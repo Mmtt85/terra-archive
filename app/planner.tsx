@@ -473,7 +473,7 @@ function slotSubstitutes(team: InfraOp[], index: number, key: string, ctx: Ctx, 
     .slice(0, count);
 }
 
-const STORAGE_KEY = "terra-archive-infra-v1";
+const STORAGE_KEY = "terra-archive-infra-v2";
 
 export default function InfraPlanner() {
   const [plan, setPlan] = useState<Plan | null>(null);
@@ -483,7 +483,8 @@ export default function InfraPlanner() {
   const [showRoster, setShowRoster] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [ownedIds, setOwnedIds] = useState<Set<string>>(() => new Set(ops.filter((op) => op.rarity <= 4).map((op) => op.id)));
+  // 전 오퍼가 기본 보유 상태로 표시된다 — 없는 오퍼만 해제하면 된다
+  const [ownedIds, setOwnedIds] = useState<Set<string>>(() => new Set(ops.map((op) => op.id)));
 
   const roster = useMemo(() => ops.filter((op) => ownedIds.has(op.id)), [ownedIds]);
 
@@ -622,7 +623,7 @@ export default function InfraPlanner() {
         return;
       }
     } catch { /* fall through to defaults */ }
-    setPlan(optimize(ops.filter((op) => op.rarity <= 4)));
+    setPlan(optimize(ops));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
