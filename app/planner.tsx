@@ -494,6 +494,16 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ owned: Array.from(ids), plan: nextPlan })); } catch { /* ignore */ }
   };
 
+  const [confirmProposal, setConfirmProposal] = useState(false);
+  const submitBaseProposal = async () => {
+    setConfirmProposal(false);
+    if (!plan) return;
+    try {
+      await sendFeedback("plan", "", { scope: "base", strategy: plan.strategy, assignments: plan.assignments, tokenPoints: plan.tokenPoints, owned: ownedIds.size });
+      showToast("전체 편성을 제안했습니다, 감사합니다!");
+    } catch { showToast("전송 실패 — 잠시 후 다시 시도해주세요"); }
+  };
+
   const exportImage = async () => {
     if (!plan) return;
     type Row = { cell: (typeof LAYOUT)[number]; crews: { label: string; team: InfraOp[]; score: number | null }[] };
@@ -705,13 +715,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
           <button className="primary" onClick={() => runOptimize()}>자동편성 실행</button>
           <button onClick={exportImage} title="A조·B조 편성표를 이미지로 확인 (PNG)">이미지로 보기</button>
           {plan && feedbackReady && (
-            <button title="현재 전체 편성을 사이트 운영자에게 제안" onClick={async () => {
-              const comment = window.prompt("전체 편성 제안 — 한마디 남기시겠어요? (선택)") ?? "";
-              try {
-                await sendFeedback("plan", comment, { scope: "base", strategy: plan.strategy, assignments: plan.assignments, tokenPoints: plan.tokenPoints, owned: ownedIds.size });
-                showToast("전체 편성을 제안했습니다, 감사합니다!");
-              } catch { showToast("전송 실패 — 잠시 후 다시 시도해주세요"); }
-            }}>전체 편성 제안</button>
+            <button title="현재 전체 편성을 사이트 운영자에게 제안" onClick={() => setConfirmProposal(true)}>전체 편성 제안</button>
           )}
           <span className="file-group">
             <button onClick={exportState} title="보유 오퍼와 편성을 JSON 파일로 저장">현재 상태 파일로 저장</button>
@@ -754,7 +758,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
               <div key={cell.key} className={`ship-room dorm-room pos-${cell.key.toLowerCase()}`} style={{ "--room-accent": ROOM_ACCENT[cell.room] } as React.CSSProperties}>
                 <div className="ship-room-head"><b>{cell.label}</b><span>고정</span></div>
                 <div className="ship-room-crew">
-                  {pinned.map((op) => <img key={op.id} src={op.image} alt={op.name} title={`${op.name} (숙소 고정)`} loading="lazy" />)}
+                  {pinned.map((op) => <img key={op.id} src={op.image} alt={op.name} title={`${op.name} 상세 정보`} loading="lazy" className={onShowOperator ? "op-link" : undefined} onClick={() => onShowOperator?.(op.id)} />)}
                   <i>{pinned.length ? "시너지 고정 + 휴식 공간" : "휴식 공간 · 조 전환과 무관"}</i>
                 </div>
               </div>
@@ -811,7 +815,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
         </div>
       )}
 
-      {showFlows && plan && <FlowModal plan={plan} onClose={() => setShowFlows(false)} />}
+      {showFlows && plan && <FlowModal plan={plan} onClose={() => setShowFlows(false)} onShowOperator={onShowOperator} />}
 
       {openCell && plan && (
         <RoomModal
@@ -827,6 +831,17 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
         />
       )}
       {toast && <div className="toast" role="status">{toast}</div>}
+      {confirmProposal && (
+        <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setConfirmProposal(false); }}>
+          <div className="confirm-dialog" role="dialog" aria-modal="true">
+            <p>현재 <b>전체 인프라 편성</b>을 사이트 운영자에게 제안할까요?</p>
+            <div className="confirm-actions">
+              <button type="button" onClick={() => setConfirmProposal(false)}>취소</button>
+              <button type="button" className="confirm-yes" onClick={submitBaseProposal}>제안하기</button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
@@ -890,9 +905,8 @@ function RoomModal({ cell, plan, allAssigned, roster, initialShift, onClose, onS
             ))}
             {feedbackReady && team.length > 0 && (
               <button type="button" className="propose-btn" title="이 시설의 현재 편성을 사이트 운영자에게 제안" onClick={async () => {
-                const comment = window.prompt(`${cell.label} 편성 제안 — 한마디 남기시겠어요? (선택)`) ?? "";
                 try {
-                  await sendFeedback("plan", comment, { scope: cell.key, label: cell.label, room: cell.room, shifts: plan.assignments[cell.key], score: currentScore, shift: shiftIndex });
+                  await sendFeedback("plan", "", { scope: cell.key, label: cell.label, room: cell.room, shifts: plan.assignments[cell.key], score: currentScore, shift: shiftIndex });
                   onNotify?.(`${cell.label} 편성을 제안했습니다, 감사합니다!`);
                 } catch { onNotify?.("전송 실패 — 잠시 후 다시 시도해주세요"); }
               }}>이 편성을 제안</button>
@@ -983,8 +997,12 @@ function RoomModal({ cell, plan, allAssigned, roster, initialShift, onClose, onS
   );
 }
 
-function FlowModal({ plan, onClose }: { plan: Plan; onClose: () => void }) {
+function FlowModal({ plan, onClose, onShowOperator }: { plan: Plan; onClose: () => void; onShowOperator?: (id: string) => void }) {
   const flows = plan.flows.filter((flow) => flow.generators.length > 0 || flow.consumers.length > 0);
+  const avatar = (op: InfraOp | undefined) => op ? (
+    <img src={op.image} alt="" loading="lazy" className={onShowOperator ? "op-link" : undefined}
+      title={onShowOperator ? `${op.name} 상세 정보` : undefined} onClick={() => onShowOperator?.(op.id)} />
+  ) : null;
   return (
     <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <section className="operator-modal room-modal" role="dialog" aria-modal="true" style={{ "--accent": "#dfff00" } as React.CSSProperties}>
@@ -1005,7 +1023,7 @@ function FlowModal({ plan, onClose }: { plan: Plan; onClose: () => void }) {
                       const op = opById.get(gen.opId);
                       return (
                         <li key={`${gen.opId}-${index}`}>
-                          {op && <img src={op.image} alt="" loading="lazy" />}
+                          {avatar(op)}
                           <b>{op?.name ?? gen.opId}</b> <i>{gen.at}</i>
                           <em>+{Math.round(gen.amount)}점{gen.via ? ` (${gen.via} 전환)` : ""}</em>
                         </li>
@@ -1019,7 +1037,7 @@ function FlowModal({ plan, onClose }: { plan: Plan; onClose: () => void }) {
                     <ul>
                       {flow.converters.map((conv) => {
                         const op = opById.get(conv.opId);
-                        return <li key={conv.opId}>{op && <img src={op.image} alt="" loading="lazy" />}<b>{op?.name}</b> <em>{conv.from} → {flow.token}</em></li>;
+                        return <li key={conv.opId}>{avatar(op)}<b>{op?.name}</b> <em>{conv.from} → {flow.token}</em></li>;
                       })}
                     </ul>
                   </li>
@@ -1030,7 +1048,7 @@ function FlowModal({ plan, onClose }: { plan: Plan; onClose: () => void }) {
                       const op = opById.get(consumer.opId);
                       return (
                         <li key={`${consumer.opId}-${index}`}>
-                          {op && <img src={op.image} alt="" loading="lazy" />}
+                          {avatar(op)}
                           <b>{op?.name ?? consumer.opId}</b> <i>{consumer.at}</i>
                           <em>{consumer.percent ? `${flow.token} ${Math.round(flow.total)}점 소비 → ${UNIT[consumer.room] ?? "효율"} +${Math.round(consumer.gain)}% (1점당 +${consumer.rate}%)` : `${flow.token} 기반 컨디션 회복·소모 보정`}</em>
                         </li>

@@ -316,7 +316,7 @@ export default function Home() {
       </section>}
 
       {tab === "planner" && <InfraPlanner onShowOperator={showOperatorById} />}
-      {tab === "recruit" && <RecruitHelper />}
+      {tab === "recruit" && <RecruitHelper onShowOperator={showOperatorById} />}
 
       {selected && <OperatorModal operator={selected} onClose={closeOperator} />}
       <FeedbackWidget />

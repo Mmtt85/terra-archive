@@ -62,11 +62,23 @@ for m in re.finditer(r"\n(★+)\n(.*?)(?=\n-{5,}|\Z)", detail, re.S):
         seen_cids.add(cid)
 
 # KR 클라이언트에 실제로 공채 추가가 적용됐지만 데이터마인 recruitDetail이 아직 갱신되지
-# 않은 오퍼만 여기에 넣는다 (id로 중복 제외됨, 성급은 character_table 자동 판정).
-# ⚠️ 나무위키 등의 "예정/미정" 단계는 넣지 말 것 — recruitDetail/recruitPool에서 실제
-#    반영을 확인한 뒤에만 추가한다. (카넬리안·키라라·인디고는 2026-07-12 시점 데이터마인
-#    미반영 = KR 클라 미적용으로 확인되어 제외.)
+# 않은 오퍼 (id로 중복 제외됨, 성급은 character_table 자동 판정, 즉시 모집 가능).
 RECRUIT_SUPPLEMENT: list[str] = []
+
+# "공채 추가 예정" — 공지는 됐으나 아직 KR 클라에 미적용. 풀에는 넣되 pending 플래그로
+# 표시만 하고, 조합 결과에서는 "예정" 배지로 구분한다 (실제 적용되면 SUPPLEMENT로 옮김).
+RECRUIT_PENDING = ["카넬리안", "키라라", "인디고"]
+pending_cids = set()
+for name in RECRUIT_PENDING:
+    cid = byname.get(name)
+    if not cid:
+        print(f"WARN: pending name not matched: {name!r}", file=sys.stderr)
+        continue
+    if cid in seen_cids:
+        continue
+    pool.append((cid, TIER[chars[cid]["rarity"]]))
+    seen_cids.add(cid)
+    pending_cids.add(cid)
 for name in RECRUIT_SUPPLEMENT:
     cid = byname.get(name)
     if not cid:
@@ -86,9 +98,11 @@ for cid, stars in pool:
     if stars == 5: tags.append("특별 채용")
     if stars == 6: tags.append("고급 특별 채용")
     meta = ops_meta.get(cid) or {}
-    ops.append({"id": cid, "name": c["name"], "rarity": stars, "tags": tags,
-                "image": meta.get("image") or f"/avatars/{cid}.png",
-                "accent": meta.get("accent") or "#6b7a86", "seq": meta.get("seq", -1)})
+    entry = {"id": cid, "name": c["name"], "rarity": stars, "tags": tags,
+             "image": meta.get("image") or f"/avatars/{cid}.png",
+             "accent": meta.get("accent") or "#6b7a86", "seq": meta.get("seq", -1)}
+    if cid in pending_cids: entry["pending"] = True
+    ops.append(entry)
 
 known = {t["tagName"] for t in gacha["gachaTags"]}
 used = {t for o in ops for t in o["tags"]}

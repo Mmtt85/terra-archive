@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import recruitData from "./data/recruit.json";
 
 type RecruitTag = { id: number; name: string; group: number };
-type RecruitOp = { id: string; name: string; rarity: number; tags: string[]; image: string; accent: string; seq: number };
+type RecruitOp = { id: string; name: string; rarity: number; tags: string[]; image: string; accent: string; seq: number; pending?: boolean };
 
 const data = recruitData as { tags: RecruitTag[]; ops: RecruitOp[] };
 
@@ -74,7 +74,7 @@ const SNIPE_DICT: ComboResult[] = (() => {
     .sort((a, b) => b.floor - a.floor || a.combo.length - b.combo.length || a.ops.length - b.ops.length);
 })();
 
-function ComboCard({ result }: { result: ComboResult }) {
+function ComboCard({ result, onShowOperator }: { result: ComboResult; onShowOperator?: (id: string) => void }) {
   return (
     <article className={`recruit-combo${result.floor >= 4 ? " prized" : ""}`}>
       <header>
@@ -85,9 +85,10 @@ function ComboCard({ result }: { result: ComboResult }) {
       </header>
       <ul>
         {result.ops.map((op) => (
-          <li key={op.id} style={{ borderColor: RARITY_COLORS[op.rarity] }}>
-            <img src={op.image} alt="" loading="lazy" decoding="async" />
-            <span>{op.name}</span>
+          <li key={op.id} className={op.pending ? "pending" : undefined} style={{ borderColor: RARITY_COLORS[op.rarity] }}>
+            <img src={op.image} alt="" loading="lazy" decoding="async" className={onShowOperator ? "op-link" : undefined}
+              title={onShowOperator ? `${op.name} 상세 정보` : undefined} onClick={() => onShowOperator?.(op.id)} />
+            <span>{op.name}{op.pending && <em className="pending-tag">추가 예정</em>}</span>
             <i style={{ color: RARITY_COLORS[op.rarity] }}>{op.rarity}★</i>
           </li>
         ))}
@@ -98,7 +99,7 @@ function ComboCard({ result }: { result: ComboResult }) {
 
 const ALL_TAG_NAMES = data.tags.map((tag) => tag.name);
 
-export default function RecruitHelper() {
+export default function RecruitHelper({ onShowOperator }: { onShowOperator?: (id: string) => void } = {}) {
   const [showDict, setShowDict] = useState(false);
   const [quick, setQuick] = useState("");
   const [manualOn, setManualOn] = useState<string[]>([]);   // 직접 클릭해 켠 태그
@@ -179,7 +180,7 @@ export default function RecruitHelper() {
         <p className="recruit-empty">태그를 선택하면 조합 결과가 여기에 표시됩니다.</p>
       ) : (
         <div className="recruit-results">
-          {results.map((result) => <ComboCard key={result.combo.join("+")} result={result} />)}
+          {results.map((result) => <ComboCard key={result.combo.join("+")} result={result} onShowOperator={onShowOperator} />)}
         </div>
       )}
 
@@ -192,7 +193,7 @@ export default function RecruitHelper() {
             <p>특별 채용·고급 특별 채용 없이도 <b>4★ 이상이 확정</b>되는 최소 태그 조합 전체입니다.
               모집 태그에 아래 조합이 뜨면 놓치지 마세요. (태그를 더 얹어도 확정은 유지됩니다)</p>
             <div className="recruit-results">
-              {SNIPE_DICT.map((result) => <ComboCard key={result.combo.join("+")} result={result} />)}
+              {SNIPE_DICT.map((result) => <ComboCard key={result.combo.join("+")} result={result} onShowOperator={onShowOperator} />)}
             </div>
           </>
         )}
