@@ -234,7 +234,7 @@ export default function Home() {
           <span className="brand-mark">TA</span>
           <span>테라 아카이브<small>명일방주(Arknights) KR 팬사이트</small></span>
         </a>
-        <div className="header-tagline">로도스 아일랜드 <em>비공식 작전 데이터베이스</em>.</div>
+        <div className="header-tagline">로도스 아일랜드 <em>비공식 작전 데이터베이스</em></div>
         <nav className="main-tabs" aria-label="주요 탭">
           <button className={tab === "archive" ? "selected" : ""} onClick={() => switchTab("archive")}>오퍼 백과사전</button>
           <button className={tab === "planner" ? "selected" : ""} onClick={() => switchTab("planner")}>인프라 플래너</button>
