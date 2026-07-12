@@ -928,7 +928,7 @@ function RosterModal({ ownedIds, onApply, onClose }: { ownedIds: Set<string>; on
   const idNo = (op: InfraOp) => parseInt(op.id.replace(/\D/g, ""), 10) || 0;
   const visible = ops
     .filter((op) => !keyword || op.name.toLowerCase().includes(keyword) || op.faction.toLowerCase().includes(keyword))
-    .sort((a, b) => idNo(b) - idNo(a)); // 최신(높은 char 번호) 우선
+    .sort((a, b) => b.rarity - a.rarity || idNo(b) - idNo(a)); // 6성 우선, 그 안에서 최신순
   const toggle = (id: string) => setDraft((current) => {
     const next = new Set(current);
     if (next.has(id)) next.delete(id); else next.add(id);
