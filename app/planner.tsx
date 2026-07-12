@@ -900,13 +900,18 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
   }, { "스킬 효율": 0, "시설 기반": 0, "자동화": 0, "품질 기대치": 0, "오더 수익": 0, "효율 오버라이드": 0, "동료 보너스": 0, "제어 오라(가중)": 0 } as Record<string, number>);
   // 추가 후보: 어디에도 배치 안 된 보유 오퍼를 한계 기여 순으로
   const [benchAll, setBenchAll] = useState(false);
+  const [benchQuery, setBenchQuery] = useState("");
   const benchFull = team.length < slots && onUpdateTeam
     ? roster
         .filter((op) => !allAssigned.has(op.id))
         .map((op) => ({ op, delta: Math.round(teamScore([...team, op], cell.room, ctx)) - currentScore }))
         .sort((a, b) => b.delta - a.delta || b.op.rarity - a.op.rarity)
     : [];
-  const bench = benchAll ? benchFull : benchFull.slice(0, 12);
+  const benchKeyword = benchQuery.trim().toLowerCase();
+  const benchFiltered = benchKeyword
+    ? benchFull.filter(({ op }) => op.name.toLowerCase().includes(benchKeyword) || op.faction.toLowerCase().includes(benchKeyword))
+    : benchFull;
+  const bench = benchAll ? benchFiltered : benchFiltered.slice(0, 12);
   // synergy cores can't be swapped: token generators/consumers of active
   // systems, override/payout roles, and per-member counter bodies (쉐이)
   const activeTokens = new Set(Object.entries(plan.tokenPoints).filter(([, points]) => points > 0).map(([token]) => token));
@@ -991,21 +996,26 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                   </article>
                 );
               })}
-              {team.length === 0 && !bench.length && <p className="no-detail">자동 편성을 먼저 실행해 주세요.</p>}
+              {team.length === 0 && !benchFull.length && <p className="no-detail">자동 편성을 먼저 실행해 주세요.</p>}
             </div>
-            {bench.length > 0 && (
+            {benchFull.length > 0 && (
               <div className="bench">
                 <span>빈 자리에 추가 — 클릭 시 즉시 배치 (기여 예상):</span>
-                <div className="bench-chips">
-                  {bench.map(({ op, delta }) => (
-                    <small key={op.id} className="sub-chip swappable" title={`${op.name} 추가`} onClick={() => setIds([...rawIds, op.id])}>
-                      <img src={op.image} alt="" loading="lazy" className={onShowOperator ? "op-link" : undefined} onClick={(event) => { event.stopPropagation(); onShowOperator?.(op.id); }} />{op.name} <em>{delta >= 0 ? `+${delta}` : delta}</em>
-                    </small>
-                  ))}
-                </div>
-                {benchFull.length > 12 && (
+                <input className="bench-search" value={benchQuery} onChange={(event) => setBenchQuery(event.target.value)} placeholder="이름·소속으로 후보 검색" />
+                {bench.length > 0 ? (
+                  <div className="bench-chips">
+                    {bench.map(({ op, delta }) => (
+                      <small key={op.id} className="sub-chip swappable" title={`${op.name} 추가`} onClick={() => setIds([...rawIds, op.id])}>
+                        <img src={op.image} alt="" loading="lazy" className={onShowOperator ? "op-link" : undefined} onClick={(event) => { event.stopPropagation(); onShowOperator?.(op.id); }} />{op.name} <em>{delta >= 0 ? `+${delta}` : delta}</em>
+                      </small>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="no-detail">검색 결과가 없습니다.</p>
+                )}
+                {benchFiltered.length > 12 && (
                   <button type="button" className="more-filter" onClick={() => setBenchAll((current) => !current)}>
-                    {benchAll ? "접기" : `더 많이 보기 (전체 ${benchFull.length}명)`}
+                    {benchAll ? "접기" : `더 많이 보기 (전체 ${benchFiltered.length}명)`}
                   </button>
                 )}
               </div>

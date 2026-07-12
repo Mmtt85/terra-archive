@@ -353,6 +353,7 @@ footer p { margin:0 }
 .sub-chip.swappable:hover { outline:2px solid var(--lime); outline-offset:1px }
 .bench { margin-top:14px; border-top:1px dashed var(--line); padding-top:12px }
 .bench>span { font-size:11px; font-weight:800; color:var(--muted) }
+.bench-search { display:block; width:100%; max-width:260px; margin-top:8px; border:1px solid var(--line); background:var(--white); padding:7px 9px; font-size:12px }
 .bench-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px }
 /* ─ 피드백 위젯 ─ */
 .feedback-widget { position:fixed; right:22px; bottom:22px; z-index:150; display:flex; flex-direction:column; align-items:flex-end; gap:10px }
