@@ -266,9 +266,9 @@ export default function Home() {
         </a>
         <div className="header-tagline">로도스 아일랜드 <em>비공식 작전 데이터베이스</em></div>
         <nav className="main-tabs" aria-label="주요 탭">
-          <button className={tab === "archive" ? "selected" : ""} onClick={() => switchTab("archive")}>오퍼 백과사전</button>
-          <button className={tab === "planner" ? "selected" : ""} onClick={() => switchTab("planner")}>인프라 플래너</button>
-          <button className={tab === "recruit" ? "selected" : ""} onClick={() => switchTab("recruit")}>공채 도우미</button>
+          <button className={`tab-archive${tab === "archive" ? " selected" : ""}`} onClick={() => switchTab("archive")}>오퍼 백과사전</button>
+          <button className={`tab-planner${tab === "planner" ? " selected" : ""}`} onClick={() => switchTab("planner")}>인프라 플래너</button>
+          <button className={`tab-recruit${tab === "recruit" ? " selected" : ""}`} onClick={() => switchTab("recruit")}>공채 도우미</button>
         </nav>
         <div className="server-chip"><span /> KR SERVER · BETA</div>
       </header>

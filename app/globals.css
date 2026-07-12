@@ -6,8 +6,14 @@ html { scroll-behavior:smooth }
 body { background:var(--paper); color:var(--ink); margin:0; font-family:Arial,Apple SD Gothic Neo,Noto Sans KR,sans-serif }
 main { height:100dvh; overflow:hidden }
 /* 서버 HTML은 항상 백과사전 — #infra·#recruit로 새로고침 시 첫 페인트에서 백과사전을
-   숨겨 플래시를 막는다 (인라인 스크립트가 <html data-route>를 설정, 하이드레이션 후 해제) */
+   숨기고 헤더 탭 하이라이트도 올바른 탭으로 옮겨 플래시를 막는다
+   (인라인 스크립트가 <html data-route>를 설정, 하이드레이션 후 page.tsx가 해제) */
 html[data-route="infra"] .explorer, html[data-route="recruit"] .explorer { display:none }
+html[data-route="infra"] main, html[data-route="recruit"] main { height:auto; min-height:100vh; overflow:visible; display:flex; flex-direction:column }
+html[data-route="infra"] .main-tabs .tab-archive.selected,
+html[data-route="recruit"] .main-tabs .tab-archive.selected { background:transparent; color:inherit; border-color:var(--line) }
+html[data-route="infra"] .main-tabs .tab-planner,
+html[data-route="recruit"] .main-tabs .tab-recruit { background:var(--ink); color:var(--lime); border-color:var(--ink) }
 button,input { font:inherit }
 button { color:inherit }
 .site-header { border-bottom:1px solid var(--line); z-index:20; -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); background:#f1f0ebe6; justify-content:space-between; align-items:center; height:78px; padding:0 clamp(22px,5vw,76px); display:flex; position:sticky; top:0 }
