@@ -22,7 +22,7 @@ export async function sendFeedback(kind: FeedbackKind, message: string, payload?
 }
 
 // ─ 관리자 (/admin) — RLS 정책이 x-admin-key 헤더를 검사한다 (docs/supabase-admin.sql) ─
-export type FeedbackRow = { id: string; created_at: string; kind: FeedbackKind; message: string; payload: unknown };
+export type FeedbackRow = { id: string; created_at: string; kind: FeedbackKind; message: string; payload: unknown; reviewed_at: string | null };
 
 function adminHeaders(password: string) {
   return {
@@ -38,6 +38,15 @@ export async function adminListFeedback(password: string): Promise<FeedbackRow[]
   });
   if (!res.ok) throw new Error(`조회 실패 (${res.status})`);
   return res.json();
+}
+
+export async function adminSetReviewed(password: string, id: string, reviewed: boolean) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/feedback?id=eq.${id}`, {
+    method: "PATCH",
+    headers: { ...adminHeaders(password), "Content-Type": "application/json", Prefer: "return=minimal" },
+    body: JSON.stringify({ reviewed_at: reviewed ? new Date().toISOString() : null }),
+  });
+  if (!res.ok) throw new Error(`갱신 실패 (${res.status})`);
 }
 
 export async function adminDeleteFeedback(password: string, id: string) {

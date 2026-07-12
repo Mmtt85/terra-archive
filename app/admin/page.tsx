@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { adminDeleteFeedback, adminListFeedback, type FeedbackRow } from "../feedback";
+import { adminDeleteFeedback, adminListFeedback, adminSetReviewed, type FeedbackRow } from "../feedback";
 
 const KIND_LABEL: Record<string, string> = { feature: "기능 제안", data_error: "데이터 오류", plan: "편성 제안" };
 
@@ -29,6 +29,16 @@ export default function AdminPage() {
     const saved = sessionStorage.getItem("ta-admin-key");
     if (saved) { setPassword(saved); load(saved); }
   }, []);
+
+  const toggleReviewed = async (row: FeedbackRow) => {
+    const next = !row.reviewed_at;
+    try {
+      await adminSetReviewed(password, row.id, next);
+      setRows((current) => current.map((item) => item.id === row.id ? { ...item, reviewed_at: next ? new Date().toISOString() : null } : item));
+    } catch {
+      setStatus("갱신 실패");
+    }
+  };
 
   const remove = async (id: string) => {
     if (!window.confirm("이 항목을 삭제할까요?")) return;
@@ -74,10 +84,12 @@ export default function AdminPage() {
       {status && <p className="admin-status">{status}</p>}
       <div className="admin-list">
         {shown.map((row) => (
-          <article key={row.id} className={`admin-row kind-${row.kind}`}>
+          <article key={row.id} className={`admin-row kind-${row.kind}${row.reviewed_at ? " reviewed" : ""}`}>
             <header>
               <b>{KIND_LABEL[row.kind] ?? row.kind}</b>
+              {row.reviewed_at && <i className="reviewed-badge" title={new Date(row.reviewed_at).toLocaleString("ko-KR")}>✓ 확인됨</i>}
               <time>{new Date(row.created_at).toLocaleString("ko-KR")}</time>
+              <button className="review-btn" onClick={() => toggleReviewed(row)}>{row.reviewed_at ? "확인 취소" : "확인완료"}</button>
               <button onClick={() => remove(row.id)}>삭제</button>
             </header>
             {row.message && <p>{row.message}</p>}

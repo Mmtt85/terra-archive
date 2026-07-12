@@ -13,3 +13,13 @@ create policy "admin delete feedback"
   on public.feedback for delete
   to anon
   using ((current_setting('request.headers', true)::json ->> 'x-admin-key') = 'admin');
+
+-- 확인완료 표시 (reviewed_at이 null이 아니면 확인된 제안)
+alter table public.feedback add column if not exists reviewed_at timestamptz;
+
+drop policy if exists "admin update feedback" on public.feedback;
+create policy "admin update feedback"
+  on public.feedback for update
+  to anon
+  using ((current_setting('request.headers', true)::json ->> 'x-admin-key') = 'admin')
+  with check ((current_setting('request.headers', true)::json ->> 'x-admin-key') = 'admin');
