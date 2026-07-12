@@ -87,7 +87,9 @@ const conceptCounts = new Map<string, number>();
 operators.forEach((operator) => operator.concepts.forEach((concept) => conceptCounts.set(concept, (conceptCounts.get(concept) ?? 0) + 1)));
 const concepts = Array.from(conceptCounts.keys()).sort((a, b) => (conceptCounts.get(b) ?? 0) - (conceptCounts.get(a) ?? 0));
 
-const positions = ["근거리", "원거리"];
+const attackMethods = ["근거리", "원거리", "물리", "마법"];
+const POSITION_METHODS = ["근거리", "원거리"];
+const damageTypeOf = (operator: Operator) => (operator.trait.includes("마법 대미지") ? "마법" : "물리");
 const combatTags = Array.from(new Set(operators.flatMap((operator) => operator.combatTags))).sort((a, b) => a.localeCompare(b, "ko"));
 const jobs = ["뱅가드", "가드", "디펜더", "스나이퍼", "캐스터", "메딕", "서포터", "스페셜리스트"];
 const subProfessions = Array.from(new Set(operators.map((operator) => operator.subProfession))).sort((a, b) => a.localeCompare(b, "ko"));
@@ -98,7 +100,7 @@ export default function Home() {
   const [selectedFactions, setSelectedFactions] = useState<string[]>([]);
   const [selectedConcepts, setSelectedConcepts] = useState<string[]>([]);
   const [query, setQuery] = useState("");
-  const [selectedPositions, setSelectedPositions] = useState<string[]>([]);
+  const [selectedMethods, setSelectedMethods] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [selectedJobs, setSelectedJobs] = useState<string[]>([]);
   const [selectedSubProfessions, setSelectedSubProfessions] = useState<string[]>([]);
@@ -125,19 +127,21 @@ export default function Home() {
     return operators.filter((operator) => {
       const matchesFaction = selectedFactions.length === 0 || selectedFactions.some((faction) => operator.factions.includes(faction));
       const matchesConcept = selectedConcepts.length === 0 || selectedConcepts.some((concept) => operator.concepts.includes(concept));
-      const matchesPosition = selectedPositions.length === 0 || selectedPositions.includes(operator.position);
+      const positionPicks = selectedMethods.filter((method) => POSITION_METHODS.includes(method));
+      const damagePicks = selectedMethods.filter((method) => !POSITION_METHODS.includes(method));
+      const matchesMethod = (positionPicks.length === 0 || positionPicks.includes(operator.position)) && (damagePicks.length === 0 || damagePicks.includes(damageTypeOf(operator)));
       const matchesTags = tags.every((tag) => operator.combatTags.includes(tag));
       const matchesJob = selectedJobs.length === 0 || selectedJobs.includes(operator.job);
       const matchesSubProfession = selectedSubProfessions.length === 0 || selectedSubProfessions.includes(operator.subProfession);
       const matchesQuery = !keyword || [operator.name, operator.code, operator.job, operator.subProfession, operator.position, ...operator.combatTags, ...operator.factions, operator.reason, ...operator.aliases, ...operator.concepts].join(" ").toLowerCase().includes(keyword);
-      return matchesFaction && matchesConcept && matchesPosition && matchesTags && matchesJob && matchesSubProfession && matchesQuery;
+      return matchesFaction && matchesConcept && matchesMethod && matchesTags && matchesJob && matchesSubProfession && matchesQuery;
     });
-  }, [selectedFactions, selectedConcepts, selectedPositions, tags, selectedJobs, selectedSubProfessions, query]);
+  }, [selectedFactions, selectedConcepts, selectedMethods, tags, selectedJobs, selectedSubProfessions, query]);
 
   const reset = () => {
     setSelectedFactions([]);
     setSelectedConcepts([]);
-    setSelectedPositions([]);
+    setSelectedMethods([]);
     setTags([]);
     setSelectedJobs([]);
     setSelectedSubProfessions([]);
@@ -148,7 +152,7 @@ export default function Home() {
     setter((current) => (current.includes(value) ? current.filter((item) => item !== value) : [...current, value]));
   const toggleTag = toggleIn(setTags);
 
-  const hasActiveFilter = selectedFactions.length > 0 || selectedConcepts.length > 0 || selectedPositions.length > 0 || tags.length > 0 || selectedJobs.length > 0 || selectedSubProfessions.length > 0 || query.trim().length > 0;
+  const hasActiveFilter = selectedFactions.length > 0 || selectedConcepts.length > 0 || selectedMethods.length > 0 || tags.length > 0 || selectedJobs.length > 0 || selectedSubProfessions.length > 0 || query.trim().length > 0;
 
   const sorted = useMemo(() => {
     if (sortKey === "기본") return sortAsc ? filtered : [...filtered].reverse();
@@ -193,12 +197,12 @@ export default function Home() {
           <label className="search-label" htmlFor="operator-search">오퍼레이터 검색</label>
           <div className="search-wrap"><span>⌕</span><input id="operator-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="이름, 별명, 직군, 효과 검색" /></div>
 
-          <FilterGroup title="공격 위치" items={positions} selected={selectedPositions} onToggle={toggleIn(setSelectedPositions)} limit={3} countForItem={(item) => operators.filter((operator) => operator.position === item).length} />
-          <FilterGroup title="전투 태그" items={combatTags} selected={tags} onToggle={toggleTag} limit={12} countForItem={(item) => operators.filter((operator) => operator.combatTags.includes(item)).length} />
+          <FilterGroup title="컨셉덱" items={concepts} selected={selectedConcepts} onToggle={toggleIn(setSelectedConcepts)} limit={16} countForItem={(item) => operators.filter((operator) => operator.concepts.includes(item)).length} />
           <FilterGroup title="직군" items={jobs} selected={selectedJobs} onToggle={toggleIn(setSelectedJobs)} limit={9} countForItem={(item) => operators.filter((operator) => operator.job === item).length} />
           <FilterGroup title="세부 직군" items={subProfessions} selected={selectedSubProfessions} onToggle={toggleIn(setSelectedSubProfessions)} limit={13} countForItem={(item) => operators.filter((operator) => operator.subProfession === item).length} />
+          <FilterGroup title="전투 태그" items={combatTags} selected={tags} onToggle={toggleTag} limit={12} countForItem={(item) => operators.filter((operator) => operator.combatTags.includes(item)).length} />
+          <FilterGroup title="공격 방식" items={attackMethods} selected={selectedMethods} onToggle={toggleIn(setSelectedMethods)} limit={4} countForItem={(item) => operators.filter((operator) => POSITION_METHODS.includes(item) ? operator.position === item : damageTypeOf(operator) === item).length} />
           <FilterGroup title="공식 소속" items={factions} selected={selectedFactions} onToggle={toggleIn(setSelectedFactions)} limit={12} countForItem={(item) => operators.filter((operator) => operator.factions.includes(item)).length} />
-          <FilterGroup title="컨셉덱" items={concepts} selected={selectedConcepts} onToggle={toggleIn(setSelectedConcepts)} limit={16} countForItem={(item) => operators.filter((operator) => operator.concepts.includes(item)).length} />
 
           <aside className="data-note"><span>DATA NOTE</span><p>한국 서버 {operators.length}명 · 전원 이미지 · 다국어 이름 및 커뮤니티 별명 검색 · 스킬과 재능 기반 {concepts.length}개 컨셉 태그를 제공합니다. 모든 필터는 토글식이며 아무것도 선택하지 않으면 전체가 표시됩니다.</p></aside>
         </div>
@@ -220,7 +224,7 @@ export default function Home() {
           <div className="active-filters">
             {selectedFactions.map((item) => <button key={`f-${item}`} onClick={() => toggleIn(setSelectedFactions)(item)}>{item} ×</button>)}
             {selectedConcepts.map((item) => <button key={`c-${item}`} onClick={() => toggleIn(setSelectedConcepts)(item)}>{item} ×</button>)}
-            {selectedPositions.map((item) => <button key={`p-${item}`} onClick={() => toggleIn(setSelectedPositions)(item)}>{item} ×</button>)}
+            {selectedMethods.map((item) => <button key={`p-${item}`} onClick={() => toggleIn(setSelectedMethods)(item)}>{item} ×</button>)}
             {tags.map((tag) => <button key={`t-${tag}`} onClick={() => toggleTag(tag)}>{tag} ×</button>)}
             {selectedJobs.map((item) => <button key={`j-${item}`} onClick={() => toggleIn(setSelectedJobs)(item)}>{item} ×</button>)}
             {selectedSubProfessions.map((item) => <button key={`s-${item}`} onClick={() => toggleIn(setSelectedSubProfessions)(item)}>{item} ×</button>)}
