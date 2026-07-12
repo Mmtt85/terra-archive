@@ -142,7 +142,12 @@ export default function Home() {
   };
   const closeOperator = () => {
     setSelected(null);
-    history.replaceState(null, "", window.location.pathname);
+    history.replaceState(null, "", tab === "planner" ? "#infra" : tab === "recruit" ? "#recruit" : window.location.pathname);
+  };
+  // 플래너 등 다른 탭 위에서 모달만 띄울 때 — 해시(#infra)는 건드리지 않는다
+  const showOperatorById = (id: string) => {
+    const operator = operators.find((candidate) => candidate.id === id);
+    if (operator) setSelected(operator);
   };
 
   const switchTab = (next: "archive" | "planner" | "recruit") => {
@@ -296,7 +301,7 @@ export default function Home() {
         </div>
       </section>}
 
-      {tab === "planner" && <InfraPlanner />}
+      {tab === "planner" && <InfraPlanner onShowOperator={showOperatorById} />}
       {tab === "recruit" && <RecruitHelper />}
 
       {selected && <OperatorModal operator={selected} onClose={closeOperator} />}

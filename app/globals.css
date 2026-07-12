@@ -326,3 +326,5 @@ footer p { margin:0 }
 .clear-btn { border:1px solid var(--ink); background:var(--ink); color:var(--lime); cursor:pointer; padding:0 18px; font-size:12px; font-weight:800 }
 .clear-btn:hover { background:var(--lime); color:var(--ink) }
 .recruit-time-note { border-left:3px solid var(--lime); background:#e6e5df; color:#535b5f; max-width:760px; margin:14px 0 0; padding:12px 15px; font-size:12px; line-height:1.7 }
+.op-link { cursor:pointer; transition:outline-color .15s }
+.op-link:hover { outline:2px solid var(--lime); outline-offset:1px }

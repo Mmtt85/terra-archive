@@ -76,6 +76,9 @@ def parse_metric(room, text):
     if room == "POWER":
         if re.search(r"발전소 \+1개로 간주", text): return "plantbonus", 1
         v = best(r"(?:무인기|드론)[^+%\d]{0,20}회복[^+%\d]{0,14}" + PCT)
+        # 성장형 상한 채택: "드론 상한 10당 +1% (최대 +25%)" → 25 고정 (이격그레이 점검 매뉴얼, 사용자 확정)
+        cap = re.search(r"최대 \+?(\d+(?:\.\d+)?)%", text)
+        if v and cap: v = max(v, float(cap.group(1)))
         if v: return "output", v
     if room == "MEETING":
         v = best(r"단서 (?:수집|검색) 속도(?:가)?[^%\d]{0,16}" + PCT)

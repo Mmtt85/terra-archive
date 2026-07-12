@@ -476,7 +476,7 @@ function slotSubstitutes(team: InfraOp[], index: number, key: string, ctx: Ctx, 
 
 const STORAGE_KEY = "terra-archive-infra-v3";
 
-export default function InfraPlanner() {
+export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id: string) => void } = {}) {
   const [plan, setPlan] = useState<Plan | null>(null);
   const [activeShift, setActiveShift] = useState(0);
   const [openRoom, setOpenRoom] = useState<string | null>(null);
@@ -772,13 +772,14 @@ export default function InfraPlanner() {
           roster={roster}
           initialShift={activeShift}
           onClose={() => setOpenRoom(null)}
+          onShowOperator={onShowOperator}
         />
       )}
     </section>
   );
 }
 
-function RoomModal({ cell, plan, allAssigned, roster, initialShift, onClose }: { cell: { key: string; room: string; label: string; product?: string }; plan: Plan; allAssigned: Set<string>; roster: InfraOp[]; initialShift: number; onClose: () => void }) {
+function RoomModal({ cell, plan, allAssigned, roster, initialShift, onClose, onShowOperator }: { cell: { key: string; room: string; label: string; product?: string }; plan: Plan; allAssigned: Set<string>; roster: InfraOp[]; initialShift: number; onClose: () => void; onShowOperator?: (id: string) => void }) {
   const [shift, setShift] = useState(initialShift);
   const shiftIndex = Math.min(shift, (plan.assignments[cell.key]?.length ?? 1) - 1);
   const team = (plan.assignments[cell.key]?.[shiftIndex] ?? []).map((id) => opById.get(id)).filter(Boolean) as InfraOp[];
@@ -823,7 +824,8 @@ function RoomModal({ cell, plan, allAssigned, roster, initialShift, onClose }: {
                 const shown = b.skills.length ? b.skills : op.skills.filter((skill) => skill.room === cell.room);
                 return (
                   <article key={op.id} className="crew-card">
-                    <img src={op.image} alt={op.name} loading="lazy" />
+                    <img src={op.image} alt={op.name} loading="lazy" className={onShowOperator ? "op-link" : undefined}
+                      title={`${op.name} 상세 정보`} onClick={() => onShowOperator?.(op.id)} />
                     <div>
                       <b>{op.name} <i>{"★".repeat(op.rarity)}</i></b>
                       {shown.length ? shown.map((skill) => <p key={skill.name}><em>{skill.name}</em> — {skill.description}</p>) : <p>이 시설에 적용되는 스킬이 없습니다 (세트 대기 요원).</p>}
@@ -838,7 +840,7 @@ function RoomModal({ cell, plan, allAssigned, roster, initialShift, onClose }: {
                           <span>이 자리 대체 오퍼:</span>
                           {slotSubstitutes(team, team.indexOf(op), cell.key, ctx, excluded, roster).map(({ op: sub, score }) => (
                             <small key={sub.id} className="sub-chip" title={sub.skills.filter((skill) => skill.room === cell.room).map((skill) => `${skill.name}: ${skill.description}`).join("\n")}>
-                              <img src={sub.image} alt="" loading="lazy" />{sub.name} <em>{score >= currentScore ? "동급" : `-${currentScore - score}`}</em>
+                              <img src={sub.image} alt="" loading="lazy" className={onShowOperator ? "op-link" : undefined} onClick={() => onShowOperator?.(sub.id)} />{sub.name} <em>{score >= currentScore ? "동급" : `-${currentScore - score}`}</em>
                             </small>
                           ))}
                         </div>
