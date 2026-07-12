@@ -291,6 +291,10 @@ def sub_name(spid):
 result = []
 for cid, c in chars.items():
     if not cid.startswith("char_"): continue
+    # 획득 불가 게스트 오퍼 중 모듈 데이터가 들어있는 항목은 스토리용 가짜 데이터
+    # (6성판 샤프·피스·튤립·미저리·스톰아이·메커니스트·로드·샤프·라이디언 char_6xx 계열).
+    # 모듈 없는 획득 불가 오퍼(5성 A팀 등)는 실사용 가능하므로 유지.
+    if c.get("isNotObtainable") and build_modules(cid): continue
     name = c.get("name")
     stats = build_stats(c)
     birth, race = build_handbook(cid)
