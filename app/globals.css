@@ -193,3 +193,62 @@ footer p { margin:0 }
 @media (width<=430px) { .brand small { display:none } .hero h1 { font-size:29px } .hero-stats div { min-width:85px; margin-right:16px; padding-right:16px } .operator-grid { grid-template-columns:1fr } .portrait { height:138px } .card-body p { min-height:0 } }
 @media (width<=760px) { .module-levels { grid-template-columns:1fr } .module-levels>div { border-left:0; border-top:1px solid var(--line) } .module-levels>div:first-child { border-top:0 } .infra-list article { grid-template-columns:90px 1fr } main { height:auto; overflow:visible } .header-tagline { display:none } .hero h1 br { display:block } }
 @media (prefers-reduced-motion:reduce) { * { scroll-behavior:auto!important; animation:none!important } }
+
+/* ---- infra planner ---- */
+.base-main { height:auto; min-height:100vh; overflow:visible; display:flex; flex-direction:column }
+.planner { width:min(100%,1500px); margin:0 auto; padding:36px clamp(18px,4vw,64px) 80px; flex:1 }
+.planner-controls { display:flex; align-items:end; justify-content:space-between; gap:20px; border-bottom:2px solid var(--ink); padding-bottom:16px }
+.planner-controls h2 { margin:6px 0 0; font-size:30px; letter-spacing:-1.2px }
+.planner-buttons { display:flex; gap:8px }
+.planner-buttons button { border:1px solid var(--ink); background:var(--white); padding:11px 16px; font-size:12px; font-weight:800; cursor:pointer; transition:.15s }
+.planner-buttons button:hover { background:var(--lime) }
+.planner-buttons button.primary { background:var(--ink); color:var(--lime) }
+.planner-summary { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)) minmax(0,1.6fr); gap:10px; margin-top:18px }
+.planner-summary > div { background:var(--white); border:1px solid var(--line); padding:13px 15px }
+.planner-summary span { display:block; color:var(--muted); font:700 9px monospace; letter-spacing:1px }
+.planner-summary b { display:block; margin-top:6px; font:800 19px monospace }
+.planner-summary .wide b { font-size:13px; font-family:inherit }
+.shift-tabs { display:flex; align-items:center; gap:7px; margin-top:16px }
+.shift-tabs button { border:1px solid var(--line); background:transparent; padding:8px 16px; font-size:12px; font-weight:800; cursor:pointer }
+.shift-tabs button.selected { background:var(--ink); color:var(--lime); border-color:var(--ink) }
+.shift-hint { color:var(--muted); font-size:10px; margin-left:8px }
+.ship { display:grid; gap:10px; margin-top:22px; grid-template-columns:repeat(3,minmax(0,1fr)) repeat(2,minmax(0,.9fr)); grid-template-areas:
+  ". . . control meeting"
+  "trading0 trading1 mfg0 dorm0 workshop"
+  "mfg1 mfg2 mfg3 dorm1 hire"
+  "power0 power1 power2 dorm2 training"
+  ". . . dorm3 ." }
+.pos-trading-0 { grid-area:trading0 } .pos-trading-1 { grid-area:trading1 }
+.pos-manufacture-0 { grid-area:mfg0 } .pos-manufacture-1 { grid-area:mfg1 } .pos-manufacture-2 { grid-area:mfg2 } .pos-manufacture-3 { grid-area:mfg3 }
+.pos-power-0 { grid-area:power0 } .pos-power-1 { grid-area:power1 } .pos-power-2 { grid-area:power2 }
+.pos-control { grid-area:control } .pos-meeting { grid-area:meeting } .pos-workshop { grid-area:workshop } .pos-hire { grid-area:hire } .pos-training { grid-area:training }
+.pos-dorm-0 { grid-area:dorm0 } .pos-dorm-1 { grid-area:dorm1 } .pos-dorm-2 { grid-area:dorm2 } .pos-dorm-3 { grid-area:dorm3 }
+.ship-room { position:relative; text-align:left; background:#171b1d; color:#e8ecec; border:1px solid #2c3234; border-left:4px solid var(--room-accent); min-height:96px; padding:11px 12px; cursor:pointer; transition:.15s; overflow:hidden }
+.ship-room:hover { transform:translateY(-2px); border-color:var(--room-accent); box-shadow:0 10px 24px #1f242522 }
+.ship-room:focus-visible { outline:3px solid var(--lime); outline-offset:2px }
+.ship-room-head { display:flex; justify-content:space-between; align-items:center }
+.ship-room-head b { font-size:13px; letter-spacing:-.4px }
+.ship-room-head span { color:var(--room-accent); font:800 10px monospace }
+.ship-room-crew { display:flex; flex-wrap:wrap; gap:4px; margin-top:9px; min-height:28px }
+.ship-room-crew img { width:26px; height:26px; object-fit:cover; border:1px solid #3a4144; background:#0e1213 }
+.ship-room-crew i { color:#5d686c; font-size:9px; font-style:normal; align-self:center }
+.ship-room > small { display:block; margin-top:7px; color:var(--room-accent); font:800 9px monospace; letter-spacing:.5px }
+.pos-control.ship-room { min-height:110px; background:linear-gradient(120deg,#1d2325,#12161a) }
+.room-modal .room-modal-head { background:linear-gradient(120deg,color-mix(in srgb,var(--accent) 60%,#111),#151b1e); color:#fff; padding:30px 60px 22px 34px }
+.room-modal .room-modal-head h2 { margin:8px 0 12px; font-size:clamp(28px,4vw,44px); letter-spacing:-.05em }
+.room-modal .shift-tabs.in-modal { margin-top:0 }
+.room-modal .shift-tabs.in-modal button { border-color:#ffffff44; color:#fff }
+.room-modal .shift-tabs.in-modal button.selected { background:var(--lime); color:var(--ink); border-color:var(--lime) }
+.crew-list { display:grid; gap:9px }
+.crew-card { display:grid; grid-template-columns:52px 1fr; gap:13px; border:1px solid var(--line); background:#fff; padding:12px }
+.crew-card.sub { background:#f4f3ee; border-style:dashed }
+.crew-card img { width:52px; height:52px; object-fit:cover; background:#12171a }
+.crew-card b { font-size:14px }
+.crew-card b i { color:#c89b25; font-style:normal; font-size:9px; letter-spacing:-1px; margin-left:5px }
+.crew-card p { margin:6px 0 0; color:#4f585c; font-size:11px; line-height:1.6 }
+.crew-card p em { font-style:normal; font-weight:800; color:var(--ink) }
+.crew-card small { display:inline-block; margin-top:7px; padding:3px 7px; background:color-mix(in srgb,var(--accent) 18%,white); color:color-mix(in srgb,var(--accent) 75%,black); font:800 10px monospace }
+.sub-hint { color:var(--muted); font-size:11px; margin:0 0 12px }
+.planner-link { border:1px solid var(--ink); background:var(--ink); color:var(--lime); padding:8px 12px; font:700 10px monospace; letter-spacing:1px; text-decoration:none; margin-left:auto; margin-right:14px }
+.planner-link:hover { background:var(--lime); color:var(--ink) }
+@media (max-width:1100px) { .ship { grid-template-columns:repeat(3,minmax(0,1fr)); grid-template-areas:"control control meeting" "trading0 trading1 workshop" "mfg0 mfg1 hire" "mfg2 mfg3 training" "power0 power1 power2" "dorm0 dorm1 dorm2" "dorm3 . ." } .planner-summary { grid-template-columns:repeat(2,minmax(0,1fr)) } .planner-controls { display:block } .planner-buttons { margin-top:12px } }

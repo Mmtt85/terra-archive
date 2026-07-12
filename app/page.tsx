@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import operatorsData from "./data/operators.json";
 
 type RangeGrid = { row: number; col: number };
@@ -185,6 +186,7 @@ export default function Home() {
           <span>테라 아카이브<small>한국 서버 오퍼레이터 탐색기</small></span>
         </a>
         <div className="header-tagline">소속을 넘어, <em>함께 싸울 이유</em>로 찾기.</div>
+        <Link className="planner-link" href="/base">인프라 플래너 →</Link>
         <div className="server-chip"><span /> KR SERVER · BETA</div>
       </header>
 
