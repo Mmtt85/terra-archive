@@ -334,6 +334,22 @@ for cid, c in chars.items():
     op["faction"] = op["factions"][0]
     result.append(op)
 
+# 동명 중복 정리 (사용자 확정 2026-07): 같은 이름이 여럿이면 입수 가능 버전 우선,
+# 전부 입수 불가면 먼저 나온(char 번호 낮은) 쪽만 남긴다 — 샬렘은 진짜(char_4025)만,
+# 예비 인원 3성/4성 쌍은 3성(r시리즈)만. 이름 안 겹치는 입수 불가 유닛은 그대로 둔다.
+def char_no(cid):
+    try: return int(cid.split("_")[1])
+    except (IndexError, ValueError): return 10**9
+by_name = {}
+for o in result: by_name.setdefault(o["name"], []).append(o)
+deduped = []
+for name, group in by_name.items():
+    group.sort(key=lambda o: (bool(chars.get(o["id"], {}).get("isNotObtainable")), char_no(o["id"])))
+    if len(group) > 1:
+        print("dedup:", name, "→ keep", group[0]["id"], "drop", [g["id"] for g in group[1:]])
+    deduped.append(group[0])
+result = deduped
+
 # stable order: rarity asc, then name (matches deployed robots-first look)
 result.sort(key=lambda o: (o["rarity"], o["name"]))
 json.dump(result, open(f"{S}/operators-regen.json", "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
