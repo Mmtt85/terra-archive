@@ -20,12 +20,42 @@ def corpus(o):
             parts.extend(lv["effects"])
     return "   ".join(parts)
 
+# 시너지 팟 (사용자 확정 컨셉덱) — 컨셉 필터 최상단 고정 순서
+POTS = ["해산물팟", "쉐이팟", "쉐라그팟", "카시미어팟", "미노스팟", "아베무팟", "연소팟",
+        "라테라노팟", "탄약팟", "라인랩팟"]
+# 판정: 앵커 진영 소속이거나, 전투 텍스트(스킬·재능·특성·모듈)에 시너지 언급이 있을 때.
+# 출신지만으로 붙이지 않는다 (예: 에기르 ≠ 해산물팟 — terra-archive 도메인 규칙).
+POT_BY_FACTION = {
+    "해산물팟": {"어비설 헌터스"},
+    "쉐이팟": {"염-쉐이"},
+    "쉐라그팟": {"쉐라그", "카란 무역회사"},
+    "카시미어팟": {"카시미어"},
+    "미노스팟": {"미노스"},
+    "아베무팟": {"Ave Mujica"},
+    "라테라노팟": {"라테라노"},
+    "라인랩팟": {"라인 랩"},
+}
+POT_BY_TEXT = {
+    "해산물팟": r"어비[설셜]",
+    "쉐이팟": r"쉐이",
+    "쉐라그팟": r"쉐라그",
+    "카시미어팟": r"카시미어",
+    "미노스팟": r"미노스",
+    "연소팟": r"소각",       # KR 연소 원소 = '소각 손상'
+    "라테라노팟": r"라테라노",
+    "라인랩팟": r"라인 랩",
+    "탄약팟": r"탄약",
+}
+POT_EXTRA = {  # 텍스트에 안 잡히지만 사용자가 확정한 멤버 (소각 게이지를 실질 축적하는 고빈도 술딜러)
+    "연소팟": {"골든글로우", "라플란드 더 데카덴차"},
+}
+
 # canonical tag order (frequency-informed); tags emitted in this order
-TAG_ORDER = ["공격 회복", "피격 회복", "아군 치유", "자가 회복", "SP 배터리", "기절", "수면",
+TAG_ORDER = POTS + ["공격 회복", "피격 회복", "아군 치유", "자가 회복", "SP 배터리", "기절", "수면",
              "냉기·빙결", "감속·정지", "속박", "침묵", "공포", "취약", "방어력 감소", "마법 저항 감소",
              "방어 무시", "마법 저항 무시", "트루 대미지", "지속 피해", "원소 피해", "강제 이동",
              "공격 중지", "보호막", "회피", "은신·위장", "은신 감지", "불사·생존", "체력 비례",
-             "체력 소모", "탄약", "대공", "소환물·장치", "함정", "쾌속 배치", "어비설 시너지",
+             "체력 소모", "대공", "소환물·장치", "함정", "쾌속 배치",
              "소환사", "음유시인", "리퍼", "힐링 디펜더", "포트리스"]
 
 def tag(o):
@@ -74,7 +104,12 @@ def tag(o):
     if re.search(r"사망하지 않|사망을 (방지|무시)|치명적인 대미지를 (입어도|받아도|무시)|치명상[^가-힣]{0,4}(을|를)? ?입(어도|을 경우)|쓰러지지 않|HP를 최소 1|HP가 1 이하로|전투 불능이 되지 않", T): tags.add("불사·생존")
     if re.search(r"(최대 HP|HP ?최대치|현재 HP)의 \d+(\.\d+)?%", T): tags.add("체력 비례")
     if re.search(r"(자신|스스로)의? ?HP(를|을)? ?(소모|잃|감소)|HP를 소모|HP 점차 감소|HP가 지속적으로 감소", T): tags.add("체력 소모")
-    if re.search(r"탄약", T): tags.add("탄약")
+    for pot, facs in POT_BY_FACTION.items():
+        if any(f in facs for f in o["factions"]): tags.add(pot)
+    for pot, pat in POT_BY_TEXT.items():
+        if re.search(pat, T): tags.add(pot)
+    for pot, names in POT_EXTRA.items():
+        if o["name"] in names: tags.add(pot)
     if re.search(r"공중 (유닛|목표|적)|드론", T) or "대공" in sub: tags.add("대공")
 
     if raw.get("displayTokenDict") or re.search(r"소환(수|물|하여|해)|장치를 (배치|설치)", T):
@@ -84,9 +119,6 @@ def tag(o):
     redeploys = [s["redeploy"] for s in o["stats"] if isinstance(s.get("redeploy"), (int, float))]
     if redeploys and min(redeploys) <= 40 and o["rarity"] >= 3: tags.add("쾌속 배치")
 
-    # 에기르 출신이라도 스킬·재능에 어비설 언급이 없으면 시너지 아님 (예: 루실라·언더플로우·딥컬러)
-    if any("어비" in f for f in o["factions"]) or re.search(r"어비[설셜]", T):
-        tags.add("어비설 시너지")
 
     if sub == "소환사": tags.add("소환사")
     if sub == "음유시인": tags.add("음유시인")

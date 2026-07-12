@@ -10,8 +10,9 @@ Output shape:
   { "tags": [{"id", "name", "group"}],
     "ops":  [{"id", "name", "rarity", "tags": [..], "image", "accent", "seq"}] }
 
-Operator tags = 직군 + 위치 + tagList(로봇/신입 포함) + 성별(핸드북) +
+Operator tags = 직군 + 위치 + tagList(로봇/신입 포함) +
 5성→특별 채용, 6성→고급 특별 채용.
+※ 남성/여성 태그는 gacha_table에 남아 있지만 KR 공채에서 삭제됨 — 제외한다.
 """
 import json, re, sys, os
 
@@ -64,8 +65,6 @@ for cid, stars in pool:
     assert TIER[c["rarity"]] == stars, f"{c['name']}: pool {stars}★ vs table {c['rarity']}"
     tags = [JOB_KO[c["profession"]], "근거리" if c["position"] == "MELEE" else "원거리"]
     tags += c.get("tagList") or []
-    g = gender_of(cid)
-    if g: tags.append(g)
     if stars == 5: tags.append("특별 채용")
     if stars == 6: tags.append("고급 특별 채용")
     meta = ops_meta.get(cid) or {}
@@ -79,7 +78,8 @@ unknown = used - known
 if unknown:
     print(f"WARN: tags not in gachaTags: {sorted(unknown)}", file=sys.stderr)
 
-out = {"tags": [{"id": t["tagId"], "name": t["tagName"], "group": t["tagGroup"]} for t in gacha["gachaTags"]],
+out = {"tags": [{"id": t["tagId"], "name": t["tagName"], "group": t["tagGroup"]} for t in gacha["gachaTags"]
+                if t["tagName"] not in ("남성", "여성")],
        "ops": ops}
 json.dump(out, open(f"{REPO}/app/data/recruit.json", "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
 print(f"recruit pool: {len(ops)} ops, tags: {len(out['tags'])}")

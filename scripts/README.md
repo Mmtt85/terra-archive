@@ -35,7 +35,13 @@ cp <scratch>/operators-tagged.json app/data/operators.json
 
 ```bash
 python3 scripts/build-infra.py .gamedata      # → app/data/infra.json (방 스펙 + 스킬 수치·시너지 파싱)
+python3 scripts/build-recruit.py .gamedata    # → app/data/recruit.json (공채 태그 31종 + 모집 풀)
+python3 scripts/download-avatars.py           # 신규 오퍼 아바타를 public/avatars/에 다운로드
 ```
+
+공채 데이터는 `kr_gacha_table.json`(추가 다운로드 필요: `kr/gamedata/excel/gacha_table.json`)의
+`recruitDetail` 텍스트에서 풀을 파싱하고, 성별 태그(남성/여성)는 핸드북 프로필의 `[성별]`에서 뽑는다.
+5성→특별 채용, 6성→고급 특별 채용 자격 태그는 성급에서 자동 부여.
 
 - 신규 오퍼레이터의 `accent` 색상은 `regen-operators.py`의 `NEW_ACCENTS`에 추가한다.
 - 커뮤니티 별명은 기존 JSON의 aliases에서 자동 보존된다(새로 추가하려면 데이터에 직접).

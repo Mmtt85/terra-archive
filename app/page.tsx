@@ -88,7 +88,11 @@ const factions = Array.from(new Set(operators.flatMap((operator) => operator.fac
 
 const conceptCounts = new Map<string, number>();
 operators.forEach((operator) => operator.concepts.forEach((concept) => conceptCounts.set(concept, (conceptCounts.get(concept) ?? 0) + 1)));
-const concepts = Array.from(conceptCounts.keys()).sort((a, b) => (conceptCounts.get(b) ?? 0) - (conceptCounts.get(a) ?? 0));
+const SYNERGY_POTS = ["해산물팟", "쉐이팟", "쉐라그팟", "카시미어팟", "미노스팟", "아베무팟", "연소팟", "라테라노팟", "탄약팟", "라인랩팟"];
+const concepts = [
+  ...SYNERGY_POTS.filter((pot) => conceptCounts.has(pot)),
+  ...Array.from(conceptCounts.keys()).filter((concept) => !SYNERGY_POTS.includes(concept)).sort((a, b) => (conceptCounts.get(b) ?? 0) - (conceptCounts.get(a) ?? 0)),
+];
 
 const attackMethods = ["근거리", "원거리", "물리", "마법"];
 const POSITION_METHODS = ["근거리", "원거리"];

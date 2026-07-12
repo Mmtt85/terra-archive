@@ -11,8 +11,7 @@ const data = recruitData as { tags: RecruitTag[]; ops: RecruitOp[] };
 const QUALIFICATION_TAGS = ["고급 특별 채용", "특별 채용", "신입", "로봇"];
 const JOB_TAGS = ["가드", "스나이퍼", "디펜더", "메딕", "서포터", "캐스터", "스페셜리스트", "뱅가드"];
 const POSITION_TAGS = ["근거리", "원거리"];
-const GENDER_TAGS = ["남성", "여성"];
-const FIXED = new Set([...QUALIFICATION_TAGS, ...JOB_TAGS, ...POSITION_TAGS, ...GENDER_TAGS]);
+const FIXED = new Set([...QUALIFICATION_TAGS, ...JOB_TAGS, ...POSITION_TAGS]);
 const AFFIX_TAGS = data.tags.map((tag) => tag.name).filter((name) => !FIXED.has(name));
 
 const TAG_GROUPS: Array<[string, string[]]> = [
@@ -20,7 +19,6 @@ const TAG_GROUPS: Array<[string, string[]]> = [
   ["직군", JOB_TAGS],
   ["위치", POSITION_TAGS],
   ["특성", AFFIX_TAGS],
-  ["성별", GENDER_TAGS],
 ];
 
 const RARITY_COLORS: Record<number, string> = { 6: "#c2571f", 5: "#b8860b", 4: "#7c5cbf", 3: "#3a7ca5", 2: "#5a8f4f", 1: "#75797a" };
