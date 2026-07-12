@@ -234,7 +234,7 @@ export default function Home() {
           <span className="brand-mark">TA</span>
           <span>테라 아카이브<small>한국 서버 오퍼레이터 탐색기</small></span>
         </a>
-        <div className="header-tagline">소속을 넘어, <em>함께 싸울 이유</em>로 찾기.</div>
+        <div className="header-tagline">테라의 데이터, <em>박사의 무기</em>.</div>
         <nav className="main-tabs" aria-label="주요 탭">
           <button className={tab === "archive" ? "selected" : ""} onClick={() => switchTab("archive")}>오퍼 백과사전</button>
           <button className={tab === "planner" ? "selected" : ""} onClick={() => switchTab("planner")}>인프라 플래너</button>
