@@ -128,16 +128,15 @@ legend { margin-bottom:10px; font-size:11px; font-weight:900 }
 .modal-facts div { background:#e9e8e2; padding:14px 16px }
 .modal-facts span { color:var(--muted); letter-spacing:1px; font:700 9px monospace; display:block }
 .modal-facts b { margin-top:7px; font-size:11px; line-height:1.5; display:block }
-/* 커뮤니티 별명 — 모달 헤더 이름 오른쪽에 득표순 상위 3개 + 제보 폼 */
+/* 커뮤니티 별명 — 이름 바로 오른쪽에 상위 3개 (득표수 비표시), 헤더 오른편에 제보 폼 */
 .modal-title-block { display:flex; align-items:center; justify-content:space-between; gap:24px }
-.modal-title-main { flex:none }
-.nickname-row { flex:1; max-width:330px; border-left:1px solid #ffffff2e; padding-left:20px }
+.modal-title-main { flex:none; min-width:0 }
+.modal-name-row { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap }
+.nickname-inline { display:inline-flex; flex-wrap:wrap; gap:5px }
+.nickname-inline b { background:#ffffff1c; border:1px solid #ffffff42; color:#fff; padding:2px 8px; font-size:11px; font-weight:800; white-space:nowrap }
+.nickname-row { flex:1; max-width:300px; border-left:1px solid #ffffff2e; padding-left:20px }
 @media (width<=760px) { .modal-title-block { display:block } .nickname-row { max-width:none; border-left:0; border-top:1px solid #ffffff2e; padding-left:0; padding-top:10px; margin-top:11px } }
 .nickname-label { color:#c9ced0; letter-spacing:1.5px; font:700 9px monospace; display:block }
-.nickname-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px }
-.nickname-chips b { display:inline-flex; align-items:center; gap:6px; background:#ffffff1c; border:1px solid #ffffff4d; color:#fff; padding:4px 9px; font-size:11.5px; font-weight:800 }
-.nickname-chips b i { font:800 9px monospace; color:#dfff00; font-style:normal }
-.nickname-chips em { color:#c9ced0; font-size:10.5px; font-style:normal }
 .nickname-form { display:flex; gap:6px; margin-top:9px }
 .nickname-form input { flex:1; max-width:240px; min-width:0; border:1px solid #ffffff55; background:#ffffff18; color:#fff; padding:7px 10px; font-size:12px }
 .nickname-form input::placeholder { color:#ffffff88 }
