@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import operatorsData from "./data/operators.json";
 import InfraPlanner from "./planner";
 import RecruitHelper from "./recruit";
@@ -115,40 +115,53 @@ export default function Home() {
   const [selected, setSelected] = useState<Operator | null>(null);
   const [tab, setTab] = useState<"archive" | "planner" | "recruit">("archive");
 
+  // 모달을 열 때 히스토리를 쌓았는지 여부 — 뒤로가기(popstate)가 모달만 닫도록
+  const pushedModalRef = useRef(false);
+
   useEffect(() => {
     const applyHash = () => {
       const hash = decodeURIComponent(window.location.hash);
-      if (hash === "#infra") {
-        setTab("planner");
-        return;
-      }
-      if (hash === "#recruit") {
-        setTab("recruit");
-        return;
-      }
-      setTab("archive");
       if (hash.startsWith("#op-")) {
+        setTab("archive");
         const operator = operators.find((candidate) => candidate.id === hash.slice(4));
         if (operator) setSelected(operator);
+        return;
       }
+      // op 해시가 아니면 열려 있던 모달을 닫는다 (뒤로가기로 닫기)
+      pushedModalRef.current = false;
+      setSelected(null);
+      setTab(hash === "#infra" ? "planner" : hash === "#recruit" ? "recruit" : "archive");
     };
     applyHash();
     window.addEventListener("hashchange", applyHash);
-    return () => window.removeEventListener("hashchange", applyHash);
+    window.addEventListener("popstate", applyHash);
+    return () => {
+      window.removeEventListener("hashchange", applyHash);
+      window.removeEventListener("popstate", applyHash);
+    };
   }, []);
 
   const openOperator = (operator: Operator) => {
     setSelected(operator);
-    history.replaceState(null, "", `#op-${operator.id}`);
+    history.pushState(null, "", `#op-${operator.id}`);
+    pushedModalRef.current = true;
   };
   const closeOperator = () => {
+    if (pushedModalRef.current) {
+      pushedModalRef.current = false;
+      history.back(); // popstate → applyHash가 모달을 닫고 이전 해시 복원
+      return;
+    }
     setSelected(null);
     history.replaceState(null, "", tab === "planner" ? "#infra" : tab === "recruit" ? "#recruit" : window.location.pathname);
   };
-  // 플래너 등 다른 탭 위에서 모달만 띄울 때 — 해시(#infra)는 건드리지 않는다
+  // 플래너 등 다른 탭 위에서 모달만 띄울 때 — URL은 그대로 두고 히스토리만 한 칸 쌓는다
   const showOperatorById = (id: string) => {
     const operator = operators.find((candidate) => candidate.id === id);
-    if (operator) setSelected(operator);
+    if (!operator) return;
+    setSelected(operator);
+    history.pushState(null, "", window.location.href);
+    pushedModalRef.current = true;
   };
 
   const switchTab = (next: "archive" | "planner" | "recruit") => {
