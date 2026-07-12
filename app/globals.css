@@ -316,3 +316,7 @@ footer p { margin:0 }
 .recruit-combo li img { width:24px; height:24px; object-fit:cover; background:#20272b }
 .recruit-combo li i { font-style:normal; font:800 9px monospace }
 @media (width<=760px) { .recruit { padding-top:20px } .recruit-tags { padding:2px 12px 12px } }
+.recruit-dict { margin-top:30px }
+.dict-toggle { width:100%; border:1px dashed #aaa9a2; background:0 0; color:var(--muted); cursor:pointer; padding:12px; font-size:12px; font-weight:800 }
+.dict-toggle:hover { border-color:var(--ink); color:var(--ink) }
+.recruit-dict>p { color:#535b5f; margin:14px 2px 0; font-size:12px; line-height:1.6 }
