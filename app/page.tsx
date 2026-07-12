@@ -107,6 +107,19 @@ export default function Home() {
   const [selectedSubProfessions, setSelectedSubProfessions] = useState<string[]>([]);
   const [selected, setSelected] = useState<Operator | null>(null);
   const [tab, setTab] = useState<"archive" | "planner">("archive");
+
+  useEffect(() => {
+    const applyHash = () => setTab(window.location.hash === "#infra" ? "planner" : "archive");
+    applyHash();
+    window.addEventListener("hashchange", applyHash);
+    return () => window.removeEventListener("hashchange", applyHash);
+  }, []);
+
+  const switchTab = (next: "archive" | "planner") => {
+    setTab(next);
+    if (next === "planner") window.location.hash = "infra";
+    else history.replaceState(null, "", window.location.pathname);
+  };
   const [sortKey, setSortKey] = useState("기본");
   const [sortAsc, setSortAsc] = useState(true);
 
@@ -188,8 +201,8 @@ export default function Home() {
         </a>
         <div className="header-tagline">소속을 넘어, <em>함께 싸울 이유</em>로 찾기.</div>
         <nav className="main-tabs" aria-label="주요 탭">
-          <button className={tab === "archive" ? "selected" : ""} onClick={() => setTab("archive")}>오퍼 백과사전</button>
-          <button className={tab === "planner" ? "selected" : ""} onClick={() => setTab("planner")}>인프라 플래너</button>
+          <button className={tab === "archive" ? "selected" : ""} onClick={() => switchTab("archive")}>오퍼 백과사전</button>
+          <button className={tab === "planner" ? "selected" : ""} onClick={() => switchTab("planner")}>인프라 플래너</button>
         </nav>
         <div className="server-chip"><span /> KR SERVER · BETA</div>
       </header>

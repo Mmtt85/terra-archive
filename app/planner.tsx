@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import infraData from "./data/infra.json";
 
 type TokenGen = { token: string; estimate: number };
@@ -397,6 +397,11 @@ export default function InfraPlanner() {
     setActiveShift(0);
   };
 
+  useEffect(() => {
+    setPlan(optimize());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const teamFor = (key: string, shift: number): InfraOp[] => {
     const shifts = plan?.assignments[key] ?? [];
     const team = shifts[Math.min(shift, shifts.length - 1)] ?? [];
@@ -432,7 +437,7 @@ export default function InfraPlanner() {
           <h2>인프라 배치 최적화</h2>
         </div>
         <div className="planner-buttons">
-          <button className={plan ? "primary" : ""} onClick={runOptimize}>자동 편성 실행</button>
+          <button className="primary" onClick={runOptimize}>다시 편성</button>
         </div>
       </div>
 
