@@ -104,6 +104,10 @@ const subProfessions = Array.from(new Set(operators.map((operator) => operator.s
 
 const SORT_KEYS = ["기본", "이름", "성급", "소속", "출신지", "종족", "직군", "세부 직군"];
 
+function tabFromHash(hash: string): "archive" | "planner" | "recruit" {
+  return hash === "#infra" ? "planner" : hash === "#recruit" ? "recruit" : "archive";
+}
+
 export default function Home() {
   const [selectedFactions, setSelectedFactions] = useState<string[]>([]);
   const [selectedConcepts, setSelectedConcepts] = useState<string[]>([]);
@@ -113,7 +117,9 @@ export default function Home() {
   const [selectedJobs, setSelectedJobs] = useState<string[]>([]);
   const [selectedSubProfessions, setSelectedSubProfessions] = useState<string[]>([]);
   const [selected, setSelected] = useState<Operator | null>(null);
-  const [tab, setTab] = useState<"archive" | "planner" | "recruit">("archive");
+  const [tab, setTab] = useState<"archive" | "planner" | "recruit">(() =>
+    typeof window === "undefined" ? "archive" : tabFromHash(window.location.hash)
+  );
 
   // 모달을 열 때 히스토리를 쌓았는지 여부 — 뒤로가기(popstate)가 모달만 닫도록
   const pushedModalRef = useRef(false);
@@ -130,7 +136,7 @@ export default function Home() {
       // op 해시가 아니면 열려 있던 모달을 닫는다 (뒤로가기로 닫기)
       pushedModalRef.current = false;
       setSelected(null);
-      setTab(hash === "#infra" ? "planner" : hash === "#recruit" ? "recruit" : "archive");
+      setTab(tabFromHash(hash));
     };
     applyHash();
     window.addEventListener("hashchange", applyHash);

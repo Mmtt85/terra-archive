@@ -48,6 +48,15 @@ const infra = infraData as { rooms: Record<string, RoomSpec>; ops: InfraOp[] };
 const ops = infra.ops;
 const opById = new Map(ops.map((op) => [op.id, op]));
 
+const ELITE2_UNLOCK = "정예화 2";
+
+// 1정(정예화 1) 오퍼는 정예화 2에서 해금되는 인프라 스킬을 아직 못 씀 — 미지정 시 2정(최대) 가정
+function withElite(op: InfraOp, elite: 1 | 2 | undefined): InfraOp {
+  if (elite !== 1) return op;
+  const skills = op.skills.filter((skill) => skill.unlock !== ELITE2_UNLOCK);
+  return skills.length === op.skills.length ? op : { ...op, skills };
+}
+
 // 243 layout: gold ×2 + battle-record ×2 factories, two 12h crews per day
 const LAYOUT: { key: string; room: string; label: string; product?: string }[] = [
   { key: "TRADING-0", room: "TRADING", label: "무역소 1" },
@@ -403,10 +412,11 @@ function buildPlan(packageTokens: string[], roster: InfraOp[]): Plan {
   for (let d = 0; d < 4; d += 1) assignments[`DORM-${d}`] = [dormPins[d].map((op) => op.id)];
   // ledger: recount per-member generators against the actual A-crew roster,
   // then record who cashes the points in
+  const rosterById = new Map(roster.map((op) => [op.id, op]));
   const placedA: InfraOp[] = [];
   for (const key of [...PRODUCTION_KEYS, ...SUPPORT_KEYS]) {
     for (const id of assignments[key]?.[0] ?? []) {
-      const op = opById.get(id);
+      const op = rosterById.get(id);
       if (op) placedA.push(op);
     }
   }
@@ -422,7 +432,7 @@ function buildPlan(packageTokens: string[], roster: InfraOp[]): Plan {
     tokenPoints[flow.token] = total;
     flow.total = total;
     for (const key of [...PRODUCTION_KEYS, ...SUPPORT_KEYS, "DORM-0", "DORM-1", "DORM-2", "DORM-3"]) {
-      const team = (assignments[key]?.[0] ?? []).map((id) => opById.get(id)).filter(Boolean) as InfraOp[];
+      const team = (assignments[key]?.[0] ?? []).map((id) => rosterById.get(id)).filter(Boolean) as InfraOp[];
       const cell = cellByKey.get(key);
       for (const op of team) {
         let bestRate = 0;
@@ -487,11 +497,17 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   // 1~5성은 기본 보유, 6성은 미보유로 시작 — 가진 6성만 직접 체크한다
   const [ownedIds, setOwnedIds] = useState<Set<string>>(() => new Set(ops.filter((op) => op.rarity <= 5).map((op) => op.id)));
+  // 미지정 = 2정(정예화 2, 최대) 가정 — 정예화 2 스킬이 있는 오퍼만 1정으로 낮출 수 있다
+  const [eliteById, setEliteById] = useState<Map<string, 1 | 2>>(new Map());
+  // 보유 오퍼·정예화 구성이나 방별 수동 편성을 바꾼 뒤 파일로 저장하지 않았으면 true
+  const [dirty, setDirty] = useState(false);
 
-  const roster = useMemo(() => ops.filter((op) => ownedIds.has(op.id)), [ownedIds]);
+  const effectiveOps = useMemo(() => ops.map((op) => withElite(op, eliteById.get(op.id))), [eliteById]);
+  const effectiveOpById = useMemo(() => new Map(effectiveOps.map((op) => [op.id, op])), [effectiveOps]);
+  const roster = useMemo(() => effectiveOps.filter((op) => ownedIds.has(op.id)), [effectiveOps, ownedIds]);
 
-  const persist = (ids: Set<string>, nextPlan: Plan | null) => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ owned: Array.from(ids), plan: nextPlan })); } catch { /* ignore */ }
+  const persist = (ids: Set<string>, nextPlan: Plan | null, elite: Map<string, 1 | 2> = eliteById) => {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ owned: Array.from(ids), elite: Array.from(elite.entries()), plan: nextPlan })); } catch { /* ignore */ }
   };
 
   const [confirmProposal, setConfirmProposal] = useState(false);
@@ -512,7 +528,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
       const scoreFor = (team: InfraOp[], shift: number) =>
         cell.room === "DORMITORY" || PARK_KEYS.includes(cell.key) ? null
           : Math.round(teamScore(team, cell.room, ctxFor(cell.key, shift === 0 ? plan.tokenPoints : {}, plan.factionCounts[shift] ?? {}, plan.plants)));
-      const teamAt = (shift: number) => (shifts[Math.min(shift, shifts.length - 1)] ?? []).map((id) => opById.get(id)).filter(Boolean) as InfraOp[];
+      const teamAt = (shift: number) => (shifts[Math.min(shift, shifts.length - 1)] ?? []).map((id) => effectiveOpById.get(id)).filter(Boolean) as InfraOp[];
       const single = cell.room === "DORMITORY" || cell.key === "MEETING" || cell.key === "TRAINING";
       if (single) {
         const team = teamAt(0);
@@ -589,7 +605,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
   };
 
   const exportState = () => {
-    const payload = JSON.stringify({ version: 1, exported: new Date().toISOString(), owned: Array.from(ownedIds), plan }, null, 1);
+    const payload = JSON.stringify({ version: 1, exported: new Date().toISOString(), owned: Array.from(ownedIds), elite: Array.from(eliteById.entries()), plan }, null, 1);
     const blob = new Blob([payload], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
@@ -597,6 +613,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
     anchor.download = "terra-archive-infra.json";
     anchor.click();
     URL.revokeObjectURL(url);
+    setDirty(false);
     showToast("현재 상태를 파일로 저장했습니다");
   };
 
@@ -606,9 +623,12 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
       try {
         const data = JSON.parse(String(reader.result));
         const ids = new Set<string>((data.owned as string[]).filter((id) => opById.has(id)));
+        const elite = new Map<string, 1 | 2>((data.elite as [string, 1 | 2][] | undefined) ?? []);
         setOwnedIds(ids);
+        setEliteById(elite);
         if (data.plan) { setPlan(data.plan as Plan); setActiveShift(0); }
-        persist(ids, data.plan ?? null);
+        persist(ids, data.plan ?? null, elite);
+        setDirty(false);
         showToast(`저장된 상태를 불러왔습니다 · 보유 ${ids.size}명 복원`);
       } catch { alert("가져오기 실패: 파일 형식을 확인해 주세요."); }
     };
@@ -633,7 +653,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
         const cellShifts = assignments[c.key] ?? [];
         const team = cellShifts[Math.min(s, cellShifts.length - 1)] ?? [];
         for (const id of team) {
-          const op = opById.get(id);
+          const op = effectiveOpById.get(id);
           if (op) counts[op.faction] = (counts[op.faction] ?? 0) + 1;
         }
       }
@@ -642,6 +662,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
     const next = { ...plan, assignments, factionCounts };
     setPlan(next);
     persist(ownedIds, next);
+    setDirty(true);
   };
 
   const [toast, setToast] = useState<string | null>(null);
@@ -652,11 +673,11 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
     toastTimer.current = setTimeout(() => setToast(null), 2400);
   };
 
-  const runOptimize = (ids: Set<string> = ownedIds) => {
-    const next = optimize(ops.filter((op) => ids.has(op.id)));
+  const runOptimize = (ids: Set<string> = ownedIds, elite: Map<string, 1 | 2> = eliteById) => {
+    const next = optimize(ops.map((op) => withElite(op, elite.get(op.id))).filter((op) => ids.has(op.id)));
     setPlan(next);
     setActiveShift(0);
-    persist(ids, next);
+    persist(ids, next, elite);
     showToast(`자동편성을 실행했습니다 · 보유 ${ids.size}명 기준`);
   };
 
@@ -666,9 +687,11 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
       if (saved) {
         const data = JSON.parse(saved);
         const ids = new Set<string>((data.owned as string[]).filter((id: string) => opById.has(id)));
+        const elite = new Map<string, 1 | 2>((data.elite as [string, 1 | 2][] | undefined) ?? []);
         setOwnedIds(ids);
+        setEliteById(elite);
         if (data.plan) { setPlan(data.plan as Plan); return; }
-        setPlan(optimize(ops.filter((op) => ids.has(op.id))));
+        setPlan(optimize(ops.map((op) => withElite(op, elite.get(op.id))).filter((op) => ids.has(op.id))));
         return;
       }
     } catch { /* fall through to defaults */ }
@@ -679,7 +702,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
   const teamFor = (key: string, shift: number): InfraOp[] => {
     const shifts = plan?.assignments[key] ?? [];
     const team = shifts[Math.min(shift, shifts.length - 1)] ?? [];
-    return team.map((id) => opById.get(id)).filter(Boolean) as InfraOp[];
+    return team.map((id) => effectiveOpById.get(id)).filter(Boolean) as InfraOp[];
   };
 
   const pointsFor = (shift: number) => (shift === 0 && plan ? plan.tokenPoints : {});
@@ -718,7 +741,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
             <button title="현재 전체 편성을 사이트 운영자에게 제안" onClick={() => setConfirmProposal(true)}>전체 편성 제안</button>
           )}
           <span className="file-group">
-            <button onClick={exportState} title="보유 오퍼와 편성을 JSON 파일로 저장">현재 상태 파일로 저장</button>
+            <button className={dirty ? "save-pending" : undefined} onClick={exportState} title={dirty ? "저장 후 변경 사항이 있습니다 — 파일로 저장하세요" : "보유 오퍼와 편성을 JSON 파일로 저장"}>현재 상태 파일로 저장</button>
             <label className="import-label">
               저장된 상태 파일 가져오기
               <input type="file" accept="application/json" onChange={(event) => { const file = event.target.files?.[0]; if (file) importState(file); event.target.value = ""; }} />
@@ -792,7 +815,8 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
       {showRoster && (
         <RosterModal
           ownedIds={ownedIds}
-          onApply={(ids) => { setOwnedIds(ids); setShowRoster(false); runOptimize(ids); }}
+          eliteById={eliteById}
+          onApply={(ids, elite) => { setOwnedIds(ids); setEliteById(elite); setShowRoster(false); runOptimize(ids, elite); setDirty(true); }}
           onClose={() => setShowRoster(false)}
         />
       )}
@@ -815,7 +839,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
         </div>
       )}
 
-      {showFlows && plan && <FlowModal plan={plan} onClose={() => setShowFlows(false)} onShowOperator={onShowOperator} />}
+      {showFlows && plan && <FlowModal plan={plan} opMap={effectiveOpById} onClose={() => setShowFlows(false)} onShowOperator={onShowOperator} />}
 
       {openCell && plan && (
         <RoomModal
@@ -823,6 +847,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
           plan={plan}
           allAssigned={allAssigned}
           roster={roster}
+          opMap={effectiveOpById}
           initialShift={activeShift}
           onClose={() => setOpenRoom(null)}
           onShowOperator={onShowOperator}
@@ -846,11 +871,12 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
   );
 }
 
-function RoomModal({ cell, plan, allAssigned, roster, initialShift, onClose, onShowOperator, onUpdateTeam, onNotify }: { cell: { key: string; room: string; label: string; product?: string }; plan: Plan; allAssigned: Set<string>; roster: InfraOp[]; initialShift: number; onClose: () => void; onShowOperator?: (id: string) => void; onUpdateTeam?: (cellKey: string, shiftIdx: number, ids: string[]) => void; onNotify?: (message: string) => void }) {
+function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClose, onShowOperator, onUpdateTeam, onNotify }: { cell: { key: string; room: string; label: string; product?: string }; plan: Plan; allAssigned: Set<string>; roster: InfraOp[]; opMap: Map<string, InfraOp>; initialShift: number; onClose: () => void; onShowOperator?: (id: string) => void; onUpdateTeam?: (cellKey: string, shiftIdx: number, ids: string[]) => void; onNotify?: (message: string) => void }) {
   const [shift, setShift] = useState(initialShift);
+  const [confirmRoomProposal, setConfirmRoomProposal] = useState(false);
   const shiftIndex = Math.min(shift, (plan.assignments[cell.key]?.length ?? 1) - 1);
   const rawIds = plan.assignments[cell.key]?.[shiftIndex] ?? [];
-  const team = rawIds.map((id) => opById.get(id)).filter(Boolean) as InfraOp[];
+  const team = rawIds.map((id) => opMap.get(id)).filter(Boolean) as InfraOp[];
   const teamIds = new Set(team.map((op) => op.id));
   const points = shiftIndex === 0 ? plan.tokenPoints : {};
   const ctx = ctxFor(cell.key, points, plan.factionCounts[shiftIndex] ?? {}, plan.plants);
@@ -904,12 +930,7 @@ function RoomModal({ cell, plan, allAssigned, roster, initialShift, onClose, onS
               <button key={i} className={shift === i ? "selected" : ""} onClick={() => setShift(i)}>{["A조", "B조"][i]}</button>
             ))}
             {feedbackReady && team.length > 0 && (
-              <button type="button" className="propose-btn" title="이 시설의 현재 편성을 사이트 운영자에게 제안" onClick={async () => {
-                try {
-                  await sendFeedback("plan", "", { scope: cell.key, label: cell.label, room: cell.room, shifts: plan.assignments[cell.key], score: currentScore, shift: shiftIndex });
-                  onNotify?.(`${cell.label} 편성을 제안했습니다, 감사합니다!`);
-                } catch { onNotify?.("전송 실패 — 잠시 후 다시 시도해주세요"); }
-              }}>이 편성을 제안</button>
+              <button type="button" className="propose-btn" title="이 시설의 현재 편성을 사이트 운영자에게 제안" onClick={() => setConfirmRoomProposal(true)}>이 편성을 제안</button>
             )}
           </div>
         </header>
@@ -993,11 +1014,28 @@ function RoomModal({ cell, plan, allAssigned, roster, initialShift, onClose, onS
 
         </div>
       </section>
+      {confirmRoomProposal && (
+        <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setConfirmRoomProposal(false); }}>
+          <div className="confirm-dialog" role="dialog" aria-modal="true">
+            <p><b>{cell.label}</b> 편성을 사이트 운영자에게 제안할까요?</p>
+            <div className="confirm-actions">
+              <button type="button" onClick={() => setConfirmRoomProposal(false)}>취소</button>
+              <button type="button" className="confirm-yes" onClick={async () => {
+                setConfirmRoomProposal(false);
+                try {
+                  await sendFeedback("plan", "", { scope: cell.key, label: cell.label, room: cell.room, shifts: plan.assignments[cell.key], score: currentScore, shift: shiftIndex });
+                  onNotify?.(`${cell.label} 편성을 제안했습니다, 감사합니다!`);
+                } catch { onNotify?.("전송 실패 — 잠시 후 다시 시도해주세요"); }
+              }}>제안하기</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function FlowModal({ plan, onClose, onShowOperator }: { plan: Plan; onClose: () => void; onShowOperator?: (id: string) => void }) {
+function FlowModal({ plan, opMap, onClose, onShowOperator }: { plan: Plan; opMap: Map<string, InfraOp>; onClose: () => void; onShowOperator?: (id: string) => void }) {
   const flows = plan.flows.filter((flow) => flow.generators.length > 0 || flow.consumers.length > 0);
   const avatar = (op: InfraOp | undefined) => op ? (
     <img src={op.image} alt="" loading="lazy" className={onShowOperator ? "op-link" : undefined}
@@ -1020,7 +1058,7 @@ function FlowModal({ plan, onClose, onShowOperator }: { plan: Plan; onClose: () 
                 <li className="flow-branch">생성
                   <ul>
                     {flow.generators.map((gen, index) => {
-                      const op = opById.get(gen.opId);
+                      const op = opMap.get(gen.opId);
                       return (
                         <li key={`${gen.opId}-${index}`}>
                           {avatar(op)}
@@ -1036,7 +1074,7 @@ function FlowModal({ plan, onClose, onShowOperator }: { plan: Plan; onClose: () 
                   <li className="flow-branch">전환
                     <ul>
                       {flow.converters.map((conv) => {
-                        const op = opById.get(conv.opId);
+                        const op = opMap.get(conv.opId);
                         return <li key={conv.opId}>{avatar(op)}<b>{op?.name}</b> <em>{conv.from} → {flow.token}</em></li>;
                       })}
                     </ul>
@@ -1045,7 +1083,7 @@ function FlowModal({ plan, onClose, onShowOperator }: { plan: Plan; onClose: () 
                 <li className="flow-branch">소비
                   <ul>
                     {flow.consumers.map((consumer, index) => {
-                      const op = opById.get(consumer.opId);
+                      const op = opMap.get(consumer.opId);
                       return (
                         <li key={`${consumer.opId}-${index}`}>
                           {avatar(op)}
@@ -1066,8 +1104,9 @@ function FlowModal({ plan, onClose, onShowOperator }: { plan: Plan; onClose: () 
   );
 }
 
-function RosterModal({ ownedIds, onApply, onClose }: { ownedIds: Set<string>; onApply: (ids: Set<string>) => void; onClose: () => void }) {
+function RosterModal({ ownedIds, eliteById, onApply, onClose }: { ownedIds: Set<string>; eliteById: Map<string, 1 | 2>; onApply: (ids: Set<string>, elite: Map<string, 1 | 2>) => void; onClose: () => void }) {
   const [draft, setDraft] = useState<Set<string>>(new Set(ownedIds));
+  const [eliteDraft, setEliteDraft] = useState<Map<string, 1 | 2>>(new Map(eliteById));
   const [query, setQuery] = useState("");
   const keyword = query.trim().toLowerCase();
   const visible = ops
@@ -1076,6 +1115,11 @@ function RosterModal({ ownedIds, onApply, onClose }: { ownedIds: Set<string>; on
   const toggle = (id: string) => setDraft((current) => {
     const next = new Set(current);
     if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
+  const setElite = (id: string, elite: 1 | 2) => setEliteDraft((current) => {
+    const next = new Map(current);
+    if (elite === 2) next.delete(id); else next.set(id, elite); // 2정이 기본값이라 별도 저장 불필요
     return next;
   });
   return (
@@ -1089,17 +1133,31 @@ function RosterModal({ ownedIds, onApply, onClose }: { ownedIds: Set<string>; on
             <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="이름·소속 검색" />
             <button type="button" onClick={() => setDraft(new Set(ops.map((op) => op.id)))}>전체 선택</button>
             <button type="button" onClick={() => setDraft(new Set())}>전체 해제</button>
-            <button type="button" className="apply" onClick={() => onApply(draft)}>적용 및 자동편성 실행</button>
+            <button type="button" className="apply" onClick={() => onApply(draft, eliteDraft)}>적용 및 자동편성 실행</button>
           </div>
         </header>
         <div className="modal-scroll">
+          <p className="dorm-note">정예화 2에서 해금되는 인프라 스킬을 가진 오퍼는 카드 아래 <b>1정/2정</b>을 선택할 수 있습니다 (기본값 2정 · 최대치 가정).</p>
           <div className="roster-grid">
-            {visible.map((op) => (
-              <button key={op.id} type="button" className={draft.has(op.id) ? "owned" : ""} onClick={() => toggle(op.id)} title={op.name}>
-                <img src={op.image} alt={op.name} loading="lazy" />
-                <span>{op.name}</span>
-              </button>
-            ))}
+            {visible.map((op) => {
+              const owned = draft.has(op.id);
+              const hasElite2Skill = op.skills.some((skill) => skill.unlock === "정예화 2");
+              const elite = eliteDraft.get(op.id) ?? 2;
+              return (
+                <div key={op.id} className={`roster-card${owned ? " owned" : ""}`}>
+                  <button type="button" onClick={() => toggle(op.id)} title={op.name}>
+                    <img src={op.image} alt={op.name} loading="lazy" />
+                    <span>{op.name}</span>
+                  </button>
+                  {owned && hasElite2Skill && (
+                    <div className="elite-toggle" role="group" aria-label={`${op.name} 정예화 단계`}>
+                      <button type="button" className={elite === 1 ? "selected" : ""} onClick={() => setElite(op.id, 1)}>1정</button>
+                      <button type="button" className={elite === 2 ? "selected" : ""} onClick={() => setElite(op.id, 2)}>2정</button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -1135,6 +1193,10 @@ const HELP_SECTIONS: { title: string; items: string[] }[] = [
   { title: "제어 센터", items: [
     "오라 우선순위: 제조소 생산력 > 무역소 오더 효율 > 인맥 레퍼런스 > 단서 수집. '동종 효과 중 최고만 적용' 규칙을 따릅니다.",
     "'용문근위국 오퍼와 함께'류 동반 조건, '미노스 1명당'류 카운트 조건은 실제 배치를 기준으로만 인정합니다.",
+  ]},
+  { title: "정예화 단계 (1정/2정)", items: [
+    "보유 오퍼 설정에서 오퍼별로 기본값(2정 · 정예화 2)을 1정으로 낮출 수 있습니다. 정예화 2에서 해금되는 인프라 스킬을 가진 오퍼만 선택지가 보입니다.",
+    "1정으로 지정하면 해당 오퍼는 정예화 2 전용 스킬 없이 계산·자동편성됩니다 — 아직 승급 못 한 오퍼를 과대평가하지 않도록 맞춰 두세요.",
   ]},
   { title: "대체 추천", items: [
     "각 자리의 대체 후보는 실제로 교체해 본 방 점수로 순위를 매기고, 동점이면 낮은 성급(육성 저렴)을 우선합니다.",
