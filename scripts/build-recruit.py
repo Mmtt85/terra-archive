@@ -61,10 +61,12 @@ for m in re.finditer(r"\n(★+)\n(.*?)(?=\n-{5,}|\Z)", detail, re.S):
         pool.append((cid, stars))
         seen_cids.add(cid)
 
-# KR에 공채 추가가 공지·적용됐으나 데이터마인 recruitDetail이 아직 갱신되지 않은 오퍼를
-# 수동 보충한다. 데이터마인이 따라잡으면 위 루프에서 이미 잡히므로 여기서 중복 제외된다.
-# (성급은 character_table 기준으로 자동 판정, 확인 근거는 나무위키 공개모집 문서.)
-RECRUIT_SUPPLEMENT = ["카넬리안", "키라라", "인디고"]
+# KR 클라이언트에 실제로 공채 추가가 적용됐지만 데이터마인 recruitDetail이 아직 갱신되지
+# 않은 오퍼만 여기에 넣는다 (id로 중복 제외됨, 성급은 character_table 자동 판정).
+# ⚠️ 나무위키 등의 "예정/미정" 단계는 넣지 말 것 — recruitDetail/recruitPool에서 실제
+#    반영을 확인한 뒤에만 추가한다. (카넬리안·키라라·인디고는 2026-07-12 시점 데이터마인
+#    미반영 = KR 클라 미적용으로 확인되어 제외.)
+RECRUIT_SUPPLEMENT: list[str] = []
 for name in RECRUIT_SUPPLEMENT:
     cid = byname.get(name)
     if not cid:
