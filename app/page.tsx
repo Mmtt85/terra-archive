@@ -76,6 +76,7 @@ type Operator = {
   potentials: Potential[];
   modules: OperatorModule[];
   infrastructure: Infrastructure[];
+  seq: number;
   accent: string;
   image: string;
 };
@@ -170,7 +171,10 @@ export default function Home() {
   const hasActiveFilter = selectedFactions.length > 0 || selectedConcepts.length > 0 || selectedMethods.length > 0 || tags.length > 0 || selectedJobs.length > 0 || selectedSubProfessions.length > 0 || query.trim().length > 0;
 
   const sorted = useMemo(() => {
-    if (sortKey === "기본") return sortAsc ? filtered : [...filtered].reverse();
+    if (sortKey === "기본") {
+      const base = [...filtered].sort((a, b) => b.rarity - a.rarity || b.seq - a.seq);
+      return sortAsc ? base : base.reverse();
+    }
     const valueOf = (operator: Operator): string | number => {
       switch (sortKey) {
         case "이름": return operator.name;

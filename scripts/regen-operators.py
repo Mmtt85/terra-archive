@@ -17,6 +17,8 @@ building = load(f"{S}/kr_building_data.json")
 ranges = load(f"{S}/kr_range_table.json"); ranges = ranges.get("range", ranges)
 team_table = load(f"{S}/kr_handbook_team_table.json")
 handbook = load(f"{S}/kr_handbook_info_table.json"); handbook = handbook.get("handbookDict", handbook)
+# KR release order: handbook entries append in release order (no entry → -1, sinks last)
+release_seq = {cid: i for i, cid in enumerate(handbook.keys())}
 jp = load(f"{S}/jp_character_table.json"); jp = jp.get("chars", jp)
 cn = load(f"{S}/cn_character_table.json"); cn = cn.get("chars", cn)
 old_ops = {o["id"]: o for o in load(f"{REPO}/app/data/operators.json")}
@@ -317,6 +319,7 @@ for cid, c in chars.items():
         "potentials": build_potentials(c),
         "modules": build_modules(cid),
         "infrastructure": build_infra(cid),
+        "seq": release_seq.get(cid, -1),
         "accent": (old or {}).get("accent") or NEW_ACCENTS.get(cid) or "#6b7a86",
         "image": (old or {}).get("image") or f"https://raw.githubusercontent.com/yuanyan3060/ArknightsGameResource/main/avatar/{cid}.png",
     }
