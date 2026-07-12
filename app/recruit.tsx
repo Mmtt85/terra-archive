@@ -99,28 +99,38 @@ function ComboCard({ result }: { result: ComboResult }) {
 const ALL_TAG_NAMES = data.tags.map((tag) => tag.name);
 
 export default function RecruitHelper() {
-  const [picked, setPicked] = useState<string[]>([]);
   const [showDict, setShowDict] = useState(false);
   const [quick, setQuick] = useState("");
+  const [manualOn, setManualOn] = useState<string[]>([]);   // 직접 클릭해 켠 태그
+  const [manualOff, setManualOff] = useState<string[]>([]); // 자동 선택을 직접 꺼둔 태그
 
-  const togglePicked = (tag: string) =>
-    setPicked((current) => current.includes(tag) ? current.filter((item) => item !== tag) : current.length >= 5 ? current : [...current, tag]);
-
-  // 빠른 입력: 각 글자를 첫 글자로 갖는 태그만 표시하고, 후보가 하나뿐이면 자동 선택
+  // 빠른 입력: 각 글자를 첫 글자로 갖는 태그만 표시하고, 후보가 하나뿐이면 자동 선택.
+  // 선택은 현재 입력 문자열에서 매번 다시 계산한다 — 한글 IME 조합 중간 상태
+  // (예: "가메" 입력 도중 '감')에서 잘못 붙은 자동 선택이 다음 키 입력에서 스스로 풀리게.
   const quickChars = Array.from(new Set(quick.replace(/\s/g, "").split("")));
+  const autoPicks = useMemo(() =>
+    quickChars
+      .map((char) => ALL_TAG_NAMES.filter((name) => name[0] === char))
+      .filter((candidates) => candidates.length === 1)
+      .map((candidates) => candidates[0]),
+    [quick]);
+  const picked = useMemo(() => {
+    const merged = [...autoPicks.filter((tag) => !manualOff.includes(tag))];
+    for (const tag of manualOn) if (!merged.includes(tag)) merged.push(tag);
+    return merged.slice(0, 5);
+  }, [autoPicks, manualOn, manualOff]);
+
   const isVisible = (tag: string) => quickChars.length === 0 || quickChars.includes(tag[0]) || picked.includes(tag);
-  const onQuickChange = (value: string) => {
-    setQuick(value);
-    const chars = Array.from(new Set(value.replace(/\s/g, "").split("")));
-    setPicked((current) => {
-      const next = [...current];
-      for (const char of chars) {
-        const candidates = ALL_TAG_NAMES.filter((name) => name[0] === char);
-        if (candidates.length === 1 && !next.includes(candidates[0]) && next.length < 5) next.push(candidates[0]);
-      }
-      return next;
-    });
+  const togglePicked = (tag: string) => {
+    if (picked.includes(tag)) {
+      setManualOn((current) => current.filter((item) => item !== tag));
+      if (autoPicks.includes(tag)) setManualOff((current) => [...current, tag]);
+    } else {
+      setManualOff((current) => current.filter((item) => item !== tag));
+      if (picked.length < 5 && !autoPicks.includes(tag)) setManualOn((current) => [...current, tag]);
+    }
   };
+  const clearAll = () => { setQuick(""); setManualOn([]); setManualOff([]); };
 
   const results = useMemo(() => comboResults(picked), [picked]);
 
@@ -141,9 +151,9 @@ export default function RecruitHelper() {
 
       <div className="recruit-tags">
         <div className="quick-wrap">
-          <input value={quick} onChange={(event) => onQuickChange(event.target.value)}
+          <input value={quick} onChange={(event) => setQuick(event.target.value)}
             placeholder="빠른 입력 — 태그 첫 글자를 이어서 입력 (예: 가메신생범)" aria-label="태그 첫 글자 빠른 입력" />
-          <button type="button" className="clear-btn" onClick={() => { setPicked([]); setQuick(""); }}>클리어</button>
+          <button type="button" className="clear-btn" onClick={clearAll}>클리어</button>
         </div>
         {TAG_GROUPS.map(([group, tags]) => {
           const shown = tags.filter(isVisible);
