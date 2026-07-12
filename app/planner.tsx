@@ -236,7 +236,7 @@ function bestTeam(room: string, slots: number, pool: Map<string, InfraOp>, ctx: 
 }
 
 type FlowGenerator = { opId: string; at: string; amount: number; via?: string; perMember?: { per: number; cap: number; match: string } };
-type FlowConsumer = { opId: string; at: string; rate: number; percent: boolean; gain: number };
+type FlowConsumer = { opId: string; at: string; room: string; rate: number; percent: boolean; gain: number };
 
 type TokenFlow = {
   token: string;
@@ -402,7 +402,7 @@ function buildPlan(packageTokens: string[]): Plan {
             if (!use.percent && bestRate === 0) { bestRate = rate; percent = false; }
           }
         }
-        if (bestRate !== 0) flow.consumers.push({ opId: op.id, at: cell?.label ?? key, rate: bestRate, percent, gain: percent ? flow.total * bestRate : bestRate * flow.total });
+        if (bestRate !== 0) flow.consumers.push({ opId: op.id, at: cell?.label ?? key, room: cell?.room ?? key, rate: bestRate, percent, gain: percent ? flow.total * bestRate : bestRate * flow.total });
       }
     }
   }
@@ -689,7 +689,7 @@ function FlowModal({ plan, onClose }: { plan: Plan; onClose: () => void }) {
                         <li key={`${consumer.opId}-${index}`}>
                           {op && <img src={op.image} alt="" loading="lazy" />}
                           <b>{op?.name ?? consumer.opId}</b> <i>{consumer.at}</i>
-                          <em>{consumer.percent ? `1점당 +${consumer.rate}% → +${Math.round(consumer.gain)}%` : "컨디션·전환 계열"}</em>
+                          <em>{consumer.percent ? `${flow.token} ${Math.round(flow.total)}점 소비 → ${UNIT[consumer.room] ?? "효율"} +${Math.round(consumer.gain)}% (1점당 +${consumer.rate}%)` : `${flow.token} 기반 컨디션 회복·소모 보정`}</em>
                         </li>
                       );
                     })}
