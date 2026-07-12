@@ -52,12 +52,12 @@ def parse_metric(room, text):
             if g: vals.append(float(g[-1]))
         return max(vals) if vals else None
     if room == "MANUFACTURE":
-        v = best(r"생산력[^+%]{0,24}" + PCT)
+        v = best(r"생산력[^+%\d]{0,24}" + PCT)
         if v: return "output", v
     if room == "TRADING":
-        m = re.search(r"자신을 제외한 작업 중인 오퍼레이터 1명당[^+%]{0,20}\+\s*(\d+(?:\.\d+)?)\s*%", text)
+        m = re.search(r"자신을 제외한 작업 중인 오퍼레이터 1명당[^+%\d]{0,20}\+\s*(\d+(?:\.\d+)?)\s*%", text)
         if m: return "percoworker", float(m.group(1))
-        v = best(r"(?:오더 수주 효율|주문 획득 효율)[^+%]{0,24}" + PCT)
+        v = best(r"(?:오더 수주 효율|주문 획득 효율)[^+%\d]{0,24}" + PCT)
         if v: return "output", v
         # order-quality effects, converted to a rough efficiency-equivalent %.
         # payout skills (테킬라 용문폐 보너스, 프로바이조 위약 배상) scale with
@@ -70,28 +70,40 @@ def parse_metric(room, text):
         if re.search(r"고품질 귀금속 오더의 출현 확률이 소폭 상승", text): return "quality", 10
         if re.search(r"오더 수주 상한|주문 상한|최대 주문", text): return "capacity", 0
     if room == "POWER":
-        v = best(r"(?:무인기|드론)[^+%]{0,20}회복[^+%]{0,14}" + PCT)
+        v = best(r"(?:무인기|드론)[^+%\d]{0,20}회복[^+%\d]{0,14}" + PCT)
         if v: return "output", v
     if room == "MEETING":
-        v = best(r"단서 (?:수집|검색) 속도(?:가)?[^%]{0,16}" + PCT)
-        if v: return "output", v
+        v = best(r"단서 (?:수집|검색) 속도(?:가)?[^%\d]{0,16}" + PCT)
+        if v:
+            if re.search(r"자신만 업무 중", text): return "solo", v
+            if re.search(r"단서 공유 상태에서", text): return "shared", v
+            return "output", v
     if room == "HIRE":
-        v = best(r"(?:인맥 레퍼런스|연락).{0,16}(?:누적 |획득 )?속도[^+%]{0,18}" + PCT)
+        v = best(r"(?:인맥 레퍼런스|연락).{0,16}(?:누적 |획득 )?속도[^+%\d]{0,18}" + PCT)
         if v: return "output", v
     if room == "WORKSHOP":
-        v = best(r"부산물[^%]{0,26}" + PCT)
+        v = best(r"부산물[^%\d]{0,26}" + PCT)
         if v: return "output", v
     if room == "TRAINING":
-        v = best(r"(?:훈련|특화)[^%]{0,22}속도[^%]{0,16}" + PCT)
+        v = best(r"(?:훈련|특화)[^%\d]{0,22}속도[^%\d]{0,16}" + PCT)
         if v: return "output", v
     if room == "DORMITORY":
         m = re.findall(r"컨디션 회복[^+]{0,10}\+\s*(\d+(?:\.\d+)?)", text)
         if m: return "morale", max(float(x) for x in m)
     if room == "CONTROL":
+        # facility-wide auras — only the highest of a kind applies per base,
+        # ranked 제조소 > 무역소 > 인맥 레퍼런스 > 단서 by the planner
+        v = best(r"제조소의 생산력[^+%\d]{0,10}" + PCT)
+        if v: return "ctrl_mfg", v
+        v = best(r"무역소의 오더 수주 효율[^+%\d]{0,10}" + PCT)
+        if v: return "ctrl_trade", v
+        v = best(r"인맥 레퍼런스[^%\d]{0,24}" + PCT)
+        if v: return "ctrl_hire", v
+        v = best(r"단서 수집 (?:속도|성향)[^%\d]{0,20}" + PCT)
+        if v: return "ctrl_clue", v
+        if re.search(r"단서 수집 성향 효과가 (소폭 )?상승", text): return "ctrl_clue", 5
         m = re.findall(r"컨디션 (?:회복|소모)[^+\-]{0,14}([+\-]\s*\d+(?:\.\d+)?)", text)
         if m: return "morale", max(float(x.replace(" ", "")) for x in m)
-        v = best(r"(?:획득 효율|수집 속도|누적 속도)[^+%]{0,18}" + PCT)
-        if v: return "aura", v
     # generic percent fallback
     v = best(PCT)
     if v: return "misc", v
@@ -99,7 +111,7 @@ def parse_metric(room, text):
 
 TOKENS = ["속세의 화식", "감지 정보", "무성의 공명", "생각의 사슬", "정보 저장", "주술 결정"]
 
-def parse_tokens(text):
+def parse_tokens(text, room):
     """Cross-facility point systems: generators (+N) and consumers (N점당 +V)."""
     gen, use = [], []
     for token in TOKENS:
@@ -109,14 +121,19 @@ def parse_tokens(text):
         for m in re.finditer(re.escape(token) + r"\s*\+(\d+)", text):
             amount = float(m.group(1))
             cap = re.search(r"1명당[^(]{0,40}\(최대 (\d+)명\)", text)
+            per_dorm_member = re.search(r"숙소 (?:내|안)에? ?(?:배치된 )?오퍼레이터 1명당", text)
             if cap and "1명당" in text:
                 amount *= float(cap.group(1))
-            elif re.search(r"숙소 내 오퍼레이터 1명당", text):
-                amount *= 20
+            elif per_dorm_member:
+                # own dorm holds 5; a facility skill counting all dorms sees ~20
+                amount *= 5 if room == "DORMITORY" else 20
             elif re.search(r"모집 인원마다", text):
                 amount *= 4  # office holds up to 4 recruitment slots
             gen.append({"token": token, "estimate": amount})
-    return gen, use
+    # dorm stack systems (아이리스 꿈나라, 체르니 소절): Lv5 dorm grants 5 stacks
+    stack = re.search(r"레벨(?: ?1)?당 ([가-힣]+) ?(\d*)스택", text)
+    conv = re.search(r"([가-힣]+) (\d+)스택당 (" + "|".join(map(re.escape, TOKENS)) + r") (\d+)점으로 전환", text)
+    return gen, use, stack, conv
 
 def parse_morale_drain(text):
     m = re.findall(r"시간당 컨디션 소모[^+\-]{0,8}([+\-])\s*(\d+(?:\.\d+)?)", text)
@@ -150,18 +167,17 @@ for o in operators:
             kind, value = "override", float(override.group(1))
         product = "any"
         if room == "MANUFACTURE":
-            if "금괴" in text: product = "gold"
+            if re.search(r"순금|금괴", text): product = "gold"
             elif re.search(r"작전 ?기록", text): product = "exp"
             elif "오리지늄" in text: product = "shard"
-        gen, use = parse_tokens(text)
+        gen, use, stack_grant, stack_conv = parse_tokens(text, room)
         # conversion skills ("감지 정보 1점당 무성의 공명 1점으로 전환") re-route
-        # this op's own generation into the target token
+        # this op's own generation and, at plan level, the shared pool
+        convert = None
         conv = re.search(r"(" + "|".join(map(re.escape, TOKENS)) + r") (\d+(?:\.\d+)?)점당 (" + "|".join(map(re.escape, TOKENS)) + r") (\d+(?:\.\d+)?)점으로 전환", text)
         if conv:
             src, ratio_src, dst, ratio_dst = conv.group(1), float(conv.group(2)), conv.group(3), float(conv.group(4))
-            for g in list(gen):
-                if g["token"] == src:
-                    gen.append({"token": dst, "estimate": g["estimate"] / ratio_src * ratio_dst})
+            convert = {"from": src, "per": ratio_src, "to": dst, "amount": ratio_dst}
         # tier: α/β/γ variants replace each other; different roots stack
         tier_match = re.search(r"\s*(α|β|γ|Ⅰ|Ⅱ|Ⅲ)\s*$", entry["name"])
         tier = {"α": 1, "Ⅰ": 1, "β": 2, "Ⅱ": 2, "γ": 3, "Ⅲ": 3}.get(tier_match.group(1), 1) if tier_match else 1
@@ -172,9 +188,32 @@ for o in operators:
             "group": group, "tier": tier,
             "moraleDrain": parse_morale_drain(text),
             "partners": find_partners(text, o["name"]),
-            "tokenGen": gen, "tokenUse": use,
-            "conditional": bool(re.search(r"함께 배치|같이 .{0,10}배치|1명당|마다|미만|이상일 (때|경우)|경우", text)),
+            "tokenGen": gen, "tokenUse": use, "convert": convert,
+            "_stackGrant": stack_grant.group(1) if stack_grant else None,
+            "_stackCount": 5 * (int(stack_grant.group(2)) if stack_grant and stack_grant.group(2) else 1) if stack_grant else 0,
+            "_stackConv": {"name": stack_conv.group(1), "per": float(stack_conv.group(2)), "token": stack_conv.group(3), "amount": float(stack_conv.group(4))} if stack_conv else None,
         })
+    # dorm stack systems: one skill grants stacks per dorm level, a sibling
+    # converts stacks into a token → net token generation for this op
+    grants = {sk["_stackGrant"]: sk["_stackCount"] for sk in skills if sk["_stackGrant"]}
+    for sk in skills:
+        sc = sk["_stackConv"]
+        if sc and sc["name"] in grants:
+            sk["tokenGen"].append({"token": sc["token"], "estimate": grants[sc["name"]] / sc["per"] * sc["amount"]})
+    for sk in skills:
+        sk.pop("_stackGrant", None); sk.pop("_stackCount", None); sk.pop("_stackConv", None)
+    # upgrade lines that only change numbers (스킬 이론 → 최고의 경지) replace
+    # each other even when renamed: dedupe by digit-stripped description
+    def unlock_rank(u):
+        m = re.match(r"정예화 (\d)", u)
+        return (1 + int(m.group(1))) if m else 0
+    dedup = {}
+    for sk in skills:
+        key = (sk["room"], sk["kind"], re.sub(r"[\d.+%]+", "", sk["description"]))
+        prev = dedup.get(key)
+        if not prev or unlock_rank(sk["unlock"]) >= unlock_rank(prev["unlock"]):
+            dedup[key] = sk
+    skills = list(dedup.values())
     if skills:
         infra_ops.append({"id": o["id"], "name": o["name"], "rarity": o["rarity"],
                           "faction": o["faction"], "accent": o["accent"], "image": o["image"],

@@ -20,7 +20,7 @@ type InfraSkill = {
   partners: string[];
   tokenGen: TokenGen[];
   tokenUse: TokenUse[];
-  conditional: boolean;
+  convert: { from: string; per: number; to: string; amount: number } | null;
 };
 
 type InfraOp = {
@@ -101,11 +101,16 @@ type OpBreakdown = {
   payout: number;       // per-order payout bonus (scales with quality crew)
   override: number;     // 샤마르: flat rate replacing everyone's efficiency
   perCoworker: number;  // +x% per other member
+  auras: Record<string, number>; // control-center facility-wide auras
   skills: InfraSkill[];
 };
 
-function breakdown(op: InfraOp, room: string, teamIds: Set<string>, ctx: Ctx): OpBreakdown {
-  const out: OpBreakdown = { efficiency: 0, quality: 0, payout: 0, override: 0, perCoworker: 0, skills: [] };
+// control auras: only the highest of a kind counts, ranked by the user's
+// priority — factories > trading posts > hire contacts > clue speed
+const AURA_WEIGHT: Record<string, number> = { ctrl_mfg: 10, ctrl_trade: 2, ctrl_hire: 0.6, ctrl_clue: 0.2 };
+
+function breakdown(op: InfraOp, room: string, teamIds: Set<string>, teamSize: number, ctx: Ctx): OpBreakdown {
+  const out: OpBreakdown = { efficiency: 0, quality: 0, payout: 0, override: 0, perCoworker: 0, auras: {}, skills: [] };
   const tokenRates = new Map<string, number>();
   for (const skill of activeSkills(op, room, ctx.product)) {
     if (skill.partners.length > 0 && !skill.partners.every((p) => teamIds.has(p))) continue;
@@ -119,6 +124,9 @@ function breakdown(op: InfraOp, room: string, teamIds: Set<string>, ctx: Ctx): O
     if (skill.kind === "quality") { out.quality += skill.value; continue; }
     if (skill.kind === "payout") { out.payout += skill.value; continue; }
     if (skill.kind === "percoworker") { out.perCoworker += skill.value; continue; }
+    if (skill.kind === "solo") { if (teamSize === 1) out.efficiency += skill.value; continue; }
+    if (skill.kind === "shared") { out.efficiency += skill.value * 0.3; continue; } // 단서 공유 상태 한정
+    if (skill.kind in AURA_WEIGHT) { out.auras[skill.kind] = Math.max(out.auras[skill.kind] ?? 0, skill.value); continue; }
     if (room === "DORMITORY") continue;
     if (percentUses.length === 0) out.efficiency += skill.value;
   }
@@ -128,7 +136,7 @@ function breakdown(op: InfraOp, room: string, teamIds: Set<string>, ctx: Ctx): O
 
 function teamScore(team: InfraOp[], room: string, ctx: Ctx): number {
   const ids = new Set(team.map((op) => op.id));
-  const parts = team.map((op) => breakdown(op, room, ids, ctx));
+  const parts = team.map((op) => breakdown(op, room, ids, team.length, ctx));
   const override = Math.max(...parts.map((p) => p.override), 0);
   const additive = parts.reduce((sum, p) => sum + p.efficiency + p.perCoworker * (team.length - 1), 0);
   // an override (샤마르) zeroes everyone's own efficiency, flat rate per member instead
@@ -137,12 +145,19 @@ function teamScore(team: InfraOp[], room: string, ctx: Ctx): number {
   const quality = parts.reduce((sum, p) => sum + p.quality, 0);
   // payout skills (테킬라/프로바이조) profit from quality orders showing up more often
   const payout = parts.reduce((sum, p) => sum + p.payout, 0) * Math.min(1 + 0.5 * probCount, 2);
-  return efficiency + quality + payout;
+  let auras = 0;
+  for (const kind of Object.keys(AURA_WEIGHT)) {
+    const bestOfKind = Math.max(...parts.map((p) => p.auras[kind] ?? 0), 0);
+    auras += bestOfKind * AURA_WEIGHT[kind];
+  }
+  return efficiency + quality + payout + auras;
 }
 
 function opSolo(op: InfraOp, room: string, slots: number, ctx: Ctx): number {
-  const b = breakdown(op, room, new Set([op.id]), ctx);
-  return b.efficiency + b.quality + b.payout + b.override * slots + b.perCoworker * (slots - 1);
+  const b = breakdown(op, room, new Set([op.id]), 1, ctx);
+  let auras = 0;
+  for (const kind of Object.keys(AURA_WEIGHT)) auras += (b.auras[kind] ?? 0) * AURA_WEIGHT[kind];
+  return b.efficiency + b.quality + b.payout + b.override * slots + b.perCoworker * (slots - 1) + auras;
 }
 
 function bestTeam(room: string, slots: number, pool: Map<string, InfraOp>, ctx: Ctx, seedOps: InfraOp[] = []): InfraOp[] {
@@ -206,6 +221,7 @@ function buildPlan(packageTokens: string[]): Plan {
   for (const key of keys) assignments[key] = [];
   const tokenPoints: Record<string, number> = {};
 
+  const dormPins: InfraOp[][] = [[], [], [], []];
   for (let shift = 0; shift < SHIFT_COUNT; shift += 1) {
     const seeds: Record<string, InfraOp[]> = {};
     if (shift === 0 && packageTokens.length) {
@@ -219,9 +235,13 @@ function buildPlan(packageTokens: string[]): Plan {
         return true;
       };
       for (const token of packageTokens) {
-        const members = ops.filter((op) => !used.has(op.id) && op.skills.some((skill) => skill.tokenGen.some((g) => g.token === token) || skill.tokenUse.some((u) => u.token === token)));
-        // consumers first (they convert points into production), then generators,
-        // then park leftover family members to feed per-member counters
+        // converters (에벤홀츠) pull a source token into this one, so source
+        // generators (숙소의 아이리스·체르니 등) join the package too
+        const converters = ops.filter((op) => op.skills.some((skill) => skill.convert?.to === token));
+        const sources = new Map<string, number>(); // source token -> rate
+        for (const op of converters) for (const skill of op.skills) if (skill.convert?.to === token) sources.set(skill.convert.from, skill.convert.amount / skill.convert.per);
+        const generatesFor = (op: InfraOp) => op.skills.some((skill) => skill.tokenGen.some((g) => g.token === token || sources.has(g.token)));
+        const members = ops.filter((op) => !used.has(op.id) && (generatesFor(op) || op.skills.some((skill) => skill.tokenUse.some((u) => u.token === token))));
         for (const op of members) {
           for (const skill of op.skills) {
             if (!skill.tokenUse.some((u) => u.token === token && u.percent)) continue;
@@ -230,19 +250,29 @@ function buildPlan(packageTokens: string[]): Plan {
         }
         for (const op of members) {
           for (const skill of op.skills) {
-            const gen = skill.tokenGen.filter((g) => g.token === token);
+            const gen = skill.tokenGen.filter((g) => g.token === token || sources.has(g.token));
             if (!gen.length) continue;
+            const converterPlaced = gen.some((g) => g.token === token) || converters.some((c) => parked.has(c.id) || c === op);
             const already = parked.has(op.id);
             if (already || LAYOUT.filter((c) => c.room === skill.room).some((cell) => place(op, cell.key))) {
-              tokenPoints[token] = (tokenPoints[token] ?? 0) + gen.reduce((s, g) => s + g.estimate, 0);
+              if (converterPlaced) tokenPoints[token] = (tokenPoints[token] ?? 0) + gen.reduce((s, g) => s + g.estimate * (g.token === token ? 1 : sources.get(g.token) ?? 0), 0);
               break;
             }
           }
         }
+        // park leftovers only where they at least have a matching room skill
         for (const op of members) {
           if (parked.has(op.id)) continue;
-          for (const key of PARK_KEYS) if (place(op, key)) break;
+          for (const key of ["TRAINING", "WORKSHOP"]) {
+            if (op.skills.some((skill) => skill.room === key) && place(op, key)) break;
+          }
         }
+      }
+      // dorm-pinned package members stay put across both shifts
+      for (let d = 0; d < 4; d += 1) {
+        const pinned = seeds[`DORM-${d}`] ?? [];
+        dormPins[d] = pinned;
+        pinned.forEach((op) => used.add(op.id));
       }
     }
     for (const key of keys) {
@@ -256,8 +286,9 @@ function buildPlan(packageTokens: string[]): Plan {
       assignments[key].push(team.map((op) => op.id));
     }
   }
-  // dorms: pinned rest space for the off-shift crew, unaffected by switching
-  for (let d = 0; d < 4; d += 1) assignments[`DORM-${d}`] = [[]];
+  // dorms: pinned rest space; package members that generate from the dorm
+  // (아이리스·체르니·비르투오사 등) stay locked in regardless of shift
+  for (let d = 0; d < 4; d += 1) assignments[`DORM-${d}`] = [dormPins[d].map((op) => op.id)];
   const strategy = packageTokens.length ? `${packageTokens.join(" + ")} 패키지` : "기본 편성";
   return { assignments, tokenPoints, strategy };
 }
@@ -379,10 +410,14 @@ export default function InfraPlanner() {
       <div className="ship">
         {LAYOUT.map((cell) => {
           if (cell.room === "DORMITORY") {
+            const pinned = teamFor(cell.key, 0);
             return (
               <div key={cell.key} className={`ship-room dorm-room pos-${cell.key.toLowerCase()}`} style={{ "--room-accent": ROOM_ACCENT[cell.room] } as React.CSSProperties}>
                 <div className="ship-room-head"><b>{cell.label}</b><span>고정</span></div>
-                <div className="ship-room-crew"><i>휴식 공간 · 조 전환과 무관</i></div>
+                <div className="ship-room-crew">
+                  {pinned.map((op) => <img key={op.id} src={op.image} alt={op.name} title={`${op.name} (숙소 고정)`} loading="lazy" />)}
+                  <i>{pinned.length ? "시너지 고정 + 휴식 공간" : "휴식 공간 · 조 전환과 무관"}</i>
+                </div>
               </div>
             );
           }
@@ -451,8 +486,9 @@ function RoomModal({ cell, plan, allAssigned, onClose }: { cell: { key: string; 
             <h3>편성 ({team.length}/{infra.rooms[cell.room]?.slots ?? 1})</h3>
             <div className="crew-list">
               {team.map((op) => {
-                const b = breakdown(op, cell.room, teamIds, ctx);
-                const total = Math.round(b.efficiency + b.quality + b.payout + (b.override > 0 ? b.override : 0) + b.perCoworker * (team.length - 1));
+                const b = breakdown(op, cell.room, teamIds, team.length, ctx);
+                const auraTotal = Object.keys(AURA_WEIGHT).reduce((sum, kind) => sum + (b.auras[kind] ?? 0) * AURA_WEIGHT[kind], 0);
+                const total = Math.round(b.efficiency + b.quality + b.payout + (b.override > 0 ? b.override : 0) + b.perCoworker * (team.length - 1) + auraTotal);
                 const shown = b.skills.length ? b.skills : op.skills.filter((skill) => skill.room === cell.room);
                 return (
                   <article key={op.id} className="crew-card">
