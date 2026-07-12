@@ -21,6 +21,43 @@ export async function sendFeedback(kind: FeedbackKind, message: string, payload?
   if (!res.ok) throw new Error(`전송 실패 (${res.status})`);
 }
 
+// ─ 오퍼레이터 별명 제보 (docs/supabase-nicknames.sql) ─
+// 제보 1건 = 1행, 공개 조회는 (오퍼, 별명)별 득표 집계 뷰로만.
+
+export type NicknameCount = { op_id: string; name: string; votes: number };
+
+export async function fetchNicknameCounts(): Promise<NicknameCount[]> {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/op_nickname_counts?select=*&order=votes.desc&limit=10000`, {
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+  });
+  if (!res.ok) throw new Error(`별명 조회 실패 (${res.status})`);
+  return res.json();
+}
+
+export async function submitNickname(opId: string, name: string) {
+  if (!feedbackReady) throw new Error("Supabase 키가 아직 설정되지 않았습니다");
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/op_nickname`, {
+    method: "POST",
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      "Content-Type": "application/json",
+      Prefer: "return=minimal",
+    },
+    body: JSON.stringify({ op_id: opId, name: name.slice(0, 16) }),
+  });
+  if (!res.ok) throw new Error(`전송 실패 (${res.status})`);
+}
+
+// 관리자: 특정 (오퍼, 별명)의 제보 행 전체 삭제 — 집계에서 사라진다
+export async function adminDeleteNickname(password: string, opId: string, name: string) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/op_nickname?op_id=eq.${encodeURIComponent(opId)}&name=eq.${encodeURIComponent(name)}`, {
+    method: "DELETE",
+    headers: adminHeaders(password),
+  });
+  if (!res.ok) throw new Error(`삭제 실패 (${res.status})`);
+}
+
 // ─ 관리자 (/admin) — RLS 정책이 x-admin-key 헤더를 검사한다 (docs/supabase-admin.sql) ─
 export type FeedbackRow = { id: string; created_at: string; kind: FeedbackKind; message: string; payload: unknown; reviewed_at: string | null };
 

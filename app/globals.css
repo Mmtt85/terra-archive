@@ -16,6 +16,8 @@ html[data-route="infra"] .main-tabs .tab-planner,
 html[data-route="recruit"] .main-tabs .tab-recruit { background:var(--ink); color:var(--lime); border-color:var(--ink) }
 button,input { font:inherit }
 button { color:inherit }
+/* iOS는 입력 폰트가 16px 미만이면 포커스 시 화면을 자동 확대한다 — 모바일에서 16px 강제 */
+@media (width<=760px) { input:not([type="checkbox"]):not([type="radio"]), textarea, select { font-size:16px !important } }
 .site-header { border-bottom:1px solid var(--line); z-index:20; -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); background:#f1f0ebe6; justify-content:space-between; align-items:center; height:78px; padding:0 clamp(22px,5vw,76px); display:flex; position:sticky; top:0 }
 .header-tagline { letter-spacing:-.055em; white-space:nowrap; margin:0 auto; padding:0 28px; font-size:clamp(16px,2vw,27px); font-weight:900 }
 .header-tagline em { color:#0000; -webkit-text-stroke:1px var(--ink); font-style:normal }
@@ -126,6 +128,22 @@ legend { margin-bottom:10px; font-size:11px; font-weight:900 }
 .modal-facts div { background:#e9e8e2; padding:14px 16px }
 .modal-facts span { color:var(--muted); letter-spacing:1px; font:700 9px monospace; display:block }
 .modal-facts b { margin-top:7px; font-size:11px; line-height:1.5; display:block }
+/* 커뮤니티 별명 — 모달 헤더 이름 오른쪽에 득표순 상위 3개 + 제보 폼 */
+.modal-title-block { display:flex; align-items:center; justify-content:space-between; gap:24px }
+.modal-title-main { flex:none }
+.nickname-row { flex:1; max-width:330px; border-left:1px solid #ffffff2e; padding-left:20px }
+@media (width<=760px) { .modal-title-block { display:block } .nickname-row { max-width:none; border-left:0; border-top:1px solid #ffffff2e; padding-left:0; padding-top:10px; margin-top:11px } }
+.nickname-label { color:#c9ced0; letter-spacing:1.5px; font:700 9px monospace; display:block }
+.nickname-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px }
+.nickname-chips b { display:inline-flex; align-items:center; gap:6px; background:#ffffff1c; border:1px solid #ffffff4d; color:#fff; padding:4px 9px; font-size:11.5px; font-weight:800 }
+.nickname-chips b i { font:800 9px monospace; color:#dfff00; font-style:normal }
+.nickname-chips em { color:#c9ced0; font-size:10.5px; font-style:normal }
+.nickname-form { display:flex; gap:6px; margin-top:9px }
+.nickname-form input { flex:1; max-width:240px; min-width:0; border:1px solid #ffffff55; background:#ffffff18; color:#fff; padding:7px 10px; font-size:12px }
+.nickname-form input::placeholder { color:#ffffff88 }
+.nickname-form button { border:1px solid var(--lime); background:var(--lime); color:var(--ink); padding:7px 13px; font-size:11px; font-weight:800; cursor:pointer }
+.nickname-form button:disabled { opacity:.4; cursor:default }
+.nickname-msg { display:block; margin-top:7px; font-size:10.5px; font-weight:700; color:#dfff00 }
 .detail-section { border-top:1px solid var(--line); padding:26px 0 }
 .detail-section:first-of-type { border-top:2px solid var(--ink) }
 .detail-section .detail-no { color:var(--muted) }
@@ -425,6 +443,12 @@ footer p { margin:0 }
 .reviewed-badge { font-style:normal; color:#2e7d32; font-size:11px; font-weight:800 }
 .admin-row>header .review-btn { color:#2e7d32 }
 .admin-row>header .review-btn:hover { background:#2e7d32; border-color:#2e7d32; color:#fff }
+.admin-section-head { margin-top:44px }
+.admin-nicknames { display:flex; flex-wrap:wrap; gap:7px; margin-top:14px }
+.admin-nick { display:inline-flex; align-items:center; gap:7px; border:1px solid var(--line); background:var(--white); padding:6px 9px; font-size:12px }
+.admin-nick b { font-size:10px; color:var(--muted); font-weight:800 }
+.admin-nick i { font:800 9px monospace; color:#5b6b00; font-style:normal }
+.admin-nick button { border:0; background:0 0; color:#c0392b; font-weight:900; cursor:pointer; padding:0 2px }
 .recruit-combo li.pending { border-style:dashed; opacity:.9 }
 .pending-tag { display:inline-block; margin-left:5px; font-style:normal; font-size:8.5px; font-weight:800; color:#b8860b; background:#f5ecc9; padding:1px 4px; vertical-align:middle }
 .confirm-dialog { background:var(--white); border:1px solid var(--ink); max-width:340px; margin:auto; padding:24px; box-shadow:0 20px 60px #0006 }

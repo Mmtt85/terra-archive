@@ -308,7 +308,8 @@ for cid, c in chars.items():
         "jobCode": c.get("profession"),
         "subProfession": sub_name(c.get("subProfessionId")),
         "position": "근거리" if c.get("position") == "MELEE" else "원거리",
-        "combatTags": c.get("tagList") or [],
+        # 게임 데이터에 빈 문자열 태그가 섞인 사례 있음 (예비 오퍼레이터·하디야)
+        "combatTags": [t for t in (c.get("tagList") or []) if t and t.strip()],
         "faction": None,  # set below
         "factions": factions_of(c, cid),
         "birthplace": birth,

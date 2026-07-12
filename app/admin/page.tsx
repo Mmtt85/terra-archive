@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { adminDeleteFeedback, adminListFeedback, adminSetReviewed, type FeedbackRow } from "../feedback";
+import { adminDeleteFeedback, adminDeleteNickname, adminListFeedback, adminSetReviewed, fetchNicknameCounts, type FeedbackRow, type NicknameCount } from "../feedback";
+import operatorsData from "../data/operators.json";
 
 const KIND_LABEL: Record<string, string> = { feature: "기능 제안", data_error: "데이터 오류", plan: "편성 제안" };
+const OP_NAME = new Map((operatorsData as { id: string; name: string }[]).map((op) => [op.id, op.name]));
 
 export default function AdminPage() {
   const [password, setPassword] = useState("");
@@ -11,6 +13,7 @@ export default function AdminPage() {
   const [rows, setRows] = useState<FeedbackRow[]>([]);
   const [status, setStatus] = useState("");
   const [filter, setFilter] = useState<string>("all");
+  const [nicknames, setNicknames] = useState<NicknameCount[]>([]);
 
   const load = async (pw: string) => {
     setStatus("불러오는 중…");
@@ -20,8 +23,19 @@ export default function AdminPage() {
       setStatus(data.length ? "" : "항목이 없습니다 — 비밀번호가 틀리면 목록이 비어 보입니다");
       setEntered(true);
       sessionStorage.setItem("ta-admin-key", pw);
+      fetchNicknameCounts().then(setNicknames).catch(() => { /* 별명 테이블 미설치 시 무시 */ });
     } catch {
       setStatus("조회 실패 — 잠시 후 다시 시도해주세요");
+    }
+  };
+
+  const removeNickname = async (item: NicknameCount) => {
+    if (!window.confirm(`'${OP_NAME.get(item.op_id) ?? item.op_id}'의 별명 '${item.name}' (${item.votes}표)을 전부 삭제할까요?`)) return;
+    try {
+      await adminDeleteNickname(password, item.op_id, item.name);
+      setNicknames((current) => current.filter((row) => !(row.op_id === item.op_id && row.name === item.name)));
+    } catch {
+      setStatus("별명 삭제 실패");
     }
   };
 
@@ -102,6 +116,21 @@ export default function AdminPage() {
           </article>
         ))}
         {shown.length === 0 && <p className="admin-status">표시할 항목이 없습니다.</p>}
+      </div>
+
+      <header className="admin-section-head">
+        <h1>별명 제보 <small>{nicknames.length}종</small></h1>
+      </header>
+      <div className="admin-nicknames">
+        {nicknames.map((item) => (
+          <span key={`${item.op_id}-${item.name}`} className="admin-nick">
+            <b>{OP_NAME.get(item.op_id) ?? item.op_id}</b>
+            {item.name}
+            <i>{item.votes}표</i>
+            <button onClick={() => removeNickname(item)} title="이 별명의 제보를 전부 삭제">×</button>
+          </span>
+        ))}
+        {nicknames.length === 0 && <p className="admin-status">제보된 별명이 없습니다.</p>}
       </div>
     </main>
   );
