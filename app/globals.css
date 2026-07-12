@@ -358,6 +358,9 @@ footer p { margin:0 }
 @keyframes toastOut { from { opacity:1 } to { opacity:0 } }
 .file-group { display:inline-flex }
 .file-group>button { border-right:0 !important }
+/* 미저장 펄스 중에는 scale로 묶음에서 떨어져 보이므로 오른쪽 테두리를 되살린다
+   (-1px 마진으로 라벨 왼쪽 테두리와 겹쳐 이중선 방지) */
+.file-group>button.save-pending { border-right:1px solid var(--ink) !important; margin-right:-1px; z-index:1 }
 .planner-buttons { flex-wrap:wrap }
 .room-summary h3 .summary-total { font-size:22px; margin-left:8px; color:var(--accent) }
 .summary-parts { display:flex; flex-wrap:wrap; gap:7px; margin-top:10px }
