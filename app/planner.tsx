@@ -497,6 +497,7 @@ export default function InfraPlanner() {
           cell={openCell}
           plan={plan}
           allAssigned={allAssigned}
+          initialShift={activeShift}
           onClose={() => setOpenRoom(null)}
         />
       )}
@@ -504,8 +505,8 @@ export default function InfraPlanner() {
   );
 }
 
-function RoomModal({ cell, plan, allAssigned, onClose }: { cell: { key: string; room: string; label: string; product?: string }; plan: Plan; allAssigned: Set<string>; onClose: () => void }) {
-  const [shift, setShift] = useState(0);
+function RoomModal({ cell, plan, allAssigned, initialShift, onClose }: { cell: { key: string; room: string; label: string; product?: string }; plan: Plan; allAssigned: Set<string>; initialShift: number; onClose: () => void }) {
+  const [shift, setShift] = useState(initialShift);
   const shiftIndex = Math.min(shift, (plan.assignments[cell.key]?.length ?? 1) - 1);
   const team = (plan.assignments[cell.key]?.[shiftIndex] ?? []).map((id) => opById.get(id)).filter(Boolean) as InfraOp[];
   const teamIds = new Set(team.map((op) => op.id));
