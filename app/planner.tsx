@@ -610,6 +610,29 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
     return set;
   }, [plan]);
 
+  // 방 모달에서 직접 편집: 해당 조의 팀을 교체하고 진영 카운트를 다시 센다.
+  // 토큰 포인트·패키지 구성은 마지막 자동편성 기준으로 유지된다 (근사).
+  const updateTeam = (cellKey: string, shiftIdx: number, ids: string[]) => {
+    if (!plan) return;
+    const shifts = (plan.assignments[cellKey] ?? []).map((team, index) => (index === shiftIdx ? ids : team));
+    const assignments = { ...plan.assignments, [cellKey]: shifts };
+    const factionCounts = [0, 1].map((s) => {
+      const counts: Record<string, number> = {};
+      for (const c of LAYOUT) {
+        const cellShifts = assignments[c.key] ?? [];
+        const team = cellShifts[Math.min(s, cellShifts.length - 1)] ?? [];
+        for (const id of team) {
+          const op = opById.get(id);
+          if (op) counts[op.faction] = (counts[op.faction] ?? 0) + 1;
+        }
+      }
+      return counts;
+    });
+    const next = { ...plan, assignments, factionCounts };
+    setPlan(next);
+    persist(ownedIds, next);
+  };
+
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const showToast = (message: string) => {
@@ -789,6 +812,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
           initialShift={activeShift}
           onClose={() => setOpenRoom(null)}
           onShowOperator={onShowOperator}
+          onUpdateTeam={updateTeam}
         />
       )}
       {toast && <div className="toast" role="status">{toast}</div>}
@@ -796,15 +820,40 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
   );
 }
 
-function RoomModal({ cell, plan, allAssigned, roster, initialShift, onClose, onShowOperator }: { cell: { key: string; room: string; label: string; product?: string }; plan: Plan; allAssigned: Set<string>; roster: InfraOp[]; initialShift: number; onClose: () => void; onShowOperator?: (id: string) => void }) {
+function RoomModal({ cell, plan, allAssigned, roster, initialShift, onClose, onShowOperator, onUpdateTeam }: { cell: { key: string; room: string; label: string; product?: string }; plan: Plan; allAssigned: Set<string>; roster: InfraOp[]; initialShift: number; onClose: () => void; onShowOperator?: (id: string) => void; onUpdateTeam?: (cellKey: string, shiftIdx: number, ids: string[]) => void }) {
   const [shift, setShift] = useState(initialShift);
   const shiftIndex = Math.min(shift, (plan.assignments[cell.key]?.length ?? 1) - 1);
-  const team = (plan.assignments[cell.key]?.[shiftIndex] ?? []).map((id) => opById.get(id)).filter(Boolean) as InfraOp[];
+  const rawIds = plan.assignments[cell.key]?.[shiftIndex] ?? [];
+  const team = rawIds.map((id) => opById.get(id)).filter(Boolean) as InfraOp[];
   const teamIds = new Set(team.map((op) => op.id));
   const points = shiftIndex === 0 ? plan.tokenPoints : {};
-  const ctx = ctxFor(cell.key, points);
+  const ctx = ctxFor(cell.key, points, plan.factionCounts[shiftIndex] ?? {}, plan.plants);
   const excluded = new Set([...allAssigned, ...teamIds]);
   const currentScore = Math.round(teamScore(team, cell.room, ctx));
+  const slots = infra.rooms[cell.room]?.slots ?? 1;
+  const scored = cell.room !== "DORMITORY" && !PARK_KEYS.includes(cell.key);
+  const setIds = (ids: string[]) => onUpdateTeam?.(cell.key, shiftIndex, ids);
+  // 종합 효율 구성 요소 (팀원 breakdown 합산)
+  const agg = team.reduce((acc, op) => {
+    const b = breakdown(op, cell.room, team, ctx);
+    acc["스킬 효율"] += b.efficiency;
+    acc["시설 기반"] += b.facilityEff;
+    acc["자동화"] += b.automation;
+    acc["품질 기대치"] += b.quality;
+    acc["오더 수익"] += b.payout + b.payoutViolation;
+    acc["효율 오버라이드"] += b.override > 0 ? b.override : 0;
+    acc["동료 보너스"] += b.perCoworker * (team.length - 1);
+    acc["제어 오라(가중)"] += Object.keys(AURA_WEIGHT).reduce((sum, kind) => sum + (b.auras[kind] ?? 0) * AURA_WEIGHT[kind], 0);
+    return acc;
+  }, { "스킬 효율": 0, "시설 기반": 0, "자동화": 0, "품질 기대치": 0, "오더 수익": 0, "효율 오버라이드": 0, "동료 보너스": 0, "제어 오라(가중)": 0 } as Record<string, number>);
+  // 추가 후보: 어디에도 배치 안 된 보유 오퍼를 한계 기여 순으로
+  const bench = team.length < slots && onUpdateTeam
+    ? roster
+        .filter((op) => !allAssigned.has(op.id))
+        .map((op) => ({ op, delta: Math.round(teamScore([...team, op], cell.room, ctx)) - currentScore }))
+        .sort((a, b) => b.delta - a.delta || b.op.rarity - a.op.rarity)
+        .slice(0, 12)
+    : [];
   // synergy cores can't be swapped: token generators/consumers of active
   // systems, override/payout roles, and per-member counter bodies (쉐이)
   const activeTokens = new Set(Object.entries(plan.tokenPoints).filter(([, points]) => points > 0).map(([token]) => token));
@@ -830,9 +879,23 @@ function RoomModal({ cell, plan, allAssigned, roster, initialShift, onClose, onS
           </div>
         </header>
         <div className="modal-scroll">
+          {scored && (
+            <section className="detail-section room-summary">
+              <span className="detail-no">RESULT / 00</span>
+              <h3>종합 효율{cell.product ? ` · ${cell.product}` : ""} <b className="summary-total">+{currentScore}{cell.room === "CONTROL" ? "" : "%"}</b></h3>
+              <div className="summary-parts">
+                {Object.entries(agg).filter(([, value]) => Math.round(value) !== 0).map(([name, value]) => (
+                  <span key={name}>{name} <b>+{Math.round(value)}</b></span>
+                ))}
+                {team.length === 0 && <span>편성 없음</span>}
+              </div>
+              <p className="summary-note">아래에서 오퍼를 빼거나(✕) 대체 오퍼·추가 후보를 클릭하면 즉시 다시 계산됩니다.
+                단, 토큰 포인트(속세의 화식 등)와 패키지 구성은 마지막 자동편성 기준이므로, 토큰 생성원을 바꿨다면 자동편성 실행으로 재계산하세요.</p>
+            </section>
+          )}
           <section className="detail-section">
             <span className="detail-no">CREW / 01</span>
-            <h3>편성 ({team.length}/{infra.rooms[cell.room]?.slots ?? 1})</h3>
+            <h3>편성 ({team.length}/{slots})</h3>
             {cell.room === "DORMITORY" && (
               <p className="dorm-note">숙소는 <b>항상 5명을 꽉 채운 상태로 유지</b>하세요. 고정 생성원 외의 빈 자리는 휴식이 필요한 아무 오퍼레이터로 채우면 됩니다 — 토큰 생성과 회복 효율은 풀 인원 기준으로 계산됩니다.</p>
             )}
@@ -844,6 +907,7 @@ function RoomModal({ cell, plan, allAssigned, roster, initialShift, onClose, onS
                 const shown = b.skills.length ? b.skills : op.skills.filter((skill) => skill.room === cell.room);
                 return (
                   <article key={op.id} className="crew-card">
+                    {onUpdateTeam && <button type="button" className="crew-remove" title="이 자리에서 빼기" onClick={() => setIds(rawIds.filter((id) => id !== op.id))}>✕</button>}
                     <img src={op.image} alt={op.name} loading="lazy" className={onShowOperator ? "op-link" : undefined}
                       title={`${op.name} 상세 정보`} onClick={() => onShowOperator?.(op.id)} />
                     <div>
@@ -859,8 +923,10 @@ function RoomModal({ cell, plan, allAssigned, roster, initialShift, onClose, onS
                         <div className="slot-subs">
                           <span>이 자리 대체 오퍼:</span>
                           {slotSubstitutes(team, team.indexOf(op), cell.key, ctx, excluded, roster).map(({ op: sub, score }) => (
-                            <small key={sub.id} className="sub-chip" title={sub.skills.filter((skill) => skill.room === cell.room).map((skill) => `${skill.name}: ${skill.description}`).join("\n")}>
-                              <img src={sub.image} alt="" loading="lazy" className={onShowOperator ? "op-link" : undefined} onClick={() => onShowOperator?.(sub.id)} />{sub.name} <em>{score >= currentScore ? "동급" : `-${currentScore - score}`}</em>
+                            <small key={sub.id} className={`sub-chip${onUpdateTeam ? " swappable" : ""}`}
+                              title={`클릭하면 ${op.name} 자리에 교체\n${sub.skills.filter((skill) => skill.room === cell.room).map((skill) => `${skill.name}: ${skill.description}`).join("\n")}`}
+                              onClick={() => onUpdateTeam && setIds(rawIds.map((id) => (id === op.id ? sub.id : id)))}>
+                              <img src={sub.image} alt="" loading="lazy" className={onShowOperator ? "op-link" : undefined} onClick={(event) => { event.stopPropagation(); onShowOperator?.(sub.id); }} />{sub.name} <em>{score >= currentScore ? "동급" : `-${currentScore - score}`}</em>
                             </small>
                           ))}
                         </div>
@@ -869,8 +935,20 @@ function RoomModal({ cell, plan, allAssigned, roster, initialShift, onClose, onS
                   </article>
                 );
               })}
-              {team.length === 0 && <p className="no-detail">자동 편성을 먼저 실행해 주세요.</p>}
+              {team.length === 0 && !bench.length && <p className="no-detail">자동 편성을 먼저 실행해 주세요.</p>}
             </div>
+            {bench.length > 0 && (
+              <div className="bench">
+                <span>빈 자리에 추가 — 클릭 시 즉시 배치 (기여 예상):</span>
+                <div className="bench-chips">
+                  {bench.map(({ op, delta }) => (
+                    <small key={op.id} className="sub-chip swappable" title={`${op.name} 추가`} onClick={() => setIds([...rawIds, op.id])}>
+                      <img src={op.image} alt="" loading="lazy" className={onShowOperator ? "op-link" : undefined} onClick={(event) => { event.stopPropagation(); onShowOperator?.(op.id); }} />{op.name} <em>{delta >= 0 ? `+${delta}` : delta}</em>
+                    </small>
+                  ))}
+                </div>
+              </div>
+            )}
           </section>
 
         </div>

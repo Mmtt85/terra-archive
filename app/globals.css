@@ -335,3 +335,16 @@ footer p { margin:0 }
 .file-group { display:inline-flex }
 .file-group>button { border-right:0 !important }
 .planner-buttons { flex-wrap:wrap }
+.room-summary h3 .summary-total { font-size:22px; margin-left:8px; color:var(--accent) }
+.summary-parts { display:flex; flex-wrap:wrap; gap:7px; margin-top:10px }
+.summary-parts span { background:#e9e8e2; padding:6px 9px; font-size:11px; font-weight:800 }
+.summary-parts span b { color:#131719 }
+.summary-note { border-left:3px solid var(--lime); background:#e6e5df; color:#535b5f; margin:12px 0 0; padding:10px 13px; font-size:11px; line-height:1.6 }
+.crew-card { position:relative }
+.crew-remove { position:absolute; top:8px; right:8px; border:1px solid var(--line); background:var(--white); color:var(--muted); width:24px; height:24px; font-size:12px; line-height:1; cursor:pointer }
+.crew-remove:hover { background:#c0392b; border-color:#c0392b; color:#fff }
+.sub-chip.swappable { cursor:pointer }
+.sub-chip.swappable:hover { outline:2px solid var(--lime); outline-offset:1px }
+.bench { margin-top:14px; border-top:1px dashed var(--line); padding-top:12px }
+.bench>span { font-size:11px; font-weight:800; color:var(--muted) }
+.bench-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px }
