@@ -48,6 +48,7 @@ def gender_of(cid):
 detail = gacha["recruitDetail"]
 byname = {c["name"]: cid for cid, c in chars.items() if cid.startswith("char_")}
 pool = []  # (cid, rarity)
+seen_cids = set()
 for m in re.finditer(r"\n(★+)\n(.*?)(?=\n-{5,}|\Z)", detail, re.S):
     stars = len(m.group(1))
     body = re.sub(r"<@rc\.eml>(.*?)</>", r"\1", m.group(2))
@@ -58,6 +59,21 @@ for m in re.finditer(r"\n(★+)\n(.*?)(?=\n-{5,}|\Z)", detail, re.S):
             print(f"WARN: recruit name not matched: {name!r}", file=sys.stderr)
             continue
         pool.append((cid, stars))
+        seen_cids.add(cid)
+
+# KR에 공채 추가가 공지·적용됐으나 데이터마인 recruitDetail이 아직 갱신되지 않은 오퍼를
+# 수동 보충한다. 데이터마인이 따라잡으면 위 루프에서 이미 잡히므로 여기서 중복 제외된다.
+# (성급은 character_table 기준으로 자동 판정, 확인 근거는 나무위키 공개모집 문서.)
+RECRUIT_SUPPLEMENT = ["카넬리안", "키라라", "인디고"]
+for name in RECRUIT_SUPPLEMENT:
+    cid = byname.get(name)
+    if not cid:
+        print(f"WARN: supplement name not matched: {name!r}", file=sys.stderr)
+        continue
+    if cid in seen_cids:
+        continue  # 데이터마인이 이미 반영함
+    pool.append((cid, TIER[chars[cid]["rarity"]]))
+    seen_cids.add(cid)
 
 ops = []
 for cid, stars in pool:
