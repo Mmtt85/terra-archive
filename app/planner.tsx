@@ -537,11 +537,14 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
       g.fillText(row.cell.label, 44, y + 26);
       row.crews.forEach((crew, crewIndex) => {
         const cy = y + crewIndex * lineH;
+        g.font = "900 13px monospace";
+        const labelWidth = g.measureText(crew.label).width;
+        const badgeWidth = Math.max(26, labelWidth + 14);
         g.fillStyle = "#131719";
-        g.fillRect(210, cy + 10, 26, 26);
-        g.fillStyle = "#dfff00"; g.font = "900 13px monospace";
-        g.fillText(crew.label, 217, cy + 28);
-        let x = 248;
+        g.fillRect(210, cy + 10, badgeWidth, 26);
+        g.fillStyle = "#dfff00";
+        g.fillText(crew.label, 210 + (badgeWidth - labelWidth) / 2, cy + 28);
+        let x = 210 + badgeWidth + 12;
         for (const op of crew.team) {
           const img = avatars.get(op.id);
           if (img) g.drawImage(img, x, cy + 6, 34, 34);
