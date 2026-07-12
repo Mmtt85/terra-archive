@@ -276,3 +276,4 @@ footer p { margin:0 }
 .sub-chip { display:inline-flex; align-items:center; gap:5px; border:1px dashed #b5b4ac; background:#f4f3ee; padding:3px 7px 3px 3px; font-size:10px; font-weight:800 }
 .sub-chip img { width:18px; height:18px; object-fit:cover }
 .sub-chip em { font-style:normal; color:var(--muted); font:700 9px monospace }
+.core-chip { display:inline-block; padding:3px 8px; background:var(--ink); color:var(--lime); font:800 9px monospace; letter-spacing:.5px }

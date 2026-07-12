@@ -584,6 +584,16 @@ function RoomModal({ cell, plan, allAssigned, initialShift, onClose }: { cell: {
   const ctx = ctxFor(cell.key, points);
   const excluded = new Set([...allAssigned, ...teamIds]);
   const currentScore = Math.round(teamScore(team, cell.room, ctx));
+  // synergy cores can't be swapped: token generators/consumers of active
+  // systems, override/payout roles, and per-member counter bodies (쉐이)
+  const activeTokens = new Set(Object.entries(plan.tokenPoints).filter(([, points]) => points > 0).map(([token]) => token));
+  const counterMatches = plan.flows.flatMap((flow) => flow.generators).filter((gen) => gen.perMember).map((gen) => gen.perMember!.match);
+  const isCore = (op: InfraOp) =>
+    op.skills.some((skill) =>
+      skill.kind === "override" || skill.kind === "payout" || skill.kind === "payout_v" ||
+      skill.tokenGen.some((gen) => activeTokens.has(gen.token)) ||
+      skill.tokenUse.some((use) => use.percent && activeTokens.has(use.token))) ||
+    counterMatches.some((match) => op.faction.includes(match));
 
   return (
     <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
@@ -618,14 +628,18 @@ function RoomModal({ cell, plan, allAssigned, initialShift, onClose }: { cell: {
                       {op.skills.flatMap((skill) => skill.tokenGen).map((gen) => (
                         <small key={`${op.id}-${gen.token}`} className="token-chip">{gen.token} +{Math.round(gen.estimate)}점 생성</small>
                       ))}
-                      <div className="slot-subs">
-                        <span>이 자리 대체 오퍼:</span>
-                        {slotSubstitutes(team, team.indexOf(op), cell.key, ctx, excluded).map(({ op: sub, score }) => (
-                          <small key={sub.id} className="sub-chip" title={sub.skills.filter((skill) => skill.room === cell.room).map((skill) => `${skill.name}: ${skill.description}`).join("\n")}>
-                            <img src={sub.image} alt="" loading="lazy" />{sub.name} <em>{score >= currentScore ? "동급" : `-${currentScore - score}`}</em>
-                          </small>
-                        ))}
-                      </div>
+                      {isCore(op) ? (
+                        <div className="slot-subs"><small className="core-chip">대체 불가 · 시너지 코어</small></div>
+                      ) : (
+                        <div className="slot-subs">
+                          <span>이 자리 대체 오퍼:</span>
+                          {slotSubstitutes(team, team.indexOf(op), cell.key, ctx, excluded).map(({ op: sub, score }) => (
+                            <small key={sub.id} className="sub-chip" title={sub.skills.filter((skill) => skill.room === cell.room).map((skill) => `${skill.name}: ${skill.description}`).join("\n")}>
+                              <img src={sub.image} alt="" loading="lazy" />{sub.name} <em>{score >= currentScore ? "동급" : `-${currentScore - score}`}</em>
+                            </small>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </article>
                 );
