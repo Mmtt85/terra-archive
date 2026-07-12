@@ -101,7 +101,7 @@ export default function RecruitHelper() {
   const [showDict, setShowDict] = useState(false);
 
   const togglePicked = (tag: string) =>
-    setPicked((current) => current.includes(tag) ? current.filter((item) => item !== tag) : current.length >= 3 ? current : [...current, tag]);
+    setPicked((current) => current.includes(tag) ? current.filter((item) => item !== tag) : current.length >= 5 ? current : [...current, tag]);
 
   const results = useMemo(() => comboResults(picked), [picked]);
 
@@ -110,7 +110,8 @@ export default function RecruitHelper() {
       <div className="recruit-head">
         <span className="section-no">RECRUITMENT ASSIST</span>
         <h2>공채 도우미</h2>
-        <p>게임과 동일하게 태그를 <b>최대 3개</b>까지 선택하면, 선택한 태그의 모든 조합별 결과를 높은 성급이 확정되는 순서로 보여줍니다.
+        <p>게임 공개모집에 <b>제시된 태그 5개</b>를 아래에서 그대로 입력하세요. 실제 게임에서 체크할 수 있는 <b>최대 3개</b>짜리 조합 전부를 계산해,
+          높은 성급이 확정되는 조합부터 순서대로 보여줍니다.
           모집 시간 <b>9시간</b> 기준 — 1★는 로봇 태그, 2★는 신입 태그를 체크했을 때만 나오고, 6★는 고급 특별 채용이 있어야 나옵니다.</p>
       </div>
 
@@ -121,13 +122,13 @@ export default function RecruitHelper() {
             <div className="filter-list">
               {tags.map((tag) => (
                 <button key={tag} type="button" className={picked.includes(tag) ? "selected" : ""}
-                  disabled={!picked.includes(tag) && picked.length >= 3} onClick={() => togglePicked(tag)}>{tag}</button>
+                  disabled={!picked.includes(tag) && picked.length >= 5} onClick={() => togglePicked(tag)}>{tag}</button>
               ))}
             </div>
           </fieldset>
         ))}
         <div className="recruit-picked">
-          선택 {picked.length}/3
+          제시된 태그 {picked.length}/5 · 체크 조합은 3개까지 계산
           {picked.length > 0 && <button type="button" className="reset" onClick={() => setPicked([])}>모두 해제</button>}
         </div>
       </div>
