@@ -162,8 +162,23 @@ infra_ops = []
 for o in operators:
     skills = []
     raw = chars.get(o["id"], {})
-    for entry in o.get("infrastructure") or []:
-        room = next((k for k, v in ROOM_KO.items() if v == entry["room"]), entry["room"])
+    slots_b = ((building.get("chars") or {}).get(o["id"]) or {}).get("buffChar") or []
+    slot_entries = []
+    for slot in slots_b:
+        data = slot.get("buffData") or []
+        if not data: continue
+        final = data[-1]  # highest unlock stage replaces the earlier ones
+        bf = (building.get("buffs") or {}).get(final["buffId"])
+        if not bf: continue
+        cond = final.get("cond") or {}
+        ph = cond.get("phase", 0)
+        ph = ph if isinstance(ph, int) else int(str(ph).replace("PHASE_", ""))
+        unlock = f"Lv.{cond.get('level', 1)}" if ph == 0 else f"정예화 {ph}"
+        slot_entries.append({"name": bf.get("buffName"), "room": bf.get("roomType"),
+                             "unlock": unlock, "description": strip_tags(bf.get("description"))})
+    for entry in slot_entries:
+        room = entry["room"]
+        if room not in ROOM_KO: continue
         text = entry["description"]
         kind, value = parse_metric(room, text)
         override = re.search(r"효율이 전부 0이 되고[^+]{0,20}\+\s*(\d+(?:\.\d+)?)\s*%", text)
@@ -205,10 +220,9 @@ for o in operators:
         if conv:
             src, ratio_src, dst, ratio_dst = conv.group(1), float(conv.group(2)), conv.group(3), float(conv.group(4))
             convert = {"from": src, "per": ratio_src, "to": dst, "amount": ratio_dst}
-        # tier: α/β/γ variants replace each other; different roots stack
-        tier_match = re.search(r"\s*(α|β|γ|Ⅰ|Ⅱ|Ⅲ)\s*$", entry["name"])
-        tier = {"α": 1, "Ⅰ": 1, "β": 2, "Ⅱ": 2, "γ": 3, "Ⅲ": 3}.get(tier_match.group(1), 1) if tier_match else 1
-        group = re.sub(r"\s*(α|β|γ|Ⅰ|Ⅱ|Ⅲ)\s*$", "", entry["name"])
+        # buffChar slots already resolved upgrades — every line here stacks
+        tier = 1
+        group = entry["name"]
         skills.append({
             "name": entry["name"], "room": room, "unlock": entry["unlock"],
             "description": text, "kind": kind, "value": value, "product": product,
@@ -231,18 +245,6 @@ for o in operators:
             sk["tokenGen"].append({"token": sc["token"], "estimate": grants[sc["name"]] / sc["per"] * sc["amount"]})
     for sk in skills:
         sk.pop("_stackGrant", None); sk.pop("_stackCount", None); sk.pop("_stackConv", None)
-    # upgrade lines that only change numbers (스킬 이론 → 최고의 경지) replace
-    # each other even when renamed: dedupe by digit-stripped description
-    def unlock_rank(u):
-        m = re.match(r"정예화 (\d)", u)
-        return (1 + int(m.group(1))) if m else 0
-    dedup = {}
-    for sk in skills:
-        key = (sk["room"], sk["kind"], re.sub(r"[\d.+%]+", "", sk["description"]))
-        prev = dedup.get(key)
-        if not prev or unlock_rank(sk["unlock"]) >= unlock_rank(prev["unlock"]):
-            dedup[key] = sk
-    skills = list(dedup.values())
     if skills:
         infra_ops.append({"id": o["id"], "name": o["name"], "rarity": o["rarity"],
                           "faction": o["faction"], "accent": o["accent"], "image": o["image"],
