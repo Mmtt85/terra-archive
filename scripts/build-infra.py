@@ -65,7 +65,7 @@ def parse_metric(room, text):
         m = re.search(r"용문폐 수익 \+\s*(\d+)", text)
         if m: return "payout", round(float(m.group(1)) / 20)
         m = re.search(r"위약 오더인 경우, 순금 납품 수가 추가로 \+\s*(\d+)", text)
-        if m: return "payout", float(m.group(1)) * 10
+        if m: return "payout_v", float(m.group(1)) * 10  # violation-order loop (프로바이조)
         if re.search(r"고품질 귀금속 오더의 출현 확률이 상승", text): return "quality", 15
         if re.search(r"고품질 귀금속 오더의 출현 확률이 소폭 상승", text): return "quality", 10
         if re.search(r"오더 수주 상한|주문 상한|최대 주문", text): return "capacity", 0
