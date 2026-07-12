@@ -858,13 +858,14 @@ function RoomModal({ cell, plan, allAssigned, roster, initialShift, onClose, onS
     return acc;
   }, { "스킬 효율": 0, "시설 기반": 0, "자동화": 0, "품질 기대치": 0, "오더 수익": 0, "효율 오버라이드": 0, "동료 보너스": 0, "제어 오라(가중)": 0 } as Record<string, number>);
   // 추가 후보: 어디에도 배치 안 된 보유 오퍼를 한계 기여 순으로
-  const bench = team.length < slots && onUpdateTeam
+  const [benchAll, setBenchAll] = useState(false);
+  const benchFull = team.length < slots && onUpdateTeam
     ? roster
         .filter((op) => !allAssigned.has(op.id))
         .map((op) => ({ op, delta: Math.round(teamScore([...team, op], cell.room, ctx)) - currentScore }))
         .sort((a, b) => b.delta - a.delta || b.op.rarity - a.op.rarity)
-        .slice(0, 12)
     : [];
+  const bench = benchAll ? benchFull : benchFull.slice(0, 12);
   // synergy cores can't be swapped: token generators/consumers of active
   // systems, override/payout roles, and per-member counter bodies (쉐이)
   const activeTokens = new Set(Object.entries(plan.tokenPoints).filter(([, points]) => points > 0).map(([token]) => token));
@@ -967,6 +968,11 @@ function RoomModal({ cell, plan, allAssigned, roster, initialShift, onClose, onS
                     </small>
                   ))}
                 </div>
+                {benchFull.length > 12 && (
+                  <button type="button" className="more-filter" onClick={() => setBenchAll((current) => !current)}>
+                    {benchAll ? "접기" : `더 많이 보기 (전체 ${benchFull.length}명)`}
+                  </button>
+                )}
               </div>
             )}
           </section>

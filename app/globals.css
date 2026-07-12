@@ -366,3 +366,30 @@ footer p { margin:0 }
 .feedback-send:disabled { opacity:.45; cursor:default }
 .feedback-send:not(:disabled):hover { background:var(--lime); color:var(--ink) }
 .propose-btn { border:1px solid var(--lime) !important; background:#dfff0022 !important; color:inherit }
+/* ─ 관리자 페이지 ─ */
+.admin-gate { display:grid; place-items:center; min-height:100vh; overflow:visible }
+.admin-gate section { border:1px solid var(--ink); background:var(--white); padding:34px 38px; text-align:center }
+.admin-gate h1 { font:900 16px monospace; letter-spacing:1px; margin:0 0 18px }
+.admin-gate form { display:flex; gap:8px }
+.admin-gate input { border:1px solid #bbbcb7; padding:11px 12px; font-size:13px; outline:0 }
+.admin-gate button { border:1px solid var(--ink); background:var(--ink); color:var(--lime); padding:11px 18px; font-weight:800; cursor:pointer }
+.admin-gate p { color:var(--muted); font-size:11px; margin:14px 0 0 }
+.admin { width:min(100%,1000px); margin:0 auto; padding:34px 20px 90px; height:auto; min-height:100vh; overflow:visible }
+.admin>header { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:12px; border-bottom:2px solid var(--ink); padding-bottom:14px }
+.admin h1 { margin:0; font-size:24px; letter-spacing:-1px }
+.admin h1 small { color:var(--muted); font:700 12px monospace; margin-left:8px }
+.admin-tools { display:flex; flex-wrap:wrap; gap:6px }
+.admin-tools button { border:1px solid var(--line); background:var(--white); padding:8px 12px; font-size:11px; font-weight:800; cursor:pointer }
+.admin-tools button.selected { background:var(--ink); color:var(--lime); border-color:var(--ink) }
+.admin-status { color:var(--muted); font-size:12px; margin:16px 0 }
+.admin-list { display:grid; gap:10px; margin-top:18px }
+.admin-row { border:1px solid var(--line); background:var(--white); padding:13px 15px }
+.admin-row>header { display:flex; align-items:center; gap:12px; margin-bottom:6px }
+.admin-row>header b { font-size:12px; padding:3px 7px; background:#e9e8e2 }
+.kind-plan>header b { background:#dfff0055 } .kind-data_error>header b { background:#f5d3cd }
+.admin-row time { color:var(--muted); font:600 10px monospace; margin-right:auto }
+.admin-row>header button { border:1px solid var(--line); background:0 0; color:#c0392b; font-size:11px; font-weight:800; cursor:pointer; padding:5px 10px }
+.admin-row>header button:hover { background:#c0392b; color:#fff; border-color:#c0392b }
+.admin-row p { margin:4px 0; font-size:13px; line-height:1.6; white-space:pre-wrap }
+.admin-row details summary { color:var(--muted); font-size:11px; cursor:pointer }
+.admin-row pre { background:#131719; color:#c8e0a8; padding:12px; font-size:10.5px; overflow-x:auto; max-height:340px }
