@@ -84,7 +84,8 @@ def tag(o):
     redeploys = [s["redeploy"] for s in o["stats"] if isinstance(s.get("redeploy"), (int, float))]
     if redeploys and min(redeploys) <= 40 and o["rarity"] >= 3: tags.add("쾌속 배치")
 
-    if any("어비" in f for f in o["factions"]) or re.search(r"어비[설셜]", T) or o["factions"] == ["에기르"]:
+    # 에기르 출신이라도 스킬·재능에 어비설 언급이 없으면 시너지 아님 (예: 루실라·언더플로우·딥컬러)
+    if any("어비" in f for f in o["factions"]) or re.search(r"어비[설셜]", T):
         tags.add("어비설 시너지")
 
     if sub == "소환사": tags.add("소환사")
