@@ -18,8 +18,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "localhost:3000";
   const protocol = requestHeaders.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
   const base = new URL(`${protocol}://${host}`);
-  const title = "테라 아카이브 | 명일방주 컨셉덱 탐색기";
-  const description = "한국 서버 오퍼레이터를 소속과 전투 컨셉으로 탐색하세요.";
+  const title = "테라 아카이브 | 명일방주(Arknights) KR 팬사이트";
+  const description = "명일방주 한국 서버 팬사이트 — 오퍼레이터 백과사전, 인프라 플래너, 공채 도우미.";
   return {
     metadataBase: base,
     title,

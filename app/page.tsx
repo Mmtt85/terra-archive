@@ -232,7 +232,7 @@ export default function Home() {
       <header className="site-header" id="top">
         <a className="brand" href="#top" aria-label="테라 아카이브 홈">
           <span className="brand-mark">TA</span>
-          <span>테라 아카이브<small>한국 서버 오퍼레이터 탐색기</small></span>
+          <span>테라 아카이브<small>명일방주(Arknights) KR 팬사이트</small></span>
         </a>
         <div className="header-tagline">로도스 아일랜드 <em>비공식 작전 데이터베이스</em>.</div>
         <nav className="main-tabs" aria-label="주요 탭">
@@ -301,7 +301,7 @@ export default function Home() {
 
       {selected && <OperatorModal operator={selected} onClose={closeOperator} />}
 
-      <footer><span>RHODES ISLAND // TERRA ARCHIVE</span><p>비공식 팬 프로젝트 · 게임 내 명칭과 데이터의 권리는 각 권리자에게 있습니다.</p></footer>
+      <footer><span>RHODES ISLAND // TERRA ARCHIVE</span><p>명일방주(Arknights) 비공식 팬 프로젝트 · 게임 내 명칭과 데이터의 권리는 Hypergryph / Yostar 등 각 권리자에게 있습니다.</p></footer>
     </main>
   );
 }
