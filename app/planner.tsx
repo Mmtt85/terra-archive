@@ -273,7 +273,7 @@ function ctxFor(key: string, tokenPoints: Record<string, number>, factionCounts?
   return { product: cellByKey.get(key)?.product, tokenPoints, factionCounts };
 }
 
-function buildPlan(packageTokens: string[]): Plan {
+function buildPlan(packageTokens: string[], roster: InfraOp[]): Plan {
   const assignments: Record<string, string[][]> = {};
   const used = new Set<string>();
   const keys = [...PRODUCTION_KEYS, ...SUPPORT_KEYS];
@@ -302,21 +302,19 @@ function buildPlan(packageTokens: string[]): Plan {
       for (const token of packageTokens) {
         // converters (에벤홀츠) pull a source token into this one, so source
         // generators (숙소의 아이리스·체르니 등) join the package too
-        const converters = ops.filter((op) => op.skills.some((skill) => skill.convert?.to === token));
+        const converters = roster.filter((op) => op.skills.some((skill) => skill.convert?.to === token));
         const sources = new Map<string, number>(); // source token -> rate
         for (const op of converters) for (const skill of op.skills) if (skill.convert?.to === token) sources.set(skill.convert.from, skill.convert.amount / skill.convert.per);
         const flow: TokenFlow = { token, total: 0, generators: [], converters: converters.map((op) => ({ opId: op.id, from: op.skills.find((skill) => skill.convert?.to === token)?.convert?.from ?? "" })), consumers: [] };
         flows.push(flow);
         const generatesFor = (op: InfraOp) => op.skills.some((skill) => skill.tokenGen.some((g) => g.token === token || sources.has(g.token)));
-        const members = ops.filter((op) => !used.has(op.id) && (generatesFor(op) || op.skills.some((skill) => skill.tokenUse.some((u) => u.token === token))));
+        const members = roster.filter((op) => !used.has(op.id) && (generatesFor(op) || op.skills.some((skill) => skill.tokenUse.some((u) => u.token === token))));
         for (const op of members) {
           for (const skill of op.skills) {
             if (!skill.tokenUse.some((u) => u.token === token && u.percent)) continue;
-            let targets = LAYOUT.filter((c) => c.room === skill.room && !PARK_KEYS.includes(c.key));
-            if (skill.room === "MANUFACTURE" && skill.product === "any") {
-              // generic boosters go where product specialists can't (작전기록)
-              targets = [...targets].sort((a, b) => (a.product === "gold" ? 1 : 0) - (b.product === "gold" ? 1 : 0));
-            }
+            // 순금이 병목이므로 최고 효율 요원은 순금 제조소부터 채운다
+            // (LAYOUT 순서가 순금 → 작전기록); 남는 효율이 작전기록으로 간다
+            const targets = LAYOUT.filter((c) => c.room === skill.room && !PARK_KEYS.includes(c.key));
             for (const cell of targets) if (place(op, cell.key)) break;
           }
         }
@@ -348,12 +346,12 @@ function buildPlan(packageTokens: string[]): Plan {
       // family pinning: when a token's generators share a faction (쉐이),
       // faction-mates with a workshop/training skill are pinned there (니엔)
       for (const token of packageTokens) {
-        const genOps = ops.filter((op) => op.skills.some((skill) => skill.tokenGen.some((g) => g.token === token)));
+        const genOps = roster.filter((op) => op.skills.some((skill) => skill.tokenGen.some((g) => g.token === token)));
         const factionCounts = new Map<string, number>();
         genOps.forEach((op) => factionCounts.set(op.faction, (factionCounts.get(op.faction) ?? 0) + 1));
         const families = Array.from(factionCounts.entries()).filter(([, count]) => count >= 2).map(([faction]) => faction);
         for (const key of ["WORKSHOP"]) {
-          const candidates = ops
+          const candidates = roster
             .filter((op) => !used.has(op.id) && !parked.has(op.id) && families.includes(op.faction) && op.skills.some((skill) => skill.room === key))
             .sort((a, b) => opSolo(b, key, 1, { tokenPoints: {} }) - opSolo(a, key, 1, { tokenPoints: {} }));
           for (const op of candidates) place(op, key);
@@ -372,7 +370,7 @@ function buildPlan(packageTokens: string[]): Plan {
       if (key === "MEETING" && shift > 0) continue; // 응접실은 조 전환과 별개 상시 편성
       const room = cellByKey.get(key)?.room ?? key;
       const slots = infra.rooms[room]?.slots ?? 1;
-      const pool = new Map(ops.filter((op) => !used.has(op.id) && (shift > 0 || !reserved.has(op.id) || reserved.get(op.id) === key)).map((op) => [op.id, op]));
+      const pool = new Map(roster.filter((op) => !used.has(op.id) && (shift > 0 || !reserved.has(op.id) || reserved.get(op.id) === key)).map((op) => [op.id, op]));
       const ctx = ctxFor(key, shift === 0 ? tokenPoints : {}, shiftFactionCounts);
       const seed = (seeds[key] ?? []).filter((op) => pool.has(op.id));
       const team = bestTeam(room, slots, pool, ctx, seed);
@@ -429,25 +427,25 @@ function buildPlan(packageTokens: string[]): Plan {
   return { assignments, tokenPoints, factionCounts: factionCountsPerShift, flows, strategy };
 }
 
-function optimize(): Plan {
+function optimize(roster: InfraOp[]): Plan {
   // every token family (속세의 화식, 감지 정보 계열, 주술 결정, …) is always
   // assembled into A조 — B조 is the recovery crew that steps in when A조's
   // morale runs out
   const allTokens = new Set<string>();
-  for (const op of ops) for (const skill of op.skills) for (const use of skill.tokenUse) if (use.percent) allTokens.add(use.token);
+  for (const op of roster) for (const skill of op.skills) for (const use of skill.tokenUse) if (use.percent) allTokens.add(use.token);
   // closed single-team systems (정보 저장 = 레인보우 팀 전용) stay out of the
   // base-wide packages — they'd hijack control/meeting slots from the mains
   const open = Array.from(allTokens).filter((token) => {
-    const participants = ops.filter((op) => op.skills.some((skill) => skill.tokenGen.some((g) => g.token === token) || skill.tokenUse.some((u) => u.token === token)));
+    const participants = roster.filter((op) => op.skills.some((skill) => skill.tokenGen.some((g) => g.token === token) || skill.tokenUse.some((u) => u.token === token)));
     const factions = new Set(participants.map((op) => op.faction));
     return participants.length < 2 || factions.size > 1;
   });
-  return buildPlan(open);
+  return buildPlan(open, roster);
 }
 
-function slotSubstitutes(team: InfraOp[], index: number, key: string, ctx: Ctx, excluded: Set<string>, count = 3): { op: InfraOp; score: number }[] {
+function slotSubstitutes(team: InfraOp[], index: number, key: string, ctx: Ctx, excluded: Set<string>, roster: InfraOp[], count = 3): { op: InfraOp; score: number }[] {
   const room = cellByKey.get(key)?.room ?? key;
-  return ops
+  return roster
     .filter((op) => !excluded.has(op.id) && op.skills.some((skill) => skillApplies(skill, room, ctx.product)))
     .map((op) => {
       const swapped = team.map((member, i) => (i === index ? op : member));
@@ -457,11 +455,46 @@ function slotSubstitutes(team: InfraOp[], index: number, key: string, ctx: Ctx, 
     .slice(0, count);
 }
 
+const STORAGE_KEY = "terra-archive-infra-v1";
+
 export default function InfraPlanner() {
   const [plan, setPlan] = useState<Plan | null>(null);
   const [activeShift, setActiveShift] = useState(0);
   const [openRoom, setOpenRoom] = useState<string | null>(null);
   const [showFlows, setShowFlows] = useState(false);
+  const [showRoster, setShowRoster] = useState(false);
+  const [ownedIds, setOwnedIds] = useState<Set<string>>(() => new Set(ops.map((op) => op.id)));
+
+  const roster = useMemo(() => ops.filter((op) => ownedIds.has(op.id)), [ownedIds]);
+
+  const persist = (ids: Set<string>, nextPlan: Plan | null) => {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ owned: Array.from(ids), plan: nextPlan })); } catch { /* ignore */ }
+  };
+
+  const exportState = () => {
+    const payload = JSON.stringify({ version: 1, exported: new Date().toISOString(), owned: Array.from(ownedIds), plan }, null, 1);
+    const blob = new Blob([payload], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "terra-archive-infra.json";
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importState = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(String(reader.result));
+        const ids = new Set<string>((data.owned as string[]).filter((id) => opById.has(id)));
+        setOwnedIds(ids);
+        if (data.plan) { setPlan(data.plan as Plan); setActiveShift(0); }
+        persist(ids, data.plan ?? null);
+      } catch { alert("가져오기 실패: 파일 형식을 확인해 주세요."); }
+    };
+    reader.readAsText(file);
+  };
 
   const allAssigned = useMemo(() => {
     const set = new Set<string>();
@@ -469,13 +502,26 @@ export default function InfraPlanner() {
     return set;
   }, [plan]);
 
-  const runOptimize = () => {
-    setPlan(optimize());
+  const runOptimize = (ids: Set<string> = ownedIds) => {
+    const next = optimize(ops.filter((op) => ids.has(op.id)));
+    setPlan(next);
     setActiveShift(0);
+    persist(ids, next);
   };
 
   useEffect(() => {
-    setPlan(optimize());
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const data = JSON.parse(saved);
+        const ids = new Set<string>((data.owned as string[]).filter((id: string) => opById.has(id)));
+        setOwnedIds(ids);
+        if (data.plan) { setPlan(data.plan as Plan); return; }
+        setPlan(optimize(ops.filter((op) => ids.has(op.id))));
+        return;
+      }
+    } catch { /* fall through to defaults */ }
+    setPlan(optimize(ops));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -514,7 +560,13 @@ export default function InfraPlanner() {
           <h2>인프라 배치 최적화</h2>
         </div>
         <div className="planner-buttons">
-          <button className="primary" onClick={runOptimize}>다시 편성</button>
+          <button onClick={() => setShowRoster(true)}>보유 오퍼 설정 ({ownedIds.size}/{ops.length})</button>
+          <button className="primary" onClick={() => runOptimize()}>자동 편성</button>
+          <button onClick={exportState}>내보내기</button>
+          <label className="import-label">
+            가져오기
+            <input type="file" accept="application/json" onChange={(event) => { const file = event.target.files?.[0]; if (file) importState(file); event.target.value = ""; }} />
+          </label>
         </div>
       </div>
 
@@ -579,6 +631,14 @@ export default function InfraPlanner() {
 
       <aside className="data-note"><span>PLANNER NOTE</span><p>오퍼레이터의 모든 인프라 스킬을 동시에 적용하고(α/β는 상위 티어만), 시설 간 포인트 시스템(속세의 화식·무성의 공명 등)을 겹쳐 쌓을 수 있을 때까지 패키지로 조합합니다. 고품질 귀금속 오더 확률(샤마르·카프카·디아만테·바이비크)과 오더당 수익(테킬라·프로바이조)의 상호작용, 샤마르의 효율 대체를 반영합니다. 조건부·누적 버프는 추정 상한 기준 근사치입니다.</p></aside>
 
+      {showRoster && (
+        <RosterModal
+          ownedIds={ownedIds}
+          onApply={(ids) => { setOwnedIds(ids); setShowRoster(false); runOptimize(ids); }}
+          onClose={() => setShowRoster(false)}
+        />
+      )}
+
       {showFlows && plan && <FlowModal plan={plan} onClose={() => setShowFlows(false)} />}
 
       {openCell && plan && (
@@ -586,6 +646,7 @@ export default function InfraPlanner() {
           cell={openCell}
           plan={plan}
           allAssigned={allAssigned}
+          roster={roster}
           initialShift={activeShift}
           onClose={() => setOpenRoom(null)}
         />
@@ -594,7 +655,7 @@ export default function InfraPlanner() {
   );
 }
 
-function RoomModal({ cell, plan, allAssigned, initialShift, onClose }: { cell: { key: string; room: string; label: string; product?: string }; plan: Plan; allAssigned: Set<string>; initialShift: number; onClose: () => void }) {
+function RoomModal({ cell, plan, allAssigned, roster, initialShift, onClose }: { cell: { key: string; room: string; label: string; product?: string }; plan: Plan; allAssigned: Set<string>; roster: InfraOp[]; initialShift: number; onClose: () => void }) {
   const [shift, setShift] = useState(initialShift);
   const shiftIndex = Math.min(shift, (plan.assignments[cell.key]?.length ?? 1) - 1);
   const team = (plan.assignments[cell.key]?.[shiftIndex] ?? []).map((id) => opById.get(id)).filter(Boolean) as InfraOp[];
@@ -652,7 +713,7 @@ function RoomModal({ cell, plan, allAssigned, initialShift, onClose }: { cell: {
                       ) : (
                         <div className="slot-subs">
                           <span>이 자리 대체 오퍼:</span>
-                          {slotSubstitutes(team, team.indexOf(op), cell.key, ctx, excluded).map(({ op: sub, score }) => (
+                          {slotSubstitutes(team, team.indexOf(op), cell.key, ctx, excluded, roster).map(({ op: sub, score }) => (
                             <small key={sub.id} className="sub-chip" title={sub.skills.filter((skill) => skill.room === cell.room).map((skill) => `${skill.name}: ${skill.description}`).join("\n")}>
                               <img src={sub.image} alt="" loading="lazy" />{sub.name} <em>{score >= currentScore ? "동급" : `-${currentScore - score}`}</em>
                             </small>
@@ -732,6 +793,45 @@ function FlowModal({ plan, onClose }: { plan: Plan; onClose: () => void }) {
               </ul>
             </section>
           ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function RosterModal({ ownedIds, onApply, onClose }: { ownedIds: Set<string>; onApply: (ids: Set<string>) => void; onClose: () => void }) {
+  const [draft, setDraft] = useState<Set<string>>(new Set(ownedIds));
+  const [query, setQuery] = useState("");
+  const keyword = query.trim().toLowerCase();
+  const visible = ops.filter((op) => !keyword || op.name.toLowerCase().includes(keyword) || op.faction.toLowerCase().includes(keyword));
+  const toggle = (id: string) => setDraft((current) => {
+    const next = new Set(current);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
+  return (
+    <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+      <section className="operator-modal room-modal" role="dialog" aria-modal="true" style={{ "--accent": "#dfff00" } as React.CSSProperties}>
+        <button type="button" className="modal-close" onClick={onClose} aria-label="닫기">×</button>
+        <header className="room-modal-head">
+          <span className="modal-kicker">ROSTER · {draft.size}/{ops.length} 보유</span>
+          <h2>보유 오퍼레이터 설정</h2>
+          <div className="roster-tools">
+            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="이름·소속 검색" />
+            <button type="button" onClick={() => setDraft(new Set(ops.map((op) => op.id)))}>전체 선택</button>
+            <button type="button" onClick={() => setDraft(new Set())}>전체 해제</button>
+            <button type="button" className="apply" onClick={() => onApply(draft)}>적용 후 자동 편성</button>
+          </div>
+        </header>
+        <div className="modal-scroll">
+          <div className="roster-grid">
+            {visible.map((op) => (
+              <button key={op.id} type="button" className={draft.has(op.id) ? "owned" : ""} onClick={() => toggle(op.id)} title={op.name}>
+                <img src={op.image} alt={op.name} loading="lazy" />
+                <span>{op.name}</span>
+              </button>
+            ))}
+          </div>
         </div>
       </section>
     </div>
