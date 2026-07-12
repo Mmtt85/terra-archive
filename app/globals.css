@@ -309,10 +309,11 @@ footer p { margin:0 }
 .elite-pill button:first-child { border-right:1px solid color-mix(in srgb,var(--accent) 45%,#d8d6cd) }
 .elite-pill button:hover { color:var(--ink) }
 .elite-pill button.selected { background:var(--accent); color:var(--ink) }
-.save-pending { position:relative; border-color:var(--ink)!important; font-weight:900; animation:save-pending-blink .85s ease-in-out infinite }
+/* 미저장 알림: 약 5초(1s×5회)만 깜빡인 뒤 정적인 라임 배경으로 남는다 */
+.save-pending { position:relative; border-color:var(--ink)!important; font-weight:900; background:var(--lime); animation:save-pending-blink 1s ease-in-out 5 both }
 @keyframes save-pending-blink {
-  0%,100% { background:var(--lime); color:var(--ink); box-shadow:0 0 0 0 #dfff0000; transform:scale(1) }
-  50%     { background:var(--ink); color:var(--lime); box-shadow:0 0 0 5px #dfff0066, 0 0 14px 2px #dfff00cc; transform:scale(1.06) }
+  0%,100% { background:var(--lime); box-shadow:0 0 0 0 #dfff0000; transform:scale(1) }
+  50%     { background:var(--white); box-shadow:0 0 0 5px #dfff0055, 0 0 14px 2px #dfff00bb; transform:scale(1.05) }
 }
 .help-list { margin:0; padding-left:18px }
 .help-list li { color:#4f585c; font-size:12px; line-height:1.75; margin-top:6px }
