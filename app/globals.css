@@ -329,8 +329,8 @@ footer p { margin:0 }
 .op-link { cursor:pointer; transition:outline-color .15s }
 .op-link:hover { outline:2px solid var(--lime); outline-offset:1px }
 .dorm-note { border-left:3px solid var(--lime); background:#e6e5df; color:#535b5f; margin:0 0 14px; padding:11px 14px; font-size:11.5px; line-height:1.6 }
-.toast { position:fixed; left:50%; bottom:34px; transform:translateX(-50%); z-index:200; background:var(--ink); color:var(--lime); padding:12px 22px; font-size:12.5px; font-weight:800; letter-spacing:.3px; box-shadow:0 10px 30px #0006; animation:toastIn .22s ease-out, toastOut .3s ease-in 2.1s both; pointer-events:none }
-@keyframes toastIn { from { opacity:0; transform:translateX(-50%) translateY(14px) } to { opacity:1; transform:translateX(-50%) translateY(0) } }
+.toast { position:fixed; left:50%; top:92px; transform:translateX(-50%); z-index:200; background:var(--ink); color:var(--lime); padding:12px 22px; font-size:12.5px; font-weight:800; letter-spacing:.3px; box-shadow:0 10px 30px #0006; animation:toastIn .22s ease-out, toastOut .3s ease-in 2.1s both; pointer-events:none }
+@keyframes toastIn { from { opacity:0; transform:translateX(-50%) translateY(-14px) } to { opacity:1; transform:translateX(-50%) translateY(0) } }
 @keyframes toastOut { from { opacity:1 } to { opacity:0 } }
 .file-group { display:inline-flex }
 .file-group>button { border-right:0 !important }
