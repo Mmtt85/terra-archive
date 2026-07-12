@@ -5,6 +5,9 @@
 html { scroll-behavior:smooth }
 body { background:var(--paper); color:var(--ink); margin:0; font-family:Arial,Apple SD Gothic Neo,Noto Sans KR,sans-serif }
 main { height:100dvh; overflow:hidden }
+/* 서버 HTML은 항상 백과사전 — #infra·#recruit로 새로고침 시 첫 페인트에서 백과사전을
+   숨겨 플래시를 막는다 (인라인 스크립트가 <html data-route>를 설정, 하이드레이션 후 해제) */
+html[data-route="infra"] .explorer, html[data-route="recruit"] .explorer { display:none }
 button,input { font:inherit }
 button { color:inherit }
 .site-header { border-bottom:1px solid var(--line); z-index:20; -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); background:#f1f0ebe6; justify-content:space-between; align-items:center; height:78px; padding:0 clamp(22px,5vw,76px); display:flex; position:sticky; top:0 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import operatorsData from "./data/operators.json";
 import InfraPlanner from "./planner";
 import RecruitHelper from "./recruit";
@@ -117,14 +117,19 @@ export default function Home() {
   const [selectedJobs, setSelectedJobs] = useState<string[]>([]);
   const [selectedSubProfessions, setSelectedSubProfessions] = useState<string[]>([]);
   const [selected, setSelected] = useState<Operator | null>(null);
-  const [tab, setTab] = useState<"archive" | "planner" | "recruit">(() =>
-    typeof window === "undefined" ? "archive" : tabFromHash(window.location.hash)
-  );
+  // 서버 렌더는 해시를 모르므로 항상 "archive"로 시작 — hydration 직후
+  // useLayoutEffect가 페인트 전에 동기적으로 올바른 탭으로 맞춘다 (깜빡임 방지 +
+  // hydration mismatch 방지, useState 초기값에서 window.location.hash를
+  // 직접 읽으면 서버/클라이언트 첫 렌더가 갈려서 hydration 에러가 난다)
+  const [tab, setTab] = useState<"archive" | "planner" | "recruit">("archive");
 
   // 모달을 열 때 히스토리를 쌓았는지 여부 — 뒤로가기(popstate)가 모달만 닫도록
   const pushedModalRef = useRef(false);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    // 첫 페인트 플래시 방지용 data-route는 이제 React가 탭을 제어하므로 해제한다
+    // (남겨두면 클라이언트에서 백과사전 탭으로 이동해도 CSS가 계속 숨겨버린다)
+    document.documentElement.removeAttribute("data-route");
     const applyHash = () => {
       const hash = decodeURIComponent(window.location.hash);
       if (hash.startsWith("#op-")) {
