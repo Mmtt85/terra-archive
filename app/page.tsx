@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import operatorsData from "./data/operators.json";
+import InfraPlanner from "./planner";
 
 type RangeGrid = { row: number; col: number };
 
@@ -106,6 +106,7 @@ export default function Home() {
   const [selectedJobs, setSelectedJobs] = useState<string[]>([]);
   const [selectedSubProfessions, setSelectedSubProfessions] = useState<string[]>([]);
   const [selected, setSelected] = useState<Operator | null>(null);
+  const [tab, setTab] = useState<"archive" | "planner">("archive");
   const [sortKey, setSortKey] = useState("기본");
   const [sortAsc, setSortAsc] = useState(true);
 
@@ -179,18 +180,21 @@ export default function Home() {
   }, [filtered, sortKey, sortAsc]);
 
   return (
-    <main>
+    <main className={tab === "planner" ? "base-main" : ""}>
       <header className="site-header" id="top">
         <a className="brand" href="#top" aria-label="테라 아카이브 홈">
           <span className="brand-mark">TA</span>
           <span>테라 아카이브<small>한국 서버 오퍼레이터 탐색기</small></span>
         </a>
         <div className="header-tagline">소속을 넘어, <em>함께 싸울 이유</em>로 찾기.</div>
-        <Link className="planner-link" href="/base">인프라 플래너 →</Link>
+        <nav className="main-tabs" aria-label="주요 탭">
+          <button className={tab === "archive" ? "selected" : ""} onClick={() => setTab("archive")}>오퍼 백과사전</button>
+          <button className={tab === "planner" ? "selected" : ""} onClick={() => setTab("planner")}>인프라 플래너</button>
+        </nav>
         <div className="server-chip"><span /> KR SERVER · BETA</div>
       </header>
 
-      <section className="explorer" aria-labelledby="explorer-title">
+      {tab === "archive" && <section className="explorer" aria-labelledby="explorer-title">
         <div className="filter-panel">
           <div className="panel-heading">
             <div><span className="section-no">FILTER / 01</span><h2 id="explorer-title">탐색 조건</h2></div>
@@ -241,7 +245,9 @@ export default function Home() {
             <div className="empty"><span>NO MATCH</span><h3>조건에 맞는 오퍼레이터가 없어요.</h3><p>소속이나 컨셉 태그를 하나씩 해제해 보세요.</p><button onClick={reset}>전체 보기</button></div>
           )}
         </div>
-      </section>
+      </section>}
+
+      {tab === "planner" && <InfraPlanner />}
 
       {selected && <OperatorModal operator={selected} onClose={() => setSelected(null)} />}
 

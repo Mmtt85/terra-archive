@@ -57,6 +57,11 @@ def parse_metric(room, text):
     if room == "TRADING":
         v = best(r"(?:오더 수주 효율|주문 획득 효율)[^+%]{0,24}" + PCT)
         if v: return "output", v
+        # order-quality effects, converted to a rough efficiency-equivalent %
+        m = re.search(r"용문폐 수익 \+\s*(\d+)", text)
+        if m: return "quality", round(float(m.group(1)) / 20)
+        if re.search(r"고품질 귀금속 오더의 출현 확률이 상승", text): return "quality", 15
+        if re.search(r"고품질 귀금속 오더의 출현 확률이 소폭 상승", text): return "quality", 10
         if re.search(r"오더 수주 상한|주문 상한|최대 주문", text): return "capacity", 0
     if room == "POWER":
         v = best(r"(?:무인기|드론)[^+%]{0,20}회복[^+%]{0,14}" + PCT)
@@ -86,6 +91,27 @@ def parse_metric(room, text):
     if v: return "misc", v
     return "misc", 0
 
+TOKENS = ["속세의 화식", "감지 정보", "무성의 공명", "생각의 사슬", "정보 저장", "주술 결정"]
+
+def parse_tokens(text):
+    """Cross-facility point systems: generators (+N) and consumers (N점당 +V)."""
+    gen, use = [], []
+    for token in TOKENS:
+        for m in re.finditer(re.escape(token) + r"\s*(\d+(?:\.\d+)?)점당[^%\d]{0,34}?([+\-]?\d+(?:\.\d+)?)\s*(%?)", text):
+            per, val, pct = float(m.group(1)), float(m.group(2)), m.group(3) == "%"
+            use.append({"token": token, "per": per, "value": val, "percent": pct})
+        for m in re.finditer(re.escape(token) + r"\s*\+(\d+)", text):
+            amount = float(m.group(1))
+            cap = re.search(r"1명당[^(]{0,40}\(최대 (\d+)명\)", text)
+            if cap and "1명당" in text:
+                amount *= float(cap.group(1))
+            elif re.search(r"숙소 내 오퍼레이터 1명당", text):
+                amount *= 20
+            elif re.search(r"모집 인원마다", text):
+                amount *= 4  # office holds up to 4 recruitment slots
+            gen.append({"token": token, "estimate": amount})
+    return gen, use
+
 def parse_morale_drain(text):
     m = re.findall(r"시간당 컨디션 소모[^+\-]{0,8}([+\-])\s*(\d+(?:\.\d+)?)", text)
     delta = 0.0
@@ -113,11 +139,21 @@ for o in operators:
         room = next((k for k, v in ROOM_KO.items() if v == entry["room"]), entry["room"])
         text = entry["description"]
         kind, value = parse_metric(room, text)
+        override = re.search(r"효율이 전부 0이 되고[^+]{0,20}\+\s*(\d+(?:\.\d+)?)\s*%", text)
+        if override:
+            kind, value = "override", float(override.group(1))
+        product = "any"
+        if room == "MANUFACTURE":
+            if "금괴" in text: product = "gold"
+            elif re.search(r"작전 ?기록", text): product = "exp"
+            elif "오리지늄" in text: product = "shard"
+        gen, use = parse_tokens(text)
         skills.append({
             "name": entry["name"], "room": room, "unlock": entry["unlock"],
-            "description": text, "kind": kind, "value": value,
+            "description": text, "kind": kind, "value": value, "product": product,
             "moraleDrain": parse_morale_drain(text),
             "partners": find_partners(text, o["name"]),
+            "tokenGen": gen, "tokenUse": use,
             "conditional": bool(re.search(r"함께 배치|같이 .{0,10}배치|1명당|마다|미만|이상일 (때|경우)|경우", text)),
         })
     if skills:

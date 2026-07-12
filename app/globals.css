@@ -252,3 +252,11 @@ footer p { margin:0 }
 .planner-link { border:1px solid var(--ink); background:var(--ink); color:var(--lime); padding:8px 12px; font:700 10px monospace; letter-spacing:1px; text-decoration:none; margin-left:auto; margin-right:14px }
 .planner-link:hover { background:var(--lime); color:var(--ink) }
 @media (max-width:1100px) { .ship { grid-template-columns:repeat(3,minmax(0,1fr)); grid-template-areas:"control control meeting" "trading0 trading1 workshop" "mfg0 mfg1 hire" "mfg2 mfg3 training" "power0 power1 power2" "dorm0 dorm1 dorm2" "dorm3 . ." } .planner-summary { grid-template-columns:repeat(2,minmax(0,1fr)) } .planner-controls { display:block } .planner-buttons { margin-top:12px } }
+.main-tabs { display:flex; gap:6px; margin-left:auto; margin-right:14px }
+.main-tabs button { border:1px solid var(--line); background:transparent; padding:9px 14px; font-size:12px; font-weight:800; cursor:pointer; transition:.15s }
+.main-tabs button:hover { border-color:var(--ink) }
+.main-tabs button.selected { background:var(--ink); color:var(--lime); border-color:var(--ink) }
+.planner-summary .strategy { font-size:13px; font-family:inherit }
+@media (max-width:760px) { .main-tabs { margin:0 8px } .main-tabs button { padding:7px 9px; font-size:10px } }
+.dorm-room { cursor:default; opacity:.75 }
+.dorm-room .ship-room-head span { color:#8d97a5 }
