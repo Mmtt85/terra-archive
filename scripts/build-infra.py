@@ -52,10 +52,14 @@ def parse_metric(room, text):
             if g: vals.append(float(g[-1]))
         return max(vals) if vals else None
     if room == "MANUFACTURE":
-        # automation (위디·유넥티스): zeroes operator-provided efficiency,
-        # scales with power-plant count (3 in the 243 layout)
+        # automation (위디·유넥티스·윈드플릿·패신저): zeroes operator-provided
+        # efficiency, scales with power-plant count (3 in the 243 layout)
         m = re.search(r"생산력이 전부 0이 되고[^%]*?발전소 하나당[^+%\d]{0,20}\+\s*(\d+(?:\.\d+)?)\s*%", text)
         if m: return "automation", float(m.group(1))  # per plant; planner multiplies
+        # automation_crew (스네구로치카): same zero-out, but scales with the
+        # room's own headcount instead of power plants
+        m = re.search(r"생산력이 전부 0이 되고[^%]*?제조소 내의 오퍼레이터 1명당[^+%\d]{0,20}\+\s*(\d+(?:\.\d+)?)\s*%", text)
+        if m: return "automation_crew", float(m.group(1))  # per teammate in room; planner multiplies
         v = best(r"생산력[^+%\d]{0,24}" + PCT)
         if v: return "output", v
     if room == "TRADING":
@@ -222,7 +226,8 @@ for o in operators:
         if m: req_faction = m.group(1)
         per_faction = per_scope = per_cap = None
         m = re.search(r"([가-힣A-Za-z·]{2,14}) 오퍼레이터(?:가)? 1명(?:당| 증가할 때마다)", text)
-        if m and m.group(1) not in ("작업 중인",):
+        # "제조소 내의 오퍼레이터 1명당"처럼 방 범위를 가리키는 조사구는 진영이 아니다
+        if m and m.group(1) not in ("작업 중인", "내의", "안의", "내"):
             per_faction = m.group(1)
             per_scope = "room" if re.search(r"제어 센터 내", text) else "base"
             c = re.search(r"최대 \+?(\d+(?:\.\d+)?)%", text)

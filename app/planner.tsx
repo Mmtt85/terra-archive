@@ -167,6 +167,8 @@ function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx): OpBrea
     }
     if (skill.kind === "override") { out.override = Math.max(out.override, skill.value); continue; }
     if (skill.kind === "automation") { out.automation += skill.value * (ctx.plants ?? 3); continue; }
+    // 스네구로치카: 위디·유넥티스와 같은 제로아웃이지만 발전소가 아니라 같은 방 인원수로 스케일
+    if (skill.kind === "automation_crew") { out.automation += skill.value * teamSize; continue; }
     if (skill.kind === "quality") { out.quality += skill.value; continue; }
     if (skill.kind === "payout") { out.payout += skill.value; continue; }
     if (skill.kind === "payout_v") { out.payoutViolation += skill.value; continue; }
@@ -665,6 +667,16 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
     setDirty(true);
   };
 
+  // 이미 배치된 오퍼의 정예화 단계를 방 상세에서 바로 바꾼다 — 편성 자체는 그대로 두고
+  // 해당 오퍼의 활성 스킬만 다시 계산된다 (전체 재배치는 자동편성 실행에서 별도로).
+  const setOperatorElite = (id: string, elite: 1 | 2) => {
+    const next = new Map(eliteById);
+    if (elite === 2) next.delete(id); else next.set(id, elite);
+    setEliteById(next);
+    persist(ownedIds, plan, next);
+    setDirty(true);
+  };
+
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const showToast = (message: string) => {
@@ -853,6 +865,8 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
           onShowOperator={onShowOperator}
           onUpdateTeam={updateTeam}
           onNotify={showToast}
+          eliteById={eliteById}
+          onSetElite={setOperatorElite}
         />
       )}
       {toast && <div className="toast" role="status">{toast}</div>}
@@ -871,7 +885,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
   );
 }
 
-function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClose, onShowOperator, onUpdateTeam, onNotify }: { cell: { key: string; room: string; label: string; product?: string }; plan: Plan; allAssigned: Set<string>; roster: InfraOp[]; opMap: Map<string, InfraOp>; initialShift: number; onClose: () => void; onShowOperator?: (id: string) => void; onUpdateTeam?: (cellKey: string, shiftIdx: number, ids: string[]) => void; onNotify?: (message: string) => void }) {
+function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClose, onShowOperator, onUpdateTeam, onNotify, eliteById, onSetElite }: { cell: { key: string; room: string; label: string; product?: string }; plan: Plan; allAssigned: Set<string>; roster: InfraOp[]; opMap: Map<string, InfraOp>; initialShift: number; onClose: () => void; onShowOperator?: (id: string) => void; onUpdateTeam?: (cellKey: string, shiftIdx: number, ids: string[]) => void; onNotify?: (message: string) => void; eliteById: Map<string, 1 | 2>; onSetElite: (id: string, elite: 1 | 2) => void }) {
   const [shift, setShift] = useState(initialShift);
   const [confirmRoomProposal, setConfirmRoomProposal] = useState(false);
   const shiftIndex = Math.min(shift, (plan.assignments[cell.key]?.length ?? 1) - 1);
@@ -973,6 +987,12 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                       title={`${op.name} 상세 정보`} onClick={() => onShowOperator?.(op.id)} />
                     <div>
                       <b>{op.name} <i>{"★".repeat(op.rarity)}</i></b>
+                      {opById.get(op.id)?.skills.some((skill) => skill.unlock === "정예화 2") && (
+                        <div className="elite-toggle crew-elite" role="group" aria-label={`${op.name} 정예화 단계`}>
+                          <button type="button" className={(eliteById.get(op.id) ?? 2) === 1 ? "selected" : ""} onClick={() => onSetElite(op.id, 1)}>1정</button>
+                          <button type="button" className={(eliteById.get(op.id) ?? 2) === 2 ? "selected" : ""} onClick={() => onSetElite(op.id, 2)}>2정</button>
+                        </div>
+                      )}
                       {shown.length ? shown.map((skill) => <p key={skill.name}><em>{skill.name}</em> — {skill.description}</p>) : <p>이 시설에 적용되는 스킬이 없습니다 (세트 대기 요원).</p>}
                       {total > 0 && <small>기여 +{total}{cell.room === "CONTROL" ? "" : "%"}</small>}
                       {op.skills.flatMap((skill) => skill.tokenGen).map((gen) => (
@@ -1196,9 +1216,11 @@ const HELP_SECTIONS: { title: string; items: string[] }[] = [
     "프로바이조는 반대로 저품질 오더를 위약 처리해 수익을 내므로 고품질 확률과는 반시너지입니다. 처리량이 높은 우요우+에벤홀츠 방에 넣습니다.",
   ]},
   { title: "자동화 제조소", items: [
-    "위디·유넥티스는 방 내 오퍼 생산력을 0으로 만들고 발전소 1기당 +15%/+10%를 받습니다.",
+    "위디·유넥티스·윈드플릿·패신저는 방 내 다른 오퍼의 생산력을 0으로 만들고 발전소 1기당 +15%/+10%/+5%/+5%를 받습니다 — 이들과 같은 방에 넣은 일반 +30%/+35%류 생산력 스킬은 전부 0%가 되므로, 직접 수치가 아니라 이런 제로아웃 오퍼와 궁합이 맞는지 먼저 확인해야 합니다.",
+    "스네구로치카는 같은 방식으로 제로아웃하되 발전소가 아니라 그 제조소에 실제 배치된 인원수당 +10%로 스케일됩니다.",
     "단 시설 수량 기반 생산력(퓨어스트림·쏜즈의 '각각의 무역소가…')은 살아남아 함께 쓸 수 있습니다.",
     "그레이 더 라이트닝베어러를 발전소에 두면(다른 발전소에 1성 로봇이 없는 한) 발전소 4기로 간주되어 자동화 방이 최대 140%까지 오릅니다.",
+    "제로아웃 오퍼를 쓰는 편성 자체가 예외적인 케이스입니다 — 자동편성은 실제 방 점수(제로아웃 반영)로 비교해 더 나을 때만 추천합니다.",
   ]},
   { title: "제어 센터", items: [
     "오라 우선순위: 제조소 생산력 > 무역소 오더 효율 > 인맥 레퍼런스 > 단서 수집. '동종 효과 중 최고만 적용' 규칙을 따릅니다.",
