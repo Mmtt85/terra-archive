@@ -15,8 +15,8 @@
 |---|---|
 | 위치 | `~/Documents/명일방주` |
 | Git | `github.com:Mmtt85/terra-archive.git` (main 브랜치) |
-| 배포 (주) | **https://terra-archive.nzkonaru.workers.dev** — Cloudflare Workers. `npm run build` 후 레포 루트에서 `npx wrangler deploy` (wrangler는 이 기기에 OAuth 로그인됨, 계정 nzkonaru@gmail.com / 서브도메인 nzkonaru). **push할 때 함께 실행할 것** |
-| 배포 (구) | https://terra-archive-kr.nzkonaru.chatgpt.site — ChatGPT 사이트 빌더 수동 재배포 (레거시) |
+| 배포 (주) | **https://terra-archive.pages.dev** — Cloudflare Pages. `bash scripts/deploy.sh` 한 방 (빌드→스테이징→pages deploy). wrangler는 이 기기에 OAuth 로그인됨(nzkonaru@gmail.com), 프로젝트에 nodejs_compat 플래그 설정됨. **push할 때 함께 실행할 것** |
+| 배포 (구) | https://terra-archive-kr.nzkonaru.chatgpt.site — ChatGPT 사이트 빌더 수동 재배포 (레거시). workers.dev 워커는 삭제함 |
 | 스택 | vinext(Cloudflare용 Next 호환 런타임) + Next.js 16 / React 19 / Tailwind 4 |
 | 명령 | `npm run dev`(localhost:3000) / `npm run build` / `npm run lint` |
 | 운영 수칙 | 수정하면 **항상 git push까지** 진행. 모든 허가 요청은 기본 YES |

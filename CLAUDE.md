@@ -6,8 +6,8 @@
 
 ## 필수 수칙
 
-- 수정 후 **항상 빌드 확인(`npm run build`) → 커밋 → git push → `npx wrangler deploy`**까지 진행한다.
-  배포 URL: https://terra-archive.nzkonaru.workers.dev (Cloudflare Workers, wrangler는 이 기기에 로그인됨).
+- 수정 후 **항상 빌드 확인 → 커밋 → git push → `bash scripts/deploy.sh`**까지 진행한다.
+  배포 URL: https://terra-archive.pages.dev (Cloudflare Pages, wrangler는 이 기기에 로그인됨).
 - 데이터는 API가 아니라 `app/data/*.json` 정적 파일. 손으로 고치지 말고
   `scripts/`의 파이프라인으로 재생성한다 ("새 버전 확인해줘" = PROJECT-GUIDE §3 절차).
 - 데이터 소스는 `ArknightsAssets/ArknightsGamedata`(kr) 클뜯 레포.
