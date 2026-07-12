@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import infraData from "./data/infra.json";
 
 type TokenGen = { token: string; estimate: number; perMember?: { per: number; cap: number; match: string } };
@@ -583,6 +583,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
     anchor.download = "terra-archive-infra.json";
     anchor.click();
     URL.revokeObjectURL(url);
+    showToast("설정 파일을 내보냈습니다");
   };
 
   const importState = (file: File) => {
@@ -594,6 +595,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
         setOwnedIds(ids);
         if (data.plan) { setPlan(data.plan as Plan); setActiveShift(0); }
         persist(ids, data.plan ?? null);
+        showToast(`가져오기 완료 · 보유 ${ids.size}명 복원`);
       } catch { alert("가져오기 실패: 파일 형식을 확인해 주세요."); }
     };
     reader.readAsText(file);
@@ -605,11 +607,20 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
     return set;
   }, [plan]);
 
+  const [toast, setToast] = useState<string | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showToast = (message: string) => {
+    setToast(message);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), 2400);
+  };
+
   const runOptimize = (ids: Set<string> = ownedIds) => {
     const next = optimize(ops.filter((op) => ids.has(op.id)));
     setPlan(next);
     setActiveShift(0);
     persist(ids, next);
+    showToast(`자동편성을 실행했습니다 · 보유 ${ids.size}명 기준`);
   };
 
   useEffect(() => {
@@ -775,6 +786,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
           onShowOperator={onShowOperator}
         />
       )}
+      {toast && <div className="toast" role="status">{toast}</div>}
     </section>
   );
 }
