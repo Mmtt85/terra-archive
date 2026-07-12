@@ -583,7 +583,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
     anchor.download = "terra-archive-infra.json";
     anchor.click();
     URL.revokeObjectURL(url);
-    showToast("설정 파일을 내보냈습니다");
+    showToast("현재 상태를 파일로 저장했습니다");
   };
 
   const importState = (file: File) => {
@@ -595,7 +595,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
         setOwnedIds(ids);
         if (data.plan) { setPlan(data.plan as Plan); setActiveShift(0); }
         persist(ids, data.plan ?? null);
-        showToast(`가져오기 완료 · 보유 ${ids.size}명 복원`);
+        showToast(`저장된 상태를 불러왔습니다 · 보유 ${ids.size}명 복원`);
       } catch { alert("가져오기 실패: 파일 형식을 확인해 주세요."); }
     };
     reader.readAsText(file);
