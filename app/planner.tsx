@@ -482,6 +482,7 @@ export default function InfraPlanner() {
   const [showFlows, setShowFlows] = useState(false);
   const [showRoster, setShowRoster] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [ownedIds, setOwnedIds] = useState<Set<string>>(() => new Set(ops.filter((op) => op.rarity <= 4).map((op) => op.id)));
 
   const roster = useMemo(() => ops.filter((op) => ownedIds.has(op.id)), [ownedIds]);
@@ -538,13 +539,13 @@ export default function InfraPlanner() {
     g.fillText("A조 기준 · terra-archive infra planner", 32, canvas.height - 28);
     canvas.toBlob((blob) => {
       if (!blob) return;
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      anchor.href = url;
-      anchor.download = "terra-archive-infra.png";
-      anchor.click();
-      URL.revokeObjectURL(url);
+      setImageUrl(URL.createObjectURL(blob)); // 미리보기 모달로 바로 표시
     });
+  };
+
+  const closeImage = () => {
+    if (imageUrl) URL.revokeObjectURL(imageUrl);
+    setImageUrl(null);
   };
 
   const exportState = () => {
@@ -718,6 +719,22 @@ export default function InfraPlanner() {
       )}
 
       {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
+
+      {imageUrl && (
+        <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) closeImage(); }}>
+          <section className="operator-modal room-modal image-preview" style={{ "--accent": "#dfff00" } as React.CSSProperties}>
+            <button type="button" className="modal-close" onClick={closeImage} aria-label="닫기">×</button>
+            <header className="room-modal-head">
+              <span className="modal-kicker">PLAN SHEET</span>
+              <h2>편성표 이미지</h2>
+              <div className="roster-tools">
+                <a className="apply save-image" href={imageUrl} download="terra-archive-infra.png">PNG 저장</a>
+              </div>
+            </header>
+            <div className="modal-scroll"><img src={imageUrl} alt="인프라 편성표" /></div>
+          </section>
+        </div>
+      )}
 
       {showFlows && plan && <FlowModal plan={plan} onClose={() => setShowFlows(false)} />}
 
