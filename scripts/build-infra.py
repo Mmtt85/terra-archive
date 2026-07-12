@@ -131,6 +131,8 @@ def parse_tokens(text, room):
                 amount *= 5 if room == "DORMITORY" else 20
             elif re.search(r"모집 인원마다", text):
                 amount *= 4  # office holds up to 4 recruitment slots
+            elif re.search(r"오퍼레이터가 1명 증가할 때마다", text):
+                amount *= 4  # e.g. Ash: per teammate in the control center
             gen.append({"token": token, "estimate": amount})
     # dorm stack systems (아이리스 꿈나라, 체르니 소절): Lv5 dorm grants 5 stacks
     stack = re.search(r"레벨(?: ?1)?당 ([가-힣]+) ?(\d*)스택", text)

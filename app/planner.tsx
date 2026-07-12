@@ -359,7 +359,14 @@ function optimize(): Plan {
   // morale runs out
   const allTokens = new Set<string>();
   for (const op of ops) for (const skill of op.skills) for (const use of skill.tokenUse) if (use.percent) allTokens.add(use.token);
-  return buildPlan(Array.from(allTokens));
+  // closed single-team systems (정보 저장 = 레인보우 팀 전용) stay out of the
+  // base-wide packages — they'd hijack control/meeting slots from the mains
+  const open = Array.from(allTokens).filter((token) => {
+    const participants = ops.filter((op) => op.skills.some((skill) => skill.tokenGen.some((g) => g.token === token) || skill.tokenUse.some((u) => u.token === token)));
+    const factions = new Set(participants.map((op) => op.faction));
+    return participants.length < 2 || factions.size > 1;
+  });
+  return buildPlan(open);
 }
 
 function substitutes(key: string, tokenPoints: Record<string, number>, excluded: Set<string>, count = 3): { op: InfraOp; value: number }[] {
