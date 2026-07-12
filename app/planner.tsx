@@ -664,7 +664,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
         </div>
         <div className="planner-buttons">
           <button onClick={() => setShowRoster(true)}>보유 오퍼 설정 ({ownedIds.size}/{ops.length})</button>
-          <button className="primary" onClick={() => runOptimize()}>자동 편성</button>
+          <button className="primary" onClick={() => runOptimize()}>자동편성 실행</button>
           <button onClick={exportState} title="나중에 가져오기로 복구할 수 있는 JSON 파일">내보내기 (파일)</button>
           <button onClick={exportImage} title="공유용 편성표 이미지 (PNG)">내보내기 (이미지)</button>
           <button onClick={() => setShowHelp(true)}>도움말</button>
@@ -739,7 +739,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
       {showRoster && (
         <RosterModal
           ownedIds={ownedIds}
-          onApply={(ids) => { setOwnedIds(ids); setShowRoster(false); persist(ids, plan); }}
+          onApply={(ids) => { setOwnedIds(ids); setShowRoster(false); runOptimize(ids); }}
           onClose={() => setShowRoster(false)}
         />
       )}
@@ -950,7 +950,7 @@ function RosterModal({ ownedIds, onApply, onClose }: { ownedIds: Set<string>; on
             <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="이름·소속 검색" />
             <button type="button" onClick={() => setDraft(new Set(ops.map((op) => op.id)))}>전체 선택</button>
             <button type="button" onClick={() => setDraft(new Set())}>전체 해제</button>
-            <button type="button" className="apply" onClick={() => onApply(draft)}>적용</button>
+            <button type="button" className="apply" onClick={() => onApply(draft)}>적용 및 자동편성 실행</button>
           </div>
         </header>
         <div className="modal-scroll">
