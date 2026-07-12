@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import operatorsData from "./data/operators.json";
 import InfraPlanner from "./planner";
 import RecruitHelper from "./recruit";
+import FeedbackWidget from "./feedback-widget";
 
 type RangeGrid = { row: number; col: number };
 
@@ -305,6 +306,7 @@ export default function Home() {
       {tab === "recruit" && <RecruitHelper />}
 
       {selected && <OperatorModal operator={selected} onClose={closeOperator} />}
+      <FeedbackWidget />
 
       <footer><span>RHODES ISLAND // TERRA ARCHIVE</span><p>명일방주(Arknights) 비공식 팬 프로젝트 · 게임 내 명칭과 데이터의 권리는 Hypergryph / Yostar 등 각 권리자에게 있습니다.</p></footer>
     </main>

@@ -348,3 +348,21 @@ footer p { margin:0 }
 .bench { margin-top:14px; border-top:1px dashed var(--line); padding-top:12px }
 .bench>span { font-size:11px; font-weight:800; color:var(--muted) }
 .bench-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px }
+/* ─ 피드백 위젯 ─ */
+.feedback-widget { position:fixed; right:22px; bottom:22px; z-index:150; display:flex; flex-direction:column; align-items:flex-end; gap:10px }
+.feedback-fab { border:1px solid var(--ink); background:var(--ink); color:var(--lime); cursor:pointer; padding:12px 18px; font-size:13px; font-weight:800; box-shadow:0 8px 24px #0005 }
+.feedback-fab:hover { background:var(--lime); color:var(--ink) }
+.feedback-panel { width:min(320px, calc(100vw - 44px)); border:1px solid var(--ink); background:var(--white); box-shadow:0 16px 44px #0004; animation:.18s both fadeIn }
+.feedback-panel>header { display:flex; justify-content:space-between; align-items:center; background:var(--ink); color:#fff; padding:11px 14px; font-size:13px }
+.feedback-panel>header button { background:0 0; border:0; color:#fff; font-size:19px; cursor:pointer; line-height:1 }
+.feedback-kind { display:flex; gap:6px; padding:12px 14px 0 }
+.feedback-kind button { flex:1; border:1px solid var(--line); background:0 0; padding:8px; font-size:11px; font-weight:800; cursor:pointer }
+.feedback-kind button.selected { background:var(--ink); color:var(--lime); border-color:var(--ink) }
+.feedback-panel textarea { width:calc(100% - 28px); margin:12px 14px 0; border:1px solid #bbbcb7; background:#fff; padding:10px; font-size:12px; resize:vertical; outline:0 }
+.feedback-panel textarea:focus { border-color:var(--ink) }
+.feedback-panel>footer { display:flex; justify-content:space-between; align-items:center; padding:10px 14px 14px; gap:10px }
+.feedback-panel>footer small { color:var(--muted); font-size:10px }
+.feedback-send { border:1px solid var(--ink); background:var(--ink); color:var(--lime); cursor:pointer; padding:8px 16px; font-size:12px; font-weight:800 }
+.feedback-send:disabled { opacity:.45; cursor:default }
+.feedback-send:not(:disabled):hover { background:var(--lime); color:var(--ink) }
+.propose-btn { border:1px solid var(--lime) !important; background:#dfff0022 !important; color:inherit }

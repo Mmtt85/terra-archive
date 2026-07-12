@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { feedbackReady, sendFeedback } from "./feedback";
 import infraData from "./data/infra.json";
 
 type TokenGen = { token: string; estimate: number; perMember?: { per: number; cap: number; match: string } };
@@ -703,6 +704,15 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
           <button onClick={() => setShowRoster(true)}>보유 오퍼 설정 ({ownedIds.size}/{ops.length})</button>
           <button className="primary" onClick={() => runOptimize()}>자동편성 실행</button>
           <button onClick={exportImage} title="A조·B조 편성표를 이미지로 확인 (PNG)">이미지로 보기</button>
+          {plan && feedbackReady && (
+            <button title="현재 전체 편성을 사이트 운영자에게 제안" onClick={async () => {
+              const comment = window.prompt("전체 편성 제안 — 한마디 남기시겠어요? (선택)") ?? "";
+              try {
+                await sendFeedback("plan", comment, { scope: "base", strategy: plan.strategy, assignments: plan.assignments, tokenPoints: plan.tokenPoints, owned: ownedIds.size });
+                showToast("전체 편성을 제안했습니다, 감사합니다!");
+              } catch { showToast("전송 실패 — 잠시 후 다시 시도해주세요"); }
+            }}>전체 편성 제안</button>
+          )}
           <span className="file-group">
             <button onClick={exportState} title="보유 오퍼와 편성을 JSON 파일로 저장">현재 상태 파일로 저장</button>
             <label className="import-label">
@@ -813,6 +823,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
           onClose={() => setOpenRoom(null)}
           onShowOperator={onShowOperator}
           onUpdateTeam={updateTeam}
+          onNotify={showToast}
         />
       )}
       {toast && <div className="toast" role="status">{toast}</div>}
@@ -820,7 +831,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
   );
 }
 
-function RoomModal({ cell, plan, allAssigned, roster, initialShift, onClose, onShowOperator, onUpdateTeam }: { cell: { key: string; room: string; label: string; product?: string }; plan: Plan; allAssigned: Set<string>; roster: InfraOp[]; initialShift: number; onClose: () => void; onShowOperator?: (id: string) => void; onUpdateTeam?: (cellKey: string, shiftIdx: number, ids: string[]) => void }) {
+function RoomModal({ cell, plan, allAssigned, roster, initialShift, onClose, onShowOperator, onUpdateTeam, onNotify }: { cell: { key: string; room: string; label: string; product?: string }; plan: Plan; allAssigned: Set<string>; roster: InfraOp[]; initialShift: number; onClose: () => void; onShowOperator?: (id: string) => void; onUpdateTeam?: (cellKey: string, shiftIdx: number, ids: string[]) => void; onNotify?: (message: string) => void }) {
   const [shift, setShift] = useState(initialShift);
   const shiftIndex = Math.min(shift, (plan.assignments[cell.key]?.length ?? 1) - 1);
   const rawIds = plan.assignments[cell.key]?.[shiftIndex] ?? [];
@@ -876,6 +887,15 @@ function RoomModal({ cell, plan, allAssigned, roster, initialShift, onClose, onS
             {Array.from({ length: SHIFT_COUNT }, (_, i) => (
               <button key={i} className={shift === i ? "selected" : ""} onClick={() => setShift(i)}>{["A조", "B조"][i]}</button>
             ))}
+            {feedbackReady && team.length > 0 && (
+              <button type="button" className="propose-btn" title="이 시설의 현재 편성을 사이트 운영자에게 제안" onClick={async () => {
+                const comment = window.prompt(`${cell.label} 편성 제안 — 한마디 남기시겠어요? (선택)`) ?? "";
+                try {
+                  await sendFeedback("plan", comment, { scope: cell.key, label: cell.label, room: cell.room, shifts: plan.assignments[cell.key], score: currentScore, shift: shiftIndex });
+                  onNotify?.(`${cell.label} 편성을 제안했습니다, 감사합니다!`);
+                } catch { onNotify?.("전송 실패 — 잠시 후 다시 시도해주세요"); }
+              }}>이 편성을 제안</button>
+            )}
           </div>
         </header>
         <div className="modal-scroll">
