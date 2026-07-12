@@ -171,10 +171,33 @@ for o in operators:
             kind, value = "override", float(override.group(1))
         product = "any"
         if room == "MANUFACTURE":
-            if re.search(r"순금|금괴", text): product = "gold"
+            if re.search(r"순금|금괴|귀금속", text): product = "gold"
             elif re.search(r"작전 ?기록", text): product = "exp"
             elif "오리지늄" in text: product = "shard"
         gen, use, stack_grant, stack_conv = parse_tokens(text, room)
+        # faction-conditional control skills: "용문근위국 오퍼레이터와 함께
+        # 제어 센터에 배치 시" (gate) / "미노스 오퍼레이터 1명당 +v% (최대 c%)"
+        req_faction = None
+        m = re.search(r"([가-힣A-Za-z·]{2,14}) 오퍼레이터와 함께", text)
+        if m: req_faction = m.group(1)
+        per_faction = per_scope = per_cap = None
+        m = re.search(r"([가-힣A-Za-z·]{2,14}) 오퍼레이터(?:가)? 1명(?:당| 증가할 때마다)", text)
+        if m and m.group(1) not in ("작업 중인",):
+            per_faction = m.group(1)
+            per_scope = "room" if re.search(r"제어 센터 내", text) else "base"
+            c = re.search(r"최대 \+?(\d+(?:\.\d+)?)%", text)
+            per_cap = float(c.group(1)) if c else None
+        # same-room skill-tag counting (브라이오피타: 금속 공예류 스킬 1개당 +5%)
+        per_skill_tag = per_skill_value = None
+        m = re.search(r"(?:해당 )?(?:제조소|무역소) 내 ([가-힣 ]{2,10}?)류? 스킬 1개당[^%\d]{0,20}\+\s*(\d+(?:\.\d+)?)\s*%", text)
+        if m:
+            per_skill_tag = m.group(1).replace(" ", "")
+            per_skill_value = float(m.group(2))
+        # facility-count multipliers (쏜즈: 각각의 무역소가 ... +3% → ×2)
+        if kind in ("output", "misc") and value:
+            fac = re.search(r"각각의 (무역소|발전소|제조소)", text)
+            if fac:
+                value = value * {"무역소": 2, "발전소": 3, "제조소": 4}[fac.group(1)]
         # conversion skills ("감지 정보 1점당 무성의 공명 1점으로 전환") re-route
         # this op's own generation and, at plan level, the shared pool
         convert = None
@@ -193,6 +216,8 @@ for o in operators:
             "moraleDrain": parse_morale_drain(text),
             "partners": find_partners(text, o["name"]),
             "tokenGen": gen, "tokenUse": use, "convert": convert,
+            "reqFaction": req_faction, "perFaction": per_faction, "perScope": per_scope, "perCap": per_cap,
+            "perSkillTag": per_skill_tag, "perSkillValue": per_skill_value,
             "_stackGrant": stack_grant.group(1) if stack_grant else None,
             "_stackCount": 5 * (int(stack_grant.group(2)) if stack_grant and stack_grant.group(2) else 1) if stack_grant else 0,
             "_stackConv": {"name": stack_conv.group(1), "per": float(stack_conv.group(2)), "token": stack_conv.group(3), "amount": float(stack_conv.group(4))} if stack_conv else None,
