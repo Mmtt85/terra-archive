@@ -290,3 +290,5 @@ footer p { margin:0 }
 .roster-grid button.owned { opacity:1; background:var(--white); border-color:var(--ink) }
 .roster-grid img { width:30px; height:30px; object-fit:cover; flex:none; background:#12171a }
 .roster-grid span { font-size:10px; font-weight:800; line-height:1.25 }
+.help-list { margin:0; padding-left:18px }
+.help-list li { color:#4f585c; font-size:12px; line-height:1.75; margin-top:6px }

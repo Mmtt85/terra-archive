@@ -55,7 +55,7 @@ def parse_metric(room, text):
         # automation (위디·유넥티스): zeroes operator-provided efficiency,
         # scales with power-plant count (3 in the 243 layout)
         m = re.search(r"생산력이 전부 0이 되고[^%]*?발전소 하나당[^+%\d]{0,20}\+\s*(\d+(?:\.\d+)?)\s*%", text)
-        if m: return "automation", float(m.group(1)) * 3
+        if m: return "automation", float(m.group(1))  # per plant; planner multiplies
         v = best(r"생산력[^+%\d]{0,24}" + PCT)
         if v: return "output", v
     if room == "TRADING":
@@ -74,6 +74,7 @@ def parse_metric(room, text):
         if re.search(r"고품질 귀금속 오더의 출현 확률이 소폭 상승", text): return "quality", 10
         if re.search(r"오더 수주 상한|주문 상한|최대 주문", text): return "capacity", 0
     if room == "POWER":
+        if re.search(r"발전소 \+1개로 간주", text): return "plantbonus", 1
         v = best(r"(?:무인기|드론)[^+%\d]{0,20}회복[^+%\d]{0,14}" + PCT)
         if v: return "output", v
     if room == "MEETING":
@@ -115,13 +116,13 @@ def parse_metric(room, text):
     if v: return "misc", v
     return "misc", 0
 
-TOKENS = ["속세의 화식", "감지 정보", "무성의 공명", "생각의 사슬", "정보 저장", "주술 결정"]
+TOKENS = ["속세의 화식", "감지 정보", "무성의 공명", "생각의 사슬", "정보 저장", "주술 결정", "마물 요리"]
 
 def parse_tokens(text, room):
     """Cross-facility point systems: generators (+N) and consumers (N점당 +V)."""
     gen, use = [], []
     for token in TOKENS:
-        for m in re.finditer(re.escape(token) + r"\s*(\d+(?:\.\d+)?)점당[^%\d]{0,34}?([+\-]?\d+(?:\.\d+)?)\s*(%?)", text):
+        for m in re.finditer(re.escape(token) + r"\s*(\d+(?:\.\d+)?)(?:점|개)당[^%\d]{0,34}?([+\-]?\d+(?:\.\d+)?)\s*(%?)", text):
             per, val, pct = float(m.group(1)), float(m.group(2)), m.group(3) == "%"
             use.append({"token": token, "per": per, "value": val, "percent": pct})
         for m in re.finditer(re.escape(token) + r"\s*\+(\d+)", text):
@@ -145,6 +146,10 @@ def parse_tokens(text, room):
             entry_gen = {"token": token, "estimate": amount}
             if per_member: entry_gen["perMember"] = per_member
             gen.append(entry_gen)
+    # dorm level grants (센시: 숙소 레벨 1당 마물 요리 1개 제공 → Lv5 = 5개)
+    for token in TOKENS:
+        m = re.search(r"레벨(?: ?1)?당 " + re.escape(token) + r" ?(\d+)개", text)
+        if m: gen.append({"token": token, "estimate": float(m.group(1)) * 5})
     # dorm stack systems (아이리스 꿈나라, 체르니 소절): Lv5 dorm grants 5 stacks
     stack = re.search(r"레벨(?: ?1)?당 ([가-힣]+) ?(\d*)스택", text)
     conv = re.search(r"([가-힣]+) (\d+)스택당 (" + "|".join(map(re.escape, TOKENS)) + r") (\d+)점으로 전환", text)

@@ -83,7 +83,7 @@ const UNIT: Record<string, string> = {
 const PARK_KEYS = ["WORKSHOP"];
 const SHIFT_COUNT = 2;
 
-type Ctx = { product?: string; tokenPoints: Record<string, number>; factionCounts?: Record<string, number> };
+type Ctx = { product?: string; tokenPoints: Record<string, number>; factionCounts?: Record<string, number>; plants?: number };
 
 function skillApplies(skill: InfraSkill, room: string, product?: string): boolean {
   if (skill.room !== room) return false;
@@ -155,7 +155,7 @@ function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx): OpBrea
       if (rate > (tokenRates.get(use.token) ?? 0)) tokenRates.set(use.token, rate);
     }
     if (skill.kind === "override") { out.override = Math.max(out.override, skill.value); continue; }
-    if (skill.kind === "automation") { out.automation += skill.value; continue; }
+    if (skill.kind === "automation") { out.automation += skill.value * (ctx.plants ?? 3); continue; }
     if (skill.kind === "quality") { out.quality += skill.value; continue; }
     if (skill.kind === "payout") { out.payout += skill.value; continue; }
     if (skill.kind === "payout_v") { out.payoutViolation += skill.value; continue; }
@@ -260,6 +260,7 @@ type TokenFlow = {
 
 type Plan = {
   assignments: Record<string, string[][]>; // roomKey -> shift -> opIds
+  plants: number; // 발전소 수 (그레이 더 라이트닝베어러 배치 시 4로 간주)
   tokenPoints: Record<string, number>;
   factionCounts: Record<string, number>[]; // per shift, base-wide placements
   flows: TokenFlow[];
@@ -269,8 +270,8 @@ type Plan = {
 const PRODUCTION_KEYS = ["TRADING-0", "TRADING-1", "MANUFACTURE-0", "MANUFACTURE-1", "MANUFACTURE-2", "MANUFACTURE-3", "POWER-0", "POWER-1", "POWER-2"];
 const SUPPORT_KEYS = ["CONTROL", "MEETING", "HIRE", "WORKSHOP", "TRAINING"];
 
-function ctxFor(key: string, tokenPoints: Record<string, number>, factionCounts?: Record<string, number>): Ctx {
-  return { product: cellByKey.get(key)?.product, tokenPoints, factionCounts };
+function ctxFor(key: string, tokenPoints: Record<string, number>, factionCounts?: Record<string, number>, plants?: number): Ctx {
+  return { product: cellByKey.get(key)?.product, tokenPoints, factionCounts, plants };
 }
 
 function buildPlan(packageTokens: string[], roster: InfraOp[]): Plan {
@@ -282,10 +283,18 @@ function buildPlan(packageTokens: string[], roster: InfraOp[]): Plan {
   const flows: TokenFlow[] = [];
   const factionCountsPerShift: Record<string, number>[] = [];
   const reserved = new Map<string, string>(); // seeded ops belong to their room
+  // 그레이 더 라이트닝베어러: 다른 발전소에 1성 로봇(작업 플랫폼)만 없으면
+  // 발전소 +1개로 간주 — 발전소에 고정 배치하고 4기로 계산
+  const plantBooster = roster.find((op) => op.skills.some((skill) => skill.kind === "plantbonus"));
+  const plants = plantBooster ? 4 : 3;
 
   const dormPins: InfraOp[][] = [[], [], [], []];
   for (let shift = 0; shift < SHIFT_COUNT; shift += 1) {
     const seeds: Record<string, InfraOp[]> = {};
+    if (shift === 0 && plantBooster) {
+      seeds["POWER-0"] = [plantBooster];
+      reserved.set(plantBooster.id, "POWER-0");
+    }
     if (shift === 0 && packageTokens.length) {
       const parked = new Set<string>();
       const placedAt = new Map<string, string>();
@@ -309,9 +318,14 @@ function buildPlan(packageTokens: string[], roster: InfraOp[]): Plan {
         flows.push(flow);
         const generatesFor = (op: InfraOp) => op.skills.some((skill) => skill.tokenGen.some((g) => g.token === token || sources.has(g.token)));
         const members = roster.filter((op) => !used.has(op.id) && (generatesFor(op) || op.skills.some((skill) => skill.tokenUse.some((u) => u.token === token))));
+        const estTotal = roster.reduce((sum, member) => sum + member.skills.reduce((inner, skill) => inner + skill.tokenGen.reduce((acc, g) => acc + (g.token === token ? g.estimate : sources.has(g.token) ? g.estimate * (sources.get(g.token) ?? 0) : 0), 0), 0), 0);
         for (const op of members) {
           for (const skill of op.skills) {
-            if (!skill.tokenUse.some((u) => u.token === token && u.percent)) continue;
+            const use = skill.tokenUse.find((u) => u.token === token && u.percent);
+            if (!use) continue;
+            // 시드는 토큰 기대 가치가 큰 핵심 소비자만: 약한 소비자(마르실
+            // +5% 급)는 일반 경쟁으로 — 토큰 값은 점수에 자동 반영된다
+            if ((use.value / use.per) * estTotal < 20) continue;
             // 순금이 병목이므로 최고 효율 요원은 순금 제조소부터 채운다
             // (LAYOUT 순서가 순금 → 작전기록); 남는 효율이 작전기록으로 간다
             const targets = LAYOUT.filter((c) => c.room === skill.room && !PARK_KEYS.includes(c.key));
@@ -371,7 +385,7 @@ function buildPlan(packageTokens: string[], roster: InfraOp[]): Plan {
       const room = cellByKey.get(key)?.room ?? key;
       const slots = infra.rooms[room]?.slots ?? 1;
       const pool = new Map(roster.filter((op) => !used.has(op.id) && (shift > 0 || !reserved.has(op.id) || reserved.get(op.id) === key)).map((op) => [op.id, op]));
-      const ctx = ctxFor(key, shift === 0 ? tokenPoints : {}, shiftFactionCounts);
+      const ctx = ctxFor(key, shift === 0 ? tokenPoints : {}, shiftFactionCounts, plants);
       const seed = (seeds[key] ?? []).filter((op) => pool.has(op.id));
       const team = bestTeam(room, slots, pool, ctx, seed);
       team.forEach((op) => {
@@ -424,7 +438,7 @@ function buildPlan(packageTokens: string[], roster: InfraOp[]): Plan {
     }
   }
   const strategy = packageTokens.length ? `${packageTokens.join(" + ")} 패키지` : "기본 편성";
-  return { assignments, tokenPoints, factionCounts: factionCountsPerShift, flows, strategy };
+  return { assignments, plants, tokenPoints, factionCounts: factionCountsPerShift, flows, strategy };
 }
 
 function optimize(roster: InfraOp[]): Plan {
@@ -438,7 +452,11 @@ function optimize(roster: InfraOp[]): Plan {
   const open = Array.from(allTokens).filter((token) => {
     const participants = roster.filter((op) => op.skills.some((skill) => skill.tokenGen.some((g) => g.token === token) || skill.tokenUse.some((u) => u.token === token)));
     const factions = new Set(participants.map((op) => op.faction));
-    return participants.length < 2 || factions.size > 1;
+    if (participants.length < 2 || factions.size > 1) return true;
+    // closed single-team systems stay only if their generators live in the
+    // dorm (센시 마물 요리) — control-seat generators (Ash 정보 저장) hijack
+    const genRooms = new Set(participants.flatMap((op) => op.skills.filter((skill) => skill.tokenGen.some((g) => g.token === token)).map((skill) => skill.room)));
+    return genRooms.size > 0 && Array.from(genRooms).every((room) => room === "DORMITORY");
   });
   return buildPlan(open, roster);
 }
@@ -463,12 +481,70 @@ export default function InfraPlanner() {
   const [openRoom, setOpenRoom] = useState<string | null>(null);
   const [showFlows, setShowFlows] = useState(false);
   const [showRoster, setShowRoster] = useState(false);
-  const [ownedIds, setOwnedIds] = useState<Set<string>>(() => new Set(ops.map((op) => op.id)));
+  const [showHelp, setShowHelp] = useState(false);
+  const [ownedIds, setOwnedIds] = useState<Set<string>>(() => new Set(ops.filter((op) => op.rarity <= 4).map((op) => op.id)));
 
   const roster = useMemo(() => ops.filter((op) => ownedIds.has(op.id)), [ownedIds]);
 
   const persist = (ids: Set<string>, nextPlan: Plan | null) => {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ owned: Array.from(ids), plan: nextPlan })); } catch { /* ignore */ }
+  };
+
+  const exportImage = async () => {
+    if (!plan) return;
+    const rows = LAYOUT.map((cell) => {
+      const team = (plan.assignments[cell.key]?.[0] ?? []).map((id) => opById.get(id)).filter(Boolean) as InfraOp[];
+      const score = cell.room === "DORMITORY" || PARK_KEYS.includes(cell.key) ? null
+        : Math.round(teamScore(team, cell.room, ctxFor(cell.key, plan.tokenPoints, plan.factionCounts[0], plan.plants)));
+      return { cell, team, score };
+    });
+    const uniqueOps = Array.from(new Set(rows.flatMap((row) => row.team)));
+    const avatars = new Map<string, HTMLImageElement>();
+    await Promise.all(uniqueOps.map((op) => new Promise<void>((resolve) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => { avatars.set(op.id, img); resolve(); };
+      img.onerror = () => resolve();
+      img.src = op.image;
+    })));
+    const W = 1240; const rowH = 58; const top = 150;
+    const canvas = document.createElement("canvas");
+    canvas.width = W; canvas.height = top + rows.length * rowH + 70;
+    const g = canvas.getContext("2d")!;
+    g.fillStyle = "#f1f0eb"; g.fillRect(0, 0, W, canvas.height);
+    g.fillStyle = "#131719"; g.fillRect(0, 0, W, 96);
+    g.fillStyle = "#dfff00"; g.font = "900 30px monospace"; g.fillText("TERRA ARCHIVE // RIIC PLAN", 32, 58);
+    g.fillStyle = "#131719"; g.font = "700 15px sans-serif";
+    g.fillText(`${plan.strategy} · ${Object.entries(plan.tokenPoints).map(([token, points]) => `${token} ${Math.round(points)}점`).join(" · ")}`, 32, 126);
+    rows.forEach((row, index) => {
+      const y = top + index * rowH;
+      g.fillStyle = index % 2 ? "#eceae3" : "#fbfbf8"; g.fillRect(24, y, W - 48, rowH - 8);
+      g.fillStyle = ROOM_ACCENT[row.cell.room] ?? "#888"; g.fillRect(24, y, 5, rowH - 8);
+      g.fillStyle = "#131719"; g.font = "800 15px sans-serif";
+      g.fillText(row.cell.label, 44, y + 24);
+      g.fillStyle = "#687176"; g.font = "700 12px monospace";
+      g.fillText(row.score != null ? `+${row.score}${row.cell.room === "CONTROL" ? "" : "%"}` : row.cell.room === "DORMITORY" ? "고정" : "", 44, y + 43);
+      let x = 250;
+      for (const op of row.team) {
+        const img = avatars.get(op.id);
+        if (img) { g.drawImage(img, x, y + 7, 36, 36); }
+        g.fillStyle = "#131719"; g.font = "700 12px sans-serif";
+        g.fillText(op.name, x + 42, y + 30);
+        x += 42 + Math.max(g.measureText(op.name).width + 22, 80);
+      }
+      if (!row.team.length) { g.fillStyle = "#9aa0a3"; g.font = "700 12px sans-serif"; g.fillText(row.cell.key === "TRAINING" ? "비워둠 (특화 훈련용)" : "휴식 공간", 250, y + 30); }
+    });
+    g.fillStyle = "#687176"; g.font = "700 11px monospace";
+    g.fillText("A조 기준 · terra-archive infra planner", 32, canvas.height - 28);
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "terra-archive-infra.png";
+      anchor.click();
+      URL.revokeObjectURL(url);
+    });
   };
 
   const exportState = () => {
@@ -521,7 +597,7 @@ export default function InfraPlanner() {
         return;
       }
     } catch { /* fall through to defaults */ }
-    setPlan(optimize(ops));
+    setPlan(optimize(ops.filter((op) => op.rarity <= 4)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -537,7 +613,7 @@ export default function InfraPlanner() {
     if (!plan) return null;
     const avg = (prefix: string) => {
       const keys = LAYOUT.filter((cell) => cell.key.startsWith(prefix)).map((cell) => cell.key);
-      const totals = keys.map((key) => teamScore(teamFor(key, activeShift), cellByKey.get(key)!.room, ctxFor(key, pointsFor(activeShift), plan.factionCounts[activeShift])));
+      const totals = keys.map((key) => teamScore(teamFor(key, activeShift), cellByKey.get(key)!.room, ctxFor(key, pointsFor(activeShift), plan.factionCounts[activeShift], plan.plants)));
       return totals.length ? Math.round(totals.reduce((a, b) => a + b, 0) / totals.length) : 0;
     };
     return {
@@ -562,7 +638,9 @@ export default function InfraPlanner() {
         <div className="planner-buttons">
           <button onClick={() => setShowRoster(true)}>보유 오퍼 설정 ({ownedIds.size}/{ops.length})</button>
           <button className="primary" onClick={() => runOptimize()}>자동 편성</button>
-          <button onClick={exportState}>내보내기</button>
+          <button onClick={exportState} title="나중에 가져오기로 복구할 수 있는 JSON 파일">내보내기 (파일)</button>
+          <button onClick={exportImage} title="공유용 편성표 이미지 (PNG)">내보내기 (이미지)</button>
+          <button onClick={() => setShowHelp(true)}>도움말</button>
           <label className="import-label">
             가져오기
             <input type="file" accept="application/json" onChange={(event) => { const file = event.target.files?.[0]; if (file) importState(file); event.target.value = ""; }} />
@@ -608,7 +686,7 @@ export default function InfraPlanner() {
           }
           const team = teamFor(cell.key, activeShift);
           const spec = infra.rooms[cell.room];
-          const score = Math.round(teamScore(team, cell.room, ctxFor(cell.key, pointsFor(activeShift), plan?.factionCounts?.[activeShift])));
+          const score = Math.round(teamScore(team, cell.room, ctxFor(cell.key, pointsFor(activeShift), plan?.factionCounts?.[activeShift], plan?.plants)));
           return (
             <button key={cell.key} type="button" className={`ship-room pos-${cell.key.toLowerCase()}`} onClick={() => setOpenRoom(cell.key)} style={{ "--room-accent": ROOM_ACCENT[cell.room] } as React.CSSProperties}>
               <div className="ship-room-head">
@@ -634,10 +712,12 @@ export default function InfraPlanner() {
       {showRoster && (
         <RosterModal
           ownedIds={ownedIds}
-          onApply={(ids) => { setOwnedIds(ids); setShowRoster(false); runOptimize(ids); }}
+          onApply={(ids) => { setOwnedIds(ids); setShowRoster(false); persist(ids, plan); }}
           onClose={() => setShowRoster(false)}
         />
       )}
+
+      {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
 
       {showFlows && plan && <FlowModal plan={plan} onClose={() => setShowFlows(false)} />}
 
@@ -803,7 +883,10 @@ function RosterModal({ ownedIds, onApply, onClose }: { ownedIds: Set<string>; on
   const [draft, setDraft] = useState<Set<string>>(new Set(ownedIds));
   const [query, setQuery] = useState("");
   const keyword = query.trim().toLowerCase();
-  const visible = ops.filter((op) => !keyword || op.name.toLowerCase().includes(keyword) || op.faction.toLowerCase().includes(keyword));
+  const idNo = (op: InfraOp) => parseInt(op.id.replace(/\D/g, ""), 10) || 0;
+  const visible = ops
+    .filter((op) => !keyword || op.name.toLowerCase().includes(keyword) || op.faction.toLowerCase().includes(keyword))
+    .sort((a, b) => idNo(b) - idNo(a)); // 최신(높은 char 번호) 우선
   const toggle = (id: string) => setDraft((current) => {
     const next = new Set(current);
     if (next.has(id)) next.delete(id); else next.add(id);
@@ -820,7 +903,7 @@ function RosterModal({ ownedIds, onApply, onClose }: { ownedIds: Set<string>; on
             <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="이름·소속 검색" />
             <button type="button" onClick={() => setDraft(new Set(ops.map((op) => op.id)))}>전체 선택</button>
             <button type="button" onClick={() => setDraft(new Set())}>전체 해제</button>
-            <button type="button" className="apply" onClick={() => onApply(draft)}>적용 후 자동 편성</button>
+            <button type="button" className="apply" onClick={() => onApply(draft)}>적용</button>
           </div>
         </header>
         <div className="modal-scroll">
@@ -832,6 +915,69 @@ function RosterModal({ ownedIds, onApply, onClose }: { ownedIds: Set<string>; on
               </button>
             ))}
           </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+const HELP_SECTIONS: { title: string; items: string[] }[] = [
+  { title: "교대 정책", items: [
+    "A조가 풀파워 주력이고 모든 시너지 세트는 A조에 모입니다. B조는 A조 컨디션이 소진됐을 때 투입되는 회복 교대입니다 (12시간 2조).",
+    "숙소·응접실·시너지 고정 요원(숙소 생성원, 니엔 등)은 A/B 전환과 무관하게 고정됩니다.",
+    "훈련실은 실제 스킬 특화 훈련에 쓰도록 비워 둡니다.",
+  ]},
+  { title: "제조소 우선순위", items: [
+    "순금 2 + 작전기록 2 분할. 무역소 효율이 오르면 순금이 병목이 되므로 가장 강한 생산 팀을 순금 2방에 먼저 배치하고, 남는 효율을 작전기록으로 돌립니다.",
+    "품목 전용 스킬(금속공예류 = 순금)은 해당 품목 방에서만 계산됩니다.",
+  ]},
+  { title: "포인트 시너지 (시설 간)", items: [
+    "속세의 화식: 제어센터 시·링·총웨(쉐이 1명당 +5, 최대 5명 — 실제 배치 수로 계산) + 우요우가 생성, 슈(제조)·우요우(무역)·지에윈(화식→주술 결정 전환)이 소비합니다.",
+    "무성의 공명·감지 정보: 숙소에 고정된 아이리스(꿈나라)·체르니(소절)·비르투오사가 생성, 에벤홀츠가 감지 정보를 공명으로 전환해 무역소 효율로 소비합니다.",
+    "마물 요리: 센시를 숙소에 고정하면 레벨당 1개(총 5개)가 생겨 마르실(제조)·라이오스(응접실)가 소비합니다.",
+    "정보 저장은 레인보우 팀 전용 폐쇄 시스템이라 기지 편성에 넣지 않습니다.",
+  ]},
+  { title: "무역소 조합", items: [
+    "샤마르(속삭임)는 다른 인원의 효율을 0으로 만들고 인당 +45%를 주므로, 효율이 없어도 되는 품질 요원과 묶습니다: 샤마르 + 테킬라(투자β: 고품질 순금 오더 수익) + 확률 요원(카프카·디아만테·바이비크 — 전부 동급).",
+    "프로바이조는 반대로 저품질 오더를 위약 처리해 수익을 내므로 고품질 확률과는 반시너지입니다. 처리량이 높은 우요우+에벤홀츠 방에 넣습니다.",
+  ]},
+  { title: "자동화 제조소", items: [
+    "위디·유넥티스는 방 내 오퍼 생산력을 0으로 만들고 발전소 1기당 +15%/+10%를 받습니다.",
+    "단 시설 수량 기반 생산력(퓨어스트림·쏜즈의 '각각의 무역소가…')은 살아남아 함께 쓸 수 있습니다.",
+    "그레이 더 라이트닝베어러를 발전소에 두면(다른 발전소에 1성 로봇이 없는 한) 발전소 4기로 간주되어 자동화 방이 최대 140%까지 오릅니다.",
+  ]},
+  { title: "제어 센터", items: [
+    "오라 우선순위: 제조소 생산력 > 무역소 오더 효율 > 인맥 레퍼런스 > 단서 수집. '동종 효과 중 최고만 적용' 규칙을 따릅니다.",
+    "'용문근위국 오퍼와 함께'류 동반 조건, '미노스 1명당'류 카운트 조건은 실제 배치를 기준으로만 인정합니다.",
+  ]},
+  { title: "대체 추천", items: [
+    "각 자리의 대체 후보는 실제로 교체해 본 방 점수로 순위를 매기고, 동점이면 낮은 성급(육성 저렴)을 우선합니다.",
+    "토큰 생성·소비자, 오버라이드·수익 역할, 쉐이 카운트 인원 같은 시너지 코어는 '대체 불가'로 표시됩니다.",
+  ]},
+  { title: "수치는 근사치", items: [
+    "숙소는 풀 인원(20명), 모집 4칸, 발전소 3(그레이 알터 시 4) 기준의 추정 상한으로 계산합니다. 실제 게임 수치와 약간 다를 수 있습니다.",
+    "자세한 규칙 전문은 저장소의 docs/INFRA-RULES.md를 참고하세요.",
+  ]},
+];
+
+function HelpModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+      <section className="operator-modal room-modal" role="dialog" aria-modal="true" style={{ "--accent": "#dfff00" } as React.CSSProperties}>
+        <button type="button" className="modal-close" onClick={onClose} aria-label="닫기">×</button>
+        <header className="room-modal-head">
+          <span className="modal-kicker">HOW IT WORKS</span>
+          <h2>최적화 규칙 도움말</h2>
+        </header>
+        <div className="modal-scroll">
+          {HELP_SECTIONS.map((section) => (
+            <section key={section.title} className="detail-section">
+              <h3>{section.title}</h3>
+              <ul className="help-list">
+                {section.items.map((item, index) => <li key={index}>{item}</li>)}
+              </ul>
+            </section>
+          ))}
         </div>
       </section>
     </div>
