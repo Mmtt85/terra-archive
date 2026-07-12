@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import infraData from "./data/infra.json";
 
-type TokenGen = { token: string; estimate: number };
+type TokenGen = { token: string; estimate: number; perMember?: { per: number; cap: number; match: string } };
 type TokenUse = { token: string; per: number; value: number; percent: boolean };
 
 type InfraSkill = {
@@ -79,7 +79,7 @@ const UNIT: Record<string, string> = {
   HIRE: "연락 속도", WORKSHOP: "부산물", TRAINING: "훈련 속도", CONTROL: "지원", DORMITORY: "회복",
 };
 
-const PARK_KEYS = ["WORKSHOP", "TRAINING"];
+const PARK_KEYS = ["WORKSHOP"];
 const SHIFT_COUNT = 2;
 
 type Ctx = { product?: string; tokenPoints: Record<string, number>; factionCounts?: Record<string, number> };
@@ -175,9 +175,10 @@ function teamScore(team: InfraOp[], room: string, ctx: Ctx): number {
   const probCount = parts.filter((p) => p.quality > 0).length;
   const quality = parts.reduce((sum, p) => sum + p.quality, 0);
   // quality payouts (테킬라) profit from quality orders; violation payouts
-  // (프로바이조) need low-count orders, so quality crew works against them
+  // (프로바이조) need low-count orders — quality crew works against them, but
+  // a high-throughput post (우요우·에벤홀츠) multiplies her per-order bonus
   const payout = parts.reduce((sum, p) => sum + p.payout, 0) * Math.min(1 + 0.5 * probCount, 2)
-    + parts.reduce((sum, p) => sum + p.payoutViolation, 0) * Math.max(1 - 0.5 * probCount, 0);
+    + parts.reduce((sum, p) => sum + p.payoutViolation, 0) * Math.max(1 - 0.5 * probCount, 0) * Math.min(1 + efficiency / 100, 3);
   let auras = 0;
   for (const kind of Object.keys(AURA_WEIGHT)) {
     const bestOfKind = Math.max(...parts.map((p) => p.auras[kind] ?? 0), 0);
@@ -234,7 +235,7 @@ function bestTeam(room: string, slots: number, pool: Map<string, InfraOp>, ctx: 
   return best;
 }
 
-type FlowGenerator = { opId: string; at: string; amount: number; via?: string };
+type FlowGenerator = { opId: string; at: string; amount: number; via?: string; perMember?: { per: number; cap: number; match: string } };
 type FlowConsumer = { opId: string; at: string; rate: number; percent: boolean; gain: number };
 
 type TokenFlow = {
@@ -311,7 +312,7 @@ function buildPlan(packageTokens: string[]): Plan {
                 for (const g of gen) {
                   const amount = g.estimate * (g.token === token ? 1 : sources.get(g.token) ?? 0);
                   if (amount <= 0) continue;
-                  flow.generators.push({ opId: op.id, at: placedAt.get(op.id) ?? "기존 배치", amount, via: g.token === token ? undefined : g.token });
+                  flow.generators.push({ opId: op.id, at: placedAt.get(op.id) ?? "기존 배치", amount, via: g.token === token ? undefined : g.token, perMember: g.perMember });
                   tokenPoints[token] = (tokenPoints[token] ?? 0) + amount;
                 }
               }
@@ -322,9 +323,7 @@ function buildPlan(packageTokens: string[]): Plan {
         // park leftovers only where they at least have a matching room skill
         for (const op of members) {
           if (parked.has(op.id)) continue;
-          for (const key of ["TRAINING", "WORKSHOP"]) {
-            if (op.skills.some((skill) => skill.room === key) && place(op, key)) break;
-          }
+          if (op.skills.some((skill) => skill.room === "WORKSHOP")) place(op, "WORKSHOP");
         }
       }
       // family pinning: when a token's generators share a faction (쉐이),
@@ -334,7 +333,7 @@ function buildPlan(packageTokens: string[]): Plan {
         const factionCounts = new Map<string, number>();
         genOps.forEach((op) => factionCounts.set(op.faction, (factionCounts.get(op.faction) ?? 0) + 1));
         const families = Array.from(factionCounts.entries()).filter(([, count]) => count >= 2).map(([faction]) => faction);
-        for (const key of ["WORKSHOP", "TRAINING"]) {
+        for (const key of ["WORKSHOP"]) {
           const candidates = ops
             .filter((op) => !used.has(op.id) && !parked.has(op.id) && families.includes(op.faction) && op.skills.some((skill) => skill.room === key))
             .sort((a, b) => opSolo(b, key, 1, { tokenPoints: {} }) - opSolo(a, key, 1, { tokenPoints: {} }));
@@ -350,6 +349,7 @@ function buildPlan(packageTokens: string[]): Plan {
     }
     const shiftFactionCounts: Record<string, number> = {};
     for (const key of keys) {
+      if (key === "TRAINING") { assignments[key].push([]); continue; } // 특화 훈련용으로 비워둠
       if (key === "MEETING" && shift > 0) continue; // 응접실은 조 전환과 별개 상시 편성
       const room = cellByKey.get(key)?.room ?? key;
       const slots = infra.rooms[room]?.slots ?? 1;
@@ -368,9 +368,26 @@ function buildPlan(packageTokens: string[]): Plan {
   // dorms: pinned rest space; package members that generate from the dorm
   // (아이리스·체르니·비르투오사 등) stay locked in regardless of shift
   for (let d = 0; d < 4; d += 1) assignments[`DORM-${d}`] = [dormPins[d].map((op) => op.id)];
-  // ledger: who actually cashes the points in (A조 기준)
+  // ledger: recount per-member generators against the actual A-crew roster,
+  // then record who cashes the points in
+  const placedA: InfraOp[] = [];
+  for (const key of [...PRODUCTION_KEYS, ...SUPPORT_KEYS]) {
+    for (const id of assignments[key]?.[0] ?? []) {
+      const op = opById.get(id);
+      if (op) placedA.push(op);
+    }
+  }
   for (const flow of flows) {
-    flow.total = tokenPoints[flow.token] ?? 0;
+    let total = 0;
+    for (const gen of flow.generators) {
+      if (gen.perMember) {
+        const count = placedA.filter((op) => op.faction.includes(gen.perMember!.match)).length;
+        gen.amount = gen.perMember.per * Math.min(count, gen.perMember.cap);
+      }
+      total += gen.amount;
+    }
+    tokenPoints[flow.token] = total;
+    flow.total = total;
     for (const key of [...PRODUCTION_KEYS, ...SUPPORT_KEYS, "DORM-0", "DORM-1", "DORM-2", "DORM-3"]) {
       const team = (assignments[key]?.[0] ?? []).map((id) => opById.get(id)).filter(Boolean) as InfraOp[];
       const cell = cellByKey.get(key);
@@ -409,14 +426,15 @@ function optimize(): Plan {
   return buildPlan(open);
 }
 
-function substitutes(key: string, tokenPoints: Record<string, number>, excluded: Set<string>, count = 3): { op: InfraOp; value: number }[] {
+function slotSubstitutes(team: InfraOp[], index: number, key: string, ctx: Ctx, excluded: Set<string>, count = 3): { op: InfraOp; score: number }[] {
   const room = cellByKey.get(key)?.room ?? key;
-  const ctx = ctxFor(key, tokenPoints);
-  const slots = infra.rooms[room]?.slots ?? 1;
   return ops
     .filter((op) => !excluded.has(op.id) && op.skills.some((skill) => skillApplies(skill, room, ctx.product)))
-    .map((op) => ({ op, value: Math.round(opSolo(op, room, slots, ctx)) }))
-    .sort((a, b) => b.value - a.value)
+    .map((op) => {
+      const swapped = team.map((member, i) => (i === index ? op : member));
+      return { op, score: Math.round(teamScore(swapped, room, ctx)) };
+    })
+    .sort((a, b) => b.score - a.score || a.op.rarity - b.op.rarity)
     .slice(0, count);
 }
 
@@ -529,7 +547,7 @@ export default function InfraPlanner() {
               <div className="ship-room-crew">
                 {team.length ? team.map((op) => (
                   <img key={op.id} src={op.image} alt={op.name} title={op.name} loading="lazy" />
-                )) : <i>{plan ? "비어 있음" : "자동 편성 대기"}</i>}
+                )) : <i>{cell.key === "TRAINING" ? "비워둠 · 특화 훈련 시 사용" : plan ? "비어 있음" : "자동 편성 대기"}</i>}
               </div>
               {plan && team.length > 0 && !PARK_KEYS.includes(cell.key) && (
                 <small>+{score}{cell.room === "CONTROL" ? "" : "%"} {UNIT[cell.room]}{cell.key === "MEETING" ? " · 조 전환과 별개 상시 편성" : ""}</small>
@@ -564,7 +582,8 @@ function RoomModal({ cell, plan, allAssigned, initialShift, onClose }: { cell: {
   const teamIds = new Set(team.map((op) => op.id));
   const points = shiftIndex === 0 ? plan.tokenPoints : {};
   const ctx = ctxFor(cell.key, points);
-  const subs = substitutes(cell.key, points, new Set([...allAssigned, ...teamIds]));
+  const excluded = new Set([...allAssigned, ...teamIds]);
+  const currentScore = Math.round(teamScore(team, cell.room, ctx));
 
   return (
     <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
@@ -599,6 +618,14 @@ function RoomModal({ cell, plan, allAssigned, initialShift, onClose }: { cell: {
                       {op.skills.flatMap((skill) => skill.tokenGen).map((gen) => (
                         <small key={`${op.id}-${gen.token}`} className="token-chip">{gen.token} +{Math.round(gen.estimate)}점 생성</small>
                       ))}
+                      <div className="slot-subs">
+                        <span>이 자리 대체 오퍼:</span>
+                        {slotSubstitutes(team, team.indexOf(op), cell.key, ctx, excluded).map(({ op: sub, score }) => (
+                          <small key={sub.id} className="sub-chip" title={sub.skills.filter((skill) => skill.room === cell.room).map((skill) => `${skill.name}: ${skill.description}`).join("\n")}>
+                            <img src={sub.image} alt="" loading="lazy" />{sub.name} <em>{score >= currentScore ? "동급" : `-${currentScore - score}`}</em>
+                          </small>
+                        ))}
+                      </div>
                     </div>
                   </article>
                 );
@@ -607,26 +634,6 @@ function RoomModal({ cell, plan, allAssigned, initialShift, onClose }: { cell: {
             </div>
           </section>
 
-          <section className="detail-section">
-            <span className="detail-no">SUBSTITUTE / 02</span>
-            <h3>대체 오퍼레이터 추천</h3>
-            <p className="sub-hint">위 편성 오퍼레이터가 없다면, 아직 어디에도 기용되지 않은 차순위 오퍼레이터입니다.</p>
-            <div className="crew-list">
-              {subs.map(({ op, value }) => {
-                const skills = activeSkills(op, cell.room, cell.product);
-                return (
-                  <article key={op.id} className="crew-card sub">
-                    <img src={op.image} alt={op.name} loading="lazy" />
-                    <div>
-                      <b>{op.name} <i>{"★".repeat(op.rarity)}</i></b>
-                      {skills.map((skill) => <p key={skill.name}><em>{skill.name}</em> — {skill.description}</p>)}
-                      <small>단독 기여 +{value}{cell.room === "CONTROL" ? "" : "%"}</small>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          </section>
         </div>
       </section>
     </div>

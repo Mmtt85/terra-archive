@@ -271,3 +271,8 @@ footer p { margin:0 }
 .flow-tree li i { font-style:normal; color:var(--muted); margin-left:6px; font:700 9px monospace }
 .flow-tree li em { font-style:normal; margin-left:8px; padding:2px 6px; background:#e9e8e2; font:800 10px monospace }
 .flow-total { margin-left:10px; color:var(--muted); font:800 11px monospace }
+.slot-subs { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:9px }
+.slot-subs > span { color:var(--muted); font:700 9px monospace }
+.sub-chip { display:inline-flex; align-items:center; gap:5px; border:1px dashed #b5b4ac; background:#f4f3ee; padding:3px 7px 3px 3px; font-size:10px; font-weight:800 }
+.sub-chip img { width:18px; height:18px; object-fit:cover }
+.sub-chip em { font-style:normal; color:var(--muted); font:700 9px monospace }

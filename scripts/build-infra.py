@@ -122,10 +122,15 @@ def parse_tokens(text, room):
             use.append({"token": token, "per": per, "value": val, "percent": pct})
         for m in re.finditer(re.escape(token) + r"\s*\+(\d+)", text):
             amount = float(m.group(1))
+            per_member = None
             cap = re.search(r"1명당[^(]{0,40}\(최대 (\d+)명\)", text)
             per_dorm_member = re.search(r"숙소 (?:내|안)에? ?(?:배치된 )?오퍼레이터 1명당", text)
             if cap and "1명당" in text:
+                base = amount
                 amount *= float(cap.group(1))
+                fm = re.search(r"배치된 ([가-힣]+) 오퍼레이터 1명당", text)
+                if fm:
+                    per_member = {"per": base, "cap": float(cap.group(1)), "match": fm.group(1)}
             elif per_dorm_member:
                 # own dorm holds 5; a facility skill counting all dorms sees ~20
                 amount *= 5 if room == "DORMITORY" else 20
@@ -133,7 +138,9 @@ def parse_tokens(text, room):
                 amount *= 4  # office holds up to 4 recruitment slots
             elif re.search(r"오퍼레이터가 1명 증가할 때마다", text):
                 amount *= 4  # e.g. Ash: per teammate in the control center
-            gen.append({"token": token, "estimate": amount})
+            entry_gen = {"token": token, "estimate": amount}
+            if per_member: entry_gen["perMember"] = per_member
+            gen.append(entry_gen)
     # dorm stack systems (아이리스 꿈나라, 체르니 소절): Lv5 dorm grants 5 stacks
     stack = re.search(r"레벨(?: ?1)?당 ([가-힣]+) ?(\d*)스택", text)
     conv = re.search(r"([가-힣]+) (\d+)스택당 (" + "|".join(map(re.escape, TOKENS)) + r") (\d+)점으로 전환", text)
