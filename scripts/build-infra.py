@@ -55,11 +55,17 @@ def parse_metric(room, text):
         v = best(r"생산력[^+%]{0,24}" + PCT)
         if v: return "output", v
     if room == "TRADING":
+        m = re.search(r"자신을 제외한 작업 중인 오퍼레이터 1명당[^+%]{0,20}\+\s*(\d+(?:\.\d+)?)\s*%", text)
+        if m: return "percoworker", float(m.group(1))
         v = best(r"(?:오더 수주 효율|주문 획득 효율)[^+%]{0,24}" + PCT)
         if v: return "output", v
-        # order-quality effects, converted to a rough efficiency-equivalent %
+        # order-quality effects, converted to a rough efficiency-equivalent %.
+        # payout skills (테킬라 용문폐 보너스, 프로바이조 위약 배상) scale with
+        # quality-probability crew in the same post — handled in the planner
         m = re.search(r"용문폐 수익 \+\s*(\d+)", text)
-        if m: return "quality", round(float(m.group(1)) / 20)
+        if m: return "payout", round(float(m.group(1)) / 20)
+        m = re.search(r"위약 오더인 경우, 순금 납품 수가 추가로 \+\s*(\d+)", text)
+        if m: return "payout", float(m.group(1)) * 10
         if re.search(r"고품질 귀금속 오더의 출현 확률이 상승", text): return "quality", 15
         if re.search(r"고품질 귀금속 오더의 출현 확률이 소폭 상승", text): return "quality", 10
         if re.search(r"오더 수주 상한|주문 상한|최대 주문", text): return "capacity", 0
@@ -148,9 +154,22 @@ for o in operators:
             elif re.search(r"작전 ?기록", text): product = "exp"
             elif "오리지늄" in text: product = "shard"
         gen, use = parse_tokens(text)
+        # conversion skills ("감지 정보 1점당 무성의 공명 1점으로 전환") re-route
+        # this op's own generation into the target token
+        conv = re.search(r"(" + "|".join(map(re.escape, TOKENS)) + r") (\d+(?:\.\d+)?)점당 (" + "|".join(map(re.escape, TOKENS)) + r") (\d+(?:\.\d+)?)점으로 전환", text)
+        if conv:
+            src, ratio_src, dst, ratio_dst = conv.group(1), float(conv.group(2)), conv.group(3), float(conv.group(4))
+            for g in list(gen):
+                if g["token"] == src:
+                    gen.append({"token": dst, "estimate": g["estimate"] / ratio_src * ratio_dst})
+        # tier: α/β/γ variants replace each other; different roots stack
+        tier_match = re.search(r"\s*(α|β|γ|Ⅰ|Ⅱ|Ⅲ)\s*$", entry["name"])
+        tier = {"α": 1, "Ⅰ": 1, "β": 2, "Ⅱ": 2, "γ": 3, "Ⅲ": 3}.get(tier_match.group(1), 1) if tier_match else 1
+        group = re.sub(r"\s*(α|β|γ|Ⅰ|Ⅱ|Ⅲ)\s*$", "", entry["name"])
         skills.append({
             "name": entry["name"], "room": room, "unlock": entry["unlock"],
             "description": text, "kind": kind, "value": value, "product": product,
+            "group": group, "tier": tier,
             "moraleDrain": parse_morale_drain(text),
             "partners": find_partners(text, o["name"]),
             "tokenGen": gen, "tokenUse": use,
