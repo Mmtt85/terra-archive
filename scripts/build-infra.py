@@ -74,6 +74,8 @@ def parse_metric(room, text):
         if v: return "output", v
     if room == "MEETING":
         v = best(r"단서 (?:수집|검색) 속도(?:가)?[^%\d]{0,16}" + PCT)
+        cap = re.search(r"최대 (\d+(?:\.\d+)?)%까지", text)
+        if cap: v = max(v or 0, float(cap.group(1)))
         if v:
             if re.search(r"자신만 업무 중", text): return "solo", v
             if re.search(r"단서 공유 상태에서", text): return "shared", v

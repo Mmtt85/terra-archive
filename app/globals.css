@@ -260,3 +260,14 @@ footer p { margin:0 }
 @media (max-width:760px) { .main-tabs { margin:0 8px } .main-tabs button { padding:7px 9px; font-size:10px } }
 .dorm-room { cursor:default; opacity:.75 }
 .dorm-room .ship-room-head span { color:#8d97a5 }
+.strategy-cell { text-align:left; cursor:pointer; background:var(--white); border:1px solid var(--line); padding:13px 15px; transition:.15s }
+.strategy-cell:hover { border-color:var(--ink); background:#fdfdea }
+.token-chip { display:inline-block; margin:6px 6px 0 0; padding:3px 7px; background:#eef3d2; color:#5b6b00; font:800 9px monospace }
+.flow-tree ul { list-style:none; margin:8px 0 0; padding-left:18px; border-left:2px solid var(--line) }
+.flow-tree > ul { border-left:0; padding-left:0 }
+.flow-tree li { margin-top:8px; font-size:12px }
+.flow-branch { font-weight:900; font-size:12px }
+.flow-tree li img { width:22px; height:22px; object-fit:cover; vertical-align:middle; margin-right:7px; border:1px solid var(--line); background:#12171a }
+.flow-tree li i { font-style:normal; color:var(--muted); margin-left:6px; font:700 9px monospace }
+.flow-tree li em { font-style:normal; margin-left:8px; padding:2px 6px; background:#e9e8e2; font:800 10px monospace }
+.flow-total { margin-left:10px; color:var(--muted); font:800 11px monospace }
