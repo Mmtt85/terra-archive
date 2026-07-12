@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import operatorsData from "./data/operators.json";
 import InfraPlanner from "./planner";
+import RecruitHelper from "./recruit";
 
 type RangeGrid = { row: number; col: number };
 
@@ -107,13 +108,17 @@ export default function Home() {
   const [selectedJobs, setSelectedJobs] = useState<string[]>([]);
   const [selectedSubProfessions, setSelectedSubProfessions] = useState<string[]>([]);
   const [selected, setSelected] = useState<Operator | null>(null);
-  const [tab, setTab] = useState<"archive" | "planner">("archive");
+  const [tab, setTab] = useState<"archive" | "planner" | "recruit">("archive");
 
   useEffect(() => {
     const applyHash = () => {
       const hash = decodeURIComponent(window.location.hash);
       if (hash === "#infra") {
         setTab("planner");
+        return;
+      }
+      if (hash === "#recruit") {
+        setTab("recruit");
         return;
       }
       setTab("archive");
@@ -136,10 +141,11 @@ export default function Home() {
     history.replaceState(null, "", window.location.pathname);
   };
 
-  const switchTab = (next: "archive" | "planner") => {
+  const switchTab = (next: "archive" | "planner" | "recruit") => {
     setTab(next);
     setSelected(null);
     if (next === "planner") window.location.hash = "infra";
+    else if (next === "recruit") window.location.hash = "recruit";
     else history.replaceState(null, "", window.location.pathname);
   };
   const [sortKey, setSortKey] = useState("기본");
@@ -218,7 +224,7 @@ export default function Home() {
   }, [filtered, sortKey, sortAsc]);
 
   return (
-    <main className={tab === "planner" ? "base-main" : ""}>
+    <main className={tab !== "archive" ? "base-main" : ""}>
       <header className="site-header" id="top">
         <a className="brand" href="#top" aria-label="테라 아카이브 홈">
           <span className="brand-mark">TA</span>
@@ -228,6 +234,7 @@ export default function Home() {
         <nav className="main-tabs" aria-label="주요 탭">
           <button className={tab === "archive" ? "selected" : ""} onClick={() => switchTab("archive")}>오퍼 백과사전</button>
           <button className={tab === "planner" ? "selected" : ""} onClick={() => switchTab("planner")}>인프라 플래너</button>
+          <button className={tab === "recruit" ? "selected" : ""} onClick={() => switchTab("recruit")}>공채 도우미</button>
         </nav>
         <div className="server-chip"><span /> KR SERVER · BETA</div>
       </header>
@@ -286,6 +293,7 @@ export default function Home() {
       </section>}
 
       {tab === "planner" && <InfraPlanner />}
+      {tab === "recruit" && <RecruitHelper />}
 
       {selected && <OperatorModal operator={selected} onClose={closeOperator} />}
 

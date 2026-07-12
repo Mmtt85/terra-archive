@@ -295,3 +295,24 @@ footer p { margin:0 }
 .help-list li { color:#4f585c; font-size:12px; line-height:1.75; margin-top:6px }
 .image-preview .modal-scroll img { width:100%; height:auto; border:1px solid var(--line) }
 .save-image { display:inline-block; background:var(--lime); color:var(--ink); padding:9px 14px; font-size:11px; font-weight:800; text-decoration:none }
+
+/* ─ 공채 도우미 ─ */
+.recruit { width:min(100%,1200px); margin:0 auto; padding:34px clamp(18px,4vw,64px) 80px }
+.recruit-head h2 { letter-spacing:-1.2px; margin:8px 0 10px; font-size:30px }
+.recruit-head p { color:#535b5f; max-width:760px; margin:0; font-size:12px; line-height:1.65 }
+.recruit-tags { border:1px solid var(--line); background:var(--white); margin-top:22px; padding:6px 20px 16px }
+.recruit-tags fieldset { margin:14px 0 0 }
+.recruit-picked { display:flex; align-items:center; gap:14px; margin-top:16px; padding-top:12px; border-top:1px dashed var(--line); font:700 11px monospace; color:var(--muted) }
+.recruit-empty { color:var(--muted); text-align:center; margin:60px 0; font-size:13px }
+.recruit-results { display:grid; gap:12px; margin-top:22px }
+.recruit-combo { border:1px solid var(--line); background:var(--white); padding:14px 16px 15px }
+.recruit-combo.prized { border-color:var(--ink); box-shadow:4px 4px 0 var(--lime) }
+.recruit-combo>header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:11px }
+.combo-tags { display:flex; flex-wrap:wrap; gap:6px }
+.combo-tags span { background:var(--ink); color:#fff; padding:5px 9px; font-size:11px; font-weight:800 }
+.recruit-combo>header>b { color:#fff; flex:none; padding:5px 10px; font:800 11px monospace; letter-spacing:.5px }
+.recruit-combo ul { list-style:none; display:flex; flex-wrap:wrap; gap:7px; margin:0; padding:0 }
+.recruit-combo li { display:flex; align-items:center; gap:6px; border:1px solid; background:#fbfbf8; padding:3px 8px 3px 3px; font-size:11px; font-weight:800 }
+.recruit-combo li img { width:24px; height:24px; object-fit:cover; background:#20272b }
+.recruit-combo li i { font-style:normal; font:800 9px monospace }
+@media (width<=760px) { .recruit { padding-top:20px } .recruit-tags { padding:2px 12px 12px } }
