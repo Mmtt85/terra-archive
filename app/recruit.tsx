@@ -64,8 +64,9 @@ export default function RecruitHelper() {
       <div className="recruit-head">
         <span className="section-no">RECRUITMENT ASSIST</span>
         <h2>공채 도우미</h2>
-        <p>게임에서 받은 모집 태그 <b>5개</b>를 선택하면, 최대 3개 조합별로 나올 수 있는 오퍼레이터를 높은 성급 확정 순으로 보여줍니다.
-          모집 시간 <b>9시간</b> 기준 — 1★는 로봇 태그, 2★는 신입 태그를 골랐을 때만 나오고, 6★는 고급 특별 채용이 있어야 나옵니다.</p>
+        <p>게임 공개모집에 <b>제시된 태그 5개</b>를 아래에서 그대로 입력하세요. 실제 게임에서는 그중 <b>최대 3개만 체크</b>할 수 있으므로,
+          체크 가능한 모든 1~3개 조합을 계산해 높은 성급이 확정되는 조합부터 순서대로 보여줍니다.
+          모집 시간 <b>9시간</b> 기준 — 1★는 로봇 태그, 2★는 신입 태그를 체크했을 때만 나오고, 6★는 고급 특별 채용이 있어야 나옵니다.</p>
       </div>
 
       <div className="recruit-tags">
@@ -81,7 +82,7 @@ export default function RecruitHelper() {
           </fieldset>
         ))}
         <div className="recruit-picked">
-          선택 {picked.length}/5
+          제시된 태그 {picked.length}/5 · 조합은 3개까지만 계산됩니다
           {picked.length > 0 && <button type="button" className="reset" onClick={() => setPicked([])}>모두 해제</button>}
         </div>
       </div>
