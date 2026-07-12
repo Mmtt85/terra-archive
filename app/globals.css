@@ -320,3 +320,8 @@ footer p { margin:0 }
 .dict-toggle { width:100%; border:1px dashed #aaa9a2; background:0 0; color:var(--muted); cursor:pointer; padding:12px; font-size:12px; font-weight:800 }
 .dict-toggle:hover { border-color:var(--ink); color:var(--ink) }
 .recruit-dict>p { color:#535b5f; margin:14px 2px 0; font-size:12px; line-height:1.6 }
+.quick-wrap { display:flex; align-items:stretch; gap:8px; margin-top:16px }
+.quick-wrap input { flex:1; border:1px solid #bbbcb7; background:var(--white); padding:11px 12px; font-size:13px; outline:0 }
+.quick-wrap input:focus { border-color:var(--ink) }
+.clear-btn { border:1px solid var(--ink); background:var(--ink); color:var(--lime); cursor:pointer; padding:0 18px; font-size:12px; font-weight:800 }
+.clear-btn:hover { background:var(--lime); color:var(--ink) }

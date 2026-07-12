@@ -96,12 +96,31 @@ function ComboCard({ result }: { result: ComboResult }) {
   );
 }
 
+const ALL_TAG_NAMES = data.tags.map((tag) => tag.name);
+
 export default function RecruitHelper() {
   const [picked, setPicked] = useState<string[]>([]);
   const [showDict, setShowDict] = useState(false);
+  const [quick, setQuick] = useState("");
 
   const togglePicked = (tag: string) =>
     setPicked((current) => current.includes(tag) ? current.filter((item) => item !== tag) : current.length >= 5 ? current : [...current, tag]);
+
+  // 빠른 입력: 각 글자를 첫 글자로 갖는 태그만 표시하고, 후보가 하나뿐이면 자동 선택
+  const quickChars = Array.from(new Set(quick.replace(/\s/g, "").split("")));
+  const isVisible = (tag: string) => quickChars.length === 0 || quickChars.includes(tag[0]) || picked.includes(tag);
+  const onQuickChange = (value: string) => {
+    setQuick(value);
+    const chars = Array.from(new Set(value.replace(/\s/g, "").split("")));
+    setPicked((current) => {
+      const next = [...current];
+      for (const char of chars) {
+        const candidates = ALL_TAG_NAMES.filter((name) => name[0] === char);
+        if (candidates.length === 1 && !next.includes(candidates[0]) && next.length < 5) next.push(candidates[0]);
+      }
+      return next;
+    });
+  };
 
   const results = useMemo(() => comboResults(picked), [picked]);
 
@@ -116,20 +135,28 @@ export default function RecruitHelper() {
       </div>
 
       <div className="recruit-tags">
-        {TAG_GROUPS.map(([group, tags]) => (
-          <fieldset key={group}>
-            <legend>{group}</legend>
-            <div className="filter-list">
-              {tags.map((tag) => (
-                <button key={tag} type="button" className={picked.includes(tag) ? "selected" : ""}
-                  disabled={!picked.includes(tag) && picked.length >= 5} onClick={() => togglePicked(tag)}>{tag}</button>
-              ))}
-            </div>
-          </fieldset>
-        ))}
+        <div className="quick-wrap">
+          <input value={quick} onChange={(event) => onQuickChange(event.target.value)}
+            placeholder="빠른 입력 — 태그 첫 글자를 이어서 입력 (예: 가메신생범)" aria-label="태그 첫 글자 빠른 입력" />
+          <button type="button" className="clear-btn" onClick={() => { setPicked([]); setQuick(""); }}>클리어</button>
+        </div>
+        {TAG_GROUPS.map(([group, tags]) => {
+          const shown = tags.filter(isVisible);
+          if (shown.length === 0) return null;
+          return (
+            <fieldset key={group}>
+              <legend>{group}</legend>
+              <div className="filter-list">
+                {shown.map((tag) => (
+                  <button key={tag} type="button" className={picked.includes(tag) ? "selected" : ""}
+                    disabled={!picked.includes(tag) && picked.length >= 5} onClick={() => togglePicked(tag)}>{tag}</button>
+                ))}
+              </div>
+            </fieldset>
+          );
+        })}
         <div className="recruit-picked">
           제시된 태그 {picked.length}/5 · 체크 조합은 3개까지 계산
-          {picked.length > 0 && <button type="button" className="reset" onClick={() => setPicked([])}>모두 해제</button>}
         </div>
       </div>
 
