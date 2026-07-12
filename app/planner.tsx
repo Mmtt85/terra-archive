@@ -693,7 +693,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
           {Array.from({ length: SHIFT_COUNT }, (_, i) => (
             <button key={i} className={activeShift === i ? "selected" : ""} onClick={() => setActiveShift(i)}>{["A조 (풀파워)", "B조 (회복 교대)"][i]}</button>
           ))}
-          <span className="shift-hint">A조 컨디션 소진 시 B조 투입 · 시너지 세트는 A조 집중 · 숙소·응접실·고정 요원은 조 전환과 무관 (숙소는 풀 인원 기준)</span>
+          <span className="shift-hint">A조 컨디션 소진 시 B조 투입 · 시너지 세트는 A조 집중 · 숙소·응접실·고정 요원은 조 전환과 무관 · <b>숙소는 항상 5명 꽉 채워 유지</b></span>
         </div>
       )}
 
@@ -816,6 +816,9 @@ function RoomModal({ cell, plan, allAssigned, roster, initialShift, onClose, onS
           <section className="detail-section">
             <span className="detail-no">CREW / 01</span>
             <h3>편성 ({team.length}/{infra.rooms[cell.room]?.slots ?? 1})</h3>
+            {cell.room === "DORMITORY" && (
+              <p className="dorm-note">숙소는 <b>항상 5명을 꽉 채운 상태로 유지</b>하세요. 고정 생성원 외의 빈 자리는 휴식이 필요한 아무 오퍼레이터로 채우면 됩니다 — 토큰 생성과 회복 효율은 풀 인원 기준으로 계산됩니다.</p>
+            )}
             <div className="crew-list">
               {team.map((op) => {
                 const b = breakdown(op, cell.room, team, ctx);
