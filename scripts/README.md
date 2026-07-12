@@ -1,0 +1,35 @@
+# 데이터 파이프라인
+
+명일방주 새 버전이 나오면 클뜯 레포에서 데이터를 받아 `app/data/operators.json`을 갱신한다.
+
+## 1. 신규 오퍼레이터 확인
+
+```bash
+node scripts/check-new-operators.mjs
+```
+
+KR 최신 `character_table`과 로컬 JSON을 비교해 미수록 오퍼레이터를 출력한다.
+
+## 2. 게임 데이터 다운로드
+
+`ArknightsAssets/ArknightsGamedata` 레포(자동 클뜯, kr 폴더)에서 아래 테이블을 받아 한 폴더(예: `.gamedata/`)에 저장:
+
+- `kr_character_table.json`, `kr_skill_table.json`, `kr_uniequip_table.json`,
+  `kr_battle_equip_table.json`, `kr_building_data.json`, `kr_range_table.json`,
+  `kr_handbook_team_table.json`, `kr_handbook_info_table.json` ← `kr/gamedata/excel/*.json`
+- `jp_character_table.json`, `cn_character_table.json` ← 별명(다국어 이름)용
+
+이미지는 `yuanyan3060/ArknightsGameResource`의 `avatar/<char_id>.png` 핫링크를 쓴다
+(신규 오퍼레이터는 URL이 200인지 확인할 것).
+
+## 3. 재생성 + 태그
+
+```bash
+python3 scripts/regen-operators.py .gamedata   # 기계 필드 전체 재생성 → operators-regen.json
+python3 scripts/retag-concepts.py .gamedata    # 스킬·재능·특성 기반 컨셉 태그 → operators-tagged.json
+cp <scratch>/operators-tagged.json app/data/operators.json
+```
+
+- 신규 오퍼레이터의 `accent` 색상은 `regen-operators.py`의 `NEW_ACCENTS`에 추가한다.
+- 커뮤니티 별명은 기존 JSON의 aliases에서 자동 보존된다(새로 추가하려면 데이터에 직접).
+- 출신지·종족은 handbook에서 파싱하며 로봇·예비 인원은 "불명" 처리된다.
