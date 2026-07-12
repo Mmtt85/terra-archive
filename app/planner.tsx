@@ -23,6 +23,8 @@ type InfraSkill = {
   tokenUse: TokenUse[];
   convert: { from: string; per: number; to: string; amount: number } | null;
   facilityBased?: boolean;
+  basePartners?: string[];      // 기지 어디든(숙소 포함) 있으면 발동하는 동반 조건
+  basePartnerBonus?: number | null; // 위 조건 충족 시 추가 효율 (언더플로우 +10)
   reqFaction: string | null;
   perFaction: string | null;
   perScope: string | null;
@@ -94,7 +96,7 @@ const UNIT: Record<string, string> = {
 const PARK_KEYS = ["WORKSHOP"];
 const SHIFT_COUNT = 2;
 
-type Ctx = { product?: string; tokenPoints: Record<string, number>; factionCounts?: Record<string, number>; plants?: number };
+type Ctx = { product?: string; tokenPoints: Record<string, number>; factionCounts?: Record<string, number>; plants?: number; presentIds?: Set<string> };
 
 function skillApplies(skill: InfraSkill, room: string, product?: string): boolean {
   if (skill.room !== room) return false;
@@ -140,6 +142,10 @@ function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx): OpBrea
     // faction companion gate (호시구마: 용문근위국 오퍼와 함께 배치 시)
     if (skill.reqFaction && !team.some((member) => member.id !== op.id && member.faction === skill.reqFaction)) continue;
     out.skills.push(skill);
+    // 기반시설 어디든 존재 조건 (언더플로우: 울피아누스가 숙소 포함 기지 내에 있으면 +10%)
+    if (skill.basePartners?.length && skill.basePartnerBonus && skill.basePartners.every((p) => ctx.presentIds?.has(p))) {
+      out.efficiency += skill.basePartnerBonus;
+    }
     // per-faction counting (바르카리스: 미노스 오퍼레이터 1명당 +v%, 최대 cap)
     if (skill.perFaction && skill.perSkillTag == null) {
       const count = skill.perScope === "room"
@@ -283,8 +289,17 @@ type Plan = {
 const PRODUCTION_KEYS = ["TRADING-0", "TRADING-1", "MANUFACTURE-0", "MANUFACTURE-1", "MANUFACTURE-2", "MANUFACTURE-3", "POWER-0", "POWER-1", "POWER-2"];
 const SUPPORT_KEYS = ["CONTROL", "MEETING", "HIRE", "WORKSHOP", "TRAINING"];
 
-function ctxFor(key: string, tokenPoints: Record<string, number>, factionCounts?: Record<string, number>, plants?: number): Ctx {
-  return { product: cellByKey.get(key)?.product, tokenPoints, factionCounts, plants };
+function ctxFor(key: string, tokenPoints: Record<string, number>, factionCounts?: Record<string, number>, plants?: number, presentIds?: Set<string>): Ctx {
+  return { product: cellByKey.get(key)?.product, tokenPoints, factionCounts, plants, presentIds };
+}
+
+// 해당 조 기준 기지 내 배치 전원 (숙소·응접실 포함) — 기반시설 존재 조건 판정용
+function presentIdsFor(plan: Plan, shift: number): Set<string> {
+  const ids = new Set<string>();
+  for (const shifts of Object.values(plan.assignments)) {
+    for (const id of shifts[Math.min(shift, shifts.length - 1)] ?? []) ids.add(id);
+  }
+  return ids;
 }
 
 function buildPlan(packageTokens: string[], roster: InfraOp[]): Plan {
@@ -392,17 +407,21 @@ function buildPlan(packageTokens: string[], roster: InfraOp[]): Plan {
       }
     }
     const shiftFactionCounts: Record<string, number> = {};
+    // 기지 전체 존재 조건(언더플로우의 울피아누스 등)용 — 숙소 고정 인원 포함,
+    // 이 조에서 지금까지 배치된 오퍼가 누적된다
+    const placedIds = new Set<string>(dormPins.flat().map((op) => op.id));
     for (const key of keys) {
       if (key === "TRAINING") { assignments[key].push([]); continue; } // 특화 훈련용으로 비워둠
       if (key === "MEETING" && shift > 0) continue; // 응접실은 조 전환과 별개 상시 편성
       const room = cellByKey.get(key)?.room ?? key;
       const slots = infra.rooms[room]?.slots ?? 1;
       const pool = new Map(roster.filter((op) => !used.has(op.id) && (shift > 0 || !reserved.has(op.id) || reserved.get(op.id) === key)).map((op) => [op.id, op]));
-      const ctx = ctxFor(key, shift === 0 ? tokenPoints : {}, shiftFactionCounts, plants);
+      const ctx = ctxFor(key, shift === 0 ? tokenPoints : {}, shiftFactionCounts, plants, placedIds);
       const seed = (seeds[key] ?? []).filter((op) => pool.has(op.id));
       const team = bestTeam(room, slots, pool, ctx, seed);
       team.forEach((op) => {
         used.add(op.id);
+        placedIds.add(op.id);
         shiftFactionCounts[op.faction] = (shiftFactionCounts[op.faction] ?? 0) + 1;
       });
       assignments[key].push(team.map((op) => op.id));
@@ -529,7 +548,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
       const shifts = plan.assignments[cell.key] ?? [];
       const scoreFor = (team: InfraOp[], shift: number) =>
         cell.room === "DORMITORY" || PARK_KEYS.includes(cell.key) ? null
-          : Math.round(teamScore(team, cell.room, ctxFor(cell.key, shift === 0 ? plan.tokenPoints : {}, plan.factionCounts[shift] ?? {}, plan.plants)));
+          : Math.round(teamScore(team, cell.room, ctxFor(cell.key, shift === 0 ? plan.tokenPoints : {}, plan.factionCounts[shift] ?? {}, plan.plants, presentIdsFor(plan, shift))));
       const teamAt = (shift: number) => (shifts[Math.min(shift, shifts.length - 1)] ?? []).map((id) => effectiveOpById.get(id)).filter(Boolean) as InfraOp[];
       const single = cell.room === "DORMITORY" || cell.key === "MEETING" || cell.key === "TRAINING";
       if (single) {
@@ -719,11 +738,14 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
 
   const pointsFor = (shift: number) => (shift === 0 && plan ? plan.tokenPoints : {});
 
+  // 현재 조 기준 기지 내 배치 전원 — 기반시설 존재 조건(언더플로우+울피아누스) 판정용
+  const presentIds = useMemo(() => (plan ? presentIdsFor(plan, activeShift) : undefined), [plan, activeShift]);
+
   const summary = useMemo(() => {
     if (!plan) return null;
     const avg = (prefix: string) => {
       const keys = LAYOUT.filter((cell) => cell.key.startsWith(prefix)).map((cell) => cell.key);
-      const totals = keys.map((key) => teamScore(teamFor(key, activeShift), cellByKey.get(key)!.room, ctxFor(key, pointsFor(activeShift), plan.factionCounts[activeShift], plan.plants)));
+      const totals = keys.map((key) => teamScore(teamFor(key, activeShift), cellByKey.get(key)!.room, ctxFor(key, pointsFor(activeShift), plan.factionCounts[activeShift], plan.plants, presentIds)));
       return totals.length ? Math.round(totals.reduce((a, b) => a + b, 0) / totals.length) : 0;
     };
     return {
@@ -801,7 +823,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
           }
           const team = teamFor(cell.key, activeShift);
           const spec = infra.rooms[cell.room];
-          const score = Math.round(teamScore(team, cell.room, ctxFor(cell.key, pointsFor(activeShift), plan?.factionCounts?.[activeShift], plan?.plants)));
+          const score = Math.round(teamScore(team, cell.room, ctxFor(cell.key, pointsFor(activeShift), plan?.factionCounts?.[activeShift], plan?.plants, presentIds)));
           return (
             <button key={cell.key} type="button" className={`ship-room pos-${cell.key.toLowerCase()}`} onClick={() => setOpenRoom(cell.key)} style={{ "--room-accent": ROOM_ACCENT[cell.room] } as React.CSSProperties}>
               <div className="ship-room-head">
@@ -893,7 +915,7 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
   const team = rawIds.map((id) => opMap.get(id)).filter(Boolean) as InfraOp[];
   const teamIds = new Set(team.map((op) => op.id));
   const points = shiftIndex === 0 ? plan.tokenPoints : {};
-  const ctx = ctxFor(cell.key, points, plan.factionCounts[shiftIndex] ?? {}, plan.plants);
+  const ctx = ctxFor(cell.key, points, plan.factionCounts[shiftIndex] ?? {}, plan.plants, presentIdsFor(plan, shiftIndex));
   const excluded = new Set([...allAssigned, ...teamIds]);
   const currentScore = Math.round(teamScore(team, cell.room, ctx));
   const slots = infra.rooms[cell.room]?.slots ?? 1;
@@ -1216,6 +1238,8 @@ const HELP_SECTIONS: { title: string; items: string[] }[] = [
   { title: "무역소 조합", items: [
     "샤마르(속삭임)는 다른 인원의 효율을 0으로 만들고 인당 +45%를 주므로, 효율이 없어도 되는 품질 요원과 묶습니다: 샤마르 + 테킬라(투자β: 고품질 순금 오더 수익) + 확률 요원(카프카·디아만테·바이비크 — 전부 동급).",
     "프로바이조는 반대로 저품질 오더를 위약 처리해 수익을 내므로 고품질 확률과는 반시너지입니다. 처리량이 높은 우요우+에벤홀츠 방에 넣습니다.",
+    "레벨 성장형은 만렙 기지 기준 상한으로 계산합니다: 비질 +40%(응접실 Lv3), 아르케토 +40%(숙소 20레벨), 미틈 +30%, 만트라 +45%(시설 10개).",
+    "언더플로우(+30%)는 울피아누스가 기지 어디든(숙소 포함) 있으면 +40%가 됩니다 — 울피아누스를 숙소에 고정해 두세요. B조 무역소 정배: 비질+아르케토+언더플로우.",
   ]},
   { title: "자동화 제조소", items: [
     "위디·유넥티스·윈드플릿·패신저는 방 내 다른 오퍼의 생산력을 0으로 만들고 발전소 1기당 +15%/+10%/+5%/+5%를 받습니다 — 이들과 같은 방에 넣은 일반 +30%/+35%류 생산력 스킬은 전부 0%가 되므로, 직접 수치가 아니라 이런 제로아웃 오퍼와 궁합이 맞는지 먼저 확인해야 합니다.",

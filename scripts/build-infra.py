@@ -66,7 +66,18 @@ def parse_metric(room, text):
         m = re.search(r"자신을 제외한 작업 중인 오퍼레이터 1명당[^+%\d]{0,20}\+\s*(\d+(?:\.\d+)?)\s*%", text)
         if m: return "percoworker", float(m.group(1))
         v = best(r"(?:오더 수주 효율|주문 획득 효율)[^+%\d]{0,24}" + PCT)
-        if v: return "output", v
+        if v:
+            # 응접실 레벨 성장형 (비질·미틈): "응접실 레벨 1레벨당 추가로 5% 제공,
+            # 최대 40% 제공" → 응접실은 만렙(Lv3) 기준이므로 상한 채택
+            grow = re.search(r"응접실 레벨 ?1?(?:레벨)?당 추가로 수주 효율 (\d+(?:\.\d+)?)% 제공", text)
+            if grow:
+                cap = re.search(r"최대 \+?(\d+(?:\.\d+)?)% 제공", text)
+                v = float(cap.group(1)) if cap else v + float(grow.group(1)) * 3
+            # 시설 카운트 (만트라): "정예 오퍼레이터가 배치된 시설 1개당 +2% (최대
+            # 10개)" → 풀 기지는 시설 10개를 쉽게 채우므로 상한 채택
+            fac = re.search(r"시설 1개당[^%]*?\+\s*(\d+(?:\.\d+)?)\s*%\s*\(최대 (\d+)개\)", text)
+            if fac: v += float(fac.group(1)) * float(fac.group(2))
+            return "output", v
         # order-quality effects, converted to a rough efficiency-equivalent %.
         # payout skills (테킬라 용문폐 보너스, 프로바이조 위약 배상) scale with
         # quality-probability crew in the same post — handled in the planner
@@ -209,7 +220,13 @@ for o in operators:
         room = entry["room"]
         if room not in ROOM_KO: continue
         text = entry["description"]
-        kind, value = parse_metric(room, text)
+        # "모든 숙소의 레벨 1당 +N%" (아르케토·틴맨·나란투야·필라에): 숙소 4개 ×
+        # Lv5 = 20레벨 기준 상한 — 절을 떼고 기본치를 파싱한 뒤 ×20을 더한다
+        dorm_lvl = re.search(r"모든 숙소의 레벨 ?1당[^%+]*\+\s*(\d+(?:\.\d+)?)\s*%", text)
+        metric_text = text[:dorm_lvl.start()] + text[dorm_lvl.end():] if dorm_lvl else text
+        kind, value = parse_metric(room, metric_text)
+        if dorm_lvl and kind in ("output", "misc"):
+            kind, value = "output", (value or 0) + float(dorm_lvl.group(1)) * 20
         override = re.search(r"효율이 전부 0이 되고[^+]{0,20}\+\s*(\d+(?:\.\d+)?)\s*%", text)
         if override:
             kind, value = "override", float(override.group(1))
@@ -253,6 +270,15 @@ for o in operators:
         if conv:
             src, ratio_src, dst, ratio_dst = conv.group(1), float(conv.group(2)), conv.group(3), float(conv.group(4))
             convert = {"from": src, "per": ratio_src, "to": dst, "amount": ratio_dst}
+        # 기반시설 어디든 존재 조건 (언더플로우: "울피아누스가 기반시설에 있으면
+        # 추가로 +10%") — 같은 방 동반(partners)이 아니라 기지 전체 존재 조건.
+        # partners로 오인하면 기본 효율까지 통째로 게이트돼 버린다
+        base_partner_ids = []
+        base_partner_bonus = None
+        bp = re.search(r"([가-힣A-Za-z0-9·' ]{2,20}?)(?:이|가) 기반시설[^%]*?있으면[^%]*?추가로 \+?\s*(\d+(?:\.\d+)?)\s*%", text)
+        if bp and bp.group(1).strip() in name_to_id:
+            base_partner_ids = [name_to_id[bp.group(1).strip()]]
+            base_partner_bonus = float(bp.group(2))
         # buffChar slots already resolved upgrades — every line here stacks
         tier = 1
         group = entry["name"]
@@ -261,7 +287,8 @@ for o in operators:
             "description": text, "kind": kind, "value": value, "product": product,
             "group": group, "tier": tier,
             "moraleDrain": parse_morale_drain(text),
-            "partners": find_partners(text, o["name"]),
+            "partners": [p for p in find_partners(text, o["name"]) if p not in base_partner_ids],
+            "basePartners": base_partner_ids, "basePartnerBonus": base_partner_bonus,
             "tokenGen": gen, "tokenUse": use, "convert": convert,
             "reqFaction": req_faction, "perFaction": per_faction, "perScope": per_scope, "perCap": per_cap,
             "facilityBased": facility_based,
