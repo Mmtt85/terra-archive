@@ -493,13 +493,21 @@ export default function InfraPlanner() {
 
   const exportImage = async () => {
     if (!plan) return;
-    const rows = LAYOUT.map((cell) => {
-      const team = (plan.assignments[cell.key]?.[0] ?? []).map((id) => opById.get(id)).filter(Boolean) as InfraOp[];
-      const score = cell.room === "DORMITORY" || PARK_KEYS.includes(cell.key) ? null
-        : Math.round(teamScore(team, cell.room, ctxFor(cell.key, plan.tokenPoints, plan.factionCounts[0], plan.plants)));
-      return { cell, team, score };
+    type Row = { cell: (typeof LAYOUT)[number]; crews: { label: string; team: InfraOp[]; score: number | null }[] };
+    const rows: Row[] = LAYOUT.map((cell) => {
+      const shifts = plan.assignments[cell.key] ?? [];
+      const scoreFor = (team: InfraOp[], shift: number) =>
+        cell.room === "DORMITORY" || PARK_KEYS.includes(cell.key) ? null
+          : Math.round(teamScore(team, cell.room, ctxFor(cell.key, shift === 0 ? plan.tokenPoints : {}, plan.factionCounts[shift] ?? {}, plan.plants)));
+      const teamAt = (shift: number) => (shifts[Math.min(shift, shifts.length - 1)] ?? []).map((id) => opById.get(id)).filter(Boolean) as InfraOp[];
+      const single = cell.room === "DORMITORY" || cell.key === "MEETING" || cell.key === "TRAINING";
+      if (single) {
+        const team = teamAt(0);
+        return { cell, crews: [{ label: cell.room === "DORMITORY" ? "고정" : cell.key === "MEETING" ? "상시" : "-", team, score: scoreFor(team, 0) }] };
+      }
+      return { cell, crews: [0, 1].map((shift) => ({ label: ["A", "B"][shift], team: teamAt(shift), score: scoreFor(teamAt(shift), shift) })) };
     });
-    const uniqueOps = Array.from(new Set(rows.flatMap((row) => row.team)));
+    const uniqueOps = Array.from(new Set(rows.flatMap((row) => row.crews.flatMap((crew) => crew.team))));
     const avatars = new Map<string, HTMLImageElement>();
     await Promise.all(uniqueOps.map((op) => new Promise<void>((resolve) => {
       const img = new Image();
@@ -508,35 +516,51 @@ export default function InfraPlanner() {
       img.onerror = () => resolve();
       img.src = op.image;
     })));
-    const W = 1240; const rowH = 58; const top = 150;
+    const W = 1240; const lineH = 46; const top = 150;
+    const rowHeights = rows.map((row) => row.crews.length * lineH + 12);
     const canvas = document.createElement("canvas");
-    canvas.width = W; canvas.height = top + rows.length * rowH + 70;
+    canvas.width = W; canvas.height = top + rowHeights.reduce((a, b) => a + b, 0) + 70;
     const g = canvas.getContext("2d")!;
     g.fillStyle = "#f1f0eb"; g.fillRect(0, 0, W, canvas.height);
     g.fillStyle = "#131719"; g.fillRect(0, 0, W, 96);
     g.fillStyle = "#dfff00"; g.font = "900 30px monospace"; g.fillText("TERRA ARCHIVE // RIIC PLAN", 32, 58);
     g.fillStyle = "#131719"; g.font = "700 15px sans-serif";
     g.fillText(`${plan.strategy} · ${Object.entries(plan.tokenPoints).map(([token, points]) => `${token} ${Math.round(points)}점`).join(" · ")}`, 32, 126);
+    let y = top;
     rows.forEach((row, index) => {
-      const y = top + index * rowH;
-      g.fillStyle = index % 2 ? "#eceae3" : "#fbfbf8"; g.fillRect(24, y, W - 48, rowH - 8);
-      g.fillStyle = ROOM_ACCENT[row.cell.room] ?? "#888"; g.fillRect(24, y, 5, rowH - 8);
+      const h = rowHeights[index];
+      g.fillStyle = index % 2 ? "#eceae3" : "#fbfbf8"; g.fillRect(24, y, W - 48, h - 8);
+      g.fillStyle = ROOM_ACCENT[row.cell.room] ?? "#888"; g.fillRect(24, y, 5, h - 8);
       g.fillStyle = "#131719"; g.font = "800 15px sans-serif";
-      g.fillText(row.cell.label, 44, y + 24);
-      g.fillStyle = "#687176"; g.font = "700 12px monospace";
-      g.fillText(row.score != null ? `+${row.score}${row.cell.room === "CONTROL" ? "" : "%"}` : row.cell.room === "DORMITORY" ? "고정" : "", 44, y + 43);
-      let x = 250;
-      for (const op of row.team) {
-        const img = avatars.get(op.id);
-        if (img) { g.drawImage(img, x, y + 7, 36, 36); }
-        g.fillStyle = "#131719"; g.font = "700 12px sans-serif";
-        g.fillText(op.name, x + 42, y + 30);
-        x += 42 + Math.max(g.measureText(op.name).width + 22, 80);
-      }
-      if (!row.team.length) { g.fillStyle = "#9aa0a3"; g.font = "700 12px sans-serif"; g.fillText(row.cell.key === "TRAINING" ? "비워둠 (특화 훈련용)" : "휴식 공간", 250, y + 30); }
+      g.fillText(row.cell.label, 44, y + 26);
+      row.crews.forEach((crew, crewIndex) => {
+        const cy = y + crewIndex * lineH;
+        g.fillStyle = "#131719";
+        g.fillRect(210, cy + 10, 26, 26);
+        g.fillStyle = "#dfff00"; g.font = "900 13px monospace";
+        g.fillText(crew.label, 217, cy + 28);
+        let x = 248;
+        for (const op of crew.team) {
+          const img = avatars.get(op.id);
+          if (img) g.drawImage(img, x, cy + 6, 34, 34);
+          g.fillStyle = "#131719"; g.font = "700 12px sans-serif";
+          g.fillText(op.name, x + 40, cy + 28);
+          x += 40 + Math.max(g.measureText(op.name).width + 20, 76);
+        }
+        if (!crew.team.length) {
+          g.fillStyle = "#9aa0a3"; g.font = "700 12px sans-serif";
+          g.fillText(row.cell.key === "TRAINING" ? "비워둠 (특화 훈련용)" : "휴식 공간", 248, cy + 28);
+        }
+        if (crew.score != null) {
+          g.fillStyle = "#687176"; g.font = "800 13px monospace";
+          const label = `+${crew.score}${row.cell.room === "CONTROL" ? "" : "%"}`;
+          g.fillText(label, W - 48 - g.measureText(label).width, cy + 28);
+        }
+      });
+      y += h;
     });
     g.fillStyle = "#687176"; g.font = "700 11px monospace";
-    g.fillText("A조 기준 · terra-archive infra planner", 32, canvas.height - 28);
+    g.fillText("A = 풀파워 주간조 · B = 회복 교대조 · terra-archive infra planner", 32, canvas.height - 28);
     canvas.toBlob((blob) => {
       if (!blob) return;
       setImageUrl(URL.createObjectURL(blob)); // 미리보기 모달로 바로 표시
