@@ -174,6 +174,12 @@ def find_partners(text, self_name):
             scan = scan.replace(n, "§")
     return found
 
+# KR release order: handbook entries append in release order (robots/reserves
+# without a handbook entry sink to the bottom)
+handbook = load(f"{S}/kr_handbook_info_table.json")
+handbook = handbook.get("handbookDict", handbook)
+release_seq = {cid: i for i, cid in enumerate(handbook.keys())}
+
 infra_ops = []
 for o in operators:
     skills = []
@@ -268,6 +274,7 @@ for o in operators:
     if skills:
         infra_ops.append({"id": o["id"], "name": o["name"], "rarity": o["rarity"],
                           "faction": o["faction"], "accent": o["accent"], "image": o["image"],
+                          "seq": release_seq.get(o["id"], -1),
                           "skills": skills})
 
 out = {"rooms": rooms_out, "ops": infra_ops}

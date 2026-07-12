@@ -37,6 +37,7 @@ type InfraOp = {
   faction: string;
   accent: string;
   image: string;
+  seq: number;
   skills: InfraSkill[];
 };
 
@@ -925,10 +926,9 @@ function RosterModal({ ownedIds, onApply, onClose }: { ownedIds: Set<string>; on
   const [draft, setDraft] = useState<Set<string>>(new Set(ownedIds));
   const [query, setQuery] = useState("");
   const keyword = query.trim().toLowerCase();
-  const idNo = (op: InfraOp) => parseInt(op.id.replace(/\D/g, ""), 10) || 0;
   const visible = ops
     .filter((op) => !keyword || op.name.toLowerCase().includes(keyword) || op.faction.toLowerCase().includes(keyword))
-    .sort((a, b) => b.rarity - a.rarity || idNo(b) - idNo(a)); // 6성 우선, 그 안에서 최신순
+    .sort((a, b) => b.rarity - a.rarity || b.seq - a.seq); // 6성 우선, 그 안에서 KR 출시 최신순
   const toggle = (id: string) => setDraft((current) => {
     const next = new Set(current);
     if (next.has(id)) next.delete(id); else next.add(id);
