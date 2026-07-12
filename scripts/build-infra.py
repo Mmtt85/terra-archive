@@ -52,6 +52,10 @@ def parse_metric(room, text):
             if g: vals.append(float(g[-1]))
         return max(vals) if vals else None
     if room == "MANUFACTURE":
+        # automation (위디·유넥티스): zeroes operator-provided efficiency,
+        # scales with power-plant count (3 in the 243 layout)
+        m = re.search(r"생산력이 전부 0이 되고[^%]*?발전소 하나당[^+%\d]{0,20}\+\s*(\d+(?:\.\d+)?)\s*%", text)
+        if m: return "automation", float(m.group(1)) * 3
         v = best(r"생산력[^+%\d]{0,24}" + PCT)
         if v: return "output", v
     if room == "TRADING":
@@ -215,11 +219,14 @@ for o in operators:
         if m:
             per_skill_tag = m.group(1).replace(" ", "")
             per_skill_value = float(m.group(2))
-        # facility-count multipliers (쏜즈: 각각의 무역소가 ... +3% → ×2)
+        # facility-count multipliers (쏜즈: 각각의 무역소가 ... +3% → ×2);
+        # these survive automation's zeroing ("시설 수량에 따라 제공" 예외)
+        facility_based = False
         if kind in ("output", "misc") and value:
             fac = re.search(r"각각의 (무역소|발전소|제조소)", text)
             if fac:
                 value = value * {"무역소": 2, "발전소": 3, "제조소": 4}[fac.group(1)]
+                facility_based = True
         # conversion skills ("감지 정보 1점당 무성의 공명 1점으로 전환") re-route
         # this op's own generation and, at plan level, the shared pool
         convert = None
@@ -238,6 +245,7 @@ for o in operators:
             "partners": find_partners(text, o["name"]),
             "tokenGen": gen, "tokenUse": use, "convert": convert,
             "reqFaction": req_faction, "perFaction": per_faction, "perScope": per_scope, "perCap": per_cap,
+            "facilityBased": facility_based,
             "perSkillTag": per_skill_tag, "perSkillValue": per_skill_value,
             "_stackGrant": stack_grant.group(1) if stack_grant else None,
             "_stackCount": 5 * (int(stack_grant.group(2)) if stack_grant and stack_grant.group(2) else 1) if stack_grant else 0,

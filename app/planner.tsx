@@ -21,6 +21,7 @@ type InfraSkill = {
   tokenGen: TokenGen[];
   tokenUse: TokenUse[];
   convert: { from: string; per: number; to: string; amount: number } | null;
+  facilityBased?: boolean;
   reqFaction: string | null;
   perFaction: string | null;
   perScope: string | null;
@@ -103,6 +104,8 @@ function activeSkills(op: InfraOp, room: string, product?: string): InfraSkill[]
 
 type OpBreakdown = {
   efficiency: number;   // additive order/production efficiency
+  facilityEff: number;  // facility-count-based production (survives automation)
+  automation: number;   // 위디·유넥티스: zeroes others, scales with plants
   quality: number;      // quality-order probability (equiv %)
   payout: number;       // quality-order payout (테킬라 — scales with quality crew)
   payoutViolation: number; // violation-order payout (프로바이조 — anti-synergy with quality crew)
@@ -119,7 +122,7 @@ const AURA_WEIGHT: Record<string, number> = { ctrl_mfg: 10, ctrl_trade: 2, ctrl_
 function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx): OpBreakdown {
   const teamIds = new Set(team.map((member) => member.id));
   const teamSize = Math.max(team.length, 1);
-  const out: OpBreakdown = { efficiency: 0, quality: 0, payout: 0, payoutViolation: 0, override: 0, perCoworker: 0, auras: {}, skills: [] };
+  const out: OpBreakdown = { efficiency: 0, facilityEff: 0, automation: 0, quality: 0, payout: 0, payoutViolation: 0, override: 0, perCoworker: 0, auras: {}, skills: [] };
   const tokenRates = new Map<string, number>();
   for (const skill of activeSkills(op, room, ctx.product)) {
     if (skill.partners.length > 0 && !skill.partners.every((p) => teamIds.has(p))) continue;
@@ -152,6 +155,7 @@ function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx): OpBrea
       if (rate > (tokenRates.get(use.token) ?? 0)) tokenRates.set(use.token, rate);
     }
     if (skill.kind === "override") { out.override = Math.max(out.override, skill.value); continue; }
+    if (skill.kind === "automation") { out.automation += skill.value; continue; }
     if (skill.kind === "quality") { out.quality += skill.value; continue; }
     if (skill.kind === "payout") { out.payout += skill.value; continue; }
     if (skill.kind === "payout_v") { out.payoutViolation += skill.value; continue; }
@@ -160,7 +164,10 @@ function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx): OpBrea
     if (skill.kind === "shared") { out.efficiency += skill.value; continue; } // 단서 공유 상태 기준
     if (skill.kind in AURA_WEIGHT) { out.auras[skill.kind] = Math.max(out.auras[skill.kind] ?? 0, skill.value); continue; }
     if (room === "DORMITORY") continue;
-    if (percentUses.length === 0) out.efficiency += skill.value;
+    if (percentUses.length === 0) {
+      if (skill.facilityBased) out.facilityEff += skill.value;
+      else out.efficiency += skill.value;
+    }
   }
   for (const [token, rate] of tokenRates) out.efficiency += (ctx.tokenPoints[token] ?? 0) * rate;
   return out;
@@ -169,9 +176,14 @@ function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx): OpBrea
 function teamScore(team: InfraOp[], room: string, ctx: Ctx): number {
   const parts = team.map((op) => breakdown(op, room, team, ctx));
   const override = Math.max(...parts.map((p) => p.override), 0);
+  const automation = parts.reduce((sum, p) => sum + p.automation, 0);
+  const facilityEff = parts.reduce((sum, p) => sum + p.facilityEff, 0);
   const additive = parts.reduce((sum, p) => sum + p.efficiency + p.perCoworker * (team.length - 1), 0);
-  // an override (샤마르) zeroes everyone's own efficiency, flat rate per member instead
-  const efficiency = override > 0 ? override * team.length : additive;
+  // 샤마르 override zeroes everyone's efficiency; 위디·유넥티스 automation
+  // zeroes operator-provided efficiency but facility-based production survives
+  const efficiency = override > 0 ? override * team.length
+    : automation > 0 ? automation + facilityEff
+    : additive + facilityEff;
   const probCount = parts.filter((p) => p.quality > 0).length;
   const quality = parts.reduce((sum, p) => sum + p.quality, 0);
   // quality payouts (테킬라) profit from quality orders; violation payouts
@@ -191,7 +203,7 @@ function opSolo(op: InfraOp, room: string, slots: number, ctx: Ctx): number {
   const b = breakdown(op, room, [op], ctx);
   let auras = 0;
   for (const kind of Object.keys(AURA_WEIGHT)) auras += (b.auras[kind] ?? 0) * AURA_WEIGHT[kind];
-  return b.efficiency + b.quality + b.payout + b.payoutViolation + b.override * slots + b.perCoworker * (slots - 1) + auras;
+  return b.efficiency + b.facilityEff + b.automation + b.quality + b.payout + b.payoutViolation + b.override * slots + b.perCoworker * (slots - 1) + auras;
 }
 
 function bestTeam(room: string, slots: number, pool: Map<string, InfraOp>, ctx: Ctx, seedOps: InfraOp[] = []): InfraOp[] {
@@ -269,6 +281,7 @@ function buildPlan(packageTokens: string[]): Plan {
   const tokenPoints: Record<string, number> = {};
   const flows: TokenFlow[] = [];
   const factionCountsPerShift: Record<string, number>[] = [];
+  const reserved = new Map<string, string>(); // seeded ops belong to their room
 
   const dormPins: InfraOp[][] = [[], [], [], []];
   for (let shift = 0; shift < SHIFT_COUNT; shift += 1) {
@@ -282,6 +295,7 @@ function buildPlan(packageTokens: string[]): Plan {
         if (seeds[key].length >= slots || parked.has(op.id)) return false;
         seeds[key].push(op);
         parked.add(op.id);
+        reserved.set(op.id, key);
         placedAt.set(op.id, cellByKey.get(key)?.label ?? key);
         return true;
       };
@@ -298,7 +312,12 @@ function buildPlan(packageTokens: string[]): Plan {
         for (const op of members) {
           for (const skill of op.skills) {
             if (!skill.tokenUse.some((u) => u.token === token && u.percent)) continue;
-            for (const cell of LAYOUT.filter((c) => c.room === skill.room && !PARK_KEYS.includes(c.key))) if (place(op, cell.key)) break;
+            let targets = LAYOUT.filter((c) => c.room === skill.room && !PARK_KEYS.includes(c.key));
+            if (skill.room === "MANUFACTURE" && skill.product === "any") {
+              // generic boosters go where product specialists can't (작전기록)
+              targets = [...targets].sort((a, b) => (a.product === "gold" ? 1 : 0) - (b.product === "gold" ? 1 : 0));
+            }
+            for (const cell of targets) if (place(op, cell.key)) break;
           }
         }
         for (const op of members) {
@@ -353,7 +372,7 @@ function buildPlan(packageTokens: string[]): Plan {
       if (key === "MEETING" && shift > 0) continue; // 응접실은 조 전환과 별개 상시 편성
       const room = cellByKey.get(key)?.room ?? key;
       const slots = infra.rooms[room]?.slots ?? 1;
-      const pool = new Map(ops.filter((op) => !used.has(op.id)).map((op) => [op.id, op]));
+      const pool = new Map(ops.filter((op) => !used.has(op.id) && (shift > 0 || !reserved.has(op.id) || reserved.get(op.id) === key)).map((op) => [op.id, op]));
       const ctx = ctxFor(key, shift === 0 ? tokenPoints : {}, shiftFactionCounts);
       const seed = (seeds[key] ?? []).filter((op) => pool.has(op.id));
       const team = bestTeam(room, slots, pool, ctx, seed);
@@ -616,7 +635,7 @@ function RoomModal({ cell, plan, allAssigned, initialShift, onClose }: { cell: {
               {team.map((op) => {
                 const b = breakdown(op, cell.room, team, ctx);
                 const auraTotal = Object.keys(AURA_WEIGHT).reduce((sum, kind) => sum + (b.auras[kind] ?? 0) * AURA_WEIGHT[kind], 0);
-                const total = Math.round(b.efficiency + b.quality + b.payout + b.payoutViolation + (b.override > 0 ? b.override : 0) + b.perCoworker * (team.length - 1) + auraTotal);
+                const total = Math.round(b.efficiency + b.facilityEff + b.automation + b.quality + b.payout + b.payoutViolation + (b.override > 0 ? b.override : 0) + b.perCoworker * (team.length - 1) + auraTotal);
                 const shown = b.skills.length ? b.skills : op.skills.filter((skill) => skill.room === cell.room);
                 return (
                   <article key={op.id} className="crew-card">
