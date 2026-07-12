@@ -110,14 +110,35 @@ export default function Home() {
   const [tab, setTab] = useState<"archive" | "planner">("archive");
 
   useEffect(() => {
-    const applyHash = () => setTab(window.location.hash === "#infra" ? "planner" : "archive");
+    const applyHash = () => {
+      const hash = decodeURIComponent(window.location.hash);
+      if (hash === "#infra") {
+        setTab("planner");
+        return;
+      }
+      setTab("archive");
+      if (hash.startsWith("#op-")) {
+        const operator = operators.find((candidate) => candidate.id === hash.slice(4));
+        if (operator) setSelected(operator);
+      }
+    };
     applyHash();
     window.addEventListener("hashchange", applyHash);
     return () => window.removeEventListener("hashchange", applyHash);
   }, []);
 
+  const openOperator = (operator: Operator) => {
+    setSelected(operator);
+    history.replaceState(null, "", `#op-${operator.id}`);
+  };
+  const closeOperator = () => {
+    setSelected(null);
+    history.replaceState(null, "", window.location.pathname);
+  };
+
   const switchTab = (next: "archive" | "planner") => {
     setTab(next);
+    setSelected(null);
     if (next === "planner") window.location.hash = "infra";
     else history.replaceState(null, "", window.location.pathname);
   };
@@ -129,7 +150,7 @@ export default function Home() {
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setSelected(null);
+      if (event.key === "Escape") closeOperator();
     };
     window.addEventListener("keydown", onKeyDown);
     return () => {
@@ -256,7 +277,7 @@ export default function Home() {
 
           {sorted.length > 0 ? (
             <div className="operator-grid">
-              {sorted.map((operator, index) => <OperatorCard key={operator.id ?? `${operator.name}-${index}`} operator={operator} index={index} onSelect={setSelected} />)}
+              {sorted.map((operator, index) => <OperatorCard key={operator.id ?? `${operator.name}-${index}`} operator={operator} index={index} onSelect={openOperator} />)}
             </div>
           ) : (
             <div className="empty"><span>NO MATCH</span><h3>조건에 맞는 오퍼레이터가 없어요.</h3><p>소속이나 컨셉 태그를 하나씩 해제해 보세요.</p><button onClick={reset}>전체 보기</button></div>
@@ -266,7 +287,7 @@ export default function Home() {
 
       {tab === "planner" && <InfraPlanner />}
 
-      {selected && <OperatorModal operator={selected} onClose={() => setSelected(null)} />}
+      {selected && <OperatorModal operator={selected} onClose={closeOperator} />}
 
       <footer><span>RHODES ISLAND // TERRA ARCHIVE</span><p>비공식 팬 프로젝트 · 게임 내 명칭과 데이터의 권리는 각 권리자에게 있습니다.</p></footer>
     </main>
