@@ -676,13 +676,15 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
         <div className="planner-buttons">
           <button onClick={() => setShowRoster(true)}>보유 오퍼 설정 ({ownedIds.size}/{ops.length})</button>
           <button className="primary" onClick={() => runOptimize()}>자동편성 실행</button>
-          <button onClick={exportState} title="나중에 가져오기로 복구할 수 있는 JSON 파일">내보내기 (파일)</button>
-          <button onClick={exportImage} title="공유용 편성표 이미지 (PNG)">내보내기 (이미지)</button>
+          <button onClick={exportImage} title="A조·B조 편성표를 이미지로 확인 (PNG)">이미지로 보기</button>
+          <span className="file-group">
+            <button onClick={exportState} title="보유 오퍼와 편성을 JSON 파일로 저장">현재 상태 파일로 저장</button>
+            <label className="import-label">
+              저장된 상태 파일 가져오기
+              <input type="file" accept="application/json" onChange={(event) => { const file = event.target.files?.[0]; if (file) importState(file); event.target.value = ""; }} />
+            </label>
+          </span>
           <button onClick={() => setShowHelp(true)}>도움말</button>
-          <label className="import-label">
-            가져오기
-            <input type="file" accept="application/json" onChange={(event) => { const file = event.target.files?.[0]; if (file) importState(file); event.target.value = ""; }} />
-          </label>
         </div>
       </div>
 
