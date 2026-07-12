@@ -986,13 +986,15 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                     <img src={op.image} alt={op.name} loading="lazy" className={onShowOperator ? "op-link" : undefined}
                       title={`${op.name} 상세 정보`} onClick={() => onShowOperator?.(op.id)} />
                     <div>
-                      <b>{op.name} <i>{"★".repeat(op.rarity)}</i></b>
-                      {opById.get(op.id)?.skills.some((skill) => skill.unlock === "정예화 2") && (
-                        <div className="elite-toggle crew-elite" role="group" aria-label={`${op.name} 정예화 단계`}>
-                          <button type="button" className={(eliteById.get(op.id) ?? 2) === 1 ? "selected" : ""} onClick={() => onSetElite(op.id, 1)}>1정</button>
-                          <button type="button" className={(eliteById.get(op.id) ?? 2) === 2 ? "selected" : ""} onClick={() => onSetElite(op.id, 2)}>2정</button>
-                        </div>
-                      )}
+                      <b>
+                        {op.name} <i>{"★".repeat(op.rarity)}</i>
+                        {opById.get(op.id)?.skills.some((skill) => skill.unlock === "정예화 2") && (
+                          <span className="elite-pill" role="group" aria-label={`${op.name} 정예화 단계`}>
+                            <button type="button" className={(eliteById.get(op.id) ?? 2) === 1 ? "selected" : ""} onClick={() => onSetElite(op.id, 1)}>1정</button>
+                            <button type="button" className={(eliteById.get(op.id) ?? 2) === 2 ? "selected" : ""} onClick={() => onSetElite(op.id, 2)}>2정</button>
+                          </span>
+                        )}
+                      </b>
                       {shown.length ? shown.map((skill) => <p key={skill.name}><em>{skill.name}</em> — {skill.description}</p>) : <p>이 시설에 적용되는 스킬이 없습니다 (세트 대기 요원).</p>}
                       {total > 0 && <small>기여 +{total}{cell.room === "CONTROL" ? "" : "%"}</small>}
                       {op.skills.flatMap((skill) => skill.tokenGen).map((gen) => (
