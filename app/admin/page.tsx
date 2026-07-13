@@ -113,6 +113,10 @@ export default function AdminPage() {
         {shown.map((row) => (
           <article key={row.id} className={`admin-row kind-${row.kind}${row.reviewed_at ? " reviewed" : ""}`}>
             <header>
+              <code className="fb-id" title={`${row.id} — 클릭하면 전체 ID 복사`}
+                onClick={() => { navigator.clipboard?.writeText(row.id).then(() => setStatus(`ID 복사됨: ${row.id}`)).catch(() => {}); }}>
+                #{row.id.slice(0, 8)}
+              </code>
               <b>{KIND_LABEL[row.kind] ?? row.kind}</b>
               {pageOf(row.payload) && (
                 <a className="page-chip" href={pageOf(row.payload)} target="_blank" rel="noreferrer" title={`보낸 페이지 열기: ${pageOf(row.payload)}`}>
