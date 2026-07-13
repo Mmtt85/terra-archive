@@ -1,98 +1,29 @@
-# vinext-starter
+# 테라 아카이브 (Terra Archive)
 
-A clean full-stack starter running on
-[vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
-Drizzle support.
+명일방주(Arknights) 한국 서버 팬사이트 — https://terra-archive.pages.dev
 
-## Prerequisites
+- **오퍼 백과사전** — 전 오퍼레이터 스탯·스킬·모듈·인프라 스킬 + 컨셉덱/진영/태그 필터, 커뮤니티 별명 검색
+- **인프라 플래너** — 보유 오퍼 기반 기반시설(RIIC) A/B조 자동 편성 최적화
+- **공채 도우미** — 공개모집 태그 조합 계산기 (4·5성 저격 조합 사전 포함)
 
-- Node.js `>=22.13.0`
+## 스택
 
-## Quick Start
+vinext(Cloudflare용 Next 호환 런타임) + React 19 + Tailwind 4, Cloudflare Pages 배포.
+데이터는 API 없이 `app/data/*.json` 정적 파일 (클뜯 레포에서 `scripts/` 파이프라인으로 재생성).
+공식 방송 일정만 별도 크론 워커(`workers/broadcast/`)가 유튜브에서 자동 수집.
+
+## 명령
 
 ```bash
-npm install
-npm run dev
-npm run build
+npm run dev     # localhost:3000
+npm run build   # 빌드 확인
+npm run lint
+bash scripts/deploy.sh              # 사이트 배포 (Cloudflare Pages) — 사용자가 직접 실행
+bash workers/broadcast/deploy.sh    # 방송 수집 워커 배포
 ```
 
-This starter does not use `wrangler.jsonc`.
+## 문서
 
-## Included Shape
-
-- edit site code under `app/`
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `db/schema.ts` starts intentionally empty
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
-
-## Workspace Auth Headers
-
-OpenAI workspace sites can read the current user's email from
-`oai-authenticated-user-email`.
-
-SIWC-authenticated workspace sites may also receive
-`oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty
-`name` claim. The full-name value is percent-encoded UTF-8 and is accompanied by
-`oai-authenticated-user-full-name-encoding: percent-encoded-utf-8`.
-
-Treat the full name as optional and fall back to email when it is absent:
-
-```tsx
-import { headers } from "next/headers";
-
-export default async function Home() {
-  const requestHeaders = await headers();
-  const email = requestHeaders.get("oai-authenticated-user-email");
-  const encodedFullName = requestHeaders.get("oai-authenticated-user-full-name");
-  const fullName =
-    encodedFullName &&
-    requestHeaders.get("oai-authenticated-user-full-name-encoding") ===
-      "percent-encoded-utf-8"
-      ? decodeURIComponent(encodedFullName)
-      : null;
-
-  const displayName = fullName ?? email;
-  // ...
-}
-```
-
-## Optional Dispatch-Owned ChatGPT Sign-In
-
-Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs
-optional or required ChatGPT sign-in:
-
-- Use `getChatGPTUser()` for optional signed-in UI.
-- Use `requireChatGPTUser(returnTo)` for server-rendered pages that should send
-  anonymous visitors through Sign in with ChatGPT.
-- Use `chatGPTSignInPath(returnTo)` and `chatGPTSignOutPath(returnTo)` for
-  browser links or actions.
-- Pass a same-origin relative `returnTo` path for the destination after sign-in
-  or sign-out. The helper validates and safely encodes it.
-- Mark protected pages with `export const dynamic = "force-dynamic"` because
-  they depend on per-request identity headers.
-
-Dispatch owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, `/callback`, the
-OAuth cookies, and identity header injection. Do not implement app routes for
-those reserved paths. Routes that do not import and call the helper remain
-anonymous-compatible.
-
-SIWC establishes identity only; it does not prove workspace membership. Use the
-Sites hosting platform's access policy controls for workspace-wide restrictions,
-or enforce explicit server-side membership or allowlist checks.
-
-Use SIWC for account pages, user-specific dashboards, saved records, and write
-actions tied to the current ChatGPT user. Leave public content anonymous.
-
-## Useful Commands
-
-- `npm run dev`: start local development
-- `npm run build`: verify the vinext build output
-- `npm test`: build the starter and verify its rendered loading skeleton
-- `npm run db:generate`: generate Drizzle migrations after schema changes
-
-## Learn More
-
-- [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+- [docs/PROJECT-GUIDE.md](docs/PROJECT-GUIDE.md) — 전체 규칙·데이터 출처·파이프라인 정본
+- [docs/INFRA-RULES.md](docs/INFRA-RULES.md) — 인프라 플래너 도메인 규칙
+- [scripts/README.md](scripts/README.md) — 데이터 갱신 파이프라인
