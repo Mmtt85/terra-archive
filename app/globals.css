@@ -452,6 +452,8 @@ footer p { margin:0 }
 .reviewed-badge { font-style:normal; color:#2e7d32; font-size:11px; font-weight:800 }
 .admin-row>header .review-btn { color:#2e7d32 }
 .admin-row>header .review-btn:hover { background:#2e7d32; border-color:#2e7d32; color:#fff }
+.page-chip { display:inline-flex; align-items:center; gap:3px; border:1px solid var(--line); background:#eef3d2; color:#4b5a00; padding:3px 8px; font-size:10.5px; font-weight:800; text-decoration:none }
+.page-chip:hover { border-color:#4b5a00 }
 .admin-section-head { margin-top:44px }
 .admin-nicknames { display:flex; flex-wrap:wrap; gap:7px; margin-top:14px }
 .admin-nick { display:inline-flex; align-items:center; gap:7px; border:1px solid var(--line); background:var(--white); padding:6px 9px; font-size:12px }

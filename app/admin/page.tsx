@@ -7,6 +7,19 @@ import operatorsData from "../data/operators.json";
 const KIND_LABEL: Record<string, string> = { feature: "기능 제안", data_error: "데이터 오류", plan: "편성 제안" };
 const OP_NAME = new Map((operatorsData as { id: string; name: string }[]).map((op) => [op.id, op.name]));
 
+// payload.page("/#infra" 등)를 사람이 읽을 라벨로 — 클릭하면 그 페이지가 새 탭에 열린다
+function pageOf(payload: unknown): string | undefined {
+  const page = payload && typeof payload === "object" ? (payload as { page?: unknown }).page : undefined;
+  return typeof page === "string" && page ? page : undefined;
+}
+function pageLabel(page: string): string {
+  if (page.includes("#infra")) return "인프라 플래너";
+  if (page.includes("#recruit")) return "공채 도우미";
+  const op = page.match(/#op-(char_[A-Za-z0-9_]+)/);
+  if (op) return `오퍼 상세 · ${OP_NAME.get(op[1]) ?? op[1]}`;
+  return "오퍼 백과사전";
+}
+
 export default function AdminPage() {
   const [password, setPassword] = useState("");
   const [entered, setEntered] = useState(false);
@@ -101,6 +114,11 @@ export default function AdminPage() {
           <article key={row.id} className={`admin-row kind-${row.kind}${row.reviewed_at ? " reviewed" : ""}`}>
             <header>
               <b>{KIND_LABEL[row.kind] ?? row.kind}</b>
+              {pageOf(row.payload) && (
+                <a className="page-chip" href={pageOf(row.payload)} target="_blank" rel="noreferrer" title={`보낸 페이지 열기: ${pageOf(row.payload)}`}>
+                  📍 {pageLabel(pageOf(row.payload)!)}
+                </a>
+              )}
               {row.reviewed_at && <i className="reviewed-badge" title={new Date(row.reviewed_at).toLocaleString("ko-KR")}>✓ 확인됨</i>}
               <time>{new Date(row.created_at).toLocaleString("ko-KR")}</time>
               <button className="review-btn" onClick={() => toggleReviewed(row)}>{row.reviewed_at ? "확인 취소" : "확인완료"}</button>
