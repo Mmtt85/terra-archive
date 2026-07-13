@@ -26,7 +26,7 @@ cat > "$STAGE/_routes.json" <<'JSON'
 {
   "version": 1,
   "include": ["/*"],
-  "exclude": ["/assets/*", "/avatars/*", "/favicon.svg", "/og.png", "/file.svg", "/globe.svg", "/window.svg", "/robots.txt", "/sitemap.xml"]
+  "exclude": ["/assets/*", "/avatars/*", "/favicon.svg", "/og.png", "/file.svg", "/globe.svg", "/window.svg", "/robots.txt", "/sitemap.xml", "/googlea82084324e20a1c2.html"]
 }
 JSON
 
