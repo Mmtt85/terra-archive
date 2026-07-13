@@ -284,6 +284,13 @@ for o in operators:
         if conv:
             src, ratio_src, dst, ratio_dst = conv.group(1), float(conv.group(2)), conv.group(3), float(conv.group(4))
             convert = {"from": src, "per": ratio_src, "to": dst, "amount": ratio_dst}
+        # 임계값 미만 조건 (사일라흐 감화력: "인맥 레퍼런스 누적 속도가 30% 미만인
+        # 경우(기본 5% 포함) 추가로 +20%") — 대상 방의 현재 수치가 임계값 미만일
+        # 때만 발동. 오퍼별 특례가 아니라 같은 문구를 가진 모든 오퍼에 적용된다
+        below_threshold = None
+        bt = re.search(r"(\d+(?:\.\d+)?)% 미만인 경우.{0,60}?추가로 \+?\s*\d", text)
+        if bt:
+            below_threshold = float(bt.group(1))
         # 조건부 진영 인원 게이트 (실버애쉬 더 레인프로스트: "쉐라그 오퍼레이터가
         # 3명 배치된 무역소의 오더 수주 효율 +10%") — 같은 방 동반이 아니라
         # 진영 N명 배치 조건. 플래너는 교대 기준 기지 전체 인원수로 근사한다
@@ -315,6 +322,7 @@ for o in operators:
             "partners": [p for p in find_partners(text, o["name"]) if p not in base_partner_ids],
             "basePartners": base_partner_ids, "basePartnerBonus": base_partner_bonus,
             "gateFaction": gate_faction, "gateCount": gate_count,
+            "belowThreshold": below_threshold,
             "_roboCap": int(robo_cap.group(1)) if robo_cap else None,
             "_roboUse": (float(robo_use.group(1)), float(robo_use.group(2))) if robo_use else None,
             "tokenGen": gen, "tokenUse": use, "convert": convert,
