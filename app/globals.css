@@ -297,8 +297,8 @@ footer p { margin:0 }
 .ship-room-head { display:flex; justify-content:space-between; align-items:center }
 .ship-room-head b { font-size:13px; letter-spacing:-.4px }
 .ship-room-head span { color:var(--room-accent); font:800 10px monospace }
-.ship-room-crew { display:flex; flex-wrap:wrap; gap:4px; margin-top:9px; min-height:28px }
-.ship-room-crew img { width:26px; height:26px; object-fit:cover; border:1px solid #3a4144; background:#0e1213 }
+.ship-room-crew { display:flex; flex-wrap:wrap; gap:5px; margin-top:9px; min-height:44px }
+.ship-room-crew img { width:42px; height:42px; object-fit:cover; border:1px solid #3a4144; background:#0e1213 }
 .ship-room-crew i { color:#5d686c; font-size:9px; font-style:normal; align-self:center }
 .ship-room > small { display:block; margin-top:7px; color:var(--room-accent); font:800 9px monospace; letter-spacing:.5px }
 .pos-control.ship-room { min-height:110px; background:linear-gradient(120deg,#1d2325,#12161a) }
@@ -478,6 +478,18 @@ footer p { margin:0 }
 .admin-tools button { border:1px solid var(--line); background:var(--white); padding:8px 12px; font-size:11px; font-weight:800; cursor:pointer }
 .admin-tools button.selected { background:var(--ink); color:var(--lime); border-color:var(--ink) }
 .admin-status { color:var(--muted); font-size:12px; margin:16px 0 }
+/* 게임 데이터 갱신 필요 여부 (크론 워커 /datacheck와 번들 데이터 비교) */
+.data-status { border:1px solid var(--line); padding:14px 16px; margin-top:16px; font-size:13px }
+.data-status.ok { border-color:#59bb5588 }
+.data-status.warn { border-color:#c62828; box-shadow:inset 0 0 0 1px #c6282833 }
+.data-status header { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap }
+.data-status.warn header b { color:#c62828 }
+.data-status.ok header b { color:#2e7d32 }
+.data-status time { color:var(--muted); font-size:11px }
+.data-status p { margin-top:10px; line-height:1.6 }
+.data-status code { border:1px solid var(--line); padding:1px 5px; font-size:11px }
+.data-status i { color:var(--muted); font-style:normal; font-size:12px }
+.data-status-minor { color:var(--muted); font-size:11.5px }
 .admin-list { display:grid; gap:10px; margin-top:18px }
 .admin-row { border:1px solid var(--line); background:var(--white); padding:13px 15px }
 .admin-row>header { display:flex; align-items:center; gap:12px; margin-bottom:6px }

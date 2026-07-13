@@ -3,6 +3,16 @@
 import { useEffect, useState } from "react";
 import { adminDeleteFeedback, adminDeleteNickname, adminListFeedback, adminSetReviewed, fetchNicknameCounts, type FeedbackRow, type NicknameCount } from "../feedback";
 import operatorsData from "../data/operators.json";
+import recruitData from "../data/recruit.json";
+
+// 크론 워커가 매일 클뜯 레포에서 뽑아둔 최신 오퍼 목록·공채 풀 요약.
+// 여기(브라우저)서 사이트에 번들된 데이터와 비교해 "갱신 필요" 여부를 판단한다.
+const DATACHECK_API = "https://terra-archive-broadcast.nzkonaru.workers.dev/datacheck";
+type DataCheck = {
+  updated: string;
+  operators: { id: string; name: string; rarity: number; obtainable: boolean }[];
+  recruit: { name: string; rarity: number }[];
+};
 
 const KIND_LABEL: Record<string, string> = { feature: "기능 제안", data_error: "데이터 오류", plan: "편성 제안" };
 const OP_NAME = new Map((operatorsData as { id: string; name: string }[]).map((op) => [op.id, op.name]));
@@ -27,6 +37,15 @@ export default function AdminPage() {
   const [status, setStatus] = useState("");
   const [filter, setFilter] = useState<string>("all");
   const [nicknames, setNicknames] = useState<NicknameCount[]>([]);
+  const [dataCheck, setDataCheck] = useState<DataCheck | null>(null);
+
+  useEffect(() => {
+    if (!entered) return;
+    fetch(DATACHECK_API)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => { if (Array.isArray(data?.operators)) setDataCheck(data); })
+      .catch(() => { /* 워커 불통 시 섹션이 '확인 중'으로 남음 */ });
+  }, [entered]);
 
   const load = async (pw: string) => {
     setStatus("불러오는 중…");
@@ -79,6 +98,16 @@ export default function AdminPage() {
 
   const shown = rows.filter((row) => filter === "all" || row.kind === filter);
 
+  // 게임 데이터 비교 — 획득 불가(가짜 게스트·컬래버 잔재 등)는 사이트가 의도적으로
+  // 제외한 것이므로 obtainable=true만 신규로 판정한다
+  const localOpIds = new Set((operatorsData as { id: string }[]).map((op) => op.id));
+  const localRecruitNames = new Set((recruitData as { ops: { name: string }[] }).ops.map((op) => op.name));
+  const newOps = (dataCheck?.operators ?? []).filter((op) => op.obtainable && !localOpIds.has(op.id)).sort((a, b) => b.rarity - a.rarity);
+  const newRecruit = (dataCheck?.recruit ?? []).filter((r) => !localRecruitNames.has(r.name)).sort((a, b) => b.rarity - a.rarity);
+  const remoteRecruitNames = new Set((dataCheck?.recruit ?? []).map((r) => r.name));
+  const staleRecruit = dataCheck ? (recruitData as { ops: { name: string }[] }).ops.filter((op) => !remoteRecruitNames.has(op.name)).map((op) => op.name) : [];
+  const needsUpdate = newOps.length > 0 || newRecruit.length > 0;
+
   if (!entered) {
     return (
       <main className="admin-gate">
@@ -109,6 +138,35 @@ export default function AdminPage() {
         </div>
       </header>
       {status && <p className="admin-status">{status}</p>}
+
+      <section className={`data-status ${dataCheck ? (needsUpdate ? "warn" : "ok") : ""}`}>
+        {!dataCheck ? (
+          <p>게임 데이터 확인 중… (크론 워커 응답 대기)</p>
+        ) : (
+          <>
+            <header>
+              <b>{needsUpdate ? "⚠ 게임 데이터 갱신 필요" : "✓ 게임 데이터 최신 상태"}</b>
+              <time>클뜯 레포 기준 · {new Date(dataCheck.updated).toLocaleString("ko-KR")} 확인</time>
+            </header>
+            {newOps.length > 0 && (
+              <p>
+                <b>신규 오퍼 {newOps.length}명</b> — {newOps.map((op) => `${"★".repeat(op.rarity)} ${op.name}`).join(" · ")}
+                <br /><i>Claude에서 <code>/operator-data-update</code> 실행</i>
+              </p>
+            )}
+            {newRecruit.length > 0 && (
+              <p>
+                <b>공채 풀 추가 {newRecruit.length}명</b> — {newRecruit.map((r) => `${"★".repeat(r.rarity)} ${r.name}`).join(" · ")}
+                <br /><i>Claude에서 <code>/recruit-data-update</code> 실행</i>
+              </p>
+            )}
+            {staleRecruit.length > 0 && (
+              <p className="data-status-minor">참고 · 사이트 공채 풀에만 있는 오퍼 (데이터마인 미반영이면 정상): {staleRecruit.join(" · ")}</p>
+            )}
+          </>
+        )}
+      </section>
+
       <div className="admin-list">
         {shown.map((row) => (
           <article key={row.id} className={`admin-row kind-${row.kind}${row.reviewed_at ? " reviewed" : ""}`}>

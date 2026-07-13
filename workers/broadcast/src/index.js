@@ -84,6 +84,52 @@ async function poll(env) {
   return payload;
 }
 
+// ── 게임 데이터 신규 항목 감지 ─────────────────────────────
+// 하루 한 번 클뜯 레포(ArknightsAssets/ArknightsGamedata, kr, master)에서
+// 오퍼레이터 목록과 공채 풀 요약만 뽑아 KV에 저장한다. 실제 비교는 /admin 페이지가
+// 사이트에 번들된 operators.json/recruit.json과 브라우저에서 수행 — 워커에 기준
+// 상태를 두지 않으므로 사이트 갱신과 어긋날 일이 없다.
+const GAMEDATA_BASE = "https://raw.githubusercontent.com/ArknightsAssets/ArknightsGamedata/master/kr/gamedata/excel";
+const DATACHECK_KEY = "datacheck";
+
+const tierToStars = (rarity) =>
+  typeof rarity === "number" ? rarity + 1 : Number(String(rarity).replace("TIER_", ""));
+
+// recruitDetail 텍스트에서 공채 풀 오퍼 이름을 뽑는다 — ★줄이 성급, 아래 줄들이 / 구분 이름
+function parseRecruitPool(detail) {
+  const out = [];
+  let rarity = 0;
+  for (const rawLine of detail.split("\n")) {
+    const line = rawLine.trim();
+    if (/^★+$/.test(line)) { rarity = line.length; continue; }
+    if (!rarity || !line || line.startsWith("-")) continue;
+    const cleaned = line.replace(/<[^>]*>/g, "").trim();
+    for (const part of cleaned.split("/")) {
+      const name = part.trim();
+      if (name) out.push({ name, rarity });
+    }
+  }
+  return out;
+}
+
+async function dataCheck(env) {
+  const [charRes, gachaRes] = await Promise.all([
+    fetch(`${GAMEDATA_BASE}/character_table.json`),
+    fetch(`${GAMEDATA_BASE}/gacha_table.json`),
+  ]);
+  if (!charRes.ok || !gachaRes.ok) throw new Error(`gamedata fetch ${charRes.status}/${gachaRes.status}`);
+  const table = await charRes.json();
+  const chars = table.chars ?? table;
+  const operators = Object.entries(chars)
+    .filter(([id]) => id.startsWith("char_"))
+    .map(([id, c]) => ({ id, name: c.name, rarity: tierToStars(c.rarity), obtainable: !c.isNotObtainable }));
+  const gacha = await gachaRes.json();
+  const recruit = parseRecruitPool(gacha.recruitDetail ?? "");
+  const payload = { updated: new Date().toISOString(), operators, recruit };
+  await env.BCAST.put(DATACHECK_KEY, JSON.stringify(payload));
+  return payload;
+}
+
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, OPTIONS",
@@ -91,14 +137,18 @@ const CORS = {
   "Content-Type": "application/json; charset=utf-8",
 };
 
+const DATACHECK_CRON = "41 2 * * *"; // 11:41 KST — KR 업데이트(목 10시) 당일 반영
+
 export default {
-  async scheduled(_event, env, ctx) {
-    ctx.waitUntil(poll(env));
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(event.cron === DATACHECK_CRON ? dataCheck(env) : poll(env));
   },
   async fetch(request, env, ctx) {
     if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
-    let payload = await env.BCAST.get(KV_KEY, "json");
-    if (!payload) payload = await poll(env); // 최초 배포 직후 KV가 비어 있으면 즉석 수집
+    const isDataCheck = new URL(request.url).pathname === "/datacheck";
+    const key = isDataCheck ? DATACHECK_KEY : KV_KEY;
+    let payload = await env.BCAST.get(key, "json");
+    if (!payload) payload = await (isDataCheck ? dataCheck(env) : poll(env)); // KV가 비어 있으면 즉석 수집
     return new Response(JSON.stringify(payload), { headers: CORS });
   },
 };
