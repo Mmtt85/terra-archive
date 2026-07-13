@@ -43,7 +43,7 @@ button { color:inherit }
 @keyframes bcast-blink { 50% { opacity:.3 } }
 
 /* 공식 방송 — 목록 모달 */
-.bcast-modal { background:var(--white,#fff); border:1px solid var(--ink); width:min(540px,100%); max-height:calc(100dvh - 48px); margin:auto; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 30px 100px #0008 }
+.bcast-modal { position:relative; background:var(--white,#fff); border:1px solid var(--ink); width:min(540px,100%); max-height:calc(100dvh - 48px); margin:auto; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 30px 100px #0008 }
 .bcast-modal>header { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:14px 16px; border-bottom:1px solid var(--line); flex:none }
 .bcast-modal>header h2 { font-size:16px; font-weight:900; display:flex; align-items:center; gap:8px }
 .bcast-list { padding:12px; display:flex; flex-direction:column; gap:8px; overflow-y:auto }

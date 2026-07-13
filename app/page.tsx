@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import operatorsData from "./data/operators.json";
 import broadcastsData from "./data/broadcasts.json";
 import InfraPlanner from "./planner";
@@ -215,7 +216,9 @@ function BroadcastBadges() {
         <span>공식 방송</span>
         {hint && <span className="bcast-hint">· {hint.text}</span>}
       </button>
-      {open && (
+      {/* 사이트 헤더의 backdrop-filter가 fixed 기준을 헤더로 만들어버리므로,
+          모달은 portal로 body에 직접 렌더링해야 화면 전체를 덮는다 */}
+      {open && createPortal(
         <div className="modal-backdrop bcast-backdrop" onClick={() => setOpen(false)}>
           <div className="bcast-modal" onClick={(event) => event.stopPropagation()} role="dialog" aria-label="명일방주 공식 방송 일정">
             <header>
@@ -252,7 +255,8 @@ function BroadcastBadges() {
               })}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
