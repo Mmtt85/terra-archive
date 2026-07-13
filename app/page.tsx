@@ -113,9 +113,11 @@ function tabFromHash(hash: string): "archive" | "planner" | "recruit" {
 }
 
 // ── 공식 방송 ─────────────────────────────────────────────
-// broadcasts.json의 일정을 현재 시각과 비교해 예약/생방송/지난방송으로 분류한다.
-// 헤더엔 가장 중요한 방송 요약 배지 하나만 두고, 클릭하면 전체 목록(유튜브 썸네일 포함)
-// 모달을 연다. 지난 방송도 날짜와 함께 계속 남긴다 (숨기지 않음).
+// 방송 목록은 크론 워커(workers/broadcast — 6시간마다 유튜브 공식 채널 3개를 수집)에서
+// 가져오고, 네트워크 실패 시 broadcasts.json 정적 데이터로 폴백한다. 현재 시각과 비교해
+// 예약/생방송/지난방송을 분류하며, 헤더엔 요약 버튼 하나만 두고 클릭하면 전체 목록
+// (유튜브 썸네일 포함) 모달을 연다. 지난 방송도 날짜와 함께 계속 남긴다.
+const BCAST_API = "https://terra-archive-broadcast.nzkonaru.workers.dev/";
 type Broadcast = { server: string; title: string; start: string; durationMin?: number; url?: string; videoId?: string };
 type BState = "live" | "upcoming" | "past";
 
@@ -181,14 +183,26 @@ function BroadcastThumb({ b }: { b: Broadcast }) {
   );
 }
 
+// 원격/정적 항목 중복 판정 키 — 유튜브 영상 ID가 있으면 그것, 없으면 서버+날짜(UTC)
+function bcastKey(b: Broadcast): string {
+  return youTubeId(b) ?? `${b.server}:${new Date(b.start).toISOString().slice(0, 10)}`;
+}
+
 function BroadcastBadges() {
   // 서버 렌더에는 시각을 알 수 없어 hydration이 어긋나므로, 마운트 후에만 그린다
   const [now, setNow] = useState<number | null>(null);
   const [open, setOpen] = useState(false);
+  const [remote, setRemote] = useState<Broadcast[] | null>(null);
   useEffect(() => {
     setNow(Date.now());
     const id = setInterval(() => setNow(Date.now()), 60_000);
     return () => clearInterval(id);
+  }, []);
+  useEffect(() => {
+    fetch(BCAST_API)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => { if (Array.isArray(data?.broadcasts)) setRemote(data.broadcasts); })
+      .catch(() => { /* 워커 불통이면 정적 broadcasts.json만 사용 */ });
   }, []);
   useEffect(() => {
     if (!open) return;
@@ -197,7 +211,12 @@ function BroadcastBadges() {
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
   if (now == null) return null;
-  const all = (broadcastsData.broadcasts as Broadcast[]).filter((b) => !Number.isNaN(Date.parse(b.start)));
+  const statics = (broadcastsData.broadcasts as Broadcast[]).filter((b) => !Number.isNaN(Date.parse(b.start)));
+  const seen = new Set((remote ?? []).map(bcastKey));
+  const all = [
+    ...(remote ?? []).filter((b) => !Number.isNaN(Date.parse(b.start))),
+    ...statics.filter((b) => !seen.has(bcastKey(b))),
+  ];
   if (all.length === 0) return null;
   // 정렬: 생방송 > 가까운 예약 > 최근 지난 방송 (세 서버 전부 목록에 표시)
   const sorted = [...all].sort((a, b) => {

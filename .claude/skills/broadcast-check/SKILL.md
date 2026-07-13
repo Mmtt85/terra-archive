@@ -1,49 +1,33 @@
 ---
 name: broadcast-check
-description: 명일방주(Arknights) 한국·일본·글로벌 공식 생방송 일정을 웹에서 확인해 app/data/broadcasts.json을 갱신한다. "방송 확인해줘", "방송 일정 갱신", "생방송 예약 있어?" 같은 요청에 사용.
+description: 명일방주 공식 방송 자동 수집 시스템(크론 워커) 점검 및 유튜브 외 공지 방송의 수동 보완. "방송 확인해줘", "방송 배지 이상해", "방송 일정 갱신" 같은 요청에 사용.
 ---
 
-# 명일방주 공식 방송 일정 체크
+# 명일방주 공식 방송 일정 — 자동 시스템 점검·보완
 
-테라 아카이브 헤더의 방송 배지를 채우는 `app/data/broadcasts.json`을 최신 상태로 유지하는 절차. 매일 반복 실행하는 것을 전제로 한다.
+## 현재 구조 (2026-07 자동화 완료 — 수동 갱신은 보완용)
 
-## 배경 — 어떻게 동작하나
+방송 수집은 **Cloudflare 크론 워커가 전자동**으로 처리한다. 매일 반복하던 수동 체크는 더 이상 필요 없다.
 
-- 사이트는 정적(static)이라 실시간 API가 없다. **방송 일정만 JSON에 넣어두면**, 헤더의 `BroadcastBadges`(app/page.tsx)가 현재 시각과 비교해 상태를 **자동 계산**한다:
-  - `now < start` → `◷ 예약됨` (D-N / N시간 후 / 곧 시작)
-  - `start ≤ now ≤ start+durationMin` → `● 생방송 중` (빨간색 깜빡임)
-  - 그 이후 → `▶ 지난 방송` (방송 날짜 표시). **지난 방송도 계속 남긴다 — 지우지 않는다.**
-- 헤더엔 가장 중요한 방송(생방송>가까운 예약>최근 지난방송) 요약 배지 하나만 뜨고, 클릭하면 **전체 목록 모달**(유튜브 썸네일·날짜·서버·상태)이 열린다.
-- 상태 전환은 시간이 알아서 처리한다. **새 방송이 확정될 때만** 이 파일에 항목을 추가하면 된다.
-- 공식 방송은 전부 유튜브다. **썸네일은 `https://i.ytimg.com/vi/<videoId>/hqdefault.jpg`에서 자동으로 받아온다** — `url`을 `watch?v=<ID>`/`youtu.be/<ID>`/`/live/<ID>` 형태로 넣거나 `videoId`를 채우면 썸네일이 뜬다. 채널 `/streams` URL만 있으면 썸네일 없이 표시된다.
+- **워커**: `workers/broadcast/` → `terra-archive-broadcast` (nzkonaru 계정, 6시간마다 크론 `23 */6 * * *`)
+  - 유튜브 공식 채널 3개(KR `UCnnbUv4urnbWgb_lgGUfeBw` / JP `UCvoQlzEzqa6vQA8hq9GNNug` / GL `UCR0J2NYGuC8epsa1O4DMmXQ`)에서
+    ① search(eventType=upcoming/live)로 예약·라이브, ② 업로드 재생목록 스캔으로 종료된 생방송을 수집
+    (KR 생방송이 completed 검색 인덱스에 안 잡히는 사례가 있어 재생목록 방식 사용).
+  - YouTube Data API 키는 워커 secret `YOUTUBE_API_KEY` (코드·git에 없음). 쿼터 일 ~2,420/10,000.
+  - 결과는 KV(binding BCAST)에 저장, **GET https://terra-archive-broadcast.nzkonaru.workers.dev/** 로 서빙 (CORS 허용, 5분 캐시).
+- **프론트**: `BroadcastBadges`(app/page.tsx)가 워커 API를 fetch, 실패 시 `app/data/broadcasts.json` 폴백.
+  원격·정적 중복은 videoId(없으면 서버+UTC날짜)로 제거하고 원격 우선. 상태(예약/생방송/지난방송)는 클라이언트가 시각 비교로 계산.
+- **워커 배포**: `bash workers/broadcast/deploy.sh` (루트 vinext 빌드 산출물과의 wrangler 설정 충돌을 우회함).
+  워커 배포는 사이트 배포 금지 규칙과 별개지만, 사용자에게 한 줄 보고할 것.
 
-## 절차
+## 이 skill이 하는 일
 
-1. **세 서버의 공식 방송 예정을 웹에서 확인** (WebSearch/WebFetch). 신뢰 소스 우선:
-   - 한국(kr): 명일방주 KR 공식 유튜브 `@Arknights_KR_Official`, 공식 X `@ArknightsKorea`, arca.live 명일방주 채널 공지
-   - 일본(jp): 공식 유튜브 `@ArknightsStaff_JP/streams`, 4Gamer/電撃/Gamer 방송 예고 기사
-   - 글로벌(global): 공식 유튜브 `@ArknightsOfficialYostar/streams`, arknights.wiki.gg `Livestreams/EN-<연도>`
-   - 검색 예: `명일방주 공식 방송 예정`, `アークナイツ 生放送 予定`, `Arknights livestream schedule <연도>`
-2. **확정된(날짜·시각이 공지된) 방송만** 추가한다. "곧 있을 예정" 수준의 미확정 루머는 넣지 않는다.
-3. **시각은 반드시 오프셋 포함 ISO8601**로 적는다. 한국·일본 = `+09:00`, 글로벌 EN = 대개 `-07:00`(PT). 시각을 모르면 공지된 현지 시각 그대로 오프셋만 맞춰 기입.
-4. `app/data/broadcasts.json`을 갱신:
-   - 새 방송 객체 추가 (`server`, `title`, `start`, `durationMin`(기본 120~150), `url`).
-   - `updated` 날짜를 오늘로.
-   - 종료된 방송은 남겨둬도 자동으로 숨겨지므로 굳이 지우지 않는다(파일이 길어지면 3일 넘은 것 정리 가능).
-   - `server`는 `kr` / `jp` / `global` 중 하나여야 배지 국가 라벨(KR/JP/GL)이 붙는다.
-5. **빌드 → 커밋 → 푸시**까지만 한다. **`scripts/deploy.sh`는 실행하지 않는다** (사용자 규칙: 세션마다 자동 배포 금지 — 배포는 사용자가 모아서 직접 함). PROJECT-GUIDE 참고.
+1. **점검**: `curl -s https://terra-archive-broadcast.nzkonaru.workers.dev/` 로 데이터가 최신인지(`updated` 시각, 최근 방송 포함 여부) 확인. 이상하면 워커 로그(`npx wrangler tail terra-archive-broadcast`)·쿼터를 확인.
+2. **수동 보완**: 유튜브에 예약 영상이 아직 안 올라오고 **트위터/공지로만 알려진 방송**은 자동 수집이 못 잡는다 → `app/data/broadcasts.json`에 수동 추가 (start는 오프셋 포함 ISO8601, 예: `+09:00`; 유튜브 링크가 생기면 `url`을 `watch?v=ID`로). 웹 검색 소스: KR arca.live 공지/@ArknightsKorea, JP 4Gamer·電撃, GL wiki.gg Livestreams.
+3. **KV 강제 갱신**: `npx wrangler kv key delete broadcasts --namespace-id=b6445de857bc40fc83595aa8132ccd75 --remote` 후 엔드포인트 curl 한 번 (KV 비면 즉석 재수집).
 
-## 데이터 형식 예시
+## 규칙
 
-```json
-{
-  "updated": "2026-07-13",
-  "broadcasts": [
-    { "server": "kr", "title": "6.5주년 특별 방송", "start": "2026-07-12T13:00:00+09:00", "durationMin": 150, "url": "https://www.youtube.com/watch?v=..." }
-  ]
-}
-```
-
-## 보고
-
-갱신 후 사용자에게 세 서버별 현재 상태(예약 D-N / 생방송 중 / 최근 종료 / 예정 없음)를 표로 간단히 요약한다.
+- 정적 JSON의 지난 방송 항목은 지우지 않는다 (원격과 중복되면 화면에서 자동 제거됨).
+- 사이트 코드 수정 시 **빌드 → 커밋 → 푸시까지만** (`scripts/deploy.sh` 자동 실행 금지, PROJECT-GUIDE 참고).
+- 보고: 세 서버별 현재 상태(예약 D-N / 생방송 중 / 마지막 방송 날짜)를 짧은 표로 요약.

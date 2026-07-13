@@ -16,7 +16,8 @@
 | 위치 | `~/Documents/명일방주` |
 | Git | `github.com:Mmtt85/terra-archive.git` (main 브랜치) |
 | 배포 (주) | **https://terra-archive.pages.dev** — Cloudflare Pages. `bash scripts/deploy.sh` 한 방 (빌드→스테이징→pages deploy). wrangler는 이 기기에 OAuth 로그인됨(nzkonaru@gmail.com), 프로젝트에 nodejs_compat 플래그 설정됨. **⚠️ 자동 실행 금지 — 배포는 사용자가 변경분을 모아서 직접 돌린다** (2026-07 규칙 변경). |
-| 배포 (구) | https://terra-archive-kr.nzkonaru.chatgpt.site — ChatGPT 사이트 빌더 수동 재배포 (레거시). workers.dev 워커는 삭제함 |
+| 배포 (구) | https://terra-archive-kr.nzkonaru.chatgpt.site — ChatGPT 사이트 빌더 수동 재배포 (레거시) |
+| 방송 워커 | `terra-archive-broadcast` (workers/broadcast) — 6시간마다 유튜브 공식 채널 3개에서 방송 일정 자동 수집 → KV → https://terra-archive-broadcast.nzkonaru.workers.dev (프론트 폴백: app/data/broadcasts.json). 배포는 `bash workers/broadcast/deploy.sh`, 상세는 `.claude/skills/broadcast-check` |
 | 스택 | vinext(Cloudflare용 Next 호환 런타임) + Next.js 16 / React 19 / Tailwind 4 |
 | 명령 | `npm run dev`(localhost:3000) / `npm run build` / `npm run lint` |
 | 운영 수칙 | 수정하면 **빌드 확인 → 커밋 → git push 까지만** 진행하고 **멈춘다**. `scripts/deploy.sh`는 절대 자동 실행하지 않음 — 세션마다 자동 배포하면 토큰이 낭비되므로, 배포는 사용자가 여러 변경을 모아서 직접 실행한다 (2026-07 규칙). 모든 허가 요청은 기본 YES |

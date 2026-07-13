@@ -1,0 +1,14 @@
+# 명일방주 공식 방송 자동 수집 워커 (사이트 배포와 별개)
+# - 6시간마다 유튜브 공식 채널 3개(한국/일본/글로벌)에서 예약·라이브 방송을 조회해 KV에 저장
+# - GET / 로 프론트엔드에 JSON 제공 (CORS 허용)
+# 배포: 이 폴더에서 `npx wrangler deploy` / 시크릿: `npx wrangler secret put YOUTUBE_API_KEY`
+name = "terra-archive-broadcast"
+main = "src/index.js"
+compatibility_date = "2026-07-01"
+
+[triggers]
+crons = ["23 */6 * * *"]
+
+[[kv_namespaces]]
+binding = "BCAST"
+id = "b6445de857bc40fc83595aa8132ccd75"
