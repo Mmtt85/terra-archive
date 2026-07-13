@@ -328,7 +328,7 @@ footer p { margin:0 }
 .elite-toggle button.selected { opacity:1; background:var(--lime); color:var(--ink) }
 .elite-pill { display:inline-flex; vertical-align:middle; margin-left:8px; border-radius:999px; overflow:hidden; border:1px solid color-mix(in srgb,var(--accent) 45%,#d8d6cd) }
 .elite-pill button { border:0; background:#fff; padding:3px 10px; font:800 9px monospace; color:var(--muted); cursor:pointer; transition:.12s }
-.elite-pill button:first-child { border-right:1px solid color-mix(in srgb,var(--accent) 45%,#d8d6cd) }
+.elite-pill button + button { border-left:1px solid color-mix(in srgb,var(--accent) 45%,#d8d6cd) }
 .elite-pill button:hover { color:var(--ink) }
 .elite-pill button.selected { background:var(--accent); color:var(--ink) }
 /* 미저장 알림: 약 5초(1s×5회)만 깜빡인 뒤 정적인 라임 배경으로 남는다 */
@@ -375,8 +375,10 @@ footer p { margin:0 }
 .clear-btn { border:1px solid var(--ink); background:var(--ink); color:var(--lime); cursor:pointer; padding:0 18px; font-size:12px; font-weight:800 }
 .clear-btn:hover { background:var(--lime); color:var(--ink) }
 .recruit-time-note { border-left:3px solid var(--lime); background:#e6e5df; color:#535b5f; max-width:760px; margin:14px 0 0; padding:12px 15px; font-size:12px; line-height:1.7 }
-.op-link { cursor:pointer; transition:outline-color .15s }
-.op-link:hover { outline:2px solid var(--lime); outline-offset:1px }
+/* 기본 상태에 투명 outline을 깔아 두면 hover 시 색만 부드럽게 차오른다
+   (없던 outline이 생기면 기본색이 한순간 비쳐 깜빡여 보임) */
+.op-link { cursor:pointer; outline:2px solid transparent; outline-offset:1px; transition:outline-color .18s ease, filter .18s ease }
+.op-link:hover { outline-color:var(--lime); filter:brightness(1.08) }
 .dorm-note { border-left:3px solid var(--lime); background:#e6e5df; color:#535b5f; margin:0 0 14px; padding:11px 14px; font-size:11.5px; line-height:1.6 }
 .toast { position:fixed; left:50%; top:92px; transform:translateX(-50%); z-index:200; background:var(--ink); color:var(--lime); padding:12px 22px; font-size:12.5px; font-weight:800; letter-spacing:.3px; box-shadow:0 10px 30px #0006; animation:toastIn .22s ease-out, toastOut .3s ease-in 2.1s both; pointer-events:none }
 @keyframes toastIn { from { opacity:0; transform:translateX(-50%) translateY(-14px) } to { opacity:1; transform:translateX(-50%) translateY(0) } }

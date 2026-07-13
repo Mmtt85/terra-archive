@@ -50,13 +50,23 @@ const infra = infraData as { rooms: Record<string, RoomSpec>; ops: InfraOp[] };
 const ops = infra.ops;
 const opById = new Map(ops.map((op) => [op.id, op]));
 
-const ELITE2_UNLOCK = "정예화 2";
+type Elite = 0 | 1 | 2;
 
-// 1정(정예화 1) 오퍼는 정예화 2에서 해금되는 인프라 스킬을 아직 못 씀 — 미지정 시 2정(최대) 가정
-function withElite(op: InfraOp, elite: 1 | 2 | undefined): InfraOp {
-  if (elite !== 1) return op;
-  const skills = op.skills.filter((skill) => skill.unlock !== ELITE2_UNLOCK);
+// 미지정 = 2정(최대) 가정. 1정은 '정예화 2' 해금 스킬을, 0정(노정예)은
+// '정예화 1'·'정예화 2' 해금 스킬을 아직 못 쓴다 (Lv.1/Lv.30 스킬은 유지)
+function withElite(op: InfraOp, elite: Elite | undefined): InfraOp {
+  if (elite == null || elite === 2) return op;
+  const skills = op.skills.filter((skill) => skill.unlock !== "정예화 2" && (elite === 1 || skill.unlock !== "정예화 1"));
   return skills.length === op.skills.length ? op : { ...op, skills };
+}
+
+// 정예화 단계 선택지: 정예화 해금 스킬이 있어야 의미가 있고,
+// 3성은 정예화 1까지·1~2성은 승급 자체가 없다
+const ELITE_LABEL: Record<Elite, string> = { 0: "노정예", 1: "1정", 2: "2정" };
+function eliteOptions(op: InfraOp): Elite[] {
+  if (!op.skills.some((skill) => skill.unlock.startsWith("정예화"))) return [];
+  if (op.rarity <= 2) return [];
+  return op.rarity === 3 ? [0, 1] : [0, 1, 2];
 }
 
 // 243 layout: gold ×2 + battle-record ×2 factories, two 12h crews per day
@@ -519,7 +529,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
   // 1~5성은 기본 보유, 6성은 미보유로 시작 — 가진 6성만 직접 체크한다
   const [ownedIds, setOwnedIds] = useState<Set<string>>(() => new Set(ops.filter((op) => op.rarity <= 5).map((op) => op.id)));
   // 미지정 = 2정(정예화 2, 최대) 가정 — 정예화 2 스킬이 있는 오퍼만 1정으로 낮출 수 있다
-  const [eliteById, setEliteById] = useState<Map<string, 1 | 2>>(new Map());
+  const [eliteById, setEliteById] = useState<Map<string, Elite>>(new Map());
   // 보유 오퍼·정예화 구성이나 방별 수동 편성을 바꾼 뒤 파일로 저장하지 않았으면 true
   const [dirty, setDirty] = useState(false);
 
@@ -527,7 +537,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
   const effectiveOpById = useMemo(() => new Map(effectiveOps.map((op) => [op.id, op])), [effectiveOps]);
   const roster = useMemo(() => effectiveOps.filter((op) => ownedIds.has(op.id)), [effectiveOps, ownedIds]);
 
-  const persist = (ids: Set<string>, nextPlan: Plan | null, elite: Map<string, 1 | 2> = eliteById) => {
+  const persist = (ids: Set<string>, nextPlan: Plan | null, elite: Map<string, Elite> = eliteById) => {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ owned: Array.from(ids), elite: Array.from(elite.entries()), plan: nextPlan })); } catch { /* ignore */ }
   };
 
@@ -644,7 +654,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
       try {
         const data = JSON.parse(String(reader.result));
         const ids = new Set<string>((data.owned as string[]).filter((id) => opById.has(id)));
-        const elite = new Map<string, 1 | 2>((data.elite as [string, 1 | 2][] | undefined) ?? []);
+        const elite = new Map<string, Elite>((data.elite as [string, Elite][] | undefined) ?? []);
         setOwnedIds(ids);
         setEliteById(elite);
         if (data.plan) { setPlan(data.plan as Plan); setActiveShift(0); }
@@ -688,7 +698,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
 
   // 이미 배치된 오퍼의 정예화 단계를 방 상세에서 바로 바꾼다 — 편성 자체는 그대로 두고
   // 해당 오퍼의 활성 스킬만 다시 계산된다 (전체 재배치는 자동편성 실행에서 별도로).
-  const setOperatorElite = (id: string, elite: 1 | 2) => {
+  const setOperatorElite = (id: string, elite: Elite) => {
     const next = new Map(eliteById);
     if (elite === 2) next.delete(id); else next.set(id, elite);
     setEliteById(next);
@@ -704,7 +714,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
     toastTimer.current = setTimeout(() => setToast(null), 2400);
   };
 
-  const runOptimize = (ids: Set<string> = ownedIds, elite: Map<string, 1 | 2> = eliteById) => {
+  const runOptimize = (ids: Set<string> = ownedIds, elite: Map<string, Elite> = eliteById) => {
     const next = optimize(ops.map((op) => withElite(op, elite.get(op.id))).filter((op) => ids.has(op.id)));
     setPlan(next);
     setActiveShift(0);
@@ -718,7 +728,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
       if (saved) {
         const data = JSON.parse(saved);
         const ids = new Set<string>((data.owned as string[]).filter((id: string) => opById.has(id)));
-        const elite = new Map<string, 1 | 2>((data.elite as [string, 1 | 2][] | undefined) ?? []);
+        const elite = new Map<string, Elite>((data.elite as [string, Elite][] | undefined) ?? []);
         setOwnedIds(ids);
         setEliteById(elite);
         if (data.plan) { setPlan(data.plan as Plan); return; }
@@ -852,6 +862,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
           eliteById={eliteById}
           onApply={(ids, elite) => { setOwnedIds(ids); setEliteById(elite); setShowRoster(false); runOptimize(ids, elite); setDirty(true); }}
           onClose={() => setShowRoster(false)}
+          onShowOperator={onShowOperator}
         />
       )}
 
@@ -907,7 +918,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
   );
 }
 
-function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClose, onShowOperator, onUpdateTeam, onNotify, eliteById, onSetElite }: { cell: { key: string; room: string; label: string; product?: string }; plan: Plan; allAssigned: Set<string>; roster: InfraOp[]; opMap: Map<string, InfraOp>; initialShift: number; onClose: () => void; onShowOperator?: (id: string) => void; onUpdateTeam?: (cellKey: string, shiftIdx: number, ids: string[]) => void; onNotify?: (message: string) => void; eliteById: Map<string, 1 | 2>; onSetElite: (id: string, elite: 1 | 2) => void }) {
+function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClose, onShowOperator, onUpdateTeam, onNotify, eliteById, onSetElite }: { cell: { key: string; room: string; label: string; product?: string }; plan: Plan; allAssigned: Set<string>; roster: InfraOp[]; opMap: Map<string, InfraOp>; initialShift: number; onClose: () => void; onShowOperator?: (id: string) => void; onUpdateTeam?: (cellKey: string, shiftIdx: number, ids: string[]) => void; onNotify?: (message: string) => void; eliteById: Map<string, Elite>; onSetElite: (id: string, elite: Elite) => void }) {
   const [shift, setShift] = useState(initialShift);
   const [confirmRoomProposal, setConfirmRoomProposal] = useState(false);
   const shiftIndex = Math.min(shift, (plan.assignments[cell.key]?.length ?? 1) - 1);
@@ -1010,12 +1021,20 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                     <div>
                       <b>
                         {op.name} <i>{"★".repeat(op.rarity)}</i>
-                        {opById.get(op.id)?.skills.some((skill) => skill.unlock === "정예화 2") && (
-                          <span className="elite-pill" role="group" aria-label={`${op.name} 정예화 단계`}>
-                            <button type="button" className={(eliteById.get(op.id) ?? 2) === 1 ? "selected" : ""} onClick={() => onSetElite(op.id, 1)}>1정</button>
-                            <button type="button" className={(eliteById.get(op.id) ?? 2) === 2 ? "selected" : ""} onClick={() => onSetElite(op.id, 2)}>2정</button>
-                          </span>
-                        )}
+                        {(() => {
+                          // 정예화 판정은 스킬이 필터링되지 않은 원본(opById) 기준
+                          const master = opById.get(op.id);
+                          const options = master ? eliteOptions(master) : [];
+                          if (!options.length) return null;
+                          const current = Math.min(eliteById.get(op.id) ?? 2, options[options.length - 1]) as Elite;
+                          return (
+                            <span className="elite-pill" role="group" aria-label={`${op.name} 정예화 단계`}>
+                              {options.map((option) => (
+                                <button key={option} type="button" className={current === option ? "selected" : ""} onClick={() => onSetElite(op.id, option)}>{ELITE_LABEL[option]}</button>
+                              ))}
+                            </span>
+                          );
+                        })()}
                       </b>
                       {shown.length ? shown.map((skill) => <p key={skill.name}><em>{skill.name}</em> — {skill.description}</p>) : <p>이 시설에 적용되는 스킬이 없습니다 (세트 대기 요원).</p>}
                       {total > 0 && <small>기여 +{total}{cell.room === "CONTROL" ? "" : "%"}</small>}
@@ -1158,9 +1177,9 @@ function FlowModal({ plan, opMap, onClose, onShowOperator }: { plan: Plan; opMap
   );
 }
 
-function RosterModal({ ownedIds, eliteById, onApply, onClose }: { ownedIds: Set<string>; eliteById: Map<string, 1 | 2>; onApply: (ids: Set<string>, elite: Map<string, 1 | 2>) => void; onClose: () => void }) {
+function RosterModal({ ownedIds, eliteById, onApply, onClose, onShowOperator }: { ownedIds: Set<string>; eliteById: Map<string, Elite>; onApply: (ids: Set<string>, elite: Map<string, Elite>) => void; onClose: () => void; onShowOperator?: (id: string) => void }) {
   const [draft, setDraft] = useState<Set<string>>(new Set(ownedIds));
-  const [eliteDraft, setEliteDraft] = useState<Map<string, 1 | 2>>(new Map(eliteById));
+  const [eliteDraft, setEliteDraft] = useState<Map<string, Elite>>(new Map(eliteById));
   const [query, setQuery] = useState("");
   const keyword = query.trim().toLowerCase();
   const visible = ops
@@ -1171,30 +1190,31 @@ function RosterModal({ ownedIds, eliteById, onApply, onClose }: { ownedIds: Set<
     if (next.has(id)) next.delete(id); else next.add(id);
     return next;
   });
-  const setElite = (id: string, elite: 1 | 2) => setEliteDraft((current) => {
+  const setElite = (id: string, elite: Elite) => setEliteDraft((current) => {
     const next = new Map(current);
     if (elite === 2) next.delete(id); else next.set(id, elite); // 2정이 기본값이라 별도 저장 불필요
     return next;
   });
-  // 성급 단위 일괄 조작 — 보유 체크/해제, 정예화 1정/2정 (정예화는 2정 스킬 보유 오퍼만 의미)
+  // 성급 단위 일괄 조작 — 보유 체크/해제, 정예화 노정예/1정/2정
+  // (정예화는 정예화 해금 스킬이 있는 오퍼에만 적용, 3성 이하는 2정이 없어 보유/해제만)
   const bulkOwn = (test: (rarity: number) => boolean, own: boolean) => setDraft((current) => {
     const next = new Set(current);
     for (const op of ops) if (test(op.rarity)) { if (own) next.add(op.id); else next.delete(op.id); }
     return next;
   });
-  const bulkElite = (test: (rarity: number) => boolean, elite: 1 | 2) => setEliteDraft((current) => {
+  const bulkElite = (test: (rarity: number) => boolean, elite: Elite) => setEliteDraft((current) => {
     const next = new Map(current);
     for (const op of ops) {
-      if (!test(op.rarity) || !op.skills.some((skill) => skill.unlock === "정예화 2")) continue;
-      if (elite === 2) next.delete(op.id); else next.set(op.id, 1);
+      if (!test(op.rarity) || eliteOptions(op).length === 0) continue;
+      if (elite === 2) next.delete(op.id); else next.set(op.id, elite);
     }
     return next;
   });
-  const BULK_GROUPS: { label: string; test: (rarity: number) => boolean }[] = [
-    { label: "6성", test: (rarity) => rarity === 6 },
-    { label: "5성", test: (rarity) => rarity === 5 },
-    { label: "4성", test: (rarity) => rarity === 4 },
-    { label: "3성 이하", test: (rarity) => rarity <= 3 },
+  const BULK_GROUPS: { label: string; test: (rarity: number) => boolean; elites: boolean }[] = [
+    { label: "6성", test: (rarity) => rarity === 6, elites: true },
+    { label: "5성", test: (rarity) => rarity === 5, elites: true },
+    { label: "4성", test: (rarity) => rarity === 4, elites: true },
+    { label: "3성 이하", test: (rarity) => rarity <= 3, elites: false },
   ];
   return (
     <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
@@ -1211,33 +1231,36 @@ function RosterModal({ ownedIds, eliteById, onApply, onClose }: { ownedIds: Set<
           </div>
         </header>
         <div className="modal-scroll">
-          <p className="dorm-note">정예화 2에서 해금되는 인프라 스킬을 가진 오퍼는 카드 아래 <b>1정/2정</b>을 선택할 수 있습니다 (기본값 2정 · 최대치 가정).</p>
+          <p className="dorm-note">정예화 단계에 따라 해금되는 인프라 스킬을 가진 오퍼는 카드 아래에서 <b>노정예/1정/2정</b>을 선택할 수 있습니다 (기본값 최대 정예화). 얼굴을 클릭하면 상세 정보가 열립니다.</p>
           <div className="roster-bulk">
-            {BULK_GROUPS.map(({ label, test }) => (
+            {BULK_GROUPS.map(({ label, test, elites }) => (
               <span key={label} className="bulk-group">
                 <b>{label}</b>
                 <button type="button" onClick={() => bulkOwn(test, true)}>전체 보유</button>
                 <button type="button" onClick={() => bulkOwn(test, false)}>전체 해제</button>
-                <button type="button" onClick={() => bulkElite(test, 1)}>일괄 1정</button>
-                <button type="button" onClick={() => bulkElite(test, 2)}>일괄 2정</button>
+                {elites && <button type="button" onClick={() => bulkElite(test, 0)}>일괄 노정예</button>}
+                {elites && <button type="button" onClick={() => bulkElite(test, 1)}>일괄 1정</button>}
+                {elites && <button type="button" onClick={() => bulkElite(test, 2)}>일괄 2정</button>}
               </span>
             ))}
           </div>
           <div className="roster-grid">
             {visible.map((op) => {
               const owned = draft.has(op.id);
-              const hasElite2Skill = op.skills.some((skill) => skill.unlock === "정예화 2");
-              const elite = eliteDraft.get(op.id) ?? 2;
+              const options = eliteOptions(op);
+              const elite = Math.min(eliteDraft.get(op.id) ?? 2, options.length ? options[options.length - 1] : 2) as Elite;
               return (
                 <div key={op.id} className={`roster-card${owned ? " owned" : ""}`}>
                   <button type="button" onClick={() => toggle(op.id)} title={op.name}>
-                    <img src={op.image} alt={op.name} loading="lazy" />
+                    <img src={op.image} alt={op.name} loading="lazy" className={onShowOperator ? "op-link" : undefined}
+                      onClick={(event) => { if (onShowOperator) { event.stopPropagation(); onShowOperator(op.id); } }} />
                     <span>{op.name}</span>
                   </button>
-                  {owned && hasElite2Skill && (
+                  {owned && options.length > 0 && (
                     <div className="elite-toggle" role="group" aria-label={`${op.name} 정예화 단계`}>
-                      <button type="button" className={elite === 1 ? "selected" : ""} onClick={() => setElite(op.id, 1)}>1정</button>
-                      <button type="button" className={elite === 2 ? "selected" : ""} onClick={() => setElite(op.id, 2)}>2정</button>
+                      {options.map((option) => (
+                        <button key={option} type="button" className={elite === option ? "selected" : ""} onClick={() => setElite(op.id, option)}>{ELITE_LABEL[option]}</button>
+                      ))}
                     </div>
                   )}
                 </div>

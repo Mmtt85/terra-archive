@@ -27,8 +27,8 @@ const RARITY_COLORS: Record<number, string> = { 6: "#c2571f", 5: "#b8860b", 4: "
 type ComboResult = { combo: string[]; ops: RecruitOp[]; lowOps: RecruitOp[]; floor: number; ceil: number };
 
 // 1·2★는 태그와 무관하게 모집 시간만 맞으면 등장할 수 있다 (사용자 확인:
-// 로봇도 로봇 태그 없이 나온 사례 있음) — 1★는 3:50 이하, 2★는 7:40 미만
-const LOW_TIME_HINT: Record<number, string> = { 1: "3:50 이하", 2: "7:40 미만" };
+// 로봇도 로봇 태그 없이 나온 사례 있음) — 1★는 3:50 이하, 2★는 7:30 이하
+const LOW_TIME_HINT: Record<number, string> = { 1: "3:50 이하", 2: "7:30 이하" };
 
 const allCombos = (tags: string[]): string[][] => {
   const combos: string[][] = [];
@@ -108,7 +108,7 @@ function ComboCard({ result, onShowOperator }: { result: ComboResult; onShowOper
         ))}
       </ul>
       {result.lowOps.length > 0 && (
-        <p className="low-time-note">1·2★는 모집 시간을 낮춰야 등장합니다 — <b>1★는 3시간 50분 이하</b>, <b>2★는 7시간 40분 미만</b>. 9시간 설정 시에는 나오지 않습니다.</p>
+        <p className="low-time-note">1·2★는 모집 시간을 낮춰야 등장합니다 — <b>1★는 3시간 50분 이하</b>, <b>2★는 7시간 30분 이하</b>. 9시간 설정 시에는 나오지 않습니다.</p>
       )}
     </article>
   );
