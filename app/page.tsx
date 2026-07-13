@@ -125,8 +125,11 @@ const SERVER_META: Record<string, { code: string; label: string }> = {
 };
 const HOUR = 3_600_000;
 const DAY = 86_400_000;
-const STATE_ICON: Record<BState, string> = { live: "●", upcoming: "◷", past: "▶" };
 const STATE_RANK: Record<BState, number> = { live: 0, upcoming: 1, past: 2 };
+
+function YtIcon() {
+  return <span className="yt-icon" aria-label="YouTube"><i /></span>;
+}
 
 // 공식 방송은 전부 유튜브 — watch/live/youtu.be/embed URL 또는 명시적 videoId에서 11자 ID 추출
 function youTubeId(b: Broadcast): string | null {
@@ -195,44 +198,49 @@ function BroadcastBadges() {
   if (now == null) return null;
   const all = (broadcastsData.broadcasts as Broadcast[]).filter((b) => !Number.isNaN(Date.parse(b.start)));
   if (all.length === 0) return null;
-  // 정렬: 생방송 > 가까운 예약 > 최근 지난 방송
+  // 정렬: 생방송 > 가까운 예약 > 최근 지난 방송 (세 서버 전부 목록에 표시)
   const sorted = [...all].sort((a, b) => {
     const sa = bcastState(a, now), sb = bcastState(b, now);
     if (STATE_RANK[sa] !== STATE_RANK[sb]) return STATE_RANK[sa] - STATE_RANK[sb];
     return sa === "past" ? Date.parse(b.start) - Date.parse(a.start) : Date.parse(a.start) - Date.parse(b.start);
   });
-  const primary = sorted[0];
-  const pState = bcastState(primary, now);
-  const pMeta = SERVER_META[primary.server] ?? { code: primary.server.toUpperCase(), label: primary.server };
+  // 헤더 버튼 힌트: 생방송이 있으면 LIVE, 없으면 가장 가까운 예약을 표시
+  const liveOne = all.find((b) => bcastState(b, now) === "live");
+  const nextUp = all.filter((b) => bcastState(b, now) === "upcoming").sort((a, b) => Date.parse(a.start) - Date.parse(b.start))[0];
+  const hint = liveOne ? { cls: "live", text: "생방송 중" } : nextUp ? { cls: "upcoming", text: `예약 ${shortStatus(nextUp, now)}` } : null;
   return (
     <>
-      <button type="button" className={`bcast-trigger ${pState}`} onClick={() => setOpen(true)} title="명일방주 공식 방송 일정 보기">
-        <span className="bcast-icon" aria-hidden>{STATE_ICON[pState]}</span>
-        <span className="bcast-code">{pMeta.code}</span>
-        <span className="bcast-label">{shortStatus(primary, now)}</span>
+      <button type="button" className={`bcast-trigger ${hint?.cls ?? ""}`} onClick={() => setOpen(true)} title="명일방주 한국·일본·글로벌 공식 방송 일정 보기">
+        <YtIcon />
+        <span>공식 방송</span>
+        {hint && <span className="bcast-hint">· {hint.text}</span>}
       </button>
       {open && (
         <div className="modal-backdrop bcast-backdrop" onClick={() => setOpen(false)}>
           <div className="bcast-modal" onClick={(event) => event.stopPropagation()} role="dialog" aria-label="명일방주 공식 방송 일정">
             <header>
-              <h2>명일방주 공식 방송</h2>
+              <h2><YtIcon /> 명일방주 공식 방송</h2>
               <button type="button" className="modal-close" onClick={() => setOpen(false)} aria-label="닫기">×</button>
             </header>
             <div className="bcast-list">
               {sorted.map((b) => {
                 const st = bcastState(b, now);
                 const meta = SERVER_META[b.server] ?? { code: b.server.toUpperCase(), label: b.server };
-                const stateLabel = st === "live" ? "생방송 중" : st === "upcoming" ? `예약됨 · ${shortStatus(b, now)}` : "지난 방송";
+                const stateLabel = st === "live" ? "● 생방송 중" : st === "upcoming" ? `예약됨 (${shortStatus(b, now)})` : "지난 방송";
+                const dateLine =
+                  st === "live" ? "지금 방송 중"
+                    : st === "upcoming" ? `${fmtDate(b.start, true)} 예정`
+                      : `${fmtDate(b.start, false)} 방송`;
                 const body = (
                   <>
                     <BroadcastThumb b={b} />
                     <div className="bcast-info">
                       <div className="bcast-top">
-                        <span className={`bcast-server ${b.server}`}>{meta.code} · {meta.label}</span>
-                        <span className={`bcast-state ${st}`}>{STATE_ICON[st]} {stateLabel}</span>
+                        <span className={`bcast-server ${b.server}`}>{meta.label} 서버</span>
+                        <span className={`bcast-state ${st}`}>{stateLabel}</span>
                       </div>
                       <strong>{b.title}</strong>
-                      <span className="bcast-date">{fmtDate(b.start, st !== "past")} {st === "upcoming" ? "예정" : "방송"}</span>
+                      <span className="bcast-date">{dateLine}</span>
                     </div>
                   </>
                 );
