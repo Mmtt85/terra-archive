@@ -228,7 +228,7 @@ for o in operators:
         ph = cond.get("phase", 0)
         ph = ph if isinstance(ph, int) else int(str(ph).replace("PHASE_", ""))
         unlock = f"Lv.{cond.get('level', 1)}" if ph == 0 else f"정예화 {ph}"
-        slot_entries.append({"name": bf.get("buffName"), "room": bf.get("roomType"),
+        slot_entries.append({"buffId": final["buffId"], "name": bf.get("buffName"), "room": bf.get("roomType"),
                              "unlock": unlock, "description": strip_tags(bf.get("description"))})
     for entry in slot_entries:
         room = entry["room"]
@@ -315,6 +315,7 @@ for o in operators:
         tier = 1
         group = entry["name"]
         skills.append({
+            "buffId": entry["buffId"],  # 다국어 오버레이(build-i18n.py) 매핑 키
             "name": entry["name"], "room": room, "unlock": entry["unlock"],
             "description": text, "kind": kind, "value": value, "product": product,
             "group": group, "tier": tier,

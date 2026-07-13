@@ -1,9 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- 해시(#infra, #op-...) 라우팅은 크롤러가 별도 URL로 취급하지 않으므로 루트만 등재 -->
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<!-- 해시(#infra, #op-...) 라우팅은 크롤러가 별도 URL로 취급하지 않으므로 언어 루트만 등재.
+     언어 버전은 xhtml:link hreflang으로 상호 참조한다 (/ = ko, /en, /ja). -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://terra-archive.pages.dev/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.pages.dev/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.pages.dev/en"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.pages.dev/ja"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.pages.dev/"/>
+  </url>
+  <url>
+    <loc>https://terra-archive.pages.dev/en</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.pages.dev/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.pages.dev/en"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.pages.dev/ja"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.pages.dev/"/>
+  </url>
+  <url>
+    <loc>https://terra-archive.pages.dev/ja</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.pages.dev/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.pages.dev/en"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.pages.dev/ja"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.pages.dev/"/>
   </url>
 </urlset>

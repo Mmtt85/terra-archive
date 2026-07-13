@@ -24,6 +24,8 @@ description: 명일방주 KR 공개모집(공채) 데이터를 클뜯 레포의 
    ```
    - 풀은 `gacha_table`의 `recruitDetail` 텍스트에서 파싱.
    - 5성 → 특별 채용, 6성 → 고급 특별 채용 자격 태그 자동 부여.
+   - 태그/풀이 바뀌었으면 `python3 scripts/build-i18n.py .gamedata`도 실행해
+     EN/JA 오버레이(extra-i18n.*.json)를 동기화 (en/jp gacha·character 테이블 필요).
 3. **검증**: `git diff`로 신규 오퍼/태그 변경만 반영됐는지 확인.
 4. **빌드 → 커밋 → 푸시까지만**. **`scripts/deploy.sh` 자동 실행 금지**(2026-07 규칙) — 배포는 사용자가 직접.
 

@@ -11,6 +11,9 @@
   배포는 사용자가 변경분을 모아 직접 돌린다. 배포 URL: https://terra-archive.pages.dev (Cloudflare Pages, wrangler 로그인됨).
 - 데이터는 API가 아니라 `app/data/*.json` 정적 파일. 손으로 고치지 말고
   `scripts/`의 파이프라인으로 재생성한다 ("새 버전 확인해줘" = PROJECT-GUIDE §3 절차).
+  KR 데이터를 재생성하면 **`build-i18n.py`로 EN/JA 데이터도 함께 재생성**한다.
+- 사이트는 3개 언어(`/` 한국어 · `/en` · `/ja`). UI의 **한국어 문구를 수정하면
+  `app/i18n.tsx` 사전의 같은 키도 함께 수정**해야 EN/JA 번역이 유지된다 (PROJECT-GUIDE §1).
 - 데이터 소스는 `ArknightsAssets/ArknightsGamedata`(kr) 클뜯 레포.
   Kengxxiao 레포는 죽었음(2025-11) — 사용 금지.
 - 사용자가 교정해준 도메인 규칙(가짜 게스트 오퍼 제외, KR 출시순 seq, 시너지 팟 판정,

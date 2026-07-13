@@ -24,8 +24,17 @@ button { color:inherit }
 .brand { color:inherit; letter-spacing:-.5px; align-items:center; gap:12px; font-size:17px; font-weight:900; text-decoration:none; display:flex }
 .brand small { color:var(--muted); letter-spacing:1.2px; margin-top:3px; font:600 9px/1 monospace; display:block }
 .brand-mark { width:39px; height:39px; color:var(--lime); background:var(--ink); clip-path:polygon(0 0,100% 0,100% 72%,72% 100%,0 100%); place-items:center; font:900 13px monospace; display:grid }
-.server-chip { border:1px solid var(--ink); letter-spacing:1px; padding:8px 11px; font:700 10px monospace }
+.server-chip { border:1px solid var(--ink); letter-spacing:1px; padding:8px 11px; font:700 10px monospace; background:none; color:var(--ink); cursor:pointer; display:inline-flex; align-items:center; white-space:nowrap }
 .server-chip span { background:#59bb55; border-radius:50%; width:7px; height:7px; margin-right:7px; display:inline-block; box-shadow:0 0 0 3px #d9ecd7 }
+.server-chip i { font-style:normal; margin-left:6px; opacity:.55 }
+/* 언어 드롭다운 — 서버 칩을 누르면 한국어/English/日本語 선택 (경로 이동) */
+.lang-wrap { position:relative }
+.lang-menu { position:absolute; top:calc(100% + 6px); right:0; z-index:60; background:var(--paper); border:1px solid var(--ink); min-width:150px; display:flex; flex-direction:column; box-shadow:4px 4px 0 #13171926 }
+.lang-menu button { display:flex; justify-content:space-between; align-items:center; gap:14px; padding:9px 12px; font:700 12px/1 sans-serif; background:none; border:0; border-bottom:1px solid #1317191f; cursor:pointer; text-align:left; color:var(--ink) }
+.lang-menu button:last-child { border-bottom:0 }
+.lang-menu button:hover { background:var(--lime) }
+.lang-menu button.selected { background:var(--ink); color:var(--paper) }
+.lang-menu button small { font:700 9px monospace; opacity:.65 }
 
 /* 유튜브 아이콘 (빨간 재생 마크) */
 .yt-mark,.yt-icon { display:grid; place-items:center; background:#f00; border-radius:4px }

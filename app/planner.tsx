@@ -2,11 +2,14 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import infraData from "./data/infra.json";
+import { useI18n, tokenName, rich, type ExtraI18n, type Locale, type T } from "./i18n";
 
 type TokenGen = { token: string; estimate: number; perMember?: { per: number; cap: number; match: string } };
 type TokenUse = { token: string; per: number; value: number; percent: boolean };
 
 type InfraSkill = {
+  buffId?: string;   // 다국어 오버레이(extra-i18n) 매핑 키
+  krName?: string;   // 표시명을 로케일로 바꿔도 로직(스킬 태그 카운트)은 KR 이름 기준
   name: string;
   room: string;
   unlock: string;
@@ -215,11 +218,12 @@ function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx): OpBrea
       continue;
     }
     // same-room skill-tag counting (브라이오피타: 금속 공예류 스킬 1개당 +5%)
+    // 스킬 태그 매칭은 표시명이 아니라 KR 원본 이름(krName) 기준 — 로케일 무관하게 동작
     if (skill.perSkillTag && skill.perSkillValue) {
       const tag = skill.perSkillTag;
       let count = 0;
       for (const member of team) for (const active of activeSkills(member, room, ctx.product)) {
-        if (active.name.replace(/\s/g, "").includes(tag)) count += 1;
+        if ((active.krName ?? active.name).replace(/\s/g, "").includes(tag)) count += 1;
       }
       out.efficiency += skill.perSkillValue * count;
       continue;
@@ -353,8 +357,20 @@ type Plan = {
   tokenPoints: Record<string, number>;
   factionCounts: Record<string, number>[]; // per shift, base-wide placements
   flows: TokenFlow[];
-  strategy: string;
+  strategy: string;             // KR 조합 문자열 (구버전 저장 호환용)
+  strategyTokens?: string[];    // 표시용 구조 필드 — 로케일에서 토큰명 번역해 재조립
+  strategySet?: boolean;
 };
+
+// 전략 라벨은 저장된 문자열이 아니라 구조 필드에서 로케일로 재조립한다
+// (localStorage의 구버전 플랜은 strategyTokens가 없어 KR 문자열 그대로 표시)
+function strategyLabel(plan: Plan, locale: Locale, t: T): string {
+  if (!plan.strategyTokens) return plan.strategy;
+  const base = plan.strategyTokens.length
+    ? t("{tokens} 패키지", { tokens: plan.strategyTokens.map((token) => tokenName(locale, token)).join(" + ") })
+    : t("기본 편성");
+  return base + (plan.strategySet ? t(" + 쉐라그 세트") : "");
+}
 
 // 방 채우기 우선순위 (사용자 확정 2026-07): 제조소-순금 > 제조소-작전기록 > 무역소 >
 // 발전소 > 사무실 > 응접실 — 먼저 채우는 방이 최고 요원을 가져간다. 응접실은 최하위
@@ -562,7 +578,7 @@ function buildPlan(packageTokens: string[], roster: InfraOp[], factionSets = fal
     }
   }
   const strategy = (packageTokens.length ? `${packageTokens.join(" + ")} 패키지` : "기본 편성") + (factionSets ? " + 쉐라그 세트" : "");
-  return { assignments, plants, tokenPoints, factionCounts: factionCountsPerShift, flows, strategy };
+  return { assignments, plants, tokenPoints, factionCounts: factionCountsPerShift, flows, strategy, strategyTokens: packageTokens, strategySet: factionSets };
 }
 
 // 계획 전체 총점 (양 조 전 방, 앰비언트 오라 포함) — 세트 포함/미포함 두 안 비교용
@@ -626,7 +642,23 @@ function slotSubstitutes(team: InfraOp[], index: number, key: string, ctx: Ctx, 
 
 const STORAGE_KEY = "terra-archive-infra-v3";
 
-export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id: string) => void } = {}) {
+export default function InfraPlanner({ onShowOperator, extra }: { onShowOperator?: (id: string) => void; extra?: ExtraI18n | null } = {}) {
+  const { locale, t } = useI18n();
+  // 로케일 표시 오버레이: 이름·스킬명·설명만 교체하고(krName에 원본 보존),
+  // 엔진이 쓰는 구조 필드(unlock·kind·token 등)는 KR 원본 그대로 둔다
+  const lops = useMemo(() => {
+    if (!extra) return ops;
+    return ops.map((op) => ({
+      ...op,
+      name: extra.names[op.id] ?? op.name,
+      skills: op.skills.map((skill) => ({
+        ...skill,
+        krName: skill.name,
+        name: (skill.buffId && extra.buffs[skill.buffId]?.name) || skill.name,
+        description: (skill.buffId && extra.buffs[skill.buffId]?.desc) || skill.description,
+      })),
+    }));
+  }, [extra]);
   const [plan, setPlan] = useState<Plan | null>(null);
   const [activeShift, setActiveShift] = useState(0);
   const [openRoom, setOpenRoom] = useState<string | null>(null);
@@ -641,7 +673,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
   // 보유 오퍼·정예화 구성이나 방별 수동 편성을 바꾼 뒤 파일로 저장하지 않았으면 true
   const [dirty, setDirty] = useState(false);
 
-  const effectiveOps = useMemo(() => ops.map((op) => withElite(op, eliteById.get(op.id))), [eliteById]);
+  const effectiveOps = useMemo(() => lops.map((op) => withElite(op, eliteById.get(op.id))), [lops, eliteById]);
   const effectiveOpById = useMemo(() => new Map(effectiveOps.map((op) => [op.id, op])), [effectiveOps]);
   const roster = useMemo(() => effectiveOps.filter((op) => ownedIds.has(op.id)), [effectiveOps, ownedIds]);
 
@@ -666,7 +698,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
       const single = cell.room === "DORMITORY" || cell.key === "TRAINING";
       if (single) {
         const team = teamAt(0);
-        return { cell, crews: [{ label: cell.room === "DORMITORY" ? "고정" : "-", team, score: scoreFor(team, 0) }] };
+        return { cell, crews: [{ label: cell.room === "DORMITORY" ? t("고정") : "-", team, score: scoreFor(team, 0) }] };
       }
       return { cell, crews: [0, 1].map((shift) => ({ label: ["A", "B"][shift], team: teamAt(shift), score: scoreFor(teamAt(shift), shift) })) };
     });
@@ -688,14 +720,14 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
     g.fillStyle = "#131719"; g.fillRect(0, 0, W, 96);
     g.fillStyle = "#dfff00"; g.font = "900 30px monospace"; g.fillText("TERRA ARCHIVE // RIIC PLAN", 32, 58);
     g.fillStyle = "#131719"; g.font = "700 15px sans-serif";
-    g.fillText(`${plan.strategy} · ${Object.entries(plan.tokenPoints).map(([token, points]) => `${token} ${Math.round(points)}점`).join(" · ")}`, 32, 126);
+    g.fillText(`${strategyLabel(plan, locale, t)} · ${Object.entries(plan.tokenPoints).map(([token, points]) => t("{token} {n}점", { token: tokenName(locale, token), n: Math.round(points) })).join(" · ")}`, 32, 126);
     let y = top;
     rows.forEach((row, index) => {
       const h = rowHeights[index];
       g.fillStyle = index % 2 ? "#eceae3" : "#fbfbf8"; g.fillRect(24, y, W - 48, h - 8);
       g.fillStyle = ROOM_ACCENT[row.cell.room] ?? "#888"; g.fillRect(24, y, 5, h - 8);
       g.fillStyle = "#131719"; g.font = "800 15px sans-serif";
-      g.fillText(row.cell.label, 44, y + 26);
+      g.fillText(t(row.cell.label), 44, y + 26);
       row.crews.forEach((crew, crewIndex) => {
         const cy = y + crewIndex * lineH;
         g.font = "900 13px monospace";
@@ -715,7 +747,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
         }
         if (!crew.team.length) {
           g.fillStyle = "#9aa0a3"; g.font = "700 12px sans-serif";
-          g.fillText(row.cell.key === "TRAINING" ? "비워둠 (특화 훈련용)" : "휴식 공간", 248, cy + 28);
+          g.fillText(row.cell.key === "TRAINING" ? t("비워둠 (특화 훈련용)") : t("휴식 공간"), 248, cy + 28);
         }
         if (crew.score != null) {
           g.fillStyle = "#687176"; g.font = "800 13px monospace";
@@ -726,7 +758,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
       y += h;
     });
     g.fillStyle = "#687176"; g.font = "700 11px monospace";
-    g.fillText("A = 풀파워 주간조 · B = 회복 교대조 · terra-archive infra planner", 32, canvas.height - 28);
+    g.fillText(t("A = 풀파워 주간조 · B = 회복 교대조 · terra-archive infra planner"), 32, canvas.height - 28);
     canvas.toBlob((blob) => {
       if (!blob) return;
       setImageUrl(URL.createObjectURL(blob)); // 미리보기 모달로 바로 표시
@@ -748,7 +780,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
     anchor.click();
     URL.revokeObjectURL(url);
     setDirty(false);
-    showToast("현재 상태를 파일로 저장했습니다");
+    showToast(t("현재 상태를 파일로 저장했습니다"));
   };
 
   const importState = (file: File) => {
@@ -763,8 +795,8 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
         if (data.plan) { setPlan(data.plan as Plan); setActiveShift(0); }
         persist(ids, data.plan ?? null, elite);
         setDirty(false);
-        showToast(`저장된 상태를 불러왔습니다 · 보유 ${ids.size}명 복원`);
-      } catch { alert("가져오기 실패: 파일 형식을 확인해 주세요."); }
+        showToast(t("저장된 상태를 불러왔습니다 · 보유 {n}명 복원", { n: ids.size }));
+      } catch { alert(t("가져오기 실패: 파일 형식을 확인해 주세요.")); }
     };
     reader.readAsText(file);
   };
@@ -818,11 +850,11 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
   };
 
   const runOptimize = (ids: Set<string> = ownedIds, elite: Map<string, Elite> = eliteById) => {
-    const next = optimize(ops.map((op) => withElite(op, elite.get(op.id))).filter((op) => ids.has(op.id)));
+    const next = optimize(lops.map((op) => withElite(op, elite.get(op.id))).filter((op) => ids.has(op.id)));
     setPlan(next);
     setActiveShift(0);
     persist(ids, next, elite);
-    showToast(`전체 자동편성을 실행했습니다 · 보유 ${ids.size}명 기준`);
+    showToast(t("전체 자동편성을 실행했습니다 · 보유 {n}명 기준", { n: ids.size }));
   };
 
   // 현재 편성(수동 수정 포함)은 그대로 두고, 빈 슬롯만 한계 기여가 큰 미배치 오퍼로
@@ -876,7 +908,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
         }
       }
     }
-    if (added === 0) { showToast("채울 수 있는 빈 자리가 없습니다"); return; }
+    if (added === 0) { showToast(t("채울 수 있는 빈 자리가 없습니다")); return; }
     const factionCounts = [0, 1].map((shift) => {
       const counts: Record<string, number> = {};
       for (const cell of LAYOUT) {
@@ -892,7 +924,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
     setPlan(next);
     persist(ownedIds, next);
     setDirty(true);
-    showToast(`빈 자리 ${added}곳을 채웠습니다 · 기존 편성 유지`);
+    showToast(t("빈 자리 {n}곳을 채웠습니다 · 기존 편성 유지", { n: added }));
   };
 
   useEffect(() => {
@@ -955,44 +987,44 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
     <section className="planner">
       <div className="planner-controls">
         <div>
-          <span className="section-no">RIIC / 243 · 순금 2 + 작전기록 2 · 12시간 2조 교대</span>
-          <h2>인프라 배치 최적화</h2>
+          <span className="section-no">{t("RIIC / 243 · 순금 2 + 작전기록 2 · 12시간 2조 교대")}</span>
+          <h2>{t("인프라 배치 최적화")}</h2>
         </div>
         <div className="planner-buttons">
-          <button onClick={() => setShowRoster(true)}><span className="btn-icon" aria-hidden>▦</span>보유 오퍼 설정 ({ownedIds.size}/{ops.length})</button>
-          <button className="primary" onClick={() => runOptimize()}><span className="btn-icon" aria-hidden>⟳</span>전체 자동편성</button>
-          <button onClick={fillGaps} title="현재 편성(수동 수정 포함)은 그대로 두고, 남은 빈 자리만 효율 순으로 자동 편성합니다"><span className="btn-icon" aria-hidden>⊕</span>빈 자리만 자동편성</button>
-          <button onClick={exportImage} title="A조·B조 편성표를 이미지로 확인 (PNG)"><span className="btn-icon" aria-hidden>⧉</span>이미지로 보기</button>
+          <button onClick={() => setShowRoster(true)}><span className="btn-icon" aria-hidden>▦</span>{t("보유 오퍼 설정 ({a}/{b})", { a: ownedIds.size, b: ops.length })}</button>
+          <button className="primary" onClick={() => runOptimize()}><span className="btn-icon" aria-hidden>⟳</span>{t("전체 자동편성")}</button>
+          <button onClick={fillGaps} title={t("현재 편성(수동 수정 포함)은 그대로 두고, 남은 빈 자리만 효율 순으로 자동 편성합니다")}><span className="btn-icon" aria-hidden>⊕</span>{t("빈 자리만 자동편성")}</button>
+          <button onClick={exportImage} title={t("A조·B조 편성표를 이미지로 확인 (PNG)")}><span className="btn-icon" aria-hidden>⧉</span>{t("이미지로 보기")}</button>
           <span className="file-group">
-            <button className={dirty ? "save-pending" : undefined} onClick={exportState} title={dirty ? "저장 후 변경 사항이 있습니다 — 파일로 저장하세요" : "보유 오퍼와 편성을 JSON 파일로 저장"}><span className="btn-icon" aria-hidden>⤓</span>현재 상태 파일로 저장</button>
+            <button className={dirty ? "save-pending" : undefined} onClick={exportState} title={dirty ? t("저장 후 변경 사항이 있습니다 — 파일로 저장하세요") : t("보유 오퍼와 편성을 JSON 파일로 저장")}><span className="btn-icon" aria-hidden>⤓</span>{t("현재 상태 파일로 저장")}</button>
             <label className="import-label">
-              <span className="btn-icon" aria-hidden>⤒</span>저장된 상태 파일 가져오기
+              <span className="btn-icon" aria-hidden>⤒</span>{t("저장된 상태 파일 가져오기")}
               <input type="file" accept="application/json" onChange={(event) => { const file = event.target.files?.[0]; if (file) importState(file); event.target.value = ""; }} />
             </label>
           </span>
-          <button onClick={() => setShowHelp(true)}><span className="btn-icon" aria-hidden>?</span>도움말</button>
+          <button onClick={() => setShowHelp(true)}><span className="btn-icon" aria-hidden>?</span>{t("도움말")}</button>
         </div>
       </div>
 
       {summary && (
         <div className="planner-summary">
           <button type="button" className="strategy-cell" onClick={() => setShowFlows(true)}>
-            <span>전략 (클릭해 시너지 트리 보기)</span>
-            <b className="strategy">{summary.strategy}{plan && Object.keys(plan.tokenPoints).length > 0 && ` · ${Object.entries(plan.tokenPoints).map(([token, points]) => `${token} ${Math.round(points)}점`).join(" · ")}`}</b>
+            <span>{t("전략 (클릭해 시너지 트리 보기)")}</span>
+            <b className="strategy">{plan ? strategyLabel(plan, locale, t) : summary.strategy}{plan && Object.keys(plan.tokenPoints).length > 0 && ` · ${Object.entries(plan.tokenPoints).map(([token, points]) => t("{token} {n}점", { token: tokenName(locale, token), n: Math.round(points) })).join(" · ")}`}</b>
           </button>
-          <div><span>제조소 평균</span><b>+{summary.manufacture}%</b></div>
-          <div><span>무역소 평균</span><b>+{summary.trading}%</b></div>
-          <div><span>발전소 평균</span><b>+{summary.power}%</b></div>
-          <div><span>기용 인원</span><b>{summary.staffed}명</b></div>
+          <div><span>{t("제조소 평균")}</span><b>+{summary.manufacture}%</b></div>
+          <div><span>{t("무역소 평균")}</span><b>+{summary.trading}%</b></div>
+          <div><span>{t("발전소 평균")}</span><b>+{summary.power}%</b></div>
+          <div><span>{t("기용 인원")}</span><b>{t("{n}명", { n: summary.staffed })}</b></div>
         </div>
       )}
 
       {plan && (
         <div className="shift-tabs">
           {Array.from({ length: SHIFT_COUNT }, (_, i) => (
-            <button key={i} className={activeShift === i ? "selected" : ""} onClick={() => setActiveShift(i)}>{["A조 (풀파워)", "B조 (회복 교대)"][i]}</button>
+            <button key={i} className={activeShift === i ? "selected" : ""} onClick={() => setActiveShift(i)}>{[t("A조 (풀파워)"), t("B조 (회복 교대)")][i]}</button>
           ))}
-          <span className="shift-hint">A조 컨디션 소진 시 B조 투입 · 시너지 세트는 A조 집중 · 숙소·고정 요원은 조 전환과 무관 · <b>숙소는 항상 5명 꽉 채워 유지</b></span>
+          <span className="shift-hint">{t("A조 컨디션 소진 시 B조 투입 · 시너지 세트는 A조 집중 · 숙소·고정 요원은 조 전환과 무관 · ")}<b>{t("숙소는 항상 5명 꽉 채워 유지")}</b></span>
         </div>
       )}
 
@@ -1002,10 +1034,10 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
             const pinned = teamFor(cell.key, 0);
             return (
               <div key={cell.key} className={`ship-room dorm-room pos-${cell.key.toLowerCase()}`} style={{ "--room-accent": ROOM_ACCENT[cell.room] } as React.CSSProperties}>
-                <div className="ship-room-head"><b>{cell.label}</b><span>고정</span></div>
+                <div className="ship-room-head"><b>{t(cell.label)}</b><span>{t("고정")}</span></div>
                 <div className="ship-room-crew">
-                  {pinned.map((op) => <img key={op.id} src={op.image} alt={op.name} title={`${op.name} 상세 정보`} loading="lazy" className={onShowOperator ? "op-link" : undefined} onClick={() => onShowOperator?.(op.id)} />)}
-                  <i>{pinned.length ? "시너지 고정 + 휴식 공간" : "휴식 공간 · 조 전환과 무관"}</i>
+                  {pinned.map((op) => <img key={op.id} src={op.image} alt={op.name} title={t("{name} 상세 정보", { name: op.name })} loading="lazy" className={onShowOperator ? "op-link" : undefined} onClick={() => onShowOperator?.(op.id)} />)}
+                  <i>{pinned.length ? t("시너지 고정 + 휴식 공간") : t("휴식 공간 · 조 전환과 무관")}</i>
                 </div>
               </div>
             );
@@ -1016,27 +1048,28 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
           return (
             <button key={cell.key} type="button" className={`ship-room pos-${cell.key.toLowerCase()}`} onClick={() => setOpenRoom(cell.key)} style={{ "--room-accent": ROOM_ACCENT[cell.room] } as React.CSSProperties}>
               <div className="ship-room-head">
-                <b>{cell.label}</b>
+                <b>{t(cell.label)}</b>
                 <span>{team.length}/{spec?.slots ?? 1}</span>
               </div>
               <div className="ship-room-crew">
                 {team.length ? team.map((op) => (
                   <img key={op.id} src={op.image} alt={op.name} title={op.name} loading="lazy" />
-                )) : <i>{cell.key === "TRAINING" ? "비워둠 · 특화 훈련 시 사용" : plan ? "비어 있음" : "자동 편성 대기"}</i>}
+                )) : <i>{cell.key === "TRAINING" ? t("비워둠 · 특화 훈련 시 사용") : plan ? t("비어 있음") : t("자동 편성 대기")}</i>}
               </div>
               {plan && team.length > 0 && !PARK_KEYS.includes(cell.key) && (
-                <small>+{score}{cell.room === "CONTROL" ? "" : "%"} {UNIT[cell.room]}</small>
+                <small>+{score}{cell.room === "CONTROL" ? "" : "%"} {t(UNIT[cell.room])}</small>
               )}
-              {plan && PARK_KEYS.includes(cell.key) && team.length > 0 && <small>세트 요원 고정 · 효율 무관</small>}
+              {plan && PARK_KEYS.includes(cell.key) && team.length > 0 && <small>{t("세트 요원 고정 · 효율 무관")}</small>}
             </button>
           );
         })}
       </div>
 
-      <aside className="data-note"><span>PLANNER NOTE</span><p>오퍼레이터의 모든 인프라 스킬을 동시에 적용하고(α/β는 상위 티어만), 시설 간 포인트 시스템(속세의 화식·무성의 공명 등)을 겹쳐 쌓을 수 있을 때까지 패키지로 조합합니다. 고품질 귀금속 오더 확률(샤마르·카프카·디아만테·바이비크)과 오더당 수익(테킬라·프로바이조)의 상호작용, 샤마르의 효율 대체를 반영합니다. 조건부·누적 버프는 추정 상한 기준 근사치입니다.</p></aside>
+      <aside className="data-note"><span>PLANNER NOTE</span><p>{t("오퍼레이터의 모든 인프라 스킬을 동시에 적용하고(α/β는 상위 티어만), 시설 간 포인트 시스템(속세의 화식·무성의 공명 등)을 겹쳐 쌓을 수 있을 때까지 패키지로 조합합니다. 고품질 귀금속 오더 확률(샤마르·카프카·디아만테·바이비크)과 오더당 수익(테킬라·프로바이조)의 상호작용, 샤마르의 효율 대체를 반영합니다. 조건부·누적 버프는 추정 상한 기준 근사치입니다.")}</p></aside>
 
       {showRoster && (
         <RosterModal
+          allOps={lops}
           ownedIds={ownedIds}
           eliteById={eliteById}
           onApply={(ids, elite) => { setOwnedIds(ids); setEliteById(elite); setShowRoster(false); runOptimize(ids, elite); setDirty(true); }}
@@ -1050,15 +1083,15 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
       {imageUrl && (
         <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) closeImage(); }}>
           <section className="operator-modal room-modal image-preview" style={{ "--accent": "#dfff00" } as React.CSSProperties}>
-            <button type="button" className="modal-close" onClick={closeImage} aria-label="닫기">×</button>
+            <button type="button" className="modal-close" onClick={closeImage} aria-label={t("닫기")}>×</button>
             <header className="room-modal-head">
               <span className="modal-kicker">PLAN SHEET</span>
-              <h2>편성표 이미지</h2>
+              <h2>{t("편성표 이미지")}</h2>
               <div className="roster-tools">
-                <a className="apply save-image" href={imageUrl} download="terra-archive-infra.png">PNG 저장</a>
+                <a className="apply save-image" href={imageUrl} download="terra-archive-infra.png">{t("PNG 저장")}</a>
               </div>
             </header>
-            <div className="modal-scroll"><img src={imageUrl} alt="인프라 편성표" /></div>
+            <div className="modal-scroll"><img src={imageUrl} alt={t("인프라 편성표")} /></div>
           </section>
         </div>
       )}
@@ -1086,6 +1119,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
 }
 
 function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClose, onShowOperator, onUpdateTeam, eliteById, onSetElite }: { cell: { key: string; room: string; label: string; product?: string }; plan: Plan; allAssigned: Set<string>; roster: InfraOp[]; opMap: Map<string, InfraOp>; initialShift: number; onClose: () => void; onShowOperator?: (id: string) => void; onUpdateTeam?: (cellKey: string, shiftIdx: number, ids: string[]) => void; eliteById: Map<string, Elite>; onSetElite: (id: string, elite: Elite) => void }) {
+  const { locale, t } = useI18n();
   const [shift, setShift] = useState(initialShift);
   const shiftIndex = Math.min(shift, (plan.assignments[cell.key]?.length ?? 1) - 1);
   const rawIds = plan.assignments[cell.key]?.[shiftIndex] ?? [];
@@ -1145,13 +1179,13 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
   return (
     <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <section className="operator-modal room-modal" role="dialog" aria-modal="true" style={{ "--accent": ROOM_ACCENT[cell.room] } as React.CSSProperties}>
-        <button type="button" className="modal-close" onClick={onClose} aria-label="닫기">×</button>
+        <button type="button" className="modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
         <header className="room-modal-head">
           <span className="modal-kicker">FACILITY FILE · {cell.room}</span>
-          <h2>{cell.label}</h2>
+          <h2>{t(cell.label)}</h2>
           <div className="shift-tabs in-modal">
             {Array.from({ length: SHIFT_COUNT }, (_, i) => (
-              <button key={i} className={shift === i ? "selected" : ""} onClick={() => setShift(i)}>{["A조", "B조"][i]}</button>
+              <button key={i} className={shift === i ? "selected" : ""} onClick={() => setShift(i)}>{[t("A조"), t("B조")][i]}</button>
             ))}
           </div>
         </header>
@@ -1159,22 +1193,21 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
           {scored && (
             <section className="detail-section room-summary">
               <span className="detail-no">RESULT / 00</span>
-              <h3>종합 효율{cell.product ? ` · ${cell.product}` : ""} <b className="summary-total">+{currentScore}{cell.room === "CONTROL" ? "" : "%"}</b></h3>
+              <h3>{t("종합 효율")}{cell.product ? ` · ${cell.product}` : ""} <b className="summary-total">+{currentScore}{cell.room === "CONTROL" ? "" : "%"}</b></h3>
               <div className="summary-parts">
                 {Object.entries(agg).filter(([, value]) => Math.round(value) !== 0).map(([name, value]) => (
-                  <span key={name}>{name} <b>+{Math.round(value)}</b></span>
+                  <span key={name}>{t(name)} <b>+{Math.round(value)}</b></span>
                 ))}
-                {team.length === 0 && <span>편성 없음</span>}
+                {team.length === 0 && <span>{t("편성 없음")}</span>}
               </div>
-              <p className="summary-note">아래에서 오퍼를 빼거나(✕) 대체 오퍼·추가 후보를 클릭하면 즉시 다시 계산됩니다.
-                단, 토큰 포인트(속세의 화식 등)와 패키지 구성은 마지막 자동편성 기준이므로, 토큰 생성원을 바꿨다면 자동편성 실행으로 재계산하세요.</p>
+              <p className="summary-note">{t("아래에서 오퍼를 빼거나(✕) 대체 오퍼·추가 후보를 클릭하면 즉시 다시 계산됩니다. 단, 토큰 포인트(속세의 화식 등)와 패키지 구성은 마지막 자동편성 기준이므로, 토큰 생성원을 바꿨다면 자동편성 실행으로 재계산하세요.")}</p>
             </section>
           )}
           <section className="detail-section">
             <span className="detail-no">CREW / 01</span>
-            <h3>편성 ({team.length}/{slots})</h3>
+            <h3>{t("편성 ({a}/{b})", { a: team.length, b: slots })}</h3>
             {cell.room === "DORMITORY" && (
-              <p className="dorm-note">숙소는 <b>항상 5명을 꽉 채운 상태로 유지</b>하세요. 고정 생성원 외의 빈 자리는 휴식이 필요한 아무 오퍼레이터로 채우면 됩니다 — 토큰 생성과 회복 효율은 풀 인원 기준으로 계산됩니다.</p>
+              <p className="dorm-note">{rich(t("숙소는 **항상 5명을 꽉 채운 상태로 유지**하세요. 고정 생성원 외의 빈 자리는 휴식이 필요한 아무 오퍼레이터로 채우면 됩니다 — 토큰 생성과 회복 효율은 풀 인원 기준으로 계산됩니다."))}</p>
             )}
             <div className="crew-list">
               {team.map((op) => {
@@ -1183,20 +1216,20 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                 // 아니라 실제 효과("무역소 오더 효율 오라 +10%")로 보여준다
                 const pct = cell.room === "CONTROL" ? "" : "%";
                 const parts: string[] = [];
-                if (Math.round(b.efficiency) !== 0) parts.push(`${UNIT[cell.room] ?? "효율"} +${Math.round(b.efficiency)}${pct}`);
-                if (Math.round(b.facilityEff) !== 0) parts.push(`시설 기반 +${Math.round(b.facilityEff)}%`);
-                if (Math.round(b.automation) !== 0) parts.push(`자동화 +${Math.round(b.automation)}%`);
-                if (Math.round(b.quality) !== 0) parts.push(`고품질 확률 +${Math.round(b.quality)}%p 상당`);
-                if (Math.round(b.payout + b.payoutViolation) !== 0) parts.push(`오더 수익 +${Math.round(b.payout + b.payoutViolation)}% 상당`);
-                if (b.override > 0) parts.push(`효율 대체 인당 +${Math.round(b.override)}%`);
-                if (Math.round(b.perCoworker * (team.length - 1)) !== 0) parts.push(`동료 보너스 +${Math.round(b.perCoworker * (team.length - 1))}%`);
-                for (const [kind, value] of Object.entries(b.auras)) if (value > 0) parts.push(`${AURA_LABEL[kind] ?? kind} +${Math.round(value)}%`);
+                if (Math.round(b.efficiency) !== 0) parts.push(`${t(UNIT[cell.room] ?? "효율")} +${Math.round(b.efficiency)}${pct}`);
+                if (Math.round(b.facilityEff) !== 0) parts.push(t("시설 기반 +{n}%", { n: Math.round(b.facilityEff) }));
+                if (Math.round(b.automation) !== 0) parts.push(t("자동화 +{n}%", { n: Math.round(b.automation) }));
+                if (Math.round(b.quality) !== 0) parts.push(t("고품질 확률 +{n}%p 상당", { n: Math.round(b.quality) }));
+                if (Math.round(b.payout + b.payoutViolation) !== 0) parts.push(t("오더 수익 +{n}% 상당", { n: Math.round(b.payout + b.payoutViolation) }));
+                if (b.override > 0) parts.push(t("효율 대체 인당 +{n}%", { n: Math.round(b.override) }));
+                if (Math.round(b.perCoworker * (team.length - 1)) !== 0) parts.push(t("동료 보너스 +{n}%", { n: Math.round(b.perCoworker * (team.length - 1)) }));
+                for (const [kind, value] of Object.entries(b.auras)) if (value > 0) parts.push(`${t(AURA_LABEL[kind] ?? kind)} +${Math.round(value)}%`);
                 const shown = b.skills.length ? b.skills : op.skills.filter((skill) => skill.room === cell.room);
                 return (
                   <article key={op.id} className="crew-card">
-                    {onUpdateTeam && <button type="button" className="crew-remove" title="이 자리에서 빼기" onClick={() => setIds(rawIds.filter((id) => id !== op.id))}>✕</button>}
+                    {onUpdateTeam && <button type="button" className="crew-remove" title={t("이 자리에서 빼기")} onClick={() => setIds(rawIds.filter((id) => id !== op.id))}>✕</button>}
                     <img src={op.image} alt={op.name} loading="lazy" className={onShowOperator ? "op-link" : undefined}
-                      title={`${op.name} 상세 정보`} onClick={() => onShowOperator?.(op.id)} />
+                      title={t("{name} 상세 정보", { name: op.name })} onClick={() => onShowOperator?.(op.id)} />
                     <div>
                       <b>
                         {op.name} <i>{"★".repeat(op.rarity)}</i>
@@ -1207,29 +1240,29 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                           if (!options.length) return null;
                           const current = Math.min(eliteById.get(op.id) ?? 2, options[options.length - 1]) as Elite;
                           return (
-                            <span className="elite-pill" role="group" aria-label={`${op.name} 정예화 단계`}>
+                            <span className="elite-pill" role="group" aria-label={t("{name} 정예화 단계", { name: op.name })}>
                               {options.map((option) => (
-                                <button key={option} type="button" className={current === option ? "selected" : ""} onClick={() => onSetElite(op.id, option)}>{ELITE_LABEL[option]}</button>
+                                <button key={option} type="button" className={current === option ? "selected" : ""} onClick={() => onSetElite(op.id, option)}>{t(ELITE_LABEL[option])}</button>
                               ))}
                             </span>
                           );
                         })()}
                       </b>
-                      {shown.length ? shown.map((skill) => <p key={skill.name}><em>{skill.name}</em> — {skill.description}</p>) : <p>이 시설에 적용되는 스킬이 없습니다 (세트 대기 요원).</p>}
+                      {shown.length ? shown.map((skill) => <p key={skill.name}><em>{skill.name}</em> — {skill.description}</p>) : <p>{t("이 시설에 적용되는 스킬이 없습니다 (세트 대기 요원).")}</p>}
                       {parts.map((part) => <small key={part}>{part}</small>)}
                       {op.skills.flatMap((skill) => skill.tokenGen).map((gen) => (
-                        <small key={`${op.id}-${gen.token}`} className="token-chip">{gen.token} +{Math.round(gen.estimate)}점 생성</small>
+                        <small key={`${op.id}-${gen.token}`} className="token-chip">{t("{token} +{n}점 생성", { token: tokenName(locale, gen.token), n: Math.round(gen.estimate) })}</small>
                       ))}
                       {isCore(op) ? (
-                        <div className="slot-subs"><small className="core-chip">대체 불가 · 시너지 코어</small></div>
+                        <div className="slot-subs"><small className="core-chip">{t("대체 불가 · 시너지 코어")}</small></div>
                       ) : (
                         <div className="slot-subs">
-                          <span>이 자리 대체 오퍼:</span>
+                          <span>{t("이 자리 대체 오퍼:")}</span>
                           {slotSubstitutes(team, team.indexOf(op), cell.key, ctx, excluded, roster).map(({ op: sub, score }) => (
                             <small key={sub.id} className={`sub-chip${onUpdateTeam ? " swappable" : ""}`}
-                              title={`클릭하면 ${op.name} 자리에 교체\n${sub.skills.filter((skill) => skill.room === cell.room).map((skill) => `${skill.name}: ${skill.description}`).join("\n")}`}
+                              title={`${t("클릭하면 {name} 자리에 교체", { name: op.name })}\n${sub.skills.filter((skill) => skill.room === cell.room).map((skill) => `${skill.name}: ${skill.description}`).join("\n")}`}
                               onClick={() => onUpdateTeam && setIds(rawIds.map((id) => (id === op.id ? sub.id : id)))}>
-                              <img src={sub.image} alt="" loading="lazy" className={onShowOperator ? "op-link" : undefined} onClick={(event) => { event.stopPropagation(); onShowOperator?.(sub.id); }} />{sub.name} <em>{score >= currentScore ? "동급" : `-${currentScore - score}`}</em>
+                              <img src={sub.image} alt="" loading="lazy" className={onShowOperator ? "op-link" : undefined} onClick={(event) => { event.stopPropagation(); onShowOperator?.(sub.id); }} />{sub.name} <em>{score >= currentScore ? t("동급") : `-${currentScore - score}`}</em>
                             </small>
                           ))}
                         </div>
@@ -1238,26 +1271,26 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                   </article>
                 );
               })}
-              {team.length === 0 && !benchFull.length && <p className="no-detail">자동 편성을 먼저 실행해 주세요.</p>}
+              {team.length === 0 && !benchFull.length && <p className="no-detail">{t("자동 편성을 먼저 실행해 주세요.")}</p>}
             </div>
             {benchFull.length > 0 && (
               <div className="bench">
-                <span>빈 자리에 추가 — 클릭 시 즉시 배치 (기여 예상):</span>
-                <input className="bench-search" value={benchQuery} onChange={(event) => setBenchQuery(event.target.value)} placeholder="이름·소속으로 후보 검색" />
+                <span>{t("빈 자리에 추가 — 클릭 시 즉시 배치 (기여 예상):")}</span>
+                <input className="bench-search" value={benchQuery} onChange={(event) => setBenchQuery(event.target.value)} placeholder={t("이름·소속으로 후보 검색")} />
                 {bench.length > 0 ? (
                   <div className="bench-chips">
                     {bench.map(({ op, delta }) => (
-                      <small key={op.id} className="sub-chip swappable" title={`${op.name} 추가`} onClick={() => setIds([...rawIds, op.id])}>
+                      <small key={op.id} className="sub-chip swappable" title={t("{name} 추가", { name: op.name })} onClick={() => setIds([...rawIds, op.id])}>
                         <img src={op.image} alt="" loading="lazy" className={onShowOperator ? "op-link" : undefined} onClick={(event) => { event.stopPropagation(); onShowOperator?.(op.id); }} />{op.name} <em>{delta >= 0 ? `+${delta}` : delta}</em>
                       </small>
                     ))}
                   </div>
                 ) : (
-                  <p className="no-detail">검색 결과가 없습니다.</p>
+                  <p className="no-detail">{t("검색 결과가 없습니다.")}</p>
                 )}
                 {benchFiltered.length > 12 && (
                   <button type="button" className="more-filter" onClick={() => setBenchAll((current) => !current)}>
-                    {benchAll ? "접기" : `더 많이 보기 (전체 ${benchFiltered.length}명)`}
+                    {benchAll ? t("접기") : t("더 많이 보기 (전체 {n}명)", { n: benchFiltered.length })}
                   </button>
                 )}
               </div>
@@ -1271,63 +1304,66 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
 }
 
 function FlowModal({ plan, opMap, onClose, onShowOperator }: { plan: Plan; opMap: Map<string, InfraOp>; onClose: () => void; onShowOperator?: (id: string) => void }) {
+  const { locale, t } = useI18n();
   const flows = plan.flows.filter((flow) => flow.generators.length > 0 || flow.consumers.length > 0);
   const avatar = (op: InfraOp | undefined) => op ? (
     <img src={op.image} alt="" loading="lazy" className={onShowOperator ? "op-link" : undefined}
-      title={onShowOperator ? `${op.name} 상세 정보` : undefined} onClick={() => onShowOperator?.(op.id)} />
+      title={onShowOperator ? t("{name} 상세 정보", { name: op.name }) : undefined} onClick={() => onShowOperator?.(op.id)} />
   ) : null;
   return (
     <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <section className="operator-modal room-modal" role="dialog" aria-modal="true" style={{ "--accent": "#dfff00" } as React.CSSProperties}>
-        <button type="button" className="modal-close" onClick={onClose} aria-label="닫기">×</button>
+        <button type="button" className="modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
         <header className="room-modal-head">
-          <span className="modal-kicker">SYNERGY LEDGER · A조 기준</span>
-          <h2>시너지 트리</h2>
+          <span className="modal-kicker">SYNERGY LEDGER · {t("A조 기준")}</span>
+          <h2>{t("시너지 트리")}</h2>
         </header>
         <div className="modal-scroll">
-          {flows.length === 0 && <p className="no-detail">활성화된 포인트 시너지가 없습니다.</p>}
+          {flows.length === 0 && <p className="no-detail">{t("활성화된 포인트 시너지가 없습니다.")}</p>}
           {flows.map((flow) => (
             <section key={flow.token} className="detail-section flow-tree">
-              <h3>{flow.token} <span className="flow-total">총 {Math.round(flow.total)}점</span></h3>
+              <h3>{tokenName(locale, flow.token)} <span className="flow-total">{t("총 {n}점", { n: Math.round(flow.total) })}</span></h3>
               <ul>
-                <li className="flow-branch">생성
+                <li className="flow-branch">{t("생성")}
                   <ul>
                     {flow.generators.map((gen, index) => {
                       const op = opMap.get(gen.opId);
                       return (
                         <li key={`${gen.opId}-${index}`}>
                           {avatar(op)}
-                          <b>{op?.name ?? gen.opId}</b> <i>{gen.at}</i>
-                          <em>+{Math.round(gen.amount)}점{gen.via ? ` (${gen.via} 전환)` : ""}</em>
+                          <b>{op?.name ?? gen.opId}</b> <i>{t(gen.at)}</i>
+                          <em>{t("+{n}점", { n: Math.round(gen.amount) })}{gen.via ? t(" ({token} 전환)", { token: tokenName(locale, gen.via) }) : ""}</em>
                         </li>
                       );
                     })}
-                    {flow.generators.length === 0 && <li><em>생성원이 배치되지 않음</em></li>}
+                    {flow.generators.length === 0 && <li><em>{t("생성원이 배치되지 않음")}</em></li>}
                   </ul>
                 </li>
                 {flow.converters.length > 0 && (
-                  <li className="flow-branch">전환
+                  <li className="flow-branch">{t("전환")}
                     <ul>
                       {flow.converters.map((conv) => {
                         const op = opMap.get(conv.opId);
-                        return <li key={conv.opId}>{avatar(op)}<b>{op?.name}</b> <em>{conv.from} → {flow.token}</em></li>;
+                        return <li key={conv.opId}>{avatar(op)}<b>{op?.name}</b> <em>{tokenName(locale, conv.from)} → {tokenName(locale, flow.token)}</em></li>;
                       })}
                     </ul>
                   </li>
                 )}
-                <li className="flow-branch">소비
+                <li className="flow-branch">{t("소비")}
                   <ul>
                     {flow.consumers.map((consumer, index) => {
                       const op = opMap.get(consumer.opId);
                       return (
                         <li key={`${consumer.opId}-${index}`}>
                           {avatar(op)}
-                          <b>{op?.name ?? consumer.opId}</b> <i>{consumer.at}</i>
-                          <em>{consumer.percent ? `${flow.token} ${Math.round(flow.total)}점 소비 → ${UNIT[consumer.room] ?? "효율"} +${Math.round(consumer.gain)}% (1점당 +${consumer.rate}%)` : `${flow.token} 기반 컨디션 회복·소모 보정`}</em>
+                          <b>{op?.name ?? consumer.opId}</b> <i>{t(consumer.at)}</i>
+                          <em>{consumer.percent
+                            ? t("{token} {n}점 소비 → {unit} +{m}% (1점당 +{r}%)", { token: tokenName(locale, flow.token), n: Math.round(flow.total), unit: t(UNIT[consumer.room] ?? "효율"), m: Math.round(consumer.gain), r: consumer.rate })
+                            : t("{token} 기반 컨디션 회복·소모 보정", { token: tokenName(locale, flow.token) })}</em>
                         </li>
                       );
                     })}
-                    {flow.consumers.length === 0 && <li><em>소비자가 배치되지 않음</em></li>}
+                    {flow.consumers.length === 0 && <li><em>{t("소비자가 배치되지 않음")}</em></li>}
                   </ul>
                 </li>
               </ul>
@@ -1339,12 +1375,13 @@ function FlowModal({ plan, opMap, onClose, onShowOperator }: { plan: Plan; opMap
   );
 }
 
-function RosterModal({ ownedIds, eliteById, onApply, onClose, onShowOperator }: { ownedIds: Set<string>; eliteById: Map<string, Elite>; onApply: (ids: Set<string>, elite: Map<string, Elite>) => void; onClose: () => void; onShowOperator?: (id: string) => void }) {
+function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOperator }: { allOps: InfraOp[]; ownedIds: Set<string>; eliteById: Map<string, Elite>; onApply: (ids: Set<string>, elite: Map<string, Elite>) => void; onClose: () => void; onShowOperator?: (id: string) => void }) {
+  const { t } = useI18n();
   const [draft, setDraft] = useState<Set<string>>(new Set(ownedIds));
   const [eliteDraft, setEliteDraft] = useState<Map<string, Elite>>(new Map(eliteById));
   const [query, setQuery] = useState("");
   const keyword = query.trim().toLowerCase();
-  const visible = ops
+  const visible = allOps
     .filter((op) => !keyword || op.name.toLowerCase().includes(keyword) || op.faction.toLowerCase().includes(keyword))
     .sort((a, b) => b.rarity - a.rarity || b.seq - a.seq); // 6성 우선, 그 안에서 KR 출시 최신순
   const toggle = (id: string) => setDraft((current) => {
@@ -1361,12 +1398,12 @@ function RosterModal({ ownedIds, eliteById, onApply, onClose, onShowOperator }: 
   // (정예화는 정예화 해금 스킬이 있는 오퍼에만 적용, 3성 이하는 2정이 없어 보유/해제만)
   const bulkOwn = (test: (rarity: number) => boolean, own: boolean) => setDraft((current) => {
     const next = new Set(current);
-    for (const op of ops) if (test(op.rarity)) { if (own) next.add(op.id); else next.delete(op.id); }
+    for (const op of allOps) if (test(op.rarity)) { if (own) next.add(op.id); else next.delete(op.id); }
     return next;
   });
   const bulkElite = (test: (rarity: number) => boolean, elite: Elite) => setEliteDraft((current) => {
     const next = new Map(current);
-    for (const op of ops) {
+    for (const op of allOps) {
       if (!test(op.rarity) || eliteOptions(op).length === 0) continue;
       if (elite === 2) next.delete(op.id); else next.set(op.id, elite);
     }
@@ -1383,27 +1420,27 @@ function RosterModal({ ownedIds, eliteById, onApply, onClose, onShowOperator }: 
   return (
     <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <section className="operator-modal room-modal" role="dialog" aria-modal="true" style={{ "--accent": "#dfff00" } as React.CSSProperties}>
-        <button type="button" className="modal-close" onClick={onClose} aria-label="닫기">×</button>
+        <button type="button" className="modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
         <header className="room-modal-head">
-          <span className="modal-kicker">ROSTER · {draft.size}/{ops.length} 보유</span>
-          <h2>보유 오퍼레이터 설정</h2>
+          <span className="modal-kicker">ROSTER · {t("{n}/{m} 보유", { n: draft.size, m: allOps.length })}</span>
+          <h2>{t("보유 오퍼레이터 설정")}</h2>
           <div className="roster-tools">
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="이름·소속 검색" />
-            <button type="button" onClick={() => setDraft(new Set(ops.map((op) => op.id)))}><span className="btn-icon" aria-hidden>✓</span>전체 선택</button>
-            <button type="button" onClick={() => setDraft(new Set())}><span className="btn-icon" aria-hidden>✕</span>전체 해제</button>
-            <button type="button" className="apply" onClick={() => onApply(draft, eliteDraft)}><span className="btn-icon" aria-hidden>⟳</span>적용 및 자동편성 실행</button>
+            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("이름·소속 검색")} />
+            <button type="button" onClick={() => setDraft(new Set(allOps.map((op) => op.id)))}><span className="btn-icon" aria-hidden>✓</span>{t("전체 선택")}</button>
+            <button type="button" onClick={() => setDraft(new Set())}><span className="btn-icon" aria-hidden>✕</span>{t("전체 해제")}</button>
+            <button type="button" className="apply" onClick={() => onApply(draft, eliteDraft)}><span className="btn-icon" aria-hidden>⟳</span>{t("적용 및 자동편성 실행")}</button>
           </div>
         </header>
         <div className="modal-scroll">
-          <p className="dorm-note">정예화 단계에 따라 해금되는 인프라 스킬을 가진 오퍼는 카드 아래에서 <b>노정예/1정/2정</b>을 선택할 수 있습니다 (기본값 최대 정예화). 얼굴을 클릭하면 상세 정보가 열립니다.</p>
+          <p className="dorm-note">{rich(t("정예화 단계에 따라 해금되는 인프라 스킬을 가진 오퍼는 카드 아래에서 **노정예/1정/2정**을 선택할 수 있습니다 (기본값 최대 정예화). 얼굴을 클릭하면 상세 정보가 열립니다."))}</p>
           <div className="roster-bulk">
             {BULK_GROUPS.map(({ label, test, elites }) => (
               <span key={label} className="bulk-group">
-                <b>{label}</b>
-                <button type="button" onClick={() => bulkOwn(test, true)}>전체 보유</button>
-                <button type="button" onClick={() => bulkOwn(test, false)}>전체 해제</button>
+                <b>{t(label)}</b>
+                <button type="button" onClick={() => bulkOwn(test, true)}>{t("전체 보유")}</button>
+                <button type="button" onClick={() => bulkOwn(test, false)}>{t("전체 해제")}</button>
                 {elites.map((option) => (
-                  <button key={option} type="button" onClick={() => bulkElite(test, option)}>일괄 {ELITE_LABEL[option]}</button>
+                  <button key={option} type="button" onClick={() => bulkElite(test, option)}>{t("일괄 {label}", { label: t(ELITE_LABEL[option]) })}</button>
                 ))}
               </span>
             ))}
@@ -1421,9 +1458,9 @@ function RosterModal({ ownedIds, eliteById, onApply, onClose, onShowOperator }: 
                     <span>{op.name}</span>
                   </button>
                   {owned && options.length > 0 && (
-                    <div className="elite-toggle" role="group" aria-label={`${op.name} 정예화 단계`}>
+                    <div className="elite-toggle" role="group" aria-label={t("{name} 정예화 단계", { name: op.name })}>
                       {options.map((option) => (
-                        <button key={option} type="button" className={elite === option ? "selected" : ""} onClick={() => setElite(op.id, option)}>{ELITE_LABEL[option]}</button>
+                        <button key={option} type="button" className={elite === option ? "selected" : ""} onClick={() => setElite(op.id, option)}>{t(ELITE_LABEL[option])}</button>
                       ))}
                     </div>
                   )}
@@ -1490,20 +1527,21 @@ const HELP_SECTIONS: { title: string; items: string[] }[] = [
 ];
 
 function HelpModal({ onClose }: { onClose: () => void }) {
+  const { t } = useI18n();
   return (
     <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <section className="operator-modal room-modal" role="dialog" aria-modal="true" style={{ "--accent": "#dfff00" } as React.CSSProperties}>
-        <button type="button" className="modal-close" onClick={onClose} aria-label="닫기">×</button>
+        <button type="button" className="modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
         <header className="room-modal-head">
           <span className="modal-kicker">HOW IT WORKS</span>
-          <h2>최적화 규칙 도움말</h2>
+          <h2>{t("최적화 규칙 도움말")}</h2>
         </header>
         <div className="modal-scroll">
           {HELP_SECTIONS.map((section) => (
             <section key={section.title} className="detail-section">
-              <h3>{section.title}</h3>
+              <h3>{t(section.title)}</h3>
               <ul className="help-list">
-                {section.items.map((item, index) => <li key={index}>{item}</li>)}
+                {section.items.map((item, index) => <li key={index}>{t(item)}</li>)}
               </ul>
             </section>
           ))}
