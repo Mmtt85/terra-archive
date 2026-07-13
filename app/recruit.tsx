@@ -172,7 +172,7 @@ export default function RecruitHelper({ onShowOperator }: { onShowOperator?: (id
         <div className="quick-wrap">
           <input value={quick} onChange={(event) => setQuick(event.target.value)}
             placeholder="빠른 입력 — 태그 첫 글자를 이어서 입력 (예: 가메신생범)" aria-label="태그 첫 글자 빠른 입력" />
-          <button type="button" className="clear-btn" onClick={clearAll}>클리어</button>
+          <button type="button" className="clear-btn" onClick={clearAll}><span className="btn-icon" aria-hidden>↻</span>클리어</button>
         </div>
         {TAG_GROUPS.map(([group, tags]) => {
           const shown = tags.filter(isVisible);

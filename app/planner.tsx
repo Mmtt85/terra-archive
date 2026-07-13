@@ -959,18 +959,18 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
           <h2>인프라 배치 최적화</h2>
         </div>
         <div className="planner-buttons">
-          <button onClick={() => setShowRoster(true)}>보유 오퍼 설정 ({ownedIds.size}/{ops.length})</button>
-          <button className="primary" onClick={() => runOptimize()}>전체 자동편성</button>
-          <button onClick={fillGaps} title="현재 편성(수동 수정 포함)은 그대로 두고, 남은 빈 자리만 효율 순으로 자동 편성합니다">빈 자리만 자동편성</button>
-          <button onClick={exportImage} title="A조·B조 편성표를 이미지로 확인 (PNG)">이미지로 보기</button>
+          <button onClick={() => setShowRoster(true)}><span className="btn-icon" aria-hidden>▦</span>보유 오퍼 설정 ({ownedIds.size}/{ops.length})</button>
+          <button className="primary" onClick={() => runOptimize()}><span className="btn-icon" aria-hidden>⟳</span>전체 자동편성</button>
+          <button onClick={fillGaps} title="현재 편성(수동 수정 포함)은 그대로 두고, 남은 빈 자리만 효율 순으로 자동 편성합니다"><span className="btn-icon" aria-hidden>⊕</span>빈 자리만 자동편성</button>
+          <button onClick={exportImage} title="A조·B조 편성표를 이미지로 확인 (PNG)"><span className="btn-icon" aria-hidden>⧉</span>이미지로 보기</button>
           <span className="file-group">
-            <button className={dirty ? "save-pending" : undefined} onClick={exportState} title={dirty ? "저장 후 변경 사항이 있습니다 — 파일로 저장하세요" : "보유 오퍼와 편성을 JSON 파일로 저장"}>현재 상태 파일로 저장</button>
+            <button className={dirty ? "save-pending" : undefined} onClick={exportState} title={dirty ? "저장 후 변경 사항이 있습니다 — 파일로 저장하세요" : "보유 오퍼와 편성을 JSON 파일로 저장"}><span className="btn-icon" aria-hidden>⤓</span>현재 상태 파일로 저장</button>
             <label className="import-label">
-              저장된 상태 파일 가져오기
+              <span className="btn-icon" aria-hidden>⤒</span>저장된 상태 파일 가져오기
               <input type="file" accept="application/json" onChange={(event) => { const file = event.target.files?.[0]; if (file) importState(file); event.target.value = ""; }} />
             </label>
           </span>
-          <button onClick={() => setShowHelp(true)}>도움말</button>
+          <button onClick={() => setShowHelp(true)}><span className="btn-icon" aria-hidden>?</span>도움말</button>
         </div>
       </div>
 
@@ -1389,9 +1389,9 @@ function RosterModal({ ownedIds, eliteById, onApply, onClose, onShowOperator }: 
           <h2>보유 오퍼레이터 설정</h2>
           <div className="roster-tools">
             <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="이름·소속 검색" />
-            <button type="button" onClick={() => setDraft(new Set(ops.map((op) => op.id)))}>전체 선택</button>
-            <button type="button" onClick={() => setDraft(new Set())}>전체 해제</button>
-            <button type="button" className="apply" onClick={() => onApply(draft, eliteDraft)}>적용 및 자동편성 실행</button>
+            <button type="button" onClick={() => setDraft(new Set(ops.map((op) => op.id)))}><span className="btn-icon" aria-hidden>✓</span>전체 선택</button>
+            <button type="button" onClick={() => setDraft(new Set())}><span className="btn-icon" aria-hidden>✕</span>전체 해제</button>
+            <button type="button" className="apply" onClick={() => onApply(draft, eliteDraft)}><span className="btn-icon" aria-hidden>⟳</span>적용 및 자동편성 실행</button>
           </div>
         </header>
         <div className="modal-scroll">

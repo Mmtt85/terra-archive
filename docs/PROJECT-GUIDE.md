@@ -15,11 +15,11 @@
 |---|---|
 | 위치 | `~/Documents/명일방주` |
 | Git | `github.com:Mmtt85/terra-archive.git` (main 브랜치) |
-| 배포 (주) | **https://terra-archive.pages.dev** — Cloudflare Pages. `bash scripts/deploy.sh` 한 방 (빌드→스테이징→pages deploy). wrangler는 이 기기에 OAuth 로그인됨(nzkonaru@gmail.com), 프로젝트에 nodejs_compat 플래그 설정됨. **push할 때 함께 실행할 것** |
+| 배포 (주) | **https://terra-archive.pages.dev** — Cloudflare Pages. `bash scripts/deploy.sh` 한 방 (빌드→스테이징→pages deploy). wrangler는 이 기기에 OAuth 로그인됨(nzkonaru@gmail.com), 프로젝트에 nodejs_compat 플래그 설정됨. **⚠️ 자동 실행 금지 — 배포는 사용자가 변경분을 모아서 직접 돌린다** (2026-07 규칙 변경). |
 | 배포 (구) | https://terra-archive-kr.nzkonaru.chatgpt.site — ChatGPT 사이트 빌더 수동 재배포 (레거시). workers.dev 워커는 삭제함 |
 | 스택 | vinext(Cloudflare용 Next 호환 런타임) + Next.js 16 / React 19 / Tailwind 4 |
 | 명령 | `npm run dev`(localhost:3000) / `npm run build` / `npm run lint` |
-| 운영 수칙 | 수정하면 **항상 git push까지** 진행. 모든 허가 요청은 기본 YES |
+| 운영 수칙 | 수정하면 **빌드 확인 → 커밋 → git push 까지만** 진행하고 **멈춘다**. `scripts/deploy.sh`는 절대 자동 실행하지 않음 — 세션마다 자동 배포하면 토큰이 낭비되므로, 배포는 사용자가 여러 변경을 모아서 직접 실행한다 (2026-07 규칙). 모든 허가 요청은 기본 YES |
 | 알려진 무시 항목 | `npm test`의 스켈레톤 테스트 2건은 스타터 템플릿 잔재로 원래 실패(무시). git author가 로컬 기본값(nzkonaru@local) |
 
 ### 화면 구성 — 단일 페이지 + 탭 3개

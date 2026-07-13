@@ -26,6 +26,24 @@ button { color:inherit }
 .brand-mark { width:39px; height:39px; color:var(--lime); background:var(--ink); clip-path:polygon(0 0,100% 0,100% 72%,72% 100%,0 100%); place-items:center; font:900 13px monospace; display:grid }
 .server-chip { border:1px solid var(--ink); letter-spacing:1px; padding:8px 11px; font:700 10px monospace }
 .server-chip span { background:#59bb55; border-radius:50%; width:7px; height:7px; margin-right:7px; display:inline-block; box-shadow:0 0 0 3px #d9ecd7 }
+
+/* 공식 방송 배지 (헤더) */
+.broadcast-badges { display:flex; align-items:center; gap:6px; margin-left:16px }
+.bcast { display:inline-flex; align-items:center; gap:5px; border:1px solid var(--line); padding:5px 9px; font:700 10px monospace; letter-spacing:.3px; color:var(--ink); text-decoration:none; white-space:nowrap; transition:.15s }
+.bcast:hover { border-color:var(--ink) }
+.bcast .bcast-icon { font-size:11px; line-height:1 }
+.bcast .bcast-code { font-weight:900; opacity:.8 }
+.bcast.live { border-color:#c62828; color:#c62828 }
+.bcast.live .bcast-icon { animation:bcast-blink 1.2s steps(1) infinite }
+.bcast.upcoming { border-color:var(--ink) }
+.bcast.ended { opacity:.5 }
+@keyframes bcast-blink { 50% { opacity:.25 } }
+
+/* 버튼 아이콘 (단색 글리프) */
+.btn-icon,.tab-icon { display:inline-block; margin-right:6px; font-weight:400; opacity:.75 }
+.tab-icon { font-size:12px }
+.main-tabs button.selected .tab-icon,.btn-icon { opacity:.85 }
+@media (width<=760px) { .broadcast-badges { margin-left:8px; gap:4px } .bcast { padding:4px 6px; font-size:9px } .bcast .bcast-label { display:none } .tab-icon { margin-right:4px } }
 .hero { border-bottom:1px solid var(--line); background:linear-gradient(120deg,#f4f3ee 55%,#e8e7e0); min-height:190px; padding:30px clamp(22px,7vw,110px) 26px; position:relative; overflow:hidden }
 .hero:after { content:"TA"; color:#0000; -webkit-text-stroke:1px #cfcdc5; letter-spacing:-.12em; pointer-events:none; font:900 190px/.8 Arial; position:absolute; bottom:-54px; right:3vw }
 .eyebrow,.section-no { letter-spacing:1.5px; color:var(--muted); font:700 10px monospace }
