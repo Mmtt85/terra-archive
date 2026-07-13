@@ -23,7 +23,12 @@ const TAG_GROUPS: Array<[string, string[]]> = [
 
 const RARITY_COLORS: Record<number, string> = { 6: "#c2571f", 5: "#b8860b", 4: "#7c5cbf", 3: "#3a7ca5", 2: "#5a8f4f", 1: "#75797a" };
 
-type ComboResult = { combo: string[]; ops: RecruitOp[]; floor: number; ceil: number };
+// lowOps: 모집 시간을 낮춰야만 등장하는 1·2성 — 배지(floor/ceil)는 9시간 기준(3★+)으로만 계산
+type ComboResult = { combo: string[]; ops: RecruitOp[]; lowOps: RecruitOp[]; floor: number; ceil: number };
+
+// 1·2★는 태그와 무관하게 모집 시간만 맞으면 등장할 수 있다 (사용자 확인:
+// 로봇도 로봇 태그 없이 나온 사례 있음) — 1★는 3:50 이하, 2★는 7:40 미만
+const LOW_TIME_HINT: Record<number, string> = { 1: "3:50 이하", 2: "7:40 미만" };
 
 const allCombos = (tags: string[]): string[][] => {
   const combos: string[][] = [];
@@ -38,16 +43,16 @@ const allCombos = (tags: string[]): string[][] => {
 };
 
 const evaluate = (combo: string[]): ComboResult | null => {
-  const matched = data.ops
-    .filter((op) =>
-      combo.every((tag) => op.tags.includes(tag)) &&
-      (op.rarity !== 6 || combo.includes("고급 특별 채용")) &&
-      (op.rarity !== 1 || combo.includes("로봇")) &&
-      (op.rarity !== 2 || combo.includes("신입")))
-    .sort((a, b) => b.rarity - a.rarity || b.seq - a.seq);
-  if (matched.length === 0) return null;
-  const rarities = matched.map((op) => op.rarity);
-  return { combo, ops: matched, floor: Math.min(...rarities), ceil: Math.max(...rarities) };
+  const byRarity = (op: RecruitOp) =>
+    combo.every((tag) => op.tags.includes(tag)) &&
+    (op.rarity !== 6 || combo.includes("고급 특별 채용"));
+  const all = data.ops.filter(byRarity).sort((a, b) => b.rarity - a.rarity || b.seq - a.seq);
+  const ops = all.filter((op) => op.rarity >= 3);
+  const lowOps = all.filter((op) => op.rarity <= 2);
+  if (all.length === 0) return null;
+  // 배지는 9시간 기준 — 3★+ 매칭이 없고 저시간 전용(로봇 등)만 있으면 그 성급으로 표시
+  const rarities = (ops.length ? ops : lowOps).map((op) => op.rarity);
+  return { combo, ops, lowOps, floor: Math.min(...rarities), ceil: Math.max(...rarities) };
 };
 
 export function comboResults(picked: string[]): ComboResult[] {
@@ -75,12 +80,13 @@ const SNIPE_DICT: ComboResult[] = (() => {
 })();
 
 function ComboCard({ result, onShowOperator }: { result: ComboResult; onShowOperator?: (id: string) => void }) {
+  const lowOnly = result.ops.length === 0;
   return (
     <article className={`recruit-combo${result.floor >= 4 ? " prized" : ""}`}>
       <header>
         <div className="combo-tags">{result.combo.map((tag) => <span key={tag}>{tag}</span>)}</div>
         <b style={{ background: RARITY_COLORS[result.floor] }}>
-          {result.floor === result.ceil ? `${result.floor}★ 확정` : `${result.floor}★ 이상`}
+          {lowOnly ? `${result.floor}★ · 저시간 전용` : result.floor === result.ceil ? `${result.floor}★ 확정` : `${result.floor}★ 이상`}
         </b>
       </header>
       <ul>
@@ -92,7 +98,18 @@ function ComboCard({ result, onShowOperator }: { result: ComboResult; onShowOper
             <i style={{ color: RARITY_COLORS[op.rarity] }}>{op.rarity}★</i>
           </li>
         ))}
+        {result.lowOps.map((op) => (
+          <li key={op.id} className="low-time" style={{ borderColor: RARITY_COLORS[op.rarity] }}>
+            <img src={op.image} alt="" loading="lazy" decoding="async" className={onShowOperator ? "op-link" : undefined}
+              title={onShowOperator ? `${op.name} 상세 정보` : undefined} onClick={() => onShowOperator?.(op.id)} />
+            <span>{op.name}<em className="time-req">{LOW_TIME_HINT[op.rarity]}</em></span>
+            <i style={{ color: RARITY_COLORS[op.rarity] }}>{op.rarity}★</i>
+          </li>
+        ))}
       </ul>
+      {result.lowOps.length > 0 && (
+        <p className="low-time-note">1·2★는 모집 시간을 낮춰야 등장합니다 — <b>1★는 3시간 50분 이하</b>, <b>2★는 7시간 40분 미만</b>. 9시간 설정 시에는 나오지 않습니다.</p>
+      )}
     </article>
   );
 }
@@ -142,7 +159,8 @@ export default function RecruitHelper({ onShowOperator }: { onShowOperator?: (id
         <h2>공채 도우미</h2>
         <p>게임 공개모집에 <b>제시된 태그 5개</b>를 아래에서 그대로 입력하세요. 실제 게임에서 체크할 수 있는 <b>최대 3개</b>짜리 조합 전부를 계산해,
           높은 성급이 확정되는 조합부터 순서대로 보여줍니다.
-          결과는 모집 시간 <b>9시간</b> 기준 — 1★는 로봇 태그, 2★는 신입 태그를 체크했을 때만 나오고, 6★는 고급 특별 채용이 있어야 나옵니다.</p>
+          성급 배지는 모집 시간 <b>9시간</b> 기준 — 6★는 고급 특별 채용이 있어야 나옵니다.
+          모집 시간을 낮추면 나오는 <b>1·2★</b>도 함께 표시되며, 각 결과에 필요한 시간 조건이 붙어 있습니다.</p>
         <p className="recruit-time-note"><b>모집 시간별 출현 성급</b> —
           1시간~3시간 50분: <b>1·2·3·4★</b> ·
           4시간~7시간 30분: <b>2·3·4·5★</b> ·

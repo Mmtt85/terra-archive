@@ -312,6 +312,11 @@ footer p { margin:0 }
 .roster-tools input::placeholder { color:#ffffff88 }
 .roster-tools button { border:1px solid #ffffff55; background:transparent; color:#fff; padding:9px 13px; font-size:11px; font-weight:800; cursor:pointer }
 .roster-tools button.apply { background:var(--lime); color:var(--ink); border-color:var(--lime) }
+.roster-bulk { display:flex; flex-wrap:wrap; gap:8px 18px; margin:0 0 13px }
+.bulk-group { display:inline-flex; align-items:center; gap:5px }
+.bulk-group b { font:800 10px monospace; margin-right:3px }
+.bulk-group button { border:1px solid var(--line); background:var(--white); padding:5px 8px; font-size:10px; font-weight:800; cursor:pointer }
+.bulk-group button:hover { border-color:var(--ink) }
 .roster-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(108px,1fr)); gap:7px }
 .roster-card { display:flex; flex-direction:column; border:1px solid var(--line); background:#f0efe9; opacity:.45; transition:.12s }
 .roster-card.owned { opacity:1; background:var(--white); border-color:var(--ink) }
@@ -356,6 +361,9 @@ footer p { margin:0 }
 .recruit-combo li { display:flex; align-items:center; gap:6px; border:1px solid; background:#fbfbf8; padding:3px 8px 3px 3px; font-size:11px; font-weight:800 }
 .recruit-combo li img { width:24px; height:24px; object-fit:cover; background:#20272b }
 .recruit-combo li i { font-style:normal; font:800 9px monospace }
+.recruit-combo li.low-time { border-style:dashed; opacity:.85 }
+.time-req { display:inline-block; margin-left:5px; font-style:normal; font-size:8.5px; font-weight:800; color:#8a4b0f; background:#f5e3c9; padding:1px 4px; vertical-align:middle }
+.low-time-note { margin:10px 0 0; border-left:3px solid #d99a3d; background:#f7efdf; color:#6c5326; padding:8px 11px; font-size:10.5px; line-height:1.55 }
 @media (width<=760px) { .recruit { padding-top:20px } .recruit-tags { padding:2px 12px 12px } }
 .recruit-dict { margin-top:30px }
 .dict-toggle { width:100%; border:1px dashed #aaa9a2; background:0 0; color:var(--muted); cursor:pointer; padding:12px; font-size:12px; font-weight:800 }

@@ -8,6 +8,8 @@ export type FeedbackKind = "feature" | "data_error" | "plan";
 
 export async function sendFeedback(kind: FeedbackKind, message: string, payload?: unknown) {
   if (!feedbackReady) throw new Error("Supabase 키가 아직 설정되지 않았습니다");
+  // 어떤 화면에서 보낸 제안인지 payload에 자동 첨부 (예: "/#infra", "/#op-char_2014_nian")
+  const page = typeof window === "undefined" ? null : `${window.location.pathname}${window.location.hash}`;
   const res = await fetch(`${SUPABASE_URL}/rest/v1/feedback`, {
     method: "POST",
     headers: {
@@ -16,7 +18,7 @@ export async function sendFeedback(kind: FeedbackKind, message: string, payload?
       "Content-Type": "application/json",
       Prefer: "return=minimal",
     },
-    body: JSON.stringify({ kind, message: message.slice(0, 4000), payload: payload ?? null }),
+    body: JSON.stringify({ kind, message: message.slice(0, 4000), payload: { ...(payload && typeof payload === "object" ? payload : {}), page } }),
   });
   if (!res.ok) throw new Error(`전송 실패 (${res.status})`);
 }

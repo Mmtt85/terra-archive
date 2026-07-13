@@ -1176,6 +1176,26 @@ function RosterModal({ ownedIds, eliteById, onApply, onClose }: { ownedIds: Set<
     if (elite === 2) next.delete(id); else next.set(id, elite); // 2정이 기본값이라 별도 저장 불필요
     return next;
   });
+  // 성급 단위 일괄 조작 — 보유 체크/해제, 정예화 1정/2정 (정예화는 2정 스킬 보유 오퍼만 의미)
+  const bulkOwn = (test: (rarity: number) => boolean, own: boolean) => setDraft((current) => {
+    const next = new Set(current);
+    for (const op of ops) if (test(op.rarity)) { if (own) next.add(op.id); else next.delete(op.id); }
+    return next;
+  });
+  const bulkElite = (test: (rarity: number) => boolean, elite: 1 | 2) => setEliteDraft((current) => {
+    const next = new Map(current);
+    for (const op of ops) {
+      if (!test(op.rarity) || !op.skills.some((skill) => skill.unlock === "정예화 2")) continue;
+      if (elite === 2) next.delete(op.id); else next.set(op.id, 1);
+    }
+    return next;
+  });
+  const BULK_GROUPS: { label: string; test: (rarity: number) => boolean }[] = [
+    { label: "6성", test: (rarity) => rarity === 6 },
+    { label: "5성", test: (rarity) => rarity === 5 },
+    { label: "4성", test: (rarity) => rarity === 4 },
+    { label: "3성 이하", test: (rarity) => rarity <= 3 },
+  ];
   return (
     <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <section className="operator-modal room-modal" role="dialog" aria-modal="true" style={{ "--accent": "#dfff00" } as React.CSSProperties}>
@@ -1192,6 +1212,17 @@ function RosterModal({ ownedIds, eliteById, onApply, onClose }: { ownedIds: Set<
         </header>
         <div className="modal-scroll">
           <p className="dorm-note">정예화 2에서 해금되는 인프라 스킬을 가진 오퍼는 카드 아래 <b>1정/2정</b>을 선택할 수 있습니다 (기본값 2정 · 최대치 가정).</p>
+          <div className="roster-bulk">
+            {BULK_GROUPS.map(({ label, test }) => (
+              <span key={label} className="bulk-group">
+                <b>{label}</b>
+                <button type="button" onClick={() => bulkOwn(test, true)}>전체 보유</button>
+                <button type="button" onClick={() => bulkOwn(test, false)}>전체 해제</button>
+                <button type="button" onClick={() => bulkElite(test, 1)}>일괄 1정</button>
+                <button type="button" onClick={() => bulkElite(test, 2)}>일괄 2정</button>
+              </span>
+            ))}
+          </div>
           <div className="roster-grid">
             {visible.map((op) => {
               const owned = draft.has(op.id);
