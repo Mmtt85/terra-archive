@@ -1210,11 +1210,13 @@ function RosterModal({ ownedIds, eliteById, onApply, onClose, onShowOperator }: 
     }
     return next;
   });
-  const BULK_GROUPS: { label: string; test: (rarity: number) => boolean; elites: boolean }[] = [
-    { label: "6성", test: (rarity) => rarity === 6, elites: true },
-    { label: "5성", test: (rarity) => rarity === 5, elites: true },
-    { label: "4성", test: (rarity) => rarity === 4, elites: true },
-    { label: "3성 이하", test: (rarity) => rarity <= 3, elites: false },
+  // 성급별 가능한 정예화 단계: 4성+ = 노정예/1정/2정, 3성 = 노정예/1정, 2성 이하 = 노정예뿐(선택지 없음)
+  const BULK_GROUPS: { label: string; test: (rarity: number) => boolean; elites: Elite[] }[] = [
+    { label: "6성", test: (rarity) => rarity === 6, elites: [0, 1, 2] },
+    { label: "5성", test: (rarity) => rarity === 5, elites: [0, 1, 2] },
+    { label: "4성", test: (rarity) => rarity === 4, elites: [0, 1, 2] },
+    { label: "3성", test: (rarity) => rarity === 3, elites: [0, 1] },
+    { label: "2성 이하", test: (rarity) => rarity <= 2, elites: [] },
   ];
   return (
     <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
@@ -1238,9 +1240,9 @@ function RosterModal({ ownedIds, eliteById, onApply, onClose, onShowOperator }: 
                 <b>{label}</b>
                 <button type="button" onClick={() => bulkOwn(test, true)}>전체 보유</button>
                 <button type="button" onClick={() => bulkOwn(test, false)}>전체 해제</button>
-                {elites && <button type="button" onClick={() => bulkElite(test, 0)}>일괄 노정예</button>}
-                {elites && <button type="button" onClick={() => bulkElite(test, 1)}>일괄 1정</button>}
-                {elites && <button type="button" onClick={() => bulkElite(test, 2)}>일괄 2정</button>}
+                {elites.map((option) => (
+                  <button key={option} type="button" onClick={() => bulkElite(test, option)}>일괄 {ELITE_LABEL[option]}</button>
+                ))}
               </span>
             ))}
           </div>
