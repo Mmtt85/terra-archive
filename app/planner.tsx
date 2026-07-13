@@ -143,6 +143,7 @@ type OpBreakdown = {
 // control auras: only the highest of a kind counts, ranked by the user's
 // priority — factories > trading posts > hire contacts > clue speed
 const AURA_WEIGHT: Record<string, number> = { ctrl_mfg: 10, ctrl_trade: 2, ctrl_hire: 0.6, ctrl_clue: 0.2 };
+const AURA_LABEL: Record<string, string> = { ctrl_mfg: "제조소 생산력 오라", ctrl_trade: "무역소 오더 효율 오라", ctrl_hire: "인맥 레퍼런스 오라", ctrl_clue: "단서 수집 오라" };
 
 function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx): OpBreakdown {
   const teamIds = new Set(team.map((member) => member.id));
@@ -1014,8 +1015,18 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
             <div className="crew-list">
               {team.map((op) => {
                 const b = breakdown(op, cell.room, team, ctx);
-                const auraTotal = Object.keys(AURA_WEIGHT).reduce((sum, kind) => sum + (b.auras[kind] ?? 0) * AURA_WEIGHT[kind], 0);
-                const total = Math.round(b.efficiency + b.facilityEff + b.automation + b.quality + b.payout + b.payoutViolation + (b.override > 0 ? b.override : 0) + b.perCoworker * (team.length - 1) + auraTotal);
+                // 기여를 성분별로 풀어서 표시 — 특히 제어센터 오라는 내부 가중치 점수가
+                // 아니라 실제 효과("무역소 오더 효율 오라 +10%")로 보여준다
+                const pct = cell.room === "CONTROL" ? "" : "%";
+                const parts: string[] = [];
+                if (Math.round(b.efficiency) !== 0) parts.push(`${UNIT[cell.room] ?? "효율"} +${Math.round(b.efficiency)}${pct}`);
+                if (Math.round(b.facilityEff) !== 0) parts.push(`시설 기반 +${Math.round(b.facilityEff)}%`);
+                if (Math.round(b.automation) !== 0) parts.push(`자동화 +${Math.round(b.automation)}%`);
+                if (Math.round(b.quality) !== 0) parts.push(`고품질 확률 +${Math.round(b.quality)}%p 상당`);
+                if (Math.round(b.payout + b.payoutViolation) !== 0) parts.push(`오더 수익 +${Math.round(b.payout + b.payoutViolation)}% 상당`);
+                if (b.override > 0) parts.push(`효율 대체 인당 +${Math.round(b.override)}%`);
+                if (Math.round(b.perCoworker * (team.length - 1)) !== 0) parts.push(`동료 보너스 +${Math.round(b.perCoworker * (team.length - 1))}%`);
+                for (const [kind, value] of Object.entries(b.auras)) if (value > 0) parts.push(`${AURA_LABEL[kind] ?? kind} +${Math.round(value)}%`);
                 const shown = b.skills.length ? b.skills : op.skills.filter((skill) => skill.room === cell.room);
                 return (
                   <article key={op.id} className="crew-card">
@@ -1041,7 +1052,7 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                         })()}
                       </b>
                       {shown.length ? shown.map((skill) => <p key={skill.name}><em>{skill.name}</em> — {skill.description}</p>) : <p>이 시설에 적용되는 스킬이 없습니다 (세트 대기 요원).</p>}
-                      {total > 0 && <small>기여 +{total}{cell.room === "CONTROL" ? "" : "%"}</small>}
+                      {parts.map((part) => <small key={part}>{part}</small>)}
                       {op.skills.flatMap((skill) => skill.tokenGen).map((gen) => (
                         <small key={`${op.id}-${gen.token}`} className="token-chip">{gen.token} +{Math.round(gen.estimate)}점 생성</small>
                       ))}

@@ -274,7 +274,7 @@ footer p { margin:0 }
 .crew-card b i { color:#c89b25; font-style:normal; font-size:9px; letter-spacing:-1px; margin-left:5px }
 .crew-card p { margin:6px 0 0; color:#4f585c; font-size:11px; line-height:1.6 }
 .crew-card p em { font-style:normal; font-weight:800; color:var(--ink) }
-.crew-card small { display:inline-block; margin-top:7px; padding:3px 7px; background:color-mix(in srgb,var(--accent) 18%,white); color:color-mix(in srgb,var(--accent) 75%,black); font:800 10px monospace }
+.crew-card small { display:inline-block; margin:7px 6px 0 0; padding:3px 7px; background:color-mix(in srgb,var(--accent) 18%,white); color:color-mix(in srgb,var(--accent) 75%,black); font:800 10px monospace }
 .sub-hint { color:var(--muted); font-size:11px; margin:0 0 12px }
 .planner-link { border:1px solid var(--ink); background:var(--ink); color:var(--lime); padding:8px 12px; font:700 10px monospace; letter-spacing:1px; text-decoration:none; margin-left:auto; margin-right:14px }
 .planner-link:hover { background:var(--lime); color:var(--ink) }
