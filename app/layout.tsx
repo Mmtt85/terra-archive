@@ -44,6 +44,7 @@ export async function generateMetadata(): Promise<Metadata> {
     ],
     alternates: { canonical: `${SITE_URL}/` },
     robots: { index: true, follow: true },
+    icons: { icon: [{ url: "/favicon.svg", type: "image/svg+xml" }] },
     openGraph: {
       title,
       description,
