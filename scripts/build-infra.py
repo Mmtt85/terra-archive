@@ -180,6 +180,10 @@ def parse_morale_drain(text):
         delta += float(val) * (1 if sign == "+" else -1)
     return delta
 
+# 오퍼 이름이 진영 이름의 접두어인 경우("쉐라" ⊂ "쉐라그") 진영 언급을 파트너로
+# 오인하지 않도록, 매치 지점이 더 긴 진영명으로 시작하면 무시한다
+FACTION_NAMES = sorted({f for o in operators for f in (o.get("factions") or []) if f}, key=len, reverse=True)
+
 def find_partners(text, self_name):
     found = []
     scan = text
@@ -187,9 +191,13 @@ def find_partners(text, self_name):
         if n == self_name or len(n) < 2: continue
         # avoid substring hits inside other words (e.g. '레이' in '오퍼레이터'):
         # the name must not be glued to a preceding Hangul syllable
-        if re.search(r"(?<![가-힣])" + re.escape(n), scan):
+        for m in re.finditer(r"(?<![가-힣])" + re.escape(n), scan):
+            at = m.start()
+            if any(len(f) > len(n) and scan.startswith(f, at) for f in FACTION_NAMES):
+                continue  # 진영명("쉐라그 오퍼레이터…")이지 오퍼 언급이 아니다
             found.append(name_to_id[n])
             scan = scan.replace(n, "§")
+            break
     return found
 
 # KR release order: handbook entries append in release order (robots/reserves
@@ -270,6 +278,17 @@ for o in operators:
         if conv:
             src, ratio_src, dst, ratio_dst = conv.group(1), float(conv.group(2)), conv.group(3), float(conv.group(4))
             convert = {"from": src, "per": ratio_src, "to": dst, "amount": ratio_dst}
+        # 조건부 진영 인원 게이트 (실버애쉬 더 레인프로스트: "쉐라그 오퍼레이터가
+        # 3명 배치된 무역소의 오더 수주 효율 +10%") — 같은 방 동반이 아니라
+        # 진영 N명 배치 조건. 플래너는 교대 기준 기지 전체 인원수로 근사한다
+        gate_faction = gate_count = None
+        gm = re.search(r"([가-힣A-Za-z· ]{2,16}?) 오퍼레이터가 (\d+)명 배치된 (?:무역소|제조소|발전소)", text)
+        if gm:
+            gate_faction, gate_count = gm.group(1).strip(), int(gm.group(2))
+        # 공사용 로봇 세트 (미니멀리스트): 생성 스킬이 "시설 레벨당 +1대 (최대 64대)",
+        # 소비 스킬이 "로봇 8대당 생산력 +5%" — 만렙 기지 상한(64대) 기준으로 결합
+        robo_cap = re.search(r"공사용 로봇[^%]*?최대 (\d+)대", text)
+        robo_use = re.search(r"공사용 로봇 (\d+)대당[^%+\d]{0,16}\+?\s*(\d+(?:\.\d+)?)\s*%", text)
         # 기반시설 어디든 존재 조건 (언더플로우: "울피아누스가 기반시설에 있으면
         # 추가로 +10%") — 같은 방 동반(partners)이 아니라 기지 전체 존재 조건.
         # partners로 오인하면 기본 효율까지 통째로 게이트돼 버린다
@@ -289,6 +308,9 @@ for o in operators:
             "moraleDrain": parse_morale_drain(text),
             "partners": [p for p in find_partners(text, o["name"]) if p not in base_partner_ids],
             "basePartners": base_partner_ids, "basePartnerBonus": base_partner_bonus,
+            "gateFaction": gate_faction, "gateCount": gate_count,
+            "_roboCap": int(robo_cap.group(1)) if robo_cap else None,
+            "_roboUse": (float(robo_use.group(1)), float(robo_use.group(2))) if robo_use else None,
             "tokenGen": gen, "tokenUse": use, "convert": convert,
             "reqFaction": req_faction, "perFaction": per_faction, "perScope": per_scope, "perCap": per_cap,
             "facilityBased": facility_based,
@@ -304,8 +326,15 @@ for o in operators:
         sc = sk["_stackConv"]
         if sc and sc["name"] in grants:
             sk["tokenGen"].append({"token": sc["token"], "estimate": grants[sc["name"]] / sc["per"] * sc["amount"]})
+    # 공사용 로봇 세트 결합 (미니멀리스트): 형제 스킬의 로봇 상한 × 소비 스킬 배율
+    robo_caps = [sk["_roboCap"] for sk in skills if sk["_roboCap"]]
+    for sk in skills:
+        if sk["_roboUse"] and robo_caps:
+            per, val = sk["_roboUse"]
+            sk["kind"], sk["value"] = "output", robo_caps[0] / per * val  # 64/8×5 = +40%
     for sk in skills:
         sk.pop("_stackGrant", None); sk.pop("_stackCount", None); sk.pop("_stackConv", None)
+        sk.pop("_roboCap", None); sk.pop("_roboUse", None)
     if skills:
         infra_ops.append({"id": o["id"], "name": o["name"], "rarity": o["rarity"],
                           "faction": o["faction"], "accent": o["accent"], "image": o["image"],
