@@ -289,7 +289,7 @@ function LanguageSwitcher() {
     <div className="lang-wrap">
       <button type="button" className="server-chip" aria-haspopup="listbox" aria-expanded={open} aria-label={t("언어 선택")}
         onClick={(event) => { event.stopPropagation(); setOpen((value) => !value); }}>
-        <span /> KR SERVER · {current.chip} <i aria-hidden>▾</i>
+        <span /> {current.chip} <i aria-hidden>▾</i>
       </button>
       {open && (
         <div className="lang-menu" role="listbox" aria-label={t("언어 선택")}>

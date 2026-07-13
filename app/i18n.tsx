@@ -12,8 +12,8 @@ export type Locale = "ko" | "en" | "ja";
 
 export const LOCALES: { code: Locale; label: string; chip: string; path: string }[] = [
   { code: "ko", label: "한국어", chip: "KO", path: "/" },
-  { code: "en", label: "English", chip: "EN", path: "/en/" },
-  { code: "ja", label: "日本語", chip: "JA", path: "/ja/" },
+  { code: "en", label: "English", chip: "EN", path: "/en" },
+  { code: "ja", label: "日本語", chip: "JP", path: "/ja" },
 ];
 
 export const DT_LOCALE: Record<Locale, string> = { ko: "ko-KR", en: "en-US", ja: "ja-JP" };
