@@ -40,11 +40,14 @@ type InfraOp = {
   name: string;
   rarity: number;
   faction: string;
+  factions?: string[]; // 다중 소속 (마터호른: 카란 무역회사 + 쉐라그) — 진영 카운트는 전부 인정
   accent: string;
   image: string;
   seq: number;
   skills: InfraSkill[];
 };
+
+const factionsOf = (op: InfraOp): string[] => op.factions ?? [op.faction];
 
 type RoomSpec = { name: string; slots: number; electricity: number; maxCount: number };
 
@@ -108,7 +111,7 @@ const UNIT: Record<string, string> = {
 const PARK_KEYS = ["WORKSHOP"];
 const SHIFT_COUNT = 2;
 
-type Ctx = { product?: string; tokenPoints: Record<string, number>; factionCounts?: Record<string, number>; plants?: number; presentIds?: Set<string> };
+type Ctx = { product?: string; tokenPoints: Record<string, number>; factionCounts?: Record<string, number>; plants?: number; presentIds?: Set<string>; ambient?: Record<string, number> };
 
 function skillApplies(skill: InfraSkill, room: string, product?: string): boolean {
   if (skill.room !== room) return false;
@@ -144,6 +147,18 @@ type OpBreakdown = {
 // priority — factories > trading posts > hire contacts > clue speed
 const AURA_WEIGHT: Record<string, number> = { ctrl_mfg: 10, ctrl_trade: 2, ctrl_hire: 0.6, ctrl_clue: 0.2 };
 const AURA_LABEL: Record<string, string> = { ctrl_mfg: "제조소 생산력 오라", ctrl_trade: "무역소 오더 효율 오라", ctrl_hire: "인맥 레퍼런스 오라", ctrl_clue: "단서 수집 오라" };
+// 제어센터 오라가 실제로 더해지는 대상 방 — 방 점수·서머리에 합산된다
+const AURA_TARGET: Record<string, string> = { MANUFACTURE: "ctrl_mfg", TRADING: "ctrl_trade", HIRE: "ctrl_hire", MEETING: "ctrl_clue" };
+
+// 제어센터 팀의 활성 오라(동종 최고만) — 대상 방 점수에 앰비언트로 더해 준다
+function aurasOf(controlTeam: InfraOp[], ctx: Ctx): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const op of controlTeam) {
+    const b = breakdown(op, "CONTROL", controlTeam, ctx);
+    for (const [kind, value] of Object.entries(b.auras)) out[kind] = Math.max(out[kind] ?? 0, value);
+  }
+  return out;
+}
 
 function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx): OpBreakdown {
   const teamIds = new Set(team.map((member) => member.id));
@@ -153,7 +168,7 @@ function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx): OpBrea
   for (const skill of activeSkills(op, room, ctx.product)) {
     if (skill.partners.length > 0 && !skill.partners.every((p) => teamIds.has(p))) continue;
     // faction companion gate (호시구마: 용문근위국 오퍼와 함께 배치 시)
-    if (skill.reqFaction && !team.some((member) => member.id !== op.id && member.faction === skill.reqFaction)) continue;
+    if (skill.reqFaction && !team.some((member) => member.id !== op.id && factionsOf(member).includes(skill.reqFaction!))) continue;
     // 진영 N명 배치 게이트 (실버애쉬 이격: 쉐라그 3명 배치된 무역소) — 조 전체 인원수 근사
     if (skill.gateFaction && (ctx.factionCounts?.[skill.gateFaction] ?? 0) < (skill.gateCount ?? 1)) continue;
     out.skills.push(skill);
@@ -164,7 +179,7 @@ function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx): OpBrea
     // per-faction counting (바르카리스: 미노스 오퍼레이터 1명당 +v%, 최대 cap)
     if (skill.perFaction && skill.perSkillTag == null) {
       const count = skill.perScope === "room"
-        ? team.filter((member) => member.faction === skill.perFaction).length
+        ? team.filter((member) => factionsOf(member).includes(skill.perFaction!)).length
         : ctx.factionCounts?.[skill.perFaction] ?? 0;
       const gained = Math.min(skill.value * count, skill.perCap ?? Infinity);
       if (skill.kind in AURA_WEIGHT) { out.auras[skill.kind] = Math.max(out.auras[skill.kind] ?? 0, gained); continue; }
@@ -230,7 +245,9 @@ function teamScore(team: InfraOp[], room: string, ctx: Ctx): number {
     const bestOfKind = Math.max(...parts.map((p) => p.auras[kind] ?? 0), 0);
     auras += bestOfKind * AURA_WEIGHT[kind];
   }
-  return efficiency + quality + payout + auras;
+  // 제어센터 오라를 대상 방 점수에 실제 합산 — "무역소 오더 효율 +10%"면 무역소가 +10%
+  const ambient = team.length > 0 ? ctx.ambient?.[AURA_TARGET[room] ?? ""] ?? 0 : 0;
+  return efficiency + quality + payout + auras + ambient;
 }
 
 function opSolo(op: InfraOp, room: string, slots: number, ctx: Ctx): number {
@@ -301,11 +318,14 @@ type Plan = {
   strategy: string;
 };
 
-const PRODUCTION_KEYS = ["TRADING-0", "TRADING-1", "MANUFACTURE-0", "MANUFACTURE-1", "MANUFACTURE-2", "MANUFACTURE-3", "POWER-0", "POWER-1", "POWER-2"];
-const SUPPORT_KEYS = ["CONTROL", "MEETING", "HIRE", "WORKSHOP", "TRAINING"];
+// 방 채우기 우선순위 (사용자 확정 2026-07): 제조소-순금 > 제조소-작전기록 > 무역소 >
+// 발전소 > 사무실 > 응접실 — 먼저 채우는 방이 최고 요원을 가져간다. 응접실은 최하위
+// (제어센터는 쉐이 시드·오라 요원 전용이라 경합이 적어 발전소 다음에 둔다)
+const PRODUCTION_KEYS = ["MANUFACTURE-0", "MANUFACTURE-1", "MANUFACTURE-2", "MANUFACTURE-3", "TRADING-0", "TRADING-1", "POWER-0", "POWER-1", "POWER-2"];
+const SUPPORT_KEYS = ["CONTROL", "HIRE", "MEETING", "WORKSHOP", "TRAINING"];
 
-function ctxFor(key: string, tokenPoints: Record<string, number>, factionCounts?: Record<string, number>, plants?: number, presentIds?: Set<string>): Ctx {
-  return { product: cellByKey.get(key)?.product, tokenPoints, factionCounts, plants, presentIds };
+function ctxFor(key: string, tokenPoints: Record<string, number>, factionCounts?: Record<string, number>, plants?: number, presentIds?: Set<string>, ambient?: Record<string, number>): Ctx {
+  return { product: cellByKey.get(key)?.product, tokenPoints, factionCounts, plants, presentIds, ambient };
 }
 
 // 해당 조 기준 기지 내 배치 전원 (숙소·응접실 포함) — 기반시설 존재 조건 판정용
@@ -337,6 +357,26 @@ function buildPlan(packageTokens: string[], roster: InfraOp[]): Plan {
     if (shift === 0 && plantBooster) {
       seeds["POWER-0"] = [plantBooster];
       reserved.set(plantBooster.id, "POWER-0");
+    }
+    // 쉐라그 무역소 세트 (사용자 확정): 이격 실버애쉬(제어센터 "쉐라그 3명 배치된
+    // 무역소 +10%")를 보유하면 쉐라그 오퍼 3명을 무역소 한 곳에 모은다 — 쉐라를
+    // 응접실에 두는 것보다 우선 (방 우선순위: 무역소 > 응접실). 무역 스킬이 강한
+    // 쉐라그부터 채워 손해를 최소화한다
+    if (shift === 0) {
+      for (const auraOp of roster) {
+        for (const skill of auraOp.skills) {
+          if (skill.room !== "CONTROL" || !skill.gateFaction || !skill.gateCount) continue;
+          const bodies = roster
+            .filter((op) => op.id !== auraOp.id && !used.has(op.id) && !reserved.has(op.id) && factionsOf(op).includes(skill.gateFaction!))
+            .sort((a, b) => opSolo(b, "TRADING", 3, { tokenPoints: {} }) - opSolo(a, "TRADING", 3, { tokenPoints: {} }));
+          if (bodies.length < skill.gateCount) continue;
+          const set = bodies.slice(0, skill.gateCount);
+          seeds["TRADING-0"] = [...(seeds["TRADING-0"] ?? []), ...set].slice(0, 3);
+          seeds["CONTROL"] = [...(seeds["CONTROL"] ?? []), auraOp];
+          for (const op of seeds["TRADING-0"]) reserved.set(op.id, "TRADING-0");
+          reserved.set(auraOp.id, "CONTROL");
+        }
+      }
     }
     if (shift === 0 && packageTokens.length) {
       const parked = new Set<string>();
@@ -437,7 +477,7 @@ function buildPlan(packageTokens: string[], roster: InfraOp[]): Plan {
       team.forEach((op) => {
         used.add(op.id);
         placedIds.add(op.id);
-        shiftFactionCounts[op.faction] = (shiftFactionCounts[op.faction] ?? 0) + 1;
+        for (const faction of factionsOf(op)) shiftFactionCounts[faction] = (shiftFactionCounts[faction] ?? 0) + 1;
       });
       assignments[key].push(team.map((op) => op.id));
     }
@@ -460,7 +500,7 @@ function buildPlan(packageTokens: string[], roster: InfraOp[]): Plan {
     let total = 0;
     for (const gen of flow.generators) {
       if (gen.perMember) {
-        const count = placedA.filter((op) => op.faction.includes(gen.perMember!.match)).length;
+        const count = placedA.filter((op) => factionsOf(op).some((faction) => faction.includes(gen.perMember!.match))).length;
         gen.amount = gen.perMember.per * Math.min(count, gen.perMember.cap);
       }
       total += gen.amount;
@@ -559,11 +599,16 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
   const exportImage = async () => {
     if (!plan) return;
     type Row = { cell: (typeof LAYOUT)[number]; crews: { label: string; team: InfraOp[]; score: number | null }[] };
+    const controlTeamAt = (shift: number) => {
+      const shifts = plan.assignments["CONTROL"] ?? [];
+      return (shifts[Math.min(shift, shifts.length - 1)] ?? []).map((id) => effectiveOpById.get(id)).filter(Boolean) as InfraOp[];
+    };
+    const ambientAt = [0, 1].map((shift) => aurasOf(controlTeamAt(shift), ctxFor("CONTROL", shift === 0 ? plan.tokenPoints : {}, plan.factionCounts[shift] ?? {}, plan.plants, presentIdsFor(plan, shift))));
     const rows: Row[] = LAYOUT.map((cell) => {
       const shifts = plan.assignments[cell.key] ?? [];
       const scoreFor = (team: InfraOp[], shift: number) =>
         cell.room === "DORMITORY" || PARK_KEYS.includes(cell.key) ? null
-          : Math.round(teamScore(team, cell.room, ctxFor(cell.key, shift === 0 ? plan.tokenPoints : {}, plan.factionCounts[shift] ?? {}, plan.plants, presentIdsFor(plan, shift))));
+          : Math.round(teamScore(team, cell.room, ctxFor(cell.key, shift === 0 ? plan.tokenPoints : {}, plan.factionCounts[shift] ?? {}, plan.plants, presentIdsFor(plan, shift), ambientAt[shift])));
       const teamAt = (shift: number) => (shifts[Math.min(shift, shifts.length - 1)] ?? []).map((id) => effectiveOpById.get(id)).filter(Boolean) as InfraOp[];
       const single = cell.room === "DORMITORY" || cell.key === "MEETING" || cell.key === "TRAINING";
       if (single) {
@@ -690,7 +735,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
         const team = cellShifts[Math.min(s, cellShifts.length - 1)] ?? [];
         for (const id of team) {
           const op = effectiveOpById.get(id);
-          if (op) counts[op.faction] = (counts[op.faction] ?? 0) + 1;
+          if (op) for (const faction of factionsOf(op)) counts[faction] = (counts[faction] ?? 0) + 1;
         }
       }
       return counts;
@@ -756,11 +801,19 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
   // 현재 조 기준 기지 내 배치 전원 — 기반시설 존재 조건(언더플로우+울피아누스) 판정용
   const presentIds = useMemo(() => (plan ? presentIdsFor(plan, activeShift) : undefined), [plan, activeShift]);
 
+  // 제어센터 오라 — 대상 방(제조·무역·사무·응접) 점수와 서머리에 실제 합산된다
+  const ambient = useMemo(() => {
+    if (!plan) return undefined;
+    const control = teamFor("CONTROL", activeShift);
+    return aurasOf(control, ctxFor("CONTROL", pointsFor(activeShift), plan.factionCounts[activeShift], plan.plants, presentIds));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plan, activeShift, presentIds, eliteById]);
+
   const summary = useMemo(() => {
     if (!plan) return null;
     const avg = (prefix: string) => {
       const keys = LAYOUT.filter((cell) => cell.key.startsWith(prefix)).map((cell) => cell.key);
-      const totals = keys.map((key) => teamScore(teamFor(key, activeShift), cellByKey.get(key)!.room, ctxFor(key, pointsFor(activeShift), plan.factionCounts[activeShift], plan.plants, presentIds)));
+      const totals = keys.map((key) => teamScore(teamFor(key, activeShift), cellByKey.get(key)!.room, ctxFor(key, pointsFor(activeShift), plan.factionCounts[activeShift], plan.plants, presentIds, ambient)));
       return totals.length ? Math.round(totals.reduce((a, b) => a + b, 0) / totals.length) : 0;
     };
     return {
@@ -771,7 +824,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
       staffed: allAssigned.size,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [plan, activeShift, allAssigned]);
+  }, [plan, activeShift, allAssigned, presentIds, ambient, eliteById]);
 
   const openCell = LAYOUT.find((cell) => cell.key === openRoom);
 
@@ -838,7 +891,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
           }
           const team = teamFor(cell.key, activeShift);
           const spec = infra.rooms[cell.room];
-          const score = Math.round(teamScore(team, cell.room, ctxFor(cell.key, pointsFor(activeShift), plan?.factionCounts?.[activeShift], plan?.plants, presentIds)));
+          const score = Math.round(teamScore(team, cell.room, ctxFor(cell.key, pointsFor(activeShift), plan?.factionCounts?.[activeShift], plan?.plants, presentIds, ambient)));
           return (
             <button key={cell.key} type="button" className={`ship-room pos-${cell.key.toLowerCase()}`} onClick={() => setOpenRoom(cell.key)} style={{ "--room-accent": ROOM_ACCENT[cell.room] } as React.CSSProperties}>
               <div className="ship-room-head">
@@ -931,7 +984,12 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
   const team = rawIds.map((id) => opMap.get(id)).filter(Boolean) as InfraOp[];
   const teamIds = new Set(team.map((op) => op.id));
   const points = shiftIndex === 0 ? plan.tokenPoints : {};
-  const ctx = ctxFor(cell.key, points, plan.factionCounts[shiftIndex] ?? {}, plan.plants, presentIdsFor(plan, shiftIndex));
+  // 제어센터 오라를 이 방 점수에도 합산 (제어센터 자신을 볼 때는 미적용)
+  const controlShifts = plan.assignments["CONTROL"] ?? [];
+  const controlTeam = (controlShifts[Math.min(shiftIndex, controlShifts.length - 1)] ?? []).map((id) => opMap.get(id)).filter(Boolean) as InfraOp[];
+  const ambient = cell.key === "CONTROL" ? undefined
+    : aurasOf(controlTeam, ctxFor("CONTROL", points, plan.factionCounts[shiftIndex] ?? {}, plan.plants, presentIdsFor(plan, shiftIndex)));
+  const ctx = ctxFor(cell.key, points, plan.factionCounts[shiftIndex] ?? {}, plan.plants, presentIdsFor(plan, shiftIndex), ambient);
   const excluded = new Set([...allAssigned, ...teamIds]);
   const currentScore = Math.round(teamScore(team, cell.room, ctx));
   const slots = infra.rooms[cell.room]?.slots ?? 1;
@@ -949,7 +1007,7 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
     acc["동료 보너스"] += b.perCoworker * (team.length - 1);
     acc["제어 오라(가중)"] += Object.keys(AURA_WEIGHT).reduce((sum, kind) => sum + (b.auras[kind] ?? 0) * AURA_WEIGHT[kind], 0);
     return acc;
-  }, { "스킬 효율": 0, "시설 기반": 0, "자동화": 0, "품질 기대치": 0, "오더 수익": 0, "효율 오버라이드": 0, "동료 보너스": 0, "제어 오라(가중)": 0 } as Record<string, number>);
+  }, { "스킬 효율": 0, "시설 기반": 0, "자동화": 0, "품질 기대치": 0, "오더 수익": 0, "효율 오버라이드": 0, "동료 보너스": 0, "제어 오라(가중)": 0, "제어센터 오라 수신": team.length > 0 ? ambient?.[AURA_TARGET[cell.room] ?? ""] ?? 0 : 0 } as Record<string, number>);
   // 추가 후보: 어디에도 배치 안 된 보유 오퍼를 한계 기여 순으로
   const [benchAll, setBenchAll] = useState(false);
   const [benchQuery, setBenchQuery] = useState("");
@@ -973,7 +1031,7 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
       skill.kind === "override" || skill.kind === "payout" || skill.kind === "payout_v" ||
       skill.tokenGen.some((gen) => activeTokens.has(gen.token)) ||
       skill.tokenUse.some((use) => use.percent && activeTokens.has(use.token))) ||
-    counterMatches.some((match) => op.faction.includes(match));
+    counterMatches.some((match) => factionsOf(op).some((faction) => faction.includes(match)));
 
   return (
     <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
@@ -1296,7 +1354,8 @@ const HELP_SECTIONS: { title: string; items: string[] }[] = [
     "숙소·응접실·시너지 고정 요원(숙소 생성원, 니엔 등)은 A/B 전환과 무관하게 고정됩니다.",
     "훈련실은 실제 스킬 특화 훈련에 쓰도록 비워 둡니다.",
   ]},
-  { title: "제조소 우선순위", items: [
+  { title: "방 우선순위", items: [
+    "채우는 순서: 제조소-순금 > 제조소-작전기록 > 무역소 > 발전소 > 사무실 > 응접실 — 먼저 채우는 방이 좋은 요원을 가져갑니다. 응접실은 최하위라, 응접실 스킬이 있는 오퍼(쉐라 등)도 상위 방 세트가 우선입니다.",
     "순금 2 + 작전기록 2 분할. 무역소 효율이 오르면 순금이 병목이 되므로 가장 강한 생산 팀을 순금 2방에 먼저 배치하고, 남는 효율을 작전기록으로 돌립니다.",
     "품목 전용 스킬(금속공예류 = 순금)은 해당 품목 방에서만 계산됩니다.",
   ]},
@@ -1321,7 +1380,10 @@ const HELP_SECTIONS: { title: string; items: string[] }[] = [
   ]},
   { title: "제어 센터", items: [
     "오라 우선순위: 제조소 생산력 > 무역소 오더 효율 > 인맥 레퍼런스 > 단서 수집. '동종 효과 중 최고만 적용' 규칙을 따릅니다.",
+    "제어센터 오라는 대상 방 점수에 실제로 합산됩니다 — 무역소 오더 효율 +10% 오라면 각 무역소와 상단 서머리에 +10%가 더해집니다 (방 상세의 '제어센터 오라 수신').",
     "'용문근위국 오퍼와 함께'류 동반 조건, '미노스 1명당'류 카운트 조건은 실제 배치를 기준으로만 인정합니다.",
+    "이격 실버애쉬 보유 시 쉐라그 오퍼 3명(마터호른·클리프하트 등 무역 스킬 우선)을 무역소 한 곳에 모아 '쉐라그 3명 배치' 조건을 채웁니다 — 진영 판정은 다중 소속 기준(카란 무역회사 오퍼도 쉐라그로 인정).",
+    "만트라 정예 소대는 실존 정예 오퍼 수 기준으로 계산합니다 (현재 6명 → +37%, 신규 정예 오퍼 추가 시 데이터 갱신에서 자동 반영).",
   ]},
   { title: "정예화 단계 (1정/2정)", items: [
     "보유 오퍼 설정에서 오퍼별로 기본값(2정 · 정예화 2)을 1정으로 낮출 수 있습니다. 정예화 2에서 해금되는 인프라 스킬을 가진 오퍼만 선택지가 보입니다.",

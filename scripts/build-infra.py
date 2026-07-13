@@ -43,6 +43,12 @@ for cid, c in chars.items():
 # matches "+30%" and "30% 상승" / "30% 추가 상승"
 PCT = r"(?:\+\s*(\d+(?:\.\d+)?)\s*%|(\d+(?:\.\d+)?)\s*%(?:\s*추가)?\s*상승)"
 
+# 만트라 "정예 오퍼레이터가 배치된 시설 1개당 +2% (최대 10개)" — 게임 상한은 10이지만
+# 실존 정예 오퍼 수만큼만 시설을 채울 수 있다 (현재 6명 → +12%). 신규 정예 오퍼가
+# 추가되면 파이프라인 재생성 시 자동으로 반영된다 (사용자 확정)
+ELITE_TEAM = "로도스 아일랜드-정예 오퍼레이터"
+elite_count = sum(1 for o in operators if ELITE_TEAM in (o.get("factions") or []))
+
 def parse_metric(room, text):
     """Return (kind, value) — the op's headline contribution in this room."""
     def best(pattern):
@@ -74,9 +80,9 @@ def parse_metric(room, text):
                 cap = re.search(r"최대 \+?(\d+(?:\.\d+)?)% 제공", text)
                 v = float(cap.group(1)) if cap else v + float(grow.group(1)) * 3
             # 시설 카운트 (만트라): "정예 오퍼레이터가 배치된 시설 1개당 +2% (최대
-            # 10개)" → 풀 기지는 시설 10개를 쉽게 채우므로 상한 채택
-            fac = re.search(r"시설 1개당[^%]*?\+\s*(\d+(?:\.\d+)?)\s*%\s*\(최대 (\d+)개\)", text)
-            if fac: v += float(fac.group(1)) * float(fac.group(2))
+            # 10개)" → 실존 정예 오퍼 수(현재 6)와 게임 상한(10) 중 작은 쪽 채택
+            fac = re.search(r"정예 오퍼레이터가 배치된 시설 1개당[^%]*?\+\s*(\d+(?:\.\d+)?)\s*%\s*\(최대 (\d+)개\)", text)
+            if fac: v += float(fac.group(1)) * min(float(fac.group(2)), elite_count)
             return "output", v
         # order-quality effects, converted to a rough efficiency-equivalent %.
         # payout skills (테킬라 용문폐 보너스, 프로바이조 위약 배상) scale with
@@ -337,7 +343,10 @@ for o in operators:
         sk.pop("_roboCap", None); sk.pop("_roboUse", None)
     if skills:
         infra_ops.append({"id": o["id"], "name": o["name"], "rarity": o["rarity"],
-                          "faction": o["faction"], "accent": o["accent"], "image": o["image"],
+                          "faction": o["faction"],
+                          # 다중 소속 (마터호른 = 카란 무역회사 + 쉐라그) — 진영 카운트·게이트는 전부 인정
+                          "factions": o.get("factions") or [o["faction"]],
+                          "accent": o["accent"], "image": o["image"],
                           "seq": release_seq.get(o["id"], -1),
                           "skills": skills})
 
