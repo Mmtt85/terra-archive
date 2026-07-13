@@ -961,7 +961,7 @@ export default function InfraPlanner({ onShowOperator }: { onShowOperator?: (id:
         <div className="planner-buttons">
           <button onClick={() => setShowRoster(true)}>보유 오퍼 설정 ({ownedIds.size}/{ops.length})</button>
           <button className="primary" onClick={() => runOptimize()}>전체 자동편성</button>
-          <button onClick={fillGaps} title="현재 편성(수동 수정 포함)은 그대로 두고 빈 자리만 효율 순으로 채웁니다">빈 칸 채우기</button>
+          <button onClick={fillGaps} title="현재 편성(수동 수정 포함)은 그대로 두고, 남은 빈 자리만 효율 순으로 자동 편성합니다">빈 자리만 자동편성</button>
           <button onClick={exportImage} title="A조·B조 편성표를 이미지로 확인 (PNG)">이미지로 보기</button>
           <span className="file-group">
             <button className={dirty ? "save-pending" : undefined} onClick={exportState} title={dirty ? "저장 후 변경 사항이 있습니다 — 파일로 저장하세요" : "보유 오퍼와 편성을 JSON 파일로 저장"}>현재 상태 파일로 저장</button>
@@ -1442,7 +1442,7 @@ const HELP_SECTIONS: { title: string; items: string[] }[] = [
     "A조가 풀파워 주력이고 모든 시너지 세트는 A조에 모입니다. B조는 A조 컨디션이 소진됐을 때 투입되는 회복 교대입니다 (12시간 2조).",
     "숙소·시너지 고정 요원(숙소 생성원, 니엔 등)은 A/B 전환과 무관하게 고정됩니다. 응접실도 A/B 교대로 운영합니다 — 같은 인원을 24시간 돌리지 않습니다.",
     "훈련실은 실제 스킬 특화 훈련에 쓰도록 비워 둡니다.",
-    "'전체 자동편성'은 처음부터 다시 계산하고, '빈 칸 채우기'는 현재 편성(수동 수정 포함)을 유지한 채 빈 자리만 한계 기여 순으로 채웁니다.",
+    "'전체 자동편성'은 처음부터 다시 계산하고, '빈 자리만 자동편성'은 현재 편성(수동 수정 포함)을 유지한 채 남은 빈 자리만 한계 기여 순으로 채웁니다.",
   ]},
   { title: "방 우선순위", items: [
     "채우는 순서: 제조소-순금 > 제조소-작전기록 > 무역소 > 발전소 > 사무실 > 응접실 — 먼저 채우는 방이 좋은 요원을 가져갑니다. 응접실은 최하위라, 응접실 스킬이 있는 오퍼(쉐라 등)도 상위 방 세트가 우선입니다.",
