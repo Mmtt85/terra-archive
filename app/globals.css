@@ -297,8 +297,9 @@ footer p { margin:0 }
 .ship-room-head { display:flex; justify-content:space-between; align-items:center }
 .ship-room-head b { font-size:13px; letter-spacing:-.4px }
 .ship-room-head span { color:var(--room-accent); font:800 10px monospace }
-.ship-room-crew { display:flex; flex-wrap:wrap; gap:5px; margin-top:9px; min-height:44px }
-.ship-room-crew img { width:42px; height:42px; object-fit:cover; border:1px solid #3a4144; background:#0e1213 }
+/* 한 줄 고정 — 5인 방(제어센터 등)은 썸네일이 자동으로 줄어들어 줄바꿈 없이 들어간다 */
+.ship-room-crew { display:flex; flex-wrap:nowrap; gap:5px; margin-top:9px; min-height:44px }
+.ship-room-crew img { flex:0 1 42px; min-width:0; width:42px; height:auto; aspect-ratio:1/1; object-fit:cover; border:1px solid #3a4144; background:#0e1213 }
 .ship-room-crew i { color:#5d686c; font-size:9px; font-style:normal; align-self:center }
 .ship-room > small { display:block; margin-top:7px; color:var(--room-accent); font:800 9px monospace; letter-spacing:.5px }
 .pos-control.ship-room { min-height:110px; background:linear-gradient(120deg,#1d2325,#12161a) }
