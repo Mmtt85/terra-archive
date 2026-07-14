@@ -3,7 +3,7 @@
 // 3개 탭(백과사전·플래너·공채)의 공용 루트. 로케일별 라우트(/ /en /ja)가
 // home-ko/en/ja.tsx 래퍼로 해당 언어의 operators 데이터를 정적 import해 넘긴다 —
 // 런타임 언어 전환은 전체 내비게이션이라 이 컴포넌트 안에서 로케일은 불변이다.
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import broadcastsData from "./data/broadcasts.json";
 import InfraPlanner from "./planner";
@@ -98,8 +98,22 @@ const JOB_ORDER = ["PIONEER", "WARRIOR", "TANK", "SNIPER", "CASTER", "MEDIC", "S
 
 const SORT_KEYS = ["기본", "이름", "성급", "발매순", "소속", "출신지", "종족", "직군", "세부 직군"];
 
-function tabFromHash(hash: string): "archive" | "planner" | "recruit" | "farm" | "story" {
-  return hash === "#infra" ? "planner" : hash === "#recruit" ? "recruit" : hash === "#farm" ? "farm" : hash.startsWith("#story") ? "story" : "archive";
+export type Tab = "archive" | "planner" | "recruit" | "farm" | "story";
+// 탭 ↔ URL 세그먼트 (archive는 로케일 루트). seo.ts의 TAB_SEG·라우트 폴더명과 일치.
+const TAB_SEG: Record<Tab, string> = { archive: "", planner: "infra", recruit: "recruit", farm: "farm", story: "story" };
+const SEG_TAB: Record<string, Tab> = { "": "archive", infra: "planner", recruit: "recruit", farm: "farm", story: "story" };
+const LOCALE_BASE: Record<Locale, string> = { ko: "", en: "/en", ja: "/ja" };
+
+// 현재 pathname → 탭 (로케일 프리픽스 제거 후 세그먼트 매핑)
+function tabFromPath(pathname: string): Tab {
+  let p = pathname;
+  if (p === "/en" || p.startsWith("/en/")) p = p.slice(3);
+  else if (p === "/ja" || p.startsWith("/ja/")) p = p.slice(3);
+  return SEG_TAB[p.replace(/^\/+/, "").replace(/\/+$/, "")] ?? "archive";
+}
+// 구 해시(#infra 등) → 탭 (하위호환 리다이렉트용). op 해시나 일반 해시는 null.
+function tabFromLegacyHash(hash: string): Tab | null {
+  return hash === "#infra" ? "planner" : hash === "#recruit" ? "recruit" : hash === "#farm" ? "farm" : hash.startsWith("#story") ? "story" : null;
 }
 
 // ── 공식 방송 ─────────────────────────────────────────────
@@ -326,15 +340,15 @@ function rememberNickSent(opId: string, name: string) {
   } catch { /* ignore */ }
 }
 
-export default function Home({ locale, operators, extra }: { locale: Locale; operators: Operator[]; extra: ExtraI18n | null }) {
+export default function Home({ locale, operators, extra, initialTab = "archive" }: { locale: Locale; operators: Operator[]; extra: ExtraI18n | null; initialTab?: Tab }) {
   return (
     <I18nProvider locale={locale}>
-      <HomeInner operators={operators} extra={extra} />
+      <HomeInner operators={operators} extra={extra} initialTab={initialTab} />
     </I18nProvider>
   );
 }
 
-function HomeInner({ operators, extra }: { operators: Operator[]; extra: ExtraI18n | null }) {
+function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; extra: ExtraI18n | null; initialTab: Tab }) {
   const { locale, t } = useI18n();
   const [selectedFactions, setSelectedFactions] = useState<string[]>([]);
   const [selectedConcepts, setSelectedConcepts] = useState<string[]>([]);
@@ -344,11 +358,15 @@ function HomeInner({ operators, extra }: { operators: Operator[]; extra: ExtraI1
   const [selectedJobs, setSelectedJobs] = useState<string[]>([]);
   const [selectedSubProfessions, setSelectedSubProfessions] = useState<string[]>([]);
   const [selected, setSelected] = useState<Operator | null>(null);
-  // 서버 렌더는 해시를 모르므로 항상 "archive"로 시작 — hydration 직후
-  // useLayoutEffect가 페인트 전에 동기적으로 올바른 탭으로 맞춘다 (깜빡임 방지 +
-  // hydration mismatch 방지, useState 초기값에서 window.location.hash를
-  // 직접 읽으면 서버/클라이언트 첫 렌더가 갈려서 hydration 에러가 난다)
-  const [tab, setTab] = useState<"archive" | "planner" | "recruit" | "farm" | "story">("archive");
+  // 경로 기반 라우팅: 서버가 라우트별로 올바른 탭을 렌더하므로 initialTab을 그대로
+  // 초기값으로 쓴다 (SSR/클라이언트 첫 렌더 일치 → hydration mismatch 없음).
+  const [tab, setTab] = useState<Tab>(initialTab);
+  const localeBase = LOCALE_BASE[locale];
+  // 탭 → 로케일 포함 경로 (예: planner + en → "/en/infra", archive + ko → "/")
+  const tabPath = useCallback((tb: Tab) => {
+    const seg = TAB_SEG[tb];
+    return (localeBase + (seg ? `/${seg}` : "")) || "/";
+  }, [localeBase]);
 
   // 필터 항목은 전부 현재 로케일 데이터에서 유도한다 — 값과 표시가 항상 일치
   const factions = useMemo(() =>
@@ -426,13 +444,28 @@ function HomeInner({ operators, extra }: { operators: Operator[]; extra: ExtraI1
   }, [locale]);
 
   useLayoutEffect(() => {
-    // 첫 페인트 플래시 방지용 data-route는 이제 React가 탭을 제어하므로 해제한다
-    // (남겨두면 클라이언트에서 백과사전 탭으로 이동해도 CSS가 계속 숨겨버린다)
+    // 구 해시 링크(#infra 등) 하위호환 — 서버는 경로 기준으로 archive를 렌더하므로,
+    // 첫 페인트 script가 data-route로 잠깐 가려둔 걸 경로로 치환하고 탭을 맞춘다.
+    const legacy = tabFromLegacyHash(decodeURIComponent(window.location.hash));
+    if (legacy) {
+      setTab(legacy);
+      history.replaceState(null, "", tabPath(legacy));
+    }
+    // React가 탭을 제어하므로 data-route(첫 페인트 플래시 방지용)는 이제 해제한다.
     document.documentElement.removeAttribute("data-route");
-    const applyHash = () => {
+
+    // 첫 진입이 딥링크(/#op-xxx)면 모달을 연다 (탭은 initialTab=경로 기준으로 이미 맞음).
+    const hash0 = decodeURIComponent(window.location.hash);
+    if (hash0.startsWith("#op-")) {
+      const op = operators.find((candidate) => candidate.id === hash0.slice(4));
+      if (op) setSelected(op);
+    }
+
+    // 뒤로/앞으로 및 해시 변경 시 URL(경로+해시)로 탭·모달을 동기화한다.
+    const syncFromUrl = () => {
       const hash = decodeURIComponent(window.location.hash);
+      setTab(tabFromPath(window.location.pathname));
       if (hash.startsWith("#op-")) {
-        setTab("archive");
         const operator = operators.find((candidate) => candidate.id === hash.slice(4));
         if (operator) setSelected(operator);
         return;
@@ -440,14 +473,12 @@ function HomeInner({ operators, extra }: { operators: Operator[]; extra: ExtraI1
       // op 해시가 아니면 열려 있던 모달을 닫는다 (뒤로가기로 닫기)
       pushedModalRef.current = false;
       setSelected(null);
-      setTab(tabFromHash(hash));
     };
-    applyHash();
-    window.addEventListener("hashchange", applyHash);
-    window.addEventListener("popstate", applyHash);
+    window.addEventListener("hashchange", syncFromUrl);
+    window.addEventListener("popstate", syncFromUrl);
     return () => {
-      window.removeEventListener("hashchange", applyHash);
-      window.removeEventListener("popstate", applyHash);
+      window.removeEventListener("hashchange", syncFromUrl);
+      window.removeEventListener("popstate", syncFromUrl);
     };
     // operators는 라우트 수명 동안 불변 (로케일 전환 = 전체 내비게이션)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -470,17 +501,17 @@ function HomeInner({ operators, extra }: { operators: Operator[]; extra: ExtraI1
 
   const openOperator = (operator: Operator) => {
     setSelected(operator);
-    history.pushState(null, "", `#op-${operator.id}`);
+    history.pushState(null, "", `${tabPath(tab)}#op-${operator.id}`);
     pushedModalRef.current = true;
   };
   const closeOperator = () => {
     if (pushedModalRef.current) {
       pushedModalRef.current = false;
-      history.back(); // popstate → applyHash가 모달을 닫고 이전 해시 복원
+      history.back(); // popstate → syncFromUrl이 모달을 닫고 이전 URL 복원
       return;
     }
     setSelected(null);
-    history.replaceState(null, "", tab === "planner" ? "#infra" : tab === "recruit" ? "#recruit" : tab === "farm" ? "#farm" : tab === "story" ? "#story" : window.location.pathname);
+    history.replaceState(null, "", tabPath(tab));
   };
   // 플래너 등 다른 탭 위에서 모달만 띄울 때 — URL은 그대로 두고 히스토리만 한 칸 쌓는다
   const showOperatorById = (id: string) => {
@@ -491,14 +522,11 @@ function HomeInner({ operators, extra }: { operators: Operator[]; extra: ExtraI1
     pushedModalRef.current = true;
   };
 
-  const switchTab = (next: "archive" | "planner" | "recruit" | "farm" | "story") => {
+  const switchTab = (next: Tab) => {
+    if (next === tab && !selected) return;
     setTab(next);
     setSelected(null);
-    if (next === "planner") window.location.hash = "infra";
-    else if (next === "recruit") window.location.hash = "recruit";
-    else if (next === "farm") window.location.hash = "farm";
-    else if (next === "story") window.location.hash = "story";
-    else history.replaceState(null, "", window.location.pathname);
+    history.pushState(null, "", tabPath(next));
   };
   const [sortKey, setSortKey] = useState("기본");
   const [sortAsc, setSortAsc] = useState(true);

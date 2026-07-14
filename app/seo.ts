@@ -5,13 +5,54 @@ import type { Metadata } from "next";
 export const SITE_URL = "https://terra-archive.pages.dev";
 
 type SeoLocale = "ko" | "en" | "ja";
+export type SeoTab = "archive" | "planner" | "recruit" | "farm" | "story";
 
-// hreflang 상호 참조 — 세 언어 모두 같은 언어 목록을 선언해야 한다
-const LANGUAGES = {
-  ko: `${SITE_URL}/`,
-  en: `${SITE_URL}/en`,
-  ja: `${SITE_URL}/ja`,
-  "x-default": `${SITE_URL}/`,
+// 탭 → URL 세그먼트 (archive는 로케일 루트). 라우트 폴더명과 반드시 일치.
+export const TAB_SEG: Record<SeoTab, string> = {
+  archive: "", planner: "infra", recruit: "recruit", farm: "farm", story: "story",
+};
+
+// 로케일 베이스 경로
+const LOCALE_BASE: Record<SeoLocale, string> = { ko: "", en: "/en", ja: "/ja" };
+
+function pathFor(locale: SeoLocale, tab: SeoTab): string {
+  const seg = TAB_SEG[tab];
+  const p = LOCALE_BASE[locale] + (seg ? `/${seg}` : "");
+  return p || "/";
+}
+
+// 같은 탭의 세 언어 상호 참조 (hreflang). 탭별로 언어 세트가 달라진다.
+function languagesFor(tab: SeoTab) {
+  return {
+    ko: `${SITE_URL}${pathFor("ko", tab)}`,
+    en: `${SITE_URL}${pathFor("en", tab)}`,
+    ja: `${SITE_URL}${pathFor("ja", tab)}`,
+    "x-default": `${SITE_URL}${pathFor("ko", tab)}`,
+  };
+}
+
+// 탭별 제목·설명 (archive는 아래 META의 기본값 사용)
+const TAB_META: Record<Exclude<SeoTab, "archive">, Record<SeoLocale, { title: string; description: string }>> = {
+  planner: {
+    ko: { title: "인프라 플래너 - 명일방주 기반시설 편성 | 테라 아카이브", description: "명일방주 기반시설(RIIC) 자동 편성 플래너 — 보유 오퍼레이터로 제조소·무역소·발전소 최적 배치를 계산합니다." },
+    en: { title: "Base Planner - Arknights RIIC Base | Terra Archive", description: "Arknights RIIC base auto-assignment planner — computes the optimal factory, trading post, and power plant layout from your roster." },
+    ja: { title: "基地プランナー - アークナイツ基地編成 | テラアーカイブ", description: "アークナイツ基地（インフラ）自動編成プランナー — 手持ちオペレーターで製造所・貿易所・発電所の最適配置を計算します。" },
+  },
+  recruit: {
+    ko: { title: "공채 도우미 - 명일방주 공개모집 계산기 | 테라 아카이브", description: "명일방주 공개모집(공채) 태그 계산기 — 태그 조합으로 확정·고성급 오퍼레이터를 찾아줍니다." },
+    en: { title: "Recruit Helper - Arknights Recruitment Calculator | Terra Archive", description: "Arknights recruitment tag calculator — finds guaranteed and high-rarity operators from your tag combinations." },
+    ja: { title: "公開求人ヘルパー - アークナイツ公開求人計算機 | テラアーカイブ", description: "アークナイツ公開求人タグ計算機 — タグの組み合わせから確定・高レアオペレーターを見つけます。" },
+  },
+  farm: {
+    ko: { title: "재료 파밍 효율표 - 명일방주 파밍 가이드 | 테라 아카이브", description: "명일방주 재료 파밍 효율표 — 재료별 최적 파밍 스테이지와 이성 효율을 정리했습니다." },
+    en: { title: "Material Farming Efficiency - Arknights Farming Guide | Terra Archive", description: "Arknights material farming efficiency table — the best stage and sanity efficiency for each material." },
+    ja: { title: "素材周回効率表 - アークナイツ周回ガイド | テラアーカイブ", description: "アークナイツ素材周回効率表 — 素材ごとの最適ステージと理性効率をまとめました。" },
+  },
+  story: {
+    ko: { title: "AI 이벤트 스토리 요약 - 명일방주 이벤트 스토리 요약 | 테라 아카이브", description: "명일방주 이벤트 스토리 AI 요약 아카이브 — 사이드 스토리를 컷씬과 함께 10분 분량으로 요약합니다." },
+    en: { title: "AI Event Story Digest - Arknights Event Story Summaries | Terra Archive", description: "AI-written Arknights event story digest archive — side stories summarized with cutscenes in a 10-minute read." },
+    ja: { title: "AIイベントストーリー要約 - アークナイツイベントストーリー要約 | テラアーカイブ", description: "アークナイツのイベントストーリーAI要約アーカイブ — サイドストーリーをカットシーンと共に10分で要約します。" },
+  },
 };
 
 const META: Record<SeoLocale, {
@@ -48,18 +89,21 @@ const META: Record<SeoLocale, {
   },
 };
 
-export function pageMetadata(locale: SeoLocale): Metadata {
+export function pageMetadata(locale: SeoLocale, tab: SeoTab = "archive"): Metadata {
   const meta = META[locale];
-  const url = `${SITE_URL}${meta.path}`;
+  const tabMeta = tab === "archive" ? null : TAB_META[tab][locale];
+  const title = tabMeta?.title ?? meta.title;
+  const description = tabMeta?.description ?? meta.description;
+  const url = `${SITE_URL}${pathFor(locale, tab)}`;
   return {
-    title: meta.title,
-    description: meta.description,
+    title,
+    description,
     keywords: meta.keywords,
-    alternates: { canonical: url, languages: LANGUAGES },
+    alternates: { canonical: url, languages: languagesFor(tab) },
     robots: { index: true, follow: true },
     openGraph: {
-      title: meta.title,
-      description: meta.description,
+      title,
+      description,
       type: "website",
       url,
       siteName: meta.siteName,
@@ -67,19 +111,20 @@ export function pageMetadata(locale: SeoLocale): Metadata {
       alternateLocale: Object.values(META).filter((m) => m !== meta).map((m) => m.ogLocale),
       images: [{ url: "/og.png", width: 1200, height: 630, alt: meta.siteName }],
     },
-    twitter: { card: "summary_large_image", title: meta.title, description: meta.description, images: ["/og.png"] },
+    twitter: { card: "summary_large_image", title, description, images: ["/og.png"] },
   };
 }
 
-export function jsonLdFor(locale: SeoLocale) {
+export function jsonLdFor(locale: SeoLocale, tab: SeoTab = "archive") {
   const meta = META[locale];
+  const tabMeta = tab === "archive" ? null : TAB_META[tab][locale];
   return {
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: meta.siteName,
     alternateName: ["Terra Archive", "테라 아카이브", "テラアーカイブ", "명일방주 팬사이트"],
-    url: `${SITE_URL}${meta.path}`,
-    description: meta.description,
+    url: `${SITE_URL}${pathFor(locale, tab)}`,
+    description: tabMeta?.description ?? meta.description,
     inLanguage: locale,
   };
 }
