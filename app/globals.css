@@ -102,6 +102,8 @@ button { color:inherit }
 .filter-panel::-webkit-scrollbar-thumb { background:#b9bbb5; border-radius:10px }
 .results::-webkit-scrollbar-thumb { background:#b9bbb5; border-radius:10px }
 .panel-heading,.results-heading { border-bottom:2px solid var(--ink); justify-content:space-between; align-items:end; padding-bottom:16px; display:flex }
+.results-heading { position:sticky; top:0; z-index:6; background:var(--paper); padding-top:6px }
+.results-heading > div:first-child { flex:none }
 .panel-heading h2,.results-heading h2 { letter-spacing:-1.2px; margin:6px 0 0; font-size:24px }
 .reset { color:var(--muted); cursor:pointer; background:0 0; border:0; padding:7px 0; font-size:11px }
 .reset:hover { color:var(--ink) }
@@ -109,11 +111,16 @@ button { color:inherit }
 .search-wrap { background:var(--white); border:1px solid #bbbcb7; align-items:center; display:flex }
 .search-wrap span { padding-left:12px; font-size:22px }
 .search-wrap input { background:0 0; border:0; outline:0; width:100%; min-width:0; padding:12px 11px; font-size:13px }
-.heading-search { flex:1 1 auto; max-width:340px; margin:0 20px; align-self:center }
-.heading-search span { font-size:18px }
-.heading-search input { padding:9px 4px 9px 8px }
+.heading-search { flex:1 1 auto; max-width:340px; height:38px; margin:0 20px; align-self:end }
+.heading-search span { font-size:17px }
+.heading-search input { height:100%; padding:0 4px 0 8px }
 .search-clear { border:0; background:0 0; cursor:pointer; font-size:19px; line-height:1; padding:0 12px; color:var(--muted); flex:none }
 .search-clear:hover { color:var(--ink) }
+/* 제목·검색·정렬을 같은 하단선/높이(38px)로 정렬 */
+.results-tools { align-self:end }
+.results-heading .sort-wrap { height:38px }
+.results-heading .sort-wrap select { height:38px }
+.results-heading .sort-direction { width:38px; height:38px }
 @media (width<=760px) { .results-heading { flex-wrap:wrap } .heading-search { order:3; flex-basis:100%; max-width:none; margin:12px 0 0 } }
 fieldset { border:0; margin:28px 0 0; padding:0 }
 legend { margin-bottom:10px; font-size:11px; font-weight:900 }
