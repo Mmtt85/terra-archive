@@ -603,9 +603,6 @@ function HomeInner({ operators, extra }: { operators: Operator[]; extra: ExtraI1
             <div><span className="section-no">FILTER / 01</span><h2 id="explorer-title">{t("탐색 조건")}</h2></div>
             <button className="reset" onClick={reset}>↻ {t("초기화")}</button>
           </div>
-          <label className="search-label" htmlFor="operator-search">{t("오퍼레이터 검색")}</label>
-          <div className="search-wrap"><span>⌕</span><input id="operator-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("이름, 별명, 직군, 효과 검색")} /></div>
-
           <FilterGroup title={t("컨셉덱")} items={concepts} labelFor={(item) => conceptName(locale, item)} selected={selectedConcepts} onToggle={toggleIn(setSelectedConcepts)} rows={2} countForItem={(item) => operators.filter((operator) => operator.concepts.includes(item)).length} />
           <FilterGroup title={t("직군")} items={jobs} selected={selectedJobs} onToggle={toggleIn(setSelectedJobs)} countForItem={(item) => operators.filter((operator) => operator.job === item).length} />
           <FilterGroup title={t("세부 직군")} items={subProfessions} selected={selectedSubProfessions} onToggle={toggleIn(setSelectedSubProfessions)} countForItem={(item) => operators.filter((operator) => operator.subProfession === item).length} />
@@ -619,6 +616,11 @@ function HomeInner({ operators, extra }: { operators: Operator[]; extra: ExtraI1
         <div className="results">
           <div className="results-heading">
             <div><span className="section-no">RESULT / 02</span><h2>{selectedConcepts.length === 1 ? t("{concept} 컨셉덱", { concept: conceptName(locale, selectedConcepts[0]) }) : selectedFactions.length === 1 ? selectedFactions[0] : hasActiveFilter ? t("탐색 결과") : t("전체 오퍼레이터")}</h2></div>
+            <div className="search-wrap heading-search">
+              <span>⌕</span>
+              <input id="operator-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("이름, 별명, 직군, 효과 검색")} />
+              {query && <button type="button" className="search-clear" onClick={() => setQuery("")} aria-label={t("검색어 지우기")}>×</button>}
+            </div>
             <div className="results-tools">
               <label className="sort-wrap">
                 <span>{t("정렬")}</span>

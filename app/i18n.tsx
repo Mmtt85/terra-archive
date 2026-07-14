@@ -91,7 +91,6 @@ const CONCEPT_I18N: Record<string, Pair> = {
   "음유시인": ["Bard", "吟遊詩人"],
   "리퍼": ["Reaper", "リーパー"],
   "함정": ["Trap", "トラップ"],
-  "침묵": ["Silence", "沈黙"],
   "포트리스": ["Fortress", "フォートレス"],
   "공포": ["Fear", "恐怖"],
   "체력 소모": ["HP Drain", "HP消耗"],

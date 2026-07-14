@@ -109,6 +109,12 @@ button { color:inherit }
 .search-wrap { background:var(--white); border:1px solid #bbbcb7; align-items:center; display:flex }
 .search-wrap span { padding-left:12px; font-size:22px }
 .search-wrap input { background:0 0; border:0; outline:0; width:100%; min-width:0; padding:12px 11px; font-size:13px }
+.heading-search { flex:1 1 auto; max-width:340px; margin:0 20px; align-self:center }
+.heading-search span { font-size:18px }
+.heading-search input { padding:9px 4px 9px 8px }
+.search-clear { border:0; background:0 0; cursor:pointer; font-size:19px; line-height:1; padding:0 12px; color:var(--muted); flex:none }
+.search-clear:hover { color:var(--ink) }
+@media (width<=760px) { .results-heading { flex-wrap:wrap } .heading-search { order:3; flex-basis:100%; max-width:none; margin:12px 0 0 } }
 fieldset { border:0; margin:28px 0 0; padding:0 }
 legend { margin-bottom:10px; font-size:11px; font-weight:900 }
 .multi-hint { color:var(--muted); margin-left:7px; font-size:8px; font-weight:600 }
@@ -378,10 +384,9 @@ footer p { margin:0 }
 .bulk-group button { border:1px solid var(--line); background:var(--white); padding:5px 8px; font-size:10px; font-weight:800; cursor:pointer }
 .bulk-group button:hover { border-color:var(--ink) }
 /* 정렬 바 — 오퍼 리스트 바로 위 (어두운 모달 톤에 맞춰 흰 글씨) */
-.roster-sortbar { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 0 10px }
-.roster-sortbar .sort-wrap { color:#ffffffaa }
-.roster-sortbar .count { color:#ffffff88 }
-.roster-sortbar .count b { color:#fff }
+.roster-sortbar { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 0 12px }
+.roster-sortbar .count { color:var(--muted); font:700 10px monospace; letter-spacing:1px }
+.roster-sortbar .count b { color:var(--ink) }
 .roster-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(108px,1fr)); gap:7px }
 .roster-card { display:flex; flex-direction:column; border:1px solid var(--line); background:#f0efe9; opacity:.45; transition:.12s }
 .roster-card.owned { opacity:1; background:var(--white); border-color:var(--ink) }
