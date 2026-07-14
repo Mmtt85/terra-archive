@@ -9,7 +9,7 @@ export type SeoTab = "archive" | "planner" | "recruit" | "farm" | "story";
 
 // 탭 → URL 세그먼트 (archive는 로케일 루트). 라우트 폴더명과 반드시 일치.
 export const TAB_SEG: Record<SeoTab, string> = {
-  archive: "", planner: "infra", recruit: "recruit", farm: "farm", story: "story",
+  archive: "", planner: "infra", recruit: "recruit", farm: "farm", story: "stories",
 };
 
 // 로케일 베이스 경로
