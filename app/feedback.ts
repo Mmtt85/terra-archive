@@ -88,6 +88,30 @@ export async function adminSetReviewed(password: string, id: string, reviewed: b
   if (!res.ok) throw new Error(`갱신 실패 (${res.status})`);
 }
 
+// '대응중' 상태 — 스키마 변경 없이 payload.handling(ISO 문자열)로 저장한다.
+// (신규 → 대응중 → 확인완료 3단계. 대응중은 "나중에 진위 검토할 과제"로 모아두는 용도)
+export function handlingAt(payload: unknown): string | null {
+  const value = payload && typeof payload === "object" ? (payload as { handling?: unknown }).handling : null;
+  return typeof value === "string" && value ? value : null;
+}
+
+// 기존 payload를 보존한 채 handling 키만 갱신 (plan 제안의 shifts/score 등을 지우지 않도록 병합)
+export function withHandling(payload: unknown, handling: boolean): Record<string, unknown> {
+  const base = payload && typeof payload === "object" ? { ...(payload as Record<string, unknown>) } : {};
+  if (handling) base.handling = new Date().toISOString();
+  else delete base.handling;
+  return base;
+}
+
+export async function adminSetHandling(password: string, id: string, payload: unknown, handling: boolean) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/feedback?id=eq.${id}`, {
+    method: "PATCH",
+    headers: { ...adminHeaders(password), "Content-Type": "application/json", Prefer: "return=minimal" },
+    body: JSON.stringify({ payload: withHandling(payload, handling) }),
+  });
+  if (!res.ok) throw new Error(`갱신 실패 (${res.status})`);
+}
+
 export async function adminDeleteFeedback(password: string, id: string) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/feedback?id=eq.${id}`, {
     method: "DELETE",

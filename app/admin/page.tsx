@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { adminDeleteFeedback, adminDeleteNickname, adminListFeedback, adminSetReviewed, fetchNicknameCounts, type FeedbackRow, type NicknameCount } from "../feedback";
+import { adminDeleteFeedback, adminDeleteNickname, adminListFeedback, adminSetHandling, adminSetReviewed, handlingAt, withHandling, fetchNicknameCounts, type FeedbackRow, type NicknameCount } from "../feedback";
 import operatorsData from "../data/operators.json";
 import recruitData from "../data/recruit.json";
 import farmData from "../data/farm.json";
@@ -39,6 +39,7 @@ export default function AdminPage() {
   const [rows, setRows] = useState<FeedbackRow[]>([]);
   const [status, setStatus] = useState("");
   const [filter, setFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all"); // all | open | handling | reviewed
   const [nicknames, setNicknames] = useState<NicknameCount[]>([]);
   const [dataCheck, setDataCheck] = useState<DataCheck | null>(null);
 
@@ -89,6 +90,33 @@ export default function AdminPage() {
     }
   };
 
+  const toggleHandling = async (row: FeedbackRow) => {
+    const next = !handlingAt(row.payload);
+    try {
+      await adminSetHandling(password, row.id, row.payload, next);
+      setRows((current) => current.map((item) => item.id === row.id ? { ...item, payload: withHandling(item.payload, next) } : item));
+    } catch {
+      setStatus("갱신 실패");
+    }
+  };
+
+  // "한꺼번에 대응중" — 지금 보이는 목록 중 아직 대응중이 아닌 항목을 일괄 표시
+  const markShownHandling = async () => {
+    const targets = shown.filter((row) => !handlingAt(row.payload));
+    if (!targets.length) { setStatus("이미 모두 대응중입니다"); return; }
+    if (!window.confirm(`표시된 ${targets.length}건을 대응중으로 표시할까요?`)) return;
+    setStatus(`대응중 표시 중… (0/${targets.length})`);
+    let done = 0;
+    for (const row of targets) {
+      try {
+        await adminSetHandling(password, row.id, row.payload, true);
+        setRows((current) => current.map((item) => item.id === row.id ? { ...item, payload: withHandling(item.payload, true) } : item));
+      } catch { /* 개별 실패는 건너뛴다 */ }
+      setStatus(`대응중 표시 중… (${++done}/${targets.length})`);
+    }
+    setStatus(`${done}건 대응중 표시 완료`);
+  };
+
   const remove = async (id: string) => {
     if (!window.confirm("이 항목을 삭제할까요?")) return;
     try {
@@ -99,10 +127,17 @@ export default function AdminPage() {
     }
   };
 
-  // 확인완료 안 된 항목을 위로 — 같은 그룹 안에서는 최신순
+  // 상태: 확인완료 > 대응중 > 신규. 확인완료를 아래로, 그 위에 대응중, 맨 위 신규 — 같은 그룹은 최신순
+  const statusRank = (row: FeedbackRow) => (row.reviewed_at ? 2 : handlingAt(row.payload) ? 1 : 0);
+  const matchStatus = (row: FeedbackRow) =>
+    statusFilter === "all" ? true
+    : statusFilter === "reviewed" ? Boolean(row.reviewed_at)
+    : statusFilter === "handling" ? Boolean(handlingAt(row.payload)) && !row.reviewed_at
+    : /* open */ !row.reviewed_at && !handlingAt(row.payload);
   const shown = rows
-    .filter((row) => filter === "all" || row.kind === filter)
-    .sort((a, b) => (a.reviewed_at ? 1 : 0) - (b.reviewed_at ? 1 : 0) || Date.parse(b.created_at) - Date.parse(a.created_at));
+    .filter((row) => (filter === "all" || row.kind === filter) && matchStatus(row))
+    .sort((a, b) => statusRank(a) - statusRank(b) || Date.parse(b.created_at) - Date.parse(a.created_at));
+  const handlingCount = rows.filter((row) => handlingAt(row.payload) && !row.reviewed_at).length;
 
   // 게임 데이터 비교 — 획득 불가(가짜 게스트·컬래버 잔재 등)는 사이트가 의도적으로
   // 제외한 것이므로 obtainable=true만 신규로 판정한다
@@ -152,6 +187,14 @@ export default function AdminPage() {
           <button onClick={() => load(password)}>새로고침</button>
           <button onClick={() => { sessionStorage.removeItem("ta-admin-key"); setEntered(false); setRows([]); }}>잠금</button>
         </div>
+        <div className="admin-tools admin-status-tools">
+          {([["all", "전체 상태"], ["open", "신규"], ["handling", "대응중"], ["reviewed", "확인완료"]] as const).map(([key, label]) => (
+            <button key={key} className={statusFilter === key ? "selected" : ""} onClick={() => setStatusFilter(key)}>
+              {label}{key === "handling" && handlingCount ? ` (${handlingCount})` : ""}
+            </button>
+          ))}
+          <button className="bulk-handling-btn" onClick={markShownHandling} title="지금 보이는 목록을 한꺼번에 대응중으로 표시">🔧 표시된 항목 일괄 대응중</button>
+        </div>
       </header>
       {status && <p className="admin-status">{status}</p>}
 
@@ -197,7 +240,7 @@ export default function AdminPage() {
 
       <div className="admin-list">
         {shown.map((row) => (
-          <article key={row.id} className={`admin-row kind-${row.kind}${row.reviewed_at ? " reviewed" : ""}`}>
+          <article key={row.id} className={`admin-row kind-${row.kind}${row.reviewed_at ? " reviewed" : ""}${handlingAt(row.payload) && !row.reviewed_at ? " handling" : ""}`}>
             <header>
               <code className="fb-id" title={`${row.id} — 클릭하면 전체 ID 복사`}
                 onClick={() => { navigator.clipboard?.writeText(row.id).then(() => setStatus(`ID 복사됨: ${row.id}`)).catch(() => {}); }}>
@@ -209,8 +252,10 @@ export default function AdminPage() {
                   📍 {pageLabel(pageOf(row.payload)!)}
                 </a>
               )}
+              {handlingAt(row.payload) && !row.reviewed_at && <i className="handling-badge" title={new Date(handlingAt(row.payload)!).toLocaleString("ko-KR")}>🔧 대응중</i>}
               {row.reviewed_at && <i className="reviewed-badge" title={new Date(row.reviewed_at).toLocaleString("ko-KR")}>✓ 확인됨</i>}
               <time>{new Date(row.created_at).toLocaleString("ko-KR")}</time>
+              <button className="handling-btn" onClick={() => toggleHandling(row)}>{handlingAt(row.payload) ? "대응 해제" : "대응중"}</button>
               <button className="review-btn" onClick={() => toggleReviewed(row)}>{row.reviewed_at ? "확인 취소" : "확인완료"}</button>
               <button onClick={() => remove(row.id)}>삭제</button>
             </header>
