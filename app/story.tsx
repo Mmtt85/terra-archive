@@ -9,6 +9,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import storiesData from "./data/stories.json";
 import summariesData from "./data/story-summaries.json";
+import chronologyData from "./data/chronology.json";
 import { rich, useI18n, type Locale } from "./i18n";
 
 type LocText = { ko: string; en?: string; ja?: string };
@@ -21,8 +22,17 @@ type Block =
 type Entity = { name: string; desc: string; img?: string; alias?: string[]; op?: string };
 type Summary = { tagline: string; chars?: Entity[]; terms?: Entity[]; blocks: Block[] };
 
+// 테라 연대기 (app/data/chronology.json — 손수 큐레이트하는 스캐폴드).
+type ChronKind = "event" | "main" | "roguelike";
+type Arc = { id: string; name: LocText };
+type RawEntry = { ref?: string; id?: string; kind: ChronKind; title?: LocText; terraYear?: number | null; arc?: string | null };
+type Chronology = { note: string; updated?: string; arcs: Arc[]; entries: RawEntry[] };
+// 연대기 항목 하나(이벤트 ref는 stories.json에서 이름·썸네일·출시월을 끌어온다)
+type ChronItem = { key: string; kind: ChronKind; name: LocText; start?: string; thumb?: string; terraYear: number | null; arc: string | null; eventId?: string };
+
 const data = storiesData as { updated: string; events: StoryEvent[] };
 const summaries = summariesData as Record<string, Summary>;
+const chronology = chronologyData as Chronology;
 
 function locText(locale: Locale, text: LocText): string {
   return (locale === "ko" ? text.ko : text[locale]) ?? text.ko;
@@ -168,9 +178,122 @@ function StoryDetail({ event, summary, onClose, onShowOperator }: {
   );
 }
 
+// chronology.json 항목 → 표시용 ChronItem (이벤트는 stories.json에서 이름/썸네일/출시월 병합)
+const eventById = new Map(data.events.map((e) => [e.id, e]));
+function resolveChron(): ChronItem[] {
+  return chronology.entries.map((raw, i) => {
+    if (raw.kind === "event" && raw.ref) {
+      const ev = eventById.get(raw.ref);
+      return {
+        key: raw.ref, kind: "event",
+        name: ev ? ev.name : { ko: raw.ref },
+        start: ev?.start, thumb: ev?.thumb,
+        terraYear: raw.terraYear ?? null, arc: raw.arc ?? null,
+        eventId: ev ? raw.ref : undefined,
+      };
+    }
+    return {
+      key: raw.id ?? `x${i}`, kind: raw.kind,
+      name: raw.title ?? { ko: raw.id ?? "?" },
+      terraYear: raw.terraYear ?? null, arc: raw.arc ?? null,
+    };
+  });
+}
+const CHRON_ITEMS = resolveChron();
+
+// arc 색상 팔레트 (id 순환) + 종류 라벨
+const ARC_COLORS = ["#c2410c", "#0369a1", "#7c3aed", "#b45309", "#be123c", "#0f766e", "#4d7c0f", "#a16207"];
+const arcColor = (arcId: string) => {
+  const idx = chronology.arcs.findIndex((a) => a.id === arcId);
+  return idx >= 0 ? ARC_COLORS[idx % ARC_COLORS.length] : "#8b9294";
+};
+const KIND_KO: Record<ChronKind, string> = { event: "이벤트", main: "메인스토리", roguelike: "로그라이크" };
+
+// 테라 연대기 뷰 — 한 줄 타임라인 + 테마/종류별 그룹핑
+function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => void }) {
+  const { locale, t } = useI18n();
+  const [group, setGroup] = useState<"theme" | "kind">("theme");
+  const arcName = (id: string) => {
+    const a = chronology.arcs.find((x) => x.id === id);
+    return a ? locText(locale, a.name) : id;
+  };
+  const yearLabel = (item: ChronItem) => item.terraYear == null ? t("테라력 미정") : t("테라력 {y}년", { y: item.terraYear });
+
+  // 그룹핑: 테마(arc)별 또는 종류(kind)별. 각 그룹은 연대기(entries) 순서 유지.
+  const groups = useMemo(() => {
+    const map = new Map<string, { label: string; color?: string; items: ChronItem[] }>();
+    const keyOf = (it: ChronItem) => group === "theme" ? (it.arc ?? "__none") : it.kind;
+    for (const it of CHRON_ITEMS) {
+      const k = keyOf(it);
+      if (!map.has(k)) {
+        map.set(k, {
+          label: group === "theme" ? (it.arc ? arcName(it.arc) : t("테마 미분류")) : t(KIND_KO[it.kind]),
+          color: group === "theme" && it.arc ? arcColor(it.arc) : undefined,
+          items: [],
+        });
+      }
+      map.get(k)!.items.push(it);
+    }
+    // 테마 뷰: 미분류를 맨 뒤로
+    return Array.from(map.entries())
+      .sort((a, b) => (a[0] === "__none" ? 1 : b[0] === "__none" ? -1 : 0))
+      .map(([, v]) => v);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [group, locale, t]);
+
+  const openIf = (it: ChronItem) => { if (it.eventId) onOpenEvent(it.eventId); };
+
+  return (
+    <div className="chron">
+      <p className="chron-note">{rich(t("**테라 연대기 (베타)** — 모든 이벤트·메인스토리·로그라이크를 시계열로 모으는 사전 작업입니다. 테라력 연도와 테마 묶음은 확정되는 대로 채워집니다."))}</p>
+
+      {/* 한 줄 연혁 바 — 연대기 순서대로, 테마 색으로 */}
+      <div className="chron-rail" role="list" aria-label={t("테라 연대기")}>
+        {CHRON_ITEMS.map((it) => (
+          <button key={it.key} type="button" role="listitem"
+            className={`chron-tick k-${it.kind}${it.eventId ? "" : " nolink"}`}
+            style={it.arc ? { ["--arc" as string]: arcColor(it.arc) } : undefined}
+            onClick={() => openIf(it)} title={`${locText(locale, it.name)} · ${it.arc ? arcName(it.arc) : t(KIND_KO[it.kind])}`}>
+            <span className="chron-tick-dot" />
+          </button>
+        ))}
+      </div>
+
+      {/* 그룹핑 토글 */}
+      <div className="chron-tabs">
+        <button type="button" className={group === "theme" ? "on" : ""} onClick={() => setGroup("theme")}>{t("테마별")}</button>
+        <button type="button" className={group === "kind" ? "on" : ""} onClick={() => setGroup("kind")}>{t("종류별")}</button>
+      </div>
+
+      <div className="chron-groups">
+        {groups.map((g) => (
+          <section key={g.label} className="chron-group">
+            <h3 style={g.color ? { borderColor: g.color, color: g.color } : undefined}>
+              {g.label} <em>{g.items.length}</em>
+            </h3>
+            <ul className="chron-list">
+              {g.items.map((it) => (
+                <li key={it.key}>
+                  <button type="button" className={`chron-item k-${it.kind}${it.eventId ? "" : " nolink"}`}
+                    onClick={() => openIf(it)} disabled={!it.eventId}>
+                    <span className="chron-kind" style={it.arc ? { background: arcColor(it.arc) } : undefined}>{t(KIND_KO[it.kind])}</span>
+                    <span className="chron-item-name">{locText(locale, it.name)}</span>
+                    <span className="chron-item-meta">{it.start ?? yearLabel(it)}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function StoryGuide({ onShowOperator }: { onShowOperator?: (id: string) => void }) {
   const { locale, t } = useI18n();
   const [query, setQuery] = useState("");
+  const [view, setView] = useState<"digest" | "chronicle">("digest");
   const [selected, setSelected] = useState<StoryEvent | null>(null);
 
   // #story-<id> 해시와 동기화 — 새로고침·공유·뒤로가기 모두 동작
@@ -186,6 +309,11 @@ export default function StoryGuide({ onShowOperator }: { onShowOperator?: (id: s
   };
   const close = () => {
     window.location.assign("#story");
+  };
+  // 연대기에서 이벤트 클릭 → 요약이 있으면 상세로, 없으면 무시
+  const openEvent = (eventId: string) => {
+    const ev = eventById.get(eventId);
+    if (ev && summaries[eventId]) open(ev);
   };
 
   useEffect(() => {
@@ -206,14 +334,23 @@ export default function StoryGuide({ onShowOperator }: { onShowOperator?: (id: s
   }
 
   return (
-    <section className="story" aria-label={t("AI 이벤트 스토리 요약")}>
+    <section className="story" aria-label={t("AI 스토리 요약")}>
       <div className="story-head">
         <span className="section-no">AI STORY DIGEST</span>
-        <h2>{t("AI 이벤트 스토리 요약")}</h2>
+        <h2>{t("AI 스토리 요약")}</h2>
         <p>{t("한국 서버에 풀린 사이드 스토리 {count}개의 아카이브입니다. AI가 스토리 스크립트 전문을 정독하고 컷씬과 함께 10분 분량으로 요약합니다. 현재 {done}개 수록 — 계속 추가됩니다.", { count: data.events.length, done: summarized })}</p>
         <p className="story-source">{t("요약에는 결말 포함 스포일러가 있습니다. 이벤트 제목·썸네일 출처: 게임 데이터 · {date} 기준.", { date: data.updated })}</p>
       </div>
 
+      <div className="story-viewtabs" role="tablist">
+        <button type="button" role="tab" aria-selected={view === "digest"} className={view === "digest" ? "on" : ""} onClick={() => setView("digest")}>{t("요약")}</button>
+        <button type="button" role="tab" aria-selected={view === "chronicle"} className={view === "chronicle" ? "on" : ""} onClick={() => setView("chronicle")}>{t("테라 연대기")}</button>
+      </div>
+
+      {view === "chronicle" ? (
+        <ChronologyView onOpenEvent={openEvent} />
+      ) : (
+      <>
       <div className="story-tools">
         <div className="search-wrap story-search"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("이벤트 이름 검색")} aria-label={t("이벤트 이름 검색")} /></div>
       </div>
@@ -243,6 +380,8 @@ export default function StoryGuide({ onShowOperator }: { onShowOperator?: (id: s
             );
           })}
         </div>
+      )}
+      </>
       )}
     </section>
   );

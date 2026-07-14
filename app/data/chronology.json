@@ -1,0 +1,586 @@
+{
+ "note": "테라 연대기 스캐폴딩. terraYear는 공식 데이터가 거의 없어 null(미정)로 두고 확정되는 대로 채운다. entries 배열 순서 = 연대기 순서(초기값은 이벤트 출시순 프록시, 인게임 시계열로 재큐레이트 예정). kind: event(ref→stories.json) / main / roguelike. arc는 arcs[].id 참조. 스크립트는 story-summaries.json.",
+ "updated": "2026-07-14",
+ "arcs": [
+  {
+   "id": "abyssal",
+   "name": {
+    "ko": "어비설 헌터스 (심해)",
+    "en": "Abyssal Hunters",
+    "ja": "アビサルハンターズ"
+   }
+  },
+  {
+   "id": "sarkaz",
+   "name": {
+    "ko": "살카즈 / 카즈델",
+    "en": "Sarkaz / Kazdel",
+    "ja": "サルカズ / カズデル"
+   }
+  },
+  {
+   "id": "columbia",
+   "name": {
+    "ko": "콜럼비아 / 라인 랩",
+    "en": "Columbia / Rhine Lab",
+    "ja": "コロンビア / ライン研究所"
+   }
+  },
+  {
+   "id": "siracusa",
+   "name": {
+    "ko": "시라쿠사",
+    "en": "Siracusa",
+    "ja": "シラクーザ"
+   }
+  },
+  {
+   "id": "victoria",
+   "name": {
+    "ko": "빅토리아 내전",
+    "en": "Victorian Civil War",
+    "ja": "ヴィクトリア内戦"
+   }
+  },
+  {
+   "id": "kjerag",
+   "name": {
+    "ko": "설역 / 사미",
+    "en": "Kjerag / Sami",
+    "ja": "雪原 / サーミ"
+   }
+  },
+  {
+   "id": "higashi",
+   "name": {
+    "ko": "동방 (극동)",
+    "en": "Higashi (Far East)",
+    "ja": "極東"
+   }
+  },
+  {
+   "id": "iberia",
+   "name": {
+    "ko": "이베리아",
+    "en": "Iberia",
+    "ja": "イベリア"
+   }
+  }
+ ],
+ "entries": [
+  {
+   "ref": "1stact",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act3d0",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act5d0",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act11d0",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act9d0",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act12d0",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act13d5",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act15d0",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act16d5",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act17d0",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act18d0",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act18d3",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "abyssal"
+  },
+  {
+   "ref": "act12side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act13side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act14side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act15side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act16side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act17side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "abyssal"
+  },
+  {
+   "ref": "act18side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act20side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act19side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act21side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act23side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act22side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act24side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act25side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act26side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act27side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act28side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act29side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act30side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act31side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act32side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act33side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act34side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "abyssal"
+  },
+  {
+   "ref": "act35side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act36side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act38side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act37side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act39side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act40side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act41side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act42side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act43side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act44side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act45side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act46side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act47side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act48side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "id": "main_00",
+   "kind": "main",
+   "title": {
+    "ko": "메인스토리 에피소드 0",
+    "en": "Main Story Episode 0",
+    "ja": "メインストーリー エピソード0"
+   },
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "id": "main_01",
+   "kind": "main",
+   "title": {
+    "ko": "메인스토리 에피소드 1",
+    "en": "Main Story Episode 1",
+    "ja": "メインストーリー エピソード1"
+   },
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "id": "main_02",
+   "kind": "main",
+   "title": {
+    "ko": "메인스토리 에피소드 2",
+    "en": "Main Story Episode 2",
+    "ja": "メインストーリー エピソード2"
+   },
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "id": "main_03",
+   "kind": "main",
+   "title": {
+    "ko": "메인스토리 에피소드 3",
+    "en": "Main Story Episode 3",
+    "ja": "メインストーリー エピソード3"
+   },
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "id": "main_04",
+   "kind": "main",
+   "title": {
+    "ko": "메인스토리 에피소드 4",
+    "en": "Main Story Episode 4",
+    "ja": "メインストーリー エピソード4"
+   },
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "id": "main_05",
+   "kind": "main",
+   "title": {
+    "ko": "메인스토리 에피소드 5",
+    "en": "Main Story Episode 5",
+    "ja": "メインストーリー エピソード5"
+   },
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "id": "main_06",
+   "kind": "main",
+   "title": {
+    "ko": "메인스토리 에피소드 6",
+    "en": "Main Story Episode 6",
+    "ja": "メインストーリー エピソード6"
+   },
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "id": "main_07",
+   "kind": "main",
+   "title": {
+    "ko": "메인스토리 에피소드 7",
+    "en": "Main Story Episode 7",
+    "ja": "メインストーリー エピソード7"
+   },
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "id": "main_08",
+   "kind": "main",
+   "title": {
+    "ko": "메인스토리 에피소드 8",
+    "en": "Main Story Episode 8",
+    "ja": "メインストーリー エピソード8"
+   },
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "id": "main_09",
+   "kind": "main",
+   "title": {
+    "ko": "메인스토리 에피소드 9",
+    "en": "Main Story Episode 9",
+    "ja": "メインストーリー エピソード9"
+   },
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "id": "main_10",
+   "kind": "main",
+   "title": {
+    "ko": "메인스토리 에피소드 10",
+    "en": "Main Story Episode 10",
+    "ja": "メインストーリー エピソード10"
+   },
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "id": "main_11",
+   "kind": "main",
+   "title": {
+    "ko": "메인스토리 에피소드 11",
+    "en": "Main Story Episode 11",
+    "ja": "メインストーリー エピソード11"
+   },
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "id": "main_12",
+   "kind": "main",
+   "title": {
+    "ko": "메인스토리 에피소드 12",
+    "en": "Main Story Episode 12",
+    "ja": "メインストーリー エピソード12"
+   },
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "id": "main_13",
+   "kind": "main",
+   "title": {
+    "ko": "메인스토리 에피소드 13",
+    "en": "Main Story Episode 13",
+    "ja": "メインストーリー エピソード13"
+   },
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "id": "main_14",
+   "kind": "main",
+   "title": {
+    "ko": "메인스토리 에피소드 14",
+    "en": "Main Story Episode 14",
+    "ja": "メインストーリー エピソード14"
+   },
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "id": "is1",
+   "kind": "roguelike",
+   "title": {
+    "ko": "통합전략 #1",
+    "en": "Integrated Strategies #1",
+    "ja": "統合戦略 #1"
+   },
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "id": "is2",
+   "kind": "roguelike",
+   "title": {
+    "ko": "통합전략 #2",
+    "en": "Integrated Strategies #2",
+    "ja": "統合戦略 #2"
+   },
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "id": "is3",
+   "kind": "roguelike",
+   "title": {
+    "ko": "통합전략 #3",
+    "en": "Integrated Strategies #3",
+    "ja": "統合戦略 #3"
+   },
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "id": "is4",
+   "kind": "roguelike",
+   "title": {
+    "ko": "통합전략 #4",
+    "en": "Integrated Strategies #4",
+    "ja": "統合戦略 #4"
+   },
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "id": "is5",
+   "kind": "roguelike",
+   "title": {
+    "ko": "통합전략 #5",
+    "en": "Integrated Strategies #5",
+    "ja": "統合戦略 #5"
+   },
+   "terraYear": null,
+   "arc": null
+  }
+ ]
+}

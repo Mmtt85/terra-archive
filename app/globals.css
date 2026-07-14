@@ -3542,6 +3542,41 @@ footer p {
   gap: 14px;
   margin: 20px 0 24px;
 }
+/* 요약 ↔ 테라 연대기 뷰 토글 */
+.story-viewtabs { display:flex; gap:8px; margin:22px 0 6px }
+.story-viewtabs button { border:1px solid var(--line); background:var(--white); padding:9px 18px; font-size:13px; font-weight:800; cursor:pointer; letter-spacing:-.2px }
+.story-viewtabs button.on { background:var(--ink); color:var(--paper); border-color:var(--ink) }
+.story-viewtabs button:not(.on):hover { border-color:var(--ink) }
+/* ── 테라 연대기 ── */
+.chron { margin-top:14px }
+.chron-note { color:#5a6266; font-size:12px; line-height:1.7; background:#e6e5df; border-left:3px solid var(--lime); padding:12px 15px; margin:0 0 18px }
+.chron-note b { color:var(--ink) }
+/* 한 줄 연혁 바 — 가로 스크롤, 연대기 순서대로 눈금 */
+.chron-rail { display:flex; align-items:center; gap:3px; overflow-x:auto; padding:16px 4px 20px; border-bottom:2px solid var(--ink); position:relative }
+.chron-rail::-webkit-scrollbar { height:7px }
+.chron-rail::-webkit-scrollbar-thumb { background:#b9bbb5; border-radius:10px }
+.chron-tick { flex:none; width:13px; height:34px; border:0; background:0 0; padding:0; cursor:pointer; display:grid; place-items:center; --arc:#8b9294 }
+.chron-tick.nolink { cursor:default }
+.chron-tick-dot { width:11px; height:11px; background:var(--arc); border-radius:50% }
+.chron-tick.k-main .chron-tick-dot { border-radius:2px; transform:rotate(45deg) }
+.chron-tick.k-roguelike .chron-tick-dot { border-radius:2px }
+.chron-tick:not(.nolink):hover .chron-tick-dot { transform:scale(1.5); box-shadow:0 0 0 3px #13171914 }
+.chron-tick.k-main:not(.nolink):hover .chron-tick-dot { transform:rotate(45deg) scale(1.5) }
+/* 그룹핑 토글 */
+.chron-tabs { display:flex; gap:6px; margin:18px 0 16px }
+.chron-tabs button { border:1px solid var(--line); background:var(--white); padding:6px 14px; font-size:11px; font-weight:800; cursor:pointer }
+.chron-tabs button.on { background:var(--ink); color:var(--paper); border-color:var(--ink) }
+/* 그룹 목록 */
+.chron-groups { display:flex; flex-direction:column; gap:26px }
+.chron-group h3 { font-size:14px; font-weight:900; letter-spacing:-.3px; margin:0 0 12px; padding-left:10px; border-left:4px solid var(--ink) }
+.chron-group h3 em { color:var(--muted); font-style:normal; font-size:11px; font-weight:700; margin-left:6px }
+.chron-list { list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:8px }
+.chron-item { width:100%; display:flex; align-items:center; gap:9px; border:1px solid var(--line); background:var(--white); padding:9px 11px; cursor:pointer; text-align:left; transition:border-color .15s }
+.chron-item:not(:disabled):hover { border-color:var(--ink) }
+.chron-item:disabled { cursor:default; opacity:.72 }
+.chron-kind { flex:none; font:800 8px/1 monospace; letter-spacing:.5px; color:#fff; background:#8b9294; padding:4px 5px; border-radius:2px }
+.chron-item-name { flex:1 1 auto; font-size:12.5px; font-weight:700; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.chron-item-meta { flex:none; color:var(--muted); font:600 10px monospace }
 .story-search {
   max-width: 280px;
   flex: 1 1 220px;

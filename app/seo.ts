@@ -49,9 +49,9 @@ const TAB_META: Record<Exclude<SeoTab, "archive">, Record<SeoLocale, { title: st
     ja: { title: "素材周回効率表 - アークナイツ周回ガイド | テラアーカイブ", description: "アークナイツ素材周回効率表 — 素材ごとの最適ステージと理性効率をまとめました。" },
   },
   story: {
-    ko: { title: "AI 이벤트 스토리 요약 - 명일방주 이벤트 스토리 요약 | 테라 아카이브", description: "명일방주 이벤트 스토리 AI 요약 아카이브 — 사이드 스토리를 컷씬과 함께 10분 분량으로 요약합니다." },
-    en: { title: "AI Event Story Digest - Arknights Event Story Summaries | Terra Archive", description: "AI-written Arknights event story digest archive — side stories summarized with cutscenes in a 10-minute read." },
-    ja: { title: "AIイベントストーリー要約 - アークナイツイベントストーリー要約 | テラアーカイブ", description: "アークナイツのイベントストーリーAI要約アーカイブ — サイドストーリーをカットシーンと共に10分で要約します。" },
+    ko: { title: "AI 스토리 요약 - 명일방주 스토리 요약 | 테라 아카이브", description: "명일방주 이벤트 스토리 AI 요약 아카이브 — 사이드 스토리를 컷씬과 함께 10분 분량으로 요약합니다." },
+    en: { title: "AI Story Digest - Arknights Story Summaries | Terra Archive", description: "AI-written Arknights event story digest archive — side stories summarized with cutscenes in a 10-minute read." },
+    ja: { title: "AIストーリー要約 - アークナイツストーリー要約 | テラアーカイブ", description: "アークナイツのイベントストーリーAI要約アーカイブ — サイドストーリーをカットシーンと共に10分で要約します。" },
   },
 };
 

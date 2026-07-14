@@ -604,8 +604,22 @@ const D: Record<string, Pair> = {
 
   // ── AI 스토리 요약 ─────────────────────────────────────────────────────────
   "스토리 요약": ["Story Digest", "ストーリー要約"],
-  "AI 이벤트 스토리 요약": ["AI Event Story Digest", "AIイベントストーリー要約"],
-  "AI 이벤트 스토리 요약 - 명일방주 이벤트 스토리 요약 | 테라 아카이브": ["AI Event Story Digest - Arknights Event Story Summaries | Terra Archive", "AIイベントストーリー要約 - アークナイツイベントストーリー要約 | テラアーカイブ"],
+  "AI 스토리 요약": ["AI Story Digest", "AIストーリー要約"],
+  "요약": ["Digest", "要約"],
+  "테라 연대기": ["Terra Chronicle", "テラ年代記"],
+  "테라력 미정": ["Terra year TBD", "テラ暦 未定"],
+  "테라력 {y}년": ["Terra {y}", "テラ暦{y}年"],
+  "테마 미분류": ["Unsorted", "未分類"],
+  "이벤트": ["Event", "イベント"],
+  "메인스토리": ["Main Story", "メインストーリー"],
+  "로그라이크": ["Roguelike", "ローグライク"],
+  "테마별": ["By theme", "テーマ別"],
+  "종류별": ["By type", "種類別"],
+  "**테라 연대기 (베타)** — 모든 이벤트·메인스토리·로그라이크를 시계열로 모으는 사전 작업입니다. 테라력 연도와 테마 묶음은 확정되는 대로 채워집니다.": [
+    "**Terra Chronicle (beta)** — groundwork for arranging every event, main story, and roguelike in chronological order. Terra-calendar years and theme groupings will be filled in as they are confirmed.",
+    "**テラ年代記（ベータ）** — すべてのイベント・メインストーリー・ローグライクを時系列で集める準備作業です。テラ暦の年号とテーマ分類は確定次第埋めていきます。",
+  ],
+  "AI 스토리 요약 - 명일방주 스토리 요약 | 테라 아카이브": ["AI Story Digest - Arknights Story Summaries | Terra Archive", "AIストーリー要約 - アークナイツストーリー要約 | テラアーカイブ"],
   "한국 서버에 풀린 사이드 스토리 {count}개의 아카이브입니다. AI가 스토리 스크립트 전문을 정독하고 컷씬과 함께 10분 분량으로 요약합니다. 현재 {done}개 수록 — 계속 추가됩니다.": [
     "An archive of all {count} side stories released on the KR server. AI reads the full story scripts and condenses each into a 10-minute digest with cutscenes. {done} available now — more on the way.",
     "韓国サーバーで公開されたサイドストーリー{count}件のアーカイブです。AIがストーリースクリプト全文を読み込み、カットシーン付きの10分ダイジェストにまとめます。現在{done}件収録 — 順次追加されます。",
