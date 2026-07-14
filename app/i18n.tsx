@@ -70,6 +70,7 @@ const CONCEPT_I18N: Record<string, Pair> = {
   "체력 비례": ["HP-Scaling", "HP比例"],
   "대공": ["Anti-Air", "対空"],
   "보호막": ["Shield", "シールド"],
+  "반사": ["Damage Reflect", "ダメージ反射"],
   "방어 무시": ["Ignore DEF", "防御無視"],
   "속박": ["Bind", "束縛"],
   "지속 피해": ["Damage over Time", "継続ダメージ"],
