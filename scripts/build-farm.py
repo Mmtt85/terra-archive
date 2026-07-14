@@ -130,7 +130,11 @@ for iid, rows in rows_by_item.items():
 # 표시 순서: 등급 내림차순 → 게임 정렬(sortId)
 out_items.sort(key=lambda item: (-item["rarity"], item["sortId"]))
 
-out = {"updated": time.strftime("%Y-%m-%d"), "minTimes": MIN_TIMES, "items": out_items}
+# admin 데이터 상태 비교 기준: 빌드 시점에 조건(KR 개방·표본 충족)을 만족한
+# 전체 스테이지/재료 세트 — 크론 워커의 현재 세트와 다르면 "파밍표 갱신 필요"
+open_stages = sorted({row["id"] for rows in rows_by_item.values() for row in rows})
+out = {"updated": time.strftime("%Y-%m-%d"), "minTimes": MIN_TIMES,
+       "openStages": open_stages, "items": out_items}
 json.dump(out, open(f"{REPO}/app/data/farm.json", "w", encoding="utf-8"),
           ensure_ascii=False, separators=(",", ":"))
 

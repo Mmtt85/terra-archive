@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { adminDeleteFeedback, adminDeleteNickname, adminListFeedback, adminSetReviewed, fetchNicknameCounts, type FeedbackRow, type NicknameCount } from "../feedback";
 import operatorsData from "../data/operators.json";
 import recruitData from "../data/recruit.json";
+import farmData from "../data/farm.json";
 
 // 크론 워커가 매일 클뜯 레포에서 뽑아둔 최신 오퍼 목록·공채 풀 요약.
 // 여기(브라우저)서 사이트에 번들된 데이터와 비교해 "갱신 필요" 여부를 판단한다.
@@ -12,6 +13,8 @@ type DataCheck = {
   updated: string;
   operators: { id: string; name: string; rarity: number; obtainable: boolean }[];
   recruit: { name: string; rarity: number }[];
+  // 펭귄 물류 기준 "지금 KR에 열려 있는 파밍 스테이지·재료" 세트 (워커 불통 시 null)
+  farm?: { stages: string[]; items: string[] } | null;
 };
 
 const KIND_LABEL: Record<string, string> = { feature: "기능 제안", data_error: "데이터 오류", plan: "편성 제안" };
@@ -96,7 +99,10 @@ export default function AdminPage() {
     }
   };
 
-  const shown = rows.filter((row) => filter === "all" || row.kind === filter);
+  // 확인완료 안 된 항목을 위로 — 같은 그룹 안에서는 최신순
+  const shown = rows
+    .filter((row) => filter === "all" || row.kind === filter)
+    .sort((a, b) => (a.reviewed_at ? 1 : 0) - (b.reviewed_at ? 1 : 0) || Date.parse(b.created_at) - Date.parse(a.created_at));
 
   // 게임 데이터 비교 — 획득 불가(가짜 게스트·컬래버 잔재 등)는 사이트가 의도적으로
   // 제외한 것이므로 obtainable=true만 신규로 판정한다
@@ -106,7 +112,17 @@ export default function AdminPage() {
   const newRecruit = (dataCheck?.recruit ?? []).filter((r) => !localRecruitNames.has(r.name)).sort((a, b) => b.rarity - a.rarity);
   const remoteRecruitNames = new Set((dataCheck?.recruit ?? []).map((r) => r.name));
   const staleRecruit = dataCheck ? (recruitData as { ops: { name: string }[] }).ops.filter((op) => !remoteRecruitNames.has(op.name)).map((op) => op.name) : [];
-  const needsUpdate = newOps.length > 0 || newRecruit.length > 0;
+  // 재료 파밍표: farm.json에 박힌 빌드 시점 세트 vs 워커의 현재 세트 —
+  // 이벤트 개폐(스테이지 증감)나 신규 재료가 생기면 재생성 신호
+  const farmLocal = farmData as { updated: string; openStages?: string[]; items: { id: string }[] };
+  const localFarmStages = new Set(farmLocal.openStages ?? []);
+  const localFarmItems = new Set(farmLocal.items.map((item) => item.id));
+  const remoteFarm = dataCheck?.farm ?? null;
+  const farmOpened = remoteFarm ? remoteFarm.stages.filter((sid) => !localFarmStages.has(sid)) : [];
+  const farmClosed = remoteFarm ? [...localFarmStages].filter((sid) => !remoteFarm.stages.includes(sid)) : [];
+  const farmNewItems = remoteFarm ? remoteFarm.items.filter((iid) => !localFarmItems.has(iid)) : [];
+  const farmNeeds = farmOpened.length > 0 || farmClosed.length > 0 || farmNewItems.length > 0;
+  const needsUpdate = newOps.length > 0 || newRecruit.length > 0 || farmNeeds;
 
   if (!entered) {
     return (
@@ -160,8 +176,20 @@ export default function AdminPage() {
                 <br /><i>Claude에서 <code>/recruit-data-update</code> 실행</i>
               </p>
             )}
+            {farmNeeds && (
+              <p>
+                <b>재료 파밍표 갱신 필요</b>
+                {farmOpened.length > 0 && <> — 새로 열린 파밍 스테이지 {farmOpened.length}개 ({farmOpened.slice(0, 8).join(" · ")}{farmOpened.length > 8 ? " …" : ""})</>}
+                {farmClosed.length > 0 && <> — 닫힌 스테이지 {farmClosed.length}개 ({farmClosed.slice(0, 8).join(" · ")}{farmClosed.length > 8 ? " …" : ""})</>}
+                {farmNewItems.length > 0 && <> — 신규 재료 {farmNewItems.length}종 ({farmNewItems.join(" · ")})</>}
+                <br /><i>Claude에서 <code>/farm-data-update</code> 실행 (farm.json 기준일 {farmLocal.updated})</i>
+              </p>
+            )}
             {staleRecruit.length > 0 && (
               <p className="data-status-minor">참고 · 사이트 공채 풀에만 있는 오퍼 (데이터마인 미반영이면 정상): {staleRecruit.join(" · ")}</p>
+            )}
+            {remoteFarm == null && (
+              <p className="data-status-minor">참고 · 파밍표 신선도는 다음 크론 수집(매일 11:41 KST) 후 표시됩니다.</p>
             )}
           </>
         )}

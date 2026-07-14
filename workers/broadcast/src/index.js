@@ -112,6 +112,33 @@ function parseRecruitPool(detail) {
   return out;
 }
 
+// 재료 파밍표 신선도 요약 — 펭귄 물류에서 "지금 KR에 열려 있고 표본이 충분한
+// 파밍 스테이지·재료(5자리 id)" 세트만 뽑는다. build-farm.py가 farm.json에 기록한
+// 빌드 시점 세트(openStages/items)와 /admin이 브라우저에서 비교해, 달라졌으면
+// (이벤트 개폐·신규 재료) "파밍표 갱신 필요"를 띄운다. 기준은 build-farm.py와 동일:
+// 5자리 숫자 itemId, times ≥ 100, KR 개방, apCost > 0.
+const PENGUIN = "https://penguin-stats.io/PenguinStats/api/v2";
+
+async function farmCheck() {
+  const [stagesRes, matrixRes] = await Promise.all([
+    fetch(`${PENGUIN}/stages?server=KR`),
+    fetch(`${PENGUIN}/result/matrix?server=KR&show_closed_zones=false`),
+  ]);
+  if (!stagesRes.ok || !matrixRes.ok) throw new Error(`penguin fetch ${stagesRes.status}/${matrixRes.status}`);
+  const stages = new Map((await stagesRes.json()).map((s) => [s.stageId, s]));
+  const { matrix } = await matrixRes.json();
+  const stageIds = new Set();
+  const itemIds = new Set();
+  for (const row of matrix) {
+    if (!/^\d{5}$/.test(row.itemId) || row.times < 100 || !(row.quantity > 0)) continue;
+    const stage = stages.get(row.stageId);
+    if (!stage?.existence?.KR?.exist || !(stage.apCost > 0)) continue;
+    stageIds.add(row.stageId);
+    itemIds.add(row.itemId);
+  }
+  return { stages: [...stageIds].sort(), items: [...itemIds].sort() };
+}
+
 async function dataCheck(env) {
   const [charRes, gachaRes] = await Promise.all([
     fetch(`${GAMEDATA_BASE}/character_table.json`),
@@ -125,7 +152,9 @@ async function dataCheck(env) {
     .map(([id, c]) => ({ id, name: c.name, rarity: tierToStars(c.rarity), obtainable: !c.isNotObtainable }));
   const gacha = await gachaRes.json();
   const recruit = parseRecruitPool(gacha.recruitDetail ?? "");
-  const payload = { updated: new Date().toISOString(), operators, recruit };
+  // 펭귄 불통이어도 오퍼·공채 체크는 살린다 — farm은 null로 두면 admin이 섹션만 생략
+  const farm = await farmCheck().catch(() => null);
+  const payload = { updated: new Date().toISOString(), operators, recruit, farm };
   await env.BCAST.put(DATACHECK_KEY, JSON.stringify(payload));
   return payload;
 }

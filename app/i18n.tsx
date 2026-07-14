@@ -588,6 +588,7 @@ const D: Record<string, Pair> = {
   ],
   "등급 필터": ["Tier filter", "レア度フィルター"],
   "재료 이름 검색": ["Search material names", "素材名で検索"],
+  "재료 이름·별명 검색": ["Search materials by name or nickname", "素材名・愛称で検索"],
   "상시 파밍 가능한 스테이지만 (이벤트 한정 제외)": ["Permanently farmable stages only (exclude limited events)", "常時周回可能なステージのみ（期間限定イベント除外）"],
   "조건에 맞는 재료가 없어요.": ["No materials match these filters.", "条件に合う素材がありません。"],
   "스테이지": ["Stage", "ステージ"],

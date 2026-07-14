@@ -26,6 +26,19 @@ const data = farmData as { updated: string; minTimes: number; items: FarmItem[] 
 
 const TIERS = Array.from(new Set(data.items.map((item) => item.rarity))).sort((a, b) => b - a);
 
+// 커뮤니티 별칭 검색 (사용자 확정 2026-07-14) — 데이터 재생성과 무관하게 여기서 관리.
+// 오줌=아케톤, 돌=원암+RMA70-24, 장치/좆치=장치류, 방석=연마석, 젤리=콜(로식·화이트 호스),
+// 별사탕=RMA70 계열. 한국어 은어라 로케일과 무관하게 항상 검색에 걸린다.
+const SEARCH_ALIASES: Record<string, string[]> = {
+  "30011": ["돌"], "30012": ["돌"], "30013": ["돌"], "30014": ["돌"],
+  "30051": ["오줌"], "30052": ["오줌"], "30053": ["오줌"], "30054": ["오줌"],
+  "30061": ["장치", "좆치"], "30062": ["장치", "좆치"], "30063": ["장치", "좆치"], "30064": ["장치", "좆치"],
+  "30073": ["젤리"], "30074": ["젤리"],
+  "30093": ["방석"], "30094": ["방석"],
+  "30103": ["별사탕"],
+  "30104": ["돌", "별사탕"],
+};
+
 // 상시 파밍 가능 = 메인/서브 + 상설(복각) + 물자(요일 로테이션)
 const PERMANENT_KINDS = new Set(["main", "perm", "daily"]);
 const KIND_LABEL: Record<string, string> = { perm: "상설", event: "이벤트 한정", daily: "물자" };
@@ -50,7 +63,9 @@ export default function FarmGuide() {
       .filter((item) =>
         item.stages.length > 0 &&
         (tiers.length === 0 || tiers.includes(item.rarity)) &&
-        (!keyword || [item.name.ko, item.name.en, item.name.ja].filter(Boolean).join(" ").toLowerCase().includes(keyword)));
+        (!keyword ||
+          [item.name.ko, item.name.en, item.name.ja].filter(Boolean).join(" ").toLowerCase().includes(keyword) ||
+          (SEARCH_ALIASES[item.id] ?? []).some((alias) => alias.includes(keyword))));
   }, [tiers, query, permOnly]);
 
   return (
@@ -70,7 +85,7 @@ export default function FarmGuide() {
             </button>
           ))}
         </div>
-        <div className="search-wrap farm-search"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("재료 이름 검색")} aria-label={t("재료 이름 검색")} /></div>
+        <div className="search-wrap farm-search"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("재료 이름·별명 검색")} aria-label={t("재료 이름·별명 검색")} /></div>
         <label className="farm-perm-toggle">
           <input type="checkbox" checked={permOnly} onChange={(event) => setPermOnly(event.target.checked)} />
           {t("상시 파밍 가능한 스테이지만 (이벤트 한정 제외)")}
