@@ -42,3 +42,7 @@ next-env.d.ts
 /work/
 tsconfig.tsbuildinfo
 Arknights_OperBox_Export.json
+
+# Claude Code 로컬 설정 (머신별 권한·경로)
+.claude/settings.json
+.claude/settings.local.json

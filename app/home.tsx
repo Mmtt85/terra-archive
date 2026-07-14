@@ -9,6 +9,7 @@ import broadcastsData from "./data/broadcasts.json";
 import InfraPlanner from "./planner";
 import RecruitHelper from "./recruit";
 import FarmGuide from "./farm";
+import StoryGuide from "./story";
 import FeedbackWidget from "./feedback-widget";
 import { feedbackReady, fetchNicknameCounts, submitNickname } from "./feedback";
 import { I18nProvider, useI18n, conceptName, DT_LOCALE, MAGIC_TRAIT_RE, LOCALES, type Locale, type ExtraI18n } from "./i18n";
@@ -97,8 +98,8 @@ const JOB_ORDER = ["PIONEER", "WARRIOR", "TANK", "SNIPER", "CASTER", "MEDIC", "S
 
 const SORT_KEYS = ["기본", "이름", "성급", "소속", "출신지", "종족", "직군", "세부 직군"];
 
-function tabFromHash(hash: string): "archive" | "planner" | "recruit" | "farm" {
-  return hash === "#infra" ? "planner" : hash === "#recruit" ? "recruit" : hash === "#farm" ? "farm" : "archive";
+function tabFromHash(hash: string): "archive" | "planner" | "recruit" | "farm" | "story" {
+  return hash === "#infra" ? "planner" : hash === "#recruit" ? "recruit" : hash === "#farm" ? "farm" : hash.startsWith("#story") ? "story" : "archive";
 }
 
 // ── 공식 방송 ─────────────────────────────────────────────
@@ -347,7 +348,7 @@ function HomeInner({ operators, extra }: { operators: Operator[]; extra: ExtraI1
   // useLayoutEffect가 페인트 전에 동기적으로 올바른 탭으로 맞춘다 (깜빡임 방지 +
   // hydration mismatch 방지, useState 초기값에서 window.location.hash를
   // 직접 읽으면 서버/클라이언트 첫 렌더가 갈려서 hydration 에러가 난다)
-  const [tab, setTab] = useState<"archive" | "planner" | "recruit" | "farm">("archive");
+  const [tab, setTab] = useState<"archive" | "planner" | "recruit" | "farm" | "story">("archive");
 
   // 필터 항목은 전부 현재 로케일 데이터에서 유도한다 — 값과 표시가 항상 일치
   const factions = useMemo(() =>
@@ -462,7 +463,9 @@ function HomeInner({ operators, extra }: { operators: Operator[]; extra: ExtraI1
           ? t("공채 도우미 - 명일방주 공개모집 계산기 | 테라 아카이브")
           : tab === "farm"
             ? t("재료 파밍 효율표 - 명일방주 파밍 가이드 | 테라 아카이브")
-            : t("테라 아카이브 | 명일방주(Arknights) KR 팬사이트");
+            : tab === "story"
+              ? t("AI 스토리 요약 - 명일방주 이벤트 스토리 요약 | 테라 아카이브")
+              : t("테라 아카이브 | 명일방주(Arknights) KR 팬사이트");
   }, [tab, selected, t]);
 
   const openOperator = (operator: Operator) => {
@@ -477,7 +480,7 @@ function HomeInner({ operators, extra }: { operators: Operator[]; extra: ExtraI1
       return;
     }
     setSelected(null);
-    history.replaceState(null, "", tab === "planner" ? "#infra" : tab === "recruit" ? "#recruit" : tab === "farm" ? "#farm" : window.location.pathname);
+    history.replaceState(null, "", tab === "planner" ? "#infra" : tab === "recruit" ? "#recruit" : tab === "farm" ? "#farm" : tab === "story" ? "#story" : window.location.pathname);
   };
   // 플래너 등 다른 탭 위에서 모달만 띄울 때 — URL은 그대로 두고 히스토리만 한 칸 쌓는다
   const showOperatorById = (id: string) => {
@@ -488,12 +491,13 @@ function HomeInner({ operators, extra }: { operators: Operator[]; extra: ExtraI1
     pushedModalRef.current = true;
   };
 
-  const switchTab = (next: "archive" | "planner" | "recruit" | "farm") => {
+  const switchTab = (next: "archive" | "planner" | "recruit" | "farm" | "story") => {
     setTab(next);
     setSelected(null);
     if (next === "planner") window.location.hash = "infra";
     else if (next === "recruit") window.location.hash = "recruit";
     else if (next === "farm") window.location.hash = "farm";
+    else if (next === "story") window.location.hash = "story";
     else history.replaceState(null, "", window.location.pathname);
   };
   const [sortKey, setSortKey] = useState("기본");
@@ -587,6 +591,7 @@ function HomeInner({ operators, extra }: { operators: Operator[]; extra: ExtraI1
           <button className={`tab-planner${tab === "planner" ? " selected" : ""}`} onClick={() => switchTab("planner")}><span className="tab-icon" aria-hidden>⌂</span>{t("인프라 플래너")}</button>
           <button className={`tab-recruit${tab === "recruit" ? " selected" : ""}`} onClick={() => switchTab("recruit")}><span className="tab-icon" aria-hidden>◎</span>{t("공채 도우미")}</button>
           <button className={`tab-farm${tab === "farm" ? " selected" : ""}`} onClick={() => switchTab("farm")}><span className="tab-icon" aria-hidden>◈</span>{t("재료 파밍")}</button>
+          <button className={`tab-story${tab === "story" ? " selected" : ""}`} onClick={() => switchTab("story")}><span className="tab-icon" aria-hidden>✦</span>{t("스토리 요약")}</button>
         </nav>
         <LanguageSwitcher />
       </header>
@@ -647,6 +652,7 @@ function HomeInner({ operators, extra }: { operators: Operator[]; extra: ExtraI1
       {tab === "planner" && <InfraPlanner onShowOperator={showOperatorById} extra={extra} />}
       {tab === "recruit" && <RecruitHelper onShowOperator={showOperatorById} extra={extra} />}
       {tab === "farm" && <FarmGuide />}
+      {tab === "story" && <StoryGuide />}
 
       {selected && <OperatorModal operator={selected} nicknames={nicknames.get(selected.id) ?? []} onSubmitNickname={handleSubmitNickname} onClose={closeOperator} />}
       <FeedbackWidget />

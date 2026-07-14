@@ -8,14 +8,16 @@ main { height:100dvh; overflow:hidden }
 /* 서버 HTML은 항상 백과사전 — #infra·#recruit로 새로고침 시 첫 페인트에서 백과사전을
    숨기고 헤더 탭 하이라이트도 올바른 탭으로 옮겨 플래시를 막는다
    (인라인 스크립트가 <html data-route>를 설정, 하이드레이션 후 page.tsx가 해제) */
-html[data-route="infra"] .explorer, html[data-route="recruit"] .explorer, html[data-route="farm"] .explorer { display:none }
-html[data-route="infra"] main, html[data-route="recruit"] main, html[data-route="farm"] main { height:auto; min-height:100vh; overflow:visible; display:flex; flex-direction:column }
+html[data-route="infra"] .explorer, html[data-route="recruit"] .explorer, html[data-route="farm"] .explorer, html[data-route="story"] .explorer { display:none }
+html[data-route="infra"] main, html[data-route="recruit"] main, html[data-route="farm"] main, html[data-route="story"] main { height:auto; min-height:100vh; overflow:visible; display:flex; flex-direction:column }
 html[data-route="infra"] .main-tabs .tab-archive.selected,
 html[data-route="recruit"] .main-tabs .tab-archive.selected,
-html[data-route="farm"] .main-tabs .tab-archive.selected { background:transparent; color:inherit; border-color:var(--line) }
+html[data-route="farm"] .main-tabs .tab-archive.selected,
+html[data-route="story"] .main-tabs .tab-archive.selected { background:transparent; color:inherit; border-color:var(--line) }
 html[data-route="infra"] .main-tabs .tab-planner,
 html[data-route="recruit"] .main-tabs .tab-recruit,
-html[data-route="farm"] .main-tabs .tab-farm { background:var(--ink); color:var(--lime); border-color:var(--ink) }
+html[data-route="farm"] .main-tabs .tab-farm,
+html[data-route="story"] .main-tabs .tab-story { background:var(--ink); color:var(--lime); border-color:var(--ink) }
 button,input { font:inherit }
 button { color:inherit }
 /* iOS는 입력 폰트가 16px 미만이면 포커스 시 화면을 자동 확대한다 — 모바일에서 16px 강제 */
@@ -583,3 +585,44 @@ footer p { margin:0 }
 .farm-rate { font-weight:800 }
 .farm-sanity { color:var(--muted); font-weight:700 }
 @media (width<=760px) { .farm { padding:24px 18px 48px } .farm-grid { grid-template-columns:1fr } .farm-tools { gap:10px } }
+
+/* ── AI 스토리 요약 탭 ─────────────────────────────── */
+.story { padding:34px clamp(22px,5vw,76px) 60px }
+.story-head { max-width:860px }
+.story-head h2 { margin:6px 0 12px; font-size:28px; letter-spacing:-.5px }
+.story-head p { margin:0 0 8px; font-size:13.5px; line-height:1.75; color:#3a4146 }
+.story-source { color:var(--muted) !important; font-size:12px !important }
+.story-tools { display:flex; flex-wrap:wrap; align-items:center; gap:14px; margin:20px 0 24px }
+.story-search { max-width:280px; flex:1 1 220px }
+.story-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:14px }
+.story-card button { display:block; width:100%; padding:0; border:1px solid var(--line); background:var(--white); text-align:left; cursor:pointer; transition:.15s }
+.story-card button:hover:not(:disabled) { border-color:var(--ink); transform:translateY(-2px) }
+.story-card button:disabled { cursor:default }
+.story-card.pending .story-thumb img { filter:grayscale(.85) contrast(.85); opacity:.55 }
+.story-thumb { position:relative; aspect-ratio:404/491; overflow:hidden; background:var(--ink) }
+.story-thumb img { width:100%; height:100%; object-fit:cover; display:block }
+.story-ready-badge,.story-pending-badge { position:absolute; left:8px; top:8px; font:800 10px monospace; padding:3px 7px; font-style:normal }
+.story-ready-badge { background:var(--ink); color:var(--lime) }
+.story-pending-badge { background:#ffffffd9; color:var(--muted); border:1px solid var(--line) }
+.story-card-info { padding:10px 12px 12px }
+.story-card-info h3 { margin:0 0 4px; font-size:14px; letter-spacing:-.3px; line-height:1.35 }
+.story-card-info span { font:700 11px monospace; color:var(--muted) }
+/* 상세 */
+.story-back { border:1px solid var(--line); background:var(--white); padding:8px 14px; font-size:12.5px; font-weight:800; cursor:pointer; transition:.15s }
+.story-back:hover { border-color:var(--ink) }
+.story-detail-head { margin-top:20px; max-width:760px }
+.story-detail-head h2 { margin:6px 0 8px; font-size:30px; letter-spacing:-.5px }
+.story-meta { margin:0 0 10px; font:700 12px monospace; color:var(--muted) }
+.story-tagline { margin:0 0 14px; font-size:15px; font-weight:700; line-height:1.6 }
+.story-disclaimer { margin:0 0 6px; padding:9px 12px; background:#dfff0033; border-left:3px solid var(--lime); font-size:12px; line-height:1.65; color:#3a4146 }
+.story-body { max-width:720px; margin-top:26px }
+.story-body h3 { margin:34px 0 12px; font-size:19px; letter-spacing:-.4px; padding-bottom:8px; border-bottom:2px solid var(--ink) }
+.story-body p { margin:0 0 14px; font-size:14.5px; line-height:1.9; color:#22282c }
+.story-body figure { margin:22px 0; border:1px solid var(--line) }
+.story-body figure img { width:100%; display:block }
+.story-body figcaption { padding:8px 12px; font-size:11.5px; color:var(--muted); border-top:1px solid var(--line); background:var(--white) }
+.story-body blockquote { margin:20px 0; padding:12px 16px; border-left:3px solid var(--ink); background:var(--white); border-top:1px solid var(--line); border-right:1px solid var(--line); border-bottom:1px solid var(--line) }
+.story-body blockquote p { margin:0 0 6px; font-size:14px; font-style:italic }
+.story-body blockquote cite { font:700 11.5px monospace; color:var(--muted); font-style:normal }
+.story-detail-foot { margin-top:36px }
+@media (width<=760px) { .story { padding:24px 18px 48px } .story-grid { grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px } .story-detail-head h2 { font-size:24px } }

@@ -601,6 +601,30 @@ const D: Record<string, Pair> = {
   "이벤트 한정": ["Limited event", "期間限定"],
   "물자": ["Supply", "物資"],
 
+  // ── AI 스토리 요약 ─────────────────────────────────────────────────────────
+  "스토리 요약": ["Story Digest", "ストーリー要約"],
+  "AI 스토리 요약": ["AI Story Digest", "AIストーリー要約"],
+  "AI 스토리 요약 - 명일방주 이벤트 스토리 요약 | 테라 아카이브": ["AI Story Digest - Arknights Event Story Summaries | Terra Archive", "AIストーリー要約 - アークナイツイベントストーリー要約 | テラアーカイブ"],
+  "한국 서버에 풀린 사이드 스토리 {count}개의 아카이브입니다. AI(Claude)가 스토리 스크립트 전문을 정독하고 컷씬과 함께 10분 분량으로 요약합니다. 현재 {done}개 수록 — 계속 추가됩니다.": [
+    "An archive of all {count} side stories released on the KR server. Claude (AI) reads the full story scripts and condenses each into a 10-minute digest with cutscenes. {done} available now — more on the way.",
+    "韓国サーバーで公開されたサイドストーリー{count}件のアーカイブです。AI（Claude）がストーリースクリプト全文を読み込み、カットシーン付きの10分ダイジェストにまとめます。現在{done}件収録 — 順次追加されます。",
+  ],
+  "요약에는 결말 포함 스포일러가 있습니다. 이벤트 제목·썸네일 출처: 게임 데이터 · {date} 기준.": [
+    "Digests contain full spoilers including endings. Event titles & thumbnails from datamined game data · as of {date}.",
+    "要約には結末を含むネタバレがあります。イベント名・サムネイルの出典：ゲームデータ · {date}時点。",
+  ],
+  "이벤트 이름 검색": ["Search event names", "イベント名で検索"],
+  "조건에 맞는 이벤트가 없어요.": ["No events match your search.", "条件に合うイベントがありません。"],
+  "AI 요약": ["AI digest", "AI要約"],
+  "요약 준비 중": ["Digest coming soon", "要約準備中"],
+  "에피소드 {n}개": ["{n} episodes", "エピソード{n}話"],
+  "스토리 목록으로": ["Back to story list", "ストーリー一覧へ"],
+  "이 요약은 AI(Claude)가 게임 내 스토리 스크립트 전문을 읽고 쓴 2차 창작 요약입니다. 결말까지 전부 스포일러하며, 원문의 유머와 온도를 살리려 약간의 익살이 섞여 있습니다.": [
+    "This digest was written by Claude (AI) after reading the full in-game story script. It spoils everything including the ending, and keeps a bit of playful tone to match the original's humor.",
+    "この要約はAI（Claude）がゲーム内ストーリースクリプト全文を読んで書いた二次創作の要約です。結末まで完全にネタバレを含み、原文のユーモアと温度感を残すため少しおどけた文体になっています。",
+  ],
+  "요약 본문은 현재 한국어로만 제공됩니다.": ["Digest text is currently available in Korean only.", "要約本文は現在韓国語のみ提供しています。"],
+
   // ── 피드백 위젯 ────────────────────────────────────────────────────────────
   "제안 보내기": ["Send Feedback", "フィードバックを送る"],
   "기능 제안": ["Feature idea", "機能提案"],

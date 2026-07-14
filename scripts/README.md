@@ -80,3 +80,15 @@ python3 scripts/build-farm.py .gamedata   # → app/data/farm.json + public/item
 결합한다 — 네트워크 필요. 효율 지표 = 개당 기대 이성(apCost ÷ 드랍률), 표본 100회 미만 제외,
 재료당 상위 8개 스테이지 수록. 이벤트 개방/종료 시점마다 재실행해야 목록이 최신으로 유지된다.
 상세 규칙: PROJECT-GUIDE §6.5.
+
+## 6. AI 스토리 요약 데이터
+
+```bash
+python3 scripts/build-story.py                 # → app/data/stories.json + public/story/ 썸네일
+python3 scripts/build-story.py --cuts act48side  # 해당 이벤트 컷씬 CG → public/story/cut/ (집필용)
+```
+
+전부 원격 fetch라 로컬 gamedata 폴더 불필요 (story_review_table 3개 언어 + ArknightsAssets2
+이미지). KR에 새 사이드 이벤트가 풀리면 기본 모드를 재실행해 목록·썸네일을 갱신한다.
+**요약 본문(`app/data/story-summaries.json`)은 스크립트가 만들지 않는다** — AI(Claude)가
+스토리 스크립트를 정독하고 집필해 넣는다 (`story-summary` 스킬, PROJECT-GUIDE §6.6).

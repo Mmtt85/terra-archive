@@ -21,6 +21,9 @@ cat >> "$STAGE/_headers" <<'EOF'
 
 /items/*
   Cache-Control: public, max-age=2592000
+
+/story/*
+  Cache-Control: public, max-age=2592000
 EOF
 
 # Pages 고급 모드(_worker.js)는 기본적으로 모든 요청을 워커로 보낸다.
@@ -29,7 +32,7 @@ cat > "$STAGE/_routes.json" <<'JSON'
 {
   "version": 1,
   "include": ["/*"],
-  "exclude": ["/assets/*", "/avatars/*", "/items/*", "/favicon.svg", "/og.png", "/file.svg", "/globe.svg", "/window.svg", "/robots.txt", "/sitemap.xml", "/googlea82084324e20a1c2.html", "/googlea82084324e20a1c2"]
+  "exclude": ["/assets/*", "/avatars/*", "/items/*", "/story/*", "/favicon.svg", "/og.png", "/file.svg", "/globe.svg", "/window.svg", "/robots.txt", "/sitemap.xml", "/googlea82084324e20a1c2.html", "/googlea82084324e20a1c2"]
 }
 JSON
 
