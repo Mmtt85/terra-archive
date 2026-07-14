@@ -1409,6 +1409,47 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
     }
     return next;
   });
+  // MAA(MaaAssistantArknights) 오퍼 박스 인식 결과 가져오기.
+  // 지원 형식: ① Arknights_OperBox_Export.json — [{id, own, elite, ...}] 플랫 배열
+  //           ② MAA 원본 operbox — {own_opers:[...], all_opers:[...]}
+  // 파일이 언급한 오퍼만 갱신한다 (MAA가 모르는 최신 오퍼는 현재 체크 상태 유지).
+  const [importMsg, setImportMsg] = useState<string | null>(null);
+  const importMaa = (file: File) => {
+    const reader = new FileReader();
+    const fail = () => setImportMsg(t("MAA 파일을 인식하지 못했습니다 — 오퍼 박스 인식 결과 JSON(Arknights_OperBox_Export.json 등)인지 확인해 주세요."));
+    reader.onload = () => {
+      try {
+        // MAA 내보내기 파일은 UTF-8 BOM이 붙어 있어 그대로 JSON.parse하면 실패한다
+        const text = String(reader.result).replace(/^\uFEFF/, "");
+        const parsed = JSON.parse(text);
+        type MaaOper = { id?: string; own?: boolean; elite?: number };
+        const entries: MaaOper[] = Array.isArray(parsed)
+          ? parsed
+          : [...((parsed?.all_opers as MaaOper[]) ?? []), ...((parsed?.own_opers as MaaOper[]) ?? [])];
+        const byId = new Map(allOps.map((op) => [op.id, op]));
+        const nextDraft = new Set(draft);
+        const nextElite = new Map(eliteDraft);
+        const seen = new Set<string>();
+        let owned = 0, eliteSet = 0, unmatched = 0;
+        for (const entry of entries) {
+          if (!entry || typeof entry.id !== "string" || seen.has(entry.id)) continue;
+          seen.add(entry.id);
+          const op = byId.get(entry.id);
+          const isOwned = entry.own !== false; // own_opers 항목은 own 필드 없이도 보유로 취급
+          if (!op) { if (isOwned) unmatched += 1; continue; }
+          if (isOwned) { nextDraft.add(op.id); owned += 1; } else nextDraft.delete(op.id);
+          const elite = (typeof entry.elite === "number" ? Math.max(0, Math.min(2, entry.elite)) : 2) as Elite;
+          if (isOwned && elite < 2 && eliteOptions(op).length > 0) { nextElite.set(op.id, elite); eliteSet += 1; }
+          else nextElite.delete(op.id);
+        }
+        if (seen.size === 0) { fail(); return; }
+        setDraft(nextDraft);
+        setEliteDraft(nextElite);
+        setImportMsg(t("MAA 보유 데이터를 반영했습니다 — 보유 {own}명 · 정예화 반영 {elite}건 · 미수록 오퍼 {skip}건. 확인 후 '적용 및 자동편성 실행'을 누르세요.", { own: owned, elite: eliteSet, skip: unmatched }));
+      } catch { fail(); }
+    };
+    reader.readAsText(file);
+  };
   // 성급별 가능한 정예화 단계: 4성+ = 노정예/1정/2정, 3성 = 노정예/1정, 2성 이하 = 노정예뿐(선택지 없음)
   const BULK_GROUPS: { label: string; test: (rarity: number) => boolean; elites: Elite[] }[] = [
     { label: "6성", test: (rarity) => rarity === 6, elites: [0, 1, 2] },
@@ -1428,10 +1469,15 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
             <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("이름·소속 검색")} />
             <button type="button" onClick={() => setDraft(new Set(allOps.map((op) => op.id)))}><span className="btn-icon" aria-hidden>✓</span>{t("전체 선택")}</button>
             <button type="button" onClick={() => setDraft(new Set())}><span className="btn-icon" aria-hidden>✕</span>{t("전체 해제")}</button>
+            <label className="maa-import" title={t("MAA(MaaAssistantArknights)의 오퍼 박스 인식 결과 JSON을 불러와 보유·정예화를 한 번에 설정합니다")}>
+              <span className="btn-icon" aria-hidden>⤒</span>{t("MAA 파일 가져오기")}
+              <input type="file" accept="application/json,.json" onChange={(event) => { const file = event.target.files?.[0]; if (file) importMaa(file); event.target.value = ""; }} />
+            </label>
             <button type="button" className="apply" onClick={() => onApply(draft, eliteDraft)}><span className="btn-icon" aria-hidden>⟳</span>{t("적용 및 자동편성 실행")}</button>
           </div>
         </header>
         <div className="modal-scroll">
+          {importMsg && <p className="dorm-note maa-import-msg">{importMsg}</p>}
           <p className="dorm-note">{rich(t("정예화 단계에 따라 해금되는 인프라 스킬을 가진 오퍼는 카드 아래에서 **노정예/1정/2정**을 선택할 수 있습니다 (기본값 최대 정예화). 얼굴을 클릭하면 상세 정보가 열립니다."))}</p>
           <div className="roster-bulk">
             {BULK_GROUPS.map(({ label, test, elites }) => (

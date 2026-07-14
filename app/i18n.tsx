@@ -389,6 +389,19 @@ const D: Record<string, Pair> = {
   "전체 선택": ["Select all", "全選択"],
   "전체 해제": ["Clear all", "全解除"],
   "적용 및 자동편성 실행": ["Apply & run auto-assign", "適用して自動編成を実行"],
+  "MAA 파일 가져오기": ["Import MAA file", "MAAファイル読み込み"],
+  "MAA(MaaAssistantArknights)의 오퍼 박스 인식 결과 JSON을 불러와 보유·정예화를 한 번에 설정합니다": [
+    "Load an operator-box recognition JSON from MAA (MaaAssistantArknights) to set ownership and promotions at once",
+    "MAA（MaaAssistantArknights）のオペレーターBOX認識結果JSONを読み込み、所持と昇進を一括設定します",
+  ],
+  "MAA 보유 데이터를 반영했습니다 — 보유 {own}명 · 정예화 반영 {elite}건 · 미수록 오퍼 {skip}건. 확인 후 '적용 및 자동편성 실행'을 누르세요.": [
+    "Applied MAA box data — {own} owned · {elite} promotions set · {skip} operators not in this site's data. Review, then press 'Apply & run auto-assign'.",
+    "MAAの所持データを反映しました — 所持{own}名 · 昇進反映{elite}件 · 未収録オペレーター{skip}件。確認後「適用して自動編成を実行」を押してください。",
+  ],
+  "MAA 파일을 인식하지 못했습니다 — 오퍼 박스 인식 결과 JSON(Arknights_OperBox_Export.json 등)인지 확인해 주세요.": [
+    "Could not read the MAA file — make sure it is an operator-box recognition JSON (e.g. Arknights_OperBox_Export.json).",
+    "MAAファイルを認識できませんでした — オペレーターBOX認識結果のJSON（Arknights_OperBox_Export.json など）か確認してください。",
+  ],
   "정예화 단계에 따라 해금되는 인프라 스킬을 가진 오퍼는 카드 아래에서 **노정예/1정/2정**을 선택할 수 있습니다 (기본값 최대 정예화). 얼굴을 클릭하면 상세 정보가 열립니다.": [
     "Operators whose base skills unlock by promotion can be set to **E0/E1/E2** under their card (default: max promotion). Click a portrait to open details.",
     "昇進段階で基地スキルが解放されるオペレーターは、カード下で**未昇進/昇進1/昇進2**を選択できます（デフォルトは最大昇進）。顔をクリックすると詳細が開きます。",

@@ -363,6 +363,11 @@ footer p { margin:0 }
 .roster-tools input::placeholder { color:#ffffff88 }
 .roster-tools button { border:1px solid #ffffff55; background:transparent; color:#fff; padding:9px 13px; font-size:11px; font-weight:800; cursor:pointer }
 .roster-tools button.apply { background:var(--lime); color:var(--ink); border-color:var(--lime) }
+/* MAA 오퍼 박스 파일 가져오기 — roster-tools 버튼과 같은 톤의 label+hidden input */
+.roster-tools .maa-import { display:inline-flex; align-items:center; border:1px solid #ffffff55; background:transparent; color:#fff; padding:9px 13px; font-size:11px; font-weight:800; cursor:pointer; transition:.15s }
+.roster-tools .maa-import:hover { background:#ffffff22 }
+.roster-tools .maa-import input { display:none }
+.maa-import-msg { border-left:3px solid var(--lime) }
 .roster-bulk { display:flex; flex-wrap:wrap; gap:8px 18px; margin:0 0 13px }
 .bulk-group { display:inline-flex; align-items:center; gap:5px }
 .bulk-group b { font:800 10px monospace; margin-right:3px }
