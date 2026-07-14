@@ -41,7 +41,8 @@ function blockText(block: Block): string {
   return block.x;
 }
 
-const MAX_RAIL_CARDS = 5;
+// 세로 중앙 정렬 스택이 일반 노트북 뷰포트(~800px)를 넘지 않는 개수
+const MAX_RAIL_CARDS = 4;
 
 // 요약 상세 — 본문 + 스크롤 추적 참조 레일
 function StoryDetail({ event, summary, onClose }: { event: StoryEvent; summary: Summary; onClose: () => void }) {

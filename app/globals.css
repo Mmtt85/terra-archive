@@ -625,7 +625,10 @@ footer p { margin:0 }
 .story-cast figcaption span { font:600 9.5px/1.45 monospace; color:var(--muted); word-break:keep-all }
 /* 본문 + 스크롤 추적 참조 레일 (넓은 화면) */
 .story-detail-grid { display:flex; gap:30px; align-items:flex-start; margin-top:26px }
-.story-rail { position:sticky; top:22px; width:216px; flex:0 0 216px; display:flex; flex-direction:column; gap:10px }
+/* 레일은 뷰포트 전체 높이를 차지하고 카드를 세로 중앙에 모은다 —
+   읽는 시선(화면 중간)과 같은 높이에서 카드가 열리고 닫히게 */
+.story-rail { position:sticky; top:0; height:100vh; width:216px; flex:0 0 216px;
+  display:flex; flex-direction:column; justify-content:center; gap:10px; overflow:hidden; padding:12px 0 }
 .rail-card { border:1px solid var(--line); background:var(--white); animation:rail-in .4s ease both }
 .rail-card .cast-img { height:118px }
 .rail-card-text { padding:7px 10px 9px; display:flex; flex-direction:column; gap:3px }
