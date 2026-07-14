@@ -464,7 +464,7 @@ function HomeInner({ operators, extra }: { operators: Operator[]; extra: ExtraI1
           : tab === "farm"
             ? t("재료 파밍 효율표 - 명일방주 파밍 가이드 | 테라 아카이브")
             : tab === "story"
-              ? t("AI 스토리 요약 - 명일방주 이벤트 스토리 요약 | 테라 아카이브")
+              ? t("AI 이벤트 스토리 요약 - 명일방주 이벤트 스토리 요약 | 테라 아카이브")
               : t("테라 아카이브 | 명일방주(Arknights) KR 팬사이트");
   }, [tab, selected, t]);
 
@@ -591,7 +591,7 @@ function HomeInner({ operators, extra }: { operators: Operator[]; extra: ExtraI1
           <button className={`tab-planner${tab === "planner" ? " selected" : ""}`} onClick={() => switchTab("planner")}><span className="tab-icon" aria-hidden>⌂</span>{t("인프라 플래너")}</button>
           <button className={`tab-recruit${tab === "recruit" ? " selected" : ""}`} onClick={() => switchTab("recruit")}><span className="tab-icon" aria-hidden>◎</span>{t("공채 도우미")}</button>
           <button className={`tab-farm${tab === "farm" ? " selected" : ""}`} onClick={() => switchTab("farm")}><span className="tab-icon" aria-hidden>◈</span>{t("재료 파밍")}</button>
-          <button className={`tab-story${tab === "story" ? " selected" : ""}`} onClick={() => switchTab("story")}><span className="tab-icon" aria-hidden>✦</span>{t("스토리 요약")}</button>
+          <button className={`tab-story${tab === "story" ? " selected" : ""}`} onClick={() => switchTab("story")}><span className="tab-icon" aria-hidden>✦</span>{t("AI 이벤트 스토리 요약")}</button>
         </nav>
         <LanguageSwitcher />
       </header>
@@ -652,7 +652,7 @@ function HomeInner({ operators, extra }: { operators: Operator[]; extra: ExtraI1
       {tab === "planner" && <InfraPlanner onShowOperator={showOperatorById} extra={extra} />}
       {tab === "recruit" && <RecruitHelper onShowOperator={showOperatorById} extra={extra} />}
       {tab === "farm" && <FarmGuide />}
-      {tab === "story" && <StoryGuide />}
+      {tab === "story" && <StoryGuide onShowOperator={showOperatorById} />}
 
       {selected && <OperatorModal operator={selected} nicknames={nicknames.get(selected.id) ?? []} onSubmitNickname={handleSubmitNickname} onClose={closeOperator} />}
       <FeedbackWidget />

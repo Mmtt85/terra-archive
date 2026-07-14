@@ -12,13 +12,13 @@ import summariesData from "./data/story-summaries.json";
 import { rich, useI18n, type Locale } from "./i18n";
 
 type LocText = { ko: string; en?: string; ja?: string };
-type StoryEvent = { id: string; name: LocText; start: string; episodes: number; thumb: string };
+type StoryEvent = { id: string; name: LocText; start: string; episodes: number; thumb: string; thumbJa?: string };
 type Block =
   | { t: "h"; x: string }
   | { t: "p"; x: string }
   | { t: "img"; src: string; cap?: string }
   | { t: "quote"; who: string; x: string };
-type Entity = { name: string; desc: string; img?: string; alias?: string[] };
+type Entity = { name: string; desc: string; img?: string; alias?: string[]; op?: string };
 type Summary = { tagline: string; chars?: Entity[]; terms?: Entity[]; blocks: Block[] };
 
 const data = storiesData as { updated: string; events: StoryEvent[] };
@@ -45,7 +45,9 @@ function blockText(block: Block): string {
 const MAX_RAIL_CARDS = 4;
 
 // 요약 상세 — 본문 + 스크롤 추적 참조 레일
-function StoryDetail({ event, summary, onClose }: { event: StoryEvent; summary: Summary; onClose: () => void }) {
+function StoryDetail({ event, summary, onClose, onShowOperator }: {
+  event: StoryEvent; summary: Summary; onClose: () => void; onShowOperator?: (id: string) => void;
+}) {
   const { locale, t } = useI18n();
   const bodyRef = useRef<HTMLDivElement>(null);
   const [inView, setInView] = useState<Set<number>>(new Set());
@@ -121,12 +123,17 @@ function StoryDetail({ event, summary, onClose }: { event: StoryEvent; summary: 
       </header>
       {cast.length > 0 && (
         <div className="story-cast" role="list" aria-label={t("등장인물")}>
-          {cast.map((who) => (
-            <figure key={who.name} role="listitem">
-              <div className="cast-img"><img src={who.img} alt={who.name} loading="lazy" decoding="async" /></div>
-              <figcaption><b>{who.name}</b><span>{who.desc}</span></figcaption>
-            </figure>
-          ))}
+          {cast.map((who) => {
+            const linked = Boolean(who.op && onShowOperator);
+            return (
+              <figure key={who.name} role="listitem" className={linked ? "op-linked" : undefined}
+                onClick={linked ? () => onShowOperator!(who.op!) : undefined}
+                title={linked ? t("오퍼레이터 정보 보기") : undefined}>
+                <div className="cast-img"><img src={who.img} alt={who.name} loading="lazy" decoding="async" /></div>
+                <figcaption><b>{who.name}{linked && <i className="op-mark" aria-hidden>↗</i>}</b><span>{who.desc}</span></figcaption>
+              </figure>
+            );
+          })}
         </div>
       )}
       <div className="story-detail-grid">
@@ -153,12 +160,17 @@ function StoryDetail({ event, summary, onClose }: { event: StoryEvent; summary: 
         <aside className="story-rail" aria-label={t("등장인물")}>
           {active.map((entityIndex) => {
             const entity = entities[entityIndex];
+            const linked = Boolean(entity.op && onShowOperator);
             return (
-              <div className="rail-card" key={entity.name}>
+              <div className={`rail-card${linked ? " op-linked" : ""}`} key={entity.name}
+                onClick={linked ? () => onShowOperator!(entity.op!) : undefined}
+                role={linked ? "button" : undefined} tabIndex={linked ? 0 : undefined}
+                onKeyDown={linked ? (keyEvent) => { if (keyEvent.key === "Enter") onShowOperator!(entity.op!); } : undefined}
+                title={linked ? t("오퍼레이터 정보 보기") : undefined}>
                 {entity.img && (
                   <div className="cast-img"><img src={entity.img} alt="" loading="lazy" decoding="async" /></div>
                 )}
-                <div className="rail-card-text"><b>{entity.name}</b><span>{entity.desc}</span></div>
+                <div className="rail-card-text"><b>{entity.name}{linked && <i className="op-mark" aria-hidden>↗</i>}</b><span>{entity.desc}</span></div>
               </div>
             );
           })}
@@ -171,7 +183,7 @@ function StoryDetail({ event, summary, onClose }: { event: StoryEvent; summary: 
   );
 }
 
-export default function StoryGuide() {
+export default function StoryGuide({ onShowOperator }: { onShowOperator?: (id: string) => void }) {
   const { locale, t } = useI18n();
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<StoryEvent | null>(null);
@@ -205,15 +217,15 @@ export default function StoryGuide() {
   const summarized = data.events.filter((event) => summaries[event.id]).length;
 
   if (selected) {
-    return <StoryDetail event={selected} summary={summaries[selected.id]} onClose={close} />;
+    return <StoryDetail event={selected} summary={summaries[selected.id]} onClose={close} onShowOperator={onShowOperator} />;
   }
 
   return (
-    <section className="story" aria-label={t("AI 스토리 요약")}>
+    <section className="story" aria-label={t("AI 이벤트 스토리 요약")}>
       <div className="story-head">
         <span className="section-no">AI STORY DIGEST</span>
-        <h2>{t("AI 스토리 요약")}</h2>
-        <p>{t("한국 서버에 풀린 사이드 스토리 {count}개의 아카이브입니다. AI(Claude)가 스토리 스크립트 전문을 정독하고 컷씬과 함께 10분 분량으로 요약합니다. 현재 {done}개 수록 — 계속 추가됩니다.", { count: data.events.length, done: summarized })}</p>
+        <h2>{t("AI 이벤트 스토리 요약")}</h2>
+        <p>{t("한국 서버에 풀린 사이드 스토리 {count}개의 아카이브입니다. AI가 스토리 스크립트 전문을 정독하고 컷씬과 함께 10분 분량으로 요약합니다. 현재 {done}개 수록 — 계속 추가됩니다.", { count: data.events.length, done: summarized })}</p>
         <p className="story-source">{t("요약에는 결말 포함 스포일러가 있습니다. 이벤트 제목·썸네일 출처: 게임 데이터 · {date} 기준.", { date: data.updated })}</p>
       </div>
 
@@ -232,7 +244,7 @@ export default function StoryGuide() {
                 <button type="button" onClick={() => ready && open(event)} disabled={!ready}
                   aria-label={locText(locale, event.name)}>
                   <div className="story-thumb">
-                    <img src={event.thumb} alt="" loading="lazy" decoding="async" />
+                    <img src={locale === "ja" && event.thumbJa ? event.thumbJa : event.thumb} alt="" loading="lazy" decoding="async" />
                     {ready
                       ? <em className="story-ready-badge">{t("AI 요약")}</em>
                       : <em className="story-pending-badge">{t("요약 준비 중")}</em>}

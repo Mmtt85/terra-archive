@@ -635,6 +635,11 @@ footer p { margin:0 }
 .rail-card-text b { font-size:12px; letter-spacing:-.3px }
 .rail-card-text span { font:600 10px/1.5 monospace; color:var(--muted); word-break:keep-all }
 @keyframes rail-in { from { opacity:0; transform:translateX(16px) } to { opacity:1; transform:none } }
+/* 오퍼레이터인 인물 카드 — 클릭하면 오퍼 상세 모달 */
+.op-linked { cursor:pointer; transition:.15s }
+.op-linked:hover { border-color:var(--ink); transform:translateY(-2px) }
+.op-mark { margin-left:4px; font:800 10px monospace; color:var(--muted); font-style:normal }
+.op-linked:hover .op-mark { color:var(--ink) }
 /* 넓은 화면에선 레일이 상단 갤러리를 대체하고, 좁은 화면에선 반대 */
 @media (width>1180px) { .story-detail .story-cast { display:none } }
 @media (width<=1180px) { .story-rail { display:none } }

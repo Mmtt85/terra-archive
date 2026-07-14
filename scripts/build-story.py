@@ -11,9 +11,13 @@ Usage:
 데이터 소스 (전부 원격 — 로컬 gamedata 폴더 불필요):
   - 이벤트 목록·제목(3개 언어)·에피소드 구성: 클뜯 레포 excel/story_review_table.json
     (kr 기준, en/jp는 미출시 이벤트면 한국어로 폴백)
-  - 썸네일: ArknightsAssets/ArknightsAssets2(cn 브랜치)
-    assets/dyn/arts/ui/storyreview/hubs/activity/storyentrypic_<id>.png
-    → public/story/<eventId>.jpg (sips로 jpeg 변환, 있으면 스킵)
+  - 썸네일: CN판은 중국어 부제가 박혀 있어 쓰지 않는다 (사용자 확정 2026-07).
+    · 기본(ko·en 라우트): ArknightsAssets2 en 브랜치(글로벌판) → public/story/<id>.jpg
+      ※ KR 서버판은 언팩된 공개 레포가 없어 글로벌판으로 대체
+    · ja 라우트: 555me/ArknightsAssets2 jp 브랜치(일본판) → public/story/ja/<id>.jpg
+      (없는 이벤트는 stories.json에 thumbJa를 넣지 않음 → UI가 기본판으로 폴백)
+    경로: assets/dyn/arts/ui/storyreview/hubs/activity/storyentrypic_<id>.png
+    (sips로 jpeg 변환, 있으면 스킵)
   - 컷씬 CG(--cuts): 스토리 스크립트의 [Image(image="...")] 태그를 수집해
     assets/dyn/avg/images/<name>.png → public/story/cut/<name>.jpg (1080px 리사이즈)
 
@@ -25,7 +29,9 @@ import json, os, re, subprocess, sys, time, urllib.request
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 GAMEDATA = "https://raw.githubusercontent.com/ArknightsAssets/ArknightsGamedata/master"
-ASSETS = "https://raw.githubusercontent.com/ArknightsAssets/ArknightsAssets2/cn/assets/dyn"
+ASSETS = "https://raw.githubusercontent.com/ArknightsAssets/ArknightsAssets2/cn/assets/dyn"      # 컷씬·스탠딩(텍스트 없음)
+ASSETS_EN = "https://raw.githubusercontent.com/ArknightsAssets/ArknightsAssets2/en/assets/dyn"  # 글로벌판 썸네일
+ASSETS_JP = "https://raw.githubusercontent.com/555me/ArknightsAssets2/jp/assets/dyn"            # 일본판 썸네일 (본가엔 jp 브랜치 없음)
 
 def fetch(url, binary=False):
     req = urllib.request.Request(url, headers={"User-Agent": "terra-archive-story/1.0"})
@@ -125,6 +131,9 @@ THUMB_FALLBACK = {
     "act36side": f"{ASSETS}/avg/images/54_i1.png",   # 테라밥
 }
 
+ja_dir = os.path.join(thumb_dir, "ja")
+os.makedirs(ja_dir, exist_ok=True)
+
 events, failed = [], []
 acts = sorted((v for v in kr.values() if v["entryType"] == "ACTIVITY"),
               key=lambda v: -v["startTime"])
@@ -134,7 +143,7 @@ for act in acts:
     codes = []
     for info in act["infoUnlockDatas"]:
         if info["storyCode"] and info["storyCode"] not in codes: codes.append(info["storyCode"])
-    events.append({
+    entry = {
         "id": eid,
         "name": {
             "ko": act["name"],
@@ -144,17 +153,31 @@ for act in acts:
         "start": time.strftime("%Y-%m", time.gmtime(act["startTime"])),
         "episodes": len(codes),
         "thumb": f"/story/{eid}.jpg",
-    })
-    dest = os.path.join(thumb_dir, f"{eid}.jpg")
-    if os.path.exists(dest): continue
+    }
     pic = (act.get("storyEntryPicId") or f"storyEntryPic_{eid}").lower()
-    url = THUMB_FALLBACK.get(eid) or f"{ASSETS}/arts/ui/storyreview/hubs/activity/{pic}.png"
-    try:
-        png = fetch(url, binary=True)
-        to_jpeg(png, dest, max_px=640 if eid in THUMB_FALLBACK else None)
-        print("thumb:", eid, file=sys.stderr)
-    except Exception as err:  # noqa: BLE001 — 썸네일 하나 실패해도 목록은 만든다
-        failed.append((eid, pic, str(err)))
+    # 기본(ko·en) = 글로벌판, 없으면 스토리 CG로 대체
+    dest = os.path.join(thumb_dir, f"{eid}.jpg")
+    if not os.path.exists(dest):
+        url = THUMB_FALLBACK.get(eid) or f"{ASSETS_EN}/arts/ui/storyreview/hubs/activity/{pic}.png"
+        try:
+            png = fetch(url, binary=True)
+            to_jpeg(png, dest, max_px=640 if eid in THUMB_FALLBACK else None)
+            print("thumb:", eid, file=sys.stderr)
+        except Exception as err:  # noqa: BLE001 — 썸네일 하나 실패해도 목록은 만든다
+            failed.append((eid, pic, str(err)))
+    # 일본판 — 없으면 thumbJa 생략(UI가 기본판으로 폴백)
+    if eid not in THUMB_FALLBACK:
+        ja_dest = os.path.join(ja_dir, f"{eid}.jpg")
+        if not os.path.exists(ja_dest):
+            try:
+                png = fetch(f"{ASSETS_JP}/arts/ui/storyreview/hubs/activity/{pic}.png", binary=True)
+                to_jpeg(png, ja_dest)
+                print("thumb(ja):", eid, file=sys.stderr)
+            except Exception:  # noqa: BLE001
+                pass
+        if os.path.exists(ja_dest):
+            entry["thumbJa"] = f"/story/ja/{eid}.jpg"
+    events.append(entry)
 
 out = {"updated": time.strftime("%Y-%m-%d"), "events": events}
 json.dump(out, open(f"{REPO}/app/data/stories.json", "w", encoding="utf-8"),
