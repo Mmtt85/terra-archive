@@ -1562,13 +1562,6 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
           <h2>{t("보유 오퍼레이터 설정")}</h2>
           <div className="roster-tools">
             <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("이름·소속 검색")} />
-            <label className="sort-wrap">
-              <span>{t("정렬")}</span>
-              <select value={sortKey} onChange={(event) => setSortKey(event.target.value)}>
-                {["기본", "이름", "성급", "발매순", "소속"].map((key) => <option key={key} value={key}>{t(key)}</option>)}
-              </select>
-              <button type="button" className="sort-direction" onClick={() => setSortAsc((current) => !current)} aria-label={sortAsc ? t("내림차순으로 변경") : t("오름차순으로 변경")}>{sortAsc ? "↑" : "↓"}</button>
-            </label>
             <button type="button" onClick={() => setDraft(new Set(allOps.map((op) => op.id)))}><span className="btn-icon" aria-hidden>✓</span>{t("전체 선택")}</button>
             <button type="button" onClick={() => setDraft(new Set())}><span className="btn-icon" aria-hidden>✕</span>{t("전체 해제")}</button>
             <label className="maa-import" title={t("MAA(MaaAssistantArknights)의 오퍼 박스 인식 결과 JSON을 불러와 보유·정예화를 한 번에 설정합니다")}>
@@ -1592,6 +1585,16 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
                 ))}
               </span>
             ))}
+          </div>
+          <div className="roster-sortbar">
+            <label className="sort-wrap">
+              <span>{t("정렬")}</span>
+              <select value={sortKey} onChange={(event) => setSortKey(event.target.value)}>
+                {["기본", "이름", "성급", "발매순", "소속"].map((key) => <option key={key} value={key}>{t(key)}</option>)}
+              </select>
+              <button type="button" className="sort-direction" onClick={() => setSortAsc((current) => !current)} aria-label={sortAsc ? t("내림차순으로 변경") : t("오름차순으로 변경")}>{sortAsc ? "↑" : "↓"}</button>
+            </label>
+            <span className="count"><b>{visible.length}</b> OPERATORS</span>
           </div>
           <div className="roster-grid">
             {visible.map((op) => {

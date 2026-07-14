@@ -377,6 +377,11 @@ footer p { margin:0 }
 .bulk-group b { font:800 10px monospace; margin-right:3px }
 .bulk-group button { border:1px solid var(--line); background:var(--white); padding:5px 8px; font-size:10px; font-weight:800; cursor:pointer }
 .bulk-group button:hover { border-color:var(--ink) }
+/* 정렬 바 — 오퍼 리스트 바로 위 (어두운 모달 톤에 맞춰 흰 글씨) */
+.roster-sortbar { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 0 10px }
+.roster-sortbar .sort-wrap { color:#ffffffaa }
+.roster-sortbar .count { color:#ffffff88 }
+.roster-sortbar .count b { color:#fff }
 .roster-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(108px,1fr)); gap:7px }
 .roster-card { display:flex; flex-direction:column; border:1px solid var(--line); background:#f0efe9; opacity:.45; transition:.12s }
 .roster-card.owned { opacity:1; background:var(--white); border-color:var(--ink) }
