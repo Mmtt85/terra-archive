@@ -270,7 +270,7 @@ footer p { margin:0 }
 @keyframes fadeIn { 0% { opacity:0 } }
 @media (width<=1450px) { .operator-grid { grid-template-columns:repeat(4,minmax(0,1fr)) } }
 @media (width<=1100px) { .header-tagline { padding:0 14px; font-size:16px } .operator-grid { grid-template-columns:repeat(3,minmax(0,1fr)) } }
-@media (width<=760px) { .site-header { height:66px } .server-chip { font-size:8px } .hero { min-height:auto; padding:24px 22px } .hero h1 { font-size:32px } .hero>p br { display:none } .explorer { width:auto; height:auto; padding-top:35px; display:block; overflow:visible } .filter-panel,.results { padding-right:0; overflow:visible } .results { margin-top:48px } .operator-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px } .portrait { min-height:138px } .card-body { padding:12px } .name-line { display:block } .name-line i { text-align:left; margin-top:7px; display:block } .modal-backdrop { padding:10px } .operator-modal { max-height:calc(100dvh - 20px) } .modal-hero { grid-template-columns:110px 1fr; min-height:110px } .modal-hero>img { height:100%; min-height:110px } .modal-title-block { padding:12px 48px 12px 16px } .modal-title-block h2 { font-size:20px } .class-line { margin-top:8px } .modal-scroll { padding:20px 18px 30px } .modal-facts,.detail-list { grid-template-columns:1fr } .skill-detail { grid-template-columns:38px 1fr; gap:10px; padding:12px } .skill-index { width:34px; height:34px } footer { line-height:1.6; display:block } footer p { margin-top:7px } }
+@media (width<=760px) { .site-header { height:66px } .server-chip { font-size:8px } .hero { min-height:auto; padding:24px 22px } .hero h1 { font-size:32px } .hero>p br { display:none } .explorer { width:auto; height:auto; padding-top:35px; display:block; overflow:visible } .filter-panel,.results { padding-right:0; overflow:visible } .results { margin-top:48px } .operator-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px } .portrait { min-height:138px } .card-body { padding:12px } .name-line { display:block } .name-line i { text-align:left; margin-top:7px; display:block } .modal-backdrop { padding:10px } .operator-modal { max-height:calc(100dvh - 20px) } .modal-hero { grid-template-columns:110px 1fr; min-height:110px } .modal-hero>img { height:100%; min-height:110px } .modal-title-block { padding:12px 48px 12px 16px } .modal-title-block h2 { font-size:20px } .class-line { margin-top:8px } .modal-scroll { padding:20px 18px 30px } .modal-facts,.detail-list { grid-template-columns:1fr } .skill-detail { grid-template-columns:38px 1fr; gap:10px; padding:12px } .skill-index { width:34px; height:34px } footer { line-height:1.6; display:block } footer p { margin-top:7px } .feedback-widget { bottom:140px; right:14px } }
 @media (width<=430px) { .brand small { display:none } .hero h1 { font-size:29px } .hero-stats div { min-width:85px; margin-right:16px; padding-right:16px } .operator-grid { grid-template-columns:1fr } .portrait { min-height:138px } .card-body p { min-height:0 } }
 @media (width<=760px) { .module-levels { grid-template-columns:1fr } .module-levels>div { border-left:0; border-top:1px solid var(--line) } .module-levels>div:first-child { border-top:0 } .infra-list article { grid-template-columns:90px 1fr } main { height:auto; overflow:visible } .header-tagline { display:none } .hero h1 br { display:block } }
 @media (prefers-reduced-motion:reduce) { * { scroll-behavior:auto!important; animation:none!important } }
@@ -464,7 +464,8 @@ footer p { margin:0 }
 .bench-search { display:block; width:100%; max-width:260px; margin-top:8px; border:1px solid var(--line); background:var(--white); padding:7px 9px; font-size:12px }
 .bench-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px }
 /* ─ 피드백 위젯 ─ */
-.feedback-widget { position:fixed; right:22px; bottom:22px; z-index:150; display:flex; flex-direction:column; align-items:flex-end; gap:10px }
+/* bottom을 footer 높이보다 살짝 크게 띄워 버튼이 푸터 위에 겹치지 않게 한다 */
+.feedback-widget { position:fixed; right:22px; bottom:96px; z-index:150; display:flex; flex-direction:column; align-items:flex-end; gap:10px }
 .feedback-fab { border:1px solid var(--ink); background:var(--ink); color:var(--lime); cursor:pointer; padding:12px 18px; font-size:13px; font-weight:800; box-shadow:0 8px 24px #0005 }
 .feedback-fab:hover { background:var(--lime); color:var(--ink) }
 .feedback-panel { width:min(320px, calc(100vw - 44px)); border:1px solid var(--ink); background:var(--white); box-shadow:0 16px 44px #0004; animation:.18s both fadeIn }
@@ -610,7 +611,10 @@ footer p { margin:0 }
 /* 상세 */
 .story-back { border:1px solid var(--line); background:var(--white); padding:8px 14px; font-size:12.5px; font-weight:800; cursor:pointer; transition:.15s }
 .story-back:hover { border-color:var(--ink) }
-.story-detail-head { margin-top:20px; max-width:760px }
+/* 상세 콘텐츠(본문+레일 합산 966px) 한 덩어리를 섹션 안에서 가운데 정렬 —
+   개별 요소에 margin:auto를 걸면 display:block 버튼이 늘어나므로, 바깥 래퍼를 센터링한다 */
+.story-detail-inner { max-width:966px; margin:0 auto }
+.story-detail-head { margin-top:20px }
 .story-detail-head h2 { margin:6px 0 8px; font-size:30px; letter-spacing:-.5px }
 .story-meta { margin:0 0 10px; font:700 12px monospace; color:var(--muted) }
 .story-tagline { margin:0 0 14px; font-size:15px; font-weight:700; line-height:1.6 }

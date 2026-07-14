@@ -110,58 +110,60 @@ function StoryDetail({ event, summary, onClose, onShowOperator }: {
 
   return (
     <section className="story story-detail" aria-label={locText(locale, event.name)}>
-      <button type="button" className="story-back" onClick={onClose}>← {t("스토리 목록으로")}</button>
-      <header className="story-detail-head">
-        <span className="section-no">AI STORY DIGEST</span>
-        <h2>{locText(locale, event.name)}</h2>
-        <p className="story-meta">{event.start} · {t("에피소드 {n}개", { n: event.episodes })}</p>
-        <p className="story-tagline">{summary.tagline}</p>
-        <p className="story-disclaimer">{t("이 요약은 AI가 게임 내 스토리 스크립트 전문을 읽고 쓴 2차 창작 요약입니다.")}</p>
-        {locale !== "ko" && <p className="story-disclaimer">{t("요약 본문은 현재 한국어로만 제공됩니다.")}</p>}
-      </header>
-      <div className="story-detail-grid">
-        <div className="story-body" ref={bodyRef}>
-          {summary.blocks.map((block, index) => {
-            if (block.t === "h") return <h3 key={index} data-idx={index}>{block.x}</h3>;
-            if (block.t === "img")
-              return (
-                <figure key={index} data-idx={index}>
-                  <img src={block.src} alt={block.cap ?? ""} loading="lazy" decoding="async" />
-                  {block.cap && <figcaption>{block.cap}</figcaption>}
-                </figure>
-              );
-            if (block.t === "quote")
-              return (
-                <blockquote key={index} data-idx={index}>
-                  <p>{rich(block.x)}</p>
-                  <cite>— {block.who}</cite>
-                </blockquote>
-              );
-            return <p key={index} data-idx={index}>{rich(block.x)}</p>;
-          })}
-        </div>
-        <aside className="story-rail" aria-label={t("등장인물")}>
-          {active.map((entityIndex) => {
-            const entity = entities[entityIndex];
-            const linked = Boolean(entity.op && onShowOperator);
-            return (
-              <div className={`rail-card${linked ? " op-linked" : ""}`} key={entity.name}
-                onClick={linked ? () => onShowOperator!(entity.op!) : undefined}
-                role={linked ? "button" : undefined} tabIndex={linked ? 0 : undefined}
-                onKeyDown={linked ? (keyEvent) => { if (keyEvent.key === "Enter") onShowOperator!(entity.op!); } : undefined}
-                title={linked ? t("오퍼레이터 정보 보기") : undefined}>
-                {entity.img && (
-                  <div className="cast-img"><img src={entity.img} alt="" loading="lazy" decoding="async" /></div>
-                )}
-                <div className="rail-card-text"><b>{entity.name}{linked && <i className="op-mark" aria-hidden>↗</i>}</b><span>{entity.desc}</span></div>
-              </div>
-            );
-          })}
-        </aside>
-      </div>
-      <footer className="story-detail-foot">
+      <div className="story-detail-inner">
         <button type="button" className="story-back" onClick={onClose}>← {t("스토리 목록으로")}</button>
-      </footer>
+        <header className="story-detail-head">
+          <span className="section-no">AI STORY DIGEST</span>
+          <h2>{locText(locale, event.name)}</h2>
+          <p className="story-meta">{event.start} · {t("에피소드 {n}개", { n: event.episodes })}</p>
+          <p className="story-tagline">{summary.tagline}</p>
+          <p className="story-disclaimer">{t("이 요약은 AI가 게임 내 스토리 스크립트 전문을 읽고 쓴 2차 창작 요약입니다.")}</p>
+          {locale !== "ko" && <p className="story-disclaimer">{t("요약 본문은 현재 한국어로만 제공됩니다.")}</p>}
+        </header>
+        <div className="story-detail-grid">
+          <div className="story-body" ref={bodyRef}>
+            {summary.blocks.map((block, index) => {
+              if (block.t === "h") return <h3 key={index} data-idx={index}>{block.x}</h3>;
+              if (block.t === "img")
+                return (
+                  <figure key={index} data-idx={index}>
+                    <img src={block.src} alt={block.cap ?? ""} loading="lazy" decoding="async" />
+                    {block.cap && <figcaption>{block.cap}</figcaption>}
+                  </figure>
+                );
+              if (block.t === "quote")
+                return (
+                  <blockquote key={index} data-idx={index}>
+                    <p>{rich(block.x)}</p>
+                    <cite>— {block.who}</cite>
+                  </blockquote>
+                );
+              return <p key={index} data-idx={index}>{rich(block.x)}</p>;
+            })}
+          </div>
+          <aside className="story-rail" aria-label={t("등장인물")}>
+            {active.map((entityIndex) => {
+              const entity = entities[entityIndex];
+              const linked = Boolean(entity.op && onShowOperator);
+              return (
+                <div className={`rail-card${linked ? " op-linked" : ""}`} key={entity.name}
+                  onClick={linked ? () => onShowOperator!(entity.op!) : undefined}
+                  role={linked ? "button" : undefined} tabIndex={linked ? 0 : undefined}
+                  onKeyDown={linked ? (keyEvent) => { if (keyEvent.key === "Enter") onShowOperator!(entity.op!); } : undefined}
+                  title={linked ? t("오퍼레이터 정보 보기") : undefined}>
+                  {entity.img && (
+                    <div className="cast-img"><img src={entity.img} alt="" loading="lazy" decoding="async" /></div>
+                  )}
+                  <div className="rail-card-text"><b>{entity.name}{linked && <i className="op-mark" aria-hidden>↗</i>}</b><span>{entity.desc}</span></div>
+                </div>
+              );
+            })}
+          </aside>
+        </div>
+        <footer className="story-detail-foot">
+          <button type="button" className="story-back" onClick={onClose}>← {t("스토리 목록으로")}</button>
+        </footer>
+      </div>
     </section>
   );
 }
