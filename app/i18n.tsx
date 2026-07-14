@@ -159,6 +159,7 @@ const D: Record<string, Pair> = {
   "기본": ["Default", "デフォルト"],
   "이름": ["Name", "名前"],
   "성급": ["Rarity", "レア度"],
+  "발매순": ["Release order", "実装順"],
   "소속": ["Affiliation", "所属"],
   "출신지": ["Birthplace", "出身"],
   "종족": ["Race", "種族"],

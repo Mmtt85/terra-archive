@@ -96,7 +96,7 @@ const SYNERGY_POTS = ["해산물팟", "쉐이팟", "쉐라그팟", "카시미어
 // 직군 표시 순서의 정본은 jobCode — 표시명은 로케일 데이터에서 뽑는다
 const JOB_ORDER = ["PIONEER", "WARRIOR", "TANK", "SNIPER", "CASTER", "MEDIC", "SUPPORT", "SPECIAL"];
 
-const SORT_KEYS = ["기본", "이름", "성급", "소속", "출신지", "종족", "직군", "세부 직군"];
+const SORT_KEYS = ["기본", "이름", "성급", "발매순", "소속", "출신지", "종족", "직군", "세부 직군"];
 
 function tabFromHash(hash: string): "archive" | "planner" | "recruit" | "farm" | "story" {
   return hash === "#infra" ? "planner" : hash === "#recruit" ? "recruit" : hash === "#farm" ? "farm" : hash.startsWith("#story") ? "story" : "archive";
@@ -561,6 +561,7 @@ function HomeInner({ operators, extra }: { operators: Operator[]; extra: ExtraI1
       switch (sortKey) {
         case "이름": return operator.name;
         case "성급": return operator.rarity;
+        case "발매순": return operator.seq; // KR 출시 순서 (↑ 오래된 순 / ↓ 최신 순)
         case "소속": return operator.faction;
         case "출신지": return operator.birthplace ?? "";
         case "종족": return operator.race ?? "";
