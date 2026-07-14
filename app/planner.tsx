@@ -29,6 +29,7 @@ type InfraSkill = {
   basePartnerBonus?: number | null; // 위 조건 충족 시 추가 효율 (언더플로우 +10)
   gateFaction?: string | null;  // "쉐라그 3명 배치된 무역소" 류 — 진영 N명 배치 조건
   gateCount?: number | null;
+  gatePlatforms?: number | null; // "작업 플랫폼 2대+ 발전소 배치 시" (푸딩) — 자동편성 미충족 조건
   belowThreshold?: number | null; // "누적 속도 30% 미만인 경우" 류 — 대상 방 수치가 임계값 미만일 때만 (사일라흐)
   reqFaction: string | null;
   perFaction: string | null;
@@ -36,6 +37,7 @@ type InfraSkill = {
   perCap: number | null;
   perSkillTag: string | null;
   perSkillValue: number | null;
+  tiers?: InfraSkill[]; // 같은 슬롯의 하위 정예화 단계 (스푸리아 기술 교류 α) — 정예화 낮추면 대체
 };
 
 type InfraOp = {
@@ -62,10 +64,20 @@ type Elite = 0 | 1 | 2;
 
 // 미지정 = 2정(최대) 가정. 1정은 '정예화 2' 해금 스킬을, 0정(노정예)은
 // '정예화 1'·'정예화 2' 해금 스킬을 아직 못 쓴다 (Lv.1/Lv.30 스킬은 유지)
+const eliteLocks = (unlock: string, elite: Elite) => unlock === "정예화 2" || (elite === 0 && unlock === "정예화 1");
 function withElite(op: InfraOp, elite: Elite | undefined): InfraOp {
   if (elite == null || elite === 2) return op;
-  const skills = op.skills.filter((skill) => skill.unlock !== "정예화 2" && (elite === 1 || skill.unlock !== "정예화 1"));
-  return skills.length === op.skills.length ? op : { ...op, skills };
+  let changed = false;
+  const skills: InfraSkill[] = [];
+  for (const skill of op.skills) {
+    if (!eliteLocks(skill.unlock, elite)) { skills.push(skill); continue; }
+    changed = true;
+    // 정예화로 잠긴 스킬 — 같은 슬롯의 하위 단계(기술 교류 α 등)가 있으면 그걸로 대체.
+    // 없으면(순수 정예화 해금 스킬) 통째로 빠진다.
+    const lower = (skill.tiers ?? []).filter((t) => !eliteLocks(t.unlock, elite));
+    if (lower.length) skills.push(lower[lower.length - 1]);
+  }
+  return changed ? { ...op, skills } : op;
 }
 
 // 정예화 단계 선택지: 정예화 해금 스킬이 있어야 의미가 있고,
@@ -203,6 +215,9 @@ function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx): OpBrea
     // 진영 N명 배치 게이트 (실버애쉬 이격: 쉐라그 3명 배치된 무역소) — 조 전체 인원수 근사
     if (skill.gateFaction && (ctx.factionCounts?.[skill.gateFaction] ?? 0) < (skill.gateCount ?? 1)) continue;
     out.skills.push(skill);
+    // 작업 플랫폼 발전소 배치 조건(푸딩)은 자동편성이 충족하지 않으므로 오라를 계상하지 않는다
+    // — 스킬 자체는 표시(위에서 push)하되 효과는 0으로 둔다
+    if (skill.gatePlatforms) continue;
     // 기반시설 어디든 존재 조건 (언더플로우: 울피아누스가 숙소 포함 기지 내에 있으면 +10%)
     if (skill.basePartners?.length && skill.basePartnerBonus && skill.basePartners.every((p) => ctx.presentIds?.has(p))) {
       out.efficiency += skill.basePartnerBonus;
@@ -648,15 +663,18 @@ export default function InfraPlanner({ onShowOperator, extra }: { onShowOperator
   // 엔진이 쓰는 구조 필드(unlock·kind·token 등)는 KR 원본 그대로 둔다
   const lops = useMemo(() => {
     if (!extra) return ops;
+    const loc = (skill: InfraSkill): InfraSkill => ({
+      ...skill,
+      krName: skill.name,
+      name: (skill.buffId && extra.buffs[skill.buffId]?.name) || skill.name,
+      description: (skill.buffId && extra.buffs[skill.buffId]?.desc) || skill.description,
+      // 하위 정예화 단계(정예화 낮추면 대체됨)도 같은 오버레이로 로컬라이즈
+      ...(skill.tiers ? { tiers: skill.tiers.map(loc) } : {}),
+    });
     return ops.map((op) => ({
       ...op,
       name: extra.names[op.id] ?? op.name,
-      skills: op.skills.map((skill) => ({
-        ...skill,
-        krName: skill.name,
-        name: (skill.buffId && extra.buffs[skill.buffId]?.name) || skill.name,
-        description: (skill.buffId && extra.buffs[skill.buffId]?.desc) || skill.description,
-      })),
+      skills: op.skills.map(loc),
     }));
   }, [extra]);
   const [plan, setPlan] = useState<Plan | null>(null);

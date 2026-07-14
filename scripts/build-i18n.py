@@ -317,11 +317,12 @@ def build_locale(prefix):
     buffs_out = {}
     for iop in infra["ops"]:
         for sk in iop["skills"]:
-            bid = sk.get("buffId")
-            if not bid or bid in buffs_out: continue
-            buff = (building.get("buffs") or {}).get(bid)
-            if buff:
-                buffs_out[bid] = {"name": buff.get("buffName"), "desc": strip_tags(buff.get("description"))}
+            for s in [sk, *sk.get("tiers", [])]:  # 하위 정예화 단계(tiers)의 buffId도 오버레이에 포함
+                bid = s.get("buffId")
+                if not bid or bid in buffs_out: continue
+                buff = (building.get("buffs") or {}).get(bid)
+                if buff:
+                    buffs_out[bid] = {"name": buff.get("buffName"), "desc": strip_tags(buff.get("description"))}
     recruit_tags = {str(t["tagId"]): t["tagName"] for t in gacha.get("gachaTags") or []}
     rooms_out = {rid: room_names.get(rid, rid) for rid in infra["rooms"].keys()}
     extra = {"names": names, "recruitTags": recruit_tags, "buffs": buffs_out, "rooms": rooms_out}

@@ -49,6 +49,10 @@ PCT = r"(?:\+\s*(\d+(?:\.\d+)?)\s*%|(\d+(?:\.\d+)?)\s*%(?:\s*추가)?\s*상승)"
 ELITE_TEAM = "로도스 아일랜드-정예 오퍼레이터"
 elite_count = sum(1 for o in operators if ELITE_TEAM in (o.get("factions") or []))
 
+# 자기 컨디션 낙차(소진)로 생산력이 변하는 오퍼(토터)의 대표 운용 낙차.
+# 만컨디션(낙차 0)이 아니라 12h 교대 평균 기준 — 컨디션 9~12 구간 (사용자 제보 2026-07)
+DROP_ASSUMED = 12
+
 def parse_metric(room, text):
     """Return (kind, value) — the op's headline contribution in this room."""
     def best(pattern):
@@ -126,7 +130,8 @@ def parse_metric(room, text):
         # ranked 제조소 > 무역소 > 인맥 레퍼런스 > 단서 by the planner
         v = best(r"제조소의 생산력[^+%\d]{0,10}" + PCT)
         if v: return "ctrl_mfg", v
-        v = best(r"무역소의 오더 수주 효율[^+%\d]{0,10}" + PCT)
+        # "무역소의 …" 뿐 아니라 "무역소 내 <진영> 1명당 … 오더 수주 효율"(야하타 우미리)도 무역소 오라로 인식
+        v = best(r"무역소[^.]{0,40}?오더 수주 효율[^+%\d]{0,10}" + PCT)
         if v: return "ctrl_trade", v
         v = best(r"인맥 레퍼런스[^%\d]{0,24}" + PCT)
         if v: return "ctrl_hire", v
@@ -150,6 +155,12 @@ def parse_tokens(text, room):
             per, val, pct = float(m.group(1)), float(m.group(2)), m.group(3) == "%"
             use.append({"token": token, "per": per, "value": val, "percent": pct})
         for m in re.finditer(re.escape(token) + r"\s*\+(\d+)", text):
+            # 자기 컨디션이 낮을 때만("미만/이하") 생성되는 배타 브랜치(시·링)는 풀파워 A조
+            # 기준에선 비활성 — 같은 오퍼가 화식·감지를 동시에 내는 이중계상 방지.
+            # 컨디션 높을 때("초과/이상") 브랜치만 남긴다.
+            before = text[max(0, m.start() - 30):m.start()]
+            if "컨디션" in before and ("미만" in before or "이하" in before):
+                continue
             amount = float(m.group(1))
             per_member = None
             cap = re.search(r"1명당[^(]{0,40}\(최대 (\d+)명\)", text)
@@ -164,7 +175,9 @@ def parse_tokens(text, room):
                 # own dorm holds 5; a facility skill counting all dorms sees ~20
                 amount *= 5 if room == "DORMITORY" else 20
             elif re.search(r"모집 인원마다", text):
-                amount *= 4  # office holds up to 4 recruitment slots
+                # 사무실 4슬롯. "초기 모집 인원은 포함하지 않음"(멀베리)이면 초기 2명 제외 = 2
+                # (사용자 확정 2026-07: 20점이 정배, 40점은 과다)
+                amount *= 2 if re.search(r"초기 모집 인원", text) else 4
             elif re.search(r"오퍼레이터가 1명 증가할 때마다", text):
                 amount *= 4  # e.g. Ash: per teammate in the control center
             entry_gen = {"token": token, "estimate": amount}
@@ -212,27 +225,9 @@ handbook = load(f"{S}/kr_handbook_info_table.json")
 handbook = handbook.get("handbookDict", handbook)
 release_seq = {cid: i for i, cid in enumerate(handbook.keys())}
 
-infra_ops = []
-for o in operators:
-    skills = []
-    raw = chars.get(o["id"], {})
-    slots_b = ((building.get("chars") or {}).get(o["id"]) or {}).get("buffChar") or []
-    slot_entries = []
-    for slot in slots_b:
-        data = slot.get("buffData") or []
-        if not data: continue
-        final = data[-1]  # highest unlock stage replaces the earlier ones
-        bf = (building.get("buffs") or {}).get(final["buffId"])
-        if not bf: continue
-        cond = final.get("cond") or {}
-        ph = cond.get("phase", 0)
-        ph = ph if isinstance(ph, int) else int(str(ph).replace("PHASE_", ""))
-        unlock = f"Lv.{cond.get('level', 1)}" if ph == 0 else f"정예화 {ph}"
-        slot_entries.append({"buffId": final["buffId"], "name": bf.get("buffName"), "room": bf.get("roomType"),
-                             "unlock": unlock, "description": strip_tags(bf.get("description"))})
-    for entry in slot_entries:
+def parse_skill(entry, oname):
         room = entry["room"]
-        if room not in ROOM_KO: continue
+        if room not in ROOM_KO: return None
         text = entry["description"]
         # "모든 숙소의 레벨 1당 +N%" (아르케토·틴맨·나란투야·필라에): 숙소 4개 ×
         # Lv5 = 20레벨 기준 상한 — 절을 떼고 기본치를 파싱한 뒤 ×20을 더한다
@@ -241,6 +236,15 @@ for o in operators:
         kind, value = parse_metric(room, metric_text)
         if dorm_lvl and kind in ("output", "misc"):
             kind, value = "output", (value or 0) + float(dorm_lvl.group(1)) * 20
+        # 자기 컨디션 낙차 페널티·게이트 (토터 흐려진 시야/창밖 눈보라): 만컨디션 최대치가
+        # 아니라 대표 운용 낙차(DROP_ASSUMED)에서의 실효율로 보정 — 40% 고정 표기 방지
+        if kind in ("output", "misc") and value:
+            gate = re.search(r"컨디션 낙차(?:가)? ?(\d+) 이상일 경우", text)
+            if gate and DROP_ASSUMED < int(gate.group(1)):
+                value = 0
+            pen = re.search(r"컨디션 낙차 ?(\d+)당 생산력 -\s*(\d+(?:\.\d+)?)\s*%", text)
+            if pen:
+                value = max(0, value - (DROP_ASSUMED // int(pen.group(1))) * float(pen.group(2)))
         override = re.search(r"효율이 전부 0이 되고[^+]{0,20}\+\s*(\d+(?:\.\d+)?)\s*%", text)
         if override:
             kind, value = "override", float(override.group(1))
@@ -256,13 +260,21 @@ for o in operators:
         m = re.search(r"([가-힣A-Za-z·]{2,14}) 오퍼레이터와 함께", text)
         if m: req_faction = m.group(1)
         per_faction = per_scope = per_cap = None
-        m = re.search(r"([가-힣A-Za-z·]{2,14}) 오퍼레이터(?:가)? 1명(?:당| 증가할 때마다)", text)
-        # "제조소 내의 오퍼레이터 1명당"처럼 방 범위를 가리키는 조사구는 진영이 아니다
-        if m and m.group(1) not in ("작업 중인", "내의", "안의", "내"):
-            per_faction = m.group(1)
+        # "<진영> 오퍼레이터(최대 N명)? 1명당/1명 증가할 때마다" — 진영명을 알려진 진영으로
+        # 한정 매칭한다(공백 포함 '라인 랩'도, '제조소 내의'·'숙소 내' 같은 방 범위 조사구는
+        # 진영이 아니므로 자연히 제외). 오퍼레이터와 "1명당" 사이 "(최대 N명)"은 개수 상한(내스티)
+        for f in FACTION_NAMES:
+            fm = re.search(re.escape(f) + r" 오퍼레이터(?:가)?(?:\(최대 (\d+)명\))? ?1명(?:당| 증가할 때마다)", text)
+            if not fm: continue
+            per_faction = f
             per_scope = "room" if re.search(r"제어 센터 내", text) else "base"
-            c = re.search(r"최대 \+?(\d+(?:\.\d+)?)%", text)
-            per_cap = float(c.group(1)) if c else None
+            cnt_cap = fm.group(1)  # "(최대 N명)" = 개수 상한 → 퍼센트 상한 등가로 변환 (3%×5명 = 15%)
+            if cnt_cap and value:
+                per_cap = value * float(cnt_cap)
+            else:
+                c = re.search(r"최대 \+?(\d+(?:\.\d+)?)%", text)
+                per_cap = float(c.group(1)) if c else None
+            break
         # same-room skill-tag counting (브라이오피타: 금속 공예류 스킬 1개당 +5%)
         per_skill_tag = per_skill_value = None
         m = re.search(r"(?:해당 )?(?:제조소|무역소) 내 ([가-힣 ]{2,10}?)류? 스킬 1개당[^%\d]{0,20}\+\s*(\d+(?:\.\d+)?)\s*%", text)
@@ -298,6 +310,11 @@ for o in operators:
         gm = re.search(r"([가-힣A-Za-z· ]{2,16}?) 오퍼레이터가 (\d+)명 배치된 (?:무역소|제조소|발전소)", text)
         if gm:
             gate_faction, gate_count = gm.group(1).strip(), int(gm.group(2))
+        # 작업 플랫폼(1성 로봇) 발전소 배치 조건 (푸딩 오버클럭: "2대 이상의 작업 플랫폼이
+        # 발전소에 배치된 경우 …") — 자동편성은 로봇을 발전소에 넣지 않으므로 이 오라는
+        # 사실상 발동하지 않는다. 플래너가 미충족으로 보고 오라를 계상하지 않게 표시
+        gp = re.search(r"(\d+)대 이상의 작업 플랫폼이 발전소에 배치된 경우", text)
+        gate_platforms = int(gp.group(1)) if gp else None
         # 공사용 로봇 세트 (미니멀리스트): 생성 스킬이 "시설 레벨당 +1대 (최대 64대)",
         # 소비 스킬이 "로봇 8대당 생산력 +5%" — 만렙 기지 상한(64대) 기준으로 결합
         robo_cap = re.search(r"공사용 로봇[^%]*?최대 (\d+)대", text)
@@ -314,15 +331,16 @@ for o in operators:
         # buffChar slots already resolved upgrades — every line here stacks
         tier = 1
         group = entry["name"]
-        skills.append({
+        return {
             "buffId": entry["buffId"],  # 다국어 오버레이(build-i18n.py) 매핑 키
             "name": entry["name"], "room": room, "unlock": entry["unlock"],
             "description": text, "kind": kind, "value": value, "product": product,
             "group": group, "tier": tier,
             "moraleDrain": parse_morale_drain(text),
-            "partners": [p for p in find_partners(text, o["name"]) if p not in base_partner_ids],
+            "partners": [p for p in find_partners(text, oname) if p not in base_partner_ids],
             "basePartners": base_partner_ids, "basePartnerBonus": base_partner_bonus,
             "gateFaction": gate_faction, "gateCount": gate_count,
+            "gatePlatforms": gate_platforms,
             "belowThreshold": below_threshold,
             "_roboCap": int(robo_cap.group(1)) if robo_cap else None,
             "_roboUse": (float(robo_use.group(1)), float(robo_use.group(2))) if robo_use else None,
@@ -333,7 +351,34 @@ for o in operators:
             "_stackGrant": stack_grant.group(1) if stack_grant else None,
             "_stackCount": 5 * (int(stack_grant.group(2)) if stack_grant and stack_grant.group(2) else 1) if stack_grant else 0,
             "_stackConv": {"name": stack_conv.group(1), "per": float(stack_conv.group(2)), "token": stack_conv.group(3), "amount": float(stack_conv.group(4))} if stack_conv else None,
-        })
+        }
+
+
+infra_ops = []
+for o in operators:
+    skills = []
+    slots_b = ((building.get("chars") or {}).get(o["id"]) or {}).get("buffChar") or []
+    for slot in slots_b:
+        data = slot.get("buffData") or []
+        if not data: continue
+        # 슬롯의 모든 정예화 단계를 만든다 (data[-1] = 최종). 최종만 활성이지만, 하위 단계는
+        # 정예화를 낮췄을 때(withElite) 대체본으로 쓰이도록 최종 스킬의 tiers에 보존한다
+        tier_entries = []
+        for bd in data:
+            bf = (building.get("buffs") or {}).get(bd["buffId"])
+            if not bf: continue
+            cond = bd.get("cond") or {}
+            ph = cond.get("phase", 0)
+            ph = ph if isinstance(ph, int) else int(str(ph).replace("PHASE_", ""))
+            unlock = f"Lv.{cond.get('level', 1)}" if ph == 0 else f"정예화 {ph}"
+            tier_entries.append({"buffId": bd["buffId"], "name": bf.get("buffName"), "room": bf.get("roomType"),
+                                 "unlock": unlock, "description": strip_tags(bf.get("description"))})
+        if not tier_entries: continue
+        main = parse_skill(tier_entries[-1], o["name"])
+        if main is None: continue
+        lowers = [s for s in (parse_skill(e, o["name"]) for e in tier_entries[:-1]) if s is not None]
+        if lowers: main["tiers"] = lowers
+        skills.append(main)
     # dorm stack systems: one skill grants stacks per dorm level, a sibling
     # converts stacks into a token → net token generation for this op
     grants = {sk["_stackGrant"]: sk["_stackCount"] for sk in skills if sk["_stackGrant"]}
@@ -348,8 +393,9 @@ for o in operators:
             per, val = sk["_roboUse"]
             sk["kind"], sk["value"] = "output", robo_caps[0] / per * val  # 64/8×5 = +40%
     for sk in skills:
-        sk.pop("_stackGrant", None); sk.pop("_stackCount", None); sk.pop("_stackConv", None)
-        sk.pop("_roboCap", None); sk.pop("_roboUse", None)
+        for s in [sk, *sk.get("tiers", [])]:  # 하위 tier의 임시 필드도 함께 정리
+            for k in ("_stackGrant", "_stackCount", "_stackConv", "_roboCap", "_roboUse"):
+                s.pop(k, None)
     if skills:
         infra_ops.append({"id": o["id"], "name": o["name"], "rarity": o["rarity"],
                           "faction": o["faction"],
