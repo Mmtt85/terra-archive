@@ -3549,33 +3549,49 @@ footer p {
 .story-viewtabs button:not(.on):hover { border-color:var(--ink) }
 /* ── 테라 연대기 ── */
 .chron { margin-top:14px }
-.chron-note { color:#5a6266; font-size:12px; line-height:1.7; background:#e6e5df; border-left:3px solid var(--lime); padding:12px 15px; margin:0 0 18px }
+.chron-note { color:#5a6266; font-size:12px; line-height:1.7; background:#e6e5df; border-left:3px solid var(--lime); padding:12px 15px; margin:0 0 22px }
 .chron-note b { color:var(--ink) }
-/* 한 줄 연혁 바 — 가로 스크롤, 연대기 순서대로 눈금 */
-.chron-rail { display:flex; align-items:center; gap:3px; overflow-x:auto; padding:16px 4px 20px; border-bottom:2px solid var(--ink); position:relative }
+/* 한 줄 연혁 바 — 트랙 위에 놓인 노드, 가로 스크롤 */
+.chron-railwrap { border:1px solid var(--line); background:linear-gradient(180deg,#fbfbf8,#f4f3ee); padding:26px 20px 16px; margin-bottom:26px }
+.chron-rail { display:flex; align-items:center; gap:2px; overflow-x:auto; padding:14px 6px; position:relative }
+.chron-rail::before { content:""; position:absolute; left:6px; right:6px; top:50%; height:2px; background:linear-gradient(90deg,#d2d0c9,#9a9c95,#d2d0c9); transform:translateY(-50%) }
 .chron-rail::-webkit-scrollbar { height:7px }
 .chron-rail::-webkit-scrollbar-thumb { background:#b9bbb5; border-radius:10px }
-.chron-tick { flex:none; width:13px; height:34px; border:0; background:0 0; padding:0; cursor:pointer; display:grid; place-items:center; --arc:#8b9294 }
+.chron-tick { flex:none; width:15px; height:40px; border:0; background:0 0; padding:0; cursor:pointer; display:grid; place-items:center; position:relative; z-index:1; --arc:#c3c6bf }
 .chron-tick.nolink { cursor:default }
-.chron-tick-dot { width:11px; height:11px; background:var(--arc); border-radius:50% }
-.chron-tick.k-main .chron-tick-dot { border-radius:2px; transform:rotate(45deg) }
+.chron-tick-dot { width:11px; height:11px; background:var(--arc); border:2px solid #fbfbf8; border-radius:50%; box-shadow:0 1px 3px #0002; transition:transform .12s }
+.chron-tick.k-main .chron-tick-dot { width:12px; height:12px; border-radius:2px; transform:rotate(45deg) }
 .chron-tick.k-roguelike .chron-tick-dot { border-radius:2px }
-.chron-tick:not(.nolink):hover .chron-tick-dot { transform:scale(1.5); box-shadow:0 0 0 3px #13171914 }
-.chron-tick.k-main:not(.nolink):hover .chron-tick-dot { transform:rotate(45deg) scale(1.5) }
+.chron-tick:hover .chron-tick-dot,.chron-tick.active .chron-tick-dot { transform:scale(1.55) }
+.chron-tick.k-main:hover .chron-tick-dot,.chron-tick.k-main.active .chron-tick-dot { transform:rotate(45deg) scale(1.55) }
+.chron-legend { display:flex; flex-wrap:wrap; gap:16px; margin-top:12px; padding-top:12px; border-top:1px solid var(--line); font:700 10px monospace; letter-spacing:.5px; color:var(--muted) }
+.chron-legend span { display:inline-flex; align-items:center; gap:6px }
+.chron-legend .lg-dot { width:9px; height:9px; background:#8b9294; border-radius:50%; display:inline-block }
+.chron-legend .lg-dot.lg-main { border-radius:1px; transform:rotate(45deg) }
+.chron-legend .lg-dot.lg-rl { border-radius:1px }
+/* 호버 툴팁 (fixed — 스크롤/오버플로 클리핑 없음) */
+.chron-tip { position:fixed; transform:translate(-50%,calc(-100% - 12px)); z-index:60; pointer-events:none; background:var(--ink); color:#fff; padding:9px 12px; max-width:260px; box-shadow:0 8px 24px #0004; border-radius:3px }
+.chron-tip::after { content:""; position:absolute; left:50%; top:100%; transform:translateX(-50%); border:6px solid transparent; border-top-color:var(--ink) }
+.chron-tip-top { display:flex; align-items:center; gap:7px; margin-bottom:5px }
+.chron-tip-arc { font-style:normal; font:800 9px monospace; letter-spacing:.5px }
+.chron-tip b { display:block; font-size:13px; line-height:1.35 }
+.chron-tip-meta { display:block; margin-top:3px; color:#ffffffa8; font:600 10px monospace }
 /* 그룹핑 토글 */
-.chron-tabs { display:flex; gap:6px; margin:18px 0 16px }
-.chron-tabs button { border:1px solid var(--line); background:var(--white); padding:6px 14px; font-size:11px; font-weight:800; cursor:pointer }
+.chron-tabs { display:flex; gap:6px; margin:0 0 18px }
+.chron-tabs button { border:1px solid var(--line); background:var(--white); padding:7px 16px; font-size:11px; font-weight:800; cursor:pointer; letter-spacing:.3px }
 .chron-tabs button.on { background:var(--ink); color:var(--paper); border-color:var(--ink) }
+.chron-tabs button:not(.on):hover { border-color:var(--ink) }
 /* 그룹 목록 */
-.chron-groups { display:flex; flex-direction:column; gap:26px }
-.chron-group h3 { font-size:14px; font-weight:900; letter-spacing:-.3px; margin:0 0 12px; padding-left:10px; border-left:4px solid var(--ink) }
-.chron-group h3 em { color:var(--muted); font-style:normal; font-size:11px; font-weight:700; margin-left:6px }
-.chron-list { list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:8px }
-.chron-item { width:100%; display:flex; align-items:center; gap:9px; border:1px solid var(--line); background:var(--white); padding:9px 11px; cursor:pointer; text-align:left; transition:border-color .15s }
-.chron-item:not(:disabled):hover { border-color:var(--ink) }
-.chron-item:disabled { cursor:default; opacity:.72 }
-.chron-kind { flex:none; font:800 8px/1 monospace; letter-spacing:.5px; color:#fff; background:#8b9294; padding:4px 5px; border-radius:2px }
+.chron-groups { display:flex; flex-direction:column; gap:28px }
+.chron-group h3 { display:flex; align-items:center; gap:8px; font-size:15px; font-weight:900; letter-spacing:-.3px; margin:0 0 13px; padding-left:11px; border-left:4px solid var(--ink) }
+.chron-group h3 em { color:#fff; background:var(--muted); font-style:normal; font:800 10px monospace; padding:2px 7px; border-radius:9px }
+.chron-list { list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:8px }
+.chron-item { width:100%; display:flex; align-items:center; gap:10px; border:1px solid var(--line); background:var(--white); padding:10px 12px; cursor:pointer; text-align:left; transition:border-color .15s,box-shadow .15s }
+.chron-item:not(:disabled):hover { border-color:var(--ink); box-shadow:2px 2px 0 #13171914 }
+.chron-item:disabled { cursor:default; background:#faf9f5 }
+.chron-kind { flex:none; font:800 8px/1 monospace; letter-spacing:.5px; color:#fff; background:#8b9294; padding:4px 5px; border-radius:2px; white-space:nowrap }
 .chron-item-name { flex:1 1 auto; font-size:12.5px; font-weight:700; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.chron-item:disabled .chron-item-name { color:#7a8185 }
 .chron-item-meta { flex:none; color:var(--muted); font:600 10px monospace }
 .story-search {
   max-width: 280px;

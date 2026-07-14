@@ -615,6 +615,7 @@ const D: Record<string, Pair> = {
   "로그라이크": ["Roguelike", "ローグライク"],
   "테마별": ["By theme", "テーマ別"],
   "종류별": ["By type", "種類別"],
+  "클릭해서 열기": ["click to open", "クリックで開く"],
   "**테라 연대기 (베타)** — 모든 이벤트·메인스토리·로그라이크를 시계열로 모으는 사전 작업입니다. 테라력 연도와 테마 묶음은 확정되는 대로 채워집니다.": [
     "**Terra Chronicle (beta)** — groundwork for arranging every event, main story, and roguelike in chronological order. Terra-calendar years and theme groupings will be filled in as they are confirmed.",
     "**テラ年代記（ベータ）** — すべてのイベント・メインストーリー・ローグライクを時系列で集める準備作業です。テラ暦の年号とテーマ分類は確定次第埋めていきます。",

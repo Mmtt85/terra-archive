@@ -213,11 +213,16 @@ const KIND_KO: Record<ChronKind, string> = { event: "이벤트", main: "메인�
 function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => void }) {
   const { locale, t } = useI18n();
   const [group, setGroup] = useState<"theme" | "kind">("theme");
+  const [tip, setTip] = useState<{ item: ChronItem; x: number; y: number } | null>(null);
   const arcName = (id: string) => {
     const a = chronology.arcs.find((x) => x.id === id);
     return a ? locText(locale, a.name) : id;
   };
   const yearLabel = (item: ChronItem) => item.terraYear == null ? t("테라력 미정") : t("테라력 {y}년", { y: item.terraYear });
+  const showTip = (e: React.FocusEvent<HTMLButtonElement> | React.MouseEvent<HTMLButtonElement>, it: ChronItem) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    setTip({ item: it, x: r.left + r.width / 2, y: r.top });
+  };
 
   // 그룹핑: 테마(arc)별 또는 종류(kind)별. 각 그룹은 연대기(entries) 순서 유지.
   const groups = useMemo(() => {
@@ -248,16 +253,36 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
       <p className="chron-note">{rich(t("**테라 연대기 (베타)** — 모든 이벤트·메인스토리·로그라이크를 시계열로 모으는 사전 작업입니다. 테라력 연도와 테마 묶음은 확정되는 대로 채워집니다."))}</p>
 
       {/* 한 줄 연혁 바 — 연대기 순서대로, 테마 색으로 */}
-      <div className="chron-rail" role="list" aria-label={t("테라 연대기")}>
-        {CHRON_ITEMS.map((it) => (
-          <button key={it.key} type="button" role="listitem"
-            className={`chron-tick k-${it.kind}${it.eventId ? "" : " nolink"}`}
-            style={it.arc ? { ["--arc" as string]: arcColor(it.arc) } : undefined}
-            onClick={() => openIf(it)} title={`${locText(locale, it.name)} · ${it.arc ? arcName(it.arc) : t(KIND_KO[it.kind])}`}>
-            <span className="chron-tick-dot" />
-          </button>
-        ))}
+      <div className="chron-railwrap">
+        <div className="chron-rail" role="list" aria-label={t("테라 연대기")} onMouseLeave={() => setTip(null)}>
+          {CHRON_ITEMS.map((it) => (
+            <button key={it.key} type="button" role="listitem"
+              className={`chron-tick k-${it.kind}${it.eventId ? "" : " nolink"}${tip?.item.key === it.key ? " active" : ""}`}
+              style={{ ["--arc" as string]: it.arc ? arcColor(it.arc) : "#c3c6bf" }}
+              onClick={() => openIf(it)}
+              onMouseEnter={(e) => showTip(e, it)} onFocus={(e) => showTip(e, it)} onBlur={() => setTip(null)}
+              aria-label={locText(locale, it.name)}>
+              <span className="chron-tick-dot" />
+            </button>
+          ))}
+        </div>
+        <div className="chron-legend">
+          <span><i className="lg-dot" /> {t("이벤트")}</span>
+          <span><i className="lg-dot lg-main" /> {t("메인스토리")}</span>
+          <span><i className="lg-dot lg-rl" /> {t("로그라이크")}</span>
+        </div>
       </div>
+
+      {tip && (
+        <div className="chron-tip" style={{ left: tip.x, top: tip.y }} aria-hidden>
+          <span className="chron-tip-top">
+            <em className="chron-kind" style={{ background: tip.item.arc ? arcColor(tip.item.arc) : "#8b9294" }}>{t(KIND_KO[tip.item.kind])}</em>
+            {tip.item.arc && <em className="chron-tip-arc" style={{ color: arcColor(tip.item.arc) }}>{arcName(tip.item.arc)}</em>}
+          </span>
+          <b>{locText(locale, tip.item.name)}</b>
+          <span className="chron-tip-meta">{tip.item.start ?? yearLabel(tip.item)}{tip.item.eventId ? ` · ${t("클릭해서 열기")}` : ""}</span>
+        </div>
+      )}
 
       {/* 그룹핑 토글 */}
       <div className="chron-tabs">
