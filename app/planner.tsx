@@ -652,10 +652,16 @@ function buildPlan(packageTokens: string[], roster: InfraOp[], factionSets = fal
   return { assignments, plants, tokenPoints, factionCounts: factionCountsPerShift, flows, strategy, strategyTokens: packageTokens, strategySet: factionSets };
 }
 
+// 세트 채택 비교 시 조별 가중 — A조는 풀파워 주력, B조는 회복 교대(§1). 동일 가중이면
+// 약한 쉐라그 세트를 A조에 앉히고 강한 샤마르 조합을 B조로 밀어도 총점이 같아 세트가 잘못
+// 채택된다(사용자 지적 2026-07). A조를 더 높게 쳐서 강조합이 A조에 남게 한다.
+const SHIFT_WEIGHT = [1, 0.6];
+
 // 계획 전체 총점 (양 조 전 방, 앰비언트 오라 포함) — 세트 포함/미포함 두 안 비교용
 function planScore(plan: Plan, byId: Map<string, InfraOp>): number {
   let total = 0;
   for (let shift = 0; shift < SHIFT_COUNT; shift += 1) {
+    const shiftWeight = SHIFT_WEIGHT[shift] ?? 1;
     const teamAt = (key: string): InfraOp[] => {
       const shifts = plan.assignments[key] ?? [];
       return (shifts[Math.min(shift, shifts.length - 1)] ?? []).map((id) => byId.get(id)).filter(Boolean) as InfraOp[];
@@ -667,7 +673,7 @@ function planScore(plan: Plan, byId: Map<string, InfraOp>): number {
     for (const key of [...PRODUCTION_KEYS, ...SUPPORT_KEYS]) {
       const cell = cellByKey.get(key)!;
       if (PARK_KEYS.includes(key)) continue;
-      total += teamScore(teamAt(key), cell.room, ctxFor(key, points, counts, plan.plants, present, ambient));
+      total += shiftWeight * teamScore(teamAt(key), cell.room, ctxFor(key, points, counts, plan.plants, present, ambient));
     }
   }
   return total;
