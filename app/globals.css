@@ -3592,6 +3592,7 @@ footer p {
 .chron-kind { flex:none; font:800 8px/1 monospace; letter-spacing:.5px; color:#fff; background:#8b9294; padding:4px 5px; border-radius:2px; white-space:nowrap }
 .chron-item-name { flex:1 1 auto; font-size:12.5px; font-weight:700; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
 .chron-item:disabled .chron-item-name { color:#7a8185 }
+.chron-item-year { flex:none; font:800 9px monospace; letter-spacing:.3px; color:var(--ink); background:var(--lime); padding:3px 6px; border-radius:2px }
 .chron-item-meta { flex:none; color:var(--muted); font:600 10px monospace }
 .story-search {
   max-width: 280px;

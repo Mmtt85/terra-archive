@@ -25,10 +25,10 @@ type Summary = { tagline: string; chars?: Entity[]; terms?: Entity[]; blocks: Bl
 // 테라 연대기 (app/data/chronology.json — 손수 큐레이트하는 스캐폴드).
 type ChronKind = "event" | "main" | "roguelike";
 type Arc = { id: string; name: LocText };
-type RawEntry = { ref?: string; id?: string; kind: ChronKind; title?: LocText; terraYear?: number | null; arc?: string | null };
+type RawEntry = { ref?: string; id?: string; kind: ChronKind; title?: LocText; terraYear?: number | null; arc?: string | null; dateNote?: string };
 type Chronology = { note: string; updated?: string; arcs: Arc[]; entries: RawEntry[] };
 // 연대기 항목 하나(이벤트 ref는 stories.json에서 이름·썸네일·출시월을 끌어온다)
-type ChronItem = { key: string; kind: ChronKind; name: LocText; start?: string; thumb?: string; terraYear: number | null; arc: string | null; eventId?: string };
+type ChronItem = { key: string; kind: ChronKind; name: LocText; start?: string; thumb?: string; terraYear: number | null; arc: string | null; eventId?: string; dateNote?: string };
 
 const data = storiesData as { updated: string; events: StoryEvent[] };
 const summaries = summariesData as Record<string, Summary>;
@@ -189,13 +189,13 @@ function resolveChron(): ChronItem[] {
         name: ev ? ev.name : { ko: raw.ref },
         start: ev?.start, thumb: ev?.thumb,
         terraYear: raw.terraYear ?? null, arc: raw.arc ?? null,
-        eventId: ev ? raw.ref : undefined,
+        eventId: ev ? raw.ref : undefined, dateNote: raw.dateNote,
       };
     }
     return {
       key: raw.id ?? `x${i}`, kind: raw.kind,
       name: raw.title ?? { ko: raw.id ?? "?" },
-      terraYear: raw.terraYear ?? null, arc: raw.arc ?? null,
+      terraYear: raw.terraYear ?? null, arc: raw.arc ?? null, dateNote: raw.dateNote,
     };
   });
 }
@@ -212,7 +212,7 @@ const KIND_KO: Record<ChronKind, string> = { event: "이벤트", main: "메인�
 // 테라 연대기 뷰 — 한 줄 타임라인 + 테마/종류별 그룹핑
 function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => void }) {
   const { locale, t } = useI18n();
-  const [group, setGroup] = useState<"theme" | "kind">("theme");
+  const [group, setGroup] = useState<"chrono" | "theme" | "kind">("chrono");
   const [tip, setTip] = useState<{ item: ChronItem; x: number; y: number } | null>(null);
   const arcName = (id: string) => {
     const a = chronology.arcs.find((x) => x.id === id);
@@ -224,25 +224,24 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
     setTip({ item: it, x: r.left + r.width / 2, y: r.top });
   };
 
-  // 그룹핑: 테마(arc)별 또는 종류(kind)별. 각 그룹은 연대기(entries) 순서 유지.
+  // 그룹핑: 연대순(테라력) / 테마(arc) / 종류(kind). 연대순은 연도 오름차순, 미정은 맨 뒤.
   const groups = useMemo(() => {
-    const map = new Map<string, { label: string; color?: string; items: ChronItem[] }>();
-    const keyOf = (it: ChronItem) => group === "theme" ? (it.arc ?? "__none") : it.kind;
+    const map = new Map<string, { label: string; color?: string; sort: number; items: ChronItem[] }>();
     for (const it of CHRON_ITEMS) {
-      const k = keyOf(it);
-      if (!map.has(k)) {
-        map.set(k, {
-          label: group === "theme" ? (it.arc ? arcName(it.arc) : t("테마 미분류")) : t(KIND_KO[it.kind]),
-          color: group === "theme" && it.arc ? arcColor(it.arc) : undefined,
-          items: [],
-        });
+      let k: string, label: string, color: string | undefined, sort: number;
+      if (group === "chrono") {
+        if (it.terraYear == null) { k = "__none"; label = t("테라력 미정"); sort = Infinity; }
+        else { k = `y${it.terraYear}`; label = t("테라력 {y}년", { y: it.terraYear }); sort = it.terraYear; }
+      } else if (group === "theme") {
+        k = it.arc ?? "__none"; label = it.arc ? arcName(it.arc) : t("테마 미분류");
+        color = it.arc ? arcColor(it.arc) : undefined; sort = it.arc ? 0 : 1;
+      } else {
+        k = it.kind; label = t(KIND_KO[it.kind]); sort = ["event", "main", "roguelike"].indexOf(it.kind);
       }
+      if (!map.has(k)) map.set(k, { label, color, sort, items: [] });
       map.get(k)!.items.push(it);
     }
-    // 테마 뷰: 미분류를 맨 뒤로
-    return Array.from(map.entries())
-      .sort((a, b) => (a[0] === "__none" ? 1 : b[0] === "__none" ? -1 : 0))
-      .map(([, v]) => v);
+    return Array.from(map.values()).sort((a, b) => a.sort - b.sort);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [group, locale, t]);
 
@@ -286,6 +285,7 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
 
       {/* 그룹핑 토글 */}
       <div className="chron-tabs">
+        <button type="button" className={group === "chrono" ? "on" : ""} onClick={() => setGroup("chrono")}>{t("연대순")}</button>
         <button type="button" className={group === "theme" ? "on" : ""} onClick={() => setGroup("theme")}>{t("테마별")}</button>
         <button type="button" className={group === "kind" ? "on" : ""} onClick={() => setGroup("kind")}>{t("종류별")}</button>
       </div>
@@ -300,10 +300,11 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
               {g.items.map((it) => (
                 <li key={it.key}>
                   <button type="button" className={`chron-item k-${it.kind}${it.eventId ? "" : " nolink"}`}
-                    onClick={() => openIf(it)} disabled={!it.eventId}>
+                    onClick={() => openIf(it)} disabled={!it.eventId} title={it.dateNote}>
                     <span className="chron-kind" style={it.arc ? { background: arcColor(it.arc) } : undefined}>{t(KIND_KO[it.kind])}</span>
                     <span className="chron-item-name">{locText(locale, it.name)}</span>
-                    <span className="chron-item-meta">{it.start ?? yearLabel(it)}</span>
+                    {it.terraYear != null && <span className="chron-item-year">{t("테라력 {y}년", { y: it.terraYear })}</span>}
+                    <span className="chron-item-meta">{it.start ?? "—"}</span>
                   </button>
                 </li>
               ))}

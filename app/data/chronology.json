@@ -1,5 +1,5 @@
 {
- "note": "테라 연대기 스캐폴딩. terraYear·entries 순서(=연대기)는 게임 데이터에 인게임 날짜 필드가 없어 보류 — 스토리 스크립트 반영 시 채운다. 현재 entries 순서는 출시순(임시). arc(테마)는 게임 데이터에 없어 로어 기반 수작업, '확실한 것 우선' 배정(나머지 null=미분류). kind: event(ref→stories.json)/main/roguelike.",
+ "note": "테라 연대기 (손큐레이트). terraYear = 이벤트 '당대' 연도(스크립트의 '올해/지금 = N년'만 채택; 'N년 전'·역사 참조 연도는 제외). 예) 아테누스=1100. 채운 건 dateNote에 출처 명시. entries 순서는 출시순(임시). arc(테마)=로어 기반 수작업, 확실한 것 우선. kind: event(ref→stories.json)/main/roguelike. ※ 이 파일은 이제 손으로 편집한다 — 스캐폴드 생성 스크립트로 재생성 금지(연도·테마 날아감).",
  "updated": "2026-07-14",
  "arcs": [
   {
@@ -391,8 +391,9 @@
   {
    "ref": "act48side",
    "kind": "event",
-   "terraYear": null,
-   "arc": null
+   "terraYear": 1100,
+   "arc": null,
+   "dateNote": "'올해가 1100년' — act48side/level_act48side_03_end"
   },
   {
    "id": "main_00",
