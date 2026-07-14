@@ -16,7 +16,8 @@ type Block =
   | { t: "p"; x: string }
   | { t: "img"; src: string; cap?: string }
   | { t: "quote"; who: string; x: string };
-type Summary = { tagline: string; blocks: Block[] };
+type CastChar = { name: string; desc: string; img: string };
+type Summary = { tagline: string; chars?: CastChar[]; blocks: Block[] };
 
 const data = storiesData as { updated: string; events: StoryEvent[] };
 const summaries = summariesData as Record<string, Summary>;
@@ -75,9 +76,19 @@ export default function StoryGuide() {
           <h2>{locText(locale, selected.name)}</h2>
           <p className="story-meta">{selected.start} · {t("에피소드 {n}개", { n: selected.episodes })}</p>
           <p className="story-tagline">{summary.tagline}</p>
-          <p className="story-disclaimer">{t("이 요약은 AI(Claude)가 게임 내 스토리 스크립트 전문을 읽고 쓴 2차 창작 요약입니다. 결말까지 전부 스포일러하며, 원문의 유머와 온도를 살리려 약간의 익살이 섞여 있습니다.")}</p>
+          <p className="story-disclaimer">{t("이 요약은 AI가 게임 내 스토리 스크립트 전문을 읽고 쓴 2차 창작 요약입니다.")}</p>
           {locale !== "ko" && <p className="story-disclaimer">{t("요약 본문은 현재 한국어로만 제공됩니다.")}</p>}
         </header>
+        {summary.chars && summary.chars.length > 0 && (
+          <div className="story-cast" role="list" aria-label={t("등장인물")}>
+            {summary.chars.map((who) => (
+              <figure key={who.name} role="listitem">
+                <div className="cast-img"><img src={who.img} alt={who.name} loading="lazy" decoding="async" /></div>
+                <figcaption><b>{who.name}</b><span>{who.desc}</span></figcaption>
+              </figure>
+            ))}
+          </div>
+        )}
         <div className="story-body">
           {summary.blocks.map((block, index) => {
             if (block.t === "h") return <h3 key={index}>{block.x}</h3>;

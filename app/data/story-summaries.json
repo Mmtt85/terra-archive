@@ -1,6 +1,19 @@
 {
   "act48side": {
     "tagline": "뱃멀미하는 사르곤 대사가 팔씨름으로 국제 분쟁을 중재하다가, 훔쳐온 나라에서 '명예 미노스인'이 되어버리는 이야기. 그리고 100년의 침묵을 깨는 리라 한 대.",
+    "chars": [
+      { "name": "티티", "desc": "사르곤 사절단 대사 · 박물관 관장 · 뱃멀미", "img": "/story/char/avg_4056_titi_1.png" },
+      { "name": "크산토스", "desc": "델피 운하의 뱃사공 · 전직 유격대원", "img": "/story/char/avg_4166_varkis_1.png" },
+      { "name": "팔라스", "desc": "신전 재건 발의자 · 애주가", "img": "/story/char/avgnew_482_pallas_1.png" },
+      { "name": "카산드라", "desc": "엔디미온 신전의 해몽 제사장", "img": "/story/char/avg_npc_2068_1.png" },
+      { "name": "리디아", "desc": "아테누스 시정감독관 · 수완가", "img": "/story/char/avg_npc_2067_1.png" },
+      { "name": "레나", "desc": "로도스 아일랜드 의사 · 리디아의 언니", "img": "/story/char/avg_1022_flwr2_1.png" },
+      { "name": "헤카데모스", "desc": "시정감독관 서기관 · 정시 퇴근의 화신", "img": "/story/char/avg_npc_2070_1.png" },
+      { "name": "리케이온", "desc": "크산토스의 제자 · 배는 못 몲", "img": "/story/char/avg_npc_2069_1.png" },
+      { "name": "베누이", "desc": "사절단 부대사 · 명언 제조기", "img": "/story/char/avg_npc_2077_1.png" },
+      { "name": "페리안드로스", "desc": "코리니아의 장사꾼 제사장", "img": "/story/char/avg_npc_2078_1.png" },
+      { "name": "시니스카", "desc": "라케다이몬 제사장 · 손가락이 흉기", "img": "/story/char/avg_npc_2079_1.png" }
+    ],
     "blocks": [
       { "t": "p", "x": "무대는 미노스. 명일방주 세계관의 그리스예요. 도시국가, 신전, 연극, 영웅 서사시… 그리고 분쟁은 팔씨름으로 해결합니다. 진짜로요." },
       { "t": "p", "x": "근데 이 낭만의 나라, 이웃 사르곤에게 100년 넘게 점령당했던 역사가 있어요. 그리고 종전 겨우 5년 만에, 그 사르곤이 '문화 교류'를 하러 옵니다." },

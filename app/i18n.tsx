@@ -619,11 +619,12 @@ const D: Record<string, Pair> = {
   "요약 준비 중": ["Digest coming soon", "要約準備中"],
   "에피소드 {n}개": ["{n} episodes", "エピソード{n}話"],
   "스토리 목록으로": ["Back to story list", "ストーリー一覧へ"],
-  "이 요약은 AI(Claude)가 게임 내 스토리 스크립트 전문을 읽고 쓴 2차 창작 요약입니다. 결말까지 전부 스포일러하며, 원문의 유머와 온도를 살리려 약간의 익살이 섞여 있습니다.": [
-    "This digest was written by Claude (AI) after reading the full in-game story script. It spoils everything including the ending, and keeps a bit of playful tone to match the original's humor.",
-    "この要約はAI（Claude）がゲーム内ストーリースクリプト全文を読んで書いた二次創作の要約です。結末まで完全にネタバレを含み、原文のユーモアと温度感を残すため少しおどけた文体になっています。",
+  "이 요약은 AI가 게임 내 스토리 스크립트 전문을 읽고 쓴 2차 창작 요약입니다.": [
+    "This digest is a fan-made summary written by AI after reading the full in-game story script.",
+    "この要約はAIがゲーム内ストーリースクリプト全文を読んで書いた二次創作の要約です。",
   ],
   "요약 본문은 현재 한국어로만 제공됩니다.": ["Digest text is currently available in Korean only.", "要約本文は現在韓国語のみ提供しています。"],
+  "등장인물": ["Cast", "登場人物"],
 
   // ── 피드백 위젯 ────────────────────────────────────────────────────────────
   "제안 보내기": ["Send Feedback", "フィードバックを送る"],

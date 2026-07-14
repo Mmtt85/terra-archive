@@ -615,6 +615,14 @@ footer p { margin:0 }
 .story-meta { margin:0 0 10px; font:700 12px monospace; color:var(--muted) }
 .story-tagline { margin:0 0 14px; font-size:15px; font-weight:700; line-height:1.6 }
 .story-disclaimer { margin:0 0 6px; padding:9px 12px; background:#dfff0033; border-left:3px solid var(--lime); font-size:12px; line-height:1.65; color:#3a4146 }
+/* 등장인물 스탠딩 CG 참조 갤러리 — 가로 스크롤, 상반신 크롭 */
+.story-cast { display:flex; gap:10px; margin-top:22px; max-width:720px; overflow-x:auto; padding-bottom:6px }
+.story-cast figure { margin:0; flex:0 0 96px; border:1px solid var(--line); background:var(--white) }
+.cast-img { height:108px; overflow:hidden; background:#eceae2 }
+.cast-img img { width:100%; height:200%; object-fit:cover; object-position:50% 0% }
+.story-cast figcaption { padding:6px 8px 8px; display:flex; flex-direction:column; gap:2px }
+.story-cast figcaption b { font-size:11.5px; letter-spacing:-.3px }
+.story-cast figcaption span { font:600 9.5px/1.45 monospace; color:var(--muted); word-break:keep-all }
 .story-body { max-width:720px; margin-top:26px }
 .story-body h3 { margin:34px 0 12px; font-size:19px; letter-spacing:-.4px; padding-bottom:8px; border-bottom:2px solid var(--ink) }
 .story-body p { margin:0 0 14px; font-size:14.5px; line-height:1.9; color:#22282c }

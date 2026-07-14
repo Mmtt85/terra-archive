@@ -4,6 +4,9 @@
 Usage:
   python3 scripts/build-story.py                # 이벤트 목록 재생성 + 썸네일 다운로드
   python3 scripts/build-story.py --cuts act48side   # 해당 이벤트 컷씬 CG 다운로드 (요약 집필용)
+  python3 scripts/build-story.py --chars act48side  # 스탠딩 CG 이름↔화자 매칭표 출력
+  python3 scripts/build-story.py --chars act48side avg_4056_titi_1 "avg_npc_2068_1#2" …
+                                                # 지정 스탠딩 CG 다운로드 (기본 표정 #1$1)
 
 데이터 소스 (전부 원격 — 로컬 gamedata 폴더 불필요):
   - 이벤트 목록·제목(3개 언어)·에피소드 구성: 클뜯 레포 excel/story_review_table.json
@@ -64,6 +67,48 @@ def download_cuts(event_id):
 
 if len(sys.argv) > 2 and sys.argv[1] == "--cuts":
     download_cuts(sys.argv[2]); sys.exit(0)
+
+# ── --chars <eventId> [name…]: 스탠딩 CG 매칭표/다운로드 (요약 집필 보조) ──
+# 인자 없이: 스크립트의 [charslot name=…]과 바로 뒤따르는 [name="화자"]를 세어
+# "어느 스프라이트가 누구인지" 표를 출력한다. 이름을 주면 해당 스탠딩 CG를
+# public/story/char/<base>.png 로 내려받는다 (표정 변형 미지정 시 #1$1).
+def chars_mode(event_id, wanted):
+    review = fetch(f"{GAMEDATA}/kr/gamedata/excel/story_review_table.json")
+    event = review.get(event_id) or sys.exit(f"unknown event: {event_id}")
+    if wanted:
+        char_dir = os.path.join(REPO, "public", "story", "char")
+        os.makedirs(char_dir, exist_ok=True)
+        for want in wanted:
+            base = want.split("#")[0]
+            variant = want if "#" in want else f"{want}#1$1"
+            dest = os.path.join(char_dir, f"{base}.png")
+            if os.path.exists(dest):
+                print("skip:", base); continue
+            url = f"{ASSETS}/avg/characters/{base}/{urllib.request.quote(variant)}.png"
+            png = fetch(url, binary=True)
+            tmp = dest + ".tmp.png"
+            open(tmp, "wb").write(png)  # 스탠딩은 투명 배경이라 png 유지, 세로 640px로 축소
+            ok = subprocess.run(["sips", "-Z", "640", tmp, "--out", dest], capture_output=True).returncode == 0
+            os.remove(tmp) if ok else os.rename(tmp, dest)
+            print("char:", f"/story/char/{base}.png")
+        return
+    from collections import Counter, defaultdict
+    speaker_for = defaultdict(Counter)
+    for info in event["infoUnlockDatas"]:
+        txt = fetch(f"{GAMEDATA}/kr/gamedata/story/{info['storyTxt']}.txt", binary=True).decode("utf-8")
+        active = set()
+        for line in txt.splitlines():
+            slots = re.findall(r'\[[Cc]har(?:slot|acter)\([^)]*?name2?\s*=\s*"([^"]+)"', line)
+            if slots:
+                active = {s.split("#")[0] for s in slots}; continue
+            m = re.match(r'\s*\[name="([^"]+)"', line)
+            if m and active:
+                for a in active: speaker_for[a][m.group(1)] += 1
+    for spr, cnt in sorted(speaker_for.items(), key=lambda kv: -sum(kv[1].values())):
+        print(f"{sum(cnt.values()):4d}  {spr:28s} → {', '.join(n for n, _ in cnt.most_common(2))}")
+
+if len(sys.argv) > 2 and sys.argv[1] == "--chars":
+    chars_mode(sys.argv[2], sys.argv[3:]); sys.exit(0)
 
 # ── 기본: stories.json + 썸네일 ─────────────────────────────
 print("fetching story_review_table (kr/en/jp) …", file=sys.stderr)
