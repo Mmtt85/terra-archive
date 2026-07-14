@@ -108,8 +108,6 @@ function StoryDetail({ event, summary, onClose, onShowOperator }: {
     return order.slice(0, MAX_RAIL_CARDS);
   }, [inView, mentions]);
 
-  const cast = (summary.chars ?? []).filter((who) => who.img);
-
   return (
     <section className="story story-detail" aria-label={locText(locale, event.name)}>
       <button type="button" className="story-back" onClick={onClose}>← {t("스토리 목록으로")}</button>
@@ -121,21 +119,6 @@ function StoryDetail({ event, summary, onClose, onShowOperator }: {
         <p className="story-disclaimer">{t("이 요약은 AI가 게임 내 스토리 스크립트 전문을 읽고 쓴 2차 창작 요약입니다.")}</p>
         {locale !== "ko" && <p className="story-disclaimer">{t("요약 본문은 현재 한국어로만 제공됩니다.")}</p>}
       </header>
-      {cast.length > 0 && (
-        <div className="story-cast" role="list" aria-label={t("등장인물")}>
-          {cast.map((who) => {
-            const linked = Boolean(who.op && onShowOperator);
-            return (
-              <figure key={who.name} role="listitem" className={linked ? "op-linked" : undefined}
-                onClick={linked ? () => onShowOperator!(who.op!) : undefined}
-                title={linked ? t("오퍼레이터 정보 보기") : undefined}>
-                <div className="cast-img"><img src={who.img} alt={who.name} loading="lazy" decoding="async" /></div>
-                <figcaption><b>{who.name}{linked && <i className="op-mark" aria-hidden>↗</i>}</b><span>{who.desc}</span></figcaption>
-              </figure>
-            );
-          })}
-        </div>
-      )}
       <div className="story-detail-grid">
         <div className="story-body" ref={bodyRef}>
           {summary.blocks.map((block, index) => {
