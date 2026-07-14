@@ -574,6 +574,32 @@ const D: Record<string, Pair> = {
     "エリート・上級エリートなしでも**星4以上が確定**する最小タグ組み合わせの全リストです。募集タグに下の組み合わせが出たら見逃さないでください。（タグを追加しても確定は維持されます）",
   ],
 
+  // ── 재료 파밍 효율표 ───────────────────────────────────────────────────────
+  "재료 파밍": ["Farming", "素材周回"],
+  "재료 파밍 효율표": ["Material Farming Efficiency", "素材周回効率表"],
+  "재료 파밍 효율표 - 명일방주 파밍 가이드 | 테라 아카이브": ["Material Farming Efficiency - Arknights Farming Guide | Terra Archive", "素材周回効率表 - アークナイツ周回ガイド | テラアーカイブ"],
+  "정예화 재료 {count}종의 실측 드랍 통계입니다. 재료마다 어느 스테이지에서 나오는지와 개당 기대 이성(이성 소모 ÷ 드랍률)을 표시하고, 이성 대비 획득 확률이 가장 높은 스테이지에 최고 효율 배지를 붙입니다.": [
+    "Measured drop statistics for {count} elite materials. Each material lists the stages it drops from with the expected sanity per drop (sanity cost ÷ drop rate), and the stage with the best drop odds per sanity gets the Best badge.",
+    "昇進素材{count}種の実測ドロップ統計です。素材ごとにドロップするステージと1個あたりの期待理性（理性消費 ÷ ドロップ率）を表示し、理性あたりの入手確率が最も高いステージに最高効率バッジを付けます。",
+  ],
+  "출처: 펭귄 물류 실측 통계(표본 {min}회 이상) + 클뜯 게임 데이터 · {date} 기준 한국 서버에 개방된 스테이지만 수록 · 기대 이성은 낮을수록 좋습니다.": [
+    "Source: Penguin Statistics measured data (min. {min} samples) + datamined game data · only stages open on the KR server as of {date} · lower expected sanity is better.",
+    "出典：ペンギン急便の実測統計（標本{min}回以上）+ データマインのゲームデータ · {date}時点で韓国サーバーに開放中のステージのみ収録 · 期待理性は低いほど良いです。",
+  ],
+  "등급 필터": ["Tier filter", "レア度フィルター"],
+  "재료 이름 검색": ["Search material names", "素材名で検索"],
+  "상시 파밍 가능한 스테이지만 (이벤트 한정 제외)": ["Permanently farmable stages only (exclude limited events)", "常時周回可能なステージのみ（期間限定イベント除外）"],
+  "조건에 맞는 재료가 없어요.": ["No materials match these filters.", "条件に合う素材がありません。"],
+  "스테이지": ["Stage", "ステージ"],
+  "드랍률": ["Drop rate", "ドロップ率"],
+  "기대 이성": ["Exp. sanity", "期待理性"],
+  "이성 {n} 소모": ["Costs {n} sanity", "理性{n}消費"],
+  "표본 {n}회": ["{n} samples", "標本{n}回"],
+  "최고 효율": ["Best", "最高効率"],
+  "상설": ["Permanent", "常設"],
+  "이벤트 한정": ["Limited event", "期間限定"],
+  "물자": ["Supply", "物資"],
+
   // ── 피드백 위젯 ────────────────────────────────────────────────────────────
   "제안 보내기": ["Send Feedback", "フィードバックを送る"],
   "기능 제안": ["Feature idea", "機能提案"],

@@ -68,3 +68,15 @@ python3 scripts/download-avatars.py           # 신규 오퍼 아바타를 publi
 - 신규 오퍼레이터의 `accent` 색상은 `regen-operators.py`의 `NEW_ACCENTS`에 추가한다.
 - 커뮤니티 별명은 기존 JSON의 aliases에서 자동 보존된다(새로 추가하려면 데이터에 직접).
 - 출신지·종족은 handbook에서 파싱하며 로봇·예비 인원은 "불명" 처리된다.
+
+## 5. 재료 파밍 효율표 데이터
+
+```bash
+# 추가 테이블: {kr,en,jp}/gamedata/excel/{item_table,stage_table}.json → <prefix>_<name>.json
+python3 scripts/build-farm.py .gamedata   # → app/data/farm.json + public/items/ 아이콘
+```
+
+클뜯 item/stage_table(이름 3개 언어)과 **펭귄 물류 API**(실측 드랍률, KR 개방 스테이지만)를
+결합한다 — 네트워크 필요. 효율 지표 = 개당 기대 이성(apCost ÷ 드랍률), 표본 100회 미만 제외,
+재료당 상위 8개 스테이지 수록. 이벤트 개방/종료 시점마다 재실행해야 목록이 최신으로 유지된다.
+상세 규칙: PROJECT-GUIDE §6.5.

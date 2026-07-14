@@ -8,12 +8,14 @@ main { height:100dvh; overflow:hidden }
 /* 서버 HTML은 항상 백과사전 — #infra·#recruit로 새로고침 시 첫 페인트에서 백과사전을
    숨기고 헤더 탭 하이라이트도 올바른 탭으로 옮겨 플래시를 막는다
    (인라인 스크립트가 <html data-route>를 설정, 하이드레이션 후 page.tsx가 해제) */
-html[data-route="infra"] .explorer, html[data-route="recruit"] .explorer { display:none }
-html[data-route="infra"] main, html[data-route="recruit"] main { height:auto; min-height:100vh; overflow:visible; display:flex; flex-direction:column }
+html[data-route="infra"] .explorer, html[data-route="recruit"] .explorer, html[data-route="farm"] .explorer { display:none }
+html[data-route="infra"] main, html[data-route="recruit"] main, html[data-route="farm"] main { height:auto; min-height:100vh; overflow:visible; display:flex; flex-direction:column }
 html[data-route="infra"] .main-tabs .tab-archive.selected,
-html[data-route="recruit"] .main-tabs .tab-archive.selected { background:transparent; color:inherit; border-color:var(--line) }
+html[data-route="recruit"] .main-tabs .tab-archive.selected,
+html[data-route="farm"] .main-tabs .tab-archive.selected { background:transparent; color:inherit; border-color:var(--line) }
 html[data-route="infra"] .main-tabs .tab-planner,
-html[data-route="recruit"] .main-tabs .tab-recruit { background:var(--ink); color:var(--lime); border-color:var(--ink) }
+html[data-route="recruit"] .main-tabs .tab-recruit,
+html[data-route="farm"] .main-tabs .tab-farm { background:var(--ink); color:var(--lime); border-color:var(--ink) }
 button,input { font:inherit }
 button { color:inherit }
 /* iOS는 입력 폰트가 16px 미만이면 포커스 시 화면을 자동 확대한다 — 모바일에서 16px 강제 */
@@ -538,3 +540,46 @@ footer p { margin:0 }
 .confirm-actions button { border:1px solid var(--line); background:var(--white); padding:9px 16px; font-size:12px; font-weight:800; cursor:pointer }
 .confirm-actions .confirm-yes { border-color:var(--ink); background:var(--ink); color:var(--lime) }
 .confirm-actions .confirm-yes:hover { background:var(--lime); color:var(--ink) }
+
+/* ── 재료 파밍 효율표 탭 ─────────────────────────────── */
+.farm { padding:34px clamp(22px,5vw,76px) 60px }
+.farm-head { max-width:860px }
+.farm-head h2 { margin:6px 0 12px; font-size:28px; letter-spacing:-.5px }
+.farm-head p { margin:0 0 8px; font-size:13.5px; line-height:1.75; color:#3a4146 }
+.farm-source { color:var(--muted) !important; font-size:12px !important }
+.farm-tools { display:flex; flex-wrap:wrap; align-items:center; gap:14px; margin:20px 0 24px }
+.farm-tier-filter { display:flex; gap:7px }
+.farm-tier-filter button { border:1px solid var(--line); background:var(--white); padding:8px 12px; font-size:12px; font-weight:800; cursor:pointer; transition:.15s }
+.farm-tier-filter button span { margin-left:6px; font-weight:600; opacity:.55; font-size:11px }
+.farm-tier-filter button:hover { border-color:var(--ink) }
+.farm-tier-filter button.selected { background:var(--ink); color:var(--lime); border-color:var(--ink) }
+.farm-search { max-width:260px; flex:1 1 200px }
+.farm-perm-toggle { display:inline-flex; align-items:center; gap:8px; font-size:12.5px; font-weight:700; cursor:pointer }
+.farm-perm-toggle input { accent-color:var(--ink) }
+.farm-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px }
+.farm-card { border:1px solid var(--line); background:var(--white); padding:14px 16px 12px; display:flex; flex-direction:column }
+.farm-card header { display:flex; align-items:center; gap:12px; margin-bottom:10px }
+.farm-card header img { width:52px; height:52px; object-fit:contain; background:#13171910; border:1px solid var(--line) }
+.farm-card h3 { margin:0; font-size:15px; letter-spacing:-.3px }
+.farm-tier { display:inline-block; margin-top:5px; padding:2px 7px; font:800 10px monospace; border:1px solid var(--ink) }
+.farm-tier.tier-4 { background:var(--ink); color:#d8a0ff }
+.farm-tier.tier-3 { background:var(--ink); color:#9fd4ff }
+.farm-tier.tier-2 { background:var(--ink); color:#c9e69a }
+.farm-tier.tier-1 { background:var(--ink); color:#d5d5d0 }
+.farm-cols,.farm-card li { display:grid; grid-template-columns:minmax(58px,auto) 1fr 62px 58px; align-items:center; gap:8px }
+.farm-cols { padding:0 8px 5px; border-bottom:1px solid var(--line) }
+.farm-cols i { font:700 10px monospace; color:var(--muted); font-style:normal }
+.farm-cols i:nth-child(3),.farm-cols i:nth-child(4),.farm-rate,.farm-sanity { text-align:right }
+.farm-card ul { list-style:none; margin:0; padding:0 }
+.farm-card li { padding:7px 8px; border-bottom:1px dashed #d2d0c988; font-size:12.5px }
+.farm-card li:last-child { border-bottom:0 }
+.farm-card li.best { background:#dfff0033; border-left:3px solid var(--lime); padding-left:5px }
+.farm-code { font:800 12.5px monospace }
+.farm-badges { display:flex; gap:5px; flex-wrap:wrap }
+.best-badge { background:var(--ink); color:var(--lime); font:800 9.5px monospace; padding:2px 6px; font-style:normal }
+.kind-badge { border:1px solid var(--line); color:var(--muted); font:700 9.5px monospace; padding:2px 6px; font-style:normal }
+.kind-badge.event { border-color:#c05f6e; color:#c05f6e }
+.kind-badge.daily { border-color:#4d9dd6; color:#4d9dd6 }
+.farm-rate { font-weight:800 }
+.farm-sanity { color:var(--muted); font-weight:700 }
+@media (width<=760px) { .farm { padding:24px 18px 48px } .farm-grid { grid-template-columns:1fr } .farm-tools { gap:10px } }
