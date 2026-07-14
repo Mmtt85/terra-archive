@@ -4,7 +4,9 @@
 // 이벤트 목록·썸네일은 scripts/build-story.py가 생성하는 app/data/stories.json,
 // 요약 본문은 AI(Claude)가 스토리 스크립트를 정독하고 집필하는 app/data/story-summaries.json.
 // 요약이 있는 이벤트만 카드가 열리고, 상세는 #story-<id> 해시로 공유·뒤로가기 가능.
-import { useEffect, useMemo, useState } from "react";
+// 상세를 읽는 동안, 화면에 보이는 문단에 언급된 인물·용어 카드가 오른쪽 레일에
+// 따라다니며 떠오른다 (IntersectionObserver — 넓은 화면 전용, 좁은 화면은 상단 갤러리).
+import { useEffect, useMemo, useRef, useState } from "react";
 import storiesData from "./data/stories.json";
 import summariesData from "./data/story-summaries.json";
 import { rich, useI18n, type Locale } from "./i18n";
@@ -16,8 +18,8 @@ type Block =
   | { t: "p"; x: string }
   | { t: "img"; src: string; cap?: string }
   | { t: "quote"; who: string; x: string };
-type CastChar = { name: string; desc: string; img: string };
-type Summary = { tagline: string; chars?: CastChar[]; blocks: Block[] };
+type Entity = { name: string; desc: string; img?: string; alias?: string[] };
+type Summary = { tagline: string; chars?: Entity[]; terms?: Entity[]; blocks: Block[] };
 
 const data = storiesData as { updated: string; events: StoryEvent[] };
 const summaries = summariesData as Record<string, Summary>;
@@ -31,6 +33,141 @@ function eventFromHash(): StoryEvent | null {
   if (!hash.startsWith("#story-")) return null;
   const id = hash.slice(7);
   return data.events.find((event) => event.id === id && summaries[id]) ?? null;
+}
+
+function blockText(block: Block): string {
+  if (block.t === "img") return block.cap ?? "";
+  if (block.t === "quote") return `${block.who} ${block.x}`;
+  return block.x;
+}
+
+const MAX_RAIL_CARDS = 5;
+
+// 요약 상세 — 본문 + 스크롤 추적 참조 레일
+function StoryDetail({ event, summary, onClose }: { event: StoryEvent; summary: Summary; onClose: () => void }) {
+  const { locale, t } = useI18n();
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const [inView, setInView] = useState<Set<number>>(new Set());
+
+  // 인물이 용어보다 먼저 뜨도록 chars → terms 순으로 합친다
+  const entities = useMemo<Entity[]>(
+    () => [...(summary.chars ?? []), ...(summary.terms ?? [])],
+    [summary],
+  );
+
+  // 블록별로 언급된 엔티티 인덱스를 미리 계산 (단순 부분 문자열 매칭)
+  const mentions = useMemo(
+    () =>
+      summary.blocks.map((block) => {
+        const text = blockText(block);
+        const found: number[] = [];
+        entities.forEach((entity, index) => {
+          if ([entity.name, ...(entity.alias ?? [])].some((key) => text.includes(key))) found.push(index);
+        });
+        return found;
+      }),
+    [summary, entities],
+  );
+
+  // 화면(읽는 영역)에 들어온 블록 추적
+  useEffect(() => {
+    const root = bodyRef.current;
+    if (!root) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        setInView((previous) => {
+          const next = new Set(previous);
+          for (const entry of entries) {
+            const index = Number((entry.target as HTMLElement).dataset.idx);
+            if (entry.isIntersecting) next.add(index);
+            else next.delete(index);
+          }
+          return next;
+        });
+      },
+      // 화면 상단 10%~하단 35%를 '읽는 중' 영역으로 취급
+      { rootMargin: "-10% 0px -35% 0px" },
+    );
+    root.querySelectorAll<HTMLElement>("[data-idx]").forEach((node) => observer.observe(node));
+    return () => observer.disconnect();
+  }, [summary]);
+
+  // 지금 보이는 블록들에 언급된 엔티티 — 본문 등장 순서 유지, 상한 개수 제한
+  const active = useMemo(() => {
+    const order: number[] = [];
+    [...inView]
+      .sort((a, b) => a - b)
+      .forEach((blockIndex) => {
+        for (const entityIndex of mentions[blockIndex] ?? []) {
+          if (!order.includes(entityIndex)) order.push(entityIndex);
+        }
+      });
+    return order.slice(0, MAX_RAIL_CARDS);
+  }, [inView, mentions]);
+
+  const cast = (summary.chars ?? []).filter((who) => who.img);
+
+  return (
+    <section className="story story-detail" aria-label={locText(locale, event.name)}>
+      <button type="button" className="story-back" onClick={onClose}>← {t("스토리 목록으로")}</button>
+      <header className="story-detail-head">
+        <span className="section-no">AI STORY DIGEST</span>
+        <h2>{locText(locale, event.name)}</h2>
+        <p className="story-meta">{event.start} · {t("에피소드 {n}개", { n: event.episodes })}</p>
+        <p className="story-tagline">{summary.tagline}</p>
+        <p className="story-disclaimer">{t("이 요약은 AI가 게임 내 스토리 스크립트 전문을 읽고 쓴 2차 창작 요약입니다.")}</p>
+        {locale !== "ko" && <p className="story-disclaimer">{t("요약 본문은 현재 한국어로만 제공됩니다.")}</p>}
+      </header>
+      {cast.length > 0 && (
+        <div className="story-cast" role="list" aria-label={t("등장인물")}>
+          {cast.map((who) => (
+            <figure key={who.name} role="listitem">
+              <div className="cast-img"><img src={who.img} alt={who.name} loading="lazy" decoding="async" /></div>
+              <figcaption><b>{who.name}</b><span>{who.desc}</span></figcaption>
+            </figure>
+          ))}
+        </div>
+      )}
+      <div className="story-detail-grid">
+        <div className="story-body" ref={bodyRef}>
+          {summary.blocks.map((block, index) => {
+            if (block.t === "h") return <h3 key={index} data-idx={index}>{block.x}</h3>;
+            if (block.t === "img")
+              return (
+                <figure key={index} data-idx={index}>
+                  <img src={block.src} alt={block.cap ?? ""} loading="lazy" decoding="async" />
+                  {block.cap && <figcaption>{block.cap}</figcaption>}
+                </figure>
+              );
+            if (block.t === "quote")
+              return (
+                <blockquote key={index} data-idx={index}>
+                  <p>{rich(block.x)}</p>
+                  <cite>— {block.who}</cite>
+                </blockquote>
+              );
+            return <p key={index} data-idx={index}>{rich(block.x)}</p>;
+          })}
+        </div>
+        <aside className="story-rail" aria-label={t("등장인물")}>
+          {active.map((entityIndex) => {
+            const entity = entities[entityIndex];
+            return (
+              <div className="rail-card" key={entity.name}>
+                {entity.img && (
+                  <div className="cast-img"><img src={entity.img} alt="" loading="lazy" decoding="async" /></div>
+                )}
+                <div className="rail-card-text"><b>{entity.name}</b><span>{entity.desc}</span></div>
+              </div>
+            );
+          })}
+        </aside>
+      </div>
+      <footer className="story-detail-foot">
+        <button type="button" className="story-back" onClick={onClose}>← {t("스토리 목록으로")}</button>
+      </footer>
+    </section>
+  );
 }
 
 export default function StoryGuide() {
@@ -67,53 +204,7 @@ export default function StoryGuide() {
   const summarized = data.events.filter((event) => summaries[event.id]).length;
 
   if (selected) {
-    const summary = summaries[selected.id];
-    return (
-      <section className="story story-detail" aria-label={locText(locale, selected.name)}>
-        <button type="button" className="story-back" onClick={close}>← {t("스토리 목록으로")}</button>
-        <header className="story-detail-head">
-          <span className="section-no">AI STORY DIGEST</span>
-          <h2>{locText(locale, selected.name)}</h2>
-          <p className="story-meta">{selected.start} · {t("에피소드 {n}개", { n: selected.episodes })}</p>
-          <p className="story-tagline">{summary.tagline}</p>
-          <p className="story-disclaimer">{t("이 요약은 AI가 게임 내 스토리 스크립트 전문을 읽고 쓴 2차 창작 요약입니다.")}</p>
-          {locale !== "ko" && <p className="story-disclaimer">{t("요약 본문은 현재 한국어로만 제공됩니다.")}</p>}
-        </header>
-        {summary.chars && summary.chars.length > 0 && (
-          <div className="story-cast" role="list" aria-label={t("등장인물")}>
-            {summary.chars.map((who) => (
-              <figure key={who.name} role="listitem">
-                <div className="cast-img"><img src={who.img} alt={who.name} loading="lazy" decoding="async" /></div>
-                <figcaption><b>{who.name}</b><span>{who.desc}</span></figcaption>
-              </figure>
-            ))}
-          </div>
-        )}
-        <div className="story-body">
-          {summary.blocks.map((block, index) => {
-            if (block.t === "h") return <h3 key={index}>{block.x}</h3>;
-            if (block.t === "img")
-              return (
-                <figure key={index}>
-                  <img src={block.src} alt={block.cap ?? ""} loading="lazy" decoding="async" />
-                  {block.cap && <figcaption>{block.cap}</figcaption>}
-                </figure>
-              );
-            if (block.t === "quote")
-              return (
-                <blockquote key={index}>
-                  <p>{rich(block.x)}</p>
-                  <cite>— {block.who}</cite>
-                </blockquote>
-              );
-            return <p key={index}>{rich(block.x)}</p>;
-          })}
-        </div>
-        <footer className="story-detail-foot">
-          <button type="button" className="story-back" onClick={close}>← {t("스토리 목록으로")}</button>
-        </footer>
-      </section>
-    );
+    return <StoryDetail event={selected} summary={summaries[selected.id]} onClose={close} />;
   }
 
   return (
