@@ -12,7 +12,7 @@ import summariesData from "./data/story-summaries.json";
 import { rich, useI18n, type Locale } from "./i18n";
 
 type LocText = { ko: string; en?: string; ja?: string };
-type StoryEvent = { id: string; name: LocText; start: string; episodes: number; thumb: string; thumbJa?: string };
+type StoryEvent = { id: string; name: LocText; start: string; episodes: number; thumb: string; thumbEn?: string; thumbJa?: string };
 type Block =
   | { t: "h"; x: string }
   | { t: "p"; x: string }
@@ -244,7 +244,7 @@ export default function StoryGuide({ onShowOperator }: { onShowOperator?: (id: s
                 <button type="button" onClick={() => ready && open(event)} disabled={!ready}
                   aria-label={locText(locale, event.name)}>
                   <div className="story-thumb">
-                    <img src={locale === "ja" && event.thumbJa ? event.thumbJa : event.thumb} alt="" loading="lazy" decoding="async" />
+                    <img src={(locale === "ja" ? event.thumbJa : locale === "en" ? event.thumbEn : undefined) ?? event.thumb} alt="" loading="lazy" decoding="async" />
                     {ready
                       ? <em className="story-ready-badge">{t("AI 요약")}</em>
                       : <em className="story-pending-badge">{t("요약 준비 중")}</em>}

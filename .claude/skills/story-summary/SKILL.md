@@ -77,9 +77,10 @@ chars·terms는 **스크롤 추적 레일**에 쓰인다 — 넓은 화면에서
 "…· 오퍼레이터 바르카리스", 레나 → char_1022_flwr2 "…· 오퍼레이터 퍼퓨머 더 디스틸트").
 스프라이트 파일명(avg_4166_varkis 등)이 오퍼 id의 힌트가 되니 대조해 볼 것.
 
-**썸네일 서버판**: CN판은 중국어 부제가 있어 금지. 기본(ko·en)=본가 en 브랜치,
-ja=555me/ArknightsAssets2 jp 브랜치(`thumbJa`). KR판은 언팩 레포가 없어 글로벌판 대체.
-신규 이벤트 추가 시 `python3 scripts/build-story.py`가 알아서 두 판을 받는다.
+**썸네일 서버판**: CN판은 중국어 부제가 있어 금지. ko=한국판(`build-story.py
+--kr-thumbs` — KR 공식 CDN 언팩, pip UnityPy·lz4inv 필요), en=본가 en 브랜치(`thumbEn`),
+ja=555me/ArknightsAssets2 jp 브랜치(`thumbJa`). 신규 이벤트 추가 시 기본 모드 실행 후
+--kr-thumbs로 한국판을 덮어쓸 것 (기본 모드는 글로벌판을 임시로 넣는다).
 
 ## 마무리
 

@@ -7,15 +7,17 @@ Usage:
   python3 scripts/build-story.py --chars act48side  # 스탠딩 CG 이름↔화자 매칭표 출력
   python3 scripts/build-story.py --chars act48side avg_4056_titi_1 "avg_npc_2068_1#2" …
                                                 # 지정 스탠딩 CG 다운로드 (기본 표정 #1$1)
+  python3 scripts/build-story.py --kr-thumbs        # 한국판 썸네일을 KR 공식 CDN에서 언팩·갱신
 
 데이터 소스 (전부 원격 — 로컬 gamedata 폴더 불필요):
   - 이벤트 목록·제목(3개 언어)·에피소드 구성: 클뜯 레포 excel/story_review_table.json
     (kr 기준, en/jp는 미출시 이벤트면 한국어로 폴백)
-  - 썸네일: CN판은 중국어 부제가 박혀 있어 쓰지 않는다 (사용자 확정 2026-07).
-    · 기본(ko·en 라우트): ArknightsAssets2 en 브랜치(글로벌판) → public/story/<id>.jpg
-      ※ KR 서버판은 언팩된 공개 레포가 없어 글로벌판으로 대체
-    · ja 라우트: 555me/ArknightsAssets2 jp 브랜치(일본판) → public/story/ja/<id>.jpg
-      (없는 이벤트는 stories.json에 thumbJa를 넣지 않음 → UI가 기본판으로 폴백)
+  - 썸네일은 로케일별 서버판 (CN판은 중국어 부제가 박혀 있어 사용 금지 — 사용자 확정 2026-07):
+    · ko: 한국판 → public/story/<id>.jpg — --kr-thumbs 모드가 KR 공식 CDN에서 언팩
+      (신규 이벤트 직후 기본 모드는 글로벌판을 임시로 넣으니 --kr-thumbs로 교체할 것)
+    · en: ArknightsAssets2 en 브랜치(글로벌판) → public/story/en/<id>.jpg (thumbEn)
+    · ja: 555me/ArknightsAssets2 jp 브랜치(일본판) → public/story/ja/<id>.jpg (thumbJa)
+      (en/ja는 없는 이벤트면 필드 생략 → UI가 기본판으로 폴백)
     경로: assets/dyn/arts/ui/storyreview/hubs/activity/storyentrypic_<id>.png
     (sips로 jpeg 변환, 있으면 스킵)
   - 컷씬 CG(--cuts): 스토리 스크립트의 [Image(image="...")] 태그를 수집해
@@ -116,6 +118,80 @@ def chars_mode(event_id, wanted):
 if len(sys.argv) > 2 and sys.argv[1] == "--chars":
     chars_mode(sys.argv[2], sys.argv[3:]); sys.exit(0)
 
+# ── --kr-thumbs: 한국판 썸네일을 KR 공식 CDN에서 언팩 ─────────────
+# KR 서버는 언팩된 공개 레포가 없어 게임 CDN에서 직접 뽑는다 (사용자 확정 2026-07).
+# 절차: network_config → resVersion → .idx 매니페스트(FlatBuffer, 128바이트 헤더 뒤)를
+# 수제 파서로 읽어 asset→bundle 매핑 → storyentrypic이 든 spritepack 번들(.dat=zip)을
+# 받아 UnityPy(+lz4inv, 아크나이츠 커스텀 압축)로 Texture2D 추출 → public/story/<id>.jpg.
+# 필요 pip: UnityPy, lz4inv. 이벤트 id ≠ pic id인 경우(1stact=act1d0)는 리뷰 테이블로 매핑.
+def kr_thumbs():
+    import io, struct, zipfile
+    try:
+        import lz4inv, UnityPy
+        from UnityPy.enums.BundleFile import CompressionFlags
+        from UnityPy.helpers.CompressionHelper import DECOMPRESSION_MAP
+        DECOMPRESSION_MAP[CompressionFlags.LZHAM] = lz4inv.decompress_buffer
+    except ImportError:
+        sys.exit("pip3 install --user UnityPy lz4inv 후 다시 실행")
+    conf = fetch("https://ak-conf.arknights.kr/config/prod/official/network_config")
+    network = json.loads(conf["content"])
+    urls = network["configs"][network["funcVer"]]["network"]
+    ver = fetch(urls["hv"].replace("{0}", "Android"))
+    assets_url = f"{urls['hu']}/Android/assets/{ver['resVersion']}"
+    hul = fetch(f"{assets_url}/hot_update_list.json")
+
+    def fetch_dat(name):  # 번들 하나 = zip 포장 .dat
+        dat = name.replace("/", "_").replace("#", "__").split(".")[0] + ".dat"
+        with zipfile.ZipFile(io.BytesIO(fetch(f"{assets_url}/{dat}", binary=True))) as z:
+            return z.read(z.filelist[0])
+
+    # .idx FlatBuffer 수제 파싱 (스키마: OpenArknightsFBS resource_manifest.fbs)
+    buf = fetch_dat(hul["manifestName"])[128:]
+    u32 = lambda o: struct.unpack_from("<I", buf, o)[0]
+    i32 = lambda o: struct.unpack_from("<i", buf, o)[0]
+    u16 = lambda o: struct.unpack_from("<H", buf, o)[0]
+    def table(o):
+        vt = o - i32(o); nslots = (u16(vt) - 4) // 2
+        return lambda s: (o + u16(vt + 4 + s*2)) if s < nslots and u16(vt + 4 + s*2) else None
+    def string_at(fo):
+        so = fo + u32(fo); return buf[so+4:so+4+u32(so)].decode("utf-8")
+    def vector_at(fo):
+        vo = fo + u32(fo); return vo + 4, u32(vo)
+    root = table(u32(0))
+    base, n = vector_at(root(1))
+    bundles = []
+    for i in range(n):
+        t = table(base + i*4 + u32(base + i*4)); f = t(0)
+        bundles.append(string_at(f) if f else "")
+    base, n = vector_at(root(2))
+    packs = set()
+    for i in range(n):
+        t = table(base + i*4 + u32(base + i*4)); fa, fb = t(0), t(1)
+        if fa and "storyreview/hubs/activity/storyentrypic" in string_at(fa):
+            packs.add(bundles[i32(fb)] if fb else "")
+
+    review = fetch(f"{GAMEDATA}/kr/gamedata/excel/story_review_table.json")
+    pic_to_event = {(v.get("storyEntryPicId") or "").lower(): v["id"]
+                    for v in review.values() if v.get("entryType") == "ACTIVITY"}
+    thumb_dir = os.path.join(REPO, "public", "story")
+    count = 0
+    for pack in sorted(packs):
+        env = UnityPy.load(io.BytesIO(fetch_dat(pack)))
+        for obj in env.objects:
+            if obj.type.name != "Texture2D": continue
+            d = obj.read()
+            eid = pic_to_event.get(d.m_Name.lower())
+            if not eid: continue
+            tmp = os.path.join(thumb_dir, f".{eid}.tmp.png")
+            d.image.save(tmp)
+            to_jpeg(open(tmp, "rb").read(), os.path.join(thumb_dir, f"{eid}.jpg"))
+            os.remove(tmp)
+            count += 1
+    print(f"KR 썸네일 {count}장 갱신 (resVersion {ver['resVersion']})")
+
+if len(sys.argv) > 1 and sys.argv[1] == "--kr-thumbs":
+    kr_thumbs(); sys.exit(0)
+
 # ── 기본: stories.json + 썸네일 ─────────────────────────────
 print("fetching story_review_table (kr/en/jp) …", file=sys.stderr)
 kr = fetch(f"{GAMEDATA}/kr/gamedata/excel/story_review_table.json")
@@ -132,7 +208,9 @@ THUMB_FALLBACK = {
 }
 
 ja_dir = os.path.join(thumb_dir, "ja")
+en_dir = os.path.join(thumb_dir, "en")
 os.makedirs(ja_dir, exist_ok=True)
+os.makedirs(en_dir, exist_ok=True)
 
 events, failed = [], []
 acts = sorted((v for v in kr.values() if v["entryType"] == "ACTIVITY"),
@@ -155,28 +233,29 @@ for act in acts:
         "thumb": f"/story/{eid}.jpg",
     }
     pic = (act.get("storyEntryPicId") or f"storyEntryPic_{eid}").lower()
-    # 기본(ko·en) = 글로벌판, 없으면 스토리 CG로 대체
+    # 기본(ko) = 한국판 — KR CDN 언팩(--kr-thumbs)으로 채워지며 여기선 만들지 않는다.
+    # 파일이 아직 없으면(신규 이벤트) 글로벌판을 임시로 받아두고, CG 대체 이벤트는 CG.
     dest = os.path.join(thumb_dir, f"{eid}.jpg")
     if not os.path.exists(dest):
         url = THUMB_FALLBACK.get(eid) or f"{ASSETS_EN}/arts/ui/storyreview/hubs/activity/{pic}.png"
         try:
             png = fetch(url, binary=True)
             to_jpeg(png, dest, max_px=640 if eid in THUMB_FALLBACK else None)
-            print("thumb:", eid, file=sys.stderr)
+            print("thumb(임시-글로벌판, --kr-thumbs로 교체 필요):", eid, file=sys.stderr)
         except Exception as err:  # noqa: BLE001 — 썸네일 하나 실패해도 목록은 만든다
             failed.append((eid, pic, str(err)))
-    # 일본판 — 없으면 thumbJa 생략(UI가 기본판으로 폴백)
+    # 글로벌판(en)·일본판(ja) — 없으면 필드 생략(UI가 기본판으로 폴백)
     if eid not in THUMB_FALLBACK:
-        ja_dest = os.path.join(ja_dir, f"{eid}.jpg")
-        if not os.path.exists(ja_dest):
-            try:
-                png = fetch(f"{ASSETS_JP}/arts/ui/storyreview/hubs/activity/{pic}.png", binary=True)
-                to_jpeg(png, ja_dest)
-                print("thumb(ja):", eid, file=sys.stderr)
-            except Exception:  # noqa: BLE001
-                pass
-        if os.path.exists(ja_dest):
-            entry["thumbJa"] = f"/story/ja/{eid}.jpg"
+        for key, sub_dir, base_url in (("thumbEn", en_dir, ASSETS_EN), ("thumbJa", ja_dir, ASSETS_JP)):
+            sub_dest = os.path.join(sub_dir, f"{eid}.jpg")
+            if not os.path.exists(sub_dest):
+                try:
+                    png = fetch(f"{base_url}/arts/ui/storyreview/hubs/activity/{pic}.png", binary=True)
+                    to_jpeg(png, sub_dest)
+                    print(f"thumb({key}):", eid, file=sys.stderr)
+                except Exception:  # noqa: BLE001
+                    continue
+            entry[key] = f"/story/{os.path.basename(sub_dir)}/{eid}.jpg"
     events.append(entry)
 
 out = {"updated": time.strftime("%Y-%m-%d"), "events": events}
