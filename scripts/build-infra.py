@@ -14,6 +14,7 @@ ops_by_id = {o["id"]: o for o in operators}
 ROOM_KO = {"MANUFACTURE": "제조소", "TRADING": "무역소", "POWER": "발전소", "WORKSHOP": "가공소",
            "DORMITORY": "숙소", "MEETING": "응접실", "HIRE": "사무실", "TRAINING": "훈련실",
            "CONTROL": "제어 센터"}
+KO_ROOM = {v: k for k, v in ROOM_KO.items()}  # 한글 방이름 → 방 종류 (교차방 파트너 조건 파싱용)
 
 def strip_tags(s):
     if not s: return ""
@@ -328,6 +329,13 @@ def parse_skill(entry, oname):
         if bp and bp.group(1).strip() in name_to_id:
             base_partner_ids = [name_to_id[bp.group(1).strip()]]
             base_partner_bonus = float(bp.group(2))
+        # 교차방 파트너 조건 (레토 환난지교: "만약 굼이 무역소에 배치되어 있다면 +35%") —
+        # 특정 오퍼가 특정 방 종류에 배치돼야 스킬 발동. 같은 방 동반도 기지 존재도 아님.
+        # 방 순서상 그리디 1차엔 판정 불가 → 플래너가 낙관 배치 후 리페어 패스에서 엄격 검증
+        room_partner = None
+        rp = re.search(r"만약 ([가-힣A-Za-z0-9·']{1,16}?)(?:이|가) (제조소|무역소|발전소|응접실|사무실|가공소|훈련실|제어 센터|숙소)에 배치(?:되어 있|돼 있)다면", text)
+        if rp and rp.group(1).strip() in name_to_id:
+            room_partner = {"id": name_to_id[rp.group(1).strip()], "room": KO_ROOM[rp.group(2)]}
         # buffChar slots already resolved upgrades — every line here stacks
         tier = 1
         group = entry["name"]
@@ -340,7 +348,7 @@ def parse_skill(entry, oname):
             "partners": [p for p in find_partners(text, oname) if p not in base_partner_ids],
             "basePartners": base_partner_ids, "basePartnerBonus": base_partner_bonus,
             "gateFaction": gate_faction, "gateCount": gate_count,
-            "gatePlatforms": gate_platforms,
+            "gatePlatforms": gate_platforms, "roomPartner": room_partner,
             "belowThreshold": below_threshold,
             "_roboCap": int(robo_cap.group(1)) if robo_cap else None,
             "_roboUse": (float(robo_use.group(1)), float(robo_use.group(2))) if robo_use else None,

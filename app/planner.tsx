@@ -30,6 +30,7 @@ type InfraSkill = {
   gateFaction?: string | null;  // "쉐라그 3명 배치된 무역소" 류 — 진영 N명 배치 조건
   gateCount?: number | null;
   gatePlatforms?: number | null; // "작업 플랫폼 2대+ 발전소 배치 시" (푸딩) — 자동편성 미충족 조건
+  roomPartner?: { id: string; room: string } | null; // "만약 굼이 무역소에 배치되어 있다면" (레토) — 교차방 파트너
   belowThreshold?: number | null; // "누적 속도 30% 미만인 경우" 류 — 대상 방 수치가 임계값 미만일 때만 (사일라흐)
   reqFaction: string | null;
   perFaction: string | null;
@@ -126,7 +127,7 @@ const UNIT: Record<string, string> = {
 const PARK_KEYS = ["WORKSHOP"];
 const SHIFT_COUNT = 2;
 
-type Ctx = { product?: string; tokenPoints: Record<string, number>; factionCounts?: Record<string, number>; plants?: number; presentIds?: Set<string>; ambient?: AmbientAura[] };
+type Ctx = { product?: string; tokenPoints: Record<string, number>; factionCounts?: Record<string, number>; plants?: number; presentIds?: Set<string>; ambient?: AmbientAura[]; roomOf?: Map<string, string> };
 
 function skillApplies(skill: InfraSkill, room: string, product?: string): boolean {
   if (skill.room !== room) return false;
@@ -214,6 +215,9 @@ function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx): OpBrea
     if (skill.reqFaction && !team.some((member) => member.id !== op.id && factionsOf(member).includes(skill.reqFaction!))) continue;
     // 진영 N명 배치 게이트 (실버애쉬 이격: 쉐라그 3명 배치된 무역소) — 조 전체 인원수 근사
     if (skill.gateFaction && (ctx.factionCounts?.[skill.gateFaction] ?? 0) < (skill.gateCount ?? 1)) continue;
+    // 교차방 파트너 조건(레토: 굼이 무역소에): roomOf가 주어진 검증 단계에선 파트너가 지정 방에
+    // 실제 있어야 발동. 그리디 1차(roomOf 없음)에선 낙관적으로 통과시켜 짝이 배치될 기회를 준다
+    if (skill.roomPartner && ctx.roomOf && ctx.roomOf.get(skill.roomPartner.id) !== skill.roomPartner.room) continue;
     out.skills.push(skill);
     // 작업 플랫폼 발전소 배치 조건(푸딩)은 자동편성이 충족하지 않으므로 오라를 계상하지 않는다
     // — 스킬 자체는 표시(위에서 push)하되 효과는 0으로 둔다
@@ -553,6 +557,58 @@ function buildPlan(packageTokens: string[], roster: InfraOp[], factionSets = fal
   // dorms: pinned rest space; package members that generate from the dorm
   // (아이리스·체르니·비르투오사 등) stay locked in regardless of shift
   for (let d = 0; d < 4; d += 1) assignments[`DORM-${d}`] = [dormPins[d].map((op) => op.id)];
+
+  // ── 교차방 조건 리페어 패스 (사용자 제안 2026-07) ──────────────────────────────
+  // 그리디는 방을 우선순위대로 채우느라 "굼이 무역소에 있어야 +35%"인 레토처럼 나중에
+  // 채워질 방에 걸린 조건을 1차엔 낙관적으로 배치한다. 편성을 다 마친 뒤 조 전체를 다시
+  // 보고, 조건이 실제로 미충족인 오퍼는 그 자리에서 더 나은 벤치 오퍼로 교체(없으면 제거)한다.
+  // 조건 미충족 오퍼만 손대므로(그리디 결과를 갈아엎지 않음) 안전. 안정될 때까지 최대 3회.
+  const byIdAll = new Map(roster.map((op) => [op.id, op]));
+  for (let shift = 0; shift < SHIFT_COUNT; shift += 1) {
+    for (let pass = 0; pass < 3; pass += 1) {
+      const roomOf = new Map<string, string>();
+      const placed = new Set<string>();
+      for (const key of Object.keys(assignments)) {
+        const room = cellByKey.get(key)?.room ?? key;
+        for (const id of assignments[key][Math.min(shift, assignments[key].length - 1)] ?? []) { roomOf.set(id, room); placed.add(id); }
+      }
+      const fc: Record<string, number> = {};
+      for (const id of placed) { const op = byIdAll.get(id); if (op) for (const f of factionsOf(op)) fc[f] = (fc[f] ?? 0) + 1; }
+      let changed = false;
+      for (const key of PRODUCTION_KEYS) {
+        const room = cellByKey.get(key)?.room ?? key;
+        const idx = Math.min(shift, assignments[key].length - 1);
+        const team = (assignments[key][idx] ?? []).map((id) => byIdAll.get(id)).filter((op): op is InfraOp => Boolean(op));
+        if (!team.length) continue;
+        const ctx: Ctx = { product: cellByKey.get(key)?.product, tokenPoints: shift === 0 ? tokenPoints : {}, factionCounts: fc, plants, presentIds: placed, roomOf };
+        // 조건(roomPartner)이 실제 미충족인 멤버 — 시드/예약 오퍼는 건드리지 않는다
+        const member = team.find((op) => reserved.get(op.id) !== key && op.skills.some((sk) =>
+          sk.roomPartner && skillApplies(sk, room, ctx.product) && roomOf.get(sk.roomPartner.id) !== sk.roomPartner.room));
+        if (!member) continue;
+        const rest = team.filter((op) => op !== member);
+        // 미충족 멤버는 "빼기(DROP)"를 기본값으로 둔다 — 조건이 안 채워진 데드웨이트는
+        // 슬롯을 비우는 게 낫다(0 기여 몸빵 금지). 유지·대체가 더 나을 때만 그쪽을 택한다.
+        let bestScore = teamScore(rest, room, ctx);
+        let bestPick: InfraOp | "DROP" | null = "DROP";
+        if (teamScore(team, room, ctx) > bestScore) { bestScore = teamScore(team, room, ctx); bestPick = null; }
+        for (const op of roster) {
+          if (placed.has(op.id) || reserved.has(op.id)) continue;
+          if (!op.skills.some((sk) => skillApplies(sk, room, ctx.product))) continue;
+          const sc = teamScore([...rest, op], room, ctx);
+          if (sc > bestScore) { bestScore = sc; bestPick = op; }
+        }
+        if (bestPick) {
+          const newTeam = bestPick === "DROP" ? rest : [...rest, bestPick];
+          assignments[key][idx] = newTeam.map((op) => op.id);
+          placed.delete(member.id); roomOf.delete(member.id);
+          if (bestPick !== "DROP") { placed.add(bestPick.id); roomOf.set(bestPick.id, room); }
+          changed = true;
+        }
+      }
+      if (!changed) break;
+    }
+  }
+
   // ledger: recount per-member generators against the actual A-crew roster,
   // then record who cashes the points in
   const rosterById = new Map(roster.map((op) => [op.id, op]));
