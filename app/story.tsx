@@ -250,7 +250,7 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
 
   return (
     <div className="chron">
-      <p className="chron-note">{rich(t("**테라 연대기 (베타)** — 모든 이벤트·메인스토리·로그라이크를 시계열로 모으는 사전 작업입니다. 테라력 연도와 테마 묶음은 확정되는 대로 채워집니다."))}</p>
+      <p className="chron-note">{rich(t("**테라 연대기 (베타)** — 모든 이벤트·메인스토리·로그라이크를 한자리에 모으는 사전 작업입니다. 현재 정렬은 출시순(임시)이며, 인게임 연대기 순서·테라력 연도는 스토리 스크립트를 반영하며 채웁니다. 테마 묶음은 확실한 것부터 배정 중입니다."))}</p>
 
       {/* 한 줄 연혁 바 — 연대기 순서대로, 테마 색으로 */}
       <div className="chron-railwrap">

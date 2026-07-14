@@ -1,5 +1,5 @@
 {
- "note": "테라 연대기 스캐폴딩. terraYear는 공식 데이터가 거의 없어 null(미정)로 두고 확정되는 대로 채운다. entries 배열 순서 = 연대기 순서(초기값은 이벤트 출시순 프록시, 인게임 시계열로 재큐레이트 예정). kind: event(ref→stories.json) / main / roguelike. arc는 arcs[].id 참조. 스크립트는 story-summaries.json.",
+ "note": "테라 연대기 스캐폴딩. terraYear·entries 순서(=연대기)는 게임 데이터에 인게임 날짜 필드가 없어 보류 — 스토리 스크립트 반영 시 채운다. 현재 entries 순서는 출시순(임시). arc(테마)는 게임 데이터에 없어 로어 기반 수작업, '확실한 것 우선' 배정(나머지 null=미분류). kind: event(ref→stories.json)/main/roguelike.",
  "updated": "2026-07-14",
  "arcs": [
   {
@@ -37,33 +37,65 @@
   {
    "id": "victoria",
    "name": {
-    "ko": "빅토리아 내전",
-    "en": "Victorian Civil War",
-    "ja": "ヴィクトリア内戦"
+    "ko": "빅토리아",
+    "en": "Victoria",
+    "ja": "ヴィクトリア"
    }
   },
   {
    "id": "kjerag",
    "name": {
-    "ko": "설역 / 사미",
+    "ko": "설역 (설산·사미)",
     "en": "Kjerag / Sami",
-    "ja": "雪原 / サーミ"
+    "ja": "雪原 (雪山・サーミ)"
    }
   },
   {
    "id": "higashi",
    "name": {
-    "ko": "동방 (극동)",
-    "en": "Higashi (Far East)",
-    "ja": "極東"
+    "ko": "동국 (극동)",
+    "en": "Higashi",
+    "ja": "ヒガシ (極東)"
    }
   },
   {
-   "id": "iberia",
+   "id": "yan",
    "name": {
-    "ko": "이베리아",
-    "en": "Iberia",
-    "ja": "イベリア"
+    "ko": "염 (옌)",
+    "en": "Yan",
+    "ja": "炎 (ヤン)"
+   }
+  },
+  {
+   "id": "kazimierz",
+   "name": {
+    "ko": "카시미어",
+    "en": "Kazimierz",
+    "ja": "カジミエーシュ"
+   }
+  },
+  {
+   "id": "leithanien",
+   "name": {
+    "ko": "라이타니엔",
+    "en": "Leithanien",
+    "ja": "ライタニエン"
+   }
+  },
+  {
+   "id": "minos",
+   "name": {
+    "ko": "미노스",
+    "en": "Minos",
+    "ja": "ミノス"
+   }
+  },
+  {
+   "id": "sargon",
+   "name": {
+    "ko": "사르곤",
+    "en": "Sargon",
+    "ja": "サルゴン"
    }
   }
  ],
@@ -78,7 +110,7 @@
    "ref": "act3d0",
    "kind": "event",
    "terraYear": null,
-   "arc": null
+   "arc": "columbia"
   },
   {
    "ref": "act5d0",
@@ -102,19 +134,19 @@
    "ref": "act12d0",
    "kind": "event",
    "terraYear": null,
-   "arc": null
+   "arc": "sargon"
   },
   {
    "ref": "act13d5",
    "kind": "event",
    "terraYear": null,
-   "arc": null
+   "arc": "kazimierz"
   },
   {
    "ref": "act15d0",
    "kind": "event",
    "terraYear": null,
-   "arc": null
+   "arc": "columbia"
   },
   {
    "ref": "act16d5",
@@ -144,7 +176,7 @@
    "ref": "act12side",
    "kind": "event",
    "terraYear": null,
-   "arc": null
+   "arc": "siracusa"
   },
   {
    "ref": "act13side",
@@ -156,19 +188,19 @@
    "ref": "act14side",
    "kind": "event",
    "terraYear": null,
-   "arc": null
+   "arc": "kjerag"
   },
   {
    "ref": "act15side",
    "kind": "event",
    "terraYear": null,
-   "arc": null
+   "arc": "yan"
   },
   {
    "ref": "act16side",
    "kind": "event",
    "terraYear": null,
-   "arc": null
+   "arc": "victoria"
   },
   {
    "ref": "act17side",
@@ -180,7 +212,7 @@
    "ref": "act18side",
    "kind": "event",
    "terraYear": null,
-   "arc": null
+   "arc": "leithanien"
   },
   {
    "ref": "act20side",
@@ -192,13 +224,13 @@
    "ref": "act19side",
    "kind": "event",
    "terraYear": null,
-   "arc": null
+   "arc": "columbia"
   },
   {
    "ref": "act21side",
    "kind": "event",
    "terraYear": null,
-   "arc": null
+   "arc": "siracusa"
   },
   {
    "ref": "act23side",
@@ -216,13 +248,13 @@
    "ref": "act24side",
    "kind": "event",
    "terraYear": null,
-   "arc": null
+   "arc": "higashi"
   },
   {
    "ref": "act25side",
    "kind": "event",
    "terraYear": null,
-   "arc": null
+   "arc": "minos"
   },
   {
    "ref": "act26side",
@@ -246,13 +278,13 @@
    "ref": "act29side",
    "kind": "event",
    "terraYear": null,
-   "arc": null
+   "arc": "sarkaz"
   },
   {
    "ref": "act30side",
    "kind": "event",
    "terraYear": null,
-   "arc": null
+   "arc": "yan"
   },
   {
    "ref": "act31side",
@@ -264,13 +296,13 @@
    "ref": "act32side",
    "kind": "event",
    "terraYear": null,
-   "arc": null
+   "arc": "kazimierz"
   },
   {
    "ref": "act33side",
    "kind": "event",
    "terraYear": null,
-   "arc": null
+   "arc": "sarkaz"
   },
   {
    "ref": "act34side",
@@ -318,25 +350,25 @@
    "ref": "act41side",
    "kind": "event",
    "terraYear": null,
-   "arc": null
+   "arc": "victoria"
   },
   {
    "ref": "act42side",
    "kind": "event",
    "terraYear": null,
-   "arc": null
+   "arc": "kjerag"
   },
   {
    "ref": "act43side",
    "kind": "event",
    "terraYear": null,
-   "arc": null
+   "arc": "siracusa"
   },
   {
    "ref": "act44side",
    "kind": "event",
    "terraYear": null,
-   "arc": null
+   "arc": "higashi"
   },
   {
    "ref": "act45side",
@@ -348,13 +380,13 @@
    "ref": "act46side",
    "kind": "event",
    "terraYear": null,
-   "arc": null
+   "arc": "kjerag"
   },
   {
    "ref": "act47side",
    "kind": "event",
    "terraYear": null,
-   "arc": null
+   "arc": "columbia"
   },
   {
    "ref": "act48side",
