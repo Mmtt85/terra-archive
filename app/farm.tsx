@@ -313,6 +313,25 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
       const now = current[key] ?? group.steps.length;
       return { ...current, [key]: now === pos + 1 ? pos : pos + 1 };
     });
+  // 마우스로 레일을 잡고 끌면 포인터 아래 단계까지 목표를 맞춘다. 단순 클릭은 clickStep 토글을
+  // 유지하고(0까지 낮추기 가능), 드래그가 일어난 경우 뒤따르는 click을 무시한다(draggedRef).
+  const dragRef = useRef<{ opId: string; groupKey: string } | null>(null);
+  const draggedRef = useRef(false);
+  useEffect(() => {
+    const end = () => { dragRef.current = null; };
+    window.addEventListener("pointerup", end);
+    window.addEventListener("pointercancel", end);
+    return () => { window.removeEventListener("pointerup", end); window.removeEventListener("pointercancel", end); };
+  }, []);
+  const dragOver = (opId: string) => (event: React.PointerEvent) => {
+    const drag = dragRef.current;
+    if (!drag || drag.opId !== opId) return;
+    const el = document.elementFromPoint(event.clientX, event.clientY) as HTMLElement | null;
+    const ds = el?.closest<HTMLElement>(".cost-step-dot")?.dataset;
+    if (!ds || ds.op !== opId || ds.gkey !== drag.groupKey || ds.pos === undefined) return;
+    draggedRef.current = true;
+    setTargets((current) => ({ ...current, [`${opId}/${drag.groupKey}`]: Number(ds.pos) + 1 }));
+  };
   const setAllGroups = (opId: string, groups: CostGroup[], full: boolean) =>
     setTargets((current) => {
       const next = { ...current };
@@ -411,7 +430,7 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
                     </button>
                     <button type="button" className="cost-chip-remove" onClick={() => removeOp(id)} aria-label={t("{name} 제외", { name: operator.name })}>×</button>
                   </header>
-                  <div className="cost-rows">
+                  <div className="cost-rows" onPointerMove={dragOver(id)}>
                     {groups.map((group) => {
                       const target = targetOf(id, group);
                       return group.steps.map((row, pos) => {
@@ -424,7 +443,11 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
                             <button
                               type="button"
                               className={`cost-step-dot ${railClass}${first ? " first" : ""}${pos === group.steps.length - 1 ? " last" : ""}`}
-                              onClick={() => clickStep(id, group, pos)}
+                              data-op={id}
+                              data-gkey={group.key}
+                              data-pos={pos}
+                              onPointerDown={() => { dragRef.current = { opId: id, groupKey: group.key }; draggedRef.current = false; }}
+                              onClick={() => { if (draggedRef.current) { draggedRef.current = false; return; } clickStep(id, group, pos); }}
                               aria-pressed={on}
                               title={on ? t("{label} {step}까지 육성 (클릭 시 제외)", { label: group.label, step: row.step }) : t("{label} {step}까지 육성", { label: group.label, step: row.step })}
                             />

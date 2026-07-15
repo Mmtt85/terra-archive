@@ -188,7 +188,7 @@ export default function AdminPage() {
           <button onClick={() => { sessionStorage.removeItem("ta-admin-key"); setEntered(false); setRows([]); }}>잠금</button>
         </div>
         <div className="admin-tools admin-status-tools">
-          {([["all", "전체 상태"], ["open", "신규"], ["handling", "대응중"], ["reviewed", "확인완료"]] as const).map(([key, label]) => (
+          {([["all", "전체 상태"], ["open", "신규"], ["handling", "대응중"], ["reviewed", "대응완료"]] as const).map(([key, label]) => (
             <button key={key} className={statusFilter === key ? "selected" : ""} onClick={() => setStatusFilter(key)}>
               {label}{key === "handling" && handlingCount ? ` (${handlingCount})` : ""}
             </button>
@@ -256,7 +256,7 @@ export default function AdminPage() {
               {row.reviewed_at && <i className="reviewed-badge" title={new Date(row.reviewed_at).toLocaleString("ko-KR")}>✓ 확인됨</i>}
               <time>{new Date(row.created_at).toLocaleString("ko-KR")}</time>
               <button className="handling-btn" onClick={() => toggleHandling(row)}>{handlingAt(row.payload) ? "대응 해제" : "대응중"}</button>
-              <button className="review-btn" onClick={() => toggleReviewed(row)}>{row.reviewed_at ? "확인 취소" : "확인완료"}</button>
+              <button className="review-btn" onClick={() => toggleReviewed(row)}>{row.reviewed_at ? "대응 취소" : "대응완료"}</button>
               <button onClick={() => remove(row.id)}>삭제</button>
             </header>
             {row.message && <p>{row.message}</p>}

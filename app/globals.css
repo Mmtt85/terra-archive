@@ -4238,6 +4238,8 @@ footer p {
   background: none;
   padding: 0;
   cursor: pointer;
+  touch-action: none;
+  user-select: none;
 }
 /* 세로 레일(노드 위·아래 연결선) */
 .cost-step-dot::before {
