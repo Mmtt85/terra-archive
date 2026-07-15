@@ -608,6 +608,7 @@ const D: Record<string, Pair> = {
   "요약": ["Digest", "要約"],
   "테라 연대기": ["Terra Chronicle", "テラ年代記"],
   "테라력 미정": ["Terra year TBD", "テラ暦 未定"],
+  "미정": ["TBD", "未定"],
   "테라력 {y}년": ["Terra {y}", "テラ暦{y}年"],
   "테마 미분류": ["Unsorted", "未分類"],
   "이벤트": ["Event", "イベント"],

@@ -3552,11 +3552,18 @@ footer p {
 .chron-note { color:#5a6266; font-size:12px; line-height:1.7; background:#e6e5df; border-left:3px solid var(--lime); padding:12px 15px; margin:0 0 22px }
 .chron-note b { color:var(--ink) }
 /* 한 줄 연혁 바 — 트랙 위에 놓인 노드, 가로 스크롤 */
-.chron-railwrap { border:1px solid var(--line); background:linear-gradient(180deg,#fbfbf8,#f4f3ee); padding:26px 20px 16px; margin-bottom:26px }
-.chron-rail { display:flex; align-items:center; gap:2px; overflow-x:auto; padding:14px 6px; position:relative }
-.chron-rail::before { content:""; position:absolute; left:6px; right:6px; top:50%; height:2px; background:linear-gradient(90deg,#d2d0c9,#9a9c95,#d2d0c9); transform:translateY(-50%) }
+.chron-railwrap { border:1px solid var(--line); background:linear-gradient(180deg,#fbfbf8,#f4f3ee); padding:20px 20px 16px; margin-bottom:26px }
+.chron-rail { display:flex; align-items:flex-start; gap:0; overflow-x:auto; padding:6px 6px 12px; position:relative }
 .chron-rail::-webkit-scrollbar { height:7px }
 .chron-rail::-webkit-scrollbar-thumb { background:#b9bbb5; border-radius:10px }
+/* 연도 세그먼트 — 작은 연도 라벨 + 그 해의 노드들 */
+.chron-railseg { flex:none; display:flex; flex-direction:column; gap:4px; padding:0 9px; border-left:1px dashed #d3d3cb }
+.chron-railseg:first-child { border-left:0; padding-left:2px }
+.chron-railseg-yr { align-self:flex-start; border:0; background:0 0; padding:1px 3px; cursor:pointer; font:800 9px/1.3 monospace; letter-spacing:.2px; color:#a2a49c; white-space:nowrap; border-radius:2px }
+.chron-railseg-yr:hover { color:var(--ink) }
+.chron-railseg-yr.on { color:var(--ink); background:var(--lime) }
+.chron-railseg-ticks { display:flex; align-items:center; gap:2px; position:relative }
+.chron-railseg-ticks::before { content:""; position:absolute; left:0; right:0; top:50%; height:2px; background:linear-gradient(90deg,#d2d0c9,#9a9c95,#d2d0c9); transform:translateY(-50%); z-index:0 }
 .chron-tick { flex:none; width:15px; height:40px; border:0; background:0 0; padding:0; cursor:pointer; display:grid; place-items:center; position:relative; z-index:1; --arc:#c3c6bf }
 .chron-tick.nolink { cursor:default }
 .chron-tick-dot { width:11px; height:11px; background:var(--arc); border:2px solid #fbfbf8; border-radius:50%; box-shadow:0 1px 3px #0002; transition:transform .12s }
@@ -3581,9 +3588,13 @@ footer p {
 .chron-tabs button { border:1px solid var(--line); background:var(--white); padding:7px 16px; font-size:11px; font-weight:800; cursor:pointer; letter-spacing:.3px }
 .chron-tabs button.on { background:var(--ink); color:var(--paper); border-color:var(--ink) }
 .chron-tabs button:not(.on):hover { border-color:var(--ink) }
-/* 그룹 목록 */
-.chron-groups { display:flex; flex-direction:column; gap:28px }
-.chron-group h3 { display:flex; align-items:center; gap:8px; font-size:15px; font-weight:900; letter-spacing:-.3px; margin:0 0 13px; padding-left:11px; border-left:4px solid var(--ink) }
+/* 그룹 목록 — 레일과 스크롤 동기화되는 세로 스크롤 패널 */
+.chron-groups { position:relative; display:flex; flex-direction:column; gap:24px; max-height:min(66vh,620px); overflow-y:auto; padding:6px 14px 8px 2px }
+.chron-groups::-webkit-scrollbar { width:9px }
+.chron-groups::-webkit-scrollbar-thumb { background:#c4c6bf; border-radius:10px }
+.chron-group h3 { display:flex; align-items:center; gap:8px; font-size:15px; font-weight:900; letter-spacing:-.3px; margin:0 0 13px; padding-left:11px; border-left:4px solid var(--ink); transition:border-color .15s }
+.chron-group.active h3 { border-left-color:var(--lime) }
+.chron-group.active h3 em { background:var(--ink) }
 .chron-group h3 em { color:#fff; background:var(--muted); font-style:normal; font:800 10px monospace; padding:2px 7px; border-radius:9px }
 .chron-list { list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:8px }
 .chron-item { width:100%; display:flex; align-items:center; gap:10px; border:1px solid var(--line); background:var(--white); padding:10px 12px; cursor:pointer; text-align:left; transition:border-color .15s,box-shadow .15s }

@@ -217,6 +217,7 @@ const arcNameOf = (locale: Locale, id: string) => {
 function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => void }) {
   const { locale, t } = useI18n();
   const [tip, setTip] = useState<{ item: ChronItem; x: number; y: number } | null>(null);
+  const [activeKey, setActiveKey] = useState<string | null>(null);
   const arcName = (id: string) => arcNameOf(locale, id);
   const yearLabel = (item: ChronItem) => item.terraYear == null ? t("테라력 미정") : t("테라력 {y}년", { y: item.terraYear });
   const showTip = (e: React.FocusEvent<HTMLButtonElement> | React.MouseEvent<HTMLButtonElement>, it: ChronItem) => {
@@ -224,19 +225,87 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
     setTip({ item: it, x: r.left + r.width / 2, y: r.top });
   };
 
-  // 연대순(테라력) — 연도 오름차순, 미정은 맨 뒤.
+  // 연대순(테라력) — 연도 오름차순, 미정은 맨 뒤. 연도별로 묶어 레일·목록이 같은 순서를 공유한다.
   const groups = useMemo(() => {
-    const map = new Map<string, { label: string; sort: number; items: ChronItem[] }>();
+    const map = new Map<string, { key: string; label: string; year: number | null; sort: number; items: ChronItem[] }>();
     for (const it of CHRON_ITEMS) {
-      let k: string, label: string, sort: number;
-      if (it.terraYear == null) { k = "__none"; label = t("테라력 미정"); sort = Infinity; }
-      else { k = `y${it.terraYear}`; label = t("테라력 {y}년", { y: it.terraYear }); sort = it.terraYear; }
-      if (!map.has(k)) map.set(k, { label, sort, items: [] });
+      let k: string, label: string, year: number | null, sort: number;
+      if (it.terraYear == null) { k = "__none"; label = t("테라력 미정"); year = null; sort = Infinity; }
+      else { k = `y${it.terraYear}`; label = t("테라력 {y}년", { y: it.terraYear }); year = it.terraYear; sort = it.terraYear; }
+      if (!map.has(k)) map.set(k, { key: k, label, year, sort, items: [] });
       map.get(k)!.items.push(it);
     }
     return Array.from(map.values()).sort((a, b) => a.sort - b.sort);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locale, t]);
+
+  // 레일(가로)과 목록(세로) 스크롤을 연도 단위로 서로 맞춘다.
+  const railRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const segRefs = useRef<Map<string, HTMLElement>>(new Map());
+  const secRefs = useRef<Map<string, HTMLElement>>(new Map());
+  const source = useRef<"rail" | "panel" | null>(null);
+  const resetT = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  useEffect(() => {
+    setActiveKey((k) => k ?? groups[0]?.key ?? null);
+    return () => { if (resetT.current) clearTimeout(resetT.current); };
+  }, [groups]);
+
+  const scheduleReset = (ms = 160) => {
+    if (resetT.current) clearTimeout(resetT.current);
+    resetT.current = setTimeout(() => { source.current = null; }, ms);
+  };
+  // 현재 스크롤 위치가 걸쳐 있는 연도 그룹 key (오름차순 정렬 전제)
+  const currentKey = (kind: "rail" | "panel") => {
+    const c = kind === "rail" ? railRef.current : panelRef.current;
+    const refs = kind === "rail" ? segRefs.current : secRefs.current;
+    if (!c) return null;
+    const scroll = kind === "rail" ? c.scrollLeft : c.scrollTop;
+    const pad = kind === "rail" ? 48 : 56;
+    let best: string | null = null;
+    for (const g of groups) {
+      const el = refs.get(g.key);
+      if (!el) continue;
+      const start = kind === "rail" ? el.offsetLeft : el.offsetTop;
+      if (start <= scroll + pad) best = g.key; else break;
+    }
+    return best ?? groups[0]?.key ?? null;
+  };
+  const onRailScroll = () => {
+    if (source.current === "panel") { scheduleReset(); return; }
+    source.current = "rail";
+    const key = currentKey("rail");
+    if (key && key !== activeKey) {
+      setActiveKey(key);
+      const sec = secRefs.current.get(key);
+      if (sec && panelRef.current) panelRef.current.scrollTo({ top: sec.offsetTop, behavior: "auto" });
+    }
+    scheduleReset();
+  };
+  const onPanelScroll = () => {
+    if (source.current === "rail") { scheduleReset(); return; }
+    source.current = "panel";
+    const key = currentKey("panel");
+    if (key && key !== activeKey) {
+      setActiveKey(key);
+      const seg = segRefs.current.get(key);
+      if (seg && railRef.current) railRef.current.scrollTo({ left: Math.max(0, seg.offsetLeft - 12), behavior: "auto" });
+    }
+    scheduleReset();
+  };
+  // 연도 라벨 클릭 → 양쪽을 그 연도로 부드럽게 이동
+  const goYear = (key: string) => {
+    source.current = "rail";
+    setActiveKey(key);
+    const sec = secRefs.current.get(key);
+    const seg = segRefs.current.get(key);
+    if (sec && panelRef.current) panelRef.current.scrollTo({ top: sec.offsetTop, behavior: "smooth" });
+    if (seg && railRef.current) railRef.current.scrollTo({ left: Math.max(0, seg.offsetLeft - 12), behavior: "smooth" });
+    scheduleReset(600);
+  };
+  const setSeg = (key: string) => (el: HTMLElement | null) => { if (el) segRefs.current.set(key, el); else segRefs.current.delete(key); };
+  const setSec = (key: string) => (el: HTMLElement | null) => { if (el) secRefs.current.set(key, el); else secRefs.current.delete(key); };
 
   const openIf = (it: ChronItem) => { if (it.eventId) onOpenEvent(it.eventId); };
 
@@ -244,18 +313,29 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
     <div className="chron">
       <p className="chron-note">{rich(t("**테라 연대기 (베타)** — 모든 이벤트·메인스토리·로그라이크를 한자리에 모으는 사전 작업입니다. 현재 정렬은 출시순(임시)이며, 인게임 연대기 순서·테라력 연도는 스토리 스크립트를 반영하며 채웁니다. 테마 묶음은 확실한 것부터 배정 중입니다."))}</p>
 
-      {/* 한 줄 연혁 바 — 연대기 순서대로, 테마 색으로 */}
+      {/* 한 줄 연혁 바 — 연도별로 묶고 작은 연도 라벨을 얹는다. 가로 스크롤 시 아래 목록도 따라간다. */}
       <div className="chron-railwrap">
-        <div className="chron-rail" role="list" aria-label={t("테라 연대기")} onMouseLeave={() => setTip(null)}>
-          {CHRON_ITEMS.map((it) => (
-            <button key={it.key} type="button" role="listitem"
-              className={`chron-tick k-${it.kind}${it.eventId ? "" : " nolink"}${tip?.item.key === it.key ? " active" : ""}`}
-              style={{ ["--arc" as string]: it.arc ? arcColor(it.arc) : "#c3c6bf" }}
-              onClick={() => openIf(it)}
-              onMouseEnter={(e) => showTip(e, it)} onFocus={(e) => showTip(e, it)} onBlur={() => setTip(null)}
-              aria-label={locText(locale, it.name)}>
-              <span className="chron-tick-dot" />
-            </button>
+        <div className="chron-rail" ref={railRef} role="list" aria-label={t("테라 연대기")}
+          onScroll={onRailScroll} onMouseLeave={() => setTip(null)}>
+          {groups.map((g) => (
+            <div key={g.key} className="chron-railseg" ref={setSeg(g.key)}>
+              <button type="button" className={`chron-railseg-yr${activeKey === g.key ? " on" : ""}`}
+                onClick={() => goYear(g.key)} title={g.label} aria-label={g.label}>
+                {g.year == null ? t("미정") : g.year}
+              </button>
+              <div className="chron-railseg-ticks">
+                {g.items.map((it) => (
+                  <button key={it.key} type="button" role="listitem"
+                    className={`chron-tick k-${it.kind}${it.eventId ? "" : " nolink"}${tip?.item.key === it.key ? " active" : ""}`}
+                    style={{ ["--arc" as string]: it.arc ? arcColor(it.arc) : "#c3c6bf" }}
+                    onClick={() => openIf(it)}
+                    onMouseEnter={(e) => showTip(e, it)} onFocus={(e) => showTip(e, it)} onBlur={() => setTip(null)}
+                    aria-label={locText(locale, it.name)}>
+                    <span className="chron-tick-dot" />
+                  </button>
+                ))}
+              </div>
+            </div>
           ))}
         </div>
         <div className="chron-legend">
@@ -276,9 +356,9 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
         </div>
       )}
 
-      <div className="chron-groups">
+      <div className="chron-groups" ref={panelRef} onScroll={onPanelScroll}>
         {groups.map((g) => (
-          <section key={g.label} className="chron-group">
+          <section key={g.key} className={`chron-group${activeKey === g.key ? " active" : ""}`} ref={setSec(g.key)}>
             <h3>{g.label} <em>{g.items.length}</em></h3>
             <ul className="chron-list">
               {g.items.map((it) => (
