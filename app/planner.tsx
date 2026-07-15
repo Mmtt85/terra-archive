@@ -654,7 +654,12 @@ function buildPlan(packageTokens: string[], roster: InfraOp[], factionSets = fal
         for (const aKey of gkeys) {
           const room = cellByKey.get(aKey)?.room ?? aKey;
           const present = new Set<string>([...aWorkingIds, ...dormIds]);
-          const ctxA = ctxFor(aKey, tokenPoints, factionCountsPerShift[0], plants, present);
+          // roomPartner 조건(레토=굼이 무역소에)을 엄격히 본다 — roomOf 없이 낙관 평가하면
+          // 리페어가 뺀 굼 없는 레토를 감사가 도로 넣어버린다(롤백). 파트너 실배치를 반영.
+          const roomOfA = new Map<string, string>();
+          for (const k of workKeys) { const rm = cellByKey.get(k)?.room ?? k; for (const id of assignments[k]?.[0] ?? []) roomOfA.set(id, rm); }
+          for (let dd = 0; dd < 4; dd += 1) for (const id of assignments[`DORM-${dd}`]?.[0] ?? []) roomOfA.set(id, "DORMITORY");
+          const ctxA = { ...ctxFor(aKey, tokenPoints, factionCountsPerShift[0], plants, present), roomOf: roomOfA };
           let aTeam = (assignments[aKey][0] ?? []).map((id) => byIdAll.get(id)).filter((op): op is InfraOp => Boolean(op));
           let improved = true;
           while (improved) {
@@ -697,13 +702,17 @@ function buildPlan(packageTokens: string[], roster: InfraOp[], factionSets = fal
           assignments[key][shift] = kept;
           for (const id of kept) usedThisShift.add(id);
         }
+        // roomPartner 조건 엄격 평가용 현재 배치 지도 — 재충원이 굼 없는 레토 등을 도로 넣지 않게.
+        const roomOfS = new Map<string, string>();
+        for (const k of workKeys) { const rm = cellByKey.get(k)?.room ?? k; for (const id of assignments[k]?.[shift] ?? []) roomOfS.set(id, rm); }
+        for (let dd = 0; dd < 4; dd += 1) for (const id of assignments[`DORM-${dd}`]?.[0] ?? []) roomOfS.set(id, "DORMITORY");
         for (const key of workKeys) {
           const room = cellByKey.get(key)?.room ?? key;
           const slots = infra.rooms[room]?.slots ?? 1;
           const team = assignments[key][shift] ?? [];
           if (team.length >= slots) continue;
           const present = new Set<string>([...usedThisShift, ...dormIds]);
-          const ctx = ctxFor(key, shift === 0 ? tokenPoints : {}, factionCountsPerShift[shift], plants, present);
+          const ctx = { ...ctxFor(key, shift === 0 ? tokenPoints : {}, factionCountsPerShift[shift], plants, present), roomOf: roomOfS };
           const pool = new Map(roster.filter((op) =>
             !usedThisShift.has(op.id) && !otherWorking.has(op.id) &&
             (shift > 0 || !reserved.has(op.id) || reserved.get(op.id) === key)).map((op) => [op.id, op]));
@@ -711,7 +720,7 @@ function buildPlan(packageTokens: string[], roster: InfraOp[], factionSets = fal
           const filled = bestTeam(room, slots, pool, ctx, seed);
           if (filled.length !== team.length) changed = true;
           assignments[key][shift] = filled.map((op) => op.id);
-          for (const op of filled) usedThisShift.add(op.id);
+          for (const op of filled) { usedThisShift.add(op.id); roomOfS.set(op.id, room); }
         }
       }
 
