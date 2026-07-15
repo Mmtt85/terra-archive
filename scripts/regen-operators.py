@@ -16,12 +16,28 @@ battle_equip = battle_equip.get("equips", battle_equip)
 building = load(f"{S}/kr_building_data.json")
 ranges = load(f"{S}/kr_range_table.json"); ranges = ranges.get("range", ranges)
 team_table = load(f"{S}/kr_handbook_team_table.json")
+kr_team_table = team_table
 handbook = load(f"{S}/kr_handbook_info_table.json"); handbook = handbook.get("handbookDict", handbook)
 # KR release order: handbook entries append in release order (no entry → -1, sinks last)
 release_seq = {cid: i for i, cid in enumerate(handbook.keys())}
 jp = load(f"{S}/jp_character_table.json"); jp = jp.get("chars", jp)
 cn = load(f"{S}/cn_character_table.json"); cn = cn.get("chars", cn)
 old_ops = {o["id"]: o for o in load(f"{REPO}/app/data/operators.json")}
+
+# ─── 미래시(미실장) 오퍼: CN에만 있는 오퍼를 CN 테이블로 빌드해 unreleased 플래그를 달아 추가 ───
+cn_tables = {
+    "skill_table": load(f"{S}/cn_skill_table.json"),
+    "uniequip": load(f"{S}/cn_uniequip_table.json"),
+    "battle_equip": load(f"{S}/cn_battle_equip_table.json"),
+    "building": load(f"{S}/cn_building_data.json"),
+    "ranges": load(f"{S}/cn_range_table.json"),
+    "team_table": load(f"{S}/cn_handbook_team_table.json"),
+    "handbook": load(f"{S}/cn_handbook_info_table.json"),
+}
+cn_tables["skill_table"] = cn_tables["skill_table"].get("skills", cn_tables["skill_table"])
+cn_tables["battle_equip"] = cn_tables["battle_equip"].get("equips", cn_tables["battle_equip"])
+cn_tables["ranges"] = cn_tables["ranges"].get("range", cn_tables["ranges"])
+cn_tables["handbook"] = cn_tables["handbook"].get("handbookDict", cn_tables["handbook"])
 
 JOB_KO = {"PIONEER": "뱅가드", "WARRIOR": "가드", "TANK": "디펜더", "SNIPER": "스나이퍼",
           "CASTER": "캐스터", "MEDIC": "메딕", "SUPPORT": "서포터", "SPECIAL": "스페셜리스트"}
@@ -76,7 +92,8 @@ def interpolate(desc, blackboard):
 
 def team_name(pid):
     if not pid: return None
-    e = team_table.get(pid)
+    # KR 테이블 우선 (진영명은 미실장 오퍼라도 KR에 번역이 있는 경우가 많다), 없으면 CN 폴백
+    e = kr_team_table.get(pid) or team_table.get(pid)
     return e.get("powerName") if e else None
 
 unknown_powers = set()
@@ -225,8 +242,9 @@ def build_handbook(cid):
         for sta in e.get("storyTextAudio") or []:
             for st in sta.get("stories") or []:
                 t = st.get("storyText", "")
-                m1 = re.search(r"\[출신지?\]\s*([^\n\[]+)", t)
-                m2 = re.search(r"\[종족\]\s*([^\n\[]+)", t)
+                # KR: [출신지]/[종족], CN(미실장 오퍼): 【出身地】/【种族】
+                m1 = re.search(r"[\[【](?:출신지?|出身地)[\]】]\s*([^\n\[【]+)", t)
+                m2 = re.search(r"[\[【](?:종족|种族)[\]】]\s*([^\n\[【]+)", t)
                 if m1 and not birth: birth = m1.group(1).strip()
                 if m2 and not race: race = m2.group(1).strip()
             if birth or race: break
@@ -284,17 +302,12 @@ CURATED = {
 }
 
 sub_dict = uniequip.get("subProfDict") or {}
+cn_sub_dict = cn_tables["uniequip"].get("subProfDict") or {}
 def sub_name(spid):
-    e = sub_dict.get(spid)
+    e = sub_dict.get(spid) or cn_sub_dict.get(spid)
     return e.get("subProfessionName") if e else spid
 
-result = []
-for cid, c in chars.items():
-    if not cid.startswith("char_"): continue
-    # 획득 불가 게스트 오퍼 중 모듈 데이터가 들어있는 항목은 스토리용 가짜 데이터
-    # (6성판 샤프·피스·튤립·미저리·스톰아이·메커니스트·로드·샤프·라이디언 char_6xx 계열).
-    # 모듈 없는 획득 불가 오퍼(5성 A팀 등)는 실사용 가능하므로 유지.
-    if c.get("isNotObtainable") and build_modules(cid): continue
+def build_op(cid, c):
     name = c.get("name")
     stats = build_stats(c)
     birth, race = build_handbook(cid)
@@ -332,7 +345,48 @@ for cid, c in chars.items():
     if cur:
         op["code"] = cur["code"]; op["reason"] = cur["reason"]; op["accent"] = cur["accent"]
     op["faction"] = op["factions"][0]
+    return op
+
+result = []
+for cid, c in chars.items():
+    if not cid.startswith("char_"): continue
+    # 획득 불가 게스트 오퍼 중 모듈 데이터가 들어있는 항목은 스토리용 가짜 데이터
+    # (6성판 샤프·피스·튤립·미저리·스톰아이·메커니스트·로드·샤프·라이디언 char_6xx 계열).
+    # 모듈 없는 획득 불가 오퍼(5성 A팀 등)는 실사용 가능하므로 유지.
+    if c.get("isNotObtainable") and build_modules(cid): continue
+    result.append(build_op(cid, c))
+
+# ─── 미래시(미실장) 오퍼 2차 패스 — CN 테이블로 스위칭 후 CN 전용 오퍼를 빌드 ────────────
+# 이름은 한국어 표기가 없으므로 영문 코드네임(appellation)을 쓰고, 중국어 원명은
+# aliases에 들어간다(build_aliases의 cn 테이블 참조). 검색용 한국어 통칭은 FUTURE_ALIASES.
+FUTURE_ALIASES = {
+    "char_4228_closur": ["클로저"],
+    "char_1050_chen3": ["첸"],
+    "char_1052_kalts2": ["켈시"],
+    "char_1051_headb2": ["지마"],
+    "char_1048_orchd2": ["오키드", "몬헌"],
+    "char_1049_catap2": ["캐터펄트", "몬헌"],
+    "char_2027_wang": ["왕"],
+}
+skill_table = cn_tables["skill_table"]; uniequip = cn_tables["uniequip"]
+battle_equip = cn_tables["battle_equip"]; building = cn_tables["building"]
+ranges = cn_tables["ranges"]; team_table = cn_tables["team_table"]; handbook = cn_tables["handbook"]
+# 출시순(seq): KR 전체 뒤에 CN 도감 순서대로 이어 붙인다 → '출시순 최신'에 미래시가 맨 앞
+cn_seq = {c2: i for i, c2 in enumerate(cn_tables["handbook"].keys())}
+release_seq = {cid: 100000 + cn_seq.get(cid, 99999) for cid in cn if cid not in chars}
+unreleased_count = 0
+for cid, c in cn.items():
+    if not cid.startswith("char_") or cid in chars: continue
+    if c.get("isNotObtainable") and build_modules(cid): continue
+    op = build_op(cid, c)
+    op["name"] = c.get("appellation") or c.get("name")
+    op["aliases"] = [a for a in [c.get("name")] + op["aliases"] + FUTURE_ALIASES.get(cid, [])
+                     if a and a != op["name"]]
+    op["aliases"] = list(dict.fromkeys(op["aliases"]))
+    op["unreleased"] = True
     result.append(op)
+    unreleased_count += 1
+print("unreleased (CN-only) ops:", unreleased_count)
 
 # 동명 중복 정리 (사용자 확정 2026-07): 같은 이름이 여럿이면 입수 가능 버전 우선,
 # 전부 입수 불가면 먼저 나온(char 번호 낮은) 쪽만 남긴다 — 샬렘은 진짜(char_4025)만,

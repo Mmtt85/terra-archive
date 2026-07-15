@@ -89,6 +89,8 @@ export type Operator = {
   seq: number;
   accent: string;
   image: string;
+  // 한국 서버 미실장(중국 서버 선행) 오퍼 — 헤더 '미래시 포함' 토글이 꺼져 있으면 숨긴다
+  unreleased?: boolean;
 };
 
 const SYNERGY_POTS = ["해산물팟", "쉐이팟", "쉐라그팟", "카시미어팟", "미노스팟", "아베무팟", "연소팟", "라테라노팟", "탄약팟", "라인랩팟", "라이오스 파티"];
@@ -349,8 +351,23 @@ export default function Home({ locale, operators, extra, initialTab = "archive" 
   );
 }
 
+// '미래시 포함' 토글 localStorage 키 — 켜면 한국 서버 미실장(CN 선행) 오퍼도 목록에 표시
+const FUTURE_KEY = "ta-include-future";
+
 function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; extra: ExtraI18n | null; initialTab: Tab }) {
   const { locale, t } = useI18n();
+  // SSR엔 localStorage가 없으므로 false로 하이드레이션 후 이펙트에서 복원한다
+  const [includeFuture, setIncludeFuture] = useState(false);
+  useEffect(() => {
+    try { if (localStorage.getItem(FUTURE_KEY) === "1") setIncludeFuture(true); } catch { /* ignore */ }
+  }, []);
+  const toggleFuture = (on: boolean) => {
+    setIncludeFuture(on);
+    try { localStorage.setItem(FUTURE_KEY, on ? "1" : "0"); } catch { /* ignore */ }
+  };
+  // 백과사전 목록·필터·카운트가 쓰는 로스터 — 미래시 꺼짐(기본)이면 미실장 오퍼 제외.
+  // 딥링크(#op-…)·플래너발 모달 열기는 전체 operators에서 찾으므로 토글과 무관하게 동작.
+  const roster = useMemo(() => (includeFuture ? operators : operators.filter((operator) => !operator.unreleased)), [operators, includeFuture]);
   const [selectedFactions, setSelectedFactions] = useState<string[]>([]);
   const [selectedConcepts, setSelectedConcepts] = useState<string[]>([]);
   const [query, setQuery] = useState("");
@@ -371,28 +388,28 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
 
   // 필터 항목은 전부 현재 로케일 데이터에서 유도한다 — 값과 표시가 항상 일치
   const factions = useMemo(() =>
-    Array.from(new Set(operators.flatMap((operator) => operator.factions))).sort((a, b) => a.localeCompare(b, locale)),
-    [operators, locale]);
+    Array.from(new Set(roster.flatMap((operator) => operator.factions))).sort((a, b) => a.localeCompare(b, locale)),
+    [roster, locale]);
   const concepts = useMemo(() => {
     const counts = new Map<string, number>();
-    operators.forEach((operator) => operator.concepts.forEach((concept) => counts.set(concept, (counts.get(concept) ?? 0) + 1)));
+    roster.forEach((operator) => operator.concepts.forEach((concept) => counts.set(concept, (counts.get(concept) ?? 0) + 1)));
     return [
       ...SYNERGY_POTS.filter((pot) => counts.has(pot)),
       ...Array.from(counts.keys()).filter((concept) => !SYNERGY_POTS.includes(concept)).sort((a, b) => (counts.get(b) ?? 0) - (counts.get(a) ?? 0)),
     ];
-  }, [operators]);
+  }, [roster]);
   const combatTags = useMemo(() =>
     // 데이터에 빈 문자열 태그가 섞여 들어온 사례(예비 오퍼레이터·하디야)가 있어 걸러낸다
-    Array.from(new Set(operators.flatMap((operator) => operator.combatTags))).filter((tag) => tag.trim().length > 0).sort((a, b) => a.localeCompare(b, locale)),
-    [operators, locale]);
+    Array.from(new Set(roster.flatMap((operator) => operator.combatTags))).filter((tag) => tag.trim().length > 0).sort((a, b) => a.localeCompare(b, locale)),
+    [roster, locale]);
   const jobs = useMemo(() => {
     const byCode = new Map<string, string>();
-    operators.forEach((operator) => { if (!byCode.has(operator.jobCode)) byCode.set(operator.jobCode, operator.job); });
+    roster.forEach((operator) => { if (!byCode.has(operator.jobCode)) byCode.set(operator.jobCode, operator.job); });
     return JOB_ORDER.map((code) => byCode.get(code)).filter((job): job is string => Boolean(job));
-  }, [operators]);
+  }, [roster]);
   const subProfessions = useMemo(() =>
-    Array.from(new Set(operators.map((operator) => operator.subProfession))).sort((a, b) => a.localeCompare(b, locale)),
-    [operators, locale]);
+    Array.from(new Set(roster.map((operator) => operator.subProfession))).sort((a, b) => a.localeCompare(b, locale)),
+    [roster, locale]);
   const positionMethods = useMemo(() => [t("근거리"), t("원거리")], [t]);
   const attackMethods = useMemo(() => [...positionMethods, t("물리"), t("마법")], [positionMethods, t]);
   const damageTypeOf = (operator: Operator) => (MAGIC_TRAIT_RE[locale].test(operator.trait) ? t("마법") : t("물리"));
@@ -551,7 +568,7 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
 
   const filtered = useMemo(() => {
     const keyword = query.trim().toLowerCase();
-    return operators.filter((operator) => {
+    return roster.filter((operator) => {
       const matchesFaction = selectedFactions.length === 0 || selectedFactions.some((faction) => operator.factions.includes(faction));
       const matchesConcept = selectedConcepts.length === 0 || selectedConcepts.some((concept) => operator.concepts.includes(concept));
       const positionPicks = selectedMethods.filter((method) => positionMethods.includes(method));
@@ -566,7 +583,7 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
       return matchesFaction && matchesConcept && matchesMethod && matchesTags && matchesJob && matchesSubProfession && matchesQuery;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [operators, selectedFactions, selectedConcepts, selectedMethods, tags, selectedJobs, selectedSubProfessions, query, nicknames, locale]);
+  }, [roster, selectedFactions, selectedConcepts, selectedMethods, tags, selectedJobs, selectedSubProfessions, query, nicknames, locale]);
 
   const reset = () => {
     setSelectedFactions([]);
@@ -626,6 +643,10 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
           <button className={`tab-farm${tab === "farm" ? " selected" : ""}`} onClick={() => switchTab("farm")}><span className="tab-icon" aria-hidden>◈</span>{t("재료 파밍")}</button>
           <button className={`tab-story${tab === "story" ? " selected" : ""}`} onClick={() => switchTab("story")}><span className="tab-icon" aria-hidden>✦</span>{t("AI 스토리 요약")}</button>
         </nav>
+        <label className="future-toggle" title={t("한국 서버에 아직 나오지 않은 오퍼레이터(중국 서버 데이터)도 목록·계산기에 표시합니다.")}>
+          <input type="checkbox" checked={includeFuture} onChange={(event) => toggleFuture(event.target.checked)} />
+          {t("미래시 오퍼레이터 포함")}
+        </label>
         <LanguageSwitcher />
       </header>
 
@@ -635,14 +656,14 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
             <div><span className="section-no">FILTER / 01</span><h2 id="explorer-title">{t("탐색 조건")}</h2></div>
             <button className="reset" onClick={reset}>↻ {t("초기화")}</button>
           </div>
-          <FilterGroup title={t("컨셉덱")} items={concepts} labelFor={(item) => conceptName(locale, item)} selected={selectedConcepts} onToggle={toggleIn(setSelectedConcepts)} rows={2} countForItem={(item) => operators.filter((operator) => operator.concepts.includes(item)).length} />
-          <FilterGroup title={t("직군")} items={jobs} selected={selectedJobs} onToggle={toggleIn(setSelectedJobs)} countForItem={(item) => operators.filter((operator) => operator.job === item).length} />
-          <FilterGroup title={t("세부 직군")} items={subProfessions} selected={selectedSubProfessions} onToggle={toggleIn(setSelectedSubProfessions)} countForItem={(item) => operators.filter((operator) => operator.subProfession === item).length} />
-          <FilterGroup title={t("전투 태그")} items={combatTags} selected={tags} onToggle={toggleTag} countForItem={(item) => operators.filter((operator) => operator.combatTags.includes(item)).length} />
-          <FilterGroup title={t("공격 방식")} items={attackMethods} selected={selectedMethods} onToggle={toggleIn(setSelectedMethods)} countForItem={(item) => operators.filter((operator) => positionMethods.includes(item) ? operator.position === item : damageTypeOf(operator) === item).length} />
-          <FilterGroup title={t("공식 소속")} items={factions} selected={selectedFactions} onToggle={toggleIn(setSelectedFactions)} countForItem={(item) => operators.filter((operator) => operator.factions.includes(item)).length} />
+          <FilterGroup title={t("컨셉덱")} items={concepts} labelFor={(item) => conceptName(locale, item)} selected={selectedConcepts} onToggle={toggleIn(setSelectedConcepts)} rows={2} countForItem={(item) => roster.filter((operator) => operator.concepts.includes(item)).length} />
+          <FilterGroup title={t("직군")} items={jobs} selected={selectedJobs} onToggle={toggleIn(setSelectedJobs)} countForItem={(item) => roster.filter((operator) => operator.job === item).length} />
+          <FilterGroup title={t("세부 직군")} items={subProfessions} selected={selectedSubProfessions} onToggle={toggleIn(setSelectedSubProfessions)} countForItem={(item) => roster.filter((operator) => operator.subProfession === item).length} />
+          <FilterGroup title={t("전투 태그")} items={combatTags} selected={tags} onToggle={toggleTag} countForItem={(item) => roster.filter((operator) => operator.combatTags.includes(item)).length} />
+          <FilterGroup title={t("공격 방식")} items={attackMethods} selected={selectedMethods} onToggle={toggleIn(setSelectedMethods)} countForItem={(item) => roster.filter((operator) => positionMethods.includes(item) ? operator.position === item : damageTypeOf(operator) === item).length} />
+          <FilterGroup title={t("공식 소속")} items={factions} selected={selectedFactions} onToggle={toggleIn(setSelectedFactions)} countForItem={(item) => roster.filter((operator) => operator.factions.includes(item)).length} />
 
-          <aside className="data-note"><span>DATA NOTE</span><p>{t("한국 서버 {count}명 · 전원 이미지 · 다국어 이름 및 커뮤니티 별명 검색 · 스킬과 재능 기반 {concepts}개 컨셉 태그를 제공합니다. 모든 필터는 토글식이며 아무것도 선택하지 않으면 전체가 표시됩니다.", { count: operators.length, concepts: concepts.length })}</p></aside>
+          <aside className="data-note"><span>DATA NOTE</span><p>{t("한국 서버 {count}명 · 전원 이미지 · 다국어 이름 및 커뮤니티 별명 검색 · 스킬과 재능 기반 {concepts}개 컨셉 태그를 제공합니다. 모든 필터는 토글식이며 아무것도 선택하지 않으면 전체가 표시됩니다.", { count: roster.length, concepts: concepts.length })}</p></aside>
         </div>
 
         <div className="results">
@@ -686,7 +707,7 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
 
       {tab === "planner" && <InfraPlanner onShowOperator={showOperatorById} extra={extra} />}
       {tab === "recruit" && <RecruitHelper onShowOperator={showOperatorById} extra={extra} />}
-      {tab === "farm" && <FarmGuide />}
+      {tab === "farm" && <FarmGuide operators={operators} includeFuture={includeFuture} onShowOperator={showOperatorById} />}
       {tab === "story" && <StoryGuide onShowOperator={showOperatorById} />}
 
       {selected && <OperatorModal operator={selected} nicknames={nicknames.get(selected.id) ?? []} onSubmitNickname={handleSubmitNickname} onClose={closeOperator} />}
@@ -747,7 +768,7 @@ function OperatorCard({ operator, index, onSelect }: { operator: Operator; index
       <div className="portrait">
         <span className="portrait-grid" />
         <div className="portrait-info">
-          <div className="portrait-meta"><span>{"★".repeat(operator.rarity)}</span><b>{operator.job}</b></div>
+          <div className="portrait-meta"><span>{"★".repeat(operator.rarity)}</span><b>{operator.job}</b>{operator.unreleased && <em className="future-badge">{t("미실장")}</em>}</div>
           <h3>{operator.name}</h3>
           <small className="portrait-facts">
             <span><i>{t("소속")}</i>{operator.faction}</span>
@@ -815,10 +836,11 @@ function OperatorModal({ operator, nicknames, onSubmitNickname, onClose }: { ope
                   <span className="nickname-inline">{nicknames.filter((nick) => nick.votes >= NICKNAME_MIN_VOTES).slice(0, 3).map((nick) => <b key={nick.name}>{nick.name}</b>)}</span>
                 )}
               </div>
-              <div className="modal-rarity">{"★".repeat(operator.rarity)} <span>{t("{n}성", { n: operator.rarity })}</span></div>
+              <div className="modal-rarity">{"★".repeat(operator.rarity)} <span>{t("{n}성", { n: operator.rarity })}</span>{operator.unreleased && <em className="future-badge">{t("미실장")}</em>}</div>
               <div className="class-line">
                 <div><b>{operator.job}</b><small>{operator.subProfession} · {operator.position}</small></div>
               </div>
+              {operator.unreleased && <p className="future-note">{t("한국 서버 미실장 오퍼레이터입니다 — 중국 서버 데이터 기준이라 일부 텍스트가 원문(중국어)으로 표시됩니다.")}</p>}
             </div>
             <NicknameForm key={operator.id} operator={operator} onSubmit={onSubmitNickname} />
           </div>

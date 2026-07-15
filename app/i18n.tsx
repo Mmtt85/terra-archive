@@ -616,6 +616,37 @@ const D: Record<string, Pair> = {
   "재료 이름·별명 검색": ["Search materials by name or nickname", "素材名・愛称で検索"],
   "상시 파밍 가능한 스테이지만 (이벤트 한정 제외)": ["Permanently farmable stages only (exclude limited events)", "常時周回可能なステージのみ（期間限定イベント除外）"],
   "조건에 맞는 재료가 없어요.": ["No materials match these filters.", "条件に合う素材がありません。"],
+  // ── 미래시(미실장) 오퍼 토글 ──
+  "미래시 오퍼레이터 포함": ["Include future operators", "未実装オペレーターを含む"],
+  "한국 서버에 아직 나오지 않은 오퍼레이터(중국 서버 데이터)도 목록·계산기에 표시합니다.": [
+    "Also show operators not yet released on the KR server (CN server data) in the list and calculator.",
+    "韓国サーバー未実装のオペレーター（中国サーバーのデータ）も一覧・計算機に表示します。",
+  ],
+  "미실장": ["Unreleased", "未実装"],
+  "한국 서버 미실장 오퍼레이터입니다 — 중국 서버 데이터 기준이라 일부 텍스트가 원문(중국어)으로 표시됩니다.": [
+    "This operator is not yet released on the KR server — data comes from the CN server, so some text appears in Chinese.",
+    "韓国サーバー未実装のオペレーターです — 中国サーバーのデータ基準のため、一部テキストが原文（中国語）で表示されます。",
+  ],
+  // ── 육성 비용 계산기 ──
+  "육성 비용 계산기": ["Upgrade Cost Calculator", "育成コスト計算機"],
+  "오퍼레이터를 추가하면 정예화 1·2, 스킬 7레벨, 전 스킬 특화 3, 모듈 풀강까지 필요한 용문폐와 재료 총량을 계산합니다. 파밍 가능한 재료는 클릭하면 아래 효율표에서 검색됩니다.": [
+    "Add operators to total the LMD and materials needed for Elite 1·2, skill level 7, Mastery 3 on every skill, and fully upgraded modules. Click a farmable material to search it in the table below.",
+    "オペレーターを追加すると、昇進1·2、スキルLv.7、全スキル特化3、モジュール完凸までに必要な龍門幣と素材の合計を計算します。周回可能な素材はクリックすると下の効率表で検索されます。",
+  ],
+  "오퍼레이터 이름·별명 검색 후 추가": ["Search operators by name or alias to add", "オペレーター名・愛称で検索して追加"],
+  "계산 범위": ["Calculation scope", "計算範囲"],
+  "정예화 1·2": ["Elite 1·2", "昇進1·2"],
+  "스킬 Lv.7": ["Skill Lv.7", "スキルLv.7"],
+  "특화 3 (전 스킬)": ["Mastery 3 (all skills)", "特化3（全スキル）"],
+  "모듈 풀강": ["Modules maxed", "モジュール完凸"],
+  "아직 선택한 오퍼레이터가 없어요 — 위 검색창에서 추가해 보세요.": [
+    "No operators selected yet — add some from the search box above.",
+    "まだオペレーターが選択されていません — 上の検索欄から追加してみてください。",
+  ],
+  "{name} 제외": ["Remove {name}", "{name}を除外"],
+  "전체 비우기": ["Clear all", "すべてクリア"],
+  "용문폐": ["LMD", "龍門幣"],
+  "효율표에서 {name} 검색": ["Search {name} in the table", "効率表で{name}を検索"],
   "스테이지": ["Stage", "ステージ"],
   "드랍률": ["Drop rate", "ドロップ率"],
   "기대 이성": ["Exp. sanity", "期待理性"],
