@@ -188,19 +188,23 @@ export default function FarmGuide({ operators, includeFuture, onShowOperator }: 
                     </ul>
                   </>
                 ) : (
-                  <button type="button" className="farm-nonfarm-body" onClick={() => setShownItem(item.id)}>
+                  <div className="farm-nonfarm-body">
                     <span className="farm-nonfarm-tag">{craftable ? t("가공소 조합") : t("파밍 불가")}</span>
                     {craftable && (
                       <span className="farm-nonfarm-craft">
                         {meta!.craft!.map(([subId, count]) => {
                           const sub = costs.items[subId];
                           if (!sub) return null;
-                          return <span key={subId} className="cost-mini"><img src={sub.image} alt={locText(locale, sub.name)} /><i>{count}</i></span>;
+                          // 조합 재료 아이콘은 각자 자기 상세를 연다 (예전엔 카드 전체가 버튼이라 재료를 눌러도 이 재료 상세가 떴음)
+                          return (
+                            <button key={subId} type="button" className="cost-mini farmable" title={t("{name} 상세 정보 열기", { name: locText(locale, sub.name) })} onClick={() => setShownItem(subId)}>
+                              <img src={sub.image} alt={locText(locale, sub.name)} /><i>{count}</i>
+                            </button>
+                          );
                         })}
                       </span>
                     )}
-                    <span className="farm-nonfarm-more">{t("상세 보기 →")}</span>
-                  </button>
+                  </div>
                 )}
               </article>
             );

@@ -388,6 +388,7 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
   // 경로 기반 라우팅: 서버가 라우트별로 올바른 탭을 렌더하므로 initialTab을 그대로
   // 초기값으로 쓴다 (SSR/클라이언트 첫 렌더 일치 → hydration mismatch 없음).
   const [tab, setTab] = useState<Tab>(initialTab);
+  const [navOpen, setNavOpen] = useState(false); // 모바일 탭 메뉴(햄버거) 열림 상태
   const localeBase = LOCALE_BASE[locale];
   // 탭 → 로케일 포함 경로 (예: planner + en → "/en/infra", archive + ko → "/").
   // 전역 파라미터(future)는 탭을 옮겨도 URL에 유지한다 (공유·일관성). ops 같은 탭 전용
@@ -518,6 +519,65 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // 스크롤 복원: 페이지(탭·스토리) 이동 시 top으로, 뒤로/앞으로 시 직전 스크롤 복구.
+  // pushState를 감싸 (1) 떠나는 위치 저장 (2) 엔트리에 고유 키 부여 (3) 페이지가 바뀌면 top.
+  // (오퍼 모달은 #op- 해시만 바뀌거나 URL이 그대로라 '같은 페이지'로 보고 스크롤을 건드리지 않는다)
+  useEffect(() => {
+    if (typeof window === "undefined" || !("scrollRestoration" in history)) return;
+    history.scrollRestoration = "manual";
+    const store = new Map<number, number>();
+    const pageId = (href: string) => { const u = new URL(href); return u.pathname + (u.hash.startsWith("#op-") ? "" : u.hash); };
+    const freshKey = () => Date.now() + Math.random();
+    const keyOf = (): number | null => (history.state && typeof (history.state as { __k?: number }).__k === "number") ? (history.state as { __k: number }).__k : null;
+    if (keyOf() === null) history.replaceState({ ...(history.state as object || {}), __k: freshKey() }, "");
+    let curKey = keyOf() as number;
+    const save = () => { if (curKey != null) store.set(curKey, window.scrollY); };
+    let ticking = false;
+    const onScroll = () => { if (ticking) return; ticking = true; requestAnimationFrame(() => { save(); ticking = false; }); };
+    const origPush = history.pushState.bind(history);
+    const origReplace = history.replaceState.bind(history);
+    history.replaceState = ((state: unknown, ...rest: [string, (string | URL | null)?]) => {
+      origReplace({ ...(state as object || {}), __k: keyOf() ?? curKey }, ...rest);
+    }) as typeof history.replaceState;
+    history.pushState = ((state: unknown, title: string, url?: string | URL | null) => {
+      const fromPage = pageId(window.location.href);
+      save();
+      const k = freshKey();
+      origPush({ ...(state as object || {}), __k: k }, title, url as string);
+      curKey = k;
+      if (pageId(window.location.href) !== fromPage) { store.set(k, 0); window.scrollTo(0, 0); }
+      else store.set(k, window.scrollY);
+    }) as typeof history.pushState;
+    const onPop = () => {
+      const k = keyOf();
+      curKey = k ?? freshKey();
+      if (k === null) origReplace({ ...(history.state as object || {}), __k: curKey }, "");
+      const y = k != null && store.has(k) ? store.get(k)! : 0;
+      requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo(0, y)));
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("popstate", onPop);
+    return () => {
+      history.pushState = origPush;
+      history.replaceState = origReplace;
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("popstate", onPop);
+    };
+  }, []);
+
+  // 모바일 sticky 요소(스토리 레일)가 가변 높이 헤더 아래에 붙도록 헤더 높이를 CSS 변수로 노출
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const header = document.querySelector<HTMLElement>(".site-header");
+    if (!header) return;
+    const apply = () => document.documentElement.style.setProperty("--header-h", `${header.offsetHeight}px`);
+    apply();
+    const observer = new ResizeObserver(apply);
+    observer.observe(header);
+    window.addEventListener("resize", apply);
+    return () => { observer.disconnect(); window.removeEventListener("resize", apply); };
+  }, []);
+
   // 탭·오퍼 모달에 맞춰 문서 제목 갱신 — 검색엔진 렌더링·북마크·공유 미리보기에 반영
   useEffect(() => {
     document.title = selected
@@ -556,7 +616,15 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
     pushedModalRef.current = true;
   };
 
+  const TAB_LABEL: Record<Tab, string> = {
+    archive: t("오퍼 백과사전"),
+    planner: t("인프라 플래너"),
+    recruit: t("공채 도우미"),
+    farm: t("파밍·육성 시뮬"),
+    story: t("AI 스토리 요약"),
+  };
   const switchTab = (next: Tab) => {
+    setNavOpen(false);
     if (next === tab && !selected) return;
     setTab(next);
     setSelected(null);
@@ -578,6 +646,14 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
       window.removeEventListener("keydown", onKeyDown);
     };
   }, [selected]);
+
+  // 모바일 메뉴 열림 중엔 배경(본문) 스크롤을 잠근다 — 메뉴 위 스와이프가 뒤 페이지를 움직이던 문제
+  useEffect(() => {
+    if (!navOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = previousOverflow; };
+  }, [navOpen]);
 
   const filtered = useMemo(() => {
     const keyword = normSearch(query);
@@ -650,7 +726,10 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
           <span>{t("테라 아카이브")}<small>{t("명일방주(Arknights) KR 팬사이트")}</small></span>
         </a>
         <BroadcastBadges />
-        <nav className="main-tabs" aria-label={t("주요 탭")}>
+        <button type="button" className="nav-toggle" aria-expanded={navOpen} aria-label={t("메뉴 열기")} onClick={() => setNavOpen((open) => !open)}>
+          <span aria-hidden>☰</span>{TAB_LABEL[tab]}
+        </button>
+        <nav className={`main-tabs${navOpen ? " open" : ""}`} aria-label={t("주요 탭")}>
           <button className={`tab-archive${tab === "archive" ? " selected" : ""}`} onClick={() => switchTab("archive")}><span className="tab-icon" aria-hidden>▤</span>{t("오퍼 백과사전")}</button>
           <button className={`tab-planner${tab === "planner" ? " selected" : ""}`} onClick={() => switchTab("planner")}><span className="tab-icon" aria-hidden>⌂</span>{t("인프라 플래너")}</button>
           <button className={`tab-recruit${tab === "recruit" ? " selected" : ""}`} onClick={() => switchTab("recruit")}><span className="tab-icon" aria-hidden>◎</span>{t("공채 도우미")}</button>

@@ -71,7 +71,7 @@ button {
   color: inherit;
 }
 /* iOS는 입력 폰트가 16px 미만이면 포커스 시 화면을 자동 확대한다 — 모바일에서 16px 강제 */
-@media (width<=760px) {
+@media (max-width: 760px) {
   input:not([type="checkbox"]):not([type="radio"]),
   textarea,
   select {
@@ -412,7 +412,7 @@ button {
 .btn-icon {
   opacity: 0.85;
 }
-@media (width<=760px) {
+@media (max-width: 760px) {
   .bcast-trigger {
     margin-left: 8px;
     padding: 5px 8px;
@@ -646,7 +646,7 @@ button {
   width: 38px;
   height: 38px;
 }
-@media (width<=760px) {
+@media (max-width: 760px) {
   .results-heading {
     flex-wrap: wrap;
   }
@@ -1240,7 +1240,7 @@ legend {
   border-left: 1px solid #ffffff2e;
   padding-left: 20px;
 }
-@media (width<=760px) {
+@media (max-width: 760px) {
   .modal-title-block {
     display: block;
   }
@@ -1634,12 +1634,12 @@ footer p {
     opacity: 0;
   }
 }
-@media (width<=1450px) {
+@media (max-width: 1450px) {
   .operator-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
-@media (width<=1100px) {
+@media (max-width: 1100px) {
   .header-tagline {
     padding: 0 14px;
     font-size: 16px;
@@ -1648,9 +1648,70 @@ footer p {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
-@media (width<=760px) {
+@media (max-width: 760px) {
+  /* 모바일 헤더: 탭 5개는 햄버거(.nav-toggle) 안으로 접고, 브랜드+토글+언어만 한 줄에.
+     너무 좁으면 줄바꿈 허용. */
   .site-header {
-    height: 66px;
+    height: auto;
+    min-height: 56px;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 16px;
+    position: sticky;
+  }
+  .brand {
+    margin-right: auto;
+    font-size: 15px;
+    gap: 9px;
+  }
+  .brand-mark {
+    width: 31px;
+    height: 31px;
+  }
+  .brand small {
+    display: none;   /* 모바일 헤더는 한 줄로 컴팩트하게 */
+  }
+  /* 햄버거 버튼 노출 + 현재 탭 이름 표기.
+     (.site-header 로 한정해 뒤에 오는 base 규칙보다 우선순위를 확보 — 같은 클래스 특정성이라
+      순서가 밀리면 base가 이겨버리는 문제 방지) */
+  .site-header .nav-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: var(--lime);
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .site-header .nav-toggle span {
+    font-size: 14px;
+    line-height: 1;
+  }
+  /* 탭 목록 — 평소엔 숨기고, 열면 헤더 아래 드롭다운으로 펼친다 */
+  .site-header .main-tabs {
+    display: none;
+    order: 20;
+    flex-basis: 100%;
+    width: 100%;
+    margin: 0;
+  }
+  .site-header .main-tabs.open {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-top: 4px;
+    border-top: 1px solid var(--line);
+  }
+  .site-header .main-tabs.open button {
+    width: 100%;
+    text-align: left;
+    padding: 12px 14px;
+    font-size: 13px;
   }
   .server-chip {
     font-size: 8px;
@@ -1749,7 +1810,7 @@ footer p {
     right: 14px;
   }
 }
-@media (width<=430px) {
+@media (max-width: 430px) {
   .brand small {
     display: none;
   }
@@ -1771,7 +1832,7 @@ footer p {
     min-height: 0;
   }
 }
-@media (width<=760px) {
+@media (max-width: 760px) {
   .module-levels {
     grid-template-columns: 1fr;
   }
@@ -2176,6 +2237,10 @@ footer p {
   background: var(--ink);
   color: var(--lime);
   border-color: var(--ink);
+}
+/* 모바일 햄버거 — 데스크탑에선 숨긴다 (탭이 그대로 노출됨) */
+.nav-toggle {
+  display: none;
 }
 .planner-summary .strategy {
   font-size: 13px;
@@ -2680,7 +2745,7 @@ footer p {
   font-size: 10.5px;
   line-height: 1.55;
 }
-@media (width<=760px) {
+@media (max-width: 760px) {
   .recruit {
     padding-top: 20px;
   }
@@ -3422,12 +3487,9 @@ footer p {
   align-items: center;
   gap: 8px;
   width: 100%;
-  border: 0;
   border-top: 1px dashed var(--line);
-  background: none;
   margin-top: 4px;
   padding: 10px 0 2px;
-  cursor: pointer;
   text-align: left;
 }
 .farm-nonfarm-tag {
@@ -3442,15 +3504,6 @@ footer p {
   display: inline-flex;
   flex-wrap: wrap;
   gap: 5px;
-}
-.farm-nonfarm-more {
-  margin-left: auto;
-  font-size: 11.5px;
-  font-weight: 700;
-  color: var(--ink);
-}
-.farm-nonfarm-body:hover .farm-nonfarm-more {
-  text-decoration: underline;
 }
 .farm-head h2 {
   margin: 6px 0 12px;
@@ -3553,6 +3606,11 @@ footer p {
   font: 800 10px monospace;
   border: 1px solid var(--ink);
 }
+/* 재료 카드의 미실장 배지 — T등급 배지와 붙지 않게 간격 */
+.farm-card .future-badge {
+  margin-left: 6px;
+  vertical-align: middle;
+}
 .farm-tier.tier-4 {
   background: var(--ink);
   color: #d8a0ff;
@@ -3646,7 +3704,7 @@ footer p {
   color: var(--muted);
   font-weight: 700;
 }
-@media (width<=760px) {
+@media (max-width: 760px) {
   .farm {
     padding: 24px 18px 48px;
   }
@@ -3956,6 +4014,10 @@ footer p {
   color: var(--muted);
   word-break: keep-all;
 }
+/* 데스크탑 레일은 설명 전문을 보여주므로 스니펫 변형은 숨긴다 (모바일에서만 노출) */
+.rail-desc-snip {
+  display: none;
+}
 @keyframes rail-in {
   from {
     opacity: 0;
@@ -3984,9 +4046,96 @@ footer p {
 .op-linked:hover .op-mark {
   color: var(--ink);
 }
+/* 좁은 화면(≤1180px): 우측 세로 레일 대신 상단에 가로 sticky 바로 붙는다.
+   데스크탑과 동일하게 읽는 위치(active)에 따라 카드가 나타났다 사라진다. */
 @media (max-width: 1180px) {
+  .story-detail-grid {
+    flex-direction: column;
+  }
   .story-rail {
+    order: -1;
+    position: sticky;
+    top: var(--header-h, 56px);   /* 가변 높이 헤더 바로 아래에 붙는다 (JS가 --header-h 설정) */
+    z-index: 8;
+    height: auto;
+    width: 100%;
+    flex: none;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 8px 0;
+    margin-bottom: 6px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    background: var(--paper);
+    border-bottom: 1px solid var(--line);
+  }
+  .story-rail::-webkit-scrollbar {
     display: none;
+  }
+  .story-rail:empty {
+    display: none;
+  }
+  /* 스니펫: 기본은 아바타+이름만. 탭하면 .open 이 붙어 설명까지 펼친다. */
+  .story-rail .rail-card {
+    flex: 0 0 auto;
+    max-width: 82vw;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: var(--white);
+    cursor: pointer;
+  }
+  .story-rail .cast-img {
+    flex: 0 0 32px;
+    width: 32px;
+    height: 32px;
+  }
+  .story-rail .cast-img img {
+    height: 180%;
+  }
+  .story-rail .rail-card-text {
+    padding: 6px 11px;
+    min-width: 0;
+  }
+  .story-rail .rail-card-text b {
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  /* 접힘 상태: 이름 + 짧은 스니펫(서너 글자 + …). 펼치면 전문(full)으로 교체 */
+  .story-rail .rail-card-text > span {
+    display: block;
+    margin-top: 2px;
+    font: 600 10px/1.4 monospace;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .story-rail .rail-desc-full {
+    display: none;
+  }
+  .story-rail .rail-desc-snip {
+    display: inline;
+  }
+  .story-rail .rail-card.open {
+    max-width: 90vw;
+  }
+  .story-rail .rail-card.open .rail-card-text b {
+    white-space: normal;
+  }
+  .story-rail .rail-card.open .rail-card-text > span {
+    white-space: normal;
+    word-break: keep-all;
+    line-height: 1.5;
+  }
+  .story-rail .rail-card.open .rail-desc-full {
+    display: inline;
+  }
+  .story-rail .rail-card.open .rail-desc-snip {
+    display: none;
+  }
+  .rail-card {
+    animation: none;           /* 가로 바에선 슬라이드 인 생략 */
   }
 }
 .story-body {
@@ -4089,7 +4238,7 @@ footer p {
 .story-detail-foot {
   margin-top: 36px;
 }
-@media (width<=760px) {
+@media (max-width: 760px) {
   .story {
     padding: 24px 18px 48px;
   }
@@ -4454,6 +4603,35 @@ footer p {
 .cost-mini.farmable:hover {
   border-color: var(--ink);
   background: var(--lime);
+}
+/* 모바일 육성 계산기: 레일·그룹·단계 칼럼을 좁혀 재료 칩 열(1fr)에 폭을 몰아준다.
+   (base .cost-row 정의보다 뒤에 와야 미디어쿼리 오버라이드가 이긴다) */
+@media (max-width: 520px) {
+  .cost-rows {
+    padding: 6px 9px 10px;
+  }
+  .cost-row {
+    grid-template-columns: 16px 54px 30px minmax(0, 1fr);
+    gap: 6px;
+  }
+  .cost-row-group {
+    font-size: 10px;
+    letter-spacing: -0.02em;
+  }
+  .cost-row-step {
+    font-size: 9px;
+  }
+  .cost-mini {
+    padding: 2px 4px 2px 2px;
+    gap: 2px;
+  }
+  .cost-mini img {
+    width: 19px;
+    height: 19px;
+  }
+  .cost-mini i {
+    font-size: 9.5px;
+  }
 }
 .cost-total-head {
   flex: 1 0 100%;

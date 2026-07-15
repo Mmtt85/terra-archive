@@ -118,6 +118,16 @@ function StoryDetail({ event, summary, onClose, onShowOperator }: {
   // 지금 화면(아래 문단 우선)에 언급된 엔티티. 한 번 뜬 카드는 그 문단이 완전히 사라질 때까지
   // 자리를 지켜, 4장 제한 때문에 밀렸다 다시 뜨는 깜빡임을 막는다. 빈 자리엔 아래쪽 새 엔티티를 채운다.
   const [active, setActive] = useState<number[]>([]);
+  const [openCard, setOpenCard] = useState<string | null>(null); // 모바일 레일에서 펼친 카드(이름)
+  // 펼친 카드 바깥을 누르면 자동으로 접는다
+  useEffect(() => {
+    if (!openCard) return;
+    const onDown = (event: PointerEvent) => {
+      if (!(event.target as HTMLElement).closest(".story-rail .rail-card")) setOpenCard(null);
+    };
+    document.addEventListener("pointerdown", onDown);
+    return () => document.removeEventListener("pointerdown", onDown);
+  }, [openCard]);
   useEffect(() => {
     const ordered: number[] = [];
     [...inView].sort((a, b) => b - a).forEach((blockIndex) => {
@@ -187,16 +197,27 @@ function StoryDetail({ event, summary, onClose, onShowOperator }: {
             {active.map((entityIndex) => {
               const entity = entities[entityIndex];
               const linked = Boolean(entity.op && onShowOperator);
+              // 모바일(≤1180px): 스니펫(이름만) → 탭하면 펼쳐 설명 표시, 한 번 더 탭하면 오퍼 상세(있으면)·접기.
+              // 데스크탑: 종전대로 카드를 누르면 바로 오퍼 상세.
+              const handleClick = () => {
+                const mobile = typeof window !== "undefined" && window.matchMedia("(max-width: 1180px)").matches;
+                if (mobile) {
+                  if (openCard !== entity.name) { setOpenCard(entity.name); return; } // 첫 탭: 펼침
+                  if (linked) onShowOperator!(entity.op!);                             // 펼친 카드 재탭: 오퍼 상세 (닫기는 바깥 클릭)
+                } else if (linked) {
+                  onShowOperator!(entity.op!);
+                }
+              };
               return (
-                <div className={`rail-card${linked ? " op-linked" : ""}`} key={entity.name}
-                  onClick={linked ? () => onShowOperator!(entity.op!) : undefined}
-                  role={linked ? "button" : undefined} tabIndex={linked ? 0 : undefined}
-                  onKeyDown={linked ? (keyEvent) => { if (keyEvent.key === "Enter") onShowOperator!(entity.op!); } : undefined}
+                <div className={`rail-card${linked ? " op-linked" : ""}${openCard === entity.name ? " open" : ""}`} key={entity.name}
+                  onClick={handleClick}
+                  role="button" tabIndex={0}
+                  onKeyDown={(keyEvent) => { if (keyEvent.key === "Enter") handleClick(); }}
                   title={linked ? t("오퍼레이터 정보 보기") : undefined}>
                   {entity.img && (
                     <div className="cast-img"><img src={entity.img} alt="" loading="lazy" decoding="async" /></div>
                   )}
-                  <div className="rail-card-text"><b>{entity.name}{linked && <i className="op-mark" aria-hidden>↗</i>}</b><span>{entity.desc}</span></div>
+                  <div className="rail-card-text"><b>{entity.name}{linked && <i className="op-mark" aria-hidden>↗</i>}</b><span><span className="rail-desc-full">{entity.desc}</span><span className="rail-desc-snip">{entity.desc.slice(0, 5).trim()}…</span></span></div>
                 </div>
               );
             })}
@@ -591,19 +612,25 @@ export default function StoryGuide({ onShowOperator }: { onShowOperator?: (id: s
   const [view, setView] = useState<"digest" | "chronicle">("digest");
   const [selected, setSelected] = useState<StoryEvent | null>(null);
 
+  const pushedDetail = useRef(false);
   // #story-<id> 해시와 동기화 — 새로고침·공유·뒤로가기 모두 동작
   useEffect(() => {
     const apply = () => setSelected(eventFromHash());
     apply();
     window.addEventListener("hashchange", apply);
-    return () => window.removeEventListener("hashchange", apply);
+    window.addEventListener("popstate", apply);
+    return () => { window.removeEventListener("hashchange", apply); window.removeEventListener("popstate", apply); };
   }, []);
 
+  // pushState로 진입 → 홈의 스크롤 매니저가 상세는 top으로, 뒤로가기 시 목록 스크롤을 복구한다
   const open = (event: StoryEvent) => {
-    window.location.assign(`#story-${event.id}`);
+    history.pushState(null, "", `#story-${event.id}`);
+    pushedDetail.current = true;
+    setSelected(event);
   };
   const close = () => {
-    window.location.assign("#story");
+    if (pushedDetail.current) { pushedDetail.current = false; history.back(); }
+    else { window.location.assign("#story"); }  // 딥링크 첫 진입이면 목록으로
   };
   // 연대기에서 이벤트 클릭 → 요약이 있으면 상세로, 없으면 무시
   const openEvent = (eventId: string) => {
