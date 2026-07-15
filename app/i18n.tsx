@@ -652,6 +652,8 @@ const D: Record<string, Pair> = {
   ],
   "{name} 제외": ["Remove {name}", "{name}を除外"],
   "전체 비우기": ["Clear all", "すべてクリア"],
+  "공유 링크 복사": ["Copy share link", "共有リンクをコピー"],
+  "복사됨!": ["Copied!", "コピーしました！"],
   "모두 선택": ["Select all", "すべて選択"],
   "모두 해제": ["Deselect all", "すべて解除"],
   "정예화": ["Elite", "昇進"],

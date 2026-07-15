@@ -4390,6 +4390,25 @@ footer p {
   font-size: 14px;
   letter-spacing: -0.2px;
 }
+.cost-total-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cost-share {
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--lime);
+  padding: 6px 11px;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: 0.15s;
+}
+.cost-share:hover {
+  background: #22282c;
+}
 
 /* ── 재료 상세 모달 ─────────────────────────────────────────────────────────
    효율표·계산기의 모든 재료 아이콘에서 열린다. 밝은 카드(오퍼 모달과 달리 소형) */

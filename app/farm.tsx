@@ -8,7 +8,7 @@
 // 화면에는 재료당 효율 상위 3개 스테이지만 표시한다 (2026-07 사용자 확정).
 // 육성 비용 데이터는 scripts/build-costs.py가 생성하는 app/data/costs.json —
 // 정예화 1·2, 스킬 2~7, 특화 1~3, 모듈 1~3단계의 용문폐·재료 소요량.
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import farmData from "./data/farm.json";
 import costsData from "./data/costs.json";
 import type { Operator } from "./home";
@@ -268,6 +268,26 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
   const [targets, setTargets] = useState<Record<string, number>>({});
 
   const byId = useMemo(() => new Map(operators.map((operator) => [operator.id, operator])), [operators]);
+
+  // 공유 링크 복원 — URL ?ops=char_2027_wang,... 를 읽어 계산기에 담는다 (마운트 1회).
+  // 하이드레이션 불일치를 피해 초기값은 [] 로 두고 이펙트에서 복원한다.
+  useEffect(() => {
+    const raw = new URLSearchParams(window.location.search).get("ops");
+    if (!raw) return;
+    const ids = raw.split(",").filter((id) => byId.has(id) && costs.ops[id]);
+    if (ids.length) setPicked(ids);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  // picked → URL ?ops 동기화 (공유용). 첫 마운트의 [] 상태로 파라미터를 지우지 않도록 건너뛴다.
+  const opsSynced = useRef(false);
+  useEffect(() => {
+    if (!opsSynced.current) { opsSynced.current = true; return; }
+    const url = new URL(window.location.href);
+    if (picked.length) url.searchParams.set("ops", picked.join(","));
+    else url.searchParams.delete("ops");
+    window.history.replaceState(null, "", url);
+  }, [picked]);
+
   // 비용 데이터가 있는 오퍼만 (로봇 등 정예화·스킬 없는 유닛 제외) · 미래시 토글 반영
   const pool = useMemo(() =>
     operators.filter((operator) => costs.ops[operator.id] && (includeFuture || !operator.unreleased)),
@@ -419,7 +439,10 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
           <div className="cost-result">
             <div className="cost-total-head">
               <b>{t("합계")}</b>
-              <button type="button" className="cost-clear" onClick={() => { setPicked([]); setTargets({}); }}>{t("전체 비우기")}</button>
+              <div className="cost-total-actions">
+                <ShareLinkButton />
+                <button type="button" className="cost-clear" onClick={() => { setPicked([]); setTargets({}); }}>{t("전체 비우기")}</button>
+              </div>
             </div>
             <div className="cost-lmd">
               <img src="/items/4001.png" alt="" />
@@ -440,6 +463,24 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
         </>
       )}
     </div>
+  );
+}
+
+// 현재 URL(선택 상태 반영)을 클립보드에 복사 — "왕 육성 시뮬" 링크를 바로 공유
+function ShareLinkButton() {
+  const { t } = useI18n();
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1600);
+    } catch { /* 클립보드 권한 없으면 무시 */ }
+  };
+  return (
+    <button type="button" className="cost-share" onClick={copy}>
+      <span aria-hidden>🔗</span> {copied ? t("복사됨!") : t("공유 링크 복사")}
+    </button>
   );
 }
 

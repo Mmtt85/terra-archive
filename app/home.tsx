@@ -356,14 +356,22 @@ const FUTURE_KEY = "ta-include-future";
 
 function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; extra: ExtraI18n | null; initialTab: Tab }) {
   const { locale, t } = useI18n();
-  // SSR엔 localStorage가 없으므로 false로 하이드레이션 후 이펙트에서 복원한다
+  // SSR엔 localStorage가 없으므로 false로 하이드레이션 후 이펙트에서 복원한다.
+  // 우선순위: URL 쿼리(?future=1|0) > localStorage. URL 파라미터는 공유 링크용.
   const [includeFuture, setIncludeFuture] = useState(false);
   useEffect(() => {
+    const fromUrl = new URLSearchParams(window.location.search).get("future");
+    if (fromUrl === "1") { setIncludeFuture(true); return; }
+    if (fromUrl === "0") { setIncludeFuture(false); return; }
     try { if (localStorage.getItem(FUTURE_KEY) === "1") setIncludeFuture(true); } catch { /* ignore */ }
   }, []);
   const toggleFuture = (on: boolean) => {
     setIncludeFuture(on);
     try { localStorage.setItem(FUTURE_KEY, on ? "1" : "0"); } catch { /* ignore */ }
+    // 공유용 URL 파라미터도 갱신 (다른 파라미터는 보존)
+    const url = new URL(window.location.href);
+    if (on) url.searchParams.set("future", "1"); else url.searchParams.delete("future");
+    window.history.replaceState(null, "", url);
   };
   // 백과사전 목록·필터·카운트가 쓰는 로스터 — 미래시 꺼짐(기본)이면 미실장 오퍼 제외.
   // 딥링크(#op-…)·플래너발 모달 열기는 전체 operators에서 찾으므로 토글과 무관하게 동작.
@@ -380,10 +388,14 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
   // 초기값으로 쓴다 (SSR/클라이언트 첫 렌더 일치 → hydration mismatch 없음).
   const [tab, setTab] = useState<Tab>(initialTab);
   const localeBase = LOCALE_BASE[locale];
-  // 탭 → 로케일 포함 경로 (예: planner + en → "/en/infra", archive + ko → "/")
+  // 탭 → 로케일 포함 경로 (예: planner + en → "/en/infra", archive + ko → "/").
+  // 전역 파라미터(future)는 탭을 옮겨도 URL에 유지한다 (공유·일관성). ops 같은 탭 전용
+  // 파라미터는 해당 탭이 직접 관리하므로 여기서 실어 나르지 않는다.
   const tabPath = useCallback((tb: Tab) => {
     const seg = TAB_SEG[tb];
-    return (localeBase + (seg ? `/${seg}` : "")) || "/";
+    const base = (localeBase + (seg ? `/${seg}` : "")) || "/";
+    const fut = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("future") === "1";
+    return fut ? `${base}?future=1` : base;
   }, [localeBase]);
 
   // 필터 항목은 전부 현재 로케일 데이터에서 유도한다 — 값과 표시가 항상 일치
