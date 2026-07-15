@@ -98,8 +98,9 @@ python3 scripts/build-costs.py .gamedata   # → app/data/costs.json + public/it
 (levelUpCostCond), 모듈 1~3단계(uniequip itemCost)를 오퍼별로 수록한다. 용문폐(4001)는
 `lmd` 필드로 분리. 미실장 오퍼는 CN 테이블 폴백(신재료는 중국어 이름). 아이템 사전에는
 효율표(farm.json) 재료까지 합쳐 설명·용도·가공소 조합식(craft)도 수록한다 — 재료 상세
-모달용. 재료파밍 탭의 '육성 비용 계산기'가 사용하며, **operators.json 또는 farm.json을
-재생성했다면 이것도 재실행**한다.
+모달용. KR 미출시(중국 선행) 재료는 이름에 한자(CJK)가 남아 있어 `unreleased: true`로
+표시하며, '파밍·육성 시뮬' 탭에서 '미래시 데이터 포함'을 켜야 노출된다. 재료파밍 탭의
+'육성 비용 계산기'가 사용하며, **operators.json 또는 farm.json을 재생성했다면 이것도 재실행**한다.
 
 ## 6. AI 스토리 요약 데이터
 

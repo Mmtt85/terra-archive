@@ -601,8 +601,14 @@ const D: Record<string, Pair> = {
 
   // ── 재료 파밍 효율표 ───────────────────────────────────────────────────────
   "재료 파밍": ["Farming", "素材周回"],
+  "파밍·육성 시뮬": ["Farm & Sim", "周回・育成"],
+  "재료 파밍 & 오퍼 육성 시뮬레이션": ["Material Farming & Operator Upgrade Simulator", "素材周回＆オペレーター育成シミュレーター"],
+  "오퍼레이터 육성에 필요한 용문폐·재료 총량을 단계별로 계산하고, 각 재료를 어느 스테이지에서 파밍하는 게 가장 효율적인지 실측 드랍 통계로 확인합니다.": [
+    "Calculate the LMD and materials needed to upgrade operators step by step, and check the most efficient farming stage for each material with measured drop statistics.",
+    "オペレーター育成に必要な龍門幣・素材の合計を段階ごとに計算し、各素材をどのステージで周回するのが最も効率的かを実測ドロップ統計で確認します。",
+  ],
   "재료 파밍 효율표": ["Material Farming Efficiency", "素材周回効率表"],
-  "재료 파밍 효율표 - 명일방주 파밍 가이드 | 테라 아카이브": ["Material Farming Efficiency - Arknights Farming Guide | Terra Archive", "素材周回効率表 - アークナイツ周回ガイド | テラアーカイブ"],
+  "재료 파밍 & 오퍼 육성 시뮬레이션 - 명일방주 파밍·육성 계산기 | 테라 아카이브": ["Material Farming & Operator Upgrade Simulator - Arknights Farming/Upgrade Calculator | Terra Archive", "素材周回＆オペレーター育成シミュレーター - アークナイツ周回・育成計算機 | テラアーカイブ"],
   "정예화 재료 {count}종의 실측 드랍 통계입니다. 재료마다 어느 스테이지에서 나오는지와 개당 기대 이성(이성 소모 ÷ 드랍률)을 표시하고, 이성 대비 획득 확률이 가장 높은 스테이지에 최고 효율 배지를 붙입니다.": [
     "Measured drop statistics for {count} elite materials. Each material lists the stages it drops from with the expected sanity per drop (sanity cost ÷ drop rate), and the stage with the best drop odds per sanity gets the Best badge.",
     "昇進素材{count}種の実測ドロップ統計です。素材ごとにドロップするステージと1個あたりの期待理性（理性消費 ÷ ドロップ率）を表示し、理性あたりの入手確率が最も高いステージに最高効率バッジを付けます。",
@@ -616,11 +622,11 @@ const D: Record<string, Pair> = {
   "재료 이름·별명 검색": ["Search materials by name or nickname", "素材名・愛称で検索"],
   "상시 파밍 가능한 스테이지만 (이벤트 한정 제외)": ["Permanently farmable stages only (exclude limited events)", "常時周回可能なステージのみ（期間限定イベント除外）"],
   "조건에 맞는 재료가 없어요.": ["No materials match these filters.", "条件に合う素材がありません。"],
-  // ── 미래시(미실장) 오퍼 토글 ──
-  "미래시 오퍼레이터 포함": ["Include future operators", "未実装オペレーターを含む"],
-  "한국 서버에 아직 나오지 않은 오퍼레이터(중국 서버 데이터)도 목록·계산기에 표시합니다.": [
-    "Also show operators not yet released on the KR server (CN server data) in the list and calculator.",
-    "韓国サーバー未実装のオペレーター（中国サーバーのデータ）も一覧・計算機に表示します。",
+  // ── 미래시(미실장) 데이터 토글 ──
+  "미래시 데이터 포함": ["Include future data", "未実装データを含む"],
+  "한국 서버에 아직 나오지 않은 오퍼레이터·재료(중국 서버 데이터)도 목록·계산기에 표시합니다.": [
+    "Also show operators and materials not yet released on the KR server (CN server data) in the list and calculator.",
+    "韓国サーバー未実装のオペレーター・素材（中国サーバーのデータ）も一覧・計算機に表示します。",
   ],
   "미실장": ["Unreleased", "未実装"],
   "한국 서버 미실장 오퍼레이터입니다 — 중국 서버 데이터 기준이라 일부 텍스트가 원문(중국어)으로 표시됩니다.": [
@@ -629,11 +635,17 @@ const D: Record<string, Pair> = {
   ],
   // ── 육성 비용 계산기 ──
   "육성 비용 계산기": ["Upgrade Cost Calculator", "育成コスト計算機"],
-  "오퍼레이터를 추가하면 정예화 1·2, 스킬 레벨 2~7, 스킬별 특화 1~3, 모듈별 1~3단계 비용이 전부 개별 행으로 나옵니다. 원하는 단계만 체크해 합산하세요. 재료 아이콘을 클릭하면 상세 정보가 열립니다.": [
-    "Add operators to see every cost broken down per step — Elite 1·2, each skill level 2–7, Mastery 1–3 per skill, and each module stage 1–3. Check only the steps you want to total. Click a material icon for its details.",
-    "オペレーターを追加すると、昇進1·2、スキルLv.2~7の各レベル、スキル別特化1~3、モジュール別1~3段階のコストがすべて個別の行で表示されます。合算したい段階だけチェックしてください。素材アイコンをクリックすると詳細が開きます。",
+  "오퍼레이터를 추가하면 정예화 1·2, 스킬 레벨 2~7, 스킬별 특화 1~3, 모듈별 1~3단계가 전부 개별 행으로 나옵니다. 각 그룹에서 목표 단계를 클릭하면 앞 단계가 자동 포함돼 합산됩니다. 재료 아이콘을 클릭하면 상세 정보가 열립니다.": [
+    "Add operators to see every cost broken down per step — Elite 1·2, each skill level 2–7, Mastery 1–3 per skill, and each module stage 1–3. Click a target step in each group and all preceding steps are included automatically. Click a material icon for its details.",
+    "オペレーターを追加すると、昇進1·2、スキルLv.2~7の各レベル、スキル別特化1~3、モジュール別1~3段階がすべて個別の行で表示されます。各グループで目標段階をクリックすると、前の段階が自動的に含まれて合算されます。素材アイコンをクリックすると詳細が開きます。",
   ],
+  "{label} {step}까지 육성": ["Level up {label} to {step}", "{label}を{step}まで育成"],
+  "{label} {step}까지 육성 (클릭 시 제외)": ["Level up {label} to {step} (click to remove)", "{label}を{step}まで育成（クリックで除外）"],
   "오퍼레이터 이름·별명 검색 후 추가": ["Search operators by name or alias to add", "オペレーター名・愛称で検索して追加"],
+  "클릭하면 전체 오퍼레이터 · 이름·별명 입력 시 필터": ["Click to see all operators · type a name or alias to filter", "クリックで全オペレーター表示 · 名前・愛称を入力で絞り込み"],
+  "파밍 불가": ["Not farmable", "周回不可"],
+  "가공소 조합": ["Workshop craft", "加工所で作成"],
+  "상세 보기 →": ["View details →", "詳細を見る →"],
   "아직 선택한 오퍼레이터가 없어요 — 위 검색창에서 추가해 보세요.": [
     "No operators selected yet — add some from the search box above.",
     "まだオペレーターが選択されていません — 上の検索欄から追加してみてください。",

@@ -3,138 +3,138 @@
      각 URL은 같은 탭의 3개 언어 버전을 xhtml:link hreflang으로 상호 참조한다. -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>https://terra-archive.pages.dev/</loc>
+    <loc>https://terra-archive.net/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
-    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.pages.dev/"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.pages.dev/en"/>
-    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.pages.dev/ja"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.pages.dev/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/"/>
   </url>
   <url>
-    <loc>https://terra-archive.pages.dev/en</loc>
+    <loc>https://terra-archive.net/en</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
-    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.pages.dev/"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.pages.dev/en"/>
-    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.pages.dev/ja"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.pages.dev/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/"/>
   </url>
   <url>
-    <loc>https://terra-archive.pages.dev/ja</loc>
+    <loc>https://terra-archive.net/ja</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
-    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.pages.dev/"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.pages.dev/en"/>
-    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.pages.dev/ja"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.pages.dev/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/"/>
   </url>
   <url>
-    <loc>https://terra-archive.pages.dev/infra</loc>
+    <loc>https://terra-archive.net/infra</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.pages.dev/infra"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.pages.dev/en/infra"/>
-    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.pages.dev/ja/infra"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.pages.dev/infra"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/infra"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/infra"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/infra"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/infra"/>
   </url>
   <url>
-    <loc>https://terra-archive.pages.dev/en/infra</loc>
+    <loc>https://terra-archive.net/en/infra</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.pages.dev/infra"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.pages.dev/en/infra"/>
-    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.pages.dev/ja/infra"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.pages.dev/infra"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/infra"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/infra"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/infra"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/infra"/>
   </url>
   <url>
-    <loc>https://terra-archive.pages.dev/ja/infra</loc>
+    <loc>https://terra-archive.net/ja/infra</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.pages.dev/infra"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.pages.dev/en/infra"/>
-    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.pages.dev/ja/infra"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.pages.dev/infra"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/infra"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/infra"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/infra"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/infra"/>
   </url>
   <url>
-    <loc>https://terra-archive.pages.dev/recruit</loc>
+    <loc>https://terra-archive.net/recruit</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.pages.dev/recruit"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.pages.dev/en/recruit"/>
-    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.pages.dev/ja/recruit"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.pages.dev/recruit"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/recruit"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/recruit"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/recruit"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/recruit"/>
   </url>
   <url>
-    <loc>https://terra-archive.pages.dev/en/recruit</loc>
+    <loc>https://terra-archive.net/en/recruit</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.pages.dev/recruit"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.pages.dev/en/recruit"/>
-    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.pages.dev/ja/recruit"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.pages.dev/recruit"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/recruit"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/recruit"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/recruit"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/recruit"/>
   </url>
   <url>
-    <loc>https://terra-archive.pages.dev/ja/recruit</loc>
+    <loc>https://terra-archive.net/ja/recruit</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.pages.dev/recruit"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.pages.dev/en/recruit"/>
-    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.pages.dev/ja/recruit"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.pages.dev/recruit"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/recruit"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/recruit"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/recruit"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/recruit"/>
   </url>
   <url>
-    <loc>https://terra-archive.pages.dev/farm</loc>
+    <loc>https://terra-archive.net/farm</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.pages.dev/farm"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.pages.dev/en/farm"/>
-    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.pages.dev/ja/farm"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.pages.dev/farm"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/farm"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/farm"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/farm"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/farm"/>
   </url>
   <url>
-    <loc>https://terra-archive.pages.dev/en/farm</loc>
+    <loc>https://terra-archive.net/en/farm</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.pages.dev/farm"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.pages.dev/en/farm"/>
-    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.pages.dev/ja/farm"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.pages.dev/farm"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/farm"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/farm"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/farm"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/farm"/>
   </url>
   <url>
-    <loc>https://terra-archive.pages.dev/ja/farm</loc>
+    <loc>https://terra-archive.net/ja/farm</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.pages.dev/farm"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.pages.dev/en/farm"/>
-    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.pages.dev/ja/farm"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.pages.dev/farm"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/farm"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/farm"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/farm"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/farm"/>
   </url>
   <url>
-    <loc>https://terra-archive.pages.dev/stories</loc>
+    <loc>https://terra-archive.net/stories</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.pages.dev/stories"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.pages.dev/en/stories"/>
-    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.pages.dev/ja/stories"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.pages.dev/stories"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/stories"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/stories"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/stories"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/stories"/>
   </url>
   <url>
-    <loc>https://terra-archive.pages.dev/en/stories</loc>
+    <loc>https://terra-archive.net/en/stories</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.pages.dev/stories"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.pages.dev/en/stories"/>
-    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.pages.dev/ja/stories"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.pages.dev/stories"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/stories"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/stories"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/stories"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/stories"/>
   </url>
   <url>
-    <loc>https://terra-archive.pages.dev/ja/stories</loc>
+    <loc>https://terra-archive.net/ja/stories</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.pages.dev/stories"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.pages.dev/en/stories"/>
-    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.pages.dev/ja/stories"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.pages.dev/stories"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/stories"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/stories"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/stories"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/stories"/>
   </url>
 </urlset>

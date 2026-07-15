@@ -1,8 +1,11 @@
 // 로케일별 SEO 메타데이터의 정본 — 라우트(/ /en /ja) 페이지가 공유한다.
-// 프리뷰 배포(*.pages.dev 해시 서브도메인)도 항상 본 사이트를 정본(canonical)으로 가리킨다.
+// 정본 도메인은 terra-archive.net (2026-07 사용자가 구매·연결). Cloudflare Pages 기본
+// 도메인(terra-archive.pages.dev)과 프리뷰 배포(*.pages.dev)도 전부 이 SITE_URL을 canonical·
+// hreflang·OG로 내보내므로, 어느 도메인으로 크롤링되든 검색엔진이 .net으로 통합한다
+// (중복 콘텐츠 방지). 도메인을 바꾸면 여기 + public/sitemap.xml + public/robots.txt를 함께 수정.
 import type { Metadata } from "next";
 
-export const SITE_URL = "https://terra-archive.pages.dev";
+export const SITE_URL = "https://terra-archive.net";
 
 type SeoLocale = "ko" | "en" | "ja";
 export type SeoTab = "archive" | "planner" | "recruit" | "farm" | "story";
@@ -44,9 +47,9 @@ const TAB_META: Record<Exclude<SeoTab, "archive">, Record<SeoLocale, { title: st
     ja: { title: "公開求人ヘルパー - アークナイツ公開求人計算機 | テラアーカイブ", description: "アークナイツ公開求人タグ計算機 — タグの組み合わせから確定・高レアオペレーターを見つけます。" },
   },
   farm: {
-    ko: { title: "재료 파밍 효율표 - 명일방주 파밍 가이드 | 테라 아카이브", description: "명일방주 재료 파밍 효율표 — 재료별 최적 파밍 스테이지와 이성 효율을 정리했습니다." },
-    en: { title: "Material Farming Efficiency - Arknights Farming Guide | Terra Archive", description: "Arknights material farming efficiency table — the best stage and sanity efficiency for each material." },
-    ja: { title: "素材周回効率表 - アークナイツ周回ガイド | テラアーカイブ", description: "アークナイツ素材周回効率表 — 素材ごとの最適ステージと理性効率をまとめました。" },
+    ko: { title: "재료 파밍 & 오퍼 육성 시뮬레이션 - 명일방주 파밍·육성 계산기 | 테라 아카이브", description: "명일방주 재료 파밍 효율표 + 오퍼레이터 육성 비용 시뮬레이터 — 재료별 최적 파밍 스테이지와 이성 효율, 정예화·스킬·특화·모듈 육성에 필요한 용문폐·재료 총량을 계산합니다." },
+    en: { title: "Material Farming & Operator Upgrade Simulator - Arknights Farming/Upgrade Calculator | Terra Archive", description: "Arknights material farming efficiency table + operator upgrade cost simulator — best farming stage and sanity efficiency per material, plus the LMD and materials needed for Elite, skills, masteries, and modules." },
+    ja: { title: "素材周回＆オペレーター育成シミュレーター - アークナイツ周回・育成計算機 | テラアーカイブ", description: "アークナイツ素材周回効率表＋オペレーター育成コストシミュレーター — 素材ごとの最適ステージと理性効率、昇進・スキル・特化・モジュール育成に必要な龍門幣と素材の合計を計算します。" },
   },
   story: {
     ko: { title: "AI 스토리 요약 - 명일방주 스토리 요약 | 테라 아카이브", description: "명일방주 이벤트 스토리 AI 요약 아카이브 — 사이드 스토리를 컷씬과 함께 10분 분량으로 요약합니다." },

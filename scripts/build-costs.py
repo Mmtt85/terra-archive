@@ -18,7 +18,7 @@ Needs: {kr,cn}_character_table.json, {kr,cn}_uniequip_table.json,
 아이콘은 yuanyan3060/ArknightsGameResource의 item/<iconId>.png 를
 public/items/<itemId>.png 로 내려받는다 (있으면 스킵 — build-farm.py와 동일 규칙).
 """
-import json, os, sys, time, urllib.request
+import json, os, re, sys, time, urllib.request
 
 S = sys.argv[1] if len(sys.argv) > 1 else os.environ.get("GAMEDATA_DIR", ".gamedata")
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -139,6 +139,16 @@ def loc_field(iid, field):
     if ja: out["ja"] = ja
     return out if out["ko"] else None
 
+CJK = re.compile(r"[一-鿿]")
+def is_unreleased_item(iid):
+    # KR 미출시(중국 선행) 재료 = KR item_table에 번역이 없어 중국어 원문이 그대로 들어온 것.
+    # 한국 정식 명칭은 한글 또는 라틴 코드명(RMA70-12 등)이라 한자(CJK)를 쓰지 않으므로,
+    # ko 이름에 한자가 있으면 미번역=미실장으로 본다 (RMA70·D32 같은 코드명 오탐 방지).
+    krn = (kr_items.get(iid) or {}).get("name")
+    if not krn:
+        return iid in cn_items  # KR엔 아예 없고 CN에만 있으면 미실장
+    return bool(CJK.search(krn))
+
 os.makedirs(f"{REPO}/public/items", exist_ok=True)
 items_out = {}
 missing_icons = []
@@ -153,6 +163,7 @@ for iid in sorted(used_items):
     usage = loc_field(iid, "usage")
     if desc: entry["desc"] = desc
     if usage: entry["usage"] = usage
+    if is_unreleased_item(iid): entry["unreleased"] = True
     f = formulas.get(iid)
     if f:
         gold = f.get("goldCost") or 0
@@ -177,6 +188,7 @@ for iid in sorted(used_items):
     desc = loc_field(iid, "description"); usage = loc_field(iid, "usage")
     if desc: entry["desc"] = desc
     if usage: entry["usage"] = usage
+    if is_unreleased_item(iid): entry["unreleased"] = True
     items_out[iid] = entry
     dst = f"{REPO}/public/items/{iid}.png"
     if not os.path.exists(dst):

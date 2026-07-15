@@ -514,7 +514,7 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
         : tab === "recruit"
           ? t("공채 도우미 - 명일방주 공개모집 계산기 | 테라 아카이브")
           : tab === "farm"
-            ? t("재료 파밍 효율표 - 명일방주 파밍 가이드 | 테라 아카이브")
+            ? t("재료 파밍 & 오퍼 육성 시뮬레이션 - 명일방주 파밍·육성 계산기 | 테라 아카이브")
             : tab === "story"
               ? t("AI 스토리 요약 - 명일방주 스토리 요약 | 테라 아카이브")
               : t("테라 아카이브 | 명일방주(Arknights) KR 팬사이트");
@@ -640,12 +640,12 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
           <button className={`tab-archive${tab === "archive" ? " selected" : ""}`} onClick={() => switchTab("archive")}><span className="tab-icon" aria-hidden>▤</span>{t("오퍼 백과사전")}</button>
           <button className={`tab-planner${tab === "planner" ? " selected" : ""}`} onClick={() => switchTab("planner")}><span className="tab-icon" aria-hidden>⌂</span>{t("인프라 플래너")}</button>
           <button className={`tab-recruit${tab === "recruit" ? " selected" : ""}`} onClick={() => switchTab("recruit")}><span className="tab-icon" aria-hidden>◎</span>{t("공채 도우미")}</button>
-          <button className={`tab-farm${tab === "farm" ? " selected" : ""}`} onClick={() => switchTab("farm")}><span className="tab-icon" aria-hidden>◈</span>{t("재료 파밍")}</button>
+          <button className={`tab-farm${tab === "farm" ? " selected" : ""}`} onClick={() => switchTab("farm")}><span className="tab-icon" aria-hidden>◈</span>{t("파밍·육성 시뮬")}</button>
           <button className={`tab-story${tab === "story" ? " selected" : ""}`} onClick={() => switchTab("story")}><span className="tab-icon" aria-hidden>✦</span>{t("AI 스토리 요약")}</button>
         </nav>
-        <label className="future-toggle" title={t("한국 서버에 아직 나오지 않은 오퍼레이터(중국 서버 데이터)도 목록·계산기에 표시합니다.")}>
+        <label className="future-toggle" title={t("한국 서버에 아직 나오지 않은 오퍼레이터·재료(중국 서버 데이터)도 목록·계산기에 표시합니다.")}>
           <input type="checkbox" checked={includeFuture} onChange={(event) => toggleFuture(event.target.checked)} />
-          {t("미래시 오퍼레이터 포함")}
+          {t("미래시 데이터 포함")}
         </label>
         <LanguageSwitcher />
       </header>

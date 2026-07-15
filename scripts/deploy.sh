@@ -1,5 +1,5 @@
 #!/bin/bash
-# 테라 아카이브 배포: vinext 빌드 → Cloudflare Pages (https://terra-archive.pages.dev)
+# 테라 아카이브 배포: vinext 빌드 → Cloudflare Pages (https://terra-archive.net)
 # 사전 조건: 이 기기에서 wrangler OAuth 로그인 완료 (nzkonaru@gmail.com)
 set -euo pipefail
 cd "$(dirname "$0")/.."

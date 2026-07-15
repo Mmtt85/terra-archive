@@ -368,6 +368,39 @@ FUTURE_ALIASES = {
     "char_1049_catap2": ["캐터펄트", "몬헌"],
     "char_2027_wang": ["왕"],
 }
+# ── 미실장 오퍼 한국어화: KR·CN 양쪽에 다 있는 오퍼로 CN→KR 공통 어휘 사전을 만든다 ──
+# 출신지·종족·전투 태그는 양 서버 공통 어휘(용문·용·컬럼비아·광역 등)라, 두 서버에 모두
+# 존재하는 오퍼에서 같은 필드의 KR값과 CN값을 짝지어 다수결 사전을 구축하면 미실장 오퍼도
+# 한국어로 표기할 수 있다 (스킬·재능 같은 자유 서술은 KR 소스가 없어 원문 유지).
+from collections import Counter, defaultdict
+def parse_profile(hb, cid):
+    e = hb.get(cid); birth = race = None
+    for sta in (e or {}).get("storyTextAudio") or []:
+        for st in sta.get("stories") or []:
+            txt = st.get("storyText", "")
+            m1 = re.search(r"[\[【](?:출신지?|出身地)[\]】]\s*([^\n\[【]+)", txt)
+            m2 = re.search(r"[\[【](?:종족|种族)[\]】]\s*([^\n\[【]+)", txt)
+            if m1 and not birth: birth = m1.group(1).strip()
+            if m2 and not race: race = m2.group(1).strip()
+        if birth or race: break
+    return birth, race
+
+kr_handbook = handbook  # 상단에서 load한 KR handbook (아직 CN으로 안 바뀜)
+cn_handbook = cn_tables["handbook"]
+birth_votes = defaultdict(Counter); race_votes = defaultdict(Counter); tag_votes = defaultdict(Counter)
+for cid in set(chars) & set(cn):
+    kb, kr_race = parse_profile(kr_handbook, cid)
+    cb, cn_race = parse_profile(cn_handbook, cid)
+    if kb and cb: birth_votes[cb][kb] += 1
+    if kr_race and cn_race: race_votes[cn_race][kr_race] += 1
+    kt = [t for t in (chars[cid].get("tagList") or []) if t and t.strip()]
+    ct = [t for t in (cn[cid].get("tagList") or []) if t and t.strip()]
+    if len(kt) == len(ct):
+        for c_tag, k_tag in zip(ct, kt): tag_votes[c_tag][k_tag] += 1
+BIRTH_CN2KR = {k: v.most_common(1)[0][0] for k, v in birth_votes.items()}
+RACE_CN2KR = {k: v.most_common(1)[0][0] for k, v in race_votes.items()}
+TAG_CN2KR = {k: v.most_common(1)[0][0] for k, v in tag_votes.items()}
+
 skill_table = cn_tables["skill_table"]; uniequip = cn_tables["uniequip"]
 battle_equip = cn_tables["battle_equip"]; building = cn_tables["building"]
 ranges = cn_tables["ranges"]; team_table = cn_tables["team_table"]; handbook = cn_tables["handbook"]
@@ -383,10 +416,15 @@ for cid, c in cn.items():
     op["aliases"] = [a for a in [c.get("name")] + op["aliases"] + FUTURE_ALIASES.get(cid, [])
                      if a and a != op["name"]]
     op["aliases"] = list(dict.fromkeys(op["aliases"]))
+    # 공통 어휘 사전으로 한국어화 (없으면 원문 유지)
+    op["birthplace"] = BIRTH_CN2KR.get(op["birthplace"], op["birthplace"])
+    op["race"] = RACE_CN2KR.get(op["race"], op["race"])
+    op["combatTags"] = [TAG_CN2KR.get(t, t) for t in op["combatTags"]]
     op["unreleased"] = True
     result.append(op)
     unreleased_count += 1
-print("unreleased (CN-only) ops:", unreleased_count)
+print("unreleased (CN-only) ops:", unreleased_count,
+      "| dict sizes birth/race/tag:", len(BIRTH_CN2KR), len(RACE_CN2KR), len(TAG_CN2KR))
 
 # 동명 중복 정리 (사용자 확정 2026-07): 같은 이름이 여럿이면 입수 가능 버전 우선,
 # 전부 입수 불가면 먼저 나온(char 번호 낮은) 쪽만 남긴다 — 샬렘은 진짜(char_4025)만,

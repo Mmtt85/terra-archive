@@ -37,6 +37,7 @@ type CostEntry = {
 type CostItemMeta = {
   name: LocText; rarity: number; sortId: number; image: string;
   desc?: LocText; usage?: LocText; craft?: CostList; craftGold?: number;
+  unreleased?: boolean;   // KR 미출시(중국 선행) 재료 — 미래시 데이터 포함 시에만 노출
 };
 type CostsData = {
   updated: string;
@@ -47,7 +48,20 @@ type CostsData = {
 const data = farmData as { updated: string; minTimes: number; items: FarmItem[] };
 const costs = costsData as unknown as CostsData;
 
-const TIERS = Array.from(new Set(data.items.map((item) => item.rarity))).sort((a, b) => b - a);
+// 화면에 뿌릴 재료 통합 목록 — 효율표(파밍 가능) + costs 사전(칩·조합 T5 등 파밍 불가).
+// 파밍 불가 재료도 정보는 봐야 하므로(2026-07 사용자 확정) stages 없이 카드로 노출한다.
+type MaterialCard = { id: string; name: LocText; rarity: number; sortId: number; image: string; stages: FarmStage[]; farmable: boolean; unreleased: boolean };
+const ALL_MATERIALS: MaterialCard[] = (() => {
+  const map = new Map<string, MaterialCard>();
+  for (const item of data.items) map.set(item.id, { ...item, farmable: true, unreleased: false });
+  for (const [id, meta] of Object.entries(costs.items)) {
+    if (map.has(id) || id === "4001") continue; // 용문폐는 재료 목록 제외
+    map.set(id, { id, name: meta.name, rarity: meta.rarity, sortId: meta.sortId, image: meta.image, stages: [], farmable: false, unreleased: !!meta.unreleased });
+  }
+  return Array.from(map.values()).sort((a, b) => b.rarity - a.rarity || a.sortId - b.sortId);
+})();
+
+const TIERS = Array.from(new Set(ALL_MATERIALS.map((item) => item.rarity))).sort((a, b) => b - a);
 
 // 재료당 화면에 표시할 효율 스테이지 수 (데이터에는 상위 8개까지 있음)
 const TOP_STAGES = 3;
@@ -86,32 +100,43 @@ export default function FarmGuide({ operators, includeFuture, onShowOperator }: 
 
   const visible = useMemo(() => {
     const keyword = query.trim().toLowerCase();
-    return data.items
-      .map((item) => permOnly ? { ...item, stages: item.stages.filter((stage) => PERMANENT_KINDS.has(stage.kind)) } : item)
+    return ALL_MATERIALS
+      // 상시 파밍 토글은 파밍 가능 재료의 스테이지만 거른다 (파밍 불가 재료는 스테이지가 없음)
+      .map((item) => permOnly && item.farmable ? { ...item, stages: item.stages.filter((stage) => PERMANENT_KINDS.has(stage.kind)) } : item)
+      // 상시 파밍 토글 시: 파밍 가능한데 상설 스테이지가 하나도 안 남은 재료만 숨긴다.
+      // 파밍 불가 재료(칩·조합 T5 등)는 정보 표시용이라 토글과 무관하게 항상 노출.
+      .filter((item) => item.farmable ? (permOnly ? item.stages.length > 0 : true) : true)
+      // 미래시 데이터 미포함이면 KR 미출시 재료(중국 선행)는 숨긴다
+      .filter((item) => includeFuture || !item.unreleased)
       .filter((item) =>
-        item.stages.length > 0 &&
         (tiers.length === 0 || tiers.includes(item.rarity)) &&
         (!keyword ||
           [item.name.ko, item.name.en, item.name.ja].filter(Boolean).join(" ").toLowerCase().includes(keyword) ||
           (SEARCH_ALIASES[item.id] ?? []).some((alias) => alias.includes(keyword))));
-  }, [tiers, query, permOnly]);
+  }, [tiers, query, permOnly, includeFuture]);
 
   return (
-    <section className="farm" aria-label={t("재료 파밍 효율표")}>
+    <section className="farm" aria-label={t("재료 파밍 & 오퍼 육성 시뮬레이션")}>
       <div className="farm-head">
-        <span className="section-no">FARMING EFFICIENCY</span>
-        <h2>{t("재료 파밍 효율표")}</h2>
-        <p>{t("정예화 재료 {count}종의 실측 드랍 통계입니다. 재료마다 어느 스테이지에서 나오는지와 개당 기대 이성(이성 소모 ÷ 드랍률)을 표시하고, 이성 대비 획득 확률이 가장 높은 스테이지에 최고 효율 배지를 붙입니다.", { count: data.items.length })}</p>
-        <p className="farm-source">{t("출처: 펭귄 물류 실측 통계(표본 {min}회 이상) + 클뜯 게임 데이터 · {date} 기준 한국 서버에 개방된 스테이지만 수록 · 기대 이성은 낮을수록 좋습니다.", { min: data.minTimes, date: data.updated })}</p>
+        <span className="section-no">FARM &amp; UPGRADE</span>
+        <h2>{t("재료 파밍 & 오퍼 육성 시뮬레이션")}</h2>
+        <p>{t("오퍼레이터 육성에 필요한 용문폐·재료 총량을 단계별로 계산하고, 각 재료를 어느 스테이지에서 파밍하는 게 가장 효율적인지 실측 드랍 통계로 확인합니다.")}</p>
       </div>
 
       <CostCalculator operators={operators} includeFuture={includeFuture} onShowOperator={onShowOperator} onShowItem={setShownItem} />
+
+      <div className="farm-subhead">
+        <span className="section-no">FARMING EFFICIENCY</span>
+        <h3>{t("재료 파밍 효율표")}</h3>
+        <p>{t("정예화 재료 {count}종의 실측 드랍 통계입니다. 재료마다 어느 스테이지에서 나오는지와 개당 기대 이성(이성 소모 ÷ 드랍률)을 표시하고, 이성 대비 획득 확률이 가장 높은 스테이지에 최고 효율 배지를 붙입니다.", { count: data.items.length })}</p>
+        <p className="farm-source">{t("출처: 펭귄 물류 실측 통계(표본 {min}회 이상) + 클뜯 게임 데이터 · {date} 기준 한국 서버에 개방된 스테이지만 수록 · 기대 이성은 낮을수록 좋습니다.", { min: data.minTimes, date: data.updated })}</p>
+      </div>
 
       <div className="farm-tools">
         <div className="filter-list farm-tier-filter" role="group" aria-label={t("등급 필터")}>
           {TIERS.map((tier) => (
             <button key={tier} type="button" className={tiers.includes(tier) ? "selected" : ""} aria-pressed={tiers.includes(tier)} onClick={() => toggleTier(tier)}>
-              T{tier}<span>{data.items.filter((item) => item.rarity === tier).length}</span>
+              T{tier}<span>{ALL_MATERIALS.filter((item) => item.rarity === tier && (includeFuture || !item.unreleased)).length}</span>
             </button>
           ))}
         </div>
@@ -126,36 +151,59 @@ export default function FarmGuide({ operators, includeFuture, onShowOperator }: 
         <p className="recruit-empty">{t("조건에 맞는 재료가 없어요.")}</p>
       ) : (
         <div className="farm-grid">
-          {visible.map((item) => (
-            <article key={item.id} className="farm-card" style={{ "--tier": item.rarity } as React.CSSProperties}>
-              <header>
-                <button type="button" className="farm-item-btn" onClick={() => setShownItem(item.id)} title={t("{name} 상세 정보 열기", { name: locText(locale, item.name) })}>
-                  <img src={item.image} alt={locText(locale, item.name)} loading="lazy" decoding="async" />
-                </button>
-                <div>
-                  <h3>{locText(locale, item.name)}</h3>
-                  <span className={`farm-tier tier-${item.rarity}`}>T{item.rarity}</span>
-                </div>
-              </header>
-              <div className="farm-cols" aria-hidden>
-                <i>{t("스테이지")}</i><i>{t("드랍률")}</i><i>{t("기대 이성")}</i>
-              </div>
-              <ul>
-                {item.stages.slice(0, TOP_STAGES).map((stage, index) => (
-                  <li key={stage.id} className={index === 0 ? "best" : undefined}
-                    title={`${locText(locale, stage.name) ?? stage.code} · ${t("이성 {n} 소모", { n: stage.ap })} · ${t("표본 {n}회", { n: stage.times.toLocaleString() })}`}>
-                    <b className="farm-code">{stage.code}</b>
-                    <span className="farm-badges">
-                      {index === 0 && <em className="best-badge">{t("최고 효율")}</em>}
-                      {KIND_LABEL[stage.kind] && <em className={`kind-badge ${stage.kind}`}>{t(KIND_LABEL[stage.kind])}</em>}
-                    </span>
-                    <span className="farm-rate">{stage.rate}%</span>
-                    <span className="farm-sanity">{stage.sanity}</span>
-                  </li>
-                ))}
-              </ul>
-            </article>
-          ))}
+          {visible.map((item) => {
+            const meta = costs.items[item.id];
+            const craftable = !item.farmable && (meta?.craft?.length ?? 0) > 0;
+            return (
+              <article key={item.id} className={`farm-card${item.farmable ? "" : " nonfarm"}`} style={{ "--tier": item.rarity } as React.CSSProperties}>
+                <header>
+                  <button type="button" className="farm-item-btn" onClick={() => setShownItem(item.id)} title={t("{name} 상세 정보 열기", { name: locText(locale, item.name) })}>
+                    <img src={item.image} alt={locText(locale, item.name)} loading="lazy" decoding="async" />
+                  </button>
+                  <div>
+                    <h3>{locText(locale, item.name)}</h3>
+                    <span className={`farm-tier tier-${item.rarity}`}>T{item.rarity}</span>
+                    {item.unreleased && <em className="future-badge">{t("미실장")}</em>}
+                  </div>
+                </header>
+                {item.farmable ? (
+                  <>
+                    <div className="farm-cols" aria-hidden>
+                      <i>{t("스테이지")}</i><i>{t("드랍률")}</i><i>{t("기대 이성")}</i>
+                    </div>
+                    <ul>
+                      {item.stages.slice(0, TOP_STAGES).map((stage, index) => (
+                        <li key={stage.id} className={index === 0 ? "best" : undefined}
+                          title={`${locText(locale, stage.name) ?? stage.code} · ${t("이성 {n} 소모", { n: stage.ap })} · ${t("표본 {n}회", { n: stage.times.toLocaleString() })}`}>
+                          <b className="farm-code">{stage.code}</b>
+                          <span className="farm-badges">
+                            {index === 0 && <em className="best-badge">{t("최고 효율")}</em>}
+                            {KIND_LABEL[stage.kind] && <em className={`kind-badge ${stage.kind}`}>{t(KIND_LABEL[stage.kind])}</em>}
+                          </span>
+                          <span className="farm-rate">{stage.rate}%</span>
+                          <span className="farm-sanity">{stage.sanity}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                ) : (
+                  <button type="button" className="farm-nonfarm-body" onClick={() => setShownItem(item.id)}>
+                    <span className="farm-nonfarm-tag">{craftable ? t("가공소 조합") : t("파밍 불가")}</span>
+                    {craftable && (
+                      <span className="farm-nonfarm-craft">
+                        {meta!.craft!.map(([subId, count]) => {
+                          const sub = costs.items[subId];
+                          if (!sub) return null;
+                          return <span key={subId} className="cost-mini"><img src={sub.image} alt={locText(locale, sub.name)} /><i>{count}</i></span>;
+                        })}
+                      </span>
+                    )}
+                    <span className="farm-nonfarm-more">{t("상세 보기 →")}</span>
+                  </button>
+                )}
+              </article>
+            );
+          })}
         </div>
       )}
 
@@ -173,37 +221,36 @@ export default function FarmGuide({ operators, includeFuture, onShowOperator }: 
 
 // ── 육성 비용 계산기 ──────────────────────────────────────────────────────────
 // 선택한 오퍼레이터마다 정예화 1/2, 스킬 Lv.2~7 각 레벨, 스킬별 특화 1/2/3, 모듈별
-// 1/2/3단계를 전부 개별 행 + 개별 체크박스로 나열한다 (2026-07 사용자 확정: 뭉뚱그리지
-// 말 것). 합계는 체크된 행만 합산한다. 재료 아이콘 클릭 = 재료 상세 모달.
+// 1/2/3단계를 전부 개별 행으로 나열한다 (2026-07 사용자 확정: 뭉뚱그리지 말 것).
+// 육성은 순차라 앞 단계가 전제조건이므로 개별 체크가 아니라 그룹마다 "목표 단계까지
+// 누적 선택"한다 — 한 지점을 클릭하면 앞 단계가 자동 포함되고 왼쪽 레일이 슬라이더처럼
+// 차오른다 (2026-07 사용자 확정). 합계는 각 그룹의 목표 단계까지만 합산.
 function addCost(map: Map<string, number>, list: CostList) {
   for (const [id, count] of list) map.set(id, (map.get(id) ?? 0) + count);
 }
 
-// 한 오퍼의 비용을 "그룹 라벨 + 단계 라벨 + 용문폐 + 재료" 행 목록으로 분해
-type CostRow = { key: string; group: string; step: string; lmd: number; items: CostList };
+// 한 오퍼의 비용을 그룹(정예화·스킬·스킬별 특화·모듈별)으로 나누고, 각 그룹은 순차 단계 행을 갖는다
+type CostStep = { step: string; lmd: number; items: CostList };
+type CostGroup = { key: string; label: string; steps: CostStep[] };
 
-function buildRows(operator: Operator, entry: CostEntry, t: (key: string, params?: Record<string, string | number>) => string): CostRow[] {
-  const rows: CostRow[] = [];
-  (entry.elite ?? []).forEach((phase, index) => {
-    rows.push({ key: `e${index}`, group: t("정예화"), step: `${index + 1}`, lmd: phase.lmd, items: phase.items });
-  });
-  (entry.skills ?? []).forEach((items, index) => {
-    rows.push({ key: `s${index}`, group: t("스킬"), step: `Lv.${index + 2}`, lmd: 0, items });
-  });
+function buildGroups(operator: Operator, entry: CostEntry, t: (key: string, params?: Record<string, string | number>) => string): CostGroup[] {
+  const groups: CostGroup[] = [];
+  if (entry.elite?.length) {
+    groups.push({ key: "e", label: t("정예화"), steps: entry.elite.map((phase, index) => ({ step: `${index + 1}`, lmd: phase.lmd, items: phase.items })) });
+  }
+  if (entry.skills?.length) {
+    groups.push({ key: "s", label: t("스킬"), steps: entry.skills.map((items, index) => ({ step: `Lv.${index + 2}`, lmd: 0, items })) });
+  }
   (entry.masteries ?? []).forEach((mastery, index) => {
     const skillName = operator.skills.find((skill) => skill.id === mastery.id)?.name ?? `S${index + 1}`;
-    mastery.levels.forEach((items, level) => {
-      rows.push({ key: `m${index}-${level}`, group: `S${index + 1} · ${skillName}`, step: t("특화 {n}", { n: level + 1 }), lmd: 0, items });
-    });
+    groups.push({ key: `m${index}`, label: `S${index + 1} · ${skillName}`, steps: mastery.levels.map((items, level) => ({ step: t("특화 {n}", { n: level + 1 }), lmd: 0, items })) });
   });
   (entry.modules ?? []).forEach((mod, index) => {
     const meta = operator.modules.find((candidate) => candidate.id === mod.id);
     const label = meta ? `${meta.type} · ${meta.name}` : `MODULE ${index + 1}`;
-    mod.levels.forEach((level, stage) => {
-      rows.push({ key: `d${index}-${stage}`, group: label, step: `STAGE ${stage + 1}`, lmd: level.lmd, items: level.items });
-    });
+    groups.push({ key: `d${index}`, label, steps: mod.levels.map((level, stage) => ({ step: `STAGE ${stage + 1}`, lmd: level.lmd, items: level.items })) });
   });
-  return rows;
+  return groups;
 }
 
 function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }: {
@@ -215,8 +262,10 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
   const { locale, t } = useI18n();
   const [picked, setPicked] = useState<string[]>([]);
   const [draft, setDraft] = useState("");
-  // 개별 행 체크 상태 — 기본 전부 포함, 끈 행만 "opId/rowKey"로 기록
-  const [excluded, setExcluded] = useState<Set<string>>(new Set());
+  // 검색창 포커스 여부 — 입력이 없어도 포커스만 하면 전체 오퍼 목록을 펼쳐 보여준다.
+  const [focused, setFocused] = useState(false);
+  // 그룹별 목표 단계 — "opId/groupKey" → 포함할 앞쪽 단계 수. 없으면 전체(steps.length) 기본.
+  const [targets, setTargets] = useState<Record<string, number>>({});
 
   const byId = useMemo(() => new Map(operators.map((operator) => [operator.id, operator])), [operators]);
   // 비용 데이터가 있는 오퍼만 (로봇 등 정예화·스킬 없는 유닛 제외) · 미래시 토글 반영
@@ -224,28 +273,30 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
     operators.filter((operator) => costs.ops[operator.id] && (includeFuture || !operator.unreleased)),
     [operators, includeFuture]);
   const keyword = draft.trim().toLowerCase();
-  const matches = keyword
-    ? pool.filter((operator) => !picked.includes(operator.id) &&
-        [operator.name, operator.code, ...operator.aliases].join(" ").toLowerCase().includes(keyword)).slice(0, 8)
-    : [];
+  // 포커스만 해도 전체 목록(선택 안 된 오퍼)을 보여주고, 입력이 있으면 그 안에서 필터링한다.
+  // operators는 성급 오름차순이라 그대로 자르면 저성급만 나온다 → 성급·출시순 내림차순으로 정렬.
+  const candidates = pool
+    .filter((operator) => !picked.includes(operator.id))
+    .sort((a, b) => b.rarity - a.rarity || b.seq - a.seq);
+  // 성급·출시순 정렬은 유지하되 개수 제한 없이 전 성급(1~6성)을 다 보여주고 목록은 스크롤한다.
+  const matches = !focused
+    ? []
+    : keyword
+        ? candidates.filter((operator) => [operator.name, operator.code, ...operator.aliases].join(" ").toLowerCase().includes(keyword))
+        : candidates;
 
-  const toggleRow = (opId: string, rowKey: string) =>
-    setExcluded((current) => {
-      const next = new Set(current);
-      const key = `${opId}/${rowKey}`;
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
+  const targetOf = (opId: string, group: CostGroup) => targets[`${opId}/${group.key}`] ?? group.steps.length;
+  // 단계 pos(0-index)를 클릭 → 목표를 pos+1로(앞 단계 자동 포함). 이미 최상단이면 pos로 낮춰 해제.
+  const clickStep = (opId: string, group: CostGroup, pos: number) =>
+    setTargets((current) => {
+      const key = `${opId}/${group.key}`;
+      const now = current[key] ?? group.steps.length;
+      return { ...current, [key]: now === pos + 1 ? pos : pos + 1 };
     });
-  // 오퍼 단위 전체 선택/해제 — 하나라도 꺼져 있으면 전체 선택, 모두 켜져 있으면 전체 해제
-  const toggleAll = (opId: string, rowKeys: string[]) =>
-    setExcluded((current) => {
-      const next = new Set(current);
-      const anyOff = rowKeys.some((rowKey) => next.has(`${opId}/${rowKey}`));
-      for (const rowKey of rowKeys) {
-        if (anyOff) next.delete(`${opId}/${rowKey}`);
-        else next.add(`${opId}/${rowKey}`);
-      }
+  const setAllGroups = (opId: string, groups: CostGroup[], full: boolean) =>
+    setTargets((current) => {
+      const next = { ...current };
+      for (const group of groups) next[`${opId}/${group.key}`] = full ? group.steps.length : 0;
       return next;
     });
 
@@ -256,10 +307,12 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
       const operator = byId.get(id);
       const entry = costs.ops[id];
       if (!operator || !entry) continue;
-      for (const row of buildRows(operator, entry, t)) {
-        if (excluded.has(`${id}/${row.key}`)) continue;
-        lmd += row.lmd;
-        addCost(map, row.items);
+      for (const group of buildGroups(operator, entry, t)) {
+        const target = targets[`${id}/${group.key}`] ?? group.steps.length;
+        for (let pos = 0; pos < target; pos += 1) {
+          lmd += group.steps[pos].lmd;
+          addCost(map, group.steps[pos].items);
+        }
       }
     }
     const rows = Array.from(map.entries())
@@ -267,7 +320,7 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
       .filter((row) => row.meta)
       .sort((a, b) => b.meta.rarity - a.meta.rarity || a.meta.sortId - b.meta.sortId);
     return { lmd, rows };
-  }, [picked, excluded, byId, t]);
+  }, [picked, targets, byId, t]);
 
   const addOp = (id: string) => { setPicked((current) => [...current, id]); setDraft(""); };
   const removeOp = (id: string) =>
@@ -278,16 +331,24 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
       <div className="cost-calc-head">
         <span className="section-no">COST CALCULATOR</span>
         <h3>{t("육성 비용 계산기")}</h3>
-        <p>{t("오퍼레이터를 추가하면 정예화 1·2, 스킬 레벨 2~7, 스킬별 특화 1~3, 모듈별 1~3단계 비용이 전부 개별 행으로 나옵니다. 원하는 단계만 체크해 합산하세요. 재료 아이콘을 클릭하면 상세 정보가 열립니다.")}</p>
+        <p>{t("오퍼레이터를 추가하면 정예화 1·2, 스킬 레벨 2~7, 스킬별 특화 1~3, 모듈별 1~3단계가 전부 개별 행으로 나옵니다. 각 그룹에서 목표 단계를 클릭하면 앞 단계가 자동 포함돼 합산됩니다. 재료 아이콘을 클릭하면 상세 정보가 열립니다.")}</p>
       </div>
       <div className="cost-tools">
         <div className="search-wrap cost-search">
           <span>⌕</span>
-          <input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder={t("오퍼레이터 이름·별명 검색 후 추가")} aria-label={t("오퍼레이터 이름·별명 검색 후 추가")} />
+          <input
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            onFocus={() => setFocused(true)}
+            // 목록 항목 클릭이 먼저 처리되도록 blur는 살짝 지연
+            onBlur={() => window.setTimeout(() => setFocused(false), 150)}
+            placeholder={t("클릭하면 전체 오퍼레이터 · 이름·별명 입력 시 필터")}
+            aria-label={t("오퍼레이터 이름·별명 검색 후 추가")}
+          />
           {matches.length > 0 && (
             <div className="cost-suggest" role="listbox">
               {matches.map((operator) => (
-                <button key={operator.id} type="button" onClick={() => addOp(operator.id)}>
+                <button key={operator.id} type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => addOp(operator.id)}>
                   <img src={operator.image} alt="" loading="lazy" decoding="async" />
                   <b>{operator.name}</b>
                   <small>{"★".repeat(operator.rarity)}</small>
@@ -308,41 +369,47 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
               const operator = byId.get(id);
               const entry = costs.ops[id];
               if (!operator || !entry) return null;
-              const rows = buildRows(operator, entry, t);
-              const anyOff = rows.some((row) => excluded.has(`${id}/${row.key}`));
-              // 같은 그룹(정예화/스킬/특화 스킬/모듈)의 첫 행에만 그룹 라벨을 표시
-              let lastGroup = "";
+              const groups = buildGroups(operator, entry, t);
+              const allFull = groups.every((group) => targetOf(id, group) === group.steps.length);
               return (
                 <article key={id} className="cost-op" style={{ "--accent": operator.accent } as React.CSSProperties}>
                   <header>
                     <img src={operator.image} alt="" />
                     <button type="button" className="cost-chip-name" onClick={() => onShowOperator(id)} title={t("{name} 상세 정보 열기", { name: operator.name })}>{operator.name}</button>
                     {operator.unreleased && <em className="future-badge">{t("미실장")}</em>}
-                    <button type="button" className="cost-op-all" onClick={() => toggleAll(id, rows.map((row) => row.key))}>
-                      {anyOff ? t("모두 선택") : t("모두 해제")}
+                    <button type="button" className="cost-op-all" onClick={() => setAllGroups(id, groups, !allFull)}>
+                      {allFull ? t("모두 해제") : t("모두 선택")}
                     </button>
                     <button type="button" className="cost-chip-remove" onClick={() => removeOp(id)} aria-label={t("{name} 제외", { name: operator.name })}>×</button>
                   </header>
                   <div className="cost-rows">
-                    {rows.map((row) => {
-                      const showGroup = row.group !== lastGroup;
-                      lastGroup = row.group;
-                      const off = excluded.has(`${id}/${row.key}`);
-                      return (
-                        <div key={row.key} className={`cost-row${showGroup ? " group-start" : ""}${off ? " off" : ""}`}>
-                          <label className="cost-row-check">
-                            <input type="checkbox" checked={!off} onChange={() => toggleRow(id, row.key)} aria-label={`${row.group} ${row.step}`} />
-                          </label>
-                          <span className="cost-row-group">{showGroup ? row.group : ""}</span>
-                          <span className="cost-row-step">{row.step}</span>
-                          <span className="cost-row-items">
-                            {row.lmd > 0 && <ItemChip id="4001" count={row.lmd} onShowItem={onShowItem} locale={locale} />}
-                            {row.items.map(([itemId, count]) => (
-                              <ItemChip key={itemId} id={itemId} count={count} onShowItem={onShowItem} locale={locale} />
-                            ))}
-                          </span>
-                        </div>
-                      );
+                    {groups.map((group) => {
+                      const target = targetOf(id, group);
+                      return group.steps.map((row, pos) => {
+                        const on = pos < target;
+                        const first = pos === 0;
+                        // 레일 모양: 켜진 구간은 이어지고, 목표 지점이 마지막 채워진 노드
+                        const railClass = !on ? "rail-off" : pos + 1 === target ? "rail-head" : "rail-on";
+                        return (
+                          <div key={group.key + pos} className={`cost-row${first ? " group-start" : ""}${on ? "" : " off"}`}>
+                            <button
+                              type="button"
+                              className={`cost-step-dot ${railClass}${first ? " first" : ""}${pos === group.steps.length - 1 ? " last" : ""}`}
+                              onClick={() => clickStep(id, group, pos)}
+                              aria-pressed={on}
+                              title={on ? t("{label} {step}까지 육성 (클릭 시 제외)", { label: group.label, step: row.step }) : t("{label} {step}까지 육성", { label: group.label, step: row.step })}
+                            />
+                            <span className="cost-row-group">{first ? group.label : ""}</span>
+                            <span className="cost-row-step">{row.step}</span>
+                            <span className="cost-row-items">
+                              {row.lmd > 0 && <ItemChip id="4001" count={row.lmd} onShowItem={onShowItem} locale={locale} />}
+                              {row.items.map(([itemId, count]) => (
+                                <ItemChip key={itemId} id={itemId} count={count} onShowItem={onShowItem} locale={locale} />
+                              ))}
+                            </span>
+                          </div>
+                        );
+                      });
                     })}
                   </div>
                 </article>
@@ -352,7 +419,7 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
           <div className="cost-result">
             <div className="cost-total-head">
               <b>{t("합계")}</b>
-              <button type="button" className="cost-clear" onClick={() => { setPicked([]); setExcluded(new Set()); }}>{t("전체 비우기")}</button>
+              <button type="button" className="cost-clear" onClick={() => { setPicked([]); setTargets({}); }}>{t("전체 비우기")}</button>
             </div>
             <div className="cost-lmd">
               <img src="/items/4001.png" alt="" />
