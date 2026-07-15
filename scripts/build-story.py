@@ -290,9 +290,14 @@ def kr_story_thumbs():
         bundles.append(string_at(f) if f else "")
 
     thumb_dir = os.path.join(REPO, "public", "story")
-    # 원하는 텍스처 basename(소문자) → 저장 경로
+    # KR 서버가 아직 한글화하지 않은 최신 장(15·16)은 타이틀 카드가 영문뿐이라,
+    # 텍스트 없는 해당 장 대표 CG(로케일 무관)를 세로형 크롭해 대체한다.
+    MAIN_OVERRIDE = {15: "60_i23", 16: "66_i14"}
+    # 원하는 텍스처 basename(소문자) → 저장 경로 (오버라이드 장은 타이틀 카드 추출에서 제외)
     wanted = {}
     for i in range(17):
+        if i in MAIN_OVERRIDE:
+            continue
         wanted[f"avg_ep{i:02d}"] = os.path.join(thumb_dir, f"main_{i}.jpg")
     for i in range(1, 6):
         wanted[f"pic_rogue_{i}_kv1"] = os.path.join(thumb_dir, f"rogue_{i}.jpg")
@@ -321,6 +326,12 @@ def kr_story_thumbs():
             png = io.BytesIO(); d.image.save(png, format="PNG")
             to_portrait_jpeg(png.getvalue(), dest)
             print("kr thumb:", dest); count += 1
+    # 한글 미출시 장 대체 CG (cn 레포 = 텍스트 없는 일러스트라 로케일 무관)
+    for n, cg in MAIN_OVERRIDE.items():
+        dest = os.path.join(thumb_dir, f"main_{n}.jpg")
+        png = fetch(f"{ASSETS}/avg/images/{cg}.png", binary=True)
+        to_portrait_jpeg(png, dest)
+        print("kr thumb(override CG):", dest, f"({cg})"); count += 1
     print(f"한국판 메인/로그라이크 썸네일 {count}장 생성 (resVersion {ver['resVersion']})")
 
 if len(sys.argv) > 1 and sys.argv[1] == "--kr-story-thumbs":
