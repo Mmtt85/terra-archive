@@ -10,7 +10,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import storiesData from "./data/stories.json";
 import summariesData from "./data/story-summaries.json";
 import chronologyData from "./data/chronology.json";
+import imageDimsData from "./data/story-image-dims.json";
 import { rich, useI18n, type Locale } from "./i18n";
+
+// CG·삽화의 실측 크기 (scripts/measure-story-images.py) — width/height를 박아 로딩 중
+// 레이아웃 밀림(CLS)을 없앤다. 브라우저가 렌더 폭에 맞춰 높이를 미리 예약한다.
+const imageDims = imageDimsData as Record<string, [number, number]>;
 
 type LocText = { ko: string; en?: string; ja?: string };
 type StoryEvent = { id: string; name: LocText; start: string; episodes: number; thumb: string; thumbEn?: string; thumbJa?: string };
@@ -146,13 +151,16 @@ function StoryDetail({ event, summary, onClose, onShowOperator }: {
           <div className="story-body" ref={bodyRef}>
             {summary.blocks.map((block, index) => {
               if (block.t === "h") return <h3 key={index} data-idx={index}>{block.x}</h3>;
-              if (block.t === "img")
+              if (block.t === "img") {
+                const dim = imageDims[block.src];
                 return (
                   <figure key={index} data-idx={index}>
-                    <img src={block.src} alt={block.cap ?? ""} loading="lazy" decoding="async" />
+                    <img src={block.src} alt={block.cap ?? ""} loading="lazy" decoding="async"
+                      width={dim?.[0]} height={dim?.[1]} />
                     {block.cap && <figcaption>{block.cap}</figcaption>}
                   </figure>
                 );
+              }
               if (block.t === "quote")
                 return (
                   <blockquote key={index} data-idx={index}>
@@ -161,13 +169,16 @@ function StoryDetail({ event, summary, onClose, onShowOperator }: {
                   </blockquote>
                 );
               // 장식 삽화 — 본문 옆에 작게 떠 있고 레일 추적(data-idx) 대상은 아니다
-              if (block.t === "deco")
+              if (block.t === "deco") {
+                const dim = imageDims[block.src];
                 return (
                   <figure key={index} className={`story-deco story-deco-${block.side ?? "right"}`}>
-                    <img src={block.src} alt={block.cap ?? ""} loading="lazy" decoding="async" />
+                    <img src={block.src} alt={block.cap ?? ""} loading="lazy" decoding="async"
+                      width={dim?.[0]} height={dim?.[1]} />
                     {block.cap && <figcaption>{block.cap}</figcaption>}
                   </figure>
                 );
+              }
               return <p key={index} data-idx={index}>{rich(block.x)}</p>;
             })}
           </div>

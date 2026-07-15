@@ -3940,6 +3940,7 @@ footer p {
 }
 .story-body figure img {
   width: 100%;
+  height: auto;   /* width/height 속성의 비율로 높이 예약 (CLS 방지) */
   display: block;
 }
 .story-body figcaption {
@@ -3969,6 +3970,7 @@ footer p {
 }
 .story-body figure.story-deco img {
   width: 100%;
+  height: auto;   /* 정사각 조각상 — 비율 예약으로 밀림 방지 */
   border: 1px solid var(--line);
   border-radius: 10px;
   background: var(--white);
