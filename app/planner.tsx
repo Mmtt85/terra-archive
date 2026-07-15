@@ -238,14 +238,16 @@ function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx): OpBrea
       continue;
     }
     // same-room skill-tag counting (도로시: 라인테크류 1개당 +5% / 브라이오피타: 금속공예류 +5%)
-    // 계열 판정은 build-infra.py가 정리한 families 카탈로그 우선, 없으면 KR 원본 이름 부분매칭
-    // (로케일 무관 — krName에 KR 원본 보존). 같은 방 팀원의 활성 스킬을 세어 계열 수만큼 가산.
+    // 계열 판정은 build-infra.py가 정리한 families 카탈로그 우선. 폴백도 부분매칭이 아니라
+    // **정확 명칭**("<태그>" 또는 "<태그> α/β/γ")만 인정 — '비표준화'류 오포함 방지, 사용자
+    // 확정 2026-07. (컨빅션 "작전기록류 +35%"의 '~류'는 제품 분류라 계열이 아님)
     if (skill.perSkillTag && skill.perSkillValue) {
       const tag = skill.perSkillTag;
       let count = 0;
       for (const member of team) for (const active of activeSkills(member, room, ctx.product)) {
+        const raw = (active.krName ?? active.name).trim();
         const inFamily = active.families ? active.families.includes(tag)
-          : (active.krName ?? active.name).replace(/\s/g, "").includes(tag);
+          : raw.startsWith(tag) && raw.slice(tag.length).trim().length <= 2 && !/[가-힣]/.test(raw.slice(tag.length));
         if (inFamily) count += 1;
       }
       out.efficiency += skill.perSkillValue * count;
@@ -680,8 +682,11 @@ function buildPlan(packageTokens: string[], roster: InfraOp[], factionSets = fal
           const holders = freeOps.filter((op) => activeSkills(op, room, ctx.product).some((sk) => sk.perSkillTag && sk.perSkillValue));
           for (const holder of holders) {
             const tags = new Set(activeSkills(holder, room, ctx.product).flatMap((sk) => (sk.perSkillTag ? [sk.perSkillTag] : [])));
-            const isFam = (op: InfraOp) => op.id !== holder.id && activeSkills(op, room, ctx.product).some((sk) =>
-              sk.families ? sk.families.some((f) => tags.has(f)) : [...tags].some((t) => (sk.krName ?? sk.name).replace(/\s/g, "").includes(t)));
+            const isFam = (op: InfraOp) => op.id !== holder.id && activeSkills(op, room, ctx.product).some((sk) => {
+              if (sk.families) return sk.families.some((f) => tags.has(f));
+              const raw = (sk.krName ?? sk.name).trim(); // 폴백도 정확 명칭만 — 부분매칭 금지
+              return [...tags].some((t) => raw.startsWith(t) && raw.slice(t.length).trim().length <= 2 && !/[가-힣]/.test(raw.slice(t.length)));
+            });
             let team = seedKeep.some((op) => op.id === holder.id) ? [...seedKeep] : [...seedKeep, holder];
             if (team.length > slots) continue;
             // 전체 자유 풀에서 한계 기여 순으로 채우되, **동률이면 계열 요원 우선**(미세 보정 +1e-4).

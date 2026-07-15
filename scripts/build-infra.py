@@ -418,11 +418,16 @@ for o in operators:
 # 어떤 스킬이 어느 계열(라인테크류·금속공예류 등)에 속하는지 미리 정리해 둔다.
 # 계열 태그 = 스킬들이 실제로 참조하는 perSkillTag 값들의 집합. 각 스킬엔 자기가 속한 계열을
 # families로 달고, 최상위 skillFamilies에 태그→오퍼명 목록을 정리해 스코어링·검수에 쓴다.
+# 계열 판정은 부분 문자열이 아니라 **정확 명칭**: 스킬명이 "<태그>" 또는 "<태그> α/β/γ" 꼴일 때만
+# (사용자 확정 2026-07: 표준화류 = 표준화 α/β 같은 스킬들. '비표준화'류 오포함 방지.
+#  컨빅션 "작전기록류 생산력 +35%"의 '작전기록류'는 제품 분류라 스킬 계열이 아님)
 family_tags = sorted({sk["perSkillTag"] for op in infra_ops for sk in op["skills"] if sk.get("perSkillTag")})
+def in_family(name, tag):
+    return bool(re.fullmatch(rf"{re.escape(tag)}\s*[^가-힣]{{0,2}}", (name or "").strip()))
 skill_families = {tag: [] for tag in family_tags}
 for op in infra_ops:
     for sk in op["skills"]:
-        fams = [tag for tag in family_tags if tag in (sk.get("name") or "").replace(" ", "")]
+        fams = [tag for tag in family_tags if in_family(sk.get("name"), tag)]
         if fams:
             sk["families"] = fams
             for tag in fams:
