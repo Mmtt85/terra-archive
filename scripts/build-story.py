@@ -192,6 +192,53 @@ def kr_thumbs():
 if len(sys.argv) > 1 and sys.argv[1] == "--kr-thumbs":
     kr_thumbs(); sys.exit(0)
 
+# ── --main-thumbs: 메인스토리 17장 썸네일 (에피소드 타이틀 카드) ─────────
+# 메인스토리(main_N)는 storyEntryPicId가 없어 스토리 회고 썸네일이 없다.
+# 각 장 오프닝 타이틀 카드 avg/images/avg_ep<NN>.png 를 세로형으로 중앙 크롭해 쓴다.
+# CN판 카드는 중국어 부제가 박혀 있어 금지(사용자 확정) — 글로벌(en)/일본(jp)판을 쓴다.
+#   · ko·en: en판 카드 → public/story/main_N.jpg
+#   · ja: jp판 카드 → public/story/ja/main_N.jpg
+def to_portrait_jpeg(png_bytes, dest, ratio=404/491, max_px=720):
+    """PNG를 세로형(404:491)으로 중앙 크롭 후 jpeg 저장 (macOS sips)."""
+    tmp = dest + ".tmp.png"
+    open(tmp, "wb").write(png_bytes)
+    info = subprocess.run(["sips", "-g", "pixelWidth", "-g", "pixelHeight", tmp],
+                          capture_output=True, text=True).stdout
+    w = int(re.search(r"pixelWidth: (\d+)", info).group(1))
+    h = int(re.search(r"pixelHeight: (\d+)", info).group(1))
+    cw = min(w, int(round(h * ratio)))
+    subprocess.run(["sips", "-c", str(h), str(cw), tmp, "--out", tmp], capture_output=True)
+    ok = subprocess.run(["sips", "-Z", str(max_px), "-s", "format", "jpeg",
+                         "-s", "formatOptions", "80", tmp, "--out", dest], capture_output=True).returncode == 0
+    os.remove(tmp)
+    return ok
+
+def main_thumbs():
+    review = fetch(f"{GAMEDATA}/kr/gamedata/excel/story_review_table.json")
+    ids = sorted((v["id"] for v in review.values() if v.get("entryType") == "MAINLINE"),
+                 key=lambda x: int(x.split("_")[1]))
+    thumb_dir = os.path.join(REPO, "public", "story")
+    ja_dir = os.path.join(thumb_dir, "ja")
+    os.makedirs(ja_dir, exist_ok=True)
+    count = 0
+    for eid in ids:
+        n = int(eid.split("_")[1])
+        pic = f"avg_ep{n:02d}"
+        for base_url, dest in ((ASSETS_EN, os.path.join(thumb_dir, f"{eid}.jpg")),
+                               (ASSETS_JP, os.path.join(ja_dir, f"{eid}.jpg"))):
+            if os.path.exists(dest):
+                print("skip:", dest); continue
+            try:
+                png = fetch(f"{base_url}/avg/images/{pic}.png", binary=True)
+                to_portrait_jpeg(png, dest)
+                print("main thumb:", dest); count += 1
+            except Exception as err:  # noqa: BLE001
+                print("FAIL:", eid, pic, err, file=sys.stderr)
+    print(f"메인스토리 썸네일 {count}장 생성")
+
+if len(sys.argv) > 1 and sys.argv[1] == "--main-thumbs":
+    main_thumbs(); sys.exit(0)
+
 # ── 기본: stories.json + 썸네일 ─────────────────────────────
 print("fetching story_review_table (kr/en/jp) …", file=sys.stderr)
 kr = fetch(f"{GAMEDATA}/kr/gamedata/excel/story_review_table.json")

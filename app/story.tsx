@@ -28,7 +28,7 @@ type Arc = { id: string; name: LocText };
 type RawEntry = { ref?: string; id?: string; kind: ChronKind; title?: LocText; terraYear?: number | null; arc?: string | null; dateNote?: string };
 type Chronology = { note: string; updated?: string; arcs: Arc[]; entries: RawEntry[] };
 // 연대기 항목 하나(이벤트 ref는 stories.json에서 이름·썸네일·출시월을 끌어온다)
-type ChronItem = { key: string; kind: ChronKind; name: LocText; start?: string; thumb?: string; terraYear: number | null; arc: string | null; eventId?: string; dateNote?: string };
+type ChronItem = { key: string; kind: ChronKind; name: LocText; start?: string; thumb?: string; thumbJa?: string; terraYear: number | null; arc: string | null; eventId?: string; dateNote?: string; epNo?: number; ep?: LocText };
 
 const data = storiesData as { updated: string; events: StoryEvent[] };
 const summaries = summariesData as Record<string, Summary>;
@@ -178,6 +178,13 @@ function StoryDetail({ event, summary, onClose, onShowOperator }: {
   );
 }
 
+// 메인스토리 에피소드 번호 라벨 (KR 존 테이블 표기: 프롤로그 / 에피소드 N, EN Episode, JP 序章·第N章)
+const EP_KANJI = ["〇", "一", "二", "三", "四", "五", "六", "七", "八", "九", "十", "十一", "十二", "十三", "十四", "十五", "十六"];
+function epLabel(n: number): LocText {
+  if (n === 0) return { ko: "프롤로그", en: "Prologue", ja: "序章" };
+  return { ko: `에피소드 ${n}`, en: `Episode ${n}`, ja: `第${EP_KANJI[n] ?? n}章` };
+}
+
 // chronology.json 항목 → 표시용 ChronItem (이벤트는 stories.json에서 이름/썸네일/출시월 병합)
 const eventById = new Map(data.events.map((e) => [e.id, e]));
 function resolveChron(): ChronItem[] {
@@ -192,10 +199,16 @@ function resolveChron(): ChronItem[] {
         eventId: ev ? raw.ref : undefined, dateNote: raw.dateNote,
       };
     }
+    const isMain = raw.kind === "main" && /^main_\d+$/.test(raw.id ?? "");
+    const epNo = isMain ? Number((raw.id as string).split("_")[1]) : undefined;
     return {
       key: raw.id ?? `x${i}`, kind: raw.kind,
       name: raw.title ?? { ko: raw.id ?? "?" },
       terraYear: raw.terraYear ?? null, arc: raw.arc ?? null, dateNote: raw.dateNote,
+      epNo,
+      ep: epNo != null ? epLabel(epNo) : undefined,
+      thumb: isMain ? `/story/${raw.id}.jpg` : undefined,
+      thumbJa: isMain ? `/story/ja/${raw.id}.jpg` : undefined,
     };
   });
 }
@@ -398,7 +411,7 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
             <em className="chron-kind" style={{ background: tip.item.arc ? arcColor(tip.item.arc) : "#8b9294" }}>{t(KIND_KO[tip.item.kind])}</em>
             {tip.item.arc && <em className="chron-tip-arc" style={{ color: arcColor(tip.item.arc) }}>{arcName(tip.item.arc)}</em>}
           </span>
-          <b>{locText(locale, tip.item.name)}</b>
+          <b>{tip.item.ep ? `${locText(locale, tip.item.ep)} · ` : ""}{locText(locale, tip.item.name)}</b>
           <span className="chron-tip-meta">{tip.item.start ?? yearLabel(tip.item)}{tip.item.eventId ? ` · ${t("클릭해서 열기")}` : ""}</span>
         </div>
       )}
@@ -413,6 +426,7 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
                   <button type="button" className={`chron-item k-${it.kind}${it.eventId ? "" : " nolink"}`}
                     onClick={() => openIf(it)} disabled={!it.eventId} title={it.dateNote}>
                     <span className="chron-kind" style={it.arc ? { background: arcColor(it.arc) } : undefined}>{t(KIND_KO[it.kind])}</span>
+                    {it.ep && <span className="chron-item-ep">{locText(locale, it.ep)}</span>}
                     <span className="chron-item-name">{locText(locale, it.name)}</span>
                     {it.terraYear != null && <span className="chron-item-year">{t("테라력 {y}년", { y: it.terraYear })}</span>}
                     <span className="chron-item-meta">{it.start ?? "—"}</span>
@@ -427,12 +441,12 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
   );
 }
 
-// 요약 뷰 — 이벤트·메인스토리·로그라이크 카드 그리드 + 검색 + 전체/테마별/종류별 그룹핑.
-// 요약이 있는 이벤트만 열리고, 나머지는 '요약 준비 중' 카드로 표시된다.
+// 요약 뷰 — 이벤트·메인스토리·로그라이크 카드 그리드 + 검색 + 종류별/테마별 그룹핑(기본 종류별).
+// 각 그룹은 최신순(이벤트=출시월, 메인=에피소드 번호). 요약이 있는 이벤트만 열린다.
 function DigestView({ onOpen }: { onOpen: (event: StoryEvent) => void }) {
   const { locale, t } = useI18n();
   const [query, setQuery] = useState("");
-  const [group, setGroup] = useState<"all" | "theme" | "kind">("all");
+  const [group, setGroup] = useState<"theme" | "kind">("kind");
 
   const keyword = query.trim().toLowerCase();
   const filtered = useMemo(() => {
@@ -441,9 +455,19 @@ function DigestView({ onOpen }: { onOpen: (event: StoryEvent) => void }) {
       [it.name.ko, it.name.en, it.name.ja].filter(Boolean).join(" ").toLowerCase().includes(keyword));
   }, [keyword]);
 
-  // 전체(단일 그룹) / 테마별(arc) / 종류별(kind)
+  // 최신순 정렬: 이벤트는 출시월 내림차순(최신 위), 메인스토리는 에피소드 번호 내림차순
+  const recency = (it: ChronItem) => (it.eventId ? eventById.get(it.eventId)?.start : undefined) ?? "";
+  const sortItems = (items: ChronItem[]) => [...items].sort((a, b) => {
+    const sa = recency(a), sb = recency(b);
+    if (sa && sb) { const c = sb.localeCompare(sa); if (c) return c; }
+    else if (sa) return -1;
+    else if (sb) return 1;
+    if (a.epNo != null && b.epNo != null) return b.epNo - a.epNo;
+    return b.key.localeCompare(a.key);
+  });
+
+  // 테마별(arc) / 종류별(kind) — 각 그룹 내부는 최신순
   const groups = useMemo(() => {
-    if (group === "all") return [{ key: "all", label: "", color: undefined as string | undefined, sort: 0, items: filtered }];
     const map = new Map<string, { key: string; label: string; color?: string; sort: number; items: ChronItem[] }>();
     for (const it of filtered) {
       let k: string, label: string, color: string | undefined, sort: number;
@@ -456,15 +480,19 @@ function DigestView({ onOpen }: { onOpen: (event: StoryEvent) => void }) {
       if (!map.has(k)) map.set(k, { key: k, label, color, sort, items: [] });
       map.get(k)!.items.push(it);
     }
-    return Array.from(map.values()).sort((a, b) => a.sort - b.sort);
+    return Array.from(map.values()).sort((a, b) => a.sort - b.sort)
+      .map((g) => ({ ...g, items: sortItems(g.items) }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [group, filtered, locale, t]);
 
   const renderCard = (it: ChronItem) => {
     const ev = it.eventId ? eventById.get(it.eventId) : undefined;
     const ready = Boolean(it.eventId && summaries[it.eventId]);
-    const thumb = ev ? ((locale === "ja" ? ev.thumbJa : locale === "en" ? ev.thumbEn : undefined) ?? ev.thumb) : undefined;
-    const meta = ev ? `${ev.start} · ${t("에피소드 {n}개", { n: ev.episodes })}` : t(KIND_KO[it.kind]);
+    const thumb = ev
+      ? ((locale === "ja" ? ev.thumbJa : locale === "en" ? ev.thumbEn : undefined) ?? ev.thumb)
+      : ((locale === "ja" ? it.thumbJa : it.thumb) ?? it.thumb);
+    const meta = ev ? `${ev.start} · ${t("에피소드 {n}개", { n: ev.episodes })}`
+      : it.ep ? locText(locale, it.ep) : t(KIND_KO[it.kind]);
     return (
       <article key={it.key} className={`story-card${ready ? "" : " pending"}`}>
         <button type="button" onClick={() => { if (ready && ev) onOpen(ev); }} disabled={!ready}
@@ -491,16 +519,13 @@ function DigestView({ onOpen }: { onOpen: (event: StoryEvent) => void }) {
       <div className="story-tools">
         <div className="search-wrap story-search"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("이벤트 이름 검색")} aria-label={t("이벤트 이름 검색")} /></div>
         <div className="chron-tabs digest-tabs">
-          <button type="button" className={group === "all" ? "on" : ""} onClick={() => setGroup("all")}>{t("전체")}</button>
-          <button type="button" className={group === "theme" ? "on" : ""} onClick={() => setGroup("theme")}>{t("테마별")}</button>
           <button type="button" className={group === "kind" ? "on" : ""} onClick={() => setGroup("kind")}>{t("종류별")}</button>
+          <button type="button" className={group === "theme" ? "on" : ""} onClick={() => setGroup("theme")}>{t("테마별")}</button>
         </div>
       </div>
 
       {filtered.length === 0 ? (
         <p className="recruit-empty">{t("조건에 맞는 이벤트가 없어요.")}</p>
-      ) : group === "all" ? (
-        <div className="story-grid">{filtered.map(renderCard)}</div>
       ) : (
         <div className="digest-groups">
           {groups.map((g) => (

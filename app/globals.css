@@ -3553,9 +3553,9 @@ footer p {
 .chron-note b { color:var(--ink) }
 /* 한 줄 연혁 바 — 트랙 위에 놓인 노드, 가로 스크롤 */
 .chron-railwrap { border:1px solid var(--line); background:linear-gradient(180deg,#fbfbf8,#f4f3ee); padding:20px 20px 16px; margin-bottom:26px }
-.chron-rail { display:flex; align-items:flex-start; gap:0; overflow-x:auto; padding:6px 6px 12px; position:relative }
-.chron-rail::-webkit-scrollbar { height:7px }
-.chron-rail::-webkit-scrollbar-thumb { background:#b9bbb5; border-radius:10px }
+/* 슬라이더로 조작하므로 레일 자체의 네이티브 스크롤바는 숨긴다 (휠·트랙패드 스크롤은 유지) */
+.chron-rail { display:flex; align-items:flex-start; gap:0; overflow-x:auto; padding:6px 6px 12px; position:relative; scrollbar-width:none; -ms-overflow-style:none; max-width:100% }
+.chron-rail::-webkit-scrollbar { display:none; width:0; height:0 }
 /* 연도 세그먼트 — 작은 연도 라벨 + 그 해의 노드들 */
 .chron-railseg { flex:none; display:flex; flex-direction:column; gap:4px; padding:0 9px; border-left:1px dashed #d3d3cb }
 .chron-railseg:first-child { border-left:0; padding-left:2px }
@@ -3613,6 +3613,7 @@ footer p {
 .chron-kind { flex:none; font:800 8px/1 monospace; letter-spacing:.5px; color:#fff; background:#8b9294; padding:4px 5px; border-radius:2px; white-space:nowrap }
 .chron-item-name { flex:1 1 auto; font-size:12.5px; font-weight:700; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
 .chron-item:disabled .chron-item-name { color:#7a8185 }
+.chron-item-ep { flex:none; font:800 9px monospace; letter-spacing:.2px; color:var(--paper); background:var(--ink); padding:3px 6px; border-radius:2px; white-space:nowrap }
 .chron-item-year { flex:none; font:800 9px monospace; letter-spacing:.3px; color:var(--ink); background:var(--lime); padding:3px 6px; border-radius:2px }
 .chron-item-meta { flex:none; color:var(--muted); font:600 10px monospace }
 .story-search {
