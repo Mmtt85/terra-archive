@@ -616,41 +616,93 @@ function buildPlan(packageTokens: string[], roster: InfraOp[], factionSets = fal
     }
   }
 
-  // ── 조 동시 배치 금지 + 근무 방 비우지 않기 (사용자 확정 2026-07, INFRA-RULES §1) ──
-  // 같은 오퍼가 A조·B조 근무에 동시에 들어가면 못 쉬고 24시간 돌게 되므로 금지한다.
-  // A조(풀파워)를 남기고 B조 중복만 제거하되, 제거로 자리가 비면 벤치 최고 요원으로
-  // 반드시 다시 채운다 — 절대 빈 슬롯을 방치하지 않는다. 사기 비소모 방 숙소(휴식)·
-  // 가공소(상시 슬롯)만 예외로 조 전환과 무관하게 고정.
+  // ── 편성 후 전수 감사 ×3 (사용자 확정 2026-07, INFRA-RULES §1) ────────────────────
+  // 한 번의 그리디로는 "A조=최강·조 동시배치 금지·빈 방 금지" 규칙을 놓치므로, 편성을
+  // 마친 뒤 최대 3회 다시 훑어 교정한다. 매 회: ① A조가 각 방(제품 타입별)에서 최강이
+  // 되도록 B조의 더 나은 요원을 끌어올리고(같은 방타입 내 swap, 시드/예약은 고정) →
+  // ② A·B 동시 배치를 제거하고 → ③ 빈 근무 방을 벤치 최고 요원으로 채운다. 사기 비소모
+  // 방 숙소(휴식)·가공소(상시 슬롯)만 예외로 조 전환과 무관하게 고정.
   {
     const restRoom = (key: string) => { const r = cellByKey.get(key)?.room ?? key; return r === "DORMITORY" || r === "WORKSHOP"; };
     const workKeys = keys.filter((key) => !restRoom(key) && key !== "TRAINING");
     const dormIds = new Set<string>();
     for (let d = 0; d < 4; d += 1) for (const id of assignments[`DORM-${d}`]?.[0] ?? []) dormIds.add(id);
-    for (let shift = 0; shift < SHIFT_COUNT; shift += 1) {
-      const otherWorking = new Set<string>();
-      for (const key of workKeys) for (const id of assignments[key]?.[Math.min(SHIFT_COUNT - 1 - shift, (assignments[key]?.length ?? 1) - 1)] ?? []) otherWorking.add(id);
-      // 1) A조 중복·같은 조 중복 제거하며 이번 조 근무 인원을 재수집
-      const usedThisShift = new Set<string>();
-      for (const key of workKeys) {
-        assignments[key][shift] = (assignments[key][shift] ?? []).filter((id) => !otherWorking.has(id) && !usedThisShift.has(id));
-        for (const id of assignments[key][shift]) usedThisShift.add(id);
+    // 방 타입(방+제품) 그룹 — 트라고디아(작전기록 전용)와 순금 전용을 섞지 않도록 제품까지 묶는다
+    const groups = new Map<string, string[]>();
+    for (const key of workKeys) {
+      const c = cellByKey.get(key);
+      const g = `${c?.room}|${c?.product ?? ""}`;
+      if (!groups.has(g)) groups.set(g, []);
+      groups.get(g)!.push(key);
+    }
+    for (let pass = 0; pass < 3; pass += 1) {
+      let changed = false;
+
+      // ① A조 최강화: 같은 방타입 안에서 B조의 더 나은 요원을 A조로 승격(맞교환)
+      const presentA = new Set<string>([...dormIds]);
+      for (const key of workKeys) for (const id of assignments[key]?.[0] ?? []) presentA.add(id);
+      for (const gkeys of groups.values()) {
+        for (const aKey of gkeys) {
+          const room = cellByKey.get(aKey)?.room ?? aKey;
+          const ctxA = ctxFor(aKey, tokenPoints, factionCountsPerShift[0], plants, presentA);
+          let aTeam = (assignments[aKey][0] ?? []).map((id) => byIdAll.get(id)).filter((op): op is InfraOp => Boolean(op));
+          let improved = true;
+          while (improved) {
+            improved = false;
+            for (let i = 0; i < aTeam.length && !improved; i += 1) {
+              if (reserved.has(aTeam[i].id)) continue; // 시드/예약 요원은 A조 고정
+              for (const bKey of gkeys) {
+                const bTeam = assignments[bKey]?.[1] ?? [];
+                for (const bId of bTeam) {
+                  if (reserved.has(bId) || aTeam.some((o) => o.id === bId)) continue;
+                  const bOp = byIdAll.get(bId);
+                  if (!bOp) continue;
+                  const cand = aTeam.slice(); cand[i] = bOp;
+                  if (teamScore(cand, room, ctxA) > teamScore(aTeam, room, ctxA) + 1e-6) {
+                    const demoted = aTeam[i].id;
+                    assignments[bKey][1] = bTeam.map((x) => (x === bId ? demoted : x));
+                    aTeam = cand; assignments[aKey][0] = aTeam.map((o) => o.id);
+                    presentA.delete(bId); presentA.add(demoted); // 유지되진 않지만 근사
+                    changed = true; improved = true; break;
+                  }
+                }
+                if (improved) break;
+              }
+            }
+          }
+        }
       }
-      // 2) 빈 자리(중복 제거·리페어 DROP 등으로 생긴)를 벤치 최고 요원으로 채운다
-      for (const key of workKeys) {
-        const room = cellByKey.get(key)?.room ?? key;
-        const slots = infra.rooms[room]?.slots ?? 1;
-        const team = assignments[key][shift] ?? [];
-        if (team.length >= slots) continue;
-        const present = new Set<string>([...usedThisShift, ...dormIds]);
-        const ctx = ctxFor(key, shift === 0 ? tokenPoints : {}, factionCountsPerShift[shift], plants, present);
-        const pool = new Map(roster.filter((op) =>
-          !usedThisShift.has(op.id) && !otherWorking.has(op.id) &&
-          (shift > 0 || !reserved.has(op.id) || reserved.get(op.id) === key)).map((op) => [op.id, op]));
-        const seed = team.map((id) => byIdAll.get(id)).filter((op): op is InfraOp => Boolean(op));
-        const filled = bestTeam(room, slots, pool, ctx, seed);
-        assignments[key][shift] = filled.map((op) => op.id);
-        for (const op of filled) usedThisShift.add(op.id);
+
+      // ②·③ 조 동시배치 제거 + 빈 방 재충원
+      for (let shift = 0; shift < SHIFT_COUNT; shift += 1) {
+        const otherWorking = new Set<string>();
+        for (const key of workKeys) for (const id of assignments[key]?.[Math.min(SHIFT_COUNT - 1 - shift, (assignments[key]?.length ?? 1) - 1)] ?? []) otherWorking.add(id);
+        const usedThisShift = new Set<string>();
+        for (const key of workKeys) {
+          const kept = (assignments[key][shift] ?? []).filter((id) => !otherWorking.has(id) && !usedThisShift.has(id));
+          if (kept.length !== (assignments[key][shift] ?? []).length) changed = true;
+          assignments[key][shift] = kept;
+          for (const id of kept) usedThisShift.add(id);
+        }
+        for (const key of workKeys) {
+          const room = cellByKey.get(key)?.room ?? key;
+          const slots = infra.rooms[room]?.slots ?? 1;
+          const team = assignments[key][shift] ?? [];
+          if (team.length >= slots) continue;
+          const present = new Set<string>([...usedThisShift, ...dormIds]);
+          const ctx = ctxFor(key, shift === 0 ? tokenPoints : {}, factionCountsPerShift[shift], plants, present);
+          const pool = new Map(roster.filter((op) =>
+            !usedThisShift.has(op.id) && !otherWorking.has(op.id) &&
+            (shift > 0 || !reserved.has(op.id) || reserved.get(op.id) === key)).map((op) => [op.id, op]));
+          const seed = team.map((id) => byIdAll.get(id)).filter((op): op is InfraOp => Boolean(op));
+          const filled = bestTeam(room, slots, pool, ctx, seed);
+          if (filled.length !== team.length) changed = true;
+          assignments[key][shift] = filled.map((op) => op.id);
+          for (const op of filled) usedThisShift.add(op.id);
+        }
       }
+
+      if (!changed) break;
     }
   }
 
