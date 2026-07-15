@@ -18,7 +18,9 @@ type Block =
   | { t: "h"; x: string }
   | { t: "p"; x: string }
   | { t: "img"; src: string; cap?: string }
-  | { t: "quote"; who: string; x: string };
+  | { t: "quote"; who: string; x: string }
+  // 본문 옆에 작게 떠 있는 장식 삽화 (귀여운 조각상 등) — 레일 추적 대상 아님
+  | { t: "deco"; src: string; cap?: string; side?: "left" | "right" };
 type Entity = { name: string; desc: string; img?: string; alias?: string[]; op?: string };
 type Summary = { tagline: string; chars?: Entity[]; terms?: Entity[]; blocks: Block[] };
 
@@ -47,8 +49,9 @@ function eventFromHash(): StoryEvent | null {
 
 function blockText(block: Block): string {
   if (block.t === "img") return block.cap ?? "";
+  if (block.t === "deco") return "";   // 장식 삽화는 레일 매칭 대상 아님
   if (block.t === "quote") return `${block.who} ${block.x}`;
-  return block.x;
+  return block.t === "h" || block.t === "p" ? block.x : "";
 }
 
 // 세로 중앙 정렬 스택이 일반 노트북 뷰포트(~800px)를 넘지 않는 개수
@@ -156,6 +159,14 @@ function StoryDetail({ event, summary, onClose, onShowOperator }: {
                     <p>{rich(block.x)}</p>
                     <cite>— {block.who}</cite>
                   </blockquote>
+                );
+              // 장식 삽화 — 본문 옆에 작게 떠 있고 레일 추적(data-idx) 대상은 아니다
+              if (block.t === "deco")
+                return (
+                  <figure key={index} className={`story-deco story-deco-${block.side ?? "right"}`}>
+                    <img src={block.src} alt={block.cap ?? ""} loading="lazy" decoding="async" />
+                    {block.cap && <figcaption>{block.cap}</figcaption>}
+                  </figure>
                 );
               return <p key={index} data-idx={index}>{rich(block.x)}</p>;
             })}
