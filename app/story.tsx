@@ -218,6 +218,7 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
   const { locale, t } = useI18n();
   const [tip, setTip] = useState<{ item: ChronItem; x: number; y: number } | null>(null);
   const [activeKey, setActiveKey] = useState<string | null>(null);
+  const [pos, setPos] = useState(0); // 레일 가로 스크롤 진행도 0~1 (슬라이더 썸 위치)
   const arcName = (id: string) => arcNameOf(locale, id);
   const yearLabel = (item: ChronItem) => item.terraYear == null ? t("테라력 미정") : t("테라력 {y}년", { y: item.terraYear });
   const showTip = (e: React.FocusEvent<HTMLButtonElement> | React.MouseEvent<HTMLButtonElement>, it: ChronItem) => {
@@ -241,6 +242,7 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
 
   // 레일(가로)과 목록(세로) 스크롤을 연도 단위로 서로 맞춘다.
   const railRef = useRef<HTMLDivElement>(null);
+  const sliderRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const segRefs = useRef<Map<string, HTMLElement>>(new Map());
   const secRefs = useRef<Map<string, HTMLElement>>(new Map());
@@ -272,7 +274,38 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
     }
     return best ?? groups[0]?.key ?? null;
   };
+  const railMax = () => { const r = railRef.current; return r ? Math.max(1, r.scrollWidth - r.clientWidth) : 1; };
+  // 슬라이더 → 레일 가로 위치(0~1). 레일 onScroll가 아래 목록까지 맞춰준다.
+  const setRailFrac = (frac: number, smooth = false) => {
+    const r = railRef.current; if (!r) return;
+    const f = Math.min(1, Math.max(0, frac));
+    r.scrollTo({ left: f * railMax(), behavior: smooth ? "smooth" : "auto" });
+  };
+  const onSliderDown = (e: React.PointerEvent) => {
+    e.preventDefault();
+    const track = sliderRef.current; if (!track) return;
+    const rect = track.getBoundingClientRect();
+    const move = (clientX: number) => setRailFrac((clientX - rect.left) / rect.width);
+    move(e.clientX);
+    const onMove = (ev: PointerEvent) => move(ev.clientX);
+    const onUp = () => { window.removeEventListener("pointermove", onMove); window.removeEventListener("pointerup", onUp); };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
+  // 양끝 화살표 / 방향키 — 연도 그룹 단위로 이동
+  const stepYear = (dir: 1 | -1) => {
+    const i = groups.findIndex((g) => g.key === activeKey);
+    const j = Math.min(groups.length - 1, Math.max(0, (i < 0 ? 0 : i) + dir));
+    if (groups[j]) goYear(groups[j].key);
+  };
+  const onThumbKey = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowLeft") { e.preventDefault(); stepYear(-1); }
+    else if (e.key === "ArrowRight") { e.preventDefault(); stepYear(1); }
+  };
+
   const onRailScroll = () => {
+    const r = railRef.current;
+    if (r) setPos(r.scrollLeft / railMax());
     if (source.current === "panel") { scheduleReset(); return; }
     source.current = "rail";
     const key = currentKey("rail");
@@ -338,6 +371,20 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
             </div>
           ))}
         </div>
+
+        {/* 연대기 슬라이더 — 드래그하면 위 레일과 아래 목록이 함께 이동, 양끝 화살표는 연도 단위 이동 */}
+        <div className="chron-slider">
+          <button type="button" className="chron-slider-arrow" onClick={() => stepYear(-1)} aria-label={t("이전 연도")}>‹</button>
+          <div className="chron-slider-track" ref={sliderRef} onPointerDown={onSliderDown}>
+            <div className="chron-slider-fill" style={{ width: `${pos * 100}%` }} />
+            <div className="chron-slider-thumb" style={{ left: `${pos * 100}%` }}
+              role="slider" tabIndex={0} aria-label={t("연대기 슬라이더")}
+              aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pos * 100)}
+              onKeyDown={onThumbKey}><span aria-hidden>⇆</span></div>
+          </div>
+          <button type="button" className="chron-slider-arrow" onClick={() => stepYear(1)} aria-label={t("다음 연도")}>›</button>
+        </div>
+
         <div className="chron-legend">
           <span><i className="lg-dot" /> {t("이벤트")}</span>
           <span><i className="lg-dot lg-main" /> {t("메인스토리")}</span>

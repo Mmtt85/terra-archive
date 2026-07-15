@@ -3564,6 +3564,16 @@ footer p {
 .chron-railseg-yr.on { color:var(--ink); background:var(--lime) }
 .chron-railseg-ticks { display:flex; align-items:center; gap:2px; position:relative }
 .chron-railseg-ticks::before { content:""; position:absolute; left:0; right:0; top:50%; height:2px; background:linear-gradient(90deg,#d2d0c9,#9a9c95,#d2d0c9); transform:translateY(-50%); z-index:0 }
+/* 연대기 슬라이더 — 드래그 핸들 + 양끝 화살표 */
+.chron-slider { display:flex; align-items:center; gap:10px; margin-top:14px }
+.chron-slider-arrow { flex:none; width:30px; height:28px; border:1px solid var(--line); background:var(--white); cursor:pointer; font:700 16px/1 monospace; color:var(--ink); border-radius:2px; display:grid; place-items:center; transition:.12s }
+.chron-slider-arrow:hover { border-color:var(--ink); background:var(--ink); color:var(--paper) }
+.chron-slider-track { position:relative; flex:1 1 auto; height:6px; background:#dcdbd4; border-radius:6px; cursor:pointer; touch-action:none }
+.chron-slider-fill { position:absolute; left:0; top:0; height:100%; background:linear-gradient(90deg,#bfc4b7,var(--lime)); border-radius:6px; pointer-events:none }
+.chron-slider-thumb { position:absolute; top:50%; width:22px; height:22px; transform:translate(-50%,-50%); background:var(--ink); border:2px solid var(--lime); border-radius:50%; cursor:grab; box-shadow:0 1px 5px #0003; display:grid; place-items:center; touch-action:none }
+.chron-slider-thumb:active { cursor:grabbing }
+.chron-slider-thumb span { font:800 10px/1 monospace; color:var(--lime); pointer-events:none }
+.chron-slider-thumb:focus-visible { outline:2px solid var(--ink); outline-offset:2px }
 .chron-tick { flex:none; width:15px; height:40px; border:0; background:0 0; padding:0; cursor:pointer; display:grid; place-items:center; position:relative; z-index:1; --arc:#c3c6bf }
 .chron-tick.nolink { cursor:default }
 .chron-tick-dot { width:11px; height:11px; background:var(--arc); border:2px solid #fbfbf8; border-radius:50%; box-shadow:0 1px 3px #0002; transition:transform .12s }
