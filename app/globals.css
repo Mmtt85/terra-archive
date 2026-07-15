@@ -3636,6 +3636,30 @@ footer p {
   object-fit: cover;
   display: block;
 }
+/* 썸네일 없는 항목(메인스토리·로그라이크) 자리표시 */
+.story-thumb-none {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--ink), #2c2f2b);
+}
+.story-thumb-kind {
+  font: 800 12px/1 monospace;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--lime);
+  opacity: 0.75;
+}
+/* 요약 그룹핑(테마별·종류별) 섹션 */
+.digest-groups { display: flex; flex-direction: column; gap: 28px; }
+.digest-group > h3 {
+  margin: 0 0 12px;
+  font-size: 13px; font-weight: 800; letter-spacing: -0.2px;
+  border-left: 3px solid var(--line); padding-left: 9px;
+  display: flex; align-items: center; gap: 8px;
+}
+.digest-group > h3 em { font: 700 10px monospace; color: var(--muted); font-style: normal; }
+.digest-tabs { margin: 0; }
 .story-ready-badge,
 .story-pending-badge {
   position: absolute;

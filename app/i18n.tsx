@@ -614,6 +614,7 @@ const D: Record<string, Pair> = {
   "메인스토리": ["Main Story", "メインストーリー"],
   "로그라이크": ["Roguelike", "ローグライク"],
   "연대순": ["Chronological", "年代順"],
+  "전체": ["All", "すべて"],
   "테마별": ["By theme", "テーマ別"],
   "종류별": ["By type", "種類別"],
   "클릭해서 열기": ["click to open", "クリックで開く"],
