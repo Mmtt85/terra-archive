@@ -1752,12 +1752,12 @@ footer p {
   font-size: 30px;
   letter-spacing: -1.2px;
 }
-/* 우선 생산 모드 세그먼트 (순금/작전기록/밸런스) */
-.prio-seg { display:inline-flex; border:1px solid var(--line); overflow:hidden; border-radius:2px }
-.prio-seg button { border:0; background:var(--white); padding:9px 12px; font-size:12px; font-weight:800; cursor:pointer; letter-spacing:-.2px; color:var(--ink) }
-.prio-seg button + button { border-left:1px solid var(--line) }
-.prio-seg button.on { background:var(--ink); color:var(--paper) }
-.prio-seg button:not(.on):hover { background:#ecebe5 }
+/* 우선 생산 설정 (라디오) — 버튼 줄과 분리된 설정 행, 다음 자동편성부터 적용 */
+.prio-setting { display:flex; flex-wrap:wrap; align-items:center; gap:14px; margin:10px 0 4px; padding:8px 12px; border:1px dashed var(--line); background:#f7f6f1; font-size:12px }
+.prio-label { font:800 11px monospace; letter-spacing:.4px; color:var(--muted) }
+.prio-setting label { display:inline-flex; align-items:center; gap:6px; cursor:pointer; font-weight:700; color:var(--muted) }
+.prio-setting label.on { color:var(--ink) }
+.prio-setting input[type="radio"] { accent-color:var(--ink); margin:0 }
 .planner-buttons {
   display: flex;
   gap: 8px;

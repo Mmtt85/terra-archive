@@ -257,13 +257,17 @@ const D: Record<string, Pair> = {
   "순금 우선": ["Gold first", "純金優先"],
   "작전기록 우선": ["Records first", "作戦記録優先"],
   "밸런스": ["Balanced", "バランス"],
-  "먼저 채우는 방이 최고 요원을 가져갑니다 — 모드를 바꾸면 즉시 다시 편성합니다": [
-    "Rooms filled first get the best operators — switching modes re-optimizes immediately",
-    "先に埋める部屋が最高の要員を確保します — モード変更で即時再編成されます",
+  "먼저 채우는 방이 최고 요원을 가져갑니다 — 다음 자동편성부터 적용됩니다": [
+    "Rooms filled first get the best operators — applies from the next auto-assign",
+    "先に埋める部屋が最高の要員を確保します — 次回の自動編成から適用されます",
   ],
-  "우선 생산 모드: 순금 우선(기본) · 작전기록 우선 · 밸런스(교차). 먼저 채우는 방이 최고 요원을 가져가며, 모드를 바꾸면 즉시 전체 재편성됩니다.": [
-    "Production priority modes: Gold first (default) · Records first · Balanced (interleaved). Rooms filled first get the best operators; switching modes re-optimizes immediately.",
-    "優先生産モード：純金優先（デフォルト）・作戦記録優先・バランス（交互）。先に埋める部屋が最高の要員を確保し、モード変更で即時再編成されます。",
+  "우선 생산 설정을 저장했습니다 — 다음 자동편성부터 적용됩니다": [
+    "Production priority saved — applies from the next auto-assign",
+    "優先生産設定を保存しました — 次回の自動編成から適用されます",
+  ],
+  "우선 생산 설정: 순금 우선(기본) · 작전기록 우선 · 밸런스(교차). 먼저 채우는 방이 최고 요원을 가져갑니다. 설정만 바꾸고, 실제 편성은 전체 자동편성 버튼을 눌러 적용합니다.": [
+    "Production priority setting: Gold first (default) · Records first · Balanced (interleaved). Rooms filled first get the best operators. This is only a setting — press Auto-assign All to apply.",
+    "優先生産設定：純金優先（デフォルト）・作戦記録優先・バランス（交互）。先に埋める部屋が最高の要員を確保します。設定のみ変更され、実際の編成は全自動編成ボタンで適用します。",
   ],
   "A조를 먼저 전수검사 3회로 풀파워로 완성한 뒤, 남은 오퍼레이터만으로 B조를 다시 3회 검수해 편성합니다.": [
     "Shift A is audited up to 3 times first to reach full power, then Shift B is audited 3 more times using only the remaining operators.",

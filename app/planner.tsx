@@ -1038,8 +1038,8 @@ export default function InfraPlanner({ onShowOperator, extra }: { onShowOperator
   const effectiveOpById = useMemo(() => new Map(effectiveOps.map((op) => [op.id, op])), [effectiveOps]);
   const roster = useMemo(() => effectiveOps.filter((op) => ownedIds.has(op.id)), [effectiveOps, ownedIds]);
 
-  const persist = (ids: Set<string>, nextPlan: Plan | null, elite: Map<string, Elite> = eliteById) => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ owned: Array.from(ids), elite: Array.from(elite.entries()), plan: nextPlan })); } catch { /* ignore */ }
+  const persist = (ids: Set<string>, nextPlan: Plan | null, elite: Map<string, Elite> = eliteById, prio: ProdPriority = priority) => {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ owned: Array.from(ids), elite: Array.from(elite.entries()), plan: nextPlan, priority: prio })); } catch { /* ignore */ }
   };
 
   const exportImage = async () => {
@@ -1218,11 +1218,13 @@ export default function InfraPlanner({ onShowOperator, extra }: { onShowOperator
     showToast(t("전체 자동편성을 실행했습니다 · 보유 {n}명 기준", { n: ids.size }));
   };
 
-  // 우선 생산 모드 변경 → 즉시 해당 규칙으로 전체 재편성 (편성 규칙이므로 자동 적용)
+  // 우선 생산 모드는 설정(라디오)일 뿐 — 실제 편성은 기존처럼 자동편성 버튼으로 실행한다
+  // (사용자 확정 2026-07: 설정 변경이 편성을 갈아엎으면 안 됨)
   const setPriority = (prio: ProdPriority) => {
     if (prio === priority) return;
     setPriorityState(prio);
-    runOptimize(ownedIds, eliteById, prio);
+    persist(ownedIds, plan, eliteById, prio);
+    showToast(t("우선 생산 설정을 저장했습니다 — 다음 자동편성부터 적용됩니다"));
   };
 
   // 현재 편성(수동 수정 포함)은 그대로 두고, 빈 슬롯만 한계 기여가 큰 미배치 오퍼로
@@ -1304,7 +1306,8 @@ export default function InfraPlanner({ onShowOperator, extra }: { onShowOperator
         const elite = new Map<string, Elite>((data.elite as [string, Elite][] | undefined) ?? []);
         setOwnedIds(ids);
         setEliteById(elite);
-        if (data.plan) { setPlan(data.plan as Plan); if ((data.plan as Plan).priority) setPriorityState((data.plan as Plan).priority!); return; }
+        if (data.priority) setPriorityState(data.priority as ProdPriority);
+        if (data.plan) { setPlan(data.plan as Plan); if (!data.priority && (data.plan as Plan).priority) setPriorityState((data.plan as Plan).priority!); return; }
         setPlan(optimize(ops.map((op) => withElite(op, elite.get(op.id))).filter((op) => ids.has(op.id))));
         return;
       }
@@ -1360,11 +1363,6 @@ export default function InfraPlanner({ onShowOperator, extra }: { onShowOperator
         </div>
         <div className="planner-buttons">
           <button onClick={() => setShowRoster(true)}><span className="btn-icon" aria-hidden>▦</span>{t("보유 오퍼 설정 ({a}/{b})", { a: ownedIds.size, b: ops.length })}</button>
-          <span className="prio-seg" role="group" aria-label={t("우선 생산")} title={t("먼저 채우는 방이 최고 요원을 가져갑니다 — 모드를 바꾸면 즉시 다시 편성합니다")}>
-            <button className={priority === "gold" ? "on" : ""} onClick={() => setPriority("gold")}>{t("순금 우선")}</button>
-            <button className={priority === "exp" ? "on" : ""} onClick={() => setPriority("exp")}>{t("작전기록 우선")}</button>
-            <button className={priority === "balance" ? "on" : ""} onClick={() => setPriority("balance")}>{t("밸런스")}</button>
-          </span>
           <button className="primary" onClick={() => runOptimize()}><span className="btn-icon" aria-hidden>⟳</span>{t("전체 자동편성")}</button>
           <button onClick={fillGaps} title={t("현재 편성(수동 수정 포함)은 그대로 두고, 남은 빈 자리만 효율 순으로 자동 편성합니다")}><span className="btn-icon" aria-hidden>⊕</span>{t("빈 자리만 자동편성")}</button>
           <button onClick={exportImage} title={t("A조·B조 편성표를 이미지로 확인 (PNG)")}><span className="btn-icon" aria-hidden>⧉</span>{t("이미지로 보기")}</button>
@@ -1377,6 +1375,18 @@ export default function InfraPlanner({ onShowOperator, extra }: { onShowOperator
           </span>
           <button onClick={() => setShowHelp(true)}><span className="btn-icon" aria-hidden>?</span>{t("도움말")}</button>
         </div>
+      </div>
+
+      {/* 우선 생산 설정 (라디오) — 다음 자동편성부터 적용, 편성 실행은 버튼으로 */}
+      <div className="prio-setting" role="radiogroup" aria-label={t("우선 생산")}
+        title={t("먼저 채우는 방이 최고 요원을 가져갑니다 — 다음 자동편성부터 적용됩니다")}>
+        <span className="prio-label">⚙ {t("우선 생산")}</span>
+        {(["gold", "exp", "balance"] as const).map((mode) => (
+          <label key={mode} className={priority === mode ? "on" : ""}>
+            <input type="radio" name="prod-priority" checked={priority === mode} onChange={() => setPriority(mode)} />
+            {t(mode === "gold" ? "순금 우선" : mode === "exp" ? "작전기록 우선" : "밸런스")}
+          </label>
+        ))}
       </div>
 
       {summary && (
@@ -1928,7 +1938,7 @@ const HELP_SECTIONS: { title: string; items: string[] }[] = [
     "'전체 자동편성'은 처음부터 다시 계산하고, '빈 자리만 자동편성'은 현재 편성(수동 수정 포함)을 유지한 채 남은 빈 자리만 한계 기여 순으로 채웁니다.",
   ]},
   { title: "방 우선순위", items: [
-    "우선 생산 모드: 순금 우선(기본) · 작전기록 우선 · 밸런스(교차). 먼저 채우는 방이 최고 요원을 가져가며, 모드를 바꾸면 즉시 전체 재편성됩니다.",
+    "우선 생산 설정: 순금 우선(기본) · 작전기록 우선 · 밸런스(교차). 먼저 채우는 방이 최고 요원을 가져갑니다. 설정만 바꾸고, 실제 편성은 전체 자동편성 버튼을 눌러 적용합니다.",
     "채우는 순서: 제조소-순금 > 제조소-작전기록 > 무역소 > 발전소 > 사무실 > 응접실 — 먼저 채우는 방이 좋은 요원을 가져갑니다. 응접실은 최하위라, 응접실 스킬이 있는 오퍼(쉐라 등)도 상위 방 세트가 우선입니다.",
     "순금 2 + 작전기록 2 분할. 무역소 효율이 오르면 순금이 병목이 되므로 가장 강한 생산 팀을 순금 2방에 먼저 배치하고, 남는 효율을 작전기록으로 돌립니다.",
     "품목 전용 스킬(금속공예류 = 순금)은 해당 품목 방에서만 계산됩니다.",
