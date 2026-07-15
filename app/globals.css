@@ -1752,6 +1752,12 @@ footer p {
   font-size: 30px;
   letter-spacing: -1.2px;
 }
+/* 우선 생산 모드 세그먼트 (순금/작전기록/밸런스) */
+.prio-seg { display:inline-flex; border:1px solid var(--line); overflow:hidden; border-radius:2px }
+.prio-seg button { border:0; background:var(--white); padding:9px 12px; font-size:12px; font-weight:800; cursor:pointer; letter-spacing:-.2px; color:var(--ink) }
+.prio-seg button + button { border-left:1px solid var(--line) }
+.prio-seg button.on { background:var(--ink); color:var(--paper) }
+.prio-seg button:not(.on):hover { background:#ecebe5 }
 .planner-buttons {
   display: flex;
   gap: 8px;

@@ -253,6 +253,22 @@ const D: Record<string, Pair> = {
   "발전소 평균": ["Power avg", "発電所平均"],
   "기용 인원": ["Operators used", "起用人数"],
   "{n}명": ["{n}", "{n}名"],
+  "우선 생산": ["Production priority", "優先生産"],
+  "순금 우선": ["Gold first", "純金優先"],
+  "작전기록 우선": ["Records first", "作戦記録優先"],
+  "밸런스": ["Balanced", "バランス"],
+  "먼저 채우는 방이 최고 요원을 가져갑니다 — 모드를 바꾸면 즉시 다시 편성합니다": [
+    "Rooms filled first get the best operators — switching modes re-optimizes immediately",
+    "先に埋める部屋が最高の要員を確保します — モード変更で即時再編成されます",
+  ],
+  "우선 생산 모드: 순금 우선(기본) · 작전기록 우선 · 밸런스(교차). 먼저 채우는 방이 최고 요원을 가져가며, 모드를 바꾸면 즉시 전체 재편성됩니다.": [
+    "Production priority modes: Gold first (default) · Records first · Balanced (interleaved). Rooms filled first get the best operators; switching modes re-optimizes immediately.",
+    "優先生産モード：純金優先（デフォルト）・作戦記録優先・バランス（交互）。先に埋める部屋が最高の要員を確保し、モード変更で即時再編成されます。",
+  ],
+  "A조를 먼저 전수검사 3회로 풀파워로 완성한 뒤, 남은 오퍼레이터만으로 B조를 다시 3회 검수해 편성합니다.": [
+    "Shift A is audited up to 3 times first to reach full power, then Shift B is audited 3 more times using only the remaining operators.",
+    "まずA班を最大3回の全数検査でフルパワーに仕上げ、その後残りのオペレーターだけでB班を3回検査して編成します。",
+  ],
   "A조 (풀파워)": ["Shift A (full power)", "A班（フルパワー）"],
   "B조 (회복 교대)": ["Shift B (recovery)", "B班（回復交代）"],
   "A조": ["Shift A", "A班"],
