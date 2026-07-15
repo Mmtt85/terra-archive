@@ -13,6 +13,7 @@ import farmData from "./data/farm.json";
 import costsData from "./data/costs.json";
 import type { Operator } from "./home";
 import { useI18n, type Locale } from "./i18n";
+import { normSearch } from "./search";
 
 type LocText = { ko: string; en?: string; ja?: string };
 type FarmStage = {
@@ -99,7 +100,7 @@ export default function FarmGuide({ operators, includeFuture, onShowOperator }: 
     setTiers((current) => (current.includes(tier) ? current.filter((value) => value !== tier) : [...current, tier]));
 
   const visible = useMemo(() => {
-    const keyword = query.trim().toLowerCase();
+    const keyword = normSearch(query);
     return ALL_MATERIALS
       // 상시 파밍 토글은 파밍 가능 재료의 스테이지만 거른다 (파밍 불가 재료는 스테이지가 없음)
       .map((item) => permOnly && item.farmable ? { ...item, stages: item.stages.filter((stage) => PERMANENT_KINDS.has(stage.kind)) } : item)
@@ -111,8 +112,8 @@ export default function FarmGuide({ operators, includeFuture, onShowOperator }: 
       .filter((item) =>
         (tiers.length === 0 || tiers.includes(item.rarity)) &&
         (!keyword ||
-          [item.name.ko, item.name.en, item.name.ja].filter(Boolean).join(" ").toLowerCase().includes(keyword) ||
-          (SEARCH_ALIASES[item.id] ?? []).some((alias) => alias.includes(keyword))));
+          normSearch([item.name.ko, item.name.en, item.name.ja].filter(Boolean).join(" ")).includes(keyword) ||
+          (SEARCH_ALIASES[item.id] ?? []).some((alias) => normSearch(alias).includes(keyword))));
   }, [tiers, query, permOnly, includeFuture]);
 
   return (
@@ -292,7 +293,7 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
   const pool = useMemo(() =>
     operators.filter((operator) => costs.ops[operator.id] && (includeFuture || !operator.unreleased)),
     [operators, includeFuture]);
-  const keyword = draft.trim().toLowerCase();
+  const keyword = normSearch(draft);
   // 포커스만 해도 전체 목록(선택 안 된 오퍼)을 보여주고, 입력이 있으면 그 안에서 필터링한다.
   // operators는 성급 오름차순이라 그대로 자르면 저성급만 나온다 → 성급·출시순 내림차순으로 정렬.
   const candidates = pool
@@ -302,7 +303,7 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
   const matches = !focused
     ? []
     : keyword
-        ? candidates.filter((operator) => [operator.name, operator.code, ...operator.aliases].join(" ").toLowerCase().includes(keyword))
+        ? candidates.filter((operator) => normSearch([operator.name, operator.code, ...operator.aliases].join(" ")).includes(keyword))
         : candidates;
 
   const targetOf = (opId: string, group: CostGroup) => targets[`${opId}/${group.key}`] ?? group.steps.length;

@@ -1023,6 +1023,79 @@ legend {
   color: var(--ink);
   outline: 0;
 }
+/* 재사용 확인 모달 (app/confirm.tsx의 useConfirm) — window.confirm 대체 */
+.confirm-backdrop {
+  z-index: 200;
+  place-items: center;
+}
+.confirm-modal {
+  width: min(400px, 100%);
+  margin: auto;
+  padding: 26px 26px 20px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  box-shadow: 0 24px 70px #0009;
+  position: relative;
+  animation: 0.18s both confirmPop;
+}
+@keyframes confirmPop {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+.confirm-title {
+  margin: 0 0 10px;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.confirm-message {
+  margin: 0 0 22px;
+  font-size: 14px;
+  line-height: 1.65;
+  color: #3a3f41;
+}
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.confirm-actions button {
+  cursor: pointer;
+  padding: 9px 20px;
+  font-size: 13px;
+  font-weight: 700;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: var(--white);
+  color: var(--ink);
+  transition: 0.12s;
+}
+.confirm-cancel:hover {
+  border-color: var(--ink);
+  background: var(--paper);
+}
+.confirm-ok {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+.confirm-ok:hover {
+  background: #000;
+}
+.confirm-ok.danger {
+  background: #c0392b;
+  border-color: #c0392b;
+  color: #fff;
+}
+.confirm-ok.danger:hover {
+  background: #a5301f;
+  border-color: #a5301f;
+}
+.confirm-actions button:focus-visible {
+  outline: 2px solid var(--lime);
+  outline-offset: 2px;
+}
 .modal-hero {
   color: #fff;
   background: linear-gradient(120deg, var(--accent), #151b1e);

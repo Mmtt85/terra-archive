@@ -9,6 +9,7 @@ import broadcastsData from "./data/broadcasts.json";
 import InfraPlanner from "./planner";
 import RecruitHelper from "./recruit";
 import FarmGuide from "./farm";
+import { normSearch } from "./search";
 import StoryGuide from "./story";
 import FeedbackWidget from "./feedback-widget";
 import { feedbackReady, fetchNicknameCounts, submitNickname } from "./feedback";
@@ -579,7 +580,7 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
   }, [selected]);
 
   const filtered = useMemo(() => {
-    const keyword = query.trim().toLowerCase();
+    const keyword = normSearch(query);
     return roster.filter((operator) => {
       const matchesFaction = selectedFactions.length === 0 || selectedFactions.some((faction) => operator.factions.includes(faction));
       const matchesConcept = selectedConcepts.length === 0 || selectedConcepts.some((concept) => operator.concepts.includes(concept));
@@ -591,7 +592,7 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
       const matchesSubProfession = selectedSubProfessions.length === 0 || selectedSubProfessions.includes(operator.subProfession);
       const communityNicknames = nicknames.get(operator.id)?.filter((nick) => nick.votes >= NICKNAME_MIN_VOTES).map((nick) => nick.name) ?? [];
       const conceptNames = operator.concepts.map((concept) => conceptName(locale, concept));
-      const matchesQuery = !keyword || [operator.name, operator.code, operator.job, operator.subProfession, operator.position, ...operator.combatTags, ...operator.factions, operator.reason, ...operator.aliases, ...communityNicknames, ...operator.concepts, ...conceptNames].join(" ").toLowerCase().includes(keyword);
+      const matchesQuery = !keyword || normSearch([operator.name, operator.code, operator.job, operator.subProfession, operator.position, ...operator.combatTags, ...operator.factions, operator.reason, ...operator.aliases, ...communityNicknames, ...operator.concepts, ...conceptNames].join(" ")).includes(keyword);
       return matchesFaction && matchesConcept && matchesMethod && matchesTags && matchesJob && matchesSubProfession && matchesQuery;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps

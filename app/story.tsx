@@ -12,6 +12,7 @@ import summariesData from "./data/story-summaries.json";
 import chronologyData from "./data/chronology.json";
 import imageDimsData from "./data/story-image-dims.json";
 import { rich, useI18n, type Locale } from "./i18n";
+import { normSearch } from "./search";
 
 // CG·삽화의 실측 크기 (scripts/measure-story-images.py) — width/height를 박아 로딩 중
 // 레이아웃 밀림(CLS)을 없앤다. 브라우저가 렌더 폭에 맞춰 높이를 미리 예약한다.
@@ -493,11 +494,11 @@ function DigestView({ onOpen }: { onOpen: (event: StoryEvent) => void }) {
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState<"theme" | "kind">("kind");
 
-  const keyword = query.trim().toLowerCase();
+  const keyword = normSearch(query);
   const filtered = useMemo(() => {
     if (!keyword) return CHRON_ITEMS;
     return CHRON_ITEMS.filter((it) =>
-      [it.name.ko, it.name.en, it.name.ja].filter(Boolean).join(" ").toLowerCase().includes(keyword));
+      normSearch([it.name.ko, it.name.en, it.name.ja].filter(Boolean).join(" ")).includes(keyword));
   }, [keyword]);
 
   // 최신순 정렬: 이벤트는 출시월 내림차순(최신 위), 메인스토리는 에피소드 번호 내림차순

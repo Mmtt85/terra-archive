@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import infraData from "./data/infra.json";
 import { useI18n, tokenName, rich, type ExtraI18n, type Locale, type T } from "./i18n";
+import { useConfirm } from "./confirm";
+import { normSearch } from "./search";
 
 type TokenGen = { token: string; estimate: number; perMember?: { per: number; cap: number; match: string } };
 type TokenUse = { token: string; per: number; value: number; percent: boolean };
@@ -1019,6 +1021,7 @@ export default function InfraPlanner({ onShowOperator, extra }: { onShowOperator
       skills: op.skills.map(loc),
     }));
   }, [extra]);
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const [plan, setPlan] = useState<Plan | null>(null);
   const [priority, setPriorityState] = useState<ProdPriority>("gold"); // 우선 생산 모드
   const [activeShift, setActiveShift] = useState(0);
@@ -1298,9 +1301,15 @@ export default function InfraPlanner({ onShowOperator, extra }: { onShowOperator
   };
 
   // 편성 전체 비우기 — 모든 방을 빈 슬롯으로 되돌린다(수동 배치 시작점). 되돌릴 수 없어 확인을 받는다.
-  const clearAll = () => {
+  const clearAll = async () => {
     if (!plan) return;
-    if (typeof window !== "undefined" && !window.confirm(t("현재 편성을 전부 비웁니다. 계속할까요?"))) return;
+    const ok = await confirm({
+      title: t("편성 전체 비우기"),
+      message: t("현재 편성을 전부 비웁니다. 되돌릴 수 없어요 — 계속할까요?"),
+      confirmLabel: t("비우기"),
+      danger: true,
+    });
+    if (!ok) return;
     const assignments: Record<string, string[][]> = Object.fromEntries(
       Object.entries(plan.assignments).map(([key, shifts]) => [key, shifts.map(() => [])])
     );
@@ -1371,6 +1380,7 @@ export default function InfraPlanner({ onShowOperator, extra }: { onShowOperator
 
   return (
     <section className="planner">
+      {confirmDialog}
       <div className="planner-controls">
         <div>
           <span className="section-no">{t("RIIC / 243 · 순금 2 + 작전기록 2 · 12시간 2조 교대")}</span>
@@ -1559,9 +1569,9 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
         .map((op) => ({ op, delta: Math.round(teamScore([...team, op], cell.room, ctx)) - currentScore }))
         .sort((a, b) => b.delta - a.delta || b.op.rarity - a.op.rarity)
     : [];
-  const benchKeyword = benchQuery.trim().toLowerCase();
+  const benchKeyword = normSearch(benchQuery);
   const benchFiltered = benchKeyword
-    ? benchFull.filter(({ op }) => op.name.toLowerCase().includes(benchKeyword) || op.faction.toLowerCase().includes(benchKeyword))
+    ? benchFull.filter(({ op }) => normSearch(op.name).includes(benchKeyword) || normSearch(op.faction).includes(benchKeyword))
     : benchFull;
   const bench = benchAll ? benchFiltered : benchFiltered.slice(0, 12);
   // synergy cores can't be swapped: token generators/consumers of active
