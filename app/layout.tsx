@@ -44,6 +44,15 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        {/* 정본 도메인 정리 — Cloudflare Pages 기본 도메인(정확히 terra-archive.pages.dev)으로
+            들어온 방문자를 terra-archive.net으로 보낸다. 프리뷰 배포(해시.terra-archive.pages.dev)와
+            localhost는 정확 일치가 아니라 건드리지 않는다. SEO는 canonical(app/seo.ts)이 담당하고
+            이 스크립트는 UX용. 첫 페인트 전에 실행되도록 body 최상단에 둔다. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `if(location.hostname==='terra-archive.pages.dev'){location.replace('https://terra-archive.net'+location.pathname+location.search+location.hash);}`,
+          }}
+        />
         {/* 첫 페인트 전에 해시를 읽어 초기 탭을 표시 — 서버 HTML은 항상 백과사전이라
             #infra·#recruit로 새로고침 시 백과사전이 잠깐 보이는 플래시를 막는다.
             React 하이드레이션 후 home.tsx의 useLayoutEffect가 data-route를 지운다. */}
