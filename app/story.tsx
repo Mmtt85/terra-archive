@@ -106,17 +106,25 @@ function StoryDetail({ event, summary, onClose, onShowOperator }: {
     return () => observer.disconnect();
   }, [summary]);
 
-  // 지금 읽는 위치(맨 아래 문단)부터 판단 — 아래쪽 블록의 엔티티에 우선권을 주고 상한 개수 제한
-  const active = useMemo(() => {
-    const order: number[] = [];
-    [...inView]
-      .sort((a, b) => b - a)
-      .forEach((blockIndex) => {
-        for (const entityIndex of mentions[blockIndex] ?? []) {
-          if (!order.includes(entityIndex)) order.push(entityIndex);
-        }
-      });
-    return order.slice(0, MAX_RAIL_CARDS);
+  // 지금 화면(아래 문단 우선)에 언급된 엔티티. 한 번 뜬 카드는 그 문단이 완전히 사라질 때까지
+  // 자리를 지켜, 4장 제한 때문에 밀렸다 다시 뜨는 깜빡임을 막는다. 빈 자리엔 아래쪽 새 엔티티를 채운다.
+  const [active, setActive] = useState<number[]>([]);
+  useEffect(() => {
+    const ordered: number[] = [];
+    [...inView].sort((a, b) => b - a).forEach((blockIndex) => {
+      for (const entityIndex of mentions[blockIndex] ?? []) {
+        if (!ordered.includes(entityIndex)) ordered.push(entityIndex);
+      }
+    });
+    const present = new Set(ordered);
+    setActive((prev) => {
+      const next = prev.filter((e) => present.has(e)); // 아직 보이는 카드는 순서 그대로 유지
+      for (const e of ordered) {                        // 빈 자리에만 아래쪽 새 엔티티 추가
+        if (next.length >= MAX_RAIL_CARDS) break;
+        if (!next.includes(e)) next.push(e);
+      }
+      return next.length === prev.length && next.every((e, i) => e === prev[i]) ? prev : next;
+    });
   }, [inView, mentions]);
 
   return (
