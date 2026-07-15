@@ -634,98 +634,109 @@ function buildPlan(packageTokens: string[], roster: InfraOp[], factionSets = fal
     for (let pass = 0; pass < 3; pass += 1) {
       let changed = false;
 
-      // ① 방별 통째 검수 (사용자 규칙 2026-07): 시설을 하나하나 보며 세 후보를 만들어
-      //    "총 생산력"을 직접 비교하고 높은 쪽을 배치한다. 한 자리씩 바꾸는 swap이 아니라
-      //    팀 전체 단위 비교라 국소최적에 안 갇힌다.
+      // ① 방별 통째 검수 (사용자 규칙 2026-07): **A조·B조 양쪽 모두**, 시설을 하나하나 보며
+      //    세 후보를 만들어 "총 생산력"을 직접 비교하고 높은 쪽을 배치한다. 한 자리씩 바꾸는
+      //    swap이 아니라 팀 전체 단위 비교라 국소최적에 안 갇힌다. (B조를 검수하지 않으면
+      //    "도로시 혼자" 같은 방이 회복 교대에 그대로 남는다 — 사용자 지적 2026-07)
       //    ⓐ 현재 팀 그대로
-      //    ⓑ 일반 재편성 — 자유 풀(벤치+B조)에서 방 전체를 다시 짠 최고 팀 (시너지 미고려 대안)
+      //    ⓑ 일반 재편성 — 자유 풀(벤치, 반대 조 근무자 제외)에서 방 전체를 다시 짠 최고 팀
       //    ⓒ 시너지 결집 — perSkillTag 보유자(도로시: 라인테크류 1개당 +5%)를 축으로 같은
-      //       계열(families 카탈로그)을 채운 팀. 계열 요원이 "다른 A조 방"에 있으면 그 방의
+      //       계열(families 카탈로그)을 채운 팀. 계열 요원이 같은 조 다른 방에 있으면 그 방의
       //       손실(차출 후 재충원해도 남는 점수 하락)을 비용으로 계산해 순증일 때만 차출한다.
+      //       **총점 동률이면 ⓒ(시너지 결집)를 우선한다** — 같은 점수면 계열을 모아두는 쪽이
+      //       정배이고, 사용자가 편성을 읽을 때도 의도가 보인다.
       //    시드·예약 요원은 항상 유지, roomPartner는 엄격 평가(굼 없는 레토 방지).
       const orderKeys = [...PRODUCTION_KEYS, ...SUPPORT_KEYS].filter((k) => workKeys.includes(k));
-      for (const aKey of orderKeys) {
-        const room = cellByKey.get(aKey)?.room ?? aKey;
-        const slots = infra.rooms[room]?.slots ?? 1;
-        // 현재 A조 배치 지도 (매 방마다 갱신 — 앞 방의 확정을 반영)
-        const roomKeyOfA = new Map<string, string>();
-        for (const k of workKeys) for (const id of assignments[k]?.[0] ?? []) roomKeyOfA.set(id, k);
-        const roomOfA = new Map<string, string>();
-        for (const [id, k] of roomKeyOfA) roomOfA.set(id, cellByKey.get(k)?.room ?? k);
-        for (const id of dormIds) roomOfA.set(id, "DORMITORY");
-        const present = new Set<string>([...roomKeyOfA.keys(), ...dormIds]);
-        const ctx = { ...ctxFor(aKey, tokenPoints, factionCountsPerShift[0], plants, present), roomOf: roomOfA };
-        const curTeam = (assignments[aKey][0] ?? []).map((id) => byIdAll.get(id)).filter((op): op is InfraOp => Boolean(op));
-        const seedKeep = curTeam.filter((op) => reserved.get(op.id) === aKey); // 시드는 무조건 유지
-        // 자유 풀 = 벤치 + B조 + 이 방의 현재 멤버 (다른 A조 방·숙소 고정·타방 예약 제외)
-        const freeOps = roster.filter((op) =>
-          !dormIds.has(op.id) &&
-          (!roomKeyOfA.has(op.id) || roomKeyOfA.get(op.id) === aKey) &&
-          (!reserved.has(op.id) || reserved.get(op.id) === aKey));
-        const score = (team: InfraOp[]) => teamScore(team, room, ctx);
-        let bestPickTeam = curTeam;
-        let bestNet = score(curTeam);
-        let bestDonors: { fromKey: string; refill: InfraOp[] }[] = [];
-        // ⓑ 일반 재편성
-        const flat = bestTeam(room, slots, new Map(freeOps.map((op) => [op.id, op])), ctx, seedKeep);
-        if (score(flat) > bestNet + 1e-6) { bestPickTeam = flat; bestNet = score(flat); bestDonors = []; }
-        // ⓒ 시너지 결집 — 계열 카운트 보유자별 후보 팀
-        const holders = freeOps.filter((op) => activeSkills(op, room, ctx.product).some((sk) => sk.perSkillTag && sk.perSkillValue));
-        for (const holder of holders) {
-          const tags = new Set(activeSkills(holder, room, ctx.product).flatMap((sk) => (sk.perSkillTag ? [sk.perSkillTag] : [])));
-          const isFam = (op: InfraOp) => op.id !== holder.id && activeSkills(op, room, ctx.product).some((sk) =>
-            sk.families ? sk.families.some((f) => tags.has(f)) : [...tags].some((t) => (sk.krName ?? sk.name).replace(/\s/g, "").includes(t)));
-          let team = seedKeep.some((op) => op.id === holder.id) ? [...seedKeep] : [...seedKeep, holder];
-          if (team.length > slots) continue;
-          // 자유 풀의 계열 요원부터 한계 기여 순으로 채운다
-          const freeFam = freeOps.filter((op) => isFam(op));
-          let adding = true;
-          while (adding && team.length < slots) {
-            adding = false;
-            let pick: InfraOp | null = null; let ps = score(team);
-            for (const op of freeFam) {
-              if (team.some((t) => t.id === op.id)) continue;
-              const s = score([...team, op]);
-              if (s > ps + 1e-6) { ps = s; pick = op; }
+      for (let shift = 0; shift < SHIFT_COUNT; shift += 1) {
+        const tp = shift === 0 ? tokenPoints : {};
+        for (const aKey of orderKeys) {
+          const room = cellByKey.get(aKey)?.room ?? aKey;
+          const slots = infra.rooms[room]?.slots ?? 1;
+          // 이 조의 현재 배치 지도 (매 방마다 갱신) + 반대 조 근무자(동시 배치 금지 대상)
+          const roomKeyOf = new Map<string, string>();
+          for (const k of workKeys) for (const id of assignments[k]?.[shift] ?? []) roomKeyOf.set(id, k);
+          const otherWork = new Set<string>();
+          for (const k of workKeys) for (const id of assignments[k]?.[Math.min(SHIFT_COUNT - 1 - shift, (assignments[k]?.length ?? 1) - 1)] ?? []) otherWork.add(id);
+          const roomOfS = new Map<string, string>();
+          for (const [id, k] of roomKeyOf) roomOfS.set(id, cellByKey.get(k)?.room ?? k);
+          for (const id of dormIds) roomOfS.set(id, "DORMITORY");
+          const present = new Set<string>([...roomKeyOf.keys(), ...dormIds]);
+          const ctx = { ...ctxFor(aKey, tp, factionCountsPerShift[shift], plants, present), roomOf: roomOfS };
+          const curTeam = (assignments[aKey][shift] ?? []).map((id) => byIdAll.get(id)).filter((op): op is InfraOp => Boolean(op));
+          const seedKeep = shift === 0 ? curTeam.filter((op) => reserved.get(op.id) === aKey) : []; // 예약 시드는 A조 개념
+          // 자유 풀 = 벤치 + 이 방의 현재 멤버 (같은 조 다른 방·반대 조 근무·숙소 고정·타방 예약 제외)
+          const freeOps = roster.filter((op) =>
+            !dormIds.has(op.id) && !otherWork.has(op.id) &&
+            (!roomKeyOf.has(op.id) || roomKeyOf.get(op.id) === aKey) &&
+            (shift > 0 || !reserved.has(op.id) || reserved.get(op.id) === aKey));
+          const score = (team: InfraOp[]) => teamScore(team, room, ctx);
+          let bestPickTeam = curTeam;
+          let bestNet = score(curTeam);
+          let bestDonors: { fromKey: string; refill: InfraOp[] }[] = [];
+          // ⓑ 일반 재편성
+          const flat = bestTeam(room, slots, new Map(freeOps.map((op) => [op.id, op])), ctx, seedKeep);
+          if (score(flat) > bestNet + 1e-6) { bestPickTeam = flat; bestNet = score(flat); bestDonors = []; }
+          // ⓒ 시너지 결집 — 계열 카운트 보유자별 후보 팀
+          const holders = freeOps.filter((op) => activeSkills(op, room, ctx.product).some((sk) => sk.perSkillTag && sk.perSkillValue));
+          for (const holder of holders) {
+            const tags = new Set(activeSkills(holder, room, ctx.product).flatMap((sk) => (sk.perSkillTag ? [sk.perSkillTag] : [])));
+            const isFam = (op: InfraOp) => op.id !== holder.id && activeSkills(op, room, ctx.product).some((sk) =>
+              sk.families ? sk.families.some((f) => tags.has(f)) : [...tags].some((t) => (sk.krName ?? sk.name).replace(/\s/g, "").includes(t)));
+            let team = seedKeep.some((op) => op.id === holder.id) ? [...seedKeep] : [...seedKeep, holder];
+            if (team.length > slots) continue;
+            // 전체 자유 풀에서 한계 기여 순으로 채우되, **동률이면 계열 요원 우선**(미세 보정 +1e-4).
+            // 계열만 먼저 채우면 [도로시+계열+계열]=95가 [도로시+계열+강범용]=100을 가리는 함정이 있다.
+            let adding = true;
+            while (adding && team.length < slots) {
+              adding = false;
+              let pick: InfraOp | null = null; let ps = score(team) + 1e-6;
+              for (const op of freeOps) {
+                if (team.some((t) => t.id === op.id)) continue;
+                const s = score([...team, op]) + (isFam(op) ? 1e-4 : 0);
+                if (s > ps) { ps = s; pick = op; }
+              }
+              if (pick) { team.push(pick); adding = true; }
             }
-            if (pick) { team.push(pick); adding = true; }
-          }
-          // 다른 A조 방의 계열 요원 차출 — 그 방의 손실을 비용으로 치르고 순증일 때만
-          const donors: { fromKey: string; refill: InfraOp[] }[] = [];
-          let net = 0;
-          if (team.length < slots) {
-            for (const [id, fromKey] of roomKeyOfA) {
-              if (team.length >= slots) break;
-              if (fromKey === aKey || reserved.has(id)) continue;
-              const op = byIdAll.get(id);
-              if (!op || !isFam(op) || team.some((t) => t.id === op.id)) continue;
-              const gain = score([...team, op]) - score(team);
-              const dRoom = cellByKey.get(fromKey)?.room ?? fromKey;
-              const dSlots = infra.rooms[dRoom]?.slots ?? 1;
-              const dCtx = { ...ctxFor(fromKey, tokenPoints, factionCountsPerShift[0], plants, present), roomOf: roomOfA };
-              const dTeam = (assignments[fromKey][0] ?? []).map((x) => byIdAll.get(x)).filter((o): o is InfraOp => Boolean(o));
-              const rest = dTeam.filter((o) => o.id !== id);
-              const claimed = new Set(team.map((t) => t.id));
-              const dPool = new Map(freeOps.filter((o) => !claimed.has(o.id)).map((o) => [o.id, o]));
-              const refill = bestTeam(dRoom, dSlots, dPool, dCtx, rest);
-              const cost = teamScore(dTeam, dRoom, dCtx) - teamScore(refill, dRoom, dCtx);
-              if (gain - cost > 1e-6) { team.push(op); donors.push({ fromKey, refill }); net -= cost; }
+            // 같은 조 다른 방의 계열 요원 차출 — 그 방의 손실을 비용으로 치르고 순증일 때만
+            const donors: { fromKey: string; refill: InfraOp[] }[] = [];
+            let net = 0;
+            if (team.length < slots) {
+              for (const [id, fromKey] of roomKeyOf) {
+                if (team.length >= slots) break;
+                if (fromKey === aKey || reserved.has(id)) continue;
+                const op = byIdAll.get(id);
+                if (!op || !isFam(op) || team.some((t) => t.id === op.id)) continue;
+                const gain = score([...team, op]) - score(team);
+                const dRoom = cellByKey.get(fromKey)?.room ?? fromKey;
+                const dSlots = infra.rooms[dRoom]?.slots ?? 1;
+                const dCtx = { ...ctxFor(fromKey, tp, factionCountsPerShift[shift], plants, present), roomOf: roomOfS };
+                const dTeam = (assignments[fromKey][shift] ?? []).map((x) => byIdAll.get(x)).filter((o): o is InfraOp => Boolean(o));
+                const rest = dTeam.filter((o) => o.id !== id);
+                const claimed = new Set(team.map((t) => t.id));
+                const dPool = new Map(freeOps.filter((o) => !claimed.has(o.id)).map((o) => [o.id, o]));
+                const refill = bestTeam(dRoom, dSlots, dPool, dCtx, rest);
+                const cost = teamScore(dTeam, dRoom, dCtx) - teamScore(refill, dRoom, dCtx);
+                if (gain - cost > 1e-6) { team.push(op); donors.push({ fromKey, refill }); net -= cost; }
+              }
             }
+            // 남는 자리는 자유 풀 최고 요원으로 (점수가 오를 때만 — 0 기여 몸빵 금지)
+            if (team.length < slots) {
+              const claimed = new Set([...team.map((t) => t.id), ...donors.flatMap((d) => d.refill.map((o) => o.id))]);
+              team = bestTeam(room, slots, new Map(freeOps.filter((o) => !claimed.has(o.id)).map((o) => [o.id, o])), ctx, team);
+            }
+            const total = score(team) + net;
+            // 순증이면 채택. 차출 없는 결집은 동률(±1e-6)이어도 채택 — 같은 점수면 시너지를
+            // 모아두는 게 정배(시너지 우선 규칙). 동일 팀 재선택은 커밋 가드가 걸러 수렴한다.
+            const wins = donors.length ? total > bestNet + 1e-6 : total > bestNet - 1e-6;
+            if (wins) { bestPickTeam = team; bestNet = Math.max(bestNet, total); bestDonors = donors; }
           }
-          // 남는 자리는 자유 풀 최고 요원으로 (점수가 오를 때만 — 0 기여 몸빵 금지)
-          if (team.length < slots) {
-            const claimed = new Set([...team.map((t) => t.id), ...donors.flatMap((d) => d.refill.map((o) => o.id))]);
-            team = bestTeam(room, slots, new Map(freeOps.filter((o) => !claimed.has(o.id)).map((o) => [o.id, o])), ctx, team);
+          // 최고 후보 배치 (중복·공백은 바로 뒤 ②·③이 정규화)
+          const newIds = bestPickTeam.map((o) => o.id);
+          if (newIds.join() !== (assignments[aKey][shift] ?? []).join()) {
+            assignments[aKey][shift] = newIds;
+            for (const d of bestDonors) assignments[d.fromKey][shift] = d.refill.map((o) => o.id);
+            changed = true;
           }
-          const total = score(team) + net;
-          if (total > bestNet + 1e-6) { bestPickTeam = team; bestNet = total; bestDonors = donors; }
-        }
-        // 최고 후보 배치 (중복·공백은 바로 뒤 ②·③이 정규화)
-        const newIds = bestPickTeam.map((o) => o.id);
-        if (newIds.join() !== (assignments[aKey][0] ?? []).join()) {
-          assignments[aKey][0] = newIds;
-          for (const d of bestDonors) assignments[d.fromKey][0] = d.refill.map((o) => o.id);
-          changed = true;
         }
       }
 
