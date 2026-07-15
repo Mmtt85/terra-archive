@@ -631,8 +631,9 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
   return (
     <main className={tab !== "archive" ? "base-main" : ""}>
       <header className="site-header" id="top">
-        <a className="brand" href="#top" aria-label={t("테라 아카이브 홈")}>
-          <span className="brand-mark">TA</span>
+        <a className="brand" href={localeBase || "/"} aria-label={t("테라 아카이브 홈")}
+          onClick={(event) => { event.preventDefault(); switchTab("archive"); window.scrollTo({ top: 0 }); }}>
+          <span className="brand-mark"><img src="/avatars/char_1012_skadi2.png" alt="" /></span>
           <span>{t("테라 아카이브")}<small>{t("명일방주(Arknights) KR 팬사이트")}</small></span>
         </a>
         <BroadcastBadges />
