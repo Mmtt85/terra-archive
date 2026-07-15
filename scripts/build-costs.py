@@ -113,6 +113,32 @@ for op in ops:
     if entry: result_ops[cid] = entry
 
 # ─── 아이템 사전 + 아이콘 ─────────────────────────────────────────────────────
+# 재료 상세 모달용으로 설명(description)·용도(usage)·가공소 조합식(craft)도 함께 수록한다.
+kr_building = load(f"{S}/kr_building_data.json")
+cn_building = load(f"{S}/cn_building_data.json")
+formulas = {}  # itemId → formula (KR 우선, 미출시 재료는 CN)
+for src in [cn_building, kr_building]:
+    for f in (src.get("workshopFormulas") or {}).values():
+        formulas[f.get("itemId")] = f
+
+# 용문폐(4001)는 lmd로 분리되지만 모달·합계 표시는 아이템 사전을 참조하므로 항상 포함
+used_items.add("4001")
+# 재료 상세 모달은 효율표(farm.json)의 재료에도 뜨므로 그 목록도 사전에 합친다
+try:
+    farm = load(f"{REPO}/app/data/farm.json")
+    for it in farm.get("items") or []:
+        used_items.add(it["id"])
+except FileNotFoundError:
+    pass
+
+def loc_field(iid, field):
+    out = {"ko": ((kr_items.get(iid) or cn_items.get(iid) or {}).get(field))}
+    en = (en_items.get(iid) or {}).get(field)
+    ja = (jp_items.get(iid) or {}).get(field)
+    if en: out["en"] = en
+    if ja: out["ja"] = ja
+    return out if out["ko"] else None
+
 os.makedirs(f"{REPO}/public/items", exist_ok=True)
 items_out = {}
 missing_icons = []
@@ -121,13 +147,37 @@ for iid in sorted(used_items):
     base = kr or cn
     if not base:
         print("WARN: unknown item", iid, file=sys.stderr); continue
-    name = {"ko": (kr or cn).get("name")}
-    en = (en_items.get(iid) or {}).get("name")
-    ja = (jp_items.get(iid) or {}).get("name")
-    if en: name["en"] = en
-    if ja: name["ja"] = ja
-    items_out[iid] = {"name": name, "rarity": tier(base.get("rarity")),
-                      "sortId": base.get("sortId", 0), "image": f"/items/{iid}.png"}
+    entry = {"name": loc_field(iid, "name"), "rarity": tier(base.get("rarity")),
+             "sortId": base.get("sortId", 0), "image": f"/items/{iid}.png"}
+    desc = loc_field(iid, "description")
+    usage = loc_field(iid, "usage")
+    if desc: entry["desc"] = desc
+    if usage: entry["usage"] = usage
+    f = formulas.get(iid)
+    if f:
+        gold = f.get("goldCost") or 0
+        craft = [[c.get("id"), c.get("count", 0)] for c in (f.get("costs") or []) if c.get("id")]
+        if craft:
+            entry["craft"] = craft
+            if gold > 0: entry["craftGold"] = gold
+            # 조합 재료도 아이템 사전에 있어야 모달에서 이름·아이콘이 나온다
+            for cid2, _ in craft: used_items.add(cid2)
+    items_out[iid] = entry
+    dst = f"{REPO}/public/items/{iid}.png"
+    if not os.path.exists(dst):
+        missing_icons.append((iid, base.get("iconId") or iid))
+
+# craft로 새로 추가된 재료(예: 조합 하위 재료가 비용에 직접 안 쓰이는 경우) 사전 보충
+for iid in sorted(used_items):
+    if iid in items_out: continue
+    base = kr_items.get(iid) or cn_items.get(iid)
+    if not base: continue
+    entry = {"name": loc_field(iid, "name"), "rarity": tier(base.get("rarity")),
+             "sortId": base.get("sortId", 0), "image": f"/items/{iid}.png"}
+    desc = loc_field(iid, "description"); usage = loc_field(iid, "usage")
+    if desc: entry["desc"] = desc
+    if usage: entry["usage"] = usage
+    items_out[iid] = entry
     dst = f"{REPO}/public/items/{iid}.png"
     if not os.path.exists(dst):
         missing_icons.append((iid, base.get("iconId") or iid))
