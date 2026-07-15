@@ -413,8 +413,25 @@ for o in operators:
                           "seq": release_seq.get(o["id"], -1),
                           "skills": skills})
 
-out = {"rooms": rooms_out, "ops": infra_ops}
+# ── "~류" 스킬 패밀리 카탈로그 (사용자 확정 2026-07) ────────────────────────────────
+# 도로시("라인테크류 스킬 1개당 +5%")처럼 특정 스킬 계열 수에 따라 스케일하는 오퍼가 있어,
+# 어떤 스킬이 어느 계열(라인테크류·금속공예류 등)에 속하는지 미리 정리해 둔다.
+# 계열 태그 = 스킬들이 실제로 참조하는 perSkillTag 값들의 집합. 각 스킬엔 자기가 속한 계열을
+# families로 달고, 최상위 skillFamilies에 태그→오퍼명 목록을 정리해 스코어링·검수에 쓴다.
+family_tags = sorted({sk["perSkillTag"] for op in infra_ops for sk in op["skills"] if sk.get("perSkillTag")})
+skill_families = {tag: [] for tag in family_tags}
+for op in infra_ops:
+    for sk in op["skills"]:
+        fams = [tag for tag in family_tags if tag in (sk.get("name") or "").replace(" ", "")]
+        if fams:
+            sk["families"] = fams
+            for tag in fams:
+                if op["name"] not in skill_families[tag]:
+                    skill_families[tag].append(op["name"])
+
+out = {"rooms": rooms_out, "ops": infra_ops, "skillFamilies": skill_families}
 json.dump(out, open(f"{REPO}/app/data/infra.json", "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
+print("skill families:", json.dumps({k: len(v) for k, v in skill_families.items()}, ensure_ascii=False))
 
 # report
 by_room = {}

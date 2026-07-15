@@ -38,6 +38,7 @@ type InfraSkill = {
   perCap: number | null;
   perSkillTag: string | null;
   perSkillValue: number | null;
+  families?: string[]; // 이 스킬이 속한 "~류" 계열 태그 (build-infra.py skillFamilies 카탈로그)
   tiers?: InfraSkill[]; // 같은 슬롯의 하위 정예화 단계 (스푸리아 기술 교류 α) — 정예화 낮추면 대체
 };
 
@@ -236,13 +237,16 @@ function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx): OpBrea
       out.efficiency += gained;
       continue;
     }
-    // same-room skill-tag counting (브라이오피타: 금속 공예류 스킬 1개당 +5%)
-    // 스킬 태그 매칭은 표시명이 아니라 KR 원본 이름(krName) 기준 — 로케일 무관하게 동작
+    // same-room skill-tag counting (도로시: 라인테크류 1개당 +5% / 브라이오피타: 금속공예류 +5%)
+    // 계열 판정은 build-infra.py가 정리한 families 카탈로그 우선, 없으면 KR 원본 이름 부분매칭
+    // (로케일 무관 — krName에 KR 원본 보존). 같은 방 팀원의 활성 스킬을 세어 계열 수만큼 가산.
     if (skill.perSkillTag && skill.perSkillValue) {
       const tag = skill.perSkillTag;
       let count = 0;
       for (const member of team) for (const active of activeSkills(member, room, ctx.product)) {
-        if ((active.krName ?? active.name).replace(/\s/g, "").includes(tag)) count += 1;
+        const inFamily = active.families ? active.families.includes(tag)
+          : (active.krName ?? active.name).replace(/\s/g, "").includes(tag);
+        if (inFamily) count += 1;
       }
       out.efficiency += skill.perSkillValue * count;
       continue;
@@ -638,35 +642,44 @@ function buildPlan(packageTokens: string[], roster: InfraOp[], factionSets = fal
     for (let pass = 0; pass < 3; pass += 1) {
       let changed = false;
 
-      // ① A조 최강화: 같은 방타입 안에서 B조의 더 나은 요원을 A조로 승격(맞교환)
-      const presentA = new Set<string>([...dormIds]);
-      for (const key of workKeys) for (const id of assignments[key]?.[0] ?? []) presentA.add(id);
+      // ① A조 최강화(+시너지 반영): 각 A조 근무 방을 "전체 풀(B조·벤치 포함)"에서 teamScore가
+      // 최대가 되도록 교정한다. 후보를 A↔B로만 보면 라인테크류 같은 시너지 요원이 벤치에 있을 때
+      // 못 끌어오므로, 벤치까지 뒤진다. teamScore에 perSkillTag(도로시 라인테크류 1개당 +5%) 등
+      // 시너지가 이미 반영돼 있어, 시너지 팀이 더 세면 자동으로 그 조합을 집는다. 시드·예약은 고정.
+      const aWorkingIds = new Set<string>();
+      for (const key of workKeys) for (const id of assignments[key]?.[0] ?? []) aWorkingIds.add(id);
+      const bLoc = new Map<string, string>(); // opId -> 현재 B조 근무 방 key
+      for (const key of workKeys) for (const id of assignments[key]?.[1] ?? []) bLoc.set(id, key);
       for (const gkeys of groups.values()) {
         for (const aKey of gkeys) {
           const room = cellByKey.get(aKey)?.room ?? aKey;
-          const ctxA = ctxFor(aKey, tokenPoints, factionCountsPerShift[0], plants, presentA);
+          const present = new Set<string>([...aWorkingIds, ...dormIds]);
+          const ctxA = ctxFor(aKey, tokenPoints, factionCountsPerShift[0], plants, present);
           let aTeam = (assignments[aKey][0] ?? []).map((id) => byIdAll.get(id)).filter((op): op is InfraOp => Boolean(op));
           let improved = true;
           while (improved) {
             improved = false;
             for (let i = 0; i < aTeam.length && !improved; i += 1) {
-              if (reserved.has(aTeam[i].id)) continue; // 시드/예약 요원은 A조 고정
-              for (const bKey of gkeys) {
-                const bTeam = assignments[bKey]?.[1] ?? [];
-                for (const bId of bTeam) {
-                  if (reserved.has(bId) || aTeam.some((o) => o.id === bId)) continue;
-                  const bOp = byIdAll.get(bId);
-                  if (!bOp) continue;
-                  const cand = aTeam.slice(); cand[i] = bOp;
-                  if (teamScore(cand, room, ctxA) > teamScore(aTeam, room, ctxA) + 1e-6) {
-                    const demoted = aTeam[i].id;
-                    assignments[bKey][1] = bTeam.map((x) => (x === bId ? demoted : x));
-                    aTeam = cand; assignments[aKey][0] = aTeam.map((o) => o.id);
-                    presentA.delete(bId); presentA.add(demoted); // 유지되진 않지만 근사
-                    changed = true; improved = true; break;
-                  }
-                }
-                if (improved) break;
+              const r = aTeam[i];
+              if (reserved.has(r.id)) continue; // 시드/예약 요원은 A조 고정
+              const baseScore = teamScore(aTeam, room, ctxA);
+              let bestC: InfraOp | null = null; let bestScore = baseScore + 1e-6;
+              for (const c of roster) {
+                if (aWorkingIds.has(c.id) || reserved.has(c.id) || aTeam.some((o) => o.id === c.id)) continue;
+                if (!c.skills.some((sk) => skillApplies(sk, room, ctxA.product))) continue;
+                const cand = aTeam.slice(); cand[i] = c;
+                const sc = teamScore(cand, room, ctxA);
+                if (sc > bestScore) { bestScore = sc; bestC = c; }
+              }
+              if (bestC) {
+                const bKey = bLoc.get(bestC.id);
+                if (bKey) { // B조에서 왔으면 밀려난 요원을 그 자리로 맞교환
+                  assignments[bKey][1] = (assignments[bKey][1] ?? []).map((x) => (x === bestC!.id ? r.id : x));
+                  bLoc.delete(bestC.id); bLoc.set(r.id, bKey);
+                } else { bLoc.delete(r.id); } // 벤치에서 왔으면 밀려난 요원은 벤치로 (재충원 패스가 처리)
+                aWorkingIds.delete(r.id); aWorkingIds.add(bestC.id);
+                aTeam[i] = bestC; assignments[aKey][0] = aTeam.map((o) => o.id);
+                changed = true; improved = true;
               }
             }
           }
