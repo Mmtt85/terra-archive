@@ -609,6 +609,22 @@ function buildPlan(packageTokens: string[], roster: InfraOp[], factionSets = fal
     }
   }
 
+  // ── 조 동시 배치 금지 불변식 (사용자 확정 2026-07, INFRA-RULES §1) ──────────────
+  // 같은 오퍼가 A조·B조 근무에 동시에 들어가면 못 쉬고 24시간 돌게 되므로 금지한다.
+  // A조가 풀파워 주력이니 A조를 남기고, B조 중복만 제거한다(교차방 리페어 패스가
+  // B조를 고칠 때 A조에 이미 있는 오퍼를 집어올 수 있어 필요). 사기를 소모하지 않는
+  // 숙소(휴식)·가공소(상시 슬롯)는 예외 — 조 전환과 무관하게 고정 허용.
+  {
+    const restRoom = (key: string) => { const r = cellByKey.get(key)?.room ?? key; return r === "DORMITORY" || r === "WORKSHOP"; };
+    const aWorking = new Set<string>();
+    for (const key of keys) if (!restRoom(key)) for (const id of assignments[key]?.[0] ?? []) aWorking.add(id);
+    for (const key of keys) {
+      if (restRoom(key)) continue;
+      const b = assignments[key]?.[1];
+      if (b) assignments[key][1] = b.filter((id) => !aWorking.has(id));
+    }
+  }
+
   // ledger: recount per-member generators against the actual A-crew roster,
   // then record who cashes the points in
   const rosterById = new Map(roster.map((op) => [op.id, op]));
@@ -1628,6 +1644,7 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
 const HELP_SECTIONS: { title: string; items: string[] }[] = [
   { title: "교대 정책", items: [
     "A조가 풀파워 주력이고 모든 시너지 세트는 A조에 모입니다. B조는 A조 컨디션이 소진됐을 때 투입되는 회복 교대입니다 (12시간 2조).",
+    "같은 오퍼를 A조·B조에 동시 배치하지 않는 것이 기본 원칙입니다 — 근무를 이중으로 서면 못 쉬고 24시간 돌아야 하기 때문입니다. 사기를 소모하지 않는 숙소(휴식)·가공소(상시 슬롯)만 예외로 조 전환과 무관하게 고정됩니다.",
     "숙소·시너지 고정 요원(숙소 생성원, 니엔 등)은 A/B 전환과 무관하게 고정됩니다. 응접실도 A/B 교대로 운영합니다 — 같은 인원을 24시간 돌리지 않습니다.",
     "훈련실은 실제 스킬 특화 훈련에 쓰도록 비워 둡니다.",
     "'전체 자동편성'은 처음부터 다시 계산하고, '빈 자리만 자동편성'은 현재 편성(수동 수정 포함)을 유지한 채 남은 빈 자리만 한계 기여 순으로 채웁니다.",

@@ -421,6 +421,10 @@ const D: Record<string, Pair> = {
     "Shift A is the full-power main crew and every synergy set is assembled there. Shift B is the recovery crew that steps in when Shift A's morale runs out (two 12h shifts).",
     "A班がフルパワーの主力で、すべてのシナジーセットはA班に集めます。B班はA班の体力が尽きたときに投入される回復交代です（12時間2交代）。",
   ],
+  "같은 오퍼를 A조·B조에 동시 배치하지 않는 것이 기본 원칙입니다 — 근무를 이중으로 서면 못 쉬고 24시간 돌아야 하기 때문입니다. 사기를 소모하지 않는 숙소(휴식)·가공소(상시 슬롯)만 예외로 조 전환과 무관하게 고정됩니다.": [
+    "As a base rule, the same operator is never placed in both Shift A and Shift B — pulling a double shift means working 24 hours with no rest. Only the Dormitory (rest) and Workshop (passive slot), which don't drain morale, may stay fixed across shifts.",
+    "同じオペレーターをA班・B班に同時配置しないのが基本原則です — 二重勤務は休めず24時間稼働になるためです。士気を消費しない宿舎（休息）・加工所（常時スロット）のみ、交代と無関係に固定できます。",
+  ],
   "숙소·시너지 고정 요원(숙소 생성원, 니엔 등)은 A/B 전환과 무관하게 고정됩니다. 응접실도 A/B 교대로 운영합니다 — 같은 인원을 24시간 돌리지 않습니다.": [
     "Dorm/synergy-pinned members (dorm generators, Nian, …) stay put regardless of A/B. The Reception Room also rotates A/B — nobody works 24 hours straight.",
     "宿舎・シナジー固定要員（宿舎生成要員、ニェンなど）はA/B交代と無関係に固定されます。応接室もA/Bで交代運用 — 同じ人員を24時間回しません。",
