@@ -402,111 +402,111 @@
    "dateNote": "'올해가 1100년' — act48side"
   },
   {
-   "id": "main_00",
+   "id": "main_0",
    "kind": "main",
    "title": {
-    "ko": "메인스토리 에피소드 0",
-    "en": "Main Story Episode 0",
-    "ja": "メインストーリー エピソード0"
+    "ko": "암흑 시대·상",
+    "en": "Evil Time Part 1",
+    "ja": "暗黒時代・上"
    },
    "terraYear": null,
    "arc": null
   },
   {
-   "id": "main_01",
+   "id": "main_1",
    "kind": "main",
    "title": {
-    "ko": "메인스토리 에피소드 1",
-    "en": "Main Story Episode 1",
-    "ja": "メインストーリー エピソード1"
+    "ko": "암흑 시대·하",
+    "en": "Evil Time Part 2",
+    "ja": "暗黒時代・下"
    },
    "terraYear": null,
    "arc": null
   },
   {
-   "id": "main_02",
+   "id": "main_2",
    "kind": "main",
    "title": {
-    "ko": "메인스토리 에피소드 2",
-    "en": "Main Story Episode 2",
-    "ja": "メインストーリー エピソード2"
+    "ko": "같지만 다른",
+    "en": "Separated Hearts",
+    "ja": "相思相殺"
    },
    "terraYear": null,
    "arc": null
   },
   {
-   "id": "main_03",
+   "id": "main_3",
    "kind": "main",
    "title": {
-    "ko": "메인스토리 에피소드 3",
-    "en": "Main Story Episode 3",
-    "ja": "メインストーリー エピソード3"
+    "ko": "세컨드 윈드",
+    "en": "Stinging Shock",
+    "ja": "起死回生"
    },
    "terraYear": null,
    "arc": null
   },
   {
-   "id": "main_04",
+   "id": "main_4",
    "kind": "main",
    "title": {
-    "ko": "메인스토리 에피소드 4",
-    "en": "Main Story Episode 4",
-    "ja": "メインストーリー エピソード4"
+    "ko": "급성쇠약",
+    "en": "Burning Run",
+    "ja": "急転直下"
    },
    "terraYear": null,
    "arc": null
   },
   {
-   "id": "main_05",
+   "id": "main_5",
    "kind": "main",
    "title": {
-    "ko": "메인스토리 에피소드 5",
-    "en": "Main Story Episode 5",
-    "ja": "メインストーリー エピソード5"
+    "ko": "표적치료",
+    "en": "Necessary Solutions",
+    "ja": "快刀乱麻"
    },
    "terraYear": null,
    "arc": null
   },
   {
-   "id": "main_06",
+   "id": "main_6",
    "kind": "main",
    "title": {
-    "ko": "메인스토리 에피소드 6",
-    "en": "Main Story Episode 6",
-    "ja": "メインストーリー エピソード6"
+    "ko": "부분괴사",
+    "en": "Partial Necrosis",
+    "ja": "局部壊死"
    },
    "terraYear": null,
    "arc": null
   },
   {
-   "id": "main_07",
+   "id": "main_7",
    "kind": "main",
    "title": {
-    "ko": "메인스토리 에피소드 7",
-    "en": "Main Story Episode 7",
-    "ja": "メインストーリー エピソード7"
+    "ko": "고난의 요람",
+    "en": "The Birth of Tragedy",
+    "ja": "苦難揺籃"
    },
    "terraYear": null,
    "arc": null
   },
   {
-   "id": "main_08",
+   "id": "main_8",
    "kind": "main",
    "title": {
-    "ko": "메인스토리 에피소드 8",
-    "en": "Main Story Episode 8",
-    "ja": "メインストーリー エピソード8"
+    "ko": "울부짖는 광명",
+    "en": "Roaring Flare",
+    "ja": "怒号光明"
    },
    "terraYear": null,
    "arc": null
   },
   {
-   "id": "main_09",
+   "id": "main_9",
    "kind": "main",
    "title": {
-    "ko": "메인스토리 에피소드 9",
-    "en": "Main Story Episode 9",
-    "ja": "メインストーリー エピソード9"
+    "ko": "스톰워치",
+    "en": "Stormwatch",
+    "ja": "暴風眺望"
    },
    "terraYear": null,
    "arc": null
@@ -515,9 +515,9 @@
    "id": "main_10",
    "kind": "main",
    "title": {
-    "ko": "메인스토리 에피소드 10",
-    "en": "Main Story Episode 10",
-    "ja": "メインストーリー エピソード10"
+    "ko": "섀터 포인트",
+    "en": "Shatterpoint",
+    "ja": "光冠残蝕"
    },
    "terraYear": null,
    "arc": null
@@ -526,9 +526,9 @@
    "id": "main_11",
    "kind": "main",
    "title": {
-    "ko": "메인스토리 에피소드 11",
-    "en": "Main Story Episode 11",
-    "ja": "メインストーリー エピソード11"
+    "ko": "리턴 투 미스트",
+    "en": "Return To Mist",
+    "ja": "淬火煙塵"
    },
    "terraYear": null,
    "arc": null
@@ -537,9 +537,9 @@
    "id": "main_12",
    "kind": "main",
    "title": {
-    "ko": "메인스토리 에피소드 12",
-    "en": "Main Story Episode 12",
-    "ja": "メインストーリー エピソード12"
+    "ko": "천둥 속의 고요",
+    "en": "All Quiet Under the Thunder",
+    "ja": "驚靂蕭然"
    },
    "terraYear": null,
    "arc": null
@@ -548,9 +548,9 @@
    "id": "main_13",
    "kind": "main",
    "title": {
-    "ko": "메인스토리 에피소드 13",
-    "en": "Main Story Episode 13",
-    "ja": "メインストーリー エピソード13"
+    "ko": "흉조의 소용돌이",
+    "en": "The Whirlpool that is Passion",
+    "ja": "悪兆渦流"
    },
    "terraYear": null,
    "arc": null
@@ -559,64 +559,86 @@
    "id": "main_14",
    "kind": "main",
    "title": {
-    "ko": "메인스토리 에피소드 14",
-    "en": "Main Story Episode 14",
-    "ja": "メインストーリー エピソード14"
+    "ko": "자비의 등대",
+    "en": "Absolved Will Be the Seekers",
+    "ja": "慈悲光塔"
    },
    "terraYear": null,
    "arc": null
   },
   {
-   "id": "is1",
-   "kind": "roguelike",
+   "id": "main_15",
+   "kind": "main",
    "title": {
-    "ko": "통합전략 #1",
-    "en": "Integrated Strategies #1",
-    "ja": "統合戦略 #1"
+    "ko": "해리성 결합",
+    "en": "Dissociative Recombination",
+    "ja": "解離結合"
    },
    "terraYear": null,
    "arc": null
   },
   {
-   "id": "is2",
-   "kind": "roguelike",
+   "id": "main_16",
+   "kind": "main",
    "title": {
-    "ko": "통합전략 #2",
-    "en": "Integrated Strategies #2",
-    "ja": "統合戦略 #2"
+    "ko": "비정상 스펙트럼",
+    "en": "Abnormal Spectrum",
+    "ja": "背理分光"
    },
    "terraYear": null,
    "arc": null
   },
   {
-   "id": "is3",
+   "id": "rogue_1",
    "kind": "roguelike",
    "title": {
-    "ko": "통합전략 #3",
-    "en": "Integrated Strategies #3",
-    "ja": "統合戦略 #3"
+    "ko": "팬텀 & 크림슨 솔리테어",
+    "en": "Phantom & Crimson Solitaire",
+    "ja": "ファントムと緋き貴石"
    },
    "terraYear": null,
    "arc": null
   },
   {
-   "id": "is4",
+   "id": "rogue_2",
    "kind": "roguelike",
    "title": {
-    "ko": "통합전략 #4",
-    "en": "Integrated Strategies #4",
-    "ja": "統合戦略 #4"
+    "ko": "미즈키 & 카이룰라 아버",
+    "en": "Mizuki & Caerula Arbor",
+    "ja": "ミヅキと紺碧の樹"
    },
    "terraYear": null,
    "arc": null
   },
   {
-   "id": "is5",
+   "id": "rogue_3",
    "kind": "roguelike",
    "title": {
-    "ko": "통합전략 #5",
-    "en": "Integrated Strategies #5",
-    "ja": "統合戦略 #5"
+    "ko": "탐험가의 은빛 서리 끝자락",
+    "en": "Expeditioner's Jǫklumarkar",
+    "ja": "探索者と銀氷の果て"
+   },
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "id": "rogue_4",
+   "kind": "roguelike",
+   "title": {
+    "ko": "살카즈의 영겁 기담",
+    "en": "Sarkaz's Furnaceside Fables",
+    "ja": "サルカズの炉辺奇談"
+   },
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "id": "rogue_5",
+   "kind": "roguelike",
+   "title": {
+    "ko": "쉐이의 기이한 계원",
+    "en": "Sui's Garden of Grotesqueries",
+    "ja": "歳の界園志異"
    },
    "terraYear": null,
    "arc": null
