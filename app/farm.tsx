@@ -342,7 +342,15 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
     return { lmd, rows };
   }, [picked, targets, byId, t]);
 
-  const addOp = (id: string) => { setPicked((current) => [...current, id]); setDraft(""); };
+  const searchRef = useRef<HTMLInputElement>(null);
+  // 오퍼를 담으면 드롭다운을 닫는다 (선택 후에도 목록이 안 사라지던 문제). 다시 추가하려면
+  // 검색창을 클릭(포커스)하면 목록이 다시 열린다.
+  const addOp = (id: string) => {
+    setPicked((current) => [...current, id]);
+    setDraft("");
+    setFocused(false);
+    searchRef.current?.blur();
+  };
   const removeOp = (id: string) =>
     setPicked((current) => current.filter((value) => value !== id));
 
@@ -357,8 +365,9 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
         <div className="search-wrap cost-search">
           <span>⌕</span>
           <input
+            ref={searchRef}
             value={draft}
-            onChange={(event) => setDraft(event.target.value)}
+            onChange={(event) => { setDraft(event.target.value); setFocused(true); }}
             onFocus={() => setFocused(true)}
             // 목록 항목 클릭이 먼저 처리되도록 blur는 살짝 지연
             onBlur={() => window.setTimeout(() => setFocused(false), 150)}
