@@ -7,7 +7,9 @@ Usage:
   python3 scripts/build-story.py --chars act48side  # 스탠딩 CG 이름↔화자 매칭표 출력
   python3 scripts/build-story.py --chars act48side avg_4056_titi_1 "avg_npc_2068_1#2" …
                                                 # 지정 스탠딩 CG 다운로드 (기본 표정 #1$1)
-  python3 scripts/build-story.py --kr-thumbs        # 한국판 썸네일을 KR 공식 CDN에서 언팩·갱신
+  python3 scripts/build-story.py --kr-thumbs         # 사이드 이벤트 한국판 썸네일을 KR CDN에서 언팩
+  python3 scripts/build-story.py --kr-story-thumbs   # 메인스토리(ko)·로그라이크 썸네일을 KR CDN에서 언팩
+  python3 scripts/build-story.py --main-thumbs       # 메인스토리 en/ja 타이틀카드 썸네일
 
 데이터 소스 (전부 원격 — 로컬 gamedata 폴더 불필요):
   - 이벤트 목록·제목(3개 언어)·에피소드 구성: 클뜯 레포 excel/story_review_table.json
@@ -192,12 +194,15 @@ def kr_thumbs():
 if len(sys.argv) > 1 and sys.argv[1] == "--kr-thumbs":
     kr_thumbs(); sys.exit(0)
 
-# ── --main-thumbs: 메인스토리 17장 썸네일 (에피소드 타이틀 카드) ─────────
-# 메인스토리(main_N)는 storyEntryPicId가 없어 스토리 회고 썸네일이 없다.
-# 각 장 오프닝 타이틀 카드 avg/images/avg_ep<NN>.png 를 세로형으로 중앙 크롭해 쓴다.
-# CN판 카드는 중국어 부제가 박혀 있어 금지(사용자 확정) — 글로벌(en)/일본(jp)판을 쓴다.
-#   · ko·en: en판 카드 → public/story/main_N.jpg
-#   · ja: jp판 카드 → public/story/ja/main_N.jpg
+# ── 메인스토리·로그라이크 썸네일 ─────────────────────────────────────
+# 메인스토리(main_N)·로그라이크(rogue_N)는 스토리 회고 썸네일이 없어 직접 만든다.
+#   · 메인: 각 장 타이틀 카드 avg/images/avg_ep<NN> 를 세로형 중앙 크롭
+#   · 로그라이크: 키 비주얼 avg/images/pic_rogue_<N>_kv1
+# 텍스트가 박히므로 로케일별 서버판을 쓴다 (ko=한국판 CDN, en=글로벌, ja=일본).
+#   · ko: public/story/{main_N,rogue_N}.jpg     ← --kr-story-thumbs (KR CDN 언팩)
+#   · en: public/story/en/main_N.jpg            ← --main-thumbs
+#   · ja: public/story/ja/main_N.jpg            ← --main-thumbs
+# 로그라이크 키 비주얼은 일러스트라 로케일 무관 — ko판 하나를 전 로케일 공용으로 쓴다.
 def to_portrait_jpeg(png_bytes, dest, ratio=404/491, max_px=720):
     """PNG를 세로형(404:491)으로 중앙 크롭 후 jpeg 저장 (macOS sips)."""
     tmp = dest + ".tmp.png"
@@ -214,18 +219,19 @@ def to_portrait_jpeg(png_bytes, dest, ratio=404/491, max_px=720):
     return ok
 
 def main_thumbs():
+    """글로벌(en)·일본(jp)판 메인스토리 타이틀 카드 → 로케일 서브폴더."""
     review = fetch(f"{GAMEDATA}/kr/gamedata/excel/story_review_table.json")
     ids = sorted((v["id"] for v in review.values() if v.get("entryType") == "MAINLINE"),
                  key=lambda x: int(x.split("_")[1]))
     thumb_dir = os.path.join(REPO, "public", "story")
-    ja_dir = os.path.join(thumb_dir, "ja")
-    os.makedirs(ja_dir, exist_ok=True)
+    en_dir, ja_dir = os.path.join(thumb_dir, "en"), os.path.join(thumb_dir, "ja")
+    os.makedirs(en_dir, exist_ok=True); os.makedirs(ja_dir, exist_ok=True)
     count = 0
     for eid in ids:
         n = int(eid.split("_")[1])
         pic = f"avg_ep{n:02d}"
-        for base_url, dest in ((ASSETS_EN, os.path.join(thumb_dir, f"{eid}.jpg")),
-                               (ASSETS_JP, os.path.join(ja_dir, f"{eid}.jpg"))):
+        for base_url, sub_dir in ((ASSETS_EN, en_dir), (ASSETS_JP, ja_dir)):
+            dest = os.path.join(sub_dir, f"{eid}.jpg")
             if os.path.exists(dest):
                 print("skip:", dest); continue
             try:
@@ -234,10 +240,91 @@ def main_thumbs():
                 print("main thumb:", dest); count += 1
             except Exception as err:  # noqa: BLE001
                 print("FAIL:", eid, pic, err, file=sys.stderr)
-    print(f"메인스토리 썸네일 {count}장 생성")
+    print(f"메인스토리 en/ja 썸네일 {count}장 생성")
 
 if len(sys.argv) > 1 and sys.argv[1] == "--main-thumbs":
     main_thumbs(); sys.exit(0)
+
+# ── --kr-story-thumbs: 한국판 메인스토리 카드 + 로그라이크 키비주얼 (KR CDN 언팩) ──
+# KR 서버는 언팩 공개 레포가 없어 게임 CDN에서 직접 추출한다 (--kr-thumbs와 동일 파이프라인).
+# avg/images/avg_ep<NN> (메인 17장) + avg/images/pic_rogue_<N>_kv1 (로그라이크 5종) 텍스처를
+# 담은 번들(.ab)을 매니페스트에서 찾아 받아 UnityPy로 추출 → 세로형 크롭 저장.
+def kr_story_thumbs():
+    import io, struct, zipfile
+    from collections import defaultdict
+    try:
+        import lz4inv, UnityPy
+        from UnityPy.enums.BundleFile import CompressionFlags
+        from UnityPy.helpers.CompressionHelper import DECOMPRESSION_MAP
+        DECOMPRESSION_MAP[CompressionFlags.LZHAM] = lz4inv.decompress_buffer
+    except ImportError:
+        sys.exit("pip3 install --user UnityPy lz4inv 후 다시 실행")
+    conf = fetch("https://ak-conf.arknights.kr/config/prod/official/network_config")
+    network = json.loads(conf["content"])
+    urls = network["configs"][network["funcVer"]]["network"]
+    ver = fetch(urls["hv"].replace("{0}", "Android"))
+    assets_url = f"{urls['hu']}/Android/assets/{ver['resVersion']}"
+    hul = fetch(f"{assets_url}/hot_update_list.json")
+
+    def fetch_dat(name):
+        dat = name.replace("/", "_").replace("#", "__").split(".")[0] + ".dat"
+        with zipfile.ZipFile(io.BytesIO(fetch(f"{assets_url}/{dat}", binary=True))) as z:
+            return z.read(z.filelist[0])
+
+    buf = fetch_dat(hul["manifestName"])[128:]
+    u32 = lambda o: struct.unpack_from("<I", buf, o)[0]
+    i32 = lambda o: struct.unpack_from("<i", buf, o)[0]
+    u16 = lambda o: struct.unpack_from("<H", buf, o)[0]
+    def table(o):
+        vt = o - i32(o); nslots = (u16(vt) - 4) // 2
+        return lambda s: (o + u16(vt + 4 + s*2)) if s < nslots and u16(vt + 4 + s*2) else None
+    def string_at(fo):
+        so = fo + u32(fo); return buf[so+4:so+4+u32(so)].decode("utf-8")
+    def vector_at(fo):
+        vo = fo + u32(fo); return vo + 4, u32(vo)
+    root = table(u32(0))
+    base, n = vector_at(root(1))
+    bundles = []
+    for i in range(n):
+        t = table(base + i*4 + u32(base + i*4)); f = t(0)
+        bundles.append(string_at(f) if f else "")
+
+    thumb_dir = os.path.join(REPO, "public", "story")
+    # 원하는 텍스처 basename(소문자) → 저장 경로
+    wanted = {}
+    for i in range(17):
+        wanted[f"avg_ep{i:02d}"] = os.path.join(thumb_dir, f"main_{i}.jpg")
+    for i in range(1, 6):
+        wanted[f"pic_rogue_{i}_kv1"] = os.path.join(thumb_dir, f"rogue_{i}.jpg")
+
+    base, n = vector_at(root(2))
+    by_bundle = defaultdict(list)  # bundle → [(basename, dest), …]
+    for i in range(n):
+        t = table(base + i*4 + u32(base + i*4)); fa, fb = t(0), t(1)
+        if not fa:
+            continue
+        name = string_at(fa); bn = name.split("/")[-1].lower()
+        if bn in wanted:
+            by_bundle[bundles[i32(fb)] if fb else ""].append((bn, wanted[bn]))
+
+    count = 0
+    for bundle, items in sorted(by_bundle.items()):
+        env = UnityPy.load(io.BytesIO(fetch_dat(bundle)))
+        tex = {}
+        for obj in env.objects:
+            if obj.type.name == "Texture2D":
+                d = obj.read(); tex[d.m_Name.lower()] = d
+        for bn, dest in items:
+            d = tex.get(bn)
+            if not d:
+                print("MISSING tex:", bn, "in", bundle, file=sys.stderr); continue
+            png = io.BytesIO(); d.image.save(png, format="PNG")
+            to_portrait_jpeg(png.getvalue(), dest)
+            print("kr thumb:", dest); count += 1
+    print(f"한국판 메인/로그라이크 썸네일 {count}장 생성 (resVersion {ver['resVersion']})")
+
+if len(sys.argv) > 1 and sys.argv[1] == "--kr-story-thumbs":
+    kr_story_thumbs(); sys.exit(0)
 
 # ── 기본: stories.json + 썸네일 ─────────────────────────────
 print("fetching story_review_table (kr/en/jp) …", file=sys.stderr)

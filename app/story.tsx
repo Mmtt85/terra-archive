@@ -28,7 +28,7 @@ type Arc = { id: string; name: LocText };
 type RawEntry = { ref?: string; id?: string; kind: ChronKind; title?: LocText; terraYear?: number | null; arc?: string | null; dateNote?: string };
 type Chronology = { note: string; updated?: string; arcs: Arc[]; entries: RawEntry[] };
 // 연대기 항목 하나(이벤트 ref는 stories.json에서 이름·썸네일·출시월을 끌어온다)
-type ChronItem = { key: string; kind: ChronKind; name: LocText; start?: string; thumb?: string; thumbJa?: string; terraYear: number | null; arc: string | null; eventId?: string; dateNote?: string; epNo?: number; ep?: LocText };
+type ChronItem = { key: string; kind: ChronKind; name: LocText; start?: string; thumb?: string; thumbEn?: string; thumbJa?: string; terraYear: number | null; arc: string | null; eventId?: string; dateNote?: string; epNo?: number; ep?: LocText };
 
 const data = storiesData as { updated: string; events: StoryEvent[] };
 const summaries = summariesData as Record<string, Summary>;
@@ -200,6 +200,7 @@ function resolveChron(): ChronItem[] {
       };
     }
     const isMain = raw.kind === "main" && /^main_\d+$/.test(raw.id ?? "");
+    const isRogue = raw.kind === "roguelike" && /^rogue_\d+$/.test(raw.id ?? "");
     const epNo = isMain ? Number((raw.id as string).split("_")[1]) : undefined;
     return {
       key: raw.id ?? `x${i}`, kind: raw.kind,
@@ -207,7 +208,9 @@ function resolveChron(): ChronItem[] {
       terraYear: raw.terraYear ?? null, arc: raw.arc ?? null, dateNote: raw.dateNote,
       epNo,
       ep: epNo != null ? epLabel(epNo) : undefined,
-      thumb: isMain ? `/story/${raw.id}.jpg` : undefined,
+      // 메인: 한국판/글로벌/일본 타이틀카드. 로그라이크: 키 비주얼(로케일 공용).
+      thumb: isMain ? `/story/${raw.id}.jpg` : isRogue ? `/story/${raw.id}.jpg` : undefined,
+      thumbEn: isMain ? `/story/en/${raw.id}.jpg` : undefined,
       thumbJa: isMain ? `/story/ja/${raw.id}.jpg` : undefined,
     };
   });
@@ -490,7 +493,7 @@ function DigestView({ onOpen }: { onOpen: (event: StoryEvent) => void }) {
     const ready = Boolean(it.eventId && summaries[it.eventId]);
     const thumb = ev
       ? ((locale === "ja" ? ev.thumbJa : locale === "en" ? ev.thumbEn : undefined) ?? ev.thumb)
-      : ((locale === "ja" ? it.thumbJa : it.thumb) ?? it.thumb);
+      : ((locale === "ja" ? it.thumbJa : locale === "en" ? it.thumbEn : undefined) ?? it.thumb);
     const meta = ev ? `${ev.start} · ${t("에피소드 {n}개", { n: ev.episodes })}`
       : it.ep ? locText(locale, it.ep) : t(KIND_KO[it.kind]);
     return (
