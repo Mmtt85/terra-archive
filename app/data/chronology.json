@@ -199,8 +199,9 @@
   {
    "ref": "act16side",
    "kind": "event",
-   "terraYear": null,
-   "arc": "victoria"
+   "terraYear": 1099,
+   "arc": "victoria",
+   "dateNote": "'지금은 1099년 3월 15일' — act16side"
   },
   {
    "ref": "act17side",
@@ -253,8 +254,9 @@
   {
    "ref": "act25side",
    "kind": "event",
-   "terraYear": null,
-   "arc": "minos"
+   "terraYear": 1099,
+   "arc": "minos",
+   "dateNote": "'1099년 11월 21일' 날짜 스탬프 — act25side"
   },
   {
    "ref": "act26side",
@@ -265,8 +267,9 @@
   {
    "ref": "act27side",
    "kind": "event",
-   "terraYear": null,
-   "arc": null
+   "terraYear": 1099,
+   "arc": null,
+   "dateNote": "'오늘은 1099년 8월 21일입니다' — act27side"
   },
   {
    "ref": "act28side",
@@ -325,14 +328,16 @@
   {
    "ref": "act38side",
    "kind": "event",
-   "terraYear": null,
-   "arc": null
+   "terraYear": 1100,
+   "arc": null,
+   "dateNote": "날짜 스탬프 1099년 12월~1100년 11월(당대 최신) — act38side"
   },
   {
    "ref": "act37side",
    "kind": "event",
-   "terraYear": null,
-   "arc": null
+   "terraYear": 1098,
+   "arc": null,
+   "dateNote": "'1098년 12월 21일' 날짜 스탬프 — act37side"
   },
   {
    "ref": "act39side",
@@ -379,8 +384,9 @@
   {
    "ref": "act46side",
    "kind": "event",
-   "terraYear": null,
-   "arc": "kjerag"
+   "terraYear": 1101,
+   "arc": "kjerag",
+   "dateNote": "'1101년 12월 7일' 날짜 스탬프(제목도 1101) — act46side"
   },
   {
    "ref": "act47side",
@@ -393,7 +399,7 @@
    "kind": "event",
    "terraYear": 1100,
    "arc": null,
-   "dateNote": "'올해가 1100년' — act48side/level_act48side_03_end"
+   "dateNote": "'올해가 1100년' — act48side"
   },
   {
    "id": "main_00",
