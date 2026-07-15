@@ -98,18 +98,19 @@ function StoryDetail({ event, summary, onClose, onShowOperator }: {
           return next;
         });
       },
-      // 화면 상단 10%~하단 35%를 '읽는 중' 영역으로 취급
-      { rootMargin: "-10% 0px -35% 0px" },
+      // '읽는 중' 영역을 화면 하단 쪽(45%~90%)으로 잡는다 — 사람은 스크롤을 내리며 읽으니
+      // 방금 나타난 아래쪽 문단을 기준으로 삼고, 위로 올라간 문단(45% 위)은 빠르게 제외한다.
+      { rootMargin: "-45% 0px -10% 0px" },
     );
     root.querySelectorAll<HTMLElement>("[data-idx]").forEach((node) => observer.observe(node));
     return () => observer.disconnect();
   }, [summary]);
 
-  // 지금 보이는 블록들에 언급된 엔티티 — 본문 등장 순서 유지, 상한 개수 제한
+  // 지금 읽는 위치(맨 아래 문단)부터 판단 — 아래쪽 블록의 엔티티에 우선권을 주고 상한 개수 제한
   const active = useMemo(() => {
     const order: number[] = [];
     [...inView]
-      .sort((a, b) => a - b)
+      .sort((a, b) => b - a)
       .forEach((blockIndex) => {
         for (const entityIndex of mentions[blockIndex] ?? []) {
           if (!order.includes(entityIndex)) order.push(entityIndex);
