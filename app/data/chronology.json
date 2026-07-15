@@ -286,8 +286,9 @@
   {
    "ref": "act30side",
    "kind": "event",
-   "terraYear": null,
-   "arc": "yan"
+   "terraYear": 1100,
+   "arc": "yan",
+   "dateNote": "'1100년 겨울, 쉐라그 페일로쉬' 장면 스탬프 — act30side"
   },
   {
    "ref": "act31side",
