@@ -328,16 +328,27 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
     const f = Math.min(1, Math.max(0, frac));
     r.scrollTo({ left: f * railMax(), behavior: smooth ? "smooth" : "auto" });
   };
-  const onSliderDown = (e: React.PointerEvent) => {
-    e.preventDefault();
+  // 트랙에 포인터를 캡처해 드래그를 안정적으로 추적한다 (window 리스너 방식은 썸 재렌더 중
+  // 이벤트가 끊겨 드래그가 먹통이 되던 문제가 있었다). 캡처 중에만 move가 반응한다.
+  const seekTo = (clientX: number) => {
     const track = sliderRef.current; if (!track) return;
     const rect = track.getBoundingClientRect();
-    const move = (clientX: number) => setRailFrac((clientX - rect.left) / rect.width);
-    move(e.clientX);
-    const onMove = (ev: PointerEvent) => move(ev.clientX);
-    const onUp = () => { window.removeEventListener("pointermove", onMove); window.removeEventListener("pointerup", onUp); };
-    window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerup", onUp);
+    setRailFrac((clientX - rect.left) / rect.width);
+  };
+  const onSliderDown = (e: React.PointerEvent) => {
+    const track = sliderRef.current; if (!track) return;
+    e.preventDefault();
+    track.setPointerCapture(e.pointerId);
+    seekTo(e.clientX);
+  };
+  const onSliderMove = (e: React.PointerEvent) => {
+    const track = sliderRef.current;
+    if (!track || !track.hasPointerCapture(e.pointerId)) return;
+    seekTo(e.clientX);
+  };
+  const onSliderUp = (e: React.PointerEvent) => {
+    const track = sliderRef.current;
+    if (track?.hasPointerCapture(e.pointerId)) track.releasePointerCapture(e.pointerId);
   };
   // 양끝 화살표 / 방향키 — 연도 그룹 단위로 이동
   const stepYear = (dir: 1 | -1) => {
@@ -422,7 +433,7 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
         {/* 연대기 슬라이더 — 드래그하면 위 레일과 아래 목록이 함께 이동, 양끝 화살표는 연도 단위 이동 */}
         <div className="chron-slider">
           <button type="button" className="chron-slider-arrow" onClick={() => stepYear(-1)} aria-label={t("이전 연도")}>‹</button>
-          <div className="chron-slider-track" ref={sliderRef} onPointerDown={onSliderDown}>
+          <div className="chron-slider-track" ref={sliderRef} onPointerDown={onSliderDown} onPointerMove={onSliderMove} onPointerUp={onSliderUp} onPointerCancel={onSliderUp}>
             <div className="chron-slider-fill" style={{ width: `${pos * 100}%` }} />
             <div className="chron-slider-thumb" style={{ left: `${pos * 100}%` }}
               role="slider" tabIndex={0} aria-label={t("연대기 슬라이더")}

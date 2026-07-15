@@ -1297,6 +1297,21 @@ export default function InfraPlanner({ onShowOperator, extra }: { onShowOperator
     showToast(t("빈 자리 {n}곳을 채웠습니다 · 기존 편성 유지", { n: added }));
   };
 
+  // 편성 전체 비우기 — 모든 방을 빈 슬롯으로 되돌린다(수동 배치 시작점). 되돌릴 수 없어 확인을 받는다.
+  const clearAll = () => {
+    if (!plan) return;
+    if (typeof window !== "undefined" && !window.confirm(t("현재 편성을 전부 비웁니다. 계속할까요?"))) return;
+    const assignments: Record<string, string[][]> = Object.fromEntries(
+      Object.entries(plan.assignments).map(([key, shifts]) => [key, shifts.map(() => [])])
+    );
+    const next = { ...plan, assignments, tokenPoints: {}, factionCounts: plan.factionCounts.map(() => ({})) };
+    setPlan(next);
+    setActiveShift(0);
+    persist(ownedIds, next);
+    setDirty(true);
+    showToast(t("편성을 전부 비웠습니다 — 방을 눌러 수동 배치하거나 자동편성하세요"));
+  };
+
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -1365,6 +1380,7 @@ export default function InfraPlanner({ onShowOperator, extra }: { onShowOperator
           <button onClick={() => setShowRoster(true)}><span className="btn-icon" aria-hidden>▦</span>{t("보유 오퍼 설정 ({a}/{b})", { a: ownedIds.size, b: ops.length })}</button>
           <button className="primary" onClick={() => runOptimize()}><span className="btn-icon" aria-hidden>⟳</span>{t("전체 자동편성")}</button>
           <button onClick={fillGaps} title={t("현재 편성(수동 수정 포함)은 그대로 두고, 남은 빈 자리만 효율 순으로 자동 편성합니다")}><span className="btn-icon" aria-hidden>⊕</span>{t("빈 자리만 자동편성")}</button>
+          <button onClick={clearAll} title={t("모든 방의 편성을 비웁니다 (보유 오퍼 설정은 유지)")}><span className="btn-icon" aria-hidden>⌫</span>{t("편성 전체 비우기")}</button>
           <button onClick={exportImage} title={t("A조·B조 편성표를 이미지로 확인 (PNG)")}><span className="btn-icon" aria-hidden>⧉</span>{t("이미지로 보기")}</button>
           <span className="file-group">
             <button className={dirty ? "save-pending" : undefined} onClick={exportState} title={dirty ? t("저장 후 변경 사항이 있습니다 — 파일로 저장하세요") : t("보유 오퍼와 편성을 JSON 파일로 저장")}><span className="btn-icon" aria-hidden>⤓</span>{t("현재 상태 파일로 저장")}</button>
