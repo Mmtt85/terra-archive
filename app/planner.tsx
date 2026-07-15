@@ -691,6 +691,65 @@ function buildPlan(packageTokens: string[], roster: InfraOp[], factionSets = fal
         }
       }
 
+      // ①.5 시너지 재결집: perSkillTag 오퍼(도로시=라인테크류 1개당 +5%)의 방에, 같은 계열
+      // 오퍼를 다른 A조 방에서 끌어와 시너지를 살린다. A조 최강화(①)는 벤치·B조만 봐서 초기
+      // 그리디가 도로시와 라인테크를 서로 다른 A조 방에 흩어놓으면 못 모으기 때문. 두 방 총점이
+      // 오를 때만 맞바꾼다(A조 총합 단조 증가). 제품 안 맞는 오퍼는 famOf가 걸러 끌어오지 않음.
+      {
+        const roomOf0 = new Map<string, string>();
+        for (const k of workKeys) { const rm = cellByKey.get(k)?.room ?? k; for (const id of assignments[k]?.[0] ?? []) roomOf0.set(id, rm); }
+        for (let dd = 0; dd < 4; dd += 1) for (const id of assignments[`DORM-${dd}`]?.[0] ?? []) roomOf0.set(id, "DORMITORY");
+        const aPresent = new Set<string>(roomOf0.keys());
+        const famOf = (op: InfraOp, room: string, product?: string) => {
+          const set = new Set<string>();
+          for (const sk of activeSkills(op, room, product)) if (sk.families) for (const f of sk.families) set.add(f);
+          return set;
+        };
+        for (const gkeys of groups.values()) {
+          if (gkeys.length < 2) continue;
+          for (const sKey of gkeys) {
+            const sRoom = cellByKey.get(sKey)?.room ?? sKey;
+            const sCtx = { ...ctxFor(sKey, tokenPoints, factionCountsPerShift[0], plants, aPresent), roomOf: roomOf0 };
+            let sTeam = (assignments[sKey][0] ?? []).map((id) => byIdAll.get(id)).filter((op): op is InfraOp => Boolean(op));
+            const wantTags = new Set<string>();
+            for (const op of sTeam) for (const sk of activeSkills(op, sRoom, sCtx.product)) if (sk.perSkillTag) wantTags.add(sk.perSkillTag);
+            if (!wantTags.size) continue;
+            let improved = true;
+            while (improved) {
+              improved = false;
+              for (let i = 0; i < sTeam.length && !improved; i += 1) {
+                const r = sTeam[i];
+                if (reserved.has(r.id)) continue;
+                const rFam = famOf(r, sRoom, sCtx.product);
+                if ([...wantTags].some((t) => rFam.has(t))) continue; // 이미 원하는 계열이면 유지
+                for (const oKey of gkeys) {
+                  if (oKey === sKey) continue;
+                  const oRoom = cellByKey.get(oKey)?.room ?? oKey;
+                  const oCtx = { ...ctxFor(oKey, tokenPoints, factionCountsPerShift[0], plants, aPresent), roomOf: roomOf0 };
+                  const oTeam = (assignments[oKey][0] ?? []).map((id) => byIdAll.get(id)).filter((op): op is InfraOp => Boolean(op));
+                  for (let j = 0; j < oTeam.length; j += 1) {
+                    const c = oTeam[j];
+                    if (reserved.has(c.id)) continue;
+                    if (![...wantTags].some((t) => famOf(c, sRoom, sCtx.product).has(t))) continue; // c는 원하는 계열
+                    const newS = sTeam.slice(); newS[i] = c;
+                    const newO = oTeam.slice(); newO[j] = r;
+                    const gain = (teamScore(newS, sRoom, sCtx) - teamScore(sTeam, sRoom, sCtx))
+                               + (teamScore(newO, oRoom, oCtx) - teamScore(oTeam, oRoom, oCtx));
+                    if (gain > 1e-6) {
+                      assignments[sKey][0] = newS.map((o) => o.id);
+                      assignments[oKey][0] = newO.map((o) => o.id);
+                      roomOf0.set(c.id, sRoom); roomOf0.set(r.id, oRoom);
+                      sTeam = newS; changed = true; improved = true; break;
+                    }
+                  }
+                  if (improved) break;
+                }
+              }
+            }
+          }
+        }
+      }
+
       // ②·③ 조 동시배치 제거 + 빈 방 재충원
       for (let shift = 0; shift < SHIFT_COUNT; shift += 1) {
         const otherWorking = new Set<string>();
