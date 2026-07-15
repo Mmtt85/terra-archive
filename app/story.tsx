@@ -98,9 +98,9 @@ function StoryDetail({ event, summary, onClose, onShowOperator }: {
           return next;
         });
       },
-      // '읽는 중' 영역을 화면 하단 쪽(45%~90%)으로 잡는다 — 사람은 스크롤을 내리며 읽으니
-      // 방금 나타난 아래쪽 문단을 기준으로 삼고, 위로 올라간 문단(45% 위)은 빠르게 제외한다.
-      { rootMargin: "-45% 0px -10% 0px" },
+      // '읽는 중' 영역: 화면 18%~90%. 아래쪽(하단 10% 지점)에서 문단이 나타나면 카드가 뜨고,
+      // 위로 스크롤돼 상단 ~18%까지 올라가면(거의 화면 밖) 사라진다. 아래쪽 문단 기준으로 판정.
+      { rootMargin: "-18% 0px -10% 0px" },
     );
     root.querySelectorAll<HTMLElement>("[data-idx]").forEach((node) => observer.observe(node));
     return () => observer.disconnect();
