@@ -4043,10 +4043,12 @@ footer p {
   object-fit: cover;
   object-position: 50% 0%;
 }
-/* 오퍼레이터 아바타 폴백(정사각 초상) — 세로 크롭 대신 얼굴이 보이게 꽉 채운다 */
+/* 오퍼레이터 아바타 폴백(정사각 초상) — 가로형 스트립에 맞춰 얼굴 중심으로 크롭.
+   22%는 입·턱이 잘려서 45%(눈~턱이 온전히 보이는 지점)로 조정 */
 .cast-avatar img {
   height: 100%;
-  object-position: 50% 22%;
+  object-fit: cover;
+  object-position: 50% 45%;
 }
 /* 본문 + 스크롤 추적 참조 레일 (넓은 화면) */
 .story-detail-grid {
