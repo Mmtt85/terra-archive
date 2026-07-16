@@ -199,6 +199,41 @@ const storyEventById = new Map(
 // 사이드스토리·복각 등 굵직한 이벤트 — 배지 대표로 우선한다 (로그인·출석류보다)
 const MAJOR_EVENT_TYPES = new Set(["SIDESTORY", "BRANCHLINE", "MINISTORY"]);
 
+// 워커 fetch는 모듈 공유 프라미스로 1회만 — 헤더 배지와 이벤트 스트립이 같이 쓴다
+let bcastFetch: Promise<{ broadcasts: Broadcast[]; events: GameEvent[] } | null> | null = null;
+function fetchBcastPayload() {
+  bcastFetch ??= fetch(BCAST_API)
+    .then((res) => (res.ok ? res.json() : null))
+    .then((data) => (data ? {
+      broadcasts: Array.isArray(data.broadcasts) ? data.broadcasts : [],
+      events: Array.isArray(data.events) ? data.events : [],
+    } : null))
+    .catch(() => null);
+  return bcastFetch;
+}
+
+// 진행중 이벤트 공용 헬퍼 — 배지·스트립이 같은 규칙으로 정렬·표기한다
+function sortRunning(events: GameEvent[], now: number): GameEvent[] {
+  return events
+    .filter((event) => Date.parse(event.start) <= now && now <= Date.parse(event.end))
+    .sort((a, b) => {
+      const majorA = MAJOR_EVENT_TYPES.has(a.displayType ?? "") ? 0 : 1;
+      const majorB = MAJOR_EVENT_TYPES.has(b.displayType ?? "") ? 0 : 1;
+      if (majorA !== majorB) return majorA - majorB;
+      return majorA === 0 ? Date.parse(b.start) - Date.parse(a.start) : Date.parse(a.end) - Date.parse(b.end);
+    });
+}
+function eventName(locale: Locale, event: GameEvent): string {
+  const story = storyEventById.get(event.id);
+  return story ? ((locale === "ko" ? story.name.ko : story.name[locale]) ?? story.name.ko) : event.name;
+}
+function eventThumb(locale: Locale, event: GameEvent): string | undefined {
+  const story = storyEventById.get(event.id);
+  if (!story) return undefined;
+  return (locale === "ja" ? story.thumbJa : locale === "en" ? story.thumbEn : undefined) ?? story.thumb;
+}
+const eventDday = (event: GameEvent, now: number): number => Math.max(0, Math.ceil((Date.parse(event.end) - now) / DAY));
+
 function BroadcastBadges() {
   const { locale, t } = useI18n();
   const shortStatus = (b: Broadcast, now: number): string => {
@@ -223,13 +258,12 @@ function BroadcastBadges() {
     return () => clearInterval(id);
   }, []);
   useEffect(() => {
-    fetch(BCAST_API)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (Array.isArray(data?.broadcasts)) setRemote(data.broadcasts);
-        if (Array.isArray(data?.events)) setGameEvents(data.events);
-      })
-      .catch(() => { /* 워커 불통이면 정적 broadcasts.json만 사용 (이벤트 배지는 생략) */ });
+    // 워커 불통이면 정적 broadcasts.json만 사용 (이벤트 배지는 생략)
+    fetchBcastPayload().then((data) => {
+      if (!data) return;
+      setRemote(data.broadcasts);
+      setGameEvents(data.events);
+    });
   }, []);
   useEffect(() => {
     if (!open) return;
@@ -257,28 +291,14 @@ function BroadcastBadges() {
   // ── 진행중 게임 이벤트 배지 (공식 방송 버튼 오른쪽) ──
   // 굵직한 이벤트(사이드스토리 등) 우선 + 최신 시작순으로 대표 하나를 버튼에,
   // 나머지는 팝오버 목록에 (로그인·출석류 포함 전부 — 사용자 선택 2026-07)
-  const running = gameEvents
-    .filter((event) => Date.parse(event.start) <= now && now <= Date.parse(event.end))
-    .sort((a, b) => {
-      const majorA = MAJOR_EVENT_TYPES.has(a.displayType ?? "") ? 0 : 1;
-      const majorB = MAJOR_EVENT_TYPES.has(b.displayType ?? "") ? 0 : 1;
-      if (majorA !== majorB) return majorA - majorB;
-      return majorA === 0 ? Date.parse(b.start) - Date.parse(a.start) : Date.parse(a.end) - Date.parse(b.end);
-    });
+  const running = sortRunning(gameEvents, now);
   const headline = running[0];
-  const evName = (event: GameEvent): string => {
-    const story = storyEventById.get(event.id);
-    return story ? ((locale === "ko" ? story.name.ko : story.name[locale]) ?? story.name.ko) : event.name;
-  };
-  const dday = (event: GameEvent): number => Math.max(0, Math.ceil((Date.parse(event.end) - now) / DAY));
+  const evName = (event: GameEvent): string => eventName(locale, event);
+  const dday = (event: GameEvent): number => eventDday(event, now);
   const md = (iso: string): string =>
     new Intl.DateTimeFormat(DT_LOCALE[locale], { timeZone: "Asia/Seoul", month: "numeric", day: "numeric" }).format(new Date(iso));
   // 스토리 탭용으로 이미 받아둔 이벤트 배너를 재활용 (로케일 변형 → ko 폴백)
-  const evThumb = (event: GameEvent): string | undefined => {
-    const story = storyEventById.get(event.id);
-    if (!story) return undefined;
-    return (locale === "ja" ? story.thumbJa : locale === "en" ? story.thumbEn : undefined) ?? story.thumb;
-  };
+  const evThumb = (event: GameEvent): string | undefined => eventThumb(locale, event);
   const eventBadge = headline && (
     <div className="event-group" ref={evRef}>
       <button type="button" className="event-trigger" aria-expanded={evOpen} onClick={() => setEvOpen((o) => !o)}
@@ -377,6 +397,61 @@ function BroadcastBadges() {
         document.body
       )}
     </>
+  );
+}
+
+// ── 진행중 이벤트 스트립 (헤더 바로 아래, 전 탭 상시 노출) ─────────────────
+// 팝오버와 같은 데이터·정렬을 쓰되 클릭 없이 바로 보인다 (사용자 요청 2026-07).
+// 배너가 있는 이벤트(사이드스토리류)는 배너 카드, 나머지는 텍스트 칩.
+function EventStrip() {
+  const { locale, t } = useI18n();
+  const [now, setNow] = useState<number | null>(null);
+  const [gameEvents, setGameEvents] = useState<GameEvent[]>([]);
+  useEffect(() => {
+    setNow(Date.now());
+    const id = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+  useEffect(() => {
+    fetchBcastPayload().then((data) => { if (data) setGameEvents(data.events); });
+  }, []);
+  if (now == null) return null;
+  const running = sortRunning(gameEvents, now);
+  if (running.length === 0) return null;
+  const md = (iso: string): string =>
+    new Intl.DateTimeFormat(DT_LOCALE[locale], { timeZone: "Asia/Seoul", month: "numeric", day: "numeric" }).format(new Date(iso));
+  return (
+    <section className="event-strip" aria-label={t("진행중 이벤트")}>
+      <span className="event-strip-label">{t("진행중 이벤트")}</span>
+      <div className="event-strip-items">
+        {running.map((event) => {
+          const thumb = eventThumb(locale, event);
+          const linked = storyEventById.has(event.id);
+          const dday = eventDday(event, now);
+          if (thumb) {
+            const card = (
+              <>
+                <span className="event-card-thumb"><img src={thumb} alt="" loading="lazy" /></span>
+                <span className="event-card-info">
+                  <b>{eventName(locale, event)}</b>
+                  <small>{md(event.start)} ~ {md(event.end)} · D-{dday}</small>
+                </span>
+              </>
+            );
+            return linked ? (
+              <a key={event.id} className="event-card" href={`${LOCALE_BASE[locale]}/stories#story-${event.id}`} title={t("AI 스토리 요약 보기")}>{card}</a>
+            ) : (
+              <span key={event.id} className="event-card">{card}</span>
+            );
+          }
+          return (
+            <span key={event.id} className="event-chip">
+              {eventName(locale, event)} <small>D-{dday}</small>
+            </span>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 
@@ -851,6 +926,9 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
         <button type="button" className={`about-icon${tab === "about" ? " selected" : ""}`} onClick={() => switchTab("about")}
           aria-label={t("소개")} title={t("소개")}>ⓘ</button>
       </header>
+
+      {/* 진행중 이벤트 스트립 — 클릭 없이 페이지에서 바로 보이게 (사용자 요청 2026-07) */}
+      <EventStrip />
 
       {tab === "archive" && <section className="explorer" aria-labelledby="explorer-title">
         <div className="filter-panel">
