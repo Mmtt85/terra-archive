@@ -640,6 +640,10 @@ const D: Record<string, Pair> = {
     "This operator is not yet released on the KR server — data comes from the CN server, so some text appears in Chinese.",
     "韓国サーバー未実装のオペレーターです — 中国サーバーのデータ基準のため、一部テキストが原文（中国語）で表示されます。",
   ],
+  "미실장(중국 서버 선행) 이벤트의 제목은 AI 임시 번역으로, 한국 서버 정식 출시 시 공식 번역과 다를 수 있습니다.": [
+    "Titles of unreleased (CN-first) events are provisional AI translations and may differ from the official localization.",
+    "未実装（中国サーバー先行）イベントのタイトルはAIによる仮訳であり、正式実装時の公式翻訳と異なる場合があります。",
+  ],
   // ── 육성 비용 계산기 ──
   "육성 비용 계산기": ["Upgrade Cost Calculator", "育成コスト計算機"],
   "오퍼레이터를 추가하면 레벨업(용문폐·경험치), 정예화 1·2, 스킬 레벨 2~7, 스킬별 특화 1~3, 모듈별 1~3단계가 전부 개별 행으로 나옵니다. 각 그룹에서 목표 단계를 클릭하면 앞 단계가 자동 포함돼 합산됩니다. 경험치는 고급작전기록(2000 EXP) 환산 개수로 표시합니다. 재료 아이콘을 클릭하면 상세 정보가 열립니다.": [

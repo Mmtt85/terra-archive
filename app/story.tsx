@@ -670,6 +670,9 @@ export default function StoryGuide({ onShowOperator, includeFuture }: { onShowOp
         <h2>{t("AI 스토리 요약")}</h2>
         <p>{t("한국 서버에 풀린 사이드 스토리 {count}개의 아카이브입니다. AI가 스토리 스크립트 전문을 정독하고 컷씬과 함께 10분 분량으로 요약합니다. 현재 {done}개 수록 — 계속 추가됩니다.", { count: data.events.filter((event) => !event.unreleased).length, done: summarized })}</p>
         <p className="story-source">{t("요약에는 결말 포함 스포일러가 있습니다. 이벤트 제목·썸네일 출처: 게임 데이터 · {date} 기준.", { date: data.updated })}</p>
+        {includeFuture && data.events.some((event) => event.unreleased) && (
+          <p className="story-source">{t("미실장(중국 서버 선행) 이벤트의 제목은 AI 임시 번역으로, 한국 서버 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>
+        )}
       </div>
 
       <div className="story-viewtabs" role="tablist">

@@ -408,6 +408,16 @@ for act in acts:
 # (중국어 부제 금지 규칙은 KR 출시 이벤트의 기본 썸네일에만 적용 — 미실장은 CN판이 원본).
 # /story/cn/ 에 따로 저장해, KR 출시 후 기본 썸네일(--kr-thumbs)과 파일이 충돌하지 않게 한다.
 # UI는 '미래시 데이터 포함' 체크 시에만 노출한다.
+
+# CN 전용 이벤트 제목의 AI 임시 번역 — 정식 출시 전까지 로케일별로 이걸 보여주고,
+# UI에 '임시 번역이라 정식 번역과 다를 수 있다' 안내를 띄운다 (KR 출시되면 kr 테이블이
+# 이 블록을 대체하므로 자연 소멸). 새 CN 이벤트가 잡히면 AI(Claude)가 여기에 번역을
+# 채운다 — 없는 이벤트는 중국어 원문 그대로 나간다. 한자 시제(詩題)류는 KR 공식 관례대로
+# 한자 독음(懷黍離→회서리, 將進酒→장진주)을 따른다.
+CN_PROVISIONAL_NAMES = {
+    "act49side": {"ko": "사세행", "en": "A Farewell to the Passing Year", "ja": "辞歳行"},  # 辞岁行
+    "act51side": {"ko": "사람들, 우리", "en": "People, Us", "ja": "人々、私たち"},          # 人们，我们
+}
 print("fetching story_review_table (cn) …", file=sys.stderr)
 cn = fetch(f"{GAMEDATA}/cn/gamedata/excel/story_review_table.json")
 cn_dir = os.path.join(thumb_dir, "cn")
@@ -429,9 +439,12 @@ for act in cn_acts:
         except Exception as err:  # noqa: BLE001 — 썸네일 없으면 이벤트도 생략 (404 이미지 방지)
             print("skip cn event (no thumb):", eid, err, file=sys.stderr)
             continue
+    trans = CN_PROVISIONAL_NAMES.get(eid)
+    if not trans:
+        print("untranslated cn event (원문 노출):", eid, act["name"], file=sys.stderr)
     events.append({
         "id": eid,
-        "name": {"ko": act["name"]},   # 중국어 원문 — KR 출시 전이라 번역 없음
+        "name": trans or {"ko": act["name"]},  # 임시 번역 없으면 중국어 원문
         "start": time.strftime("%Y-%m", time.gmtime(act["startTime"])),  # CN 출시월
         "episodes": len(codes),
         "thumb": f"/story/cn/{eid}.jpg",
