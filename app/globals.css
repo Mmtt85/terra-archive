@@ -1877,10 +1877,20 @@ footer p {
   .site-header .future-toggle {
     margin-left: 0;
   }
-  /* 모바일에선 햄버거를 좀 더 컴팩트하게 (드롭다운 동작은 base 공통) */
+  /* 모바일에선 햄버거를 좀 더 컴팩트하게 (드롭다운 동작은 base 공통).
+     탭 라벨이 길어도("인프라 자동편성기") 한 줄이 유지되게 축소·말줄임 허용 */
+  .site-header .nav-group {
+    min-width: 0;
+    flex: 0 1 auto;
+  }
   .site-header .nav-toggle {
-    padding: 8px 12px;
-    margin-right: 8px;
+    padding: 7px 9px;
+    margin-right: 6px;
+    font-size: 11px;
+    gap: 6px;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   /* 모바일에선 드롭다운을 헤더 폭 전체로 — nav-group을 static으로 풀어
      .main-tabs가 헤더(sticky) 기준으로 좌우 16px에 붙게 한다 */
