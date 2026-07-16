@@ -15,6 +15,15 @@ type Feature = {
   highlight?: string; // 강조 박스 (인프라 플래너 90/10 어필)
 };
 
+// 기능별 스크린샷 (한국어 UI · 헤드리스 캡처본). 로케일 공용 — 탭 키로 매핑.
+const SHOTS: Partial<Record<Tab, string>> = {
+  archive: "/about/archive.jpg",
+  planner: "/about/planner.jpg",
+  recruit: "/about/recruit.jpg",
+  farm: "/about/farm.jpg",
+  story: "/about/story.jpg",
+};
+
 type Content = {
   kicker: string;
   title: string;
@@ -270,6 +279,9 @@ export default function About({ onOpenTab }: { onOpenTab?: (tab: Tab) => void })
               <span className="about-card-icon" aria-hidden>{f.icon}</span>
               <h3>{f.name}</h3>
             </header>
+            {SHOTS[f.tab] && (
+              <img className="about-shot" src={SHOTS[f.tab]} alt={f.name} loading="lazy" decoding="async" />
+            )}
             <p className="about-card-summary">{f.summary}</p>
             {f.highlight && <p className="about-card-highlight">{rich(f.highlight)}</p>}
             <ul className="about-card-bullets">

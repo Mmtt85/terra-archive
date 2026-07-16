@@ -4301,6 +4301,13 @@ footer p {
 .about-card > header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
 .about-card-icon { font-size: 20px; line-height: 1; }
 .about-card > header h3 { font-size: 18px; margin: 0; letter-spacing: -0.3px; }
+.about-shot {
+  width: 100%;
+  display: block;
+  margin-bottom: 13px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
 .about-card-summary { font-size: 14px; line-height: 1.6; margin: 0 0 12px; }
 .about-card-highlight {
   font-size: 14px;
