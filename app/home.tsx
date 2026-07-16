@@ -736,7 +736,7 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
           <button className={`tab-farm${tab === "farm" ? " selected" : ""}`} onClick={() => switchTab("farm")}><span className="tab-icon" aria-hidden>◈</span>{t("파밍·육성 시뮬")}</button>
           <button className={`tab-story${tab === "story" ? " selected" : ""}`} onClick={() => switchTab("story")}><span className="tab-icon" aria-hidden>✦</span>{t("AI 스토리 요약")}</button>
         </nav>
-        <label className="future-toggle" title={t("한국 서버에 아직 나오지 않은 오퍼레이터·재료(중국 서버 데이터)도 목록·계산기에 표시합니다.")}>
+        <label className="future-toggle" title={t("한국 서버에 아직 나오지 않은 오퍼레이터·재료(중국 서버 데이터)도 목록·계산기에 표시합니다. 미실장 텍스트는 비공식 AI 번역입니다.")}>
           <input type="checkbox" checked={includeFuture} onChange={(event) => toggleFuture(event.target.checked)} />
           {t("미래시 데이터 포함")}
         </label>
@@ -933,7 +933,7 @@ function OperatorModal({ operator, nicknames, onSubmitNickname, onClose }: { ope
               <div className="class-line">
                 <div><b>{operator.job}</b><small>{operator.subProfession} · {operator.position}</small></div>
               </div>
-              {operator.unreleased && <p className="future-note">{t("한국 서버 미실장 오퍼레이터입니다 — 중국 서버 데이터 기준이라 일부 텍스트가 원문(중국어)으로 표시됩니다.")}</p>}
+              {operator.unreleased && <p className="future-note">{t("한국 서버 미실장 오퍼레이터입니다 — 중국 서버 데이터 기준이며, 스킬·재능 등 텍스트는 비공식 AI 번역이라 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>}
             </div>
             <NicknameForm key={operator.id} operator={operator} onSubmit={onSubmitNickname} />
           </div>

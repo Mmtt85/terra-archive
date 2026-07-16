@@ -154,12 +154,24 @@ try:
 except FileNotFoundError:
     pass
 
+# 미실장 재료의 중국어 원문 → AI 비공식 번역 (scripts/cn-translations.json, {cn: {ko,en,ja}}).
+# 새 미실장 재료가 잡히면 AI(Claude)가 채운다 — 없으면 원문 유지 + 경고 출력.
+CN_MANUAL_PATH = f"{REPO}/scripts/cn-translations.json"
+CN_MANUAL = load(CN_MANUAL_PATH) if os.path.exists(CN_MANUAL_PATH) else {}
+
 def loc_field(iid, field):
     out = {"ko": ((kr_items.get(iid) or cn_items.get(iid) or {}).get(field))}
     en = (en_items.get(iid) or {}).get(field)
     ja = (jp_items.get(iid) or {}).get(field)
     if en: out["en"] = en
     if ja: out["ja"] = ja
+    tr = CN_MANUAL.get(out["ko"] or "")
+    if tr:  # ko가 중국어 원문(미실장 재료)이면 비공식 번역으로 대체
+        if tr.get("ko"): out["ko"] = tr["ko"]
+        if tr.get("en") and "en" not in out: out["en"] = tr["en"]
+        if tr.get("ja") and "ja" not in out: out["ja"] = tr["ja"]
+    elif out["ko"] and field == "name" and CJK.search(out["ko"]) and not (kr_items.get(iid) or {}).get("name"):
+        print("untranslated cn item (원문 노출):", iid, out["ko"], file=sys.stderr)
     return out if out["ko"] else None
 
 CJK = re.compile(r"[一-鿿]")

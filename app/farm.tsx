@@ -123,6 +123,9 @@ export default function FarmGuide({ operators, includeFuture, onShowOperator }: 
         <span className="section-no">FARM &amp; UPGRADE</span>
         <h2>{t("재료 파밍 & 오퍼 육성 시뮬레이션")}</h2>
         <p>{t("오퍼레이터 육성에 필요한 용문폐·재료 총량을 단계별로 계산하고, 각 재료를 어느 스테이지에서 파밍하는 게 가장 효율적인지 실측 드랍 통계로 확인합니다.")}</p>
+        {includeFuture && (
+          <p className="farm-source">{t("미실장(중국 서버 선행) 오퍼레이터·재료의 텍스트는 비공식 AI 번역으로, 한국 서버 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>
+        )}
       </div>
 
       <CostCalculator operators={operators} includeFuture={includeFuture} onShowOperator={onShowOperator} onShowItem={setShownItem} />
@@ -567,8 +570,10 @@ function ItemModal({ id, onClose, onShowItem, onSearchItem }: {
             <h3>{name}</h3>
             <span className={`farm-tier tier-${rarity}`}>T{rarity}</span>
             {farmItem && <em className="item-farmable-badge">{t("파밍 가능")}</em>}
+            {meta?.unreleased && <em className="future-badge">{t("미실장")}</em>}
           </div>
         </header>
+        {meta?.unreleased && <p className="item-usage">{t("한국 서버 미실장 재료입니다 — 이름·설명은 비공식 AI 번역이라 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>}
         {meta?.desc && <p className="item-desc">{locText(locale, meta.desc)}</p>}
         {meta?.usage && <p className="item-usage">{locText(locale, meta.usage)}</p>}
         {meta?.craft && (

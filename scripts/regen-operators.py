@@ -404,6 +404,51 @@ TAG_CN2KR = {k: v.most_common(1)[0][0] for k, v in tag_votes.items()}
 skill_table = cn_tables["skill_table"]; uniequip = cn_tables["uniequip"]
 battle_equip = cn_tables["battle_equip"]; building = cn_tables["building"]
 ranges = cn_tables["ranges"]; team_table = cn_tables["team_table"]; handbook = cn_tables["handbook"]
+
+# ── 미실장 오퍼 상세 텍스트 번역: CN→KR 자동 사전 + 수동 오버레이 ──────────────────
+# 자동 사전: KR·CN 양쪽에 있는 오퍼를 CN 테이블로도 렌더링해 필드 단위로 짝짓는다 —
+# 정형 문구(잠재 "天赋效果加强"→"재능 효과 강화", 세부직군 공통 특성, 기반시설 공통
+# 스킬 설명 등)는 공식 KR 번역이 그대로 잡힌다. 다수결로 충돌 해소.
+# 수동 오버레이(scripts/cn-translations.json): 재능·스킬·모듈 등 신규 고유 텍스트의
+# AI 비공식 번역 {cn원문: {ko,en,ja}} — 새 CN 오퍼가 잡히면 AI(Claude)가 채운다.
+# 수동이 자동보다 우선(자동 다수결 오역 교정용). 남은 미번역은 원문 유지 + 경고 출력.
+CJK_RE = re.compile(r"[㐀-鿿]")
+MANUAL_PATH = f"{REPO}/scripts/cn-translations.json"
+MANUAL = load(MANUAL_PATH) if os.path.exists(MANUAL_PATH) else {}
+_pair_votes = defaultdict(Counter)
+def _pair(cn_v, kr_v):
+    if isinstance(cn_v, dict) and isinstance(kr_v, dict):
+        for k in cn_v:
+            if k in kr_v: _pair(cn_v[k], kr_v[k])
+    elif isinstance(cn_v, list) and isinstance(kr_v, list) and len(cn_v) == len(kr_v):
+        for a, b in zip(cn_v, kr_v): _pair(a, b)
+    elif isinstance(cn_v, str) and isinstance(kr_v, str) and cn_v != kr_v and CJK_RE.search(cn_v):
+        _pair_votes[cn_v][kr_v] += 1
+
+_kr_built = {o["id"]: o for o in result}
+_saved_unknown = set(unknown_powers)
+for _cid in set(chars) & set(cn):
+    if _cid not in _kr_built: continue
+    try: _pair(build_op(_cid, cn[_cid]), _kr_built[_cid])
+    except Exception: pass  # noqa: BLE001 — 사전 수확은 최선 노력, 한 오퍼 실패로 전체를 막지 않는다
+unknown_powers = _saved_unknown  # 수확 중 생긴 노이즈 제거
+CN2KR_TEXT = {k: v.most_common(1)[0][0] for k, v in _pair_votes.items()}
+
+TR_FIELDS = ("subProfession", "reason", "trait", "talents", "skills", "potentials",
+             "modules", "infrastructure")
+untranslated = []
+def translate_cn(x, ctx):
+    if isinstance(x, dict):
+        return {k: (translate_cn(v, f"{ctx}.{k}") if k != "id" else v) for k, v in x.items()}
+    if isinstance(x, list):
+        return [translate_cn(v, ctx) for v in x]
+    if isinstance(x, str) and CJK_RE.search(x):
+        t = (MANUAL.get(x) or {}).get("ko") or CN2KR_TEXT.get(x)
+        if t: return t
+        untranslated.append({"ctx": ctx, "cn": x})
+        return x
+    return x
+
 # 출시순(seq): KR 전체 뒤에 CN 도감 순서대로 이어 붙인다 → '출시순 최신'에 미래시가 맨 앞
 cn_seq = {c2: i for i, c2 in enumerate(cn_tables["handbook"].keys())}
 release_seq = {cid: 100000 + cn_seq.get(cid, 99999) for cid in cn if cid not in chars}
@@ -420,11 +465,21 @@ for cid, c in cn.items():
     op["birthplace"] = BIRTH_CN2KR.get(op["birthplace"], op["birthplace"])
     op["race"] = RACE_CN2KR.get(op["race"], op["race"])
     op["combatTags"] = [TAG_CN2KR.get(t, t) for t in op["combatTags"]]
+    # 상세 텍스트(특성·재능·스킬·잠재·모듈·기반시설) 한국어화 — 자동 사전 + 수동 오버레이
+    for f in TR_FIELDS:
+        op[f] = translate_cn(op[f], f"{op['name']}.{f}")
     op["unreleased"] = True
     result.append(op)
     unreleased_count += 1
 print("unreleased (CN-only) ops:", unreleased_count,
-      "| dict sizes birth/race/tag:", len(BIRTH_CN2KR), len(RACE_CN2KR), len(TAG_CN2KR))
+      "| dict sizes birth/race/tag:", len(BIRTH_CN2KR), len(RACE_CN2KR), len(TAG_CN2KR),
+      "| cn-text dict:", len(CN2KR_TEXT), "manual:", len(MANUAL))
+if untranslated:
+    dedup_miss = list({m["cn"]: m for m in untranslated}.values())
+    print(f"UNTRANSLATED cn strings: {len(dedup_miss)} — scripts/cn-translations.json에 번역을 채울 것",
+          file=sys.stderr)
+    for m in dedup_miss:
+        print(json.dumps(m, ensure_ascii=False), file=sys.stderr)
 
 # 동명 중복 정리 (사용자 확정 2026-07): 같은 이름이 여럿이면 입수 가능 버전 우선,
 # 전부 입수 불가면 먼저 나온(char 번호 낮은) 쪽만 남긴다 — 샬렘은 진짜(char_4025)만,

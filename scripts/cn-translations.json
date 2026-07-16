@@ -1,0 +1,1422 @@
+{
+ "名叫GALLUS²的原鸡，对你产生了兴趣。": {
+  "ko": "GALLUS²라는 이름의 들닭이 당신에게 흥미를 가졌습니다.",
+  "en": "A junglefowl by the name of GALLUS² has taken an interest in you.",
+  "ja": "GALLUS²という名の野鶏が、あなたに興味を持った。"
+ },
+ "攻击造成法术伤害，且不受部署数量限制，但再部署时间极长": {
+  "ko": "공격 시 마법 대미지를 입히며, 배치 가능 인원수 제약을 받지 않으나, 재배치 시간이 매우 김",
+  "en": "Deals Arts damage and ignores the Deployment Limit, but has a long Redeployment Time",
+  "ja": "攻撃時に術ダメージを与える。配置可能数にカウントされない。再配置までの時間が極めて長い"
+ },
+ "“来抓我啊”·VI": {
+  "ko": "“날 잡아봐”·VI",
+  "en": "\"Catch Me!\"·VI",
+  "ja": "「捕まえてみて」・VI"
+ },
+ "部署后20秒内，攻击使敌人法术抗性-25%（持续10秒），且优先攻击未获得此效果的敌人": {
+  "ko": "배치 후 20초 이내, 공격 시 적의 마법 저항 -25% (10초간 지속), 해당 효과를 받지 않은 적을 우선 공격",
+  "en": "For 20 seconds after deployment, attacks reduce the target's RES by 25% (lasts 10 seconds), prioritizing enemies not affected by this effect",
+  "ja": "配置後20秒間、攻撃時に敵の術耐性-25%（10秒間継続）。この効果を受けていない敵を優先して攻撃する"
+ },
+ "鸡电工程": {
+  "ko": "꼬꼬 전기 공학",
+  "en": "Chickelectrical Engineering",
+  "ja": "ニワトリ電気工学"
+ },
+ "鸡励机制": {
+  "ko": "꼬꼬 격려 메커니즘",
+  "en": "Chickentive Scheme",
+  "ja": "ニワトリ激励メカニズム"
+ },
+ "进驻发电站时，如果其他作业平台进驻在发电站，则无人机充能速度+5%": {
+  "ko": "발전소에 배치 시, 다른 작업 플랫폼이 발전소에 배치되어 있으면 드론 회복 속도 +5%",
+  "en": "When this Operator is assigned to a Power Plant, if another work platform is assigned to a Power Plant, drone recovery rate +5%",
+  "ja": "発電所配置時、他の作業プラットフォームが発電所に配置されている場合、ドローンの回復速度+5%"
+ },
+ "罗德岛隐秘队，政宗和义经，正在规划新的调查路线。": {
+  "ko": "로도스 아일랜드 은밀 정찰대, 마사무네와 요시츠네가 새로운 조사 루트를 계획하고 있습니다.",
+  "en": "Masamune and Yoshitsune of the Rhodes Island Recon are plotting a new survey route.",
+  "ja": "ロドス隠密調査隊の政宗と義経が、新たな調査ルートを計画している。"
+ },
+ "可以在攻击范围内选择一次战术点来召唤援军，自身攻击援军阻挡的敌人时攻击力提升至150%；不受部署数量限制，但再部署时间极长": {
+  "ko": "공격 범위 내 전술포인트를 1회 선택해 지원군을 소환할 수 있으며, 지원군이 저지 중인 적 공격 시 공격력이 150%로 증가. 배치 가능 인원수 제약을 받지 않으나, 재배치 시간이 매우 김",
+  "en": "Can select a Tactical Point within attack range once to summon a reinforcement; ATK increases to 150% when attacking enemies blocked by the reinforcement. Ignores the Deployment Limit, but has a long Redeployment Time",
+  "ja": "攻撃範囲内の戦術召集点を1回選択して援軍を召喚できる。援軍がブロック中の敵を攻撃する時、攻撃力が150%まで上昇。配置可能数にカウントされない。再配置までの時間が極めて長い"
+ },
+ "猫式起爆龙弹·VI": {
+  "ko": "고양이식 기폭룡탄·VI",
+  "en": "Felyne Wyvernblast·VI",
+  "ja": "ネコ式起爆竜弾・VI"
+ },
+ "对前三个敌人首次进行攻击时改为使用“猫式起爆龙弹”。来自我方其他单位的伤害会将其引爆，造成罗德岛隐秘队500%攻击力的伤害和3秒晕眩，并回复1点部署费用。“猫式起爆龙弹”在被引爆后或30秒后消失": {
+  "ko": "처음 세 명의 적에게 첫 공격 시 '고양이식 기폭룡탄'을 대신 사용. 다른 아군 유닛의 대미지로 기폭되며, 로도스 아일랜드 은밀 정찰대 공격력의 500%에 해당하는 대미지와 3초 기절을 부여하고 배치 코스트 1 회복. '고양이식 기폭룡탄'은 기폭 후 또는 30초 후 소멸",
+  "en": "The first attack against each of the first 3 enemies is replaced with a 'Felyne Wyvernblast'. Damage from other allied units detonates it, dealing damage equal to 500% of Rhodes Island Recon's ATK, Stunning for 3 seconds, and recovering 1 DP. The 'Felyne Wyvernblast' disappears after detonating or after 30 seconds",
+  "ja": "最初の3体の敵への初回攻撃時、「ネコ式起爆竜弾」を代わりに使用する。他の味方ユニットからのダメージで起爆し、ロドス隠密調査隊の攻撃力の500%のダメージと3秒間のスタンを与え、コストを1回復する。「ネコ式起爆竜弾」は起爆後、または30秒後に消滅する"
+ },
+ "狩猎好帮手": {
+  "ko": "사냥의 든든한 조수",
+  "en": "Hunting Helper",
+  "ja": "狩猟の頼れる助手"
+ },
+ "进驻宿舍时，使该宿舍内除自身以外心情未满的某个干员每小时恢复+0.55（同种效果取最高），如果目标是怪物猎人小队成员和泡影国狩猎小队，则恢复效果额外+0.45": {
+  "ko": "숙소에 배치 시, 해당 숙소 내 자신을 제외한 컨디션이 가득 차지 않은 오퍼레이터 1명의 시간당 회복 +0.55 (동종 효과 중 가장 높은 수치만 적용), 대상이 몬스터 헌터 팀 멤버 또는 포영국 사냥 팀이면 회복 효과 추가 +0.45",
+  "en": "When this Operator is assigned to a Dormitory, one Operator in that Dormitory other than self whose Morale is not full recovers +0.55 Morale per hour (Strongest effect of the same type applies); if the target is a Monster Hunter Squad member or Bubbly Realm Hunting Squad, recovery effect +0.45",
+  "ja": "配置宿舎内、自身以外の体力が満タンでないオペレーター1人の1時間ごとの体力回復量+0.55（同種の効果は高いほうのみ適用）。対象がモンスターハンターチームまたは泡沫国狩猟チームの場合、回復効果が追加で+0.45"
+ },
+ "隐秘专家": {
+  "ko": "은밀 전문가",
+  "en": "Covert Expert",
+  "ja": "隠密エキスパート"
+ },
+ "进驻会客室时，更容易获得线索板上尚未拥有的线索，若焰狐龙梓兰进驻控制中枢，则线索搜集速度提升10%": {
+  "ko": "응접실에 배치 시, 단서 보드에 아직 없는 단서를 더 쉽게 획득, 타마미츠네 오키드가 제어 센터에 배치되어 있으면 단서 수집 속도 10% 상승",
+  "en": "When this Operator is assigned to the Reception Room, Clues not yet in the Clue Board are easier to obtain; if Violet Mizutsune Orchid is assigned to the Control Center, Clue search speed +10%",
+  "ja": "応接室配置時、手がかりボードにまだない手がかりを入手しやすくなる。タマミツネ・オーキッドが制御中枢に配置されている場合、手がかり捜索速度+10%"
+ },
+ "新晋近卫干员空爆，决定踏上名为狩猎的无尽之旅。": {
+  "ko": "신입 가드 오퍼레이터 캐터펄트, 사냥이라는 이름의 끝없는 여정에 오르기로 결심했습니다.",
+  "en": "Catapult, newly a Guard Operator, has decided to set out on the endless journey called the hunt.",
+  "ja": "新人前衛オペレーターのカタパルトは、狩猟という名の果てなき旅に出ることを決めた。"
+ },
+ "斧模式变形": {
+  "ko": "도끼 모드 변형",
+  "en": "Axe Mode Morph",
+  "ja": "斧モード変形"
+ },
+ "技能期间攻击距离延长。开启技能时施展变形斩造成伤害，同时消耗所有充能，每层使技能持续时间增加50%（+10%）": {
+  "ko": "스킬 지속 시간 동안 공격 거리 연장. 스킬 발동 시 변형 베기로 대미지를 입히며 모든 충전을 소모, 1층당 스킬 지속 시간 50%(+10%) 증가",
+  "en": "Extends attack range while skill is active. Performs a Morph Slash dealing damage when activating the skill, consuming all charges; each charge increases skill duration by 50% (+10%)",
+  "ja": "スキル中、攻撃距離が延長される。スキル発動時に変形斬りでダメージを与え、すべてのチャージを消費する。1チャージごとにスキル継続時間+50%（+10%）"
+ },
+ "高压回填斩": {
+  "ko": "고압 충전 베기",
+  "en": "High-Pressure Reload Slash",
+  "ja": "高圧回填斬り"
+ },
+ "消耗20点部署费用，攻击间隔增大，交替使用五连击与十连击攻击阻挡的所有敌人，且每一击附带相当于攻击力35%的法术伤害 可充能5次": {
+  "ko": "배치 코스트 20 소모, 공격 딜레이 증가, 5연격과 10연격을 번갈아 사용해 저지 중인 모든 적을 공격하며, 매 타격마다 공격력의 35%에 해당하는 마법 대미지 추가 5회 충전 가능",
+  "en": "Consumes 20 DP; Attack Interval increases, alternates between 5-hit and 10-hit combos against all blocked enemies, with each hit dealing an additional 35% ATK as Arts damage Can store 5 charges",
+  "ja": "コストを20消費し、攻撃間隔が長くなり、5連撃と10連撃を交互に使用してブロック中の敵全員を攻撃する。1撃ごとに攻撃力の35%の術ダメージを追加で与える 5回チャージ可能"
+ },
+ "超高输出属性解放斩": {
+  "ko": "초고출력 속성 해방 베기",
+  "en": "Super Amped Element Discharge",
+  "ja": "超高出力属性解放斬り"
+ },
+ "消耗5点部署费用，攻击力和防御力+100%；技能期间可消耗10点部署费用使用装备应变，对前方造成一次相当于攻击力350%的物理伤害，且开启技能时每消耗一层充能附加一次相当于攻击力150%的法术伤害，之后技能立即结束 可充能5次": {
+  "ko": "배치 코스트 5 소모, 공격력 및 방어력 +100%. 스킬 지속 시간 동안 배치 코스트 10을 소모해 장비응변 사용 가능: 전방에 공격력의 350%에 해당하는 물리 대미지를 1회 입히고, 스킬 발동 시 소모한 충전 1층당 공격력의 150%에 해당하는 마법 대미지를 추가로 1회 입힌 뒤 스킬 즉시 종료 5회 충전 가능",
+  "en": "Consumes 5 DP; ATK and DEF +100%. While skill is active, can consume 10 DP to use Equipment Alteration: deals one instance of 350% ATK as Physical damage to the front, plus one instance of 150% ATK as Arts damage for each charge consumed when the skill was activated, then the skill immediately ends Can store 5 charges",
+  "ja": "コストを5消費し、攻撃力・防御力+100%。スキル中、コストを10消費して戦術換装を使用可能：前方に攻撃力の350%の物理ダメージを1回与え、スキル発動時に消費したチャージ1層ごとに攻撃力の150%の術ダメージを追加で1回与えた後、スキルが即座に終了する 5回チャージ可能"
+ },
+ "狩猎之路": {
+  "ko": "사냥의 길",
+  "en": "Path of the Hunt",
+  "ja": "狩猟の道"
+ },
+ "特性消耗费用时，每消耗1点费用使本次技能期间攻击力+2%（上限10层）": {
+  "ko": "특성으로 코스트 소모 시, 코스트 1 소모마다 해당 스킬 지속 시간 동안 공격력 +2% (최대 10층)",
+  "en": "When the Trait consumes DP, each DP consumed grants ATK +2% for that skill's duration (up to 10 stacks)",
+  "ja": "特性でコストを消費する時、コスト1消費ごとにそのスキル中の攻撃力+2%（最大10スタック）"
+ },
+ "技能期间攻击距离延长。开启技能时施展变形斩造成伤害，同时消耗所有充能，每层使技能持续时间增加40%且攻击力增加2%": {
+  "ko": "스킬 지속 시간 동안 공격 거리 연장. 스킬 발동 시 변형 베기로 대미지를 입히며 모든 충전을 소모, 1층당 스킬 지속 시간 40% 증가 및 공격력 2% 증가",
+  "en": "Extends attack range while skill is active. Performs a Morph Slash dealing damage when activating the skill, consuming all charges; each charge increases skill duration by 40% and ATK by 2%",
+  "ja": "スキル中、攻撃距離が延長される。スキル発動時に変形斬りでダメージを与え、すべてのチャージを消費する。1チャージごとにスキル継続時間+40%、攻撃力+2%"
+ },
+ "技能期间攻击距离延长。开启技能时施展变形斩造成伤害，同时消耗所有充能，每层使技能持续时间增加40%且攻击力增加3%": {
+  "ko": "스킬 지속 시간 동안 공격 거리 연장. 스킬 발동 시 변형 베기로 대미지를 입히며 모든 충전을 소모, 1층당 스킬 지속 시간 40% 증가 및 공격력 3% 증가",
+  "en": "Extends attack range while skill is active. Performs a Morph Slash dealing damage when activating the skill, consuming all charges; each charge increases skill duration by 40% and ATK by 3%",
+  "ja": "スキル中、攻撃距離が延長される。スキル発動時に変形斬りでダメージを与え、すべてのチャージを消費する。1チャージごとにスキル継続時間+40%、攻撃力+3%"
+ },
+ "兴之所至·α": {
+  "ko": "흥이 나는 대로·α",
+  "en": "Wherever the Mood Takes·α",
+  "ja": "興の赴くままに・α"
+ },
+ "兴之所至·β": {
+  "ko": "흥이 나는 대로·β",
+  "en": "Wherever the Mood Takes·β",
+  "ja": "興の赴くままに・β"
+ },
+ "进驻训练室协助位时，近卫与狙击干员的专精技能训练速度+50%，心情每小时消耗+1": {
+  "ko": "훈련실에 배치 시, 가드 및 스나이퍼 오퍼레이터의 스킬 훈련 속도 +50%, 시간당 컨디션 소모 +1",
+  "en": "When this Operator is assigned to be the Trainer in the Training Room, Guard and Sniper Operators' Specialization training speed +50%; Morale consumed each hour +1",
+  "ja": "訓練室で協力者として配置時、前衛と狙撃の訓練速度+50%、1時間ごとの体力消費量+1"
+ },
+ "气氛组": {
+  "ko": "분위기 메이커",
+  "en": "Hype Squad",
+  "ja": "ムードメーカー"
+ },
+ "乐团经理人复奏，积极地为乐团的未来构筑新的可能性。": {
+  "ko": "악단 매니저 리프레사, 악단의 미래를 위해 적극적으로 새로운 가능성을 쌓아 갑니다.",
+  "en": "Ripresa, the orchestra's manager, is actively building new possibilities for its future.",
+  "ja": "楽団マネージャーのリプレーザは、楽団の未来のために新たな可能性を積極的に切り拓いている。"
+ },
+ "执棒素养": {
+  "ko": "지휘봉의 소양",
+  "en": "Baton Discipline",
+  "ja": "指揮棒の素養"
+ },
+ "攻击溅射范围内有大于或等于3个敌人时，使当次攻击造成的伤害提升至125%（+5%）": {
+  "ko": "공격의 스플래시 범위 내에 적이 3명 이상일 시, 해당 공격의 대미지가 125%(+5%)로 증가",
+  "en": "When there are 3 or more enemies within the attack's splash area, that attack's damage increases to 125% (+5%)",
+  "ja": "攻撃のスプラッシュ範囲内に敵が3体以上いる時、その攻撃のダメージが125%（+5%）まで上昇"
+ },
+ "合奏起拍": {
+  "ko": "합주의 첫 박자",
+  "en": "Ensemble Upbeat",
+  "ja": "合奏のアウフタクト"
+ },
+ "下一次攻击溅射范围扩大，造成相当于攻击力210%的法术伤害 可充能2次": {
+  "ko": "다음 공격의 스플래시 범위 확대, 공격력의 210%에 해당하는 마법 대미지를 입힘 2회 충전 가능",
+  "en": "The next attack has an enlarged splash area and deals 210% ATK as Arts damage Can store 2 charges",
+  "ja": "次の通常攻撃時、スプラッシュ範囲が拡大し、攻撃力の210%の術ダメージを与える 2回チャージ可能"
+ },
+ "直到终曲": {
+  "ko": "종곡에 이르기까지",
+  "en": "Until the Finale",
+  "ja": "終曲に至るまで"
+ },
+ "溅射范围扩大且立即对攻击范围内3个目标造成相当于攻击力180%的法术伤害，并使攻击到的所有敌人在6秒内每秒受到相当于复奏攻击力35%的法术伤害": {
+  "ko": "스플래시 범위 확대, 즉시 공격 범위 내 3개 목표에게 공격력의 180%에 해당하는 마법 대미지를 입히고, 공격당한 모든 적은 6초 내 초당 리프레사 공격력의 35%에 해당하는 마법 대미지를 받음",
+  "en": "Splash area expands; immediately deals 180% ATK as Arts damage to 3 targets within attack range, and all enemies hit take Arts damage equal to 35% of Ripresa's ATK per second for 6 seconds",
+  "ja": "スプラッシュ範囲が拡大し、即座に攻撃範囲内の敵3体に攻撃力の180%の術ダメージを与える。攻撃を受けたすべての敵は6秒間、1秒ごとにリプレーザの攻撃力の35%の術ダメージを受ける"
+ },
+ "“暮约”": {
+  "ko": "'황혼의 약속'",
+  "en": "'Dusk Promise'",
+  "ja": "「夕暮れの約束」"
+ },
+ "攻击溅射范围内有大于或等于3个敌人时，使当次攻击造成的伤害提升至125%": {
+  "ko": "공격의 스플래시 범위 내에 적이 3명 이상일 시, 해당 공격의 대미지가 125%로 증가",
+  "en": "When there are 3 or more enemies within the attack's splash area, that attack's damage increases to 125%",
+  "ja": "攻撃のスプラッシュ範囲内に敵が3体以上いる時、その攻撃のダメージが125%まで上昇"
+ },
+ "攻击溅射范围内有大于或等于3个敌人时，使当次攻击造成的伤害提升至130%": {
+  "ko": "공격의 스플래시 범위 내에 적이 3명 이상일 시, 해당 공격의 대미지가 130%로 증가",
+  "en": "When there are 3 or more enemies within the attack's splash area, that attack's damage increases to 130%",
+  "ja": "攻撃のスプラッシュ範囲内に敵が3体以上いる時、その攻撃のダメージが130%まで上昇"
+ },
+ "专业经理·α": {
+  "ko": "프로 매니저·α",
+  "en": "Professional Manager·α",
+  "ja": "プロマネージャー・α"
+ },
+ "专业经理·β": {
+  "ko": "프로 매니저·β",
+  "en": "Professional Manager·β",
+  "ja": "プロマネージャー・β"
+ },
+ "从被封锁的圣骏堡卡托加区走出的乌啾，她正努力尝试着不回头，去走出自己的道路。": {
+  "ko": "봉쇄된 장크트콘부르크 카토르가 지구에서 걸어 나온 우쿠시크. 그녀는 뒤돌아보지 않고 자신만의 길을 걸어가려 노력하고 있습니다.",
+  "en": "Ukusik walked out of the sealed-off Katorga district of Sankt-Konburg. She is trying her best not to look back, and to walk a path of her own.",
+  "ja": "封鎖されたザンクト・コンブルクのカトルガ地区から歩み出たウクーシク。彼女は振り返らず、自分だけの道を歩もうと努力している。"
+ },
+ "久病良医": {
+  "ko": "오랜 병에 명의",
+  "en": "Long Illness, Good Doctor",
+  "ja": "久病良医"
+ },
+ "受到自身的跳跃治疗时，治疗量提升至125%（+5%），并额外进行一次不衰减的治疗跳跃": {
+  "ko": "자신의 치료 튕김을 받을 시 치유량이 125%(+5%)로 증가, 추가로 감쇠되지 않는 치료 튕김 1회 진행",
+  "en": "When affected by this unit's own bouncing heal, healing increases to 125% (+5%), and the heal bounces one additional time without decay",
+  "ja": "自身の跳躍治療を受けた時、治療量が125%（+5%）まで上昇し、追加で減衰しない跳躍治療を1回行う"
+ },
+ "火钳秘咒": {
+  "ko": "부지깽이의 비밀 주문",
+  "en": "Fire-Tong Incantation",
+  "ja": "火バサミの秘呪"
+ },
+ "攻击速度+80，每次治疗的跳跃次数+1": {
+  "ko": "공격 속도 +80, 매 치료의 튕김 횟수 +1",
+  "en": "ASPD +80; each heal bounces 1 additional time",
+  "ja": "攻撃速度+80、治療ごとの跳躍回数+1"
+ },
+ "“捉迷藏！”": {
+  "ko": "'숨바꼭질!'",
+  "en": "'Hide-and-Seek!'",
+  "ja": "「かくれんぼ！」"
+ },
+ "流失15%当前生命值，立即进行一次治疗，并使目标每秒受到治疗量为35%攻击力的增益治疗，治疗的所有目标获得迷彩，持续12秒": {
+  "ko": "현재 HP의 15%를 잃고 즉시 1회 치료, 대상은 초당 공격력의 35%에 해당하는 회복 버프를 받으며, 치료한 모든 대상이 위장 효과 획득, 12초간 지속",
+  "en": "Loses 15% of current HP and immediately performs a heal; the target gains a regeneration buff that restores HP equal to 35% of ATK per second, and all healed targets gain Camouflage for 12 seconds",
+  "ja": "現在HPの15%を失い、即座に治療を1回行う。対象は1秒ごとに攻撃力の35%のHPを回復するバフを獲得し、治療されたすべての対象が迷彩状態になる（12秒間継続）"
+ },
+ "“睡前故事”": {
+  "ko": "'잠들기 전 이야기'",
+  "en": "'Bedtime Story'",
+  "ja": "「おやすみ前の物語」"
+ },
+ "受到自身的跳跃治疗时，治疗量提升至125%，并额外进行一次不衰减的治疗跳跃": {
+  "ko": "자신의 치료 튕김을 받을 시 치유량이 125%로 증가, 추가로 감쇠되지 않는 치료 튕김 1회 진행",
+  "en": "When affected by this unit's own bouncing heal, healing increases to 125%, and the heal bounces one additional time without decay",
+  "ja": "自身の跳躍治療を受けた時、治療量が125%まで上昇し、追加で減衰しない跳躍治療を1回行う"
+ },
+ "受到自身的跳跃治疗时，治疗量提升至130%，并额外进行一次不衰减的治疗跳跃": {
+  "ko": "자신의 치료 튕김을 받을 시 치유량이 130%로 증가, 추가로 감쇠되지 않는 치료 튕김 1회 진행",
+  "en": "When affected by this unit's own bouncing heal, healing increases to 130%, and the heal bounces one additional time without decay",
+  "ja": "自身の跳躍治療を受けた時、治療量が130%まで上昇し、追加で減衰しない跳躍治療を1回行う"
+ },
+ "“号外！”": {
+  "ko": "'호외요!'",
+  "en": "'Extra! Extra!'",
+  "ja": "「号外！」"
+ },
+ "街头法则": {
+  "ko": "거리의 법칙",
+  "en": "Rules of the Street",
+  "ja": "ストリートの掟"
+ },
+ "医疗干员风絮，在驮兽车驾驶方面有着丰富的经验。": {
+  "ko": "메딕 오퍼레이터 타락사쿰, 운반 짐승 수레 운전에 풍부한 경험을 갖고 있습니다.",
+  "en": "Taraxacum, a Medic Operator with plenty of experience driving burdenbeast carts.",
+  "ja": "医療オペレーターのタラクサカム。駄獣車の運転において豊富な経験を持つ。"
+ },
+ "恢复友方单位生命，并且可以起飞": {
+  "ko": "아군 유닛의 HP 회복, 이륙 가능",
+  "en": "Restores the HP of allies and can Lift Off",
+  "ja": "味方のHPを回復し、離陸できる"
+ },
+ "定风絮": {
+  "ko": "바람을 잠재우는 솜털",
+  "en": "Wind-Stilling Fluff",
+  "ja": "風を鎮める綿毛"
+ },
+ "攻击范围内飞行的友方单位获得12%（+2%）的庇护，阻挡数+1": {
+  "ko": "공격 범위 내 비행 중인 아군 유닛이 12%(+2%)의 가호 획득, 저지 가능 수 +1",
+  "en": "Flying allied units within attack range gain 12% (+2%) Sanctuary and Block +1",
+  "ja": "攻撃範囲内の飛行中の味方ユニットが12%（+2%）の加護を獲得し、ブロック数+1"
+ },
+ "何处着": {
+  "ko": "어디에 내려앉을까",
+  "en": "Where to Alight",
+  "ja": "いずこに降り立つ"
+ },
+ "立刻起飞，攻击间隔大幅度缩短，每次随机回复攻击范围内已受伤的一名单位相当于攻击力60%的生命": {
+  "ko": "즉시 이륙, 공격 딜레이 대폭 감소, 매번 공격 범위 내 부상당한 유닛 1명을 무작위로 공격력의 60%에 해당하는 HP 회복",
+  "en": "Immediately Lifts Off; Attack Interval significantly reduces, and each action randomly restores HP equal to 60% of ATK to one injured unit within attack range",
+  "ja": "即座に離陸し、攻撃間隔を大幅に短縮。毎回、攻撃範囲内の負傷したユニット1体をランダムに攻撃力の60%回復する"
+ },
+ "扶风起": {
+  "ko": "바람을 타고 오르다",
+  "en": "Rising on the Wind",
+  "ja": "風に乗りて昇る"
+ },
+ "立刻起飞，攻击力+120%，可以额外治疗一名起飞的干员，治疗目标时对目标周围的至多2名单位造成攻击力50%的治疗效果": {
+  "ko": "즉시 이륙, 공격력 +120%, 이륙한 오퍼레이터 1명을 추가로 치료 가능, 대상 치료 시 대상 주변 최대 2명의 유닛에게 공격력의 50%에 해당하는 치료 효과",
+  "en": "Immediately Lifts Off; ATK +120%, can heal 1 additional Lifted-Off Operator; when healing a target, also heals up to 2 units around the target for 50% of ATK",
+  "ja": "即座に離陸し、攻撃力+120%。離陸中のオペレーター1名を追加で治療できる。対象を治療する時、対象周囲の最大2体のユニットに攻撃力の50%の治療効果を与える"
+ },
+ "“孺子可教！”": {
+  "ko": "'가르칠 맛이 나는군!'",
+  "en": "'A Promising Pupil!'",
+  "ja": "「教え甲斐があるな！」"
+ },
+ "进驻贸易站时，基建内（不包含副手及活动室）每有一间进驻岁干员的设施，订单获取效率+4%（最多5间）": {
+  "ko": "무역소에 배치 시, 기반시설(어시스턴트 및 활동실 사용자 미포함) 내 '세' 오퍼레이터가 배치된 시설 1개당 오더 수주 효율 +4% (최대 5개)",
+  "en": "When this Operator is assigned to a Trading Post, order acquisition efficiency +4% for every facility in the Base with a Sui Operator assigned (excluding Assistants and Activity Rooms; up to 5 facilities)",
+  "ja": "貿易所配置時、「歳」オペレーターが配置されている施設1室（補佐と活動室利用者を除く）ごとに、受注効率+4%（最大5室まで）"
+ },
+ "罗德岛的医疗干员凯尔希，在经历过短暂的意外离别后，她回到了这里。": {
+  "ko": "로도스 아일랜드의 메딕 오퍼레이터 켈시. 짧고 갑작스러운 이별을 겪은 뒤, 그녀는 이곳으로 돌아왔습니다.",
+  "en": "Kal'tsit, Medic Operator of Rhodes Island. After a brief and unexpected parting, she has returned.",
+  "ja": "ロドスの医療オペレーター、ケルシー。短くも突然の別れを経て、彼女はここへ帰ってきた。"
+ },
+ "遗尘守望": {
+  "ko": "남겨진 먼지의 파수",
+  "en": "Watch Over the Remnant Dust",
+  "ja": "遺塵の見守り"
+ },
+ "生命上限和防御力+30%（+5%），阻挡数+1，阻挡范围扩大，部署后生命修复单元升空，自身起飞": {
+  "ko": "최대 HP 및 방어력 +30%(+5%), 저지 가능 수 +1, 저지 범위 확대, 배치 후 생명 수복 유닛이 공중으로 떠오르며 자신이 이륙",
+  "en": "Max HP and DEF +30% (+5%), Block +1, block range expands; after deployment, the Life Restoration Unit rises into the air and this unit Lifts Off",
+  "ja": "最大HP・防御力+30%（+5%）、ブロック数+1、ブロック範囲が拡大。配置後、生命修復ユニットが浮上し、自身が離陸する"
+ },
+ "医者丰碑": {
+  "ko": "의사의 기념비",
+  "en": "Monument of the Healer",
+  "ja": "医者の金字塔"
+ },
+ "其他友方干员进入自身攻击范围时立刻获得1层护盾并额外获得一次每秒回复60（+10）点生命值的增益治疗，持续30秒（不可叠加），增益治疗对【罗德岛】干员的效果翻倍": {
+  "ko": "다른 아군 오퍼레이터가 자신의 공격 범위에 진입 시 즉시 실드 1회를 획득하고, 추가로 초당 HP 60(+10) 회복하는 회복 버프를 1회 획득, 30초간 지속 (중첩 불가), 회복 버프는 [로도스 아일랜드] 오퍼레이터에게 효과 2배",
+  "en": "When another allied Operator enters this unit's attack range, they immediately gain 1 Shield and a regeneration buff that restores 60 (+10) HP per second for 30 seconds (does not stack); the regeneration buff is twice as effective on [Rhodes Island] Operators",
+  "ja": "他の味方オペレーターが自身の攻撃範囲に入った時、即座にシールドを1枚獲得し、さらに1秒ごとにHPを60（+10）回復するバフを1回獲得する（30秒間継続、重複不可）。回復バフは【ロドス】オペレーターに対して効果が2倍になる"
+ },
+ "应急肃正防线": {
+  "ko": "긴급 숙정 방어선",
+  "en": "Emergency Correction Line",
+  "ja": "緊急粛正防衛線"
+ },
+ "攻击力+90%，攻击速度+50，所有其他起飞的友方干员阻挡范围扩大": {
+  "ko": "공격력 +90%, 공격 속도 +50, 이륙 중인 다른 모든 아군 오퍼레이터의 저지 범위 확대",
+  "en": "ATK +90%, ASPD +50; the block range of all other Lifted-Off allied Operators expands",
+  "ja": "攻撃力+90%、攻撃速度+50。離陸中の他のすべての味方オペレーターのブロック範囲が拡大する"
+ },
+ "保护性拒止": {
+  "ko": "보호적 거부",
+  "en": "Protective Denial",
+  "ja": "保護的拒止"
+ },
+ "攻击范围扩大，攻击力+150%，攻击变为射出医疗单元（优先选择敌人），击中时对目标周围所有敌人造成相当于攻击力380%的真实伤害，使其停顿5秒并回复目标周围所有友方干员相当于攻击力200%的生命 攻击装有10发弹药，可以随时停止技能": {
+  "ko": "공격 범위 확대, 공격력 +150%, 공격이 의료 유닛 사출로 변경(적 우선 선택), 명중 시 목표 주변 모든 적에게 공격력의 380%에 해당하는 트루 대미지를 입히고 5초간 정지시키며, 목표 주변 모든 아군 오퍼레이터의 HP를 공격력의 200%만큼 회복 스킬 발동 시 10발의 탄약이 장전되며, 수동 종료 가능",
+  "en": "Attack Range expands, ATK +150%; attacks become launched medical units (prioritizing enemies) that on impact deal 380% ATK as True damage to all enemies around the target, Slowing them for 5 seconds, and restore HP equal to 200% of ATK to all allied Operators around the target Skill activation grants 10 ammo; can manually deactivate skill",
+  "ja": "攻撃範囲拡大、攻撃力+150%。攻撃が医療ユニットの射出に変化する（敵を優先して選択）。命中時、対象周囲のすべての敵に攻撃力の380%の確定ダメージを与えて5秒間足止めし、対象周囲のすべての味方オペレーターのHPを攻撃力の200%回復する 合計10発の弾薬を撃ち切るとスキルが終了（手動でスキルを停止可能）"
+ },
+ "破梏重生": {
+  "ko": "속박을 깨는 재생",
+  "en": "Rebirth Unshackled",
+  "ja": "枷を破りし再生"
+ },
+ "立刻获得战术锚点，攻击力+150%，攻击间隔大幅缩小，额外治疗1个目标，部署战术锚点后，自身移动至该位置，并使攻击范围内最多2名友方干员可以部署至自身攻击范围的另一位置": {
+  "ko": "즉시 전술 앵커를 획득, 공격력 +150%, 공격 딜레이 대폭 감소, 추가로 1개 목표 치료. 전술 앵커 배치 후 자신이 해당 위치로 이동하며, 공격 범위 내 최대 2명의 아군 오퍼레이터를 자신의 공격 범위 내 다른 위치로 배치 가능",
+  "en": "Immediately gains a Tactical Anchor; ATK +150%, Attack Interval significantly reduces, heals 1 additional target. After deploying the Tactical Anchor, this unit moves to its position, and up to 2 allied Operators within attack range can be redeployed to another position within this unit's attack range",
+  "ja": "即座に戦術アンカーを獲得し、攻撃力+150%、攻撃間隔を大幅に短縮、治療対象数+1。戦術アンカーを配置した後、自身がその位置に移動し、攻撃範囲内の最大2名の味方オペレーターを自身の攻撃範囲内の別の位置に配置できるようになる"
+ },
+ "技术阐明": {
+  "ko": "기술 규명",
+  "en": "Technical Elucidation",
+  "ja": "技術解明"
+ },
+ "理论革新": {
+  "ko": "이론 혁신",
+  "en": "Theoretical Innovation",
+  "ja": "理論革新"
+ },
+ "进驻加工站加工任意类材料时，副产品的产出概率提升80%": {
+  "ko": "가공소에 배치해 임의 종류의 재료 가공 시, 부산물 산출 확률 80% 상승",
+  "en": "When this Operator is assigned to a Workshop to process any type of material, byproduct production chance is increased by 80%",
+  "ja": "加工所で任意の種類の素材を加工する際、副産物の入手確率+80%"
+ },
+ "“泰拉的方舟”": {
+  "ko": "'테라의 방주'",
+  "en": "'Ark of Terra'",
+  "ja": "「テラの方舟」"
+ },
+ "进驻人力办公室时，人脉资源的联络速度+30%，基建内（不包含副手及活动室）每有一间进驻精英干员的设施，联络速度额外+4%（最多5间）": {
+  "ko": "인사부 사무실에 배치 시, 인맥 레퍼런스의 누적 속도 +30%, 기반시설(어시스턴트 및 활동실 사용자 미포함) 내 정예 오퍼레이터가 배치된 시설 1개당 누적 속도 추가 +4% (최대 5개)",
+  "en": "When this Operator is assigned to the HR Office, HR contacting speed +30%; for every facility in the Base with an Elite Operator assigned (excluding Assistants and Activity Rooms), contacting speed +4% (up to 5 facilities)",
+  "ja": "事務室配置時、事務連絡速度+30%。エリートオペレーターが配置されている施設1室（補佐と活動室利用者を除く）ごとに、連絡速度が追加で+4%（最大5室まで）"
+ },
+ "重装干员裂响，捍卫你的道路，无可动摇。": {
+  "ko": "디펜더 오퍼레이터 크랙본, 당신의 길을 흔들림 없이 수호합니다.",
+  "en": "Crackborne, Defender Operator. She defends your path, unshakable.",
+  "ja": "重装オペレーターのクラックボーン。揺るぎなく、あなたの道を守り抜く。"
+ },
+ "劣质溶剂耐受": {
+  "ko": "저질 용제 내성",
+  "en": "Crude Solvent Tolerance",
+  "ja": "粗悪溶剤耐性"
+ },
+ "自身受到的元素损伤-12%（+2%），受到的侵蚀损伤额外-12%（+2%）": {
+  "ko": "자신이 받는 원소 손상 -12%(+2%), 받는 침식 손상 추가 -12%(+2%)",
+  "en": "Elemental Injury taken -12% (+2%); Corrosion taken additionally -12% (+2%)",
+  "ja": "自身が受ける元素損傷-12%（+2%）、受ける侵蝕損傷が追加で-12%（+2%）"
+ },
+ "涤净": {
+  "ko": "정화",
+  "en": "Cleanse",
+  "ja": "洗浄"
+ },
+ "生命上限+100%，自身每秒回复120点元素损伤": {
+  "ko": "최대 HP +100%, 자신의 원소 손상을 초당 120 회복",
+  "en": "Max HP +100%; restores 120 of this unit's Elemental Injury per second",
+  "ja": "最大HP+100%、自身の元素損傷を1秒ごとに120回復する"
+ },
+ "溃决": {
+  "ko": "붕괴",
+  "en": "Breach",
+  "ja": "決壊"
+ },
+ "获得5层可叠加的防御力+20%的增益，受到攻击后消耗1层，并对周围所有地面敌人造成相当于攻击力35%的侵蚀损伤 增益最多叠加5层": {
+  "ko": "중첩 가능한 방어력 +20% 버프 5층 획득, 피격 시 1층 소모하며 주변 모든 지상 적에게 공격력의 35%에 해당하는 침식 손상을 입힘 버프 최대 5층 중첩",
+  "en": "Gains 5 stackable buffs of DEF +20%; consumes 1 stack when attacked, dealing Corrosion equal to 35% of ATK to all surrounding ground enemies Buff stacks up to 5 times",
+  "ja": "重ね掛け可能な防御力+20%のバフを5層獲得する。攻撃を受けると1層消費し、周囲のすべての地上の敵に攻撃力の35%の侵蝕損傷を与える バフは最大5層まで重複"
+ },
+ "“漂洗”": {
+  "ko": "'헹굼'",
+  "en": "'Rinse'",
+  "ja": "「すすぎ」"
+ },
+ "阻挡敌人时，自身造成的元素损伤提升15%": {
+  "ko": "적 저지 시, 자신이 입히는 원소 손상 15% 상승",
+  "en": "While blocking enemies, Elemental Damage dealt by this unit +15%",
+  "ja": "敵をブロックしている時、自身が与える元素損傷+15%"
+ },
+ "自身受到的元素损伤-13%，受到的侵蚀损伤额外-15%": {
+  "ko": "자신이 받는 원소 손상 -13%, 받는 침식 손상 추가 -15%",
+  "en": "Elemental Injury taken -13%; Corrosion taken additionally -15%",
+  "ja": "自身が受ける元素損傷-13%、受ける侵蝕損傷が追加で-15%"
+ },
+ "自身受到的元素损伤-13%，受到的侵蚀损伤额外-18%": {
+  "ko": "자신이 받는 원소 손상 -13%, 받는 침식 손상 추가 -18%",
+  "en": "Elemental Injury taken -13%; Corrosion taken additionally -18%",
+  "ja": "自身が受ける元素損傷-13%、受ける侵蝕損傷が追加で-18%"
+ },
+ "难得休憩": {
+  "ko": "모처럼의 휴식",
+  "en": "A Rare Respite",
+  "ja": "つかの間の休息"
+ },
+ "“连轴转”": {
+  "ko": "'쉼 없이 돌아가는'",
+  "en": "'Round the Clock'",
+  "ja": "「休みなしの回転」"
+ },
+ "进驻制造站时，作战记录类配方的生产力+35%，心情每小时消耗+0.25": {
+  "ko": "제조소에 배치 시, 작전기록류에 대한 생산력 +35%, 시간당 컨디션 소모 +0.25",
+  "en": "When this Operator is assigned to a Factory, productivity towards Battle Records +35%; Morale consumed each hour +0.25",
+  "ja": "製造所配置時、作戦記録製造の製造効率+35%、1時間ごとの体力消費量+0.25"
+ },
+ "一块大炎的巨兽残片，亦是山海众尊奉的“理”。善工者身体力行，从不介意弄脏双手。": {
+  "ko": "대염의 거수 잔편이자, 산해중이 받드는 '리(理)'. 뛰어난 장인은 몸소 행하며, 두 손이 더러워지는 것을 결코 개의치 않습니다.",
+  "en": "A fragment of a great beast of Yan, and the 'Li' revered by the Shanhaizhong. A true artisan leads by example, never minding getting their hands dirty.",
+  "ja": "大炎の巨獣の残片にして、山海衆が奉る「理」。優れた匠は自ら実践し、両手が汚れることを決して厭わない。"
+ },
+ "墨守": {
+  "ko": "묵수",
+  "en": "Ink-Line Discipline",
+  "ja": "墨守"
+ },
+ "造成致命伤害时使敌人保留1点生命并使其重伤（击杀者技力+2）；矩不攻击重伤单位": {
+  "ko": "치명적인 대미지를 입힐 시 적의 HP를 1 남기고 중상 상태로 만듦 (처치자는 SP +2). 주는 중상 상태의 유닛을 공격하지 않음",
+  "en": "When dealing lethal damage, leaves the enemy at 1 HP and Critically Wounds them (whoever defeats them gains +2 SP); Ju does not attack Critically Wounded units",
+  "ja": "致命的なダメージを与えた時、敵のHPを1残して重傷状態にする（トドメを刺した者はSP+2）。ジュは重傷状態のユニットを攻撃しない"
+ },
+ "良弓难张": {
+  "ko": "좋은 활은 당기기 어렵다",
+  "en": "A Fine Bow Is Hard to Draw",
+  "ja": "良弓は張り難し"
+ },
+ "下次攻击造成相当于攻击力250%的物理伤害，不会选择生命值高于一半的敌人作为目标 可充能2次": {
+  "ko": "다음 공격이 공격력의 250%에 해당하는 물리 대미지를 입히며, HP가 절반 이상인 적은 목표로 선택하지 않음 2회 충전 가능",
+  "en": "The next attack deals 250% ATK as Physical damage, and will not target enemies above half HP Can store 2 charges",
+  "ja": "次の通常攻撃時、攻撃力の250%の物理ダメージを与える。HPが半分以上の敵を対象に選ばない 2回チャージ可能"
+ },
+ "良翼难乘": {
+  "ko": "좋은 날개는 타기 어렵다",
+  "en": "Fine Wings Are Hard to Ride",
+  "ja": "良翼は乗り難し"
+ },
+ "攻击力+100%，额外攻击1个目标；技能期间对攻击范围内生命值低于一半的敌人仅一次造成相当于攻击力100%的额外物理伤害（该次伤害有短暂间隔） 每个敌人最多受到一次额外物理伤害": {
+  "ko": "공격력 +100%, 추가로 목표 1명 공격. 스킬 지속 시간 동안 공격 범위 내 HP가 절반 이하인 적에게 1회에 한해 공격력의 100%에 해당하는 추가 물리 대미지를 입힘 (해당 대미지는 짧은 간격을 가짐) 적 1명당 추가 물리 대미지는 최대 1회",
+  "en": "ATK +100% and attacks 1 additional target; while skill is active, deals one instance of 100% ATK as additional Physical damage to enemies below half HP within attack range (with a short interval between instances) Each enemy takes the additional Physical damage at most once",
+  "ja": "攻撃力+100%、攻撃対象数+1。スキル中、攻撃範囲内のHPが半分以下の敵に一度だけ攻撃力の100%の追加物理ダメージを与える（このダメージには短い間隔がある） 敵1体につき追加物理ダメージは最大1回"
+ },
+ "田间吓兽人": {
+  "ko": "밭의 허수아비",
+  "en": "Field Beast-Scarer",
+  "ja": "田畑の獣おどし"
+ },
+ "对生命值低于一半的单位造成的伤害提升8%；造成致命伤害时使敌人保留1点生命并使其重伤（击杀者技力+2）；矩不攻击重伤单位；": {
+  "ko": "HP가 절반 이하인 유닛에게 입히는 대미지 8% 상승. 치명적인 대미지를 입힐 시 적의 HP를 1 남기고 중상 상태로 만듦 (처치자는 SP +2). 주는 중상 상태의 유닛을 공격하지 않음",
+  "en": "Damage dealt to units below half HP +8%; when dealing lethal damage, leaves the enemy at 1 HP and Critically Wounds them (whoever defeats them gains +2 SP); Ju does not attack Critically Wounded units",
+  "ja": "HPが半分以下のユニットに与えるダメージ+8%。致命的なダメージを与えた時、敵のHPを1残して重傷状態にする（トドメを刺した者はSP+2）。ジュは重傷状態のユニットを攻撃しない"
+ },
+ "对生命值低于一半的单位造成的伤害提升12%；造成致命伤害时使敌人保留1点生命并使其重伤（击杀者技力+2）；矩不攻击重伤单位；": {
+  "ko": "HP가 절반 이하인 유닛에게 입히는 대미지 12% 상승. 치명적인 대미지를 입힐 시 적의 HP를 1 남기고 중상 상태로 만듦 (처치자는 SP +2). 주는 중상 상태의 유닛을 공격하지 않음",
+  "en": "Damage dealt to units below half HP +12%; when dealing lethal damage, leaves the enemy at 1 HP and Critically Wounds them (whoever defeats them gains +2 SP); Ju does not attack Critically Wounded units",
+  "ja": "HPが半分以下のユニットに与えるダメージ+12%。致命的なダメージを与えた時、敵のHPを1残して重傷状態にする（トドメを刺した者はSP+2）。ジュは重傷状態のユニットを攻撃しない"
+ },
+ "大匠之心·α": {
+  "ko": "대장인의 마음·α",
+  "en": "Heart of the Master Artisan·α",
+  "ja": "大匠の心・α"
+ },
+ "大匠之心·β": {
+  "ko": "대장인의 마음·β",
+  "en": "Heart of the Master Artisan·β",
+  "ja": "大匠の心・β"
+ },
+ "进驻加工站加工精英材料时，副产品的产出概率提升60%，同时心情消耗为8以上的配方全部-2心情消耗": {
+  "ko": "가공소에 배치해 정예화 재료 가공 시, 부산물 산출 확률 60% 상승, 컨디션 소모가 8 이상인 레시피는 모두 컨디션 소모 -2",
+  "en": "When this Operator is assigned to a Workshop to process Elite materials, byproduct production chance is increased by 60%, and all formulas with a Morale cost of 8 or more cost 2 less Morale",
+  "ja": "加工所で昇進素材を加工する際、副産物の入手確率+60%。体力消費が8以上のレシピはすべて体力消費-2"
+ },
+ "进驻加工站加工精英材料时，副产品的产出概率提升80%，同时心情消耗为4以上的配方全部-2心情消耗": {
+  "ko": "가공소에 배치해 정예화 재료 가공 시, 부산물 산출 확률 80% 상승, 컨디션 소모가 4 이상인 레시피는 모두 컨디션 소모 -2",
+  "en": "When this Operator is assigned to a Workshop to process Elite materials, byproduct production chance is increased by 80%, and all formulas with a Morale cost of 4 or more cost 2 less Morale",
+  "ja": "加工所で昇進素材を加工する際、副産物の入手確率+80%。体力消費が4以上のレシピはすべて体力消費-2"
+ },
+ "在风雪中聆听希望的伯塔尼，为您向更远的地方传递讯号。": {
+  "ko": "눈보라 속에서 희망에 귀 기울이는 보타니, 당신을 위해 더 먼 곳까지 신호를 전합니다.",
+  "en": "Botany, who listens for hope amid the blizzard, relays your signal to places farther still.",
+  "ja": "吹雪の中で希望に耳を澄ますボタニーは、あなたのためにより遠くへと信号を届ける。"
+ },
+ "背弃沉默": {
+  "ko": "침묵을 등지고",
+  "en": "Forsaking Silence",
+  "ja": "沈黙への背反"
+ },
+ "攻击范围内有敌人侵蚀损伤爆发时攻击速度+7（+1），最多可叠加3层": {
+  "ko": "공격 범위 내 적의 침식 손상이 폭발할 시 공격 속도 +7(+1), 최대 3층 중첩 가능",
+  "en": "ASPD +7 (+1) whenever an enemy within attack range has a Corrosion burst; stacks up to 3 times",
+  "ja": "攻撃範囲内の敵の侵蝕損傷が爆発した時、攻撃速度+7（+1）。最大3層まで重複可能"
+ },
+ "谐波破坏": {
+  "ko": "고조파 파괴",
+  "en": "Harmonic Destruction",
+  "ja": "調和波破壊"
+ },
+ "下一次攻击造成相当于攻击力110%的法术伤害并附带100%攻击力的侵蚀损伤；若目标未受到侵蚀损伤，则额外造成相当于攻击力50%的法术伤害并附带35%攻击力的的侵蚀损伤": {
+  "ko": "다음 공격이 공격력의 110%에 해당하는 마법 대미지를 입히고 공격력의 100%에 해당하는 침식 손상 부여. 목표가 침식 손상을 받지 않은 상태라면 추가로 공격력의 50%에 해당하는 마법 대미지와 공격력의 35%에 해당하는 침식 손상 부여",
+  "en": "The next attack deals 110% ATK as Arts damage plus Corrosion equal to 100% of ATK; if the target has no Corrosion, additionally deals 50% ATK as Arts damage plus Corrosion equal to 35% of ATK",
+  "ja": "次の通常攻撃時、攻撃力の110%の術ダメージと攻撃力の100%の侵蝕損傷を与える。対象が侵蝕損傷を受けていない場合、さらに攻撃力の50%の術ダメージと攻撃力の35%の侵蝕損傷を追加で与える"
+ },
+ "静域回声": {
+  "ko": "고요한 영역의 메아리",
+  "en": "Echoes in the Still Zone",
+  "ja": "静域の残響"
+ },
+ "攻击范围扩大，同时攻击2个目标，每次攻击额外附带相当于攻击力150%的物理伤害和攻击力65%的侵蚀损伤，范围内敌人侵蚀损伤冷却恢复速度+25%": {
+  "ko": "공격 범위 확대, 동시에 2개 목표 공격, 매 공격마다 추가로 공격력의 150%에 해당하는 물리 대미지와 공격력의 65%에 해당하는 침식 손상 부여, 범위 내 적의 침식 손상 쿨타임 회복 속도 +25%",
+  "en": "Attack Range expands and attacks 2 targets simultaneously; each attack additionally deals 150% ATK as Physical damage plus Corrosion equal to 65% of ATK; Corrosion burst cooldown recovery of enemies in range +25%",
+  "ja": "攻撃範囲が拡大し、同時に2体を攻撃する。攻撃ごとに攻撃力の150%の物理ダメージと攻撃力の65%の侵蝕損傷を追加で与える。範囲内の敵の侵蝕損傷が再度爆発可能になるまでの回復速度+25%"
+ },
+ "昨日、今日、明日": {
+  "ko": "어제, 오늘, 내일",
+  "en": "Yesterday, Today, Tomorrow",
+  "ja": "昨日、今日、明日"
+ },
+ "攻击范围内有敌人侵蚀损伤爆发时攻击速度+7，最多可叠加3层": {
+  "ko": "공격 범위 내 적의 침식 손상이 폭발할 시 공격 속도 +7, 최대 3층 중첩 가능",
+  "en": "ASPD +7 whenever an enemy within attack range has a Corrosion burst; stacks up to 3 times",
+  "ja": "攻撃範囲内の敵の侵蝕損傷が爆発した時、攻撃速度+7。最大3層まで重複可能"
+ },
+ "攻击范围内有敌人侵蚀损伤爆发时攻击速度+7，最多可叠加4层": {
+  "ko": "공격 범위 내 적의 침식 손상이 폭발할 시 공격 속도 +7, 최대 4층 중첩 가능",
+  "en": "ASPD +7 whenever an enemy within attack range has a Corrosion burst; stacks up to 4 times",
+  "ja": "攻撃範囲内の敵の侵蝕損傷が爆発した時、攻撃速度+7。最大4層まで重複可能"
+ },
+ "宣传阵线": {
+  "ko": "선전 전선",
+  "en": "Propaganda Front",
+  "ja": "宣伝戦線"
+ },
+ "灵感改装": {
+  "ko": "영감의 개조",
+  "en": "Inspired Refit",
+  "ja": "ひらめきの改造"
+ },
+ "游击手": {
+  "ko": "유격수",
+  "en": "Skirmisher",
+  "ja": "遊撃手"
+ },
+ "佩德洛，一个因过于常见而总是被忽略的名字。": {
+  "ko": "페드로, 너무 흔해서 늘 지나쳐 버리는 이름.",
+  "en": "Pedro. A name so common it is always overlooked.",
+  "ja": "ペドロ。ありふれすぎて、いつも見過ごされてしまう名前。"
+ },
+ "可以使用触发型效果协助作战": {
+  "ko": "발동형 효과를 사용해 전투를 지원할 수 있음",
+  "en": "Can assist in combat with trigger-type effects",
+  "ja": "トリガー型の効果で戦闘を支援できる"
+ },
+ "掩护战术": {
+  "ko": "엄호 전술",
+  "en": "Covering Tactics",
+  "ja": "掩護戦術"
+ },
+ "攻击范围内至少有2名其他干员时，自身攻击力+12%（+2%）": {
+  "ko": "공격 범위 내 다른 오퍼레이터가 2명 이상일 시, 자신의 공격력 +12%(+2%)",
+  "en": "When there are at least 2 other Operators within attack range, this unit's ATK +12% (+2%)",
+  "ja": "攻撃範囲内に他のオペレーターが2名以上いる時、自身の攻撃力+12%（+2%）"
+ },
+ "标记射击": {
+  "ko": "표식 사격",
+  "en": "Marking Shot",
+  "ja": "マーキング射撃"
+ },
+ "下次攻击的攻击力提升至135%，同时攻击2个目标并对目标施加触发型效果（不叠加，优先选择未持有该效果的目标）：受到法术伤害时，额外受到相当于佩德洛220%攻击力的法术伤害": {
+  "ko": "다음 공격의 공격력이 135%로 증가, 동시에 2개 목표를 공격하고 목표에게 발동형 효과 부여 (중첩 불가, 해당 효과가 없는 목표 우선 선택): 마법 대미지를 받을 시, 추가로 페드로 공격력의 220%에 해당하는 마법 대미지를 받음",
+  "en": "The next attack's ATK increases to 135%, attacking 2 targets simultaneously and applying a trigger effect (does not stack; prioritizes targets without this effect): when the target takes Arts damage, it takes additional Arts damage equal to 220% of Pedro's ATK",
+  "ja": "次の通常攻撃時、攻撃力が135%まで上昇し、同時に2体を攻撃して対象にトリガー効果を付与する（重複不可、この効果を持たない対象を優先して選択）：術ダメージを受けた時、追加でペドロの攻撃力の220%の術ダメージを受ける"
+ },
+ "交替撤离": {
+  "ko": "교대 철수",
+  "en": "Alternating Extraction",
+  "ja": "交互撤退"
+ },
+ "对范围内的3名干员施加触发型效果（不叠加，优先选择未持有该效果的目标）：生命值低于50%时，立刻治疗相当于佩德洛210%攻击力的生命值且在8秒内不容易受到攻击 可充能2次": {
+  "ko": "범위 내 3명의 오퍼레이터에게 발동형 효과 부여 (중첩 불가, 해당 효과가 없는 목표 우선 선택): HP가 50% 이하가 될 시, 즉시 페드로 공격력의 210%에 해당하는 HP를 회복하고 8초간 적의 공격 목표가 잘 되지 않음 2회 충전 가능",
+  "en": "Applies a trigger effect to 3 Operators within range (does not stack; prioritizes targets without this effect): when their HP falls below 50%, immediately restores HP equal to 210% of Pedro's ATK and makes them less likely to be attacked for 8 seconds Can store 2 charges",
+  "ja": "範囲内の3名のオペレーターにトリガー効果を付与する（重複不可、この効果を持たない対象を優先して選択）：HPが50%を下回った時、即座にペドロの攻撃力の210%のHPを回復し、8秒間攻撃されにくくなる 2回チャージ可能"
+ },
+ "实战技巧：游击手": {
+  "ko": "실전 기교: 유격수",
+  "en": "Field Technique: Skirmisher",
+  "ja": "実戦テクニック：遊撃手"
+ },
+ "进驻训练室协助位时，辅助干员的专精技能训练速度+30%，如果训练位干员分支为游击手，则训练速度额外+45%": {
+  "ko": "훈련실에 배치 시, 서포터 오퍼레이터의 스킬 훈련 속도 +30%, 훈련 중인 오퍼레이터의 세부 직군이 유격수라면 훈련 속도 추가 +45%",
+  "en": "When this Operator is assigned to be the Trainer in the Training Room, Supporter Operators' Specialization training speed +30%; if the trainee's archetype is Skirmisher, training speed +45%",
+  "ja": "訓練室で協力者として配置時、補助の訓練速度+30%。訓練中のオペレーターの職分が遊撃手の場合、訓練速度が追加で+45%"
+ },
+ "新晋狙击干员梓兰，冷静地面对一切麻烦。": {
+  "ko": "신입 스나이퍼 오퍼레이터 오키드, 그 어떤 골칫거리도 침착하게 마주합니다.",
+  "en": "Orchid, newly a Sniper Operator, faces every kind of trouble with composure.",
+  "ja": "新人狙撃オペレーターのオーキッドは、あらゆる厄介事に冷静に立ち向かう。"
+ },
+ "强击瓶专家": {
+  "ko": "강격병 전문가",
+  "en": "Power Coating Expert",
+  "ja": "強撃ビン専門家"
+ },
+ "部署后首次开启技能时，接下来50次攻击的攻击力提升至120%（+5%）": {
+  "ko": "배치 후 처음 스킬 발동 시, 이후 50회 공격의 공격력이 120%(+5%)로 증가",
+  "en": "When activating a skill for the first time after deployment, the next 50 attacks have ATK increased to 120% (+5%)",
+  "ja": "配置後、初めてスキルを発動した時、以降50回の攻撃の攻撃力が120%（+5%）まで上昇"
+ },
+ "翔虫机动": {
+  "ko": "날벌레 기동",
+  "en": "Wirebug Maneuver",
+  "ja": "翔蟲機動"
+ },
+ "再部署时间-15秒且不提高部署费用；部署至上次部署位置周围时，30秒内攻击力+15%并且可以部署在近战位": {
+  "ko": "재배치 시간 -15초, 배치 코스트가 증가하지 않음. 지난 배치 위치 주변에 배치 시, 30초간 공격력 +15%, 근거리 타일에 배치 가능",
+  "en": "Redeployment Time -15 seconds and DP cost does not increase; when deployed near the previous deployment position, ATK +15% for 30 seconds and can be deployed on Melee tiles",
+  "ja": "再配置時間-15秒、配置コストが増加しない。前回の配置位置の周囲に配置した時、30秒間攻撃力+15%、近接マスに配置可能"
+ },
+ "刚射": {
+  "ko": "강사",
+  "en": "Power Shot",
+  "ja": "剛射"
+ },
+ "发射4支攻击力160%的箭矢，若还有充能则额外消耗1层施展刚连射：发射5支攻击力200%的箭矢，每支箭矢有20%概率使目标晕眩2秒 可充能4次，充能至最大层数时自动释放一次": {
+  "ko": "공격력 160%의 화살 4발 발사, 충전이 남아 있으면 추가로 1층을 소모해 강연사 시전: 공격력 200%의 화살 5발 발사, 화살 1발당 20% 확률로 목표를 2초간 기절시킴 4회 충전 가능, 최대 층수까지 충전 시 자동으로 1회 발동",
+  "en": "Fires 4 arrows at 160% ATK; if charges remain, consumes 1 additional charge to perform Power Volley: fires 5 arrows at 200% ATK, each with a 20% chance to Stun the target for 2 seconds Can store 4 charges; automatically activates once when fully charged",
+  "ja": "攻撃力160%の矢を4本発射する。チャージが残っている場合、追加で1層消費して剛連射を行う：攻撃力200%の矢を5本発射し、1本ごとに20%の確率で対象を2秒間スタンさせる 4回チャージ可能、最大までチャージすると自動的に1回発動"
+ },
+ "飞翔瞪射": {
+  "ko": "비상 조준 사격",
+  "en": "Aerial Glare Shot",
+  "ja": "飛翔にらみ撃ち"
+ },
+ "立刻起飞并对前方范围的所有目标射击3次，分别射出3、4、5支攻击力提升至180%的箭矢；之后降落并对前方小范围内的所有敌人造成攻击力300%的物理伤害 可充能3次，部署后立即释放一次": {
+  "ko": "즉시 이륙해 전방 범위의 모든 목표에게 3회 사격, 각각 공격력이 180%로 증가한 화살 3, 4, 5발을 발사. 이후 착지하며 전방 소범위 내 모든 적에게 공격력의 300%에 해당하는 물리 대미지를 입힘 3회 충전 가능, 배치 후 즉시 1회 발동",
+  "en": "Immediately Lifts Off and shoots all targets in the frontal area 3 times, firing 3, 4, and 5 arrows respectively with ATK increased to 180%; then lands, dealing 300% ATK as Physical damage to all enemies in a small frontal area Can store 3 charges; activates once immediately after deployment",
+  "ja": "即座に離陸し、前方範囲のすべての対象に3回射撃を行い、それぞれ攻撃力が180%まで上昇した矢を3、4、5本発射する。その後着地し、前方の小範囲内のすべての敵に攻撃力の300%の物理ダメージを与える 3回チャージ可能、配置後即座に1回発動"
+ },
+ "龙之箭": {
+  "ko": "용의 화살",
+  "en": "Dragon Piercer",
+  "ja": "竜の一矢"
+ },
+ "蓄力3秒后射出直线飞行的贯穿箭矢，箭矢以较大力度推动每个经过的敌人，每飞行一段距离都会对周围所有敌人造成攻击力360%的物理伤害和攻击力60%的法术伤害，箭矢射程无限 可充能2次": {
+  "ko": "3초간 힘을 모은 뒤 직선으로 날아가는 관통 화살 발사, 화살은 경로상의 모든 적을 강하게 밀어내며, 일정 거리를 날아갈 때마다 주변 모든 적에게 공격력의 360%에 해당하는 물리 대미지와 공격력의 60%에 해당하는 마법 대미지를 입힘, 화살의 사거리 무한 2회 충전 가능",
+  "en": "After charging for 3 seconds, fires a piercing arrow that flies in a straight line, forcefully pushing every enemy it passes; for every distance traveled, deals 360% ATK as Physical damage and 60% ATK as Arts damage to all surrounding enemies; the arrow's range is unlimited Can store 2 charges",
+  "ja": "3秒間チャージした後、直線に飛ぶ貫通矢を放つ。矢は通過するすべての敵を強く押し出し、一定距離飛ぶごとに周囲のすべての敵に攻撃力の360%の物理ダメージと攻撃力の60%の術ダメージを与える。矢の射程は無限 2回チャージ可能"
+ },
+ "梓兰特制箭靶": {
+  "ko": "오키드 특제 과녁",
+  "en": "Orchid's Custom Target",
+  "ja": "オーキッド特製的"
+ },
+ "再部署时间-17秒且不提高部署费用；部署至上次部署位置周围时，30秒内攻击力+20%并且可以部署在近战位": {
+  "ko": "재배치 시간 -17초, 배치 코스트가 증가하지 않음. 지난 배치 위치 주변에 배치 시, 30초간 공격력 +20%, 근거리 타일에 배치 가능",
+  "en": "Redeployment Time -17 seconds and DP cost does not increase; when deployed near the previous deployment position, ATK +20% for 30 seconds and can be deployed on Melee tiles",
+  "ja": "再配置時間-17秒、配置コストが増加しない。前回の配置位置の周囲に配置した時、30秒間攻撃力+20%、近接マスに配置可能"
+ },
+ "再部署时间-18秒且不提高部署费用；部署至上次部署位置周围更大范围时，30秒内攻击力+20%并且可以部署在近战位": {
+  "ko": "재배치 시간 -18초, 배치 코스트가 증가하지 않음. 지난 배치 위치 주변(더 넓은 범위)에 배치 시, 30초간 공격력 +20%, 근거리 타일에 배치 가능",
+  "en": "Redeployment Time -18 seconds and DP cost does not increase; when deployed within a larger area around the previous deployment position, ATK +20% for 30 seconds and can be deployed on Melee tiles",
+  "ja": "再配置時間-18秒、配置コストが増加しない。前回の配置位置の周囲（より広い範囲）に配置した時、30秒間攻撃力+20%、近接マスに配置可能"
+ },
+ "办公室年度人物": {
+  "ko": "사무실 올해의 인물",
+  "en": "Office Person of the Year",
+  "ja": "オフィスの年間MVP"
+ },
+ "进驻控制中枢时，人力办公室联络速度+10%（同种效果取最高）": {
+  "ko": "제어 센터에 배치 시, 인사부 사무실의 연락 속도 +10% (동종 효과 중 가장 높은 수치만 적용)",
+  "en": "When this Operator is assigned to the Control Center, HR Office contacting speed +10% (Strongest effect of the same type applies)",
+  "ja": "制御中枢配置時、事務室の事務連絡速度+10%（同種の効果は高いほうのみ適用）"
+ },
+ "队长的自觉": {
+  "ko": "대장의 자각",
+  "en": "A Captain's Duty",
+  "ja": "隊長の自覚"
+ },
+ "进驻贸易站时，订单上限+3，且每有一个泡影国狩猎小队干员进驻贸易站，订单获取效率+20%": {
+  "ko": "무역소에 배치 시, 오더 수주 상한 +3, 포영국 사냥 팀 오퍼레이터가 무역소에 1명 배치될 때마다 오더 수주 효율 +20%",
+  "en": "When this Operator is assigned to a Trading Post, order limit +3; for each Bubbly Realm Hunting Squad Operator assigned to a Trading Post, order acquisition efficiency +20%",
+  "ja": "貿易所配置時、注文上限+3。泡沫国狩猟チームのオペレーターが貿易所に1人配置されるごとに、受注効率+20%"
+ },
+ "罗德岛总工程师可露希尔，以先锋身份亲临前线！": {
+  "ko": "로도스 아일랜드 수석 엔지니어 클로저, 뱅가드로서 최전선에 몸소 등장!",
+  "en": "Closure, Chief Engineer of Rhodes Island, takes to the frontline in person as a Vanguard!",
+  "ja": "ロドスのチーフエンジニア、クロージャがヴァンガードとして自ら前線に登場！"
+ },
+ "精准投放": {
+  "ko": "정밀 투하",
+  "en": "Precision Delivery",
+  "ja": "精密投下"
+ },
+ "可以在战术点召唤指挥中心协助作战，其被击败后会在15秒后自动刷新；战术点效果范围随携带技能变化，效果范围内的友方单位视为自身的援军": {
+  "ko": "전술포인트에 지휘 센터를 소환해 전투를 지원할 수 있으며, 격파당하면 15초 후 자동으로 재생성. 전술포인트의 효과 범위는 장착한 스킬에 따라 변화하며, 효과 범위 내 아군 유닛은 자신의 지원군으로 간주",
+  "en": "Can summon a Command Center at a Tactical Point to assist in combat; it automatically respawns 15 seconds after being defeated. The Tactical Point's effect area changes with the equipped skill, and allied units within the effect area count as this unit's reinforcements",
+  "ja": "戦術召集点に指揮センターを召喚して戦闘を支援できる。撃破された場合、15秒後に自動的に再出現する。戦術召集点の効果範囲は装備スキルによって変化し、効果範囲内の味方ユニットは自身の援軍とみなされる"
+ },
+ "极限调度": {
+  "ko": "극한 스케줄링",
+  "en": "Extreme Scheduling",
+  "ja": "極限スケジューリング"
+ },
+ "携带可露希尔时，部署费用下限降低4（+1），【罗德岛】干员攻击力+4%": {
+  "ko": "클로저 편성 시, 배치 코스트 하한 4(+1) 감소, [로도스 아일랜드] 오퍼레이터 공격력 +4%",
+  "en": "When Closure is in the squad, the minimum DP cost is reduced by 4 (+1), and [Rhodes Island] Operators gain ATK +4%",
+  "ja": "クロージャを編成した時、コストの下限が4（+1）低下し、【ロドス】オペレーターの攻撃力+4%"
+ },
+ "递归策略": {
+  "ko": "재귀 전략",
+  "en": "Recursive Strategy",
+  "ja": "再帰戦略"
+ },
+ "立即使自身的援军获得1层护盾（不叠加），技能持续时间内逐渐获得3点部署费用；部署后每使用过一次技能，获得的部署费用+1（最多提升至7点）": {
+  "ko": "즉시 자신의 지원군이 실드 1회 획득 (중첩 불가), 스킬 지속 시간 동안 배치 코스트 3을 서서히 획득. 배치 후 스킬을 1회 사용할 때마다 획득하는 배치 코스트 +1 (최대 7까지 증가)",
+  "en": "Immediately grants this unit's reinforcements 1 Shield (does not stack); gradually gains 3 DP over the skill's duration. Each time the skill has been used after deployment, the DP gained +1 (up to 7)",
+  "ja": "即座に自身の援軍がシールドを1枚獲得する（重複不可）。スキル継続時間中に徐々にコストを3獲得する。配置後、スキルを1回使用するごとに獲得コスト+1（最大7まで上昇）"
+ },
+ "模型扩展": {
+  "ko": "모델 확장",
+  "en": "Model Expansion",
+  "ja": "モデル拡張"
+ },
+ "立即获得10点部署费用，持续时间内逐渐获得15点部署费用，自身的援军防御力+60%，阻挡数+1，自身攻击力+80%，同时攻击2个目标且能攻击到自身援军阻挡的敌人；在战术点效果范围内部署干员时，立即返还部署费用的40%": {
+  "ko": "즉시 배치 코스트 10 획득, 지속 시간 동안 배치 코스트 15를 서서히 획득, 자신의 지원군 방어력 +60% 및 저지 가능 수 +1, 자신의 공격력 +80%, 동시에 2개 목표를 공격하며 지원군이 저지 중인 적도 공격 가능. 전술포인트 효과 범위 내에 오퍼레이터 배치 시, 배치 코스트의 40%를 즉시 반환",
+  "en": "Immediately gains 10 DP and gradually gains 15 DP over the duration; this unit's reinforcements gain DEF +60% and Block +1; this unit gains ATK +80%, attacks 2 targets simultaneously, and can attack enemies blocked by its reinforcements. When deploying an Operator within the Tactical Point's effect area, 40% of the DP cost is immediately refunded",
+  "ja": "即座にコストを10獲得し、継続時間中に徐々にコストを15獲得する。自身の援軍の防御力+60%、ブロック数+1。自身の攻撃力+80%、同時に2体を攻撃し、援軍がブロック中の敵も攻撃できる。戦術召集点の効果範囲内にオペレーターを配置した時、コストの40%が即座に返還される"
+ },
+ "技能持续时间内逐渐获得18点部署费用，攻击间隔缩短，锁定自身和援军原本攻击范围内的敌人进行攻击，造成可露希尔250%攻击力的物理伤害并施加持续3秒的6%迟钝效果（可叠加，最高60%），每攻击9次后攻击目标数+1（最多触发6次）": {
+  "ko": "스킬 지속 시간 동안 배치 코스트 18을 서서히 획득, 공격 딜레이 감소, 자신과 지원군의 원래 공격 범위 내 적을 지정해 공격하며 클로저 공격력의 250%에 해당하는 물리 대미지를 입히고 3초간 지속되는 6% 둔화 효과 부여 (중첩 가능, 최대 60%), 9회 공격할 때마다 공격 목표 수 +1 (최대 6회 발동)",
+  "en": "Gradually gains 18 DP over the skill's duration; Attack Interval reduces; locks onto and attacks enemies within this unit's and its reinforcements' original attack ranges, dealing 250% of Closure's ATK as Physical damage and applying a stacking 6% Sluggish effect for 3 seconds (stacks up to 60%); after every 9 attacks, number of targets +1 (up to 6 times)",
+  "ja": "スキル継続時間中に徐々にコストを18獲得する。攻撃間隔を短縮し、自身と援軍の本来の攻撃範囲内の敵をロックオンして攻撃、クロージャの攻撃力の250%の物理ダメージを与え、3秒間継続する6%の鈍化効果を付与する（重複可能、最大60%）。9回攻撃するごとに攻撃対象数+1（最大6回まで発動）"
+ },
+ "给自己的小奖杯": {
+  "ko": "나에게 주는 작은 트로피",
+  "en": "A Little Trophy for Myself",
+  "ja": "自分への小さなトロフィー"
+ },
+ "携带可露希尔时，部署费用下限降低4，【罗德岛】干员攻击力+6%": {
+  "ko": "클로저 편성 시, 배치 코스트 하한 4 감소, [로도스 아일랜드] 오퍼레이터 공격력 +6%",
+  "en": "When Closure is in the squad, the minimum DP cost is reduced by 4, and [Rhodes Island] Operators gain ATK +6%",
+  "ja": "クロージャを編成した時、コストの下限が4低下し、【ロドス】オペレーターの攻撃力+6%"
+ },
+ "携带可露希尔时，部署费用下限降低5，【罗德岛】干员攻击力+8%": {
+  "ko": "클로저 편성 시, 배치 코스트 하한 5 감소, [로도스 아일랜드] 오퍼레이터 공격력 +8%",
+  "en": "When Closure is in the squad, the minimum DP cost is reduced by 5, and [Rhodes Island] Operators gain ATK +8%",
+  "ja": "クロージャを編成した時、コストの下限が5低下し、【ロドス】オペレーターの攻撃力+8%"
+ },
+ "总工程师": {
+  "ko": "수석 엔지니어",
+  "en": "Chief Engineer",
+  "ja": "チーフエンジニア"
+ },
+ "特别订单": {
+  "ko": "특별 오더",
+  "en": "Special Order",
+  "ja": "特別注文"
+ },
+ "进驻贸易站时，订单获取效率+10%，固定获取可露希尔特别订单（不视作违约订单）": {
+  "ko": "무역소에 배치 시, 오더 수주 효율 +10%, 클로저 특별 오더를 고정 획득 (위약 오더로 간주하지 않음)",
+  "en": "When this Operator is assigned to a Trading Post, order acquisition efficiency +10%, and always obtains Closure's Special Orders (not counted as breach-of-contract orders)",
+  "ja": "貿易所配置時、受注効率+10%。クロージャ特別注文を固定で獲得する（違約注文とみなされない）"
+ },
+ "术师干员谬因，自称是一名普通的源石科技研究员。": {
+  "ko": "캐스터 오퍼레이터 아프리사, 자신을 평범한 오리지늄 아츠 연구원이라 소개합니다.",
+  "en": "Aphrissa, Caster Operator. She claims to be an ordinary Originium Arts researcher.",
+  "ja": "術師オペレーターのアフリッサ。自らを平凡な源石技芸研究員だと称している。"
+ },
+ "链路协议": {
+  "ko": "링크 프로토콜",
+  "en": "Link Protocol",
+  "ja": "リンクプロトコル"
+ },
+ "可以使用一个持续时间25秒的“中继器”，能改变自身的攻击方向，且使该次攻击距离+2；“中继器”在场时，自身攻击力+25%": {
+  "ko": "지속 시간 25초의 '중계기' 1개를 사용 가능, 자신의 공격 방향을 바꿀 수 있으며 해당 공격의 사거리 +2. '중계기'가 전장에 있을 시 자신의 공격력 +25%",
+  "en": "Can use one 'Relay' that lasts 25 seconds, which can change this unit's attack direction and extends that attack's range by 2 tiles; while the 'Relay' is on the field, this unit's ATK +25%",
+  "ja": "継続時間25秒の「中継器」を1つ使用できる。自身の攻撃方向を変えることができ、その攻撃の距離+2。「中継器」が場にいる時、自身の攻撃力+25%"
+ },
+ "取样优化": {
+  "ko": "샘플링 최적화",
+  "en": "Sampling Optimization",
+  "ja": "サンプリング最適化"
+ },
+ "攻击范围内的友方干员攻击时无视敌方13（+3）点法术抗性": {
+  "ko": "공격 범위 내 아군 오퍼레이터가 공격 시 적의 마법 저항 13(+3) 무시",
+  "en": "Allied Operators within attack range ignore 13 (+3) RES when attacking",
+  "ja": "攻撃範囲内の味方オペレーターが攻撃時、敵の術耐性を13（+3）無視する"
+ },
+ "连续映射": {
+  "ko": "연속 사상",
+  "en": "Continuous Mapping",
+  "ja": "連続写像"
+ },
+ "攻击力+165%，“中继器”持续时间变为无限 持续时间无限": {
+  "ko": "공격력 +165%, '중계기'의 지속 시간이 무한으로 변경 무한 지속",
+  "en": "ATK +165%; the 'Relay' lasts indefinitely Unlimited duration",
+  "ja": "攻撃力+165%、「中継器」の継続時間が無限になる 退場まで効果継続"
+ },
+ "临界瞬爆": {
+  "ko": "임계 순간 폭발",
+  "en": "Critical Instant Burst",
+  "ja": "臨界瞬間爆発"
+ },
+ "向前发射一道无限长直线的光束，每0.5秒造成攻击力150%的法术伤害，光束可被我方干员改变方向": {
+  "ko": "전방으로 무한히 뻗는 직선 광선을 발사, 0.5초마다 공격력의 150%에 해당하는 마법 대미지를 입히며, 광선은 아군 오퍼레이터가 방향을 바꿀 수 있음",
+  "en": "Fires a beam of unlimited length in a straight line ahead, dealing 150% ATK as Arts damage every 0.5 seconds; the beam's direction can be changed by allied Operators",
+  "ja": "前方に無限に伸びる直線のビームを発射し、0.5秒ごとに攻撃力の150%の術ダメージを与える。ビームは味方オペレーターによって方向を変えられる"
+ },
+ "混沌的本质": {
+  "ko": "혼돈의 본질",
+  "en": "The Nature of Chaos",
+  "ja": "混沌の本質"
+ },
+ "技能开启后停止攻击3秒，撤回已部署的“中继器”并重置再部署；攻击间隔较大幅度缩短，攻击力+145%，攻击造成200%的法术伤害，并使目标停顿0.4秒；攻击经过“中继器”后，额外造成一次攻击力30%的法术伤害，且停顿时间延长0.4秒 技能期间可额外部署2个“中继器”，“中继器”不会撤退，技能结束时自动撤退 攻击装有20发弹药，打完后结束（可随时停止技能）": {
+  "ko": "스킬 발동 후 3초간 공격 중지, 배치된 '중계기'를 회수하고 재배치 시간 초기화. 공격 딜레이 상당량 감소, 공격력 +145%, 공격이 200%의 마법 대미지를 입히고 목표를 0.4초간 정지시킴. 공격이 '중계기'를 거치면 추가로 공격력의 30%에 해당하는 마법 대미지를 1회 입히고 정지 시간 0.4초 연장 스킬 지속 시간 동안 '중계기' 2개 추가 배치 가능, '중계기'는 퇴각하지 않으며 스킬 종료 시 자동 퇴각 스킬 발동 시 20발의 탄약이 장전되며, 탄약 소진 시 스킬 종료(수동 종료 가능)",
+  "en": "After activating the skill, stops attacking for 3 seconds, withdraws the deployed 'Relay' and resets its redeployment; Attack Interval reduces considerably, ATK +145%, attacks deal 200% ATK as Arts damage and Slow the target for 0.4 seconds; attacks that pass through the 'Relay' deal one additional instance of 30% ATK as Arts damage and extend the Slow by 0.4 seconds Can deploy 2 additional 'Relays' during the skill; 'Relays' do not retreat and automatically retreat when the skill ends Skill activation grants 20 ammo and the skill ends when all ammo is used (can manually deactivate skill)",
+  "ja": "スキル発動後3秒間攻撃を停止し、配置済みの「中継器」を撤退させて再配置をリセットする。攻撃間隔をかなり短縮し、攻撃力+145%、攻撃時に200%の術ダメージを与えて対象を0.4秒間足止めする。攻撃が「中継器」を経由すると、追加で攻撃力の30%の術ダメージを1回与え、足止め時間が0.4秒延長される スキル中、「中継器」を追加で2つ配置可能。「中継器」は退場せず、スキル終了時に自動的に退場する 合計20発の弾薬を撃ち切るとスキルが終了（手動でスキルを停止可能）"
+ },
+ "第三相态": {
+  "ko": "제3의 상",
+  "en": "The Third Phase",
+  "ja": "第三の相"
+ },
+ "可以使用一个持续时间35秒的“中继器”，能改变自身的攻击方向，且使该次攻击距离+2；“中继器”在场时，自身攻击力+30%": {
+  "ko": "지속 시간 35초의 '중계기' 1개를 사용 가능, 자신의 공격 방향을 바꿀 수 있으며 해당 공격의 사거리 +2. '중계기'가 전장에 있을 시 자신의 공격력 +30%",
+  "en": "Can use one 'Relay' that lasts 35 seconds, which can change this unit's attack direction and extends that attack's range by 2 tiles; while the 'Relay' is on the field, this unit's ATK +30%",
+  "ja": "継続時間35秒の「中継器」を1つ使用できる。自身の攻撃方向を変えることができ、その攻撃の距離+2。「中継器」が場にいる時、自身の攻撃力+30%"
+ },
+ "可以使用一个持续时间35秒的“中继器”，“中继器”再部署时间变短，能改变自身的攻击方向，且使该次攻击距离+2；“中继器”在场时，自身攻击力+35%": {
+  "ko": "지속 시간 35초의 '중계기' 1개를 사용 가능, '중계기'의 재배치 시간 감소, 자신의 공격 방향을 바꿀 수 있으며 해당 공격의 사거리 +2. '중계기'가 전장에 있을 시 자신의 공격력 +35%",
+  "en": "Can use one 'Relay' that lasts 35 seconds with a shorter redeployment time, which can change this unit's attack direction and extends that attack's range by 2 tiles; while the 'Relay' is on the field, this unit's ATK +35%",
+  "ja": "継続時間35秒の「中継器」を1つ使用できる。「中継器」の再配置時間が短くなり、自身の攻撃方向を変えることができ、その攻撃の距離+2。「中継器」が場にいる時、自身の攻撃力+35%"
+ },
+ "源岩解析": {
+  "ko": "원암 해석",
+  "en": "Orirock Analysis",
+  "ja": "源岩解析"
+ },
+ "独立战术兵团“谢钦”的首领斯乔帕·拉辛，向中意之人寻求双手短暂的交握。": {
+  "ko": "독립 전술 병단 '셰친'의 수장 스툐파 라진, 마음에 둔 이에게 두 손의 짧은 맞잡음을 청합니다.",
+  "en": "Styopa Razin, leader of the independent tactical legion 'Shchin', seeks a brief clasp of hands with the one who has caught his eye.",
+  "ja": "独立戦術兵団「シチン」の首領スチョーパ・ラージン。意中の人に、両手の束の間の握手を求める。"
+ },
+ "“在挥刀之前”": {
+  "ko": "'칼을 휘두르기 전에'",
+  "en": "'Before the Blade Falls'",
+  "ja": "「刃を振るう前に」"
+ },
+ "特性储存的能量达到3个时，合成为1个转置能量（至多储存等同于9倍的能量），拥有转置能量时攻击力+12%（+2%），未拥有转置能量时攻击速度+15": {
+  "ko": "특성으로 저장한 에너지가 3개에 도달하면 전치 에너지 1개로 합성 (최대 9배에 해당하는 에너지 저장 가능), 전치 에너지 보유 시 공격력 +12%(+2%), 미보유 시 공격 속도 +15",
+  "en": "When 3 units of energy stored by the Trait accumulate, they combine into 1 Transposed Energy (can store up to the equivalent of 9 units); ATK +12% (+2%) while holding Transposed Energy, ASPD +15 while not",
+  "ja": "特性で蓄えたエネルギーが3個に達すると、1個の転置エネルギーに合成される（最大9倍相当まで蓄積可能）。転置エネルギー所持時、攻撃力+12%（+2%）。未所持時、攻撃速度+15"
+ },
+ "战争技艺": {
+  "ko": "전쟁의 기예",
+  "en": "Art of War",
+  "ja": "戦争の技芸"
+ },
+ "攻击和储存的能量使目标在5秒内每秒受到90点法术伤害（至多叠加3次，发射转置能量可以叠加3次），维伊不以该效果影响的敌人为攻击目标": {
+  "ko": "공격 및 저장된 에너지는 목표가 5초 내 초당 90의 마법 대미지를 받게 함 (최대 3회 중첩, 전치 에너지 발사 시 3회 중첩 가능), 비이는 해당 효과의 영향을 받는 적을 공격 목표로 삼지 않음",
+  "en": "Attacks and stored energy cause the target to take 90 Arts damage per second for 5 seconds (stacks up to 3 times; firing Transposed Energy applies 3 stacks); Viy does not target enemies affected by this effect",
+  "ja": "攻撃と蓄えたエネルギーは、対象に5秒間、1秒ごとに90の術ダメージを与える（最大3回まで重複、転置エネルギーの発射で3回重複可能）。ヴィーはこの効果の影響を受けている敵を攻撃対象にしない"
+ },
+ "“自呼号生发”": {
+  "ko": "'부름에서 태어나'",
+  "en": "'Born of the Call Sign'",
+  "ja": "「呼び声より生まれる」"
+ },
+ "“以鲜血洗去”": {
+  "ko": "'선혈로 씻어 내어'",
+  "en": "'Washed Away in Blood'",
+  "ja": "「鮮血で洗い流す」"
+ },
+ "攻击间隔小幅缩短，每次攻击或发射储存能量后，使自身后续攻击力+15%，攻击速度+8（至多叠加9层，发射转置能量可叠加3层），持续至技能结束": {
+  "ko": "공격 딜레이 소폭 감소, 공격 또는 저장 에너지 발사 시마다 자신의 이후 공격력 +15%, 공격 속도 +8 (최대 9층 중첩, 전치 에너지 발사 시 3층 중첩 가능), 스킬 종료 시까지 지속",
+  "en": "Attack Interval slightly reduces; each attack or stored-energy shot grants this unit ATK +15% and ASPD +8 for subsequent attacks (stacks up to 9 times; firing Transposed Energy applies 3 stacks), lasting until the skill ends",
+  "ja": "攻撃間隔をやや短縮。攻撃または蓄えたエネルギーの発射ごとに、自身の以降の攻撃力+15%、攻撃速度+8（最大9層まで重複、転置エネルギーの発射で3層重複可能）。スキル終了まで継続"
+ },
+ "“用赤铁铭记”": {
+  "ko": "'붉은 쇠에 새겨'",
+  "en": "'Etched in Red Iron'",
+  "ja": "「赤鉄に刻む」"
+ },
+ "攻击速度+180，储存的能量发射后会在敌人间（优先不同目标）跳跃一次，并造成相当于165%攻击力的法术伤害，转置能量改为跳跃3次 攻击装有27发弹药，仅在发射每个储存能量时消耗1发弹药，发射转置能量消耗3发弹药，弹药打完后结束（可随时停止技能）": {
+  "ko": "공격 속도 +180, 저장된 에너지는 발사 후 적들 사이를 1회 도약하며 (다른 목표 우선) 공격력의 165%에 해당하는 마법 대미지를 입힘, 전치 에너지는 3회 도약으로 변경 스킬 발동 시 27발의 탄약이 장전되며, 저장 에너지 발사 시에만 1발, 전치 에너지 발사 시 3발 소모, 탄약 소진 시 스킬 종료(수동 종료 가능)",
+  "en": "ASPD +180; stored energy, once fired, bounces once between enemies (prioritizing different targets), dealing 165% ATK as Arts damage; Transposed Energy bounces 3 times instead Skill activation grants 27 ammo; 1 ammo is consumed only when firing each stored energy, and firing Transposed Energy consumes 3 ammo; the skill ends when all ammo is used (can manually deactivate skill)",
+  "ja": "攻撃速度+180。蓄えたエネルギーは発射後、敵の間を1回跳躍し（異なる対象を優先）、攻撃力の165%の術ダメージを与える。転置エネルギーは3回跳躍する 合計27発の弾薬を装填し、蓄えたエネルギーの発射時のみ1発、転置エネルギーの発射時は3発消費する。弾薬を撃ち切るとスキル終了（手動でスキルを停止可能）"
+ },
+ "军械库": {
+  "ko": "무기고",
+  "en": "Armory",
+  "ja": "武器庫"
+ },
+ "攻击和储存的能量使目标在5秒内每秒受到100点法术伤害（至多叠加4次，发射转置能量可以叠加3次），维伊不以该效果影响的敌人为攻击目标": {
+  "ko": "공격 및 저장된 에너지는 목표가 5초 내 초당 100의 마법 대미지를 받게 함 (최대 4회 중첩, 전치 에너지 발사 시 3회 중첩 가능), 비이는 해당 효과의 영향을 받는 적을 공격 목표로 삼지 않음",
+  "en": "Attacks and stored energy cause the target to take 100 Arts damage per second for 5 seconds (stacks up to 4 times; firing Transposed Energy applies 3 stacks); Viy does not target enemies affected by this effect",
+  "ja": "攻撃と蓄えたエネルギーは、対象に5秒間、1秒ごとに100の術ダメージを与える（最大4回まで重複、転置エネルギーの発射で3回重複可能）。ヴィーはこの効果の影響を受けている敵を攻撃対象にしない"
+ },
+ "攻击和储存的能量使目标在5秒内每秒受到120点法术伤害（至多叠加4次，发射转置能量可以叠加3次），维伊不以该效果影响的敌人为攻击目标": {
+  "ko": "공격 및 저장된 에너지는 목표가 5초 내 초당 120의 마법 대미지를 받게 함 (최대 4회 중첩, 전치 에너지 발사 시 3회 중첩 가능), 비이는 해당 효과의 영향을 받는 적을 공격 목표로 삼지 않음",
+  "en": "Attacks and stored energy cause the target to take 120 Arts damage per second for 5 seconds (stacks up to 4 times; firing Transposed Energy applies 3 stacks); Viy does not target enemies affected by this effect",
+  "ja": "攻撃と蓄えたエネルギーは、対象に5秒間、1秒ごとに120の術ダメージを与える（最大4回まで重複、転置エネルギーの発射で3回重複可能）。ヴィーはこの効果の影響を受けている敵を攻撃対象にしない"
+ },
+ "“我不懂啊”": {
+  "ko": "'난 모르겠는걸'",
+  "en": "'I Don't Get It'",
+  "ja": "「わからないなぁ」"
+ },
+ "“触类旁通”": {
+  "ko": "'하나를 들으면 열을 아는'",
+  "en": "'One Thing Leads to Another'",
+  "ja": "「一を聞いて十を知る」"
+ },
+ "进驻训练室协助位时，术师与近卫干员的专精技能训练速度+45%": {
+  "ko": "훈련실에 배치 시, 캐스터 및 가드 오퍼레이터의 스킬 훈련 속도 +45%",
+  "en": "When this Operator is assigned to be the Trainer in the Training Room, Caster and Guard Operators' Specialization training speed +45%",
+  "ja": "訓練室で協力者として配置時、術師と前衛の訓練速度+45%"
+ },
+ "手艺人": {
+  "ko": "장인",
+  "en": "Craftsman",
+  "ja": "職人"
+ },
+ "进驻制造站时，训练室每级为当前制造站+10%生产力，最多30%": {
+  "ko": "제조소에 배치 시, 훈련실 레벨 1당 현재 제조소의 생산력 +10%, 최대 30%",
+  "en": "When this Operator is assigned to a Factory, each Training Room level grants that Factory +10% productivity, up to 30%",
+  "ja": "製造所配置時、訓練室のレベル1につき、その製造所の製造効率+10%（最大30%）"
+ },
+ "炎国围棋国手望，了结一场千年的棋局之后，来到罗德岛暂歇。": {
+  "ko": "염국의 바둑 국수 왕. 천 년에 걸친 대국을 끝맺은 뒤, 로도스 아일랜드에 잠시 쉬러 왔습니다.",
+  "en": "Wang, Yan's national Go master. Having settled a thousand-year game, he has come to Rhodes Island for a brief rest.",
+  "ja": "炎国の囲碁国手ワン。千年に及ぶ対局を終え、ロドスへ束の間の休息に訪れた。"
+ },
+ "铸子": {
+  "ko": "돌을 벼리다",
+  "en": "Forging Stones",
+  "ja": "碁石鋳造"
+ },
+ "可以使用7（+1）枚棋子（最多拥有8（+1）枚），棋子相连时相互激活，敌人进入激活的棋子所在地块时触发其效果；手动部署棋子时，望在相邻位置额外部署一枚棋子（最多10（+1）枚，可以且优先部署在有敌人的不可部署地块）": {
+  "ko": "바둑돌 7(+1)개 사용 가능 (최대 8(+1)개 보유), 바둑돌이 이어지면 서로 활성화되며, 적이 활성화된 바둑돌이 있는 타일에 진입 시 그 효과 발동. 바둑돌을 수동 배치할 시, 왕이 인접한 위치에 바둑돌 1개를 추가 배치 (최대 10(+1)개, 적이 있는 배치 불가 타일에도 배치 가능하며 우선 배치)",
+  "en": "Can use 7 (+1) Go stones (holds up to 8 (+1)); connected stones activate each other, and their effects trigger when an enemy enters an activated stone's tile. When manually deploying a stone, Wang deploys an additional stone on an adjacent tile (up to 10 (+1); can be placed on — and prioritizes — non-deployable tiles occupied by enemies)",
+  "ja": "碁石を7（+1）個使用できる（最大8（+1）個所持）。碁石は繋がると互いに活性化し、敵が活性化した碁石のあるマスに入るとその効果が発動する。碁石を手動で配置する時、ワンは隣接する位置に碁石を1個追加で配置する（最大10（+1）個。敵のいる配置不可マスにも配置可能かつ優先的に配置）"
+ },
+ "料敌机先": {
+  "ko": "적수를 앞서 읽다",
+  "en": "Reading Ahead",
+  "ja": "敵手先読"
+ },
+ "棋子激活时所在的连续直线上每有一枚棋子，直线上所有棋子造成伤害提升12%（+2%）并无视敌人10（+1）点法术抗性（最多叠加3次）": {
+  "ko": "바둑돌이 활성화될 시 이어진 직선상의 바둑돌 1개당, 직선상 모든 바둑돌이 입히는 대미지 12%(+2%) 상승 및 적의 마법 저항 10(+1) 무시 (최대 3회 중첩)",
+  "en": "When a stone activates, for each stone on the same continuous line, all stones on that line deal 12% (+2%) more damage and ignore 10 (+1) RES (stacks up to 3 times)",
+  "ja": "碁石が活性化した時、連続する直線上にある碁石1個につき、直線上のすべての碁石の与ダメージ+12%（+2%）、敵の術耐性を10（+1）無視する（最大3回まで重複）"
+ },
+ "取势": {
+  "ko": "세를 취하다",
+  "en": "Taking Influence",
+  "ja": "勢を取る"
+ },
+ "被动效果：棋子触发时使目标敌人停顿且每秒受到相当于望攻击力的135%的法术伤害，持续6.5秒 主动效果：立即获得两枚棋子": {
+  "ko": "패시브 효과: 바둑돌 발동 시 목표 적을 정지시키고 초당 왕 공격력의 135%에 해당하는 마법 대미지를 받게 함, 6.5초간 지속 액티브 효과: 즉시 바둑돌 2개 획득",
+  "en": "Passive Effect: When a stone triggers, Slows the target enemy and deals Arts damage equal to 135% of Wang's ATK per second for 6.5 seconds Active Effect: Immediately gains two stones",
+  "ja": "パッシブ：碁石発動時、対象の敵を足止めし、1秒ごとにワンの攻撃力の135%の術ダメージを与える（6.5秒間継続） アクティブ：即座に碁石を2個獲得する"
+ },
+ "连星": {
+  "ko": "연성",
+  "en": "Linked Stars",
+  "ja": "連星"
+ },
+ "被动效果：棋子触发时，对连线方向上两侧3格范围内的敌人造成相当于攻击力的580%的法术伤害，并使其6秒内移动速度降低50% 主动效果：立即获得两枚棋子": {
+  "ko": "패시브 효과: 바둑돌 발동 시, 연결선 방향 양쪽 3칸 범위 내 적에게 공격력의 580%에 해당하는 마법 대미지를 입히고 6초간 이동 속도 50% 감소 액티브 효과: 즉시 바둑돌 2개 획득",
+  "en": "Passive Effect: When a stone triggers, deals 580% ATK as Arts damage to enemies within 3 tiles on both sides along the line's direction, reducing their Movement Speed by 50% for 6 seconds Active Effect: Immediately gains two stones",
+  "ja": "パッシブ：碁石発動時、連結線の方向の両側3マス範囲内の敵に攻撃力の580%の術ダメージを与え、6秒間移動速度を50%低下させる アクティブ：即座に碁石を2個獲得する"
+ },
+ "天下劫": {
+  "ko": "천하의 패",
+  "en": "Ko for the World",
+  "ja": "天下劫"
+ },
+ "被动效果：棋子的触发和伤害范围扩大，造成相当于攻击力380%的法术伤害 主动效果：停止攻击但攻击范围扩大；立即获得8枚棋子，然后将超出上限的棋子优先部署在范围内敌人所在位置；在攻击范围内手动部署棋子时可部署至敌人所在位置，且第一天赋额外至多部署3枚棋子并消耗等量弹药 装有20发弹药，手动停止或棋子耗尽后技能结束，剩余的弹药返还为棋子": {
+  "ko": "패시브 효과: 바둑돌의 발동 및 대미지 범위 확대, 공격력의 380%에 해당하는 마법 대미지를 입힘 액티브 효과: 공격을 중지하지만 공격 범위 확대. 즉시 바둑돌 8개를 획득한 뒤, 상한을 초과한 바둑돌을 범위 내 적이 있는 위치에 우선 배치. 공격 범위 내에 바둑돌 수동 배치 시 적이 있는 위치에 배치 가능하며, 제1재능이 추가로 최대 3개의 바둑돌을 배치하고 같은 수의 탄약을 소모 20발의 탄약이 장전되며, 수동 종료 또는 바둑돌 소진 시 스킬 종료, 남은 탄약은 바둑돌로 반환",
+  "en": "Passive Effect: Stones' trigger and damage areas expand, dealing 380% ATK as Arts damage Active Effect: Stops attacking but attack range expands; immediately gains 8 stones, then deploys stones exceeding the limit prioritizing tiles occupied by enemies in range; stones manually deployed within attack range can be placed on enemy-occupied tiles, and Talent 1 deploys up to 3 additional stones, consuming equal ammo Grants 20 ammo; the skill ends when manually deactivated or all stones are used, and remaining ammo is refunded as stones",
+  "ja": "パッシブ：碁石の発動範囲とダメージ範囲が拡大し、攻撃力の380%の術ダメージを与える アクティブ：攻撃を停止するが攻撃範囲が拡大。即座に碁石を8個獲得し、上限を超えた碁石を範囲内の敵のいる位置に優先的に配置する。攻撃範囲内に碁石を手動配置する時、敵のいる位置に配置可能。第一素質が追加で最大3個の碁石を配置し、同数の弾薬を消費する 合計20発の弾薬を装填し、手動停止または碁石を使い切るとスキル終了。残りの弾薬は碁石として返還される"
+ },
+ "兽形棋盒": {
+  "ko": "짐승 모양 바둑돌 통",
+  "en": "Beast-Shaped Stone Bowl",
+  "ja": "獣形碁笥"
+ },
+ "棋子激活时所在的连续直线上每有一枚棋子，直线上所有棋子造成伤害提升12%并无视敌人11点法术抗性（最多叠加3次）": {
+  "ko": "바둑돌이 활성화될 시 이어진 직선상의 바둑돌 1개당, 직선상 모든 바둑돌이 입히는 대미지 12% 상승 및 적의 마법 저항 11 무시 (최대 3회 중첩)",
+  "en": "When a stone activates, for each stone on the same continuous line, all stones on that line deal 12% more damage and ignore 11 RES (stacks up to 3 times)",
+  "ja": "碁石が活性化した時、連続する直線上にある碁石1個につき、直線上のすべての碁石の与ダメージ+12%、敵の術耐性を11無視する（最大3回まで重複）"
+ },
+ "棋子激活时所在的连续直线上每有一枚棋子，直线上所有棋子造成伤害提升13%并无视敌人12点法术抗性（最多叠加3次）": {
+  "ko": "바둑돌이 활성화될 시 이어진 직선상의 바둑돌 1개당, 직선상 모든 바둑돌이 입히는 대미지 13% 상승 및 적의 마법 저항 12 무시 (최대 3회 중첩)",
+  "en": "When a stone activates, for each stone on the same continuous line, all stones on that line deal 13% more damage and ignore 12 RES (stacks up to 3 times)",
+  "ja": "碁石が活性化した時、連続する直線上にある碁石1個につき、直線上のすべての碁石の与ダメージ+13%、敵の術耐性を12無視する（最大3回まで重複）"
+ },
+ "权变": {
+  "ko": "권변",
+  "en": "Adaptation",
+  "ja": "権変"
+ },
+ "进驻控制中枢时，若外势大于等于实地，所有贸易站订单效率+7%；若实地大于外势，所有制造站生产力+2%（同种效果取最高）": {
+  "ko": "제어 센터에 배치 시, 외세가 실리 이상이면 모든 무역소의 오더 효율 +7%, 실리가 외세보다 크면 모든 제조소의 생산력 +2% (동종 효과 중 가장 높은 수치만 적용)",
+  "en": "When this Operator is assigned to the Control Center, if Outer Influence is greater than or equal to Territory, all Trading Posts' order efficiency +7%; if Territory is greater than Outer Influence, all Factories' productivity +2% (Strongest effect of the same type applies)",
+  "ja": "制御中枢配置時、外勢が実利以上の場合、すべての貿易所の受注効率+7%。実利が外勢より大きい場合、すべての製造所の製造効率+2%（同種の効果は高いほうのみ適用）"
+ },
+ "苦心孤诣": {
+  "ko": "고심참담",
+  "en": "Painstaking Dedication",
+  "ja": "苦心孤詣"
+ },
+ "进驻训练室协助位时，如果本次训练专精技能至3级，专精技能训练速度+70%": {
+  "ko": "훈련실에 배치 시, 이번 훈련을 통해 스킬 마스터리가 3레벨까지 도달한 경우 스킬 훈련 속도 +70%",
+  "en": "When this Operator is assigned to be the Trainer in the Training Room, if training this skill to Specialization Level 3, training speed +70%",
+  "ja": "訓練室で協力者として配置時、特化ランク3への訓練をサポートする場合、訓練速度+70%"
+ },
+ "贝洛内家族过去的少爷莱昂图索曾经的军师，德米特里，如今已是贝洛内家的家主。": {
+  "ko": "한때 벨로네 가문의 도련님 레온투소의 군사였던 데미트리. 이제는 벨로네 가문의 가주가 되었습니다.",
+  "en": "Demetri, once the strategist of Leontuzzo, young master of the Bellone family. Today, he is the head of the Bellones.",
+  "ja": "かつてベッローネ家の坊ちゃんレオントゥーゾの軍師だったデメトリ。今やベッローネ家の当主となった。"
+ },
+ "家族手段": {
+  "ko": "가문의 수완",
+  "en": "Family Methods",
+  "ja": "ファミリーの手腕"
+ },
+ "攻击使目标在10秒内防御力降低7%（最多叠加5次），并且目标剩余生命值比例越低自身对其造成的伤害越高，在剩余20%以下生命值时伤害提高到最高136%（+8%）": {
+  "ko": "공격 시 목표의 방어력이 10초간 7% 감소 (최대 5회 중첩), 목표의 잔여 HP 비율이 낮을수록 목표에게 입히는 대미지가 상승하며, 잔여 HP 20% 이하일 시 대미지가 최대 136%(+8%)까지 상승",
+  "en": "Attacks reduce the target's DEF by 7% for 10 seconds (stacks up to 5 times); the lower the target's remaining HP percentage, the more damage this unit deals to it, up to a maximum of 136% (+8%) when the target is below 20% HP",
+  "ja": "攻撃時、対象の防御力を10秒間7%低下させる（最大5回まで重複）。対象の残りHP割合が低いほど与えるダメージが上昇し、残りHPが20%以下の時、ダメージが最大136%（+8%）まで上昇"
+ },
+ "街头直觉": {
+  "ko": "거리의 직감",
+  "en": "Street Instinct",
+  "ja": "ストリートの直感"
+ },
+ "获得40%的物理和法术闪避，部署后提高到80%并在20秒内逐渐衰减": {
+  "ko": "물리 및 마법 회피율 40% 획득, 배치 후 80%로 상승했다가 20초에 걸쳐 서서히 감소",
+  "en": "Gains 40% Physical and Arts dodge; increases to 80% after deployment and gradually decays over 20 seconds",
+  "ja": "物理回避と術回避40%を獲得する。配置後は80%まで上昇し、20秒かけて徐々に減衰する"
+ },
+ "家主的余裕": {
+  "ko": "가주의 여유",
+  "en": "The Don's Composure",
+  "ja": "当主の余裕"
+ },
+ "下次攻击对目标造成两次相当于攻击力250%的物理伤害": {
+  "ko": "다음 공격이 목표에게 공격력의 250%에 해당하는 물리 대미지를 2회 입힘",
+  "en": "The next attack deals two instances of 250% ATK as Physical damage to the target",
+  "ja": "次の通常攻撃時、対象に攻撃力の250%の物理ダメージを2回与える"
+ },
+ "军师的手段": {
+  "ko": "군사의 수완",
+  "en": "The Strategist's Methods",
+  "ja": "軍師の手腕"
+ },
+ "攻击范围扩大，攻击速度+80，每次攻击对3名目标造成相当于攻击力200%的物理伤害；技能期间第一天赋使目标防御力降低的效果改为最多叠加8次，并且叠满后对目标造成持续的停顿效果": {
+  "ko": "공격 범위 확대, 공격 속도 +80, 매 공격마다 3명의 목표에게 공격력의 200%에 해당하는 물리 대미지를 입힘. 스킬 지속 시간 동안 제1재능의 방어력 감소 효과가 최대 8회 중첩으로 변경되며, 최대 중첩 시 목표에게 지속적인 정지 효과 부여",
+  "en": "Attack Range expands, ASPD +80; each attack deals 200% ATK as Physical damage to 3 targets. While the skill is active, Talent 1's DEF reduction stacks up to 8 times instead, and at max stacks continuously Slows the target",
+  "ja": "攻撃範囲拡大、攻撃速度+80。攻撃ごとに3体の対象に攻撃力の200%の物理ダメージを与える。スキル中、第一素質の防御力低下効果が最大8回重複に変更され、最大まで重複すると対象に継続的な足止め効果を与える"
+ },
+ "清算": {
+  "ko": "청산",
+  "en": "Reckoning",
+  "ja": "清算"
+ },
+ "攻击力+170%，攻击速度+50，攻击时有50%的几率造成相当于攻击力185%的物理伤害；技能开启后立即选取自身周围一定范围内的一名地面目标，若其所在位置可部署，自身会移动至目标所在位置进行攻击；自身攻击的精英、领袖敌人被击倒，或自身持续1秒未进行攻击时，会立即重新选取目标 受到致命伤害时不撤退但会结束技能，技能结束后返回初始位置": {
+  "ko": "공격력 +170%, 공격 속도 +50, 공격 시 50% 확률로 공격력의 185%에 해당하는 물리 대미지를 입힘. 스킬 발동 시 즉시 자신 주변 일정 범위 내 지상 목표 1명을 선택하며, 해당 위치가 배치 가능하면 목표 위치로 이동해 공격. 자신이 공격하던 정예·리더 적이 쓰러지거나 1초간 공격하지 않았을 시 즉시 목표 재선택 치명적인 대미지를 받아도 퇴각하지 않으나 스킬이 종료되며, 스킬 종료 후 처음 위치로 복귀",
+  "en": "ATK +170%, ASPD +50; attacks have a 50% chance to deal 185% ATK as Physical damage. Upon skill activation, immediately selects one ground target within a certain range; if the target's tile is deployable, this unit moves there to attack. Immediately reselects a target when the Elite or Leader enemy it attacks is defeated, or when it has not attacked for 1 second When taking lethal damage, does not retreat but the skill ends; returns to the initial position after the skill ends",
+  "ja": "攻撃力+170%、攻撃速度+50。攻撃時、50%の確率で攻撃力の185%の物理ダメージを与える。スキル発動後、即座に自身周囲の一定範囲内の地上の対象1体を選択し、その位置が配置可能な場合、対象の位置に移動して攻撃する。攻撃していたエリート・ボスの敵が倒された時、または1秒間攻撃しなかった時、即座に対象を再選択する 致命的なダメージを受けても退場しないがスキルが終了する。スキル終了後、元の位置に戻る"
+ },
+ "实用的工具": {
+  "ko": "실용적인 도구",
+  "en": "Practical Tools",
+  "ja": "実用的な道具"
+ },
+ "攻击使目标在10秒内防御力降低7%（最多叠加5次），并且目标剩余生命值比例越低自身对其造成的伤害越高，在剩余20%以下生命值时伤害提高到最高142%": {
+  "ko": "공격 시 목표의 방어력이 10초간 7% 감소 (최대 5회 중첩), 목표의 잔여 HP 비율이 낮을수록 목표에게 입히는 대미지가 상승하며, 잔여 HP 20% 이하일 시 대미지가 최대 142%까지 상승",
+  "en": "Attacks reduce the target's DEF by 7% for 10 seconds (stacks up to 5 times); the lower the target's remaining HP percentage, the more damage this unit deals to it, up to a maximum of 142% when the target is below 20% HP",
+  "ja": "攻撃時、対象の防御力を10秒間7%低下させる（最大5回まで重複）。対象の残りHP割合が低いほど与えるダメージが上昇し、残りHPが20%以下の時、ダメージが最大142%まで上昇"
+ },
+ "攻击使目标在10秒内防御力降低8%（最多叠加5次），并且目标剩余生命值比例越低自身对其造成的伤害越高，在剩余20%以下生命值时伤害提高到最高142%": {
+  "ko": "공격 시 목표의 방어력이 10초간 8% 감소 (최대 5회 중첩), 목표의 잔여 HP 비율이 낮을수록 목표에게 입히는 대미지가 상승하며, 잔여 HP 20% 이하일 시 대미지가 최대 142%까지 상승",
+  "en": "Attacks reduce the target's DEF by 8% for 10 seconds (stacks up to 5 times); the lower the target's remaining HP percentage, the more damage this unit deals to it, up to a maximum of 142% when the target is below 20% HP",
+  "ja": "攻撃時、対象の防御力を10秒間8%低下させる（最大5回まで重複）。対象の残りHP割合が低いほど与えるダメージが上昇し、残りHPが20%以下の時、ダメージが最大142%まで上昇"
+ },
+ "家族经营·α": {
+  "ko": "가문 경영·α",
+  "en": "Family Business·α",
+  "ja": "ファミリー経営・α"
+ },
+ "家族经营·β": {
+  "ko": "가문 경영·β",
+  "en": "Family Business·β",
+  "ja": "ファミリー経営・β"
+ },
+ "进驻贸易站时，订单获取效率+25%；当伺夜在基建内时（不包含副手及活动室使用者），订单获取效率额外+5%": {
+  "ko": "무역소에 배치 시, 오더 수주 효율 +25%. 비질이 기반시설에 있을 시 (어시스턴트 및 활동실 사용자 미포함), 오더 수주 효율 추가 +5%",
+  "en": "When this Operator is assigned to a Trading Post, order acquisition efficiency +25%; while Vigil is in the Base (excluding Assistants and Activity Room users), order acquisition efficiency +5%",
+  "ja": "貿易所配置時、受注効率+25%。ヴィジェルが基地内にいる時（補佐と活動室利用者を除く）、受注効率が追加で+5%"
+ },
+ "进驻贸易站时，订单获取效率+30%；当伺夜在基建内时（不包含副手及活动室使用者），订单获取效率额外+10%": {
+  "ko": "무역소에 배치 시, 오더 수주 효율 +30%. 비질이 기반시설에 있을 시 (어시스턴트 및 활동실 사용자 미포함), 오더 수주 효율 추가 +10%",
+  "en": "When this Operator is assigned to a Trading Post, order acquisition efficiency +30%; while Vigil is in the Base (excluding Assistants and Activity Room users), order acquisition efficiency +10%",
+  "ja": "貿易所配置時、受注効率+30%。ヴィジェルが基地内にいる時（補佐と活動室利用者を除く）、受注効率が追加で+10%"
+ },
+ "未偿还的债务": {
+  "ko": "갚지 못한 빚",
+  "en": "Unpaid Debt",
+  "ja": "未返済の借り"
+ },
+ "当与伺夜在同一个贸易站时，心情每小时消耗-0.1，订单上限+2": {
+  "ko": "비질과 함께 같은 무역소에 배치 시, 시간당 컨디션 소모 -0.1, 오더 수주 상한 +2",
+  "en": "When this Operator is assigned to the same Trading Post as Vigil, Morale consumed each hour -0.1, and order limit +2",
+  "ja": "ヴィジェルと同じ貿易所に配置時、1時間ごとの体力消費量-0.1、注文上限+2"
+ },
+ "罗德岛近卫干员凛冬，将集结力量为同伴们开辟出前路。": {
+  "ko": "로도스 아일랜드 가드 오퍼레이터 지마, 힘을 결집해 동료들을 위한 앞길을 열어젖힙니다.",
+  "en": "Zima, Guard Operator of Rhodes Island, rallies her strength to carve a path forward for her comrades.",
+  "ja": "ロドスの前衛オペレーター、ジーマ。力を結集し、仲間たちのために前途を切り開く。"
+ },
+ "汹涌怒火": {
+  "ko": "용솟음치는 분노",
+  "en": "Surging Fury",
+  "ja": "沸き立つ怒り"
+ },
+ "特性溅射造成的物理伤害提升24%，且溅射到的每个高台对周围四格所有地面敌人造成相当于攻击力27%（+3%）的物理伤害和0.5秒停顿": {
+  "ko": "특성의 스플래시가 입히는 물리 대미지 24% 상승, 스플래시가 닿은 각 원거리 타일이 주변 4칸의 모든 지상 적에게 공격력의 27%(+3%)에 해당하는 물리 대미지와 0.5초 정지를 부여",
+  "en": "Physical damage dealt by the Trait's splash +24%; each Ranged tile hit by the splash deals 27% (+3%) ATK as Physical damage and a 0.5-second Slow to all ground enemies in the surrounding 4 tiles",
+  "ja": "特性のスプラッシュが与える物理ダメージ+24%。スプラッシュが及んだ各高台マスは、周囲4マスのすべての地上の敵に攻撃力の27%（+3%）の物理ダメージと0.5秒の足止めを与える"
+ },
+ "万众巨潮": {
+  "ko": "만인의 거대한 파도",
+  "en": "Tide of the Multitude",
+  "ja": "万人の大波"
+ },
+ "技能期间所有场上干员攻击力和防御力+18%（+4%），【乌萨斯学生自治团】干员获得加成效果翻倍": {
+  "ko": "스킬 지속 시간 동안 전장의 모든 오퍼레이터 공격력 및 방어력 +18%(+4%), [우르수스 학생 자치단] 오퍼레이터는 획득하는 강화 효과 2배",
+  "en": "While a skill is active, all Operators on the field gain ATK and DEF +18% (+4%); [Ursus Student Self-Governing Group] Operators gain double this bonus",
+  "ja": "スキル中、場にいるすべてのオペレーターの攻撃力・防御力+18%（+4%）。【ウルサス学生自治団】オペレーターは獲得するバフ効果が2倍になる"
+ },
+ "誓不低头": {
+  "ko": "결코 고개 숙이지 않으리",
+  "en": "Never Bow",
+  "ja": "決して屈しない"
+ },
+ "攻击力+50%，攻击速度+50": {
+  "ko": "공격력 +50%, 공격 속도 +50",
+  "en": "ATK +50%, ASPD +50",
+  "ja": "攻撃力+50%、攻撃速度+50"
+ },
+ "绝不罢休": {
+  "ko": "결코 물러서지 않으리",
+  "en": "Never Relent",
+  "ja": "決して引き下がらない"
+ },
+ "被动效果：每次有高台触发第一天赋的效果时，获得1点技力 自动开启：攻击范围扩大，攻击力+90%，防御力+60% 第二次及以后使用时能力加成变为最初的两倍，且持续时间无限": {
+  "ko": "패시브 효과: 원거리 타일이 제1재능의 효과를 발동할 때마다 SP 1 획득 자동 발동: 공격 범위 확대, 공격력 +90%, 방어력 +60% 2회째 사용부터 능력 강화가 처음의 2배가 되며 무한 지속",
+  "en": "Passive Effect: Gains 1 SP each time a Ranged tile triggers Talent 1's effect Auto-activation: Attack Range expands, ATK +90%, DEF +60% From the second use onward, the stat bonuses double and the duration becomes unlimited",
+  "ja": "パッシブ：高台マスが第一素質の効果を発動するたび、SPを1獲得する 自動発動：攻撃範囲拡大、攻撃力+90%、防御力+60% 2回目以降の使用時、能力上昇が最初の2倍になり、退場まで効果継続"
+ },
+ "无可抵挡": {
+  "ko": "막을 수 없으리",
+  "en": "Unstoppable",
+  "ja": "止められない"
+ },
+ "攻击力+100%，对前方一格持续进行五次溅射范围更大的锤击，每次造成相当于攻击力240%的物理伤害并使攻击力额外+30%；技能期间触发第一天赋的高台会向四周高台扩散该效果（扩散次数随攻击次数递增），并使伤害效果提升至3.5倍，控制效果变为2秒束缚": {
+  "ko": "공격력 +100%, 전방 1칸에 스플래시 범위가 더 넓은 망치 타격을 5회 연속 가하며, 매회 공격력의 240%에 해당하는 물리 대미지를 입히고 공격력 추가 +30%. 스킬 지속 시간 동안 제1재능을 발동한 원거리 타일이 그 효과를 주변 원거리 타일로 확산시키며 (확산 횟수는 공격 횟수에 따라 증가), 대미지 효과가 3.5배로 상승하고 제어 효과가 2초 속박으로 변경",
+  "en": "ATK +100%; delivers five successive hammer blows with a larger splash area to the tile ahead, each dealing 240% ATK as Physical damage and granting an additional ATK +30%. While the skill is active, Ranged tiles that trigger Talent 1 spread the effect to surrounding Ranged tiles (spread count increases with each attack), the damage effect increases to 3.5x, and the crowd control becomes a 2-second Bind",
+  "ja": "攻撃力+100%。前方1マスに、より広いスプラッシュ範囲のハンマー打撃を5回連続で行い、1回ごとに攻撃力の240%の物理ダメージを与え、攻撃力が追加で+30%。スキル中、第一素質を発動した高台マスは周囲の高台マスにその効果を拡散させ（拡散回数は攻撃回数に応じて増加）、ダメージ効果が3.5倍まで上昇し、制御効果が2秒間のバインドに変化する"
+ },
+ "迟到的勋章": {
+  "ko": "뒤늦게 도착한 훈장",
+  "en": "A Medal Long Overdue",
+  "ja": "遅れて届いた勲章"
+ },
+ "特性溅射造成的物理伤害提升32%，且溅射到的每个高台对周围四格所有地面敌人造成相当于攻击力24%的物理伤害和0.5秒停顿": {
+  "ko": "특성의 스플래시가 입히는 물리 대미지 32% 상승, 스플래시가 닿은 각 원거리 타일이 주변 4칸의 모든 지상 적에게 공격력의 24%에 해당하는 물리 대미지와 0.5초 정지를 부여",
+  "en": "Physical damage dealt by the Trait's splash +32%; each Ranged tile hit by the splash deals 24% ATK as Physical damage and a 0.5-second Slow to all ground enemies in the surrounding 4 tiles",
+  "ja": "特性のスプラッシュが与える物理ダメージ+32%。スプラッシュが及んだ各高台マスは、周囲4マスのすべての地上の敵に攻撃力の24%の物理ダメージと0.5秒の足止めを与える"
+ },
+ "特性溅射造成的物理伤害提升40%，且溅射到的每个高台对周围四格所有地面敌人造成相当于攻击力24%的物理伤害和0.5秒停顿": {
+  "ko": "특성의 스플래시가 입히는 물리 대미지 40% 상승, 스플래시가 닿은 각 원거리 타일이 주변 4칸의 모든 지상 적에게 공격력의 24%에 해당하는 물리 대미지와 0.5초 정지를 부여",
+  "en": "Physical damage dealt by the Trait's splash +40%; each Ranged tile hit by the splash deals 24% ATK as Physical damage and a 0.5-second Slow to all ground enemies in the surrounding 4 tiles",
+  "ja": "特性のスプラッシュが与える物理ダメージ+40%。スプラッシュが及んだ各高台マスは、周囲4マスのすべての地上の敵に攻撃力の24%の物理ダメージと0.5秒の足止めを与える"
+ },
+ "战阵领袖": {
+  "ko": "전열의 리더",
+  "en": "Battle-Line Leader",
+  "ja": "戦列のリーダー"
+ },
+ "情同手足": {
+  "ko": "형제 같은 사이",
+  "en": "Like Family",
+  "ja": "兄弟同然"
+ },
+ "进驻制造站时，作战记录类配方的生产力+30%，当与乌萨斯学生自治团干员在同一个制造站时，作战记录类配方的生产力额外+10%": {
+  "ko": "제조소에 배치 시, 작전기록류에 대한 생산력 +30%, 우르수스 학생 자치단 오퍼레이터와 함께 같은 제조소에 배치 시 작전기록류에 대한 생산력 추가 +10%",
+  "en": "When this Operator is assigned to a Factory, productivity towards Battle Records +30%; when assigned to the same Factory as an Ursus Student Self-Governing Group Operator, productivity towards Battle Records +10%",
+  "ja": "製造所配置時、作戦記録製造の製造効率+30%。ウルサス学生自治団のオペレーターと同じ製造所に配置時、作戦記録製造の製造効率が追加で+10%"
+ },
+ "“是，团长！”": {
+  "ko": "'네, 단장님!'",
+  "en": "'Yes, Chief!'",
+  "ja": "「はい、団長！」"
+ },
+ "进驻控制中枢时，自身心情每小时消耗+0.5，每个进驻在会客室的乌萨斯学生自治团干员，线索搜集速度+10%": {
+  "ko": "제어 센터에 배치 시, 자신의 시간당 컨디션 소모 +0.5, 응접실에 배치된 우르수스 학생 자치단 오퍼레이터 1명당 단서 수집 속도 +10%",
+  "en": "When this Operator is assigned to the Control Center, own Morale consumed each hour +0.5; for each Ursus Student Self-Governing Group Operator assigned to the Reception Room, Clue search speed +10%",
+  "ja": "制御中枢配置時、自身の1時間ごとの体力消費量+0.5。応接室に配置されたウルサス学生自治団のオペレーター1人につき、手がかり捜索速度+10%"
+ },
+ "罗德岛干员陈，她的剑仍为“公义”而挥。": {
+  "ko": "로도스 아일랜드 오퍼레이터 첸. 그녀의 검은 여전히 '정의'를 위해 휘둘러집니다.",
+  "en": "Ch'en, Operator of Rhodes Island. Her blade still swings for 'justice'.",
+  "ja": "ロドスのオペレーター、チェン。彼女の剣は今もなお「正義」のために振るわれる。"
+ },
+ "形意洞照": {
+  "ko": "형의통찰",
+  "en": "Form and Intent Illuminated",
+  "ja": "形意洞察"
+ },
+ "攻击力+16%（+3%），攻击速度+16（+3），攻击变为弱点伤害": {
+  "ko": "공격력 +16%(+3%), 공격 속도 +16(+3), 공격이 약점 대미지로 변경",
+  "en": "ATK +16% (+3%), ASPD +16 (+3); attacks deal Weakness damage",
+  "ja": "攻撃力+16%（+3%）、攻撃速度+16（+3）。攻撃が弱点ダメージに変化"
+ },
+ "寒暑觉知": {
+  "ko": "한서지각",
+  "en": "Sense of Seasons",
+  "ja": "寒暑覚知"
+ },
+ "未受到伤害时，每7秒随机治疗自身一定（攻击力的35%（+5%）~165%（+5%））生命值，并闪避下次物理与法术攻击": {
+  "ko": "대미지를 받지 않았을 시, 7초마다 자신의 HP를 일정량 (공격력의 35%(+5%)~165%(+5%)) 무작위로 치료하고 다음 물리 및 마법 공격을 회피",
+  "en": "While not taking damage, every 7 seconds restores a random amount of HP (35% (+5%) to 165% (+5%) of ATK) and dodges the next Physical or Arts attack",
+  "ja": "ダメージを受けていない時、7秒ごとに自身のHPをランダムな量（攻撃力の35%（+5%）～165%（+5%））回復し、次の物理・術攻撃を回避する"
+ },
+ "赤霄·奔夜": {
+  "ko": "적소·분야",
+  "en": "Chi Xiao: Night Gallop",
+  "ja": "赤霄・夜駆け"
+ },
+ "攻击力+120%，攻击变为二连击，攻击使目标敌人特殊能力失效持续至技能结束": {
+  "ko": "공격력 +120%, 공격이 2연격으로 변경, 공격 시 목표 적의 특수 능력이 스킬 종료 시까지 무효화",
+  "en": "ATK +120%; attacks become 2-hit combos and disable the target's special abilities until the skill ends",
+  "ja": "攻撃力+120%、攻撃が2連撃に変化。攻撃時、対象の敵の特殊能力がスキル終了まで無効化される"
+ },
+ "赤霄·绝影-驰": {
+  "ko": "적소·절영-질주",
+  "en": "Chi Xiao: Shadowless Dash",
+  "ja": "赤霄・絶影―馳"
+ },
+ "对周围最近的1名敌人发动10次斩击，每次造成攻击力480%的法术伤害，敌人被击倒时转移至目标周围最近的其他敌人并使剩余攻击次数+1；斩击结束时，若目标未被击倒且其位置可部署则移动至该位置，否则返回原位置。接下来攻击力+300%，获得60%物理和法术闪避": {
+  "ko": "주변의 가장 가까운 적 1명에게 10회 참격을 가하며, 매회 공격력의 480%에 해당하는 마법 대미지를 입힘. 적이 쓰러지면 목표 주변의 가장 가까운 다른 적에게로 옮겨 가며 잔여 공격 횟수 +1. 참격 종료 시 목표가 쓰러지지 않았고 그 위치가 배치 가능하면 해당 위치로 이동, 그렇지 않으면 원래 위치로 복귀. 이후 공격력 +300%, 물리 및 마법 회피율 60% 획득",
+  "en": "Unleashes 10 slashes at the nearest surrounding enemy, each dealing 480% ATK as Arts damage; when an enemy is defeated, transfers to the nearest other enemy around the target and gains +1 remaining slash. When the slashes end, moves to the target's position if it survived and the tile is deployable, otherwise returns to the original position. Afterwards gains ATK +300% and 60% Physical and Arts dodge",
+  "ja": "周囲の最も近い敵1体に10回の斬撃を放ち、1回ごとに攻撃力の480%の術ダメージを与える。敵が倒された時、対象周囲の最も近い別の敵に移り、残り攻撃回数+1。斬撃終了時、対象が倒されておらずその位置が配置可能な場合はその位置に移動し、そうでなければ元の位置に戻る。その後、攻撃力+300%、物理回避と術回避60%を獲得する"
+ },
+ "赤霄·天喟": {
+  "ko": "적소·천위",
+  "en": "Chi Xiao: Heaven's Sigh",
+  "ja": "赤霄・天喟"
+ },
+ "技能开启时向前释放一道可转向的剑气，对穿过的敌人造成相当于其当前生命值6%的法术伤害（至少造成自身攻击力580%的法术伤害）；攻击范围扩大，每次攻击对最多4名地面敌人造成3次攻击力210%的法术伤害": {
+  "ko": "스킬 발동 시 전방으로 방향 전환 가능한 검기를 방출, 관통한 적에게 현재 HP의 6%에 해당하는 마법 대미지를 입힘 (최소 자신의 공격력 580%에 해당하는 마법 대미지). 공격 범위 확대, 매 공격마다 최대 4명의 지상 적에게 공격력의 210%에 해당하는 마법 대미지를 3회 입힘",
+  "en": "Upon activation, releases a steerable sword wave ahead that deals Arts damage equal to 6% of each passed enemy's current HP (at minimum 580% of own ATK as Arts damage); Attack Range expands, and each attack deals 3 instances of 210% ATK as Arts damage to up to 4 ground enemies",
+  "ja": "スキル発動時、前方に方向転換可能な剣気を放ち、貫通した敵に現在HPの6%の術ダメージを与える（最低でも自身の攻撃力の580%の術ダメージ）。攻撃範囲が拡大し、攻撃ごとに最大4体の地上の敵に攻撃力の210%の術ダメージを3回与える"
+ },
+ "记忆残页": {
+  "ko": "기억의 남은 페이지",
+  "en": "Remnant Pages of Memory",
+  "ja": "記憶の残頁"
+ },
+ "未受到伤害时，每6秒随机治疗自身一定（攻击力的40%~180%）生命值，并闪避下次物理与法术攻击": {
+  "ko": "대미지를 받지 않았을 시, 6초마다 자신의 HP를 일정량 (공격력의 40%~180%) 무작위로 치료하고 다음 물리 및 마법 공격을 회피",
+  "en": "While not taking damage, every 6 seconds restores a random amount of HP (40% to 180% of ATK) and dodges the next Physical or Arts attack",
+  "ja": "ダメージを受けていない時、6秒ごとに自身のHPをランダムな量（攻撃力の40%～180%）回復し、次の物理・術攻撃を回避する"
+ },
+ "未受到伤害时，每6秒随机治疗自身一定（攻击力的50%~200%）生命值，并闪避下次物理与法术攻击": {
+  "ko": "대미지를 받지 않았을 시, 6초마다 자신의 HP를 일정량 (공격력의 50%~200%) 무작위로 치료하고 다음 물리 및 마법 공격을 회피",
+  "en": "While not taking damage, every 6 seconds restores a random amount of HP (50% to 200% of ATK) and dodges the next Physical or Arts attack",
+  "ja": "ダメージを受けていない時、6秒ごとに自身のHPをランダムな量（攻撃力の50%～200%）回復し、次の物理・術攻撃を回避する"
+ },
+ "萍踪浪迹": {
+  "ko": "부평초 같은 발자취",
+  "en": "Wandering Traces",
+  "ja": "浮草の足跡"
+ },
+ "扶危行侠": {
+  "ko": "위기에 손을 내미는 협객",
+  "en": "Chivalrous Aid",
+  "ja": "危うきを扶く侠客"
+ },
+ "进驻会客室时，线索搜集速度提升20%，同时每10点人间烟火额外提升1%": {
+  "ko": "응접실에 배치 시, 단서 수집 속도 20% 상승, 속세의 화식 10마다 추가로 1% 상승",
+  "en": "When this Operator is assigned to the Reception Room, Clue search speed +20%, plus an additional +1% for every 10 Worldly Plight",
+  "ja": "応接室配置時、手がかり捜索速度+20%。俗世之憂10につき、追加で+1%"
+ },
+ "液化高能气体": {
+  "ko": "액화 고에너지 가스",
+  "en": "Liquefied High-Energy Gas",
+  "ja": "液化高エネルギーガス"
+ },
+ "一种极易燃烧的高活泼性气体产品，燃烧时温度极高，可熔融绝大部分金属材料，被广泛利用于工业烧焊和催化反应领域。": {
+  "ko": "매우 잘 타는 고활성 가스 제품. 연소 시 온도가 극도로 높아 대부분의 금속 재료를 녹일 수 있으며, 산업 용접과 촉매 반응 분야에서 널리 쓰인다.",
+  "en": "A highly reactive, extremely flammable gas product. It burns hot enough to melt most metallic materials, and is widely used in industrial welding and catalytic reactions.",
+  "ja": "極めて燃えやすい高活性ガス製品。燃焼時の温度は非常に高く、大半の金属材料を溶かすことができ、工業溶接や触媒反応の分野で広く利用されている。"
+ },
+ "储存在特制金属罐体中的液化气体。可用于多种强化场合，也常作为制造站合成项目的原料。": {
+  "ko": "특제 금속 탱크에 저장된 액화 가스. 다양한 강화에 사용할 수 있으며, 제조소 합성 프로젝트의 원료로도 자주 쓰인다.",
+  "en": "Liquefied gas stored in specially made metal canisters. Used in many kinds of upgrades, and often as a raw material for Factory synthesis projects.",
+  "ja": "特製の金属タンクに貯蔵された液化ガス。様々な強化に使用でき、製造所の合成プロジェクトの原料としてもよく使われる。"
+ },
+ "液化醚吸聚体": {
+  "ko": "액화 에테르 응집체",
+  "en": "Liquefied Ether Aggregate",
+  "ja": "液化エーテル凝集体"
+ },
+ "将酮制剂进行惰性化之后得到的醚制剂。该种制剂较为稳定，不会与活泼金属材料发生反应，因此被广泛利用于各类工业流程之中。": {
+  "ko": "케톤 제제를 불활성화하여 얻은 에테르 제제. 비교적 안정적이고 활성 금속 재료와 반응하지 않아 각종 산업 공정에 널리 이용된다.",
+  "en": "An ether preparation obtained by rendering a ketone preparation inert. Relatively stable and unreactive with active metals, it is widely used across industrial processes.",
+  "ja": "ケトン製剤を不活性化して得られるエーテル製剤。比較的安定しており、活性金属材料と反応しないため、各種工業プロセスで広く利用されている。"
+ },
+ "通过复杂的合成流程得到的有机化合物。可用于多种强化场合。": {
+  "ko": "복잡한 합성 공정을 거쳐 얻은 유기 화합물. 다양한 강화에 사용할 수 있다.",
+  "en": "An organic compound obtained through a complex synthesis process. Used in many kinds of upgrades.",
+  "ja": "複雑な合成プロセスを経て得られる有機化合物。様々な強化に使用できる。"
+ },
+ "电极单元": {
+  "ko": "전극 유닛",
+  "en": "Electrode Unit",
+  "ja": "電極ユニット"
+ },
+ "利用特殊材料制作的电极，本身不参与电解过程中的反应，在冶炼和纯化流程中有着极高的利用价值。": {
+  "ko": "특수 재료로 제작한 전극. 전기분해 과정의 반응에는 관여하지 않으며, 제련·정제 공정에서 매우 높은 활용 가치를 지닌다.",
+  "en": "An electrode made from special materials. It does not itself take part in electrolytic reactions, and is highly valuable in smelting and purification processes.",
+  "ja": "特殊な材料で作られた電極。電気分解の反応そのものには関与せず、精錬・純化プロセスにおいて極めて高い利用価値を持つ。"
+ },
+ "具有高度电稳定性和抗腐蚀能力的工业用材。用于多种强化场合，也常作为制造站合成项目的原料。": {
+  "ko": "높은 전기적 안정성과 내부식성을 갖춘 산업용 자재. 다양한 강화에 쓰이며, 제조소 합성 프로젝트의 원료로도 자주 쓰인다.",
+  "en": "An industrial material with high electrical stability and corrosion resistance. Used in many kinds of upgrades, and often as a raw material for Factory synthesis projects.",
+  "ja": "高い電気的安定性と耐腐食性を備えた工業用素材。様々な強化に使用され、製造所の合成プロジェクトの原料としてもよく使われる。"
+ },
+ "聚能动力单元": {
+  "ko": "축전 동력 유닛",
+  "en": "Power-Condensing Drive Unit",
+  "ja": "集束動力ユニット"
+ },
+ "通过对以往收缴而来的装置进行全方位的改良，新的液压单元在保证性能的同时大幅降低了故障率，从而大大提高了生产性。": {
+  "ko": "과거에 노획한 장치를 전방위로 개량한 것으로, 새로운 유압 유닛은 성능을 보장하면서도 고장률을 크게 낮춰 생산성을 대폭 끌어올렸다.",
+  "en": "A comprehensive improvement on previously confiscated devices. The new hydraulic unit maintains performance while greatly reducing failure rates, substantially improving productivity.",
+  "ja": "かつて押収した装置を全面的に改良したもの。新しい油圧ユニットは性能を保証しつつ故障率を大幅に下げ、生産性を大きく向上させた。"
+ },
+ "进行过专项设计和材料改良的动力输出装置。可用于多种强化场合。": {
+  "ko": "전용 설계와 재료 개량을 거친 동력 출력 장치. 다양한 강화에 사용할 수 있다.",
+  "en": "A power output device with dedicated design and improved materials. Used in many kinds of upgrades.",
+  "ja": "専用設計と材料改良が施された動力出力装置。様々な強化に使用できる。"
+ }
+}

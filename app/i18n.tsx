@@ -631,18 +631,26 @@ const D: Record<string, Pair> = {
   "조건에 맞는 재료가 없어요.": ["No materials match these filters.", "条件に合う素材がありません。"],
   // ── 미래시(미실장) 데이터 토글 ──
   "미래시 데이터 포함": ["Include future data", "未実装データを含む"],
-  "한국 서버에 아직 나오지 않은 오퍼레이터·재료(중국 서버 데이터)도 목록·계산기에 표시합니다.": [
-    "Also show operators and materials not yet released on the KR server (CN server data) in the list and calculator.",
-    "韓国サーバー未実装のオペレーター・素材（中国サーバーのデータ）も一覧・計算機に表示します。",
+  "한국 서버에 아직 나오지 않은 오퍼레이터·재료(중국 서버 데이터)도 목록·계산기에 표시합니다. 미실장 텍스트는 비공식 AI 번역입니다.": [
+    "Also show operators and materials not yet released on the KR server (CN server data) in the list and calculator. Unreleased text is an unofficial AI translation.",
+    "韓国サーバー未実装のオペレーター・素材（中国サーバーのデータ）も一覧・計算機に表示します。未実装テキストは非公式のAI翻訳です。",
   ],
   "미실장": ["Unreleased", "未実装"],
-  "한국 서버 미실장 오퍼레이터입니다 — 중국 서버 데이터 기준이라 일부 텍스트가 원문(중국어)으로 표시됩니다.": [
-    "This operator is not yet released on the KR server — data comes from the CN server, so some text appears in Chinese.",
-    "韓国サーバー未実装のオペレーターです — 中国サーバーのデータ基準のため、一部テキストが原文（中国語）で表示されます。",
+  "한국 서버 미실장 오퍼레이터입니다 — 중국 서버 데이터 기준이며, 스킬·재능 등 텍스트는 비공식 AI 번역이라 정식 출시 시 공식 번역과 다를 수 있습니다.": [
+    "This operator is not yet released on the KR server — data comes from the CN server, and skill/talent text is an unofficial AI translation that may differ from the official localization.",
+    "韓国サーバー未実装のオペレーターです — 中国サーバーのデータ基準であり、スキル・素質などのテキストは非公式のAI翻訳のため、正式実装時の公式翻訳と異なる場合があります。",
   ],
-  "미실장(중국 서버 선행) 이벤트의 제목은 AI 임시 번역으로, 한국 서버 정식 출시 시 공식 번역과 다를 수 있습니다.": [
-    "Titles of unreleased (CN-first) events are provisional AI translations and may differ from the official localization.",
-    "未実装（中国サーバー先行）イベントのタイトルはAIによる仮訳であり、正式実装時の公式翻訳と異なる場合があります。",
+  "미실장(중국 서버 선행) 이벤트의 제목은 비공식 AI 번역으로, 한국 서버 정식 출시 시 공식 번역과 다를 수 있습니다.": [
+    "Titles of unreleased (CN-first) events are unofficial AI translations and may differ from the official localization.",
+    "未実装（中国サーバー先行）イベントのタイトルは非公式のAI翻訳であり、正式実装時の公式翻訳と異なる場合があります。",
+  ],
+  "미실장(중국 서버 선행) 오퍼레이터·재료의 텍스트는 비공식 AI 번역으로, 한국 서버 정식 출시 시 공식 번역과 다를 수 있습니다.": [
+    "Text for unreleased (CN-first) operators and materials is an unofficial AI translation and may differ from the official localization.",
+    "未実装（中国サーバー先行）のオペレーター・素材のテキストは非公式のAI翻訳であり、正式実装時の公式翻訳と異なる場合があります。",
+  ],
+  "한국 서버 미실장 재료입니다 — 이름·설명은 비공식 AI 번역이라 정식 출시 시 공식 번역과 다를 수 있습니다.": [
+    "This material is not yet released on the KR server — its name and description are unofficial AI translations that may differ from the official localization.",
+    "韓国サーバー未実装の素材です — 名称・説明は非公式のAI翻訳のため、正式実装時の公式翻訳と異なる場合があります。",
   ],
   // ── 육성 비용 계산기 ──
   "육성 비용 계산기": ["Upgrade Cost Calculator", "育成コスト計算機"],

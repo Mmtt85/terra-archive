@@ -21,6 +21,7 @@
 # Missing text falls back to the KR value — the site must never break because a
 # locale table lags behind KR.
 import json, os, re, sys
+from collections import Counter, defaultdict
 
 S = sys.argv[1] if len(sys.argv) > 1 else os.environ.get("GAMEDATA_DIR", ".gamedata")
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -28,6 +29,14 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 load = lambda p: json.load(open(p, encoding="utf-8"))
 kr_ops = load(f"{REPO}/app/data/operators.json")
 infra = load(f"{REPO}/app/data/infra.json")
+
+# 미실장(unreleased) 오퍼의 EN/JA: 로케일 테이블에 아직 없으므로 ① 방금 로컬라이즈한
+# 출시 오퍼들의 (KR문자열 → 로케일문자열) 쌍을 다수결 수확해 정형 문구를 공식 번역으로
+# 채우고, ② cn-translations.json(AI 비공식 번역)의 ko→en/ja 대응으로 고유 텍스트를
+# 채운다. 둘 다 없으면 한국어 그대로 폴백 (사이트가 깨지지 않는 게 우선).
+CN_MANUAL_PATH = f"{REPO}/scripts/cn-translations.json"
+CN_MANUAL = load(CN_MANUAL_PATH) if os.path.exists(CN_MANUAL_PATH) else {}
+HANGUL = re.compile(r"[가-힣]")
 
 # ─── shared text helpers (same rules as regen-operators.py) ───────────────────
 
@@ -270,6 +279,18 @@ def build_locale(prefix):
         # KR infra rows are built by the exact same iteration → align by index
         return rows if len(rows) == len(kr_infra) else kr_infra
 
+    # KR→로케일 문자열 쌍 수확 (구조가 같은 필드끼리 짝짓기, 다수결로 충돌 해소)
+    _votes = defaultdict(Counter)
+    def _pair(a, b):
+        if isinstance(a, dict) and isinstance(b, dict):
+            for k in a:
+                if k in ("id", "rangeId") or k not in b: continue
+                _pair(a[k], b[k])
+        elif isinstance(a, list) and isinstance(b, list) and len(a) == len(b):
+            for x, y in zip(a, b): _pair(x, y)
+        elif isinstance(a, str) and isinstance(b, str) and a != b and HANGUL.search(a):
+            _votes[a][b] += 1
+
     ops_out = []
     names = {}
     for op in kr_ops:
@@ -308,6 +329,41 @@ def build_locale(prefix):
             "infrastructure": build_infra_texts(cid, op["infrastructure"]),
         }
         ops_out.append(loc)
+        _pair(op, loc)
+
+    # ── 미실장 오퍼 번역 적용: 수확 사전 → 수동(ko→로케일) → 스탯 단어 치환 → 한국어 폴백 ──
+    kr2loc = {k: v.most_common(1)[0][0] for k, v in _votes.items()}
+    manual2 = {v["ko"]: v[C["out"]] for v in CN_MANUAL.values()
+               if v.get("ko") and v.get(C["out"])}
+    # 모듈 스탯 라인("HP +125 · 공격력 +112")은 수치가 오퍼마다 달라 통문장 사전에 안 잡힘 —
+    # 스탯 단어만 치환해서 한국어가 안 남으면 그 결과를 쓴다 (regen ATTR_KO의 역방향).
+    _attr_words = [("마법 저항", C["attr"]["magic_resistance"]), ("공격 속도", C["attr"]["attack_speed"]),
+                   ("재배치 시간", C["attr"]["respawn_time"]), ("공격력", C["attr"]["atk"]),
+                   ("방어력", C["attr"]["def"]), ("코스트", C["attr"]["cost"]),
+                   ("저지", C["attr"]["block_cnt"]), ("HP", C["attr"]["max_hp"])]
+    _misses = set()
+    def _tr(x):
+        if isinstance(x, dict):
+            return {k: (v if k in ("id", "rangeId") else _tr(v)) for k, v in x.items()}
+        if isinstance(x, list):
+            return [_tr(v) for v in x]
+        if isinstance(x, str) and HANGUL.search(x):
+            t = kr2loc.get(x) or manual2.get(x)
+            if t: return t
+            t2 = x
+            for kw, lw in _attr_words: t2 = t2.replace(kw, lw)
+            if not HANGUL.search(t2): return t2
+            _misses.add(x)
+            return x
+        return x
+    # concepts는 KR 키 유지(UI 사전이 번역), name/code/aliases는 검색·표기용 원본 유지
+    _skip_top = {"id", "name", "code", "aliases", "image", "accent", "concepts"}
+    for i, uop in enumerate(ops_out):
+        if not uop.get("unreleased"): continue
+        ops_out[i] = {k: (v if k in _skip_top else _tr(v)) for k, v in uop.items()}
+    if _misses:
+        print(f"[{C['out']}] unreleased text left in Korean: {len(_misses)}", file=sys.stderr)
+        for m in sorted(_misses): print(" ", m[:80], file=sys.stderr)
 
     out_suffix = C["out"]
     json.dump(ops_out, open(f"{REPO}/app/data/operators.{out_suffix}.json", "w", encoding="utf-8"),
