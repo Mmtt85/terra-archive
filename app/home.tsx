@@ -299,20 +299,26 @@ function BroadcastBadges() {
     new Intl.DateTimeFormat(DT_LOCALE[locale], { timeZone: "Asia/Seoul", month: "numeric", day: "numeric" }).format(new Date(iso));
   // 스토리 탭용으로 이미 받아둔 이벤트 배너를 재활용 (로케일 변형 → ko 폴백)
   const evThumb = (event: GameEvent): string | undefined => eventThumb(locale, event);
+  const headlineThumb = headline ? evThumb(headline) : undefined;
   const eventBadge = headline && (
     <div className="event-group" ref={evRef}>
-      <button type="button" className="event-trigger" aria-expanded={evOpen} onClick={() => setEvOpen((o) => !o)}
-        title={t("진행중인 이벤트 보기")}>
-        <span className="event-mark" aria-hidden>✦</span>
+      {/* 대표 이벤트는 배너째로 버튼에 — 클릭하면 나머지 이벤트 드롭다운 (사용자 요청 2026-07) */}
+      <button type="button" className={`event-trigger${headlineThumb ? " has-banner" : ""}`} aria-expanded={evOpen}
+        onClick={() => setEvOpen((o) => !o)} title={t("진행중인 이벤트 보기")}>
+        {headlineThumb
+          ? <span className="event-trigger-thumb"><img src={headlineThumb} alt="" /></span>
+          : <span className="event-mark" aria-hidden>✦</span>}
         <span className="event-name">{evName(headline)}</span>
         <span className="event-dday">D-{dday(headline)}</span>
+        <span className="event-caret" aria-hidden>▾</span>
       </button>
       {evOpen && (
         <div className="event-menu" role="dialog" aria-label={t("진행중 이벤트")}>
           <h3>{t("진행중 이벤트")}</h3>
           <ul>
             {running.map((event) => {
-              const thumb = evThumb(event);
+              // 대표 배너는 버튼에 이미 보이므로 드롭다운에서는 중복 표시하지 않는다
+              const thumb = event.id === headline.id ? undefined : evThumb(event);
               const body = (
                 <>
                   {thumb && <span className="event-banner"><img src={thumb} alt="" loading="lazy" /></span>}
@@ -397,61 +403,6 @@ function BroadcastBadges() {
         document.body
       )}
     </>
-  );
-}
-
-// ── 진행중 이벤트 스트립 (헤더 바로 아래, 전 탭 상시 노출) ─────────────────
-// 팝오버와 같은 데이터·정렬을 쓰되 클릭 없이 바로 보인다 (사용자 요청 2026-07).
-// 배너가 있는 이벤트(사이드스토리류)는 배너 카드, 나머지는 텍스트 칩.
-function EventStrip() {
-  const { locale, t } = useI18n();
-  const [now, setNow] = useState<number | null>(null);
-  const [gameEvents, setGameEvents] = useState<GameEvent[]>([]);
-  useEffect(() => {
-    setNow(Date.now());
-    const id = setInterval(() => setNow(Date.now()), 60_000);
-    return () => clearInterval(id);
-  }, []);
-  useEffect(() => {
-    fetchBcastPayload().then((data) => { if (data) setGameEvents(data.events); });
-  }, []);
-  if (now == null) return null;
-  const running = sortRunning(gameEvents, now);
-  if (running.length === 0) return null;
-  const md = (iso: string): string =>
-    new Intl.DateTimeFormat(DT_LOCALE[locale], { timeZone: "Asia/Seoul", month: "numeric", day: "numeric" }).format(new Date(iso));
-  return (
-    <section className="event-strip" aria-label={t("진행중 이벤트")}>
-      <span className="event-strip-label">{t("진행중 이벤트")}</span>
-      <div className="event-strip-items">
-        {running.map((event) => {
-          const thumb = eventThumb(locale, event);
-          const linked = storyEventById.has(event.id);
-          const dday = eventDday(event, now);
-          if (thumb) {
-            const card = (
-              <>
-                <span className="event-card-thumb"><img src={thumb} alt="" loading="lazy" /></span>
-                <span className="event-card-info">
-                  <b>{eventName(locale, event)}</b>
-                  <small>{md(event.start)} ~ {md(event.end)} · D-{dday}</small>
-                </span>
-              </>
-            );
-            return linked ? (
-              <a key={event.id} className="event-card" href={`${LOCALE_BASE[locale]}/stories#story-${event.id}`} title={t("AI 스토리 요약 보기")}>{card}</a>
-            ) : (
-              <span key={event.id} className="event-card">{card}</span>
-            );
-          }
-          return (
-            <span key={event.id} className="event-chip">
-              {eventName(locale, event)} <small>D-{dday}</small>
-            </span>
-          );
-        })}
-      </div>
-    </section>
   );
 }
 
@@ -927,8 +878,6 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
           aria-label={t("소개")} title={t("소개")}>ⓘ</button>
       </header>
 
-      {/* 진행중 이벤트 스트립 — 클릭 없이 페이지에서 바로 보이게 (사용자 요청 2026-07) */}
-      <EventStrip />
 
       {tab === "archive" && <section className="explorer" aria-labelledby="explorer-title">
         <div className="filter-panel">
