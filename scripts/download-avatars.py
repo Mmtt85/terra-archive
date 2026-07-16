@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-"""Download missing operator avatars into public/avatars/.
+"""Download missing operator avatars into public/avatars/ (webp로 변환 저장).
 
-Source: yuanyan3060/ArknightsGameResource avatar/<char_id>.png
+Source: yuanyan3060/ArknightsGameResource avatar/<char_id>.png → <char_id>.webp
 Usage:  python3 scripts/download-avatars.py   (repo root)
 Idempotent — skips files that already exist with sane size.
 """
 import json, os, sys, urllib.request, concurrent.futures as cf
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from imgutil import save_webp
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEST = os.path.join(REPO, "public", "avatars")
@@ -16,7 +18,7 @@ ops = json.load(open(os.path.join(REPO, "app", "data", "operators.json")))
 jobs = [o["id"] for o in ops]
 
 def dl(cid):
-    dest = os.path.join(DEST, f"{cid}.png")
+    dest = os.path.join(DEST, f"{cid}.webp")
     if os.path.exists(dest) and os.path.getsize(dest) > 1000:
         return None
     req = urllib.request.Request(f"{SRC}/{cid}.png", headers={"User-Agent": "terra-archive"})
@@ -26,7 +28,7 @@ def dl(cid):
         return f"FAIL {cid}: {e}"
     if len(data) < 500:
         return f"FAIL {cid}: response too small ({len(data)} bytes)"
-    open(dest, "wb").write(data)
+    save_webp(data, dest)
     return f"ok {cid}"
 
 with cf.ThreadPoolExecutor(12) as ex:

@@ -15,15 +15,15 @@ Usage:
   - 이벤트 목록·제목(3개 언어)·에피소드 구성: 클뜯 레포 excel/story_review_table.json
     (kr 기준, en/jp는 미출시 이벤트면 한국어로 폴백)
   - 썸네일은 로케일별 서버판 (CN판은 중국어 부제가 박혀 있어 사용 금지 — 사용자 확정 2026-07):
-    · ko: 한국판 → public/story/<id>.jpg — --kr-thumbs 모드가 KR 공식 CDN에서 언팩
+    · ko: 한국판 → public/story/<id>.webp — --kr-thumbs 모드가 KR 공식 CDN에서 언팩
       (신규 이벤트 직후 기본 모드는 글로벌판을 임시로 넣으니 --kr-thumbs로 교체할 것)
-    · en: ArknightsAssets2 en 브랜치(글로벌판) → public/story/en/<id>.jpg (thumbEn)
-    · ja: 555me/ArknightsAssets2 jp 브랜치(일본판) → public/story/ja/<id>.jpg (thumbJa)
+    · en: ArknightsAssets2 en 브랜치(글로벌판) → public/story/en/<id>.webp (thumbEn)
+    · ja: 555me/ArknightsAssets2 jp 브랜치(일본판) → public/story/ja/<id>.webp (thumbJa)
       (en/ja는 없는 이벤트면 필드 생략 → UI가 기본판으로 폴백)
     경로: assets/dyn/arts/ui/storyreview/hubs/activity/storyentrypic_<id>.png
     (sips로 jpeg 변환, 있으면 스킵)
   - 컷씬 CG(--cuts): 스토리 스크립트의 [Image(image="...")] 태그를 수집해
-    assets/dyn/avg/images/<name>.png → public/story/cut/<name>.jpg (1080px 리사이즈)
+    assets/dyn/avg/images/<name>.png → public/story/cut/<name>.webp (1080px 리사이즈)
 
 요약 본문은 app/data/story-summaries.json 에 별도 저장 — 이 스크립트가 만들지 않는다.
 AI(Claude)가 스토리 스크립트를 정독하고 집필해 넣는다 (story-summary 스킬 참고).
@@ -31,6 +31,7 @@ ACTIVITY(사이드 스토리)만 수록. MINI_ACTIVITY(스토리 컬렉션)·MAI
 """
 import json, os, re, subprocess, sys, time, urllib.request
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # imgutil import용
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 GAMEDATA = "https://raw.githubusercontent.com/ArknightsAssets/ArknightsGamedata/master"
 ASSETS = "https://raw.githubusercontent.com/ArknightsAssets/ArknightsAssets2/cn/assets/dyn"      # 컷씬·스탠딩(텍스트 없음)
@@ -44,16 +45,10 @@ def fetch(url, binary=False):
         return raw if binary else json.loads(raw.decode("utf-8"))
 
 def to_jpeg(png_bytes, dest, max_px=None):
-    """PNG 바이트를 jpeg로 변환해 저장 (macOS sips). 실패 시 png 그대로 저장."""
-    tmp = dest + ".tmp.png"
-    open(tmp, "wb").write(png_bytes)
-    cmd = ["sips"] + (["-Z", str(max_px)] if max_px else []) + \
-          ["-s", "format", "jpeg", "-s", "formatOptions", "78", tmp, "--out", dest]
-    ok = subprocess.run(cmd, capture_output=True).returncode == 0
-    os.remove(tmp)
-    if not ok:  # sips 없는 환경 폴백 — png 확장자 그대로라도 동작은 한다
-        open(dest, "wb").write(png_bytes)
-    return ok
+    """PNG 바이트를 webp(손실 q82)로 변환해 저장 — 사이트 이미지는 webp 통일 (2026-07)."""
+    from imgutil import save_webp
+    save_webp(png_bytes, dest, photo=True, max_px=max_px)
+    return True
 
 # ── --cuts <eventId>: 컷씬 CG 수집 (요약 집필 보조) ──────────────
 def download_cuts(event_id):
@@ -67,12 +62,12 @@ def download_cuts(event_id):
         for m in re.finditer(r'\[Image\(image="([^"]+)"', txt, re.I):
             if m.group(1) not in names: names.append(m.group(1))
     for name in names:
-        dest = os.path.join(cut_dir, f"{name}.jpg")
+        dest = os.path.join(cut_dir, f"{name}.webp")
         if os.path.exists(dest):
             print("skip:", name); continue
         png = fetch(f"{ASSETS}/avg/images/{name}.png", binary=True)
         to_jpeg(png, dest, max_px=1080)
-        print("cut:", f"/story/cut/{name}.jpg")
+        print("cut:", f"/story/cut/{name}.webp")
     print(f"{event_id}: {len(names)} cutscenes → public/story/cut/")
 
 if len(sys.argv) > 2 and sys.argv[1] == "--cuts":
@@ -91,16 +86,14 @@ def chars_mode(event_id, wanted):
         for want in wanted:
             base = want.split("#")[0]
             variant = want if "#" in want else f"{want}#1$1"
-            dest = os.path.join(char_dir, f"{base}.png")
+            dest = os.path.join(char_dir, f"{base}.webp")
             if os.path.exists(dest):
                 print("skip:", base); continue
             url = f"{ASSETS}/avg/characters/{base}/{urllib.request.quote(variant)}.png"
             png = fetch(url, binary=True)
-            tmp = dest + ".tmp.png"
-            open(tmp, "wb").write(png)  # 스탠딩은 투명 배경이라 png 유지, 세로 640px로 축소
-            ok = subprocess.run(["sips", "-Z", "640", tmp, "--out", dest], capture_output=True).returncode == 0
-            os.remove(tmp) if ok else os.rename(tmp, dest)
-            print("char:", f"/story/char/{base}.png")
+            from imgutil import save_webp
+            save_webp(png, dest, max_px=640)  # 투명 배경 유지(webp 알파), 세로 640px로 축소
+            print("char:", f"/story/char/{base}.webp")
         return
     from collections import Counter, defaultdict
     speaker_for = defaultdict(Counter)
@@ -124,7 +117,7 @@ if len(sys.argv) > 2 and sys.argv[1] == "--chars":
 # KR 서버는 언팩된 공개 레포가 없어 게임 CDN에서 직접 뽑는다 (사용자 확정 2026-07).
 # 절차: network_config → resVersion → .idx 매니페스트(FlatBuffer, 128바이트 헤더 뒤)를
 # 수제 파서로 읽어 asset→bundle 매핑 → storyentrypic이 든 spritepack 번들(.dat=zip)을
-# 받아 UnityPy(+lz4inv, 아크나이츠 커스텀 압축)로 Texture2D 추출 → public/story/<id>.jpg.
+# 받아 UnityPy(+lz4inv, 아크나이츠 커스텀 압축)로 Texture2D 추출 → public/story/<id>.webp.
 # 필요 pip: UnityPy, lz4inv. 이벤트 id ≠ pic id인 경우(1stact=act1d0)는 리뷰 테이블로 매핑.
 def kr_thumbs():
     import io, struct, zipfile
@@ -186,7 +179,7 @@ def kr_thumbs():
             if not eid: continue
             tmp = os.path.join(thumb_dir, f".{eid}.tmp.png")
             d.image.save(tmp)
-            to_jpeg(open(tmp, "rb").read(), os.path.join(thumb_dir, f"{eid}.jpg"))
+            to_jpeg(open(tmp, "rb").read(), os.path.join(thumb_dir, f"{eid}.webp"))
             os.remove(tmp)
             count += 1
     print(f"KR 썸네일 {count}장 갱신 (resVersion {ver['resVersion']})")
@@ -199,12 +192,12 @@ if len(sys.argv) > 1 and sys.argv[1] == "--kr-thumbs":
 #   · 메인: 각 장 타이틀 카드 avg/images/avg_ep<NN> 를 세로형 중앙 크롭
 #   · 로그라이크: 키 비주얼 avg/images/pic_rogue_<N>_kv1
 # 텍스트가 박히므로 로케일별 서버판을 쓴다 (ko=한국판 CDN, en=글로벌, ja=일본).
-#   · ko: public/story/{main_N,rogue_N}.jpg     ← --kr-story-thumbs (KR CDN 언팩)
-#   · en: public/story/en/main_N.jpg            ← --main-thumbs
-#   · ja: public/story/ja/main_N.jpg            ← --main-thumbs
+#   · ko: public/story/{main_N,rogue_N}.webp     ← --kr-story-thumbs (KR CDN 언팩)
+#   · en: public/story/en/main_N.webp            ← --main-thumbs
+#   · ja: public/story/ja/main_N.webp            ← --main-thumbs
 # 로그라이크 키 비주얼은 일러스트라 로케일 무관 — ko판 하나를 전 로케일 공용으로 쓴다.
 def to_portrait_jpeg(png_bytes, dest, ratio=404/491, max_px=720):
-    """PNG를 세로형(404:491)으로 중앙 크롭 후 jpeg 저장 (macOS sips)."""
+    """PNG를 세로형(404:491)으로 중앙 크롭 후 webp 저장 (크롭은 sips, 인코딩은 imgutil)."""
     tmp = dest + ".tmp.png"
     open(tmp, "wb").write(png_bytes)
     info = subprocess.run(["sips", "-g", "pixelWidth", "-g", "pixelHeight", tmp],
@@ -213,10 +206,10 @@ def to_portrait_jpeg(png_bytes, dest, ratio=404/491, max_px=720):
     h = int(re.search(r"pixelHeight: (\d+)", info).group(1))
     cw = min(w, int(round(h * ratio)))
     subprocess.run(["sips", "-c", str(h), str(cw), tmp, "--out", tmp], capture_output=True)
-    ok = subprocess.run(["sips", "-Z", str(max_px), "-s", "format", "jpeg",
-                         "-s", "formatOptions", "80", tmp, "--out", dest], capture_output=True).returncode == 0
+    from imgutil import save_webp
+    save_webp(open(tmp, "rb").read(), dest, photo=True, max_px=max_px)
     os.remove(tmp)
-    return ok
+    return True
 
 def main_thumbs():
     """글로벌(en)·일본(jp)판 메인스토리 타이틀 카드 → 로케일 서브폴더."""
@@ -231,7 +224,7 @@ def main_thumbs():
         n = int(eid.split("_")[1])
         pic = f"avg_ep{n:02d}"
         for base_url, sub_dir in ((ASSETS_EN, en_dir), (ASSETS_JP, ja_dir)):
-            dest = os.path.join(sub_dir, f"{eid}.jpg")
+            dest = os.path.join(sub_dir, f"{eid}.webp")
             if os.path.exists(dest):
                 print("skip:", dest); continue
             try:
@@ -298,9 +291,9 @@ def kr_story_thumbs():
     for i in range(17):
         if i in MAIN_OVERRIDE:
             continue
-        wanted[f"avg_ep{i:02d}"] = os.path.join(thumb_dir, f"main_{i}.jpg")
+        wanted[f"avg_ep{i:02d}"] = os.path.join(thumb_dir, f"main_{i}.webp")
     for i in range(1, 6):
-        wanted[f"pic_rogue_{i}_kv1"] = os.path.join(thumb_dir, f"rogue_{i}.jpg")
+        wanted[f"pic_rogue_{i}_kv1"] = os.path.join(thumb_dir, f"rogue_{i}.webp")
 
     base, n = vector_at(root(2))
     by_bundle = defaultdict(list)  # bundle → [(basename, dest), …]
@@ -328,7 +321,7 @@ def kr_story_thumbs():
             print("kr thumb:", dest); count += 1
     # 한글 미출시 장 대체 CG (cn 레포 = 텍스트 없는 일러스트라 로케일 무관)
     for n, cg in MAIN_OVERRIDE.items():
-        dest = os.path.join(thumb_dir, f"main_{n}.jpg")
+        dest = os.path.join(thumb_dir, f"main_{n}.webp")
         png = fetch(f"{ASSETS}/avg/images/{cg}.png", binary=True)
         to_portrait_jpeg(png, dest)
         print("kr thumb(override CG):", dest, f"({cg})"); count += 1
@@ -375,12 +368,12 @@ for act in acts:
         },
         "start": time.strftime("%Y-%m", time.gmtime(act["startTime"])),
         "episodes": len(codes),
-        "thumb": f"/story/{eid}.jpg",
+        "thumb": f"/story/{eid}.webp",
     }
     pic = (act.get("storyEntryPicId") or f"storyEntryPic_{eid}").lower()
     # 기본(ko) = 한국판 — KR CDN 언팩(--kr-thumbs)으로 채워지며 여기선 만들지 않는다.
     # 파일이 아직 없으면(신규 이벤트) 글로벌판을 임시로 받아두고, CG 대체 이벤트는 CG.
-    dest = os.path.join(thumb_dir, f"{eid}.jpg")
+    dest = os.path.join(thumb_dir, f"{eid}.webp")
     if not os.path.exists(dest):
         url = THUMB_FALLBACK.get(eid) or f"{ASSETS_EN}/arts/ui/storyreview/hubs/activity/{pic}.png"
         try:
@@ -392,7 +385,7 @@ for act in acts:
     # 글로벌판(en)·일본판(ja) — 없으면 필드 생략(UI가 기본판으로 폴백)
     if eid not in THUMB_FALLBACK:
         for key, sub_dir, base_url in (("thumbEn", en_dir, ASSETS_EN), ("thumbJa", ja_dir, ASSETS_JP)):
-            sub_dest = os.path.join(sub_dir, f"{eid}.jpg")
+            sub_dest = os.path.join(sub_dir, f"{eid}.webp")
             if not os.path.exists(sub_dest):
                 try:
                     png = fetch(f"{base_url}/arts/ui/storyreview/hubs/activity/{pic}.png", binary=True)
@@ -400,7 +393,7 @@ for act in acts:
                     print(f"thumb({key}):", eid, file=sys.stderr)
                 except Exception:  # noqa: BLE001
                     continue
-            entry[key] = f"/story/{os.path.basename(sub_dir)}/{eid}.jpg"
+            entry[key] = f"/story/{os.path.basename(sub_dir)}/{eid}.webp"
     events.append(entry)
 
 # ── 중섭 선행(미실장) 이벤트 — CN에만 있는 ACTIVITY를 unreleased 플래그로 추가 ──
@@ -430,7 +423,7 @@ for act in cn_acts:
     for info in act["infoUnlockDatas"]:
         if info["storyCode"] and info["storyCode"] not in codes: codes.append(info["storyCode"])
     pic = (act.get("storyEntryPicId") or f"storyEntryPic_{eid}").lower()
-    dest = os.path.join(cn_dir, f"{eid}.jpg")
+    dest = os.path.join(cn_dir, f"{eid}.webp")
     if not os.path.exists(dest):
         try:
             png = fetch(f"{ASSETS}/arts/ui/storyreview/hubs/activity/{pic}.png", binary=True)
@@ -447,7 +440,7 @@ for act in cn_acts:
         "name": trans or {"ko": act["name"]},  # 임시 번역 없으면 중국어 원문
         "start": time.strftime("%Y-%m", time.gmtime(act["startTime"])),  # CN 출시월
         "episodes": len(codes),
-        "thumb": f"/story/cn/{eid}.jpg",
+        "thumb": f"/story/cn/{eid}.webp",
         "unreleased": True,
     })
 

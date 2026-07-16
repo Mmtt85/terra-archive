@@ -17,9 +17,12 @@ Needs: {kr,cn}_character_table.json, {kr,cn}_uniequip_table.json,
 미실장(unreleased) 오퍼는 KR 테이블에 없으므로 CN 테이블로 폴백한다.
 아이템 이름은 KR 우선(미출시 재료는 CN 이름), EN/JA는 각 로케일 item_table.
 아이콘은 yuanyan3060/ArknightsGameResource의 item/<iconId>.png 를
-public/items/<itemId>.png 로 내려받는다 (있으면 스킵 — build-farm.py와 동일 규칙).
+public/items/<itemId>.webp 로 내려받는다(webp 변환) (있으면 스킵 — build-farm.py와 동일 규칙).
 """
 import json, os, re, sys, time, urllib.request
+import sys as _sys, os as _os
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+from imgutil import save_webp
 
 S = sys.argv[1] if len(sys.argv) > 1 else os.environ.get("GAMEDATA_DIR", ".gamedata")
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -193,7 +196,7 @@ for iid in sorted(used_items):
     if not base:
         print("WARN: unknown item", iid, file=sys.stderr); continue
     entry = {"name": loc_field(iid, "name"), "rarity": tier(base.get("rarity")),
-             "sortId": base.get("sortId", 0), "image": f"/items/{iid}.png"}
+             "sortId": base.get("sortId", 0), "image": f"/items/{iid}.webp"}
     desc = loc_field(iid, "description")
     usage = loc_field(iid, "usage")
     if desc: entry["desc"] = desc
@@ -209,7 +212,7 @@ for iid in sorted(used_items):
             # 조합 재료도 아이템 사전에 있어야 모달에서 이름·아이콘이 나온다
             for cid2, _ in craft: used_items.add(cid2)
     items_out[iid] = entry
-    dst = f"{REPO}/public/items/{iid}.png"
+    dst = f"{REPO}/public/items/{iid}.webp"
     if not os.path.exists(dst):
         missing_icons.append((iid, base.get("iconId") or iid))
 
@@ -219,21 +222,22 @@ for iid in sorted(used_items):
     base = kr_items.get(iid) or cn_items.get(iid)
     if not base: continue
     entry = {"name": loc_field(iid, "name"), "rarity": tier(base.get("rarity")),
-             "sortId": base.get("sortId", 0), "image": f"/items/{iid}.png"}
+             "sortId": base.get("sortId", 0), "image": f"/items/{iid}.webp"}
     desc = loc_field(iid, "description"); usage = loc_field(iid, "usage")
     if desc: entry["desc"] = desc
     if usage: entry["usage"] = usage
     if is_unreleased_item(iid): entry["unreleased"] = True
     items_out[iid] = entry
-    dst = f"{REPO}/public/items/{iid}.png"
+    dst = f"{REPO}/public/items/{iid}.webp"
     if not os.path.exists(dst):
         missing_icons.append((iid, base.get("iconId") or iid))
 
 for iid, icon in missing_icons:
     url = f"{ICON_BASE}/{urllib.parse.quote(icon)}.png"
-    dst = f"{REPO}/public/items/{iid}.png"
+    dst = f"{REPO}/public/items/{iid}.webp"
     try:
-        urllib.request.urlretrieve(url, dst)
+        req = urllib.request.Request(url, headers={"User-Agent": "terra-archive"})
+        save_webp(urllib.request.urlopen(req, timeout=60).read(), dst)
         print("icon ok", iid, icon)
     except Exception as e:
         print("icon FAIL", iid, icon, e, file=sys.stderr)

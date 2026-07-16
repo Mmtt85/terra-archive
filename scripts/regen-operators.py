@@ -339,7 +339,7 @@ def build_op(cid, c):
         "infrastructure": build_infra(cid),
         "seq": release_seq.get(cid, -1),
         "accent": (old or {}).get("accent") or NEW_ACCENTS.get(cid) or "#6b7a86",
-        "image": f"/avatars/{cid}.png",  # local copy; run scripts/download-avatars.py for new ops
+        "image": f"/avatars/{cid}.webp",  # local copy; run scripts/download-avatars.py for new ops
     }
     cur = CURATED.get(name)
     if cur:

@@ -201,7 +201,7 @@ function StoryDetail({ event, summary, onClose, onShowOperator }: {
               const entity = entities[entityIndex];
               const linked = Boolean(entity.op && onShowOperator);
               // 전용 스탠딩 CG(img)가 없으면 연결된 오퍼레이터 아바타로 폴백
-              const imgSrc = entity.img ?? (entity.op ? `/avatars/${entity.op}.png` : undefined);
+              const imgSrc = entity.img ?? (entity.op ? `/avatars/${entity.op}.webp` : undefined);
               // 모바일(≤1180px): 스니펫(이름만) → 탭하면 펼쳐 설명 표시, 한 번 더 탭하면 오퍼 상세(있으면)·접기.
               // 데스크탑: 종전대로 카드를 누르면 바로 오퍼 상세.
               const handleClick = () => {
@@ -267,9 +267,9 @@ function resolveChron(): ChronItem[] {
       epNo,
       ep: epNo != null ? epLabel(epNo) : undefined,
       // 메인: 한국판/글로벌/일본 타이틀카드. 로그라이크: 키 비주얼(로케일 공용).
-      thumb: isMain ? `/story/${raw.id}.jpg` : isRogue ? `/story/${raw.id}.jpg` : undefined,
-      thumbEn: isMain ? `/story/en/${raw.id}.jpg` : undefined,
-      thumbJa: isMain ? `/story/ja/${raw.id}.jpg` : undefined,
+      thumb: isMain ? `/story/${raw.id}.webp` : isRogue ? `/story/${raw.id}.webp` : undefined,
+      thumbEn: isMain ? `/story/en/${raw.id}.webp` : undefined,
+      thumbJa: isMain ? `/story/ja/${raw.id}.webp` : undefined,
     };
   });
 }

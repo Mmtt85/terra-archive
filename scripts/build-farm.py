@@ -20,6 +20,8 @@ Needs: {kr,en,jp}_item_table.json, {kr,en,jp}_stage_table.json (클뜯 레포)
 public/items/<itemId>.png 로 내려받는다 (있으면 스킵).
 """
 import json, os, sys, time, urllib.request
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from imgutil import save_webp
 
 S = sys.argv[1] if len(sys.argv) > 1 else os.environ.get("GAMEDATA_DIR", ".gamedata")
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -94,19 +96,19 @@ for entry in matrix:
         "times": times,
     })
 
-# 아이콘 다운로드 (public/items/<itemId>.png, 있으면 스킵)
+# 아이콘 다운로드 (public/items/<itemId>.webp — 원본 png를 webp로 변환 저장, 있으면 스킵)
 icon_dir = os.path.join(REPO, "public", "items")
 os.makedirs(icon_dir, exist_ok=True)
 failed_icons = []
 for iid in rows_by_item:
-    dest = os.path.join(icon_dir, f"{iid}.png")
+    dest = os.path.join(icon_dir, f"{iid}.webp")
     if os.path.exists(dest): continue
     icon = kr_items[iid].get("iconId")
     try:
         req = urllib.request.Request(f"{ICON_BASE}/{urllib.request.quote(icon)}.png",
                                      headers={"User-Agent": "terra-archive-farm/1.0"})
         with urllib.request.urlopen(req, timeout=60) as res:
-            open(dest, "wb").write(res.read())
+            save_webp(res.read(), dest)
         print("icon:", iid, icon, file=sys.stderr)
     except Exception as err:  # noqa: BLE001 — 아이콘 하나 실패해도 데이터는 만든다
         failed_icons.append((iid, icon, str(err)))
@@ -124,7 +126,7 @@ for iid, rows in rows_by_item.items():
         },
         "rarity": tier(info.get("rarity")),
         "sortId": info.get("sortId", 0),
-        "image": f"/items/{iid}.png",
+        "image": f"/items/{iid}.webp",
         "stages": rows[:MAX_STAGES],
     })
 # 표시 순서: 등급 내림차순 → 게임 정렬(sortId)

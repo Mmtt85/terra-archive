@@ -117,9 +117,9 @@ export function pageMetadata(locale: SeoLocale, tab: SeoTab = "archive"): Metada
       siteName: meta.siteName,
       locale: meta.ogLocale,
       alternateLocale: Object.values(META).filter((m) => m !== meta).map((m) => m.ogLocale),
-      images: [{ url: "/og.png", width: 1200, height: 630, alt: meta.siteName }],
+      images: [{ url: "/og.jpg", width: 1200, height: 630, alt: meta.siteName }],
     },
-    twitter: { card: "summary_large_image", title, description, images: ["/og.png"] },
+    twitter: { card: "summary_large_image", title, description, images: ["/og.jpg"] },
   };
 }
 

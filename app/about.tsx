@@ -17,11 +17,11 @@ type Feature = {
 
 // 기능별 스크린샷 (한국어 UI · 헤드리스 캡처본). 로케일 공용 — 탭 키로 매핑.
 const SHOTS: Partial<Record<Tab, string>> = {
-  archive: "/about/archive.jpg",
-  planner: "/about/planner.jpg",
-  recruit: "/about/recruit.jpg",
-  farm: "/about/farm.jpg",
-  story: "/about/story.jpg",
+  archive: "/about/archive.webp",
+  planner: "/about/planner.webp",
+  recruit: "/about/recruit.webp",
+  farm: "/about/farm.webp",
+  story: "/about/story.webp",
 };
 
 type Content = {
