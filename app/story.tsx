@@ -514,6 +514,18 @@ function DigestView({ onOpen, includeFuture }: { onOpen: (event: StoryEvent) => 
   const { locale, t } = useI18n();
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState<"theme" | "kind">("kind");
+  const [searchOpen, setSearchOpen] = useState(false); // 검색창 클릭 시 전체 이벤트 목록 드롭다운
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  // 드롭다운: 바깥 클릭·Esc로 닫기
+  useEffect(() => {
+    if (!searchOpen) return;
+    const onDown = (e: MouseEvent) => { if (!searchRef.current?.contains(e.target as Node)) setSearchOpen(false); };
+    const onEsc = (e: KeyboardEvent) => { if (e.key === "Escape") setSearchOpen(false); };
+    window.addEventListener("mousedown", onDown);
+    window.addEventListener("keydown", onEsc);
+    return () => { window.removeEventListener("mousedown", onDown); window.removeEventListener("keydown", onEsc); };
+  }, [searchOpen]);
 
   // 중섭 선행(미실장) 이벤트 — '미래시 데이터 포함' 체크 시에만 목록에 합류
   // (chronology.json엔 없으므로 stories.json의 unreleased 플래그에서 직접 만든다)
@@ -599,7 +611,32 @@ function DigestView({ onOpen, includeFuture }: { onOpen: (event: StoryEvent) => 
   return (
     <>
       <div className="story-tools">
-        <div className="search-wrap story-search"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("이벤트 이름 검색")} aria-label={t("이벤트 이름 검색")} /></div>
+        <div className="search-wrap story-search" ref={searchRef}>
+          <span>⌕</span>
+          <input value={query} onChange={(event) => { setQuery(event.target.value); setSearchOpen(true); }}
+            onFocus={() => setSearchOpen(true)} onClick={() => setSearchOpen(true)}
+            placeholder={t("이벤트 이름 검색")} aria-label={t("이벤트 이름 검색")}
+            role="combobox" aria-expanded={searchOpen} aria-controls="story-search-list" />
+          {searchOpen && (
+            <ul className="story-search-menu" id="story-search-list" role="listbox">
+              {sortItems(filtered).length === 0
+                ? <li className="story-search-empty">{t("조건에 맞는 이벤트가 없어요.")}</li>
+                : sortItems(filtered).map((it) => {
+                    const ev = it.eventId ? eventById.get(it.eventId) : undefined;
+                    const ready = Boolean(it.eventId && summaries[it.eventId]);
+                    return (
+                      <li key={it.key} role="option" aria-selected={false}>
+                        <button type="button" className={ready ? "" : "pending"} disabled={!ready}
+                          onClick={() => { if (ready && ev) { onOpen(ev); setSearchOpen(false); } }}>
+                          <span className="ss-name">{locText(locale, it.name)}{ev?.unreleased && <em className="future-badge">{t("미실장")}</em>}</span>
+                          <span className="ss-meta">{ev ? ev.start : t(KIND_KO[it.kind])}{ready ? "" : ` · ${t("요약 준비 중")}`}</span>
+                        </button>
+                      </li>
+                    );
+                  })}
+            </ul>
+          )}
+        </div>
         <div className="chron-tabs digest-tabs">
           <button type="button" className={group === "kind" ? "on" : ""} onClick={() => setGroup("kind")}>{t("종류별")}</button>
           <button type="button" className={group === "theme" ? "on" : ""} onClick={() => setGroup("theme")}>{t("테마별")}</button>

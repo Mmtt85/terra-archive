@@ -3856,7 +3856,41 @@ footer p {
 .story-search {
   max-width: 280px;
   flex: 1 1 220px;
+  position: relative;
 }
+/* 검색창 클릭 시 뜨는 전체 이벤트 목록 드롭다운 (사용자 요청 2026-07) */
+.story-search-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 40;
+  max-height: 340px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--white);
+  border: 1px solid var(--ink);
+  box-shadow: 0 12px 34px #00000022;
+}
+.story-search-menu li { list-style: none; }
+.story-search-menu button {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  background: 0 0;
+  text-align: left;
+  cursor: pointer;
+}
+.story-search-menu button:hover:not(:disabled) { background: var(--paper); }
+.story-search-menu button:disabled { cursor: default; opacity: 0.5; }
+.story-search-menu .ss-name { font-size: 13px; font-weight: 800; }
+.story-search-menu .ss-meta { font-size: 11px; color: #7c8087; }
+.story-search-empty { padding: 12px 10px; font-size: 12px; color: #7c8087; }
 .story-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
