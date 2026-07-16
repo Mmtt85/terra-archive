@@ -191,9 +191,9 @@ function bcastKey(b: Broadcast): string {
   return youTubeId(b) ?? `${b.server}:${new Date(b.start).toISOString().slice(0, 10)}`;
 }
 
-// AI 스토리 요약이 있는 이벤트 — 진행중 배지에서 이름 현지화 + 스토리 페이지 링크에 사용
+// AI 스토리 요약이 있는 이벤트 — 진행중 배지에서 이름 현지화 + 배너 썸네일 + 스토리 페이지 링크에 사용
 const storyEventById = new Map(
-  (storyEventsData as { events: { id: string; name: { ko: string; en?: string; ja?: string } }[] }).events
+  (storyEventsData as { events: { id: string; name: { ko: string; en?: string; ja?: string }; thumb?: string; thumbEn?: string; thumbJa?: string }[] }).events
     .map((event) => [event.id, event]),
 );
 // 사이드스토리·복각 등 굵직한 이벤트 — 배지 대표로 우선한다 (로그인·출석류보다)
@@ -273,6 +273,12 @@ function BroadcastBadges() {
   const dday = (event: GameEvent): number => Math.max(0, Math.ceil((Date.parse(event.end) - now) / DAY));
   const md = (iso: string): string =>
     new Intl.DateTimeFormat(DT_LOCALE[locale], { timeZone: "Asia/Seoul", month: "numeric", day: "numeric" }).format(new Date(iso));
+  // 스토리 탭용으로 이미 받아둔 이벤트 배너를 재활용 (로케일 변형 → ko 폴백)
+  const evThumb = (event: GameEvent): string | undefined => {
+    const story = storyEventById.get(event.id);
+    if (!story) return undefined;
+    return (locale === "ja" ? story.thumbJa : locale === "en" ? story.thumbEn : undefined) ?? story.thumb;
+  };
   const eventBadge = headline && (
     <div className="event-group" ref={evRef}>
       <button type="button" className="event-trigger" aria-expanded={evOpen} onClick={() => setEvOpen((o) => !o)}
@@ -285,14 +291,23 @@ function BroadcastBadges() {
         <div className="event-menu" role="dialog" aria-label={t("진행중 이벤트")}>
           <h3>{t("진행중 이벤트")}</h3>
           <ul>
-            {running.map((event) => (
-              <li key={event.id}>
-                {storyEventById.has(event.id)
-                  ? <a href={`${LOCALE_BASE[locale]}/stories#story-${event.id}`} title={t("AI 스토리 요약 보기")}>{evName(event)}</a>
-                  : <span>{evName(event)}</span>}
-                <small>{md(event.start)} ~ {md(event.end)} · D-{dday(event)}</small>
-              </li>
-            ))}
+            {running.map((event) => {
+              const thumb = evThumb(event);
+              const body = (
+                <>
+                  {thumb && <span className="event-banner"><img src={thumb} alt="" loading="lazy" /></span>}
+                  <span className="event-row-name">{evName(event)}</span>
+                  <small>{md(event.start)} ~ {md(event.end)} · D-{dday(event)}</small>
+                </>
+              );
+              return (
+                <li key={event.id}>
+                  {storyEventById.has(event.id)
+                    ? <a href={`${LOCALE_BASE[locale]}/stories#story-${event.id}`} title={t("AI 스토리 요약 보기")}>{body}</a>
+                    : <span className="event-row-plain">{body}</span>}
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}

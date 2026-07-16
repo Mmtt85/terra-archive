@@ -350,10 +350,31 @@ button {
 .event-menu li:first-child {
   border-top: 0;
 }
-.event-menu li a {
+.event-menu li a,
+.event-menu li .event-row-plain {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
   color: var(--ink);
+  text-decoration: none;
+}
+.event-menu li a .event-row-name {
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+.event-menu li a:hover .event-row-name {
+  color: var(--accent, #b98a2f);
+}
+.event-menu .event-banner {
+  display: block;
+  overflow: hidden;
+  border: 1px solid var(--line);
+}
+.event-menu .event-banner img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 7;
+  object-fit: cover;
 }
 .event-menu li small {
   font: 600 10.5px monospace;
