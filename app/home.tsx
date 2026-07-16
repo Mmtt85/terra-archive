@@ -302,9 +302,13 @@ function LanguageSwitcher() {
     return () => window.removeEventListener("click", close);
   }, [open]);
   const current = LOCALES.find((entry) => entry.code === locale) ?? LOCALES[0];
-  const switchTo = (code: Locale, path: string) => {
+  // 언어 전환 시 탑페이지로 가지 않고 현재 탭(세그먼트)·해시를 유지한 채 로케일만 바꾼다
+  const switchTo = (code: Locale) => {
     try { localStorage.setItem("ta-locale", code); } catch { /* ignore */ }
-    if (code !== locale) window.location.assign(path + window.location.hash);
+    if (code === locale) return;
+    const seg = TAB_SEG[tabFromPath(window.location.pathname)];
+    const target = (LOCALE_BASE[code] + (seg ? `/${seg}` : "")) || "/";
+    window.location.assign(target + window.location.hash);
   };
   return (
     <div className="lang-wrap">
@@ -317,7 +321,7 @@ function LanguageSwitcher() {
           {LOCALES.map((entry) => (
             <button key={entry.code} type="button" role="option" aria-selected={entry.code === locale}
               className={entry.code === locale ? "selected" : ""}
-              onClick={() => switchTo(entry.code, entry.path)}>
+              onClick={() => switchTo(entry.code)}>
               {entry.label}<small>{entry.chip}</small>
             </button>
           ))}
