@@ -166,6 +166,7 @@ button {
 /* 언어 드롭다운 — 서버 칩을 누르면 한국어/English/日本語 선택 (경로 이동) */
 .lang-wrap {
   position: relative;
+  margin-left: 10px;   /* 햄버거 버튼과 간격 */
 }
 .lang-menu {
   position: absolute;
@@ -1677,7 +1678,11 @@ footer p {
     padding: 8px 12px;
     margin-right: 8px;
   }
-  /* 드롭다운은 모바일 폭에 맞춰 우측 패딩 기준으로 붙이고 화면을 넘지 않게 */
+  /* 모바일에선 드롭다운을 헤더 폭 전체로 — nav-group을 static으로 풀어
+     .main-tabs가 헤더(sticky) 기준으로 좌우 16px에 붙게 한다 */
+  .site-header .nav-group {
+    position: static;
+  }
   .site-header .main-tabs {
     right: 16px;
     left: 16px;
@@ -2187,11 +2192,18 @@ footer p {
 }
 /* 햄버거 메뉴 — 데스크탑·모바일 공통. 5개 메인 탭은 햄버거(.nav-toggle) 드롭다운으로
    접고, future 토글·소개(ⓘ)·언어는 헤더에 그대로 인라인 노출한다 (사용자 요청 2026-07). */
+/* 우측 그룹: 햄버거 · 언어 · 소개 순. margin-left:auto로 헤더 오른쪽 끝으로 밀고,
+   position:relative로 드롭다운(.main-tabs)을 햄버거 버튼 바로 밑에 앵커한다 */
+.nav-group {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin-left: auto;
+}
 .nav-toggle {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  margin-left: 12px;   /* 언어 변경 버튼과 간격 (사용자 요청 2026-07) */
   border: 1px solid var(--ink);
   background: var(--ink);
   color: var(--lime);
@@ -2208,8 +2220,8 @@ footer p {
 .main-tabs {
   display: none;
   position: absolute;
-  top: calc(100% + 6px);
-  right: clamp(22px, 5vw, 76px);
+  top: 100%;      /* 햄버거 버튼에 딱 붙여서 (사용자 요청 2026-07) */
+  left: 0;        /* 햄버거 왼쪽 정렬 (.nav-group 기준) */
   z-index: 30;
   flex-direction: column;
   gap: 3px;
@@ -4262,15 +4274,14 @@ footer p {
   margin: 0;
 }
 /* 헤더 우측 소개(ⓘ) 아이콘 — 메인 탭과 별개로 소개 페이지로 이동.
-   margin-left:auto로 여기부터(소개·언어·햄버거)를 헤더 오른쪽 끝으로 밀어낸다 */
+   우측 그룹 맨 끝(햄버거·언어 다음)에 온다 */
 .about-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 32px;
   height: 32px;
-  margin-left: auto;
-  margin-right: 8px;
+  margin-left: 10px;
   border: 1px solid var(--line);
   background: var(--white);
   color: var(--ink);
