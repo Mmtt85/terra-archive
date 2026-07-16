@@ -801,7 +801,7 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
       {tab === "planner" && <InfraPlanner onShowOperator={showOperatorById} extra={extra} />}
       {tab === "recruit" && <RecruitHelper onShowOperator={showOperatorById} extra={extra} />}
       {tab === "farm" && <FarmGuide operators={operators} includeFuture={includeFuture} onShowOperator={showOperatorById} />}
-      {tab === "story" && <StoryGuide onShowOperator={showOperatorById} />}
+      {tab === "story" && <StoryGuide onShowOperator={showOperatorById} includeFuture={includeFuture} />}
 
       {selected && <OperatorModal operator={selected} nicknames={nicknames.get(selected.id) ?? []} onSubmitNickname={handleSubmitNickname} onClose={closeOperator} />}
       <FeedbackWidget />

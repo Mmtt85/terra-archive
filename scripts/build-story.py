@@ -403,10 +403,46 @@ for act in acts:
             entry[key] = f"/story/{os.path.basename(sub_dir)}/{eid}.jpg"
     events.append(entry)
 
+# ── 중섭 선행(미실장) 이벤트 — CN에만 있는 ACTIVITY를 unreleased 플래그로 추가 ──
+# 이름은 중국어 원문(한국어 데이터가 아직 없음). 썸네일은 CN판이 유일한 소스라 예외 허용
+# (중국어 부제 금지 규칙은 KR 출시 이벤트의 기본 썸네일에만 적용 — 미실장은 CN판이 원본).
+# /story/cn/ 에 따로 저장해, KR 출시 후 기본 썸네일(--kr-thumbs)과 파일이 충돌하지 않게 한다.
+# UI는 '미래시 데이터 포함' 체크 시에만 노출한다.
+print("fetching story_review_table (cn) …", file=sys.stderr)
+cn = fetch(f"{GAMEDATA}/cn/gamedata/excel/story_review_table.json")
+cn_dir = os.path.join(thumb_dir, "cn")
+os.makedirs(cn_dir, exist_ok=True)
+cn_acts = sorted((v for v in cn.values() if v["entryType"] == "ACTIVITY" and v["id"] not in kr),
+                 key=lambda v: -v["startTime"])
+for act in cn_acts:
+    eid = act["id"]
+    codes = []
+    for info in act["infoUnlockDatas"]:
+        if info["storyCode"] and info["storyCode"] not in codes: codes.append(info["storyCode"])
+    pic = (act.get("storyEntryPicId") or f"storyEntryPic_{eid}").lower()
+    dest = os.path.join(cn_dir, f"{eid}.jpg")
+    if not os.path.exists(dest):
+        try:
+            png = fetch(f"{ASSETS}/arts/ui/storyreview/hubs/activity/{pic}.png", binary=True)
+            to_jpeg(png, dest)
+            print("thumb(cn·미실장):", eid, file=sys.stderr)
+        except Exception as err:  # noqa: BLE001 — 썸네일 없으면 이벤트도 생략 (404 이미지 방지)
+            print("skip cn event (no thumb):", eid, err, file=sys.stderr)
+            continue
+    events.append({
+        "id": eid,
+        "name": {"ko": act["name"]},   # 중국어 원문 — KR 출시 전이라 번역 없음
+        "start": time.strftime("%Y-%m", time.gmtime(act["startTime"])),  # CN 출시월
+        "episodes": len(codes),
+        "thumb": f"/story/cn/{eid}.jpg",
+        "unreleased": True,
+    })
+
 out = {"updated": time.strftime("%Y-%m-%d"), "events": events}
 json.dump(out, open(f"{REPO}/app/data/stories.json", "w", encoding="utf-8"),
           ensure_ascii=False, separators=(",", ":"))
-print(f"stories.json: {len(events)} events")
+print(f"stories.json: {len(events)} events "
+      f"({sum(1 for e in events if e.get('unreleased'))} unreleased)")
 if failed:
     print("FAILED thumbs:", failed, file=sys.stderr)
     sys.exit(1)

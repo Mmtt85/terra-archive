@@ -19,7 +19,7 @@ import { normSearch } from "./search";
 const imageDims = imageDimsData as Record<string, [number, number]>;
 
 type LocText = { ko: string; en?: string; ja?: string };
-type StoryEvent = { id: string; name: LocText; start: string; episodes: number; thumb: string; thumbEn?: string; thumbJa?: string };
+type StoryEvent = { id: string; name: LocText; start: string; episodes: number; thumb: string; thumbEn?: string; thumbJa?: string; unreleased?: boolean };
 type Block =
   | { t: "h"; x: string }
   | { t: "p"; x: string }
@@ -510,21 +510,36 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
 
 // 요약 뷰 — 이벤트·메인스토리·로그라이크 카드 그리드 + 검색 + 종류별/테마별 그룹핑(기본 종류별).
 // 각 그룹은 최신순(이벤트=출시월, 메인=에피소드 번호). 요약이 있는 이벤트만 열린다.
-function DigestView({ onOpen }: { onOpen: (event: StoryEvent) => void }) {
+function DigestView({ onOpen, includeFuture }: { onOpen: (event: StoryEvent) => void; includeFuture?: boolean }) {
   const { locale, t } = useI18n();
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState<"theme" | "kind">("kind");
 
+  // 중섭 선행(미실장) 이벤트 — '미래시 데이터 포함' 체크 시에만 목록에 합류
+  // (chronology.json엔 없으므로 stories.json의 unreleased 플래그에서 직접 만든다)
+  const allItems = useMemo<ChronItem[]>(() => {
+    if (!includeFuture) return CHRON_ITEMS;
+    const future = data.events.filter((ev) => ev.unreleased).map<ChronItem>((ev) => ({
+      key: ev.id, kind: "event", name: ev.name, start: ev.start, thumb: ev.thumb,
+      terraYear: null, arc: null, eventId: ev.id,
+    }));
+    return [...future, ...CHRON_ITEMS];
+  }, [includeFuture]);
+
   const keyword = normSearch(query);
   const filtered = useMemo(() => {
-    if (!keyword) return CHRON_ITEMS;
-    return CHRON_ITEMS.filter((it) =>
+    if (!keyword) return allItems;
+    return allItems.filter((it) =>
       normSearch([it.name.ko, it.name.en, it.name.ja].filter(Boolean).join(" ")).includes(keyword));
-  }, [keyword]);
+  }, [keyword, allItems]);
 
   // 최신순 정렬: 이벤트는 출시월 내림차순(최신 위), 메인스토리는 에피소드 번호 내림차순
   const recency = (it: ChronItem) => (it.eventId ? eventById.get(it.eventId)?.start : undefined) ?? "";
   const sortItems = (items: ChronItem[]) => [...items].sort((a, b) => {
+    // 중섭 선행(미실장)은 아직 KR에 없는 미래분 — CN 출시월이 KR 최신작보다 과거라도 맨 위에 둔다
+    const fa = a.eventId && eventById.get(a.eventId)?.unreleased ? 1 : 0;
+    const fb = b.eventId && eventById.get(b.eventId)?.unreleased ? 1 : 0;
+    if (fa !== fb) return fb - fa;
     const sa = recency(a), sb = recency(b);
     if (sa && sb) { const c = sb.localeCompare(sa); if (c) return c; }
     else if (sa) return -1;
@@ -573,7 +588,7 @@ function DigestView({ onOpen }: { onOpen: (event: StoryEvent) => void }) {
               : <em className="story-pending-badge">{t("요약 준비 중")}</em>}
           </div>
           <div className="story-card-info">
-            <h3>{locText(locale, it.name)}</h3>
+            <h3>{locText(locale, it.name)}{ev?.unreleased && <em className="future-badge">{t("미실장")}</em>}</h3>
             <span>{meta}</span>
           </div>
         </button>
@@ -607,7 +622,7 @@ function DigestView({ onOpen }: { onOpen: (event: StoryEvent) => void }) {
   );
 }
 
-export default function StoryGuide({ onShowOperator }: { onShowOperator?: (id: string) => void }) {
+export default function StoryGuide({ onShowOperator, includeFuture }: { onShowOperator?: (id: string) => void; includeFuture?: boolean }) {
   const { t } = useI18n();
   const [view, setView] = useState<"digest" | "chronicle">("digest");
   const [selected, setSelected] = useState<StoryEvent | null>(null);
@@ -653,7 +668,7 @@ export default function StoryGuide({ onShowOperator }: { onShowOperator?: (id: s
       <div className="story-head">
         <span className="section-no">AI STORY DIGEST</span>
         <h2>{t("AI 스토리 요약")}</h2>
-        <p>{t("한국 서버에 풀린 사이드 스토리 {count}개의 아카이브입니다. AI가 스토리 스크립트 전문을 정독하고 컷씬과 함께 10분 분량으로 요약합니다. 현재 {done}개 수록 — 계속 추가됩니다.", { count: data.events.length, done: summarized })}</p>
+        <p>{t("한국 서버에 풀린 사이드 스토리 {count}개의 아카이브입니다. AI가 스토리 스크립트 전문을 정독하고 컷씬과 함께 10분 분량으로 요약합니다. 현재 {done}개 수록 — 계속 추가됩니다.", { count: data.events.filter((event) => !event.unreleased).length, done: summarized })}</p>
         <p className="story-source">{t("요약에는 결말 포함 스포일러가 있습니다. 이벤트 제목·썸네일 출처: 게임 데이터 · {date} 기준.", { date: data.updated })}</p>
       </div>
 
@@ -665,7 +680,7 @@ export default function StoryGuide({ onShowOperator }: { onShowOperator?: (id: s
       {view === "chronicle" ? (
         <ChronologyView onOpenEvent={openEvent} />
       ) : (
-        <DigestView onOpen={open} />
+        <DigestView onOpen={open} includeFuture={includeFuture} />
       )}
     </section>
   );

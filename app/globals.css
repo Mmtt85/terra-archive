@@ -4298,6 +4298,10 @@ footer p {
 .modal-rarity .future-badge {
   margin-left: 8px;
 }
+/* AI 스토리 요약 카드 — 중섭 선행(미실장) 이벤트 제목 옆 배지 */
+.story-card-info h3 .future-badge {
+  margin-left: 6px;
+}
 /* 미실장 안내문 — 오퍼 모달 히어로(어두운 그라데이션) 위에 뜨므로 밝은 글자 사용.
    max-width로 제목 블록(flex:none, 내용폭 추종)이 넓어지는 걸 막아 별명 제보 폼이 밀리지 않게 한다 */
 .future-note {
