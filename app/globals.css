@@ -573,30 +573,52 @@ button {
     font-size: 11px;
     gap: 5px;
   }
-  /* 모바일: 배지가 자기 줄을 통째로 차지하고 가운데 정렬 */
-  .event-group {
-    order: 10;
+  /* 모바일 줄 구성 (사용자 배치 지시 2026-07):
+     1줄 = 브랜드 · 공식방송 · 미래시 / 2줄 = 이벤트배너(미니) · 햄버거 · 언어 · 도움말.
+     ::after(폭 100%, order 2)가 두 줄 사이를 강제로 끊는다. */
+  .site-header::after {
+    content: "";
+    order: 2;
     flex-basis: 100%;
-    justify-content: center;
-    margin-left: 0;
+    height: 0;
   }
+  .site-header .future-toggle {
+    font-size: 11px;
+    padding: 6px 8px;
+  }
+  .event-group {
+    order: 3;
+    margin: 0 auto 0 0;
+    min-width: 0;
+  }
+  .site-header .nav-group { order: 4; }
+  .site-header .lang-wrap { order: 5; }
+  .site-header .about-icon { order: 6; }
+  /* 미니 배지: 배너 + D-day + 캐럿만 (이름·라벨·기간은 드롭다운에서) */
   .event-trigger {
-    padding: 5px 10px;
-    font-size: 12.5px;
-    gap: 8px;
+    padding: 4px 8px;
+    font-size: 12px;
+    gap: 6px;
+    max-width: 100%;
+  }
+  .event-trigger .event-kicker,
+  .event-trigger .event-dates,
+  .event-trigger.has-banner .event-name {
+    display: none;
   }
   .event-trigger .event-name {
-    max-width: 170px;
+    max-width: 96px;
   }
   .event-trigger.has-banner {
-    padding: 3px 10px 3px 3px;
+    padding: 2px 8px 2px 2px;
   }
   .event-trigger-thumb {
-    width: 126px;
+    width: 64px;
+    flex: none;
   }
   .event-group .event-menu {
-    left: 50%;
-    transform: translateX(-50%);
+    left: 0;
+    transform: none;
   }
   .bcast-thumb {
     width: 104px;
