@@ -65,8 +65,7 @@ const ALL_MATERIALS: MaterialCard[] = (() => {
 
 const TIERS = Array.from(new Set(ALL_MATERIALS.map((item) => item.rarity))).sort((a, b) => b - a);
 
-// 재료당 화면에 표시할 효율 스테이지 수 (데이터에는 상위 8개까지 있음)
-const TOP_STAGES = 3;
+// 효율표 카드는 기본 최고 효율 1개만 표시, '더 보기'로 전체(상위 8개) 펼침 (2026-07 사용자 확정)
 
 // 커뮤니티 별칭 검색 (사용자 확정 2026-07-14) — 데이터 재생성과 무관하게 여기서 관리.
 // 오줌=아케톤, 돌=원암+RMA70-24, 장치/좆치=장치류, 방석=연마석, 젤리=콜(로식·화이트 호스),
@@ -85,6 +84,31 @@ const SEARCH_ALIASES: Record<string, string[]> = {
 const PERMANENT_KINDS = new Set(["main", "perm", "daily"]);
 const KIND_LABEL: Record<string, string> = { perm: "상설", event: "이벤트 한정", daily: "물자" };
 
+// 칩·칩셋의 주간 물자(PR) 스테이지 — 요일 로테이션 고정 드랍이라 펭귄 효율표엔 없다.
+// 구역명은 zone_table 주간 구역(난공불락 등) 기준, 드랍 페어는 stage_table 확인 (2026-07).
+const CHIP_STAGES: Record<string, { code: string; zone: LocText; ap: number }> = (() => {
+  const zones: [LocText, string, string][] = [
+    [{ ko: "난공불락", en: "Solid Defense", ja: "重装/医療" }, "3231", "3261"],   // PR-A: 디펜더·메딕
+    [{ ko: "추풍낙엽", en: "Fierce Attack", ja: "狙撃/術師" }, "3241", "3251"],   // PR-B: 스나이퍼·캐스터
+    [{ ko: "질풍노도", en: "Unstoppable Charge", ja: "先鋒/補助" }, "3211", "3271" ], // PR-C: 뱅가드·서포터
+    [{ ko: "솔선수범", en: "Fearless Protection", ja: "前衛/特殊" }, "3221", "3281" ], // PR-D: 가드·스페셜리스트
+  ];
+  const letters = ["A", "B", "C", "D"];
+  const out: Record<string, { code: string; zone: LocText; ap: number }> = {};
+  zones.forEach(([zone, ...chips], index) => {
+    for (const chip of chips) {
+      out[chip] = { code: `PR-${letters[index]}-1`, zone, ap: 18 };                    // 32X1 칩
+      out[chip.slice(0, 3) + "2"] = { code: `PR-${letters[index]}-2`, zone, ap: 36 };  // 32X2 칩셋
+    }
+  });
+  // 스킬개론 1~3권 — CA 「공중 위협」 주간 스테이지 (CA-5가 세 권 모두 드랍, 사용자 확정 2026-07)
+  const ca: LocText = { ko: "공중 위협", en: "Aerial Threat", ja: "空軍迎撃" };
+  out["3301"] = { code: "CA-5", zone: ca, ap: 30 };
+  out["3302"] = { code: "CA-5", zone: ca, ap: 30 };
+  out["3303"] = { code: "CA-5", zone: ca, ap: 30 };
+  return out;
+})();
+
 function locText(locale: Locale, text: LocText): string {
   return (locale === "ko" ? text.ko : text[locale]) ?? text.ko;
 }
@@ -96,6 +120,13 @@ export default function FarmGuide({ operators, includeFuture, onShowOperator }: 
   const [permOnly, setPermOnly] = useState(false);
   // 재료 상세 모달 — 효율표·계산기의 모든 재료 아이콘에서 연다 (id = item id)
   const [shownItem, setShownItem] = useState<string | null>(null);
+  // 스테이지 목록 펼침 — 기본은 최고 효율 1개만, '더 보기'로 나머지 전부 (2026-07 사용자 확정)
+  const [expandedStages, setExpandedStages] = useState<Set<string>>(new Set());
+  const toggleStages = (id: string) => setExpandedStages((current) => {
+    const next = new Set(current);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
 
   const toggleTier = (tier: number) =>
     setTiers((current) => (current.includes(tier) ? current.filter((value) => value !== tier) : [...current, tier]));
@@ -177,7 +208,7 @@ export default function FarmGuide({ operators, includeFuture, onShowOperator }: 
                       <i>{t("스테이지")}</i><i>{t("드랍률")}</i><i>{t("기대 이성")}</i>
                     </div>
                     <ul>
-                      {item.stages.slice(0, TOP_STAGES).map((stage, index) => (
+                      {item.stages.slice(0, expandedStages.has(item.id) ? item.stages.length : 1).map((stage, index) => (
                         <li key={stage.id} className={index === 0 ? "best" : undefined}
                           title={`${locText(locale, stage.name) ?? stage.code} · ${t("이성 {n} 소모", { n: stage.ap })} · ${t("표본 {n}회", { n: stage.times.toLocaleString() })}`}>
                           <b className="farm-code">{stage.code}</b>
@@ -190,10 +221,25 @@ export default function FarmGuide({ operators, includeFuture, onShowOperator }: 
                         </li>
                       ))}
                     </ul>
+                    {item.stages.length > 1 && (
+                      <button type="button" className="farm-more-stages" onClick={() => toggleStages(item.id)} aria-expanded={expandedStages.has(item.id)}>
+                        {expandedStages.has(item.id) ? `▴ ${t("접기")}` : `▾ ${t("더보기 +{n}", { n: item.stages.length - 1 })}`}
+                      </button>
+                    )}
                   </>
                 ) : (
                   <div className="farm-nonfarm-body">
-                    <span className="farm-nonfarm-tag">{craftable ? t("가공소 조합") : t("파밍 불가")}</span>
+                    {CHIP_STAGES[item.id] && (
+                      <p className="chip-stage" title={t("요일별 주간 물자 스테이지 — 이성 {n} 소모", { n: CHIP_STAGES[item.id].ap })}>
+                        <b className="farm-code">{CHIP_STAGES[item.id].code}</b>
+                        <span className="chip-zone">「{locText(locale, CHIP_STAGES[item.id].zone)}」</span>
+                        <em className="kind-badge daily">{t("주간 물자")}</em>
+                        <span className="farm-sanity">{t("이성 {n}", { n: CHIP_STAGES[item.id].ap })}</span>
+                      </p>
+                    )}
+                    {(craftable || !CHIP_STAGES[item.id]) && (
+                      <span className="farm-nonfarm-tag">{craftable ? t("가공소 조합") : t("파밍 불가")}</span>
+                    )}
                     {craftable && (
                       <span className="farm-nonfarm-craft">
                         {meta!.craft!.map(([subId, count]) => {
@@ -490,7 +536,7 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
               </div>
             </div>
             <div className="cost-lmd">
-              <img src="/items/4001.png" alt="" />
+              <img src="/items/4001.webp" alt="" />
               <div><span>{t("용문폐")}</span><b>{totals.lmd.toLocaleString()}</b></div>
             </div>
             <div className="cost-items">
@@ -592,7 +638,7 @@ function ItemModal({ id, onClose, onShowItem, onSearchItem }: {
               })}
               {(meta.craftGold ?? 0) > 0 && (
                 <span className="cost-mini" title={t("용문폐")}>
-                  <img src="/items/4001.png" alt={t("용문폐")} />
+                  <img src="/items/4001.webp" alt={t("용문폐")} />
                   <i>{(meta.craftGold ?? 0).toLocaleString()}</i>
                 </span>
               )}
@@ -603,7 +649,7 @@ function ItemModal({ id, onClose, onShowItem, onSearchItem }: {
           <div className="item-stages">
             <b>{t("효율 스테이지")}</b>
             <ul>
-              {farmItem.stages.slice(0, TOP_STAGES).map((stage, index) => (
+              {farmItem.stages.map((stage, index) => (
                 <li key={stage.id}>
                   <b className="farm-code">{stage.code}</b>
                   {index === 0 && <em className="best-badge">{t("최고 효율")}</em>}
@@ -615,7 +661,18 @@ function ItemModal({ id, onClose, onShowItem, onSearchItem }: {
             <button type="button" className="cost-clear" onClick={() => onSearchItem(locText(locale, farmItem.name))}>{t("효율표에서 {name} 검색", { name })}</button>
           </div>
         )}
-        {!farmItem && !meta?.craft && (
+        {!farmItem && CHIP_STAGES[id] && (
+          <div className="item-stages">
+            <b>{t("주간 물자 스테이지")}</b>
+            <p className="chip-stage">
+              <b className="farm-code">{CHIP_STAGES[id].code}</b>
+              <span className="chip-zone">「{locText(locale, CHIP_STAGES[id].zone)}」</span>
+              <em className="kind-badge daily">{t("주간 물자")}</em>
+              <span className="farm-sanity">{t("이성 {n}", { n: CHIP_STAGES[id].ap })}</span>
+            </p>
+          </div>
+        )}
+        {!farmItem && !meta?.craft && !CHIP_STAGES[id] && (
           <p className="item-usage">{t("상시 파밍 스테이지가 없는 재료예요 — 이벤트 보상·상점 교환 등으로 획득합니다.")}</p>
         )}
       </section>
