@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import broadcastsData from "./data/broadcasts.json";
+import storyEventsData from "./data/stories.json";
 import InfraPlanner from "./planner";
 import RecruitHelper from "./recruit";
 import FarmGuide from "./farm";
@@ -129,6 +130,9 @@ function tabFromLegacyHash(hash: string): Tab | null {
 const BCAST_API = "https://terra-archive-broadcast.nzkonaru.workers.dev/";
 type Broadcast = { server: string; title: string; start: string; durationMin?: number; url?: string; videoId?: string };
 type BState = "live" | "upcoming" | "past";
+// 진행중 게임 이벤트 — 워커가 KR activity_table에서 뽑아 같은 payload에 실어준다.
+// 진행중 판정은 클라이언트가 start/end와 Date.now()를 비교 (워커 데이터가 묵어도 정확)
+type GameEvent = { id: string; name: string; type?: string | null; displayType?: string | null; start: string; end: string };
 
 const SERVER_META: Record<string, { code: string; label: string }> = {
   kr: { code: "KR", label: "한국" },
@@ -187,6 +191,14 @@ function bcastKey(b: Broadcast): string {
   return youTubeId(b) ?? `${b.server}:${new Date(b.start).toISOString().slice(0, 10)}`;
 }
 
+// AI 스토리 요약이 있는 이벤트 — 진행중 배지에서 이름 현지화 + 스토리 페이지 링크에 사용
+const storyEventById = new Map(
+  (storyEventsData as { events: { id: string; name: { ko: string; en?: string; ja?: string } }[] }).events
+    .map((event) => [event.id, event]),
+);
+// 사이드스토리·복각 등 굵직한 이벤트 — 배지 대표로 우선한다 (로그인·출석류보다)
+const MAJOR_EVENT_TYPES = new Set(["SIDESTORY", "BRANCHLINE", "MINISTORY"]);
+
 function BroadcastBadges() {
   const { locale, t } = useI18n();
   const shortStatus = (b: Broadcast, now: number): string => {
@@ -202,6 +214,9 @@ function BroadcastBadges() {
   const [now, setNow] = useState<number | null>(null);
   const [open, setOpen] = useState(false);
   const [remote, setRemote] = useState<Broadcast[] | null>(null);
+  const [gameEvents, setGameEvents] = useState<GameEvent[]>([]);
+  const [evOpen, setEvOpen] = useState(false);
+  const evRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     setNow(Date.now());
     const id = setInterval(() => setNow(Date.now()), 60_000);
@@ -210,8 +225,11 @@ function BroadcastBadges() {
   useEffect(() => {
     fetch(BCAST_API)
       .then((res) => (res.ok ? res.json() : null))
-      .then((data) => { if (Array.isArray(data?.broadcasts)) setRemote(data.broadcasts); })
-      .catch(() => { /* 워커 불통이면 정적 broadcasts.json만 사용 */ });
+      .then((data) => {
+        if (Array.isArray(data?.broadcasts)) setRemote(data.broadcasts);
+        if (Array.isArray(data?.events)) setGameEvents(data.events);
+      })
+      .catch(() => { /* 워커 불통이면 정적 broadcasts.json만 사용 (이벤트 배지는 생략) */ });
   }, []);
   useEffect(() => {
     if (!open) return;
@@ -219,6 +237,15 @@ function BroadcastBadges() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
+  // 진행중 이벤트 팝오버 — 바깥 클릭/Esc로 닫기
+  useEffect(() => {
+    if (!evOpen) return;
+    const onDoc = (event: MouseEvent) => { if (!evRef.current?.contains(event.target as Node)) setEvOpen(false); };
+    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") setEvOpen(false); };
+    document.addEventListener("mousedown", onDoc);
+    window.addEventListener("keydown", onKey);
+    return () => { document.removeEventListener("mousedown", onDoc); window.removeEventListener("keydown", onKey); };
+  }, [evOpen]);
   if (now == null) return null;
   const statics = (broadcastsData.broadcasts as Broadcast[]).filter((b) => !Number.isNaN(Date.parse(b.start)));
   const seen = new Set((remote ?? []).map(bcastKey));
@@ -226,7 +253,53 @@ function BroadcastBadges() {
     ...(remote ?? []).filter((b) => !Number.isNaN(Date.parse(b.start))),
     ...statics.filter((b) => !seen.has(bcastKey(b))),
   ];
-  if (all.length === 0) return null;
+
+  // ── 진행중 게임 이벤트 배지 (공식 방송 버튼 오른쪽) ──
+  // 굵직한 이벤트(사이드스토리 등) 우선 + 최신 시작순으로 대표 하나를 버튼에,
+  // 나머지는 팝오버 목록에 (로그인·출석류 포함 전부 — 사용자 선택 2026-07)
+  const running = gameEvents
+    .filter((event) => Date.parse(event.start) <= now && now <= Date.parse(event.end))
+    .sort((a, b) => {
+      const majorA = MAJOR_EVENT_TYPES.has(a.displayType ?? "") ? 0 : 1;
+      const majorB = MAJOR_EVENT_TYPES.has(b.displayType ?? "") ? 0 : 1;
+      if (majorA !== majorB) return majorA - majorB;
+      return majorA === 0 ? Date.parse(b.start) - Date.parse(a.start) : Date.parse(a.end) - Date.parse(b.end);
+    });
+  const headline = running[0];
+  const evName = (event: GameEvent): string => {
+    const story = storyEventById.get(event.id);
+    return story ? ((locale === "ko" ? story.name.ko : story.name[locale]) ?? story.name.ko) : event.name;
+  };
+  const dday = (event: GameEvent): number => Math.max(0, Math.ceil((Date.parse(event.end) - now) / DAY));
+  const md = (iso: string): string =>
+    new Intl.DateTimeFormat(DT_LOCALE[locale], { timeZone: "Asia/Seoul", month: "numeric", day: "numeric" }).format(new Date(iso));
+  const eventBadge = headline && (
+    <div className="event-group" ref={evRef}>
+      <button type="button" className="event-trigger" aria-expanded={evOpen} onClick={() => setEvOpen((o) => !o)}
+        title={t("진행중인 이벤트 보기")}>
+        <span className="event-mark" aria-hidden>✦</span>
+        <span className="event-name">{evName(headline)}</span>
+        <span className="event-dday">D-{dday(headline)}</span>
+      </button>
+      {evOpen && (
+        <div className="event-menu" role="dialog" aria-label={t("진행중 이벤트")}>
+          <h3>{t("진행중 이벤트")}</h3>
+          <ul>
+            {running.map((event) => (
+              <li key={event.id}>
+                {storyEventById.has(event.id)
+                  ? <a href={`${LOCALE_BASE[locale]}/stories#story-${event.id}`} title={t("AI 스토리 요약 보기")}>{evName(event)}</a>
+                  : <span>{evName(event)}</span>}
+                <small>{md(event.start)} ~ {md(event.end)} · D-{dday(event)}</small>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+
+  if (all.length === 0) return eventBadge || null;
   // 정렬: 생방송 > 가까운 예약 > 최근 지난 방송 (세 서버 전부 목록에 표시)
   const sorted = [...all].sort((a, b) => {
     const sa = bcastState(a, now), sb = bcastState(b, now);
@@ -244,6 +317,8 @@ function BroadcastBadges() {
         <span>{t("공식 방송")}</span>
         {hint && <span className="bcast-hint">· {hint.text}</span>}
       </button>
+      {/* 진행중 게임 이벤트 배지 — 공식 방송 버튼 바로 오른쪽 (사용자 요청 2026-07) */}
+      {eventBadge}
       {/* 사이트 헤더의 backdrop-filter가 fixed 기준을 헤더로 만들어버리므로,
           모달은 portal로 body에 직접 렌더링해야 화면 전체를 덮는다 */}
       {open && createPortal(

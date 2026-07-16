@@ -279,6 +279,87 @@ button {
   }
 }
 
+/* 진행중 게임 이벤트 — 공식 방송 버튼 오른쪽 배지 + 팝오버 */
+.event-group {
+  position: relative;
+  display: inline-flex;
+  margin-left: 8px;
+}
+.event-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  background: transparent;
+  padding: 6px 11px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink);
+  cursor: pointer;
+  transition: 0.15s;
+  white-space: nowrap;
+}
+.event-trigger:hover {
+  border-color: var(--ink);
+}
+.event-trigger .event-mark {
+  color: var(--accent, #b98a2f);
+}
+.event-trigger .event-name {
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.event-trigger .event-dday {
+  font: 700 10px monospace;
+  color: var(--muted);
+}
+.event-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 40;
+  min-width: 250px;
+  max-width: min(330px, calc(100vw - 24px));
+  background: var(--white, #fff);
+  border: 1px solid var(--ink);
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.12);
+  padding: 10px 12px;
+}
+.event-menu h3 {
+  margin: 0 0 6px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.event-menu ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.event-menu li {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 6px 0;
+  border-top: 1px dashed var(--line);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.event-menu li:first-child {
+  border-top: 0;
+}
+.event-menu li a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.event-menu li small {
+  font: 600 10.5px monospace;
+  color: var(--muted);
+}
+
 /* 공식 방송 — 목록 모달 */
 .bcast-modal {
   position: relative;
@@ -419,6 +500,17 @@ button {
     padding: 5px 8px;
     font-size: 11px;
     gap: 5px;
+  }
+  .event-group {
+    margin-left: 6px;
+  }
+  .event-trigger {
+    padding: 5px 8px;
+    font-size: 11px;
+    gap: 4px;
+  }
+  .event-trigger .event-name {
+    max-width: 76px;
   }
   .bcast-thumb {
     width: 104px;

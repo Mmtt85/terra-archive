@@ -46,7 +46,7 @@ async function poll(env) {
   }
 
   // 이전 저장분도 다시 조회 대상에 포함 — 예약→라이브→종료 전환과 시각 변경을 반영
-  const prev = (await env.BCAST.get(KV_KEY, "json")) ?? { broadcasts: [] };
+  const prev = (await env.BCAST.get(KV_KEY, "json")) ?? { broadcasts: [], events: [] };
   const now = Date.now();
   for (const b of prev.broadcasts) {
     const fresh = now - Date.parse(b.start) < 7 * 86_400_000; // 최근 7일 것만 재확인
@@ -79,9 +79,35 @@ async function poll(env) {
   const broadcasts = [...merged.values()]
     .sort((a, b) => Date.parse(b.start) - Date.parse(a.start))
     .slice(0, MAX_ENTRIES);
-  const payload = { updated: new Date().toISOString(), broadcasts };
+  // 진행중 게임 이벤트도 같은 payload에 실어 헤더가 fetch 한 번으로 다 받게 한다.
+  // 클뜯 불통 시 이전 저장분 유지 — 판정은 클라이언트가 start/end로 하므로 하루쯤 묵어도 된다.
+  const events = await fetchEvents().catch(() => prev.events ?? []);
+  const payload = { updated: new Date().toISOString(), broadcasts, events };
   await env.BCAST.put(KV_KEY, JSON.stringify(payload));
   return payload;
+}
+
+// ── 진행중 게임 이벤트 (KR activity_table) ────────────────────
+// KR 서버 이벤트의 정확한 시작·종료 시각을 클뜯 레포에서 뽑는다. 진행중 판정은
+// 클라이언트가 Date.now()와 비교하므로, 워커는 "아직 안 끝났고 3주 내 시작"인
+// 항목만 실어 payload를 작게 유지한다 (사이드스토리·콜라보·로그인 등 전부 포함).
+async function fetchEvents() {
+  const res = await fetch(`${GAMEDATA_BASE}/activity_table.json`);
+  if (!res.ok) throw new Error(`activity fetch ${res.status}`);
+  const table = await res.json();
+  const now = Date.now();
+  const soon = now + 21 * 86_400_000;
+  return Object.values(table.basicInfo ?? {})
+    .filter((a) => a.startTime > 0 && a.endTime * 1000 > now && a.startTime * 1000 < soon)
+    .map((a) => ({
+      id: a.id,
+      name: a.name,
+      type: a.type ?? null,
+      displayType: a.displayType ?? null,
+      start: new Date(a.startTime * 1000).toISOString(),
+      end: new Date(a.endTime * 1000).toISOString(),
+    }))
+    .sort((a, b) => Date.parse(a.end) - Date.parse(b.end));
 }
 
 // ── 게임 데이터 신규 항목 감지 ─────────────────────────────
