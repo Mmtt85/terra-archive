@@ -649,12 +649,17 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
     };
   }, [selected]);
 
-  // 모바일 메뉴 열림 중엔 배경(본문) 스크롤을 잠근다 — 메뉴 위 스와이프가 뒤 페이지를 움직이던 문제
+  // 햄버거 드롭다운은 바깥 클릭·Esc로 닫는다 (데스크탑·모바일 공통 드롭다운)
   useEffect(() => {
     if (!navOpen) return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = previousOverflow; };
+    const onPointer = (event: PointerEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest(".main-tabs") && !target.closest(".nav-toggle")) setNavOpen(false);
+    };
+    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") setNavOpen(false); };
+    document.addEventListener("pointerdown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => { document.removeEventListener("pointerdown", onPointer); document.removeEventListener("keydown", onKey); };
   }, [navOpen]);
 
   const filtered = useMemo(() => {
@@ -728,6 +733,16 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
           <span>{t("테라 아카이브")}<small>{t("명일방주(Arknights) KR 팬사이트")}</small></span>
         </a>
         <BroadcastBadges />
+        {/* 공식방송 버튼 바로 오른쪽 = 미래시 토글 (사용자 배치 지시 2026-07) */}
+        <label className="future-toggle" title={t("한국 서버에 아직 나오지 않은 오퍼레이터·재료(중국 서버 데이터)도 목록·계산기에 표시합니다. 미실장 텍스트는 비공식 AI 번역입니다.")}>
+          <input type="checkbox" checked={includeFuture} onChange={(event) => toggleFuture(event.target.checked)} />
+          {t("미래시 데이터 포함")}
+        </label>
+        {/* 우측 그룹 (about-icon에 margin-left:auto) → 소개·언어·햄버거를 헤더 오른쪽으로 밀어낸다 */}
+        <button type="button" className={`about-icon${tab === "about" ? " selected" : ""}`} onClick={() => switchTab("about")}
+          aria-label={t("소개")} title={t("소개")}>ⓘ</button>
+        <LanguageSwitcher />
+        {/* 햄버거는 헤더 제일 오른쪽 (사용자 배치 지시 2026-07) */}
         <button type="button" className="nav-toggle" aria-expanded={navOpen} aria-label={t("메뉴 열기")} onClick={() => setNavOpen((open) => !open)}>
           <span aria-hidden>☰</span>{TAB_LABEL[tab]}
         </button>
@@ -738,13 +753,6 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
           <button className={`tab-farm${tab === "farm" ? " selected" : ""}`} onClick={() => switchTab("farm")}><span className="tab-icon" aria-hidden>◈</span>{t("파밍·육성 시뮬")}</button>
           <button className={`tab-story${tab === "story" ? " selected" : ""}`} onClick={() => switchTab("story")}><span className="tab-icon" aria-hidden>✦</span>{t("AI 스토리 요약")}</button>
         </nav>
-        <label className="future-toggle" title={t("한국 서버에 아직 나오지 않은 오퍼레이터·재료(중국 서버 데이터)도 목록·계산기에 표시합니다. 미실장 텍스트는 비공식 AI 번역입니다.")}>
-          <input type="checkbox" checked={includeFuture} onChange={(event) => toggleFuture(event.target.checked)} />
-          {t("미래시 데이터 포함")}
-        </label>
-        <button type="button" className={`about-icon${tab === "about" ? " selected" : ""}`} onClick={() => switchTab("about")}
-          aria-label={t("소개")} title={t("소개")}>ⓘ</button>
-        <LanguageSwitcher />
       </header>
 
       {tab === "archive" && <section className="explorer" aria-labelledby="explorer-title">

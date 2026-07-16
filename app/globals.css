@@ -1672,46 +1672,16 @@ footer p {
   .brand small {
     display: none;   /* 모바일 헤더는 한 줄로 컴팩트하게 */
   }
-  /* 햄버거 버튼 노출 + 현재 탭 이름 표기.
-     (.site-header 로 한정해 뒤에 오는 base 규칙보다 우선순위를 확보 — 같은 클래스 특정성이라
-      순서가 밀리면 base가 이겨버리는 문제 방지) */
+  /* 모바일에선 햄버거를 좀 더 컴팩트하게 (드롭다운 동작은 base 공통) */
   .site-header .nav-toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    border: 1px solid var(--ink);
-    background: var(--ink);
-    color: var(--lime);
     padding: 8px 12px;
-    font-size: 12px;
-    font-weight: 800;
-    cursor: pointer;
-    white-space: nowrap;
+    margin-right: 8px;
   }
-  .site-header .nav-toggle span {
-    font-size: 14px;
-    line-height: 1;
-  }
-  /* 탭 목록 — 평소엔 숨기고, 열면 헤더 아래 드롭다운으로 펼친다 */
+  /* 드롭다운은 모바일 폭에 맞춰 우측 패딩 기준으로 붙이고 화면을 넘지 않게 */
   .site-header .main-tabs {
-    display: none;
-    order: 20;
-    flex-basis: 100%;
-    width: 100%;
-    margin: 0;
-  }
-  .site-header .main-tabs.open {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding-top: 4px;
-    border-top: 1px solid var(--line);
-  }
-  .site-header .main-tabs.open button {
-    width: 100%;
-    text-align: left;
-    padding: 12px 14px;
-    font-size: 13px;
+    right: 16px;
+    left: 16px;
+    min-width: 0;
   }
   .server-chip {
     font-size: 8px;
@@ -2215,45 +2185,66 @@ footer p {
     margin-top: 12px;
   }
 }
-.main-tabs {
-  display: flex;
-  gap: 6px;
-  margin-left: auto;
-  margin-right: 14px;
-}
-.main-tabs button {
-  border: 1px solid var(--line);
-  background: transparent;
+/* 햄버거 메뉴 — 데스크탑·모바일 공통. 5개 메인 탭은 햄버거(.nav-toggle) 드롭다운으로
+   접고, future 토글·소개(ⓘ)·언어는 헤더에 그대로 인라인 노출한다 (사용자 요청 2026-07). */
+.nav-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 12px;   /* 언어 변경 버튼과 간격 (사용자 요청 2026-07) */
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--lime);
   padding: 9px 14px;
   font-size: 12px;
   font-weight: 800;
   cursor: pointer;
-  transition: 0.15s;
+  white-space: nowrap;
+}
+.nav-toggle span {
+  font-size: 15px;
+  line-height: 1;
+}
+.main-tabs {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  right: clamp(22px, 5vw, 76px);
+  z-index: 30;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 220px;
+  padding: 6px;
+  background: var(--white);
+  border: 1px solid var(--ink);
+  box-shadow: 0 12px 34px #00000022;
+}
+.main-tabs.open {
+  display: flex;
+}
+.main-tabs button {
+  border: 1px solid transparent;
+  background: transparent;
+  padding: 11px 13px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: 0.12s;
 }
 .main-tabs button:hover {
-  border-color: var(--ink);
+  background: var(--paper);
 }
 .main-tabs button.selected {
   background: var(--ink);
   color: var(--lime);
-  border-color: var(--ink);
-}
-/* 모바일 햄버거 — 데스크탑에선 숨긴다 (탭이 그대로 노출됨) */
-.nav-toggle {
-  display: none;
 }
 .planner-summary .strategy {
   font-size: 13px;
   font-family: inherit;
-}
-@media (max-width: 760px) {
-  .main-tabs {
-    margin: 0 8px;
-  }
-  .main-tabs button {
-    padding: 7px 9px;
-    font-size: 10px;
-  }
 }
 .dorm-room {
   cursor: default;
@@ -4260,6 +4251,7 @@ footer p {
   border: 1px solid var(--line);
   background: var(--white);
   padding: 8px 11px;
+  margin-left: 14px;   /* 공식방송 버튼과 간격 (사용자 요청 2026-07) */
   margin-right: 10px;
   font: 700 11px/1 monospace;
   letter-spacing: 0.2px;
@@ -4269,13 +4261,15 @@ footer p {
   accent-color: var(--ink);
   margin: 0;
 }
-/* 헤더 우측 소개(ⓘ) 아이콘 — 메인 탭과 별개로 소개 페이지로 이동 */
+/* 헤더 우측 소개(ⓘ) 아이콘 — 메인 탭과 별개로 소개 페이지로 이동.
+   margin-left:auto로 여기부터(소개·언어·햄버거)를 헤더 오른쪽 끝으로 밀어낸다 */
 .about-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 32px;
   height: 32px;
+  margin-left: auto;
   margin-right: 8px;
   border: 1px solid var(--line);
   background: var(--white);
