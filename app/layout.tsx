@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -14,23 +13,19 @@ const geistMono = Geist_Mono({
 });
 
 // 제목·설명·OG·hreflang 등 로케일별 메타데이터는 각 라우트 페이지(app/seo.ts)가 담당하고,
-// 레이아웃은 요청 호스트 기반 metadataBase 등 공통값만 제공한다.
-export async function generateMetadata(): Promise<Metadata> {
-  const requestHeaders = await headers();
-  const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "localhost:3000";
-  const protocol = requestHeaders.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
-  return {
-    metadataBase: new URL(`${protocol}://${host}`),
-    icons: {
-      icon: [
-        { url: "/favicon.ico", sizes: "any" },
-        { url: "/favicon-32.png", type: "image/png", sizes: "32x32" },
-        { url: "/favicon-16.png", type: "image/png", sizes: "16x16" },
-      ],
-      apple: [{ url: "/favicon-180.png", sizes: "180x180" }],
-    },
-  };
-}
+// 레이아웃은 metadataBase 등 공통값만 제공한다. 정적 내보내기(output: "export")라
+// 요청 헤더를 읽을 수 없으므로 정본 도메인을 고정한다 (OG·canonical 절대 URL 기준).
+export const metadata: Metadata = {
+  metadataBase: new URL("https://terra-archive.net"),
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon-32.png", type: "image/png", sizes: "32x32" },
+      { url: "/favicon-16.png", type: "image/png", sizes: "16x16" },
+    ],
+    apple: [{ url: "/favicon-180.png", sizes: "180x180" }],
+  },
+};
 
 export default function RootLayout({
   children,
