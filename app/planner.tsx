@@ -1232,7 +1232,9 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     setPlan(next);
     setActiveShift(0);
     persist(ids, next, elite);
-    showToast(t("전체 자동편성을 실행했습니다 · 보유 {n}명 기준", { n: ids.size }));
+    // 실제 계산에 쓰인 인원 = 보유 ∩ 현재 표시 대상(미래시 토글 반영) — 미래시 OFF면 미실장 제외
+    const usedCount = visibleOps.filter((op) => ids.has(op.id)).length;
+    showToast(t("전체 자동편성을 실행했습니다 · 보유 {n}명 기준", { n: usedCount }));
   };
 
   // 우선 생산 모드는 설정(라디오)일 뿐 — 실제 편성은 기존처럼 자동편성 버튼으로 실행한다
