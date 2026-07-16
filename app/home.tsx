@@ -791,6 +791,23 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
     return () => { document.removeEventListener("pointerdown", onPointer); document.removeEventListener("keydown", onKey); };
   }, [navOpen]);
 
+  // 모바일: 햄버거 드롭다운이 열려 있는 동안 배경 페이지 스크롤을 잠근다
+  // (iOS 사파리는 body overflow:hidden만으로는 안 막혀 position:fixed 방식 사용)
+  useEffect(() => {
+    if (!navOpen || !window.matchMedia("(max-width: 760px)").matches) return;
+    const scrollY = window.scrollY;
+    const { position, top, width } = document.body.style;
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = "100%";
+    return () => {
+      document.body.style.position = position;
+      document.body.style.top = top;
+      document.body.style.width = width;
+      window.scrollTo(0, scrollY);
+    };
+  }, [navOpen]);
+
   const filtered = useMemo(() => {
     const keyword = normSearch(query);
     return roster.filter((operator) => {
