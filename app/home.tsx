@@ -131,8 +131,9 @@ const BCAST_API = "https://terra-archive-broadcast.nzkonaru.workers.dev/";
 type Broadcast = { server: string; title: string; start: string; durationMin?: number; url?: string; videoId?: string };
 type BState = "live" | "upcoming" | "past";
 // 진행중 게임 이벤트 — 워커가 KR activity_table에서 뽑아 같은 payload에 실어준다.
-// 진행중 판정은 클라이언트가 start/end와 Date.now()를 비교 (워커 데이터가 묵어도 정확)
-type GameEvent = { id: string; name: string; type?: string | null; displayType?: string | null; start: string; end: string };
+// 진행중 판정은 클라이언트가 start/end와 Date.now()를 비교 (워커 데이터가 묵어도 정확).
+// url = 공식 네이버 카페 이벤트 공지 (워커가 제목 매칭으로 찾음, 없으면 링크 없음)
+type GameEvent = { id: string; name: string; type?: string | null; displayType?: string | null; start: string; end: string; url?: string };
 
 const SERVER_META: Record<string, { code: string; label: string }> = {
   kr: { code: "KR", label: "한국" },
@@ -299,17 +300,24 @@ function BroadcastBadges() {
     new Intl.DateTimeFormat(DT_LOCALE[locale], { timeZone: "Asia/Seoul", month: "numeric", day: "numeric" }).format(new Date(iso));
   // 스토리 탭용으로 이미 받아둔 이벤트 배너를 재활용 (로케일 변형 → ko 폴백)
   const evThumb = (event: GameEvent): string | undefined => eventThumb(locale, event);
+  // "7월 16일" 식 표기 (KST) — 배지의 이벤트 기간 표시용
+  const mdLong = (iso: string): string =>
+    new Intl.DateTimeFormat(DT_LOCALE[locale], { timeZone: "Asia/Seoul", month: "long", day: "numeric" }).format(new Date(iso));
   const headlineThumb = headline ? evThumb(headline) : undefined;
   const eventBadge = headline && (
     <div className="event-group" ref={evRef}>
-      {/* 대표 이벤트는 배너째로 버튼에 — 클릭하면 나머지 이벤트 드롭다운 (사용자 요청 2026-07) */}
+      {/* 대표 이벤트는 배너째로 버튼에 — 헤더 정가운데, 라벨·기간 포함 (사용자 요청 2026-07).
+          클릭하면 나머지 이벤트 드롭다운. */}
       <button type="button" className={`event-trigger${headlineThumb ? " has-banner" : ""}`} aria-expanded={evOpen}
         onClick={() => setEvOpen((o) => !o)} title={t("진행중인 이벤트 보기")}>
         {headlineThumb
           ? <span className="event-trigger-thumb"><img src={headlineThumb} alt="" /></span>
           : <span className="event-mark" aria-hidden>✦</span>}
-        <span className="event-name">{evName(headline)}</span>
-        <span className="event-dday">D-{dday(headline)}</span>
+        <span className="event-trigger-main">
+          <small className="event-kicker">{t("현재 진행중 이벤트")}</small>
+          <span className="event-name">{evName(headline)}</span>
+          <span className="event-dates">{mdLong(headline.start)} ~ {mdLong(headline.end)} · D-{dday(headline)}</span>
+        </span>
         <span className="event-caret" aria-hidden>▾</span>
       </button>
       {evOpen && (
@@ -326,10 +334,11 @@ function BroadcastBadges() {
                   <small>{md(event.start)} ~ {md(event.end)} · D-{dday(event)}</small>
                 </>
               );
+              // 링크는 공식 카페 이벤트 공지로 (사용자 요청 2026-07 — 스토리 요약 아님)
               return (
                 <li key={event.id}>
-                  {storyEventById.has(event.id)
-                    ? <a href={`${LOCALE_BASE[locale]}/stories#story-${event.id}`} title={t("AI 스토리 요약 보기")}>{body}</a>
+                  {event.url
+                    ? <a href={event.url} target="_blank" rel="noopener noreferrer" title={t("공식 카페 공지 보기")}>{body}</a>
                     : <span className="event-row-plain">{body}</span>}
                 </li>
               );

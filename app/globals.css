@@ -279,25 +279,40 @@ button {
   }
 }
 
-/* 진행중 게임 이벤트 — 공식 방송 버튼 오른쪽 배지 + 팝오버 */
+/* 진행중 게임 이벤트 — 헤더 중앙 배지 + 팝오버 */
 .event-group {
   position: relative;
   display: inline-flex;
   margin-left: 8px;
 }
+/* 좌(브랜드·방송)·우(토글·메뉴) 클러스터와 겹치지 않는 폭에서만 절대 중앙 배치 */
+@media (min-width: 1181px) {
+  .event-group {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    margin-left: 0;
+  }
+  .event-group .event-menu {
+    left: 50%;
+    transform: translateX(-50%);
+  }
+}
 .event-trigger {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 10px;
   border: 1px solid var(--line);
   background: transparent;
-  padding: 6px 11px;
-  font-size: 12px;
+  padding: 6px 12px;
+  font-size: 13.5px;
   font-weight: 800;
   color: var(--ink);
   cursor: pointer;
   transition: 0.15s;
   white-space: nowrap;
+  text-align: left;
 }
 .event-trigger:hover {
   border-color: var(--ink);
@@ -305,18 +320,34 @@ button {
 .event-trigger .event-mark {
   color: var(--accent, #b98a2f);
 }
+.event-trigger-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.event-trigger .event-kicker {
+  font: 800 9px monospace;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
 .event-trigger .event-name {
-  max-width: 130px;
+  max-width: 210px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.event-trigger .event-dates {
+  font: 700 10.5px monospace;
+  color: var(--muted);
+}
 /* 대표 이벤트 배너가 버튼 안에 통째로 들어가는 형태 */
 .event-trigger.has-banner {
-  padding: 3px 10px 3px 3px;
+  padding: 4px 12px 4px 4px;
 }
 .event-trigger-thumb {
   display: block;
-  width: 62px;
+  width: 102px;
   overflow: hidden;
   border: 1px solid var(--line);
 }
@@ -327,7 +358,7 @@ button {
   object-fit: cover;
 }
 .event-trigger .event-caret {
-  font-size: 9px;
+  font-size: 10px;
   color: var(--muted);
 }
 .event-trigger .event-dday {
@@ -542,22 +573,30 @@ button {
     font-size: 11px;
     gap: 5px;
   }
+  /* 모바일: 배지가 자기 줄을 통째로 차지하고 가운데 정렬 */
   .event-group {
-    margin-left: 6px;
+    order: 10;
+    flex-basis: 100%;
+    justify-content: center;
+    margin-left: 0;
   }
   .event-trigger {
-    padding: 5px 8px;
-    font-size: 11px;
-    gap: 4px;
+    padding: 5px 10px;
+    font-size: 12.5px;
+    gap: 8px;
   }
   .event-trigger .event-name {
-    max-width: 76px;
+    max-width: 170px;
   }
   .event-trigger.has-banner {
-    padding: 2px 8px 2px 2px;
+    padding: 3px 10px 3px 3px;
   }
   .event-trigger-thumb {
-    width: 50px;
+    width: 84px;
+  }
+  .event-group .event-menu {
+    left: 50%;
+    transform: translateX(-50%);
   }
   .bcast-thumb {
     width: 104px;

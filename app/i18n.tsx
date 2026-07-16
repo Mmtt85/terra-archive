@@ -137,7 +137,8 @@ const D: Record<string, Pair> = {
   // 진행중 게임 이벤트 배지 (KR 서버 기준)
   "진행중인 이벤트 보기": ["View events currently running (KR server)", "開催中のイベントを見る（韓国サーバー）"],
   "진행중 이벤트": ["Ongoing events", "開催中イベント"],
-  "AI 스토리 요약 보기": ["Read the AI story digest", "AIストーリー要約を読む"],
+  "현재 진행중 이벤트": ["Now running · KR", "現在開催中 · 韓国"],
+  "공식 카페 공지 보기": ["Open the official notice (Naver Cafe)", "公式カフェのお知らせを開く"],
 
   // 백과사전 — 필터
   "탐색 조건": ["Filters", "検索条件"],

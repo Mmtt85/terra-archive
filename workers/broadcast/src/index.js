@@ -91,12 +91,44 @@ async function poll(env) {
 // KR 서버 이벤트의 정확한 시작·종료 시각을 클뜯 레포에서 뽑는다. 진행중 판정은
 // 클라이언트가 Date.now()와 비교하므로, 워커는 "아직 안 끝났고 3주 내 시작"인
 // 항목만 실어 payload를 작게 유지한다 (사이드스토리·콜라보·로그인 등 전부 포함).
+// 공식 네이버 카페 이벤트 게시판(메뉴 3) 공지를 제목 매칭으로 찾아 url로 붙인다.
+const CAFE_CLUB = 29703924; // 명일방주 공식 카페
+const CAFE_LIST = `https://apis.naver.com/cafe-web/cafe2/ArticleListV2dot1.json?search.clubid=${CAFE_CLUB}&search.menuid=3&search.perPage=30`;
+
+// 이벤트명 → 공지 제목 매칭 키 ("나른한 기분 콜라보 이벤트" → "나른한 기분"도 시도)
+function eventMatchKeys(name) {
+  const keys = [name];
+  const stripped = name.replace(/(콜라보 이벤트|로그인 이벤트|한정 임무|이벤트)$/, "").trim();
+  if (stripped && stripped !== name) keys.push(stripped);
+  return keys;
+}
+
+async function fetchEventNotices() {
+  const res = await fetch(CAFE_LIST, { headers: { Referer: "https://cafe.naver.com" } });
+  if (!res.ok) throw new Error(`cafe fetch ${res.status}`);
+  const data = await res.json();
+  return (data?.message?.result?.articleList ?? []).map((a) => ({ id: a.articleId, subject: a.subject ?? "" }));
+}
+
+function noticeUrlFor(name, articles) {
+  let best = null;
+  for (const art of articles) {
+    if (!eventMatchKeys(name).some((k) => k && art.subject.includes(k))) continue;
+    // 업데이트 공지 본문을 우선 — PV·캘린더·가이드·축전은 후순위
+    let score = art.subject.includes("안내") ? 2 : 1;
+    if (/PV|트레일러|캘린더|가이드|축전/.test(art.subject)) score -= 2;
+    if (!best || score > best.score) best = { score, id: art.id };
+  }
+  return best ? `https://cafe.naver.com/arknights/${best.id}` : undefined;
+}
+
 async function fetchEvents() {
   const res = await fetch(`${GAMEDATA_BASE}/activity_table.json`);
   if (!res.ok) throw new Error(`activity fetch ${res.status}`);
   const table = await res.json();
   const now = Date.now();
   const soon = now + 21 * 86_400_000;
+  const articles = await fetchEventNotices().catch(() => []); // 카페 불통이어도 이벤트는 살린다
   return Object.values(table.basicInfo ?? {})
     .filter((a) => a.startTime > 0 && a.endTime * 1000 > now && a.startTime * 1000 < soon)
     .map((a) => ({
@@ -106,6 +138,7 @@ async function fetchEvents() {
       displayType: a.displayType ?? null,
       start: new Date(a.startTime * 1000).toISOString(),
       end: new Date(a.endTime * 1000).toISOString(),
+      url: noticeUrlFor(a.name, articles),
     }))
     .sort((a, b) => Date.parse(a.end) - Date.parse(b.end));
 }
