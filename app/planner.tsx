@@ -377,7 +377,7 @@ function bestTeam(room: string, slots: number, pool: Map<string, InfraOp>, ctx: 
   return best;
 }
 
-type FlowGenerator = { opId: string; at: string; amount: number; via?: string; perMember?: { per: number; cap: number; match: string } };
+type FlowGenerator = { opId: string; at: string; amount: number; via?: string; convRate?: number; perMember?: { per: number; cap: number; match: string } };
 type FlowConsumer = { opId: string; at: string; room: string; rate: number; percent: boolean; gain: number };
 
 type TokenFlow = {
@@ -526,9 +526,10 @@ function buildPlan(packageTokens: string[], roster: InfraOp[], factionSets = fal
             if (already || LAYOUT.filter((c) => c.room === skill.room).some((cell) => place(op, cell.key))) {
               if (converterPlaced) {
                 for (const g of gen) {
-                  const amount = g.estimate * (g.token === token ? 1 : sources.get(g.token) ?? 0);
+                  const convRate = g.token === token ? 1 : sources.get(g.token) ?? 0;
+                  const amount = g.estimate * convRate;
                   if (amount <= 0) continue;
-                  flow.generators.push({ opId: op.id, at: placedAt.get(op.id) ?? "기존 배치", amount, via: g.token === token ? undefined : g.token, perMember: g.perMember });
+                  flow.generators.push({ opId: op.id, at: placedAt.get(op.id) ?? "기존 배치", amount, via: g.token === token ? undefined : g.token, convRate, perMember: g.perMember });
                   tokenPoints[token] = (tokenPoints[token] ?? 0) + amount;
                 }
               }
@@ -916,7 +917,8 @@ function buildPlan(packageTokens: string[], roster: InfraOp[], factionSets = fal
     for (const gen of flow.generators) {
       if (gen.perMember) {
         const count = placedA.filter((op) => factionsOf(op).some((faction) => faction.includes(gen.perMember!.match))).length;
-        gen.amount = gen.perMember.per * Math.min(count, gen.perMember.cap);
+        // 전환 생성원(총웨 속세의 화식→주술 결정 등)은 재집계 때도 전환율을 다시 곱해야 한다
+        gen.amount = gen.perMember.per * Math.min(count, gen.perMember.cap) * (gen.convRate ?? 1);
       }
       total += gen.amount;
     }
