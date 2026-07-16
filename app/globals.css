@@ -3997,14 +3997,28 @@ footer p {
 .story-back:hover {
   border-color: var(--ink);
 }
-/* 상단 뒤로가기: 좁은 화면은 본문 위 일반 배치 */
+/* 상단 뒤로가기: 좁은 화면에서도 sticky. 래퍼를 display:contents로 풀어
+   버튼이 섹션(긴 본문) 기준으로 상단에 달라붙어 스크롤을 따라온다 */
+.story-back-wrap {
+  display: contents;
+}
 .story-back-top {
+  position: sticky;
+  top: 88px;   /* 사이트 헤더 아래 */
+  z-index: 5;
   margin-bottom: 18px;
+  align-self: flex-start;
+}
+@media (max-width: 760px) {
+  .story-back-top {
+    top: 64px;   /* 모바일 헤더가 더 낮음 */
+  }
 }
 /* 넓은 화면: 버튼을 왼쪽 여백에 sticky로 띄우고(스크롤 따라옴), 래퍼는 높이 0이라
    본문이 버튼 자리까지 위로 올라온다 */
 @media (min-width: 1400px) {
   .story-back-wrap {
+    display: block;
     position: sticky;
     top: 92px;
     height: 0;
