@@ -339,7 +339,11 @@ def parse_skill(entry, oname, oid=None):
             fm = re.search(re.escape(f) + r" 오퍼레이터(?:가)?(?:\(최대 (\d+)명\))? ?1명(?:당| 증가할 때마다)", text)
             if not fm: continue
             per_faction = f
-            per_scope = "room" if re.search(r"제어 센터 내", text) else "base"
+            # 방 범위: 자기 방 안의 진영 동료만 센다. "제어 센터 내"(블리츠 등)뿐 아니라
+            # 자기가 생산방에 앉아 "함께 배치된 …"·"해당 무역소/제조소/발전소 내 … 1명당"으로
+            # 세는 오라(엑시아 뉴커버넌트·모건·팽 알터)도 방 범위. "기반시설 내 배치된"(바르카리스·
+            # 아몬드 등)이나 제어에서 "무역소 내 …"를 세는 원격 오라(야하타)는 base 유지.
+            per_scope = "room" if re.search(r"제어 센터 내|함께 배치(?:되어 있는|된)|해당 (?:무역소|제조소|발전소) 내", text) else "base"
             cnt_cap = fm.group(1)  # "(최대 N명)" = 개수 상한 → 퍼센트 상한 등가로 변환 (3%×5명 = 15%)
             if cnt_cap and value:
                 per_cap = value * float(cnt_cap)
