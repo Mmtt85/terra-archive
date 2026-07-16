@@ -43,9 +43,21 @@ const CONTENT: Record<Locale, Content> = {
     title: "테라 아카이브 소개",
     tagline: "명일방주(Arknights) 한국 서버 도우미 · 한국어 / English / 日本語",
     intro:
-      "테라 아카이브는 명일방주 플레이어(도착터)를 위한 비영리 팬 도구 모음입니다. 오퍼레이터 자료 조사부터 기반시설 편성, 공개모집, 재료 파밍·육성 계획, 스토리 요약까지 — 게임 데이터를 직접 파싱해 자동 파이프라인으로 항상 최신 상태를 유지합니다. 설치·로그인 없이 웹에서 바로 쓸 수 있습니다.",
+      "테라 아카이브는 명일방주 독타를 위한 비영리 팬 도구 모음입니다. 오퍼레이터 자료 조사부터 기반시설 편성, 공개모집, 재료 파밍·육성 계획, 스토리 요약까지 — 게임 데이터를 직접 파싱해 자동 파이프라인으로 항상 최신 상태를 유지합니다. 설치·로그인 없이 웹에서 바로 쓸 수 있습니다.",
     featureLead: "다섯 가지 도구가 있습니다. 카드를 누르면 해당 기능으로 이동합니다.",
     features: [
+      {
+        tab: "planner", icon: "⌂", name: "인프라 플래너",
+        summary: "보유한 오퍼레이터를 입력하면 243 기지(제조소·무역소·발전소·제어 센터·응접실 등)의 A/B 2교대 편성을 자동으로 계산합니다.",
+        highlight:
+          "**모든 걸 100% 대신 짜주는 도구가 아닙니다.** 시너지 세트·시설 간 포인트 시스템·교대 정책까지 반영해 **큰 틀의 90% 이상을 자동으로 잡아주고**, 개인 취향과 특수 상황에 맞춘 **나머지 10%는 독타가 직접 손봐 완성**하도록 설계했습니다. 방별 수동 편집, 빈칸만 채우기, 오퍼별 정예화 조정, 우선 생산 모드 전환을 모두 지원합니다.",
+        bullets: [
+          "순금 우선 / 작전기록 우선 / 밸런스 등 우선 생산 모드 선택",
+          "쉐라그 무역소 세트 같은 진영 시너지와 속세의 화식 등 토큰 시스템 자동 판정",
+          "MAA(MaaAssistantArknights) 오퍼 박스 인식 결과를 불러와 보유·정예화 일괄 설정",
+          "편성 내보내기/불러오기, 미래시(중국 선행) 오퍼 포함 계산 지원",
+        ],
+      },
       {
         tab: "archive", icon: "▤", name: "오퍼 백과사전",
         summary: "모든 오퍼레이터의 스탯·스킬·재능·잠재·모듈·기반시설 스킬을 한곳에서 봅니다.",
@@ -54,18 +66,6 @@ const CONTENT: Record<Locale, Content> = {
           "정예화 단계별 스탯과 사거리, 스킬 SP·지속시간, 모듈 스탯·효과까지 상세 표시",
           "시너지 팟(컨셉덱) 태그로 함께 쓰기 좋은 오퍼를 묶어서 확인",
           "커뮤니티가 제보한 별명을 집계해 검색에 반영 — 별명으로도 오퍼를 찾습니다",
-        ],
-      },
-      {
-        tab: "planner", icon: "⌂", name: "인프라 플래너",
-        summary: "보유한 오퍼레이터를 입력하면 243 기지(제조소·무역소·발전소·제어 센터·응접실 등)의 A/B 2교대 편성을 자동으로 계산합니다.",
-        highlight:
-          "**모든 걸 100% 대신 짜주는 도구가 아닙니다.** 시너지 세트·시설 간 포인트 시스템·교대 정책까지 반영해 **큰 틀의 90% 이상을 자동으로 잡아주고**, 개인 취향과 특수 상황에 맞춘 **나머지 10%는 도착터가 직접 손봐 완성**하도록 설계했습니다. 방별 수동 편집, 빈칸만 채우기, 오퍼별 정예화 조정, 우선 생산 모드 전환을 모두 지원합니다.",
-        bullets: [
-          "순금 우선 / 작전기록 우선 / 밸런스 등 우선 생산 모드 선택",
-          "쉐라그 무역소 세트 같은 진영 시너지와 속세의 화식 등 토큰 시스템 자동 판정",
-          "MAA(MaaAssistantArknights) 오퍼 박스 인식 결과를 불러와 보유·정예화 일괄 설정",
-          "편성 내보내기/불러오기, 미래시(중국 선행) 오퍼 포함 계산 지원",
         ],
       },
       {
@@ -89,7 +89,7 @@ const CONTENT: Record<Locale, Content> = {
         tab: "story", icon: "✦", name: "AI 스토리 요약",
         summary: "이벤트 사이드 스토리를 컷씬과 함께 10분 분량으로 읽을 수 있게 요약합니다.",
         bullets: [
-          "스토리 스크립트 전문을 정독한 AI 요약 — 바쁜 도착터를 위한 줄거리 정리",
+          "스토리 스크립트 전문을 정독한 AI 요약 — 바쁜 독타를 위한 줄거리 정리",
           "테라 연대기 타임라인으로 이벤트 시간 순서를 한눈에 파악",
         ],
       },
@@ -120,16 +120,6 @@ const CONTENT: Record<Locale, Content> = {
     featureLead: "Five tools in one. Tap a card to jump to that feature.",
     features: [
       {
-        tab: "archive", icon: "▤", name: "Operator Encyclopedia",
-        summary: "Every operator's stats, skills, talents, potentials, modules, and base skills in one place.",
-        bullets: [
-          "Filter by faction, class, subclass, combat tags, and synergy concepts; search by name, nickname, or effect",
-          "Per–Elite-phase stats and range, skill SP and duration, module stats and effects in full detail",
-          "Synergy (concept-deck) tags group operators that work well together",
-          "Community-submitted nicknames are tallied and made searchable — find operators by nickname too",
-        ],
-      },
-      {
         tab: "planner", icon: "⌂", name: "Base (RIIC) Planner",
         summary: "Enter your roster and it auto-computes an A/B two-shift layout for the 243 base (factories, trading posts, power plants, control center, reception room, and more).",
         highlight:
@@ -139,6 +129,16 @@ const CONTENT: Record<Locale, Content> = {
           "Auto-detects faction synergies (e.g. the Kjerag trading-post set) and token systems (Worldly Plight, etc.)",
           "Import your MAA (MaaAssistantArknights) operator-box scan to set ownership and Elite at once",
           "Export/import assignments; can include future (CN-first) operators in the calculation",
+        ],
+      },
+      {
+        tab: "archive", icon: "▤", name: "Operator Encyclopedia",
+        summary: "Every operator's stats, skills, talents, potentials, modules, and base skills in one place.",
+        bullets: [
+          "Filter by faction, class, subclass, combat tags, and synergy concepts; search by name, nickname, or effect",
+          "Per–Elite-phase stats and range, skill SP and duration, module stats and effects in full detail",
+          "Synergy (concept-deck) tags group operators that work well together",
+          "Community-submitted nicknames are tallied and made searchable — find operators by nickname too",
         ],
       },
       {
@@ -193,16 +193,6 @@ const CONTENT: Record<Locale, Content> = {
     featureLead: "5つのツールがあります。カードを押すとその機能へ移動します。",
     features: [
       {
-        tab: "archive", icon: "▤", name: "オペレーター図鑑",
-        summary: "全オペレーターのステータス・スキル・素質・潜在・モジュール・基地スキルを一箇所で確認できます。",
-        bullets: [
-          "陣営・職分・サブ職分・戦闘タグ・シナジー概念で絞り込み、名前・愛称・効果で検索",
-          "昇進段階ごとのステータスと範囲、スキルSP・持続時間、モジュールのステータス・効果まで詳細表示",
-          "シナジー（コンセプトデッキ）タグで、相性の良いオペレーターをまとめて確認",
-          "ユーザー投稿の愛称を集計して検索に反映 — 愛称でもオペレーターを探せます",
-        ],
-      },
-      {
         tab: "planner", icon: "⌂", name: "基地プランナー",
         summary: "手持ちのオペレーターを入力すると、243基地（製造所・貿易所・発電所・制御中枢・応接室など）のA/B2交代編成を自動計算します。",
         highlight:
@@ -212,6 +202,16 @@ const CONTENT: Record<Locale, Content> = {
           "カジミエーシュ…ではなくクルビア等の陣営シナジー（イェラグ貿易所セット）やトークンシステム（俗世之憂ほか）を自動判定",
           "MAA（MaaAssistantArknights）のオペレーターボックス認識結果を読み込み、所持・昇進を一括設定",
           "編成のエクスポート／インポート、未実装（中国先行）オペレーターを含めた計算に対応",
+        ],
+      },
+      {
+        tab: "archive", icon: "▤", name: "オペレーター図鑑",
+        summary: "全オペレーターのステータス・スキル・素質・潜在・モジュール・基地スキルを一箇所で確認できます。",
+        bullets: [
+          "陣営・職分・サブ職分・戦闘タグ・シナジー概念で絞り込み、名前・愛称・効果で検索",
+          "昇進段階ごとのステータスと範囲、スキルSP・持続時間、モジュールのステータス・効果まで詳細表示",
+          "シナジー（コンセプトデッキ）タグで、相性の良いオペレーターをまとめて確認",
+          "ユーザー投稿の愛称を集計して検索に反映 — 愛称でもオペレーターを探せます",
         ],
       },
       {
