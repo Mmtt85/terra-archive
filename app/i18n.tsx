@@ -642,10 +642,12 @@ const D: Record<string, Pair> = {
   ],
   // ── 육성 비용 계산기 ──
   "육성 비용 계산기": ["Upgrade Cost Calculator", "育成コスト計算機"],
-  "오퍼레이터를 추가하면 정예화 1·2, 스킬 레벨 2~7, 스킬별 특화 1~3, 모듈별 1~3단계가 전부 개별 행으로 나옵니다. 각 그룹에서 목표 단계를 클릭하면 앞 단계가 자동 포함돼 합산됩니다. 재료 아이콘을 클릭하면 상세 정보가 열립니다.": [
-    "Add operators to see every cost broken down per step — Elite 1·2, each skill level 2–7, Mastery 1–3 per skill, and each module stage 1–3. Click a target step in each group and all preceding steps are included automatically. Click a material icon for its details.",
-    "オペレーターを追加すると、昇進1·2、スキルLv.2~7の各レベル、スキル別特化1~3、モジュール別1~3段階がすべて個別の行で表示されます。各グループで目標段階をクリックすると、前の段階が自動的に含まれて合算されます。素材アイコンをクリックすると詳細が開きます。",
+  "오퍼레이터를 추가하면 레벨업(용문폐·경험치), 정예화 1·2, 스킬 레벨 2~7, 스킬별 특화 1~3, 모듈별 1~3단계가 전부 개별 행으로 나옵니다. 각 그룹에서 목표 단계를 클릭하면 앞 단계가 자동 포함돼 합산됩니다. 경험치는 고급작전기록(2000 EXP) 환산 개수로 표시합니다. 재료 아이콘을 클릭하면 상세 정보가 열립니다.": [
+    "Add operators to see every cost broken down per step — leveling (LMD·EXP), Elite 1·2, each skill level 2–7, Mastery 1–3 per skill, and each module stage 1–3. Click a target step in each group and all preceding steps are included automatically. EXP is shown as an equivalent count of Senior Battle Records (2000 EXP). Click a material icon for its details.",
+    "オペレーターを追加すると、レベルアップ（龍門幣·経験値）、昇進1·2、スキルLv.2~7の各レベル、スキル別特化1~3、モジュール別1~3段階がすべて個別の行で表示されます。各グループで目標段階をクリックすると、前の段階が自動的に含まれて合算されます。経験値は上級作戦記録（2000EXP）換算の個数で表示します。素材アイコンをクリックすると詳細が開きます。",
   ],
+  "레벨업": ["Leveling", "レベルアップ"],
+  "E{p}·{n}": ["E{p}·{n}", "E{p}·{n}"],
   "{label} {step}까지 육성": ["Level up {label} to {step}", "{label}を{step}まで育成"],
   "{label} {step}까지 육성 (클릭 시 제외)": ["Level up {label} to {step} (click to remove)", "{label}を{step}まで育成（クリックで除外）"],
   "오퍼레이터 이름·별명 검색 후 추가": ["Search operators by name or alias to add", "オペレーター名・愛称で検索して追加"],

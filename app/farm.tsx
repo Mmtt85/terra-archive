@@ -30,6 +30,7 @@ type FarmItem = { id: string; name: LocText; rarity: number; sortId: number; ima
 
 type CostList = [string, number][];
 type CostEntry = {
+  levels?: { lmd: number; items: CostList; maxLv: number; exp: number }[];
   elite?: { lmd: number; items: CostList }[];
   skills?: CostList[];
   masteries?: { id: string; levels: CostList[] }[];
@@ -240,6 +241,10 @@ type CostGroup = { key: string; label: string; steps: CostStep[] };
 
 function buildGroups(operator: Operator, entry: CostEntry, t: (key: string, params?: Record<string, string | number>) => string): CostGroup[] {
   const groups: CostGroup[] = [];
+  if (entry.levels?.length) {
+    // 각 정예화 단계의 만렙까지 레벨업 (용문폐 + 고급작전기록 환산). step은 "E0 → Lv.50" 형태
+    groups.push({ key: "lv", label: t("레벨업"), steps: entry.levels.map((phase, index) => ({ step: t("E{p}·{n}", { p: index, n: phase.maxLv }), lmd: phase.lmd, items: phase.items })) });
+  }
   if (entry.elite?.length) {
     groups.push({ key: "e", label: t("정예화"), steps: entry.elite.map((phase, index) => ({ step: `${index + 1}`, lmd: phase.lmd, items: phase.items })) });
   }
@@ -383,7 +388,7 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
       <div className="cost-calc-head">
         <span className="section-no">COST CALCULATOR</span>
         <h3>{t("육성 비용 계산기")}</h3>
-        <p>{t("오퍼레이터를 추가하면 정예화 1·2, 스킬 레벨 2~7, 스킬별 특화 1~3, 모듈별 1~3단계가 전부 개별 행으로 나옵니다. 각 그룹에서 목표 단계를 클릭하면 앞 단계가 자동 포함돼 합산됩니다. 재료 아이콘을 클릭하면 상세 정보가 열립니다.")}</p>
+        <p>{t("오퍼레이터를 추가하면 레벨업(용문폐·경험치), 정예화 1·2, 스킬 레벨 2~7, 스킬별 특화 1~3, 모듈별 1~3단계가 전부 개별 행으로 나옵니다. 각 그룹에서 목표 단계를 클릭하면 앞 단계가 자동 포함돼 합산됩니다. 경험치는 고급작전기록(2000 EXP) 환산 개수로 표시합니다. 재료 아이콘을 클릭하면 상세 정보가 열립니다.")}</p>
       </div>
       <div className="cost-tools">
         <div className="search-wrap cost-search">

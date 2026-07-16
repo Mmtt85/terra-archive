@@ -7,6 +7,7 @@ Needs: {kr,cn}_character_table.json, {kr,cn}_uniequip_table.json,
        + 네트워크 (신규 아이템 아이콘 다운로드 시).
 
 수록 범위 (재료파밍 탭 '육성 비용 계산기' 사용):
+  - levels:    각 정예화 단계 1레벨→만렙 용문폐 + 경험치(고급작전기록 2004 환산)
   - elite:     정예화 1·2 재료 + 용문폐 (gamedata_const.evolveGoldCost)
   - skills:    스킬 레벨 2~7 공용 재료 (allSkillLvlup)
   - masteries: 스킬별 특화 1~3 재료 (levelUpCostCond)
@@ -40,6 +41,13 @@ kr_items = items_of("kr"); cn_items = items_of("cn")
 en_items = items_of("en"); jp_items = items_of("jp")
 const = load(f"{S}/kr_gamedata_const.json")
 EVOLVE_GOLD = const["evolveGoldCost"]  # [rarity-1][phase-1], -1 = 해당 없음
+EXP_MAP = const["characterExpMap"]           # [phase][레벨업 index] = 필요 경험치
+LMD_MAP = const["characterUpgradeCostMap"]   # [phase][레벨업 index] = 필요 용문폐
+MAX_LEVEL = const["maxLevel"]                 # [rarity-1][phase] = 해당 정예화 만렙
+# 작전기록(EXP 카드)별 경험치 — 고급작전기록(2004)=2000으로 환산해 표시
+EXP_ITEMS = load(f"{S}/kr_item_table.json").get("expItems", {})
+EXP_UNIT_ID = "2004"  # 고급작전기록
+EXP_UNIT = (EXP_ITEMS.get(EXP_UNIT_ID) or {}).get("gainExp", 2000)
 ops = load(f"{REPO}/app/data/operators.json")
 
 def tier(r):
@@ -67,6 +75,21 @@ for op in ops:
     uni = kr_uni if cid in kr_chars else cn_uni
     rarity = tier(c.get("rarity"))
     entry = {}
+
+    # 레벨업 — 각 정예화 단계에서 1레벨→만렙까지 용문폐 + 경험치(고급작전기록 환산)
+    # (EXP는 작전기록으로 자유롭게 채우므로 고급작전기록 2000 EXP 기준 환산 개수로 표시)
+    levels = []
+    phase_max = MAX_LEVEL[rarity - 1] if rarity - 1 < len(MAX_LEVEL) else []
+    for p, maxlv in enumerate(phase_max):
+        if p >= len(EXP_MAP) or p >= len(LMD_MAP): continue
+        ups = max(0, maxlv - 1)  # 1레벨→만렙 = maxlv-1회 레벨업
+        exp = sum(EXP_MAP[p][:ups]); lmd = sum(LMD_MAP[p][:ups])
+        records = round(exp / EXP_UNIT) if exp else 0
+        if lmd <= 0 and records <= 0: continue
+        items = [[EXP_UNIT_ID, records]] if records > 0 else []
+        levels.append({"lmd": lmd, "items": items, "maxLv": maxlv, "exp": exp})
+        if records > 0: used_items.add(EXP_UNIT_ID)
+    if levels: entry["levels"] = levels
 
     # 정예화 1·2
     elite = []
