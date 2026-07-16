@@ -119,7 +119,8 @@ function noticeUrlFor(name, articles) {
     if (/PV|트레일러|캘린더|가이드|축전/.test(art.subject)) score -= 2;
     if (!best || score > best.score) best = { score, id: art.id };
   }
-  return best ? `https://cafe.naver.com/arknights/${best.id}` : undefined;
+  // 카페 URL 슬러그는 arknightskor — arknights는 다른 카페라 로그인 게이트가 뜬다 (사용자 정정 2026-07)
+  return best ? `https://cafe.naver.com/arknightskor/${best.id}` : undefined;
 }
 
 async function fetchEvents() {
