@@ -4009,9 +4009,12 @@ footer p {
   margin-bottom: 18px;
   align-self: flex-start;
 }
-@media (max-width: 760px) {
+/* 좁은 화면: 상단 가로 레일(sticky, top:--header-h)이 있으므로
+   뒤로가기는 헤더+레일 높이만큼 내려 '레일 바로 밑'에 sticky로 붙는다 */
+@media (max-width: 1180px) {
   .story-back-top {
-    top: 64px;   /* 모바일 헤더가 더 낮음 */
+    top: calc(var(--header-h, 56px) + 58px);
+    z-index: 4;   /* 레일(z-index:8)보다 아래 — 레일 밑에서 겹치지 않게 */
   }
 }
 /* 넓은 화면: 버튼을 왼쪽 여백에 sticky로 띄우고(스크롤 따라옴), 래퍼는 높이 0이라
