@@ -8,11 +8,11 @@ import type { Metadata } from "next";
 export const SITE_URL = "https://terra-archive.net";
 
 type SeoLocale = "ko" | "en" | "ja";
-export type SeoTab = "archive" | "planner" | "recruit" | "farm" | "story";
+export type SeoTab = "archive" | "planner" | "recruit" | "farm" | "story" | "about";
 
 // 탭 → URL 세그먼트 (archive는 로케일 루트). 라우트 폴더명과 반드시 일치.
 export const TAB_SEG: Record<SeoTab, string> = {
-  archive: "", planner: "infra", recruit: "recruit", farm: "farm", story: "stories",
+  archive: "", planner: "infra", recruit: "recruit", farm: "farm", story: "stories", about: "about",
 };
 
 // 로케일 베이스 경로
@@ -55,6 +55,11 @@ const TAB_META: Record<Exclude<SeoTab, "archive">, Record<SeoLocale, { title: st
     ko: { title: "AI 스토리 요약 - 명일방주 스토리 요약 | 테라 아카이브", description: "명일방주 이벤트 스토리 AI 요약 아카이브 — 사이드 스토리를 컷씬과 함께 10분 분량으로 요약합니다." },
     en: { title: "AI Story Digest - Arknights Story Summaries | Terra Archive", description: "AI-written Arknights event story digest archive — side stories summarized with cutscenes in a 10-minute read." },
     ja: { title: "AIストーリー要約 - アークナイツストーリー要約 | テラアーカイブ", description: "アークナイツのイベントストーリーAI要約アーカイブ — サイドストーリーをカットシーンと共に10分で要約します。" },
+  },
+  about: {
+    ko: { title: "소개 - 기능 안내 | 테라 아카이브", description: "테라 아카이브의 기능 소개 — 오퍼 백과사전, 인프라 플래너, 공채 도우미, 파밍·육성 시뮬, AI 스토리 요약이 각각 무엇이고 어떤 상황에 쓰는지 안내합니다." },
+    en: { title: "About - Feature Guide | Terra Archive", description: "About Terra Archive — what the operator encyclopedia, base planner, recruitment helper, farming/upgrade simulator, and AI story digest do, and when to use each." },
+    ja: { title: "紹介 - 機能ガイド | テラアーカイブ", description: "テラアーカイブの機能紹介 — オペレーター図鑑、基地プランナー、公開求人ヘルパー、周回・育成シミュ、AIストーリー要約が何で、どんな時に使うのかを案内します。" },
   },
 };
 

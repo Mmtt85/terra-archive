@@ -4269,6 +4269,74 @@ footer p {
   accent-color: var(--ink);
   margin: 0;
 }
+/* 헤더 우측 소개(ⓘ) 아이콘 — 메인 탭과 별개로 소개 페이지로 이동 */
+.about-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin-right: 8px;
+  border: 1px solid var(--line);
+  background: var(--white);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  flex: none;
+}
+.about-icon:hover { background: var(--paper); }
+.about-icon.selected { background: var(--ink); color: var(--white); border-color: var(--ink); }
+
+/* ── 소개 페이지 ── */
+.about { max-width: 1000px; margin: 0 auto; padding: 8px 0 40px; }
+.about-hero { border-bottom: 1px solid var(--line); padding-bottom: 22px; margin-bottom: 22px; }
+.about-hero h2 { font-size: clamp(24px, 4vw, 38px); margin: 6px 0 10px; letter-spacing: -0.5px; }
+.about-tagline { font: 700 12px/1.4 monospace; color: var(--muted); letter-spacing: 0.3px; margin: 0 0 14px; }
+.about-intro { font-size: 15px; line-height: 1.7; max-width: 68ch; margin: 0; }
+.about-lead { font: 700 12px/1.4 monospace; color: var(--muted); letter-spacing: 0.2px; margin: 0 0 14px; }
+.about-features { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+.about-card {
+  border: 1px solid var(--line);
+  background: var(--white);
+  padding: 18px 18px 16px;
+  display: flex;
+  flex-direction: column;
+}
+.about-card.featured { grid-column: 1 / -1; border-color: var(--ink); border-width: 2px; }
+.about-card > header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.about-card-icon { font-size: 20px; line-height: 1; }
+.about-card > header h3 { font-size: 18px; margin: 0; letter-spacing: -0.3px; }
+.about-card-summary { font-size: 14px; line-height: 1.6; margin: 0 0 12px; }
+.about-card-highlight {
+  font-size: 14px;
+  line-height: 1.65;
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  background: var(--paper);
+  border-left: 3px solid var(--ink);
+}
+.about-card-highlight strong { font-weight: 800; }
+.about-card-bullets { margin: 0 0 14px; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+.about-card-bullets li { font-size: 13.5px; line-height: 1.55; }
+.about-card-go {
+  align-self: flex-start;
+  margin-top: auto;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  padding: 7px 12px;
+  font: 700 12px/1 monospace;
+  cursor: pointer;
+}
+.about-card-go:hover { background: var(--ink); color: var(--white); border-color: var(--ink); }
+.about-notes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 24px 0; }
+.about-note { border: 1px solid var(--line); padding: 16px; background: var(--white); }
+.about-note h4 { font-size: 14px; margin: 0 0 8px; letter-spacing: -0.2px; }
+.about-note p { font-size: 13px; line-height: 1.6; margin: 0; color: var(--ink); }
+.about-cta { font-size: 13px; color: var(--muted); text-align: center; margin: 8px 0 0; }
+@media (max-width: 720px) {
+  .about-features, .about-notes { grid-template-columns: 1fr; }
+}
 .future-badge {
   display: inline-block;
   background: #8a2be2;

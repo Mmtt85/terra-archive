@@ -11,6 +11,7 @@ import RecruitHelper from "./recruit";
 import FarmGuide from "./farm";
 import { normSearch } from "./search";
 import StoryGuide from "./story";
+import About from "./about";
 import FeedbackWidget from "./feedback-widget";
 import { feedbackReady, fetchNicknameCounts, submitNickname } from "./feedback";
 import { I18nProvider, useI18n, conceptName, DT_LOCALE, MAGIC_TRAIT_RE, LOCALES, type Locale, type ExtraI18n } from "./i18n";
@@ -101,11 +102,11 @@ const JOB_ORDER = ["PIONEER", "WARRIOR", "TANK", "SNIPER", "CASTER", "MEDIC", "S
 
 const SORT_KEYS = ["기본", "이름", "성급", "발매순", "소속", "출신지", "종족", "직군", "세부 직군"];
 
-export type Tab = "archive" | "planner" | "recruit" | "farm" | "story";
+export type Tab = "archive" | "planner" | "recruit" | "farm" | "story" | "about";
 // 탭 ↔ URL 세그먼트 (archive는 로케일 루트). seo.ts의 TAB_SEG·라우트 폴더명과 일치.
 // URL 세그먼트 "stories"(← 정적 자산 디렉터리 public/story/ 와의 경로 충돌 회피). 내부 탭명은 story.
-const TAB_SEG: Record<Tab, string> = { archive: "", planner: "infra", recruit: "recruit", farm: "farm", story: "stories" };
-const SEG_TAB: Record<string, Tab> = { "": "archive", infra: "planner", recruit: "recruit", farm: "farm", stories: "story" };
+const TAB_SEG: Record<Tab, string> = { archive: "", planner: "infra", recruit: "recruit", farm: "farm", story: "stories", about: "about" };
+const SEG_TAB: Record<string, Tab> = { "": "archive", infra: "planner", recruit: "recruit", farm: "farm", stories: "story", about: "about" };
 const LOCALE_BASE: Record<Locale, string> = { ko: "", en: "/en", ja: "/ja" };
 
 // 현재 pathname → 탭 (로케일 프리픽스 제거 후 세그먼트 매핑)
@@ -622,6 +623,7 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
     recruit: t("공채 도우미"),
     farm: t("파밍·육성 시뮬"),
     story: t("AI 스토리 요약"),
+    about: t("소개"),
   };
   const switchTab = (next: Tab) => {
     setNavOpen(false);
@@ -740,6 +742,8 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
           <input type="checkbox" checked={includeFuture} onChange={(event) => toggleFuture(event.target.checked)} />
           {t("미래시 데이터 포함")}
         </label>
+        <button type="button" className={`about-icon${tab === "about" ? " selected" : ""}`} onClick={() => switchTab("about")}
+          aria-label={t("소개")} title={t("소개")}>ⓘ</button>
         <LanguageSwitcher />
       </header>
 
@@ -802,6 +806,7 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
       {tab === "recruit" && <RecruitHelper onShowOperator={showOperatorById} extra={extra} />}
       {tab === "farm" && <FarmGuide operators={operators} includeFuture={includeFuture} onShowOperator={showOperatorById} />}
       {tab === "story" && <StoryGuide onShowOperator={showOperatorById} includeFuture={includeFuture} />}
+      {tab === "about" && <About onOpenTab={switchTab} />}
 
       {selected && <OperatorModal operator={selected} nicknames={nicknames.get(selected.id) ?? []} onSubmitNickname={handleSubmitNickname} onClose={closeOperator} />}
       <FeedbackWidget />
