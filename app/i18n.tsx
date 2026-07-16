@@ -109,7 +109,7 @@ const D: Record<string, Pair> = {
   "테라 아카이브 홈": ["Terra Archive home", "テラアーカイブ ホーム"],
   "주요 탭": ["Main tabs", "メインタブ"],
   "오퍼 백과사전": ["Operator Archive", "オペレーター図鑑"],
-  "인프라 플래너": ["Base Planner", "基地プランナー"],
+  "인프라 자동편성기": ["Base Auto-Planner", "基地自動編成"],
   "공채 도우미": ["Recruit Helper", "公開求人ヘルパー"],
   "언어 선택": ["Language", "言語選択"],
   "닫기": ["Close", "閉じる"],
@@ -230,7 +230,7 @@ const D: Record<string, Pair> = {
   ],
   "테라 아카이브 | 명일방주(Arknights) KR 팬사이트": ["Terra Archive | Arknights KR Fansite", "テラアーカイブ | アークナイツ韓国サーバーファンサイト"],
   "{name} - 명일방주 오퍼레이터 | 테라 아카이브": ["{name} - Arknights Operator | Terra Archive", "{name} - アークナイツ オペレーター | テラアーカイブ"],
-  "인프라 플래너 - 명일방주 기반시설 편성 | 테라 아카이브": ["Base Planner - Arknights RIIC Base | Terra Archive", "基地プランナー - アークナイツ基地編成 | テラアーカイブ"],
+  "인프라 자동편성기 - 명일방주 기반시설 편성 | 테라 아카이브": ["Base Auto-Planner - Arknights RIIC Base | Terra Archive", "基地自動編成 - アークナイツ基地編成 | テラアーカイブ"],
   "공채 도우미 - 명일방주 공개모집 계산기 | 테라 아카이브": ["Recruit Helper - Arknights Recruitment Calculator | Terra Archive", "公開求人ヘルパー - アークナイツ公開求人計算機 | テラアーカイブ"],
 
   // ── 인프라 플래너 ──────────────────────────────────────────────────────────

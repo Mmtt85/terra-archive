@@ -47,7 +47,7 @@ const CONTENT: Record<Locale, Content> = {
     featureLead: "다섯 가지 도구가 있습니다. 카드를 누르면 해당 기능으로 이동합니다.",
     features: [
       {
-        tab: "planner", icon: "⌂", name: "인프라 플래너",
+        tab: "planner", icon: "⌂", name: "인프라 자동편성기",
         summary: "보유한 오퍼레이터만 입력하면 243 기지(제조소·무역소·발전소·제어 센터·응접실 등)의 A/B 2교대 편성을 자동으로 짜줍니다.",
         highlight:
           "**모든 걸 100% 대신 짜주는 도구가 아닙니다.** 시너지 세트·시설 간 포인트 시스템·교대 정책까지 반영해 **큰 틀의 90% 이상을 자동으로 잡아주고**, 개인 취향과 특수 상황에 맞춘 **나머지 10%는 독타가 직접 손봐 완성**하도록 설계했습니다. 방별 수동 편집, 빈칸만 채우기, 오퍼별 정예화 조정, 우선 생산 모드 전환을 모두 지원합니다.",
@@ -120,7 +120,7 @@ const CONTENT: Record<Locale, Content> = {
     featureLead: "Five tools in one. Tap a card to jump to that feature.",
     features: [
       {
-        tab: "planner", icon: "⌂", name: "Base (RIIC) Planner",
+        tab: "planner", icon: "⌂", name: "Base Auto-Planner",
         summary: "Just enter the operators you own and it automatically builds the whole A/B two-shift assignment for the 243 base (factories, trading posts, power plants, control center, reception room, and more) for you.",
         highlight:
           "**It isn't a tool that does 100% for you.** By accounting for synergy sets, cross-facility point systems, and shift policy, it **locks in 90%+ of the overall framework automatically** — and is designed so **you, the Doctor, finish the remaining 10%** to fit your preferences and edge cases. Per-room manual edits, fill-empty-slots, per-operator Elite adjustment, and production-priority modes are all supported.",
@@ -193,7 +193,7 @@ const CONTENT: Record<Locale, Content> = {
     featureLead: "5つのツールがあります。カードを押すとその機能へ移動します。",
     features: [
       {
-        tab: "planner", icon: "⌂", name: "基地プランナー",
+        tab: "planner", icon: "⌂", name: "基地自動編成",
         summary: "手持ちのオペレーターを入力するだけで、243基地（製造所・貿易所・発電所・制御中枢・応接室など）のA/B2交代編成を自動で組んでくれます。",
         highlight:
           "**すべてを100%代わりに組むツールではありません。** シナジーセット・施設間のポイントシステム・交代方針まで反映し、**全体の枠組みの90%以上を自動で固め**、好みや特殊な状況に合わせた**残り10%はドクター自身が手直しして仕上げる**ように設計しています。部屋ごとの手動編集、空き枠だけ補充、オペレーター単位の昇進調整、優先生産モードの切替にすべて対応しています。",

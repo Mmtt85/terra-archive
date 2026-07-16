@@ -588,7 +588,7 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
     document.title = selected
       ? t("{name} - 명일방주 오퍼레이터 | 테라 아카이브", { name: selected.name })
       : tab === "planner"
-        ? t("인프라 플래너 - 명일방주 기반시설 편성 | 테라 아카이브")
+        ? t("인프라 자동편성기 - 명일방주 기반시설 편성 | 테라 아카이브")
         : tab === "recruit"
           ? t("공채 도우미 - 명일방주 공개모집 계산기 | 테라 아카이브")
           : tab === "farm"
@@ -623,7 +623,7 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
 
   const TAB_LABEL: Record<Tab, string> = {
     archive: t("오퍼 백과사전"),
-    planner: t("인프라 플래너"),
+    planner: t("인프라 자동편성기"),
     recruit: t("공채 도우미"),
     farm: t("파밍·육성 시뮬"),
     story: t("AI 스토리 요약"),
@@ -737,7 +737,7 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
           <span>{t("테라 아카이브")}<small>{t("명일방주(Arknights) KR 팬사이트")}</small></span>
         </a>
         <BroadcastBadges />
-        {/* 공식방송 버튼 바로 오른쪽 = 미래시 토글 (사용자 배치 지시 2026-07) */}
+        {/* 미래시 토글 = 우측 그룹의 첫 요소(margin-left:auto). 햄버거 버튼 바로 왼쪽 (사용자 배치 지시 2026-07) */}
         <label className="future-toggle" title={t("한국 서버에 아직 나오지 않은 오퍼레이터·재료(중국 서버 데이터)도 목록·계산기에 표시합니다. 미실장 텍스트는 비공식 AI 번역입니다.")}>
           <input type="checkbox" checked={includeFuture} onChange={(event) => toggleFuture(event.target.checked)} />
           {t("미래시 데이터 포함")}
@@ -751,7 +751,7 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
           {/* 드롭다운은 햄버거 버튼 바로 밑에 딱 붙여 연다 (사용자 요청 2026-07) */}
           <nav className={`main-tabs${navOpen ? " open" : ""}`} aria-label={t("주요 탭")}>
             <button className={`tab-archive${tab === "archive" ? " selected" : ""}`} onClick={() => switchTab("archive")}><span className="tab-icon" aria-hidden>▤</span>{t("오퍼 백과사전")}</button>
-            <button className={`tab-planner${tab === "planner" ? " selected" : ""}`} onClick={() => switchTab("planner")}><span className="tab-icon" aria-hidden>⌂</span>{t("인프라 플래너")}</button>
+            <button className={`tab-planner${tab === "planner" ? " selected" : ""}`} onClick={() => switchTab("planner")}><span className="tab-icon" aria-hidden>⌂</span>{t("인프라 자동편성기")}</button>
             <button className={`tab-recruit${tab === "recruit" ? " selected" : ""}`} onClick={() => switchTab("recruit")}><span className="tab-icon" aria-hidden>◎</span>{t("공채 도우미")}</button>
             <button className={`tab-farm${tab === "farm" ? " selected" : ""}`} onClick={() => switchTab("farm")}><span className="tab-icon" aria-hidden>◈</span>{t("파밍·육성 시뮬")}</button>
             <button className={`tab-story${tab === "story" ? " selected" : ""}`} onClick={() => switchTab("story")}><span className="tab-icon" aria-hidden>✦</span>{t("AI 스토리 요약")}</button>

@@ -37,9 +37,9 @@ function languagesFor(tab: SeoTab) {
 // 탭별 제목·설명 (archive는 아래 META의 기본값 사용)
 const TAB_META: Record<Exclude<SeoTab, "archive">, Record<SeoLocale, { title: string; description: string }>> = {
   planner: {
-    ko: { title: "인프라 플래너 - 명일방주 기반시설 편성 | 테라 아카이브", description: "명일방주 기반시설(RIIC) 자동 편성 플래너 — 보유 오퍼레이터로 제조소·무역소·발전소 최적 배치를 계산합니다." },
-    en: { title: "Base Planner - Arknights RIIC Base | Terra Archive", description: "Arknights RIIC base auto-assignment planner — computes the optimal factory, trading post, and power plant layout from your roster." },
-    ja: { title: "基地プランナー - アークナイツ基地編成 | テラアーカイブ", description: "アークナイツ基地（インフラ）自動編成プランナー — 手持ちオペレーターで製造所・貿易所・発電所の最適配置を計算します。" },
+    ko: { title: "인프라 자동편성기 - 명일방주 기반시설 편성 | 테라 아카이브", description: "명일방주 기반시설(RIIC) 자동 편성 플래너 — 보유 오퍼레이터만 입력하면 제조소·무역소·발전소 편성을 자동으로 짜줍니다." },
+    en: { title: "Base Auto-Planner - Arknights RIIC Base | Terra Archive", description: "Arknights RIIC base auto-assignment planner — just enter your roster and it builds the optimal factory, trading post, and power plant layout for you." },
+    ja: { title: "基地自動編成 - アークナイツ基地編成 | テラアーカイブ", description: "アークナイツ基地（インフラ）自動編成プランナー — 手持ちオペレーターを入力するだけで製造所・貿易所・発電所の編成を自動で組んでくれます。" },
   },
   recruit: {
     ko: { title: "공채 도우미 - 명일방주 공개모집 계산기 | 테라 아카이브", description: "명일방주 공개모집(공채) 태그 계산기 — 태그 조합으로 확정·고성급 오퍼레이터를 찾아줍니다." },
@@ -57,9 +57,9 @@ const TAB_META: Record<Exclude<SeoTab, "archive">, Record<SeoLocale, { title: st
     ja: { title: "AIストーリー要約 - アークナイツストーリー要約 | テラアーカイブ", description: "アークナイツのイベントストーリーAI要約アーカイブ — サイドストーリーをカットシーンと共に10分で要約します。" },
   },
   about: {
-    ko: { title: "소개 - 기능 안내 | 테라 아카이브", description: "테라 아카이브의 기능 소개 — 오퍼 백과사전, 인프라 플래너, 공채 도우미, 파밍·육성 시뮬, AI 스토리 요약이 각각 무엇이고 어떤 상황에 쓰는지 안내합니다." },
-    en: { title: "About - Feature Guide | Terra Archive", description: "About Terra Archive — what the operator encyclopedia, base planner, recruitment helper, farming/upgrade simulator, and AI story digest do, and when to use each." },
-    ja: { title: "紹介 - 機能ガイド | テラアーカイブ", description: "テラアーカイブの機能紹介 — オペレーター図鑑、基地プランナー、公開求人ヘルパー、周回・育成シミュ、AIストーリー要約が何で、どんな時に使うのかを案内します。" },
+    ko: { title: "소개 - 기능 안내 | 테라 아카이브", description: "테라 아카이브의 기능 소개 — 오퍼 백과사전, 인프라 자동편성기, 공채 도우미, 파밍·육성 시뮬, AI 스토리 요약이 각각 무엇이고 어떤 상황에 쓰는지 안내합니다." },
+    en: { title: "About - Feature Guide | Terra Archive", description: "About Terra Archive — what the operator encyclopedia, base auto-planner, recruitment helper, farming/upgrade simulator, and AI story digest do, and when to use each." },
+    ja: { title: "紹介 - 機能ガイド | テラアーカイブ", description: "テラアーカイブの機能紹介 — オペレーター図鑑、基地自動編成、公開求人ヘルパー、周回・育成シミュ、AIストーリー要約が何で、どんな時に使うのかを案内します。" },
   },
 };
 

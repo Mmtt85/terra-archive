@@ -1673,6 +1673,10 @@ footer p {
   .brand small {
     display: none;   /* 모바일 헤더는 한 줄로 컴팩트하게 */
   }
+  /* 모바일에선 헤더가 줄바꿈되므로 미래시 토글의 오른쪽-밀어내기(auto)를 해제 */
+  .site-header .future-toggle {
+    margin-left: 0;
+  }
   /* 모바일에선 햄버거를 좀 더 컴팩트하게 (드롭다운 동작은 base 공통) */
   .site-header .nav-toggle {
     padding: 8px 12px;
@@ -2198,7 +2202,6 @@ footer p {
   position: relative;
   display: inline-flex;
   align-items: center;
-  margin-left: auto;
 }
 .nav-toggle {
   display: inline-flex;
@@ -4263,8 +4266,8 @@ footer p {
   border: 1px solid var(--line);
   background: var(--white);
   padding: 8px 11px;
-  margin-left: 14px;   /* 공식방송 버튼과 간격 (사용자 요청 2026-07) */
-  margin-right: 10px;
+  margin-left: auto;   /* 우측 그룹(미래시·햄버거·언어·소개)을 헤더 오른쪽 끝으로 밀어낸다 */
+  margin-right: 10px;  /* 햄버거 버튼과 간격 */
   font: 700 11px/1 monospace;
   letter-spacing: 0.2px;
   cursor: pointer;
