@@ -1042,6 +1042,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   const [showFlows, setShowFlows] = useState(false);
   const [showRoster, setShowRoster] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false); // '그 외' 드롭다운(이미지·파일·도움말)
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   // 1~5성은 기본 보유, 6성은 미보유로 시작 — 가진 6성만 직접 체크한다
   const [ownedIds, setOwnedIds] = useState<Set<string>>(() => new Set(ops.filter((op) => op.rarity <= 5).map((op) => op.id)));
@@ -1334,6 +1335,18 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     showToast(t("편성을 전부 비웠습니다 — 방을 눌러 수동 배치하거나 자동편성하세요"));
   };
 
+  // '그 외' 드롭다운: 바깥 클릭·Esc로 닫기
+  useEffect(() => {
+    if (!moreOpen) return;
+    const onDown = (event: MouseEvent) => {
+      if (!(event.target as HTMLElement).closest(".more-group")) setMoreOpen(false);
+    };
+    const onEsc = (event: KeyboardEvent) => { if (event.key === "Escape") setMoreOpen(false); };
+    window.addEventListener("mousedown", onDown);
+    window.addEventListener("keydown", onEsc);
+    return () => { window.removeEventListener("mousedown", onDown); window.removeEventListener("keydown", onEsc); };
+  }, [moreOpen]);
+
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -1406,15 +1419,22 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           <button className="primary" onClick={() => runOptimize()}><span className="btn-icon" aria-hidden>⟳</span>{t("전체 자동편성")}</button>
           <button onClick={fillGaps} title={t("현재 편성(수동 수정 포함)은 그대로 두고, 남은 빈 자리만 효율 순으로 자동 편성합니다")}><span className="btn-icon" aria-hidden>⊕</span>{t("빈 자리만 자동편성")}</button>
           <button onClick={clearAll} title={t("모든 방의 편성을 비웁니다 (보유 오퍼 설정은 유지)")}><span className="btn-icon" aria-hidden>⌫</span>{t("편성 전체 비우기")}</button>
-          <button onClick={exportImage} title={t("A조·B조 편성표를 이미지로 확인 (PNG)")}><span className="btn-icon" aria-hidden>⧉</span>{t("이미지로 보기")}</button>
-          <span className="file-group">
-            <button className={dirty ? "save-pending" : undefined} onClick={exportState} title={dirty ? t("저장 후 변경 사항이 있습니다 — 파일로 저장하세요") : t("보유 오퍼와 편성을 JSON 파일로 저장")}><span className="btn-icon" aria-hidden>⤓</span>{t("현재 상태 파일로 저장")}</button>
-            <label className="import-label">
-              <span className="btn-icon" aria-hidden>⤒</span>{t("저장된 상태 파일 가져오기")}
-              <input type="file" accept="application/json" onChange={(event) => { const file = event.target.files?.[0]; if (file) importState(file); event.target.value = ""; }} />
-            </label>
+          {/* 이미지·파일·도움말은 '그 외' 드롭다운으로 묶는다 (사용자 요청 2026-07) */}
+          <span className="more-group">
+            <button className={`more-toggle${dirty ? " save-pending" : ""}`} aria-expanded={moreOpen} aria-haspopup="menu"
+              onClick={() => setMoreOpen((open) => !open)}><span className="btn-icon" aria-hidden>⋯</span>{t("그 외")}</button>
+            {moreOpen && (
+              <div className="more-menu" role="menu">
+                <button role="menuitem" onClick={() => { setMoreOpen(false); exportImage(); }} title={t("A조·B조 편성표를 이미지로 확인 (PNG)")}><span className="btn-icon" aria-hidden>⧉</span>{t("이미지로 보기")}</button>
+                <button role="menuitem" className={dirty ? "save-pending" : undefined} onClick={() => { setMoreOpen(false); exportState(); }} title={dirty ? t("저장 후 변경 사항이 있습니다 — 파일로 저장하세요") : t("보유 오퍼와 편성을 JSON 파일로 저장")}><span className="btn-icon" aria-hidden>⤓</span>{t("현재 상태 파일로 저장")}</button>
+                <label className="import-label" role="menuitem">
+                  <span className="btn-icon" aria-hidden>⤒</span>{t("저장된 상태 파일 가져오기")}
+                  <input type="file" accept="application/json" onChange={(event) => { const file = event.target.files?.[0]; if (file) importState(file); event.target.value = ""; setMoreOpen(false); }} />
+                </label>
+                <button role="menuitem" onClick={() => { setMoreOpen(false); setShowHelp(true); }}><span className="btn-icon" aria-hidden>?</span>{t("도움말")}</button>
+              </div>
+            )}
           </span>
-          <button onClick={() => setShowHelp(true)}><span className="btn-icon" aria-hidden>?</span>{t("도움말")}</button>
         </div>
       </div>
 

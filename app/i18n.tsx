@@ -254,6 +254,7 @@ const D: Record<string, Pair> = {
   "보유 오퍼와 편성을 JSON 파일로 저장": ["Save owned operators and assignments as a JSON file", "所持オペレーターと編成をJSONファイルに保存"],
   "저장된 상태 파일 가져오기": ["Load saved state file", "保存した状態ファイルを読み込む"],
   "도움말": ["Help", "ヘルプ"],
+  "그 외": ["More", "その他"],
   "전략 (클릭해 시너지 트리 보기)": ["Strategy (click for synergy tree)", "戦略（クリックでシナジーツリー）"],
   "제조소 평균": ["Factory avg", "製造所平均"],
   "무역소 평균": ["Trading avg", "貿易所平均"],
