@@ -364,6 +364,7 @@ const D: Record<string, Pair> = {
   "오더 수익": ["Order payout", "受注収益"],
   "효율 오버라이드": ["Efficiency override", "効率オーバーライド"],
   "동료 보너스": ["Coworker bonus", "同僚ボーナス"],
+  "레어도 기본": ["Rarity base", "レア度基本"],
   "제어 오라(가중)": ["Control auras (weighted)", "管制オーラ（加重）"],
   "제어센터 오라 수신": ["Aura received from Control", "制御中枢オーラ受信"],
   "편성 없음": ["No assignment", "編成なし"],
@@ -383,6 +384,7 @@ const D: Record<string, Pair> = {
   "오더 수익 +{n}% 상당": ["order payout +{n}% equiv.", "受注収益 +{n}%相当"],
   "효율 대체 인당 +{n}%": ["override +{n}% per member", "効率代替 1人あたり+{n}%"],
   "동료 보너스 +{n}%": ["coworker bonus +{n}%", "同僚ボーナス +{n}%"],
+  "레어도 기본 {r}성·{e} +{n}%": ["rarity base {r}★·{e} +{n}%", "レア度基本 {r}★·{e} +{n}%"],
   "시설 기반 +{n}%": ["facility-based +{n}%", "施設ベース +{n}%"],
   "자동화 +{n}%": ["automation +{n}%", "自動化 +{n}%"],
   "{token} +{n}점 생성": ["{token} +{n} pts generated", "{token} +{n}点生成"],
@@ -466,6 +468,10 @@ const D: Record<string, Pair> = {
   "채우는 순서: 제조소-순금 > 제조소-작전기록 > 무역소 > 발전소 > 사무실 > 응접실 — 먼저 채우는 방이 좋은 요원을 가져갑니다. 응접실은 최하위라, 응접실 스킬이 있는 오퍼(쉐라 등)도 상위 방 세트가 우선입니다.": [
     "Fill order: Gold factories > Battle Record factories > Trading Posts > Power Plants > Office > Reception Room — earlier rooms take the best operators. Reception is last, so even reception-skill operators may be claimed by higher rooms first.",
     "埋める順序：製造所-純金 > 製造所-作戦記録 > 貿易所 > 発電所 > 事務室 > 応接室 — 先に埋める部屋が優秀な要員を取ります。応接室は最下位のため、応接室スキル持ちでも上位部屋のセットが優先されます。",
+  ],
+  "응접실 단서 수집 속도는 RIIC 스킬과 별개로 레어도·정예화 기본치가 더해집니다: 6성 +10 / 5성 +9 / 4성 +7 / 3성↓ +5, 정예화 1정 +8 · 2정 +16 (미지정은 그 레어도 최대 승급 가정). 그래서 스킬 없는 2정 6성도 +26%. 카드에 '레어도 기본'으로 따로 표기됩니다.": [
+    "Reception clue-search speed adds a rarity/promotion base on top of RIIC skills: 6★ +10 / 5★ +9 / 4★ +7 / 3★↓ +5, plus E1 +8 · E2 +16 (unset assumes the rarity's max promotion). So even an E2 6★ with no skill gives +26%. Shown separately as 'Rarity base' on each card.",
+    "応接室の手がかり収集速度はRIICスキルとは別に、レア度・昇進の基本値が加算されます：6★ +10 / 5★ +9 / 4★ +7 / 3★以下 +5、昇進1 +8・昇進2 +16（未指定はそのレア度の最大昇進を仮定）。スキルなしの昇進2・6★でも +26%。カードに「レア度基本」として別表示されます。",
   ],
   "순금 2 + 작전기록 2 분할. 무역소 효율이 오르면 순금이 병목이 되므로 가장 강한 생산 팀을 순금 2방에 먼저 배치하고, 남는 효율을 작전기록으로 돌립니다.": [
     "Split as Gold ×2 + Battle Records ×2. As trading efficiency rises, gold becomes the bottleneck, so the strongest production teams go to the two gold rooms first.",

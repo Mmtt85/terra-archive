@@ -60,6 +60,7 @@ type InfraOp = {
   seq: number;
   skills: InfraSkill[];
   unreleased?: boolean; // KR 미실장(중국 선행) — '미래시 데이터 포함' 토글이 켜져야 로스터에 노출
+  elite?: Elite; // withElite가 스탬프하는 정예화 단계 (미지정=2정). 응접실 레어도 기본 단서속도 계산용
 };
 
 // 직군 정렬 순서·정렬 키 — 백과사전(home.tsx)과 동일 (보유 오퍼 설정 정렬용)
@@ -80,19 +81,27 @@ type Elite = 0 | 1 | 2;
 // '정예화 1'·'정예화 2' 해금 스킬을 아직 못 쓴다 (Lv.1/Lv.30 스킬은 유지)
 const eliteLocks = (unlock: string, elite: Elite) => unlock === "정예화 2" || (elite === 0 && unlock === "정예화 1");
 function withElite(op: InfraOp, elite: Elite | undefined): InfraOp {
+  // 미지정·2정은 스킬 필터링이 필요 없지만, 응접실 기본 단서속도용으로 정예화만 스탬프한다
   if (elite == null || elite === 2) return op;
-  let changed = false;
   const skills: InfraSkill[] = [];
   for (const skill of op.skills) {
     if (!eliteLocks(skill.unlock, elite)) { skills.push(skill); continue; }
-    changed = true;
     // 정예화로 잠긴 스킬 — 같은 슬롯의 하위 단계(기술 교류 α 등)가 있으면 그걸로 대체.
     // 없으면(순수 정예화 해금 스킬) 통째로 빠진다.
     const lower = (skill.tiers ?? []).filter((t) => !eliteLocks(t.unlock, elite));
     if (lower.length) skills.push(lower[lower.length - 1]);
   }
-  return changed ? { ...op, skills } : op;
+  return { ...op, elite, skills };
 }
+
+// 응접실 단서 수집 속도는 RIIC 스킬과 별개로 레어도·정예화 기본치가 가산된다
+// (Terra Wiki): 3성↓ +5 / 4성 +7 / 5성 +9 / 6성 +10, 정예화 E1 +8 / E2 +16.
+// 정예화 미지정이면 그 레어도의 최대 승급을 가정한다(6·5·4성 E2, 3성 E1, 2성↓ E0).
+// RIIC 스킬 없는 2정 6성 +26%, 2정 5성 +25%(=12F 5+20). 응접실 2인 배치라 합산.
+const CLUE_RARITY_BASE: Record<number, number> = { 6: 10, 5: 9, 4: 7 };
+const CLUE_ELITE_BASE: Record<Elite, number> = { 0: 0, 1: 8, 2: 16 };
+const maxElite = (rarity: number): Elite => (rarity >= 4 ? 2 : rarity === 3 ? 1 : 0);
+const clueBase = (op: InfraOp): number => (CLUE_RARITY_BASE[op.rarity] ?? 5) + CLUE_ELITE_BASE[op.elite ?? maxElite(op.rarity)];
 
 // 정예화 단계 선택지: 정예화 해금 스킬이 있어야 의미가 있고,
 // 3성은 정예화 1까지·1~2성은 승급 자체가 없다
@@ -168,6 +177,7 @@ type OpBreakdown = {
   payoutViolation: number; // violation-order payout (프로바이조 — anti-synergy with quality crew)
   override: number;     // 샤마르: flat rate replacing everyone's efficiency
   perCoworker: number;  // +x% per other member
+  clueBase: number;     // 응접실: 레어도·정예화 기본 단서속도 (RIIC 스킬과 별개, 항상 가산)
   auras: Record<string, number>; // control-center facility-wide auras
   skills: InfraSkill[];
 };
@@ -220,7 +230,7 @@ function ambientFor(room: string, team: InfraOp[], ambient?: AmbientAura[], room
 function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx): OpBreakdown {
   const teamIds = new Set(team.map((member) => member.id));
   const teamSize = Math.max(team.length, 1);
-  const out: OpBreakdown = { efficiency: 0, facilityEff: 0, automation: 0, quality: 0, payout: 0, payoutViolation: 0, override: 0, perCoworker: 0, auras: {}, skills: [] };
+  const out: OpBreakdown = { efficiency: 0, facilityEff: 0, automation: 0, quality: 0, payout: 0, payoutViolation: 0, override: 0, perCoworker: 0, clueBase: 0, auras: {}, skills: [] };
   const tokenRates = new Map<string, number>();
   for (const skill of activeSkills(op, room, ctx.product)) {
     if (skill.partners.length > 0 && !skill.partners.every((p) => teamIds.has(p))) continue;
@@ -288,6 +298,9 @@ function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx): OpBrea
     }
   }
   for (const [token, rate] of tokenRates) out.efficiency += (ctx.tokenPoints[token] ?? 0) * rate;
+  // 응접실: RIIC 스킬과 별개로 레어도·정예화 기본 단서속도를 모든 배치 오퍼가 가산.
+  // efficiency에 묻지 않고 별도 필드로 둬서 화면에 "레어도 기본"으로 따로 표시한다
+  if (room === "MEETING") out.clueBase = clueBase(op);
   return out;
 }
 
@@ -314,16 +327,18 @@ function teamScore(team: InfraOp[], room: string, ctx: Ctx): number {
     const bestOfKind = Math.max(...parts.map((p) => p.auras[kind] ?? 0), 0);
     auras += bestOfKind * AURA_WEIGHT[kind];
   }
+  // 응접실 레어도 기본 단서속도 — 스킬과 무관한 항상 가산분 (override/automation과 무관)
+  const clueBaseSum = parts.reduce((sum, p) => sum + p.clueBase, 0);
   // 제어센터 오라를 대상 방 점수에 실제 합산 — "무역소 오더 효율 +10%"면 무역소가 +10%.
   // 조건부 오라(쉐라그 3명 배치)는 조건을 채운 그 방 하나에만 붙는다
-  return efficiency + quality + payout + auras + ambientFor(room, team, ctx.ambient, efficiency);
+  return efficiency + clueBaseSum + quality + payout + auras + ambientFor(room, team, ctx.ambient, efficiency);
 }
 
 function opSolo(op: InfraOp, room: string, slots: number, ctx: Ctx): number {
   const b = breakdown(op, room, [op], ctx);
   let auras = 0;
   for (const kind of Object.keys(AURA_WEIGHT)) auras += (b.auras[kind] ?? 0) * AURA_WEIGHT[kind];
-  return b.efficiency + b.facilityEff + b.automation + b.quality + b.payout + b.payoutViolation + b.override * slots + b.perCoworker * (slots - 1) + auras;
+  return b.efficiency + b.clueBase + b.facilityEff + b.automation + b.quality + b.payout + b.payoutViolation + b.override * slots + b.perCoworker * (slots - 1) + auras;
 }
 
 function bestTeam(room: string, slots: number, pool: Map<string, InfraOp>, ctx: Ctx, seedOps: InfraOp[] = []): InfraOp[] {
@@ -1595,9 +1610,10 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
     acc["오더 수익"] += b.payout + b.payoutViolation;
     acc["효율 오버라이드"] += b.override > 0 ? b.override : 0;
     acc["동료 보너스"] += b.perCoworker * (team.length - 1);
+    acc["레어도 기본"] += b.clueBase;
     acc["제어 오라(가중)"] += Object.keys(AURA_WEIGHT).reduce((sum, kind) => sum + (b.auras[kind] ?? 0) * AURA_WEIGHT[kind], 0);
     return acc;
-  }, { "스킬 효율": 0, "시설 기반": 0, "자동화": 0, "품질 기대치": 0, "오더 수익": 0, "효율 오버라이드": 0, "동료 보너스": 0, "제어 오라(가중)": 0 } as Record<string, number>);
+  }, { "스킬 효율": 0, "시설 기반": 0, "자동화": 0, "품질 기대치": 0, "오더 수익": 0, "효율 오버라이드": 0, "동료 보너스": 0, "레어도 기본": 0, "제어 오라(가중)": 0 } as Record<string, number>);
   agg["제어센터 오라 수신"] = ambientFor(cell.room, team, ambient, agg["스킬 효율"]);
   // 추가 후보: 어디에도 배치 안 된 보유 오퍼를 한계 기여 순으로
   const [benchAll, setBenchAll] = useState(false);
@@ -1671,6 +1687,7 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                 if (Math.round(b.payout + b.payoutViolation) !== 0) parts.push(t("오더 수익 +{n}% 상당", { n: Math.round(b.payout + b.payoutViolation) }));
                 if (b.override > 0) parts.push(t("효율 대체 인당 +{n}%", { n: Math.round(b.override) }));
                 if (Math.round(b.perCoworker * (team.length - 1)) !== 0) parts.push(t("동료 보너스 +{n}%", { n: Math.round(b.perCoworker * (team.length - 1)) }));
+                if (Math.round(b.clueBase) !== 0) parts.push(t("레어도 기본 {r}성·{e} +{n}%", { r: op.rarity, e: t(ELITE_LABEL[op.elite ?? maxElite(op.rarity)]), n: Math.round(b.clueBase) }));
                 for (const [kind, value] of Object.entries(b.auras)) if (value > 0) parts.push(`${t(AURA_LABEL[kind] ?? kind)} +${Math.round(value)}%`);
                 const shown = b.skills.length ? b.skills : op.skills.filter((skill) => skill.room === cell.room);
                 return (
@@ -2021,6 +2038,7 @@ const HELP_SECTIONS: { title: string; items: string[] }[] = [
   { title: "방 우선순위", items: [
     "우선 생산 설정: 순금 우선(기본) · 작전기록 우선 · 밸런스(교차). 먼저 채우는 방이 최고 요원을 가져갑니다. 설정만 바꾸고, 실제 편성은 전체 자동편성 버튼을 눌러 적용합니다.",
     "채우는 순서: 제조소-순금 > 제조소-작전기록 > 무역소 > 발전소 > 사무실 > 응접실 — 먼저 채우는 방이 좋은 요원을 가져갑니다. 응접실은 최하위라, 응접실 스킬이 있는 오퍼(쉐라 등)도 상위 방 세트가 우선입니다.",
+    "응접실 단서 수집 속도는 RIIC 스킬과 별개로 레어도·정예화 기본치가 더해집니다: 6성 +10 / 5성 +9 / 4성 +7 / 3성↓ +5, 정예화 1정 +8 · 2정 +16 (미지정은 그 레어도 최대 승급 가정). 그래서 스킬 없는 2정 6성도 +26%. 카드에 '레어도 기본'으로 따로 표기됩니다.",
     "순금 2 + 작전기록 2 분할. 무역소 효율이 오르면 순금이 병목이 되므로 가장 강한 생산 팀을 순금 2방에 먼저 배치하고, 남는 효율을 작전기록으로 돌립니다.",
     "품목 전용 스킬(금속공예류 = 순금)은 해당 품목 방에서만 계산됩니다.",
   ]},
