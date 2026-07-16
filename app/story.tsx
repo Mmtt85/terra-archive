@@ -148,8 +148,10 @@ function StoryDetail({ event, summary, onClose, onShowOperator }: {
 
   return (
     <section className="story story-detail" aria-label={locText(locale, event.name)}>
-      {/* 뒤로가기는 중앙 콘텐츠 밖(섹션 왼쪽 끝)에 배치 (사용자 요청 2026-07) */}
-      <button type="button" className="story-back story-back-top" onClick={onClose}>← {t("스토리 목록으로")}</button>
+      {/* 뒤로가기: 넓은 화면에선 왼쪽 여백에 sticky(본문은 위로 올라옴), 좁으면 본문 위 일반 배치 */}
+      <div className="story-back-wrap">
+        <button type="button" className="story-back story-back-top" onClick={onClose}>← {t("스토리 목록으로")}</button>
+      </div>
       <div className="story-detail-inner">
         <header className="story-detail-head">
           <span className="section-no">AI STORY DIGEST</span>

@@ -3997,9 +3997,25 @@ footer p {
 .story-back:hover {
   border-color: var(--ink);
 }
-/* 상단 뒤로가기: 중앙 콘텐츠와 분리해 섹션 왼쪽 끝에 */
+/* 상단 뒤로가기: 좁은 화면은 본문 위 일반 배치 */
 .story-back-top {
   margin-bottom: 18px;
+}
+/* 넓은 화면: 버튼을 왼쪽 여백에 sticky로 띄우고(스크롤 따라옴), 래퍼는 높이 0이라
+   본문이 버튼 자리까지 위로 올라온다 */
+@media (min-width: 1400px) {
+  .story-back-wrap {
+    position: sticky;
+    top: 92px;
+    height: 0;
+    z-index: 5;
+  }
+  .story-back-top {
+    position: absolute;
+    left: 0;
+    top: 0;
+    margin-bottom: 0;
+  }
 }
 /* 상세 콘텐츠(본문+레일 합산 966px) 한 덩어리를 섹션 안에서 가운데 정렬 —
    개별 요소에 margin:auto를 걸면 display:block 버튼이 늘어나므로, 바깥 래퍼를 센터링한다 */
