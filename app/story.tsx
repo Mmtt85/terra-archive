@@ -148,8 +148,9 @@ function StoryDetail({ event, summary, onClose, onShowOperator }: {
 
   return (
     <section className="story story-detail" aria-label={locText(locale, event.name)}>
+      {/* 뒤로가기는 중앙 콘텐츠 밖(섹션 왼쪽 끝)에 배치 (사용자 요청 2026-07) */}
+      <button type="button" className="story-back story-back-top" onClick={onClose}>← {t("스토리 목록으로")}</button>
       <div className="story-detail-inner">
-        <button type="button" className="story-back" onClick={onClose}>← {t("스토리 목록으로")}</button>
         <header className="story-detail-head">
           <span className="section-no">AI STORY DIGEST</span>
           <h2>{locText(locale, event.name)}</h2>

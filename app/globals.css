@@ -3997,6 +3997,10 @@ footer p {
 .story-back:hover {
   border-color: var(--ink);
 }
+/* 상단 뒤로가기: 중앙 콘텐츠와 분리해 섹션 왼쪽 끝에 */
+.story-back-top {
+  margin-bottom: 18px;
+}
 /* 상세 콘텐츠(본문+레일 합산 966px) 한 덩어리를 섹션 안에서 가운데 정렬 —
    개별 요소에 margin:auto를 걸면 display:block 버튼이 늘어나므로, 바깥 래퍼를 센터링한다 */
 .story-detail-inner {
