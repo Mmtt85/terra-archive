@@ -4013,7 +4013,7 @@ footer p {
    뒤로가기는 헤더+레일 높이만큼 내려 '레일 바로 밑'에 sticky로 붙는다 */
 @media (max-width: 1180px) {
   .story-back-top {
-    top: calc(var(--header-h, 56px) + 58px);
+    top: calc(var(--header-h, 56px) + 78px);
     z-index: 4;   /* 레일(z-index:8)보다 아래 — 레일 밑에서 겹치지 않게 */
   }
 }
