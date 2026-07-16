@@ -60,7 +60,7 @@
   "ja": "狩猟の頼れる助手"
  },
  "进驻宿舍时，使该宿舍内除自身以外心情未满的某个干员每小时恢复+0.55（同种效果取最高），如果目标是怪物猎人小队成员和泡影国狩猎小队，则恢复效果额外+0.45": {
-  "ko": "숙소에 배치 시, 해당 숙소 내 자신을 제외한 컨디션이 가득 차지 않은 오퍼레이터 1명의 시간당 회복 +0.55 (동종 효과 중 가장 높은 수치만 적용), 대상이 몬스터 헌터 팀 멤버 또는 포영국 사냥 팀이면 회복 효과 추가 +0.45",
+  "ko": "숙소에 배치 시, 해당 숙소 내 자신을 제외한 컨디션이 가득 차지 않은 오퍼레이터 1명의 시간당 컨디션 회복 +0.55 (동종 효과 중 가장 높은 수치만 적용), 대상이 몬스터 헌터 팀 멤버 또는 포영국 사냥 팀이면 회복 효과 추가 +0.45",
   "en": "When this Operator is assigned to a Dormitory, one Operator in that Dormitory other than self whose Morale is not full recovers +0.55 Morale per hour (Strongest effect of the same type applies); if the target is a Monster Hunter Squad member or Bubbly Realm Hunting Squad, recovery effect +0.45",
   "ja": "配置宿舎内、自身以外の体力が満タンでないオペレーター1人の1時間ごとの体力回復量+0.55（同種の効果は高いほうのみ適用）。対象がモンスターハンターチームまたは泡沫国狩猟チームの場合、回復効果が追加で+0.45"
  },
@@ -70,7 +70,7 @@
   "ja": "隠密エキスパート"
  },
  "进驻会客室时，更容易获得线索板上尚未拥有的线索，若焰狐龙梓兰进驻控制中枢，则线索搜集速度提升10%": {
-  "ko": "응접실에 배치 시, 단서 보드에 아직 없는 단서를 더 쉽게 획득, 타마미츠네 오키드가 제어 센터에 배치되어 있으면 단서 수집 속도 10% 상승",
+  "ko": "응접실에 배치 시, 단서 보드에 아직 없는 단서를 더 쉽게 획득, 만약 타마미츠네 오키드가 제어 센터에 배치되어 있다면 단서 수집 속도 10% 상승",
   "en": "When this Operator is assigned to the Reception Room, Clues not yet in the Clue Board are easier to obtain; if Violet Mizutsune Orchid is assigned to the Control Center, Clue search speed +10%",
   "ja": "応接室配置時、手がかりボードにまだない手がかりを入手しやすくなる。タマミツネ・オーキッドが制御中枢に配置されている場合、手がかり捜索速度+10%"
  },
@@ -315,7 +315,7 @@
   "ja": "「教え甲斐があるな！」"
  },
  "进驻贸易站时，基建内（不包含副手及活动室）每有一间进驻岁干员的设施，订单获取效率+4%（最多5间）": {
-  "ko": "무역소에 배치 시, 기반시설(어시스턴트 및 활동실 사용자 미포함) 내 '세' 오퍼레이터가 배치된 시설 1개당 오더 수주 효율 +4% (최대 5개)",
+  "ko": "무역소에 배치 시, 기반시설(어시스턴트 및 활동실 사용자 미포함) 내 쉐이 오퍼레이터가 배치된 시설 1개당 오더 수주 효율이 추가로 +4% (최대 5개)",
   "en": "When this Operator is assigned to a Trading Post, order acquisition efficiency +4% for every facility in the Base with a Sui Operator assigned (excluding Assistants and Activity Rooms; up to 5 facilities)",
   "ja": "貿易所配置時、「歳」オペレーターが配置されている施設1室（補佐と活動室利用者を除く）ごとに、受注効率+4%（最大5室まで）"
  },
@@ -1065,7 +1065,7 @@
   "ja": "権変"
  },
  "进驻控制中枢时，若外势大于等于实地，所有贸易站订单效率+7%；若实地大于外势，所有制造站生产力+2%（同种效果取最高）": {
-  "ko": "제어 센터에 배치 시, 외세가 실리 이상이면 모든 무역소의 오더 효율 +7%, 실리가 외세보다 크면 모든 제조소의 생산력 +2% (동종 효과 중 가장 높은 수치만 적용)",
+  "ko": "제어 센터에 배치 시, 외세가 실리 이상이면 모든 무역소의 오더 수주 효율 +7%, 실리가 외세보다 크면 모든 제조소의 생산력 +2% (동종 효과 중 가장 높은 수치만 적용)",
   "en": "When this Operator is assigned to the Control Center, if Outer Influence is greater than or equal to Territory, all Trading Posts' order efficiency +7%; if Territory is greater than Outer Influence, all Factories' productivity +2% (Strongest effect of the same type applies)",
   "ja": "制御中枢配置時、外勢が実利以上の場合、すべての貿易所の受注効率+7%。実利が外勢より大きい場合、すべての製造所の製造効率+2%（同種の効果は高いほうのみ適用）"
  },
@@ -1200,7 +1200,7 @@
   "ja": "万人の大波"
  },
  "技能期间所有场上干员攻击力和防御力+18%（+4%），【乌萨斯学生自治团】干员获得加成效果翻倍": {
-  "ko": "스킬 지속 시간 동안 전장의 모든 오퍼레이터 공격력 및 방어력 +18%(+4%), [우르수스 학생 자치단] 오퍼레이터는 획득하는 강화 효과 2배",
+  "ko": "스킬 지속 시간 동안 전장의 모든 오퍼레이터 공격력 및 방어력 +18%(+4%), [우르수스 학생자치단] 오퍼레이터는 획득하는 강화 효과 2배",
   "en": "While a skill is active, all Operators on the field gain ATK and DEF +18% (+4%); [Ursus Student Self-Governing Group] Operators gain double this bonus",
   "ja": "スキル中、場にいるすべてのオペレーターの攻撃力・防御力+18%（+4%）。【ウルサス学生自治団】オペレーターは獲得するバフ効果が2倍になる"
  },
@@ -1260,7 +1260,7 @@
   "ja": "兄弟同然"
  },
  "进驻制造站时，作战记录类配方的生产力+30%，当与乌萨斯学生自治团干员在同一个制造站时，作战记录类配方的生产力额外+10%": {
-  "ko": "제조소에 배치 시, 작전기록류에 대한 생산력 +30%, 우르수스 학생 자치단 오퍼레이터와 함께 같은 제조소에 배치 시 작전기록류에 대한 생산력 추가 +10%",
+  "ko": "제조소에 배치 시, 작전기록류에 대한 생산력 +30%, 우르수스 학생자치단 오퍼레이터와 함께 같은 제조소에 배치 시 작전기록류에 대한 생산력 추가 +10%",
   "en": "When this Operator is assigned to a Factory, productivity towards Battle Records +30%; when assigned to the same Factory as an Ursus Student Self-Governing Group Operator, productivity towards Battle Records +10%",
   "ja": "製造所配置時、作戦記録製造の製造効率+30%。ウルサス学生自治団のオペレーターと同じ製造所に配置時、作戦記録製造の製造効率が追加で+10%"
  },
@@ -1270,7 +1270,7 @@
   "ja": "「はい、団長！」"
  },
  "进驻控制中枢时，自身心情每小时消耗+0.5，每个进驻在会客室的乌萨斯学生自治团干员，线索搜集速度+10%": {
-  "ko": "제어 센터에 배치 시, 자신의 시간당 컨디션 소모 +0.5, 응접실에 배치된 우르수스 학생 자치단 오퍼레이터 1명당 단서 수집 속도 +10%",
+  "ko": "제어 센터에 배치 시, 자신의 시간당 컨디션 소모 +0.5, 응접실에 배치된 우르수스 학생자치단 오퍼레이터 1명당 단서 수집 속도 +10%",
   "en": "When this Operator is assigned to the Control Center, own Morale consumed each hour +0.5; for each Ursus Student Self-Governing Group Operator assigned to the Reception Room, Clue search speed +10%",
   "ja": "制御中枢配置時、自身の1時間ごとの体力消費量+0.5。応接室に配置されたウルサス学生自治団のオペレーター1人につき、手がかり捜索速度+10%"
  },

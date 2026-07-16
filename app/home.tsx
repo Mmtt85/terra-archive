@@ -798,7 +798,7 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
         </div>
       </section>}
 
-      {tab === "planner" && <InfraPlanner onShowOperator={showOperatorById} extra={extra} />}
+      {tab === "planner" && <InfraPlanner onShowOperator={showOperatorById} extra={extra} includeFuture={includeFuture} />}
       {tab === "recruit" && <RecruitHelper onShowOperator={showOperatorById} extra={extra} />}
       {tab === "farm" && <FarmGuide operators={operators} includeFuture={includeFuture} onShowOperator={showOperatorById} />}
       {tab === "story" && <StoryGuide onShowOperator={showOperatorById} includeFuture={includeFuture} />}

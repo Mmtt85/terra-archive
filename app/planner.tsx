@@ -54,6 +54,7 @@ type InfraOp = {
   image: string;
   seq: number;
   skills: InfraSkill[];
+  unreleased?: boolean; // KR 미실장(중국 선행) — '미래시 데이터 포함' 토글이 켜져야 로스터에 노출
 };
 
 const factionsOf = (op: InfraOp): string[] => op.factions ?? [op.faction];
@@ -1001,7 +1002,7 @@ function slotSubstitutes(team: InfraOp[], index: number, key: string, ctx: Ctx, 
 
 const STORAGE_KEY = "terra-archive-infra-v3";
 
-export default function InfraPlanner({ onShowOperator, extra }: { onShowOperator?: (id: string) => void; extra?: ExtraI18n | null } = {}) {
+export default function InfraPlanner({ onShowOperator, extra, includeFuture }: { onShowOperator?: (id: string) => void; extra?: ExtraI18n | null; includeFuture?: boolean } = {}) {
   const { locale, t } = useI18n();
   // 로케일 표시 오버레이: 이름·스킬명·설명만 교체하고(krName에 원본 보존),
   // 엔진이 쓰는 구조 필드(unlock·kind·token 등)는 KR 원본 그대로 둔다
@@ -1021,6 +1022,9 @@ export default function InfraPlanner({ onShowOperator, extra }: { onShowOperator
       skills: op.skills.map(loc),
     }));
   }, [extra]);
+  // 미실장(중국 선행) 오퍼는 '미래시 데이터 포함' 토글이 켜져야 로스터·설정·편성에 등장.
+  // 토글을 바꿔도 현재 편성은 갈아엎지 않는다 — 다음 자동편성부터 반영 (설정 불변 원칙)
+  const visibleOps = useMemo(() => (includeFuture ? lops : lops.filter((op) => !op.unreleased)), [lops, includeFuture]);
   const { confirm, dialog: confirmDialog } = useConfirm();
   const [plan, setPlan] = useState<Plan | null>(null);
   const [priority, setPriorityState] = useState<ProdPriority>("gold"); // 우선 생산 모드
@@ -1037,7 +1041,7 @@ export default function InfraPlanner({ onShowOperator, extra }: { onShowOperator
   // 보유 오퍼·정예화 구성이나 방별 수동 편성을 바꾼 뒤 파일로 저장하지 않았으면 true
   const [dirty, setDirty] = useState(false);
 
-  const effectiveOps = useMemo(() => lops.map((op) => withElite(op, eliteById.get(op.id))), [lops, eliteById]);
+  const effectiveOps = useMemo(() => visibleOps.map((op) => withElite(op, eliteById.get(op.id))), [visibleOps, eliteById]);
   const effectiveOpById = useMemo(() => new Map(effectiveOps.map((op) => [op.id, op])), [effectiveOps]);
   const roster = useMemo(() => effectiveOps.filter((op) => ownedIds.has(op.id)), [effectiveOps, ownedIds]);
 
@@ -1214,7 +1218,7 @@ export default function InfraPlanner({ onShowOperator, extra }: { onShowOperator
   };
 
   const runOptimize = (ids: Set<string> = ownedIds, elite: Map<string, Elite> = eliteById, prio: ProdPriority = priority) => {
-    const next = optimize(lops.map((op) => withElite(op, elite.get(op.id))).filter((op) => ids.has(op.id)), prio);
+    const next = optimize(visibleOps.map((op) => withElite(op, elite.get(op.id))).filter((op) => ids.has(op.id)), prio);
     setPlan(next);
     setActiveShift(0);
     persist(ids, next, elite);
@@ -1332,11 +1336,13 @@ export default function InfraPlanner({ onShowOperator, extra }: { onShowOperator
         setEliteById(elite);
         if (data.priority) setPriorityState(data.priority as ProdPriority);
         if (data.plan) { setPlan(data.plan as Plan); if (!data.priority && (data.plan as Plan).priority) setPriorityState((data.plan as Plan).priority!); return; }
-        setPlan(optimize(ops.map((op) => withElite(op, elite.get(op.id))).filter((op) => ids.has(op.id))));
+        // 마운트 시점엔 미래시 토글이 아직 복원 전(false)일 수 있으므로 미실장은 제외하고
+        // 기본 편성을 만든다 — 미래시 포함 편성은 토글 후 자동편성 버튼으로 실행
+        setPlan(optimize(ops.filter((op) => !op.unreleased).map((op) => withElite(op, elite.get(op.id))).filter((op) => ids.has(op.id))));
         return;
       }
     } catch { /* fall through to defaults */ }
-    setPlan(optimize(ops.filter((op) => op.rarity <= 5)));
+    setPlan(optimize(ops.filter((op) => op.rarity <= 5 && !op.unreleased)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -1387,7 +1393,7 @@ export default function InfraPlanner({ onShowOperator, extra }: { onShowOperator
           <h2>{t("인프라 배치 최적화")}</h2>
         </div>
         <div className="planner-buttons">
-          <button onClick={() => setShowRoster(true)}><span className="btn-icon" aria-hidden>▦</span>{t("보유 오퍼 설정 ({a}/{b})", { a: ownedIds.size, b: ops.length })}</button>
+          <button onClick={() => setShowRoster(true)}><span className="btn-icon" aria-hidden>▦</span>{t("보유 오퍼 설정 ({a}/{b})", { a: visibleOps.filter((op) => ownedIds.has(op.id)).length, b: visibleOps.length })}</button>
           <button className="primary" onClick={() => runOptimize()}><span className="btn-icon" aria-hidden>⟳</span>{t("전체 자동편성")}</button>
           <button onClick={fillGaps} title={t("현재 편성(수동 수정 포함)은 그대로 두고, 남은 빈 자리만 효율 순으로 자동 편성합니다")}><span className="btn-icon" aria-hidden>⊕</span>{t("빈 자리만 자동편성")}</button>
           <button onClick={clearAll} title={t("모든 방의 편성을 비웁니다 (보유 오퍼 설정은 유지)")}><span className="btn-icon" aria-hidden>⌫</span>{t("편성 전체 비우기")}</button>
@@ -1478,7 +1484,7 @@ export default function InfraPlanner({ onShowOperator, extra }: { onShowOperator
 
       {showRoster && (
         <RosterModal
-          allOps={lops}
+          allOps={visibleOps}
           ownedIds={ownedIds}
           eliteById={eliteById}
           onApply={(ids, elite) => { setOwnedIds(ids); setEliteById(elite); setShowRoster(false); runOptimize(ids, elite); setDirty(true); }}
@@ -1903,6 +1909,9 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
         <div className="modal-scroll">
           {importMsg && <p className="dorm-note maa-import-msg">{importMsg}</p>}
           <p className="dorm-note">{rich(t("정예화 단계에 따라 해금되는 인프라 스킬을 가진 오퍼는 카드 아래에서 **노정예/1정/2정**을 선택할 수 있습니다 (기본값 최대 정예화). 얼굴을 클릭하면 상세 정보가 열립니다."))}</p>
+          {allOps.some((op) => op.unreleased) && (
+            <p className="dorm-note">{rich(t("**미실장** 배지가 붙은 오퍼는 한국 서버 미출시(중국 서버 선행) 오퍼입니다 — 미래시 데이터 포함이 켜져 있을 때만 표시되며, 스킬 텍스트는 비공식 AI 번역입니다."))}</p>
+          )}
           <div className="roster-bulk">
             {BULK_GROUPS.map(({ label, test, elites }) => (
               <span key={label} className="bulk-group">
@@ -1931,11 +1940,11 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
               const options = eliteOptions(op);
               const elite = Math.min(eliteDraft.get(op.id) ?? 2, options.length ? options[options.length - 1] : 2) as Elite;
               return (
-                <div key={op.id} className={`roster-card${owned ? " owned" : ""}`}>
+                <div key={op.id} className={`roster-card${owned ? " owned" : ""}${op.unreleased ? " future" : ""}`}>
                   <button type="button" onClick={() => toggle(op.id)} title={op.name}>
                     <img src={op.image} alt={op.name} loading="lazy" className={onShowOperator ? "op-link" : undefined}
                       onClick={(event) => { if (onShowOperator) { event.stopPropagation(); onShowOperator(op.id); } }} />
-                    <span>{op.name}</span>
+                    <span>{op.name}{op.unreleased && <em className="future-badge">{t("미실장")}</em>}</span>
                   </button>
                   {owned && options.length > 0 && (
                     <div className="elite-toggle" role="group" aria-label={t("{name} 정예화 단계", { name: op.name })}>
@@ -2002,6 +2011,10 @@ const HELP_SECTIONS: { title: string; items: string[] }[] = [
   { title: "대체 추천", items: [
     "각 자리의 대체 후보는 실제로 교체해 본 방 점수로 순위를 매기고, 동점이면 낮은 성급(육성 저렴)을 우선합니다.",
     "토큰 생성·소비자, 오버라이드·수익 역할, 쉐이 카운트 인원 같은 시너지 코어는 '대체 불가'로 표시됩니다.",
+  ]},
+  { title: "미래시(미실장) 오퍼", items: [
+    "헤더의 '미래시 데이터 포함'을 켜면 한국 서버 미출시(중국 서버 선행) 오퍼도 보유 오퍼 설정과 자동편성 계산에 포함됩니다. 스킬 텍스트는 비공식 AI 번역이며, 한국 서버 정식 출시 시 공식 데이터로 대체됩니다.",
+    "토글을 바꿔도 현재 편성은 유지됩니다 — 자동편성을 다시 실행해야 반영됩니다.",
   ]},
   { title: "수치는 근사치", items: [
     "숙소는 풀 인원(20명), 모집 4칸, 발전소 3(그레이 알터 시 4) 기준의 추정 상한으로 계산합니다. 실제 게임 수치와 약간 다를 수 있습니다.",

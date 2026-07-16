@@ -364,7 +364,7 @@ FUTURE_ALIASES = {
     "char_1050_chen3": ["첸"],
     "char_1052_kalts2": ["켈시"],
     "char_1051_headb2": ["지마"],
-    "char_1048_orchd2": ["오키드", "몬헌"],
+    "char_1048_orchd2": ["타마미츠네 오키드", "오키드", "몬헌"],
     "char_1049_catap2": ["캐터펄트", "몬헌"],
     "char_2027_wang": ["왕"],
 }

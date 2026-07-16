@@ -652,6 +652,19 @@ const D: Record<string, Pair> = {
     "This material is not yet released on the KR server — its name and description are unofficial AI translations that may differ from the official localization.",
     "韓国サーバー未実装の素材です — 名称・説明は非公式のAI翻訳のため、正式実装時の公式翻訳と異なる場合があります。",
   ],
+  "**미실장** 배지가 붙은 오퍼는 한국 서버 미출시(중국 서버 선행) 오퍼입니다 — 미래시 데이터 포함이 켜져 있을 때만 표시되며, 스킬 텍스트는 비공식 AI 번역입니다.": [
+    "Operators with the **Unreleased** badge are not yet on the KR server (CN-first) — they appear only while 'Include future data' is on, and their skill text is an unofficial AI translation.",
+    "**未実装**バッジ付きのオペレーターは韓国サーバー未実装（中国サーバー先行）です — 「未実装データを含む」がオンの間のみ表示され、スキルテキストは非公式のAI翻訳です。",
+  ],
+  "미래시(미실장) 오퍼": ["Future (unreleased) operators", "未実装（先行）オペレーター"],
+  "헤더의 '미래시 데이터 포함'을 켜면 한국 서버 미출시(중국 서버 선행) 오퍼도 보유 오퍼 설정과 자동편성 계산에 포함됩니다. 스킬 텍스트는 비공식 AI 번역이며, 한국 서버 정식 출시 시 공식 데이터로 대체됩니다.": [
+    "Turn on 'Include future data' in the header to include operators not yet released on the KR server (CN-first) in the roster settings and auto-assignment. Their skill text is an unofficial AI translation, replaced by official data when they release on KR.",
+    "ヘッダーの「未実装データを含む」をオンにすると、韓国サーバー未実装（中国サーバー先行）のオペレーターも所持設定と自動編成の計算に含まれます。スキルテキストは非公式のAI翻訳で、韓国サーバーでの正式実装時に公式データへ置き換えられます。",
+  ],
+  "토글을 바꿔도 현재 편성은 유지됩니다 — 자동편성을 다시 실행해야 반영됩니다.": [
+    "Changing the toggle keeps the current assignment — run auto-assignment again to apply it.",
+    "トグルを切り替えても現在の編成は維持されます — 反映するには自動編成を再実行してください。",
+  ],
   // ── 육성 비용 계산기 ──
   "육성 비용 계산기": ["Upgrade Cost Calculator", "育成コスト計算機"],
   "오퍼레이터를 추가하면 레벨업(용문폐·경험치), 정예화 1·2, 스킬 레벨 2~7, 스킬별 특화 1~3, 모듈별 1~3단계가 전부 개별 행으로 나옵니다. 각 그룹에서 목표 단계를 클릭하면 앞 단계가 자동 포함돼 합산됩니다. 경험치는 고급작전기록(2000 EXP) 환산 개수로 표시합니다. 재료 아이콘을 클릭하면 상세 정보가 열립니다.": [

@@ -379,6 +379,10 @@ def build_locale(prefix):
                 buff = (building.get("buffs") or {}).get(bid)
                 if buff:
                     buffs_out[bid] = {"name": buff.get("buffName"), "desc": strip_tags(buff.get("description"))}
+                elif iop.get("unreleased"):
+                    # 미실장 오퍼의 buffId는 로케일 테이블에 없음 — infra.json의 한국어
+                    # 텍스트를 수확 사전 + 수동(ko→로케일)으로 번역해 채운다 (미스는 KR 폴백)
+                    buffs_out[bid] = {"name": _tr(s.get("name")), "desc": _tr(s.get("description"))}
     recruit_tags = {str(t["tagId"]): t["tagName"] for t in gacha.get("gachaTags") or []}
     rooms_out = {rid: room_names.get(rid, rid) for rid in infra["rooms"].keys()}
     extra = {"names": names, "recruitTags": recruit_tags, "buffs": buffs_out, "rooms": rooms_out}

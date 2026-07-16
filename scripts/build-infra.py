@@ -11,6 +11,16 @@ kr = load(f"{S}/kr_character_table.json"); chars = kr.get("chars", kr)
 operators = load(f"{REPO}/app/data/operators.json")
 ops_by_id = {o["id"]: o for o in operators}
 
+# ── 미실장(CN 선행) 오퍼 지원: CN building_data 폴백 + 설명 한국어화 ──────────────
+# 미실장 오퍼는 KR building_data에 없으므로 CN 테이블에서 buffChar를 읽되, 파서가
+# 한국어 정규식이라 설명을 먼저 한국어로 바꾼다: ① 양쪽에 다 있는 buffId를 조인한
+# CN→KR 자동 사전(정형 문구 = 공식 번역), ② scripts/cn-translations.json 수동
+# 오버레이(비공식 AI 번역, regen-operators.py와 같은 파일·같은 strip_tags 렌더링 키).
+# 번역이 없으면 원문 유지 + 경고 — 파서가 못 읽으므로 스킬 수치가 0으로 잡힌다.
+cn_building = load(f"{S}/cn_building_data.json")
+MANUAL_PATH = f"{REPO}/scripts/cn-translations.json"
+MANUAL = load(MANUAL_PATH) if os.path.exists(MANUAL_PATH) else {}
+
 ROOM_KO = {"MANUFACTURE": "제조소", "TRADING": "무역소", "POWER": "발전소", "WORKSHOP": "가공소",
            "DORMITORY": "숙소", "MEETING": "응접실", "HIRE": "사무실", "TRAINING": "훈련실",
            "CONTROL": "제어 센터"}
@@ -21,6 +31,26 @@ def strip_tags(s):
     s = re.sub(r"<[@$/][^>]*>", "", s).replace("</>", "")
     s = re.sub(r"<[a-zA-Z][^>]*>", "", s)
     return re.sub(r"\s+", " ", s).strip()
+
+# CN→KR 버프 텍스트 사전: 같은 buffId가 양 서버에 있으면 렌더링(strip_tags) 기준으로 짝짓기
+CJK_RE = re.compile(r"[㐀-鿿]")
+_kr_buffs = building.get("buffs") or {}
+_cn_buffs = cn_building.get("buffs") or {}
+CN2KR_BUFF = {}
+for _bid, _cb in _cn_buffs.items():
+    _kb = _kr_buffs.get(_bid)
+    if not _kb: continue
+    for _field in ("description", "buffName"):
+        _c, _k = strip_tags(_cb.get(_field)), strip_tags(_kb.get(_field))
+        if _c and _k and _c != _k and CJK_RE.search(_c):
+            CN2KR_BUFF.setdefault(_c, _k)
+untranslated_buffs = []
+def tr_buff(text, ctx):
+    if not text or not CJK_RE.search(text): return text
+    t = (MANUAL.get(text) or {}).get("ko") or CN2KR_BUFF.get(text)
+    if t: return t
+    untranslated_buffs.append({"ctx": ctx, "cn": text})
+    return text
 
 # room specs at max level (phases[-1])
 rooms_out = {}
@@ -36,10 +66,16 @@ for rid, room in (building.get("rooms") or {}).items():
 
 # all KR operator names for partner detection (longest first so 스카디 doesn't
 # swallow 스카디 더 커럽팅 하트)
-names = sorted({c["name"] for cid, c in chars.items() if cid.startswith("char_")}, key=len, reverse=True)
 name_to_id = {}
 for cid, c in chars.items():
     if cid.startswith("char_"): name_to_id.setdefault(c["name"], cid)
+# 미실장 오퍼도 파트너 탐지 대상 — 표시명(영문 코드네임)과 별칭(한글 통칭·중문 원명)을 등록.
+# 번역된 버프 텍스트가 "클로저"·"타마미츠네 오키드" 같은 한글 통칭으로 미실장 오퍼를 언급한다
+for o in operators:
+    if not o.get("unreleased"): continue
+    for n in [o["name"], *(o.get("aliases") or [])]:
+        if n and len(n) >= 2: name_to_id.setdefault(n, o["id"])
+names = sorted(name_to_id.keys(), key=len, reverse=True)
 
 # matches "+30%" and "30% 상승" / "30% 추가 상승"
 PCT = r"(?:\+\s*(\d+(?:\.\d+)?)\s*%|(\d+(?:\.\d+)?)\s*%(?:\s*추가)?\s*상승)"
@@ -50,15 +86,33 @@ PCT = r"(?:\+\s*(\d+(?:\.\d+)?)\s*%|(\d+(?:\.\d+)?)\s*%(?:\s*추가)?\s*상승)"
 ELITE_TEAM = "로도스 아일랜드-정예 오퍼레이터"
 elite_count = sum(1 for o in operators if ELITE_TEAM in (o.get("factions") or []))
 
+# "X 오퍼레이터가 배치된 시설 1개당 +v% (최대 c개)" 시설 카운트 절 — 만트라(정예)뿐
+# 아니라 타락사쿰(쉐이) 같은 진영 조건도 지원. 게임 상한(c)과 실존 오퍼 수 중 작은 쪽.
+# 절을 떼어낸 텍스트를 함께 돌려줘 기본치 파싱이 이 절의 %를 이중 계상하지 않게 한다.
+# ⚠ 토큰은 화이트리스트 alternation으로만 잡는다 — 자유 캡처는 leftmost 매칭이
+# "내 정예" 같은 조사구를 물어 카운트가 0이 되는 회귀를 냈다 (2026-07).
+# 실제 정의는 FACTION_NAMES 확정 후(아래) — 호출은 parse_skill 시점이라 문제없다.
+def facility_clause(text):
+    m = FAC_RE.search(text)
+    if not m: return 0.0, text
+    token = m.group(1)
+    per, cap = float(m.group(2)), float(m.group(3))
+    if token == "정예":
+        count = elite_count
+    else:  # 진영명 토큰 — 정확 일치 또는 하이픈 꼬리 일치(쉐이 = 염-쉐이)
+        count = sum(1 for o in operators
+                    if any(token == f or f.split("-")[-1] == token for f in (o.get("factions") or [])))
+    return per * min(cap, count), text[:m.start()] + text[m.end():]
+
 # 자기 컨디션 낙차(소진)로 생산력이 변하는 오퍼(토터)의 대표 운용 낙차.
 # 만컨디션(낙차 0)이 아니라 12h 교대 평균 기준 — 컨디션 9~12 구간 (사용자 제보 2026-07)
 DROP_ASSUMED = 12
 
 def parse_metric(room, text):
     """Return (kind, value) — the op's headline contribution in this room."""
-    def best(pattern):
+    def best(pattern, src=None):
         vals = []
-        for m in re.finditer(pattern, text):
+        for m in re.finditer(pattern, src if src is not None else text):
             g = [g for g in m.groups() if g]
             if g: vals.append(float(g[-1]))
         return max(vals) if vals else None
@@ -76,19 +130,17 @@ def parse_metric(room, text):
     if room == "TRADING":
         m = re.search(r"자신을 제외한 작업 중인 오퍼레이터 1명당[^+%\d]{0,20}\+\s*(\d+(?:\.\d+)?)\s*%", text)
         if m: return "percoworker", float(m.group(1))
-        v = best(r"(?:오더 수주 효율|주문 획득 효율)[^+%\d]{0,24}" + PCT)
-        if v:
+        # 시설 카운트 절(만트라 정예 / 타락사쿰 쉐이)을 먼저 떼어 기본치와 분리 계상
+        fac_add, fac_text = facility_clause(text)
+        v = best(r"(?:오더 수주 효율|주문 획득 효율)[^+%\d]{0,24}" + PCT, fac_text)
+        if v or fac_add:
             # 응접실 레벨 성장형 (비질·미틈): "응접실 레벨 1레벨당 추가로 5% 제공,
             # 최대 40% 제공" → 응접실은 만렙(Lv3) 기준이므로 상한 채택
-            grow = re.search(r"응접실 레벨 ?1?(?:레벨)?당 추가로 수주 효율 (\d+(?:\.\d+)?)% 제공", text)
-            if grow:
-                cap = re.search(r"최대 \+?(\d+(?:\.\d+)?)% 제공", text)
+            grow = re.search(r"응접실 레벨 ?1?(?:레벨)?당 추가로 수주 효율 (\d+(?:\.\d+)?)% 제공", fac_text)
+            if grow and v is not None:
+                cap = re.search(r"최대 \+?(\d+(?:\.\d+)?)% 제공", fac_text)
                 v = float(cap.group(1)) if cap else v + float(grow.group(1)) * 3
-            # 시설 카운트 (만트라): "정예 오퍼레이터가 배치된 시설 1개당 +2% (최대
-            # 10개)" → 실존 정예 오퍼 수(현재 6)와 게임 상한(10) 중 작은 쪽 채택
-            fac = re.search(r"정예 오퍼레이터가 배치된 시설 1개당[^%]*?\+\s*(\d+(?:\.\d+)?)\s*%\s*\(최대 (\d+)개\)", text)
-            if fac: v += float(fac.group(1)) * min(float(fac.group(2)), elite_count)
-            return "output", v
+            return "output", (v or 0) + fac_add
         # order-quality effects, converted to a rough efficiency-equivalent %.
         # payout skills (테킬라 용문폐 보너스, 프로바이조 위약 배상) scale with
         # quality-probability crew in the same post — handled in the planner
@@ -115,8 +167,9 @@ def parse_metric(room, text):
             if re.search(r"단서 공유 상태에서", text): return "shared", v
             return "output", v
     if room == "HIRE":
-        v = best(r"(?:인맥 레퍼런스|연락).{0,16}(?:누적 |획득 )?속도[^+%\d]{0,18}" + PCT)
-        if v: return "output", v
+        fac_add, fac_text = facility_clause(text)  # 켈시 '테라의 방주': 정예 시설 1개당 +4% (최대 5개)
+        v = best(r"(?:인맥 레퍼런스|연락).{0,16}(?:누적 |획득 )?속도[^+%\d]{0,18}" + PCT, fac_text)
+        if v or fac_add: return "output", (v or 0) + fac_add
     if room == "WORKSHOP":
         v = best(r"부산물[^%\d]{0,26}" + PCT)
         if v: return "output", v
@@ -129,11 +182,15 @@ def parse_metric(room, text):
     if room == "CONTROL":
         # facility-wide auras — only the highest of a kind applies per base,
         # ranked 제조소 > 무역소 > 인맥 레퍼런스 > 단서 by the planner
-        v = best(r"제조소의 생산력[^+%\d]{0,10}" + PCT)
-        if v: return "ctrl_mfg", v
+        v_mfg = best(r"제조소의 생산력[^+%\d]{0,10}" + PCT)
         # "무역소의 …" 뿐 아니라 "무역소 내 <진영> 1명당 … 오더 수주 효율"(야하타 우미리)도 무역소 오라로 인식
-        v = best(r"무역소[^.]{0,40}?오더 수주 효율[^+%\d]{0,10}" + PCT)
-        if v: return "ctrl_trade", v
+        v_trd = best(r"무역소[^.]{0,40}?오더 수주 효율[^+%\d]{0,10}" + PCT)
+        if v_mfg and v_trd:
+            # 배타 조건 분기 (왕 권변: "외세≥실리면 무역 +7% / 실리>외세면 제조 +2%") —
+            # 성장형 상한 채택과 같은 관례로 유리한 분기를 가정해 큰 쪽을 채택
+            return ("ctrl_trade", v_trd) if v_trd >= v_mfg else ("ctrl_mfg", v_mfg)
+        if v_mfg: return "ctrl_mfg", v_mfg
+        if v_trd: return "ctrl_trade", v_trd
         v = best(r"인맥 레퍼런스[^%\d]{0,24}" + PCT)
         if v: return "ctrl_hire", v
         v = best(r"단서 수집 (?:속도|성향)[^%\d]{0,20}" + PCT)
@@ -204,11 +261,18 @@ def parse_morale_drain(text):
 # 오인하지 않도록, 매치 지점이 더 긴 진영명으로 시작하면 무시한다
 FACTION_NAMES = sorted({f for o in operators for f in (o.get("factions") or []) if f}, key=len, reverse=True)
 
-def find_partners(text, self_name):
+# facility_clause용 토큰 화이트리스트: 정예 + 진영명 + 하이픈 꼬리("염-쉐이"→"쉐이")
+_fac_tokens = {"정예"} | set(FACTION_NAMES) | {f.split("-")[-1] for f in FACTION_NAMES if "-" in f}
+FAC_RE = re.compile(r"(" + "|".join(re.escape(t) for t in sorted(_fac_tokens, key=len, reverse=True))
+                    + r") 오퍼레이터가 배치된 시설 1개당[^%]*?\+\s*(\d+(?:\.\d+)?)\s*%[^(]{0,10}\(최대 (\d+)개\)")
+
+def find_partners(text, self_name, self_id=None):
     found = []
     scan = text
     for n in names:
-        if n == self_name or len(n) < 2: continue
+        # 자기 자신 언급 제외 — 미실장 오퍼는 표시명(영문)과 텍스트 속 한글 통칭이 달라
+        # 이름 비교만으론 못 거르므로 id로도 거른다 (클로저 '특별 오더' 자기 언급 등)
+        if n == self_name or len(n) < 2 or (self_id and name_to_id.get(n) == self_id): continue
         # avoid substring hits inside other words (e.g. '레이' in '오퍼레이터'):
         # the name must not be glued to a preceding Hangul syllable
         for m in re.finditer(r"(?<![가-힣])" + re.escape(n), scan):
@@ -226,7 +290,7 @@ handbook = load(f"{S}/kr_handbook_info_table.json")
 handbook = handbook.get("handbookDict", handbook)
 release_seq = {cid: i for i, cid in enumerate(handbook.keys())}
 
-def parse_skill(entry, oname):
+def parse_skill(entry, oname, oid=None):
         room = entry["room"]
         if room not in ROOM_KO: return None
         text = entry["description"]
@@ -258,8 +322,15 @@ def parse_skill(entry, oname):
         # faction-conditional control skills: "용문근위국 오퍼레이터와 함께
         # 제어 센터에 배치 시" (gate) / "미노스 오퍼레이터 1명당 +v% (최대 c%)"
         req_faction = None
-        m = re.search(r"([가-힣A-Za-z·]{2,14}) 오퍼레이터와 함께", text)
-        if m: req_faction = m.group(1)
+        # 알려진 진영명 우선(길이 내림차순) — 공백 포함 진영("우르수스 학생자치단")이
+        # 자유 캡처에서 '학생자치단'으로 잘리는 것을 방지. 플래너는 factions 정확 일치 게이트
+        for f in FACTION_NAMES:
+            if re.search(re.escape(f) + r" 오퍼레이터와 함께", text):
+                req_faction = f
+                break
+        if not req_faction:
+            m = re.search(r"([가-힣A-Za-z·]{2,14}) 오퍼레이터와 함께", text)
+            if m: req_faction = m.group(1)
         per_faction = per_scope = per_cap = None
         # "<진영> 오퍼레이터(최대 N명)? 1명당/1명 증가할 때마다" — 진영명을 알려진 진영으로
         # 한정 매칭한다(공백 포함 '라인 랩'도, '제조소 내의'·'숙소 내' 같은 방 범위 조사구는
@@ -333,7 +404,7 @@ def parse_skill(entry, oname):
         # 특정 오퍼가 특정 방 종류에 배치돼야 스킬 발동. 같은 방 동반도 기지 존재도 아님.
         # 방 순서상 그리디 1차엔 판정 불가 → 플래너가 낙관 배치 후 리페어 패스에서 엄격 검증
         room_partner = None
-        rp = re.search(r"만약 ([가-힣A-Za-z0-9·']{1,16}?)(?:이|가) (제조소|무역소|발전소|응접실|사무실|가공소|훈련실|제어 센터|숙소)에 배치(?:되어 있|돼 있)다면", text)
+        rp = re.search(r"만약 ([가-힣A-Za-z0-9·' ]{1,20}?)(?:이|가) (제조소|무역소|발전소|응접실|사무실|가공소|훈련실|제어 센터|숙소)에 배치(?:되어 있|돼 있)다면", text)
         if rp and rp.group(1).strip() in name_to_id:
             room_partner = {"id": name_to_id[rp.group(1).strip()], "room": KO_ROOM[rp.group(2)]}
         # buffChar slots already resolved upgrades — every line here stacks
@@ -345,7 +416,10 @@ def parse_skill(entry, oname):
             "description": text, "kind": kind, "value": value, "product": product,
             "group": group, "tier": tier,
             "moraleDrain": parse_morale_drain(text),
-            "partners": [p for p in find_partners(text, oname) if p not in base_partner_ids],
+            # 교차방 파트너(roomPartner)·기지 존재 파트너(basePartners)는 같은 방 동반 조건이
+            # 아니므로 partners에서 제외 — 이중 게이트 방지 (레토는 '굼'이 1글자라 우연히 회피)
+            "partners": [p for p in find_partners(text, oname, oid)
+                         if p not in base_partner_ids and not (room_partner and p == room_partner["id"])],
             "basePartners": base_partner_ids, "basePartnerBonus": base_partner_bonus,
             "gateFaction": gate_faction, "gateCount": gate_count,
             "gatePlatforms": gate_platforms, "roomPartner": room_partner,
@@ -365,7 +439,13 @@ def parse_skill(entry, oname):
 infra_ops = []
 for o in operators:
     skills = []
+    # 미실장 오퍼는 KR building_data에 없음 → CN 테이블 폴백 + 설명·이름 한국어화
+    src = building
+    is_unrel = bool(o.get("unreleased"))
     slots_b = ((building.get("chars") or {}).get(o["id"]) or {}).get("buffChar") or []
+    if not slots_b and is_unrel:
+        src = cn_building
+        slots_b = ((cn_building.get("chars") or {}).get(o["id"]) or {}).get("buffChar") or []
     for slot in slots_b:
         data = slot.get("buffData") or []
         if not data: continue
@@ -373,18 +453,23 @@ for o in operators:
         # 정예화를 낮췄을 때(withElite) 대체본으로 쓰이도록 최종 스킬의 tiers에 보존한다
         tier_entries = []
         for bd in data:
-            bf = (building.get("buffs") or {}).get(bd["buffId"])
+            bf = (src.get("buffs") or {}).get(bd["buffId"])
             if not bf: continue
             cond = bd.get("cond") or {}
             ph = cond.get("phase", 0)
             ph = ph if isinstance(ph, int) else int(str(ph).replace("PHASE_", ""))
             unlock = f"Lv.{cond.get('level', 1)}" if ph == 0 else f"정예화 {ph}"
-            tier_entries.append({"buffId": bd["buffId"], "name": bf.get("buffName"), "room": bf.get("roomType"),
-                                 "unlock": unlock, "description": strip_tags(bf.get("description"))})
+            name = strip_tags(bf.get("buffName"))
+            desc = strip_tags(bf.get("description"))
+            if is_unrel:
+                name = tr_buff(name, f"{o['name']}·buffName")
+                desc = tr_buff(desc, f"{o['name']}·description")
+            tier_entries.append({"buffId": bd["buffId"], "name": name, "room": bf.get("roomType"),
+                                 "unlock": unlock, "description": desc})
         if not tier_entries: continue
-        main = parse_skill(tier_entries[-1], o["name"])
+        main = parse_skill(tier_entries[-1], o["name"], o["id"])
         if main is None: continue
-        lowers = [s for s in (parse_skill(e, o["name"]) for e in tier_entries[:-1]) if s is not None]
+        lowers = [s for s in (parse_skill(e, o["name"], o["id"]) for e in tier_entries[:-1]) if s is not None]
         if lowers: main["tiers"] = lowers
         skills.append(main)
     # dorm stack systems: one skill grants stacks per dorm level, a sibling
@@ -405,13 +490,16 @@ for o in operators:
             for k in ("_stackGrant", "_stackCount", "_stackConv", "_roboCap", "_roboUse"):
                 s.pop(k, None)
     if skills:
-        infra_ops.append({"id": o["id"], "name": o["name"], "rarity": o["rarity"],
-                          "faction": o["faction"],
-                          # 다중 소속 (마터호른 = 카란 무역회사 + 쉐라그) — 진영 카운트·게이트는 전부 인정
-                          "factions": o.get("factions") or [o["faction"]],
-                          "accent": o["accent"], "image": o["image"],
-                          "seq": release_seq.get(o["id"], -1),
-                          "skills": skills})
+        entry = {"id": o["id"], "name": o["name"], "rarity": o["rarity"],
+                 "faction": o["faction"],
+                 # 다중 소속 (마터호른 = 카란 무역회사 + 쉐라그) — 진영 카운트·게이트는 전부 인정
+                 "factions": o.get("factions") or [o["faction"]],
+                 "accent": o["accent"], "image": o["image"],
+                 # 미실장은 KR 핸드북에 없음 → operators.json의 seq(100000+CN 도감순) 사용
+                 "seq": release_seq.get(o["id"], o.get("seq", -1)),
+                 "skills": skills}
+        if is_unrel: entry["unreleased"] = True
+        infra_ops.append(entry)
 
 # ── "~류" 스킬 패밀리 카탈로그 (사용자 확정 2026-07) ────────────────────────────────
 # 도로시("라인테크류 스킬 1개당 +5%")처럼 특정 스킬 계열 수에 따라 스케일하는 오퍼가 있어,
@@ -445,7 +533,13 @@ for op in infra_ops:
     for sk in op["skills"]:
         by_room[sk["room"]] = by_room.get(sk["room"], 0) + 1
         if sk["partners"]: partnered += 1
-print("ops with infra skills:", len(infra_ops))
+print("ops with infra skills:", len(infra_ops),
+      f"({sum(1 for op in infra_ops if op.get('unreleased'))} unreleased)")
 print("skills per room:", json.dumps(by_room, ensure_ascii=False))
 print("skills naming partners:", partnered)
 print("room specs:", json.dumps(rooms_out, ensure_ascii=False))
+if untranslated_buffs:
+    dedup = list({m["cn"]: m for m in untranslated_buffs}.values())
+    print(f"UNTRANSLATED buff texts: {len(dedup)} — scripts/cn-translations.json에 채울 것 (파싱 수치 0으로 잡힘)",
+          file=sys.stderr)
+    for m in dedup: print(json.dumps(m, ensure_ascii=False), file=sys.stderr)

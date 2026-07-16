@@ -4302,6 +4302,17 @@ footer p {
 .story-card-info h3 .future-badge {
   margin-left: 6px;
 }
+/* 인프라 플래너 보유 오퍼 설정 — 미실장 오퍼 구분 표시 */
+.roster-card.future {
+  outline: 1px dashed #8a2be2;
+  outline-offset: -1px;
+  border-radius: 4px;
+}
+.roster-card .future-badge {
+  margin-left: 4px;
+  padding: 1px 4px;
+  font-size: 8px;
+}
 /* 미실장 안내문 — 오퍼 모달 히어로(어두운 그라데이션) 위에 뜨므로 밝은 글자 사용.
    max-width로 제목 블록(flex:none, 내용폭 추종)이 넓어지는 걸 막아 별명 제보 폼이 밀리지 않게 한다 */
 .future-note {
