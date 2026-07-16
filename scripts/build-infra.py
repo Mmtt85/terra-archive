@@ -491,6 +491,10 @@ for o in operators:
                 s.pop(k, None)
     if skills:
         entry = {"id": o["id"], "name": o["name"], "rarity": o["rarity"],
+                 # 직군 계열 — 보유 오퍼 설정(RosterModal) 정렬용 (백과사전 SORT_KEYS와 동일).
+                 # jobCode는 로케일 무관 정렬 순서, subProfession·birthplace·race는 KR 문자열 정렬.
+                 "job": o["job"], "jobCode": o["jobCode"], "subProfession": o["subProfession"],
+                 "birthplace": o.get("birthplace", ""), "race": o.get("race", ""),
                  "faction": o["faction"],
                  # 다중 소속 (마터호른 = 카란 무역회사 + 쉐라그) — 진영 카운트·게이트는 전부 인정
                  "factions": o.get("factions") or [o["faction"]],

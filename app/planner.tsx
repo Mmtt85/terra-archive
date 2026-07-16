@@ -48,6 +48,11 @@ type InfraOp = {
   id: string;
   name: string;
   rarity: number;
+  job: string;          // 직군 표시명 (뱅가드·가드 …)
+  jobCode: string;      // 직군 정렬 순서의 정본 (PIONEER·WARRIOR …)
+  subProfession: string;
+  birthplace: string;
+  race: string;
   faction: string;
   factions?: string[]; // 다중 소속 (마터호른: 카란 무역회사 + 쉐라그) — 진영 카운트는 전부 인정
   accent: string;
@@ -56,6 +61,10 @@ type InfraOp = {
   skills: InfraSkill[];
   unreleased?: boolean; // KR 미실장(중국 선행) — '미래시 데이터 포함' 토글이 켜져야 로스터에 노출
 };
+
+// 직군 정렬 순서·정렬 키 — 백과사전(home.tsx)과 동일 (보유 오퍼 설정 정렬용)
+const JOB_ORDER = ["PIONEER", "WARRIOR", "TANK", "SNIPER", "CASTER", "MEDIC", "SUPPORT", "SPECIAL"];
+const ROSTER_SORT_KEYS = ["기본", "이름", "성급", "발매순", "소속", "출신지", "종족", "직군", "세부 직군"];
 
 const factionsOf = (op: InfraOp): string[] => op.factions ?? [op.faction];
 
@@ -1798,22 +1807,29 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
   const [sortKey, setSortKey] = useState("기본");
   const [sortAsc, setSortAsc] = useState(true);
   const keyword = query.trim().toLowerCase();
-  // 백과사전과 동일한 정렬 (InfraOp가 가진 필드: 이름·성급·발매순·소속). 기본 = 6성↓ → KR 출시 최신순
+  // 백과사전과 동일한 정렬 (직군·세부 직군·출신지·종족 포함). 기본 = 6성↓ → KR 출시 최신순
   const filteredOps = allOps.filter((op) => !keyword || op.name.toLowerCase().includes(keyword) || op.faction.toLowerCase().includes(keyword));
-  let visible: InfraOp[];
-  if (sortKey === "기본") {
-    const base = [...filteredOps].sort((a, b) => b.rarity - a.rarity || b.seq - a.seq);
-    visible = sortAsc ? base : base.reverse();
-  } else {
+  const sortOps = (list: InfraOp[]): InfraOp[] => {
+    if (sortKey === "기본") {
+      const base = [...list].sort((a, b) => b.rarity - a.rarity || b.seq - a.seq);
+      return sortAsc ? base : base.reverse();
+    }
     const valueOf = (op: InfraOp): string | number =>
-      sortKey === "이름" ? op.name : sortKey === "성급" ? op.rarity : sortKey === "발매순" ? op.seq : op.faction;
+      sortKey === "이름" ? op.name : sortKey === "성급" ? op.rarity : sortKey === "발매순" ? op.seq
+      : sortKey === "출신지" ? op.birthplace : sortKey === "종족" ? op.race
+      : sortKey === "직군" ? JOB_ORDER.indexOf(op.jobCode) : sortKey === "세부 직군" ? op.subProfession
+      : op.faction;
     const direction = sortAsc ? 1 : -1;
-    visible = [...filteredOps].sort((a, b) => {
+    return [...list].sort((a, b) => {
       const left = valueOf(a), right = valueOf(b);
       const compared = typeof left === "number" && typeof right === "number" ? left - right : String(left).localeCompare(String(right), "ko");
       return compared !== 0 ? compared * direction : a.name.localeCompare(b.name, "ko");
     });
-  }
+  };
+  // 미실장(중국 선행) 오퍼는 위쪽에 따로 빼서 보여준다 (사용자 요청) — 각 그룹 내부는 선택 정렬
+  const futureOps = sortOps(filteredOps.filter((op) => op.unreleased));
+  const releasedOps = sortOps(filteredOps.filter((op) => !op.unreleased));
+  const visible = [...futureOps, ...releasedOps];
   const toggle = (id: string) => setDraft((current) => {
     const next = new Set(current);
     if (next.has(id)) next.delete(id); else next.add(id);
@@ -1824,6 +1840,27 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
     if (elite === 2) next.delete(id); else next.set(id, elite); // 2정이 기본값이라 별도 저장 불필요
     return next;
   });
+  const renderCard = (op: InfraOp) => {
+    const owned = draft.has(op.id);
+    const options = eliteOptions(op);
+    const elite = Math.min(eliteDraft.get(op.id) ?? 2, options.length ? options[options.length - 1] : 2) as Elite;
+    return (
+      <div key={op.id} className={`roster-card${owned ? " owned" : ""}${op.unreleased ? " future" : ""}`}>
+        <button type="button" onClick={() => toggle(op.id)} title={op.name}>
+          <img src={op.image} alt={op.name} loading="lazy" className={onShowOperator ? "op-link" : undefined}
+            onClick={(event) => { if (onShowOperator) { event.stopPropagation(); onShowOperator(op.id); } }} />
+          <span>{op.name}{op.unreleased && <em className="future-badge">{t("미실장")}</em>}</span>
+        </button>
+        {owned && options.length > 0 && (
+          <div className="elite-toggle" role="group" aria-label={t("{name} 정예화 단계", { name: op.name })}>
+            {options.map((option) => (
+              <button key={option} type="button" className={elite === option ? "selected" : ""} onClick={() => setElite(op.id, option)}>{t(ELITE_LABEL[option])}</button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
   // 성급 단위 일괄 조작 — 보유 체크/해제, 정예화 노정예/1정/2정
   // (정예화는 정예화 해금 스킬이 있는 오퍼에만 적용, 3성 이하는 2정이 없어 보유/해제만)
   const bulkOwn = (test: (rarity: number) => boolean, own: boolean) => setDraft((current) => {
@@ -1928,35 +1965,20 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
             <label className="sort-wrap">
               <span>{t("정렬")}</span>
               <select value={sortKey} onChange={(event) => setSortKey(event.target.value)}>
-                {["기본", "이름", "성급", "발매순", "소속"].map((key) => <option key={key} value={key}>{t(key)}</option>)}
+                {ROSTER_SORT_KEYS.map((key) => <option key={key} value={key}>{t(key)}</option>)}
               </select>
               <button type="button" className="sort-direction" onClick={() => setSortAsc((current) => !current)} aria-label={sortAsc ? t("내림차순으로 변경") : t("오름차순으로 변경")}>{sortAsc ? "↑" : "↓"}</button>
             </label>
             <span className="count"><b>{visible.length}</b> OPERATORS</span>
           </div>
-          <div className="roster-grid">
-            {visible.map((op) => {
-              const owned = draft.has(op.id);
-              const options = eliteOptions(op);
-              const elite = Math.min(eliteDraft.get(op.id) ?? 2, options.length ? options[options.length - 1] : 2) as Elite;
-              return (
-                <div key={op.id} className={`roster-card${owned ? " owned" : ""}${op.unreleased ? " future" : ""}`}>
-                  <button type="button" onClick={() => toggle(op.id)} title={op.name}>
-                    <img src={op.image} alt={op.name} loading="lazy" className={onShowOperator ? "op-link" : undefined}
-                      onClick={(event) => { if (onShowOperator) { event.stopPropagation(); onShowOperator(op.id); } }} />
-                    <span>{op.name}{op.unreleased && <em className="future-badge">{t("미실장")}</em>}</span>
-                  </button>
-                  {owned && options.length > 0 && (
-                    <div className="elite-toggle" role="group" aria-label={t("{name} 정예화 단계", { name: op.name })}>
-                      {options.map((option) => (
-                        <button key={option} type="button" className={elite === option ? "selected" : ""} onClick={() => setElite(op.id, option)}>{t(ELITE_LABEL[option])}</button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+          {futureOps.length > 0 && (
+            <>
+              <h4 className="roster-section-head">{t("미실장 (중국 서버 선행)")} <em>{futureOps.length}</em></h4>
+              <div className="roster-grid">{futureOps.map(renderCard)}</div>
+              <h4 className="roster-section-head">{t("한국 서버 출시")} <em>{releasedOps.length}</em></h4>
+            </>
+          )}
+          <div className="roster-grid">{releasedOps.map(renderCard)}</div>
         </div>
       </section>
     </div>

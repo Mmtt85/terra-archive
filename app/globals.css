@@ -4308,6 +4308,25 @@ footer p {
   outline-offset: -1px;
   border-radius: 4px;
 }
+.roster-section-head {
+  margin: 14px 2px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  opacity: 0.75;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.roster-section-head:first-of-type { margin-top: 4px; }
+.roster-section-head em {
+  font-style: normal;
+  font-weight: 700;
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 14%, transparent);
+}
 .roster-card .future-badge {
   margin-left: 4px;
   padding: 1px 4px;

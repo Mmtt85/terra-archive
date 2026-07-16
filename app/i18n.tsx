@@ -657,6 +657,8 @@ const D: Record<string, Pair> = {
     "**未実装**バッジ付きのオペレーターは韓国サーバー未実装（中国サーバー先行）です — 「未実装データを含む」がオンの間のみ表示され、スキルテキストは非公式のAI翻訳です。",
   ],
   "미래시(미실장) 오퍼": ["Future (unreleased) operators", "未実装（先行）オペレーター"],
+  "미실장 (중국 서버 선행)": ["Unreleased (CN server)", "未実装（中国サーバー先行）"],
+  "한국 서버 출시": ["Released on KR server", "韓国サーバー実装済み"],
   "헤더의 '미래시 데이터 포함'을 켜면 한국 서버 미출시(중국 서버 선행) 오퍼도 보유 오퍼 설정과 자동편성 계산에 포함됩니다. 스킬 텍스트는 비공식 AI 번역이며, 한국 서버 정식 출시 시 공식 데이터로 대체됩니다.": [
     "Turn on 'Include future data' in the header to include operators not yet released on the KR server (CN-first) in the roster settings and auto-assignment. Their skill text is an unofficial AI translation, replaced by official data when they release on KR.",
     "ヘッダーの「未実装データを含む」をオンにすると、韓国サーバー未実装（中国サーバー先行）のオペレーターも所持設定と自動編成の計算に含まれます。スキルテキストは非公式のAI翻訳で、韓国サーバーでの正式実装時に公式データへ置き換えられます。",
