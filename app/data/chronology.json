@@ -403,6 +403,13 @@
    "dateNote": "'올해가 1100년' — act48side"
   },
   {
+   "ref": "act49side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null,
+   "dateNote": "사세행 — 염국(백조), 쉐이의 화 종결. 스크립트에 당대 연도 명시 없음"
+  },
+  {
    "id": "main_0",
    "kind": "main",
    "title": {
