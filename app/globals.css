@@ -347,7 +347,7 @@ button {
 }
 .event-trigger-thumb {
   display: block;
-  width: 102px;
+  width: 153px; /* 배너 1.5배 확대 (사용자 요청 2026-07) */
   overflow: hidden;
   border: 1px solid var(--line);
 }
@@ -370,8 +370,8 @@ button {
   top: 100%;
   left: 0;
   z-index: 40;
-  min-width: 250px;
-  max-width: min(330px, calc(100vw - 24px));
+  min-width: 295px; /* "2026년 7월 16일 ~ 2026년 8월 6일 · D-21"이 한 줄에 들어가는 폭 */
+  max-width: min(340px, calc(100vw - 24px));
   background: var(--white, #fff);
   border: 1px solid var(--ink);
   box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.12);
@@ -592,7 +592,7 @@ button {
     padding: 3px 10px 3px 3px;
   }
   .event-trigger-thumb {
-    width: 84px;
+    width: 126px;
   }
   .event-group .event-menu {
     left: 50%;

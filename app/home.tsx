@@ -296,13 +296,12 @@ function BroadcastBadges() {
   const headline = running[0];
   const evName = (event: GameEvent): string => eventName(locale, event);
   const dday = (event: GameEvent): number => eventDday(event, now);
+  // "2026년 7월 16일" 식 연·월·일 표기 (KST) — 배지·드롭다운 공용 (사용자 요청 2026-07)
   const md = (iso: string): string =>
-    new Intl.DateTimeFormat(DT_LOCALE[locale], { timeZone: "Asia/Seoul", month: "numeric", day: "numeric" }).format(new Date(iso));
+    new Intl.DateTimeFormat(DT_LOCALE[locale], { timeZone: "Asia/Seoul", year: "numeric", month: "long", day: "numeric" }).format(new Date(iso));
   // 스토리 탭용으로 이미 받아둔 이벤트 배너를 재활용 (로케일 변형 → ko 폴백)
   const evThumb = (event: GameEvent): string | undefined => eventThumb(locale, event);
-  // "7월 16일" 식 표기 (KST) — 배지의 이벤트 기간 표시용
-  const mdLong = (iso: string): string =>
-    new Intl.DateTimeFormat(DT_LOCALE[locale], { timeZone: "Asia/Seoul", month: "long", day: "numeric" }).format(new Date(iso));
+  const mdLong = md;
   const headlineThumb = headline ? evThumb(headline) : undefined;
   const eventBadge = headline && (
     <div className="event-group" ref={evRef}>
@@ -858,7 +857,7 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
       <header className="site-header" id="top">
         <a className="brand" href={localeBase || "/"} aria-label={t("테라 아카이브 홈")}
           onClick={(event) => { event.preventDefault(); switchTab("archive"); window.scrollTo({ top: 0 }); }}>
-          <span className="brand-mark"><img src="/avatars/char_1012_skadi2.png" alt="" /></span>
+          <span className="brand-mark"><img src="/avatars/char_1012_skadi2.webp" alt="" /></span>
           <span>{t("테라 아카이브")}<small>{t("명일방주(Arknights) KR 팬사이트")}</small></span>
         </a>
         <BroadcastBadges />
