@@ -197,6 +197,8 @@ function StoryDetail({ event, summary, onClose, onShowOperator }: {
             {active.map((entityIndex) => {
               const entity = entities[entityIndex];
               const linked = Boolean(entity.op && onShowOperator);
+              // 전용 스탠딩 CG(img)가 없으면 연결된 오퍼레이터 아바타로 폴백
+              const imgSrc = entity.img ?? (entity.op ? `/avatars/${entity.op}.png` : undefined);
               // 모바일(≤1180px): 스니펫(이름만) → 탭하면 펼쳐 설명 표시, 한 번 더 탭하면 오퍼 상세(있으면)·접기.
               // 데스크탑: 종전대로 카드를 누르면 바로 오퍼 상세.
               const handleClick = () => {
@@ -214,8 +216,8 @@ function StoryDetail({ event, summary, onClose, onShowOperator }: {
                   role="button" tabIndex={0}
                   onKeyDown={(keyEvent) => { if (keyEvent.key === "Enter") handleClick(); }}
                   title={linked ? t("오퍼레이터 정보 보기") : undefined}>
-                  {entity.img && (
-                    <div className="cast-img"><img src={entity.img} alt="" loading="lazy" decoding="async" /></div>
+                  {imgSrc && (
+                    <div className={`cast-img${entity.img ? "" : " cast-avatar"}`}><img src={imgSrc} alt="" loading="lazy" decoding="async" /></div>
                   )}
                   <div className="rail-card-text"><b>{entity.name}{linked && <i className="op-mark" aria-hidden>↗</i>}</b><span><span className="rail-desc-full">{entity.desc}</span><span className="rail-desc-snip">{entity.desc.slice(0, 5).trim()}…</span></span></div>
                 </div>
