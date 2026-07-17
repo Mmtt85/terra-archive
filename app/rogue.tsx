@@ -120,15 +120,18 @@ function StageModal({ pair, grade, onClose, onOpenEnemy }: {
             <button type="button" role="tab" aria-selected={mode === "e"} className={`emg${mode === "e" ? " on" : ""}`} onClick={() => setMode("e")}>{t("긴급 작전")}</button>
           </div>
         )}
-        {stage.map && <img className="rg-modal-map" src={`/rogue/map/${stage.map}.webp`} alt={t("전장 미니맵")} loading="lazy" decoding="async" />}
-        {stage.desc && <p className="rg-modal-desc">{stage.desc}</p>}
-        {stage.eliteDesc && <p className="rg-modal-elite">⚠ {stage.eliteDesc}</p>}
-        {isEmg && (mul.atk || mul.max_hp || mul.def) && (
-          <p className="rg-modal-elite">
-            {t("긴급 배율")}: {mul.atk ? `${t("공격")} ×${mul.atk} ` : ""}{mul.def ? `${t("방어")} ×${mul.def} ` : ""}{mul.max_hp ? `HP ×${mul.max_hp}` : ""}
-          </p>
-        )}
-        <div className="rg-modal-enemies">
+        <div className="rg-modal-cols">
+          <div className="rg-modal-left">
+            {stage.map && <img className="rg-modal-map" src={`/rogue/map/${stage.map}.webp`} alt={t("전장 미니맵")} loading="lazy" decoding="async" />}
+            {stage.desc && <p className="rg-modal-desc">{stage.desc}</p>}
+            {stage.eliteDesc && <p className="rg-modal-elite">⚠ {stage.eliteDesc}</p>}
+            {isEmg && (mul.atk || mul.max_hp || mul.def) && (
+              <p className="rg-modal-elite">
+                {t("긴급 배율")}: {mul.atk ? `${t("공격")} ×${mul.atk} ` : ""}{mul.def ? `${t("방어")} ×${mul.def} ` : ""}{mul.max_hp ? `HP ×${mul.max_hp}` : ""}
+              </p>
+            )}
+          </div>
+          <div className="rg-modal-enemies">
           {stage.enemies.map((se) => {
             const e = data.enemies[se.key];
             if (!e) return null;
@@ -145,6 +148,7 @@ function StageModal({ pair, grade, onClose, onOpenEnemy }: {
               </button>
             );
           })}
+          </div>
         </div>
       </div>
     </div>
