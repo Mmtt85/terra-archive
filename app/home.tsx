@@ -12,6 +12,7 @@ import RecruitHelper from "./recruit";
 import FarmGuide from "./farm";
 import { normSearch } from "./search";
 import StoryGuide from "./story";
+import RogueGuide from "./rogue";
 import About from "./about";
 import FeedbackWidget from "./feedback-widget";
 import { feedbackReady, fetchNicknameCounts, submitNickname } from "./feedback";
@@ -103,12 +104,12 @@ const JOB_ORDER = ["PIONEER", "WARRIOR", "TANK", "SNIPER", "CASTER", "MEDIC", "S
 
 const SORT_KEYS = ["기본", "이름", "성급", "발매순", "소속", "출신지", "종족", "직군", "세부 직군"];
 
-export type Tab = "portal" | "archive" | "planner" | "recruit" | "farm" | "story" | "about";
+export type Tab = "portal" | "archive" | "planner" | "recruit" | "farm" | "story" | "rogue" | "about";
 // 탭 ↔ URL 세그먼트 (portal이 로케일 루트, 오퍼 백과사전은 /operators — 사용자 확정 2026-07-17:
 // 루트 진입 시 오퍼 이미지 강제 로딩을 없애려 포탈 첫화면 도입). seo.ts의 TAB_SEG·라우트 폴더명과 일치.
 // URL 세그먼트 "stories"(← 정적 자산 디렉터리 public/story/ 와의 경로 충돌 회피). 내부 탭명은 story.
-const TAB_SEG: Record<Tab, string> = { portal: "", archive: "operators", planner: "infra", recruit: "recruit", farm: "farm", story: "stories", about: "about" };
-const SEG_TAB: Record<string, Tab> = { "": "portal", operators: "archive", infra: "planner", recruit: "recruit", farm: "farm", stories: "story", about: "about" };
+const TAB_SEG: Record<Tab, string> = { portal: "", archive: "operators", planner: "infra", recruit: "recruit", farm: "farm", story: "stories", rogue: "rogue", about: "about" };
+const SEG_TAB: Record<string, Tab> = { "": "portal", operators: "archive", infra: "planner", recruit: "recruit", farm: "farm", stories: "story", rogue: "rogue", about: "about" };
 const LOCALE_BASE: Record<Locale, string> = { ko: "", en: "/en", ja: "/ja" };
 
 // 현재 pathname → 탭 (로케일 프리픽스 제거 후 세그먼트 매핑)
@@ -552,6 +553,7 @@ function Portal({ onOpenTab }: { onOpenTab: (tab: Tab) => void }) {
     { tab: "recruit", icon: "◎", name: t("공채 도우미"), desc: t("공개모집 태그 조합으로 확정·고성급 오퍼를 탐색") },
     { tab: "farm", icon: "◈", name: t("파밍·육성 시뮬"), desc: t("재료 파밍 효율표와 오퍼 육성 비용 시뮬레이션") },
     { tab: "story", icon: "✦", name: t("AI 스토리 요약"), desc: t("이벤트 스토리를 컷씬과 함께 10분 분량으로 요약") },
+    { tab: "rogue", icon: "❖", name: t("통합전략 가이드"), desc: t("층별 노드·적 도감·유물·엔딩 조건을 난이도별로 정리") },
     { tab: "about", icon: "ⓘ", name: t("소개"), desc: t("각 기능이 무엇이고 언제 쓰는지 안내") },
   ];
   return (
@@ -821,7 +823,9 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
             ? t("재료 파밍 & 오퍼 육성 시뮬레이션 - 명일방주 파밍·육성 계산기 | 테라 아카이브")
             : tab === "story"
               ? t("AI 스토리 요약 - 명일방주 스토리 요약 | 테라 아카이브")
-              : tab === "archive"
+              : tab === "rogue"
+                ? t("통합전략 가이드 - 명일방주 통합전략 공략 | 테라 아카이브")
+                : tab === "archive"
                 ? t("오퍼레이터 백과사전 - 명일방주 오퍼 도감 | 테라 아카이브")
                 : t("테라 아카이브 | 명일방주(Arknights) KR 팬사이트");
   }, [tab, selected, t]);
@@ -1020,6 +1024,7 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
             <button className={`tab-recruit${tab === "recruit" ? " selected" : ""}`} onClick={() => switchTab("recruit")}><span className="tab-icon" aria-hidden>◎</span>{t("공채 도우미")}</button>
             <button className={`tab-farm${tab === "farm" ? " selected" : ""}`} onClick={() => switchTab("farm")}><span className="tab-icon" aria-hidden>◈</span>{t("파밍·육성 시뮬")}</button>
             <button className={`tab-story${tab === "story" ? " selected" : ""}`} onClick={() => switchTab("story")}><span className="tab-icon" aria-hidden>✦</span>{t("AI 스토리 요약")}</button>
+            <button className={`tab-rogue${tab === "rogue" ? " selected" : ""}`} onClick={() => switchTab("rogue")}><span className="tab-icon" aria-hidden>❖</span>{t("통합전략 가이드")}</button>
             <button className={`tab-about${tab === "about" ? " selected" : ""}`} onClick={() => switchTab("about")}><span className="tab-icon" aria-hidden>ⓘ</span>{t("소개")}</button>
           </nav>
         </div>
@@ -1088,6 +1093,7 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
       {tab === "recruit" && <RecruitHelper onShowOperator={showOperatorById} extra={extra} />}
       {tab === "farm" && <FarmGuide operators={operators} includeFuture={includeFuture} onShowOperator={showOperatorById} />}
       {tab === "story" && <StoryGuide onShowOperator={showOperatorById} includeFuture={includeFuture} />}
+      {tab === "rogue" && <RogueGuide />}
       {tab === "about" && <About onOpenTab={switchTab} />}
 
       {selected && <OperatorModal operator={selected} nicknames={nicknames.get(selected.id) ?? []} onSubmitNickname={handleSubmitNickname} onClose={closeOperator} />}

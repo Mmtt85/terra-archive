@@ -5493,3 +5493,140 @@ footer p {
 @keyframes ta-skeleton-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 .is-skeleton .sk-box,
 .is-skeleton .sk-line { animation: ta-skeleton-pulse 1.2s ease-in-out infinite; }
+
+/* ── 통합전략 가이드 탭 ─────────────────────────────── */
+.rg { padding: 34px clamp(22px, 5vw, 76px) 60px }
+.rg-head h2 { margin: 6px 0 10px; font-size: 28px; letter-spacing: -0.5px }
+.rg-topic-pick { display: flex; gap: 8px; align-items: center; margin: 0 0 10px; flex-wrap: wrap }
+.rg-topic { font: 700 12.5px/1.2 inherit; padding: 5px 12px; border: 1px solid var(--line); border-radius: 999px }
+.rg-topic.on { background: var(--ink); color: var(--paper); border-color: var(--ink) }
+.rg-topic.off { color: var(--muted) }
+.rg-line { margin: 0 0 14px; font-size: 13px; line-height: 1.7; color: #3a4146; white-space: pre-line; max-width: 720px }
+
+.rg-diffbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; border: 1px solid var(--line); background: var(--white); padding: 10px 14px; max-width: 640px }
+.rg-diffbar-label { font: 800 11px/1 monospace; letter-spacing: 1px; color: var(--muted) }
+.rg-diff-chip { border: 1px solid var(--line); background: 0 0; padding: 4px 10px; font: 700 12px/1 inherit; cursor: pointer; border-radius: 999px }
+.rg-diff-chip.on { background: var(--ink); color: var(--lime); border-color: var(--ink) }
+.rg-diffbar input[type="range"] { flex: 1 1 160px; accent-color: #131719; min-width: 120px }
+.rg-diff-cur { font: 800 12.5px/1.2 inherit; color: var(--muted); min-width: 96px }
+.rg-diff-cur.on { color: var(--ink) }
+
+.rg-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 18px 0 22px; border-bottom: 2px solid var(--ink); padding-bottom: 10px }
+.rg-tabs button { border: 1px solid var(--line); background: var(--white); padding: 7px 14px; font: 700 13px/1 inherit; cursor: pointer; transition: 0.12s }
+.rg-tabs button:hover { border-color: var(--ink) }
+.rg-tabs button.on { background: var(--ink); color: var(--lime); border-color: var(--ink) }
+
+/* 맵·노드 */
+.rg-map { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 14px }
+.rg-zone { border: 1px solid var(--line); background: var(--white); padding: 16px 18px }
+.rg-zone.hidden-zone { border-style: dashed; background: #f6f4ef }
+.rg-zone-wide { grid-column: 1 / -1 }
+.rg-zone header { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; flex-wrap: wrap }
+.rg-zone-num { font: 800 15px/1 monospace; background: var(--ink); color: var(--lime); padding: 3px 8px; border-radius: 2px }
+.rg-zone h3 { margin: 0; font-size: 16.5px; letter-spacing: -0.3px }
+.rg-zone-time { font: 700 11px/1 monospace; color: var(--muted) }
+.rg-zone-hidden { font: 800 10px/1 monospace; background: #8d3030; color: #fff; padding: 3px 7px; border-radius: 999px }
+.rg-zone-desc { margin: 0 0 10px; font-size: 12.5px; line-height: 1.7; color: #3a4146; white-space: pre-line }
+.rg-stage-group { margin-top: 8px }
+.rg-stage-group h4 { margin: 0 0 6px; font-size: 12px; letter-spacing: 0.3px }
+.rg-stage-group h4 em { font-style: normal; color: var(--muted); font-family: monospace }
+.rg-stage-group h4.emg { color: #8d3030 }
+.rg-sub { margin: 14px 0 6px; font-size: 12px }
+.rg-chips { display: flex; flex-wrap: wrap; gap: 5px }
+.rg-chip { border: 1px solid var(--line); background: 0 0; padding: 4px 9px; font: 600 12px/1.3 inherit; cursor: pointer; border-radius: 3px; transition: 0.12s; text-align: left }
+.rg-chip:hover { border-color: var(--ink); background: var(--ink); color: var(--paper) }
+.rg-chip.emg { border-color: #c99; color: #8d3030 }
+.rg-chip.emg:hover { background: #8d3030; border-color: #8d3030; color: #fff }
+.rg-chip.boss { border-color: var(--ink); font-weight: 800 }
+
+/* 조우 */
+.rg-encounters { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 8px }
+.rg-enc { border: 1px solid var(--line); background: var(--white); padding: 0 }
+.rg-enc summary { display: flex; align-items: center; gap: 8px; padding: 10px 12px; cursor: pointer; list-style: none }
+.rg-enc summary::-webkit-details-marker { display: none }
+.rg-enc-title { font-weight: 700; font-size: 13px }
+.rg-enc-floors { margin-left: auto; font: 800 10.5px/1 monospace; background: var(--paper); border: 1px solid var(--line); padding: 3px 7px; border-radius: 999px; white-space: nowrap }
+.rg-enc-desc { margin: 0; padding: 0 12px 8px; font-size: 12px; line-height: 1.7; color: #3a4146 }
+.rg-enc-note { margin: 0 12px 8px; padding: 7px 9px; font-size: 11.5px; line-height: 1.6; background: #f4f8e8; border-left: 3px solid #9ab52a }
+.rg-enc-choices { margin: 0; padding: 0 12px 12px 28px; font-size: 12px; line-height: 1.7; color: #3a4146 }
+
+/* 적 도감 */
+.rg-filterbar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 14px }
+.rg-filterbar input[type="search"] { border: 1px solid var(--line); background: var(--white); padding: 7px 11px; font: 500 13px/1 inherit; min-width: 180px }
+.rg-filterbar button { border: 1px solid var(--line); background: var(--white); padding: 6px 12px; font: 700 12px/1 inherit; cursor: pointer }
+.rg-filterbar button.on { background: var(--ink); color: var(--lime); border-color: var(--ink) }
+.rg-count { font: 800 11.5px/1 monospace; color: var(--muted); margin-left: 4px }
+.rg-enemy-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px }
+.rg-enemy-card { border: 1px solid var(--line); background: var(--white); padding: 11px 13px }
+.rg-enemy-card header { display: flex; align-items: center; gap: 7px; cursor: pointer; margin-bottom: 7px }
+.rg-enemy-card h4 { margin: 0; font-size: 14px; letter-spacing: -0.2px }
+.rg-enemy-idx { margin-left: auto; font: 700 10.5px/1 monospace; color: var(--muted) }
+.rg-rank { font: 800 10px/1 monospace; padding: 3px 6px; border-radius: 2px; background: #e4e3dc; color: #555 }
+.rg-rank.r-ELITE { background: #3d4852; color: #ffd76e }
+.rg-rank.r-BOSS { background: #8d3030; color: #fff }
+.rg-stats { display: flex; flex-wrap: wrap; gap: 4px }
+.rg-stats.sub { margin-top: 6px }
+.rg-stat { font: 700 11px/1 monospace; border: 1px solid var(--line); background: var(--paper); padding: 4px 7px; border-radius: 2px; white-space: nowrap }
+.rg-stat.up { border-color: #8d3030; color: #8d3030; background: #fbeeee }
+.rg-stat.g14 { border-color: #b06a00; color: #b06a00; background: #fdf3e3 }
+.rg-enemy-more { margin-top: 9px; border-top: 1px dashed var(--line); padding-top: 9px }
+.rg-enemy-more p { margin: 0 0 6px; font-size: 12px; line-height: 1.65; color: #3a4146 }
+.rg-enemy-desc { color: var(--muted) !important; font-style: italic }
+.rg-appear { margin-top: 8px }
+.rg-appear strong { display: block; font-size: 11px; margin-bottom: 5px }
+
+/* 전시관 */
+.rg-relic-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 9px }
+.rg-relic { border: 1px solid var(--line); background: var(--white); padding: 11px 13px }
+.rg-relic.fusion { border-color: #b06a00; background: #fdf9f0 }
+.rg-relic header { display: flex; align-items: baseline; gap: 7px; margin-bottom: 5px; flex-wrap: wrap }
+.rg-relic h4 { margin: 0; font-size: 13.5px; letter-spacing: -0.2px }
+.rg-relic-no { font: 800 10px/1 monospace; color: var(--muted) }
+.rg-cap-en { font: 600 11px/1.2 inherit; font-style: italic; color: var(--muted) }
+.rg-fusion-tag { font: 800 10px/1 monospace; background: #b06a00; color: #fff; padding: 3px 7px; border-radius: 999px }
+.rg-relic-usage { margin: 0 0 5px; font-size: 12.5px; line-height: 1.65; font-weight: 600 }
+.rg-relic-desc { margin: 0 0 4px; font-size: 11.5px; line-height: 1.65; color: var(--muted) }
+.rg-relic-obtain { margin: 0; font: 600 10.5px/1.4 monospace; color: #9aa }
+
+/* 난이도 */
+.rg-diff-table { width: 100%; border-collapse: collapse; background: var(--white); border: 1px solid var(--line) }
+.rg-diff-table th, .rg-diff-table td { border-bottom: 1px solid var(--line); padding: 9px 13px; text-align: left; font-size: 12.5px; line-height: 1.6 }
+.rg-diff-table th { font: 800 11px/1 monospace; letter-spacing: 1px; background: var(--paper) }
+.rg-diff-table td:first-child { font: 800 13px/1 monospace; width: 64px }
+.rg-diff-table tr.on td { background: #f7fbe6 }
+.rg-diff-table tr.on td:first-child { color: #131719; background: var(--lime) }
+
+/* 엔딩 */
+.rg-endings { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 14px }
+.rg-ending { border: 1px solid var(--line); background: var(--white); padding: 16px 18px }
+.rg-ending h3 { margin: 0 0 8px; font-size: 16px; letter-spacing: -0.3px; border-left: 4px solid var(--ink); padding-left: 10px }
+.rg-ending-desc { margin: 0 0 10px; font-size: 12.5px; line-height: 1.75; color: #3a4146 }
+.rg-ending-cond { margin: 0 0 10px; padding-left: 20px; font-size: 12.5px; line-height: 1.8 }
+.rg-ending-cond li { margin-bottom: 5px }
+.rg-ending-change { margin: 0; font-size: 12px; font-style: italic; color: var(--muted) }
+
+/* 스테이지 모달 */
+.rg-modal-back { position: fixed; inset: 0; background: #131719cc; z-index: 80; display: grid; place-items: center; padding: 20px }
+.rg-modal { background: var(--paper); border: 1px solid var(--ink); max-width: 720px; width: 100%; max-height: 84vh; overflow-y: auto; padding: 20px 22px }
+.rg-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 10px }
+.rg-modal-head > div { display: flex; align-items: center; gap: 9px; flex-wrap: wrap }
+.rg-modal-head h3 { margin: 0; font-size: 18px; letter-spacing: -0.3px }
+.rg-modal-zone { font: 800 11px/1 monospace; color: var(--muted) }
+.rg-kind { font: 800 10px/1 monospace; padding: 4px 8px; border-radius: 2px; background: #e4e3dc }
+.rg-kind.k-emergency { background: #8d3030; color: #fff }
+.rg-kind.k-boss { background: var(--ink); color: var(--lime) }
+.rg-modal-close { border: 1px solid var(--line); background: var(--white); width: 30px; height: 30px; font-size: 17px; cursor: pointer; line-height: 1 }
+.rg-modal-desc { margin: 0 0 8px; font-size: 12.5px; line-height: 1.7; color: #3a4146; white-space: pre-line }
+.rg-modal-elite { margin: 0 0 8px; padding: 8px 11px; background: #fbeeee; border-left: 3px solid #8d3030; font-size: 12px; line-height: 1.6; font-weight: 600 }
+.rg-modal-enemies { display: flex; flex-direction: column; gap: 6px; margin-top: 12px }
+.rg-enemy-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; border: 1px solid var(--line); background: var(--white); padding: 8px 11px; cursor: pointer; text-align: left; font: inherit; transition: 0.12s }
+.rg-enemy-row:hover { border-color: var(--ink) }
+.rg-enemy-name { font-weight: 700; font-size: 13px }
+.rg-enemy-cnt { font: 800 11.5px/1 monospace; color: var(--muted) }
+.rg-enemy-row .rg-stats { margin-left: auto }
+
+@media (max-width: 720px) {
+  .rg { padding: 26px 16px 48px }
+  .rg-endings { grid-template-columns: 1fr }
+  .rg-enemy-row .rg-stats { margin-left: 0; width: 100% }
+}
