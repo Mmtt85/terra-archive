@@ -163,17 +163,33 @@ def build_rogue1():
         for b in (lv.get("branches") or {}).values():
             for ph in b.get("phases", []):
                 count_actions(ph.get("actions"))
-        # 긴급 작전 배율: FOUR_STAR 룬의 enemy_attribute_mul / enemy_attribute_add
+        # 긴급 작전(FOUR_STAR 룬) 해석:
+        #   enemy_attribute_mul/add · ebuff_attribute — 적 스탯 배율 (ebuff는 enemy 셀렉터로
+        #   특정 적 한정 가능) / level_enemy_replace — 긴급 시 적 교체 (더 강한 변종으로)
         emg = {}
         for rune in lv.get("runes") or []:
             if rune.get("difficultyMask") not in ("FOUR_STAR", 8):
                 continue
             key = rune.get("key")
-            if key not in ("enemy_attribute_mul", "enemy_attribute_add"):
-                continue
-            for bb in rune.get("blackboard", []):
-                if bb.get("value") is not None:
-                    emg.setdefault(key.rsplit("_", 1)[1], {})[bb["key"]] = num(bb["value"])
+            bbs = rune.get("blackboard", [])
+            bb_map = {bb["key"]: (bb["valueStr"] if bb.get("valueStr") is not None else bb.get("value")) for bb in bbs}
+            if key in ("enemy_attribute_mul", "enemy_attribute_add"):
+                for bb in bbs:
+                    if bb.get("value") is not None:
+                        emg.setdefault(key.rsplit("_", 1)[1], {})[bb["key"]] = num(bb["value"])
+            elif key == "ebuff_attribute":
+                stats = {k: num(v) for k, v in bb_map.items() if k != "enemy" and isinstance(v, (int, float))}
+                sel = bb_map.get("enemy")
+                if sel:  # 특정 적 한정 배율
+                    keys = [re.sub(r"#\d+$", "", e) for e in str(sel).split("|")]
+                    emg.setdefault("per", []).append({"keys": keys, "mul": stats})
+                else:
+                    emg.setdefault("mul", {}).update(stats)
+            elif key == "level_enemy_replace":
+                frm = re.sub(r"#\d+$", "", str(bb_map.get("key") or ""))
+                to = re.sub(r"#\d+$", "", str(bb_map.get("value") or ""))
+                if frm and to:
+                    emg.setdefault("replace", {})[frm] = to
         level_cache[level_id] = {"refs": refs, "counts": counts, "emg": emg, "raw": lv}
         return level_cache[level_id]
 
@@ -193,6 +209,10 @@ def build_rogue1():
             cur = used_enemies.get(ref["key"])
             if cur is None or ref["level"] > cur["level"]:
                 used_enemies[ref["key"]] = ref
+        # 긴급 교체(level_enemy_replace) 대상 적도 도감에 포함
+        for to in (lv["emg"].get("replace") or {}).values():
+            if to not in used_enemies:
+                used_enemies[to] = {"key": to, "level": 0, "over": None}
         stages.append({
             "id": sid, "kind": kind, "zone": zone, "code": st.get("code"),
             "name": st["name"], "desc": st.get("description"),

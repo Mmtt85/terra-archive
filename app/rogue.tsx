@@ -11,7 +11,11 @@ import { normSearch } from "./search";
 
 type Zone = { id: string; num: number; name: string; time: string | null; desc: string; buff: string | null; hidden: boolean; img?: boolean };
 type StageEnemy = { key: string; cnt: number };
-type Emg = { mul?: Record<string, number>; add?: Record<string, number> } | null;
+type Emg = {
+  mul?: Record<string, number>; add?: Record<string, number>;
+  per?: { keys: string[]; mul: Record<string, number> }[];  // 특정 적 한정 배율
+  replace?: Record<string, string>;                          // 긴급 시 적 교체 (원본→변종)
+} | null;
 type Stage = { id: string; kind: string; zone: number | null; code: string | null; name: string; desc: string | null; eliteDesc: string | null; emg: Emg; map?: string | null; enemies: StageEnemy[] };
 type Enemy = { name: string; rank: string | null; index: string | null; attack: string | null; desc: string | null; ability: string | null; hp: number; atk: number; def: number; res: number; aspd: number; ms: number; weight: number; lifePoint: number; img?: string | null };
 type Relic = { id: string; name: string; desc: string | null; usage: string | null; obtain: string | null; order: string | null; group: number | null; sort: number; sp: boolean; img?: boolean };
@@ -49,7 +53,7 @@ const RANK_KO: Record<string, string> = { NORMAL: "일반", ELITE: "정예", BOS
 //   g10+ : 긴급 작전·험난한 길에서 적 공격력·HP ×1.15
 //   g14+ : 정예·리더 등장 후 20초 공격력 ×1.3 / 받는 대미지 -50% (한시 효과 — 별도 표기)
 // 긴급 작전 자체 배율은 레벨 룬(emg — 스테이지마다 다름)으로 별도 적용.
-type StatCtx = { emergencyOrBoss?: boolean; emg?: Emg };
+type StatCtx = { emergencyOrBoss?: boolean; emg?: Emg; enemyKey?: string };
 function applyDiff(e: Enemy, grade: number, ctx: StatCtx) {
   let hp = e.hp, atk = e.atk, def = e.def;
   const res = e.res;
@@ -62,6 +66,15 @@ function applyDiff(e: Enemy, grade: number, ctx: StatCtx) {
     if (a.max_hp) hp += a.max_hp;
     if (a.atk) atk += a.atk;
     if (a.def) def += a.def;
+    // 특정 적 한정 배율 (ebuff_attribute의 enemy 셀렉터)
+    if (ctx.enemyKey) {
+      for (const p of ctx.emg.per ?? []) {
+        if (!p.keys.includes(ctx.enemyKey)) continue;
+        if (p.mul.max_hp) hp *= p.mul.max_hp;
+        if (p.mul.atk) atk *= p.mul.atk;
+        if (p.mul.def) def *= p.mul.def;
+      }
+    }
   }
   const elite = e.rank === "ELITE" || e.rank === "BOSS";
   if (grade >= 5 && elite) hp *= 1.2;
@@ -130,13 +143,27 @@ function StageModal({ pair, grade, onClose, onOpenEnemy }: {
                 {t("긴급 배율")}: {mul.atk ? `${t("공격")} ×${mul.atk} ` : ""}{mul.def ? `${t("방어")} ×${mul.def} ` : ""}{mul.max_hp ? `HP ×${mul.max_hp}` : ""}
               </p>
             )}
+            {isEmg && (stage.emg?.per ?? []).map((p, i) => (
+              <p key={i} className="rg-modal-elite">
+                {t("특정 적 강화")} ({p.keys.map((k) => data.enemies[k]?.name ?? k).join(", ")}):
+                {p.mul.atk ? ` ${t("공격")} ×${p.mul.atk}` : ""}{p.mul.def ? ` ${t("방어")} ×${p.mul.def}` : ""}{p.mul.max_hp ? ` HP ×${p.mul.max_hp}` : ""}
+              </p>
+            ))}
+            {isEmg && stage.emg?.replace && Object.keys(stage.emg.replace).length > 0 && (
+              <p className="rg-modal-elite">
+                {t("긴급 시 적 교체")}: {Object.entries(stage.emg.replace).map(([f, to]) =>
+                  `${data.enemies[f]?.name ?? f} → ${data.enemies[to]?.name ?? to}`).join(" · ")}
+              </p>
+            )}
           </div>
           <div className="rg-modal-enemies">
           {stage.enemies.map((se) => {
-            const e = data.enemies[se.key];
+            // 긴급 모드에선 교체 룬(level_enemy_replace)이 적용된 변종으로 표시
+            const key = isEmg ? (stage.emg?.replace?.[se.key] ?? se.key) : se.key;
+            const e = data.enemies[key];
             if (!e) return null;
             return (
-              <button type="button" key={se.key} className="rg-enemy-cell" onClick={() => onOpenEnemy(se.key)}>
+              <button type="button" key={se.key} className="rg-enemy-cell" onClick={() => onOpenEnemy(key)}>
                 {e.img ? <img className="rg-enemy-face" src={`/rogue/enemy/${e.img}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />
                   : <span className="rg-enemy-face none" aria-hidden>?</span>}
                 <span className="rg-enemy-cell-head">
@@ -144,7 +171,7 @@ function StageModal({ pair, grade, onClose, onOpenEnemy }: {
                   {se.cnt > 0 && <span className="rg-enemy-cnt">×{se.cnt}</span>}
                 </span>
                 <span className="rg-enemy-name">{e.name}</span>
-                <StatRow e={e} grade={grade} ctx={ctx} />
+                <StatRow e={e} grade={grade} ctx={{ ...ctx, enemyKey: key }} />
               </button>
             );
           })}
@@ -354,7 +381,6 @@ export default function RogueGuide() {
     return data.relics.filter((r) => !q || normSearch(r.name).includes(q) || normSearch(r.usage ?? "").includes(q));
   }, [relicQ]);
 
-  const gradeLabel = grade < 0 ? t("고성 관광 (쉬움)") : t("정식 수사 {n}", { n: grade });
 
   // 엔딩 조건 문장 속 「이름」 참조를 전부 클릭 가능하게 — 스테이지·조우·유물·적 순으로 매칭
   const stageByName = useMemo(() => new Map(data.stages.filter((s) => s.kind !== "emergency").map((s) => [s.name, s])), []);
@@ -392,16 +418,19 @@ export default function RogueGuide() {
             {locale !== "ko" && <p className="rg-disclaimer">{t("통합전략 데이터는 현재 한국어로만 제공됩니다.")}</p>}
             {data.line && <p className="rg-line">{data.line}</p>}
           </div>
-        </div>
 
-        {/* 난이도 선택 — 모든 스탯 표시에 반영 */}
-        <div className="rg-diffbar" role="group" aria-label={t("난이도 선택")}>
-          <span className="rg-diffbar-label">{t("난이도")}</span>
-          <button type="button" className={`rg-diff-chip${grade < 0 ? " on" : ""}`} onClick={() => setGrade(-1)}>{t("쉬움")}</button>
-          <input type="range" min={0} max={15} value={Math.max(0, grade)}
-            onChange={(e) => setGrade(Number(e.target.value))}
-            aria-label={t("난이도 등급")} />
-          <span className={`rg-diff-cur${grade >= 0 ? " on" : ""}`}>{gradeLabel}</span>
+          {/* 난이도 선택 — 배너 우하단, 모든 스탯 표시에 반영 */}
+          <div className="rg-diffbar" role="group" aria-label={t("난이도 선택")}>
+            <span className="rg-diffbar-label">{t("난이도")}</span>
+            <button type="button" className={`rg-diff-chip${grade < 0 ? " on" : ""}`} onClick={() => setGrade(-1)}>{t("쉬움")}</button>
+            <input type="range" min={0} max={15} value={Math.max(0, grade)}
+              onChange={(e) => setGrade(Number(e.target.value))}
+              aria-label={t("난이도 등급")} />
+            <span className={`rg-diff-cur${grade >= 0 ? " on" : ""}`}>
+              {grade >= 0 && <em className="rg-diff-hex">{grade}</em>}
+              {grade < 0 ? t("고성 관광 (쉬움)") : t("정식 수사")}
+            </span>
+          </div>
         </div>
       </header>
 
@@ -475,24 +504,15 @@ export default function RogueGuide() {
             </summary>
             <div className="rg-zone-body">
               <p className="rg-zone-desc">{t("비전투 노드에서 발생하는 이벤트입니다. 출현 층 표기는 위키 실측 기반입니다.")}</p>
-              <div className="rg-encounters">
-                {data.encounters.map((enc) => (
-                  <details key={enc.scene} className="rg-enc">
-                    <summary>
-                      {enc.bg && <img className="rg-enc-thumb" src={`/rogue/scene/${enc.bg}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
+              <div className="rg-enc-list">
+                {[...data.encounters]
+                  .sort((a, b) => (a.floors?.[0] ?? 99) - (b.floors?.[0] ?? 99) || (a.floors?.length ?? 9) - (b.floors?.length ?? 9) || a.title.localeCompare(b.title, "ko"))
+                  .map((enc) => (
+                    <button key={enc.scene} type="button" className="rg-enc-item" onClick={() => setEncOpen(enc)}>
                       <span className="rg-enc-title">{enc.title}</span>
-                      {enc.floors && <span className="rg-enc-floors">{enc.floors.map((f) => `${f}`).join("·")}{t("층")}</span>}
-                    </summary>
-                    {enc.bg && <img className="rg-enc-cg" src={`/rogue/scene/${enc.bg}.webp`} alt={enc.title} loading="lazy" decoding="async" />}
-                    {enc.desc && <p className="rg-enc-desc">{enc.desc}</p>}
-                    {enc.note && <p className="rg-enc-note">{enc.note}</p>}
-                    <ul className="rg-enc-choices">
-                      {enc.choices.map((c, i) => (
-                        <li key={i}><strong>{c.title}</strong>{c.desc ? ` — ${c.desc}` : ""}</li>
-                      ))}
-                    </ul>
-                  </details>
-                ))}
+                      {enc.floors && <span className="rg-enc-floors">{enc.floors.join("·")}{t("층")}</span>}
+                    </button>
+                  ))}
               </div>
             </div>
           </details>
