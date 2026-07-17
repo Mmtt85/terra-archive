@@ -9,18 +9,18 @@ import rogueData from "./data/rogue1.json";
 import { useI18n } from "./i18n";
 import { normSearch } from "./search";
 
-type Zone = { id: string; num: number; name: string; time: string | null; desc: string; buff: string | null; hidden: boolean };
+type Zone = { id: string; num: number; name: string; time: string | null; desc: string; buff: string | null; hidden: boolean; img?: boolean };
 type StageEnemy = { key: string; cnt: number };
 type Emg = { mul?: Record<string, number>; add?: Record<string, number> } | null;
-type Stage = { id: string; kind: string; zone: number | null; code: string | null; name: string; desc: string | null; eliteDesc: string | null; emg: Emg; enemies: StageEnemy[] };
-type Enemy = { name: string; rank: string | null; index: string | null; attack: string | null; desc: string | null; ability: string | null; hp: number; atk: number; def: number; res: number; aspd: number; ms: number; weight: number; lifePoint: number };
+type Stage = { id: string; kind: string; zone: number | null; code: string | null; name: string; desc: string | null; eliteDesc: string | null; emg: Emg; map?: string | null; enemies: StageEnemy[] };
+type Enemy = { name: string; rank: string | null; index: string | null; attack: string | null; desc: string | null; ability: string | null; hp: number; atk: number; def: number; res: number; aspd: number; ms: number; weight: number; lifePoint: number; img?: string | null };
 type Relic = { id: string; name: string; desc: string | null; usage: string | null; obtain: string | null; order: string | null; group: number | null; sort: number; sp: boolean };
-type Capsule = { id: string; name: string; en: string | null; desc: string | null; usage: string | null };
+type Capsule = { id: string; name: string; en: string | null; desc: string | null; usage: string | null; img?: boolean };
 type Simple = { id: string; name: string; desc: string | null; usage: string | null };
 type Variation = { id: string; name: string; func: string | null; desc: string | null; fusion: boolean };
 type Difficulty = { mode: string; grade: number; name: string; rule: string | null; score: number | null };
 type Ending = { id: string; name: string; desc: string | null; boss: string | null; priority: number; change: string | null; cond?: string[] };
-type Encounter = { scene: string; title: string; desc: string | null; choices: { title: string; desc: string | null }[]; floors?: number[]; note?: string };
+type Encounter = { scene: string; title: string; desc: string | null; bg?: string | null; choices: { title: string; desc: string | null }[]; floors?: number[]; note?: string };
 type RogueData = {
   id: string; name: string; line: string | null;
   zones: Zone[]; nodeTypes: { id: string; name: string; desc: string | null }[];
@@ -111,6 +111,7 @@ function StageModal({ stage, grade, onClose, onOpenEnemy }: {
           </div>
           <button type="button" className="rg-modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
         </header>
+        {stage.map && <img className="rg-modal-map" src={`/rogue/map/${stage.map}.webp`} alt={t("전장 미니맵")} loading="lazy" decoding="async" />}
         {stage.desc && <p className="rg-modal-desc">{stage.desc.replace(/<[^>]+>/g, "")}</p>}
         {stage.eliteDesc && <p className="rg-modal-elite">⚠ {stage.eliteDesc}</p>}
         {isEmg && (mul.atk || mul.max_hp || mul.def) && (
@@ -124,6 +125,8 @@ function StageModal({ stage, grade, onClose, onOpenEnemy }: {
             if (!e) return null;
             return (
               <button type="button" key={se.key} className="rg-enemy-row" onClick={() => onOpenEnemy(se.key)}>
+                {e.img ? <img className="rg-enemy-face sm" src={`/rogue/enemy/${e.img}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />
+                  : <span className="rg-enemy-face sm none" aria-hidden>?</span>}
                 <span className={`rg-rank r-${e.rank ?? "NORMAL"}`}>{t(RANK_KO[e.rank ?? ""] ?? "일반")}</span>
                 <span className="rg-enemy-name">{e.name}</span>
                 {se.cnt > 0 && <span className="rg-enemy-cnt">×{se.cnt}</span>}
@@ -140,6 +143,16 @@ function StageModal({ stage, grade, onClose, onOpenEnemy }: {
 const KIND_LABEL: Record<string, string> = {
   normal: "작전", emergency: "긴급 작전", boss: "험난한 길", event: "조우 전투", duel: "특수",
 };
+
+// 전투 노드 카드 — 미니맵 썸네일 + 이름 (클릭 → 스테이지 상세)
+function StageCard({ s, onOpen, emg, boss }: { s: Stage; onOpen: (s: Stage) => void; emg?: boolean; boss?: boolean }) {
+  return (
+    <button type="button" className={`rg-stagecard${emg ? " emg" : ""}${boss ? " boss" : ""}`} onClick={() => onOpen(s)}>
+      {s.map && <img className="rg-stagecard-map" src={`/rogue/map/${s.map}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
+      <span className="rg-stagecard-name">{s.name}</span>
+    </button>
+  );
+}
 
 // ── 메인 ───────────────────────────────────────────────────────────────────
 export default function RogueGuide() {
@@ -215,14 +228,19 @@ export default function RogueGuide() {
   return (
     <section className="rg" aria-labelledby="rg-title">
       <header className="rg-head">
-        <span className="section-no">INTEGRATED STRATEGIES</span>
-        <h2 id="rg-title">{t("통합전략 가이드")}</h2>
-        <p className="rg-topic-pick">
-          <span className="rg-topic on">{data.name}</span>
-          <span className="rg-topic off">{t("다른 테마는 준비 중")}</span>
-        </p>
-        {locale !== "ko" && <p className="story-disclaimer">{t("통합전략 데이터는 현재 한국어로만 제공됩니다.")}</p>}
-        {data.line && <p className="rg-line">{data.line}</p>}
+        <div className="rg-hero">
+          <img className="rg-hero-kv" src="/rogue/kv1.webp" alt="" aria-hidden loading="lazy" decoding="async" />
+          <div className="rg-hero-text">
+            <span className="rg-eyebrow">INTEGRATED STRATEGIES</span>
+            <h2 id="rg-title">{t("통합전략 가이드")}</h2>
+            <p className="rg-topic-pick">
+              <span className="rg-topic on">{data.name}</span>
+              <span className="rg-topic off">{t("다른 테마는 준비 중")}</span>
+            </p>
+            {locale !== "ko" && <p className="rg-disclaimer">{t("통합전략 데이터는 현재 한국어로만 제공됩니다.")}</p>}
+            {data.line && <p className="rg-line">{data.line}</p>}
+          </div>
+        </div>
 
         {/* 난이도 선택 — 모든 스탯 표시에 반영 */}
         <div className="rg-diffbar" role="group" aria-label={t("난이도 선택")}>
@@ -245,83 +263,80 @@ export default function RogueGuide() {
         <div className="rg-map">
           {data.zones.map((z) => {
             const g = stagesByZone.get(z.num) ?? { normal: [], emergency: [] };
+            const zoneBosses = bossStages.filter((s) => s.zone === z.num);
             return (
               <article key={z.id} className={`rg-zone${z.hidden ? " hidden-zone" : ""}`}>
-                <header>
-                  <span className="rg-zone-num">{z.hidden ? "?" : z.num}</span>
-                  <h3>{z.name}</h3>
-                  {z.time && <span className="rg-zone-time">{z.time}</span>}
-                  {z.hidden && <span className="rg-zone-hidden">{t("히든 층")}</span>}
-                </header>
-                <p className="rg-zone-desc">{z.desc}</p>
-                {g.normal.length > 0 && (
-                  <div className="rg-stage-group">
-                    <h4>{t("작전")} <em>{g.normal.length}</em></h4>
-                    <div className="rg-chips">
-                      {g.normal.map((s) => (
-                        <button key={s.id} type="button" className="rg-chip" onClick={() => setStageOpen(s)}>{s.name}</button>
-                      ))}
+                {z.img && <img className="rg-zone-bg" src={`/rogue/zone/rogue_1_map_${z.num}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
+                <div className="rg-zone-body">
+                  <header>
+                    <span className="rg-zone-num">{z.hidden ? "?" : z.num}</span>
+                    <h3>{z.name}</h3>
+                    {z.time && <span className="rg-zone-time">{z.time}</span>}
+                    {z.hidden && <span className="rg-zone-hidden">{t("히든 층")}</span>}
+                  </header>
+                  <p className="rg-zone-desc">{z.desc}</p>
+                  {g.normal.length > 0 && (
+                    <div className="rg-stage-group">
+                      <h4>{t("작전")} <em>{g.normal.length}</em></h4>
+                      <div className="rg-stage-cards">
+                        {g.normal.map((s) => <StageCard key={s.id} s={s} onOpen={setStageOpen} />)}
+                      </div>
                     </div>
-                  </div>
-                )}
-                {g.emergency.length > 0 && (
-                  <div className="rg-stage-group">
-                    <h4 className="emg">{t("긴급 작전")} <em>{g.emergency.length}</em></h4>
-                    <div className="rg-chips">
-                      {g.emergency.map((s) => (
-                        <button key={s.id} type="button" className="rg-chip emg" onClick={() => setStageOpen(s)}>{s.name}</button>
-                      ))}
+                  )}
+                  {g.emergency.length > 0 && (
+                    <div className="rg-stage-group">
+                      <h4 className="emg">{t("긴급 작전")} <em>{g.emergency.length}</em></h4>
+                      <div className="rg-stage-cards">
+                        {g.emergency.map((s) => <StageCard key={s.id} s={s} onOpen={setStageOpen} emg />)}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                  {zoneBosses.length > 0 && (
+                    <div className="rg-stage-group">
+                      <h4 className="boss">{t("험난한 길 (보스)")} <em>{zoneBosses.length}</em></h4>
+                      <div className="rg-stage-cards">
+                        {zoneBosses.map((s) => <StageCard key={s.id} s={s} onOpen={setStageOpen} boss />)}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </article>
             );
           })}
 
           <article className="rg-zone rg-zone-wide">
-            <header><h3>{t("험난한 길 (보스)")}</h3></header>
-            <div className="rg-chips">
-              {bossStages.map((s) => (
-                <button key={s.id} type="button" className="rg-chip boss" onClick={() => setStageOpen(s)}>{s.name}</button>
-              ))}
+            <div className="rg-zone-body">
+              <header><h3>{t("조우 전투")} · {t("특수 (심층 조사)")}</h3></header>
+              <div className="rg-stage-cards">
+                {evStages.map((s) => <StageCard key={s.id} s={s} onOpen={setStageOpen} />)}
+                {duelStages.map((s) => <StageCard key={s.id} s={s} onOpen={setStageOpen} />)}
+              </div>
             </div>
-            {evStages.length > 0 && (<>
-              <h4 className="rg-sub">{t("조우 전투")}</h4>
-              <div className="rg-chips">
-                {evStages.map((s) => (
-                  <button key={s.id} type="button" className="rg-chip" onClick={() => setStageOpen(s)}>{s.name}</button>
-                ))}
-              </div>
-            </>)}
-            {duelStages.length > 0 && (<>
-              <h4 className="rg-sub">{t("특수 (심층 조사)")}</h4>
-              <div className="rg-chips">
-                {duelStages.map((s) => (
-                  <button key={s.id} type="button" className="rg-chip" onClick={() => setStageOpen(s)}>{s.name}</button>
-                ))}
-              </div>
-            </>)}
           </article>
 
           <article className="rg-zone rg-zone-wide">
-            <header><h3>{t("우연한 만남·기타 노드")}</h3></header>
-            <p className="rg-zone-desc">{t("비전투 노드에서 발생하는 이벤트입니다. 출현 층 표기는 위키 실측 기반입니다.")}</p>
-            <div className="rg-encounters">
-              {data.encounters.map((enc) => (
-                <details key={enc.scene} className="rg-enc">
-                  <summary>
-                    <span className="rg-enc-title">{enc.title}</span>
-                    {enc.floors && <span className="rg-enc-floors">{enc.floors.map((f) => `${f}`).join("·")}{t("층")}</span>}
-                  </summary>
-                  {enc.desc && <p className="rg-enc-desc">{enc.desc}</p>}
-                  {enc.note && <p className="rg-enc-note">{enc.note}</p>}
-                  <ul className="rg-enc-choices">
-                    {enc.choices.map((c, i) => (
-                      <li key={i}><strong>{c.title}</strong>{c.desc ? ` — ${c.desc}` : ""}</li>
-                    ))}
-                  </ul>
-                </details>
-              ))}
+            <div className="rg-zone-body">
+              <header><h3>{t("우연한 만남·기타 노드")}</h3></header>
+              <p className="rg-zone-desc">{t("비전투 노드에서 발생하는 이벤트입니다. 출현 층 표기는 위키 실측 기반입니다.")}</p>
+              <div className="rg-encounters">
+                {data.encounters.map((enc) => (
+                  <details key={enc.scene} className="rg-enc">
+                    <summary>
+                      {enc.bg && <img className="rg-enc-thumb" src={`/rogue/scene/${enc.bg}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
+                      <span className="rg-enc-title">{enc.title}</span>
+                      {enc.floors && <span className="rg-enc-floors">{enc.floors.map((f) => `${f}`).join("·")}{t("층")}</span>}
+                    </summary>
+                    {enc.bg && <img className="rg-enc-cg" src={`/rogue/scene/${enc.bg}.webp`} alt={enc.title} loading="lazy" decoding="async" />}
+                    {enc.desc && <p className="rg-enc-desc">{enc.desc}</p>}
+                    {enc.note && <p className="rg-enc-note">{enc.note}</p>}
+                    <ul className="rg-enc-choices">
+                      {enc.choices.map((c, i) => (
+                        <li key={i}><strong>{c.title}</strong>{c.desc ? ` — ${c.desc}` : ""}</li>
+                      ))}
+                    </ul>
+                  </details>
+                ))}
+              </div>
             </div>
           </article>
         </div>
@@ -345,6 +360,8 @@ export default function RogueGuide() {
               return (
                 <article key={key} className={`rg-enemy-card${open ? " open" : ""}`} id={`rg-en-${key}`}>
                   <header onClick={() => setEnemyOpen(open ? null : key)}>
+                    {e.img ? <img className="rg-enemy-face" src={`/rogue/enemy/${e.img}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />
+                      : <span className="rg-enemy-face none" aria-hidden>?</span>}
                     <span className={`rg-rank r-${e.rank ?? "NORMAL"}`}>{t(RANK_KO[e.rank ?? ""] ?? "일반")}</span>
                     <h4>{e.name}</h4>
                     {e.index && <span className="rg-enemy-idx">{e.index}</span>}
@@ -413,9 +430,10 @@ export default function RogueGuide() {
             </div>
           )}
           {arcTab === "capsule" && (
-            <div className="rg-relic-grid">
+            <div className="rg-capsule-grid">
               {data.capsules.map((c) => (
                 <article key={c.id} className="rg-relic capsule">
+                  {c.img && <img className="rg-cap-art" src={`/rogue/capsule/${c.id}.webp`} alt={c.name} loading="lazy" decoding="async" />}
                   <header><h4>{c.name}</h4>{c.en && <span className="rg-cap-en">{c.en}</span>}</header>
                   {c.usage && <p className="rg-relic-usage">{c.usage}</p>}
                   {c.desc && <p className="rg-relic-desc">{c.desc}</p>}

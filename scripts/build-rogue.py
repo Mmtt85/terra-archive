@@ -11,12 +11,16 @@
 #
 # 조우(우연한 만남)의 층별 출현 규칙과 엔딩 선제조건은 클라 테이블에 없어
 # scripts/rogue1-curated.json (PRTS 위키 기반 수작업 큐레이션)에서 병합한다.
-import json, os, sys, urllib.request
+import json, os, re, sys, urllib.request
+from concurrent.futures import ThreadPoolExecutor
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 GAMEDATA = "https://raw.githubusercontent.com/ArknightsAssets/ArknightsGamedata/master"
+ASSETS = "https://raw.githubusercontent.com/ArknightsAssets/ArknightsAssets2/cn/assets/dyn"
 CACHE = os.path.join(REPO, ".gamedata", "rogue")
 os.makedirs(CACHE, exist_ok=True)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from imgutil import save_webp
 
 def fetch_json(path):
     """kr gamedata JSON — .gamedata/rogue 에 캐시."""
@@ -28,6 +32,69 @@ def fetch_json(path):
     raw = urllib.request.urlopen(req).read()
     open(cache, "wb").write(raw)
     return json.loads(raw)
+
+def download_webp(jobs, max_px=None, photo=True):
+    """(url, dest) 목록을 병렬 다운로드해 webp 저장. 이미 있으면 스킵. 실패 목록 반환."""
+    def one(job):
+        url, dest = job
+        if os.path.exists(dest):
+            return None
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            png = urllib.request.urlopen(req, timeout=30).read()
+            os.makedirs(os.path.dirname(dest), exist_ok=True)
+            save_webp(png, dest, photo=photo, max_px=max_px)
+            return None
+        except Exception as e:
+            return (url, str(e))
+    with ThreadPoolExecutor(12) as ex:
+        fails = [f for f in ex.map(one, jobs) if f]
+    return fails
+
+# ── 미니맵 렌더 — level json의 mapData(타일 그리드)를 색 격자 webp로 ─────────
+TILE_COLORS = {
+    "tile_forbidden": (26, 17, 19), "tile_hole": (12, 8, 9),
+    "tile_road": (82, 80, 90), "tile_floor": (70, 68, 78),
+    "tile_wall": (132, 128, 138), "tile_rcm_crate": (132, 128, 138),
+    "tile_start": (196, 60, 46), "tile_flystart": (172, 66, 88),
+    "tile_end": (52, 130, 190), "tile_telin": (120, 84, 160), "tile_telout": (156, 120, 190),
+    "tile_grass": (72, 92, 62), "tile_deepwater": (34, 52, 74), "tile_water": (44, 70, 96),
+    "tile_infection": (128, 62, 130), "tile_corrosion": (128, 62, 130),
+    "tile_defup": (96, 116, 96), "tile_gazebo": (96, 108, 130), "tile_healing": (96, 140, 110),
+    "tile_fence": (110, 96, 80), "tile_fence_bound": (110, 96, 80),
+    "tile_bigforce": (150, 96, 60), "tile_smog": (90, 90, 100), "tile_yinyang_road": (100, 96, 106),
+}
+def render_minimap(level, dest):
+    from PIL import Image
+    md = level.get("mapData") or {}
+    grid = md.get("map") or []
+    tiles = md.get("tiles") or []
+    if not grid or not tiles:
+        return False
+    cell, gap = 14, 2
+    rows, cols = len(grid), len(grid[0])
+    bg = (20, 12, 14)
+    img = Image.new("RGB", (cols * cell + gap, rows * cell + gap), bg)
+    px = img.load()
+    for r in range(rows):
+        for c in range(cols):
+            t = tiles[grid[r][c]]
+            key = t.get("tileKey")
+            color = TILE_COLORS.get(key)
+            if color is None:  # 미지정 타일은 지형 높이로 추정
+                color = (132, 128, 138) if t.get("heightType") in (1, "HIGHLAND") else (82, 80, 90)
+            x0, y0 = c * cell + gap, r * cell + gap
+            for y in range(y0, y0 + cell - gap):
+                for x in range(x0, x0 + cell - gap):
+                    px[x, y] = color
+    os.makedirs(os.path.dirname(dest), exist_ok=True)
+    scale = 4  # 부드럽게 축소 저장
+    img = img.resize((img.width * scale // 2, img.height * scale // 2), Image.NEAREST)
+    save_webp_img(img, dest)
+    return True
+
+def save_webp_img(img, dest):
+    img.save(dest, "WEBP", quality=88)
 
 def mv(field, default=None):
     """enemy_database의 {m_defined, m_value} 언랩."""
@@ -63,13 +130,24 @@ def build_rogue1():
             "buff": z.get("buffDescription"), "hidden": bool(z.get("isHiddenZone")),
         })
     zones.sort(key=lambda z: z["num"])
+    # 존 배경 — ui/rogueliketopic/topics/rogue_1_update/levelbgpic/rogue_1_map_<n>.png
+    zone_dir = os.path.join(REPO, "public", "rogue", "zone")
+    download_webp([(f"{ASSETS}/ui/rogueliketopic/topics/rogue_1_update/levelbgpic/rogue_1_map_{z['num']}.png",
+                    os.path.join(zone_dir, f"rogue_1_map_{z['num']}.webp")) for z in zones], max_px=900)
+    for z in zones:
+        z["img"] = os.path.exists(os.path.join(zone_dir, f"rogue_1_map_{z['num']}.webp"))
 
     # ── 스테이지 + 레벨 파일 (일반/긴급이 같은 levelId 공유 → 캐시) ──────────
+    map_dir = os.path.join(REPO, "public", "rogue", "map")
     level_cache = {}
     def load_level(level_id):
         if level_id in level_cache:
             return level_cache[level_id]
         lv = fetch_json(f"levels/{level_id.lower()}.json")
+        # 미니맵 렌더 (전투 노드 썸네일)
+        map_name = level_id.rsplit("/", 1)[-1]
+        map_dest = os.path.join(map_dir, f"{map_name}.webp")
+        has_map = os.path.exists(map_dest) or render_minimap(lv, map_dest)
         # 등장 적: enemyDbRefs 순서 = 인게임 표시 순서
         refs = [{"key": e["id"], "level": e.get("level", 0),
                  "over": e.get("overwrittenData")} for e in lv.get("enemyDbRefs", [])]
@@ -96,7 +174,8 @@ def build_rogue1():
             for bb in rune.get("blackboard", []):
                 if bb.get("value") is not None:
                     emg.setdefault(key.rsplit("_", 1)[1], {})[bb["key"]] = num(bb["value"])
-        level_cache[level_id] = {"refs": refs, "counts": counts, "emg": emg}
+        level_cache[level_id] = {"refs": refs, "counts": counts, "emg": emg,
+                                 "map": map_name if has_map else None}
         return level_cache[level_id]
 
     used_enemies = {}  # key → {level, over} (스탯 해석용 대표 ref)
@@ -120,6 +199,7 @@ def build_rogue1():
             "name": st["name"], "desc": st.get("description"),
             "eliteDesc": st.get("eliteDesc") or None,
             "emg": lv["emg"] if kind == "emergency" else None,
+            "map": lv["map"],
             "enemies": enemies,
         })
     order = {"normal": 0, "emergency": 1, "boss": 2, "event": 3, "duel": 4}
@@ -158,6 +238,31 @@ def build_rogue1():
             "lifePoint": mv(pick.get("lifePointReduce"), mv(base.get("lifePointReduce"), 1)),
         }
 
+    # 적 초상 — arts/enemies/<id>.png (변종 _N은 원본 id 초상으로 폴백)
+    enemy_dir = os.path.join(REPO, "public", "rogue", "enemy")
+    jobs, img_of = [], {}
+    for key in enemies:
+        cands = [key]
+        b = re.sub(r"_\d+$", "", key)
+        if b != key:
+            cands.append(b)
+        for cand in cands:
+            dest = os.path.join(enemy_dir, f"{cand}.webp")
+            if os.path.exists(dest):
+                img_of[key] = cand
+                break
+            jobs.append((f"{ASSETS}/arts/enemies/{cand}.png", dest))
+    fails = {u.rsplit("/", 1)[-1][:-4] for u, _ in download_webp(jobs, max_px=256)}
+    for key in enemies:
+        if key in img_of:
+            continue
+        for cand in [key, re.sub(r"_\d+$", "", key)]:
+            if cand not in fails and os.path.exists(os.path.join(enemy_dir, f"{cand}.webp")):
+                img_of[key] = cand
+                break
+    for key, e in enemies.items():
+        e["img"] = img_of.get(key)
+
     # ── 전시관: 유물(소장품) / 레퍼토리(음반) / 무대 도구 / 분대 ─────────────
     relic_order = (r["archiveComp"]["relic"] or {}).get("relic", {})
     relics = []
@@ -185,6 +290,12 @@ def build_rogue1():
             "sort": arc.get("capsuleSortId", 9999),
         })
     capsules.sort(key=lambda x: x["sort"])
+    # 음반 자켓 — ui/rogueliketopic/topics/rogue_1/capsule/<id>.png
+    cap_dir = os.path.join(REPO, "public", "rogue", "capsule")
+    download_webp([(f"{ASSETS}/ui/rogueliketopic/topics/rogue_1/capsule/{c['id']}.png",
+                    os.path.join(cap_dir, f"{c['id']}.webp")) for c in capsules], max_px=360)
+    for c in capsules:
+        c["img"] = os.path.exists(os.path.join(cap_dir, f"{c['id']}.webp"))
 
     tools = [{"id": iid, "name": it["name"], "desc": it.get("description"), "usage": it.get("usage")}
              for iid, it in items.items() if it.get("type") == "ACTIVE_TOOL"]
@@ -224,9 +335,17 @@ def build_rogue1():
                if cid.startswith(prefix + "_")]
         encounters.append({
             "scene": sid, "title": sc["title"], "desc": sc.get("description"),
-            "choices": chs,
+            "bg": sc.get("background"), "choices": chs,
         })
     encounters.sort(key=lambda x: x["scene"])
+    # 조우 배경 CG — avg/images/<bg>.png
+    scene_dir = os.path.join(REPO, "public", "rogue", "scene")
+    download_webp([(f"{ASSETS}/avg/images/{e['bg']}.png",
+                    os.path.join(scene_dir, f"{e['bg']}.webp"))
+                   for e in encounters if e.get("bg")], max_px=720)
+    for e in encounters:
+        if e.get("bg") and not os.path.exists(os.path.join(scene_dir, f"{e['bg']}.webp")):
+            e["bg"] = None
 
     # ── 수작업 큐레이션 병합 (조우 층 규칙·엔딩 조건 — PRTS 기반) ─────────────
     curated_path = os.path.join(REPO, "scripts", "rogue1-curated.json")
@@ -243,6 +362,11 @@ def build_rogue1():
         for e in endings:
             if e["id"] in conds:
                 e["cond"] = conds[e["id"]]
+        # 보스(험난한 길) 출현 층 — 사용자 확인: b_1~5=3층, b_6~7=5층, b_8~9=히든 6층
+        boss_floors = curated.get("bossFloors", {})
+        for s in stages:
+            if s["id"] in boss_floors:
+                s["zone"] = boss_floors[s["id"]]
 
     out = {
         "id": "rogue_1",

@@ -1,5 +1,10 @@
 {
   "_note": "rogue_1 수작업 큐레이션 — 조우 층별 출현 규칙·엔딩 선제조건. 클라 테이블에 없는 정보로, PRTS 위키(傀影与猩红孤钻 메인 + 事件一览 wikitext의 floor 필드)를 전사하고 KR 클뜯 데이터의 공식 한국어 명칭으로 대조함 (2026-07-17). build-rogue.py가 rogue1.json에 병합한다.",
+  "bossFloors": {
+    "ro1_b_1": 3, "ro1_b_2": 3, "ro1_b_3": 3, "ro1_b_4": 3, "ro1_b_5": 3,
+    "ro1_b_6": 5, "ro1_b_7": 5,
+    "ro1_b_8": 6, "ro1_b_9": 6
+  },
   "encounterFloors": {
     "scene_hp_enter": [1, 2, 3, 4, 5],
     "scene_gold_enter": [1, 2, 3, 4, 5],
