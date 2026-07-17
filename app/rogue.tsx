@@ -309,7 +309,7 @@ function EncounterModal({ enc, onClose }: { enc: Encounter; onClose: () => void 
           </div>
           <button type="button" className="rg-modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
         </header>
-        <div className="rg-modal-cols">
+        <div className="rg-modal-cols enc">
           <div className="rg-modal-left">
             {enc.bg && <img className="rg-enc-cg modal" src={`/rogue/scene/${enc.bg}.webp`} alt={enc.title} loading="lazy" decoding="async" />}
           </div>

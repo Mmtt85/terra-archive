@@ -5628,7 +5628,7 @@ html.rg-theme.rg6 body, html.rg-theme.rg6 main.site-main { background: linear-gr
 
 /* 조우 — 이름만 나열, 클릭 → 모달 (층 오름차순 정렬) */
 .rg-enc-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 6px }
-.rg-enc-thumb { width: 93px; height: 51px; object-fit: cover; border: 1px solid var(--rgline); border-radius: 2px; flex: none; background: var(--rgdeep) }
+.rg-enc-thumb { width: 121px; height: 66px; object-fit: cover; border: 1px solid var(--rgline); border-radius: 2px; flex: none; background: var(--rgdeep) }
 .rg-enc-item { display: flex; align-items: center; gap: 8px; border: 1px solid var(--rgline); background: var(--rgdeep); color: var(--rgink); padding: 9px 11px; cursor: pointer; font: inherit; text-align: left; transition: 0.12s }
 .rg-enc-item:hover { border-color: var(--rggold) }
 .rg-enc-item .rg-enc-floors { margin-left: auto }
@@ -5754,6 +5754,8 @@ html.rg-theme.rg6 body, html.rg-theme.rg6 main.site-main { background: linear-gr
 .rg-modal-close { border: 1px solid var(--rgline); background: var(--rgdeep); color: var(--rgink); width: 30px; height: 30px; font-size: 17px; cursor: pointer; line-height: 1 }
 .rg-modal-map { display: block; width: 100%; aspect-ratio: 16/9; object-fit: fill; border: 1px solid var(--rgline); margin: 0 0 10px }
 .rg-modal-cols { display: grid; grid-template-columns: 360px 1fr; gap: 16px; align-items: start }
+/* 조우 모달은 CG를 30% 크게 (사용자 확정) */
+.rg-modal-cols.enc { grid-template-columns: 468px 1fr }
 .rg-modal-left { min-width: 0 }
 @media (max-width: 860px) { .rg-modal-cols { grid-template-columns: 1fr } }
 .rg-modal-desc { margin: 0 0 8px; font-size: 12.5px; line-height: 1.7; color: var(--rgtext2); white-space: pre-line }
