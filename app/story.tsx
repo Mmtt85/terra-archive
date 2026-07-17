@@ -339,14 +339,14 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
     setTip({ item: it, x: r.left + r.width / 2, y: r.top });
   };
 
-  // 연대순(테라력) — 연도 오름차순, 미정은 맨 뒤. 연도별로 묶어 레일·목록이 같은 순서를 공유한다.
+  // 연대순(테라력) — 연도 오름차순. 연도 미정 항목은 타임라인(레일·슬라이더)에서 제외한다
+  // (미정 항목은 테마별·종류별 뷰에서 노출된다). 연도별로 묶어 레일·목록이 같은 순서를 공유한다.
   const groups = useMemo(() => {
     const map = new Map<string, { key: string; label: string; year: number | null; sort: number; items: ChronItem[] }>();
     for (const it of CHRON_ITEMS) {
-      let k: string, label: string, year: number | null, sort: number;
-      if (it.terraYear == null) { k = "__none"; label = t("테라력 미정"); year = null; sort = Infinity; }
-      else { k = `y${it.terraYear}`; label = t("테라력 {y}년", { y: it.terraYear }); year = it.terraYear; sort = it.terraYear; }
-      if (!map.has(k)) map.set(k, { key: k, label, year, sort, items: [] });
+      if (it.terraYear == null) continue;
+      const k = `y${it.terraYear}`;
+      if (!map.has(k)) map.set(k, { key: k, label: t("테라력 {y}년", { y: it.terraYear }), year: it.terraYear, sort: it.terraYear, items: [] });
       map.get(k)!.items.push(it);
     }
     return Array.from(map.values()).sort((a, b) => a.sort - b.sort);
@@ -478,7 +478,7 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
             <div key={g.key} className="chron-railseg" ref={setSeg(g.key)}>
               <button type="button" className={`chron-railseg-yr${activeKey === g.key ? " on" : ""}`}
                 onClick={() => goYear(g.key)} title={g.label} aria-label={g.label}>
-                {g.year == null ? t("미정") : g.year}
+                {g.year}
               </button>
               <div className="chron-railseg-ticks">
                 {g.items.map((it) => (
