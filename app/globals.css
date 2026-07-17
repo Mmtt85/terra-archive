@@ -5509,10 +5509,13 @@ html.rg-theme.rg6 body, html.rg-theme.rg6 main.site-main { background: linear-gr
 .rg.rg6 .rg-topic.on { box-shadow: 0 0 14px #1fa08e55 }
 .rg.rg6 .rg-diff-hex { background: #0a1210; color: #59dddc; border-color: #59dddc }
 .rg.rg6 .rg-diffbar { border-color: #1f4a44; background: #0a1413cc }
-/* 중국어 원문 병기 (CN 선행 토픽) */
+/* 중국어 원문 병기 (CN 선행 토픽) — 인라인 표기용 */
 .rg-cn { font-size: 11px; font-weight: 400; font-style: normal; color: var(--rgmut); margin-left: 6px; letter-spacing: .2px }
-.rg-stagecard-name .rg-cn, .rg-enemy-name .rg-cn { display: block; margin: 2px 0 0; font-size: 10.5px }
-.rg-enc-title .rg-cn { margin-left: 6px }
+/* 이름 서브 표기(한국어 번역) — 중국어 다음 줄에 표시 (사용자 확정) */
+.rg-sub { display: block; font-size: 11px; font-weight: 400; color: var(--rgmut); margin-top: 2px; letter-spacing: .2px }
+/* 목록 아이템: 층 라벨 윗줄 + 이름 아랫줄 */
+.rg-enc-txt { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; min-width: 0 }
+.rg-enc-txt .rg-enc-floors { margin-left: 0 }
 /* 환경 뷰 (실토피아·유토피아) */
 .rg-env-h { margin: 26px 0 6px; font-size: 16px; color: var(--rggold) }
 .rg-env-h:first-child { margin-top: 0 }
@@ -5531,7 +5534,7 @@ html.rg-theme.rg6 body, html.rg-theme.rg6 main.site-main { background: linear-gr
 .rg-zonecard-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .38; pointer-events: none }
 .rg-zonecard > :not(.rg-zonecard-bg) { position: relative }
 .rg-zonecard-name { font: 700 13.5px/1.3 inherit }
-.rg-zonecard-name .rg-cn { display: block; margin: 2px 0 0 }
+
 .rg-zonecard .rg-zone-counts { margin-top: auto; font-size: 11px; color: var(--rgmut) }
 @media (max-width: 1100px) { .rg-zone-cards { grid-auto-flow: row; grid-template-columns: repeat(2, 1fr) } }
 /* 층 상세 모달 — 스테이지 카드 3열이 들어가게 넓게 */
@@ -5631,7 +5634,6 @@ html.rg-theme.rg6 body, html.rg-theme.rg6 main.site-main { background: linear-gr
 .rg-enc-thumb { width: 93px; height: 50px; object-fit: cover; border: 1px solid var(--rgline); border-radius: 2px; flex: none; background: var(--rgdeep) }
 .rg-enc-item { display: flex; align-items: center; gap: 8px; border: 1px solid var(--rgline); background: var(--rgdeep); color: var(--rgink); padding: 9px 11px; cursor: pointer; font: inherit; text-align: left; transition: 0.12s }
 .rg-enc-item:hover { border-color: var(--rggold) }
-.rg-enc-item .rg-enc-floors { margin-left: auto }
 
 /* 조우 */
 .rg-enc-title { font-weight: 700; font-size: 13px; color: var(--rgink) }

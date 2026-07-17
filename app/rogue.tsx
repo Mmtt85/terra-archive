@@ -44,9 +44,9 @@ const rogue1 = rogue1Data as unknown as RogueData;
 let data = rogue1;
 function setActiveData(d: RogueData) { data = d; }
 
-// CN 선행 토픽의 이름 표기 — 중국어 원문이 메인, 한국어 번역이 서브 (사용자 확정 2026-07)
+// CN 선행 토픽의 이름 표기 — 중국어 원문이 메인, 한국어 번역이 다음 줄 서브 (사용자 확정 2026-07)
 function Nm({ name, cn }: { name: string; cn?: string }) {
-  return cn ? <><span lang="zh">{cn}</span><span className="rg-cn">{name}</span></> : <>{name}</>;
+  return cn ? <><span lang="zh">{cn}</span><span className="rg-sub">{name}</span></> : <>{name}</>;
 }
 
 type View = "map" | "enemy" | "archive" | "hallu" | "diff" | "ending";
@@ -753,8 +753,10 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
                       {enc.bg
                         ? <img className="rg-enc-thumb" src={`/rogue/scene/${enc.bg}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />
                         : <span className="rg-enc-thumb none" aria-hidden />}
-                      <span className="rg-enc-title"><Nm name={enc.title} cn={enc.cn} /></span>
-                      {enc.floors && <span className="rg-enc-floors">{enc.floors.join("·")}{t("층")}</span>}
+                      <span className="rg-enc-txt">
+                        {enc.floors && <span className="rg-enc-floors">{enc.floors.join("·")}{t("층")}</span>}
+                        <span className="rg-enc-title"><Nm name={enc.title} cn={enc.cn} /></span>
+                      </span>
                     </button>
                   ))}
               </div>
