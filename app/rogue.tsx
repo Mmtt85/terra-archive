@@ -349,6 +349,53 @@ function RelicModal({ relic, onClose }: { relic: Relic; onClose: () => void }) {
   );
 }
 
+// ── 층 상세 모달 — 층 카드 클릭 시 (설명 + 작전/보스 카드) ───────────────────
+function ZoneModal({ zone, pairs, bosses, onOpenStage, onClose }: {
+  zone: Zone; pairs: StagePair[]; bosses: Stage[];
+  onOpenStage: (p: StagePair) => void; onClose: () => void;
+}) {
+  const { t } = useI18n();
+  useEffect(() => {
+    const onKey = (ev: KeyboardEvent) => { if (ev.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+  return (
+    <div className="rg-modal-back" onClick={onClose} role="presentation">
+      <div className="rg-modal rg-zmodal" role="dialog" aria-modal onClick={(ev) => ev.stopPropagation()}>
+        <header className="rg-modal-head">
+          <div>
+            <span className="rg-zone-num">{zone.hidden ? "?" : zone.num}</span>
+            <h3><Nm name={zone.name} cn={zone.cn} /></h3>
+            {zone.variant && <span className="rg-zone-hidden">{t("변형 구역")}</span>}
+            {zone.hidden && <span className="rg-zone-hidden">{t("히든 층")}</span>}
+            {zone.time && <span className="rg-modal-zone">{zone.time}</span>}
+          </div>
+          <button type="button" className="rg-modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
+        </header>
+        <p className="rg-zone-desc">{zone.desc}</p>
+        {zone.buff && <p className="rg-modal-elite">{zone.buff}</p>}
+        {pairs.length > 0 && (
+          <div className="rg-stage-group">
+            <h4>{t("작전")} <em>{pairs.length}</em> <span className="rg-stage-hint">{t("카드를 열면 일반/긴급 탭으로 전환할 수 있습니다")}</span></h4>
+            <div className="rg-stage-cards">
+              {pairs.map((p) => <StageCard key={p.n.id} pair={p} onOpen={onOpenStage} />)}
+            </div>
+          </div>
+        )}
+        {bosses.length > 0 && (
+          <div className="rg-stage-group">
+            <h4 className="boss">{t("험난한 길 (보스)")} <em>{bosses.length}</em></h4>
+            <div className="rg-stage-cards">
+              {bosses.map((s) => <StageCard key={s.id} pair={{ n: s }} onOpen={onOpenStage} boss />)}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // 토픽 목록 — ready=데이터 있음, future=미래시 토글 필요 (CN 선행, 비공식 번역명)
 const TOPICS: { id: string; name: string; ready?: boolean; future?: boolean }[] = [
   { id: "rogue_1", name: "팬텀 & 크림슨 솔리테어", ready: true },
@@ -398,6 +445,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   }, [topic]);
   const [view, setView] = useState<View>("map");
   const [grade, setGrade] = useState(0); // -1 = EASY, 0~15
+  const [zoneOpen, setZoneOpen] = useState<Zone | null>(null);
   const [stageOpen, setStageOpen] = useState<StagePair | null>(null);
   const [enemyOpen, setEnemyOpen] = useState<{ key: string; ctx: StatCtx } | null>(null);
   const [encOpen, setEncOpen] = useState<Encounter | null>(null);
@@ -418,7 +466,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
     setTopic(id);
     setView("map");
     setGrade(0);
-    setStageOpen(null); setEnemyOpen(null); setEncOpen(null); setRelicOpen(null);
+    setZoneOpen(null); setStageOpen(null); setEnemyOpen(null); setEncOpen(null); setRelicOpen(null);
     setEnemyQ(""); setEnemyRank(""); setRelicQ(""); setArcTab("relic");
   };
 
@@ -573,46 +621,27 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
 
       {view === "map" && (
         <div className="rg-map">
+          {/* 층 카드 — 가로 일렬, 클릭하면 층 상세 모달 (사용자 확정 2026-07) */}
+          <div className="rg-zone-cards">
           {data.zones.map((z) => {
             const pairs = z.variant ? [] : pairsByZone.get(z.num) ?? [];
             const zoneBosses = z.variant ? [] : bossStages.filter((s) => s.zone === z.num);
             return (
-              <details key={z.id} className={`rg-zone${z.hidden ? " hidden-zone" : ""}`}>
-                <summary className="rg-zone-sum">
-                  {z.img && <img className="rg-zone-bg" src={`/rogue/zone/${data.id}_map_${z.num}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
-                  <span className="rg-zone-num">{z.hidden ? "?" : z.num}</span>
-                  <h3><Nm name={z.name} cn={z.cn} /></h3>
-                  {z.variant && <span className="rg-zone-hidden">{t("변형 구역")}</span>}
-                  {z.time && <span className="rg-zone-time">{z.time}</span>}
-                  {z.hidden && <span className="rg-zone-hidden">{t("히든 층")}</span>}
-                  <span className="rg-zone-counts">
-                    {pairs.length > 0 && t("작전 {n}개", { n: pairs.length })}
-                    {zoneBosses.length > 0 && ` · ${t("보스 {n}개", { n: zoneBosses.length })}`}
-                  </span>
-                  <span className="rg-zone-arrow" aria-hidden>▾</span>
-                </summary>
-                <div className="rg-zone-body">
-                  <p className="rg-zone-desc">{z.desc}</p>
-                  {pairs.length > 0 && (
-                    <div className="rg-stage-group">
-                      <h4>{t("작전")} <em>{pairs.length}</em> <span className="rg-stage-hint">{t("카드를 열면 일반/긴급 탭으로 전환할 수 있습니다")}</span></h4>
-                      <div className="rg-stage-cards">
-                        {pairs.map((p) => <StageCard key={p.n.id} pair={p} onOpen={setStageOpen} />)}
-                      </div>
-                    </div>
-                  )}
-                  {zoneBosses.length > 0 && (
-                    <div className="rg-stage-group">
-                      <h4 className="boss">{t("험난한 길 (보스)")} <em>{zoneBosses.length}</em></h4>
-                      <div className="rg-stage-cards">
-                        {zoneBosses.map((s) => <StageCard key={s.id} pair={{ n: s }} onOpen={setStageOpen} boss />)}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </details>
+              <button type="button" key={z.id} className={`rg-zonecard${z.hidden ? " hidden-zone" : ""}`}
+                onClick={() => setZoneOpen(z)}>
+                {z.img && <img className="rg-zonecard-bg" src={`/rogue/zone/${data.id}_map_${z.num}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
+                <span className="rg-zone-num">{z.hidden ? "?" : z.num}</span>
+                <span className="rg-zonecard-name"><Nm name={z.name} cn={z.cn} /></span>
+                {z.variant && <span className="rg-zone-hidden">{t("변형 구역")}</span>}
+                {z.hidden && <span className="rg-zone-hidden">{t("히든 층")}</span>}
+                <span className="rg-zone-counts">
+                  {pairs.length > 0 && t("작전 {n}개", { n: pairs.length })}
+                  {zoneBosses.length > 0 && ` · ${t("보스 {n}개", { n: zoneBosses.length })}`}
+                </span>
+              </button>
             );
           })}
+          </div>
 
           {(evStages.length > 0 || duelStages.length > 0) && topic !== "rogue_6" && (
           <details className="rg-zone rg-zone-wide">
@@ -985,9 +1014,15 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
         </div>
       )}
 
+      {zoneOpen && (
+        <ZoneModal zone={zoneOpen}
+          pairs={zoneOpen.variant ? [] : pairsByZone.get(zoneOpen.num) ?? []}
+          bosses={zoneOpen.variant ? [] : bossStages.filter((s) => s.zone === zoneOpen.num)}
+          onOpenStage={setStageOpen} onClose={() => setZoneOpen(null)} />
+      )}
       {stageOpen && (
         <StageModal key={stageOpen.n.id} pair={stageOpen} grade={grade} onClose={() => setStageOpen(null)}
-          onOpenEnemy={setEnemyOpen} />
+          onOpenEnemy={(key, ctx) => setEnemyOpen({ key, ctx })} />
       )}
       {enemyOpen && (
         <EnemyModal ekey={enemyOpen.key} grade={grade} ctx={enemyOpen.ctx} onClose={() => setEnemyOpen(null)}

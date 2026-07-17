@@ -5521,6 +5521,19 @@ html.rg-theme.rg6 body, html.rg-theme.rg6 main.site-main { background: linear-gr
 .rg-scrap-type em { font-style: normal; color: var(--rgmut); margin-left: 6px; font-size: 12px }
 .rg-scrap-hint { display: block; font-weight: 400; font-size: 11.5px; color: var(--rgmut); margin-top: 3px }
 .rg-loading { padding: 40px 0; text-align: center; color: var(--rgmut) }
+/* 층 카드 — 가로 일렬 (클릭 → 층 상세 모달) */
+.rg-zone-cards { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 10px; margin: 0 0 16px }
+.rg-zonecard { position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-height: 118px; padding: 12px; border: 1px solid var(--rgline); background: var(--rgcard); color: var(--rgink); cursor: pointer; text-align: left; transition: border-color .15s }
+.rg-zonecard:hover { border-color: var(--rgcrim) }
+.rg-zonecard-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .38; pointer-events: none }
+.rg-zonecard > :not(.rg-zonecard-bg) { position: relative }
+.rg-zonecard-name { font: 700 13.5px/1.3 inherit }
+.rg-zonecard-name .rg-cn { display: block; margin: 2px 0 0 }
+.rg-zonecard .rg-zone-counts { margin-top: auto; font-size: 11px; color: var(--rgmut) }
+@media (max-width: 1100px) { .rg-zone-cards { grid-auto-flow: row; grid-template-columns: repeat(2, 1fr) } }
+/* 층 상세 모달 — 스테이지 카드 3열이 들어가게 넓게 */
+.rg-modal.rg-zmodal { max-width: 980px; width: min(980px, calc(100vw - 48px)) }
+.rg-zmodal .rg-zone-desc { margin-top: 0 }
 /* 전투맵 미리보기 확대 토글 — 클릭 시 2배 (레이아웃 밀지 않게 transform, 우측 열 위로 겹침) */
 .rg-map-zoom { display: block; width: 100%; padding: 0; border: 0; background: 0 0; cursor: zoom-in }
 .rg-map-zoom.zoom { cursor: zoom-out; position: relative; z-index: 6 }

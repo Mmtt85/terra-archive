@@ -63,9 +63,12 @@ python3 scripts/build-rogue.py --icons rogue_6  # 아이콘 언팩 (UnityPy·lz4
 
 - **크림슨 극장 다크 테마**: `.rg` 로컬 변수 `--rgbg #150a0e / --rgcard #211218 /
   --rgcrim #c23b4e / --rggold #c9a35c / --rgink #ead9c8`. 키비주얼 히어로 헤더.
-- **층 카드 = 아코디언** (기본 접힘). 존 배경 img는 **반드시 `<summary>` 안에** —
-  details 직속이면 닫힌 층이 열려 보이는 버그. 그리드에 `align-items:start` 필수
-  (없으면 옆 카드가 행 높이만큼 늘어나 빈 채로 열려 보임).
+- **층 = 가로 일렬 카드 → 클릭 시 ZoneModal** (사용자 확정 2026-07 — 아코디언에서 변경).
+  .rg-zone-cards(grid-auto-flow: column), 모달(.rg-zmodal, 980px)에 설명+작전/보스 카드.
+  StageModal이 ZoneModal 위에 겹치도록 렌더 순서는 ZoneModal 먼저.
+  조우 전투·추격전·부표·우연한 만남 등 광폭 섹션은 아코디언 유지.
+- ⚠ StageModal의 onOpenEnemy는 (key, ctx) 2인자 — 호출부에서 `{ key, ctx }`로 감싸
+  setEnemyOpen에 넘길 것 (setEnemyOpen을 직접 넘기면 적 클릭이 무반응).
 - **일반/긴급은 카드 하나로 통합** — StagePair {n, e}. 모달 안 [일반 작전|긴급 작전] 탭 전환.
   모달은 `key={pair.n.id}`로 재마운트 (effect로 mode 리셋 금지 — lint 에러).
 - **맵 미리보기: 16:9로 늘려서(fill) 표시** — 크롭 금지, 인게임과 동일 (사용자 확정).
