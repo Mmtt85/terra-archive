@@ -144,10 +144,6 @@ def build_rogue1():
         if level_id in level_cache:
             return level_cache[level_id]
         lv = fetch_json(f"levels/{level_id.lower()}.json")
-        # 미니맵 렌더 (전투 노드 썸네일)
-        map_name = level_id.rsplit("/", 1)[-1]
-        map_dest = os.path.join(map_dir, f"{map_name}.webp")
-        has_map = os.path.exists(map_dest) or render_minimap(lv, map_dest)
         # 등장 적: enemyDbRefs 순서 = 인게임 표시 순서
         refs = [{"key": e["id"], "level": e.get("level", 0),
                  "over": e.get("overwrittenData")} for e in lv.get("enemyDbRefs", [])]
@@ -174,8 +170,7 @@ def build_rogue1():
             for bb in rune.get("blackboard", []):
                 if bb.get("value") is not None:
                     emg.setdefault(key.rsplit("_", 1)[1], {})[bb["key"]] = num(bb["value"])
-        level_cache[level_id] = {"refs": refs, "counts": counts, "emg": emg,
-                                 "map": map_name if has_map else None}
+        level_cache[level_id] = {"refs": refs, "counts": counts, "emg": emg, "raw": lv}
         return level_cache[level_id]
 
     used_enemies = {}  # key → {level, over} (스탯 해석용 대표 ref)
@@ -199,11 +194,21 @@ def build_rogue1():
             "name": st["name"], "desc": st.get("description"),
             "eliteDesc": st.get("eliteDesc") or None,
             "emg": lv["emg"] if kind == "emergency" else None,
-            "map": lv["map"],
             "enemies": enemies,
         })
     order = {"normal": 0, "emergency": 1, "boss": 2, "event": 3, "duel": 4}
     stages.sort(key=lambda s: (order.get(s["kind"], 9), s["zone"] or 0, s["id"]))
+
+    # 전투 노드 미리보기 — 인게임 맵 프리뷰(arts/ui/stage/mappreviews/<stageId>.png).
+    # 없는 스테이지만 level mapData 격자 렌더로 폴백.
+    download_webp([(f"{ASSETS}/arts/ui/stage/mappreviews/{s['id']}.png",
+                    os.path.join(map_dir, f"{s['id']}.webp")) for s in stages], max_px=640)
+    for s in stages:
+        dest = os.path.join(map_dir, f"{s['id']}.webp")
+        if not os.path.exists(dest):
+            lvid = r["stages"][s["id"]]["levelId"]
+            render_minimap(level_cache[lvid]["raw"], dest)
+        s["map"] = s["id"] if os.path.exists(dest) else None
 
     # ── 적 도감 (등장 적만) ───────────────────────────────────────────────────
     enemies = {}

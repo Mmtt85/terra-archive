@@ -852,6 +852,13 @@ const D: Record<string, Pair> = {
   "난이도는 하위 등급의 규칙을 전부 포함합니다. 현재 선택한 난이도까지의 규칙이 강조됩니다.": ["Each grade includes all lower-grade rules. Rules up to the selected grade are highlighted.", "各難易度は下位グレードのルールをすべて含みます。選択した難易度までのルールが強調されます。"],
   "등급": ["Grade", "グレード"],
   "전장 미니맵": ["Battlefield minimap", "戦場ミニマップ"],
+  "일반 작전": ["Normal Operation", "通常作戦"],
+  "작전 모드": ["Operation mode", "作戦モード"],
+  "긴급": ["EX", "緊急"],
+  "작전 {n}개": ["{n} operations", "作戦{n}件"],
+  "보스 {n}개": ["{n} bosses", "ボス{n}件"],
+  "카드를 열면 일반/긴급 탭으로 전환할 수 있습니다": ["Open a card to switch between normal/emergency tabs", "カードを開くと通常/緊急タブを切り替えられます"],
+
   "추가 규칙": ["Added rule", "追加ルール"],
 
   // ── 피드백 위젯 ────────────────────────────────────────────────────────────
