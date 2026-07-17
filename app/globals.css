@@ -4682,13 +4682,31 @@ footer p {
 .about-card > header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
 .about-card-icon { font-size: 20px; line-height: 1; }
 .about-card > header h3 { font-size: 18px; margin: 0; letter-spacing: -0.3px; }
-.about-shot {
-  width: 100%;
+/* 데스크톱 + 모바일 스크린샷을 겹치지 않게 나란히 (반응형 UI를 한눈에) */
+.about-shot-fig { margin: 0 0 13px; }
+.about-shots { display: flex; gap: 10px; align-items: flex-start; line-height: 0; }
+.about-shot-d {
+  flex: 1 1 auto;
+  min-width: 0;
   display: block;
-  margin-bottom: 13px;
   border: 1px solid var(--line);
   border-radius: 4px;
 }
+.about-shot-m {
+  flex: 0 0 auto;
+  width: clamp(80px, 22%, 132px);
+  height: auto;
+  display: block;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+.about-shot-cap {
+  font: 700 11px/1.4 monospace;
+  color: var(--muted);
+  letter-spacing: 0.2px;
+  margin: 7px 0 0;
+}
+.about-hero .about-shot-fig { margin: 18px 0 0; }
 .about-card-summary { font-size: 14px; line-height: 1.6; margin: 0 0 12px; }
 .about-card-highlight {
   font-size: 14px;

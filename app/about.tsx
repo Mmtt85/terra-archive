@@ -15,14 +15,28 @@ type Feature = {
   highlight?: string; // 강조 박스 (인프라 플래너 90/10 어필)
 };
 
-// 기능별 스크린샷 (한국어 UI · 헤드리스 캡처본). 로케일 공용 — 탭 키로 매핑.
-const SHOTS: Partial<Record<Tab, string>> = {
-  archive: "/about/archive.webp",
-  planner: "/about/planner.webp",
-  recruit: "/about/recruit.webp",
-  farm: "/about/farm.webp",
-  story: "/about/story.webp",
+// 기능별 스크린샷 (한국어 UI · 헤드리스 캡처본, 데스크톱+모바일 한 쌍). 로케일 공용 — 탭 키로 매핑.
+type ShotPair = { d: string; m: string };
+const SHOTS: Partial<Record<Tab, ShotPair>> = {
+  archive: { d: "/about/archive.webp", m: "/about/archive-m.webp" },
+  planner: { d: "/about/planner.webp", m: "/about/planner-m.webp" },
+  recruit: { d: "/about/recruit.webp", m: "/about/recruit-m.webp" },
+  farm: { d: "/about/farm.webp", m: "/about/farm-m.webp" },
+  story: { d: "/about/story.webp", m: "/about/story-m.webp" },
 };
+
+// 데스크톱 스크린샷과 모바일 화면을 겹치지 않게 나란히 놓아 반응형 UI를 한눈에 보여준다.
+function ShotFrame({ shot, alt, cap }: { shot: ShotPair; alt: string; cap?: string }) {
+  return (
+    <figure className="about-shot-fig">
+      <div className="about-shots">
+        <img className="about-shot-d" src={shot.d} alt={alt} loading="lazy" decoding="async" />
+        <img className="about-shot-m" src={shot.m} alt="" aria-hidden loading="lazy" decoding="async" />
+      </div>
+      {cap && <figcaption className="about-shot-cap">{cap}</figcaption>}
+    </figure>
+  );
+}
 
 type Content = {
   kicker: string;
@@ -31,6 +45,7 @@ type Content = {
   intro: string;
   featureLead: string;
   features: Feature[];
+  chronicleCap: string; // 스토리 카드 안 테라 연대기 스크린샷 캡션
   future: { title: string; body: string };
   data: { title: string; body: string };
   disclaimer: { title: string; body: string };
@@ -94,6 +109,7 @@ const CONTENT: Record<Locale, Content> = {
         ],
       },
     ],
+    chronicleCap: "테라 연대기 — 이벤트·메인스토리·로그라이크를 테라력 연표로",
     future: {
       title: "미래시 데이터",
       body:
@@ -167,6 +183,7 @@ const CONTENT: Record<Locale, Content> = {
         ],
       },
     ],
+    chronicleCap: "Terra Chronicle — events, main story, and roguelikes on a Terra-calendar timeline",
     future: {
       title: "Future (unreleased) data",
       body:
@@ -240,6 +257,7 @@ const CONTENT: Record<Locale, Content> = {
         ],
       },
     ],
+    chronicleCap: "テラ年代記 — イベント・メインストーリー・ローグライクをテラ暦の年表で",
     future: {
       title: "未実装（先行）データ",
       body:
@@ -269,6 +287,7 @@ export default function About({ onOpenTab }: { onOpenTab?: (tab: Tab) => void })
         <h2>{c.title}</h2>
         <p className="about-tagline">{c.tagline}</p>
         <p className="about-intro">{c.intro}</p>
+        <ShotFrame shot={{ d: "/about/portal.webp", m: "/about/portal-m.webp" }} alt={c.title} />
       </div>
 
       <p className="about-lead">{c.featureLead}</p>
@@ -279,8 +298,10 @@ export default function About({ onOpenTab }: { onOpenTab?: (tab: Tab) => void })
               <span className="about-card-icon" aria-hidden>{f.icon}</span>
               <h3>{f.name}</h3>
             </header>
-            {SHOTS[f.tab] && (
-              <img className="about-shot" src={SHOTS[f.tab]} alt={f.name} loading="lazy" decoding="async" />
+            {SHOTS[f.tab] && <ShotFrame shot={SHOTS[f.tab]!} alt={f.name} />}
+            {/* 테라 연대기는 AI 스토리 요약 기능의 일부 — 스토리 카드 안에 함께 보여준다 */}
+            {f.tab === "story" && (
+              <ShotFrame shot={{ d: "/about/chronicle.webp", m: "/about/chronicle-m.webp" }} alt={c.chronicleCap} cap={c.chronicleCap} />
             )}
             <p className="about-card-summary">{f.summary}</p>
             {f.highlight && <p className="about-card-highlight">{rich(f.highlight)}</p>}
