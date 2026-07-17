@@ -48,6 +48,12 @@ python3 scripts/build-rogue.py --icons rogue_6  # 아이콘 언팩 (UnityPy·lz4
 | `capsule/` | `ASSETS/ui/rogueliketopic/topics/<topic>/capsule/` | 음반(레퍼토리) 자켓 |
 | `zone/` | `ASSETS/ui/rogueliketopic/topics/<topic>_update/levelbgpic/` | 존 배경 |
 | `relic/` | KR CDN `spritepack/ui_roguelike_topic_item_h1_<topic>_0.ab` 언팩 | `--icons` 모드. **깃허브 레포엔 없음** (아틀라스 패킹) |
+| `kv<N>.webp` | `topics/<topic>_update/entrykeyvisuals/<kv폴더>/` 좌/우 반쪽 2장(각 780×960) **가로 합성** | 히어로 배경. 파일명 토픽마다 불규칙(KV_SRC 매핑). ⚠ kv3(사미)는 좌측에 CN 제목이 박혀 있어 커밋본은 하늘 그라데이션 보간으로 텍스트를 지운 가공본 — 재생성 금지 |
+
+### 적 상세 (공격 방식·능력) — 2026-07-18 확정
+핸드북의 `attackType`/`ability` 상위 필드는 **폐기(전부 null)** — `damageType` 배열(물리/마법
+KR 매핑 attack_of)과 `abilityList[].text`(개행 join, ability_of)에서 뽑는다. UI는
+.rg-emodal-ability에 white-space:pre-line. 이걸 안 하면 적 상세 모달에 공격 방식·능력이 안 뜬다.
 
 ### 유물 정렬
 전시관 유물은 **유물번호(archiveComp orderId) 오름차순** (사용자 확정) — 숫자 번호 먼저,
@@ -62,6 +68,10 @@ python3 scripts/build-rogue.py --icons rogue_6  # 아이콘 언팩 (UnityPy·lz4
 - `endingConds`: 엔딩별 선제조건 스텝 배열. **「이름」 표기는 데이터의 공식 KR 명칭과
   글자 단위로 일치**시켜야 UI가 자동 링크한다 (아래 renderCond).
 - `bossFloors`: 험난한 길 층 배정. rogue_1(사용자 확인): b_1~5=3층, b_6~7=5층, b_8~9=히든 6층.
+  rogue_2~4도 큐레이션 존재. **rogue_5(쉐이)는 PRTS 미정리로 아직 없음** — 층 미배정 보스는
+  맵 뷰의 '험난한 길 (보스)' 폴백 아코디언(orphanBosses — 이름 없는 더미 보스 제외)에 뜬다.
+- **조우 같은 제목 병합은 전 토픽 공통** (build_topic에도 적용, 2026-07-18): 같은 제목의
+  enter 씬을 하나로 병합(선택지 dedupe 합집합) — rogue3 111→45, rogue5 114→58.
 
 ## UI 규칙 (app/rogue.tsx + globals.css .rg-*)
 
@@ -71,6 +81,17 @@ python3 scripts/build-rogue.py --icons rogue_6  # 아이콘 언팩 (UnityPy·lz4
   (--rgdeep 어두운 바탕 / --rgmodal 모달 배경 / --rgmodalline 모달 테두리 /
   --rgsel 선택 강조 / --rgtext2 본문색 / --rgup·--rgupbg 스탯 상승 강조)로 쓸 것.
   토픽 스킨(.rg.rg6)이 변수만 오버라이드해서 전체 색이 갈아입혀지는 구조다.
+- **토픽 스킨 색 (사용자 확정 2026-07-18)**: rg2=칠흑 심해+시안(인게임 KV) ·
+  rg3=**눈빛 은색**(설원 은백+얼음 시안 — 밝은 --rgcrim 위 흰 글자 요소는 #101722 잉크로
+  대비 보정 오버라이드 필수) · rg4=**검붉은** 검은 왕관(핏빛 심홍+왕관 금) ·
+  rg5=**파스텔 분홍**(연분홍 로즈+벚꽃 은백) · rg6=심해 청록.
+- **하이드레이션 게이트**: 정적 프리렌더는 항상 rogue_1 — `mounted`
+  (useSyncExternalStore, effect-내-setState 금지)로 마운트 전엔 로딩 셸만 렌더.
+  lazy init으로 topicFromUrl()을 첫 렌더에 쓰면 ?topic= URL에서 하이드레이션 에러,
+  rogue_1 고정 후 effect 반영이면 팬텀→해당 토픽 깜빡임 — 게이트가 유일한 정답.
+  switchTopic은 **팬텀도 ?topic=is1**을 URL에 남긴다.
+- **맵 탭 노드 이름 검색** (.rg-map-search, mapQ): 전투 노드 전 종류+우연한 만남을
+  이름/CN 원문으로 통합 검색 — 검색 중엔 결과 패널만 렌더, 토픽 전환 시 리셋.
 - **층 = 가로 일렬 카드 → 클릭 시 ZoneModal** (사용자 확정 2026-07 — 아코디언에서 변경).
   .rg-zone-cards는 **grid-column: 1/-1 필수** (.rg-map이 2열 그리드라 안 주면 한 칸에 갇힘),
   grid-auto-flow: column으로 합산 100% 폭 균등 분할. 번호 뱃지는 **'N층' 텍스트**.
