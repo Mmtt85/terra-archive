@@ -5685,6 +5685,8 @@ html.rg-theme body, html.rg-theme main.site-main { background: linear-gradient(1
 .rg-emodal-row strong { color: var(--rggold); margin-right: 6px }
 .rg-emodal-desc { margin: 0 0 6px; font-size: 12px; font-style: italic; color: var(--rgmut) }
 .rg-emodal-ability { margin: 0 0 10px; font-size: 12.5px; line-height: 1.7; color: #c8b4a6 }
+/* 스탯 컨텍스트 안내 — 어떤 배율이 반영된 수치인지 명시 (도감/노드 상세 불일치 방지) */
+.rg-ctx-note { margin: 0 0 6px; font-size: 11.5px; color: var(--rggold); opacity: .85 }
 .rg-emodal .rg-stats.sub { margin-top: 7px }
 .rg-emodal .rg-appear { margin-top: 12px }
 .rg-relic-icon { width: 40px; height: 40px; object-fit: contain; flex: none; background: radial-gradient(circle at 50% 45%, #2c161e, transparent); align-self: center }

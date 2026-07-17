@@ -858,6 +858,8 @@ const D: Record<string, Pair> = {
   "우연한 만남": ["Encounter", "思わぬ遭遇"],
   "특정 적 강화": ["Specific enemy buff", "特定の敵強化"],
   "긴급 시 적 교체": ["Emergency enemy swap", "緊急時の敵入れ替え"],
+  "긴급 작전 배율이 반영된 수치입니다.": ["Stats include the emergency operation multipliers.", "緊急作戦の倍率が反映された数値です。"],
+  "난이도 10 이상 험난한 길·긴급 작전 배율(공격·HP ×1.15)이 반영된 수치입니다.": ["Stats include the difficulty 10+ boss/emergency multiplier (ATK/HP ×1.15).", "難易度10以上の険路・緊急作戦倍率（攻撃・HP ×1.15）が反映された数値です。"],
   "이 난이도로 설정": ["Set as current difficulty", "この難易度に設定"],
   "일반 작전": ["Normal Operation", "通常作戦"],
   "작전 모드": ["Operation mode", "作戦モード"],

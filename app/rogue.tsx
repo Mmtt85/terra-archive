@@ -102,7 +102,7 @@ function StatRow({ e, grade, ctx }: { e: Enemy; grade: number; ctx: StatCtx }) {
 // ── 스테이지 상세 모달 — 일반/긴급이 같은 맵을 공유하므로 페어로 받아 탭 전환 ──
 export type StagePair = { n: Stage; e?: Stage };
 function StageModal({ pair, grade, onClose, onOpenEnemy }: {
-  pair: StagePair; grade: number; onClose: () => void; onOpenEnemy: (key: string) => void;
+  pair: StagePair; grade: number; onClose: () => void; onOpenEnemy: (key: string, ctx: StatCtx) => void;
 }) {
   const { t } = useI18n();
   const [mode, setMode] = useState<"n" | "e">("n");
@@ -163,7 +163,7 @@ function StageModal({ pair, grade, onClose, onOpenEnemy }: {
             const e = data.enemies[key];
             if (!e) return null;
             return (
-              <button type="button" key={se.key} className="rg-enemy-cell" onClick={() => onOpenEnemy(key)}>
+              <button type="button" key={se.key} className="rg-enemy-cell" onClick={() => onOpenEnemy(key, { ...ctx, enemyKey: key })}>
                 {e.img ? <img className="rg-enemy-face" src={`/rogue/enemy/${e.img}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />
                   : <span className="rg-enemy-face none" aria-hidden>?</span>}
                 <span className="rg-enemy-cell-head">
@@ -198,8 +198,8 @@ function StageCard({ pair, onOpen, boss }: { pair: StagePair; onOpen: (p: StageP
 }
 
 // ── 적 상세 모달 — 도감 카드·스테이지 모달의 적 행에서 연다 (스테이지 모달 위에 스택) ──
-function EnemyModal({ ekey, grade, onClose, onOpenStage, appear }: {
-  ekey: string; grade: number; onClose: () => void;
+function EnemyModal({ ekey, grade, ctx, onClose, onOpenStage, appear }: {
+  ekey: string; grade: number; ctx: StatCtx; onClose: () => void;
   onOpenStage: (s: Stage) => void; appear: Stage[];
 }) {
   const { t } = useI18n();
@@ -226,7 +226,10 @@ function EnemyModal({ ekey, grade, onClose, onOpenStage, appear }: {
         {e.attack && <p className="rg-emodal-row"><strong>{t("공격 방식")}</strong> {e.attack}</p>}
         {e.desc && <p className="rg-emodal-desc">{e.desc}</p>}
         {e.ability && <p className="rg-emodal-ability">{e.ability}</p>}
-        <StatRow e={e} grade={grade} ctx={{ emergencyOrBoss: false }} />
+        {/* 연 곳(노드 상세/도감)의 배율 컨텍스트를 그대로 물려받아 표시 — 수치 불일치 방지 */}
+        {ctx.emg && <p className="rg-ctx-note">{t("긴급 작전 배율이 반영된 수치입니다.")}</p>}
+        {!ctx.emg && ctx.emergencyOrBoss && grade >= 10 && <p className="rg-ctx-note">{t("난이도 10 이상 험난한 길·긴급 작전 배율(공격·HP ×1.15)이 반영된 수치입니다.")}</p>}
+        <StatRow e={e} grade={grade} ctx={{ ...ctx, enemyKey: ekey }} />
         <div className="rg-stats sub">
           <span className="rg-stat">{t("공속")} {e.aspd}</span>
           <span className="rg-stat">{t("이속")} {e.ms}</span>
@@ -331,7 +334,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   const [view, setView] = useState<View>("map");
   const [grade, setGrade] = useState(0); // -1 = EASY, 0~15
   const [stageOpen, setStageOpen] = useState<StagePair | null>(null);
-  const [enemyOpen, setEnemyOpen] = useState<string | null>(null);
+  const [enemyOpen, setEnemyOpen] = useState<{ key: string; ctx: StatCtx } | null>(null);
   const [encOpen, setEncOpen] = useState<Encounter | null>(null);
   const [relicOpen, setRelicOpen] = useState<Relic | null>(null);
   const [enemyQ, setEnemyQ] = useState("");
@@ -383,6 +386,13 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
     return m;
   }, []);
 
+  // 도감 컨텍스트 — 험난한 길에만 등장하는 적(보스 등)은 도감에서도 g10+ 배율을
+  // 적용해 노드 상세와 같은 수치를 보여준다 (사용자 리포트: 도감/노드 상세 불일치)
+  const dexCtx = (key: string): StatCtx => {
+    const appear = enemyStages.get(key) ?? [];
+    return { emergencyOrBoss: appear.length > 0 && appear.every((s) => s.kind === "boss") };
+  };
+
   const enemies = useMemo(() => {
     const q = normSearch(enemyQ);
     return Object.entries(data.enemies)
@@ -413,7 +423,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
       const rl = relicByName.get(part);
       if (rl) return <button key={i} type="button" className="rg-cond-node relic" onClick={() => setRelicOpen(rl)}>「{part}」</button>;
       const en = enemyByName.get(part);
-      if (en) return <button key={i} type="button" className="rg-cond-node" onClick={() => setEnemyOpen(en)}>「{part}」</button>;
+      if (en) return <button key={i} type="button" className="rg-cond-node" onClick={() => setEnemyOpen({ key: en, ctx: dexCtx(en) })}>「{part}」</button>;
       return `「${part}」`;
     });
   };
@@ -552,7 +562,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
           <div className="rg-enemy-grid">
             {enemies.map(([key, e]) => (
               <button type="button" key={key} className="rg-enemy-card" id={`rg-en-${key}`}
-                onClick={() => setEnemyOpen(key)}>
+                onClick={() => setEnemyOpen({ key, ctx: dexCtx(key) })}>
                 <header>
                   {e.img ? <img className="rg-enemy-face" src={`/rogue/enemy/${e.img}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />
                     : <span className="rg-enemy-face none" aria-hidden>?</span>}
@@ -560,7 +570,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
                   <h4>{e.name}</h4>
                   {e.index && <span className="rg-enemy-idx">{e.index}</span>}
                 </header>
-                <StatRow e={e} grade={grade} ctx={{ emergencyOrBoss: false }} />
+                <StatRow e={e} grade={grade} ctx={dexCtx(key)} />
               </button>
             ))}
           </div>
@@ -703,8 +713,8 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
           onOpenEnemy={setEnemyOpen} />
       )}
       {enemyOpen && (
-        <EnemyModal ekey={enemyOpen} grade={grade} onClose={() => setEnemyOpen(null)}
-          appear={enemyStages.get(enemyOpen) ?? []}
+        <EnemyModal ekey={enemyOpen.key} grade={grade} ctx={enemyOpen.ctx} onClose={() => setEnemyOpen(null)}
+          appear={enemyStages.get(enemyOpen.key) ?? []}
           onOpenStage={(s) => { setEnemyOpen(null); setStageOpen(pairOf(s)); }} />
       )}
       {encOpen && <EncounterModal enc={encOpen} onClose={() => setEncOpen(null)} />}
