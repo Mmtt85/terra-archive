@@ -5628,7 +5628,7 @@ html.rg-theme.rg6 body, html.rg-theme.rg6 main.site-main { background: linear-gr
 
 /* 조우 — 이름만 나열, 클릭 → 모달 (층 오름차순 정렬) */
 .rg-enc-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 6px }
-.rg-enc-thumb { width: 121px; height: 66px; object-fit: cover; border: 1px solid var(--rgline); border-radius: 2px; flex: none; background: var(--rgdeep) }
+.rg-enc-thumb { width: 157px; height: 86px; object-fit: cover; border: 1px solid var(--rgline); border-radius: 2px; flex: none; background: var(--rgdeep) }
 .rg-enc-item { display: flex; align-items: center; gap: 8px; border: 1px solid var(--rgline); background: var(--rgdeep); color: var(--rgink); padding: 9px 11px; cursor: pointer; font: inherit; text-align: left; transition: 0.12s }
 .rg-enc-item:hover { border-color: var(--rggold) }
 .rg-enc-item .rg-enc-floors { margin-left: auto }
