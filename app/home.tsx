@@ -766,14 +766,31 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
 
   useEffect(() => {
     if (!selected) return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const body = document.body;
+    const saved = { position: body.style.position, top: body.style.top, width: body.style.width, overflow: body.style.overflow };
+    // 모바일은 window가 스크롤러 — iOS Safari는 body{overflow:hidden}만으론 스크롤이
+    // 튀므로(닫을 때 맨 위로 점프) position:fixed로 잠그고 닫을 때 정확히 복원한다.
+    // 그래서 오퍼 상세를 닫으면 보던 오퍼 위치 그대로 돌아온다 (사용자 요청 2026-07).
+    // 데스크탑은 목록이 .results 내부 스크롤이라 body 잠금만으로 충분하다.
+    const mobile = window.matchMedia("(max-width: 1180px)").matches;
+    const scrollY = window.scrollY;
+    if (mobile) {
+      body.style.position = "fixed";
+      body.style.top = `-${scrollY}px`;
+      body.style.width = "100%";
+    } else {
+      body.style.overflow = "hidden";
+    }
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") closeOperator();
     };
     window.addEventListener("keydown", onKeyDown);
     return () => {
-      document.body.style.overflow = previousOverflow;
+      body.style.position = saved.position;
+      body.style.top = saved.top;
+      body.style.width = saved.width;
+      body.style.overflow = saved.overflow;
+      if (mobile) window.scrollTo(0, scrollY);
       window.removeEventListener("keydown", onKeyDown);
     };
   }, [selected]);
