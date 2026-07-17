@@ -5628,20 +5628,14 @@ html.rg-theme.rg6 body, html.rg-theme.rg6 main.site-main { background: linear-gr
 
 /* 조우 — 이름만 나열, 클릭 → 모달 (층 오름차순 정렬) */
 .rg-enc-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 6px }
-.rg-enc-thumb { width: 157px; height: 86px; object-fit: cover; border: 1px solid var(--rgline); border-radius: 2px; flex: none; background: var(--rgdeep) }
+.rg-enc-thumb { width: 93px; height: 50px; object-fit: cover; border: 1px solid var(--rgline); border-radius: 2px; flex: none; background: var(--rgdeep) }
 .rg-enc-item { display: flex; align-items: center; gap: 8px; border: 1px solid var(--rgline); background: var(--rgdeep); color: var(--rgink); padding: 9px 11px; cursor: pointer; font: inherit; text-align: left; transition: 0.12s }
 .rg-enc-item:hover { border-color: var(--rggold) }
 .rg-enc-item .rg-enc-floors { margin-left: auto }
 
 /* 조우 */
-.rg-encounters { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 8px }
-.rg-enc { border: 1px solid var(--rgline); background: var(--rgdeep) }
-.rg-enc summary { display: flex; align-items: center; gap: 9px; padding: 8px 11px 8px 8px; cursor: pointer; list-style: none }
-.rg-enc summary::-webkit-details-marker { display: none }
-.rg-enc-thumb { width: 52px; height: 34px; object-fit: cover; border: 1px solid var(--rgline); flex: none }
 .rg-enc-title { font-weight: 700; font-size: 13px; color: var(--rgink) }
 .rg-enc-floors { margin-left: auto; font: 800 10.5px/1 monospace; background: var(--rgsel); border: 1px solid var(--rgmodalline); color: var(--rggold); padding: 3px 7px; border-radius: 999px; white-space: nowrap }
-.rg-enc[open] .rg-enc-thumb { display: none }
 .rg-enc-cg { display: block; width: calc(100% - 24px); margin: 0 12px 10px; border: 1px solid var(--rgline) }
 .rg-enc-cg.modal { width: 100%; margin: 0 0 10px }
 .rg-relic-icon.lg { width: 56px; height: 56px }
