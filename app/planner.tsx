@@ -443,6 +443,44 @@ function ctxFor(key: string, tokenPoints: Record<string, number>, factionCounts?
   return { product: cellByKey.get(key)?.product, tokenPoints, factionCounts, plants, presentIds, ambient };
 }
 
+// 불러온(import) plan을 렌더가 안전하게 다룰 수 있는 형태로 정규화한다.
+// 방 키는 현재 LAYOUT만 남기고, 각 시프트는 문자열 id 배열로, factionCounts는 조 수만큼
+// 채운다. 손상·구버전·수기 편집 파일이 들어와도 인덱스 초과·undefined 접근으로 크래시하지
+// 않게 하는 방어 코드 (사용자 제보 2026-07: 커스텀 json 불러오면 인덱스 초과 오류).
+function sanitizePlan(raw: unknown): Plan | null {
+  if (!raw || typeof raw !== "object") return null;
+  const p = raw as Record<string, unknown>;
+  const src = (p.assignments && typeof p.assignments === "object") ? p.assignments as Record<string, unknown> : {};
+  const assignments: Record<string, string[][]> = {};
+  for (const cell of LAYOUT) {
+    const v = src[cell.key];
+    const shifts = Array.isArray(v)
+      ? v.map((s) => (Array.isArray(s) ? s.filter((x): x is string => typeof x === "string") : []))
+      : [];
+    assignments[cell.key] = shifts.length ? shifts : [[]]; // 최소 1개 시프트 보장
+  }
+  const fc = Array.isArray(p.factionCounts) ? p.factionCounts : [];
+  const factionCounts = Array.from({ length: SHIFT_COUNT }, (_, i) =>
+    (fc[i] && typeof fc[i] === "object" ? fc[i] : {})) as Record<string, number>[];
+  const flows = Array.isArray(p.flows)
+    ? (p.flows as unknown[]).filter((f): f is TokenFlow => {
+        const o = f as Record<string, unknown>;
+        return !!o && typeof o.token === "string" && Array.isArray(o.generators) && Array.isArray(o.converters) && Array.isArray(o.consumers);
+      })
+    : [];
+  return {
+    assignments,
+    plants: typeof p.plants === "number" ? p.plants : 3,
+    tokenPoints: (p.tokenPoints && typeof p.tokenPoints === "object") ? p.tokenPoints as Record<string, number> : {},
+    factionCounts,
+    flows,
+    strategy: typeof p.strategy === "string" ? p.strategy : "",
+    strategyTokens: Array.isArray(p.strategyTokens) ? (p.strategyTokens as unknown[]).filter((x): x is string => typeof x === "string") : [],
+    strategySet: !!p.strategySet,
+    priority: (p.priority === "gold" || p.priority === "exp" || p.priority === "balance") ? p.priority : "gold",
+  };
+}
+
 // 해당 조 기준 기지 내 배치 전원 (숙소·응접실 포함) — 기반시설 존재 조건 판정용
 function presentIdsFor(plan: Plan, shift: number): Set<string> {
   const ids = new Set<string>();
@@ -1183,12 +1221,17 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     reader.onload = () => {
       try {
         const data = JSON.parse(String(reader.result));
-        const ids = new Set<string>((data.owned as string[]).filter((id) => opById.has(id)));
-        const elite = new Map<string, Elite>((data.elite as [string, Elite][] | undefined) ?? []);
+        const ids = new Set<string>((Array.isArray(data.owned) ? data.owned : []).filter((id: unknown): id is string => typeof id === "string" && opById.has(id)));
+        // 정예화는 [id, 0|1|2] 쌍만 인정 (손상 항목 무시)
+        const elite = new Map<string, Elite>(
+          (Array.isArray(data.elite) ? data.elite : [])
+            .filter((e: unknown): e is [string, Elite] => Array.isArray(e) && typeof e[0] === "string" && [0, 1, 2].includes(e[1] as number)),
+        );
+        const plan = sanitizePlan(data.plan);
         setOwnedIds(ids);
         setEliteById(elite);
-        if (data.plan) { setPlan(data.plan as Plan); setActiveShift(0); }
-        persist(ids, data.plan ?? null, elite);
+        if (plan) { setPlan(plan); setActiveShift(0); }
+        persist(ids, plan, elite);
         setDirty(false);
         showToast(t("저장된 상태를 불러왔습니다 · 보유 {n}명 복원", { n: ids.size }));
       } catch { alert(t("가져오기 실패: 파일 형식을 확인해 주세요.")); }
