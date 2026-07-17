@@ -266,8 +266,9 @@
     {
       "ref": "act22side",
       "kind": "event",
-      "terraYear": null,
-      "arc": "ta"
+      "terraYear": 1098,
+      "arc": "ta",
+      "dateNote": "현재 씬 datestamp \"1098년 스카타나 들판\" (회상 \"8년 전 1090년\"과 구분; 1090+8=1098)"
     },
     {
       "ref": "act24side",
@@ -304,8 +305,9 @@
     {
       "ref": "act29side",
       "kind": "event",
-      "terraYear": null,
-      "arc": "le"
+      "terraYear": 1100,
+      "arc": "le",
+      "dateNote": "현재 씬 datestamp \"1100년, 라이타니엔 북부 국경, 슈투름란트\" (페데리코 과거 사건 언급과 구분)"
     },
     {
       "ref": "act30side",
@@ -429,9 +431,9 @@
     {
       "ref": "act49side",
       "kind": "event",
-      "terraYear": null,
+      "terraYear": 1102,
       "arc": "su",
-      "dateNote": "사세행 — 염국(백조), 쉐이의 화 종결. 스크립트에 당대 연도 명시 없음"
+      "dateNote": "현재 씬 datestamp \"1102년 늦가을 … 초겨울\""
     },
     {
       "id": "main_0",
@@ -562,8 +564,9 @@
         "en": "Return To Mist",
         "ja": "淬火煙塵"
       },
-      "terraYear": null,
-      "arc": "rl"
+      "terraYear": 1098,
+      "arc": "rl",
+      "dateNote": "11-4·11-5 나레이션 datestamp \"1098년\" (회상 1072년과 구분된 당대)"
     },
     {
       "id": "main_12",
@@ -606,8 +609,9 @@
         "en": "Dissociative Recombination",
         "ja": "解離結合"
       },
-      "terraYear": null,
-      "arc": "rl"
+      "terraYear": 1098,
+      "arc": "rl",
+      "dateNote": "나레이션 \"1098년 10월 초 … 바벨/살카즈 런디니움 철수\" = 당대 사건"
     },
     {
       "id": "main_16",
