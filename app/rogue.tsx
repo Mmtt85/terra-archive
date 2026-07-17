@@ -309,14 +309,20 @@ function EncounterModal({ enc, onClose }: { enc: Encounter; onClose: () => void 
           </div>
           <button type="button" className="rg-modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
         </header>
-        {enc.bg && <img className="rg-enc-cg modal" src={`/rogue/scene/${enc.bg}.webp`} alt={enc.title} loading="lazy" decoding="async" />}
-        {enc.desc && <p className="rg-modal-desc">{enc.desc}</p>}
-        {enc.note && <p className="rg-enc-note">{enc.note}</p>}
-        <ul className="rg-enc-choices">
-          {enc.choices.map((c, i) => (
-            <li key={i}><strong>{c.title}</strong>{c.desc ? ` — ${c.desc}` : ""}</li>
-          ))}
-        </ul>
+        <div className="rg-modal-cols">
+          <div className="rg-modal-left">
+            {enc.bg && <img className="rg-enc-cg modal" src={`/rogue/scene/${enc.bg}.webp`} alt={enc.title} loading="lazy" decoding="async" />}
+          </div>
+          <div className="rg-enc-body">
+            {enc.desc && <p className="rg-modal-desc">{enc.desc}</p>}
+            {enc.note && <p className="rg-enc-note">{enc.note}</p>}
+            <ul className="rg-enc-choices">
+              {enc.choices.map((c, i) => (
+                <li key={i}><strong>{c.title}</strong>{c.desc ? ` — ${c.desc}` : ""}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
   );

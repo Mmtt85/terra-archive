@@ -5651,6 +5651,9 @@ html.rg-theme.rg6 body, html.rg-theme.rg6 main.site-main { background: linear-gr
 .rg-diff-table tbody tr:hover td { background: var(--rgsel) }
 .rg-enc-desc { margin: 0; padding: 0 12px 8px; font-size: 12px; line-height: 1.7; color: var(--rgtext2) }
 .rg-enc-note { margin: 0 12px 8px; padding: 7px 9px; font-size: 11.5px; line-height: 1.6; background: var(--rgsel); border-left: 3px solid var(--rggold); color: #dcc9a8 }
+.rg-enc-body .rg-modal-desc { margin-top: 0 }
+.rg-enc-body .rg-enc-note { margin-left: 0; margin-right: 0 }
+.rg-enc-body .rg-enc-choices { padding: 0 0 0 18px }
 .rg-enc-choices { margin: 0; padding: 0 12px 12px 28px; font-size: 12px; line-height: 1.7; color: var(--rgtext2) }
 .rg-enc-choices strong { color: var(--rgink) }
 
