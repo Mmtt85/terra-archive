@@ -957,7 +957,7 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
   }, [filtered, sortKey, sortAsc, jobs, locale]);
 
   return (
-    <main className={tab === "archive" ? "" : tab === "portal" ? "base-main portal-main" : "base-main"}>
+    <main className={tab === "archive" ? "" : "base-main"}>
       <header className="site-header" id="top">
         <a className="brand" href={localeBase || "/"} aria-label={t("테라 아카이브 홈")}
           onClick={(event) => { event.preventDefault(); switchTab("portal"); window.scrollTo({ top: 0 }); }}>

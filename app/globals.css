@@ -5391,7 +5391,8 @@ footer p {
 }
 
 /* ── 포탈 첫화면 (루트 /) — 진입 시 이미지 로딩 없는 랜딩 (사용자 확정 2026-07-17) ── */
-.portal-main { align-items: center; }
+/* 헤더는 다른 메뉴 페이지와 동일하게 풀폭이어야 하므로 main에 align-items:center를 주지 않는다.
+   포탈 콘텐츠는 .portal 자체의 max-width + margin:0 auto로 중앙 정렬한다 (사용자 확정 2026-07-17). */
 .portal {
   width: 100%;
   max-width: 920px;
