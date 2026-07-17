@@ -48,15 +48,16 @@ const CHRON_SYNTH: StoryEvent[] = chronology.entries
   .filter((raw) => raw.kind !== "event" && raw.id && summaries[raw.id])
   .map((raw) => {
     const id = raw.id as string;
-    const epNo = /^main_\d+$/.test(id) ? Number(id.split("_")[1]) : undefined;
+    const isMain = /^main_\d+$/.test(id);
+    const epNo = isMain ? Number(id.split("_")[1]) : undefined;
     return {
       id,
       name: raw.title ?? { ko: id },
       start: "",
       episodes: 0,
       thumb: `/story/${id}.webp`,
-      thumbEn: `/story/en/${id}.webp`,
-      thumbJa: `/story/ja/${id}.webp`,
+      // 메인스토리만 글로벌·일본판 타이틀카드가 있다. 로그라이크는 KR 키비주얼로 폴백.
+      ...(isMain ? { thumbEn: `/story/en/${id}.webp`, thumbJa: `/story/ja/${id}.webp` } : {}),
       epNo,
     };
   });
@@ -193,7 +194,7 @@ function StoryDetail({ event, summary, onClose, onShowOperator }: {
         <header className="story-detail-head">
           <span className="section-no">AI STORY DIGEST</span>
           <h2>{locText(locale, event.name)}</h2>
-          <p className="story-meta">{event.epNo != null ? locText(locale, epLabel(event.epNo)) : `${event.start} · ${t("에피소드 {n}개", { n: event.episodes })}`}</p>
+          <p className="story-meta">{event.epNo != null ? locText(locale, epLabel(event.epNo)) : event.id.startsWith("rogue_") ? t("통합 전략") : `${event.start} · ${t("에피소드 {n}개", { n: event.episodes })}`}</p>
           <p className="story-tagline">{summary.tagline}</p>
           <p className="story-disclaimer">{t("이 요약은 AI가 게임 내 스토리 스크립트 전문을 읽고 쓴 2차 창작 요약입니다.")}</p>
           {locale !== "ko" && <p className="story-disclaimer">{t("요약 본문은 현재 한국어로만 제공됩니다.")}</p>}
@@ -319,7 +320,7 @@ const arcColor = (arcId: string) => {
   const idx = chronology.arcs.findIndex((a) => a.id === arcId);
   return idx >= 0 ? ARC_COLORS[idx % ARC_COLORS.length] : "#8b9294";
 };
-const KIND_KO: Record<ChronKind, string> = { event: "이벤트", main: "메인스토리", roguelike: "로그라이크" };
+const KIND_KO: Record<ChronKind, string> = { event: "이벤트", main: "메인스토리", roguelike: "통합 전략" };
 const arcNameOf = (locale: Locale, id: string) => {
   const a = chronology.arcs.find((x) => x.id === id);
   return a ? locText(locale, a.name) : id;
@@ -467,7 +468,7 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
 
   return (
     <div className="chron">
-      <p className="chron-note">{rich(t("**테라 연대기 (베타)** — 모든 이벤트·메인스토리·로그라이크를 한자리에 모으는 사전 작업입니다. 현재 정렬은 출시순(임시)이며, 인게임 연대기 순서·테라력 연도는 스토리 스크립트를 반영하며 채웁니다. 테마 묶음은 확실한 것부터 배정 중입니다."))}</p>
+      <p className="chron-note">{rich(t("**테라 연대기 (베타)** — 모든 이벤트·메인스토리·통합 전략을 한자리에 모으는 사전 작업입니다. 현재 정렬은 출시순(임시)이며, 인게임 연대기 순서·테라력 연도는 스토리 스크립트를 반영하며 채웁니다. 테마 묶음은 확실한 것부터 배정 중입니다."))}</p>
 
       {/* 한 줄 연혁 바 — 연도별로 묶고 작은 연도 라벨을 얹는다. 가로 스크롤 시 아래 목록도 따라간다. */}
       <div className="chron-railwrap">
@@ -511,7 +512,7 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
         <div className="chron-legend">
           <span><i className="lg-dot" /> {t("이벤트")}</span>
           <span><i className="lg-dot lg-main" /> {t("메인스토리")}</span>
-          <span><i className="lg-dot lg-rl" /> {t("로그라이크")}</span>
+          <span><i className="lg-dot lg-rl" /> {t("통합 전략")}</span>
         </div>
       </div>
 
@@ -553,10 +554,9 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
 
 // 요약 뷰 — 이벤트·메인스토리·로그라이크 카드 그리드 + 검색 + 종류별/테마별 그룹핑(기본 종류별).
 // 각 그룹은 최신순(이벤트=출시월, 메인=에피소드 번호). 요약이 있는 이벤트만 열린다.
-function DigestView({ onOpen, includeFuture }: { onOpen: (event: StoryEvent) => void; includeFuture?: boolean }) {
+function DigestView({ onOpen, includeFuture, group, onGroup }: { onOpen: (event: StoryEvent) => void; includeFuture?: boolean; group: "theme" | "kind"; onGroup: (g: "theme" | "kind") => void }) {
   const { locale, t } = useI18n();
   const [query, setQuery] = useState("");
-  const [group, setGroup] = useState<"theme" | "kind">("kind");
   const [searchOpen, setSearchOpen] = useState(false); // 검색창 클릭 시 전체 이벤트 목록 드롭다운
   const searchRef = useRef<HTMLDivElement>(null);
 
@@ -686,8 +686,8 @@ function DigestView({ onOpen, includeFuture }: { onOpen: (event: StoryEvent) => 
           )}
         </div>
         <div className="chron-tabs digest-tabs">
-          <button type="button" className={group === "kind" ? "on" : ""} onClick={() => setGroup("kind")}>{t("종류별")}</button>
-          <button type="button" className={group === "theme" ? "on" : ""} onClick={() => setGroup("theme")}>{t("테마별")}</button>
+          <button type="button" className={group === "kind" ? "on" : ""} onClick={() => onGroup("kind")}>{t("종류별")}</button>
+          <button type="button" className={group === "theme" ? "on" : ""} onClick={() => onGroup("theme")}>{t("테마별")}</button>
         </div>
       </div>
 
@@ -710,12 +710,21 @@ function DigestView({ onOpen, includeFuture }: { onOpen: (event: StoryEvent) => 
 export default function StoryGuide({ onShowOperator, includeFuture }: { onShowOperator?: (id: string) => void; includeFuture?: boolean }) {
   const { t } = useI18n();
   const [view, setView] = useState<"digest" | "chronicle">("digest");
+  const [group, setGroup] = useState<"theme" | "kind">("kind");
   const [selected, setSelected] = useState<StoryEvent | null>(null);
 
   const pushedDetail = useRef(false);
-  // #story-<id> 해시와 동기화 — 새로고침·공유·뒤로가기 모두 동작
+  // 해시 동기화(복붙·공유·뒤로가기): 상세 #story-<id> · 연대기 #chronicle · 테마별 #theme · 종류별 #kind
   useEffect(() => {
-    const apply = () => setSelected(eventFromHash());
+    const apply = () => {
+      const h = decodeURIComponent(window.location.hash);
+      const detail = eventFromHash();
+      setSelected(detail);
+      if (detail) return;                              // 상세 진입 시 뷰/그룹 상태는 유지
+      if (h === "#chronicle") setView("chronicle");
+      else if (h === "#theme") { setView("digest"); setGroup("theme"); }
+      else if (h === "#kind" || h === "#story" || h === "") { setView("digest"); setGroup("kind"); }
+    };
     apply();
     window.addEventListener("hashchange", apply);
     window.addEventListener("popstate", apply);
@@ -736,6 +745,15 @@ export default function StoryGuide({ onShowOperator, includeFuture }: { onShowOp
   const openEvent = (eventId: string) => {
     const ev = eventById.get(eventId);
     if (ev && summaries[eventId]) open(ev);
+  };
+  // 뷰·그룹 전환을 복붙 가능한 해시로 남긴다 (뒤로가기로 오갈 수 있게 pushState)
+  const goView = (v: "digest" | "chronicle") => {
+    history.pushState(null, "", v === "chronicle" ? "#chronicle" : (group === "theme" ? "#theme" : "#kind"));
+    setView(v);
+  };
+  const goGroup = (g: "theme" | "kind") => {
+    history.pushState(null, "", g === "theme" ? "#theme" : "#kind");
+    setView("digest"); setGroup(g);
   };
 
   useEffect(() => {
@@ -761,14 +779,14 @@ export default function StoryGuide({ onShowOperator, includeFuture }: { onShowOp
       </div>
 
       <div className="story-viewtabs" role="tablist">
-        <button type="button" role="tab" aria-selected={view === "digest"} className={view === "digest" ? "on" : ""} onClick={() => setView("digest")}>{t("요약")}</button>
-        <button type="button" role="tab" aria-selected={view === "chronicle"} className={view === "chronicle" ? "on" : ""} onClick={() => setView("chronicle")}>{t("테라 연대기")}</button>
+        <button type="button" role="tab" aria-selected={view === "digest"} className={view === "digest" ? "on" : ""} onClick={() => goView("digest")}>{t("요약")}</button>
+        <button type="button" role="tab" aria-selected={view === "chronicle"} className={view === "chronicle" ? "on" : ""} onClick={() => goView("chronicle")}>{t("테라 연대기")}</button>
       </div>
 
       {view === "chronicle" ? (
         <ChronologyView onOpenEvent={openEvent} />
       ) : (
-        <DigestView onOpen={open} includeFuture={includeFuture} />
+        <DigestView onOpen={open} includeFuture={includeFuture} group={group} onGroup={goGroup} />
       )}
     </section>
   );

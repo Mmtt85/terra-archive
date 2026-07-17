@@ -109,7 +109,7 @@ const CONTENT: Record<Locale, Content> = {
         ],
       },
     ],
-    chronicleCap: "테라 연대기 — 이벤트·메인스토리·로그라이크를 테라력 연표로",
+    chronicleCap: "테라 연대기 — 이벤트·메인스토리·통합 전략을 테라력 연표로",
     future: {
       title: "미래시 데이터",
       body:
@@ -183,7 +183,7 @@ const CONTENT: Record<Locale, Content> = {
         ],
       },
     ],
-    chronicleCap: "Terra Chronicle — events, main story, and roguelikes on a Terra-calendar timeline",
+    chronicleCap: "Terra Chronicle — events, main story, and Integrated Strategies on a Terra-calendar timeline",
     future: {
       title: "Future (unreleased) data",
       body:
@@ -257,7 +257,7 @@ const CONTENT: Record<Locale, Content> = {
         ],
       },
     ],
-    chronicleCap: "テラ年代記 — イベント・メインストーリー・ローグライクをテラ暦の年表で",
+    chronicleCap: "テラ年代記 — イベント・メインストーリー・統合戦略をテラ暦の年表で",
     future: {
       title: "未実装（先行）データ",
       body:

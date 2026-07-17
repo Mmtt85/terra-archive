@@ -764,15 +764,15 @@ const D: Record<string, Pair> = {
   "테마 미분류": ["Unsorted", "未分類"],
   "이벤트": ["Event", "イベント"],
   "메인스토리": ["Main Story", "メインストーリー"],
-  "로그라이크": ["Roguelike", "ローグライク"],
+  "통합 전략": ["Integrated Strategies", "統合戦略"],
   "연대순": ["Chronological", "年代順"],
   "전체": ["All", "すべて"],
   "테마별": ["By theme", "テーマ別"],
   "종류별": ["By type", "種類別"],
   "클릭해서 열기": ["click to open", "クリックで開く"],
-  "**테라 연대기 (베타)** — 모든 이벤트·메인스토리·로그라이크를 한자리에 모으는 사전 작업입니다. 현재 정렬은 출시순(임시)이며, 인게임 연대기 순서·테라력 연도는 스토리 스크립트를 반영하며 채웁니다. 테마 묶음은 확실한 것부터 배정 중입니다.": [
-    "**Terra Chronicle (beta)** — groundwork for gathering every event, main story, and roguelike in one place. The current order is by release date (temporary); the in-universe order and Terra-calendar years will be filled in from the story scripts. Theme groupings are being assigned confident-first.",
-    "**テラ年代記（ベータ）** — すべてのイベント・メインストーリー・ローグライクを一箇所に集める準備作業です。現在の並びは配信順（暫定）で、作中の年代順・テラ暦の年号はストーリースクリプトを反映して埋めます。テーマ分類は確実なものから割り当て中です。",
+  "**테라 연대기 (베타)** — 모든 이벤트·메인스토리·통합 전략을 한자리에 모으는 사전 작업입니다. 현재 정렬은 출시순(임시)이며, 인게임 연대기 순서·테라력 연도는 스토리 스크립트를 반영하며 채웁니다. 테마 묶음은 확실한 것부터 배정 중입니다.": [
+    "**Terra Chronicle (beta)** — groundwork for gathering every event, main story, and Integrated Strategies in one place. The current order is by release date (temporary); the in-universe order and Terra-calendar years will be filled in from the story scripts. Theme groupings are being assigned confident-first.",
+    "**テラ年代記（ベータ）** — すべてのイベント・メインストーリー・統合戦略を一箇所に集める準備作業です。現在の並びは配信順（暫定）で、作中の年代順・テラ暦の年号はストーリースクリプトを反映して埋めます。テーマ分類は確実なものから割り当て中です。",
   ],
   "AI 스토리 요약 - 명일방주 스토리 요약 | 테라 아카이브": ["AI Story Digest - Arknights Story Summaries | Terra Archive", "AIストーリー要約 - アークナイツストーリー要約 | テラアーカイブ"],
   "한국 서버에 풀린 사이드 스토리 {count}개의 아카이브입니다. AI가 스토리 스크립트 전문을 정독하고 컷씬과 함께 10분 분량으로 요약합니다. 현재 {done}개 수록 — 계속 추가됩니다.": [

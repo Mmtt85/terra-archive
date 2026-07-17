@@ -113,6 +113,14 @@
         "en": "Collaborations",
         "ja": "コラボレーション"
       }
+    },
+    {
+      "id": "rogue",
+      "name": {
+        "ko": "통합 전략",
+        "en": "Integrated Strategies",
+        "ja": "統合戦略"
+      }
     }
   ],
   "entries": [
@@ -621,7 +629,7 @@
         "ja": "ファントムと緋き貴石"
       },
       "terraYear": null,
-      "arc": null
+      "arc": "rogue"
     },
     {
       "id": "rogue_2",
@@ -632,7 +640,7 @@
         "ja": "ミヅキと紺碧の樹"
       },
       "terraYear": null,
-      "arc": "ae"
+      "arc": "rogue"
     },
     {
       "id": "rogue_3",
@@ -643,7 +651,7 @@
         "ja": "探索者と銀氷の果て"
       },
       "terraYear": null,
-      "arc": "kj"
+      "arc": "rogue"
     },
     {
       "id": "rogue_4",
@@ -654,7 +662,7 @@
         "ja": "サルカズの炉辺奇談"
       },
       "terraYear": null,
-      "arc": "rl"
+      "arc": "rogue"
     },
     {
       "id": "rogue_5",
@@ -665,7 +673,7 @@
         "ja": "歳の界園志異"
       },
       "terraYear": null,
-      "arc": "su"
+      "arc": "rogue"
     }
   ]
 }
