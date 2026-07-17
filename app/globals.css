@@ -5509,6 +5509,52 @@ html.rg-theme.rg6 body, html.rg-theme.rg6 main.site-main { background: linear-gr
 .rg.rg6 .rg-topic.on { box-shadow: 0 0 14px #1fa08e55 }
 .rg.rg6 .rg-diff-hex { background: #0a1210; color: #59dddc; border-color: #59dddc }
 .rg.rg6 .rg-diffbar { border-color: #1f4a44; background: #0a1413cc }
+
+/* ── rogue_2 미즈키 & 카이룰라 아버 — 심해 남색 스킨 (인게임 KV: 칠흑 심해 + 시안 발광 해파리·달빛 은백) ── */
+html.rg-theme.rg2 body, html.rg-theme.rg2 main.site-main { background: linear-gradient(180deg,#03060e,#060b18 220px,#070d1c) }
+.rg.rg2 { --rgbg:#070d1c; --rgcard:#0f1830; --rgline:#213858; --rgink:#dce9fb; --rgmut:#7d93b8;
+  --rgcrim:#4a9edd; --rggold:#79d1e2;
+  --rgdeep:#060c1a; --rgmodal:#0a1122; --rgmodalline:#2b4c7c; --rgsel:#122645; --rgtext2:#a9c0e2; --rgup:#69c8ff; --rgupbg:#0c264a }
+.rg.rg2 .rg-modal-back { background: #02040bd9 } .rg.rg2 .rg-modal-back.stack { background: #02040be6 }
+.rg.rg2 .rg-topic.on { box-shadow: 0 0 16px #4a9edd66 }
+.rg.rg2 .rg-diff-hex { background: #070d1c; color: #72ccff; border-color: #72ccff }
+.rg.rg2 .rg-diffbar { border-color: #2b4e7e; background: #070d1ccc }
+
+/* ── rogue_3 탐험가의 은빛 서리 끝자락 — 오로라 겨울밤 스킨 (인게임 KV: 짙은 남보라 밤하늘 + 청록 오로라 + 보랏빛 서리 결정 + 은백) ── */
+html.rg-theme.rg3 body, html.rg-theme.rg3 main.site-main { background: linear-gradient(180deg,#060811,#0a0e20 220px,#0c1024) }
+.rg.rg3 { --rgbg:#0c1024; --rgcard:#151b36; --rgline:#2c3b60; --rgink:#e7eefb; --rgmut:#93a3c8;
+  --rgcrim:#54bcc6; --rggold:#aa9de4;
+  --rgdeep:#0b0f22; --rgmodal:#0e142e; --rgmodalline:#374e78; --rgsel:#182545; --rgtext2:#c4cfe9; --rgup:#79e4dc; --rgupbg:#0f303a }
+.rg.rg3 .rg-modal-back { background: #04060ed9 } .rg.rg3 .rg-modal-back.stack { background: #04060ee6 }
+.rg.rg3 .rg-topic.on { box-shadow: 0 0 16px #54bcc666 }
+.rg.rg3 .rg-diff-hex { background: #0c1024; color: #8fe8e0; border-color: #8fe8e0 }
+.rg.rg3 .rg-diffbar { border-color: #35526c; background: #0c1024cc }
+
+/* ── rogue_4 살카즈의 영겁 기담 — 검은 왕관 검붉은 스킨 (칠흑 + 핏빛 심홍 + 왕관 금) ── */
+html.rg-theme.rg4 body, html.rg-theme.rg4 main.site-main { background: linear-gradient(180deg,#0b0405,#150708 220px,#170808) }
+.rg.rg4 { --rgbg:#170808; --rgcard:#26100f; --rgline:#4a2320; --rgink:#f1ddd6; --rgmut:#a9877e;
+  --rgcrim:#b1303e; --rggold:#c99150;
+  --rgdeep:#140607; --rgmodal:#1b0a09; --rgmodalline:#5a2823; --rgsel:#301412; --rgtext2:#d9bdb4; --rgup:#ff5c6a; --rgupbg:#33100f }
+.rg.rg4 .rg-modal-back { background: #060202d9 } .rg.rg4 .rg-modal-back.stack { background: #060202e6 }
+.rg.rg4 .rg-topic.on { box-shadow: 0 0 16px #b1303e66 }
+.rg.rg4 .rg-diff-hex { background: #170808; color: #ff6673; border-color: #ff6673 }
+.rg.rg4 .rg-diffbar { border-color: #5a2a26; background: #170808cc }
+
+/* ── rogue_5 쉐이의 기이한 계원 — 파스텔 분홍 수묵 스킨 (연분홍 로즈 + 벚꽃빛 은백) ── */
+html.rg-theme.rg5 body, html.rg-theme.rg5 main.site-main { background: linear-gradient(180deg,#120a0d,#1a0e13 220px,#1c0f15) }
+.rg.rg5 { --rgbg:#1c0f15; --rgcard:#2a1620; --rgline:#4a2a37; --rgink:#f7e4ec; --rgmut:#b592a1;
+  --rgcrim:#e07fa5; --rggold:#f0b8cc;
+  --rgdeep:#1a0e14; --rgmodal:#20111a; --rgmodalline:#5c2f3f; --rgsel:#341825; --rgtext2:#dcbccb; --rgup:#ff9ec2; --rgupbg:#3a1522 }
+.rg.rg5 .rg-modal-back { background: #080406d9 } .rg.rg5 .rg-modal-back.stack { background: #080406e6 }
+.rg.rg5 .rg-topic.on { box-shadow: 0 0 16px #e07fa566 }
+.rg.rg5 .rg-diff-hex { background: #1c0f15; color: #ff9ec2; border-color: #ff9ec2 }
+.rg.rg5 .rg-diffbar { border-color: #5a3040; background: #1c0f15cc }
+
+/* 적 상태이상 면역 칩 */
+.rg-emodal-immune { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 8px 0 4px; font-size: 12.5px; color: var(--rgtext2) }
+.rg-emodal-immune strong { color: var(--rgink); margin-right: 2px }
+.rg-immune-chip { border: 1px solid var(--rgmodalline); background: var(--rgsel); color: var(--rgink);
+  padding: 2px 8px; border-radius: 10px; font-size: 11.5px; font-weight: 700 }
 /* 중국어 원문 병기 (CN 선행 토픽) — 인라인 표기용 */
 .rg-cn { font-size: 11px; font-weight: 400; font-style: normal; color: var(--rgmut); margin-left: 6px; letter-spacing: .2px }
 /* 이름 서브 표기(한국어 번역) — 중국어 다음 줄에 표시 (사용자 확정) */
@@ -5730,7 +5776,7 @@ html.rg-theme.rg6 body, html.rg-theme.rg6 main.site-main { background: linear-gr
 .rg-emodal-row { margin: 0 0 6px; font-size: 12.5px; color: var(--rgtext2) }
 .rg-emodal-row strong { color: var(--rggold); margin-right: 6px }
 .rg-emodal-desc { margin: 0 0 6px; font-size: 12px; font-style: italic; color: var(--rgmut) }
-.rg-emodal-ability { margin: 0 0 10px; font-size: 12.5px; line-height: 1.7; color: var(--rgtext2) }
+.rg-emodal-ability { margin: 0 0 10px; font-size: 12.5px; line-height: 1.7; color: var(--rgtext2); white-space: pre-line }
 /* 스탯 컨텍스트 안내 — 어떤 배율이 반영된 수치인지 명시 (도감/노드 상세 불일치 방지) */
 .rg-ctx-note { margin: 0 0 6px; font-size: 11.5px; color: var(--rggold); opacity: .85 }
 .rg-emodal .rg-stats.sub { margin-top: 7px }

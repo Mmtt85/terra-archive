@@ -17,7 +17,7 @@ type Emg = {
   replace?: Record<string, string>;                          // 긴급 시 적 교체 (원본→변종)
 } | null;
 type Stage = { id: string; kind: string; zone: number | null; code: string | null; name: string; desc: string | null; eliteDesc: string | null; emg: Emg; map?: string | null; enemies: StageEnemy[]; cn?: string };
-type Enemy = { name: string; rank: string | null; index: string | null; attack: string | null; desc: string | null; ability: string | null; hp: number; atk: number; def: number; res: number; aspd: number; ms: number; weight: number; lifePoint: number; img?: string | null; cn?: string };
+type Enemy = { name: string; rank: string | null; index: string | null; attack: string | null; desc: string | null; ability: string | null; hp: number; atk: number; def: number; res: number; aspd: number; ms: number; weight: number; lifePoint: number; immune?: string[]; img?: string | null; cn?: string };
 type Relic = { id: string; name: string; desc: string | null; usage: string | null; obtain: string | null; order: string | null; group: number | null; sort: number; sp: boolean; img?: boolean; cn?: string };
 type Capsule = { id: string; name: string; en: string | null; desc: string | null; usage: string | null; img?: boolean; cn?: string };
 type Simple = { id: string; name: string; desc?: string | null; usage: string | null; img?: boolean; cn?: string };
@@ -32,7 +32,7 @@ type RogueData = {
   id: string; name: string; line: string | null; cnName?: string; future?: boolean;
   zones: Zone[]; nodeTypes: { id: string; name: string; desc: string | null }[];
   difficulties: Difficulty[]; stages: Stage[]; enemies: Record<string, Enemy>;
-  relics: Relic[]; capsules?: Capsule[]; tools: Simple[]; bands: Simple[];
+  relics: Relic[]; capsules?: Capsule[]; tools: Simple[]; bands: Simple[]; exploreTools?: Simple[];
   scraps?: Scrap[]; legacies?: Simple[]; buoys?: Simple[];
   weathers?: Weather[]; subweathers?: SubWeather[];
   variations: Variation[]; endings: Ending[]; encounters: Encounter[];
@@ -50,11 +50,13 @@ function Nm({ name, cn }: { name: string; cn?: string }) {
 }
 
 type View = "map" | "enemy" | "archive" | "hallu" | "diff" | "ending";
+// hallu 자리의 토픽별 라벨 — 없는 토픽(IS3~5)은 탭 자체를 숨긴다
+const HALLU_LABEL: Record<string, string> = { rogue_1: "환각", rogue_2: "메아리", rogue_6: "환경" };
 const viewsFor = (topic: string): { id: View; label: string }[] => [
   { id: "map", label: "맵·노드" },
   { id: "enemy", label: "적 도감" },
   { id: "archive", label: "전시관" },
-  { id: "hallu", label: topic === "rogue_6" ? "환경" : "환각" },
+  ...(HALLU_LABEL[topic] ? [{ id: "hallu" as View, label: HALLU_LABEL[topic] }] : []),
   { id: "diff", label: "난이도" },
   { id: "ending", label: "엔딩" },
 ];
@@ -75,7 +77,6 @@ const RANK_KO: Record<string, string> = { NORMAL: "일반", ELITE: "정예", BOS
 type StatCtx = { emergencyOrBoss?: boolean; emg?: Emg; enemyKey?: string };
 function applyDiff(e: Enemy, grade: number, ctx: StatCtx) {
   let hp = e.hp, atk = e.atk, def = e.def;
-  const res = e.res;
   if (ctx.emg) {
     const m = ctx.emg.mul ?? {};
     if (m.max_hp) hp *= m.max_hp;
@@ -96,17 +97,44 @@ function applyDiff(e: Enemy, grade: number, ctx: StatCtx) {
     }
   }
   const elite = e.rank === "ELITE" || e.rank === "BOSS";
-  let burst14 = false, guard11 = false;
+  const boss = e.rank === "BOSS";
+  let res = e.res;
+  let burst14 = false, guard = 0; // guard = 피격 대미지 감소 뱃지(%) — 토픽별 규칙
   if (data.id === "rogue_6") {
     if (grade >= 5) hp *= 1.3;
     if (grade >= 8 && elite) atk *= 1.15;
-    guard11 = grade >= 11 && e.rank === "BOSS";
+    if (grade >= 11 && boss) guard = 20;
+  } else if (data.id === "rogue_2") {
+    // g3+/g12+ 마법 저항 +10 · g5+ 리더 공/방 +15% · g11+ 정예·리더 HP +20% · g15 정예·리더 전 스탯 +20%
+    if (grade >= 3) res += 10;
+    if (grade >= 5 && boss) { atk *= 1.15; def *= 1.15; }
+    if (grade >= 11 && elite) hp *= 1.2;
+    if (grade >= 12) res += 10;
+    if (grade >= 15 && elite) { atk *= 1.2; def *= 1.2; hp *= 1.2; }
+  } else if (data.id === "rogue_3") {
+    // g4+ 정예 공격 +10% · g5+ 전체 공/HP +5% · g10+ 전체 공격 +10% · g14+ 전체 방/HP +5% · g15 전체 +10%
+    if (grade >= 4 && e.rank === "ELITE") atk *= 1.1;
+    if (grade >= 5) { atk *= 1.05; hp *= 1.05; }
+    if (grade >= 10) atk *= 1.1;
+    if (grade >= 14) { def *= 1.05; hp *= 1.05; }
+    if (grade >= 15) { atk *= 1.1; def *= 1.1; hp *= 1.1; }
+    if (grade >= 11 && boss) guard = 5; // 리더 피격 대미지 -5% (표기만)
+  } else if (data.id === "rogue_4") {
+    // g4+ 정예·리더 HP +20% · g10+ 정예·리더 피격 대미지 -10% (표기만)
+    if (grade >= 4 && elite) hp *= 1.2;
+    if (grade >= 10 && elite) guard = 10;
+  } else if (data.id === "rogue_5") {
+    // g4+ 전체 HP +40% · g8+ 정예·리더 방/HP +20% · g11+ 전체 공격 +20% · g14+ 리더 피격 -20% (표기만)
+    if (grade >= 4) hp *= 1.4;
+    if (grade >= 8 && elite) { def *= 1.2; hp *= 1.2; }
+    if (grade >= 11) atk *= 1.2;
+    if (grade >= 14 && boss) guard = 20;
   } else {
     if (grade >= 5 && elite) hp *= 1.2;
     if (grade >= 10 && ctx.emergencyOrBoss) { hp *= 1.15; atk *= 1.15; }
     burst14 = grade >= 14 && elite;
   }
-  return { hp: Math.round(hp), atk: Math.round(atk), def: Math.round(def), res, burst14, guard11 };
+  return { hp: Math.round(hp), atk: Math.round(atk), def: Math.round(def), res, burst14, guard };
 }
 
 const fmt = (n: number) => n.toLocaleString("en-US");
@@ -122,7 +150,7 @@ function StatRow({ e, grade, ctx }: { e: Enemy; grade: number; ctx: StatCtx }) {
       <span className={up(s.def, e.def) ? "rg-stat up" : "rg-stat"} title={t("방어력")}>{t("방어")} {fmt(s.def)}</span>
       <span className="rg-stat" title={t("마법 저항")}>{t("마저")} {s.res}</span>
       {s.burst14 && <span className="rg-stat g14" title={t("난이도 14 이상: 정예·리더가 등장 후 20초간 공격력 +30%, 받는 물리·마법 대미지 -50%")}>{t("등장 20초")} {t("공격")} {fmt(Math.round(s.atk * 1.3))}</span>}
-      {s.guard11 && <span className="rg-stat g14" title={t("난이도 11 이상: 리더 적이 받는 대미지 20% 감소")}>{t("받는 대미지")} -20%</span>}
+      {s.guard > 0 && <span className="rg-stat g14" title={t("고난이도에서 이 적이 받는 물리·마법 대미지가 감소합니다")}>{t("받는 대미지")} -{s.guard}%</span>}
     </div>
   );
 }
@@ -222,8 +250,8 @@ function StageModal({ pair, grade, onClose, onOpenEnemy }: {
 }
 
 const KIND_LABEL: Record<string, string> = {
-  normal: "작전", emergency: "긴급 작전", boss: "험난한 길", event: "조우 전투", duel: "특수",
-  chase: "추격전", savage: "거점전", incident: "조우 전투",
+  normal: "작전", emergency: "긴급 작전", boss: "험난한 길", event: "조우 전투", special: "특수",
+  duel: "외나무다리", trial: "시련", chase: "추격전", savage: "거점전", incident: "조우 전투",
 };
 
 // 전투 노드 카드 — 인게임 맵 미리보기 + 이름 (클릭 → 상세, 일반/긴급은 모달 탭 전환)
@@ -266,6 +294,11 @@ function EnemyModal({ ekey, grade, ctx, onClose, onOpenStage, appear }: {
         {e.attack && <p className="rg-emodal-row"><strong>{t("공격 방식")}</strong> {e.attack}</p>}
         {e.desc && <p className="rg-emodal-desc">{e.desc}</p>}
         {e.ability && <p className="rg-emodal-ability">{e.ability}</p>}
+        {e.immune && e.immune.length > 0 && (
+          <p className="rg-emodal-immune"><strong>{t("상태이상 면역")}</strong>
+            {e.immune.map((im) => <span key={im} className="rg-immune-chip">{t(im)}</span>)}
+          </p>
+        )}
         {/* 연 곳(노드 상세/도감)의 배율 컨텍스트를 그대로 물려받아 표시 — 수치 불일치 방지 */}
         {ctx.emg && <p className="rg-ctx-note">{t("긴급 작전 배율이 반영된 수치입니다.")}</p>}
         {!ctx.emg && ctx.emergencyOrBoss && grade >= 10 && <p className="rg-ctx-note">{t("난이도 10 이상 험난한 길·긴급 작전 배율(공격·HP ×1.15)이 반영된 수치입니다.")}</p>}
@@ -409,12 +442,21 @@ function ZoneModal({ zone, pairs, bosses, onOpenStage, onClose }: {
 // 토픽 목록 — ready=데이터 있음, future=미래시 토글 필요 (CN 선행, 비공식 번역명)
 const TOPICS: { id: string; name: string; ready?: boolean; future?: boolean }[] = [
   { id: "rogue_1", name: "팬텀 & 크림슨 솔리테어", ready: true },
-  { id: "rogue_2", name: "미즈키 & 카이룰라 아버" },
-  { id: "rogue_3", name: "탐험가의 은빛 서리 끝자락" },
-  { id: "rogue_4", name: "살카즈의 영겁 기담" },
-  { id: "rogue_5", name: "쉐이의 기이한 계원" },
+  { id: "rogue_2", name: "미즈키 & 카이룰라 아버", ready: true },
+  { id: "rogue_3", name: "탐험가의 은빛 서리 끝자락", ready: true },
+  { id: "rogue_4", name: "살카즈의 영겁 기담", ready: true },
+  { id: "rogue_5", name: "쉐이의 기이한 계원", ready: true },
   { id: "rogue_6", name: "침몰자의 흑류수해", ready: true, future: true },
 ];
+
+// 토픽 데이터 동적 로더 — rogue_1만 기본 번들, 나머지는 선택 시 로드 (각 300~600KB)
+const TOPIC_LOADERS: Record<string, () => Promise<{ default: unknown }>> = {
+  rogue_2: () => import("./data/rogue2.json"),
+  rogue_3: () => import("./data/rogue3.json"),
+  rogue_4: () => import("./data/rogue4.json"),
+  rogue_5: () => import("./data/rogue5.json"),
+  rogue_6: () => import("./data/rogue6.json"),
+};
 
 // 토픽 URL 슬러그 — /rogue?topic=is6 (rogue_1은 파라미터 없음)
 const slugOf = (id: string) => "is" + id.split("_")[1];
@@ -429,29 +471,30 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
 
   // 첫 렌더에서 URL의 ?topic= 을 읽어 시작 토픽 결정 (SSR에선 rogue_1)
   const [topic, setTopic] = useState(() => (typeof window === "undefined" ? "rogue_1" : topicFromUrl()));
-  const [rogue6, setRogue6] = useState<RogueData | null>(null);
+  const [loaded, setLoaded] = useState<Record<string, RogueData>>({});
   // 뒤로 가기 → 토픽 동기화
   useEffect(() => {
     const onPop = () => setTopic(topicFromUrl());
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);
-  // rogue_6 데이터는 선택 시에만 동적 로드 (~430KB — 기본 번들에서 제외)
+  // rogue_2~6 데이터는 선택 시에만 동적 로드 (기본 번들에서 제외)
   useEffect(() => {
-    if (topic === "rogue_6" && !rogue6) {
-      import("./data/rogue6.json").then((m) => setRogue6(m.default as unknown as RogueData));
+    if (topic !== "rogue_1" && !loaded[topic] && TOPIC_LOADERS[topic]) {
+      TOPIC_LOADERS[topic]().then((m) =>
+        setLoaded((cur) => ({ ...cur, [topic]: m.default as RogueData })));
     }
-  }, [topic, rogue6]);
-  const active = topic === "rogue_6" ? rogue6 : rogue1;
+  }, [topic, loaded]);
+  const active = topic === "rogue_1" ? rogue1 : loaded[topic] ?? null;
   setActiveData(active ?? rogue1);
   const loading = active == null;
 
-  // 다크 테마 배경을 페이지 전체(100% 폭)에 칠한다 — rogue_6은 심해 수림(rg6) 스킨
+  // 다크 테마 배경을 페이지 전체(100% 폭)에 칠한다 — 토픽별 스킨 클래스(rg2~rg6)
   useEffect(() => {
     const c = document.documentElement.classList;
     c.add("rg-theme");
-    c.toggle("rg6", topic === "rogue_6");
-    return () => { c.remove("rg-theme"); c.remove("rg6"); };
+    for (const tp of TOPICS) c.toggle("rg" + tp.id.split("_")[1], tp.id === topic && tp.id !== "rogue_1");
+    return () => { c.remove("rg-theme"); for (const tp of TOPICS) c.remove("rg" + tp.id.split("_")[1]); };
   }, [topic]);
   const [view, setView] = useState<View>("map");
   const [grade, setGrade] = useState(0); // -1 = EASY, 0~15
@@ -463,7 +506,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   const [enemyQ, setEnemyQ] = useState("");
   const [enemyRank, setEnemyRank] = useState<string>("");
   const [relicQ, setRelicQ] = useState("");
-  const [arcTab, setArcTab] = useState<"relic" | "capsule" | "tool" | "band" | "scrap" | "legacy">("relic");
+  const [arcTab, setArcTab] = useState<"relic" | "capsule" | "tool" | "band" | "scrap" | "legacy" | "explore">("relic");
   const VIEWS = viewsFor(topic);
 
   const switchTopic = (id: string) => {
@@ -500,7 +543,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   const emgById = useMemo(() => new Map(data.stages.filter((s) => s.kind === "emergency").map((s) => [s.id, s])), [active]);
   const emgOf = (s: Stage): Stage | undefined =>
     s.kind === "normal" ? emgById.get(s.id.replace("_n_", "_e_"))
-      : s.kind === "incident" ? emgById.get(s.id.replace("_t_", "_e_t_")) : undefined;
+      : s.kind === "incident" || s.kind === "special" ? emgById.get(s.id.replace("_t_", "_e_t_")) : undefined;
   const pairOf = (s: Stage): StagePair => ({ n: s, e: emgOf(s) });
   const pairsByZone = useMemo(() => {
     const m = new Map<number, StagePair[]>();
@@ -512,8 +555,12 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
     return m;
   }, [emgById]); // eslint-disable-line react-hooks/exhaustive-deps
   const bossStages = useMemo(() => data.stages.filter((s) => s.kind === "boss"), [active]);
+  // 층이 배정되지 않은 보스(층 큐레이션이 없는 토픽) — 이름 없는 더미 보스는 제외
+  const orphanBosses = useMemo(() => bossStages.filter((s) => s.zone == null && s.name.trim()), [bossStages]);
   const evStages = useMemo(() => data.stages.filter((s) => s.kind === "event"), [active]);
+  const specialStages = useMemo(() => data.stages.filter((s) => s.kind === "special"), [active]);
   const duelStages = useMemo(() => data.stages.filter((s) => s.kind === "duel"), [active]);
+  const trialStages = useMemo(() => data.stages.filter((s) => s.kind === "trial"), [active]);
   const chaseStages = useMemo(() => data.stages.filter((s) => s.kind === "chase"), [active]);
   const savageStages = useMemo(() => data.stages.filter((s) => s.kind === "savage"), [active]);
   const incidentStages = useMemo(() => data.stages.filter((s) => s.kind === "incident"), [active]);
@@ -576,12 +623,15 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   const hasEasy = data.difficulties.some((d) => d.mode === "EASY");
   const normalName = data.difficulties.find((d) => d.mode === "NORMAL")?.name ?? "";
   const easyName = data.difficulties.find((d) => d.mode === "EASY")?.name ?? "";
+  // 최고 난이도는 토픽마다 다르다 (IS1/3/6=15, IS2/4/5=승천 18) — 데이터에서 읽는다.
+  // switchTopic이 토픽 전환 시 grade를 0으로 리셋하므로 별도 클램프는 불필요.
+  const maxGrade = useMemo(() => Math.max(15, ...data.difficulties.filter((d) => d.mode === "NORMAL").map((d) => d.grade)), [active]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <section className={`rg${topic === "rogue_6" ? " rg6" : ""}`} aria-labelledby="rg-title">
+    <section className={`rg${topic === "rogue_1" ? "" : " rg" + topic.split("_")[1]}`} aria-labelledby="rg-title">
       <header className="rg-head">
         <div className="rg-hero">
-          <img className="rg-hero-kv" src={topic === "rogue_6" ? "/rogue/kv6.webp" : "/rogue/kv1.webp"} alt="" aria-hidden loading="lazy" decoding="async" />
+          <img className="rg-hero-kv" src={`/rogue/kv${topic.split("_")[1]}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />
           <div className="rg-hero-text">
             <span className="rg-eyebrow">INTEGRATED STRATEGIES</span>
             <h2 id="rg-title">{t("통합전략 가이드")}</h2>
@@ -610,7 +660,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
           <div className="rg-diffbar" role="group" aria-label={t("난이도 선택")}>
             <span className="rg-diffbar-label">{t("난이도")}</span>
             {hasEasy && <button type="button" className={`rg-diff-chip${grade < 0 ? " on" : ""}`} onClick={() => setGrade(-1)}>{t("쉬움")}</button>}
-            <input type="range" min={0} max={15} value={Math.max(0, grade)}
+            <input type="range" min={0} max={maxGrade} value={Math.max(0, grade)}
               onChange={(e) => setGrade(Number(e.target.value))}
               aria-label={t("난이도 등급")} />
             <span className={`rg-diff-cur${grade >= 0 ? " on" : ""}`}>
@@ -654,17 +704,50 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
           })}
           </div>
 
-          {(evStages.length > 0 || duelStages.length > 0) && topic !== "rogue_6" && (
+          {/* 층이 배정되지 않은 보스(험난한 길) — 층 큐레이션이 없는 토픽에서 보스맵이 누락되지 않도록 폴백 */}
+          {orphanBosses.length > 0 && (
+          <details className="rg-zone rg-zone-wide" open>
+            <summary className="rg-zone-sum">
+              <h3 className="boss">{t("험난한 길 (보스)")}</h3>
+              <span className="rg-zone-counts">{t("작전 {n}개", { n: orphanBosses.length })}</span>
+              <span className="rg-zone-arrow" aria-hidden>▾</span>
+            </summary>
+            <div className="rg-zone-body">
+              <p className="rg-zone-desc">{t("각 구역 끝에서 마주치는 강력한 적입니다.")}</p>
+              <div className="rg-stage-cards">
+                {orphanBosses.map((s) => <StageCard key={s.id} pair={{ n: s }} onOpen={setStageOpen} boss />)}
+              </div>
+            </div>
+          </details>
+          )}
+
+          {(evStages.length > 0 || specialStages.length > 0) && (
           <details className="rg-zone rg-zone-wide">
             <summary className="rg-zone-sum">
-              <h3>{t("조우 전투")} · {t("특수 (심층 조사)")}</h3>
-              <span className="rg-zone-counts">{t("작전 {n}개", { n: evStages.length + duelStages.length })}</span>
+              <h3>{t("조우 전투")} · {t("특수")}</h3>
+              <span className="rg-zone-counts">{t("작전 {n}개", { n: evStages.length + specialStages.length })}</span>
+              <span className="rg-zone-arrow" aria-hidden>▾</span>
+            </summary>
+            <div className="rg-zone-body">
+              <p className="rg-zone-desc">{t("우연한 만남 등 이벤트에서 발생하는 전투입니다. 카드를 열면 일반/긴급 탭이 있는 경우 전환할 수 있습니다.")}</p>
+              <div className="rg-stage-cards">
+                {evStages.map((s) => <StageCard key={s.id} pair={{ n: s }} onOpen={setStageOpen} />)}
+                {specialStages.map((s) => <StageCard key={s.id} pair={pairOf(s)} onOpen={setStageOpen} />)}
+              </div>
+            </div>
+          </details>
+          )}
+
+          {trialStages.length > 0 && (
+          <details className="rg-zone rg-zone-wide">
+            <summary className="rg-zone-sum">
+              <h3>{t("시련·특수 전투")}</h3>
+              <span className="rg-zone-counts">{t("작전 {n}개", { n: trialStages.length })}</span>
               <span className="rg-zone-arrow" aria-hidden>▾</span>
             </summary>
             <div className="rg-zone-body">
               <div className="rg-stage-cards">
-                {evStages.map((s) => <StageCard key={s.id} pair={{ n: s }} onOpen={setStageOpen} />)}
-                {duelStages.map((s) => <StageCard key={s.id} pair={{ n: s }} onOpen={setStageOpen} />)}
+                {trialStages.map((s) => <StageCard key={s.id} pair={{ n: s }} onOpen={setStageOpen} />)}
               </div>
             </div>
           </details>
@@ -718,7 +801,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
           </details>
           )}
 
-          {duelStages.length > 0 && topic === "rogue_6" && (
+          {duelStages.length > 0 && (
           <details className="rg-zone rg-zone-wide">
             <summary className="rg-zone-sum">
               <h3>{t("외나무다리 (결투)")}</h3>
@@ -822,7 +905,12 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
               ["relic", "소장품 (유물)"] as const,
               ...(topic === "rogue_6"
                 ? [["scrap", "부품 (零件)"], ["tool", "도구"], ["band", "스쿼드"], ["legacy", "유산"]] as const
-                : [["capsule", "레퍼토리 (음반)"], ["tool", "무대 도구"], ["band", "스쿼드"]] as const),
+                : [
+                    ...((data.capsules?.length ?? 0) > 0 ? [["capsule", "레퍼토리 (음반)"]] as const : []),
+                    ["tool", "무대 도구"] as const,
+                    ...((data.exploreTools?.length ?? 0) > 0 ? [["explore", "탐사 도구"]] as const : []),
+                    ["band", "스쿼드"] as const,
+                  ]),
             ]).map(([id, label]) => (
               <button key={id} type="button" className={arcTab === id ? "on" : ""} onClick={() => setArcTab(id)}>{t(label)}</button>
             ))}
@@ -835,6 +923,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
                 : arcTab === "capsule" ? data.capsules?.length ?? 0
                 : arcTab === "scrap" ? data.scraps?.length ?? 0
                 : arcTab === "legacy" ? data.legacies?.length ?? 0
+                : arcTab === "explore" ? data.exploreTools?.length ?? 0
                 : arcTab === "tool" ? data.tools.length : data.bands.length}
             </span>
           </div>
@@ -921,6 +1010,20 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
               ))}
             </div>
           )}
+          {arcTab === "explore" && (
+            <div className="rg-relic-grid">
+              {(data.exploreTools ?? []).map((c) => (
+                <article key={c.id} className="rg-relic">
+                  <header>
+                    {c.img && <img className="rg-relic-icon" src={`/rogue/relic/${c.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
+                    <h4><Nm name={c.name} cn={c.cn} /></h4>
+                  </header>
+                  {c.usage && <p className="rg-relic-usage">{c.usage}</p>}
+                  {c.desc && <p className="rg-relic-desc">{c.desc}</p>}
+                </article>
+              ))}
+            </div>
+          )}
           {arcTab === "band" && (
             <div className="rg-relic-grid">
               {data.bands.map((c) => (
@@ -938,9 +1041,11 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
         </div>
       )}
 
-      {view === "hallu" && topic !== "rogue_6" && (
+      {view === "hallu" && (topic === "rogue_1" || topic === "rogue_2") && (
         <div className="rg-hallu">
-          <p className="rg-zone-desc">{t("난이도 1 이상에서 구역에 환각이 나타납니다. 난이도 11 이상에서는 특정 조합이 융합 환각으로 발동합니다.")}</p>
+          <p className="rg-zone-desc">{topic === "rogue_2"
+            ? t("특정 구역에 '메아리'가 나타나 해당 구역 전체에 효과를 겁니다. 좋은 효과와 나쁜 효과가 함께 붙습니다.")
+            : t("난이도 1 이상에서 구역에 환각이 나타납니다. 난이도 11 이상에서는 특정 조합이 융합 환각으로 발동합니다.")}</p>
           <div className="rg-relic-grid">
             {data.variations.map((v) => (
               <article key={v.id} className={`rg-relic${v.fusion ? " fusion" : ""}`}>

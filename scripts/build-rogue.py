@@ -107,6 +107,33 @@ def mv(field, default=None):
         return field["m_value"] if field["m_defined"] else default
     return field if field is not None else default
 
+# 적 상태 면역 필드 → KR 표기 (도감 상세 표시용, 사용자 요청 2026-07-18)
+IMMUNE_KO = [
+    ("stunImmune", "기절"), ("silenceImmune", "침묵"), ("sleepImmune", "수면"),
+    ("frozenImmune", "빙결"), ("levitateImmune", "부양"), ("disarmedCombatImmune", "무장 해제"),
+    ("fearedImmune", "공포"), ("palsyImmune", "마비"), ("attractImmune", "흡인"),
+    ("teleportImmune", "강제 이동"),
+]
+
+# 공격(피해) 타입 — 신버전 핸드북은 attackType이 폐기(null)되고 damageType 배열로 이동.
+DAMAGE_KO = {"PHYSIC": "물리", "MAGIC": "마법", "NO_DAMAGE": "피해 없음", "HEAL": "치유"}
+
+
+def attack_of(hb):
+    # damageType(['PHYSIC'] 등)을 "물리·마법" 식 KR 표기로. 옛 attackType이 있으면 우선.
+    if hb.get("attackType"):
+        return hb["attackType"]
+    dt = hb.get("damageType") or []
+    return "·".join(DAMAGE_KO.get(d, d) for d in dt) or None
+
+
+def ability_of(hb):
+    # 능력은 abilityList([{text, textFormat}]) 각 줄을 개행으로 합친다. 옛 ability 문자열 폴백.
+    al = hb.get("abilityList") or []
+    lines = [a.get("text", "").strip() for a in al if a.get("text")]
+    return "\n".join(lines) or hb.get("ability") or None
+
+
 def dedupe_choices(chs):
     # 다단계 조우 씬은 후속 단계 선택지가 접두 매칭으로 전부 쓸려 들어와
     # 같은 선택지가 반복된다 — 제목+설명이 같으면 하나만 남긴다 (사용자 리포트 2026-07-18)
@@ -126,34 +153,44 @@ def num(v):
     return round(v, 3) if isinstance(v, float) else v
 
 
-def build_rogue1():
+def build_topic(tid="rogue_1"):
+    """KR 정식 출시 토픽(rogue_1~5) 공통 빌더 — 스테이지 id 접두 roN_ 공통,
+    토픽 고유 시스템(음반/메아리/탐사 도구 등)은 데이터 존재 여부로 분기한다."""
+    ronum = tid.split("_")[1]  # "1"~"5"
     table = fetch_json("excel/roguelike_topic_table.json")
-    topic = table["topics"]["rogue_1"]
-    r = table["details"]["rogue_1"]
+    topic = table["topics"][tid]
+    r = table["details"][tid]
     handbook = fetch_json("excel/enemy_handbook_table.json")["enemyData"]
     enemy_db = fetch_json("levels/enemydata/enemy_database.json")
 
     items = r["items"]  # 유물/음반/티켓 등 표시 텍스트
 
-    # ── 존 (portal_* 변형 존은 원본과 중복이라 제외) ──────────────────────────
+    # ── 존 — 숫자 존(zone_N)만. portal_/zone_s_/zone_sky_/zone_N_b 등 변형·하위
+    # 존은 본 존과 내용이 중복이라 제외 (rogue_6의 중복 변형 존 제거 규칙과 동일 취지)
     zones = []
     for zid, z in r["zones"].items():
-        if zid.startswith("portal_"):
+        m = re.fullmatch(r"zone_(\d+)", zid)
+        if not m:
             continue
         desc = (z.get("description") or "").split("\n", 1)
         zones.append({
-            "id": zid, "num": int(zid.split("_")[1]), "name": z["name"],
+            "id": zid, "num": int(m.group(1)), "name": z["name"],
             "time": desc[0] if len(desc) > 1 else None,
             "desc": desc[1] if len(desc) > 1 else desc[0],
             "buff": z.get("buffDescription"), "hidden": bool(z.get("isHiddenZone")),
         })
     zones.sort(key=lambda z: z["num"])
-    # 존 배경 — ui/rogueliketopic/topics/rogue_1_update/levelbgpic/rogue_1_map_<n>.png
+    # 존 배경 — ui/rogueliketopic/topics/<tid>_update/levelbgpic/<tid>_map_<n>.png
+    # (_update 폴더가 없는 토픽은 topics/<tid>/levelbgpic 폴백)
     zone_dir = os.path.join(REPO, "public", "rogue", "zone")
-    download_webp([(f"{ASSETS}/ui/rogueliketopic/topics/rogue_1_update/levelbgpic/rogue_1_map_{z['num']}.png",
-                    os.path.join(zone_dir, f"rogue_1_map_{z['num']}.webp")) for z in zones], max_px=900)
+    for sub in (f"{tid}_update", tid):
+        pend = [z for z in zones if not os.path.exists(os.path.join(zone_dir, f"{tid}_map_{z['num']}.webp"))]
+        if not pend:
+            break
+        download_webp([(f"{ASSETS}/ui/rogueliketopic/topics/{sub}/levelbgpic/{tid}_map_{z['num']}.png",
+                        os.path.join(zone_dir, f"{tid}_map_{z['num']}.webp")) for z in pend], max_px=900)
     for z in zones:
-        z["img"] = os.path.exists(os.path.join(zone_dir, f"rogue_1_map_{z['num']}.webp"))
+        z["img"] = os.path.exists(os.path.join(zone_dir, f"{tid}_map_{z['num']}.webp"))
 
     # ── 스테이지 + 레벨 파일 (일반/긴급이 같은 levelId 공유 → 캐시) ──────────
     map_dir = os.path.join(REPO, "public", "rogue", "map")
@@ -211,10 +248,13 @@ def build_rogue1():
     stages = []
     for st in r["stages"].values():
         sid = st["id"]
-        parts = sid.split("_")  # ro1_n_1_1 / ro1_e_1_1 / ro1_b_1 / ro1_ev_1 / ro1_t_1
+        parts = sid.split("_")  # roN_n_1_1 / roN_e_1_1 / roN_b_1 / roN_ev_1 / roN_t_1 / roN_duel_1 / ro5_fs_1
         kind_code = parts[1]
-        kind = {"n": "normal", "e": "emergency", "b": "boss", "ev": "event", "t": "duel"}.get(kind_code, kind_code)
-        zone = int(parts[2]) if kind_code in ("n", "e") else None
+        # t=특수(조우·이벤트 전투) / duel=외나무다리 / fs·sv·dv=IS5 고유(시련 계열)
+        kind = {"n": "normal", "e": "emergency", "b": "boss", "ev": "event", "t": "special",
+                "duel": "duel", "fs": "trial", "sv": "trial", "dv": "trial"}.get(kind_code, kind_code)
+        # e_t_N = 특수 스테이지의 긴급판 (t와 페어) — kind는 emergency 그대로, zone 없음
+        zone = int(parts[2]) if kind_code in ("n", "e") and parts[2].isdigit() else None
         lv = load_level(st["levelId"])
         enemies = []
         for ref in lv["refs"]:
@@ -234,7 +274,7 @@ def build_rogue1():
             "emg": lv["emg"] if kind == "emergency" else None,
             "enemies": enemies,
         })
-    order = {"normal": 0, "emergency": 1, "boss": 2, "event": 3, "duel": 4}
+    order = {"normal": 0, "emergency": 1, "boss": 2, "event": 3, "special": 4, "duel": 5, "trial": 6}
     stages.sort(key=lambda s: (order.get(s["kind"], 9), s["zone"] or 0, s["id"]))
 
     # 전투 노드 미리보기 — 인게임 맵 프리뷰(arts/ui/stage/mappreviews/<stageId>.png).
@@ -271,14 +311,15 @@ def build_rogue1():
             "name": name,
             "rank": hb.get("enemyLevel"),  # NORMAL/ELITE/BOSS
             "index": hb.get("enemyIndex"),
-            "attack": hb.get("attackType"),
+            "attack": attack_of(hb),
             "desc": hb.get("description"),
-            "ability": hb.get("ability"),
+            "ability": ability_of(hb),
             "hp": num(attr("maxHp", 0)), "atk": num(attr("atk", 0)),
             "def": num(attr("def", 0)), "res": num(attr("magicResistance", 0)),
             "aspd": num(attr("attackSpeed", 100)), "ms": num(attr("moveSpeed", 1)),
             "weight": num(attr("massLevel", 1)),
             "lifePoint": mv(pick.get("lifePointReduce"), mv(base.get("lifePointReduce"), 1)),
+            "immune": [ko for k, ko in IMMUNE_KO if attr(k, False)],
         }
 
     # 적 초상 — arts/enemies/<id>.png (변종 _N은 원본 id 초상으로 폴백)
@@ -331,7 +372,7 @@ def build_rogue1():
         x["img"] = os.path.exists(os.path.join(relic_icon_dir, f"{x['id']}.webp"))
 
     capsules = []
-    cap_order = (r["archiveComp"]["capsule"] or {}).get("capsule", {})
+    cap_order = (r["archiveComp"].get("capsule") or {}).get("capsule") or {}
     for iid, it in items.items():
         if it.get("type") != "CAPSULE":
             continue
@@ -342,27 +383,31 @@ def build_rogue1():
             "sort": arc.get("capsuleSortId", 9999),
         })
     capsules.sort(key=lambda x: x["sort"])
-    # 음반 자켓 — ui/rogueliketopic/topics/rogue_1/capsule/<id>.png
+    # 음반 자켓 — ui/rogueliketopic/topics/<tid>/capsule/<id>.png (rogue_1만 존재)
     cap_dir = os.path.join(REPO, "public", "rogue", "capsule")
-    download_webp([(f"{ASSETS}/ui/rogueliketopic/topics/rogue_1/capsule/{c['id']}.png",
+    download_webp([(f"{ASSETS}/ui/rogueliketopic/topics/{tid}/capsule/{c['id']}.png",
                     os.path.join(cap_dir, f"{c['id']}.webp")) for c in capsules], max_px=360)
     for c in capsules:
         c["img"] = os.path.exists(os.path.join(cap_dir, f"{c['id']}.webp"))
 
-    tools = [{"id": iid, "name": it["name"], "desc": it.get("description"), "usage": it.get("usage"),
-              "img": os.path.exists(os.path.join(REPO, "public", "rogue", "relic", f"{iid}.webp"))}
-             for iid, it in items.items() if it.get("type") == "ACTIVE_TOOL"]
-    bands = [{"id": iid, "name": it["name"], "desc": it.get("description"), "usage": it.get("usage"),
-              "img": os.path.exists(os.path.join(REPO, "public", "rogue", "relic", f"{iid}.webp"))}
-             for iid, it in items.items() if it.get("type") == "BAND"]
+    def item_group(itype):
+        return [{"id": iid, "name": it["name"], "desc": it.get("description"), "usage": it.get("usage"),
+                 "img": os.path.exists(os.path.join(REPO, "public", "rogue", "relic", f"{iid}.webp"))}
+                for iid, it in items.items() if it.get("type") == itype]
+    tools = item_group("ACTIVE_TOOL")
+    bands = item_group("BAND")
+    explore_tools = item_group("EXPLORE_TOOL")  # IS3 탐사 도구 (다른 토픽은 빈 배열)
 
-    # ── 환각(variation) + 융합(fusion) ────────────────────────────────────────
+    # ── 환각/메아리(variation) + 융합(fusion) — 토픽별 존재 여부·정합성 확인 후 수록
+    # (rogue_3의 variationData는 이름이 "1"~"8"인 플레이스홀더라 제외)
     variations = [{"id": k, "name": v.get("outerName") or v.get("innerName"),
                    "func": v.get("functionDesc"), "desc": v.get("desc"), "fusion": False}
-                  for k, v in r["variationData"].items()]
+                  for k, v in (r.get("variationData") or {}).items()
+                  if (v.get("outerName") or v.get("innerName") or "").strip() and
+                     not (v.get("outerName") or "").isdigit()]
     variations += [{"id": k, "name": v.get("name"), "func": v.get("functionDesc"),
                     "desc": v.get("desc"), "fusion": True}
-                   for k, v in r["fusionData"].items()]
+                   for k, v in (r.get("fusionData") or {}).items()]
 
     # ── 난이도 (EASY + NORMAL 0~15; 월간/심층은 표기만) ──────────────────────
     difficulties = [{
@@ -402,7 +447,7 @@ def build_rogue1():
             e["bg"] = None
 
     # ── 수작업 큐레이션 병합 (조우 층 규칙·엔딩 조건 — PRTS 기반) ─────────────
-    curated_path = os.path.join(REPO, "scripts", "rogue1-curated.json")
+    curated_path = os.path.join(REPO, "scripts", f"rogue{ronum}-curated.json")
     if os.path.exists(curated_path):
         curated = json.load(open(curated_path, encoding="utf-8"))
         floors = curated.get("encounterFloors", {})
@@ -423,7 +468,7 @@ def build_rogue1():
                 s["zone"] = boss_floors[s["id"]]
 
     out = {
-        "id": "rogue_1",
+        "id": tid,
         "name": topic["name"],
         "line": topic.get("lineText"),
         "zones": zones,
@@ -440,6 +485,8 @@ def build_rogue1():
         "endings": endings,
         "encounters": encounters,
     }
+    if explore_tools:
+        out["exploreTools"] = explore_tools
     # 게임 마크업 태그(<@ro.lose>1</>, <color=#...> 등)를 모든 문자열에서 일괄 제거
     def sanitize(v):
         if isinstance(v, str):
@@ -451,10 +498,10 @@ def build_rogue1():
         return v
     out = sanitize(out)
 
-    dest = os.path.join(REPO, "app", "data", "rogue1.json")
+    dest = os.path.join(REPO, "app", "data", f"rogue{ronum}.json")
     json.dump(out, open(dest, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
     kb = os.path.getsize(dest) // 1024
-    print(f"rogue1.json: zones={len(zones)} stages={len(stages)} enemies={len(enemies)} "
+    print(f"rogue{ronum}.json: zones={len(zones)} stages={len(stages)} enemies={len(enemies)} "
           f"relics={len(relics)} capsules={len(capsules)} variations={len(variations)} "
           f"encounters={len(encounters)} → {kb}KB")
 
@@ -657,14 +704,15 @@ def build_rogue6():
             "cn": cn_name,
             "rank": hb.get("enemyLevel") or hbk.get("enemyLevel"),
             "index": hb.get("enemyIndex") or hbk.get("enemyIndex"),
-            "attack": hbk.get("attackType") or hb.get("attackType"),
+            "attack": attack_of(hbk) or attack_of(hb),
             "desc": hbk.get("description") or hb.get("description"),
-            "ability": hbk.get("ability") or hb.get("ability"),
+            "ability": ability_of(hbk) or ability_of(hb),
             "hp": num(attr("maxHp", 0)), "atk": num(attr("atk", 0)),
             "def": num(attr("def", 0)), "res": num(attr("magicResistance", 0)),
             "aspd": num(attr("attackSpeed", 100)), "ms": num(attr("moveSpeed", 1)),
             "weight": num(attr("massLevel", 1)),
             "lifePoint": mv(pick.get("lifePointReduce"), mv(base.get("lifePointReduce"), 1)),
+            "immune": [ko for k, ko in IMMUNE_KO if attr(k, False)],
         }
 
     enemy_dir = os.path.join(REPO, "public", "rogue", "enemy")
@@ -1010,9 +1058,16 @@ def unpack_icons(topic="rogue_1"):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1 and sys.argv[1] == "--icons":
+    arg = sys.argv[1] if len(sys.argv) > 1 else ""
+    if arg == "--icons":
         unpack_icons(sys.argv[2] if len(sys.argv) > 2 else "rogue_1")
-    elif len(sys.argv) > 1 and sys.argv[1] == "rogue6":
+    elif arg == "rogue6":
+        build_rogue6()
+    elif re.fullmatch(r"rogue[1-5]", arg):
+        build_topic(f"rogue_{arg[-1]}")
+    elif arg == "all":
+        for n in range(1, 6):
+            build_topic(f"rogue_{n}")
         build_rogue6()
     else:
-        build_rogue1()
+        build_topic("rogue_1")
