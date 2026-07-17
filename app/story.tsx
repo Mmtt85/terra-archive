@@ -77,18 +77,29 @@ function StoryDetail({ event, summary, onClose, onShowOperator }: {
     [summary],
   );
 
-  // 블록별로 언급된 엔티티 인덱스를 미리 계산 (단순 부분 문자열 매칭)
+  // 엔티티별 매칭 정규식 — 이름/별칭 앞에 한글이 오면 제외(negative lookbehind).
+  // "이신"이 경어체 "-이신"(선생님이신)에, 짧은 이름이 다른 단어에 부분일치해 레일이
+  // 엉뚱하게 뜨던 문제를 막는다. 한국어 조사는 이름 뒤에 붙으므로 뒤쪽은 열어 둔다 (2026-07).
+  const matchers = useMemo(
+    () =>
+      entities.map((entity) => {
+        const keys = [entity.name, ...(entity.alias ?? [])]
+          .map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+          .sort((a, b) => b.length - a.length);
+        return new RegExp(`(?<![가-힣])(?:${keys.join("|")})`);
+      }),
+    [entities],
+  );
+  // 블록별로 언급된 엔티티 인덱스를 미리 계산
   const mentions = useMemo(
     () =>
       summary.blocks.map((block) => {
         const text = blockText(block);
         const found: number[] = [];
-        entities.forEach((entity, index) => {
-          if ([entity.name, ...(entity.alias ?? [])].some((key) => text.includes(key))) found.push(index);
-        });
+        matchers.forEach((re, index) => { if (re.test(text)) found.push(index); });
         return found;
       }),
-    [summary, entities],
+    [summary, matchers],
   );
 
   // 화면(읽는 영역)에 들어온 블록 추적
@@ -99,12 +110,15 @@ function StoryDetail({ event, summary, onClose, onShowOperator }: {
       (entries) => {
         setInView((previous) => {
           const next = new Set(previous);
+          let changed = false;
           for (const entry of entries) {
             const index = Number((entry.target as HTMLElement).dataset.idx);
-            if (entry.isIntersecting) next.add(index);
-            else next.delete(index);
+            if (entry.isIntersecting) { if (!next.has(index)) { next.add(index); changed = true; } }
+            else if (next.delete(index)) changed = true;
           }
-          return next;
+          // 실제 변화가 없으면 이전 Set을 그대로 반환 — 스크롤 중 불필요한 리렌더로
+          // 모바일에서 스크롤이 툭툭 끊기던 문제를 막는다 (2026-07)
+          return changed ? next : previous;
         });
       },
       // '읽는 중' 영역: 화면 18%~90%. 아래쪽(하단 10% 지점)에서 문단이 나타나면 카드가 뜨고,

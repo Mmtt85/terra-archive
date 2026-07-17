@@ -57,8 +57,14 @@ export default function RootLayout({
           }}
         />
         {children}
-        {/* Cloudflare Web Analytics */}
-        <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "e173a2e6c1cd466988379d4338063b89"}' />
+        {/* Cloudflare Web Analytics — 정본 도메인에서만 집계한다. localhost·프리뷰
+            (해시.pages.dev)·헤드리스 테스트에서 beacon이 프로드 토큰으로 조회수를
+            부풀리던 문제를 막는다 (2026-07). */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `if(location.hostname==='terra-archive.net'){var s=document.createElement('script');s.defer=true;s.src='https://static.cloudflareinsights.com/beacon.min.js';s.setAttribute('data-cf-beacon','{"token":"e173a2e6c1cd466988379d4338063b89"}');document.body.appendChild(s);}`,
+          }}
+        />
       </body>
     </html>
   );

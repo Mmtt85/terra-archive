@@ -8835,22 +8835,19 @@
         "op": "char_379_sesa",
         "alias": [
           "브릿지"
-        ],
-        "img": "/story/char/char_472_pasngr_n_1.webp"
+        ]
       },
       {
         "name": "하이디",
         "desc": "빅토리아 토룬 백작 톰슨의 외동딸 — 몰래 어머니 옷을 훔쳐 입고 파티에 숨어들었다가, 라테라노 수도사 '켈시'에게 홀딱 반한 열여섯 소녀예요.",
-        "op": "char_4045_heidi",
-        "img": "/story/char/char_003_kaltsn08_1.webp"
+        "op": "char_4045_heidi"
       },
       {
         "name": "릴리아",
         "desc": "우르수스 체르노보그 연구소의 젊은 과학자 — 사고로 남편을 잃고, 어린 딸을 남에게 맡긴 채 복수를 준비하는 어머니예요.",
         "alias": [
           "루이자"
-        ],
-        "img": "/story/char/char_003_kalts_1.webp"
+        ]
       },
       {
         "name": "이신",
