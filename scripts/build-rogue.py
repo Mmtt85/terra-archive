@@ -306,7 +306,13 @@ def build_rogue1():
             "order": arc.get("orderId"), "group": arc.get("relicGroupId"),
             "sort": arc.get("relicSortId", 9999), "sp": bool(arc.get("isSpRelic")),
         })
-    relics.sort(key=lambda x: x["sort"])
+    # 유물번호(orderId) 정렬 — 숫자 번호 오름차순, 특수 번호(PCS01 등)는 뒤에, 번호 없으면 맨 뒤
+    def relic_order_key(x):
+        o = x.get("order") or ""
+        if o.isdigit():
+            return (0, int(o), "")
+        return (1, 0, o) if o else (2, 0, x["id"])
+    relics.sort(key=relic_order_key)
     relic_icon_dir = os.path.join(REPO, "public", "rogue", "relic")
     for x in relics:
         x["img"] = os.path.exists(os.path.join(relic_icon_dir, f"{x['id']}.webp"))
@@ -677,7 +683,13 @@ def build_rogue6():
             "order": arc.get("orderId"), "group": arc.get("relicGroupId"),
             "sort": arc.get("relicSortId", 9999), "sp": bool(arc.get("isSpRelic")),
         })
-    relics.sort(key=lambda x: x["sort"])
+    # 유물번호(orderId) 정렬 — 숫자 번호 오름차순, 특수 번호(PCS01 등)는 뒤에, 번호 없으면 맨 뒤
+    def relic_order_key(x):
+        o = x.get("order") or ""
+        if o.isdigit():
+            return (0, int(o), "")
+        return (1, 0, o) if o else (2, 0, x["id"])
+    relics.sort(key=relic_order_key)
     for x in relics:
         x["img"] = os.path.exists(os.path.join(relic_icon_dir, f"{x['id']}.webp"))
 
