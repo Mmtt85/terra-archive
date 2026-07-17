@@ -62,7 +62,7 @@ export default function RootLayout({
             부풀리던 문제를 막는다 (2026-07). */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `if(location.hostname==='terra-archive.net'){var s=document.createElement('script');s.defer=true;s.src='https://static.cloudflareinsights.com/beacon.min.js';s.setAttribute('data-cf-beacon','{"token":"e173a2e6c1cd466988379d4338063b89"}');document.body.appendChild(s);}`,
+            __html: `if(location.hostname==='terra-archive.net'){var s=document.createElement('script');s.defer=true;s.src='https://static.cloudflareinsights.com/beacon.min.js';s.setAttribute('data-cf-beacon','{"token":"e173a2e6c1cd466988379d4338063b89","spa":false}');document.body.appendChild(s);}`,
           }}
         />
       </body>
