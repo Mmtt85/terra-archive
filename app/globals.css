@@ -5452,9 +5452,30 @@ footer p {
 .portal-card-body small { font-size: 12.5px; line-height: 1.5; color: var(--muted); }
 .portal-card-go { flex: 0 0 auto; font-size: 18px; color: var(--muted); transition: transform 0.15s ease, color 0.15s ease; }
 .portal-card:hover .portal-card-go { transform: translateX(3px); color: var(--ink); }
-/* 오퍼 백과사전 카드 — 대표 도구라 한 줄 전체 차지 */
-.portal-card.portal-archive { grid-column: 1 / -1; }
+/* 인프라 자동편성기 = 대표 도구라 최상단 한 줄 전체, 소개는 마지막 줄 전체 (사용자 확정 2026-07-17) */
+.portal-card.portal-planner { grid-column: 1 / -1; }
+.portal-card.portal-about { grid-column: 1 / -1; }
 
 @media (max-width: 640px) {
   .portal-grid { grid-template-columns: 1fr; }
 }
+
+/* ── 공식방송·이벤트 배지 로딩 스켈레톤 — 헤더 슬롯 고정 예약 (CLS 방지, 사용자 요청 2026-07-17) ── */
+.bcast-trigger.is-skeleton,
+.event-trigger.is-skeleton { pointer-events: none; cursor: default; }
+.sk-box {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 7;
+  background: var(--line);
+}
+.event-trigger.is-skeleton .sk-line {
+  display: block;
+  background: var(--line);
+  border-radius: 2px;
+}
+.event-trigger.is-skeleton .event-name.sk-line { width: 92px; height: 12px; margin: 1px 0; }
+.event-trigger.is-skeleton .event-dates.sk-line { width: 150px; height: 9px; margin: 2px 0 0; }
+@keyframes ta-skeleton-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+.is-skeleton .sk-box,
+.is-skeleton .sk-line { animation: ta-skeleton-pulse 1.2s ease-in-out infinite; }

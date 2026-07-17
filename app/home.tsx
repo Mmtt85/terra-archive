@@ -257,6 +257,7 @@ function BroadcastBadges() {
   const [open, setOpen] = useState(false);
   const [remote, setRemote] = useState<Broadcast[] | null>(null);
   const [gameEvents, setGameEvents] = useState<GameEvent[]>([]);
+  const [settled, setSettled] = useState(false); // 워커 응답 여부 — 응답 전엔 스켈레톤으로 슬롯 예약
   const [evOpen, setEvOpen] = useState(false);
   const evRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -267,9 +268,11 @@ function BroadcastBadges() {
   useEffect(() => {
     // 워커 불통이면 정적 broadcasts.json만 사용 (이벤트 배지는 생략)
     fetchBcastPayload().then((data) => {
-      if (!data) return;
-      setRemote(data.broadcasts);
-      setGameEvents(data.events);
+      if (data) {
+        setRemote(data.broadcasts);
+        setGameEvents(data.events);
+      }
+      setSettled(true); // 성공·실패(워커 불통) 모두 스켈레톤 해제
     });
   }, []);
   useEffect(() => {
@@ -287,7 +290,29 @@ function BroadcastBadges() {
     window.addEventListener("keydown", onKey);
     return () => { document.removeEventListener("mousedown", onDoc); window.removeEventListener("keydown", onKey); };
   }, [evOpen]);
-  if (now == null) return null;
+  // 워커 응답(또는 마운트) 전에는 실제 버튼과 같은 치수의 스켈레톤으로 슬롯을 고정 예약한다
+  // — 로딩 후 요소가 생기며 헤더가 좁아졌다 넓어졌다 하던 레이아웃 시프트 방지 (사용자 요청 2026-07-17).
+  if (now == null || !settled) {
+    return (
+      <>
+        <span className="bcast-trigger is-skeleton" aria-hidden>
+          <YtIcon />
+          <span>{t("공식 방송")}</span>
+        </span>
+        <div className="event-group" aria-hidden>
+          <div className="event-trigger has-banner is-skeleton">
+            <span className="event-trigger-thumb"><span className="sk-box" /></span>
+            <span className="event-trigger-main">
+              <small className="event-kicker">{t("현재 진행중 이벤트")}</small>
+              <span className="event-name sk-line" />
+              <span className="event-dates sk-line" />
+            </span>
+            <span className="event-caret" aria-hidden>▾</span>
+          </div>
+        </div>
+      </>
+    );
+  }
   const statics = (broadcastsData.broadcasts as Broadcast[]).filter((b) => !Number.isNaN(Date.parse(b.start)));
   const seen = new Set((remote ?? []).map(bcastKey));
   const all = [
@@ -485,12 +510,14 @@ function rememberNickSent(opId: string, name: string) {
 // 전혀 없다 (사용자 확정 2026-07-17: 데이터 소진 방지). 오퍼 백과사전은 여기서 /operators로 이동.
 function Portal({ onOpenTab }: { onOpenTab: (tab: Tab) => void }) {
   const { t } = useI18n();
+  // 메뉴 순서는 햄버거 메뉴와 동일하게 유지 (사용자 확정 2026-07-17: 인프라 자동편성기 최상단).
   const cards: { tab: Tab; icon: string; name: string; desc: string }[] = [
-    { tab: "archive", icon: "▤", name: t("오퍼 백과사전"), desc: t("소속·직군·태그·시너지로 필터·검색하는 오퍼레이터 도감") },
     { tab: "planner", icon: "⌂", name: t("인프라 자동편성기"), desc: t("보유 오퍼만 입력하면 기반시설 편성을 자동으로 계산") },
+    { tab: "archive", icon: "▤", name: t("오퍼 백과사전"), desc: t("소속·직군·태그·시너지로 필터·검색하는 오퍼레이터 도감") },
     { tab: "recruit", icon: "◎", name: t("공채 도우미"), desc: t("공개모집 태그 조합으로 확정·고성급 오퍼를 탐색") },
     { tab: "farm", icon: "◈", name: t("파밍·육성 시뮬"), desc: t("재료 파밍 효율표와 오퍼 육성 비용 시뮬레이션") },
     { tab: "story", icon: "✦", name: t("AI 스토리 요약"), desc: t("이벤트 스토리를 컷씬과 함께 10분 분량으로 요약") },
+    { tab: "about", icon: "ⓘ", name: t("소개"), desc: t("각 기능이 무엇이고 언제 쓰는지 안내") },
   ];
   return (
     <section className="portal" aria-labelledby="portal-title">
@@ -950,18 +977,18 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
             <span aria-hidden>☰</span>{TAB_LABEL[tab]}
           </button>
           {/* 드롭다운은 햄버거 버튼 바로 밑에 딱 붙여 연다 (사용자 요청 2026-07) */}
+          {/* 순서는 포탈 카드와 동일 (사용자 확정 2026-07-17): 홈 · 인프라 · 백과사전 · 공채 · 파밍 · 스토리 · 소개 */}
           <nav className={`main-tabs${navOpen ? " open" : ""}`} aria-label={t("주요 탭")}>
             <button className={`tab-portal${tab === "portal" ? " selected" : ""}`} onClick={() => switchTab("portal")}><span className="tab-icon" aria-hidden>◇</span>{t("홈")}</button>
-            <button className={`tab-archive${tab === "archive" ? " selected" : ""}`} onClick={() => switchTab("archive")}><span className="tab-icon" aria-hidden>▤</span>{t("오퍼 백과사전")}</button>
             <button className={`tab-planner${tab === "planner" ? " selected" : ""}`} onClick={() => switchTab("planner")}><span className="tab-icon" aria-hidden>⌂</span>{t("인프라 자동편성기")}</button>
+            <button className={`tab-archive${tab === "archive" ? " selected" : ""}`} onClick={() => switchTab("archive")}><span className="tab-icon" aria-hidden>▤</span>{t("오퍼 백과사전")}</button>
             <button className={`tab-recruit${tab === "recruit" ? " selected" : ""}`} onClick={() => switchTab("recruit")}><span className="tab-icon" aria-hidden>◎</span>{t("공채 도우미")}</button>
             <button className={`tab-farm${tab === "farm" ? " selected" : ""}`} onClick={() => switchTab("farm")}><span className="tab-icon" aria-hidden>◈</span>{t("파밍·육성 시뮬")}</button>
             <button className={`tab-story${tab === "story" ? " selected" : ""}`} onClick={() => switchTab("story")}><span className="tab-icon" aria-hidden>✦</span>{t("AI 스토리 요약")}</button>
+            <button className={`tab-about${tab === "about" ? " selected" : ""}`} onClick={() => switchTab("about")}><span className="tab-icon" aria-hidden>ⓘ</span>{t("소개")}</button>
           </nav>
         </div>
         <LanguageSwitcher />
-        <button type="button" className={`about-icon${tab === "about" ? " selected" : ""}`} onClick={() => switchTab("about")}
-          aria-label={t("소개")} title={t("소개")}>ⓘ</button>
       </header>
 
 

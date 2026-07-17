@@ -122,6 +122,7 @@ const D: Record<string, Pair> = {
   "공개모집 태그 조합으로 확정·고성급 오퍼를 탐색": ["Find guaranteed and high-rarity operators from recruitment tag combos.", "公開求人タグの組み合わせから確定・高レアオペレーターを探索。"],
   "재료 파밍 효율표와 오퍼 육성 비용 시뮬레이션": ["Material farming efficiency table and operator upgrade-cost simulator.", "素材周回効率表とオペレーター育成コストシミュレーション。"],
   "이벤트 스토리를 컷씬과 함께 10분 분량으로 요약": ["Event stories summarized with cutscenes in a 10-minute read.", "イベントストーリーをカットシーンと共に10分で要約。"],
+  "각 기능이 무엇이고 언제 쓰는지 안내": ["What each tool is and when to use it.", "各機能が何で、いつ使うのかを案内。"],
   "오퍼레이터 백과사전 - 명일방주 오퍼 도감 | 테라 아카이브": ["Operator Archive - Arknights Operator Database | Terra Archive", "オペレーター図鑑 - アークナイツ オペレーター一覧 | テラアーカイブ"],
 
   // 공식 방송
