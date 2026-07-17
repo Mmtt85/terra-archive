@@ -339,73 +339,73 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
     setTip({ item: it, x: r.left + r.width / 2, y: r.top });
   };
 
-  // 연대순(테라력) — 연도 오름차순. 연도 미정 항목은 타임라인(레일·슬라이더)에서 제외한다
-  // (미정 항목은 테마별·종류별 뷰에서 노출된다). 연도별로 묶어 레일·목록이 같은 순서를 공유한다.
+  // 연대순(테라력) — 연도 오름차순, 미정은 맨 뒤. 세로 목록(panel)은 미정 그룹까지 전부 담는다.
   const groups = useMemo(() => {
     const map = new Map<string, { key: string; label: string; year: number | null; sort: number; items: ChronItem[] }>();
     for (const it of CHRON_ITEMS) {
-      if (it.terraYear == null) continue;
-      const k = `y${it.terraYear}`;
-      if (!map.has(k)) map.set(k, { key: k, label: t("테라력 {y}년", { y: it.terraYear }), year: it.terraYear, sort: it.terraYear, items: [] });
+      let k: string, label: string, year: number | null, sort: number;
+      if (it.terraYear == null) { k = "__none"; label = t("테라력 미정"); year = null; sort = Infinity; }
+      else { k = `y${it.terraYear}`; label = t("테라력 {y}년", { y: it.terraYear }); year = it.terraYear; sort = it.terraYear; }
+      if (!map.has(k)) map.set(k, { key: k, label, year, sort, items: [] });
       map.get(k)!.items.push(it);
     }
     return Array.from(map.values()).sort((a, b) => a.sort - b.sort);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locale, t]);
+  // 레일·슬라이더(연도 타임라인)는 연도 확정분만 — 미정은 타임라인에서 제외한다.
+  const yearGroups = useMemo(() => groups.filter((g) => g.year != null), [groups]);
 
-  // 레일(가로)과 목록(세로) 스크롤을 연도 단위로 서로 맞춘다.
-  const railRef = useRef<HTMLDivElement>(null);
+  // 세로 목록(panel)이 스크롤 주체 — 연도 레일과 슬라이더는 목록 스크롤에 동기된다.
   const sliderRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
-  const segRefs = useRef<Map<string, HTMLElement>>(new Map());
   const secRefs = useRef<Map<string, HTMLElement>>(new Map());
-  const source = useRef<"rail" | "panel" | null>(null);
-  const resetT = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  useEffect(() => {
-    setActiveKey((k) => k ?? groups[0]?.key ?? null);
-    return () => { if (resetT.current) clearTimeout(resetT.current); };
-  }, [groups]);
+  useEffect(() => { setActiveKey((k) => k ?? groups[0]?.key ?? null); }, [groups]);
 
-  const scheduleReset = (ms = 160) => {
-    if (resetT.current) clearTimeout(resetT.current);
-    resetT.current = setTimeout(() => { source.current = null; }, ms);
+  const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
+  // 연도 확정 그룹들의 목록 내 세로 위치(offsetTop) 배열
+  const yearTops = () => yearGroups.map((g) => secRefs.current.get(g.key)?.offsetTop ?? 0);
+  // 목록 스크롤 위치 → 슬라이더 진행도(0~1). 연도 라벨이 균등 배치된 인덱스 공간에 맞춰 보간.
+  const posFromScroll = (top: number) => {
+    const tops = yearTops(); const n = tops.length;
+    if (n <= 1) return 0;
+    if (top <= tops[0]) return 0;
+    if (top >= tops[n - 1]) return 1;
+    let i = 0; for (let k = 0; k < n - 1; k++) if (top >= tops[k]) i = k;
+    const t = (top - tops[i]) / ((tops[i + 1] - tops[i]) || 1);
+    return clamp01((i + t) / (n - 1));
   };
-  // 현재 스크롤 위치가 걸쳐 있는 연도 그룹 key (오름차순 정렬 전제)
-  const currentKey = (kind: "rail" | "panel") => {
-    const c = kind === "rail" ? railRef.current : panelRef.current;
-    const refs = kind === "rail" ? segRefs.current : secRefs.current;
-    if (!c) return null;
-    const scroll = kind === "rail" ? c.scrollLeft : c.scrollTop;
-    const pad = kind === "rail" ? 48 : 56;
+  // 현재 스크롤이 걸친 그룹 key (미정 포함 전체 그룹 기준)
+  const currentKey = () => {
+    const c = panelRef.current; if (!c) return null;
+    const top = c.scrollTop + 56;
     let best: string | null = null;
     for (const g of groups) {
-      const el = refs.get(g.key);
-      if (!el) continue;
-      const start = kind === "rail" ? el.offsetLeft : el.offsetTop;
-      if (start <= scroll + pad) best = g.key; else break;
+      const el = secRefs.current.get(g.key); if (!el) continue;
+      if (el.offsetTop <= top) best = g.key; else break;
     }
     return best ?? groups[0]?.key ?? null;
   };
-  const railMax = () => { const r = railRef.current; return r ? Math.max(1, r.scrollWidth - r.clientWidth) : 1; };
-  // 슬라이더 → 레일 가로 위치(0~1). 레일 onScroll가 아래 목록까지 맞춰준다.
-  const setRailFrac = (frac: number, smooth = false) => {
-    const r = railRef.current; if (!r) return;
-    const f = Math.min(1, Math.max(0, frac));
-    r.scrollTo({ left: f * railMax(), behavior: smooth ? "smooth" : "auto" });
+  const onPanelScroll = () => {
+    const c = panelRef.current; if (!c) return;
+    setPos(posFromScroll(c.scrollTop));
+    const key = currentKey();
+    if (key) setActiveKey((prev) => (key !== prev ? key : prev));
   };
-  // 트랙에 포인터를 캡처해 드래그를 안정적으로 추적한다 (window 리스너 방식은 썸 재렌더 중
-  // 이벤트가 끊겨 드래그가 먹통이 되던 문제가 있었다). 캡처 중에만 move가 반응한다.
+  // 슬라이더 드래그 → 목록을 연도 구간에 맞춰 스크롤 (연도 라벨 균등 간격 기준 보간).
+  // 트랙에 포인터를 캡처해 드래그를 안정적으로 추적한다.
   const seekTo = (clientX: number) => {
-    const track = sliderRef.current; if (!track) return;
+    const track = sliderRef.current, panel = panelRef.current; if (!track || !panel) return;
     const rect = track.getBoundingClientRect();
-    setRailFrac((clientX - rect.left) / rect.width);
+    const tops = yearTops(); const n = tops.length; if (!n) return;
+    const p = clamp01((clientX - rect.left) / rect.width) * (n - 1);
+    const lo = Math.floor(p), hi = Math.min(n - 1, lo + 1);
+    const top = tops[lo] + (tops[hi] - tops[lo]) * (p - lo);
+    panel.scrollTo({ top, behavior: "auto" });
   };
   const onSliderDown = (e: React.PointerEvent) => {
     const track = sliderRef.current; if (!track) return;
-    e.preventDefault();
-    track.setPointerCapture(e.pointerId);
-    seekTo(e.clientX);
+    e.preventDefault(); track.setPointerCapture(e.pointerId); seekTo(e.clientX);
   };
   const onSliderMove = (e: React.PointerEvent) => {
     const track = sliderRef.current;
@@ -416,52 +416,23 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
     const track = sliderRef.current;
     if (track?.hasPointerCapture(e.pointerId)) track.releasePointerCapture(e.pointerId);
   };
+  // 연도 라벨 클릭 → 그 연도 섹션으로 부드럽게 이동
+  const goYear = (key: string) => {
+    setActiveKey(key);
+    const sec = secRefs.current.get(key);
+    if (sec && panelRef.current) panelRef.current.scrollTo({ top: sec.offsetTop, behavior: "smooth" });
+  };
   // 양끝 화살표 / 방향키 — 연도 그룹 단위로 이동
   const stepYear = (dir: 1 | -1) => {
-    const i = groups.findIndex((g) => g.key === activeKey);
-    const j = Math.min(groups.length - 1, Math.max(0, (i < 0 ? 0 : i) + dir));
-    if (groups[j]) goYear(groups[j].key);
+    const i = yearGroups.findIndex((g) => g.key === activeKey);
+    const cur = i < 0 ? (dir > 0 ? -1 : yearGroups.length) : i;
+    const j = Math.min(yearGroups.length - 1, Math.max(0, cur + dir));
+    if (yearGroups[j]) goYear(yearGroups[j].key);
   };
   const onThumbKey = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowLeft") { e.preventDefault(); stepYear(-1); }
     else if (e.key === "ArrowRight") { e.preventDefault(); stepYear(1); }
   };
-
-  const onRailScroll = () => {
-    const r = railRef.current;
-    if (r) setPos(r.scrollLeft / railMax());
-    if (source.current === "panel") { scheduleReset(); return; }
-    source.current = "rail";
-    const key = currentKey("rail");
-    if (key && key !== activeKey) {
-      setActiveKey(key);
-      const sec = secRefs.current.get(key);
-      if (sec && panelRef.current) panelRef.current.scrollTo({ top: sec.offsetTop, behavior: "auto" });
-    }
-    scheduleReset();
-  };
-  const onPanelScroll = () => {
-    if (source.current === "rail") { scheduleReset(); return; }
-    source.current = "panel";
-    const key = currentKey("panel");
-    if (key && key !== activeKey) {
-      setActiveKey(key);
-      const seg = segRefs.current.get(key);
-      if (seg && railRef.current) railRef.current.scrollTo({ left: Math.max(0, seg.offsetLeft - 12), behavior: "auto" });
-    }
-    scheduleReset();
-  };
-  // 연도 라벨 클릭 → 양쪽을 그 연도로 부드럽게 이동
-  const goYear = (key: string) => {
-    source.current = "rail";
-    setActiveKey(key);
-    const sec = secRefs.current.get(key);
-    const seg = segRefs.current.get(key);
-    if (sec && panelRef.current) panelRef.current.scrollTo({ top: sec.offsetTop, behavior: "smooth" });
-    if (seg && railRef.current) railRef.current.scrollTo({ left: Math.max(0, seg.offsetLeft - 12), behavior: "smooth" });
-    scheduleReset(600);
-  };
-  const setSeg = (key: string) => (el: HTMLElement | null) => { if (el) segRefs.current.set(key, el); else segRefs.current.delete(key); };
   const setSec = (key: string) => (el: HTMLElement | null) => { if (el) secRefs.current.set(key, el); else secRefs.current.delete(key); };
 
   const openIf = (it: ChronItem) => { if (it.eventId) onOpenEvent(it.eventId); };
@@ -470,12 +441,12 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
     <div className="chron">
       <p className="chron-note">{rich(t("**테라 연대기 (베타)** — 모든 이벤트·메인스토리·통합 전략을 한자리에 모으는 사전 작업입니다. 현재 정렬은 출시순(임시)이며, 인게임 연대기 순서·테라력 연도는 스토리 스크립트를 반영하며 채웁니다. 테마 묶음은 확실한 것부터 배정 중입니다."))}</p>
 
-      {/* 한 줄 연혁 바 — 연도별로 묶고 작은 연도 라벨을 얹는다. 가로 스크롤 시 아래 목록도 따라간다. */}
+      {/* 한 줄 연혁 바 — 연도 확정분만 100% 폭에 균등 배치(미정 제외). 슬라이더로 아래 목록을 이동. */}
       <div className="chron-railwrap">
-        <div className="chron-rail" ref={railRef} role="list" aria-label={t("테라 연대기")}
-          onScroll={onRailScroll} onMouseLeave={() => setTip(null)}>
-          {groups.map((g) => (
-            <div key={g.key} className="chron-railseg" ref={setSeg(g.key)}>
+        <div className="chron-rail" role="list" aria-label={t("테라 연대기")}
+          onMouseLeave={() => setTip(null)}>
+          {yearGroups.map((g) => (
+            <div key={g.key} className="chron-railseg">
               <button type="button" className={`chron-railseg-yr${activeKey === g.key ? " on" : ""}`}
                 onClick={() => goYear(g.key)} title={g.label} aria-label={g.label}>
                 {g.year}

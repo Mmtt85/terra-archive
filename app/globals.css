@@ -4041,11 +4041,12 @@ footer p {
 /* 한 줄 연혁 바 — 트랙 위에 놓인 노드, 가로 스크롤 */
 .chron-railwrap { border:1px solid var(--line); background:linear-gradient(180deg,#fbfbf8,#f4f3ee); padding:20px 20px 16px; margin-bottom:26px }
 /* 슬라이더로 조작하므로 레일 자체의 네이티브 스크롤바는 숨긴다 (휠·트랙패드 스크롤은 유지) */
-.chron-rail { display:flex; align-items:flex-start; gap:0; overflow-x:auto; padding:6px 6px 12px; position:relative; scrollbar-width:none; -ms-overflow-style:none; max-width:100% }
+.chron-rail { display:flex; align-items:flex-start; gap:0; padding:6px 2px 12px; position:relative; width:100% }
 .chron-rail::-webkit-scrollbar { display:none; width:0; height:0 }
 /* 연도 세그먼트 — 작은 연도 라벨 + 그 해의 노드들 */
-.chron-railseg { flex:none; display:flex; flex-direction:column; gap:4px; padding:0 9px; border-left:1px dashed #d3d3cb }
+.chron-railseg { flex:1 1 0; min-width:0; display:flex; flex-direction:column; gap:4px; padding:0 9px; border-left:1px dashed #d3d3cb }
 .chron-railseg:first-child { border-left:0; padding-left:2px }
+.chron-railseg-ticks { flex-wrap:wrap }
 .chron-railseg-yr { align-self:flex-start; border:0; background:0 0; padding:1px 3px; cursor:pointer; font:800 9px/1.3 monospace; letter-spacing:.2px; color:#a2a49c; white-space:nowrap; border-radius:2px }
 .chron-railseg-yr:hover { color:var(--ink) }
 .chron-railseg-yr.on { color:var(--ink); background:var(--lime) }
