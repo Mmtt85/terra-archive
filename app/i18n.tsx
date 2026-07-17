@@ -852,6 +852,8 @@ const D: Record<string, Pair> = {
   "난이도는 하위 등급의 규칙을 전부 포함합니다. 현재 선택한 난이도까지의 규칙이 강조됩니다.": ["Each grade includes all lower-grade rules. Rules up to the selected grade are highlighted.", "各難易度は下位グレードのルールをすべて含みます。選択した難易度までのルールが強調されます。"],
   "등급": ["Grade", "グレード"],
   "전장 미니맵": ["Battlefield minimap", "戦場ミニマップ"],
+  "우연한 만남": ["Encounter", "思わぬ遭遇"],
+  "이 난이도로 설정": ["Set as current difficulty", "この難易度に設定"],
   "일반 작전": ["Normal Operation", "通常作戦"],
   "작전 모드": ["Operation mode", "作戦モード"],
   "긴급": ["EX", "緊急"],

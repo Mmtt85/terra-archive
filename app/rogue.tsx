@@ -121,7 +121,7 @@ function StageModal({ pair, grade, onClose, onOpenEnemy }: {
           </div>
         )}
         {stage.map && <img className="rg-modal-map" src={`/rogue/map/${stage.map}.webp`} alt={t("전장 미니맵")} loading="lazy" decoding="async" />}
-        {stage.desc && <p className="rg-modal-desc">{stage.desc.replace(/<[^>]+>/g, "")}</p>}
+        {stage.desc && <p className="rg-modal-desc">{stage.desc}</p>}
         {stage.eliteDesc && <p className="rg-modal-elite">⚠ {stage.eliteDesc}</p>}
         {isEmg && (mul.atk || mul.max_hp || mul.def) && (
           <p className="rg-modal-elite">
@@ -192,7 +192,7 @@ function EnemyModal({ ekey, grade, onClose, onOpenStage, appear }: {
         </header>
         {e.attack && <p className="rg-emodal-row"><strong>{t("공격 방식")}</strong> {e.attack}</p>}
         {e.desc && <p className="rg-emodal-desc">{e.desc}</p>}
-        {e.ability && <p className="rg-emodal-ability">{e.ability.replace(/<[^>]+>/g, "")}</p>}
+        {e.ability && <p className="rg-emodal-ability">{e.ability}</p>}
         <StatRow e={e} grade={grade} ctx={{ emergencyOrBoss: false }} />
         <div className="rg-stats sub">
           <span className="rg-stat">{t("공속")} {e.aspd}</span>
@@ -218,6 +218,65 @@ function EnemyModal({ ekey, grade, onClose, onOpenStage, appear }: {
   );
 }
 
+// ── 조우 상세 모달 — 엔딩 조건 등에서 조우를 참조할 때 연다 ──────────────────
+function EncounterModal({ enc, onClose }: { enc: Encounter; onClose: () => void }) {
+  const { t } = useI18n();
+  useEffect(() => {
+    const onKey = (ev: KeyboardEvent) => { if (ev.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+  return (
+    <div className="rg-modal-back stack" onClick={onClose} role="presentation">
+      <div className="rg-modal" role="dialog" aria-modal onClick={(ev) => ev.stopPropagation()}>
+        <header className="rg-modal-head">
+          <div>
+            <span className="rg-kind">{t("우연한 만남")}</span>
+            <h3>{enc.title}</h3>
+            {enc.floors && <span className="rg-modal-zone">{enc.floors.join("·")}{t("층")}</span>}
+          </div>
+          <button type="button" className="rg-modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
+        </header>
+        {enc.bg && <img className="rg-enc-cg modal" src={`/rogue/scene/${enc.bg}.webp`} alt={enc.title} loading="lazy" decoding="async" />}
+        {enc.desc && <p className="rg-modal-desc">{enc.desc}</p>}
+        {enc.note && <p className="rg-enc-note">{enc.note}</p>}
+        <ul className="rg-enc-choices">
+          {enc.choices.map((c, i) => (
+            <li key={i}><strong>{c.title}</strong>{c.desc ? ` — ${c.desc}` : ""}</li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+// ── 유물 상세 모달 — 엔딩 조건의 분기 아이템 참조에서 연다 ───────────────────
+function RelicModal({ relic, onClose }: { relic: Relic; onClose: () => void }) {
+  const { t } = useI18n();
+  useEffect(() => {
+    const onKey = (ev: KeyboardEvent) => { if (ev.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+  return (
+    <div className="rg-modal-back stack" onClick={onClose} role="presentation">
+      <div className="rg-modal rg-rmodal" role="dialog" aria-modal onClick={(ev) => ev.stopPropagation()}>
+        <header className="rg-modal-head">
+          <div>
+            {relic.img && <img className="rg-relic-icon lg" src={`/rogue/relic/${relic.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
+            {relic.order && <span className="rg-relic-no">{relic.order}</span>}
+            <h3>{relic.name}</h3>
+          </div>
+          <button type="button" className="rg-modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
+        </header>
+        {relic.usage && <p className="rg-relic-usage">{relic.usage}</p>}
+        {relic.desc && <p className="rg-relic-desc">{relic.desc}</p>}
+        {relic.obtain && <p className="rg-relic-obtain">{relic.obtain}</p>}
+      </div>
+    </div>
+  );
+}
+
 // ── 메인 ───────────────────────────────────────────────────────────────────
 export default function RogueGuide() {
   const { t, locale } = useI18n();
@@ -225,6 +284,8 @@ export default function RogueGuide() {
   const [grade, setGrade] = useState(0); // -1 = EASY, 0~15
   const [stageOpen, setStageOpen] = useState<StagePair | null>(null);
   const [enemyOpen, setEnemyOpen] = useState<string | null>(null);
+  const [encOpen, setEncOpen] = useState<Encounter | null>(null);
+  const [relicOpen, setRelicOpen] = useState<Relic | null>(null);
   const [enemyQ, setEnemyQ] = useState("");
   const [enemyRank, setEnemyRank] = useState<string>("");
   const [relicQ, setRelicQ] = useState("");
@@ -289,16 +350,24 @@ export default function RogueGuide() {
 
   const gradeLabel = grade < 0 ? t("고성 관광 (쉬움)") : t("정식 수사 {n}", { n: grade });
 
-  // 엔딩 조건 문장 속 「스테이지명」 을 클릭 가능한 노드 버튼으로 렌더
+  // 엔딩 조건 문장 속 「이름」 참조를 전부 클릭 가능하게 — 스테이지·조우·유물·적 순으로 매칭
   const stageByName = useMemo(() => new Map(data.stages.filter((s) => s.kind !== "emergency").map((s) => [s.name, s])), []);
+  const encByTitle = useMemo(() => new Map(data.encounters.map((e) => [e.title, e])), []);
+  const relicByName = useMemo(() => new Map(data.relics.map((r) => [r.name, r])), []);
+  const enemyByName = useMemo(() => new Map(Object.entries(data.enemies).map(([k, e]) => [e.name, k])), []);
   const renderCond = (text: string) => {
     const parts = text.split(/「([^」]+)」/g);
     return parts.map((part, i) => {
       if (i % 2 === 0) return part;
       const s = stageByName.get(part);
-      return s
-        ? <button key={i} type="button" className="rg-cond-node" onClick={() => setStageOpen(pairOf(s))}>「{part}」</button>
-        : `「${part}」`;
+      if (s) return <button key={i} type="button" className="rg-cond-node" onClick={() => setStageOpen(pairOf(s))}>「{part}」</button>;
+      const enc = encByTitle.get(part);
+      if (enc) return <button key={i} type="button" className="rg-cond-node" onClick={() => setEncOpen(enc)}>「{part}」</button>;
+      const rl = relicByName.get(part);
+      if (rl) return <button key={i} type="button" className="rg-cond-node relic" onClick={() => setRelicOpen(rl)}>「{part}」</button>;
+      const en = enemyByName.get(part);
+      if (en) return <button key={i} type="button" className="rg-cond-node" onClick={() => setEnemyOpen(en)}>「{part}」</button>;
+      return `「${part}」`;
     });
   };
 
@@ -553,7 +622,10 @@ export default function RogueGuide() {
               {data.difficulties.filter((d) => d.mode === "EASY" || d.mode === "NORMAL").map((d) => {
                 const on = d.mode === "EASY" ? grade < 0 : grade >= d.grade;
                 return (
-                  <tr key={`${d.mode}${d.grade}`} className={on ? "on" : ""}>
+                  <tr key={`${d.mode}${d.grade}`} className={on ? "on" : ""} role="button" tabIndex={0}
+                    title={t("이 난이도로 설정")}
+                    onClick={() => setGrade(d.mode === "EASY" ? -1 : d.grade)}
+                    onKeyDown={(ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); setGrade(d.mode === "EASY" ? -1 : d.grade); } }}>
                     <td>{d.mode === "EASY" ? t("쉬움") : d.grade}</td>
                     <td>{d.rule}</td>
                   </tr>
@@ -590,6 +662,8 @@ export default function RogueGuide() {
           appear={enemyStages.get(enemyOpen) ?? []}
           onOpenStage={(s) => { setEnemyOpen(null); setStageOpen(pairOf(s)); }} />
       )}
+      {encOpen && <EncounterModal enc={encOpen} onClose={() => setEncOpen(null)} />}
+      {relicOpen && <RelicModal relic={relicOpen} onClose={() => setRelicOpen(null)} />}
     </section>
   );
 }

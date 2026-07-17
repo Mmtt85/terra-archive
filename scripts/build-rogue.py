@@ -400,6 +400,17 @@ def build_rogue1():
         "endings": endings,
         "encounters": encounters,
     }
+    # 게임 마크업 태그(<@ro.lose>1</>, <color=#...> 등)를 모든 문자열에서 일괄 제거
+    def sanitize(v):
+        if isinstance(v, str):
+            return re.sub(r"</?[@$a-zA-Z][^>]*>|</>", "", v)
+        if isinstance(v, list):
+            return [sanitize(x) for x in v]
+        if isinstance(v, dict):
+            return {k: sanitize(x) for k, x in v.items()}
+        return v
+    out = sanitize(out)
+
     dest = os.path.join(REPO, "app", "data", "rogue1.json")
     json.dump(out, open(dest, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
     kb = os.path.getsize(dest) // 1024
