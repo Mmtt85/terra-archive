@@ -103,11 +103,12 @@ const JOB_ORDER = ["PIONEER", "WARRIOR", "TANK", "SNIPER", "CASTER", "MEDIC", "S
 
 const SORT_KEYS = ["기본", "이름", "성급", "발매순", "소속", "출신지", "종족", "직군", "세부 직군"];
 
-export type Tab = "archive" | "planner" | "recruit" | "farm" | "story" | "about";
-// 탭 ↔ URL 세그먼트 (archive는 로케일 루트). seo.ts의 TAB_SEG·라우트 폴더명과 일치.
+export type Tab = "portal" | "archive" | "planner" | "recruit" | "farm" | "story" | "about";
+// 탭 ↔ URL 세그먼트 (portal이 로케일 루트, 오퍼 백과사전은 /operators — 사용자 확정 2026-07-17:
+// 루트 진입 시 오퍼 이미지 강제 로딩을 없애려 포탈 첫화면 도입). seo.ts의 TAB_SEG·라우트 폴더명과 일치.
 // URL 세그먼트 "stories"(← 정적 자산 디렉터리 public/story/ 와의 경로 충돌 회피). 내부 탭명은 story.
-const TAB_SEG: Record<Tab, string> = { archive: "", planner: "infra", recruit: "recruit", farm: "farm", story: "stories", about: "about" };
-const SEG_TAB: Record<string, Tab> = { "": "archive", infra: "planner", recruit: "recruit", farm: "farm", stories: "story", about: "about" };
+const TAB_SEG: Record<Tab, string> = { portal: "", archive: "operators", planner: "infra", recruit: "recruit", farm: "farm", story: "stories", about: "about" };
+const SEG_TAB: Record<string, Tab> = { "": "portal", operators: "archive", infra: "planner", recruit: "recruit", farm: "farm", stories: "story", about: "about" };
 const LOCALE_BASE: Record<Locale, string> = { ko: "", en: "/en", ja: "/ja" };
 
 // 현재 pathname → 탭 (로케일 프리픽스 제거 후 세그먼트 매핑)
@@ -115,7 +116,7 @@ function tabFromPath(pathname: string): Tab {
   let p = pathname;
   if (p === "/en" || p.startsWith("/en/")) p = p.slice(3);
   else if (p === "/ja" || p.startsWith("/ja/")) p = p.slice(3);
-  return SEG_TAB[p.replace(/^\/+/, "").replace(/\/+$/, "")] ?? "archive";
+  return SEG_TAB[p.replace(/^\/+/, "").replace(/\/+$/, "")] ?? "portal";
 }
 // 구 해시(#infra 등) → 탭 (하위호환 리다이렉트용). op 해시나 일반 해시는 null.
 function tabFromLegacyHash(hash: string): Tab | null {
@@ -199,6 +200,10 @@ const storyEventById = new Map(
 );
 // 사이드스토리·복각 등 굵직한 이벤트 — 배지 대표로 우선한다 (로그인·출석류보다)
 const MAJOR_EVENT_TYPES = new Set(["SIDESTORY", "BRANCHLINE", "MINISTORY"]);
+// 로그인·출석·기원 등 "보상 수령만" 하는 잔이벤트 — 헤더에서 아예 숨긴다 (사용자 확정 2026-07-17).
+// 콜라보(SWITCH_ONLY)·한정임무(COLLECTION) 같은 실제 콘텐츠 이벤트는 "_ONLY"라도 남기므로
+// 접미사 일괄 필터가 아니라 명시적 블록리스트로 관리한다.
+const MINOR_EVENT_TYPES = new Set(["LOGIN_ONLY", "CHECKIN_ONLY", "PRAY_ONLY", "BLESS_ONLY"]);
 
 // 워커 fetch는 모듈 공유 프라미스로 1회만 — 헤더 배지와 이벤트 스트립이 같이 쓴다
 let bcastFetch: Promise<{ broadcasts: Broadcast[]; events: GameEvent[] } | null> | null = null;
@@ -217,6 +222,7 @@ function fetchBcastPayload() {
 function sortRunning(events: GameEvent[], now: number): GameEvent[] {
   return events
     .filter((event) => Date.parse(event.start) <= now && now <= Date.parse(event.end))
+    .filter((event) => !MINOR_EVENT_TYPES.has(event.type ?? ""))
     .sort((a, b) => {
       const majorA = MAJOR_EVENT_TYPES.has(a.displayType ?? "") ? 0 : 1;
       const majorB = MAJOR_EVENT_TYPES.has(b.displayType ?? "") ? 0 : 1;
@@ -291,7 +297,8 @@ function BroadcastBadges() {
 
   // ── 진행중 게임 이벤트 배지 (공식 방송 버튼 오른쪽) ──
   // 굵직한 이벤트(사이드스토리 등) 우선 + 최신 시작순으로 대표 하나를 버튼에,
-  // 나머지는 팝오버 목록에 (로그인·출석류 포함 전부 — 사용자 선택 2026-07)
+  // 나머지는 팝오버 목록에. 로그인·출석·기원류 잔이벤트는 sortRunning에서 제외한다
+  // (대표 이벤트만 노출 — 사용자 확정 2026-07-17).
   const running = sortRunning(gameEvents, now);
   const headline = running[0];
   const evName = (event: GameEvent): string => eventName(locale, event);
@@ -474,7 +481,39 @@ function rememberNickSent(opId: string, name: string) {
   } catch { /* ignore */ }
 }
 
-export default function Home({ locale, operators, extra, initialTab = "archive" }: { locale: Locale; operators: Operator[]; extra: ExtraI18n | null; initialTab?: Tab }) {
+// 포탈 첫화면 — 루트(/)의 랜딩. 각 도구로 가는 큰 버튼만 두어, 진입 시 오퍼 이미지 로딩이
+// 전혀 없다 (사용자 확정 2026-07-17: 데이터 소진 방지). 오퍼 백과사전은 여기서 /operators로 이동.
+function Portal({ onOpenTab }: { onOpenTab: (tab: Tab) => void }) {
+  const { t } = useI18n();
+  const cards: { tab: Tab; icon: string; name: string; desc: string }[] = [
+    { tab: "archive", icon: "▤", name: t("오퍼 백과사전"), desc: t("소속·직군·태그·시너지로 필터·검색하는 오퍼레이터 도감") },
+    { tab: "planner", icon: "⌂", name: t("인프라 자동편성기"), desc: t("보유 오퍼만 입력하면 기반시설 편성을 자동으로 계산") },
+    { tab: "recruit", icon: "◎", name: t("공채 도우미"), desc: t("공개모집 태그 조합으로 확정·고성급 오퍼를 탐색") },
+    { tab: "farm", icon: "◈", name: t("파밍·육성 시뮬"), desc: t("재료 파밍 효율표와 오퍼 육성 비용 시뮬레이션") },
+    { tab: "story", icon: "✦", name: t("AI 스토리 요약"), desc: t("이벤트 스토리를 컷씬과 함께 10분 분량으로 요약") },
+  ];
+  return (
+    <section className="portal" aria-labelledby="portal-title">
+      <div className="portal-hero">
+        <span className="portal-kicker">TERRA ARCHIVE</span>
+        <h1 id="portal-title">{t("테라 아카이브")}</h1>
+        <p>{t("명일방주(아크나이츠) KR 팬사이트 — 필요한 도구를 골라 들어가세요.")}</p>
+      </div>
+      <div className="portal-grid">
+        {cards.map((card) => (
+          <button key={card.tab} type="button" className={`portal-card portal-${card.tab}`}
+            onClick={() => { onOpenTab(card.tab); window.scrollTo({ top: 0 }); }}>
+            <span className="portal-card-icon" aria-hidden>{card.icon}</span>
+            <span className="portal-card-body"><b>{card.name}</b><small>{card.desc}</small></span>
+            <span className="portal-card-go" aria-hidden>→</span>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export default function Home({ locale, operators, extra, initialTab = "portal" }: { locale: Locale; operators: Operator[]; extra: ExtraI18n | null; initialTab?: Tab }) {
   return (
     <I18nProvider locale={locale}>
       <HomeInner operators={operators} extra={extra} initialTab={initialTab} />
@@ -720,7 +759,9 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
             ? t("재료 파밍 & 오퍼 육성 시뮬레이션 - 명일방주 파밍·육성 계산기 | 테라 아카이브")
             : tab === "story"
               ? t("AI 스토리 요약 - 명일방주 스토리 요약 | 테라 아카이브")
-              : t("테라 아카이브 | 명일방주(Arknights) KR 팬사이트");
+              : tab === "archive"
+                ? t("오퍼레이터 백과사전 - 명일방주 오퍼 도감 | 테라 아카이브")
+                : t("테라 아카이브 | 명일방주(Arknights) KR 팬사이트");
   }, [tab, selected, t]);
 
   const openOperator = (operator: Operator) => {
@@ -747,6 +788,7 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
   };
 
   const TAB_LABEL: Record<Tab, string> = {
+    portal: t("홈"),
     archive: t("오퍼 백과사전"),
     planner: t("인프라 자동편성기"),
     recruit: t("공채 도우미"),
@@ -888,10 +930,10 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
   }, [filtered, sortKey, sortAsc, jobs, locale]);
 
   return (
-    <main className={tab !== "archive" ? "base-main" : ""}>
+    <main className={tab === "archive" ? "" : tab === "portal" ? "base-main portal-main" : "base-main"}>
       <header className="site-header" id="top">
         <a className="brand" href={localeBase || "/"} aria-label={t("테라 아카이브 홈")}
-          onClick={(event) => { event.preventDefault(); switchTab("archive"); window.scrollTo({ top: 0 }); }}>
+          onClick={(event) => { event.preventDefault(); switchTab("portal"); window.scrollTo({ top: 0 }); }}>
           <span className="brand-mark"><img src="/avatars/char_1012_skadi2.webp" alt="" /></span>
           <span>{t("테라 아카이브")}<small>{t("명일방주(Arknights) KR 팬사이트")}</small></span>
         </a>
@@ -909,6 +951,7 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
           </button>
           {/* 드롭다운은 햄버거 버튼 바로 밑에 딱 붙여 연다 (사용자 요청 2026-07) */}
           <nav className={`main-tabs${navOpen ? " open" : ""}`} aria-label={t("주요 탭")}>
+            <button className={`tab-portal${tab === "portal" ? " selected" : ""}`} onClick={() => switchTab("portal")}><span className="tab-icon" aria-hidden>◇</span>{t("홈")}</button>
             <button className={`tab-archive${tab === "archive" ? " selected" : ""}`} onClick={() => switchTab("archive")}><span className="tab-icon" aria-hidden>▤</span>{t("오퍼 백과사전")}</button>
             <button className={`tab-planner${tab === "planner" ? " selected" : ""}`} onClick={() => switchTab("planner")}><span className="tab-icon" aria-hidden>⌂</span>{t("인프라 자동편성기")}</button>
             <button className={`tab-recruit${tab === "recruit" ? " selected" : ""}`} onClick={() => switchTab("recruit")}><span className="tab-icon" aria-hidden>◎</span>{t("공채 도우미")}</button>
@@ -921,6 +964,8 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
           aria-label={t("소개")} title={t("소개")}>ⓘ</button>
       </header>
 
+
+      {tab === "portal" && <Portal onOpenTab={switchTab} />}
 
       {tab === "archive" && <section className="explorer" aria-labelledby="explorer-title">
         <div className="filter-panel">

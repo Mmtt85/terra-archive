@@ -113,6 +113,16 @@ const D: Record<string, Pair> = {
   "공채 도우미": ["Recruit Helper", "公開求人ヘルパー"],
   "언어 선택": ["Language", "言語選択"],
   "닫기": ["Close", "閉じる"],
+  "홈": ["Home", "ホーム"],
+
+  // 포탈 첫화면 (루트 /)
+  "명일방주(아크나이츠) KR 팬사이트 — 필요한 도구를 골라 들어가세요.": ["An Arknights KR-server fansite — pick a tool and dive in.", "アークナイツ韓国サーバーファンサイト — 使いたいツールを選んで入りましょう。"],
+  "소속·직군·태그·시너지로 필터·검색하는 오퍼레이터 도감": ["Operator database you can filter and search by faction, class, tag, and synergy.", "所属・クラス・タグ・シナジーで絞り込み検索できるオペレーター図鑑。"],
+  "보유 오퍼만 입력하면 기반시설 편성을 자동으로 계산": ["Enter your roster and it auto-builds your RIIC base layout.", "手持ちオペレーターを入力するだけで基地編成を自動計算。"],
+  "공개모집 태그 조합으로 확정·고성급 오퍼를 탐색": ["Find guaranteed and high-rarity operators from recruitment tag combos.", "公開求人タグの組み合わせから確定・高レアオペレーターを探索。"],
+  "재료 파밍 효율표와 오퍼 육성 비용 시뮬레이션": ["Material farming efficiency table and operator upgrade-cost simulator.", "素材周回効率表とオペレーター育成コストシミュレーション。"],
+  "이벤트 스토리를 컷씬과 함께 10분 분량으로 요약": ["Event stories summarized with cutscenes in a 10-minute read.", "イベントストーリーをカットシーンと共に10分で要約。"],
+  "오퍼레이터 백과사전 - 명일방주 오퍼 도감 | 테라 아카이브": ["Operator Archive - Arknights Operator Database | Terra Archive", "オペレーター図鑑 - アークナイツ オペレーター一覧 | テラアーカイブ"],
 
   // 공식 방송
   "공식 방송": ["Official Streams", "公式配信"],

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- 경로 기반 라우팅: 언어 루트(/ /en /ja)와 탭 경로(/infra /recruit /farm /stories ×3언어)를 등재.
-     각 URL은 같은 탭의 3개 언어 버전을 xhtml:link hreflang으로 상호 참조한다. -->
+<!-- 경로 기반 라우팅: 언어 루트(/ /en /ja = 포탈 첫화면)와 탭 경로(/operators /infra /recruit
+     /farm /stories ×3언어)를 등재. 각 URL은 같은 탭의 3개 언어 버전을 xhtml:link hreflang으로 상호 참조한다. -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://terra-archive.net/</loc>
@@ -55,6 +55,33 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/infra"/>
     <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/infra"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/infra"/>
+  </url>
+  <url>
+    <loc>https://terra-archive.net/operators</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/operators"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/operators"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/operators"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/operators"/>
+  </url>
+  <url>
+    <loc>https://terra-archive.net/en/operators</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/operators"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/operators"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/operators"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/operators"/>
+  </url>
+  <url>
+    <loc>https://terra-archive.net/ja/operators</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/operators"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/operators"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/operators"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/operators"/>
   </url>
   <url>
     <loc>https://terra-archive.net/recruit</loc>

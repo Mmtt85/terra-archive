@@ -5402,3 +5402,59 @@ footer p {
     margin-right: 0;
   }
 }
+
+/* ── 포탈 첫화면 (루트 /) — 진입 시 이미지 로딩 없는 랜딩 (사용자 확정 2026-07-17) ── */
+.portal-main { align-items: center; }
+.portal {
+  width: 100%;
+  max-width: 920px;
+  margin: 0 auto;
+  padding: clamp(32px, 7vw, 72px) 20px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(24px, 4vw, 40px);
+}
+.portal-hero { text-align: center; display: flex; flex-direction: column; gap: 10px; }
+.portal-kicker {
+  font-size: 12px; letter-spacing: 3px; font-weight: 700;
+  color: var(--accent, #b98a2f);
+}
+.portal-hero h1 {
+  font-size: clamp(30px, 6vw, 48px); margin: 0; letter-spacing: -1px; color: var(--ink);
+}
+.portal-hero p { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.6; }
+.portal-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.portal-card {
+  display: flex; align-items: center; gap: 16px; text-align: left;
+  padding: 20px 22px;
+  border: 1px solid var(--line);
+  background: var(--white);
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.portal-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--ink);
+  box-shadow: 0 8px 24px -14px rgba(19, 23, 25, 0.5);
+}
+.portal-card-icon {
+  font-size: 26px; line-height: 1; flex: 0 0 auto;
+  width: 44px; height: 44px; display: grid; place-items: center;
+  border: 1px solid var(--line); background: var(--paper);
+  color: var(--accent, #b98a2f);
+}
+.portal-card-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1 1 auto; }
+.portal-card-body b { font-size: 16px; letter-spacing: -0.3px; color: var(--ink); }
+.portal-card-body small { font-size: 12.5px; line-height: 1.5; color: var(--muted); }
+.portal-card-go { flex: 0 0 auto; font-size: 18px; color: var(--muted); transition: transform 0.15s ease, color 0.15s ease; }
+.portal-card:hover .portal-card-go { transform: translateX(3px); color: var(--ink); }
+/* 오퍼 백과사전 카드 — 대표 도구라 한 줄 전체 차지 */
+.portal-card.portal-archive { grid-column: 1 / -1; }
+
+@media (max-width: 640px) {
+  .portal-grid { grid-template-columns: 1fr; }
+}

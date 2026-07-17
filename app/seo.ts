@@ -8,11 +8,12 @@ import type { Metadata } from "next";
 export const SITE_URL = "https://terra-archive.net";
 
 type SeoLocale = "ko" | "en" | "ja";
-export type SeoTab = "archive" | "planner" | "recruit" | "farm" | "story" | "about";
+export type SeoTab = "portal" | "archive" | "planner" | "recruit" | "farm" | "story" | "about";
 
-// 탭 → URL 세그먼트 (archive는 로케일 루트). 라우트 폴더명과 반드시 일치.
+// 탭 → URL 세그먼트 (portal이 로케일 루트, 오퍼 백과사전은 /operators로 분리 — 사용자 확정
+// 2026-07-17: 루트 진입 시 오퍼 이미지 강제 로딩을 없애기 위해 포탈 첫화면 도입). 라우트 폴더명과 반드시 일치.
 export const TAB_SEG: Record<SeoTab, string> = {
-  archive: "", planner: "infra", recruit: "recruit", farm: "farm", story: "stories", about: "about",
+  portal: "", archive: "operators", planner: "infra", recruit: "recruit", farm: "farm", story: "stories", about: "about",
 };
 
 // 로케일 베이스 경로
@@ -34,8 +35,13 @@ function languagesFor(tab: SeoTab) {
   };
 }
 
-// 탭별 제목·설명 (archive는 아래 META의 기본값 사용)
-const TAB_META: Record<Exclude<SeoTab, "archive">, Record<SeoLocale, { title: string; description: string }>> = {
+// 탭별 제목·설명 (portal은 아래 META의 기본값=사이트 허브 메타를 그대로 쓴다)
+const TAB_META: Record<Exclude<SeoTab, "portal">, Record<SeoLocale, { title: string; description: string }>> = {
+  archive: {
+    ko: { title: "오퍼레이터 백과사전 - 명일방주 오퍼 도감 | 테라 아카이브", description: "명일방주(아크나이츠) 오퍼레이터 백과사전 — 소속·직군·태그·시너지로 필터·검색하고, 오퍼레이터 상세 정보와 별명을 확인하세요." },
+    en: { title: "Operator Archive - Arknights Operator Database | Terra Archive", description: "Arknights operator encyclopedia — filter and search by faction, class, tags, and synergy, and browse full operator details." },
+    ja: { title: "オペレーター図鑑 - アークナイツ オペレーター一覧 | テラアーカイブ", description: "アークナイツのオペレーター図鑑 — 所属・クラス・タグ・シナジーで絞り込み検索し、オペレーターの詳細情報を確認できます。" },
+  },
   planner: {
     ko: { title: "인프라 자동편성기 - 명일방주 기반시설 편성 | 테라 아카이브", description: "명일방주 기반시설(RIIC) 자동 편성 플래너 — 보유 오퍼레이터만 입력하면 제조소·무역소·발전소 편성을 자동으로 짜줍니다." },
     en: { title: "Base Auto-Planner - Arknights RIIC Base | Terra Archive", description: "Arknights RIIC base auto-assignment planner — just enter your roster and it builds the optimal factory, trading post, and power plant layout for you." },
@@ -97,9 +103,9 @@ const META: Record<SeoLocale, {
   },
 };
 
-export function pageMetadata(locale: SeoLocale, tab: SeoTab = "archive"): Metadata {
+export function pageMetadata(locale: SeoLocale, tab: SeoTab = "portal"): Metadata {
   const meta = META[locale];
-  const tabMeta = tab === "archive" ? null : TAB_META[tab][locale];
+  const tabMeta = tab === "portal" ? null : TAB_META[tab][locale];
   const title = tabMeta?.title ?? meta.title;
   const description = tabMeta?.description ?? meta.description;
   const url = `${SITE_URL}${pathFor(locale, tab)}`;
@@ -123,9 +129,9 @@ export function pageMetadata(locale: SeoLocale, tab: SeoTab = "archive"): Metada
   };
 }
 
-export function jsonLdFor(locale: SeoLocale, tab: SeoTab = "archive") {
+export function jsonLdFor(locale: SeoLocale, tab: SeoTab = "portal") {
   const meta = META[locale];
-  const tabMeta = tab === "archive" ? null : TAB_META[tab][locale];
+  const tabMeta = tab === "portal" ? null : TAB_META[tab][locale];
   return {
     "@context": "https://schema.org",
     "@type": "WebSite",
