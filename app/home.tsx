@@ -860,6 +860,7 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
     recruit: t("공채 도우미"),
     farm: t("파밍·육성 시뮬"),
     story: t("AI 스토리 요약"),
+    rogue: t("통합전략 가이드"),
     about: t("소개"),
   };
   const switchTab = (next: Tab) => {
@@ -1093,7 +1094,7 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
       {tab === "recruit" && <RecruitHelper onShowOperator={showOperatorById} extra={extra} />}
       {tab === "farm" && <FarmGuide operators={operators} includeFuture={includeFuture} onShowOperator={showOperatorById} />}
       {tab === "story" && <StoryGuide onShowOperator={showOperatorById} includeFuture={includeFuture} />}
-      {tab === "rogue" && <RogueGuide />}
+      {tab === "rogue" && <RogueGuide includeFuture={includeFuture} />}
       {tab === "about" && <About onOpenTab={switchTab} />}
 
       {selected && <OperatorModal operator={selected} nicknames={nicknames.get(selected.id) ?? []} onSubmitNickname={handleSubmitNickname} onClose={closeOperator} />}

@@ -803,6 +803,8 @@ const D: Record<string, Pair> = {
   "층별 노드·적 도감·유물·엔딩 조건을 난이도별로 정리": ["Floor nodes, enemy handbook, relics, and ending requirements by difficulty", "階層ノード・敵図鑑・秘宝・エンディング条件を難易度別に整理"],
   "통합전략 데이터는 현재 한국어로만 제공됩니다.": ["Integrated Strategies data is currently available in Korean only.", "統合戦略データは現在韓国語のみ提供しています。"],
   "다른 테마는 준비 중": ["Other themes coming soon", "他のテーマは準備中"],
+  "준비 중": ["Coming soon", "準備中"],
+  "미래시": ["Future", "先行"],
   "통합전략 섹션": ["Integrated Strategies sections", "統合戦略セクション"],
   "맵·노드": ["Map & Nodes", "マップ・ノード"],
   "적 도감": ["Enemies", "敵図鑑"],

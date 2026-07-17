@@ -5497,9 +5497,10 @@ footer p {
 /* ── 통합전략 가이드 탭 — 팬텀 & 크림슨 솔리테어 다크 극장 테마 ──────────
    팔레트: 배경 #150a0e(암적), 카드 #211218, 라인 #3c2129, 잉크 #ead9c8(아이보리),
    크림슨 #c23b4e, 골드 #c9a35c (테마 키비주얼의 금박 타이틀 톤) */
+html.rg-theme body, html.rg-theme main.site-main { background: linear-gradient(180deg,#120810,#150a0e 220px,#170b0f) }
 .rg { --rgbg:#150a0e; --rgcard:#211218; --rgline:#3c2129; --rgink:#ead9c8; --rgmut:#9d8a86;
   --rgcrim:#c23b4e; --rggold:#c9a35c;
-  padding: 34px clamp(22px, 5vw, 76px) 60px; background: linear-gradient(180deg,#120810,#150a0e 220px,#170b0f); color: var(--rgink) }
+  padding: 34px clamp(22px, 5vw, 76px) 60px; color: var(--rgink) }
 
 /* 헤더 — 키비주얼 히어로 */
 .rg-hero { position: relative; border: 1px solid var(--rgline); overflow: hidden; background: #0d0609; margin-bottom: 18px }
@@ -5512,7 +5513,8 @@ footer p {
 .rg-topic-pick { display: flex; gap: 8px; align-items: center; margin: 0 0 10px; flex-wrap: wrap }
 .rg-topic { font: 700 12.5px/1.2 inherit; padding: 5px 12px; border: 1px solid var(--rgline); border-radius: 999px }
 .rg-topic.on { background: var(--rgcrim); color: #fff; border-color: var(--rgcrim); box-shadow: 0 0 14px #c23b4e55 }
-.rg-topic.off { color: var(--rgmut) }
+.rg-topic.off { color: var(--rgmut); background: 0 0; cursor: default; font: 700 12.5px/1.2 inherit }
+.rg-topic-future { font: 800 9.5px/1 monospace; font-style: normal; color: var(--rggold); border: 1px solid var(--rggold); padding: 2px 5px; border-radius: 999px; margin-left: 6px; vertical-align: 1px }
 .rg-line { margin: 0; font-size: 12.5px; line-height: 1.7; color: #c8b4a6; white-space: pre-line; text-shadow: 0 1px 8px #000c }
 .rg-disclaimer { margin: 0 0 8px; font-size: 12px; color: var(--rggold) }
 
@@ -5727,5 +5729,12 @@ footer p {
 
 /* ── 전역 콘텐츠 폭 — 넓은 화면에서 좌우 15% 여백, 가운데 70%에 콘텐츠 (사용자 확정 2026-07-17) ── */
 @media (min-width: 1400px) {
-  main.site-main { margin-inline: 15%; }
+  /* 헤더·푸터(배경 100% 폭)는 제외하고, 본문 섹션만 좌우 15% 여백 */
+  main.site-main > :not(.site-header):not(footer) { margin-inline: 15%; }
+}
+
+/* 헤더·푸터: 배경은 100% 폭, 내부 콘텐츠만 좌우 15% 여백에 맞춰 정렬 (사용자 확정 2026-07-17) */
+@media (min-width: 1400px) {
+  .site-header { padding-inline: 15%; }
+  footer { padding-inline: 15%; }
 }

@@ -310,9 +310,24 @@ function RelicModal({ relic, onClose }: { relic: Relic; onClose: () => void }) {
   );
 }
 
+// 다음 토픽들 — 데이터 준비 전까지 버튼만 노출 (rogue_6은 미래시 전용: CN 선행, 비공식 번역명)
+const UPCOMING_TOPICS: { id: string; name: string; future?: boolean }[] = [
+  { id: "rogue_2", name: "미즈키 & 카이룰라 아버" },
+  { id: "rogue_3", name: "탐험가의 은빛 서리 끝자락" },
+  { id: "rogue_4", name: "살카즈의 영겁 기담" },
+  { id: "rogue_5", name: "쉐이의 기이한 계원" },
+  { id: "rogue_6", name: "침몰자의 흑류수해", future: true },
+];
+
 // ── 메인 ───────────────────────────────────────────────────────────────────
-export default function RogueGuide() {
+export default function RogueGuide({ includeFuture }: { includeFuture?: boolean }) {
   const { t, locale } = useI18n();
+
+  // 다크 극장 테마 배경을 페이지 전체(100% 폭)에 칠한다 — 콘텐츠는 70%여도 배경은 풀블리드
+  useEffect(() => {
+    document.documentElement.classList.add("rg-theme");
+    return () => document.documentElement.classList.remove("rg-theme");
+  }, []);
   const [view, setView] = useState<View>("map");
   const [grade, setGrade] = useState(0); // -1 = EASY, 0~15
   const [stageOpen, setStageOpen] = useState<StagePair | null>(null);
@@ -413,7 +428,11 @@ export default function RogueGuide() {
             <h2 id="rg-title">{t("통합전략 가이드")}</h2>
             <p className="rg-topic-pick">
               <span className="rg-topic on">{data.name}</span>
-              <span className="rg-topic off">{t("다른 테마는 준비 중")}</span>
+              {UPCOMING_TOPICS.filter((tp) => !tp.future || includeFuture).map((tp) => (
+                <button key={tp.id} type="button" className="rg-topic off" disabled title={t("준비 중")}>
+                  {tp.name}{tp.future && <em className="rg-topic-future">{t("미래시")}</em>}
+                </button>
+              ))}
             </p>
             {locale !== "ko" && <p className="rg-disclaimer">{t("통합전략 데이터는 현재 한국어로만 제공됩니다.")}</p>}
             {data.line && <p className="rg-line">{data.line}</p>}

@@ -75,6 +75,17 @@ python3 scripts/build-rogue.py --icons    # 유물·도구 아이콘 언팩 (Uni
   클릭 가능한 모달 링크로 렌더. 새 조건 문안 추가 시 매칭 검증 스크립트로 미매핑 확인.
 - **난이도 탭**: 등급 행 클릭 → 상단 난이도 선택 연동.
 - 섹션 해시 딥링크: `#rg-map / #rg-enemy / #rg-archive / #rg-hallu / #rg-diff / #rg-ending`.
+- **난이도 슬라이더는 히어로 배너 안 우하단** (absolute, 반투명 패널 + 육각 등급 뱃지).
+- **우연한 만남 목록은 이름+층 뱃지만** (층 오름차순 정렬), 클릭 → EncounterModal.
+- **다크 배경은 페이지 100% 폭**: RogueGuide가 `html.rg-theme` 클래스를 토글하고
+  CSS가 body에 그라데이션을 칠한다 (.rg 자체 배경 금지 — 70%만 칠해짐).
+- **전역 레이아웃(전 탭 공통)**: 1400px 이상에서 본문 섹션만 `margin-inline: 15%`
+  (`main.site-main > :not(.site-header):not(footer)`), 헤더·푸터는 배경 100% 폭에
+  내부 padding-inline 15%로 정렬.
+- ⚠ **새 탭 추가 시 home.tsx `TAB_LABEL`에 반드시 항목 추가** — Record<Tab,string>이지만
+  빌드가 타입체크를 안 해 누락돼도 통과된다. 누락되면 햄버거 버튼의 현재 탭 라벨이 빈다.
+- 토픽 셀렉터: 미출시 테마는 disabled 버튼(준비 중), CN 선행(rogue_6)은
+  `includeFuture`(미래시 데이터 포함 토글) 켜졌을 때만 노출 + "미래시" 뱃지.
 
 ### 난이도 스탯 적용 (applyDiff — ruleDesc 근거 하드코딩)
 - g5+: 정예·리더 HP ×1.2
