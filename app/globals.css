@@ -5780,9 +5780,27 @@ html.rg-theme.rg6 body, html.rg-theme.rg6 main.site-main { background: linear-gr
 
 /* ── 전역 콘텐츠 폭 — 넓은 화면에서 좌우 15% 여백, 가운데 70%에 콘텐츠 (사용자 확정 2026-07-17) ── */
 @media (min-width: 1400px) {
-  /* 헤더·푸터(배경 100% 폭)는 제외하고, 본문 섹션만 좌우 15% 여백 */
-  main.site-main > :not(.site-header):not(footer) { margin-inline: 15%; }
+  /* 헤더·푸터(배경 100% 폭)와 position:fixed 오버레이(모달 백드롭·제안 버튼 —
+     여백이 남으면 백드롭 블러가 가운데 70%만 덮는다. 사용자 리포트 2026-07-18)는
+     제외하고, 본문 섹션만 좌우 15% 여백. 섹션별 자체 width/max-width(920~1600px)는
+     무효화해 모든 페이지가 정확히 가운데 70% 컬럼을 쓰게 한다 (사용자 확정 2026-07-18) */
+  main.site-main > :not(.site-header):not(footer):not(.modal-backdrop):not(.feedback-widget) {
+    margin-inline: 15%;
+    width: auto;
+    max-width: none;
+    min-width: 0;
+  }
+  /* 제안 버튼은 오른쪽 15% 여백 기둥의 가운데에 (사용자 확정 2026-07-18) */
+  .feedback-widget { right: calc(7.5% - 45px); }
 }
+
+/* 본문이 짧아도 푸터는 항상 화면 하단에 (사용자 확정 2026-07-18) */
+main.site-main {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+main.site-main > footer { margin-top: auto; }
 
 /* 헤더·푸터: 배경은 100% 폭, 내부 콘텐츠만 좌우 15% 여백에 맞춰 정렬 (사용자 확정 2026-07-17) */
 @media (min-width: 1400px) {
