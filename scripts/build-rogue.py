@@ -191,6 +191,32 @@ def build_topic(tid="rogue_1"):
                         os.path.join(zone_dir, f"{tid}_map_{z['num']}.webp")) for z in pend], max_px=900)
     for z in zones:
         z["img"] = os.path.exists(os.path.join(zone_dir, f"{tid}_map_{z['num']}.webp"))
+    # 홈 화면 키비주얼(히어로 배경) → public/rogue/kv<N>.webp. 인게임 KV는
+    # 좌/우 반쪽 2장(각 780×960)을 가로로 이어붙인 와이드 아트 — 폴더·파일명이
+    # 토픽마다 불규칙해 개별 매핑. 이미 있으면 스킵 (사용자 확정 아트 2026-07-18).
+    KV_SRC = {
+        "rogue_2": ("rogue_2_update/entrykeyvisuals/rogue_2_kv_1_2/rl2_home_kv12_bg1.png",
+                    "rogue_2_update/entrykeyvisuals/rogue_2_kv_1_2/rl2_home_kv12_bg2.png"),
+        "rogue_3": ("rogue_3_update/entrykeyvisuals/rogue_3_kv_1_2/rl3_home_kv_2_1.png",
+                    "rogue_3_update/entrykeyvisuals/rogue_3_kv_1_2/rl3_home_kv_2_2.png"),
+    }
+    kv_dest = os.path.join(REPO, "public", "rogue", f"kv{ronum}.webp")
+    if tid in KV_SRC and not os.path.exists(kv_dest):
+        import io
+        from PIL import Image
+        halves = []
+        for p in KV_SRC[tid]:
+            req = urllib.request.Request(f"{ASSETS}/ui/rogueliketopic/topics/{p}",
+                                         headers={"User-Agent": "Mozilla/5.0"})
+            halves.append(Image.open(io.BytesIO(urllib.request.urlopen(req, timeout=30).read())).convert("RGB"))
+        h = min(im.height for im in halves)
+        wide = Image.new("RGB", (sum(im.width for im in halves), h))
+        x = 0
+        for im in halves:
+            wide.paste(im, (x, 0)); x += im.width
+        if wide.width > 1280:
+            wide = wide.resize((1280, round(wide.height * 1280 / wide.width)), Image.LANCZOS)
+        wide.save(kv_dest, "WEBP", quality=88)
 
     # ── 스테이지 + 레벨 파일 (일반/긴급이 같은 levelId 공유 → 캐시) ──────────
     map_dir = os.path.join(REPO, "public", "rogue", "map")

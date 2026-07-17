@@ -4,7 +4,7 @@
 // 데이터는 scripts/build-rogue.py가 생성하는 app/data/rogue1.json / rogue6.json (클뜯 레포 원본).
 // rogue_6은 CN 데이터를 한국어화(rogue6-ko.json)한 것으로, 이름류는 중국어 원문(cn)을 병기한다.
 // 조우의 층별 출현 규칙·엔딩 선제조건은 클라 데이터에 없어 PRTS 기반 큐레이션(rogueN-curated.json)을 병합한다.
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import rogue1Data from "./data/rogue1.json";
 import { useI18n } from "./i18n";
 import { normSearch } from "./search";
@@ -472,6 +472,12 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   // 첫 렌더에서 URL의 ?topic= 을 읽어 시작 토픽 결정 (SSR에선 rogue_1)
   const [topic, setTopic] = useState(() => (typeof window === "undefined" ? "rogue_1" : topicFromUrl()));
   const [loaded, setLoaded] = useState<Record<string, RogueData>>({});
+  // 마운트 게이트 — 정적 프리렌더 HTML(항상 rogue_1)과 클라 첫 렌더가 어긋나면
+  // 하이드레이션 미스매치가 난다. 마운트 전엔 토픽 무관 로딩 셸만 렌더해 양쪽을
+  // 일치시키고, 마운트 후 곧바로 올바른 토픽을 그린다 (팬텀→사미 깜빡임도 방지).
+  // useSyncExternalStore: 서버/하이드레이션 스냅샷=false, 마운트 후 클라 스냅샷=true
+  // (effect 내 setState 없이 하이드레이션 안전하게 클라 마운트를 감지).
+  const mounted = useSyncExternalStore(() => () => {}, () => true, () => false);
   // 뒤로 가기 → 토픽 동기화
   useEffect(() => {
     const onPop = () => setTopic(topicFromUrl());
@@ -511,10 +517,9 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
 
   const switchTopic = (id: string) => {
     if (id === topic) return;
-    // 토픽을 URL에 반영 — 공유·새로고침 시에도 같은 테마로 진입
+    // 토픽을 URL에 반영 — 공유·새로고침 시에도 같은 테마로 진입 (팬텀도 ?topic=is1)
     const url = new URL(window.location.href);
-    if (id === "rogue_1") url.searchParams.delete("topic");
-    else url.searchParams.set("topic", slugOf(id));
+    url.searchParams.set("topic", slugOf(id));
     history.pushState(null, "", url.pathname + url.search + url.hash);
     setTopic(id);
     setView("map");
@@ -626,6 +631,15 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   // 최고 난이도는 토픽마다 다르다 (IS1/3/6=15, IS2/4/5=승천 18) — 데이터에서 읽는다.
   // switchTopic이 토픽 전환 시 grade를 0으로 리셋하므로 별도 클램프는 불필요.
   const maxGrade = useMemo(() => Math.max(15, ...data.difficulties.filter((d) => d.mode === "NORMAL").map((d) => d.grade)), [active]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 마운트 전(=SSR 프리렌더 + 클라 첫 렌더)엔 토픽 무관 로딩 셸만 — 하이드레이션 일치용
+  if (!mounted) {
+    return (
+      <section className="rg" aria-labelledby="rg-title">
+        <p className="rg-loading">{t("데이터를 불러오는 중...")}</p>
+      </section>
+    );
+  }
 
   return (
     <section className={`rg${topic === "rogue_1" ? "" : " rg" + topic.split("_")[1]}`} aria-labelledby="rg-title">
