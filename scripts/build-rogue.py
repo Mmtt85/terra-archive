@@ -515,6 +515,9 @@ def build_rogue6():
             "buff": z.get("buffDescription"), "hidden": bool(z.get("isHiddenZone")),
         })
     zones.sort(key=lambda z: (z["num"], z["variant"]))
+    # 내용이 본 존과 완전히 같은 변형 존(zone_4_1 등)은 중복이므로 제외
+    base_sig = {(z["num"]): (z["name"], z["desc"], z.get("buff")) for z in zones if not z["variant"]}
+    zones = [z for z in zones if not (z["variant"] and base_sig.get(z["num"]) == (z["name"], z["desc"], z.get("buff")))]
     zone_dir = os.path.join(REPO, "public", "rogue", "zone")
     download_webp([(f"{ASSETS}/ui/rogueliketopic/topics/rogue_6_update/levelbgpic/rogue_6_map_{z['num']}.png",
                     os.path.join(zone_dir, f"rogue_6_map_{z['num']}.webp")) for z in zones], max_px=900)

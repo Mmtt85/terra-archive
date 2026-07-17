@@ -5502,7 +5502,10 @@ html.rg-theme body, html.rg-theme main.site-main { background: linear-gradient(1
 /* rogue_6 침몰자의 흑류수해 — 심해 수림 스킨 (인게임 테마: 짙은 청록 + 시안 발광 + 금빛 스크립트) */
 html.rg-theme.rg6 body, html.rg-theme.rg6 main.site-main { background: linear-gradient(180deg,#060d0e,#0a1413 220px,#0b1512) }
 .rg.rg6 { --rgbg:#0a1413; --rgcard:#101d1a; --rgline:#1f3a34; --rgink:#d9e6df; --rgmut:#7e948c;
-  --rgcrim:#1fa08e; --rggold:#c9b27c }
+  --rgcrim:#1fa08e; --rggold:#c9b27c;
+  --rgdeep:#0c1614; --rgmodal:#0d1a17; --rgmodalline:#24544b; --rgsel:#14332d; --rgtext2:#aec4b9; --rgup:#5ee6d0; --rgupbg:#0e2a25 }
+.rg.rg6 .rg-modal-back { background: #030b0ad9 }
+.rg.rg6 .rg-modal-back.stack { background: #030b0ae6 }
 .rg.rg6 .rg-topic.on { box-shadow: 0 0 14px #1fa08e55 }
 .rg.rg6 .rg-diff-hex { background: #0a1210; color: #59dddc; border-color: #59dddc }
 .rg.rg6 .rg-diffbar { border-color: #1f4a44; background: #0a1413cc }
@@ -5540,6 +5543,7 @@ html.rg-theme.rg6 body, html.rg-theme.rg6 main.site-main { background: linear-gr
 .rg-map-zoom.zoom .rg-modal-map { transform: scale(2); transform-origin: top left; box-shadow: 0 18px 60px #000c }
 .rg-map-zoom .rg-modal-map { transition: transform .18s ease }
 .rg { --rgbg:#150a0e; --rgcard:#211218; --rgline:#3c2129; --rgink:#ead9c8; --rgmut:#9d8a86;
+  --rgdeep:#190d12; --rgmodal:#1c0f14; --rgmodalline:#5a2a35; --rgsel:#35202a; --rgtext2:#c8b4a6; --rgup:#ff7385; --rgupbg:#2b1016;
   --rgcrim:#c23b4e; --rggold:#c9a35c;
   padding: 34px clamp(22px, 5vw, 76px) 60px; color: var(--rgink) }
 
@@ -5558,7 +5562,7 @@ html.rg-theme.rg6 body, html.rg-theme.rg6 main.site-main { background: linear-gr
 .rg-topic.off.ready { color: var(--rgink); cursor: pointer }
 .rg-topic.off.ready:hover { border-color: var(--rgcrim); color: #fff }
 .rg-topic-future { font: 800 9.5px/1 monospace; font-style: normal; color: var(--rggold); border: 1px solid var(--rggold); padding: 2px 5px; border-radius: 999px; margin-left: 6px; vertical-align: 1px }
-.rg-line { margin: 0; font-size: 12.5px; line-height: 1.7; color: #c8b4a6; white-space: pre-line; text-shadow: 0 1px 8px #000c }
+.rg-line { margin: 0; font-size: 12.5px; line-height: 1.7; color: var(--rgtext2); white-space: pre-line; text-shadow: 0 1px 8px #000c }
 .rg-disclaimer { margin: 0 0 8px; font-size: 12px; color: var(--rggold) }
 
 /* 난이도 바 */
@@ -5594,8 +5598,8 @@ html.rg-theme.rg6 body, html.rg-theme.rg6 main.site-main { background: linear-gr
 .rg-zone-body { position: relative; padding: 2px 18px 16px }
 .rg-stage-hint { font: 500 10.5px/1 inherit; color: var(--rgmut); margin-left: 6px }
 .rg-modal-modes { display: flex; gap: 6px; margin: 0 0 12px }
-.rg-modal-modes button { border: 1px solid var(--rgline); background: #190d12; color: var(--rgink); padding: 7px 16px; font: 700 12.5px/1 inherit; cursor: pointer }
-.rg-modal-modes button.on { background: #35202a; border-color: var(--rggold); color: var(--rggold) }
+.rg-modal-modes button { border: 1px solid var(--rgline); background: var(--rgdeep); color: var(--rgink); padding: 7px 16px; font: 700 12.5px/1 inherit; cursor: pointer }
+.rg-modal-modes button.on { background: var(--rgsel); border-color: var(--rggold); color: var(--rggold) }
 .rg-modal-modes button.emg.on { background: var(--rgcrim); border-color: var(--rgcrim); color: #fff }
 .rg-zone-wide { grid-column: 1 / -1 }
 .rg-zone header { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; flex-wrap: wrap }
@@ -5604,7 +5608,7 @@ html.rg-theme.rg6 body, html.rg-theme.rg6 main.site-main { background: linear-gr
 .rg-zone h3 { margin: 0; font-size: 17px; letter-spacing: -0.3px; color: #f4e7d3; text-shadow: 0 1px 8px #000 }
 .rg-zone-time { font: 700 11px/1 monospace; color: var(--rggold) }
 .rg-zone-hidden { font: 800 10px/1 monospace; background: #c23b4e; color: #fff; padding: 3px 7px; border-radius: 999px }
-.rg-zone-desc { margin: 0 0 10px; font-size: 12.5px; line-height: 1.7; color: #c8b4a6; white-space: pre-line; text-shadow: 0 1px 6px #000c }
+.rg-zone-desc { margin: 0 0 10px; font-size: 12.5px; line-height: 1.7; color: var(--rgtext2); white-space: pre-line; text-shadow: 0 1px 6px #000c }
 .rg-stage-group { margin-top: 10px }
 .rg-stage-group h4 { margin: 0 0 6px; font-size: 12px; letter-spacing: 0.3px; color: var(--rgink) }
 .rg-stage-group h4 em { font-style: normal; color: var(--rgmut); font-family: monospace }
@@ -5613,7 +5617,7 @@ html.rg-theme.rg6 body, html.rg-theme.rg6 main.site-main { background: linear-gr
 
 /* 전투 노드 카드 (미니맵 썸네일) */
 .rg-stage-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px }
-.rg-stagecard { border: 1px solid var(--rgline); background: #190d12; color: var(--rgink); padding: 0 0 6px; cursor: pointer; font: inherit; transition: 0.12s; text-align: center; overflow: hidden }
+.rg-stagecard { border: 1px solid var(--rgline); background: var(--rgdeep); color: var(--rgink); padding: 0 0 6px; cursor: pointer; font: inherit; transition: 0.12s; text-align: center; overflow: hidden }
 .rg-stagecard:hover { border-color: var(--rggold); transform: translateY(-1px) }
 .rg-stagecard-map { display: block; width: 100%; aspect-ratio: 16/9; object-fit: fill; background: #140b0e; margin-bottom: 5px }
 .rg-stagecard-name { font: 700 11.5px/1.35 inherit; padding: 0 6px; display: block }
@@ -5624,18 +5628,18 @@ html.rg-theme.rg6 body, html.rg-theme.rg6 main.site-main { background: linear-gr
 
 /* 조우 — 이름만 나열, 클릭 → 모달 (층 오름차순 정렬) */
 .rg-enc-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 6px }
-.rg-enc-item { display: flex; align-items: center; gap: 8px; border: 1px solid var(--rgline); background: #190d12; color: var(--rgink); padding: 9px 11px; cursor: pointer; font: inherit; text-align: left; transition: 0.12s }
+.rg-enc-item { display: flex; align-items: center; gap: 8px; border: 1px solid var(--rgline); background: var(--rgdeep); color: var(--rgink); padding: 9px 11px; cursor: pointer; font: inherit; text-align: left; transition: 0.12s }
 .rg-enc-item:hover { border-color: var(--rggold) }
 .rg-enc-item .rg-enc-floors { margin-left: auto }
 
 /* 조우 */
 .rg-encounters { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 8px }
-.rg-enc { border: 1px solid var(--rgline); background: #190d12 }
+.rg-enc { border: 1px solid var(--rgline); background: var(--rgdeep) }
 .rg-enc summary { display: flex; align-items: center; gap: 9px; padding: 8px 11px 8px 8px; cursor: pointer; list-style: none }
 .rg-enc summary::-webkit-details-marker { display: none }
 .rg-enc-thumb { width: 52px; height: 34px; object-fit: cover; border: 1px solid var(--rgline); flex: none }
 .rg-enc-title { font-weight: 700; font-size: 13px; color: var(--rgink) }
-.rg-enc-floors { margin-left: auto; font: 800 10.5px/1 monospace; background: #241016; border: 1px solid #5a2a35; color: var(--rggold); padding: 3px 7px; border-radius: 999px; white-space: nowrap }
+.rg-enc-floors { margin-left: auto; font: 800 10.5px/1 monospace; background: var(--rgsel); border: 1px solid var(--rgmodalline); color: var(--rggold); padding: 3px 7px; border-radius: 999px; white-space: nowrap }
 .rg-enc[open] .rg-enc-thumb { display: none }
 .rg-enc-cg { display: block; width: calc(100% - 24px); margin: 0 12px 10px; border: 1px solid var(--rgline) }
 .rg-enc-cg.modal { width: 100%; margin: 0 0 10px }
@@ -5643,15 +5647,15 @@ html.rg-theme.rg6 body, html.rg-theme.rg6 main.site-main { background: linear-gr
 .rg-rmodal .rg-relic-usage { font-size: 13.5px }
 .rg-cond-node.relic { color: #d8b8f0 }
 .rg-diff-table tbody tr { cursor: pointer }
-.rg-diff-table tbody tr:hover td { background: #241016 }
-.rg-enc-desc { margin: 0; padding: 0 12px 8px; font-size: 12px; line-height: 1.7; color: #c8b4a6 }
-.rg-enc-note { margin: 0 12px 8px; padding: 7px 9px; font-size: 11.5px; line-height: 1.6; background: #241016; border-left: 3px solid var(--rggold); color: #dcc9a8 }
-.rg-enc-choices { margin: 0; padding: 0 12px 12px 28px; font-size: 12px; line-height: 1.7; color: #c8b4a6 }
+.rg-diff-table tbody tr:hover td { background: var(--rgsel) }
+.rg-enc-desc { margin: 0; padding: 0 12px 8px; font-size: 12px; line-height: 1.7; color: var(--rgtext2) }
+.rg-enc-note { margin: 0 12px 8px; padding: 7px 9px; font-size: 11.5px; line-height: 1.6; background: var(--rgsel); border-left: 3px solid var(--rggold); color: #dcc9a8 }
+.rg-enc-choices { margin: 0; padding: 0 12px 12px 28px; font-size: 12px; line-height: 1.7; color: var(--rgtext2) }
 .rg-enc-choices strong { color: var(--rgink) }
 
 /* 필터 바 */
 .rg-filterbar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 14px }
-.rg-filterbar input[type="search"] { border: 1px solid var(--rgline); background: #190d12; color: var(--rgink); padding: 7px 11px; font: 500 13px/1 inherit; min-width: 180px }
+.rg-filterbar input[type="search"] { border: 1px solid var(--rgline); background: var(--rgdeep); color: var(--rgink); padding: 7px 11px; font: 500 13px/1 inherit; min-width: 180px }
 .rg-filterbar input[type="search"]::placeholder { color: var(--rgmut) }
 .rg-filterbar button { border: 1px solid var(--rgline); background: var(--rgcard); color: var(--rgink); padding: 6px 12px; font: 700 12px/1 inherit; cursor: pointer }
 .rg-filterbar button.on { background: var(--rgcrim); color: #fff; border-color: var(--rgcrim) }
@@ -5663,25 +5667,25 @@ html.rg-theme.rg6 body, html.rg-theme.rg6 main.site-main { background: linear-gr
 .rg-enemy-card header { display: flex; align-items: center; gap: 8px; cursor: pointer; margin-bottom: 8px }
 .rg-enemy-card h4 { margin: 0; font-size: 14px; letter-spacing: -0.2px; color: #f4e7d3 }
 .rg-enemy-idx { margin-left: auto; font: 700 10.5px/1 monospace; color: var(--rgmut) }
-.rg-enemy-face { width: 46px; height: 46px; object-fit: contain; border: 1px solid var(--rgline); background: radial-gradient(circle at 50% 42%, #2c161e, #140a0d); border-radius: 3px; flex: none }
+.rg-enemy-face { width: 46px; height: 46px; object-fit: contain; border: 1px solid var(--rgline); background: radial-gradient(circle at 50% 42%, var(--rgsel), var(--rgdeep)); border-radius: 3px; flex: none }
 .rg-enemy-face.none { display: grid; place-items: center; color: var(--rgmut); font: 800 16px monospace }
 .rg-enemy-face.sm { width: 34px; height: 34px }
-.rg-rank { font: 800 10px/1 monospace; padding: 3px 6px; border-radius: 2px; background: #35202a; color: #c8b4a6 }
+.rg-rank { font: 800 10px/1 monospace; padding: 3px 6px; border-radius: 2px; background: var(--rgsel); color: var(--rgtext2) }
 .rg-rank.r-ELITE { background: #513a17; color: #eac36e }
 .rg-rank.r-BOSS { background: var(--rgcrim); color: #fff }
 .rg-stats { display: flex; flex-wrap: wrap; gap: 4px }
 .rg-stats.sub { margin-top: 6px }
-.rg-stat { font: 700 11px/1 monospace; border: 1px solid var(--rgline); background: #190d12; color: var(--rgink); padding: 4px 7px; border-radius: 2px; white-space: nowrap }
-.rg-stat.up { border-color: #c23b4e; color: #ff7385; background: #2b1016 }
+.rg-stat { font: 700 11px/1 monospace; border: 1px solid var(--rgline); background: var(--rgdeep); color: var(--rgink); padding: 4px 7px; border-radius: 2px; white-space: nowrap }
+.rg-stat.up { border-color: var(--rgcrim); color: var(--rgup); background: var(--rgupbg) }
 .rg-stat.g14 { border-color: #8a6a2a; color: #eac36e; background: #241a0c }
 .rg-enemy-more { margin-top: 9px; border-top: 1px dashed var(--rgline); padding-top: 9px }
-.rg-enemy-more p { margin: 0 0 6px; font-size: 12px; line-height: 1.65; color: #c8b4a6 }
+.rg-enemy-more p { margin: 0 0 6px; font-size: 12px; line-height: 1.65; color: var(--rgtext2) }
 .rg-enemy-more strong { color: var(--rgink) }
 .rg-enemy-desc { color: var(--rgmut) !important; font-style: italic }
 .rg-appear { margin-top: 8px }
 .rg-appear strong { display: block; font-size: 11px; margin-bottom: 5px; color: var(--rggold) }
 .rg-chips { display: flex; flex-wrap: wrap; gap: 5px }
-.rg-chip { border: 1px solid var(--rgline); background: #190d12; color: var(--rgink); padding: 4px 9px; font: 600 12px/1.3 inherit; cursor: pointer; border-radius: 3px; transition: 0.12s; text-align: left }
+.rg-chip { border: 1px solid var(--rgline); background: var(--rgdeep); color: var(--rgink); padding: 4px 9px; font: 600 12px/1.3 inherit; cursor: pointer; border-radius: 3px; transition: 0.12s; text-align: left }
 .rg-chip:hover { border-color: var(--rggold); color: var(--rggold) }
 .rg-chip.boss { border-color: var(--rggold); color: var(--rggold); font-weight: 800 }
 
@@ -5703,8 +5707,8 @@ html.rg-theme.rg6 body, html.rg-theme.rg6 main.site-main { background: linear-gr
 /* 난이도 */
 .rg-diff-view .rg-zone-desc { margin-bottom: 12px }
 .rg-diff-table { width: 100%; border-collapse: collapse; background: var(--rgcard); border: 1px solid var(--rgline) }
-.rg-diff-table th, .rg-diff-table td { border-bottom: 1px solid var(--rgline); padding: 9px 13px; text-align: left; font-size: 12.5px; line-height: 1.6; color: #c8b4a6 }
-.rg-diff-table th { font: 800 11px/1 monospace; letter-spacing: 1px; background: #190d12; color: var(--rggold) }
+.rg-diff-table th, .rg-diff-table td { border-bottom: 1px solid var(--rgline); padding: 9px 13px; text-align: left; font-size: 12.5px; line-height: 1.6; color: var(--rgtext2) }
+.rg-diff-table th { font: 800 11px/1 monospace; letter-spacing: 1px; background: var(--rgdeep); color: var(--rggold) }
 .rg-diff-table td:first-child { font: 800 13px/1 monospace; width: 64px }
 .rg-diff-table tr.on td { background: #2b1016; color: var(--rgink) }
 .rg-diff-table tr.on td:first-child { color: #fff; background: var(--rgcrim) }
@@ -5713,7 +5717,7 @@ html.rg-theme.rg6 body, html.rg-theme.rg6 main.site-main { background: linear-gr
 .rg-endings { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 14px }
 .rg-ending { border: 1px solid var(--rgline); background: var(--rgcard); padding: 16px 18px }
 .rg-ending h3 { margin: 0 0 8px; font-size: 16.5px; letter-spacing: -0.3px; border-left: 4px solid var(--rgcrim); padding-left: 10px; color: #f4e7d3 }
-.rg-ending-desc { margin: 0 0 10px; font-size: 12.5px; line-height: 1.75; color: #c8b4a6 }
+.rg-ending-desc { margin: 0 0 10px; font-size: 12.5px; line-height: 1.75; color: var(--rgtext2) }
 .rg-ending-cond { margin: 0 0 10px; padding-left: 20px; font-size: 12.5px; line-height: 1.8; color: var(--rgink) }
 .rg-ending-cond li { margin-bottom: 5px }
 .rg-ending-cond li::marker { color: var(--rggold); font-weight: 800 }
@@ -5723,10 +5727,10 @@ html.rg-theme.rg6 body, html.rg-theme.rg6 main.site-main { background: linear-gr
 .rg-modal-back { position: fixed; inset: 0; background: #0b0508d9; z-index: 80; display: grid; place-items: center; padding: 20px }
 .rg-modal-back.stack { z-index: 90; background: #0b0508e6 }
 .rg-enemy-face.lg { width: 64px; height: 64px }
-.rg-emodal-row { margin: 0 0 6px; font-size: 12.5px; color: #c8b4a6 }
+.rg-emodal-row { margin: 0 0 6px; font-size: 12.5px; color: var(--rgtext2) }
 .rg-emodal-row strong { color: var(--rggold); margin-right: 6px }
 .rg-emodal-desc { margin: 0 0 6px; font-size: 12px; font-style: italic; color: var(--rgmut) }
-.rg-emodal-ability { margin: 0 0 10px; font-size: 12.5px; line-height: 1.7; color: #c8b4a6 }
+.rg-emodal-ability { margin: 0 0 10px; font-size: 12.5px; line-height: 1.7; color: var(--rgtext2) }
 /* 스탯 컨텍스트 안내 — 어떤 배율이 반영된 수치인지 명시 (도감/노드 상세 불일치 방지) */
 .rg-ctx-note { margin: 0 0 6px; font-size: 11.5px; color: var(--rggold); opacity: .85 }
 .rg-emodal .rg-stats.sub { margin-top: 7px }
@@ -5735,30 +5739,30 @@ html.rg-theme.rg6 body, html.rg-theme.rg6 main.site-main { background: linear-gr
 .rg-relic header { align-items: center }
 .rg-cond-node { border: 0; background: 0 0; padding: 0; font: inherit; font-weight: 800; color: var(--rggold); cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px }
 .rg-cond-node:hover { color: #ffd98a }
-.rg-modal { background: #1c0f14; border: 1px solid #5a2a35; color: var(--rgink); max-width: 980px; width: 100%; max-height: 84vh; overflow-y: auto; padding: 20px 22px; box-shadow: 0 8px 48px #000c }
+.rg-modal { background: var(--rgmodal); border: 1px solid var(--rgmodalline); color: var(--rgink); max-width: 980px; width: 100%; max-height: 84vh; overflow-y: auto; padding: 20px 22px; box-shadow: 0 8px 48px #000c }
 .rg-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 10px }
 .rg-modal-head > div { display: flex; align-items: center; gap: 9px; flex-wrap: wrap }
 .rg-modal-head h3 { margin: 0; font-size: 18px; letter-spacing: -0.3px; color: #f4e7d3 }
 .rg-modal-zone { font: 800 11px/1 monospace; color: var(--rggold) }
-.rg-kind { font: 800 10px/1 monospace; padding: 4px 8px; border-radius: 2px; background: #35202a; color: #c8b4a6 }
+.rg-kind { font: 800 10px/1 monospace; padding: 4px 8px; border-radius: 2px; background: var(--rgsel); color: var(--rgtext2) }
 .rg-kind.k-emergency { background: var(--rgcrim); color: #fff }
 .rg-kind.k-boss { background: var(--rggold); color: #1a0d10 }
-.rg-modal-close { border: 1px solid var(--rgline); background: #190d12; color: var(--rgink); width: 30px; height: 30px; font-size: 17px; cursor: pointer; line-height: 1 }
+.rg-modal-close { border: 1px solid var(--rgline); background: var(--rgdeep); color: var(--rgink); width: 30px; height: 30px; font-size: 17px; cursor: pointer; line-height: 1 }
 .rg-modal-map { display: block; width: 100%; aspect-ratio: 16/9; object-fit: fill; border: 1px solid var(--rgline); margin: 0 0 10px }
 .rg-modal-cols { display: grid; grid-template-columns: 360px 1fr; gap: 16px; align-items: start }
 .rg-modal-left { min-width: 0 }
 @media (max-width: 860px) { .rg-modal-cols { grid-template-columns: 1fr } }
-.rg-modal-desc { margin: 0 0 8px; font-size: 12.5px; line-height: 1.7; color: #c8b4a6; white-space: pre-line }
+.rg-modal-desc { margin: 0 0 8px; font-size: 12.5px; line-height: 1.7; color: var(--rgtext2); white-space: pre-line }
 .rg-modal-elite { margin: 0 0 8px; padding: 8px 11px; background: #2b1016; border-left: 3px solid var(--rgcrim); font-size: 12px; line-height: 1.6; font-weight: 600; color: #f0b9c0 }
 .rg-modal-enemies { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 7px; margin-top: 0 }
-.rg-enemy-cell { display: flex; flex-direction: column; align-items: center; gap: 5px; border: 1px solid var(--rgline); background: #190d12; color: var(--rgink); padding: 9px 7px; cursor: pointer; text-align: center; font: inherit; transition: 0.12s }
+.rg-enemy-cell { display: flex; flex-direction: column; align-items: center; gap: 5px; border: 1px solid var(--rgline); background: var(--rgdeep); color: var(--rgink); padding: 9px 7px; cursor: pointer; text-align: center; font: inherit; transition: 0.12s }
 .rg-enemy-cell:hover { border-color: var(--rggold) }
 .rg-enemy-cell .rg-enemy-face { width: 52px; height: 52px }
 .rg-enemy-cell-head { display: flex; align-items: center; gap: 5px }
 .rg-enemy-cell .rg-enemy-name { font-size: 12px; line-height: 1.3 }
 .rg-enemy-cell .rg-stats { justify-content: center }
 @media (max-width: 720px) { .rg-modal-enemies { grid-template-columns: repeat(2, 1fr) } }
-.rg-enemy-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; border: 1px solid var(--rgline); background: #190d12; color: var(--rgink); padding: 7px 11px; cursor: pointer; text-align: left; font: inherit; transition: 0.12s }
+.rg-enemy-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; border: 1px solid var(--rgline); background: var(--rgdeep); color: var(--rgink); padding: 7px 11px; cursor: pointer; text-align: left; font: inherit; transition: 0.12s }
 .rg-enemy-row:hover { border-color: var(--rggold) }
 .rg-enemy-name { font-weight: 700; font-size: 13px }
 .rg-enemy-cnt { font: 800 11.5px/1 monospace; color: var(--rggold) }
