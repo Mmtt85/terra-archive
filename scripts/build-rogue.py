@@ -194,6 +194,8 @@ def build_topic(tid="rogue_1"):
     # 홈 화면 키비주얼(히어로 배경) → public/rogue/kv<N>.webp. 인게임 KV는
     # 좌/우 반쪽 2장(각 780×960)을 가로로 이어붙인 와이드 아트 — 폴더·파일명이
     # 토픽마다 불규칙해 개별 매핑. 이미 있으면 스킵 (사용자 확정 아트 2026-07-18).
+    # ⚠ rogue_3 좌측 반쪽엔 CN 제목이 박혀 있어 커밋본 kv3.webp는 하늘 그라데이션
+    # 보간으로 텍스트를 지운 가공본 — 삭제 후 재실행하면 텍스트가 되살아난다.
     KV_SRC = {
         "rogue_2": ("rogue_2_update/entrykeyvisuals/rogue_2_kv_1_2/rl2_home_kv12_bg1.png",
                     "rogue_2_update/entrykeyvisuals/rogue_2_kv_1_2/rl2_home_kv12_bg2.png"),
@@ -463,6 +465,19 @@ def build_topic(tid="rogue_1"):
             "bg": sc.get("background"), "choices": chs,
         })
     encounters.sort(key=lambda x: x["scene"])
+    # 같은 제목의 변형 씬은 하나로 병합 — 선택지는 제목+설명 기준 합집합
+    # (rogue_3 '전진하는 숲' 56종 등 목록 중복 방지, 사용자 리포트 2026-07-18)
+    merged, by_title = [], {}
+    for e in encounters:
+        m = by_title.get(e["title"])
+        if m is None:
+            by_title[e["title"]] = e
+            merged.append(e)
+            continue
+        m["desc"] = m["desc"] or e["desc"]
+        m["bg"] = m["bg"] or e["bg"]
+        m["choices"] = dedupe_choices(m["choices"] + e["choices"])
+    encounters = merged
     # 조우 배경 CG — avg/images/<bg>.png
     scene_dir = os.path.join(REPO, "public", "rogue", "scene")
     download_webp([(f"{ASSETS}/avg/images/{e['bg']}.png",

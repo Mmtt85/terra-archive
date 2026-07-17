@@ -512,6 +512,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   const [enemyQ, setEnemyQ] = useState("");
   const [enemyRank, setEnemyRank] = useState<string>("");
   const [relicQ, setRelicQ] = useState("");
+  const [mapQ, setMapQ] = useState(""); // 맵·노드 이름 검색 (작전·조우 전투·우연한 만남 전부)
   const [arcTab, setArcTab] = useState<"relic" | "capsule" | "tool" | "band" | "scrap" | "legacy" | "explore">("relic");
   const VIEWS = viewsFor(topic);
 
@@ -525,7 +526,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
     setView("map");
     setGrade(0);
     setZoneOpen(null); setStageOpen(null); setEnemyOpen(null); setEncOpen(null); setRelicOpen(null);
-    setEnemyQ(""); setEnemyRank(""); setRelicQ(""); setArcTab("relic");
+    setEnemyQ(""); setEnemyRank(""); setRelicQ(""); setMapQ(""); setArcTab("relic");
   };
 
   // 해시 딥링크: #rg-<view>
@@ -602,6 +603,17 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
     const q = normSearch(relicQ);
     return data.relics.filter((r) => !q || normSearch(r.name).includes(q) || (r.cn && normSearch(r.cn).includes(q)) || normSearch(r.usage ?? "").includes(q));
   }, [relicQ, active]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 맵 탭 이름 검색 — 전투 노드(작전·긴급·보스·조우 전투·특수·시련·추격전·거점전·외나무다리)
+  // + 우연한 만남(조우)을 전부 이름/중국어 원문으로 매칭
+  const mapHits = useMemo(() => {
+    const q = normSearch(mapQ);
+    if (!q) return null;
+    const nm = (name: string, cn?: string) => normSearch(name).includes(q) || (cn ? normSearch(cn).includes(q) : false);
+    const stages = data.stages.filter((s) => s.kind !== "emergency" && nm(s.name, s.cn));
+    const encs = data.encounters.filter((e) => nm(e.title, e.cn));
+    return { stages, encs };
+  }, [mapQ, active]); // eslint-disable-line react-hooks/exhaustive-deps
 
 
   // 엔딩 조건 문장 속 「이름」 참조를 전부 클릭 가능하게 — 스테이지·조우·유물·적 순으로 매칭
@@ -696,6 +708,48 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
 
       {view === "map" && (
         <div className="rg-map">
+          {/* 노드 이름 검색 — 작전·보스·조우 전투·특수·우연한 만남 전부 (사용자 요청 2026-07-18) */}
+          <div className="rg-filterbar rg-map-search">
+            <input type="search" value={mapQ} onChange={(e) => setMapQ(e.target.value)}
+              placeholder={t("노드 이름 검색 (작전·조우·우연한 만남)")} aria-label={t("노드 이름 검색 (작전·조우·우연한 만남)")} />
+            {mapHits && <span className="rg-count">{mapHits.stages.length + mapHits.encs.length}</span>}
+          </div>
+
+          {mapHits && (<>
+            {mapHits.stages.length === 0 && mapHits.encs.length === 0 && (
+              <p className="rg-zone-desc">{t("검색 결과가 없습니다.")}</p>
+            )}
+            {mapHits.stages.length > 0 && (
+              <div className="rg-stage-group rg-map-hits">
+                <h4>{t("전투 노드")} <em>{mapHits.stages.length}</em></h4>
+                <div className="rg-stage-cards">
+                  {mapHits.stages.map((s) => (
+                    <StageCard key={s.id} pair={pairOf(s)} onOpen={setStageOpen} boss={s.kind === "boss"} />
+                  ))}
+                </div>
+              </div>
+            )}
+            {mapHits.encs.length > 0 && (
+              <div className="rg-stage-group rg-map-hits">
+                <h4>{t("우연한 만남·기타 노드")} <em>{mapHits.encs.length}</em></h4>
+                <div className="rg-enc-list">
+                  {mapHits.encs.map((enc) => (
+                    <button key={enc.scene} type="button" className="rg-enc-item" onClick={() => setEncOpen(enc)}>
+                      {enc.bg
+                        ? <img className="rg-enc-thumb" src={`/rogue/scene/${enc.bg}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />
+                        : <span className="rg-enc-thumb none" aria-hidden />}
+                      <span className="rg-enc-txt">
+                        {enc.floors && <span className="rg-enc-floors">{enc.floors.join("·")}{t("층")}</span>}
+                        <span className="rg-enc-title"><Nm name={enc.title} cn={enc.cn} /></span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>)}
+
+          {!mapHits && (<>
           {/* 층 카드 — 가로 일렬, 클릭하면 층 상세 모달 (사용자 확정 2026-07) */}
           <div className="rg-zone-cards">
           {data.zones.map((z) => {
@@ -880,6 +934,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
               </div>
             </div>
           </details>
+          </>)}
         </div>
       )}
 

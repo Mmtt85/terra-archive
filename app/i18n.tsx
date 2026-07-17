@@ -869,6 +869,8 @@ const D: Record<string, Pair> = {
   "난이도(보밀등급) 4 이상에서만 나타나는 '주민' 거점 노드의 전투입니다. 격파하면 후한 보상과 함께 구역 내 떠돌이 '주민'이 모두 사라집니다.": ["Battles at 'Resident' stronghold nodes, which appear only at difficulty (Secrecy Level) 4+. Clearing one grants rich rewards and drives away all roaming 'Residents' in the area.", "難易度（保密等級）4以上でのみ出現する「住民」拠点ノードの戦闘です。撃破すると豊富な報酬とともに、区域内を徘徊する「住民」がすべて消えます。"],
   "행동력이 다 떨어지면 강제로 발생하는 전투입니다. 보스 층에서는 보스 특수판으로 대체됩니다.": ["Forced battles that trigger when you run out of action points. On boss floors they are replaced by special boss versions.", "行動力が尽きると強制的に発生する戦闘です。ボス階ではボス特殊版に置き換わります。"],
   "각 구역 끝에서 마주치는 강력한 적입니다.": ["Powerful foes encountered at the end of each zone.", "各エリアの終わりで対峙する強敵です。"],
+  "노드 이름 검색 (작전·조우·우연한 만남)": ["Search nodes by name (operations, encounters, events)", "ノード名検索（作戦・遭遇・思わぬ出会い）"],
+  "전투 노드": ["Combat nodes", "戦闘ノード"],
   "외나무다리": ["Duel", "一本橋"],
   "특수": ["Special", "特殊"],
   "시련·특수 전투": ["Trials & special battles", "試練・特殊戦闘"],
