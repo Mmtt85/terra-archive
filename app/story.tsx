@@ -19,7 +19,7 @@ import { normSearch } from "./search";
 const imageDims = imageDimsData as Record<string, [number, number]>;
 
 type LocText = { ko: string; en?: string; ja?: string };
-type StoryEvent = { id: string; name: LocText; start: string; episodes: number; thumb: string; thumbEn?: string; thumbJa?: string; unreleased?: boolean };
+type StoryEvent = { id: string; name: LocText; start: string; episodes: number; thumb: string; thumbEn?: string; thumbJa?: string; unreleased?: boolean; epNo?: number };
 type Block =
   | { t: "h"; x: string }
   | { t: "p"; x: string }
@@ -42,6 +42,28 @@ const data = storiesData as { updated: string; events: StoryEvent[] };
 const summaries = summariesData as Record<string, Summary>;
 const chronology = chronologyData as Chronology;
 
+// 메인스토리·로그라이크는 stories.json이 아니라 chronology.json 스캐폴드에만 있다.
+// 요약이 달린 항목은 이벤트처럼 열 수 있도록 합성 StoryEvent로 만들어 eventById에 병합한다.
+const CHRON_SYNTH: StoryEvent[] = chronology.entries
+  .filter((raw) => raw.kind !== "event" && raw.id && summaries[raw.id])
+  .map((raw) => {
+    const id = raw.id as string;
+    const epNo = /^main_\d+$/.test(id) ? Number(id.split("_")[1]) : undefined;
+    return {
+      id,
+      name: raw.title ?? { ko: id },
+      start: "",
+      episodes: 0,
+      thumb: `/story/${id}.webp`,
+      thumbEn: `/story/en/${id}.webp`,
+      thumbJa: `/story/ja/${id}.webp`,
+      epNo,
+    };
+  });
+const eventById = new Map<string, StoryEvent>(
+  [...data.events, ...CHRON_SYNTH].map((event) => [event.id, event]),
+);
+
 function locText(locale: Locale, text: LocText): string {
   return (locale === "ko" ? text.ko : text[locale]) ?? text.ko;
 }
@@ -50,7 +72,8 @@ function eventFromHash(): StoryEvent | null {
   const hash = decodeURIComponent(window.location.hash);
   if (!hash.startsWith("#story-")) return null;
   const id = hash.slice(7);
-  return data.events.find((event) => event.id === id && summaries[id]) ?? null;
+  const ev = eventById.get(id);
+  return ev && summaries[id] ? ev : null;
 }
 
 function blockText(block: Block): string {
@@ -170,7 +193,7 @@ function StoryDetail({ event, summary, onClose, onShowOperator }: {
         <header className="story-detail-head">
           <span className="section-no">AI STORY DIGEST</span>
           <h2>{locText(locale, event.name)}</h2>
-          <p className="story-meta">{event.start} · {t("에피소드 {n}개", { n: event.episodes })}</p>
+          <p className="story-meta">{event.epNo != null ? locText(locale, epLabel(event.epNo)) : `${event.start} · ${t("에피소드 {n}개", { n: event.episodes })}`}</p>
           <p className="story-tagline">{summary.tagline}</p>
           <p className="story-disclaimer">{t("이 요약은 AI가 게임 내 스토리 스크립트 전문을 읽고 쓴 2차 창작 요약입니다.")}</p>
           {locale !== "ko" && <p className="story-disclaimer">{t("요약 본문은 현재 한국어로만 제공됩니다.")}</p>}
@@ -258,7 +281,6 @@ function epLabel(n: number): LocText {
 }
 
 // chronology.json 항목 → 표시용 ChronItem (이벤트는 stories.json에서 이름/썸네일/출시월 병합)
-const eventById = new Map(data.events.map((e) => [e.id, e]));
 function resolveChron(): ChronItem[] {
   return chronology.entries.map((raw, i) => {
     if (raw.kind === "event" && raw.ref) {
@@ -278,6 +300,8 @@ function resolveChron(): ChronItem[] {
       key: raw.id ?? `x${i}`, kind: raw.kind,
       name: raw.title ?? { ko: raw.id ?? "?" },
       terraYear: raw.terraYear ?? null, arc: raw.arc ?? null, dateNote: raw.dateNote,
+      // 요약이 달린 메인스토리·로그라이크는 열 수 있게 eventId를 부여 (합성 이벤트와 매칭)
+      eventId: raw.id && summaries[raw.id] ? raw.id : undefined,
       epNo,
       ep: epNo != null ? epLabel(epNo) : undefined,
       // 메인: 한국판/글로벌/일본 타이틀카드. 로그라이크: 키 비주얼(로케일 공용).
@@ -604,7 +628,10 @@ function DigestView({ onOpen, includeFuture }: { onOpen: (event: StoryEvent) => 
     const thumb = ev
       ? ((locale === "ja" ? ev.thumbJa : locale === "en" ? ev.thumbEn : undefined) ?? ev.thumb)
       : ((locale === "ja" ? it.thumbJa : locale === "en" ? it.thumbEn : undefined) ?? it.thumb);
-    const meta = ev ? `${ev.start} · ${t("에피소드 {n}개", { n: ev.episodes })}`
+    // 메인스토리·로그라이크는 출시월 대신 에피소드 라벨(종류)을 메타로 쓴다
+    const meta = it.kind !== "event"
+      ? (it.ep ? locText(locale, it.ep) : t(KIND_KO[it.kind]))
+      : ev ? `${ev.start} · ${t("에피소드 {n}개", { n: ev.episodes })}`
       : it.ep ? locText(locale, it.ep) : t(KIND_KO[it.kind]);
     return (
       <article key={it.key} className={`story-card${ready ? "" : " pending"}`}>
