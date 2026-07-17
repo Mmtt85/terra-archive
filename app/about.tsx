@@ -23,6 +23,7 @@ const SHOTS: Partial<Record<Tab, ShotPair>> = {
   recruit: { d: "/about/recruit.webp", m: "/about/recruit-m.webp" },
   farm: { d: "/about/farm.webp", m: "/about/farm-m.webp" },
   story: { d: "/about/story.webp", m: "/about/story-m.webp" },
+  rogue: { d: "/about/rogue.webp", m: "/about/rogue-m.webp" },
 };
 
 // 데스크톱 스크린샷과 모바일 화면을 겹치지 않게 나란히 놓아 반응형 UI를 한눈에 보여준다.
@@ -59,7 +60,7 @@ const CONTENT: Record<Locale, Content> = {
     tagline: "명일방주(Arknights) 한국 서버 도우미 · 한국어 / English / 日本語",
     intro:
       "테라 아카이브는 명일방주 독타를 위한 비영리 팬 도구 모음입니다. 오퍼레이터 자료 조사부터 기반시설 편성, 공개모집, 재료 파밍·육성 계획, 스토리 요약까지 — 게임 데이터를 직접 파싱해 자동 파이프라인으로 항상 최신 상태를 유지합니다. 설치·로그인 없이 웹에서 바로 쓸 수 있습니다.",
-    featureLead: "다섯 가지 도구가 있습니다. 카드를 누르면 해당 기능으로 이동합니다.",
+    featureLead: "여섯 가지 도구가 있습니다. 카드를 누르면 해당 기능으로 이동합니다.",
     features: [
       {
         tab: "planner", icon: "⌂", name: "인프라 자동편성기",
@@ -108,6 +109,16 @@ const CONTENT: Record<Locale, Content> = {
           "테라 연대기 타임라인으로 이벤트 시간 순서를 한눈에 파악",
         ],
       },
+      {
+        tab: "rogue", icon: "❖", name: "통합전략 가이드",
+        summary: "통합전략(IS) 테마별로 층 구성·전투 노드·적 도감·유물·엔딩 조건을 난이도별로 정리합니다.",
+        bullets: [
+          "층별 노드 맵과 인게임 맵 미리보기, 등장 적·스폰 수·긴급 작전 배율까지 표시",
+          "적 도감은 난이도 등급을 바꾸면 스탯이 실시간으로 재계산",
+          "유물·음반·조우 이벤트·엔딩 해금 조건을 클릭 가능한 상호 링크로 연결",
+          "중국 서버 선행 테마(침몰자의 흑류수해)는 미래시 토글로 중국어 원문과 함께 미리 보기",
+        ],
+      },
     ],
     chronicleCap: "테라 연대기 — 이벤트·메인스토리·통합 전략을 테라력 연표로",
     future: {
@@ -133,7 +144,7 @@ const CONTENT: Record<Locale, Content> = {
     tagline: "An Arknights (KR-server) companion · 한국어 / English / 日本語",
     intro:
       "Terra Archive is a non-commercial fan toolkit for Arknights players (Doctors). From researching operators to planning your base, recruitment, farming and upgrade budgeting, and catching up on the story — it parses the game data directly and an automated pipeline keeps everything up to date. No install, no login; it runs right in the browser.",
-    featureLead: "Five tools in one. Tap a card to jump to that feature.",
+    featureLead: "Six tools in one. Tap a card to jump to that feature.",
     features: [
       {
         tab: "planner", icon: "⌂", name: "Base Auto-Planner",
@@ -182,6 +193,16 @@ const CONTENT: Record<Locale, Content> = {
           "A Terra chronology timeline lays out events in order at a glance",
         ],
       },
+      {
+        tab: "rogue", icon: "❖", name: "Integrated Strategies Guide",
+        summary: "Per-theme IS reference: floor layouts, battle nodes, an enemy dex, relics, and ending conditions — all difficulty-aware.",
+        bullets: [
+          "Node maps per floor with in-game map previews, enemy rosters, spawn counts, and emergency-op multipliers",
+          "The enemy dex recalculates stats live as you change the difficulty grade",
+          "Relics, records, encounter events, and ending unlock conditions are cross-linked and clickable",
+          "Preview the CN-first theme (沉沦者的黑流树海) with the future-data toggle, Chinese originals alongside",
+        ],
+      },
     ],
     chronicleCap: "Terra Chronicle — events, main story, and Integrated Strategies on a Terra-calendar timeline",
     future: {
@@ -207,7 +228,7 @@ const CONTENT: Record<Locale, Content> = {
     tagline: "アークナイツ（韓国サーバー基準）の補助ツール · 한국어 / English / 日本語",
     intro:
       "テラアーカイブは、アークナイツのプレイヤー（ドクター）のための非営利ファンツール集です。オペレーターの調査から基地編成、公開求人、素材周回・育成の計画、ストーリー要約まで — ゲームデータを直接解析し、自動パイプラインで常に最新の状態を保ちます。インストールもログインも不要、ブラウザですぐに使えます。",
-    featureLead: "5つのツールがあります。カードを押すとその機能へ移動します。",
+    featureLead: "6つのツールがあります。カードを押すとその機能へ移動します。",
     features: [
       {
         tab: "planner", icon: "⌂", name: "基地自動編成",
@@ -254,6 +275,16 @@ const CONTENT: Record<Locale, Content> = {
         bullets: [
           "ストーリースクリプト全文を読み込んだAI要約 — 忙しいドクターのためのあらすじ整理",
           "テラ年代記のタイムラインで、イベントの時系列を一目で把握",
+        ],
+      },
+      {
+        tab: "rogue", icon: "❖", name: "統合戦略ガイド",
+        summary: "統合戦略（IS）のテーマごとに、階層構成・戦闘ノード・敵図鑑・秘宝・エンディング条件を難易度別に整理します。",
+        bullets: [
+          "階層ごとのノードマップとゲーム内マッププレビュー、出現する敵・スポーン数・緊急作戦の倍率まで表示",
+          "敵図鑑は難易度等級を変えるとステータスをリアルタイムに再計算",
+          "秘宝・レコード・遭遇イベント・エンディング解放条件をクリック可能な相互リンクで接続",
+          "中国サーバー先行テーマ（沉沦者的黑流树海）は未実装トグルで中国語原文と併せて先取りチェック",
         ],
       },
     ],
