@@ -29,6 +29,14 @@ python3 scripts/build-rogue.py --icons    # 유물·도구 아이콘 언팩 (Uni
 `ro1_n_<층>_<i>`=작전 · `ro1_e_<층>_<i>`=긴급(같은 levelId 공유 — 룬만 추가) ·
 `ro1_b_<i>`=험난한 길(보스) · `ro1_ev_<i>`=조우 전투 · `ro1_t_<i>`=특수(심층 조사).
 
+### 긴급(FOUR_STAR) 룬 해석 — ⚠ 키가 레벨마다 다르다
+- `enemy_attribute_mul`/`add` — 전역 배율 (bb마다 스탯 하나)
+- `ebuff_attribute` — 전역 배율(bb에 스탯 여러 개). **bb에 `enemy` 셀렉터가 있으면
+  특정 적 한정 배율** (`emg.per`) — `#N` 폼 접미는 strip
+- `level_enemy_replace` — 긴급 시 적 교체 (`emg.replace` from→to). 교체 대상 적도
+  used_enemies에 등록해야 도감·모달에 뜬다
+- 이 셋을 모두 잡아야 긴급 36/36 전부 커버 (mul 키만 잡으면 16개가 빈다)
+
 ### 이미지 (public/rogue/)
 | 폴더 | 소스 | 비고 |
 |---|---|---|
