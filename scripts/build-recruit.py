@@ -45,6 +45,8 @@ def gender_of(cid):
     return None
 
 # recruit pool from recruitDetail: ★-count sections, names separated by " / "
+# KR recruitDetail 오기 보정 — 공채 상세문과 character_table의 표기가 다른 오퍼
+NAME_FIX = {"샤미르": "샤마르"}
 detail = gacha["recruitDetail"]
 byname = {c["name"]: cid for cid, c in chars.items() if cid.startswith("char_")}
 pool = []  # (cid, rarity)
@@ -54,7 +56,7 @@ for m in re.finditer(r"\n(★+)\n(.*?)(?=\n-{5,}|\Z)", detail, re.S):
     body = re.sub(r"<@rc\.eml>(.*?)</>", r"\1", m.group(2))
     for name in (n.strip() for n in body.replace("\n", " ").split("/")):
         if not name: continue
-        cid = byname.get(name)
+        cid = byname.get(NAME_FIX.get(name, name))
         if not cid:
             print(f"WARN: recruit name not matched: {name!r}", file=sys.stderr)
             continue
