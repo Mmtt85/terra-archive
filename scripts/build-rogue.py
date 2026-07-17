@@ -11,6 +11,10 @@
 #
 # 조우(우연한 만남)의 층별 출현 규칙과 엔딩 선제조건은 클라 테이블에 없어
 # scripts/rogue1-curated.json (PRTS 위키 기반 수작업 큐레이션)에서 병합한다.
+#
+# 유물·무대 도구 아이콘은 KR CDN 스프라이트 아틀라스에만 있어 별도 모드로 언팩한다:
+#   python3 scripts/build-rogue.py --icons    # UnityPy·lz4inv 필요 (pip3 install --user)
+#   → public/rogue/relic/<itemId>.webp 생성 후 기본 모드 재실행하면 img 플래그가 붙는다.
 import json, os, re, sys, urllib.request
 from concurrent.futures import ThreadPoolExecutor
 
@@ -282,6 +286,9 @@ def build_rogue1():
             "sort": arc.get("relicSortId", 9999), "sp": bool(arc.get("isSpRelic")),
         })
     relics.sort(key=lambda x: x["sort"])
+    relic_icon_dir = os.path.join(REPO, "public", "rogue", "relic")
+    for x in relics:
+        x["img"] = os.path.exists(os.path.join(relic_icon_dir, f"{x['id']}.webp"))
 
     capsules = []
     cap_order = (r["archiveComp"]["capsule"] or {}).get("capsule", {})
@@ -302,9 +309,11 @@ def build_rogue1():
     for c in capsules:
         c["img"] = os.path.exists(os.path.join(cap_dir, f"{c['id']}.webp"))
 
-    tools = [{"id": iid, "name": it["name"], "desc": it.get("description"), "usage": it.get("usage")}
+    tools = [{"id": iid, "name": it["name"], "desc": it.get("description"), "usage": it.get("usage"),
+              "img": os.path.exists(os.path.join(REPO, "public", "rogue", "relic", f"{iid}.webp"))}
              for iid, it in items.items() if it.get("type") == "ACTIVE_TOOL"]
-    bands = [{"id": iid, "name": it["name"], "desc": it.get("description"), "usage": it.get("usage")}
+    bands = [{"id": iid, "name": it["name"], "desc": it.get("description"), "usage": it.get("usage"),
+              "img": os.path.exists(os.path.join(REPO, "public", "rogue", "relic", f"{iid}.webp"))}
              for iid, it in items.items() if it.get("type") == "BAND"]
 
     # ── 환각(variation) + 융합(fusion) ────────────────────────────────────────
@@ -399,5 +408,47 @@ def build_rogue1():
           f"encounters={len(encounters)} → {kb}KB")
 
 
+def unpack_icons(topic="rogue_1"):
+    """KR CDN 스프라이트 아틀라스에서 유물·도구 아이콘 언팩 → public/rogue/relic/."""
+    import io, struct, zipfile
+    try:
+        import lz4inv, UnityPy
+        from UnityPy.enums.BundleFile import CompressionFlags
+        from UnityPy.helpers.CompressionHelper import DECOMPRESSION_MAP
+        DECOMPRESSION_MAP[CompressionFlags.LZHAM] = lz4inv.decompress_buffer
+    except ImportError:
+        sys.exit("pip3 install --user UnityPy lz4inv 후 다시 실행")
+    def fetch(url, binary=False):
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        raw = urllib.request.urlopen(req, timeout=120).read()
+        return raw if binary else json.loads(raw)
+    conf = fetch("https://ak-conf.arknights.kr/config/prod/official/network_config")
+    network = json.loads(conf["content"])
+    urls = network["configs"][network["funcVer"]]["network"]
+    ver = fetch(urls["hv"].replace("{0}", "Android"))
+    assets_url = f"{urls['hu']}/Android/assets/{ver['resVersion']}"
+    def fetch_dat(name):
+        dat = name.replace("/", "_").replace("#", "__").split(".")[0] + ".dat"
+        with zipfile.ZipFile(io.BytesIO(fetch(f"{assets_url}/{dat}", binary=True))) as z:
+            return z.read(z.filelist[0])
+    env = UnityPy.load(io.BytesIO(fetch_dat(f"spritepack/ui_roguelike_topic_item_h1_{topic}_0.ab")))
+    dest = os.path.join(REPO, "public", "rogue", "relic")
+    os.makedirs(dest, exist_ok=True)
+    from imgutil import save_webp as _sw  # noqa — 아래에서 PIL 경유 저장
+    count = 0
+    for obj in env.objects:
+        if obj.type.name != "Sprite":
+            continue
+        d = obj.read()
+        buf = io.BytesIO()
+        d.image.save(buf, "PNG")
+        save_webp(buf.getvalue(), os.path.join(dest, f"{d.m_Name}.webp"), photo=False, max_px=180)
+        count += 1
+    print(f"{topic} 아이콘 {count}장 언팩 (resVersion {ver['resVersion']}) → public/rogue/relic/")
+
+
 if __name__ == "__main__":
-    build_rogue1()
+    if len(sys.argv) > 1 and sys.argv[1] == "--icons":
+        unpack_icons(sys.argv[2] if len(sys.argv) > 2 else "rogue_1")
+    else:
+        build_rogue1()

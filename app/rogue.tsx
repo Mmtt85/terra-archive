@@ -14,9 +14,9 @@ type StageEnemy = { key: string; cnt: number };
 type Emg = { mul?: Record<string, number>; add?: Record<string, number> } | null;
 type Stage = { id: string; kind: string; zone: number | null; code: string | null; name: string; desc: string | null; eliteDesc: string | null; emg: Emg; map?: string | null; enemies: StageEnemy[] };
 type Enemy = { name: string; rank: string | null; index: string | null; attack: string | null; desc: string | null; ability: string | null; hp: number; atk: number; def: number; res: number; aspd: number; ms: number; weight: number; lifePoint: number; img?: string | null };
-type Relic = { id: string; name: string; desc: string | null; usage: string | null; obtain: string | null; order: string | null; group: number | null; sort: number; sp: boolean };
+type Relic = { id: string; name: string; desc: string | null; usage: string | null; obtain: string | null; order: string | null; group: number | null; sort: number; sp: boolean; img?: boolean };
 type Capsule = { id: string; name: string; en: string | null; desc: string | null; usage: string | null; img?: boolean };
-type Simple = { id: string; name: string; desc: string | null; usage: string | null };
+type Simple = { id: string; name: string; desc: string | null; usage: string | null; img?: boolean };
 type Variation = { id: string; name: string; func: string | null; desc: string | null; fusion: boolean };
 type Difficulty = { mode: string; grade: number; name: string; rule: string | null; score: number | null };
 type Ending = { id: string; name: string; desc: string | null; boss: string | null; priority: number; change: string | null; cond?: string[] };
@@ -155,14 +155,66 @@ const KIND_LABEL: Record<string, string> = {
 
 // 전투 노드 카드 — 인게임 맵 미리보기 + 이름 (클릭 → 상세, 일반/긴급은 모달 탭 전환)
 function StageCard({ pair, onOpen, boss }: { pair: StagePair; onOpen: (p: StagePair) => void; boss?: boolean }) {
-  const { t } = useI18n();
   const s = pair.n;
   return (
     <button type="button" className={`rg-stagecard${boss ? " boss" : ""}`} onClick={() => onOpen(pair)}>
       {s.map && <img className="rg-stagecard-map" src={`/rogue/map/${s.map}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
       <span className="rg-stagecard-name">{s.name}</span>
-      {pair.e && <span className="rg-stagecard-emg">{t("긴급")}</span>}
     </button>
+  );
+}
+
+// ── 적 상세 모달 — 도감 카드·스테이지 모달의 적 행에서 연다 (스테이지 모달 위에 스택) ──
+function EnemyModal({ ekey, grade, onClose, onOpenStage, appear }: {
+  ekey: string; grade: number; onClose: () => void;
+  onOpenStage: (s: Stage) => void; appear: Stage[];
+}) {
+  const { t } = useI18n();
+  const e = data.enemies[ekey];
+  useEffect(() => {
+    const onKey = (ev: KeyboardEvent) => { if (ev.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+  if (!e) return null;
+  return (
+    <div className="rg-modal-back stack" onClick={onClose} role="presentation">
+      <div className="rg-modal rg-emodal" role="dialog" aria-modal onClick={(ev) => ev.stopPropagation()}>
+        <header className="rg-modal-head">
+          <div>
+            {e.img ? <img className="rg-enemy-face lg" src={`/rogue/enemy/${e.img}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />
+              : <span className="rg-enemy-face lg none" aria-hidden>?</span>}
+            <span className={`rg-rank r-${e.rank ?? "NORMAL"}`}>{t(RANK_KO[e.rank ?? ""] ?? "일반")}</span>
+            <h3>{e.name}</h3>
+            {e.index && <span className="rg-modal-zone">{e.index}</span>}
+          </div>
+          <button type="button" className="rg-modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
+        </header>
+        {e.attack && <p className="rg-emodal-row"><strong>{t("공격 방식")}</strong> {e.attack}</p>}
+        {e.desc && <p className="rg-emodal-desc">{e.desc}</p>}
+        {e.ability && <p className="rg-emodal-ability">{e.ability.replace(/<[^>]+>/g, "")}</p>}
+        <StatRow e={e} grade={grade} ctx={{ emergencyOrBoss: false }} />
+        <div className="rg-stats sub">
+          <span className="rg-stat">{t("공속")} {e.aspd}</span>
+          <span className="rg-stat">{t("이속")} {e.ms}</span>
+          <span className="rg-stat">{t("무게")} {e.weight}</span>
+          <span className="rg-stat">{t("침투 피해")} {e.lifePoint}</span>
+        </div>
+        {appear.length > 0 && (
+          <div className="rg-appear">
+            <strong>{t("등장 노드")}</strong>
+            <div className="rg-chips">
+              {appear.map((s) => (
+                <button key={s.id} type="button" className={`rg-chip${s.kind === "boss" ? " boss" : ""}`}
+                  onClick={() => onOpenStage(s)}>
+                  {s.zone != null ? `${s.zone}F ` : ""}{s.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -237,7 +289,18 @@ export default function RogueGuide() {
 
   const gradeLabel = grade < 0 ? t("고성 관광 (쉬움)") : t("정식 수사 {n}", { n: grade });
 
-  const openEnemyFromStage = (key: string) => { setStageOpen(null); setEnemyOpen(key); goView("enemy"); setEnemyQ(data.enemies[key]?.name ?? ""); };
+  // 엔딩 조건 문장 속 「스테이지명」 을 클릭 가능한 노드 버튼으로 렌더
+  const stageByName = useMemo(() => new Map(data.stages.filter((s) => s.kind !== "emergency").map((s) => [s.name, s])), []);
+  const renderCond = (text: string) => {
+    const parts = text.split(/「([^」]+)」/g);
+    return parts.map((part, i) => {
+      if (i % 2 === 0) return part;
+      const s = stageByName.get(part);
+      return s
+        ? <button key={i} type="button" className="rg-cond-node" onClick={() => setStageOpen(pairOf(s))}>「{part}」</button>
+        : `「${part}」`;
+    });
+  };
 
   return (
     <section className="rg" aria-labelledby="rg-title">
@@ -280,8 +343,8 @@ export default function RogueGuide() {
             const zoneBosses = bossStages.filter((s) => s.zone === z.num);
             return (
               <details key={z.id} className={`rg-zone${z.hidden ? " hidden-zone" : ""}`}>
-                {z.img && <img className="rg-zone-bg" src={`/rogue/zone/rogue_1_map_${z.num}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
                 <summary className="rg-zone-sum">
+                  {z.img && <img className="rg-zone-bg" src={`/rogue/zone/rogue_1_map_${z.num}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
                   <span className="rg-zone-num">{z.hidden ? "?" : z.num}</span>
                   <h3>{z.name}</h3>
                   {z.time && <span className="rg-zone-time">{z.time}</span>}
@@ -373,48 +436,19 @@ export default function RogueGuide() {
             <span className="rg-count">{enemies.length}</span>
           </div>
           <div className="rg-enemy-grid">
-            {enemies.map(([key, e]) => {
-              const appear = enemyStages.get(key) ?? [];
-              const open = enemyOpen === key;
-              return (
-                <article key={key} className={`rg-enemy-card${open ? " open" : ""}`} id={`rg-en-${key}`}>
-                  <header onClick={() => setEnemyOpen(open ? null : key)}>
-                    {e.img ? <img className="rg-enemy-face" src={`/rogue/enemy/${e.img}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />
-                      : <span className="rg-enemy-face none" aria-hidden>?</span>}
-                    <span className={`rg-rank r-${e.rank ?? "NORMAL"}`}>{t(RANK_KO[e.rank ?? ""] ?? "일반")}</span>
-                    <h4>{e.name}</h4>
-                    {e.index && <span className="rg-enemy-idx">{e.index}</span>}
-                  </header>
-                  <StatRow e={e} grade={grade} ctx={{ emergencyOrBoss: false }} />
-                  {open && (
-                    <div className="rg-enemy-more">
-                      {e.attack && <p><strong>{t("공격 방식")}</strong> {e.attack}</p>}
-                      {e.desc && <p className="rg-enemy-desc">{e.desc}</p>}
-                      {e.ability && <p className="rg-enemy-ability">{e.ability.replace(/<[^>]+>/g, "")}</p>}
-                      <div className="rg-stats sub">
-                        <span className="rg-stat">{t("공속")} {e.aspd}</span>
-                        <span className="rg-stat">{t("이속")} {e.ms}</span>
-                        <span className="rg-stat">{t("무게")} {e.weight}</span>
-                        <span className="rg-stat">{t("침투 피해")} {e.lifePoint}</span>
-                      </div>
-                      {appear.length > 0 && (
-                        <div className="rg-appear">
-                          <strong>{t("등장 노드")}</strong>
-                          <div className="rg-chips">
-                            {appear.map((s) => (
-                              <button key={s.id} type="button" className={`rg-chip${s.kind === "boss" ? " boss" : ""}`}
-                                onClick={() => setStageOpen(pairOf(s))}>
-                                {s.zone != null ? `${s.zone}F ` : ""}{s.name}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </article>
-              );
-            })}
+            {enemies.map(([key, e]) => (
+              <button type="button" key={key} className="rg-enemy-card" id={`rg-en-${key}`}
+                onClick={() => setEnemyOpen(key)}>
+                <header>
+                  {e.img ? <img className="rg-enemy-face" src={`/rogue/enemy/${e.img}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />
+                    : <span className="rg-enemy-face none" aria-hidden>?</span>}
+                  <span className={`rg-rank r-${e.rank ?? "NORMAL"}`}>{t(RANK_KO[e.rank ?? ""] ?? "일반")}</span>
+                  <h4>{e.name}</h4>
+                  {e.index && <span className="rg-enemy-idx">{e.index}</span>}
+                </header>
+                <StatRow e={e} grade={grade} ctx={{ emergencyOrBoss: false }} />
+              </button>
+            ))}
           </div>
         </div>
       )}
@@ -438,6 +472,7 @@ export default function RogueGuide() {
               {relics.map((r) => (
                 <article key={r.id} className="rg-relic">
                   <header>
+                    {r.img && <img className="rg-relic-icon" src={`/rogue/relic/${r.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
                     {r.order && <span className="rg-relic-no">{r.order}</span>}
                     <h4>{r.name}</h4>
                   </header>
@@ -464,7 +499,10 @@ export default function RogueGuide() {
             <div className="rg-relic-grid">
               {data.tools.map((c) => (
                 <article key={c.id} className="rg-relic">
-                  <header><h4>{c.name}</h4></header>
+                  <header>
+                    {c.img && <img className="rg-relic-icon" src={`/rogue/relic/${c.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
+                    <h4>{c.name}</h4>
+                  </header>
                   {c.usage && <p className="rg-relic-usage">{c.usage}</p>}
                   {c.desc && <p className="rg-relic-desc">{c.desc}</p>}
                 </article>
@@ -475,7 +513,10 @@ export default function RogueGuide() {
             <div className="rg-relic-grid">
               {data.bands.map((c) => (
                 <article key={c.id} className="rg-relic">
-                  <header><h4>{c.name}</h4></header>
+                  <header>
+                    {c.img && <img className="rg-relic-icon" src={`/rogue/relic/${c.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
+                    <h4>{c.name}</h4>
+                  </header>
                   {c.usage && <p className="rg-relic-usage">{c.usage}</p>}
                   {c.desc && <p className="rg-relic-desc">{c.desc}</p>}
                 </article>
@@ -531,7 +572,7 @@ export default function RogueGuide() {
               {e.desc && <p className="rg-ending-desc">{e.desc}</p>}
               {e.cond && e.cond.length > 0 && (
                 <ol className="rg-ending-cond">
-                  {e.cond.map((c, i) => <li key={i}>{c}</li>)}
+                  {e.cond.map((c, i) => <li key={i}>{renderCond(c)}</li>)}
                 </ol>
               )}
               {e.change && <p className="rg-ending-change">“{e.change}”</p>}
@@ -542,7 +583,12 @@ export default function RogueGuide() {
 
       {stageOpen && (
         <StageModal key={stageOpen.n.id} pair={stageOpen} grade={grade} onClose={() => setStageOpen(null)}
-          onOpenEnemy={openEnemyFromStage} />
+          onOpenEnemy={setEnemyOpen} />
+      )}
+      {enemyOpen && (
+        <EnemyModal ekey={enemyOpen} grade={grade} onClose={() => setEnemyOpen(null)}
+          appear={enemyStages.get(enemyOpen) ?? []}
+          onOpenStage={(s) => { setEnemyOpen(null); setStageOpen(pairOf(s)); }} />
       )}
     </section>
   );
