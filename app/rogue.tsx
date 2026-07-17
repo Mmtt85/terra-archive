@@ -279,7 +279,7 @@ function EnemyModal({ ekey, grade, ctx, onClose, onOpenStage, appear }: {
               {appear.map((s) => (
                 <button key={s.id} type="button" className={`rg-chip${s.kind === "boss" ? " boss" : ""}`}
                   onClick={() => onOpenStage(s)}>
-                  {s.zone != null ? `${s.zone}F ` : ""}{s.name}
+                  {s.zone != null ? `${s.zone}F ` : ""}<Nm name={s.name} cn={s.cn} />
                 </button>
               ))}
             </div>
