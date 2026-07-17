@@ -1418,5 +1418,95 @@
   "ko": "전용 설계와 재료 개량을 거친 동력 출력 장치. 다양한 강화에 사용할 수 있다.",
   "en": "A power output device with dedicated design and improved materials. Used in many kinds of upgrades.",
   "ja": "専用設計と材料改良が施された動力出力装置。様々な強化に使用できる。"
+ },
+ "重装干员机械师，即日起纳入你的指挥序列。": {
+  "ko": "디펜더 오퍼레이터 메커니스트, 오늘부로 당신의 지휘 서열에 편입됩니다.",
+  "en": "Defender Operator Mechanist, joining your command roster effective today.",
+  "ja": "重装オペレーターのメカニスト、本日より指揮系統に編入されます。"
+ },
+ "结构性原理": {
+  "ko": "구조적 원리",
+  "en": "Structural Principle",
+  "ja": "構造的原理"
+ },
+ "可以使用一个持续30秒的结构性原理，拥有独立的再部署时间": {
+  "ko": "30초 동안 지속되는 '구조적 원리' 1기를 사용할 수 있으며, 독립적인 재배치 시간을 가짐",
+  "en": "Can use 1 Structural Principle that lasts 30 seconds, with an independent redeployment time",
+  "ja": "30秒間持続する「構造的原理」を1体使用可能。独立した再配置時間を持つ"
+ },
+ "生命方程": {
+  "ko": "생명 방정식",
+  "en": "Equation of Life",
+  "ja": "生命方程式"
+ },
+ "自身和结构性原理部署时获得最大生命40%（+10%）的屏障；来自自身的屏障可以抵挡超额的伤害": {
+  "ko": "자신과 '구조적 원리'는 배치 시 최대 HP 40%(+10%)의 보호막 획득. 자신이 부여한 보호막은 초과 대미지를 막아냄",
+  "en": "Self and Structural Principle gain a barrier equal to 40% (+10%) of Max HP when deployed; barriers from this unit block excess damage",
+  "ja": "自身と「構造的原理」は配置時、最大HPの40%（+10%）のバリアを獲得。自身のバリアは超過ダメージを防ぐ"
+ },
+ "聚类分析": {
+  "ko": "군집 분석",
+  "en": "Cluster Analysis",
+  "ja": "クラスター分析"
+ },
+ "攻击间隔增大，攻击变为五连击的群体攻击，每次造成攻击力155%的范围物理伤害 攻击装有3发弹药，打完后结束（可随时停止技能）": {
+  "ko": "공격 딜레이 증가, 공격이 5연격 범위 공격으로 변경되어 타격마다 공격력의 155%에 해당하는 범위 물리 대미지를 입힘 스킬 발동 시 3발의 탄약이 장전되며, 탄약 소진 시 스킬 종료(수동 종료 가능)",
+  "en": "Attack interval increases; attacks become a 5-hit AoE attack, each hit dealing 155% ATK as AoE Physical damage. Loads 3 rounds of ammo; the skill ends when depleted (can be manually deactivated)",
+  "ja": "攻撃間隔が増大し、攻撃が5連撃の範囲攻撃に変化。1撃ごとに攻撃力の155%の範囲物理ダメージを与える 発動時に弾薬を3発装填し、撃ち尽くすと終了（任意で停止可能）"
+ },
+ "协防术式": {
+  "ko": "협동 방어 술식",
+  "en": "Cooperative Defense Formula",
+  "ja": "協防術式"
+ },
+ "攻击力+150%，自身和结构性原理立刻获得最大生命10%的屏障，屏障被摧毁时对周围敌人造成攻击力200%的法术伤害和3秒的战栗，并消耗1发弹药再次获得屏障 攻击装有8发弹药，打完后结束（可随时停止技能）": {
+  "ko": "공격력 +150%, 자신과 '구조적 원리'는 즉시 최대 HP 10%의 보호막 획득. 보호막이 파괴되면 주변 적에게 공격력의 200%에 해당하는 마법 대미지와 3초의 전율 효과를 입히고, 탄약 1발을 소모해 보호막을 다시 획득 스킬 발동 시 8발의 탄약이 장전되며, 탄약 소진 시 스킬 종료(수동 종료 가능)",
+  "en": "ATK +150%; self and Structural Principle immediately gain a barrier equal to 10% of Max HP. When a barrier is destroyed, deals 200% ATK as Arts damage to nearby enemies, inflicts Tremble for 3 seconds, and consumes 1 round of ammo to regain the barrier. Loads 8 rounds of ammo; the skill ends when depleted (can be manually deactivated)",
+  "ja": "攻撃力+150%。自身と「構造的原理」は直ちに最大HP10%のバリアを獲得。バリアが破壊されると周囲の敵に攻撃力の200%の術ダメージと3秒間の戦慄を与え、弾薬を1発消費してバリアを再獲得 発動時に弾薬を8発装填し、撃ち尽くすと終了（任意で停止可能）"
+ },
+ "工程学十字星": {
+  "ko": "공학 십자성",
+  "en": "Engineering Cross-Star",
+  "ja": "工学十字星"
+ },
+ "攻击力+280%，攻击间隔大幅增大，攻击变为对十字范围内所有敌人造成攻击力260%的法术伤害，可攻击结构性原理阻挡的目标 结构性原理向前方冲锋，碰到敌人或高台时对范围内所有敌人造成机械师攻击力300%的物理伤害并停下，周围的敌人获得逐渐衰减的50%的虚弱效果": {
+  "ko": "공격력 +280%, 공격 딜레이 대폭 증가, 공격이 십자 범위 내 모든 적에게 공격력의 260%에 해당하는 마법 대미지를 입히도록 변경되며, '구조적 원리'가 저지 중인 목표도 공격 가능 '구조적 원리'는 전방으로 돌진해, 적이나 높은 지형에 부딪히면 범위 내 모든 적에게 메커니스트 공격력의 300%에 해당하는 물리 대미지를 입히고 정지하며, 주변 적은 점차 감소하는 50%의 쇠약 효과를 받음",
+  "en": "ATK +280%; attack interval greatly increases; attacks deal 260% ATK as Arts damage to all enemies within a cross-shaped area, and can target enemies blocked by the Structural Principle. The Structural Principle charges forward; upon hitting an enemy or elevated terrain, it deals Physical damage equal to 300% of Mechanist's ATK to all enemies in range and stops; nearby enemies suffer a gradually decaying 50% Fragile effect",
+  "ja": "攻撃力+280%。攻撃間隔が大幅に増大し、攻撃が十字範囲内のすべての敵に攻撃力の260%の術ダメージを与えるものに変化。「構造的原理」がブロック中の目標も攻撃可能 「構造的原理」は前方に突進し、敵または高台にぶつかると範囲内のすべての敵にメカニストの攻撃力の300%の物理ダメージを与えて停止。周囲の敵は徐々に減衰する50%の虚弱効果を受ける"
+ },
+ "机械师特勤证章": {
+  "ko": "메커니스트 특무 휘장",
+  "en": "Mechanist's Special Duty Insignia",
+  "ja": "メカニスト特務記章"
+ },
+ "在【沉沦者的黑流树海】中，攻击被自身或召唤物阻挡的敌人时攻击力提升至150%": {
+  "ko": "[침몰자의 흑류수해]에서, 자신 또는 소환물이 저지 중인 적을 공격할 때 공격력이 150%까지 상승",
+  "en": "In [Integrated Strategies: 沉沦者的黑流树海], ATK increases to 150% when attacking enemies blocked by this unit or its summons",
+  "ja": "【沉沦者的黑流树海】では、自身または召喚ユニットがブロック中の敵を攻撃する際、攻撃力が150%まで上昇"
+ },
+ "可以使用一个持续30秒的结构性原理，拥有独立的再部署时间；在【沉沦者的黑流树海】中，结构性原理的持续时间无限": {
+  "ko": "30초 동안 지속되는 '구조적 원리' 1기를 사용할 수 있으며, 독립적인 재배치 시간을 가짐. [침몰자의 흑류수해]에서는 '구조적 원리'의 지속 시간이 무제한",
+  "en": "Can use 1 Structural Principle that lasts 30 seconds, with an independent redeployment time; in [Integrated Strategies: 沉沦者的黑流树海], the Structural Principle's duration becomes unlimited",
+  "ja": "30秒間持続する「構造的原理」を1体使用可能。独立した再配置時間を持つ。【沉沦者的黑流树海】では「構造的原理」の持続時間が無制限"
+ },
+ "持续时间无限": {
+  "ko": "지속 시간 무제한",
+  "en": "Unlimited duration",
+  "ja": "持続時間無制限"
+ },
+ "可以使用一个持续30秒的结构性原理，拥有独立的再部署时间；在【沉沦者的黑流树海】中，结构性原理的持续时间无限，5秒内未受到伤害后每秒获得4%最大生命的屏障（上限为最大生命的20%）": {
+  "ko": "30초 동안 지속되는 '구조적 원리' 1기를 사용할 수 있으며, 독립적인 재배치 시간을 가짐. [침몰자의 흑류수해]에서는 '구조적 원리'의 지속 시간이 무제한이 되며, 5초 동안 대미지를 받지 않으면 초당 최대 HP 4%의 보호막 획득(최대 HP의 20%까지)",
+  "en": "Can use 1 Structural Principle that lasts 30 seconds, with an independent redeployment time; in [Integrated Strategies: 沉沦者的黑流树海], its duration becomes unlimited, and after taking no damage for 5 seconds it gains a barrier equal to 4% of Max HP per second (up to 20% of Max HP)",
+  "ja": "30秒間持続する「構造的原理」を1体使用可能。独立した再配置時間を持つ。【沉沦者的黑流树海】では持続時間が無制限となり、5秒間ダメージを受けなかった場合、毎秒最大HPの4%のバリアを獲得（上限は最大HPの20%）"
+ },
+ "“我睡过了”": {
+  "ko": "'늦잠 잤어요'",
+  "en": "'I Overslept'",
+  "ja": "「寝過ごした」"
+ },
+ "进驻制造站时，若单次工作时长达到12小时，生产力+10%": {
+  "ko": "제조소에 배치 시, 1회 근무 시간이 12시간에 도달하면 생산력 +10%",
+  "en": "When assigned to a Factory, if a single work shift reaches 12 hours, productivity +10%",
+  "ja": "製造所配置時、1回の勤務時間が12時間に達すると、生産力+10%"
  }
 }

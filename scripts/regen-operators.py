@@ -277,6 +277,7 @@ NEW_ACCENTS = {
     "char_4207_branch": "#8f7a4e", "char_4208_wintim": "#6c95ab", "char_4211_snhunt": "#5d87a0",
     "char_4212_nasti": "#7d6f95", "char_4213_skybx": "#5a8bc0", "char_4214_cairn": "#6e8a75",
     "char_616_pithst": "#7f7f89", "char_617_sharp2": "#a0654e",
+    "char_4230_mcnist": "#5f8a8a",
 }
 
 # curated display overrides from the deployed prototype (baked into data now)
@@ -367,6 +368,7 @@ FUTURE_ALIASES = {
     "char_1048_orchd2": ["타마미츠네 오키드", "오키드", "몬헌"],
     "char_1049_catap2": ["캐터펄트", "몬헌"],
     "char_2027_wang": ["왕"],
+    "char_4230_mcnist": ["메커니스트", "기계사"],
 }
 # ── 미실장 오퍼 한국어화: KR·CN 양쪽에 다 있는 오퍼로 CN→KR 공통 어휘 사전을 만든다 ──
 # 출신지·종족·전투 태그는 양 서버 공통 어휘(용문·용·컬럼비아·광역 등)라, 두 서버에 모두
