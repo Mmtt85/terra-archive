@@ -610,7 +610,9 @@ function DigestView({ onOpen, includeFuture }: { onOpen: (event: StoryEvent) => 
       let k: string, label: string, color: string | undefined, sort: number;
       if (group === "theme") {
         k = it.arc ?? "__none"; label = it.arc ? arcNameOf(locale, it.arc) : t("테마 미분류");
-        color = it.arc ? arcColor(it.arc) : undefined; sort = it.arc ? 0 : 1;
+        color = it.arc ? arcColor(it.arc) : undefined;
+        // 테마 그룹은 arcs 배열(=나무위키 테마) 순서대로, 미분류는 맨 끝
+        sort = it.arc ? chronology.arcs.findIndex((a) => a.id === it.arc) : 999;
       } else {
         k = it.kind; label = t(KIND_KO[it.kind]); sort = ["event", "main", "roguelike"].indexOf(it.kind);
       }
