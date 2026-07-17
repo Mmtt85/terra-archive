@@ -744,6 +744,9 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
                   .sort((a, b) => (a.floors?.[0] ?? 99) - (b.floors?.[0] ?? 99) || (a.floors?.length ?? 9) - (b.floors?.length ?? 9) || a.title.localeCompare(b.title, "ko"))
                   .map((enc) => (
                     <button key={enc.scene} type="button" className="rg-enc-item" onClick={() => setEncOpen(enc)}>
+                      {enc.bg
+                        ? <img className="rg-enc-thumb" src={`/rogue/scene/${enc.bg}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />
+                        : <span className="rg-enc-thumb none" aria-hidden />}
                       <span className="rg-enc-title"><Nm name={enc.title} cn={enc.cn} /></span>
                       {enc.floors && <span className="rg-enc-floors">{enc.floors.join("·")}{t("층")}</span>}
                     </button>
