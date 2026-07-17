@@ -280,24 +280,12 @@ button {
 }
 
 /* 진행중 게임 이벤트 — 헤더 중앙 배지 + 팝오버 */
+/* 방송 버튼 오른쪽에 그대로 흐름 배치한다. (절대 중앙배치는 방송 버튼·토글과 겹쳐
+   레이아웃이 깨지고 스켈레톤 예약도 무력화되어 제거 — 사용자 확정 2026-07-17) */
 .event-group {
   position: relative;
   display: inline-flex;
   margin-left: 8px;
-}
-/* 좌(브랜드·방송)·우(토글·메뉴) 클러스터와 겹치지 않는 폭에서만 절대 중앙 배치 */
-@media (min-width: 1181px) {
-  .event-group {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    margin-left: 0;
-  }
-  .event-group .event-menu {
-    left: 50%;
-    transform: translateX(-50%);
-  }
 }
 .event-trigger {
   display: inline-flex;
@@ -349,7 +337,6 @@ button {
   display: block;
   width: 153px; /* 배너 1.5배 확대 (사용자 요청 2026-07) */
   overflow: hidden;
-  border: 1px solid var(--line);
 }
 .event-trigger-thumb img {
   display: block;
