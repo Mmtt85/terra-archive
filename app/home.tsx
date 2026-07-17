@@ -325,9 +325,16 @@ function BroadcastBadges() {
   // 나머지는 팝오버 목록에. 로그인·출석·기원류 잔이벤트는 sortRunning에서 제외한다
   // (대표 이벤트만 노출 — 사용자 확정 2026-07-17).
   const running = sortRunning(gameEvents, now);
-  const headline = running[0];
+  // 진행 예정 이벤트(아직 시작 전, 3주 내 시작 — 워커가 함께 실어줌)도 드롭다운에 노출한다
+  // (사용자 요청 2026-07-17). 로그인·출석류 잔이벤트는 동일하게 제외, 시작 임박순 정렬.
+  const upcoming = gameEvents
+    .filter((event) => Date.parse(event.start) > now && !MINOR_EVENT_TYPES.has(event.type ?? ""))
+    .sort((a, b) => Date.parse(a.start) - Date.parse(b.start));
+  const headline = running[0] ?? upcoming[0]; // 진행중이 없으면 가장 가까운 예정을 대표로
+  const headlineUpcoming = running.length === 0 && upcoming.length > 0;
   const evName = (event: GameEvent): string => eventName(locale, event);
   const dday = (event: GameEvent): number => eventDday(event, now);
+  const startDday = (event: GameEvent): number => Math.max(0, Math.ceil((Date.parse(event.start) - now) / DAY));
   // 드롭다운: "2026년 7월 16일" 연·월·일 / 배지: "7월 16일" 월·일 (사용자 요청 2026-07)
   const md = (iso: string): string =>
     new Intl.DateTimeFormat(DT_LOCALE[locale], { timeZone: "Asia/Seoul", year: "numeric", month: "long", day: "numeric" }).format(new Date(iso));
@@ -338,44 +345,72 @@ function BroadcastBadges() {
   const headlineThumb = headline ? evThumb(headline) : undefined;
   const eventBadge = headline && (
     <div className="event-group" ref={evRef}>
-      {/* 대표 이벤트는 배너째로 버튼에 — 헤더 정가운데, 라벨·기간 포함 (사용자 요청 2026-07).
-          클릭하면 나머지 이벤트 드롭다운. */}
+      {/* 대표 이벤트는 배너째로 버튼에 — 라벨·기간 포함 (사용자 요청 2026-07).
+          클릭하면 나머지 진행중·예정 이벤트 드롭다운. */}
       <button type="button" className={`event-trigger${headlineThumb ? " has-banner" : ""}`} aria-expanded={evOpen}
-        onClick={() => setEvOpen((o) => !o)} title={t("진행중인 이벤트 보기")}>
+        onClick={() => setEvOpen((o) => !o)} title={t("진행중·예정 이벤트 보기")}>
         {headlineThumb
           ? <span className="event-trigger-thumb"><img src={headlineThumb} alt="" /></span>
           : <span className="event-mark" aria-hidden>✦</span>}
         <span className="event-trigger-main">
-          <small className="event-kicker">{t("현재 진행중 이벤트")}</small>
+          <small className="event-kicker">{headlineUpcoming ? t("진행 예정 이벤트") : t("현재 진행중 이벤트")}</small>
           <span className="event-name">{evName(headline)}</span>
-          <span className="event-dates">{mdLong(headline.start)} ~ {mdLong(headline.end)} · D-{dday(headline)}</span>
+          <span className="event-dates">
+            {headlineUpcoming
+              ? <>{t("{date} 시작", { date: mdLong(headline.start) })} · D-{startDday(headline)}</>
+              : <>{mdLong(headline.start)} ~ {mdLong(headline.end)} · D-{dday(headline)}</>}
+          </span>
         </span>
         <span className="event-caret" aria-hidden>▾</span>
       </button>
       {evOpen && (
-        <div className="event-menu" role="dialog" aria-label={t("진행중 이벤트")}>
-          <h3>{t("진행중 이벤트")}</h3>
-          <ul>
-            {running.map((event) => {
-              // 대표 배너는 버튼에 이미 보이므로 드롭다운에서는 중복 표시하지 않는다
-              const thumb = event.id === headline.id ? undefined : evThumb(event);
-              const body = (
-                <>
-                  {thumb && <span className="event-banner"><img src={thumb} alt="" loading="lazy" /></span>}
-                  <span className="event-row-name">{evName(event)}</span>
-                  <small>{md(event.start)} ~ {md(event.end)} · D-{dday(event)}</small>
-                </>
-              );
-              // 링크는 공식 카페 이벤트 공지로 (사용자 요청 2026-07 — 스토리 요약 아님)
-              return (
-                <li key={event.id}>
-                  {event.url
-                    ? <a href={event.url} target="_blank" rel="noopener noreferrer" title={t("공식 카페 공지 보기")}>{body}</a>
-                    : <span className="event-row-plain">{body}</span>}
-                </li>
-              );
-            })}
-          </ul>
+        <div className="event-menu" role="dialog" aria-label={t("진행중·예정 이벤트")}>
+          {running.length > 0 && <>
+            <h3>{t("진행중 이벤트")}</h3>
+            <ul>
+              {running.map((event) => {
+                // 대표 배너는 버튼에 이미 보이므로 드롭다운에서는 중복 표시하지 않는다
+                const thumb = event.id === headline.id ? undefined : evThumb(event);
+                const body = (
+                  <>
+                    {thumb && <span className="event-banner"><img src={thumb} alt="" loading="lazy" /></span>}
+                    <span className="event-row-name">{evName(event)}</span>
+                    <small>{md(event.start)} ~ {md(event.end)} · D-{dday(event)}</small>
+                  </>
+                );
+                // 링크는 공식 카페 이벤트 공지로 (사용자 요청 2026-07 — 스토리 요약 아님)
+                return (
+                  <li key={event.id}>
+                    {event.url
+                      ? <a href={event.url} target="_blank" rel="noopener noreferrer" title={t("공식 카페 공지 보기")}>{body}</a>
+                      : <span className="event-row-plain">{body}</span>}
+                  </li>
+                );
+              })}
+            </ul>
+          </>}
+          {upcoming.length > 0 && <>
+            <h3 className="event-menu-upcoming">{t("진행 예정")}</h3>
+            <ul>
+              {upcoming.map((event) => {
+                const thumb = event.id === headline.id ? undefined : evThumb(event);
+                const body = (
+                  <>
+                    {thumb && <span className="event-banner"><img src={thumb} alt="" loading="lazy" /></span>}
+                    <span className="event-row-name">{evName(event)}</span>
+                    <small>{md(event.start)} ~ {md(event.end)} · {t("시작 D-{n}", { n: startDday(event) })}</small>
+                  </>
+                );
+                return (
+                  <li key={event.id}>
+                    {event.url
+                      ? <a href={event.url} target="_blank" rel="noopener noreferrer" title={t("공식 카페 공지 보기")}>{body}</a>
+                      : <span className="event-row-plain">{body}</span>}
+                  </li>
+                );
+              })}
+            </ul>
+          </>}
         </div>
       )}
     </div>

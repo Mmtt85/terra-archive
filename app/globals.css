@@ -332,7 +332,9 @@ button {
 /* 대표 이벤트 배너가 버튼 안에 통째로 들어가는 형태 */
 .event-trigger.has-banner {
   padding: 4px 12px 4px 4px;
+  border: none; /* 배너를 감싸는 프레임 제거 (사용자 요청 2026-07-17) */
 }
+.event-trigger.has-banner:hover { border: none; }
 .event-trigger-thumb {
   display: block;
   width: 153px; /* 배너 1.5배 확대 (사용자 요청 2026-07) */
@@ -371,6 +373,12 @@ button {
   color: var(--muted);
   text-transform: uppercase;
 }
+/* 진행 예정 섹션 헤더 — 진행중 목록과 구분되게 위 여백 + 점선 구분 (사용자 요청 2026-07-17) */
+.event-menu h3.event-menu-upcoming {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
 .event-menu ul {
   list-style: none;
   margin: 0;
@@ -406,7 +414,6 @@ button {
 .event-menu .event-banner {
   display: block;
   overflow: hidden;
-  border: 1px solid var(--line);
 }
 .event-menu .event-banner img {
   display: block;
