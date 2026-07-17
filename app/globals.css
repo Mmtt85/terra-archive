@@ -5499,6 +5499,33 @@ footer p {
    팔레트: 배경 #150a0e(암적), 카드 #211218, 라인 #3c2129, 잉크 #ead9c8(아이보리),
    크림슨 #c23b4e, 골드 #c9a35c (테마 키비주얼의 금박 타이틀 톤) */
 html.rg-theme body, html.rg-theme main.site-main { background: linear-gradient(180deg,#120810,#150a0e 220px,#170b0f) }
+/* rogue_6 침몰자의 흑류수해 — 심해 수림 스킨 (인게임 테마: 짙은 청록 + 시안 발광 + 금빛 스크립트) */
+html.rg-theme.rg6 body, html.rg-theme.rg6 main.site-main { background: linear-gradient(180deg,#060d0e,#0a1413 220px,#0b1512) }
+.rg.rg6 { --rgbg:#0a1413; --rgcard:#101d1a; --rgline:#1f3a34; --rgink:#d9e6df; --rgmut:#7e948c;
+  --rgcrim:#1fa08e; --rggold:#c9b27c }
+.rg.rg6 .rg-topic.on { box-shadow: 0 0 14px #1fa08e55 }
+.rg.rg6 .rg-diff-hex { background: #0a1210; color: #59dddc; border-color: #59dddc }
+.rg.rg6 .rg-diffbar { border-color: #1f4a44; background: #0a1413cc }
+/* 중국어 원문 병기 (CN 선행 토픽) */
+.rg-cn { font-size: 11px; font-weight: 400; font-style: normal; color: var(--rgmut); margin-left: 6px; letter-spacing: .2px }
+.rg-stagecard-name .rg-cn, .rg-enemy-name .rg-cn { display: block; margin: 2px 0 0; font-size: 10.5px }
+.rg-enc-title .rg-cn { margin-left: 6px }
+/* 환경 뷰 (실토피아·유토피아) */
+.rg-env-h { margin: 26px 0 6px; font-size: 16px; color: var(--rggold) }
+.rg-env-h:first-child { margin-top: 0 }
+.rg-wlv { font: 800 10px/1 monospace; font-style: normal; color: #59dddc; border: 1px solid #2a5a55; padding: 1px 5px; border-radius: 999px; margin-right: 4px }
+.rg-wlv.lv-b { color: #e6c86a; border-color: #6a5a2a }
+.rg-wlv.lv-c { color: #f08a7a; border-color: #6a342a }
+.rg-scrap-group { margin: 0 0 22px }
+.rg-scrap-type { margin: 0 0 10px; font-size: 14.5px; color: var(--rggold) }
+.rg-scrap-type em { font-style: normal; color: var(--rgmut); margin-left: 6px; font-size: 12px }
+.rg-scrap-hint { display: block; font-weight: 400; font-size: 11.5px; color: var(--rgmut); margin-top: 3px }
+.rg-loading { padding: 40px 0; text-align: center; color: var(--rgmut) }
+/* 전투맵 미리보기 확대 토글 — 클릭 시 2배 (레이아웃 밀지 않게 transform, 우측 열 위로 겹침) */
+.rg-map-zoom { display: block; width: 100%; padding: 0; border: 0; background: 0 0; cursor: zoom-in }
+.rg-map-zoom.zoom { cursor: zoom-out; position: relative; z-index: 6 }
+.rg-map-zoom.zoom .rg-modal-map { transform: scale(2); transform-origin: top left; box-shadow: 0 18px 60px #000c }
+.rg-map-zoom .rg-modal-map { transition: transform .18s ease }
 .rg { --rgbg:#150a0e; --rgcard:#211218; --rgline:#3c2129; --rgink:#ead9c8; --rgmut:#9d8a86;
   --rgcrim:#c23b4e; --rggold:#c9a35c;
   padding: 34px clamp(22px, 5vw, 76px) 60px; color: var(--rgink) }
@@ -5515,6 +5542,8 @@ html.rg-theme body, html.rg-theme main.site-main { background: linear-gradient(1
 .rg-topic { font: 700 12.5px/1.2 inherit; padding: 5px 12px; border: 1px solid var(--rgline); border-radius: 999px }
 .rg-topic.on { background: var(--rgcrim); color: #fff; border-color: var(--rgcrim); box-shadow: 0 0 14px #c23b4e55 }
 .rg-topic.off { color: var(--rgmut); background: 0 0; cursor: default; font: 700 12.5px/1.2 inherit }
+.rg-topic.off.ready { color: var(--rgink); cursor: pointer }
+.rg-topic.off.ready:hover { border-color: var(--rgcrim); color: #fff }
 .rg-topic-future { font: 800 9.5px/1 monospace; font-style: normal; color: var(--rggold); border: 1px solid var(--rggold); padding: 2px 5px; border-radius: 999px; margin-left: 6px; vertical-align: 1px }
 .rg-line { margin: 0; font-size: 12.5px; line-height: 1.7; color: #c8b4a6; white-space: pre-line; text-shadow: 0 1px 8px #000c }
 .rg-disclaimer { margin: 0 0 8px; font-size: 12px; color: var(--rggold) }
@@ -5526,7 +5555,7 @@ html.rg-theme body, html.rg-theme main.site-main { background: linear-gradient(1
 .rg-diffbar-label { font: 800 11px/1 monospace; letter-spacing: 1px; color: var(--rggold) }
 .rg-diff-chip { border: 1px solid var(--rgline); background: 0 0; color: var(--rgink); padding: 4px 10px; font: 700 12px/1 inherit; cursor: pointer; border-radius: 999px }
 .rg-diff-chip.on { background: var(--rggold); color: #1a0d10; border-color: var(--rggold) }
-.rg-diffbar input[type="range"] { flex: 1 1 160px; accent-color: #c23b4e; min-width: 120px }
+.rg-diffbar input[type="range"] { flex: 1 1 160px; accent-color: var(--rgcrim); min-width: 120px }
 .rg-diff-cur { font: 800 12.5px/1.2 inherit; color: var(--rgmut); min-width: 96px }
 .rg-diff-cur.on { color: var(--rgcrim) }
 
