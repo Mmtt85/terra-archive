@@ -133,12 +133,14 @@ function StageModal({ pair, grade, onClose, onOpenEnemy }: {
             const e = data.enemies[se.key];
             if (!e) return null;
             return (
-              <button type="button" key={se.key} className="rg-enemy-row" onClick={() => onOpenEnemy(se.key)}>
-                {e.img ? <img className="rg-enemy-face sm" src={`/rogue/enemy/${e.img}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />
-                  : <span className="rg-enemy-face sm none" aria-hidden>?</span>}
-                <span className={`rg-rank r-${e.rank ?? "NORMAL"}`}>{t(RANK_KO[e.rank ?? ""] ?? "일반")}</span>
+              <button type="button" key={se.key} className="rg-enemy-cell" onClick={() => onOpenEnemy(se.key)}>
+                {e.img ? <img className="rg-enemy-face" src={`/rogue/enemy/${e.img}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />
+                  : <span className="rg-enemy-face none" aria-hidden>?</span>}
+                <span className="rg-enemy-cell-head">
+                  <span className={`rg-rank r-${e.rank ?? "NORMAL"}`}>{t(RANK_KO[e.rank ?? ""] ?? "일반")}</span>
+                  {se.cnt > 0 && <span className="rg-enemy-cnt">×{se.cnt}</span>}
+                </span>
                 <span className="rg-enemy-name">{e.name}</span>
-                {se.cnt > 0 && <span className="rg-enemy-cnt">×{se.cnt}</span>}
                 <StatRow e={e} grade={grade} ctx={ctx} />
               </button>
             );
