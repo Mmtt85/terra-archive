@@ -5568,7 +5568,7 @@ footer p {
 .rg-stage-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 7px }
 .rg-stagecard { border: 1px solid var(--rgline); background: #190d12; color: var(--rgink); padding: 0 0 6px; cursor: pointer; font: inherit; transition: 0.12s; text-align: center; overflow: hidden }
 .rg-stagecard:hover { border-color: var(--rggold); transform: translateY(-1px) }
-.rg-stagecard-map { display: block; width: 100%; aspect-ratio: 16/10; object-fit: cover; background: #140b0e; margin-bottom: 5px }
+.rg-stagecard-map { display: block; width: 100%; aspect-ratio: 16/8; object-fit: cover; background: #140b0e; margin-bottom: 5px }
 .rg-stagecard-name { font: 700 11.5px/1.35 inherit; padding: 0 6px; display: block }
 .rg-stagecard.emg { border-color: #6e2f3c }
 .rg-stagecard.emg .rg-stagecard-name { color: #e0596c }
@@ -5689,7 +5689,7 @@ footer p {
 .rg-kind.k-emergency { background: var(--rgcrim); color: #fff }
 .rg-kind.k-boss { background: var(--rggold); color: #1a0d10 }
 .rg-modal-close { border: 1px solid var(--rgline); background: #190d12; color: var(--rgink); width: 30px; height: 30px; font-size: 17px; cursor: pointer; line-height: 1 }
-.rg-modal-map { display: block; width: min(440px, 100%); aspect-ratio: 16/10; object-fit: cover; border: 1px solid var(--rgline); margin: 0 0 10px }
+.rg-modal-map { display: block; width: min(440px, 100%); aspect-ratio: 16/8; object-fit: cover; border: 1px solid var(--rgline); margin: 0 0 10px }
 .rg-modal-desc { margin: 0 0 8px; font-size: 12.5px; line-height: 1.7; color: #c8b4a6; white-space: pre-line }
 .rg-modal-elite { margin: 0 0 8px; padding: 8px 11px; background: #2b1016; border-left: 3px solid var(--rgcrim); font-size: 12px; line-height: 1.6; font-weight: 600; color: #f0b9c0 }
 .rg-modal-enemies { display: flex; flex-direction: column; gap: 6px; margin-top: 12px }
