@@ -98,7 +98,6 @@ function StageModal({ pair, grade, onClose, onOpenEnemy }: {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
-  useEffect(() => { setMode("n"); }, [pair]);
   const stage = mode === "e" && pair.e ? pair.e : pair.n;
   const isEmg = stage.kind === "emergency";
   const isBoss = stage.kind === "boss";
@@ -542,7 +541,7 @@ export default function RogueGuide() {
       )}
 
       {stageOpen && (
-        <StageModal pair={stageOpen} grade={grade} onClose={() => setStageOpen(null)}
+        <StageModal key={stageOpen.n.id} pair={stageOpen} grade={grade} onClose={() => setStageOpen(null)}
           onOpenEnemy={openEnemyFromStage} />
       )}
     </section>
