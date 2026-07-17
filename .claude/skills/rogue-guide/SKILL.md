@@ -103,9 +103,15 @@ python3 scripts/build-rogue.py --icons rogue_6  # 아이콘 언팩 (UnityPy·lz4
   **EncounterModal은 2열**: 좌측 CG(.rg-modal-cols.enc — 좌열 468px), 우측 설명·비고·선택지.
 - **다크 배경은 페이지 100% 폭**: RogueGuide가 `html.rg-theme` 클래스를 토글하고
   CSS가 body에 그라데이션을 칠한다 (.rg 자체 배경 금지 — 70%만 칠해짐).
-- **전역 레이아웃(전 탭 공통)**: 1400px 이상에서 본문 섹션만 `margin-inline: 15%`
-  (`main.site-main > :not(.site-header):not(footer)`), 헤더·푸터는 배경 100% 폭에
-  내부 padding-inline 15%로 정렬.
+- **전역 레이아웃(전 탭 공통, 2026-07-18 확정)**: 1400px 이상에서 본문 직계 섹션에
+  `margin-inline: 15%` + **width:auto/max-width:none 강제**(섹션별 자체 폭 920~1600px
+  무효화 — 전 페이지가 정확히 가운데 70% 컬럼). 셀렉터는
+  `main.site-main > :not(.site-header):not(footer):not(.modal-backdrop):not(.feedback-widget)`
+  — **fixed 오버레이(.modal-backdrop 등)를 :not으로 함께 제외해야 한다**(margin이 남으면
+  fixed inset:0 백드롭 블러가 가운데 70%만 덮는다. 별도 예외 규칙은 :not 체인 특이도에
+  져서 안 먹음). 헤더·푸터는 배경 100% 폭에 내부 padding-inline 15%로 정렬. 푸터는
+  main이 flex 컬럼(min-height 100dvh) + footer margin-top:auto로 항상 화면 하단.
+  제안 버튼은 오른쪽 15% 기둥 가운데(right: calc(7.5% - 45px)).
 - ⚠ **새 탭 추가 시 home.tsx `TAB_LABEL`에 반드시 항목 추가** — Record<Tab,string>이지만
   빌드가 타입체크를 안 해 누락돼도 통과된다. 누락되면 햄버거 버튼의 현재 탭 라벨이 빈다.
 - 토픽 셀렉터: 미출시 테마는 disabled 버튼(준비 중), CN 선행(rogue_6)은
