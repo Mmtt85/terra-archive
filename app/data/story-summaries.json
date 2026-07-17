@@ -5,7 +5,6 @@
       {
         "name": "첸",
         "desc": "사라진 외삼촌 웨이 옌우를 쫓아 수도 백조에 잠입한 전 용문근위국 총경 · 오퍼레이터 첸 더 던스트릭",
-        "img": "/story/char/avg_1050_chen3_1.webp",
         "alias": [
           "첸 훼이지에",
           "진휘결",
@@ -16,7 +15,6 @@
       {
         "name": "왕",
         "desc": "쉐이의 부서진 의식에서 태어난 열둘 중 둘째. 천 년째 같은 바둑을 두는 국수(國手) · 오퍼레이터 왕",
-        "img": "/story/char/avg_2027_wang_1.webp",
         "alias": [
           "바둑꾼"
         ],
@@ -25,13 +23,11 @@
       {
         "name": "좌락",
         "desc": "염국 사세대의 지촉인. 계원에서 가져온 증표에 얽혀버린 성실한 청년 · 오퍼레이터 좌락",
-        "img": "/story/char/avg_4121_zuole_1.webp",
         "op": "char_4121_zuole"
       },
       {
         "name": "총웨",
         "desc": "열둘의 맏이. 옥문에서 무예를 가르치는 무학 종사, 모든 걸 기억하고 담아두는 사람 · 오퍼레이터 총웨",
-        "img": "/story/char/avg_2024_chyue_1.webp",
         "alias": [
           "숴"
         ],
@@ -39,37 +35,31 @@
       },
       {
         "name": "쥔",
-        "desc": "열둘 중 심판을 맡은 악사. 가장 공정하고 사심 없는 사람 (오퍼 미출시)",
-        "img": "/story/char/avg_npc_2126_1.webp"
+        "desc": "열둘 중 심판을 맡은 악사. 가장 공정하고 사심 없는 사람 (오퍼 미출시)"
       },
       {
         "name": "링",
         "desc": "열둘의 첫째 언니. 술과 시를 사랑하는 시인 · 오퍼레이터 링",
-        "img": "/story/char/avg_2023_ling_1.webp",
         "op": "char_2023_ling"
       },
       {
         "name": "니엔",
         "desc": "열둘의 아홉째. 폭죽과 영화를 사랑하는 흥 넘치는 대장장이 · 오퍼레이터 니엔",
-        "img": "/story/char/avgnew_2014_nian_1.webp",
         "op": "char_2014_nian"
       },
       {
         "name": "슈",
         "desc": "열둘의 여섯째. 앞일을 조용히 내다보는 사람 · 오퍼레이터 슈",
-        "img": "/story/char/avg_2025_shu_1.webp",
         "op": "char_2025_shu"
       },
       {
         "name": "시",
         "desc": "열둘 중 그림을 담당하는 잠꾸러기 · 오퍼레이터 시",
-        "img": "/story/char/avgnew_2015_dusk_1.webp",
         "op": "char_2015_dusk"
       },
       {
         "name": "위",
         "desc": "열둘의 막내. '위미각'을 지키는 요리사 · 오퍼레이터 위",
-        "img": "/story/char/avg_2026_yu_1.webp",
         "op": "char_2026_yu"
       }
     ],
@@ -581,7 +571,6 @@
       {
         "name": "티티",
         "desc": "사르곤 사절단 대사 · 박물관 관장 · 뱃멀미",
-        "img": "/story/char/avg_4056_titi_1.webp",
         "alias": [
           "메제티케티"
         ],
@@ -594,55 +583,45 @@
       {
         "name": "크산토스",
         "desc": "델피 운하의 뱃사공 · 전직 유격대원 · 오퍼레이터 바르카리스",
-        "img": "/story/char/avg_4166_varkis_1.webp",
         "op": "char_4166_varkis"
       },
       {
         "name": "팔라스",
         "desc": "신전 재건 발의자 · 애주가",
-        "img": "/story/char/avgnew_482_pallas_1.webp",
         "op": "char_485_pallas"
       },
       {
         "name": "카산드라",
-        "desc": "엔디미온 신전의 해몽 제사장",
-        "img": "/story/char/avg_npc_2068_1.webp"
+        "desc": "엔디미온 신전의 해몽 제사장"
       },
       {
         "name": "리디아",
-        "desc": "아테누스 시정감독관 · 수완가",
-        "img": "/story/char/avg_npc_2067_1.webp"
+        "desc": "아테누스 시정감독관 · 수완가"
       },
       {
         "name": "레나",
         "desc": "로도스 아일랜드 의사 · 리디아의 언니 · 오퍼레이터 퍼퓨머 더 디스틸트",
-        "img": "/story/char/avg_1022_flwr2_1.webp",
         "op": "char_1022_flwr2"
       },
       {
         "name": "헤카데모스",
-        "desc": "시정감독관 서기관 · 정시 퇴근의 화신",
-        "img": "/story/char/avg_npc_2070_1.webp"
+        "desc": "시정감독관 서기관 · 정시 퇴근의 화신"
       },
       {
         "name": "리케이온",
-        "desc": "크산토스의 제자 · 배는 못 몲",
-        "img": "/story/char/avg_npc_2069_1.webp"
+        "desc": "크산토스의 제자 · 배는 못 몲"
       },
       {
         "name": "베누이",
-        "desc": "사절단 부대사 · 명언 제조기",
-        "img": "/story/char/avg_npc_2077_1.webp"
+        "desc": "사절단 부대사 · 명언 제조기"
       },
       {
         "name": "페리안드로스",
-        "desc": "코리니아의 장사꾼 제사장",
-        "img": "/story/char/avg_npc_2078_1.webp"
+        "desc": "코리니아의 장사꾼 제사장"
       },
       {
         "name": "시니스카",
-        "desc": "라케다이몬 제사장 · 손가락이 흉기",
-        "img": "/story/char/avg_npc_2079_1.webp"
+        "desc": "라케다이몬 제사장 · 손가락이 흉기"
       }
     ],
     "blocks": [
@@ -1049,7 +1028,6 @@
       {
         "name": "내스티",
         "desc": "라인 랩 엔지니어링과 주임. 카즈델에서 온 밴시, 말은 짧고 손은 빠르다.",
-        "img": "/story/char/avg_4212_nasti_1.webp",
         "alias": [
           "내스티 루노레이"
         ],
@@ -1058,7 +1036,6 @@
       {
         "name": "펀",
         "desc": "'불가능'만 골라 다니는 1인 여행 가이드. 죽음의 황무지도 세 번 다녀왔다 · 오퍼레이터 케언",
-        "img": "/story/char/avg_4214_cairn_1.webp",
         "alias": [
           "펀 반",
           "케언"
@@ -1067,13 +1044,11 @@
       },
       {
         "name": "베일라",
-        "desc": "펀이 죽음의 황무지에서 만난, 기억을 잃어가는 늙은 밴시 손님.",
-        "img": "/story/char/avg_npc_2048_1.webp"
+        "desc": "펀이 죽음의 황무지에서 만난, 기억을 잃어가는 늙은 밴시 손님."
       },
       {
         "name": "고든",
         "desc": "'프로펠러 파라다이스'의 총장. 규칙을 경멸하고 금지품을 밀수한다 · 오퍼레이터 스카이박스",
-        "img": "/story/char/avg_npc_2034_1.webp",
         "alias": [
           "고든 타넨"
         ],
@@ -1082,7 +1057,6 @@
       {
         "name": "머시아",
         "desc": "고든의 비서. 어떤 난관에도 '비서 수칙'을 읊는다.",
-        "img": "/story/char/avg_npc_2037_1.webp",
         "alias": [
           "머시"
         ]
@@ -1090,7 +1064,6 @@
       {
         "name": "스카이",
         "desc": "슬럼가에서 올라온 라인 랩 보조 연구원. 크리스틴을 우상으로 삼는다.",
-        "img": "/story/char/avg_npc_2039_1.webp",
         "alias": [
           "앤드류"
         ]
@@ -1103,15 +1076,13 @@
       {
         "name": "크리스틴",
         "desc": "2년 전 트리마운츠의 하늘을 가른 라인 랩 총괄. 지금은 고인.",
-        "img": "/story/char/avg_npc_2032_1.webp",
         "alias": [
           "크리스틴 라이트"
         ]
       },
       {
         "name": "애스펜",
-        "desc": "하늘에 전 재산을 건 '럭키 치스티비스트'의 대표.",
-        "img": "/story/char/avg_npc_2041_1.webp"
+        "desc": "하늘에 전 재산을 건 '럭키 치스티비스트'의 대표."
       }
     ],
     "terms": [
@@ -1534,14 +1505,12 @@
         "op": "char_174_slbell",
         "alias": [
           "성녀"
-        ],
-        "img": "/story/char/avg_174_slbell_1.webp"
+        ]
       },
       {
         "name": "엔시오데스",
         "desc": "카란 무역회사를 세운 실버애쉬 가문의 가주. 쉐라그를 무역과 산업으로 개혁하려는 야심가 · 오퍼레이터 실버애쉬",
-        "op": "char_172_svrash",
-        "img": "/story/char/avg_172_svrash_1.webp"
+        "op": "char_172_svrash"
       },
       {
         "name": "조안나",
@@ -1549,8 +1518,7 @@
         "op": "char_4211_snhunt",
         "alias": [
           "스노우헌터"
-        ],
-        "img": "/story/char/avg_4211_snhunt_1.webp"
+        ]
       },
       {
         "name": "엘레나",
@@ -1558,35 +1526,29 @@
         "op": "char_1047_halo2",
         "alias": [
           "아스트젠"
-        ],
-        "img": "/story/char/avg_1047_halo2_1.webp"
+        ]
       },
       {
         "name": "아크토즈",
-        "desc": "페일로쉬 가문의 가주. 다혈질에 직설적인 우르수스 전사",
-        "img": "/story/char/avg_npc_254_1.webp"
+        "desc": "페일로쉬 가문의 가주. 다혈질에 직설적인 우르수스 전사"
       },
       {
         "name": "라타토스",
-        "desc": "브라운테일 가문의 가주. 차분하고 계산적인 처세로 유명하다",
-        "img": "/story/char/avg_npc_253_1.webp"
+        "desc": "브라운테일 가문의 가주. 차분하고 계산적인 처세로 유명하다"
       },
       {
         "name": "데겐블레허",
         "desc": "엔시오데스가 데리고 다니는 어둠의 기사. 실력으로 소문난 호위무사",
-        "op": "char_4116_blkkgt",
-        "img": "/story/char/avg_4116_blkkgt_1.webp"
+        "op": "char_4116_blkkgt"
       },
       {
         "name": "노시스",
         "desc": "카란 무역회사의 집행관. 엔시오데스의 오랜 동료",
-        "op": "char_206_gnosis",
-        "img": "/story/char/avg_206_gnosis_1.webp"
+        "op": "char_206_gnosis"
       },
       {
         "name": "캐롤린",
-        "desc": "라인 랩 관측소에서 근무하는 젊은 연구원. 밤샘 근무와 잡담을 즐기는 동료였다",
-        "img": "/story/char/avg_npc_1999_1.webp"
+        "desc": "라인 랩 관측소에서 근무하는 젊은 연구원. 밤샘 근무와 잡담을 즐기는 동료였다"
       }
     ],
     "terms": [
@@ -1935,7 +1897,6 @@
       {
         "name": "레온투초",
         "desc": "뉴 볼시니의 시장 대행. 패밀리를 버리고 '패밀리 없는 도시'를 꿈꾸는 이상주의자.",
-        "img": "/story/char/avg_npc_1541_1.webp",
         "alias": [
           "레온"
         ]
@@ -1943,35 +1904,29 @@
       {
         "name": "라비니아",
         "desc": "뉴 볼시니의 대법관. 레온투초의 동반자이자, 《신도시 관리법》을 엄정히 지키는 판사. · 오퍼레이터 페넌스",
-        "img": "/story/char/avg_4065_judge_1.webp",
         "op": "char_4065_judge"
       },
       {
         "name": "텍사스",
         "desc": "펭귄 로지스틱스의 운전기사. 친구들을 도우러 뉴 볼시니로 온, 겉은 무심하나 속은 이상주의자. · 오퍼레이터 텍사스 디 오메르토사",
-        "img": "/story/char/avg_1028_texas2_1.webp",
         "op": "char_1028_texas2"
       },
       {
         "name": "라플란드",
         "desc": "살루초 가주에게 성을 박탈당한 하얀 늑대. 판을 짜기보다 판을 밟아 엎는 걸 즐긴다. · 오퍼레이터 라플란드 더 데카덴차",
-        "img": "/story/char/avg_1038_whitw2_1.webp",
         "op": "char_1038_whitw2"
       },
       {
         "name": "에이레네",
-        "desc": "트럭 상조회의 리더. 시칠리아에서 모든 걸 잃고 뉴 볼시니로 도망쳐 온 운전기사.",
-        "img": "/story/char/avg_npc_1542_1.webp"
+        "desc": "트럭 상조회의 리더. 시칠리아에서 모든 걸 잃고 뉴 볼시니로 도망쳐 온 운전기사."
       },
       {
         "name": "소머",
-        "desc": "에이레네의 가장 오랜 친구이자 은인. 아픈 딸 구리를 위해 위험한 일에 손을 댄다.",
-        "img": "/story/char/avg_npc_1547_1.webp"
+        "desc": "에이레네의 가장 오랜 친구이자 은인. 아픈 딸 구리를 위해 위험한 일에 손을 댄다."
       },
       {
         "name": "류드밀라",
         "desc": "우르수스에서 온 트럭 기사. 스승의 원수를 쫓는 리프로바. · 오퍼레이터 크라운슬레이어",
-        "img": "/story/char/avg_1502_crosly_1.webp",
         "op": "char_1502_crosly"
       },
       {
@@ -1981,42 +1936,35 @@
       },
       {
         "name": "잉그리드",
-        "desc": "극동에서 돌아온 킬러. 광석병에 걸린 딸 리사를 위해 진실을 찾는 어머니. · 오퍼레이터 불피스폴리아",
-        "img": "/story/char/avg_4026_vulpis_1.webp"
+        "desc": "극동에서 돌아온 킬러. 광석병에 걸린 딸 리사를 위해 진실을 찾는 어머니. · 오퍼레이터 불피스폴리아"
       },
       {
         "name": "안토니오",
-        "desc": "베네치아 자동차 회사의 실세. 가주의 사위가 된 페로.",
-        "img": "/story/char/avg_npc_1544_1.webp"
+        "desc": "베네치아 자동차 회사의 실세. 가주의 사위가 된 페로."
       },
       {
         "name": "베네치아",
         "desc": "베네치아 패밀리의 늙은 가주. '잡종'들을 거둬 한 가족으로 묶어 온 노인.",
-        "img": "/story/char/avg_npc_1545_1.webp",
         "alias": [
           "파브리치오"
         ]
       },
       {
         "name": "움베르토",
-        "desc": "데 몬타노 테일러샵의 늙은 재단사. 손자 루치노의 유일한 가족.",
-        "img": "/story/char/avg_npc_1543_1.webp"
+        "desc": "데 몬타노 테일러샵의 늙은 재단사. 손자 루치노의 유일한 가족."
       },
       {
         "name": "루치노",
         "desc": "움베르토의 손자. 패밀리 거물을 동경하는 재단사 견습생. · 오퍼레이터 피구리노",
-        "img": "/story/char/avg_4155_talr_1.webp",
         "op": "char_4155_talr"
       },
       {
         "name": "드미트리",
-        "desc": "레온투초의 옛 친구이자, 남은 벨로네 패밀리를 책임지는 사람.",
-        "img": "/story/char/avg_npc_690_1.webp"
+        "desc": "레온투초의 옛 친구이자, 남은 벨로네 패밀리를 책임지는 사람."
       },
       {
         "name": "알베르토",
-        "desc": "살루초 와이너리의 가주. 라플란드의 아버지.",
-        "img": "/story/char/avg_npc_686_1.webp"
+        "desc": "살루초 와이너리의 가주. 라플란드의 아버지."
       }
     ],
     "terms": [
@@ -2337,31 +2285,26 @@
       {
         "name": "라이오스",
         "desc": "마물 미식에 미친 파티의 리더. 검을 든 전사. (던전밥)",
-        "img": "/story/char/avg_4142_laios_1.webp",
         "op": "char_4142_laios"
       },
       {
         "name": "마르실",
         "desc": "엘프 마법사. 파린의 절친이자, 마물 요리라면 질색한다. (던전밥)",
-        "img": "/story/char/avg_4141_marcil_1.webp",
         "op": "char_4141_marcil"
       },
       {
         "name": "센시",
         "desc": "미궁을 누비는 드워프 요리사. 식재료에는 늘 정성을 다한다. (던전밥)",
-        "img": "/story/char/avg_4143_sensi_1.webp",
         "op": "char_4143_sensi"
       },
       {
         "name": "칠책",
         "desc": "하프풋 열쇠사. 파티의 상식인이자 고생 담당. (던전밥)",
-        "img": "/story/char/avg_4144_chilc_1.webp",
         "op": "char_4144_chilc"
       },
       {
         "name": "케오베",
         "desc": "로도스 아일랜드의, 늘 배고픈 사미 소녀.",
-        "img": "/story/char/avg_2013_cerber_1.webp",
         "op": "char_2013_cerber",
         "alias": [
           "케오"
@@ -2377,13 +2320,11 @@
       },
       {
         "name": "오크컵",
-        "desc": "사미의 견습 샤먼. 매사에 심드렁하다.",
-        "img": "/story/char/avg_npc_964_1.webp"
+        "desc": "사미의 견습 샤먼. 매사에 심드렁하다."
       },
       {
         "name": "아르게스",
-        "desc": "재앙만을 내다보는 사이클롭스.",
-        "img": "/story/char/avg_npc_969_1.webp"
+        "desc": "재앙만을 내다보는 사이클롭스."
       },
       {
         "name": "머드락",
@@ -2728,8 +2669,7 @@
       {
         "name": "페페",
         "desc": "역사에 미친 고고학자 · 사르곤 파디샤의 딸 · 별명 그대로 페페",
-        "op": "char_4058_pepe",
-        "img": "/story/char/avg_4058_pepe_1.webp"
+        "op": "char_4058_pepe"
       },
       {
         "name": "티티",
@@ -2737,36 +2677,30 @@
         "op": "char_4056_titi",
         "alias": [
           "메제티케티"
-        ],
-        "img": "/story/char/avg_npc_1478_1.webp"
+        ]
       },
       {
         "name": "아나트",
         "desc": "박물관 관장 대행 · 걱정 많은 원칙주의자 · 오퍼레이터 파피루스",
-        "op": "char_4139_papyrs",
-        "img": "/story/char/avg_4139_papyrs_1.webp"
+        "op": "char_4139_papyrs"
       },
       {
         "name": "주바이르",
-        "desc": "박물관 특별전의 미라 · 정체는 샤 시대의 어전 호위 장교 · 천 년째 뭔가를 기다리는 중",
-        "img": "/story/char/avg_4058_pepe_1.webp"
+        "desc": "박물관 특별전의 미라 · 정체는 샤 시대의 어전 호위 장교 · 천 년째 뭔가를 기다리는 중"
       },
       {
         "name": "나란투야",
         "desc": "빚에 쫓기는 사막 도적단 두목 · 자칭 대장 · 부하 복이 지독히 없다",
-        "op": "char_4138_narant",
-        "img": "/story/char/avg_4138_narant_1.webp"
+        "op": "char_4138_narant"
       },
       {
         "name": "아스파시아",
-        "desc": "미노스에서 온 관광객 · 은메달 10개 소지자 · 원칙에 살고 원칙에 죽는다",
-        "img": "/story/char/avg_npc_1477_1.webp"
+        "desc": "미노스에서 온 관광객 · 은메달 10개 소지자 · 원칙에 살고 원칙에 죽는다"
       },
       {
         "name": "라즈바르",
         "desc": "그랜드 바자르 보석 거래소의 젊은 관리인 · 뭐든 저울에 올려 재는 버릇 · 오퍼레이터 샌드레코너",
-        "op": "char_4140_lasher",
-        "img": "/story/char/avg_4140_lasher_1.webp"
+        "op": "char_4140_lasher"
       },
       {
         "name": "미오",
@@ -3179,8 +3113,7 @@
         "op": "char_4123_ela",
         "alias": [
           "엘라"
-        ],
-        "img": "/story/char/avg_4123_ela_1.webp"
+        ]
       },
       {
         "name": "Iana",
@@ -3188,8 +3121,7 @@
         "op": "char_4124_iana",
         "alias": [
           "이아나"
-        ],
-        "img": "/story/char/avg_4124_iana_1.webp"
+        ]
       },
       {
         "name": "Doc",
@@ -3198,8 +3130,7 @@
         "alias": [
           "카테브",
           "귀스타브"
-        ],
-        "img": "/story/char/avg_4125_rdoc_1.webp"
+        ]
       },
       {
         "name": "Fuze",
@@ -3214,29 +3145,24 @@
         "desc": "도솔레스의 괴짜 미술상 부호 · 갤러리아 크리슈타와의 주인",
         "alias": [
           "코발스키"
-        ],
-        "img": "/story/char/avg_npc_1211_1.webp"
+        ]
       },
       {
         "name": "미워시",
-        "desc": "레이넬의 비서 · 와인병으로도 싸우는 만능 집사",
-        "img": "/story/char/avg_npc_1213_1.webp"
+        "desc": "레이넬의 비서 · 와인병으로도 싸우는 만능 집사"
       },
       {
         "name": "테크노",
         "desc": "예술 거리의 두린 그래피티 아티스트 · 오퍼레이터 테크노",
-        "op": "char_4164_tecno",
-        "img": "/story/char/avg_npc_1212_1.webp"
+        "op": "char_4164_tecno"
       },
       {
         "name": "디아즈",
-        "desc": "예술 거리를 지키는 전직 소방관 · 다들 '영감'이라 부른다",
-        "img": "/story/char/avg_npc_1214_1.webp"
+        "desc": "예술 거리를 지키는 전직 소방관 · 다들 '영감'이라 부른다"
       },
       {
         "name": "마테오",
-        "desc": "볼리바르 연립정부의 대위 · 예술 거리의 땅을 노린다",
-        "img": "/story/char/avg_npc_1210_1.webp"
+        "desc": "볼리바르 연립정부의 대위 · 예술 거리의 땅을 노린다"
       },
       {
         "name": "테킬라",
@@ -3244,8 +3170,7 @@
         "op": "char_486_takila",
         "alias": [
           "에르네스토"
-        ],
-        "img": "/story/char/avg_486_espumo_1.webp"
+        ]
       }
     ],
     "terms": [
@@ -3706,38 +3631,32 @@
       {
         "name": "슈",
         "desc": "대황성에서 농사를 가르치는 상냥한 천사. 다들 '신농님'이 돌아온 거라 믿고 있어요.",
-        "op": "char_2025_shu",
-        "img": "/story/char/avg_2025_shu_1.webp"
+        "op": "char_2025_shu"
       },
       {
         "name": "니엔",
         "desc": "슈의 남동생. 대황성을 지킬 이동 요새 '오성 십이루' 건설을 진두지휘하는 괴짜 설계자예요.",
-        "op": "char_2014_nian",
-        "img": "/story/char/avgnew_2014_nian_1.webp"
+        "op": "char_2014_nian"
       },
       {
         "name": "시",
         "desc": "니엔의 동생인 화가. 자기가 그린 그림 속 세계를 자유롭게 드나드는 능력이 있어요.",
-        "op": "char_2015_dusk",
-        "img": "/story/char/avgnew_2015_dusk_1.webp"
+        "op": "char_2015_dusk"
       },
       {
         "name": "좌락",
         "desc": "아버지에게 실수를 지적받고 대황성으로 보내진 사세대 지촉인 도련님.",
-        "op": "char_4121_zuole",
-        "img": "/story/char/avg_4121_zuole_1.webp"
+        "op": "char_4121_zuole"
       },
       {
         "name": "화생",
         "desc": "논에서 태어났다는 전설을 지닌 대황성의 젊은 농업천사. 오리지늄에 강한 벼를 연구 중이에요. · 오퍼레이터 완칭",
-        "op": "char_4119_wanqin",
-        "img": "/story/char/avg_4119_wanqin_1.webp"
+        "op": "char_4119_wanqin"
       },
       {
         "name": "소만",
         "desc": "가축과 대화할 수 있다고 믿는 명랑한 대황성 소녀. · 오퍼레이터 그레인버즈",
-        "op": "char_4122_grabds",
-        "img": "/story/char/avg_4122_grabds_1.webp"
+        "op": "char_4122_grabds"
       },
       {
         "name": "운청평",
@@ -3745,13 +3664,11 @@
       },
       {
         "name": "영사추",
-        "desc": "예부에서 대황성에 파견된 젊은 시랑. 조부의 명성에 가려질까 늘 날이 서 있어요.",
-        "img": "/story/char/avg_npc_298_1.webp"
+        "desc": "예부에서 대황성에 파견된 젊은 시랑. 조부의 명성에 가려질까 늘 날이 서 있어요."
       },
       {
         "name": "만 시랑",
-        "desc": "오성 십이루 건설을 총괄하는, 출세욕이 강한 공부 시랑.",
-        "img": "/story/char/avg_npc_1241_1.webp"
+        "desc": "오성 십이루 건설을 총괄하는, 출세욕이 강한 공부 시랑."
       }
     ],
     "terms": [
@@ -4157,63 +4074,53 @@
       {
         "name": "제시카",
         "desc": "블랙스틸 소속의 젊은 저격수. 위기의 순간마다 눈물을 참지 못하는 여린 마음의 소유자다 · 오퍼레이터 제시카 더 리버레이티드",
-        "op": "char_1034_jesca2",
-        "img": "/story/char/avg_1034_jesca2_1.webp"
+        "op": "char_1034_jesca2"
       },
       {
         "name": "우드로 비앙키",
         "desc": "데이비스 타운 외곽에서 홀로 사냥하며 사는 무뚝뚝한 노인. 마을 사람들은 그냥 '우디'라고 부른다",
         "alias": [
           "우디"
-        ],
-        "img": "/story/char/avg_npc_1034_1.webp"
+        ]
       },
       {
         "name": "헬레나",
         "desc": "데이비스 타운의 하나뿐인 레스토랑을 운영하는 주인아주머니. 동네 모두의 보호자 노릇을 자처한다 · 오퍼레이터 콜드샷",
-        "op": "char_4104_coldst",
-        "img": "/story/char/avg_4104_coldst_1.webp"
+        "op": "char_4104_coldst"
       },
       {
         "name": "리온 테레민",
-        "desc": "채굴 공장 폭파 엔지니어. 두 아들을 홀로 키운 아버지",
-        "img": "/story/char/avg_1034_jesca2_1.webp"
+        "desc": "채굴 공장 폭파 엔지니어. 두 아들을 홀로 키운 아버지"
       },
       {
         "name": "베니",
-        "desc": "리온의 막내아들. 조숙하고 다정한 소년",
-        "img": "/story/char/avg_npc_1037_1.webp"
+        "desc": "리온의 막내아들. 조숙하고 다정한 소년"
       },
       {
         "name": "실비아",
-        "desc": "데이비스 타운 은행의 말수 적은 젊은 직원",
-        "img": "/story/char/avg_npc_1039_1.webp"
+        "desc": "데이비스 타운 은행의 말수 적은 젊은 직원"
       },
       {
         "name": "'클립' 클리프",
         "desc": "블랙스틸 용병단의 수장. 사업과 감정을 철저히 분리하는 인물",
         "alias": [
           "루퍼트"
-        ],
-        "img": "/story/char/avg_npc_1036_1.webp"
+        ]
       },
       {
         "name": "프란카",
         "desc": "블랙스틸 소속의 지휘관급 용병. 시원시원하고 입담이 좋다",
-        "op": "char_106_franka",
-        "img": "/story/char/avg_106_franka_1.webp"
+        "op": "char_106_franka"
       },
       {
         "name": "리스캄",
         "desc": "프란카의 파트너. 신중하고 원칙을 중시하는 팀장",
-        "op": "char_107_liskam",
-        "img": "/story/char/avg_107_liskam_1.webp"
+        "op": "char_107_liskam"
       },
       {
         "name": "로라",
         "desc": "블랙스틸의 수석 기술자. 혼잣말이 많은 낙천가 · 오퍼레이터 아몬드",
-        "op": "char_4105_almond",
-        "img": "/story/char/avg_4105_almond_1.webp"
+        "op": "char_4105_almond"
       }
     ],
     "terms": [
@@ -4605,41 +4512,35 @@
           "에이야퍄들라",
           "에이야"
         ],
-        "op": "char_180_amgoat",
-        "img": "/story/char/avg_180_amgoat_1.webp"
+        "op": "char_180_amgoat"
       },
       {
         "name": "에니스",
         "desc": "온 가족의 생계를 혼자 짊어진 시에스타 소년, 아르바이트를 네 개나 뛰면서도 정작 자기 몸은 뒷전이다",
-        "alias": [],
-        "img": "/story/char/avg_4106_bryota_1.webp"
+        "alias": []
       },
       {
         "name": "켈러",
         "desc": "나우만 부부의 옛 동료이자 새 화산박물관 관장, 뭔가를 숨기는 듯한 눈빛이 자꾸 마음에 걸린다",
-        "alias": [],
-        "img": "/story/char/avg_npc_999_1.webp"
+        "alias": []
       },
       {
         "name": "스와이어",
         "desc": "용문 근위국 총경, 휴가라고 우기지만 아무도 안 믿는 재벌가 후계자 · 오퍼레이터 스와이어",
         "alias": [],
-        "op": "char_308_swire",
-        "img": "/story/char/avg_1033_swire2_1.webp"
+        "op": "char_308_swire"
       },
       {
         "name": "바이슨",
         "desc": "마운틴대쉬 로지스틱스 후계자, 아버지의 그늘에서 벗어나려는 성실한 도련님 · 오퍼레이터 바이슨",
         "alias": [],
-        "op": "char_325_bison",
-        "img": "/story/char/avg_npc_990_1.webp"
+        "op": "char_325_bison"
       },
       {
         "name": "실론",
         "desc": "시장의 딸이자 로도스 아일랜드 소속 의사, 아버지와는 데면데면한 사이다 · 오퍼레이터 실론",
         "alias": [],
-        "op": "char_348_ceylon",
-        "img": "/story/char/avg_348_ceylon_1.webp"
+        "op": "char_348_ceylon"
       },
       {
         "name": "돌리",
@@ -4651,14 +4552,12 @@
       {
         "name": "칸",
         "desc": "나우만 부부의 제자였던 화산학자, 스승 켈러를 향한 의심을 거두지 못한다",
-        "alias": [],
-        "img": "/story/char/avg_npc_996_1.webp"
+        "alias": []
       },
       {
         "name": "코스타",
         "desc": "주민들에게 이주 의향서를 받으러 다니는 시청 직원, 사실은 폐업한 카페 집 아들이다",
-        "alias": [],
-        "img": "/story/char/avg_npc_997_1.webp"
+        "alias": []
       }
     ],
     "terms": [
@@ -5042,7 +4941,6 @@
       {
         "name": "크리스틴",
         "desc": "라인 랩 총괄. 하늘에 도전했다 목숨을 잃은 발명가 부부, 라이트 부부의 딸.",
-        "img": "/story/char/avg_npc_537_1.webp",
         "alias": [
           "크리스틴 라이트"
         ]
@@ -5050,25 +4948,21 @@
       {
         "name": "사리아",
         "desc": "라인 랩 전 방위과 주임. 크리스틴의 오랜 친구이자, 이성과 질서를 지키는 와이번.",
-        "img": "/story/char/avg_npc_896_1.webp",
         "op": "char_202_demkni"
       },
       {
         "name": "뮤엘시스",
         "desc": "라인 랩 생태과 주임. 물을 다루는, 얼마 남지 않은 엘프 중 한 명.",
-        "img": "/story/char/avg_249_mlyss_1.webp",
         "op": "char_249_mlyss"
       },
       {
         "name": "사일런스",
         "desc": "라인 랩의 연구원이자 의사. 진지하고 성실한 과학자. · 오퍼레이터 사일런스 더 패러디그매틱",
-        "img": "/story/char/avg_1031_slent2_1.webp",
         "op": "char_1031_slent2"
       },
       {
         "name": "오올헤약",
         "desc": "메이랜더 재단의 특수요원. 고대 쿠쿨칸의 혈통과 힘을 좇는 리베리.",
-        "img": "/story/char/avg_npc_536_1.webp",
         "op": "char_4027_heyak",
         "alias": [
           "쿠쿨칸"
@@ -5077,13 +4971,11 @@
       {
         "name": "이프리트",
         "desc": "로도스 아일랜드의 사브라 소녀. 사일런스와 사리아를 가족처럼 따른다.",
-        "img": "/story/char/avg_npc_895_1.webp",
         "op": "char_134_ifrit"
       },
       {
         "name": "로즈몬티스",
         "desc": "로도스 아일랜드의 필라인 정예 오퍼레이터. 잊고 싶은 것은 잊고, 남길 것은 기록한다.",
-        "img": "/story/char/avg_391_rosmon_1.webp",
         "op": "char_391_rosmon",
         "alias": [
           "나르시사"
@@ -5091,39 +4983,33 @@
       },
       {
         "name": "퍼디낸드",
-        "desc": "라인 랩 전 에너지과 주임. 크리스틴을 질투하는, 자칭 최고의 고에너지 물리학자.",
-        "img": "/story/char/avg_npc_890_1.webp"
+        "desc": "라인 랩 전 에너지과 주임. 크리스틴을 질투하는, 자칭 최고의 고에너지 물리학자."
       },
       {
         "name": "야라",
         "desc": "라인 랩 인적자원조사과 주임. 한때 이름을 날린 은막의 배우였다.",
-        "img": "/story/char/avg_npc_893_1.webp",
         "alias": [
           "마리안"
         ]
       },
       {
         "name": "내스티",
-        "desc": "라인 랩 엔지니어링과 주임. 골필을 다루는 살카즈 밴시.",
-        "img": "/story/char/avg_npc_891_1.webp"
+        "desc": "라인 랩 엔지니어링과 주임. 골필을 다루는 살카즈 밴시."
       },
       {
         "name": "저스틴",
-        "desc": "라인 랩 비즈니스과 주임. 돈과 인맥으로 '미치광이들의 성공'을 돕는 남자.",
-        "img": "/story/char/avg_npc_892_1.webp"
+        "desc": "라인 랩 비즈니스과 주임. 돈과 인맥으로 '미치광이들의 성공'을 돕는 남자."
       },
       {
         "name": "로켄",
         "desc": "특별구 이동감옥의 30번 죄수. 학계에서 매장된 몰락한 과학자.",
-        "img": "/story/char/avg_npc_894_1.webp",
         "alias": [
           "로켄 윌리엄스"
         ]
       },
       {
         "name": "블레이크",
-        "desc": "컬럼비아 국방부 대령. 볼리바르에서의 실패를 '아크 1호'로 만회하려 한다.",
-        "img": "/story/char/avg_npc_899_1.webp"
+        "desc": "컬럼비아 국방부 대령. 볼리바르에서의 실패를 '아크 1호'로 만회하려 한다."
       }
     ],
     "terms": [
@@ -5503,59 +5389,49 @@
       {
         "name": "총웨",
         "desc": "옥문을 백 년 가까이 지켜온 전설의 무술 종사. 곧 은퇴하고 도시를 떠날 예정이다.",
-        "op": "char_2024_chyue",
-        "img": "/story/char/avg_2024_chyue_1.webp"
+        "op": "char_2024_chyue"
       },
       {
         "name": "웨이 옌우",
-        "desc": "용문 총독이자 종사의 오랜 벗. 옛 친구를 배웅하러 일부러 옥문까지 찾아왔다.",
-        "img": "/story/char/char_2005_weiyw_1.webp"
+        "desc": "용문 총독이자 종사의 오랜 벗. 옛 친구를 배웅하러 일부러 옥문까지 찾아왔다."
       },
       {
         "name": "린 위시아",
         "desc": "용문에서 파견된 특사, 래트킹의 딸. 옥문에 숨어든 위험 세력을 은밀히 조사한다 · 오퍼레이터 린",
-        "op": "char_4080_lin",
-        "img": "/story/char/avg_4080_lin_1.webp"
+        "op": "char_4080_lin"
       },
       {
         "name": "와이후",
         "desc": "리 탐정사무소 직원이자 대학 졸업생. 옥문 연무대에서도 밀리지 않는 실력자다.",
-        "op": "char_243_waaifu",
-        "img": "/story/char/avg_243_waaifu_1.webp"
+        "op": "char_243_waaifu"
       },
       {
         "name": "지에윈",
         "desc": "사막 유목민 아나사족 소녀. 죽은 스승의 마지막 부탁으로 검 한 자루를 품고 옥문에 숨어들었다.",
-        "op": "char_4078_bdhkgt",
-        "img": "/story/char/avg_4078_bdhkgt_1.webp"
+        "op": "char_4078_bdhkgt"
       },
       {
         "name": "좌락",
         "desc": "옥문 장군의 아들이자 사세대의 젊은 지촉인. 도난당한 검을 쫓는 임무를 맡았다.",
-        "op": "char_4121_zuole",
-        "img": "/story/char/avg_npc_297_1.webp"
+        "op": "char_4121_zuole"
       },
       {
         "name": "치우바이",
         "desc": "종사의 유일한 제자. 5년째 그의 곁을 지키며 검을 배우고 있다.",
-        "op": "char_4082_qiubai",
-        "img": "/story/char/avg_npc_787_1.webp"
+        "op": "char_4082_qiubai"
       },
       {
         "name": "리",
         "desc": "용문에서 온 사설탐정. 오랫동안 소식이 끊긴 의형제를 찾아 옥문에 왔다.",
-        "op": "char_322_lmlee",
-        "img": "/story/char/avg_322_lmlee_1.webp"
+        "op": "char_322_lmlee"
       },
       {
         "name": "두요야",
-        "desc": "상촉 출신으로 옥문에 물류회사 '행유물류'를 차린 신참 사장. 겁 없이 발로 뛰는 성격이다.",
-        "img": "/story/char/avg_npc_296_1.webp"
+        "desc": "상촉 출신으로 옥문에 물류회사 '행유물류'를 차린 신참 사장. 겁 없이 발로 뛰는 성격이다."
       },
       {
         "name": "와이틴푸이",
-        "desc": "옥문의 한 의원에서 일하는 정체불명의 우람한 남자. 무기보다 자기 주먹을 믿는다.",
-        "img": "/story/char/avg_322_lmlee_1.webp"
+        "desc": "옥문의 한 의원에서 일하는 정체불명의 우람한 남자. 무기보다 자기 주먹을 믿는다."
       }
     ],
     "terms": [
@@ -5951,51 +5827,42 @@
         "op": "char_1020_reed2",
         "alias": [
           "로흐시니"
-        ],
-        "img": "/story/char/avg_1020_reed2_1.webp"
+        ]
       },
       {
         "name": "핀",
-        "desc": "말 많고 정 많은 타라 상인. 도망자 무리의 살림꾼을 자처한다",
-        "img": "/story/char/avg_npc_725_1.webp"
+        "desc": "말 많고 정 많은 타라 상인. 도망자 무리의 살림꾼을 자처한다"
       },
       {
         "name": "셀몬",
-        "desc": "더블린에 들어간 오빠를 쫓아 그 흉내를 내는 거친 타라 여성",
-        "img": "/story/char/avg_npc_724_1.webp"
+        "desc": "더블린에 들어간 오빠를 쫓아 그 흉내를 내는 거친 타라 여성"
       },
       {
         "name": "백파이프",
         "desc": "평민을 지키겠다고 고집하는 퇴역 빅토리아 군인 출신 오퍼레이터",
-        "op": "char_222_bpipe",
-        "img": "/story/char/avg_222_bpipe_1.webp"
+        "op": "char_222_bpipe"
       },
       {
         "name": "첸",
-        "desc": "냉철하고 검술에 능한 조사관. 백파이프의 동료",
-        "img": "/story/char/avg_npc_662_1.webp"
+        "desc": "냉철하고 검술에 능한 조사관. 백파이프의 동료"
       },
       {
         "name": "모란",
-        "desc": "야맹증을 앓는 감염자. 조용하지만 강단 있다",
-        "img": "/story/char/avg_npc_728_1.webp"
+        "desc": "야맹증을 앓는 감염자. 조용하지만 강단 있다"
       },
       {
         "name": "워릭 백작",
-        "desc": "타라 문화 부흥 살롱을 여는 늙은 백작",
-        "img": "/story/char/avg_npc_727_1.webp"
+        "desc": "타라 문화 부흥 살롱을 여는 늙은 백작"
       },
       {
         "name": "아르모니",
         "desc": "빅토리아와 타라 양쪽에 양다리를 걸친 필라인 스파이",
-        "op": "char_297_hamoni",
-        "img": "/story/char/avg_npc_228_1.webp"
+        "op": "char_297_hamoni"
       },
       {
         "name": "피셔",
         "desc": "정체불명의 시의회 조사관. 더블린과 공작들 사이의 암투를 홀로 쫓는다 · 오퍼레이터 퍼즐",
-        "op": "char_4017_puzzle",
-        "img": "/story/char/avg_4017_puzzle_1.webp"
+        "op": "char_4017_puzzle"
       }
     ],
     "terms": [
@@ -6535,20 +6402,17 @@
           "첼리니아 텍사스",
           "첼리니아"
         ],
-        "op": "char_102_texas",
-        "img": "/story/char/avg_1028_texas2_1.webp"
+        "op": "char_102_texas"
       },
       {
         "name": "엑시아",
         "desc": "텍사스의 오랜 파트너. 오지랖으로 문제를 일으키고, 오지랖으로 그걸 또 수습하는 산크타 · 오퍼레이터 엑시아",
-        "op": "char_103_angel",
-        "img": "/story/char/avg_103_angel_1.webp"
+        "op": "char_103_angel"
       },
       {
         "name": "크루아상",
         "desc": "정 많은 잔소리쟁이 보디가드. 사투리로 다 걱정해 주는 든든한 동료 · 오퍼레이터 크루아상",
-        "op": "char_201_moeshd",
-        "img": "/story/char/avg_201_moeshd_1.webp"
+        "op": "char_201_moeshd"
       },
       {
         "name": "소라",
@@ -6558,32 +6422,28 @@
       {
         "name": "라플란드",
         "desc": "살루초 패밀리에서 제명된 딸. 텍사스에게 집착에 가까운 관심을 쏟는 광기 어린 늑대 · 오퍼레이터 라플란드",
-        "op": "char_140_whitew",
-        "img": "/story/char/avg_npc_683_1.webp"
+        "op": "char_140_whitew"
       },
       {
         "name": "라비니아",
         "desc": "볼시니의 젊은 판사. 벨로네 패밀리의 비호를 받으면서도 공정함을 포기하지 못하는 이상주의자",
         "alias": [
           "라비니아 판사"
-        ],
-        "img": "/story/char/avg_4065_judge_1.webp"
+        ]
       },
       {
         "name": "레온투초",
         "desc": "벨로네 패밀리의 젊은 후계자. 폭력보다 협상과 이익을 믿는, 시대에 앞서 있는 도련님",
         "alias": [
           "레온"
-        ],
-        "img": "/story/char/avg_427_vigil_1.webp"
+        ]
       },
       {
         "name": "베르나르도",
         "desc": "델 알바 극단의 아트 디렉터로 위장한 벨로네 패밀리의 원로. 레온투초의 아버지",
         "alias": [
           "디렉터"
-        ],
-        "img": "/story/char/avg_npc_685_1.webp"
+        ]
       }
     ],
     "terms": [
@@ -6964,8 +6824,7 @@
       {
         "name": "가비알",
         "desc": "아카후알라 티아카우 최강의 전사이자 로도스 아일랜드 메딕. 도끼 한 자루로 웬만한 문제는 다 두들겨 해결한다 · 오퍼레이터 가비알",
-        "op": "char_187_ccheal",
-        "img": "/story/char/avg_1026_gvial2_1.webp"
+        "op": "char_187_ccheal"
       },
       {
         "name": "유넥티스",
@@ -6991,45 +6850,39 @@
         "desc": "쎄루에르차의 건축 설계사. 광석병을 앓고 있고, 집에 틀어박혀 지내는 걸 좋아하는 미니멀리스트",
         "alias": [
           "스티치"
-        ],
-        "img": "/story/char/avg_4054_malist_1.webp"
+        ]
       },
       {
         "name": "아브도티야",
-        "desc": "쎄루에르차의 문학 대표. 두린식 이름 뒤에 자기 과거를 숨기고 사는 이주민",
-        "img": "/story/char/avg_4055_bgsnow_1.webp"
+        "desc": "쎄루에르차의 문학 대표. 두린식 이름 뒤에 자기 과거를 숨기고 사는 이주민"
       },
       {
         "name": "캐치 라이트레이스",
         "desc": "쎄루에르차의 설계 대표(대리). 스티치의 오랜 라이벌이자 둘도 없는 친구",
         "alias": [
           "캐치"
-        ],
-        "img": "/story/char/avg_npc_567_1.webp"
+        ]
       },
       {
         "name": "엣지 어스하트",
         "desc": "쎄루에르차의 환경 및 기후 대표. 오리지늄 탐사를 담당하는 잔소리 많은 노장",
         "alias": [
           "마스터 엣지"
-        ],
-        "img": "/story/char/avg_npc_564_1.webp"
+        ]
       },
       {
         "name": "크로크 다이아몬드페이스",
         "desc": "쎄루에르차의 상업 대표. 술과 흥행이라면 사족을 못 쓰는 만능 MC",
         "alias": [
           "크로크"
-        ],
-        "img": "/story/char/avg_npc_566_1.webp"
+        ]
       },
       {
         "name": "디컬처 실버민트",
         "desc": "쎄루에르차의 공업 대표이자 로봇 관리자. 별명은 데커키",
         "alias": [
           "데커키"
-        ],
-        "img": "/story/char/avg_npc_569_1.webp"
+        ]
       }
     ],
     "terms": [
@@ -7405,46 +7258,38 @@
     "chars": [
       {
         "name": "체첼리아",
-        "desc": "여덟 살, 세상 밖을 궁금해하는 산크타·살카즈 혼혈 소녀",
-        "img": "/story/char/avg_npc_352_1.webp"
+        "desc": "여덟 살, 세상 밖을 궁금해하는 산크타·살카즈 혼혈 소녀"
       },
       {
         "name": "에젤",
-        "desc": "정시 퇴근이 인생 목표인 수습 집행자, 그런데 오지랖은 라테라노 제일",
-        "img": "/story/char/avg_4036_forcer_1.webp"
+        "desc": "정시 퇴근이 인생 목표인 수습 집행자, 그런데 오지랖은 라테라노 제일"
       },
       {
         "name": "피아메타",
         "desc": "라테라노의 리베리 호위, 별명 '미광의 야경꾼'을 죽어라 싫어한다",
-        "op": "char_300_phenxi",
-        "img": "/story/char/avg_300_phenxi_1.webp"
+        "op": "char_300_phenxi"
       },
       {
         "name": "모스티마",
         "desc": "만사 귀찮아하면서도 계속 라테라노로 돌아오는 타천사",
-        "op": "char_213_mostma",
-        "img": "/story/char/avg_213_mostma_1.webp"
+        "op": "char_213_mostma"
       },
       {
         "name": "르무엔",
         "desc": "왕년의 명사수, 지금은 휠체어와 서류 업무 사이 어딘가",
-        "op": "char_4193_lemuen",
-        "img": "/story/char/avg_npc_353_1.webp"
+        "op": "char_4193_lemuen"
       },
       {
         "name": "파티아",
-        "desc": "이베리아 출신 리베리, 산크타를 신처럼 떠받드는 리베리가 제일 싫다",
-        "img": "/story/char/avg_npc_357_1.webp"
+        "desc": "이베리아 출신 리베리, 산크타를 신처럼 떠받드는 리베리가 제일 싫다"
       },
       {
         "name": "오렌",
-        "desc": "능글맞고 계산 빠른 만국 전달자, 다 도와주는 척하며 실속은 혼자 챙긴다",
-        "img": "/story/char/avg_npc_355_1.webp"
+        "desc": "능글맞고 계산 빠른 만국 전달자, 다 도와주는 척하며 실속은 혼자 챙긴다"
       },
       {
         "name": "벨리브",
-        "desc": "젊은 추기경, 계산이 빠르고 뒤끝도 길다",
-        "img": "/story/char/avg_npc_361_1.webp"
+        "desc": "젊은 추기경, 계산이 빠르고 뒤끝도 길다"
       },
       {
         "name": "페데리코",
@@ -7452,21 +7297,18 @@
       },
       {
         "name": "로셀라",
-        "desc": "노래를 좋아하는 살카즈 여성, 체첼리아에게 유독 다정하다",
-        "img": "/story/char/avg_npc_363_1.webp"
+        "desc": "노래를 좋아하는 살카즈 여성, 체첼리아에게 유독 다정하다"
       },
       {
         "name": "안도아인",
-        "desc": "라테라노를 떠나 오래 방랑하다 돌아온 인물, 스스로를 '선도자'라 부른다",
-        "img": "/story/char/avg_npc_351_1.webp"
+        "desc": "라테라노를 떠나 오래 방랑하다 돌아온 인물, 스스로를 '선도자'라 부른다"
       },
       {
         "name": "교황",
         "desc": "슈크림빵을 좋아하는 라테라노의 최고 지도자, 보기보다 훨씬 능구렁이",
         "alias": [
           "이반젤리스타 11세"
-        ],
-        "img": "/story/char/avg_npc_356_1.webp"
+        ]
       }
     ],
     "terms": [
@@ -7863,33 +7705,28 @@
         "alias": [
           "미스터 리"
         ],
-        "op": "char_322_lmlee",
-        "img": "/story/char/avg_322_lmlee_1.webp"
+        "op": "char_322_lmlee"
       },
       {
         "name": "크루스",
         "desc": "로도스 아일랜드의 작전 오퍼레이터, 니엔과는 오래 알고 지내 웬만한 일엔 놀라지 않는다 · 오퍼레이터 크루스",
-        "op": "char_124_kroos",
-        "img": "/story/char/avg_1021_kroos2_1.webp"
+        "op": "char_124_kroos"
       },
       {
         "name": "우요우",
         "desc": "부채를 무기로 쓰는 예비 오퍼레이터, 아직 정식 입사는 아니지만 충성심은 진작부터 로도스 아일랜드행 · 오퍼레이터 우요우",
-        "op": "char_455_nothin",
-        "img": "/story/char/avgnew_455_nothing_1.webp"
+        "op": "char_455_nothin"
       },
       {
         "name": "양현",
-        "desc": "상촉 지부를 맡은 관리, 융통성 없이 성실하기로 유명한 리의 옛 동창",
-        "img": "/story/char/avg_npc_295_1.webp"
+        "desc": "상촉 지부를 맡은 관리, 융통성 없이 성실하기로 유명한 리의 옛 동창"
       },
       {
         "name": "두 소저",
         "desc": "행유표국 사장의 외동딸, 놀고먹는 부잣집 아가씨 행세 뒤에 다른 속셈을 감추고 있다",
         "alias": [
           "두요야"
-        ],
-        "img": "/story/char/avg_npc_296_1.webp"
+        ]
       },
       {
         "name": "정 사장",
@@ -7897,8 +7734,7 @@
         "alias": [
           "정청월",
           "문상객"
-        ],
-        "img": "/story/char/avg_npc_300_1.webp"
+        ]
       },
       {
         "name": "상총",
@@ -7913,50 +7749,42 @@
       },
       {
         "name": "좌락",
-        "desc": "조정 밀사로 상촉에 온 젊은 귀공자, 어른스러운 척하지만 아직 다 자라진 못했다",
-        "img": "/story/char/avg_npc_297_1.webp"
+        "desc": "조정 밀사로 상촉에 온 젊은 귀공자, 어른스러운 척하지만 아직 다 자라진 못했다"
       },
       {
         "name": "태합",
-        "desc": "좌락을 호위하는 무뚝뚝한 관리, 말보다 주먹이 먼저 나가는 편",
-        "img": "/story/char/avg_npc_299_1.webp"
+        "desc": "좌락을 호위하는 무뚝뚝한 관리, 말보다 주먹이 먼저 나가는 편"
       },
       {
         "name": "니엔",
         "desc": "크루스의 오랜 친구, 만사에 여유롭고 태평한 성격 · 오퍼레이터 니엔",
-        "op": "char_2014_nian",
-        "img": "/story/char/avgnew_2014_nian_1.webp"
+        "op": "char_2014_nian"
       },
       {
         "name": "시",
         "desc": "니엔의 동생, 그림 속에 틀어박혀 지내길 좋아하는 낯가림쟁이 · 오퍼레이터 시",
-        "op": "char_2015_dusk",
-        "img": "/story/char/avgnew_2015_dusk_1.webp"
+        "op": "char_2015_dusk"
       },
       {
         "name": "링",
         "desc": "니엔과 시의 손위 언니뻘 되는 존재, 술과 풍경을 사랑하며 만사에 초연하다 · 오퍼레이터 링",
-        "op": "char_2023_ling",
-        "img": "/story/char/avg_2023_ling_1.webp"
+        "op": "char_2023_ling"
       },
       {
         "name": "블랙나이트",
         "desc": "림 빌리턴 출신의 바운티 헌터, 슬럼버풋 두 마리를 데리고 다니며 도둑질로 먹고산다 · 오퍼레이터 블랙나이트",
-        "op": "char_476_blkngt",
-        "img": "/story/char/avg_476_blkngt_1.webp"
+        "op": "char_476_blkngt"
       },
       {
         "name": "태부",
-        "desc": "염국 조정의 최고 원로, 등장 한 번으로 얽힌 일을 정리해버리는 인물",
-        "img": "/story/char/avg_npc_301_1.webp"
+        "desc": "염국 조정의 최고 원로, 등장 한 번으로 얽힌 일을 정리해버리는 인물"
       },
       {
         "name": "영 소저",
         "desc": "양현의 저택에 유독 자주 드나드는 손님, 다정하면서도 빈틈이 없다",
         "alias": [
           "영사추"
-        ],
-        "img": "/story/char/avg_npc_298_1.webp"
+        ]
       }
     ],
     "terms": [
@@ -8346,20 +8174,17 @@
       {
         "name": "스카디",
         "desc": "로도스 아일랜드 소속 에기르인 오퍼레이터. 어느 밤, 아무도 못 듣는 노랫소리를 홀로 알아채고 함선을 뛰쳐나갑니다.",
-        "op": "char_263_skadi",
-        "img": "/story/char/char_263_skadi.webp"
+        "op": "char_263_skadi"
       },
       {
         "name": "글래디아",
         "desc": "예전 어비설 헌터스 제2대대를 이끌던 대장. 죽은 줄 알았던 스카디 앞에 홀연히 나타나 스펙터를 데려갑니다.",
-        "op": "char_474_glady",
-        "img": "/story/char/avg_474_gladiia_1.webp"
+        "op": "char_474_glady"
       },
       {
         "name": "스펙터",
         "desc": "스카디가 유일하게 생존을 확인한 어비설 헌터스 동료. 몇 년째 의식을 잃은 채 로도스 아일랜드 병실에 누워 있었습니다.",
-        "op": "char_143_ghost",
-        "img": "/story/char/char_143_ghost.webp"
+        "op": "char_143_ghost"
       },
       {
         "name": "아니타",
@@ -8379,14 +8204,12 @@
       {
         "name": "켈시",
         "desc": "로도스 아일랜드의 의사. 스카디가 사고를 칠 때마다 뒷수습을 해 온 인물로, 이번에도 예상 밖의 순간 살비엔토에 나타납니다.",
-        "op": "char_003_kalts",
-        "img": "/story/char/char_003_kalts_1.webp"
+        "op": "char_003_kalts"
       },
       {
         "name": "재판관 아이린",
         "desc": "이베리아의 젊은 재판관. 낯선 이방인과 이 도시의 '이상 현상'을 직접 판결하겠다며 나섭니다.",
-        "op": "char_4009_irene",
-        "img": "/story/char/avg_npc_182.webp"
+        "op": "char_4009_irene"
       }
     ],
     "terms": [
@@ -8820,14 +8643,12 @@
       {
         "name": "켈시",
         "desc": "정체불명의 의사이자 '작전 고문'. 등에 업은 괴물 Mon3tr와 함께, 사르곤에서 빅토리아까지 스무 해 넘게 조용히 개입해 온 여자예요.",
-        "op": "char_003_kalts",
-        "img": "/story/char/char_003_kaltsn07_1.webp"
+        "op": "char_003_kalts"
       },
       {
         "name": "헤비레인",
         "desc": "로도스 아일랜드 소속으로 사르곤 암시장에 접선하러 온 수송팀원 — 원칙주의자라 상관의 게임기부터 압수하려 들어요.",
-        "op": "char_304_zebra",
-        "img": "/story/char/char_304_hvrain.webp"
+        "op": "char_304_zebra"
       },
       {
         "name": "세사",
@@ -9226,24 +9047,20 @@
       {
         "name": "폴리닉",
         "desc": "실종된 절친 아트로를 찾아 월루몽드까지 온 로도스 아일랜드의 의사",
-        "op": "char_345_folnic",
-        "img": "/story/char/char_345_folnic_1.webp"
+        "op": "char_345_folnic"
       },
       {
         "name": "스즈란",
         "desc": "폴리닉을 따라나선, 꼬리 아홉 개 달린 앳된 불포족 후배 오퍼레이터",
-        "op": "char_358_lisa",
-        "img": "/story/char/char_358_lisa_1.webp"
+        "op": "char_358_lisa"
       },
       {
         "name": "세버린 호손",
-        "desc": "담배를 입에 달고 사는, 월루몽드의 사관장(시장)",
-        "img": "/story/char/avg_npc_066.webp"
+        "desc": "담배를 입에 달고 사는, 월루몽드의 사관장(시장)"
       },
       {
         "name": "타쟈나",
-        "desc": "세버린의 보좌관이자, 죽은 아들 토어발트의 약혼녀였던 마을 주민",
-        "img": "/story/char/avg_npc_069.webp"
+        "desc": "세버린의 보좌관이자, 죽은 아들 토어발트의 약혼녀였던 마을 주민"
       },
       {
         "name": "아트로",
@@ -9252,8 +9069,7 @@
       {
         "name": "그레이스롯",
         "desc": "예전 리유니온 사건을 겪은 뒤로 감염자를 두려워하게 된 로도스 아일랜드의 궁수",
-        "op": "char_367_swllow",
-        "img": "/story/char/char_367_swllow_1.webp"
+        "op": "char_367_swllow"
       },
       {
         "name": "에이어스카르페",
@@ -9268,8 +9084,7 @@
       {
         "name": "머드락",
         "desc": "월루몽드 주변을 서성이는 무장 감염자 소대 '머드락 소대'의 리더",
-        "op": "char_311_mudrok",
-        "img": "/story/char/avg_npc_011.webp"
+        "op": "char_311_mudrok"
       }
     ],
     "terms": [
@@ -9628,8 +9443,7 @@
         "alias": [
           "소니아"
         ],
-        "op": "char_115_headbr",
-        "img": "/story/char/avg_1051_headb2_1.webp"
+        "op": "char_115_headbr"
       },
       {
         "name": "이스티나",
@@ -9637,8 +9451,7 @@
         "alias": [
           "안나"
         ],
-        "op": "char_195_glassb",
-        "img": "/story/char/avg_npc_2156_1.webp"
+        "op": "char_195_glassb"
       },
       {
         "name": "레토",
@@ -9647,8 +9460,7 @@
           "나탈리아",
           "나타셴카"
         ],
-        "op": "char_194_leto",
-        "img": "/story/char/avg_194_leto_1.webp"
+        "op": "char_194_leto"
       },
       {
         "name": "굼",
@@ -9656,8 +9468,7 @@
         "alias": [
           "라다"
         ],
-        "op": "char_196_sunbr",
-        "img": "/story/char/avg_196_sunbr_1.webp"
+        "op": "char_196_sunbr"
       },
       {
         "name": "로사",
@@ -9665,8 +9476,7 @@
         "alias": [
           "로잘린드"
         ],
-        "op": "char_197_poca",
-        "img": "/story/char/avg_197_poca_1.webp"
+        "op": "char_197_poca"
       },
       {
         "name": "압생트",
@@ -9674,29 +9484,25 @@
         "alias": [
           "조야"
         ],
-        "op": "char_405_absin",
-        "img": "/story/char/avg_405_absin_1.webp"
+        "op": "char_405_absin"
       },
       {
         "name": "우쿠시크",
         "desc": "카토르가에서 자란, 이름조차 없던 부랑아 소녀 · 오퍼레이터 우쿠시크",
         "alias": [],
-        "op": "char_4224_turdus",
-        "img": "/story/char/avg_4224_turdus_1.webp"
+        "op": "char_4224_turdus"
       },
       {
         "name": "보타니",
         "desc": "무전으로 학생들을 잇는 통신 담당 소녀 · 오퍼레이터 보타니",
         "alias": [],
-        "op": "char_4223_botany",
-        "img": "/story/char/avg_4223_botany_1.webp"
+        "op": "char_4223_botany"
       },
       {
         "name": "듀나",
         "desc": "자치단을 돌보는 로도스 소속 교관 · 오퍼레이터 듀나",
         "alias": [],
-        "op": "char_260_durnar",
-        "img": "/story/char/avg_260_durnar_1.webp"
+        "op": "char_260_durnar"
       },
       {
         "name": "크라운슬레이어",
@@ -9705,8 +9511,7 @@
           "류드밀라",
           "시해자"
         ],
-        "op": "char_1502_crosly",
-        "img": "/story/char/avg_1502_crosly_1.webp"
+        "op": "char_1502_crosly"
       }
     ],
     "terms": [
