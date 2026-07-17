@@ -49,6 +49,10 @@ python3 scripts/build-rogue.py --icons rogue_6  # 아이콘 언팩 (UnityPy·lz4
 | `zone/` | `ASSETS/ui/rogueliketopic/topics/<topic>_update/levelbgpic/` | 존 배경 |
 | `relic/` | KR CDN `spritepack/ui_roguelike_topic_item_h1_<topic>_0.ab` 언팩 | `--icons` 모드. **깃허브 레포엔 없음** (아틀라스 패킹) |
 
+### 유물 정렬
+전시관 유물은 **유물번호(archiveComp orderId) 오름차순** (사용자 확정) — 숫자 번호 먼저,
+특수 번호(PCS01 등)는 그 뒤, 번호 없는 항목은 맨 뒤. relicSortId는 거의 전부 1이라 쓰지 말 것.
+
 ## 수작업 큐레이션 (scripts/rogueN-curated.json)
 
 클라 테이블에 없는 정보 — 빌드 시 병합:
@@ -63,10 +67,16 @@ python3 scripts/build-rogue.py --icons rogue_6  # 아이콘 언팩 (UnityPy·lz4
 
 - **크림슨 극장 다크 테마**: `.rg` 로컬 변수 `--rgbg #150a0e / --rgcard #211218 /
   --rgcrim #c23b4e / --rggold #c9a35c / --rgink #ead9c8`. 키비주얼 히어로 헤더.
+  ⚠ **모달·입력·스탯 칩 등 컴포넌트 색은 하드코딩 금지** — 전부 테마 변수
+  (--rgdeep 어두운 바탕 / --rgmodal 모달 배경 / --rgmodalline 모달 테두리 /
+  --rgsel 선택 강조 / --rgtext2 본문색 / --rgup·--rgupbg 스탯 상승 강조)로 쓸 것.
+  토픽 스킨(.rg.rg6)이 변수만 오버라이드해서 전체 색이 갈아입혀지는 구조다.
 - **층 = 가로 일렬 카드 → 클릭 시 ZoneModal** (사용자 확정 2026-07 — 아코디언에서 변경).
-  .rg-zone-cards(grid-auto-flow: column), 모달(.rg-zmodal, 980px)에 설명+작전/보스 카드.
-  StageModal이 ZoneModal 위에 겹치도록 렌더 순서는 ZoneModal 먼저.
-  조우 전투·추격전·부표·우연한 만남 등 광폭 섹션은 아코디언 유지.
+  .rg-zone-cards는 **grid-column: 1/-1 필수** (.rg-map이 2열 그리드라 안 주면 한 칸에 갇힘),
+  grid-auto-flow: column으로 합산 100% 폭 균등 분할. 번호 뱃지는 **'N층' 텍스트**.
+  모달(.rg-zmodal, 980px)에 설명+작전/보스 카드. StageModal이 ZoneModal 위에 겹치도록
+  렌더 순서는 ZoneModal 먼저. 조우 전투·추격전·부표·우연한 만남 등 광폭 섹션은 아코디언 유지.
+  내용(이름·설명·버프)이 본 존과 동일한 변형 존(zone_4_1)은 빌더에서 중복 제거.
 - ⚠ StageModal의 onOpenEnemy는 (key, ctx) 2인자 — 호출부에서 `{ key, ctx }`로 감싸
   setEnemyOpen에 넘길 것 (setEnemyOpen을 직접 넘기면 적 클릭이 무반응).
 - **일반/긴급은 카드 하나로 통합** — StagePair {n, e}. 모달 안 [일반 작전|긴급 작전] 탭 전환.
@@ -87,7 +97,10 @@ python3 scripts/build-rogue.py --icons rogue_6  # 아이콘 언팩 (UnityPy·lz4
 - **난이도 탭**: 등급 행 클릭 → 상단 난이도 선택 연동.
 - 섹션 해시 딥링크: `#rg-map / #rg-enemy / #rg-archive / #rg-hallu / #rg-diff / #rg-ending`.
 - **난이도 슬라이더는 히어로 배너 안 우하단** (absolute, 반투명 패널 + 육각 등급 뱃지).
-- **우연한 만남 목록은 이름+층 뱃지만** (층 오름차순 정렬), 클릭 → EncounterModal.
+- **우연한 만남 목록**: CG 썸네일(93×50 — 수차례 조정 끝 사용자 확정) + 텍스트 세로 스택
+  (층 뱃지 윗줄 → 이름 아랫줄), 층 오름차순 정렬, 클릭 → EncounterModal.
+  ⚠ 옛 아코디언 시절 .rg-enc/.rg-enc-thumb(52×34) 규칙이 남아 있으면 크기를 덮어쓴다 — 제거됨.
+  **EncounterModal은 2열**: 좌측 CG(.rg-modal-cols.enc — 좌열 468px), 우측 설명·비고·선택지.
 - **다크 배경은 페이지 100% 폭**: RogueGuide가 `html.rg-theme` 클래스를 토글하고
   CSS가 body에 그라데이션을 칠한다 (.rg 자체 배경 금지 — 70%만 칠해짐).
 - **전역 레이아웃(전 탭 공통)**: 1400px 이상에서 본문 섹션만 `margin-inline: 15%`
@@ -115,8 +128,9 @@ python3 scripts/build-rogue.py --icons rogue_6  # 아이콘 언팩 (UnityPy·lz4
   ⚠ 매칭 전 sanitize에서 `\r\n`과 **리터럴 `\n`(백슬래시+n)** 을 실제 개행으로 정규화 —
   안 하면 여러 줄 문자열이 전부 미스매치.
 - **중국어 병기 규칙 (사용자 확정)**: 이름류는 `cn` 필드에 원문 보존, UI는 `Nm` 컴포넌트로
-  **중국어가 메인, 한국어 번역이 서브**(.rg-cn). 적 도감은 KR 공식 번역이 있어도 CN 원명 필수
-  병기(빌더에서 cn_name 별도 저장). 번역 사전에는 원문 유지용 항등 엔트리 가능(cnName).
+  **중국어가 메인(윗줄), 한국어 번역이 다음 줄 서브**(.rg-sub — 블록. 인라인 병기용 .rg-cn과
+  구분). 적 도감은 KR 공식 번역이 있어도 CN 원명 필수 병기(빌더에서 cn_name 별도 저장) —
+  등장 노드 칩·모달 헤더·카드 전부 적용. 번역 사전에는 원문 유지용 항등 엔트리 가능(cnName).
 - **IS6 고유 시스템**: 격자 존(행동력 이동)·실토피아(理念 10종×초기/중기/말기 + 方針 4종,
   modules.rogue_6.weather)·유토피아(variationData 9종 — 기이한 공간에서 가공품 소모로 히든
   구역 '흑담' 진입 시 적용되는 규칙)·부품(SCRAP 30: 자연물/가공품/개념체, modules.scrap)·
