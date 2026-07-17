@@ -107,6 +107,19 @@ def mv(field, default=None):
         return field["m_value"] if field["m_defined"] else default
     return field if field is not None else default
 
+def dedupe_choices(chs):
+    # 다단계 조우 씬은 후속 단계 선택지가 접두 매칭으로 전부 쓸려 들어와
+    # 같은 선택지가 반복된다 — 제목+설명이 같으면 하나만 남긴다 (사용자 리포트 2026-07-18)
+    seen, out = set(), []
+    for c in chs:
+        key = (c["title"], c.get("desc"))
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(c)
+    return out
+
+
 def num(v):
     if isinstance(v, float) and v.is_integer():
         return int(v)
@@ -371,9 +384,9 @@ def build_rogue1():
         if not sid.endswith("_enter"):
             continue
         prefix = sid[: -len("_enter")].replace("scene_", "choice_")
-        chs = [{"title": c["title"], "desc": c.get("description")}
-               for cid, c in sorted(r["choices"].items())
-               if cid.startswith(prefix + "_")]
+        chs = dedupe_choices({"title": c["title"], "desc": c.get("description")}
+                             for cid, c in sorted(r["choices"].items())
+                             if cid.startswith(prefix + "_"))
         encounters.append({
             "scene": sid, "title": sc["title"], "desc": sc.get("description"),
             "bg": sc.get("background"), "choices": chs,
@@ -572,13 +585,19 @@ def build_rogue6():
         return level_cache[level_id]
 
     kind_map = {"n": "normal", "e": "emergency", "b": "boss",
-                "t": "incident", "duel": "duel", "c": "savage"}
+                "t": "incident", "duel": "duel", "c": "chase"}
+    # 거점전(BATTLE_SAVAGE “居民”据点) 정본 id — PRTS는 t_13~15만 문서화하며,
+    # c_5~7은 같은 levelId를 공유하는 미사용 중복 등록이라 제외한다 (피드백 2026-07-18).
+    SAVAGE_IDS = {"ro6_t_13", "ro6_t_14", "ro6_t_15"}
+    DUP_SKIP = {"ro6_c_5", "ro6_c_6", "ro6_c_7"}
     used_enemies = {}
     stages = []
     for st in r["stages"].values():
         sid = st["id"]
+        if sid in DUP_SKIP:
+            continue
         parts = sid.split("_")  # ro6_n_1_1 / ro6_e_1_1 / ro6_b_1 / ro6_t_1 / ro6_duel_1 / ro6_c_1
-        kind = kind_map.get(parts[1], parts[1])
+        kind = "savage" if sid in SAVAGE_IDS else kind_map.get(parts[1], parts[1])
         zone = int(parts[2]) if parts[1] in ("n", "e") and parts[2].isdigit() else None
         lv = load_level(st["levelId"])
         enemies = []
@@ -599,7 +618,7 @@ def build_rogue6():
             "level": st["levelId"],
             "enemies": enemies,
         })
-    order = {"normal": 0, "emergency": 1, "boss": 2, "savage": 3, "duel": 4, "incident": 5}
+    order = {"normal": 0, "emergency": 1, "boss": 2, "chase": 3, "savage": 4, "duel": 5, "incident": 6}
     stages.sort(key=lambda s: (order.get(s["kind"], 9), s["zone"] or 0, s["id"]))
 
     download_webp([(f"{ASSETS}/arts/ui/stage/mappreviews/{s['id']}.png",
@@ -794,15 +813,15 @@ def build_rogue6():
         if not sid.endswith("_enter"):
             continue
         prefix = sid[: -len("_enter")].replace("scene_", "choice_")
-        chs = [{"title": c["title"], "desc": c.get("description")}
-               for cid, c in sorted(r["choices"].items())
-               if cid.startswith(prefix + "_")]
+        chs = dedupe_choices({"title": c["title"], "desc": c.get("description")}
+                             for cid, c in sorted(r["choices"].items())
+                             if cid.startswith(prefix + "_"))
         encounters.append({
             "scene": sid, "title": sc["title"], "desc": sc.get("description"),
             "bg": sc.get("background"), "choices": chs,
         })
     encounters.sort(key=lambda x: x["scene"])
-    # 같은 제목의 변형 씬(溯源 19종 등)은 하나로 병합 — 선택지는 제목 기준 합집합
+    # 같은 제목의 변형 씬(溯源 19종 등)은 하나로 병합 — 선택지는 제목+설명 기준 합집합
     merged, by_title = [], {}
     for e in encounters:
         m = by_title.get(e["title"])
@@ -812,8 +831,7 @@ def build_rogue6():
             continue
         m["desc"] = m["desc"] or e["desc"]
         m["bg"] = m["bg"] or e["bg"]
-        seen_ch = {c["title"] for c in m["choices"]}
-        m["choices"] += [c for c in e["choices"] if c["title"] not in seen_ch]
+        m["choices"] = dedupe_choices(m["choices"] + e["choices"])
     encounters = merged
     scene_dir = os.path.join(REPO, "public", "rogue", "scene")
     download_webp([(f"{ASSETS}/avg/images/{e['bg']}.png",

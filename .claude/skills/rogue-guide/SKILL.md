@@ -136,15 +136,24 @@ python3 scripts/build-rogue.py --icons rogue_6  # 아이콘 언팩 (UnityPy·lz4
   구역 '흑담' 진입 시 적용되는 규칙)·부품(SCRAP 30: 자연물/가공품/개념체, modules.scrap)·
   유산(LEGACY 襁褓, 동명 중복은 대표 1개)·부표(NODE_BUOY 7, 지도 마커)·레퍼토리 없음
   (capsuleDict=None). 스테이지 접두: ro6_n/e(31쌍+e_t_3~5는 t와 페어)/b(10, _b=변형)/
-  t(조우 전투 19)/duel(외나무다리 2)/c(추격전 9).
+  t(조우 전투 — 단 t_13~15는 예외)/duel(외나무다리 2)/c(추격전).
+- **추격전 vs 거점전 (피드백+PRTS 확정 2026-07-18)**: 追猎(추격전)=c_1~c_4 계열 6종 —
+  행동력 소진 시 강제 발생, 보스 층에선 _b 변형 보스(哀悼铁腕 등)가 그 대체판(그래서
+  _b 보스는 원판과 같은 층). “居民”据点(거점전, BATTLE_SAVAGE)=**t_13~15**(“闹乐”/“纵怒”/
+  “灭身”)가 정본 — 난이도(보밀등급) 4+ 전용 노드. **c_5~7은 같은 levelId의 미사용 중복
+  등록이라 빌더에서 제외**(DUP_SKIP). kind: c→chase(추격전), t_13~15→savage(거점전).
 - **난이도 규칙(applyDiff, rogue_6 분기)**: g5+ 모든 적 HP×1.3 / g8+ 정예·리더 공격×1.15 /
   g11+ 리더 받는 대미지 -20%(뱃지) / EASY 없음(기밀 등급 0~15만).
 - **조우 병합**: 같은 제목의 enter 씬(溯源 19종 등)은 빌더에서 하나로 병합(선택지 합집합)
-  — 안 하면 목록에 중복이 줄줄이 뜬다 (59→37).
-- **큐레이션** `scripts/rogue6-curated.json`: bossFloors(3층=b_1·b_1_b·b_2·b_3 /
-  5층=b_2_b·b_3_b·b_4·b_4_b·b_5 / 6층=b_6 — PRTS), endingConds 3종(강제 재부팅/차원
-  재구축/얽힘, 조화). encounterFloors는 PRTS 事件一览에 floor 필드가 아직 없어 빈 채 —
-  문서 보강 후 채울 것.
+  — 안 하면 목록에 중복이 줄줄이 뜬다 (59→37). **선택지는 dedupe_choices로 제목+설명
+  중복 제거 필수** — 다단계 씬은 후속 단계 선택지가 접두 매칭으로 전부 쓸려 들어와 같은
+  선택지가 수십 번 반복된다 (回滚文明 24→10, 사용자 리포트 2026-07-18).
+- **전투 노드 적 목록 정렬**: StageModal의 적은 **리더 → 정예 → 일반** 순 (사용자 확정
+  2026-07-18).
+- **큐레이션** `scripts/rogue6-curated.json`: bossFloors(3층=b_1~b_3 전원 — **_b 변형도
+  원판과 같은 층** / 5층=b_4·b_4_b·b_5 / 6층=b_6 — PRTS+피드백), endingConds 3종(강제
+  재부팅/차원 재구축/얽힘, 조화). encounterFloors는 PRTS 事件一览에 floor 필드가 아직
+  없어 빈 채 — 문서 보강 후 채울 것.
 - **이미지**: 전부 ArknightsAssets2 cn 브랜치에 있음(맵 프리뷰 105/105, 존 배경
   rogue_6_map_1~6, KV=entrykeyvisuals/rogue_kv_default/bg.png→kv6.webp, 날씨·유토피아·부표
   아이콘=topics/rogue_6/misc/→public/rogue/misc/). **유물·부품 아이콘은 CN 공식 CDN 언팩**

@@ -192,7 +192,11 @@ function StageModal({ pair, grade, onClose, onOpenEnemy }: {
             )}
           </div>
           <div className="rg-modal-enemies">
-          {stage.enemies.map((se) => {
+          {/* 리더 → 정예 → 일반 순으로 정렬 (사용자 확정 2026-07-18) */}
+          {[...stage.enemies].sort((a, b) => {
+            const rankOrder = (k: string) => ({ BOSS: 0, ELITE: 1 }[data.enemies[k]?.rank ?? ""] ?? 2);
+            return rankOrder(a.key) - rankOrder(b.key);
+          }).map((se) => {
             // 긴급 모드에선 교체 룬(level_enemy_replace)이 적용된 변종으로 표시
             const key = isEmg ? (stage.emg?.replace?.[se.key] ?? se.key) : se.key;
             const e = data.enemies[key];
@@ -219,7 +223,7 @@ function StageModal({ pair, grade, onClose, onOpenEnemy }: {
 
 const KIND_LABEL: Record<string, string> = {
   normal: "작전", emergency: "긴급 작전", boss: "험난한 길", event: "조우 전투", duel: "특수",
-  savage: "추격전", incident: "조우 전투",
+  chase: "추격전", savage: "거점전", incident: "조우 전투",
 };
 
 // 전투 노드 카드 — 인게임 맵 미리보기 + 이름 (클릭 → 상세, 일반/긴급은 모달 탭 전환)
@@ -510,6 +514,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   const bossStages = useMemo(() => data.stages.filter((s) => s.kind === "boss"), [active]);
   const evStages = useMemo(() => data.stages.filter((s) => s.kind === "event"), [active]);
   const duelStages = useMemo(() => data.stages.filter((s) => s.kind === "duel"), [active]);
+  const chaseStages = useMemo(() => data.stages.filter((s) => s.kind === "chase"), [active]);
   const savageStages = useMemo(() => data.stages.filter((s) => s.kind === "savage"), [active]);
   const incidentStages = useMemo(() => data.stages.filter((s) => s.kind === "incident"), [active]);
 
@@ -681,15 +686,31 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
           </details>
           )}
 
-          {savageStages.length > 0 && (
+          {chaseStages.length > 0 && (
           <details className="rg-zone rg-zone-wide">
             <summary className="rg-zone-sum">
-              <h3>{t("추격전 ('주민' 거점)")}</h3>
-              <span className="rg-zone-counts">{t("작전 {n}개", { n: savageStages.length })}</span>
+              <h3>{t("추격전")}</h3>
+              <span className="rg-zone-counts">{t("작전 {n}개", { n: chaseStages.length })}</span>
               <span className="rg-zone-arrow" aria-hidden>▾</span>
             </summary>
             <div className="rg-zone-body">
               <p className="rg-zone-desc">{t("행동력이 다 떨어지면 강제로 발생하는 전투입니다. 보스 층에서는 보스 특수판으로 대체됩니다.")}</p>
+              <div className="rg-stage-cards">
+                {chaseStages.map((s) => <StageCard key={s.id} pair={{ n: s }} onOpen={setStageOpen} />)}
+              </div>
+            </div>
+          </details>
+          )}
+
+          {savageStages.length > 0 && (
+          <details className="rg-zone rg-zone-wide">
+            <summary className="rg-zone-sum">
+              <h3>{t("거점전 ('주민' 거점)")}</h3>
+              <span className="rg-zone-counts">{t("작전 {n}개", { n: savageStages.length })}</span>
+              <span className="rg-zone-arrow" aria-hidden>▾</span>
+            </summary>
+            <div className="rg-zone-body">
+              <p className="rg-zone-desc">{t("난이도(보밀등급) 4 이상에서만 나타나는 '주민' 거점 노드의 전투입니다. 격파하면 후한 보상과 함께 구역 내 떠돌이 '주민'이 모두 사라집니다.")}</p>
               <div className="rg-stage-cards">
                 {savageStages.map((s) => <StageCard key={s.id} pair={{ n: s }} onOpen={setStageOpen} />)}
               </div>
