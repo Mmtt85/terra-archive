@@ -4595,6 +4595,13 @@ html.dark .story-card:hover .story-thumb img {
   border: 1px solid var(--line);
   flex: none;
 }
+/* 오퍼레이터 화자 — 클릭하면 오퍼 상세 (피드백 반영 2026-07-18) */
+.sc-name.op-linked {
+  cursor: pointer;
+}
+.sc-name.op-linked:hover {
+  text-decoration: underline;
+}
 /* 같은 화자의 연속 대사 — 이름 생략, 줄 간격 살짝 좁게 */
 .sc-line.cont {
   margin-top: -3px;

@@ -246,9 +246,9 @@ function EntityRail({ entities, active, onShowOperator }: {
 // ── 전문(풀 스크립트) 리더 — 요약 상단 '전문 보기' 토글로 진입 (2026-07-18) ──
 // 데이터는 public/story/script/<id>.json 을 지연 fetch. 에피소드 단위로 렌더.
 // 요약과 같은 참조 레일이 오른쪽에 따라다닌다 (사용자 요청 2026-07-18).
-function ScriptReader({ script, error, entities, matchers, opIndex, onShowOperator }: {
+function ScriptReader({ script, error, entities, opIndex, onShowOperator }: {
   script: ScriptData | null; error: boolean;
-  entities: Entity[]; matchers: RegExp[]; opIndex?: OpIndex; onShowOperator?: (id: string) => void;
+  entities: Entity[]; opIndex?: OpIndex; onShowOperator?: (id: string) => void;
 }) {
   const { locale, t } = useI18n();
   // 요약 카드에 없는 화자라도 오퍼레이터면 자동으로 레일 카드 생성 (호시구마 등 — 사용자 리포트 2026-07-18)
@@ -269,10 +269,6 @@ function ScriptReader({ script, error, entities, matchers, opIndex, onShowOperat
     return out;
   }, [script, opIndex, entities]);
   const allEntities = useMemo(() => [...entities, ...autoEntities], [entities, autoEntities]);
-  const allMatchers = useMemo(
-    () => [...matchers, ...autoEntities.map((e) => entityMatcher([e.name]))],
-    [matchers, autoEntities],
-  );
   const [epIdx, setEpIdx] = useState(0);
   const topRef = useRef<HTMLDivElement>(null);
   const goEp = (i: number) => {
@@ -318,7 +314,25 @@ function ScriptReader({ script, error, entities, matchers, opIndex, onShowOperat
     () => lines.map((ln) => [ln.n, ln.x, ln.st, ln.loc, ...(ln.opts ?? [])].filter(Boolean).join(" ")),
     [lines],
   );
-  const { bodyRef, active } = useEntityRail(lineTexts, allMatchers);
+  // 이 에피소드에서 썸네일 달고 말하는 인물은 레일에서 제외 — 왼쪽에 이미 얼굴이 보이므로
+  // 중복 표시하지 않는다 (사용자 요청 2026-07-18). 언급만 되는 편에서는 레일에 그대로 뜬다.
+  const facedSpeakers = useMemo(() => {
+    const s = new Set<string>();
+    for (const ln of lines) {
+      const l = ln as ScriptLine & { face?: string };
+      if (l.n && l.face) s.add(l.n);
+    }
+    return s;
+  }, [lines]);
+  const railEntities = useMemo(
+    () => allEntities.filter((e) => ![e.name, ...(e.alias ?? [])].some((k) => facedSpeakers.has(k))),
+    [allEntities, facedSpeakers],
+  );
+  const railMatchers = useMemo(
+    () => railEntities.map((e) => entityMatcher([e.name, ...(e.alias ?? [])])),
+    [railEntities],
+  );
+  const { bodyRef, active } = useEntityRail(lineTexts, railMatchers);
   if (error) return <p className="story-disclaimer">{t("스크립트를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.")}</p>;
   if (!script || !ep) return <p className="sc-loading">{t("스크립트 불러오는 중…")}</p>;
   return (
@@ -354,9 +368,18 @@ function ScriptReader({ script, error, entities, matchers, opIndex, onShowOperat
           if (ln.st) return <p key={i} className="sc-st" data-idx={i}>{ln.st}</p>;
           if (ln.n) {
             const { showN, face } = ln as ScriptLine & { showN?: boolean; face?: string };
+            // 화자가 오퍼레이터면 이름·썸네일 클릭 → 오퍼 상세 모달 (사용자 요청 2026-07-18)
+            const opId = opIndex?.[ln.n]?.op;
+            const clickable = Boolean(opId && onShowOperator);
             return (
               <p key={i} className={`sc-line${showN === false ? " cont" : ""}`} data-idx={i}>
-                <b className="sc-name">
+                <b className={`sc-name${clickable ? " op-linked" : ""}`}
+                  {...(clickable && showN !== false ? {
+                    onClick: () => onShowOperator!(opId!),
+                    role: "button", tabIndex: 0,
+                    onKeyDown: (e: { key: string }) => { if (e.key === "Enter") onShowOperator!(opId!); },
+                    title: t("오퍼레이터 정보 보기"),
+                  } : {})}>
                   {showN !== false && face && <img className="sc-face" src={face} alt="" aria-hidden loading="lazy" decoding="async" />}
                   {showN !== false && ln.n}
                 </b>
@@ -367,7 +390,7 @@ function ScriptReader({ script, error, entities, matchers, opIndex, onShowOperat
           return <p key={i} className="sc-narr" data-idx={i}>{ln.x}</p>;
         })}
         </div>
-        <EntityRail entities={allEntities} active={active} onShowOperator={onShowOperator} />
+        <EntityRail entities={railEntities} active={active} onShowOperator={onShowOperator} />
       </div>
       <div className="sc-ep-foot">
         {epIdx > 0 && <button type="button" onClick={() => goEp(epIdx - 1)}>← {t("이전 에피소드")}</button>}
@@ -440,7 +463,7 @@ function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }: {
             <p className="story-disclaimer">{t("이 편의 요약 본문은 아직 번역되지 않아 한국어로 표시됩니다.")}</p>
           )}
         </header>
-        {scriptView && <ScriptReader script={script} error={scriptErr} entities={entities} matchers={matchers} opIndex={opIndex} onShowOperator={onShowOperator} />}
+        {scriptView && <ScriptReader script={script} error={scriptErr} entities={entities} opIndex={opIndex} onShowOperator={onShowOperator} />}
         <div className="story-detail-grid" hidden={scriptView}>
           <div className="story-body" ref={bodyRef}>
             {summary.blocks.map((block, index) => {
