@@ -280,14 +280,18 @@ function ScriptReader({ script, error, entities, matchers, opIndex, onShowOperat
     topRef.current?.scrollIntoView({ block: "start" });
   };
   const ep = script ? script.eps[Math.min(epIdx, script.eps.length - 1)] : null;
-  // 분기(br) 마커에 직전 선택지 텍스트를 미리 붙인다 — 렌더 중 변수 재할당 금지(react-compiler)
+  // 렌더용 라인 가공 — 렌더 중 변수 재할당 금지(react-compiler)라 memo에서 미리 계산:
+  //  · br 마커에 직전 선택지 텍스트 부착 (references 는 Decision values 참조 — 옵션 순번 아님)
+  //  · 같은 화자의 연속 대사는 첫 줄만 이름 표시 (showN — 사용자 요청 2026-07-18)
+  //  · 화자 썸네일(face): 오퍼 아바타 → 요약 스탠딩 CG 순 폴백
   const lines = useMemo(() => {
     if (!ep) return [];
-    // 분기(br)의 references 는 직전 Decision 의 values 를 가리킨다 (옵션 순번이 아님 — 3;4 등)
     let lastOpts: string[] = [];
     let lastVals: string[] = [];
+    let prevN: string | undefined;
     return ep.lines.map((ln) => {
       if (ln.opts) {
+        prevN = undefined;
         lastOpts = ln.opts;
         lastVals = ln.vals ?? ln.opts.map((_, i) => String(i + 1));
         return ln;
@@ -297,9 +301,19 @@ function ScriptReader({ script, error, entities, matchers, opIndex, onShowOperat
         const texts = refs.map((r) => lastOpts[lastVals.indexOf(r)]).filter(Boolean);
         return { ...ln, brTexts: texts } as ScriptLine & { brTexts: string[] };
       }
+      if (ln.n) {
+        const showN = ln.n !== prevN;
+        prevN = ln.n;
+        const face = opIndex?.[ln.n]
+          ? `/avatars/${opIndex[ln.n].op}.webp`
+          : entities.find((e) => e.name === ln.n)?.img;
+        return { ...ln, showN, face } as ScriptLine & { showN: boolean; face?: string };
+      }
+      // 지문·컷씬 등이 끼면 다음 대사엔 이름을 다시 보여준다
+      prevN = undefined;
       return ln;
     });
-  }, [ep]);
+  }, [ep, opIndex, entities]);
   const lineTexts = useMemo(
     () => lines.map((ln) => [ln.n, ln.x, ln.st, ln.loc, ...(ln.opts ?? [])].filter(Boolean).join(" ")),
     [lines],
@@ -338,7 +352,18 @@ function ScriptReader({ script, error, entities, matchers, opIndex, onShowOperat
           );
           if (ln.loc) return <div key={i} className="sc-loc" data-idx={i}>{ln.loc}</div>;
           if (ln.st) return <p key={i} className="sc-st" data-idx={i}>{ln.st}</p>;
-          if (ln.n) return <p key={i} className="sc-line" data-idx={i}><b className="sc-name">{ln.n}</b><span>{ln.x}</span></p>;
+          if (ln.n) {
+            const { showN, face } = ln as ScriptLine & { showN?: boolean; face?: string };
+            return (
+              <p key={i} className={`sc-line${showN === false ? " cont" : ""}`} data-idx={i}>
+                <b className="sc-name">
+                  {showN !== false && face && <img className="sc-face" src={face} alt="" aria-hidden loading="lazy" decoding="async" />}
+                  {showN !== false && ln.n}
+                </b>
+                <span>{ln.x}</span>
+              </p>
+            );
+          }
           return <p key={i} className="sc-narr" data-idx={i}>{ln.x}</p>;
         })}
         </div>

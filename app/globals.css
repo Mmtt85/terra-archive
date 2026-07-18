@@ -4578,9 +4578,26 @@ html.dark .story-card:hover .story-thumb img {
   color: #8a6d3b;
   font-weight: 900;
   font-size: 13.5px;
-  text-align: right;
   padding-top: 2px;
   word-break: keep-all;
+  /* 화자 썸네일 + 이름 — 오른쪽 정렬 유지 (피드백 반영 2026-07-18) */
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+  text-align: right;
+}
+.sc-face {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  flex: none;
+}
+/* 같은 화자의 연속 대사 — 이름 생략, 줄 간격 살짝 좁게 */
+.sc-line.cont {
+  margin-top: -3px;
 }
 .sc-narr {
   margin: 14px 0;
