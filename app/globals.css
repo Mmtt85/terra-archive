@@ -5854,12 +5854,9 @@ html.dark.rg-theme.rg6 .site-header { background: #0a1413e6; border-bottom-color
 .rg-filterbar button.on { background: var(--rgcrim); color: #fff; border-color: var(--rgcrim) }
 .rg-count { font: 800 11.5px/1 monospace; color: var(--rgmut); margin-left: 4px }
 
-/* 적 도감 */
-.rg-enemy-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 10px }
-.rg-enemy-card { border: 1px solid var(--rgline); background: var(--rgcard); padding: 11px 13px }
-.rg-enemy-card header { display: flex; align-items: center; gap: 8px; cursor: pointer; margin-bottom: 8px }
-.rg-enemy-card h4 { margin: 0; font-size: 14px; letter-spacing: -0.2px; color: #f4e7d3 }
-.rg-enemy-idx { margin-left: auto; font: 700 10.5px/1 monospace; color: var(--rgmut) }
+/* 적 도감 — 노드 상세 모달의 적 카드(.rg-enemy-cell)와 동일한 카드형 (사용자 확정 2026-07-18) */
+.rg-enemy-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px }
+.rg-enemy-idx { position: absolute; top: 8px; right: 10px; font: 700 10.5px/1 monospace; color: var(--rgmut) }
 .rg-enemy-face { width: 46px; height: 46px; object-fit: contain; border: 1px solid var(--rgline); background: radial-gradient(circle at 50% 42%, var(--rgsel), var(--rgdeep)); border-radius: 3px; flex: none }
 .rg-enemy-face.none { display: grid; place-items: center; color: var(--rgmut); font: 800 16px monospace }
 .rg-enemy-face.sm { width: 34px; height: 34px }
@@ -5894,6 +5891,8 @@ html.dark.rg-theme.rg6 .site-header { background: #0a1413e6; border-bottom-color
 .rg-cap-en { font: 600 11px/1.2 inherit; font-style: italic; color: var(--rggold) }
 .rg-fusion-tag { font: 800 10px/1 monospace; background: #8a6a2a; color: #fff; padding: 3px 7px; border-radius: 999px }
 .rg-relic-usage { margin: 0 0 5px; font-size: 12.5px; line-height: 1.65; font-weight: 600; color: var(--rgink) }
+/* 다단계 효과(붕괴 패러다임 심화·시대 형성기/확장기 등)의 줄바꿈 보존 */
+.rg-multiline { white-space: pre-line }
 .rg-relic-desc { margin: 0 0 4px; font-size: 11.5px; line-height: 1.65; color: var(--rgmut) }
 .rg-relic-obtain { margin: 0; font: 600 10.5px/1.4 monospace; color: #7d6a66 }
 
@@ -5950,7 +5949,7 @@ html.dark.rg-theme.rg6 .site-header { background: #0a1413e6; border-bottom-color
 .rg-modal-desc { margin: 0 0 8px; font-size: 12.5px; line-height: 1.7; color: var(--rgtext2); white-space: pre-line }
 .rg-modal-elite { margin: 0 0 8px; padding: 8px 11px; background: #2b1016; border-left: 3px solid var(--rgcrim); font-size: 12px; line-height: 1.6; font-weight: 600; color: #f0b9c0 }
 .rg-modal-enemies { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 7px; margin-top: 0 }
-.rg-enemy-cell { display: flex; flex-direction: column; align-items: center; gap: 5px; border: 1px solid var(--rgline); background: var(--rgdeep); color: var(--rgink); padding: 9px 7px; cursor: pointer; text-align: center; font: inherit; transition: 0.12s }
+.rg-enemy-cell { position: relative; display: flex; flex-direction: column; align-items: center; gap: 5px; border: 1px solid var(--rgline); background: var(--rgdeep); color: var(--rgink); padding: 9px 7px; cursor: pointer; text-align: center; font: inherit; transition: 0.12s }
 .rg-enemy-cell:hover { border-color: var(--rggold) }
 .rg-enemy-cell .rg-enemy-face { width: 52px; height: 52px }
 .rg-enemy-cell-head { display: flex; align-items: center; gap: 5px }

@@ -36,8 +36,9 @@ type RogueData = {
   scraps?: Scrap[]; legacies?: Simple[]; buoys?: Simple[];
   weathers?: Weather[]; subweathers?: SubWeather[];
   variations: Variation[]; endings: Ending[]; encounters: Encounter[];
-  // 토픽 고유 시스템 갤러리 (거부반응·암호판·파편/재앙·주화/분노 등). 첫 항목=시그니처(최상위 탭).
-  mechanics?: { label: string; items: { id: string; name: string; usage?: string | null; desc?: string | null; img?: boolean }[] }[];
+  // 토픽 고유 시스템 갤러리 (거부반응·암호판·붕괴 패러다임·사고·시대·주화·분노 등) — 전시관 서브탭.
+  // kind=하위 분류(사고: 염원/영감/구상), usage의 개행은 단계 효과(심화·형성기 등) 줄바꿈.
+  mechanics?: { label: string; items: { id: string; name: string; kind?: string; usage?: string | null; desc?: string | null; img?: boolean }[] }[];
 };
 
 const rogue1 = rogue1Data as unknown as RogueData;
@@ -980,17 +981,18 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
             ))}
             <span className="rg-count">{enemies.length}</span>
           </div>
+          {/* 도감 카드 = 노드 상세 모달의 적 카드(.rg-enemy-cell)와 동일한 카드형 (사용자 확정 2026-07-18) */}
           <div className="rg-enemy-grid">
             {enemies.map(([key, e]) => (
-              <button type="button" key={key} className="rg-enemy-card" id={`rg-en-${key}`}
+              <button type="button" key={key} className="rg-enemy-cell" id={`rg-en-${key}`}
                 onClick={() => setEnemyOpen({ key, ctx: dexCtx(key) })}>
-                <header>
-                  {e.img ? <img className="rg-enemy-face" src={`/rogue/enemy/${e.img}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />
-                    : <span className="rg-enemy-face none" aria-hidden>?</span>}
+                {e.img ? <img className="rg-enemy-face" src={`/rogue/enemy/${e.img}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />
+                  : <span className="rg-enemy-face none" aria-hidden>?</span>}
+                <span className="rg-enemy-cell-head">
                   <span className={`rg-rank r-${e.rank ?? "NORMAL"}`}>{t(RANK_KO[e.rank ?? ""] ?? "일반")}</span>
-                  <h4><Nm name={e.name} cn={e.cn} /></h4>
-                  {e.index && <span className="rg-enemy-idx">{e.index}</span>}
-                </header>
+                </span>
+                <span className="rg-enemy-name"><Nm name={e.name} cn={e.cn} /></span>
+                {e.index && <span className="rg-enemy-idx">{e.index}</span>}
                 <StatRow e={e} grade={grade} ctx={dexCtx(key)} />
               </button>
             ))}
@@ -1134,21 +1136,32 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
               ))}
             </div>
           )}
-          {/* 토픽 고유 시스템 갤러리 (거부반응·암호판·붕괴·파편·재앙·주화·분노 등) — usage(효과)+desc(플레이버) */}
-          {(data.mechanics ?? []).map((m) => m.label === activeArc && (
-            <div key={m.label} className="rg-relic-grid">
-              {m.items.map((c) => (
-                <article key={c.id} className="rg-relic">
-                  <header>
-                    {c.img && <img className="rg-relic-icon" src={`/rogue/relic/${c.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
-                    <h4>{c.name}</h4>
-                  </header>
-                  {c.usage && <p className="rg-relic-usage">{c.usage}</p>}
-                  {c.desc && <p className="rg-relic-desc">{c.desc}</p>}
-                </article>
-              ))}
-            </div>
-          ))}
+          {/* 토픽 고유 시스템 갤러리 (거부반응·암호판·붕괴 패러다임·사고·시대·주화·분노 등).
+              kind가 있으면(사고: 염원/영감/구상) 분류별 섹션으로 나눠 렌더 (부품 뷰와 동일 패턴) */}
+          {(data.mechanics ?? []).map((m) => {
+            if (m.label !== activeArc) return null;
+            const kinds = [...new Set(m.items.map((c) => c.kind).filter(Boolean))] as string[];
+            const groups: { kind?: string; items: typeof m.items }[] = kinds.length > 0
+              ? kinds.map((k) => ({ kind: k, items: m.items.filter((c) => c.kind === k) }))
+              : [{ items: m.items }];
+            return groups.map((g) => (
+              <div key={`${m.label}-${g.kind ?? "all"}`} className={g.kind ? "rg-scrap-group" : undefined}>
+                {g.kind && <h4 className="rg-scrap-type">{t(g.kind)}<em>{g.items.length}</em></h4>}
+                <div className="rg-relic-grid">
+                  {g.items.map((c) => (
+                    <article key={c.id} className="rg-relic">
+                      <header>
+                        {c.img && <img className="rg-relic-icon" src={`/rogue/relic/${c.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
+                        <h4>{c.name}</h4>
+                      </header>
+                      {c.usage && <p className="rg-relic-usage rg-multiline">{c.usage}</p>}
+                      {c.desc && <p className="rg-relic-desc">{c.desc}</p>}
+                    </article>
+                  ))}
+                </div>
+              </div>
+            ));
+          })}
           {/* 환각/메아리 (IS1/IS2) — 전시관 서브탭으로 편입 */}
           {activeArc === "hallu" && (topic === "rogue_1" || topic === "rogue_2") && (
             <div className="rg-hallu-inner">

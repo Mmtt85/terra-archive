@@ -162,9 +162,9 @@ MECH_GROUPS = {
     "rogue_2": [("거부반응", "charbuff", ["MUTATION", "EVOLUTION"]),
                 ("주사위", "item", ["DICE_TYPE"])],
     "rogue_3": [("암호판", "item", ["TOTEM"]),
-                ("붕괴 패러다임", "variation", None)],
-    # 재앙(시대)은 데이터가 전부 "시대 유형/기믹 아이템" 플레이스홀더라 갤러리 제외 (실제 시대 이름·효과 부재)
-    "rogue_4": [("사고", "item", ["FRAGMENT"])],
+                ("붕괴 패러다임", "module_chaos", None)],
+    "rogue_4": [("사고", "fragment", None),
+                ("시대", "module_disaster", None)],
     "rogue_5": [("주화", "item", ["COPPER", "COPPER_BUFF"]),
                 ("분노", "item", ["WRATH"])],
 }
@@ -435,9 +435,18 @@ def build_topic(tid="rogue_1"):
         c["img"] = os.path.exists(os.path.join(cap_dir, f"{c['id']}.webp"))
 
     def item_group(itype):
-        return [{"id": iid, "name": it["name"], "desc": it.get("description"), "usage": it.get("usage"),
-                 "img": os.path.exists(os.path.join(REPO, "public", "rogue", "relic", f"{iid}.webp"))}
-                for iid, it in items.items() if it.get("type") == itype]
+        # 같은 이름은 업그레이드 티어 중복 (스쿼드 등) — usage가 가장 긴(최종 티어) 항목만 대표로
+        # 남긴다 (사용자 요청 2026-07-18: 모든 록라 스쿼드 중복 제거)
+        best = {}
+        for iid, it in items.items():
+            if it.get("type") != itype:
+                continue
+            nm = it["name"]
+            score = len(it.get("usage") or "") + len(it.get("description") or "")
+            if nm not in best or score > best[nm][0]:
+                best[nm] = (score, {"id": iid, "name": nm, "desc": it.get("description"), "usage": it.get("usage"),
+                                    "img": os.path.exists(os.path.join(REPO, "public", "rogue", "relic", f"{iid}.webp"))})
+        return [e for _, e in best.values()]
     tools = item_group("ACTIVE_TOOL")
     bands = item_group("BAND")
     explore_tools = item_group("EXPLORE_TOOL")  # IS3 탐사 도구 (다른 토픽은 빈 배열)
@@ -448,13 +457,17 @@ def build_topic(tid="rogue_1"):
     def has_icon(iid):
         return os.path.exists(os.path.join(REPO, "public", "rogue", "relic", f"{iid}.webp"))
     mechanics = []
+    mods = (table.get("modules") or {}).get(tid) or {}
     for label, source, mfilter in MECH_GROUPS.get(tid, []):
         entries = []
-        # usage=기계적 효과, desc=플레이버 (소장품처럼 둘 다 보여준다 — 사용자 요청)
-        if source == "item":
+        # usage=기계적 효과, desc=플레이버 (소장품처럼 둘 다 상세 모달에 표시)
+        if source in ("item", "fragment"):
             best = {}
             for iid, it in items.items():
-                if it.get("type") not in mfilter:
+                if source == "fragment":
+                    if it.get("type") != "FRAGMENT":
+                        continue
+                elif it.get("type") not in mfilter:
                     continue
                 nm = it.get("name")
                 usage = (it.get("usage") or "").strip()
@@ -462,9 +475,18 @@ def build_topic(tid="rogue_1"):
                 if not nm or not (usage or desc):
                     continue
                 if nm not in best or len(usage) + len(desc) > best[nm]["_len"]:
-                    best[nm] = {"id": iid, "name": nm, "usage": usage or None, "desc": desc or None,
-                                "img": has_icon(iid), "_len": len(usage) + len(desc)}
+                    e = {"id": iid, "name": nm, "usage": usage or None, "desc": desc or None,
+                         "img": has_icon(iid), "_len": len(usage) + len(desc)}
+                    if source == "fragment":
+                        # 사고 3분류 — id 접두 D/F/I = 염원/영감/구상 (사용자 확인 2026-07-18:
+                        # usage에 '사용 시'가 있으면 영감(F), 없으면 염원(D), '구상'(I)은 단일 항목)
+                        code = iid.replace(f"{tid}_fragment_", "").split("_")[0]
+                        e["kind"] = {"D": "염원", "F": "영감", "I": "구상"}.get(code, "기타")
+                    best[nm] = e
             entries = [{k: v for k, v in e.items() if k != "_len"} for e in best.values()]
+            if source == "fragment":
+                korder = {"염원": 0, "영감": 1, "구상": 2}
+                entries.sort(key=lambda e: korder.get(e.get("kind"), 9))
         elif source == "charbuff":
             best = {}  # 이름 기준 중복 제거 (같은 변이가 난이도 티어별로 중복 — 사용자 요청)
             for bid, bv in (r.get("charBuffData") or {}).items():
@@ -479,18 +501,38 @@ def build_topic(tid="rogue_1"):
                     best[nm] = {"id": bid, "name": nm, "usage": usage or None, "desc": desc or None,
                                 "img": has_icon(bv.get("iconId") or bid), "_len": len(usage) + len(desc)}
             entries = [{k: v for k, v in e.items() if k != "_len"} for e in best.values()]
-        elif source == "variation":
-            n = 0
-            for vid, vv in (r.get("variationData") or {}).items():
-                usage = (vv.get("desc") or "").strip()
-                if not usage or len(usage) < 6:
-                    continue
-                n += 1
-                nm = vv.get("outerName")
-                if not nm or nm.isdigit():   # 이름이 "1"~"8" 플레이스홀더 → 번호로 (실제 명칭은 데이터 부재)
-                    nm = f"{label} {n}"
-                entries.append({"id": vid, "name": nm, "usage": usage, "desc": None,
-                                "img": has_icon(vv.get("iconId") or vid)})
+        elif source == "module_chaos":
+            # 붕괴 패러다임 — modules.chaos.chaosDatas (실명: '수적 붕괴' 등). 심화 단계는
+            # nextChaosId 체인을 따라 같은 카드의 usage에 줄로 병합.
+            datas = (mods.get("chaos") or {}).get("chaosDatas") or {}
+            base = sorted([v for v in datas.values() if not v.get("prevChaosId")],
+                          key=lambda v: v.get("sortId", 0))
+            for v in base:
+                lines = [v.get("functionDesc") or ""]
+                nxt = v.get("nextChaosId")
+                while nxt and nxt in datas:
+                    nv = datas[nxt]
+                    lines.append(f"〔{nv.get('name')}〕 {nv.get('functionDesc') or ''}")
+                    nxt = nv.get("nextChaosId")
+                entries.append({"id": v["chaosId"], "name": v.get("name"),
+                                "usage": "\n".join(x for x in lines if x.strip()) or None,
+                                "desc": (v.get("desc") or "").strip() or None,
+                                "img": has_icon(v.get("iconId") or v["chaosId"])})
+        elif source == "module_disaster":
+            # 시대 — modules.disaster.disasterData (유형 9종 × 형성기/확장기/… 단계).
+            # 유형별 한 카드, 단계 효과를 usage 줄로 병합.
+            datas = (mods.get("disaster") or {}).get("disasterData") or {}
+            groups = {}
+            for v in datas.values():
+                groups.setdefault(v.get("type") or v.get("id"), []).append(v)
+            for gtype in sorted(groups):
+                lv = sorted(groups[gtype], key=lambda v: v.get("level", 0))
+                first = lv[0]
+                lines = [f"〔{v.get('levelName') or v.get('level')}〕 {v.get('functionDesc') or ''}" for v in lv]
+                entries.append({"id": gtype, "name": first.get("name"),
+                                "usage": "\n".join(x for x in lines if x.strip()) or None,
+                                "desc": (first.get("desc") or "").strip() or None,
+                                "img": has_icon(first.get("iconId") or gtype)})
         if entries:
             mechanics.append({"label": label, "items": entries})
 
@@ -896,12 +938,20 @@ def build_rogue6():
         })
     scraps.sort(key=lambda x: ({"GOODS": 0, "MOVE": 1, "PASSIVE": 2}.get(x["type"], 9), x["sort"], x["id"]))
 
-    tools = [{"id": iid, "name": it["name"], "desc": it.get("description"), "usage": it.get("usage"),
-              "img": os.path.exists(os.path.join(relic_icon_dir, f"{iid}.webp"))}
-             for iid, it in items.items() if it.get("type") == "ACTIVE_TOOL"]
-    bands = [{"id": iid, "name": it["name"], "desc": it.get("description"), "usage": it.get("usage"),
-              "img": os.path.exists(os.path.join(relic_icon_dir, f"{iid}.webp"))}
-             for iid, it in items.items() if it.get("type") == "BAND"]
+    # 같은 이름은 업그레이드 티어 중복 — usage가 가장 긴(최종 티어) 항목만 대표로 (사용자 요청)
+    def item_group6(itype):
+        best = {}
+        for iid, it in items.items():
+            if it.get("type") != itype:
+                continue
+            nm = it["name"]
+            score = len(it.get("usage") or "") + len(it.get("description") or "")
+            if nm not in best or score > best[nm][0]:
+                best[nm] = (score, {"id": iid, "name": nm, "desc": it.get("description"), "usage": it.get("usage"),
+                                    "img": os.path.exists(os.path.join(relic_icon_dir, f"{iid}.webp"))})
+        return [e for _, e in best.values()]
+    tools = item_group6("ACTIVE_TOOL")
+    bands = item_group6("BAND")
 
     # 유산(襁褓 — 다음 탐색에 물려주는 아이템). 동명 중복(획득 횟수 슬롯)은 대표 1개만
     seen_legacy = set()
