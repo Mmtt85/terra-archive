@@ -4417,10 +4417,14 @@ html.dark .story-card:hover .story-thumb img {
     z-index: 5;
   }
   .story-back-top {
+    /* 본문 칼럼 '바깥' 왼쪽 여백(전역 15% 거터)에 띄운다 —
+       left:0(칼럼 안쪽)이면 본문 글 위로 겹친다 (사용자 리포트 2026-07-18) */
     position: absolute;
-    left: 0;
+    right: calc(100% + 14px);
+    left: auto;
     top: 0;
     margin-bottom: 0;
+    white-space: nowrap;
   }
 }
 /* 상세 콘텐츠(본문+레일 합산 966px) 한 덩어리를 섹션 안에서 가운데 정렬 —
