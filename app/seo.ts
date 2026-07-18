@@ -2,7 +2,8 @@
 // 정본 도메인은 terra-archive.net (2026-07 사용자가 구매·연결). Cloudflare Pages 기본
 // 도메인(terra-archive.pages.dev)과 프리뷰 배포(*.pages.dev)도 전부 이 SITE_URL을 canonical·
 // hreflang·OG로 내보내므로, 어느 도메인으로 크롤링되든 검색엔진이 .net으로 통합한다
-// (중복 콘텐츠 방지). 도메인을 바꾸면 여기 + public/sitemap.xml + public/robots.txt를 함께 수정.
+// (중복 콘텐츠 방지). 도메인을 바꾸면 여기 + scripts/build-sitemap.mjs + public/robots.txt를 함께 수정
+// (sitemap.xml은 빌드 시 build-sitemap.mjs가 라우트 스캔으로 자동 생성 — 직접 수정 금지).
 import type { Metadata } from "next";
 
 export const SITE_URL = "https://terra-archive.net";
