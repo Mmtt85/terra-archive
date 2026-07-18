@@ -754,6 +754,13 @@ const D: Record<string, Pair> = {
   // ── AI 스토리 요약 ─────────────────────────────────────────────────────────
   "스토리 요약": ["Story Digest", "ストーリー要約"],
   "AI 스토리 요약": ["AI Story Digest", "AIストーリー要約"],
+  "스토리": ["Story", "ストーリー"],
+  "이벤트 스토리를 AI 요약과 전문(풀 스크립트)으로": ["Event stories as AI digests and full scripts.", "イベントストーリーをAI要約と全文（フルスクリプト）で。"],
+  "스토리 - 명일방주 스토리 요약·전문 | 테라 아카이브": ["Story - Arknights Story Digests & Full Scripts | Terra Archive", "ストーリー - アークナイツストーリー要約・全文 | テラアーカイブ"],
+  "아직 한국 서버에 출시되지 않은 이벤트라, 중국 서버 원문을 AI가 번역한 비공식 한국어 텍스트입니다.": [
+    "This event has not been released on the KR server yet — this is an unofficial AI translation of the CN server text.",
+    "韓国サーバー未実装のイベントのため、中国サーバー原文をAIが翻訳した非公式テキストです。",
+  ],
   "요약": ["Digest", "要約"],
   "테라 연대기": ["Terra Chronicle", "テラ年代記"],
   "테라력 미정": ["Terra year TBD", "テラ暦 未定"],

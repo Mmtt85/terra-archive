@@ -577,7 +577,7 @@ function Portal({ onOpenTab }: { onOpenTab: (tab: Tab) => void }) {
     { tab: "archive", icon: "▤", name: t("오퍼 백과사전"), desc: t("소속·직군·태그·시너지로 필터·검색하는 오퍼레이터 도감") },
     { tab: "recruit", icon: "◎", name: t("공채 도우미"), desc: t("공개모집 태그 조합으로 확정·고성급 오퍼를 탐색") },
     { tab: "farm", icon: "◈", name: t("파밍·육성 시뮬"), desc: t("재료 파밍 효율표와 오퍼 육성 비용 시뮬레이션") },
-    { tab: "story", icon: "✦", name: t("AI 스토리 요약"), desc: t("이벤트 스토리를 컷씬과 함께 10분 분량으로 요약") },
+    { tab: "story", icon: "✦", name: t("스토리"), desc: t("이벤트 스토리를 AI 요약과 전문(풀 스크립트)으로") },
     { tab: "rogue", icon: "❖", name: t("통합전략 가이드"), desc: t("층별 노드·적 도감·유물·엔딩 조건을 난이도별로 정리") },
     { tab: "about", icon: "ⓘ", name: t("소개"), desc: t("각 기능이 무엇이고 언제 쓰는지 안내") },
   ];
@@ -847,7 +847,7 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
           : tab === "farm"
             ? t("재료 파밍 & 오퍼 육성 시뮬레이션 - 명일방주 파밍·육성 계산기 | 테라 아카이브")
             : tab === "story"
-              ? t("AI 스토리 요약 - 명일방주 스토리 요약 | 테라 아카이브")
+              ? t("스토리 - 명일방주 스토리 요약·전문 | 테라 아카이브")
               : tab === "rogue"
                 ? t("통합전략 가이드 - 명일방주 통합전략 공략 | 테라 아카이브")
                 : tab === "archive"
@@ -883,7 +883,7 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
     planner: t("인프라 자동편성기"),
     recruit: t("공채 도우미"),
     farm: t("파밍·육성 시뮬"),
-    story: t("AI 스토리 요약"),
+    story: t("스토리"),
     rogue: t("통합전략 가이드"),
     about: t("소개"),
   };
@@ -1061,7 +1061,7 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
             <button className={`tab-archive${tab === "archive" ? " selected" : ""}`} onClick={() => switchTab("archive")}><span className="tab-icon" aria-hidden>▤</span>{t("오퍼 백과사전")}</button>
             <button className={`tab-recruit${tab === "recruit" ? " selected" : ""}`} onClick={() => switchTab("recruit")}><span className="tab-icon" aria-hidden>◎</span>{t("공채 도우미")}</button>
             <button className={`tab-farm${tab === "farm" ? " selected" : ""}`} onClick={() => switchTab("farm")}><span className="tab-icon" aria-hidden>◈</span>{t("파밍·육성 시뮬")}</button>
-            <button className={`tab-story${tab === "story" ? " selected" : ""}`} onClick={() => switchTab("story")}><span className="tab-icon" aria-hidden>✦</span>{t("AI 스토리 요약")}</button>
+            <button className={`tab-story${tab === "story" ? " selected" : ""}`} onClick={() => switchTab("story")}><span className="tab-icon" aria-hidden>✦</span>{t("스토리")}</button>
             {/* 통합전략 가이드 — 마우스오버 시 테마별 부메뉴가 펼쳐진다 (플라이아웃) */}
             <div className="tab-rogue-wrap">
               <button className={`tab-rogue${tab === "rogue" ? " selected" : ""}`} onClick={() => switchTab("rogue")}><span className="tab-icon" aria-hidden>❖</span>{t("통합전략 가이드")}</button>

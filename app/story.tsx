@@ -57,7 +57,8 @@ const scriptIds = new Set(scriptIdsData as string[]);
 // 전문(풀 스크립트) 스키마 — build-story-scripts.py 라인 스키마와 1:1
 type ScriptLine = { n?: string; x?: string; st?: string; img?: string; loc?: string; opts?: string[]; vals?: string[]; br?: string };
 type ScriptEp = { code: string; name: string; tag: string; lines: ScriptLine[] };
-type ScriptData = { id: string; eps: ScriptEp[] };
+// tr: "cn" = 한국 서버 미출시 이벤트 — CN 원문 AI 번역본 (비공식 번역 안내 표시)
+type ScriptData = { id: string; eps: ScriptEp[]; tr?: string };
 const translatedByLocale: Record<string, Set<string>> = {
   en: new Set(translatedEnData as string[]),
   ja: new Set(translatedJaData as string[]),
@@ -109,9 +110,128 @@ function blockText(block: Block): string {
 // 세로 중앙 정렬 스택이 일반 노트북 뷰포트(~800px)를 넘지 않는 개수
 const MAX_RAIL_CARDS = 4;
 
+// ── 참조 레일 공용 로직 — 요약 본문과 전문(스크립트) 뷰가 같이 쓴다 (2026-07-18) ──
+// texts[i] = data-idx=i 요소의 매칭용 텍스트. 화면에 보이는 요소들에 언급된 엔티티를 추적.
+function useEntityRail(texts: string[], matchers: RegExp[]) {
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const [inView, setInView] = useState<Set<number>>(new Set());
+  const mentions = useMemo(
+    () =>
+      texts.map((text) => {
+        const found: number[] = [];
+        matchers.forEach((re, index) => { if (re.test(text)) found.push(index); });
+        return found;
+      }),
+    [texts, matchers],
+  );
+  useEffect(() => {
+    const root = bodyRef.current;
+    if (!root) return;
+    setInView(new Set());
+    const observer = new IntersectionObserver(
+      (entries) => {
+        setInView((previous) => {
+          const next = new Set(previous);
+          let changed = false;
+          for (const entry of entries) {
+            const index = Number((entry.target as HTMLElement).dataset.idx);
+            if (entry.isIntersecting) { if (!next.has(index)) { next.add(index); changed = true; } }
+            else if (next.delete(index)) changed = true;
+          }
+          // 실제 변화가 없으면 이전 Set을 그대로 반환 — 스크롤 중 불필요한 리렌더로
+          // 모바일에서 스크롤이 툭툭 끊기던 문제를 막는다 (2026-07)
+          return changed ? next : previous;
+        });
+      },
+      // '읽는 중' 영역: 화면 18%~90%. 아래쪽(하단 10% 지점)에서 문단이 나타나면 카드가 뜨고,
+      // 위로 스크롤돼 상단 ~18%까지 올라가면(거의 화면 밖) 사라진다. 아래쪽 문단 기준으로 판정.
+      { rootMargin: "-18% 0px -10% 0px" },
+    );
+    root.querySelectorAll<HTMLElement>("[data-idx]").forEach((node) => observer.observe(node));
+    return () => observer.disconnect();
+  }, [texts]);
+
+  // 지금 화면(아래 문단 우선)에 언급된 엔티티. 한 번 뜬 카드는 그 문단이 완전히 사라질 때까지
+  // 자리를 지켜, 4장 제한 때문에 밀렸다 다시 뜨는 깜빡임을 막는다. 빈 자리엔 아래쪽 새 엔티티를 채운다.
+  const [active, setActive] = useState<number[]>([]);
+  useEffect(() => {
+    const ordered: number[] = [];
+    [...inView].sort((a, b) => b - a).forEach((blockIndex) => {
+      for (const entityIndex of mentions[blockIndex] ?? []) {
+        if (!ordered.includes(entityIndex)) ordered.push(entityIndex);
+      }
+    });
+    const present = new Set(ordered);
+    setActive((prev) => {
+      const next = prev.filter((e) => present.has(e)); // 아직 보이는 카드는 순서 그대로 유지
+      for (const e of ordered) {                        // 빈 자리에만 아래쪽 새 엔티티 추가
+        if (next.length >= MAX_RAIL_CARDS) break;
+        if (!next.includes(e)) next.push(e);
+      }
+      return next.length === prev.length && next.every((e, i) => e === prev[i]) ? prev : next;
+    });
+  }, [inView, mentions]);
+
+  return { bodyRef, active };
+}
+
+// 참조 레일 렌더 — 요약/전문 공용 (모바일 펼침 상태 포함)
+function EntityRail({ entities, active, onShowOperator }: {
+  entities: Entity[]; active: number[]; onShowOperator?: (id: string) => void;
+}) {
+  const { t } = useI18n();
+  const [openCard, setOpenCard] = useState<string | null>(null); // 모바일 레일에서 펼친 카드(이름)
+  // 펼친 카드 바깥을 누르면 자동으로 접는다
+  useEffect(() => {
+    if (!openCard) return;
+    const onDown = (event: PointerEvent) => {
+      if (!(event.target as HTMLElement).closest(".story-rail .rail-card")) setOpenCard(null);
+    };
+    document.addEventListener("pointerdown", onDown);
+    return () => document.removeEventListener("pointerdown", onDown);
+  }, [openCard]);
+  return (
+    <aside className="story-rail" aria-label={t("등장인물")}>
+      {active.map((entityIndex) => {
+        const entity = entities[entityIndex];
+        const linked = Boolean(entity.op && onShowOperator);
+        // 전용 스탠딩 CG(img)가 없으면 연결된 오퍼레이터 아바타로 폴백
+        const imgSrc = entity.img ?? (entity.op ? `/avatars/${entity.op}.webp` : undefined);
+        // 모바일(≤1180px): 스니펫(이름만) → 탭하면 펼쳐 설명 표시, 한 번 더 탭하면 오퍼 상세(있으면)·접기.
+        // 데스크탑: 종전대로 카드를 누르면 바로 오퍼 상세.
+        const handleClick = () => {
+          const mobile = typeof window !== "undefined" && window.matchMedia("(max-width: 1180px)").matches;
+          if (mobile) {
+            if (openCard !== entity.name) { setOpenCard(entity.name); return; } // 첫 탭: 펼침
+            if (linked) onShowOperator!(entity.op!);                             // 펼친 카드 재탭: 오퍼 상세 (닫기는 바깥 클릭)
+          } else if (linked) {
+            onShowOperator!(entity.op!);
+          }
+        };
+        return (
+          <div className={`rail-card${linked ? " op-linked" : ""}${openCard === entity.name ? " open" : ""}`} key={entity.name}
+            onClick={handleClick}
+            role="button" tabIndex={0}
+            onKeyDown={(keyEvent) => { if (keyEvent.key === "Enter") handleClick(); }}
+            title={linked ? t("오퍼레이터 정보 보기") : undefined}>
+            {imgSrc && (
+              <div className={`cast-img${entity.img ? "" : " cast-avatar"}`}><img src={imgSrc} alt="" loading="lazy" decoding="async" /></div>
+            )}
+            <div className="rail-card-text"><b>{entity.name}{linked && <i className="op-mark" aria-hidden>↗</i>}</b><span><span className="rail-desc-full">{entity.desc}</span><span className="rail-desc-snip">{entity.desc.slice(0, 5).trim()}…</span></span></div>
+          </div>
+        );
+      })}
+    </aside>
+  );
+}
+
 // ── 전문(풀 스크립트) 리더 — 요약 상단 '전문 보기' 토글로 진입 (2026-07-18) ──
 // 데이터는 public/story/script/<id>.json 을 지연 fetch. 에피소드 단위로 렌더.
-function ScriptReader({ script, error }: { script: ScriptData | null; error: boolean }) {
+// 요약과 같은 참조 레일이 오른쪽에 따라다닌다 (사용자 요청 2026-07-18).
+function ScriptReader({ script, error, entities, matchers, onShowOperator }: {
+  script: ScriptData | null; error: boolean;
+  entities: Entity[]; matchers: RegExp[]; onShowOperator?: (id: string) => void;
+}) {
   const { locale, t } = useI18n();
   const [epIdx, setEpIdx] = useState(0);
   const topRef = useRef<HTMLDivElement>(null);
@@ -140,11 +260,17 @@ function ScriptReader({ script, error }: { script: ScriptData | null; error: boo
       return ln;
     });
   }, [ep]);
+  const lineTexts = useMemo(
+    () => lines.map((ln) => [ln.n, ln.x, ln.st, ln.loc, ...(ln.opts ?? [])].filter(Boolean).join(" ")),
+    [lines],
+  );
+  const { bodyRef, active } = useEntityRail(lineTexts, matchers);
   if (error) return <p className="story-disclaimer">{t("스크립트를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.")}</p>;
   if (!script || !ep) return <p className="sc-loading">{t("스크립트 불러오는 중…")}</p>;
   return (
     <div className="story-script" ref={topRef}>
       <p className="story-disclaimer">{t("게임 내 스토리 스크립트 원문입니다. 대사·지문·컷씬만 표시되며 연출(음악·효과)은 생략됩니다.")}</p>
+      {script.tr === "cn" && <p className="story-disclaimer">{t("아직 한국 서버에 출시되지 않은 이벤트라, 중국 서버 원문을 AI가 번역한 비공식 한국어 텍스트입니다.")}</p>}
       {locale !== "ko" && <p className="story-disclaimer">{t("전문은 현재 한국어 게임 텍스트로만 제공됩니다.")}</p>}
       <div className="sc-ep-nav" role="tablist" aria-label={t("에피소드")}>
         {script.eps.map((e, i) => (
@@ -155,10 +281,11 @@ function ScriptReader({ script, error }: { script: ScriptData | null; error: boo
         ))}
       </div>
       <h3 className="sc-ep-title">{ep.code} {ep.name}{ep.tag && <small>{ep.tag}</small>}</h3>
-      <div className="sc-body">
+      <div className="story-detail-grid">
+        <div className="story-body sc-body" ref={bodyRef}>
         {lines.map((ln, i) => {
           if (ln.opts) return (
-            <div key={i} className="sc-opts"><i>{t("선택지")}</i>{ln.opts.map((o, j) => <span key={j}>{o}</span>)}</div>
+            <div key={i} className="sc-opts" data-idx={i}><i>{t("선택지")}</i>{ln.opts.map((o, j) => <span key={j}>{o}</span>)}</div>
           );
           if (ln.br != null) {
             const texts = (ln as ScriptLine & { brTexts?: string[] }).brTexts ?? [];
@@ -169,11 +296,13 @@ function ScriptReader({ script, error }: { script: ScriptData | null; error: boo
               <img src={`/story/cut/${ln.img}.webp`} alt="" loading="lazy" decoding="async" />
             </figure>
           );
-          if (ln.loc) return <div key={i} className="sc-loc">{ln.loc}</div>;
-          if (ln.st) return <p key={i} className="sc-st">{ln.st}</p>;
-          if (ln.n) return <p key={i} className="sc-line"><b className="sc-name">{ln.n}</b><span>{ln.x}</span></p>;
-          return <p key={i} className="sc-narr">{ln.x}</p>;
+          if (ln.loc) return <div key={i} className="sc-loc" data-idx={i}>{ln.loc}</div>;
+          if (ln.st) return <p key={i} className="sc-st" data-idx={i}>{ln.st}</p>;
+          if (ln.n) return <p key={i} className="sc-line" data-idx={i}><b className="sc-name">{ln.n}</b><span>{ln.x}</span></p>;
+          return <p key={i} className="sc-narr" data-idx={i}>{ln.x}</p>;
         })}
+        </div>
+        <EntityRail entities={entities} active={active} onShowOperator={onShowOperator} />
       </div>
       <div className="sc-ep-foot">
         {epIdx > 0 && <button type="button" onClick={() => goEp(epIdx - 1)}>← {t("이전 에피소드")}</button>}
@@ -188,8 +317,6 @@ function StoryDetail({ event, summary, onClose, onShowOperator }: {
   event: StoryEvent; summary: Summary; onClose: () => void; onShowOperator?: (id: string) => void;
 }) {
   const { locale, t } = useI18n();
-  const bodyRef = useRef<HTMLDivElement>(null);
-  const [inView, setInView] = useState<Set<number>>(new Set());
 
   // 전문(풀 스크립트) 토글 — public/story/script/<id>.json 을 첫 진입 때 지연 fetch
   const hasScript = scriptIds.has(event.id);
@@ -220,79 +347,20 @@ function StoryDetail({ event, summary, onClose, onShowOperator }: {
         const keys = [entity.name, ...(entity.alias ?? [])]
           .map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
           .sort((a, b) => b.length - a.length);
-        return new RegExp(`(?<![가-힣])(?:${keys.join("|")})`);
+        // 한 글자 이름(위·시 등)은 '위해·위험·시간' 같은 일반 단어 첫 글자에 오탐된다 —
+        // 단독으로 서 있거나(뒤가 한글 아님) 바로 뒤가 조사일 때만 매칭 (사용자 리포트 2026-07-18)
+        const parts = keys.map((k) =>
+          k.length === 1
+            ? `(?:${k}(?![가-힣])|${k}(?=(?:가|는|를|의|와|과|도|만|랑|에게|한테|께서?)(?![가-힣])))`
+            : k,
+        );
+        return new RegExp(`(?<![가-힣])(?:${parts.join("|")})`);
       }),
     [entities],
   );
-  // 블록별로 언급된 엔티티 인덱스를 미리 계산
-  const mentions = useMemo(
-    () =>
-      summary.blocks.map((block) => {
-        const text = blockText(block);
-        const found: number[] = [];
-        matchers.forEach((re, index) => { if (re.test(text)) found.push(index); });
-        return found;
-      }),
-    [summary, matchers],
-  );
-
-  // 화면(읽는 영역)에 들어온 블록 추적
-  useEffect(() => {
-    const root = bodyRef.current;
-    if (!root) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        setInView((previous) => {
-          const next = new Set(previous);
-          let changed = false;
-          for (const entry of entries) {
-            const index = Number((entry.target as HTMLElement).dataset.idx);
-            if (entry.isIntersecting) { if (!next.has(index)) { next.add(index); changed = true; } }
-            else if (next.delete(index)) changed = true;
-          }
-          // 실제 변화가 없으면 이전 Set을 그대로 반환 — 스크롤 중 불필요한 리렌더로
-          // 모바일에서 스크롤이 툭툭 끊기던 문제를 막는다 (2026-07)
-          return changed ? next : previous;
-        });
-      },
-      // '읽는 중' 영역: 화면 18%~90%. 아래쪽(하단 10% 지점)에서 문단이 나타나면 카드가 뜨고,
-      // 위로 스크롤돼 상단 ~18%까지 올라가면(거의 화면 밖) 사라진다. 아래쪽 문단 기준으로 판정.
-      { rootMargin: "-18% 0px -10% 0px" },
-    );
-    root.querySelectorAll<HTMLElement>("[data-idx]").forEach((node) => observer.observe(node));
-    return () => observer.disconnect();
-  }, [summary]);
-
-  // 지금 화면(아래 문단 우선)에 언급된 엔티티. 한 번 뜬 카드는 그 문단이 완전히 사라질 때까지
-  // 자리를 지켜, 4장 제한 때문에 밀렸다 다시 뜨는 깜빡임을 막는다. 빈 자리엔 아래쪽 새 엔티티를 채운다.
-  const [active, setActive] = useState<number[]>([]);
-  const [openCard, setOpenCard] = useState<string | null>(null); // 모바일 레일에서 펼친 카드(이름)
-  // 펼친 카드 바깥을 누르면 자동으로 접는다
-  useEffect(() => {
-    if (!openCard) return;
-    const onDown = (event: PointerEvent) => {
-      if (!(event.target as HTMLElement).closest(".story-rail .rail-card")) setOpenCard(null);
-    };
-    document.addEventListener("pointerdown", onDown);
-    return () => document.removeEventListener("pointerdown", onDown);
-  }, [openCard]);
-  useEffect(() => {
-    const ordered: number[] = [];
-    [...inView].sort((a, b) => b - a).forEach((blockIndex) => {
-      for (const entityIndex of mentions[blockIndex] ?? []) {
-        if (!ordered.includes(entityIndex)) ordered.push(entityIndex);
-      }
-    });
-    const present = new Set(ordered);
-    setActive((prev) => {
-      const next = prev.filter((e) => present.has(e)); // 아직 보이는 카드는 순서 그대로 유지
-      for (const e of ordered) {                        // 빈 자리에만 아래쪽 새 엔티티 추가
-        if (next.length >= MAX_RAIL_CARDS) break;
-        if (!next.includes(e)) next.push(e);
-      }
-      return next.length === prev.length && next.every((e, i) => e === prev[i]) ? prev : next;
-    });
-  }, [inView, mentions]);
+  // 참조 레일 — 블록 텍스트 기준 매칭 (전문 뷰는 ScriptReader가 라인 기준으로 동일 훅 사용)
+  const blockTexts = useMemo(() => summary.blocks.map(blockText), [summary]);
+  const { bodyRef, active } = useEntityRail(blockTexts, matchers);
 
   return (
     <section className="story story-detail" aria-label={locText(locale, event.name)}>
@@ -320,7 +388,7 @@ function StoryDetail({ event, summary, onClose, onShowOperator }: {
             <p className="story-disclaimer">{t("이 편의 요약 본문은 아직 번역되지 않아 한국어로 표시됩니다.")}</p>
           )}
         </header>
-        {scriptView && <ScriptReader script={script} error={scriptErr} />}
+        {scriptView && <ScriptReader script={script} error={scriptErr} entities={entities} matchers={matchers} onShowOperator={onShowOperator} />}
         <div className="story-detail-grid" hidden={scriptView}>
           <div className="story-body" ref={bodyRef}>
             {summary.blocks.map((block, index) => {
@@ -356,37 +424,7 @@ function StoryDetail({ event, summary, onClose, onShowOperator }: {
               return <p key={index} data-idx={index}>{rich(block.x)}</p>;
             })}
           </div>
-          <aside className="story-rail" aria-label={t("등장인물")}>
-            {active.map((entityIndex) => {
-              const entity = entities[entityIndex];
-              const linked = Boolean(entity.op && onShowOperator);
-              // 전용 스탠딩 CG(img)가 없으면 연결된 오퍼레이터 아바타로 폴백
-              const imgSrc = entity.img ?? (entity.op ? `/avatars/${entity.op}.webp` : undefined);
-              // 모바일(≤1180px): 스니펫(이름만) → 탭하면 펼쳐 설명 표시, 한 번 더 탭하면 오퍼 상세(있으면)·접기.
-              // 데스크탑: 종전대로 카드를 누르면 바로 오퍼 상세.
-              const handleClick = () => {
-                const mobile = typeof window !== "undefined" && window.matchMedia("(max-width: 1180px)").matches;
-                if (mobile) {
-                  if (openCard !== entity.name) { setOpenCard(entity.name); return; } // 첫 탭: 펼침
-                  if (linked) onShowOperator!(entity.op!);                             // 펼친 카드 재탭: 오퍼 상세 (닫기는 바깥 클릭)
-                } else if (linked) {
-                  onShowOperator!(entity.op!);
-                }
-              };
-              return (
-                <div className={`rail-card${linked ? " op-linked" : ""}${openCard === entity.name ? " open" : ""}`} key={entity.name}
-                  onClick={handleClick}
-                  role="button" tabIndex={0}
-                  onKeyDown={(keyEvent) => { if (keyEvent.key === "Enter") handleClick(); }}
-                  title={linked ? t("오퍼레이터 정보 보기") : undefined}>
-                  {imgSrc && (
-                    <div className={`cast-img${entity.img ? "" : " cast-avatar"}`}><img src={imgSrc} alt="" loading="lazy" decoding="async" /></div>
-                  )}
-                  <div className="rail-card-text"><b>{entity.name}{linked && <i className="op-mark" aria-hidden>↗</i>}</b><span><span className="rail-desc-full">{entity.desc}</span><span className="rail-desc-snip">{entity.desc.slice(0, 5).trim()}…</span></span></div>
-                </div>
-              );
-            })}
-          </aside>
+          <EntityRail entities={entities} active={active} onShowOperator={onShowOperator} />
         </div>
         <footer className="story-detail-foot">
           <button type="button" className="story-back" onClick={onClose}>← {t("스토리 목록으로")}</button>
@@ -860,10 +898,10 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture }:
   }
 
   return (
-    <section className="story" aria-label={t("AI 스토리 요약")}>
+    <section className="story" aria-label={t("스토리")}>
       <div className="story-head">
         <span className="section-no">AI STORY DIGEST</span>
-        <h2>{t("AI 스토리 요약")}</h2>
+        <h2>{t("스토리")}</h2>
         <p>{t("한국 서버에 풀린 사이드 스토리 {count}개의 아카이브입니다. AI가 스토리 스크립트 전문을 정독하고 컷씬과 함께 10분 분량으로 요약합니다. 현재 {done}개 수록 — 계속 추가됩니다.", { count: data.events.filter((event) => !event.unreleased).length, done: summarized })}</p>
         <p className="story-source">{t("요약에는 결말 포함 스포일러가 있습니다. 이벤트 제목·썸네일 출처: 게임 데이터 · {date} 기준.", { date: data.updated })}</p>
         {includeFuture && data.events.some((event) => event.unreleased) && (

@@ -196,7 +196,96 @@ def download_cuts(names):
     return failed
 
 
+# ── CN 선행(미실장) 이벤트: 원문 파싱 → AI 번역 → 병합 ─────────────────────────
+# python3 scripts/build-story-scripts.py --cn act51side       # CN 파싱 → scripts/story-cn/<id>/
+# (AI가 scripts/story-cn/<id>/ko/ep_NN.json 에 번역을 채운다 — 구조 보존)
+# python3 scripts/build-story-scripts.py --cn-merge act51side # 검증·병합 → public/story/script/
+
+def cn_prepare(eid):
+    review = fetch(f"{GAMEDATA}/cn/gamedata/excel/story_review_table.json")
+    entry = review.get(eid) or sys.exit(f"CN 리뷰 테이블에 없음: {eid}")
+    base = os.path.join(REPO, "scripts", "story-cn", eid)
+    os.makedirs(os.path.join(base, "ko"), exist_ok=True)
+    infos = sorted(entry["infoUnlockDatas"], key=lambda i: i["storySort"])
+    meta, images, speakers = [], [], {}
+    for idx, info in enumerate(infos):
+        # CN 브랜치 txt — 캐시 키가 KR과 겹치지 않게 접두
+        dest = os.path.join(CACHE, "cn__" + info["storyTxt"].replace("/", "__") + ".txt")
+        if os.path.exists(dest):
+            txt = open(dest, encoding="utf-8").read()
+        else:
+            txt = fetch(f"{GAMEDATA}/cn/gamedata/story/{info['storyTxt']}.txt", binary=True).decode("utf-8")
+            os.makedirs(CACHE, exist_ok=True)
+            open(dest, "w", encoding="utf-8").write(txt)
+        lines = parse_story(txt)
+        for ln in lines:
+            if "img" in ln and ln["img"] not in images:
+                images.append(ln["img"])
+            if "n" in ln:
+                speakers[ln["n"]] = speakers.get(ln["n"], 0) + 1
+        ep = {"idx": idx, "code": info.get("storyCode") or "", "name": info.get("storyName") or "",
+              "tag": info.get("avgTag") or "", "lines": lines}
+        json.dump(ep, open(os.path.join(base, f"ep_{idx:02d}.json"), "w", encoding="utf-8"),
+                  ensure_ascii=False, indent=1)
+        meta.append({"idx": idx, "code": ep["code"], "name": ep["name"], "tag": ep["tag"], "nlines": len(lines)})
+    json.dump({"id": eid, "eps": meta}, open(os.path.join(base, "meta.json"), "w", encoding="utf-8"),
+              ensure_ascii=False, indent=1)
+    # 화자 목록 (빈도순) — AI가 speakers.json(CN→KR 통일 표기)을 만들 때 참고
+    json.dump(dict(sorted(speakers.items(), key=lambda x: -x[1])),
+              open(os.path.join(base, "speakers-raw.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    failed = download_cuts(images)
+    print(f"{eid}: {len(meta)}편 파싱 → {base}/ep_*.json · 화자 {len(speakers)}종 · 컷 {len(images)}장"
+          + (f" (누락 {failed})" if failed else ""))
+
+
+def cn_merge(eid):
+    import re as _re
+    base = os.path.join(REPO, "scripts", "story-cn", eid)
+    meta = json.load(open(os.path.join(base, "meta.json"), encoding="utf-8"))
+    hanzi = _re.compile(r"[一-鿿]")
+    eps, bad = [], []
+    for m in meta["eps"]:
+        src = json.load(open(os.path.join(base, f"ep_{m['idx']:02d}.json"), encoding="utf-8"))
+        ko_path = os.path.join(base, "ko", f"ep_{m['idx']:02d}.json")
+        if not os.path.exists(ko_path):
+            bad.append((m["idx"], "번역 파일 없음")); continue
+        ko = json.load(open(ko_path, encoding="utf-8"))
+        errs = []
+        if len(ko.get("lines", [])) != len(src["lines"]):
+            errs.append(f"라인 수 {len(src['lines'])}→{len(ko.get('lines', []))}")
+        else:
+            for i, (a, b) in enumerate(zip(src["lines"], ko["lines"])):
+                if set(a.keys()) - {"vals"} != set(b.keys()) - {"vals"}:
+                    errs.append(f"L{i} 키 불일치 {sorted(a)}→{sorted(b)}"); break
+                if a.get("img") != b.get("img") or a.get("br") != b.get("br"):
+                    errs.append(f"L{i} img/br 변조"); break
+            nhan = sum(1 for b in ko["lines"] for v in (b.get("n"), b.get("x"), b.get("st"), b.get("loc"))
+                       if isinstance(v, str) and hanzi.search(v))
+            if nhan > 0:
+                errs.append(f"중국어 잔존 {nhan}줄")
+        if errs:
+            bad.append((m["idx"], "; ".join(errs))); continue
+        eps.append({"code": ko.get("code") or m["code"], "name": ko.get("name") or m["name"],
+                    "tag": ko.get("tag") or m["tag"], "lines": ko["lines"]})
+    if bad:
+        for idx, msg in bad:
+            print(f"  ✗ ep_{idx:02d}: {msg}")
+        sys.exit(f"{eid}: {len(bad)}편 불량 — 병합 중단")
+    out = {"id": eid, "tr": "cn", "eps": eps}
+    dest = os.path.join(OUT_DIR, f"{eid}.json")
+    json.dump(out, open(dest, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
+    ids_path = os.path.join(REPO, "app", "data", "story-script-ids.json")
+    ids = set(json.load(open(ids_path, encoding="utf-8")))
+    ids.add(eid)
+    json.dump(sorted(ids), open(ids_path, "w", encoding="utf-8"), ensure_ascii=False)
+    print(f"{eid}: {len(eps)}편 병합 → {dest} ({os.path.getsize(dest)//1024}KB) · ids 갱신")
+
+
 def main():
+    if len(sys.argv) > 2 and sys.argv[1] == "--cn":
+        cn_prepare(sys.argv[2]); return
+    if len(sys.argv) > 2 and sys.argv[1] == "--cn-merge":
+        cn_merge(sys.argv[2]); return
     only = sys.argv[1] if len(sys.argv) > 1 else None
     summaries = json.load(open(os.path.join(REPO, "app", "data", "story-summaries.json"), encoding="utf-8"))
     review = fetch(f"{GAMEDATA}/kr/gamedata/excel/story_review_table.json")

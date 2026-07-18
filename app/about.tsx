@@ -117,8 +117,8 @@ const CONTENT: Record<Locale, Content> = {
         ],
       },
       {
-        tab: "story", icon: "✦", name: "AI 스토리 요약",
-        summary: "이벤트 사이드 스토리를 컷씬과 함께 10분 분량으로 읽을 수 있게 요약합니다.",
+        tab: "story", icon: "✦", name: "스토리",
+        summary: "이벤트 스토리를 AI 요약과 전문(풀 스크립트)으로 읽을 수 있습니다.",
         bullets: [
           "스토리 스크립트 전문을 정독한 AI 요약 — 바쁜 독타를 위한 줄거리 정리",
           "테라 연대기 타임라인으로 이벤트 시간 순서를 한눈에 파악",
