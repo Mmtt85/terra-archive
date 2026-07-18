@@ -11,7 +11,7 @@ import InfraPlanner from "./planner";
 import RecruitHelper from "./recruit";
 import FarmGuide from "./farm";
 import { normSearch } from "./search";
-import StoryGuide, { type StorySummaries } from "./story";
+import StoryGuide, { type StorySummaries, type OpIndex } from "./story";
 import RogueGuide, { TOPICS as ROGUE_TOPICS, slugOf as rogueSlugOf } from "./rogue";
 import About from "./about";
 import FeedbackWidget from "./feedback-widget";
@@ -635,6 +635,12 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
   // 백과사전 목록·필터·카운트가 쓰는 로스터 — 미래시 꺼짐(기본)이면 미실장 오퍼 제외.
   // 딥링크(#op-…)·플래너발 모달 열기는 전체 operators에서 찾으므로 토글과 무관하게 동작.
   const roster = useMemo(() => (includeFuture ? operators : operators.filter((operator) => !operator.unreleased)), [operators, includeFuture]);
+  // 스토리 전문 보기 레일용 — 화자명이 오퍼레이터면 자동 카드 (요약 미등록 인물 커버, 2026-07-18)
+  const storyOpIndex = useMemo<OpIndex>(() => {
+    const m: OpIndex = {};
+    for (const o of operators) m[o.name] = { op: o.id, desc: `${o.rarity}성 ${o.job} 오퍼레이터` };
+    return m;
+  }, [operators]);
   const [selectedFactions, setSelectedFactions] = useState<string[]>([]);
   const [selectedConcepts, setSelectedConcepts] = useState<string[]>([]);
   const [query, setQuery] = useState("");
@@ -1143,7 +1149,7 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
       {tab === "planner" && <InfraPlanner onShowOperator={showOperatorById} extra={extra} includeFuture={includeFuture} />}
       {tab === "recruit" && <RecruitHelper onShowOperator={showOperatorById} extra={extra} />}
       {tab === "farm" && <FarmGuide operators={operators} includeFuture={includeFuture} onShowOperator={showOperatorById} />}
-      {tab === "story" && <StoryGuide summaries={summaries} onShowOperator={showOperatorById} includeFuture={includeFuture} />}
+      {tab === "story" && <StoryGuide summaries={summaries} onShowOperator={showOperatorById} includeFuture={includeFuture} opIndex={storyOpIndex} />}
       {tab === "rogue" && <RogueGuide includeFuture={includeFuture} />}
       {tab === "about" && <About onOpenTab={switchTab} />}
 

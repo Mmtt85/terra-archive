@@ -110,6 +110,24 @@ function blockText(block: Block): string {
 // 세로 중앙 정렬 스택이 일반 노트북 뷰포트(~800px)를 넘지 않는 개수
 const MAX_RAIL_CARDS = 4;
 
+// 엔티티 이름들 → 매칭 정규식. 이름 앞에 한글이 오면 제외(negative lookbehind — '-이신' 오탐 방지).
+// 한 글자 이름(위·시·첸 등)은 '위해·시간' 같은 일반 단어 첫 글자에 오탐되므로
+// 단독으로 서 있거나 바로 뒤가 조사일 때만 매칭 (사용자 리포트 2026-07-18).
+function entityMatcher(rawKeys: string[]): RegExp {
+  const keys = rawKeys
+    .map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    .sort((a, b) => b.length - a.length);
+  const parts = keys.map((k) =>
+    k.length === 1
+      ? `(?:${k}(?![가-힣])|${k}(?=(?:가|는|를|의|와|과|도|만|랑|에게|한테|께서?)(?![가-힣])))`
+      : k,
+  );
+  return new RegExp(`(?<![가-힣])(?:${parts.join("|")})`);
+}
+
+// 오퍼레이터 자동 카드 인덱스 — Home이 로케일 오퍼 데이터에서 만들어 내려준다 (name → {op, desc})
+export type OpIndex = Record<string, { op: string; desc: string }>;
+
 // ── 참조 레일 공용 로직 — 요약 본문과 전문(스크립트) 뷰가 같이 쓴다 (2026-07-18) ──
 // texts[i] = data-idx=i 요소의 매칭용 텍스트. 화면에 보이는 요소들에 언급된 엔티티를 추적.
 function useEntityRail(texts: string[], matchers: RegExp[]) {
@@ -228,11 +246,33 @@ function EntityRail({ entities, active, onShowOperator }: {
 // ── 전문(풀 스크립트) 리더 — 요약 상단 '전문 보기' 토글로 진입 (2026-07-18) ──
 // 데이터는 public/story/script/<id>.json 을 지연 fetch. 에피소드 단위로 렌더.
 // 요약과 같은 참조 레일이 오른쪽에 따라다닌다 (사용자 요청 2026-07-18).
-function ScriptReader({ script, error, entities, matchers, onShowOperator }: {
+function ScriptReader({ script, error, entities, matchers, opIndex, onShowOperator }: {
   script: ScriptData | null; error: boolean;
-  entities: Entity[]; matchers: RegExp[]; onShowOperator?: (id: string) => void;
+  entities: Entity[]; matchers: RegExp[]; opIndex?: OpIndex; onShowOperator?: (id: string) => void;
 }) {
   const { locale, t } = useI18n();
+  // 요약 카드에 없는 화자라도 오퍼레이터면 자동으로 레일 카드 생성 (호시구마 등 — 사용자 리포트 2026-07-18)
+  const autoEntities = useMemo<Entity[]>(() => {
+    if (!script || !opIndex) return [];
+    const covered = new Set(entities.flatMap((e) => [e.name, ...(e.alias ?? [])]));
+    const seen = new Set<string>();
+    const out: Entity[] = [];
+    for (const e of script.eps) {
+      for (const ln of e.lines) {
+        if (!ln.n || seen.has(ln.n)) continue;
+        seen.add(ln.n);
+        if (covered.has(ln.n)) continue;
+        const oi = opIndex[ln.n];
+        if (oi) out.push({ name: ln.n, desc: oi.desc, op: oi.op });
+      }
+    }
+    return out;
+  }, [script, opIndex, entities]);
+  const allEntities = useMemo(() => [...entities, ...autoEntities], [entities, autoEntities]);
+  const allMatchers = useMemo(
+    () => [...matchers, ...autoEntities.map((e) => entityMatcher([e.name]))],
+    [matchers, autoEntities],
+  );
   const [epIdx, setEpIdx] = useState(0);
   const topRef = useRef<HTMLDivElement>(null);
   const goEp = (i: number) => {
@@ -264,7 +304,7 @@ function ScriptReader({ script, error, entities, matchers, onShowOperator }: {
     () => lines.map((ln) => [ln.n, ln.x, ln.st, ln.loc, ...(ln.opts ?? [])].filter(Boolean).join(" ")),
     [lines],
   );
-  const { bodyRef, active } = useEntityRail(lineTexts, matchers);
+  const { bodyRef, active } = useEntityRail(lineTexts, allMatchers);
   if (error) return <p className="story-disclaimer">{t("스크립트를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.")}</p>;
   if (!script || !ep) return <p className="sc-loading">{t("스크립트 불러오는 중…")}</p>;
   return (
@@ -302,7 +342,7 @@ function ScriptReader({ script, error, entities, matchers, onShowOperator }: {
           return <p key={i} className="sc-narr" data-idx={i}>{ln.x}</p>;
         })}
         </div>
-        <EntityRail entities={entities} active={active} onShowOperator={onShowOperator} />
+        <EntityRail entities={allEntities} active={active} onShowOperator={onShowOperator} />
       </div>
       <div className="sc-ep-foot">
         {epIdx > 0 && <button type="button" onClick={() => goEp(epIdx - 1)}>← {t("이전 에피소드")}</button>}
@@ -313,8 +353,8 @@ function ScriptReader({ script, error, entities, matchers, onShowOperator }: {
 }
 
 // 요약 상세 — 본문 + 스크롤 추적 참조 레일
-function StoryDetail({ event, summary, onClose, onShowOperator }: {
-  event: StoryEvent; summary: Summary; onClose: () => void; onShowOperator?: (id: string) => void;
+function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }: {
+  event: StoryEvent; summary: Summary; onClose: () => void; onShowOperator?: (id: string) => void; opIndex?: OpIndex;
 }) {
   const { locale, t } = useI18n();
 
@@ -342,20 +382,7 @@ function StoryDetail({ event, summary, onClose, onShowOperator }: {
   // "이신"이 경어체 "-이신"(선생님이신)에, 짧은 이름이 다른 단어에 부분일치해 레일이
   // 엉뚱하게 뜨던 문제를 막는다. 한국어 조사는 이름 뒤에 붙으므로 뒤쪽은 열어 둔다 (2026-07).
   const matchers = useMemo(
-    () =>
-      entities.map((entity) => {
-        const keys = [entity.name, ...(entity.alias ?? [])]
-          .map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
-          .sort((a, b) => b.length - a.length);
-        // 한 글자 이름(위·시 등)은 '위해·위험·시간' 같은 일반 단어 첫 글자에 오탐된다 —
-        // 단독으로 서 있거나(뒤가 한글 아님) 바로 뒤가 조사일 때만 매칭 (사용자 리포트 2026-07-18)
-        const parts = keys.map((k) =>
-          k.length === 1
-            ? `(?:${k}(?![가-힣])|${k}(?=(?:가|는|를|의|와|과|도|만|랑|에게|한테|께서?)(?![가-힣])))`
-            : k,
-        );
-        return new RegExp(`(?<![가-힣])(?:${parts.join("|")})`);
-      }),
+    () => entities.map((entity) => entityMatcher([entity.name, ...(entity.alias ?? [])])),
     [entities],
   );
   // 참조 레일 — 블록 텍스트 기준 매칭 (전문 뷰는 ScriptReader가 라인 기준으로 동일 훅 사용)
@@ -388,7 +415,7 @@ function StoryDetail({ event, summary, onClose, onShowOperator }: {
             <p className="story-disclaimer">{t("이 편의 요약 본문은 아직 번역되지 않아 한국어로 표시됩니다.")}</p>
           )}
         </header>
-        {scriptView && <ScriptReader script={script} error={scriptErr} entities={entities} matchers={matchers} onShowOperator={onShowOperator} />}
+        {scriptView && <ScriptReader script={script} error={scriptErr} entities={entities} matchers={matchers} opIndex={opIndex} onShowOperator={onShowOperator} />}
         <div className="story-detail-grid" hidden={scriptView}>
           <div className="story-body" ref={bodyRef}>
             {summary.blocks.map((block, index) => {
@@ -838,7 +865,7 @@ function DigestView({ onOpen, includeFuture, group, onGroup }: { onOpen: (event:
   );
 }
 
-export default function StoryGuide({ summaries, onShowOperator, includeFuture }: { summaries: StorySummaries; onShowOperator?: (id: string) => void; includeFuture?: boolean }) {
+export default function StoryGuide({ summaries, onShowOperator, includeFuture, opIndex }: { summaries: StorySummaries; onShowOperator?: (id: string) => void; includeFuture?: boolean; opIndex?: OpIndex }) {
   const { t } = useI18n();
   const [view, setView] = useState<"digest" | "chronicle">("digest");
   const [group, setGroup] = useState<"theme" | "kind">("kind");
@@ -894,7 +921,7 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture }:
   const summarized = data.events.filter((event) => summaryIds.has(event.id)).length;
 
   if (selected) {
-    return <StoryDetail event={selected} summary={summaries[selected.id]} onClose={close} onShowOperator={onShowOperator} />;
+    return <StoryDetail event={selected} summary={summaries[selected.id]} onClose={close} onShowOperator={onShowOperator} opIndex={opIndex} />;
   }
 
   return (
