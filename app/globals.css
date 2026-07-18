@@ -4768,13 +4768,13 @@ html.dark .story-card:hover .story-thumb img {
   font-size: 12.5px;
   letter-spacing: -0.3px;
 }
-/* 레일 카드가 본문의 어느 단어 때문에 떴는지 표시 (사용자 요청 2026-07-18) */
-.rail-why {
-  font-style: normal;
-  font-weight: 600;
-  font-size: 10.5px;
-  color: var(--muted);
-  margin-left: 6px;
+/* 본문에서 레일 카드로 연결되는 단어 — 점선 밑줄 (사용자 확정 2026-07-18) */
+.ent-mark {
+  font-style: inherit;
+  text-decoration: underline dotted;
+  text-decoration-color: #b3a58f;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
 }
 .rail-card-text span {
   font: 600 11px/1.5 monospace;

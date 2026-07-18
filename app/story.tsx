@@ -128,6 +128,40 @@ function entityMatcher(rawKeys: string[]): RegExp {
 // 오퍼레이터 자동 카드 인덱스 — Home이 로케일 오퍼 데이터에서 만들어 내려준다 (name → {op, desc})
 export type OpIndex = Record<string, { op: string; desc: string }>;
 
+// 본문에서 레일 매칭 단어에 점선 밑줄 — 레일 카드가 왜 떴는지 본문에서 직접 보여준다
+// (사용자 확정 2026-07-18: 카드 옆 배지 대신 본문 밑줄). re는 매처들의 합성 글로벌 정규식.
+function markEntities(text: string, re: RegExp | null): React.ReactNode {
+  if (!re) return text;
+  const out: React.ReactNode[] = [];
+  let last = 0;
+  let k = 0;
+  re.lastIndex = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text))) {
+    if (m[0].length === 0) { re.lastIndex++; continue; }
+    if (m.index > last) out.push(text.slice(last, m.index));
+    out.push(<i key={k++} className="ent-mark">{m[0]}</i>);
+    last = m.index + m[0].length;
+  }
+  if (last === 0) return text;
+  out.push(text.slice(last));
+  return out;
+}
+
+// **볼드** 마크업 + 엔티티 밑줄을 같이 처리 (요약 본문용 — i18n rich 대체)
+function richMark(s: string, re: RegExp | null): React.ReactNode {
+  const parts = s.split(/\*\*(.+?)\*\*/g);
+  if (parts.length === 1) return markEntities(s, re);
+  return parts.map((part, i) =>
+    i % 2 ? <b key={i}>{markEntities(part, re)}</b> : <span key={i}>{markEntities(part, re)}</span>);
+}
+
+// 매처 배열 → 합성 글로벌 정규식 (본문 밑줄용)
+function combineMatchers(matchers: RegExp[]): RegExp | null {
+  if (matchers.length === 0) return null;
+  return new RegExp(matchers.map((r) => r.source).join("|"), "g");
+}
+
 // ── 참조 레일 공용 로직 — 요약 본문과 전문(스크립트) 뷰가 같이 쓴다 (2026-07-18) ──
 // texts[i] = data-idx=i 요소의 매칭용 텍스트. 화면에 보이는 요소들에 언급된 엔티티를 추적.
 function useEntityRail(texts: string[], matchers: RegExp[]) {
@@ -214,7 +248,7 @@ function EntityRail({ entities, active, onShowOperator }: {
   }, [openCard]);
   return (
     <aside className="story-rail" aria-label={t("등장인물")}>
-      {active.map(({ ei: entityIndex, word }) => {
+      {active.map(({ ei: entityIndex }) => {
         const entity = entities[entityIndex];
         const linked = Boolean(entity.op && onShowOperator);
         // 전용 스탠딩 CG(img)가 없으면 연결된 오퍼레이터 아바타로 폴백
@@ -239,7 +273,7 @@ function EntityRail({ entities, active, onShowOperator }: {
             {imgSrc && (
               <div className={`cast-img${entity.img ? "" : " cast-avatar"}`}><img src={imgSrc} alt="" loading="lazy" decoding="async" /></div>
             )}
-            <div className="rail-card-text"><b>{entity.name}{linked && <i className="op-mark" aria-hidden>↗</i>}{word && <i className="rail-why" title={t("본문의 이 단어 때문에 표시됨")}>‘{word}’</i>}</b><span><span className="rail-desc-full">{entity.desc}</span><span className="rail-desc-snip">{entity.desc.slice(0, 5).trim()}…</span></span></div>
+            <div className="rail-card-text"><b>{entity.name}{linked && <i className="op-mark" aria-hidden>↗</i>}</b><span><span className="rail-desc-full">{entity.desc}</span><span className="rail-desc-snip">{entity.desc.slice(0, 5).trim()}…</span></span></div>
           </div>
         );
       })}
@@ -352,6 +386,7 @@ function ScriptReader({ script, error, entities, opIndex, onShowOperator }: {
     [railEntities],
   );
   const { bodyRef, active } = useEntityRail(lineTexts, railMatchers);
+  const markRe = useMemo(() => combineMatchers(railMatchers), [railMatchers]);
   if (error) return <p className="story-disclaimer">{t("스크립트를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.")}</p>;
   if (!script || !ep) return <p className="sc-loading">{t("스크립트 불러오는 중…")}</p>;
   return (
@@ -384,7 +419,7 @@ function ScriptReader({ script, error, entities, opIndex, onShowOperator }: {
             </figure>
           );
           if (ln.loc) return <div key={i} className="sc-loc" data-idx={i}>{ln.loc}</div>;
-          if (ln.st) return <p key={i} className="sc-st" data-idx={i}>{ln.st}</p>;
+          if (ln.st) return <p key={i} className="sc-st" data-idx={i}>{markEntities(ln.st, markRe)}</p>;
           if (ln.n) {
             const { showN, face, opId } = ln as ScriptLine & { showN?: boolean; face?: string; opId?: string };
             // 클릭: 오퍼레이터(별칭 연결 포함)는 오퍼 상세 모달, 그 외 얼굴 있는 화자는 스탠딩 크게 보기
@@ -407,11 +442,11 @@ function ScriptReader({ script, error, entities, opIndex, onShowOperator }: {
                   )}
                   {showN !== false && ln.n}
                 </b>
-                <span>{ln.x}</span>
+                <span>{markEntities(ln.x ?? "", markRe)}</span>
               </p>
             );
           }
-          return <p key={i} className="sc-narr" data-idx={i}>{ln.x}</p>;
+          return <p key={i} className="sc-narr" data-idx={i}>{markEntities(ln.x ?? "", markRe)}</p>;
         })}
         </div>
         <EntityRail entities={railEntities} active={active} onShowOperator={onShowOperator} />
@@ -469,6 +504,7 @@ function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }: {
   // 참조 레일 — 블록 텍스트 기준 매칭 (전문 뷰는 ScriptReader가 라인 기준으로 동일 훅 사용)
   const blockTexts = useMemo(() => summary.blocks.map(blockText), [summary]);
   const { bodyRef, active } = useEntityRail(blockTexts, matchers);
+  const markRe = useMemo(() => combineMatchers(matchers), [matchers]);
 
   return (
     <section className="story story-detail" aria-label={locText(locale, event.name)}>
@@ -514,7 +550,7 @@ function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }: {
               if (block.t === "quote")
                 return (
                   <blockquote key={index} data-idx={index}>
-                    <p>{rich(block.x)}</p>
+                    <p>{richMark(block.x, markRe)}</p>
                     <cite>— {block.who}</cite>
                   </blockquote>
                 );
@@ -529,7 +565,7 @@ function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }: {
                   </figure>
                 );
               }
-              return <p key={index} data-idx={index}>{rich(block.x)}</p>;
+              return <p key={index} data-idx={index}>{richMark(block.x, markRe)}</p>;
             })}
           </div>
           <EntityRail entities={entities} active={active} onShowOperator={onShowOperator} />

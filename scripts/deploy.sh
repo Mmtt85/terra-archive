@@ -28,4 +28,14 @@ cat >> "$STAGE/_headers" <<'EOF'
   Cache-Control: public, max-age=2592000
 EOF
 
+# ⚠ .rsc(RSC 페이로드)는 반드시 text/x-component 로 서빙해야 한다 (2026-07-18 근본 원인 수정).
+# CF 기본값(application/octet-stream)이면 vinext 클라 라우터가 RSC 응답으로 인정하지 않고
+# location.href 하드 내비게이션을 시도하는데, 대상이 현재 URL(+해시)과 같아 same-document
+# 내비게이션 → popstate → 재fetch 무한 루프가 된다 (뒤로가기 시 stories.rsc?_rsc 폭주 버그).
+# _headers 확장자 글롭 지원이 불확실해 파일별로 명시 (페이지 수 × 로케일 ≈ 수십 건, 100룰 한도 내).
+while IFS= read -r rsc; do
+  printf '\n%s\n  Content-Type: text/x-component\n' "${rsc#"$STAGE"}" >> "$STAGE/_headers"
+done < <(find "$STAGE" -name "*.rsc" -type f | sort)
+echo ".rsc content-type 규칙 $(find "$STAGE" -name "*.rsc" -type f | wc -l | tr -d ' ')건 추가"
+
 npx wrangler pages deploy "$STAGE" --project-name terra-archive --branch main --commit-dirty=true
