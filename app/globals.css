@@ -4642,6 +4642,27 @@ html.dark .story-card:hover .story-thumb img {
   white-space: pre-line;
   background: var(--bg-soft);
 }
+/* 미출시(CN 선행) 이벤트 — 전문 보기 클릭 시 안내 (사용자 요청 2026-07-18) */
+.sc-future-note {
+  margin: 26px auto;
+  max-width: 620px;
+  padding: 26px 30px;
+  border: 1px solid var(--line);
+  background: var(--bg-soft);
+  text-align: center;
+}
+.sc-future-note b {
+  display: block;
+  font-size: 16px;
+  margin-bottom: 12px;
+}
+.sc-future-note p {
+  margin: 8px 0 0;
+  font-size: 13.5px;
+  line-height: 1.8;
+  color: var(--ink3);
+  word-break: keep-all;
+}
 /* 화자 스탠딩 크게 보기 라이트박스 */
 .sc-face-zoom {
   position: fixed;

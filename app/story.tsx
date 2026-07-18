@@ -474,6 +474,8 @@ function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }: {
   // 전문(풀 스크립트)이 기본 뷰 — 진입 즉시 로드, AI 요약은 토글로 (사용자 확정 2026-07-18).
   // StoryDetail은 key={event.id}로 리마운트되므로 이벤트 전환 시 상태가 새지 않는다.
   const hasScript = scriptIds.has(event.id);
+  // 미출시(CN 선행) 이벤트: 전문이 없어도 버튼은 보여주고, 누르면 왜 없는지 안내 (사용자 요청 2026-07-18)
+  const futureNoScript = !hasScript && Boolean(event.unreleased);
   const [scriptView, setScriptView] = useState(hasScript);
   const [script, setScript] = useState<ScriptData | null>(null);
   const [scriptErr, setScriptErr] = useState(false);
@@ -519,7 +521,7 @@ function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }: {
           <p className="story-meta">{event.epNo != null ? locText(locale, epLabel(event.epNo)) : event.id.startsWith("rogue_") ? t("통합 전략") : `${event.start} · ${t("에피소드 {n}개", { n: event.episodes })}`}</p>
           <p className="story-tagline">{summary.tagline}</p>
           {/* 전문 보기 — 요약 위 토글 (사용자 요청 2026-07-18) */}
-          {hasScript && (
+          {(hasScript || futureNoScript) && (
             <div className="story-mode-bar" role="tablist" aria-label={t("보기 방식")}>
               <button type="button" role="tab" aria-selected={scriptView}
                 className={scriptView ? "on" : ""} onClick={openScript}>{t("전문 보기 (풀 스크립트)")}</button>
@@ -532,7 +534,14 @@ function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }: {
             <p className="story-disclaimer">{t("이 편의 요약 본문은 아직 번역되지 않아 한국어로 표시됩니다.")}</p>
           )}
         </header>
-        {scriptView && <ScriptReader script={script} error={scriptErr} entities={entities} opIndex={opIndex} onShowOperator={onShowOperator} />}
+        {scriptView && hasScript && <ScriptReader script={script} error={scriptErr} entities={entities} opIndex={opIndex} onShowOperator={onShowOperator} />}
+        {scriptView && futureNoScript && (
+          <div className="sc-future-note">
+            <b>{t("전문은 한국 서버 정식 출시 후에 열려요")}</b>
+            <p>{t("이 이벤트는 아직 중국 서버에만 공개된 스토리예요. 공식 한국어 번역이 나오기 전에 원문 전체를 그대로 옮겨 싣는 건 이야기를 만든 분들의 몫을 앞질러 가는 일이라, 전문은 아껴두고 있어요.")}</p>
+            <p>{t("한국 서버에 정식 출시되면 공식 번역 전문을 바로 볼 수 있도록 준비해 두었어요. 그때까지는 줄거리를 꼼꼼히 담은 AI 요약으로 먼저 만나 보세요.")}</p>
+          </div>
+        )}
         <div className="story-detail-grid" hidden={scriptView}>
           <div className="story-body" ref={bodyRef}>
             {summary.blocks.map((block, index) => {

@@ -813,6 +813,15 @@ const D: Record<string, Pair> = {
   "선택지": ["Choice", "選択肢"],
   "분기": ["Branch", "分岐"],
   "크게 보기": ["View full size", "拡大表示"],
+  "전문은 한국 서버 정식 출시 후에 열려요": ["The full script opens after the official KR release", "全文は韓国サーバーの正式リリース後に公開されます"],
+  "이 이벤트는 아직 중국 서버에만 공개된 스토리예요. 공식 한국어 번역이 나오기 전에 원문 전체를 그대로 옮겨 싣는 건 이야기를 만든 분들의 몫을 앞질러 가는 일이라, 전문은 아껴두고 있어요.": [
+    "This story is currently available only on the CN server. Publishing a full translation before the official localization would get ahead of the people who made this story, so we're holding off on the full script.",
+    "このストーリーは現在、中国サーバーのみで公開されています。公式翻訳より先に全文をそのまま載せるのは、物語を作った方々の仕事を先取りしてしまうことになるため、全文は控えています。",
+  ],
+  "한국 서버에 정식 출시되면 공식 번역 전문을 바로 볼 수 있도록 준비해 두었어요. 그때까지는 줄거리를 꼼꼼히 담은 AI 요약으로 먼저 만나 보세요.": [
+    "Everything is ready to show the official full script as soon as it launches on the KR server. Until then, enjoy the detailed AI digest.",
+    "韓国サーバーで正式リリースされ次第、公式翻訳の全文をすぐ読めるよう準備してあります。それまでは、あらすじを丁寧にまとめたAI要約でお楽しみください。",
+  ],
   "본문의 이 단어 때문에 표시됨": ["Shown because of this word in the text", "本文中のこの単語により表示"],
   "이전 에피소드": ["Previous episode", "前のエピソード"],
   "다음 에피소드": ["Next episode", "次のエピソード"],
