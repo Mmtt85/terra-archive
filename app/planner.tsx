@@ -1098,6 +1098,16 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   const [showRoster, setShowRoster] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false); // '그 외' 드롭다운(이미지·파일·도움말)
+  // 일부 모바일 인앱 브라우저(카카오톡·카페 웹뷰 등)는 탭 한 번에 click을 두 번 합성하거나
+  // ~300ms 지연 mousedown을 쏜다 — 토글이 열리자마자 닫혀 "안 보임"이 된다
+  // (사용자 리포트 2026-07-18, 일반 브라우저·에뮬레이터에선 재현 불가). 350ms 가드로 방어.
+  const moreToggledAt = useRef(0);
+  const toggleMore = () => {
+    const now = Date.now();
+    if (now - moreToggledAt.current < 350) return; // 고스트 클릭(중복 합성 click) 무시
+    moreToggledAt.current = now;
+    setMoreOpen((open) => !open);
+  };
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   // 1~5성은 기본 보유, 6성은 미보유로 시작 — 가진 6성만 직접 체크한다
   const [ownedIds, setOwnedIds] = useState<Set<string>>(() => new Set(ops.filter((op) => op.rarity <= 5).map((op) => op.id)));
@@ -1397,16 +1407,19 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     showToast(t("편성을 전부 비웠습니다 — 방을 눌러 수동 배치하거나 자동편성하세요"));
   };
 
-  // '그 외' 드롭다운: 바깥 클릭·Esc로 닫기
+  // '그 외' 드롭다운: 바깥 클릭·Esc로 닫기.
+  // pointerdown 사용 + 열린 직후 350ms 무시 — 웹뷰의 지연 합성 mousedown이
+  // 메뉴가 열린 뒤 도착해 "바깥 클릭"으로 오판·즉시 닫히는 것을 막는다.
   useEffect(() => {
     if (!moreOpen) return;
-    const onDown = (event: MouseEvent) => {
+    const onDown = (event: PointerEvent) => {
+      if (Date.now() - moreToggledAt.current < 350) return;
       if (!(event.target as HTMLElement).closest(".more-group")) setMoreOpen(false);
     };
     const onEsc = (event: KeyboardEvent) => { if (event.key === "Escape") setMoreOpen(false); };
-    window.addEventListener("mousedown", onDown);
+    window.addEventListener("pointerdown", onDown);
     window.addEventListener("keydown", onEsc);
-    return () => { window.removeEventListener("mousedown", onDown); window.removeEventListener("keydown", onEsc); };
+    return () => { window.removeEventListener("pointerdown", onDown); window.removeEventListener("keydown", onEsc); };
   }, [moreOpen]);
 
   useEffect(() => {
@@ -1484,7 +1497,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           {/* 이미지·파일·도움말은 '그 외' 드롭다운으로 묶는다 (사용자 요청 2026-07) */}
           <span className="more-group">
             <button className={`more-toggle${dirty ? " save-pending" : ""}`} aria-expanded={moreOpen} aria-haspopup="menu"
-              onClick={() => setMoreOpen((open) => !open)}><span className="btn-icon" aria-hidden>⋯</span>{t("그 외")}</button>
+              onClick={toggleMore}><span className="btn-icon" aria-hidden>⋯</span>{t("그 외")}</button>
             {moreOpen && (
               <div className="more-menu" role="menu">
                 <button role="menuitem" onClick={() => { setMoreOpen(false); exportImage(); }} title={t("A조·B조 편성표를 이미지로 확인 (PNG)")}><span className="btn-icon" aria-hidden>⧉</span>{t("이미지로 보기")}</button>

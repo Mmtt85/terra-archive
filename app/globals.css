@@ -3190,7 +3190,7 @@ footer p {
   position: absolute;
   top: calc(100% + 6px);
   right: 0;
-  z-index: 30;
+  z-index: 80; /* 30→80 — 기기별 스택 컨텍스트 간섭 대비 (모달 100 미만 유지) */
   display: flex;
   flex-direction: column;
   min-width: 230px;
