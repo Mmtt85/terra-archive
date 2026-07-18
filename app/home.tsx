@@ -97,7 +97,7 @@ export type Operator = {
   unreleased?: boolean;
 };
 
-const SYNERGY_POTS = ["해산물팟", "쉐이팟", "쉐라그팟", "카시미어팟", "미노스팟", "아베무팟", "연소팟", "라테라노팟", "탄약팟", "라인랩팟", "라이오스 파티"];
+const SYNERGY_POTS = ["해산물팟", "쉐이팟", "쉐라그팟", "카시미어팟", "미노스팟", "아베무팟", "소각팟", "라테라노팟", "탄약팟", "라인랩팟", "라이오스 파티"];
 
 // 직군 표시 순서의 정본은 jobCode — 표시명은 로케일 데이터에서 뽑는다
 const JOB_ORDER = ["PIONEER", "WARRIOR", "TANK", "SNIPER", "CASTER", "MEDIC", "SUPPORT", "SPECIAL"];

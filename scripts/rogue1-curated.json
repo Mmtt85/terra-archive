@@ -1,49 +1,198 @@
 {
   "_note": "rogue_1 수작업 큐레이션 — 조우 층별 출현 규칙·엔딩 선제조건. 클라 테이블에 없는 정보로, PRTS 위키(傀影与猩红孤钻 메인 + 事件一览 wikitext의 floor 필드)를 전사하고 KR 클뜯 데이터의 공식 한국어 명칭으로 대조함 (2026-07-17). build-rogue.py가 rogue1.json에 병합한다.",
   "bossFloors": {
-    "ro1_b_1": 3, "ro1_b_2": 3, "ro1_b_3": 3, "ro1_b_4": 3, "ro1_b_5": 3,
-    "ro1_b_6": 5, "ro1_b_7": 5,
-    "ro1_b_8": 6, "ro1_b_9": 6
+    "ro1_b_1": 3,
+    "ro1_b_2": 3,
+    "ro1_b_3": 3,
+    "ro1_b_4": 3,
+    "ro1_b_5": 3,
+    "ro1_b_6": 5,
+    "ro1_b_7": 5,
+    "ro1_b_8": 6,
+    "ro1_b_9": 6
   },
   "encounterFloors": {
-    "scene_hp_enter": [1, 2, 3, 4, 5],
-    "scene_gold_enter": [1, 2, 3, 4, 5],
-    "scene_population_enter": [1, 2, 3, 4, 5],
-    "scene_recruit1_enter": [2, 3, 4, 5],
-    "scene_recruit2_enter": [3, 4, 5],
-    "scene_up1_enter": [2],
-    "scene_up2_enter": [3, 4, 5],
-    "scene_trade1_enter": [1, 2],
-    "scene_trade2_enter": [2, 3, 4, 5],
-    "scene_trade3_enter": [2, 3, 4, 5],
-    "scene_exchange_enter": [4, 5],
-    "scene_1_enter": [3, 4, 5],
-    "scene_2_enter": [3, 4, 5],
-    "scene_3_enter": [3, 4, 5],
-    "scene_4_enter": [3, 4, 5],
-    "scene_5_enter": [3, 4, 5],
-    "scene_6_enter": [3, 4, 5],
-    "scene_bat1_enter": [2],
-    "scene_bat2_enter": [3, 4],
-    "scene_bat3_enter": [4],
-    "scene_bat4_enter": [4, 5],
-    "scene_t1_enter": [1, 2],
-    "scene_t2_enter": [3],
-    "scene_t3_enter": [4],
-    "scene_t4_enter": [5],
-    "scene_blood1_enter": [1, 2, 3, 4, 5],
-    "scene_blood2_enter": [2, 3, 4, 5],
-    "scene_bottle1_enter": [2, 3, 4, 5],
-    "scene_bottle2_enter": [2, 3, 4, 5],
-    "scene_bottle3_enter": [3, 4, 5],
-    "scene_bottle4_enter": [5],
-    "scene_side1_enter": [1, 2, 3, 4],
-    "scene_side2_enter": [3, 4, 5],
-    "scene_side3_enter": [4, 5],
-    "scene_hidden1_enter": [1, 2, 3],
-    "scene_hidden2_enter": [5],
-    "scene_writer1_enter": [2, 3],
-    "scene_writer2_enter": [4, 5]
+    "scene_hp_enter": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "scene_gold_enter": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "scene_population_enter": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "scene_recruit1_enter": [
+      2,
+      3,
+      4,
+      5
+    ],
+    "scene_recruit2_enter": [
+      3,
+      4,
+      5
+    ],
+    "scene_up1_enter": [
+      2
+    ],
+    "scene_up2_enter": [
+      3,
+      4,
+      5
+    ],
+    "scene_trade1_enter": [
+      1,
+      2
+    ],
+    "scene_trade2_enter": [
+      2,
+      3,
+      4,
+      5
+    ],
+    "scene_trade3_enter": [
+      2,
+      3,
+      4,
+      5
+    ],
+    "scene_exchange_enter": [
+      4,
+      5
+    ],
+    "scene_1_enter": [
+      3,
+      4,
+      5
+    ],
+    "scene_2_enter": [
+      3,
+      4,
+      5
+    ],
+    "scene_3_enter": [
+      3,
+      4,
+      5
+    ],
+    "scene_4_enter": [
+      3,
+      4,
+      5
+    ],
+    "scene_5_enter": [
+      3,
+      4,
+      5
+    ],
+    "scene_6_enter": [
+      3,
+      4,
+      5
+    ],
+    "scene_bat1_enter": [
+      2
+    ],
+    "scene_bat2_enter": [
+      3,
+      4
+    ],
+    "scene_bat3_enter": [
+      4
+    ],
+    "scene_bat4_enter": [
+      4,
+      5
+    ],
+    "scene_t1_enter": [
+      1,
+      2
+    ],
+    "scene_t2_enter": [
+      3
+    ],
+    "scene_t3_enter": [
+      4
+    ],
+    "scene_t4_enter": [
+      5
+    ],
+    "scene_blood1_enter": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "scene_blood2_enter": [
+      2,
+      3,
+      4,
+      5
+    ],
+    "scene_bottle1_enter": [
+      2,
+      3,
+      4,
+      5
+    ],
+    "scene_bottle2_enter": [
+      2,
+      3,
+      4,
+      5
+    ],
+    "scene_bottle3_enter": [
+      3,
+      4,
+      5
+    ],
+    "scene_bottle4_enter": [
+      5
+    ],
+    "scene_side1_enter": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "scene_side2_enter": [
+      3,
+      4,
+      5
+    ],
+    "scene_side3_enter": [
+      4,
+      5
+    ],
+    "scene_hidden1_enter": [
+      1,
+      2,
+      3
+    ],
+    "scene_hidden2_enter": [
+      5
+    ],
+    "scene_writer1_enter": [
+      2,
+      3
+    ],
+    "scene_writer2_enter": [
+      4,
+      5
+    ]
   },
   "encounterNotes": {
     "scene_hp_enter": "같은 판에서 중복 출현 가능",
@@ -60,8 +209,7 @@
     "scene_rest_enter": "히든 6층에는 고정으로 1개 배치 (1~5층 분포는 노드 배치에 따름)",
     "scene_ent1_enter": "1층 출현 확인 (막간의 여흥 노드)",
     "scene_treasure1_enter": "고성의 선물 노드 — 2층·4층 말미에 등장",
-    "scene_treasure2_enter": "고성의 선물 노드 — 2층·4층 말미에 등장. 희귀 수집품 확정 선택지 보유",
-    "scene_startbuff_enter": "탐험 시작 시 초기 보상 씬 (노드 아님)"
+    "scene_treasure2_enter": "고성의 선물 노드 — 2층·4층 말미에 등장. 희귀 수집품 확정 선택지 보유"
   },
   "endingConds": {
     "ro_ending_1": [

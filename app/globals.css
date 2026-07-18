@@ -172,7 +172,7 @@ button {
   color: var(--muted);
   letter-spacing: 1.2px;
   margin-top: 3px;
-  font: 600 9px/1 monospace;
+  font: 600 10px/1 monospace;
   display: block;
 }
 .brand-mark {
@@ -194,7 +194,7 @@ button {
   border: 1px solid var(--border-strong);
   letter-spacing: 1px;
   padding: 8px 11px;
-  font: 700 10px monospace;
+  font: 700 11px monospace;
   background: none;
   color: var(--ink);
   cursor: pointer;
@@ -255,7 +255,7 @@ button {
   align-items: center;
   gap: 14px;
   padding: 9px 12px;
-  font: 700 12px/1 sans-serif;
+  font: 700 12.5px/1 sans-serif;
   background: none;
   border: 0;
   border-bottom: 1px solid #1317191f;
@@ -274,7 +274,7 @@ button {
   color: var(--chip-ink);
 }
 .lang-menu button small {
-  font: 700 9px monospace;
+  font: 700 10px monospace;
   opacity: 0.65;
 }
 
@@ -321,7 +321,7 @@ button {
   border: 1px solid var(--line);
   background: transparent;
   padding: 6px 11px;
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 800;
   color: var(--ink);
   cursor: pointer;
@@ -332,7 +332,7 @@ button {
   border-color: var(--border-strong);
 }
 .bcast-trigger .bcast-hint {
-  font: 700 10px monospace;
+  font: 700 11px monospace;
   color: var(--muted);
 }
 .bcast-trigger.live {
@@ -363,7 +363,7 @@ button {
   border: 1px solid var(--line);
   background: transparent;
   padding: 6px 12px;
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 800;
   color: var(--ink);
   cursor: pointer;
@@ -384,7 +384,7 @@ button {
   min-width: 0;
 }
 .event-trigger .event-kicker {
-  font: 800 9px monospace;
+  font: 800 10px monospace;
   letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--muted);
@@ -395,7 +395,7 @@ button {
   text-overflow: ellipsis;
 }
 .event-trigger .event-dates {
-  font: 700 10.5px monospace;
+  font: 700 11.5px monospace;
   color: var(--muted);
 }
 /* 대표 이벤트 배너가 버튼 안에 통째로 들어가는 형태 */
@@ -416,11 +416,11 @@ button {
   object-fit: cover;
 }
 .event-trigger .event-caret {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--muted);
 }
 .event-trigger .event-dday {
-  font: 700 10px monospace;
+  font: 700 11px monospace;
   color: var(--muted);
 }
 .event-menu {
@@ -437,7 +437,7 @@ button {
 }
 .event-menu h3 {
   margin: 0 0 6px;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.08em;
   color: var(--muted);
   text-transform: uppercase;
@@ -459,7 +459,7 @@ button {
   gap: 1px;
   padding: 6px 0;
   border-top: 1px dashed var(--line);
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
 }
 .event-menu li:first-child {
@@ -491,7 +491,7 @@ button {
   object-fit: cover;
 }
 .event-menu li small {
-  font: 600 10.5px monospace;
+  font: 600 11.5px monospace;
   color: var(--muted);
 }
 
@@ -570,7 +570,7 @@ button {
   place-items: center;
   color: #ffffff55;
   background: linear-gradient(135deg, #1c1c1c, #333);
-  font: 900 10px monospace;
+  font: 900 11px monospace;
   letter-spacing: 2px;
 }
 .bcast-info {
@@ -586,13 +586,13 @@ button {
   flex-wrap: wrap;
 }
 .bcast-server {
-  font: 800 11px/1 sans-serif;
+  font: 800 12px/1 sans-serif;
   border: 1px solid var(--line);
   padding: 3px 7px;
   border-radius: 3px;
 }
 .bcast-state {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   color: var(--muted);
 }
@@ -603,7 +603,7 @@ button {
   color: var(--ink);
 }
 .bcast-card strong {
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 800;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -611,7 +611,7 @@ button {
 }
 .bcast-date {
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: 12.5px;
 }
 
 /* 버튼 아이콘 (단색 글리프) */
@@ -623,7 +623,7 @@ button {
   opacity: 0.75;
 }
 .tab-icon {
-  font-size: 12px;
+  font-size: 12.5px;
 }
 .main-tabs button.selected .tab-icon,
 .btn-icon {
@@ -634,22 +634,22 @@ button {
   .bcast-trigger {
     margin-left: 8px;
     padding: 4px 7px;
-    font-size: 10.5px;
+    font-size: 11.5px;
     gap: 4px;
   }
   .site-header .future-toggle {
-    font-size: 10px;
+    font-size: 11px;
     padding: 5px 7px;
     gap: 5px;
   }
   .site-header .server-chip {
     padding: 6px 8px;
-    font-size: 9px;
+    font-size: 10px;
   }
   .site-header .about-icon {
     width: 27px;
     height: 27px;
-    font-size: 13px;
+    font-size: 13.5px;
     margin-left: 8px;
   }
   /* 모바일 줄 구성 (사용자 배치 지시 2026-07):
@@ -673,7 +673,7 @@ button {
   /* 미니 배지: 배너 + D-day + 캐럿만 (이름·라벨·기간은 드롭다운에서) */
   .event-trigger {
     padding: 4px 8px;
-    font-size: 12px;
+    font-size: 12.5px;
     gap: 6px;
     max-width: 100%;
   }
@@ -726,7 +726,7 @@ button {
 .section-no {
   letter-spacing: 1.5px;
   color: var(--muted);
-  font: 700 10px monospace;
+  font: 700 11px monospace;
 }
 .eyebrow span {
   width: 25px;
@@ -758,7 +758,7 @@ button {
   z-index: 1;
   color: var(--ink3);
   margin: 0;
-  font-size: 12px;
+  font-size: 12.5px;
   line-height: 1.55;
   position: relative;
 }
@@ -781,7 +781,7 @@ button {
 }
 .hero-stats span {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
 }
 .explorer {
   grid-template-columns: 300px minmax(0, 1fr);
@@ -852,14 +852,14 @@ button {
   background: 0 0;
   border: 0;
   padding: 7px 0;
-  font-size: 11px;
+  font-size: 12px;
 }
 .reset:hover {
   color: var(--ink);
 }
 .search-label {
   margin: 24px 0 9px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   display: block;
 }
@@ -880,7 +880,7 @@ button {
   width: 100%;
   min-width: 0;
   padding: 12px 11px;
-  font-size: 13px;
+  font-size: 13.5px;
 }
 .heading-search {
   flex: 1 1 auto;
@@ -941,13 +941,13 @@ fieldset {
 }
 legend {
   margin-bottom: 10px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 900;
 }
 .multi-hint {
   color: var(--muted);
   margin-left: 7px;
-  font-size: 8px;
+  font-size: 9.5px;
   font-weight: 600;
 }
 .filter-list {
@@ -960,13 +960,13 @@ legend {
   cursor: pointer;
   background: 0 0;
   padding: 7px 8px;
-  font-size: 11px;
+  font-size: 12px;
   transition: all 0.15s;
 }
 .filter-list button span {
   color: #8b9294;
   margin-left: 7px;
-  font: 9px monospace;
+  font: 10px monospace;
 }
 .filter-list button:hover {
   border-color: #777;
@@ -987,7 +987,7 @@ legend {
   border: 1px dashed #aaa9a2;
   margin-top: 9px;
   padding: 8px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 800;
 }
 .more-filter:hover {
@@ -1002,12 +1002,12 @@ legend {
 }
 .data-note span {
   letter-spacing: 1px;
-  font: 800 9px monospace;
+  font: 800 10px monospace;
 }
 .data-note p {
   color: var(--ink3);
   margin: 8px 0 0;
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1.6;
 }
 .results-heading h2 {
@@ -1016,7 +1016,7 @@ legend {
 .count {
   letter-spacing: 1px;
   color: var(--muted);
-  font: 600 10px monospace;
+  font: 600 11px monospace;
 }
 .count b {
   color: var(--ink);
@@ -1033,11 +1033,12 @@ legend {
   cursor: pointer;
   border: 0;
   padding: 5px 9px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 800;
 }
 .operator-grid {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  /* 한 줄 최대 4명 (사용자 확정 2026-07-18) */
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 11px;
   display: grid;
 }
@@ -1100,7 +1101,8 @@ legend {
 }
 .portrait-info {
   z-index: 3;
-  width: 48%;
+  /* 폰트 상향(2026-07-18) 후 긴 소속명이 글자 단위로 꺾이지 않게 폭 확대 */
+  width: 58%;
   position: relative;
 }
 .portrait-meta {
@@ -1113,19 +1115,19 @@ legend {
   color: #ffd45f;
   letter-spacing: -1px;
   text-shadow: 0 1px 5px #0008;
-  font-size: 8px;
+  font-size: 11px;
 }
 .portrait-meta b {
   color: #fff;
   background: #111719bb;
   padding: 3px 5px;
-  font-size: 8px;
+  font-size: 11px;
 }
 .portrait-info h3 {
   letter-spacing: -0.7px;
   text-shadow: 0 1px 8px #0005;
   margin: 0;
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1.12;
 }
 .portrait-facts {
@@ -1139,9 +1141,10 @@ legend {
   gap: 5px;
   color: #eef1ef;
   text-shadow: 0 1px 6px #0008;
-  font-size: 8.5px;
+  font-size: 11.5px;
   font-weight: 800;
   line-height: 1.3;
+  word-break: keep-all; /* 한국어 어절 단위 줄바꿈 — 글자 단위 세로 꺾임 방지 */
 }
 .portrait-facts i {
   flex: none;
@@ -1149,7 +1152,7 @@ legend {
   color: #ffffffc9;
   background: #11171980;
   padding: 1px 4px;
-  font: 700 7px monospace;
+  font: 700 10px monospace;
   letter-spacing: 0.6px;
 }
 .results-tools {
@@ -1162,14 +1165,14 @@ legend {
   align-items: center;
   gap: 6px;
   color: var(--muted);
-  font: 700 10px monospace;
+  font: 700 11px monospace;
   letter-spacing: 1px;
 }
 .sort-wrap select {
   border: 1px solid var(--line);
   background: var(--white);
   padding: 6px 8px;
-  font-size: 11px;
+  font-size: 12px;
   cursor: pointer;
 }
 .sort-direction {
@@ -1178,7 +1181,7 @@ legend {
   width: 27px;
   height: 27px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 13.5px;
   line-height: 1;
 }
 .sort-direction:hover {
@@ -1196,7 +1199,7 @@ legend {
   right: 4px;
 }
 .card-body {
-  height: 43px;
+  height: 50px;
   padding: 9px 11px 10px;
   overflow: hidden;
 }
@@ -1209,20 +1212,20 @@ legend {
 .name-line h3 {
   letter-spacing: -0.7px;
   margin: 0;
-  font-size: 14px;
+  font-size: 16px;
 }
 .name-line div > span {
   color: #8a8f91;
   letter-spacing: 1px;
   margin-top: 3px;
-  font: 8px monospace;
+  font: 10.5px monospace;
   display: block;
 }
 .name-line i {
   color: var(--muted);
   text-align: right;
   flex-shrink: 0;
-  font-size: 9px;
+  font-size: 11.5px;
   font-style: normal;
 }
 .tags {
@@ -1236,7 +1239,7 @@ legend {
 .tags span {
   background: var(--bg-soft);
   padding: 4px 6px;
-  font-size: 9px;
+  font-size: 11.5px;
   font-weight: 800;
 }
 .tags span:first-child {
@@ -1340,7 +1343,7 @@ legend {
 .confirm-actions button {
   cursor: pointer;
   padding: 9px 20px;
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 700;
   border: 1px solid var(--line);
   border-radius: 2px;
@@ -1417,7 +1420,7 @@ legend {
 .detail-no {
   color: #c9ced0;
   letter-spacing: 1.5px;
-  font: 700 9px monospace;
+  font: 700 11px monospace;
 }
 .modal-title-block h2 {
   letter-spacing: -0.06em;
@@ -1434,7 +1437,7 @@ legend {
   color: #d8dddf;
   letter-spacing: 0;
   margin-left: 8px;
-  font: 700 10px monospace;
+  font: 700 12px monospace;
 }
 .class-line {
   align-items: center;
@@ -1443,13 +1446,13 @@ legend {
   display: flex;
 }
 .class-line b {
-  font-size: 14px;
+  font-size: 15px;
   display: block;
 }
 .class-line small {
   color: #c8ced0;
   margin-top: 3px;
-  font-size: 10px;
+  font-size: 12.5px;
   display: block;
 }
 .modal-scroll {
@@ -1471,12 +1474,12 @@ legend {
 .modal-facts span {
   color: var(--muted);
   letter-spacing: 1px;
-  font: 700 9px monospace;
+  font: 700 11px monospace;
   display: block;
 }
 .modal-facts b {
   margin-top: 7px;
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.5;
   display: block;
 }
@@ -1507,7 +1510,7 @@ legend {
   border: 1px solid #ffffff42;
   color: #fff;
   padding: 2px 8px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   white-space: nowrap;
 }
@@ -1533,7 +1536,7 @@ legend {
 .nickname-label {
   color: #c9ced0;
   letter-spacing: 1.5px;
-  font: 700 9px monospace;
+  font: 700 10px monospace;
   display: block;
 }
 .nickname-form {
@@ -1549,7 +1552,7 @@ legend {
   background: #ffffff18;
   color: #fff;
   padding: 7px 10px;
-  font-size: 12px;
+  font-size: 12.5px;
 }
 .nickname-form input::placeholder {
   color: #ffffff88;
@@ -1559,7 +1562,7 @@ legend {
   background: var(--lime);
   color: var(--on-lime);
   padding: 7px 13px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   cursor: pointer;
 }
@@ -1570,7 +1573,7 @@ legend {
 .nickname-msg {
   display: block;
   margin-top: 7px;
-  font-size: 10.5px;
+  font-size: 11.5px;
   font-weight: 700;
   color: var(--lime);
 }
@@ -1592,7 +1595,7 @@ legend {
 .detail-section > p {
   color: var(--ink3);
   margin: 0;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.75;
 }
 .detail-list {
@@ -1606,12 +1609,12 @@ legend {
   padding: 15px;
 }
 .detail-list b {
-  font-size: 13px;
+  font-size: 14.5px;
 }
 .detail-list p {
   color: var(--ink3);
   margin: 7px 0 0;
-  font-size: 11px;
+  font-size: 13.5px;
   line-height: 1.65;
 }
 .skill-list {
@@ -1647,11 +1650,11 @@ legend {
   }
 }
 .skill-index {
-  font: 900 12px monospace;
+  font: 900 12.5px monospace;
 }
 .skill-detail h4 {
   margin: 1px 0 7px;
-  font-size: 15px;
+  font-size: 16px;
 }
 .skill-meta {
   flex-wrap: wrap;
@@ -1662,12 +1665,12 @@ legend {
   color: var(--ink3);
   background: var(--bg-soft);
   padding: 4px 6px;
-  font: 700 9px monospace;
+  font: 700 11.5px monospace;
 }
 .skill-detail p {
   color: var(--ink3);
   margin: 10px 0 0;
-  font-size: 11px;
+  font-size: 13.5px;
   line-height: 1.7;
 }
 .no-detail {
@@ -1690,21 +1693,21 @@ legend {
 .stat-row > * {
   text-align: center;
   padding: 11px 9px;
-  font-size: 10px;
+  font-size: 12.5px;
 }
 .stat-row b {
   text-align: left;
 }
 .stat-row small {
   color: var(--muted);
-  font: 8px monospace;
+  font: 10.5px monospace;
 }
 .stat-head {
   background: var(--chip);
   color: #fff;
 }
 .stat-head > * {
-  font: 700 9px monospace;
+  font: 700 11px monospace;
 }
 .attack-range {
   gap: 2px;
@@ -1749,13 +1752,13 @@ legend {
   height: 30px;
   color: var(--lime);
   place-items: center;
-  font: 900 10px monospace;
+  font: 900 12px monospace;
   display: grid;
 }
 .potential-list p {
   margin: 0;
   padding: 10px 11px;
-  font-size: 10px;
+  font-size: 12.5px;
   line-height: 1.45;
 }
 .module-list {
@@ -1780,16 +1783,16 @@ legend {
   color: var(--on-lime);
   flex: none;
   place-items: center;
-  font: 900 10px monospace;
+  font: 900 11px monospace;
   display: grid;
 }
 .module-card h4 {
   margin: 0 0 4px;
-  font-size: 15px;
+  font-size: 16px;
 }
 .module-card header small {
   color: #aeb5b7;
-  font: 9px monospace;
+  font: 11px monospace;
 }
 .module-levels {
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1804,12 +1807,12 @@ legend {
 }
 .module-levels b {
   color: var(--accent);
-  font: 900 9px monospace;
+  font: 900 11px monospace;
 }
 .module-levels p {
   color: var(--ink3);
   margin: 8px 0 0;
-  font-size: 10px;
+  font-size: 12.5px;
   line-height: 1.55;
 }
 .module-levels .module-stats {
@@ -1839,24 +1842,24 @@ legend {
   display: block;
 }
 .infra-list article > div span {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 900;
 }
 .infra-list article > div small {
   color: var(--muted);
   margin-top: 5px;
-  font: 8px monospace;
+  font: 10.5px monospace;
 }
 .infra-list section {
   padding: 12px 14px;
 }
 .infra-list section b {
-  font-size: 12px;
+  font-size: 13.5px;
 }
 .infra-list section p {
   color: var(--ink3);
   margin: 6px 0 0;
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1.6;
 }
 .empty {
@@ -1866,14 +1869,14 @@ legend {
 }
 .empty span {
   letter-spacing: 2px;
-  font: 800 9px monospace;
+  font: 800 10px monospace;
 }
 .empty h3 {
   margin: 12px 0 7px;
 }
 .empty p {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 12.5px;
 }
 .empty button {
   background: var(--chip);
@@ -1889,14 +1892,14 @@ footer {
   border-top: 1px solid #303536;
   justify-content: space-between;
   padding: 15px clamp(22px, 5vw, 76px);
-  font-size: 10px;
+  font-size: 11px;
   display: flex;
   align-items: center;
 }
 footer span {
   color: var(--lime);
   letter-spacing: 1px;
-  font: 700 10px monospace;
+  font: 700 11px monospace;
 }
 footer p {
   margin: 0;
@@ -1963,7 +1966,7 @@ footer p {
   .site-header .nav-toggle {
     padding: 7px 9px;
     margin-right: 6px;
-    font-size: 11px;
+    font-size: 12px;
     gap: 6px;
     max-width: 100%;
     overflow: hidden;
@@ -1980,7 +1983,7 @@ footer p {
     min-width: 0;
   }
   .server-chip {
-    font-size: 8px;
+    font-size: 9.5px;
   }
   .hero {
     min-height: auto;
@@ -2171,7 +2174,7 @@ footer p {
   border: 1px solid var(--border-strong);
   background: var(--white);
   padding: 11px 16px;
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 800;
   cursor: pointer;
   transition: 0.15s;
@@ -2197,7 +2200,7 @@ footer p {
 .planner-summary span {
   display: block;
   color: var(--muted);
-  font: 700 9px monospace;
+  font: 700 10px monospace;
   letter-spacing: 1px;
 }
 .planner-summary b {
@@ -2206,7 +2209,7 @@ footer p {
   font: 800 19px monospace;
 }
 .planner-summary .wide b {
-  font-size: 13px;
+  font-size: 13.5px;
   font-family: inherit;
 }
 .shift-tabs {
@@ -2219,7 +2222,7 @@ footer p {
   border: 1px solid var(--line);
   background: transparent;
   padding: 8px 16px;
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 800;
   cursor: pointer;
 }
@@ -2230,7 +2233,7 @@ footer p {
 }
 .shift-hint {
   color: var(--muted);
-  font-size: 10px;
+  font-size: 11px;
   margin-left: 8px;
 }
 .ship {
@@ -2327,12 +2330,12 @@ footer p {
   align-items: center;
 }
 .ship-room-head b {
-  font-size: 13px;
+  font-size: 13.5px;
   letter-spacing: -0.4px;
 }
 .ship-room-head span {
   color: var(--room-accent);
-  font: 800 10px monospace;
+  font: 800 11px monospace;
 }
 /* 한 줄 고정 — 5인 방(제어센터 등)은 썸네일이 자동으로 줄어들어 줄바꿈 없이 들어간다 */
 .ship-room-crew {
@@ -2354,7 +2357,7 @@ footer p {
 }
 .ship-room-crew i {
   color: #5d686c;
-  font-size: 9px;
+  font-size: 10px;
   font-style: normal;
   align-self: center;
 }
@@ -2362,7 +2365,7 @@ footer p {
   display: block;
   margin-top: 7px;
   color: var(--room-accent);
-  font: 800 9px monospace;
+  font: 800 10px monospace;
   letter-spacing: 0.5px;
 }
 .pos-control.ship-room {
@@ -2423,14 +2426,14 @@ footer p {
 .crew-card b i {
   color: #c89b25;
   font-style: normal;
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: -1px;
   margin-left: 5px;
 }
 .crew-card p {
   margin: 6px 0 0;
   color: var(--ink3);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.6;
 }
 .crew-card p em {
@@ -2444,11 +2447,11 @@ footer p {
   padding: 3px 7px;
   background: color-mix(in srgb, var(--accent) 18%, var(--white));
   color: color-mix(in srgb, var(--accent) 75%, var(--ink));
-  font: 800 10px monospace;
+  font: 800 11px monospace;
 }
 .sub-hint {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   margin: 0 0 12px;
 }
 .planner-link {
@@ -2456,7 +2459,7 @@ footer p {
   background: var(--chip);
   color: var(--lime);
   padding: 8px 12px;
-  font: 700 10px monospace;
+  font: 700 11px monospace;
   letter-spacing: 1px;
   text-decoration: none;
   margin-left: auto;
@@ -2498,7 +2501,7 @@ footer p {
   background: var(--chip);
   color: var(--lime);
   padding: 9px 14px;
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 800;
   cursor: pointer;
   white-space: nowrap;
@@ -2528,7 +2531,7 @@ footer p {
   border: 1px solid transparent;
   background: transparent;
   padding: 11px 13px;
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 800;
   cursor: pointer;
   text-align: left;
@@ -2571,7 +2574,7 @@ footer p {
 }
 .main-tabs .tab-sub {
   padding: 9px 12px;
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 700;
   color: var(--ink2);
   gap: 6px;
@@ -2586,7 +2589,7 @@ footer p {
 }
 .tab-sub-future {
   font-style: normal;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 800;
   padding: 1px 5px;
   margin-left: 4px;
@@ -2594,7 +2597,7 @@ footer p {
   background: var(--lime);
 }
 .planner-summary .strategy {
-  font-size: 13px;
+  font-size: 13.5px;
   font-family: inherit;
 }
 .dorm-room {
@@ -2622,7 +2625,7 @@ footer p {
   padding: 3px 7px;
   background: var(--tint-lime);
   color: var(--tint-lime-ink);
-  font: 800 9px monospace;
+  font: 800 10px monospace;
 }
 .flow-tree ul {
   list-style: none;
@@ -2636,11 +2639,11 @@ footer p {
 }
 .flow-tree li {
   margin-top: 8px;
-  font-size: 12px;
+  font-size: 12.5px;
 }
 .flow-branch {
   font-weight: 900;
-  font-size: 12px;
+  font-size: 12.5px;
 }
 .flow-tree li img {
   width: 22px;
@@ -2655,19 +2658,19 @@ footer p {
   font-style: normal;
   color: var(--muted);
   margin-left: 6px;
-  font: 700 9px monospace;
+  font: 700 10px monospace;
 }
 .flow-tree li em {
   font-style: normal;
   margin-left: 8px;
   padding: 2px 6px;
   background: var(--bg-soft);
-  font: 800 10px monospace;
+  font: 800 11px monospace;
 }
 .flow-total {
   margin-left: 10px;
   color: var(--muted);
-  font: 800 11px monospace;
+  font: 800 12px monospace;
 }
 .slot-subs {
   display: flex;
@@ -2678,7 +2681,7 @@ footer p {
 }
 .slot-subs > span {
   color: var(--muted);
-  font: 700 9px monospace;
+  font: 700 10px monospace;
 }
 .sub-chip {
   display: inline-flex;
@@ -2687,7 +2690,7 @@ footer p {
   border: 1px dashed #b5b4ac;
   background: var(--bg-panel);
   padding: 3px 7px 3px 3px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 800;
 }
 .sub-chip img {
@@ -2698,14 +2701,14 @@ footer p {
 .sub-chip em {
   font-style: normal;
   color: var(--muted);
-  font: 700 9px monospace;
+  font: 700 10px monospace;
 }
 .core-chip {
   display: inline-block;
   padding: 3px 8px;
   background: var(--chip);
   color: var(--lime);
-  font: 800 9px monospace;
+  font: 800 10px monospace;
   letter-spacing: 0.5px;
 }
 .import-label {
@@ -2714,7 +2717,7 @@ footer p {
   border: 1px solid var(--border-strong);
   background: var(--white);
   padding: 11px 16px;
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 800;
   cursor: pointer;
   transition: 0.15s;
@@ -2736,7 +2739,7 @@ footer p {
   background: #ffffff18;
   color: #fff;
   padding: 9px 11px;
-  font-size: 12px;
+  font-size: 12.5px;
   min-width: 180px;
 }
 .roster-tools input::placeholder {
@@ -2747,7 +2750,7 @@ footer p {
   background: transparent;
   color: #fff;
   padding: 9px 13px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   cursor: pointer;
 }
@@ -2764,7 +2767,7 @@ footer p {
   background: transparent;
   color: #fff;
   padding: 9px 13px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   cursor: pointer;
   transition: 0.15s;
@@ -2790,14 +2793,14 @@ footer p {
   gap: 5px;
 }
 .bulk-group b {
-  font: 800 10px monospace;
+  font: 800 11px monospace;
   margin-right: 3px;
 }
 .bulk-group button {
   border: 1px solid var(--line);
   background: var(--white);
   padding: 5px 8px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 800;
   cursor: pointer;
 }
@@ -2814,7 +2817,7 @@ footer p {
 }
 .roster-sortbar .count {
   color: var(--muted);
-  font: 700 10px monospace;
+  font: 700 11px monospace;
   letter-spacing: 1px;
 }
 .roster-sortbar .count b {
@@ -2857,7 +2860,7 @@ footer p {
   background: #12171a;
 }
 .roster-grid span {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 800;
   line-height: 1.25;
 }
@@ -2869,7 +2872,7 @@ footer p {
   flex: 1;
   justify-content: center;
   padding: 4px 0;
-  font: 800 9px monospace;
+  font: 800 10px monospace;
   opacity: 0.5;
 }
 .elite-toggle button.selected {
@@ -2889,7 +2892,7 @@ footer p {
   border: 0;
   background: var(--white);
   padding: 3px 10px;
-  font: 800 9px monospace;
+  font: 800 10px monospace;
   color: var(--muted);
   cursor: pointer;
   transition: 0.12s;
@@ -2933,7 +2936,7 @@ footer p {
 }
 .help-list li {
   color: var(--ink3);
-  font-size: 12px;
+  font-size: 12.5px;
   line-height: 1.75;
   margin-top: 6px;
 }
@@ -2947,7 +2950,7 @@ footer p {
   background: var(--lime);
   color: var(--on-lime);
   padding: 9px 14px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   text-decoration: none;
 }
@@ -2967,7 +2970,7 @@ footer p {
   color: var(--ink3);
   max-width: 760px;
   margin: 0;
-  font-size: 12px;
+  font-size: 12.5px;
   line-height: 1.65;
 }
 .recruit-tags {
@@ -2986,14 +2989,14 @@ footer p {
   margin-top: 16px;
   padding-top: 12px;
   border-top: 1px dashed var(--line);
-  font: 700 11px monospace;
+  font: 700 12px monospace;
   color: var(--muted);
 }
 .recruit-empty {
   color: var(--muted);
   text-align: center;
   margin: 60px 0;
-  font-size: 13px;
+  font-size: 13.5px;
 }
 .recruit-results {
   display: grid;
@@ -3025,14 +3028,14 @@ footer p {
   background: var(--chip);
   color: #fff;
   padding: 5px 9px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
 }
 .recruit-combo > header > b {
   color: #fff;
   flex: none;
   padding: 5px 10px;
-  font: 800 11px monospace;
+  font: 800 12px monospace;
   letter-spacing: 0.5px;
 }
 .recruit-combo ul {
@@ -3050,7 +3053,7 @@ footer p {
   border: 1px solid;
   background: var(--white);
   padding: 3px 8px 3px 3px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
 }
 .recruit-combo li img {
@@ -3061,7 +3064,7 @@ footer p {
 }
 .recruit-combo li i {
   font-style: normal;
-  font: 800 9px monospace;
+  font: 800 10px monospace;
 }
 .recruit-combo li.low-time {
   border-style: dashed;
@@ -3071,7 +3074,7 @@ footer p {
   display: inline-block;
   margin-left: 5px;
   font-style: normal;
-  font-size: 8.5px;
+  font-size: 10px;
   font-weight: 800;
   color: var(--tint-warm-ink);
   background: var(--tint-warm);
@@ -3084,7 +3087,7 @@ footer p {
   background: var(--tint-warm2);
   color: var(--tint-warm2-ink);
   padding: 8px 11px;
-  font-size: 10.5px;
+  font-size: 11.5px;
   line-height: 1.55;
 }
 @media (max-width: 760px) {
@@ -3105,7 +3108,7 @@ footer p {
   color: var(--muted);
   cursor: pointer;
   padding: 12px;
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 800;
 }
 .dict-toggle:hover {
@@ -3115,7 +3118,7 @@ footer p {
 .recruit-dict > p {
   color: var(--ink3);
   margin: 14px 2px 0;
-  font-size: 12px;
+  font-size: 12.5px;
   line-height: 1.6;
 }
 .quick-wrap {
@@ -3129,7 +3132,7 @@ footer p {
   border: 1px solid #bbbcb7;
   background: var(--white);
   padding: 11px 12px;
-  font-size: 13px;
+  font-size: 13.5px;
   outline: 0;
 }
 .quick-wrap input:focus {
@@ -3141,7 +3144,7 @@ footer p {
   color: var(--lime);
   cursor: pointer;
   padding: 0 18px;
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 800;
 }
 .clear-btn:hover {
@@ -3155,7 +3158,7 @@ footer p {
   max-width: 760px;
   margin: 14px 0 0;
   padding: 12px 15px;
-  font-size: 12px;
+  font-size: 12.5px;
   line-height: 1.7;
 }
 /* 기본 상태에 투명 outline을 깔아 두면 hover 시 색만 부드럽게 차오른다
@@ -3178,7 +3181,7 @@ footer p {
   color: var(--ink3);
   margin: 0 0 14px;
   padding: 11px 14px;
-  font-size: 11.5px;
+  font-size: 12.5px;
   line-height: 1.6;
 }
 .toast {
@@ -3190,7 +3193,7 @@ footer p {
   background: var(--chip);
   color: var(--lime);
   padding: 12px 22px;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 800;
   letter-spacing: 0.3px;
   box-shadow: 0 10px 30px #0006;
@@ -3278,7 +3281,7 @@ footer p {
 .summary-parts span {
   background: var(--bg-soft);
   padding: 6px 9px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
 }
 .summary-parts span b {
@@ -3290,7 +3293,7 @@ footer p {
   color: var(--ink3);
   margin: 12px 0 0;
   padding: 10px 13px;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.6;
 }
 .crew-card {
@@ -3305,7 +3308,7 @@ footer p {
   color: var(--muted);
   width: 24px;
   height: 24px;
-  font-size: 12px;
+  font-size: 12.5px;
   line-height: 1;
   cursor: pointer;
 }
@@ -3327,7 +3330,7 @@ footer p {
   padding-top: 12px;
 }
 .bench > span {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   color: var(--muted);
 }
@@ -3339,7 +3342,7 @@ footer p {
   border: 1px solid var(--line);
   background: var(--white);
   padding: 7px 9px;
-  font-size: 12px;
+  font-size: 12.5px;
 }
 .bench-chips {
   display: flex;
@@ -3365,7 +3368,7 @@ footer p {
   color: var(--lime);
   cursor: pointer;
   padding: 12px 18px;
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 800;
   box-shadow: 0 8px 24px #0005;
 }
@@ -3387,7 +3390,7 @@ footer p {
   background: var(--chip);
   color: #fff;
   padding: 11px 14px;
-  font-size: 13px;
+  font-size: 13.5px;
 }
 .feedback-panel > header button {
   background: 0 0;
@@ -3407,7 +3410,7 @@ footer p {
   border: 1px solid var(--line);
   background: 0 0;
   padding: 8px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   cursor: pointer;
 }
@@ -3422,7 +3425,7 @@ footer p {
   border: 1px solid #bbbcb7;
   background: var(--white);
   padding: 10px;
-  font-size: 12px;
+  font-size: 12.5px;
   resize: vertical;
   outline: 0;
 }
@@ -3438,7 +3441,7 @@ footer p {
 }
 .feedback-panel > footer small {
   color: var(--muted);
-  font-size: 10px;
+  font-size: 11px;
 }
 .feedback-send {
   border: 1px solid var(--border-strong);
@@ -3446,7 +3449,7 @@ footer p {
   color: var(--lime);
   cursor: pointer;
   padding: 8px 16px;
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 800;
 }
 .feedback-send:disabled {
@@ -3487,7 +3490,7 @@ footer p {
 .admin-gate input {
   border: 1px solid #bbbcb7;
   padding: 11px 12px;
-  font-size: 13px;
+  font-size: 13.5px;
   outline: 0;
 }
 .admin-gate button {
@@ -3500,7 +3503,7 @@ footer p {
 }
 .admin-gate p {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   margin: 14px 0 0;
 }
 .admin {
@@ -3527,7 +3530,7 @@ footer p {
 }
 .admin h1 small {
   color: var(--muted);
-  font: 700 12px monospace;
+  font: 700 12.5px monospace;
   margin-left: 8px;
 }
 .admin-tools {
@@ -3539,7 +3542,7 @@ footer p {
   border: 1px solid var(--line);
   background: var(--white);
   padding: 8px 12px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   cursor: pointer;
 }
@@ -3550,7 +3553,7 @@ footer p {
 }
 .admin-status {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 12.5px;
   margin: 16px 0;
 }
 /* 게임 데이터 갱신 필요 여부 (크론 워커 /datacheck와 번들 데이터 비교) */
@@ -3558,7 +3561,7 @@ footer p {
   border: 1px solid var(--line);
   padding: 14px 16px;
   margin-top: 16px;
-  font-size: 13px;
+  font-size: 13.5px;
 }
 .data-status.ok {
   border-color: #59bb5588;
@@ -3581,7 +3584,7 @@ footer p {
 }
 .data-status time {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
 }
 .data-status p {
   margin-top: 10px;
@@ -3590,16 +3593,16 @@ footer p {
 .data-status code {
   border: 1px solid var(--line);
   padding: 1px 5px;
-  font-size: 11px;
+  font-size: 12px;
 }
 .data-status i {
   color: var(--muted);
   font-style: normal;
-  font-size: 12px;
+  font-size: 12.5px;
 }
 .data-status-minor {
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: 12.5px;
 }
 .admin-list {
   display: grid;
@@ -3618,7 +3621,7 @@ footer p {
   margin-bottom: 6px;
 }
 .admin-row > header b {
-  font-size: 12px;
+  font-size: 12.5px;
   padding: 3px 7px;
   background: var(--bg-soft);
 }
@@ -3630,14 +3633,14 @@ footer p {
 }
 .admin-row time {
   color: var(--muted);
-  font: 600 10px monospace;
+  font: 600 11px monospace;
   margin-right: auto;
 }
 .admin-row > header button {
   border: 1px solid var(--line);
   background: 0 0;
   color: #c0392b;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   cursor: pointer;
   padding: 5px 10px;
@@ -3649,20 +3652,20 @@ footer p {
 }
 .admin-row p {
   margin: 4px 0;
-  font-size: 13px;
+  font-size: 13.5px;
   line-height: 1.6;
   white-space: pre-wrap;
 }
 .admin-row details summary {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   cursor: pointer;
 }
 .admin-row pre {
   background: #131719;
   color: #c8e0a8;
   padding: 12px;
-  font-size: 10.5px;
+  font-size: 11.5px;
   overflow-x: auto;
   max-height: 340px;
 }
@@ -3672,7 +3675,7 @@ footer p {
 .reviewed-badge {
   font-style: normal;
   color: var(--ok);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
 }
 .admin-row > header .review-btn {
@@ -3690,7 +3693,7 @@ footer p {
 .handling-badge {
   font-style: normal;
   color: #b26a00;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
 }
 .admin-row > header .handling-btn {
@@ -3714,7 +3717,7 @@ footer p {
   color: #fff;
 }
 .fb-id {
-  font: 800 10px monospace;
+  font: 800 11px monospace;
   color: var(--muted);
   background: var(--bg-soft);
   padding: 3px 6px;
@@ -3731,7 +3734,7 @@ footer p {
   background: var(--tint-lime);
   color: var(--tint-lime-ink);
   padding: 3px 8px;
-  font-size: 10.5px;
+  font-size: 11.5px;
   font-weight: 800;
   text-decoration: none;
 }
@@ -3754,15 +3757,15 @@ footer p {
   border: 1px solid var(--line);
   background: var(--white);
   padding: 6px 9px;
-  font-size: 12px;
+  font-size: 12.5px;
 }
 .admin-nick b {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--muted);
   font-weight: 800;
 }
 .admin-nick i {
-  font: 800 9px monospace;
+  font: 800 10px monospace;
   color: var(--tint-lime-ink);
   font-style: normal;
 }
@@ -3782,7 +3785,7 @@ footer p {
   display: inline-block;
   margin-left: 5px;
   font-style: normal;
-  font-size: 8.5px;
+  font-size: 10px;
   font-weight: 800;
   color: var(--gold-ink);
   background: var(--tint-gold);
@@ -3811,7 +3814,7 @@ footer p {
   border: 1px solid var(--line);
   background: var(--white);
   padding: 9px 16px;
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 800;
   cursor: pointer;
 }
@@ -3846,7 +3849,7 @@ footer p {
 }
 .farm-subhead p {
   margin: 0 0 8px;
-  font-size: 13.5px;
+  font-size: 14px;
   line-height: 1.75;
   color: var(--ink2);
 }
@@ -3869,7 +3872,7 @@ footer p {
   border: 1px solid var(--line);
   background: var(--paper);
   padding: 3px 8px;
-  font: 700 10.5px monospace;
+  font: 700 11.5px monospace;
   letter-spacing: 0.3px;
   color: var(--muted);
 }
@@ -3885,14 +3888,14 @@ footer p {
   gap: 7px;
   width: 100%;
   margin: 0;
-  font-size: 12px;
+  font-size: 12.5px;
 }
 .chip-stage .chip-zone {
   font-weight: 700;
 }
 .chip-stage .farm-sanity {
   margin-left: auto;
-  font: 700 11px monospace;
+  font: 700 12px monospace;
   color: var(--muted);
 }
 /* 스테이지 더 보기/접기 (효율표 카드) */
@@ -3902,7 +3905,7 @@ footer p {
   padding: 5px 0;
   border: 1px dashed var(--line);
   background: none;
-  font: 700 10.5px monospace;
+  font: 700 11.5px monospace;
   letter-spacing: 0.4px;
   color: var(--muted);
   cursor: pointer;
@@ -3919,13 +3922,13 @@ footer p {
 }
 .farm-head p {
   margin: 0 0 8px;
-  font-size: 13.5px;
+  font-size: 14px;
   line-height: 1.75;
   color: var(--ink2);
 }
 .farm-source {
   color: var(--muted) !important;
-  font-size: 12px !important;
+  font-size: 12.5px !important;
 }
 .farm-tools {
   display: flex;
@@ -3942,7 +3945,7 @@ footer p {
   border: 1px solid var(--line);
   background: var(--white);
   padding: 8px 12px;
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 800;
   cursor: pointer;
   transition: 0.15s;
@@ -3951,7 +3954,7 @@ footer p {
   margin-left: 6px;
   font-weight: 600;
   opacity: 0.55;
-  font-size: 11px;
+  font-size: 12px;
 }
 .farm-tier-filter button:hover {
   border-color: var(--border-strong);
@@ -3969,7 +3972,7 @@ footer p {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -4010,7 +4013,7 @@ footer p {
   display: inline-block;
   margin-top: 5px;
   padding: 2px 7px;
-  font: 800 10px monospace;
+  font: 800 11px monospace;
   border: 1px solid var(--border-strong);
 }
 /* 재료 카드의 미실장 배지 — T등급 배지와 붙지 않게 간격 */
@@ -4046,7 +4049,7 @@ footer p {
   border-bottom: 1px solid var(--line);
 }
 .farm-cols i {
-  font: 700 10px monospace;
+  font: 700 11px monospace;
   color: var(--muted);
   font-style: normal;
 }
@@ -4064,7 +4067,7 @@ footer p {
 .farm-card li {
   padding: 7px 8px;
   border-bottom: 1px dashed var(--line);
-  font-size: 12.5px;
+  font-size: 13px;
 }
 .farm-card li:last-child {
   border-bottom: 0;
@@ -4075,7 +4078,7 @@ footer p {
   padding-left: 5px;
 }
 .farm-code {
-  font: 800 12.5px monospace;
+  font: 800 13px monospace;
 }
 .farm-badges {
   display: flex;
@@ -4085,14 +4088,14 @@ footer p {
 .best-badge {
   background: var(--chip);
   color: var(--lime);
-  font: 800 9.5px monospace;
+  font: 800 10.5px monospace;
   padding: 2px 6px;
   font-style: normal;
 }
 .kind-badge {
   border: 1px solid var(--line);
   color: var(--muted);
-  font: 700 9.5px monospace;
+  font: 700 10.5px monospace;
   padding: 2px 6px;
   font-style: normal;
 }
@@ -4134,13 +4137,13 @@ footer p {
 }
 .story-head p {
   margin: 0 0 8px;
-  font-size: 13.5px;
+  font-size: 14px;
   line-height: 1.75;
   color: var(--ink2);
 }
 .story-source {
   color: var(--muted) !important;
-  font-size: 12px !important;
+  font-size: 12.5px !important;
 }
 .story-tools {
   display: flex;
@@ -4259,13 +4262,19 @@ footer p {
 }
 .story-search-menu button:hover:not(:disabled) { background: var(--paper); }
 .story-search-menu button:disabled { cursor: default; opacity: 0.5; }
-.story-search-menu .ss-name { font-size: 13px; font-weight: 800; }
-.story-search-menu .ss-meta { font-size: 11px; color: #7c8087; }
-.story-search-empty { padding: 12px 10px; font-size: 12px; color: #7c8087; }
+.story-search-menu .ss-name { font-size: 13.5px; font-weight: 800; }
+.story-search-menu .ss-meta { font-size: 12px; color: #7c8087; }
+.story-search-empty { padding: 12px 10px; font-size: 12.5px; color: #7c8087; }
 .story-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  /* 한 줄 6개 (사용자 확정 2026-07-18) — 좁은 화면은 아래 미디어쿼리가 auto-fill로 완화 */
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 14px;
+}
+@media (max-width: 1100px) {
+  .story-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  }
 }
 .story-card button {
   display: block;
@@ -4316,7 +4325,7 @@ html.dark .story-card:hover .story-thumb img {
   background: linear-gradient(135deg, var(--chip), #2c2f2b);
 }
 .story-thumb-kind {
-  font: 800 12px/1 monospace;
+  font: 800 12.5px/1 monospace;
   letter-spacing: 2px;
   text-transform: uppercase;
   color: var(--lime);
@@ -4326,18 +4335,18 @@ html.dark .story-card:hover .story-thumb img {
 .digest-groups { display: flex; flex-direction: column; gap: 28px; }
 .digest-group > h3 {
   margin: 0 0 12px;
-  font-size: 13px; font-weight: 800; letter-spacing: -0.2px;
+  font-size: 13.5px; font-weight: 800; letter-spacing: -0.2px;
   border-left: 3px solid var(--line); padding-left: 9px;
   display: flex; align-items: center; gap: 8px;
 }
-.digest-group > h3 em { font: 700 10px monospace; color: var(--muted); font-style: normal; }
+.digest-group > h3 em { font: 700 11px monospace; color: var(--muted); font-style: normal; }
 .digest-tabs { margin: 0; }
 .story-ready-badge,
 .story-pending-badge {
   position: absolute;
   left: 8px;
   top: 8px;
-  font: 800 10px monospace;
+  font: 800 11px monospace;
   padding: 3px 7px;
   font-style: normal;
 }
@@ -4360,7 +4369,7 @@ html.dark .story-card:hover .story-thumb img {
   line-height: 1.35;
 }
 .story-card-info span {
-  font: 700 11px monospace;
+  font: 700 12px monospace;
   color: var(--muted);
 }
 /* 상세 */
@@ -4368,7 +4377,7 @@ html.dark .story-card:hover .story-thumb img {
   border: 1px solid var(--line);
   background: var(--white);
   padding: 8px 14px;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 800;
   cursor: pointer;
   transition: 0.15s;
@@ -4429,7 +4438,7 @@ html.dark .story-card:hover .story-thumb img {
 }
 .story-meta {
   margin: 0 0 10px;
-  font: 700 12px monospace;
+  font: 700 12.5px monospace;
   color: var(--muted);
 }
 .story-tagline {
@@ -4443,7 +4452,7 @@ html.dark .story-card:hover .story-thumb img {
   padding: 9px 12px;
   background: color-mix(in srgb, var(--lime) 20%, transparent);
   border-left: 3px solid var(--lime);
-  font-size: 12px;
+  font-size: 12.5px;
   line-height: 1.65;
   color: var(--ink2);
 }
@@ -4505,11 +4514,11 @@ html.dark .story-card:hover .story-thumb img {
   gap: 3px;
 }
 .rail-card-text b {
-  font-size: 12px;
+  font-size: 12.5px;
   letter-spacing: -0.3px;
 }
 .rail-card-text span {
-  font: 600 10px/1.5 monospace;
+  font: 600 11px/1.5 monospace;
   color: var(--muted);
   word-break: keep-all;
 }
@@ -4538,7 +4547,7 @@ html.dark .story-card:hover .story-thumb img {
 }
 .op-mark {
   margin-left: 4px;
-  font: 800 10px monospace;
+  font: 800 11px monospace;
   color: var(--muted);
   font-style: normal;
 }
@@ -4602,14 +4611,14 @@ html.dark .story-card:hover .story-thumb img {
     min-width: 0;
   }
   .story-rail .rail-card-text b {
-    font-size: 12px;
+    font-size: 12.5px;
     white-space: nowrap;
   }
   /* 접힘 상태: 이름 + 짧은 스니펫(서너 글자 + …). 펼치면 전문(full)으로 교체 */
   .story-rail .rail-card-text > span {
     display: block;
     margin-top: 2px;
-    font: 600 10px/1.4 monospace;
+    font: 600 11px/1.4 monospace;
     color: var(--muted);
     white-space: nowrap;
   }
@@ -4669,7 +4678,7 @@ html.dark .story-card:hover .story-thumb img {
 }
 .story-body figcaption {
   padding: 8px 12px;
-  font-size: 11.5px;
+  font-size: 12.5px;
   color: var(--muted);
   border-top: 1px solid var(--line);
   background: var(--white);
@@ -4708,7 +4717,7 @@ html.dark .story-card:hover .story-thumb img {
   padding: 5px 0 0;
   border: 0;
   background: none;
-  font-size: 10.5px;
+  font-size: 11.5px;
   font-weight: 700;
   letter-spacing: -0.2px;
   color: var(--muted);
@@ -4733,7 +4742,7 @@ html.dark .story-card:hover .story-thumb img {
   font-style: italic;
 }
 .story-body blockquote cite {
-  font: 700 11.5px monospace;
+  font: 700 12.5px monospace;
   color: var(--muted);
   font-style: normal;
 }
@@ -4764,7 +4773,7 @@ html.dark .story-card:hover .story-thumb img {
   padding: 8px 11px;
   margin-left: auto;   /* 우측 그룹(미래시·햄버거·언어·소개)을 헤더 오른쪽 끝으로 밀어낸다 */
   margin-right: 10px;  /* 햄버거 버튼과 간격 */
-  font: 700 11px/1 monospace;
+  font: 700 12px/1 monospace;
   letter-spacing: 0.2px;
   cursor: pointer;
 }
@@ -4796,9 +4805,9 @@ html.dark .story-card:hover .story-thumb img {
 .about { max-width: 1000px; margin: 0 auto; padding: 8px 0 40px; }
 .about-hero { border-bottom: 1px solid var(--line); padding-bottom: 22px; margin-bottom: 22px; }
 .about-hero h2 { font-size: clamp(24px, 4vw, 38px); margin: 6px 0 10px; letter-spacing: -0.5px; }
-.about-tagline { font: 700 12px/1.4 monospace; color: var(--muted); letter-spacing: 0.3px; margin: 0 0 14px; }
+.about-tagline { font: 700 12.5px/1.4 monospace; color: var(--muted); letter-spacing: 0.3px; margin: 0 0 14px; }
 .about-intro { font-size: 15px; line-height: 1.7; max-width: 68ch; margin: 0; }
-.about-lead { font: 700 12px/1.4 monospace; color: var(--muted); letter-spacing: 0.2px; margin: 0 0 14px; }
+.about-lead { font: 700 12.5px/1.4 monospace; color: var(--muted); letter-spacing: 0.2px; margin: 0 0 14px; }
 .about-features { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
 .about-card {
   border: 1px solid var(--line);
@@ -4830,7 +4839,7 @@ html.dark .story-card:hover .story-thumb img {
   border-radius: 4px;
 }
 .about-shot-cap {
-  font: 700 11px/1.4 monospace;
+  font: 700 12px/1.4 monospace;
   color: var(--muted);
   letter-spacing: 0.2px;
   margin: 7px 0 0;
@@ -4847,22 +4856,22 @@ html.dark .story-card:hover .story-thumb img {
 }
 .about-card-highlight strong { font-weight: 800; }
 .about-card-bullets { margin: 0 0 14px; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
-.about-card-bullets li { font-size: 13.5px; line-height: 1.55; }
+.about-card-bullets li { font-size: 14px; line-height: 1.55; }
 .about-card-go {
   align-self: flex-start;
   margin-top: auto;
   border: 1px solid var(--line);
   background: var(--paper);
   padding: 7px 12px;
-  font: 700 12px/1 monospace;
+  font: 700 12.5px/1 monospace;
   cursor: pointer;
 }
 .about-card-go:hover { background: var(--chip); color: var(--white); border-color: var(--border-strong); }
 .about-notes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 24px 0; }
 .about-note { border: 1px solid var(--line); padding: 16px; background: var(--white); }
 .about-note h4 { font-size: 14px; margin: 0 0 8px; letter-spacing: -0.2px; }
-.about-note p { font-size: 13px; line-height: 1.6; margin: 0; color: var(--ink); }
-.about-cta { font-size: 13px; color: var(--muted); text-align: center; margin: 8px 0 0; }
+.about-note p { font-size: 13.5px; line-height: 1.6; margin: 0; color: var(--ink); }
+.about-cta { font-size: 13.5px; color: var(--muted); text-align: center; margin: 8px 0 0; }
 @media (max-width: 720px) {
   .about-features, .about-notes { grid-template-columns: 1fr; }
 }
@@ -4872,7 +4881,7 @@ html.dark .story-card:hover .story-thumb img {
   color: #fff;
   border-radius: 2px;
   padding: 2px 6px;
-  font: 800 9.5px/1 monospace;
+  font: 800 10.5px/1 monospace;
   letter-spacing: 0.6px;
   font-style: normal;
   vertical-align: middle;
@@ -4890,7 +4899,7 @@ html.dark .story-card:hover .story-thumb img {
 .portrait-meta .future-badge {
   margin-left: 0;
   padding: 2px 5px;
-  font-size: 8.5px;
+  font-size: 10px;
 }
 .modal-rarity .future-badge {
   margin-left: 8px;
@@ -4907,7 +4916,7 @@ html.dark .story-card:hover .story-thumb img {
 }
 .roster-section-head {
   margin: 14px 2px 8px;
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 700;
   letter-spacing: 0.3px;
   opacity: 0.75;
@@ -4919,7 +4928,7 @@ html.dark .story-card:hover .story-thumb img {
 .roster-section-head em {
   font-style: normal;
   font-weight: 700;
-  font-size: 10px;
+  font-size: 11px;
   padding: 1px 6px;
   border-radius: 999px;
   background: color-mix(in srgb, currentColor 14%, transparent);
@@ -4927,7 +4936,7 @@ html.dark .story-card:hover .story-thumb img {
 .roster-card .future-badge {
   margin-left: 4px;
   padding: 1px 4px;
-  font-size: 8px;
+  font-size: 9.5px;
 }
 /* 미실장 안내문 — 오퍼 모달 히어로(어두운 그라데이션) 위에 뜨므로 밝은 글자 사용.
    max-width로 제목 블록(flex:none, 내용폭 추종)이 넓어지는 걸 막아 별명 제보 폼이 밀리지 않게 한다 */
@@ -4936,7 +4945,7 @@ html.dark .story-card:hover .story-thumb img {
   padding: 8px 10px;
   border-left: 3px solid #b06dff;
   background: #ffffff14;
-  font-size: 12px;
+  font-size: 12.5px;
   line-height: 1.6;
   color: #e9e2f7;
   max-width: 430px;
@@ -4957,7 +4966,7 @@ html.dark .story-card:hover .story-thumb img {
 .cost-calc-head p {
   margin: 0;
   max-width: 760px;
-  font-size: 12.5px;
+  font-size: 13px;
   line-height: 1.7;
   color: var(--ink2);
 }
@@ -4995,7 +5004,7 @@ html.dark .story-card:hover .story-thumb img {
   border-bottom: 1px solid var(--line);
   background: none;
   padding: 7px 10px;
-  font-size: 13px;
+  font-size: 13.5px;
   cursor: pointer;
   text-align: left;
 }
@@ -5024,7 +5033,7 @@ html.dark .story-card:hover .story-thumb img {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -5034,7 +5043,7 @@ html.dark .story-card:hover .story-thumb img {
 .cost-empty {
   margin: 14px 0 0;
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: 13px;
 }
 /* 오퍼별 비용 분해 카드 — 정예화 1/2 · 스킬 Lv.2~7 · 스킬별 특화 1~3 · 모듈별 1~3단계를
    전부 개별 행으로 나열한다 (2026-07 사용자 확정: 합계만 뭉치지 말고 단계별로 따로) */
@@ -5165,7 +5174,7 @@ html.dark .story-card:hover .story-thumb img {
   background: none;
   padding: 4px 8px;
   margin-left: auto;
-  font-size: 10.5px;
+  font-size: 11.5px;
   font-weight: 700;
   white-space: nowrap;
   cursor: pointer;
@@ -5194,14 +5203,14 @@ html.dark .story-card:hover .story-thumb img {
   padding-top: 4px;
 }
 .cost-row-group {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   line-height: 1.3;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .cost-row-step {
-  font: 700 10.5px monospace;
+  font: 700 11.5px monospace;
   color: var(--muted);
   white-space: nowrap;
 }
@@ -5224,7 +5233,7 @@ html.dark .story-card:hover .story-thumb img {
   object-fit: contain;
 }
 .cost-mini i {
-  font: 800 10.5px/1 monospace;
+  font: 800 11.5px/1 monospace;
   font-style: normal;
 }
 .cost-mini.farmable {
@@ -5246,11 +5255,11 @@ html.dark .story-card:hover .story-thumb img {
     gap: 6px;
   }
   .cost-row-group {
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: -0.02em;
   }
   .cost-row-step {
-    font-size: 9px;
+    font-size: 10px;
   }
   .cost-mini {
     padding: 2px 4px 2px 2px;
@@ -5261,7 +5270,7 @@ html.dark .story-card:hover .story-thumb img {
     height: 19px;
   }
   .cost-mini i {
-    font-size: 9.5px;
+    font-size: 10.5px;
   }
 }
 .cost-total-head {
@@ -5284,7 +5293,7 @@ html.dark .story-card:hover .story-thumb img {
   background: var(--chip);
   color: var(--lime);
   padding: 6px 11px;
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
@@ -5363,13 +5372,13 @@ html.dark .story-card:hover .story-thumb img {
   background: var(--chip);
   color: var(--lime);
   padding: 2px 7px;
-  font: 800 10px/1.4 monospace;
+  font: 800 11px/1.4 monospace;
   font-style: normal;
   vertical-align: middle;
 }
 .item-desc {
   margin: 0 0 8px;
-  font-size: 13px;
+  font-size: 13.5px;
   line-height: 1.75;
   color: var(--ink2);
 }
@@ -5378,7 +5387,7 @@ html.dark .story-card:hover .story-thumb img {
   padding: 8px 10px;
   border-left: 3px solid var(--line);
   background: var(--paper);
-  font-size: 12px;
+  font-size: 12.5px;
   line-height: 1.65;
   color: var(--muted);
 }
@@ -5392,7 +5401,7 @@ html.dark .story-card:hover .story-thumb img {
 .item-stages > b {
   display: block;
   margin-bottom: 8px;
-  font: 700 10.5px monospace;
+  font: 700 11.5px monospace;
   letter-spacing: 1px;
   color: var(--muted);
   text-transform: uppercase;
@@ -5415,7 +5424,7 @@ html.dark .story-card:hover .story-thumb img {
   gap: 8px;
   padding: 5px 0;
   border-bottom: 1px solid var(--line);
-  font-size: 12.5px;
+  font-size: 13px;
 }
 .item-stages li span {
   text-align: right;
@@ -5425,7 +5434,7 @@ html.dark .story-card:hover .story-thumb img {
   border: 0;
   background: none;
   padding: 0;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 800;
   cursor: pointer;
 }
@@ -5448,7 +5457,7 @@ html.dark .story-card:hover .story-thumb img {
   border: 1px solid var(--line);
   background: none;
   padding: 6px 10px;
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -5479,7 +5488,7 @@ html.dark .story-card:hover .story-thumb img {
 }
 .cost-lmd span {
   display: block;
-  font: 700 10px monospace;
+  font: 700 11px monospace;
   letter-spacing: 1px;
   opacity: 0.8;
 }
@@ -5500,7 +5509,7 @@ html.dark .story-card:hover .story-thumb img {
   border: 1px solid var(--line);
   background: var(--paper);
   padding: 6px 8px;
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 700;
   text-align: left;
   color: var(--ink);
@@ -5532,7 +5541,7 @@ html.dark .story-card:hover .story-thumb img {
   color: var(--lime);
   border-radius: 2px;
   padding: 1px 4px;
-  font: 800 10px/1.3 monospace;
+  font: 800 11px/1.3 monospace;
   font-style: normal;
 }
 .cost-item b {
@@ -5558,7 +5567,7 @@ html.dark .story-card:hover .story-thumb img {
 }
 .portal-hero { text-align: center; display: flex; flex-direction: column; gap: 10px; }
 .portal-kicker {
-  font-size: 12px; letter-spacing: 3px; font-weight: 700;
+  font-size: 12.5px; letter-spacing: 3px; font-weight: 700;
   color: var(--accent, #b98a2f);
 }
 .portal-hero h1 {
@@ -5591,7 +5600,7 @@ html.dark .story-card:hover .story-thumb img {
 }
 .portal-card-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1 1 auto; }
 .portal-card-body b { font-size: 16px; letter-spacing: -0.3px; color: var(--ink); }
-.portal-card-body small { font-size: 12.5px; line-height: 1.5; color: var(--muted); }
+.portal-card-body small { font-size: 13px; line-height: 1.5; color: var(--muted); }
 .portal-card-go { flex: 0 0 auto; font-size: 18px; color: var(--muted); transition: transform 0.15s ease, color 0.15s ease; }
 .portal-card:hover .portal-card-go { transform: translateX(3px); color: var(--ink); }
 /* 인프라 자동편성기 = 대표 도구라 최상단 한 줄 전체.
@@ -5691,27 +5700,27 @@ html.dark.rg-theme.rg5 .site-header { background: #1c0f15e6; border-bottom-color
 html.dark.rg-theme.rg6 .site-header { background: #0a1413e6; border-bottom-color: #1f3a34 }
 
 /* 적 상태이상 면역 칩 */
-.rg-emodal-immune { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 8px 0 4px; font-size: 12.5px; color: var(--rgtext2) }
+.rg-emodal-immune { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 8px 0 4px; font-size: 13px; color: var(--rgtext2) }
 .rg-emodal-immune strong { color: var(--rgink); margin-right: 2px }
 .rg-immune-chip { border: 1px solid var(--rgmodalline); background: var(--rgsel); color: var(--rgink);
-  padding: 2px 8px; border-radius: 10px; font-size: 11.5px; font-weight: 700 }
+  padding: 2px 8px; border-radius: 10px; font-size: 12.5px; font-weight: 700 }
 /* 중국어 원문 병기 (CN 선행 토픽) — 인라인 표기용 */
-.rg-cn { font-size: 11px; font-weight: 400; font-style: normal; color: var(--rgmut); margin-left: 6px; letter-spacing: .2px }
+.rg-cn { font-size: 12px; font-weight: 400; font-style: normal; color: var(--rgmut); margin-left: 6px; letter-spacing: .2px }
 /* 이름 서브 표기(한국어 번역) — 중국어 다음 줄에 표시 (사용자 확정) */
-.rg-sub { display: block; font-size: 11px; font-weight: 400; color: var(--rgmut); margin-top: 2px; letter-spacing: .2px }
+.rg-sub { display: block; font-size: 12px; font-weight: 400; color: var(--rgmut); margin-top: 2px; letter-spacing: .2px }
 /* 목록 아이템: 층 라벨 윗줄 + 이름 아랫줄 */
 .rg-enc-txt { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; min-width: 0 }
 .rg-enc-txt .rg-enc-floors { margin-left: 0 }
 /* 환경 뷰 (실토피아·유토피아) */
 .rg-env-h { margin: 26px 0 6px; font-size: 16px; color: var(--rggold) }
 .rg-env-h:first-child { margin-top: 0 }
-.rg-wlv { font: 800 10px/1 monospace; font-style: normal; color: #59dddc; border: 1px solid #2a5a55; padding: 1px 5px; border-radius: 999px; margin-right: 4px }
+.rg-wlv { font: 800 11px/1 monospace; font-style: normal; color: #59dddc; border: 1px solid #2a5a55; padding: 1px 5px; border-radius: 999px; margin-right: 4px }
 .rg-wlv.lv-b { color: #e6c86a; border-color: #6a5a2a }
 .rg-wlv.lv-c { color: #f08a7a; border-color: #6a342a }
 .rg-scrap-group { margin: 0 0 22px }
 .rg-scrap-type { margin: 0 0 10px; font-size: 14.5px; color: var(--rggold) }
-.rg-scrap-type em { font-style: normal; color: var(--rgmut); margin-left: 6px; font-size: 12px }
-.rg-scrap-hint { display: block; font-weight: 400; font-size: 11.5px; color: var(--rgmut); margin-top: 3px }
+.rg-scrap-type em { font-style: normal; color: var(--rgmut); margin-left: 6px; font-size: 12.5px }
+.rg-scrap-hint { display: block; font-weight: 400; font-size: 12.5px; color: var(--rgmut); margin-top: 3px }
 .rg-loading { padding: 40px 0; text-align: center; color: var(--rgmut) }
 /* 층 카드 — 가로 일렬 (클릭 → 층 상세 모달) */
 .rg-zone-cards { grid-column: 1 / -1; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 10px; margin: 0 0 2px; width: 100% }
@@ -5719,9 +5728,9 @@ html.dark.rg-theme.rg6 .site-header { background: #0a1413e6; border-bottom-color
 .rg-zonecard:hover { border-color: var(--rgcrim) }
 .rg-zonecard-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .38; pointer-events: none }
 .rg-zonecard > :not(.rg-zonecard-bg) { position: relative }
-.rg-zonecard-name { font: 700 13.5px/1.3 inherit }
+.rg-zonecard-name { font: 700 14px/1.3 inherit }
 
-.rg-zonecard .rg-zone-counts { margin-top: auto; font-size: 11px; color: var(--rgmut) }
+.rg-zonecard .rg-zone-counts { margin-top: auto; font-size: 12px; color: var(--rgmut) }
 @media (max-width: 1100px) { .rg-zone-cards { grid-auto-flow: row; grid-template-columns: repeat(2, 1fr) } }
 /* 층 상세 모달 — 스테이지 카드 3열이 들어가게 넓게 */
 .rg-modal.rg-zmodal { max-width: 980px; width: min(980px, calc(100vw - 48px)) }
@@ -5743,38 +5752,38 @@ html.dark.rg-theme.rg6 .site-header { background: #0a1413e6; border-bottom-color
 .rg-hero-kv { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 72% 30%; opacity: .5;
   -webkit-mask-image: linear-gradient(90deg,transparent 0,#000 45%); mask-image: linear-gradient(90deg,transparent 0,#000 45%) }
 .rg-hero-text { position: relative; padding: 26px 28px 30px; max-width: 620px }
-.rg-eyebrow { font: 800 10.5px/1 monospace; letter-spacing: 3px; color: var(--rggold) }
+.rg-eyebrow { font: 800 11.5px/1 monospace; letter-spacing: 3px; color: var(--rggold) }
 .rg-head h2 { margin: 8px 0 12px; font-size: 30px; letter-spacing: -0.4px; color: #f4e7d3;
   text-shadow: 0 2px 14px #000c }
-.rg-title-future { font: 800 11px/1 monospace; font-style: normal; color: var(--rggold); border: 1px solid var(--rggold); padding: 3px 7px; border-radius: 999px; margin-left: 10px; vertical-align: 6px; text-shadow: none }
+.rg-title-future { font: 800 12px/1 monospace; font-style: normal; color: var(--rggold); border: 1px solid var(--rggold); padding: 3px 7px; border-radius: 999px; margin-left: 10px; vertical-align: 6px; text-shadow: none }
 .rg-topic-pick { display: flex; gap: 8px; align-items: center; margin: 0 0 10px; flex-wrap: wrap }
-.rg-topic { font: 700 12.5px/1.2 inherit; padding: 5px 12px; border: 1px solid var(--rgline); border-radius: 999px }
+.rg-topic { font: 700 13px/1.2 inherit; padding: 5px 12px; border: 1px solid var(--rgline); border-radius: 999px }
 .rg-topic.on { background: var(--rgcrim); color: #fff; border-color: var(--rgcrim); box-shadow: 0 0 14px #c23b4e55 }
-.rg-topic.off { color: var(--rgmut); background: 0 0; cursor: default; font: 700 12.5px/1.2 inherit }
+.rg-topic.off { color: var(--rgmut); background: 0 0; cursor: default; font: 700 13px/1.2 inherit }
 .rg-topic.off.ready { color: var(--rgink); cursor: pointer }
 .rg-topic.off.ready:hover { border-color: var(--rgcrim); color: #fff }
-.rg-topic-future { font: 800 9.5px/1 monospace; font-style: normal; color: var(--rggold); border: 1px solid var(--rggold); padding: 2px 5px; border-radius: 999px; margin-left: 6px; vertical-align: 1px }
-.rg-line { margin: 0; font-size: 12.5px; line-height: 1.7; color: var(--rgtext2); white-space: pre-line; text-shadow: 0 1px 8px #000c }
-.rg-disclaimer { margin: 0 0 8px; font-size: 12px; color: var(--rggold) }
+.rg-topic-future { font: 800 10.5px/1 monospace; font-style: normal; color: var(--rggold); border: 1px solid var(--rggold); padding: 2px 5px; border-radius: 999px; margin-left: 6px; vertical-align: 1px }
+.rg-line { margin: 0; font-size: 13px; line-height: 1.7; color: var(--rgtext2); white-space: pre-line; text-shadow: 0 1px 8px #000c }
+.rg-disclaimer { margin: 0 0 8px; font-size: 12.5px; color: var(--rggold) }
 
 /* 난이도 바 */
 .rg-diffbar { position: absolute; right: 18px; bottom: 16px; display: flex; align-items: center; flex-wrap: wrap; gap: 8px 10px; border: 1px solid #6a3040; background: #150a0ecc; backdrop-filter: blur(6px); padding: 10px 14px; width: min(460px, calc(100% - 36px)); box-shadow: 0 4px 24px #000a }
 /* 테마 변경 드롭다운 — 배너 오른쪽 위 (사용자 요청 2026-07-18) */
-.rg-topicsel { position: absolute; right: 18px; top: 16px; z-index: 3; width: min(280px, calc(100% - 36px)); background: color-mix(in srgb, var(--rgcard) 82%, transparent); backdrop-filter: blur(6px); color: var(--rgink); border: 1px solid var(--rgline); padding: 8px 11px; font: 700 12px/1.2 inherit; cursor: pointer; box-shadow: 0 4px 24px #0008 }
+.rg-topicsel { position: absolute; right: 18px; top: 16px; z-index: 3; width: min(280px, calc(100% - 36px)); background: color-mix(in srgb, var(--rgcard) 82%, transparent); backdrop-filter: blur(6px); color: var(--rgink); border: 1px solid var(--rgline); padding: 8px 11px; font: 700 12.5px/1.2 inherit; cursor: pointer; box-shadow: 0 4px 24px #0008 }
 .rg-topicsel:focus-visible { outline: 2px solid var(--rggold); outline-offset: 1px }
 @media (max-width: 860px) { .rg-topicsel { position: static; width: 100%; margin-bottom: 12px; backdrop-filter: none; background: var(--rgcard) } }
 .rg-diff-hex { display: inline-grid; place-items: center; width: 30px; height: 34px; margin-right: 7px; flex: none; font: 800 15px/1 monospace; font-style: normal; color: var(--rggold); background: #0d0609; border: 1px solid var(--rggold); clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%) }
 @media (max-width: 860px) { .rg-diffbar { position: static; width: 100%; margin-top: 12px; backdrop-filter: none; background: var(--rgcard) } }
-.rg-diffbar-label { flex: none; white-space: nowrap; font: 800 11px/1 monospace; letter-spacing: 1px; color: var(--rggold) }
-.rg-diff-chip { flex: none; white-space: nowrap; border: 1px solid var(--rgline); background: 0 0; color: var(--rgink); padding: 4px 10px; font: 700 12px/1 inherit; cursor: pointer; border-radius: 999px }
+.rg-diffbar-label { flex: none; white-space: nowrap; font: 800 12px/1 monospace; letter-spacing: 1px; color: var(--rggold) }
+.rg-diff-chip { flex: none; white-space: nowrap; border: 1px solid var(--rgline); background: 0 0; color: var(--rgink); padding: 4px 10px; font: 700 12.5px/1 inherit; cursor: pointer; border-radius: 999px }
 .rg-diff-chip.on { background: var(--rggold); color: #1a0d10; border-color: var(--rggold) }
 .rg-diffbar input[type="range"] { flex: 1 1 120px; accent-color: var(--rgcrim); min-width: 90px }
-.rg-diff-cur { flex: none; white-space: nowrap; display: flex; align-items: center; font: 800 12.5px/1.2 inherit; color: var(--rgmut) }
+.rg-diff-cur { flex: none; white-space: nowrap; display: flex; align-items: center; font: 800 13px/1.2 inherit; color: var(--rgmut) }
 .rg-diff-cur.on { color: var(--rgcrim) }
 
 /* 섹션 탭 */
 .rg-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 18px 0 22px; border-bottom: 2px solid var(--rgcrim); padding-bottom: 10px }
-.rg-tabs button { border: 1px solid var(--rgline); background: var(--rgcard); color: var(--rgink); padding: 7px 14px; font: 700 13px/1 inherit; cursor: pointer; transition: 0.12s }
+.rg-tabs button { border: 1px solid var(--rgline); background: var(--rgcard); color: var(--rgink); padding: 7px 14px; font: 700 13.5px/1 inherit; cursor: pointer; transition: 0.12s }
 .rg-tabs button:hover { border-color: var(--rggold); color: var(--rggold) }
 .rg-tabs button.on { background: var(--rgcrim); color: #fff; border-color: var(--rgcrim) }
 
@@ -5787,14 +5796,14 @@ html.dark.rg-theme.rg6 .site-header { background: #0a1413e6; border-bottom-color
 .rg-zone-sum { position: relative; display: flex; align-items: center; gap: 9px; padding: 14px 18px; cursor: pointer; list-style: none; flex-wrap: wrap }
 .rg-zone-sum::-webkit-details-marker { display: none }
 .rg-zone-sum h3 { margin: 0 }
-.rg-zone-counts { margin-left: auto; font: 700 11px/1 monospace; color: var(--rgmut) }
-.rg-zone-arrow { color: var(--rggold); font-size: 12px; transition: transform .15s }
+.rg-zone-counts { margin-left: auto; font: 700 12px/1 monospace; color: var(--rgmut) }
+.rg-zone-arrow { color: var(--rggold); font-size: 12.5px; transition: transform .15s }
 .rg-zone[open] .rg-zone-arrow { transform: rotate(180deg) }
 .rg-zone:not([open]) .rg-zone-bg { -webkit-mask-image: none; mask-image: none; opacity: .22 }
 .rg-zone-body { position: relative; padding: 2px 18px 16px }
-.rg-stage-hint { font: 500 10.5px/1 inherit; color: var(--rgmut); margin-left: 6px }
+.rg-stage-hint { font: 500 11.5px/1 inherit; color: var(--rgmut); margin-left: 6px }
 .rg-modal-modes { display: flex; gap: 6px; margin: 0 0 12px }
-.rg-modal-modes button { border: 1px solid var(--rgline); background: var(--rgdeep); color: var(--rgink); padding: 7px 16px; font: 700 12.5px/1 inherit; cursor: pointer }
+.rg-modal-modes button { border: 1px solid var(--rgline); background: var(--rgdeep); color: var(--rgink); padding: 7px 16px; font: 700 13px/1 inherit; cursor: pointer }
 .rg-modal-modes button.on { background: var(--rgsel); border-color: var(--rggold); color: var(--rggold) }
 .rg-modal-modes button.emg.on { background: var(--rgcrim); border-color: var(--rgcrim); color: #fff }
 .rg-zone-wide { grid-column: 1 / -1 }
@@ -5802,21 +5811,32 @@ html.dark.rg-theme.rg6 .site-header { background: #0a1413e6; border-bottom-color
 .rg-zone-sum:hover h3 { color: var(--rggold) }
 .rg-zone-num { font: 800 15px/1 monospace; background: var(--rgcrim); color: #fff; padding: 3px 8px; border-radius: 2px }
 .rg-zone h3 { margin: 0; font-size: 17px; letter-spacing: -0.3px; color: #f4e7d3; text-shadow: 0 1px 8px #000 }
-.rg-zone-time { font: 700 11px/1 monospace; color: var(--rggold) }
-.rg-zone-hidden { font: 800 10px/1 monospace; background: #c23b4e; color: #fff; padding: 3px 7px; border-radius: 999px }
-.rg-zone-desc { margin: 0 0 10px; font-size: 12.5px; line-height: 1.7; color: var(--rgtext2); white-space: pre-line; text-shadow: 0 1px 6px #000c }
+.rg-zone-time { font: 700 12px/1 monospace; color: var(--rggold) }
+.rg-zone-hidden { font: 800 11px/1 monospace; background: #c23b4e; color: #fff; padding: 3px 7px; border-radius: 999px }
+.rg-zone-desc { margin: 0 0 10px; font-size: 13px; line-height: 1.7; color: var(--rgtext2); white-space: pre-line; text-shadow: 0 1px 6px #000c }
 .rg-stage-group { margin-top: 10px }
-.rg-stage-group h4 { margin: 0 0 6px; font-size: 12px; letter-spacing: 0.3px; color: var(--rgink) }
+.rg-stage-group h4 { margin: 0 0 6px; font-size: 12.5px; letter-spacing: 0.3px; color: var(--rgink) }
 .rg-stage-group h4 em { font-style: normal; color: var(--rgmut); font-family: monospace }
 .rg-stage-group h4.emg { color: #e0596c }
 .rg-stage-group h4.boss { color: var(--rggold) }
 
 /* 전투 노드 카드 (미니맵 썸네일) */
 .rg-stage-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px }
+/* 광폭 섹션(조우 전투·추격전·기타 노드 등)의 카드는 한 줄 5개 (사용자 확정 2026-07-18) */
+.rg-zone-wide .rg-stage-cards { grid-template-columns: repeat(5, 1fr) }
+@media (max-width: 1100px) { .rg-zone-wide .rg-stage-cards { grid-template-columns: repeat(3, 1fr) } }
+/* 기타 노드 — 노드 타입 설명 그리드; 외나무다리(wide)는 한 줄 전체 + 결투 카드 포함 */
+.rg-nodetype-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px }
+@media (max-width: 900px) { .rg-nodetype-list { grid-template-columns: 1fr } }
+.rg-nodetype { border: 1px solid var(--rgline); background: var(--rgdeep); padding: 10px 12px }
+.rg-nodetype h4 { margin: 0 0 4px; font-size: 13.5px; color: var(--rggold) }
+.rg-nodetype p { margin: 0 0 4px; font-size: 13px; line-height: 1.55; color: var(--rgtext2) }
+.rg-nodetype.wide { grid-column: 1 / -1 }
+.rg-nodetype .rg-stage-cards { margin-top: 8px }
 .rg-stagecard { border: 1px solid var(--rgline); background: var(--rgdeep); color: var(--rgink); padding: 0 0 6px; cursor: pointer; font: inherit; transition: 0.12s; text-align: center; overflow: hidden }
 .rg-stagecard:hover { border-color: var(--rggold); transform: translateY(-1px) }
 .rg-stagecard-map { display: block; width: 100%; aspect-ratio: 16/9; object-fit: fill; background: #140b0e; margin-bottom: 5px }
-.rg-stagecard-name { font: 700 11.5px/1.35 inherit; padding: 0 6px; display: block }
+.rg-stagecard-name { font: 700 12.5px/1.35 inherit; padding: 0 6px; display: block }
 .rg-stagecard.emg { border-color: #6e2f3c }
 .rg-stagecard.emg .rg-stagecard-name { color: #e0596c }
 .rg-stagecard.boss { border-color: var(--rggold); box-shadow: 0 0 12px #c9a35c22 }
@@ -5829,55 +5849,59 @@ html.dark.rg-theme.rg6 .site-header { background: #0a1413e6; border-bottom-color
 .rg-enc-item:hover { border-color: var(--rggold) }
 
 /* 조우 */
-.rg-enc-title { font-weight: 700; font-size: 13px; color: var(--rgink) }
-.rg-enc-floors { margin-left: auto; font: 800 10.5px/1 monospace; background: var(--rgsel); border: 1px solid var(--rgmodalline); color: var(--rggold); padding: 3px 7px; border-radius: 999px; white-space: nowrap }
+.rg-enc-title { font-weight: 700; font-size: 13.5px; color: var(--rgink) }
+.rg-enc-floors { margin-left: auto; font: 800 11.5px/1 monospace; background: var(--rgsel); border: 1px solid var(--rgmodalline); color: var(--rggold); padding: 3px 7px; border-radius: 999px; white-space: nowrap }
 .rg-enc-cg { display: block; width: calc(100% - 24px); margin: 0 12px 10px; border: 1px solid var(--rgline) }
 .rg-enc-cg.modal { width: 100%; margin: 0 0 10px }
 .rg-relic-icon.lg { width: 56px; height: 56px }
-.rg-rmodal .rg-relic-usage { font-size: 13.5px }
+.rg-rmodal .rg-relic-usage { font-size: 14px }
 .rg-cond-node.relic { color: #d8b8f0 }
 .rg-diff-table tbody tr { cursor: pointer }
 .rg-diff-table tbody tr:hover td { background: var(--rgsel) }
-.rg-enc-desc { margin: 0; padding: 0 12px 8px; font-size: 12px; line-height: 1.7; color: var(--rgtext2) }
-.rg-enc-note { margin: 0 12px 8px; padding: 7px 9px; font-size: 11.5px; line-height: 1.6; background: var(--rgsel); border-left: 3px solid var(--rggold); color: #dcc9a8 }
+.rg-enc-desc { margin: 0; padding: 0 12px 8px; font-size: 12.5px; line-height: 1.7; color: var(--rgtext2) }
+.rg-enc-note { margin: 0 12px 8px; padding: 7px 9px; font-size: 12.5px; line-height: 1.6; background: var(--rgsel); border-left: 3px solid var(--rggold); color: #dcc9a8 }
 .rg-enc-body .rg-modal-desc { margin-top: 0 }
 .rg-enc-body .rg-enc-note { margin-left: 0; margin-right: 0 }
 .rg-enc-body .rg-enc-choices { padding: 0 0 0 18px }
-.rg-enc-choices { margin: 0; padding: 0 12px 12px 28px; font-size: 12px; line-height: 1.7; color: var(--rgtext2) }
+.rg-enc-choices { margin: 0; padding: 0 12px 12px 28px; font-size: 12.5px; line-height: 1.7; color: var(--rgtext2) }
 .rg-enc-choices strong { color: var(--rgink) }
 
 /* 필터 바 */
 .rg-filterbar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 14px }
-.rg-filterbar input[type="search"] { border: 1px solid var(--rgline); background: var(--rgdeep); color: var(--rgink); padding: 7px 11px; font: 500 13px/1 inherit; min-width: 180px }
+.rg-filterbar input[type="search"] { border: 1px solid var(--rgline); background: var(--rgdeep); color: var(--rgink); padding: 7px 11px; font: 500 13.5px/1 inherit; min-width: 180px }
 .rg-filterbar input[type="search"]::placeholder { color: var(--rgmut) }
 /* 노드 이름 검색란은 안내 문구가 길어 기본의 2배 폭으로 (사용자 요청 2026-07-18) */
 .rg-map-search input[type="search"] { min-width: 360px }
-.rg-filterbar button { border: 1px solid var(--rgline); background: var(--rgcard); color: var(--rgink); padding: 6px 12px; font: 700 12px/1 inherit; cursor: pointer }
+.rg-filterbar button { border: 1px solid var(--rgline); background: var(--rgcard); color: var(--rgink); padding: 6px 12px; font: 700 12.5px/1 inherit; cursor: pointer }
 .rg-filterbar button.on { background: var(--rgcrim); color: #fff; border-color: var(--rgcrim) }
-.rg-count { font: 800 11.5px/1 monospace; color: var(--rgmut); margin-left: 4px }
+.rg-count { font: 800 12.5px/1 monospace; color: var(--rgmut); margin-left: 4px }
 
-/* 적 도감 — 노드 상세 모달의 적 카드(.rg-enemy-cell)와 동일한 카드형 (사용자 확정 2026-07-18) */
-.rg-enemy-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px }
-.rg-enemy-idx { position: absolute; top: 8px; right: 10px; font: 700 10.5px/1 monospace; color: var(--rgmut) }
+/* 적 도감 — 사진 왼쪽·정보 오른쪽 가로형 카드 (피드백 반영 2026-07-18) */
+.rg-enemy-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 10px }
+.rg-enemy-cell.row { flex-direction: row; align-items: center; text-align: left; gap: 12px; padding: 10px 12px }
+.rg-enemy-cell.row .rg-enemy-face { width: 72px; height: 72px }
+.rg-enemy-cell-info { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0 }
+.rg-enemy-cell.row .rg-stats { justify-content: flex-start }
+.rg-enemy-idx { position: absolute; top: 8px; right: 10px; font: 700 11.5px/1 monospace; color: var(--rgmut) }
 .rg-enemy-face { width: 46px; height: 46px; object-fit: contain; border: 1px solid var(--rgline); background: radial-gradient(circle at 50% 42%, var(--rgsel), var(--rgdeep)); border-radius: 3px; flex: none }
 .rg-enemy-face.none { display: grid; place-items: center; color: var(--rgmut); font: 800 16px monospace }
 .rg-enemy-face.sm { width: 34px; height: 34px }
-.rg-rank { font: 800 10px/1 monospace; padding: 3px 6px; border-radius: 2px; background: var(--rgsel); color: var(--rgtext2) }
+.rg-rank { font: 800 11px/1 monospace; padding: 3px 6px; border-radius: 2px; background: var(--rgsel); color: var(--rgtext2) }
 .rg-rank.r-ELITE { background: #513a17; color: #eac36e }
 .rg-rank.r-BOSS { background: var(--rgcrim); color: #fff }
 .rg-stats { display: flex; flex-wrap: wrap; gap: 4px }
 .rg-stats.sub { margin-top: 6px }
-.rg-stat { font: 700 11px/1 monospace; border: 1px solid var(--rgline); background: var(--rgdeep); color: var(--rgink); padding: 4px 7px; border-radius: 2px; white-space: nowrap }
+.rg-stat { font: 700 12px/1 monospace; border: 1px solid var(--rgline); background: var(--rgdeep); color: var(--rgink); padding: 4px 7px; border-radius: 2px; white-space: nowrap }
 .rg-stat.up { border-color: var(--rgcrim); color: var(--rgup); background: var(--rgupbg) }
 .rg-stat.g14 { border-color: #8a6a2a; color: #eac36e; background: #241a0c }
 .rg-enemy-more { margin-top: 9px; border-top: 1px dashed var(--rgline); padding-top: 9px }
-.rg-enemy-more p { margin: 0 0 6px; font-size: 12px; line-height: 1.65; color: var(--rgtext2) }
+.rg-enemy-more p { margin: 0 0 6px; font-size: 12.5px; line-height: 1.65; color: var(--rgtext2) }
 .rg-enemy-more strong { color: var(--rgink) }
 .rg-enemy-desc { color: var(--rgmut) !important; font-style: italic }
 .rg-appear { margin-top: 8px }
-.rg-appear strong { display: block; font-size: 11px; margin-bottom: 5px; color: var(--rggold) }
+.rg-appear strong { display: block; font-size: 12px; margin-bottom: 5px; color: var(--rggold) }
 .rg-chips { display: flex; flex-wrap: wrap; gap: 5px }
-.rg-chip { border: 1px solid var(--rgline); background: var(--rgdeep); color: var(--rgink); padding: 4px 9px; font: 600 12px/1.3 inherit; cursor: pointer; border-radius: 3px; transition: 0.12s; text-align: left }
+.rg-chip { border: 1px solid var(--rgline); background: var(--rgdeep); color: var(--rgink); padding: 4px 9px; font: 600 12.5px/1.3 inherit; cursor: pointer; border-radius: 3px; transition: 0.12s; text-align: left }
 .rg-chip:hover { border-color: var(--rggold); color: var(--rggold) }
 .rg-chip.boss { border-color: var(--rggold); color: var(--rggold); font-weight: 800 }
 
@@ -5887,23 +5911,23 @@ html.dark.rg-theme.rg6 .site-header { background: #0a1413e6; border-bottom-color
 .rg-relic { border: 1px solid var(--rgline); background: var(--rgcard); padding: 11px 13px }
 .rg-relic.fusion { border-color: #8a6a2a; background: #231419 }
 .rg-relic header { display: flex; align-items: baseline; gap: 7px; margin-bottom: 5px; flex-wrap: wrap }
-.rg-relic h4 { margin: 0; font-size: 13.5px; letter-spacing: -0.2px; color: #f4e7d3 }
-.rg-relic-no { font: 800 10px/1 monospace; color: var(--rggold) }
+.rg-relic h4 { margin: 0; font-size: 14px; letter-spacing: -0.2px; color: #f4e7d3 }
+.rg-relic-no { font: 800 11px/1 monospace; color: var(--rggold) }
 .rg-cap-art { display: block; width: 100%; aspect-ratio: 3/4; object-fit: cover; border: 1px solid var(--rgline); margin-bottom: 9px }
-.rg-cap-en { font: 600 11px/1.2 inherit; font-style: italic; color: var(--rggold) }
-.rg-fusion-tag { font: 800 10px/1 monospace; background: #8a6a2a; color: #fff; padding: 3px 7px; border-radius: 999px }
-.rg-relic-usage { margin: 0 0 5px; font-size: 12.5px; line-height: 1.65; font-weight: 600; color: var(--rgink) }
+.rg-cap-en { font: 600 12px/1.2 inherit; font-style: italic; color: var(--rggold) }
+.rg-fusion-tag { font: 800 11px/1 monospace; background: #8a6a2a; color: #fff; padding: 3px 7px; border-radius: 999px }
+.rg-relic-usage { margin: 0 0 5px; font-size: 13px; line-height: 1.65; font-weight: 600; color: var(--rgink) }
 /* 다단계 효과(붕괴 패러다임 심화·시대 형성기/확장기 등)의 줄바꿈 보존 */
 .rg-multiline { white-space: pre-line }
-.rg-relic-desc { margin: 0 0 4px; font-size: 11.5px; line-height: 1.65; color: var(--rgmut) }
-.rg-relic-obtain { margin: 0; font: 600 10.5px/1.4 monospace; color: #7d6a66 }
+.rg-relic-desc { margin: 0 0 4px; font-size: 12.5px; line-height: 1.65; color: var(--rgmut) }
+.rg-relic-obtain { margin: 0; font: 600 11.5px/1.4 monospace; color: #7d6a66 }
 
 /* 난이도 */
 .rg-diff-view .rg-zone-desc { margin-bottom: 12px }
 .rg-diff-table { width: 100%; border-collapse: collapse; background: var(--rgcard); border: 1px solid var(--rgline) }
-.rg-diff-table th, .rg-diff-table td { border-bottom: 1px solid var(--rgline); padding: 9px 13px; text-align: left; font-size: 12.5px; line-height: 1.6; color: var(--rgtext2) }
-.rg-diff-table th { font: 800 11px/1 monospace; letter-spacing: 1px; background: var(--rgdeep); color: var(--rggold) }
-.rg-diff-table td:first-child { font: 800 13px/1 monospace; width: 64px }
+.rg-diff-table th, .rg-diff-table td { border-bottom: 1px solid var(--rgline); padding: 9px 13px; text-align: left; font-size: 13px; line-height: 1.6; color: var(--rgtext2) }
+.rg-diff-table th { font: 800 12px/1 monospace; letter-spacing: 1px; background: var(--rgdeep); color: var(--rggold) }
+.rg-diff-table td:first-child { font: 800 13.5px/1 monospace; width: 64px }
 .rg-diff-table tr.on td { background: #2b1016; color: var(--rgink) }
 .rg-diff-table tr.on td:first-child { color: #fff; background: var(--rgcrim) }
 
@@ -5911,22 +5935,28 @@ html.dark.rg-theme.rg6 .site-header { background: #0a1413e6; border-bottom-color
 .rg-endings { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 14px }
 .rg-ending { border: 1px solid var(--rgline); background: var(--rgcard); padding: 16px 18px }
 .rg-ending h3 { margin: 0 0 8px; font-size: 16.5px; letter-spacing: -0.3px; border-left: 4px solid var(--rgcrim); padding-left: 10px; color: #f4e7d3 }
-.rg-ending-desc { margin: 0 0 10px; font-size: 12.5px; line-height: 1.75; color: var(--rgtext2) }
-.rg-ending-cond { margin: 0 0 10px; padding-left: 20px; font-size: 12.5px; line-height: 1.8; color: var(--rgink) }
+.rg-ending-desc { margin: 0 0 10px; font-size: 13px; line-height: 1.75; color: var(--rgtext2) }
+.rg-ending-cond { margin: 0 0 10px; padding-left: 20px; font-size: 13px; line-height: 1.8; color: var(--rgink) }
 .rg-ending-cond li { margin-bottom: 5px }
 .rg-ending-cond li::marker { color: var(--rggold); font-weight: 800 }
-.rg-ending-change { margin: 0; font-size: 12px; font-style: italic; color: var(--rgmut) }
+.rg-ending-change { margin: 0; font-size: 12.5px; font-style: italic; color: var(--rgmut) }
 
 /* 스테이지 모달 */
 .rg-modal-back { position: fixed; inset: 0; background: #0b0508d9; z-index: 80; display: grid; place-items: center; padding: 20px }
 .rg-modal-back.stack { z-index: 90; background: #0b0508e6 }
 .rg-enemy-face.lg { width: 64px; height: 64px }
-.rg-emodal-row { margin: 0 0 6px; font-size: 12.5px; color: var(--rgtext2) }
+/* 적 상세 모달 — 원본 해상도(158px) 초상을 왼쪽에 크게 (피드백 반영 2026-07-18) */
+.rg-emodal-cols { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 8px }
+.rg-emodal-portrait { width: 158px; height: 158px; object-fit: contain; flex: none; border: 1px solid var(--rgmodalline); border-radius: 6px; background: radial-gradient(circle at 50% 42%, var(--rgsel), var(--rgdeep)) }
+.rg-emodal-portrait.none { display: grid; place-items: center; color: var(--rgmut); font: 800 42px monospace }
+.rg-emodal-main { flex: 1; min-width: 0 }
+@media (max-width: 640px) { .rg-emodal-cols { flex-direction: column } .rg-emodal-portrait { width: 120px; height: 120px } }
+.rg-emodal-row { margin: 0 0 6px; font-size: 13px; color: var(--rgtext2) }
 .rg-emodal-row strong { color: var(--rggold); margin-right: 6px }
-.rg-emodal-desc { margin: 0 0 6px; font-size: 12px; font-style: italic; color: var(--rgmut) }
-.rg-emodal-ability { margin: 0 0 10px; font-size: 12.5px; line-height: 1.7; color: var(--rgtext2); white-space: pre-line }
+.rg-emodal-desc { margin: 0 0 6px; font-size: 12.5px; font-style: italic; color: var(--rgmut) }
+.rg-emodal-ability { margin: 0 0 10px; font-size: 13px; line-height: 1.7; color: var(--rgtext2); white-space: pre-line }
 /* 스탯 컨텍스트 안내 — 어떤 배율이 반영된 수치인지 명시 (도감/노드 상세 불일치 방지) */
-.rg-ctx-note { margin: 0 0 6px; font-size: 11.5px; color: var(--rggold); opacity: .85 }
+.rg-ctx-note { margin: 0 0 6px; font-size: 12.5px; color: var(--rggold); opacity: .85 }
 .rg-emodal .rg-stats.sub { margin-top: 7px }
 .rg-emodal .rg-appear { margin-top: 12px }
 .rg-relic-icon { width: 40px; height: 40px; object-fit: contain; flex: none; background: radial-gradient(circle at 50% 45%, #2c161e, transparent); align-self: center }
@@ -5937,8 +5967,8 @@ html.dark.rg-theme.rg6 .site-header { background: #0a1413e6; border-bottom-color
 .rg-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 10px }
 .rg-modal-head > div { display: flex; align-items: center; gap: 9px; flex-wrap: wrap }
 .rg-modal-head h3 { margin: 0; font-size: 18px; letter-spacing: -0.3px; color: #f4e7d3 }
-.rg-modal-zone { font: 800 11px/1 monospace; color: var(--rggold) }
-.rg-kind { font: 800 10px/1 monospace; padding: 4px 8px; border-radius: 2px; background: var(--rgsel); color: var(--rgtext2) }
+.rg-modal-zone { font: 800 12px/1 monospace; color: var(--rggold) }
+.rg-kind { font: 800 11px/1 monospace; padding: 4px 8px; border-radius: 2px; background: var(--rgsel); color: var(--rgtext2) }
 .rg-kind.k-emergency { background: var(--rgcrim); color: #fff }
 .rg-kind.k-boss { background: var(--rggold); color: #1a0d10 }
 .rg-modal-close { border: 1px solid var(--rgline); background: var(--rgdeep); color: var(--rgink); width: 30px; height: 30px; font-size: 17px; cursor: pointer; line-height: 1 }
@@ -5948,20 +5978,20 @@ html.dark.rg-theme.rg6 .site-header { background: #0a1413e6; border-bottom-color
 .rg-modal-cols.enc { grid-template-columns: 468px 1fr }
 .rg-modal-left { min-width: 0 }
 @media (max-width: 860px) { .rg-modal-cols { grid-template-columns: 1fr } }
-.rg-modal-desc { margin: 0 0 8px; font-size: 12.5px; line-height: 1.7; color: var(--rgtext2); white-space: pre-line }
-.rg-modal-elite { margin: 0 0 8px; padding: 8px 11px; background: #2b1016; border-left: 3px solid var(--rgcrim); font-size: 12px; line-height: 1.6; font-weight: 600; color: #f0b9c0 }
+.rg-modal-desc { margin: 0 0 8px; font-size: 13px; line-height: 1.7; color: var(--rgtext2); white-space: pre-line }
+.rg-modal-elite { margin: 0 0 8px; padding: 8px 11px; background: #2b1016; border-left: 3px solid var(--rgcrim); font-size: 12.5px; line-height: 1.6; font-weight: 600; color: #f0b9c0 }
 .rg-modal-enemies { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 7px; margin-top: 0 }
 .rg-enemy-cell { position: relative; display: flex; flex-direction: column; align-items: center; gap: 5px; border: 1px solid var(--rgline); background: var(--rgdeep); color: var(--rgink); padding: 9px 7px; cursor: pointer; text-align: center; font: inherit; transition: 0.12s }
 .rg-enemy-cell:hover { border-color: var(--rggold) }
 .rg-enemy-cell .rg-enemy-face { width: 52px; height: 52px }
 .rg-enemy-cell-head { display: flex; align-items: center; gap: 5px }
-.rg-enemy-cell .rg-enemy-name { font-size: 12px; line-height: 1.3 }
+.rg-enemy-cell .rg-enemy-name { font-size: 12.5px; line-height: 1.3 }
 .rg-enemy-cell .rg-stats { justify-content: center }
 @media (max-width: 720px) { .rg-modal-enemies { grid-template-columns: repeat(2, 1fr) } }
 .rg-enemy-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; border: 1px solid var(--rgline); background: var(--rgdeep); color: var(--rgink); padding: 7px 11px; cursor: pointer; text-align: left; font: inherit; transition: 0.12s }
 .rg-enemy-row:hover { border-color: var(--rggold) }
-.rg-enemy-name { font-weight: 700; font-size: 13px }
-.rg-enemy-cnt { font: 800 11.5px/1 monospace; color: var(--rggold) }
+.rg-enemy-name { font-weight: 700; font-size: 13.5px }
+.rg-enemy-cnt { font: 800 12.5px/1 monospace; color: var(--rggold) }
 .rg-enemy-row .rg-stats { margin-left: auto }
 
 @media (max-width: 720px) {

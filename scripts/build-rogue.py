@@ -153,6 +153,45 @@ def num(v):
     return round(v, 3) if isinstance(v, float) else v
 
 
+def merge_dup_enemies(stages, enemies):
+    """완전 동일(이름·스탯·능력·이미지)한 적 엔트리는 하나로 병합 — 같은 오브젝트가
+    배치 위치별로 id만 다른 경우(시대의 흔적 x/y/z 등, 사용자 확정 2026-07-18).
+    긴급 룬(per/replace)이 참조하는 키는 병합 대상에서 제외해 참조 무결성을 지킨다."""
+    protected = set()
+    for st in stages:
+        emg = st.get("emg") or {}
+        for p in emg.get("per") or []:
+            protected.update(p.get("keys") or [])
+        for f, to in (emg.get("replace") or {}).items():
+            protected.update([f, to])
+    sig_of, remap = {}, {}
+    for key in sorted(enemies):
+        if key in protected:
+            continue
+        e = enemies[key]
+        sig = json.dumps({a: e.get(a) for a in e if a != "index"},
+                         ensure_ascii=False, sort_keys=True)
+        if sig in sig_of:
+            remap[key] = sig_of[sig]
+        else:
+            sig_of[sig] = key
+    for key in remap:
+        del enemies[key]
+    if remap:
+        for st in stages:
+            merged, out = {}, []
+            for se in st["enemies"]:
+                k = remap.get(se["key"], se["key"])
+                if k in merged:
+                    merged[k]["cnt"] += se["cnt"]
+                else:
+                    ne = dict(se, key=k)
+                    merged[k] = ne
+                    out.append(ne)
+            st["enemies"] = out
+    return len(remap)
+
+
 # 토픽별 고유 시스템 갤러리 — (라벨, 소스, 필터). 전시관 탭에 이름+설명 갤러리로 렌더.
 #   source="item"     → items 중 type이 필터에 속하는 것 (이름 기준 중복제거)
 #   source="charbuff" → charBuffData 중 buffType이 필터에 속하는 것 (거부반응/생체변이)
@@ -313,7 +352,8 @@ def build_topic(tid="rogue_1"):
                 used_enemies[to] = {"key": to, "level": 0, "over": None}
         stages.append({
             "id": sid, "kind": kind, "zone": zone, "code": st.get("code"),
-            "name": st["name"], "desc": st.get("description"),
+            # 히든 최종전(ro4_b_9 등)은 원본 이름이 공백 — 인게임 미스터리 연출 그대로 "???" 표기
+            "name": (st["name"] or "").strip() or "???", "desc": (st.get("description") or "").strip() or None,
             "eliteDesc": st.get("eliteDesc") or None,
             "emg": lv["emg"] if kind == "emergency" else None,
             "enemies": enemies,
@@ -390,6 +430,9 @@ def build_topic(tid="rogue_1"):
                 break
     for key, e in enemies.items():
         e["img"] = img_of.get(key)
+    merged_n = merge_dup_enemies(stages, enemies)
+    if merged_n:
+        print(f"  동일 적 병합: {merged_n}건")
 
     # ── 전시관: 유물(소장품) / 레퍼토리(음반) / 무대 도구 / 분대 ─────────────
     relic_order = (r["archiveComp"]["relic"] or {}).get("relic", {})
@@ -566,13 +609,20 @@ def build_topic(tid="rogue_1"):
     for sid, sc in r["choiceScenes"].items():
         if not sid.endswith("_enter"):
             continue
+        # 탐험 시작 보너스 씬('작전 보상' 등)은 실제 노드가 아니라 제외 (사용자 확정 2026-07-18)
+        if "startbuff" in sid:
+            continue
         prefix = sid[: -len("_enter")].replace("scene_", "choice_")
         chs = dedupe_choices({"title": c["title"], "desc": c.get("description")}
                              for cid, c in sorted(r["choices"].items())
                              if cid.startswith(prefix + "_"))
+        # 일부 bg는 확장자 포함('40_i05.png')·대문자('23_I08')로 들어 있다 — 레포 파일명은 소문자
+        bg = sc.get("background")
+        if bg:
+            bg = bg.removesuffix(".png").lower()
         encounters.append({
             "scene": sid, "title": sc["title"], "desc": sc.get("description"),
-            "bg": sc.get("background"), "choices": chs,
+            "bg": bg, "choices": chs,
         })
     encounters.sort(key=lambda x: x["scene"])
     # 같은 제목의 변형 씬은 하나로 병합 — 선택지는 제목+설명 기준 합집합
@@ -812,7 +862,7 @@ def build_rogue6():
                 used_enemies[to] = {"key": to, "level": 0, "over": None}
         stages.append({
             "id": sid, "kind": kind, "zone": zone, "code": st.get("code"),
-            "name": st["name"], "desc": st.get("description"),
+            "name": (st["name"] or "").strip() or "???", "desc": (st.get("description") or "").strip() or None,
             "eliteDesc": st.get("eliteDesc") or None,
             "emg": lv["emg"] if kind == "emergency" else None,
             "level": st["levelId"],
@@ -891,6 +941,9 @@ def build_rogue6():
                 break
     for key, e in enemies.items():
         e["img"] = img_of.get(key)
+    merged_n = merge_dup_enemies(stages, enemies)
+    if merged_n:
+        print(f"  동일 적 병합: {merged_n}건")
 
     # ── 전시관: 유물 / 스크랩(零件) / 도구 / 분대 / 유산(襁褓) / 부표 ─────────
     relic_icon_dir = os.path.join(REPO, "public", "rogue", "relic")
@@ -1021,13 +1074,19 @@ def build_rogue6():
     for sid, sc in r["choiceScenes"].items():
         if not sid.endswith("_enter"):
             continue
+        # 탐험 시작 보너스 씬('행동 보상')은 실제 노드가 아니라 제외 (사용자 확정 2026-07-18)
+        if "startbuff" in sid:
+            continue
         prefix = sid[: -len("_enter")].replace("scene_", "choice_")
         chs = dedupe_choices({"title": c["title"], "desc": c.get("description")}
                              for cid, c in sorted(r["choices"].items())
                              if cid.startswith(prefix + "_"))
+        bg = sc.get("background")
+        if bg:
+            bg = bg.removesuffix(".png").lower()
         encounters.append({
             "scene": sid, "title": sc["title"], "desc": sc.get("description"),
-            "bg": sc.get("background"), "choices": chs,
+            "bg": bg, "choices": chs,
         })
     encounters.sort(key=lambda x: x["scene"])
     # 같은 제목의 변형 씬(溯源 19종 등)은 하나로 병합 — 선택지는 제목+설명 기준 합집합

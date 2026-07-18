@@ -30,7 +30,7 @@ type Ending = { id: string; name: string; desc: string | null; boss: string | nu
 type Encounter = { scene: string; title: string; desc: string | null; bg?: string | null; choices: { title: string; desc: string | null }[]; floors?: number[]; note?: string; cn?: string };
 type RogueData = {
   id: string; name: string; line: string | null; cnName?: string; future?: boolean;
-  zones: Zone[]; nodeTypes: { id: string; name: string; desc: string | null }[];
+  zones: Zone[]; nodeTypes: { id: string; name: string; desc: string | null; cn?: string }[];
   difficulties: Difficulty[]; stages: Stage[]; enemies: Record<string, Enemy>;
   relics: Relic[]; capsules?: Capsule[]; tools: Simple[]; bands: Simple[]; exploreTools?: Simple[];
   scraps?: Scrap[]; legacies?: Simple[]; buoys?: Simple[];
@@ -232,9 +232,11 @@ function StageModal({ pair, grade, onClose, onOpenEnemy }: {
             )}
           </div>
           <div className="rg-modal-enemies">
-          {/* 리더 → 정예 → 일반 순으로 정렬 (사용자 확정 2026-07-18) */}
+          {/* 리더 → 정예 → 일반 → 공통 특수몹 순으로 정렬 (사용자 확정 2026-07-18).
+              전 테마 공통 특수몹은 데이터에 판별 플래그가 없어 이름 하드코딩 */}
           {[...stage.enemies].sort((a, b) => {
-            const rankOrder = (k: string) => ({ BOSS: 0, ELITE: 1 }[data.enemies[k]?.rank ?? ""] ?? 2);
+            const rankOrder = (k: string) => SPECIAL_LAST.has(data.enemies[k]?.name ?? "")
+              ? 3 : ({ BOSS: 0, ELITE: 1 }[data.enemies[k]?.rank ?? ""] ?? 2);
             return rankOrder(a.key) - rankOrder(b.key);
           }).map((se) => {
             // 긴급 모드에선 교체 룬(level_enemy_replace)이 적용된 변종으로 표시
@@ -260,6 +262,9 @@ function StageModal({ pair, grade, onClose, onOpenEnemy }: {
     </div>
   );
 }
+
+// 전 테마 공통으로 등장하는 특수(길가) 몹 — 전투 노드 적 목록에서 맨 밑으로 (사용자 확정 2026-07-18)
+const SPECIAL_LAST = new Set(["고프닉", "덕로드", "동글이", "눈물 흘리는 사내", "상자 넝쿨", "'게이트'", "'창문'", "시대의 흔적", "진기한 장치", "탐사용 자율차"]);
 
 const KIND_LABEL: Record<string, string> = {
   normal: "작전", emergency: "긴급 작전", boss: "험난한 길", event: "조우 전투", special: "특수",
@@ -295,22 +300,27 @@ function EnemyModal({ ekey, grade, ctx, onClose, onOpenStage, appear }: {
       <div className="rg-modal rg-emodal" role="dialog" aria-modal onClick={(ev) => ev.stopPropagation()}>
         <header className="rg-modal-head">
           <div>
-            {e.img ? <img className="rg-enemy-face lg" src={`/rogue/enemy/${e.img}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />
-              : <span className="rg-enemy-face lg none" aria-hidden>?</span>}
             <span className={`rg-rank r-${e.rank ?? "NORMAL"}`}>{t(RANK_KO[e.rank ?? ""] ?? "일반")}</span>
             <h3><Nm name={e.name} cn={e.cn} /></h3>
             {e.index && <span className="rg-modal-zone">{e.index}</span>}
           </div>
           <button type="button" className="rg-modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
         </header>
-        {e.attack && <p className="rg-emodal-row"><strong>{t("공격 방식")}</strong> {e.attack}</p>}
-        {e.desc && <p className="rg-emodal-desc">{e.desc}</p>}
-        {e.ability && <p className="rg-emodal-ability">{e.ability}</p>}
-        {e.immune && e.immune.length > 0 && (
-          <p className="rg-emodal-immune"><strong>{t("상태이상 면역")}</strong>
-            {e.immune.map((im) => <span key={im} className="rg-immune-chip">{t(im)}</span>)}
-          </p>
-        )}
+        {/* 초상은 원본 해상도(158px) 그대로 크게 — 작은 헤더 아이콘 대신 (피드백 반영 2026-07-18) */}
+        <div className="rg-emodal-cols">
+          {e.img ? <img className="rg-emodal-portrait" src={`/rogue/enemy/${e.img}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />
+            : <span className="rg-emodal-portrait none" aria-hidden>?</span>}
+          <div className="rg-emodal-main">
+            {e.attack && <p className="rg-emodal-row"><strong>{t("공격 방식")}</strong> {e.attack}</p>}
+            {e.desc && <p className="rg-emodal-desc">{e.desc}</p>}
+            {e.ability && <p className="rg-emodal-ability">{e.ability}</p>}
+            {e.immune && e.immune.length > 0 && (
+              <p className="rg-emodal-immune"><strong>{t("상태이상 면역")}</strong>
+                {e.immune.map((im) => <span key={im} className="rg-immune-chip">{t(im)}</span>)}
+              </p>
+            )}
+          </div>
+        </div>
         {/* 연 곳(노드 상세/도감)의 배율 컨텍스트를 그대로 물려받아 표시 — 수치 불일치 방지 */}
         {ctx.emg && <p className="rg-ctx-note">{t("긴급 작전 배율이 반영된 수치입니다.")}</p>}
         {!ctx.emg && ctx.emergencyOrBoss && grade >= 10 && <p className="rg-ctx-note">{t("난이도 10 이상 험난한 길·긴급 작전 배율(공격·HP ×1.15)이 반영된 수치입니다.")}</p>}
@@ -527,7 +537,9 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   const hasVariations = (data.variations?.length ?? 0) > 0 || (data.weathers?.length ?? 0) > 0;
   const archiveTabs: [string, string][] = topic === "rogue_6"
     ? [...(hasVariations ? [["hallu", HALLU_LABEL[topic]] as [string, string]] : []),
-       ["scrap", "부품 (零件)"], ["tool", "도구"], ["band", "스쿼드"], ["legacy", "유산"]]
+       ["scrap", "부품 (零件)"], ["tool", "도구"], ["band", "스쿼드"], ["legacy", "유산"],
+       // 부표는 노드가 아니라 격자 지도 위 이벤트 마커 — 전시관으로 이동 (사용자 확정 2026-07-18)
+       ...((data.buoys?.length ?? 0) > 0 ? [["buoy", "지도 마커 (부표)"] as [string, string]] : [])]
     : [...(hasVariations && HALLU_LABEL[topic] ? [["hallu", HALLU_LABEL[topic]] as [string, string]] : []),
        ...((data.capsules?.length ?? 0) > 0 ? [["capsule", "레퍼토리 (음반)"] as [string, string]] : []),
        ...(data.mechanics ?? []).map((m) => [m.label, m.label] as [string, string]),
@@ -611,6 +623,17 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   const chaseStages = useMemo(() => data.stages.filter((s) => s.kind === "chase"), [active]);
   const savageStages = useMemo(() => data.stages.filter((s) => s.kind === "savage"), [active]);
   const incidentStages = useMemo(() => data.stages.filter((s) => s.kind === "incident"), [active]);
+  // 기타 노드 — 전투(작전·긴급·험난한 길)와 우연한 만남을 제외한 노드 타입 설명.
+  // 같은 이름의 중복 타입(운명의 암시 등)은 하나만 남긴다 (사용자 요청 2026-07-18)
+  const otherNodes = useMemo(() => {
+    const skip = new Set(["BATTLE_NORMAL", "BATTLE_ELITE", "BATTLE_BOSS", "INCIDENT"]);
+    const seen = new Set<string>();
+    return data.nodeTypes.filter((nt) => {
+      if (skip.has(nt.id) || seen.has(nt.name)) return false;
+      seen.add(nt.name);
+      return true;
+    });
+  }, [active]);
 
   // 적 → 등장 스테이지 역매핑
   const enemyStages = useMemo(() => {
@@ -770,7 +793,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
             )}
             {mapHits.encs.length > 0 && (
               <div className="rg-stage-group rg-map-hits">
-                <h4>{t("우연한 만남·기타 노드")} <em>{mapHits.encs.length}</em></h4>
+                <h4>{t("우연한 만남")} <em>{mapHits.encs.length}</em></h4>
                 <div className="rg-enc-list">
                   {mapHits.encs.map((enc) => (
                     <button key={enc.scene} type="button" className="rg-enc-item" onClick={() => setEncOpen(enc)}>
@@ -908,39 +931,29 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
           </details>
           )}
 
-          {duelStages.length > 0 && (
+          {/* 기타 노드 — 전투·우연한 만남 외 노드 타입 설명. 외나무다리 상세에 결투 전투 포함 (사용자 요청 2026-07-18) */}
+          {otherNodes.length > 0 && (
           <details className="rg-zone rg-zone-wide">
             <summary className="rg-zone-sum">
-              <h3>{t("외나무다리 (결투)")}</h3>
-              <span className="rg-zone-counts">{t("작전 {n}개", { n: duelStages.length })}</span>
+              <h3>{t("기타 노드")}</h3>
+              <span className="rg-zone-counts">{otherNodes.length}</span>
               <span className="rg-zone-arrow" aria-hidden>▾</span>
             </summary>
             <div className="rg-zone-body">
-              <p className="rg-zone-desc">{t("상대를 골라 싸우는 특수 전투입니다. 패배해도 목표 HP가 깎이지 않으며, 어려운 상대일수록 보상이 좋습니다.")}</p>
-              <div className="rg-stage-cards">
-                {duelStages.map((s) => <StageCard key={s.id} pair={{ n: s }} onOpen={setStageOpen} />)}
-              </div>
-            </div>
-          </details>
-          )}
-
-          {(data.buoys?.length ?? 0) > 0 && (
-          <details className="rg-zone rg-zone-wide">
-            <summary className="rg-zone-sum">
-              <h3>{t("지도 마커 (부표)")}</h3>
-              <span className="rg-zone-counts">{data.buoys!.length}</span>
-              <span className="rg-zone-arrow" aria-hidden>▾</span>
-            </summary>
-            <div className="rg-zone-body">
-              <p className="rg-zone-desc">{t("격자 지도 위에 나타나는 이벤트 마커입니다.")}</p>
-              <div className="rg-relic-grid">
-                {data.buoys!.map((b) => (
-                  <article key={b.id} className="rg-relic">
-                    <header>
-                      {b.img && <img className="rg-relic-icon" src={`/rogue/misc/${b.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
-                      <h4><Nm name={b.name} cn={b.cn} /></h4>
-                    </header>
-                    {b.usage && <p className="rg-relic-desc">{b.usage}</p>}
+              <p className="rg-zone-desc">{t("지도에서 마주치는 전투 외 특수 노드들입니다.")}</p>
+              <div className="rg-nodetype-list">
+                {otherNodes.map((nt) => (
+                  <article key={nt.id} className={`rg-nodetype${nt.id === "DUEL" && duelStages.length > 0 ? " wide" : ""}`}>
+                    <h4><Nm name={nt.name} cn={nt.cn} /></h4>
+                    {nt.desc && <p>{nt.desc}</p>}
+                    {nt.id === "DUEL" && duelStages.length > 0 && (
+                      <>
+                        <p className="rg-zone-desc">{t("상대를 골라 싸우는 특수 전투입니다. 패배해도 목표 HP가 깎이지 않으며, 어려운 상대일수록 보상이 좋습니다.")}</p>
+                        <div className="rg-stage-cards">
+                          {duelStages.map((s) => <StageCard key={s.id} pair={{ n: s }} onOpen={setStageOpen} />)}
+                        </div>
+                      </>
+                    )}
                   </article>
                 ))}
               </div>
@@ -950,7 +963,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
 
           <details className="rg-zone rg-zone-wide">
             <summary className="rg-zone-sum">
-              <h3>{t("우연한 만남·기타 노드")}</h3>
+              <h3>{t("우연한 만남")}</h3>
               <span className="rg-zone-counts">{data.encounters.length}</span>
               <span className="rg-zone-arrow" aria-hidden>▾</span>
             </summary>
@@ -988,19 +1001,21 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
             ))}
             <span className="rg-count">{enemies.length}</span>
           </div>
-          {/* 도감 카드 = 노드 상세 모달의 적 카드(.rg-enemy-cell)와 동일한 카드형 (사용자 확정 2026-07-18) */}
+          {/* 도감은 사진 왼쪽·정보 오른쪽 가로형 카드 (피드백 반영 2026-07-18) */}
           <div className="rg-enemy-grid">
             {enemies.map(([key, e]) => (
-              <button type="button" key={key} className="rg-enemy-cell" id={`rg-en-${key}`}
+              <button type="button" key={key} className="rg-enemy-cell row" id={`rg-en-${key}`}
                 onClick={() => setEnemyOpen({ key, ctx: dexCtx(key) })}>
                 {e.img ? <img className="rg-enemy-face" src={`/rogue/enemy/${e.img}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />
                   : <span className="rg-enemy-face none" aria-hidden>?</span>}
-                <span className="rg-enemy-cell-head">
-                  <span className={`rg-rank r-${e.rank ?? "NORMAL"}`}>{t(RANK_KO[e.rank ?? ""] ?? "일반")}</span>
+                <span className="rg-enemy-cell-info">
+                  <span className="rg-enemy-cell-head">
+                    <span className={`rg-rank r-${e.rank ?? "NORMAL"}`}>{t(RANK_KO[e.rank ?? ""] ?? "일반")}</span>
+                  </span>
+                  <span className="rg-enemy-name"><Nm name={e.name} cn={e.cn} /></span>
+                  <StatRow e={e} grade={grade} ctx={dexCtx(key)} />
                 </span>
-                <span className="rg-enemy-name"><Nm name={e.name} cn={e.cn} /></span>
                 {e.index && <span className="rg-enemy-idx">{e.index}</span>}
-                <StatRow e={e} grade={grade} ctx={dexCtx(key)} />
               </button>
             ))}
           </div>
@@ -1042,6 +1057,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
                 : activeArc === "capsule" ? data.capsules?.length ?? 0
                 : activeArc === "scrap" ? data.scraps?.length ?? 0
                 : activeArc === "legacy" ? data.legacies?.length ?? 0
+                : activeArc === "buoy" ? data.buoys?.length ?? 0
                 : activeArc === "explore" ? data.exploreTools?.length ?? 0
                 : activeArc === "tool" ? data.tools.length
                 : activeArc === "band" ? data.bands.length
@@ -1085,6 +1101,20 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
                   </header>
                   {c.usage && <p className="rg-relic-usage">{c.usage}</p>}
                   {c.desc && <p className="rg-relic-desc">{c.desc}</p>}
+                </article>
+              ))}
+            </div>
+          )}
+          {/* 부표 — 노드가 아니라 격자 지도 위 이벤트 마커라 전시관에 배치 (사용자 확정 2026-07-18) */}
+          {activeArc === "buoy" && (
+            <div className="rg-relic-grid">
+              {(data.buoys ?? []).map((b) => (
+                <article key={b.id} className="rg-relic">
+                  <header>
+                    {b.img && <img className="rg-relic-icon" src={`/rogue/misc/${b.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
+                    <h4><Nm name={b.name} cn={b.cn} /></h4>
+                  </header>
+                  {b.usage && <p className="rg-relic-desc">{b.usage}</p>}
                 </article>
               ))}
             </div>
