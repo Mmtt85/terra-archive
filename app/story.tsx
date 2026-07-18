@@ -12,6 +12,10 @@ import storiesData from "./data/stories.json";
 // prop으로 내려준다. 모듈 레벨(합성 이벤트·해시 확인)은 콘텐츠가 아니라 "요약이 있는 id"만
 // 필요하므로 가벼운 id 목록만 정적 import 한다 (로케일 무관 — /en /ja 번들에 KO 본문 미포함).
 import summaryIdsData from "./data/story-summary-ids.json";
+// 로케일별로 '실제 번역이 끝난' 이벤트 id 목록 (story-i18n-merge.py 생성). 부분 롤아웃 중
+// 아직 번역 안 된 이벤트는 en/ja에서 한국어 폴백이므로 'KO 전용' 안내를 띄운다.
+import translatedEnData from "./data/story-translated.en.json";
+import translatedJaData from "./data/story-translated.ja.json";
 import chronologyData from "./data/chronology.json";
 import imageDimsData from "./data/story-image-dims.json";
 import { rich, useI18n, type Locale } from "./i18n";
@@ -45,6 +49,10 @@ type ChronItem = { key: string; kind: ChronKind; name: LocText; start?: string; 
 
 const data = storiesData as { updated: string; events: StoryEvent[] };
 const summaryIds = new Set(summaryIdsData as string[]);
+const translatedByLocale: Record<string, Set<string>> = {
+  en: new Set(translatedEnData as string[]),
+  ja: new Set(translatedJaData as string[]),
+};
 const chronology = chronologyData as Chronology;
 
 // 메인스토리·로그라이크는 stories.json이 아니라 chronology.json 스캐폴드에만 있다.
@@ -202,6 +210,9 @@ function StoryDetail({ event, summary, onClose, onShowOperator }: {
           <p className="story-meta">{event.epNo != null ? locText(locale, epLabel(event.epNo)) : event.id.startsWith("rogue_") ? t("통합 전략") : `${event.start} · ${t("에피소드 {n}개", { n: event.episodes })}`}</p>
           <p className="story-tagline">{summary.tagline}</p>
           <p className="story-disclaimer">{t("이 요약은 AI가 게임 내 스토리 스크립트 전문을 읽고 쓴 2차 창작 요약입니다.")}</p>
+          {locale !== "ko" && !translatedByLocale[locale]?.has(event.id) && (
+            <p className="story-disclaimer">{t("이 편의 요약 본문은 아직 번역되지 않아 한국어로 표시됩니다.")}</p>
+          )}
         </header>
         <div className="story-detail-grid">
           <div className="story-body" ref={bodyRef}>
