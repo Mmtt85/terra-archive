@@ -153,12 +153,19 @@ def num(v):
     return round(v, 3) if isinstance(v, float) else v
 
 
-# 토픽별 고유 시스템 갤러리 — (표시 라벨, 포함할 item type들). 환경 탭에 이름+설명 갤러리로 렌더.
+# 토픽별 고유 시스템 갤러리 — (라벨, 소스, 필터). 전시관 탭에 이름+설명 갤러리로 렌더.
+#   source="item"     → items 중 type이 필터에 속하는 것 (이름 기준 중복제거)
+#   source="charbuff" → charBuffData 중 buffType이 필터에 속하는 것 (거부반응/생체변이)
+#   source="variation"→ variationData 전부 (붕괴 패러다임 — 이름이 플레이스홀더라 desc가 본체)
 MECH_GROUPS = {
-    "rogue_2": [("주사위", ["DICE_TYPE"]), ("거부반응", ["CUSTOM_TICKET"])],
-    "rogue_3": [("토템", ["TOTEM"]), ("붕괴", ["CHAOS", "CHAOS_LEVEL", "CHAOS_PURIFY"])],
-    "rogue_4": [("파편", ["FRAGMENT"]), ("재앙", ["DISASTER", "DISASTER_TYPE", "ABSTRACT_DISASTER"])],
-    "rogue_5": [("주화", ["COPPER", "COPPER_BUFF"]), ("분노", ["WRATH"])],
+    "rogue_2": [("주사위", "item", ["DICE_TYPE"]),
+                ("거부반응", "charbuff", ["MUTATION", "EVOLUTION"])],
+    "rogue_3": [("토템", "item", ["TOTEM"]),
+                ("붕괴", "variation", None)],
+    "rogue_4": [("파편", "item", ["FRAGMENT"]),
+                ("재앙", "item", ["DISASTER", "DISASTER_TYPE", "ABSTRACT_DISASTER"])],
+    "rogue_5": [("주화", "item", ["COPPER", "COPPER_BUFF"]),
+                ("분노", "item", ["WRATH"])],
 }
 
 def build_topic(tid="rogue_1"):
@@ -437,21 +444,44 @@ def build_topic(tid="rogue_1"):
     # ── 토픽 고유 시스템 갤러리 (환경 탭) — 토픽마다 다른 예외 메커니즘/수집품을 이름+설명으로.
     #    미즈키=거부반응/주사위 · 사미=붕괴/토템 · 살카즈=파편/재앙 · 쉐이=주화/분노 (사용자 요청).
     #    변형(_a/_b…)이 많아 이름 기준으로 중복 제거하고, 설명이 가장 자세한 항목을 대표로 쓴다.
+    def has_icon(iid):
+        return os.path.exists(os.path.join(REPO, "public", "rogue", "relic", f"{iid}.webp"))
     mechanics = []
-    for label, mtypes in MECH_GROUPS.get(tid, []):
-        best = {}
-        for iid, it in items.items():
-            if it.get("type") not in mtypes:
-                continue
-            nm = it.get("name")
-            desc = (it.get("description") or it.get("usage") or "").strip()
-            if not nm or not desc:
-                continue
-            if nm not in best or len(desc) > len(best[nm]["desc"]):
-                best[nm] = {"id": iid, "name": nm, "desc": desc,
-                            "img": os.path.exists(os.path.join(REPO, "public", "rogue", "relic", f"{iid}.webp"))}
-        if best:
-            mechanics.append({"label": label, "items": list(best.values())})
+    for label, source, mfilter in MECH_GROUPS.get(tid, []):
+        entries = []
+        if source == "item":
+            best = {}
+            for iid, it in items.items():
+                if it.get("type") not in mfilter:
+                    continue
+                nm = it.get("name")
+                desc = (it.get("description") or it.get("usage") or "").strip()
+                if not nm or not desc:
+                    continue
+                if nm not in best or len(desc) > len(best[nm]["desc"]):
+                    best[nm] = {"id": iid, "name": nm, "desc": desc, "img": has_icon(iid)}
+            entries = list(best.values())
+        elif source == "charbuff":
+            for bid, bv in (r.get("charBuffData") or {}).items():
+                if bv.get("buffType") not in mfilter:
+                    continue
+                nm = bv.get("outerName") or bv.get("innerName")
+                desc = (bv.get("functionDesc") or bv.get("desc") or "").strip()
+                if nm and desc:
+                    entries.append({"id": bid, "name": nm, "desc": desc, "img": has_icon(bv.get("iconId") or bid)})
+        elif source == "variation":
+            n = 0
+            for vid, vv in (r.get("variationData") or {}).items():
+                desc = (vv.get("desc") or "").strip()
+                if not desc or len(desc) < 6:
+                    continue
+                n += 1
+                nm = vv.get("outerName")
+                if not nm or nm.isdigit():   # IS3는 이름이 "1"~"8" 플레이스홀더 → 패러다임 번호로
+                    nm = f"{label} 패러다임 {n}"
+                entries.append({"id": vid, "name": nm, "desc": desc, "img": has_icon(vv.get("iconId") or vid)})
+        if entries:
+            mechanics.append({"label": label, "items": entries})
 
     # ── 환각/메아리(variation) + 융합(fusion) — 토픽별 존재 여부·정합성 확인 후 수록
     # (rogue_3의 variationData는 이름이 "1"~"8"인 플레이스홀더라 제외)

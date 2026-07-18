@@ -388,7 +388,6 @@ function RelicModal({ relic, onClose }: { relic: Relic; onClose: () => void }) {
         </header>
         {relic.usage && <p className="rg-relic-usage">{relic.usage}</p>}
         {relic.desc && <p className="rg-relic-desc">{relic.desc}</p>}
-        {relic.obtain && <p className="rg-relic-obtain">{relic.obtain}</p>}
       </div>
     </div>
   );
@@ -993,12 +992,12 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
                 ? [["scrap", "부품 (零件)"], ["tool", "도구"], ["band", "스쿼드"], ["legacy", "유산"]] as const
                 : [
                     ...((data.capsules?.length ?? 0) > 0 ? [["capsule", "레퍼토리 (음반)"]] as const : []),
+                    // 토픽 고유 시스템(토템·주화·붕괴 등)을 소장품 바로 다음에 배치 (사용자 요청 — 전시관 탭 레벨로 승격)
+                    ...(data.mechanics ?? []).map((m) => [m.label, m.label] as const),
                     ["tool", "무대 도구"] as const,
                     ...((data.exploreTools?.length ?? 0) > 0 ? [["explore", "탐사 도구"]] as const : []),
                     ["band", "스쿼드"] as const,
                   ]),
-              // 토픽 고유 시스템 갤러리 (주화·토템·파편·재앙 등) — 라벨을 탭 id로 사용
-              ...(data.mechanics ?? []).map((m) => [m.label, m.label] as const),
             ]).map(([id, label]) => (
               <button key={id} type="button" className={arcTab === id ? "on" : ""} onClick={() => setArcTab(id)}>{t(label)}</button>
             ))}
@@ -1028,7 +1027,6 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
                   </header>
                   {r.usage && <p className="rg-relic-usage">{r.usage}</p>}
                   {r.desc && <p className="rg-relic-desc">{r.desc}</p>}
-                  {r.obtain && <p className="rg-relic-obtain">{r.obtain}</p>}
                 </article>
               ))}
             </div>
