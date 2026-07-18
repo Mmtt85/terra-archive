@@ -47,3 +47,6 @@ Arknights_OperBox_Export.json
 .claude/settings.json
 .claude/settings.local.json
 .gamedata/
+
+# 스토리 요약 번역 작업 중간 산출물 (최종본은 app/data/story-summaries.{en,ja}.json)
+scripts/story-i18n/

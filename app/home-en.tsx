@@ -3,8 +3,10 @@
 import Home, { type Operator, type Tab } from "./home";
 import operators from "./data/operators.en.json";
 import extra from "./data/extra-i18n.en.json";
+import summaries from "./data/story-summaries.en.json";
+import type { StorySummaries } from "./story";
 import type { ExtraI18n } from "./i18n";
 
 export default function HomeEn({ initialTab }: { initialTab?: Tab }) {
-  return <Home locale="en" operators={operators as unknown as Operator[]} extra={extra as unknown as ExtraI18n} initialTab={initialTab} />;
+  return <Home locale="en" operators={operators as unknown as Operator[]} extra={extra as unknown as ExtraI18n} summaries={summaries as unknown as StorySummaries} initialTab={initialTab} />;
 }

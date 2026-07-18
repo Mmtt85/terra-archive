@@ -8,7 +8,10 @@
 // 따라다니며 떠오른다 (IntersectionObserver — 넓은 화면 전용, 좁은 화면은 상단 갤러리).
 import { useEffect, useMemo, useRef, useState } from "react";
 import storiesData from "./data/stories.json";
-import summariesData from "./data/story-summaries.json";
+// 요약 본문은 로케일별(story-summaries.{en,ja}.json)로 갈라져 있어 Home이 활성 로케일 것을
+// prop으로 내려준다. 모듈 레벨(합성 이벤트·해시 확인)은 콘텐츠가 아니라 "요약이 있는 id"만
+// 필요하므로 가벼운 id 목록만 정적 import 한다 (로케일 무관 — /en /ja 번들에 KO 본문 미포함).
+import summaryIdsData from "./data/story-summary-ids.json";
 import chronologyData from "./data/chronology.json";
 import imageDimsData from "./data/story-image-dims.json";
 import { rich, useI18n, type Locale } from "./i18n";
@@ -29,6 +32,8 @@ type Block =
   | { t: "deco"; src: string; cap?: string; side?: "left" | "right" };
 type Entity = { name: string; desc: string; img?: string; alias?: string[]; op?: string };
 type Summary = { tagline: string; chars?: Entity[]; terms?: Entity[]; blocks: Block[] };
+// 활성 로케일의 요약 모음 — Home이 story-summaries[.en|.ja].json을 골라 내려준다.
+export type StorySummaries = Record<string, Summary>;
 
 // 테라 연대기 (app/data/chronology.json — 손수 큐레이트하는 스캐폴드).
 type ChronKind = "event" | "main" | "roguelike";
@@ -39,13 +44,13 @@ type Chronology = { note: string; updated?: string; arcs: Arc[]; entries: RawEnt
 type ChronItem = { key: string; kind: ChronKind; name: LocText; start?: string; thumb?: string; thumbEn?: string; thumbJa?: string; terraYear: number | null; arc: string | null; eventId?: string; dateNote?: string; epNo?: number; ep?: LocText };
 
 const data = storiesData as { updated: string; events: StoryEvent[] };
-const summaries = summariesData as Record<string, Summary>;
+const summaryIds = new Set(summaryIdsData as string[]);
 const chronology = chronologyData as Chronology;
 
 // 메인스토리·로그라이크는 stories.json이 아니라 chronology.json 스캐폴드에만 있다.
 // 요약이 달린 항목은 이벤트처럼 열 수 있도록 합성 StoryEvent로 만들어 eventById에 병합한다.
 const CHRON_SYNTH: StoryEvent[] = chronology.entries
-  .filter((raw) => raw.kind !== "event" && raw.id && summaries[raw.id])
+  .filter((raw) => raw.kind !== "event" && raw.id && summaryIds.has(raw.id))
   .map((raw) => {
     const id = raw.id as string;
     const isMain = /^main_\d+$/.test(id);
@@ -74,7 +79,7 @@ function eventFromHash(): StoryEvent | null {
   if (!hash.startsWith("#story-")) return null;
   const id = hash.slice(7);
   const ev = eventById.get(id);
-  return ev && summaries[id] ? ev : null;
+  return ev && summaryIds.has(id) ? ev : null;
 }
 
 function blockText(block: Block): string {
@@ -197,7 +202,6 @@ function StoryDetail({ event, summary, onClose, onShowOperator }: {
           <p className="story-meta">{event.epNo != null ? locText(locale, epLabel(event.epNo)) : event.id.startsWith("rogue_") ? t("통합 전략") : `${event.start} · ${t("에피소드 {n}개", { n: event.episodes })}`}</p>
           <p className="story-tagline">{summary.tagline}</p>
           <p className="story-disclaimer">{t("이 요약은 AI가 게임 내 스토리 스크립트 전문을 읽고 쓴 2차 창작 요약입니다.")}</p>
-          {locale !== "ko" && <p className="story-disclaimer">{t("요약 본문은 현재 한국어로만 제공됩니다.")}</p>}
         </header>
         <div className="story-detail-grid">
           <div className="story-body" ref={bodyRef}>
@@ -302,7 +306,7 @@ function resolveChron(): ChronItem[] {
       name: raw.title ?? { ko: raw.id ?? "?" },
       terraYear: raw.terraYear ?? null, arc: raw.arc ?? null, dateNote: raw.dateNote,
       // 요약이 달린 메인스토리·로그라이크는 열 수 있게 eventId를 부여 (합성 이벤트와 매칭)
-      eventId: raw.id && summaries[raw.id] ? raw.id : undefined,
+      eventId: raw.id && summaryIds.has(raw.id) ? raw.id : undefined,
       epNo,
       ep: epNo != null ? epLabel(epNo) : undefined,
       // 메인: 한국판/글로벌/일본 타이틀카드. 로그라이크: 키 비주얼(로케일 공용).
@@ -597,7 +601,7 @@ function DigestView({ onOpen, includeFuture, group, onGroup }: { onOpen: (event:
 
   const renderCard = (it: ChronItem) => {
     const ev = it.eventId ? eventById.get(it.eventId) : undefined;
-    const ready = Boolean(it.eventId && summaries[it.eventId]);
+    const ready = Boolean(it.eventId && summaryIds.has(it.eventId));
     const thumb = ev
       ? ((locale === "ja" ? ev.thumbJa : locale === "en" ? ev.thumbEn : undefined) ?? ev.thumb)
       : ((locale === "ja" ? it.thumbJa : locale === "en" ? it.thumbEn : undefined) ?? it.thumb);
@@ -642,7 +646,7 @@ function DigestView({ onOpen, includeFuture, group, onGroup }: { onOpen: (event:
                 ? <li className="story-search-empty">{t("조건에 맞는 이벤트가 없어요.")}</li>
                 : sortItems(filtered).map((it) => {
                     const ev = it.eventId ? eventById.get(it.eventId) : undefined;
-                    const ready = Boolean(it.eventId && summaries[it.eventId]);
+                    const ready = Boolean(it.eventId && summaryIds.has(it.eventId));
                     return (
                       <li key={it.key} role="option" aria-selected={false}>
                         <button type="button" className={ready ? "" : "pending"} disabled={!ready}
@@ -678,7 +682,7 @@ function DigestView({ onOpen, includeFuture, group, onGroup }: { onOpen: (event:
   );
 }
 
-export default function StoryGuide({ onShowOperator, includeFuture }: { onShowOperator?: (id: string) => void; includeFuture?: boolean }) {
+export default function StoryGuide({ summaries, onShowOperator, includeFuture }: { summaries: StorySummaries; onShowOperator?: (id: string) => void; includeFuture?: boolean }) {
   const { t } = useI18n();
   const [view, setView] = useState<"digest" | "chronicle">("digest");
   const [group, setGroup] = useState<"theme" | "kind">("kind");
@@ -715,7 +719,7 @@ export default function StoryGuide({ onShowOperator, includeFuture }: { onShowOp
   // 연대기에서 이벤트 클릭 → 요약이 있으면 상세로, 없으면 무시
   const openEvent = (eventId: string) => {
     const ev = eventById.get(eventId);
-    if (ev && summaries[eventId]) open(ev);
+    if (ev && summaryIds.has(eventId)) open(ev);
   };
   // 뷰·그룹 전환을 복붙 가능한 해시로 남긴다 (뒤로가기로 오갈 수 있게 pushState)
   const goView = (v: "digest" | "chronicle") => {
@@ -731,7 +735,7 @@ export default function StoryGuide({ onShowOperator, includeFuture }: { onShowOp
     if (selected) window.scrollTo({ top: 0 });
   }, [selected]);
 
-  const summarized = data.events.filter((event) => summaries[event.id]).length;
+  const summarized = data.events.filter((event) => summaryIds.has(event.id)).length;
 
   if (selected) {
     return <StoryDetail event={selected} summary={summaries[selected.id]} onClose={close} onShowOperator={onShowOperator} />;

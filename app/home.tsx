@@ -11,7 +11,7 @@ import InfraPlanner from "./planner";
 import RecruitHelper from "./recruit";
 import FarmGuide from "./farm";
 import { normSearch } from "./search";
-import StoryGuide from "./story";
+import StoryGuide, { type StorySummaries } from "./story";
 import RogueGuide from "./rogue";
 import About from "./about";
 import FeedbackWidget from "./feedback-widget";
@@ -602,10 +602,10 @@ function Portal({ onOpenTab }: { onOpenTab: (tab: Tab) => void }) {
   );
 }
 
-export default function Home({ locale, operators, extra, initialTab = "portal" }: { locale: Locale; operators: Operator[]; extra: ExtraI18n | null; initialTab?: Tab }) {
+export default function Home({ locale, operators, extra, summaries, initialTab = "portal" }: { locale: Locale; operators: Operator[]; extra: ExtraI18n | null; summaries: StorySummaries; initialTab?: Tab }) {
   return (
     <I18nProvider locale={locale}>
-      <HomeInner operators={operators} extra={extra} initialTab={initialTab} />
+      <HomeInner operators={operators} extra={extra} summaries={summaries} initialTab={initialTab} />
     </I18nProvider>
   );
 }
@@ -613,7 +613,7 @@ export default function Home({ locale, operators, extra, initialTab = "portal" }
 // '미래시 포함' 토글 localStorage 키 — 켜면 한국 서버 미실장(CN 선행) 오퍼도 목록에 표시
 const FUTURE_KEY = "ta-include-future";
 
-function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; extra: ExtraI18n | null; initialTab: Tab }) {
+function HomeInner({ operators, extra, summaries, initialTab }: { operators: Operator[]; extra: ExtraI18n | null; summaries: StorySummaries; initialTab: Tab }) {
   const { locale, t } = useI18n();
   // SSR엔 localStorage가 없으므로 false로 하이드레이션 후 이펙트에서 복원한다.
   // 우선순위: URL 쿼리(?future=1|0) > localStorage. URL 파라미터는 공유 링크용.
@@ -1114,7 +1114,7 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
       {tab === "planner" && <InfraPlanner onShowOperator={showOperatorById} extra={extra} includeFuture={includeFuture} />}
       {tab === "recruit" && <RecruitHelper onShowOperator={showOperatorById} extra={extra} />}
       {tab === "farm" && <FarmGuide operators={operators} includeFuture={includeFuture} onShowOperator={showOperatorById} />}
-      {tab === "story" && <StoryGuide onShowOperator={showOperatorById} includeFuture={includeFuture} />}
+      {tab === "story" && <StoryGuide summaries={summaries} onShowOperator={showOperatorById} includeFuture={includeFuture} />}
       {tab === "rogue" && <RogueGuide includeFuture={includeFuture} />}
       {tab === "about" && <About onOpenTab={switchTab} />}
 
