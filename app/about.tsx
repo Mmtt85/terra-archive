@@ -1,5 +1,6 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
 import { useI18n, rich, type Locale } from "./i18n";
 import type { Tab } from "./home";
 
@@ -26,13 +27,27 @@ const SHOTS: Partial<Record<Tab, ShotPair>> = {
   rogue: { d: "/about/rogue.webp", m: "/about/rogue-m.webp" },
 };
 
+// 다크모드 구독 — html.dark 클래스를 관찰해 테마 토글 시 실시간 리렌더 (SSR 스냅샷 false)
+function subscribeDark(cb: () => void) {
+  const mo = new MutationObserver(cb);
+  mo.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+  return () => mo.disconnect();
+}
+function useDarkMode() {
+  return useSyncExternalStore(subscribeDark,
+    () => document.documentElement.classList.contains("dark"), () => false);
+}
+
 // 데스크톱 스크린샷과 모바일 화면을 겹치지 않게 나란히 놓아 반응형 UI를 한눈에 보여준다.
+// 다크모드일 땐 다크 캡처본(-dark 접미)으로 스왑 — 토글과 동시에 갈아끼워진다 (사용자 요청 2026-07-18).
 function ShotFrame({ shot, alt, cap }: { shot: ShotPair; alt: string; cap?: string }) {
+  const dark = useDarkMode();
+  const src = (p: string) => (dark ? p.replace(/\.webp$/, "-dark.webp") : p);
   return (
     <figure className="about-shot-fig">
       <div className="about-shots">
-        <img className="about-shot-d" src={shot.d} alt={alt} loading="lazy" decoding="async" />
-        <img className="about-shot-m" src={shot.m} alt="" aria-hidden loading="lazy" decoding="async" />
+        <img className="about-shot-d" src={src(shot.d)} alt={alt} loading="lazy" decoding="async" />
+        <img className="about-shot-m" src={src(shot.m)} alt="" aria-hidden loading="lazy" decoding="async" />
       </div>
       {cap && <figcaption className="about-shot-cap">{cap}</figcaption>}
     </figure>
