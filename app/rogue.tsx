@@ -235,7 +235,7 @@ function StageModal({ pair, grade, onClose, onOpenEnemy }: {
           {/* 리더 → 정예 → 일반 → 공통 특수몹 순으로 정렬 (사용자 확정 2026-07-18).
               전 테마 공통 특수몹은 데이터에 판별 플래그가 없어 이름 하드코딩 */}
           {[...stage.enemies].sort((a, b) => {
-            const rankOrder = (k: string) => SPECIAL_LAST.has(data.enemies[k]?.name ?? "")
+            const rankOrder = (k: string) => isSpecialLast(k)
               ? 3 : ({ BOSS: 0, ELITE: 1 }[data.enemies[k]?.rank ?? ""] ?? 2);
             return rankOrder(a.key) - rankOrder(b.key);
           }).map((se) => {
@@ -263,8 +263,12 @@ function StageModal({ pair, grade, onClose, onOpenEnemy }: {
   );
 }
 
-// 전 테마 공통으로 등장하는 특수(길가) 몹 — 전투 노드 적 목록에서 맨 밑으로 (사용자 확정 2026-07-18)
-const SPECIAL_LAST = new Set(["고프닉", "덕로드", "동글이", "눈물 흘리는 사내", "상자 넝쿨", "'게이트'", "'창문'", "시대의 흔적", "진기한 장치", "탐사용 자율차"]);
+// 전 테마 공통으로 등장하는 특수(길가) 몹 — 전투 노드 적 목록에서 맨 밑으로 (사용자 확정 2026-07-18).
+// ⚠ 이름이 아니라 적 id(변종 _N 제거한 베이스)로 판별 — EN/JA 데이터에선 이름이 현지어라 이름 매칭이 깨진다
+// (고프닉·덕로드·동글이·눈물 흘리는 사내·상자 넝쿨·'게이트'·'창문'·시대의 흔적·진기한 장치·탐사용 자율차)
+const SPECIAL_LAST_IDS = new Set(["enemy_2002_bearmi", "enemy_2001_duckmi", "enemy_2085_skzjxd", "enemy_2034_sythef",
+  "enemy_2059_smbox", "enemy_2067_skzcy", "enemy_2091_skzgds", "enemy_2086_skzdwx", "enemy_2069_skzbox", "enemy_2062_smcar"]);
+const isSpecialLast = (key: string) => SPECIAL_LAST_IDS.has(key.replace(/_\d+$/, ""));
 
 const KIND_LABEL: Record<string, string> = {
   normal: "작전", emergency: "긴급 작전", boss: "험난한 길", event: "조우 전투", special: "특수",
