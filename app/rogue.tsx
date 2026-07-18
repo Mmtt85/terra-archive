@@ -4,7 +4,7 @@
 // 데이터는 scripts/build-rogue.py가 생성하는 app/data/rogue1.json / rogue6.json (클뜯 레포 원본).
 // rogue_6은 CN 데이터를 한국어화(rogue6-ko.json)한 것으로, 이름류는 중국어 원문(cn)을 병기한다.
 // 조우의 층별 출현 규칙·엔딩 선제조건은 클라 데이터에 없어 PRTS 기반 큐레이션(rogueN-curated.json)을 병합한다.
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import rogue1Data from "./data/rogue1.json";
 import { useI18n } from "./i18n";
 import { normSearch } from "./search";
@@ -479,12 +479,6 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   // useSyncExternalStore: 서버/하이드레이션 스냅샷=false, 마운트 후 클라 스냅샷=true
   // (effect 내 setState 없이 하이드레이션 안전하게 클라 마운트를 감지).
   const mounted = useSyncExternalStore(() => () => {}, () => true, () => false);
-  // 뒤로 가기 → 토픽 동기화
-  useEffect(() => {
-    const onPop = () => setTopic(topicFromUrl());
-    window.addEventListener("popstate", onPop);
-    return () => window.removeEventListener("popstate", onPop);
-  }, []);
   // rogue_2~6 데이터는 선택 시에만 동적 로드 (기본 번들에서 제외)
   useEffect(() => {
     if (topic !== "rogue_1" && !loaded[topic] && TOPIC_LOADERS[topic]) {
@@ -517,17 +511,32 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   const [arcTab, setArcTab] = useState<"relic" | "capsule" | "tool" | "band" | "scrap" | "legacy" | "explore">("relic");
   const VIEWS = viewsFor(topic);
 
-  const switchTopic = (id: string) => {
+  // 뒤로/앞으로·햄버거 부메뉴(popstate) → 토픽 동기화. 토픽 전환은 이제 헤더 버튼이 아니라
+  // 햄버거 '통합전략 가이드' 부메뉴가 URL(?topic=isN)을 바꿔 트리거한다. 토픽이 실제로
+  // 바뀌면 뷰·난이도·검색·모달을 초기화한다(옛 switchTopic이 하던 리셋).
+  const topicRef = useRef(topic);
+  useEffect(() => {
+    const onPop = () => {
+      const next = topicFromUrl();
+      if (topicRef.current === next) return;
+      topicRef.current = next;
+      setTopic(next);
+      setView("map");
+      setGrade(0);
+      setZoneOpen(null); setStageOpen(null); setEnemyOpen(null); setEncOpen(null); setRelicOpen(null);
+      setEnemyQ(""); setEnemyRank(""); setRelicQ(""); setMapQ(""); setArcTab("relic");
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
+  // 헤더 테마 드롭다운 — URL(?topic=isN)을 바꾸고 popstate를 쏴 위 onPop이 토픽 전환·리셋을 처리.
+  const goTopic = (id: string) => {
     if (id === topic) return;
-    // 토픽을 URL에 반영 — 공유·새로고침 시에도 같은 테마로 진입 (팬텀도 ?topic=is1)
     const url = new URL(window.location.href);
     url.searchParams.set("topic", slugOf(id));
     history.pushState(null, "", url.pathname + url.search + url.hash);
-    setTopic(id);
-    setView("map");
-    setGrade(0);
-    setZoneOpen(null); setStageOpen(null); setEnemyOpen(null); setEncOpen(null); setRelicOpen(null);
-    setEnemyQ(""); setEnemyRank(""); setRelicQ(""); setMapQ(""); setArcTab("relic");
+    window.dispatchEvent(new PopStateEvent("popstate"));
   };
 
   // 해시 딥링크: #rg-<view>
@@ -661,18 +670,8 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
           <img className="rg-hero-kv" src={`/rogue/kv${topic.split("_")[1]}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />
           <div className="rg-hero-text">
             <span className="rg-eyebrow">INTEGRATED STRATEGIES</span>
-            <h2 id="rg-title">{t("통합전략 가이드")}</h2>
-            <p className="rg-topic-pick">
-              {TOPICS.filter((tp) => !tp.future || includeFuture).map((tp) => (
-                <button key={tp.id} type="button"
-                  className={`rg-topic ${tp.id === topic ? "on" : tp.ready ? "off ready" : "off"}`}
-                  disabled={!tp.ready}
-                  title={tp.ready ? undefined : t("준비 중")}
-                  onClick={() => tp.ready && switchTopic(tp.id)}>
-                  {tp.name}{tp.future && <em className="rg-topic-future">{t("미래시")}</em>}
-                </button>
-              ))}
-            </p>
+            {/* 제목은 현재 테마 이름 — 테마 전환은 햄버거 '통합전략 가이드' 부메뉴/드롭다운 (사용자 확정 2026-07-18) */}
+            <h2 id="rg-title">{t(TOPICS.find((tp) => tp.id === topic)?.name ?? "통합전략 가이드")}{TOPICS.find((tp) => tp.id === topic)?.future && <em className="rg-title-future">{t("미래시")}</em>}</h2>
             {topic === "rogue_6" && (
               <p className="rg-disclaimer">
                 {data.cnName && <span className="rg-cn" lang="zh">{data.cnName}</span>}{" "}
@@ -682,6 +681,14 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
             {locale !== "ko" && <p className="rg-disclaimer">{t("통합전략 데이터는 현재 한국어로만 제공됩니다.")}</p>}
             {data.line && <p className="rg-line">{data.line}</p>}
           </div>
+
+          {/* 테마 변경 드롭다운 — 배너 오른쪽 위 (햄버거 부메뉴와 동일 동작, 사용자 요청 2026-07-18) */}
+          <select className="rg-topicsel" aria-label={t("테마 변경")} value={topic}
+            onChange={(e) => goTopic(e.target.value)}>
+            {TOPICS.filter((tp) => tp.ready && (!tp.future || includeFuture)).map((tp) => (
+              <option key={tp.id} value={tp.id}>{t(tp.name)}{tp.future ? ` (${t("미래시")})` : ""}</option>
+            ))}
+          </select>
 
           {/* 난이도 선택 — 배너 우하단, 모든 스탯 표시에 반영 */}
           <div className="rg-diffbar" role="group" aria-label={t("난이도 선택")}>

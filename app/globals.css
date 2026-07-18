@@ -2544,17 +2544,35 @@ footer p {
   background: var(--chip);
   color: var(--lime);
 }
-/* 통합전략 가이드 부메뉴 — 테마별 바로가기 (사용자 요청 2026-07-18) */
-.tab-submenu {
+/* 통합전략 가이드 부메뉴 — 마우스오버 시 오른쪽에 플라이아웃으로 뜬다 (사용자 요청 2026-07-18) */
+.tab-rogue-wrap {
+  position: relative;
   display: flex;
   flex-direction: column;
+}
+.tab-submenu {
+  display: none;
+  position: absolute;
+  right: 100%;     /* 메뉴 왼쪽 옆에 별도 패널로 (오른쪽은 화면 밖으로 벗어남) */
+  left: auto;
+  top: -1px;
+  z-index: 40;
+  flex-direction: column;
   gap: 2px;
-  margin: 1px 0 3px;
+  min-width: 210px;
+  padding: 6px;
+  background: var(--white);
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 12px 34px #00000022;
+}
+.tab-rogue-wrap:hover .tab-submenu,
+.tab-rogue-wrap:focus-within .tab-submenu {
+  display: flex;
 }
 .main-tabs .tab-sub {
-  padding: 8px 12px 8px 30px;
+  padding: 9px 12px;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--ink2);
   gap: 6px;
 }
@@ -5726,6 +5744,7 @@ html.dark.rg-theme.rg6 .site-header { background: #0a1413e6; border-bottom-color
 .rg-eyebrow { font: 800 10.5px/1 monospace; letter-spacing: 3px; color: var(--rggold) }
 .rg-head h2 { margin: 8px 0 12px; font-size: 30px; letter-spacing: -0.4px; color: #f4e7d3;
   text-shadow: 0 2px 14px #000c }
+.rg-title-future { font: 800 11px/1 monospace; font-style: normal; color: var(--rggold); border: 1px solid var(--rggold); padding: 3px 7px; border-radius: 999px; margin-left: 10px; vertical-align: 6px; text-shadow: none }
 .rg-topic-pick { display: flex; gap: 8px; align-items: center; margin: 0 0 10px; flex-wrap: wrap }
 .rg-topic { font: 700 12.5px/1.2 inherit; padding: 5px 12px; border: 1px solid var(--rgline); border-radius: 999px }
 .rg-topic.on { background: var(--rgcrim); color: #fff; border-color: var(--rgcrim); box-shadow: 0 0 14px #c23b4e55 }
@@ -5738,6 +5757,10 @@ html.dark.rg-theme.rg6 .site-header { background: #0a1413e6; border-bottom-color
 
 /* 난이도 바 */
 .rg-diffbar { position: absolute; right: 18px; bottom: 16px; display: flex; align-items: center; flex-wrap: wrap; gap: 8px 10px; border: 1px solid #6a3040; background: #150a0ecc; backdrop-filter: blur(6px); padding: 10px 14px; width: min(460px, calc(100% - 36px)); box-shadow: 0 4px 24px #000a }
+/* 테마 변경 드롭다운 — 배너 오른쪽 위 (사용자 요청 2026-07-18) */
+.rg-topicsel { position: absolute; right: 18px; top: 16px; z-index: 3; width: min(280px, calc(100% - 36px)); background: color-mix(in srgb, var(--rgcard) 82%, transparent); backdrop-filter: blur(6px); color: var(--rgink); border: 1px solid var(--rgline); padding: 8px 11px; font: 700 12px/1.2 inherit; cursor: pointer; box-shadow: 0 4px 24px #0008 }
+.rg-topicsel:focus-visible { outline: 2px solid var(--rggold); outline-offset: 1px }
+@media (max-width: 860px) { .rg-topicsel { position: static; width: 100%; margin-bottom: 12px; backdrop-filter: none; background: var(--rgcard) } }
 .rg-diff-hex { display: inline-grid; place-items: center; width: 30px; height: 34px; margin-right: 7px; flex: none; font: 800 15px/1 monospace; font-style: normal; color: var(--rggold); background: #0d0609; border: 1px solid var(--rggold); clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%) }
 @media (max-width: 860px) { .rg-diffbar { position: static; width: 100%; margin-top: 12px; backdrop-filter: none; background: var(--rgcard) } }
 .rg-diffbar-label { flex: none; white-space: nowrap; font: 800 11px/1 monospace; letter-spacing: 1px; color: var(--rggold) }
