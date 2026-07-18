@@ -440,7 +440,8 @@ function ZoneModal({ zone, pairs, bosses, onOpenStage, onClose }: {
 }
 
 // 토픽 목록 — ready=데이터 있음, future=미래시 토글 필요 (CN 선행, 비공식 번역명)
-const TOPICS: { id: string; name: string; ready?: boolean; future?: boolean }[] = [
+// 햄버거 메뉴가 '통합전략 가이드' 부메뉴로도 쓰므로 export (home.tsx)
+export const TOPICS: { id: string; name: string; ready?: boolean; future?: boolean }[] = [
   { id: "rogue_1", name: "팬텀 & 크림슨 솔리테어", ready: true },
   { id: "rogue_2", name: "미즈키 & 카이룰라 아버", ready: true },
   { id: "rogue_3", name: "탐험가의 은빛 서리 끝자락", ready: true },
@@ -459,7 +460,7 @@ const TOPIC_LOADERS: Record<string, () => Promise<{ default: unknown }>> = {
 };
 
 // 토픽 URL 슬러그 — /rogue?topic=is6 (rogue_1은 파라미터 없음)
-const slugOf = (id: string) => "is" + id.split("_")[1];
+export const slugOf = (id: string) => "is" + id.split("_")[1];
 const topicFromUrl = () => {
   const q = new URLSearchParams(window.location.search).get("topic");
   return TOPICS.find((tp) => tp.ready && slugOf(tp.id) === q)?.id ?? "rogue_1";

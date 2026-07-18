@@ -12,7 +12,7 @@ import RecruitHelper from "./recruit";
 import FarmGuide from "./farm";
 import { normSearch } from "./search";
 import StoryGuide, { type StorySummaries } from "./story";
-import RogueGuide from "./rogue";
+import RogueGuide, { TOPICS as ROGUE_TOPICS, slugOf as rogueSlugOf } from "./rogue";
 import About from "./about";
 import FeedbackWidget from "./feedback-widget";
 import { feedbackReady, fetchNicknameCounts, submitNickname } from "./feedback";
@@ -647,6 +647,9 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
   // 초기값으로 쓴다 (SSR/클라이언트 첫 렌더 일치 → hydration mismatch 없음).
   const [tab, setTab] = useState<Tab>(initialTab);
   const [navOpen, setNavOpen] = useState(false); // 모바일 탭 메뉴(햄버거) 열림 상태
+  // 햄버거 '통합전략 가이드' 부메뉴 활성 표시용 — 현재 URL의 ?topic= 슬러그 (기본 is1)
+  const [rogueSlug, setRogueSlug] = useState<string>(() =>
+    typeof window === "undefined" ? "is1" : new URLSearchParams(window.location.search).get("topic") || "is1");
   const localeBase = LOCALE_BASE[locale];
   // 탭 → 로케일 포함 경로 (예: planner + en → "/en/infra", archive + ko → "/").
   // 전역 파라미터(future)는 탭을 옮겨도 URL에 유지한다 (공유·일관성). ops 같은 탭 전용
@@ -755,6 +758,7 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
     const syncFromUrl = () => {
       const hash = decodeURIComponent(window.location.hash);
       setTab(tabFromPath(window.location.pathname));
+      setRogueSlug(new URLSearchParams(window.location.search).get("topic") || "is1");
       if (hash.startsWith("#op-")) {
         const operator = operators.find((candidate) => candidate.id === hash.slice(4));
         if (operator) setSelected(operator);
@@ -889,6 +893,18 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
     setTab(next);
     setSelected(null);
     history.pushState(null, "", tabPath(next));
+  };
+  // 햄버거의 '통합전략 가이드' 부메뉴에서 특정 테마로 바로 진입 — /rogue?topic=isN 으로 이동.
+  // 이미 rogue 탭이면 popstate를 쏴 RogueGuide가 토픽을 동기화하게 하고, 다른 탭이면
+  // 탭 전환 시 RogueGuide가 마운트되며 URL의 topic을 읽는다.
+  const switchRogueTopic = (topicId: string) => {
+    setNavOpen(false);
+    const slug = rogueSlugOf(topicId);
+    setSelected(null);
+    setTab("rogue");
+    setRogueSlug(slug);
+    history.pushState(null, "", `${tabPath("rogue")}?topic=${slug}`);
+    window.dispatchEvent(new PopStateEvent("popstate"));
   };
   const [sortKey, setSortKey] = useState("기본");
   const [sortAsc, setSortAsc] = useState(true);
@@ -1046,6 +1062,15 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
             <button className={`tab-farm${tab === "farm" ? " selected" : ""}`} onClick={() => switchTab("farm")}><span className="tab-icon" aria-hidden>◈</span>{t("파밍·육성 시뮬")}</button>
             <button className={`tab-story${tab === "story" ? " selected" : ""}`} onClick={() => switchTab("story")}><span className="tab-icon" aria-hidden>✦</span>{t("AI 스토리 요약")}</button>
             <button className={`tab-rogue${tab === "rogue" ? " selected" : ""}`} onClick={() => switchTab("rogue")}><span className="tab-icon" aria-hidden>❖</span>{t("통합전략 가이드")}</button>
+            <div className="tab-submenu" role="group" aria-label={t("통합전략 가이드")}>
+              {ROGUE_TOPICS.filter((tp) => tp.ready && (!tp.future || includeFuture)).map((tp) => (
+                <button key={tp.id} type="button"
+                  className={`tab-sub${tab === "rogue" && rogueSlug === rogueSlugOf(tp.id) ? " selected" : ""}`}
+                  onClick={() => switchRogueTopic(tp.id)}>
+                  <span className="tab-sub-mark" aria-hidden>›</span>{t(tp.name)}{tp.future && <em className="tab-sub-future">{t("미래시")}</em>}
+                </button>
+              ))}
+            </div>
             <button className={`tab-about${tab === "about" ? " selected" : ""}`} onClick={() => switchTab("about")}><span className="tab-icon" aria-hidden>ⓘ</span>{t("소개")}</button>
           </nav>
         </div>

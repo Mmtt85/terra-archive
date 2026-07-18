@@ -2544,6 +2544,37 @@ footer p {
   background: var(--chip);
   color: var(--lime);
 }
+/* 통합전략 가이드 부메뉴 — 테마별 바로가기 (사용자 요청 2026-07-18) */
+.tab-submenu {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 1px 0 3px;
+}
+.main-tabs .tab-sub {
+  padding: 8px 12px 8px 30px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink2);
+  gap: 6px;
+}
+.main-tabs .tab-sub:hover {
+  background: var(--paper);
+  color: var(--ink);
+}
+.tab-sub-mark {
+  opacity: 0.5;
+  font-weight: 800;
+}
+.tab-sub-future {
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 1px 5px;
+  margin-left: 4px;
+  color: var(--on-lime);
+  background: var(--lime);
+}
 .planner-summary .strategy {
   font-size: 13px;
   font-family: inherit;
