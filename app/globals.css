@@ -5,7 +5,7 @@
   --muted: #687176;
   --paper: #f1f0eb;
   --line: #d2d0c9;
-  --lime: #dfff00;
+  --lime: #c3d24b; /* 종전 #dfff00 — 형광이 눈아프다는 피드백(2026-07-18)으로 톤 다운 */
   --white: #fbfbf8;
   /* 시맨틱 표면·텍스트 변수 — 다크모드(html.dark)가 통째로 갈아끼운다 */
   --ink2: #3a4146;        /* 본문 보조 텍스트 (진함) */
@@ -34,6 +34,7 @@
 /* ── 다크모드 — html.dark (헤더 토글 + localStorage, 첫 페인트 전 인라인 스크립트가 부여) ── */
 html.dark {
   color-scheme: dark;
+  --lime: #a8bd4f; /* 다크에선 한 단계 더 차분하게 */
   --ink: #e3e7e6;
   --muted: #93a0a5;
   --paper: #111517;
@@ -1571,7 +1572,7 @@ legend {
   margin-top: 7px;
   font-size: 10.5px;
   font-weight: 700;
-  color: #dfff00;
+  color: var(--lime);
 }
 .detail-section {
   border-top: 1px solid var(--line);
@@ -2866,14 +2867,14 @@ footer p {
   0%,
   100% {
     background: var(--lime);
-    box-shadow: 0 0 0 0 #dfff0000;
+    box-shadow: 0 0 0 0 transparent;
     transform: scale(1);
   }
   50% {
     background: var(--white);
     box-shadow:
-      0 0 0 5px #dfff0055,
-      0 0 14px 2px #dfff00bb;
+      0 0 0 5px color-mix(in srgb, var(--lime) 33%, transparent),
+      0 0 14px 2px color-mix(in srgb, var(--lime) 73%, transparent);
     transform: scale(1.05);
   }
 }
@@ -3409,7 +3410,7 @@ footer p {
 }
 .propose-btn {
   border: 1px solid var(--lime) !important;
-  background: #dfff0022 !important;
+  background: color-mix(in srgb, var(--lime) 13%, transparent) !important;
   color: inherit;
 }
 /* ─ 관리자 페이지 ─ */
@@ -3573,7 +3574,7 @@ footer p {
   background: var(--bg-soft);
 }
 .kind-plan > header b {
-  background: #dfff0055;
+  background: color-mix(in srgb, var(--lime) 33%, transparent);
 }
 .kind-data_error > header b {
   background: var(--tint-red);
@@ -4020,7 +4021,7 @@ footer p {
   border-bottom: 0;
 }
 .farm-card li.best {
-  background: #dfff0033;
+  background: color-mix(in srgb, var(--lime) 20%, transparent);
   border-left: 3px solid var(--lime);
   padding-left: 5px;
 }
@@ -4391,7 +4392,7 @@ html.dark .story-card:hover .story-thumb img {
 .story-disclaimer {
   margin: 0 0 6px;
   padding: 9px 12px;
-  background: #dfff0033;
+  background: color-mix(in srgb, var(--lime) 20%, transparent);
   border-left: 3px solid var(--lime);
   font-size: 12px;
   line-height: 1.65;

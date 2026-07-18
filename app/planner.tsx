@@ -137,7 +137,7 @@ const LAYOUT: { key: string; room: string; label: string; product?: string }[] =
 const cellByKey = new Map(LAYOUT.map((cell) => [cell.key, cell]));
 
 const ROOM_ACCENT: Record<string, string> = {
-  TRADING: "#4d9dd6", MANUFACTURE: "#e0b13e", POWER: "#b7d940", CONTROL: "#dfff00",
+  TRADING: "#4d9dd6", MANUFACTURE: "#e0b13e", POWER: "#b7d940", CONTROL: "#c3d24b",
   MEETING: "#8f7fc0", WORKSHOP: "#c78a54", HIRE: "#6fa08a", TRAINING: "#c05f6e", DORMITORY: "#7f8ea3",
 };
 
@@ -1151,7 +1151,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     const g = canvas.getContext("2d")!;
     g.fillStyle = "#f1f0eb"; g.fillRect(0, 0, W, canvas.height);
     g.fillStyle = "#131719"; g.fillRect(0, 0, W, 96);
-    g.fillStyle = "#dfff00"; g.font = "900 30px monospace"; g.fillText("TERRA ARCHIVE // RIIC PLAN", 32, 58);
+    g.fillStyle = "#c3d24b"; g.font = "900 30px monospace"; g.fillText("TERRA ARCHIVE // RIIC PLAN", 32, 58);
     g.fillStyle = "#131719"; g.font = "700 15px sans-serif";
     g.fillText(`${strategyLabel(plan, locale, t)} · ${Object.entries(plan.tokenPoints).map(([token, points]) => t("{token} {n}점", { token: tokenName(locale, token), n: Math.round(points) })).join(" · ")}`, 32, 126);
     let y = top;
@@ -1168,7 +1168,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         const badgeWidth = Math.max(26, labelWidth + 14);
         g.fillStyle = "#131719";
         g.fillRect(210, cy + 10, badgeWidth, 26);
-        g.fillStyle = "#dfff00";
+        g.fillStyle = "#c3d24b";
         g.fillText(crew.label, 210 + (badgeWidth - labelWidth) / 2, cy + 28);
         let x = 210 + badgeWidth + 12;
         for (const op of crew.team) {
@@ -1588,7 +1588,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
 
       {imageUrl && (
         <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) closeImage(); }}>
-          <section className="operator-modal room-modal image-preview" style={{ "--accent": "#dfff00" } as React.CSSProperties}>
+          <section className="operator-modal room-modal image-preview" style={{ "--accent": "var(--lime)" } as React.CSSProperties}>
             <button type="button" className="modal-close" onClick={closeImage} aria-label={t("닫기")}>×</button>
             <header className="room-modal-head">
               <span className="modal-kicker">PLAN SHEET</span>
@@ -1820,7 +1820,7 @@ function FlowModal({ plan, opMap, onClose, onShowOperator }: { plan: Plan; opMap
   ) : null;
   return (
     <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <section className="operator-modal room-modal" role="dialog" aria-modal="true" style={{ "--accent": "#dfff00" } as React.CSSProperties}>
+      <section className="operator-modal room-modal" role="dialog" aria-modal="true" style={{ "--accent": "var(--lime)" } as React.CSSProperties}>
         <button type="button" className="modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
         <header className="room-modal-head">
           <span className="modal-kicker">SYNERGY LEDGER · {t("A조 기준")}</span>
@@ -2011,7 +2011,7 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
   ];
   return (
     <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <section className="operator-modal room-modal" role="dialog" aria-modal="true" style={{ "--accent": "#dfff00" } as React.CSSProperties}>
+      <section className="operator-modal room-modal" role="dialog" aria-modal="true" style={{ "--accent": "var(--lime)" } as React.CSSProperties}>
         <button type="button" className="modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
         <header className="room-modal-head">
           <span className="modal-kicker">ROSTER · {t("{n}/{m} 보유", { n: draft.size, m: allOps.length })}</span>
@@ -2133,7 +2133,7 @@ function HelpModal({ onClose }: { onClose: () => void }) {
   const { t } = useI18n();
   return (
     <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <section className="operator-modal room-modal" role="dialog" aria-modal="true" style={{ "--accent": "#dfff00" } as React.CSSProperties}>
+      <section className="operator-modal room-modal" role="dialog" aria-modal="true" style={{ "--accent": "var(--lime)" } as React.CSSProperties}>
         <button type="button" className="modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
         <header className="room-modal-head">
           <span className="modal-kicker">HOW IT WORKS</span>
