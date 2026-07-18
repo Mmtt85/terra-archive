@@ -532,12 +532,12 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   // 표준 카테고리 + 토픽 고유 시스템(mechanics)의 라벨을 탭 id로 쓰므로 string
   const [arcTab, setArcTab] = useState<string>("relic");
   const VIEWS = viewsFor();
-  // 전시관 서브탭 [id, 라벨] 목록 — 환각계열 + 토픽 고유 시스템 전부 + 표준(도구·스쿼드 등).
+  // 전시관 서브탭 [id, 라벨] 목록 — 환각계열 + 토픽 고유 시스템 전부 + 표준(도구·분대 등).
   // 소장품(유물)은 최상위 탭으로 승격돼 여기서 제외. arcTab이 무효면 첫 탭으로 폴백.
   const hasVariations = (data.variations?.length ?? 0) > 0 || (data.weathers?.length ?? 0) > 0;
   const archiveTabs: [string, string][] = topic === "rogue_6"
     ? [...(hasVariations ? [["hallu", HALLU_LABEL[topic]] as [string, string]] : []),
-       ["scrap", "부품 (零件)"], ["tool", "도구"], ["band", "스쿼드"], ["legacy", "유산"],
+       ["scrap", "부품 (零件)"], ["tool", "도구"], ["band", "분대"], ["legacy", "유산"],
        // 부표는 노드가 아니라 격자 지도 위 이벤트 마커 — 전시관으로 이동 (사용자 확정 2026-07-18)
        ...((data.buoys?.length ?? 0) > 0 ? [["buoy", "지도 마커 (부표)"] as [string, string]] : [])]
     : [...(hasVariations && HALLU_LABEL[topic] ? [["hallu", HALLU_LABEL[topic]] as [string, string]] : []),
@@ -545,7 +545,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
        ...(data.mechanics ?? []).map((m) => [m.label, m.label] as [string, string]),
        ["tool", "무대 도구"],
        ...((data.exploreTools?.length ?? 0) > 0 ? [["explore", "탐사 도구"] as [string, string]] : []),
-       ["band", "스쿼드"]];
+       ["band", "분대"]];
   const activeArc = archiveTabs.some(([id]) => id === arcTab) ? arcTab : (archiveTabs[0]?.[0] ?? "tool");
 
   // 뒤로/앞으로·햄버거 부메뉴(popstate) → 토픽 동기화. 토픽 전환은 이제 헤더 버튼이 아니라

@@ -16,6 +16,9 @@ import summaryIdsData from "./data/story-summary-ids.json";
 // 아직 번역 안 된 이벤트는 en/ja에서 한국어 폴백이므로 'KO 전용' 안내를 띄운다.
 import translatedEnData from "./data/story-translated.en.json";
 import translatedJaData from "./data/story-translated.ja.json";
+// 전문(풀 스크립트)이 준비된 이벤트 id — scripts/build-story-scripts.py 생성.
+// 본문은 public/story/script/<id>.json 정적 파일을 fetch (번들 import 금지 — 수백 KB/이벤트).
+import scriptIdsData from "./data/story-script-ids.json";
 import chronologyData from "./data/chronology.json";
 import imageDimsData from "./data/story-image-dims.json";
 import { rich, useI18n, type Locale } from "./i18n";
@@ -49,6 +52,12 @@ type ChronItem = { key: string; kind: ChronKind; name: LocText; start?: string; 
 
 const data = storiesData as { updated: string; events: StoryEvent[] };
 const summaryIds = new Set(summaryIdsData as string[]);
+const scriptIds = new Set(scriptIdsData as string[]);
+
+// 전문(풀 스크립트) 스키마 — build-story-scripts.py 라인 스키마와 1:1
+type ScriptLine = { n?: string; x?: string; st?: string; img?: string; loc?: string; opts?: string[]; vals?: string[]; br?: string };
+type ScriptEp = { code: string; name: string; tag: string; lines: ScriptLine[] };
+type ScriptData = { id: string; eps: ScriptEp[] };
 const translatedByLocale: Record<string, Set<string>> = {
   en: new Set(translatedEnData as string[]),
   ja: new Set(translatedJaData as string[]),
@@ -100,6 +109,80 @@ function blockText(block: Block): string {
 // 세로 중앙 정렬 스택이 일반 노트북 뷰포트(~800px)를 넘지 않는 개수
 const MAX_RAIL_CARDS = 4;
 
+// ── 전문(풀 스크립트) 리더 — 요약 상단 '전문 보기' 토글로 진입 (2026-07-18) ──
+// 데이터는 public/story/script/<id>.json 을 지연 fetch. 에피소드 단위로 렌더.
+function ScriptReader({ script, error }: { script: ScriptData | null; error: boolean }) {
+  const { locale, t } = useI18n();
+  const [epIdx, setEpIdx] = useState(0);
+  const topRef = useRef<HTMLDivElement>(null);
+  const goEp = (i: number) => {
+    setEpIdx(i);
+    topRef.current?.scrollIntoView({ block: "start" });
+  };
+  const ep = script ? script.eps[Math.min(epIdx, script.eps.length - 1)] : null;
+  // 분기(br) 마커에 직전 선택지 텍스트를 미리 붙인다 — 렌더 중 변수 재할당 금지(react-compiler)
+  const lines = useMemo(() => {
+    if (!ep) return [];
+    // 분기(br)의 references 는 직전 Decision 의 values 를 가리킨다 (옵션 순번이 아님 — 3;4 등)
+    let lastOpts: string[] = [];
+    let lastVals: string[] = [];
+    return ep.lines.map((ln) => {
+      if (ln.opts) {
+        lastOpts = ln.opts;
+        lastVals = ln.vals ?? ln.opts.map((_, i) => String(i + 1));
+        return ln;
+      }
+      if (ln.br != null) {
+        const refs = ln.br.split(";").map((v) => v.trim());
+        const texts = refs.map((r) => lastOpts[lastVals.indexOf(r)]).filter(Boolean);
+        return { ...ln, brTexts: texts } as ScriptLine & { brTexts: string[] };
+      }
+      return ln;
+    });
+  }, [ep]);
+  if (error) return <p className="story-disclaimer">{t("스크립트를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.")}</p>;
+  if (!script || !ep) return <p className="sc-loading">{t("스크립트 불러오는 중…")}</p>;
+  return (
+    <div className="story-script" ref={topRef}>
+      <p className="story-disclaimer">{t("게임 내 스토리 스크립트 원문입니다. 대사·지문·컷씬만 표시되며 연출(음악·효과)은 생략됩니다.")}</p>
+      {locale !== "ko" && <p className="story-disclaimer">{t("전문은 현재 한국어 게임 텍스트로만 제공됩니다.")}</p>}
+      <div className="sc-ep-nav" role="tablist" aria-label={t("에피소드")}>
+        {script.eps.map((e, i) => (
+          <button key={i} type="button" role="tab" aria-selected={i === epIdx}
+            className={i === epIdx ? "on" : ""} onClick={() => goEp(i)}>
+            <b>{e.code || `#${i + 1}`}</b>{e.tag && <small>{e.tag}</small>}
+          </button>
+        ))}
+      </div>
+      <h3 className="sc-ep-title">{ep.code} {ep.name}{ep.tag && <small>{ep.tag}</small>}</h3>
+      <div className="sc-body">
+        {lines.map((ln, i) => {
+          if (ln.opts) return (
+            <div key={i} className="sc-opts"><i>{t("선택지")}</i>{ln.opts.map((o, j) => <span key={j}>{o}</span>)}</div>
+          );
+          if (ln.br != null) {
+            const texts = (ln as ScriptLine & { brTexts?: string[] }).brTexts ?? [];
+            return <div key={i} className="sc-br">▼ {texts.length > 0 ? texts.join(" / ") : t("분기")}</div>;
+          }
+          if (ln.img) return (
+            <figure key={i} className="sc-cut">
+              <img src={`/story/cut/${ln.img}.webp`} alt="" loading="lazy" decoding="async" />
+            </figure>
+          );
+          if (ln.loc) return <div key={i} className="sc-loc">{ln.loc}</div>;
+          if (ln.st) return <p key={i} className="sc-st">{ln.st}</p>;
+          if (ln.n) return <p key={i} className="sc-line"><b className="sc-name">{ln.n}</b><span>{ln.x}</span></p>;
+          return <p key={i} className="sc-narr">{ln.x}</p>;
+        })}
+      </div>
+      <div className="sc-ep-foot">
+        {epIdx > 0 && <button type="button" onClick={() => goEp(epIdx - 1)}>← {t("이전 에피소드")}</button>}
+        {epIdx < script.eps.length - 1 && <button type="button" onClick={() => goEp(epIdx + 1)}>{t("다음 에피소드")} →</button>}
+      </div>
+    </div>
+  );
+}
+
 // 요약 상세 — 본문 + 스크롤 추적 참조 레일
 function StoryDetail({ event, summary, onClose, onShowOperator }: {
   event: StoryEvent; summary: Summary; onClose: () => void; onShowOperator?: (id: string) => void;
@@ -107,6 +190,20 @@ function StoryDetail({ event, summary, onClose, onShowOperator }: {
   const { locale, t } = useI18n();
   const bodyRef = useRef<HTMLDivElement>(null);
   const [inView, setInView] = useState<Set<number>>(new Set());
+
+  // 전문(풀 스크립트) 토글 — public/story/script/<id>.json 을 첫 진입 때 지연 fetch
+  const hasScript = scriptIds.has(event.id);
+  const [scriptView, setScriptView] = useState(false);
+  const [script, setScript] = useState<ScriptData | null>(null);
+  const [scriptErr, setScriptErr] = useState(false);
+  const openScript = () => {
+    setScriptView(true);
+    if (script || scriptErr) return;
+    fetch(`/story/script/${event.id}.json`)
+      .then((res) => { if (!res.ok) throw new Error(String(res.status)); return res.json(); })
+      .then((json) => setScript(json as ScriptData))
+      .catch(() => setScriptErr(true));
+  };
 
   // 인물이 용어보다 먼저 뜨도록 chars → terms 순으로 합친다
   const entities = useMemo<Entity[]>(
@@ -209,12 +306,22 @@ function StoryDetail({ event, summary, onClose, onShowOperator }: {
           <h2>{locText(locale, event.name)}</h2>
           <p className="story-meta">{event.epNo != null ? locText(locale, epLabel(event.epNo)) : event.id.startsWith("rogue_") ? t("통합 전략") : `${event.start} · ${t("에피소드 {n}개", { n: event.episodes })}`}</p>
           <p className="story-tagline">{summary.tagline}</p>
-          <p className="story-disclaimer">{t("이 요약은 AI가 게임 내 스토리 스크립트 전문을 읽고 쓴 2차 창작 요약입니다.")}</p>
-          {locale !== "ko" && !translatedByLocale[locale]?.has(event.id) && (
+          {/* 전문 보기 — 요약 위 토글 (사용자 요청 2026-07-18) */}
+          {hasScript && (
+            <div className="story-mode-bar" role="tablist" aria-label={t("보기 방식")}>
+              <button type="button" role="tab" aria-selected={!scriptView}
+                className={!scriptView ? "on" : ""} onClick={() => setScriptView(false)}>{t("AI 요약")}</button>
+              <button type="button" role="tab" aria-selected={scriptView}
+                className={scriptView ? "on" : ""} onClick={openScript}>{t("전문 보기 (풀 스크립트)")}</button>
+            </div>
+          )}
+          {!scriptView && <p className="story-disclaimer">{t("이 요약은 AI가 게임 내 스토리 스크립트 전문을 읽고 쓴 2차 창작 요약입니다.")}</p>}
+          {!scriptView && locale !== "ko" && !translatedByLocale[locale]?.has(event.id) && (
             <p className="story-disclaimer">{t("이 편의 요약 본문은 아직 번역되지 않아 한국어로 표시됩니다.")}</p>
           )}
         </header>
-        <div className="story-detail-grid">
+        {scriptView && <ScriptReader script={script} error={scriptErr} />}
+        <div className="story-detail-grid" hidden={scriptView}>
           <div className="story-body" ref={bodyRef}>
             {summary.blocks.map((block, index) => {
               if (block.t === "h") return <h3 key={index} data-idx={index}>{block.x}</h3>;
