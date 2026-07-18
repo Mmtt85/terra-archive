@@ -928,7 +928,7 @@ const D: Record<string, Pair> = {
   "받는 대미지": ["DMG taken", "被ダメージ"],
   "난이도 11 이상: 리더 적이 받는 대미지 20% 감소": ["Difficulty 11+: leader enemies take 20% less damage", "難易度11以上：リーダー敵の被ダメージ20%減少"],
   "클릭하면 2배로 확대됩니다": ["Click to zoom in 2x", "クリックで2倍に拡大"],
-  "클릭하면 원래 크기로 돌아갑니다": ["Click to return to original size", "クリックで元のサイズに戻る"],
+  "아무 곳이나 클릭하면 원래 크기로 돌아갑니다": ["Click anywhere to return to original size", "どこかをクリックで元のサイズに戻る"],
   "긴급 작전 배율이 반영된 수치입니다.": ["Stats include the emergency operation multipliers.", "緊急作戦の倍率が反映された数値です。"],
   "난이도 10 이상 험난한 길·긴급 작전 배율(공격·HP ×1.15)이 반영된 수치입니다.": ["Stats include the difficulty 10+ boss/emergency multiplier (ATK/HP ×1.15).", "難易度10以上の険路・緊急作戦倍率（攻撃・HP ×1.15）が反映された数値です。"],
   "이 난이도로 설정": ["Set as current difficulty", "この難易度に設定"],

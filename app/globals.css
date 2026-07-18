@@ -5726,6 +5726,8 @@ html.dark.rg-theme.rg6 .site-header { background: #0a1413e6; border-bottom-color
 /* 층 상세 모달 — 스테이지 카드 3열이 들어가게 넓게 */
 .rg-modal.rg-zmodal { max-width: 980px; width: min(980px, calc(100vw - 48px)) }
 .rg-zmodal .rg-zone-desc { margin-top: 0 }
+/* 층 모달 안 스테이지 카드는 한 줄 4개 — 미니맵 약 30% 축소 효과 (사용자 확정 2026-07-18) */
+.rg-zmodal .rg-stage-cards { grid-template-columns: repeat(4, 1fr) }
 /* 전투맵 미리보기 확대 토글 — 클릭 시 2배 (레이아웃 밀지 않게 transform, 우측 열 위로 겹침) */
 .rg-map-zoom { display: block; width: 100%; padding: 0; border: 0; background: 0 0; cursor: zoom-in }
 .rg-map-zoom.zoom { cursor: zoom-out; position: relative; z-index: 6 }

@@ -167,12 +167,19 @@ function StageModal({ pair, grade, onClose, onOpenEnemy }: {
 }) {
   const { t } = useI18n();
   const [mode, setMode] = useState<"n" | "e">("n");
-  const [mapZoom, setMapZoom] = useState(false); // 미리보기 클릭 → 2배 확대 토글
+  const [mapZoom, setMapZoom] = useState(false); // 미리보기 클릭 → 2배 확대, 축소는 아무 곳이나 클릭
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
+  useEffect(() => {
+    if (!mapZoom) return;
+    // 캡처 단계에서 가로채 모달 닫힘·적 상세 열림 등 다른 클릭 동작을 막고 축소만 한다
+    const onAnyClick = (e: MouseEvent) => { e.preventDefault(); e.stopPropagation(); setMapZoom(false); };
+    document.addEventListener("click", onAnyClick, true);
+    return () => document.removeEventListener("click", onAnyClick, true);
+  }, [mapZoom]);
   const stage = mode === "e" && pair.e ? pair.e : pair.n;
   const isEmg = stage.kind === "emergency";
   const isBoss = stage.kind === "boss";
@@ -200,7 +207,7 @@ function StageModal({ pair, grade, onClose, onOpenEnemy }: {
             {stage.map && (
               <button type="button" className={`rg-map-zoom${mapZoom ? " zoom" : ""}`}
                 onClick={() => setMapZoom((z) => !z)}
-                title={mapZoom ? t("클릭하면 원래 크기로 돌아갑니다") : t("클릭하면 2배로 확대됩니다")}>
+                title={mapZoom ? t("아무 곳이나 클릭하면 원래 크기로 돌아갑니다") : t("클릭하면 2배로 확대됩니다")}>
                 <img className="rg-modal-map" src={`/rogue/map/${stage.map}.webp`} alt={t("전장 미니맵")} loading="lazy" decoding="async" />
               </button>
             )}
