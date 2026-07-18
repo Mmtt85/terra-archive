@@ -107,24 +107,31 @@ def mv(field, default=None):
         return field["m_value"] if field["m_defined"] else default
     return field if field is not None else default
 
-# 적 상태 면역 필드 → KR 표기 (도감 상세 표시용, 사용자 요청 2026-07-18)
-IMMUNE_KO = [
-    ("stunImmune", "기절"), ("silenceImmune", "침묵"), ("sleepImmune", "수면"),
-    ("frozenImmune", "빙결"), ("levitateImmune", "부양"), ("disarmedCombatImmune", "무장 해제"),
-    ("fearedImmune", "공포"), ("palsyImmune", "마비"), ("attractImmune", "흡인"),
-    ("teleportImmune", "강제 이동"),
-]
+# 적 상태 면역 필드 → 표기 (도감 상세 표시용, 사용자 요청 2026-07-18). 로케일별.
+IMMUNE_FIELDS = ["stunImmune", "silenceImmune", "sleepImmune", "frozenImmune", "levitateImmune",
+                 "disarmedCombatImmune", "fearedImmune", "palsyImmune", "attractImmune", "teleportImmune"]
+IMMUNE_LABELS = {
+    None: ["기절", "침묵", "수면", "빙결", "부양", "무장 해제", "공포", "마비", "흡인", "강제 이동"],
+    "en": ["Stun", "Silence", "Sleep", "Freeze", "Levitate", "Disarm", "Fear", "Paralysis", "Pull", "Forced movement"],
+    "ja": ["スタン", "沈黙", "睡眠", "凍結", "浮遊", "武装解除", "恐怖", "麻痺", "吸引", "強制移動"],
+}
+IMMUNE_KO = list(zip(IMMUNE_FIELDS, IMMUNE_LABELS[None]))
 
 # 공격(피해) 타입 — 신버전 핸드북은 attackType이 폐기(null)되고 damageType 배열로 이동.
-DAMAGE_KO = {"PHYSIC": "물리", "MAGIC": "마법", "NO_DAMAGE": "피해 없음", "HEAL": "치유"}
+DAMAGE_LABELS = {
+    None: {"PHYSIC": "물리", "MAGIC": "마법", "NO_DAMAGE": "피해 없음", "HEAL": "치유"},
+    "en": {"PHYSIC": "Physical", "MAGIC": "Arts", "NO_DAMAGE": "No damage", "HEAL": "Healing"},
+    "ja": {"PHYSIC": "物理", "MAGIC": "術", "NO_DAMAGE": "ダメージなし", "HEAL": "治療"},
+}
+DAMAGE_KO = DAMAGE_LABELS[None]
 
 
-def attack_of(hb):
-    # damageType(['PHYSIC'] 등)을 "물리·마법" 식 KR 표기로. 옛 attackType이 있으면 우선.
+def attack_of(hb, loc=None):
+    # damageType(['PHYSIC'] 등)을 "물리·마법" 식 표기로. 옛 attackType이 있으면 우선.
     if hb.get("attackType"):
         return hb["attackType"]
     dt = hb.get("damageType") or []
-    return "·".join(DAMAGE_KO.get(d, d) for d in dt) or None
+    return "·".join(DAMAGE_LABELS[loc].get(d, d) for d in dt) or None
 
 
 def ability_of(hb):
@@ -205,18 +212,89 @@ MECH_GROUPS = {
     "rogue_4": [("사고", "fragment", None),
                 ("시대", "module_disaster", None)],
     "rogue_5": [("주화", "item", ["COPPER", "COPPER_BUFF"]),
-                ("분노", "item", ["WRATH"])],
+                ("분노", "module_wrath", None)],
 }
 
-def build_topic(tid="rogue_1"):
+# 노드 타입별 기능 설명 (수작업 큐레이션, 2026-07-19). 게임 데이터의 description은
+# 플레이버 텍스트뿐이라, 실제로 뭘 하는 노드인지를 UI에 병기한다. 근거: 게임 상식 +
+# 데이터 교차 확인(거짓과 진실=battleLoadingTips 사고 레어도, 길라잡이=모집권 저장 팁,
+# 울창한 숲길=아이템 '숨겨진 비경 진입' 문구, 앞서 출발=rogue_5 주화 '계원행' 문구).
+# NODE_FUNC[tid]가 공통 표를 오버라이드 (같은 타입이라도 토픽마다 기능이 다른 경우).
+NODE_FUNC_COMMON = {
+    "BATTLE_NORMAL": "일반 전투 노드입니다. 승리하면 소장품·오리지늄각뿔 등 보상을 얻습니다.",
+    "BATTLE_ELITE": "일반 작전보다 강한 적이 나오는 고난도 전투입니다. 그만큼 보상(희망 등)이 좋습니다.",
+    "BATTLE_BOSS": "층의 마지막을 지키는 보스 전투입니다. 통과해야 다음 층으로 나아갈 수 있습니다.",
+    "SHOP": "오리지늄각뿔로 소장품·아이템을 사거나 목표 생명력을 회복할 수 있는 상점입니다.",
+    "BATTLE_SHOP": "오리지늄각뿔로 소장품·아이템을 사거나 목표 생명력을 회복할 수 있는 상점입니다.",
+    "REST": "목표 생명력 회복, 오퍼레이터 임시 승급 등 정비 선택지를 제공하는 휴식 노드입니다.",
+    "INCIDENT": "무작위 이벤트가 발생하는 노드입니다. 선택지에 따라 보상을 얻거나 대가를 치릅니다.",
+    "ENTERTAINMENT": "테마마다 다른 미니게임·내기가 벌어지는 오락 노드입니다. 결과에 따라 보상이 달라집니다.",
+    "UNKNOWN": "어떤 노드인지 가려져 있는 미확인 노드입니다. 진입하면 실제 노드가 드러납니다.",
+    "WISH": "무작위로 제시되는 모집권 중 원하는 것을 골라 획득하는 노드입니다.",
+    "SACRIFICE": "가진 것(목표 생명력·소장품 등)을 대가로 바치고 다른 보상과 맞바꾸는 노드입니다.",
+    "EXPEDITION": "오퍼레이터 일부를 파견 보내는 노드입니다. 파견된 오퍼레이터는 한동안 편성에서 빠지고, 복귀할 때 보상을 가져옵니다.",
+    "STORY": "엔딩 분기와 이어지는 스토리 이벤트 노드입니다. 진행 상황·소지품에 따라 특정 위치에 나타나며, 히든 엔딩 루트로 이어지기도 합니다.",
+    "STORY_HIDDEN": "엔딩 분기와 이어지는 스토리 이벤트 노드입니다. 진행 상황·소지품에 따라 특정 위치에 나타나며, 히든 엔딩 루트로 이어지기도 합니다.",
+    "DUEL": "상대를 골라 싸우는 특수 전투입니다. 패배해도 목표 생명력이 깎이지 않으며, 어려운 상대일수록 보상이 좋습니다.",
+    "TREASURE": "전투 없이 소장품 등 보상을 얻어 가는 보물 노드입니다.",
+    "PORTAL": "특수 구역으로 통하는 입구입니다. 진입하면 별도의 구역·이벤트로 이어집니다.",
+    "MISSION": "의뢰를 받아 조건을 달성하면 보상을 받는 노드입니다.",
+    "ALCHEMY": "재료를 투입해 다른 결과물로 바꾸는 정련 노드입니다.",
+}
+NODE_FUNC = {
+    "rogue_3": {
+        "PORTAL": "숨겨진 비경으로 통하는 입구입니다. 비경에서는 전용 조우가 확률적으로 등장합니다.",
+    },
+    "rogue_4": {
+        "ALCHEMY": "'사고'를 투입해 다른 결과물로 바꾸는 정련 노드입니다. 사고의 레어도가 결과물의 품질에 영향을 줍니다.",
+    },
+    "rogue_5": {
+        "PORTAL": "특수 구역 '시비경'으로 통하는 입구입니다.",
+        "SPECIAL_ZONE": "특수 구역 '시비경'으로 통하는 입구입니다.",
+        "STASHED_RECRUIT": "저장해 둔 모집권을 사용할 수 있는 노드입니다. 여기서 사용하면 희망 소모가 줄어듭니다.",
+    },
+    "rogue_6": {
+        "PORTAL": "가공품을 소모해 히든 구역 '흑담'으로 진입하는 입구입니다. 흑담에서는 유토피아 규칙이 적용됩니다.",
+        "SCRAP_SHOP": "부품(자연물·가공품·개념체)으로 거래하는 비경의 상인입니다.",
+        "DOOR": "지도 위 떨어진 지점을 잇는 지름길 통로입니다. 이동에 드는 행동력을 아낄 수 있습니다.",
+        "FINAL": "탐험의 마지막을 장식하는 최종 전투 노드입니다.",
+        "EVACUATE": "보스전을 정면으로 치르지 않고 빠져나가는 샛길입니다.",
+        "EMPLOY": "탐험 중 임시 지원을 받을 수 있는 노드입니다.",
+        "LIGHT": "주변 지형과 노드를 미리 내려다보고 표시해 두는 조망 노드입니다.",
+        "EMPTY": "아무 일도 일어나지 않는 빈 노드입니다. 행동력을 아끼며 지나가는 길목입니다.",
+        "BATTLE_SAVAGE": "'주민' 거점을 공격하는 고난도 전투입니다. 기밀 등급 4 이상에서만 등장합니다.",
+    },
+}
+
+def node_func(tid, ntype):
+    return (NODE_FUNC.get(tid) or {}).get(ntype) or NODE_FUNC_COMMON.get(ntype)
+
+def build_topic(tid="rogue_1", loc=None):
     """KR 정식 출시 토픽(rogue_1~5) 공통 빌더 — 스테이지 id 접두 roN_ 공통,
-    토픽 고유 시스템(음반/메아리/탐사 도구 등)은 데이터 존재 여부로 분기한다."""
+    토픽 고유 시스템(음반/메아리/탐사 도구 등)은 데이터 존재 여부로 분기한다.
+    loc="en"|"ja"면 텍스트 테이블만 글로벌/일본 서버 데이터로 바꿔 rogueN.<loc>.json 생성
+    — 수치(레벨 파일·enemy_database)는 서버 공통이라 KR 캐시를 그대로 쓴다."""
     ronum = tid.split("_")[1]  # "1"~"5"
-    table = fetch_json("excel/roguelike_topic_table.json")
+    branch = {"en": "en", "ja": "jp"}.get(loc, "kr")
+    table = fetch_json("excel/roguelike_topic_table.json", branch)
     topic = table["topics"][tid]
     r = table["details"][tid]
-    handbook = fetch_json("excel/enemy_handbook_table.json")["enemyData"]
+    handbook = fetch_json("excel/enemy_handbook_table.json", branch)["enemyData"]
     enemy_db = fetch_json("levels/enemydata/enemy_database.json")
+    # 큐레이션(한국어 집필) 문자열 번역 오버레이 — 없는 문장은 KR 폴백 + 리포트
+    tr_map = {}
+    if loc:
+        p = os.path.join(REPO, "scripts", "rogue-i18n.json")
+        if os.path.exists(p):
+            tr_map = (json.load(open(p, encoding="utf-8")) or {}).get(loc) or {}
+    tr_missing = set()
+    def tr(s):
+        if not loc or s is None:
+            return s
+        if s in tr_map:
+            return tr_map[s]
+        tr_missing.add(s)
+        return s
 
     items = r["items"]  # 유물/음반/티켓 등 표시 텍스트
 
@@ -390,12 +468,14 @@ def build_topic(tid="rogue_1"):
             ov = mv(ow) if ow else None
             return ov if ov is not None else v
         hb = handbook.get(key) or handbook.get(key.rsplit("_", 1)[0]) or {}
-        name = mv(pick.get("name")) or mv(base.get("name")) or hb.get("name") or key
+        # enemy_database는 KR 캐시 공유 — 로케일 빌드에선 핸드북(현지어) 이름을 우선한다
+        name = (hb.get("name") or mv(pick.get("name")) or mv(base.get("name")) or key) if loc \
+            else (mv(pick.get("name")) or mv(base.get("name")) or hb.get("name") or key)
         enemies[key] = {
             "name": name,
             "rank": hb.get("enemyLevel"),  # NORMAL/ELITE/BOSS
             "index": hb.get("enemyIndex"),
-            "attack": attack_of(hb),
+            "attack": attack_of(hb, loc),
             "desc": hb.get("description"),
             "ability": ability_of(hb),
             "hp": num(attr("maxHp", 0)), "atk": num(attr("atk", 0)),
@@ -403,7 +483,7 @@ def build_topic(tid="rogue_1"):
             "aspd": num(attr("attackSpeed", 100)), "ms": num(attr("moveSpeed", 1)),
             "weight": num(attr("massLevel", 1)),
             "lifePoint": mv(pick.get("lifePointReduce"), mv(base.get("lifePointReduce"), 1)),
-            "immune": [ko for k, ko in IMMUNE_KO if attr(k, False)],
+            "immune": [lb for k, lb in zip(IMMUNE_FIELDS, IMMUNE_LABELS[loc]) if attr(k, False)],
         }
 
     # 적 초상 — arts/enemies/<id>.png (변종 _N은 원본 id 초상으로 폴백)
@@ -524,7 +604,7 @@ def build_topic(tid="rogue_1"):
                         # 사고 3분류 — id 접두 D/F/I = 염원/영감/구상 (사용자 확인 2026-07-18:
                         # usage에 '사용 시'가 있으면 영감(F), 없으면 염원(D), '구상'(I)은 단일 항목)
                         code = iid.replace(f"{tid}_fragment_", "").split("_")[0]
-                        e["kind"] = {"D": "염원", "F": "영감", "I": "구상"}.get(code, "기타")
+                        e["kind"] = tr({"D": "염원", "F": "영감", "I": "구상"}.get(code, "기타"))
                     best[nm] = e
             entries = [{k: v for k, v in e.items() if k != "_len"} for e in best.values()]
             if source == "fragment":
@@ -576,6 +656,37 @@ def build_topic(tid="rogue_1"):
                                 "usage": "\n".join(x for x in lines if x.strip()) or None,
                                 "desc": (first.get("desc") or "").strip() or None,
                                 "img": has_icon(first.get("iconId") or gtype)})
+        elif source == "module_wrath":
+            # IS5 분노(쉐이시 시진) — modules.wrath.wrathData. items의 usage는 '기믹 아이템'
+            # 뿐이라 쓸모없고, 실효과는 여기의 단계별 functionDesc다 (사용자 리포트 2026-07-19).
+            # 그룹(시진)당 한 카드: 몽롱(L1)→명확(L2)→심각(L3) 디버프 + 각성·진정(L0) 버프.
+            # 같은 그룹·단계의 직군별 변형(랜덤/가드/…)은 대표(가장 짧은 id=랜덤형)만 쓴다.
+            datas = (mods.get("wrath") or {}).get("wrathData") or {}
+            groups = {}
+            for v in datas.values():
+                groups.setdefault(v.get("group"), {}).setdefault(v.get("level"), []).append(v)
+            def wrath_no(g):  # rogue_5_wrath_10 → 10 (숫자 정렬)
+                try:
+                    return int(g.rsplit("_", 1)[1])
+                except ValueError:
+                    return 999
+            for g in sorted(groups, key=wrath_no):
+                lv = groups[g]
+                reps = {level: min(vs, key=lambda v: (len(v["id"]), v["id"])) for level, vs in lv.items()}
+                first = reps.get(1) or next(iter(reps.values()))
+                lines = []
+                for level in (1, 2, 3):
+                    v = reps.get(level)
+                    if v and (v.get("functionDesc") or "").strip():
+                        lines.append(f"〔{v.get('levelName') or level}〕 {v['functionDesc'].strip()}")
+                v0 = reps.get(0)
+                if v0 and (v0.get("functionDesc") or "").strip():
+                    calm = {"en": "·Pacified", "ja": "・鎮静"}.get(loc, "·진정")
+                    lines.append(f"〔{v0.get('levelName') or '각성'}{calm}〕 {v0['functionDesc'].strip()}")
+                entries.append({"id": first["id"], "name": first.get("name"),
+                                "usage": "\n".join(lines) or None,
+                                "desc": (first.get("desc") or "").strip() or None,
+                                "img": has_icon(first["id"])})
         if entries:
             mechanics.append({"label": label, "items": entries})
 
@@ -648,6 +759,43 @@ def build_topic(tid="rogue_1"):
             e["bg"] = None
 
     # ── 수작업 큐레이션 병합 (조우 층 규칙·엔딩 조건 — PRTS 기반) ─────────────
+    # 로케일 빌드: 큐레이션 한국어 문장은 rogue-i18n.json 오버레이(tr)로 번역하고,
+    # 문장 속 「이름」 인용은 KR→현지어 공식 명칭으로 치환한다 (renderCond 자동 링크가
+    # 현지어 데이터의 이름과 글자 단위로 일치해야 하므로).
+    loc_name = None
+    if loc:
+        kr_table = fetch_json("excel/roguelike_topic_table.json")
+        kr_r = kr_table["details"][tid]
+        kr_hb = fetch_json("excel/enemy_handbook_table.json")["enemyData"]
+        loc_name = {}
+        for kid, kv in kr_r["stages"].items():
+            lv2 = r["stages"].get(kid)
+            if kv.get("name") and lv2 and lv2.get("name"):
+                loc_name[kv["name"].strip()] = lv2["name"].strip()
+        for kid, kv in kr_r["choiceScenes"].items():
+            lv2 = r["choiceScenes"].get(kid)
+            if kv.get("title") and lv2 and lv2.get("title"):
+                loc_name[kv["title"].strip()] = lv2["title"].strip()
+        for kid, kv in kr_r["items"].items():
+            lv2 = r["items"].get(kid)
+            if kv.get("name") and lv2 and lv2.get("name"):
+                loc_name[kv["name"].strip()] = lv2["name"].strip()
+        for kid, kv in kr_r["endings"].items():
+            lv2 = r["endings"].get(kid)
+            if kv.get("name") and lv2 and lv2.get("name"):
+                loc_name[kv["name"].strip()] = lv2["name"].strip()
+        for kid, kv in kr_r["zones"].items():
+            lv2 = r["zones"].get(kid)
+            if kv.get("name") and lv2 and lv2.get("name"):
+                loc_name[kv["name"].strip()] = lv2["name"].strip()
+        for kid, kv in kr_hb.items():
+            lv2 = handbook.get(kid)
+            if kv.get("name") and lv2 and lv2.get("name"):
+                loc_name[kv["name"].strip()] = lv2["name"].strip()
+    def tr_quoted(s):
+        if not loc or not s:
+            return s
+        return re.sub(r"「([^」]+)」", lambda m: f"「{loc_name.get(m.group(1), m.group(1))}」", s)
     curated_path = os.path.join(REPO, "scripts", f"rogue{ronum}-curated.json")
     if os.path.exists(curated_path):
         curated = json.load(open(curated_path, encoding="utf-8"))
@@ -657,11 +805,11 @@ def build_topic(tid="rogue_1"):
             if enc["scene"] in floors:
                 enc["floors"] = floors[enc["scene"]]
             if enc["scene"] in notes:
-                enc["note"] = notes[enc["scene"]]
+                enc["note"] = tr_quoted(tr(notes[enc["scene"]]))
         conds = curated.get("endingConds", {})
         for e in endings:
             if e["id"] in conds:
-                e["cond"] = conds[e["id"]]
+                e["cond"] = [tr_quoted(tr(x)) for x in conds[e["id"]]]
         # 보스(험난한 길) 출현 층 — 사용자 확인: b_1~5=3층, b_6~7=5층, b_8~9=히든 6층
         boss_floors = curated.get("bossFloors", {})
         for s in stages:
@@ -673,7 +821,8 @@ def build_topic(tid="rogue_1"):
         "name": topic["name"],
         "line": topic.get("lineText"),
         "zones": zones,
-        "nodeTypes": [{"id": k, "name": v["name"], "desc": v.get("description")}
+        "nodeTypes": [{"id": k, "name": v["name"], "desc": v.get("description"),
+                       "func": tr(node_func(tid, k))}
                       for k, v in r["nodeTypeData"].items()],
         "difficulties": difficulties,
         "stages": stages,
@@ -701,12 +850,20 @@ def build_topic(tid="rogue_1"):
         return v
     out = sanitize(out)
 
-    dest = os.path.join(REPO, "app", "data", f"rogue{ronum}.json")
+    fname = f"rogue{ronum}.{loc}.json" if loc else f"rogue{ronum}.json"
+    dest = os.path.join(REPO, "app", "data", fname)
     json.dump(out, open(dest, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
     kb = os.path.getsize(dest) // 1024
-    print(f"rogue{ronum}.json: zones={len(zones)} stages={len(stages)} enemies={len(enemies)} "
+    print(f"{fname}: zones={len(zones)} stages={len(stages)} enemies={len(enemies)} "
           f"relics={len(relics)} capsules={len(capsules)} variations={len(variations)} "
           f"encounters={len(encounters)} → {kb}KB")
+    if loc and tr_missing:
+        rep = os.path.join(REPO, "scripts", "rogue-i18n-missing.json")
+        old = json.load(open(rep, encoding="utf-8")) if os.path.exists(rep) else {}
+        old.setdefault(loc, [])
+        old[loc] = sorted(set(old[loc]) | tr_missing)
+        json.dump(old, open(rep, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+        print(f"  ⚠ {loc} 미번역 큐레이션 문장 {len(tr_missing)}건 → rogue-i18n-missing.json")
 
 
 # ── rogue_6 (침몰자의 흑류수해) — CN 선행 데이터 빌드 ─────────────────────────
@@ -1136,7 +1293,8 @@ def build_rogue6():
         "future": True,
         "line": topic.get("lineText"),
         "zones": zones,
-        "nodeTypes": [{"id": k, "name": v["name"], "desc": v.get("description")}
+        "nodeTypes": [{"id": k, "name": v["name"], "desc": v.get("description"),
+                       "func": node_func("rogue_6", k)}
                       for k, v in r["nodeTypeData"].items()],
         "difficulties": difficulties,
         "stages": stages,
@@ -1285,9 +1443,19 @@ if __name__ == "__main__":
         build_rogue6()
     elif re.fullmatch(r"rogue[1-5]", arg):
         build_topic(f"rogue_{arg[-1]}")
+    elif re.fullmatch(r"rogue[1-5]-(en|ja)", arg):
+        build_topic(f"rogue_{arg[5]}", arg.rsplit("-", 1)[1])
+    elif arg == "i18n":
+        # EN/JA 데이터 — rogue_1~5 (rogue_6은 CN 선행이라 공식 현지화가 없음)
+        for n in range(1, 6):
+            for lc in ("en", "ja"):
+                build_topic(f"rogue_{n}", lc)
     elif arg == "all":
         for n in range(1, 6):
             build_topic(f"rogue_{n}")
         build_rogue6()
+        for n in range(1, 6):
+            for lc in ("en", "ja"):
+                build_topic(f"rogue_{n}", lc)
     else:
         build_topic("rogue_1")

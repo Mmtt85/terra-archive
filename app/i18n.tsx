@@ -776,6 +776,7 @@ const D: Record<string, Pair> = {
   "연대순": ["Chronological", "年代順"],
   "전체": ["All", "すべて"],
   "테마별": ["By theme", "テーマ別"],
+  "클릭하면 주소가 이 테마의 공유 링크로 바뀝니다": ["Click to set the URL to a shareable link for this theme", "クリックするとURLがこのテーマの共有リンクになります"],
   "종류별": ["By type", "種類別"],
   "클릭해서 열기": ["click to open", "クリックで開く"],
   "**테라 연대기 (베타)** — 모든 이벤트·메인스토리·통합 전략을 한자리에 모으는 사전 작업입니다. 현재 정렬은 출시순(임시)이며, 인게임 연대기 순서·테라력 연도는 스토리 스크립트를 반영하며 채웁니다. 테마 묶음은 확실한 것부터 배정 중입니다.": [
@@ -860,7 +861,7 @@ const D: Record<string, Pair> = {
   "거부반응": ["Rejection", "拒絶反応"],
   "통합전략 가이드 - 명일방주 통합전략 공략 | 테라 아카이브": ["Integrated Strategies Guide - Arknights IS Guide | Terra Archive", "統合戦略ガイド - アークナイツ統合戦略攻略 | テラアーカイブ"],
   "층별 노드·적 도감·유물·엔딩 조건을 난이도별로 정리": ["Floor nodes, enemy handbook, relics, and ending requirements by difficulty", "階層ノード・敵図鑑・秘宝・エンディング条件を難易度別に整理"],
-  "통합전략 데이터는 현재 한국어로만 제공됩니다.": ["Integrated Strategies data is currently available in Korean only.", "統合戦略データは現在韓国語のみ提供しています。"],
+  "이 테마는 CN 선행 데이터라 아직 한국어·중국어로만 제공됩니다.": ["This theme is based on advance CN-server data and is only available in Korean/Chinese for now.", "このテーマはCN先行データのため、現在は韓国語・中国語のみの提供です。"],
   "다른 테마는 준비 중": ["Other themes coming soon", "他のテーマは準備中"],
   "준비 중": ["Coming soon", "準備中"],
   "미래시": ["Future", "先行"],

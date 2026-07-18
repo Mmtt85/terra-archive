@@ -30,7 +30,7 @@ type Ending = { id: string; name: string; desc: string | null; boss: string | nu
 type Encounter = { scene: string; title: string; desc: string | null; bg?: string | null; choices: { title: string; desc: string | null }[]; floors?: number[]; note?: string; cn?: string };
 type RogueData = {
   id: string; name: string; line: string | null; cnName?: string; future?: boolean;
-  zones: Zone[]; nodeTypes: { id: string; name: string; desc: string | null; cn?: string }[];
+  zones: Zone[]; nodeTypes: { id: string; name: string; desc: string | null; func?: string | null; cn?: string }[];
   difficulties: Difficulty[]; stages: Stage[]; enemies: Record<string, Enemy>;
   relics: Relic[]; capsules?: Capsule[]; tools: Simple[]; bands: Simple[]; exploreTools?: Simple[];
   scraps?: Scrap[]; legacies?: Simple[]; buoys?: Simple[];
@@ -471,7 +471,9 @@ export const TOPICS: { id: string; name: string; ready?: boolean; future?: boole
   { id: "rogue_6", name: "침몰자의 흑류수해", ready: true, future: true },
 ];
 
-// 토픽 데이터 동적 로더 — rogue_1만 기본 번들, 나머지는 선택 시 로드 (각 300~600KB)
+// 토픽 데이터 동적 로더 — KR은 rogue_1만 기본 번들, 나머지는 선택 시 로드 (각 300~600KB).
+// EN/JA는 글로벌/일본 서버 공식 텍스트로 빌드한 rogueN.<loc>.json (build-rogue.py i18n).
+// rogue_6은 CN 선행이라 공식 현지화가 없어 전 로케일이 KR/CN 병기 파일을 공유한다.
 const TOPIC_LOADERS: Record<string, () => Promise<{ default: unknown }>> = {
   rogue_2: () => import("./data/rogue2.json"),
   rogue_3: () => import("./data/rogue3.json"),
@@ -479,8 +481,32 @@ const TOPIC_LOADERS: Record<string, () => Promise<{ default: unknown }>> = {
   rogue_5: () => import("./data/rogue5.json"),
   rogue_6: () => import("./data/rogue6.json"),
 };
+const TOPIC_LOADERS_EN: Record<string, () => Promise<{ default: unknown }>> = {
+  rogue_1: () => import("./data/rogue1.en.json"),
+  rogue_2: () => import("./data/rogue2.en.json"),
+  rogue_3: () => import("./data/rogue3.en.json"),
+  rogue_4: () => import("./data/rogue4.en.json"),
+  rogue_5: () => import("./data/rogue5.en.json"),
+  rogue_6: () => import("./data/rogue6.json"),
+};
+const TOPIC_LOADERS_JA: Record<string, () => Promise<{ default: unknown }>> = {
+  rogue_1: () => import("./data/rogue1.ja.json"),
+  rogue_2: () => import("./data/rogue2.ja.json"),
+  rogue_3: () => import("./data/rogue3.ja.json"),
+  rogue_4: () => import("./data/rogue4.ja.json"),
+  rogue_5: () => import("./data/rogue5.ja.json"),
+  rogue_6: () => import("./data/rogue6.json"),
+};
+const loadersFor = (locale: string) =>
+  locale === "en" ? TOPIC_LOADERS_EN : locale === "ja" ? TOPIC_LOADERS_JA : TOPIC_LOADERS;
 
 // 토픽 URL 슬러그 — /rogue?topic=is6 (rogue_1은 파라미터 없음)
+// 테마별 상징색 — 드롭다운 색점 (각 스킨(.rgN)의 강조색과 동일 계열)
+const TOPIC_HUE: Record<string, string> = {
+  rogue_1: "#c23b4e", rogue_2: "#4a9edd", rogue_3: "#b7c2d1",
+  rogue_4: "#8e222f", rogue_5: "#efa5c1", rogue_6: "#2fbfa5",
+};
+
 export const slugOf = (id: string) => "is" + id.split("_")[1];
 const topicFromUrl = () => {
   const q = new URLSearchParams(window.location.search).get("topic");
@@ -500,14 +526,18 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   // useSyncExternalStore: 서버/하이드레이션 스냅샷=false, 마운트 후 클라 스냅샷=true
   // (effect 내 setState 없이 하이드레이션 안전하게 클라 마운트를 감지).
   const mounted = useSyncExternalStore(() => () => {}, () => true, () => false);
-  // rogue_2~6 데이터는 선택 시에만 동적 로드 (기본 번들에서 제외)
+  // KR rogue_1만 기본 번들 — 그 외(다른 토픽·EN/JA 로케일)는 선택 시 동적 로드.
+  // 캐시 키는 토픽:로케일 (언어 전환 시 같은 토픽의 현지어 데이터를 다시 불러온다)
+  const dataKey = `${topic}:${locale}`;
   useEffect(() => {
-    if (topic !== "rogue_1" && !loaded[topic] && TOPIC_LOADERS[topic]) {
-      TOPIC_LOADERS[topic]().then((m) =>
-        setLoaded((cur) => ({ ...cur, [topic]: m.default as RogueData })));
+    const key = `${topic}:${locale}`;
+    const loader = loadersFor(locale)[topic];
+    if (!(topic === "rogue_1" && locale === "ko") && !loaded[key] && loader) {
+      loader().then((m) =>
+        setLoaded((cur) => ({ ...cur, [key]: m.default as RogueData })));
     }
-  }, [topic, loaded]);
-  const active = topic === "rogue_1" ? rogue1 : loaded[topic] ?? null;
+  }, [topic, locale, loaded]);
+  const active = topic === "rogue_1" && locale === "ko" ? rogue1 : loaded[dataKey] ?? null;
   setActiveData(active ?? rogue1);
   const loading = active == null;
 
@@ -520,6 +550,17 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   }, [topic]);
   const [view, setView] = useState<View>("map");
   const [grade, setGrade] = useState(0); // -1 = EASY, 0~15
+  // 테마 변경 커스텀 드롭다운 — 바깥 클릭·Esc로 닫기
+  const [topicMenu, setTopicMenu] = useState(false);
+  const topicSelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!topicMenu) return;
+    const onDown = (e: MouseEvent) => { if (!topicSelRef.current?.contains(e.target as Node)) setTopicMenu(false); };
+    const onEsc = (e: KeyboardEvent) => { if (e.key === "Escape") setTopicMenu(false); };
+    window.addEventListener("mousedown", onDown);
+    window.addEventListener("keydown", onEsc);
+    return () => { window.removeEventListener("mousedown", onDown); window.removeEventListener("keydown", onEsc); };
+  }, [topicMenu]);
   const [zoneOpen, setZoneOpen] = useState<Zone | null>(null);
   const [stageOpen, setStageOpen] = useState<StagePair | null>(null);
   const [enemyOpen, setEnemyOpen] = useState<{ key: string; ctx: StatCtx } | null>(null);
@@ -732,17 +773,9 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
                 {t("CN 선행 데이터 기반 · 명칭은 비공식 번역이며 중국어 원문을 병기합니다.")}
               </p>
             )}
-            {locale !== "ko" && <p className="rg-disclaimer">{t("통합전략 데이터는 현재 한국어로만 제공됩니다.")}</p>}
+            {locale !== "ko" && topic === "rogue_6" && <p className="rg-disclaimer">{t("이 테마는 CN 선행 데이터라 아직 한국어·중국어로만 제공됩니다.")}</p>}
             {data.line && <p className="rg-line">{data.line}</p>}
           </div>
-
-          {/* 테마 변경 드롭다운 — 배너 오른쪽 위 (햄버거 부메뉴와 동일 동작, 사용자 요청 2026-07-18) */}
-          <select className="rg-topicsel" aria-label={t("테마 변경")} value={topic}
-            onChange={(e) => goTopic(e.target.value)}>
-            {TOPICS.filter((tp) => tp.ready && (!tp.future || includeFuture)).map((tp) => (
-              <option key={tp.id} value={tp.id}>{t(tp.name)}{tp.future ? ` (${t("미래시")})` : ""}</option>
-            ))}
-          </select>
 
           {/* 난이도 선택 — 배너 우하단, 모든 스탯 표시에 반영 */}
           <div className="rg-diffbar" role="group" aria-label={t("난이도 선택")}>
@@ -756,6 +789,35 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
               {grade < 0 ? easyName : normalName}
             </span>
           </div>
+        </div>
+
+        {/* 테마 변경 드롭다운 — 배너 오른쪽 위. 네이티브 select 대신 테마 톤에 맞춘 커스텀
+            리스트박스 (사용자 요청 2026-07-19). ⚠ .rg-hero 안에 두면 overflow:hidden에
+            펼친 메뉴가 잘린다 — 반드시 .rg-head 직속(클리핑 밖)에 두고 absolute로 겹칠 것 */}
+        <div className="rg-topicsel" ref={topicSelRef}>
+          <button type="button" className="rg-topicsel-btn" aria-haspopup="listbox" aria-expanded={topicMenu}
+            onClick={() => setTopicMenu((v) => !v)}>
+            <span className="rg-topicsel-label">{t("테마 변경")}</span>
+            <span className="rg-topicsel-cur">
+              <i className="rg-topicsel-dot" style={{ background: TOPIC_HUE[topic], boxShadow: `0 0 8px ${TOPIC_HUE[topic]}` }} aria-hidden />
+              {t(TOPICS.find((tp) => tp.id === topic)?.name ?? "통합전략 가이드")}
+            </span>
+            <span className={`rg-topicsel-arrow${topicMenu ? " up" : ""}`} aria-hidden>▾</span>
+          </button>
+          {topicMenu && (
+            <ul className="rg-topicsel-menu" role="listbox" aria-label={t("테마 변경")}>
+              {TOPICS.filter((tp) => tp.ready && (!tp.future || includeFuture)).map((tp) => (
+                <li key={tp.id} role="option" aria-selected={tp.id === topic}>
+                  <button type="button" className={tp.id === topic ? "on" : ""}
+                    onClick={() => { setTopicMenu(false); goTopic(tp.id); }}>
+                    <i className="rg-topicsel-dot" style={{ background: TOPIC_HUE[tp.id], boxShadow: `0 0 8px ${TOPIC_HUE[tp.id]}` }} aria-hidden />
+                    <span className="rg-topicsel-name">{t(tp.name)}</span>
+                    {tp.future && <em className="rg-topicsel-future">{t("미래시")}</em>}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </header>
 
@@ -945,10 +1007,10 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
                 {otherNodes.map((nt) => (
                   <article key={nt.id} className={`rg-nodetype${nt.id === "DUEL" && duelStages.length > 0 ? " wide" : ""}`}>
                     <h4><Nm name={nt.name} cn={nt.cn} /></h4>
+                    {nt.func && <p className="rg-nodetype-func">{nt.func}</p>}
                     {nt.desc && <p>{nt.desc}</p>}
                     {nt.id === "DUEL" && duelStages.length > 0 && (
                       <>
-                        <p className="rg-zone-desc">{t("상대를 골라 싸우는 특수 전투입니다. 패배해도 목표 HP가 깎이지 않으며, 어려운 상대일수록 보상이 좋습니다.")}</p>
                         <div className="rg-stage-cards">
                           {duelStages.map((s) => <StageCard key={s.id} pair={{ n: s }} onOpen={setStageOpen} />)}
                         </div>

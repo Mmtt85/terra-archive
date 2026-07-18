@@ -4341,6 +4341,15 @@ html.dark .story-card:hover .story-thumb img {
   display: flex; align-items: center; gap: 8px;
 }
 .digest-group > h3 em { font: 700 11px monospace; color: var(--muted); font-style: normal; }
+/* 테마 이름 클릭 → #theme-<arc> 딥링크 (h3 스타일 상속, 앵커 표시는 호버에만) */
+.digest-group-link {
+  background: none; border: 0; padding: 0; cursor: pointer;
+  font: inherit; color: inherit; letter-spacing: inherit;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.digest-group-link .digest-group-anchor { color: var(--muted); font-weight: 700; opacity: 0; transition: opacity 0.15s; }
+.digest-group-link:hover .digest-group-anchor { opacity: 0.8; }
+.digest-group[id] { scroll-margin-top: 76px; }
 .digest-tabs { margin: 0; }
 .story-ready-badge,
 .story-pending-badge {
@@ -5936,47 +5945,50 @@ html.rg-theme.rg2 body, html.rg-theme.rg2 main.site-main { background: linear-gr
 .rg.rg2 .rg-diff-hex { background: #070d1c; color: #72ccff; border-color: #72ccff }
 .rg.rg2 .rg-diffbar { border-color: #2b4e7e; background: #070d1ccc }
 
-/* ── rogue_3 탐험가의 은빛 서리 끝자락 — 눈빛 은색 스킨 (설원 은백 + 얼음 시안 + 오로라 기운) ── */
-html.rg-theme.rg3 body, html.rg-theme.rg3 main.site-main { background: linear-gradient(180deg,#0a0d14,#10141d 220px,#12161f) }
-.rg.rg3 { --rgbg:#12161f; --rgcard:#1b212d; --rgline:#39435a; --rgink:#eef3fa; --rgmut:#9dabc0;
-  --rgcrim:#8fb8d8; --rggold:#cfdae8;
-  --rgdeep:#11151e; --rgmodal:#141a26; --rgmodalline:#46536e; --rgsel:#212b3d; --rgtext2:#ccd7e6; --rgup:#a8e2f2; --rgupbg:#16303e }
+/* ── rogue_3 탐험가의 은빛 서리 끝자락 — 눈빛 은색 스킨 (설원 은백 — 푸른기를 빼고
+   더 무채색 실버로, 사용자 요청 2026-07-19) ── */
+html.rg-theme.rg3 body, html.rg-theme.rg3 main.site-main { background: linear-gradient(180deg,#0b0d11,#101318 220px,#13151a) }
+.rg.rg3 { --rgbg:#13151a; --rgcard:#1c1f25; --rgline:#3e434e; --rgink:#f0f3f7; --rgmut:#a3aab6;
+  --rgcrim:#b7c2d1; --rggold:#dde3ec;
+  --rgdeep:#111318; --rgmodal:#15181e; --rgmodalline:#4b515e; --rgsel:#242832; --rgtext2:#d2d8e1; --rgup:#c2e4f2; --rgupbg:#1c2f3a }
 .rg.rg3 .rg-modal-back { background: #05070bd9 } .rg.rg3 .rg-modal-back.stack { background: #05070be6 }
 /* 은색 포인트(--rgcrim)가 밝아 흰 글자 요소는 어두운 잉크로 대비 보정 */
 .rg.rg3 .rg-topic.on { box-shadow: 0 0 16px #9fc4e066 }
 .rg.rg3 .rg-topic.on, .rg.rg3 .rg-tabs button.on, .rg.rg3 .rg-filterbar button.on,
 .rg.rg3 .rg-rank.r-BOSS, .rg.rg3 .rg-zone-num, .rg.rg3 .rg-modal-modes button.emg.on,
 .rg.rg3 .rg-topic.off.ready:hover { color: #101722 }
-.rg.rg3 .rg-diff-hex { background: #12161f; color: #d8e6f4; border-color: #d8e6f4 }
-.rg.rg3 .rg-diffbar { border-color: #4a586f; background: #12161fcc }
+.rg.rg3 .rg-diff-hex { background: #13151a; color: #dfe5ed; border-color: #dfe5ed }
+.rg.rg3 .rg-diffbar { border-color: #4d525d; background: #13151acc }
 
-/* ── rogue_4 살카즈의 영겁 기담 — 검은 왕관 검붉은 스킨 (칠흑 + 핏빛 심홍 + 왕관 금) ── */
-html.rg-theme.rg4 body, html.rg-theme.rg4 main.site-main { background: linear-gradient(180deg,#0b0405,#150708 220px,#170808) }
-.rg.rg4 { --rgbg:#170808; --rgcard:#26100f; --rgline:#4a2320; --rgink:#f1ddd6; --rgmut:#a9877e;
-  --rgcrim:#b1303e; --rggold:#c99150;
-  --rgdeep:#140607; --rgmodal:#1b0a09; --rgmodalline:#5a2823; --rgsel:#301412; --rgtext2:#d9bdb4; --rgup:#ff5c6a; --rgupbg:#33100f }
+/* ── rogue_4 살카즈의 영겁 기담 — 검은 왕관 검붉은 스킨 (칠흑에 가까운 흑적 + 응혈빛
+   심홍 — 더 어둡고 검붉게, 사용자 요청 2026-07-19) ── */
+html.rg-theme.rg4 body, html.rg-theme.rg4 main.site-main { background: linear-gradient(180deg,#070202,#0d0404 220px,#0f0505) }
+.rg.rg4 { --rgbg:#0f0505; --rgcard:#1b0909; --rgline:#3d1815; --rgink:#eed7cf; --rgmut:#9d786f;
+  --rgcrim:#8e222f; --rggold:#b8823f;
+  --rgdeep:#0c0304; --rgmodal:#130606; --rgmodalline:#4c1f1b; --rgsel:#260f0e; --rgtext2:#d2b3a9; --rgup:#e8515f; --rgupbg:#2b0c0c }
 .rg.rg4 .rg-modal-back { background: #060202d9 } .rg.rg4 .rg-modal-back.stack { background: #060202e6 }
-.rg.rg4 .rg-topic.on { box-shadow: 0 0 16px #b1303e66 }
-.rg.rg4 .rg-diff-hex { background: #170808; color: #ff6673; border-color: #ff6673 }
-.rg.rg4 .rg-diffbar { border-color: #5a2a26; background: #170808cc }
+.rg.rg4 .rg-topic.on { box-shadow: 0 0 16px #8e222f66 }
+.rg.rg4 .rg-diff-hex { background: #0f0505; color: #e8515f; border-color: #e8515f }
+.rg.rg4 .rg-diffbar { border-color: #4c1f1b; background: #0f0505cc }
 
-/* ── rogue_5 쉐이의 기이한 계원 — 파스텔 분홍 수묵 스킨 (연분홍 로즈 + 벚꽃빛 은백) ── */
-html.rg-theme.rg5 body, html.rg-theme.rg5 main.site-main { background: linear-gradient(180deg,#120a0d,#1a0e13 220px,#1c0f15) }
-.rg.rg5 { --rgbg:#1c0f15; --rgcard:#2a1620; --rgline:#4a2a37; --rgink:#f7e4ec; --rgmut:#b592a1;
-  --rgcrim:#e07fa5; --rggold:#f0b8cc;
-  --rgdeep:#1a0e14; --rgmodal:#20111a; --rgmodalline:#5c2f3f; --rgsel:#341825; --rgtext2:#dcbccb; --rgup:#ff9ec2; --rgupbg:#3a1522 }
+/* ── rogue_5 쉐이의 기이한 계원 — 파스텔 분홍 수묵 스킨 (더 연하고 화사한 벚꽃 파스텔로,
+   사용자 요청 2026-07-19) ── */
+html.rg-theme.rg5 body, html.rg-theme.rg5 main.site-main { background: linear-gradient(180deg,#160c11,#1f1219 220px,#22131b) }
+.rg.rg5 { --rgbg:#22131b; --rgcard:#301b26; --rgline:#573448; --rgink:#fceef4; --rgmut:#c19fae;
+  --rgcrim:#efa5c1; --rggold:#f7cfde;
+  --rgdeep:#1e1017; --rgmodal:#26141d; --rgmodalline:#68394d; --rgsel:#3d212e; --rgtext2:#ebcfda; --rgup:#ffb4d0; --rgupbg:#43182a }
 .rg.rg5 .rg-modal-back { background: #080406d9 } .rg.rg5 .rg-modal-back.stack { background: #080406e6 }
-.rg.rg5 .rg-topic.on { box-shadow: 0 0 16px #e07fa566 }
-.rg.rg5 .rg-diff-hex { background: #1c0f15; color: #ff9ec2; border-color: #ff9ec2 }
-.rg.rg5 .rg-diffbar { border-color: #5a3040; background: #1c0f15cc }
+.rg.rg5 .rg-topic.on { box-shadow: 0 0 16px #efa5c166 }
+.rg.rg5 .rg-diff-hex { background: #22131b; color: #ffb4d0; border-color: #ffb4d0 }
+.rg.rg5 .rg-diffbar { border-color: #68394d; background: #22131bcc }
 
 /* ── 다크모드 × 통합전략 — 토픽 테마색이 상단 헤더까지 이어진다 (사용자 요청 2026-07-18).
    헤더 텍스트·버튼은 전역 다크 변수(--ink 등)를 그대로 쓰므로 배경·경계선만 토픽색으로. ── */
 html.dark.rg-theme .site-header { background: #150a0ee6; border-bottom-color: #3c2129 }
 html.dark.rg-theme.rg2 .site-header { background: #070d1ce6; border-bottom-color: #213858 }
-html.dark.rg-theme.rg3 .site-header { background: #12161fe6; border-bottom-color: #39435a }
-html.dark.rg-theme.rg4 .site-header { background: #170808e6; border-bottom-color: #4a2320 }
-html.dark.rg-theme.rg5 .site-header { background: #1c0f15e6; border-bottom-color: #4a2a37 }
+html.dark.rg-theme.rg3 .site-header { background: #13151ae6; border-bottom-color: #3e434e }
+html.dark.rg-theme.rg4 .site-header { background: #0f0505e6; border-bottom-color: #3d1815 }
+html.dark.rg-theme.rg5 .site-header { background: #22131be6; border-bottom-color: #573448 }
 html.dark.rg-theme.rg6 .site-header { background: #0a1413e6; border-bottom-color: #1f3a34 }
 
 /* 적 상태이상 면역 칩 */
@@ -6049,15 +6061,44 @@ html.dark.rg-theme.rg6 .site-header { background: #0a1413e6; border-bottom-color
 /* 난이도 바 */
 .rg-diffbar { position: absolute; right: 18px; bottom: 16px; display: flex; align-items: center; flex-wrap: wrap; gap: 8px 10px; border: 1px solid #6a3040; background: #150a0ecc; backdrop-filter: blur(6px); padding: 10px 14px; width: min(460px, calc(100% - 36px)); box-shadow: 0 4px 24px #000a }
 /* 테마 변경 드롭다운 — 배너 오른쪽 위 (사용자 요청 2026-07-18) */
-.rg-topicsel { position: absolute; right: 18px; top: 16px; z-index: 3; width: min(280px, calc(100% - 36px)); background: color-mix(in srgb, var(--rgcard) 82%, transparent); backdrop-filter: blur(6px); color: var(--rgink); border: 1px solid var(--rgline); padding: 8px 11px; font: 700 12.5px/1.2 inherit; cursor: pointer; box-shadow: 0 4px 24px #0008 }
-.rg-topicsel:focus-visible { outline: 2px solid var(--rggold); outline-offset: 1px }
-@media (max-width: 860px) { .rg-topicsel { position: static; width: 100%; margin-bottom: 12px; backdrop-filter: none; background: var(--rgcard) } }
+/* 테마 변경 — 커스텀 드롭다운 (네이티브 select 교체, 2026-07-19).
+   .rg-head 직속 absolute — .rg-hero(overflow:hidden) 안에 넣으면 펼친 메뉴가 잘린다 */
+.rg-head { position: relative; z-index: 5 }
+.rg-topicsel { position: absolute; right: 18px; top: 16px; z-index: 30; width: min(300px, calc(100% - 36px)) }
+.rg-topicsel-btn { width: 100%; display: grid; grid-template-columns: 1fr auto; row-gap: 3px; column-gap: 10px; align-items: center; text-align: left; background: color-mix(in srgb, var(--rgcard) 82%, transparent); backdrop-filter: blur(6px); border: 1px solid var(--rgline); padding: 9px 13px; cursor: pointer; box-shadow: 0 4px 24px #0008; color: var(--rgink); transition: border-color 0.15s }
+.rg-topicsel-btn:hover, .rg-topicsel-btn[aria-expanded="true"] { border-color: var(--rggold) }
+.rg-topicsel-btn:focus-visible { outline: 2px solid var(--rggold); outline-offset: 1px }
+.rg-topicsel-label { grid-column: 1; font: 700 9.5px/1 inherit; letter-spacing: 1.6px; text-transform: uppercase; color: var(--rggold); opacity: 0.9 }
+.rg-topicsel-cur { grid-column: 1; display: flex; align-items: center; gap: 8px; font: 700 13.5px/1.25 inherit }
+.rg-topicsel-arrow { grid-column: 2; grid-row: 1 / span 2; color: var(--rggold); font-size: 12px; transition: transform 0.15s }
+.rg-topicsel-arrow.up { transform: rotate(180deg) }
+.rg-topicsel-dot { width: 8px; height: 8px; border-radius: 50%; flex: none }
+.rg-topicsel-menu { list-style: none; margin: 6px 0 0; padding: 5px; position: absolute; left: 0; right: 0; top: 100%; background: color-mix(in srgb, var(--rgmodal, var(--rgcard)) 94%, transparent); backdrop-filter: blur(10px); border: 1px solid var(--rggold); box-shadow: 0 14px 36px #000c }
+.rg-topicsel-menu li button { width: 100%; display: flex; align-items: center; gap: 9px; text-align: left; padding: 10px 11px; background: none; border: 0; color: var(--rgtext2); font: 600 13px/1.3 inherit; cursor: pointer }
+.rg-topicsel-menu li button:hover { background: color-mix(in srgb, var(--rggold) 13%, transparent); color: var(--rgink) }
+.rg-topicsel-menu li button.on { color: var(--rgink); background: var(--rgsel, #ffffff12); box-shadow: inset 2px 0 0 var(--rggold) }
+.rg-topicsel-name { flex: 1 }
+.rg-topicsel-future { font: 700 10px/1 inherit; font-style: normal; color: var(--rggold); border: 1px solid; padding: 3px 7px; border-radius: 999px; white-space: nowrap }
+@media (max-width: 860px) { .rg-topicsel { position: relative; right: auto; top: auto; width: 100%; margin-bottom: 12px } .rg-topicsel-btn { backdrop-filter: none; background: var(--rgcard) } }
 .rg-diff-hex { display: inline-grid; place-items: center; width: 30px; height: 34px; margin-right: 7px; flex: none; font: 800 15px/1 monospace; font-style: normal; color: var(--rggold); background: #0d0609; border: 1px solid var(--rggold); clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%) }
 @media (max-width: 860px) { .rg-diffbar { position: static; width: 100%; margin-top: 12px; backdrop-filter: none; background: var(--rgcard) } }
 .rg-diffbar-label { flex: none; white-space: nowrap; font: 800 12px/1 monospace; letter-spacing: 1px; color: var(--rggold) }
 .rg-diff-chip { flex: none; white-space: nowrap; border: 1px solid var(--rgline); background: 0 0; color: var(--rgink); padding: 4px 10px; font: 700 12.5px/1 inherit; cursor: pointer; border-radius: 999px }
 .rg-diff-chip.on { background: var(--rggold); color: #1a0d10; border-color: var(--rggold) }
-.rg-diffbar input[type="range"] { flex: 1 1 120px; accent-color: var(--rgcrim); min-width: 90px }
+/* 난이도 슬라이더 — 네이티브 흰 트랙 대신 테마색 트랙/썸 (사용자 요청 2026-07-19) */
+.rg-diffbar input[type="range"] { flex: 1 1 120px; accent-color: var(--rgcrim); min-width: 90px;
+  appearance: none; -webkit-appearance: none; height: 5px; border-radius: 999px;
+  background: color-mix(in srgb, var(--rgcrim) 28%, var(--rgdeep)); cursor: pointer }
+.rg-diffbar input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none;
+  width: 15px; height: 15px; border-radius: 50%; background: var(--rgcrim);
+  border: 2px solid color-mix(in srgb, var(--rgink) 85%, transparent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--rgcrim) 65%, transparent) }
+.rg-diffbar input[type="range"]::-moz-range-thumb { width: 13px; height: 13px; border-radius: 50%;
+  background: var(--rgcrim); border: 2px solid color-mix(in srgb, var(--rgink) 85%, transparent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--rgcrim) 65%, transparent) }
+.rg-diffbar input[type="range"]::-moz-range-track { height: 5px; border-radius: 999px;
+  background: color-mix(in srgb, var(--rgcrim) 28%, var(--rgdeep)) }
+.rg-diffbar input[type="range"]:focus-visible { outline: 2px solid var(--rggold); outline-offset: 3px }
 .rg-diff-cur { flex: none; white-space: nowrap; display: flex; align-items: center; font: 800 13px/1.2 inherit; color: var(--rgmut) }
 .rg-diff-cur.on { color: var(--rgcrim) }
 
@@ -6111,6 +6152,9 @@ html.dark.rg-theme.rg6 .site-header { background: #0a1413e6; border-bottom-color
 .rg-nodetype { border: 1px solid var(--rgline); background: var(--rgdeep); padding: 10px 12px }
 .rg-nodetype h4 { margin: 0 0 4px; font-size: 13.5px; color: var(--rggold) }
 .rg-nodetype p { margin: 0 0 4px; font-size: 13px; line-height: 1.55; color: var(--rgtext2) }
+/* 기능 설명(func) — 플레이버 텍스트보다 위, 본문색으로 또렷하게 */
+.rg-nodetype .rg-nodetype-func { color: var(--rgink); font-size: 13.5px }
+.rg-nodetype .rg-nodetype-func + p { color: var(--rgmut, var(--rgtext2)); font-size: 12.5px; font-style: italic }
 .rg-nodetype.wide { grid-column: 1 / -1 }
 .rg-nodetype .rg-stage-cards { margin-top: 8px }
 .rg-stagecard { border: 1px solid var(--rgline); background: var(--rgdeep); color: var(--rgink); padding: 0 0 6px; cursor: pointer; font: inherit; transition: 0.12s; text-align: center; overflow: hidden }

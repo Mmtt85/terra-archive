@@ -844,6 +844,15 @@ function DigestView({ onOpen, includeFuture, group, onGroup }: { onOpen: (event:
   const [searchOpen, setSearchOpen] = useState(false); // 검색창 클릭 시 전체 이벤트 목록 드롭다운
   const searchRef = useRef<HTMLDivElement>(null);
 
+  // #theme-<arc> 딥링크 진입 시 해당 테마 섹션으로 스크롤 (테마별 뷰가 렌더된 뒤)
+  useEffect(() => {
+    if (group !== "theme") return;
+    const m = decodeURIComponent(window.location.hash).match(/^#theme-(.+)$/);
+    if (!m) return;
+    const el = document.getElementById(`theme-${m[1]}`);
+    if (el) requestAnimationFrame(() => el.scrollIntoView({ block: "start" }));
+  }, [group]);
+
   // 드롭다운: 바깥 클릭·Esc로 닫기
   useEffect(() => {
     if (!searchOpen) return;
@@ -979,12 +988,28 @@ function DigestView({ onOpen, includeFuture, group, onGroup }: { onOpen: (event:
         <p className="recruit-empty">{t("조건에 맞는 이벤트가 없어요.")}</p>
       ) : (
         <div className="digest-groups">
-          {groups.map((g) => (
-            <section key={g.key} className="digest-group">
-              <h3 style={g.color ? { borderColor: g.color, color: g.color } : undefined}>{g.label} <em>{g.items.length}</em></h3>
-              <div className="story-grid">{g.items.map(renderCard)}</div>
-            </section>
-          ))}
+          {groups.map((g) => {
+            // 테마 그룹은 이름 클릭으로 #theme-<arc> 딥링크를 남긴다 (URL 복붙 공유용)
+            const linkable = group === "theme" && g.key !== "__none";
+            return (
+              <section key={g.key} id={linkable ? `theme-${g.key}` : undefined} className="digest-group">
+                <h3 style={g.color ? { borderColor: g.color, color: g.color } : undefined}>
+                  {linkable ? (
+                    <button type="button" className="digest-group-link" title={t("클릭하면 주소가 이 테마의 공유 링크로 바뀝니다")}
+                      onClick={() => {
+                        history.pushState(null, "", `#theme-${g.key}`);
+                        document.getElementById(`theme-${g.key}`)?.scrollIntoView({ block: "start", behavior: "smooth" });
+                      }}>
+                      {g.label} <em>{g.items.length}</em><span className="digest-group-anchor" aria-hidden>#</span>
+                    </button>
+                  ) : (
+                    <>{g.label} <em>{g.items.length}</em></>
+                  )}
+                </h3>
+                <div className="story-grid">{g.items.map(renderCard)}</div>
+              </section>
+            );
+          })}
         </div>
       )}
     </>
@@ -1006,7 +1031,7 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
       setSelected(detail);
       if (detail) return;                              // 상세 진입 시 뷰/그룹 상태는 유지
       if (h === "#chronicle") setView("chronicle");
-      else if (h === "#theme") { setView("digest"); setGroup("theme"); }
+      else if (h === "#theme" || h.startsWith("#theme-")) { setView("digest"); setGroup("theme"); }
       else if (h === "#kind" || h === "#story" || h === "") { setView("digest"); setGroup("kind"); }
     };
     apply();
