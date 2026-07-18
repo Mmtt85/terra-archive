@@ -725,9 +725,6 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
     return "";
   };
 
-  // 모달을 열 때 히스토리를 쌓았는지 여부 — 뒤로가기(popstate)가 모달만 닫도록
-  const pushedModalRef = useRef(false);
-
   // 루트 레이아웃은 lang="ko" 고정이라, 로케일 라우트에서는 클라이언트에서 맞춘다
   useEffect(() => {
     document.documentElement.lang = locale;
@@ -763,8 +760,7 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
         if (operator) setSelected(operator);
         return;
       }
-      // op 해시가 아니면 열려 있던 모달을 닫는다 (뒤로가기로 닫기)
-      pushedModalRef.current = false;
+      // op 해시가 아니면 열려 있던 모달을 닫는다 (URL 직접 편집·딥링크 이탈)
       setSelected(null);
     };
     window.addEventListener("hashchange", syncFromUrl);
@@ -855,27 +851,26 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
                 : t("테라 아카이브 | 명일방주(Arknights) KR 팬사이트");
   }, [tab, selected, t]);
 
+  // 오퍼 모달은 히스토리 엔트리를 쌓지 않고 해시만 교체한다(공유용 딥링크).
+  // 예전엔 열 때 pushState, 닫을 때 history.back()으로 URL을 복원했는데, 인앱 브라우저
+  // (카톡·네이버 카페 웹뷰 — bfcache 미지원)에서 back()이 문서를 통째로 리로드시켜
+  // 목록·필터·스크롤이 전부 초기화되는 버그가 있었다 (사용자 리포트 2026-07-18).
+  // replaceState는 네비게이션이 아니라 리로드가 원천적으로 발생하지 않는다.
   const openOperator = (operator: Operator) => {
     setSelected(operator);
-    history.pushState(null, "", `${tabPath(tab)}#op-${operator.id}`);
-    pushedModalRef.current = true;
+    history.replaceState(null, "", `${tabPath(tab)}#op-${operator.id}`);
   };
   const closeOperator = () => {
-    if (pushedModalRef.current) {
-      pushedModalRef.current = false;
-      history.back(); // popstate → syncFromUrl이 모달을 닫고 이전 URL 복원
-      return;
-    }
     setSelected(null);
-    history.replaceState(null, "", tabPath(tab));
+    if (decodeURIComponent(window.location.hash).startsWith("#op-")) {
+      history.replaceState(null, "", tabPath(tab));
+    }
   };
-  // 플래너 등 다른 탭 위에서 모달만 띄울 때 — URL은 그대로 두고 히스토리만 한 칸 쌓는다
+  // 플래너 등 다른 탭 위에서 모달만 띄울 때 — URL(경로)은 그대로 둔다.
   const showOperatorById = (id: string) => {
     const operator = operators.find((candidate) => candidate.id === id);
     if (!operator) return;
     setSelected(operator);
-    history.pushState(null, "", window.location.href);
-    pushedModalRef.current = true;
   };
 
   const TAB_LABEL: Record<Tab, string> = {
