@@ -5794,8 +5794,8 @@ html.dark.rg-theme.rg6 .site-header { background: #0a1413e6; border-bottom-color
 .rg-filterbar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 14px }
 .rg-filterbar input[type="search"] { border: 1px solid var(--rgline); background: var(--rgdeep); color: var(--rgink); padding: 7px 11px; font: 500 13px/1 inherit; min-width: 180px }
 .rg-filterbar input[type="search"]::placeholder { color: var(--rgmut) }
-/* 노드 이름 검색란은 안내 문구가 길어 1.5배 폭으로 (사용자 요청 2026-07-18) */
-.rg-map-search input[type="search"] { min-width: 270px }
+/* 노드 이름 검색란은 안내 문구가 길어 기본의 2배 폭으로 (사용자 요청 2026-07-18) */
+.rg-map-search input[type="search"] { min-width: 360px }
 .rg-filterbar button { border: 1px solid var(--rgline); background: var(--rgcard); color: var(--rgink); padding: 6px 12px; font: 700 12px/1 inherit; cursor: pointer }
 .rg-filterbar button.on { background: var(--rgcrim); color: #fff; border-color: var(--rgcrim) }
 .rg-count { font: 800 11.5px/1 monospace; color: var(--rgmut); margin-left: 4px }
