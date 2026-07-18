@@ -515,28 +515,34 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   // 햄버거 '통합전략 가이드' 부메뉴가 URL(?topic=isN)을 바꿔 트리거한다. 토픽이 실제로
   // 바뀌면 뷰·난이도·검색·모달을 초기화한다(옛 switchTopic이 하던 리셋).
   const topicRef = useRef(topic);
+  // 토픽 전환 + 뷰/난이도/검색/모달 리셋 (옛 switchTopic이 하던 일). 같은 토픽이면 무시.
+  const applyTopic = (next: string) => {
+    if (topicRef.current === next) return;
+    topicRef.current = next;
+    setTopic(next);
+    setView("map");
+    setGrade(0);
+    setZoneOpen(null); setStageOpen(null); setEnemyOpen(null); setEncOpen(null); setRelicOpen(null);
+    setEnemyQ(""); setEnemyRank(""); setRelicQ(""); setMapQ(""); setArcTab("relic");
+  };
+  const applyTopicFromUrl = () => applyTopic(topicFromUrl());
   useEffect(() => {
-    const onPop = () => {
-      const next = topicFromUrl();
-      if (topicRef.current === next) return;
-      topicRef.current = next;
-      setTopic(next);
-      setView("map");
-      setGrade(0);
-      setZoneOpen(null); setStageOpen(null); setEnemyOpen(null); setEncOpen(null); setRelicOpen(null);
-      setEnemyQ(""); setEnemyRank(""); setRelicQ(""); setMapQ(""); setArcTab("relic");
-    };
-    window.addEventListener("popstate", onPop);
-    return () => window.removeEventListener("popstate", onPop);
+    // popstate=브라우저 뒤로/앞으로, ta:rogue-topic=햄버거 부메뉴에서 온 커스텀 이벤트.
+    // ⚠ 예전엔 부메뉴/드롭다운이 합성 popstate를 쐈는데, vinext 라우터가 그걸 내비게이션으로
+    // 보고 rogue RSC를 재요청했다 → 커스텀 이벤트로 바꿔 프레임워크가 무시하게 한다.
+    const onNav = () => applyTopicFromUrl();
+    window.addEventListener("popstate", onNav);
+    window.addEventListener("ta:rogue-topic", onNav);
+    return () => { window.removeEventListener("popstate", onNav); window.removeEventListener("ta:rogue-topic", onNav); };
   }, []);
 
-  // 헤더 테마 드롭다운 — URL(?topic=isN)을 바꾸고 popstate를 쏴 위 onPop이 토픽 전환·리셋을 처리.
+  // 헤더 테마 드롭다운 — URL(?topic=isN)만 바꾸고 직접 토픽 전환(합성 popstate 안 씀).
   const goTopic = (id: string) => {
     if (id === topic) return;
     const url = new URL(window.location.href);
     url.searchParams.set("topic", slugOf(id));
     history.pushState(null, "", url.pathname + url.search + url.hash);
-    window.dispatchEvent(new PopStateEvent("popstate"));
+    applyTopic(id);
   };
 
   // 해시 딥링크: #rg-<view>

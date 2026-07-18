@@ -895,8 +895,9 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
     history.pushState(null, "", tabPath(next));
   };
   // 햄버거의 '통합전략 가이드' 부메뉴에서 특정 테마로 바로 진입 — /rogue?topic=isN 으로 이동.
-  // 이미 rogue 탭이면 popstate를 쏴 RogueGuide가 토픽을 동기화하게 하고, 다른 탭이면
-  // 탭 전환 시 RogueGuide가 마운트되며 URL의 topic을 읽는다.
+  // 이미 rogue 탭이면 커스텀 이벤트(ta:rogue-topic)로 RogueGuide가 토픽을 동기화하고, 다른
+  // 탭이면 탭 전환 시 RogueGuide가 마운트되며 URL의 topic을 읽는다.
+  // ⚠ 합성 popstate를 쓰지 않는다 — vinext 라우터가 그걸 내비게이션으로 보고 RSC를 재요청한다.
   const switchRogueTopic = (topicId: string) => {
     setNavOpen(false);
     const slug = rogueSlugOf(topicId);
@@ -904,7 +905,7 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
     setTab("rogue");
     setRogueSlug(slug);
     history.pushState(null, "", `${tabPath("rogue")}?topic=${slug}`);
-    window.dispatchEvent(new PopStateEvent("popstate"));
+    window.dispatchEvent(new CustomEvent("ta:rogue-topic"));
   };
   const [sortKey, setSortKey] = useState("기본");
   const [sortAsc, setSortAsc] = useState(true);
