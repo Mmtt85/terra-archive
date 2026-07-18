@@ -300,10 +300,22 @@ function ScriptReader({ script, error, entities, opIndex, onShowOperator }: {
       if (ln.n) {
         const showN = ln.n !== prevN;
         prevN = ln.n;
-        const face = opIndex?.[ln.n]
-          ? `/avatars/${opIndex[ln.n].op}.webp`
-          : entities.find((e) => e.name === ln.n)?.img;
-        return { ...ln, showN, face } as ScriptLine & { showN: boolean; face?: string };
+        // 화자 얼굴·오퍼 연결: 오퍼명 직매칭 → 요약 엔티티(별칭 포함 — '숴'는 총웨)의
+        // 스탠딩 CG/연결 오퍼 아바타 순으로 폴백 (사용자 요청 2026-07-18)
+        let face: string | undefined;
+        let opId: string | undefined;
+        const oi = opIndex?.[ln.n];
+        if (oi) {
+          face = `/avatars/${oi.op}.webp`;
+          opId = oi.op;
+        } else {
+          const ent = entities.find((e) => e.name === ln.n || e.alias?.includes(ln.n!));
+          if (ent) {
+            face = ent.img ?? (ent.op ? `/avatars/${ent.op}.webp` : undefined);
+            opId = ent.op;
+          }
+        }
+        return { ...ln, showN, face, opId } as ScriptLine & { showN: boolean; face?: string; opId?: string };
       }
       // 지문·컷씬 등이 끼면 다음 대사엔 이름을 다시 보여준다
       prevN = undefined;
@@ -367,9 +379,8 @@ function ScriptReader({ script, error, entities, opIndex, onShowOperator }: {
           if (ln.loc) return <div key={i} className="sc-loc" data-idx={i}>{ln.loc}</div>;
           if (ln.st) return <p key={i} className="sc-st" data-idx={i}>{ln.st}</p>;
           if (ln.n) {
-            const { showN, face } = ln as ScriptLine & { showN?: boolean; face?: string };
-            // 화자가 오퍼레이터면 이름·썸네일 클릭 → 오퍼 상세 모달 (사용자 요청 2026-07-18)
-            const opId = opIndex?.[ln.n]?.op;
+            const { showN, face, opId } = ln as ScriptLine & { showN?: boolean; face?: string; opId?: string };
+            // 화자가 오퍼레이터(별칭 연결 포함)면 이름·썸네일 클릭 → 오퍼 상세 모달
             const clickable = Boolean(opId && onShowOperator);
             return (
               <p key={i} className={`sc-line${showN === false ? " cont" : ""}`} data-idx={i}>
