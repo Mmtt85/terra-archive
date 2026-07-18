@@ -36,8 +36,8 @@ type RogueData = {
   scraps?: Scrap[]; legacies?: Simple[]; buoys?: Simple[];
   weathers?: Weather[]; subweathers?: SubWeather[];
   variations: Variation[]; endings: Ending[]; encounters: Encounter[];
-  // 토픽 고유 시스템 갤러리 (미즈키 거부반응·사미 붕괴/토템·살카즈 파편/재앙·쉐이 주화/분노)
-  mechanics?: { label: string; items: { id: string; name: string; desc: string; img?: boolean }[] }[];
+  // 토픽 고유 시스템 갤러리 (거부반응·암호판·파편/재앙·주화/분노 등). 첫 항목=시그니처(최상위 탭).
+  mechanics?: { label: string; items: { id: string; name: string; usage?: string | null; desc?: string | null; img?: boolean }[] }[];
 };
 
 const rogue1 = rogue1Data as unknown as RogueData;
@@ -51,14 +51,16 @@ function Nm({ name, cn }: { name: string; cn?: string }) {
   return cn ? <><span lang="zh">{cn}</span><span className="rg-sub">{name}</span></> : <>{name}</>;
 }
 
-type View = "map" | "enemy" | "archive" | "hallu" | "diff" | "ending";
-// hallu 자리의 토픽별 라벨 — 없는 토픽(IS3~5)은 탭 자체를 숨긴다
+// 모든 록라 공통 6탭. 테마별 고유 시스템(환각/메아리/환경·거부반응·암호판·붕괴·파편·주화 등)은
+// 전부 전시관(archive) 안 서브탭으로 들어간다 (사용자 확정 2026-07-18).
+type View = "map" | "enemy" | "relic" | "archive" | "diff" | "ending";
+// 환각 계열 서브탭의 토픽별 라벨 (전시관 안에서 사용)
 const HALLU_LABEL: Record<string, string> = { rogue_1: "환각", rogue_2: "메아리", rogue_6: "환경" };
-const viewsFor = (topic: string): { id: View; label: string }[] => [
+const viewsFor = (): { id: View; label: string }[] => [
   { id: "map", label: "맵·노드" },
   { id: "enemy", label: "적 도감" },
+  { id: "relic", label: "소장품" },
   { id: "archive", label: "전시관" },
-  ...(HALLU_LABEL[topic] ? [{ id: "hallu" as View, label: HALLU_LABEL[topic] }] : []),
   { id: "diff", label: "난이도" },
   { id: "ending", label: "엔딩" },
 ];
@@ -511,7 +513,20 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   const [mapQ, setMapQ] = useState(""); // 맵·노드 이름 검색 (작전·조우 전투·우연한 만남 전부)
   // 표준 카테고리 + 토픽 고유 시스템(mechanics)의 라벨을 탭 id로 쓰므로 string
   const [arcTab, setArcTab] = useState<string>("relic");
-  const VIEWS = viewsFor(topic);
+  const VIEWS = viewsFor();
+  // 전시관 서브탭 [id, 라벨] 목록 — 환각계열 + 토픽 고유 시스템 전부 + 표준(도구·스쿼드 등).
+  // 소장품(유물)은 최상위 탭으로 승격돼 여기서 제외. arcTab이 무효면 첫 탭으로 폴백.
+  const hasVariations = (data.variations?.length ?? 0) > 0 || (data.weathers?.length ?? 0) > 0;
+  const archiveTabs: [string, string][] = topic === "rogue_6"
+    ? [...(hasVariations ? [["hallu", HALLU_LABEL[topic]] as [string, string]] : []),
+       ["scrap", "부품 (零件)"], ["tool", "도구"], ["band", "스쿼드"], ["legacy", "유산"]]
+    : [...(hasVariations && HALLU_LABEL[topic] ? [["hallu", HALLU_LABEL[topic]] as [string, string]] : []),
+       ...((data.capsules?.length ?? 0) > 0 ? [["capsule", "레퍼토리 (음반)"] as [string, string]] : []),
+       ...(data.mechanics ?? []).map((m) => [m.label, m.label] as [string, string]),
+       ["tool", "무대 도구"],
+       ...((data.exploreTools?.length ?? 0) > 0 ? [["explore", "탐사 도구"] as [string, string]] : []),
+       ["band", "스쿼드"]];
+  const activeArc = archiveTabs.some(([id]) => id === arcTab) ? arcTab : (archiveTabs[0]?.[0] ?? "tool");
 
   // 뒤로/앞으로·햄버거 부메뉴(popstate) → 토픽 동기화. 토픽 전환은 이제 헤더 버튼이 아니라
   // 햄버거 '통합전략 가이드' 부메뉴가 URL(?topic=isN)을 바꿔 트리거한다. 토픽이 실제로
@@ -551,7 +566,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   useEffect(() => {
     const fromHash = () => {
       const m = window.location.hash.match(/^#rg-(\w+)/);
-      if (m && viewsFor("rogue_1").some((v) => v.id === m[1])) setView(m[1] as View);
+      if (m && viewsFor().some((v) => v.id === m[1])) setView(m[1] as View);
     };
     fromHash();
     window.addEventListener("hashchange", fromHash);
@@ -983,55 +998,48 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
         </div>
       )}
 
+      {/* 소장품(유물) — 전시관에서 최상위 탭으로 승격 (사용자 요청 2026-07-18) */}
+      {view === "relic" && (
+        <div className="rg-archive">
+          <div className="rg-filterbar">
+            <input type="search" value={relicQ} onChange={(e) => setRelicQ(e.target.value)}
+              placeholder={t("유물 검색")} aria-label={t("유물 검색")} />
+            <span className="rg-count">{relics.length}</span>
+          </div>
+          <div className="rg-relic-grid">
+            {relics.map((r) => (
+              <article key={r.id} className="rg-relic">
+                <header>
+                  {r.img && <img className="rg-relic-icon" src={`/rogue/relic/${r.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
+                  {r.order && <span className="rg-relic-no">{r.order}</span>}
+                  <h4><Nm name={r.name} cn={r.cn} /></h4>
+                </header>
+                {r.usage && <p className="rg-relic-usage">{r.usage}</p>}
+                {r.desc && <p className="rg-relic-desc">{r.desc}</p>}
+              </article>
+            ))}
+          </div>
+        </div>
+      )}
+
       {view === "archive" && (
         <div className="rg-archive">
           <div className="rg-filterbar">
-            {([
-              ["relic", "소장품 (유물)"] as const,
-              ...(topic === "rogue_6"
-                ? [["scrap", "부품 (零件)"], ["tool", "도구"], ["band", "스쿼드"], ["legacy", "유산"]] as const
-                : [
-                    ...((data.capsules?.length ?? 0) > 0 ? [["capsule", "레퍼토리 (음반)"]] as const : []),
-                    // 토픽 고유 시스템(토템·주화·붕괴 등)을 소장품 바로 다음에 배치 (사용자 요청 — 전시관 탭 레벨로 승격)
-                    ...(data.mechanics ?? []).map((m) => [m.label, m.label] as const),
-                    ["tool", "무대 도구"] as const,
-                    ...((data.exploreTools?.length ?? 0) > 0 ? [["explore", "탐사 도구"]] as const : []),
-                    ["band", "스쿼드"] as const,
-                  ]),
-            ]).map(([id, label]) => (
-              <button key={id} type="button" className={arcTab === id ? "on" : ""} onClick={() => setArcTab(id)}>{t(label)}</button>
+            {archiveTabs.map(([id, label]) => (
+              <button key={id} type="button" className={activeArc === id ? "on" : ""} onClick={() => setArcTab(id)}>{t(label)}</button>
             ))}
-            {arcTab === "relic" && (
-              <input type="search" value={relicQ} onChange={(e) => setRelicQ(e.target.value)}
-                placeholder={t("유물 검색")} aria-label={t("유물 검색")} />
-            )}
             <span className="rg-count">
-              {arcTab === "relic" ? relics.length
-                : arcTab === "capsule" ? data.capsules?.length ?? 0
-                : arcTab === "scrap" ? data.scraps?.length ?? 0
-                : arcTab === "legacy" ? data.legacies?.length ?? 0
-                : arcTab === "explore" ? data.exploreTools?.length ?? 0
-                : arcTab === "tool" ? data.tools.length
-                : arcTab === "band" ? data.bands.length
-                : (data.mechanics ?? []).find((m) => m.label === arcTab)?.items.length ?? 0}
+              {activeArc === "hallu" ? (data.variations?.length ?? data.weathers?.length ?? 0)
+                : activeArc === "capsule" ? data.capsules?.length ?? 0
+                : activeArc === "scrap" ? data.scraps?.length ?? 0
+                : activeArc === "legacy" ? data.legacies?.length ?? 0
+                : activeArc === "explore" ? data.exploreTools?.length ?? 0
+                : activeArc === "tool" ? data.tools.length
+                : activeArc === "band" ? data.bands.length
+                : (data.mechanics ?? []).find((m) => m.label === activeArc)?.items.length ?? 0}
             </span>
           </div>
-          {arcTab === "relic" && (
-            <div className="rg-relic-grid">
-              {relics.map((r) => (
-                <article key={r.id} className="rg-relic">
-                  <header>
-                    {r.img && <img className="rg-relic-icon" src={`/rogue/relic/${r.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
-                    {r.order && <span className="rg-relic-no">{r.order}</span>}
-                    <h4><Nm name={r.name} cn={r.cn} /></h4>
-                  </header>
-                  {r.usage && <p className="rg-relic-usage">{r.usage}</p>}
-                  {r.desc && <p className="rg-relic-desc">{r.desc}</p>}
-                </article>
-              ))}
-            </div>
-          )}
-          {arcTab === "scrap" && (
+          {activeArc === "scrap" && (
             <div className="rg-scrap-view">
               {["GOODS", "MOVE", "PASSIVE"].map((st) => {
                 const items = (data.scraps ?? []).filter((s) => s.type === st);
@@ -1058,7 +1066,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
               })}
             </div>
           )}
-          {arcTab === "legacy" && (
+          {activeArc === "legacy" && (
             <div className="rg-relic-grid">
               {(data.legacies ?? []).map((c) => (
                 <article key={c.id} className="rg-relic">
@@ -1072,7 +1080,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
               ))}
             </div>
           )}
-          {arcTab === "capsule" && (
+          {activeArc === "capsule" && (
             <div className="rg-capsule-grid">
               {(data.capsules ?? []).map((c) => (
                 <article key={c.id} className="rg-relic capsule">
@@ -1084,7 +1092,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
               ))}
             </div>
           )}
-          {arcTab === "tool" && (
+          {activeArc === "tool" && (
             <div className="rg-relic-grid">
               {data.tools.map((c) => (
                 <article key={c.id} className="rg-relic">
@@ -1098,7 +1106,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
               ))}
             </div>
           )}
-          {arcTab === "explore" && (
+          {activeArc === "explore" && (
             <div className="rg-relic-grid">
               {(data.exploreTools ?? []).map((c) => (
                 <article key={c.id} className="rg-relic">
@@ -1112,7 +1120,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
               ))}
             </div>
           )}
-          {arcTab === "band" && (
+          {activeArc === "band" && (
             <div className="rg-relic-grid">
               {data.bands.map((c) => (
                 <article key={c.id} className="rg-relic">
@@ -1126,8 +1134,8 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
               ))}
             </div>
           )}
-          {/* 토픽 고유 시스템 갤러리 (주화·토템·파편·재앙·거부반응·붕괴 등) */}
-          {(data.mechanics ?? []).map((m) => m.label === arcTab && (
+          {/* 토픽 고유 시스템 갤러리 (거부반응·암호판·붕괴·파편·재앙·주화·분노 등) — usage(효과)+desc(플레이버) */}
+          {(data.mechanics ?? []).map((m) => m.label === activeArc && (
             <div key={m.label} className="rg-relic-grid">
               {m.items.map((c) => (
                 <article key={c.id} className="rg-relic">
@@ -1135,16 +1143,15 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
                     {c.img && <img className="rg-relic-icon" src={`/rogue/relic/${c.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
                     <h4>{c.name}</h4>
                   </header>
+                  {c.usage && <p className="rg-relic-usage">{c.usage}</p>}
                   {c.desc && <p className="rg-relic-desc">{c.desc}</p>}
                 </article>
               ))}
             </div>
           ))}
-        </div>
-      )}
-
-      {view === "hallu" && (topic === "rogue_1" || topic === "rogue_2") && (
-        <div className="rg-hallu">
+          {/* 환각/메아리 (IS1/IS2) — 전시관 서브탭으로 편입 */}
+          {activeArc === "hallu" && (topic === "rogue_1" || topic === "rogue_2") && (
+            <div className="rg-hallu-inner">
           <p className="rg-zone-desc">{topic === "rogue_2"
             ? t("특정 구역에 '메아리'가 나타나 해당 구역 전체에 효과를 겁니다. 좋은 효과와 나쁜 효과가 함께 붙습니다.")
             : t("난이도 1 이상에서 구역에 환각이 나타납니다. 난이도 11 이상에서는 특정 조합이 융합 환각으로 발동합니다.")}</p>
@@ -1163,8 +1170,9 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
         </div>
       )}
 
-      {view === "hallu" && topic === "rogue_6" && (
-        <div className="rg-hallu">
+          {/* 환경(실토피아/유토피아, IS6) — 전시관 서브탭으로 편입 */}
+          {activeArc === "hallu" && topic === "rogue_6" && (
+        <div className="rg-hallu-inner">
           {/* 실토피아 — 기밀 등급 2+에서 격자 지도에 생성되는 이상역. 이념(주 효과) 10종 × 강도 3단계 */}
           <h3 className="rg-env-h">{t("실토피아 · 이념")} <span className="rg-cn" lang="zh">实托邦·理念</span></h3>
           <p className="rg-zone-desc">{t("기밀 등급 2 이상에서 '주민'의 사념이 실체화된 이상역(실토피아)이 격자 지도에 생성됩니다. '이상원' 노드를 파괴하면 제거되며, 영향권의 노드에 진입하면 아래 이념 효과가 발동합니다. 강도는 난이도에 따라 초기(a)/중기(b)/말기(c)로 강화됩니다.")}</p>
@@ -1210,6 +1218,8 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
               </article>
             ))}
           </div>
+        </div>
+          )}
         </div>
       )}
 

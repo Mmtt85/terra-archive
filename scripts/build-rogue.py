@@ -158,10 +158,11 @@ def num(v):
 #   source="charbuff" → charBuffData 중 buffType이 필터에 속하는 것 (거부반응/생체변이)
 #   source="variation"→ variationData 전부 (붕괴 패러다임 — 이름이 플레이스홀더라 desc가 본체)
 MECH_GROUPS = {
-    "rogue_2": [("주사위", "item", ["DICE_TYPE"]),
-                ("거부반응", "charbuff", ["MUTATION", "EVOLUTION"])],
-    "rogue_3": [("토템", "item", ["TOTEM"]),
-                ("붕괴", "variation", None)],
+    # 첫 항목=시그니처 시스템(전시관 밖 최상위 탭으로 승격) · 나머지=전시관 안 서브탭
+    "rogue_2": [("거부반응", "charbuff", ["MUTATION", "EVOLUTION"]),
+                ("주사위", "item", ["DICE_TYPE"])],
+    "rogue_3": [("암호판", "item", ["TOTEM"]),
+                ("붕괴 패러다임", "variation", None)],
     "rogue_4": [("파편", "item", ["FRAGMENT"]),
                 ("재앙", "item", ["DISASTER", "DISASTER_TYPE", "ABSTRACT_DISASTER"])],
     "rogue_5": [("주화", "item", ["COPPER", "COPPER_BUFF"]),
@@ -449,37 +450,47 @@ def build_topic(tid="rogue_1"):
     mechanics = []
     for label, source, mfilter in MECH_GROUPS.get(tid, []):
         entries = []
+        # usage=기계적 효과, desc=플레이버 (소장품처럼 둘 다 보여준다 — 사용자 요청)
         if source == "item":
             best = {}
             for iid, it in items.items():
                 if it.get("type") not in mfilter:
                     continue
                 nm = it.get("name")
-                desc = (it.get("description") or it.get("usage") or "").strip()
-                if not nm or not desc:
+                usage = (it.get("usage") or "").strip()
+                desc = (it.get("description") or "").strip()
+                if not nm or not (usage or desc):
                     continue
-                if nm not in best or len(desc) > len(best[nm]["desc"]):
-                    best[nm] = {"id": iid, "name": nm, "desc": desc, "img": has_icon(iid)}
-            entries = list(best.values())
+                if nm not in best or len(usage) + len(desc) > best[nm]["_len"]:
+                    best[nm] = {"id": iid, "name": nm, "usage": usage or None, "desc": desc or None,
+                                "img": has_icon(iid), "_len": len(usage) + len(desc)}
+            entries = [{k: v for k, v in e.items() if k != "_len"} for e in best.values()]
         elif source == "charbuff":
+            best = {}  # 이름 기준 중복 제거 (같은 변이가 난이도 티어별로 중복 — 사용자 요청)
             for bid, bv in (r.get("charBuffData") or {}).items():
                 if bv.get("buffType") not in mfilter:
                     continue
                 nm = bv.get("outerName") or bv.get("innerName")
-                desc = (bv.get("functionDesc") or bv.get("desc") or "").strip()
-                if nm and desc:
-                    entries.append({"id": bid, "name": nm, "desc": desc, "img": has_icon(bv.get("iconId") or bid)})
+                usage = (bv.get("functionDesc") or "").strip()
+                desc = (bv.get("desc") or "").strip()
+                if not nm or not (usage or desc):
+                    continue
+                if nm not in best or len(usage) + len(desc) > best[nm]["_len"]:
+                    best[nm] = {"id": bid, "name": nm, "usage": usage or None, "desc": desc or None,
+                                "img": has_icon(bv.get("iconId") or bid), "_len": len(usage) + len(desc)}
+            entries = [{k: v for k, v in e.items() if k != "_len"} for e in best.values()]
         elif source == "variation":
             n = 0
             for vid, vv in (r.get("variationData") or {}).items():
-                desc = (vv.get("desc") or "").strip()
-                if not desc or len(desc) < 6:
+                usage = (vv.get("desc") or "").strip()
+                if not usage or len(usage) < 6:
                     continue
                 n += 1
                 nm = vv.get("outerName")
-                if not nm or nm.isdigit():   # IS3는 이름이 "1"~"8" 플레이스홀더 → 패러다임 번호로
-                    nm = f"{label} 패러다임 {n}"
-                entries.append({"id": vid, "name": nm, "desc": desc, "img": has_icon(vv.get("iconId") or vid)})
+                if not nm or nm.isdigit():   # 이름이 "1"~"8" 플레이스홀더 → 번호로 (실제 명칭은 데이터 부재)
+                    nm = f"{label} {n}"
+                entries.append({"id": vid, "name": nm, "usage": usage, "desc": None,
+                                "img": has_icon(vv.get("iconId") or vid)})
         if entries:
             mechanics.append({"label": label, "items": entries})
 
