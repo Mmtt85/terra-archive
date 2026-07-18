@@ -800,6 +800,13 @@ const D: Record<string, Pair> = {
 
   // ── 통합전략 가이드 탭 ──────────────────────────────────────────────────────
   "통합전략 가이드": ["Integrated Strategies Guide", "統合戦略ガイド"],
+  // 테마(토픽) 이름 — 공식 EN/JP 게임 데이터(roguelike_topic_table) 기준. rogue_6(침몰자의
+  // 흑류수해)은 아직 EN/JP 미출시(CN 선행)라 사전 미등록 → 한국어 폴백.
+  "팬텀 & 크림슨 솔리테어": ["Phantom & Crimson Solitaire", "ファントムと緋き貴石"],
+  "미즈키 & 카이룰라 아버": ["Mizuki & Caerula Arbor", "ミヅキと紺碧の樹"],
+  "탐험가의 은빛 서리 끝자락": ["Expeditioner's Jǫklumarkar", "探索者と銀氷の果て"],
+  "살카즈의 영겁 기담": ["Sarkaz's Furnaceside Fables", "サルカズの炉辺奇談"],
+  "쉐이의 기이한 계원": ["Sui's Garden of Grotesqueries", "歳の界園志異"],
   "통합전략 가이드 - 명일방주 통합전략 공략 | 테라 아카이브": ["Integrated Strategies Guide - Arknights IS Guide | Terra Archive", "統合戦略ガイド - アークナイツ統合戦略攻略 | テラアーカイブ"],
   "층별 노드·적 도감·유물·엔딩 조건을 난이도별로 정리": ["Floor nodes, enemy handbook, relics, and ending requirements by difficulty", "階層ノード・敵図鑑・秘宝・エンディング条件を難易度別に整理"],
   "통합전략 데이터는 현재 한국어로만 제공됩니다.": ["Integrated Strategies data is currently available in Korean only.", "統合戦略データは現在韓国語のみ提供しています。"],
