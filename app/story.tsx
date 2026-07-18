@@ -136,8 +136,12 @@ function useEntityRail(texts: string[], matchers: RegExp[]) {
   const mentions = useMemo(
     () =>
       texts.map((text) => {
-        const found: number[] = [];
-        matchers.forEach((re, index) => { if (re.test(text)) found.push(index); });
+        // 매칭된 실제 단어도 포착 — 레일 카드에 '왜 떴는지' 표시용 (사용자 요청 2026-07-18)
+        const found: { ei: number; word: string }[] = [];
+        matchers.forEach((re, index) => {
+          const m = re.exec(text);
+          if (m) found.push({ ei: index, word: m[0] });
+        });
         return found;
       }),
     [texts, matchers],
@@ -171,22 +175,22 @@ function useEntityRail(texts: string[], matchers: RegExp[]) {
 
   // 지금 화면(아래 문단 우선)에 언급된 엔티티. 한 번 뜬 카드는 그 문단이 완전히 사라질 때까지
   // 자리를 지켜, 4장 제한 때문에 밀렸다 다시 뜨는 깜빡임을 막는다. 빈 자리엔 아래쪽 새 엔티티를 채운다.
-  const [active, setActive] = useState<number[]>([]);
+  const [active, setActive] = useState<{ ei: number; word: string }[]>([]);
   useEffect(() => {
-    const ordered: number[] = [];
+    const ordered: { ei: number; word: string }[] = [];
     [...inView].sort((a, b) => b - a).forEach((blockIndex) => {
-      for (const entityIndex of mentions[blockIndex] ?? []) {
-        if (!ordered.includes(entityIndex)) ordered.push(entityIndex);
+      for (const m of mentions[blockIndex] ?? []) {
+        if (!ordered.some((o) => o.ei === m.ei)) ordered.push(m);
       }
     });
-    const present = new Set(ordered);
+    const present = new Set(ordered.map((o) => o.ei));
     setActive((prev) => {
-      const next = prev.filter((e) => present.has(e)); // 아직 보이는 카드는 순서 그대로 유지
-      for (const e of ordered) {                        // 빈 자리에만 아래쪽 새 엔티티 추가
+      const next = prev.filter((o) => present.has(o.ei)); // 아직 보이는 카드는 순서 그대로 유지
+      for (const o of ordered) {                           // 빈 자리에만 아래쪽 새 엔티티 추가
         if (next.length >= MAX_RAIL_CARDS) break;
-        if (!next.includes(e)) next.push(e);
+        if (!next.some((x) => x.ei === o.ei)) next.push(o);
       }
-      return next.length === prev.length && next.every((e, i) => e === prev[i]) ? prev : next;
+      return next.length === prev.length && next.every((o, i) => o.ei === prev[i].ei) ? prev : next;
     });
   }, [inView, mentions]);
 
@@ -195,7 +199,7 @@ function useEntityRail(texts: string[], matchers: RegExp[]) {
 
 // 참조 레일 렌더 — 요약/전문 공용 (모바일 펼침 상태 포함)
 function EntityRail({ entities, active, onShowOperator }: {
-  entities: Entity[]; active: number[]; onShowOperator?: (id: string) => void;
+  entities: Entity[]; active: { ei: number; word: string }[]; onShowOperator?: (id: string) => void;
 }) {
   const { t } = useI18n();
   const [openCard, setOpenCard] = useState<string | null>(null); // 모바일 레일에서 펼친 카드(이름)
@@ -210,7 +214,7 @@ function EntityRail({ entities, active, onShowOperator }: {
   }, [openCard]);
   return (
     <aside className="story-rail" aria-label={t("등장인물")}>
-      {active.map((entityIndex) => {
+      {active.map(({ ei: entityIndex, word }) => {
         const entity = entities[entityIndex];
         const linked = Boolean(entity.op && onShowOperator);
         // 전용 스탠딩 CG(img)가 없으면 연결된 오퍼레이터 아바타로 폴백
@@ -235,7 +239,7 @@ function EntityRail({ entities, active, onShowOperator }: {
             {imgSrc && (
               <div className={`cast-img${entity.img ? "" : " cast-avatar"}`}><img src={imgSrc} alt="" loading="lazy" decoding="async" /></div>
             )}
-            <div className="rail-card-text"><b>{entity.name}{linked && <i className="op-mark" aria-hidden>↗</i>}</b><span><span className="rail-desc-full">{entity.desc}</span><span className="rail-desc-snip">{entity.desc.slice(0, 5).trim()}…</span></span></div>
+            <div className="rail-card-text"><b>{entity.name}{linked && <i className="op-mark" aria-hidden>↗</i>}{word && <i className="rail-why" title={t("본문의 이 단어 때문에 표시됨")}>‘{word}’</i>}</b><span><span className="rail-desc-full">{entity.desc}</span><span className="rail-desc-snip">{entity.desc.slice(0, 5).trim()}…</span></span></div>
           </div>
         );
       })}

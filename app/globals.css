@@ -4768,6 +4768,14 @@ html.dark .story-card:hover .story-thumb img {
   font-size: 12.5px;
   letter-spacing: -0.3px;
 }
+/* 레일 카드가 본문의 어느 단어 때문에 떴는지 표시 (사용자 요청 2026-07-18) */
+.rail-why {
+  font-style: normal;
+  font-weight: 600;
+  font-size: 10.5px;
+  color: var(--muted);
+  margin-left: 6px;
+}
 .rail-card-text span {
   font: 600 11px/1.5 monospace;
   color: var(--muted);
