@@ -3,7 +3,7 @@
 // 3개 탭(백과사전·플래너·공채)의 공용 루트. 로케일별 라우트(/ /en /ja)가
 // home-ko/en/ja.tsx 래퍼로 해당 언어의 operators 데이터를 정적 import해 넘긴다 —
 // 런타임 언어 전환은 전체 내비게이션이라 이 컴포넌트 안에서 로케일은 불변이다.
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import broadcastsData from "./data/broadcasts.json";
 import storyEventsData from "./data/stories.json";
@@ -524,6 +524,31 @@ function LanguageSwitcher() {
   );
 }
 
+// ── 다크모드 토글 — html.dark 클래스 + localStorage(ta-theme). 첫 페인트 적용은
+// layout.tsx 인라인 스크립트가 담당하므로 여기선 현재 상태 구독·전환만 한다.
+// useSyncExternalStore: 서버 스냅샷 false → 하이드레이션 일치, 클라에선 클래스 관찰.
+function subscribeThemeClass(cb: () => void) {
+  const mo = new MutationObserver(cb);
+  mo.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+  return () => mo.disconnect();
+}
+function ThemeToggle() {
+  const { t } = useI18n();
+  const dark = useSyncExternalStore(subscribeThemeClass,
+    () => document.documentElement.classList.contains("dark"), () => false);
+  const toggle = () => {
+    const next = !document.documentElement.classList.contains("dark");
+    document.documentElement.classList.toggle("dark", next);
+    try { localStorage.setItem("ta-theme", next ? "dark" : "light"); } catch { /* ignore */ }
+  };
+  return (
+    <button type="button" className="theme-toggle" onClick={toggle}
+      aria-pressed={dark} aria-label={t("다크 모드 전환")} title={t("다크 모드 전환")}>
+      <span aria-hidden>{dark ? "☀" : "☾"}</span>
+    </button>
+  );
+}
+
 type Nickname = { name: string; votes: number };
 
 // 별명은 제보 3회 이상 쌓여야 노출·검색에 반영된다 (스팸·오타 필터)
@@ -1029,6 +1054,7 @@ function HomeInner({ operators, extra, initialTab }: { operators: Operator[]; ex
             <button className={`tab-about${tab === "about" ? " selected" : ""}`} onClick={() => switchTab("about")}><span className="tab-icon" aria-hidden>ⓘ</span>{t("소개")}</button>
           </nav>
         </div>
+        <ThemeToggle />
         <LanguageSwitcher />
       </header>
 

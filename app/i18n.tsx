@@ -112,6 +112,7 @@ const D: Record<string, Pair> = {
   "인프라 자동편성기": ["Base Auto-Planner", "基地自動編成"],
   "공채 도우미": ["Recruit Helper", "公開求人ヘルパー"],
   "언어 선택": ["Language", "言語選択"],
+  "다크 모드 전환": ["Toggle dark mode", "ダークモード切替"],
   "닫기": ["Close", "閉じる"],
   "홈": ["Home", "ホーム"],
 

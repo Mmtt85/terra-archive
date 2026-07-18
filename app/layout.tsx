@@ -56,6 +56,13 @@ export default function RootLayout({
             __html: `try{var h=location.hash;var r=h==='#infra'?'infra':h==='#recruit'?'recruit':h==='#farm'?'farm':h.indexOf('#story')===0?'story':'';if(r)document.documentElement.setAttribute('data-route',r);}catch(e){}`,
           }}
         />
+        {/* 다크모드 — 저장값(ta-theme) 우선, 없으면 OS 설정. 첫 페인트 전에 html.dark를
+            부여해 라이트→다크 플래시를 막는다. 토글은 헤더 버튼(home.tsx). */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var t=localStorage.getItem('ta-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark');}catch(e){}`,
+          }}
+        />
         {children}
         {/* Cloudflare Web Analytics — 정본 도메인에서만 집계한다. localhost·프리뷰
             (해시.pages.dev)·헤드리스 테스트에서 beacon이 프로드 토큰으로 조회수를
