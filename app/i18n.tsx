@@ -812,6 +812,7 @@ const D: Record<string, Pair> = {
   ],
   "선택지": ["Choice", "選択肢"],
   "분기": ["Branch", "分岐"],
+  "크게 보기": ["View full size", "拡大表示"],
   "이전 에피소드": ["Previous episode", "前のエピソード"],
   "다음 에피소드": ["Next episode", "次のエピソード"],
   "에피소드": ["Episodes", "エピソード"],

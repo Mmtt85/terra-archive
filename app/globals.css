@@ -4574,6 +4574,10 @@ html.dark .story-card:hover .story-thumb img {
   grid-template-columns: 128px 1fr;
   gap: 12px;
 }
+/* 대사 본문은 bolder — 지문(이탤릭·회색)과 밀도 대비 (사용자 확정 2026-07-18) */
+.sc-line > span {
+  font-weight: bolder;
+}
 .sc-name {
   color: #8a6d3b;
   font-weight: 900;
@@ -4591,9 +4595,22 @@ html.dark .story-card:hover .story-thumb img {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  object-fit: cover;
   border: 1px solid var(--line);
   flex: none;
+  background: var(--bg-soft);
+  overflow: hidden;
+  display: block;
+}
+.sc-face img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+/* 스탠딩 스프라이트 — 전신 이미지라 머리 부분을 확대해서 보여준다 */
+.sc-face.sprite img {
+  transform: scale(2.2);
+  transform-origin: 50% 16%;
 }
 /* 오퍼레이터 화자 — 클릭하면 오퍼 상세 (피드백 반영 2026-07-18) */
 .sc-name.op-linked {
@@ -4607,6 +4624,7 @@ html.dark .story-card:hover .story-thumb img {
   margin-top: -3px;
 }
 .sc-narr {
+  /* 나레이션도 대사 본문과 같은 컬럼 정렬 — 왼쪽 거터는 화자 이름 전용 (2026-07-18 논의 확정) */
   margin: 14px 0;
   padding-left: 140px;
   font-size: 14px;
@@ -4623,6 +4641,22 @@ html.dark .story-card:hover .story-thumb img {
   color: var(--ink3);
   white-space: pre-line;
   background: var(--bg-soft);
+}
+/* 화자 스탠딩 크게 보기 라이트박스 */
+.sc-face-zoom {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  background: #000a;
+  backdrop-filter: blur(4px);
+  display: grid;
+  place-items: center;
+  cursor: zoom-out;
+}
+.sc-face-zoom img {
+  max-height: 86vh;
+  max-width: 90vw;
+  filter: drop-shadow(0 12px 40px #000c);
 }
 .sc-loc {
   margin: 26px 0 16px;

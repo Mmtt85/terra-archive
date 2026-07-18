@@ -58,7 +58,7 @@ const scriptIds = new Set(scriptIdsData as string[]);
 type ScriptLine = { n?: string; x?: string; st?: string; img?: string; loc?: string; opts?: string[]; vals?: string[]; br?: string };
 type ScriptEp = { code: string; name: string; tag: string; lines: ScriptLine[] };
 // tr: "cn" = 한국 서버 미출시 이벤트 — CN 원문 AI 번역본 (비공식 번역 안내 표시)
-type ScriptData = { id: string; eps: ScriptEp[]; tr?: string };
+type ScriptData = { id: string; eps: ScriptEp[]; tr?: string; faces?: Record<string, string> };
 const translatedByLocale: Record<string, Set<string>> = {
   en: new Set(translatedEnData as string[]),
   ja: new Set(translatedJaData as string[]),
@@ -251,6 +251,8 @@ function ScriptReader({ script, error, entities, opIndex, onShowOperator }: {
   entities: Entity[]; opIndex?: OpIndex; onShowOperator?: (id: string) => void;
 }) {
   const { locale, t } = useI18n();
+  // 오퍼가 아닌 화자의 스탠딩 스프라이트 — 썸네일 클릭 시 원본 크게 보기 (사용자 요청 2026-07-18)
+  const [faceZoom, setFaceZoom] = useState<string | null>(null);
   // 요약 카드에 없는 화자라도 오퍼레이터면 자동으로 레일 카드 생성 (호시구마 등 — 사용자 리포트 2026-07-18)
   const autoEntities = useMemo<Entity[]>(() => {
     if (!script || !opIndex) return [];
@@ -300,8 +302,8 @@ function ScriptReader({ script, error, entities, opIndex, onShowOperator }: {
       if (ln.n) {
         const showN = ln.n !== prevN;
         prevN = ln.n;
-        // 화자 얼굴·오퍼 연결: 오퍼명 직매칭 → 요약 엔티티(별칭 포함 — '숴'는 총웨)의
-        // 스탠딩 CG/연결 오퍼 아바타 순으로 폴백 (사용자 요청 2026-07-18)
+        // 화자 얼굴·오퍼 연결: 오퍼명 직매칭 → 요약 엔티티(별칭 포함 — '숴'는 총웨) →
+        // 스크립트 스탠딩 스프라이트(faces — 오퍼 아닌 NPC도 연결) 순 폴백 (사용자 요청 2026-07-18)
         let face: string | undefined;
         let opId: string | undefined;
         const oi = opIndex?.[ln.n];
@@ -315,13 +317,14 @@ function ScriptReader({ script, error, entities, opIndex, onShowOperator }: {
             opId = ent.op;
           }
         }
+        if (!face && script?.faces?.[ln.n]) face = `/story/char/${script.faces[ln.n]}.webp`;
         return { ...ln, showN, face, opId } as ScriptLine & { showN: boolean; face?: string; opId?: string };
       }
       // 지문·컷씬 등이 끼면 다음 대사엔 이름을 다시 보여준다
       prevN = undefined;
       return ln;
     });
-  }, [ep, opIndex, entities]);
+  }, [ep, script, opIndex, entities]);
   const lineTexts = useMemo(
     () => lines.map((ln) => [ln.n, ln.x, ln.st, ln.loc, ...(ln.opts ?? [])].filter(Boolean).join(" ")),
     [lines],
@@ -380,18 +383,24 @@ function ScriptReader({ script, error, entities, opIndex, onShowOperator }: {
           if (ln.st) return <p key={i} className="sc-st" data-idx={i}>{ln.st}</p>;
           if (ln.n) {
             const { showN, face, opId } = ln as ScriptLine & { showN?: boolean; face?: string; opId?: string };
-            // 화자가 오퍼레이터(별칭 연결 포함)면 이름·썸네일 클릭 → 오퍼 상세 모달
-            const clickable = Boolean(opId && onShowOperator);
+            // 클릭: 오퍼레이터(별칭 연결 포함)는 오퍼 상세 모달, 그 외 얼굴 있는 화자는 스탠딩 크게 보기
+            const openOp = opId && onShowOperator ? () => onShowOperator(opId) : undefined;
+            const act = openOp ?? (face ? () => setFaceZoom(face) : undefined);
+            const clickable = Boolean(act);
             return (
               <p key={i} className={`sc-line${showN === false ? " cont" : ""}`} data-idx={i}>
                 <b className={`sc-name${clickable ? " op-linked" : ""}`}
                   {...(clickable && showN !== false ? {
-                    onClick: () => onShowOperator!(opId!),
+                    onClick: act,
                     role: "button", tabIndex: 0,
-                    onKeyDown: (e: { key: string }) => { if (e.key === "Enter") onShowOperator!(opId!); },
-                    title: t("오퍼레이터 정보 보기"),
+                    onKeyDown: (e: { key: string }) => { if (e.key === "Enter") act!(); },
+                    title: openOp ? t("오퍼레이터 정보 보기") : t("크게 보기"),
                   } : {})}>
-                  {showN !== false && face && <img className="sc-face" src={face} alt="" aria-hidden loading="lazy" decoding="async" />}
+                  {showN !== false && face && (
+                    <span className={`sc-face${face.startsWith("/story/char/") ? " sprite" : ""}`} aria-hidden>
+                      <img src={face} alt="" loading="lazy" decoding="async" />
+                    </span>
+                  )}
                   {showN !== false && ln.n}
                 </b>
                 <span>{ln.x}</span>
@@ -407,6 +416,12 @@ function ScriptReader({ script, error, entities, opIndex, onShowOperator }: {
         {epIdx > 0 && <button type="button" onClick={() => goEp(epIdx - 1)}>← {t("이전 에피소드")}</button>}
         {epIdx < script.eps.length - 1 && <button type="button" onClick={() => goEp(epIdx + 1)}>{t("다음 에피소드")} →</button>}
       </div>
+      {/* 화자 스탠딩 크게 보기 — 아무 곳이나 클릭하면 닫힘 */}
+      {faceZoom && (
+        <div className="sc-face-zoom" role="presentation" onClick={() => setFaceZoom(null)}>
+          <img src={faceZoom} alt="" />
+        </div>
+      )}
     </div>
   );
 }
@@ -417,19 +432,22 @@ function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }: {
 }) {
   const { locale, t } = useI18n();
 
-  // 전문(풀 스크립트) 토글 — public/story/script/<id>.json 을 첫 진입 때 지연 fetch
+  // 전문(풀 스크립트)이 기본 뷰 — 진입 즉시 로드, AI 요약은 토글로 (사용자 확정 2026-07-18).
+  // StoryDetail은 key={event.id}로 리마운트되므로 이벤트 전환 시 상태가 새지 않는다.
   const hasScript = scriptIds.has(event.id);
-  const [scriptView, setScriptView] = useState(false);
+  const [scriptView, setScriptView] = useState(hasScript);
   const [script, setScript] = useState<ScriptData | null>(null);
   const [scriptErr, setScriptErr] = useState(false);
-  const openScript = () => {
-    setScriptView(true);
-    if (script || scriptErr) return;
+  useEffect(() => {
+    if (!hasScript) return;
+    let alive = true;
     fetch(`/story/script/${event.id}.json`)
       .then((res) => { if (!res.ok) throw new Error(String(res.status)); return res.json(); })
-      .then((json) => setScript(json as ScriptData))
-      .catch(() => setScriptErr(true));
-  };
+      .then((json) => { if (alive) setScript(json as ScriptData); })
+      .catch(() => { if (alive) setScriptErr(true); });
+    return () => { alive = false; };
+  }, [event.id, hasScript]);
+  const openScript = () => setScriptView(true);
 
   // 인물이 용어보다 먼저 뜨도록 chars → terms 순으로 합친다
   const entities = useMemo<Entity[]>(
@@ -463,10 +481,10 @@ function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }: {
           {/* 전문 보기 — 요약 위 토글 (사용자 요청 2026-07-18) */}
           {hasScript && (
             <div className="story-mode-bar" role="tablist" aria-label={t("보기 방식")}>
-              <button type="button" role="tab" aria-selected={!scriptView}
-                className={!scriptView ? "on" : ""} onClick={() => setScriptView(false)}>{t("AI 요약")}</button>
               <button type="button" role="tab" aria-selected={scriptView}
                 className={scriptView ? "on" : ""} onClick={openScript}>{t("전문 보기 (풀 스크립트)")}</button>
+              <button type="button" role="tab" aria-selected={!scriptView}
+                className={!scriptView ? "on" : ""} onClick={() => setScriptView(false)}>{t("AI 요약")}</button>
             </div>
           )}
           {!scriptView && <p className="story-disclaimer">{t("이 요약은 AI가 게임 내 스토리 스크립트 전문을 읽고 쓴 2차 창작 요약입니다.")}</p>}
@@ -980,7 +998,7 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
   const summarized = data.events.filter((event) => summaryIds.has(event.id)).length;
 
   if (selected) {
-    return <StoryDetail event={selected} summary={summaries[selected.id]} onClose={close} onShowOperator={onShowOperator} opIndex={opIndex} />;
+    return <StoryDetail key={selected.id} event={selected} summary={summaries[selected.id]} onClose={close} onShowOperator={onShowOperator} opIndex={opIndex} />;
   }
 
   return (

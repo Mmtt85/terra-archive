@@ -148,9 +148,74 @@ def parse_story(txt):
     return out
 
 
+RE_CHARTAG = re.compile(r'\[[Cc]har(?:acter|slot)\s*\(([^)]*)\)', )
+RE_CHARNAME = re.compile(r'name2?\s*=\s*"([^"]+)"')
+RE_FOCUS = re.compile(r'focus\s*=\s*(\d)')
+
+def scan_faces(txt, votes):
+    """무대 위 스탠딩 스프라이트와 뒤따르는 화자를 짝지어 votes[화자][스프라이트] 집계.
+    focus= 속성이 있으면 포커스된 스프라이트에만 투표 (오퍼가 아닌 NPC 얼굴 연결용)."""
+    active = []
+    for line in txt.splitlines():
+        m = RE_CHARTAG.search(line)
+        if m:
+            attrs = m.group(1)
+            names = [n.split("#")[0] for n in RE_CHARNAME.findall(attrs)]
+            f = RE_FOCUS.search(attrs)
+            if f and names:
+                i = int(f.group(1)) - 1
+                active = [names[i]] if 0 <= i < len(names) else names
+            else:
+                active = names
+            continue
+        m = RE_NAME.match(line.strip())
+        if m and active:
+            who = clean(m.group(1))
+            for spr in active:
+                votes[who][spr] += 1
+
+
+def resolve_faces(votes):
+    """화자별 다수결 스프라이트 — 과반+2표 이상일 때만 채택 (오귀속 방지)."""
+    faces = {}
+    for who, cnt in votes.items():
+        if not who or who.startswith("?"):
+            continue
+        (spr, n), total = cnt.most_common(1)[0], sum(cnt.values())
+        if n >= 2 and n * 2 > total:
+            faces[who] = spr
+    return faces
+
+
+def download_sprites(names):
+    """스탠딩 스프라이트(기본 표정 #1$1) → public/story/char/<base>.webp. 실패분 반환."""
+    from imgutil import save_webp
+    char_dir = os.path.join(REPO, "public", "story", "char")
+    os.makedirs(char_dir, exist_ok=True)
+    missing = [n for n in names if not os.path.exists(os.path.join(char_dir, f"{n}.webp"))]
+    failed = []
+
+    def dl(base):
+        for variant in (f"{base}#1$1", f"{base}#1", base):
+            url = f"{ASSETS}/avg/characters/{base}/{urllib.request.quote(variant)}.png"
+            try:
+                png = fetch(url, binary=True)
+            except urllib.error.HTTPError:
+                continue
+            save_webp(png, os.path.join(char_dir, f"{base}.webp"), max_px=640)
+            return
+        failed.append(base)
+
+    with ThreadPoolExecutor(8) as ex:
+        list(ex.map(dl, missing))
+    return failed
+
+
 def build_event(eid, entry):
+    from collections import Counter, defaultdict
     infos = sorted(entry["infoUnlockDatas"], key=lambda i: i["storySort"])
     eps, images = [], []
+    votes = defaultdict(Counter)
     txts = {}
     with ThreadPoolExecutor(8) as ex:
         for info, txt in zip(infos, ex.map(lambda i: fetch_txt_cached(i["storyTxt"]), infos)):
@@ -162,6 +227,7 @@ def build_event(eid, entry):
         lines = parse_story(txt)
         if not lines:
             continue
+        scan_faces(txt, votes)
         for ln in lines:
             if "img" in ln and ln["img"] not in images:
                 images.append(ln["img"])
@@ -171,7 +237,13 @@ def build_event(eid, entry):
             "tag": info.get("avgTag") or "",
             "lines": lines,
         })
-    return eps, images
+    # 화자 → 스탠딩 스프라이트 얼굴 (오퍼가 아닌 인물도 썸네일 연결, 사용자 요청 2026-07-18)
+    faces = resolve_faces(votes)
+    failed = download_sprites(sorted(set(faces.values())))
+    if failed:
+        bad = set(failed)
+        faces = {w: s for w, s in faces.items() if s not in bad}
+    return eps, images, faces
 
 
 def download_cuts(names):
@@ -297,7 +369,7 @@ def main():
         entry = review.get(eid)
         if not entry:  # rogue_N 등 리뷰 테이블에 없는 합성 이벤트
             continue
-        eps, images = build_event(eid, entry)
+        eps, images, faces = build_event(eid, entry)
         if not eps:
             continue
         failed = download_cuts(images)
@@ -307,7 +379,7 @@ def main():
             bad = set(failed)
             for ep in eps:
                 ep["lines"] = [ln for ln in ep["lines"] if ln.get("img") not in bad]
-        out = {"id": eid, "eps": eps}
+        out = {"id": eid, "eps": eps, "faces": faces}
         dest = os.path.join(OUT_DIR, f"{eid}.json")
         json.dump(out, open(dest, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
         kb = os.path.getsize(dest) // 1024
