@@ -1758,7 +1758,7 @@ legend {
 .potential-list p {
   margin: 0;
   padding: 10px 11px;
-  font-size: 12.5px;
+  font-size: 13.5px;
   line-height: 1.45;
 }
 .module-list {
@@ -1812,7 +1812,7 @@ legend {
 .module-levels p {
   color: var(--ink3);
   margin: 8px 0 0;
-  font-size: 12.5px;
+  font-size: 13.5px;
   line-height: 1.55;
 }
 .module-levels .module-stats {
@@ -1842,24 +1842,25 @@ legend {
   display: block;
 }
 .infra-list article > div span {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 900;
 }
 .infra-list article > div small {
   color: var(--muted);
   margin-top: 5px;
-  font: 10.5px monospace;
+  font: 11.5px monospace;
 }
 .infra-list section {
   padding: 12px 14px;
 }
 .infra-list section b {
-  font-size: 13.5px;
+  font-size: 14px;
 }
 .infra-list section p {
+  /* 인프라 스킬 설명 본문 — 사용자 리포트로 재상향 (2026-07-18) */
   color: var(--ink3);
   margin: 6px 0 0;
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.6;
 }
 .empty {
