@@ -163,8 +163,8 @@ MECH_GROUPS = {
                 ("주사위", "item", ["DICE_TYPE"])],
     "rogue_3": [("암호판", "item", ["TOTEM"]),
                 ("붕괴 패러다임", "variation", None)],
-    "rogue_4": [("파편", "item", ["FRAGMENT"]),
-                ("재앙", "item", ["DISASTER", "DISASTER_TYPE", "ABSTRACT_DISASTER"])],
+    # 재앙(시대)은 데이터가 전부 "시대 유형/기믹 아이템" 플레이스홀더라 갤러리 제외 (실제 시대 이름·효과 부재)
+    "rogue_4": [("사고", "item", ["FRAGMENT"])],
     "rogue_5": [("주화", "item", ["COPPER", "COPPER_BUFF"]),
                 ("분노", "item", ["WRATH"])],
 }
