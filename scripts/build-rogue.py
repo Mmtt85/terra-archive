@@ -153,6 +153,14 @@ def num(v):
     return round(v, 3) if isinstance(v, float) else v
 
 
+# 토픽별 고유 시스템 갤러리 — (표시 라벨, 포함할 item type들). 환경 탭에 이름+설명 갤러리로 렌더.
+MECH_GROUPS = {
+    "rogue_2": [("주사위", ["DICE_TYPE"]), ("거부반응", ["CUSTOM_TICKET"])],
+    "rogue_3": [("토템", ["TOTEM"]), ("붕괴", ["CHAOS", "CHAOS_LEVEL", "CHAOS_PURIFY"])],
+    "rogue_4": [("파편", ["FRAGMENT"]), ("재앙", ["DISASTER", "DISASTER_TYPE", "ABSTRACT_DISASTER"])],
+    "rogue_5": [("주화", ["COPPER", "COPPER_BUFF"]), ("분노", ["WRATH"])],
+}
+
 def build_topic(tid="rogue_1"):
     """KR 정식 출시 토픽(rogue_1~5) 공통 빌더 — 스테이지 id 접두 roN_ 공통,
     토픽 고유 시스템(음반/메아리/탐사 도구 등)은 데이터 존재 여부로 분기한다."""
@@ -426,6 +434,25 @@ def build_topic(tid="rogue_1"):
     bands = item_group("BAND")
     explore_tools = item_group("EXPLORE_TOOL")  # IS3 탐사 도구 (다른 토픽은 빈 배열)
 
+    # ── 토픽 고유 시스템 갤러리 (환경 탭) — 토픽마다 다른 예외 메커니즘/수집품을 이름+설명으로.
+    #    미즈키=거부반응/주사위 · 사미=붕괴/토템 · 살카즈=파편/재앙 · 쉐이=주화/분노 (사용자 요청).
+    #    변형(_a/_b…)이 많아 이름 기준으로 중복 제거하고, 설명이 가장 자세한 항목을 대표로 쓴다.
+    mechanics = []
+    for label, mtypes in MECH_GROUPS.get(tid, []):
+        best = {}
+        for iid, it in items.items():
+            if it.get("type") not in mtypes:
+                continue
+            nm = it.get("name")
+            desc = (it.get("description") or it.get("usage") or "").strip()
+            if not nm or not desc:
+                continue
+            if nm not in best or len(desc) > len(best[nm]["desc"]):
+                best[nm] = {"id": iid, "name": nm, "desc": desc,
+                            "img": os.path.exists(os.path.join(REPO, "public", "rogue", "relic", f"{iid}.webp"))}
+        if best:
+            mechanics.append({"label": label, "items": list(best.values())})
+
     # ── 환각/메아리(variation) + 융합(fusion) — 토픽별 존재 여부·정합성 확인 후 수록
     # (rogue_3의 variationData는 이름이 "1"~"8"인 플레이스홀더라 제외)
     variations = [{"id": k, "name": v.get("outerName") or v.get("innerName"),
@@ -528,6 +555,8 @@ def build_topic(tid="rogue_1"):
     }
     if explore_tools:
         out["exploreTools"] = explore_tools
+    if mechanics:
+        out["mechanics"] = mechanics
     # 게임 마크업 태그(<@ro.lose>1</>, <color=#...> 등)를 모든 문자열에서 일괄 제거
     def sanitize(v):
         if isinstance(v, str):

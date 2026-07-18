@@ -36,6 +36,8 @@ type RogueData = {
   scraps?: Scrap[]; legacies?: Simple[]; buoys?: Simple[];
   weathers?: Weather[]; subweathers?: SubWeather[];
   variations: Variation[]; endings: Ending[]; encounters: Encounter[];
+  // 토픽 고유 시스템 갤러리 (미즈키 거부반응·사미 붕괴/토템·살카즈 파편/재앙·쉐이 주화/분노)
+  mechanics?: { label: string; items: { id: string; name: string; desc: string; img?: boolean }[] }[];
 };
 
 const rogue1 = rogue1Data as unknown as RogueData;
@@ -508,7 +510,8 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   const [enemyRank, setEnemyRank] = useState<string>("");
   const [relicQ, setRelicQ] = useState("");
   const [mapQ, setMapQ] = useState(""); // 맵·노드 이름 검색 (작전·조우 전투·우연한 만남 전부)
-  const [arcTab, setArcTab] = useState<"relic" | "capsule" | "tool" | "band" | "scrap" | "legacy" | "explore">("relic");
+  // 표준 카테고리 + 토픽 고유 시스템(mechanics)의 라벨을 탭 id로 쓰므로 string
+  const [arcTab, setArcTab] = useState<string>("relic");
   const VIEWS = viewsFor(topic);
 
   // 뒤로/앞으로·햄버거 부메뉴(popstate) → 토픽 동기화. 토픽 전환은 이제 헤더 버튼이 아니라
@@ -994,6 +997,8 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
                     ...((data.exploreTools?.length ?? 0) > 0 ? [["explore", "탐사 도구"]] as const : []),
                     ["band", "스쿼드"] as const,
                   ]),
+              // 토픽 고유 시스템 갤러리 (주화·토템·파편·재앙 등) — 라벨을 탭 id로 사용
+              ...(data.mechanics ?? []).map((m) => [m.label, m.label] as const),
             ]).map(([id, label]) => (
               <button key={id} type="button" className={arcTab === id ? "on" : ""} onClick={() => setArcTab(id)}>{t(label)}</button>
             ))}
@@ -1007,7 +1012,9 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
                 : arcTab === "scrap" ? data.scraps?.length ?? 0
                 : arcTab === "legacy" ? data.legacies?.length ?? 0
                 : arcTab === "explore" ? data.exploreTools?.length ?? 0
-                : arcTab === "tool" ? data.tools.length : data.bands.length}
+                : arcTab === "tool" ? data.tools.length
+                : arcTab === "band" ? data.bands.length
+                : (data.mechanics ?? []).find((m) => m.label === arcTab)?.items.length ?? 0}
             </span>
           </div>
           {arcTab === "relic" && (
@@ -1121,6 +1128,20 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
               ))}
             </div>
           )}
+          {/* 토픽 고유 시스템 갤러리 (주화·토템·파편·재앙·거부반응·붕괴 등) */}
+          {(data.mechanics ?? []).map((m) => m.label === arcTab && (
+            <div key={m.label} className="rg-relic-grid">
+              {m.items.map((c) => (
+                <article key={c.id} className="rg-relic">
+                  <header>
+                    {c.img && <img className="rg-relic-icon" src={`/rogue/relic/${c.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
+                    <h4>{c.name}</h4>
+                  </header>
+                  {c.desc && <p className="rg-relic-desc">{c.desc}</p>}
+                </article>
+              ))}
+            </div>
+          ))}
         </div>
       )}
 
