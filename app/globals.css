@@ -4250,6 +4250,14 @@ footer p {
   object-fit: cover;
   display: block;
 }
+/* 다크모드 — 밝은 게임 배너 썸네일을 살짝 어둡고 차분하게 (사용자 요청 2026-07-18) */
+html.dark .story-thumb img {
+  filter: brightness(0.72) saturate(0.88);
+  transition: filter 0.15s;
+}
+html.dark .story-card:hover .story-thumb img {
+  filter: brightness(0.92) saturate(1); /* 호버 시 원래 톤으로 — 살펴볼 때는 선명하게 */
+}
 /* 썸네일 없는 항목(메인스토리·로그라이크) 자리표시 */
 .story-thumb-none {
   display: flex;
@@ -5536,9 +5544,9 @@ footer p {
 .portal-card-body small { font-size: 12.5px; line-height: 1.5; color: var(--muted); }
 .portal-card-go { flex: 0 0 auto; font-size: 18px; color: var(--muted); transition: transform 0.15s ease, color 0.15s ease; }
 .portal-card:hover .portal-card-go { transform: translateX(3px); color: var(--ink); }
-/* 인프라 자동편성기 = 대표 도구라 최상단 한 줄 전체, 소개는 마지막 줄 전체 (사용자 확정 2026-07-17) */
+/* 인프라 자동편성기 = 대표 도구라 최상단 한 줄 전체.
+   소개는 통합전략 가이드 오른쪽 같은 줄 (사용자 변경 2026-07-18 — 종전 마지막 줄 전체) */
 .portal-card.portal-planner { grid-column: 1 / -1; }
-.portal-card.portal-about { grid-column: 1 / -1; }
 
 @media (max-width: 640px) {
   .portal-grid { grid-template-columns: 1fr; }
