@@ -154,7 +154,7 @@ def dedupe_choices(chs):
     return out
 
 
-def extract_encounters(choice_scenes, choices):
+def extract_encounters(choice_scenes, choices, tree_overrides=None):
     """조우 씬을 계단식 트리로 추출 (사용자 요청 2026-07-19).
 
     선택지(choice)의 `nextSceneId`가 후속 씬을 가리키고, 후속 씬은 부모와 같은 제목에
@@ -166,7 +166,13 @@ def extract_encounters(choice_scenes, choices):
     합쳐서(union) 같은 선택지가 여러 벌 반복됐다 — 그 중복을 트리로 대체한다.
     NEXT/NEXT_PROB(서사 진행)만 다음 씬을 중첩하고, TRADE·SACRIFICE 등 결과 분기는
     단말 선택지로 둔다(결과 씬은 같은 텍스트 반복뿐이라 파고들 실익이 없음).
-    형제 선택지는 (제목,설명) 기준 중복 제거(확률 변형 '접과장품' 3벌 등)."""
+    형제 선택지는 (제목,설명) 기준 중복 제거(확률 변형 '접과장품' 3벌 등).
+
+    tree_overrides: {enter_scene_id: {"부모choice번호": [자식choice번호…]}} — 게임 데이터엔
+    씬↔선택지 소속 링크가 없어(전투 돌입 등 후속 이벤트가 어느 선택 밑인지 미저장) 자동
+    복원이 불가하다. 중요 조우만 choice의 끝번호(_N)로 부모-자식을 수작업 지정해 중첩한다
+    (번호는 로케일 무관 — 사용자 확정 2026-07-19). rogueN-curated.json의 encounterTree."""
+    tree_overrides = tree_overrides or {}
     from collections import defaultdict
     scene_ch = defaultdict(list)
     for cid, c in choices.items():
@@ -208,22 +214,54 @@ def extract_encounters(choice_scenes, choices):
         return out
 
     def build_scene(sid, seen):
+        # 원시 노드 목록(_num=choice 끝번호 보유, 그룹화 전). 하위 씬도 재귀로 원시.
         nodes, dedup = [], set()
         for cid, c in scene_ch.get(sid, []):
             key = (c["title"], c.get("description"))
             if key in dedup:
                 continue
             dedup.add(key)
-            node = {"title": c["title"], "desc": c.get("description")}
+            m = re.search(r"_(\d+)$", cid)
+            node = {"title": c["title"], "desc": c.get("description"),
+                    "_num": int(m.group(1)) if m else -1}
             nxt = c.get("nextSceneId")
             if (nxt and nxt in choice_scenes and nxt not in seen
                     and str(c.get("type", "")).startswith("NEXT")):
                 sub = build_scene(nxt, seen | {nxt})
                 sub_desc = (choice_scenes[nxt].get("description") or "").strip()
-                if sub["choices"] or sub_desc:
-                    node["next"] = {"desc": sub_desc or None, "choices": sub["choices"]}
+                if sub or sub_desc:
+                    node["next"] = {"desc": sub_desc or None, "choices": sub}
             nodes.append(node)
-        return {"choices": group_by_title(nodes)}
+        return nodes
+
+    def finalize(nodes):
+        # 하위 next.choices 먼저 재귀 그룹화 → 이 레벨 제목 그룹화 → _num 제거
+        for n in nodes:
+            if n.get("next"):
+                n["next"]["choices"] = finalize(n["next"]["choices"])
+        grouped = group_by_title(nodes)
+        for n in grouped:
+            n.pop("_num", None)
+        return grouped
+
+    def apply_overrides(raw, sid):
+        # 수작업 지정된 부모→자식 번호대로 자식 노드를 부모의 next.choices로 옮긴다.
+        ov = tree_overrides.get(sid)
+        if not ov:
+            return raw
+        by_num = {n["_num"]: n for n in raw}
+        moved = set()
+        for pnum, cnums in ov.items():
+            parent = by_num.get(int(pnum))
+            if parent is None:
+                continue
+            nx = parent.setdefault("next", {"desc": None, "choices": []})
+            for cnum in cnums:
+                child = by_num.get(int(cnum))
+                if child is not None and int(cnum) not in moved:
+                    nx["choices"].append(child)
+                    moved.add(int(cnum))
+        return [n for n in raw if n["_num"] not in moved]
 
     encounters = []
     for sid, sc in choice_scenes.items():
@@ -234,7 +272,7 @@ def extract_encounters(choice_scenes, choices):
             bg = bg.removesuffix(".png").lower()
         encounters.append({
             "scene": sid, "title": sc["title"], "desc": sc.get("description"),
-            "bg": bg, "choices": build_scene(sid, {sid})["choices"],
+            "bg": bg, "choices": finalize(apply_overrides(build_scene(sid, {sid}), sid)),
         })
     encounters.sort(key=lambda x: x["scene"])
     # 동명 enter 씬(溯源 19변형·三重身 3변형 등)은 대표 1개만 — 예전엔 선택지를 union해
@@ -249,6 +287,14 @@ def extract_encounters(choice_scenes, choices):
         m["desc"] = m["desc"] or e["desc"]
         m["bg"] = m["bg"] or e["bg"]
     return merged
+
+
+def load_encounter_tree(rogue_name):
+    """rogueN-curated.json의 encounterTree(수작업 부모→자식 선택지 중첩) 로드."""
+    path = os.path.join(REPO, "scripts", f"{rogue_name}-curated.json")
+    if os.path.exists(path):
+        return json.load(open(path, encoding="utf-8")).get("encounterTree") or {}
+    return {}
 
 
 def num(v):
@@ -858,7 +904,10 @@ def build_topic(tid="rogue_1", loc=None):
     # ── 조우 씬 (enter 씬을 뿌리로 한 계단식 선택지 트리) ──────────────────────
     # nextSceneId를 따라 후속 씬(부모와 제목 공유)을 next로 중첩한다. 예전 접두 매칭+제목
     # union은 부모/자식 선택지를 뭉쳐 중복이 났다 (사용자 리포트 2026-07-19).
-    encounters = extract_encounters(r["choiceScenes"], r["choices"])
+    # encounterTree: 후속 이벤트(전투 돌입 등)의 부모 선택 소속은 게임 데이터에 없어
+    # rogueN-curated.json에서 choice 끝번호로 수작업 지정 (로케일 무관).
+    encounters = extract_encounters(r["choiceScenes"], r["choices"],
+                                    load_encounter_tree(f"rogue{ronum}"))
     # 조우 배경 CG — avg/images/<bg>.png
     scene_dir = os.path.join(REPO, "public", "rogue", "scene")
     download_webp([(f"{ASSETS}/avg/images/{e['bg']}.png",
@@ -1354,7 +1403,8 @@ def build_rogue6():
     endings.sort(key=lambda x: x["priority"])
 
     # 계단식 선택지 트리 (溯源 19변형 등 동명 enter는 대표 1개로 — extract_encounters 참조)
-    encounters = extract_encounters(r["choiceScenes"], r["choices"])
+    encounters = extract_encounters(r["choiceScenes"], r["choices"],
+                                    load_encounter_tree("rogue6"))
     scene_dir = os.path.join(REPO, "public", "rogue", "scene")
     download_webp([(f"{ASSETS}/avg/images/{e['bg']}.png",
                     os.path.join(scene_dir, f"{e['bg']}.webp"))
