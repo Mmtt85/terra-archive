@@ -439,6 +439,7 @@ export type Plan = {
   strategyTokens?: string[];    // 표시용 구조 필드 — 로케일에서 토큰명 번역해 재조립
   strategySet?: boolean;
   priority?: ProdPriority;    // 우선 생산 모드 (기본 gold)
+  auditRounds?: number[];     // 조별 전수 감사 수렴 회차 [A, B] — 진행 안내 재생용
 };
 
 
@@ -817,6 +818,8 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
   // 되도록 B조의 더 나은 요원을 끌어올리고(같은 방타입 내 swap, 시드/예약은 고정) →
   // ② A·B 동시 배치를 제거하고 → ③ 빈 근무 방을 벤치 최고 요원으로 채운다. 사기 비소모
   // 방 숙소(휴식)·가공소(상시 슬롯)만 예외로 조 전환과 무관하게 고정.
+  // 조별 전수 감사가 몇 회 만에 수렴했는지 — UI가 최종 단계에서 회차를 재생 표시한다
+  const auditRounds: number[] = [0, 0];
   {
     const restRoom = (key: string) => { const r = cellByKey.get(key)?.room ?? key; return r === "DORMITORY" || r === "WORKSHOP"; };
     const workKeys = keys.filter((key) => !restRoom(key) && key !== "TRAINING");
@@ -836,6 +839,7 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
         assignments[k][idx] = (assignments[k]?.[idx] ?? []).filter((id) => !lockedPrev.has(id));
       }
     for (let pass = 0; pass < 8; pass += 1) {
+      auditRounds[auditShift] = pass + 1;
       let changed = false;
       const shift = auditShift;
 
@@ -1110,7 +1114,7 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
   }
   const setUsed = SYNERGY_SETS.some((def) => def.badge && factionSets[def.key]);
   const strategy = (packageTokens.length ? `${packageTokens.join(" + ")} 패키지` : "기본 편성") + (setUsed ? " + 진영 세트" : "");
-  return { assignments, plants, tokenPoints, factionCounts: factionCountsPerShift, flows, strategy, strategyTokens: packageTokens, strategySet: setUsed, priority };
+  return { assignments, plants, tokenPoints, factionCounts: factionCountsPerShift, flows, strategy, strategyTokens: packageTokens, strategySet: setUsed, priority, auditRounds };
 }
 
 // 세트 채택 비교 시 조별 가중 — A조는 풀파워 주력, B조는 회복 교대(§1). 동일 가중이면
@@ -1144,7 +1148,7 @@ export function planScore(plan: Plan, byId: Map<string, InfraOp>): number {
 // 콜백이 Promise를 돌려주면 기다린다 — UI가 단계별 최소 표시 시간(페이싱)을 넣을 수 있게
 // (사용자 확정 2026-07-19: 안내 문구를 읽을 수 있도록 전체 3~5초). 콜백이 없으면(초기 로드·
 // 검증 스크립트) 페이싱 없이 전속력으로 돈다.
-export type OptimizeStep = { phase: "base" | "variant" | "final"; index?: number; total?: number; sets?: string[] };
+export type OptimizeStep = { phase: "base" | "variant" | "final"; index?: number; total?: number; sets?: string[]; crew?: "A" | "B" };
 
 export async function optimize(roster: InfraOp[], priority: ProdPriority = "gold", onStep?: (step: OptimizeStep) => void | Promise<void>): Promise<Plan> {
   // 진행 콜백(페이싱 포함) 후 매크로태스크 양보 — 브라우저가 안내 문구를 리페인트할 틈을 준다
@@ -1198,7 +1202,22 @@ export async function optimize(roster: InfraOp[], priority: ProdPriority = "gold
     const score = planScore(plan, byId);
     if (score > bestScore) { best = plan; bestScore = score; }
   }
-  await tick({ phase: "final" });
+  // 채택안의 전수 감사 수렴 회차를 조별로 재생 — "몇 회 반복으로 최선을 확인했는지"를
+  // 보여준다 (사용자 확정 2026-07-19). 페이싱(랜덤 간격)은 UI 콜백 몫.
+  const rounds = best.auditRounds ?? [];
+  const totalTicks = Math.min(rounds.reduce((sum, n) => sum + n, 0), 6);
+  if (totalTicks > 0) {
+    let tickNo = 0;
+    replay: for (let crew = 0; crew < rounds.length; crew += 1) {
+      for (let round = 1; round <= rounds[crew]; round += 1) {
+        tickNo += 1;
+        await tick({ phase: "final", index: tickNo, total: totalTicks, crew: crew === 0 ? "A" : "B" });
+        if (tickNo >= totalTicks) break replay;
+      }
+    }
+  } else {
+    await tick({ phase: "final" });
+  }
   return best;
 }
 

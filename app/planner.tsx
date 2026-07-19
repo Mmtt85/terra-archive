@@ -266,6 +266,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   const stepMessage = (step: OptimizeStep): string => {
     if (step.phase === "base") return t("자동편성 엔진 계산 중 — 기본 편성 조립·전수 감사…");
     if (step.phase === "variant") return t("자동편성 엔진 계산 중 — 시너지 세트 후보안 {i}/{n} ({sets}) 평가…", { i: step.index ?? 0, n: step.total ?? 0, sets: (step.sets ?? []).map((key) => t(SET_LABEL[key] ?? key)).join("+") });
+    if (step.index) return t("자동편성 엔진 계산 중 — 채택안 전수 감사 {crew}조 {i}/{n}회차 검수…", { crew: step.crew ?? "A", i: step.index, n: step.total ?? step.index });
     return t("자동편성 엔진 계산 중 — 최적안 비교·마무리 검증…");
   };
 
@@ -274,11 +275,12 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     const startedAt = performance.now();
     setOptimizing(t("자동편성 엔진 계산 중 — 편성 공간 구성…"));
     try {
-      // 페이싱 (사용자 확정 2026-07-19): 단계 문구를 읽을 수 있게 단계당 최소 400ms,
-      // 전체 최소 3.2초 — 계산이 그보다 빨라도 안내가 후다닥 지나가지 않는다
+      // 페이싱 (사용자 확정 2026-07-19): 단계 문구를 읽을 수 있게 단계당 0.3~1.2초
+      // **랜덤** 간격(딱딱한 정주기 금지), 전체 최소 3.2초 — 계산이 빨라도 안내가
+      // 후다닥 지나가지 않는다
       const paced = async (step: OptimizeStep) => {
         setOptimizing(stepMessage(step));
-        await new Promise((resolve) => setTimeout(resolve, 400));
+        await new Promise((resolve) => setTimeout(resolve, 300 + Math.random() * 900));
       };
       const next = await optimize(visibleOps.map((op) => withElite(op, elite.get(op.id))).filter((op) => ids.has(op.id)), prio, paced);
       const remain = 3200 - (performance.now() - startedAt);
@@ -419,7 +421,13 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         setOwnedIds(ids);
         setEliteById(elite);
         if (data.priority) setPriorityState(data.priority as ProdPriority);
-        if (data.plan) { setPlan(data.plan as Plan); if (!data.priority && (data.plan as Plan).priority) setPriorityState((data.plan as Plan).priority!); return; }
+        // 손상·구버전 저장분 방어 — raw 복원은 assignments 등 누락 시 렌더 크래시
+        // (개발 중간 상태가 저장된 localStorage에서 실제 발병, 2026-07-19). 정규화 실패면
+        // 아래로 떨어져 새 편성을 만든다.
+        if (data.plan) {
+          const savedPlan = sanitizePlan(data.plan);
+          if (savedPlan) { setPlan(savedPlan); if (!data.priority && savedPlan.priority) setPriorityState(savedPlan.priority); return; }
+        }
         // 마운트 시점엔 미래시 토글이 아직 복원 전(false)일 수 있으므로 미실장은 제외하고
         // 기본 편성을 만든다 — 미래시 포함 편성은 토글 후 자동편성 버튼으로 실행
         void optimize(ops.filter((op) => !op.unreleased).map((op) => withElite(op, elite.get(op.id))).filter((op) => ids.has(op.id))).then(setPlan);
@@ -557,6 +565,9 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           const team = teamFor(cell.key, activeShift);
           const spec = infra.rooms[cell.room];
           const score = Math.round(teamScore(team, cell.room, ctxFor(cell.key, pointsFor(activeShift), plan?.factionCounts?.[activeShift], plan?.plants, presentIds, ambient)));
+          // 제어센터 오라 수신분 — 카드 총점이 "오퍼 스킬 합과 달라 보이는" 이유를 명시
+          // (플레임테일 B조: 작전기록 +30 / 순금 -30 등. 사용자 지적 2026-07-19)
+          const ambientPart = score - Math.round(teamScore(team, cell.room, ctxFor(cell.key, pointsFor(activeShift), plan?.factionCounts?.[activeShift], plan?.plants, presentIds)));
           return (
             <button key={cell.key} type="button" className={`ship-room pos-${cell.key.toLowerCase()}`} onClick={() => setOpenRoom(cell.key)} style={{ "--room-accent": ROOM_ACCENT[cell.room] } as React.CSSProperties}>
               <div className="ship-room-head">
@@ -569,7 +580,12 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
                 )) : <i>{cell.key === "TRAINING" ? t("비워둠 · 특화 훈련 시 사용") : plan ? t("비어 있음") : t("자동 편성 대기")}</i>}
               </div>
               {plan && team.length > 0 && !PARK_KEYS.includes(cell.key) && (
-                <small>+{score}{cell.room === "CONTROL" ? "" : "%"} {t(UNIT[cell.room])}</small>
+                <small title={cell.room === "CONTROL"
+                  ? t("오라 효과를 우선순위 가중치(제조소 ×10 > 무역소 ×2 > 인맥 ×0.6 > 단서 ×0.2)로 환산해 합한 비교용 점수입니다 — %가 아니며, 실제 효과는 대상 방 점수에 '오라' 수신분으로 더해집니다.")
+                  : ambientPart !== 0 ? t("제어센터 오라 수신 {n} 포함 — 방을 눌러 상세 내역을 확인하세요", { n: `${ambientPart > 0 ? "+" : ""}${ambientPart}` }) : undefined}>
+                  +{score}{cell.room === "CONTROL" ? "" : "%"} {cell.room === "CONTROL" ? t("오라 가중 점수") : t(UNIT[cell.room])}
+                  {ambientPart !== 0 && cell.room !== "CONTROL" && <em className="ambient-note"> ({t("오라")} {ambientPart > 0 ? "+" : ""}{ambientPart})</em>}
+                </small>
               )}
               {plan && PARK_KEYS.includes(cell.key) && team.length > 0 && <small>{t("세트 요원 고정 · 효율 무관")}</small>}
             </button>
@@ -1117,6 +1133,7 @@ const HELP_SECTIONS: { title: string; items: string[] }[] = [
     "'용문근위국 오퍼와 함께'류 동반 조건, '미노스 1명당'류 카운트 조건은 실제 배치를 기준으로만 인정합니다.",
     "이격 실버애쉬 보유 시 쉐라그 3명(무역 스킬 강한 순)을 무역소 한 곳에 모으는 세트안을 만들되, 세트 없는 편성과 기지 총점을 비교해 이득일 때만 채택합니다. 진영 판정은 다중 소속 기준(카란 무역회사 오퍼도 쉐라그로 인정).",
     "플레임테일(피누스 실베스트리스 기사)은 제조소에 배치된 기사단 1명당 작전기록 생산력 +10%·귀금속 -10% 오라입니다. 보유 시 애쉬락·와일드메인·파투스(각 +25%)를 B조 작전기록방에 결집하고 플레임테일을 B조 제어센터에 앉히는 세트안을 만들어, 세트 없는 편성과 기지 총점을 비교해 이득일 때만 채택합니다 — 귀금속 방의 감산도 방 점수에 그대로 반영됩니다.",
+    "제어센터 카드의 '+N 오라 가중 점수'는 %가 아니라 오라를 우선순위 가중치(제조소 ×10 > 무역소 ×2 > 인맥 ×0.6 > 단서 ×0.2)로 환산한 비교용 점수입니다. 일반 방 카드에 '(오라 ±N)'이 붙어 있으면 제어센터 오라 수신분이 포함된 것으로, 방 점수가 오퍼 스킬 합과 달라 보이는 이유입니다 — 방 상세의 '제어센터 오라 수신' 항목에서 내역을 확인할 수 있습니다.",
     "만트라 정예 소대는 실존 정예 오퍼 수 기준으로 계산합니다 (현재 6명 → +37%, 신규 정예 오퍼 추가 시 데이터 갱신에서 자동 반영).",
   ]},
   { title: "정예화 단계 (1정/2정)", items: [

@@ -310,11 +310,23 @@ const D: Record<string, Pair> = {
   "자동편성 엔진 계산 중 — 시너지 세트 후보안 {i}/{n} ({sets}) 평가…": ["Auto-assign engine running — evaluating synergy-set candidate {i}/{n} ({sets})…", "自動編成エンジン計算中 — シナジーセット候補案 {i}/{n}（{sets}）を評価…"],
   "자동편성 엔진 계산 중 — 최적안 비교·마무리 검증…": ["Auto-assign engine running — comparing candidates and final checks…", "自動編成エンジン計算中 — 最適案の比較・最終検証…"],
   "계산 중…": ["Computing…", "計算中…"],
+  "자동편성 엔진 계산 중 — 채택안 전수 감사 {crew}조 {i}/{n}회차 검수…": ["Auto-assign engine running — full audit of the chosen plan, Shift {crew} round {i}/{n}…", "自動編成エンジン計算中 — 採用案の全数検査 {crew}班 {i}/{n}回目…"],
+  "오라 가중 점수": ["weighted aura score", "オーラ加重スコア"],
+  "오라": ["aura", "オーラ"],
+  "오라 효과를 우선순위 가중치(제조소 ×10 > 무역소 ×2 > 인맥 ×0.6 > 단서 ×0.2)로 환산해 합한 비교용 점수입니다 — %가 아니며, 실제 효과는 대상 방 점수에 '오라' 수신분으로 더해집니다.": [
+    "A comparison score: aura effects weighted by the priority multipliers (Factory ×10 > Trading Post ×2 > HR ×0.6 > Clue ×0.2). It is not a %, and the actual effect is added to each target room's score as received aura.",
+    "オーラ効果を優先度加重（製造所×10＞貿易所×2＞人脈×0.6＞手がかり×0.2）で換算した比較用スコアです — %ではなく、実際の効果は対象部屋のスコアに受信オーラとして加算されます。",
+  ],
+  "제어센터 오라 수신 {n} 포함 — 방을 눌러 상세 내역을 확인하세요": ["Includes {n} received from Control Center auras — click the room for the breakdown", "制御中枢オーラ受信 {n} を含みます — 部屋をクリックして内訳を確認"],
   // 시너지 세트 표시명 — rules.json synergySets의 name(KR)이 그대로 키가 된다.
   // /admin에서 새 세트를 추가하면 여기에 같은 이름 키로 EN/JA를 보충할 것 (없으면 KR 표시)
   "쉐라그 무역소 세트": ["Kjerag trading set", "イェラグ貿易セット"],
   "피누스 실베스트리스 세트": ["Pinus Sylvestris set", "ピヌス・シルウェストリスセット"],
   "품질 수익 조합": ["quality-payout combo", "品質収益コンボ"],
+  "제어센터 카드의 '+N 오라 가중 점수'는 %가 아니라 오라를 우선순위 가중치(제조소 ×10 > 무역소 ×2 > 인맥 ×0.6 > 단서 ×0.2)로 환산한 비교용 점수입니다. 일반 방 카드에 '(오라 ±N)'이 붙어 있으면 제어센터 오라 수신분이 포함된 것으로, 방 점수가 오퍼 스킬 합과 달라 보이는 이유입니다 — 방 상세의 '제어센터 오라 수신' 항목에서 내역을 확인할 수 있습니다.": [
+    "The Control Center card's '+N weighted aura score' is not a % — it converts auras with the priority multipliers (Factory ×10 > Trading Post ×2 > HR ×0.6 > Clue ×0.2) into a comparison score. When a room card shows '(aura ±N)', received Control Center auras are included — that's why a room score can differ from the sum of operator skills. See 'Received Control Center auras' in the room details.",
+    "制御中枢カードの「+N オーラ加重スコア」は%ではなく、オーラを優先度加重（製造所×10＞貿易所×2＞人脈×0.6＞手がかり×0.2）で換算した比較用スコアです。部屋カードに「(オーラ ±N)」が付いていれば制御中枢オーラの受信分が含まれており、部屋スコアがオペレータースキルの合計と違って見える理由です — 部屋詳細の「制御中枢オーラ受信」で内訳を確認できます。",
+  ],
   "A조 (풀파워)": ["Shift A (full power)", "A班（フルパワー）"],
   "B조 (회복 교대)": ["Shift B (recovery)", "B班（回復交代）"],
   "A조": ["Shift A", "A班"],
