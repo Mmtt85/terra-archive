@@ -27,7 +27,10 @@ type SubWeather = { id: string; name: string; desc: string | null; img?: boolean
 type Variation = { id: string; name: string; func: string | null; desc: string | null; fusion: boolean; img?: boolean; cn?: string };
 type Difficulty = { mode: string; grade: number; name: string; rule: string | null; score: number | null };
 type Ending = { id: string; name: string; desc: string | null; boss: string | null; priority: number; change: string | null; cond?: string[]; cn?: string };
-type Encounter = { scene: string; title: string; desc: string | null; bg?: string | null; choices: { title: string; desc: string | null; cn?: string }[]; floors?: number[]; note?: string; cn?: string };
+// 선택지는 계단식 트리 — next.desc는 그 선택의 결과 서사, next.choices는 이어지는 하위 선택지
+// (현재 데이터는 대부분 결과 서사까지 깊이 2. 하위 선택지가 생기면 재귀로 중첩 렌더).
+type EncChoice = { title: string; desc: string | null; cn?: string; next?: { desc: string | null; choices: EncChoice[] } };
+type Encounter = { scene: string; title: string; desc: string | null; bg?: string | null; choices: EncChoice[]; floors?: number[]; note?: string; cn?: string };
 type RogueData = {
   id: string; name: string; line: string | null; cnName?: string; future?: boolean;
   zones: Zone[]; nodeTypes: { id: string; name: string; desc: string | null; func?: string | null; cn?: string }[];
@@ -50,6 +53,31 @@ function setActiveData(d: RogueData) { data = d; }
 // CN 선행 토픽의 이름 표기 — 중국어 원문이 메인, 한국어 번역이 다음 줄 서브 (사용자 확정 2026-07)
 function Nm({ name, cn }: { name: string; cn?: string }) {
   return cn ? <><span lang="zh">{cn}</span><span className="rg-sub">{name}</span></> : <>{name}</>;
+}
+
+// 우연한 만남 선택지 노드 — 계단식 트리로 렌더. 선택 → (결과 서사) → 이어지는 하위 선택지.
+// cn 병기 룰: 중국어(rogue_6)가 대표, 한국어 번역이 뒤 (Nm과 동일).
+function ChoiceNode({ c }: { c: EncChoice }) {
+  return (
+    <li className="rg-choice">
+      <div className="rg-choice-head">
+        {c.cn
+          ? <><strong lang="zh">{c.cn}</strong><span className="rg-choice-kr">{c.title}</span></>
+          : <strong>{c.title}</strong>}
+        {c.desc && <span className="rg-choice-desc">{c.desc}</span>}
+      </div>
+      {c.next && (c.next.desc || c.next.choices.length > 0) && (
+        <div className="rg-choice-next">
+          {c.next.desc && <p className="rg-choice-result">{c.next.desc}</p>}
+          {c.next.choices.length > 0 && (
+            <ul className="rg-enc-choices nested">
+              {c.next.choices.map((cc, i) => <ChoiceNode key={i} c={cc} />)}
+            </ul>
+          )}
+        </div>
+      )}
+    </li>
+  );
 }
 
 // 모든 록라 공통 6탭. 테마별 고유 시스템(환각/메아리/환경·거부반응·암호판·붕괴·파편·주화 등)은
@@ -390,14 +418,10 @@ function EncounterModal({ enc, onClose }: { enc: Encounter; onClose: () => void 
           <div className="rg-enc-body">
             {enc.desc && <p className="rg-modal-desc">{enc.desc}</p>}
             {enc.note && <p className="rg-enc-note">{enc.note}</p>}
+            {/* 계단식 선택지 트리 — 선택 아래에 결과 서사·하위 선택지를 중첩.
+                rogue_6은 게임 버튼이 중국어라 원문을 대표로 병기 (사용자 확정 2026-07-19). */}
             <ul className="rg-enc-choices">
-              {/* rogue_6(CN 선행)은 게임 버튼이 중국어라 선택지에 원문 병기 — 병기 룰:
-                  중국어가 항상 대표, 한국어 번역이 뒤 (사용자 확정 2026-07-19, Nm 관례와 동일) */}
-              {enc.choices.map((c, i) => (
-                <li key={i}>{c.cn
-                  ? <><strong lang="zh">{c.cn}</strong><span className="rg-sub">{c.title}{c.desc ? ` — ${c.desc}` : ""}</span></>
-                  : <><strong>{c.title}</strong>{c.desc ? ` — ${c.desc}` : ""}</>}</li>
-              ))}
+              {enc.choices.map((c, i) => <ChoiceNode key={i} c={c} />)}
             </ul>
           </div>
         </div>

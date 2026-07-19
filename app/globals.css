@@ -6328,6 +6328,17 @@ html.dark.rg-theme.rg6 .site-header { background: #0a1413e6; border-bottom-color
 .rg-enc-body .rg-enc-choices { padding: 0 0 0 18px }
 .rg-enc-choices { margin: 0; padding: 0 12px 12px 28px; font-size: 12.5px; line-height: 1.7; color: var(--rgtext2) }
 .rg-enc-choices strong { color: var(--rgink) }
+/* 계단식 선택지 트리 — 선택 아래에 결과 서사(▸)와 하위 선택지를 들여쓰기+연결선으로 */
+.rg-choice { margin-bottom: 4px }
+.rg-choice-head strong { color: var(--rgink) }
+.rg-choice-head strong[lang="zh"] { margin-right: 6px }   /* 중국어 대표 + 한국어 뒤 */
+.rg-choice-kr { color: var(--rgtext2); font-weight: 500 }
+.rg-choice-desc { color: var(--rgmut); font-weight: 400 }
+.rg-choice-desc::before { content: " — " }
+.rg-choice-next { margin: 2px 0 6px 4px; padding-left: 12px; border-left: 2px solid var(--rgline) }
+.rg-choice-result { margin: 2px 0; padding: 0; font-size: 12px; line-height: 1.65; color: var(--rgmut) }
+.rg-choice-result::before { content: "▸ "; color: var(--rggold) }
+.rg-enc-choices.nested { padding: 2px 0 0 0; list-style: none }
 
 /* 필터 바 */
 .rg-filterbar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 14px }

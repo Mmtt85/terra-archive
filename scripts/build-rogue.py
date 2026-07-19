@@ -154,6 +154,74 @@ def dedupe_choices(chs):
     return out
 
 
+def extract_encounters(choice_scenes, choices):
+    """조우 씬을 계단식 트리로 추출 (사용자 요청 2026-07-19).
+
+    선택지(choice)의 `nextSceneId`가 후속 씬을 가리키고, 후속 씬은 부모와 같은 제목에
+    새 지문·새 선택지를 갖는 다단계 구조다(흑류수해 최대 3단). choice id에서 끝 `_N`을
+    떼면 그 선택지가 속한 씬 id가 나온다(choice_ro6_bat1_1 → scene_ro6_bat1(_enter),
+    choice_ro6_bat1_1_2 → scene_ro6_bat1_1) — 이 정확 바인딩으로 트리를 복원한다.
+
+    예전엔 접두 매칭으로 부모+자식 선택지를 한 리스트에 쏟고 제목 기준으로 씬을
+    합쳐서(union) 같은 선택지가 여러 벌 반복됐다 — 그 중복을 트리로 대체한다.
+    NEXT/NEXT_PROB(서사 진행)만 다음 씬을 중첩하고, TRADE·SACRIFICE 등 결과 분기는
+    단말 선택지로 둔다(결과 씬은 같은 텍스트 반복뿐이라 파고들 실익이 없음).
+    형제 선택지는 (제목,설명) 기준 중복 제거(확률 변형 '접과장품' 3벌 등)."""
+    from collections import defaultdict
+    scene_ch = defaultdict(list)
+    for cid, c in choices.items():
+        base = re.sub(r"_\d+$", "", cid).replace("choice_", "scene_")
+        parent = base if base in choice_scenes else (
+            base + "_enter" if base + "_enter" in choice_scenes else None)
+        if parent:
+            scene_ch[parent].append((cid, c))
+    for k in scene_ch:
+        scene_ch[k].sort(key=lambda x: (x[1].get("sortId", 0), x[0]))
+
+    def build_scene(sid, seen):
+        nodes, dedup = [], set()
+        for cid, c in scene_ch.get(sid, []):
+            key = (c["title"], c.get("description"))
+            if key in dedup:
+                continue
+            dedup.add(key)
+            node = {"title": c["title"], "desc": c.get("description")}
+            nxt = c.get("nextSceneId")
+            if (nxt and nxt in choice_scenes and nxt not in seen
+                    and str(c.get("type", "")).startswith("NEXT")):
+                sub = build_scene(nxt, seen | {nxt})
+                sub_desc = (choice_scenes[nxt].get("description") or "").strip()
+                if sub["choices"] or sub_desc:
+                    node["next"] = {"desc": sub_desc or None, "choices": sub["choices"]}
+            nodes.append(node)
+        return {"choices": nodes}
+
+    encounters = []
+    for sid, sc in choice_scenes.items():
+        if not sid.endswith("_enter") or "startbuff" in sid:
+            continue
+        bg = sc.get("background")
+        if bg:
+            bg = bg.removesuffix(".png").lower()
+        encounters.append({
+            "scene": sid, "title": sc["title"], "desc": sc.get("description"),
+            "bg": bg, "choices": build_scene(sid, {sid})["choices"],
+        })
+    encounters.sort(key=lambda x: x["scene"])
+    # 동명 enter 씬(溯源 19변형·三重身 3변형 등)은 대표 1개만 — 예전엔 선택지를 union해
+    # 중복이 폭발했다. 트리는 첫 대표 것을 유지하고 배경/지문만 보충한다.
+    merged, by_title = [], {}
+    for e in encounters:
+        m = by_title.get(e["title"])
+        if m is None:
+            by_title[e["title"]] = e
+            merged.append(e)
+            continue
+        m["desc"] = m["desc"] or e["desc"]
+        m["bg"] = m["bg"] or e["bg"]
+    return merged
+
+
 def num(v):
     if isinstance(v, float) and v.is_integer():
         return int(v)
@@ -758,40 +826,10 @@ def build_topic(tid="rogue_1", loc=None):
     } for e in r["endings"].values()]
     endings.sort(key=lambda x: x["priority"])
 
-    # ── 조우 씬 (enter 씬 + 선택지 텍스트) ────────────────────────────────────
-    encounters = []
-    for sid, sc in r["choiceScenes"].items():
-        if not sid.endswith("_enter"):
-            continue
-        # 탐험 시작 보너스 씬('작전 보상' 등)은 실제 노드가 아니라 제외 (사용자 확정 2026-07-18)
-        if "startbuff" in sid:
-            continue
-        prefix = sid[: -len("_enter")].replace("scene_", "choice_")
-        chs = dedupe_choices({"title": c["title"], "desc": c.get("description")}
-                             for cid, c in sorted(r["choices"].items())
-                             if cid.startswith(prefix + "_"))
-        # 일부 bg는 확장자 포함('40_i05.png')·대문자('23_I08')로 들어 있다 — 레포 파일명은 소문자
-        bg = sc.get("background")
-        if bg:
-            bg = bg.removesuffix(".png").lower()
-        encounters.append({
-            "scene": sid, "title": sc["title"], "desc": sc.get("description"),
-            "bg": bg, "choices": chs,
-        })
-    encounters.sort(key=lambda x: x["scene"])
-    # 같은 제목의 변형 씬은 하나로 병합 — 선택지는 제목+설명 기준 합집합
-    # (rogue_3 '전진하는 숲' 56종 등 목록 중복 방지, 사용자 리포트 2026-07-18)
-    merged, by_title = [], {}
-    for e in encounters:
-        m = by_title.get(e["title"])
-        if m is None:
-            by_title[e["title"]] = e
-            merged.append(e)
-            continue
-        m["desc"] = m["desc"] or e["desc"]
-        m["bg"] = m["bg"] or e["bg"]
-        m["choices"] = dedupe_choices(m["choices"] + e["choices"])
-    encounters = merged
+    # ── 조우 씬 (enter 씬을 뿌리로 한 계단식 선택지 트리) ──────────────────────
+    # nextSceneId를 따라 후속 씬(부모와 제목 공유)을 next로 중첩한다. 예전 접두 매칭+제목
+    # union은 부모/자식 선택지를 뭉쳐 중복이 났다 (사용자 리포트 2026-07-19).
+    encounters = extract_encounters(r["choiceScenes"], r["choices"])
     # 조우 배경 CG — avg/images/<bg>.png
     scene_dir = os.path.join(REPO, "public", "rogue", "scene")
     download_webp([(f"{ASSETS}/avg/images/{e['bg']}.png",
@@ -1286,37 +1324,8 @@ def build_rogue6():
     } for e in r["endings"].values()]
     endings.sort(key=lambda x: x["priority"])
 
-    encounters = []
-    for sid, sc in r["choiceScenes"].items():
-        if not sid.endswith("_enter"):
-            continue
-        # 탐험 시작 보너스 씬('행동 보상')은 실제 노드가 아니라 제외 (사용자 확정 2026-07-18)
-        if "startbuff" in sid:
-            continue
-        prefix = sid[: -len("_enter")].replace("scene_", "choice_")
-        chs = dedupe_choices({"title": c["title"], "desc": c.get("description")}
-                             for cid, c in sorted(r["choices"].items())
-                             if cid.startswith(prefix + "_"))
-        bg = sc.get("background")
-        if bg:
-            bg = bg.removesuffix(".png").lower()
-        encounters.append({
-            "scene": sid, "title": sc["title"], "desc": sc.get("description"),
-            "bg": bg, "choices": chs,
-        })
-    encounters.sort(key=lambda x: x["scene"])
-    # 같은 제목의 변형 씬(溯源 19종 등)은 하나로 병합 — 선택지는 제목+설명 기준 합집합
-    merged, by_title = [], {}
-    for e in encounters:
-        m = by_title.get(e["title"])
-        if m is None:
-            by_title[e["title"]] = e
-            merged.append(e)
-            continue
-        m["desc"] = m["desc"] or e["desc"]
-        m["bg"] = m["bg"] or e["bg"]
-        m["choices"] = dedupe_choices(m["choices"] + e["choices"])
-    encounters = merged
+    # 계단식 선택지 트리 (溯源 19변형 등 동명 enter는 대표 1개로 — extract_encounters 참조)
+    encounters = extract_encounters(r["choiceScenes"], r["choices"])
     scene_dir = os.path.join(REPO, "public", "rogue", "scene")
     download_webp([(f"{ASSETS}/avg/images/{e['bg']}.png",
                     os.path.join(scene_dir, f"{e['bg']}.webp"))
@@ -1396,12 +1405,16 @@ def build_rogue6():
                  "weathers", "subweathers", "variations", "endings", "nodeTypes"):
         for x in out[coll]:
             keep_cn(x)
+    # 선택지 트리를 재귀로 훑어 각 선택지 제목에 원문 병기 (CN 클라 버튼과 대조용,
+    # 사용자 요청 2026-07-19). next.desc(후속 씬 지문)는 이름류가 아니라 병기 안 함.
+    def keep_cn_tree(chs):
+        for ch in chs:
+            keep_cn(ch, "title")
+            if ch.get("next"):
+                keep_cn_tree(ch["next"]["choices"])
     for enc in out["encounters"]:
         keep_cn(enc, "title")
-        # 선택지에도 원문 병기 — CN 클라 실황과 대조할 수 있게 (사용자 요청 2026-07-19:
-        # 선택지 많은 조우는 어느 버튼이 어느 번역인지 알 수 없다)
-        for ch in enc["choices"]:
-            keep_cn(ch, "title")
+        keep_cn_tree(enc["choices"])
 
     # ── 번역 오버레이: ① KR 교차 자동 사전 → ② rogue6-ko.json 수동 사전 ──────
     tr = load_auto_tr()
@@ -1441,10 +1454,14 @@ def build_rogue6():
                  "weathers", "subweathers", "variations", "endings", "nodeTypes"):
         for x in out[coll]:
             drop_same_cn(x)
+    def drop_same_cn_tree(chs):
+        for ch in chs:
+            drop_same_cn(ch, "title")
+            if ch.get("next"):
+                drop_same_cn_tree(ch["next"]["choices"])
     for enc in out["encounters"]:
         drop_same_cn(enc, "title")
-        for ch in enc["choices"]:
-            drop_same_cn(ch, "title")
+        drop_same_cn_tree(enc["choices"])
 
     report = os.path.join(REPO, "scripts", "rogue6-untranslated.json")
     json.dump(untranslated, open(report, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
