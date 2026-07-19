@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { adminDeleteFeedback, adminDeleteNickname, adminListFeedback, adminSetHandling, adminSetReviewed, handlingAt, withHandling, fetchNicknameCounts, type FeedbackRow, type NicknameCount } from "../feedback";
+import { adminDeleteRelease, adminDeleteRule, adminListRules, adminPublishRelease, adminUpsertRule, fetchLatestRelease, type ReleaseRow } from "../rules-api";
+import { compileSnapshot, validateRules, RULE_KINDS, type RuleRow } from "../rules-compile";
+import { RULES as bundledRules } from "../rules";
 import operatorsData from "../data/operators.json";
 import recruitData from "../data/recruit.json";
 import farmData from "../data/farm.json";
@@ -19,6 +22,53 @@ type DataCheck = {
 
 const KIND_LABEL: Record<string, string> = { feature: "기능 제안", data_error: "데이터 오류", plan: "편성 제안" };
 const OP_NAME = new Map((operatorsData as { id: string; name: string }[]).map((op) => [op.id, op.name]));
+
+// 플래너 지식 베이스(docs/PLANNER-RULES-DB.md) — 규칙 종류 표시명
+const RULE_KIND_LABEL: Record<RuleRow["kind"], string> = {
+  constant: "엔진 상수", parser: "파서 상수", token: "토큰 카탈로그",
+  skill_override: "파싱 교정", fixture: "정배 픽스처", doc: "섹션 문서",
+};
+
+// 규칙 편집 폼 — body는 JSON 텍스트로 직접 편집 (저장 시 파싱 검증)
+function RuleEditor({ rule, onSave, onCancel }: { rule: RuleRow; onSave: (next: RuleRow) => Promise<void>; onCancel: () => void }) {
+  const isNew = !rule.id;
+  const [key, setKey] = useState(rule.key);
+  const [bodyText, setBodyText] = useState(JSON.stringify(rule.body, null, 2));
+  const [status, setStatus] = useState<RuleRow["status"]>(rule.status);
+  const [note, setNote] = useState(rule.note ?? "");
+  const [seq, setSeq] = useState(String(rule.seq));
+  const [error, setError] = useState("");
+  const save = async () => {
+    let body: Record<string, unknown>;
+    try { body = JSON.parse(bodyText); } catch { setError("body가 올바른 JSON이 아닙니다"); return; }
+    if (!key.trim()) { setError("key를 입력하세요"); return; }
+    try {
+      await onSave({ ...rule, key: key.trim(), body, status, note: note || null, seq: Number(seq) || 0 });
+    } catch (err) { setError(String((err as Error).message ?? err)); }
+  };
+  return (
+    <div className="rule-editor">
+      <header>
+        <b>{RULE_KIND_LABEL[rule.kind]}</b>
+        <input value={key} onChange={(e) => setKey(e.target.value)} placeholder="key" disabled={!isNew}
+          title={isNew ? "규칙 키 (kind 안에서 유일)" : "키 변경은 삭제 후 재생성으로"} />
+        <select value={status} onChange={(e) => setStatus(e.target.value as RuleRow["status"])}>
+          <option value="active">active (발행 포함)</option>
+          <option value="draft">draft (발행 보류)</option>
+          <option value="retired">retired (퇴역)</option>
+        </select>
+        <input className="rule-seq" value={seq} onChange={(e) => setSeq(e.target.value)} title="섹션 내 정렬 순서 (tokens는 파서 매칭 순서에 영향)" />
+      </header>
+      <textarea value={bodyText} onChange={(e) => setBodyText(e.target.value)} rows={Math.min(16, bodyText.split("\n").length + 2)} spellCheck={false} />
+      <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="메모 (출처·근거 — 예: 사용자 확정 2026-07, feedback:<id>)" />
+      {error && <p className="admin-status">{error}</p>}
+      <div className="admin-tools">
+        <button onClick={save}>저장</button>
+        <button onClick={onCancel}>취소</button>
+      </div>
+    </div>
+  );
+}
 
 // payload.page("/#infra" 등)를 사람이 읽을 라벨로 — 클릭하면 그 페이지가 새 탭에 열린다
 function pageOf(payload: unknown): string | undefined {
@@ -42,6 +92,11 @@ export default function AdminPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all"); // all | open | handling | reviewed
   const [nicknames, setNicknames] = useState<NicknameCount[]>([]);
   const [dataCheck, setDataCheck] = useState<DataCheck | null>(null);
+  // 플래너 규칙 원장 + 최신 발행 (null = 조회 실패 → 미설치 안내)
+  const [rules, setRules] = useState<RuleRow[] | null>(null);
+  const [release, setRelease] = useState<ReleaseRow | null>(null);
+  const [rulesStatus, setRulesStatus] = useState("");
+  const [editingRule, setEditingRule] = useState<RuleRow | null>(null);
 
   useEffect(() => {
     if (!entered) return;
@@ -60,9 +115,65 @@ export default function AdminPage() {
       setEntered(true);
       sessionStorage.setItem("ta-admin-key", pw);
       fetchNicknameCounts().then(setNicknames).catch(() => { /* 별명 테이블 미설치 시 무시 */ });
+      loadRules(pw);
     } catch {
       setStatus("조회 실패 — 잠시 후 다시 시도해주세요");
     }
+  };
+
+  // ── 플래너 규칙 (docs/PLANNER-RULES-DB.md Phase 2) ────────────────────────────
+  const loadRules = async (pw: string) => {
+    try {
+      const [rows, latest] = await Promise.all([adminListRules(pw), fetchLatestRelease()]);
+      setRules(rows);
+      setRelease(latest);
+      setRulesStatus("");
+    } catch {
+      setRules(null);
+      setRulesStatus("플래너 규칙 테이블 조회 실패 — docs/supabase-planner-rules.sql을 Supabase SQL Editor에서 실행했는지 확인");
+    }
+  };
+
+  const saveRule = async (next: RuleRow) => {
+    await adminUpsertRule(password, next);
+    setEditingRule(null);
+    setRulesStatus(`저장됨: ${next.kind}/${next.key} — 발행해야 반영됩니다`);
+    loadRules(password);
+  };
+
+  const removeRule = async (rule: RuleRow) => {
+    if (!rule.id) return;
+    if (!window.confirm(`${RULE_KIND_LABEL[rule.kind]} '${rule.key}'를 삭제할까요?\n(이력을 남기려면 삭제 대신 편집에서 retired로)`)) return;
+    try {
+      await adminDeleteRule(password, rule.id);
+      setRulesStatus(`삭제됨: ${rule.kind}/${rule.key} — 발행해야 반영됩니다`);
+      loadRules(password);
+    } catch { setRulesStatus("규칙 삭제 실패"); }
+  };
+
+  const publishRules = async () => {
+    if (!rules) return;
+    const errors = validateRules(rules);
+    if (errors.length) { setRulesStatus(`발행 불가 — ${errors.join(" · ")}`); return; }
+    const nextVersion = (release?.version ?? 0) + 1;
+    const activeCount = rules.filter((row) => row.status === "active").length;
+    if (!window.confirm(`v${nextVersion}으로 발행할까요? (active 규칙 ${activeCount}건)`)) return;
+    const note = window.prompt("발행 메모 (무엇을 왜 바꿨나)") ?? "";
+    try {
+      await adminPublishRelease(password, nextVersion, compileSnapshot(rules, nextVersion), note);
+      setRelease(await fetchLatestRelease());
+      setRulesStatus(`v${nextVersion} 발행 완료 — 로컬에서 python3 scripts/build-rules.py 베이크 → 안내되는 검증 절차 → 커밋·배포`);
+    } catch (err) { setRulesStatus(String((err as Error).message ?? err)); }
+  };
+
+  const rollbackRelease = async () => {
+    if (!release) return;
+    if (!window.confirm(`최신 발행 v${release.version}을 삭제(롤백)할까요? 이전 버전이 최신이 됩니다.`)) return;
+    try {
+      await adminDeleteRelease(password, release.version);
+      setRelease(await fetchLatestRelease());
+      setRulesStatus(`v${release.version} 롤백됨`);
+    } catch { setRulesStatus("롤백 실패"); }
   };
 
   const removeNickname = async (item: NicknameCount) => {
@@ -285,6 +396,61 @@ export default function AdminPage() {
         ))}
         {nicknames.length === 0 && <p className="admin-status">제보된 별명이 없습니다.</p>}
       </div>
+
+      <header className="admin-section-head">
+        <h1>
+          플래너 규칙{" "}
+          <small>
+            발행 v{release?.version ?? "—"} · 사이트 번들 v{bundledRules.version}
+            {release && release.version !== bundledRules.version && " ⚠ 베이크 필요 (build-rules.py)"}
+          </small>
+        </h1>
+      </header>
+      {rulesStatus && <p className="admin-status">{rulesStatus}</p>}
+      {rules === null ? (
+        <p className="admin-status">플래너 규칙 테이블이 아직 없습니다 — <code>docs/supabase-planner-rules.sql</code>을 Supabase SQL Editor에서 실행하세요.</p>
+      ) : (
+        <div className="admin-rules">
+          <div className="admin-tools">
+            {RULE_KINDS.filter((kind) => kind !== "doc").map((kind) => (
+              <button key={kind} onClick={() => setEditingRule({ kind, key: "", body: kind === "skill_override" ? { patch: {}, reason: "" } : kind === "fixture" ? { name: "", type: "planContains" } : kind === "token" ? {} : { value: 0 }, status: "active", seq: 99, note: null })}>
+                + {RULE_KIND_LABEL[kind]}
+              </button>
+            ))}
+            <button onClick={() => loadRules(password)}>새로고침</button>
+            <button className="bulk-handling-btn" onClick={publishRules} title="active 규칙을 스냅샷으로 컴파일해 새 버전으로 발행">🚀 발행 (v{(release?.version ?? 0) + 1})</button>
+            {release && <button onClick={rollbackRelease} title="최신 발행을 삭제해 이전 버전으로 롤백 (원장은 그대로)">↩ v{release.version} 롤백</button>}
+          </div>
+          {editingRule && !editingRule.id && <RuleEditor rule={editingRule} onSave={saveRule} onCancel={() => setEditingRule(null)} />}
+          {RULE_KINDS.map((kind) => {
+            const group = rules.filter((row) => row.kind === kind);
+            if (!group.length) return null;
+            return (
+              <details key={kind} className="rule-group" open={kind === "fixture" || kind === "skill_override"}>
+                <summary><b>{RULE_KIND_LABEL[kind]}</b> <small>{group.length}건{group.some((row) => row.status !== "active") ? ` (active ${group.filter((row) => row.status === "active").length})` : ""}</small></summary>
+                {group.map((rule) => (
+                  editingRule && editingRule.id === rule.id
+                    ? <RuleEditor key={rule.id} rule={editingRule} onSave={saveRule} onCancel={() => setEditingRule(null)} />
+                    : (
+                      <div key={rule.id} className={`rule-row status-${rule.status}`}>
+                        <code>{rule.key}</code>
+                        {rule.status !== "active" && <i className="rule-status-chip">{rule.status}</i>}
+                        <span className="rule-preview">{kind === "doc" ? String(rule.body.text ?? "").slice(0, 60) : JSON.stringify(kind === "constant" || kind === "parser" ? rule.body.value : rule.body).slice(0, 60)}</span>
+                        {rule.note && <span className="rule-note" title={rule.note}>{rule.note}</span>}
+                        <button onClick={() => setEditingRule(rule)}>편집</button>
+                        <button onClick={() => removeRule(rule)}>삭제</button>
+                      </div>
+                    )
+                ))}
+              </details>
+            );
+          })}
+          <p className="data-status-minor">
+            발행 → 로컬 <code>python3 scripts/build-rules.py</code> 베이크 → 안내되는 검증(verify-plan, 파서 변경 시 build-infra 재생성) →
+            커밋·배포까지 해야 사이트에 반영됩니다. 규칙 계층·작성법: <code>docs/PLANNER-RULES-DB.md</code>
+          </p>
+        </div>
+      )}
     </main>
   );
 }

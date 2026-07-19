@@ -66,8 +66,9 @@ URL 복붙으로 해당 탭/오퍼 모달이 바로 열려야 한다 (hashchange
 - `app/data/operators.json` — 백과사전용 오퍼 전체 (2026-07 기준 **416명**)
 - `app/data/infra.json` — 인프라 플래너용 (방 스펙 + 오퍼별 인프라 스킬 구조화, 스킬마다 `buffId` = 다국어 매핑 키)
 - `app/data/rules.json` — 인프라 플래너 **지식 베이스(L2)**: 추정 상수·토큰 카탈로그·파싱
-  교정(skillOverrides)·검증된 정배 픽스처. 재생성 대상이 아니라 **손으로 편집하는 데이터** —
-  수정 후 `node scripts/verify-plan.mjs`로 회귀 검증 ([PLANNER-RULES-DB.md](PLANNER-RULES-DB.md))
+  교정(skillOverrides)·검증된 정배 픽스처. **정본은 Supabase** — /admin '플래너 규칙' 탭에서
+  편집·발행하고 `python3 scripts/build-rules.py`로 베이크한다 (손편집 금지, 수정 후
+  `node scripts/verify-plan.mjs` 필수 — [PLANNER-RULES-DB.md](PLANNER-RULES-DB.md))
 - `app/data/recruit.json` — 공채 도우미용 (태그 29종 + 모집 풀 153명)
 - `app/data/operators.en.json` / `operators.ja.json` — 백과사전 EN/JA 로컬라이즈본 (같은 스키마, 컨셉 태그는 KR 키 유지)
 - `app/data/extra-i18n.en.json` / `.ja.json` — 플래너·공채 표시 오버레이 (이름·buffId→스킬 텍스트·공채 tagId→태그명·방 이름)

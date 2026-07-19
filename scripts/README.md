@@ -68,6 +68,14 @@ build-infra.py는 파서 추정 상수·토큰 카탈로그·파싱 교정(skill
 `node scripts/verify-plan.mjs --snapshot <f>` → 수정 → `--compare <f>`로 편성 무변화를
 증명한다. 계층 설계는 docs/PLANNER-RULES-DB.md.
 
+rules.json의 정본은 Supabase(원장 `planner_rules` + 발행 `rule_releases`)다 —
+편집은 /admin '플래너 규칙' 탭에서 하고 발행 후 로컬에서 베이크한다:
+
+```bash
+python3 scripts/build-rules.py                # 최신 발행 스냅샷 → app/data/rules.json
+                                              # (변경 섹션에 따라 후속 절차를 자동 안내)
+```
+
 ## 4. 다국어(EN/JA) 사이트 데이터
 
 사이트는 `/`(한국어)·`/en`·`/ja` 세 경로로 서빙되며, EN/JA 게임 텍스트는

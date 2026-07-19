@@ -45,24 +45,48 @@
 
 - **Phase 1 (완료 2026-07-19)**: 엔진(L0)을 `planner-engine.ts`로 분리, 유동 지식을
   `rules.json`(정적)으로 추출, `verify-plan.mjs` 하네스. 스냅샷 6로스터×3모드 무변화 검증 완료.
-- **Phase 2 — Supabase 이관**: 테이블 `planner_rules`(kind/key/body jsonb/status/source/note),
-  `rule_releases`(version, snapshot jsonb — active 규칙을 발행 시점에 한 덩어리로 컴파일),
-  `plan_fixtures`(room_key/given/expect/verdict/feedback_id). RLS는 기존 패턴 그대로
-  (anon은 releases 최신 1행 SELECT만, 쓰기는 x-admin-key — docs/supabase-admin.sql 참조).
-  `scripts/build-rules.py`가 최신 release를 받아 rules.json으로 베이크(깃 커밋 = 이력·롤백).
-- **Phase 3 — 축적 루프**: /admin에 "플래너 규칙" 탭(CRUD+발행), 피드백 행에
-  "규칙으로 승격"(source: `feedback:<id>` 자동 기록) / "픽스처로 승격" 버튼.
-  발행 전 verify-plan.mjs 픽스처 전체 통과를 강제.
+- **Phase 2 (완료 2026-07-19)** — Supabase 이관: 테이블 `planner_rules`(원장 — kind/key/body
+  jsonb/status/source/note/seq)와 `rule_releases`(version, snapshot jsonb — 발행 시점에 active
+  규칙을 rules.json 형태로 컴파일한 것). **픽스처도 원장의 `kind='fixture'` 행**으로 통합
+  (설계 초안의 별도 plan_fixtures 테이블은 과설계라 폐기 — 출처는 source/note 컬럼으로 충분).
+  RLS는 기존 패턴 그대로: releases SELECT만 anon, 원장 CRUD·발행·롤백은 x-admin-key
+  (`docs/supabase-planner-rules.sql` — **SQL Editor에서 1회 실행 필요**, 시드 45행 + v1 발행 포함).
+  /admin에 "플래너 규칙" 탭(원장 CRUD + 발행 + 롤백 + 번들 버전 대조), 로컬은
+  `scripts/build-rules.py`가 최신 release를 rules.json으로 베이크(깃 커밋 = 이력·리뷰).
+  컴파일 등가성은 시드 rows → `compileSnapshot()` == rules.json으로 검증 완료.
+- **Phase 3 — 축적 루프**: 피드백 행에 "규칙으로 승격"(source: `feedback:<id>` 자동 기록) /
+  "픽스처로 승격" 버튼. 발행 전 브라우저에서 픽스처 실행(엔진 상수 주입 필요 — 현재는
+  베이크 후 verify-plan이 정식 게이트).
 - **Phase 4 (선택) — 런타임 오버레이**: 플래너 마운트 시 release 버전 확인, 번들보다
   새 버전이면 교체(실패 시 조용히 번들 사용) — 배포 없이 규칙 핫픽스가 필요해지면 도입.
 
-## 5. Phase 1 파일 지도
+## 5. 운영 흐름 (Phase 2 이후)
 
 ```
-app/planner-engine.ts   L0 엔진 (React 무의존 — esbuild로 노드 실행 가능)
-app/planner.tsx         UI만 (엔진 심볼은 planner-engine에서 import)
-app/rules.ts            L2 로더·타입 (RULES / C)
-app/data/rules.json     L2 정본 (constants·parser·tokens·skillOverrides·fixtures)
-scripts/build-infra.py  L1 생성기 — parser·tokens·skillOverrides를 rules.json에서 읽음
-scripts/verify-plan.mjs 회귀 하네스 (픽스처 / --snapshot / --compare)
+/admin '플래너 규칙' 탭에서 편집 (원장 planner_rules; draft=발행 보류, retired=퇴역)
+  → 🚀 발행: validateRules → compileSnapshot → rule_releases에 v(N+1) INSERT
+  → 로컬: python3 scripts/build-rules.py     # rules.json 베이크 + 후속 절차 자동 안내
+  → (parser/tokens/skillOverrides 변경 시) build-infra.py + build-i18n.py 재생성
+  → node scripts/verify-plan.mjs             # 정식 게이트 — 실패하면 커밋 금지
+  → npm run build → 커밋·푸시 → 배포
+잘못 발행했으면 /admin에서 ↩ 롤백(최신 release 행 삭제) 후 재발행.
+```
+
+⚠ `rules.json`은 build-rules.py가 쓰는 파일 — DB 시드 이후엔 손으로 고치지 않는다
+(같은 버전인데 내용이 다르면 베이크가 드리프트 경고를 내고 발행본으로 덮어쓴다).
+
+## 6. 파일 지도
+
+```
+app/planner-engine.ts             L0 엔진 (React 무의존 — esbuild로 노드 실행 가능)
+app/planner.tsx                   UI만 (엔진 심볼은 planner-engine에서 import)
+app/rules.ts                      L2 로더·타입 (RULES / C)
+app/data/rules.json               L2 런타임 정본 (DB 발행 스냅샷의 베이크 결과)
+app/rules-compile.ts              원장 rows → 스냅샷 컴파일 + 발행 전 검증
+app/rules-api.ts                  Supabase REST (release 읽기 anon / CRUD·발행 x-admin-key)
+app/admin/page.tsx                '플래너 규칙' 탭 (원장 CRUD·발행·롤백)
+docs/supabase-planner-rules.sql   테이블·RLS·시드·v1 발행 (SQL Editor 1회 실행)
+scripts/build-rules.py            최신 release → rules.json 베이크 + 후속 절차 안내
+scripts/build-infra.py            L1 생성기 — parser·tokens·skillOverrides를 rules.json에서 읽음
+scripts/verify-plan.mjs           회귀 하네스 (픽스처 / --snapshot / --compare)
 ```

@@ -6,7 +6,9 @@
 
 **규칙 계층 (2026-07-19)**: 절대룰·점수 모델은 `app/planner-engine.ts`(L0), 파싱된 게임 팩트는
 `app/data/infra.json`(L1), **유동 규칙(추정 상수·토큰 카탈로그·파싱 교정·검증된 정배 픽스처)은
-`app/data/rules.json`(L2)** — 계층 설계와 Supabase 이관 로드맵은 [PLANNER-RULES-DB.md](PLANNER-RULES-DB.md).
+`app/data/rules.json`(L2)** — 계층 설계와 운영 흐름은 [PLANNER-RULES-DB.md](PLANNER-RULES-DB.md).
+L2의 정본은 Supabase 원장이며 **/admin '플래너 규칙' 탭에서 편집·발행 →
+`python3 scripts/build-rules.py` 베이크**로 갱신한다 (rules.json 손편집 금지).
 엔진·rules.json·build-infra.py를 고치면 **커밋 전에 `node scripts/verify-plan.mjs`** (픽스처 회귀 검사,
 엔진 리팩토링은 `--snapshot`→`--compare`로 무변화 증명)를 통과시킨다.
 

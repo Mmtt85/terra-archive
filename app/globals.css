@@ -3789,6 +3789,108 @@ footer p {
   cursor: pointer;
   padding: 0 2px;
 }
+/* 플래너 규칙 탭 (지식 베이스 원장 CRUD + 발행) */
+.admin-rules {
+  margin-top: 14px;
+  display: grid;
+  gap: 10px;
+}
+.rule-group {
+  border: 1px solid var(--line);
+  background: var(--white);
+  padding: 10px 14px;
+}
+.rule-group summary {
+  cursor: pointer;
+  font-size: 13px;
+}
+.rule-group summary small {
+  color: var(--muted);
+  font-weight: 700;
+}
+.rule-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  border-top: 1px dashed var(--line);
+  font-size: 12.5px;
+}
+.rule-group .rule-row:first-of-type,
+.rule-group details + .rule-row {
+  margin-top: 8px;
+}
+.rule-row code {
+  font-weight: 800;
+  white-space: nowrap;
+}
+.rule-row.status-draft code { color: var(--muted); }
+.rule-row.status-retired { opacity: 0.55; text-decoration: line-through; }
+.rule-status-chip {
+  font: 800 10px monospace;
+  font-style: normal;
+  color: var(--tint-lime-ink);
+  border: 1px solid var(--line);
+  padding: 1px 5px;
+}
+.rule-preview {
+  color: var(--muted);
+  font: 500 11.5px monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+.rule-note {
+  color: var(--muted);
+  font-size: 11px;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rule-row button {
+  border: 1px solid var(--line);
+  background: var(--white);
+  padding: 3px 9px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.rule-editor {
+  border: 1px solid var(--border-strong);
+  background: var(--white);
+  padding: 12px 14px;
+  display: grid;
+  gap: 8px;
+}
+.rule-editor header {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.rule-editor header b {
+  font-size: 12px;
+}
+.rule-editor input,
+.rule-editor select,
+.rule-editor textarea {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  padding: 6px 9px;
+  font-size: 12.5px;
+  font-family: inherit;
+}
+.rule-editor header input { flex: 1; min-width: 160px; }
+.rule-editor header input.rule-seq { flex: 0 0 56px; min-width: 0; }
+.rule-editor textarea {
+  font: 500 12px/1.55 monospace;
+  resize: vertical;
+  white-space: pre;
+}
 .recruit-combo li.pending {
   border-style: dashed;
   opacity: 0.9;
