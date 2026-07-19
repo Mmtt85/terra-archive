@@ -177,17 +177,6 @@ export function skillApplies(skill: InfraSkill, room: string, product?: string):
   return true;
 }
 
-// 이 방에서 쓰는 스킬의 정예화 요구 단계 (0/1/2). unlock "정예화 N"→N, "Lv.X"→0.
-// 오퍼가 방에 기여하는 활성 스킬 중 가장 높은 단계 = 그 오퍼를 이 방에 쓰려면 필요한 정예화.
-export function eliteReqFor(op: InfraOp, room: string, product?: string): 0 | 1 | 2 {
-  let max = 0;
-  for (const skill of activeSkills(op, room, product)) {
-    const m = /정예화\s*(\d)/.exec(skill.unlock);
-    if (m) max = Math.max(max, Number(m[1]));
-  }
-  return max as 0 | 1 | 2;
-}
-
 // every distinct skill line (group) applies at once; α/β tiers replace each other
 export function activeSkills(op: InfraOp, room: string, product?: string): InfraSkill[] {
   const byGroup = new Map<string, InfraSkill>();

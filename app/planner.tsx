@@ -11,7 +11,7 @@ import {
   ELITE_LABEL, LAYOUT, cellByKey, ROOM_ACCENT, UNIT, PARK_KEYS, SHIFT_COUNT,
   JOB_ORDER, ROSTER_SORT_KEYS, PRODUCTION_KEYS, SUPPORT_KEYS,
   AURA_WEIGHT, AURA_LABEL, skillApplies, breakdown, teamScore, aurasOf, ambientFor, capConvFor,
-  ctxFor, sanitizePlan, presentIdsFor, optimize, slotSubstitutes, eliteReqFor,
+  ctxFor, sanitizePlan, presentIdsFor, optimize, slotSubstitutes,
   type InfraOp, type InfraSkill, type Elite, type Plan, type ProdPriority, type TokenFlow, type OptimizeStep,
 } from "./planner-engine";
 
@@ -79,9 +79,6 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
 
   const effectiveOps = useMemo(() => visibleOps.map((op) => withElite(op, eliteById.get(op.id))), [visibleOps, eliteById]);
   const effectiveOpById = useMemo(() => new Map(effectiveOps.map((op) => [op.id, op])), [effectiveOps]);
-  // 정예화 배지용 — 정예화 하향 전 원본 스킬셋(모든 단계 보유). 하향된 op으로 판정하면
-  // 최고 스킬(예: 로즈몬티스 의식의 실체 E2)이 하위(염력 E0)로 대체돼 E0으로 오판된다.
-  const baseOpById = useMemo(() => new Map(visibleOps.map((op) => [op.id, op])), [visibleOps]);
   const roster = useMemo(() => effectiveOps.filter((op) => ownedIds.has(op.id)), [effectiveOps, ownedIds]);
 
   const persist = (ids: Set<string>, nextPlan: Plan | null, elite: Map<string, Elite> = eliteById, prio: ProdPriority = priority) => {
@@ -577,13 +574,12 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
               </div>
               <div className="ship-room-crew">
                 {team.length ? team.map((op) => {
-                  // 이 방에서 그 오퍼의 최고 인프라 스킬의 정예화 요구 단계 (E0/E1/E2).
-                  // 원본 스킬셋 기준 — 정예화 하향으로 대체되기 전 실제 스킬 티어를 표시.
-                  const elite = eliteReqFor(baseOpById.get(op.id) ?? op, cell.room, cellCtx.product);
+                  // 오퍼의 정예화 단계 (E0/E1/E2) — 편성기 설정값, 미지정이면 그 오퍼 최대 정예화.
+                  const elite = eliteById.get(op.id) ?? maxElite(op.rarity);
                   return (
                     <span key={op.id} className="op-av">
                       <img src={op.image} alt={op.name} width={180} height={180} title={op.name} loading="lazy" />
-                      <em className={`op-elite e${elite}`} title={t("정예화 {n} 스킬", { n: elite })}>E{elite}</em>
+                      <em className={`op-elite e${elite}`} title={t("정예화 {n}", { n: elite })}>E{elite}</em>
                     </span>
                   );
                 }) : <i>{cell.key === "TRAINING" ? t("비워둠 · 특화 훈련 시 사용") : plan ? t("비어 있음") : t("자동 편성 대기")}</i>}
