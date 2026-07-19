@@ -178,6 +178,35 @@ def extract_encounters(choice_scenes, choices):
     for k in scene_ch:
         scene_ch[k].sort(key=lambda x: (x[1].get("sortId", 0), x[0]))
 
+    def group_by_title(nodes):
+        # 다라운드 조우(춤 루프 '被歌颂的影子' 등)는 같은 선택지가 라운드마다 설명만 달리
+        # 반복된다(加入它们 -1/-2/-3 HP · 收下 보상 12종). (제목,설명) 중복제거로는 안 걸려
+        # 목록이 줄줄이 늘어난다 — 제목이 같으면 하나로 묶고, 서로 다른 설명을 variants로
+        # 자식에 접는다 (사용자 리포트 2026-07-19). 순서=제목 첫 등장 순.
+        order, groups = [], {}
+        for n in nodes:
+            if n["title"] not in groups:
+                groups[n["title"]] = []
+                order.append(n["title"])
+            groups[n["title"]].append(n)
+        out = []
+        for title in order:
+            g = groups[title]
+            if len(g) == 1:
+                out.append(g[0])
+                continue
+            variants, seen = [], set()
+            for n in g:
+                d = n.get("desc")
+                if d and d not in seen:
+                    seen.add(d)
+                    variants.append(d)
+            node = {"title": title, "desc": None}
+            if variants:
+                node["variants"] = variants
+            out.append(node)
+        return out
+
     def build_scene(sid, seen):
         nodes, dedup = [], set()
         for cid, c in scene_ch.get(sid, []):
@@ -194,7 +223,7 @@ def extract_encounters(choice_scenes, choices):
                 if sub["choices"] or sub_desc:
                     node["next"] = {"desc": sub_desc or None, "choices": sub["choices"]}
             nodes.append(node)
-        return {"choices": nodes}
+        return {"choices": group_by_title(nodes)}
 
     encounters = []
     for sid, sc in choice_scenes.items():

@@ -6339,6 +6339,10 @@ html.dark.rg-theme.rg6 .site-header { background: #0a1413e6; border-bottom-color
 .rg-choice-result { margin: 2px 0; padding: 0; font-size: 12px; line-height: 1.65; color: var(--rgmut) }
 .rg-choice-result::before { content: "▸ "; color: var(--rggold) }
 .rg-enc-choices.nested { padding: 2px 0 0 0; list-style: none }
+/* 라운드 반복 선택지의 변형 결과 목록 (받기 보상·춤 HP 소모 등) */
+.rg-choice-variants { margin: 2px 0 6px 4px; padding: 0 0 0 14px; list-style: none; border-left: 2px solid var(--rgline) }
+.rg-choice-variants li { font-size: 12px; line-height: 1.6; color: var(--rgmut) }
+.rg-choice-variants li::before { content: "· "; color: var(--rgtext2) }
 
 /* 필터 바 */
 .rg-filterbar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 14px }

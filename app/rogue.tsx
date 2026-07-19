@@ -29,7 +29,7 @@ type Difficulty = { mode: string; grade: number; name: string; rule: string | nu
 type Ending = { id: string; name: string; desc: string | null; boss: string | null; priority: number; change: string | null; cond?: string[]; cn?: string };
 // 선택지는 계단식 트리 — next.desc는 그 선택의 결과 서사, next.choices는 이어지는 하위 선택지
 // (현재 데이터는 대부분 결과 서사까지 깊이 2. 하위 선택지가 생기면 재귀로 중첩 렌더).
-type EncChoice = { title: string; desc: string | null; cn?: string; next?: { desc: string | null; choices: EncChoice[] } };
+type EncChoice = { title: string; desc: string | null; cn?: string; variants?: string[]; next?: { desc: string | null; choices: EncChoice[] } };
 type Encounter = { scene: string; title: string; desc: string | null; bg?: string | null; choices: EncChoice[]; floors?: number[]; note?: string; cn?: string };
 type RogueData = {
   id: string; name: string; line: string | null; cnName?: string; future?: boolean;
@@ -66,6 +66,12 @@ function ChoiceNode({ c }: { c: EncChoice }) {
           : <strong>{c.title}</strong>}
         {c.desc && <span className="rg-choice-desc">{c.desc}</span>}
       </div>
+      {/* 라운드마다 반복되는 선택지의 서로 다른 결과(춤 -1/-2/-3 HP·받기 보상 12종)를 자식으로 */}
+      {c.variants && c.variants.length > 0 && (
+        <ul className="rg-choice-variants">
+          {c.variants.map((v, i) => <li key={i}>{v}</li>)}
+        </ul>
+      )}
       {c.next && (c.next.desc || c.next.choices.length > 0) && (
         <div className="rg-choice-next">
           {c.next.desc && <p className="rg-choice-result">{c.next.desc}</p>}
