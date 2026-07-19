@@ -154,7 +154,7 @@ def dedupe_choices(chs):
     return out
 
 
-def extract_encounters(choice_scenes, choices, tree_overrides=None):
+def extract_encounters(choice_scenes, choices, tree_overrides=None, items=None):
     """조우 씬을 계단식 트리로 추출 (사용자 요청 2026-07-19).
 
     선택지(choice)의 `nextSceneId`가 후속 씬을 가리키고, 후속 씬은 부모와 같은 제목에
@@ -173,6 +173,28 @@ def extract_encounters(choice_scenes, choices, tree_overrides=None):
     복원이 불가하다. 중요 조우만 choice의 끝번호(_N)로 부모-자식을 수작업 지정해 중첩한다
     (번호는 로케일 무관 — 사용자 확정 2026-07-19). rogueN-curated.json의 encounterTree."""
     tree_overrides = tree_overrides or {}
+    relic_items = items or {}
+
+    def name_reward(c, desc):
+        # 선택지가 특정 소장품을 주면(displayData.itemId=RELIC) 이름을 병기한다.
+        # 게임 텍스트가 "소장품 획득"으로 뭉뚱그린 확정 보상을 구체화 (사용자 요청 2026-07-20).
+        # itemId=null(랜덤 소장품)·비(非)소장품(각뿔·희망 등)은 건드리지 않는다. 이미 설명에
+        # 이름이 박힌 경우(예: 소장품 <전기주전자> 획득)도 그대로 둔다. 동명 선택지 3벌이
+        # 서로 다른 소장품을 주면(곱사등이의 그림자/칼춤/배풍등) variants가 자동 분리된다.
+        dd = c.get("displayData") or {}
+        iid = dd.get("itemId")
+        if not iid or dd.get("type") != "ITEM":
+            return desc
+        it = relic_items.get(iid)
+        if not it or it.get("type") != "RELIC":
+            return desc
+        nm = (it.get("name") or "").strip()
+        # 이미 설명에 이름이 박혀 있으면(장식 따옴표·괄호 차이 무시) 병기하지 않는다.
+        bare = lambda s: re.sub(r"""[\s'"‘’“”「」『』()（）《》]""", "", s or "")
+        if not nm or bare(nm) in bare(desc):
+            return desc
+        return f"{desc} ({nm})" if desc and desc.strip() else nm
+
     from collections import defaultdict
     scene_ch = defaultdict(list)
     for cid, c in choices.items():
@@ -217,12 +239,13 @@ def extract_encounters(choice_scenes, choices, tree_overrides=None):
         # 원시 노드 목록(_num=choice 끝번호 보유, 그룹화 전). 하위 씬도 재귀로 원시.
         nodes, dedup = [], set()
         for cid, c in scene_ch.get(sid, []):
-            key = (c["title"], c.get("description"))
+            desc = name_reward(c, c.get("description"))
+            key = (c["title"], desc)
             if key in dedup:
                 continue
             dedup.add(key)
             m = re.search(r"_(\d+)$", cid)
-            node = {"title": c["title"], "desc": c.get("description"),
+            node = {"title": c["title"], "desc": desc,
                     "_num": int(m.group(1)) if m else -1}
             nxt = c.get("nextSceneId")
             if (nxt and nxt in choice_scenes and nxt not in seen
@@ -939,7 +962,7 @@ def build_topic(tid="rogue_1", loc=None):
     # encounterTree: 후속 이벤트(전투 돌입 등)의 부모 선택 소속은 게임 데이터에 없어
     # rogueN-curated.json에서 choice 끝번호로 수작업 지정 (로케일 무관).
     encounters = extract_encounters(r["choiceScenes"], r["choices"],
-                                    load_encounter_tree(f"rogue{ronum}"))
+                                    load_encounter_tree(f"rogue{ronum}"), items)
     # 조우 배경 CG — avg/images/<bg>.png
     scene_dir = os.path.join(REPO, "public", "rogue", "scene")
     download_webp([(f"{ASSETS}/avg/images/{e['bg']}.png",
@@ -1436,7 +1459,7 @@ def build_rogue6():
 
     # 계단식 선택지 트리 (溯源 19변형 등 동명 enter는 대표 1개로 — extract_encounters 참조)
     encounters = extract_encounters(r["choiceScenes"], r["choices"],
-                                    load_encounter_tree("rogue6"))
+                                    load_encounter_tree("rogue6"), items)
     scene_dir = os.path.join(REPO, "public", "rogue", "scene")
     download_webp([(f"{ASSETS}/avg/images/{e['bg']}.png",
                     os.path.join(scene_dir, f"{e['bg']}.webp"))
