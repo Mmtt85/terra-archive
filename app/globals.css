@@ -6288,7 +6288,8 @@ html.dark.rg-theme.rg6 .site-header { background: #0a1413e6; border-bottom-color
 .rg-nodetype-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px }
 @media (max-width: 900px) { .rg-nodetype-list { grid-template-columns: 1fr } }
 .rg-nodetype { border: 1px solid var(--rgline); background: var(--rgdeep); padding: 10px 12px }
-.rg-nodetype h4 { margin: 0 0 4px; font-size: 13.5px; color: var(--rggold) }
+.rg-nodetype h4 { margin: 0 0 4px; font-size: 13.5px; color: var(--rggold); display: flex; align-items: center; gap: 7px }
+.rg-nodetype-ic { font-size: 16px; line-height: 1; flex: none; width: 1.4em; text-align: center }
 .rg-nodetype p { margin: 0 0 4px; font-size: 13px; line-height: 1.55; color: var(--rgtext2) }
 /* 기능 설명(func) — 플레이버 텍스트보다 위, 본문색으로 또렷하게 */
 .rg-nodetype .rg-nodetype-func { color: var(--rgink); font-size: 13.5px }

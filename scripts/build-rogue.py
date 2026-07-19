@@ -557,6 +557,12 @@ def build_topic(tid="rogue_1", loc=None):
     for c in capsules:
         c["img"] = os.path.exists(os.path.join(cap_dir, f"{c['id']}.webp"))
 
+    # 악단(BAND) 아이콘 — init/initreliciconpic/<id>.png (파일명이 아이템 id와 일치).
+    # relic 폴더에 받아 두면 item_group의 img 판정이 자동으로 붙는다.
+    band_ids = [iid for iid, it in items.items() if it.get("type") == "BAND"]
+    download_webp([(f"{ASSETS}/ui/rogueliketopic/topics/{tid}/init/initreliciconpic/{bid}.png",
+                    os.path.join(relic_icon_dir, f"{bid}.webp")) for bid in band_ids], max_px=180, photo=False)
+
     def item_group(itype):
         # 같은 이름은 업그레이드 티어 중복 (스쿼드 등) — usage가 가장 긴(최종 티어) 항목만 대표로
         # 남긴다 (사용자 요청 2026-07-18: 모든 록라 스쿼드 중복 제거)
@@ -1123,8 +1129,20 @@ def build_rogue6():
             return (0, int(o), "")
         return (1, 0, o) if o else (2, 0, x["id"])
     relics.sort(key=relic_order_key)
+    # 아이콘 판정 — 정확 일치 우선, 없으면 변형 접미(_a/_b/_c 등)를 뗀 베이스 아이콘으로 폴백.
+    # (특선 통조림 α/β/γ처럼 강도 변형이 하나의 아이콘을 공유하는 유물 39종 대응)
+    def relic_icon_id(iid):
+        if os.path.exists(os.path.join(relic_icon_dir, f"{iid}.webp")):
+            return iid
+        base = re.sub(r"_[a-z]$", "", iid)
+        if base != iid and os.path.exists(os.path.join(relic_icon_dir, f"{base}.webp")):
+            return base
+        return None
     for x in relics:
-        x["img"] = os.path.exists(os.path.join(relic_icon_dir, f"{x['id']}.webp"))
+        ic = relic_icon_id(x["id"])
+        x["img"] = ic is not None
+        if ic and ic != x["id"]:
+            x["iconId"] = ic
 
     # 스크랩(零件) — 자연물(GOODS)·가공품(MOVE)·개념체(PASSIVE) 3분류
     scrap_mod = mod["scrap"]
@@ -1161,6 +1179,10 @@ def build_rogue6():
                                     "img": os.path.exists(os.path.join(relic_icon_dir, f"{iid}.webp"))})
         return [e for _, e in best.values()]
     tools = item_group6("ACTIVE_TOOL")
+    # 악단(BAND) 아이콘 — init/initreliciconpic/<id>.png (id 일치). relic 폴더에 받아 img 판정 자동화.
+    band_ids = [iid for iid, it in items.items() if it.get("type") == "BAND"]
+    download_webp([(f"{ASSETS}/ui/rogueliketopic/topics/rogue_6/init/initreliciconpic/{bid}.png",
+                    os.path.join(relic_icon_dir, f"{bid}.webp")) for bid in band_ids], max_px=180, photo=False)
     bands = item_group6("BAND")
 
     # 유산(襁褓 — 다음 탐색에 물려주는 아이템). 동명 중복(획득 횟수 슬롯)은 대표 1개만
