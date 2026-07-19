@@ -272,18 +272,21 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
 
   const runOptimize = async (ids: Set<string> = ownedIds, elite: Map<string, Elite> = eliteById, prio: ProdPriority = priority) => {
     if (optimizing) return; // 중복 실행 방지
+    // 페이싱 (사용자 확정 2026-07-19): 전체 소요는 3~5초 사이 랜덤, 단계 간격은 0.3~1.2초
+    // 랜덤(딱딱한 정주기 금지) — 남은 예산 안에서만 지연해 총 시간이 목표를 넘지 않는다.
+    // 실제 계산이 목표보다 오래 걸리면 그만큼 걸린다 (전수 비교가 우선).
+    const targetMs = 3000 + Math.random() * 2000;
     const startedAt = performance.now();
     setOptimizing(t("자동편성 엔진 계산 중 — 편성 공간 구성…"));
     try {
-      // 페이싱 (사용자 확정 2026-07-19): 단계 문구를 읽을 수 있게 단계당 0.3~1.2초
-      // **랜덤** 간격(딱딱한 정주기 금지), 전체 최소 3.2초 — 계산이 빨라도 안내가
-      // 후다닥 지나가지 않는다
       const paced = async (step: OptimizeStep) => {
         setOptimizing(stepMessage(step));
-        await new Promise((resolve) => setTimeout(resolve, 300 + Math.random() * 900));
+        const budget = targetMs - (performance.now() - startedAt);
+        const delay = Math.min(300 + Math.random() * 900, Math.max(budget, 0));
+        if (delay > 0) await new Promise((resolve) => setTimeout(resolve, delay));
       };
       const next = await optimize(visibleOps.map((op) => withElite(op, elite.get(op.id))).filter((op) => ids.has(op.id)), prio, paced);
-      const remain = 3200 - (performance.now() - startedAt);
+      const remain = targetMs - (performance.now() - startedAt);
       if (remain > 0) await new Promise((resolve) => setTimeout(resolve, remain));
       setPlan(next);
       setActiveShift(0);
@@ -1132,7 +1135,7 @@ const HELP_SECTIONS: { title: string; items: string[] }[] = [
     "제어센터 오라는 대상 방 점수에 실제로 합산됩니다 — 무역소 오더 효율 +10% 오라면 무역소 점수와 상단 서머리에 더해집니다 (방 상세의 '제어센터 오라 수신'). 단 이격 실버애쉬처럼 조건이 붙은 오라는 조건을 채운 그 방 하나에만 적용됩니다.",
     "'용문근위국 오퍼와 함께'류 동반 조건, '미노스 1명당'류 카운트 조건은 실제 배치를 기준으로만 인정합니다.",
     "이격 실버애쉬 보유 시 쉐라그 3명(무역 스킬 강한 순)을 무역소 한 곳에 모으는 세트안을 만들되, 세트 없는 편성과 기지 총점을 비교해 이득일 때만 채택합니다. 진영 판정은 다중 소속 기준(카란 무역회사 오퍼도 쉐라그로 인정).",
-    "플레임테일(피누스 실베스트리스 기사)은 제조소에 배치된 기사단 1명당 작전기록 생산력 +10%·귀금속 -10% 오라입니다. 보유 시 애쉬락·와일드메인·파투스(각 +25%)를 B조 작전기록방에 결집하고 플레임테일을 B조 제어센터에 앉히는 세트안을 만들어, 세트 없는 편성과 기지 총점을 비교해 이득일 때만 채택합니다 — 귀금속 방의 감산도 방 점수에 그대로 반영됩니다.",
+    "플레임테일(피누스 실베스트리스 기사)은 제조소에 배치된 기사단원 1명당, 그 기사단원이 일하는 제조소에 작전기록 +10%·귀금속 -10%를 주는 오라입니다 — 기지 전체 일률이 아니라 방 단위라, 기사단을 작전기록방에 모으면 감산은 발생하지 않습니다. 보유 시 애쉬락·와일드메인·파투스(각 +25%)를 B조 작전기록방에 결집하고 플레임테일을 B조 제어센터에 앉히는 세트안을 만들어, 세트 없는 편성과 기지 총점을 비교해 이득일 때만 채택합니다.",
     "제어센터 카드의 '+N 오라 가중 점수'는 %가 아니라 오라를 우선순위 가중치(제조소 ×10 > 무역소 ×2 > 인맥 ×0.6 > 단서 ×0.2)로 환산한 비교용 점수입니다. 일반 방 카드에 '(오라 ±N)'이 붙어 있으면 제어센터 오라 수신분이 포함된 것으로, 방 점수가 오퍼 스킬 합과 달라 보이는 이유입니다 — 방 상세의 '제어센터 오라 수신' 항목에서 내역을 확인할 수 있습니다.",
     "만트라 정예 소대는 실존 정예 오퍼 수 기준으로 계산합니다 (현재 6명 → +37%, 신규 정예 오퍼 추가 시 데이터 갱신에서 자동 반영).",
   ]},
