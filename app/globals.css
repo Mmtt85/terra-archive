@@ -5085,8 +5085,12 @@ html.dark .story-card:hover .story-thumb img {
   .story-rail .rail-desc-snip {
     display: inline;
   }
+  /* 밑줄 단어 터치로 펼친 카드 — 제자리서 커져 오른쪽이 잘리지 않게 레일 전체 폭(100%)을
+     차지하고, JS가 가운데로 스크롤한다 (사용자 리포트 2026-07-20) */
   .story-rail .rail-card.open {
-    max-width: 90vw;
+    flex: 0 0 100%;
+    max-width: 100%;
+    width: 100%;
   }
   .story-rail .rail-card.open .rail-card-text b {
     white-space: normal;

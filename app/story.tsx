@@ -274,12 +274,15 @@ function EntityRail({ entities, active, onShowOperator, focus }: {
     const entity = entities[focus.ei];
     if (!entity) return;
     const mobile = typeof window !== "undefined" && window.matchMedia("(max-width: 1180px)").matches;
-    if (mobile) setOpenCard(entity.name);
-    const el = railRef.current?.querySelector<HTMLElement>(`[data-ei="${focus.ei}"]`);
-    el?.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
+    if (mobile) setOpenCard(entity.name); // 모바일: 펼치면 100% 폭이 되므로 레이아웃 후 스크롤
     setFlashEi(focus.ei);
+    // 펼침(.open)으로 폭이 바뀐 뒤에 가운데로 스크롤해야 오른쪽 잘림 없이 정확히 중앙에 온다
+    const raf = window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
+      const el = railRef.current?.querySelector<HTMLElement>(`[data-ei="${focus.ei}"]`);
+      el?.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
+    }));
     const timer = window.setTimeout(() => setFlashEi((cur) => (cur === focus.ei ? null : cur)), 1400);
-    return () => window.clearTimeout(timer);
+    return () => { window.cancelAnimationFrame(raf); window.clearTimeout(timer); };
   }, [focus, entities]);
   // 강조 대상이 현재 active에 없으면(스크롤로 밀려남) 임시로 끼워 넣어 카드를 띄운다
   const shown = focus && !active.some((a) => a.ei === focus.ei)
