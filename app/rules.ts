@@ -22,6 +22,29 @@ export type PlannerConstants = {
 
 export type SkillOverride = { patch: Record<string, unknown>; note?: string };
 
+// 시너지 세트(팟) 정의 — L2 카탈로그. 평가기 타입(anchor.detect, bodies.from, target.cell)은
+// 엔진(L0)이 알고, 인스턴스는 데이터다. 새 팟 = /admin에서 synergy_set 행 추가 + 발행.
+export type SynergySetDef = {
+  key: string;                 // optimize 후보 플래그 키 (예: sherag/pinus/quality)
+  name: string;                // 표시명 (진행 안내·admin) — KR, i18n 사전에 같은 키로 번역 추가
+  shift?: number;              // 0 = A조(기본), 1 = B조(회복 교대)
+  badge?: boolean;             // 채택 시 전략 라벨에 "+ 진영 세트" 표시
+  note?: string;
+  anchor?: {                   // 세트를 여는 오라원 (별도 방에 앉는 오퍼 — 없으면 본체만)
+    room: string;              // 앵커가 앉는 방 (CONTROL 등)
+    detect: "gateFaction" | "perProduct"; // 앵커 스킬 판별 평가기 (L0)
+  };
+  bodies: {
+    room: string;              // 본체가 앉는 방 종류
+    from: "anchorFaction" | "roles"; // 본체 선발: 앵커 진영원 / kind 역할 슬롯
+    roles?: string[];          // from=roles: 슬롯별 스킬 kind (override/payout/quality …)
+    count?: number | "gateCount";    // from=anchorFaction: 최대 인원 (gateCount = 앵커 게이트 수)
+    min?: number | "gateCount";      // 세트 성립 최소 인원 (기본: roles 수 또는 count)
+    requireRoomSkill?: boolean;      // 본체가 그 방 스킬을 가져야 하는가 (쉐라그는 머릿수라 false)
+  };
+  target: { cell: "first" | "firstFree" | "byAnchorProduct" }; // bodies.room의 어느 칸에
+};
+
 export type Fixture = {
   name: string;
   type: "invariant" | "planContains" | "teamCompare";
@@ -49,6 +72,7 @@ export type PlannerRules = {
   parser: Record<string, unknown>;               // build-infra.py 전용 — 프론트 미사용
   tokens: string[];                              // build-infra.py 전용 토큰 카탈로그
   skillOverrides: Record<string, SkillOverride>; // build-infra.py 전용 파서 교정
+  synergySets?: SynergySetDef[];                 // 시너지 세트 카탈로그 (v4+, 구 스냅샷은 부재 가능)
   fixtures: Fixture[];                           // scripts/verify-plan.mjs 전용
 };
 

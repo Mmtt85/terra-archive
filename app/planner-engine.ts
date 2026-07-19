@@ -5,7 +5,7 @@
 // ⚠ 이 파일이나 rules.json을 고치면 반드시 `node scripts/verify-plan.mjs`로 회귀 검증할 것 —
 // 픽스처(검증된 정배)와 스냅샷이 "굼 없는 레토"류 회귀를 커밋 전에 잡는다.
 import infraData from "./data/infra.json";
-import { C } from "./rules";
+import { C, RULES, type SynergySetDef } from "./rules";
 
 export type TokenGen = { token: string; estimate: number; perMember?: { per: number; cap: number; match: string } };
 export type TokenUse = { token: string; per: number; value: number; percent: boolean };
@@ -507,10 +507,101 @@ export function presentIdsFor(plan: Plan, shift: number): Set<string> {
   return ids;
 }
 
-// 세트 후보 선택 — 쉐라그(gate: A조 무역소)·피누스(product: B조 작전기록방)·품질 조합
-// (quality: A조 무역소 오버라이드+수익+품질)은 **개별 후보**로 평가한다. 단일 플래그로 묶으면
-// 한 세트의 이득에 다른 세트가 무임승차로 채택되는 얽힘이 생긴다 (2026-07-19)
-export type FactionSets = { gate?: boolean; product?: boolean; quality?: boolean };
+// ── 시너지 세트(팟) — L2 카탈로그 기반 제네릭 조립 (Phase 3, 2026-07-19) ──────────────
+// 어떤 팟이 있는지(쉐라그·피누스·품질 조합·이후 추가분)는 rules.json synergySets(L2 데이터)가
+// 정의하고, 평가기(anchor.detect / bodies.from / target.cell)만 여기 L0에 있다.
+// 각 팟은 **개별 후보**로 평가한다(멱집합) — 단일 플래그로 묶으면 한 세트의 이득에 다른
+// 세트가 무임승차로 채택되는 얽힘이 생긴다. 채택은 항상 planScore 비교 (L2는 점수 불간섭).
+const SYNERGY_SETS: SynergySetDef[] = RULES.synergySets ?? [];
+
+export type FactionSets = Record<string, boolean>; // def.key → 이 후보안에 세트 포함 여부
+
+const matchAnchorSkill = (detect: string, skill: InfraSkill): boolean =>
+  detect === "gateFaction" ? Boolean(skill.gateFaction && skill.gateCount)
+  : detect === "perProduct" ? Boolean(skill.kind in AURA_WEIGHT && skill.perFaction && skill.perProduct)
+  : false;
+
+// 로스터만으로 세트 조립 가능성 판정 — optimize()가 후보 플래그(멱집합의 축)를 만들 때 사용
+export function synergySetAvailable(def: SynergySetDef, roster: InfraOp[]): boolean {
+  if (def.anchor) {
+    const anchor = def.anchor;
+    return roster.some((op) => op.skills.some((skill) => skill.room === anchor.room && matchAnchorSkill(anchor.detect, skill)));
+  }
+  const picked = new Set<string>();
+  for (const kind of def.bodies.roles ?? []) {
+    const cand = roster.find((op) => !picked.has(op.id) && op.skills.some((skill) => skill.room === def.bodies.room && skill.kind === kind));
+    if (!cand) return false;
+    picked.add(cand.id);
+  }
+  return (def.bodies.roles ?? []).length > 0;
+}
+
+// 팟 하나를 시드·예약으로 연다 — 그리디가 방 순서 때문에 못 여는 완성형(닭-달걀·시드 선점)의
+// 탈출구. 실패 조건(앵커 없음·인원 미달·칸 없음)이면 조용히 무시 → 그 후보안은 기본과 동일.
+function seedSynergySet(def: SynergySetDef, roster: InfraOp[], used: Set<string>, reserved: Map<string, string>, seeds: Record<string, InfraOp[]>): void {
+  const room = def.bodies.room;
+  const soloCtx: Ctx = { tokenPoints: {} };
+  const free = (op: InfraOp) => !used.has(op.id) && !reserved.has(op.id);
+  // 앵커(오라원) — 별도 방(제어센터 등)에 앉아 세트를 여는 오퍼
+  let anchorOp: InfraOp | undefined;
+  let anchorSkill: InfraSkill | undefined;
+  if (def.anchor) {
+    const anchor = def.anchor;
+    for (const op of roster) {
+      if (!free(op)) continue;
+      const skill = op.skills.find((sk) => sk.room === anchor.room && matchAnchorSkill(anchor.detect, sk));
+      if (skill) { anchorOp = op; anchorSkill = skill; break; }
+    }
+    if (!anchorOp || !anchorSkill) return;
+  }
+  // 본체 대상 생산품 (byAnchorProduct: 앵커 perProduct의 양수 쪽 — 피누스 작전기록)
+  const product = def.target.cell === "byAnchorProduct"
+    ? Object.entries(anchorSkill?.perProduct ?? {}).find(([, per]) => per > 0)?.[0]
+    : undefined;
+  if (def.target.cell === "byAnchorProduct" && !product) return;
+  const gateCount = anchorSkill?.gateCount ?? 3;
+  const resolve = (value: number | "gateCount" | undefined, fallback: number) => (value === "gateCount" ? gateCount : value ?? fallback);
+  // 본체 선발 — anchorFaction: 앵커 진영원(쉐라그는 머릿수라 방 스킬 불요), roles: kind 역할 슬롯
+  const bodies: InfraOp[] = [];
+  if (def.bodies.from === "anchorFaction") {
+    const faction = anchorSkill?.gateFaction ?? anchorSkill?.perFaction;
+    if (!faction) return;
+    bodies.push(...roster
+      .filter((op) => op.id !== anchorOp!.id && free(op) && factionsOf(op).includes(faction)
+        && (def.bodies.requireRoomSkill === false || op.skills.some((sk) => skillApplies(sk, room, product))))
+      .sort((a, b) => opSolo(b, room, 3, soloCtx) - opSolo(a, room, 3, soloCtx))
+      .slice(0, resolve(def.bodies.count, 3)));
+  } else {
+    // 역할 슬롯 순서대로 그리디 — 첫 자리는 단독 점수, 이후는 "지금까지 뽑힌 팀과의 방 점수"로
+    // 순위 (품질 요원처럼 팀이 있어야 가치가 드러나는 역할의 동급 대체 판정)
+    for (const kind of def.bodies.roles ?? []) {
+      const cand = roster
+        .filter((op) => free(op) && op.id !== anchorOp?.id && !bodies.some((b) => b.id === op.id)
+          && op.skills.some((sk) => sk.room === room && sk.kind === kind))
+        .sort((a, b) => (bodies.length
+          ? teamScore([...bodies, b], room, soloCtx) - teamScore([...bodies, a], room, soloCtx)
+          : opSolo(b, room, 3, soloCtx) - opSolo(a, room, 3, soloCtx)))[0];
+      if (cand) bodies.push(cand);
+    }
+  }
+  const min = resolve(def.bodies.min, def.bodies.from === "roles" ? (def.bodies.roles ?? []).length : resolve(def.bodies.count, 3));
+  if (bodies.length < min) return;
+  // 시드 + 예약 — 같은 조의 앞 순서 방이 시드를 채가거나 전수 감사(seedKeep)가 쓸어내지 않게
+  const cells = LAYOUT.filter((c) => c.room === room);
+  const cell = def.target.cell === "firstFree" ? cells.find((c) => !(seeds[c.key]?.length))
+    : def.target.cell === "byAnchorProduct" ? cells.find((c) => c.product === product)
+    : cells[0];
+  if (!cell) return;
+  seeds[cell.key] = [...(seeds[cell.key] ?? []), ...bodies].slice(0, infra.rooms[room]?.slots ?? 3);
+  for (const op of seeds[cell.key]) reserved.set(op.id, cell.key);
+  if (anchorOp && def.anchor) {
+    const anchorCell = LAYOUT.find((c) => c.room === def.anchor!.room);
+    if (anchorCell) {
+      seeds[anchorCell.key] = [...(seeds[anchorCell.key] ?? []), anchorOp].slice(0, infra.rooms[def.anchor.room]?.slots ?? 1);
+      reserved.set(anchorOp.id, anchorCell.key);
+    }
+  }
+}
 
 export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSets: FactionSets = {}, priority: ProdPriority = "gold"): Plan {
   const prodKeys = PRIORITY_KEYS[priority];
@@ -534,83 +625,10 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
       seeds["POWER-0"] = [plantBooster];
       reserved.set(plantBooster.id, "POWER-0");
     }
-    // 쉐라그 무역소 세트: 이격 실버애쉬(제어센터 "쉐라그 3명 배치된 무역소 +10%")
-    // 보유 시 쉐라그 3명을 무역소 한 곳에 모으는 후보안 — 무조건 채택이 아니라
-    // optimize()가 세트 미포함안과 총점을 비교해 이득일 때만 쓴다 (사용자 확정)
-    if (shift === 0 && factionSets.gate) {
-      for (const auraOp of roster) {
-        for (const skill of auraOp.skills) {
-          if (skill.room !== "CONTROL" || !skill.gateFaction || !skill.gateCount) continue;
-          const bodies = roster
-            .filter((op) => op.id !== auraOp.id && !used.has(op.id) && !reserved.has(op.id) && factionsOf(op).includes(skill.gateFaction!))
-            .sort((a, b) => opSolo(b, "TRADING", 3, { tokenPoints: {} }) - opSolo(a, "TRADING", 3, { tokenPoints: {} }));
-          if (bodies.length < skill.gateCount) continue;
-          const set = bodies.slice(0, skill.gateCount);
-          seeds["TRADING-0"] = [...(seeds["TRADING-0"] ?? []), ...set].slice(0, 3);
-          seeds["CONTROL"] = [...(seeds["CONTROL"] ?? []), auraOp];
-          for (const op of seeds["TRADING-0"]) reserved.set(op.id, "TRADING-0");
-          reserved.set(auraOp.id, "CONTROL");
-        }
-      }
-    }
-    // 품질 조합 세트 (사용자 확정 2026-07-19: "샤마르+테킬라는 가능한 한 고품질 확률 요원과
-    // 조합한다"): 오버라이드(샤마르)+품질 수익(테킬라)+고품질 확률 요원 3인을 무역소 한 곳에
-    // 결집한 후보안. 보통은 점수 모델이 알아서 조립하지만(디아만테 210 > 아르케토 182.5),
-    // 토큰 시드(우요우 등)가 무역소를 선점·예약하면 그리디·감사 모두 이 완성형을 못 연다
-    // (무6성 로스터에서 총점 -27.5 사례) — 세트로 열고 planScore 비교로 채택한다.
-    // payout_v(프로바이조 위약 수익)는 품질과 반시너지라 제외.
-    if (shift === 0 && factionSets.quality) {
-      const bestOf = (kind: string) => roster
-        .filter((op) => !used.has(op.id) && !reserved.has(op.id) && op.skills.some((s) => s.room === "TRADING" && s.kind === kind))
-        .sort((a, b) => opSolo(b, "TRADING", 3, { tokenPoints: {} }) - opSolo(a, "TRADING", 3, { tokenPoints: {} }))[0];
-      const overrideOp = bestOf("override");
-      const payoutOp = bestOf("payout");
-      if (overrideOp && payoutOp && overrideOp.id !== payoutOp.id) {
-        // 3번째 자리는 실제 방 점수 기준 최고 품질 요원 (미틈·디아만테·카프카·바이비크 동급 대체)
-        const qualityOp = roster
-          .filter((op) => op.id !== overrideOp.id && op.id !== payoutOp.id && !used.has(op.id) && !reserved.has(op.id)
-            && op.skills.some((s) => s.room === "TRADING" && s.kind === "quality"))
-          .sort((a, b) => teamScore([overrideOp, payoutOp, b], "TRADING", { tokenPoints: {} })
-            - teamScore([overrideOp, payoutOp, a], "TRADING", { tokenPoints: {} }))[0];
-        const cell = LAYOUT.filter((c) => c.room === "TRADING").find((c) => !(seeds[c.key]?.length));
-        if (qualityOp && cell) {
-          seeds[cell.key] = [overrideOp, payoutOp, qualityOp];
-          for (const op of seeds[cell.key]) reserved.set(op.id, cell.key);
-        }
-      }
-    }
-    // 피누스 실베스트리스 세트 (피드백 2026-07-14 · 사용자 확정 2026-07-19): 플레임테일
-    // (제어센터 — 제조소의 기사단 1명당 작전기록 +10% / 귀금속 -10% 오라) 보유 시
-    // **회복 교대(B조)**에 기사단 제조 요원(애쉬락·와일드메인·파투스, 각 +25%)과 플레임테일을
-    // 결집한 후보안을 만든다. 그리디는 제조소를 제어센터보다 먼저 채워 "오라는 인원이 있어야
-    // 켜지고, 인원은 오라가 켜져야 이긴다"는 닭-달걀로 세트를 못 연다 — 쉐라그 세트처럼
-    // 시드로 열고 optimize()가 세트 없는 안과 기지 총점(귀금속 감산 포함)을 비교해 이득일
-    // 때만 채택한다. B조인 이유: A조 제조소·제어센터는 화식 세트와 상위 생산 오퍼 몫이라
-    // 기회비용이 크다.
-    if (shift === 1 && factionSets.product) {
-      for (const auraOp of roster) {
-        if (used.has(auraOp.id)) continue;
-        for (const skill of auraOp.skills) {
-          if (skill.room !== "CONTROL" || !(skill.kind in AURA_WEIGHT) || !skill.perFaction || !skill.perProduct) continue;
-          const plusProduct = Object.entries(skill.perProduct).find(([, per]) => per > 0)?.[0];
-          if (!plusProduct) continue;
-          const bodies = roster
-            .filter((op) => op.id !== auraOp.id && !used.has(op.id) && !reserved.has(op.id)
-              && factionsOf(op).includes(skill.perFaction!)
-              && op.skills.some((s) => skillApplies(s, "MANUFACTURE", plusProduct)))
-            .sort((a, b) => opSolo(b, "MANUFACTURE", 3, { tokenPoints: {} }) - opSolo(a, "MANUFACTURE", 3, { tokenPoints: {} }))
-            .slice(0, 3);
-          if (bodies.length < 2) continue; // 결집할 인원이 없으면 세트 무의미
-          const cell = LAYOUT.find((c) => c.room === "MANUFACTURE" && c.product === plusProduct);
-          if (!cell) continue;
-          seeds[cell.key] = [...(seeds[cell.key] ?? []), ...bodies].slice(0, 3);
-          seeds["CONTROL"] = [...(seeds["CONTROL"] ?? []), auraOp].slice(0, 5);
-          // 예약 등록 — 같은 조의 앞 순서 방(순금 등)이 시드를 채가거나 전수 감사(seedKeep)가
-          // 세트를 쓸어내지 않도록. A조 풀은 이미 지나갔으므로 A 배치에는 영향 없다
-          for (const op of seeds[cell.key]) reserved.set(op.id, cell.key);
-          reserved.set(auraOp.id, "CONTROL");
-        }
-      }
+    // ── 시너지 세트 시딩 — 카탈로그(rules.json synergySets)의 이 조(shift) 팟 중,
+    // 이 후보안(factionSets)에 포함된 것만 연다. 도메인 근거는 INFRA-RULES §4·§5.
+    for (const def of SYNERGY_SETS) {
+      if ((def.shift ?? 0) === shift && factionSets[def.key]) seedSynergySet(def, roster, used, reserved, seeds);
     }
     if (shift === 0 && packageTokens.length) {
       const parked = new Set<string>();
@@ -1090,7 +1108,7 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
       }
     }
   }
-  const setUsed = Boolean(factionSets.gate || factionSets.product);
+  const setUsed = SYNERGY_SETS.some((def) => def.badge && factionSets[def.key]);
   const strategy = (packageTokens.length ? `${packageTokens.join(" + ")} 패키지` : "기본 편성") + (setUsed ? " + 진영 세트" : "");
   return { assignments, plants, tokenPoints, factionCounts: factionCountsPerShift, flows, strategy, strategyTokens: packageTokens, strategySet: setUsed, priority };
 }
@@ -1122,14 +1140,17 @@ export function planScore(plan: Plan, byId: Map<string, InfraOp>): number {
   return total;
 }
 
-// 자동편성 진행 알림 — UI가 로케일 문구로 포맷해 표시한다 (엔진은 i18n 무의존)
-export type OptimizeStep = { phase: "base" | "variant" | "final"; index?: number; total?: number; sets?: (keyof FactionSets)[] };
+// 자동편성 진행 알림 — UI가 로케일 문구로 포맷해 표시한다 (엔진은 i18n 무의존).
+// 콜백이 Promise를 돌려주면 기다린다 — UI가 단계별 최소 표시 시간(페이싱)을 넣을 수 있게
+// (사용자 확정 2026-07-19: 안내 문구를 읽을 수 있도록 전체 3~5초). 콜백이 없으면(초기 로드·
+// 검증 스크립트) 페이싱 없이 전속력으로 돈다.
+export type OptimizeStep = { phase: "base" | "variant" | "final"; index?: number; total?: number; sets?: string[] };
 
-export async function optimize(roster: InfraOp[], priority: ProdPriority = "gold", onStep?: (step: OptimizeStep) => void): Promise<Plan> {
-  // 진행 콜백 후 매크로태스크 양보 — 브라우저가 안내 문구를 리페인트할 틈을 준다
+export async function optimize(roster: InfraOp[], priority: ProdPriority = "gold", onStep?: (step: OptimizeStep) => void | Promise<void>): Promise<Plan> {
+  // 진행 콜백(페이싱 포함) 후 매크로태스크 양보 — 브라우저가 안내 문구를 리페인트할 틈을 준다
   const tick = async (step: OptimizeStep) => {
     if (!onStep) return;
-    onStep(step);
+    await onStep(step);
     await new Promise((resolve) => setTimeout(resolve, 0));
   };
   // every token family (속세의 화식, 감지 정보 계열, 주술 결정, …) is always
@@ -1157,30 +1178,22 @@ export async function optimize(roster: InfraOp[], priority: ProdPriority = "gold
   // 두 세트가 함께일 때만 이기는 안을 놓친다 — 계산이 수 초 걸려도 전수 비교가 우선
   // (사용자 확정 2026-07-19). 귀금속 감산 등 세트의 비용도 planScore에 그대로 반영되며,
   // 동률이면 세트 없는 안 유지(쉐라그 "이득일 때만" 규칙).
-  const hasGatedAura = roster.some((op) => op.skills.some((skill) => skill.room === "CONTROL" && skill.gateFaction));
-  const hasPerProductSet = roster.some((op) => op.skills.some((skill) =>
-    skill.room === "CONTROL" && skill.perFaction && skill.kind in AURA_WEIGHT && skill.perProduct));
-  const tradeOps = (kind: string) => roster.filter((op) => op.skills.some((s) => s.room === "TRADING" && s.kind === kind));
-  const hasQualityCombo = (() => {
-    const ov = tradeOps("override"), po = tradeOps("payout"), qu = tradeOps("quality");
-    return ov.length > 0 && po.length > 0 && qu.some((op) => op.id !== ov[0].id && op.id !== po[0].id);
-  })();
-  const flags: (keyof FactionSets)[] = [];
-  if (hasGatedAura) flags.push("gate");
-  if (hasPerProductSet) flags.push("product");
-  if (hasQualityCombo) flags.push("quality");
+  const flags = SYNERGY_SETS.filter((def) => synergySetAvailable(def, roster)).map((def) => def.key);
   const variants: FactionSets[] = [];
   for (let mask = 1; mask < (1 << flags.length); mask += 1) {
     const sets: FactionSets = {};
     flags.forEach((flag, index) => { if (mask & (1 << index)) sets[flag] = true; });
     variants.push(sets);
   }
+  // 조합 폭발 가드 — 카탈로그가 5종 이상이면 후보 상한 15안 (2^4-1). 넘게 등록할 일이
+  // 생기면 세트 우선순위 필드를 도입할 것 (지금은 3종 = 최대 7안)
+  if (variants.length > 15) variants.length = 15;
   if (!variants.length) return base;
   const byId = new Map(roster.map((op) => [op.id, op]));
   let best = base;
   let bestScore = planScore(base, byId);
   for (let i = 0; i < variants.length; i += 1) {
-    await tick({ phase: "variant", index: i + 1, total: variants.length, sets: Object.keys(variants[i]) as (keyof FactionSets)[] });
+    await tick({ phase: "variant", index: i + 1, total: variants.length, sets: Object.keys(variants[i]) });
     const plan = buildPlan(open, roster, variants[i], priority);
     const score = planScore(plan, byId);
     if (score > bestScore) { best = plan; bestScore = score; }

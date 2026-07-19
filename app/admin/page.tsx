@@ -26,7 +26,7 @@ const OP_NAME = new Map((operatorsData as { id: string; name: string }[]).map((o
 // 플래너 지식 베이스(docs/PLANNER-RULES-DB.md) — 규칙 종류 표시명
 const RULE_KIND_LABEL: Record<RuleRow["kind"], string> = {
   constant: "엔진 상수", parser: "파서 상수", token: "토큰 카탈로그",
-  skill_override: "파싱 교정", fixture: "정배 픽스처", doc: "섹션 문서",
+  skill_override: "파싱 교정", synergy_set: "시너지 세트", fixture: "정배 픽스처", doc: "섹션 문서",
 };
 
 // 규칙 편집 폼 — body는 JSON 텍스트로 직접 편집 (저장 시 파싱 검증)
@@ -414,7 +414,7 @@ export default function AdminPage() {
         <div className="admin-rules">
           <div className="admin-tools">
             {RULE_KINDS.filter((kind) => kind !== "doc").map((kind) => (
-              <button key={kind} onClick={() => setEditingRule({ kind, key: "", body: kind === "skill_override" ? { patch: {}, reason: "" } : kind === "fixture" ? { name: "", type: "planContains" } : kind === "token" ? {} : { value: 0 }, status: "active", seq: 99, note: null })}>
+              <button key={kind} onClick={() => setEditingRule({ kind, key: "", body: kind === "skill_override" ? { patch: {}, reason: "" } : kind === "fixture" ? { name: "", type: "planContains" } : kind === "synergy_set" ? { key: "", name: "", shift: 0, bodies: { room: "TRADING", from: "roles", roles: [] }, target: { cell: "firstFree" } } : kind === "token" ? {} : { value: 0 }, status: "active", seq: 99, note: null })}>
                 + {RULE_KIND_LABEL[kind]}
               </button>
             ))}

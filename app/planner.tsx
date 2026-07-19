@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useI18n, tokenName, rich, type ExtraI18n, type Locale, type T } from "./i18n";
+import { RULES } from "./rules";
 import { useConfirm } from "./confirm";
 import { normSearch } from "./search";
 
@@ -260,7 +261,8 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   // 자동편성 진행 안내 — 계산이 수 초 걸려도 전수 비교가 우선(사용자 확정 2026-07-19)이라,
   // 엔진이 후보안 사이마다 진행 단계를 알려주면 로케일 문구로 표시한다
   const [optimizing, setOptimizing] = useState<string | null>(null);
-  const SET_LABEL: Record<string, string> = { gate: "쉐라그", product: "피누스", quality: "품질 조합" };
+  // 세트 표시명은 L2 카탈로그(rules.json synergySets)의 name — KR 원문이 i18n 사전 키
+  const SET_LABEL: Record<string, string> = Object.fromEntries((RULES.synergySets ?? []).map((def) => [def.key, def.name]));
   const stepMessage = (step: OptimizeStep): string => {
     if (step.phase === "base") return t("자동편성 엔진 계산 중 — 기본 편성 조립·전수 감사…");
     if (step.phase === "variant") return t("자동편성 엔진 계산 중 — 시너지 세트 후보안 {i}/{n} ({sets}) 평가…", { i: step.index ?? 0, n: step.total ?? 0, sets: (step.sets ?? []).map((key) => t(SET_LABEL[key] ?? key)).join("+") });
@@ -269,9 +271,18 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
 
   const runOptimize = async (ids: Set<string> = ownedIds, elite: Map<string, Elite> = eliteById, prio: ProdPriority = priority) => {
     if (optimizing) return; // 중복 실행 방지
+    const startedAt = performance.now();
     setOptimizing(t("자동편성 엔진 계산 중 — 편성 공간 구성…"));
     try {
-      const next = await optimize(visibleOps.map((op) => withElite(op, elite.get(op.id))).filter((op) => ids.has(op.id)), prio, (step) => setOptimizing(stepMessage(step)));
+      // 페이싱 (사용자 확정 2026-07-19): 단계 문구를 읽을 수 있게 단계당 최소 400ms,
+      // 전체 최소 3.2초 — 계산이 그보다 빨라도 안내가 후다닥 지나가지 않는다
+      const paced = async (step: OptimizeStep) => {
+        setOptimizing(stepMessage(step));
+        await new Promise((resolve) => setTimeout(resolve, 400));
+      };
+      const next = await optimize(visibleOps.map((op) => withElite(op, elite.get(op.id))).filter((op) => ids.has(op.id)), prio, paced);
+      const remain = 3200 - (performance.now() - startedAt);
+      if (remain > 0) await new Promise((resolve) => setTimeout(resolve, remain));
       setPlan(next);
       setActiveShift(0);
       persist(ids, next, elite);

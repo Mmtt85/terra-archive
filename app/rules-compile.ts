@@ -5,7 +5,7 @@ import type { PlannerRules } from "./rules";
 
 export type RuleRow = {
   id?: string;
-  kind: "constant" | "parser" | "token" | "skill_override" | "fixture" | "doc";
+  kind: "constant" | "parser" | "token" | "skill_override" | "synergy_set" | "fixture" | "doc";
   key: string;
   body: Record<string, unknown>;
   status: "active" | "draft" | "retired";
@@ -15,7 +15,7 @@ export type RuleRow = {
   updated_at?: string;
 };
 
-export const RULE_KINDS: RuleRow["kind"][] = ["constant", "parser", "token", "skill_override", "fixture", "doc"];
+export const RULE_KINDS: RuleRow["kind"][] = ["constant", "parser", "token", "skill_override", "synergy_set", "fixture", "doc"];
 
 const bySeq = (a: RuleRow, b: RuleRow) => a.seq - b.seq || a.key.localeCompare(b.key, "ko");
 
@@ -38,6 +38,7 @@ export function compileSnapshot(rows: RuleRow[], version: number): PlannerRules 
     parser: section("parser", "parser"),
     tokens: pick("token").map((row) => row.key),
     skillOverrides: overrides,
+    synergySets: pick("synergy_set").map((row) => row.body),
     fixtures: pick("fixture").map((row) => row.body),
   } as unknown as PlannerRules;
 }
@@ -70,6 +71,16 @@ export function validateRules(rows: RuleRow[]): string[] {
     if (row.kind === "fixture") {
       if (row.body.name !== row.key) errors.push(`${tag}: body.name과 key가 다릅니다`);
       if (!FIXTURE_TYPES.includes(row.body.type as string)) errors.push(`${tag}: type은 ${FIXTURE_TYPES.join("/")} 중 하나여야 합니다`);
+    }
+    if (row.kind === "synergy_set") {
+      if (row.body.key !== row.key) errors.push(`${tag}: body.key와 key가 다릅니다`);
+      if (!row.body.name) errors.push(`${tag}: name(표시명)이 없습니다`);
+      const bodies = row.body.bodies as { room?: string; from?: string; roles?: unknown[] } | undefined;
+      if (!bodies?.room || !["anchorFaction", "roles"].includes(bodies.from ?? "")) errors.push(`${tag}: bodies.room/from이 올바르지 않습니다`);
+      if (bodies?.from === "roles" && !(Array.isArray(bodies.roles) && bodies.roles.length)) errors.push(`${tag}: from=roles면 roles 배열이 필요합니다`);
+      if (bodies?.from === "anchorFaction" && !row.body.anchor) errors.push(`${tag}: from=anchorFaction이면 anchor가 필요합니다`);
+      const cell = (row.body.target as { cell?: string } | undefined)?.cell;
+      if (!["first", "firstFree", "byAnchorProduct"].includes(cell ?? "")) errors.push(`${tag}: target.cell은 first/firstFree/byAnchorProduct 중 하나여야 합니다`);
     }
   }
   // 엔진이 참조하는 상수는 전부 있어야 한다 — 빠지면 런타임 undefined 산술

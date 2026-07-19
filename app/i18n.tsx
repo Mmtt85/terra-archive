@@ -310,9 +310,11 @@ const D: Record<string, Pair> = {
   "자동편성 엔진 계산 중 — 시너지 세트 후보안 {i}/{n} ({sets}) 평가…": ["Auto-assign engine running — evaluating synergy-set candidate {i}/{n} ({sets})…", "自動編成エンジン計算中 — シナジーセット候補案 {i}/{n}（{sets}）を評価…"],
   "자동편성 엔진 계산 중 — 최적안 비교·마무리 검증…": ["Auto-assign engine running — comparing candidates and final checks…", "自動編成エンジン計算中 — 最適案の比較・最終検証…"],
   "계산 중…": ["Computing…", "計算中…"],
-  "쉐라그": ["Kjerag", "イェラグ"],
-  "피누스": ["Pinus", "ピヌス"],
-  "품질 조합": ["quality combo", "品質コンボ"],
+  // 시너지 세트 표시명 — rules.json synergySets의 name(KR)이 그대로 키가 된다.
+  // /admin에서 새 세트를 추가하면 여기에 같은 이름 키로 EN/JA를 보충할 것 (없으면 KR 표시)
+  "쉐라그 무역소 세트": ["Kjerag trading set", "イェラグ貿易セット"],
+  "피누스 실베스트리스 세트": ["Pinus Sylvestris set", "ピヌス・シルウェストリスセット"],
+  "품질 수익 조합": ["quality-payout combo", "品質収益コンボ"],
   "A조 (풀파워)": ["Shift A (full power)", "A班（フルパワー）"],
   "B조 (회복 교대)": ["Shift B (recovery)", "B班（回復交代）"],
   "A조": ["Shift A", "A班"],

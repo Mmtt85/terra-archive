@@ -3,10 +3,10 @@
 -- 기존 admin 패턴(docs/supabase-admin.sql)과 동일하게 쓰기는 x-admin-key 헤더로만 허용.
 -- ⚠ 비밀번호를 바꿨다면 아래 'admin' 문자열을 전부 실제 비밀번호로 바꿔서 실행할 것.
 
--- ── 규칙 원장: 1행 = 1규칙 (kind: constant/parser/token/skill_override/fixture/doc) ──
+-- ── 규칙 원장: 1행 = 1규칙 (kind: constant/parser/token/skill_override/synergy_set/fixture/doc) ──
 create table if not exists public.planner_rules (
   id uuid primary key default gen_random_uuid(),
-  kind text not null check (kind in ('constant', 'parser', 'token', 'skill_override', 'fixture', 'doc')),
+  kind text not null check (kind in ('constant', 'parser', 'token', 'skill_override', 'synergy_set', 'fixture', 'doc')),
   key text not null,
   body jsonb not null,
   status text not null default 'active' check (status in ('active', 'draft', 'retired')),
@@ -17,6 +17,12 @@ create table if not exists public.planner_rules (
   updated_at timestamptz not null default now(),
   unique (kind, key)
 );
+
+-- Phase 3 마이그레이션 (2026-07-19): v1 시드로 이미 설치한 경우 kind CHECK에 synergy_set을
+-- 추가한다 — 이 파일 전체를 다시 돌려도 안전(create는 스킵되고 아래 두 줄이 제약을 갱신)
+alter table public.planner_rules drop constraint if exists planner_rules_kind_check;
+alter table public.planner_rules add constraint planner_rules_kind_check
+  check (kind in ('constant', 'parser', 'token', 'skill_override', 'synergy_set', 'fixture', 'doc'));
 
 alter table public.planner_rules enable row level security;
 

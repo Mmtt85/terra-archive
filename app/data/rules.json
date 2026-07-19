@@ -228,6 +228,67 @@
   "skillOverrides": {
     "_doc": "buffId → { patch: {필드 덮어쓰기}, note } — 파서가 새 문구를 오분류했을 때 정규식 패치 대신 여기에 교정 행을 추가한다. build-infra.py가 파싱 직후 적용. 파서가 정식 지원하게 되면 행을 지운다 (재생성 diff가 없으면 안전)"
   },
+  "synergySets": [
+    {
+      "anchor": {
+        "detect": "gateFaction",
+        "room": "CONTROL"
+      },
+      "badge": true,
+      "bodies": {
+        "count": "gateCount",
+        "from": "anchorFaction",
+        "min": "gateCount",
+        "requireRoomSkill": false,
+        "room": "TRADING"
+      },
+      "key": "sherag",
+      "name": "쉐라그 무역소 세트",
+      "note": "이격 실버애쉬 게이트 오라 — 진영 판정은 다중 소속(카란 무역회사도 쉐라그)",
+      "shift": 0,
+      "target": {
+        "cell": "first"
+      }
+    },
+    {
+      "bodies": {
+        "from": "roles",
+        "roles": [
+          "override",
+          "payout",
+          "quality"
+        ],
+        "room": "TRADING"
+      },
+      "key": "quality",
+      "name": "품질 수익 조합",
+      "note": "오버라이드(샤마르)+품질수익(테킬라)+고품질 확률(미틈·디아만테·카프카·바이비크 동급). payout_v(프로바이조)는 반시너지라 역할에 안 넣는다",
+      "shift": 0,
+      "target": {
+        "cell": "firstFree"
+      }
+    },
+    {
+      "anchor": {
+        "detect": "perProduct",
+        "room": "CONTROL"
+      },
+      "badge": true,
+      "bodies": {
+        "count": 3,
+        "from": "anchorFaction",
+        "min": 2,
+        "room": "MANUFACTURE"
+      },
+      "key": "pinus",
+      "name": "피누스 실베스트리스 세트",
+      "note": "A조 제조소·제어센터는 화식 세트와 상위 생산 오퍼 몫이라 B조(회복 교대)에 결집. 귀금속 감산도 planScore에 정직 반영",
+      "shift": 1,
+      "target": {
+        "cell": "byAnchorProduct"
+      }
+    }
+  ],
   "tokens": [
     "속세의 화식",
     "감지 정보",
@@ -237,5 +298,5 @@
     "주술 결정",
     "마물 요리"
   ],
-  "version": 3
+  "version": 4
 }
