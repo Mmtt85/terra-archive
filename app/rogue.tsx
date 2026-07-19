@@ -91,17 +91,6 @@ function ChoiceNode({ c }: { c: EncChoice }) {
 type View = "map" | "enemy" | "relic" | "archive" | "diff" | "ending";
 // 환각 계열 서브탭의 토픽별 라벨 (전시관 안에서 사용)
 const HALLU_LABEL: Record<string, string> = { rogue_1: "환각", rogue_2: "메아리", rogue_6: "환경" };
-// 기타 노드 심볼 아이콘 — 게임 노드 마커 아이콘이 접근 가능한 에셋에 없어(UI 번들 내부)
-// 노드 타입 id별 기하 심볼로 시각 구분 (전 토픽 공통, 사용자 확정 2026-07-19). 미매핑은 ◈ 폴백.
-const NODE_ICON: Record<string, string> = {
-  SHOP: "🛒", BATTLE_SHOP: "🛒", SCRAP_SHOP: "🎒",
-  REST: "⛺", TREASURE: "🎁", ENTERTAINMENT: "🎲", UNKNOWN: "🌫️",
-  WISH: "🌠", SACRIFICE: "⚖️", EXPEDITION: "🧭", PORTAL: "🌀",
-  DUEL: "⚔️", STORY: "🔮", STORY_HIDDEN: "🔮", DOOR: "🚪",
-  FINAL: "🏁", EVACUATE: "🛤️", EMPLOY: "🤝", LIGHT: "🪶",
-  BATTLE_SAVAGE: "🛖", EMPTY: "🌲", ALCHEMY: "⚗️", MISSION: "📋",
-  SPECIAL_ZONE: "🌌", STASHED_RECRUIT: "🎫",
-};
 const viewsFor = (): { id: View; label: string }[] => [
   { id: "map", label: "맵·노드" },
   { id: "enemy", label: "적 도감" },
@@ -1055,7 +1044,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
               <div className="rg-nodetype-list">
                 {otherNodes.map((nt) => (
                   <article key={nt.id} className={`rg-nodetype${nt.id === "DUEL" && duelStages.length > 0 ? " wide" : ""}`}>
-                    <h4><span className="rg-nodetype-ic" aria-hidden>{NODE_ICON[nt.id] ?? "◈"}</span><span><Nm name={nt.name} cn={nt.cn} /></span></h4>
+                    <h4><Nm name={nt.name} cn={nt.cn} /></h4>
                     {nt.func && <p className="rg-nodetype-func">{nt.func}</p>}
                     {nt.desc && <p>{nt.desc}</p>}
                     {nt.id === "DUEL" && duelStages.length > 0 && (
