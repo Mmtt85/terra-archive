@@ -18,6 +18,7 @@ export type PlannerConstants = {
   PAYOUT_QUALITY_CAP: number;            // payout 배율 상한 (§8)
   PAYOUT_VIOLATION_CAP: number;          // 위약 수익 처리량 비례 상한 (§8)
   FAMILY_TIEBREAK: number;               // 시너지 결집 동률 시 계열 우선 미세 보정 (§1 ⓒ)
+  OP_GROUPS: Record<string, string[]>;   // 진영이 아닌 명단형 그룹 (비비아나 '기사' 등 — PRTS 근거, §5)
 };
 
 export type SkillOverride = { patch: Record<string, unknown>; note?: string };

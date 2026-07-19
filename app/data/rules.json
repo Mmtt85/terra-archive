@@ -19,6 +19,21 @@
       "default": 5
     },
     "FAMILY_TIEBREAK": 0.0001,
+    "OP_GROUPS": {
+      "기사": [
+        "char_148_nearl",
+        "char_1014_nearl2",
+        "char_423_blemsh",
+        "char_265_sophia",
+        "char_420_flamtl",
+        "char_430_fartth",
+        "char_431_ashlok",
+        "char_496_wildmn",
+        "char_4000_jnight",
+        "char_237_gravel",
+        "char_4098_vvana"
+      ]
+    },
     "PAYOUT_QUALITY_CAP": 2,
     "PAYOUT_QUALITY_STEP": 0.5,
     "PAYOUT_VIOLATION_CAP": 3,
@@ -298,5 +313,5 @@
     "주술 결정",
     "마물 요리"
   ],
-  "version": 5
+  "version": 6
 }

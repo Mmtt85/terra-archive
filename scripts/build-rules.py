@@ -46,10 +46,12 @@ open(RULES_PATH, "a", encoding="utf-8").write("\n")
 print(f"베이크 완료: rules.json ← v{release['version']} ({release.get('published_at', '')}) "
       f"{('— ' + release['note']) if release.get('note') else ''}")
 
-# 후속 절차 안내 — 어떤 섹션이 바뀌었는지에 따라 필요한 단계가 다르다
+# 후속 절차 안내 — 어떤 섹션이 바뀌었는지에 따라 필요한 단계가 다르다.
+# constants.OP_GROUPS(명단형 그룹)는 파서의 "1명당" 매칭 대상이라 파서 영향에 포함
 def section(d, key):
     return (d or {}).get(key)
-parser_changed = old is None or any(section(old, k) != section(snapshot, k) for k in ("parser", "tokens", "skillOverrides"))
+parser_changed = old is None or any(section(old, k) != section(snapshot, k) for k in ("parser", "tokens", "skillOverrides")) \
+    or (section(old, "constants") or {}).get("OP_GROUPS") != (section(snapshot, "constants") or {}).get("OP_GROUPS")
 print("\n다음 절차:")
 if parser_changed:
     print("  1. python3 scripts/build-infra.py .gamedata   # parser/tokens/skillOverrides 변경 — infra.json 재생성 (~2분)")

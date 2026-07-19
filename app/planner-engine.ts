@@ -71,6 +71,11 @@ export const ROSTER_SORT_KEYS = ["기본", "이름", "성급", "발매순", "소
 
 export const factionsOf = (op: InfraOp): string[] => op.factions ?? [op.faction];
 
+// 진영 또는 명단형 그룹(OP_GROUPS — 비비아나 '기사' 등, L2 카탈로그) 소속 판정.
+// 게임이 내부적으로만 아는 그룹은 진영 데이터에 없어 rules.json 명단으로 센다 (PRTS 근거)
+export const memberOf = (op: InfraOp, name: string): boolean =>
+  factionsOf(op).includes(name) || ((C.OP_GROUPS ?? {})[name] ?? []).includes(op.id);
+
 export type RoomSpec = { name: string; slots: number; electricity: number; maxCount: number };
 
 export const infra = infraData as { rooms: Record<string, RoomSpec>; ops: InfraOp[] };
@@ -180,7 +185,10 @@ export type OpBreakdown = {
   override: number;     // 샤마르: flat rate replacing everyone's efficiency
   perCoworker: number;  // +x% per other member
   clueBase: number;     // 응접실: 레어도·정예화 기본 단서속도 (RIIC 스킬과 별개, 항상 가산)
-  auras: Record<string, number>; // control-center facility-wide auras
+  auras: Record<string, number>; // control-center facility-wide auras — "동종 최고만" 경쟁형
+  aurasAdd: Record<string, number>; // 인원 카운트형(perScope mfg) 오라 — 서로 **중첩(가산)**.
+                                    // 스킬에 "동종 효과 중 가장 높은 수치만" 문구가 없고, 실측
+                                    // (+131% 제보)으로 플레임테일+비비아나 스택 확인 (2026-07-19)
   skills: InfraSkill[];
 };
 
@@ -214,7 +222,7 @@ export function aurasOf(controlTeam: InfraOp[], ctx: Ctx): AmbientAura[] {
         // 적용된다 — 기지 전체 일률 아님 (사용자 정정 2026-07-19: 제조소1에 기사단+작전기록이면
         // 그 방만 +10, 제조소2에 기사단+귀금속이면 그 방만 -10). 방별 인원수는 ambientFor가
         // 대상 방 팀에서 직접 센다. value는 제어센터 자리 평가(§6 가중)용 근사치일 뿐.
-        list.push({ kind: skill.kind, value: b.auras[skill.kind] ?? 0, perFaction: skill.perFaction,
+        list.push({ kind: skill.kind, value: b.aurasAdd[skill.kind] ?? 0, perFaction: skill.perFaction,
           perProduct: skill.perProduct ?? { any: skill.value } });
       } else {
         list.push({ kind: skill.kind, value: skill.perFaction ? b.auras[skill.kind] ?? 0 : skill.value });
@@ -234,8 +242,8 @@ export function ambientFor(room: string, team: InfraOp[], ambient?: AmbientAura[
   for (const aura of ambient) {
     if (aura.kind !== target) continue;
     if (aura.perProduct) {
-      // 이 방에 실제로 앉은 해당 진영원 수 × 이 방 생산품의 1명당 가감치 (any = 생산품 무관)
-      const members = aura.perFaction ? team.filter((member) => factionsOf(member).includes(aura.perFaction!)).length : 0;
+      // 이 방에 실제로 앉은 해당 진영·그룹원 수 × 이 방 생산품의 1명당 가감치 (any = 생산품 무관)
+      const members = aura.perFaction ? team.filter((member) => memberOf(member, aura.perFaction!)).length : 0;
       if (members > 0) productAdd += ((product ? aura.perProduct[product] : undefined) ?? aura.perProduct.any ?? 0) * members;
       continue;
     }
@@ -249,7 +257,7 @@ export function ambientFor(room: string, team: InfraOp[], ambient?: AmbientAura[
 export function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx): OpBreakdown {
   const teamIds = new Set(team.map((member) => member.id));
   const teamSize = Math.max(team.length, 1);
-  const out: OpBreakdown = { efficiency: 0, facilityEff: 0, automation: 0, quality: 0, payout: 0, payoutViolation: 0, override: 0, perCoworker: 0, clueBase: 0, auras: {}, skills: [] };
+  const out: OpBreakdown = { efficiency: 0, facilityEff: 0, automation: 0, quality: 0, payout: 0, payoutViolation: 0, override: 0, perCoworker: 0, clueBase: 0, auras: {}, aurasAdd: {}, skills: [] };
   const tokenRates = new Map<string, number>();
   for (const skill of activeSkills(op, room, ctx.product)) {
     if (skill.partners.length > 0 && !skill.partners.every((p) => teamIds.has(p))) continue;
@@ -269,15 +277,26 @@ export function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx):
       out.efficiency += skill.basePartnerBonus;
     }
     // per-faction counting (바르카리스: 미노스 오퍼레이터 1명당 +v%, 최대 cap).
-    // perScope "mfg"(플레임테일·제시카 이격 "제조소에 배치된 <진영> 1명당")의 기지 전체 근사는
-    // 같은 제어센터에 앉은 동일 진영 인원(본인 포함)을 빼서 과산정을 줄인다
+    // perScope "mfg"(플레임테일·제시카 이격·비비아나 "제조소에 배치된 <진영·그룹> 1명당")의
+    // 기지 전체 근사는 같은 제어센터에 앉은 동일 소속(본인 포함)을 빼서 과산정을 줄인다.
+    // 명단형 그룹(기사)은 factionCounts에 없으므로 배치 전원(presentIds)에서 직접 센다
     if (skill.perFaction && skill.perSkillTag == null) {
-      const seated = skill.perScope === "mfg" ? team.filter((member) => factionsOf(member).includes(skill.perFaction!)).length : 0;
+      const isMember = (member: InfraOp) => memberOf(member, skill.perFaction!);
+      const seated = skill.perScope === "mfg" ? team.filter(isMember).length : 0;
+      const groupIds = (C.OP_GROUPS ?? {})[skill.perFaction] ?? null;
+      const baseCount = groupIds
+        ? groupIds.filter((id) => ctx.presentIds?.has(id)).length
+        : ctx.factionCounts?.[skill.perFaction] ?? 0;
       const count = skill.perScope === "room"
-        ? team.filter((member) => factionsOf(member).includes(skill.perFaction!)).length
-        : Math.max(0, (ctx.factionCounts?.[skill.perFaction] ?? 0) - seated);
+        ? team.filter(isMember).length
+        : Math.max(0, baseCount - seated);
       const gained = Math.min(skill.value * count, skill.perCap ?? Infinity);
-      if (skill.kind in AURA_WEIGHT) { out.auras[skill.kind] = Math.max(out.auras[skill.kind] ?? 0, gained); continue; }
+      if (skill.kind in AURA_WEIGHT) {
+        // 인원 카운트형(mfg)은 중첩 — 플레임테일+비비아나가 같은 방에 함께 실리는 실측 반영
+        if (skill.perScope === "mfg") out.aurasAdd[skill.kind] = (out.aurasAdd[skill.kind] ?? 0) + gained;
+        else out.auras[skill.kind] = Math.max(out.auras[skill.kind] ?? 0, gained);
+        continue;
+      }
       out.efficiency += gained;
       continue;
     }
@@ -347,7 +366,8 @@ export function teamScore(team: InfraOp[], room: string, ctx: Ctx): number {
   let auras = 0;
   for (const kind of Object.keys(AURA_WEIGHT)) {
     const bestOfKind = Math.max(...parts.map((p) => p.auras[kind] ?? 0), 0);
-    auras += bestOfKind * AURA_WEIGHT[kind];
+    const stacked = parts.reduce((sum, p) => sum + (p.aurasAdd[kind] ?? 0), 0); // 카운트형은 중첩
+    auras += (bestOfKind + stacked) * AURA_WEIGHT[kind];
   }
   // 응접실 레어도 기본 단서속도 — 스킬과 무관한 항상 가산분 (override/automation과 무관)
   const clueBaseSum = parts.reduce((sum, p) => sum + p.clueBase, 0);
@@ -359,7 +379,7 @@ export function teamScore(team: InfraOp[], room: string, ctx: Ctx): number {
 export function opSolo(op: InfraOp, room: string, slots: number, ctx: Ctx): number {
   const b = breakdown(op, room, [op], ctx);
   let auras = 0;
-  for (const kind of Object.keys(AURA_WEIGHT)) auras += (b.auras[kind] ?? 0) * AURA_WEIGHT[kind];
+  for (const kind of Object.keys(AURA_WEIGHT)) auras += ((b.auras[kind] ?? 0) + (b.aurasAdd[kind] ?? 0)) * AURA_WEIGHT[kind];
   return b.efficiency + b.clueBase + b.facilityEff + b.automation + b.quality + b.payout + b.payoutViolation + b.override * slots + b.perCoworker * (slots - 1) + auras;
 }
 

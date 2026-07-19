@@ -276,10 +276,15 @@ def parse_morale_drain(text):
 # 오인하지 않도록, 매치 지점이 더 긴 진영명으로 시작하면 무시한다
 FACTION_NAMES = sorted({f for o in operators for f in (o.get("factions") or []) if f}, key=len, reverse=True)
 
-# 제어센터→제조소 진영 카운트 오라 (parse_metric CONTROL에서 사용 — FACTION_NAMES 확정 후 정의,
-# 호출은 parse_skill 시점이라 문제없다. 화이트리스트 alternation만 — 자유 캡처 금지 회귀 방지)
+# 명단형 그룹 (rules.json constants.OP_GROUPS — 비비아나 '기사' 등): 진영 데이터에 없는
+# 게임 내부 그룹. 파서는 진영과 동일하게 "1명당" 카운트 대상으로 인정하고, 엔진은 명단으로 센다
+OP_GROUP_NAMES = sorted((RULES.get("constants", {}).get("OP_GROUPS") or {}).keys(), key=len, reverse=True)
+PER_COUNT_NAMES = sorted(set(FACTION_NAMES) | set(OP_GROUP_NAMES), key=len, reverse=True)
+
+# 제어센터→제조소 진영·그룹 카운트 오라 (parse_metric CONTROL에서 사용 — FACTION_NAMES 확정 후
+# 정의, 호출은 parse_skill 시점이라 문제없다. 화이트리스트 alternation만 — 자유 캡처 금지 회귀 방지)
 MFG_FACTION_AURA_RE = re.compile(
-    r"제조소에 배치된 (?:" + "|".join(re.escape(f) for f in FACTION_NAMES)
+    r"제조소에 배치된 (?:" + "|".join(re.escape(f) for f in PER_COUNT_NAMES)
     + r") 오퍼레이터 1명당[^%]{0,24}?생산력[^+%\d]{0,10}" + PCT)
 
 # facility_clause용 토큰 화이트리스트: 정예 + 진영명 + 하이픈 꼬리("염-쉐이"→"쉐이")
@@ -353,10 +358,11 @@ def parse_skill(entry, oname, oid=None):
             m = re.search(r"([가-힣A-Za-z·]{2,14}) 오퍼레이터와 함께", text)
             if m: req_faction = m.group(1)
         per_faction = per_scope = per_cap = None
-        # "<진영> 오퍼레이터(최대 N명)? 1명당/1명 증가할 때마다" — 진영명을 알려진 진영으로
-        # 한정 매칭한다(공백 포함 '라인 랩'도, '제조소 내의'·'숙소 내' 같은 방 범위 조사구는
-        # 진영이 아니므로 자연히 제외). 오퍼레이터와 "1명당" 사이 "(최대 N명)"은 개수 상한(내스티)
-        for f in FACTION_NAMES:
+        # "<진영·그룹> 오퍼레이터(최대 N명)? 1명당/1명 증가할 때마다" — 알려진 진영 +
+        # 명단형 그룹(OP_GROUPS: 비비아나 '기사')으로 한정 매칭한다(공백 포함 '라인 랩'도,
+        # '제조소 내의'·'숙소 내' 같은 방 범위 조사구는 자연히 제외). 오퍼레이터와 "1명당"
+        # 사이 "(최대 N명)"은 개수 상한(내스티)
+        for f in PER_COUNT_NAMES:
             fm = re.search(re.escape(f) + r" 오퍼레이터(?:가)?(?:\(최대 (\d+)명\))? ?1명(?:당| 증가할 때마다)", text)
             if not fm: continue
             per_faction = f

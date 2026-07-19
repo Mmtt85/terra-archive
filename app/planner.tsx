@@ -673,7 +673,7 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
     acc["효율 오버라이드"] += b.override > 0 ? b.override : 0;
     acc["동료 보너스"] += b.perCoworker * (team.length - 1);
     acc["레어도 기본"] += b.clueBase;
-    acc["제어 오라(가중)"] += Object.keys(AURA_WEIGHT).reduce((sum, kind) => sum + (b.auras[kind] ?? 0) * AURA_WEIGHT[kind], 0);
+    acc["제어 오라(가중)"] += Object.keys(AURA_WEIGHT).reduce((sum, kind) => sum + ((b.auras[kind] ?? 0) + (b.aurasAdd[kind] ?? 0)) * AURA_WEIGHT[kind], 0);
     return acc;
   }, { "스킬 효율": 0, "시설 기반": 0, "자동화": 0, "품질 기대치": 0, "오더 수익": 0, "효율 오버라이드": 0, "동료 보너스": 0, "레어도 기본": 0, "제어 오라(가중)": 0 } as Record<string, number>);
   agg["제어센터 오라 수신"] = ambientFor(cell.room, team, ambient, agg["스킬 효율"], ctx.product);
