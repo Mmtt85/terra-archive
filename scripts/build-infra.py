@@ -11,6 +11,14 @@ kr = load(f"{S}/kr_character_table.json"); chars = kr.get("chars", kr)
 operators = load(f"{REPO}/app/data/operators.json")
 ops_by_id = {o["id"]: o for o in operators}
 
+# ── 지식 베이스(L2): app/data/rules.json — 파서 추정 상수·토큰 카탈로그·파싱 교정 ──
+# 상수 튜닝·새 토큰 추가·오분류 교정은 코드가 아니라 rules.json을 고친다 (INFRA-RULES §8).
+# 재생성 후 diff 없음 = 교정이 파서 정식 지원으로 흡수됐다는 뜻이므로 해당 override를 지운다.
+RULES = load(f"{REPO}/app/data/rules.json")
+P = RULES["parser"]
+OVERRIDES = {k: v for k, v in (RULES.get("skillOverrides") or {}).items() if not k.startswith("_")}
+applied_overrides = set()
+
 # ── 미실장(CN 선행) 오퍼 지원: CN building_data 폴백 + 설명 한국어화 ──────────────
 # 미실장 오퍼는 KR building_data에 없으므로 CN 테이블에서 buffChar를 읽되, 파서가
 # 한국어 정규식이라 설명을 먼저 한국어로 바꾼다: ① 양쪽에 다 있는 buffId를 조인한
@@ -106,7 +114,7 @@ def facility_clause(text):
 
 # 자기 컨디션 낙차(소진)로 생산력이 변하는 오퍼(토터)의 대표 운용 낙차.
 # 만컨디션(낙차 0)이 아니라 12h 교대 평균 기준 — 컨디션 9~12 구간 (사용자 제보 2026-07)
-DROP_ASSUMED = 12
+DROP_ASSUMED = P["DROP_ASSUMED"]
 
 def parse_metric(room, text):
     """Return (kind, value) — the op's headline contribution in this room."""
@@ -139,17 +147,17 @@ def parse_metric(room, text):
             grow = re.search(r"응접실 레벨 ?1?(?:레벨)?당 추가로 수주 효율 (\d+(?:\.\d+)?)% 제공", fac_text)
             if grow and v is not None:
                 cap = re.search(r"최대 \+?(\d+(?:\.\d+)?)% 제공", fac_text)
-                v = float(cap.group(1)) if cap else v + float(grow.group(1)) * 3
+                v = float(cap.group(1)) if cap else v + float(grow.group(1)) * P["MEETING_LEVELS"]
             return "output", (v or 0) + fac_add
         # order-quality effects, converted to a rough efficiency-equivalent %.
         # payout skills (테킬라 용문폐 보너스, 프로바이조 위약 배상) scale with
         # quality-probability crew in the same post — handled in the planner
         m = re.search(r"용문폐 수익 \+\s*(\d+)", text)
-        if m: return "payout", round(float(m.group(1)) / 20)
+        if m: return "payout", round(float(m.group(1)) / P["LMD_PER_PERCENT"])
         m = re.search(r"위약 오더인 경우, 순금 납품 수가 추가로 \+\s*(\d+)", text)
-        if m: return "payout_v", float(m.group(1)) * 10  # violation-order loop (프로바이조)
-        if re.search(r"고품질 귀금속 오더의 출현 확률이 상승", text): return "quality", 15
-        if re.search(r"고품질 귀금속 오더의 출현 확률이 소폭 상승", text): return "quality", 10
+        if m: return "payout_v", float(m.group(1)) * P["VIOLATION_EQUIV_MULT"]  # violation-order loop (프로바이조)
+        if re.search(r"고품질 귀금속 오더의 출현 확률이 상승", text): return "quality", P["QUALITY_MAJOR"]
+        if re.search(r"고품질 귀금속 오더의 출현 확률이 소폭 상승", text): return "quality", P["QUALITY_MINOR"]
         if re.search(r"오더 수주 상한|주문 상한|최대 주문", text): return "capacity", 0
     if room == "POWER":
         if re.search(r"발전소 \+1개로 간주", text): return "plantbonus", 1
@@ -203,7 +211,7 @@ def parse_metric(room, text):
     if v: return "misc", v
     return "misc", 0
 
-TOKENS = ["속세의 화식", "감지 정보", "무성의 공명", "생각의 사슬", "정보 저장", "주술 결정", "마물 요리"]
+TOKENS = RULES["tokens"]  # 시설 간 포인트 토큰 카탈로그 — 새 토큰 시스템은 rules.json에 추가
 
 def parse_tokens(text, room):
     """Cross-facility point systems: generators (+N) and consumers (N점당 +V)."""
@@ -231,20 +239,20 @@ def parse_tokens(text, room):
                     per_member = {"per": base, "cap": float(cap.group(1)), "match": fm.group(1)}
             elif per_dorm_member:
                 # own dorm holds 5; a facility skill counting all dorms sees ~20
-                amount *= 5 if room == "DORMITORY" else 20
+                amount *= P["DORM_SELF_MEMBERS"] if room == "DORMITORY" else P["DORM_ALL_MEMBERS"]
             elif re.search(r"모집 인원마다", text):
                 # 사무실 4슬롯. "초기 모집 인원은 포함하지 않음"(멀베리)이면 초기 2명 제외 = 2
                 # (사용자 확정 2026-07: 20점이 정배, 40점은 과다)
-                amount *= 2 if re.search(r"초기 모집 인원", text) else 4
+                amount *= P["RECRUIT_SLOTS_EXCL_INITIAL"] if re.search(r"초기 모집 인원", text) else P["RECRUIT_SLOTS"]
             elif re.search(r"오퍼레이터가 1명 증가할 때마다", text):
-                amount *= 4  # e.g. Ash: per teammate in the control center
+                amount *= P["CONTROL_EXTRA_MEMBERS"]  # e.g. Ash: per teammate in the control center
             entry_gen = {"token": token, "estimate": amount}
             if per_member: entry_gen["perMember"] = per_member
             gen.append(entry_gen)
     # dorm level grants (센시: 숙소 레벨 1당 마물 요리 1개 제공 → Lv5 = 5개)
     for token in TOKENS:
         m = re.search(r"레벨(?: ?1)?당 " + re.escape(token) + r" ?(\d+)개", text)
-        if m: gen.append({"token": token, "estimate": float(m.group(1)) * 5})
+        if m: gen.append({"token": token, "estimate": float(m.group(1)) * P["DORM_LEVEL"]})
     # dorm stack systems (아이리스 꿈나라, 체르니 소절): Lv5 dorm grants 5 stacks
     stack = re.search(r"레벨(?: ?1)?당 ([가-힣]+) ?(\d*)스택", text)
     conv = re.search(r"([가-힣]+) (\d+)스택당 (" + "|".join(map(re.escape, TOKENS)) + r") (\d+)점으로 전환", text)
@@ -300,7 +308,7 @@ def parse_skill(entry, oname, oid=None):
         metric_text = text[:dorm_lvl.start()] + text[dorm_lvl.end():] if dorm_lvl else text
         kind, value = parse_metric(room, metric_text)
         if dorm_lvl and kind in ("output", "misc"):
-            kind, value = "output", (value or 0) + float(dorm_lvl.group(1)) * 20
+            kind, value = "output", (value or 0) + float(dorm_lvl.group(1)) * P["DORM_TOTAL_LEVELS"]
         # 자기 컨디션 낙차 페널티·게이트 (토터 흐려진 시야/창밖 눈보라): 만컨디션 최대치가
         # 아니라 대표 운용 낙차(DROP_ASSUMED)에서의 실효율로 보정 — 40% 고정 표기 방지
         if kind in ("output", "misc") and value:
@@ -363,7 +371,7 @@ def parse_skill(entry, oname, oid=None):
         if kind in ("output", "misc") and value:
             fac = re.search(r"각각의 (무역소|발전소|제조소)", text)
             if fac:
-                value = value * {"무역소": 2, "발전소": 3, "제조소": 4}[fac.group(1)]
+                value = value * P["FACILITY_COUNTS"][fac.group(1)]
                 facility_based = True
         # conversion skills ("감지 정보 1점당 무성의 공명 1점으로 전환") re-route
         # this op's own generation and, at plan level, the shared pool
@@ -435,7 +443,7 @@ def parse_skill(entry, oname, oid=None):
             "facilityBased": facility_based,
             "perSkillTag": per_skill_tag, "perSkillValue": per_skill_value,
             "_stackGrant": stack_grant.group(1) if stack_grant else None,
-            "_stackCount": 5 * (int(stack_grant.group(2)) if stack_grant and stack_grant.group(2) else 1) if stack_grant else 0,
+            "_stackCount": P["DORM_LEVEL"] * (int(stack_grant.group(2)) if stack_grant and stack_grant.group(2) else 1) if stack_grant else 0,
             "_stackConv": {"name": stack_conv.group(1), "per": float(stack_conv.group(2)), "token": stack_conv.group(3), "amount": float(stack_conv.group(4))} if stack_conv else None,
         }
 
@@ -475,6 +483,13 @@ for o in operators:
         if main is None: continue
         lowers = [s for s in (parse_skill(e, o["name"], o["id"]) for e in tier_entries[:-1]) if s is not None]
         if lowers: main["tiers"] = lowers
+        # 지식 베이스 파싱 교정(skillOverrides): 파서가 새 문구를 오분류하면 정규식 대신
+        # rules.json에 buffId 교정 행을 추가한다 — 최종 단계와 하위 tier 모두에 적용
+        for s in [main, *main.get("tiers", [])]:
+            ov = OVERRIDES.get(s["buffId"])
+            if ov:
+                s.update(ov.get("patch") or {})
+                applied_overrides.add(s["buffId"])
         skills.append(main)
     # dorm stack systems: one skill grants stacks per dorm level, a sibling
     # converts stacks into a token → net token generation for this op
@@ -546,6 +561,11 @@ print("ops with infra skills:", len(infra_ops),
 print("skills per room:", json.dumps(by_room, ensure_ascii=False))
 print("skills naming partners:", partnered)
 print("room specs:", json.dumps(rooms_out, ensure_ascii=False))
+# 적용되지 않은 skillOverrides = 대상 buffId가 사라졌거나 오타 — 방치하면 조용히 죽은 규칙이 된다
+stale_overrides = set(OVERRIDES) - applied_overrides
+if stale_overrides:
+    print(f"WARNING: rules.json skillOverrides 미적용 {len(stale_overrides)}건 (buffId 확인 필요): "
+          + ", ".join(sorted(stale_overrides)), file=sys.stderr)
 if untranslated_buffs:
     dedup = list({m["cn"]: m for m in untranslated_buffs}.values())
     print(f"UNTRANSLATED buff texts: {len(dedup)} — scripts/cn-translations.json에 채울 것 (파싱 수치 0으로 잡힘)",

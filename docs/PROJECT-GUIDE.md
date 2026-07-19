@@ -65,6 +65,9 @@ URL 복붙으로 해당 탭/오퍼 모달이 바로 열려야 한다 (hashchange
 
 - `app/data/operators.json` — 백과사전용 오퍼 전체 (2026-07 기준 **416명**)
 - `app/data/infra.json` — 인프라 플래너용 (방 스펙 + 오퍼별 인프라 스킬 구조화, 스킬마다 `buffId` = 다국어 매핑 키)
+- `app/data/rules.json` — 인프라 플래너 **지식 베이스(L2)**: 추정 상수·토큰 카탈로그·파싱
+  교정(skillOverrides)·검증된 정배 픽스처. 재생성 대상이 아니라 **손으로 편집하는 데이터** —
+  수정 후 `node scripts/verify-plan.mjs`로 회귀 검증 ([PLANNER-RULES-DB.md](PLANNER-RULES-DB.md))
 - `app/data/recruit.json` — 공채 도우미용 (태그 29종 + 모집 풀 153명)
 - `app/data/operators.en.json` / `operators.ja.json` — 백과사전 EN/JA 로컬라이즈본 (같은 스키마, 컨셉 태그는 KR 키 유지)
 - `app/data/extra-i18n.en.json` / `.ja.json` — 플래너·공채 표시 오버레이 (이름·buffId→스킬 텍스트·공채 tagId→태그명·방 이름)
@@ -81,7 +84,8 @@ node scripts/check-new-operators.mjs      # 1. 미수록 오퍼 확인
 # 2. KR/JP/CN + EN 테이블 다운로드 (gacha_table 포함, EN/JP는 다국어용 풀 세트) → 작업 폴더
 python3 scripts/regen-operators.py <dir>  # 3. 기계 필드 전체 재생성 → operators-regen.json
 python3 scripts/retag-concepts.py <dir>   # 4. 컨셉덱 태그 재부착 → operators-tagged.json → app/data/operators.json 으로 복사
-python3 scripts/build-infra.py <dir>      # 5. 인프라 데이터 재생성 → app/data/infra.json
+python3 scripts/build-infra.py <dir>      # 5. 인프라 데이터 재생성 → app/data/infra.json (rules.json의 파서 상수·교정 반영)
+node scripts/verify-plan.mjs              # 5-1. 플래너 회귀 검증 (정배 픽스처 — INFRA-RULES §10)
 python3 scripts/build-recruit.py <dir>    # 6. 공채 데이터 재생성 → app/data/recruit.json
 python3 scripts/build-i18n.py <dir>       # 7. EN/JA 데이터 재생성 → operators.{en,ja}.json + extra-i18n.{en,ja}.json
 python3 scripts/download-avatars.py       # 8. 신규 아바타 다운로드 (기존 파일 스킵)

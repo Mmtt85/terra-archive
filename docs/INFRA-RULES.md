@@ -1,8 +1,14 @@
 # 인프라 플래너 규칙서
 
-테라 아카이브 인프라 플래너(`app/planner.tsx` + `scripts/build-infra.py`)가 따르는 모든 도메인
-규칙의 정본. 새 오퍼레이터가 나오거나 편성이 이상할 때 이 문서를 기준으로 파서·모델을 갱신한다.
-데이터 갱신 절차 자체는 `scripts/README.md` 참고.
+테라 아카이브 인프라 플래너(`app/planner-engine.ts` + `app/planner.tsx` + `scripts/build-infra.py`)가
+따르는 모든 도메인 규칙의 정본. 새 오퍼레이터가 나오거나 편성이 이상할 때 이 문서를 기준으로
+파서·모델을 갱신한다. 데이터 갱신 절차 자체는 `scripts/README.md` 참고.
+
+**규칙 계층 (2026-07-19)**: 절대룰·점수 모델은 `app/planner-engine.ts`(L0), 파싱된 게임 팩트는
+`app/data/infra.json`(L1), **유동 규칙(추정 상수·토큰 카탈로그·파싱 교정·검증된 정배 픽스처)은
+`app/data/rules.json`(L2)** — 계층 설계와 Supabase 이관 로드맵은 [PLANNER-RULES-DB.md](PLANNER-RULES-DB.md).
+엔진·rules.json·build-infra.py를 고치면 **커밋 전에 `node scripts/verify-plan.mjs`** (픽스처 회귀 검사,
+엔진 리팩토링은 `--snapshot`→`--compare`로 무변화 증명)를 통과시킨다.
 
 ## 1. 기지 구성과 교대 정책
 
@@ -324,9 +330,12 @@
 
 1. `python3 scripts/build-infra.py <gamedata>` 재실행 후 신규 오퍼의 파싱 결과 확인
    (kind / value / product / tokenGen / tokenUse / 조건 필드).
-2. 새 토큰 시스템이면 `TOKENS` 목록에 추가하고 생성·소비·전환 문구가 잡히는지 확인.
-3. "…당", "…와 함께", "전부 0이 되고", "간주" 같은 새 조건 문구는 이 문서에 규칙을 추가하고
-   파서·플래너에 반영.
-4. 플래너 로직 검증은 `app/planner.tsx`의 컴포넌트 이전 부분을 esbuild로 번들해 노드에서
-   `optimize(ops)`를 직접 실행 (과거 검증 스크립트 참고).
-5. 확정된 새 규칙은 이 문서와 도움말 모달(`planner.tsx`의 HelpModal)에 함께 갱신.
+2. 새 토큰 시스템이면 `app/data/rules.json`의 `tokens` 목록에 추가하고 생성·소비·전환
+   문구가 잡히는지 확인.
+3. 파서가 오분류한 스킬은 우선 `rules.json`의 `skillOverrides`(buffId→patch)로 교정하고,
+   "…당", "…와 함께", "전부 0이 되고", "간주" 같은 **새 조건 문구 유형**은 이 문서에 규칙을
+   추가하고 파서·플래너에 반영 (정식 지원되면 override 행 삭제 — 미적용 행은 재생성 시 WARNING).
+4. 플래너 로직 검증은 `node scripts/verify-plan.mjs` — 픽스처(검증된 정배·절대룰) 회귀 검사.
+   엔진 리팩토링은 `--snapshot`으로 기준을 뜨고 수정 후 `--compare`로 무변화를 증명한다.
+5. 확정된 새 규칙은 이 문서와 도움말 모달(`planner.tsx`의 HelpModal)에 함께 갱신하고,
+   편성 정배로 확정된 조합은 `rules.json`의 `fixtures`에 케이스로 축적한다.
