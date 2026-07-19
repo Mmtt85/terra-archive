@@ -276,10 +276,17 @@ function EntityRail({ entities, active, onShowOperator, focus }: {
     const mobile = typeof window !== "undefined" && window.matchMedia("(max-width: 1180px)").matches;
     if (mobile) setOpenCard(entity.name); // 모바일: 펼치면 100% 폭이 되므로 레이아웃 후 스크롤
     setFlashEi(focus.ei);
-    // 펼침(.open)으로 폭이 바뀐 뒤에 가운데로 스크롤해야 오른쪽 잘림 없이 정확히 중앙에 온다
+    // 펼침(.open)으로 폭이 바뀐 뒤에 가운데로 스크롤해야 오른쪽 잘림 없이 정확히 중앙에 온다.
+    // scrollIntoView는 sticky 가로 레일에서 축을 헷갈려 안 먹는 사례가 있어, 레일을 직접
+    // scrollBy 한다(뷰포트 기준 rect 차이로 중앙 오프셋 계산 — 2026-07-20 사용자 리포트).
     const raf = window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
-      const el = railRef.current?.querySelector<HTMLElement>(`[data-ei="${focus.ei}"]`);
-      el?.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
+      const rail = railRef.current;
+      const el = rail?.querySelector<HTMLElement>(`[data-ei="${focus.ei}"]`);
+      if (!rail || !el) return;
+      const rRect = rail.getBoundingClientRect();
+      const eRect = el.getBoundingClientRect();
+      const delta = (eRect.left - rRect.left) - (rRect.width - eRect.width) / 2;
+      rail.scrollBy({ left: delta, behavior: "smooth" });
     }));
     const timer = window.setTimeout(() => setFlashEi((cur) => (cur === focus.ei ? null : cur)), 1400);
     return () => { window.cancelAnimationFrame(raf); window.clearTimeout(timer); };
