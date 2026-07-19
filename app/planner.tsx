@@ -272,22 +272,16 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
 
   const runOptimize = async (ids: Set<string> = ownedIds, elite: Map<string, Elite> = eliteById, prio: ProdPriority = priority) => {
     if (optimizing) return; // 중복 실행 방지
-    // 페이싱 (사용자 확정 2026-07-19): 전체 소요는 3~5초 사이 랜덤, 단계 간격은 0.3~1.2초
-    // 랜덤(딱딱한 정주기 금지) — 남은 예산 안에서만 지연해 총 시간이 목표를 넘지 않는다.
-    // 실제 계산이 목표보다 오래 걸리면 그만큼 걸린다 (전수 비교가 우선).
-    const targetMs = 3000 + Math.random() * 2000;
-    const startedAt = performance.now();
+    // 페이싱 (사용자 확정 2026-07-19): **모든 단계** 0.3~0.6초 랜덤 간격으로 균일하게 —
+    // 예산 방식은 앞 단계가 시간을 다 써 뒤가 좌르륵 지나가는 문제가 있었다. 단계마다 같은
+    // 분포로 지연해 첫 단계든 마지막이든 읽을 틈이 동일하게 주어진다 (총 시간 = 단계 수 × ~0.45초).
     setOptimizing(t("자동편성 엔진 계산 중 — 편성 공간 구성…"));
     try {
       const paced = async (step: OptimizeStep) => {
         setOptimizing(stepMessage(step));
-        const budget = targetMs - (performance.now() - startedAt);
-        const delay = Math.min(300 + Math.random() * 900, Math.max(budget, 0));
-        if (delay > 0) await new Promise((resolve) => setTimeout(resolve, delay));
+        await new Promise((resolve) => setTimeout(resolve, 300 + Math.random() * 300));
       };
       const next = await optimize(visibleOps.map((op) => withElite(op, elite.get(op.id))).filter((op) => ids.has(op.id)), prio, paced);
-      const remain = targetMs - (performance.now() - startedAt);
-      if (remain > 0) await new Promise((resolve) => setTimeout(resolve, remain));
       setPlan(next);
       setActiveShift(0);
       persist(ids, next, elite);
