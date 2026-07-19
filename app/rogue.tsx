@@ -391,9 +391,12 @@ function EncounterModal({ enc, onClose }: { enc: Encounter; onClose: () => void 
             {enc.desc && <p className="rg-modal-desc">{enc.desc}</p>}
             {enc.note && <p className="rg-enc-note">{enc.note}</p>}
             <ul className="rg-enc-choices">
-              {/* rogue_6(CN 선행)은 게임 버튼이 중국어라 선택지에 원문을 병기해 대조 가능하게 */}
+              {/* rogue_6(CN 선행)은 게임 버튼이 중국어라 선택지에 원문 병기 — 병기 룰:
+                  중국어가 항상 대표, 한국어 번역이 뒤 (사용자 확정 2026-07-19, Nm 관례와 동일) */}
               {enc.choices.map((c, i) => (
-                <li key={i}><strong>{c.title}</strong>{c.cn && <span className="rg-cn" lang="zh">{c.cn}</span>}{c.desc ? ` — ${c.desc}` : ""}</li>
+                <li key={i}>{c.cn
+                  ? <><strong lang="zh">{c.cn}</strong><span className="rg-sub">{c.title}{c.desc ? ` — ${c.desc}` : ""}</span></>
+                  : <><strong>{c.title}</strong>{c.desc ? ` — ${c.desc}` : ""}</>}</li>
               ))}
             </ul>
           </div>
@@ -1302,7 +1305,8 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
           {activeArc === "hallu" && topic === "rogue_6" && (
         <div className="rg-hallu-inner">
           {/* 실토피아 — 기밀 등급 2+에서 격자 지도에 생성되는 이상역. 이념(주 효과) 10종 × 강도 3단계 */}
-          <h3 className="rg-env-h">{t("실토피아 · 이념")} <span className="rg-cn" lang="zh">实托邦·理念</span></h3>
+          {/* 병기 룰: 중국어 대표 + 한국어 번역 뒤 (.rg-cn은 보조 라벨 스타일로 번역 쪽에 재사용) */}
+          <h3 className="rg-env-h"><span lang="zh">实托邦·理念</span> <span className="rg-cn">{t("실토피아 · 이념")}</span></h3>
           <p className="rg-zone-desc">{t("기밀 등급 2 이상에서 '주민'의 사념이 실체화된 이상역(실토피아)이 격자 지도에 생성됩니다. '이상원' 노드를 파괴하면 제거되며, 영향권의 노드에 진입하면 아래 이념 효과가 발동합니다. 강도는 난이도에 따라 초기(a)/중기(b)/말기(c)로 강화됩니다.")}</p>
           <div className="rg-relic-grid">
             {(data.weathers ?? []).map((w) => (
@@ -1318,7 +1322,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
             ))}
           </div>
 
-          <h3 className="rg-env-h">{t("실토피아 · 방침")} <span className="rg-cn" lang="zh">实托邦·方针</span></h3>
+          <h3 className="rg-env-h"><span lang="zh">实托邦·方针</span> <span className="rg-cn">{t("실토피아 · 방침")}</span></h3>
           <p className="rg-zone-desc">{t("기밀 등급 6 이상에서 이념에 더해지는 부가 효과입니다. 실토피아의 영향을 받는 노드를 지날 때 발동합니다.")}</p>
           <div className="rg-relic-grid">
             {(data.subweathers ?? []).map((w) => (
@@ -1332,7 +1336,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
             ))}
           </div>
 
-          <h3 className="rg-env-h">{t("유토피아 (흑담)")} <span className="rg-cn" lang="zh">乌托邦·黑潭</span></h3>
+          <h3 className="rg-env-h"><span lang="zh">乌托邦·黑潭</span> <span className="rg-cn">{t("유토피아 (흑담)")}</span></h3>
           <p className="rg-zone-desc">{t("기이한 공간 노드에서 가공품 1개를 소모하면 히든 구역 '흑담'에 진입합니다. 흑담에서는 아래 유토피아 규칙 중 하나가 맵 전체에 적용되며 제거할 수 없습니다 (대신 난이도 적 강화가 적용되지 않습니다).")}</p>
           <div className="rg-relic-grid">
             {data.variations.map((v) => (
