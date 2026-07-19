@@ -949,6 +949,7 @@ const D: Record<string, Pair> = {
   "무대 도구": ["Stage props", "舞台道具"],
   "분대": ["Squads", "分隊"],
   "유물 검색": ["Search relics", "秘宝を検索"],
+  "유물 검색 (이름·번호)": ["Search relics (name/no.)", "秘宝を検索（名前・番号）"],
   "융합": ["Fusion", "融合"],
   "난이도 1 이상에서 구역에 환각이 나타납니다. 난이도 11 이상에서는 특정 조합이 융합 환각으로 발동합니다.": ["Hallucinations appear in zones at difficulty 1+. At difficulty 11+, certain pairs trigger fusion hallucinations.", "難易度1以上でエリアに幻覚が出現します。難易度11以上では特定の組み合わせが融合幻覚として発動します。"],
   "난이도는 하위 등급의 규칙을 전부 포함합니다. 현재 선택한 난이도까지의 규칙이 강조됩니다.": ["Each grade includes all lower-grade rules. Rules up to the selected grade are highlighted.", "各難易度は下位グレードのルールをすべて含みます。選択した難易度までのルールが強調されます。"],

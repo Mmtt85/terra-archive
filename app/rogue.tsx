@@ -744,7 +744,12 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
 
   const relics = useMemo(() => {
     const q = normSearch(relicQ);
-    return data.relics.filter((r) => !q || normSearch(r.name).includes(q) || (r.cn && normSearch(r.cn).includes(q)) || normSearch(r.usage ?? "").includes(q));
+    // 소장품 번호(order)로도 검색 — 순수 숫자 질의는 번호 정확일치 우선 (사용자 요청)
+    return data.relics.filter((r) => !q
+      || normSearch(r.name).includes(q)
+      || (r.cn && normSearch(r.cn).includes(q))
+      || normSearch(r.usage ?? "").includes(q)
+      || (r.order != null && (/^\d+$/.test(q) ? String(r.order) === q : normSearch(String(r.order)).includes(q))));
   }, [relicQ, active]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 맵 탭 이름 검색 — 전투 노드(작전·긴급·보스·조우 전투·특수·시련·추격전·거점전·외나무다리)
@@ -1127,7 +1132,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
         <div className="rg-archive">
           <div className="rg-filterbar">
             <input type="search" value={relicQ} onChange={(e) => setRelicQ(e.target.value)}
-              placeholder={t("유물 검색")} aria-label={t("유물 검색")} />
+              placeholder={t("유물 검색 (이름·번호)")} aria-label={t("유물 검색 (이름·번호)")} />
             <span className="rg-count">{relics.length}</span>
           </div>
           <div className="rg-relic-grid">
