@@ -35,6 +35,7 @@ export type Fixture = {
   roomKey?: string;   // 특정 방 (예: WORKSHOP, CONTROL)
   roomType?: string;  // 방 종류 중 아무 방 (예: TRADING — 두 무역소 중 한 곳에 함께)
   allOf?: string[];
+  anyOf?: string[];   // 같은 방에 이 중 1명 이상 (동급 대체군 — 품질 요원 4종 등)
   // teamCompare
   room?: string;
   product?: string;

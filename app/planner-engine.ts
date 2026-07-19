@@ -362,7 +362,15 @@ export function opSolo(op: InfraOp, room: string, slots: number, ctx: Ctx): numb
 export function bestTeam(room: string, slots: number, pool: Map<string, InfraOp>, ctx: Ctx, seedOps: InfraOp[] = []): InfraOp[] {
   const cands = Array.from(pool.values()).filter((op) => op.skills.some((skill) => skillApplies(skill, room, ctx.product)));
   const solo = cands.map((op) => ({ op, v: opSolo(op, room, slots, ctx) })).sort((a, b) => b.v - a.v || a.op.rarity - b.op.rarity);
-  const ranked = solo.slice(0, 40).map((entry) => entry.op);
+  // 쇼트리스트 = 단독 점수 상위 40 + **팀 의존 역할군 전원**. override/payout/quality/
+  // percoworker는 팀이 갖춰져야 가치가 드러나 단독 점수로는 저평가되는데, 쇼트리스트에서
+  // 잘리면 그리디·감사 모두 완성형 조합을 영영 못 본다 — 무6성 로스터에서 디아만테(단독 15)가
+  // 잘려 샤마르 방이 품질 요원을 못 받던 사례 (사용자 확정 2026-07-19: 계산이 느려져도 전수)
+  const TEAM_KINDS = new Set(["override", "payout", "quality", "percoworker"]);
+  const rankedBase = solo.slice(0, 40).map((entry) => entry.op);
+  const rankedIds = new Set(rankedBase.map((op) => op.id));
+  const ranked = [...rankedBase, ...cands.filter((op) =>
+    !rankedIds.has(op.id) && op.skills.some((skill) => TEAM_KINDS.has(skill.kind) && skillApplies(skill, room, ctx.product)))];
   // 점수가 실제로 오를 때만 슬롯을 채운다 — 0 기여 몸빵으로 컨디션을 낭비하지 않고,
   // 아르모니류 '자신만 업무 중' 스킬은 혼자 남을 수 있다
   const fill = (seed: InfraOp[], shortlist: InfraOp[] = ranked): InfraOp[] => {
@@ -499,10 +507,10 @@ export function presentIdsFor(plan: Plan, shift: number): Set<string> {
   return ids;
 }
 
-// 진영 세트 선택 — 쉐라그(gate: A조 무역소)와 피누스(product: B조 작전기록방)는 **개별 후보**로
-// 평가한다. 단일 플래그로 묶으면 한 세트의 이득에 다른 세트가 무임승차로 채택되는 얽힘이
-// 생긴다 (피누스 +가 쉐라그 -를 가려 A조 무역소가 약화되던 사례, 2026-07-19)
-export type FactionSets = { gate?: boolean; product?: boolean };
+// 세트 후보 선택 — 쉐라그(gate: A조 무역소)·피누스(product: B조 작전기록방)·품질 조합
+// (quality: A조 무역소 오버라이드+수익+품질)은 **개별 후보**로 평가한다. 단일 플래그로 묶으면
+// 한 세트의 이득에 다른 세트가 무임승차로 채택되는 얽힘이 생긴다 (2026-07-19)
+export type FactionSets = { gate?: boolean; product?: boolean; quality?: boolean };
 
 export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSets: FactionSets = {}, priority: ProdPriority = "gold"): Plan {
   const prodKeys = PRIORITY_KEYS[priority];
@@ -542,6 +550,32 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
           seeds["CONTROL"] = [...(seeds["CONTROL"] ?? []), auraOp];
           for (const op of seeds["TRADING-0"]) reserved.set(op.id, "TRADING-0");
           reserved.set(auraOp.id, "CONTROL");
+        }
+      }
+    }
+    // 품질 조합 세트 (사용자 확정 2026-07-19: "샤마르+테킬라는 가능한 한 고품질 확률 요원과
+    // 조합한다"): 오버라이드(샤마르)+품질 수익(테킬라)+고품질 확률 요원 3인을 무역소 한 곳에
+    // 결집한 후보안. 보통은 점수 모델이 알아서 조립하지만(디아만테 210 > 아르케토 182.5),
+    // 토큰 시드(우요우 등)가 무역소를 선점·예약하면 그리디·감사 모두 이 완성형을 못 연다
+    // (무6성 로스터에서 총점 -27.5 사례) — 세트로 열고 planScore 비교로 채택한다.
+    // payout_v(프로바이조 위약 수익)는 품질과 반시너지라 제외.
+    if (shift === 0 && factionSets.quality) {
+      const bestOf = (kind: string) => roster
+        .filter((op) => !used.has(op.id) && !reserved.has(op.id) && op.skills.some((s) => s.room === "TRADING" && s.kind === kind))
+        .sort((a, b) => opSolo(b, "TRADING", 3, { tokenPoints: {} }) - opSolo(a, "TRADING", 3, { tokenPoints: {} }))[0];
+      const overrideOp = bestOf("override");
+      const payoutOp = bestOf("payout");
+      if (overrideOp && payoutOp && overrideOp.id !== payoutOp.id) {
+        // 3번째 자리는 실제 방 점수 기준 최고 품질 요원 (미틈·디아만테·카프카·바이비크 동급 대체)
+        const qualityOp = roster
+          .filter((op) => op.id !== overrideOp.id && op.id !== payoutOp.id && !used.has(op.id) && !reserved.has(op.id)
+            && op.skills.some((s) => s.room === "TRADING" && s.kind === "quality"))
+          .sort((a, b) => teamScore([overrideOp, payoutOp, b], "TRADING", { tokenPoints: {} })
+            - teamScore([overrideOp, payoutOp, a], "TRADING", { tokenPoints: {} }))[0];
+        const cell = LAYOUT.filter((c) => c.room === "TRADING").find((c) => !(seeds[c.key]?.length));
+        if (qualityOp && cell) {
+          seeds[cell.key] = [overrideOp, payoutOp, qualityOp];
+          for (const op of seeds[cell.key]) reserved.set(op.id, cell.key);
         }
       }
     }
@@ -623,6 +657,11 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
             if (!gen.length) continue;
             const converterPlaced = gen.some((g) => g.token === token) || converters.some((c) => parked.has(c.id) || c === op);
             const already = parked.has(op.id);
+            // 죽은 전환 사슬의 공급원은 앉히지 않는다 (사용자 확정 2026-07-19): 전환으로만
+            // 이 토큰에 기여하는 오퍼(우요우: 화식→주술)는 전환자(지에윈)가 배치돼 있을 때만
+            // 자리를 받는다 — 무6성 로스터에서 기대가치 8짜리 사슬이 우요우를 무역소에
+            // 예약해 품질 조합(210 > 182.5)을 봉쇄하던 원인
+            if (!already && !converterPlaced) continue;
             if (already || LAYOUT.filter((c) => c.room === skill.room).some((cell) => place(op, cell.key))) {
               if (converterPlaced) {
                 for (const g of gen) {
@@ -699,10 +738,10 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
   // 그리디는 방을 우선순위대로 채우느라 "굼이 무역소에 있어야 +35%"인 레토처럼 나중에
   // 채워질 방에 걸린 조건을 1차엔 낙관적으로 배치한다. 편성을 다 마친 뒤 조 전체를 다시
   // 보고, 조건이 실제로 미충족인 오퍼는 그 자리에서 더 나은 벤치 오퍼로 교체(없으면 제거)한다.
-  // 조건 미충족 오퍼만 손대므로(그리디 결과를 갈아엎지 않음) 안전. 안정될 때까지 최대 3회.
+  // 조건 미충족 오퍼만 손대므로(그리디 결과를 갈아엎지 않음) 안전. 안정될 때까지 최대 5회.
   const byIdAll = new Map(roster.map((op) => [op.id, op]));
   for (let shift = 0; shift < SHIFT_COUNT; shift += 1) {
-    for (let pass = 0; pass < 3; pass += 1) {
+    for (let pass = 0; pass < 5; pass += 1) {
       const roomOf = new Map<string, string>();
       const placed = new Set<string>();
       for (const key of Object.keys(assignments)) {
@@ -755,7 +794,8 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
 
   // ── 편성 후 전수 감사 ×3 (사용자 확정 2026-07, INFRA-RULES §1) ────────────────────
   // 한 번의 그리디로는 "A조=최강·조 동시배치 금지·빈 방 금지" 규칙을 놓치므로, 편성을
-  // 마친 뒤 최대 3회 다시 훑어 교정한다. 매 회: ① A조가 각 방(제품 타입별)에서 최강이
+  // 마친 뒤 수렴할 때까지(최대 8회 — 사용자 확정 2026-07-19: 계산이 수 초 걸려도 전수조사
+  // 반복이 우선) 다시 훑어 교정한다. 매 회: ① A조가 각 방(제품 타입별)에서 최강이
   // 되도록 B조의 더 나은 요원을 끌어올리고(같은 방타입 내 swap, 시드/예약은 고정) →
   // ② A·B 동시 배치를 제거하고 → ③ 빈 근무 방을 벤치 최고 요원으로 채운다. 사기 비소모
   // 방 숙소(휴식)·가공소(상시 슬롯)만 예외로 조 전환과 무관하게 고정.
@@ -764,8 +804,8 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
     const workKeys = keys.filter((key) => !restRoom(key) && key !== "TRAINING");
     const dormIds = new Set<string>();
     for (let d = 0; d < 4; d += 1) for (const id of assignments[`DORM-${d}`]?.[0] ?? []) dormIds.add(id);
-    // 조 단위 2단계 감사 (사용자 규칙 2026-07): A조를 먼저 최대 3회 전수검사로 풀파워로
-    // 완성하고(전체 로스터에서 선발), 그 뒤 B조를 "남은 오퍼만으로" 최대 3회 전수검사한다.
+    // 조 단위 2단계 감사 (사용자 규칙 2026-07): A조를 먼저 수렴까지 전수검사로 풀파워로
+    // 완성하고(전체 로스터에서 선발), 그 뒤 B조를 "남은 오퍼만으로" 수렴까지 전수검사한다.
     // A·B를 한 번에 섞어 보면 서로 자리를 뺏고 되돌리는 진동이 생긴다.
     const orderKeys = [...prodKeys, ...SUPPORT_KEYS].filter((k) => workKeys.includes(k));
     for (let auditShift = 0; auditShift < SHIFT_COUNT; auditShift += 1) {
@@ -777,7 +817,7 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
         const idx = Math.min(auditShift, (assignments[k]?.length ?? 1) - 1);
         assignments[k][idx] = (assignments[k]?.[idx] ?? []).filter((id) => !lockedPrev.has(id));
       }
-    for (let pass = 0; pass < 3; pass += 1) {
+    for (let pass = 0; pass < 8; pass += 1) {
       let changed = false;
       const shift = auditShift;
 
@@ -1082,7 +1122,16 @@ export function planScore(plan: Plan, byId: Map<string, InfraOp>): number {
   return total;
 }
 
-export function optimize(roster: InfraOp[], priority: ProdPriority = "gold"): Plan {
+// 자동편성 진행 알림 — UI가 로케일 문구로 포맷해 표시한다 (엔진은 i18n 무의존)
+export type OptimizeStep = { phase: "base" | "variant" | "final"; index?: number; total?: number; sets?: (keyof FactionSets)[] };
+
+export async function optimize(roster: InfraOp[], priority: ProdPriority = "gold", onStep?: (step: OptimizeStep) => void): Promise<Plan> {
+  // 진행 콜백 후 매크로태스크 양보 — 브라우저가 안내 문구를 리페인트할 틈을 준다
+  const tick = async (step: OptimizeStep) => {
+    if (!onStep) return;
+    onStep(step);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  };
   // every token family (속세의 화식, 감지 정보 계열, 주술 결정, …) is always
   // assembled into A조 — B조 is the recovery crew that steps in when A조's
   // morale runs out
@@ -1099,28 +1148,44 @@ export function optimize(roster: InfraOp[], priority: ProdPriority = "gold"): Pl
     const genRooms = new Set(participants.flatMap((op) => op.skills.filter((skill) => skill.tokenGen.some((g) => g.token === token)).map((skill) => skill.room)));
     return genRooms.size > 0 && Array.from(genRooms).every((room) => room === "DORMITORY");
   });
+  await tick({ phase: "base" });
   const base = buildPlan(open, roster, {}, priority);
-  // 진영 세트 후보 — 쉐라그(게이트 오라, A조 무역소)·피누스(생산품별 진영 오라, B조 작전기록방)
-  // 보유 시 **세트별 개별 후보안 + 동시 포함안**을 만들어 기지 총점이 가장 높은 안을 채택한다.
-  // 한 플래그로 묶으면 한 세트의 이득에 다른 세트가 무임승차하는 얽힘이 생긴다 (피누스 +가
-  // 쉐라그 -를 가려 A조 무역소가 약화되던 사례, 2026-07-19). 귀금속 감산 등 세트의 비용도
-  // planScore에 그대로 반영되며, 동률이면 세트 없는 안 유지(쉐라그 "이득일 때만" 규칙).
+  // 세트 후보 — 쉐라그(게이트 오라, A조 무역소)·피누스(생산품별 진영 오라, B조 작전기록방)·
+  // 품질 조합(오버라이드+수익+품질, A조 무역소) 보유 시 **가능한 모든 조합(멱집합)**의
+  // 후보안을 만들어 기지 총점이 가장 높은 안을 채택한다. 세트를 한 플래그로 묶으면 한
+  // 세트의 이득에 다른 세트가 무임승차하는 얽힘이 생기고(2026-07-19 검출), 조합을 빼먹으면
+  // 두 세트가 함께일 때만 이기는 안을 놓친다 — 계산이 수 초 걸려도 전수 비교가 우선
+  // (사용자 확정 2026-07-19). 귀금속 감산 등 세트의 비용도 planScore에 그대로 반영되며,
+  // 동률이면 세트 없는 안 유지(쉐라그 "이득일 때만" 규칙).
   const hasGatedAura = roster.some((op) => op.skills.some((skill) => skill.room === "CONTROL" && skill.gateFaction));
   const hasPerProductSet = roster.some((op) => op.skills.some((skill) =>
     skill.room === "CONTROL" && skill.perFaction && skill.kind in AURA_WEIGHT && skill.perProduct));
+  const tradeOps = (kind: string) => roster.filter((op) => op.skills.some((s) => s.room === "TRADING" && s.kind === kind));
+  const hasQualityCombo = (() => {
+    const ov = tradeOps("override"), po = tradeOps("payout"), qu = tradeOps("quality");
+    return ov.length > 0 && po.length > 0 && qu.some((op) => op.id !== ov[0].id && op.id !== po[0].id);
+  })();
+  const flags: (keyof FactionSets)[] = [];
+  if (hasGatedAura) flags.push("gate");
+  if (hasPerProductSet) flags.push("product");
+  if (hasQualityCombo) flags.push("quality");
   const variants: FactionSets[] = [];
-  if (hasGatedAura) variants.push({ gate: true });
-  if (hasPerProductSet) variants.push({ product: true });
-  if (hasGatedAura && hasPerProductSet) variants.push({ gate: true, product: true });
+  for (let mask = 1; mask < (1 << flags.length); mask += 1) {
+    const sets: FactionSets = {};
+    flags.forEach((flag, index) => { if (mask & (1 << index)) sets[flag] = true; });
+    variants.push(sets);
+  }
   if (!variants.length) return base;
   const byId = new Map(roster.map((op) => [op.id, op]));
   let best = base;
   let bestScore = planScore(base, byId);
-  for (const sets of variants) {
-    const plan = buildPlan(open, roster, sets, priority);
+  for (let i = 0; i < variants.length; i += 1) {
+    await tick({ phase: "variant", index: i + 1, total: variants.length, sets: Object.keys(variants[i]) as (keyof FactionSets)[] });
+    const plan = buildPlan(open, roster, variants[i], priority);
     const score = planScore(plan, byId);
     if (score > bestScore) { best = plan; bestScore = score; }
   }
+  await tick({ phase: "final" });
   return best;
 }
 

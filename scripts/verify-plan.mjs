@@ -37,12 +37,12 @@ const rosters = {
 };
 
 const planCache = new Map();
-function planFor(rosterName = "full", priority = "gold") {
+async function planFor(rosterName = "full", priority = "gold") {
   const key = `${rosterName}/${priority}`;
   if (!planCache.has(key)) {
     const roster = rosters[rosterName];
     if (!roster) throw new Error(`unknown roster: ${rosterName}`);
-    planCache.set(key, optimize(roster, priority));
+    planCache.set(key, optimize(roster, priority)); // Promise 캐시 — 중복 계산 방지
   }
   return planCache.get(key);
 }
@@ -53,12 +53,12 @@ const names = (ids) => ids.map((id) => opName.get(id) ?? id).join(", ");
 // ── 스냅샷 모드 ──────────────────────────────────────────────────────────────
 const mode = process.argv[2];
 const file = process.argv[3];
-function takeSnapshot() {
+async function takeSnapshot() {
   const out = {};
   for (const name of Object.keys(rosters)) {
     out[name] = {};
     for (const priority of ["gold", "exp", "balance"]) {
-      const p = planFor(name, priority);
+      const p = await planFor(name, priority);
       out[name][priority] = {
         assignments: p.assignments, plants: p.plants,
         tokenPoints: p.tokenPoints, strategy: p.strategy, strategySet: !!p.strategySet,
@@ -68,13 +68,13 @@ function takeSnapshot() {
   return out;
 }
 if (mode === "--snapshot") {
-  fs.writeFileSync(file, JSON.stringify(takeSnapshot(), null, 1));
+  fs.writeFileSync(file, JSON.stringify(await takeSnapshot(), null, 1));
   console.log("스냅샷 저장 →", file);
   process.exit(0);
 }
 if (mode === "--compare") {
   const saved = JSON.parse(fs.readFileSync(file, "utf8"));
-  const current = takeSnapshot();
+  const current = await takeSnapshot();
   let diffs = 0;
   for (const r of Object.keys(saved)) for (const p of Object.keys(saved[r])) {
     const a = JSON.stringify({ ...saved[r][p], ms: undefined });
@@ -97,7 +97,7 @@ for (const fx of rules.fixtures) {
   let detail = "";
   try {
     if (fx.type === "invariant") {
-      const plan = planFor(fx.roster, fx.priority);
+      const plan = await planFor(fx.roster, fx.priority);
       if (fx.check === "noDualShift") {
         // 근무 방 기준 A·B 동시 배치 금지 (숙소·가공소 예외 — INFRA-RULES §1)
         const shiftIds = [0, 1].map((s) => new Set(
@@ -116,16 +116,18 @@ for (const fx of rules.fixtures) {
         ok = PARK_KEYS.every((key) => ((plan.assignments[key] ?? [])[1] ?? []).length === 0);
       } else throw new Error(`unknown check: ${fx.check}`);
     } else if (fx.type === "planContains") {
-      const plan = planFor(fx.roster, fx.priority);
+      const plan = await planFor(fx.roster, fx.priority);
       const cells = fx.roomKey ? [fx.roomKey]
         : LAYOUT.filter((c) => c.room === fx.roomType).map((c) => c.key);
-      // roomType이면 "그 종류의 어느 한 방에 allOf 전원이 함께" — 같은 방 동반 판정
+      // roomType이면 "그 종류의 어느 한 방에 allOf 전원이 함께" — 같은 방 동반 판정.
+      // anyOf가 있으면 그 방에 anyOf 중 1명 이상도 함께 있어야 한다 (동급 대체군 —
+      // 예: 샤마르+테킬라 방의 품질 요원은 미틈·디아만테·카프카·바이비크 중 아무나)
       ok = cells.some((key) => {
         const shifts = plan.assignments[key] ?? [];
         const team = new Set(shifts[Math.min(fx.shift ?? 0, shifts.length - 1)] ?? []);
-        return fx.allOf.every((id) => team.has(id));
+        return fx.allOf.every((id) => team.has(id)) && (!fx.anyOf || fx.anyOf.some((id) => team.has(id)));
       });
-      if (!ok) detail = `기대 [${names(fx.allOf)}] — 미충족`;
+      if (!ok) detail = `기대 [${names(fx.allOf)}]${fx.anyOf ? ` + [${names(fx.anyOf)}] 중 1` : ""} — 미충족`;
     } else if (fx.type === "teamCompare") {
       const byId = new Map(ops.map((o) => [o.id, o]));
       const team = (ids) => ids.map((id) => {

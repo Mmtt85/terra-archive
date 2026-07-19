@@ -11,7 +11,7 @@ import {
   JOB_ORDER, ROSTER_SORT_KEYS, PRODUCTION_KEYS, SUPPORT_KEYS,
   AURA_WEIGHT, AURA_LABEL, skillApplies, breakdown, teamScore, aurasOf, ambientFor,
   ctxFor, sanitizePlan, presentIdsFor, optimize, slotSubstitutes,
-  type InfraOp, type InfraSkill, type Elite, type Plan, type ProdPriority, type TokenFlow,
+  type InfraOp, type InfraSkill, type Elite, type Plan, type ProdPriority, type TokenFlow, type OptimizeStep,
 } from "./planner-engine";
 
 // 전략 라벨은 저장된 문자열이 아니라 구조 필드에서 로케일로 재조립한다
@@ -257,14 +257,30 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     toastTimer.current = setTimeout(() => setToast(null), 2400);
   };
 
-  const runOptimize = (ids: Set<string> = ownedIds, elite: Map<string, Elite> = eliteById, prio: ProdPriority = priority) => {
-    const next = optimize(visibleOps.map((op) => withElite(op, elite.get(op.id))).filter((op) => ids.has(op.id)), prio);
-    setPlan(next);
-    setActiveShift(0);
-    persist(ids, next, elite);
-    // 실제 계산에 쓰인 인원 = 보유 ∩ 현재 표시 대상(미래시 토글 반영) — 미래시 OFF면 미실장 제외
-    const usedCount = visibleOps.filter((op) => ids.has(op.id)).length;
-    showToast(t("전체 자동편성을 실행했습니다 · 보유 {n}명 기준", { n: usedCount }));
+  // 자동편성 진행 안내 — 계산이 수 초 걸려도 전수 비교가 우선(사용자 확정 2026-07-19)이라,
+  // 엔진이 후보안 사이마다 진행 단계를 알려주면 로케일 문구로 표시한다
+  const [optimizing, setOptimizing] = useState<string | null>(null);
+  const SET_LABEL: Record<string, string> = { gate: "쉐라그", product: "피누스", quality: "품질 조합" };
+  const stepMessage = (step: OptimizeStep): string => {
+    if (step.phase === "base") return t("자동편성 엔진 계산 중 — 기본 편성 조립·전수 감사…");
+    if (step.phase === "variant") return t("자동편성 엔진 계산 중 — 시너지 세트 후보안 {i}/{n} ({sets}) 평가…", { i: step.index ?? 0, n: step.total ?? 0, sets: (step.sets ?? []).map((key) => t(SET_LABEL[key] ?? key)).join("+") });
+    return t("자동편성 엔진 계산 중 — 최적안 비교·마무리 검증…");
+  };
+
+  const runOptimize = async (ids: Set<string> = ownedIds, elite: Map<string, Elite> = eliteById, prio: ProdPriority = priority) => {
+    if (optimizing) return; // 중복 실행 방지
+    setOptimizing(t("자동편성 엔진 계산 중 — 편성 공간 구성…"));
+    try {
+      const next = await optimize(visibleOps.map((op) => withElite(op, elite.get(op.id))).filter((op) => ids.has(op.id)), prio, (step) => setOptimizing(stepMessage(step)));
+      setPlan(next);
+      setActiveShift(0);
+      persist(ids, next, elite);
+      // 실제 계산에 쓰인 인원 = 보유 ∩ 현재 표시 대상(미래시 토글 반영) — 미래시 OFF면 미실장 제외
+      const usedCount = visibleOps.filter((op) => ids.has(op.id)).length;
+      showToast(t("전체 자동편성을 실행했습니다 · 보유 {n}명 기준", { n: usedCount }));
+    } finally {
+      setOptimizing(null);
+    }
   };
 
   // 우선 생산 모드는 설정(라디오)일 뿐 — 실제 편성은 기존처럼 자동편성 버튼으로 실행한다
@@ -395,11 +411,11 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         if (data.plan) { setPlan(data.plan as Plan); if (!data.priority && (data.plan as Plan).priority) setPriorityState((data.plan as Plan).priority!); return; }
         // 마운트 시점엔 미래시 토글이 아직 복원 전(false)일 수 있으므로 미실장은 제외하고
         // 기본 편성을 만든다 — 미래시 포함 편성은 토글 후 자동편성 버튼으로 실행
-        setPlan(optimize(ops.filter((op) => !op.unreleased).map((op) => withElite(op, elite.get(op.id))).filter((op) => ids.has(op.id))));
+        void optimize(ops.filter((op) => !op.unreleased).map((op) => withElite(op, elite.get(op.id))).filter((op) => ids.has(op.id))).then(setPlan);
         return;
       }
     } catch { /* fall through to defaults */ }
-    setPlan(optimize(ops.filter((op) => op.rarity <= 5 && !op.unreleased)));
+    void optimize(ops.filter((op) => op.rarity <= 5 && !op.unreleased)).then(setPlan);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -451,7 +467,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         </div>
         <div className="planner-buttons">
           <button onClick={() => setShowRoster(true)}><span className="btn-icon" aria-hidden>▦</span>{t("보유 오퍼 설정 ({a}/{b})", { a: visibleOps.filter((op) => ownedIds.has(op.id)).length, b: visibleOps.length })}</button>
-          <button className="primary" onClick={() => runOptimize()}><span className="btn-icon" aria-hidden>⟳</span>{t("전체 자동편성")}</button>
+          <button className="primary" onClick={() => runOptimize()} disabled={!!optimizing}><span className="btn-icon" aria-hidden>⟳</span>{optimizing ? t("계산 중…") : t("전체 자동편성")}</button>
           <button onClick={fillGaps} title={t("현재 편성(수동 수정 포함)은 그대로 두고, 남은 빈 자리만 효율 순으로 자동 편성합니다")}><span className="btn-icon" aria-hidden>⊕</span>{t("빈 자리만 자동편성")}</button>
           <button onClick={clearAll} title={t("모든 방의 편성을 비웁니다 (보유 오퍼 설정은 유지)")}><span className="btn-icon" aria-hidden>⌫</span>{t("편성 전체 비우기")}</button>
           {/* 이미지·파일·도움말은 '그 외' 드롭다운으로 묶는다 (사용자 요청 2026-07) */}
@@ -472,6 +488,12 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           </span>
         </div>
       </div>
+
+      {optimizing && (
+        <p className="opt-progress" role="status" aria-live="polite">
+          <span className="opt-progress-spin" aria-hidden>⟳</span> {optimizing}
+        </p>
+      )}
 
       {/* 우선 생산 설정 (라디오) — 다음 자동편성부터 적용, 편성 실행은 버튼으로 */}
       <div className="prio-setting" role="radiogroup" aria-label={t("우선 생산")}
@@ -1045,7 +1067,7 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
 const HELP_SECTIONS: { title: string; items: string[] }[] = [
   { title: "교대 정책", items: [
     "A조가 풀파워 주력이고 토큰 패키지·시너지 세트는 기본적으로 A조에 모입니다. B조는 A조 컨디션이 소진됐을 때 투입되는 회복 교대입니다 (12시간 2조). 예외로 피누스 실베스트리스 세트는 B조에 결집합니다 — A조 제조소·제어센터는 화식 세트와 상위 생산 오퍼 몫이기 때문입니다.",
-    "A조를 먼저 전수검사 3회로 풀파워로 완성한 뒤, 남은 오퍼레이터만으로 B조를 다시 3회 검수해 편성합니다.",
+    "A조를 먼저 반복 전수검사로 풀파워로 완성한 뒤(안정될 때까지), 남은 오퍼레이터만으로 B조를 같은 방식으로 검수해 편성합니다. 시너지 세트 후보안도 가능한 조합을 전부 만들어 총점으로 비교하므로 계산에 몇 초가 걸릴 수 있습니다.",
     "같은 오퍼를 A조·B조에 동시 배치하지 않는 것이 기본 원칙입니다 — 근무를 이중으로 서면 못 쉬고 24시간 돌아야 하기 때문입니다. 사기를 소모하지 않는 숙소(휴식)·가공소(상시 슬롯)만 예외로 조 전환과 무관하게 고정됩니다.",
     "숙소·시너지 고정 요원(숙소 생성원, 니엔 등)은 A/B 전환과 무관하게 고정됩니다. 응접실도 A/B 교대로 운영합니다 — 같은 인원을 24시간 돌리지 않습니다.",
     "가공소는 상시 슬롯이라 A조 한 팀(니엔 고정)만 편성하고 B조 칸은 비워 둡니다 — 회복 교대에 가공 요원을 따로 두지 않습니다.",
