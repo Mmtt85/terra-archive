@@ -426,6 +426,7 @@ const D: Record<string, Pair> = {
   ],
   "이 자리에서 빼기": ["Remove from this slot", "このスロットから外す"],
   "{name} 상세 정보": ["{name} details", "{name}の詳細"],
+  "정예화 {n} 스킬": ["Elite {n} skill", "昇進{n}スキル"],
   "이 시설에 적용되는 스킬이 없습니다 (세트 대기 요원).": ["No skills apply in this facility (set standby member).", "この施設に適用されるスキルはありません（セット待機要員）。"],
   "고품질 확률 +{n}%p 상당": ["quality odds +{n}%p equiv.", "高品質確率 +{n}%p相当"],
   "오더 수익 +{n}% 상당": ["order payout +{n}% equiv.", "受注収益 +{n}%相当"],

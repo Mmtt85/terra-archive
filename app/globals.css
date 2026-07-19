@@ -2356,6 +2356,16 @@ footer p {
   border: 1px solid #3a4144;
   background: #0e1213;
 }
+/* 아바타 + 정예화 요구 배지 (E0/E1/E2) — 이 방에서 그 오퍼가 쓰는 스킬의 정예화 단계 */
+.ship-room-crew .op-av { flex: 0 1 42px; min-width: 0; width: 42px; position: relative; display: block }
+.ship-room-crew .op-av img { flex: none; width: 100% }
+.op-elite {
+  position: absolute; left: 0; bottom: 0; z-index: 1;
+  padding: 0 3px; font: 800 9px/1.5 monospace; letter-spacing: -.3px;
+  color: #0e1213; background: #6b7378; border-top-right-radius: 3px;
+}
+.op-elite.e1 { background: #7fb2e0 }   /* 1정 */
+.op-elite.e2 { background: var(--room-accent, #e6b34d); color: #0e1213 }  /* 2정 — 방 강조색 */
 .ship-room-crew i {
   color: #5d686c;
   font-size: 11px;

@@ -11,7 +11,7 @@ import {
   ELITE_LABEL, LAYOUT, cellByKey, ROOM_ACCENT, UNIT, PARK_KEYS, SHIFT_COUNT,
   JOB_ORDER, ROSTER_SORT_KEYS, PRODUCTION_KEYS, SUPPORT_KEYS,
   AURA_WEIGHT, AURA_LABEL, skillApplies, breakdown, teamScore, aurasOf, ambientFor, capConvFor,
-  ctxFor, sanitizePlan, presentIdsFor, optimize, slotSubstitutes,
+  ctxFor, sanitizePlan, presentIdsFor, optimize, slotSubstitutes, eliteReqFor,
   type InfraOp, type InfraSkill, type Elite, type Plan, type ProdPriority, type TokenFlow, type OptimizeStep,
 } from "./planner-engine";
 
@@ -561,7 +561,8 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           }
           const team = teamFor(cell.key, activeShift);
           const spec = infra.rooms[cell.room];
-          const score = Math.round(teamScore(team, cell.room, ctxFor(cell.key, pointsFor(activeShift), plan?.factionCounts?.[activeShift], plan?.plants, presentIds, ambient)));
+          const cellCtx = ctxFor(cell.key, pointsFor(activeShift), plan?.factionCounts?.[activeShift], plan?.plants, presentIds, ambient);
+          const score = Math.round(teamScore(team, cell.room, cellCtx));
           // 제어센터 오라 수신분 — 카드 총점이 "오퍼 스킬 합과 달라 보이는" 이유를 명시
           // (플레임테일 B조: 작전기록 +30 / 순금 -30 등. 사용자 지적 2026-07-19)
           const ambientPart = score - Math.round(teamScore(team, cell.room, ctxFor(cell.key, pointsFor(activeShift), plan?.factionCounts?.[activeShift], plan?.plants, presentIds)));
@@ -572,9 +573,16 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
                 <span>{team.length}/{spec?.slots ?? 1}</span>
               </div>
               <div className="ship-room-crew">
-                {team.length ? team.map((op) => (
-                  <img key={op.id} src={op.image} alt={op.name} width={180} height={180} title={op.name} loading="lazy" />
-                )) : <i>{cell.key === "TRAINING" ? t("비워둠 · 특화 훈련 시 사용") : plan ? t("비어 있음") : t("자동 편성 대기")}</i>}
+                {team.length ? team.map((op) => {
+                  // 이 방에서 그 오퍼가 쓰는 인프라 스킬의 정예화 요구 단계 (E0/E1/E2)
+                  const elite = eliteReqFor(op, cell.room, cellCtx.product);
+                  return (
+                    <span key={op.id} className="op-av">
+                      <img src={op.image} alt={op.name} width={180} height={180} title={op.name} loading="lazy" />
+                      <em className={`op-elite e${elite}`} title={t("정예화 {n} 스킬", { n: elite })}>E{elite}</em>
+                    </span>
+                  );
+                }) : <i>{cell.key === "TRAINING" ? t("비워둠 · 특화 훈련 시 사용") : plan ? t("비어 있음") : t("자동 편성 대기")}</i>}
               </div>
               {plan && team.length > 0 && !PARK_KEYS.includes(cell.key) && (
                 <small title={cell.room === "CONTROL"
