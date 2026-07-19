@@ -2573,6 +2573,17 @@ footer p {
 .tab-rogue-wrap:focus-within .tab-submenu {
   display: flex;
 }
+/* 모바일: 햄버거 패널이 헤더 전체 폭(left/right 16px)이라 왼쪽 플라이아웃(right:100%)이
+   화면 밖으로 잘린다 — 부메뉴를 메뉴 안 인라인 들여쓴 목록으로 전개 (사용자 리포트 2026-07-19) */
+@media (max-width: 760px) {
+  .tab-submenu {
+    position: static;
+    min-width: 0;
+    margin: 2px 0 4px 20px;
+    box-shadow: none;
+    background: var(--paper);
+  }
+}
 .main-tabs .tab-sub {
   padding: 9px 12px;
   font-size: 12.5px;
