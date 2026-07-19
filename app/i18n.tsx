@@ -891,6 +891,7 @@ const D: Record<string, Pair> = {
   "구상": ["Ideas", "構想"],
   "주사위": ["Dice", "サイコロ"],
   "거부반응": ["Rejection", "拒絶反応"],
+  "계시": ["Revelation", "啓示"],
   "통합전략 가이드 - 명일방주 통합전략 공략 | 테라 아카이브": ["Integrated Strategies Guide - Arknights IS Guide | Terra Archive", "統合戦略ガイド - アークナイツ統合戦略攻略 | テラアーカイブ"],
   "층별 노드·적 도감·유물·엔딩 조건을 난이도별로 정리": ["Floor nodes, enemy handbook, relics, and ending requirements by difficulty", "階層ノード・敵図鑑・秘宝・エンディング条件を難易度別に整理"],
   "이 테마는 CN 선행 데이터라 아직 한국어·중국어로만 제공됩니다.": ["This theme is based on advance CN-server data and is only available in Korean/Chinese for now.", "このテーマはCN先行データのため、現在は韓国語・中国語のみの提供です。"],

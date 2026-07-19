@@ -349,6 +349,7 @@ def merge_dup_enemies(stages, enemies):
 MECH_GROUPS = {
     # 첫 항목=시그니처 시스템(전시관 밖 최상위 탭으로 승격) · 나머지=전시관 안 서브탭
     "rogue_2": [("거부반응", "charbuff", ["MUTATION", "EVOLUTION"]),
+                ("계시", "squadbuff", None),
                 ("주사위", "item", ["DICE_TYPE"])],
     "rogue_3": [("암호판", "item", ["TOTEM"]),
                 ("붕괴 패러다임", "module_chaos", None)],
@@ -794,6 +795,37 @@ def build_topic(tid="rogue_1", loc=None):
                     best[nm] = {"id": bid, "name": nm, "usage": usage or None, "desc": desc or None,
                                 "_cands": [ic], "_len": len(usage) + len(desc)}
             entries = [{k: v for k, v in e.items() if k != "_len"} for e in best.values()]
+        elif source == "squadbuff":
+            # 계시(啓示) — squadBuffData. 7종 × (기본/강화). 강화판은 기본과 iconId를
+            # 공유하므로(virtue_8 아이콘=virtue_1) iconId로 묶고, 낮은 id를 대표(기본)로,
+            # 나머지를 '강화' usage 줄로 병합한다 (로케일 무관 — 붕괴/시대/분노와 같은 꼴).
+            sb = r.get("squadBuffData") or {}
+            groups = {}
+            for bv in sb.values():
+                groups.setdefault(bv.get("iconId") or bv["id"], []).append(bv)
+            def vnum(v):
+                try:
+                    return int(v["id"].rsplit("_", 1)[1])
+                except (ValueError, KeyError):
+                    return 999
+            enh = {"en": "Enhanced", "ja": "強化"}.get(loc, "강화")
+            for ic in sorted(groups, key=lambda k: min(vnum(v) for v in groups[k])):
+                lv = sorted(groups[ic], key=vnum)
+                base = lv[0]
+                lines = []
+                bfd = (base.get("functionDesc") or "").strip()
+                if bfd:
+                    lines.append(bfd)
+                for extra in lv[1:]:
+                    efd = (extra.get("functionDesc") or "").strip()
+                    if efd:
+                        lines.append(f"〔{enh}〕 {efd}")
+                mech_jobs.add((f"{ASSETS}/ui/rogueliketopic/topics/{tid}/bufficon/{ic}.png", ic))
+                entries.append({"id": base["id"],
+                                "name": base.get("outerName") or base.get("innerName"),
+                                "usage": "\n".join(lines) or None,
+                                "desc": (base.get("desc") or "").strip() or None,
+                                "_cands": [ic]})
         elif source == "module_chaos":
             # 붕괴 패러다임 — modules.chaos.chaosDatas (실명: '수적 붕괴' 등). 심화 단계는
             # nextChaosId 체인을 따라 같은 카드의 usage에 줄로 병합.
