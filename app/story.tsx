@@ -128,38 +128,55 @@ function entityMatcher(rawKeys: string[]): RegExp {
 // 오퍼레이터 자동 카드 인덱스 — Home이 로케일 오퍼 데이터에서 만들어 내려준다 (name → {op, desc})
 export type OpIndex = Record<string, { op: string; desc: string }>;
 
+// 엔티티별 글로벌 매처 (본문 밑줄용) — 매칭 단어가 '어느' 레일 카드에 연결되는지 알아야
+// 클릭 시 그 카드를 강조할 수 있으므로, 합성 정규식 대신 (정규식, 엔티티인덱스) 쌍을 쓴다.
+export type EntMatch = { re: RegExp; ei: number }[];
+function entMatchOf(matchers: RegExp[]): EntMatch {
+  return matchers.map((r, ei) => ({ re: new RegExp(r.source, "g"), ei }));
+}
+
 // 본문에서 레일 매칭 단어에 점선 밑줄 — 레일 카드가 왜 떴는지 본문에서 직접 보여준다
-// (사용자 확정 2026-07-18: 카드 옆 배지 대신 본문 밑줄). re는 매처들의 합성 글로벌 정규식.
-function markEntities(text: string, re: RegExp | null): React.ReactNode {
-  if (!re) return text;
+// (사용자 확정 2026-07-18: 카드 옆 배지 대신 본문 밑줄). 클릭하면 onEntity(ei)로 그 단어가
+// 연결된 레일 카드를 강조/펼친다 (사용자 요청 2026-07-20).
+function markEntities(text: string, em: EntMatch | null, onEntity?: (ei: number) => void): React.ReactNode {
+  if (!em || em.length === 0) return text;
+  const hits: { s: number; e: number; w: string; ei: number }[] = [];
+  for (const { re, ei } of em) {
+    re.lastIndex = 0;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(text))) {
+      if (m[0].length === 0) { re.lastIndex++; continue; }
+      hits.push({ s: m.index, e: m.index + m[0].length, w: m[0], ei });
+    }
+  }
+  if (hits.length === 0) return text;
+  // 시작 위치 오름차순, 같으면 더 긴 것 우선 → 겹치는 뒤 매치는 건너뛴다
+  hits.sort((a, b) => a.s - b.s || (b.e - b.s) - (a.e - a.s));
   const out: React.ReactNode[] = [];
   let last = 0;
   let k = 0;
-  re.lastIndex = 0;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(text))) {
-    if (m[0].length === 0) { re.lastIndex++; continue; }
-    if (m.index > last) out.push(text.slice(last, m.index));
-    out.push(<i key={k++} className="ent-mark">{m[0]}</i>);
-    last = m.index + m[0].length;
+  for (const h of hits) {
+    if (h.s < last) continue;
+    if (h.s > last) out.push(text.slice(last, h.s));
+    out.push(
+      <i key={k++} className="ent-mark" role="button" tabIndex={0}
+        onClick={onEntity ? (ev) => { ev.stopPropagation(); onEntity(h.ei); } : undefined}
+        onKeyDown={onEntity ? (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); ev.stopPropagation(); onEntity(h.ei); } } : undefined}>
+        {h.w}
+      </i>,
+    );
+    last = h.e;
   }
-  if (last === 0) return text;
   out.push(text.slice(last));
   return out;
 }
 
 // **볼드** 마크업 + 엔티티 밑줄을 같이 처리 (요약 본문용 — i18n rich 대체)
-function richMark(s: string, re: RegExp | null): React.ReactNode {
+function richMark(s: string, em: EntMatch | null, onEntity?: (ei: number) => void): React.ReactNode {
   const parts = s.split(/\*\*(.+?)\*\*/g);
-  if (parts.length === 1) return markEntities(s, re);
+  if (parts.length === 1) return markEntities(s, em, onEntity);
   return parts.map((part, i) =>
-    i % 2 ? <b key={i}>{markEntities(part, re)}</b> : <span key={i}>{markEntities(part, re)}</span>);
-}
-
-// 매처 배열 → 합성 글로벌 정규식 (본문 밑줄용)
-function combineMatchers(matchers: RegExp[]): RegExp | null {
-  if (matchers.length === 0) return null;
-  return new RegExp(matchers.map((r) => r.source).join("|"), "g");
+    i % 2 ? <b key={i}>{markEntities(part, em, onEntity)}</b> : <span key={i}>{markEntities(part, em, onEntity)}</span>);
 }
 
 // ── 참조 레일 공용 로직 — 요약 본문과 전문(스크립트) 뷰가 같이 쓴다 (2026-07-18) ──
@@ -232,11 +249,16 @@ function useEntityRail(texts: string[], matchers: RegExp[]) {
 }
 
 // 참조 레일 렌더 — 요약/전문 공용 (모바일 펼침 상태 포함)
-function EntityRail({ entities, active, onShowOperator }: {
+// focus: 본문 점선밑줄 단어를 클릭하면 {ei, k}가 넘어와 해당 카드를 강조(데스크탑)하거나
+// 펼친다(모바일). k는 같은 단어를 다시 눌러도 강조가 재발동하도록 하는 nonce.
+function EntityRail({ entities, active, onShowOperator, focus }: {
   entities: Entity[]; active: { ei: number; word: string }[]; onShowOperator?: (id: string) => void;
+  focus?: { ei: number; k: number } | null;
 }) {
   const { t } = useI18n();
   const [openCard, setOpenCard] = useState<string | null>(null); // 모바일 레일에서 펼친 카드(이름)
+  const [flashEi, setFlashEi] = useState<number | null>(null);    // 데스크탑에서 잠깐 강조할 카드
+  const railRef = useRef<HTMLElement>(null);
   // 펼친 카드 바깥을 누르면 자동으로 접는다
   useEffect(() => {
     if (!openCard) return;
@@ -246,9 +268,26 @@ function EntityRail({ entities, active, onShowOperator }: {
     document.addEventListener("pointerdown", onDown);
     return () => document.removeEventListener("pointerdown", onDown);
   }, [openCard]);
+  // 본문 밑줄 단어 클릭 → 해당 카드로 스크롤 + 강조(데스크탑) / 펼침(모바일)
+  useEffect(() => {
+    if (!focus) return;
+    const entity = entities[focus.ei];
+    if (!entity) return;
+    const mobile = typeof window !== "undefined" && window.matchMedia("(max-width: 1180px)").matches;
+    if (mobile) setOpenCard(entity.name);
+    const el = railRef.current?.querySelector<HTMLElement>(`[data-ei="${focus.ei}"]`);
+    el?.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
+    setFlashEi(focus.ei);
+    const timer = window.setTimeout(() => setFlashEi((cur) => (cur === focus.ei ? null : cur)), 1400);
+    return () => window.clearTimeout(timer);
+  }, [focus, entities]);
+  // 강조 대상이 현재 active에 없으면(스크롤로 밀려남) 임시로 끼워 넣어 카드를 띄운다
+  const shown = focus && !active.some((a) => a.ei === focus.ei)
+    ? [{ ei: focus.ei, word: "" }, ...active]
+    : active;
   return (
-    <aside className="story-rail" aria-label={t("등장인물")}>
-      {active.map(({ ei: entityIndex }) => {
+    <aside className="story-rail" aria-label={t("등장인물")} ref={railRef}>
+      {shown.map(({ ei: entityIndex }) => {
         const entity = entities[entityIndex];
         const linked = Boolean(entity.op && onShowOperator);
         // 전용 스탠딩 CG(img)가 없으면 연결된 오퍼레이터 아바타로 폴백
@@ -265,7 +304,8 @@ function EntityRail({ entities, active, onShowOperator }: {
           }
         };
         return (
-          <div className={`rail-card${linked ? " op-linked" : ""}${openCard === entity.name ? " open" : ""}`} key={entity.name}
+          <div className={`rail-card${linked ? " op-linked" : ""}${openCard === entity.name ? " open" : ""}${flashEi === entityIndex ? " flash" : ""}`} key={entity.name}
+            data-ei={entityIndex}
             onClick={handleClick}
             role="button" tabIndex={0}
             onKeyDown={(keyEvent) => { if (keyEvent.key === "Enter") handleClick(); }}
@@ -386,7 +426,9 @@ function ScriptReader({ script, error, entities, opIndex, onShowOperator }: {
     [railEntities],
   );
   const { bodyRef, active } = useEntityRail(lineTexts, railMatchers);
-  const markRe = useMemo(() => combineMatchers(railMatchers), [railMatchers]);
+  const em = useMemo(() => entMatchOf(railMatchers), [railMatchers]);
+  const [railFocus, setRailFocus] = useState<{ ei: number; k: number } | null>(null);
+  const focusEntity = (ei: number) => setRailFocus((p) => ({ ei, k: (p?.k ?? 0) + 1 }));
   if (error) return <p className="story-disclaimer">{t("스크립트를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.")}</p>;
   if (!script || !ep) return <p className="sc-loading">{t("스크립트 불러오는 중…")}</p>;
   return (
@@ -423,7 +465,7 @@ function ScriptReader({ script, error, entities, opIndex, onShowOperator }: {
             );
           }
           if (ln.loc) return <div key={i} className="sc-loc" data-idx={i}>{ln.loc}</div>;
-          if (ln.st) return <p key={i} className="sc-st" data-idx={i}>{markEntities(ln.st, markRe)}</p>;
+          if (ln.st) return <p key={i} className="sc-st" data-idx={i}>{markEntities(ln.st, em, focusEntity)}</p>;
           if (ln.n) {
             const { showN, face, opId } = ln as ScriptLine & { showN?: boolean; face?: string; opId?: string };
             // 클릭: 오퍼레이터(별칭 연결 포함)는 오퍼 상세 모달, 그 외 얼굴 있는 화자는 스탠딩 크게 보기
@@ -446,14 +488,14 @@ function ScriptReader({ script, error, entities, opIndex, onShowOperator }: {
                   )}
                   {showN !== false && ln.n}
                 </b>
-                <span>{markEntities(ln.x ?? "", markRe)}</span>
+                <span>{markEntities(ln.x ?? "", em, focusEntity)}</span>
               </p>
             );
           }
-          return <p key={i} className="sc-narr" data-idx={i}>{markEntities(ln.x ?? "", markRe)}</p>;
+          return <p key={i} className="sc-narr" data-idx={i}>{markEntities(ln.x ?? "", em, focusEntity)}</p>;
         })}
         </div>
-        <EntityRail entities={railEntities} active={active} onShowOperator={onShowOperator} />
+        <EntityRail entities={railEntities} active={active} onShowOperator={onShowOperator} focus={railFocus} />
       </div>
       <div className="sc-ep-foot">
         {epIdx > 0 && <button type="button" onClick={() => goEp(epIdx - 1)}>← {t("이전 에피소드")}</button>}
@@ -510,7 +552,9 @@ function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }: {
   // 참조 레일 — 블록 텍스트 기준 매칭 (전문 뷰는 ScriptReader가 라인 기준으로 동일 훅 사용)
   const blockTexts = useMemo(() => summary.blocks.map(blockText), [summary]);
   const { bodyRef, active } = useEntityRail(blockTexts, matchers);
-  const markRe = useMemo(() => combineMatchers(matchers), [matchers]);
+  const em = useMemo(() => entMatchOf(matchers), [matchers]);
+  const [railFocus, setRailFocus] = useState<{ ei: number; k: number } | null>(null);
+  const focusEntity = (ei: number) => setRailFocus((p) => ({ ei, k: (p?.k ?? 0) + 1 }));
 
   return (
     <section className="story story-detail" aria-label={locText(locale, event.name)}>
@@ -563,7 +607,7 @@ function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }: {
               if (block.t === "quote")
                 return (
                   <blockquote key={index} data-idx={index}>
-                    <p>{richMark(block.x, markRe)}</p>
+                    <p>{richMark(block.x, em, focusEntity)}</p>
                     <cite>— {block.who}</cite>
                   </blockquote>
                 );
@@ -578,10 +622,10 @@ function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }: {
                   </figure>
                 );
               }
-              return <p key={index} data-idx={index}>{richMark(block.x, markRe)}</p>;
+              return <p key={index} data-idx={index}>{richMark(block.x, em, focusEntity)}</p>;
             })}
           </div>
-          <EntityRail entities={entities} active={active} onShowOperator={onShowOperator} />
+          <EntityRail entities={entities} active={active} onShowOperator={onShowOperator} focus={railFocus} />
         </div>
         <footer className="story-detail-foot">
           <button type="button" className="story-back" onClick={onClose}>← {t("스토리 목록으로")}</button>

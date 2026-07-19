@@ -4949,13 +4949,30 @@ html.dark .story-card:hover .story-thumb img {
   font-size: 12.5px;
   letter-spacing: -0.3px;
 }
-/* 본문에서 레일 카드로 연결되는 단어 — 점선 밑줄 (사용자 확정 2026-07-18) */
+/* 본문에서 레일 카드로 연결되는 단어 — 점선 밑줄 (사용자 확정 2026-07-18).
+   클릭하면 연결된 레일 카드가 강조(데스크탑)·펼쳐진다(모바일) — 2026-07-20 */
 .ent-mark {
   font-style: inherit;
   text-decoration: underline dotted;
   text-decoration-color: #b3a58f;
   text-decoration-thickness: 1.5px;
   text-underline-offset: 3px;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: background 0.12s, text-decoration-color 0.12s;
+}
+.ent-mark:hover {
+  text-decoration-color: var(--gold-ink);
+  background: var(--tint-gold);
+}
+/* 밑줄 단어를 눌러 지목된 레일 카드 — 잠깐 금색 링으로 눈에 띄게 */
+.rail-card.flash {
+  animation: rail-flash 1.4s ease;
+}
+@keyframes rail-flash {
+  0% { box-shadow: 0 0 0 0 var(--gold-ink); }
+  12% { box-shadow: 0 0 0 3px var(--gold-ink); border-color: var(--gold-ink); }
+  100% { box-shadow: 0 0 0 0 rgba(184, 134, 11, 0); }
 }
 .rail-card-text span {
   font: 600 11px/1.5 monospace;
