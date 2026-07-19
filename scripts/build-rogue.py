@@ -235,19 +235,25 @@ def extract_encounters(choice_scenes, choices, tree_overrides=None, items=None):
             out.append(node)
         return out
 
-    def build_scene(sid, seen):
+    def build_scene(sid, seen, exempt=frozenset()):
         # 원시 노드 목록(_num=choice 끝번호 보유, 그룹화 전). 하위 씬도 재귀로 원시.
+        # exempt: encounterTree가 지목한 선택 번호는 (제목,desc)가 같아도 dedup에서 제외한다
+        # — 미치광이 인형처럼 '껴안는다'가 라운드별로 제목·desc 동일하나 결과가 다른 시퀀스 보존.
         nodes, dedup = [], set()
         for cid, c in scene_ch.get(sid, []):
+            m = re.search(r"_(\d+)$", cid)
+            cnum = int(m.group(1)) if m else -1
             desc = name_reward(c, c.get("description"))
             key = (c["title"], desc)
-            if key in dedup:
+            if key in dedup and cnum not in exempt:
                 continue
             dedup.add(key)
-            m = re.search(r"_(\d+)$", cid)
-            node = {"title": c["title"], "desc": desc,
-                    "_num": int(m.group(1)) if m else -1}
+            node = {"title": c["title"], "desc": desc, "_num": cnum}
             nxt = c.get("nextSceneId")
+            # 결과 씬 지문을 항상 _resultDesc에 담아둔다(원시). NEXT류는 아래서 next로 승격되고,
+            # TRADE/SACRIFICE는 평소엔 버려지지만 encounterTree로 중첩될 때 서사로 복원된다.
+            if nxt and nxt in choice_scenes:
+                node["_resultDesc"] = (choice_scenes[nxt].get("description") or "").strip() or None
             if (nxt and nxt in choice_scenes and nxt not in seen
                     and str(c.get("type", "")).startswith("NEXT")):
                 sub = build_scene(nxt, seen | {nxt})
@@ -258,13 +264,14 @@ def extract_encounters(choice_scenes, choices, tree_overrides=None, items=None):
         return nodes
 
     def finalize(nodes):
-        # 하위 next.choices 먼저 재귀 그룹화 → 이 레벨 제목 그룹화 → _num 제거
+        # 하위 next.choices 먼저 재귀 그룹화 → 이 레벨 제목 그룹화 → 내부 필드 제거
         for n in nodes:
             if n.get("next"):
                 n["next"]["choices"] = finalize(n["next"]["choices"])
         grouped = group_by_title(nodes)
         for n in grouped:
             n.pop("_num", None)
+            n.pop("_resultDesc", None)
         return grouped
 
     def apply_overrides(raw, sid):
@@ -278,7 +285,13 @@ def extract_encounters(choice_scenes, choices, tree_overrides=None, items=None):
             parent = by_num.get(int(pnum))
             if parent is None:
                 continue
-            nx = parent.setdefault("next", {"desc": None, "choices": []})
+            # 부모가 TRADE라 next가 없으면, 결과 씬 지문(_resultDesc)을 서사로 승격해 만든다.
+            nx = parent.get("next")
+            if nx is None:
+                nx = {"desc": parent.get("_resultDesc"), "choices": []}
+                parent["next"] = nx
+            elif not nx.get("desc"):
+                nx["desc"] = parent.get("_resultDesc")
             for cnum in cnums:
                 child = by_num.get(int(cnum))
                 if child is not None and int(cnum) not in moved:
@@ -293,9 +306,11 @@ def extract_encounters(choice_scenes, choices, tree_overrides=None, items=None):
         bg = sc.get("background")
         if bg:
             bg = bg.removesuffix(".png").lower()
+        ov = tree_overrides.get(sid) or {}
+        exempt = {int(p) for p in ov} | {int(c) for cs in ov.values() for c in cs}
         encounters.append({
             "scene": sid, "title": sc["title"], "desc": sc.get("description"),
-            "bg": bg, "choices": finalize(apply_overrides(build_scene(sid, {sid}), sid)),
+            "bg": bg, "choices": finalize(apply_overrides(build_scene(sid, {sid}, exempt), sid)),
         })
     encounters.sort(key=lambda x: x["scene"])
     # 동명 enter 씬(溯源 19변형·三重身 3변형 등)은 대표 1개만 — 예전엔 선택지를 union해
