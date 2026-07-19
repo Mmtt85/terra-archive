@@ -2158,12 +2158,12 @@ footer p {
 }
 .planner-controls h2 {
   margin: 6px 0 0;
-  font-size: 30px;
+  font-size: 32px;
   letter-spacing: -1.2px;
 }
 /* 우선 생산 설정 (라디오) — 버튼 줄과 분리된 설정 행, 다음 자동편성부터 적용 */
-.prio-setting { display:flex; flex-wrap:wrap; align-items:center; gap:14px; margin:10px 0 4px; padding:8px 12px; border:1px dashed var(--line); background:var(--bg-faint); font-size:12px }
-.prio-label { font:800 11px monospace; letter-spacing:.4px; color:var(--muted) }
+.prio-setting { display:flex; flex-wrap:wrap; align-items:center; gap:14px; margin:10px 0 4px; padding:8px 12px; border:1px dashed var(--line); background:var(--bg-faint); font-size:13px }
+.prio-label { font:800 12px monospace; letter-spacing:.4px; color:var(--muted) }
 .prio-setting label { display:inline-flex; align-items:center; gap:6px; cursor:pointer; font-weight:700; color:var(--muted) }
 .prio-setting label.on { color:var(--ink) }
 .prio-setting input[type="radio"] { accent-color:var(--ink); margin:0 }
@@ -2175,7 +2175,7 @@ footer p {
   border: 1px solid var(--border-strong);
   background: var(--white);
   padding: 11px 16px;
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 800;
   cursor: pointer;
   transition: 0.15s;
@@ -2201,16 +2201,16 @@ footer p {
 .planner-summary span {
   display: block;
   color: var(--muted);
-  font: 700 10px monospace;
+  font: 700 11px monospace;
   letter-spacing: 1px;
 }
 .planner-summary b {
   display: block;
   margin-top: 6px;
-  font: 800 19px monospace;
+  font: 800 21px monospace;
 }
 .planner-summary .wide b {
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-family: inherit;
 }
 .shift-tabs {
@@ -2223,7 +2223,7 @@ footer p {
   border: 1px solid var(--line);
   background: transparent;
   padding: 8px 16px;
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 800;
   cursor: pointer;
 }
@@ -2234,7 +2234,7 @@ footer p {
 }
 .shift-hint {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   margin-left: 8px;
 }
 .ship {
@@ -2331,12 +2331,12 @@ footer p {
   align-items: center;
 }
 .ship-room-head b {
-  font-size: 13.5px;
+  font-size: 15px;
   letter-spacing: -0.4px;
 }
 .ship-room-head span {
   color: var(--room-accent);
-  font: 800 11px monospace;
+  font: 800 12px monospace;
 }
 /* 한 줄 고정 — 5인 방(제어센터 등)은 썸네일이 자동으로 줄어들어 줄바꿈 없이 들어간다 */
 .ship-room-crew {
@@ -2358,7 +2358,7 @@ footer p {
 }
 .ship-room-crew i {
   color: #5d686c;
-  font-size: 10px;
+  font-size: 11px;
   font-style: normal;
   align-self: center;
 }
@@ -2366,7 +2366,7 @@ footer p {
   display: block;
   margin-top: 7px;
   color: var(--room-accent);
-  font: 800 10px monospace;
+  font: 800 11.5px monospace;
   letter-spacing: 0.5px;
 }
 .pos-control.ship-room {
@@ -2422,19 +2422,19 @@ footer p {
   background: #12171a;
 }
 .crew-card b {
-  font-size: 14px;
+  font-size: 15px;
 }
 .crew-card b i {
   color: #c89b25;
   font-style: normal;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: -1px;
   margin-left: 5px;
 }
 .crew-card p {
   margin: 6px 0 0;
   color: var(--ink3);
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.6;
 }
 .crew-card p em {
@@ -2448,7 +2448,7 @@ footer p {
   padding: 3px 7px;
   background: color-mix(in srgb, var(--accent) 18%, var(--white));
   color: color-mix(in srgb, var(--accent) 75%, var(--ink));
-  font: 800 11px monospace;
+  font: 800 12px monospace;
 }
 .sub-hint {
   color: var(--muted);
@@ -3293,7 +3293,7 @@ footer p {
 .summary-parts span {
   background: var(--bg-soft);
   padding: 6px 9px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 800;
 }
 .summary-parts span b {
@@ -3305,7 +3305,7 @@ footer p {
   color: var(--ink3);
   margin: 12px 0 0;
   padding: 10px 13px;
-  font-size: 12px;
+  font-size: 12.5px;
   line-height: 1.6;
 }
 .crew-card {
