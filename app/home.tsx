@@ -910,7 +910,12 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
     setSelected(null);
     setTab("rogue");
     setRogueSlug(slug);
-    history.pushState(null, "", `${tabPath("rogue")}?topic=${slug}`);
+    // tabPath가 이미 ?future=1을 달고 올 수 있으므로 문자열 이어붙이기 금지 —
+    // ?future=1?topic=isN 처럼 깨져 topic 파싱에 실패하면 팬텀(rogue_1)으로 떨어진다
+    const [path, query] = tabPath("rogue").split("?");
+    const params = new URLSearchParams(query);
+    params.set("topic", slug);
+    history.pushState(null, "", `${path}?${params}`);
     window.dispatchEvent(new CustomEvent("ta:rogue-topic"));
   };
   const [sortKey, setSortKey] = useState("기본");

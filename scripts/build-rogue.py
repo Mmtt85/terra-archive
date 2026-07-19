@@ -585,6 +585,21 @@ def build_topic(tid="rogue_1", loc=None):
     #    변형(_a/_b…)이 많아 이름 기준으로 중복 제거하고, 설명이 가장 자세한 항목을 대표로 쓴다.
     def has_icon(iid):
         return os.path.exists(os.path.join(REPO, "public", "rogue", "relic", f"{iid}.webp"))
+    # 아이템계 항목의 아이콘 폴백 후보 — 변형 접미사(_a/_i…)는 베이스 아이콘을 공유하고,
+    # rogue_5 주화는 강화(copper_buff_)·환전(change_copper_)이 본체 주화 아이콘,
+    # 도금 강화(gild_bat_)가 도금(gild_) 아이콘을 공유한다 (아틀라스엔 베이스만 존재).
+    def item_icon_cands(iid):
+        cands = [iid]
+        for pat, rep in ((r"_[a-z]$", ""), ("copper_buff_", "copper_"),
+                         ("change_copper_", "copper_"), ("gild_bat_", "gild_")):
+            for c in list(cands):
+                n = re.sub(pat, rep, c)
+                if n not in cands:
+                    cands.append(n)
+        return cands
+    # 고유 시스템 아이콘 정적 PNG (아이템 아틀라스 밖 소스) — (url, 아이콘id) 잡을 모아
+    # relic 폴더에 내려받는다: 변이=bufficon/, 붕괴·시대·분노=misc/, 도금=copper/gildicon/
+    mech_jobs = set()
     mechanics = []
     mods = (table.get("modules") or {}).get(tid) or {}
     for label, source, mfilter in MECH_GROUPS.get(tid, []):
@@ -604,8 +619,12 @@ def build_topic(tid="rogue_1", loc=None):
                 if not nm or not (usage or desc):
                     continue
                 if nm not in best or len(usage) + len(desc) > best[nm]["_len"]:
+                    cands = item_icon_cands(iid)
+                    for c in cands:
+                        if re.fullmatch(r"rogue_\d+_gild_\d+", c):
+                            mech_jobs.add((f"{ASSETS}/ui/rogueliketopic/topics/{tid}/copper/gildicon/{c}.png", c))
                     e = {"id": iid, "name": nm, "usage": usage or None, "desc": desc or None,
-                         "img": has_icon(iid), "_len": len(usage) + len(desc)}
+                         "_cands": cands, "_len": len(usage) + len(desc)}
                     if source == "fragment":
                         # 사고 3분류 — id 접두 D/F/I = 염원/영감/구상 (사용자 확인 2026-07-18:
                         # usage에 '사용 시'가 있으면 영감(F), 없으면 염원(D), '구상'(I)은 단일 항목)
@@ -627,8 +646,10 @@ def build_topic(tid="rogue_1", loc=None):
                 if not nm or not (usage or desc):
                     continue
                 if nm not in best or len(usage) + len(desc) > best[nm]["_len"]:
+                    ic = bv.get("iconId") or bid
+                    mech_jobs.add((f"{ASSETS}/ui/rogueliketopic/topics/{tid}/bufficon/{ic}.png", ic))
                     best[nm] = {"id": bid, "name": nm, "usage": usage or None, "desc": desc or None,
-                                "img": has_icon(bv.get("iconId") or bid), "_len": len(usage) + len(desc)}
+                                "_cands": [ic], "_len": len(usage) + len(desc)}
             entries = [{k: v for k, v in e.items() if k != "_len"} for e in best.values()]
         elif source == "module_chaos":
             # 붕괴 패러다임 — modules.chaos.chaosDatas (실명: '수적 붕괴' 등). 심화 단계는
@@ -643,10 +664,12 @@ def build_topic(tid="rogue_1", loc=None):
                     nv = datas[nxt]
                     lines.append(f"〔{nv.get('name')}〕 {nv.get('functionDesc') or ''}")
                     nxt = nv.get("nextChaosId")
+                ic = v.get("iconId") or v["chaosId"]
+                mech_jobs.add((f"{ASSETS}/ui/rogueliketopic/topics/{tid}/misc/{ic}.png", ic))
                 entries.append({"id": v["chaosId"], "name": v.get("name"),
                                 "usage": "\n".join(x for x in lines if x.strip()) or None,
                                 "desc": (v.get("desc") or "").strip() or None,
-                                "img": has_icon(v.get("iconId") or v["chaosId"])})
+                                "_cands": [ic]})
         elif source == "module_disaster":
             # 시대 — modules.disaster.disasterData (유형 9종 × 형성기/확장기/… 단계).
             # 유형별 한 카드, 단계 효과를 usage 줄로 병합.
@@ -658,10 +681,12 @@ def build_topic(tid="rogue_1", loc=None):
                 lv = sorted(groups[gtype], key=lambda v: v.get("level", 0))
                 first = lv[0]
                 lines = [f"〔{v.get('levelName') or v.get('level')}〕 {v.get('functionDesc') or ''}" for v in lv]
+                ic = first.get("iconId") or gtype
+                mech_jobs.add((f"{ASSETS}/ui/rogueliketopic/topics/{tid}/misc/{ic}.png", ic))
                 entries.append({"id": gtype, "name": first.get("name"),
                                 "usage": "\n".join(x for x in lines if x.strip()) or None,
                                 "desc": (first.get("desc") or "").strip() or None,
-                                "img": has_icon(first.get("iconId") or gtype)})
+                                "_cands": [ic]})
         elif source == "module_wrath":
             # IS5 분노(쉐이시 시진) — modules.wrath.wrathData. items의 usage는 '기믹 아이템'
             # 뿐이라 쓸모없고, 실효과는 여기의 단계별 functionDesc다 (사용자 리포트 2026-07-19).
@@ -689,12 +714,24 @@ def build_topic(tid="rogue_1", loc=None):
                 if v0 and (v0.get("functionDesc") or "").strip():
                     calm = {"en": "·Pacified", "ja": "・鎮静"}.get(loc, "·진정")
                     lines.append(f"〔{v0.get('levelName') or '각성'}{calm}〕 {v0['functionDesc'].strip()}")
+                mech_jobs.add((f"{ASSETS}/ui/rogueliketopic/topics/{tid}/misc/{g}.png", g))
                 entries.append({"id": first["id"], "name": first.get("name"),
                                 "usage": "\n".join(lines) or None,
                                 "desc": (first.get("desc") or "").strip() or None,
-                                "img": has_icon(first["id"])})
+                                "_cands": [g]})
         if entries:
             mechanics.append({"label": label, "items": entries})
+    # 아이콘 확보 후 폴백 해소 — 첫 존재 후보를 채택하고, 항목 id와 다르면 iconId로 전달
+    # (프론트는 /rogue/relic/<iconId ?? id>.webp). 소스가 없으면 img=False로 남는다.
+    download_webp([(u, os.path.join(relic_icon_dir, f"{ic}.webp")) for u, ic in sorted(mech_jobs)],
+                  max_px=180, photo=False)
+    for m in mechanics:
+        for e in m["items"]:
+            cands = e.pop("_cands", None) or [e["id"]]
+            ic = next((c for c in cands if has_icon(c)), None)
+            e["img"] = ic is not None
+            if ic and ic != e["id"]:
+                e["iconId"] = ic
 
     # ── 환각/메아리(variation) + 융합(fusion) — 토픽별 존재 여부·정합성 확인 후 수록
     # (rogue_3의 variationData는 이름이 "1"~"8"인 플레이스홀더라 제외)
@@ -1361,6 +1398,10 @@ def build_rogue6():
             keep_cn(x)
     for enc in out["encounters"]:
         keep_cn(enc, "title")
+        # 선택지에도 원문 병기 — CN 클라 실황과 대조할 수 있게 (사용자 요청 2026-07-19:
+        # 선택지 많은 조우는 어느 버튼이 어느 번역인지 알 수 없다)
+        for ch in enc["choices"]:
+            keep_cn(ch, "title")
 
     # ── 번역 오버레이: ① KR 교차 자동 사전 → ② rogue6-ko.json 수동 사전 ──────
     tr = load_auto_tr()
@@ -1402,6 +1443,8 @@ def build_rogue6():
             drop_same_cn(x)
     for enc in out["encounters"]:
         drop_same_cn(enc, "title")
+        for ch in enc["choices"]:
+            drop_same_cn(ch, "title")
 
     report = os.path.join(REPO, "scripts", "rogue6-untranslated.json")
     json.dump(untranslated, open(report, "w", encoding="utf-8"), ensure_ascii=False, indent=1)

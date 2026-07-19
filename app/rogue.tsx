@@ -27,7 +27,7 @@ type SubWeather = { id: string; name: string; desc: string | null; img?: boolean
 type Variation = { id: string; name: string; func: string | null; desc: string | null; fusion: boolean; img?: boolean; cn?: string };
 type Difficulty = { mode: string; grade: number; name: string; rule: string | null; score: number | null };
 type Ending = { id: string; name: string; desc: string | null; boss: string | null; priority: number; change: string | null; cond?: string[]; cn?: string };
-type Encounter = { scene: string; title: string; desc: string | null; bg?: string | null; choices: { title: string; desc: string | null }[]; floors?: number[]; note?: string; cn?: string };
+type Encounter = { scene: string; title: string; desc: string | null; bg?: string | null; choices: { title: string; desc: string | null; cn?: string }[]; floors?: number[]; note?: string; cn?: string };
 type RogueData = {
   id: string; name: string; line: string | null; cnName?: string; future?: boolean;
   zones: Zone[]; nodeTypes: { id: string; name: string; desc: string | null; func?: string | null; cn?: string }[];
@@ -38,7 +38,7 @@ type RogueData = {
   variations: Variation[]; endings: Ending[]; encounters: Encounter[];
   // 토픽 고유 시스템 갤러리 (거부반응·암호판·붕괴 패러다임·사고·시대·주화·분노 등) — 전시관 서브탭.
   // kind=하위 분류(사고: 염원/영감/구상), usage의 개행은 단계 효과(심화·형성기 등) 줄바꿈.
-  mechanics?: { label: string; items: { id: string; name: string; kind?: string; usage?: string | null; desc?: string | null; img?: boolean }[] }[];
+  mechanics?: { label: string; items: { id: string; name: string; kind?: string; usage?: string | null; desc?: string | null; img?: boolean; iconId?: string }[] }[];
 };
 
 const rogue1 = rogue1Data as unknown as RogueData;
@@ -391,8 +391,9 @@ function EncounterModal({ enc, onClose }: { enc: Encounter; onClose: () => void 
             {enc.desc && <p className="rg-modal-desc">{enc.desc}</p>}
             {enc.note && <p className="rg-enc-note">{enc.note}</p>}
             <ul className="rg-enc-choices">
+              {/* rogue_6(CN 선행)은 게임 버튼이 중국어라 선택지에 원문을 병기해 대조 가능하게 */}
               {enc.choices.map((c, i) => (
-                <li key={i}><strong>{c.title}</strong>{c.desc ? ` — ${c.desc}` : ""}</li>
+                <li key={i}><strong>{c.title}</strong>{c.cn && <span className="rg-cn" lang="zh">{c.cn}</span>}{c.desc ? ` — ${c.desc}` : ""}</li>
               ))}
             </ul>
           </div>
@@ -1265,7 +1266,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
                   {g.items.map((c) => (
                     <article key={c.id} className="rg-relic">
                       <header>
-                        {c.img && <img className="rg-relic-icon" src={`/rogue/relic/${c.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
+                        {c.img && <img className="rg-relic-icon" src={`/rogue/relic/${c.iconId ?? c.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
                         <h4>{c.name}</h4>
                       </header>
                       {c.usage && <p className="rg-relic-usage rg-multiline">{c.usage}</p>}
