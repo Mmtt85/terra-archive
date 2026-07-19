@@ -413,11 +413,15 @@ function ScriptReader({ script, error, entities, opIndex, onShowOperator }: {
             const texts = (ln as ScriptLine & { brTexts?: string[] }).brTexts ?? [];
             return <div key={i} className="sc-br">▼ {texts.length > 0 ? texts.join(" / ") : t("분기")}</div>;
           }
-          if (ln.img) return (
-            <figure key={i} className="sc-cut">
-              <img src={`/story/cut/${ln.img}.webp`} alt="" loading="lazy" decoding="async" />
-            </figure>
-          );
+          if (ln.img) {
+            const cutSrc = `/story/cut/${ln.img}.webp`;
+            const cutDim = imageDims[cutSrc];
+            return (
+              <figure key={i} className="sc-cut">
+                <img src={cutSrc} alt="" loading="lazy" decoding="async" width={cutDim?.[0]} height={cutDim?.[1]} />
+              </figure>
+            );
+          }
           if (ln.loc) return <div key={i} className="sc-loc" data-idx={i}>{ln.loc}</div>;
           if (ln.st) return <p key={i} className="sc-st" data-idx={i}>{markEntities(ln.st, markRe)}</p>;
           if (ln.n) {

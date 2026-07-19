@@ -245,7 +245,7 @@ function StageModal({ pair, grade, onClose, onOpenEnemy }: {
             if (!e) return null;
             return (
               <button type="button" key={se.key} className="rg-enemy-cell" onClick={() => onOpenEnemy(key, { ...ctx, enemyKey: key })}>
-                {e.img ? <img className="rg-enemy-face" src={`/rogue/enemy/${e.img}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />
+                {e.img ? <img className="rg-enemy-face" src={`/rogue/enemy/${e.img}.webp`} alt="" aria-hidden width={158} height={158} loading="lazy" decoding="async" />
                   : <span className="rg-enemy-face none" aria-hidden>?</span>}
                 <span className="rg-enemy-cell-head">
                   <span className={`rg-rank r-${e.rank ?? "NORMAL"}`}>{t(RANK_KO[e.rank ?? ""] ?? "일반")}</span>
@@ -312,7 +312,7 @@ function EnemyModal({ ekey, grade, ctx, onClose, onOpenStage, appear }: {
         </header>
         {/* 초상은 원본 해상도(158px) 그대로 크게 — 작은 헤더 아이콘 대신 (피드백 반영 2026-07-18) */}
         <div className="rg-emodal-cols">
-          {e.img ? <img className="rg-emodal-portrait" src={`/rogue/enemy/${e.img}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />
+          {e.img ? <img className="rg-emodal-portrait" src={`/rogue/enemy/${e.img}.webp`} alt="" aria-hidden width={158} height={158} loading="lazy" decoding="async" />
             : <span className="rg-emodal-portrait none" aria-hidden>?</span>}
           <div className="rg-emodal-main">
             {e.attack && <p className="rg-emodal-row"><strong>{t("공격 방식")}</strong> {e.attack}</p>}
@@ -1072,7 +1072,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
             {enemies.map(([key, e]) => (
               <button type="button" key={key} className="rg-enemy-cell row" id={`rg-en-${key}`}
                 onClick={() => setEnemyOpen({ key, ctx: dexCtx(key) })}>
-                {e.img ? <img className="rg-enemy-face" src={`/rogue/enemy/${e.img}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />
+                {e.img ? <img className="rg-enemy-face" src={`/rogue/enemy/${e.img}.webp`} alt="" aria-hidden width={158} height={158} loading="lazy" decoding="async" />
                   : <span className="rg-enemy-face none" aria-hidden>?</span>}
                 <span className="rg-enemy-cell-info">
                   <span className="rg-enemy-cell-head">

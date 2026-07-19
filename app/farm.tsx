@@ -194,7 +194,7 @@ export default function FarmGuide({ operators, includeFuture, onShowOperator }: 
               <article key={item.id} className={`farm-card${item.farmable ? "" : " nonfarm"}`} style={{ "--tier": item.rarity } as React.CSSProperties}>
                 <header>
                   <button type="button" className="farm-item-btn" onClick={() => setShownItem(item.id)} title={t("{name} 상세 정보 열기", { name: locText(locale, item.name) })}>
-                    <img src={item.image} alt={locText(locale, item.name)} loading="lazy" decoding="async" />
+                    <img src={item.image} alt={locText(locale, item.name)} width={183} height={183} loading="lazy" decoding="async" />
                   </button>
                   <div>
                     <h3>{locText(locale, item.name)}</h3>
@@ -248,7 +248,7 @@ export default function FarmGuide({ operators, includeFuture, onShowOperator }: 
                           // 조합 재료 아이콘은 각자 자기 상세를 연다 (예전엔 카드 전체가 버튼이라 재료를 눌러도 이 재료 상세가 떴음)
                           return (
                             <button key={subId} type="button" className="cost-mini farmable" title={t("{name} 상세 정보 열기", { name: locText(locale, sub.name) })} onClick={() => setShownItem(subId)}>
-                              <img src={sub.image} alt={locText(locale, sub.name)} /><i>{count}</i>
+                              <img src={sub.image} alt={locText(locale, sub.name)} width={183} height={183} /><i>{count}</i>
                             </button>
                           );
                         })}
@@ -456,7 +456,7 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
             <div className="cost-suggest" role="listbox">
               {matches.map((operator) => (
                 <button key={operator.id} type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => addOp(operator.id)}>
-                  <img src={operator.image} alt="" loading="lazy" decoding="async" />
+                  <img src={operator.image} alt="" width={180} height={180} loading="lazy" decoding="async" />
                   <b>{operator.name}</b>
                   <small>{"★".repeat(operator.rarity)}</small>
                   {operator.unreleased && <em className="future-badge">{t("미실장")}</em>}
@@ -481,7 +481,7 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
               return (
                 <article key={id} className="cost-op" style={{ "--accent": operator.accent } as React.CSSProperties}>
                   <header>
-                    <img src={operator.image} alt="" />
+                    <img src={operator.image} alt="" width={180} height={180} />
                     <button type="button" className="cost-chip-name" onClick={() => onShowOperator(id)} title={t("{name} 상세 정보 열기", { name: operator.name })}>{operator.name}</button>
                     {operator.unreleased && <em className="future-badge">{t("미실장")}</em>}
                     <button type="button" className="cost-op-all" onClick={() => setAllGroups(id, groups, !allFull)}>
@@ -536,7 +536,7 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
               </div>
             </div>
             <div className="cost-lmd">
-              <img src="/items/4001.webp" alt="" />
+              <img src="/items/4001.webp" alt="" width={183} height={183} />
               <div><span>{t("용문폐")}</span><b>{totals.lmd.toLocaleString()}</b></div>
             </div>
             <div className="cost-items">
@@ -544,7 +544,7 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
                 const name = locText(locale, row.meta.name);
                 return (
                   <button key={row.id} type="button" className="cost-item farmable" title={t("{name} 상세 정보 열기", { name })} onClick={() => onShowItem(row.id)}>
-                    <span className="cost-item-icon" data-tier={row.meta.rarity}><img src={row.meta.image} alt="" loading="lazy" decoding="async" /><i>{row.count.toLocaleString()}</i></span>
+                    <span className="cost-item-icon" data-tier={row.meta.rarity}><img src={row.meta.image} alt="" width={183} height={183} loading="lazy" decoding="async" /><i>{row.count.toLocaleString()}</i></span>
                     <b>{name}</b>
                   </button>
                 );
@@ -584,7 +584,7 @@ function ItemChip({ id, count, onShowItem, locale }: {
   const name = locText(locale, meta.name);
   return (
     <button type="button" className="cost-mini farmable" title={`${name} ×${count.toLocaleString()}`} onClick={() => onShowItem(id)}>
-      <img src={meta.image} alt={name} loading="lazy" decoding="async" />
+      <img src={meta.image} alt={name} width={183} height={183} loading="lazy" decoding="async" />
       <i>{count.toLocaleString()}</i>
     </button>
   );
@@ -611,7 +611,7 @@ function ItemModal({ id, onClose, onShowItem, onSearchItem }: {
       <section className="item-modal" role="dialog" aria-modal="true" aria-label={name}>
         <button type="button" className="modal-close" onClick={onClose} aria-label={t("상세 정보 닫기")}>×</button>
         <header>
-          <span className="item-modal-icon" data-tier={rarity}><img src={image} alt={name} /></span>
+          <span className="item-modal-icon" data-tier={rarity}><img src={image} alt={name} width={183} height={183} /></span>
           <div>
             <h3>{name}</h3>
             <span className={`farm-tier tier-${rarity}`}>T{rarity}</span>
@@ -631,14 +631,14 @@ function ItemModal({ id, onClose, onShowItem, onSearchItem }: {
                 if (!sub) return null;
                 return (
                   <button key={subId} type="button" className="cost-mini farmable" title={locText(locale, sub.name)} onClick={() => onShowItem(subId)}>
-                    <img src={sub.image} alt={locText(locale, sub.name)} />
+                    <img src={sub.image} alt={locText(locale, sub.name)} width={183} height={183} />
                     <i>{count}</i>
                   </button>
                 );
               })}
               {(meta.craftGold ?? 0) > 0 && (
                 <span className="cost-mini" title={t("용문폐")}>
-                  <img src="/items/4001.webp" alt={t("용문폐")} />
+                  <img src="/items/4001.webp" alt={t("용문폐")} width={183} height={183} />
                   <i>{(meta.craftGold ?? 0).toLocaleString()}</i>
                 </span>
               )}

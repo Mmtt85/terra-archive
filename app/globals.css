@@ -4846,6 +4846,7 @@ html.dark .story-card:hover .story-thumb img {
 }
 .sc-cut img {
   max-width: 100%;
+  height: auto;
   display: block;
   border: 1px solid var(--line);
 }
@@ -5251,22 +5252,19 @@ html.dark .story-card:hover .story-thumb img {
 .about-card > header h3 { font-size: 18px; margin: 0; letter-spacing: -0.3px; }
 /* 데스크톱 + 모바일 스크린샷을 겹치지 않게 나란히 (반응형 UI를 한눈에) */
 .about-shot-fig { margin: 0 0 13px; }
-.about-shots { display: flex; gap: 10px; align-items: flex-start; line-height: 0; }
-.about-shot-d {
-  flex: 1 1 auto;
+.about-shots { display: flex; gap: 10px; align-items: stretch; line-height: 0; }
+/* 데스크톱 774 : 모바일 226 비율 → 두 캡처(1200/760 vs 440/952)의 렌더 높이가 항상 동일.
+   래퍼에 aspect-ratio를 주어 이미지 로드 전에도 정확한 공간을 예약(CLS 0), 테마 확정 전엔 빈 박스만. */
+.about-shot {
   min-width: 0;
-  display: block;
   border: 1px solid var(--line);
   border-radius: 4px;
+  overflow: hidden;
+  background: var(--paper);
 }
-.about-shot-m {
-  flex: 0 0 auto;
-  width: clamp(80px, 22%, 132px);
-  height: auto;
-  display: block;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-}
+.about-shot-d { flex: 774 1 0; aspect-ratio: 1200 / 760; }
+.about-shot-m { flex: 226 1 0; aspect-ratio: 440 / 952; }
+.about-shot img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .about-shot-cap {
   font: 700 12px/1.4 monospace;
   color: var(--muted);
@@ -6315,7 +6313,7 @@ html.dark.rg-theme.rg6 .site-header { background: #0a1413e6; border-bottom-color
 /* 조우 */
 .rg-enc-title { font-weight: 700; font-size: 13.5px; color: var(--rgink) }
 .rg-enc-floors { margin-left: auto; font: 800 11.5px/1 monospace; background: var(--rgsel); border: 1px solid var(--rgmodalline); color: var(--rggold); padding: 3px 7px; border-radius: 999px; white-space: nowrap }
-.rg-enc-cg { display: block; width: calc(100% - 24px); margin: 0 12px 10px; border: 1px solid var(--rgline) }
+.rg-enc-cg { display: block; width: calc(100% - 24px); aspect-ratio: 16 / 9; object-fit: cover; margin: 0 12px 10px; border: 1px solid var(--rgline) }
 .rg-enc-cg.modal { width: 100%; margin: 0 0 10px }
 .rg-relic-icon.lg { width: 56px; height: 56px }
 .rg-rmodal .rg-relic-usage { font-size: 14px }

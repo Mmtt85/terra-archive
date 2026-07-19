@@ -27,27 +27,37 @@ const SHOTS: Partial<Record<Tab, ShotPair>> = {
   rogue: { d: "/about/rogue.webp", m: "/about/rogue-m.webp" },
 };
 
-// 다크모드 구독 — html.dark 클래스를 관찰해 테마 토글 시 실시간 리렌더 (SSR 스냅샷 false)
+// 다크모드 구독 — html.dark 클래스를 관찰해 테마 토글 시 실시간 리렌더.
+// SSR/하이드레이션 스냅샷은 null("아직 모름") — 첫 페인트에선 이미지 없이 빈 박스만 두고,
+// 클라이언트에서 테마가 확정된 직후 곧바로 맞는 캡처본을 넣는다. 밝은→어두운 플래시 방지.
 function subscribeDark(cb: () => void) {
   const mo = new MutationObserver(cb);
   mo.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
   return () => mo.disconnect();
 }
-function useDarkMode() {
-  return useSyncExternalStore(subscribeDark,
-    () => document.documentElement.classList.contains("dark"), () => false);
+function useTheme(): "light" | "dark" | null {
+  return useSyncExternalStore(
+    subscribeDark,
+    () => (document.documentElement.classList.contains("dark") ? "dark" : "light"),
+    () => null,
+  );
 }
 
 // 데스크톱 스크린샷과 모바일 화면을 겹치지 않게 나란히 놓아 반응형 UI를 한눈에 보여준다.
-// 다크모드일 땐 다크 캡처본(-dark 접미)으로 스왑 — 토글과 동시에 갈아끼워진다 (사용자 요청 2026-07-18).
+// 래퍼 div에 고정 aspect-ratio를 주어 로드 전에도 공간을 예약(CLS 0)하고, 774:226 플렉스 비율로
+// 데스크톱·모바일 캡처의 렌더 높이를 동일하게 맞춘다. 다크모드일 땐 다크 캡처본(-dark)으로 스왑.
 function ShotFrame({ shot, alt, cap }: { shot: ShotPair; alt: string; cap?: string }) {
-  const dark = useDarkMode();
-  const src = (p: string) => (dark ? p.replace(/\.webp$/, "-dark.webp") : p);
+  const theme = useTheme();
+  const src = (p: string) => (theme === "dark" ? p.replace(/\.webp$/, "-dark.webp") : p);
   return (
     <figure className="about-shot-fig">
       <div className="about-shots">
-        <img className="about-shot-d" src={src(shot.d)} alt={alt} loading="lazy" decoding="async" />
-        <img className="about-shot-m" src={src(shot.m)} alt="" aria-hidden loading="lazy" decoding="async" />
+        <div className="about-shot about-shot-d">
+          {theme && <img src={src(shot.d)} alt={alt} width={1200} height={760} loading="lazy" decoding="async" />}
+        </div>
+        <div className="about-shot about-shot-m" aria-hidden>
+          {theme && <img src={src(shot.m)} alt="" width={440} height={952} loading="lazy" decoding="async" />}
+        </div>
       </div>
       {cap && <figcaption className="about-shot-cap">{cap}</figcaption>}
     </figure>

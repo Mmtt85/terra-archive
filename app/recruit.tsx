@@ -96,7 +96,7 @@ function ComboCard({ result, onShowOperator, tagLabel, opLabel }: { result: Comb
       <ul>
         {result.ops.map((op) => (
           <li key={op.id} className={op.pending ? "pending" : undefined} style={{ borderColor: RARITY_COLORS[op.rarity] }}>
-            <img src={op.image} alt="" loading="lazy" decoding="async" className={onShowOperator ? "op-link" : undefined}
+            <img src={op.image} alt="" width={180} height={180} loading="lazy" decoding="async" className={onShowOperator ? "op-link" : undefined}
               title={onShowOperator ? t("{name} 상세 정보", { name: opLabel(op) }) : undefined} onClick={() => onShowOperator?.(op.id)} />
             <span>{opLabel(op)}{op.pending && <em className="pending-tag">{t("추가 예정")}</em>}</span>
             <i style={{ color: RARITY_COLORS[op.rarity] }}>{op.rarity}★</i>
@@ -104,7 +104,7 @@ function ComboCard({ result, onShowOperator, tagLabel, opLabel }: { result: Comb
         ))}
         {result.lowOps.map((op) => (
           <li key={op.id} className="low-time" style={{ borderColor: RARITY_COLORS[op.rarity] }}>
-            <img src={op.image} alt="" loading="lazy" decoding="async" className={onShowOperator ? "op-link" : undefined}
+            <img src={op.image} alt="" width={180} height={180} loading="lazy" decoding="async" className={onShowOperator ? "op-link" : undefined}
               title={onShowOperator ? t("{name} 상세 정보", { name: opLabel(op) }) : undefined} onClick={() => onShowOperator?.(op.id)} />
             <span>{opLabel(op)}<em className="time-req">{t(LOW_TIME_HINT[op.rarity])}</em></span>
             <i style={{ color: RARITY_COLORS[op.rarity] }}>{op.rarity}★</i>

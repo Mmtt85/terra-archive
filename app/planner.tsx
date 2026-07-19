@@ -553,7 +553,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
               <div key={cell.key} className={`ship-room dorm-room pos-${cell.key.toLowerCase()}`} style={{ "--room-accent": ROOM_ACCENT[cell.room] } as React.CSSProperties}>
                 <div className="ship-room-head"><b>{t(cell.label)}</b><span>{t("고정")}</span></div>
                 <div className="ship-room-crew">
-                  {pinned.map((op) => <img key={op.id} src={op.image} alt={op.name} title={t("{name} 상세 정보", { name: op.name })} loading="lazy" className={onShowOperator ? "op-link" : undefined} onClick={() => onShowOperator?.(op.id)} />)}
+                  {pinned.map((op) => <img key={op.id} src={op.image} alt={op.name} width={180} height={180} title={t("{name} 상세 정보", { name: op.name })} loading="lazy" className={onShowOperator ? "op-link" : undefined} onClick={() => onShowOperator?.(op.id)} />)}
                   <i>{pinned.length ? t("시너지 고정 + 휴식 공간") : t("휴식 공간 · 조 전환과 무관")}</i>
                 </div>
               </div>
@@ -573,7 +573,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
               </div>
               <div className="ship-room-crew">
                 {team.length ? team.map((op) => (
-                  <img key={op.id} src={op.image} alt={op.name} title={op.name} loading="lazy" />
+                  <img key={op.id} src={op.image} alt={op.name} width={180} height={180} title={op.name} loading="lazy" />
                 )) : <i>{cell.key === "TRAINING" ? t("비워둠 · 특화 훈련 시 사용") : plan ? t("비어 있음") : t("자동 편성 대기")}</i>}
               </div>
               {plan && team.length > 0 && !PARK_KEYS.includes(cell.key) && (
@@ -755,7 +755,7 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                 return (
                   <article key={op.id} className="crew-card">
                     {onUpdateTeam && <button type="button" className="crew-remove" title={t("이 자리에서 빼기")} onClick={() => setIds(rawIds.filter((id) => id !== op.id))}>✕</button>}
-                    <img src={op.image} alt={op.name} loading="lazy" className={onShowOperator ? "op-link" : undefined}
+                    <img src={op.image} alt={op.name} width={180} height={180} loading="lazy" className={onShowOperator ? "op-link" : undefined}
                       title={t("{name} 상세 정보", { name: op.name })} onClick={() => onShowOperator?.(op.id)} />
                     <div>
                       <b>
@@ -789,7 +789,7 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                             <small key={sub.id} className={`sub-chip${onUpdateTeam ? " swappable" : ""}`}
                               title={`${t("클릭하면 {name} 자리에 교체", { name: op.name })}\n${sub.skills.filter((skill) => skill.room === cell.room).map((skill) => `${skill.name}: ${skill.description}`).join("\n")}`}
                               onClick={() => onUpdateTeam && setIds(rawIds.map((id) => (id === op.id ? sub.id : id)))}>
-                              <img src={sub.image} alt="" loading="lazy" className={onShowOperator ? "op-link" : undefined} onClick={(event) => { event.stopPropagation(); onShowOperator?.(sub.id); }} />{sub.name} <em>{score >= currentScore ? t("동급") : `-${currentScore - score}`}</em>
+                              <img src={sub.image} alt="" width={180} height={180} loading="lazy" className={onShowOperator ? "op-link" : undefined} onClick={(event) => { event.stopPropagation(); onShowOperator?.(sub.id); }} />{sub.name} <em>{score >= currentScore ? t("동급") : `-${currentScore - score}`}</em>
                             </small>
                           ))}
                         </div>
@@ -808,7 +808,7 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                   <div className="bench-chips">
                     {bench.map(({ op, delta }) => (
                       <small key={op.id} className="sub-chip swappable" title={t("{name} 추가", { name: op.name })} onClick={() => setIds([...rawIds, op.id])}>
-                        <img src={op.image} alt="" loading="lazy" className={onShowOperator ? "op-link" : undefined} onClick={(event) => { event.stopPropagation(); onShowOperator?.(op.id); }} />{op.name} <em>{delta >= 0 ? `+${delta}` : delta}</em>
+                        <img src={op.image} alt="" width={180} height={180} loading="lazy" className={onShowOperator ? "op-link" : undefined} onClick={(event) => { event.stopPropagation(); onShowOperator?.(op.id); }} />{op.name} <em>{delta >= 0 ? `+${delta}` : delta}</em>
                       </small>
                     ))}
                   </div>
@@ -834,7 +834,7 @@ function FlowModal({ plan, opMap, onClose, onShowOperator }: { plan: Plan; opMap
   const { locale, t } = useI18n();
   const flows = plan.flows.filter((flow) => flow.generators.length > 0 || flow.consumers.length > 0);
   const avatar = (op: InfraOp | undefined) => op ? (
-    <img src={op.image} alt="" loading="lazy" className={onShowOperator ? "op-link" : undefined}
+    <img src={op.image} alt="" width={180} height={180} loading="lazy" className={onShowOperator ? "op-link" : undefined}
       title={onShowOperator ? t("{name} 상세 정보", { name: op.name }) : undefined} onClick={() => onShowOperator?.(op.id)} />
   ) : null;
   return (
@@ -950,7 +950,7 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
     return (
       <div key={op.id} className={`roster-card${owned ? " owned" : ""}${op.unreleased ? " future" : ""}`}>
         <button type="button" onClick={() => toggle(op.id)} title={op.name}>
-          <img src={op.image} alt={op.name} loading="lazy" className={onShowOperator ? "op-link" : undefined}
+          <img src={op.image} alt={op.name} width={180} height={180} loading="lazy" className={onShowOperator ? "op-link" : undefined}
             onClick={(event) => { if (onShowOperator) { event.stopPropagation(); onShowOperator(op.id); } }} />
           <span>{op.name}{op.unreleased && <em className="future-badge">{t("미실장")}</em>}</span>
         </button>

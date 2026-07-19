@@ -180,7 +180,7 @@ function BroadcastThumb({ b }: { b: Broadcast }) {
     <div className="bcast-thumb">
       {id && !broken ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={`https://i.ytimg.com/vi/${id}/hqdefault.jpg`} alt="" loading="lazy" onError={() => setBroken(true)} />
+        <img src={`https://i.ytimg.com/vi/${id}/hqdefault.jpg`} alt="" width={480} height={360} loading="lazy" onError={() => setBroken(true)} />
       ) : (
         <div className="bcast-thumb-empty" aria-hidden>ARKNIGHTS</div>
       )}
@@ -1044,7 +1044,7 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
       <header className="site-header" id="top">
         <a className="brand" href={localeBase || "/"} aria-label={t("테라 아카이브 홈")}
           onClick={(event) => { event.preventDefault(); switchTab("portal"); window.scrollTo({ top: 0 }); }}>
-          <span className="brand-mark"><img src="/avatars/char_1012_skadi2.webp" alt="" /></span>
+          <span className="brand-mark"><img src="/avatars/char_1012_skadi2.webp" alt="" width={180} height={180} /></span>
           <span>{t("테라 아카이브")}<small>{t("명일방주(Arknights) KR 팬사이트")}</small></span>
         </a>
         <BroadcastBadges />
@@ -1219,7 +1219,7 @@ function OperatorCard({ operator, index, onSelect }: { operator: Operator; index
             <span><i>{t("종족")}</i>{operator.race ?? t("불명")}</span>
           </small>
         </div>
-        <img src={operator.image} alt={t("{name} 오퍼레이터", { name: operator.name })} loading="lazy" decoding="async" />
+        <img src={operator.image} alt={t("{name} 오퍼레이터", { name: operator.name })} width={180} height={180} loading="lazy" decoding="async" />
       </div>
       <div className="card-body">
         <div className="tags">{operator.concepts.map((tag) => <span key={tag}>{conceptName(locale, tag)}</span>)}</div>
@@ -1269,7 +1269,7 @@ function OperatorModal({ operator, nicknames, onSubmitNickname, onClose }: { ope
       <section className="operator-modal" role="dialog" aria-modal="true" aria-labelledby="operator-modal-title" style={{ "--accent": operator.accent } as React.CSSProperties}>
         <button type="button" className="modal-close" onClick={onClose} aria-label={t("상세 정보 닫기")}>×</button>
         <header className="modal-hero">
-          <img src={operator.image} alt={t("{name} 오퍼레이터", { name: operator.name })} />
+          <img src={operator.image} alt={t("{name} 오퍼레이터", { name: operator.name })} width={180} height={180} />
           <div className="modal-title-block">
             <div className="modal-title-main">
               <span className="modal-kicker">OPERATOR FILE · {operator.code}</span>
