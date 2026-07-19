@@ -182,12 +182,6 @@ def parse_metric(room, text):
     if room == "CONTROL":
         # facility-wide auras — only the highest of a kind applies per base,
         # ranked 제조소 > 무역소 > 인맥 레퍼런스 > 단서 by the planner
-        # 제어센터→제조소 진영 카운트 오라 (플레임테일: "제조소에 배치된 피누스 실베스트리스
-        # 기사단 오퍼레이터 1명당 작전기록류에 대한 생산력 +10%") — perFaction/perScope는
-        # 공통 파서가 채우고, 생산품 한정(작전기록류)은 아래 product 블록에서 붙는다
-        v_pm = best(r"제조소에 배치된 [가-힣A-Za-z· ]{2,24}? 오퍼레이터 1명당[^%]{0,24}?생산력[^+%\d]{0,10}" + PCT)
-        if v_pm:
-            return "ctrl_mfg", v_pm
         v_mfg = best(r"제조소의 생산력[^+%\d]{0,10}" + PCT)
         # "무역소의 …" 뿐 아니라 "무역소 내 <진영> 1명당 … 오더 수주 효율"(야하타 우미리)도 무역소 오라로 인식
         v_trd = best(r"무역소[^.]{0,40}?오더 수주 효율[^+%\d]{0,10}" + PCT)
@@ -209,15 +203,13 @@ def parse_metric(room, text):
     if v: return "misc", v
     return "misc", 0
 
-TOKENS = ["속세의 화식", "감지 정보", "무성의 공명", "생각의 사슬", "정보 저장", "주술 결정", "마물 요리",
-          "기억 조각"]  # 위스퍼레인: 사무실 모집당 생성 → E2가 감지 정보로 전환 (피드백 2026-07-16)
+TOKENS = ["속세의 화식", "감지 정보", "무성의 공명", "생각의 사슬", "정보 저장", "주술 결정", "마물 요리"]
 
 def parse_tokens(text, room):
     """Cross-facility point systems: generators (+N) and consumers (N점당 +V)."""
     gen, use = [], []
     for token in TOKENS:
-        # "N점당/N개당" 외에 "N개마다"(위스퍼레인 추억 회상)도 소비 표현
-        for m in re.finditer(re.escape(token) + r"\s*(\d+(?:\.\d+)?)(?:점|개)(?:당|마다)[^%\d]{0,34}?([+\-]?\d+(?:\.\d+)?)\s*(%?)", text):
+        for m in re.finditer(re.escape(token) + r"\s*(\d+(?:\.\d+)?)(?:점|개)당[^%\d]{0,34}?([+\-]?\d+(?:\.\d+)?)\s*(%?)", text):
             per, val, pct = float(m.group(1)), float(m.group(2)), m.group(3) == "%"
             use.append({"token": token, "per": per, "value": val, "percent": pct})
         for m in re.finditer(re.escape(token) + r"\s*\+(\d+)", text):
@@ -326,11 +318,6 @@ def parse_skill(entry, oname, oid=None):
             if re.search(r"순금|금괴|귀금속", text): product = "gold"
             elif re.search(r"작전 ?기록", text): product = "exp"
             elif "오리지늄" in text: product = "shard"
-        elif room == "CONTROL" and kind == "ctrl_mfg":
-            # 생산품 한정 제조 오라 (플레임테일: 작전기록 +10/명·귀금속 -10/명) — 모델은
-            # 양(+)의 분기만 해당 생산품 방에 적용하고, 감산 분기는 배치 회피로 갈음한다
-            if re.search(r"작전기록류에 대한 생산력\s*\+", text): product = "exp"
-            elif re.search(r"귀금속류에 대한 생산력\s*\+", text): product = "gold"
         gen, use, stack_grant, stack_conv = parse_tokens(text, room)
         # faction-conditional control skills: "용문근위국 오퍼레이터와 함께
         # 제어 센터에 배치 시" (gate) / "미노스 오퍼레이터 1명당 +v% (최대 c%)"
@@ -381,8 +368,7 @@ def parse_skill(entry, oname, oid=None):
         # conversion skills ("감지 정보 1점당 무성의 공명 1점으로 전환") re-route
         # this op's own generation and, at plan level, the shared pool
         convert = None
-        # "1점당 … 전환" 외에 "1개마다 … 전환"(위스퍼레인 추억 회상: 기억 조각→감지 정보)도 수용
-        conv = re.search(r"(" + "|".join(map(re.escape, TOKENS)) + r") (\d+(?:\.\d+)?)(?:점|개)(?:당|마다) ?(" + "|".join(map(re.escape, TOKENS)) + r") (\d+(?:\.\d+)?)점으로 전환", text)
+        conv = re.search(r"(" + "|".join(map(re.escape, TOKENS)) + r") (\d+(?:\.\d+)?)점당 (" + "|".join(map(re.escape, TOKENS)) + r") (\d+(?:\.\d+)?)점으로 전환", text)
         if conv:
             src, ratio_src, dst, ratio_dst = conv.group(1), float(conv.group(2)), conv.group(3), float(conv.group(4))
             convert = {"from": src, "per": ratio_src, "to": dst, "amount": ratio_dst}
@@ -497,18 +483,6 @@ for o in operators:
         sc = sk["_stackConv"]
         if sc and sc["name"] in grants:
             sk["tokenGen"].append({"token": sc["token"], "estimate": grants[sc["name"]] / sc["per"] * sc["amount"]})
-    # 자기 전환 접기 (위스퍼레인, 피드백 2026-07-16): 한 스킬이 X를 생성(순유: 모집당
-    # 기억 조각)하고 **다른 스킬**이 X→Y 전환(추억 회상: 기억 조각→감지 정보)하면, 전환
-    # 스킬에 Y 순생성으로 접는다 — 플랜 토큰 플로우는 전환을 1홉만 풀어서 두 단계 체인
-    # (기억 조각→감지 정보→생각의 사슬)은 접지 않으면 로즈몬티스에게 닿지 않는다.
-    # 같은 스킬 안의 생성+전환(로즈몬티스 초감각)은 플로우가 sources로 이미 1홉 처리하므로 제외.
-    for sk in skills:
-        cv = sk.get("convert")
-        if not cv: continue
-        feed = sum(g["estimate"] for other in skills if other is not sk
-                   for g in other["tokenGen"] if g["token"] == cv["from"])
-        if feed > 0:
-            sk["tokenGen"].append({"token": cv["to"], "estimate": feed / cv["per"] * cv["amount"]})
     # 공사용 로봇 세트 결합 (미니멀리스트): 형제 스킬의 로봇 상한 × 소비 스킬 배율
     robo_caps = [sk["_roboCap"] for sk in skills if sk["_roboCap"]]
     for sk in skills:
