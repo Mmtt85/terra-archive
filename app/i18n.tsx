@@ -373,6 +373,7 @@ const D: Record<string, Pair> = {
   "{tokens} 패키지": ["{tokens} package", "{tokens}パッケージ"],
   "기본 편성": ["Baseline assignment", "基本編成"],
   " + 쉐라그 세트": [" + Kjerag set", " + イェラグセット"],
+  " + 진영 세트": [" + faction set", " + 陣営セット"],
   "A = 풀파워 주간조 · B = 회복 교대조 · terra-archive infra planner": ["A = full-power crew · B = recovery crew · terra-archive infra planner", "A = フルパワー班 · B = 回復交代班 · terra-archive infra planner"],
   // 정예화
   "노정예": ["E0", "未昇進"],
@@ -516,6 +517,8 @@ const D: Record<string, Pair> = {
     "魔物料理：センシを宿舎に固定するとレベルごとに1つ（計5つ）生まれ、マルシル（製造）・ライオス（応接室）が消費します。",
   ],
   "정보 저장은 레인보우 팀 전용 폐쇄 시스템이라 기지 편성에 넣지 않습니다.": ["Intelligence Reserve is a closed Team Rainbow system and is left out of base packages.", "情報備蓄はレインボー小隊専用の閉鎖システムのため、基地編成には入れません。"],
+  "기억 조각(위스퍼레인): 사무실에서 모집 인원마다 +10(초기 제외 = 20)이 쌓이고, 정예화 2 '추억 회상'이 이를 감지 정보로 1:1 전환합니다 — 로즈몬티스(생각의 사슬)·에벤홀츠(공명) 체인의 공급원이 되어 사무실 배치가 추천에 반영됩니다.": ["Memory Fragments (Whisperain): the HR Office gains +10 per recruit slot (initial slots excluded = 20), and her E2 skill converts them 1:1 into Perception Info — feeding the Rosmontis (Thought Chain) and Ebenholz (Resonance) chains, so her Office placement is factored into recommendations.", "記憶のカケラ(ウィスパーレイン): 人事室で募集枠ごとに+10(初期枠除外=20)が貯まり、昇進2スキルがこれを感知情報へ1:1変換します — ロスモンティス(思考の鎖)・エーベンホルツ(共鳴)チェーンの供給源となり、人事室への配置が推薦に反映されます。"],
+  "플레임테일(피누스 실베스트리스 기사)은 제조소의 기사단 인원 1명당 작전기록 생산력 +10% 오라입니다 — 작전기록 방에만 적용되고(귀금속은 감산이라 배치를 피함), 애쉬락·와일드메인·파투스(각 +25%)와 함께 두면 작전기록방이 최대 105%까지 오릅니다. 정예 로스터에선 주로 회복 교대(B조)에 결집합니다.": ["Flametail (Knight of Pinus Sylvestris) grants a Control Center aura of +10% Battle Record productivity per Knights member working in factories — it applies only to Battle Record rooms (Gold rooms take a penalty, so placement avoids them). With Ashlock, Wild Mane, and Fartooth (+25% each) a record room reaches up to 105%. On deep rosters the set usually assembles in the recovery (B) shift.", "フレイムテイル(ピヌム・シルウェストリス騎士)は、製造所で働く騎士団メンバー1人につき作戦記録の生産力+10%の制御中枢オーラです — 作戦記録の部屋にのみ適用され(純金は減算のため配置を回避)、アッシュロック・ワイルドメイン・ファートゥースの各+25%と合わせると作戦記録部屋は最大105%に達します。層の厚いロースターでは主に回復シフト(B班)に集まります。"],
   "무역소 조합": ["Trading post combos", "貿易所の組み合わせ"],
   "샤마르(속삭임)는 다른 인원의 효율을 0으로 만들고 인당 +45%를 주므로, 효율이 없어도 되는 품질 요원과 묶습니다: 샤마르 + 테킬라(투자β: 고품질 순금 오더 수익) + 확률 요원(카프카·디아만테·바이비크 — 전부 동급).": [
     "Shamare (Whispers) zeroes everyone else's efficiency and grants +45% per member, so she pairs with quality operators who don't need efficiency: Shamare + Tequila (Investment β: quality gold order payout) + an odds operator (Kafka / Diamante / Bibeak — all equivalent).",
