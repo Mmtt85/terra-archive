@@ -139,6 +139,7 @@ function entMatchOf(matchers: RegExp[]): EntMatch {
 // (사용자 확정 2026-07-18: 카드 옆 배지 대신 본문 밑줄). 클릭하면 onEntity(ei)로 그 단어가
 // 연결된 레일 카드를 강조/펼친다 (사용자 요청 2026-07-20).
 function markEntities(text: string, em: EntMatch | null, onEntity?: (ei: number) => void): React.ReactNode {
+  if (typeof text !== "string") return null; // 잘못된 블록(x 누락)이 페이지 전체를 죽이지 않게 방어
   if (!em || em.length === 0) return text;
   const hits: { s: number; e: number; w: string; ei: number }[] = [];
   for (const { re, ei } of em) {
@@ -173,6 +174,7 @@ function markEntities(text: string, em: EntMatch | null, onEntity?: (ei: number)
 
 // **볼드** 마크업 + 엔티티 밑줄을 같이 처리 (요약 본문용 — i18n rich 대체)
 function richMark(s: string, em: EntMatch | null, onEntity?: (ei: number) => void): React.ReactNode {
+  if (typeof s !== "string") return null; // 잘못된 블록(x 누락) 방어
   const parts = s.split(/\*\*(.+?)\*\*/g);
   if (parts.length === 1) return markEntities(s, em, onEntity);
   return parts.map((part, i) =>
