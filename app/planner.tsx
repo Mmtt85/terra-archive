@@ -21,7 +21,7 @@ function strategyLabel(plan: Plan, locale: Locale, t: T): string {
   const base = plan.strategyTokens.length
     ? t("{tokens} 패키지", { tokens: plan.strategyTokens.map((token) => tokenName(locale, token)).join(" + ") })
     : t("기본 편성");
-  return base + (plan.strategySet ? t(" + 쉐라그 세트") : "");
+  return base + (plan.strategySet ? t(" + 진영 세트") : "");
 }
 
 const STORAGE_KEY = "terra-archive-infra-v3";
@@ -630,7 +630,7 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
     acc["제어 오라(가중)"] += Object.keys(AURA_WEIGHT).reduce((sum, kind) => sum + (b.auras[kind] ?? 0) * AURA_WEIGHT[kind], 0);
     return acc;
   }, { "스킬 효율": 0, "시설 기반": 0, "자동화": 0, "품질 기대치": 0, "오더 수익": 0, "효율 오버라이드": 0, "동료 보너스": 0, "레어도 기본": 0, "제어 오라(가중)": 0 } as Record<string, number>);
-  agg["제어센터 오라 수신"] = ambientFor(cell.room, team, ambient, agg["스킬 효율"]);
+  agg["제어센터 오라 수신"] = ambientFor(cell.room, team, ambient, agg["스킬 효율"], ctx.product);
   // 추가 후보: 어디에도 배치 안 된 보유 오퍼를 한계 기여 순으로
   const [benchAll, setBenchAll] = useState(false);
   const [benchQuery, setBenchQuery] = useState("");
@@ -1044,10 +1044,11 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
 
 const HELP_SECTIONS: { title: string; items: string[] }[] = [
   { title: "교대 정책", items: [
-    "A조가 풀파워 주력이고 모든 시너지 세트는 A조에 모입니다. B조는 A조 컨디션이 소진됐을 때 투입되는 회복 교대입니다 (12시간 2조).",
+    "A조가 풀파워 주력이고 토큰 패키지·시너지 세트는 기본적으로 A조에 모입니다. B조는 A조 컨디션이 소진됐을 때 투입되는 회복 교대입니다 (12시간 2조). 예외로 피누스 실베스트리스 세트는 B조에 결집합니다 — A조 제조소·제어센터는 화식 세트와 상위 생산 오퍼 몫이기 때문입니다.",
     "A조를 먼저 전수검사 3회로 풀파워로 완성한 뒤, 남은 오퍼레이터만으로 B조를 다시 3회 검수해 편성합니다.",
     "같은 오퍼를 A조·B조에 동시 배치하지 않는 것이 기본 원칙입니다 — 근무를 이중으로 서면 못 쉬고 24시간 돌아야 하기 때문입니다. 사기를 소모하지 않는 숙소(휴식)·가공소(상시 슬롯)만 예외로 조 전환과 무관하게 고정됩니다.",
     "숙소·시너지 고정 요원(숙소 생성원, 니엔 등)은 A/B 전환과 무관하게 고정됩니다. 응접실도 A/B 교대로 운영합니다 — 같은 인원을 24시간 돌리지 않습니다.",
+    "가공소는 상시 슬롯이라 A조 한 팀(니엔 고정)만 편성하고 B조 칸은 비워 둡니다 — 회복 교대에 가공 요원을 따로 두지 않습니다.",
     "훈련실은 실제 스킬 특화 훈련에 쓰도록 비워 둡니다.",
     "'전체 자동편성'은 처음부터 다시 계산하고, '빈 자리만 자동편성'은 현재 편성(수동 수정 포함)을 유지한 채 남은 빈 자리만 한계 기여 순으로 채웁니다.",
   ]},
@@ -1082,6 +1083,7 @@ const HELP_SECTIONS: { title: string; items: string[] }[] = [
     "제어센터 오라는 대상 방 점수에 실제로 합산됩니다 — 무역소 오더 효율 +10% 오라면 무역소 점수와 상단 서머리에 더해집니다 (방 상세의 '제어센터 오라 수신'). 단 이격 실버애쉬처럼 조건이 붙은 오라는 조건을 채운 그 방 하나에만 적용됩니다.",
     "'용문근위국 오퍼와 함께'류 동반 조건, '미노스 1명당'류 카운트 조건은 실제 배치를 기준으로만 인정합니다.",
     "이격 실버애쉬 보유 시 쉐라그 3명(무역 스킬 강한 순)을 무역소 한 곳에 모으는 세트안을 만들되, 세트 없는 편성과 기지 총점을 비교해 이득일 때만 채택합니다. 진영 판정은 다중 소속 기준(카란 무역회사 오퍼도 쉐라그로 인정).",
+    "플레임테일(피누스 실베스트리스 기사)은 제조소에 배치된 기사단 1명당 작전기록 생산력 +10%·귀금속 -10% 오라입니다. 보유 시 애쉬락·와일드메인·파투스(각 +25%)를 B조 작전기록방에 결집하고 플레임테일을 B조 제어센터에 앉히는 세트안을 만들어, 세트 없는 편성과 기지 총점을 비교해 이득일 때만 채택합니다 — 귀금속 방의 감산도 방 점수에 그대로 반영됩니다.",
     "만트라 정예 소대는 실존 정예 오퍼 수 기준으로 계산합니다 (현재 6명 → +37%, 신규 정예 오퍼 추가 시 데이터 갱신에서 자동 반영).",
   ]},
   { title: "정예화 단계 (1정/2정)", items: [

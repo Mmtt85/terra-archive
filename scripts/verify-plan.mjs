@@ -23,7 +23,7 @@ execFileSync(path.join(ROOT, "node_modules/.bin/esbuild"), [
 ]);
 const engine = await import(pathToFileURL(bundle).href);
 fs.rmSync(bundle, { force: true });
-const { optimize, teamScore, ops, cellByKey, LAYOUT } = engine;
+const { optimize, teamScore, ops, cellByKey, LAYOUT, PARK_KEYS } = engine;
 
 // ── 결정적 로스터 세트 (스냅샷·픽스처 공용) ──────────────────────────────────
 const released = ops.filter((o) => !o.unreleased);
@@ -111,6 +111,9 @@ for (const fx of rules.fixtures) {
         detail = dup.length ? `중복: ${names(dup)}` : "";
       } else if (fx.check === "trainingEmpty") {
         ok = (plan.assignments["TRAINING"] ?? []).every((team) => team.length === 0);
+      } else if (fx.check === "parkBEmpty") {
+        // 가공소(상시 슬롯)는 A조 한 팀만 — B조 칸은 비워 둔다 (사용자 확정 2026-07-19)
+        ok = PARK_KEYS.every((key) => ((plan.assignments[key] ?? [])[1] ?? []).length === 0);
       } else throw new Error(`unknown check: ${fx.check}`);
     } else if (fx.type === "planContains") {
       const plan = planFor(fx.roster, fx.priority);

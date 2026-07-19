@@ -372,7 +372,7 @@ const D: Record<string, Pair> = {
   "{token} {n}점": ["{token} {n} pts", "{token} {n}点"],
   "{tokens} 패키지": ["{tokens} package", "{tokens}パッケージ"],
   "기본 편성": ["Baseline assignment", "基本編成"],
-  " + 쉐라그 세트": [" + Kjerag set", " + イェラグセット"],
+  " + 진영 세트": [" + faction set", " + 陣営セット"],
   "A = 풀파워 주간조 · B = 회복 교대조 · terra-archive infra planner": ["A = full-power crew · B = recovery crew · terra-archive infra planner", "A = フルパワー班 · B = 回復交代班 · terra-archive infra planner"],
   // 정예화
   "노정예": ["E0", "未昇進"],
@@ -471,9 +471,17 @@ const D: Record<string, Pair> = {
   // 도움말 모달
   "최적화 규칙 도움말": ["Optimizer Rules Help", "最適化ルールのヘルプ"],
   "교대 정책": ["Shift policy", "交代方針"],
-  "A조가 풀파워 주력이고 모든 시너지 세트는 A조에 모입니다. B조는 A조 컨디션이 소진됐을 때 투입되는 회복 교대입니다 (12시간 2조).": [
-    "Shift A is the full-power main crew and every synergy set is assembled there. Shift B is the recovery crew that steps in when Shift A's morale runs out (two 12h shifts).",
-    "A班がフルパワーの主力で、すべてのシナジーセットはA班に集めます。B班はA班の体力が尽きたときに投入される回復交代です（12時間2交代）。",
+  "A조가 풀파워 주력이고 토큰 패키지·시너지 세트는 기본적으로 A조에 모입니다. B조는 A조 컨디션이 소진됐을 때 투입되는 회복 교대입니다 (12시간 2조). 예외로 피누스 실베스트리스 세트는 B조에 결집합니다 — A조 제조소·제어센터는 화식 세트와 상위 생산 오퍼 몫이기 때문입니다.": [
+    "Shift A is the full-power main crew, and token packages and synergy sets are assembled there by default. Shift B is the recovery crew that steps in when Shift A's morale runs out (two 12h shifts). The one exception is the Pinus Sylvestris set, which gathers in Shift B — Shift A's factories and Control Center belong to the Vagabond package and the top production operators.",
+    "A班がフルパワーの主力で、ポイントパッケージやシナジーセットは基本的にA班に集めます。B班はA班の体力が尽きたときに投入される回復交代です（12時間2交代）。例外としてピヌス・シルウェストリスセットはB班に集結します — A班の製造所・制御中枢は浮世の食事セットと上位生産オペレーターの持ち場だからです。",
+  ],
+  "가공소는 상시 슬롯이라 A조 한 팀(니엔 고정)만 편성하고 B조 칸은 비워 둡니다 — 회복 교대에 가공 요원을 따로 두지 않습니다.": [
+    "The Workshop is a passive slot, so only one Shift A team (Nian, fixed) is assigned and the Shift B slot stays empty — the recovery crew doesn't need a separate workshop member.",
+    "加工所は常時スロットなので、A班の1チーム（ニェン固定）だけを編成し、B班の枠は空けておきます — 回復交代に加工要員を別途置く必要はありません。",
+  ],
+  "플레임테일(피누스 실베스트리스 기사)은 제조소에 배치된 기사단 1명당 작전기록 생산력 +10%·귀금속 -10% 오라입니다. 보유 시 애쉬락·와일드메인·파투스(각 +25%)를 B조 작전기록방에 결집하고 플레임테일을 B조 제어센터에 앉히는 세트안을 만들어, 세트 없는 편성과 기지 총점을 비교해 이득일 때만 채택합니다 — 귀금속 방의 감산도 방 점수에 그대로 반영됩니다.": [
+    "Flametail (Knight of Pinus Sylvestris) is a Control Center aura: for each Knights operator working in a factory, Battle Record productivity +10% and Pure Gold -10%. When owned, a set plan gathers Ashlock, Wild Mane and Fartooth (+25% each) into a Shift B Battle Record factory with Flametail in the Shift B Control Center, adopted only if the total base score beats the no-set plan — the Pure Gold penalty is charged to those rooms' scores as-is.",
+    "フレイムテイル（ピヌス・シルウェストリスの騎士）は制御中枢オーラで、製造所で稼働する騎士団オペレーター1人につき作戦記録の生産力+10%・純金-10%です。所持時はアッシュロック・ワイルドメイン・ファートゥース（各+25%）をB班の作戦記録製造所に集め、フレイムテイルをB班制御中枢に置くセット案を作り、セットなしの編成と基地総合スコアを比較して得な場合のみ採用します — 純金部屋の減算もそのまま部屋スコアに反映されます。",
   ],
   "같은 오퍼를 A조·B조에 동시 배치하지 않는 것이 기본 원칙입니다 — 근무를 이중으로 서면 못 쉬고 24시간 돌아야 하기 때문입니다. 사기를 소모하지 않는 숙소(휴식)·가공소(상시 슬롯)만 예외로 조 전환과 무관하게 고정됩니다.": [
     "As a base rule, the same operator is never placed in both Shift A and Shift B — pulling a double shift means working 24 hours with no rest. Only the Dormitory (rest) and Workshop (passive slot), which don't drain morale, may stay fixed across shifts.",

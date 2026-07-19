@@ -190,6 +190,13 @@ def parse_metric(room, text):
     if room == "CONTROL":
         # facility-wide auras — only the highest of a kind applies per base,
         # ranked 제조소 > 무역소 > 인맥 레퍼런스 > 단서 by the planner
+        # 제어센터→제조소 진영 카운트 오라: "제조소에 배치된 <진영> 오퍼레이터 1명당 생산력 +N%"
+        # (플레임테일: 작전기록 +10/귀금속 -10 분기 · 제시카 이격: 블랙스틸 +5 — 종전엔 morale로
+        # 오분류돼 오라 유실). **알려진 진영만** 매칭 — 비비아나 '기사 오퍼레이터'처럼 셀 수 없는
+        # 그룹은 종전(misc 폴백) 유지. perFaction은 공통 파서가, 생산품별 부호는 perProduct가 채운다
+        v_pm = best(MFG_FACTION_AURA_RE)
+        if v_pm:
+            return "ctrl_mfg", v_pm
         v_mfg = best(r"제조소의 생산력[^+%\d]{0,10}" + PCT)
         # "무역소의 …" 뿐 아니라 "무역소 내 <진영> 1명당 … 오더 수주 효율"(야하타 우미리)도 무역소 오라로 인식
         v_trd = best(r"무역소[^.]{0,40}?오더 수주 효율[^+%\d]{0,10}" + PCT)
@@ -268,6 +275,12 @@ def parse_morale_drain(text):
 # 오퍼 이름이 진영 이름의 접두어인 경우("쉐라" ⊂ "쉐라그") 진영 언급을 파트너로
 # 오인하지 않도록, 매치 지점이 더 긴 진영명으로 시작하면 무시한다
 FACTION_NAMES = sorted({f for o in operators for f in (o.get("factions") or []) if f}, key=len, reverse=True)
+
+# 제어센터→제조소 진영 카운트 오라 (parse_metric CONTROL에서 사용 — FACTION_NAMES 확정 후 정의,
+# 호출은 parse_skill 시점이라 문제없다. 화이트리스트 alternation만 — 자유 캡처 금지 회귀 방지)
+MFG_FACTION_AURA_RE = re.compile(
+    r"제조소에 배치된 (?:" + "|".join(re.escape(f) for f in FACTION_NAMES)
+    + r") 오퍼레이터 1명당[^%]{0,24}?생산력[^+%\d]{0,10}" + PCT)
 
 # facility_clause용 토큰 화이트리스트: 정예 + 진영명 + 하이픈 꼬리("염-쉐이"→"쉐이")
 _fac_tokens = {"정예"} | set(FACTION_NAMES) | {f.split("-")[-1] for f in FACTION_NAMES if "-" in f}
@@ -359,6 +372,20 @@ def parse_skill(entry, oname, oid=None):
                 c = re.search(r"최대 \+?(\d+(?:\.\d+)?)%", text)
                 per_cap = float(c.group(1)) if c else None
             break
+        # 제어센터→제조소 진영 카운트 오라의 범위 표시 + 생산품별 부호 (사용자 확정 2026-07-19):
+        # perScope="mfg" = "제조소에 배치된" 인원만 대상 — 엔진이 기지 전체 근사에서 제어센터
+        # 동석 동일 진영(본인 포함)을 빼서 과산정을 줄인다 (플레임테일 자신·제시카 이격 자신).
+        # perProduct (플레임테일 '피누스 실베스트리스 기사'): "작전기록류 +10%, 귀금속류 -10%"
+        # → 방 생산품에 따라 가감 — 양(+) 방엔 결집 이득, 음(-) 방엔 감산이 그대로 반영된다
+        per_product = None
+        if kind == "ctrl_mfg" and per_faction and "제조소에 배치된" in text:
+            per_scope = "mfg"
+            PRODUCT_KO = {"작전기록": "exp", "귀금속": "gold", "순금": "gold", "오리지늄": "shard"}
+            pp = {}
+            for pm in re.finditer(r"([가-힣]+)류에 대한 생산력\s*([+\-]\s*\d+(?:\.\d+)?)\s*%", text):
+                prod = PRODUCT_KO.get(pm.group(1))
+                if prod: pp[prod] = float(pm.group(2).replace(" ", ""))
+            if pp: per_product = pp
         # same-room skill-tag counting (브라이오피타: 금속 공예류 스킬 1개당 +5%)
         per_skill_tag = per_skill_value = None
         m = re.search(r"(?:해당 )?(?:제조소|무역소) 내 ([가-힣 ]{2,10}?)류? 스킬 1개당[^%\d]{0,20}\+\s*(\d+(?:\.\d+)?)\s*%", text)
@@ -440,6 +467,8 @@ def parse_skill(entry, oname, oid=None):
             "_roboUse": (float(robo_use.group(1)), float(robo_use.group(2))) if robo_use else None,
             "tokenGen": gen, "tokenUse": use, "convert": convert,
             "reqFaction": req_faction, "perFaction": per_faction, "perScope": per_scope, "perCap": per_cap,
+            # 생산품별 부호 오라는 해당 스킬(플레임테일)에만 싣는다 — null 키로 전 스킬을 불리지 않음
+            **({"perProduct": per_product} if per_product else {}),
             "facilityBased": facility_based,
             "perSkillTag": per_skill_tag, "perSkillValue": per_skill_value,
             "_stackGrant": stack_grant.group(1) if stack_grant else None,

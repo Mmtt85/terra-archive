@@ -89,7 +89,8 @@ export default function AdminPage() {
   const [rows, setRows] = useState<FeedbackRow[]>([]);
   const [status, setStatus] = useState("");
   const [filter, setFilter] = useState<string>("all");
-  const [statusFilter, setStatusFilter] = useState<string>("all"); // all | open | handling | reviewed
+  const [statusFilter, setStatusFilter] = useState<string>("open"); // open(대응미완료) | reviewed(대응완료)
+  const [tab, setTab] = useState<"feedback" | "nick" | "rules">("feedback"); // 상단 탭
   const [nicknames, setNicknames] = useState<NicknameCount[]>([]);
   const [dataCheck, setDataCheck] = useState<DataCheck | null>(null);
   // 플래너 규칙 원장 + 최신 발행 (null = 조회 실패 → 미설치 안내)
@@ -238,13 +239,11 @@ export default function AdminPage() {
     }
   };
 
-  // 상태: 확인완료 > 대응중 > 신규. 확인완료를 아래로, 그 위에 대응중, 맨 위 신규 — 같은 그룹은 최신순
+  // 상태 필터는 대응완료/대응미완료 둘뿐 (사용자 요청 2026-07-19). 미완료 안에서는
+  // 신규가 위, 대응중이 아래 — 같은 그룹은 최신순 (payload.handling 대응중 표시는 유지)
   const statusRank = (row: FeedbackRow) => (row.reviewed_at ? 2 : handlingAt(row.payload) ? 1 : 0);
   const matchStatus = (row: FeedbackRow) =>
-    statusFilter === "all" ? true
-    : statusFilter === "reviewed" ? Boolean(row.reviewed_at)
-    : statusFilter === "handling" ? Boolean(handlingAt(row.payload)) && !row.reviewed_at
-    : /* open */ !row.reviewed_at && !handlingAt(row.payload);
+    statusFilter === "reviewed" ? Boolean(row.reviewed_at) : !row.reviewed_at;
   const shown = rows
     .filter((row) => (filter === "all" || row.kind === filter) && matchStatus(row))
     .sort((a, b) => statusRank(a) - statusRank(b) || Date.parse(b.created_at) - Date.parse(a.created_at));
@@ -288,23 +287,15 @@ export default function AdminPage() {
   return (
     <main className="admin">
       <header>
-        <h1>피드백 관리 <small>{rows.length}건</small></h1>
-        <div className="admin-tools">
-          {["all", "feature", "data_error", "plan"].map((kind) => (
-            <button key={kind} className={filter === kind ? "selected" : ""} onClick={() => setFilter(kind)}>
-              {kind === "all" ? "전체" : KIND_LABEL[kind]} ({kind === "all" ? rows.length : rows.filter((row) => row.kind === kind).length})
-            </button>
-          ))}
+        <h1>TERRA ARCHIVE 관리</h1>
+        <div className="admin-tools admin-tabs">
+          <button className={tab === "feedback" ? "selected" : ""} onClick={() => setTab("feedback")}>피드백 ({rows.length})</button>
+          <button className={tab === "nick" ? "selected" : ""} onClick={() => setTab("nick")}>별명 제보 ({nicknames.length})</button>
+          <button className={tab === "rules" ? "selected" : ""} onClick={() => setTab("rules")}>
+            플래너 규칙{release ? ` (v${release.version}${release.version !== bundledRules.version ? " ⚠" : ""})` : ""}
+          </button>
           <button onClick={() => load(password)}>새로고침</button>
           <button onClick={() => { sessionStorage.removeItem("ta-admin-key"); setEntered(false); setRows([]); }}>잠금</button>
-        </div>
-        <div className="admin-tools admin-status-tools">
-          {([["all", "전체 상태"], ["open", "신규"], ["handling", "대응중"], ["reviewed", "대응완료"]] as const).map(([key, label]) => (
-            <button key={key} className={statusFilter === key ? "selected" : ""} onClick={() => setStatusFilter(key)}>
-              {label}{key === "handling" && handlingCount ? ` (${handlingCount})` : ""}
-            </button>
-          ))}
-          <button className="bulk-handling-btn" onClick={markShownHandling} title="지금 보이는 목록을 한꺼번에 대응중으로 표시">🔧 표시된 항목 일괄 대응중</button>
         </div>
       </header>
       {status && <p className="admin-status">{status}</p>}
@@ -349,6 +340,20 @@ export default function AdminPage() {
         )}
       </section>
 
+      {tab === "feedback" && (<>
+      <div className="admin-tools admin-status-tools">
+        {["all", "feature", "data_error", "plan"].map((kind) => (
+          <button key={kind} className={filter === kind ? "selected" : ""} onClick={() => setFilter(kind)}>
+            {kind === "all" ? "전체" : KIND_LABEL[kind]} ({kind === "all" ? rows.length : rows.filter((row) => row.kind === kind).length})
+          </button>
+        ))}
+        {([["open", "대응미완료"], ["reviewed", "대응완료"]] as const).map(([key, label]) => (
+          <button key={key} className={statusFilter === key ? "selected" : ""} onClick={() => setStatusFilter(key)}>
+            {label} ({rows.filter((row) => (key === "reviewed" ? row.reviewed_at : !row.reviewed_at)).length})
+          </button>
+        ))}
+        <button className="bulk-handling-btn" onClick={markShownHandling} title="지금 보이는 목록을 한꺼번에 대응중으로 표시">🔧 표시된 항목 일괄 대응중{handlingCount ? ` (현재 ${handlingCount})` : ""}</button>
+      </div>
       <div className="admin-list">
         {shown.map((row) => (
           <article key={row.id} className={`admin-row kind-${row.kind}${row.reviewed_at ? " reviewed" : ""}${handlingAt(row.payload) && !row.reviewed_at ? " handling" : ""}`}>
@@ -381,10 +386,9 @@ export default function AdminPage() {
         ))}
         {shown.length === 0 && <p className="admin-status">표시할 항목이 없습니다.</p>}
       </div>
+      </>)}
 
-      <header className="admin-section-head">
-        <h1>별명 제보 <small>{nicknames.length}종</small></h1>
-      </header>
+      {tab === "nick" && (
       <div className="admin-nicknames">
         {nicknames.map((item) => (
           <span key={`${item.op_id}-${item.name}`} className="admin-nick">
@@ -396,16 +400,13 @@ export default function AdminPage() {
         ))}
         {nicknames.length === 0 && <p className="admin-status">제보된 별명이 없습니다.</p>}
       </div>
+      )}
 
-      <header className="admin-section-head">
-        <h1>
-          플래너 규칙{" "}
-          <small>
-            발행 v{release?.version ?? "—"} · 사이트 번들 v{bundledRules.version}
-            {release && release.version !== bundledRules.version && " ⚠ 베이크 필요 (build-rules.py)"}
-          </small>
-        </h1>
-      </header>
+      {tab === "rules" && (<>
+      <p className="admin-status">
+        발행 v{release?.version ?? "—"} · 사이트 번들 v{bundledRules.version}
+        {release && release.version !== bundledRules.version && " — ⚠ 베이크 필요 (python3 scripts/build-rules.py)"}
+      </p>
       {rulesStatus && <p className="admin-status">{rulesStatus}</p>}
       {rules === null ? (
         <p className="admin-status">플래너 규칙 테이블이 아직 없습니다 — <code>docs/supabase-planner-rules.sql</code>을 Supabase SQL Editor에서 실행하세요.</p>
@@ -451,6 +452,7 @@ export default function AdminPage() {
           </p>
         </div>
       )}
+      </>)}
     </main>
   );
 }
