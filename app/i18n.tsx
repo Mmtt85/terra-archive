@@ -413,6 +413,7 @@ const D: Record<string, Pair> = {
   "레어도 기본": ["Rarity base", "レア度基本"],
   "제어 오라(가중)": ["Control auras (weighted)", "管制オーラ（加重）"],
   "제어센터 오라 수신": ["Aura received from Control", "制御中枢オーラ受信"],
+  "용량 변환": ["Capacity → output", "容量→出力変換"],
   "편성 없음": ["No assignment", "編成なし"],
   "아래에서 오퍼를 빼거나(✕) 대체 오퍼·추가 후보를 클릭하면 즉시 다시 계산됩니다. 단, 토큰 포인트(속세의 화식 등)와 패키지 구성은 마지막 자동편성 기준이므로, 토큰 생성원을 바꿨다면 자동편성 실행으로 재계산하세요.": [
     "Remove operators (✕) or click substitutes/candidates below to recalculate instantly. Token points (Worldly Plight, etc.) and package composition follow the last auto-assign — rerun it if you changed token generators.",

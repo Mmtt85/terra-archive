@@ -10,6 +10,17 @@ import { C, RULES, type SynergySetDef } from "./rules";
 export type TokenGen = { token: string; estimate: number; perMember?: { per: number; cap: number; match: string } };
 export type TokenUse = { token: string; per: number; value: number; percent: boolean };
 
+// 용량(오더 상한/창고 용량) → 출력(효율/생산력) 변환기. 팀이 쌓은 용량을 다시 % 로 바꾼다.
+//  lin    버메일 재활용(+2%/용량)·스와이어 투자 유치(+4%/상한)
+//  bundle 데겐블레허 챔피언의 품격(제공 상한 per개당 rate%, 최대 max)
+//  tier   버블 큰 게 좋아(≤at칸 lo%/칸, 초과분 hi%/칸)
+//  diff   제이 시장경제(기본상한+팀용량 1당 rate%, 현재 오더 0 가정 — 유리 분기 관례)
+export type CapConv =
+  | { t: "lin"; rate: number }
+  | { t: "bundle"; per: number; rate: number; max: number | null }
+  | { t: "tier"; at: number; lo: number; hi: number }
+  | { t: "diff"; rate: number };
+
 export type InfraSkill = {
   buffId?: string;   // 다국어 오버레이(extra-i18n) 매핑 키
   krName?: string;   // 표시명을 로케일로 바꿔도 로직(스킬 태그 카운트)은 KR 이름 기준
@@ -42,6 +53,8 @@ export type InfraSkill = {
   perProduct?: Record<string, number> | null; // 생산품별 부호 오라 (플레임테일: {exp:+10, gold:-10} — 1명당)
   perSkillTag: string | null;
   perSkillValue: number | null;
+  cap?: number;        // 이 스킬의 오더 상한/창고 용량 기여 (±N; perFaction이면 엔진이 인원수로 스케일)
+  capConv?: CapConv;   // 팀 용량 합을 효율/생산력으로 변환 (버메일·버블·데겐블레허·스와이어·제이)
   families?: string[]; // 이 스킬이 속한 "~류" 계열 태그 (build-infra.py skillFamilies 카탈로그)
   tiers?: InfraSkill[]; // 같은 슬롯의 하위 정예화 단계 (스푸리아 기술 교류 α) — 정예화 낮추면 대체
 };
@@ -189,6 +202,8 @@ export type OpBreakdown = {
   aurasAdd: Record<string, number>; // 인원 카운트형(perScope mfg) 오라 — 서로 **중첩(가산)**.
                                     // 스킬에 "동종 효과 중 가장 높은 수치만" 문구가 없고, 실측
                                     // (+131% 제보)으로 플레임테일+비비아나 스택 확인 (2026-07-19)
+  cap: number;          // 이 오퍼의 오더 상한/창고 용량 기여 (음수 포함, perFaction이면 인원 스케일)
+  capConv: CapConv[];   // 이 오퍼가 가진 용량→출력 변환기 (보통 0~1개)
   skills: InfraSkill[];
 };
 
@@ -203,7 +218,7 @@ export const AURA_TARGET: Record<string, string> = { MANUFACTURE: "ctrl_mfg", TR
 // perFaction+perProduct: 제조소 배치 진영원 오라(플레임테일·제시카 이격) — 기지 전체 일률이
 // 아니라 **그 진영원이 앉은 제조소에만** 1명당 적용 (사용자 정정 2026-07-19). perProduct는
 // 1명당 생산품별 가감 맵({exp:+10, gold:-10} 또는 {any:+5}), 방별 인원은 ambientFor가 센다.
-export type AmbientAura = { kind: string; value: number; gateFaction?: string | null; gateCount?: number | null; belowThreshold?: number | null; perFaction?: string | null; perProduct?: Record<string, number> | null };
+export type AmbientAura = { kind: string; value: number; gateFaction?: string | null; gateCount?: number | null; belowThreshold?: number | null; perFaction?: string | null; perProduct?: Record<string, number> | null; cap?: number };
 
 // 방 기본 속도 — 임계값 조건("N% 미만인 경우, 기본 속도 포함") 판정용 (사무실 기본 누적 5%)
 export const ROOM_BASE_RATE: Record<string, number> = C.ROOM_BASE_RATE;
@@ -225,7 +240,10 @@ export function aurasOf(controlTeam: InfraOp[], ctx: Ctx): AmbientAura[] {
         list.push({ kind: skill.kind, value: b.aurasAdd[skill.kind] ?? 0, perFaction: skill.perFaction,
           perProduct: skill.perProduct ?? { any: skill.value } });
       } else {
-        list.push({ kind: skill.kind, value: skill.perFaction ? b.auras[skill.kind] ?? 0 : skill.value });
+        // perFaction 오라 값은 auras(양수 최고) + aurasAdd(음수 가산) 합 — 노시스 -45가 여기 실린다.
+        // 같은 스킬의 오더 상한/창고 용량 기여(cap)도 함께 실어 대상 방 변환기에 먹인다(노시스 +18).
+        list.push({ kind: skill.kind, value: skill.perFaction ? (b.auras[skill.kind] ?? 0) + (b.aurasAdd[skill.kind] ?? 0) : skill.value,
+          ...(skill.cap ? { cap: b.cap } : {}) });
       }
     }
   }
@@ -238,6 +256,7 @@ export function ambientFor(room: string, team: InfraOp[], ambient?: AmbientAura[
   if (!team.length || !ambient) return 0;
   const target = AURA_TARGET[room] ?? "";
   let best = 0;
+  let neg = 0;        // 음수 오라(노시스 -45)는 최고 경쟁에 삼켜지면 안 되므로 별도 가산
   let productAdd = 0; // 방 단위 진영원 오라 — 동종 최고 경쟁이 아니라 가감으로 합산 (감산 포함)
   for (const aura of ambient) {
     if (aura.kind !== target) continue;
@@ -249,15 +268,51 @@ export function ambientFor(room: string, team: InfraOp[], ambient?: AmbientAura[
     }
     if (aura.gateFaction && team.filter((member) => factionsOf(member).includes(aura.gateFaction!)).length < (aura.gateCount ?? 1)) continue;
     if (aura.belowThreshold != null && (ROOM_BASE_RATE[room] ?? 0) + roomEfficiency >= aura.belowThreshold) continue;
-    best = Math.max(best, aura.value);
+    if (aura.value < 0) neg += aura.value;
+    else best = Math.max(best, aura.value);
   }
-  return best + productAdd;
+  return best + neg + productAdd;
+}
+
+// 제어센터가 이 방에 실어 주는 오더 상한/창고 용량 (노시스 '쉐라그 1명당 +6' 등) — 변환기 입력.
+export function ambientCapFor(room: string, ambient?: AmbientAura[]): number {
+  if (!ambient) return 0;
+  const target = AURA_TARGET[room] ?? "";
+  let cap = 0;
+  for (const aura of ambient) if (aura.kind === target && aura.cap) cap += aura.cap;
+  return cap;
+}
+
+// 팀이 쌓은 용량(capOp = 오퍼 제공분, capTotal = 기본상한 + 오퍼 제공분)을 효율/생산력으로 변환.
+function applyCapConv(conv: CapConv, capOp: number, capTotal: number): number {
+  switch (conv.t) {
+    case "lin": return capOp * conv.rate;
+    case "bundle": { const e = Math.floor(capOp / conv.per) * conv.rate; return conv.max != null ? Math.min(e, conv.max) : e; }
+    case "tier": return Math.min(capOp, conv.at) * conv.lo + Math.max(capOp - conv.at, 0) * conv.hi;
+    case "diff": return capTotal * conv.rate;
+  }
+}
+
+// 방이 받는 용량 변환 효율/생산력 — 이미 계산된 parts를 받아 teamScore와 UI가 공유한다.
+function capConvOf(parts: OpBreakdown[], room: string, ambient?: AmbientAura[]): number {
+  const target = AURA_TARGET[room];
+  if (target !== "ctrl_trade" && target !== "ctrl_mfg") return 0;
+  const capOp = Math.max(0, parts.reduce((sum, p) => sum + p.cap, 0) + ambientCapFor(room, ambient));
+  const capTotal = (C.CAP_BASE?.[room] ?? 0) + capOp;
+  let eff = 0;
+  for (const p of parts) for (const conv of p.capConv) eff += applyCapConv(conv, capOp, capTotal);
+  return eff;
+}
+
+// UI용 — 팀·방·ctx로 용량 변환분을 직접 산출 (방 상세 '용량 변환' 항목). 모달 전용이라 재계산 OK.
+export function capConvFor(team: InfraOp[], room: string, ctx: Ctx): number {
+  return capConvOf(team.map((op) => breakdown(op, room, team, ctx)), room, ctx.ambient);
 }
 
 export function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx): OpBreakdown {
   const teamIds = new Set(team.map((member) => member.id));
   const teamSize = Math.max(team.length, 1);
-  const out: OpBreakdown = { efficiency: 0, facilityEff: 0, automation: 0, quality: 0, payout: 0, payoutViolation: 0, override: 0, perCoworker: 0, clueBase: 0, auras: {}, aurasAdd: {}, skills: [] };
+  const out: OpBreakdown = { efficiency: 0, facilityEff: 0, automation: 0, quality: 0, payout: 0, payoutViolation: 0, override: 0, perCoworker: 0, clueBase: 0, auras: {}, aurasAdd: {}, cap: 0, capConv: [], skills: [] };
   const tokenRates = new Map<string, number>();
   for (const skill of activeSkills(op, room, ctx.product)) {
     if (skill.partners.length > 0 && !skill.partners.every((p) => teamIds.has(p))) continue;
@@ -272,6 +327,16 @@ export function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx):
     // 작업 플랫폼 발전소 배치 조건(푸딩)은 자동편성이 충족하지 않으므로 오라를 계상하지 않는다
     // — 스킬 자체는 표시(위에서 push)하되 효과는 0으로 둔다
     if (skill.gatePlatforms) continue;
+    // 용량 기여(오더 상한/창고 용량) + 변환기 수집. perFaction(노시스 '쉐라그 1명당 +6')은
+    // 인원수로 스케일 — 제어센터 스킬이면 out.cap이 aurasOf를 통해 대상 방으로 앰비언트 전달된다.
+    if (skill.cap) {
+      const groupIds = (C.OP_GROUPS ?? {})[skill.perFaction ?? ""] ?? null;
+      const scale = skill.perFaction
+        ? (groupIds ? groupIds.filter((id) => ctx.presentIds?.has(id)).length : ctx.factionCounts?.[skill.perFaction] ?? 0)
+        : 1;
+      out.cap += skill.cap * scale;
+    }
+    if (skill.capConv) out.capConv.push(skill.capConv);
     // 기반시설 어디든 존재 조건 (언더플로우: 울피아누스가 숙소 포함 기지 내에 있으면 +10%)
     if (skill.basePartners?.length && skill.basePartnerBonus && skill.basePartners.every((p) => ctx.presentIds?.has(p))) {
       out.efficiency += skill.basePartnerBonus;
@@ -292,8 +357,10 @@ export function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx):
         : Math.max(0, baseCount - seated);
       const gained = Math.min(skill.value * count, skill.perCap ?? Infinity);
       if (skill.kind in AURA_WEIGHT) {
-        // 인원 카운트형(mfg)은 중첩 — 플레임테일+비비아나가 같은 방에 함께 실리는 실측 반영
-        if (skill.perScope === "mfg") out.aurasAdd[skill.kind] = (out.aurasAdd[skill.kind] ?? 0) + gained;
+        // 인원 카운트형(mfg)은 중첩 — 플레임테일+비비아나가 같은 방에 함께 실리는 실측 반영.
+        // 음수 오라(노시스 '쉐라그 1명당 오더 효율 -15%')도 가산 채널로 — Math.max에 삼켜지면
+        // -45 페널티가 통째로 사라진다. 양수는 동종 최고만(중복 오라 이중계상 방지) 유지.
+        if (skill.perScope === "mfg" || gained < 0) out.aurasAdd[skill.kind] = (out.aurasAdd[skill.kind] ?? 0) + gained;
         else out.auras[skill.kind] = Math.max(out.auras[skill.kind] ?? 0, gained);
         continue;
       }
@@ -371,9 +438,13 @@ export function teamScore(team: InfraOp[], room: string, ctx: Ctx): number {
   }
   // 응접실 레어도 기본 단서속도 — 스킬과 무관한 항상 가산분 (override/automation과 무관)
   const clueBaseSum = parts.reduce((sum, p) => sum + p.clueBase, 0);
+  // 용량 차원(2-패스): 팀이 쌓은 오더 상한/창고 용량을 변환기가 효율/생산력으로 되돌린다.
+  // capOp = 오퍼 제공분(노시스 제어센터 앰비언트 포함), capTotal = 기본상한 + capOp(제이 diff용).
+  // 베나+벌컨(용량↑)+버블(변환) · 데겐블레허 · 스와이어 같은 시너지가 여기서 데이터로 성립한다.
+  const capConvEff = capConvOf(parts, room, ctx.ambient);
   // 제어센터 오라를 대상 방 점수에 실제 합산 — "무역소 오더 효율 +10%"면 무역소가 +10%.
   // 조건부 오라(쉐라그 3명 배치)는 조건을 채운 그 방 하나에만 붙는다
-  return efficiency + clueBaseSum + quality + payout + auras + ambientFor(room, team, ctx.ambient, efficiency, ctx.product);
+  return efficiency + clueBaseSum + quality + payout + auras + capConvEff + ambientFor(room, team, ctx.ambient, efficiency, ctx.product);
 }
 
 export function opSolo(op: InfraOp, room: string, slots: number, ctx: Ctx): number {
@@ -390,11 +461,14 @@ export function bestTeam(room: string, slots: number, pool: Map<string, InfraOp>
   // percoworker는 팀이 갖춰져야 가치가 드러나 단독 점수로는 저평가되는데, 쇼트리스트에서
   // 잘리면 그리디·감사 모두 완성형 조합을 영영 못 본다 — 무6성 로스터에서 디아만테(단독 15)가
   // 잘려 샤마르 방이 품질 요원을 못 받던 사례 (사용자 확정 2026-07-19: 계산이 느려져도 전수)
+  // 용량 부여기(벌컨 -5%/+19칸·베나 -20%/+17칸)는 단독 점수가 음수라 top-40에서 잘리지만,
+  // 변환기(버블·데겐블레허)와 만나야 가치가 드러난다 — cap·capConv 스킬 보유자도 상시 포함.
   const TEAM_KINDS = new Set(["override", "payout", "quality", "percoworker"]);
   const rankedBase = solo.slice(0, 40).map((entry) => entry.op);
   const rankedIds = new Set(rankedBase.map((op) => op.id));
   const ranked = [...rankedBase, ...cands.filter((op) =>
-    !rankedIds.has(op.id) && op.skills.some((skill) => TEAM_KINDS.has(skill.kind) && skillApplies(skill, room, ctx.product)))];
+    !rankedIds.has(op.id) && op.skills.some((skill) => skillApplies(skill, room, ctx.product)
+      && (TEAM_KINDS.has(skill.kind) || (skill.cap ?? 0) !== 0 || skill.capConv != null)))];
   // 점수가 실제로 오를 때만 슬롯을 채운다 — 0 기여 몸빵으로 컨디션을 낭비하지 않고,
   // 아르모니류 '자신만 업무 중' 스킬은 혼자 남을 수 있다
   const fill = (seed: InfraOp[], shortlist: InfraOp[] = ranked): InfraOp[] => {

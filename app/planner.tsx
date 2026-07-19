@@ -10,7 +10,7 @@ import {
   infra, ops, opById, factionsOf, withElite, clueBase, maxElite, eliteOptions,
   ELITE_LABEL, LAYOUT, cellByKey, ROOM_ACCENT, UNIT, PARK_KEYS, SHIFT_COUNT,
   JOB_ORDER, ROSTER_SORT_KEYS, PRODUCTION_KEYS, SUPPORT_KEYS,
-  AURA_WEIGHT, AURA_LABEL, skillApplies, breakdown, teamScore, aurasOf, ambientFor,
+  AURA_WEIGHT, AURA_LABEL, skillApplies, breakdown, teamScore, aurasOf, ambientFor, capConvFor,
   ctxFor, sanitizePlan, presentIdsFor, optimize, slotSubstitutes,
   type InfraOp, type InfraSkill, type Elite, type Plan, type ProdPriority, type TokenFlow, type OptimizeStep,
 } from "./planner-engine";
@@ -677,6 +677,8 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
     return acc;
   }, { "스킬 효율": 0, "시설 기반": 0, "자동화": 0, "품질 기대치": 0, "오더 수익": 0, "효율 오버라이드": 0, "동료 보너스": 0, "레어도 기본": 0, "제어 오라(가중)": 0 } as Record<string, number>);
   agg["제어센터 오라 수신"] = ambientFor(cell.room, team, ambient, agg["스킬 효율"], ctx.product);
+  // 용량 변환 — 팀이 쌓은 오더 상한/창고 용량을 변환기가 되돌린 효율/생산력 (베나벌컨버블·데겐블레허·제이)
+  agg["용량 변환"] = capConvFor(team, cell.room, ctx);
   // 추가 후보: 어디에도 배치 안 된 보유 오퍼를 한계 기여 순으로
   const [benchAll, setBenchAll] = useState(false);
   const [benchQuery, setBenchQuery] = useState("");
@@ -722,7 +724,7 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
               <h3>{t("종합 효율")}{cell.product ? ` · ${cell.product}` : ""} <b className="summary-total">+{currentScore}{cell.room === "CONTROL" ? "" : "%"}</b></h3>
               <div className="summary-parts">
                 {Object.entries(agg).filter(([, value]) => Math.round(value) !== 0).map(([name, value]) => (
-                  <span key={name}>{t(name)} <b>+{Math.round(value)}</b></span>
+                  <span key={name}>{t(name)} <b>{Math.round(value) >= 0 ? "+" : ""}{Math.round(value)}</b></span>
                 ))}
                 {team.length === 0 && <span>{t("편성 없음")}</span>}
               </div>

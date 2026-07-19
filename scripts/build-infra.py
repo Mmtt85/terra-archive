@@ -135,6 +135,10 @@ def parse_metric(room, text):
         if m: return "automation_crew", float(m.group(1))  # per teammate in room; planner multiplies
         v = best(r"생산력[^+%\d]{0,24}" + PCT)
         if v: return "output", v
+        # 음수 생산력 (벌컨 장인정신 -5%, 베나 -20%) — 헤드라인이 음수라 PCT(+전용) 미포착.
+        # 이 오퍼들의 진짜 값은 창고 용량(cap)이지만 생산력 페널티도 반영해야 한다
+        vn = re.search(r"생산력[^+\-%\d]{0,24}-\s*(\d+(?:\.\d+)?)\s*%", text)
+        if vn: return "output", -float(vn.group(1))
     if room == "TRADING":
         m = re.search(r"자신을 제외한 작업 중인 오퍼레이터 1명당[^+%\d]{0,20}\+\s*(\d+(?:\.\d+)?)\s*%", text)
         if m: return "percoworker", float(m.group(1))
@@ -206,6 +210,10 @@ def parse_metric(room, text):
             return ("ctrl_trade", v_trd) if v_trd >= v_mfg else ("ctrl_mfg", v_mfg)
         if v_mfg: return "ctrl_mfg", v_mfg
         if v_trd: return "ctrl_trade", v_trd
+        # 음수 오더 효율 오라 (노시스 정밀 계산: "무역소 내 쉐라그 1명당 오더 수주 효율 -15%") —
+        # PCT(+전용) 미포착으로 종전엔 misc/0으로 유실. perFaction=쉐라그는 공통 파서가 채운다
+        v_trn = re.search(r"무역소[^.]{0,40}?오더 수주 효율[^+\-%\d]{0,10}-\s*(\d+(?:\.\d+)?)\s*%", text)
+        if v_trn: return "ctrl_trade", -float(v_trn.group(1))
         v = best(r"인맥 레퍼런스[^%\d]{0,24}" + PCT)
         if v: return "ctrl_hire", v
         v = best(r"단서 수집 (?:속도|성향)[^%\d]{0,20}" + PCT)
@@ -452,6 +460,35 @@ def parse_skill(entry, oname, oid=None):
         rp = re.search(r"만약 ([가-힣A-Za-z0-9·' ]{1,20}?)(?:이|가) (제조소|무역소|발전소|응접실|사무실|가공소|훈련실|제어 센터|숙소)에 배치(?:되어 있|돼 있)다면", text)
         if rp and rp.group(1).strip() in name_to_id:
             room_partner = {"id": name_to_id[rp.group(1).strip()], "room": KO_ROOM[rp.group(2)]}
+        # ── 용량 차원 (오더 상한 / 창고 용량) ─────────────────────────────────
+        # 다수 무역·제조 오퍼가 효율/생산력과 **함께** 상한/용량을 ±N 부여하고(실버애쉬 효율+20 &
+        # 상한+4, 벌컨 생산력-5 & 용량+19, 데겐블레허 효율+25 & 상한-6), 일부 오퍼는 팀이 쌓은
+        # 상한/용량을 다시 효율/생산력으로 **변환**한다(버메일·버블·데겐블레허·스와이어·제이).
+        # cap = 이 오퍼의 상한/용량 기여(음수 포함, perFaction이 있으면 엔진이 인원수로 스케일).
+        cap = 0.0
+        cm = re.search(r"(?:창고 용량 상한|오더 수주 상한|오더 상한|주문 상한)\s*([+\-]\s*\d+(?:\.\d+)?)", text)
+        if cm: cap = float(cm.group(1).replace(" ", ""))
+        # capConv = 팀 용량→출력 변환기. tier(버블 계단) > bundle(데겐블레허 N개당) >
+        # diff(제이 상한차) > lin(버메일·스와이어 용량 비례) 우선순위로 하나만.
+        cap_conv = None
+        _mx = re.search(r"최대 (\d+(?:\.\d+)?)\s*%", text)
+        _tier = re.search(r"(\d+)칸 이하.*?1칸당\s*(\d+(?:\.\d+)?)\s*%.*?(\d+)칸 보다 클 경우.*?1칸당\s*(\d+(?:\.\d+)?)\s*%", text)
+        _bundle = re.search(r"제공한 (?:오더 상한|창고 용량)[^%\d]{0,4}(\d+)(?:개|칸)당[^%\d]{0,16}(\d+(?:\.\d+)?)\s*%", text)
+        _diff = re.search(r"상한의 차이 1당[^%\d]{0,16}\+?\s*(\d+(?:\.\d+)?)\s*%", text)
+        _lin = re.search(r"(?:늘[린어]|늘어난|상승시킨)[^%]{0,10}(?:창고 용량|오더 (?:수주 )?상한)[^%]{0,16}?(\d+(?:\.\d+)?)\s*%", text)
+        if _tier:
+            cap_conv = {"t": "tier", "at": int(_tier.group(1)), "lo": float(_tier.group(2)), "hi": float(_tier.group(4))}
+        elif _bundle:
+            cap_conv = {"t": "bundle", "per": int(_bundle.group(1)), "rate": float(_bundle.group(2)),
+                        "max": float(_mx.group(1)) if _mx else None}
+        elif _diff:
+            cap_conv = {"t": "diff", "rate": float(_diff.group(1))}
+        elif _lin:
+            cap_conv = {"t": "lin", "rate": float(_lin.group(1))}
+        # 변환기의 % 는 "용량 1당" 단위값이라 헤드라인 효율로 이중 계상되면 안 된다
+        # (제이 시장경제 "차이 1당 +4%"가 output=4로도 잡히는 것 방지) — 변환기면 헤드라인 0
+        if cap_conv:
+            kind, value = "misc", 0
         # buffChar slots already resolved upgrades — every line here stacks
         tier = 1
         group = entry["name"]
@@ -469,6 +506,8 @@ def parse_skill(entry, oname, oid=None):
             "gateFaction": gate_faction, "gateCount": gate_count,
             "gatePlatforms": gate_platforms, "roomPartner": room_partner,
             "belowThreshold": below_threshold,
+            **({"cap": cap} if cap else {}),
+            **({"capConv": cap_conv} if cap_conv else {}),
             "_roboCap": int(robo_cap.group(1)) if robo_cap else None,
             "_roboUse": (float(robo_use.group(1)), float(robo_use.group(2))) if robo_use else None,
             "tokenGen": gen, "tokenUse": use, "convert": convert,
