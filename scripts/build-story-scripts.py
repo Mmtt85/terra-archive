@@ -56,8 +56,11 @@ def fetch_txt_cached(path):
 MARKUP = re.compile(r"</?[@$a-zA-Z][^>]*>|</>")
 
 def clean(s):
-    s = s.replace("{@nickname}", "독타")
+    s = re.sub(r"\{@nickname\}", "독타", s, flags=re.I)  # {@Nickname} 대문자 변형 포함
+    s = s.replace("{@nbs}", " ")          # 비개행 공백 토큰 → 일반 공백 (예: "Ave Mujica")
+    s = re.sub(r"\{@[^}]*\}", "", s)        # 그 외 미처리 제어 토큰({@...}) 제거
     s = MARKUP.sub("", s)
+    s = re.sub(r"[ \t]{2,}", " ", s)        # 토큰 제거로 생긴 이중 공백 정리
     s = s.replace("\\n", "\n").replace("\r", "")
     return s.strip()
 
