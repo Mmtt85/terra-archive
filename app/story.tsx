@@ -290,7 +290,7 @@ function EntityRail({ entities, active, onShowOperator, focus }: {
       const rRect = rail.getBoundingClientRect();
       const eRect = el.getBoundingClientRect();
       const delta = (eRect.left - rRect.left) - (rRect.width - eRect.width) / 2;
-      rail.scrollBy({ left: delta, behavior: "smooth" });
+      rail.scrollBy({ left: delta, behavior: "instant" });
     }));
     const timer = window.setTimeout(() => setFlashEi((cur) => (cur === focus.ei ? null : cur)), 1400);
     return () => { window.cancelAnimationFrame(raf); window.clearTimeout(timer); };
@@ -367,7 +367,7 @@ function ScriptReader({ script, error, entities, opIndex, onShowOperator }: {
   const topRef = useRef<HTMLDivElement>(null);
   const goEp = (i: number) => {
     setEpIdx(i);
-    topRef.current?.scrollIntoView({ block: "start" });
+    topRef.current?.scrollIntoView({ block: "start", behavior: "instant" });
   };
   const ep = script ? script.eps[Math.min(epIdx, script.eps.length - 1)] : null;
   // 렌더용 라인 가공 — 렌더 중 변수 재할당 금지(react-compiler)라 memo에서 미리 계산:
@@ -799,7 +799,7 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
   const goYear = (key: string) => {
     setActiveKey(key);
     const sec = secRefs.current.get(key);
-    if (sec && panelRef.current) panelRef.current.scrollTo({ top: sec.offsetTop, behavior: "smooth" });
+    if (sec && panelRef.current) panelRef.current.scrollTo({ top: sec.offsetTop, behavior: "instant" });
   };
   // 양끝 화살표 / 방향키 — 연도 그룹 단위로 이동
   const stepYear = (dir: 1 | -1) => {
@@ -916,7 +916,7 @@ function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEve
     const m = decodeURIComponent(window.location.hash).match(/^#theme-(.+)$/);
     if (!m) return;
     const el = document.getElementById(`theme-${m[1]}`);
-    if (el) requestAnimationFrame(() => el.scrollIntoView({ block: "start" }));
+    if (el) requestAnimationFrame(() => el.scrollIntoView({ block: "start", behavior: "instant" }));
   }, [group]);
 
   // 드롭다운: 바깥 클릭·Esc로 닫기
@@ -1060,7 +1060,7 @@ function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEve
                     <button type="button" className="digest-group-link" title={t("클릭하면 주소가 이 테마의 공유 링크로 바뀝니다")}
                       onClick={() => {
                         history.pushState(null, "", `#theme-${g.key}`);
-                        document.getElementById(`theme-${g.key}`)?.scrollIntoView({ block: "start", behavior: "smooth" });
+                        document.getElementById(`theme-${g.key}`)?.scrollIntoView({ block: "start", behavior: "instant" });
                       }}>
                       {g.label} <em>{g.items.length}</em><span className="digest-group-anchor" aria-hidden>#</span>
                     </button>

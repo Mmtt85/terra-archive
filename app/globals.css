@@ -4937,7 +4937,8 @@ html.dark .story-card:hover .story-thumb img {
 .rail-card {
   border: 1px solid var(--line);
   background: var(--white);
-  animation: rail-in 0.4s ease both;
+  /* 스크롤 중 카드 슬라이드-인 애니메이션 제거 — 스크롤이 매끄럽지 않게 느껴진다는
+     사용자 리포트(2026-07-20)로 즉시 표시. 클릭 강조(rail-flash)는 유지. */
 }
 .rail-card-text {
   padding: 7px 10px 9px;
