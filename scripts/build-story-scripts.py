@@ -175,11 +175,15 @@ def scan_faces(txt, votes):
                 votes[who][spr] += 1
 
 
+# 안내방송·시스템 음성 등 실체 없는 화자 — 무대 위 스프라이트를 물려받아 얼굴이 오귀속되므로
+# 배정에서 제외 (예: '수송차 안내 방송'이 옆에 선 워미 얼굴로 붙던 버그, 사용자 리포트 2026-07-20).
+ANNOUNCE_RE = re.compile(r"(방송|안내음|알림음|스피커|자동\s*음성|시스템\s*음성|아나운스)")
+
 def resolve_faces(votes):
     """화자별 다수결 스프라이트 — 과반+2표 이상일 때만 채택 (오귀속 방지)."""
     faces = {}
     for who, cnt in votes.items():
-        if not who or who.startswith("?"):
+        if not who or who.startswith("?") or ANNOUNCE_RE.search(who):
             continue
         (spr, n), total = cnt.most_common(1)[0], sum(cnt.values())
         if n >= 2 and n * 2 > total:
