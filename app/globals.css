@@ -692,6 +692,11 @@ button {
   .event-trigger.has-banner .event-name {
     display: none;
   }
+  /* 배너(썸네일) 이벤트: 이름·날짜가 다 숨으므로 210px 고정폭 컨테이너째 접는다.
+     안 접으면 빈 210px 때문에 이벤트 칩이 1줄에서 밀려 다음 줄로 떨어진다 (2026-07-20). */
+  .event-trigger.has-banner .event-trigger-main {
+    display: none;
+  }
   .event-trigger .event-name {
     max-width: 96px;
   }
@@ -702,8 +707,16 @@ button {
     width: 64px;
     flex: none;
   }
+  /* 이벤트 칩이 헤더 오른쪽에 있어 드롭다운이 오른쪽으로 넘쳐 잘리던 문제 —
+     모바일에선 헤더 바로 아래 화면 폭(좌우 16px 여백)에 고정해 넘침 방지 (2026-07-20). */
   .event-group .event-menu {
-    left: 0;
+    position: fixed;
+    top: calc(var(--header-h, 56px) + 4px);
+    left: 16px;
+    right: 16px;
+    width: auto;
+    min-width: 0;
+    max-width: none;
     transform: none;
   }
   .bcast-thumb {
@@ -6621,7 +6634,12 @@ html.dark.rg-theme.rg6 .site-header { background: #0a1413e6; border-bottom-color
 /* 조우 모달은 CG를 30% 크게 (사용자 확정) */
 .rg-modal-cols.enc { grid-template-columns: 468px 1fr }
 .rg-modal-left { min-width: 0 }
-@media (max-width: 860px) { .rg-modal-cols { grid-template-columns: 1fr } }
+@media (max-width: 860px) {
+  /* .enc는 468px 고정 첫 칼럼이 화면폭을 넘어 선택지가 오른쪽으로 밀려 안 보였다 —
+     .enc까지 같이 1칼럼으로 접는다(이미지 위·선택지 아래로 세로 배치, 2026-07-20). */
+  .rg-modal-cols,
+  .rg-modal-cols.enc { grid-template-columns: 1fr }
+}
 .rg-modal-desc { margin: 0 0 8px; font-size: 13px; line-height: 1.7; color: var(--rgtext2); white-space: pre-line }
 .rg-modal-elite { margin: 0 0 8px; padding: 8px 11px; background: #2b1016; border-left: 3px solid var(--rgcrim); font-size: 12.5px; line-height: 1.6; font-weight: 600; color: #f0b9c0 }
 .rg-modal-enemies { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 7px; margin-top: 0 }
