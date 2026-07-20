@@ -93,7 +93,7 @@ export type Operator = {
   seq: number;
   accent: string;
   image: string;
-  // 한국 서버 미실장(중국 서버 선행) 오퍼 — 헤더 '미래시 포함' 토글이 꺼져 있으면 숨긴다
+  // 미실장(중국 서버 선행) 오퍼 — 헤더 '미래시 포함' 토글이 꺼져 있으면 숨긴다
   unreleased?: boolean;
 };
 
@@ -586,7 +586,7 @@ function Portal({ onOpenTab }: { onOpenTab: (tab: Tab) => void }) {
       <div className="portal-hero">
         <span className="portal-kicker">TERRA ARCHIVE</span>
         <h1 id="portal-title">{t("테라 아카이브")}</h1>
-        <p>{t("명일방주(아크나이츠) KR 팬사이트 — 필요한 도구를 골라 들어가세요.")}</p>
+        <p>{t("명일방주(아크나이츠) 팬사이트 — 필요한 도구를 골라 들어가세요.")}</p>
       </div>
       <div className="portal-grid">
         {cards.map((card) => (
@@ -858,7 +858,7 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
                 ? t("통합전략 가이드 - 명일방주 통합전략 공략 | 테라 아카이브")
                 : tab === "archive"
                 ? t("오퍼레이터 백과사전 - 명일방주 오퍼 도감 | 테라 아카이브")
-                : t("테라 아카이브 | 명일방주(Arknights) KR 팬사이트");
+                : t("테라 아카이브 | 명일방주(Arknights) 팬사이트");
   }, [tab, selected, t]);
 
   // 오퍼 모달은 히스토리 엔트리를 쌓지 않고 해시만 교체한다(공유용 딥링크).
@@ -1050,11 +1050,11 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
         <a className="brand" href={localeBase || "/"} aria-label={t("테라 아카이브 홈")}
           onClick={(event) => { event.preventDefault(); switchTab("portal"); window.scrollTo({ top: 0 }); }}>
           <span className="brand-mark"><img src="/avatars/char_1012_skadi2.webp" alt="" width={180} height={180} /></span>
-          <span>{t("테라 아카이브")}<small>{t("명일방주(Arknights) KR 팬사이트")}</small></span>
+          <span>{t("테라 아카이브")}<small>{t("명일방주(Arknights) 팬사이트")}</small></span>
         </a>
         <BroadcastBadges />
         {/* 미래시 토글 = 우측 그룹의 첫 요소(margin-left:auto). 햄버거 버튼 바로 왼쪽 (사용자 배치 지시 2026-07) */}
-        <label className="future-toggle" title={t("한국 서버에 아직 나오지 않은 오퍼레이터·재료(중국 서버 데이터)도 목록·계산기에 표시합니다. 미실장 텍스트는 비공식 AI 번역입니다.")}>
+        <label className="future-toggle" title={t("아직 정식 출시되지 않은(중국 서버 선행) 오퍼레이터·재료도 목록·계산기에 표시합니다. 미실장 텍스트는 비공식 AI 번역입니다.")}>
           <input type="checkbox" checked={includeFuture} onChange={(event) => toggleFuture(event.target.checked)} />
           {t("미래시 데이터 포함")}
         </label>
@@ -1109,7 +1109,7 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
           <FilterGroup title={t("공격 방식")} items={attackMethods} selected={selectedMethods} onToggle={toggleIn(setSelectedMethods)} countForItem={(item) => roster.filter((operator) => positionMethods.includes(item) ? operator.position === item : damageTypeOf(operator) === item).length} />
           <FilterGroup title={t("공식 소속")} items={factions} selected={selectedFactions} onToggle={toggleIn(setSelectedFactions)} countForItem={(item) => roster.filter((operator) => operator.factions.includes(item)).length} />
 
-          <aside className="data-note"><span>DATA NOTE</span><p>{t("한국 서버 {count}명 · 전원 이미지 · 다국어 이름 및 커뮤니티 별명 검색 · 스킬과 재능 기반 {concepts}개 컨셉 태그를 제공합니다. 모든 필터는 토글식이며 아무것도 선택하지 않으면 전체가 표시됩니다.", { count: roster.length, concepts: concepts.length })}</p></aside>
+          <aside className="data-note"><span>DATA NOTE</span><p>{t("오퍼레이터 {count}명 · 전원 이미지 · 다국어 이름 및 커뮤니티 별명 검색 · 스킬과 재능 기반 {concepts}개 컨셉 태그를 제공합니다. 모든 필터는 토글식이며 아무것도 선택하지 않으면 전체가 표시됩니다.", { count: roster.length, concepts: concepts.length })}</p></aside>
         </div>
 
         <div className="results">
@@ -1288,7 +1288,7 @@ function OperatorModal({ operator, nicknames, onSubmitNickname, onClose }: { ope
               <div className="class-line">
                 <div><b>{operator.job}</b><small>{operator.subProfession} · {operator.position}</small></div>
               </div>
-              {operator.unreleased && <p className="future-note">{t("한국 서버 미실장 오퍼레이터입니다 — 중국 서버 데이터 기준이며, 스킬·재능 등 텍스트는 비공식 AI 번역이라 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>}
+              {operator.unreleased && <p className="future-note">{t("미실장 오퍼레이터입니다 — 중국 서버 데이터 기준이며, 스킬·재능 등 텍스트는 비공식 AI 번역이라 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>}
             </div>
             <NicknameForm key={operator.id} operator={operator} onSubmit={onSubmitNickname} />
           </div>

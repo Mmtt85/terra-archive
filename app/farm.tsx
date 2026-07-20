@@ -155,7 +155,7 @@ export default function FarmGuide({ operators, includeFuture, onShowOperator }: 
         <h2>{t("재료 파밍 & 오퍼 육성 시뮬레이션")}</h2>
         <p>{t("오퍼레이터 육성에 필요한 용문폐·재료 총량을 단계별로 계산하고, 각 재료를 어느 스테이지에서 파밍하는 게 가장 효율적인지 실측 드랍 통계로 확인합니다.")}</p>
         {includeFuture && (
-          <p className="farm-source">{t("미실장(중국 서버 선행) 오퍼레이터·재료의 텍스트는 비공식 AI 번역으로, 한국 서버 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>
+          <p className="farm-source">{t("미실장(중국 서버 선행) 오퍼레이터·재료의 텍스트는 비공식 AI 번역으로, 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>
         )}
       </div>
 
@@ -165,7 +165,7 @@ export default function FarmGuide({ operators, includeFuture, onShowOperator }: 
         <span className="section-no">FARMING EFFICIENCY</span>
         <h3>{t("재료 파밍 효율표")}</h3>
         <p>{t("정예화 재료 {count}종의 실측 드랍 통계입니다. 재료마다 어느 스테이지에서 나오는지와 개당 기대 이성(이성 소모 ÷ 드랍률)을 표시하고, 이성 대비 획득 확률이 가장 높은 스테이지에 최고 효율 배지를 붙입니다.", { count: data.items.length })}</p>
-        <p className="farm-source">{t("출처: 펭귄 물류 실측 통계(표본 {min}회 이상) + 클뜯 게임 데이터 · {date} 기준 한국 서버에 개방된 스테이지만 수록 · 기대 이성은 낮을수록 좋습니다.", { min: data.minTimes, date: data.updated })}</p>
+        <p className="farm-source">{t("출처: 펭귄 물류 실측 통계(표본 {min}회 이상) + 클뜯 게임 데이터 · {date} 기준 정식 개방된 스테이지만 수록 · 기대 이성은 낮을수록 좋습니다.", { min: data.minTimes, date: data.updated })}</p>
       </div>
 
       <div className="farm-tools">
@@ -619,7 +619,7 @@ function ItemModal({ id, onClose, onShowItem, onSearchItem }: {
             {meta?.unreleased && <em className="future-badge">{t("미실장")}</em>}
           </div>
         </header>
-        {meta?.unreleased && <p className="item-usage">{t("한국 서버 미실장 재료입니다 — 이름·설명은 비공식 AI 번역이라 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>}
+        {meta?.unreleased && <p className="item-usage">{t("미실장 재료입니다 — 이름·설명은 비공식 AI 번역이라 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>}
         {meta?.desc && <p className="item-desc">{locText(locale, meta.desc)}</p>}
         {meta?.usage && <p className="item-usage">{locText(locale, meta.usage)}</p>}
         {meta?.craft && (

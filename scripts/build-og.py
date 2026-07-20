@@ -206,7 +206,7 @@ def build(locale, tab):
     icon(d, ic, px0 + (W - 72 - px0) // 2, 150 + (H - 120 - 150) // 2, 66)
 
     d.text((x0, H - 92), "terra-archive.net", font=f_foot, fill=DIM)
-    rt = "ARKNIGHTS · KR"
+    rt = "ARKNIGHTS FANSITE"
     d.text((1010 - d.textlength(rt, font=f_foot), H - 92), rt, font=f_foot, fill=DIM)
 
     d.polygon([(W - 40, H - 40), (W - 40, H - 150), (W - 150, H - 40)], fill=LIME)

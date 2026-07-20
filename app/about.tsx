@@ -82,7 +82,7 @@ const CONTENT: Record<Locale, Content> = {
   ko: {
     kicker: "ABOUT",
     title: "테라 아카이브 소개",
-    tagline: "명일방주(Arknights) 한국 서버 도우미 · 한국어 / English / 日本語",
+    tagline: "명일방주(Arknights) 도우미 · 한국어 / English / 日本語",
     intro:
       "테라 아카이브는 명일방주 독타를 위한 비영리 팬 도구 모음입니다. 오퍼레이터 자료 조사부터 기반시설 편성, 공개모집, 재료 파밍·육성 계획, 스토리 요약까지 — 게임 데이터를 직접 파싱해 자동 파이프라인으로 항상 최신 상태를 유지합니다. 설치·로그인 없이 웹에서 바로 쓸 수 있습니다.",
     featureLead: "여섯 가지 도구가 있습니다. 카드를 누르면 해당 기능으로 이동합니다.",
@@ -151,7 +151,7 @@ const CONTENT: Record<Locale, Content> = {
     future: {
       title: "미래시 데이터",
       body:
-        "헤더의 '미래시 데이터 포함'을 켜면 한국 서버에 아직 나오지 않은(중국 서버 선행) 오퍼레이터·재료·이벤트까지 미리 볼 수 있습니다. 미실장 텍스트는 정식 출시 전까지 비공식 AI 번역으로 제공하며 그 사실을 명확히 표시하고, 한국 서버 출시가 데이터에 반영되면 자동으로 공식 데이터로 교체됩니다.",
+        "헤더의 '미래시 데이터 포함'을 켜면 아직 나오지 않은(중국 서버 선행) 오퍼레이터·재료·이벤트까지 미리 볼 수 있습니다. 미실장 텍스트는 정식 출시 전까지 비공식 AI 번역으로 제공하며 그 사실을 명확히 표시하고, 정식 출시가 데이터에 반영되면 자동으로 공식 데이터로 교체됩니다.",
     },
     data: {
       title: "데이터와 갱신",
@@ -168,7 +168,7 @@ const CONTENT: Record<Locale, Content> = {
   en: {
     kicker: "ABOUT",
     title: "About Terra Archive",
-    tagline: "An Arknights (KR-server) companion · 한국어 / English / 日本語",
+    tagline: "An Arknights companion · 한국어 / English / 日本語",
     intro:
       "Terra Archive is a non-commercial fan toolkit for Arknights players (Doctors). From researching operators to planning your base, recruitment, farming and upgrade budgeting, and catching up on the story — it parses the game data directly and an automated pipeline keeps everything up to date. No install, no login; it runs right in the browser.",
     featureLead: "Six tools in one. Tap a card to jump to that feature.",
@@ -237,7 +237,7 @@ const CONTENT: Record<Locale, Content> = {
     future: {
       title: "Future (unreleased) data",
       body:
-        "Turn on 'Include future data' in the header to preview operators, materials, and events not yet on the KR server (CN-first). Unreleased text is provided as an unofficial AI translation until launch — clearly labeled as such — and is automatically replaced with official data once the KR release lands in the source.",
+        "Turn on 'Include future data' in the header to preview operators, materials, and events not yet released (CN-first). Unreleased text is provided as an unofficial AI translation until launch — clearly labeled as such — and is automatically replaced with official data once the release lands in the source.",
     },
     data: {
       title: "Data & updates",
@@ -254,7 +254,7 @@ const CONTENT: Record<Locale, Content> = {
   ja: {
     kicker: "ABOUT",
     title: "テラアーカイブについて",
-    tagline: "アークナイツ（韓国サーバー基準）の補助ツール · 한국어 / English / 日本語",
+    tagline: "アークナイツの補助ツール · 한국어 / English / 日本語",
     intro:
       "テラアーカイブは、アークナイツのプレイヤー（ドクター）のための非営利ファンツール集です。オペレーターの調査から基地編成、公開求人、素材周回・育成の計画、ストーリー要約まで — ゲームデータを直接解析し、自動パイプラインで常に最新の状態を保ちます。インストールもログインも不要、ブラウザですぐに使えます。",
     featureLead: "6つのツールがあります。カードを押すとその機能へ移動します。",
@@ -323,7 +323,7 @@ const CONTENT: Record<Locale, Content> = {
     future: {
       title: "未実装（先行）データ",
       body:
-        "ヘッダーの「未実装データを含む」をオンにすると、韓国サーバー未実装（中国サーバー先行）のオペレーター・素材・イベントも先に確認できます。未実装テキストは正式実装まで非公式のAI翻訳として提供し、その旨を明示します。韓国サーバーでの実装がデータに反映されると、自動的に公式データへ置き換えられます。",
+        "ヘッダーの「未実装データを含む」をオンにすると、未実装（中国サーバー先行）のオペレーター・素材・イベントも先に確認できます。未実装テキストは正式実装まで非公式のAI翻訳として提供し、その旨を明示します。実装がデータに反映されると、自動的に公式データへ置き換えられます。",
     },
     data: {
       title: "データと更新",

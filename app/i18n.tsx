@@ -105,7 +105,7 @@ export function conceptName(locale: Locale, ko: string): string {
 const D: Record<string, Pair> = {
   // 헤더 / 공통
   "테라 아카이브": ["Terra Archive", "テラアーカイブ"],
-  "명일방주(Arknights) KR 팬사이트": ["Arknights KR-server fansite", "アークナイツ韓国サーバーファンサイト"],
+  "명일방주(Arknights) 팬사이트": ["Arknights fansite", "アークナイツのファンサイト"],
   "테라 아카이브 홈": ["Terra Archive home", "テラアーカイブ ホーム"],
   "주요 탭": ["Main tabs", "メインタブ"],
   "오퍼 백과사전": ["Operator Archive", "オペレーター図鑑"],
@@ -117,7 +117,7 @@ const D: Record<string, Pair> = {
   "홈": ["Home", "ホーム"],
 
   // 포탈 첫화면 (루트 /)
-  "명일방주(아크나이츠) KR 팬사이트 — 필요한 도구를 골라 들어가세요.": ["An Arknights KR-server fansite — pick a tool and dive in.", "アークナイツ韓国サーバーファンサイト — 使いたいツールを選んで入りましょう。"],
+  "명일방주(아크나이츠) 팬사이트 — 필요한 도구를 골라 들어가세요.": ["An Arknights fansite — pick a tool and dive in.", "アークナイツのファンサイト — 使いたいツールを選んで入りましょう。"],
   "소속·직군·태그·시너지로 필터·검색하는 오퍼레이터 도감": ["Operator database you can filter and search by faction, class, tag, and synergy.", "所属・クラス・タグ・シナジーで絞り込み検索できるオペレーター図鑑。"],
   "보유 오퍼만 입력하면 기반시설 편성을 자동으로 계산": ["Enter your roster and it auto-builds your RIIC base layout.", "手持ちオペレーターを入力するだけで基地編成を自動計算。"],
   "공개모집 태그 조합으로 확정·고성급 오퍼를 탐색": ["Find guaranteed and high-rarity operators from recruitment tag combos.", "公開求人タグの組み合わせから確定・高レアオペレーターを探索。"],
@@ -147,8 +147,8 @@ const D: Record<string, Pair> = {
   "글로벌": ["Global", "グローバル"],
 
   // 진행중 게임 이벤트 배지 (KR 서버 기준)
-  "진행중인 이벤트 보기": ["View events currently running (KR server)", "開催中のイベントを見る（韓国サーバー）"],
-  "진행중·예정 이벤트 보기": ["View ongoing & upcoming events (KR server)", "開催中・予定イベントを見る（韓国サーバー）"],
+  "진행중인 이벤트 보기": ["View events currently running", "開催中のイベントを見る"],
+  "진행중·예정 이벤트 보기": ["View ongoing & upcoming events", "開催中・予定イベントを見る"],
   "진행중 이벤트": ["Ongoing events", "開催中イベント"],
   "진행중·예정 이벤트": ["Ongoing & upcoming events", "開催中・予定イベント"],
   "진행 예정": ["Upcoming", "開催予定"],
@@ -172,9 +172,9 @@ const D: Record<string, Pair> = {
   "복수 선택 가능 · 전부 해제 시 전체": ["Multi-select · none selected = all", "複数選択可 · 全解除で全表示"],
   "접기": ["Collapse", "閉じる"],
   "더보기 +{n}": ["More +{n}", "もっと見る +{n}"],
-  "한국 서버 {count}명 · 전원 이미지 · 다국어 이름 및 커뮤니티 별명 검색 · 스킬과 재능 기반 {concepts}개 컨셉 태그를 제공합니다. 모든 필터는 토글식이며 아무것도 선택하지 않으면 전체가 표시됩니다.": [
-    "{count} KR-server operators · full artwork · multilingual name & community nickname search · {concepts} concept tags derived from skills and talents. Every filter is a toggle; with nothing selected, all operators are shown.",
-    "韓国サーバー{count}名 · 全員画像付き · 多言語名・コミュニティ愛称検索 · スキルと素質に基づく{concepts}種のコンセプトタグを提供。フィルターはすべてトグル式で、何も選択しなければ全員が表示されます。",
+  "오퍼레이터 {count}명 · 전원 이미지 · 다국어 이름 및 커뮤니티 별명 검색 · 스킬과 재능 기반 {concepts}개 컨셉 태그를 제공합니다. 모든 필터는 토글식이며 아무것도 선택하지 않으면 전체가 표시됩니다.": [
+    "{count} operators · full artwork · multilingual name & community nickname search · {concepts} concept tags derived from skills and talents. Every filter is a toggle; with nothing selected, all operators are shown.",
+    "オペレーター{count}名 · 全員画像付き · 多言語名・コミュニティ愛称検索 · スキルと素質に基づく{concepts}種のコンセプトタグを提供。フィルターはすべてトグル式で、何も選択しなければ全員が表示されます。",
   ],
   "{concept} 컨셉덱": ["{concept} concept", "{concept}コンセプト"],
   "탐색 결과": ["Results", "検索結果"],
@@ -252,7 +252,7 @@ const D: Record<string, Pair> = {
     "Unofficial Arknights fan project. All in-game names and data belong to Hypergryph / Yostar and their respective right holders.",
     "アークナイツ非公式ファンプロジェクト · ゲーム内の名称およびデータの権利は Hypergryph / Yostar など各権利者に帰属します。",
   ],
-  "테라 아카이브 | 명일방주(Arknights) KR 팬사이트": ["Terra Archive | Arknights KR Fansite", "テラアーカイブ | アークナイツ韓国サーバーファンサイト"],
+  "테라 아카이브 | 명일방주(Arknights) 팬사이트": ["Terra Archive | Arknights Fansite", "テラアーカイブ | アークナイツのファンサイト"],
   "{name} - 명일방주 오퍼레이터 | 테라 아카이브": ["{name} - Arknights Operator | Terra Archive", "{name} - アークナイツ オペレーター | テラアーカイブ"],
   "인프라 자동편성기 - 명일방주 기반시설 편성 | 테라 아카이브": ["Base Auto-Planner - Arknights RIIC Base | Terra Archive", "基地自動編成 - アークナイツ基地編成 | テラアーカイブ"],
   "공채 도우미 - 명일방주 공개모집 계산기 | 테라 아카이브": ["Recruit Helper - Arknights Recruitment Calculator | Terra Archive", "公開求人ヘルパー - アークナイツ公開求人計算機 | テラアーカイブ"],
@@ -683,9 +683,9 @@ const D: Record<string, Pair> = {
     "Measured drop statistics for {count} elite materials. Each material lists the stages it drops from with the expected sanity per drop (sanity cost ÷ drop rate), and the stage with the best drop odds per sanity gets the Best badge.",
     "昇進素材{count}種の実測ドロップ統計です。素材ごとにドロップするステージと1個あたりの期待理性（理性消費 ÷ ドロップ率）を表示し、理性あたりの入手確率が最も高いステージに最高効率バッジを付けます。",
   ],
-  "출처: 펭귄 물류 실측 통계(표본 {min}회 이상) + 클뜯 게임 데이터 · {date} 기준 한국 서버에 개방된 스테이지만 수록 · 기대 이성은 낮을수록 좋습니다.": [
-    "Source: Penguin Statistics measured data (min. {min} samples) + datamined game data · only stages open on the KR server as of {date} · lower expected sanity is better.",
-    "出典：ペンギン急便の実測統計（標本{min}回以上）+ データマインのゲームデータ · {date}時点で韓国サーバーに開放中のステージのみ収録 · 期待理性は低いほど良いです。",
+  "출처: 펭귄 물류 실측 통계(표본 {min}회 이상) + 클뜯 게임 데이터 · {date} 기준 정식 개방된 스테이지만 수록 · 기대 이성은 낮을수록 좋습니다.": [
+    "Source: Penguin Statistics measured data (min. {min} samples) + datamined game data · only stages currently open as of {date} · lower expected sanity is better.",
+    "出典：ペンギン急便の実測統計（標本{min}回以上）+ データマインのゲームデータ · {date}時点で開放中のステージのみ収録 · 期待理性は低いほど良いです。",
   ],
   "등급 필터": ["Tier filter", "レア度フィルター"],
   "재료 이름 검색": ["Search material names", "素材名で検索"],
@@ -694,38 +694,38 @@ const D: Record<string, Pair> = {
   "조건에 맞는 재료가 없어요.": ["No materials match these filters.", "条件に合う素材がありません。"],
   // ── 미래시(미실장) 데이터 토글 ──
   "미래시 데이터 포함": ["Include future data", "未実装データを含む"],
-  "한국 서버에 아직 나오지 않은 오퍼레이터·재료(중국 서버 데이터)도 목록·계산기에 표시합니다. 미실장 텍스트는 비공식 AI 번역입니다.": [
-    "Also show operators and materials not yet released on the KR server (CN server data) in the list and calculator. Unreleased text is an unofficial AI translation.",
-    "韓国サーバー未実装のオペレーター・素材（中国サーバーのデータ）も一覧・計算機に表示します。未実装テキストは非公式のAI翻訳です。",
+  "아직 정식 출시되지 않은(중국 서버 선행) 오퍼레이터·재료도 목록·계산기에 표시합니다. 미실장 텍스트는 비공식 AI 번역입니다.": [
+    "Also show operators and materials not yet released (CN server data) in the list and calculator. Unreleased text is an unofficial AI translation.",
+    "未実装のオペレーター・素材（中国サーバーのデータ）も一覧・計算機に表示します。未実装テキストは非公式のAI翻訳です。",
   ],
   "미실장": ["Unreleased", "未実装"],
-  "한국 서버 미실장 오퍼레이터입니다 — 중국 서버 데이터 기준이며, 스킬·재능 등 텍스트는 비공식 AI 번역이라 정식 출시 시 공식 번역과 다를 수 있습니다.": [
-    "This operator is not yet released on the KR server — data comes from the CN server, and skill/talent text is an unofficial AI translation that may differ from the official localization.",
-    "韓国サーバー未実装のオペレーターです — 中国サーバーのデータ基準であり、スキル・素質などのテキストは非公式のAI翻訳のため、正式実装時の公式翻訳と異なる場合があります。",
+  "미실장 오퍼레이터입니다 — 중국 서버 데이터 기준이며, 스킬·재능 등 텍스트는 비공식 AI 번역이라 정식 출시 시 공식 번역과 다를 수 있습니다.": [
+    "This operator is not yet released — data comes from the CN server, and skill/talent text is an unofficial AI translation that may differ from the official localization.",
+    "未実装のオペレーターです — 中国サーバーのデータ基準であり、スキル・素質などのテキストは非公式のAI翻訳のため、正式実装時の公式翻訳と異なる場合があります。",
   ],
-  "미실장(중국 서버 선행) 이벤트의 제목은 비공식 AI 번역으로, 한국 서버 정식 출시 시 공식 번역과 다를 수 있습니다.": [
+  "미실장(중국 서버 선행) 이벤트의 제목은 비공식 AI 번역으로, 정식 출시 시 공식 번역과 다를 수 있습니다.": [
     "Titles of unreleased (CN-first) events are unofficial AI translations and may differ from the official localization.",
     "未実装（中国サーバー先行）イベントのタイトルは非公式のAI翻訳であり、正式実装時の公式翻訳と異なる場合があります。",
   ],
-  "미실장(중국 서버 선행) 오퍼레이터·재료의 텍스트는 비공식 AI 번역으로, 한국 서버 정식 출시 시 공식 번역과 다를 수 있습니다.": [
+  "미실장(중국 서버 선행) 오퍼레이터·재료의 텍스트는 비공식 AI 번역으로, 정식 출시 시 공식 번역과 다를 수 있습니다.": [
     "Text for unreleased (CN-first) operators and materials is an unofficial AI translation and may differ from the official localization.",
     "未実装（中国サーバー先行）のオペレーター・素材のテキストは非公式のAI翻訳であり、正式実装時の公式翻訳と異なる場合があります。",
   ],
-  "한국 서버 미실장 재료입니다 — 이름·설명은 비공식 AI 번역이라 정식 출시 시 공식 번역과 다를 수 있습니다.": [
-    "This material is not yet released on the KR server — its name and description are unofficial AI translations that may differ from the official localization.",
-    "韓国サーバー未実装の素材です — 名称・説明は非公式のAI翻訳のため、正式実装時の公式翻訳と異なる場合があります。",
+  "미실장 재료입니다 — 이름·설명은 비공식 AI 번역이라 정식 출시 시 공식 번역과 다를 수 있습니다.": [
+    "This material is not yet released — its name and description are unofficial AI translations that may differ from the official localization.",
+    "未実装の素材です — 名称・説明は非公式のAI翻訳のため、正式実装時の公式翻訳と異なる場合があります。",
   ],
-  "**미실장** 배지가 붙은 오퍼는 한국 서버 미출시(중국 서버 선행) 오퍼입니다 — 미래시 데이터 포함이 켜져 있을 때만 표시되며, 스킬 텍스트는 비공식 AI 번역입니다.": [
-    "Operators with the **Unreleased** badge are not yet on the KR server (CN-first) — they appear only while 'Include future data' is on, and their skill text is an unofficial AI translation.",
-    "**未実装**バッジ付きのオペレーターは韓国サーバー未実装（中国サーバー先行）です — 「未実装データを含む」がオンの間のみ表示され、スキルテキストは非公式のAI翻訳です。",
+  "**미실장** 배지가 붙은 오퍼는 미출시(중국 서버 선행) 오퍼입니다 — 미래시 데이터 포함이 켜져 있을 때만 표시되며, 스킬 텍스트는 비공식 AI 번역입니다.": [
+    "Operators with the **Unreleased** badge are not yet released (CN-first) — they appear only while 'Include future data' is on, and their skill text is an unofficial AI translation.",
+    "**未実装**バッジ付きのオペレーターは未実装（中国サーバー先行）です — 「未実装データを含む」がオンの間のみ表示され、スキルテキストは非公式のAI翻訳です。",
   ],
   "미래시(미실장) 오퍼": ["Future (unreleased) operators", "未実装（先行）オペレーター"],
   "미실장 (중국 서버 선행)": ["Unreleased (CN server)", "未実装（中国サーバー先行）"],
-  "한국 서버 출시": ["Released on KR server", "韓国サーバー実装済み"],
+  "정식 출시": ["Released", "実装済み"],
   "소개": ["About", "紹介"],
-  "헤더의 '미래시 데이터 포함'을 켜면 한국 서버 미출시(중국 서버 선행) 오퍼도 보유 오퍼 설정과 자동편성 계산에 포함됩니다. 스킬 텍스트는 비공식 AI 번역이며, 한국 서버 정식 출시 시 공식 데이터로 대체됩니다.": [
-    "Turn on 'Include future data' in the header to include operators not yet released on the KR server (CN-first) in the roster settings and auto-assignment. Their skill text is an unofficial AI translation, replaced by official data when they release on KR.",
-    "ヘッダーの「未実装データを含む」をオンにすると、韓国サーバー未実装（中国サーバー先行）のオペレーターも所持設定と自動編成の計算に含まれます。スキルテキストは非公式のAI翻訳で、韓国サーバーでの正式実装時に公式データへ置き換えられます。",
+  "헤더의 '미래시 데이터 포함'을 켜면 미출시(중국 서버 선행) 오퍼도 보유 오퍼 설정과 자동편성 계산에 포함됩니다. 스킬 텍스트는 비공식 AI 번역이며, 정식 출시 시 공식 데이터로 대체됩니다.": [
+    "Turn on 'Include future data' in the header to include operators not yet released (CN-first) in the roster settings and auto-assignment. Their skill text is an unofficial AI translation, replaced by official data when they release.",
+    "ヘッダーの「未実装データを含む」をオンにすると、未実装（中国サーバー先行）のオペレーターも所持設定と自動編成の計算に含まれます。スキルテキストは非公式のAI翻訳で、正式実装時に公式データへ置き換えられます。",
   ],
   "토글을 바꿔도 현재 편성은 유지됩니다 — 자동편성을 다시 실행해야 반영됩니다.": [
     "Changing the toggle keeps the current assignment — run auto-assignment again to apply it.",
@@ -789,9 +789,9 @@ const D: Record<string, Pair> = {
   "스토리": ["Story", "ストーリー"],
   "이벤트 스토리를 AI 요약과 전문(풀 스크립트)으로": ["Event stories as AI digests and full scripts.", "イベントストーリーをAI要約と全文（フルスクリプト）で。"],
   "스토리 - 명일방주 스토리 요약·전문 | 테라 아카이브": ["Story - Arknights Story Digests & Full Scripts | Terra Archive", "ストーリー - アークナイツストーリー要約・全文 | テラアーカイブ"],
-  "아직 한국 서버에 출시되지 않은 이벤트라, 중국 서버 원문을 AI가 번역한 비공식 한국어 텍스트입니다.": [
-    "This event has not been released on the KR server yet — this is an unofficial AI translation of the CN server text.",
-    "韓国サーバー未実装のイベントのため、中国サーバー原文をAIが翻訳した非公式テキストです。",
+  "아직 정식 출시되지 않은 이벤트라, 중국 서버 원문을 AI가 번역한 비공식 텍스트입니다.": [
+    "This event has not been released yet — this is an unofficial AI translation of the CN server text.",
+    "未実装のイベントのため、中国サーバー原文をAIが翻訳した非公式テキストです。",
   ],
   "요약": ["Digest", "要約"],
   "테라 연대기": ["Terra Chronicle", "テラ年代記"],
@@ -818,9 +818,9 @@ const D: Record<string, Pair> = {
     "**テラ年代記（ベータ）** — すべてのイベント・メインストーリー・統合戦略を一箇所に集める準備作業です。現在の並びは配信順（暫定）で、作中の年代順・テラ暦の年号はストーリースクリプトを反映して埋めます。テーマ分類は確実なものから割り当て中です。",
   ],
   "AI 스토리 요약 - 명일방주 스토리 요약 | 테라 아카이브": ["AI Story Digest - Arknights Story Summaries | Terra Archive", "AIストーリー要約 - アークナイツストーリー要約 | テラアーカイブ"],
-  "한국 서버에 풀린 사이드 스토리 {count}개의 아카이브입니다. AI가 스토리 스크립트 전문을 정독하고 컷씬과 함께 10분 분량으로 요약합니다. 현재 {done}개 수록 — 계속 추가됩니다.": [
-    "An archive of all {count} side stories released on the KR server. AI reads the full story scripts and condenses each into a 10-minute digest with cutscenes. {done} available now — more on the way.",
-    "韓国サーバーで公開されたサイドストーリー{count}件のアーカイブです。AIがストーリースクリプト全文を読み込み、カットシーン付きの10分ダイジェストにまとめます。現在{done}件収録 — 順次追加されます。",
+  "출시된 사이드 스토리 {count}개의 아카이브입니다. AI가 스토리 스크립트 전문을 정독하고 컷씬과 함께 10분 분량으로 요약합니다. 현재 {done}개 수록 — 계속 추가됩니다.": [
+    "An archive of all {count} side stories released. AI reads the full story scripts and condenses each into a 10-minute digest with cutscenes. {done} available now — more on the way.",
+    "公開されたサイドストーリー{count}件のアーカイブです。AIがストーリースクリプト全文を読み込み、カットシーン付きの10分ダイジェストにまとめます。現在{done}件収録 — 順次追加されます。",
   ],
   "요약에는 결말 포함 스포일러가 있습니다. 이벤트 제목·썸네일 출처: 게임 데이터 · {date} 기준.": [
     "Digests contain full spoilers including endings. Event titles & thumbnails from datamined game data · as of {date}.",
@@ -854,14 +854,14 @@ const D: Record<string, Pair> = {
   "선택지": ["Choice", "選択肢"],
   "분기": ["Branch", "分岐"],
   "크게 보기": ["View full size", "拡大表示"],
-  "전문은 한국 서버 정식 출시 후에 열려요": ["The full script opens after the official KR release", "全文は韓国サーバーの正式リリース後に公開されます"],
+  "전문은 정식 출시 후에 열려요": ["The full script opens after the official release", "全文は正式リリース後に公開されます"],
   "이 이벤트는 아직 중국 서버에만 공개된 스토리예요. 공식 한국어 번역이 나오기 전에 원문 전체를 그대로 옮겨 싣는 건 이야기를 만든 분들의 몫을 앞질러 가는 일이라, 전문은 아껴두고 있어요.": [
     "This story is currently available only on the CN server. Publishing a full translation before the official localization would get ahead of the people who made this story, so we're holding off on the full script.",
     "このストーリーは現在、中国サーバーのみで公開されています。公式翻訳より先に全文をそのまま載せるのは、物語を作った方々の仕事を先取りしてしまうことになるため、全文は控えています。",
   ],
-  "한국 서버에 정식 출시되면 공식 번역 전문을 바로 볼 수 있도록 준비해 두었어요. 그때까지는 줄거리를 꼼꼼히 담은 AI 요약으로 먼저 만나 보세요.": [
-    "Everything is ready to show the official full script as soon as it launches on the KR server. Until then, enjoy the detailed AI digest.",
-    "韓国サーバーで正式リリースされ次第、公式翻訳の全文をすぐ読めるよう準備してあります。それまでは、あらすじを丁寧にまとめたAI要約でお楽しみください。",
+  "정식 출시되면 공식 번역 전문을 바로 볼 수 있도록 준비해 두었어요. 그때까지는 줄거리를 꼼꼼히 담은 AI 요약으로 먼저 만나 보세요.": [
+    "Everything is ready to show the official full script as soon as it launches. Until then, enjoy the detailed AI digest.",
+    "正式リリースされ次第、公式翻訳の全文をすぐ読めるよう準備してあります。それまでは、あらすじを丁寧にまとめたAI要約でお楽しみください。",
   ],
   "본문의 이 단어 때문에 표시됨": ["Shown because of this word in the text", "本文中のこの単語により表示"],
   "이전 에피소드": ["Previous episode", "前のエピソード"],

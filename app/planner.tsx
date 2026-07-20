@@ -1063,7 +1063,7 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
           {importMsg && <p className="dorm-note maa-import-msg">{importMsg}</p>}
           <p className="dorm-note">{rich(t("정예화 단계에 따라 해금되는 인프라 스킬을 가진 오퍼는 카드 아래에서 **노정예/1정/2정**을 선택할 수 있습니다 (기본값 최대 정예화). 얼굴을 클릭하면 상세 정보가 열립니다."))}</p>
           {allOps.some((op) => op.unreleased) && (
-            <p className="dorm-note">{rich(t("**미실장** 배지가 붙은 오퍼는 한국 서버 미출시(중국 서버 선행) 오퍼입니다 — 미래시 데이터 포함이 켜져 있을 때만 표시되며, 스킬 텍스트는 비공식 AI 번역입니다."))}</p>
+            <p className="dorm-note">{rich(t("**미실장** 배지가 붙은 오퍼는 미출시(중국 서버 선행) 오퍼입니다 — 미래시 데이터 포함이 켜져 있을 때만 표시되며, 스킬 텍스트는 비공식 AI 번역입니다."))}</p>
           )}
           <div className="roster-bulk">
             {BULK_GROUPS.map(({ label, test, elites }) => (
@@ -1091,7 +1091,7 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
             <>
               <h4 className="roster-section-head">{t("미실장 (중국 서버 선행)")} <em>{futureOps.length}</em></h4>
               <div className="roster-grid">{futureOps.map(renderCard)}</div>
-              <h4 className="roster-section-head">{t("한국 서버 출시")} <em>{releasedOps.length}</em></h4>
+              <h4 className="roster-section-head">{t("정식 출시")} <em>{releasedOps.length}</em></h4>
             </>
           )}
           <div className="roster-grid">{releasedOps.map(renderCard)}</div>
@@ -1155,7 +1155,7 @@ const HELP_SECTIONS: { title: string; items: string[] }[] = [
     "토큰 생성·소비자, 오버라이드·수익 역할, 쉐이 카운트 인원 같은 시너지 코어는 '대체 불가'로 표시됩니다.",
   ]},
   { title: "미래시(미실장) 오퍼", items: [
-    "헤더의 '미래시 데이터 포함'을 켜면 한국 서버 미출시(중국 서버 선행) 오퍼도 보유 오퍼 설정과 자동편성 계산에 포함됩니다. 스킬 텍스트는 비공식 AI 번역이며, 한국 서버 정식 출시 시 공식 데이터로 대체됩니다.",
+    "헤더의 '미래시 데이터 포함'을 켜면 미출시(중국 서버 선행) 오퍼도 보유 오퍼 설정과 자동편성 계산에 포함됩니다. 스킬 텍스트는 비공식 AI 번역이며, 정식 출시 시 공식 데이터로 대체됩니다.",
     "토글을 바꿔도 현재 편성은 유지됩니다 — 자동편성을 다시 실행해야 반영됩니다.",
   ]},
   { title: "수치는 근사치", items: [

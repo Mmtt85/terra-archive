@@ -6,7 +6,7 @@
 // 요약이 있는 이벤트만 카드가 열리고, 상세는 #story-<id> 해시로 공유·뒤로가기 가능.
 // 상세를 읽는 동안, 화면에 보이는 문단에 언급된 인물·용어 카드가 오른쪽 레일에
 // 따라다니며 떠오른다 (IntersectionObserver — 넓은 화면 전용, 좁은 화면은 상단 갤러리).
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import storiesData from "./data/stories.json";
 // 요약 본문은 로케일별(story-summaries.{en,ja}.json)로 갈라져 있어 Home이 활성 로케일 것을
 // prop으로 내려준다. 모듈 레벨(합성 이벤트·해시 확인)은 콘텐츠가 아니라 "요약이 있는 id"만
@@ -66,7 +66,7 @@ const canOpenStory = (id: string) => summaryIds.has(id) || scriptIds.has(id);
 // 전문(풀 스크립트) 스키마 — build-story-scripts.py 라인 스키마와 1:1
 type ScriptLine = { n?: string; x?: string; st?: string; img?: string; loc?: string; opts?: string[]; vals?: string[]; br?: string };
 type ScriptEp = { code: string; name: string; tag: string; lines: ScriptLine[] };
-// tr: "cn" = 한국 서버 미출시 이벤트 — CN 원문 AI 번역본 (비공식 번역 안내 표시)
+// tr: "cn" = 미출시 이벤트 — CN 원문 AI 번역본 (비공식 번역 안내 표시)
 type ScriptData = { id: string; eps: ScriptEp[]; tr?: string; faces?: Record<string, string> };
 const translatedByLocale: Record<string, Set<string>> = {
   en: new Set(translatedEnData as string[]),
@@ -517,8 +517,7 @@ function ScriptReader({ script, error, entities, opIndex, onShowOperator }: {
   return (
     <div className="story-script" ref={topRef}>
       <p className="story-disclaimer">{t("게임 내 스토리 스크립트 원문입니다. 대사·지문·컷씬만 표시되며 연출(음악·효과)은 생략됩니다.")}</p>
-      {script.tr === "cn" && <p className="story-disclaimer">{t("아직 한국 서버에 출시되지 않은 이벤트라, 중국 서버 원문을 AI가 번역한 비공식 한국어 텍스트입니다.")}</p>}
-      {locale !== "ko" && <p className="story-disclaimer">{t("전문은 현재 한국어 게임 텍스트로만 제공됩니다.")}</p>}
+      {script.tr === "cn" && <p className="story-disclaimer">{t("아직 정식 출시되지 않은 이벤트라, 중국 서버 원문을 AI가 번역한 비공식 텍스트입니다.")}</p>}
       <div className="sc-ep-nav" role="tablist" aria-label={t("에피소드")}>
         {script.eps.map((e, i) => (
           <button key={i} type="button" role="tab" aria-selected={i === epIdx}
@@ -686,9 +685,9 @@ function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }: {
         {scriptView && hasScript && <ScriptReader script={script} error={scriptErr} entities={entities} opIndex={opIndex} onShowOperator={onShowOperator} />}
         {scriptView && futureNoScript && (
           <div className="sc-future-note">
-            <b>{t("전문은 한국 서버 정식 출시 후에 열려요")}</b>
+            <b>{t("전문은 정식 출시 후에 열려요")}</b>
             <p>{t("이 이벤트는 아직 중국 서버에만 공개된 스토리예요. 공식 한국어 번역이 나오기 전에 원문 전체를 그대로 옮겨 싣는 건 이야기를 만든 분들의 몫을 앞질러 가는 일이라, 전문은 아껴두고 있어요.")}</p>
-            <p>{t("한국 서버에 정식 출시되면 공식 번역 전문을 바로 볼 수 있도록 준비해 두었어요. 그때까지는 줄거리를 꼼꼼히 담은 AI 요약으로 먼저 만나 보세요.")}</p>
+            <p>{t("정식 출시되면 공식 번역 전문을 바로 볼 수 있도록 준비해 두었어요. 그때까지는 줄거리를 꼼꼼히 담은 AI 요약으로 먼저 만나 보세요.")}</p>
           </div>
         )}
         <div className="story-detail-grid" hidden={scriptView || !hasSummary}>
@@ -1175,7 +1174,9 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
 
   const pushedDetail = useRef(false);
   // 해시 동기화(복붙·공유·뒤로가기): 상세 #story-<id> · 연대기 #chronicle · 테마별 #theme · 종류별 #kind
-  useEffect(() => {
+  // useLayoutEffect로 첫 페인트 전에 상세를 반영해, #story-<id> 새로고침 시 목록이 잠깐 보였다
+  // 상세로 들어오는 플래시를 없앤다 (pre-paint 스크립트가 목록을 숨겨두고, 여기서 상세로 전환).
+  useLayoutEffect(() => {
     const apply = () => {
       const h = decodeURIComponent(window.location.hash);
       const detail = eventFromHash();
@@ -1186,6 +1187,7 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
       else if (h === "#kind" || h === "#story" || h === "") { setView("digest"); setGroup("kind"); }
     };
     apply();
+    document.documentElement.removeAttribute("data-story-detail");  // 목록 숨김 플래그 해제(상세 반영 후)
     window.addEventListener("hashchange", apply);
     window.addEventListener("popstate", apply);
     return () => { window.removeEventListener("hashchange", apply); window.removeEventListener("popstate", apply); };
@@ -1231,10 +1233,10 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
       <div className="story-head">
         <span className="section-no">AI STORY DIGEST</span>
         <h2>{t("스토리")}</h2>
-        <p>{t("한국 서버에 풀린 사이드 스토리 {count}개의 아카이브입니다. AI가 스토리 스크립트 전문을 정독하고 컷씬과 함께 10분 분량으로 요약합니다. 현재 {done}개 수록 — 계속 추가됩니다.", { count: data.events.filter((event) => !event.unreleased).length, done: summarized })}</p>
+        <p>{t("출시된 사이드 스토리 {count}개의 아카이브입니다. AI가 스토리 스크립트 전문을 정독하고 컷씬과 함께 10분 분량으로 요약합니다. 현재 {done}개 수록 — 계속 추가됩니다.", { count: data.events.filter((event) => !event.unreleased).length, done: summarized })}</p>
         <p className="story-source">{t("요약에는 결말 포함 스포일러가 있습니다. 이벤트 제목·썸네일 출처: 게임 데이터 · {date} 기준.", { date: data.updated })}</p>
         {includeFuture && data.events.some((event) => event.unreleased) && (
-          <p className="story-source">{t("미실장(중국 서버 선행) 이벤트의 제목은 비공식 AI 번역으로, 한국 서버 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>
+          <p className="story-source">{t("미실장(중국 서버 선행) 이벤트의 제목은 비공식 AI 번역으로, 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>
         )}
       </div>
 

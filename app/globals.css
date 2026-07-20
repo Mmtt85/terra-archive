@@ -89,6 +89,9 @@ html[lang="ja"] body {
     "Noto Sans JP",
     sans-serif;
 }
+/* 스토리 상세 딥링크(#story-<id>) 새로고침 플래시 방지 — pre-paint 스크립트(layout.tsx)가
+   data-story-detail을 세팅해 하이드레이션 전 목록을 숨기고, story.tsx가 상세 반영 후 플래그를 뗀다. */
+html[data-story-detail] .story:not(.story-detail) { display: none; }
 main {
   height: 100dvh;
   overflow: hidden;

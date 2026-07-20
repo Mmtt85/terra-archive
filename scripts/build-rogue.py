@@ -19,6 +19,8 @@ import json, os, re, sys, urllib.request
 from concurrent.futures import ThreadPoolExecutor
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# 적 이름 교정 — 클뜯 표기가 통칭과 다른 보스 등 (사용자 확정). 재생성해도 유지된다.
+ENEMY_NAME_FIX = {"캔모씨": "캔낫"}
 GAMEDATA = "https://raw.githubusercontent.com/ArknightsAssets/ArknightsGamedata/master"
 ASSETS = "https://raw.githubusercontent.com/ArknightsAssets/ArknightsAssets2/cn/assets/dyn"
 CACHE = os.path.join(REPO, ".gamedata", "rogue")
@@ -654,6 +656,7 @@ def build_topic(tid="rogue_1", loc=None):
         # enemy_database는 KR 캐시 공유 — 로케일 빌드에선 핸드북(현지어) 이름을 우선한다
         name = (hb.get("name") or mv(pick.get("name")) or mv(base.get("name")) or key) if loc \
             else (mv(pick.get("name")) or mv(base.get("name")) or hb.get("name") or key)
+        name = ENEMY_NAME_FIX.get(name, name)  # 적 이름 교정 (캔모씨→캔낫 등, 사용자 확정)
         enemies[key] = {
             "name": name,
             "rank": hb.get("enemyLevel"),  # NORMAL/ELITE/BOSS
