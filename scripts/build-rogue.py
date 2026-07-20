@@ -193,7 +193,8 @@ def extract_encounters(choice_scenes, choices, tree_overrides=None, items=None):
         bare = lambda s: re.sub(r"""[\s'"‘’“”「」『』()（）《》]""", "", s or "")
         if not nm or bare(nm) in bare(desc):
             return desc
-        return f"{desc} ({nm})" if desc and desc.strip() else nm
+        # 「소장품명」으로 감싸 프론트가 소장품 상세 모달로 링크(사용자 요청 2026-07-20).
+        return f"{desc} 「{nm}」" if desc and desc.strip() else f"「{nm}」"
 
     from collections import defaultdict
     scene_ch = defaultdict(list)

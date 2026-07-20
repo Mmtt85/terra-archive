@@ -6471,6 +6471,9 @@ html.dark.rg-theme.rg6 .site-header { background: #0a1413e6; border-bottom-color
 .rg-relic header { align-items: center }
 .rg-cond-node { border: 0; background: 0 0; padding: 0; font: inherit; font-weight: 800; color: var(--rggold); cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px }
 .rg-cond-node:hover { color: #ffd98a }
+/* 조우 선택지 보상 소장품 링크 — 상세 모달로 연다 */
+.rg-choice-relic { border: 0; background: 0 0; padding: 0; font: inherit; font-weight: 700; color: #d8b8f0; cursor: pointer; text-decoration: underline dotted; text-underline-offset: 2px }
+.rg-choice-relic:hover { color: #ecd6ff }
 .rg-modal { background: var(--rgmodal); border: 1px solid var(--rgmodalline); color: var(--rgink); max-width: 980px; width: 100%; max-height: 84vh; overflow-y: auto; padding: 20px 22px; box-shadow: 0 8px 48px #000c }
 .rg-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 10px }
 .rg-modal-head > div { display: flex; align-items: center; gap: 9px; flex-wrap: wrap }

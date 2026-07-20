@@ -57,27 +57,29 @@ function Nm({ name, cn }: { name: string; cn?: string }) {
 
 // 우연한 만남 선택지 노드 — 계단식 트리로 렌더. 선택 → (결과 서사) → 이어지는 하위 선택지.
 // cn 병기 룰: 중국어(rogue_6)가 대표, 한국어 번역이 뒤 (Nm과 동일).
-function ChoiceNode({ c }: { c: EncChoice }) {
+function ChoiceNode({ c, link }: { c: EncChoice; link?: (t: string | null) => React.ReactNode }) {
+  // link: 보상 텍스트의 「소장품명」을 소장품 상세로 여는 버튼으로 바꾼다 (없으면 그대로 출력)
+  const L = link ?? ((t: string | null) => t);
   return (
     <li className="rg-choice">
       <div className="rg-choice-head">
         {c.cn
           ? <><strong lang="zh">{c.cn}</strong><span className="rg-choice-kr">{c.title}</span></>
           : <strong>{c.title}</strong>}
-        {c.desc && <span className="rg-choice-desc">{c.desc}</span>}
+        {c.desc && <span className="rg-choice-desc">{L(c.desc)}</span>}
       </div>
       {/* 라운드마다 반복되는 선택지의 서로 다른 결과(춤 -1/-2/-3 HP·받기 보상 12종)를 자식으로 */}
       {c.variants && c.variants.length > 0 && (
         <ul className="rg-choice-variants">
-          {c.variants.map((v, i) => <li key={i}>{v}</li>)}
+          {c.variants.map((v, i) => <li key={i}>{L(v)}</li>)}
         </ul>
       )}
       {c.next && (c.next.desc || c.next.choices.length > 0) && (
         <div className="rg-choice-next">
-          {c.next.desc && <p className="rg-choice-result">{c.next.desc}</p>}
+          {c.next.desc && <p className="rg-choice-result">{L(c.next.desc)}</p>}
           {c.next.choices.length > 0 && (
             <ul className="rg-enc-choices nested">
-              {c.next.choices.map((cc, i) => <ChoiceNode key={i} c={cc} />)}
+              {c.next.choices.map((cc, i) => <ChoiceNode key={i} c={cc} link={link} />)}
             </ul>
           )}
         </div>
@@ -388,7 +390,7 @@ function EnemyModal({ ekey, grade, ctx, onClose, onOpenStage, appear }: {
 }
 
 // ── 조우 상세 모달 — 엔딩 조건 등에서 조우를 참조할 때 연다 ──────────────────
-function EncounterModal({ enc, onClose }: { enc: Encounter; onClose: () => void }) {
+function EncounterModal({ enc, onClose, link }: { enc: Encounter; onClose: () => void; link?: (t: string | null) => React.ReactNode }) {
   const { t } = useI18n();
   useEffect(() => {
     const onKey = (ev: KeyboardEvent) => { if (ev.key === "Escape") onClose(); };
@@ -416,7 +418,7 @@ function EncounterModal({ enc, onClose }: { enc: Encounter; onClose: () => void 
             {/* 계단식 선택지 트리 — 선택 아래에 결과 서사·하위 선택지를 중첩.
                 rogue_6은 게임 버튼이 중국어라 원문을 대표로 병기 (사용자 확정 2026-07-19). */}
             <ul className="rg-enc-choices">
-              {enc.choices.map((c, i) => <ChoiceNode key={i} c={c} />)}
+              {enc.choices.map((c, i) => <ChoiceNode key={i} c={c} link={link} />)}
             </ul>
           </div>
         </div>
@@ -782,6 +784,20 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
       const en = enemyByName.get(part);
       if (en) return <button key={i} type="button" className="rg-cond-node" onClick={() => setEnemyOpen({ key: en, ctx: dexCtx(en) })}>「{part}」</button>;
       return `「${part}」`;
+    });
+  };
+  // 조우 선택지 보상의 「소장품명」을 소장품 상세 모달로 여는 링크로 (사용자 요청 2026-07-20).
+  // 소장품이 아닌 「」 텍스트는 그대로 둔다.
+  const linkRelic = (text: string | null): React.ReactNode => {
+    if (!text) return text;
+    const parts = text.split(/「([^」]+)」/g);
+    if (parts.length === 1) return text;
+    return parts.map((part, i) => {
+      if (i % 2 === 0) return part;
+      const rl = relicByName.get(part);
+      return rl
+        ? <button key={i} type="button" className="rg-choice-relic" onClick={() => setRelicOpen(rl)}>{part}</button>
+        : `「${part}」`;
     });
   };
 
@@ -1434,7 +1450,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
           appear={enemyStages.get(enemyOpen.key) ?? []}
           onOpenStage={(s) => { setEnemyOpen(null); setStageOpen(pairOf(s)); }} />
       )}
-      {encOpen && <EncounterModal enc={encOpen} onClose={() => setEncOpen(null)} />}
+      {encOpen && <EncounterModal enc={encOpen} onClose={() => setEncOpen(null)} link={linkRelic} />}
       {relicOpen && <RelicModal relic={relicOpen} onClose={() => setRelicOpen(null)} />}
       </>)}
     </section>
