@@ -294,7 +294,9 @@ function applyCapConv(conv: CapConv, capOp: number, capTotal: number): number {
   switch (conv.t) {
     case "lin": return capOp * conv.rate;
     case "bundle": { const e = Math.floor(capOp / conv.per) * conv.rate; return conv.max != null ? Math.min(e, conv.max) : e; }
-    case "tier": return Math.min(capOp, conv.at) * conv.lo + Math.max(capOp - conv.at, 0) * conv.hi;
+    // tier는 문턱식: at 이하면 전량 lo/칸, 초과면 **전량** hi/칸 (한계식 아님 — 실측 확정 2026-07-20).
+    // capConvOf가 오퍼별 개별 용량으로 호출한다 (방 합산 아님).
+    case "tier": return capOp <= conv.at ? capOp * conv.lo : capOp * conv.hi;
     case "diff": return capTotal * conv.rate;
   }
 }
@@ -306,7 +308,19 @@ function capConvOf(parts: OpBreakdown[], room: string, ambient?: AmbientAura[]):
   const capOp = Math.max(0, parts.reduce((sum, p) => sum + p.cap, 0) + ambientCapFor(room, ambient));
   const capTotal = (C.CAP_BASE?.[room] ?? 0) + capOp;
   let eff = 0;
-  for (const p of parts) for (const conv of p.capConv) eff += applyCapConv(conv, capOp, capTotal);
+  for (const p of parts) for (const conv of p.capConv) {
+    if (conv.t === "tier") {
+      // 버블 '큰 게 좋아' — 실측 역산으로 확정 (사용자 제보 2026-07-20, 베나+벌컨+버블 = +93):
+      // **오퍼별 개별 용량**에 **문턱식**으로 적용한다 — 그 오퍼의 상승 용량이 at(16) 이하면
+      // 전량 lo(1%)/칸, 초과하면 **전량** hi(3%)/칸 (한계식 아님).
+      // 베나 17→51, 벌컨 19→57, 버블 10→10 = 118 (−25 페널티 = 93 ✓).
+      // 방 합산 한계식(46→106→81)·오퍼별 한계식(54→29)은 실측과 불일치.
+      // 제어센터 앰비언트 상한은 '오퍼가 자신이 상승시킨' 용량이 아니므로 제외.
+      for (const q of parts) { const c = Math.max(0, q.cap); eff += applyCapConv(conv, c, c); }
+    } else {
+      eff += applyCapConv(conv, capOp, capTotal);
+    }
+  }
   return eff;
 }
 
