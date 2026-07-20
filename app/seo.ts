@@ -115,6 +115,8 @@ export function pageMetadata(locale: SeoLocale, tab: SeoTab = "portal"): Metadat
   const title = tabMeta?.title ?? meta.title;
   const description = tabMeta?.description ?? meta.description;
   const url = `${SITE_URL}${pathFor(locale, tab)}`;
+  // 탭별 전용 OG 이미지 (scripts/build-og.py 생성) — '모든 페이지 동일' 문제 해결.
+  const ogImage = `/og/${tab}.jpg`;
   return {
     title,
     description,
@@ -129,9 +131,9 @@ export function pageMetadata(locale: SeoLocale, tab: SeoTab = "portal"): Metadat
       siteName: meta.siteName,
       locale: meta.ogLocale,
       alternateLocale: Object.values(META).filter((m) => m !== meta).map((m) => m.ogLocale),
-      images: [{ url: "/og.jpg", width: 1200, height: 630, alt: meta.siteName }],
+      images: [{ url: ogImage, width: 1200, height: 630, alt: title }],
     },
-    twitter: { card: "summary_large_image", title, description, images: ["/og.jpg"] },
+    twitter: { card: "summary_large_image", title, description, images: [ogImage] },
   };
 }
 
