@@ -20,7 +20,9 @@ const curYM = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(
 // start "YYYY-MM" (또는 "YYYY-MM-DD") ≤ 현재월 이고, 요약이 없고, 사이드/이벤트 id인 것
 const started = (e) => (e.start || "").slice(0, 7) <= curYM;
 const isEventId = (id) => !/^(rogue_|rogue\d|main_|story_)/.test(id); // rogue/메인 제외
-const pending = events.filter((e) => started(e) && isEventId(e.id) && !summaries[e.id]);
+// 미출시(CN 미래시) 이벤트는 자동 요약에서 제외 — KR 스크립트가 없어(콜라보 등) 헤드리스
+// 집필이 CN 원문에 의존하게 되므로 위험. KR 출시되면 unreleased가 풀려 자동 대상이 된다.
+const pending = events.filter((e) => started(e) && isEventId(e.id) && !summaries[e.id] && !e.unreleased);
 
 const tasks = pending.map((e) => ({ id: e.id, name: e.name?.ko || e.id, episodes: e.episodes, start: e.start }));
 writeFileSync(".ci/content-tasks.json", JSON.stringify(tasks, null, 2));
