@@ -663,20 +663,8 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
     applyTopic(id);
   };
 
-  // 해시 딥링크: #rg-<view>
-  useEffect(() => {
-    const fromHash = () => {
-      const m = window.location.hash.match(/^#rg-(\w+)/);
-      if (m && viewsFor().some((v) => v.id === m[1])) setView(m[1] as View);
-    };
-    fromHash();
-    window.addEventListener("hashchange", fromHash);
-    return () => window.removeEventListener("hashchange", fromHash);
-  }, []);
-  const goView = (v: View) => {
-    setView(v);
-    history.pushState(null, "", `#rg-${v}`);
-  };
+  // 뷰 전환 — URL 해시 동기화는 아래 딥링크 effect가 담당 (뷰+열린 모달을 함께 표현)
+  const goView = (v: View) => setView(v);
 
   // 층별 전투 노드 — 일반/긴급이 같은 맵을 공유하므로 페어(StagePair)로 묶는다.
   // rogue_6의 조우 전투(t)도 긴급 페어(e_t)가 있다.
@@ -771,6 +759,65 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   const encByTitle = useMemo(() => new Map(data.encounters.map((e) => [e.title, e])), [active]);
   const relicByName = useMemo(() => new Map(data.relics.map((r) => [r.name, r])), [active]);
   const enemyByName = useMemo(() => new Map(Object.entries(data.enemies).map(([k, e]) => [e.name, k])), [active]);
+
+  // ─── 딥링크: URL 해시로 뷰 + 열린 모달(노드·적 도감·조우·소장품·층)을 표현 ───
+  // 형식 #rg-<view> 또는 #rg-<view>~<type>~<id> (type=zone|stage|enemy|enc|relic).
+  // 복붙 URL로 바로 그 모달이 열린다. (사용자 요청 2026-07-20)
+  const stageById = useMemo(() => new Map(data.stages.map((s) => [s.id, s])), [active]); // eslint-disable-line react-hooks/exhaustive-deps
+  const relicById = useMemo(() => new Map(data.relics.map((r) => [r.id, r])), [active]); // eslint-disable-line react-hooks/exhaustive-deps
+  const encByScene = useMemo(() => new Map(data.encounters.map((e) => [e.scene, e])), [active]); // eslint-disable-line react-hooks/exhaustive-deps
+  const zoneById = useMemo(() => new Map(data.zones.map((z) => [z.id, z])), [active]); // eslint-disable-line react-hooks/exhaustive-deps
+  const curModal = (): { type: string; id: string } | null =>
+    relicOpen ? { type: "relic", id: relicOpen.id }
+      : encOpen ? { type: "enc", id: encOpen.scene }
+        : enemyOpen ? { type: "enemy", id: enemyOpen.key }
+          : stageOpen?.n ? { type: "stage", id: stageOpen.n.id }
+            : zoneOpen ? { type: "zone", id: zoneOpen.id }
+              : null;
+  const hashFor = (v: string, m: { type: string; id: string } | null) =>
+    `#rg-${v}${m ? `~${m.type}~${encodeURIComponent(m.id)}` : ""}`;
+  const applyHash = () => {
+    const mt = window.location.hash.match(/^#rg-([a-z]+)(?:~([a-z]+)~(.+))?$/);
+    if (!mt) return;
+    const [, v, type, rawId] = mt;
+    if (viewsFor().some((x) => x.id === v)) setView(v as View);
+    setZoneOpen(null); setStageOpen(null); setEnemyOpen(null); setEncOpen(null); setRelicOpen(null);
+    if (!type || !rawId) return;
+    const id = decodeURIComponent(rawId);
+    if (type === "relic") { const r = relicById.get(id); if (r) setRelicOpen(r); }
+    else if (type === "enc") { const e = encByScene.get(id); if (e) setEncOpen(e); }
+    else if (type === "enemy") { if (data.enemies[id]) setEnemyOpen({ key: id, ctx: dexCtx(id) }); }
+    else if (type === "stage") { const s = stageById.get(id); if (s) setStageOpen(pairOf(s)); }
+    else if (type === "zone") { const z = zoneById.get(id); if (z) setZoneOpen(z); }
+  };
+  // 최신 applyHash를 ref로 노출 — 리스너가 stale 클로저를 잡지 않게
+  const applyHashRef = useRef(applyHash);
+  applyHashRef.current = applyHash;
+  const inited = useRef(false);
+  // 데이터 로드 후 최초 1회: URL 해시대로 뷰·모달 복원 (복붙 딥링크 진입)
+  useEffect(() => {
+    if (!mounted || !active || inited.current) return;
+    inited.current = true;
+    applyHashRef.current();
+  }, [mounted, active]);
+  // 같은 페이지에서 해시가 바뀌면(뒤로/앞으로·수동 편집) 재적용
+  useEffect(() => {
+    if (!mounted) return;
+    const onHash = () => { if (inited.current) applyHashRef.current(); };
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, [mounted]);
+  // 상태 → URL 동기화 (모달 새로 열림=pushState라 뒤로가기로 닫힘, 그 외=replaceState)
+  const prevHash = useRef("");
+  useEffect(() => {
+    if (!mounted || !inited.current) return;
+    const want = hashFor(view, curModal());
+    if (want === (window.location.hash || "#rg-map")) { prevHash.current = want; return; }
+    const opening = curModal() !== null && !prevHash.current.includes("~");
+    history[opening ? "pushState" : "replaceState"](null, "", want);
+    prevHash.current = want;
+  }, [view, zoneOpen, stageOpen, enemyOpen, encOpen, relicOpen, mounted]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const renderCond = (text: string) => {
     const parts = text.split(/「([^」]+)」/g);
     return parts.map((part, i) => {
