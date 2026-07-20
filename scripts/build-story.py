@@ -473,8 +473,12 @@ for act in minis:
 # 한자 독음(懷黍離→회서리, 將進酒→장진주)을 따른다.
 CN_PROVISIONAL_NAMES = {
     "act49side": {"ko": "사세행", "en": "A Farewell to the Passing Year", "ja": "辞歳行"},  # 辞岁行
+    "act50side": {"ko": "포영창정", "en": "Mirage Phalanx", "ja": "泡影蒼霆"},              # 泡影苍霆 (몬스터 헌터 콜라보)
     "act51side": {"ko": "사람들, 우리", "en": "People, Us", "ja": "人々、私たち"},          # 人们，我们
 }
+# 콜라보 등 배너 에셋이 클뜯 레포에 없는(라이선스상 제외) 이벤트용 공용 플레이스홀더 썸네일.
+# 없으면 스킵하던 걸(과거 act50side 泡影苍霆 누락 원인) 폐지하고, 목록엔 반드시 넣는다.
+CN_PLACEHOLDER_THUMB = "/story/_placeholder.webp"
 print("fetching story_review_table (cn) …", file=sys.stderr)
 cn = fetch(f"{GAMEDATA}/cn/gamedata/excel/story_review_table.json")
 cn_dir = os.path.join(thumb_dir, "cn")
@@ -488,14 +492,17 @@ for act in cn_acts:
         if info["storyCode"] and info["storyCode"] not in codes: codes.append(info["storyCode"])
     pic = (act.get("storyEntryPicId") or f"storyEntryPic_{eid}").lower()
     dest = os.path.join(cn_dir, f"{eid}.webp")
+    thumb_path = f"/story/cn/{eid}.webp"
     if not os.path.exists(dest):
         try:
             png = fetch(f"{ASSETS}/arts/ui/storyreview/hubs/activity/{pic}.png", binary=True)
             to_jpeg(png, dest)
             print("thumb(cn·미실장):", eid, file=sys.stderr)
-        except Exception as err:  # noqa: BLE001 — 썸네일 없으면 이벤트도 생략 (404 이미지 방지)
-            print("skip cn event (no thumb):", eid, err, file=sys.stderr)
-            continue
+        except Exception as err:  # noqa: BLE001
+            # 콜라보 등 배너가 클뜯 레포에 없는(라이선스 제외) 이벤트 — 스킵하지 말고
+            # 플레이스홀더로 목록에 넣는다. 무인 리포트가 이 WARNING을 잡아 알려준다.
+            print(f"WARNING: cn event 썸네일 없음 — 플레이스홀더 사용: {eid} ({act['name']}) {err}", file=sys.stderr)
+            thumb_path = CN_PLACEHOLDER_THUMB
     trans = CN_PROVISIONAL_NAMES.get(eid)
     if not trans:
         print("untranslated cn event (원문 노출):", eid, act["name"], file=sys.stderr)
@@ -504,7 +511,7 @@ for act in cn_acts:
         "name": trans or {"ko": act["name"]},  # 임시 번역 없으면 중국어 원문
         "start": time.strftime("%Y-%m", time.gmtime(act["startTime"])),  # CN 출시월
         "episodes": len(codes),
-        "thumb": f"/story/cn/{eid}.webp",
+        "thumb": thumb_path,
         "unreleased": True,
     })
 
