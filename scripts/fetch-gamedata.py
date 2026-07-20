@@ -27,10 +27,10 @@ TABLES = {
            "gamedata_const", "item_table"],
     "en": ["character_table", "skill_table", "uniequip_table", "battle_equip_table",
            "building_data", "handbook_team_table", "handbook_info_table",
-           "item_table", "gacha_table"],
+           "item_table", "gacha_table", "stage_table"],
     "jp": ["character_table", "skill_table", "uniequip_table", "battle_equip_table",
            "building_data", "handbook_team_table", "handbook_info_table",
-           "item_table", "gacha_table"],
+           "item_table", "gacha_table", "stage_table"],
 }
 
 target = sys.argv[1] if len(sys.argv) > 1 else ".gamedata"
