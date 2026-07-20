@@ -668,6 +668,7 @@ button {
     order: 3;
     margin: 0;
     min-width: 0;
+    flex: 1 1 auto; /* 1줄 오른쪽 남는 공간을 이벤트 칩이 채우도록 (사용자 요청 2026-07-20) */
   }
   .site-header::after {
     content: "";
@@ -680,25 +681,34 @@ button {
   .site-header .theme-toggle { order: 7; }
   .site-header .lang-wrap { order: 8; }
   .site-header .about-icon { order: 9; }
-  /* 미니 배지: 배너 + D-day + 캐럿만 (이름·라벨·기간은 드롭다운에서) */
+  /* 배너 + 이벤트 설명(라벨·이름·기간)을 PC판처럼 함께 표시 —
+     1줄 오른쪽 남는 공간을 채운다 (사용자 요청 2026-07-20). */
   .event-trigger {
     padding: 4px 8px;
     font-size: 12.5px;
-    gap: 6px;
+    gap: 8px;
     max-width: 100%;
+    width: 100%;
+  }
+  /* 데스크톱 210px 고정폭 대신 남는 공간을 유연하게 채우고, 이름은 말줄임 */
+  .event-trigger-main {
+    width: auto;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .event-trigger.has-banner .event-trigger-main {
+    display: flex;
   }
   .event-trigger .event-kicker,
   .event-trigger .event-dates,
   .event-trigger.has-banner .event-name {
-    display: none;
+    display: block;
   }
-  /* 배너(썸네일) 이벤트: 이름·날짜가 다 숨으므로 210px 고정폭 컨테이너째 접는다.
-     안 접으면 빈 210px 때문에 이벤트 칩이 1줄에서 밀려 다음 줄로 떨어진다 (2026-07-20). */
-  .event-trigger.has-banner .event-trigger-main {
-    display: none;
-  }
+  .event-trigger .event-kicker { font-size: 9px; }
+  .event-trigger .event-dates { font-size: 10.5px; }
   .event-trigger .event-name {
-    max-width: 96px;
+    max-width: none;
+    font-size: 13px;
   }
   .event-trigger.has-banner {
     padding: 2px 8px 2px 2px;
