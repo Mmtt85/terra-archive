@@ -683,109 +683,109 @@
    "ref": "act19mini",
    "kind": "event",
    "terraYear": null,
-   "arc": null
+   "arc": "su"
   },
   {
    "ref": "act18mini",
    "kind": "event",
    "terraYear": null,
-   "arc": null
+   "arc": "rl"
   },
   {
    "ref": "act17mini",
    "kind": "event",
    "terraYear": null,
-   "arc": null
+   "arc": "rl"
   },
   {
    "ref": "act16mini",
    "kind": "event",
    "terraYear": null,
-   "arc": null
+   "arc": "ts"
   },
   {
    "ref": "act15mini",
    "kind": "event",
    "terraYear": null,
-   "arc": null
+   "arc": "ts"
   },
   {
    "ref": "act14mini",
    "kind": "event",
    "terraYear": null,
-   "arc": null
+   "arc": "su"
   },
   {
    "ref": "act12mini",
    "kind": "event",
    "terraYear": null,
-   "arc": null
+   "arc": "ts"
   },
   {
    "ref": "act11mini",
    "kind": "event",
    "terraYear": null,
-   "arc": null
+   "arc": "kj"
   },
   {
    "ref": "act10mini",
    "kind": "event",
    "terraYear": null,
-   "arc": null
+   "arc": "ts"
   },
   {
    "ref": "act9mini",
    "kind": "event",
    "terraYear": null,
-   "arc": null
+   "arc": "ts"
   },
   {
    "ref": "act8mini",
    "kind": "event",
    "terraYear": null,
-   "arc": null
+   "arc": "rl"
   },
   {
    "ref": "act7mini",
    "kind": "event",
    "terraYear": null,
-   "arc": null
+   "arc": "ts"
   },
   {
    "ref": "act15d5",
    "kind": "event",
    "terraYear": null,
-   "arc": null
+   "arc": "ts"
   },
   {
    "ref": "act13d0",
    "kind": "event",
    "terraYear": null,
-   "arc": null
+   "arc": "ts"
   },
   {
    "ref": "act10d5",
    "kind": "event",
    "terraYear": null,
-   "arc": null
+   "arc": "ur"
   },
   {
    "ref": "act7d5",
    "kind": "event",
    "terraYear": null,
-   "arc": null
+   "arc": "ts"
   },
   {
    "ref": "act6d5",
    "kind": "event",
    "terraYear": null,
-   "arc": null
+   "arc": "ts"
   },
   {
    "ref": "act4d0",
    "kind": "event",
    "terraYear": null,
-   "arc": null
+   "arc": "rl"
   }
  ]
 }
