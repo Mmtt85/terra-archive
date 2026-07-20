@@ -419,21 +419,16 @@ for act in minis:
         },
         "start": time.strftime("%Y-%m", time.gmtime(act["startTime"])),
         "episodes": len(codes) or len(act["infoUnlockDatas"]),
-        "thumb": f"/story/{eid}.webp",
     }
-    # 썸네일: KR판(--kr-thumbs)이 우선. 없으면 글로벌판 미니/액티비티 허브를 시도하고,
-    # 그래도 없으면 파일 부재 → UI가 종류 라벨 플레이스홀더로 대체(카드는 안 깨진다).
-    pic = (act.get("storyEntryPicId") or f"storyEntryPic_{eid}").lower()
-    dest = os.path.join(thumb_dir, f"{eid}.webp")
-    if not os.path.exists(dest):
-        for hub in ("mini", "activity"):
-            try:
-                png = fetch(f"{ASSETS_EN}/arts/ui/storyreview/hubs/{hub}/{pic}.png", binary=True)
-                to_jpeg(png, dest)
-                print(f"thumb(mini {hub}):", eid, file=sys.stderr)
-                break
-            except Exception:  # noqa: BLE001
-                continue
+    # 썸네일: 미니는 리뷰 허브에 엔트리 이미지가 없다(전부 404). 대신 build-story-scripts.py가
+    # 이미 받아둔 첫 컷씬 CG를 카드 썸네일로 쓰고(세로 크롭), 컷씬조차 없으면 thumb를 생략해
+    # UI가 종류 라벨 플레이스홀더를 띄우게 한다(존재하지 않는 파일을 가리켜 깨진 이미지가 뜨던 버그 수정).
+    spath = os.path.join(REPO, "public", "story", "script", f"{eid}.json")
+    if os.path.exists(spath):
+        sc = json.load(open(spath, encoding="utf-8"))
+        first_cut = next((ln["img"] for ep in sc.get("eps", []) for ln in ep.get("lines", []) if ln.get("img")), None)
+        if first_cut and os.path.exists(os.path.join(REPO, "public", "story", "cut", f"{first_cut}.webp")):
+            entry["thumb"] = f"/story/cut/{first_cut}.webp"
     events.append(entry)
 
 # ── 중섭 선행(미실장) 이벤트 — CN에만 있는 ACTIVITY를 unreleased 플래그로 추가 ──
