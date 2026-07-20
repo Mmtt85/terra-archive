@@ -39,7 +39,7 @@ Claude 구독 쿼터를 소모한다 → **추가 요금 0**.
 
 | 시크릿 | 용도 | 발급 방법 |
 |---|---|---|
-| `CLOUDFLARE_API_TOKEN` | Pages 배포 | Cloudflare 대시보드 → My Profile → API Tokens → Create Token → "Edit Cloudflare Pages" 템플릿 |
+| `CLOUDFLARE_API_TOKEN` | Pages 배포 | My Profile → API Tokens → **Create Custom Token**(Pages 전용 템플릿은 없음) → Permissions에 `Account · Cloudflare Pages · Edit` 추가 → Account Resources는 본인 계정 Include → Create |
 | `CLOUDFLARE_ACCOUNT_ID` | Pages 배포 | Cloudflare 대시보드 우측 사이드바 Account ID |
 | `CLAUDE_CODE_OAUTH_TOKEN` | 헤드리스 Claude(무과금) | 로컬에서 `claude setup-token` 실행 → 출력 토큰 |
 | `MAIL_USERNAME` | 이메일 발신 | Gmail 주소 |
