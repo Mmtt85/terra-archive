@@ -904,7 +904,7 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
 
 // 요약 뷰 — 이벤트·메인스토리·로그라이크 카드 그리드 + 검색 + 종류별/테마별 그룹핑(기본 종류별).
 // 각 그룹은 최신순(이벤트=출시월, 메인=에피소드 번호). 요약이 있는 이벤트만 열린다.
-function DigestView({ onOpen, includeFuture, group, onGroup }: { onOpen: (event: StoryEvent) => void; includeFuture?: boolean; group: "theme" | "kind"; onGroup: (g: "theme" | "kind") => void }) {
+function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEvent) => void; includeFuture?: boolean; group: "theme" | "kind" }) {
   const { locale, t } = useI18n();
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false); // 검색창 클릭 시 전체 이벤트 목록 드롭다운
@@ -1044,10 +1044,6 @@ function DigestView({ onOpen, includeFuture, group, onGroup }: { onOpen: (event:
             </ul>
           )}
         </div>
-        <div className="chron-tabs digest-tabs">
-          <button type="button" className={group === "kind" ? "on" : ""} onClick={() => onGroup("kind")}>{t("종류별")}</button>
-          <button type="button" className={group === "theme" ? "on" : ""} onClick={() => onGroup("theme")}>{t("테마별")}</button>
-        </div>
       </div>
 
       {filtered.length === 0 ? (
@@ -1154,14 +1150,15 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
       </div>
 
       <div className="story-viewtabs" role="tablist">
-        <button type="button" role="tab" aria-selected={view === "digest"} className={view === "digest" ? "on" : ""} onClick={() => goView("digest")}>{t("요약")}</button>
+        <button type="button" role="tab" aria-selected={view === "digest" && group === "kind"} className={view === "digest" && group === "kind" ? "on" : ""} onClick={() => goGroup("kind")}>{t("종류별")}</button>
+        <button type="button" role="tab" aria-selected={view === "digest" && group === "theme"} className={view === "digest" && group === "theme" ? "on" : ""} onClick={() => goGroup("theme")}>{t("테마별")}</button>
         <button type="button" role="tab" aria-selected={view === "chronicle"} className={view === "chronicle" ? "on" : ""} onClick={() => goView("chronicle")}>{t("테라 연대기")}</button>
       </div>
 
       {view === "chronicle" ? (
         <ChronologyView onOpenEvent={openEvent} />
       ) : (
-        <DigestView onOpen={open} includeFuture={includeFuture} group={group} onGroup={goGroup} />
+        <DigestView onOpen={open} includeFuture={includeFuture} group={group} />
       )}
     </section>
   );
