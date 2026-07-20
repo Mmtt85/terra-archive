@@ -1953,7 +1953,8 @@ footer p {
     position: sticky;
   }
   .brand {
-    margin-right: auto;
+    /* margin-right는 위 헤더 배치 블록(줄 구성)에서 결정 — 여기서 auto로 덮어쓰지 않는다.
+       (auto면 로고가 공식방송·이벤트를 오른쪽 끝으로 밀어 1줄 배치가 깨진다 — 2026-07-20) */
     font-size: 14px;
     gap: 8px;
   }
@@ -1964,10 +1965,8 @@ footer p {
   .brand small {
     display: none;   /* 모바일 헤더는 한 줄로 컴팩트하게 */
   }
-  /* 모바일에선 헤더가 줄바꿈되므로 미래시 토글의 오른쪽-밀어내기(auto)를 해제 */
-  .site-header .future-toggle {
-    margin-left: 0;
-  }
+  /* 미래시 토글의 margin-left(=우측 그룹 밀어내기)는 위 배치 블록에서 auto로 정한다 —
+     여기서 0으로 덮어쓰지 않는다 (2026-07-20: 2줄 우측 정렬이 풀리던 버그). */
   /* 모바일에선 햄버거를 좀 더 컴팩트하게 (드롭다운 동작은 base 공통).
      탭 라벨이 길어도("인프라 자동편성기") 한 줄이 유지되게 축소·말줄임 허용 */
   .site-header .nav-group {
