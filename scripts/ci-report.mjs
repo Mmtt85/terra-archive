@@ -159,11 +159,18 @@ const manualBlock = manual.length
     `${manual.join("\n\n")}\n`
   : "";
 
+// ── 초기 정상가동 확인용 하트비트 (2026-07-31 UTC까지만) ──────────────
+// 사용자 요청: 도입 초기엔 변경이 없어도 "돌긴 돈다"는 확인 메일을 보낸다. 8/1부터 자동 종료 →
+// 그 뒤론 변경·경고·손볼거리 있을 때만 발송(평소 무소식). 창을 늘리려면 이 날짜만 고치면 됨.
+const HEARTBEAT_UNTIL = "2026-07-31";
+const todayUTC = new Date().toISOString().slice(0, 10);
+const heartbeat = todayUTC <= HEARTBEAT_UNTIL;
+
 // ── 리포트 조립 ──────────────────────────────────────────────────────
 const laneLabel = LANE === "cn" ? "CN(미래시)" : "KR";
 let subject;
 if (!meaningful) {
-  subject = `[테라아카이브 ${laneLabel}] 변경 없음`;
+  subject = `[테라아카이브 ${laneLabel}] 변경 없음${heartbeat ? " · 정상 가동 확인" : ""}`;
 } else {
   const bits = [];
   const opAdd = lines.find((l) => l.startsWith("### 신규 오퍼레이터"));
@@ -174,7 +181,9 @@ if (!meaningful) {
 }
 
 const report = `# 테라 아카이브 데이터 리프레시 — ${laneLabel}\n\n` +
-  (meaningful ? "**변경 사항이 있어 커밋·배포합니다.**\n\n" : "변경 사항 없음 (또는 날짜만 갱신) — 배포하지 않습니다.\n\n") +
+  (meaningful ? "**변경 사항이 있어 커밋·배포합니다.**\n\n"
+    : (heartbeat ? "변경 사항 없음 — 파이프라인은 정상 가동 중입니다 (초기 확인 메일, 2026-07-31까지). 8월부터는 변경/경고가 있을 때만 발송됩니다.\n\n"
+      : "변경 사항 없음 (또는 날짜만 갱신) — 배포하지 않습니다.\n\n")) +
   (lines.length ? lines.join("\n\n") + "\n" : "") +
   manualBlock +
   warnBlock + "\n";
@@ -182,10 +191,10 @@ const report = `# 테라 아카이브 데이터 리프레시 — ${laneLabel}\n\
 writeFileSync(".ci/report.md", report);
 writeFileSync(".ci/subject.txt", subject);
 
-// 경고가 있으면 데이터 변경이 없어도 알림은 보낸다 (매일 "변경 없음" 도배 방지 겸,
-// 미번역 CN·미매칭 이름 같은 손볼 거리를 놓치지 않기 위해).
+// 경고가 있으면 데이터 변경이 없어도 알림은 보낸다 (미번역 CN·미매칭 이름 등을 놓치지 않기 위해).
+// 하트비트 창(2026-07-31까지)에는 무변경이어도 "정상 가동" 확인 메일을 보낸다.
 const hasWarnings = warnBlock.length > 0;
-const notify = meaningful || hasWarnings;
+const notify = meaningful || hasWarnings || heartbeat;
 
 if (process.env.GITHUB_OUTPUT) {
   appendFileSync(process.env.GITHUB_OUTPUT, `meaningful=${meaningful}\n`);
