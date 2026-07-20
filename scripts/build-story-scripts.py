@@ -364,7 +364,11 @@ def main():
     os.makedirs(OUT_DIR, exist_ok=True)
 
     ids, total_kb, all_failed = [], 0, []
-    targets = [only] if only else sorted(summaries.keys())
+    # 요약이 있는 이벤트 + 미니 이벤트(스토리 컬렉션) 전부 전문 생성 — 미니는 요약이 없어도
+    # 전문부터 공개한다(사용자 확정 2026-07-20). KR 스크립트가 없는 미니는 build_event가 빈
+    # eps를 돌려주므로 자동 스킵된다.
+    mini_ids = {eid for eid, v in review.items() if v.get("actType") == "MINI_STORY"}
+    targets = [only] if only else sorted(set(summaries.keys()) | mini_ids)
     for eid in targets:
         entry = review.get(eid)
         if not entry:  # rogue_N 등 리뷰 테이블에 없는 합성 이벤트

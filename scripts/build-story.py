@@ -396,6 +396,46 @@ for act in acts:
             entry[key] = f"/story/{os.path.basename(sub_dir)}/{eid}.webp"
     events.append(entry)
 
+# ── 미니 이벤트(스토리 컬렉션) — 전문(스크립트)이 있는 것만 목록에 추가 (사용자 확정 2026-07-20).
+# 요약은 아직 없어도 '전문부터 싹 공개'. build-story-scripts.py 가 먼저 story-script-ids.json 을
+# 채워두면, 여기서 그 안에 든 미니만 카드로 노출한다(요약 뒤따라 집필). KR 스크립트가 없는
+# 구 미니는 제외돼 죽은 카드가 생기지 않는다. mini:true 로 표시해 UI가 구분할 수 있게 둔다.
+sip = os.path.join(REPO, "app", "data", "story-script-ids.json")
+script_ids = set(json.load(open(sip, encoding="utf-8"))) if os.path.exists(sip) else set()
+minis = sorted((v for v in kr.values() if v.get("actType") == "MINI_STORY" and v["id"] in script_ids),
+               key=lambda v: -v["startTime"])
+for act in minis:
+    eid = act["id"]
+    codes = []
+    for info in act["infoUnlockDatas"]:
+        if info["storyCode"] and info["storyCode"] not in codes:
+            codes.append(info["storyCode"])
+    entry = {
+        "id": eid, "mini": True,
+        "name": {
+            "ko": act["name"],
+            "en": (en.get(eid) or {}).get("name") or act["name"],
+            "ja": (jp.get(eid) or {}).get("name") or act["name"],
+        },
+        "start": time.strftime("%Y-%m", time.gmtime(act["startTime"])),
+        "episodes": len(codes) or len(act["infoUnlockDatas"]),
+        "thumb": f"/story/{eid}.webp",
+    }
+    # 썸네일: KR판(--kr-thumbs)이 우선. 없으면 글로벌판 미니/액티비티 허브를 시도하고,
+    # 그래도 없으면 파일 부재 → UI가 종류 라벨 플레이스홀더로 대체(카드는 안 깨진다).
+    pic = (act.get("storyEntryPicId") or f"storyEntryPic_{eid}").lower()
+    dest = os.path.join(thumb_dir, f"{eid}.webp")
+    if not os.path.exists(dest):
+        for hub in ("mini", "activity"):
+            try:
+                png = fetch(f"{ASSETS_EN}/arts/ui/storyreview/hubs/{hub}/{pic}.png", binary=True)
+                to_jpeg(png, dest)
+                print(f"thumb(mini {hub}):", eid, file=sys.stderr)
+                break
+            except Exception:  # noqa: BLE001
+                continue
+    events.append(entry)
+
 # ── 중섭 선행(미실장) 이벤트 — CN에만 있는 ACTIVITY를 unreleased 플래그로 추가 ──
 # 이름은 중국어 원문(한국어 데이터가 아직 없음). 썸네일은 CN판이 유일한 소스라 예외 허용
 # (중국어 부제 금지 규칙은 KR 출시 이벤트의 기본 썸네일에만 적용 — 미실장은 CN판이 원본).

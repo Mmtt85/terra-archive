@@ -1,683 +1,791 @@
 {
-  "note": "테라 연대기 (손큐레이트). terraYear = 이벤트 '당대' 연도(스크립트의 '올해/지금 = N년'만 채택; 'N년 전'·역사 참조 연도는 제외). 예) 아테누스=1100. 채운 건 dateNote에 출처 명시. entries 순서는 출시순(임시). arc(테마)=로어 기반 수작업, 확실한 것 우선. kind: event(ref→stories.json)/main/roguelike. ※ 이 파일은 이제 손으로 편집한다 — 스캐폴드 생성 스크립트로 재생성 금지(연도·테마 날아감).",
-  "updated": "2026-07-14",
-  "arcs": [
-    {
-      "id": "rl",
-      "name": {
-        "ko": "방주",
-        "en": "The Ark",
-        "ja": "方舟"
-      }
-    },
-    {
-      "id": "ur",
-      "name": {
-        "ko": "들불",
-        "en": "Wildfire",
-        "ja": "野火"
-      }
-    },
-    {
-      "id": "la",
-      "name": {
-        "ko": "그 축복받은",
-        "en": "The Blessed",
-        "ja": "祝福されし者"
-      }
-    },
-    {
-      "id": "kj",
-      "name": {
-        "ko": "설산과 은철",
-        "en": "Snowpeak & Silver Iron",
-        "ja": "雪山と銀鉄"
-      }
-    },
-    {
-      "id": "si",
-      "name": {
-        "ko": "일곱 언덕의 새싹",
-        "en": "Sprouts of the Seven Hills",
-        "ja": "七つの丘の芽"
-      }
-    },
-    {
-      "id": "ka",
-      "name": {
-        "ko": "네온 불빛 아래",
-        "en": "Under the Neon Lights",
-        "ja": "ネオンの灯の下で"
-      }
-    },
-    {
-      "id": "su",
-      "name": {
-        "ko": "영원한 오늘",
-        "en": "Eternal Today",
-        "ja": "永遠の今日"
-      }
-    },
-    {
-      "id": "rh",
-      "name": {
-        "ko": "미래를 잡는 사람",
-        "en": "Those Who Seize the Future",
-        "ja": "未来を掴む者"
-      }
-    },
-    {
-      "id": "ae",
-      "name": {
-        "ko": "깊은 바닷속으로",
-        "en": "Into the Deep Sea",
-        "ja": "深海の奥へ"
-      }
-    },
-    {
-      "id": "le",
-      "name": {
-        "ko": "고탑의 그림자",
-        "en": "Shadow of the Tall Tower",
-        "ja": "高塔の影"
-      }
-    },
-    {
-      "id": "ta",
-      "name": {
-        "ko": "다시 불붙은 장작",
-        "en": "Rekindled Embers",
-        "ja": "再び燃える薪"
-      }
-    },
-    {
-      "id": "st",
-      "name": {
-        "ko": "여름의 리듬",
-        "en": "Rhythm of Summer",
-        "ja": "夏のリズム"
-      }
-    },
-    {
-      "id": "ts",
-      "name": {
-        "ko": "테라 기담",
-        "en": "Terra Tales",
-        "ja": "テラ奇譚"
-      }
-    },
-    {
-      "id": "ms",
-      "name": {
-        "ko": "콜라보레이션",
-        "en": "Collaborations",
-        "ja": "コラボレーション"
-      }
-    },
-    {
-      "id": "rogue",
-      "name": {
-        "ko": "통합 전략",
-        "en": "Integrated Strategies",
-        "ja": "統合戦略"
-      }
-    }
-  ],
-  "entries": [
-    {
-      "ref": "1stact",
-      "kind": "event",
-      "terraYear": null,
-      "arc": "ae"
-    },
-    {
-      "ref": "act3d0",
-      "kind": "event",
-      "terraYear": null,
-      "arc": "st"
-    },
-    {
-      "ref": "act5d0",
-      "kind": "event",
-      "terraYear": null,
-      "arc": "ts"
-    },
-    {
-      "ref": "act11d0",
-      "kind": "event",
-      "terraYear": null,
-      "arc": "le"
-    },
-    {
-      "ref": "act9d0",
-      "kind": "event",
-      "terraYear": null,
-      "arc": "rl"
-    },
-    {
-      "ref": "act12d0",
-      "kind": "event",
-      "terraYear": null,
-      "arc": "st"
-    },
-    {
-      "ref": "act13d5",
-      "kind": "event",
-      "terraYear": null,
-      "arc": "ka"
-    },
-    {
-      "ref": "act15d0",
-      "kind": "event",
-      "terraYear": null,
-      "arc": "rh"
-    },
-    {
-      "ref": "act16d5",
-      "kind": "event",
-      "terraYear": null,
-      "arc": "su"
-    },
-    {
-      "ref": "act17d0",
-      "kind": "event",
-      "terraYear": null,
-      "arc": "ms"
-    },
-    {
-      "ref": "act18d0",
-      "kind": "event",
-      "terraYear": null,
-      "arc": "rl"
-    },
-    {
-      "ref": "act18d3",
-      "kind": "event",
-      "terraYear": null,
-      "arc": "ae"
-    },
-    {
-      "ref": "act12side",
-      "kind": "event",
-      "terraYear": null,
-      "arc": "st"
-    },
-    {
-      "ref": "act13side",
-      "kind": "event",
-      "terraYear": null,
-      "arc": "ka"
-    },
-    {
-      "ref": "act14side",
-      "kind": "event",
-      "terraYear": null,
-      "arc": "kj"
-    },
-    {
-      "ref": "act15side",
-      "kind": "event",
-      "terraYear": null,
-      "arc": "su"
-    },
-    {
-      "ref": "act16side",
-      "kind": "event",
-      "terraYear": 1099,
-      "arc": "la",
-      "dateNote": "'지금은 1099년 3월 15일' — act16side"
-    },
-    {
-      "ref": "act17side",
-      "kind": "event",
-      "terraYear": null,
-      "arc": "ae"
-    },
-    {
-      "ref": "act18side",
-      "kind": "event",
-      "terraYear": null,
-      "arc": "le"
-    },
-    {
-      "ref": "act20side",
-      "kind": "event",
-      "terraYear": null,
-      "arc": "st"
-    },
-    {
-      "ref": "act19side",
-      "kind": "event",
-      "terraYear": null,
-      "arc": "rh"
-    },
-    {
-      "ref": "act21side",
-      "kind": "event",
-      "terraYear": null,
-      "arc": "si"
-    },
-    {
-      "ref": "act23side",
-      "kind": "event",
-      "terraYear": null,
-      "arc": "su"
-    },
-    {
-      "ref": "act22side",
-      "kind": "event",
-      "terraYear": 1098,
-      "arc": "ta",
-      "dateNote": "현재 씬 datestamp \"1098년 스카타나 들판\" (회상 \"8년 전 1090년\"과 구분; 1090+8=1098)"
-    },
-    {
-      "ref": "act24side",
-      "kind": "event",
-      "terraYear": null,
-      "arc": "ms"
-    },
-    {
-      "ref": "act25side",
-      "kind": "event",
-      "terraYear": 1099,
-      "arc": "rh",
-      "dateNote": "'1099년 11월 21일' 날짜 스탬프 — act25side"
-    },
-    {
-      "ref": "act26side",
-      "kind": "event",
-      "terraYear": null,
-      "arc": "la"
-    },
-    {
-      "ref": "act27side",
-      "kind": "event",
-      "terraYear": 1099,
-      "arc": "st",
-      "dateNote": "'오늘은 1099년 8월 21일입니다' — act27side"
-    },
-    {
-      "ref": "act28side",
-      "kind": "event",
-      "terraYear": null,
-      "arc": "ts"
-    },
-    {
-      "ref": "act29side",
-      "kind": "event",
-      "terraYear": 1100,
-      "arc": "le",
-      "dateNote": "현재 씬 datestamp \"1100년, 라이타니엔 북부 국경, 슈투름란트\" (페데리코 과거 사건 언급과 구분)"
-    },
-    {
-      "ref": "act30side",
-      "kind": "event",
-      "terraYear": 1100,
-      "arc": "kj",
-      "dateNote": "'1100년 겨울, 쉐라그 페일로쉬' 장면 스탬프 — act30side"
-    },
-    {
-      "ref": "act31side",
-      "kind": "event",
-      "terraYear": null,
-      "arc": "su"
-    },
-    {
-      "ref": "act32side",
-      "kind": "event",
-      "terraYear": null,
-      "arc": "ms"
-    },
-    {
-      "ref": "act33side",
-      "kind": "event",
-      "terraYear": null,
-      "arc": "rl"
-    },
-    {
-      "ref": "act34side",
-      "kind": "event",
-      "terraYear": null,
-      "arc": "ae"
-    },
-    {
-      "ref": "act35side",
-      "kind": "event",
-      "terraYear": null,
-      "arc": "st"
-    },
-    {
-      "ref": "act36side",
-      "kind": "event",
-      "terraYear": null,
-      "arc": "ms"
-    },
-    {
-      "ref": "act38side",
-      "kind": "event",
-      "terraYear": 1100,
-      "arc": "si",
-      "dateNote": "날짜 스탬프 1099년 12월~1100년 11월(당대 최신) — act38side"
-    },
-    {
-      "ref": "act37side",
-      "kind": "event",
-      "terraYear": 1098,
-      "arc": "rl",
-      "dateNote": "'1098년 12월 21일' 날짜 스탬프 — act37side"
-    },
-    {
-      "ref": "act39side",
-      "kind": "event",
-      "terraYear": null,
-      "arc": "ae"
-    },
-    {
-      "ref": "act40side",
-      "kind": "event",
-      "terraYear": null,
-      "arc": "su"
-    },
-    {
-      "ref": "act41side",
-      "kind": "event",
-      "terraYear": null,
-      "arc": "ta"
-    },
-    {
-      "ref": "act42side",
-      "kind": "event",
-      "terraYear": null,
-      "arc": "la"
-    },
-    {
-      "ref": "act43side",
-      "kind": "event",
-      "terraYear": null,
-      "arc": "ts"
-    },
-    {
-      "ref": "act44side",
-      "kind": "event",
-      "terraYear": null,
-      "arc": "st"
-    },
-    {
-      "ref": "act45side",
-      "kind": "event",
-      "terraYear": null,
-      "arc": "ms"
-    },
-    {
-      "ref": "act46side",
-      "kind": "event",
-      "terraYear": 1101,
-      "arc": "kj",
-      "dateNote": "'1101년 12월 7일' 날짜 스탬프(제목도 1101) — act46side"
-    },
-    {
-      "ref": "act47side",
-      "kind": "event",
-      "terraYear": null,
-      "arc": "rh"
-    },
-    {
-      "ref": "act48side",
-      "kind": "event",
-      "terraYear": 1100,
-      "arc": "ts",
-      "dateNote": "'올해가 1100년' — act48side"
-    },
-    {
-      "ref": "act49side",
-      "kind": "event",
-      "terraYear": 1102,
-      "arc": "su",
-      "dateNote": "현재 씬 datestamp \"1102년 늦가을 … 초겨울\""
-    },
-    {
-      "id": "main_0",
-      "kind": "main",
-      "title": {
-        "ko": "암흑 시대·상",
-        "en": "Evil Time Part 1",
-        "ja": "暗黒時代・上"
-      },
-      "terraYear": null,
-      "arc": "rl"
-    },
-    {
-      "id": "main_1",
-      "kind": "main",
-      "title": {
-        "ko": "암흑 시대·하",
-        "en": "Evil Time Part 2",
-        "ja": "暗黒時代・下"
-      },
-      "terraYear": null,
-      "arc": "rl"
-    },
-    {
-      "id": "main_2",
-      "kind": "main",
-      "title": {
-        "ko": "같지만 다른",
-        "en": "Separated Hearts",
-        "ja": "相思相殺"
-      },
-      "terraYear": null,
-      "arc": "rl"
-    },
-    {
-      "id": "main_3",
-      "kind": "main",
-      "title": {
-        "ko": "세컨드 윈드",
-        "en": "Stinging Shock",
-        "ja": "起死回生"
-      },
-      "terraYear": null,
-      "arc": "rl"
-    },
-    {
-      "id": "main_4",
-      "kind": "main",
-      "title": {
-        "ko": "급성쇠약",
-        "en": "Burning Run",
-        "ja": "急転直下"
-      },
-      "terraYear": null,
-      "arc": "rl"
-    },
-    {
-      "id": "main_5",
-      "kind": "main",
-      "title": {
-        "ko": "표적치료",
-        "en": "Necessary Solutions",
-        "ja": "快刀乱麻"
-      },
-      "terraYear": null,
-      "arc": "rl"
-    },
-    {
-      "id": "main_6",
-      "kind": "main",
-      "title": {
-        "ko": "부분괴사",
-        "en": "Partial Necrosis",
-        "ja": "局部壊死"
-      },
-      "terraYear": null,
-      "arc": "rl"
-    },
-    {
-      "id": "main_7",
-      "kind": "main",
-      "title": {
-        "ko": "고난의 요람",
-        "en": "The Birth of Tragedy",
-        "ja": "苦難揺籃"
-      },
-      "terraYear": null,
-      "arc": "rl"
-    },
-    {
-      "id": "main_8",
-      "kind": "main",
-      "title": {
-        "ko": "울부짖는 광명",
-        "en": "Roaring Flare",
-        "ja": "怒号光明"
-      },
-      "terraYear": null,
-      "arc": "rl"
-    },
-    {
-      "id": "main_9",
-      "kind": "main",
-      "title": {
-        "ko": "스톰워치",
-        "en": "Stormwatch",
-        "ja": "暴風眺望"
-      },
-      "terraYear": null,
-      "arc": "rl"
-    },
-    {
-      "id": "main_10",
-      "kind": "main",
-      "title": {
-        "ko": "섀터 포인트",
-        "en": "Shatterpoint",
-        "ja": "光冠残蝕"
-      },
-      "terraYear": null,
-      "arc": "rl"
-    },
-    {
-      "id": "main_11",
-      "kind": "main",
-      "title": {
-        "ko": "리턴 투 미스트",
-        "en": "Return To Mist",
-        "ja": "淬火煙塵"
-      },
-      "terraYear": 1098,
-      "arc": "rl",
-      "dateNote": "11-4·11-5 나레이션 datestamp \"1098년\" (회상 1072년과 구분된 당대)"
-    },
-    {
-      "id": "main_12",
-      "kind": "main",
-      "title": {
-        "ko": "천둥 속의 고요",
-        "en": "All Quiet Under the Thunder",
-        "ja": "驚靂蕭然"
-      },
-      "terraYear": null,
-      "arc": "rl"
-    },
-    {
-      "id": "main_13",
-      "kind": "main",
-      "title": {
-        "ko": "흉조의 소용돌이",
-        "en": "The Whirlpool that is Passion",
-        "ja": "悪兆渦流"
-      },
-      "terraYear": null,
-      "arc": "rl"
-    },
-    {
-      "id": "main_14",
-      "kind": "main",
-      "title": {
-        "ko": "자비의 등대",
-        "en": "Absolved Will Be the Seekers",
-        "ja": "慈悲光塔"
-      },
-      "terraYear": null,
-      "arc": "rl"
-    },
-    {
-      "id": "main_15",
-      "kind": "main",
-      "title": {
-        "ko": "해리성 결합",
-        "en": "Dissociative Recombination",
-        "ja": "解離結合"
-      },
-      "terraYear": 1098,
-      "arc": "rl",
-      "dateNote": "나레이션 \"1098년 10월 초 … 바벨/살카즈 런디니움 철수\" = 당대 사건"
-    },
-    {
-      "id": "main_16",
-      "kind": "main",
-      "title": {
-        "ko": "비정상 스펙트럼",
-        "en": "Abnormal Spectrum",
-        "ja": "背理分光"
-      },
-      "terraYear": null,
-      "arc": "rl"
-    },
-    {
-      "id": "rogue_1",
-      "kind": "roguelike",
-      "title": {
-        "ko": "팬텀 & 크림슨 솔리테어",
-        "en": "Phantom & Crimson Solitaire",
-        "ja": "ファントムと緋き貴石"
-      },
-      "terraYear": null,
-      "arc": "rogue"
-    },
-    {
-      "id": "rogue_2",
-      "kind": "roguelike",
-      "title": {
-        "ko": "미즈키 & 카이룰라 아버",
-        "en": "Mizuki & Caerula Arbor",
-        "ja": "ミヅキと紺碧の樹"
-      },
-      "terraYear": null,
-      "arc": "rogue"
-    },
-    {
-      "id": "rogue_3",
-      "kind": "roguelike",
-      "title": {
-        "ko": "탐험가의 은빛 서리 끝자락",
-        "en": "Expeditioner's Jǫklumarkar",
-        "ja": "探索者と銀氷の果て"
-      },
-      "terraYear": null,
-      "arc": "rogue"
-    },
-    {
-      "id": "rogue_4",
-      "kind": "roguelike",
-      "title": {
-        "ko": "살카즈의 영겁 기담",
-        "en": "Sarkaz's Furnaceside Fables",
-        "ja": "サルカズの炉辺奇談"
-      },
-      "terraYear": null,
-      "arc": "rogue"
-    },
-    {
-      "id": "rogue_5",
-      "kind": "roguelike",
-      "title": {
-        "ko": "쉐이의 기이한 계원",
-        "en": "Sui's Garden of Grotesqueries",
-        "ja": "歳の界園志異"
-      },
-      "terraYear": null,
-      "arc": "rogue"
-    }
-  ]
+ "note": "테라 연대기 (손큐레이트). terraYear = 이벤트 '당대' 연도(스크립트의 '올해/지금 = N년'만 채택; 'N년 전'·역사 참조 연도는 제외). 예) 아테누스=1100. 채운 건 dateNote에 출처 명시. entries 순서는 출시순(임시). arc(테마)=로어 기반 수작업, 확실한 것 우선. kind: event(ref→stories.json)/main/roguelike. ※ 이 파일은 이제 손으로 편집한다 — 스캐폴드 생성 스크립트로 재생성 금지(연도·테마 날아감).",
+ "updated": "2026-07-14",
+ "arcs": [
+  {
+   "id": "rl",
+   "name": {
+    "ko": "방주",
+    "en": "The Ark",
+    "ja": "方舟"
+   }
+  },
+  {
+   "id": "ur",
+   "name": {
+    "ko": "들불",
+    "en": "Wildfire",
+    "ja": "野火"
+   }
+  },
+  {
+   "id": "la",
+   "name": {
+    "ko": "그 축복받은",
+    "en": "The Blessed",
+    "ja": "祝福されし者"
+   }
+  },
+  {
+   "id": "kj",
+   "name": {
+    "ko": "설산과 은철",
+    "en": "Snowpeak & Silver Iron",
+    "ja": "雪山と銀鉄"
+   }
+  },
+  {
+   "id": "si",
+   "name": {
+    "ko": "일곱 언덕의 새싹",
+    "en": "Sprouts of the Seven Hills",
+    "ja": "七つの丘の芽"
+   }
+  },
+  {
+   "id": "ka",
+   "name": {
+    "ko": "네온 불빛 아래",
+    "en": "Under the Neon Lights",
+    "ja": "ネオンの灯の下で"
+   }
+  },
+  {
+   "id": "su",
+   "name": {
+    "ko": "영원한 오늘",
+    "en": "Eternal Today",
+    "ja": "永遠の今日"
+   }
+  },
+  {
+   "id": "rh",
+   "name": {
+    "ko": "미래를 잡는 사람",
+    "en": "Those Who Seize the Future",
+    "ja": "未来を掴む者"
+   }
+  },
+  {
+   "id": "ae",
+   "name": {
+    "ko": "깊은 바닷속으로",
+    "en": "Into the Deep Sea",
+    "ja": "深海の奥へ"
+   }
+  },
+  {
+   "id": "le",
+   "name": {
+    "ko": "고탑의 그림자",
+    "en": "Shadow of the Tall Tower",
+    "ja": "高塔の影"
+   }
+  },
+  {
+   "id": "ta",
+   "name": {
+    "ko": "다시 불붙은 장작",
+    "en": "Rekindled Embers",
+    "ja": "再び燃える薪"
+   }
+  },
+  {
+   "id": "st",
+   "name": {
+    "ko": "여름의 리듬",
+    "en": "Rhythm of Summer",
+    "ja": "夏のリズム"
+   }
+  },
+  {
+   "id": "ts",
+   "name": {
+    "ko": "테라 기담",
+    "en": "Terra Tales",
+    "ja": "テラ奇譚"
+   }
+  },
+  {
+   "id": "ms",
+   "name": {
+    "ko": "콜라보레이션",
+    "en": "Collaborations",
+    "ja": "コラボレーション"
+   }
+  },
+  {
+   "id": "rogue",
+   "name": {
+    "ko": "통합 전략",
+    "en": "Integrated Strategies",
+    "ja": "統合戦略"
+   }
+  }
+ ],
+ "entries": [
+  {
+   "ref": "1stact",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "ae"
+  },
+  {
+   "ref": "act3d0",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "st"
+  },
+  {
+   "ref": "act5d0",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "ts"
+  },
+  {
+   "ref": "act11d0",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "le"
+  },
+  {
+   "ref": "act9d0",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "rl"
+  },
+  {
+   "ref": "act12d0",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "st"
+  },
+  {
+   "ref": "act13d5",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "ka"
+  },
+  {
+   "ref": "act15d0",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "rh"
+  },
+  {
+   "ref": "act16d5",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "su"
+  },
+  {
+   "ref": "act17d0",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "ms"
+  },
+  {
+   "ref": "act18d0",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "rl"
+  },
+  {
+   "ref": "act18d3",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "ae"
+  },
+  {
+   "ref": "act12side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "st"
+  },
+  {
+   "ref": "act13side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "ka"
+  },
+  {
+   "ref": "act14side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "kj"
+  },
+  {
+   "ref": "act15side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "su"
+  },
+  {
+   "ref": "act16side",
+   "kind": "event",
+   "terraYear": 1099,
+   "arc": "la",
+   "dateNote": "'지금은 1099년 3월 15일' — act16side"
+  },
+  {
+   "ref": "act17side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "ae"
+  },
+  {
+   "ref": "act18side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "le"
+  },
+  {
+   "ref": "act20side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "st"
+  },
+  {
+   "ref": "act19side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "rh"
+  },
+  {
+   "ref": "act21side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "si"
+  },
+  {
+   "ref": "act23side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "su"
+  },
+  {
+   "ref": "act22side",
+   "kind": "event",
+   "terraYear": 1098,
+   "arc": "ta",
+   "dateNote": "현재 씬 datestamp \"1098년 스카타나 들판\" (회상 \"8년 전 1090년\"과 구분; 1090+8=1098)"
+  },
+  {
+   "ref": "act24side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "ms"
+  },
+  {
+   "ref": "act25side",
+   "kind": "event",
+   "terraYear": 1099,
+   "arc": "rh",
+   "dateNote": "'1099년 11월 21일' 날짜 스탬프 — act25side"
+  },
+  {
+   "ref": "act26side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "la"
+  },
+  {
+   "ref": "act27side",
+   "kind": "event",
+   "terraYear": 1099,
+   "arc": "st",
+   "dateNote": "'오늘은 1099년 8월 21일입니다' — act27side"
+  },
+  {
+   "ref": "act28side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "ts"
+  },
+  {
+   "ref": "act29side",
+   "kind": "event",
+   "terraYear": 1100,
+   "arc": "le",
+   "dateNote": "현재 씬 datestamp \"1100년, 라이타니엔 북부 국경, 슈투름란트\" (페데리코 과거 사건 언급과 구분)"
+  },
+  {
+   "ref": "act30side",
+   "kind": "event",
+   "terraYear": 1100,
+   "arc": "kj",
+   "dateNote": "'1100년 겨울, 쉐라그 페일로쉬' 장면 스탬프 — act30side"
+  },
+  {
+   "ref": "act31side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "su"
+  },
+  {
+   "ref": "act32side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "ms"
+  },
+  {
+   "ref": "act33side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "rl"
+  },
+  {
+   "ref": "act34side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "ae"
+  },
+  {
+   "ref": "act35side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "st"
+  },
+  {
+   "ref": "act36side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "ms"
+  },
+  {
+   "ref": "act38side",
+   "kind": "event",
+   "terraYear": 1100,
+   "arc": "si",
+   "dateNote": "날짜 스탬프 1099년 12월~1100년 11월(당대 최신) — act38side"
+  },
+  {
+   "ref": "act37side",
+   "kind": "event",
+   "terraYear": 1098,
+   "arc": "rl",
+   "dateNote": "'1098년 12월 21일' 날짜 스탬프 — act37side"
+  },
+  {
+   "ref": "act39side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "ae"
+  },
+  {
+   "ref": "act40side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "su"
+  },
+  {
+   "ref": "act41side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "ta"
+  },
+  {
+   "ref": "act42side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "la"
+  },
+  {
+   "ref": "act43side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "ts"
+  },
+  {
+   "ref": "act44side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "st"
+  },
+  {
+   "ref": "act45side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "ms"
+  },
+  {
+   "ref": "act46side",
+   "kind": "event",
+   "terraYear": 1101,
+   "arc": "kj",
+   "dateNote": "'1101년 12월 7일' 날짜 스탬프(제목도 1101) — act46side"
+  },
+  {
+   "ref": "act47side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "rh"
+  },
+  {
+   "ref": "act48side",
+   "kind": "event",
+   "terraYear": 1100,
+   "arc": "ts",
+   "dateNote": "'올해가 1100년' — act48side"
+  },
+  {
+   "ref": "act49side",
+   "kind": "event",
+   "terraYear": 1102,
+   "arc": "su",
+   "dateNote": "현재 씬 datestamp \"1102년 늦가을 … 초겨울\""
+  },
+  {
+   "id": "main_0",
+   "kind": "main",
+   "title": {
+    "ko": "암흑 시대·상",
+    "en": "Evil Time Part 1",
+    "ja": "暗黒時代・上"
+   },
+   "terraYear": null,
+   "arc": "rl"
+  },
+  {
+   "id": "main_1",
+   "kind": "main",
+   "title": {
+    "ko": "암흑 시대·하",
+    "en": "Evil Time Part 2",
+    "ja": "暗黒時代・下"
+   },
+   "terraYear": null,
+   "arc": "rl"
+  },
+  {
+   "id": "main_2",
+   "kind": "main",
+   "title": {
+    "ko": "같지만 다른",
+    "en": "Separated Hearts",
+    "ja": "相思相殺"
+   },
+   "terraYear": null,
+   "arc": "rl"
+  },
+  {
+   "id": "main_3",
+   "kind": "main",
+   "title": {
+    "ko": "세컨드 윈드",
+    "en": "Stinging Shock",
+    "ja": "起死回生"
+   },
+   "terraYear": null,
+   "arc": "rl"
+  },
+  {
+   "id": "main_4",
+   "kind": "main",
+   "title": {
+    "ko": "급성쇠약",
+    "en": "Burning Run",
+    "ja": "急転直下"
+   },
+   "terraYear": null,
+   "arc": "rl"
+  },
+  {
+   "id": "main_5",
+   "kind": "main",
+   "title": {
+    "ko": "표적치료",
+    "en": "Necessary Solutions",
+    "ja": "快刀乱麻"
+   },
+   "terraYear": null,
+   "arc": "rl"
+  },
+  {
+   "id": "main_6",
+   "kind": "main",
+   "title": {
+    "ko": "부분괴사",
+    "en": "Partial Necrosis",
+    "ja": "局部壊死"
+   },
+   "terraYear": null,
+   "arc": "rl"
+  },
+  {
+   "id": "main_7",
+   "kind": "main",
+   "title": {
+    "ko": "고난의 요람",
+    "en": "The Birth of Tragedy",
+    "ja": "苦難揺籃"
+   },
+   "terraYear": null,
+   "arc": "rl"
+  },
+  {
+   "id": "main_8",
+   "kind": "main",
+   "title": {
+    "ko": "울부짖는 광명",
+    "en": "Roaring Flare",
+    "ja": "怒号光明"
+   },
+   "terraYear": null,
+   "arc": "rl"
+  },
+  {
+   "id": "main_9",
+   "kind": "main",
+   "title": {
+    "ko": "스톰워치",
+    "en": "Stormwatch",
+    "ja": "暴風眺望"
+   },
+   "terraYear": null,
+   "arc": "rl"
+  },
+  {
+   "id": "main_10",
+   "kind": "main",
+   "title": {
+    "ko": "섀터 포인트",
+    "en": "Shatterpoint",
+    "ja": "光冠残蝕"
+   },
+   "terraYear": null,
+   "arc": "rl"
+  },
+  {
+   "id": "main_11",
+   "kind": "main",
+   "title": {
+    "ko": "리턴 투 미스트",
+    "en": "Return To Mist",
+    "ja": "淬火煙塵"
+   },
+   "terraYear": 1098,
+   "arc": "rl",
+   "dateNote": "11-4·11-5 나레이션 datestamp \"1098년\" (회상 1072년과 구분된 당대)"
+  },
+  {
+   "id": "main_12",
+   "kind": "main",
+   "title": {
+    "ko": "천둥 속의 고요",
+    "en": "All Quiet Under the Thunder",
+    "ja": "驚靂蕭然"
+   },
+   "terraYear": null,
+   "arc": "rl"
+  },
+  {
+   "id": "main_13",
+   "kind": "main",
+   "title": {
+    "ko": "흉조의 소용돌이",
+    "en": "The Whirlpool that is Passion",
+    "ja": "悪兆渦流"
+   },
+   "terraYear": null,
+   "arc": "rl"
+  },
+  {
+   "id": "main_14",
+   "kind": "main",
+   "title": {
+    "ko": "자비의 등대",
+    "en": "Absolved Will Be the Seekers",
+    "ja": "慈悲光塔"
+   },
+   "terraYear": null,
+   "arc": "rl"
+  },
+  {
+   "id": "main_15",
+   "kind": "main",
+   "title": {
+    "ko": "해리성 결합",
+    "en": "Dissociative Recombination",
+    "ja": "解離結合"
+   },
+   "terraYear": 1098,
+   "arc": "rl",
+   "dateNote": "나레이션 \"1098년 10월 초 … 바벨/살카즈 런디니움 철수\" = 당대 사건"
+  },
+  {
+   "id": "main_16",
+   "kind": "main",
+   "title": {
+    "ko": "비정상 스펙트럼",
+    "en": "Abnormal Spectrum",
+    "ja": "背理分光"
+   },
+   "terraYear": null,
+   "arc": "rl"
+  },
+  {
+   "id": "rogue_1",
+   "kind": "roguelike",
+   "title": {
+    "ko": "팬텀 & 크림슨 솔리테어",
+    "en": "Phantom & Crimson Solitaire",
+    "ja": "ファントムと緋き貴石"
+   },
+   "terraYear": null,
+   "arc": "rogue"
+  },
+  {
+   "id": "rogue_2",
+   "kind": "roguelike",
+   "title": {
+    "ko": "미즈키 & 카이룰라 아버",
+    "en": "Mizuki & Caerula Arbor",
+    "ja": "ミヅキと紺碧の樹"
+   },
+   "terraYear": null,
+   "arc": "rogue"
+  },
+  {
+   "id": "rogue_3",
+   "kind": "roguelike",
+   "title": {
+    "ko": "탐험가의 은빛 서리 끝자락",
+    "en": "Expeditioner's Jǫklumarkar",
+    "ja": "探索者と銀氷の果て"
+   },
+   "terraYear": null,
+   "arc": "rogue"
+  },
+  {
+   "id": "rogue_4",
+   "kind": "roguelike",
+   "title": {
+    "ko": "살카즈의 영겁 기담",
+    "en": "Sarkaz's Furnaceside Fables",
+    "ja": "サルカズの炉辺奇談"
+   },
+   "terraYear": null,
+   "arc": "rogue"
+  },
+  {
+   "id": "rogue_5",
+   "kind": "roguelike",
+   "title": {
+    "ko": "쉐이의 기이한 계원",
+    "en": "Sui's Garden of Grotesqueries",
+    "ja": "歳の界園志異"
+   },
+   "terraYear": null,
+   "arc": "rogue"
+  },
+  {
+   "ref": "act19mini",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act18mini",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act17mini",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act16mini",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act15mini",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act14mini",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act12mini",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act11mini",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act10mini",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act9mini",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act8mini",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act7mini",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act15d5",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act13d0",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act10d5",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act7d5",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act6d5",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  },
+  {
+   "ref": "act4d0",
+   "kind": "event",
+   "terraYear": null,
+   "arc": null
+  }
+ ]
 }
