@@ -886,11 +886,15 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
                 <li key={it.key}>
                   <button type="button" className={`chron-item k-${it.kind}${it.eventId ? "" : " nolink"}`}
                     onClick={() => openIf(it)} disabled={!it.eventId} title={it.dateNote}>
-                    <span className="chron-kind" style={it.arc ? { background: arcColor(it.arc) } : undefined}>{t(KIND_KO[it.kind])}</span>
-                    {it.ep && <span className="chron-item-ep">{locText(locale, it.ep)}</span>}
+                    <span className="chron-item-top">
+                      <span className="chron-kind" style={it.arc ? { background: arcColor(it.arc) } : undefined}>{t(KIND_KO[it.kind])}</span>
+                      {it.ep && <span className="chron-item-ep">{locText(locale, it.ep)}</span>}
+                    </span>
                     <span className="chron-item-name">{locText(locale, it.name)}</span>
-                    {it.terraYear != null && <span className="chron-item-year">{t("테라력 {y}년", { y: it.terraYear })}</span>}
-                    <span className="chron-item-meta">{it.start ?? "—"}</span>
+                    <span className="chron-item-bot">
+                      {it.terraYear != null && <span className="chron-item-year">{t("테라력 {y}년", { y: it.terraYear })}</span>}
+                      <span className="chron-item-meta">{it.start ?? "—"}</span>
+                    </span>
                   </button>
                 </li>
               ))}
