@@ -5231,8 +5231,16 @@ html.dark .story-card:hover .story-thumb img {
   .story-rail .rail-desc-snip {
     display: inline;
   }
-  /* 밑줄 단어 터치로 펼친 카드 — 제자리서 커져 오른쪽이 잘리지 않게 레일 전체 폭(100%)을
-     차지하고, JS가 가운데로 스크롤한다 (사용자 리포트 2026-07-20) */
+  /* 카드를 펼치면(.open) 레일 전체 폭(100%)을 차지한다.
+     ★ 펼친 카드가 가로 스크롤 스트립에서 다른 카드 뒤에 있으면 오른쪽이 화면 밖으로 잘렸다
+       (카드 탭은 밑줄단어와 달리 자동 스크롤이 없어서). 그래서 펼침 상태에선 나머지 카드를
+       숨기고 가로 스크롤을 끄면, 펼친 카드가 항상 왼쪽 끝에서 시작해 전부 보인다 (2026-07-20). */
+  .story-rail:has(.rail-card.open) {
+    overflow-x: hidden;
+  }
+  .story-rail:has(.rail-card.open) .rail-card:not(.open) {
+    display: none;
+  }
   .story-rail .rail-card.open {
     flex: 0 0 100%;
     max-width: 100%;
