@@ -400,10 +400,11 @@ export function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx):
     if (skill.kind === "shared") { out.efficiency += skill.value; continue; } // 단서 공유 상태 기준
     if (skill.kind in AURA_WEIGHT) { out.auras[skill.kind] = Math.max(out.auras[skill.kind] ?? 0, skill.value); continue; }
     if (room === "DORMITORY") continue;
-    if (percentUses.length === 0) {
-      if (skill.facilityBased) out.facilityEff += skill.value;
-      else out.efficiency += skill.value;
-    }
+    // 기본치(flat base)를 항상 더한다. 과거엔 percentUses가 있으면 통째로 건너뛰어,
+    // "기본 X% + 토큰 N점당 Y%" 스킬(삼첸·이아나·Blitz·Frost)의 기본 X%가 누락됐다.
+    // 이제 파서가 value=순수 기본치(순수 per-token 스킬은 0)로 넣으므로 무조건 더해도 안전하다.
+    if (skill.facilityBased) out.facilityEff += skill.value;
+    else out.efficiency += skill.value;
   }
   for (const [token, rate] of tokenRates) out.efficiency += (ctx.tokenPoints[token] ?? 0) * rate;
   // 응접실: RIIC 스킬과 별개로 레어도·정예화 기본 단서속도를 모든 배치 오퍼가 가산.

@@ -332,6 +332,14 @@ def parse_skill(entry, oname, oid=None):
         # Lv5 = 20레벨 기준 상한 — 절을 떼고 기본치를 파싱한 뒤 ×20을 더한다
         dorm_lvl = re.search(r"모든 숙소의 레벨 ?1당[^%+]*\+\s*(\d+(?:\.\d+)?)\s*%", text)
         metric_text = text[:dorm_lvl.start()] + text[dorm_lvl.end():] if dorm_lvl else text
+        # 토큰 소비 절("토큰 N점당 … +X%")은 기본치가 아니라 per-token 보너스(tokenUse로 따로 파싱)다.
+        # 기본 % 파싱 전에 떼어내, 순수 per-token 스킬이 그 %를 기본치(value)로 오인하지 않게 한다.
+        # (2026-07-20: 삼첸 "협객의 도" 기본 20%가 엔진에서 누락되던 근본 원인 — 순수 per-token
+        #  스킬 value가 per-token 값이라 엔진이 통째로 무시했고, 그 탓에 기본치 있는 스킬도 같이 버려짐)
+        for _tok in TOKENS:
+            metric_text = re.sub(
+                re.escape(_tok) + r"\s*\d+(?:\.\d+)?(?:점|개)당[^%\d]{0,34}?[+\-]?\d+(?:\.\d+)?\s*%?",
+                "", metric_text)
         kind, value = parse_metric(room, metric_text)
         if dorm_lvl and kind in ("output", "misc"):
             kind, value = "output", (value or 0) + float(dorm_lvl.group(1)) * P["DORM_TOTAL_LEVELS"]
