@@ -523,18 +523,18 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         ))}
       </div>
 
-      {summary && (
-        <div className="planner-summary">
-          <button type="button" className="strategy-cell" onClick={() => setShowFlows(true)}>
-            <span>{t("전략 (클릭해 시너지 트리 보기)")}</span>
-            <b className="strategy">{plan ? strategyLabel(plan, locale, t) : summary.strategy}{plan && Object.keys(plan.tokenPoints).length > 0 && ` · ${Object.entries(plan.tokenPoints).map(([token, points]) => t("{token} {n}점", { token: tokenName(locale, token), n: Math.round(points) })).join(" · ")}`}</b>
-          </button>
-          <div><span>{t("제조소 평균")}</span><b>+{summary.manufacture}%</b></div>
-          <div><span>{t("무역소 평균")}</span><b>+{summary.trading}%</b></div>
-          <div><span>{t("발전소 평균")}</span><b>+{summary.power}%</b></div>
-          <div><span>{t("기용 인원")}</span><b>{t("{n}명", { n: summary.staffed })}</b></div>
-        </div>
-      )}
+      {/* 항상 렌더해 높이를 처음부터 예약 — 계산 전엔 '—'로 채운다. 계산 완료 후 값이 튀어나오며
+          아래 배치도를 밀어내던 CLS 방지 (사용자 리포트 2026-07-20). summary가 있으면 plan도 항상 있음. */}
+      <div className="planner-summary">
+        <button type="button" className="strategy-cell" onClick={() => setShowFlows(true)} disabled={!plan}>
+          <span>{t("전략 (클릭해 시너지 트리 보기)")}</span>
+          <b className="strategy">{plan ? `${strategyLabel(plan, locale, t)}${Object.keys(plan.tokenPoints).length > 0 ? ` · ${Object.entries(plan.tokenPoints).map(([token, points]) => t("{token} {n}점", { token: tokenName(locale, token), n: Math.round(points) })).join(" · ")}` : ""}` : "—"}</b>
+        </button>
+        <div><span>{t("제조소 평균")}</span><b>{summary ? `+${summary.manufacture}%` : "—"}</b></div>
+        <div><span>{t("무역소 평균")}</span><b>{summary ? `+${summary.trading}%` : "—"}</b></div>
+        <div><span>{t("발전소 평균")}</span><b>{summary ? `+${summary.power}%` : "—"}</b></div>
+        <div><span>{t("기용 인원")}</span><b>{summary ? t("{n}명", { n: summary.staffed }) : "—"}</b></div>
+      </div>
 
       {plan && (
         <div className="shift-tabs">
