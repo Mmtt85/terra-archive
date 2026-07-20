@@ -209,19 +209,23 @@ function ReaderPrefsBar({ prefs, setPrefs }: { prefs: ReaderPrefs; setPrefs: (fn
   ];
   return (
     <div className="story-reader-prefs" role="group" aria-label={t("읽기 설정")}>
-      <span className="story-reader-prefs-label">{t("글자 크기")}</span>
-      <div className="story-reader-prefs-btns">
-        {STEPS.map((s) => (
-          <button key={s.key} type="button" className={prefs.font === s.key ? "on" : ""}
-            onClick={() => setPrefs((p) => ({ ...p, font: s.key }))}>{s.label}</button>
-        ))}
+      <div className="reader-prefs-group">
+        <span className="story-reader-prefs-label">{t("글자 크기")}</span>
+        <div className="story-reader-prefs-btns">
+          {STEPS.map((s) => (
+            <button key={s.key} type="button" className={prefs.font === s.key ? "on" : ""}
+              onClick={() => setPrefs((p) => ({ ...p, font: s.key }))}>{s.label}</button>
+          ))}
+        </div>
       </div>
-      <span className="story-reader-prefs-label">{t("삽화 크기")}</span>
-      <div className="story-reader-prefs-btns">
-        {STEPS.map((s) => (
-          <button key={s.key} type="button" className={prefs.img === s.key ? "on" : ""}
-            onClick={() => setPrefs((p) => ({ ...p, img: s.key }))}>{s.label}</button>
-        ))}
+      <div className="reader-prefs-group">
+        <span className="story-reader-prefs-label">{t("삽화 크기")}</span>
+        <div className="story-reader-prefs-btns">
+          {STEPS.map((s) => (
+            <button key={s.key} type="button" className={prefs.img === s.key ? "on" : ""}
+              onClick={() => setPrefs((p) => ({ ...p, img: s.key }))}>{s.label}</button>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -639,21 +643,26 @@ function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }: {
       </div>
       <div className={`story-detail-inner reader-font-${readerPrefs.font} reader-img-${readerPrefs.img}`}>
         <header className="story-detail-head">
-          <span className="section-no">AI STORY DIGEST</span>
-          <h2>{locText(locale, event.name)}</h2>
+          {/* 제목 줄 — 왼쪽 제목, 오른쪽에 전문/요약 토글 (사용자 요청 2026-07-20, 모바일·PC 공통) */}
+          <div className="story-detail-titlerow">
+            <div className="story-detail-titlecol">
+              <span className="section-no">AI STORY DIGEST</span>
+              <h2>{locText(locale, event.name)}</h2>
+            </div>
+            {/* 보기 방식 토글 — 전문·요약이 둘 다 있을 때만(또는 미출시 안내). 하나만 있으면 토글 없이 그것만. */}
+            {((hasScript && hasSummary) || futureNoScript) && (
+              <div className="story-mode-bar" role="tablist" aria-label={t("보기 방식")}>
+                <button type="button" role="tab" aria-selected={scriptView}
+                  className={scriptView ? "on" : ""} onClick={openScript}>{t("전문 보기 (풀 스크립트)")}</button>
+                <button type="button" role="tab" aria-selected={!scriptView}
+                  className={!scriptView ? "on" : ""} onClick={() => setScriptView(false)}>{t("AI 요약")}</button>
+              </div>
+            )}
+          </div>
           <p className="story-meta">{event.epNo != null ? locText(locale, epLabel(event.epNo)) : event.id.startsWith("rogue_") ? t("통합 전략") : `${event.start} · ${t("에피소드 {n}개", { n: event.episodes })}`}</p>
           {summary?.tagline && <p className="story-tagline">{summary.tagline}</p>}
           {/* 전문만 있고 요약이 아직 없는 이벤트 안내 */}
           {!hasSummary && hasScript && <p className="story-tagline story-tagline-plain">{t("AI 요약은 아직 준비 중이에요. 지금은 게임 내 스토리 전문으로 만나 보세요.")}</p>}
-          {/* 보기 방식 토글 — 전문·요약이 둘 다 있을 때만(또는 미출시 안내). 하나만 있으면 토글 없이 그것만. */}
-          {((hasScript && hasSummary) || futureNoScript) && (
-            <div className="story-mode-bar" role="tablist" aria-label={t("보기 방식")}>
-              <button type="button" role="tab" aria-selected={scriptView}
-                className={scriptView ? "on" : ""} onClick={openScript}>{t("전문 보기 (풀 스크립트)")}</button>
-              <button type="button" role="tab" aria-selected={!scriptView}
-                className={!scriptView ? "on" : ""} onClick={() => setScriptView(false)}>{t("AI 요약")}</button>
-            </div>
-          )}
           {!scriptView && hasSummary && <p className="story-disclaimer">{t("이 요약은 AI가 게임 내 스토리 스크립트 전문을 읽고 쓴 2차 창작 요약입니다.")}</p>}
           {!scriptView && locale !== "ko" && !translatedByLocale[locale]?.has(event.id) && (
             <p className="story-disclaimer">{t("이 편의 요약 본문은 아직 번역되지 않아 한국어로 표시됩니다.")}</p>

@@ -658,31 +658,26 @@ button {
     margin-left: 8px;
   }
   /* 모바일 줄 구성 (사용자 배치 지시 2026-07-20):
-     1줄 = 브랜드 / 2줄 = 공식방송 · 진행중이벤트 / 3줄 = 미래시 · 햄버거 · 다크모드 · 언어.
-     ::before·::after(폭 100%)가 세 줄 사이를 강제로 끊는다. 각 줄은 왼쪽 정렬. */
+     1줄 = 브랜드 · 공식방송 · 진행중이벤트 (왼쪽 정렬)
+     2줄 = 미래시 · 햄버거 · 다크모드 · 언어 (오른쪽 정렬).
+     ::after(폭 100%)가 두 줄 사이를 끊고, 2줄 첫 요소의 margin-left:auto가 우측 정렬. */
   .site-header { justify-content: flex-start; }
-  .brand { order: 1; margin-right: auto; }
-  .site-header::before {
-    content: "";
-    order: 2;
-    flex-basis: 100%;
-    height: 0;
-  }
-  .bcast-trigger { order: 3; margin-left: 0; }
+  .brand { order: 1; margin-right: 0; }
+  .bcast-trigger { order: 2; margin-left: 0; }
   .event-group {
-    order: 4;
-    margin: 0 auto 0 0;
+    order: 3;
+    margin: 0;
     min-width: 0;
   }
   .site-header::after {
     content: "";
-    order: 5;
+    order: 4;
     flex-basis: 100%;
     height: 0;
   }
-  .site-header .future-toggle { order: 6; margin-left: 0; }
-  .site-header .nav-group { order: 7; }
-  .site-header .theme-toggle { order: 8; }
+  .site-header .future-toggle { order: 5; margin-left: auto; }
+  .site-header .nav-group { order: 6; }
+  .site-header .theme-toggle { order: 7; }
   .site-header .lang-wrap { order: 8; }
   .site-header .about-icon { order: 9; }
   /* 미니 배지: 배너 + D-day + 캐럿만 (이름·라벨·기간은 드롭다운에서) */
@@ -4575,12 +4570,14 @@ html.dark .story-card:hover .story-thumb img {
   margin-bottom: 18px;
   align-self: flex-start;
 }
-/* 좁은 화면: 상단 가로 레일(sticky, top:--header-h)이 있으므로
-   뒤로가기는 헤더+레일 높이만큼 내려 '레일 바로 밑'에 sticky로 붙는다 */
+/* 좁은 화면: 뒤로가기 버튼을 헤더 바로 아래에 sticky로 붙이고(큰 간격 제거),
+   가로 레일은 그 버튼 바로 밑에 sticky로 붙인다 (사용자 요청 2026-07-20).
+   기존엔 반대 순서(레일이 위)라 버튼이 헤더에서 78px 떨어져 떠 있었다. */
 @media (max-width: 1180px) {
   .story-back-top {
-    top: calc(var(--header-h, 56px) + 78px);
-    z-index: 4;   /* 레일(z-index:8)보다 아래 — 레일 밑에서 겹치지 않게 */
+    top: var(--header-h, 56px);
+    z-index: 9;        /* 레일(z-index:8)보다 위 — 버튼이 위, 레일이 그 아래 */
+    margin-bottom: 10px;
   }
 }
 /* 넓은 화면: 버튼을 왼쪽 여백에 sticky로 띄우고(스크롤 따라옴), 래퍼는 높이 0이라
@@ -4612,6 +4609,22 @@ html.dark .story-card:hover .story-thumb img {
 }
 .story-detail-head {
   margin-top: 20px;
+}
+/* 제목 줄: 왼쪽 제목 + 오른쪽 전문/요약 토글 (사용자 요청 2026-07-20) */
+.story-detail-titlerow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.story-detail-titlecol {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.story-detail-titlerow .story-mode-bar {
+  flex: 0 0 auto;
+  margin: 4px 0 0 auto;   /* 오른쪽 정렬 — 제목이 길어 줄바꿈돼도 우측 유지 */
 }
 .story-detail-head h2 {
   margin: 6px 0 8px;
@@ -4699,8 +4712,13 @@ html.dark .story-card:hover .story-thumb img {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 8px 18px;
   margin: 10px 0 4px;
+}
+.reader-prefs-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 .story-reader-prefs-label {
   font: 800 11px monospace;
@@ -4752,6 +4770,28 @@ html.dark .story-card:hover .story-thumb img {
   .reader-img-sm .story-body figure:not(.story-deco) { max-width: 80%; }
   .reader-img-md .sc-cut,
   .reader-img-md .story-body figure:not(.story-deco) { max-width: 100%; }
+}
+@media (max-width: 760px) {
+  /* 모바일: 전문/요약 토글 버튼을 컴팩트하게 (사용자 피드백 2026-07-20) */
+  .story-mode-bar button {
+    padding: 6px 12px;
+    font-size: 11.5px;
+  }
+  /* 읽기 설정: 글자 크기 / 삽화 크기를 각각 한 줄씩 두 줄로, 버튼도 축소 */
+  .story-reader-prefs {
+    gap: 6px;
+  }
+  .reader-prefs-group {
+    flex-basis: 100%;
+    gap: 7px;
+  }
+  .story-reader-prefs-label {
+    flex: 0 0 52px;   /* 두 줄의 라벨 폭을 맞춰 버튼 열이 가지런하게 */
+  }
+  .story-reader-prefs-btns button {
+    padding: 4px 9px;
+    font-size: 11px;
+  }
 }
 .story-script {
   margin-top: 20px;
@@ -4984,9 +5024,11 @@ html.dark .story-card:hover .story-thumb img {
     display: block;
   }
   .sc-name {
-    display: block;
+    /* 모바일도 데스크탑처럼 얼굴(왼쪽) + 이름(오른쪽)을 한 줄에 — 세로로 쌓지 않는다
+       (사용자 피드백 2026-07-20). base의 flex/gap을 유지하고 정렬만 왼쪽으로. */
+    justify-content: flex-start;
     text-align: left;
-    margin-bottom: 2px;
+    margin-bottom: 3px;
   }
   .sc-narr, .sc-st, .sc-cut, .sc-opts, .sc-br {
     margin-left: 0;
@@ -5098,13 +5140,17 @@ html.dark .story-card:hover .story-thumb img {
   .story-rail {
     order: -1;
     position: sticky;
-    top: var(--header-h, 56px);   /* 가변 높이 헤더 바로 아래에 붙는다 (JS가 --header-h 설정) */
+    /* 헤더 + 뒤로가기 버튼(약 46px) 높이만큼 내려 '뒤로가기 바로 밑'에 붙는다 (2026-07-20) */
+    top: calc(var(--header-h, 56px) + 46px);
     z-index: 8;
     /* 카드 유무와 상관없이 높이를 고정한다. 상단 sticky 레일이 정상 흐름에서 높이를
        가지므로, 카드가 떴다 사라지면 본문이 밀렸다 되돌아오고 → 관찰 밴드 밖으로 나간
        문단 때문에 카드가 다시 꺼지는 무한 깜빡임이 생겼다(사용자 리포트 2026-07-20).
        높이 바닥을 고정하면 카드 등장·소멸이 레이아웃을 흔들지 않아 루프가 끊긴다.
-       min-height라 카드를 탭해 펼치면(.open) 그때만 늘어난다. */
+       min-height라 카드를 탭해 펼치면(.open) 그때만 늘어난다.
+       ※ height:auto로 데스크탑 base(height:100vh)를 반드시 덮어쓴다 — 안 그러면
+         모바일 레일이 화면 전체 높이를 먹어 본문이 통째로 밀려난다. */
+    height: auto;
     min-height: 62px;
     box-sizing: border-box;
     width: 100%;
