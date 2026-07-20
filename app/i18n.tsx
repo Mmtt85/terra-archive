@@ -875,6 +875,7 @@ const D: Record<string, Pair> = {
   ],
   "요약 본문은 현재 한국어로만 제공됩니다.": ["Digest text is currently available in Korean only.", "要約本文は現在韓国語のみ提供しています。"],
   "이 편의 요약 본문은 아직 번역되지 않아 한국어로 표시됩니다.": ["This digest hasn't been translated yet and is shown in Korean.", "この要約はまだ翻訳されておらず、韓国語で表示されています。"],
+  "이 이벤트의 전문은 아직 이 언어로 풀리지 않아 한국어로 표시됩니다.": ["The full script isn't available in this language yet, so it's shown in Korean.", "このイベントの全文はまだこの言語で公開されていないため、韓国語で表示されています。"],
   "등장인물": ["Cast", "登場人物"],
   "오퍼레이터 정보 보기": ["View operator details", "オペレーター情報を見る"],
 

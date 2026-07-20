@@ -28,6 +28,13 @@ CACHE = os.path.join(REPO, ".gamedata", "story-cache")
 OUT_DIR = os.path.join(REPO, "public", "story", "script")
 CUT_DIR = os.path.join(REPO, "public", "story", "cut")
 
+# 빌드 대상 언어 — main()이 설정. story txt는 언어별 폴더(kr/en/jp)에서 받고,
+# 컷씬·스프라이트·storyTxt 경로는 언어 공용이라 KR 빌드 산출물을 그대로 재사용한다.
+LANG = "kr"                                             # 레포 폴더명 (kr/en/jp)
+NICKNAME = "독타"                                       # {@nickname} 플레이어 호칭 (언어별)
+NICK = {"kr": "독타", "en": "Doctor", "jp": "ドクター"}
+LOC = {"kr": "ko", "en": "en", "jp": "ja"}              # 레포 폴더 → 사이트 로케일
+
 
 def fetch(url, binary=False):
     req = urllib.request.Request(url, headers={"User-Agent": "terra-archive-script/1.0"})
@@ -37,12 +44,13 @@ def fetch(url, binary=False):
 
 
 def fetch_txt_cached(path):
-    """story txt 를 .gamedata/story-cache/ 에 캐시하며 가져온다. 404 는 None."""
-    dest = os.path.join(CACHE, path.replace("/", "__") + ".txt")
+    """story txt 를 .gamedata/story-cache/ 에 언어별로 캐시하며 가져온다. 404 는 None."""
+    prefix = "" if LANG == "kr" else f"{LANG}__"  # kr은 무접두(기존 캐시 호환)
+    dest = os.path.join(CACHE, prefix + path.replace("/", "__") + ".txt")
     if os.path.exists(dest):
         return open(dest, encoding="utf-8").read()
     try:
-        raw = fetch(f"{GAMEDATA}/kr/gamedata/story/{path}.txt", binary=True)
+        raw = fetch(f"{GAMEDATA}/{LANG}/gamedata/story/{path}.txt", binary=True)
     except urllib.error.HTTPError as e:
         if e.code == 404:
             return None
@@ -56,7 +64,7 @@ def fetch_txt_cached(path):
 MARKUP = re.compile(r"</?[@$a-zA-Z][^>]*>|</>")
 
 def clean(s):
-    s = re.sub(r"\{@nickname\}", "독타", s, flags=re.I)  # {@Nickname} 대문자 변형 포함
+    s = re.sub(r"\{@nickname\}", NICKNAME, s, flags=re.I)  # 플레이어 호칭 (언어별: 독타/Doctor/ドクター)
     s = s.replace("{@nbs}", " ")          # 비개행 공백 토큰 → 일반 공백 (예: "Ave Mujica")
     s = re.sub(r"\{@[^}]*\}", "", s)        # 그 외 미처리 제어 토큰({@...}) 제거
     s = MARKUP.sub("", s)
@@ -361,14 +369,23 @@ def cn_merge(eid):
 
 
 def main():
-    if len(sys.argv) > 2 and sys.argv[1] == "--cn":
-        cn_prepare(sys.argv[2]); return
-    if len(sys.argv) > 2 and sys.argv[1] == "--cn-merge":
-        cn_merge(sys.argv[2]); return
-    only = sys.argv[1] if len(sys.argv) > 1 else None
+    global LANG, NICKNAME
+    args = sys.argv[1:]
+    if args and args[0] == "--cn":
+        cn_prepare(args[1]); return
+    if args and args[0] == "--cn-merge":
+        cn_merge(args[1]); return
+    # --lang en|ja (또는 kr) — story txt 언어. 기본 kr. EN/JA는 KR 요약이 있는 이벤트 중
+    # 해당 서버에 이미 풀린 것만 생성(리뷰 테이블에 없으면 스킵 — UI가 KR로 폴백).
+    if args and args[0] == "--lang":
+        LANG = {"ko": "kr", "en": "en", "ja": "jp"}.get(args[1], args[1]); args = args[2:]
+    NICKNAME = NICK[LANG]
+    site_loc = LOC[LANG]
+    only = args[0] if args else None
     summaries = json.load(open(os.path.join(REPO, "app", "data", "story-summaries.json"), encoding="utf-8"))
-    review = fetch(f"{GAMEDATA}/kr/gamedata/excel/story_review_table.json")
-    os.makedirs(OUT_DIR, exist_ok=True)
+    review = fetch(f"{GAMEDATA}/{LANG}/gamedata/excel/story_review_table.json")
+    out_dir = OUT_DIR if LANG == "kr" else os.path.join(OUT_DIR, site_loc)
+    os.makedirs(out_dir, exist_ok=True)
 
     ids, total_kb, all_failed = [], 0, []
     # 요약이 있는 이벤트 + 미니 이벤트(스토리 컬렉션) 전부 전문 생성 — 미니는 요약이 없어도
@@ -391,7 +408,7 @@ def main():
             for ep in eps:
                 ep["lines"] = [ln for ln in ep["lines"] if ln.get("img") not in bad]
         out = {"id": eid, "eps": eps, "faces": faces}
-        dest = os.path.join(OUT_DIR, f"{eid}.json")
+        dest = os.path.join(out_dir, f"{eid}.json")
         json.dump(out, open(dest, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
         kb = os.path.getsize(dest) // 1024
         total_kb += kb
@@ -400,9 +417,11 @@ def main():
         print(f"{eid}: {len(eps)}편 {nlines}라인 {len(images)}컷 → {kb}KB" + (f" (컷 누락 {len(failed)})" if failed else ""))
 
     if not only:
-        json.dump(sorted(ids), open(os.path.join(REPO, "app", "data", "story-script-ids.json"), "w", encoding="utf-8"),
+        ids_name = "story-script-ids.json" if LANG == "kr" else f"story-script-ids.{site_loc}.json"
+        json.dump(sorted(ids), open(os.path.join(REPO, "app", "data", ids_name), "w", encoding="utf-8"),
                   ensure_ascii=False)
-        print(f"\n합계 {len(ids)}이벤트 {total_kb/1024:.1f}MB → public/story/script/ · ids → app/data/story-script-ids.json")
+        sub = "" if LANG == "kr" else f"{site_loc}/"
+        print(f"\n합계 {len(ids)}이벤트 {total_kb/1024:.1f}MB → public/story/script/{sub} · ids → app/data/{ids_name}")
     if all_failed:
         print("미러에 없는 컷씬:", sorted(set(all_failed)))
 

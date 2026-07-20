@@ -19,6 +19,8 @@ import translatedJaData from "./data/story-translated.ja.json";
 // 전문(풀 스크립트)이 준비된 이벤트 id — scripts/build-story-scripts.py 생성.
 // 본문은 public/story/script/<id>.json 정적 파일을 fetch (번들 import 금지 — 수백 KB/이벤트).
 import scriptIdsData from "./data/story-script-ids.json";
+import scriptIdsEnData from "./data/story-script-ids.en.json";
+import scriptIdsJaData from "./data/story-script-ids.ja.json";
 import chronologyData from "./data/chronology.json";
 import imageDimsData from "./data/story-image-dims.json";
 import { rich, useI18n, type Locale } from "./i18n";
@@ -53,6 +55,11 @@ type ChronItem = { key: string; kind: ChronKind; name: LocText; start?: string; 
 const data = storiesData as { updated: string; events: StoryEvent[] };
 const summaryIds = new Set(summaryIdsData as string[]);
 const scriptIds = new Set(scriptIdsData as string[]);
+// 로케일별 전문 가용성 — 해당 언어 스크립트가 있으면 그 언어로, 없으면 KR로 폴백한다.
+const scriptIdsByLocale: Record<string, Set<string>> = {
+  en: new Set(scriptIdsEnData as string[]),
+  ja: new Set(scriptIdsJaData as string[]),
+};
 // 전문(풀 스크립트)이나 AI 요약 중 하나만 있어도 열 수 있다 (사용자 확정 2026-07-20).
 const canOpenStory = (id: string) => summaryIds.has(id) || scriptIds.has(id);
 
@@ -603,15 +610,18 @@ function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }: {
   const [scriptView, setScriptView] = useState(hasScript || !hasSummary);
   const [script, setScript] = useState<ScriptData | null>(null);
   const [scriptErr, setScriptErr] = useState(false);
+  // 전문 언어: 현재 로케일 버전이 있으면 그 언어, 없으면 KR로 폴백 (EN/JA는 /story/script/<loc>/)
+  const scriptLoc = locale !== "ko" && scriptIdsByLocale[locale]?.has(event.id) ? locale : "ko";
   useEffect(() => {
     if (!hasScript) return;
     let alive = true;
-    fetch(`/story/script/${event.id}.json`)
+    const path = scriptLoc === "ko" ? `/story/script/${event.id}.json` : `/story/script/${scriptLoc}/${event.id}.json`;
+    fetch(path)
       .then((res) => { if (!res.ok) throw new Error(String(res.status)); return res.json(); })
       .then((json) => { if (alive) setScript(json as ScriptData); })
       .catch(() => { if (alive) setScriptErr(true); });
     return () => { alive = false; };
-  }, [event.id, hasScript]);
+  }, [event.id, hasScript, scriptLoc]);
   const openScript = () => setScriptView(true);
   const [readerPrefs, setReaderPrefs] = useReaderPrefs();
 
@@ -666,6 +676,9 @@ function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }: {
           {!scriptView && hasSummary && <p className="story-disclaimer">{t("이 요약은 AI가 게임 내 스토리 스크립트 전문을 읽고 쓴 2차 창작 요약입니다.")}</p>}
           {!scriptView && locale !== "ko" && !translatedByLocale[locale]?.has(event.id) && (
             <p className="story-disclaimer">{t("이 편의 요약 본문은 아직 번역되지 않아 한국어로 표시됩니다.")}</p>
+          )}
+          {scriptView && hasScript && locale !== "ko" && scriptLoc === "ko" && (
+            <p className="story-disclaimer">{t("이 이벤트의 전문은 아직 이 언어로 풀리지 않아 한국어로 표시됩니다.")}</p>
           )}
           {/* 읽기 설정(글자·삽화 크기) — 전문·요약 둘 다 실제 본문이 있을 때만 노출 (사용자 피드백 2026-07-20) */}
           {(hasSummary || hasScript) && <ReaderPrefsBar prefs={readerPrefs} setPrefs={setReaderPrefs} />}
