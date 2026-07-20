@@ -690,6 +690,9 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
   agg["제어센터 오라 수신"] = ambientFor(cell.room, team, ambient, agg["스킬 효율"], ctx.product);
   // 용량 변환 — 팀이 쌓은 오더 상한/창고 용량을 변환기가 되돌린 효율/생산력 (베나벌컨버블·데겐블레허·제이)
   agg["용량 변환"] = capConvFor(team, cell.room, ctx);
+  // 증폭 — 팀이 제공한 효율(=스킬 효율 합)을 배수로 되돌림 (와이후 협동의식·스노우상트 근면성실)
+  const ampSpecs = team.flatMap((op) => breakdown(op, cell.room, team, ctx).amplify);
+  agg["증폭"] = ampSpecs.reduce((sum, spec) => sum + Math.min(spec.cap, Math.floor(agg["스킬 효율"] / spec.per) * spec.add), 0);
   // 추가 후보: 어디에도 배치 안 된 보유 오퍼를 한계 기여 순으로
   const [benchAll, setBenchAll] = useState(false);
   const [benchQuery, setBenchQuery] = useState("");
@@ -758,6 +761,10 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                 if (Math.round(b.efficiency) !== 0) parts.push(`${t(UNIT[cell.room] ?? "효율")} +${Math.round(b.efficiency)}${pct}`);
                 if (Math.round(b.facilityEff) !== 0) parts.push(t("시설 기반 +{n}%", { n: Math.round(b.facilityEff) }));
                 if (Math.round(b.automation) !== 0) parts.push(t("자동화 +{n}%", { n: Math.round(b.automation) }));
+                if (b.amplify.length) {
+                  const ampAdd = b.amplify.reduce((s, spec) => s + Math.min(spec.cap, Math.floor(agg["스킬 효율"] / spec.per) * spec.add), 0);
+                  if (Math.round(ampAdd) !== 0) parts.push(t("증폭 +{n}%", { n: Math.round(ampAdd) }));
+                }
                 if (Math.round(b.quality) !== 0) parts.push(t("고품질 확률 +{n}%p 상당", { n: Math.round(b.quality) }));
                 if (Math.round(b.payout + b.payoutViolation) !== 0) parts.push(t("오더 수익 +{n}% 상당", { n: Math.round(b.payout + b.payoutViolation) }));
                 if (b.override > 0) parts.push(t("효율 대체 인당 +{n}%", { n: Math.round(b.override) }));
@@ -1136,6 +1143,7 @@ const HELP_SECTIONS: { title: string; items: string[] }[] = [
     "단 시설 수량 기반 생산력(퓨어스트림·쏜즈의 '각각의 무역소가…')은 살아남아 함께 쓸 수 있습니다.",
     "그레이 더 라이트닝베어러를 발전소에 두면(다른 발전소에 1성 로봇이 없는 한) 발전소 4기로 간주되어 자동화 방이 최대 140%까지 오릅니다.",
     "제로아웃 오퍼를 쓰는 편성 자체가 예외적인 케이스입니다 — 자동편성은 실제 방 점수(제로아웃 반영)로 비교해 더 나을 때만 추천합니다.",
+    "와이후(협동의식)·스노우상트(근면성실)는 증폭형입니다 — 같은 방 다른 오퍼가 제공한 효율(시설 기반 제외)의 5%당 5%를 최대 +40%(스노우상트 +35%)까지 되돌립니다. 생산력 높은 오퍼와 묶어야 값이 나오므로, 아로마(귀금속 25+청소 20)+30%급 오퍼 같은 강한 생산팀에 얹으면 순금방이 ~115%가 됩니다. 시간당 성장형(아로마·크루스·씬·팽·케오베)과 Вий(훈련실 레벨 성장)는 만렙 기지 상한값으로 계산합니다.",
   ]},
   { title: "제어 센터", items: [
     "오라 우선순위: 제조소 생산력 > 무역소 오더 효율 > 인맥 레퍼런스 > 단서 수집. '동종 효과 중 최고만 적용' 규칙을 따릅니다.",

@@ -21,6 +21,10 @@ export type CapConv =
   | { t: "tier"; at: number; lo: number; hi: number }
   | { t: "diff"; rate: number };
 
+// 증폭형 (와이후 협동의식·스노우상트 근면성실): 같은 방 오퍼가 제공한 효율(시설 기반 제외)의
+// per% 마다 add% 를 추가로 되돌린다(계단식). cap = 이 스킬이 제공하는 상한.
+export type AmpSpec = { per: number; add: number; cap: number };
+
 export type InfraSkill = {
   buffId?: string;   // 다국어 오버레이(extra-i18n) 매핑 키
   krName?: string;   // 표시명을 로케일로 바꿔도 로직(스킬 태그 카운트)은 KR 이름 기준
@@ -55,6 +59,7 @@ export type InfraSkill = {
   perSkillValue: number | null;
   cap?: number;        // 이 스킬의 오더 상한/창고 용량 기여 (±N; perFaction이면 엔진이 인원수로 스케일)
   capConv?: CapConv;   // 팀 용량 합을 효율/생산력으로 변환 (버메일·버블·데겐블레허·스와이어·제이)
+  amp?: AmpSpec | null; // 증폭형 (와이후·스노우상트): 팀 제공 효율을 배수로 되돌림
   families?: string[]; // 이 스킬이 속한 "~류" 계열 태그 (build-infra.py skillFamilies 카탈로그)
   tiers?: InfraSkill[]; // 같은 슬롯의 하위 정예화 단계 (스푸리아 기술 교류 α) — 정예화 낮추면 대체
 };
@@ -204,6 +209,7 @@ export type OpBreakdown = {
                                     // (+131% 제보)으로 플레임테일+비비아나 스택 확인 (2026-07-19)
   cap: number;          // 이 오퍼의 오더 상한/창고 용량 기여 (음수 포함, perFaction이면 인원 스케일)
   capConv: CapConv[];   // 이 오퍼가 가진 용량→출력 변환기 (보통 0~1개)
+  amplify: AmpSpec[];   // 이 오퍼가 가진 증폭기 (와이후·스노우상트, 보통 0~1개)
   skills: InfraSkill[];
 };
 
@@ -312,7 +318,7 @@ export function capConvFor(team: InfraOp[], room: string, ctx: Ctx): number {
 export function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx): OpBreakdown {
   const teamIds = new Set(team.map((member) => member.id));
   const teamSize = Math.max(team.length, 1);
-  const out: OpBreakdown = { efficiency: 0, facilityEff: 0, automation: 0, quality: 0, payout: 0, payoutViolation: 0, override: 0, perCoworker: 0, clueBase: 0, auras: {}, aurasAdd: {}, cap: 0, capConv: [], skills: [] };
+  const out: OpBreakdown = { efficiency: 0, facilityEff: 0, automation: 0, quality: 0, payout: 0, payoutViolation: 0, override: 0, perCoworker: 0, clueBase: 0, auras: {}, aurasAdd: {}, cap: 0, capConv: [], amplify: [], skills: [] };
   const tokenRates = new Map<string, number>();
   for (const skill of activeSkills(op, room, ctx.product)) {
     if (skill.partners.length > 0 && !skill.partners.every((p) => teamIds.has(p))) continue;
@@ -392,6 +398,8 @@ export function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx):
     if (skill.kind === "automation") { out.automation += skill.value * (ctx.plants ?? C.PLANTS_BASE); continue; }
     // 스네구로치카: 위디·유넥티스와 같은 제로아웃이지만 발전소가 아니라 같은 방 인원수로 스케일
     if (skill.kind === "automation_crew") { out.automation += skill.value * teamSize; continue; }
+    // 와이후·스노우상트 증폭: 팀 제공 효율에 스케일 — teamScore에서 opProvided 합산 후 계상
+    if (skill.kind === "amplify") { if (skill.amp) out.amplify.push(skill.amp); continue; }
     if (skill.kind === "quality") { out.quality += skill.value; continue; }
     if (skill.kind === "payout") { out.payout += skill.value; continue; }
     if (skill.kind === "payout_v") { out.payoutViolation += skill.value; continue; }
@@ -419,11 +427,17 @@ export function teamScore(team: InfraOp[], room: string, ctx: Ctx): number {
   const automation = parts.reduce((sum, p) => sum + p.automation, 0);
   const facilityEff = parts.reduce((sum, p) => sum + p.facilityEff, 0);
   const additive = parts.reduce((sum, p) => sum + p.efficiency + p.perCoworker * (team.length - 1), 0);
+  // 증폭형 (와이후 협동의식·스노우상트 근면성실): 방 안 오퍼가 제공한 효율(시설 기반 제외)을
+  // "per%당 add%" 배수로 되돌린다. 제공 효율 합(opProvided)을 per로 나눠 계단식(floor) 가산,
+  // 스킬별 cap. override/automation이 활성이면 제공 효율이 0이 되므로 증폭도 발동하지 않는다.
+  const opProvided = parts.reduce((sum, p) => sum + p.efficiency, 0);
+  const amplify = parts.reduce((sum, p) => sum + p.amplify.reduce(
+    (a, spec) => a + Math.min(spec.cap, Math.floor(opProvided / spec.per) * spec.add), 0), 0);
   // 샤마르 override zeroes everyone's efficiency; 위디·유넥티스 automation
   // zeroes operator-provided efficiency but facility-based production survives
   const efficiency = override > 0 ? override * team.length
     : automation > 0 ? automation + facilityEff
-    : additive + facilityEff;
+    : additive + facilityEff + amplify;
   const probCount = parts.filter((p) => p.quality > 0).length;
   const quality = parts.reduce((sum, p) => sum + p.quality, 0);
   // quality payouts (테킬라) profit from quality orders; violation payouts
@@ -464,7 +478,7 @@ export function bestTeam(room: string, slots: number, pool: Map<string, InfraOp>
   // 잘려 샤마르 방이 품질 요원을 못 받던 사례 (사용자 확정 2026-07-19: 계산이 느려져도 전수)
   // 용량 부여기(벌컨 -5%/+19칸·베나 -20%/+17칸)는 단독 점수가 음수라 top-40에서 잘리지만,
   // 변환기(버블·데겐블레허)와 만나야 가치가 드러난다 — cap·capConv 스킬 보유자도 상시 포함.
-  const TEAM_KINDS = new Set(["override", "payout", "quality", "percoworker"]);
+  const TEAM_KINDS = new Set(["override", "payout", "quality", "percoworker", "amplify"]);
   const rankedBase = solo.slice(0, 40).map((entry) => entry.op);
   const rankedIds = new Set(rankedBase.map((op) => op.id));
   const ranked = [...rankedBase, ...cands.filter((op) =>

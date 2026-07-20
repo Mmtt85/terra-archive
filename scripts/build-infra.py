@@ -355,6 +355,17 @@ def parse_skill(entry, oname, oid=None):
         override = re.search(r"효율이 전부 0이 되고[^+]{0,20}\+\s*(\d+(?:\.\d+)?)\s*%", text)
         if override:
             kind, value = "override", float(override.group(1))
+        # 증폭형 (와이후 협동의식·스노우상트 근면성실 β): "해당 방 내의 오퍼레이터가 제공한
+        # [생산력/오더 수주 효율] N%당 M%를 추가 제공, 최대 C%" — 같은 방 다른 오퍼가 제공한
+        # 효율(시설 수량분 제외)을 배수로 되돌린다. 엔진이 팀 제공 효율 합으로 스케일한다.
+        # (버메일 '늘린 용량당'·스와이어 '늘어난 상한만큼'·데겐블레허 'N개당'은 용량 변환이라
+        #  '오퍼레이터가 제공한 …%…당 …% 추가' 구조가 아니어서 걸리지 않는다 — 회귀 스모크 확인)
+        amp = None
+        am = re.search(r"오퍼레이터가 제공(?:하는|한)[^%]*?(\d+(?:\.\d+)?)%[^당]{0,40}?당"
+                       r"[^%\d]{0,20}(\d+(?:\.\d+)?)%[^%]{0,20}추가[^%]{0,40}최대 (\d+(?:\.\d+)?)%", text)
+        if am:
+            kind, value = "amplify", 0
+            amp = {"per": float(am.group(1)), "add": float(am.group(2)), "cap": float(am.group(3))}
         product = "any"
         if room == "MANUFACTURE":
             if re.search(r"순금|금괴|귀금속", text): product = "gold"
@@ -414,6 +425,16 @@ def parse_skill(entry, oname, oid=None):
         if m:
             per_skill_tag = m.group(1).replace(" ", "")
             per_skill_value = float(m.group(2))
+        # 성장형 상한 채택 (제조소): "첫 시간/시간당 +N%, 최대 +M%"(아로마·크루스·씬·팽·케오베)와
+        # "훈련실 레벨 1당 +N%, 최대 M%"(Вий)는 만렙 기지 정상 운용 상한값으로 계산한다 — POWER·
+        # MEETING과 동일 관례(§2 성장형 상한, 사용자 확정 2026-07). 진영·계열 카운트 스킬의 '최대 c%'는
+        # 인원 상한이라 건드리지 않도록, 순수 output이고 성장 문구(시간당·레벨 1당)가 있을 때만 적용.
+        if (room == "MANUFACTURE" and kind == "output" and value
+                and not per_faction and not per_skill_tag
+                and re.search(r"시간당|레벨 ?1(?:레벨)?당", text)):
+            grow_cap = re.search(r"최대 \+?(\d+(?:\.\d+)?)\s*%", text)
+            if grow_cap:
+                value = max(value, float(grow_cap.group(1)))
         # facility-count multipliers (쏜즈: 각각의 무역소가 ... +3% → ×2);
         # these survive automation's zeroing ("시설 수량에 따라 제공" 예외)
         facility_based = False
@@ -516,6 +537,7 @@ def parse_skill(entry, oname, oid=None):
             "belowThreshold": below_threshold,
             **({"cap": cap} if cap else {}),
             **({"capConv": cap_conv} if cap_conv else {}),
+            **({"amp": amp} if amp else {}),
             "_roboCap": int(robo_cap.group(1)) if robo_cap else None,
             "_roboUse": (float(robo_use.group(1)), float(robo_use.group(2))) if robo_use else None,
             "tokenGen": gen, "tokenUse": use, "convert": convert,

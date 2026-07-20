@@ -414,6 +414,7 @@ const D: Record<string, Pair> = {
   "제어 오라(가중)": ["Control auras (weighted)", "管制オーラ（加重）"],
   "제어센터 오라 수신": ["Aura received from Control", "制御中枢オーラ受信"],
   "용량 변환": ["Capacity → output", "容量→出力変換"],
+  "증폭": ["Amplify", "増幅"],
   "편성 없음": ["No assignment", "編成なし"],
   "아래에서 오퍼를 빼거나(✕) 대체 오퍼·추가 후보를 클릭하면 즉시 다시 계산됩니다. 단, 토큰 포인트(속세의 화식 등)와 패키지 구성은 마지막 자동편성 기준이므로, 토큰 생성원을 바꿨다면 자동편성 실행으로 재계산하세요.": [
     "Remove operators (✕) or click substitutes/candidates below to recalculate instantly. Token points (Worldly Plight, etc.) and package composition follow the last auto-assign — rerun it if you changed token generators.",
@@ -435,6 +436,7 @@ const D: Record<string, Pair> = {
   "레어도 기본 {r}성·{e} +{n}%": ["rarity base {r}★·{e} +{n}%", "レア度基本 {r}★·{e} +{n}%"],
   "시설 기반 +{n}%": ["facility-based +{n}%", "施設ベース +{n}%"],
   "자동화 +{n}%": ["automation +{n}%", "自動化 +{n}%"],
+  "증폭 +{n}%": ["amplify +{n}%", "増幅 +{n}%"],
   "{token} +{n}점 생성": ["{token} +{n} pts generated", "{token} +{n}点生成"],
   "대체 불가 · 시너지 코어": ["Locked · synergy core", "代替不可 · シナジーコア"],
   "이 자리 대체 오퍼:": ["Substitutes for this slot:", "このスロットの代替オペレーター："],
@@ -585,6 +587,10 @@ const D: Record<string, Pair> = {
   "제로아웃 오퍼를 쓰는 편성 자체가 예외적인 케이스입니다 — 자동편성은 실제 방 점수(제로아웃 반영)로 비교해 더 나을 때만 추천합니다.": [
     "Zero-out crews are the exception, not the rule — auto-assign compares real room scores (zero-out applied) and only recommends them when they actually win.",
     "ゼロアウト編成自体が例外的なケースです — 自動編成は実際の部屋スコア（ゼロアウト反映）で比較し、上回る場合のみ推薦します。",
+  ],
+  "와이후(협동의식)·스노우상트(근면성실)는 증폭형입니다 — 같은 방 다른 오퍼가 제공한 효율(시설 기반 제외)의 5%당 5%를 최대 +40%(스노우상트 +35%)까지 되돌립니다. 생산력 높은 오퍼와 묶어야 값이 나오므로, 아로마(귀금속 25+청소 20)+30%급 오퍼 같은 강한 생산팀에 얹으면 순금방이 ~115%가 됩니다. 시간당 성장형(아로마·크루스·씬·팽·케오베)과 Вий(훈련실 레벨 성장)는 만렙 기지 상한값으로 계산합니다.": [
+    "Waai Fu (Teamwork Consciousness) and Snowsant (Diligence) are amplifiers — they return 5% for every 5% of efficiency the other crew in the room provide (facility-based excluded), up to +40% (+35% for Snowsant). They only pay off stacked on high-output crews: on a strong team like Aroma (25 precious-metal + 20 upkeep) plus a ~30% operator, a gold room reaches ~115%. Hourly growth skills (Aroma, Kroos, Scene, Fang, Keobe and the like) and Vigil (training-room-level scaling) are all scored at their max-level base cap.",
+    "ワイフー（協同意識）・スノウサント（勤勉）は増幅型です — 同じ部屋の他オペレーターが提供した効率（施設ベース除く）の5%ごとに5%を、最大+40%（スノウサントは+35%）まで返します。生産力の高いオペレーターと組んでこそ価値が出るため、アロマ（貴金属25+清掃20）＋30%級オペレーターのような強い生産チームに乗せると純金部屋が約115%になります。毎時成長型（アロマ・クルース・シーン・ファン・ケオベ）とВий（訓練室レベル成長）は満期基地の上限値で計算します。",
   ],
   "오라 우선순위: 제조소 생산력 > 무역소 오더 효율 > 인맥 레퍼런스 > 단서 수집. '동종 효과 중 최고만 적용' 규칙을 따릅니다.": [
     "Aura priority: factory productivity > trading order efficiency > HR contacts > clue collection. Only the strongest of each kind applies.",
