@@ -26,6 +26,18 @@ const stripVolatile = (obj) => {
   }
   return obj;
 };
+// farm.json은 펭귄 통계 수치(times 표본·rate·sanity)가 매 실행 자연 증가/미세 변동한다 —
+// 이대로 비교하면 매번 meaningful=true가 되어 하루 3회 무의미한 커밋·배포가 나간다
+// (첫 자동 커밋 0995a75가 이 지터만으로 발생, 2026-07-21). 구조 시그니처만 비교:
+// 이벤트 개방(openStages) + 재료 구성(id) + 재료별 추천 스테이지 집합(순서 무시).
+const farmSignature = (obj) => ({
+  openStages: obj?.openStages ?? null,
+  items: (obj?.items ?? []).map((it) => ({
+    id: it.id,
+    stages: (it.stages ?? []).map((s) => s.id).sort(),
+  })).sort((x, y) => String(x.id).localeCompare(String(y.id))),
+});
+const NORMALIZERS = { "app/data/farm.json": farmSignature };
 const meaningfulChange = (path) => {
   const oldTxt = gitShowHead(path);
   const newTxt = existsSync(path) ? readFileSync(path, "utf-8") : null;
@@ -33,7 +45,8 @@ const meaningfulChange = (path) => {
   if (newTxt === null) return true;                        // 삭제 = 의미 있음
   const a = parse(oldTxt), b = parse(newTxt);
   if (a === null || b === null) return oldTxt !== newTxt;  // JSON 아니면 바이트 비교
-  return JSON.stringify(stripVolatile(a)) !== JSON.stringify(stripVolatile(b));
+  const norm = NORMALIZERS[path] ?? stripVolatile;
+  return JSON.stringify(norm(a)) !== JSON.stringify(norm(b));
 };
 
 // ── 바뀐/신규 추적 파일 목록 ──────────────────────────────────────────
