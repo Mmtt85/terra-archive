@@ -404,6 +404,23 @@ sip = os.path.join(REPO, "app", "data", "story-script-ids.json")
 script_ids = set(json.load(open(sip, encoding="utf-8"))) if os.path.exists(sip) else set()
 minis = sorted((v for v in kr.values() if v.get("actType") == "MINI_STORY" and v["id"] in script_ids),
                key=lambda v: -v["startTime"])
+
+_BG_RE = re.compile(r'\[[Bb]ackground\s*\([^\]]*?image\s*=\s*"([^"]+)"')
+_BG_SKIP = re.compile(r"(black|white|blank|gradient|none)", re.I)
+def first_meaningful_bg(act):
+    """CG 삽화가 없는 대사 위주 미니의 썸네일용 — 에피소드 원문에서 첫 '의미 있는' 배경 이름."""
+    for info in sorted(act["infoUnlockDatas"], key=lambda i: i.get("storySort", 0)):
+        path = info.get("storyTxt")
+        if not path:
+            continue
+        try:
+            txt = fetch(f"{GAMEDATA}/kr/gamedata/story/{path}.txt", binary=True).decode("utf-8")
+        except Exception:  # noqa: BLE001
+            continue
+        for bg in _BG_RE.findall(txt):
+            if not _BG_SKIP.search(bg):
+                return bg
+    return None
 for act in minis:
     eid = act["id"]
     codes = []
@@ -429,6 +446,18 @@ for act in minis:
         first_cut = next((ln["img"] for ep in sc.get("eps", []) for ln in ep.get("lines", []) if ln.get("img")), None)
         if first_cut and os.path.exists(os.path.join(REPO, "public", "story", "cut", f"{first_cut}.webp")):
             entry["thumb"] = f"/story/cut/{first_cut}.webp"
+    if "thumb" not in entry:
+        # CG 삽화가 없는 미니(투 비 컨티뉴·프렐류딩 라이츠 등)는 첫 배경을 썸네일로 쓴다.
+        bg = first_meaningful_bg(act)
+        if bg:
+            bgdest = os.path.join(REPO, "public", "story", "cut", f"{bg}.webp")
+            if not os.path.exists(bgdest):
+                try:
+                    to_jpeg(fetch(f"{ASSETS}/avg/backgrounds/{bg}.png", binary=True), bgdest, max_px=720)
+                except Exception:  # noqa: BLE001
+                    bg = None
+            if bg:
+                entry["thumb"] = f"/story/cut/{bg}.webp"
     events.append(entry)
 
 # ── 중섭 선행(미실장) 이벤트 — CN에만 있는 ACTIVITY를 unreleased 플래그로 추가 ──
