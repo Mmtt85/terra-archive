@@ -53,6 +53,8 @@ type ChronItem = { key: string; kind: ChronKind; name: LocText; start?: string; 
 const data = storiesData as { updated: string; events: StoryEvent[] };
 const summaryIds = new Set(summaryIdsData as string[]);
 const scriptIds = new Set(scriptIdsData as string[]);
+// 전문(풀 스크립트)이나 AI 요약 중 하나만 있어도 열 수 있다 (사용자 확정 2026-07-20).
+const canOpenStory = (id: string) => summaryIds.has(id) || scriptIds.has(id);
 
 // 전문(풀 스크립트) 스키마 — build-story-scripts.py 라인 스키마와 1:1
 type ScriptLine = { n?: string; x?: string; st?: string; img?: string; loc?: string; opts?: string[]; vals?: string[]; br?: string };
@@ -97,7 +99,7 @@ function eventFromHash(): StoryEvent | null {
   if (!hash.startsWith("#story-")) return null;
   const id = hash.slice(7);
   const ev = eventById.get(id);
-  return ev && summaryIds.has(id) ? ev : null;
+  return ev && canOpenStory(id) ? ev : null;
 }
 
 function blockText(block: Block): string {
@@ -525,16 +527,18 @@ function ScriptReader({ script, error, entities, opIndex, onShowOperator }: {
 
 // 요약 상세 — 본문 + 스크롤 추적 참조 레일
 function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }: {
-  event: StoryEvent; summary: Summary; onClose: () => void; onShowOperator?: (id: string) => void; opIndex?: OpIndex;
+  event: StoryEvent; summary?: Summary; onClose: () => void; onShowOperator?: (id: string) => void; opIndex?: OpIndex;
 }) {
   const { locale, t } = useI18n();
 
   // 전문(풀 스크립트)이 기본 뷰 — 진입 즉시 로드, AI 요약은 토글로 (사용자 확정 2026-07-18).
   // StoryDetail은 key={event.id}로 리마운트되므로 이벤트 전환 시 상태가 새지 않는다.
   const hasScript = scriptIds.has(event.id);
+  const hasSummary = Boolean(summary); // 요약이 아직 없는(전문만 있는) 이벤트도 열람 가능 (2026-07-20)
   // 미출시(CN 선행) 이벤트: 전문이 없어도 버튼은 보여주고, 누르면 왜 없는지 안내 (사용자 요청 2026-07-18)
   const futureNoScript = !hasScript && Boolean(event.unreleased);
-  const [scriptView, setScriptView] = useState(hasScript);
+  // 요약이 없으면 전문만 볼 수 있으니 전문 뷰로 고정 시작
+  const [scriptView, setScriptView] = useState(hasScript || !hasSummary);
   const [script, setScript] = useState<ScriptData | null>(null);
   const [scriptErr, setScriptErr] = useState(false);
   useEffect(() => {
@@ -550,7 +554,7 @@ function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }: {
 
   // 인물이 용어보다 먼저 뜨도록 chars → terms 순으로 합친다
   const entities = useMemo<Entity[]>(
-    () => [...(summary.chars ?? []), ...(summary.terms ?? [])],
+    () => [...(summary?.chars ?? []), ...(summary?.terms ?? [])],
     [summary],
   );
 
@@ -562,7 +566,7 @@ function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }: {
     [entities],
   );
   // 참조 레일 — 블록 텍스트 기준 매칭 (전문 뷰는 ScriptReader가 라인 기준으로 동일 훅 사용)
-  const blockTexts = useMemo(() => summary.blocks.map(blockText), [summary]);
+  const blockTexts = useMemo(() => (summary?.blocks ?? []).map(blockText), [summary]);
   const { bodyRef, active } = useEntityRail(blockTexts, matchers);
   const em = useMemo(() => entMatchOf(matchers), [matchers]);
   const [railFocus, setRailFocus] = useState<{ ei: number; k: number } | null>(null);
@@ -579,9 +583,11 @@ function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }: {
           <span className="section-no">AI STORY DIGEST</span>
           <h2>{locText(locale, event.name)}</h2>
           <p className="story-meta">{event.epNo != null ? locText(locale, epLabel(event.epNo)) : event.id.startsWith("rogue_") ? t("통합 전략") : `${event.start} · ${t("에피소드 {n}개", { n: event.episodes })}`}</p>
-          <p className="story-tagline">{summary.tagline}</p>
-          {/* 전문 보기 — 요약 위 토글 (사용자 요청 2026-07-18) */}
-          {(hasScript || futureNoScript) && (
+          {summary?.tagline && <p className="story-tagline">{summary.tagline}</p>}
+          {/* 전문만 있고 요약이 아직 없는 이벤트 안내 */}
+          {!hasSummary && hasScript && <p className="story-tagline story-tagline-plain">{t("AI 요약은 아직 준비 중이에요. 지금은 게임 내 스토리 전문으로 만나 보세요.")}</p>}
+          {/* 보기 방식 토글 — 전문·요약이 둘 다 있을 때만(또는 미출시 안내). 하나만 있으면 토글 없이 그것만. */}
+          {((hasScript && hasSummary) || futureNoScript) && (
             <div className="story-mode-bar" role="tablist" aria-label={t("보기 방식")}>
               <button type="button" role="tab" aria-selected={scriptView}
                 className={scriptView ? "on" : ""} onClick={openScript}>{t("전문 보기 (풀 스크립트)")}</button>
@@ -589,7 +595,7 @@ function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }: {
                 className={!scriptView ? "on" : ""} onClick={() => setScriptView(false)}>{t("AI 요약")}</button>
             </div>
           )}
-          {!scriptView && <p className="story-disclaimer">{t("이 요약은 AI가 게임 내 스토리 스크립트 전문을 읽고 쓴 2차 창작 요약입니다.")}</p>}
+          {!scriptView && hasSummary && <p className="story-disclaimer">{t("이 요약은 AI가 게임 내 스토리 스크립트 전문을 읽고 쓴 2차 창작 요약입니다.")}</p>}
           {!scriptView && locale !== "ko" && !translatedByLocale[locale]?.has(event.id) && (
             <p className="story-disclaimer">{t("이 편의 요약 본문은 아직 번역되지 않아 한국어로 표시됩니다.")}</p>
           )}
@@ -602,9 +608,9 @@ function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }: {
             <p>{t("한국 서버에 정식 출시되면 공식 번역 전문을 바로 볼 수 있도록 준비해 두었어요. 그때까지는 줄거리를 꼼꼼히 담은 AI 요약으로 먼저 만나 보세요.")}</p>
           </div>
         )}
-        <div className="story-detail-grid" hidden={scriptView}>
+        <div className="story-detail-grid" hidden={scriptView || !hasSummary}>
           <div className="story-body" ref={bodyRef}>
-            {summary.blocks.map((block, index) => {
+            {(summary?.blocks ?? []).map((block, index) => {
               if (block.t === "h") return <h3 key={index} data-idx={index}>{block.x}</h3>;
               if (block.t === "img") {
                 const dim = imageDims[block.src];
@@ -675,7 +681,7 @@ function resolveChron(): ChronItem[] {
       name: raw.title ?? { ko: raw.id ?? "?" },
       terraYear: raw.terraYear ?? null, arc: raw.arc ?? null, dateNote: raw.dateNote,
       // 요약이 달린 메인스토리·로그라이크는 열 수 있게 eventId를 부여 (합성 이벤트와 매칭)
-      eventId: raw.id && summaryIds.has(raw.id) ? raw.id : undefined,
+      eventId: raw.id && canOpenStory(raw.id) ? raw.id : undefined,
       epNo,
       ep: epNo != null ? epLabel(epNo) : undefined,
       // 메인: 한국판/글로벌/일본 타이틀카드. 로그라이크: 키 비주얼(로케일 공용).
@@ -979,7 +985,7 @@ function DigestView({ onOpen, includeFuture, group, onGroup }: { onOpen: (event:
 
   const renderCard = (it: ChronItem) => {
     const ev = it.eventId ? eventById.get(it.eventId) : undefined;
-    const ready = Boolean(it.eventId && summaryIds.has(it.eventId));
+    const ready = Boolean(it.eventId && canOpenStory(it.eventId));
     const thumb = ev
       ? ((locale === "ja" ? ev.thumbJa : locale === "en" ? ev.thumbEn : undefined) ?? ev.thumb)
       : ((locale === "ja" ? it.thumbJa : locale === "en" ? it.thumbEn : undefined) ?? it.thumb);
@@ -1024,7 +1030,7 @@ function DigestView({ onOpen, includeFuture, group, onGroup }: { onOpen: (event:
                 ? <li className="story-search-empty">{t("조건에 맞는 이벤트가 없어요.")}</li>
                 : sortItems(filtered).map((it) => {
                     const ev = it.eventId ? eventById.get(it.eventId) : undefined;
-                    const ready = Boolean(it.eventId && summaryIds.has(it.eventId));
+                    const ready = Boolean(it.eventId && canOpenStory(it.eventId));
                     return (
                       <li key={it.key} role="option" aria-selected={false}>
                         <button type="button" className={ready ? "" : "pending"} disabled={!ready}
@@ -1113,7 +1119,7 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
   // 연대기에서 이벤트 클릭 → 요약이 있으면 상세로, 없으면 무시
   const openEvent = (eventId: string) => {
     const ev = eventById.get(eventId);
-    if (ev && summaryIds.has(eventId)) open(ev);
+    if (ev && canOpenStory(eventId)) open(ev);
   };
   // 뷰·그룹 전환을 복붙 가능한 해시로 남긴다 (뒤로가기로 오갈 수 있게 pushState)
   const goView = (v: "digest" | "chronicle") => {
