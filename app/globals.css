@@ -79,6 +79,16 @@ body {
     Noto Sans KR,
     sans-serif;
 }
+/* 일본어 페이지는 Meiryo 우선 — Meiryo가 있는 클라이언트(주로 Windows)는 자동으로 Meiryo,
+   없으면 폴백으로 렌더된다 (하이드레이션 후 home.tsx가 html lang을 ja로 바꿈). 사용자 요청 2026-07. */
+html[lang="ja"] body {
+  font-family:
+    Meiryo,
+    "Hiragino Kaku Gothic ProN",
+    "Yu Gothic",
+    "Noto Sans JP",
+    sans-serif;
+}
 main {
   height: 100dvh;
   overflow: hidden;
