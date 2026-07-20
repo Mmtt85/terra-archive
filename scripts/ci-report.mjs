@@ -68,7 +68,12 @@ const diffById = (path, keyer, labeler) => {
   return { added, removed };
 };
 
+let newReleasedOpNames = [];  // 인프라 시너지 검토 안내용 (출시 오퍼만)
 if (meaningfulData.includes("app/data/operators.json")) {
+  const oldOps = parse(gitShowHead("app/data/operators.json") || "[]") || [];
+  const oldIds = new Set(oldOps.map((o) => o.id));
+  const curOps = parse(readFileSync("app/data/operators.json", "utf-8")) || [];
+  newReleasedOpNames = curOps.filter((o) => !oldIds.has(o.id) && !o.unreleased).map((o) => o.name);
   const { added, removed } = diffById(
     "app/data/operators.json", (o) => o.id,
     (o) => `${o.name}${o.rarity ? ` (${o.rarity}★)` : ""}${o.unreleased ? " · 미실장(CN)" : ""}`);
@@ -122,6 +127,35 @@ if (existsSync(".ci/warnings.log")) {
   }
 }
 
+// ── 🖐 사람 손 필요 (세션 열어서 스킬 실행) ───────────────────────────
+// 자동화가 못 하는(도메인 판단이 필요한) 일만 골라, 실행할 스킬을 콕 집어 안내한다.
+const manual = [];
+// 1) 테라 연대기 미등록 이벤트 — chronicle-register 스킬
+try {
+  const ch = parse(readFileSync("app/data/chronology.json", "utf-8"));
+  const refs = new Set((ch?.entries || []).map((e) => e.ref).filter(Boolean));
+  const st = parse(readFileSync("app/data/stories.json", "utf-8"));
+  const evs = Array.isArray(st) ? st : st.events;
+  const gaps = evs.filter((e) => !refs.has(e.id) && !/^(rogue|main)/.test(e.id))
+    .map((e) => `${e.id}${e.name?.ko ? ` (${e.name.ko})` : ""}`);
+  if (gaps.length) manual.push(`### 테라 연대기 미등록 ${gaps.length}건 → \`chronicle-register\` 스킬\n` +
+    gaps.map((g) => `- ${g}`).join("\n"));
+} catch { /* 파일 없으면 스킵 */ }
+// 2) 신규 출시 오퍼 인프라 시너지 검토 — planner-synergy-review 스킬 (특이 시너지 없으면 무시 가능)
+if (newReleasedOpNames.length) {
+  manual.push(`### 신규 오퍼 인프라 시너지 검토 → \`planner-synergy-review\` 스킬\n` +
+    `- ${newReleasedOpNames.join(", ")}\n` +
+    `  (스탯·스킬은 자동 파싱됨. 새 시너지 팟/토큰/특이 문구가 있을 때만 rules.json 규칙 추가가 필요)`);
+}
+// 3) 미실장(CN) 신규 오퍼·재료 번역 — 파이프라인 경고(未/译/미번역)가 잡히면 cn-translation-fill 스킬
+if (/미번역|未|译/.test(warnBlock)) {
+  manual.push(`### CN 신규 텍스트 번역 → \`cn-translation-fill\` 스킬\n` +
+    `- 위 파이프라인 경고의 중국어 원문을 cn-translations.json에 채운 뒤 재생성`);
+}
+const manualBlock = manual.length
+  ? `\n## 🖐 사람 손 필요 — 세션 열어서 아래 스킬 실행\n\n${manual.join("\n\n")}\n`
+  : "";
+
 // ── 리포트 조립 ──────────────────────────────────────────────────────
 const laneLabel = LANE === "cn" ? "CN(미래시)" : "KR";
 let subject;
@@ -139,6 +173,7 @@ if (!meaningful) {
 const report = `# 테라 아카이브 데이터 리프레시 — ${laneLabel}\n\n` +
   (meaningful ? "**변경 사항이 있어 커밋·배포합니다.**\n\n" : "변경 사항 없음 (또는 날짜만 갱신) — 배포하지 않습니다.\n\n") +
   (lines.length ? lines.join("\n\n") + "\n" : "") +
+  manualBlock +
   warnBlock + "\n";
 
 writeFileSync(".ci/report.md", report);
