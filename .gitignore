@@ -51,3 +51,6 @@ Arknights_OperBox_Export.json
 # 스토리 요약 번역 작업 중간 산출물 (최종본은 app/data/story-summaries.{en,ja}.json)
 scripts/story-i18n/
 scripts/story-cn/
+
+# CI 임시 리포트/로그
+.ci/

@@ -1,0 +1,126 @@
+# AI 콘텐츠 자동 집필 (🟡 레인) — 헤드리스 Claude
+#
+# "시작됐는데 요약 없는 신규 이벤트"를 감지해 Claude Code(헤드리스)가 story-summary
+# 스킬 절차대로 요약을 집필·번역하고, 빌드가 통과하면 커밋·배포한다.
+# 사용자 확정: 완전 자동 발행 — 다만 배포 전 npm build 통과 + Claude 자체 환각검증을 게이트로 둔다.
+#
+# 비용: CLAUDE_CODE_OAUTH_TOKEN(구독 토큰, `claude setup-token`)을 쓰므로 API 종량 과금이 아니라
+#       기존 Claude 구독 쿼터를 소모한다 → 추가 요금 0.
+#
+# 필요한 저장소 시크릿(data-refresh와 공유 + 추가):
+#   CLAUDE_CODE_OAUTH_TOKEN — `claude setup-token`으로 발급한 구독 인증 토큰
+#   CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID / MAIL_* — data-refresh.yml과 동일
+name: content-auto
+
+on:
+  schedule:
+    - cron: "0 14 * * *"  # 23:00 KST — KR 데이터 리프레시 뒤
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "커밋·배포 없이 집필만 (드라이런)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: content-auto
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  write:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 의존성 설치
+        run: |
+          npm ci
+          python3 -m pip install --quiet pillow
+
+      - name: 콘텐츠 작업 감지
+        id: detect
+        run: node scripts/ci-detect-content.mjs
+
+      - name: Claude Code 설치
+        if: steps.detect.outputs.has_tasks == 'true'
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: 신규 이벤트 요약 자동 집필 (헤드리스 Claude)
+        id: claude
+        if: steps.detect.outputs.has_tasks == 'true'
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: |
+          set -o pipefail
+          claude -p "$(cat .ci/llm-task.md)" \
+            --dangerously-skip-permissions \
+            --max-turns 400 \
+            2>&1 | tee .ci/llm-output.txt
+
+      - name: 빌드 검증 (배포 전 게이트)
+        id: verify
+        if: steps.detect.outputs.has_tasks == 'true'
+        run: npm run build
+
+      - name: 커밋 + 푸시 (집필 성공 시)
+        if: steps.detect.outputs.has_tasks == 'true' && steps.verify.outcome == 'success' && !inputs.dry_run
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git config user.name  "terra-archive-bot"
+            git config user.email "bot@users.noreply.github.com"
+            git add -A
+            git commit -m "AI 스토리 요약 자동 집필 — ${{ steps.detect.outputs.ids }}
+
+            Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
+            git push
+          else
+            echo "변경 없음 — Claude가 집필을 완료하지 못했을 수 있음"
+          fi
+
+      - name: Cloudflare Pages 배포
+        if: steps.detect.outputs.has_tasks == 'true' && steps.verify.outcome == 'success' && !inputs.dry_run
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: bash scripts/deploy.sh
+
+      - name: 이메일 리포트
+        if: steps.detect.outputs.has_tasks == 'true'
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          to: ${{ secrets.MAIL_TO }}
+          from: 테라 아카이브 봇 <${{ secrets.MAIL_USERNAME }}>
+          subject: "[테라아카이브] AI 요약 자동 집필 ${{ steps.detect.outputs.count }}건 — ${{ steps.detect.outputs.ids }}"
+          body: file://.ci/llm-output.txt
+
+      - name: 실패 알림 이메일
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          to: ${{ secrets.MAIL_TO }}
+          from: 테라 아카이브 봇 <${{ secrets.MAIL_USERNAME }}>
+          subject: "[테라아카이브 실패] content-auto (AI 요약) 오류"
+          body: "AI 요약 자동 집필이 실패했습니다(빌드 게이트 실패 등). 배포는 되지 않았습니다.\n로그: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"

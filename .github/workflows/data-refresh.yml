@@ -1,0 +1,124 @@
+# 결정론 데이터 리프레시 (🟢 레인) — 무인 유지보수 백본
+#
+# 클뜯 레포(ArknightsAssets/ArknightsGamedata)에서 KR·CN·EN·JP 테이블을 받아
+# 모든 정적 데이터를 재생성하고, 진짜 변동이 있을 때만 커밋·배포한다.
+# LLM 판단이 필요한 산출물(스토리 요약·록라 큐레이션·CN 신규 오퍼 번역)은
+# 여기서 건드리지 않는다 — content-auto.yml(🟡 레인)이 맡는다.
+#
+# 스케줄(사용자 확정): KR 하루 2회(점검 후·저녁) + CN 하루 1회. UTC 기준.
+#   - 08:00 UTC = 17:00 KST  (KR 점검 종료 직후)
+#   - 13:00 UTC = 22:00 KST  (KR 저녁 보정)
+#   - 04:00 UTC = 12:00 CST  (CN 점검 후 · 미래시)
+#
+# 필요한 저장소 시크릿:
+#   CLOUDFLARE_API_TOKEN   — Pages 배포용 (Account > Cloudflare Pages: Edit 권한 토큰)
+#   CLOUDFLARE_ACCOUNT_ID  — Cloudflare 계정 ID
+#   MAIL_USERNAME          — Gmail 주소 (SMTP 발신)
+#   MAIL_PASSWORD          — Gmail 앱 비밀번호 (2단계 인증 후 발급)
+#   MAIL_TO                — 리포트 받을 주소
+name: data-refresh
+
+on:
+  schedule:
+    - cron: "0 8 * * *"   # KR #1
+    - cron: "0 13 * * *"  # KR #2
+    - cron: "0 4 * * *"   # CN(미래시)
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "커밋·배포 없이 리포트만 (드라이런)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: data-refresh
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2   # ci-report가 HEAD와 비교하므로 최소 2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 의존성 설치
+        run: |
+          npm ci
+          python3 -m pip install --quiet pillow
+
+      - name: 레인 판별 (cron → kr/cn)
+        id: lane
+        run: |
+          if [ "${{ github.event.schedule }}" = "0 4 * * *" ]; then
+            echo "lane=cn" >> "$GITHUB_OUTPUT"
+          else
+            echo "lane=kr" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 데이터 재생성 (결정론 파이프라인)
+        run: bash scripts/ci-refresh.sh
+
+      - name: 변경 감지 + 리포트
+        id: report
+        run: node scripts/ci-report.mjs "${{ steps.lane.outputs.lane }}"
+
+      - name: 커밋 + 푸시 (변동 있을 때만)
+        if: steps.report.outputs.meaningful == 'true' && !inputs.dry_run
+        run: |
+          git config user.name  "terra-archive-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add -A app/data public
+          git commit -m "데이터 자동 갱신 (${{ steps.lane.outputs.lane }}) — $(date -u +%Y-%m-%d)
+
+          $(cat .ci/subject.txt)
+
+          Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
+          git push
+
+      - name: Cloudflare Pages 배포 (변동 있을 때만)
+        if: steps.report.outputs.meaningful == 'true' && !inputs.dry_run
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: bash scripts/deploy.sh
+
+      - name: 이메일 리포트 (변동 또는 경고 있을 때만)
+        if: steps.report.outputs.notify == 'true'
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          to: ${{ secrets.MAIL_TO }}
+          from: 테라 아카이브 봇 <${{ secrets.MAIL_USERNAME }}>
+          subject: ${{ steps.report.outputs.subject }}
+          convert_markdown: true
+          html_body: file://.ci/report.md
+
+      - name: 실패 알림 이메일
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          to: ${{ secrets.MAIL_TO }}
+          from: 테라 아카이브 봇 <${{ secrets.MAIL_USERNAME }}>
+          subject: "[테라아카이브 실패] data-refresh 파이프라인 오류"
+          body: "무인 데이터 리프레시가 실패했습니다. 배포는 되지 않았습니다.\n로그: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
