@@ -4682,6 +4682,53 @@ html.dark .story-card:hover .story-thumb img {
   background: var(--ink);
   color: var(--white);
 }
+/* 읽기 설정(글자·삽화 크기) — 요약/전문 공용 (사용자 피드백 2026-07-20) */
+.story-reader-prefs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 4px;
+}
+.story-reader-prefs-label {
+  font: 800 11px monospace;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+}
+.story-reader-prefs-btns {
+  display: inline-flex;
+  border: 1px solid var(--line);
+}
+.story-reader-prefs-btns button {
+  border: 0;
+  background: var(--white);
+  padding: 5px 11px;
+  font: 700 11.5px inherit;
+  cursor: pointer;
+  color: var(--muted);
+}
+.story-reader-prefs-btns button + button {
+  border-left: 1px solid var(--line);
+}
+.story-reader-prefs-btns button.on {
+  background: var(--ink);
+  color: var(--white);
+}
+/* 글자 크기 3단계 — 전문(.sc-*)·요약(.story-body) 본문 폰트에 함께 적용 */
+.reader-font-sm .sc-line,
+.reader-font-sm .sc-narr,
+.reader-font-sm .sc-st { font-size: 13px; }
+.reader-font-sm .story-body p { font-size: 13px; }
+.reader-font-sm .story-body blockquote p { font-size: 12.5px; }
+.reader-font-lg .sc-line,
+.reader-font-lg .sc-narr,
+.reader-font-lg .sc-st { font-size: 17.5px; }
+.reader-font-lg .story-body p { font-size: 17px; }
+.reader-font-lg .story-body blockquote p { font-size: 16.5px; }
+/* 삽화 크기 3단계 — 전문 컷씬(.sc-cut)은 작게/크게 모두 유효, 요약 이미지는 작게만(기본이 이미 최대폭) */
+.reader-img-sm .sc-cut img { max-width: 58%; }
+.reader-img-sm .story-body figure:not(.story-deco) { max-width: 58%; margin-left: auto; margin-right: auto; }
+.reader-img-lg .sc-cut { margin-left: 0; }
 .story-script {
   margin-top: 20px;
 }

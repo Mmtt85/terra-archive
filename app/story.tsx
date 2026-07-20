@@ -183,6 +183,50 @@ function richMark(s: string, em: EntMatch | null, onEntity?: (ei: number) => voi
     i % 2 ? <b key={i}>{markEntities(part, em, onEntity)}</b> : <span key={i}>{markEntities(part, em, onEntity)}</span>);
 }
 
+// ── 읽기 설정(글자·삽화 크기) — 요약/전문 공용, localStorage에 기억 (사용자 피드백 2026-07-20) ──
+type ReaderPrefs = { font: "sm" | "md" | "lg"; img: "sm" | "md" | "lg" };
+const READER_PREFS_KEY = "story-reader-prefs";
+function loadReaderPrefs(): ReaderPrefs {
+  if (typeof window === "undefined") return { font: "md", img: "md" };
+  try {
+    const raw = window.localStorage.getItem(READER_PREFS_KEY);
+    const p = raw ? JSON.parse(raw) : null;
+    if (p && (p.font === "sm" || p.font === "md" || p.font === "lg") && (p.img === "sm" || p.img === "md" || p.img === "lg")) return p;
+  } catch { /* 무시 — 기본값 사용 */ }
+  return { font: "md", img: "md" };
+}
+function useReaderPrefs() {
+  const [prefs, setPrefs] = useState<ReaderPrefs>(loadReaderPrefs);
+  useEffect(() => {
+    try { window.localStorage.setItem(READER_PREFS_KEY, JSON.stringify(prefs)); } catch { /* 무시 */ }
+  }, [prefs]);
+  return [prefs, setPrefs] as const;
+}
+function ReaderPrefsBar({ prefs, setPrefs }: { prefs: ReaderPrefs; setPrefs: (fn: (p: ReaderPrefs) => ReaderPrefs) => void }) {
+  const { t } = useI18n();
+  const STEPS: Array<{ key: "sm" | "md" | "lg"; label: string }> = [
+    { key: "sm", label: t("작게") }, { key: "md", label: t("보통") }, { key: "lg", label: t("크게") },
+  ];
+  return (
+    <div className="story-reader-prefs" role="group" aria-label={t("읽기 설정")}>
+      <span className="story-reader-prefs-label">{t("글자 크기")}</span>
+      <div className="story-reader-prefs-btns">
+        {STEPS.map((s) => (
+          <button key={s.key} type="button" className={prefs.font === s.key ? "on" : ""}
+            onClick={() => setPrefs((p) => ({ ...p, font: s.key }))}>{s.label}</button>
+        ))}
+      </div>
+      <span className="story-reader-prefs-label">{t("삽화 크기")}</span>
+      <div className="story-reader-prefs-btns">
+        {STEPS.map((s) => (
+          <button key={s.key} type="button" className={prefs.img === s.key ? "on" : ""}
+            onClick={() => setPrefs((p) => ({ ...p, img: s.key }))}>{s.label}</button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── 참조 레일 공용 로직 — 요약 본문과 전문(스크립트) 뷰가 같이 쓴다 (2026-07-18) ──
 // texts[i] = data-idx=i 요소의 매칭용 텍스트. 화면에 보이는 요소들에 언급된 엔티티를 추적.
 function useEntityRail(texts: string[], matchers: RegExp[]) {
@@ -551,6 +595,7 @@ function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }: {
     return () => { alive = false; };
   }, [event.id, hasScript]);
   const openScript = () => setScriptView(true);
+  const [readerPrefs, setReaderPrefs] = useReaderPrefs();
 
   // 인물이 용어보다 먼저 뜨도록 chars → terms 순으로 합친다
   const entities = useMemo<Entity[]>(
@@ -578,7 +623,7 @@ function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }: {
       <div className="story-back-wrap">
         <button type="button" className="story-back story-back-top" onClick={onClose}>← {t("스토리 목록으로")}</button>
       </div>
-      <div className="story-detail-inner">
+      <div className={`story-detail-inner reader-font-${readerPrefs.font} reader-img-${readerPrefs.img}`}>
         <header className="story-detail-head">
           <span className="section-no">AI STORY DIGEST</span>
           <h2>{locText(locale, event.name)}</h2>
@@ -599,6 +644,8 @@ function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }: {
           {!scriptView && locale !== "ko" && !translatedByLocale[locale]?.has(event.id) && (
             <p className="story-disclaimer">{t("이 편의 요약 본문은 아직 번역되지 않아 한국어로 표시됩니다.")}</p>
           )}
+          {/* 읽기 설정(글자·삽화 크기) — 전문·요약 둘 다 실제 본문이 있을 때만 노출 (사용자 피드백 2026-07-20) */}
+          {(hasSummary || hasScript) && <ReaderPrefsBar prefs={readerPrefs} setPrefs={setReaderPrefs} />}
         </header>
         {scriptView && hasScript && <ScriptReader script={script} error={scriptErr} entities={entities} opIndex={opIndex} onShowOperator={onShowOperator} />}
         {scriptView && futureNoScript && (

@@ -44,7 +44,7 @@ export function tokenName(locale: Locale, ko: string): string {
 // ── 컨셉덱 태그 (retag-concepts.py의 KR 키 → 표시명) ────────────────────────
 const CONCEPT_I18N: Record<string, Pair> = {
   // 시너지 팟 11종
-  "해산물팟": ["Abyssal Team", "アビサルパーティ"],
+  "어비설팟": ["Abyssal Team", "アビサルパーティ"],
   "쉐이팟": ["Sui Team", "スイパーティ"],
   "쉐라그팟": ["Kjerag Team", "イェラグパーティ"],
   "카시미어팟": ["Kazimierz Team", "カジミエーシュパーティ"],
@@ -832,6 +832,12 @@ const D: Record<string, Pair> = {
   "요약 준비 중": ["Digest coming soon", "要約準備中"],
   "전문 보기 (풀 스크립트)": ["Full script", "全文（フルスクリプト）"],
   "보기 방식": ["View mode", "表示モード"],
+  "읽기 설정": ["Reading settings", "読書設定"],
+  "글자 크기": ["Text size", "文字サイズ"],
+  "삽화 크기": ["Illustration size", "挿絵サイズ"],
+  "작게": ["Small", "小"],
+  "보통": ["Medium", "中"],
+  "크게": ["Large", "大"],
   "게임 내 스토리 스크립트 원문입니다. 대사·지문·컷씬만 표시되며 연출(음악·효과)은 생략됩니다.": [
     "The original in-game story script. Only dialogue, narration, and cutscenes are shown; staging (music/effects) is omitted.",
     "ゲーム内ストーリースクリプトの原文です。セリフ・地の文・カットシーンのみ表示され、演出（音楽・効果）は省略されます。",
