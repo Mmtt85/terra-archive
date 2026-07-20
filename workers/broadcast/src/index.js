@@ -155,6 +155,11 @@ const DATACHECK_KEY = "datacheck";
 const tierToStars = (rarity) =>
   typeof rarity === "number" ? rarity + 1 : Number(String(rarity).replace("TIER_", ""));
 
+// 공채 풀 텍스트의 오탈자 교정 — scripts/build-recruit.py의 NAME_FIX와 동일하게 유지할 것.
+// (샤마르가 recruitDetail엔 "샤미르"로 잘못 적혀 있어, 교정하지 않으면 /admin 데이터 비교가
+//  신규/삭제 양쪽에 영원히 뜬다 — 2026-07-20)
+const RECRUIT_NAME_FIX = { "샤미르": "샤마르" };
+
 // recruitDetail 텍스트에서 공채 풀 오퍼 이름을 뽑는다 — ★줄이 성급, 아래 줄들이 / 구분 이름
 function parseRecruitPool(detail) {
   const out = [];
@@ -165,7 +170,7 @@ function parseRecruitPool(detail) {
     if (!rarity || !line || line.startsWith("-")) continue;
     const cleaned = line.replace(/<[^>]*>/g, "").trim();
     for (const part of cleaned.split("/")) {
-      const name = part.trim();
+      const name = (part.trim() in RECRUIT_NAME_FIX) ? RECRUIT_NAME_FIX[part.trim()] : part.trim();
       if (name) out.push({ name, rarity });
     }
   }

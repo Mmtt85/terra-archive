@@ -251,11 +251,15 @@ export default function AdminPage() {
 
   // 게임 데이터 비교 — 획득 불가(가짜 게스트·컬래버 잔재 등)는 사이트가 의도적으로
   // 제외한 것이므로 obtainable=true만 신규로 판정한다
+  // 공채 풀 텍스트(recruitDetail)의 오탈자를 build-recruit.py NAME_FIX와 동일하게 교정한 뒤 비교한다.
+  // (샤마르가 공채 풀엔 "샤미르"로 잘못 적혀 있어, 교정하지 않으면 신규/삭제 양쪽에 영원히 뜬다 — 2026-07-20)
+  const RECRUIT_NAME_FIX: Record<string, string> = { "샤미르": "샤마르" };
+  const fixName = (n: string): string => RECRUIT_NAME_FIX[n] ?? n;
   const localOpIds = new Set((operatorsData as { id: string }[]).map((op) => op.id));
   const localRecruitNames = new Set((recruitData as { ops: { name: string }[] }).ops.map((op) => op.name));
   const newOps = (dataCheck?.operators ?? []).filter((op) => op.obtainable && !localOpIds.has(op.id)).sort((a, b) => b.rarity - a.rarity);
-  const newRecruit = (dataCheck?.recruit ?? []).filter((r) => !localRecruitNames.has(r.name)).sort((a, b) => b.rarity - a.rarity);
-  const remoteRecruitNames = new Set((dataCheck?.recruit ?? []).map((r) => r.name));
+  const newRecruit = (dataCheck?.recruit ?? []).filter((r) => !localRecruitNames.has(fixName(r.name))).sort((a, b) => b.rarity - a.rarity);
+  const remoteRecruitNames = new Set((dataCheck?.recruit ?? []).map((r) => fixName(r.name)));
   const staleRecruit = dataCheck ? (recruitData as { ops: { name: string }[] }).ops.filter((op) => !remoteRecruitNames.has(op.name)).map((op) => op.name) : [];
   // 재료 파밍표: farm.json에 박힌 빌드 시점 세트 vs 워커의 현재 세트 —
   // 이벤트 개폐(스테이지 증감)나 신규 재료가 생기면 재생성 신호
