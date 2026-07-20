@@ -1011,7 +1011,9 @@ function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEve
       key: ev.id, kind: "event", name: ev.name, start: ev.start, thumb: ev.thumb,
       terraYear: null, arc: null, eventId: ev.id,
     }));
-    return [...future, ...CHRON_ITEMS];
+    // 방어적 dedup — 연대기에 실수로 미출시 이벤트가 들어가도 future와 중복되지 않게 (key 기준)
+    const futureKeys = new Set(future.map((f) => f.key));
+    return [...future, ...CHRON_ITEMS.filter((it) => !futureKeys.has(it.key))];
   }, [includeFuture]);
 
   const keyword = normSearch(query);

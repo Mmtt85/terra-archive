@@ -136,7 +136,8 @@ try {
   const refs = new Set((ch?.entries || []).map((e) => e.ref).filter(Boolean));
   const st = parse(readFileSync("app/data/stories.json", "utf-8"));
   const evs = Array.isArray(st) ? st : st.events;
-  const gaps = evs.filter((e) => !refs.has(e.id) && !/^(rogue|main)/.test(e.id))
+  // 미출시(CN 미래시) 이벤트는 연대기 대상이 아니다 — KR 출시(unreleased 해제) 후 등록한다.
+  const gaps = evs.filter((e) => !refs.has(e.id) && !e.unreleased && !/^(rogue|main)/.test(e.id))
     .map((e) => `${e.id}${e.name?.ko ? ` (${e.name.ko})` : ""}`);
   if (gaps.length) manual.push(`### 테라 연대기 미등록 ${gaps.length}건 → \`chronicle-register\` 스킬\n` +
     gaps.map((g) => `- ${g}`).join("\n"));
