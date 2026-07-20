@@ -770,6 +770,13 @@
    "arc": "ur"
   },
   {
+   "ref": "act51side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "ur",
+   "dateNote": "우르수스 학생 자치단 기원담 — '우르수스의 아이들'과 동일 인물군(지마·이스티나·레토·굼·로사 등)"
+  },
+  {
    "ref": "act7d5",
    "kind": "event",
    "terraYear": null,
