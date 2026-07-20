@@ -115,8 +115,8 @@ export function pageMetadata(locale: SeoLocale, tab: SeoTab = "portal"): Metadat
   const title = tabMeta?.title ?? meta.title;
   const description = tabMeta?.description ?? meta.description;
   const url = `${SITE_URL}${pathFor(locale, tab)}`;
-  // 탭별 전용 OG 이미지 (scripts/build-og.py 생성) — '모든 페이지 동일' 문제 해결.
-  const ogImage = `/og/${tab}.jpg`;
+  // 로케일×탭별 전용 OG 이미지 (scripts/build-og.py 생성) — '모든 페이지 동일' 문제 해결.
+  const ogImage = `/og/${locale}/${tab}.jpg`;
   return {
     title,
     description,
