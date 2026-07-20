@@ -261,25 +261,23 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   // 자동편성 진행 안내 — 계산이 수 초 걸려도 전수 비교가 우선(사용자 확정 2026-07-19)이라,
   // 엔진이 후보안 사이마다 진행 단계를 알려주면 로케일 문구로 표시한다
   const [optimizing, setOptimizing] = useState<string | null>(null);
-  // 세트 표시명은 L2 카탈로그(rules.json synergySets)의 name — KR 원문이 i18n 사전 키
-  const SET_LABEL: Record<string, string> = Object.fromEntries((RULES.synergySets ?? []).map((def) => [def.key, def.name]));
   const stepMessage = (step: OptimizeStep): string => {
     if (step.phase === "base") return t("자동편성 엔진 계산 중 — 기본 편성 조립·전수 감사…");
-    if (step.phase === "variant") return t("자동편성 엔진 계산 중 — 시너지 세트 후보안 {i}/{n} ({sets}) 평가…", { i: step.index ?? 0, n: step.total ?? 0, sets: (step.sets ?? []).map((key) => t(SET_LABEL[key] ?? key)).join("+") });
+    if (step.phase === "variant") return t("자동편성 엔진 계산 중 — 시너지 세트 후보안 {i}/{n} 평가…", { i: step.index ?? 0, n: step.total ?? 0 });
     if (step.index) return t("자동편성 엔진 계산 중 — 채택안 전수 감사 {crew}조 {i}/{n}회차 검수…", { crew: step.crew ?? "A", i: step.index, n: step.total ?? step.index });
     return t("자동편성 엔진 계산 중 — 최적안 비교·마무리 검증…");
   };
 
   const runOptimize = async (ids: Set<string> = ownedIds, elite: Map<string, Elite> = eliteById, prio: ProdPriority = priority) => {
     if (optimizing) return; // 중복 실행 방지
-    // 페이싱 (사용자 확정 2026-07-19): **모든 단계** 0.3~0.6초 랜덤 간격으로 균일하게 —
-    // 예산 방식은 앞 단계가 시간을 다 써 뒤가 좌르륵 지나가는 문제가 있었다. 단계마다 같은
-    // 분포로 지연해 첫 단계든 마지막이든 읽을 틈이 동일하게 주어진다 (총 시간 = 단계 수 × ~0.45초).
+    // 페이싱: 단계마다 균일 랜덤 지연. 단계 수는 최대 ~14개(base 1 + 세트 후보 ≤7 + 감사 ≤6)라
+    // 전체가 2.5~3초 안에 끝나도록 단계당 0.08~0.18초로 줄였다 (사용자 요청 2026-07-20 —
+    // 종전 0.3~0.6초는 총 ~6초로 너무 길었다). 균일 분포라 첫·마지막 단계 읽을 틈은 동일.
     setOptimizing(t("자동편성 엔진 계산 중 — 편성 공간 구성…"));
     try {
       const paced = async (step: OptimizeStep) => {
         setOptimizing(stepMessage(step));
-        await new Promise((resolve) => setTimeout(resolve, 300 + Math.random() * 300));
+        await new Promise((resolve) => setTimeout(resolve, 80 + Math.random() * 100));
       };
       const next = await optimize(visibleOps.map((op) => withElite(op, elite.get(op.id))).filter((op) => ids.has(op.id)), prio, paced);
       setPlan(next);
