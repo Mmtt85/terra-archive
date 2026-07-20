@@ -111,6 +111,18 @@ jobs:
           subject: "[테라아카이브] AI 요약 자동 집필 ${{ steps.detect.outputs.count }}건 — ${{ steps.detect.outputs.ids }}"
           body: file://.ci/llm-output.txt
 
+      - name: 실패 로그 꼬리 수집
+        if: failure()
+        run: |
+          mkdir -p .ci
+          {
+            echo "AI 요약 자동 집필이 실패했습니다(빌드 게이트 실패 등). 배포는 되지 않았습니다."
+            echo "로그: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            echo
+            echo "── LLM 출력 (마지막 80줄) ──"
+            tail -n 80 .ci/llm-output.txt 2>/dev/null || echo "(llm-output.txt 없음 — LLM 실행 전 실패)"
+          } > .ci/fail-body.txt
+
       - name: 실패 알림 이메일
         if: failure()
         uses: dawidd6/action-send-mail@v3
@@ -123,4 +135,4 @@ jobs:
           to: ${{ secrets.MAIL_TO }}
           from: 테라 아카이브 봇 <${{ secrets.MAIL_USERNAME }}>
           subject: "[테라아카이브 실패] content-auto (AI 요약) 오류"
-          body: "AI 요약 자동 집필이 실패했습니다(빌드 게이트 실패 등). 배포는 되지 않았습니다.\n로그: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          body: file://.ci/fail-body.txt

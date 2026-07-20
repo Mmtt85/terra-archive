@@ -68,7 +68,11 @@ jobs:
           fi
 
       - name: 데이터 재생성 (결정론 파이프라인)
-        run: bash scripts/ci-refresh.sh
+        # 전체 출력을 .ci/refresh.log에 남긴다 — 실패 시 이메일에 로그 꼬리를 실어
+        # 원인 파악 (첫 무인 실행 실패 때 메일에 링크만 있어 진단 불가였던 개선, 2026-07-21)
+        run: |
+          set -o pipefail
+          bash scripts/ci-refresh.sh 2>&1 | tee .ci/refresh.log
 
       - name: 변경 감지 + 리포트
         id: report
@@ -109,6 +113,18 @@ jobs:
           convert_markdown: true
           html_body: file://.ci/report.md
 
+      - name: 실패 로그 꼬리 수집
+        if: failure()
+        run: |
+          mkdir -p .ci
+          {
+            echo "무인 데이터 리프레시가 실패했습니다. 배포는 되지 않았습니다."
+            echo "로그: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            echo
+            echo "── 파이프라인 로그 (마지막 80줄) ──"
+            tail -n 80 .ci/refresh.log 2>/dev/null || echo "(refresh.log 없음 — 파이프라인 시작 전 실패)"
+          } > .ci/fail-body.txt
+
       - name: 실패 알림 이메일
         if: failure()
         uses: dawidd6/action-send-mail@v3
@@ -121,4 +137,4 @@ jobs:
           to: ${{ secrets.MAIL_TO }}
           from: 테라 아카이브 봇 <${{ secrets.MAIL_USERNAME }}>
           subject: "[테라아카이브 실패] data-refresh 파이프라인 오류"
-          body: "무인 데이터 리프레시가 실패했습니다. 배포는 되지 않았습니다.\n로그: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          body: file://.ci/fail-body.txt

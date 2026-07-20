@@ -12,7 +12,8 @@ build-story.py는 story_review_table을 자체적으로 원격 fetch하므로 �
 import concurrent.futures as cf
 import os
 import sys
-import urllib.request
+
+from fetchutil import urlread
 
 BASE = "https://raw.githubusercontent.com/ArknightsAssets/ArknightsGamedata/master"
 
@@ -39,8 +40,8 @@ os.makedirs(target, exist_ok=True)
 def fetch(prefix, table):
     url = f"{BASE}/{prefix}/gamedata/excel/{table}.json"
     dest = os.path.join(target, f"{prefix}_{table}.json")
-    req = urllib.request.Request(url, headers={"User-Agent": "terra-archive-fetch"})
-    data = urllib.request.urlopen(req, timeout=60).read()
+    # CI 러너의 일시 429/5xx 플레이크 대비 재시도 (fetchutil)
+    data = urlread(url, timeout=60, ua="terra-archive-fetch")
     if len(data) < 2:
         raise ValueError("empty body")
     with open(dest, "wb") as f:

@@ -34,9 +34,9 @@ MAX_STAGES = 8      # 재료당 표시할 스테이지 수 (기대 이성 오름
 load = lambda p: json.load(open(p, encoding="utf-8"))
 
 def fetch(url):
-    req = urllib.request.Request(url, headers={"User-Agent": "terra-archive-farm/1.0"})
-    with urllib.request.urlopen(req, timeout=60) as res:
-        return json.loads(res.read().decode("utf-8"))
+    # CI 러너의 일시 429/5xx 플레이크 대비 재시도 (fetchutil)
+    from fetchutil import urlread
+    return json.loads(urlread(url, timeout=60, ua="terra-archive-farm/1.0").decode("utf-8"))
 
 def items_of(prefix):
     table = load(f"{S}/{prefix}_item_table.json")

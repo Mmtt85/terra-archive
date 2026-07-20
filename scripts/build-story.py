@@ -39,10 +39,10 @@ ASSETS_EN = "https://raw.githubusercontent.com/ArknightsAssets/ArknightsAssets2/
 ASSETS_JP = "https://raw.githubusercontent.com/555me/ArknightsAssets2/jp/assets/dyn"            # 일본판 썸네일 (본가엔 jp 브랜치 없음)
 
 def fetch(url, binary=False):
-    req = urllib.request.Request(url, headers={"User-Agent": "terra-archive-story/1.0"})
-    with urllib.request.urlopen(req, timeout=60) as res:
-        raw = res.read()
-        return raw if binary else json.loads(raw.decode("utf-8"))
+    # CI 러너의 일시 429/5xx 플레이크 대비 재시도 (fetchutil) — 404는 즉시 전파(썸네일 폴백용)
+    from fetchutil import urlread
+    raw = urlread(url, timeout=60, ua="terra-archive-story/1.0")
+    return raw if binary else json.loads(raw.decode("utf-8"))
 
 def to_jpeg(png_bytes, dest, max_px=None):
     """PNG 바이트를 webp(손실 q82)로 변환해 저장 — 사이트 이미지는 webp 통일 (2026-07)."""
