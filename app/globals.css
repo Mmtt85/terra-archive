@@ -4725,10 +4725,22 @@ html.dark .story-card:hover .story-thumb img {
 .reader-font-lg .sc-st { font-size: 17.5px; }
 .reader-font-lg .story-body p { font-size: 17px; }
 .reader-font-lg .story-body blockquote p { font-size: 16.5px; }
-/* 삽화 크기 3단계 — 전문 컷씬(.sc-cut)은 작게/크게 모두 유효, 요약 이미지는 작게만(기본이 이미 최대폭) */
-.reader-img-sm .sc-cut img { max-width: 58%; }
-.reader-img-sm .story-body figure:not(.story-deco) { max-width: 58%; margin-left: auto; margin-right: auto; }
-.reader-img-lg .sc-cut { margin-left: 0; }
+/* 삽화 크기 3단계 — 전문 컷씬(.sc-cut)·요약 삽화(.story-body figure) 공통.
+   figure 자체 폭을 줄여 가운데 정렬해야 테두리가 이미지에 딱 맞는다(작게일 때 빈 테두리 방지).
+   장식 삽화(story-deco)는 본문 옆 플로팅이라 제외. */
+.reader-img-sm .sc-cut,
+.reader-img-sm .story-body figure:not(.story-deco) { max-width: 56%; margin-left: auto; margin-right: auto; }
+.reader-img-md .sc-cut,
+.reader-img-md .story-body figure:not(.story-deco) { max-width: 80%; margin-left: auto; margin-right: auto; }
+.reader-img-lg .sc-cut,
+.reader-img-lg .story-body figure:not(.story-deco) { max-width: 100%; margin-left: auto; margin-right: auto; }
+@media (max-width: 560px) {
+  /* 좁은 화면에선 3단계 폭 차이를 줄여 지나치게 작아지지 않게 */
+  .reader-img-sm .sc-cut,
+  .reader-img-sm .story-body figure:not(.story-deco) { max-width: 80%; }
+  .reader-img-md .sc-cut,
+  .reader-img-md .story-body figure:not(.story-deco) { max-width: 100%; }
+}
 .story-script {
   margin-top: 20px;
 }

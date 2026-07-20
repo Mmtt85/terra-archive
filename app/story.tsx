@@ -423,7 +423,7 @@ function ScriptReader({ script, error, entities, opIndex, onShowOperator }: {
     let lastOpts: string[] = [];
     let lastVals: string[] = [];
     let prevN: string | undefined;
-    return ep.lines.map((ln) => {
+    const mapped = ep.lines.map((ln) => {
       if (ln.opts) {
         prevN = undefined;
         lastOpts = ln.opts;
@@ -460,6 +460,20 @@ function ScriptReader({ script, error, entities, opIndex, onShowOperator }: {
       prevN = undefined;
       return ln;
     });
+    // 연속된 지문(st)은 한 박스로 합친다 — 시적 나레이션이 줄마다 별도 회색 박스로 쪼개지지
+    // 않도록 (사용자 피드백 2026-07-20). st 사이에 대사·컷씬·선택지가 끼면 병합하지 않는다.
+    const merged: ScriptLine[] = [];
+    for (const ln of mapped) {
+      const isStOnly = ln.st != null && ln.n == null && ln.x == null && ln.img == null && ln.opts == null && ln.br == null && ln.loc == null;
+      const prev = merged[merged.length - 1] as ScriptLine | undefined;
+      const prevStOnly = prev && prev.st != null && prev.n == null && prev.x == null && prev.img == null && prev.opts == null && prev.br == null && prev.loc == null;
+      if (isStOnly && prevStOnly) {
+        prev!.st = `${prev!.st}\n${ln.st}`;
+      } else {
+        merged.push({ ...ln });
+      }
+    }
+    return merged;
   }, [ep, script, opIndex, entities]);
   const lineTexts = useMemo(
     () => lines.map((ln) => [ln.n, ln.x, ln.st, ln.loc, ...(ln.opts ?? [])].filter(Boolean).join(" ")),
