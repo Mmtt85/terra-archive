@@ -29,7 +29,7 @@ import { normSearch } from "./search";
 const imageDims = imageDimsData as Record<string, [number, number]>;
 
 type LocText = { ko: string; en?: string; ja?: string };
-type StoryEvent = { id: string; name: LocText; start: string; episodes: number; thumb: string; thumbEn?: string; thumbJa?: string; unreleased?: boolean; epNo?: number };
+type StoryEvent = { id: string; name: LocText; start: string; episodes: number; thumb: string; thumbEn?: string; thumbJa?: string; unreleased?: boolean; epNo?: number; mini?: boolean };
 type Block =
   | { t: "h"; x: string }
   | { t: "p"; x: string }
@@ -43,7 +43,7 @@ type Summary = { tagline: string; chars?: Entity[]; terms?: Entity[]; blocks: Bl
 export type StorySummaries = Record<string, Summary>;
 
 // 테라 연대기 (app/data/chronology.json — 손수 큐레이트하는 스캐폴드).
-type ChronKind = "event" | "main" | "roguelike";
+type ChronKind = "event" | "mini" | "main" | "roguelike";
 type Arc = { id: string; name: LocText };
 type RawEntry = { ref?: string; id?: string; kind: ChronKind; title?: LocText; terraYear?: number | null; arc?: string | null; dateNote?: string };
 type Chronology = { note: string; updated?: string; arcs: Arc[]; entries: RawEntry[] };
@@ -666,7 +666,7 @@ function resolveChron(): ChronItem[] {
     if (raw.kind === "event" && raw.ref) {
       const ev = eventById.get(raw.ref);
       return {
-        key: raw.ref, kind: "event",
+        key: raw.ref, kind: ev?.mini ? "mini" : "event", // 미니 이벤트는 사이드와 분리 (2026-07-20)
         name: ev ? ev.name : { ko: raw.ref },
         start: ev?.start, thumb: ev?.thumb,
         terraYear: raw.terraYear ?? null, arc: raw.arc ?? null,
@@ -699,7 +699,7 @@ const arcColor = (arcId: string) => {
   const idx = chronology.arcs.findIndex((a) => a.id === arcId);
   return idx >= 0 ? ARC_COLORS[idx % ARC_COLORS.length] : "#8b9294";
 };
-const KIND_KO: Record<ChronKind, string> = { event: "이벤트", main: "메인스토리", roguelike: "통합 전략" };
+const KIND_KO: Record<ChronKind, string> = { event: "사이드 이벤트", mini: "미니 이벤트", main: "메인스토리", roguelike: "통합 전략" };
 const arcNameOf = (locale: Locale, id: string) => {
   const a = chronology.arcs.find((x) => x.id === id);
   return a ? locText(locale, a.name) : id;
@@ -973,7 +973,7 @@ function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEve
         // 테마 그룹은 arcs 배열(=나무위키 테마) 순서대로, 미분류는 맨 끝
         sort = it.arc ? chronology.arcs.findIndex((a) => a.id === it.arc) : 999;
       } else {
-        k = it.kind; label = t(KIND_KO[it.kind]); sort = ["event", "main", "roguelike"].indexOf(it.kind);
+        k = it.kind; label = t(KIND_KO[it.kind]); sort = ["event", "mini", "main", "roguelike"].indexOf(it.kind);
       }
       if (!map.has(k)) map.set(k, { key: k, label, color, sort, items: [] });
       map.get(k)!.items.push(it);

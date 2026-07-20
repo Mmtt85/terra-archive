@@ -803,6 +803,8 @@ const D: Record<string, Pair> = {
   "테라력 {y}년": ["Terra {y}", "テラ暦{y}年"],
   "테마 미분류": ["Unsorted", "未分類"],
   "이벤트": ["Event", "イベント"],
+  "사이드 이벤트": ["Side Story", "サイドストーリー"],
+  "미니 이벤트": ["Mini Event", "ミニイベント"],
   "메인스토리": ["Main Story", "メインストーリー"],
   "통합 전략": ["Integrated Strategies", "統合戦略"],
   "연대순": ["Chronological", "年代順"],
