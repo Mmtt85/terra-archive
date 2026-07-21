@@ -2445,10 +2445,15 @@ footer p {
 .ship-raisebar.idle { justify-content: flex-start; }
 /* idle 진입 버튼 — 제어센터 왼쪽 빈 공간의 육성 추천 시작점 */
 .srb-run {
+  position: relative;
   border: 1px solid var(--lime); background: color-mix(in srgb, var(--lime) 15%, var(--bg-panel));
   color: var(--ink); border-radius: 8px; padding: 8px 16px; cursor: pointer; font-size: 13px; font-weight: 800; white-space: nowrap;
 }
-.srb-run:hover { background: color-mix(in srgb, var(--lime) 28%, transparent); }
+.srb-run:not(:disabled):hover { background: color-mix(in srgb, var(--lime) 28%, transparent); }
+.srb-run:disabled { cursor: default; }
+/* 분석 중 라벨은 idle 라벨 위에 겹쳐(가운데) — idle 라벨은 visibility:hidden으로 폭만 유지 */
+.srb-run .srb-lbl.hide { visibility: hidden; }
+.srb-run .srb-over { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; white-space: nowrap; }
 .ship-raisebar .srb-top { font-weight: 700; font-size: 12px; color: var(--ink); white-space: nowrap; }
 .ship-raisebar .srb-gain { font-size: 11.5px; font-weight: 700; white-space: nowrap; }
 .ship-raisebar .srb-gain .a { color: #2f7d3a; }

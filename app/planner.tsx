@@ -737,10 +737,8 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       )}
 
       <div className="ship">
-        <div className={`ship-raisebar${(!investing && tempApplied.size === 0 && !investRecs) ? " idle" : " boxed"}`} role="group" aria-label={t("오퍼 육성 추천")}>
-          {investing ? (
-            <span className="srb-top">★ {investing.total ? t("분석 {i}/{n}", { i: investing.done, n: investing.total }) : t("분석 중…")}</span>
-          ) : tempApplied.size > 0 ? (
+        <div className={`ship-raisebar${(investing || (tempApplied.size === 0 && !investRecs)) ? " idle" : " boxed"}`} role="group" aria-label={t("인프라 오퍼 육성 추천")}>
+          {tempApplied.size > 0 && !investing ? (
             <>
               <span className="srb-top">★ {t("임시 적용 중 · {n}명", { n: tempApplied.size })}</span>
               <span className="srb-gain">
@@ -752,17 +750,21 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
                 <button className="revert" onClick={revertTemp}>{t("되돌리기")}</button>
               </span>
             </>
-          ) : investRecs ? (
+          ) : investRecs && !investing ? (
             <>
-              <span className="srb-top">★ {t("오퍼 육성 추천")}</span>
+              <span className="srb-top">★ {t("인프라 오퍼 육성 추천")}</span>
               <span className="srb-btns">
                 <button className="run" onClick={() => setShowInvest(true)}>{t("추천 열기 ({n})", { n: investRecs.length })}</button>
                 <button onClick={() => { void runInvest(); }}>{t("다시 분석")}</button>
               </span>
             </>
           ) : (
-            <button className="srb-run" onClick={openInvest}
-              title={t("보유했지만 아직 완성하지 않은(정예화를 낮춰 둔) 오퍼 중, 완성하면 인프라 효율이 오르는 오퍼를 실제 자동편성을 다시 돌려 찾아냅니다")}>★ {t("오퍼 육성 추천")}</button>
+            // 대기·분석중 공용 — 두 라벨을 겹쳐(overlay) 폭을 idle 라벨에 고정, 분석 중에도 버튼 길이 불변
+            <button className="srb-run" onClick={openInvest} disabled={!!investing}
+              title={t("보유했지만 아직 완성하지 않은(정예화를 낮춰 둔) 오퍼 중, 완성하면 인프라 효율이 오르는 오퍼를 실제 자동편성을 다시 돌려 찾아냅니다")}>
+              <span className={`srb-lbl${investing ? " hide" : ""}`}>★ {t("인프라 오퍼 육성 추천")}</span>
+              {investing && <span className="srb-over">★ {investing.total ? t("분석 {i}/{n}", { i: investing.done, n: investing.total }) : t("분석 중…")}</span>}
+            </button>
           )}
         </div>
         {LAYOUT.map((cell) => {
@@ -892,11 +894,11 @@ function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onTogg
   }, [onClose]);
   return (
     <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-    <section className="operator-modal invest-panel" role="dialog" aria-modal="true" aria-label={t("오퍼 육성 추천")}>
+    <section className="operator-modal invest-panel" role="dialog" aria-modal="true" aria-label={t("인프라 오퍼 육성 추천")}>
       <div className="invest-head">
         <div className="invest-head-title">
           <div>
-            <span className="section-no">{t("육성 추천 · 정예화 완성 투자")}</span>
+            <span className="section-no">{t("인프라 오퍼 육성 추천 · 정예화 완성 투자")}</span>
             <h3>{recs.length ? t("완성하면 인프라가 좋아지는 오퍼 {n}명", { n: recs.length }) : t("추천할 오퍼가 없습니다")}</h3>
           </div>
           <button className="invest-close" onClick={onClose} aria-label={t("닫기")}>✕</button>
