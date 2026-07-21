@@ -737,7 +737,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       )}
 
       <div className="ship">
-        <div className={`ship-raisebar${(!investing && tempApplied.size === 0 && !investRecs) ? " idle" : " boxed"}`} role="group" aria-label={t("육성 추천")}>
+        <div className={`ship-raisebar${(!investing && tempApplied.size === 0 && !investRecs) ? " idle" : " boxed"}`} role="group" aria-label={t("오퍼 육성 추천")}>
           {investing ? (
             <span className="srb-top">★ {investing.total ? t("분석 {i}/{n}", { i: investing.done, n: investing.total }) : t("분석 중…")}</span>
           ) : tempApplied.size > 0 ? (
@@ -754,7 +754,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
             </>
           ) : investRecs ? (
             <>
-              <span className="srb-top">★ {t("육성 추천")}</span>
+              <span className="srb-top">★ {t("오퍼 육성 추천")}</span>
               <span className="srb-btns">
                 <button className="run" onClick={() => setShowInvest(true)}>{t("추천 열기 ({n})", { n: investRecs.length })}</button>
                 <button onClick={() => { void runInvest(); }}>{t("다시 분석")}</button>
@@ -762,7 +762,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
             </>
           ) : (
             <button className="srb-run" onClick={openInvest}
-              title={t("보유했지만 아직 완성하지 않은(정예화를 낮춰 둔) 오퍼 중, 완성하면 인프라 효율이 오르는 오퍼를 실제 자동편성을 다시 돌려 찾아냅니다")}>★ {t("육성 추천")}</button>
+              title={t("보유했지만 아직 완성하지 않은(정예화를 낮춰 둔) 오퍼 중, 완성하면 인프라 효율이 오르는 오퍼를 실제 자동편성을 다시 돌려 찾아냅니다")}>★ {t("오퍼 육성 추천")}</button>
           )}
         </div>
         {LAYOUT.map((cell) => {
@@ -892,7 +892,7 @@ function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onTogg
   }, [onClose]);
   return (
     <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-    <section className="operator-modal invest-panel" role="dialog" aria-modal="true" aria-label={t("육성 추천")}>
+    <section className="operator-modal invest-panel" role="dialog" aria-modal="true" aria-label={t("오퍼 육성 추천")}>
       <div className="invest-head">
         <div className="invest-head-title">
           <div>
