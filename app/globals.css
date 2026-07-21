@@ -6123,10 +6123,19 @@ html.dark .story-card:hover .story-thumb img {
   font-size: 11.5px;
   font-weight: 800;
   line-height: 1.25;
-  /* 긴 라벨(예: "S1 · 적소·분야")은 어절 단위로 두 줄로 감싼다(한국어는 keep-all) */
   white-space: normal;
   word-break: keep-all;
   overflow-wrap: anywhere;
+}
+/* 스킬 특화·모듈 라벨은 명시적으로 두 줄: "S1"(또는 모듈 타입) 위, 스킬·모듈명 아래(보조) */
+.cost-grp-a {
+  display: block;
+}
+.cost-grp-b {
+  display: block;
+  font-weight: 600;
+  font-size: 10.5px;
+  color: var(--muted);
 }
 .cost-row-step {
   font: 700 11.5px monospace;

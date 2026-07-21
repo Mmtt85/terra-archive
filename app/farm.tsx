@@ -302,7 +302,8 @@ function levelCostTo(phaseIdx: number, level: number): { lmd: number; records: n
 // 한 오퍼의 비용을 그룹(레벨·정예화 / 스킬 / 스킬별 특화 / 모듈별)으로 나누고, 각 그룹은 순차 단계 행을 갖는다.
 // kind/phase는 '레벨·정예화' 통합 그룹의 레벨업 단계에서 목표 레벨 부분 비용을 계산하기 위한 메타.
 type CostStep = { step: string; lmd: number; items: CostList; kind?: "lv" | "e"; phase?: number; maxLv?: number };
-type CostGroup = { key: string; label: string; steps: CostStep[] };
+// label2가 있으면 라벨을 두 줄로 표시한다 (예: "S1" / "적소·분야", 모듈 "타입" / "이름")
+type CostGroup = { key: string; label: string; label2?: string; steps: CostStep[] };
 
 function buildGroups(operator: Operator, entry: CostEntry, t: (key: string, params?: Record<string, string | number>) => string): CostGroup[] {
   const groups: CostGroup[] = [];
@@ -325,12 +326,11 @@ function buildGroups(operator: Operator, entry: CostEntry, t: (key: string, para
   }
   (entry.masteries ?? []).forEach((mastery, index) => {
     const skillName = operator.skills.find((skill) => skill.id === mastery.id)?.name ?? `S${index + 1}`;
-    groups.push({ key: `m${index}`, label: `S${index + 1} · ${skillName}`, steps: mastery.levels.map((items, level) => ({ step: t("특화 {n}", { n: level + 1 }), lmd: 0, items })) });
+    groups.push({ key: `m${index}`, label: `S${index + 1}`, label2: skillName, steps: mastery.levels.map((items, level) => ({ step: t("특화 {n}", { n: level + 1 }), lmd: 0, items })) });
   });
   (entry.modules ?? []).forEach((mod, index) => {
     const meta = operator.modules.find((candidate) => candidate.id === mod.id);
-    const label = meta ? `${meta.type} · ${meta.name}` : `MODULE ${index + 1}`;
-    groups.push({ key: `d${index}`, label, steps: mod.levels.map((level, stage) => ({ step: `STAGE ${stage + 1}`, lmd: level.lmd, items: level.items })) });
+    groups.push({ key: `d${index}`, label: meta?.type ?? `MODULE ${index + 1}`, label2: meta?.name, steps: mod.levels.map((level, stage) => ({ step: `STAGE ${stage + 1}`, lmd: level.lmd, items: level.items })) });
   });
   return groups;
 }
@@ -585,7 +585,7 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
                               aria-pressed={on}
                               title={blocked ? t("먼저 앞 레벨업을 만렙까지 채워야 올릴 수 있어요") : on ? t("{label} {step}까지 육성 (클릭 시 제외)", { label: group.label, step: stepLabel }) : t("{label} {step}까지 육성", { label: group.label, step: stepLabel })}
                             />
-                            <span className="cost-row-group">{first ? group.label : ""}</span>
+                            <span className="cost-row-group">{first ? (group.label2 ? <><b className="cost-grp-a">{group.label}</b><span className="cost-grp-b">{group.label2}</span></> : group.label) : ""}</span>
                             <span className="cost-row-step">
                               {isTopLevel ? (
                                 <span className="cost-lv-pick">E{row.phase}·Lv.
