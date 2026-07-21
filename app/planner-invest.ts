@@ -14,7 +14,7 @@
 // 않는다. 베이스라인이 고른 전략(토큰 패키지·시너지 세트)을 재사용해 **buildPlan을 1회만** 돌린다
 // — 이 경우 두 편성은 딱 그 오퍼의 정예화만 다른 깔끔한 대조가 된다. 단 **시너지 조각(팀 의존
 // 스킬이 새로 열리는 오퍼)만** 전체 optimize로 돌려 완성 시 새로 열릴 수 있는 세트의 총 시너지
-// 효율까지 다시 평가한다. 추천은 최고 ΔS 상위 20개만 낸다.
+// 효율까지 다시 평가한다. 정렬된 전체 목록을 반환하고 표시 상한(20)·숨기기 백필은 UI 몫.
 //
 // 도메인 규칙 정본은 docs/INFRA-RULES.md, 엔진은 app/planner-engine.ts.
 import costsData from "./data/costs.json";
@@ -34,7 +34,6 @@ const OPS_COST = (costsData as { ops: Record<string, OpCost> }).ops;
 const REPORTED_CELLS = ["MANUFACTURE-0", "MANUFACTURE-1", "MANUFACTURE-2", "MANUFACTURE-3", "TRADING-0", "TRADING-1", "POWER-0", "HIRE", "MEETING"];
 // 기여 판정용 근무 방 — 여기 배치돼야 "실제로 일하는" 것으로 본다 (숙소·가공소·훈련실 제외)
 const WORK_ROOMS = new Set(["MANUFACTURE", "TRADING", "POWER", "CONTROL", "HIRE", "MEETING"]);
-const MAX_RECS = 20;      // 최고 ΔS 상위만 (사용자 확정 2026-07-21: 10~20개면 충분)
 const CAND_CAP = 140;     // 정밀 평가 후보 상한 — 유망순(시너지·성급) 정렬 후 상위만 (성능)
 const EPS = 1e-6;         // ΔS 부호 판정용 부동소수 노이즈 컷
 const DROP_TOL = 3;       // 방 효율 하락 허용 오차 (재배치 잡음 판정 문턱)
@@ -176,7 +175,7 @@ function candidateInfo(rawOp: InfraOp, target: Elite, current: Elite, baseline: 
   return { pass, synergy };
 }
 
-// 메인 — 보유·정예화 상태를 받아 "완성하면 이득인" 정예화 투자를 ΔplanScore 순 상위 20개로 반환.
+// 메인 — 보유·정예화 상태를 받아 "완성하면 이득인" 정예화 투자를 이득순 정렬 전체로 반환.
 export async function recommendRaises(
   visibleOps: InfraOp[],
   ownedIds: Set<string>,
@@ -201,7 +200,7 @@ export async function recommendRaises(
     if (!info.pass) continue;
     candidates.push({ op, from, to, synergy: info.synergy });
   }
-  // 후보가 상한을 넘으면 유망순으로 정밀 평가 대상을 좁힌다 — 어차피 상위 20만 내므로, 시너지
+  // 후보가 상한을 넘으면 유망순으로 정밀 평가 대상을 좁힌다 — 표시는 20개씩이므로, 시너지
   // 조각과 고성급(강한 스킬)을 앞세운다. 값싼 정렬이라 진짜 최상위를 놓칠 위험은 낮다.
   candidates.sort((a, b) => (b.synergy ? 1 : 0) - (a.synergy ? 1 : 0) || b.op.rarity - a.op.rarity || a.op.seq - b.op.seq);
   const capped = candidates.length > CAND_CAP;
@@ -262,9 +261,11 @@ export async function recommendRaises(
     recs.push({ opId: op.id, from, to, aGain, bGain, deltaScore, synergy, roomDeltas, placement, cost: raiseCost(op.id, from, to) });
   }
   if (onProgress) await onProgress({ done: evalList.length, total: evalList.length });
-  void capped; // 상한 초과 시 잘린 후보가 있으나(로그성) v1은 상위 20만 노출
+  void capped; // 상한 초과 시 잘린 후보가 있으나(로그성) UI는 어차피 20개씩만 노출
   // A조 방 효율 이득 우선 정렬 — A조가 풀파워 주력이라(피로 소진 전까지 A조로 돌림) 그 이득을
   // 먼저 본다 (사용자 확정 2026-07-21). 동률이면 B조, 그다음 내부 총점.
   recs.sort((a, b) => b.aGain - a.aGain || b.bGain - a.bGain || b.deltaScore - a.deltaScore);
-  return recs.slice(0, MAX_RECS);
+  // 전체 반환 — 표시 상한(20)은 UI(planner.tsx INVEST_SHOW) 몫. '숨기기' 시 21위부터 순서대로
+  // 올라와야 하므로(사용자 요청 2026-07-21) 여기서 자르지 않는다.
+  return recs;
 }

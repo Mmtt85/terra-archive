@@ -31,6 +31,8 @@ function strategyLabel(plan: Plan, locale: Locale, t: T): string {
 }
 
 const STORAGE_KEY = "terra-archive-infra-v3";
+// 육성 추천 표시 개수 — 엔진은 정렬 전체를 반환하고, 숨긴 오퍼 자리는 다음 순위가 채운다
+const INVEST_SHOW = 20;
 
 export default function InfraPlanner({ onShowOperator, extra, includeFuture }: { onShowOperator?: (id: string) => void; extra?: ExtraI18n | null; includeFuture?: boolean } = {}) {
   const { locale, t } = useI18n();
@@ -86,12 +88,17 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   const [investRecs, setInvestRecs] = useState<RaiseRec[] | null>(null);
   const [investing, setInvesting] = useState<InvestProgress | null>(null);
   const [showInvest, setShowInvest] = useState(false);
+  // 숨긴 추천 오퍼 — 목록에서 빠지고 21위 이후 후보가 순서대로 올라온다 (사용자 요청 2026-07-21).
+  // recommendRaises가 정렬 전체를 반환하므로 표시는 "숨김 제외 후 상위 INVEST_SHOW개".
+  const [investHidden, setInvestHidden] = useState<Set<string>>(new Set());
   // 육성 추천 '임시 적용' 세션 — 추천 오퍼를 완성했다 가정한 미리보기 편성(비영구). 되돌리기
   // 가능하고 추천 목록은 유지된다. 전체 자동편성·다시 분석을 누르기 전까지 (사용자 확정 2026-07-21).
   const [tempApplied, setTempApplied] = useState<Map<string, Elite>>(new Map());
   const [tempBasePlan, setTempBasePlan] = useState<Plan | null>(null);
   // 아직 적용 안 한 '선택' 오퍼 — 개별 클릭은 선택만 하고, '선택 임시 적용'으로 한 번에 재편성
   const [selectedRaise, setSelectedRaise] = useState<Set<string>>(new Set());
+  // 표시용 추천 = 숨김 제외 후 상위 20 — 숨기면 다음 순위가 자동으로 올라온다
+  const visibleRecs = useMemo(() => (investRecs ? investRecs.filter((r) => !investHidden.has(r.opId)).slice(0, INVEST_SHOW) : null), [investRecs, investHidden]);
 
   // 화면 표시용 정예화 = 커밋된 eliteById에 임시 적용(tempApplied)을 덮어쓴 것. 임시 적용 중엔
   // 플랜이 그 정예화로 재계산되므로, 방 내용·스킬·정예화 배지도 같은 정예화로 그려야 어긋나지
@@ -107,9 +114,13 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   const effectiveOpById = useMemo(() => new Map(effectiveOps.map((op) => [op.id, op])), [effectiveOps]);
   const roster = useMemo(() => effectiveOps.filter((op) => ownedIds.has(op.id)), [effectiveOps, ownedIds]);
 
-  const persist = (ids: Set<string>, nextPlan: Plan | null, elite: Map<string, Elite> = eliteById, prio: ProdPriority = priority, invest: RaiseRec[] | null = investRecs) => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ owned: Array.from(ids), elite: Array.from(elite.entries()), plan: nextPlan, priority: prio, invest })); } catch { /* ignore */ }
+  const persist = (ids: Set<string>, nextPlan: Plan | null, elite: Map<string, Elite> = eliteById, prio: ProdPriority = priority, invest: RaiseRec[] | null = investRecs, hidden: Set<string> = investHidden) => {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ owned: Array.from(ids), elite: Array.from(elite.entries()), plan: nextPlan, priority: prio, invest, investHidden: Array.from(hidden) })); } catch { /* ignore */ }
   };
+
+  // 저장된 숨김 목록 복원 — 실존 오퍼 id만
+  const restoreHidden = (raw: unknown): Set<string> =>
+    new Set(Array.isArray(raw) ? raw.filter((id): id is string => typeof id === "string" && opById.has(id)) : []);
 
   // 저장된 육성 추천 복원 — opId가 실존하고 필수 필드가 있는 항목만 (손상·구버전 방어)
   const restoreInvest = (raw: unknown): RaiseRec[] | null => {
@@ -235,12 +246,14 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         );
         const plan = sanitizePlan(data.plan);
         const invest = restoreInvest(data.invest);
+        const hidden = restoreHidden(data.investHidden);
         setOwnedIds(ids);
         setEliteById(elite);
         if (plan) { setPlan(plan); setActiveShift(0); }
         setInvestRecs(invest);
+        setInvestHidden(hidden);
         setShowInvest(false);
-        persist(ids, plan, elite, priority, invest);
+        persist(ids, plan, elite, priority, invest, hidden);
         setDirty(false);
         showToast(t("저장된 상태를 불러왔습니다 · 보유 {n}명 복원", { n: ids.size }));
       } catch { alert(t("가져오기 실패: 파일 형식을 확인해 주세요.")); }
@@ -316,11 +329,12 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       const next = await optimize(visibleOps.map((op) => withElite(op, elite.get(op.id))).filter((op) => ids.has(op.id)), prio, paced);
       setPlan(next);
       setActiveShift(0);
-      // 새 자동편성 → 기존 육성 추천 무효화 + 임시 적용 세션 종료(새 편성이 기준). 2026-07-21
+      // 새 자동편성 → 기존 육성 추천·숨김 무효화 + 임시 적용 세션 종료(새 편성이 기준). 2026-07-21
       setInvestRecs(null);
+      setInvestHidden(new Set());
       setShowInvest(false);
       endTemp(false);
-      persist(ids, next, elite, prio, null);
+      persist(ids, next, elite, prio, null, new Set());
       // 실제 계산에 쓰인 인원 = 보유 ∩ 현재 표시 대상(미래시 토글 반영) — 미래시 OFF면 미실장 제외
       const usedCount = visibleOps.filter((op) => ids.has(op.id)).length;
       showToast(t("전체 자동편성을 실행했습니다 · 보유 {n}명 기준", { n: usedCount }));
@@ -350,7 +364,8 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         await new Promise((resolve) => setTimeout(resolve, 0)); // 진행 바 리페인트 양보
       });
       setInvestRecs(recs);
-      persist(ownedIds, plan, eliteById, priority, recs);
+      setInvestHidden(new Set()); // 새 분석 → 숨김 초기화
+      persist(ownedIds, plan, eliteById, priority, recs, new Set());
       setShowInvest(true);
       if (!recs.length) showToast(t("완성하면 이득인 오퍼를 찾지 못했습니다 — 보유 설정에서 정예화를 낮춰 두면 후보가 됩니다"));
     } finally {
@@ -380,6 +395,14 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   const toggleSelectRaise = (opId: string) => {
     setSelectedRaise((prev) => { const next = new Set(prev); if (next.has(opId)) next.delete(opId); else next.add(opId); return next; });
   };
+  // 추천 숨기기 — 목록에서 빼고(선택도 해제) 다음 순위 후보가 자동으로 올라온다
+  const hideRaise = (opId: string) => {
+    const next = new Set(investHidden);
+    next.add(opId);
+    setInvestHidden(next);
+    setSelectedRaise((prev) => { if (!prev.has(opId)) return prev; const s = new Set(prev); s.delete(opId); return s; });
+    persist(ownedIds, plan, eliteById, priority, investRecs, next);
+  };
   // 정예화 오버레이 묶음(adds)을 기존 임시 적용에 더해 한 번에 미리보기 재편성
   const applyTempSet = async (adds: Map<string, Elite>, label: string) => {
     if (optimizing || investing || !adds.size) return;
@@ -393,14 +416,15 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     showToast(label);
   };
   const applySelected = async () => {
-    if (!investRecs) return;
+    if (!visibleRecs) return;
     const adds = new Map<string, Elite>();
-    for (const r of investRecs) if (selectedRaise.has(r.opId)) adds.set(r.opId, r.to);
+    for (const r of visibleRecs) if (selectedRaise.has(r.opId)) adds.set(r.opId, r.to);
     await applyTempSet(adds, t("선택 {n}명을 임시 적용했습니다 — '되돌리기'로 취소할 수 있습니다", { n: adds.size }));
   };
   const applyAllRaises = async () => {
-    if (!investRecs?.length) return;
-    const adds = new Map<string, Elite>(investRecs.map((r) => [r.opId, r.to]));
+    if (!visibleRecs?.length) return;
+    // 전체 = 화면에 보이는 목록(숨긴 오퍼 제외) 전체
+    const adds = new Map<string, Elite>(visibleRecs.map((r) => [r.opId, r.to]));
     await applyTempSet(adds, t("추천 {n}명을 임시 적용했습니다 — '되돌리기'로 취소할 수 있습니다", { n: adds.size }));
   };
   // 임시 적용 되돌리기 — 스냅샷 편성으로 복원하고 세션 종료
@@ -546,6 +570,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         setOwnedIds(ids);
         setEliteById(elite);
         setInvestRecs(restoreInvest(data.invest)); // 저장된 육성 추천 복원 (모달은 버튼으로 연다)
+        setInvestHidden(restoreHidden(data.investHidden));
         if (data.priority) setPriorityState(data.priority as ProdPriority);
         // 손상·구버전 저장분 방어 — raw 복원은 assignments 등 누락 시 렌더 크래시
         // (개발 중간 상태가 저장된 localStorage에서 실제 발병, 2026-07-19). 정규화 실패면
@@ -694,10 +719,10 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         </div>
       )}
 
-      {showInvest && investRecs && !investing && (
-        <InvestPanel recs={investRecs} opMap={effectiveOpById} onShowOperator={onShowOperator}
+      {showInvest && visibleRecs && !investing && (
+        <InvestPanel recs={visibleRecs} opMap={effectiveOpById} onShowOperator={onShowOperator}
           onClose={() => setShowInvest(false)} onReanalyze={() => { void runInvest(); }}
-          onToggleSelect={toggleSelectRaise} onApplySelected={applySelected} onApplyAll={applyAllRaises}
+          onToggleSelect={toggleSelectRaise} onApplySelected={applySelected} onApplyAll={applyAllRaises} onHide={hideRaise}
           selected={selectedRaise} applied={new Set(tempApplied.keys())} onRevert={revertTemp}
           t={t} locale={locale} />
       )}
@@ -754,7 +779,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
             <>
               <span className="srb-top">★ {t("인프라 오퍼 육성 추천")}</span>
               <span className="srb-btns">
-                <button className="run" onClick={() => setShowInvest(true)}>{t("추천 열기 ({n})", { n: investRecs.length })}</button>
+                <button className="run" onClick={() => setShowInvest(true)}>{t("추천 열기 ({n})", { n: visibleRecs?.length ?? 0 })}</button>
                 <button onClick={() => { void runInvest(); }}>{t("다시 분석")}</button>
               </span>
             </>
@@ -879,10 +904,10 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
 // 육성 추천 결과 모달 — recommendRaises가 증명한 "완성하면 이득인 정예화 투자"를 ΔS 순으로.
 // 방 %효율 변화·완성 비용은 실제 편성·게임 데이터 기준(근사 환산 없음). 한 번 분석하면 새
 // 자동편성 전까지 유지되며, 모달 안 '다시 분석'으로 강제 재계산한다.
-function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onToggleSelect, onApplySelected, onApplyAll, selected, applied, onRevert, t, locale }: {
+function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onToggleSelect, onApplySelected, onApplyAll, onHide, selected, applied, onRevert, t, locale }: {
   recs: RaiseRec[]; opMap: Map<string, InfraOp>; onShowOperator?: (id: string) => void;
   onClose: () => void; onReanalyze: () => void; onToggleSelect: (opId: string) => void; onApplySelected: () => void; onApplyAll: () => void;
-  selected: Set<string>; applied: Set<string>; onRevert: () => void; t: T; locale: Locale;
+  onHide: (opId: string) => void; selected: Set<string>; applied: Set<string>; onRevert: () => void; t: T; locale: Locale;
 }) {
   const roomLabel = (key: string) => cellByKey.get(key)?.label ?? key;
   const shiftTag = (s: number) => (s === 0 ? t("A조") : t("B조"));
@@ -938,6 +963,7 @@ function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onTogg
                   {applied.has(r.opId)
                     ? <span className="invest-applied" title={t("임시 적용됨 — 헤더 '되돌리기'로 취소")}>✓ {t("적용됨")}</span>
                     : <button className={`invest-apply${selected.has(r.opId) ? " on" : ""}`} onClick={() => onToggleSelect(r.opId)} title={t("적용할 오퍼로 선택합니다 — 헤더 '선택 임시 적용'으로 한 번에 반영")}>{selected.has(r.opId) ? `✓ ${t("선택됨")}` : t("선택")}</button>}
+                  {!applied.has(r.opId) && <button className="invest-hide" onClick={() => onHide(r.opId)} title={t("이 오퍼를 추천 목록에서 숨깁니다 — 다음 순위 오퍼가 올라옵니다")}>{t("숨기기")}</button>}
                 </div>
                 {r.placement && <div className="invest-place">{t("{room} · {shift}에 배치됩니다", { room: roomLabel(r.placement.key), shift: shiftTag(r.placement.shift) })}</div>}
                 {deltas.length > 0 && (

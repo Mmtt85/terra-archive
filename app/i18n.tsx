@@ -290,6 +290,8 @@ const D: Record<string, Pair> = {
   "임시 적용": ["Apply (temp)", "一時適用"],
   "선택": ["Select", "選択"],
   "선택됨": ["Selected", "選択中"],
+  "숨기기": ["Hide", "非表示"],
+  "이 오퍼를 추천 목록에서 숨깁니다 — 다음 순위 오퍼가 올라옵니다": ["Hides this operator from the recommendations — the next-ranked operator moves up", "このオペレーターをおすすめから非表示にします — 次の順位のオペレーターが繰り上がります"],
   "적용할 오퍼로 선택합니다 — 헤더 '선택 임시 적용'으로 한 번에 반영": ["Select this operator to apply — use 'Apply selected (temp)' in the header to apply them together", "適用するオペレーターとして選択します — ヘッダーの「選択を一時適用」でまとめて反映"],
   "선택 임시 적용 ({n})": ["Apply selected ({n})", "選択を一時適用（{n}）"],
   "선택한 오퍼만 한 번에 임시 적용합니다 (되돌리기 가능)": ["Temporarily applies only the selected operators at once (revertible)", "選択したオペレーターだけをまとめて一時適用します（元に戻せます）"],
