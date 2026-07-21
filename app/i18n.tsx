@@ -845,11 +845,6 @@ const D: Record<string, Pair> = {
     "Not part of this storyline — placed here by its position on the Terran timeline.",
     "このテーマに属する物語ではありませんが、テラ暦の時系列ではこの位置にあります。",
   ],
-  "이 테마 소속이 아니에요 — 클릭하면 「{theme}」의 원래 위치로 이동": [
-    "Not part of this storyline — click to jump to its place in \"{theme}\"",
-    "このテーマの所属ではありません — クリックで「{theme}」の元の位置へ移動",
-  ],
-  "시계열 참고용 항목이에요": ["Shown here for timeline reference only", "時系列の参考用の項目です"],
   "전문 보기 (풀 스크립트)": ["Full script", "全文（フルスクリプト）"],
   "보기 방식": ["View mode", "表示モード"],
   "읽기 설정": ["Reading settings", "読書設定"],

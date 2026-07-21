@@ -4602,19 +4602,6 @@ html.dark .story-card:hover .story-thumb img {
   color: var(--muted);
   font-size: 12.5px;
 }
-.story-guest-note {
-  display: block;
-  margin-top: 6px;
-  font-size: 11.5px;
-  line-height: 1.45;
-  color: var(--muted);
-}
-.story-guest-note::before {
-  content: "↪ ";
-}
-.story-card.guest a:hover .story-guest-note {
-  color: var(--lime);
-}
 /* 게스트 카드 클릭 → 원래 카드 도착 강조 ("여기입니다") */
 .story-card.spotlight a,
 .story-card.spotlight button {

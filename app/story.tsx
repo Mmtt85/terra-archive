@@ -1156,14 +1156,6 @@ function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEve
         <div className="story-card-info">
           <h3>{guest ? <>({locText(locale, it.name)})</> : locText(locale, it.name)}{ev?.unreleased && <em className="future-badge">{t("미실장")}</em>}</h3>
           <span>{meta}</span>
-          {/* 시계열 참조임을 분명히 — 소속 테마와 클릭 동작 안내 (사용자 요청 2026-07-21) */}
-          {guest && (
-            <span className="story-guest-note">
-              {home
-                ? t("이 테마 소속이 아니에요 — 클릭하면 「{theme}」의 원래 위치로 이동", { theme: locText(locale, home.name) })
-                : t("시계열 참고용 항목이에요")}
-            </span>
-          )}
         </div>
       </>
     );
