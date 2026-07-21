@@ -118,12 +118,61 @@ if (meaningfulData.includes("app/data/farm.json")) {
   const closed = [...oldS].filter((s) => !newS.has(s));
   if (opened.length) lines.push(`### 파밍 스테이지 개방 ${opened.length}\n- ${opened.join(", ")}`);
   if (closed.length) lines.push(`### 파밍 스테이지 종료 ${closed.length}\n- ${closed.join(", ")}`);
+
+  // 드랍 표본(times) 누적으로 재료별 "추천 스테이지 8종" 순위표 자체가 바뀌는 경우 —
+  // openStages는 그대로라 위 두 블록엔 안 잡히지만 실제 farmSignature 변경 원인은 대부분 이거다
+  // (2026-07-21: 순위표 변동인데 리포트에 아무 것도 안 찍혀 "뭐가 바뀐 건지" 알 수 없었던 회귀).
+  const oldItems = new Map((oldF?.items || []).map((it) => [it.id, it]));
+  const rankChanges = [];
+  for (const ni of newF?.items || []) {
+    const oi = oldItems.get(ni.id);
+    if (!oi) continue; // 신규/삭제 재료는 별도로 다루지 않음(드묾) — 있어도 여기선 스킵
+    const oIds = new Set((oi.stages || []).map((s) => s.id));
+    const nIds = new Set((ni.stages || []).map((s) => s.id));
+    const codeOf = (sid) => (ni.stages.find((s) => s.id === sid) || oi.stages.find((s) => s.id === sid))?.code || sid;
+    const added = [...nIds].filter((s) => !oIds.has(s)).map(codeOf);
+    const removed = [...oIds].filter((s) => !nIds.has(s)).map(codeOf);
+    if (added.length || removed.length) {
+      const name = ni.name?.ko || ni.id;
+      const bits = [...added.map((c) => `+${c}`), ...removed.map((c) => `-${c}`)];
+      rankChanges.push(`- ${name}: ${bits.join(", ")}`);
+    }
+  }
+  if (rankChanges.length) lines.push(`### 파밍 추천 스테이지 순위 변동 ${rankChanges.length}종\n` +
+    rankChanges.join("\n") +
+    `\n(드랍 표본 수 누적으로 상위 8개 추천 스테이지 구성이 바뀜 — 게임 데이터 변경 아님)`);
 }
 
-// 그 외 바뀐 데이터 파일(수치·텍스트 갱신)은 목록만
+// 그 외 바뀐 데이터 파일(수치·텍스트 갱신) — 전용 로직이 없는 파일도 최소한 "뭐가 바뀌었는지"는
+// 보여준다: 배열이면 추가/삭제/내용변경 건수, 객체면 바뀐 최상위 키 이름 (2026-07-21, 사용자 피드백:
+// "사소한거라도 뭔가 변경이 되면 뭐가 변경이 됐는지 가르쳐줘야지" — 파일명만 나열하던 걸 대체).
 const detailed = new Set(["app/data/operators.json", "app/data/recruit.json", "app/data/farm.json"]);
 const otherData = meaningfulData.filter((f) => !detailed.has(f));
-if (otherData.length) lines.push(`### 기타 갱신 데이터\n- ${otherData.map((f) => f.replace("app/data/", "")).join(", ")}`);
+const genericDiffSummary = (path) => {
+  const a = parse(gitShowHead(path) || "null");
+  const b = existsSync(path) ? parse(readFileSync(path, "utf-8")) : null;
+  if (Array.isArray(a) && Array.isArray(b)) {
+    const keyOf = (x, i) => x?.id ?? x?.eventId ?? x?.name ?? i;
+    const am = new Map(a.map((x, i) => [keyOf(x, i), x]));
+    const bm = new Map(b.map((x, i) => [keyOf(x, i), x]));
+    const added = [...bm.keys()].filter((k) => !am.has(k));
+    const removed = [...am.keys()].filter((k) => !bm.has(k));
+    const changed = [...bm.keys()].filter((k) => am.has(k) && JSON.stringify(am.get(k)) !== JSON.stringify(bm.get(k)));
+    const bits = [];
+    if (added.length) bits.push(`추가 ${added.length}`);
+    if (removed.length) bits.push(`삭제 ${removed.length}`);
+    if (changed.length) bits.push(`내용변경 ${changed.length}건${changed.length <= 5 ? ` (${changed.slice(0, 5).join(", ")})` : ""}`);
+    return bits.join(" · ") || "항목 순서만 변경";
+  }
+  if (a && b && typeof a === "object" && typeof b === "object") {
+    const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+    const changedKeys = [...keys].filter((k) => JSON.stringify(a[k]) !== JSON.stringify(b[k]));
+    return changedKeys.length ? `변경된 필드: ${changedKeys.join(", ")}` : "구조 동일 (값만 미세 변동)";
+  }
+  return "구조 파악 불가 — 바이트 diff만 다름";
+};
+if (otherData.length) lines.push(`### 기타 갱신 데이터\n` +
+  otherData.map((f) => `- ${f.replace("app/data/", "")}: ${genericDiffSummary(f)}`).join("\n"));
 if (newAvatars.length) lines.push(`### 신규 아바타 ${newAvatars.length}개`);
 if (newStory.length) lines.push(`### 신규 스토리 이미지 ${newStory.length}개`);
 
