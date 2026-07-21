@@ -20,7 +20,7 @@
 import costsData from "./data/costs.json";
 import {
   optimizeConfig, buildPlan, planScore, teamScore, opSolo, withElite, maxElite, eliteLocks,
-  availableSetKeys, cellByKey, aurasOf, ctxFor, presentIdsFor, SHIFT_COUNT,
+  availableSetKeys, synergySetMembers, cellByKey, aurasOf, ctxFor, presentIdsFor, SHIFT_COUNT,
   type InfraOp, type Elite, type Plan, type ProdPriority, type FactionSets,
 } from "./planner-engine";
 
@@ -207,16 +207,17 @@ export async function recommendRaises(
   const capped = candidates.length > CAND_CAP;
   const evalList = capped ? candidates.slice(0, CAND_CAP) : candidates;
 
-  // 후보 하나를 평가 — 순수 가산은 baseline 전략 재사용 buildPlan 1회, 시너지 조각은 baseline
-  // 세트 + 완성 시 새로 가용해지는 세트만 추가해 비교(전체 optimize의 토큰 멱집합 재탐색은 생략).
-  const evalCandidate = (upRoster: InfraOp[], byId1: Map<string, InfraOp>, synergy: boolean): { plan: Plan; score: number } => {
-    if (!synergy) {
-      const plan = buildPlan(tokenChoice, upRoster, factionSets, priority);
-      return { plan, score: planScore(plan, byId1) };
-    }
-    const baseKeys = new Set(Object.keys(factionSets));
+  // 후보 하나를 평가 — 기본은 baseline 전략 재사용 buildPlan 1회. 세트 활성안은 **그 후보가
+  // 실제로 참가하는** 휴면 세트(setMembers) + 완성으로 새로 가용해지는 세트만 추가로 비교한다.
+  // 비참가 후보에까지 휴면 세트 재탐색을 돌리던 낭비를 없앤다(대부분 후보가 buildPlan 1회로 수렴).
+  const baselineAvail = new Set(availableSetKeys(baseRoster));
+  const setMembers = synergySetMembers(baseRoster);
+  const dormantSets = [...baselineAvail].filter((key) => !factionSets[key]);
+  const evalCandidate = (upRoster: InfraOp[], byId1: Map<string, InfraOp>, opId: string): { plan: Plan; score: number } => {
     const configs: FactionSets[] = [factionSets];
-    for (const key of availableSetKeys(upRoster)) if (!baseKeys.has(key)) configs.push({ ...factionSets, [key]: true });
+    const seen = new Set(Object.keys(factionSets));
+    for (const key of dormantSets) if (!seen.has(key) && setMembers[key]?.includes(opId)) { configs.push({ ...factionSets, [key]: true }); seen.add(key); }
+    for (const key of availableSetKeys(upRoster)) if (!baselineAvail.has(key) && !seen.has(key)) { configs.push({ ...factionSets, [key]: true }); seen.add(key); }
     let best: Plan | null = null;
     let bestS = -Infinity;
     for (const cfg of configs) {
@@ -233,7 +234,7 @@ export async function recommendRaises(
     if (onProgress) await onProgress({ done: i, total: evalList.length, opId: op.id });
     const { byId: byId1 } = stampRoster(visibleOps, ownedIds, eliteById, { id: op.id, elite: to });
     const upRoster = [...byId1.values()];
-    const { plan, score: S1 } = evalCandidate(upRoster, byId1, synergy);
+    const { plan, score: S1 } = evalCandidate(upRoster, byId1, op.id);
     const deltaScore = S1 - S0;
     if (deltaScore <= EPS) continue;                 // 이득 없음/음수(휴리스틱 잡음) → 억제
     const placement = placementOf(plan, op.id);

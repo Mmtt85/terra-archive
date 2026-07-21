@@ -673,6 +673,35 @@ export function availableSetKeys(roster: InfraOp[]): string[] {
   return SYNERGY_SETS.filter((def) => synergySetAvailable(def, roster)).map((def) => def.key);
 }
 
+// 조립 가능한 각 세트의 참가자(앵커·본체) op id 목록 — 육성 추천이 "이 후보가 그 세트의
+// 멤버일 때만" 세트 활성안을 추가 평가하도록(무관한 후보에 세트 재탐색을 돌리던 낭비 제거).
+// 비멤버 오퍼를 키워도 휴면 세트가 더 이득이 되진 않으므로(그 세트를 강화하지 않음) 안전하다.
+export function synergySetMembers(roster: InfraOp[]): Record<string, string[]> {
+  const out: Record<string, string[]> = {};
+  for (const def of SYNERGY_SETS) {
+    if (!synergySetAvailable(def, roster)) continue;
+    const ids = new Set<string>();
+    let anchorFaction: string | null = null;
+    if (def.anchor) {
+      const anchor = def.anchor;
+      for (const op of roster) {
+        const sk = op.skills.find((s) => s.room === anchor.room && matchAnchorSkill(anchor.detect, s));
+        if (sk) { ids.add(op.id); anchorFaction = anchorFaction ?? sk.gateFaction ?? sk.perFaction ?? null; }
+      }
+    }
+    if (def.bodies) {
+      if (def.bodies.from === "anchorFaction" && anchorFaction) {
+        for (const op of roster) if (factionsOf(op).includes(anchorFaction)) ids.add(op.id);
+      }
+      for (const kind of def.bodies.roles ?? []) {
+        for (const op of roster) if (op.skills.some((s) => s.room === def.bodies.room && s.kind === kind)) ids.add(op.id);
+      }
+    }
+    out[def.key] = [...ids];
+  }
+  return out;
+}
+
 // 로스터만으로 세트 조립 가능성 판정 — optimize()가 후보 플래그(멱집합의 축)를 만들 때 사용
 export function synergySetAvailable(def: SynergySetDef, roster: InfraOp[]): boolean {
   if (def.anchor) {
