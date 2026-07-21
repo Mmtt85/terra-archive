@@ -261,6 +261,26 @@ def build_event(eid, entry):
     return eps, images, faces
 
 
+def actual_case_map(directory):
+    """실제 파일명(확장자 제외)을 소문자 키로 매핑. macOS는 대소문자 무시 FS라
+    참조가 20_I06이어도 20_i06.webp를 '있다'고 판정해 그대로 통과하는데, 배포처
+    (Cloudflare Pages)는 케이스를 구별해 404가 난다 (실측 28건, 2026-07-21) —
+    JSON에 싣는 참조를 항상 디스크의 실제 케이스로 정규화한다."""
+    return {f[:-5].lower(): f[:-5] for f in os.listdir(directory) if f.endswith(".webp")}
+
+
+def normalize_case(eps, faces):
+    """eps의 컷씬 참조·faces의 스탠딩 참조를 디스크 실제 파일명 케이스로 교정."""
+    cut_case = actual_case_map(CUT_DIR)
+    char_dir = os.path.join(REPO, "public", "story", "char")
+    char_case = actual_case_map(char_dir) if os.path.isdir(char_dir) else {}
+    for ep in eps:
+        for ln in ep["lines"]:
+            if "img" in ln:
+                ln["img"] = cut_case.get(ln["img"].lower(), ln["img"])
+    return {w: char_case.get(s.lower(), s) for w, s in (faces or {}).items()}
+
+
 def download_cuts(names):
     """컷씬 webp — 이미 있으면 스킵. 404(에셋 미러 누락)는 건너뛰고 목록 반환."""
     from imgutil import save_webp
@@ -407,6 +427,7 @@ def main():
             bad = set(failed)
             for ep in eps:
                 ep["lines"] = [ln for ln in ep["lines"] if ln.get("img") not in bad]
+        faces = normalize_case(eps, faces)
         out = {"id": eid, "eps": eps, "faces": faces}
         dest = os.path.join(out_dir, f"{eid}.json")
         json.dump(out, open(dest, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))

@@ -4475,7 +4475,8 @@ footer p {
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   }
 }
-.story-card button {
+.story-card button,
+.story-card a {
   display: block;
   width: 100%;
   padding: 0;
@@ -4484,8 +4485,11 @@ footer p {
   text-align: left;
   cursor: pointer;
   transition: 0.15s;
+  color: inherit;
+  text-decoration: none;
 }
-.story-card button:hover:not(:disabled) {
+.story-card button:hover:not(:disabled),
+.story-card a:hover {
   border-color: var(--border-strong);
   transform: translateY(-2px);
 }

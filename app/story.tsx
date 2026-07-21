@@ -93,7 +93,8 @@ const CHRON_SYNTH: StoryEvent[] = chronology.entries
       epNo,
     };
   });
-const eventById = new Map<string, StoryEvent>(
+// export는 scripts/verify-stories.mjs 전수 렌더 하네스용
+export const eventById = new Map<string, StoryEvent>(
   [...data.events, ...CHRON_SYNTH].map((event) => [event.id, event]),
 );
 
@@ -393,7 +394,8 @@ function EntityRail({ entities, active, onShowOperator, focus }: {
 // ── 전문(풀 스크립트) 리더 — 요약 상단 '전문 보기' 토글로 진입 (2026-07-18) ──
 // 데이터는 public/story/script/<id>.json 을 지연 fetch. 에피소드 단위로 렌더.
 // 요약과 같은 참조 레일이 오른쪽에 따라다닌다 (사용자 요청 2026-07-18).
-function ScriptReader({ script, error, entities, opIndex, onShowOperator }: {
+// export는 scripts/verify-stories.mjs 전수 렌더 하네스용 (앱 내 사용처는 이 파일뿐)
+export function ScriptReader({ script, error, entities, opIndex, onShowOperator }: {
   script: ScriptData | null; error: boolean;
   entities: Entity[]; opIndex?: OpIndex; onShowOperator?: (id: string) => void;
 }) {
@@ -594,7 +596,8 @@ function ScriptReader({ script, error, entities, opIndex, onShowOperator }: {
 }
 
 // 요약 상세 — 본문 + 스크롤 추적 참조 레일
-function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }: {
+// export는 scripts/verify-stories.mjs 전수 렌더 하네스용 (앱 내 사용처는 이 파일뿐)
+export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }: {
   event: StoryEvent; summary?: Summary; onClose: () => void; onShowOperator?: (id: string) => void; opIndex?: OpIndex;
 }) {
   const { locale, t } = useI18n();
@@ -1082,23 +1085,37 @@ function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEve
       ? (it.ep ? locText(locale, it.ep) : t(KIND_KO[it.kind]))
       : ev ? `${ev.start} · ${t("에피소드 {n}개", { n: ev.episodes })}`
       : it.ep ? locText(locale, it.ep) : t(KIND_KO[it.kind]);
+    const body = (
+      <>
+        <div className={`story-thumb${thumb ? "" : " story-thumb-none"}`}>
+          {thumb
+            ? <img src={thumb} alt="" loading="lazy" decoding="async" />
+            : <span className="story-thumb-kind">{t(KIND_KO[it.kind])}</span>}
+          {ready
+            ? <em className="story-ready-badge">{t("AI 요약")}</em>
+            : <em className="story-pending-badge">{t("요약 준비 중")}</em>}
+        </div>
+        <div className="story-card-info">
+          <h3>{locText(locale, it.name)}{ev?.unreleased && <em className="future-badge">{t("미실장")}</em>}</h3>
+          <span>{meta}</span>
+        </div>
+      </>
+    );
     return (
       <article key={it.key} className={`story-card${ready ? "" : " pending"}`}>
-        <button type="button" onClick={() => { if (ready && ev) onOpen(ev); }} disabled={!ready}
-          aria-label={locText(locale, it.name)}>
-          <div className={`story-thumb${thumb ? "" : " story-thumb-none"}`}>
-            {thumb
-              ? <img src={thumb} alt="" loading="lazy" decoding="async" />
-              : <span className="story-thumb-kind">{t(KIND_KO[it.kind])}</span>}
-            {ready
-              ? <em className="story-ready-badge">{t("AI 요약")}</em>
-              : <em className="story-pending-badge">{t("요약 준비 중")}</em>}
-          </div>
-          <div className="story-card-info">
-            <h3>{locText(locale, it.name)}{ev?.unreleased && <em className="future-badge">{t("미실장")}</em>}</h3>
-            <span>{meta}</span>
-          </div>
-        </button>
+        {/* 열 수 있는 카드는 실제 앵커 — 하이드레이션 전 클릭도 네이티브 해시 이동으로 동작하고,
+            마운트 시 apply()가 해시를 읽어 상세를 연다 (로드 직후 클릭 무반응 수정, 2026-07-21).
+            핸들러가 붙은 뒤에는 preventDefault + onOpen으로 기존 pushState 경로를 그대로 탄다. */}
+        {ready && ev ? (
+          <a href={`#story-${it.eventId}`} aria-label={locText(locale, it.name)}
+            onClick={(e) => { e.preventDefault(); onOpen(ev); }}>
+            {body}
+          </a>
+        ) : (
+          <button type="button" disabled aria-label={locText(locale, it.name)}>
+            {body}
+          </button>
+        )}
       </article>
     );
   };
