@@ -7,6 +7,7 @@
 // 상세를 읽는 동안, 화면에 보이는 문단에 언급된 인물·용어 카드가 오른쪽 레일에
 // 따라다니며 떠오른다 (IntersectionObserver — 넓은 화면 전용, 좁은 화면은 상단 갤러리).
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { scrollMainTop } from "./scroll";
 import storiesData from "./data/stories.json";
 // 요약 본문은 로케일별(story-summaries.{en,ja}.json)로 갈라져 있어 Home이 활성 로케일 것을
 // prop으로 내려준다. 모듈 레벨(합성 이벤트·해시 확인)은 콘텐츠가 아니라 "요약이 있는 id"만
@@ -1369,7 +1370,7 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
   };
 
   useEffect(() => {
-    if (selected) window.scrollTo({ top: 0 });
+    if (selected) scrollMainTop();
   }, [selected]);
 
   const summarized = data.events.filter((event) => summaryIds.has(event.id)).length;

@@ -16,6 +16,7 @@ import RogueGuide, { TOPICS as ROGUE_TOPICS, slugOf as rogueSlugOf } from "./rog
 import About from "./about";
 import FeedbackWidget from "./feedback-widget";
 import { feedbackReady, fetchNicknameCounts, submitNickname } from "./feedback";
+import { scrollMainTop } from "./scroll";
 import { I18nProvider, useI18n, conceptName, DT_LOCALE, MAGIC_TRAIT_RE, LOCALES, type Locale, type ExtraI18n } from "./i18n";
 
 type RangeGrid = { row: number; col: number };
@@ -591,7 +592,7 @@ function Portal({ onOpenTab }: { onOpenTab: (tab: Tab) => void }) {
       <div className="portal-grid">
         {cards.map((card) => (
           <button key={card.tab} type="button" className={`portal-card portal-${card.tab}`}
-            onClick={() => { onOpenTab(card.tab); window.scrollTo({ top: 0 }); }}>
+            onClick={() => { onOpenTab(card.tab); scrollMainTop(); }}>
             <span className="portal-card-icon" aria-hidden>{card.icon}</span>
             <span className="portal-card-body"><b>{card.name}</b><small>{card.desc}</small></span>
             <span className="portal-card-go" aria-hidden>→</span>
@@ -791,13 +792,16 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
   useEffect(() => {
     if (typeof window === "undefined" || !("scrollRestoration" in history)) return;
     history.scrollRestoration = "manual";
+    // 스크롤러 = .site-scroll (헤더 분리 후 window는 스크롤하지 않는다 — 2026-07-22)
+    const scroller = document.querySelector<HTMLElement>(".site-scroll");
+    if (!scroller) return;
     const store = new Map<number, number>();
     const pageId = (href: string) => { const u = new URL(href); return u.pathname + (u.hash.startsWith("#op-") ? "" : u.hash); };
     const freshKey = () => Date.now() + Math.random();
     const keyOf = (): number | null => (history.state && typeof (history.state as { __k?: number }).__k === "number") ? (history.state as { __k: number }).__k : null;
     if (keyOf() === null) history.replaceState({ ...(history.state as object || {}), __k: freshKey() }, "");
     let curKey = keyOf() as number;
-    const save = () => { if (curKey != null) store.set(curKey, window.scrollY); };
+    const save = () => { if (curKey != null) store.set(curKey, scroller.scrollTop); };
     let ticking = false;
     const onScroll = () => { if (ticking) return; ticking = true; requestAnimationFrame(() => { save(); ticking = false; }); };
     const origPush = history.pushState.bind(history);
@@ -811,22 +815,22 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
       const k = freshKey();
       origPush({ ...(state as object || {}), __k: k }, title, url as string);
       curKey = k;
-      if (pageId(window.location.href) !== fromPage) { store.set(k, 0); window.scrollTo(0, 0); }
-      else store.set(k, window.scrollY);
+      if (pageId(window.location.href) !== fromPage) { store.set(k, 0); scroller.scrollTo(0, 0); }
+      else store.set(k, scroller.scrollTop);
     }) as typeof history.pushState;
     const onPop = () => {
       const k = keyOf();
       curKey = k ?? freshKey();
       if (k === null) origReplace({ ...(history.state as object || {}), __k: curKey }, "");
       const y = k != null && store.has(k) ? store.get(k)! : 0;
-      requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo(0, y)));
+      requestAnimationFrame(() => requestAnimationFrame(() => scroller.scrollTo(0, y)));
     };
-    window.addEventListener("scroll", onScroll, { passive: true });
+    scroller.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("popstate", onPop);
     return () => {
       history.pushState = origPush;
       history.replaceState = origReplace;
-      window.removeEventListener("scroll", onScroll);
+      scroller.removeEventListener("scroll", onScroll);
       window.removeEventListener("popstate", onPop);
     };
   }, []);
@@ -931,31 +935,18 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
 
   useEffect(() => {
     if (!selected) return;
-    const body = document.body;
-    const saved = { position: body.style.position, top: body.style.top, width: body.style.width, overflow: body.style.overflow };
-    // 모바일은 window가 스크롤러 — iOS Safari는 body{overflow:hidden}만으론 스크롤이
-    // 튀므로(닫을 때 맨 위로 점프) position:fixed로 잠그고 닫을 때 정확히 복원한다.
-    // 그래서 오퍼 상세를 닫으면 보던 오퍼 위치 그대로 돌아온다 (사용자 요청 2026-07).
-    // 데스크탑은 목록이 .results 내부 스크롤이라 body 잠금만으로 충분하다.
-    const mobile = window.matchMedia("(max-width: 1180px)").matches;
-    const scrollY = window.scrollY;
-    if (mobile) {
-      body.style.position = "fixed";
-      body.style.top = `-${scrollY}px`;
-      body.style.width = "100%";
-    } else {
-      body.style.overflow = "hidden";
-    }
+    // 배경 스크롤 잠금 — 스크롤러가 .site-scroll(내부 컨테이너)로 바뀌어(2026-07-22)
+    // overflow:hidden만으로 scrollTop이 그대로 보존된다. 예전 body position:fixed 트릭
+    // (iOS에서 window 스크롤이 튀던 문제 대응)은 window가 더는 스크롤하지 않으므로 불필요.
+    const scroller = document.querySelector<HTMLElement>(".site-scroll");
+    const savedOverflow = scroller?.style.overflow ?? "";
+    if (scroller) scroller.style.overflow = "hidden";
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") closeOperator();
     };
     window.addEventListener("keydown", onKeyDown);
     return () => {
-      body.style.position = saved.position;
-      body.style.top = saved.top;
-      body.style.width = saved.width;
-      body.style.overflow = saved.overflow;
-      if (mobile) window.scrollTo(0, scrollY);
+      if (scroller) scroller.style.overflow = savedOverflow;
       window.removeEventListener("keydown", onKeyDown);
     };
   }, [selected]);
@@ -974,20 +965,14 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
   }, [navOpen]);
 
   // 모바일: 햄버거 드롭다운이 열려 있는 동안 배경 페이지 스크롤을 잠근다
-  // (iOS 사파리는 body overflow:hidden만으로는 안 막혀 position:fixed 방식 사용)
+  // (스크롤러가 .site-scroll이라 overflow:hidden으로 충분 — scrollTop 자연 보존, 2026-07-22)
   useEffect(() => {
     if (!navOpen || !window.matchMedia("(max-width: 760px)").matches) return;
-    const scrollY = window.scrollY;
-    const { position, top, width } = document.body.style;
-    document.body.style.position = "fixed";
-    document.body.style.top = `-${scrollY}px`;
-    document.body.style.width = "100%";
-    return () => {
-      document.body.style.position = position;
-      document.body.style.top = top;
-      document.body.style.width = width;
-      window.scrollTo(0, scrollY);
-    };
+    const scroller = document.querySelector<HTMLElement>(".site-scroll");
+    if (!scroller) return;
+    const savedOverflow = scroller.style.overflow;
+    scroller.style.overflow = "hidden";
+    return () => { scroller.style.overflow = savedOverflow; };
   }, [navOpen]);
 
   const filtered = useMemo(() => {
@@ -1056,7 +1041,7 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
     <main className={tab === "archive" ? "site-main" : "base-main site-main"}>
       <header className={`site-header${headerCollapsed ? " collapsed" : ""}`} id="top">
         <a className="brand" href={localeBase || "/"} aria-label={t("테라 아카이브 홈")}
-          onClick={(event) => { event.preventDefault(); switchTab("portal"); window.scrollTo({ top: 0 }); }}>
+          onClick={(event) => { event.preventDefault(); switchTab("portal"); scrollMainTop(); }}>
           <span className="brand-mark"><img src="/avatars/char_1012_skadi2.webp" alt="" width={180} height={180} /></span>
           <span>{t("테라 아카이브")}<small>{t("명일방주(Arknights) 팬사이트")}</small></span>
         </a>
@@ -1117,6 +1102,9 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
         </button>
       </header>
 
+      {/* 본문 스크롤 영역 — 세로 스크롤은 여기서만 생긴다(헤더는 위에 고정, 스크롤바가 헤더까지
+          올라오지 않도록 — 사용자 요청 2026-07-22, 모바일·PC 공통). 모달·제안 위젯은 fixed라 밖에 둔다. */}
+      <div className="site-scroll">
 
       {tab === "portal" && <Portal onOpenTab={switchTab} />}
 
@@ -1182,9 +1170,6 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
       {tab === "rogue" && <RogueGuide includeFuture={includeFuture} />}
       {tab === "about" && <About onOpenTab={switchTab} />}
 
-      {selected && <OperatorModal operator={selected} nicknames={nicknames.get(selected.id) ?? []} onSubmitNickname={handleSubmitNickname} onClose={closeOperator} />}
-      <FeedbackWidget open={feedbackOpen} setOpen={setFeedbackOpen} />
-
       <footer>
         <span>RHODES ISLAND // TERRA ARCHIVE</span>
         <p>{t("명일방주(Arknights) 비공식 팬 프로젝트 · 게임 내 명칭과 데이터의 권리는 Hypergryph / Yostar 등 각 권리자에게 있습니다.")}</p>
@@ -1200,6 +1185,10 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
           })}
         </nav>
       </footer>
+      </div>{/* /.site-scroll */}
+
+      {selected && <OperatorModal operator={selected} nicknames={nicknames.get(selected.id) ?? []} onSubmitNickname={handleSubmitNickname} onClose={closeOperator} />}
+      <FeedbackWidget open={feedbackOpen} setOpen={setFeedbackOpen} />
     </main>
   );
 }

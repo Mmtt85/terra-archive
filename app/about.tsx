@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { useI18n, rich, type Locale } from "./i18n";
+import { scrollMainTop } from "./scroll";
 import type { Tab } from "./home";
 
 // 소개 페이지 — 홍보·개발사 후원 문의용. 각 기능이 무엇이고 어떤 상황에 쓰는지 3개 언어로 설명.
@@ -371,7 +372,7 @@ export default function About({ onOpenTab }: { onOpenTab?: (tab: Tab) => void })
               {f.bullets.map((b, i) => <li key={i}>{b}</li>)}
             </ul>
             {onOpenTab && (
-              <button type="button" className="about-card-go" onClick={() => { onOpenTab(f.tab); window.scrollTo({ top: 0 }); }}>
+              <button type="button" className="about-card-go" onClick={() => { onOpenTab(f.tab); scrollMainTop(); }}>
                 {f.name} →
               </button>
             )}

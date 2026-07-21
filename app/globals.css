@@ -674,18 +674,39 @@ button {
      1줄 = 브랜드 · 공식방송 · 진행중이벤트 (왼쪽 정렬)
      2줄 = 미래시 · 햄버거 · 다크모드 · 언어 (오른쪽 정렬).
      ::after(폭 100%)가 두 줄 사이를 끊고, 2줄 첫 요소의 margin-left:auto가 우측 정렬. */
-  /* 모바일 헤더 줄 구성 (사용자 배치 지시 2026-07-22):
-     1줄 = 로고 · 공식방송 · 제안 · 진행중이벤트(공간채움) · 햄버거(맨 오른쪽)
-     2줄 = 미래시 · 다크모드 · 언어 (오른쪽 정렬)
-     헤더 하단 중앙에 접기 핸들. 접으면(.collapsed) 2줄과 제안·이벤트가 사라져 로고·공식방송·햄버거만. */
+  /* 모바일 헤더 3줄 구조 (사용자 확정 2026-07-22):
+     1줄 = 로고(왼쪽) · 햄버거(맨 오른쪽)
+     2줄 = 진행중 이벤트(왼쪽) · 공식방송(오른쪽)
+     3줄 = 제안 · 미래시 · 다크모드 · 언어
+     줄 나눔은 ::before(1↔2) / ::after(2↔3) 가상 요소의 flex-basis:100%로 만든다.
+     하단 중앙에 접기 핸들 — 접으면(.collapsed) 로고·공식방송·햄버거 한 줄만 남는다. */
   .site-header {
     justify-content: flex-start;
     position: sticky;
   }
   .brand { order: 1; margin-right: 0; }
-  .bcast-trigger { order: 2; margin-left: 0; }
-  .feedback-header-btn {
+  .site-header .nav-group { order: 2; margin-left: auto; }
+  .site-header::before {
+    content: "";
     order: 3;
+    flex-basis: 100%;
+    height: 0;
+  }
+  .event-group {
+    order: 4;
+    margin: 0;
+    min-width: 0;
+    flex: 1 1 auto; /* 2줄 왼쪽 — 남는 공간을 이벤트 칩이 채운다 */
+  }
+  .bcast-trigger { order: 5; margin-left: auto; }
+  .site-header::after {
+    content: "";
+    order: 6;
+    flex-basis: 100%;
+    height: 0;
+  }
+  .feedback-header-btn {
+    order: 7;
     display: inline-flex;
     align-items: center;
     gap: 4px;
@@ -699,25 +720,10 @@ button {
     white-space: nowrap;
     cursor: pointer;
   }
-  .event-group {
-    order: 4;
-    margin: 0;
-    min-width: 0;
-    flex: 1 1 auto; /* 1줄 오른쪽 남는 공간을 이벤트 칩이 채우도록 (사용자 요청 2026-07-20) */
-  }
-  /* 햄버거(메뉴)를 1줄 맨 오른쪽으로 (사용자 요청 2026-07-22). event-group의 grow가 밀어주고,
-     이벤트가 없을 때(접힘 등)를 대비해 margin-left:auto로도 오른쪽에 고정한다. */
-  .site-header .nav-group { order: 5; margin-left: auto; }
-  .site-header::after {
-    content: "";
-    order: 6;
-    flex-basis: 100%;
-    height: 0;
-  }
-  .site-header .future-toggle { order: 7; margin-left: auto; }
-  .site-header .theme-toggle { order: 8; }
-  .site-header .lang-wrap { order: 9; }
-  .site-header .about-icon { order: 10; }
+  .site-header .future-toggle { order: 8; margin-left: auto; }
+  .site-header .theme-toggle { order: 9; }
+  .site-header .lang-wrap { order: 10; }
+  .site-header .about-icon { order: 11; }
   /* 우하단 FAB은 모바일에서 감추고, 헤더의 제안 버튼으로 대체 (패널은 그대로 fixed로 뜬다) */
   .feedback-fab { display: none; }
   /* 헤더 접기 핸들 — 헤더 맨 아래 중앙, 아래로 살짝 걸치는 탭 (사용자 확정 2026-07-22) */
@@ -744,16 +750,19 @@ button {
     cursor: pointer;
     z-index: 1;
   }
-  /* 접힘: 2줄 요소와 제안·진행중이벤트를 숨겨 로고·공식방송·햄버거만 남긴다 */
+  /* 접힘: 줄 나눔·이벤트·3줄 요소를 숨기고 공식방송을 로고 옆으로 —
+     로고 · 공식방송 · (공간) · 햄버거 한 줄만 남는다 (사용자 요청 2026-07-22) */
   .site-header.collapsed .feedback-header-btn,
   .site-header.collapsed .event-group,
   .site-header.collapsed .future-toggle,
   .site-header.collapsed .theme-toggle,
   .site-header.collapsed .lang-wrap,
   .site-header.collapsed .about-icon,
+  .site-header.collapsed::before,
   .site-header.collapsed::after {
     display: none;
   }
+  .site-header.collapsed .bcast-trigger { order: 1; margin-left: 8px; }
   /* 배너 + 이벤트 설명(라벨·이름·기간)을 PC판처럼 함께 표시 —
      1줄 오른쪽 남는 공간을 채운다 (사용자 요청 2026-07-20). */
   .event-trigger {
@@ -4846,7 +4855,8 @@ html.dark .story-card:hover .story-thumb img {
 }
 .digest-group-link .digest-group-anchor { color: var(--muted); font-weight: 700; opacity: 0; transition: opacity 0.15s; }
 .digest-group-link:hover .digest-group-anchor { opacity: 0.8; }
-.digest-group[id] { scroll-margin-top: 76px; }
+/* 헤더가 스크롤 영역 밖으로 분리돼(2026-07-22) 앵커가 헤더에 가리지 않는다 — 여백만 조금 */
+.digest-group[id] { scroll-margin-top: 16px; }
 .digest-tabs { margin: 0; }
 .story-ready-badge,
 .story-pending-badge {
@@ -4961,7 +4971,8 @@ html.dark .story-card:hover .story-thumb img {
    기존엔 반대 순서(레일이 위)라 버튼이 헤더에서 78px 떨어져 떠 있었다. */
 @media (max-width: 1180px) {
   .story-back-top {
-    top: var(--header-h, 56px);
+    /* 스크롤러(.site-scroll)가 헤더 아래에서 시작하므로 sticky 기준도 0 (2026-07-22) */
+    top: 0;
     z-index: 9;        /* 레일(z-index:8)보다 위 — 버튼이 위, 레일이 그 아래 */
     margin-bottom: 10px;
   }
@@ -5528,8 +5539,9 @@ html.dark .story-card:hover .story-thumb img {
   .story-rail {
     order: -1;
     position: sticky;
-    /* 헤더 + 뒤로가기 버튼(약 46px) 높이만큼 내려 '뒤로가기 바로 밑'에 붙는다 (2026-07-20) */
-    top: calc(var(--header-h, 56px) + 46px);
+    /* 뒤로가기 버튼(약 46px) 바로 밑에 붙는다 — 스크롤러가 헤더 아래서 시작하므로
+       헤더 높이는 더하지 않는다 (스크롤 컨테이너 분리 2026-07-22) */
+    top: 46px;
     z-index: 8;
     /* 카드 유무와 상관없이 높이를 고정한다. 상단 sticky 레일이 정상 흐름에서 높이를
        가지므로, 카드가 떴다 사라지면 본문이 밀렸다 되돌아오고 → 관찰 밴드 밖으로 나간
@@ -7110,7 +7122,9 @@ html.dark.rg-theme.rg6 .site-header { background: #0a1413e6; border-bottom-color
      여백이 남으면 백드롭 블러가 가운데 70%만 덮는다. 사용자 리포트 2026-07-18)는
      제외하고, 본문 섹션만 좌우 15% 여백. 섹션별 자체 width/max-width(920~1600px)는
      무효화해 모든 페이지가 정확히 가운데 70% 컬럼을 쓰게 한다 (사용자 확정 2026-07-18) */
-  main.site-main > :not(.site-header):not(footer):not(.modal-backdrop):not(.feedback-widget) {
+  /* 본문 섹션은 .site-scroll의 직계 자식 (스크롤 컨테이너 분리 2026-07-22) — 스크롤바는
+     화면 오른쪽 끝(.site-scroll 가장자리)에 그대로 남고, 콘텐츠만 가운데 70% 컬럼을 쓴다 */
+  .site-scroll > :not(footer) {
     margin-inline: 15%;
     width: auto;
     max-width: none;
@@ -7120,13 +7134,26 @@ html.dark.rg-theme.rg6 .site-header { background: #0a1413e6; border-bottom-color
   .feedback-widget { right: calc(7.5% - 45px); }
 }
 
-/* 본문이 짧아도 푸터는 항상 화면 하단에 (사용자 확정 2026-07-18) */
+/* ── 스크롤 구조 — 헤더 고정, 세로 스크롤은 본문(.site-scroll)에만 (사용자 요청 2026-07-22,
+   모바일·PC 공통: 스크롤바가 헤더 옆까지 올라오지 않는다) ── */
+html, body { height: 100%; }
+body { overflow: hidden; }
 main.site-main {
-  min-height: 100dvh;
+  height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
 }
-main.site-main > footer { margin-top: auto; }
+.site-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  /* 본문이 짧아도 푸터는 항상 스크롤 영역 하단에 (사용자 확정 2026-07-18) */
+  display: flex;
+  flex-direction: column;
+}
+.site-scroll > footer { margin-top: auto; }
 
 /* 헤더·푸터: 배경은 100% 폭, 내부 콘텐츠만 좌우 15% 여백에 맞춰 정렬 (사용자 확정 2026-07-17) */
 @media (min-width: 1400px) {
