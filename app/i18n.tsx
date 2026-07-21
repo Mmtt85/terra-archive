@@ -978,6 +978,7 @@ const D: Record<string, Pair> = {
   "데이터를 불러오는 중...": ["Loading data...", "データを読み込み中..."],
   "환경": ["Environment", "環境"],
   "변형 구역": ["Variant zone", "変化区域"],
+  "특수 구역": ["Special zone", "特殊区域"],
   "우연한 만남 등 이벤트에서 발생하는 전투입니다. 카드를 열면 일반/긴급 탭이 있는 경우 전환할 수 있습니다.": ["Battles triggered by encounters and other events. Open a card to switch between normal/emergency tabs when available.", "予期せぬ出会いなどのイベントで発生する戦闘です。カードを開くと通常/緊急タブを切り替えられます。"],
   "추격전": ["Chase", "追撃戦"],
   "거점전": ["Stronghold", "拠点戦"],

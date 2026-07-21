@@ -498,17 +498,42 @@ def build_topic(tid="rogue_1", loc=None):
             "buff": z.get("buffDescription"), "hidden": bool(z.get("isHiddenZone")),
         })
     zones.sort(key=lambda z: z["num"])
-    # 존 배경 — ui/rogueliketopic/topics/<tid>_update/levelbgpic/<tid>_map_<n>.png
+    # 포탈 존 (rogue_5 시비경·금석경 — gameConst.portalZones): 숫자 존이 아니지만 변형 중복이
+    # 아니라 고유 콘텐츠다 — '의문 탐색 가능'(쉐이 울림 분대 sp·탐색 유물 페어)으로 여는
+    # '기이한 공간' 입구로 진입하는 특수 경계 (nodeTypes func "특수 구역 '시비경'으로 통하는
+    # 입구" 참조, 사용자 제보 2026-07-21). 일반 층 뒤에 num 90+로 덧붙이고 portal 플래그.
+    # 배경 파일명이 불규칙(backgroundId: rogue_5_map_0 / rogue_5_map_sky_2)이라 bg에 실어 준다.
+    # ⚠ rogue_5 전용: 다른 토픽의 portalZones는 성격이 다르다 — rogue_3는 이역 변형
+    # 수백 개(zone_s_*), rogue_4는 시공 포탈 내부 구획 — 존 카드로 실으면 안 된다.
+    seen_zone_names = {z["name"] for z in zones}
+    portal_ids = ((r.get("gameConst") or {}).get("portalZones") or []) if tid == "rogue_5" else []
+    for i, pzid in enumerate(portal_ids):
+        z = r["zones"].get(pzid)
+        # portalZones엔 본 존의 _b 변형(홍육루·산수각·시말릉 — 설명·버프·배경 전부 동일)도
+        # 섞여 있다 — 이름이 이미 있는 존은 중복이라 제외 (rogue_6 변형 존 제거 규칙과 동일)
+        if not z or z["name"] in seen_zone_names:
+            continue
+        seen_zone_names.add(z["name"])
+        desc = (z.get("description") or "").split("\n", 1)
+        zones.append({
+            "id": pzid, "num": 90 + i, "name": z["name"], "portal": True,
+            "time": desc[0] if len(desc) > 1 else None,
+            "desc": desc[1] if len(desc) > 1 else desc[0],
+            "buff": z.get("buffDescription"), "hidden": bool(z.get("isHiddenZone")),
+            "bg": z.get("backgroundId"),
+        })
+    # 존 배경 — ui/rogueliketopic/topics/<tid>_update/levelbgpic/<파일명>.png
     # (_update 폴더가 없는 토픽은 topics/<tid>/levelbgpic 폴백)
+    zone_file = lambda z: z.get("bg") or f"{tid}_map_{z['num']}"
     zone_dir = os.path.join(REPO, "public", "rogue", "zone")
     for sub in (f"{tid}_update", tid):
-        pend = [z for z in zones if not os.path.exists(os.path.join(zone_dir, f"{tid}_map_{z['num']}.webp"))]
+        pend = [z for z in zones if not os.path.exists(os.path.join(zone_dir, f"{zone_file(z)}.webp"))]
         if not pend:
             break
-        download_webp([(f"{ASSETS}/ui/rogueliketopic/topics/{sub}/levelbgpic/{tid}_map_{z['num']}.png",
-                        os.path.join(zone_dir, f"{tid}_map_{z['num']}.webp")) for z in pend], max_px=900)
+        download_webp([(f"{ASSETS}/ui/rogueliketopic/topics/{sub}/levelbgpic/{zone_file(z)}.png",
+                        os.path.join(zone_dir, f"{zone_file(z)}.webp")) for z in pend], max_px=900)
     for z in zones:
-        z["img"] = os.path.exists(os.path.join(zone_dir, f"{tid}_map_{z['num']}.webp"))
+        z["img"] = os.path.exists(os.path.join(zone_dir, f"{zone_file(z)}.webp"))
     # 홈 화면 키비주얼(히어로 배경) → public/rogue/kv<N>.webp. 인게임 KV는
     # 좌/우 반쪽 2장(각 780×960)을 가로로 이어붙인 와이드 아트 — 폴더·파일명이
     # 토픽마다 불규칙해 개별 매핑. 이미 있으면 스킵 (사용자 확정 아트 2026-07-18).

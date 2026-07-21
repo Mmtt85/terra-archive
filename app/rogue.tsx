@@ -9,7 +9,7 @@ import rogue1Data from "./data/rogue1.json";
 import { useI18n } from "./i18n";
 import { normSearch } from "./search";
 
-type Zone = { id: string; num: number; name: string; time: string | null; desc: string; buff: string | null; hidden: boolean; img?: boolean; variant?: boolean; cn?: string };
+type Zone = { id: string; num: number; name: string; time: string | null; desc: string; buff: string | null; hidden: boolean; img?: boolean; variant?: boolean; cn?: string; portal?: boolean; bg?: string };
 type StageEnemy = { key: string; cnt: number };
 type Emg = {
   mul?: Record<string, number>; add?: Record<string, number>;
@@ -469,7 +469,7 @@ function ZoneModal({ zone, pairs, bosses, onOpenStage, onClose }: {
       <div className="rg-modal rg-zmodal" role="dialog" aria-modal onClick={(ev) => ev.stopPropagation()}>
         <header className="rg-modal-head">
           <div>
-            <span className="rg-zone-num">{zone.hidden ? "?" : t("{n}층", { n: zone.num })}</span>
+            <span className="rg-zone-num">{zone.portal ? t("특수 구역") : zone.hidden ? "?" : t("{n}층", { n: zone.num })}</span>
             <h3><Nm name={zone.name} cn={zone.cn} /></h3>
             {zone.variant && <span className="rg-zone-hidden">{t("변형 구역")}</span>}
             {zone.hidden && <span className="rg-zone-hidden">{t("히든 층")}</span>}
@@ -791,8 +791,9 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
     else if (type === "zone") { const z = zoneById.get(id); if (z) setZoneOpen(z); }
   };
   // 최신 applyHash를 ref로 노출 — 리스너가 stale 클로저를 잡지 않게
+  // (렌더 중 ref 대입은 lint 에러라 effect에서 매 렌더 후 갱신 — 리스너는 렌더 후에만 발화)
   const applyHashRef = useRef(applyHash);
-  applyHashRef.current = applyHash;
+  useEffect(() => { applyHashRef.current = applyHash; });
   const inited = useRef(false);
   // 데이터 로드 후 최초 1회: URL 해시대로 뷰·모달 복원 (복붙 딥링크 진입)
   useEffect(() => {
@@ -988,8 +989,8 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
             return (
               <button type="button" key={z.id} className={`rg-zonecard${z.hidden ? " hidden-zone" : ""}`}
                 onClick={() => setZoneOpen(z)}>
-                {z.img && <img className="rg-zonecard-bg" src={`/rogue/zone/${data.id}_map_${z.num}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
-                <span className="rg-zone-num">{z.hidden ? "?" : t("{n}층", { n: z.num })}</span>
+                {z.img && <img className="rg-zonecard-bg" src={`/rogue/zone/${z.bg ?? `${data.id}_map_${z.num}`}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
+                <span className="rg-zone-num">{z.portal ? t("특수 구역") : z.hidden ? "?" : t("{n}층", { n: z.num })}</span>
                 <span className="rg-zonecard-name"><Nm name={z.name} cn={z.cn} /></span>
                 {z.variant && <span className="rg-zone-hidden">{t("변형 구역")}</span>}
                 {z.hidden && <span className="rg-zone-hidden">{t("히든 층")}</span>}
