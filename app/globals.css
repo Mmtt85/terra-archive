@@ -2001,6 +2001,8 @@ legend {
   border-radius: 6px; padding: 3px 9px; cursor: pointer; font-size: 11.5px; font-weight: 600; flex: none;
 }
 .invest-hide:hover { color: var(--ink); border-color: var(--muted); }
+/* 선택·숨기기 — 완성 비용 푸터 오른쪽 끝 고정 */
+.invest-cost-actions { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; }
 .invest-applied { font-size: 12px; font-weight: 700; color: #2f7d3a; white-space: nowrap; flex: none; }
 :root[data-theme="dark"] .invest-applied, .dark .invest-applied { color: #7fd18c; }
 .invest-revert {

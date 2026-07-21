@@ -960,10 +960,6 @@ function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onTogg
                     {Math.round(r.aGain) >= 1 && <span className="inv-gain a">{t("A조 +{n}%p", { n: Math.round(r.aGain) })}</span>}
                     {Math.round(r.bGain) >= 1 && <span className="inv-gain b">{t("B조 +{n}%p", { n: Math.round(r.bGain) })}</span>}
                   </span>
-                  {applied.has(r.opId)
-                    ? <span className="invest-applied" title={t("임시 적용됨 — 헤더 '되돌리기'로 취소")}>✓ {t("적용됨")}</span>
-                    : <button className={`invest-apply${selected.has(r.opId) ? " on" : ""}`} onClick={() => onToggleSelect(r.opId)} title={t("적용할 오퍼로 선택합니다 — 헤더 '선택 임시 적용'으로 한 번에 반영")}>{selected.has(r.opId) ? `✓ ${t("선택됨")}` : t("선택")}</button>}
-                  {!applied.has(r.opId) && <button className="invest-hide" onClick={() => onHide(r.opId)} title={t("이 오퍼를 추천 목록에서 숨깁니다 — 다음 순위 오퍼가 올라옵니다")}>{t("숨기기")}</button>}
                 </div>
                 {r.placement && <div className="invest-place">{t("{room} · {shift}에 배치됩니다", { room: roomLabel(r.placement.key), shift: shiftTag(r.placement.shift) })}</div>}
                 {deltas.length > 0 && (
@@ -982,6 +978,15 @@ function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onTogg
                       <img src={ITEM_CAT[id]?.image} alt="" width={22} height={22} loading="lazy" />{ct}
                     </span>
                   ))}
+                  {/* 선택·숨기기는 푸터 오른쪽 끝 — 타이틀 줄이 꽉 차면 버튼이 다음 줄로 밀리던 문제 (사용자 요청 2026-07-21) */}
+                  <span className="invest-cost-actions">
+                    {applied.has(r.opId)
+                      ? <span className="invest-applied" title={t("임시 적용됨 — 헤더 '되돌리기'로 취소")}>✓ {t("적용됨")}</span>
+                      : <>
+                          <button className={`invest-apply${selected.has(r.opId) ? " on" : ""}`} onClick={() => onToggleSelect(r.opId)} title={t("적용할 오퍼로 선택합니다 — 헤더 '선택 임시 적용'으로 한 번에 반영")}>{selected.has(r.opId) ? `✓ ${t("선택됨")}` : t("선택")}</button>
+                          <button className="invest-hide" onClick={() => onHide(r.opId)} title={t("이 오퍼를 추천 목록에서 숨깁니다 — 다음 순위 오퍼가 올라옵니다")}>{t("숨기기")}</button>
+                        </>}
+                  </span>
                 </div>
               </div>
             </li>
