@@ -132,11 +132,11 @@ export const CLUE_ELITE_BASE: number[] = C.CLUE_ELITE_BASE;
 export const maxElite = (rarity: number): Elite => (rarity >= 4 ? 2 : rarity === 3 ? 1 : 0);
 export const clueBase = (op: InfraOp): number => (CLUE_RARITY_BASE[op.rarity] ?? CLUE_RARITY_BASE.default ?? 5) + (CLUE_ELITE_BASE[op.elite ?? maxElite(op.rarity)] ?? 0);
 
-// 정예화 단계 선택지: 정예화 해금 스킬이 있어야 의미가 있고,
-// 3성은 정예화 1까지·1~2성은 승급 자체가 없다
+// 정예화 단계 선택지: 성급 기준 — 3성은 정예화 1까지·1~2성은 승급 자체가 없다.
+// 스킬이 전부 노정예 Lv.1부터 있는 오퍼(니엔 등)도 선택은 가능해야 한다
+// (계산엔 영향 없어도 실제 보유 상태 기록·응접실 레어도 기본치에 쓰임, 2026-07-21).
 export const ELITE_LABEL: Record<Elite, string> = { 0: "노정예", 1: "1정", 2: "2정" };
 export function eliteOptions(op: InfraOp): Elite[] {
-  if (!op.skills.some((skill) => skill.unlock.startsWith("정예화"))) return [];
   if (op.rarity <= 2) return [];
   return op.rarity === 3 ? [0, 1] : [0, 1, 2];
 }

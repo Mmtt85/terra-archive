@@ -976,7 +976,7 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
     );
   };
   // 성급 단위 일괄 조작 — 보유 체크/해제, 정예화 노정예/1정/2정
-  // (정예화는 정예화 해금 스킬이 있는 오퍼에만 적용, 3성 이하는 2정이 없어 보유/해제만)
+  // (정예화는 3성 이상에만 적용 — 2성 이하는 승급이 없어 보유/해제만)
   const bulkOwn = (test: (rarity: number) => boolean, own: boolean) => setDraft((current) => {
     const next = new Set(current);
     for (const op of allOps) if (test(op.rarity)) { if (own) next.add(op.id); else next.delete(op.id); }
@@ -1059,7 +1059,7 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
         </header>
         <div className="modal-scroll">
           {importMsg && <p className="dorm-note maa-import-msg">{importMsg}</p>}
-          <p className="dorm-note">{rich(t("정예화 단계에 따라 해금되는 인프라 스킬을 가진 오퍼는 카드 아래에서 **노정예/1정/2정**을 선택할 수 있습니다 (기본값 최대 정예화). 얼굴을 클릭하면 상세 정보가 열립니다."))}</p>
+          <p className="dorm-note">{rich(t("3성 이상 오퍼는 카드 아래에서 **노정예/1정/2정**(3성은 1정까지)을 선택할 수 있습니다 (기본값 최대 정예화). 얼굴을 클릭하면 상세 정보가 열립니다."))}</p>
           {allOps.some((op) => op.unreleased) && (
             <p className="dorm-note">{rich(t("**미실장** 배지가 붙은 오퍼는 미출시(중국 서버 선행) 오퍼입니다 — 미래시 데이터 포함이 켜져 있을 때만 표시되며, 스킬 텍스트는 비공식 AI 번역입니다."))}</p>
           )}
@@ -1146,7 +1146,7 @@ const HELP_SECTIONS: { title: string; items: string[] }[] = [
     "만트라 정예 소대는 실존 정예 오퍼 수 기준으로 계산합니다 (현재 6명 → +37%, 신규 정예 오퍼 추가 시 데이터 갱신에서 자동 반영).",
   ]},
   { title: "정예화 단계 (1정/2정)", items: [
-    "보유 오퍼 설정에서 오퍼별로 기본값(2정 · 정예화 2)을 1정으로 낮출 수 있습니다. 정예화 2에서 해금되는 인프라 스킬을 가진 오퍼만 선택지가 보입니다.",
+    "보유 오퍼 설정에서 오퍼별로 기본값(2정 · 정예화 2)을 노정예/1정으로 낮출 수 있습니다 (3성 이상 전원 — 스킬이 노정예부터 있는 오퍼도 선택 가능).",
     "1정으로 지정하면 해당 오퍼는 정예화 2 전용 스킬 없이 계산·자동편성됩니다 — 아직 승급 못 한 오퍼를 과대평가하지 않도록 맞춰 두세요.",
   ]},
   { title: "대체 추천", items: [

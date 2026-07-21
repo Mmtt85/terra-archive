@@ -487,9 +487,9 @@ const D: Record<string, Pair> = {
     "Could not read the MAA file — make sure it is an operator-box recognition JSON (e.g. Arknights_OperBox_Export.json).",
     "MAAファイルを認識できませんでした — オペレーターBOX認識結果のJSON（Arknights_OperBox_Export.json など）か確認してください。",
   ],
-  "정예화 단계에 따라 해금되는 인프라 스킬을 가진 오퍼는 카드 아래에서 **노정예/1정/2정**을 선택할 수 있습니다 (기본값 최대 정예화). 얼굴을 클릭하면 상세 정보가 열립니다.": [
-    "Operators whose base skills unlock by promotion can be set to **E0/E1/E2** under their card (default: max promotion). Click a portrait to open details.",
-    "昇進段階で基地スキルが解放されるオペレーターは、カード下で**未昇進/昇進1/昇進2**を選択できます（デフォルトは最大昇進）。顔をクリックすると詳細が開きます。",
+  "3성 이상 오퍼는 카드 아래에서 **노정예/1정/2정**(3성은 1정까지)을 선택할 수 있습니다 (기본값 최대 정예화). 얼굴을 클릭하면 상세 정보가 열립니다.": [
+    "Operators of 3★ and above can be set to **E0/E1/E2** under their card (3★ up to E1; default: max promotion). Click a portrait to open details.",
+    "星3以上のオペレーターは、カード下で**未昇進/昇進1/昇進2**（星3は昇進1まで）を選択できます（デフォルトは最大昇進）。顔をクリックすると詳細が開きます。",
   ],
   "6성": ["6★", "星6"],
   "5성": ["5★", "星5"],
@@ -617,9 +617,9 @@ const D: Record<string, Pair> = {
     "マントラの精鋭小隊は実在する精鋭オペレーター数基準で計算します（現在6人 → +37%、新規精鋭追加時はデータ更新で自動反映）。",
   ],
   "정예화 단계 (1정/2정)": ["Promotion stages (E1/E2)", "昇進段階（昇進1/昇進2）"],
-  "보유 오퍼 설정에서 오퍼별로 기본값(2정 · 정예화 2)을 1정으로 낮출 수 있습니다. 정예화 2에서 해금되는 인프라 스킬을 가진 오퍼만 선택지가 보입니다.": [
-    "In the roster settings you can lower an operator from the default (E2) to E1. The choice only appears for operators with base skills that unlock at Elite 2.",
-    "所持オペレーター設定で、デフォルト（昇進2）を昇進1に下げられます。昇進2で解放される基地スキルを持つオペレーターにのみ選択肢が表示されます。",
+  "보유 오퍼 설정에서 오퍼별로 기본값(2정 · 정예화 2)을 노정예/1정으로 낮출 수 있습니다 (3성 이상 전원 — 스킬이 노정예부터 있는 오퍼도 선택 가능).": [
+    "In the roster settings you can lower an operator from the default (E2) to E0/E1 — available for every operator of 3★ and above, including those whose base skills exist from E0.",
+    "所持オペレーター設定で、デフォルト（昇進2）を未昇進/昇進1に下げられます — 星3以上の全員が対象で、未昇進から基地スキルを持つオペレーターも選択できます。",
   ],
   "1정으로 지정하면 해당 오퍼는 정예화 2 전용 스킬 없이 계산·자동편성됩니다 — 아직 승급 못 한 오퍼를 과대평가하지 않도록 맞춰 두세요.": [
     "Marking E1 computes and auto-assigns that operator without their Elite-2-only skills — set this so unpromoted operators aren't overrated.",
