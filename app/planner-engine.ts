@@ -60,6 +60,9 @@ export type InfraSkill = {
   cap?: number;        // 이 스킬의 오더 상한/창고 용량 기여 (±N; perFaction이면 엔진이 인원수로 스케일)
   capConv?: CapConv;   // 팀 용량 합을 효율/생산력으로 변환 (버메일·버블·데겐블레허·스와이어·제이)
   amp?: AmpSpec | null; // 증폭형 (와이후·스노우상트): 팀 제공 효율을 배수로 되돌림
+  perBase?: number;    // per-faction 스케일과 별개로 항상 더하는 flat 기본치 (뮤엘시스: 회복 +10% + 라인랩/명)
+  condBonus?: { value: number; faction?: string; ids?: string[]; room?: string } | null;
+                       // 조건부 가산: 같은 방 진영(faction)/오퍼(ids)/타방(ids+room) 충족 시 +value (르무엔·비나 등)
   families?: string[]; // 이 스킬이 속한 "~류" 계열 태그 (build-infra.py skillFamilies 카탈로그)
   tiers?: InfraSkill[]; // 같은 슬롯의 하위 정예화 단계 (스푸리아 기술 교류 α) — 정예화 낮추면 대체
 };
@@ -347,6 +350,18 @@ export function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx):
     // 작업 플랫폼 발전소 배치 조건(푸딩)은 자동편성이 충족하지 않으므로 오라를 계상하지 않는다
     // — 스킬 자체는 표시(위에서 push)하되 효과는 0으로 둔다
     if (skill.gatePlatforms) continue;
+    // 조건부 가산 (르무엔·비나 등 "기본 X% + 조건부 Y%"): 기본치는 아래에서 무조건 더해지고,
+    // 여기서 조건(같은 방 진영/오퍼·타방 오퍼) 충족 시 +value 만 얹는다. crossRoom은 roomPartner
+    // 게이트와 같은 관례로 roomOf 없으면 낙관 통과, 있으면 엄격 판정.
+    if (skill.condBonus) {
+      const cb = skill.condBonus;
+      const ok = cb.faction
+        ? team.some((m) => m.id !== op.id && factionsOf(m).includes(cb.faction!))
+        : cb.room
+          ? (!ctx.roomOf || (cb.ids ?? []).every((id) => ctx.roomOf!.get(id) === cb.room))
+          : (cb.ids ?? []).every((id) => teamIds.has(id));
+      if (ok) out.efficiency += cb.value;
+    }
     // 용량 기여(오더 상한/창고 용량) + 변환기 수집. perFaction(노시스 '쉐라그 1명당 +6')은
     // 인원수로 스케일 — 제어센터 스킬이면 out.cap이 aurasOf를 통해 대상 방으로 앰비언트 전달된다.
     if (skill.cap) {
@@ -384,7 +399,7 @@ export function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx):
         else out.auras[skill.kind] = Math.max(out.auras[skill.kind] ?? 0, gained);
         continue;
       }
-      out.efficiency += gained;
+      out.efficiency += gained + (skill.perBase ?? 0);  // perBase = 카운트와 별개 flat 기본치 (뮤엘시스 +10%)
       continue;
     }
     // same-room skill-tag counting (도로시: 라인테크류 1개당 +5% / 브라이오피타: 금속공예류 +5%)

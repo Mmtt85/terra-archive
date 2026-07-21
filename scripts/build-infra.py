@@ -318,6 +318,72 @@ def find_partners(text, self_name, self_id=None):
             break
     return found
 
+_ROOM_KW = {"제어 센터": "CONTROL", "무역소": "TRADING", "제조소": "MANUFACTURE",
+            "발전소": "POWER", "응접실": "MEETING", "사무실": "HIRE"}
+
+def detect_cond_bonus(text, self_name, self_id=None):
+    """"기본 X% + 조건부 Y%" 복합 스킬을 분리한다 (사용자 제보 2026-07-21, 클래스 버그).
+
+    반환 (base_text, cond) — base_text는 무조건 적용분(조건절 제거), cond는 조건부 가산 명세:
+      - perFacBase: 기본 flat + "<진영> 1명당 +V%(≤cap)" (뮤엘시스·모건). base_text=원문 유지
+        (perFaction 파서가 '1명당'을 봐야 하므로). bonus=별도 파트너 보너스(모건 시즈).
+      - roomFaction: 같은 방에 <진영> 있으면 +value (비나·서퍼·Zima·티폰).
+      - roomPartner: 같은 방에 <오퍼> 있으면 +value (르무엔·발라크빈·불피스폴리아).
+      - basePartner: 기지 어디든(숙소 포함) <오퍼> 있으면 +value → 엔진 basePartnerBonus 재사용
+        (Bellone·산크타). crossRoom: <오퍼>가 특정 방에 있으면 +value (프라마닉스).
+    조건이 없거나 유형 미상이면 cond=None(원문 그대로 — 훈련 마스터리·토큰·레벨성장 등 불건드림).
+    """
+    PCT = r"\+?\s*(\d+(?:\.\d+)?)\s*%"
+    bm = re.search(r"추가(?:로)?\s*[^%\d]{0,20}?" + PCT, text)
+    if not bm:
+        return text, None
+    Y = float(bm.group(1))
+    head = text[:bm.start()]
+    # perFacBase — 진영 카운트 + 별도 기본치. per값은 '1명당' 직후에서 읽는다(추가 보너스 아님).
+    # ⚡ 부분문자열 사전필터(f in text)로 정규식 전수 스캔의 백트래킹 비용을 없앤다.
+    if "1명당" in text:
+        for f in FACTION_NAMES:
+            if f not in text:
+                continue
+            pm = re.search(re.escape(f) + r" 오퍼레이터(?:\(최대 (\d+)명\))? ?1명당[^%\d]{0,24}?" + PCT, text)
+            if pm:
+                per = float(pm.group(2))
+                cond = {"type": "perFacBase", "faction": f, "per": per,
+                        "cap": per * float(pm.group(1)) if pm.group(1) else None}
+                # 모건류: 같은 스킬에 "<오퍼>와 함께 … 추가 +Z%" 파트너 보너스가 더 있으면 첨부
+                pn = re.search(r"(?<![가-힣])([가-힣A-Za-z·]{2,10})(?:와|과) 함께[^%]{0,40}?추가(?:로)?[^%\d]{0,20}?" + PCT, text)
+                if pn and pn.group(1) != self_name and name_to_id.get(pn.group(1)):
+                    cond["bonus"] = {"ids": [name_to_id[pn.group(1)]], "value": float(pn.group(2))}
+                return text, cond  # base_text=원문 (perFaction 파서가 '1명당'을 봐야 함)
+
+    def _cut(anchor):  # 조건절 시작(직전 콤마/마침표/'만약') 이후를 잘라 base_text 반환
+        i = head.rfind(anchor)
+        j = max(head.rfind(",", 0, i), head.rfind(".", 0, i), head.rfind("만약", 0, i))
+        return text[:j] if j > 0 else text[:i]
+
+    # 기지 어디든 존재(basePartner) / 타방 존재(crossRoom) 조건 — 오퍼 지명 (부분문자열 사전필터)
+    for n in names:
+        if len(n) < 2 or n not in head or n == self_name or (self_id and name_to_id.get(n) == self_id):
+            continue
+        if re.search(r"(?<![가-힣])" + re.escape(n) + r"[가이]? (?:기반시설|숙소)에 (?:배치|있)", head):
+            return _cut(n), {"type": "basePartner", "ids": [name_to_id[n]], "value": Y}
+        cr = re.search(r"(?<![가-힣])" + re.escape(n) + r"[가이]? (제어 센터|무역소|제조소|발전소|응접실|사무실)에 배치", head)
+        if cr:
+            return _cut(n), {"type": "crossRoom", "ids": [name_to_id[n]], "room": _ROOM_KW[cr.group(1)], "value": Y}
+    # 같은 방 진영 동반 (진영명 우선 — 오퍼 지명보다 앞서 검사해 오탐 방지)
+    for f in FACTION_NAMES:
+        if f not in head:
+            continue
+        if re.search(re.escape(f) + r" 오퍼레이터(?:와 함께|가 있을 경우|와 같은)", head):
+            return _cut(f), {"type": "roomFaction", "faction": f, "value": Y}
+    # 같은 방 오퍼 동반
+    for n in names:
+        if len(n) < 2 or n not in head or n == self_name or (self_id and name_to_id.get(n) == self_id):
+            continue
+        if re.search(r"(?<![가-힣])" + re.escape(n) + r"(?:와|과) 함께", head):
+            return _cut(n), {"type": "roomPartner", "ids": [name_to_id[n]], "value": Y}
+    return text, None  # 유형 미상 — 원문 유지(불건드림)
+
 # KR release order: handbook entries append in release order (robots/reserves
 # without a handbook entry sink to the bottom)
 handbook = load(f"{S}/kr_handbook_info_table.json")
@@ -518,6 +584,41 @@ def parse_skill(entry, oname, oid=None):
         # (제이 시장경제 "차이 1당 +4%"가 output=4로도 잡히는 것 방지) — 변환기면 헤드라인 0
         if cap_conv:
             kind, value = "misc", 0
+        # ── 조건부 가산 분리 (사용자 제보 2026-07-21: "기본 X% + 조건부 Y%" 클래스 버그) ──
+        # 파서가 조건절로 스킬 전체를 게이트(기본치 소실)하거나 조건값을 기본치로 오배치하던
+        # 문제를 교정한다. detect_cond_bonus가 유형·기본치·보너스를 분리한다.
+        cond_bonus = None
+        per_base = None
+        partners_list = [p for p in find_partners(text, oname, oid)
+                         if p not in base_partner_ids and not (room_partner and p == room_partner["id"])]
+        _base_text, _cond = detect_cond_bonus(text, oname, oid)
+        if _cond and _cond["type"] == "perFacBase" and not _cond.get("bonus"):
+            # 뮤엘시스: 기본 flat + "진영 1명당 +V%(≤cap)". 모건류(bonus 동반)는 자기-카운트
+            # 복잡성 때문에 제외 — 별도 후속 (INFRA-RULES 노트). per값은 '1명당' 직후 값.
+            _strip = re.sub(re.escape(_cond["faction"]) + r" 오퍼레이터(?:\(최대 \d+명\))? ?1명당[^%]*?\+?\s*\d+(?:\.\d+)?\s*%", "", text)
+            _pk, per_base = parse_metric(room, _strip)
+            per_base = per_base or 0
+            kind = "output"
+            value = _cond["per"]
+            per_cap = _cond["cap"]
+            per_faction = per_faction or _cond["faction"]
+            per_scope = per_scope or ("room" if re.search(r"함께 배치|해당 (?:무역소|제조소|발전소) 내", text) else "base")
+        elif _cond and _cond["type"] in ("roomFaction", "roomPartner", "crossRoom", "basePartner"):
+            # 조건절을 뗀 base_text로 기본치 재파싱(서퍼 20→10 등 조건값 오배치 교정) 후,
+            # 조건은 별도 가산으로. 게이트로 잡혔던 partners/reqFaction는 조건분만 해제한다.
+            _bk, _bv = parse_metric(room, _base_text)
+            kind, value = (_bk, _bv) if _bv else (kind, 0)
+            partners_list = [p for p in partners_list if p not in _cond.get("ids", [])]
+            if req_faction == _cond.get("faction"): req_faction = None
+            if _cond["type"] == "basePartner":  # 엔진 basePartnerBonus 재사용 (언더플로우와 동일)
+                base_partner_ids = list(dict.fromkeys(base_partner_ids + _cond["ids"]))
+                base_partner_bonus = _cond["value"]
+            elif _cond["type"] == "roomFaction":
+                cond_bonus = {"value": _cond["value"], "faction": _cond["faction"]}
+            elif _cond["type"] == "roomPartner":
+                cond_bonus = {"value": _cond["value"], "ids": _cond["ids"]}
+            elif _cond["type"] == "crossRoom":
+                cond_bonus = {"value": _cond["value"], "ids": _cond["ids"], "room": _cond["room"]}
         # buffChar slots already resolved upgrades — every line here stacks
         tier = 1
         group = entry["name"]
@@ -529,9 +630,10 @@ def parse_skill(entry, oname, oid=None):
             "moraleDrain": parse_morale_drain(text),
             # 교차방 파트너(roomPartner)·기지 존재 파트너(basePartners)는 같은 방 동반 조건이
             # 아니므로 partners에서 제외 — 이중 게이트 방지 (레토는 '굼'이 1글자라 우연히 회피)
-            "partners": [p for p in find_partners(text, oname, oid)
-                         if p not in base_partner_ids and not (room_partner and p == room_partner["id"])],
+            "partners": [p for p in partners_list if p not in base_partner_ids],
             "basePartners": base_partner_ids, "basePartnerBonus": base_partner_bonus,
+            **({"condBonus": cond_bonus} if cond_bonus else {}),
+            **({"perBase": per_base} if per_base else {}),
             "gateFaction": gate_faction, "gateCount": gate_count,
             "gatePlatforms": gate_platforms, "roomPartner": room_partner,
             "belowThreshold": below_threshold,
