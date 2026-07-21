@@ -388,6 +388,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     if (!tempApplied.size) setTempBasePlan(plan); // 첫 임시 적용 시 되돌릴 편성 스냅샷
     setTempApplied(nextTemp);
     setSelectedRaise(new Set());
+    setShowInvest(false); // 적용하면 모달을 닫아 편성에 반영되는 걸 보여준다 (사용자 요청 2026-07-21)
     await previewOptimize(mergedElite(nextTemp));
     showToast(label);
   };
