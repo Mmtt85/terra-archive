@@ -689,7 +689,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         <div className="toast opt-progress-toast" role="status" aria-live="polite">
           <span className="opt-progress-spin" aria-hidden>⟳</span>{" "}
           {investing.total
-            ? t("육성 추천 분석 중 — 후보 {i}/{n} 반사실 재편성 검증…", { i: investing.done, n: investing.total })
+            ? t("육성 추천 분석 중 — 후보 {i}/{n}, 완성 시 편성을 다시 계산해 이득 검증 중…", { i: investing.done, n: investing.total })
             : t("육성 추천 분석 중 — 현재 상태 기준 편성 계산…")}
         </div>
       )}

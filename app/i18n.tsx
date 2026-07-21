@@ -272,7 +272,7 @@ const D: Record<string, Pair> = {
   "분석 {i}/{n}": ["Analyzing {i}/{n}", "分析 {i}/{n}"],
   "분석 중…": ["Analyzing…", "分析中…"],
   "완성하면 이득인 오퍼를 찾지 못했습니다 — 보유 설정에서 정예화를 낮춰 두면 후보가 됩니다": ["No beneficial completions found — lower an operator's elite in roster settings to make it a candidate", "完成させて得なオペレーターは見つかりませんでした — 所持設定で昇進を下げると候補になります"],
-  "육성 추천 분석 중 — 후보 {i}/{n} 반사실 재편성 검증…": ["Analyzing raises — verifying candidate {i}/{n} by counterfactual re-planning…", "育成おすすめ分析中 — 候補 {i}/{n} を反実仮想の再編成で検証中…"],
+  "육성 추천 분석 중 — 후보 {i}/{n}, 완성 시 편성을 다시 계산해 이득 검증 중…": ["Analyzing raises — candidate {i}/{n}, recomputing the plan as if completed to verify the gain…", "育成おすすめ分析中 — 候補 {i}/{n}、完成時の編成を再計算して利得を検証中…"],
   "육성 추천 분석 중 — 현재 상태 기준 편성 계산…": ["Analyzing raises — computing the baseline plan…", "育成おすすめ分析中 — 現状基準の編成を計算中…"],
   "인프라 오퍼 육성 추천 · 정예화 완성 투자": ["Operator raise advisor (RIIC) · Elite completion", "インフラ オペレーター育成おすすめ · 昇進完成投資"],
   "완성하면 인프라가 좋아지는 오퍼 {n}명": ["{n} operators worth completing", "完成させると基地が良くなるオペレーター{n}人"],
