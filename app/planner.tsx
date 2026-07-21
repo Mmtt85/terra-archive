@@ -763,7 +763,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
             <button className="srb-run" onClick={openInvest} disabled={!!investing}
               title={t("보유했지만 아직 완성하지 않은(정예화를 낮춰 둔) 오퍼 중, 완성하면 인프라 효율이 오르는 오퍼를 실제 자동편성을 다시 돌려 찾아냅니다")}>
               <span className={`srb-lbl${investing ? " hide" : ""}`}>★ {t("인프라 오퍼 육성 추천")}</span>
-              {investing && <span className="srb-over">★ {investing.total ? t("분석 {i}/{n}", { i: investing.done, n: investing.total }) : t("분석 중…")}</span>}
+              {investing && <span className="srb-over">★ {investing.total ? t("분석 중 {i}/{n}", { i: investing.done, n: investing.total }) : t("분석 중…")}</span>}
             </button>
           )}
         </div>

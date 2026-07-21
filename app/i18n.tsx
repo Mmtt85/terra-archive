@@ -269,7 +269,7 @@ const D: Record<string, Pair> = {
   "빈 자리만 자동편성": ["Fill empty slots", "空きスロットのみ自動編成"],
   "인프라 오퍼 육성 추천": ["Operator raise advisor (RIIC)", "インフラ オペレーター育成おすすめ"],
   "보유했지만 아직 완성하지 않은(정예화를 낮춰 둔) 오퍼 중, 완성하면 인프라 효율이 오르는 오퍼를 실제 자동편성을 다시 돌려 찾아냅니다": ["Among operators you own but haven't finished (elite lowered), finds the ones whose completion actually raises base efficiency by re-running the real auto-planner", "所持しているが未完成（昇進を下げた）オペレーターの中から、完成させると基地効率が上がるオペレーターを、実際の自動編成を回して見つけます"],
-  "분석 {i}/{n}": ["Analyzing {i}/{n}", "分析 {i}/{n}"],
+  "분석 중 {i}/{n}": ["Analyzing {i}/{n}", "分析中 {i}/{n}"],
   "분석 중…": ["Analyzing…", "分析中…"],
   "완성하면 이득인 오퍼를 찾지 못했습니다 — 보유 설정에서 정예화를 낮춰 두면 후보가 됩니다": ["No beneficial completions found — lower an operator's elite in roster settings to make it a candidate", "完成させて得なオペレーターは見つかりませんでした — 所持設定で昇進を下げると候補になります"],
   "육성 추천 분석 중 — 후보 {i}/{n}, 완성 시 편성을 다시 계산해 이득 검증 중…": ["Analyzing raises — candidate {i}/{n}, recomputing the plan as if completed to verify the gain…", "育成おすすめ分析中 — 候補 {i}/{n}、完成時の編成を再計算して利得を検証中…"],
