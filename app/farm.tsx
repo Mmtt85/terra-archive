@@ -45,6 +45,9 @@ type CostsData = {
   updated: string;
   items: Record<string, CostItemMeta>;
   ops: Record<string, CostEntry>;
+  // 레벨업 전역 테이블(오퍼 무관 게임 상수) — 임의 목표 레벨까지의 부분 비용 계산용.
+  // exp[phase][k]/lmd[phase][k] = 그 정예화 단계에서 Lv.1 → Lv.(k+2) 누적 경험치/용문폐.
+  levelUp?: { expUnit: number; exp: number[][]; lmd: number[][] };
 };
 
 const data = farmData as { updated: string; minTimes: number; items: FarmItem[] };
@@ -284,18 +287,38 @@ function addCost(map: Map<string, number>, list: CostList) {
   for (const [id, count] of list) map.set(id, (map.get(id) ?? 0) + count);
 }
 
-// 한 오퍼의 비용을 그룹(정예화·스킬·스킬별 특화·모듈별)으로 나누고, 각 그룹은 순차 단계 행을 갖는다
-type CostStep = { step: string; lmd: number; items: CostList };
+// 정예화 단계 phaseIdx에서 Lv.1 → level 도달 비용(용문폐 + 고급작전기록 환산 개수).
+// level=maxLv면 costs.ops[].levels[phaseIdx] 총량과 정확히 일치한다(빌드와 동일 합산).
+const EXP_CARD_ID = "2004"; // 고급작전기록
+function levelCostTo(phaseIdx: number, level: number): { lmd: number; records: number } {
+  const lu = costs.levelUp;
+  const table = lu?.lmd[phaseIdx];
+  if (!lu || !table || level <= 1) return { lmd: 0, records: 0 };
+  const k = Math.min(level - 2, table.length - 1); // level 도달 = 인덱스 level-2
+  if (k < 0) return { lmd: 0, records: 0 };
+  return { lmd: table[k] ?? 0, records: Math.round((lu.exp[phaseIdx]?.[k] ?? 0) / lu.expUnit) };
+}
+
+// 한 오퍼의 비용을 그룹(레벨·정예화 / 스킬 / 스킬별 특화 / 모듈별)으로 나누고, 각 그룹은 순차 단계 행을 갖는다.
+// kind/phase는 '레벨·정예화' 통합 그룹의 레벨업 단계에서 목표 레벨 부분 비용을 계산하기 위한 메타.
+type CostStep = { step: string; lmd: number; items: CostList; kind?: "lv" | "e"; phase?: number; maxLv?: number };
 type CostGroup = { key: string; label: string; steps: CostStep[] };
 
 function buildGroups(operator: Operator, entry: CostEntry, t: (key: string, params?: Record<string, string | number>) => string): CostGroup[] {
   const groups: CostGroup[] = [];
-  if (entry.levels?.length) {
-    // 각 정예화 단계의 만렙까지 레벨업 (용문폐 + 고급작전기록 환산). step은 "E0 → Lv.50" 형태
-    groups.push({ key: "lv", label: t("레벨업"), steps: entry.levels.map((phase, index) => ({ step: t("E{p}·{n}", { p: index, n: phase.maxLv }), lmd: phase.lmd, items: phase.items })) });
-  }
-  if (entry.elite?.length) {
-    groups.push({ key: "e", label: t("정예화"), steps: entry.elite.map((phase, index) => ({ step: `${index + 1}`, lmd: phase.lmd, items: phase.items })) });
+  // 레벨업과 정예화는 게임 실제 순서(E0 만렙 → 정예화1 → E1 만렙 → 정예화2 → E2 만렙)대로
+  // 한 순차 그룹으로 인터리브한다 — 정예화하려면 앞 단계를 만렙까지 올려야 하므로(사용자 확정
+  // 2026-07-22). 레벨업 단계는 목표 레벨을 직접 지정할 수 있다(최상위 선택 단계만 부분 적용).
+  if (entry.levels?.length || entry.elite?.length) {
+    const steps: CostStep[] = [];
+    const phases = Math.max(entry.levels?.length ?? 0, entry.elite?.length ?? 0);
+    for (let p = 0; p < phases; p += 1) {
+      const lv = entry.levels?.[p];
+      if (lv) steps.push({ kind: "lv", phase: p, maxLv: lv.maxLv, step: t("E{p}·Lv.{n}", { p, n: lv.maxLv }), lmd: lv.lmd, items: lv.items });
+      const el = entry.elite?.[p];
+      if (el) steps.push({ kind: "e", phase: p, step: t("정예화 {n}", { n: p + 1 }), lmd: el.lmd, items: el.items });
+    }
+    groups.push({ key: "grow", label: t("레벨·정예화"), steps });
   }
   if (entry.skills?.length) {
     groups.push({ key: "s", label: t("스킬"), steps: entry.skills.map((items, index) => ({ step: `Lv.${index + 2}`, lmd: 0, items })) });
@@ -325,6 +348,9 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
   const [focused, setFocused] = useState(false);
   // 그룹별 목표 단계 — "opId/groupKey" → 포함할 앞쪽 단계 수. 없으면 전체(steps.length) 기본.
   const [targets, setTargets] = useState<Record<string, number>>({});
+  // 레벨업 목표 레벨 — "opId/p{phase}" → 그 정예화 단계에서 올릴 목표 레벨. 없으면 그 단계 만렙.
+  // '레벨·정예화' 그룹의 최상위 선택 단계가 레벨업일 때만 실제 부분 비용에 반영된다(하위는 승급 강제 만렙).
+  const [levelLv, setLevelLv] = useState<Record<string, number>>({});
 
   const byId = useMemo(() => new Map(operators.map((operator) => [operator.id, operator])), [operators]);
 
@@ -390,6 +416,16 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
     if (!ds || ds.op !== opId || ds.gkey !== drag.groupKey || ds.pos === undefined) return;
     draggedRef.current = true;
     setTargets((current) => ({ ...current, [`${opId}/${drag.groupKey}`]: Number(ds.pos) + 1 }));
+    // 레일을 드래그로 쭉 내리면 "여기까지 다 키운다"는 뜻 — 지나온 레벨업의 부분 목표를 지워
+    // 노정예 50·1정예 80·2정예 90이 연속으로 채워지게 한다(부분 레벨 잠금은 드래그로 관통).
+    if (drag.groupKey === "grow") {
+      setLevelLv((current) => {
+        let changed = false;
+        const next = { ...current };
+        for (const key of Object.keys(next)) if (key.startsWith(`${opId}/p`)) { delete next[key]; changed = true; }
+        return changed ? next : current;
+      });
+    }
   };
   const setAllGroups = (opId: string, groups: CostGroup[], full: boolean) =>
     setTargets((current) => {
@@ -408,8 +444,19 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
       for (const group of buildGroups(operator, entry, t)) {
         const target = targets[`${id}/${group.key}`] ?? group.steps.length;
         for (let pos = 0; pos < target; pos += 1) {
-          lmd += group.steps[pos].lmd;
-          addCost(map, group.steps[pos].items);
+          const step = group.steps[pos];
+          // '레벨·정예화' 그룹의 최상위 선택 단계가 레벨업이면 목표 레벨까지만 부분 계산.
+          if (step.kind === "lv" && pos === target - 1 && step.phase != null && step.maxLv != null) {
+            const lvl = levelLv[`${id}/p${step.phase}`] ?? step.maxLv;
+            if (lvl < step.maxLv) {
+              const c = levelCostTo(step.phase, lvl);
+              lmd += c.lmd;
+              if (c.records > 0) addCost(map, [[EXP_CARD_ID, c.records]]);
+              continue;
+            }
+          }
+          lmd += step.lmd;
+          addCost(map, step.items);
         }
       }
     }
@@ -418,7 +465,17 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
       .filter((row) => row.meta)
       .sort((a, b) => b.meta.rarity - a.meta.rarity || a.meta.sortId - b.meta.sortId);
     return { lmd, rows };
-  }, [picked, targets, byId, t]);
+  }, [picked, targets, levelLv, byId, t]);
+
+  // 레벨업 단계의 목표 레벨 변경 — [1, maxLv]로 클램프. maxLv면 상태에서 지워 기본(만렙)으로.
+  const setLevel = (opId: string, phase: number, maxLv: number, raw: number) =>
+    setLevelLv((current) => {
+      const key = `${opId}/p${phase}`;
+      const n = Math.max(1, Math.min(maxLv, Math.round(raw) || 1));
+      const next = { ...current };
+      if (n >= maxLv) delete next[key]; else next[key] = n;
+      return next;
+    });
 
   const searchRef = useRef<HTMLInputElement>(null);
   // 오퍼를 담으면 드롭다운을 닫는다 (선택 후에도 목록이 안 사라지던 문제). 다시 추가하려면
@@ -437,7 +494,7 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
       <div className="cost-calc-head">
         <span className="section-no">COST CALCULATOR</span>
         <h3>{t("육성 비용 계산기")}</h3>
-        <p>{t("오퍼레이터를 추가하면 레벨업(용문폐·경험치), 정예화 1·2, 스킬 레벨 2~7, 스킬별 특화 1~3, 모듈별 1~3단계가 전부 개별 행으로 나옵니다. 각 그룹에서 목표 단계를 클릭하면 앞 단계가 자동 포함돼 합산됩니다. 경험치는 고급작전기록(2000 EXP) 환산 개수로 표시합니다. 재료 아이콘을 클릭하면 상세 정보가 열립니다.")}</p>
+        <p>{t("오퍼레이터를 추가하면 레벨·정예화(게임 순서대로 E0 만렙 → 정예화1 → E1 만렙 → 정예화2 → E2 만렙), 스킬 레벨 2~7, 스킬별 특화 1~3, 모듈별 1~3단계가 개별 행으로 나옵니다. 각 그룹에서 목표 단계를 클릭하면 앞 단계가 자동 포함돼 합산됩니다. 레벨업 단계는 올릴 목표 레벨을 직접 입력할 수 있고, 그 레벨을 만렙보다 낮게 두면 다음 정예화는 잠깁니다(왼쪽 레일을 아래로 끌면 만렙까지 한 번에 채워집니다). 경험치는 고급작전기록(2000 EXP) 환산 개수로 표시합니다. 재료 아이콘을 클릭하면 상세 정보가 열립니다.")}</p>
       </div>
       <div className="cost-tools">
         <div className="search-wrap cost-search">
@@ -492,29 +549,56 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
                   <div className="cost-rows" onPointerMove={dragOver(id)}>
                     {groups.map((group) => {
                       const target = targetOf(id, group);
+                      // 최상위 선택 단계가 만렙 미만 레벨업이면 그 뒤 단계는 잠근다 — E0 Lv.50을
+                      // 못 채우면 정예화1 이후를, E1 Lv.80을 못 채우면 정예화2 이후를 올릴 수 없다
+                      // (게임 승급 조건, 사용자 확정 2026-07-22). 뒤 dot을 비활성화한다.
+                      const growLocked = group.key === "grow" && target > 0 && (() => {
+                        const top = group.steps[target - 1];
+                        if (top.kind !== "lv" || top.maxLv == null) return false;
+                        return (levelLv[`${id}/p${top.phase}`] ?? top.maxLv) < top.maxLv;
+                      })();
                       return group.steps.map((row, pos) => {
                         const on = pos < target;
                         const first = pos === 0;
+                        const blocked = growLocked && pos >= target;
                         // 레일 모양: 켜진 구간은 이어지고, 목표 지점이 마지막 채워진 노드
                         const railClass = !on ? "rail-off" : pos + 1 === target ? "rail-head" : "rail-on";
+                        // '레벨·정예화' 통합 그룹의 최상위 선택 단계가 레벨업이면 목표 레벨을 직접
+                        // 지정할 수 있고(하위 단계는 승급 강제라 만렙 고정), 그만큼만 부분 비용으로 표시.
+                        const isTopLevel = row.kind === "lv" && pos === target - 1 && row.phase != null && row.maxLv != null;
+                        const lvl = isTopLevel ? (levelLv[`${id}/p${row.phase}`] ?? row.maxLv!) : row.maxLv;
+                        const part = isTopLevel && lvl! < row.maxLv! ? levelCostTo(row.phase!, lvl!) : null;
+                        const showLmd = part ? part.lmd : row.lmd;
+                        const showItems: CostList = part ? (part.records > 0 ? [[EXP_CARD_ID, part.records]] : []) : row.items;
+                        const stepLabel = isTopLevel ? t("E{p}·Lv.{n}", { p: row.phase!, n: lvl! }) : row.step;
                         return (
                           <div key={group.key + pos} className={`cost-row${first ? " group-start" : ""}${on ? "" : " off"}`}>
                             <button
                               type="button"
-                              className={`cost-step-dot ${railClass}${first ? " first" : ""}${pos === group.steps.length - 1 ? " last" : ""}`}
+                              className={`cost-step-dot ${railClass}${first ? " first" : ""}${pos === group.steps.length - 1 ? " last" : ""}${blocked ? " locked" : ""}`}
                               data-op={id}
                               data-gkey={group.key}
                               data-pos={pos}
+                              disabled={blocked}
                               onPointerDown={() => { dragRef.current = { opId: id, groupKey: group.key }; draggedRef.current = false; }}
                               onClick={() => { if (draggedRef.current) { draggedRef.current = false; return; } clickStep(id, group, pos); }}
                               aria-pressed={on}
-                              title={on ? t("{label} {step}까지 육성 (클릭 시 제외)", { label: group.label, step: row.step }) : t("{label} {step}까지 육성", { label: group.label, step: row.step })}
+                              title={blocked ? t("먼저 앞 레벨업을 만렙까지 채워야 올릴 수 있어요") : on ? t("{label} {step}까지 육성 (클릭 시 제외)", { label: group.label, step: stepLabel }) : t("{label} {step}까지 육성", { label: group.label, step: stepLabel })}
                             />
                             <span className="cost-row-group">{first ? group.label : ""}</span>
-                            <span className="cost-row-step">{row.step}</span>
+                            <span className="cost-row-step">
+                              {isTopLevel ? (
+                                <span className="cost-lv-pick">E{row.phase}·Lv.
+                                  <input type="number" className="cost-lv-input" min={1} max={row.maxLv}
+                                    value={lvl} aria-label={t("올릴 레벨")}
+                                    onClick={(e) => e.stopPropagation()}
+                                    onChange={(e) => setLevel(id, row.phase!, row.maxLv!, Number(e.target.value))} />
+                                </span>
+                              ) : row.step}
+                            </span>
                             <span className="cost-row-items">
-                              {row.lmd > 0 && <ItemChip id="4001" count={row.lmd} onShowItem={onShowItem} locale={locale} />}
-                              {row.items.map(([itemId, count]) => (
+                              {showLmd > 0 && <ItemChip id="4001" count={showLmd} onShowItem={onShowItem} locale={locale} />}
+                              {showItems.map(([itemId, count]) => (
                                 <ItemChip key={itemId} id={itemId} count={count} onShowItem={onShowItem} locale={locale} />
                               ))}
                             </span>

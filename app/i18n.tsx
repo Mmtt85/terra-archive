@@ -798,11 +798,19 @@ const D: Record<string, Pair> = {
   ],
   // ── 육성 비용 계산기 ──
   "육성 비용 계산기": ["Upgrade Cost Calculator", "育成コスト計算機"],
-  "오퍼레이터를 추가하면 레벨업(용문폐·경험치), 정예화 1·2, 스킬 레벨 2~7, 스킬별 특화 1~3, 모듈별 1~3단계가 전부 개별 행으로 나옵니다. 각 그룹에서 목표 단계를 클릭하면 앞 단계가 자동 포함돼 합산됩니다. 경험치는 고급작전기록(2000 EXP) 환산 개수로 표시합니다. 재료 아이콘을 클릭하면 상세 정보가 열립니다.": [
-    "Add operators to see every cost broken down per step — leveling (LMD·EXP), Elite 1·2, each skill level 2–7, Mastery 1–3 per skill, and each module stage 1–3. Click a target step in each group and all preceding steps are included automatically. EXP is shown as an equivalent count of Senior Battle Records (2000 EXP). Click a material icon for its details.",
-    "オペレーターを追加すると、レベルアップ（龍門幣·経験値）、昇進1·2、スキルLv.2~7の各レベル、スキル別特化1~3、モジュール別1~3段階がすべて個別の行で表示されます。各グループで目標段階をクリックすると、前の段階が自動的に含まれて合算されます。経験値は上級作戦記録（2000EXP）換算の個数で表示します。素材アイコンをクリックすると詳細が開きます。",
+  "오퍼레이터를 추가하면 레벨·정예화(게임 순서대로 E0 만렙 → 정예화1 → E1 만렙 → 정예화2 → E2 만렙), 스킬 레벨 2~7, 스킬별 특화 1~3, 모듈별 1~3단계가 개별 행으로 나옵니다. 각 그룹에서 목표 단계를 클릭하면 앞 단계가 자동 포함돼 합산됩니다. 레벨업 단계는 올릴 목표 레벨을 직접 입력할 수 있고, 그 레벨을 만렙보다 낮게 두면 다음 정예화는 잠깁니다(왼쪽 레일을 아래로 끌면 만렙까지 한 번에 채워집니다). 경험치는 고급작전기록(2000 EXP) 환산 개수로 표시합니다. 재료 아이콘을 클릭하면 상세 정보가 열립니다.": [
+    "Add operators to see costs broken down per step — Level·Elite (in game order: E0 max → Elite 1 → E1 max → Elite 2 → E2 max), each skill level 2–7, Mastery 1–3 per skill, and each module stage 1–3. Click a target step in a group and all preceding steps are included automatically. For a leveling step you can type the exact target level; setting it below the cap locks the next Elite promotion (drag the rail down to fill up to the cap at once). EXP is shown as an equivalent count of Senior Battle Records (2000 EXP). Click a material icon for its details.",
+    "オペレーターを追加すると、レベル·昇進（ゲーム順：E0カンスト → 昇進1 → E1カンスト → 昇進2 → E2カンスト）、スキルLv.2~7、スキル別特化1~3、モジュール別1~3段階が個別の行で表示されます。各グループで目標段階をクリックすると、前の段階が自動的に含まれて合算されます。レベルアップ段階は目標レベルを直接入力でき、カンスト未満にすると次の昇進はロックされます（左のレールを下にドラッグするとカンストまで一気に埋まります）。経験値は上級作戦記録（2000EXP）換算の個数で表示します。素材アイコンをクリックすると詳細が開きます。",
   ],
+  "레벨·정예화": ["Level·Elite", "レベル·昇進"],
   "레벨업": ["Leveling", "レベルアップ"],
+  "올릴 레벨": ["Target level", "目標レベル"],
+  "먼저 앞 레벨업을 만렙까지 채워야 올릴 수 있어요": [
+    "Fill the previous leveling to its cap first to unlock this",
+    "先に前のレベルアップをカンストまで上げると解放されます",
+  ],
+  "E{p}·Lv.{n}": ["E{p}·Lv.{n}", "E{p}·Lv.{n}"],
+  "정예화 {n}": ["Elite {n}", "昇進{n}"],
   "E{p}·{n}": ["E{p}·{n}", "E{p}·{n}"],
   "{label} {step}까지 육성": ["Level up {label} to {step}", "{label}を{step}まで育成"],
   "{label} {step}까지 육성 (클릭 시 제외)": ["Level up {label} to {step} (click to remove)", "{label}を{step}まで育成（クリックで除外）"],

@@ -243,7 +243,23 @@ for iid, icon in missing_icons:
         print("icon FAIL", iid, icon, e, file=sys.stderr)
     time.sleep(0.2)
 
-out = {"updated": time.strftime("%Y-%m-%d"), "items": items_out, "ops": result_ops}
+# 레벨업 전역 테이블 (오퍼 무관 게임 상수) — 육성 비용 계산기에서 "올릴 레벨"을 직접
+# 지정할 때 임의 목표 레벨까지의 부분 비용을 계산하려면 정예화 단계별 누적 테이블이 필요하다.
+# levelUp.exp[phase][k] / levelUp.lmd[phase][k] = 그 정예화 단계에서 Lv.1 → Lv.(k+2) 누적
+# 경험치 / 용문폐. 레벨 L 도달 비용 = [...][L-2] (L>=2, L=1이면 0). maxLv 도달 시 result_ops의
+# levels[phase] 총량과 정확히 일치한다(빌드 로직과 동일 합산). expUnit=고급작전기록 EXP.
+def _cum(seq):
+    acc = 0; out_ = []
+    for v in seq:
+        acc += v; out_.append(acc)
+    return out_
+level_up = {
+    "expUnit": EXP_UNIT,
+    "exp": [_cum(EXP_MAP[p][:len(LMD_MAP[p])]) for p in range(len(LMD_MAP))],
+    "lmd": [_cum(LMD_MAP[p]) for p in range(len(LMD_MAP))],
+}
+
+out = {"updated": time.strftime("%Y-%m-%d"), "items": items_out, "ops": result_ops, "levelUp": level_up}
 path = f"{REPO}/app/data/costs.json"
 json.dump(out, open(path, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
 print(f"costs.json: {len(result_ops)} ops, {len(items_out)} items, "
