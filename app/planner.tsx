@@ -824,7 +824,7 @@ function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onAppl
         </div>
         <div className="invest-head-btns">
           {applied.size > 0 && <button className="invest-revert" onClick={onRevert} title={t("임시 적용을 모두 취소하고 이전 편성으로 되돌립니다")}>↩ {t("되돌리기 ({n})", { n: applied.size })}</button>}
-          {recs.length > 0 && <button className="invest-applyall" onClick={onApplyAll} title={t("추천 오퍼 전부를 임시 적용합니다 — 되돌리기 가능")}>{t("전체 적용")}</button>}
+          {recs.length > 0 && <button className="invest-applyall" onClick={onApplyAll} title={t("추천 오퍼 전부를 임시 적용합니다 — 되돌리기 가능")}>{t("전체 임시 적용")}</button>}
           <button className="invest-reanalyze" onClick={onReanalyze} title={t("현재 보유·정예화 상태로 다시 계산합니다 (임시 적용은 취소됩니다)")}>↻ {t("다시 분석")}</button>
           <button className="invest-close" onClick={onClose} aria-label={t("닫기")}>✕</button>
         </div>

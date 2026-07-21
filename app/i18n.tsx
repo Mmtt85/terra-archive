@@ -291,7 +291,7 @@ const D: Record<string, Pair> = {
   "이 오퍼를 완성했다 가정해 편성에 임시 적용합니다 (되돌리기 가능, 추천은 유지)": ["Temporarily applies this operator to the plan as if completed (revertible; recommendations kept)", "このオペレーターを完成させたと仮定して編成に一時適用します（元に戻せます・おすすめは維持）"],
   "적용됨": ["Applied", "適用済み"],
   "임시 적용됨 — 헤더 '되돌리기'로 취소": ["Temporarily applied — undo via 'Revert' in the header", "一時適用済み — ヘッダーの「元に戻す」で取消"],
-  "전체 적용": ["Apply all", "全て適用"],
+  "전체 임시 적용": ["Apply all (temp)", "全て一時適用"],
   "추천 오퍼 전부를 임시 적용합니다 — 되돌리기 가능": ["Temporarily applies all recommended operators — revertible", "おすすめオペレーター全てを一時適用します — 元に戻せます"],
   "되돌리기 ({n})": ["Revert ({n})", "元に戻す（{n}）"],
   "되돌리기": ["Revert", "元に戻す"],
