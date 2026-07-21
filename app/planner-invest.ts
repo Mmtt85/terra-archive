@@ -112,7 +112,9 @@ export type RaiseRec = {
   opId: string;
   from: Elite;
   to: Elite;
-  deltaScore: number;            // ΔplanScore (랭킹 기준)
+  aGain: number;                 // A조 방 %효율 변화 합계(%p) — 표시·랭킹 기준(주력 조 우선)
+  bGain: number;                 // B조(회복 교대) 방 %효율 변화 합계(%p)
+  deltaScore: number;            // 내부 ΔplanScore (재배치 잡음 가드용 — 표시 안 함)
   synergy: boolean;              // 시너지 조각으로 판정돼 전체 최적화로 평가됨 (표시 힌트)
   roomDeltas: RoomDelta[];       // 바뀐 생산·무역·발전·사무실·응접실 방·조
   placement: { key: string; shift: number } | null; // raised 편성에서 이 오퍼 위치
@@ -249,13 +251,19 @@ export async function recommendRaises(
     // 재배치 잡음 억제 — 어떤 방이 눈에 띄게 하락했는데 총이득(ΔS)이 작으면, 그 오퍼를 키운
     // 효과가 아니라 그리디가 다른 방 인원을 뒤섞은 부작용이다("왜 키웠는데 다른 방이 나빠지지?"
     // 혼란·불신 방지). ΔS가 큰 진짜 시너지 결집은 하락(딴 방→결집 방 이동)이 정상이라 통과.
+    if (!roomDeltas.length) continue;                // 보여줄 방 변화가 없으면(제어·훈련만 미세 변동) 억제
     const hasDrop = roomDeltas.some((d) => d.after < d.before - DROP_TOL);
     if (hasDrop && deltaScore < SYNERGY_MIN) continue;
 
-    recs.push({ opId: op.id, from, to, deltaScore, synergy, roomDeltas, placement, cost: raiseCost(op.id, from, to) });
+    // 조별 방 %효율 변화 합계 — 유저에게 보여줄 구체 지표(추상 planScore 대신). A조(주력) 우선.
+    const aGain = roomDeltas.reduce((sum, d) => (d.shift === 0 ? sum + (d.after - d.before) : sum), 0);
+    const bGain = roomDeltas.reduce((sum, d) => (d.shift === 1 ? sum + (d.after - d.before) : sum), 0);
+    recs.push({ opId: op.id, from, to, aGain, bGain, deltaScore, synergy, roomDeltas, placement, cost: raiseCost(op.id, from, to) });
   }
   if (onProgress) await onProgress({ done: evalList.length, total: evalList.length });
   void capped; // 상한 초과 시 잘린 후보가 있으나(로그성) v1은 상위 20만 노출
-  recs.sort((a, b) => b.deltaScore - a.deltaScore);
+  // A조 방 효율 이득 우선 정렬 — A조가 풀파워 주력이라(피로 소진 전까지 A조로 돌림) 그 이득을
+  // 먼저 본다 (사용자 확정 2026-07-21). 동률이면 B조, 그다음 내부 총점.
+  recs.sort((a, b) => b.aGain - a.aGain || b.bGain - a.bGain || b.deltaScore - a.deltaScore);
   return recs.slice(0, MAX_RECS);
 }

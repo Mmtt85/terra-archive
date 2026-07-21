@@ -208,10 +208,13 @@ await invCheck("육성추천: 결정론(재현성)", async () => {
   return { ok: sig(again) === sig(sharedRecs ?? []), detail: `${again.length}건` };
 });
 
-// ④ 랭킹 단조 — ΔS 내림차순 정렬 보장
-await invCheck("육성추천: ΔS 내림차순 정렬", async () => {
+// ④ 랭킹 단조 — A조 이득(aGain) 내림차순 정렬 보장 (동률 시 bGain)
+await invCheck("육성추천: A조 이득 내림차순 정렬", async () => {
   const rs = sharedRecs ?? [];
-  for (let i = 1; i < rs.length; i += 1) if (rs[i].deltaScore > rs[i - 1].deltaScore + 1e-9) return { ok: false, detail: `#${i}` };
+  for (let i = 1; i < rs.length; i += 1) {
+    const p = rs[i - 1]; const c = rs[i];
+    if (c.aGain > p.aGain + 1e-9 || (Math.abs(c.aGain - p.aGain) < 1e-9 && c.bGain > p.bGain + 1e-9)) return { ok: false, detail: `#${i}` };
+  }
   return { ok: true, detail: `${rs.length}건` };
 });
 

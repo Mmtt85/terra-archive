@@ -1985,7 +1985,22 @@ legend {
   border-radius: 4px; padding: 0 6px;
 }
 :root[data-theme="dark"] .invest-syn, .dark .invest-syn { color: #b3a6e0; }
-.invest-score { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--lime); white-space: nowrap; }
+.invest-gains { margin-left: auto; display: inline-flex; gap: 5px; white-space: nowrap; }
+.inv-gain { font-size: 12px; font-weight: 700; border-radius: 5px; padding: 1px 7px; }
+.inv-gain.a { color: #2f7d3a; background: color-mix(in srgb, #2f7d3a 15%, transparent); }
+.inv-gain.b { color: var(--muted); background: var(--bg-soft); }
+:root[data-theme="dark"] .inv-gain.a, .dark .inv-gain.a { color: #7fd18c; }
+.invest-apply {
+  border: 1px solid var(--lime); background: color-mix(in srgb, var(--lime) 16%, transparent);
+  color: var(--ink); border-radius: 6px; padding: 3px 12px; cursor: pointer; font-size: 12px; font-weight: 700; flex: none;
+}
+.invest-apply:hover { background: color-mix(in srgb, var(--lime) 30%, transparent); }
+.invest-applyall {
+  border: 1px solid var(--lime); background: color-mix(in srgb, var(--lime) 16%, transparent);
+  color: var(--ink); border-radius: 6px; padding: 5px 12px; cursor: pointer; font-size: 12px; font-weight: 700; white-space: nowrap;
+}
+.invest-applyall:hover { background: color-mix(in srgb, var(--lime) 30%, transparent); }
+.invest-note-sub { margin-top: 2px; padding-top: 7px; border-top: 1px dotted var(--line); }
 .invest-place { font-size: 12.5px; margin-top: 5px; color: var(--ink); }
 .invest-rooms { list-style: none; margin: 5px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 12px; }
 .invest-rooms li { font-size: 11.5px; color: var(--muted); }

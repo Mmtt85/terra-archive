@@ -340,6 +340,28 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     }
   };
 
+  // 육성 추천을 인프라에 '간접 적용' — 그 오퍼의 정예화를 추천 단계(to)로 올린 것으로 반영하고
+  // 자동편성을 다시 돌린다. 직접 방에 박아 넣는 게 아니라 로스터 상태(정예화)를 바꿔 편성이
+  // 따라오게 하는 방식(사용자 요청 2026-07-21 "간접 적용"). to가 성급 최대면 오버라이드를 지운다.
+  const applyRaise = (opId: string, to: Elite) => {
+    if (optimizing || investing) return;
+    const op = opById.get(opId);
+    const next = new Map(eliteById);
+    if (op && to >= maxElite(op.rarity)) next.delete(opId); else next.set(opId, to);
+    setEliteById(next);
+    void runOptimize(ownedIds, next, priority); // investRecs 무효화 → 모달 닫힘, 편성에 반영
+  };
+  const applyAllRaises = () => {
+    if (optimizing || investing || !investRecs?.length) return;
+    const next = new Map(eliteById);
+    for (const r of investRecs) {
+      const op = opById.get(r.opId);
+      if (op && r.to >= maxElite(op.rarity)) next.delete(r.opId); else next.set(r.opId, r.to);
+    }
+    setEliteById(next);
+    void runOptimize(ownedIds, next, priority);
+  };
+
   // 우선 생산 모드는 설정(라디오)일 뿐 — 실제 편성은 기존처럼 자동편성 버튼으로 실행한다
   // (사용자 확정 2026-07: 설정 변경이 편성을 갈아엎으면 안 됨)
   const setPriority = (prio: ProdPriority) => {
@@ -526,7 +548,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       {confirmDialog}
       <div className="planner-controls">
         <div>
-          <span className="section-no">{t("RIIC / 243 · 순금 2 + 작전기록 2 · 12시간 2조 교대")}</span>
+          <span className="section-no">{t("RIIC / 243 · 순금 2 + 작전기록 2 · A조 풀파워, 피로 시 B조 교대")}</span>
           <h2>{t("인프라 배치 최적화")}</h2>
         </div>
         <div className="planner-buttons">
@@ -586,7 +608,8 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
 
       {showInvest && investRecs && !investing && (
         <InvestPanel recs={investRecs} opMap={effectiveOpById} onShowOperator={onShowOperator}
-          onClose={() => setShowInvest(false)} onReanalyze={() => { void runInvest(); }} t={t} locale={locale} />
+          onClose={() => setShowInvest(false)} onReanalyze={() => { void runInvest(); }}
+          onApply={applyRaise} onApplyAll={applyAllRaises} t={t} locale={locale} />
       )}
 
       {/* 우선 생산 설정 (라디오) — 다음 자동편성부터 적용, 편성 실행은 버튼으로 */}
@@ -732,9 +755,9 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
 // 육성 추천 결과 모달 — recommendRaises가 증명한 "완성하면 이득인 정예화 투자"를 ΔS 순으로.
 // 방 %효율 변화·완성 비용은 실제 편성·게임 데이터 기준(근사 환산 없음). 한 번 분석하면 새
 // 자동편성 전까지 유지되며, 모달 안 '다시 분석'으로 강제 재계산한다.
-function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, t, locale }: {
+function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onApply, onApplyAll, t, locale }: {
   recs: RaiseRec[]; opMap: Map<string, InfraOp>; onShowOperator?: (id: string) => void;
-  onClose: () => void; onReanalyze: () => void; t: T; locale: Locale;
+  onClose: () => void; onReanalyze: () => void; onApply: (opId: string, to: Elite) => void; onApplyAll: () => void; t: T; locale: Locale;
 }) {
   const roomLabel = (key: string) => cellByKey.get(key)?.label ?? key;
   const shiftTag = (s: number) => (s === 0 ? t("A조") : t("B조"));
@@ -753,11 +776,13 @@ function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, t, loc
           <h3>{recs.length ? t("완성하면 인프라가 좋아지는 오퍼 {n}명", { n: recs.length }) : t("추천할 오퍼가 없습니다")}</h3>
         </div>
         <div className="invest-head-btns">
+          {recs.length > 0 && <button className="invest-applyall" onClick={onApplyAll} title={t("추천 오퍼 전부를 완성으로 반영하고 자동편성을 다시 돌립니다")}>{t("전체 적용")}</button>}
           <button className="invest-reanalyze" onClick={onReanalyze} title={t("현재 보유·정예화 상태로 다시 계산합니다")}>↻ {t("다시 분석")}</button>
           <button className="invest-close" onClick={onClose} aria-label={t("닫기")}>✕</button>
         </div>
       </div>
-      <p className="invest-note">{t("현재 보유·정예화 상태로 자동편성을 돌린 결과와, 후보만 완성했을 때의 기지 총점 차이로 실제 이득을 증명합니다 — 최고 효율 상위 20개. 방 %효율 변화와 완성 비용은 실제 편성·게임 데이터 기준입니다.")}</p>
+      <p className="invest-note">{t("아직 완성 안 한(정예화를 낮춰 둔) 오퍼를 완성했다고 가정해 자동편성을 다시 돌리고, 방 %효율이 실제로 얼마나 오르는지로 이득을 증명합니다. 숫자는 그 방 %효율 변화의 합계(%p)이며, A조(주력)를 우선해 정렬합니다. '적용'은 그 오퍼를 완성 처리하고 편성에 반영합니다.")}</p>
+      <p className="invest-note invest-note-sub">{t("교대는 12시간 고정이 아닙니다 — A조를 풀파워로 돌리다 A조 오퍼 중 하나라도 피로도가 소진되면 B조로 전환하고, A조가 전부 회복되면 즉시 A조로 되돌립니다. 그래서 A조 이득을 우선합니다.")}</p>
       {!recs.length && <p className="invest-empty">{t("완성해도 최적 편성이 바뀌는 오퍼가 없습니다. 보유 오퍼 설정에서 아직 안 키운 오퍼의 정예화를 낮춰 두면, 완성 시 이득이 있는지 여기서 확인할 수 있습니다.")}</p>}
       <ul className="invest-list">
         {recs.map((r) => {
@@ -777,7 +802,11 @@ function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, t, loc
                   <i className="invest-stars" aria-hidden>{"★".repeat(op.rarity)}</i>
                   <span className="invest-raise">{t(ELITE_LABEL[r.from])} → {t(ELITE_LABEL[r.to])} {t("완성")}</span>
                   {r.synergy && <span className="invest-syn" title={t("팀 시너지를 여는 오퍼 — 완성 시 열리는 세트의 총 시너지 효율까지 반영해 평가했습니다")}>{t("시너지")}</span>}
-                  <span className="invest-score" title={t("현재와 완성 후의 기지 자동편성 총점 차이 — 추천 순위 기준")}>{t("기지 +{n}", { n: r.deltaScore.toFixed(1) })}</span>
+                  <span className="invest-gains" title={t("완성 시 오르는 방 %효율의 조별 합계 — 아래 방 변화의 합입니다")}>
+                    {Math.round(r.aGain) >= 1 && <span className="inv-gain a">{t("A조 +{n}%p", { n: Math.round(r.aGain) })}</span>}
+                    {Math.round(r.bGain) >= 1 && <span className="inv-gain b">{t("B조 +{n}%p", { n: Math.round(r.bGain) })}</span>}
+                  </span>
+                  <button className="invest-apply" onClick={() => onApply(r.opId, r.to)} title={t("이 오퍼를 완성 처리하고 자동편성에 반영합니다")}>{t("적용")}</button>
                 </div>
                 {r.placement && <div className="invest-place">{t("{room} · {shift}에 배치됩니다", { room: roomLabel(r.placement.key), shift: shiftTag(r.placement.shift) })}</div>}
                 {deltas.length > 0 && (
