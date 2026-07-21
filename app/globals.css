@@ -3807,6 +3807,13 @@ footer p {
   }
   /* 접힘: 2줄(미래시·다크모드·언어)만 사라진다. 이벤트·공식방송은 1줄 소속이라 유지. */
   .site-header.collapsed .header-sub { display: none; }
+  /* 접기 핸들은 PC에선 오른쪽(헤더 콘텐츠 패딩과 정렬) — 중앙은 이벤트 드롭다운과 동선이
+     겹친다 (사용자 확정 2026-07-22). 모바일은 중앙 유지. */
+  .site-header .header-collapse-toggle {
+    left: auto;
+    right: clamp(22px, 5vw, 76px);
+    transform: none;
+  }
 }
 .feedback-fab {
   border: 1px solid var(--border-strong);
@@ -7245,5 +7252,7 @@ main.site-main > .site-header { flex: 0 0 auto; }
 /* 헤더·푸터: 배경은 100% 폭, 내부 콘텐츠만 좌우 15% 여백에 맞춰 정렬 (사용자 확정 2026-07-17) */
 @media (min-width: 1400px) {
   .site-header { padding-inline: 15%; }
+  /* 접기 핸들도 와이드 콘텐츠 패딩(15%)과 정렬 */
+  .site-header .header-collapse-toggle { right: 15%; }
   footer { padding-inline: 15%; }
 }
