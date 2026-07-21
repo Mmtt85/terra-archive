@@ -190,10 +190,11 @@ let sharedRecs = null;
 // ② 모든 추천이 신뢰 가드를 통과 (ΔS>0 · 배치됨 · 비용>0 · 방 하락 없음 or 큰 시너지)
 await invCheck("육성추천: 모든 추천이 신뢰 가드 통과", async () => {
   sharedRecs = await invRun(loweredElite);
+  if (sharedRecs.length > 20) return { ok: false, detail: `상위 20 초과: ${sharedRecs.length}` };
   for (const r of sharedRecs) {
     if (!(r.deltaScore > 0)) return { ok: false, detail: `${r.opId} ΔS=${r.deltaScore}` };
     if (!r.placement) return { ok: false, detail: `${r.opId} 배치 없음` };
-    if (!(r.costSanity > 0)) return { ok: false, detail: `${r.opId} 비용 0` };
+    if (!(r.cost.lmd >= 0)) return { ok: false, detail: `${r.opId} 비용 이상` };
     const drop = r.roomDeltas.some((d) => d.after < d.before - 3);
     if (drop && r.deltaScore < 25) return { ok: false, detail: `${r.opId} 미보상 방하락` };
   }

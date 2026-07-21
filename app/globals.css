@@ -1935,24 +1935,33 @@ legend {
 }
 /* ── 육성(정예화 완성) 추천 패널 ─────────────────────────────────────────── */
 .invest-btn .btn-icon { color: var(--lime); }
-.invest-panel {
-  margin: 14px 0 4px;
+/* 모달로 표시 (.modal-backdrop 안). 목록이 길면 내부 스크롤. */
+.invest-panel.operator-modal {
+  width: min(680px, 94vw);
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
   border: 1px solid var(--border-strong);
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--bg-panel);
-  padding: 14px 16px 16px;
-  animation: toastIn 0.22s ease-out;
+  padding: 16px 18px 18px;
 }
 .invest-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-.invest-head h3 { margin: 2px 0 0; font-size: 17px; }
+.invest-head h3 { margin: 2px 0 0; font-size: 18px; }
+.invest-head-btns { display: flex; align-items: center; gap: 8px; flex: none; }
+.invest-reanalyze {
+  border: 1px solid var(--line); background: var(--bg-soft); color: var(--ink);
+  border-radius: 6px; padding: 5px 10px; cursor: pointer; font-size: 12px; font-weight: 600; white-space: nowrap;
+}
+.invest-reanalyze:hover { border-color: var(--lime); color: var(--lime); }
 .invest-close {
   border: 1px solid var(--line); background: var(--bg-soft); color: var(--muted);
-  border-radius: 6px; width: 28px; height: 28px; cursor: pointer; flex: none; font-size: 13px;
+  border-radius: 6px; width: 30px; height: 30px; cursor: pointer; flex: none; font-size: 14px;
 }
 .invest-close:hover { color: var(--ink); }
-.invest-note, .invest-empty { color: var(--muted); font-size: 12px; line-height: 1.55; margin: 8px 0 4px; }
+.invest-note, .invest-empty { color: var(--muted); font-size: 12px; line-height: 1.55; margin: 8px 0 4px; flex: none; }
 .invest-empty { margin: 10px 0 2px; }
-.invest-list { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.invest-list { list-style: none; margin: 12px 0 0; padding: 0 2px 2px 0; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
 .invest-card {
   display: flex; gap: 12px; align-items: flex-start;
   border: 1px solid var(--line); border-radius: 8px; background: var(--bg-faint); padding: 10px 12px;
@@ -1970,24 +1979,21 @@ legend {
   background: color-mix(in srgb, var(--lime) 30%, transparent);
   border-radius: 4px; padding: 1px 7px;
 }
+.invest-syn {
+  font-size: 10.5px; font-weight: 700; color: #8f7fc0;
+  border: 1px solid color-mix(in srgb, #8f7fc0 55%, transparent);
+  border-radius: 4px; padding: 0 6px;
+}
+:root[data-theme="dark"] .invest-syn, .dark .invest-syn { color: #b3a6e0; }
 .invest-score { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--lime); white-space: nowrap; }
 .invest-place { font-size: 12.5px; margin-top: 5px; color: var(--ink); }
 .invest-rooms { list-style: none; margin: 5px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 12px; }
 .invest-rooms li { font-size: 11.5px; color: var(--muted); }
 .invest-rooms em { font-style: normal; color: var(--ink); font-weight: 600; }
-.invest-daily { margin-top: 7px; display: flex; flex-wrap: wrap; gap: 6px; }
-.inv-res { font-size: 12px; font-weight: 700; border-radius: 5px; padding: 2px 8px; }
-.inv-res.up { color: #2f7d3a; background: color-mix(in srgb, #2f7d3a 14%, transparent); }
-.inv-res.down { color: #b3502e; background: color-mix(in srgb, #b3502e 14%, transparent); }
-.inv-res.muted { color: var(--muted); background: var(--bg-soft); font-weight: 500; }
-:root[data-theme="dark"] .inv-res.up, .dark .inv-res.up { color: #7fd18c; }
-:root[data-theme="dark"] .inv-res.down, .dark .inv-res.down { color: #e0956f; }
-.invest-cost, .invest-payback { margin-top: 7px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 12px; color: var(--muted); }
+.invest-cost { margin-top: 8px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 12px; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 7px; }
 .inv-cost-label { font-weight: 700; color: var(--ink); }
 .inv-mat { display: inline-flex; align-items: center; gap: 2px; }
 .inv-mat img { width: 22px; height: 22px; vertical-align: middle; }
-.invest-payback { border-top: 1px dashed var(--line); padding-top: 6px; }
-.inv-pay { font-weight: 700; color: var(--ink); }
 @media (max-width: 620px) {
   .invest-score { margin-left: 0; }
   .invest-card > img { width: 44px; height: 44px; }

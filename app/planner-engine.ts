@@ -667,6 +667,12 @@ const matchAnchorSkill = (detect: string, skill: InfraSkill): boolean =>
   : detect === "perProduct" ? Boolean(skill.kind in AURA_WEIGHT && skill.perFaction && skill.perProduct)
   : false;
 
+// 로스터로 조립 가능한 시너지 세트 키 목록 — 육성 추천(planner-invest)이 후보별로 "완성 시
+// 새로 열릴 세트"만 좁혀 평가하도록(전체 optimize 대신 baseline 세트 + 신규 가용 세트만 buildPlan).
+export function availableSetKeys(roster: InfraOp[]): string[] {
+  return SYNERGY_SETS.filter((def) => synergySetAvailable(def, roster)).map((def) => def.key);
+}
+
 // 로스터만으로 세트 조립 가능성 판정 — optimize()가 후보 플래그(멱집합의 축)를 만들 때 사용
 export function synergySetAvailable(def: SynergySetDef, roster: InfraOp[]): boolean {
   if (def.anchor) {
@@ -1281,7 +1287,11 @@ export function planScore(plan: Plan, byId: Map<string, InfraOp>): number {
 // 검증 스크립트) 페이싱 없이 전속력으로 돈다.
 export type OptimizeStep = { phase: "base" | "variant" | "final"; index?: number; total?: number; sets?: string[]; crew?: "A" | "B" };
 
-export async function optimize(roster: InfraOp[], priority: ProdPriority = "gold", onStep?: (step: OptimizeStep) => void | Promise<void>): Promise<Plan> {
+// optimize가 고른 전략(토큰 패키지·시너지 세트)까지 함께 반환 — 육성 추천(planner-invest)이
+// 후보마다 전체 재탐색을 반복하지 않고, 이 config를 재사용해 buildPlan을 1회만 돌려 빠르게
+// 반사실 평가를 하도록 한다 (2026-07-21 성능: 후보당 buildPlan 15회 → 1회).
+export type OptimizeResult = { plan: Plan; tokenChoice: string[]; factionSets: FactionSets };
+export async function optimizeConfig(roster: InfraOp[], priority: ProdPriority = "gold", onStep?: (step: OptimizeStep) => void | Promise<void>): Promise<OptimizeResult> {
   // 진행 콜백(페이싱 포함) 후 매크로태스크 양보 — 브라우저가 안내 문구를 리페인트할 틈을 준다
   const tick = async (step: OptimizeStep) => {
     if (!onStep) return;
@@ -1348,14 +1358,15 @@ export async function optimize(roster: InfraOp[], priority: ProdPriority = "gold
   // 조합 폭발 가드 — 카탈로그가 5종 이상이면 후보 상한 15안 (2^4-1). 넘게 등록할 일이
   // 생기면 세트 우선순위 필드를 도입할 것 (지금은 3종 = 최대 7안)
   if (variants.length > 15) variants.length = 15;
-  if (!variants.length) return base;
+  if (!variants.length) return { plan: base, tokenChoice, factionSets: {} };
   let best = base;
   let bestScore = planScore(base, byId);
+  let bestSets: FactionSets = {};
   for (let i = 0; i < variants.length; i += 1) {
     await tick({ phase: "variant", index: i + 1, total: variants.length, sets: Object.keys(variants[i]) });
     const plan = buildPlan(tokenChoice, roster, variants[i], priority);
     const score = planScore(plan, byId);
-    if (score > bestScore) { best = plan; bestScore = score; }
+    if (score > bestScore) { best = plan; bestScore = score; bestSets = variants[i]; }
   }
   // 채택안의 전수 감사 수렴 회차를 조별로 재생 — "몇 회 반복으로 최선을 확인했는지"를
   // 보여준다 (사용자 확정 2026-07-19). 페이싱(랜덤 간격)은 UI 콜백 몫.
@@ -1373,7 +1384,12 @@ export async function optimize(roster: InfraOp[], priority: ProdPriority = "gold
   } else {
     await tick({ phase: "final" });
   }
-  return best;
+  return { plan: best, tokenChoice, factionSets: bestSets };
+}
+
+// 얇은 래퍼 — 편성만 필요한 호출부(planner.tsx·verify-plan)는 종전대로 Plan을 받는다.
+export async function optimize(roster: InfraOp[], priority: ProdPriority = "gold", onStep?: (step: OptimizeStep) => void | Promise<void>): Promise<Plan> {
+  return (await optimizeConfig(roster, priority, onStep)).plan;
 }
 
 export function slotSubstitutes(team: InfraOp[], index: number, key: string, ctx: Ctx, excluded: Set<string>, roster: InfraOp[], count = 3): { op: InfraOp; score: number }[] {
