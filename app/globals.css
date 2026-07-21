@@ -4928,7 +4928,9 @@ html.dark .story-card:hover .story-thumb img {
   color: var(--white);
 }
 .sc-ep-nav button.on small {
-  color: #ffffffb0;
+  /* 하드코딩 흰색은 다크모드(밝은 --ink 배경)에서 안 보인다 (사용자 리포트 2026-07-22) */
+  color: var(--white);
+  opacity: 0.72;
 }
 .sc-ep-title {
   margin: 0 0 16px;

@@ -108,7 +108,8 @@ function locText(locale: Locale, text: LocText): string {
 function eventFromHash(): StoryEvent | null {
   const hash = decodeURIComponent(window.location.hash);
   if (!hash.startsWith("#story-")) return null;
-  const id = hash.slice(7);
+  // 전문 에피소드 딥링크(#story-<id>/ep<N>)의 접미는 떼고 이벤트만 해석 (2026-07-22)
+  const id = hash.slice(7).split("/")[0];
   const ev = eventById.get(id);
   return ev && canOpenStory(id) ? ev : null;
 }
@@ -126,13 +127,27 @@ const MAX_RAIL_CARDS = 4;
 // 엔티티 이름들 → 매칭 정규식. 이름 앞에 한글이 오면 제외(negative lookbehind — '-이신' 오탐 방지).
 // 한 글자 이름(위·시·첸 등)은 '위해·시간' 같은 일반 단어 첫 글자에 오탐되므로
 // 단독으로 서 있거나 바로 뒤가 조사일 때만 매칭 (사용자 리포트 2026-07-18).
+// 감탄사와 겹치는 한 글자 이름(아 등)은 "아," "아……" 같은 감탄 표기에 오탐되므로
+// 반드시 조사가 붙을 때만 매칭한다 (사용자 리포트 2026-07-22 — 오퍼 '아' vs 감탄사 '아').
+const INTERJECTION_HOMOGRAPHS = new Set(["아", "야", "어", "와", "하", "오", "에", "응", "음", "허"]);
+// 받침 유무에 맞는 조사만 허용 — 받침 없는 이름(아·첸X)에 '이'를 허용하면 "아이" 같은
+// 일반 단어에 오탐된다 (첸처럼 받침 있는 이름은 이/은/을이 정상 조사)
+const hasBatchim = (ch: string) => (ch.charCodeAt(0) - 0xac00) % 28 !== 0;
 function entityMatcher(rawKeys: string[]): RegExp {
   const keys = rawKeys
     .map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
     .sort((a, b) => b.length - a.length);
+  const particle = (k: string) => {
+    const josa = hasBatchim(k)
+      ? "이|은|을|과|도|만|의|이랑|에게|한테|께서?"
+      : "가|는|를|와|도|만|의|랑|에게|한테|께서?";
+    return `${k}(?=(?:${josa})(?![가-힣]))`;
+  };
   const parts = keys.map((k) =>
     k.length === 1
-      ? `(?:${k}(?![가-힣])|${k}(?=(?:가|는|를|의|와|과|도|만|랑|에게|한테|께서?)(?![가-힣])))`
+      ? INTERJECTION_HOMOGRAPHS.has(k)
+        ? `(?:${particle(k)})`
+        : `(?:${k}(?![가-힣])|${particle(k)})`
       : k,
   );
   return new RegExp(`(?<![가-힣])(?:${parts.join("|")})`);
@@ -398,9 +413,9 @@ function EntityRail({ entities, active, onShowOperator, focus }: {
 // 데이터는 public/story/script/<id>.json 을 지연 fetch. 에피소드 단위로 렌더.
 // 요약과 같은 참조 레일이 오른쪽에 따라다닌다 (사용자 요청 2026-07-18).
 // export는 scripts/verify-stories.mjs 전수 렌더 하네스용 (앱 내 사용처는 이 파일뿐)
-export function ScriptReader({ script, error, entities, opIndex, onShowOperator }: {
+export function ScriptReader({ script, error, entities, opIndex, onShowOperator, eventId }: {
   script: ScriptData | null; error: boolean;
-  entities: Entity[]; opIndex?: OpIndex; onShowOperator?: (id: string) => void;
+  entities: Entity[]; opIndex?: OpIndex; onShowOperator?: (id: string) => void; eventId?: string;
 }) {
   const { locale, t } = useI18n();
   // 오퍼가 아닌 화자의 스탠딩 스프라이트 — 썸네일 클릭 시 원본 크게 보기 (사용자 요청 2026-07-18)
@@ -423,11 +438,18 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator 
     return out;
   }, [script, opIndex, entities]);
   const allEntities = useMemo(() => [...entities, ...autoEntities], [entities, autoEntities]);
-  const [epIdx, setEpIdx] = useState(0);
+  // 에피소드 딥링크(#story-<id>/ep<N>) — 첫 마운트에 해시에서 읽고, 탭 전환 시 URL에 남긴다
+  // (사용자 요청 2026-07-22). replaceState라 뒤로가기 히스토리는 안 쌓인다.
+  const [epIdx, setEpIdx] = useState(() => {
+    if (typeof window === "undefined") return 0;
+    const m = decodeURIComponent(window.location.hash).match(/\/ep(\d+)$/);
+    return m ? Math.max(0, parseInt(m[1], 10) - 1) : 0;
+  });
   const topRef = useRef<HTMLDivElement>(null);
+  // 스크롤은 건드리지 않는다 (사용자 확정 2026-07-22 — 탭 클릭 시 화면 이동 금지)
   const goEp = (i: number) => {
     setEpIdx(i);
-    topRef.current?.scrollIntoView({ block: "start", behavior: "instant" });
+    if (eventId) history.replaceState(null, "", `#story-${eventId}${i > 0 ? `/ep${i + 1}` : ""}`);
   };
   const ep = script ? script.eps[Math.min(epIdx, script.eps.length - 1)] : null;
   // 렌더용 라인 가공 — 렌더 중 변수 재할당 금지(react-compiler)라 memo에서 미리 계산:
@@ -688,7 +710,7 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }
           {/* 읽기 설정(글자·삽화 크기) — 전문·요약 둘 다 실제 본문이 있을 때만 노출 (사용자 피드백 2026-07-20) */}
           {(hasSummary || hasScript) && <ReaderPrefsBar prefs={readerPrefs} setPrefs={setReaderPrefs} />}
         </header>
-        {scriptView && hasScript && <ScriptReader script={script} error={scriptErr} entities={entities} opIndex={opIndex} onShowOperator={onShowOperator} />}
+        {scriptView && hasScript && <ScriptReader script={script} error={scriptErr} entities={entities} opIndex={opIndex} onShowOperator={onShowOperator} eventId={event.id} />}
         {scriptView && futureNoScript && (
           <div className="sc-future-note">
             <b>{t("전문은 정식 출시 후에 열려요")}</b>
