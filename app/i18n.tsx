@@ -828,9 +828,9 @@ const D: Record<string, Pair> = {
     "**テラ年代記（ベータ）** — すべてのイベント・メインストーリー・統合戦略を一箇所に集める準備作業です。現在の並びは配信順（暫定）で、作中の年代順・テラ暦の年号はストーリースクリプトを反映して埋めます。テーマ分類は確実なものから割り当て中です。",
   ],
   "AI 스토리 요약 - 명일방주 스토리 요약 | 테라 아카이브": ["AI Story Digest - Arknights Story Summaries | Terra Archive", "AIストーリー要約 - アークナイツストーリー要約 | テラアーカイブ"],
-  "출시된 사이드 스토리 {count}개의 아카이브입니다. AI가 스토리 스크립트 전문을 정독하고 컷씬과 함께 10분 분량으로 요약합니다. 현재 {done}개 수록 — 계속 추가됩니다.": [
-    "An archive of all {count} side stories released. AI reads the full story scripts and condenses each into a 10-minute digest with cutscenes. {done} available now — more on the way.",
-    "公開されたサイドストーリー{count}件のアーカイブです。AIがストーリースクリプト全文を読み込み、カットシーン付きの10分ダイジェストにまとめます。現在{done}件収録 — 順次追加されます。",
+  "출시된 스토리 {count}개의 아카이브입니다. AI가 스토리 스크립트 전문을 정독하고 컷씬과 함께 10분 분량으로 요약합니다. 현재 {done}개 수록 — 계속 추가됩니다.": [
+    "An archive of all {count} stories released. AI reads the full story scripts and condenses each into a 10-minute digest with cutscenes. {done} available now — more on the way.",
+    "公開されたストーリー{count}件のアーカイブです。AIがストーリースクリプト全文を読み込み、カットシーン付きの10分ダイジェストにまとめます。現在{done}件収録 — 順次追加されます。",
   ],
   "요약에는 결말 포함 스포일러가 있습니다. 이벤트 제목·썸네일 출처: 게임 데이터 · {date} 기준.": [
     "Digests contain full spoilers including endings. Event titles & thumbnails from datamined game data · as of {date}.",
@@ -845,6 +845,11 @@ const D: Record<string, Pair> = {
     "Not part of this storyline — placed here by its position on the Terran timeline.",
     "このテーマに属する物語ではありませんが、テラ暦の時系列ではこの位置にあります。",
   ],
+  "이 테마 소속이 아니에요 — 클릭하면 「{theme}」의 원래 위치로 이동": [
+    "Not part of this storyline — click to jump to its place in \"{theme}\"",
+    "このテーマの所属ではありません — クリックで「{theme}」の元の位置へ移動",
+  ],
+  "시계열 참고용 항목이에요": ["Shown here for timeline reference only", "時系列の参考用の項目です"],
   "전문 보기 (풀 스크립트)": ["Full script", "全文（フルスクリプト）"],
   "보기 방식": ["View mode", "表示モード"],
   "읽기 설정": ["Reading settings", "読書設定"],

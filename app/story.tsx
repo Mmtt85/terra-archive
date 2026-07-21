@@ -674,7 +674,7 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }
               </div>
             )}
           </div>
-          <p className="story-meta">{event.epNo != null ? locText(locale, epLabel(event.epNo)) : event.id.startsWith("rogue_") ? t("통합 전략") : `${event.start} · ${t("에피소드 {n}개", { n: event.episodes })}`}</p>
+          <p className="story-meta">{event.epNo != null ? locText(locale, epLabel(event.epNo)) : event.id.startsWith("rogue_") ? t("통합 전략") : t(event.mini ? "미니 이벤트" : "사이드 이벤트")}</p>
           {summary?.tagline && <p className="story-tagline">{summary.tagline}</p>}
           {/* 전문만 있고 요약이 아직 없는 이벤트 안내 */}
           {!hasSummary && hasScript && <p className="story-tagline story-tagline-plain">{t("AI 요약은 아직 준비 중이에요. 지금은 게임 내 스토리 전문으로 만나 보세요.")}</p>}
@@ -796,6 +796,9 @@ const STORYLINES = (storylinesData as { lines: Storyline[] }).lines;
 const ARC_ID_BY_NAME = new Map(chronology.arcs.map((a) => [a.name.ko, a.id]));
 const MAINLINE_COLOR = "#475569";
 const CHRON_BY_KEY = new Map(CHRON_ITEMS.map((it) => [it.key, it]));
+// 항목 id → 소속(멤버) 스토리라인 — 게스트(시계열 참조) 카드의 '원래 위치로 이동'용
+const HOME_LINE_BY_ID = new Map<string, Storyline>();
+for (const line of STORYLINES) for (const i of line.items) if (!i.guest) HOME_LINE_BY_ID.set(i.id, line);
 const arcNameOf = (locale: Locale, id: string) => {
   const a = chronology.arcs.find((x) => x.id === id);
   return a ? locText(locale, a.name) : id;
@@ -1069,7 +1072,7 @@ function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEve
   // 기존 arc 그룹(최신순)으로 뒤에 붙인다. 종류별은 기존대로 그룹 내 최신순.
   type GroupItem = { it: ChronItem; guest?: boolean };
   const groups = useMemo(() => {
-    const out: { key: string; label: string; color?: string; items: GroupItem[] }[] = [];
+    const out: { key: string; label: string; sub?: string; color?: string; items: GroupItem[] }[] = [];
     let leftover = filtered;
     if (group === "theme") {
       const matches = (it: ChronItem) =>
@@ -1080,10 +1083,15 @@ function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEve
         out.push({
           key: arcId ?? line.id,
           label: locText(locale, line.name),
+          // '내일을 위하여'가 메인스토리 라인임을 헤더에서 바로 알 수 있게 (사용자 요청 2026-07-21)
+          sub: line.id === "mainLine" ? t("메인스토리") : undefined,
           color: arcId ? arcColor(arcId) : MAINLINE_COLOR,
+          // 시계열 역순 — 최신이 맨 왼쪽 (사용자 요청 2026-07-21). 데이터(storylines.json)는
+          // 인게임 그대로 과거→미래를 유지하고 표시만 뒤집는다.
           items: line.items
             .map((i) => ({ it: CHRON_BY_KEY.get(i.id), guest: i.guest }))
-            .filter((x): x is GroupItem => Boolean(x.it && matches(x.it))),
+            .filter((x): x is GroupItem => Boolean(x.it && matches(x.it)))
+            .reverse(),
         });
       }
       leftover = filtered.filter((it) => !covered.has(it.key));
@@ -1108,17 +1116,31 @@ function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEve
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [group, filtered, keyword, locale, t]);
 
+  // 게스트(시계열 참조) 카드 클릭 → 원래 소속 그룹의 실제 카드로 점프 + 스포트라이트.
+  // 스크롤은 즉시 이동(스토리 탭 공통 규칙 — 부드러운 스크롤 잔떨림 회피), 도착 카드에
+  // 2.6초 강조 애니메이션으로 "여기입니다"를 표시한다 (사용자 요청 2026-07-21).
+  const jumpToCard = (key: string, homeKey?: string) => {
+    const el = document.getElementById(`sl-${key}`)
+      ?? (homeKey ? document.getElementById(`theme-${homeKey}`) : null);
+    if (!el) return;
+    el.scrollIntoView({ block: "center", behavior: "instant" });
+    el.classList.remove("spotlight");
+    void (el as HTMLElement).offsetWidth;  // 연속 클릭 시 애니메이션 재시작
+    el.classList.add("spotlight");
+    window.setTimeout(() => el.classList.remove("spotlight"), 2600);
+  };
+
   const renderCard = ({ it, guest }: GroupItem) => {
     const ev = it.eventId ? eventById.get(it.eventId) : undefined;
     const ready = Boolean(it.eventId && canOpenStory(it.eventId));
+    const home = guest ? HOME_LINE_BY_ID.get(it.key) : undefined;
+    const homeKey = home ? (ARC_ID_BY_NAME.get(home.name.ko) ?? home.id) : undefined;
     const thumb = ev
       ? ((locale === "ja" ? ev.thumbJa : locale === "en" ? ev.thumbEn : undefined) ?? ev.thumb)
       : ((locale === "ja" ? it.thumbJa : locale === "en" ? it.thumbEn : undefined) ?? it.thumb);
-    // 메인스토리·로그라이크는 출시월 대신 에피소드 라벨(종류)을 메타로 쓴다
-    const meta = it.kind !== "event"
-      ? (it.ep ? locText(locale, it.ep) : t(KIND_KO[it.kind]))
-      : ev ? `${ev.start} · ${t("에피소드 {n}개", { n: ev.episodes })}`
-      : it.ep ? locText(locale, it.ep) : t(KIND_KO[it.kind]);
+    // 메타는 종류(사이드/미니 이벤트, 에피소드 N, 통합 전략)만 — 발행연월·에피소드 개수는
+    // 표시하지 않는다 (사용자 요청 2026-07-21 — 출시월은 정렬용으로만 쓴다)
+    const meta = it.ep ? locText(locale, it.ep) : t(KIND_KO[it.kind]);
     const body = (
       <>
         <div className={`story-thumb${thumb ? "" : " story-thumb-none"}`}>
@@ -1134,11 +1156,32 @@ function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEve
         <div className="story-card-info">
           <h3>{guest ? <>({locText(locale, it.name)})</> : locText(locale, it.name)}{ev?.unreleased && <em className="future-badge">{t("미실장")}</em>}</h3>
           <span>{meta}</span>
+          {/* 시계열 참조임을 분명히 — 소속 테마와 클릭 동작 안내 (사용자 요청 2026-07-21) */}
+          {guest && (
+            <span className="story-guest-note">
+              {home
+                ? t("이 테마 소속이 아니에요 — 클릭하면 「{theme}」의 원래 위치로 이동", { theme: locText(locale, home.name) })
+                : t("시계열 참고용 항목이에요")}
+            </span>
+          )}
         </div>
       </>
     );
+    if (guest) {
+      // 게스트 카드는 상세를 열지 않는다 — 원래 소속 그룹의 실제 카드로 점프해 강조.
+      // href는 하이드레이션 전 폴백(소속 테마 섹션 앵커).
+      return (
+        <article key={`ref-${it.key}`} className="story-card guest">
+          <a href={homeKey ? `#theme-${homeKey}` : `#story-${it.eventId}`} aria-label={locText(locale, it.name)}
+            onClick={(e) => { e.preventDefault(); jumpToCard(it.key, homeKey); }}>
+            {body}
+          </a>
+        </article>
+      );
+    }
     return (
-      <article key={it.key} className={`story-card${ready ? "" : " pending"}${guest ? " guest" : ""}`}>
+      <article key={it.key} id={group === "theme" ? `sl-${it.key}` : undefined}
+        className={`story-card${ready ? "" : " pending"}`}>
         {/* 열 수 있는 카드는 실제 앵커 — 하이드레이션 전 클릭도 네이티브 해시 이동으로 동작하고,
             마운트 시 apply()가 해시를 읽어 상세를 연다 (로드 직후 클릭 무반응 수정, 2026-07-21).
             핸들러가 붙은 뒤에는 preventDefault + onOpen으로 기존 pushState 경로를 그대로 탄다. */}
@@ -1177,7 +1220,7 @@ function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEve
                         <button type="button" className={ready ? "" : "pending"} disabled={!ready}
                           onClick={() => { if (ready && ev) { onOpen(ev); setSearchOpen(false); } }}>
                           <span className="ss-name">{locText(locale, it.name)}{ev?.unreleased && <em className="future-badge">{t("미실장")}</em>}</span>
-                          <span className="ss-meta">{ev ? ev.start : t(KIND_KO[it.kind])}{ready ? "" : ` · ${t("요약 준비 중")}`}</span>
+                          <span className="ss-meta">{t(KIND_KO[it.kind])}{ready ? "" : ` · ${t("요약 준비 중")}`}</span>
                         </button>
                       </li>
                     );
@@ -1203,10 +1246,10 @@ function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEve
                         history.pushState(null, "", `#theme-${g.key}`);
                         document.getElementById(`theme-${g.key}`)?.scrollIntoView({ block: "start", behavior: "instant" });
                       }}>
-                      {g.label} <em>{g.items.length}</em><span className="digest-group-anchor" aria-hidden>#</span>
+                      {g.label} <em>{g.items.length}</em>{g.sub && <small className="digest-group-kind">{g.sub}</small>}<span className="digest-group-anchor" aria-hidden>#</span>
                     </button>
                   ) : (
-                    <>{g.label} <em>{g.items.length}</em></>
+                    <>{g.label} <em>{g.items.length}</em>{g.sub && <small className="digest-group-kind">{g.sub}</small>}</>
                   )}
                 </h3>
                 <div className="story-grid">{g.items.map(renderCard)}</div>
@@ -1286,7 +1329,7 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
       <div className="story-head">
         <span className="section-no">AI STORY DIGEST</span>
         <h2>{t("스토리")}</h2>
-        <p>{t("출시된 사이드 스토리 {count}개의 아카이브입니다. AI가 스토리 스크립트 전문을 정독하고 컷씬과 함께 10분 분량으로 요약합니다. 현재 {done}개 수록 — 계속 추가됩니다.", { count: data.events.filter((event) => !event.unreleased).length, done: summarized })}</p>
+        <p>{t("출시된 스토리 {count}개의 아카이브입니다. AI가 스토리 스크립트 전문을 정독하고 컷씬과 함께 10분 분량으로 요약합니다. 현재 {done}개 수록 — 계속 추가됩니다.", { count: data.events.filter((event) => !event.unreleased).length, done: summarized })}</p>
         <p className="story-source">{t("요약에는 결말 포함 스포일러가 있습니다. 이벤트 제목·썸네일 출처: 게임 데이터 · {date} 기준.", { date: data.updated })}</p>
         {includeFuture && data.events.some((event) => event.unreleased) && (
           <p className="story-source">{t("미실장(중국 서버 선행) 이벤트의 제목은 비공식 AI 번역으로, 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>
