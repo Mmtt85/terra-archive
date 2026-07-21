@@ -64,12 +64,13 @@ export default function RootLayout({
           }}
         />
         {children}
-        {/* Cloudflare Web Analytics — 정본 도메인에서만 집계한다. localhost·프리뷰
-            (해시.pages.dev)·헤드리스 테스트에서 beacon이 프로드 토큰으로 조회수를
-            부풀리던 문제를 막는다 (2026-07). */}
+        {/* Cloudflare Web Analytics — 정본 도메인에서만 + 자동화 브라우저 제외.
+            localhost·프리뷰(해시.pages.dev)에 더해 navigator.webdriver(Playwright·Selenium 등
+            헤드리스 검증 크롤)도 걸러낸다 — 2026-07-21 스토리 전수 크롤 293건이 실방문으로
+            집계된 회귀. 크롤이 pages.dev로 들어와도 리다이렉트 후 .net에서 비콘이 떴었다. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `if(location.hostname==='terra-archive.net'){var s=document.createElement('script');s.defer=true;s.src='https://static.cloudflareinsights.com/beacon.min.js';s.setAttribute('data-cf-beacon','{"token":"e173a2e6c1cd466988379d4338063b89","spa":false}');document.body.appendChild(s);}`,
+            __html: `if(location.hostname==='terra-archive.net'&&!navigator.webdriver){var s=document.createElement('script');s.defer=true;s.src='https://static.cloudflareinsights.com/beacon.min.js';s.setAttribute('data-cf-beacon','{"token":"e173a2e6c1cd466988379d4338063b89","spa":false}');document.body.appendChild(s);}`,
           }}
         />
       </body>

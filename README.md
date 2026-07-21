@@ -1,6 +1,6 @@
 # 테라 아카이브 (Terra Archive)
 
-명일방주(Arknights) 한국 서버 팬사이트 — https://terra-archive.pages.dev
+명일방주(Arknights) 한국 서버 팬사이트 — https://terra-archive.net
 
 - **오퍼 백과사전** — 전 오퍼레이터 스탯·스킬·모듈·인프라 스킬 + 컨셉덱/진영/태그 필터, 커뮤니티 별명 검색
 - **인프라 플래너** — 보유 오퍼 기반 기반시설(RIIC) A/B조 자동 편성 최적화
