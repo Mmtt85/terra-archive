@@ -270,21 +270,12 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
 
   const runOptimize = async (ids: Set<string> = ownedIds, elite: Map<string, Elite> = eliteById, prio: ProdPriority = priority) => {
     if (optimizing) return; // 중복 실행 방지
-    // 페이싱 (사용자 요청 2026-07-20): 전체가 4~5초에 끝나게 한다. 단계 수가 로스터마다
-    // 달라(base 1 + 세트 후보 ≤7 + 감사 ≤6) 단계당 지연만으론 총시간이 들쭉날쭉하므로,
-    // 단계당 균일 지연(0.2~0.33초)으로 진행감을 주고 마지막에 목표(4~5초)까지 패딩한다.
-    const targetMs = 4000 + Math.random() * 1000;
-    const startedAt = Date.now();
+    // 페이싱 없음 (사용자 확정 2026-07-21: 최대한 빠르게) — 진행 문구만 갱신하고 지연은 두지
+    // 않는다. 엔진 tick의 매크로태스크 양보(setTimeout 0)만으로 리페인트는 충분하다.
     setOptimizing(t("자동편성 엔진 계산 중 — 편성 공간 구성…"));
     try {
-      const paced = async (step: OptimizeStep) => {
-        setOptimizing(stepMessage(step));
-        await new Promise((resolve) => setTimeout(resolve, 200 + Math.random() * 130));
-      };
+      const paced = (step: OptimizeStep) => { setOptimizing(stepMessage(step)); };
       const next = await optimize(visibleOps.map((op) => withElite(op, elite.get(op.id))).filter((op) => ids.has(op.id)), prio, paced);
-      // 남은 시간만큼 마무리 단계를 유지해 총 4~5초를 맞춘다 (단계가 적어 빨리 끝나도 동일한 체감)
-      const remainMs = targetMs - (Date.now() - startedAt);
-      if (remainMs > 0) await new Promise((resolve) => setTimeout(resolve, remainMs));
       setPlan(next);
       setActiveShift(0);
       persist(ids, next, elite);
