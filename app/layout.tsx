@@ -32,8 +32,10 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // lang은 서버에선 ko 고정 — /en·/ja 라우트는 하이드레이션 직후 Home이
-  // document.documentElement.lang을 로케일로 바꾼다 (검색엔진 신호는 hreflang이 담당)
+  // lang은 서버 렌더에선 ko 고정이지만, 빌드 후처리(scripts/fix-html-lang.mjs)가
+  // /en·/ja 정적 HTML의 lang을 실제 로케일로 교정한다 (2026-07 — 원문 HTML의 lang="ko"가
+  // EN/JA 페이지에 한국어 문서라는 모순 신호를 줘서 색인·언어 타게팅을 해쳤다).
+  // 하이드레이션 직후엔 Home이 document.documentElement.lang을 다시 로케일로 맞춘다.
   return (
     <html lang="ko" suppressHydrationWarning>
       <body

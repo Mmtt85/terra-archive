@@ -1167,7 +1167,21 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
       {selected && <OperatorModal operator={selected} nicknames={nicknames.get(selected.id) ?? []} onSubmitNickname={handleSubmitNickname} onClose={closeOperator} />}
       <FeedbackWidget />
 
-      <footer><span>RHODES ISLAND // TERRA ARCHIVE</span><p>{t("명일방주(Arknights) 비공식 팬 프로젝트 · 게임 내 명칭과 데이터의 권리는 Hypergryph / Yostar 등 각 권리자에게 있습니다.")}</p></footer>
+      <footer>
+        <span>RHODES ISLAND // TERRA ARCHIVE</span>
+        <p>{t("명일방주(Arknights) 비공식 팬 프로젝트 · 게임 내 명칭과 데이터의 권리는 Hypergryph / Yostar 등 각 권리자에게 있습니다.")}</p>
+        {/* 크롤러용 실제 언어 링크 — 헤더 전환기는 조건부 렌더 드롭다운이라 정적 HTML에
+            /en·/ja 앵커가 하나도 없었다 (2026-07 색인 문제). 현재 탭 세그먼트를 보존한다. */}
+        <nav className="footer-langs" aria-label={t("언어 선택")}>
+          {LOCALES.map((entry) => {
+            const seg = TAB_SEG[tab];
+            const href = (LOCALE_BASE[entry.code] + (seg ? `/${seg}` : "")) || "/";
+            return entry.code === locale
+              ? <strong key={entry.code} lang={entry.code}>{entry.label}</strong>
+              : <a key={entry.code} href={href} hrefLang={entry.code} lang={entry.code}>{entry.label}</a>;
+          })}
+        </nav>
+      </footer>
     </main>
   );
 }

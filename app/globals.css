@@ -1951,6 +1951,23 @@ footer span {
 footer p {
   margin: 0;
 }
+.footer-langs {
+  display: flex;
+  gap: 14px;
+  white-space: nowrap;
+}
+.footer-langs a {
+  color: #b6bbbd;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.footer-langs a:hover {
+  color: var(--lime);
+}
+.footer-langs strong {
+  color: #e2e6e8;
+  font-weight: 600;
+}
 @keyframes rise {
   0% {
     opacity: 0;
@@ -2119,6 +2136,9 @@ footer p {
   }
   footer p {
     margin-top: 7px;
+  }
+  .footer-langs {
+    margin-top: 10px;
   }
   .feedback-widget {
     bottom: 140px;
