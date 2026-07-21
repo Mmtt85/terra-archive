@@ -86,6 +86,10 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   const [investRecs, setInvestRecs] = useState<RaiseRec[] | null>(null);
   const [investing, setInvesting] = useState<InvestProgress | null>(null);
   const [showInvest, setShowInvest] = useState(false);
+  // 육성 추천 '임시 적용' 세션 — 추천 오퍼를 완성했다 가정한 미리보기 편성(비영구). 되돌리기
+  // 가능하고 추천 목록은 유지된다. 전체 자동편성·다시 분석을 누르기 전까지 (사용자 확정 2026-07-21).
+  const [tempApplied, setTempApplied] = useState<Map<string, Elite>>(new Map());
+  const [tempBasePlan, setTempBasePlan] = useState<Plan | null>(null);
 
   const effectiveOps = useMemo(() => visibleOps.map((op) => withElite(op, eliteById.get(op.id))), [visibleOps, eliteById]);
   const effectiveOpById = useMemo(() => new Map(effectiveOps.map((op) => [op.id, op])), [effectiveOps]);
@@ -300,9 +304,10 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       const next = await optimize(visibleOps.map((op) => withElite(op, elite.get(op.id))).filter((op) => ids.has(op.id)), prio, paced);
       setPlan(next);
       setActiveShift(0);
-      // 새 자동편성 → 기존 육성 추천은 무효화(다음 클릭 때 재분석). 사용자 확정 2026-07-21
+      // 새 자동편성 → 기존 육성 추천 무효화 + 임시 적용 세션 종료(새 편성이 기준). 2026-07-21
       setInvestRecs(null);
       setShowInvest(false);
+      endTemp(false);
       persist(ids, next, elite, prio, null);
       // 실제 계산에 쓰인 인원 = 보유 ∩ 현재 표시 대상(미래시 토글 반영) — 미래시 OFF면 미실장 제외
       const usedCount = visibleOps.filter((op) => ids.has(op.id)).length;
@@ -325,6 +330,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   };
   const runInvest = async () => {
     if (investing) return;
+    endTemp(true); // 다시 분석 → 임시 적용 되돌리고 커밋된 로스터 기준으로 재분석
     setInvesting({ done: 0, total: 0 });
     try {
       const recs = await recommendRaises(visibleOps, ownedIds, eliteById, priority, async (p) => {
@@ -340,26 +346,56 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     }
   };
 
-  // 육성 추천을 인프라에 '간접 적용' — 그 오퍼의 정예화를 추천 단계(to)로 올린 것으로 반영하고
-  // 자동편성을 다시 돌린다. 직접 방에 박아 넣는 게 아니라 로스터 상태(정예화)를 바꿔 편성이
-  // 따라오게 하는 방식(사용자 요청 2026-07-21 "간접 적용"). to가 성급 최대면 오버라이드를 지운다.
-  const applyRaise = (opId: string, to: Elite) => {
-    if (optimizing || investing) return;
-    const op = opById.get(opId);
-    const next = new Map(eliteById);
-    if (op && to >= maxElite(op.rarity)) next.delete(opId); else next.set(opId, to);
-    setEliteById(next);
-    void runOptimize(ownedIds, next, priority); // investRecs 무효화 → 모달 닫힘, 편성에 반영
+  // 육성 추천 '임시 적용' — 추천 오퍼(들)를 완성했다 가정한 미리보기 편성. 로스터 정예화를
+  // 영구히 바꾸지 않고(비영구·되돌리기 가능), 추천 목록도 유지한다(사용자 확정 2026-07-21).
+  // 커밋된 eliteById 위에 tempApplied를 덮어 재편성만 한다 — localStorage 저장 안 함.
+  const mergedElite = (temp: Map<string, Elite>): Map<string, Elite> => {
+    const m = new Map(eliteById);
+    for (const [id, e] of temp) { const op = opById.get(id); if (op && e >= maxElite(op.rarity)) m.delete(id); else m.set(id, e); }
+    return m;
   };
-  const applyAllRaises = () => {
+  // 미리보기 재편성 — persist·investRecs 갱신 없이 plan만 바꾼다 (임시 적용 전용)
+  const previewOptimize = async (effElite: Map<string, Elite>) => {
+    setOptimizing(t("자동편성 엔진 계산 중 — 편성 공간 구성…"));
+    try {
+      const paced = (step: OptimizeStep) => { setOptimizing(stepMessage(step)); };
+      const next = await optimize(visibleOps.map((op) => withElite(op, effElite.get(op.id))).filter((op) => ownedIds.has(op.id)), priority, paced);
+      setPlan(next);
+      setActiveShift(0);
+    } finally { setOptimizing(null); }
+  };
+  const applyRaise = async (opId: string, to: Elite) => {
+    if (optimizing || investing) return;
+    const nextTemp = new Map(tempApplied);
+    nextTemp.set(opId, to);
+    if (!tempApplied.size) setTempBasePlan(plan); // 첫 임시 적용 시 되돌릴 편성 스냅샷
+    setTempApplied(nextTemp);
+    await previewOptimize(mergedElite(nextTemp));
+    showToast(t("임시 적용했습니다 — 헤더의 '되돌리기'로 취소할 수 있습니다"));
+  };
+  const applyAllRaises = async () => {
     if (optimizing || investing || !investRecs?.length) return;
-    const next = new Map(eliteById);
-    for (const r of investRecs) {
-      const op = opById.get(r.opId);
-      if (op && r.to >= maxElite(op.rarity)) next.delete(r.opId); else next.set(r.opId, r.to);
-    }
-    setEliteById(next);
-    void runOptimize(ownedIds, next, priority);
+    const nextTemp = new Map(tempApplied);
+    for (const r of investRecs) nextTemp.set(r.opId, r.to);
+    if (!tempApplied.size) setTempBasePlan(plan);
+    setTempApplied(nextTemp);
+    await previewOptimize(mergedElite(nextTemp));
+    showToast(t("추천 {n}명을 임시 적용했습니다 — '되돌리기'로 취소할 수 있습니다", { n: investRecs.length }));
+  };
+  // 임시 적용 되돌리기 — 스냅샷 편성으로 복원하고 세션 종료
+  const revertTemp = () => {
+    if (!tempApplied.size) return;
+    if (tempBasePlan) { setPlan(tempBasePlan); setActiveShift(0); }
+    setTempApplied(new Map());
+    setTempBasePlan(null);
+    showToast(t("임시 적용을 되돌렸습니다"));
+  };
+  // 임시 적용 세션 종료 (전체 자동편성·다시 분석이 호출) — restore=true면 편성도 스냅샷 복원
+  const endTemp = (restore: boolean) => {
+    if (!tempApplied.size) return;
+    if (restore && tempBasePlan) { setPlan(tempBasePlan); setActiveShift(0); }
+    setTempApplied(new Map());
+    setTempBasePlan(null);
   };
 
   // 우선 생산 모드는 설정(라디오)일 뿐 — 실제 편성은 기존처럼 자동편성 버튼으로 실행한다
@@ -606,10 +642,20 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         </div>
       )}
 
+      {tempApplied.size > 0 && !optimizing && !showInvest && (
+        <div className="invest-temp-bar" role="status">
+          <span>★ {t("육성 추천 임시 적용 중 · {n}명", { n: tempApplied.size })}</span>
+          <span className="invest-temp-btns">
+            <button onClick={() => setShowInvest(true)}>{t("추천 열기")}</button>
+            <button className="revert" onClick={revertTemp}>{t("되돌리기")}</button>
+          </span>
+        </div>
+      )}
       {showInvest && investRecs && !investing && (
         <InvestPanel recs={investRecs} opMap={effectiveOpById} onShowOperator={onShowOperator}
           onClose={() => setShowInvest(false)} onReanalyze={() => { void runInvest(); }}
-          onApply={applyRaise} onApplyAll={applyAllRaises} t={t} locale={locale} />
+          onApply={applyRaise} onApplyAll={applyAllRaises} applied={new Set(tempApplied.keys())} onRevert={revertTemp}
+          t={t} locale={locale} />
       )}
 
       {/* 우선 생산 설정 (라디오) — 다음 자동편성부터 적용, 편성 실행은 버튼으로 */}
@@ -755,9 +801,10 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
 // 육성 추천 결과 모달 — recommendRaises가 증명한 "완성하면 이득인 정예화 투자"를 ΔS 순으로.
 // 방 %효율 변화·완성 비용은 실제 편성·게임 데이터 기준(근사 환산 없음). 한 번 분석하면 새
 // 자동편성 전까지 유지되며, 모달 안 '다시 분석'으로 강제 재계산한다.
-function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onApply, onApplyAll, t, locale }: {
+function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onApply, onApplyAll, applied, onRevert, t, locale }: {
   recs: RaiseRec[]; opMap: Map<string, InfraOp>; onShowOperator?: (id: string) => void;
-  onClose: () => void; onReanalyze: () => void; onApply: (opId: string, to: Elite) => void; onApplyAll: () => void; t: T; locale: Locale;
+  onClose: () => void; onReanalyze: () => void; onApply: (opId: string, to: Elite) => void; onApplyAll: () => void;
+  applied: Set<string>; onRevert: () => void; t: T; locale: Locale;
 }) {
   const roomLabel = (key: string) => cellByKey.get(key)?.label ?? key;
   const shiftTag = (s: number) => (s === 0 ? t("A조") : t("B조"));
@@ -776,12 +823,13 @@ function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onAppl
           <h3>{recs.length ? t("완성하면 인프라가 좋아지는 오퍼 {n}명", { n: recs.length }) : t("추천할 오퍼가 없습니다")}</h3>
         </div>
         <div className="invest-head-btns">
-          {recs.length > 0 && <button className="invest-applyall" onClick={onApplyAll} title={t("추천 오퍼 전부를 완성으로 반영하고 자동편성을 다시 돌립니다")}>{t("전체 적용")}</button>}
-          <button className="invest-reanalyze" onClick={onReanalyze} title={t("현재 보유·정예화 상태로 다시 계산합니다")}>↻ {t("다시 분석")}</button>
+          {applied.size > 0 && <button className="invest-revert" onClick={onRevert} title={t("임시 적용을 모두 취소하고 이전 편성으로 되돌립니다")}>↩ {t("되돌리기 ({n})", { n: applied.size })}</button>}
+          {recs.length > 0 && <button className="invest-applyall" onClick={onApplyAll} title={t("추천 오퍼 전부를 임시 적용합니다 — 되돌리기 가능")}>{t("전체 적용")}</button>}
+          <button className="invest-reanalyze" onClick={onReanalyze} title={t("현재 보유·정예화 상태로 다시 계산합니다 (임시 적용은 취소됩니다)")}>↻ {t("다시 분석")}</button>
           <button className="invest-close" onClick={onClose} aria-label={t("닫기")}>✕</button>
         </div>
       </div>
-      <p className="invest-note">{t("아직 완성 안 한(정예화를 낮춰 둔) 오퍼를 완성했다고 가정해 자동편성을 다시 돌리고, 방 %효율이 실제로 얼마나 오르는지로 이득을 증명합니다. 숫자는 그 방 %효율 변화의 합계(%p)이며, A조(주력)를 우선해 정렬합니다. '적용'은 그 오퍼를 완성 처리하고 편성에 반영합니다.")}</p>
+      <p className="invest-note">{t("아직 완성 안 한(정예화를 낮춰 둔) 오퍼를 완성했다고 가정해 자동편성을 다시 돌리고, 방 %효율이 실제로 얼마나 오르는지로 이득을 증명합니다. 숫자는 그 방 %효율 변화의 합계(%p)이며, A조(주력)를 우선해 정렬합니다. '적용'은 완성했다 가정해 편성에 임시 반영합니다 — 되돌리기 가능하고, 전체 자동편성·다시 분석 전까지 추천은 그대로 유지됩니다.")}</p>
       <p className="invest-note invest-note-sub">{t("교대는 12시간 고정이 아닙니다 — A조를 풀파워로 돌리다 A조 오퍼 중 하나라도 피로도가 소진되면 B조로 전환하고, A조가 전부 회복되면 즉시 A조로 되돌립니다. 그래서 A조 이득을 우선합니다.")}</p>
       {!recs.length && <p className="invest-empty">{t("완성해도 최적 편성이 바뀌는 오퍼가 없습니다. 보유 오퍼 설정에서 아직 안 키운 오퍼의 정예화를 낮춰 두면, 완성 시 이득이 있는지 여기서 확인할 수 있습니다.")}</p>}
       <ul className="invest-list">
@@ -806,7 +854,9 @@ function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onAppl
                     {Math.round(r.aGain) >= 1 && <span className="inv-gain a">{t("A조 +{n}%p", { n: Math.round(r.aGain) })}</span>}
                     {Math.round(r.bGain) >= 1 && <span className="inv-gain b">{t("B조 +{n}%p", { n: Math.round(r.bGain) })}</span>}
                   </span>
-                  <button className="invest-apply" onClick={() => onApply(r.opId, r.to)} title={t("이 오퍼를 완성 처리하고 자동편성에 반영합니다")}>{t("적용")}</button>
+                  {applied.has(r.opId)
+                    ? <span className="invest-applied" title={t("임시 적용됨 — 헤더 '되돌리기'로 취소")}>✓ {t("적용됨")}</span>
+                    : <button className="invest-apply" onClick={() => onApply(r.opId, r.to)} title={t("이 오퍼를 완성했다 가정해 편성에 임시 적용합니다 (되돌리기 가능, 추천은 유지)")}>{t("임시 적용")}</button>}
                 </div>
                 {r.placement && <div className="invest-place">{t("{room} · {shift}에 배치됩니다", { room: roomLabel(r.placement.key), shift: shiftTag(r.placement.shift) })}</div>}
                 {deltas.length > 0 && (

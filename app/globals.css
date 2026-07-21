@@ -1995,6 +1995,27 @@ legend {
   color: var(--ink); border-radius: 6px; padding: 3px 12px; cursor: pointer; font-size: 12px; font-weight: 700; flex: none;
 }
 .invest-apply:hover { background: color-mix(in srgb, var(--lime) 30%, transparent); }
+.invest-applied { font-size: 12px; font-weight: 700; color: #2f7d3a; white-space: nowrap; flex: none; }
+:root[data-theme="dark"] .invest-applied, .dark .invest-applied { color: #7fd18c; }
+.invest-revert {
+  border: 1px solid #c08a2e; background: color-mix(in srgb, #c08a2e 14%, transparent);
+  color: var(--ink); border-radius: 6px; padding: 5px 10px; cursor: pointer; font-size: 12px; font-weight: 700; white-space: nowrap;
+}
+.invest-revert:hover { background: color-mix(in srgb, #c08a2e 26%, transparent); }
+/* 편성 화면 상단 임시 적용 배너 (모달 닫아도 미리보기 상태를 알리고 되돌리기 제공) */
+.invest-temp-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  margin: 12px 0 0; padding: 9px 14px; border-radius: 8px; font-size: 13px; font-weight: 600;
+  color: var(--ink); background: color-mix(in srgb, var(--lime) 14%, var(--bg-panel));
+  border: 1px solid color-mix(in srgb, var(--lime) 45%, var(--line));
+}
+.invest-temp-btns { display: inline-flex; gap: 7px; }
+.invest-temp-bar button {
+  border: 1px solid var(--line); background: var(--bg-soft); color: var(--ink);
+  border-radius: 6px; padding: 4px 11px; cursor: pointer; font-size: 12px; font-weight: 700;
+}
+.invest-temp-bar button.revert { border-color: #c08a2e; background: color-mix(in srgb, #c08a2e 16%, transparent); }
+.invest-temp-bar button:hover { border-color: var(--lime); }
 .invest-applyall {
   border: 1px solid var(--lime); background: color-mix(in srgb, var(--lime) 16%, transparent);
   color: var(--ink); border-radius: 6px; padding: 5px 12px; cursor: pointer; font-size: 12px; font-weight: 700; white-space: nowrap;
