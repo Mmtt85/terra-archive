@@ -658,14 +658,6 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
             </span>
           </button>
           <button onClick={fillGaps} title={t("현재 편성(수동 수정 포함)은 그대로 두고, 남은 빈 자리만 효율 순으로 자동 편성합니다")}><span className="btn-icon" aria-hidden>⊕</span>{t("빈 자리만 자동편성")}</button>
-          <button className="invest-btn" onClick={openInvest} disabled={!!investing}
-            title={t("보유했지만 아직 완성하지 않은(정예화를 낮춰 둔) 오퍼 중, 완성하면 인프라 효율이 오르는 오퍼를 실제 자동편성을 다시 돌려 찾아냅니다")}>
-            <span className="btn-icon" aria-hidden>★</span>
-            <span className="btn-swap">
-              <span className={investing ? "btn-swap-hidden" : undefined}>{t("육성 추천")}{investRecs && !investing ? ` (${investRecs.length})` : ""}</span>
-              {investing && <span className="btn-swap-over">{investing.total ? t("분석 {i}/{n}", { i: investing.done, n: investing.total }) : t("분석 중…")}</span>}
-            </span>
-          </button>
           <button onClick={clearAll} title={t("모든 방의 편성을 비웁니다 (보유 오퍼 설정은 유지)")}><span className="btn-icon" aria-hidden>⌫</span>{t("편성 전체 비우기")}</button>
           {/* 이미지·파일·도움말은 '그 외' 드롭다운으로 묶는다 (사용자 요청 2026-07) */}
           <span className="more-group">
@@ -744,19 +736,34 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       )}
 
       <div className="ship">
-        {tempApplied.size > 0 && (
-          <div className="ship-raisebar" role="status">
-            <span className="srb-top">★ {t("임시 적용 중 · {n}명", { n: tempApplied.size })}</span>
-            <span className="srb-gain">
-              <span className="a">{t("A조 +{n}%p", { n: Math.round(tempTotalA) })}</span>
-              <span className="b">{t("B조 +{n}%p", { n: Math.round(tempTotalB) })}</span>
-            </span>
-            <span className="srb-btns">
-              <button onClick={() => setShowInvest(true)}>{t("추천 열기")}</button>
-              <button className="revert" onClick={revertTemp}>{t("되돌리기")}</button>
-            </span>
-          </div>
-        )}
+        <div className={`ship-raisebar${(!investing && tempApplied.size === 0 && !investRecs) ? " idle" : " boxed"}`} role="group" aria-label={t("육성 추천")}>
+          {investing ? (
+            <span className="srb-top">★ {investing.total ? t("분석 {i}/{n}", { i: investing.done, n: investing.total }) : t("분석 중…")}</span>
+          ) : tempApplied.size > 0 ? (
+            <>
+              <span className="srb-top">★ {t("임시 적용 중 · {n}명", { n: tempApplied.size })}</span>
+              <span className="srb-gain">
+                <span className="a">{t("A조 +{n}%p", { n: Math.round(tempTotalA) })}</span>
+                <span className="b">{t("B조 +{n}%p", { n: Math.round(tempTotalB) })}</span>
+              </span>
+              <span className="srb-btns">
+                <button onClick={() => setShowInvest(true)}>{t("추천 열기")}</button>
+                <button className="revert" onClick={revertTemp}>{t("되돌리기")}</button>
+              </span>
+            </>
+          ) : investRecs ? (
+            <>
+              <span className="srb-top">★ {t("육성 추천")}</span>
+              <span className="srb-btns">
+                <button className="run" onClick={() => setShowInvest(true)}>{t("추천 열기 ({n})", { n: investRecs.length })}</button>
+                <button onClick={() => { void runInvest(); }}>{t("다시 분석")}</button>
+              </span>
+            </>
+          ) : (
+            <button className="srb-run" onClick={openInvest}
+              title={t("보유했지만 아직 완성하지 않은(정예화를 낮춰 둔) 오퍼 중, 완성하면 인프라 효율이 오르는 오퍼를 실제 자동편성을 다시 돌려 찾아냅니다")}>★ {t("육성 추천")}</button>
+          )}
+        </div>
         {LAYOUT.map((cell) => {
           if (cell.room === "DORMITORY") {
             const pinned = teamFor(cell.key, 0);

@@ -304,6 +304,7 @@ const D: Record<string, Pair> = {
   "되돌리기 ({n})": ["Revert ({n})", "元に戻す（{n}）"],
   "되돌리기": ["Revert", "元に戻す"],
   "추천 열기": ["Open list", "リストを開く"],
+  "추천 열기 ({n})": ["Open list ({n})", "リストを開く（{n}）"],
   "임시 적용을 모두 취소하고 이전 편성으로 되돌립니다": ["Cancels all temporary applies and restores the previous plan", "一時適用を全て取消し、以前の編成に戻します"],
   "임시 적용했습니다 — 헤더의 '되돌리기'로 취소할 수 있습니다": ["Temporarily applied — you can undo it with 'Revert' in the header", "一時適用しました — ヘッダーの「元に戻す」で取消できます"],
   "추천 {n}명을 임시 적용했습니다 — '되돌리기'로 취소할 수 있습니다": ["Temporarily applied {n} operators — you can undo with 'Revert'", "おすすめ{n}人を一時適用しました — 「元に戻す」で取消できます"],
