@@ -91,7 +91,17 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   const [tempApplied, setTempApplied] = useState<Map<string, Elite>>(new Map());
   const [tempBasePlan, setTempBasePlan] = useState<Plan | null>(null);
 
-  const effectiveOps = useMemo(() => visibleOps.map((op) => withElite(op, eliteById.get(op.id))), [visibleOps, eliteById]);
+  // 화면 표시용 정예화 = 커밋된 eliteById에 임시 적용(tempApplied)을 덮어쓴 것. 임시 적용 중엔
+  // 플랜이 그 정예화로 재계산되므로, 방 내용·스킬·정예화 배지도 같은 정예화로 그려야 어긋나지
+  // 않는다(E2로 편성됐는데 배지는 E1로 뜨던 버그, 사용자 제보 2026-07-21). 로스터 설정 모달은
+  // 커밋된 eliteById를 그대로 쓴다(실제 보유 상태 편집).
+  const viewElite = useMemo(() => {
+    if (!tempApplied.size) return eliteById;
+    const m = new Map(eliteById);
+    for (const [id, e] of tempApplied) { const op = opById.get(id); if (op && e >= maxElite(op.rarity)) m.delete(id); else m.set(id, e); }
+    return m;
+  }, [eliteById, tempApplied]);
+  const effectiveOps = useMemo(() => visibleOps.map((op) => withElite(op, viewElite.get(op.id))), [visibleOps, viewElite]);
   const effectiveOpById = useMemo(() => new Map(effectiveOps.map((op) => [op.id, op])), [effectiveOps]);
   const roster = useMemo(() => effectiveOps.filter((op) => ownedIds.has(op.id)), [effectiveOps, ownedIds]);
 
@@ -721,8 +731,8 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
               </div>
               <div className="ship-room-crew">
                 {team.length ? team.map((op) => {
-                  // 오퍼의 정예화 단계 (E0/E1/E2) — 편성기 설정값, 미지정이면 그 오퍼 최대 정예화.
-                  const elite = eliteById.get(op.id) ?? maxElite(op.rarity);
+                  // 오퍼의 정예화 단계 (E0/E1/E2) — 임시 적용 반영(viewElite), 미지정이면 그 오퍼 최대 정예화.
+                  const elite = viewElite.get(op.id) ?? maxElite(op.rarity);
                   return (
                     <span key={op.id} className="op-av">
                       <img src={op.image} alt={op.name} width={180} height={180} title={op.name} loading="lazy" />
@@ -789,7 +799,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           onClose={() => setOpenRoom(null)}
           onShowOperator={onShowOperator}
           onUpdateTeam={updateTeam}
-          eliteById={eliteById}
+          eliteById={viewElite}
           onSetElite={setOperatorElite}
         />
       )}
