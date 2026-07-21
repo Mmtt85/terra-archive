@@ -61,6 +61,7 @@ export type InfraSkill = {
   capConv?: CapConv;   // 팀 용량 합을 효율/생산력으로 변환 (버메일·버블·데겐블레허·스와이어·제이)
   amp?: AmpSpec | null; // 증폭형 (와이후·스노우상트): 팀 제공 효율을 배수로 되돌림
   perBase?: number;    // per-faction 스케일과 별개로 항상 더하는 flat 기본치 (뮤엘시스: 회복 +10% + 라인랩/명)
+  perExclSelf?: boolean; // "자신을 제외한 <진영> 1명당" — 본인이 그 진영이면 카운트에서 제외 (뮤엘시스)
   condBonus?: { value: number; faction?: string; ids?: string[]; room?: string } | null;
                        // 조건부 가산: 같은 방 진영(faction)/오퍼(ids)/타방(ids+room) 충족 시 +value (르무엔·비나 등)
   families?: string[]; // 이 스킬이 속한 "~류" 계열 태그 (build-infra.py skillFamilies 카탈로그)
@@ -387,9 +388,11 @@ export function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx):
       const baseCount = groupIds
         ? groupIds.filter((id) => ctx.presentIds?.has(id)).length
         : ctx.factionCounts?.[skill.perFaction] ?? 0;
-      const count = skill.perScope === "room"
+      // "자신을 제외한 <진영> 1명당"(뮤엘시스): 본인이 그 진영이면 카운트에서 자신을 뺀다
+      const selfEx = skill.perExclSelf && isMember(op) ? 1 : 0;
+      const count = Math.max(0, (skill.perScope === "room"
         ? team.filter(isMember).length
-        : Math.max(0, baseCount - seated);
+        : Math.max(0, baseCount - seated)) - selfEx);
       const gained = Math.min(skill.value * count, skill.perCap ?? Infinity);
       if (skill.kind in AURA_WEIGHT) {
         // 인원 카운트형(mfg)은 중첩 — 플레임테일+비비아나가 같은 방에 함께 실리는 실측 반영.

@@ -9,6 +9,26 @@ load = lambda p: json.load(open(p, encoding="utf-8"))
 building = load(f"{S}/kr_building_data.json")
 kr = load(f"{S}/kr_character_table.json"); chars = kr.get("chars", kr)
 operators = load(f"{REPO}/app/data/operators.json")
+
+# ── 인프라 진영 카운트 교정 (사용자 확인 2026-07-21 + 인게임 크로스체크) ──────────────
+# 게임 RIIC의 진영 그룹(<$cc.g.rh> 등)은 character_table의 groupId와 다르게, **스토리상
+# 그 진영을 탈퇴한 이격 오퍼를 제외**한다. 뮤엘시스 "라인 랩 1명당" 등 진영 카운트 스킬이
+# 대상. 근거: groupId=rhine 12명 중 인게임 라인 랩 명단(10명)에서 빠진 건 이격 2명뿐
+# (사일런스 더 패러디그매틱·아스트젠 더 라이트체이서 — 둘 다 로도스로 이적). buffId가
+# 리치텍스트 그룹 참조라 명단 파일이 따로 없어 여기 명시. **인프라 전용** — operators.json의
+# 표시/프로필 진영은 groupId 그대로 두고(로어) infra.json 카운트에서만 뺀다. 새 이탈 이격이
+# 나오면 여기 (id, 뺄 진영) 추가.
+INFRA_FACTION_REMOVE = {
+    "char_1031_slent2": {"라인 랩"},   # 사일런스 더 패러디그매틱
+    "char_1047_halo2":  {"라인 랩"},   # 아스트젠 더 라이트체이서
+}
+for _o in operators:
+    _rm = INFRA_FACTION_REMOVE.get(_o["id"])
+    if _rm and _o.get("factions"):
+        _o["factions"] = [f for f in _o["factions"] if f not in _rm]
+        if _o.get("faction") in _rm:
+            _o["faction"] = _o["factions"][0] if _o["factions"] else _o.get("faction")
+
 ops_by_id = {o["id"]: o for o in operators}
 
 # ── 지식 베이스(L2): app/data/rules.json — 파서 추정 상수·토큰 카탈로그·파싱 교정 ──
@@ -644,6 +664,8 @@ def parse_skill(entry, oname, oid=None):
             "_roboUse": (float(robo_use.group(1)), float(robo_use.group(2))) if robo_use else None,
             "tokenGen": gen, "tokenUse": use, "convert": convert,
             "reqFaction": req_faction, "perFaction": per_faction, "perScope": per_scope, "perCap": per_cap,
+            # "자신을 제외한 <진영> 1명당" (뮤엘시스): 본인이 그 진영이면 카운트에서 자신을 뺀다
+            **({"perExclSelf": True} if per_faction and "자신을 제외" in text else {}),
             # 생산품별 부호 오라는 해당 스킬(플레임테일)에만 싣는다 — null 키로 전 스킬을 불리지 않음
             **({"perProduct": per_product} if per_product else {}),
             "facilityBased": facility_based,
