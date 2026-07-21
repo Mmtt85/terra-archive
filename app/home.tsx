@@ -9,7 +9,7 @@ import broadcastsData from "./data/broadcasts.json";
 import storyEventsData from "./data/stories.json";
 import InfraPlanner from "./planner";
 import RecruitHelper from "./recruit";
-import FarmGuide from "./farm";
+import FarmGuide, { UpgradeSim } from "./farm";
 import { normSearch } from "./search";
 import StoryGuide, { type StorySummaries, type OpIndex } from "./story";
 import RogueGuide, { TOPICS as ROGUE_TOPICS, slugOf as rogueSlugOf } from "./rogue";
@@ -105,12 +105,12 @@ const JOB_ORDER = ["PIONEER", "WARRIOR", "TANK", "SNIPER", "CASTER", "MEDIC", "S
 
 const SORT_KEYS = ["기본", "이름", "성급", "발매순", "소속", "출신지", "종족", "직군", "세부 직군"];
 
-export type Tab = "portal" | "archive" | "planner" | "recruit" | "farm" | "story" | "rogue" | "about";
+export type Tab = "portal" | "archive" | "planner" | "recruit" | "farm" | "upgrade" | "story" | "rogue" | "about";
 // 탭 ↔ URL 세그먼트 (portal이 로케일 루트, 오퍼 백과사전은 /operators — 사용자 확정 2026-07-17:
 // 루트 진입 시 오퍼 이미지 강제 로딩을 없애려 포탈 첫화면 도입). seo.ts의 TAB_SEG·라우트 폴더명과 일치.
 // URL 세그먼트 "stories"(← 정적 자산 디렉터리 public/story/ 와의 경로 충돌 회피). 내부 탭명은 story.
-const TAB_SEG: Record<Tab, string> = { portal: "", archive: "operators", planner: "infra", recruit: "recruit", farm: "farm", story: "stories", rogue: "rogue", about: "about" };
-const SEG_TAB: Record<string, Tab> = { "": "portal", operators: "archive", infra: "planner", recruit: "recruit", farm: "farm", stories: "story", rogue: "rogue", about: "about" };
+const TAB_SEG: Record<Tab, string> = { portal: "", archive: "operators", planner: "infra", recruit: "recruit", farm: "farm", upgrade: "upgrade", story: "stories", rogue: "rogue", about: "about" };
+const SEG_TAB: Record<string, Tab> = { "": "portal", operators: "archive", infra: "planner", recruit: "recruit", farm: "farm", upgrade: "upgrade", stories: "story", rogue: "rogue", about: "about" };
 const LOCALE_BASE: Record<Locale, string> = { ko: "", en: "/en", ja: "/ja" };
 
 // 현재 pathname → 탭 (로케일 프리픽스 제거 후 세그먼트 매핑)
@@ -122,7 +122,7 @@ function tabFromPath(pathname: string): Tab {
 }
 // 구 해시(#infra 등) → 탭 (하위호환 리다이렉트용). op 해시나 일반 해시는 null.
 function tabFromLegacyHash(hash: string): Tab | null {
-  return hash === "#infra" ? "planner" : hash === "#recruit" ? "recruit" : hash === "#farm" ? "farm" : hash.startsWith("#story") ? "story" : null;
+  return hash === "#infra" ? "planner" : hash === "#recruit" ? "recruit" : hash === "#farm" ? "farm" : hash === "#upgrade" ? "upgrade" : hash.startsWith("#story") ? "story" : null;
 }
 
 // ── 공식 방송 ─────────────────────────────────────────────
@@ -577,7 +577,8 @@ function Portal({ onOpenTab }: { onOpenTab: (tab: Tab) => void }) {
     { tab: "planner", icon: "⌂", name: t("인프라 자동편성기"), desc: t("보유 오퍼만 입력하면 기반시설 편성을 자동으로 계산") },
     { tab: "archive", icon: "▤", name: t("오퍼 백과사전"), desc: t("소속·직군·태그·시너지로 필터·검색하는 오퍼레이터 도감") },
     { tab: "recruit", icon: "◎", name: t("공채 도우미"), desc: t("공개모집 태그 조합으로 확정·고성급 오퍼를 탐색") },
-    { tab: "farm", icon: "◈", name: t("파밍·육성 시뮬"), desc: t("재료 파밍 효율표와 오퍼 육성 비용 시뮬레이션") },
+    { tab: "farm", icon: "◈", name: t("파밍 도우미"), desc: t("정예화 재료의 최적 파밍 스테이지와 이성 효율표") },
+    { tab: "upgrade", icon: "▦", name: t("오퍼 육성 시뮬"), desc: t("오퍼 육성에 필요한 용문폐·재료 총량을 단계별로 계산") },
     { tab: "story", icon: "✦", name: t("스토리"), desc: t("이벤트 스토리를 AI 요약과 전문(풀 스크립트)으로") },
     { tab: "rogue", icon: "❖", name: t("통합전략 가이드"), desc: t("층별 노드·적 도감·유물·엔딩 조건을 난이도별로 정리") },
     { tab: "about", icon: "ⓘ", name: t("소개"), desc: t("각 기능이 무엇이고 언제 쓰는지 안내") },
@@ -857,7 +858,9 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
         : tab === "recruit"
           ? t("공채 도우미 - 명일방주 공개모집 계산기 | 테라 아카이브")
           : tab === "farm"
-            ? t("재료 파밍 & 오퍼 육성 시뮬레이션 - 명일방주 파밍·육성 계산기 | 테라 아카이브")
+            ? t("파밍 도우미 - 명일방주 재료 파밍 효율표 | 테라 아카이브")
+            : tab === "upgrade"
+            ? t("오퍼 육성 시뮬 - 명일방주 육성 비용 계산기 | 테라 아카이브")
             : tab === "story"
               ? t("스토리 - 명일방주 스토리 요약·전문 | 테라 아카이브")
               : tab === "rogue"
@@ -895,7 +898,8 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
     archive: t("오퍼 백과사전"),
     planner: t("인프라 자동편성기"),
     recruit: t("공채 도우미"),
-    farm: t("파밍·육성 시뮬"),
+    farm: t("파밍 도우미"),
+    upgrade: t("오퍼 육성 시뮬"),
     story: t("스토리"),
     rogue: t("통합전략 가이드"),
     about: t("소개"),
@@ -1061,7 +1065,8 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
             <button className={`tab-planner${tab === "planner" ? " selected" : ""}`} onClick={() => switchTab("planner")}><span className="tab-icon" aria-hidden>⌂</span>{t("인프라 자동편성기")}</button>
             <button className={`tab-archive${tab === "archive" ? " selected" : ""}`} onClick={() => switchTab("archive")}><span className="tab-icon" aria-hidden>▤</span>{t("오퍼 백과사전")}</button>
             <button className={`tab-recruit${tab === "recruit" ? " selected" : ""}`} onClick={() => switchTab("recruit")}><span className="tab-icon" aria-hidden>◎</span>{t("공채 도우미")}</button>
-            <button className={`tab-farm${tab === "farm" ? " selected" : ""}`} onClick={() => switchTab("farm")}><span className="tab-icon" aria-hidden>◈</span>{t("파밍·육성 시뮬")}</button>
+            <button className={`tab-farm${tab === "farm" ? " selected" : ""}`} onClick={() => switchTab("farm")}><span className="tab-icon" aria-hidden>◈</span>{t("파밍 도우미")}</button>
+            <button className={`tab-upgrade${tab === "upgrade" ? " selected" : ""}`} onClick={() => switchTab("upgrade")}><span className="tab-icon" aria-hidden>▦</span>{t("오퍼 육성 시뮬")}</button>
             <button className={`tab-story${tab === "story" ? " selected" : ""}`} onClick={() => switchTab("story")}><span className="tab-icon" aria-hidden>✦</span>{t("스토리")}</button>
             {/* 통합전략 가이드 — 마우스오버 시 테마별 부메뉴가 펼쳐진다 (플라이아웃) */}
             <div className="tab-rogue-wrap">
@@ -1171,7 +1176,8 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
 
       {tab === "planner" && <InfraPlanner onShowOperator={showOperatorById} extra={extra} includeFuture={includeFuture} />}
       {tab === "recruit" && <RecruitHelper onShowOperator={showOperatorById} extra={extra} />}
-      {tab === "farm" && <FarmGuide operators={operators} includeFuture={includeFuture} onShowOperator={showOperatorById} />}
+      {tab === "farm" && <FarmGuide includeFuture={includeFuture} />}
+      {tab === "upgrade" && <UpgradeSim operators={operators} includeFuture={includeFuture} onShowOperator={showOperatorById} />}
       {tab === "story" && <StoryGuide summaries={summaries} onShowOperator={showOperatorById} includeFuture={includeFuture} opIndex={storyOpIndex} />}
       {tab === "rogue" && <RogueGuide includeFuture={includeFuture} />}
       {tab === "about" && <About onOpenTab={switchTab} />}

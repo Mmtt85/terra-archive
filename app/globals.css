@@ -4572,8 +4572,12 @@ footer p {
 }
 .farm-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  /* 한 줄에 3개 고정 (사용자 요청 2026-07-22). 태블릿 2열·모바일 1열은 아래 미디어쿼리. */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
+}
+@media (max-width: 1100px) {
+  .farm-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 .farm-card {
   border: 1px solid var(--line);

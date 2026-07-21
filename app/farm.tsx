@@ -116,7 +116,8 @@ function locText(locale: Locale, text: LocText): string {
   return (locale === "ko" ? text.ko : text[locale]) ?? text.ko;
 }
 
-export default function FarmGuide({ operators, includeFuture, onShowOperator }: { operators: Operator[]; includeFuture: boolean; onShowOperator: (id: string) => void }) {
+// ── 파밍 도우미 (재료 파밍 효율표) — 탭 '파밍 도우미' (2026-07-22 분리) ──
+export default function FarmGuide({ includeFuture }: { includeFuture: boolean }) {
   const { locale, t } = useI18n();
   const [tiers, setTiers] = useState<number[]>([]);
   const [query, setQuery] = useState("");
@@ -152,23 +153,15 @@ export default function FarmGuide({ operators, includeFuture, onShowOperator }: 
   }, [tiers, query, permOnly, includeFuture]);
 
   return (
-    <section className="farm" aria-label={t("재료 파밍 & 오퍼 육성 시뮬레이션")}>
+    <section className="farm" aria-label={t("재료 파밍 효율표")}>
       <div className="farm-head">
-        <span className="section-no">FARM &amp; UPGRADE</span>
-        <h2>{t("재료 파밍 & 오퍼 육성 시뮬레이션")}</h2>
-        <p>{t("오퍼레이터 육성에 필요한 용문폐·재료 총량을 단계별로 계산하고, 각 재료를 어느 스테이지에서 파밍하는 게 가장 효율적인지 실측 드랍 통계로 확인합니다.")}</p>
+        <span className="section-no">FARMING EFFICIENCY</span>
+        <h2>{t("재료 파밍 효율표")}</h2>
+        <p>{t("정예화 재료 {count}종의 실측 드랍 통계입니다. 재료마다 어느 스테이지에서 나오는지와 개당 기대 이성(이성 소모 ÷ 드랍률)을 표시하고, 이성 대비 획득 확률이 가장 높은 스테이지에 최고 효율 배지를 붙입니다.", { count: data.items.length })}</p>
+        <p className="farm-source">{t("출처: 펭귄 물류 실측 통계(표본 {min}회 이상) + 클뜯 게임 데이터 · {date} 기준 정식 개방된 스테이지만 수록 · 기대 이성은 낮을수록 좋습니다.", { min: data.minTimes, date: data.updated })}</p>
         {includeFuture && (
           <p className="farm-source">{t("미실장(중국 서버 선행) 오퍼레이터·재료의 텍스트는 비공식 AI 번역으로, 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>
         )}
-      </div>
-
-      <CostCalculator operators={operators} includeFuture={includeFuture} onShowOperator={onShowOperator} onShowItem={setShownItem} />
-
-      <div className="farm-subhead">
-        <span className="section-no">FARMING EFFICIENCY</span>
-        <h3>{t("재료 파밍 효율표")}</h3>
-        <p>{t("정예화 재료 {count}종의 실측 드랍 통계입니다. 재료마다 어느 스테이지에서 나오는지와 개당 기대 이성(이성 소모 ÷ 드랍률)을 표시하고, 이성 대비 획득 확률이 가장 높은 스테이지에 최고 효율 배지를 붙입니다.", { count: data.items.length })}</p>
-        <p className="farm-source">{t("출처: 펭귄 물류 실측 통계(표본 {min}회 이상) + 클뜯 게임 데이터 · {date} 기준 정식 개방된 스테이지만 수록 · 기대 이성은 낮을수록 좋습니다.", { min: data.minTimes, date: data.updated })}</p>
       </div>
 
       <div className="farm-tools">
@@ -272,6 +265,25 @@ export default function FarmGuide({ operators, includeFuture, onShowOperator }: 
           onShowItem={setShownItem}
           onSearchItem={(name) => { setQuery(name); setTiers([]); setShownItem(null); }}
         />
+      )}
+    </section>
+  );
+}
+
+// ── 오퍼 육성 시뮬 (육성 비용 계산기) — 탭 '오퍼 육성 시뮬' (2026-07-22 분리) ──
+// 재료 아이콘 클릭 시 상세 모달을 여는 shownItem 상태만 여기서 쥐고, 계산기 본체는 CostCalculator.
+// 효율표가 없는 탭이라 ItemModal의 '효율표에서 검색' 버튼(onSearchItem)은 넘기지 않는다.
+export function UpgradeSim({ operators, includeFuture, onShowOperator }: { operators: Operator[]; includeFuture: boolean; onShowOperator: (id: string) => void }) {
+  const { t } = useI18n();
+  const [shownItem, setShownItem] = useState<string | null>(null);
+  return (
+    <section className="farm" aria-label={t("육성 비용 계산기")}>
+      {includeFuture && (
+        <p className="farm-source cost-future-note">{t("미실장(중국 서버 선행) 오퍼레이터·재료의 텍스트는 비공식 AI 번역으로, 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>
+      )}
+      <CostCalculator operators={operators} includeFuture={includeFuture} onShowOperator={onShowOperator} onShowItem={setShownItem} />
+      {shownItem && (
+        <ItemModal id={shownItem} onClose={() => setShownItem(null)} onShowItem={setShownItem} />
       )}
     </section>
   );
@@ -493,7 +505,7 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
     <div className="cost-calc">
       <div className="cost-calc-head">
         <span className="section-no">COST CALCULATOR</span>
-        <h3>{t("육성 비용 계산기")}</h3>
+        <h2>{t("육성 비용 계산기")}</h2>
         <p>{t("오퍼레이터를 추가하면 레벨·정예화(게임 순서대로 E0 만렙 → 정예화1 → E1 만렙 → 정예화2 → E2 만렙), 스킬 레벨 2~7, 스킬별 특화 1~3, 모듈별 1~3단계가 개별 행으로 나옵니다. 각 그룹에서 목표 단계를 클릭하면 앞 단계가 자동 포함돼 합산됩니다. 레벨업 단계는 올릴 목표 레벨을 직접 입력할 수 있고, 그 레벨을 만렙보다 낮게 두면 다음 정예화는 잠깁니다(왼쪽 레일을 아래로 끌면 만렙까지 한 번에 채워집니다). 경험치는 고급작전기록(2000 EXP) 환산 개수로 표시합니다. 재료 아이콘을 클릭하면 상세 정보가 열립니다.")}</p>
       </div>
       <div className="cost-tools">
@@ -681,7 +693,7 @@ function ItemModal({ id, onClose, onShowItem, onSearchItem }: {
   id: string;
   onClose: () => void;
   onShowItem: (id: string) => void;
-  onSearchItem: (name: string) => void;
+  onSearchItem?: (name: string) => void; // 효율표 탭에서만 — 육성 시뮬 탭엔 효율표가 없어 생략
 }) {
   const { locale, t } = useI18n();
   const meta = costs.items[id];
@@ -742,7 +754,7 @@ function ItemModal({ id, onClose, onShowItem, onSearchItem }: {
                 </li>
               ))}
             </ul>
-            <button type="button" className="cost-clear" onClick={() => onSearchItem(locText(locale, farmItem.name))}>{t("효율표에서 {name} 검색", { name })}</button>
+            {onSearchItem && <button type="button" className="cost-clear" onClick={() => onSearchItem(locText(locale, farmItem.name))}>{t("효율표에서 {name} 검색", { name })}</button>}
           </div>
         )}
         {!farmItem && CHIP_STAGES[id] && (

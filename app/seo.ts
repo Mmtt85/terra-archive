@@ -9,12 +9,12 @@ import type { Metadata } from "next";
 export const SITE_URL = "https://terra-archive.net";
 
 type SeoLocale = "ko" | "en" | "ja";
-export type SeoTab = "portal" | "archive" | "planner" | "recruit" | "farm" | "story" | "rogue" | "about";
+export type SeoTab = "portal" | "archive" | "planner" | "recruit" | "farm" | "upgrade" | "story" | "rogue" | "about";
 
 // 탭 → URL 세그먼트 (portal이 로케일 루트, 오퍼 백과사전은 /operators로 분리 — 사용자 확정
 // 2026-07-17: 루트 진입 시 오퍼 이미지 강제 로딩을 없애기 위해 포탈 첫화면 도입). 라우트 폴더명과 반드시 일치.
 export const TAB_SEG: Record<SeoTab, string> = {
-  portal: "", archive: "operators", planner: "infra", recruit: "recruit", farm: "farm", story: "stories", rogue: "rogue", about: "about",
+  portal: "", archive: "operators", planner: "infra", recruit: "recruit", farm: "farm", upgrade: "upgrade", story: "stories", rogue: "rogue", about: "about",
 };
 
 // 로케일 베이스 경로
@@ -54,9 +54,14 @@ const TAB_META: Record<Exclude<SeoTab, "portal">, Record<SeoLocale, { title: str
     ja: { title: "公開求人ヘルパー - アークナイツ公開求人計算機 | テラアーカイブ", description: "アークナイツ公開求人タグ計算機 — タグの組み合わせから確定・高レアオペレーターを見つけます。" },
   },
   farm: {
-    ko: { title: "재료 파밍 & 오퍼 육성 시뮬레이션 - 명일방주 파밍·육성 계산기 | 테라 아카이브", description: "명일방주 재료 파밍 효율표 + 오퍼레이터 육성 비용 시뮬레이터 — 재료별 최적 파밍 스테이지와 이성 효율, 정예화·스킬·특화·모듈 육성에 필요한 용문폐·재료 총량을 계산합니다." },
-    en: { title: "Material Farming & Operator Upgrade Simulator - Arknights Farming/Upgrade Calculator | Terra Archive", description: "Arknights material farming efficiency table + operator upgrade cost simulator — best farming stage and sanity efficiency per material, plus the LMD and materials needed for Elite, skills, masteries, and modules." },
-    ja: { title: "素材周回＆オペレーター育成シミュレーター - アークナイツ周回・育成計算機 | テラアーカイブ", description: "アークナイツ素材周回効率表＋オペレーター育成コストシミュレーター — 素材ごとの最適ステージと理性効率、昇進・スキル・特化・モジュール育成に必要な龍門幣と素材の合計を計算します。" },
+    ko: { title: "파밍 도우미 - 명일방주 재료 파밍 효율표 | 테라 아카이브", description: "명일방주 재료 파밍 효율표 — 정예화 재료별 최적 파밍 스테이지와 개당 기대 이성을 펭귄 물류 실측 드랍 통계로 확인합니다." },
+    en: { title: "Farming Helper - Arknights Material Farming Efficiency | Terra Archive", description: "Arknights material farming efficiency table — the best farming stage and sanity-per-item for every Elite material, from Penguin Logistics real drop statistics." },
+    ja: { title: "周回ヘルパー - アークナイツ素材周回効率表 | テラアーカイブ", description: "アークナイツ素材周回効率表 — 昇進素材ごとの最適ステージと1個あたりの期待理性を、ペンギン急便の実測ドロップ統計で確認します。" },
+  },
+  upgrade: {
+    ko: { title: "오퍼 육성 시뮬 - 명일방주 육성 비용 계산기 | 테라 아카이브", description: "명일방주 오퍼레이터 육성 비용 계산기 — 레벨·정예화·스킬·특화·모듈 목표 단계까지 필요한 용문폐·경험치·재료 총량을 합산합니다." },
+    en: { title: "Operator Upgrade Sim - Arknights Upgrade Cost Calculator | Terra Archive", description: "Arknights operator upgrade cost calculator — total LMD, EXP, and materials needed to reach your target level, Elite, skills, masteries, and modules." },
+    ja: { title: "オペレーター育成シミュ - アークナイツ育成コスト計算機 | テラアーカイブ", description: "アークナイツ育成コスト計算機 — レベル・昇進・スキル・特化・モジュールの目標段階までに必要な龍門幣・経験値・素材の合計を集計します。" },
   },
   story: {
     ko: { title: "AI 스토리 요약 - 명일방주 스토리 요약 | 테라 아카이브", description: "명일방주 이벤트 스토리 AI 요약 아카이브 — 사이드 스토리를 컷씬과 함께 10분 분량으로 요약합니다." },

@@ -218,4 +218,31 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/stories"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/stories"/>
   </url>
+  <url>
+    <loc>https://terra-archive.net/upgrade</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/upgrade"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/upgrade"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/upgrade"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/upgrade"/>
+  </url>
+  <url>
+    <loc>https://terra-archive.net/en/upgrade</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/upgrade"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/upgrade"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/upgrade"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/upgrade"/>
+  </url>
+  <url>
+    <loc>https://terra-archive.net/ja/upgrade</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/upgrade"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/upgrade"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/upgrade"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/upgrade"/>
+  </url>
 </urlset>
