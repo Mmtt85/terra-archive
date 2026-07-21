@@ -807,8 +807,10 @@ const D: Record<string, Pair> = {
   "테라 연대기": ["Terra Chronicle", "テラ年代記"],
   "테라력 미정": ["Terra year TBD", "テラ暦 未定"],
   "미정": ["TBD", "未定"],
-  "이전 연도": ["Previous year", "前の年"],
-  "다음 연도": ["Next year", "次の年"],
+  "이전 구간": ["Previous section", "前の区間"],
+  "다음 구간": ["Next section", "次の区間"],
+  "서장 이전": ["Before the prologue", "序章以前"],
+  "시계열 미정 — 콜라보·통합 전략": ["Timeline unplaced — collabs & Integrated Strategies", "時系列未定 — コラボ・統合戦略"],
   "연대기 슬라이더": ["Chronicle slider", "年代スライダー"],
   "테라력 {y}년": ["Terra {y}", "テラ暦{y}年"],
   "테마 미분류": ["Unsorted", "未分類"],
@@ -823,9 +825,9 @@ const D: Record<string, Pair> = {
   "클릭하면 주소가 이 테마의 공유 링크로 바뀝니다": ["Click to set the URL to a shareable link for this theme", "クリックするとURLがこのテーマの共有リンクになります"],
   "종류별": ["By type", "種類別"],
   "클릭해서 열기": ["click to open", "クリックで開く"],
-  "**테라 연대기 (베타)** — 모든 이벤트·메인스토리·통합 전략을 한자리에 모으는 사전 작업입니다. 현재 정렬은 출시순(임시)이며, 인게임 연대기 순서·테라력 연도는 스토리 스크립트를 반영하며 채웁니다. 테마 묶음은 확실한 것부터 배정 중입니다.": [
-    "**Terra Chronicle (beta)** — groundwork for gathering every event, main story, and Integrated Strategies in one place. The current order is by release date (temporary); the in-universe order and Terra-calendar years will be filled in from the story scripts. Theme groupings are being assigned confident-first.",
-    "**テラ年代記（ベータ）** — すべてのイベント・メインストーリー・統合戦略を一箇所に集める準備作業です。現在の並びは配信順（暫定）で、作中の年代順・テラ暦の年号はストーリースクリプトを反映して埋めます。テーマ分類は確実なものから割り当て中です。",
+  "**테라 연대기** — 인게임 스토리라인(테마 시계열)을 하나로 병합한 상대 순서입니다. 메인 에피소드가 구간 경계가 되고, 사이 항목들은 그 시점 언저리의 이야기입니다. 정확한 테라력 연도는 확정된 것만 표기하며, 스토리라인에 없는 콜라보·통합 전략은 맨 뒤에 모았습니다.": [
+    "**Terra Chronicle** — the in-game storylines merged into one relative timeline. Main story episodes mark the section boundaries, and items between them take place around that point. Exact Terra-calendar years are shown only where confirmed; collabs and Integrated Strategies, absent from the storylines, are gathered at the end.",
+    "**テラ年代記** — ゲーム内ストーリーライン（テーマ時系列）を一つに統合した相対順序です。メインエピソードが区間の境界となり、間の項目はその時点前後の物語です。テラ暦の年号は確定分のみ表記し、ストーリーラインにないコラボ・統合戦略は最後にまとめています。",
   ],
   "AI 스토리 요약 - 명일방주 스토리 요약 | 테라 아카이브": ["AI Story Digest - Arknights Story Summaries | Terra Archive", "AIストーリー要約 - アークナイツストーリー要約 | テラアーカイブ"],
   "출시된 스토리 {count}개의 아카이브입니다. AI가 스토리 스크립트 전문을 정독하고 컷씬과 함께 10분 분량으로 요약합니다. 현재 {done}개 수록 — 계속 추가됩니다.": [

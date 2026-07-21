@@ -799,6 +799,9 @@ const CHRON_BY_KEY = new Map(CHRON_ITEMS.map((it) => [it.key, it]));
 // 항목 id → 소속(멤버) 스토리라인 — 게스트(시계열 참조) 카드의 '원래 위치로 이동'용
 const HOME_LINE_BY_ID = new Map<string, Storyline>();
 for (const line of STORYLINES) for (const i of line.items) if (!i.guest) HOME_LINE_BY_ID.set(i.id, line);
+// 전역 상대 시계열 — 13개 라인의 부분 순서를 위상 정렬로 병합한 것 (build-storylines.py).
+// 정확한 연도는 없어도 '어디와 어디 사이'는 보이는 순서 (사용자 요청 2026-07-21).
+const CHRON_ORDER: string[] = (storylinesData as { order?: string[] }).order ?? [];
 const arcNameOf = (locale: Locale, id: string) => {
   const a = chronology.arcs.find((x) => x.id === id);
   return a ? locText(locale, a.name) : id;
@@ -817,21 +820,32 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
     setTip({ item: it, x: r.left + r.width / 2, y: r.top });
   };
 
-  // 연대순(테라력) — 연도 오름차순, 미정은 맨 뒤. 세로 목록(panel)은 미정 그룹까지 전부 담는다.
+  // 인게임 스토리라인을 병합한 전역 상대 시계열(CHRON_ORDER) — 메인 에피소드가 구간
+  // 경계가 되고, 사이 항목들은 그 에피소드 시점 언저리라는 뜻이다 (사용자 요청 2026-07-21).
+  // 스토리라인에 없는 항목(콜라보·통합 전략)은 맨 뒤 '시계열 미정' 그룹으로.
   const groups = useMemo(() => {
-    const map = new Map<string, { key: string; label: string; year: number | null; sort: number; items: ChronItem[] }>();
-    for (const it of CHRON_ITEMS) {
-      let k: string, label: string, year: number | null, sort: number;
-      if (it.terraYear == null) { k = "__none"; label = t("테라력 미정"); year = null; sort = Infinity; }
-      else { k = `y${it.terraYear}`; label = t("테라력 {y}년", { y: it.terraYear }); year = it.terraYear; sort = it.terraYear; }
-      if (!map.has(k)) map.set(k, { key: k, label, year, sort, items: [] });
-      map.get(k)!.items.push(it);
+    const out: { key: string; label: string; rail: string; items: ChronItem[] }[] = [];
+    let cur: { key: string; label: string; rail: string; items: ChronItem[] } | null = null;
+    for (const id of CHRON_ORDER) {
+      const it = CHRON_BY_KEY.get(id);
+      if (!it) continue;
+      if (it.kind === "main" && it.epNo != null) {
+        // 구간 헤더에 확정 테라력 병기 — 아는 연도는 계속 보여준다 (사용자 요청 2026-07-21)
+        const yr = it.terraYear != null ? ` · ${t("테라력 {y}년", { y: it.terraYear })}` : "";
+        cur = { key: `ep${it.epNo}`, label: `${locText(locale, epLabel(it.epNo))} · ${locText(locale, it.name)}${yr}`, rail: String(it.epNo), items: [it] };
+        out.push(cur);
+      } else {
+        if (!cur) { cur = { key: "pre", label: t("서장 이전"), rail: "·", items: [] }; out.push(cur); }
+        cur.items.push(it);
+      }
     }
-    return Array.from(map.values()).sort((a, b) => a.sort - b.sort);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const placed = new Set(CHRON_ORDER);
+    const rest = CHRON_ITEMS.filter((it) => !placed.has(it.key));
+    if (rest.length) out.push({ key: "__rest", label: t("시계열 미정 — 콜라보·통합 전략"), rail: "?", items: rest });
+    return out;
   }, [locale, t]);
-  // 레일·슬라이더(연도 타임라인)는 연도 확정분만 — 미정은 타임라인에서 제외한다.
-  const yearGroups = useMemo(() => groups.filter((g) => g.year != null), [groups]);
+  // 레일·슬라이더는 전 구간을 다룬다 (예전 연도 그룹 → 에피소드 구간)
+  const yearGroups = groups;
 
   // 세로 목록(panel)이 스크롤 주체 — 연도 레일과 슬라이더는 목록 스크롤에 동기된다.
   const sliderRef = useRef<HTMLDivElement>(null);
@@ -917,7 +931,7 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
 
   return (
     <div className="chron">
-      <p className="chron-note">{rich(t("**테라 연대기 (베타)** — 모든 이벤트·메인스토리·통합 전략을 한자리에 모으는 사전 작업입니다. 현재 정렬은 출시순(임시)이며, 인게임 연대기 순서·테라력 연도는 스토리 스크립트를 반영하며 채웁니다. 테마 묶음은 확실한 것부터 배정 중입니다."))}</p>
+      <p className="chron-note">{rich(t("**테라 연대기** — 인게임 스토리라인(테마 시계열)을 하나로 병합한 상대 순서입니다. 메인 에피소드가 구간 경계가 되고, 사이 항목들은 그 시점 언저리의 이야기입니다. 정확한 테라력 연도는 확정된 것만 표기하며, 스토리라인에 없는 콜라보·통합 전략은 맨 뒤에 모았습니다."))}</p>
 
       {/* 한 줄 연혁 바 — 연도 확정분만 100% 폭에 균등 배치(미정 제외). 슬라이더로 아래 목록을 이동. */}
       <div className="chron-railwrap">
@@ -927,7 +941,7 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
             <div key={g.key} className="chron-railseg">
               <button type="button" className={`chron-railseg-yr${activeKey === g.key ? " on" : ""}`}
                 onClick={() => goYear(g.key)} title={g.label} aria-label={g.label}>
-                {g.year}
+                {g.rail}
               </button>
               <div className="chron-railseg-ticks">
                 {g.items.map((it) => (
@@ -947,7 +961,7 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
 
         {/* 연대기 슬라이더 — 드래그하면 위 레일과 아래 목록이 함께 이동, 양끝 화살표는 연도 단위 이동 */}
         <div className="chron-slider">
-          <button type="button" className="chron-slider-arrow" onClick={() => stepYear(-1)} aria-label={t("이전 연도")}>‹</button>
+          <button type="button" className="chron-slider-arrow" onClick={() => stepYear(-1)} aria-label={t("이전 구간")}>‹</button>
           <div className="chron-slider-track" ref={sliderRef} onPointerDown={onSliderDown} onPointerMove={onSliderMove} onPointerUp={onSliderUp} onPointerCancel={onSliderUp}>
             <div className="chron-slider-fill" style={{ width: `${pos * 100}%` }} />
             <div className="chron-slider-thumb" style={{ left: `${pos * 100}%` }}
@@ -955,7 +969,7 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
               aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pos * 100)}
               onKeyDown={onThumbKey}><span aria-hidden>⇆</span></div>
           </div>
-          <button type="button" className="chron-slider-arrow" onClick={() => stepYear(1)} aria-label={t("다음 연도")}>›</button>
+          <button type="button" className="chron-slider-arrow" onClick={() => stepYear(1)} aria-label={t("다음 구간")}>›</button>
         </div>
 
         <div className="chron-legend">
@@ -972,7 +986,7 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
             {tip.item.arc && <em className="chron-tip-arc" style={{ color: arcColor(tip.item.arc) }}>{arcName(tip.item.arc)}</em>}
           </span>
           <b>{tip.item.ep ? `${locText(locale, tip.item.ep)} · ` : ""}{locText(locale, tip.item.name)}</b>
-          <span className="chron-tip-meta">{tip.item.start ?? yearLabel(tip.item)}{tip.item.eventId ? ` · ${t("클릭해서 열기")}` : ""}</span>
+          <span className="chron-tip-meta">{yearLabel(tip.item)}{tip.item.eventId ? ` · ${t("클릭해서 열기")}` : ""}</span>
         </div>
       )}
 
@@ -992,7 +1006,6 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
                     <span className="chron-item-name">{locText(locale, it.name)}</span>
                     <span className="chron-item-bot">
                       {it.terraYear != null && <span className="chron-item-year">{t("테라력 {y}년", { y: it.terraYear })}</span>}
-                      <span className="chron-item-meta">{it.start ?? "—"}</span>
                     </span>
                   </button>
                 </li>
@@ -1257,7 +1270,8 @@ function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEve
 export default function StoryGuide({ summaries, onShowOperator, includeFuture, opIndex }: { summaries: StorySummaries; onShowOperator?: (id: string) => void; includeFuture?: boolean; opIndex?: OpIndex }) {
   const { t } = useI18n();
   const [view, setView] = useState<"digest" | "chronicle">("digest");
-  const [group, setGroup] = useState<"theme" | "kind">("kind");
+  // 기본 뷰는 테마별 (사용자 확정 2026-07-21)
+  const [group, setGroup] = useState<"theme" | "kind">("theme");
   const [selected, setSelected] = useState<StoryEvent | null>(null);
 
   const pushedDetail = useRef(false);
@@ -1271,8 +1285,9 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
       setSelected(detail);
       if (detail) return;                              // 상세 진입 시 뷰/그룹 상태는 유지
       if (h === "#chronicle") setView("chronicle");
-      else if (h === "#theme" || h.startsWith("#theme-")) { setView("digest"); setGroup("theme"); }
-      else if (h === "#kind" || h === "#story" || h === "") { setView("digest"); setGroup("kind"); }
+      else if (h === "#kind") { setView("digest"); setGroup("kind"); }
+      // 기본(해시 없음·#story)은 테마별 (사용자 확정 2026-07-21)
+      else if (h === "#theme" || h.startsWith("#theme-") || h === "#story" || h === "") { setView("digest"); setGroup("theme"); }
     };
     apply();
     document.documentElement.removeAttribute("data-story-detail");  // 목록 숨김 플래그 해제(상세 반영 후)
@@ -1329,8 +1344,8 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
       </div>
 
       <div className="story-viewtabs" role="tablist">
-        <button type="button" role="tab" aria-selected={view === "digest" && group === "kind"} className={view === "digest" && group === "kind" ? "on" : ""} onClick={() => goGroup("kind")}>{t("종류별")}</button>
         <button type="button" role="tab" aria-selected={view === "digest" && group === "theme"} className={view === "digest" && group === "theme" ? "on" : ""} onClick={() => goGroup("theme")}>{t("테마별")}</button>
+        <button type="button" role="tab" aria-selected={view === "digest" && group === "kind"} className={view === "digest" && group === "kind" ? "on" : ""} onClick={() => goGroup("kind")}>{t("종류별")}</button>
         <button type="button" role="tab" aria-selected={view === "chronicle"} className={view === "chronicle" ? "on" : ""} onClick={() => goView("chronicle")}>{t("테라 연대기")}</button>
       </div>
 
