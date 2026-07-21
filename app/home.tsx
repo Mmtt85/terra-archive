@@ -1045,23 +1045,8 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
           <span className="brand-mark"><img src="/avatars/char_1012_skadi2.webp" alt="" width={180} height={180} /></span>
           <span>{t("테라 아카이브")}<small>{t("명일방주(Arknights) 팬사이트")}</small></span>
         </a>
-        <BroadcastBadges />
-        {/* 제안 버튼 — 모바일 전용(공식 방송 오른쪽). 데스크탑에선 숨기고 우하단 FAB을 쓴다.
-            좁은 화면에서 FAB이 본문을 가려 거슬린다는 피드백(2026-07-22). CSS order로 공식방송 옆에 배치. */}
-        {feedbackReady && (
-          <button type="button" className="feedback-header-btn" onClick={() => setFeedbackOpen(true)} aria-label={t("제안 보내기")}>
-            <span aria-hidden>💬</span> {t("제안")}
-          </button>
-        )}
-        {/* 미래시 토글 = 우측 그룹의 첫 요소(margin-left:auto). 햄버거 버튼 바로 왼쪽 (사용자 배치 지시 2026-07)
-            라벨은 데스크탑 "미래시 데이터 포함", 모바일은 "미래시"로 축약 (사용자 요청 2026-07-22). */}
-        <label className="future-toggle" title={t("아직 정식 출시되지 않은(중국 서버 선행) 오퍼레이터·재료도 목록·계산기에 표시합니다. 미실장 텍스트는 비공식 AI 번역입니다.")}>
-          <input type="checkbox" checked={includeFuture} onChange={(event) => toggleFuture(event.target.checked)} />
-          <span className="ft-full">{t("미래시 데이터 포함")}</span>
-          <span className="ft-short">{t("미래시")}</span>
-        </label>
-        {/* 우측 그룹: .nav-group의 margin-left:auto로 여기부터 헤더 오른쪽 끝으로 밀어낸다.
-            순서 = 햄버거 · 언어변경 · 소개(ⓘ) (사용자 배치 지시 2026-07) */}
+        {/* 햄버거(메뉴) = 1줄 오른쪽 끝 — 데스크탑·모바일 공통 (사용자 확정 2026-07-22).
+            모바일은 order로, 데스크탑은 margin-left:auto로 배치되므로 JSX 위치는 자유. */}
         <div className="nav-group">
           <button type="button" className="nav-toggle" aria-expanded={navOpen} aria-label={t("메뉴 열기")} onClick={() => setNavOpen((open) => !open)}>
             <span aria-hidden>☰</span>{TAB_LABEL[tab]}
@@ -1091,10 +1076,30 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
             <button className={`tab-about${tab === "about" ? " selected" : ""}`} onClick={() => switchTab("about")}><span className="tab-icon" aria-hidden>ⓘ</span>{t("소개")}</button>
           </nav>
         </div>
-        <ThemeToggle />
-        <LanguageSwitcher />
-        {/* 헤더 접기 핸들 — 모바일 전용, 헤더 맨 아래 중앙. 접으면 로고·공식방송·햄버거만 남는다
-            (사용자 요청 2026-07-22). 데스크탑에선 CSS로 숨긴다. */}
+        {/* 2줄(확장부) — 데스크탑: grid(1fr|이벤트|1fr)로 이벤트를 정 가운데 고정, 왼쪽에 공식방송,
+            오른쪽에 미래시·다크모드·언어 (사용자 확정 2026-07-22). 모바일: display:contents로 래퍼를
+            풀어 기존 order 배치(2줄 이벤트·공식방송 / 3줄 제안·미래시·다크·언어)가 그대로 동작한다. */}
+        <div className="header-sub">
+          <BroadcastBadges />
+          {/* 제안 버튼 — 모바일 전용(3줄). 데스크탑에선 숨기고 우하단 FAB을 쓴다. */}
+          {feedbackReady && (
+            <button type="button" className="feedback-header-btn" onClick={() => setFeedbackOpen(true)} aria-label={t("제안 보내기")}>
+              <span aria-hidden>💬</span> {t("제안")}
+            </button>
+          )}
+          <div className="header-sub-right">
+            {/* 라벨은 데스크탑 "미래시 데이터 포함", 모바일은 "미래시"로 축약 (사용자 요청 2026-07-22) */}
+            <label className="future-toggle" title={t("아직 정식 출시되지 않은(중국 서버 선행) 오퍼레이터·재료도 목록·계산기에 표시합니다. 미실장 텍스트는 비공식 AI 번역입니다.")}>
+              <input type="checkbox" checked={includeFuture} onChange={(event) => toggleFuture(event.target.checked)} />
+              <span className="ft-full">{t("미래시 데이터 포함")}</span>
+              <span className="ft-short">{t("미래시")}</span>
+            </label>
+            <ThemeToggle />
+            <LanguageSwitcher />
+          </div>
+        </div>
+        {/* 헤더 접기 핸들 — 헤더 맨 아래 중앙, 데스크탑·모바일 공통 (접힘이 기본).
+            접으면 로고·햄버거 한 줄만 남는다 (사용자 확정 2026-07-22). */}
         <button type="button" className="header-collapse-toggle"
           aria-expanded={!headerCollapsed} aria-label={headerCollapsed ? t("헤더 펼치기") : t("헤더 접기")}
           onClick={() => setHeaderCollapsed((collapsed) => !collapsed)}>

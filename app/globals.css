@@ -726,29 +726,10 @@ button {
   .site-header .about-icon { order: 11; }
   /* 우하단 FAB은 모바일에서 감추고, 헤더의 제안 버튼으로 대체 (패널은 그대로 fixed로 뜬다) */
   .feedback-fab { display: none; }
-  /* 헤더 접기 핸들 — 헤더 맨 아래 중앙, 아래로 살짝 걸치는 탭 (사용자 확정 2026-07-22) */
-  .header-collapse-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: absolute;
-    left: 50%;
-    bottom: -14px;
-    transform: translateX(-50%);
-    width: 52px;
-    height: 16px;
-    padding: 0;
-    border: 1px solid var(--line);
-    border-top: 0;
-    border-radius: 0 0 8px 8px;
-    background: var(--header-bg);
-    -webkit-backdrop-filter: blur(12px);
-    backdrop-filter: blur(12px);
-    color: var(--muted);
-    font-size: 13px;
-    line-height: 1;
-    cursor: pointer;
-    z-index: 1;
+  /* 모바일: 데스크탑용 2줄 래퍼를 풀어 자식들이 헤더 flex에 직접 참여 — 위 order 배치가 그대로 동작 */
+  .header-sub,
+  .header-sub-right {
+    display: contents;
   }
   /* 접힘: 로고·햄버거 한 줄만 남긴다. 공식방송은 2줄 오른쪽 고정이므로 접으면 같이
      사라진다 (사용자 확정 2026-07-22 — 접힘 상태에 공식방송을 남기지 않는다) */
@@ -3719,16 +3700,79 @@ footer p {
   align-items: flex-end;
   gap: 10px;
 }
-/* 모바일 전용 헤더 요소 — 데스크탑(761px+)에서만 감춰 PC 헤더를 그대로 둔다.
-   ⚠ 전역 display:none으로 두면 소스 순서상 앞쪽에 있는 모바일 노출 규칙(650·2150줄대)을
-   같은 특이도로 덮어버려 제안 버튼·접기 핸들·"미래시" 라벨이 모바일에서도 사라진다
-   (2026-07-22 실사용 리포트) — 반드시 min-width 미디어쿼리로 가둔다. */
+/* 헤더 접기 핸들 — 헤더 맨 아래 중앙, 아래로 살짝 걸치는 탭. 데스크탑·모바일 공통
+   (사용자 확정 2026-07-22 — PC도 2줄 헤더를 접었다 펼친다, 접힘이 기본) */
+.header-collapse-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  left: 50%;
+  bottom: -14px;
+  transform: translateX(-50%);
+  width: 52px;
+  height: 16px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-top: 0;
+  border-radius: 0 0 8px 8px;
+  background: var(--header-bg);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 1;
+}
+
+/* ── 데스크탑(761px+) 헤더 2줄 구조 (사용자 확정 2026-07-22) ──
+   1줄 = 로고(왼쪽) · 햄버거(오른쪽 끝)
+   2줄 = 공식방송 | 진행중 이벤트(정 가운데 고정) | 미래시·다크모드·언어
+   .header-sub가 flex-basis:100%로 둘째 줄이 되고, 내부는 grid(1fr|max-content|1fr)라
+   이벤트가 좌우 폭과 무관하게 화면 정중앙에 온다. 접으면 .header-sub가 통째로 사라진다.
+   ⚠ 모바일 노출 규칙(650·2150줄대)과 같은 특이도이므로 반드시 min-width로 가둘 것
+   (전역으로 두면 소스 뒤쪽이라 모바일 규칙을 덮는다 — 2026-07-22 실사용 리포트). */
 @media (min-width: 761px) {
   .feedback-header-btn,
-  .header-collapse-toggle,
   .ft-short {
     display: none;
   }
+  .site-header {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 78px;
+    align-content: center;
+    row-gap: 10px;
+    padding-top: 12px;
+    padding-bottom: 14px;
+  }
+  .site-header .nav-group { margin-left: auto; }
+  .site-header .header-sub {
+    flex-basis: 100%;
+    display: grid;
+    grid-template-columns: 1fr max-content 1fr;
+    align-items: center;
+    column-gap: 14px;
+  }
+  .header-sub .bcast-trigger {
+    grid-column: 1;
+    justify-self: end;
+    margin-left: 0;
+  }
+  .header-sub .event-group { grid-column: 2; }
+  .header-sub .header-sub-right {
+    grid-column: 3;
+    justify-self: start;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .header-sub .future-toggle {
+    margin-left: 0;   /* base의 우측 밀어내기(auto)는 한 줄 헤더용 — grid 셀 안에선 해제 */
+    margin-right: 0;
+  }
+  .site-header.collapsed .header-sub { display: none; }
 }
 .feedback-fab {
   border: 1px solid var(--border-strong);
