@@ -34,9 +34,10 @@ MAX_STAGES = 8      # 재료당 표시할 스테이지 수 (기대 이성 오름
 load = lambda p: json.load(open(p, encoding="utf-8"))
 
 def fetch(url):
-    # CI 러너의 일시 429/5xx 플레이크 대비 재시도 (fetchutil)
+    # CI 러너의 일시 429/5xx 플레이크 대비 재시도 (fetchutil). 펭귄 matrix는 응답이 크고
+    # 느려 read timeout이 잦다 (CI 실측 60s×3 전부 초과, 2026-07-21) — 180초로 상향.
     from fetchutil import urlread
-    return json.loads(urlread(url, timeout=60, ua="terra-archive-farm/1.0").decode("utf-8"))
+    return json.loads(urlread(url, timeout=180, ua="terra-archive-farm/1.0").decode("utf-8"))
 
 def items_of(prefix):
     table = load(f"{S}/{prefix}_item_table.json")

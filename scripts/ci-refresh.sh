@@ -39,7 +39,11 @@ run "verify-plan"      node scripts/verify-plan.mjs
 
 # 3) 공채 / 파밍 / 육성비용 / 스토리 목록
 run "build-recruit"    python3 scripts/build-recruit.py "$G"
-run "build-farm"       python3 scripts/build-farm.py "$G"
+# 펭귄 통계는 외부 서비스라 다운/순단이 잦다 — 실패해도 파이프라인을 죽이지 않고 기존
+# farm.json(마지막 성공본)을 유지한다. farm.json은 스크립트 맨 끝에 원자적으로 쓰므로
+# 중간 실패로 파일이 깨지지 않는다 (2026-07-21, 펭귄 read timeout으로 전체 실패한 회귀).
+run "build-farm"       python3 scripts/build-farm.py "$G" \
+  || echo "[build-farm] 펭귄 통계 fetch 실패 — 기존 farm.json 유지, 다음 실행 때 재시도" | tee -a "$WARN" >&2
 run "build-costs"      python3 scripts/build-costs.py "$G"
 run "build-story"      python3 scripts/build-story.py
 
