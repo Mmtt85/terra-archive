@@ -240,8 +240,8 @@ export default function AdminPage() {
   };
 
   // 상태 필터는 대응완료/대응미완료 둘뿐 (사용자 요청 2026-07-19). 미완료 안에서는
-  // 신규가 위, 대응중이 아래 — 같은 그룹은 최신순 (payload.handling 대응중 표시는 유지)
-  const statusRank = (row: FeedbackRow) => (row.reviewed_at ? 2 : handlingAt(row.payload) ? 1 : 0);
+  // 대응중이 맨 위, 신규가 그 아래 (사용자 요청 2026-07-21) — 같은 그룹은 최신순
+  const statusRank = (row: FeedbackRow) => (row.reviewed_at ? 2 : handlingAt(row.payload) ? 0 : 1);
   const matchStatus = (row: FeedbackRow) =>
     statusFilter === "reviewed" ? Boolean(row.reviewed_at) : !row.reviewed_at;
   const shown = rows
