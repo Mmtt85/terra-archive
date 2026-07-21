@@ -2410,12 +2410,43 @@ footer p {
   margin-top: 22px;
   grid-template-columns: repeat(3, minmax(0, 1fr)) repeat(2, minmax(0, 0.9fr));
   grid-template-areas:
-    ". . . control meeting"
+    "raisebar raisebar raisebar control meeting"
     "trading0 trading1 mfg0 dorm0 workshop"
     "mfg1 mfg2 mfg3 dorm1 hire"
     "power0 power1 power2 dorm2 training"
     ". . . dorm3 .";
 }
+/* 육성 추천 임시 적용 표시 — 제어센터 왼쪽 빈 3칸(row1)에 넣어 레이아웃을 밀지 않는다
+   (사용자 요청 2026-07-21). 임시 적용 중일 때만 렌더. */
+.ship-raisebar {
+  grid-area: raisebar;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--lime) 10%, var(--bg-panel));
+  border: 1px solid color-mix(in srgb, var(--lime) 40%, var(--line));
+  font-size: 11px;
+}
+.ship-raisebar .srb-top { font-weight: 700; font-size: 11.5px; color: var(--ink); }
+.ship-raisebar .srb-gain { font-size: 11px; font-weight: 700; }
+.ship-raisebar .srb-gain .a { color: #2f7d3a; }
+.ship-raisebar .srb-gain .b { color: var(--muted); margin-left: 6px; }
+:root[data-theme="dark"] .ship-raisebar .srb-gain .a, .dark .ship-raisebar .srb-gain .a { color: #7fd18c; }
+.ship-raisebar .srb-btns { display: flex; gap: 5px; margin-top: 2px; }
+.ship-raisebar .srb-btns button {
+  border: 1px solid var(--line); background: var(--bg-soft); color: var(--ink);
+  border-radius: 5px; padding: 3px 8px; cursor: pointer; font-size: 11px; font-weight: 700;
+}
+.ship-raisebar .srb-btns button.revert { border-color: #c08a2e; background: color-mix(in srgb, #c08a2e 16%, transparent); }
+.ship-raisebar .srb-btns button:hover { border-color: var(--lime); }
+.raise-delta { font-style: normal; font-weight: 700; }
+.raise-delta.up { color: #2f7d3a; }
+.raise-delta.down { color: #b3502e; }
+:root[data-theme="dark"] .raise-delta.up, .dark .raise-delta.up { color: #7fd18c; }
+:root[data-theme="dark"] .raise-delta.down, .dark .raise-delta.down { color: #e0956f; }
 .pos-trading-0 {
   grid-area: trading0;
 }
@@ -2650,7 +2681,7 @@ footer p {
 @media (max-width: 1100px) {
   .ship {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    grid-template-areas: "control control meeting" "trading0 trading1 workshop" "mfg0 mfg1 hire" "mfg2 mfg3 training" "power0 power1 power2" "dorm0 dorm1 dorm2" "dorm3 . .";
+    grid-template-areas: "raisebar raisebar raisebar" "control control meeting" "trading0 trading1 workshop" "mfg0 mfg1 hire" "mfg2 mfg3 training" "power0 power1 power2" "dorm0 dorm1 dorm2" "dorm3 . .";
   }
   .planner-summary {
     grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -90,6 +90,8 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   // 가능하고 추천 목록은 유지된다. 전체 자동편성·다시 분석을 누르기 전까지 (사용자 확정 2026-07-21).
   const [tempApplied, setTempApplied] = useState<Map<string, Elite>>(new Map());
   const [tempBasePlan, setTempBasePlan] = useState<Plan | null>(null);
+  // 아직 적용 안 한 '선택' 오퍼 — 개별 클릭은 선택만 하고, '선택 임시 적용'으로 한 번에 재편성
+  const [selectedRaise, setSelectedRaise] = useState<Set<string>>(new Set());
 
   // 화면 표시용 정예화 = 커밋된 eliteById에 임시 적용(tempApplied)을 덮어쓴 것. 임시 적용 중엔
   // 플랜이 그 정예화로 재계산되므로, 방 내용·스킬·정예화 배지도 같은 정예화로 그려야 어긋나지
@@ -374,26 +376,35 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       setActiveShift(0);
     } finally { setOptimizing(null); }
   };
-  const applyRaise = async (opId: string, to: Elite) => {
-    if (optimizing || investing) return;
+  // 개별 추천 카드는 '선택'만 한다(즉시 재편성 X) — 모아서 '선택 임시 적용'으로 한 번에 반영
+  const toggleSelectRaise = (opId: string) => {
+    setSelectedRaise((prev) => { const next = new Set(prev); if (next.has(opId)) next.delete(opId); else next.add(opId); return next; });
+  };
+  // 정예화 오버레이 묶음(adds)을 기존 임시 적용에 더해 한 번에 미리보기 재편성
+  const applyTempSet = async (adds: Map<string, Elite>, label: string) => {
+    if (optimizing || investing || !adds.size) return;
     const nextTemp = new Map(tempApplied);
-    nextTemp.set(opId, to);
+    for (const [id, to] of adds) nextTemp.set(id, to);
     if (!tempApplied.size) setTempBasePlan(plan); // 첫 임시 적용 시 되돌릴 편성 스냅샷
     setTempApplied(nextTemp);
+    setSelectedRaise(new Set());
     await previewOptimize(mergedElite(nextTemp));
-    showToast(t("임시 적용했습니다 — 헤더의 '되돌리기'로 취소할 수 있습니다"));
+    showToast(label);
+  };
+  const applySelected = async () => {
+    if (!investRecs) return;
+    const adds = new Map<string, Elite>();
+    for (const r of investRecs) if (selectedRaise.has(r.opId)) adds.set(r.opId, r.to);
+    await applyTempSet(adds, t("선택 {n}명을 임시 적용했습니다 — '되돌리기'로 취소할 수 있습니다", { n: adds.size }));
   };
   const applyAllRaises = async () => {
-    if (optimizing || investing || !investRecs?.length) return;
-    const nextTemp = new Map(tempApplied);
-    for (const r of investRecs) nextTemp.set(r.opId, r.to);
-    if (!tempApplied.size) setTempBasePlan(plan);
-    setTempApplied(nextTemp);
-    await previewOptimize(mergedElite(nextTemp));
-    showToast(t("추천 {n}명을 임시 적용했습니다 — '되돌리기'로 취소할 수 있습니다", { n: investRecs.length }));
+    if (!investRecs?.length) return;
+    const adds = new Map<string, Elite>(investRecs.map((r) => [r.opId, r.to]));
+    await applyTempSet(adds, t("추천 {n}명을 임시 적용했습니다 — '되돌리기'로 취소할 수 있습니다", { n: adds.size }));
   };
   // 임시 적용 되돌리기 — 스냅샷 편성으로 복원하고 세션 종료
   const revertTemp = () => {
+    setSelectedRaise(new Set());
     if (!tempApplied.size) return;
     if (tempBasePlan) { setPlan(tempBasePlan); setActiveShift(0); }
     setTempApplied(new Map());
@@ -402,6 +413,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   };
   // 임시 적용 세션 종료 (전체 자동편성·다시 분석이 호출) — restore=true면 편성도 스냅샷 복원
   const endTemp = (restore: boolean) => {
+    setSelectedRaise(new Set());
     if (!tempApplied.size) return;
     if (restore && tempBasePlan) { setPlan(tempBasePlan); setActiveShift(0); }
     setTempApplied(new Map());
@@ -587,6 +599,43 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plan, activeShift, allAssigned, presentIds, ambient, eliteById]);
 
+  // 커밋 정예화 기준 op 맵 — 임시 적용 '이전' 편성 점수 계산용(현재 effectiveOpById는 임시 반영본)
+  const committedOpById = useMemo(() => new Map(visibleOps.map((op) => [op.id, withElite(op, eliteById.get(op.id))])), [visibleOps, eliteById]);
+
+  // 임의 plan+조의 방 %효율 — teamScore + 제어센터 오라. before(스냅샷)/after(현재)를 같은 식으로.
+  const scoreRoomIn = (p: Plan, opMap: Map<string, InfraOp>, key: string, shift: number): number => {
+    const room = cellByKey.get(key)?.room;
+    if (!room) return 0;
+    const teamAt = (k: string) => (p.assignments[k]?.[Math.min(shift, (p.assignments[k]?.length ?? 1) - 1)] ?? []).map((id) => opMap.get(id)).filter(Boolean) as InfraOp[];
+    const points = shift === 0 ? p.tokenPoints : {};
+    const counts = p.factionCounts[shift] ?? {};
+    const present = presentIdsFor(p, shift);
+    const amb = aurasOf(teamAt("CONTROL"), ctxFor("CONTROL", points, counts, p.plants, present));
+    return teamScore(teamAt(key), room, ctxFor(key, points, counts, p.plants, present, amb));
+  };
+
+  // 임시 적용 전(tempBasePlan·커밋 정예화) → 후(현재 plan·임시 정예화) 방별 %효율 변화 — 전체 표시용.
+  // 제어센터·훈련실·가공소·숙소는 제외(제어 효과는 버프받는 방에 드러남). Δ<0.5%p는 무시.
+  const tempDiffs = useMemo(() => {
+    if (!tempApplied.size || !tempBasePlan || !plan) return null;
+    const skip = new Set(["DORMITORY", "WORKSHOP", "TRAINING", "CONTROL"]);
+    const rows: { key: string; label: string; shift: number; before: number; after: number }[] = [];
+    for (const cell of LAYOUT) {
+      if (skip.has(cell.room)) continue;
+      for (let shift = 0; shift < SHIFT_COUNT; shift += 1) {
+        const before = scoreRoomIn(tempBasePlan, committedOpById, cell.key, shift);
+        const after = scoreRoomIn(plan, effectiveOpById, cell.key, shift);
+        if (Math.abs(after - before) < 0.5) continue;
+        rows.push({ key: cell.key, label: cell.label, shift, before: Math.round(before), after: Math.round(after) });
+      }
+    }
+    rows.sort((a, b) => Math.abs(b.after - b.before) - Math.abs(a.after - a.before));
+    return rows;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tempApplied, tempBasePlan, plan, committedOpById, effectiveOpById]);
+  const tempTotalA = tempDiffs?.filter((d) => d.shift === 0).reduce((s, d) => s + (d.after - d.before), 0) ?? 0;
+  const tempTotalB = tempDiffs?.filter((d) => d.shift === 1).reduce((s, d) => s + (d.after - d.before), 0) ?? 0;
+
   const openCell = LAYOUT.find((cell) => cell.key === openRoom);
 
   return (
@@ -652,19 +701,11 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         </div>
       )}
 
-      {tempApplied.size > 0 && !optimizing && !showInvest && (
-        <div className="invest-temp-bar" role="status">
-          <span>★ {t("육성 추천 임시 적용 중 · {n}명", { n: tempApplied.size })}</span>
-          <span className="invest-temp-btns">
-            <button onClick={() => setShowInvest(true)}>{t("추천 열기")}</button>
-            <button className="revert" onClick={revertTemp}>{t("되돌리기")}</button>
-          </span>
-        </div>
-      )}
       {showInvest && investRecs && !investing && (
         <InvestPanel recs={investRecs} opMap={effectiveOpById} onShowOperator={onShowOperator}
           onClose={() => setShowInvest(false)} onReanalyze={() => { void runInvest(); }}
-          onApply={applyRaise} onApplyAll={applyAllRaises} applied={new Set(tempApplied.keys())} onRevert={revertTemp}
+          onToggleSelect={toggleSelectRaise} onApplySelected={applySelected} onApplyAll={applyAllRaises}
+          selected={selectedRaise} applied={new Set(tempApplied.keys())} onRevert={revertTemp}
           t={t} locale={locale} />
       )}
 
@@ -703,6 +744,19 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       )}
 
       <div className="ship">
+        {tempApplied.size > 0 && (
+          <div className="ship-raisebar" role="status">
+            <span className="srb-top">★ {t("임시 적용 중 · {n}명", { n: tempApplied.size })}</span>
+            <span className="srb-gain">
+              <span className="a">{t("A조 +{n}%p", { n: Math.round(tempTotalA) })}</span>
+              <span className="b">{t("B조 +{n}%p", { n: Math.round(tempTotalB) })}</span>
+            </span>
+            <span className="srb-btns">
+              <button onClick={() => setShowInvest(true)}>{t("추천 열기")}</button>
+              <button className="revert" onClick={revertTemp}>{t("되돌리기")}</button>
+            </span>
+          </div>
+        )}
         {LAYOUT.map((cell) => {
           if (cell.room === "DORMITORY") {
             const pinned = teamFor(cell.key, 0);
@@ -723,6 +777,9 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           // 제어센터 오라 수신분 — 카드 총점이 "오퍼 스킬 합과 달라 보이는" 이유를 명시
           // (플레임테일 B조: 작전기록 +30 / 순금 -30 등. 사용자 지적 2026-07-19)
           const ambientPart = score - Math.round(teamScore(team, cell.room, ctxFor(cell.key, pointsFor(activeShift), plan?.factionCounts?.[activeShift], plan?.plants, presentIds)));
+          // 임시 적용 중이면 원래(스냅샷·커밋 정예화) 효율 대비 변화를 방 카드에 인플레이스 표시
+          const raiseBefore = tempApplied.size > 0 && tempBasePlan && cell.room !== "CONTROL" && !PARK_KEYS.includes(cell.key)
+            ? Math.round(scoreRoomIn(tempBasePlan, committedOpById, cell.key, activeShift)) : null;
           return (
             <button key={cell.key} type="button" className={`ship-room pos-${cell.key.toLowerCase()}`} onClick={() => setOpenRoom(cell.key)} style={{ "--room-accent": ROOM_ACCENT[cell.room] } as React.CSSProperties}>
               <div className="ship-room-head">
@@ -747,6 +804,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
                   : ambientPart !== 0 ? t("제어센터 오라 수신 {n} 포함 — 방을 눌러 상세 내역을 확인하세요", { n: `${ambientPart > 0 ? "+" : ""}${ambientPart}` }) : undefined}>
                   +{score}{cell.room === "CONTROL" ? "" : "%"} {cell.room === "CONTROL" ? t("오라 가중 점수") : t(UNIT[cell.room])}
                   {ambientPart !== 0 && cell.room !== "CONTROL" && <em className="ambient-note"> ({t("오라")} {ambientPart > 0 ? "+" : ""}{ambientPart})</em>}
+                  {raiseBefore != null && raiseBefore !== score && <em className={`raise-delta ${score >= raiseBefore ? "up" : "down"}`}> · {t("원래 {b}%", { b: raiseBefore })} ({score >= raiseBefore ? "+" : ""}{score - raiseBefore})</em>}
                 </small>
               )}
               {plan && PARK_KEYS.includes(cell.key) && team.length > 0 && <small>{t("세트 요원 고정 · 효율 무관")}</small>}
@@ -811,10 +869,10 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
 // 육성 추천 결과 모달 — recommendRaises가 증명한 "완성하면 이득인 정예화 투자"를 ΔS 순으로.
 // 방 %효율 변화·완성 비용은 실제 편성·게임 데이터 기준(근사 환산 없음). 한 번 분석하면 새
 // 자동편성 전까지 유지되며, 모달 안 '다시 분석'으로 강제 재계산한다.
-function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onApply, onApplyAll, applied, onRevert, t, locale }: {
+function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onToggleSelect, onApplySelected, onApplyAll, selected, applied, onRevert, t, locale }: {
   recs: RaiseRec[]; opMap: Map<string, InfraOp>; onShowOperator?: (id: string) => void;
-  onClose: () => void; onReanalyze: () => void; onApply: (opId: string, to: Elite) => void; onApplyAll: () => void;
-  applied: Set<string>; onRevert: () => void; t: T; locale: Locale;
+  onClose: () => void; onReanalyze: () => void; onToggleSelect: (opId: string) => void; onApplySelected: () => void; onApplyAll: () => void;
+  selected: Set<string>; applied: Set<string>; onRevert: () => void; t: T; locale: Locale;
 }) {
   const roomLabel = (key: string) => cellByKey.get(key)?.label ?? key;
   const shiftTag = (s: number) => (s === 0 ? t("A조") : t("B조"));
@@ -834,6 +892,7 @@ function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onAppl
         </div>
         <div className="invest-head-btns">
           {applied.size > 0 && <button className="invest-revert" onClick={onRevert} title={t("임시 적용을 모두 취소하고 이전 편성으로 되돌립니다")}>↩ {t("되돌리기 ({n})", { n: applied.size })}</button>}
+          {recs.length > 0 && <button className="invest-applysel" onClick={onApplySelected} disabled={selected.size === 0} title={t("선택한 오퍼만 한 번에 임시 적용합니다 (되돌리기 가능)")}>{t("선택 임시 적용 ({n})", { n: selected.size })}</button>}
           {recs.length > 0 && <button className="invest-applyall" onClick={onApplyAll} title={t("추천 오퍼 전부를 임시 적용합니다 — 되돌리기 가능")}>{t("전체 임시 적용")}</button>}
           <button className="invest-reanalyze" onClick={onReanalyze} title={t("현재 보유·정예화 상태로 다시 계산합니다 (임시 적용은 취소됩니다)")}>↻ {t("다시 분석")}</button>
           <button className="invest-close" onClick={onClose} aria-label={t("닫기")}>✕</button>
@@ -866,7 +925,7 @@ function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onAppl
                   </span>
                   {applied.has(r.opId)
                     ? <span className="invest-applied" title={t("임시 적용됨 — 헤더 '되돌리기'로 취소")}>✓ {t("적용됨")}</span>
-                    : <button className="invest-apply" onClick={() => onApply(r.opId, r.to)} title={t("이 오퍼를 완성했다 가정해 편성에 임시 적용합니다 (되돌리기 가능, 추천은 유지)")}>{t("임시 적용")}</button>}
+                    : <button className={`invest-apply${selected.has(r.opId) ? " on" : ""}`} onClick={() => onToggleSelect(r.opId)} title={t("적용할 오퍼로 선택합니다 — 헤더 '선택 임시 적용'으로 한 번에 반영")}>{selected.has(r.opId) ? `✓ ${t("선택됨")}` : t("선택")}</button>}
                 </div>
                 {r.placement && <div className="invest-place">{t("{room} · {shift}에 배치됩니다", { room: roomLabel(r.placement.key), shift: shiftTag(r.placement.shift) })}</div>}
                 {deltas.length > 0 && (
