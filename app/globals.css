@@ -1946,9 +1946,10 @@ legend {
   background: var(--bg-panel);
   padding: 16px 18px 18px;
 }
-.invest-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-.invest-head h3 { margin: 2px 0 0; font-size: 18px; }
-.invest-head-btns { display: flex; align-items: center; gap: 8px; flex: none; }
+.invest-head { display: flex; flex-direction: column; gap: 9px; }
+.invest-head-title { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.invest-head h3 { margin: 2px 0 0; font-size: 18px; white-space: nowrap; }
+.invest-head-btns { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .invest-reanalyze {
   border: 1px solid var(--line); background: var(--bg-soft); color: var(--ink);
   border-radius: 6px; padding: 5px 10px; cursor: pointer; font-size: 12px; font-weight: 600; white-space: nowrap;
