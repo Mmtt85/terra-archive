@@ -2418,7 +2418,7 @@ footer p {
   margin-top: 22px;
   grid-template-columns: repeat(3, minmax(0, 1fr)) repeat(2, minmax(0, 0.9fr));
   grid-template-areas:
-    "raisebar raisebar raisebar control meeting"
+    "raisebar raisebar . control meeting"
     "trading0 trading1 mfg0 dorm0 workshop"
     "mfg1 mfg2 mfg3 dorm1 hire"
     "power0 power1 power2 dorm2 training"
@@ -2428,7 +2428,7 @@ footer p {
    (사용자 요청 2026-07-21). 임시 적용 중일 때만 렌더. */
 .ship-raisebar {
   grid-area: raisebar;
-  align-self: center;
+  align-self: start;
   display: flex;
   flex-direction: row;
   align-items: center;
