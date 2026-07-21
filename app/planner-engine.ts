@@ -1305,7 +1305,28 @@ export async function optimize(roster: InfraOp[], priority: ProdPriority = "gold
     return genRooms.size > 0 && Array.from(genRooms).every((room) => room === "DORMITORY");
   });
   await tick({ phase: "base" });
-  const base = buildPlan(open, roster, {}, priority);
+  const byId = new Map(roster.map((op) => [op.id, op]));
+  // 미니 토큰 패키지(참가자 ≤4 — 아이룰루 같은 콜라보 3~4인 세트)는 세트와 같은 규칙으로
+  // **planScore 비교해 이득일 때만** 포함한다 (사용자 제보 2026-07-21: 아이룰루 패키지가
+  // 테라 대륙 조사단을 무역소에 시드해 프로바이조 완성형(우요우+에벤홀츠+프로바이조)을
+  // 밀어내고 제어센터 2석까지 차지 — 총점 −68인데도 무조건 포함되던 문제). 다진영 콜라보라
+  // 폐쇄 팀 규칙(단일 진영)을 비켜가는 케이스다. 본편 대형 패키지(화식 등 5인 이상)는
+  // 항상 이득이라 종전대로 무조건 포함. 미니 조합은 멱집합 비교(≤3개 → ≤8안).
+  const isMini = (token: string) =>
+    roster.filter((op) => op.skills.some((skill) => skill.tokenGen.some((g) => g.token === token) || skill.tokenUse.some((u) => u.token === token))).length <= 4;
+  const minis = open.filter(isMini).slice(0, 3);
+  const coreTokens = open.filter((token) => !minis.includes(token));
+  let tokenChoice = open;
+  let base = buildPlan(open, roster, {}, priority);
+  if (minis.length) {
+    let bestTokScore = planScore(base, byId);
+    for (let mask = 0; mask < (1 << minis.length) - 1; mask += 1) { // 마지막 mask(전부 포함) = base
+      const subset = coreTokens.concat(minis.filter((_, index) => mask & (1 << index)));
+      const candidate = buildPlan(subset, roster, {}, priority);
+      const score = planScore(candidate, byId);
+      if (score > bestTokScore) { base = candidate; bestTokScore = score; tokenChoice = subset; }
+    }
+  }
   // 세트 후보 — 쉐라그(게이트 오라, A조 무역소)·피누스(생산품별 진영 오라, B조 작전기록방)·
   // 품질 조합(오버라이드+수익+품질, A조 무역소) 보유 시 **가능한 모든 조합(멱집합)**의
   // 후보안을 만들어 기지 총점이 가장 높은 안을 채택한다. 세트를 한 플래그로 묶으면 한
@@ -1324,12 +1345,11 @@ export async function optimize(roster: InfraOp[], priority: ProdPriority = "gold
   // 생기면 세트 우선순위 필드를 도입할 것 (지금은 3종 = 최대 7안)
   if (variants.length > 15) variants.length = 15;
   if (!variants.length) return base;
-  const byId = new Map(roster.map((op) => [op.id, op]));
   let best = base;
   let bestScore = planScore(base, byId);
   for (let i = 0; i < variants.length; i += 1) {
     await tick({ phase: "variant", index: i + 1, total: variants.length, sets: Object.keys(variants[i]) });
-    const plan = buildPlan(open, roster, variants[i], priority);
+    const plan = buildPlan(tokenChoice, roster, variants[i], priority);
     const score = planScore(plan, byId);
     if (score > bestScore) { best = plan; bestScore = score; }
   }
