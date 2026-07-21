@@ -655,7 +655,7 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
   const [tab, setTab] = useState<Tab>(initialTab);
   const [navOpen, setNavOpen] = useState(false); // 모바일 탭 메뉴(햄버거) 열림 상태
   const [feedbackOpen, setFeedbackOpen] = useState(false); // 제안 패널 — 모바일 헤더 버튼·데스크탑 FAB 공용
-  const [headerCollapsed, setHeaderCollapsed] = useState(false); // 모바일 헤더 접기(로고·공식방송·햄버거만) — PC는 무관
+  const [headerCollapsed, setHeaderCollapsed] = useState(true); // 모바일 헤더 접기 — 접힘이 기본(사용자 확정 2026-07-22). PC는 무관(관련 CSS가 모바일 블록에만 있음)
   // 햄버거 '통합전략 가이드' 부메뉴 활성 표시용 — 현재 URL의 ?topic= 슬러그 (기본 is1)
   const [rogueSlug, setRogueSlug] = useState<string>(() =>
     typeof window === "undefined" ? "is1" : new URLSearchParams(window.location.search).get("topic") || "is1");
