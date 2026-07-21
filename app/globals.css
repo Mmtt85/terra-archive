@@ -2596,6 +2596,12 @@ footer p {
 }
 .op-elite.e1 { background: #7fb2e0 }   /* 1정 */
 .op-elite.e2 { background: var(--room-accent, #e6b34d); color: #0e1213 }  /* 2정 — 방 강조색 */
+/* 육성 추천 임시 적용 오퍼 — 완성 가정 미리보기임을 썸네일에 표시 (사용자 요청 2026-07-21) */
+.op-av.temp img { outline: 2px dashed var(--lime); outline-offset: -2px; }
+.op-temp-badge {
+  position: absolute; top: 2px; right: 2px; font-style: normal; font-weight: 800; font-size: 8.5px;
+  line-height: 1; padding: 2px 4px; border-radius: 3px; background: var(--lime); color: #17201a;
+}
 .ship-room-crew i {
   color: #5d686c;
   font-size: 11px;

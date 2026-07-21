@@ -825,10 +825,12 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
                 {team.length ? team.map((op) => {
                   // 오퍼의 정예화 단계 (E0/E1/E2) — 임시 적용 반영(viewElite), 미지정이면 그 오퍼 최대 정예화.
                   const elite = viewElite.get(op.id) ?? maxElite(op.rarity);
+                  const isTemp = tempApplied.has(op.id); // 육성 추천 임시 적용 오퍼 — 미리보기임을 썸네일에 표시
                   return (
-                    <span key={op.id} className="op-av">
-                      <img src={op.image} alt={op.name} width={180} height={180} title={op.name} loading="lazy" />
+                    <span key={op.id} className={`op-av${isTemp ? " temp" : ""}`} title={isTemp ? t("{name} — 임시 적용 중 (완성 가정 미리보기)", { name: op.name }) : undefined}>
+                      <img src={op.image} alt={op.name} width={180} height={180} title={isTemp ? undefined : op.name} loading="lazy" />
                       <em className={`op-elite e${elite}`} title={t("정예화 {n}", { n: elite })}>E{elite}</em>
+                      {isTemp && <i className="op-temp-badge" aria-hidden>{t("임시")}</i>}
                     </span>
                   );
                 }) : <i>{cell.key === "TRAINING" ? t("비워둠 · 특화 훈련 시 사용") : plan ? t("비어 있음") : t("자동 편성 대기")}</i>}
