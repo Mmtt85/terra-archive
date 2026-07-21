@@ -14,6 +14,11 @@ import {
   ctxFor, sanitizePlan, presentIdsFor, optimize, slotSubstitutes,
   type InfraOp, type InfraSkill, type Elite, type Plan, type ProdPriority, type TokenFlow, type OptimizeStep,
 } from "./planner-engine";
+import { recommendRaises, type RaiseRec, type InvestProgress } from "./planner-invest";
+import costsData from "./data/costs.json";
+
+// 재료 표시용 카탈로그 (이름·아이콘) — costs.json items (build-costs.py 수확)
+const ITEM_CAT = (costsData as { items: Record<string, { name: Record<string, string>; image: string }> }).items;
 
 // 전략 라벨은 저장된 문자열이 아니라 구조 필드에서 로케일로 재조립한다
 // (localStorage의 구버전 플랜은 strategyTokens가 없어 KR 문자열 그대로 표시)
@@ -76,6 +81,9 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   const [eliteById, setEliteById] = useState<Map<string, Elite>>(new Map());
   // 보유 오퍼·정예화 구성이나 방별 수동 편성을 바꾼 뒤 파일로 저장하지 않았으면 true
   const [dirty, setDirty] = useState(false);
+  // 육성(정예화 완성) 추천 — 반사실 재최적화 결과(null=미실행)와 진행률
+  const [investRecs, setInvestRecs] = useState<RaiseRec[] | null>(null);
+  const [investing, setInvesting] = useState<InvestProgress | null>(null);
 
   const effectiveOps = useMemo(() => visibleOps.map((op) => withElite(op, eliteById.get(op.id))), [visibleOps, eliteById]);
   const effectiveOpById = useMemo(() => new Map(effectiveOps.map((op) => [op.id, op])), [effectiveOps]);
@@ -287,6 +295,26 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     }
   };
 
+  // 육성(정예화 완성) 추천 — "이 오퍼를 키우면 인프라가 얼마나 좋아지나"를 감으로 추정하지
+  // 않고, 현재 상태 로스터와 후보만 완성한 로스터로 각각 자동편성을 돌려 기지 총점 차이(ΔS)로
+  // 증명한다. 후보 수만큼 optimize를 돌려 수십 초 걸릴 수 있어 진행률을 표시하고, 후보 사이마다
+  // 메인 스레드를 양보해 진행 바가 갱신되게 한다 (계산 우선순위는 정확성 — INFRA-RULES §1).
+  const runInvest = async () => {
+    if (investing) return;
+    setInvestRecs(null);
+    setInvesting({ done: 0, total: 0 });
+    try {
+      const recs = await recommendRaises(visibleOps, ownedIds, eliteById, priority, async (p) => {
+        setInvesting(p);
+        await new Promise((resolve) => setTimeout(resolve, 0)); // 진행 바 리페인트 양보
+      });
+      setInvestRecs(recs);
+      if (!recs.length) showToast(t("완성하면 이득인 오퍼를 찾지 못했습니다 — 보유 설정에서 정예화를 낮춰 두면 후보가 됩니다"));
+    } finally {
+      setInvesting(null);
+    }
+  };
+
   // 우선 생산 모드는 설정(라디오)일 뿐 — 실제 편성은 기존처럼 자동편성 버튼으로 실행한다
   // (사용자 확정 2026-07: 설정 변경이 편성을 갈아엎으면 안 됨)
   const setPriority = (prio: ProdPriority) => {
@@ -487,6 +515,14 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
             </span>
           </button>
           <button onClick={fillGaps} title={t("현재 편성(수동 수정 포함)은 그대로 두고, 남은 빈 자리만 효율 순으로 자동 편성합니다")}><span className="btn-icon" aria-hidden>⊕</span>{t("빈 자리만 자동편성")}</button>
+          <button className="invest-btn" onClick={runInvest} disabled={!!investing}
+            title={t("보유했지만 아직 완성하지 않은(정예화를 낮춰 둔) 오퍼 중, 완성하면 인프라 효율이 오르는 오퍼를 실제 자동편성을 다시 돌려 찾아냅니다")}>
+            <span className="btn-icon" aria-hidden>★</span>
+            <span className="btn-swap">
+              <span className={investing ? "btn-swap-hidden" : undefined}>{t("육성 추천")}</span>
+              {investing && <span className="btn-swap-over">{investing.total ? t("분석 {i}/{n}", { i: investing.done, n: investing.total }) : t("분석 중…")}</span>}
+            </span>
+          </button>
           <button onClick={clearAll} title={t("모든 방의 편성을 비웁니다 (보유 오퍼 설정은 유지)")}><span className="btn-icon" aria-hidden>⌫</span>{t("편성 전체 비우기")}</button>
           {/* 이미지·파일·도움말은 '그 외' 드롭다운으로 묶는다 (사용자 요청 2026-07) */}
           <span className="more-group">
@@ -512,6 +548,19 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         <div className="toast opt-progress-toast" role="status" aria-live="polite">
           <span className="opt-progress-spin" aria-hidden>⟳</span> {optimizing}
         </div>
+      )}
+      {investing && (
+        <div className="toast opt-progress-toast" role="status" aria-live="polite">
+          <span className="opt-progress-spin" aria-hidden>⟳</span>{" "}
+          {investing.total
+            ? t("육성 추천 분석 중 — 후보 {i}/{n} 반사실 재편성 검증…", { i: investing.done, n: investing.total })
+            : t("육성 추천 분석 중 — 현재 상태 기준 편성 계산…")}
+        </div>
+      )}
+
+      {investRecs !== null && !investing && (
+        <InvestPanel recs={investRecs} opMap={effectiveOpById} onShowOperator={onShowOperator}
+          onClose={() => setInvestRecs(null)} t={t} locale={locale} />
       )}
 
       {/* 우선 생산 설정 (라디오) — 다음 자동편성부터 적용, 편성 실행은 버튼으로 */}
@@ -650,6 +699,90 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         />
       )}
       {toast && <div className="toast" role="status">{toast}</div>}
+    </section>
+  );
+}
+
+// 육성 추천 결과 패널 — recommendRaises가 증명한 "완성하면 이득인 정예화 투자"를 ΔS 순으로.
+// 방 %효율 변화·완성 비용은 정확, 일일 자원·회수일은 경제 상수 기반 근사(β)로 표기한다.
+function InvestPanel({ recs, opMap, onShowOperator, onClose, t, locale }: {
+  recs: RaiseRec[]; opMap: Map<string, InfraOp>; onShowOperator?: (id: string) => void;
+  onClose: () => void; t: T; locale: Locale;
+}) {
+  const roomLabel = (key: string) => cellByKey.get(key)?.label ?? key;
+  const shiftTag = (s: number) => (s === 0 ? t("A조") : t("B조"));
+  const num = (n: number) => Math.round(n).toLocaleString();
+  return (
+    <section className="invest-panel" aria-label={t("육성 추천")}>
+      <div className="invest-head">
+        <div>
+          <span className="section-no">{t("육성 추천 · 정예화 완성 투자")}</span>
+          <h3>{recs.length ? t("완성하면 인프라가 좋아지는 오퍼 {n}명", { n: recs.length }) : t("추천할 오퍼가 없습니다")}</h3>
+        </div>
+        <button className="invest-close" onClick={onClose} aria-label={t("닫기")}>✕</button>
+      </div>
+      <p className="invest-note">{t("현재 보유·정예화 상태로 자동편성을 돌린 결과와, 후보만 완성했을 때의 기지 총점 차이로 실제 이득을 증명합니다. 방 %효율 변화와 완성 비용(재료·용문폐)은 정확하며, 일일 용문폐·작전기록과 회수일은 기준 상수 미확정 근사치(β)입니다.")}</p>
+      {!recs.length && <p className="invest-empty">{t("완성해도 최적 편성이 바뀌는 오퍼가 없습니다. 보유 오퍼 설정에서 아직 안 키운 오퍼의 정예화를 낮춰 두면, 완성 시 이득이 있는지 여기서 확인할 수 있습니다.")}</p>}
+      <ul className="invest-list">
+        {recs.map((r) => {
+          const op = opMap.get(r.opId);
+          if (!op) return null;
+          const daily: { k: "lmd" | "exp"; v: number }[] = [];
+          if (Math.round(r.dailyLmd) !== 0) daily.push({ k: "lmd", v: r.dailyLmd });
+          if (Math.round(r.dailyExp) !== 0) daily.push({ k: "exp", v: r.dailyExp });
+          const deltas = [...r.roomDeltas].sort((a, b) => {
+            const ap = r.placement && a.key === r.placement.key && a.shift === r.placement.shift ? 0 : 1;
+            const bp = r.placement && b.key === r.placement.key && b.shift === r.placement.shift ? 0 : 1;
+            return ap - bp;
+          }).slice(0, 3);
+          return (
+            <li key={r.opId} className="invest-card">
+              <img className={onShowOperator ? "op-link" : undefined} src={op.image} alt={op.name} width={180} height={180} loading="lazy" onClick={() => onShowOperator?.(r.opId)} />
+              <div className="invest-body">
+                <div className="invest-title">
+                  <b className={onShowOperator ? "op-link" : undefined} onClick={() => onShowOperator?.(r.opId)}>{op.name}</b>
+                  <i className="invest-stars" aria-hidden>{"★".repeat(op.rarity)}</i>
+                  <span className="invest-raise">{t(ELITE_LABEL[r.from])} → {t(ELITE_LABEL[r.to])} {t("완성")}</span>
+                  <span className="invest-score" title={t("현재와 완성 후의 기지 자동편성 총점 차이 — 추천 순위 기준")}>{t("기지 +{n}", { n: r.deltaScore.toFixed(1) })}</span>
+                </div>
+                {r.placement && <div className="invest-place">{t("{room} · {shift}에 배치됩니다", { room: roomLabel(r.placement.key), shift: shiftTag(r.placement.shift) })}</div>}
+                {deltas.length > 0 && (
+                  <ul className="invest-rooms">
+                    {deltas.map((d, i) => (
+                      <li key={i}><span>{roomLabel(d.key)} {shiftTag(d.shift)}</span> <em>{Math.round(d.before)}% → {Math.round(d.after)}%</em></li>
+                    ))}
+                  </ul>
+                )}
+                <div className="invest-daily">
+                  {daily.length > 0
+                    ? daily.map((dd) => (
+                        <span key={dd.k} className={`inv-res ${dd.v >= 0 ? "up" : "down"}`}>
+                          {dd.k === "lmd" ? t("용문폐") : t("작전기록")} {dd.v >= 0 ? "+" : ""}{num(dd.v)}{t("/일")}
+                        </span>
+                      ))
+                    : r.tradingChanged
+                      ? <span className="inv-res muted">{t("무역 오더 효율 개선 — 순금 공급에 따라 실질 용문폐가 달라져 원화 환산은 생략")}</span>
+                      : <span className="inv-res muted">{t("제조소(용문폐·작전기록) 외 방이라 일일 자원 환산은 생략")}</span>}
+                </div>
+                <div className="invest-cost">
+                  <span className="inv-cost-label">{t("완성 비용")}</span>
+                  <span className="inv-cost-lmd">{t("용문폐")} {num(r.cost.lmd)}</span>
+                  {r.cost.exp > 0 && <span>{t("경험치")} {num(r.cost.exp)}</span>}
+                  {r.cost.items.map(([id, ct]) => (
+                    <span key={id} className="inv-mat" title={`${ITEM_CAT[id]?.name?.[locale] ?? id} ×${ct}`}>
+                      <img src={ITEM_CAT[id]?.image} alt="" width={22} height={22} loading="lazy" />{ct}
+                    </span>
+                  ))}
+                </div>
+                <div className="invest-payback">
+                  <span>{t("이성 환산")} {r.costApprox ? "≈ " : ""}{num(r.costSanity)}</span>
+                  <span className="inv-pay">{r.paybackDays != null ? t("회수 ≈ {d}일", { d: num(r.paybackDays) }) : t("회수일 산출 생략")}</span>
+                </div>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
     </section>
   );
 }

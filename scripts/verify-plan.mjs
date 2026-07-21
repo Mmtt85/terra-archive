@@ -25,6 +25,16 @@ const engine = await import(pathToFileURL(bundle).href);
 fs.rmSync(bundle, { force: true });
 const { optimize, teamScore, ops, cellByKey, LAYOUT, PARK_KEYS } = engine;
 
+// 육성 추천 엔진(planner-invest.ts)도 번들 — recommendRaises 불변식 검사용.
+// 순수 함수 호출(visibleOps를 인자로 받음)이라 엔진 인스턴스가 달라도 안전하다.
+const invBundle = path.join(os.tmpdir(), `planner-invest-${process.pid}.mjs`);
+execFileSync(path.join(ROOT, "node_modules/.bin/esbuild"), [
+  path.join(ROOT, "app/planner-invest.ts"),
+  "--bundle", "--format=esm", "--platform=node", `--outfile=${invBundle}`, "--log-level=warning",
+]);
+const { recommendRaises } = await import(pathToFileURL(invBundle).href);
+fs.rmSync(invBundle, { force: true });
+
 // ── 결정적 로스터 세트 (스냅샷·픽스처 공용) ──────────────────────────────────
 const released = ops.filter((o) => !o.unreleased);
 const rosters = {
@@ -148,5 +158,61 @@ for (const fx of rules.fixtures) {
   console.log(`${ok ? "✓" : "✗"} ${fx.name}${detail ? ` (${detail})` : ""}`);
   if (!ok) failed += 1;
 }
-if (failed) { console.error(`\n✗ 픽스처 ${failed}건 실패`); process.exit(1); }
-console.log(`\n✓ 픽스처 ${rules.fixtures.length}건 전부 통과`);
+// ── 육성 추천 엔진 불변식 (planner-invest 반사실 추천) ────────────────────────
+// 잘못 추천하면 유저가 실제 자원을 태우므로 신뢰 성질을 회귀로 못박는다. 소형 로스터(4성↓)로
+// optimize 부담을 줄여 검사한다. 낮춘 오퍼가 없으면 후보 0(정상), 있으면 모든 추천이 가드를
+// 통과해야 한다: ΔS>0 · 근무 방 배치됨 · 비용>0 · (방 하락 없음 또는 큰 시너지).
+console.log("");
+// 5성 포함 소형 로스터(seq 앞 140명) — 실제 추천이 나와 가드 검사가 공허하지 않도록.
+const invRoster = ops.filter((o) => !o.unreleased && o.rarity <= 5).sort((a, b) => a.seq - b.seq).slice(0, 140);
+const invRun = async (elite) => recommendRaises(invRoster, new Set(invRoster.map((o) => o.id)), elite, "gold");
+const invCheck = async (name, fn) => {
+  let ok = false; let detail = "";
+  try { const r = await fn(); ok = r.ok; detail = r.detail ?? ""; }
+  catch (err) { ok = false; detail = String(err.message ?? err); }
+  console.log(`${ok ? "✓" : "✗"} ${name}${detail ? ` (${detail})` : ""}`);
+  if (!ok) failed += 1;
+};
+
+// ① 전원 최대 정예화면 후보 0 (완성할 게 없음)
+await invCheck("육성추천: 만정예 로스터는 추천 0건", async () => {
+  const recs = await invRun(new Map());
+  return { ok: recs.length === 0, detail: `${recs.length}건` };
+});
+
+// 4·5성 중 정예화2 인프라 스킬 보유자 일부를 1정으로 낮춰 후보를 만든다 (결정적: seq 순 12명)
+const lowerable = invRoster
+  .filter((o) => o.rarity >= 4 && o.skills.some((s) => s.unlock === "정예화 2"))
+  .sort((a, b) => a.seq - b.seq).slice(0, 12);
+const loweredElite = new Map(lowerable.map((o) => [o.id, 1]));
+
+let sharedRecs = null;
+// ② 모든 추천이 신뢰 가드를 통과 (ΔS>0 · 배치됨 · 비용>0 · 방 하락 없음 or 큰 시너지)
+await invCheck("육성추천: 모든 추천이 신뢰 가드 통과", async () => {
+  sharedRecs = await invRun(loweredElite);
+  for (const r of sharedRecs) {
+    if (!(r.deltaScore > 0)) return { ok: false, detail: `${r.opId} ΔS=${r.deltaScore}` };
+    if (!r.placement) return { ok: false, detail: `${r.opId} 배치 없음` };
+    if (!(r.costSanity > 0)) return { ok: false, detail: `${r.opId} 비용 0` };
+    const drop = r.roomDeltas.some((d) => d.after < d.before - 3);
+    if (drop && r.deltaScore < 25) return { ok: false, detail: `${r.opId} 미보상 방하락` };
+  }
+  return { ok: true, detail: `${sharedRecs.length}건 검증` };
+});
+
+// ③ 결정론 — 같은 입력 두 번이 동일 (opId·ΔS)
+await invCheck("육성추천: 결정론(재현성)", async () => {
+  const again = await invRun(loweredElite);
+  const sig = (rs) => JSON.stringify(rs.map((r) => [r.opId, Math.round(r.deltaScore * 100)]));
+  return { ok: sig(again) === sig(sharedRecs ?? []), detail: `${again.length}건` };
+});
+
+// ④ 랭킹 단조 — ΔS 내림차순 정렬 보장
+await invCheck("육성추천: ΔS 내림차순 정렬", async () => {
+  const rs = sharedRecs ?? [];
+  for (let i = 1; i < rs.length; i += 1) if (rs[i].deltaScore > rs[i - 1].deltaScore + 1e-9) return { ok: false, detail: `#${i}` };
+  return { ok: true, detail: `${rs.length}건` };
+});
+
+if (failed) { console.error(`\n✗ 검사 ${failed}건 실패`); process.exit(1); }
+console.log(`\n✓ 픽스처 ${rules.fixtures.length}건 + 육성추천 불변식 4건 전부 통과`);
