@@ -840,25 +840,11 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
             }
           }
         }
-        // park leftovers only where they at least have a matching room skill
-        for (const op of members) {
-          if (parked.has(op.id)) continue;
-          if (op.skills.some((skill) => skill.room === "WORKSHOP")) place(op, "WORKSHOP");
-        }
-      }
-      // family pinning: when a token's generators share a faction (쉐이),
-      // faction-mates with a workshop/training skill are pinned there (니엔)
-      for (const token of packageTokens) {
-        const genOps = roster.filter((op) => op.skills.some((skill) => skill.tokenGen.some((g) => g.token === token)));
-        const factionCounts = new Map<string, number>();
-        genOps.forEach((op) => factionCounts.set(op.faction, (factionCounts.get(op.faction) ?? 0) + 1));
-        const families = Array.from(factionCounts.entries()).filter(([, count]) => count >= 2).map(([faction]) => faction);
-        for (const key of ["WORKSHOP"]) {
-          const candidates = roster
-            .filter((op) => !used.has(op.id) && !parked.has(op.id) && families.includes(op.faction) && op.skills.some((skill) => skill.room === key))
-            .sort((a, b) => opSolo(b, key, 1, { tokenPoints: {} }) - opSolo(a, key, 1, { tokenPoints: {} }));
-          for (const op of candidates) place(op, key);
-        }
+        // 가공소는 토큰 패키지가 선점하지 않는다 — 상시 슬롯(PARK_KEYS)이라 일반 방 채우기가
+        // 최고 점수 가공소 오퍼(=니엔 고정, §1)를 넣는다. 예전엔 여기서 토큰 멤버·"family pin"으로
+        // 가공소를 강제 배치했으나, 콜라보 토큰(아이룰루=작전팀 A4) family가 같은 진영의 무관한
+        // 가공소 오퍼(레인저)를 니엔보다 먼저 앉히는 오발동이 있었다 (사용자 제보 2026-07-21).
+        // 쉐이 화식 팟의 니엔도 가공소 최고점(100)이라 일반 채우기로 자연히 고정된다.
       }
       // dorm-pinned package members stay put across both shifts
       for (let d = 0; d < 4; d += 1) {

@@ -34,6 +34,10 @@ const TOKEN_I18N: Record<string, Pair> = {
   "정보 저장": ["Intelligence Reserve", "情報備蓄"],
   "주술 결정": ["Witchcraft Crystal", "巫術の結晶"],
   "마물 요리": ["Monster Meal", "魔物料理"],
+  "우르수스 특제 음료": ["Ursus Special Drink", "ウルサス特製ドリンク"],
+  "열정": ["Passion", "情熱"],
+  "아이룰루": ["Airulu", "アイルル"],
+  "기억 조각": ["Memory Fragment", "記憶の欠片"],
 };
 
 export function tokenName(locale: Locale, ko: string): string {

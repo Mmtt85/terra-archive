@@ -246,15 +246,30 @@ def parse_metric(room, text):
     if v: return "misc", v
     return "misc", 0
 
-TOKENS = RULES["tokens"]  # 시설 간 포인트 토큰 카탈로그 — 새 토큰 시스템은 rules.json에 추가
+# 시설 간 포인트 토큰 카탈로그. 본편 시스템은 rules.json(Supabase 원장), 콜라보/특수 세트는
+# 여기 COLLAB_TOKENS로 보강한다 (사용자 제보 2026-07-21 — 카탈로그 밖이라 통째 미모델이던 것):
+#   우르수스 특제 음료(R6: Tachanka→Blitz·Frost·Fuze) · 열정(아베무지카) · 아이룰루(MHW) · 기억 조각(위스퍼레인)
+COLLAB_TOKENS = ["우르수스 특제 음료", "열정", "아이룰루", "기억 조각"]
+TOKENS = RULES["tokens"] + [t for t in COLLAB_TOKENS if t not in RULES["tokens"]]
 
 def parse_tokens(text, room):
     """Cross-facility point systems: generators (+N) and consumers (N점당 +V)."""
     gen, use = [], []
     for token in TOKENS:
-        for m in re.finditer(re.escape(token) + r"\s*(\d+(?:\.\d+)?)(?:점|개)당[^%\d]{0,34}?([+\-]?\d+(?:\.\d+)?)\s*(%?)", text):
-            per, val, pct = float(m.group(1)), float(m.group(2)), m.group(3) == "%"
-            use.append({"token": token, "per": per, "value": val, "percent": pct})
+        tk = re.escape(token)
+        # 소비 — 4가지 문구를 모두 per-token 소비 {per, value}로 정규화(엔진은 rate=value/per):
+        #  ① "N(점|개|병)당 +V%"(멀베리·Blitz)  ② "N(개|병) 늘어날 때마다 +V%"(테라 대륙 조사단)
+        #  ③ "보유(한) 토큰 N마다 +V%"(토가와·와카바)  ④ "N(병|개)에 도달 시 +V%"(Frost, 문턱 근사)
+        seen_spans = set()
+        for pat in (tk + r"\s*(\d+(?:\.\d+)?)\s*(?:점|개|병)당[^%\d]{0,34}?([+\-]?\d+(?:\.\d+)?)\s*(%?)",
+                    tk + r"(?:가|이)?\s*(\d+(?:\.\d+)?)\s*(?:개|병|점)?(?:씩)? ?늘어날 때마다[^%\d]{0,34}?([+\-]?\d+(?:\.\d+)?)\s*(%?)",
+                    r"보유(?:한)? " + tk + r"\s*(\d+(?:\.\d+)?)\s*마다[^%\d]{0,40}?([+\-]?\d+(?:\.\d+)?)\s*(%?)",
+                    tk + r"(?:\s*수량이)?\s*(\d+(?:\.\d+)?)\s*(?:병|개|점)?에 도달 ?시[^%\d]{0,40}?([+\-]?\d+(?:\.\d+)?)\s*(%?)"):
+            for m in re.finditer(pat, text):
+                if m.start() in seen_spans: continue
+                seen_spans.add(m.start())
+                per, val, pct = float(m.group(1)), float(m.group(2)), m.group(3) == "%"
+                if per > 0: use.append({"token": token, "per": per, "value": val, "percent": pct})
         for m in re.finditer(re.escape(token) + r"\s*\+(\d+)", text):
             # 자기 컨디션이 낮을 때만("미만/이하") 생성되는 배타 브랜치(시·링)는 풀파워 A조
             # 기준에선 비활성 — 같은 오퍼가 화식·감지를 동시에 내는 이중계상 방지.
@@ -532,7 +547,8 @@ def parse_skill(entry, oname, oid=None):
         # conversion skills ("감지 정보 1점당 무성의 공명 1점으로 전환") re-route
         # this op's own generation and, at plan level, the shared pool
         convert = None
-        conv = re.search(r"(" + "|".join(map(re.escape, TOKENS)) + r") (\d+(?:\.\d+)?)점당 (" + "|".join(map(re.escape, TOKENS)) + r") (\d+(?:\.\d+)?)점으로 전환", text)
+        # "X N점당 Y M점으로 전환"(에벤홀츠) + "X N개마다 Y M점으로 전환"(위스퍼레인 기억 조각→감지 정보)
+        conv = re.search(r"(" + "|".join(map(re.escape, TOKENS)) + r") (\d+(?:\.\d+)?)(?:점당|개마다) (" + "|".join(map(re.escape, TOKENS)) + r") (\d+(?:\.\d+)?)점으로 전환", text)
         if conv:
             src, ratio_src, dst, ratio_dst = conv.group(1), float(conv.group(2)), conv.group(3), float(conv.group(4))
             convert = {"from": src, "per": ratio_src, "to": dst, "amount": ratio_dst}
@@ -639,6 +655,15 @@ def parse_skill(entry, oname, oid=None):
                 cond_bonus = {"value": _cond["value"], "ids": _cond["ids"]}
             elif _cond["type"] == "crossRoom":
                 cond_bonus = {"value": _cond["value"], "ids": _cond["ids"], "room": _cond["room"]}
+        # 순금 생산 라인 차원 (투예·파죰카, 사용자 제보 2026-07-21): 243 기지의 순금 제조소 = 2방
+        # (§1 순금 2 + 작전기록 2). "순금 생산 라인 N개당 오더 수주 효율 +V%" → (2//N)×V 를 가산.
+        # 절 앞부분으로 base 재파싱(투예 조건값 15가 best로 base를 덮는 것 교정). 키라라 '라인 +2'는 %없어 제외.
+        gm = re.search(r"순금 생산 라인 (\d+)개당[^%]*?\+\s*(\d+(?:\.\d+)?)\s*%", text)
+        if gm and room == "TRADING":
+            _n = int(gm.group(1))
+            gold_add = (2 // _n) * float(gm.group(2)) if _n > 0 else 0
+            _, _bv = parse_metric(room, text[:gm.start()])
+            kind, value = "output", (_bv or 0) + gold_add  # 투예 5+15=20, 파죰카 0+10=10
         # buffChar slots already resolved upgrades — every line here stacks
         tier = 1
         group = entry["name"]
