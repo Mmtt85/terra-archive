@@ -750,10 +750,11 @@ button {
     cursor: pointer;
     z-index: 1;
   }
-  /* 접힘: 줄 나눔·이벤트·3줄 요소를 숨기고 공식방송을 로고 옆으로 —
-     로고 · 공식방송 · (공간) · 햄버거 한 줄만 남는다 (사용자 요청 2026-07-22) */
+  /* 접힘: 로고·햄버거 한 줄만 남긴다. 공식방송은 2줄 오른쪽 고정이므로 접으면 같이
+     사라진다 (사용자 확정 2026-07-22 — 접힘 상태에 공식방송을 남기지 않는다) */
   .site-header.collapsed .feedback-header-btn,
   .site-header.collapsed .event-group,
+  .site-header.collapsed .bcast-trigger,
   .site-header.collapsed .future-toggle,
   .site-header.collapsed .theme-toggle,
   .site-header.collapsed .lang-wrap,
@@ -762,7 +763,6 @@ button {
   .site-header.collapsed::after {
     display: none;
   }
-  .site-header.collapsed .bcast-trigger { order: 1; margin-left: 8px; }
   /* 배너 + 이벤트 설명(라벨·이름·기간)을 PC판처럼 함께 표시 —
      1줄 오른쪽 남는 공간을 채운다 (사용자 요청 2026-07-20). */
   .event-trigger {
@@ -2188,7 +2188,9 @@ footer p {
     flex-wrap: wrap;
     align-items: center;
     gap: 8px;
-    padding: 9px 16px;
+    /* 오른쪽 여백을 왼쪽보다 넉넉히 — 각 줄 오른쪽 끝 버튼(햄버거·공식방송·언어)이
+       화면 가장자리에 딱 붙어 보인다는 피드백 (2026-07-22) */
+    padding: 9px 22px 9px 16px;
     position: sticky;
   }
   .brand {
@@ -2233,7 +2235,7 @@ footer p {
     position: static;
   }
   .site-header .main-tabs {
-    right: 16px;
+    right: 22px; /* 헤더 오른쪽 패딩(22px)과 정렬 */
     left: 16px;
     min-width: 0;
   }
