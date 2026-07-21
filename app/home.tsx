@@ -1045,6 +1045,9 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
           <span className="brand-mark"><img src="/avatars/char_1012_skadi2.webp" alt="" width={180} height={180} /></span>
           <span>{t("테라 아카이브")}<small>{t("명일방주(Arknights) 팬사이트")}</small></span>
         </a>
+        {/* 공식방송 + 진행중 이벤트 — PC: 공식방송은 로고 바로 오른쪽(1줄), 이벤트는 1줄 정중앙
+            absolute (사용자 확정 2026-07-22, 접힘 상태에도 항상 표시). 모바일: order로 2줄 배치. */}
+        <BroadcastBadges />
         {/* 햄버거(메뉴) = 1줄 오른쪽 끝 — 데스크탑·모바일 공통 (사용자 확정 2026-07-22).
             모바일은 order로, 데스크탑은 margin-left:auto로 배치되므로 JSX 위치는 자유. */}
         <div className="nav-group">
@@ -1076,11 +1079,9 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
             <button className={`tab-about${tab === "about" ? " selected" : ""}`} onClick={() => switchTab("about")}><span className="tab-icon" aria-hidden>ⓘ</span>{t("소개")}</button>
           </nav>
         </div>
-        {/* 2줄(확장부) — 데스크탑: grid(1fr|이벤트|1fr)로 이벤트를 정 가운데 고정, 왼쪽에 공식방송,
-            오른쪽에 미래시·다크모드·언어 (사용자 확정 2026-07-22). 모바일: display:contents로 래퍼를
-            풀어 기존 order 배치(2줄 이벤트·공식방송 / 3줄 제안·미래시·다크·언어)가 그대로 동작한다. */}
+        {/* 2줄(확장부) — 데스크탑: 미래시·다크모드·언어(오른쪽 끝). 모바일: display:contents로
+            래퍼를 풀어 기존 order 배치(3줄 제안·미래시·다크·언어)가 그대로 동작한다. */}
         <div className="header-sub">
-          <BroadcastBadges />
           {/* 제안 버튼 — 모바일 전용(3줄). 데스크탑에선 숨기고 우하단 FAB을 쓴다. */}
           {feedbackReady && (
             <button type="button" className="feedback-header-btn" onClick={() => setFeedbackOpen(true)} aria-label={t("제안 보내기")}>

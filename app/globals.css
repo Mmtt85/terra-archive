@@ -3693,7 +3693,7 @@ footer p {
 .feedback-widget {
   position: fixed;
   right: 22px;
-  bottom: 96px;
+  bottom: 84px; /* 96 → 84px — 살짝 아래로 (사용자 요청 2026-07-22, PC FAB) */
   z-index: 150;
   display: flex;
   flex-direction: column;
@@ -3742,36 +3742,70 @@ footer p {
     flex-wrap: wrap;
     height: auto;
     min-height: 78px;
-    align-content: center;
+    /* 1줄을 항상 같은 y에 고정 — align-content:center면 접힘(내용<min-height)일 땐 중앙,
+       펼침일 땐 위쪽에 붙어 로고·햄버거가 오르내린다 (2026-07-22 사용자 리포트) */
+    align-content: flex-start;
     row-gap: 10px;
     padding-top: 12px;
     padding-bottom: 14px;
   }
+  /* 1줄 행 높이 고정: 12 + 52 + 14 = 78px — 접힘 시 종전 헤더 높이 그대로,
+     펼침 시에도 1줄이 동일 위치(로고·햄버거 이동 없음) */
+  .site-header .brand { min-height: 52px; }
   .site-header .nav-group { margin-left: auto; }
+  /* 진행중 이벤트 = 1줄 정 가운데 고정(absolute — 로고·공식방송·햄버거 폭과 무관하게 화면
+     중앙), 접힘 상태에서도 항상 보인다 (사용자 확정 2026-07-22). top 39px = 접힘 헤더(78px)의
+     세로 중앙 기준 — 펼쳐져도 1줄 영역이 그대로라 위치가 변하지 않는다. */
+  .site-header .event-group {
+    position: absolute;
+    left: 50%;
+    top: 39px;
+    transform: translate(-50%, -50%);
+    margin: 0;
+    /* transform이 스택 컨텍스트를 만들어 내부 드롭다운(z:40)이 칩 레벨에 갇힌다 —
+       칩 자체를 접기 핸들(z:1)보다 위로 올려 드롭다운이 핸들에 가리지 않게 (2026-07-22) */
+    z-index: 2;
+  }
+  /* 공식방송 = 이벤트 칩 바로 오른쪽에 밀착 (사용자 확정 2026-07-22). 칩은 고정폭(CLS 방지
+     설계, 총 ~346px)이라 중앙 + half폭 + 간격의 absolute 오프셋으로 정확히 붙는다.
+     1줄 소속이라 접힘 상태에도 보인다. */
+  .site-header > .bcast-trigger {
+    position: absolute;
+    left: calc(50% + 185px);
+    top: 39px;
+    transform: translateY(-50%);
+    margin: 0;
+    padding: 5px 9px;
+  }
+  /* 이벤트 칩 컴팩트화 — ① 높이를 살짝 줄여 위아래 공백 확보(사용자 요청 2026-07-22)
+     ② 폭도 줄여 로고·주변 버튼과 중앙 칩이 겹칠 여지 축소 */
+  .site-header .event-trigger.has-banner { padding: 3px 10px 3px 3px; gap: 8px; }
+  .site-header .event-trigger-thumb { width: 133px; }
+  .site-header .event-trigger-main { width: 176px; flex: 0 0 176px; }
+  .site-header .event-trigger .event-name { max-width: 176px; }
+  /* 2줄(펼침 시) = 미래시·다크모드·언어(오른쪽 끝) */
   .site-header .header-sub {
     flex-basis: 100%;
-    display: grid;
-    grid-template-columns: 1fr max-content 1fr;
+    display: flex;
     align-items: center;
-    column-gap: 14px;
+    justify-content: flex-end;
   }
-  .header-sub .bcast-trigger {
-    grid-column: 1;
-    justify-self: end;
-    margin-left: 0;
-  }
-  .header-sub .event-group { grid-column: 2; }
   .header-sub .header-sub-right {
-    grid-column: 3;
-    justify-self: start;
     display: flex;
     align-items: center;
     gap: 10px;
   }
   .header-sub .future-toggle {
-    margin-left: 0;   /* base의 우측 밀어내기(auto)는 한 줄 헤더용 — grid 셀 안에선 해제 */
+    margin-left: 0;   /* base의 우측 밀어내기(auto)는 한 줄 헤더용 — 여기선 해제 */
     margin-right: 0;
   }
+  /* 햄버거 드롭다운은 왼쪽으로 연다 — 햄버거가 오른쪽 끝이라 left:0(기본)이면 화면 밖으로
+     잘린다 (2026-07-22 사용자 리포트) */
+  .site-header .nav-group .main-tabs {
+    left: auto;
+    right: 0;
+  }
+  /* 접힘: 2줄(미래시·다크모드·언어)만 사라진다. 이벤트·공식방송은 1줄 소속이라 유지. */
   .site-header.collapsed .header-sub { display: none; }
 }
 .feedback-fab {
