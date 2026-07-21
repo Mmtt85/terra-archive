@@ -478,7 +478,14 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         <div className="planner-buttons">
           {/* startTransition: 로스터 모달(카드 수백 장)은 렌더가 무거워 클릭 페인트부터 내보낸다 (INP, 2026-07-21) */}
           <button onClick={() => startTransition(() => setShowRoster(true))}><span className="btn-icon" aria-hidden>▦</span>{t("보유 오퍼 설정 ({a}/{b})", { a: visibleOps.filter((op) => ownedIds.has(op.id)).length, b: visibleOps.length })}</button>
-          <button className="primary" onClick={() => runOptimize()} disabled={!!optimizing}><span className="btn-icon" aria-hidden>⟳</span>{optimizing ? t("계산 중…") : t("전체 자동편성")}</button>
+          {/* 라벨이 '계산 중…'으로 바뀌어도 버튼 폭이 줄지 않게 원 라벨로 폭을 잡아둔다 (사용자 요청 2026-07-21) */}
+          <button className="primary" onClick={() => runOptimize()} disabled={!!optimizing}>
+            <span className="btn-icon" aria-hidden>⟳</span>
+            <span className="btn-swap">
+              <span className={optimizing ? "btn-swap-hidden" : undefined}>{t("전체 자동편성")}</span>
+              {optimizing && <span className="btn-swap-over">{t("계산 중…")}</span>}
+            </span>
+          </button>
           <button onClick={fillGaps} title={t("현재 편성(수동 수정 포함)은 그대로 두고, 남은 빈 자리만 효율 순으로 자동 편성합니다")}><span className="btn-icon" aria-hidden>⊕</span>{t("빈 자리만 자동편성")}</button>
           <button onClick={clearAll} title={t("모든 방의 편성을 비웁니다 (보유 오퍼 설정은 유지)")}><span className="btn-icon" aria-hidden>⌫</span>{t("편성 전체 비우기")}</button>
           {/* 이미지·파일·도움말은 '그 외' 드롭다운으로 묶는다 (사용자 요청 2026-07) */}
@@ -500,10 +507,11 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         </div>
       </div>
 
+      {/* 진행 안내는 레이아웃을 밀지 않게 완료 토스트와 같은 자리에 오버레이로 (사용자 요청 2026-07-21) */}
       {optimizing && (
-        <p className="opt-progress" role="status" aria-live="polite">
+        <div className="toast opt-progress-toast" role="status" aria-live="polite">
           <span className="opt-progress-spin" aria-hidden>⟳</span> {optimizing}
-        </p>
+        </div>
       )}
 
       {/* 우선 생산 설정 (라디오) — 다음 자동편성부터 적용, 편성 실행은 버튼으로 */}
