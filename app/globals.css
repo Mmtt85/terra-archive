@@ -2651,7 +2651,7 @@ footer p {
 }
 .crew-card {
   display: grid;
-  grid-template-columns: 52px 1fr;
+  grid-template-columns: 62px 1fr;
   gap: 13px;
   border: 1px solid var(--line);
   background: var(--white);
@@ -2662,11 +2662,15 @@ footer p {
   border-style: dashed;
 }
 .crew-card img {
-  width: 52px;
-  height: 52px;
+  /* 얼굴 썸네일 1.2배 (52→62px, 사용자 요청 2026-07-21) */
+  width: 62px;
+  height: 62px;
   object-fit: cover;
   background: #12171a;
 }
+/* 방 상세 얼굴 썸네일 래퍼 — 임시 적용 배지 앵커 */
+.crew-face { position: relative; display: block; width: 62px; height: 62px; }
+.crew-face.temp img { outline: 2px dashed var(--lime); outline-offset: -2px; }
 .crew-card b {
   font-size: 15px;
 }
@@ -3560,6 +3564,21 @@ footer p {
 .crew-card {
   position: relative;
 }
+/* 오퍼 하나만 임시 적용 되돌리기 — ✕(빼기) 왼쪽 (사용자 요청 2026-07-22) */
+.crew-revert {
+  position: absolute;
+  top: 8px;
+  right: 38px;
+  border: 1px solid #c08a2e;
+  background: color-mix(in srgb, #c08a2e 16%, var(--white));
+  color: var(--ink);
+  width: 24px;
+  height: 24px;
+  font-size: 12.5px;
+  line-height: 1;
+  cursor: pointer;
+}
+.crew-revert:hover { background: color-mix(in srgb, #c08a2e 32%, var(--white)); }
 .crew-remove {
   position: absolute;
   top: 8px;

@@ -293,6 +293,8 @@ const D: Record<string, Pair> = {
   "숨기기": ["Hide", "非表示"],
   "임시": ["TEMP", "仮"],
   "{name} — 임시 적용 중 (완성 가정 미리보기)": ["{name} — temporarily applied (preview assuming completion)", "{name} — 一時適用中（完成前提のプレビュー）"],
+  "이 오퍼만 임시 적용을 되돌립니다": ["Reverts the temporary apply for this operator only", "このオペレーターだけ一時適用を元に戻します"],
+  "{name}의 임시 적용을 되돌렸습니다": ["Reverted the temporary apply for {name}", "{name}の一時適用を元に戻しました"],
   "이 오퍼를 추천 목록에서 숨깁니다 — 다음 순위 오퍼가 올라옵니다": ["Hides this operator from the recommendations — the next-ranked operator moves up", "このオペレーターをおすすめから非表示にします — 次の順位のオペレーターが繰り上がります"],
   "적용할 오퍼로 선택합니다 — 헤더 '선택 임시 적용'으로 한 번에 반영": ["Select this operator to apply — use 'Apply selected (temp)' in the header to apply them together", "適用するオペレーターとして選択します — ヘッダーの「選択を一時適用」でまとめて反映"],
   "선택 임시 적용 ({n})": ["Apply selected ({n})", "選択を一時適用（{n}）"],

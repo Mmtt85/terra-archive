@@ -427,6 +427,16 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     const adds = new Map<string, Elite>(visibleRecs.map((r) => [r.opId, r.to]));
     await applyTempSet(adds, t("추천 {n}명을 임시 적용했습니다 — '되돌리기'로 취소할 수 있습니다", { n: adds.size }));
   };
+  // 오퍼 하나만 임시 적용 해제 — 남은 임시 오퍼들로 미리보기 재편성 (마지막 하나면 전체 되돌리기)
+  const revertTempOne = async (opId: string) => {
+    if (optimizing || investing || !tempApplied.has(opId)) return;
+    const next = new Map(tempApplied);
+    next.delete(opId);
+    if (!next.size) { revertTemp(); return; }
+    setTempApplied(next);
+    await previewOptimize(mergedElite(next));
+    showToast(t("{name}의 임시 적용을 되돌렸습니다", { name: opById.get(opId)?.name ?? opId }));
+  };
   // 임시 적용 되돌리기 — 스냅샷 편성으로 복원하고 세션 종료
   const revertTemp = () => {
     setSelectedRaise(new Set());
@@ -896,6 +906,8 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           onUpdateTeam={updateTeam}
           eliteById={viewElite}
           onSetElite={setOperatorElite}
+          tempIds={new Set(tempApplied.keys())}
+          onRevertTempOne={(id) => { void revertTempOne(id); }}
         />
       )}
       {toast && <div className="toast" role="status">{toast}</div>}
@@ -1000,7 +1012,7 @@ function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onTogg
   );
 }
 
-function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClose, onShowOperator, onUpdateTeam, eliteById, onSetElite }: { cell: { key: string; room: string; label: string; product?: string }; plan: Plan; allAssigned: Set<string>; roster: InfraOp[]; opMap: Map<string, InfraOp>; initialShift: number; onClose: () => void; onShowOperator?: (id: string) => void; onUpdateTeam?: (cellKey: string, shiftIdx: number, ids: string[]) => void; eliteById: Map<string, Elite>; onSetElite: (id: string, elite: Elite) => void }) {
+function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClose, onShowOperator, onUpdateTeam, eliteById, onSetElite, tempIds, onRevertTempOne }: { cell: { key: string; room: string; label: string; product?: string }; plan: Plan; allAssigned: Set<string>; roster: InfraOp[]; opMap: Map<string, InfraOp>; initialShift: number; onClose: () => void; onShowOperator?: (id: string) => void; onUpdateTeam?: (cellKey: string, shiftIdx: number, ids: string[]) => void; eliteById: Map<string, Elite>; onSetElite: (id: string, elite: Elite) => void; tempIds: Set<string>; onRevertTempOne: (opId: string) => void }) {
   const { locale, t } = useI18n();
   const [shift, setShift] = useState(initialShift);
   const shiftIndex = Math.min(shift, (plan.assignments[cell.key]?.length ?? 1) - 1);
@@ -1120,9 +1132,13 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                 const shown = b.skills.length ? b.skills : op.skills.filter((skill) => skill.room === cell.room);
                 return (
                   <article key={op.id} className="crew-card">
+                    {tempIds.has(op.id) && <button type="button" className="crew-revert" title={t("이 오퍼만 임시 적용을 되돌립니다")} onClick={() => onRevertTempOne(op.id)}>↩</button>}
                     {onUpdateTeam && <button type="button" className="crew-remove" title={t("이 자리에서 빼기")} onClick={() => setIds(rawIds.filter((id) => id !== op.id))}>✕</button>}
-                    <img src={op.image} alt={op.name} width={180} height={180} loading="lazy" className={onShowOperator ? "op-link" : undefined}
-                      title={t("{name} 상세 정보", { name: op.name })} onClick={() => onShowOperator?.(op.id)} />
+                    <span className={`crew-face${tempIds.has(op.id) ? " temp" : ""}`}>
+                      <img src={op.image} alt={op.name} width={180} height={180} loading="lazy" className={onShowOperator ? "op-link" : undefined}
+                        title={tempIds.has(op.id) ? t("{name} — 임시 적용 중 (완성 가정 미리보기)", { name: op.name }) : t("{name} 상세 정보", { name: op.name })} onClick={() => onShowOperator?.(op.id)} />
+                      {tempIds.has(op.id) && <i className="op-temp-badge" aria-hidden>{t("임시")}</i>}
+                    </span>
                     <div>
                       <b>
                         {op.name} <i>{"★".repeat(op.rarity)}</i>
