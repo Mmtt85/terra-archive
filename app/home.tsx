@@ -3,7 +3,7 @@
 // 3개 탭(백과사전·플래너·공채)의 공용 루트. 로케일별 라우트(/ /en /ja)가
 // home-ko/en/ja.tsx 래퍼로 해당 언어의 operators 데이터를 정적 import해 넘긴다 —
 // 런타임 언어 전환은 전체 내비게이션이라 이 컴포넌트 안에서 로케일은 불변이다.
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import broadcastsData from "./data/broadcasts.json";
 import storyEventsData from "./data/stories.json";
@@ -877,10 +877,11 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
     }
   };
   // 플래너 등 다른 탭 위에서 모달만 띄울 때 — URL(경로)은 그대로 둔다.
+  // startTransition: 오퍼 상세 모달은 렌더가 무거워 클릭 페인트를 먼저 내보낸다 (INP, 2026-07-21)
   const showOperatorById = (id: string) => {
     const operator = operators.find((candidate) => candidate.id === id);
     if (!operator) return;
-    setSelected(operator);
+    startTransition(() => setSelected(operator));
   };
 
   const TAB_LABEL: Record<Tab, string> = {
@@ -896,9 +897,12 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
   const switchTab = (next: Tab) => {
     setNavOpen(false);
     if (next === tab && !selected) return;
-    setTab(next);
-    setSelected(null);
     history.pushState(null, "", tabPath(next));
+    // 탭 마운트(특히 플래너)는 렌더가 무거워 클릭 페인트부터 내보낸다 (INP 600ms → 개선, 2026-07-21)
+    startTransition(() => {
+      setTab(next);
+      setSelected(null);
+    });
   };
   // 햄버거의 '통합전략 가이드' 부메뉴에서 특정 테마로 바로 진입 — /rogue?topic=isN 으로 이동.
   // 이미 rogue 탭이면 커스텀 이벤트(ta:rogue-topic)로 RogueGuide가 토픽을 동기화하고, 다른
@@ -907,9 +911,11 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
   const switchRogueTopic = (topicId: string) => {
     setNavOpen(false);
     const slug = rogueSlugOf(topicId);
-    setSelected(null);
-    setTab("rogue");
-    setRogueSlug(slug);
+    startTransition(() => {
+      setSelected(null);
+      setTab("rogue");
+      setRogueSlug(slug);
+    });
     // tabPath가 이미 ?future=1을 달고 올 수 있으므로 문자열 이어붙이기 금지 —
     // ?future=1?topic=isN 처럼 깨져 topic 파싱에 실패하면 팬텀(rogue_1)으로 떨어진다
     const [path, query] = tabPath("rogue").split("?");

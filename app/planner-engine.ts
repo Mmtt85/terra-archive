@@ -1288,6 +1288,9 @@ export async function optimize(roster: InfraOp[], priority: ProdPriority = "gold
     await onStep(step);
     await new Promise((resolve) => setTimeout(resolve, 0));
   };
+  // 메시지 없이 메인 스레드만 양보 — buildPlan 여러 번을 한 태스크로 돌리면 계산 중
+  // 다른 클릭이 수백 ms 블로킹된다 (INP, 2026-07-21). UI 없는 실행(검증 하네스)은 무양보.
+  const breathe = async () => { if (onStep) await new Promise((resolve) => setTimeout(resolve, 0)); };
   // every token family (속세의 화식, 감지 정보 계열, 주술 결정, …) is always
   // assembled into A조 — B조 is the recovery crew that steps in when A조's
   // morale runs out
@@ -1321,6 +1324,7 @@ export async function optimize(roster: InfraOp[], priority: ProdPriority = "gold
   if (minis.length) {
     let bestTokScore = planScore(base, byId);
     for (let mask = 0; mask < (1 << minis.length) - 1; mask += 1) { // 마지막 mask(전부 포함) = base
+      await breathe();
       const subset = coreTokens.concat(minis.filter((_, index) => mask & (1 << index)));
       const candidate = buildPlan(subset, roster, {}, priority);
       const score = planScore(candidate, byId);

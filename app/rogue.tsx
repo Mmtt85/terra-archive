@@ -4,7 +4,7 @@
 // 데이터는 scripts/build-rogue.py가 생성하는 app/data/rogue1.json / rogue6.json (클뜯 레포 원본).
 // rogue_6은 CN 데이터를 한국어화(rogue6-ko.json)한 것으로, 이름류는 중국어 원문(cn)을 병기한다.
 // 조우의 층별 출현 규칙·엔딩 선제조건은 클라 데이터에 없어 PRTS 기반 큐레이션(rogueN-curated.json)을 병합한다.
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { startTransition, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import rogue1Data from "./data/rogue1.json";
 import { useI18n } from "./i18n";
 import { normSearch } from "./search";
@@ -664,7 +664,8 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   };
 
   // 뷰 전환 — URL 해시 동기화는 아래 딥링크 effect가 담당 (뷰+열린 모달을 함께 표현)
-  const goView = (v: View) => setView(v);
+  // startTransition: 뷰 전환은 대형 리스트 재렌더라 클릭 페인트부터 내보낸다 (INP, 2026-07-21)
+  const goView = (v: View) => startTransition(() => setView(v));
 
   // 층별 전투 노드 — 일반/긴급이 같은 맵을 공유하므로 페어(StagePair)로 묶는다.
   // rogue_6의 조우 전투(t)도 긴급 페어(e_t)가 있다.

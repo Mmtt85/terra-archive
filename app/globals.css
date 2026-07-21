@@ -2902,6 +2902,9 @@ footer p {
   background: var(--bg-panel);
   opacity: 0.45;
   transition: 0.12s;
+  /* 화면 밖 카드(수백 장)의 레이아웃·페인트 스킵 — 모달 열기 INP 개선 (2026-07-21) */
+  content-visibility: auto;
+  contain-intrinsic-size: 160px 210px;
 }
 .roster-card.owned {
   opacity: 1;

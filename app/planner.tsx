@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import { useI18n, tokenName, rich, type ExtraI18n, type Locale, type T } from "./i18n";
 import { RULES } from "./rules";
 import { useConfirm } from "./confirm";
@@ -476,7 +476,8 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           <h2>{t("인프라 배치 최적화")}</h2>
         </div>
         <div className="planner-buttons">
-          <button onClick={() => setShowRoster(true)}><span className="btn-icon" aria-hidden>▦</span>{t("보유 오퍼 설정 ({a}/{b})", { a: visibleOps.filter((op) => ownedIds.has(op.id)).length, b: visibleOps.length })}</button>
+          {/* startTransition: 로스터 모달(카드 수백 장)은 렌더가 무거워 클릭 페인트부터 내보낸다 (INP, 2026-07-21) */}
+          <button onClick={() => startTransition(() => setShowRoster(true))}><span className="btn-icon" aria-hidden>▦</span>{t("보유 오퍼 설정 ({a}/{b})", { a: visibleOps.filter((op) => ownedIds.has(op.id)).length, b: visibleOps.length })}</button>
           <button className="primary" onClick={() => runOptimize()} disabled={!!optimizing}><span className="btn-icon" aria-hidden>⟳</span>{optimizing ? t("계산 중…") : t("전체 자동편성")}</button>
           <button onClick={fillGaps} title={t("현재 편성(수동 수정 포함)은 그대로 두고, 남은 빈 자리만 효율 순으로 자동 편성합니다")}><span className="btn-icon" aria-hidden>⊕</span>{t("빈 자리만 자동편성")}</button>
           <button onClick={clearAll} title={t("모든 방의 편성을 비웁니다 (보유 오퍼 설정은 유지)")}><span className="btn-icon" aria-hidden>⌫</span>{t("편성 전체 비우기")}</button>
