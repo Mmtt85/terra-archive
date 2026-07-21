@@ -4571,6 +4571,29 @@ html.dark .story-card:hover .story-thumb img {
   color: var(--muted);
   border: 1px solid var(--line);
 }
+/* 시계열 참조(인게임 괄호 항목) — 다른 테마 소속이지만 테라력상 이 위치 */
+.story-guest-badge {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  font: 800 11px monospace;
+  padding: 3px 7px;
+  font-style: normal;
+  background: var(--veil);
+  color: var(--muted);
+  border: 1px dashed var(--border-strong);
+}
+.story-card.guest button,
+.story-card.guest a {
+  border-style: dashed;
+}
+.story-card.guest .story-thumb img {
+  filter: saturate(0.55);
+  opacity: 0.85;
+}
+.story-card.guest .story-card-info h3 {
+  color: var(--muted);
+}
 .story-card-info {
   padding: 10px 12px 12px;
 }

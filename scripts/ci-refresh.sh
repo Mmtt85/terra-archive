@@ -46,6 +46,8 @@ run "build-farm"       python3 scripts/build-farm.py "$G" \
   || echo "[build-farm] 펭귄 통계 fetch 실패 — 기존 farm.json 유지, 다음 실행 때 재시도" | tee -a "$WARN" >&2
 run "build-costs"      python3 scripts/build-costs.py "$G"
 run "build-story"      python3 scripts/build-story.py
+# 인게임 스토리라인(테마 시계열) — stories.json을 참조하므로 build-story 뒤에
+run "build-storylines" python3 scripts/build-storylines.py "$G"
 
 # 4) 다국어(EN/JA) 데이터 — operators/infra/recruit 재생성했으면 필수
 run "build-i18n"       python3 scripts/build-i18n.py "$G"

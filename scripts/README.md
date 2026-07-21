@@ -58,6 +58,7 @@ cp <scratch>/operators-tagged.json app/data/operators.json
 python3 scripts/build-infra.py .gamedata      # → app/data/infra.json (방 스펙 + 스킬 수치·시너지 파싱 + buffId)
 node scripts/verify-plan.mjs                  # 플래너 회귀 검증 — 정배 픽스처(rules.json) 전부 통과해야 커밋
 node scripts/verify-stories.mjs               # 스토리 전수 렌더 검증 — 요약·전문을 실제 렌더해 진입 크래시 탐지 (요약/전문 데이터 수정 시)
+python3 scripts/build-storylines.py .gamedata # → app/data/storylines.json (테마별 뷰 시계열 — stage_table storylines가 정본, 괄호=guest 참조)
 python3 scripts/build-recruit.py .gamedata    # → app/data/recruit.json (공채 태그 31종 + 모집 풀)
 python3 scripts/build-i18n.py .gamedata       # → app/data/operators.{en,ja}.json + extra-i18n.{en,ja}.json
 python3 scripts/download-avatars.py           # 신규 오퍼 아바타를 public/avatars/에 다운로드

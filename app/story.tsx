@@ -22,6 +22,9 @@ import scriptIdsData from "./data/story-script-ids.json";
 import scriptIdsEnData from "./data/story-script-ids.en.json";
 import scriptIdsJaData from "./data/story-script-ids.ja.json";
 import chronologyData from "./data/chronology.json";
+// 인게임 '스토리라인'(테마 시계열) — scripts/build-storylines.py가 stage_table에서 추출.
+// 테마별 뷰의 순서·소속 정본 (사용자 확정 2026-07-21). guest=타 테마 소속의 시계열 참조(괄호).
+import storylinesData from "./data/storylines.json";
 import imageDimsData from "./data/story-image-dims.json";
 import { rich, useI18n, type Locale } from "./i18n";
 import { normSearch } from "./search";
@@ -785,6 +788,14 @@ const arcColor = (arcId: string) => {
   return idx >= 0 ? ARC_COLORS[idx % ARC_COLORS.length] : "#8b9294";
 };
 const KIND_KO: Record<ChronKind, string> = { event: "사이드 이벤트", mini: "미니 이벤트", main: "메인스토리", roguelike: "통합 전략" };
+
+// ── 인게임 스토리라인(테마 시계열) — 테마별 뷰 전용 ─────────────────────────────
+type Storyline = { id: string; name: LocText; items: { id: string; guest?: boolean }[] };
+const STORYLINES = (storylinesData as { lines: Storyline[] }).lines;
+// 연대기 arc와 이름으로 매칭 — 색·#theme-<arc> 앵커 호환 유지 (mainLine은 arc 없음 → 고정색)
+const ARC_ID_BY_NAME = new Map(chronology.arcs.map((a) => [a.name.ko, a.id]));
+const MAINLINE_COLOR = "#475569";
+const CHRON_BY_KEY = new Map(CHRON_ITEMS.map((it) => [it.key, it]));
 const arcNameOf = (locale: Locale, id: string) => {
   const a = chronology.arcs.find((x) => x.id === id);
   return a ? locText(locale, a.name) : id;
@@ -1053,15 +1064,37 @@ function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEve
     return b.key.localeCompare(a.key);
   });
 
-  // 테마별(arc) / 종류별(kind) — 각 그룹 내부는 최신순
+  // 테마별 = 인게임 스토리라인 순서(테라력 시계열, guest=타 테마 소속 참조) —
+  // 사용자 확정 2026-07-21. 스토리라인에 없는 항목(콜라보·통합전략·미래시 등)은
+  // 기존 arc 그룹(최신순)으로 뒤에 붙인다. 종류별은 기존대로 그룹 내 최신순.
+  type GroupItem = { it: ChronItem; guest?: boolean };
   const groups = useMemo(() => {
+    const out: { key: string; label: string; color?: string; items: GroupItem[] }[] = [];
+    let leftover = filtered;
+    if (group === "theme") {
+      const matches = (it: ChronItem) =>
+        !keyword || normSearch([it.name.ko, it.name.en, it.name.ja].filter(Boolean).join(" ")).includes(keyword);
+      const covered = new Set(STORYLINES.flatMap((l) => l.items.map((i) => i.id)));
+      for (const line of STORYLINES) {
+        const arcId = ARC_ID_BY_NAME.get(line.name.ko);
+        out.push({
+          key: arcId ?? line.id,
+          label: locText(locale, line.name),
+          color: arcId ? arcColor(arcId) : MAINLINE_COLOR,
+          items: line.items
+            .map((i) => ({ it: CHRON_BY_KEY.get(i.id), guest: i.guest }))
+            .filter((x): x is GroupItem => Boolean(x.it && matches(x.it))),
+        });
+      }
+      leftover = filtered.filter((it) => !covered.has(it.key));
+    }
     const map = new Map<string, { key: string; label: string; color?: string; sort: number; items: ChronItem[] }>();
-    for (const it of filtered) {
+    for (const it of leftover) {
       let k: string, label: string, color: string | undefined, sort: number;
       if (group === "theme") {
         k = it.arc ?? "__none"; label = it.arc ? arcNameOf(locale, it.arc) : t("테마 미분류");
         color = it.arc ? arcColor(it.arc) : undefined;
-        // 테마 그룹은 arcs 배열(=나무위키 테마) 순서대로, 미분류는 맨 끝
+        // 잔여 테마 그룹은 arcs 배열 순서대로, 미분류는 맨 끝
         sort = it.arc ? chronology.arcs.findIndex((a) => a.id === it.arc) : 999;
       } else {
         k = it.kind; label = t(KIND_KO[it.kind]); sort = ["event", "mini", "main", "roguelike"].indexOf(it.kind);
@@ -1069,12 +1102,13 @@ function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEve
       if (!map.has(k)) map.set(k, { key: k, label, color, sort, items: [] });
       map.get(k)!.items.push(it);
     }
-    return Array.from(map.values()).sort((a, b) => a.sort - b.sort)
-      .map((g) => ({ ...g, items: sortItems(g.items) }));
+    out.push(...Array.from(map.values()).sort((a, b) => a.sort - b.sort)
+      .map((g) => ({ key: g.key, label: g.label, color: g.color, items: sortItems(g.items).map((it) => ({ it })) })));
+    return out.filter((g) => g.items.length);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [group, filtered, locale, t]);
+  }, [group, filtered, keyword, locale, t]);
 
-  const renderCard = (it: ChronItem) => {
+  const renderCard = ({ it, guest }: GroupItem) => {
     const ev = it.eventId ? eventById.get(it.eventId) : undefined;
     const ready = Boolean(it.eventId && canOpenStory(it.eventId));
     const thumb = ev
@@ -1094,15 +1128,17 @@ function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEve
           {ready
             ? <em className="story-ready-badge">{t("AI 요약")}</em>
             : <em className="story-pending-badge">{t("요약 준비 중")}</em>}
+          {/* 시계열 참조(인게임 괄호 항목) — 이 테마 소속은 아니지만 테라력상 이 위치 */}
+          {guest && <em className="story-guest-badge" title={t("이 테마에 속하는 이야기는 아니지만, 테라력 시계열로는 이 위치에 있어요.")}>{t("시계열 참조")}</em>}
         </div>
         <div className="story-card-info">
-          <h3>{locText(locale, it.name)}{ev?.unreleased && <em className="future-badge">{t("미실장")}</em>}</h3>
+          <h3>{guest ? <>({locText(locale, it.name)})</> : locText(locale, it.name)}{ev?.unreleased && <em className="future-badge">{t("미실장")}</em>}</h3>
           <span>{meta}</span>
         </div>
       </>
     );
     return (
-      <article key={it.key} className={`story-card${ready ? "" : " pending"}`}>
+      <article key={it.key} className={`story-card${ready ? "" : " pending"}${guest ? " guest" : ""}`}>
         {/* 열 수 있는 카드는 실제 앵커 — 하이드레이션 전 클릭도 네이티브 해시 이동으로 동작하고,
             마운트 시 apply()가 해시를 읽어 상세를 연다 (로드 직후 클릭 무반응 수정, 2026-07-21).
             핸들러가 붙은 뒤에는 preventDefault + onOpen으로 기존 pushState 경로를 그대로 탄다. */}
