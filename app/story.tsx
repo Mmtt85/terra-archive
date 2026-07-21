@@ -450,10 +450,12 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
     return m ? Math.max(0, parseInt(m[1], 10) - 1) : 0;
   });
   const topRef = useRef<HTMLDivElement>(null);
-  // 스크롤은 건드리지 않는다 (사용자 확정 2026-07-22 — 탭 클릭 시 화면 이동 금지)
-  const goEp = (i: number) => {
+  // 에피소드 탭 클릭은 화면을 움직이지 않는다(사용자 확정 2026-07-22). 단, 하단 이전/다음
+  // 에피소드 버튼은 새 화가 처음부터 보이도록 리더 맨 위로 올려준다(사용자 요청 2026-07-22).
+  const goEp = (i: number, scrollTop = false) => {
     setEpIdx(i);
     if (eventId) history.replaceState(null, "", `#story-${eventId}${i > 0 ? `/ep${i + 1}` : ""}`);
+    if (scrollTop) topRef.current?.scrollIntoView({ block: "start" });
   };
   const ep = script ? script.eps[Math.min(epIdx, script.eps.length - 1)] : null;
   // 렌더용 라인 가공 — 렌더 중 변수 재할당 금지(react-compiler)라 memo에서 미리 계산:
@@ -611,8 +613,8 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
         <EntityRail entities={railEntities} active={active} onShowOperator={onShowOperator} focus={railFocus} />
       </div>
       <div className="sc-ep-foot">
-        {epIdx > 0 && <button type="button" onClick={() => goEp(epIdx - 1)}>← {t("이전 에피소드")}</button>}
-        {epIdx < script.eps.length - 1 && <button type="button" onClick={() => goEp(epIdx + 1)}>{t("다음 에피소드")} →</button>}
+        {epIdx > 0 && <button type="button" onClick={() => goEp(epIdx - 1, true)}>← {t("이전 에피소드")}</button>}
+        {epIdx < script.eps.length - 1 && <button type="button" onClick={() => goEp(epIdx + 1, true)}>{t("다음 에피소드")} →</button>}
       </div>
       {/* 화자 스탠딩 크게 보기 — 아무 곳이나 클릭하면 닫힘 */}
       {faceZoom && (
