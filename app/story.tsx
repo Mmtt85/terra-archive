@@ -377,6 +377,10 @@ function EntityRail({ entities, active, onShowOperator, focus }: {
     <aside className="story-rail" aria-label={t("등장인물")} ref={railRef}>
       {shown.map(({ ei: entityIndex }) => {
         const entity = entities[entityIndex];
+        // 에피소드 전환 직후 한 렌더 동안 active/focus의 ei가 이전 에피소드(더 큰) 엔티티
+        // 배열을 가리켜 entities[ei]가 undefined가 되는 순간이 있다 — 다음/이전 에피소드 클릭 시
+        // "Cannot read properties of undefined (reading 'op')" 크래시의 원인. 방어적으로 건너뛴다.
+        if (!entity) return null;
         const linked = Boolean(entity.op && onShowOperator);
         // 전용 스탠딩 CG(img)가 없으면 연결된 오퍼레이터 아바타로 폴백
         const imgSrc = entity.img ?? (entity.op ? `/avatars/${entity.op}.webp` : undefined);
@@ -633,8 +637,17 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }
   const hasSummary = Boolean(summary); // 요약이 아직 없는(전문만 있는) 이벤트도 열람 가능 (2026-07-20)
   // 미출시(CN 선행) 이벤트: 전문이 없어도 버튼은 보여주고, 누르면 왜 없는지 안내 (사용자 요청 2026-07-18)
   const futureNoScript = !hasScript && Boolean(event.unreleased);
-  // 요약이 없으면 전문만 볼 수 있으니 전문 뷰로 고정 시작
-  const [scriptView, setScriptView] = useState(hasScript || !hasSummary);
+  // 보기 방식(전문/요약)도 URL 해시에 남긴다 (사용자 요청 2026-07-22):
+  //  · #story-<id>/summary = AI 요약  · #story-<id>/ep<N> = 전문(에피소드)  · 접미 없음 = 전문 기본
+  // 복붙·공유·새로고침 시 보던 모드 그대로 열린다. 요약이 없으면 전문만 볼 수 있으니 전문으로 시작.
+  const [scriptView, setScriptView] = useState(() => {
+    if (typeof window !== "undefined") {
+      const h = decodeURIComponent(window.location.hash);
+      if (/\/summary$/.test(h) && hasSummary) return false;   // 요약 딥링크
+      if (/\/ep\d+$/.test(h) && hasScript) return true;       // 에피소드 딥링크 = 전문
+    }
+    return hasScript || !hasSummary;
+  });
   const [script, setScript] = useState<ScriptData | null>(null);
   const [scriptErr, setScriptErr] = useState(false);
   // 전문 언어: 현재 로케일 버전이 있으면 그 언어, 없으면 KR로 폴백 (EN/JA는 /story/script/<loc>/)
@@ -649,7 +662,17 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }
       .catch(() => { if (alive) setScriptErr(true); });
     return () => { alive = false; };
   }, [event.id, hasScript, scriptLoc]);
-  const openScript = () => setScriptView(true);
+  // 모드 전환도 URL 해시에 남긴다 (사용자 요청 2026-07-22) — replaceState라 뒤로가기 히스토리는 안 쌓인다.
+  //  · 전문 = 접미 없음(#story-<id>) — ScriptReader가 마운트되며 ep1부터, 이후 에피소드 전환은 자체적으로 /ep<N> 기록
+  //  · AI 요약 = #story-<id>/summary
+  const openScript = () => {
+    setScriptView(true);
+    history.replaceState(null, "", `#story-${event.id}`);
+  };
+  const openSummary = () => {
+    setScriptView(false);
+    history.replaceState(null, "", `#story-${event.id}/summary`);
+  };
   const [readerPrefs, setReaderPrefs] = useReaderPrefs();
 
   // 인물이 용어보다 먼저 뜨도록 chars → terms 순으로 합친다
@@ -692,7 +715,7 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }
                 <button type="button" role="tab" aria-selected={scriptView}
                   className={scriptView ? "on" : ""} onClick={openScript}>{t("전문 보기 (풀 스크립트)")}</button>
                 <button type="button" role="tab" aria-selected={!scriptView}
-                  className={!scriptView ? "on" : ""} onClick={() => setScriptView(false)}>{t("AI 요약")}</button>
+                  className={!scriptView ? "on" : ""} onClick={openSummary}>{t("AI 요약")}</button>
               </div>
             )}
           </div>
