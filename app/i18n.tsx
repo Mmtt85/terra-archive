@@ -840,7 +840,7 @@ const D: Record<string, Pair> = {
   "조건에 맞는 이벤트가 없어요.": ["No events match your search.", "条件に合うイベントがありません。"],
   "AI 요약": ["AI digest", "AI要約"],
   "요약 준비 중": ["Digest coming soon", "要約準備中"],
-  "시계열 참조": ["Timeline ref.", "時系列参照"],
+  "시계열 참조용": ["Timeline ref.", "時系列参照用"],
   "이 테마에 속하는 이야기는 아니지만, 테라력 시계열로는 이 위치에 있어요.": [
     "Not part of this storyline — placed here by its position on the Terran timeline.",
     "このテーマに属する物語ではありませんが、テラ暦の時系列ではこの位置にあります。",

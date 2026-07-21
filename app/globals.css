@@ -4574,9 +4574,10 @@ html.dark .story-card:hover .story-thumb img {
 /* 시계열 참조(인게임 괄호 항목) — 다른 테마 소속이지만 테라력상 이 위치.
    클릭하면 상세 대신 원래 소속 그룹의 실제 카드로 점프 + 스포트라이트 */
 .story-guest-badge {
+  /* 썸네일 우하단 — 좌상단의 AI 요약/준비 중 배지와 겹치지 않게 (사용자 요청 2026-07-21) */
   position: absolute;
   right: 8px;
-  top: 8px;
+  bottom: 8px;
   font: 800 11px monospace;
   padding: 3px 7px;
   font-style: normal;
@@ -4587,7 +4588,7 @@ html.dark .story-card:hover .story-thumb img {
 .story-card.guest {
   /* 참고용 항목은 한눈에 '부속'임이 보이게 실제로 작게 (사용자 요청 2026-07-21) */
   align-self: center;
-  width: 84%;
+  width: 70%;
   margin-inline: auto;
 }
 .story-card.guest a {

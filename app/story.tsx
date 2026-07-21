@@ -1151,7 +1151,7 @@ function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEve
             ? <em className="story-ready-badge">{t("AI 요약")}</em>
             : <em className="story-pending-badge">{t("요약 준비 중")}</em>}
           {/* 시계열 참조(인게임 괄호 항목) — 이 테마 소속은 아니지만 테라력상 이 위치 */}
-          {guest && <em className="story-guest-badge" title={t("이 테마에 속하는 이야기는 아니지만, 테라력 시계열로는 이 위치에 있어요.")}>{t("시계열 참조")}</em>}
+          {guest && <em className="story-guest-badge" title={t("이 테마에 속하는 이야기는 아니지만, 테라력 시계열로는 이 위치에 있어요.")}>{t("시계열 참조용")}</em>}
         </div>
         <div className="story-card-info">
           <h3>{guest ? <>({locText(locale, it.name)})</> : locText(locale, it.name)}{ev?.unreleased && <em className="future-badge">{t("미실장")}</em>}</h3>
