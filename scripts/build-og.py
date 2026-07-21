@@ -35,7 +35,8 @@ TAB_META = {
     "archive": ("OPERATOR DATABASE",     "cards"),
     "planner": ("INFRA AUTO-PLANNER",    "grid"),
     "recruit": ("RECRUIT CALCULATOR",    "tags"),
-    "farm":    ("FARMING SIMULATOR",     "hex"),
+    "farm":    ("FARMING EFFICIENCY",    "hex"),
+    "upgrade": ("UPGRADE SIMULATOR",     "bars"),
     "story":   ("AI STORY DIGEST",       "story"),
     "rogue":   ("INTEGRATED STRATEGIES", "nodes"),
     "about":   ("FEATURE GUIDE",         "info"),
@@ -55,9 +56,12 @@ SUBLINE = {
     "recruit": {"ko": "태그 조합으로 확정·고성급 오퍼를 계산.",
                 "en": "Find guaranteed operators from tag combos.",
                 "ja": "タグの組み合わせから確定オペレーターを計算。"},
-    "farm":    {"ko": "재료 파밍부터 육성 비용까지, 전부 데이터로.",
-                "en": "Material farming to upgrade costs — all in data.",
-                "ja": "素材周回から育成コストまで、すべてデータで。"},
+    "farm":    {"ko": "정예화 재료의 최적 파밍 스테이지와 이성 효율.",
+                "en": "Best farming stage and sanity efficiency per material.",
+                "ja": "昇進素材の最適ステージと理性効率。"},
+    "upgrade": {"ko": "레벨·정예화·스킬·모듈, 육성 비용을 한눈에.",
+                "en": "Level, Elite, skills & modules — upgrade costs at a glance.",
+                "ja": "レベル・昇進・スキル・モジュール、育成コストを一目で。"},
     "story":   {"ko": "이벤트 스토리를 컷씬과 함께 10분 요약으로.",
                 "en": "Event stories summarized with cutscenes in 10 min.",
                 "ja": "イベントストーリーをカットシーンと共に10分要約。"},
@@ -171,6 +175,22 @@ def icon(d, kind, cx, cy, s):
             hot = k in ("b", "e"); r = 16 if hot else 12
             d.ellipse([x - r, y - r, x + r, y + r], outline=col if hot else sub,
                       width=3, fill=(20, 24, 20) if hot else None)
+    elif kind == "bars":
+        # 오름차순 막대 4개 + 위로 향하는 화살표 — 레벨·정예화 육성(단계별 상승)
+        base = cy + 70
+        bw, gap = 46, 18
+        tot = 4 * bw + 3 * gap
+        ox = cx - tot // 2
+        heights = (44, 78, 112, 150)
+        for i, h in enumerate(heights):
+            x0 = ox + i * (bw + gap)
+            c = col if i >= 2 else sub
+            d.rounded_rectangle([x0, base - h, x0 + bw, base], radius=6, outline=c, width=3)
+        # 상승 화살표
+        ax, ay = cx + tot // 2 - 6, base - heights[-1] - 6
+        d.line([(ox + 20, base - heights[0] - 20), (ax, ay)], fill=col, width=3)
+        d.line([(ax, ay), (ax - 22, ay + 6)], fill=col, width=3)
+        d.line([(ax, ay), (ax - 4, ay + 24)], fill=col, width=3)
     elif kind == "info":
         d.ellipse([cx - s, cy - s, cx + s, cy + s], outline=col, width=3)
         d.ellipse([cx - 6, cy - 46, cx + 6, cy - 34], fill=col)

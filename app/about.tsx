@@ -24,6 +24,7 @@ const SHOTS: Partial<Record<Tab, ShotPair>> = {
   planner: { d: "/about/planner.webp", m: "/about/planner-m.webp" },
   recruit: { d: "/about/recruit.webp", m: "/about/recruit-m.webp" },
   farm: { d: "/about/farm.webp", m: "/about/farm-m.webp" },
+  upgrade: { d: "/about/upgrade.webp", m: "/about/upgrade-m.webp" },
   story: { d: "/about/story.webp", m: "/about/story-m.webp" },
   rogue: { d: "/about/rogue.webp", m: "/about/rogue-m.webp" },
 };
@@ -85,8 +86,8 @@ const CONTENT: Record<Locale, Content> = {
     title: "테라 아카이브 소개",
     tagline: "명일방주(Arknights) 도우미 · 한국어 / English / 日本語",
     intro:
-      "테라 아카이브는 명일방주 독타를 위한 비영리 팬 도구 모음입니다. 오퍼레이터 자료 조사부터 기반시설 편성, 공개모집, 재료 파밍·육성 계획, 스토리 요약까지 — 게임 데이터를 직접 파싱해 자동 파이프라인으로 항상 최신 상태를 유지합니다. 설치·로그인 없이 웹에서 바로 쓸 수 있습니다.",
-    featureLead: "여섯 가지 도구가 있습니다. 카드를 누르면 해당 기능으로 이동합니다.",
+      "테라 아카이브는 명일방주 독타를 위한 비영리 팬 도구 모음입니다. 오퍼레이터 자료 조사부터 기반시설 편성, 공개모집, 재료 파밍, 오퍼 육성 계획, 스토리 요약까지 — 게임 데이터를 직접 파싱해 자동 파이프라인으로 항상 최신 상태를 유지합니다. 설치·로그인 없이 웹에서 바로 쓸 수 있습니다.",
+    featureLead: "일곱 가지 도구가 있습니다. 카드를 누르면 해당 기능으로 이동합니다.",
     features: [
       {
         tab: "planner", icon: "⌂", name: "인프라 자동편성기",
@@ -119,12 +120,21 @@ const CONTENT: Record<Locale, Content> = {
         ],
       },
       {
-        tab: "farm", icon: "◈", name: "파밍·육성 시뮬",
-        summary: "재료별 최적 파밍 스테이지와 육성에 드는 재료 총량을 함께 계산합니다.",
+        tab: "farm", icon: "◈", name: "파밍 도우미",
+        summary: "정예화 재료마다 어느 스테이지가 가장 효율적인지 실측 드랍 통계로 확인합니다.",
         bullets: [
-          "재료마다 어느 스테이지가 이성 효율이 가장 좋은지 펭귄 물류 실측 드랍률로 표시",
-          "정예화·스킬·특화·모듈·레벨업에 필요한 용문폐·경험치·재료 총량을 오퍼별로 합산",
-          "여러 오퍼를 담아 한 번에 계획 — 무엇을 얼마나 파밍해야 하는지 바로 확인",
+          "재료마다 개당 기대 이성(이성 소모 ÷ 드랍률)을 계산해 이성 효율이 가장 좋은 스테이지에 최고 효율 배지",
+          "펭귄 물류(Penguin Statistics) 실측 드랍률 + 클뜯 게임 데이터 기반, 정식 개방 스테이지만 수록",
+          "등급 필터·이름/별명 검색·상시 파밍 전용 토글, 재료 아이콘을 누르면 조합식·용도 상세",
+        ],
+      },
+      {
+        tab: "upgrade", icon: "▦", name: "오퍼 육성 시뮬",
+        summary: "오퍼 육성에 드는 용문폐·경험치·재료 총량을 목표 단계까지 합산합니다.",
+        bullets: [
+          "레벨·정예화가 게임 순서(E0 만렙→정예화1→E1 만렙→…)대로 한 줄에 이어지고, 올릴 목표 레벨을 직접 입력",
+          "스킬 레벨 2~7·스킬별 특화 1~3·모듈별 1~3단계를 그룹마다 목표까지 누적 선택",
+          "여러 오퍼를 담아 한 번에 계획 — 합계를 공유 링크로 저장, 무엇을 얼마나 파밍할지 바로 확인",
         ],
       },
       {
@@ -171,8 +181,8 @@ const CONTENT: Record<Locale, Content> = {
     title: "About Terra Archive",
     tagline: "An Arknights companion · 한국어 / English / 日本語",
     intro:
-      "Terra Archive is a non-commercial fan toolkit for Arknights players (Doctors). From researching operators to planning your base, recruitment, farming and upgrade budgeting, and catching up on the story — it parses the game data directly and an automated pipeline keeps everything up to date. No install, no login; it runs right in the browser.",
-    featureLead: "Six tools in one. Tap a card to jump to that feature.",
+      "Terra Archive is a non-commercial fan toolkit for Arknights players (Doctors). From researching operators to planning your base, recruitment, material farming, upgrade budgeting, and catching up on the story — it parses the game data directly and an automated pipeline keeps everything up to date. No install, no login; it runs right in the browser.",
+    featureLead: "Seven tools in one. Tap a card to jump to that feature.",
     features: [
       {
         tab: "planner", icon: "⌂", name: "Base Auto-Planner",
@@ -205,12 +215,21 @@ const CONTENT: Record<Locale, Content> = {
         ],
       },
       {
-        tab: "farm", icon: "◈", name: "Farming & Upgrade Sim",
-        summary: "Finds the best farming stage per material and totals the materials an upgrade will cost.",
+        tab: "farm", icon: "◈", name: "Farming Helper",
+        summary: "Shows which stage is most efficient for each Elite material, from measured drop statistics.",
         bullets: [
-          "Best sanity-efficiency stage per material, based on Penguin Statistics real drop rates",
-          "Totals the LMD, EXP, and materials needed for Elite, skills, masteries, modules, and leveling per operator",
-          "Queue several operators to plan at once — see exactly what and how much to farm",
+          "Expected sanity-per-item (sanity ÷ drop rate) per material, with a best-efficiency badge on the top stage",
+          "Based on Penguin Statistics real drop rates + extracted game data; only currently released stages",
+          "Rarity filter, name/nickname search, permanent-only toggle; click a material for its recipe and uses",
+        ],
+      },
+      {
+        tab: "upgrade", icon: "▦", name: "Operator Upgrade Sim",
+        summary: "Totals the LMD, EXP, and materials an upgrade will cost, up to your target step.",
+        bullets: [
+          "Level and Elite chain in game order (E0 max → Elite 1 → E1 max → …), and you type the exact target level",
+          "Skill levels 2–7, masteries 1–3 per skill, and module stages 1–3 accumulate to a target per group",
+          "Queue several operators, save the totals as a share link — see exactly what and how much to farm",
         ],
       },
       {
@@ -257,8 +276,8 @@ const CONTENT: Record<Locale, Content> = {
     title: "テラアーカイブについて",
     tagline: "アークナイツの補助ツール · 한국어 / English / 日本語",
     intro:
-      "テラアーカイブは、アークナイツのプレイヤー（ドクター）のための非営利ファンツール集です。オペレーターの調査から基地編成、公開求人、素材周回・育成の計画、ストーリー要約まで — ゲームデータを直接解析し、自動パイプラインで常に最新の状態を保ちます。インストールもログインも不要、ブラウザですぐに使えます。",
-    featureLead: "6つのツールがあります。カードを押すとその機能へ移動します。",
+      "テラアーカイブは、アークナイツのプレイヤー（ドクター）のための非営利ファンツール集です。オペレーターの調査から基地編成、公開求人、素材周回、オペレーター育成の計画、ストーリー要約まで — ゲームデータを直接解析し、自動パイプラインで常に最新の状態を保ちます。インストールもログインも不要、ブラウザですぐに使えます。",
+    featureLead: "7つのツールがあります。カードを押すとその機能へ移動します。",
     features: [
       {
         tab: "planner", icon: "⌂", name: "基地自動編成",
@@ -291,12 +310,21 @@ const CONTENT: Record<Locale, Content> = {
         ],
       },
       {
-        tab: "farm", icon: "◈", name: "周回・育成シミュ",
-        summary: "素材ごとの最適な周回ステージと、育成に必要な素材の合計をまとめて計算します。",
+        tab: "farm", icon: "◈", name: "周回ヘルパー",
+        summary: "昇進素材ごとにどのステージが最も効率的かを、実測ドロップ統計で確認します。",
         bullets: [
-          "素材ごとにどのステージが理性効率が良いかを、ペンギン急便の実測ドロップ率で表示",
-          "昇進・スキル・特化・モジュール・レベリングに必要な龍門幣・経験値・素材の合計をオペレーター単位で集計",
-          "複数のオペレーターをまとめて計画 — 何をどれだけ周回すべきかが一目で分かります",
+          "素材ごとの1個あたり期待理性（理性消費 ÷ ドロップ率）を計算し、最も効率の良いステージに最効率バッジ",
+          "ペンギン急便（Penguin Statistics）の実測ドロップ率＋ゲームデータ抽出に基づき、正式実装ステージのみ収録",
+          "レア度フィルター・名前/愛称検索・常設のみトグル、素材アイコンを押すと合成式・用途の詳細",
+        ],
+      },
+      {
+        tab: "upgrade", icon: "▦", name: "オペレーター育成シミュ",
+        summary: "オペレーター育成に必要な龍門幣・経験値・素材の合計を、目標段階まで集計します。",
+        bullets: [
+          "レベルと昇進がゲーム順（E0カンスト→昇進1→E1カンスト→…）に一列に並び、目標レベルを直接入力",
+          "スキルLv.2～7・スキル別特化1～3・モジュール別1～3段階をグループごとに目標まで累積選択",
+          "複数のオペレーターをまとめて計画し、合計を共有リンクで保存 — 何をどれだけ周回すべきかが一目で分かります",
         ],
       },
       {
