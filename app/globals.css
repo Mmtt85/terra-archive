@@ -3717,12 +3717,16 @@ footer p {
   align-items: flex-end;
   gap: 10px;
 }
-/* 모바일 전용 헤더 요소 — 데스크탑에선 항상 감춰 PC 헤더를 그대로 둔다.
-   실제 노출·배치는 아래 @media (max-width: 760px) 블록에서만 한다 (사용자 요청 2026-07-22). */
-.feedback-header-btn,
-.header-collapse-toggle,
-.ft-short {
-  display: none;
+/* 모바일 전용 헤더 요소 — 데스크탑(761px+)에서만 감춰 PC 헤더를 그대로 둔다.
+   ⚠ 전역 display:none으로 두면 소스 순서상 앞쪽에 있는 모바일 노출 규칙(650·2150줄대)을
+   같은 특이도로 덮어버려 제안 버튼·접기 핸들·"미래시" 라벨이 모바일에서도 사라진다
+   (2026-07-22 실사용 리포트) — 반드시 min-width 미디어쿼리로 가둔다. */
+@media (min-width: 761px) {
+  .feedback-header-btn,
+  .header-collapse-toggle,
+  .ft-short {
+    display: none;
+  }
 }
 .feedback-fab {
   border: 1px solid var(--border-strong);
@@ -7144,6 +7148,9 @@ main.site-main {
   display: flex;
   flex-direction: column;
 }
+/* 헤더는 flex 컨테이너(main)에서 절대 눌리지 않게 — flex-shrink 기본값 1이면 본문이 길 때
+   헤더가 축소돼 모바일 2·3줄이 배경 밖으로 삐져나온다 (2026-07-22 실사용 리포트) */
+main.site-main > .site-header { flex: 0 0 auto; }
 .site-scroll {
   flex: 1 1 auto;
   min-height: 0;
