@@ -674,26 +674,86 @@ button {
      1줄 = 브랜드 · 공식방송 · 진행중이벤트 (왼쪽 정렬)
      2줄 = 미래시 · 햄버거 · 다크모드 · 언어 (오른쪽 정렬).
      ::after(폭 100%)가 두 줄 사이를 끊고, 2줄 첫 요소의 margin-left:auto가 우측 정렬. */
-  .site-header { justify-content: flex-start; }
+  /* 모바일 헤더 줄 구성 (사용자 배치 지시 2026-07-22):
+     1줄 = 로고 · 공식방송 · 제안 · 진행중이벤트(공간채움) · 햄버거(맨 오른쪽)
+     2줄 = 미래시 · 다크모드 · 언어 (오른쪽 정렬)
+     헤더 하단 중앙에 접기 핸들. 접으면(.collapsed) 2줄과 제안·이벤트가 사라져 로고·공식방송·햄버거만. */
+  .site-header {
+    justify-content: flex-start;
+    position: sticky;
+  }
   .brand { order: 1; margin-right: 0; }
   .bcast-trigger { order: 2; margin-left: 0; }
-  .event-group {
+  .feedback-header-btn {
     order: 3;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0;
+    padding: 4px 8px;
+    border: 1px solid var(--border-strong);
+    background: var(--chip);
+    color: var(--lime);
+    font-size: 11.5px;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .event-group {
+    order: 4;
     margin: 0;
     min-width: 0;
     flex: 1 1 auto; /* 1줄 오른쪽 남는 공간을 이벤트 칩이 채우도록 (사용자 요청 2026-07-20) */
   }
+  /* 햄버거(메뉴)를 1줄 맨 오른쪽으로 (사용자 요청 2026-07-22). event-group의 grow가 밀어주고,
+     이벤트가 없을 때(접힘 등)를 대비해 margin-left:auto로도 오른쪽에 고정한다. */
+  .site-header .nav-group { order: 5; margin-left: auto; }
   .site-header::after {
     content: "";
-    order: 4;
+    order: 6;
     flex-basis: 100%;
     height: 0;
   }
-  .site-header .future-toggle { order: 5; margin-left: auto; }
-  .site-header .nav-group { order: 6; }
-  .site-header .theme-toggle { order: 7; }
-  .site-header .lang-wrap { order: 8; }
-  .site-header .about-icon { order: 9; }
+  .site-header .future-toggle { order: 7; margin-left: auto; }
+  .site-header .theme-toggle { order: 8; }
+  .site-header .lang-wrap { order: 9; }
+  .site-header .about-icon { order: 10; }
+  /* 우하단 FAB은 모바일에서 감추고, 헤더의 제안 버튼으로 대체 (패널은 그대로 fixed로 뜬다) */
+  .feedback-fab { display: none; }
+  /* 헤더 접기 핸들 — 헤더 맨 아래 중앙, 아래로 살짝 걸치는 탭 (사용자 확정 2026-07-22) */
+  .header-collapse-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    left: 50%;
+    bottom: -14px;
+    transform: translateX(-50%);
+    width: 52px;
+    height: 16px;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-top: 0;
+    border-radius: 0 0 8px 8px;
+    background: var(--header-bg);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 1;
+  }
+  /* 접힘: 2줄 요소와 제안·진행중이벤트를 숨겨 로고·공식방송·햄버거만 남긴다 */
+  .site-header.collapsed .feedback-header-btn,
+  .site-header.collapsed .event-group,
+  .site-header.collapsed .future-toggle,
+  .site-header.collapsed .theme-toggle,
+  .site-header.collapsed .lang-wrap,
+  .site-header.collapsed .about-icon,
+  .site-header.collapsed::after {
+    display: none;
+  }
   /* 배너 + 이벤트 설명(라벨·이름·기간)을 PC판처럼 함께 표시 —
      1줄 오른쪽 남는 공간을 채운다 (사용자 요청 2026-07-20). */
   .event-trigger {
@@ -2145,13 +2205,19 @@ footer p {
   }
   .site-header .nav-toggle {
     padding: 7px 9px;
-    margin-right: 6px;
+    margin-right: 0;
     font-size: 12px;
     gap: 6px;
-    max-width: 100%;
+    /* 크기 고정 — 탭 이름이 길어도("인프라 자동편성기") 폭이 밀리지 않게 상한 고정 + 말줄임 */
+    max-width: 132px;
+    flex: 0 0 auto;
+    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
+  /* 미래시 토글 라벨 축약 — 모바일은 "미래시"만 (사용자 요청 2026-07-22) */
+  .ft-full { display: none; }
+  .ft-short { display: inline; }
   /* 모바일에선 드롭다운을 헤더 폭 전체로 — nav-group을 static으로 풀어
      .main-tabs가 헤더(sticky) 기준으로 좌우 16px에 붙게 한다 */
   .site-header .nav-group {
@@ -3641,6 +3707,13 @@ footer p {
   flex-direction: column;
   align-items: flex-end;
   gap: 10px;
+}
+/* 모바일 전용 헤더 요소 — 데스크탑에선 항상 감춰 PC 헤더를 그대로 둔다.
+   실제 노출·배치는 아래 @media (max-width: 760px) 블록에서만 한다 (사용자 요청 2026-07-22). */
+.feedback-header-btn,
+.header-collapse-toggle,
+.ft-short {
+  display: none;
 }
 .feedback-fab {
   border: 1px solid var(--border-strong);

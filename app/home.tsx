@@ -653,6 +653,8 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
   // 초기값으로 쓴다 (SSR/클라이언트 첫 렌더 일치 → hydration mismatch 없음).
   const [tab, setTab] = useState<Tab>(initialTab);
   const [navOpen, setNavOpen] = useState(false); // 모바일 탭 메뉴(햄버거) 열림 상태
+  const [feedbackOpen, setFeedbackOpen] = useState(false); // 제안 패널 — 모바일 헤더 버튼·데스크탑 FAB 공용
+  const [headerCollapsed, setHeaderCollapsed] = useState(false); // 모바일 헤더 접기(로고·공식방송·햄버거만) — PC는 무관
   // 햄버거 '통합전략 가이드' 부메뉴 활성 표시용 — 현재 URL의 ?topic= 슬러그 (기본 is1)
   const [rogueSlug, setRogueSlug] = useState<string>(() =>
     typeof window === "undefined" ? "is1" : new URLSearchParams(window.location.search).get("topic") || "is1");
@@ -1052,17 +1054,26 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
 
   return (
     <main className={tab === "archive" ? "site-main" : "base-main site-main"}>
-      <header className="site-header" id="top">
+      <header className={`site-header${headerCollapsed ? " collapsed" : ""}`} id="top">
         <a className="brand" href={localeBase || "/"} aria-label={t("테라 아카이브 홈")}
           onClick={(event) => { event.preventDefault(); switchTab("portal"); window.scrollTo({ top: 0 }); }}>
           <span className="brand-mark"><img src="/avatars/char_1012_skadi2.webp" alt="" width={180} height={180} /></span>
           <span>{t("테라 아카이브")}<small>{t("명일방주(Arknights) 팬사이트")}</small></span>
         </a>
         <BroadcastBadges />
-        {/* 미래시 토글 = 우측 그룹의 첫 요소(margin-left:auto). 햄버거 버튼 바로 왼쪽 (사용자 배치 지시 2026-07) */}
+        {/* 제안 버튼 — 모바일 전용(공식 방송 오른쪽). 데스크탑에선 숨기고 우하단 FAB을 쓴다.
+            좁은 화면에서 FAB이 본문을 가려 거슬린다는 피드백(2026-07-22). CSS order로 공식방송 옆에 배치. */}
+        {feedbackReady && (
+          <button type="button" className="feedback-header-btn" onClick={() => setFeedbackOpen(true)} aria-label={t("제안 보내기")}>
+            <span aria-hidden>💬</span> {t("제안")}
+          </button>
+        )}
+        {/* 미래시 토글 = 우측 그룹의 첫 요소(margin-left:auto). 햄버거 버튼 바로 왼쪽 (사용자 배치 지시 2026-07)
+            라벨은 데스크탑 "미래시 데이터 포함", 모바일은 "미래시"로 축약 (사용자 요청 2026-07-22). */}
         <label className="future-toggle" title={t("아직 정식 출시되지 않은(중국 서버 선행) 오퍼레이터·재료도 목록·계산기에 표시합니다. 미실장 텍스트는 비공식 AI 번역입니다.")}>
           <input type="checkbox" checked={includeFuture} onChange={(event) => toggleFuture(event.target.checked)} />
-          {t("미래시 데이터 포함")}
+          <span className="ft-full">{t("미래시 데이터 포함")}</span>
+          <span className="ft-short">{t("미래시")}</span>
         </label>
         {/* 우측 그룹: .nav-group의 margin-left:auto로 여기부터 헤더 오른쪽 끝으로 밀어낸다.
             순서 = 햄버거 · 언어변경 · 소개(ⓘ) (사용자 배치 지시 2026-07) */}
@@ -1097,6 +1108,13 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
         </div>
         <ThemeToggle />
         <LanguageSwitcher />
+        {/* 헤더 접기 핸들 — 모바일 전용, 헤더 맨 아래 중앙. 접으면 로고·공식방송·햄버거만 남는다
+            (사용자 요청 2026-07-22). 데스크탑에선 CSS로 숨긴다. */}
+        <button type="button" className="header-collapse-toggle"
+          aria-expanded={!headerCollapsed} aria-label={headerCollapsed ? t("헤더 펼치기") : t("헤더 접기")}
+          onClick={() => setHeaderCollapsed((collapsed) => !collapsed)}>
+          <span aria-hidden>{headerCollapsed ? "⌄" : "⌃"}</span>
+        </button>
       </header>
 
 
@@ -1165,7 +1183,7 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
       {tab === "about" && <About onOpenTab={switchTab} />}
 
       {selected && <OperatorModal operator={selected} nicknames={nicknames.get(selected.id) ?? []} onSubmitNickname={handleSubmitNickname} onClose={closeOperator} />}
-      <FeedbackWidget />
+      <FeedbackWidget open={feedbackOpen} setOpen={setFeedbackOpen} />
 
       <footer>
         <span>RHODES ISLAND // TERRA ARCHIVE</span>

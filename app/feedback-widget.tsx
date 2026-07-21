@@ -4,9 +4,10 @@ import { useState } from "react";
 import { feedbackReady, sendFeedback, type FeedbackKind } from "./feedback";
 import { useI18n } from "./i18n";
 
-export default function FeedbackWidget() {
+// open/setOpen은 부모(home)가 쥔다 — 모바일에선 헤더의 '제안' 버튼(공식 방송 옆)이,
+// 데스크탑에선 우하단 FAB이 같은 패널을 연다 (사용자 요청 2026-07-22, PC 동작은 종전과 동일).
+export default function FeedbackWidget({ open, setOpen }: { open: boolean; setOpen: (value: boolean) => void }) {
   const { t } = useI18n();
-  const [open, setOpen] = useState(false);
   const [kind, setKind] = useState<FeedbackKind>("feature");
   const [message, setMessage] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "done" | "error">("idle");
@@ -49,7 +50,7 @@ export default function FeedbackWidget() {
           </footer>
         </div>
       )}
-      <button type="button" className="feedback-fab" onClick={() => setOpen((current) => !current)} aria-label={t("제안 보내기")}>
+      <button type="button" className="feedback-fab" onClick={() => setOpen(!open)} aria-label={t("제안 보내기")}>
         {open ? t("닫기") : t("💬 제안")}
       </button>
     </div>
