@@ -19,7 +19,7 @@ export function initOcr(onProgress?: OcrProgress): Promise<Worker> {
       gzip: false,
       logger: onProgress ? (m: { status: string; progress: number }) => onProgress(m.status, m.progress) : undefined,
     });
-    await w.setParameters({ tessedit_pageseg_mode: PSM.SINGLE_LINE }); // 단일 텍스트 라인
+    await w.setParameters({ tessedit_pageseg_mode: PSM.SINGLE_BLOCK }); // 1~2줄 이름 블록
     return w;
   })();
   return workerP;
@@ -83,5 +83,6 @@ export async function ocrNameBand(src: CanvasImageSource, rect: Rect, srcW: numb
   const w = await initOcr();
   const pre = preprocessNameBand(src, rect, srcW, srcH);
   const { data } = await w.recognize(pre);
-  return (data.text || "").trim().replace(/\s*\n\s*/g, " ");
+  // 줄바꿈 유지 — match가 줄 단위로 나눠 이름 줄만 골라낸다(윗줄 셰브런/스킬 잡음 제거).
+  return (data.text || "").trim();
 }

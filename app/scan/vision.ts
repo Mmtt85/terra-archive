@@ -248,8 +248,9 @@ export function scanFrame(f: Frame): FrameScan {
       const cardTop = cellRy - Math.round(px * 0.16);
       const cardH = Math.round(px * 1.94); // 카드 실제 높이(리본~이름 아래) ≈ px*1.94, 행 피치보다 짧음
       const card: Rect = { x: cardLeft, y: cardTop, w: Math.round(px * 0.92), h: cardH };
-      // 이름 띠: 카드 맨 아래 이름 줄(브랜치 아이콘·LV원 제외) — OCR 88% 검증값(px*1.60)
-      const nameBox: Rect = { x: cardLeft + Math.round(px * 0.05), y: cellRy + Math.round(px * 1.58), w: Math.round(px * 0.86), h: Math.round(px * 0.21) };
+      // 이름 띠: 카드 하단 이름. 2줄 이름까지 덮게 위로·크게(px*1.44, h*0.34). 픽스처 10장
+      // 스윕 최적값(줄 단위 매칭과 함께 신뢰매칭 113/134). 윗줄 셰브런/스킬은 match가 줄단위로 걸러냄.
+      const nameBox: Rect = { x: cardLeft + Math.round(px * 0.05), y: cellRy + Math.round(px * 1.44), w: Math.round(px * 0.86), h: Math.round(px * 0.34) };
       const eliteBox: Rect = { x: cardLeft + 4, y: cellRy + Math.round(px * 1.05), w: Math.round(px * 0.5), h: Math.round(px * 0.45) };
       cells.push({ row: ri, col: ci, cx: cardLeft, sx, ry: cellRy, rarity, cls, clsConf: conf, card, nameBox, eliteBox });
     }

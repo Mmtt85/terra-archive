@@ -70,17 +70,29 @@ function candidates(): Cand[] {
   return CANDS;
 }
 
+// OCR 원문(줄바꿈 포함)에서 매칭 후보 문자열들을 만든다. 이름은 보통 맨 아랫줄이고,
+// 윗줄엔 정예화 셰브런(≫)·스킬/모듈 텍스트가 섞여 나온다 → 줄 단위로 나눠 이름 줄이
+// 이기게 하고, 2줄 이름은 인접 줄쌍으로 합친다. (픽스처 검증: 92→113/134)
+function buildQueries(ocrText: string): string[] {
+  const lines = ocrText.split("\n").map((s) => s.trim()).filter(Boolean);
+  const q = new Set<string>();
+  for (const l of lines) { q.add(norm(l)); q.add(norm(stripNoise(l))); }
+  for (let i = 0; i + 1 < lines.length; i++) q.add(norm(lines[i] + lines[i + 1]));
+  q.add(norm(lines.join("")));
+  q.add(norm(ocrText));
+  return [...q].filter((s) => s.length >= 1);
+}
+
 // ocrText 하나에 대한 최상위 매칭
 export function matchOperator(ocrText: string, sig: Signal): MatchResult | null {
-  const raw = norm(ocrText);
-  const stripped = norm(stripNoise(ocrText));
-  if (raw.length < 1 && stripped.length < 1) return null;
+  const queries = buildQueries(ocrText);
+  if (queries.length === 0) return null;
   const useClass = sig.clsConf >= CLASS_CONF_GATE;
 
   let best: MatchResult | null = null;
   for (const c of candidates()) {
     let ns = 0;
-    for (const k of c.keys) ns = Math.max(ns, sim(raw, k), stripped ? sim(stripped, k) : 0);
+    for (const k of c.keys) for (const q of queries) ns = Math.max(ns, sim(q, k));
     let score = ns;
     if (sig.rarity && c.rarity === sig.rarity) score += W_RARITY;
     if (useClass && c.cls === sig.cls) score += W_CLASS;
