@@ -1132,13 +1132,17 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
             <div><span className="section-no">FILTER / 01</span><h2 id="explorer-title">{t("탐색 조건")}</h2></div>
             <button className="reset" onClick={reset}>↻ {t("초기화")}</button>
           </div>
-          <FilterGroup title={t("성급")} items={rarities} labelFor={(item) => `${item}★`} selected={selectedRarities} onToggle={toggleIn(setSelectedRarities)} countForItem={(item) => roster.filter((operator) => String(operator.rarity) === item).length} />
+          {/* 컨셉덱은 시그니처 기능이라 맨 위에 항상 펼쳐 둔다 (사용자 요청 2026-07-22). */}
           <FilterGroup title={t("컨셉덱")} items={concepts} labelFor={(item) => conceptName(locale, item)} selected={selectedConcepts} onToggle={toggleIn(setSelectedConcepts)} rows={2} countForItem={(item) => roster.filter((operator) => operator.concepts.includes(item)).length} />
-          <FilterGroup title={t("직군")} items={jobs} selected={selectedJobs} onToggle={toggleIn(setSelectedJobs)} countForItem={(item) => roster.filter((operator) => operator.job === item).length} />
-          <FilterGroup title={t("세부 직군")} items={subProfessions} selected={selectedSubProfessions} onToggle={toggleIn(setSelectedSubProfessions)} countForItem={(item) => roster.filter((operator) => operator.subProfession === item).length} />
-          <FilterGroup title={t("전투 태그")} items={combatTags} selected={tags} onToggle={toggleTag} countForItem={(item) => roster.filter((operator) => operator.combatTags.includes(item)).length} />
-          <FilterGroup title={t("공격 방식")} items={attackMethods} selected={selectedMethods} onToggle={toggleIn(setSelectedMethods)} countForItem={(item) => roster.filter((operator) => positionMethods.includes(item) ? operator.position === item : damageTypeOf(operator) === item).length} />
-          <FilterGroup title={t("공식 소속")} items={factions} selected={selectedFactions} onToggle={toggleIn(setSelectedFactions)} countForItem={(item) => roster.filter((operator) => operator.factions.includes(item)).length} />
+          {/* 성급·직군·세부직군·전투태그·공격방식·소속은 한 컨트롤로 합쳐 카테고리→값 방식으로. */}
+          <AttributeFilter groups={[
+            { title: t("성급"), items: rarities, selected: selectedRarities, onToggle: toggleIn(setSelectedRarities), labelFor: (item) => `${item}★`, countForItem: (item) => roster.filter((operator) => String(operator.rarity) === item).length },
+            { title: t("직군"), items: jobs, selected: selectedJobs, onToggle: toggleIn(setSelectedJobs), countForItem: (item) => roster.filter((operator) => operator.job === item).length },
+            { title: t("세부 직군"), items: subProfessions, selected: selectedSubProfessions, onToggle: toggleIn(setSelectedSubProfessions), countForItem: (item) => roster.filter((operator) => operator.subProfession === item).length },
+            { title: t("전투 태그"), items: combatTags, selected: tags, onToggle: toggleTag, countForItem: (item) => roster.filter((operator) => operator.combatTags.includes(item)).length },
+            { title: t("공격 방식"), items: attackMethods, selected: selectedMethods, onToggle: toggleIn(setSelectedMethods), countForItem: (item) => roster.filter((operator) => positionMethods.includes(item) ? operator.position === item : damageTypeOf(operator) === item).length },
+            { title: t("공식 소속"), items: factions, selected: selectedFactions, onToggle: toggleIn(setSelectedFactions), countForItem: (item) => roster.filter((operator) => operator.factions.includes(item)).length },
+          ]} />
 
           <aside className="data-note"><span>DATA NOTE</span><p>{t("오퍼레이터 {count}명 · 전원 이미지 · 다국어 이름 및 커뮤니티 별명 검색 · 스킬과 재능 기반 {concepts}개 컨셉 태그를 제공합니다. 모든 필터는 토글식이며 아무것도 선택하지 않으면 전체가 표시됩니다.", { count: roster.length, concepts: concepts.length })}</p></aside>
         </div>
@@ -1252,6 +1256,44 @@ function FilterGroup({ title, items, selected, onToggle, rows = 1, countForItem,
       </div>
       {(hiddenCount > 0 || expanded) && (
         <button className="more-filter" type="button" onClick={() => setExpanded((current) => !current)} aria-expanded={expanded}><span className="btn-icon" aria-hidden>{expanded ? "▴" : "▾"}</span>{expanded ? t("접기") : t("더보기 +{n}", { n: hiddenCount })}</button>
+      )}
+    </fieldset>
+  );
+}
+
+// 여러 속성 필터(성급·직군·세부직군·전투태그·공격방식·소속)를 한 컨트롤로 — 카테고리를 누르면
+// 그 값 태그가 펼쳐진다. 필터 패널이 세로로 끝없이 늘어나던 문제 해소 (사용자 요청 2026-07-22).
+// 컨셉덱은 시그니처 기능이라 별도 유지.
+type AttrGroup = { title: string; items: string[]; selected: string[]; onToggle: (value: string) => void; labelFor?: (value: string) => string; countForItem: (value: string) => number };
+function AttributeFilter({ groups }: { groups: AttrGroup[] }) {
+  const { t } = useI18n();
+  const [open, setOpen] = useState<string | null>(null);
+  const active = groups.find((g) => g.title === open);
+  return (
+    <fieldset className="attr-filter">
+      <legend>{t("세부 조건")}<small className="multi-hint">{t("항목을 눌러 값을 고르세요 · 복수 선택 가능")}</small></legend>
+      <div className="attr-cats">
+        {groups.map((g) => (
+          <button key={g.title} type="button"
+            className={`attr-cat${open === g.title ? " open" : ""}${g.selected.length ? " has-sel" : ""}`}
+            aria-expanded={open === g.title}
+            onClick={() => setOpen((current) => (current === g.title ? null : g.title))}>
+            {g.title}{g.selected.length > 0 && <em>{g.selected.length}</em>}
+            <span className="attr-caret" aria-hidden>{open === g.title ? "▴" : "▾"}</span>
+          </button>
+        ))}
+      </div>
+      {active && (
+        <div className="filter-list attr-values">
+          {active.items.map((item) => {
+            const isSelected = active.selected.includes(item);
+            return (
+              <button key={item} className={isSelected ? "selected" : ""} aria-pressed={isSelected} onClick={() => active.onToggle(item)}>
+                {active.labelFor ? active.labelFor(item) : item}<span>{active.countForItem(item)}</span>
+              </button>
+            );
+          })}
+        </div>
       )}
     </fieldset>
   );

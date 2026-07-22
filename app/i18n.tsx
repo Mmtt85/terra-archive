@@ -174,6 +174,8 @@ const D: Record<string, Pair> = {
   "공격 방식": ["Attack Type", "攻撃タイプ"],
   "공식 소속": ["Affiliation", "所属"],
   "복수 선택 가능 · 전부 해제 시 전체": ["Multi-select · none selected = all", "複数選択可 · 全解除で全表示"],
+  "세부 조건": ["Attributes", "属性で絞り込み"],
+  "항목을 눌러 값을 고르세요 · 복수 선택 가능": ["Tap a category to pick values · multi-select", "項目を押して値を選択 · 複数選択可"],
   "접기": ["Collapse", "閉じる"],
   "더보기 +{n}": ["More +{n}", "もっと見る +{n}"],
   "오퍼레이터 {count}명 · 전원 이미지 · 다국어 이름 및 커뮤니티 별명 검색 · 스킬과 재능 기반 {concepts}개 컨셉 태그를 제공합니다. 모든 필터는 토글식이며 아무것도 선택하지 않으면 전체가 표시됩니다.": [

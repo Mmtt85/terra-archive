@@ -1075,6 +1075,47 @@ legend {
 .filter-list button.selected span {
   color: var(--lime);
 }
+/* 통합 속성 필터 — 카테고리 버튼 행 + 선택 시 값 태그 펼침 (2026-07-22) */
+.attr-cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.attr-cat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  background: 0 0;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.attr-cat:hover { border-color: #777; }
+.attr-cat.open { border-color: var(--border-strong); background: var(--chip); color: #fff; }
+.attr-cat.has-sel { border-color: var(--border-strong); }
+.attr-cat em {
+  font-style: normal;
+  font: 800 10px monospace;
+  color: var(--on-lime, #1a1a1a);
+  background: var(--lime);
+  border-radius: 999px;
+  padding: 1px 6px;
+  line-height: 1.5;
+}
+.attr-cat .attr-caret { color: var(--muted); font-size: 9px; }
+.attr-cat.open .attr-caret { color: #fff; }
+/* 펼쳐지는 값 패널 — 카테고리 버튼과 확연히 구분되도록 옅은 배경 드로어 + 라임 액센트 */
+.attr-values {
+  margin-top: 9px;
+  padding: 11px 12px;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--lime);
+}
+.attr-values button { background: var(--white); }
 .more-filter {
   width: 100%;
   color: var(--muted);
