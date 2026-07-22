@@ -41,8 +41,8 @@ export type OcrWord = { text: string; x0: number; y0: number; x1: number; y1: nu
 // 전체 프레임을 한 번에 OCR해 단어+위치(프레임 픽셀 좌표)를 반환. 격자·크롭 없이 화면 어디의
 // 글자든 찾는다(PSM 11 sparse). 호출부가 위치로 카드 이름을 묶어 매칭한다.
 export async function ocrWords(frame: CanvasImageSource, fw: number, fh: number): Promise<OcrWord[]> {
-  // 작은 글자 인식률 위해 목표 폭 ~1900으로 스케일(과확대 방지)
-  const scale = Math.min(2, Math.max(1, 1900 / fw));
+  // 작은 글자 인식률 위해 목표 폭 ~2600으로 스케일(과확대 방지). 카드 이름이 작아 해상도가 관건.
+  const scale = Math.min(2.4, Math.max(1, 2600 / fw));
   const cw = Math.round(fw * scale), ch = Math.round(fh * scale);
   const canvas = document.createElement("canvas");
   canvas.width = cw; canvas.height = ch;

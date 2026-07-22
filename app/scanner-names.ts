@@ -68,12 +68,15 @@ export type NameMatch = { id: string; name: string; sim: number; text: string };
 type WordLike = { text: string; x0: number; y0: number; x1: number; y1: number; conf: number };
 export type Detection = NameMatch & { box: { x0: number; y0: number; x1: number; y1: number } };
 
-export function detectFromWords(words: WordLike[], minSim = 0.58): Detection[] {
-  const ws = words.filter((w) => (w.conf ?? 0) >= 30 && w.text.trim().length > 0);
+export type WordGroup = { text: string; box: { x0: number; y0: number; x1: number; y1: number } };
+
+// 전체프레임 OCR 단어들을 행·x간격으로 묶어 "카드 이름 후보 그룹"으로 만든다(매칭 전 단계).
+// 2패스 인식(호출부)이 이 그룹 위치로 각 이름을 고해상도 재판독한다.
+export function groupWords(words: WordLike[]): WordGroup[] {
+  const ws = words.filter((w) => (w.conf ?? 0) >= 25 && w.text.trim().length > 0);
   if (!ws.length) return [];
   const heights = ws.map((w) => w.y1 - w.y0).sort((a, b) => a - b);
   const medH = heights[heights.length >> 1] || 12;
-  // 행 클러스터링 — y중심이 가까운 단어끼리
   const rows: { yc: number; items: WordLike[] }[] = [];
   for (const w of [...ws].sort((a, b) => (a.y0 + a.y1) / 2 - (b.y0 + b.y1) / 2)) {
     const yc = (w.y0 + w.y1) / 2;
@@ -81,27 +84,27 @@ export function detectFromWords(words: WordLike[], minSim = 0.58): Detection[] {
     if (!row) { row = { yc, items: [] }; rows.push(row); }
     row.items.push(w);
   }
-  // 행 안에서 x간격이 좁으면(이름 내 단어) 이어붙이고, 넓으면(카드 사이) 끊는다
-  type Grp = { text: string; x0: number; y0: number; x1: number; y1: number };
-  const groups: Grp[] = [];
+  const groups: WordGroup[] = [];
   for (const row of rows) {
     row.items.sort((a, b) => a.x0 - b.x0);
-    let cur: Grp | null = null;
+    let cur: WordGroup | null = null;
     for (const w of row.items) {
-      if (cur && w.x0 - cur.x1 < medH * 1.4) {
-        cur.text += w.text; cur.x1 = w.x1; cur.y0 = Math.min(cur.y0, w.y0); cur.y1 = Math.max(cur.y1, w.y1);
+      if (cur && w.x0 - cur.box.x1 < medH * 1.4) {
+        cur.text += w.text; cur.box.x1 = w.x1; cur.box.y0 = Math.min(cur.box.y0, w.y0); cur.box.y1 = Math.max(cur.box.y1, w.y1);
       } else {
-        cur = { text: w.text, x0: w.x0, y0: w.y0, x1: w.x1, y1: w.y1 }; groups.push(cur);
+        cur = { text: w.text, box: { x0: w.x0, y0: w.y0, x1: w.x1, y1: w.y1 } }; groups.push(cur);
       }
     }
   }
+  return groups;
+}
+
+// 단일패스(참고용) — 그룹 텍스트를 그대로 매칭. 2패스는 emulator-capture가 수행.
+export function detectFromWords(words: WordLike[], minSim = 0.58): Detection[] {
   const bestById = new Map<string, Detection>();
-  for (const g of groups) {
+  for (const g of groupWords(words)) {
     const m = matchName(g.text);
-    if (m && m.sim >= minSim) {
-      const cur = bestById.get(m.id);
-      if (!cur || m.sim > cur.sim) bestById.set(m.id, { ...m, box: { x0: g.x0, y0: g.y0, x1: g.x1, y1: g.y1 } });
-    }
+    if (m && m.sim >= minSim) { const cur = bestById.get(m.id); if (!cur || m.sim > cur.sim) bestById.set(m.id, { ...m, box: g.box }); }
   }
   return [...bestById.values()].sort((a, b) => b.sim - a.sim);
 }

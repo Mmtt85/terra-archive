@@ -9,8 +9,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useI18n } from "./i18n";
 import { startDisplayCapture, sampleBrightness } from "./screen-capture";
-import { initOcr, ocrWords, terminateOcr, type OcrProgress } from "./scanner-ocr";
-import { initNames, detectFromWords, type Detection } from "./scanner-names";
+import { initOcr, ocrWords, ocrName, terminateOcr, type OcrProgress } from "./scanner-ocr";
+import { initNames, groupWords, matchName, type Detection } from "./scanner-names";
 
 const conf = (s: number) => (s >= 0.75 ? "good" : s >= 0.5 ? "mid" : "low");
 const pct = (s: number) => Math.round(s * 100);
@@ -110,8 +110,28 @@ export default function EmulatorCapture({ onClose }: { onClose: () => void }) {
     requestAnimationFrame(paintFrozen);
     try {
       await Promise.all([initOcr(), initNames()]);
+      // 1패스: 전체프레임 sparse OCR → 이름 위치(그룹) 찾기
       const words = await ocrWords(frame, frame.width, frame.height);
-      setDetections(detectFromWords(words));
+      const groups = groupWords(words);
+      // 2패스: 확실치 않은 그룹만 그 영역을 고해상도·반전 재판독(PSM 단일행) — 짧은 이름 정확도↑
+      const best = new Map<string, Detection>();
+      for (const g of groups) {
+        let m = matchName(g.text);
+        if (!m || m.sim < 0.85) {
+          const gw = g.box.x1 - g.box.x0, gh = g.box.y1 - g.box.y0;
+          const padX = Math.max(6, gw * 0.12), padY = Math.max(4, gh * 0.35);
+          const text2 = await ocrName(frame, g.box.x0 - padX, g.box.y0 - padY, gw + padX * 2, gh + padY * 2);
+          const m2 = text2 ? matchName(text2) : null;
+          if (m2 && (!m || m2.sim > m.sim)) m = m2;
+        }
+        if (m && m.sim >= 0.62) { const cur = best.get(m.id); if (!cur || m.sim > cur.sim) best.set(m.id, { ...m, box: g.box }); }
+      }
+      // 부분문자열 억제 — "텍사스"가 "텍사스 디 오메르토사"의 일부로 잘못 잡히면(멀티워드 분리·OCR 조각)
+      // 더 구체적인(긴) 이름만 남긴다. 실버애쉬 vs 실버애쉬 더 레인프로스트 등도 방어.
+      const dets = [...best.values()];
+      const norm = (s: string) => s.replace(/\s/g, "");
+      const filtered = dets.filter((d) => !dets.some((o) => o.id !== d.id && norm(o.name).length > norm(d.name).length && norm(o.name).includes(norm(d.name))));
+      setDetections(filtered.sort((a, b) => b.sim - a.sim));
     } finally {
       setBusy(false);
     }
