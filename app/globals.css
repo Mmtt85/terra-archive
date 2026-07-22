@@ -4045,6 +4045,16 @@ footer p {
   color: var(--lime);
   border-color: var(--border-strong);
 }
+/* 발행 메모 인라인 입력 — prompt() 미지원 웹뷰 대응 (2026-07-22) */
+.admin-tools .publish-note {
+  border: 1px solid var(--line);
+  background: var(--white);
+  color: var(--ink);
+  padding: 8px 10px;
+  font-size: 12px;
+  min-width: 240px;
+  flex: 1 1 240px;
+}
 .admin-status {
   color: var(--muted);
   font-size: 12.5px;

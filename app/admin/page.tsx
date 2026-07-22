@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { adminDeleteFeedback, adminDeleteNickname, adminListFeedback, adminSetHandling, adminSetReviewed, handlingAt, withHandling, fetchNicknameCounts, type FeedbackRow, type NicknameCount } from "../feedback";
 import { adminDeleteRelease, adminDeleteRule, adminListRules, adminPublishRelease, adminUpsertRule, fetchLatestRelease, type ReleaseRow } from "../rules-api";
+import { useConfirm } from "../confirm";
 import { compileSnapshot, validateRules, RULE_KINDS, type RuleRow } from "../rules-compile";
 import { RULES as bundledRules } from "../rules";
 import operatorsData from "../data/operators.json";
@@ -84,6 +85,9 @@ function pageLabel(page: string): string {
 }
 
 export default function AdminPage() {
+  // window.confirm/prompt는 VSCode 웹뷰 등 일부 임베디드 브라우저에서 미지원
+  // ("prompt() is not supported" 크래시, 2026-07-22) — 사이트 공용 확인 모달로 대체
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const [password, setPassword] = useState("");
   const [entered, setEntered] = useState(false);
   const [rows, setRows] = useState<FeedbackRow[]>([]);
@@ -98,6 +102,7 @@ export default function AdminPage() {
   const [release, setRelease] = useState<ReleaseRow | null>(null);
   const [rulesStatus, setRulesStatus] = useState("");
   const [editingRule, setEditingRule] = useState<RuleRow | null>(null);
+  const [publishNote, setPublishNote] = useState(""); // 발행 메모 — prompt() 미지원 환경 대응 인라인 입력
 
   useEffect(() => {
     if (!entered) return;
@@ -144,7 +149,7 @@ export default function AdminPage() {
 
   const removeRule = async (rule: RuleRow) => {
     if (!rule.id) return;
-    if (!window.confirm(`${RULE_KIND_LABEL[rule.kind]} '${rule.key}'를 삭제할까요?\n(이력을 남기려면 삭제 대신 편집에서 retired로)`)) return;
+    if (!(await confirm({ message: `${RULE_KIND_LABEL[rule.kind]} '${rule.key}'를 삭제할까요? (이력을 남기려면 삭제 대신 편집에서 retired로)`, danger: true }))) return;
     try {
       await adminDeleteRule(password, rule.id);
       setRulesStatus(`삭제됨: ${rule.kind}/${rule.key} — 발행해야 반영됩니다`);
@@ -158,18 +163,19 @@ export default function AdminPage() {
     if (errors.length) { setRulesStatus(`발행 불가 — ${errors.join(" · ")}`); return; }
     const nextVersion = (release?.version ?? 0) + 1;
     const activeCount = rules.filter((row) => row.status === "active").length;
-    if (!window.confirm(`v${nextVersion}으로 발행할까요? (active 규칙 ${activeCount}건)`)) return;
-    const note = window.prompt("발행 메모 (무엇을 왜 바꿨나)") ?? "";
+    // 발행 메모는 window.prompt 대신 발행 버튼 옆 인라인 입력(publishNote)에서 받는다
+    if (!(await confirm({ message: `v${nextVersion}으로 발행할까요? (active 규칙 ${activeCount}건 · 메모: ${publishNote.trim() || "없음"})` }))) return;
     try {
-      await adminPublishRelease(password, nextVersion, compileSnapshot(rules, nextVersion), note);
+      await adminPublishRelease(password, nextVersion, compileSnapshot(rules, nextVersion), publishNote.trim());
       setRelease(await fetchLatestRelease());
+      setPublishNote("");
       setRulesStatus(`v${nextVersion} 발행 완료 — 로컬에서 python3 scripts/build-rules.py 베이크 → 안내되는 검증 절차 → 커밋·배포`);
     } catch (err) { setRulesStatus(String((err as Error).message ?? err)); }
   };
 
   const rollbackRelease = async () => {
     if (!release) return;
-    if (!window.confirm(`최신 발행 v${release.version}을 삭제(롤백)할까요? 이전 버전이 최신이 됩니다.`)) return;
+    if (!(await confirm({ message: `최신 발행 v${release.version}을 삭제(롤백)할까요? 이전 버전이 최신이 됩니다.`, danger: true }))) return;
     try {
       await adminDeleteRelease(password, release.version);
       setRelease(await fetchLatestRelease());
@@ -178,7 +184,7 @@ export default function AdminPage() {
   };
 
   const removeNickname = async (item: NicknameCount) => {
-    if (!window.confirm(`'${OP_NAME.get(item.op_id) ?? item.op_id}'의 별명 '${item.name}' (${item.votes}표)을 전부 삭제할까요?`)) return;
+    if (!(await confirm({ message: `'${OP_NAME.get(item.op_id) ?? item.op_id}'의 별명 '${item.name}' (${item.votes}표)을 전부 삭제할까요?`, danger: true }))) return;
     try {
       await adminDeleteNickname(password, item.op_id, item.name);
       setNicknames((current) => current.filter((row) => !(row.op_id === item.op_id && row.name === item.name)));
@@ -216,7 +222,7 @@ export default function AdminPage() {
   const markShownHandling = async () => {
     const targets = shown.filter((row) => !handlingAt(row.payload));
     if (!targets.length) { setStatus("이미 모두 대응중입니다"); return; }
-    if (!window.confirm(`표시된 ${targets.length}건을 대응중으로 표시할까요?`)) return;
+    if (!(await confirm({ message: `표시된 ${targets.length}건을 대응중으로 표시할까요?` }))) return;
     setStatus(`대응중 표시 중… (0/${targets.length})`);
     let done = 0;
     for (const row of targets) {
@@ -230,7 +236,7 @@ export default function AdminPage() {
   };
 
   const remove = async (id: string) => {
-    if (!window.confirm("이 항목을 삭제할까요?")) return;
+    if (!(await confirm({ message: "이 항목을 삭제할까요?", danger: true }))) return;
     try {
       await adminDeleteFeedback(password, id);
       setRows((current) => current.filter((row) => row.id !== id));
@@ -290,6 +296,7 @@ export default function AdminPage() {
 
   return (
     <main className="admin">
+      {confirmDialog}
       <header>
         <h1>TERRA ARCHIVE 관리</h1>
         <div className="admin-tools admin-tabs">
@@ -423,6 +430,7 @@ export default function AdminPage() {
               </button>
             ))}
             <button onClick={() => loadRules(password)}>새로고침</button>
+            <input className="publish-note" value={publishNote} onChange={(e) => setPublishNote(e.target.value)} placeholder="발행 메모 (무엇을 왜 바꿨나)" />
             <button className="bulk-handling-btn" onClick={publishRules} title="active 규칙을 스냅샷으로 컴파일해 새 버전으로 발행">🚀 발행 (v{(release?.version ?? 0) + 1})</button>
             {release && <button onClick={rollbackRelease} title="최신 발행을 삭제해 이전 버전으로 롤백 (원장은 그대로)">↩ v{release.version} 롤백</button>}
           </div>
