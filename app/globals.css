@@ -3416,6 +3416,8 @@ footer p {
 .cap-cell.mid { border-color: #e8c14b; }
 .cap-cell.low { border-color: #ff6b5a; }
 .cap-cell.none { border-color: #ffffff22; }
+/* 인식 전 이름 밴드 위치 안내(점선) */
+.cap-cell.band { border: 1px dashed var(--lime); background: #7cff5a12; }
 .cap-cell-lbl {
   font-size: 9px;
   line-height: 1.15;
