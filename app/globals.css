@@ -7273,7 +7273,10 @@ html.dark.rg-theme.rg6 .site-header { background: #0a1413e6; border-bottom-color
 /* ── 스크롤 구조 — 헤더 고정, 세로 스크롤은 본문(.site-scroll)에만 (사용자 요청 2026-07-22,
    모바일·PC 공통: 스크롤바가 헤더 옆까지 올라오지 않는다) ── */
 html, body { height: 100%; }
-body { overflow: hidden; }
+/* 세로 스크롤 잠금은 홈 셸(main.site-main + .site-scroll)이 있는 페이지에만 적용한다.
+   /admin 같은 독립 라우트(main.admin)는 .site-scroll 컨테이너가 없어 전역으로 잠그면
+   본문이 통째로 스크롤 불가가 된다 (2026-07-22 피드백 페이지 스크롤 실종 리포트). */
+body:has(main.site-main) { overflow: hidden; }
 main.site-main {
   height: 100vh;
   height: 100dvh;
