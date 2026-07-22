@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, startTransition, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useI18n, tokenName, rich, type ExtraI18n, type Locale, type T } from "./i18n";
 import { RULES } from "./rules";
 import { useConfirm } from "./confirm";
@@ -17,6 +17,9 @@ import {
 import type { RaiseRec, InvestProgress } from "./planner-invest";
 // 자동편성·육성 추천의 실제 계산은 Web Worker에서 (INP — 메인 스레드는 진행 표시만, 2026-07-22)
 import { optimizeOff, investOff } from "./planner-offload";
+
+// 보유 오퍼 화면 스캔(에뮬레이터 화면 공유 → 자동 인식, 2026-07-23) — tesseract 등 무거워 lazy 스플릿
+const ScannerModal = lazy(() => import("./scan/scanner").then((m) => ({ default: m.ScannerModal })));
 import costsData from "./data/costs.json";
 
 // 재료 표시용 카탈로그 (이름·아이콘) — costs.json items (build-costs.py 수확)
@@ -66,6 +69,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   const [openRoom, setOpenRoom] = useState<string | null>(null);
   const [showFlows, setShowFlows] = useState(false);
   const [showRoster, setShowRoster] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false); // '그 외' 드롭다운(이미지·파일·도움말)
   // 일부 모바일 인앱 브라우저(카카오톡·카페 웹뷰 등)는 탭 한 번에 click을 두 번 합성하거나
@@ -706,6 +710,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
                   <span className="btn-icon" aria-hidden>⤒</span>{t("저장된 상태 파일 가져오기")}
                   <input type="file" accept="application/json" onChange={(event) => { const file = event.target.files?.[0]; if (file) importState(file); event.target.value = ""; setMoreOpen(false); }} />
                 </label>
+                <button role="menuitem" onClick={() => { setMoreOpen(false); setShowScanner(true); }} title={t("에뮬레이터 화면을 공유해 보유 오퍼를 자동 인식합니다")}><span className="btn-icon" aria-hidden>◉</span>{t("화면에서 보유 오퍼 스캔")}</button>
                 <button role="menuitem" onClick={() => { setMoreOpen(false); setShowHelp(true); }}><span className="btn-icon" aria-hidden>?</span>{t("도움말")}</button>
               </div>
             )}
@@ -870,6 +875,27 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           onClose={() => setShowRoster(false)}
           onShowOperator={onShowOperator}
         />
+      )}
+
+      {showScanner && (
+        <div className="modal-backdrop scanner-backdrop">
+          <Suspense fallback={<div className="scanner-loading">{t("스캐너 불러오는 중…")}</div>}>
+            <ScannerModal
+              t={t}
+              onClose={() => setShowScanner(false)}
+              onApply={(ids) => {
+                const next = new Set(ownedIds);
+                let added = 0;
+                for (const id of ids) if (opById.has(id) && !next.has(id)) { next.add(id); added++; }
+                setOwnedIds(next);
+                persist(next, plan);
+                setDirty(true);
+                setShowScanner(false);
+                showToast(t("스캔 결과 {n}명을 보유에 추가했습니다 (기존 보유는 유지)", { n: String(added) }));
+              }}
+            />
+          </Suspense>
+        </div>
       )}
 
       {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
