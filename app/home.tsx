@@ -1178,6 +1178,9 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
             {query && <button onClick={() => setQuery("")}>“{query}” ×</button>}
           </div>
 
+          {/* 스크롤은 카드 그리드에서만 시작 — 헤딩(제목·검색·정렬)과 활성 필터 칩은 위에 고정
+              (사용자 요청 2026-07-22: 스크롤바가 헤딩까지 올라오지 않게). */}
+          <div className="results-scroll">
           {sorted.length > 0 ? (
             <div className="operator-grid">
               {sorted.map((operator, index) => <OperatorCard key={operator.id ?? `${operator.name}-${index}`} operator={operator} index={index} onSelect={openOperator} />)}
@@ -1185,6 +1188,7 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
           ) : (
             <div className="empty"><span>NO MATCH</span><h3>{t("조건에 맞는 오퍼레이터가 없어요.")}</h3><p>{t("소속이나 컨셉 태그를 하나씩 해제해 보세요.")}</p><button onClick={reset}><span className="btn-icon" aria-hidden>↻</span>{t("전체 보기")}</button></div>
           )}
+          </div>
         </div>
       </section>}
 

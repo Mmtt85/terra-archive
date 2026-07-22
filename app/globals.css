@@ -896,31 +896,38 @@ button {
   display: grid;
   overflow: hidden;
 }
-.filter-panel,
-.results {
+.filter-panel {
   overscroll-behavior: contain;
   scrollbar-width: thin;
   scrollbar-color: #b9bbb5 transparent;
   min-height: 0;
   overflow-y: auto;
-}
-.filter-panel {
   padding-right: 14px;
 }
+/* .results 자체는 스크롤하지 않는다 — 헤딩(제목·검색·정렬)·활성 필터 칩을 위에 고정하고,
+   세로 스크롤은 카드 그리드(.results-scroll)에서만 시작한다 (사용자 요청 2026-07-22:
+   스크롤바가 헤딩까지 올라오지 않게). */
 .results {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.results-scroll {
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #b9bbb5 transparent;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-y: auto;
   padding-right: 10px;
 }
-.filter-panel::-webkit-scrollbar {
+.filter-panel::-webkit-scrollbar,
+.results-scroll::-webkit-scrollbar {
   width: 7px;
 }
-.results::-webkit-scrollbar {
-  width: 7px;
-}
-.filter-panel::-webkit-scrollbar-thumb {
-  background: #b9bbb5;
-  border-radius: 10px;
-}
-.results::-webkit-scrollbar-thumb {
+.filter-panel::-webkit-scrollbar-thumb,
+.results-scroll::-webkit-scrollbar-thumb {
   background: #b9bbb5;
   border-radius: 10px;
 }
@@ -933,11 +940,15 @@ button {
   display: flex;
 }
 .results-heading {
-  position: sticky;
-  top: 0;
+  /* .results-scroll 분리 후 헤딩은 스크롤 밖 고정 요소 — flex 컬럼에서 눌리지 않게 */
+  flex: 0 0 auto;
   z-index: 6;
   background: var(--paper);
   padding-top: 6px;
+}
+/* 활성 필터 칩 줄도 헤딩과 함께 고정(스크롤 안 함) */
+.results > .active-filters {
+  flex: 0 0 auto;
 }
 .results-heading > div:first-child {
   flex: none;
@@ -2292,8 +2303,16 @@ footer p {
     padding-right: 0;
     overflow: visible;
   }
+  /* 모바일은 페이지(.site-scroll) 전체가 스크롤 — 결과 그리드의 중첩 스크롤을 해제해
+     헤딩 고정 없이 한 흐름으로 흐르게 한다 (데스크톱 전용 헤딩 고정) */
   .results {
+    display: block;
     margin-top: 48px;
+  }
+  .results-scroll {
+    overflow: visible;
+    padding-right: 0;
+    min-height: 0;
   }
   .operator-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
