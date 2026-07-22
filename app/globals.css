@@ -7343,7 +7343,7 @@ main.site-main > .site-header { flex: 0 0 auto; }
 /* ── 보유 오퍼 스캐너 (2026-07-23) ─────────────────────────────────────────── */
 .scanner-backdrop { display: flex; align-items: center; justify-content: center; }
 .scanner-modal {
-  width: min(1100px, 96vw); height: 88vh; display: flex; flex-direction: column;
+  width: min(1100px, 96vw); max-height: 90vh; display: flex; flex-direction: column;
   background: var(--bg); color: var(--ink); border: 1px solid var(--border-strong);
   border-radius: 12px; overflow: hidden;
 }
@@ -7360,7 +7360,7 @@ main.site-main > .site-header { flex: 0 0 auto; }
   padding: 9px 18px; font-weight: 700; cursor: pointer;
 }
 .scanner-primary:disabled { opacity: .5; cursor: default; }
-.scanner-body { display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px; padding: 14px 18px; overflow: hidden; min-height: 0; flex: 1 1 auto; }
+.scanner-body { display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px; padding: 14px 18px; overflow: hidden; min-height: 0; }
 .scanner-stage { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .scanner-video-wrap { position: relative; background: #000; border-radius: 8px; overflow: hidden; aspect-ratio: 16 / 10; }
 .scanner-video { width: 100%; height: 100%; object-fit: contain; display: block; }
@@ -7381,7 +7381,8 @@ main.site-main > .site-header { flex: 0 0 auto; }
 .scanner-add-list button { display: flex; align-items: center; gap: 8px; width: 100%; padding: 6px 10px; background: none; border: none; color: var(--ink); cursor: pointer; text-align: left; }
 .scanner-add-list button:hover { background: var(--bg-panel); }
 .scanner-add-list img { border-radius: 5px; }
-.scanner-grid { display: flex; flex-direction: column; gap: 6px; overflow-y: auto; min-height: 0; padding-right: 4px; }
+/* 결과 목록만 내부 스크롤(상한) — 오퍼가 누적돼도 모달 높이는 안 커진다 */
+.scanner-grid { display: flex; flex-direction: column; gap: 6px; overflow-y: auto; min-height: 0; max-height: 46vh; padding-right: 4px; }
 .scanner-card { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border: 1px solid var(--bg-panel2); border-radius: 8px; background: var(--bg-panel); }
 .scanner-card.uncertain { border-color: rgba(224,160,32,.55); border-style: dashed; }
 .scanner-card img { border-radius: 6px; flex: 0 0 auto; }
