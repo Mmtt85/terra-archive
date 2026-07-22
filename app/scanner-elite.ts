@@ -4,6 +4,8 @@
 // 인게임 배지는 임의 카드 아트 위 "순백 글리프"라, 그레이 상관 대신 밝기 적응 이진화
 // 마스크 vs 스프라이트 알파 마스크의 Dice 계수로 비교한다 (2026-07-22 스윕: E1·E2 전원 정답).
 // 판정 규칙(스펙): E2 일치 → E1 일치 → 둘 다 임계 미달이면 E0.
+// 임계 0.45 — 실화면 E2 배지 Dice 실측 0.45~0.74 (2026-07-22 픽스처 4장, 합성보다 낮음:
+// 점무늬·아트 간섭). E0 정확도는 저정예 화면 미확보로 미검증 — 실측 후 재보정.
 //   (E0 배지는 얇은 외곽선이라 양성 매칭이 취약 — E0를 '부재'로 판정해 그 약점을 우회한다)
 // 템플릿: public/scan/elite{1,2}.webp (scripts/download-scanner-ui.py). 100% 클라이언트.
 
@@ -63,7 +65,7 @@ export type EliteResult = { elite: 0 | 1 | 2; confidence: number };
 
 // region(배지가 있을 카드 중하부 탐색 영역) → E2/E1 Dice 최고점. 둘 다 minScore 미달 = E0.
 // E0 confidence = 1 - max(E1,E2 최고점) — "배지가 안 보였다"의 강도.
-export function classifyElite(frame: CanvasImageSource, region: { x: number; y: number; w: number; h: number }, minScore = 0.55): EliteResult {
+export function classifyElite(frame: CanvasImageSource, region: { x: number; y: number; w: number; h: number }, minScore = 0.45): EliteResult {
   if (!TPL || region.w < 10 || region.h < 10) return { elite: 0, confidence: 0 };
   const bestOf = [-1, -1]; // [E1, E2]
   const base = Math.min(region.w, region.h);

@@ -7339,3 +7339,156 @@ main.site-main > .site-header { flex: 0 0 auto; }
   .site-header .header-collapse-toggle { right: 15%; }
   footer { padding-inline: 15%; }
 }
+
+
+/* ── 에뮬레이터 화면 연동 (화면 캡처 미리보기) — 오퍼 인식 스캐너 1단계 (2026-07-22) ── */
+.capture-btn .btn-icon { filter: grayscale(0.15); }
+.capture-modal { width: min(860px, 94vw); }
+.capture-body {
+  padding: 20px 22px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.capture-stage {
+  position: relative;
+  background: #0b0e10;
+  border: 1px solid var(--line);
+  aspect-ratio: 16 / 9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.capture-video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.capture-hint {
+  position: absolute;
+  color: #cfd3cf;
+  font-size: 13px;
+  text-align: center;
+  padding: 0 24px;
+  line-height: 1.6;
+}
+.capture-status {
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.capture-warn {
+  background: color-mix(in srgb, #e0a021 22%, var(--bg-soft));
+  border: 1px solid #e0a021;
+  color: var(--ink);
+  padding: 10px 12px;
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+.capture-privacy {
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.55;
+}
+/* 정지 프레임 + 인식 오버레이 (드래그 ROI · 결과 셀) */
+.cap-stage { position: relative; }
+.cap-frozen-wrap {
+  position: relative;
+  line-height: 0;
+  cursor: crosshair;
+  touch-action: none;
+  background: #0b0e10;
+  border: 1px solid var(--line);
+  max-height: 60vh;
+  overflow: hidden;
+}
+.cap-frozen-canvas { width: 100%; height: auto; display: block; }
+.cap-roi {
+  position: absolute;
+  border: 2px solid var(--lime);
+  box-shadow: 0 0 0 9999px #0007; /* ROI 밖을 어둡게 */
+  pointer-events: none;
+}
+.cap-cell {
+  position: absolute;
+  pointer-events: none;
+  border: 1px solid #ffffff33;
+  display: flex;
+  align-items: flex-end;
+}
+.cap-cell.good { border-color: #7cff5a; }
+.cap-cell.mid { border-color: #e8c14b; }
+.cap-cell.low { border-color: #ff6b5a; }
+.cap-cell.none { border-color: #ffffff22; }
+/* 인식 전 이름 밴드 위치 안내(점선) */
+.cap-cell.band { border: 1px dashed var(--lime); background: #7cff5a12; }
+.cap-cell-lbl {
+  font-size: 9px;
+  line-height: 1.15;
+  background: #000a;
+  color: #fff;
+  padding: 1px 3px;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.cap-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.cap-controls button {
+  border: 1px solid var(--line);
+  background: var(--white);
+  color: var(--ink);
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.cap-controls button.apply { background: var(--lime); color: var(--on-lime); border-color: var(--lime); }
+.cap-num, .cap-range {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.cap-num input { width: 46px; border: 1px solid var(--line); background: var(--white); color: var(--ink); padding: 5px 6px; font-size: 12px; }
+.cap-range input { width: 92px; }
+.cap-results {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 168px;
+  overflow-y: auto;
+}
+.cap-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-left: 3px solid #7cff5a;
+  background: var(--bg-soft);
+  padding: 3px 8px 3px 4px;
+  font-size: 12px;
+}
+.cap-chip.mid { border-left-color: #e8c14b; }
+.cap-chip.low { border-left-color: #ff6b5a; }
+.cap-chip img { border: 1px solid var(--line); }
+.cap-chip b { font-weight: 700; }
+.cap-elite, .cap-lv {
+  font-style: normal;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--muted);
+  background: var(--chip);
+  padding: 1px 5px;
+}
+.cap-elite { color: var(--lime); }
+.cap-via { font-style: normal; font-size: 11px; }
+.cap-lv.low { color: #ff6b5a; }
