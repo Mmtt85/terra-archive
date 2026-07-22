@@ -23,7 +23,7 @@ execFileSync(path.join(ROOT, "node_modules/.bin/esbuild"), [
 ]);
 const engine = await import(pathToFileURL(bundle).href);
 fs.rmSync(bundle, { force: true });
-const { optimize, teamScore, ops, cellByKey, LAYOUT, PARK_KEYS } = engine;
+const { optimize, teamScore, ops, cellByKey, LAYOUT, PARK_KEYS, aurasOf, withElite, maxElite } = engine;
 
 // 육성 추천 엔진(planner-invest.ts)도 번들 — recommendRaises 불변식 검사용.
 // 순수 함수 호출(visibleOps를 인자로 받음)이라 엔진 인스턴스가 달라도 안전하다.
@@ -217,5 +217,29 @@ await invCheck("육성추천: A조 이득 내림차순 정렬", async () => {
   return { ok: true, detail: `${rs.length}건` };
 });
 
+// ── 제어센터 "무역소 내 진영 1명당" 오라는 방 단위 (노시스·델핀·야하타, 사용자 제보 2026-07-22) ──
+// 노시스 '정밀 계산'(무역소 내 쉐라그 1명당 오더효율 -15%·상한 +6)은 **그 무역소에 앉은 쉐라그
+// 수**로만 걸려야 한다 — 기지 전체 쉐라그 수(노시스 자신·타 무역소 포함)로 세거나, 쉐라그 0명
+// 무역소에 유령 마이너스가 새면 안 된다. 종전 perScope="base"+flat 적용 버그의 회귀 잠금.
+console.log("");
+{
+  const byId = new Map(ops.map((o) => [o.id, o]));
+  const E = (id) => withElite(byId.get(id), maxElite(byId.get(id).rarity));
+  const gnosis = E("char_206_gnosis");
+  const withKjerag = [E("char_4032_provs"), E("char_172_svrash"), E("char_272_strong")]; // 실버애쉬=쉐라그 1
+  const noKjerag = [E("char_455_nothin"), E("char_4046_ebnhlz"), E("char_4032_provs")];   // 쉐라그 0
+  // base 쉐라그 수를 3으로 부풀려도(노시스 버그 조건) 방 점수는 방내 실제 쉐라그로만 결정돼야 한다
+  const ambient = aurasOf([gnosis], { tokenPoints: {}, factionCounts: { 쉐라그: 3 }, plants: 3, presentIds: new Set([gnosis.id]) });
+  const mk = (team, fc) => ({ product: "gold", tokenPoints: {}, factionCounts: { 쉐라그: fc }, plants: 3, presentIds: new Set(team.map((o) => o.id)), ambient });
+  const noAura = (team) => teamScore(team, "TRADING", { ...mk(team, 0), ambient: [] });
+  const checks = [
+    // ① 쉐라그 0명 무역소: 노시스 오라가 있어도 없어도 점수 동일 (유령 마이너스 없음)
+    ["쉐라그 0명 무역소엔 노시스 오라 0", Math.abs(teamScore(noKjerag, "TRADING", mk(noKjerag, 3)) - noAura(noKjerag)) < 1e-6],
+    // ② 방내 쉐라그 1명: base 카운트를 3으로 부풀려도 1명 기준과 동일 (자기·타방 카운트 안 함)
+    ["노시스 오라는 base가 아니라 방내 쉐라그로 스케일", Math.abs(teamScore(withKjerag, "TRADING", mk(withKjerag, 3)) - teamScore(withKjerag, "TRADING", mk(withKjerag, 1))) < 1e-6],
+  ];
+  for (const [name, ok] of checks) { console.log(`${ok ? "✓" : "✗"} ${name}`); if (!ok) failed += 1; }
+}
+
 if (failed) { console.error(`\n✗ 검사 ${failed}건 실패`); process.exit(1); }
-console.log(`\n✓ 픽스처 ${rules.fixtures.length}건 + 육성추천 불변식 4건 전부 통과`);
+console.log(`\n✓ 픽스처 ${rules.fixtures.length}건 + 육성추천 불변식 4건 + 노시스 오라 2건 전부 통과`);

@@ -228,7 +228,7 @@ export const AURA_TARGET: Record<string, string> = { MANUFACTURE: "ctrl_mfg", TR
 // perFaction+perProduct: 제조소 배치 진영원 오라(플레임테일·제시카 이격) — 기지 전체 일률이
 // 아니라 **그 진영원이 앉은 제조소에만** 1명당 적용 (사용자 정정 2026-07-19). perProduct는
 // 1명당 생산품별 가감 맵({exp:+10, gold:-10} 또는 {any:+5}), 방별 인원은 ambientFor가 센다.
-export type AmbientAura = { kind: string; value: number; gateFaction?: string | null; gateCount?: number | null; belowThreshold?: number | null; perFaction?: string | null; perProduct?: Record<string, number> | null; cap?: number };
+export type AmbientAura = { kind: string; value: number; gateFaction?: string | null; gateCount?: number | null; belowThreshold?: number | null; perFaction?: string | null; perProduct?: Record<string, number> | null; cap?: number; capPer?: number };
 
 // 방 기본 속도 — 임계값 조건("N% 미만인 경우, 기본 속도 포함") 판정용 (사무실 기본 누적 5%)
 export const ROOM_BASE_RATE: Record<string, number> = C.ROOM_BASE_RATE;
@@ -242,13 +242,16 @@ export function aurasOf(controlTeam: InfraOp[], ctx: Ctx): AmbientAura[] {
       if (!(skill.kind in AURA_WEIGHT)) continue;
       if (skill.gateFaction || skill.belowThreshold != null) {
         list.push({ kind: skill.kind, value: skill.value, gateFaction: skill.gateFaction, gateCount: skill.gateCount ?? 1, belowThreshold: skill.belowThreshold });
-      } else if (skill.perScope === "mfg" && skill.perFaction) {
-        // 제조소 배치 진영원 오라 (플레임테일·제시카 이격): **그 진영원이 앉은 방에만** 1명당
-        // 적용된다 — 기지 전체 일률 아님 (사용자 정정 2026-07-19: 제조소1에 기사단+작전기록이면
-        // 그 방만 +10, 제조소2에 기사단+귀금속이면 그 방만 -10). 방별 인원수는 ambientFor가
-        // 대상 방 팀에서 직접 센다. value는 제어센터 자리 평가(§6 가중)용 근사치일 뿐.
-        list.push({ kind: skill.kind, value: b.aurasAdd[skill.kind] ?? 0, perFaction: skill.perFaction,
-          perProduct: skill.perProduct ?? { any: skill.value } });
+      } else if (skill.perFaction && (skill.perScope === "mfg" || skill.kind === "ctrl_trade")) {
+        // 제조소·무역소 "내 <진영> 1명당" 오라 — 기지 전체 일률이 아니라 **대상 방에 실제 앉은
+        // 진영원 수**로 1명당 적용한다. 제조소(플레임테일·제시카 이격, 2026-07-19)에 이어
+        // 무역소(노시스 '무역소 내 쉐라그 -15%/+6상한'·델핀 '글래스고 +10%'·야하타 '시라쿠사 +5%',
+        // 사용자 정정 2026-07-22)도 동일 처리 — 그 진영원이 0명인 방엔 0(노시스 자신도 안 셈).
+        // 방별 카운트는 ambientFor(perProduct)·ambientCapFor(capPer)가 대상 방 팀에서 직접 센다.
+        // value는 제어센터 자리 평가(§6 가중)용 base-스케일 근사치일 뿐 방 적용엔 안 쓴다.
+        list.push({ kind: skill.kind, value: (b.auras[skill.kind] ?? 0) + (b.aurasAdd[skill.kind] ?? 0),
+          perFaction: skill.perFaction, perProduct: skill.perProduct ?? { any: skill.value },
+          ...(skill.cap ? { capPer: skill.cap } : {}) });
       } else {
         // perFaction 오라 값은 auras(양수 최고) + aurasAdd(음수 가산) 합 — 노시스 -45가 여기 실린다.
         // 같은 스킬의 오더 상한/창고 용량 기여(cap)도 함께 실어 대상 방 변환기에 먹인다(노시스 +18).
@@ -284,12 +287,17 @@ export function ambientFor(room: string, team: InfraOp[], ambient?: AmbientAura[
   return best + neg + productAdd;
 }
 
-// 제어센터가 이 방에 실어 주는 오더 상한/창고 용량 (노시스 '쉐라그 1명당 +6' 등) — 변환기 입력.
-export function ambientCapFor(room: string, ambient?: AmbientAura[]): number {
+// 제어센터가 이 방에 실어 주는 오더 상한/창고 용량 (노시스 '무역소 내 쉐라그 1명당 +6' 등) — 변환기 입력.
+// capPer(1명당)는 대상 방에 실제 앉은 진영원 수로 방별 스케일한다(노시스 자기 카운트·타 무역소 유출 방지).
+export function ambientCapFor(room: string, ambient?: AmbientAura[], team?: InfraOp[]): number {
   if (!ambient) return 0;
   const target = AURA_TARGET[room] ?? "";
   let cap = 0;
-  for (const aura of ambient) if (aura.kind === target && aura.cap) cap += aura.cap;
+  for (const aura of ambient) {
+    if (aura.kind !== target) continue;
+    if (aura.capPer != null && aura.perFaction) cap += aura.capPer * (team ? team.filter((m) => memberOf(m, aura.perFaction!)).length : 0);
+    else if (aura.cap) cap += aura.cap;
+  }
   return cap;
 }
 
@@ -306,10 +314,10 @@ function applyCapConv(conv: CapConv, capOp: number, capTotal: number): number {
 }
 
 // 방이 받는 용량 변환 효율/생산력 — 이미 계산된 parts를 받아 teamScore와 UI가 공유한다.
-function capConvOf(parts: OpBreakdown[], room: string, ambient?: AmbientAura[]): number {
+function capConvOf(parts: OpBreakdown[], room: string, ambient?: AmbientAura[], team?: InfraOp[]): number {
   const target = AURA_TARGET[room];
   if (target !== "ctrl_trade" && target !== "ctrl_mfg") return 0;
-  const capOp = Math.max(0, parts.reduce((sum, p) => sum + p.cap, 0) + ambientCapFor(room, ambient));
+  const capOp = Math.max(0, parts.reduce((sum, p) => sum + p.cap, 0) + ambientCapFor(room, ambient, team));
   const capTotal = (C.CAP_BASE?.[room] ?? 0) + capOp;
   let eff = 0;
   for (const p of parts) for (const conv of p.capConv) {
@@ -330,7 +338,7 @@ function capConvOf(parts: OpBreakdown[], room: string, ambient?: AmbientAura[]):
 
 // UI용 — 팀·방·ctx로 용량 변환분을 직접 산출 (방 상세 '용량 변환' 항목). 모달 전용이라 재계산 OK.
 export function capConvFor(team: InfraOp[], room: string, ctx: Ctx): number {
-  return capConvOf(team.map((op) => breakdown(op, room, team, ctx)), room, ctx.ambient);
+  return capConvOf(team.map((op) => breakdown(op, room, team, ctx)), room, ctx.ambient, team);
 }
 
 export function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx): OpBreakdown {
@@ -488,7 +496,7 @@ export function teamScore(team: InfraOp[], room: string, ctx: Ctx): number {
   // 용량 차원(2-패스): 팀이 쌓은 오더 상한/창고 용량을 변환기가 효율/생산력으로 되돌린다.
   // capOp = 오퍼 제공분(노시스 제어센터 앰비언트 포함), capTotal = 기본상한 + capOp(제이 diff용).
   // 베나+벌컨(용량↑)+버블(변환) · 데겐블레허 · 스와이어 같은 시너지가 여기서 데이터로 성립한다.
-  const capConvEff = capConvOf(parts, room, ctx.ambient);
+  const capConvEff = capConvOf(parts, room, ctx.ambient, team);
   // 제어센터 오라를 대상 방 점수에 실제 합산 — "무역소 오더 효율 +10%"면 무역소가 +10%.
   // 조건부 오라(쉐라그 3명 배치)는 조건을 채운 그 방 하나에만 붙는다
   return efficiency + clueBaseSum + quality + payout + auras + capConvEff + ambientFor(room, team, ctx.ambient, efficiency, ctx.product);

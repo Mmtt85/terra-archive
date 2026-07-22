@@ -241,6 +241,12 @@ def parse_metric(room, text):
         if re.search(r"단서 수집 성향 효과가 (소폭 )?상승", text): return "ctrl_clue", 5
         m = re.findall(r"컨디션 (?:회복|소모)[^+\-]{0,14}([+\-]\s*\d+(?:\.\d+)?)", text)
         if m: return "morale", max(float(x.replace(" ", "")) for x in m)
+        # 스킬 마스터리 훈련 속도 오라(이격 블레이즈 단금지교·아스카론·호시구마 더 브리처) —
+        # 생산 자원을 내지 않아 정상 운용 생산가치 0 (훈련실 훈련속도 하드 스킵과 같은 원칙,
+        # 사용자 확인 2026-07-22). 종전엔 generic PCT 폴백이 +5%를 misc 효율로 잡아 제어센터 자리
+        # 점수에 새어들어 이격 블레이즈가 제어실에 배치되던 원인. 표시는 description 기반이라
+        # value 0이어도 도감·방 상세엔 원문(+5%)이 그대로 나온다.
+        if re.search(r"훈련 속도", text): return "misc", 0
     # generic percent fallback
     v = best(PCT)
     if v: return "misc", v
