@@ -922,7 +922,9 @@ function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onTogg
   onClose: () => void; onReanalyze: () => void; onToggleSelect: (opId: string) => void; onApplySelected: () => void; onApplyAll: () => void;
   onHide: (opId: string) => void; selected: Set<string>; applied: Set<string>; onRevert: () => void; t: T; locale: Locale;
 }) {
-  const roomLabel = (key: string) => cellByKey.get(key)?.label ?? key;
+  // 방 라벨은 i18n 사전 키("제조소 1 · 순금" 등) — 배 뷰(t(cell.label))처럼 번역해 표시
+  // (일어판 육성 추천 모달에 방 이름만 한국어로 남던 문제, 사용자 리포트 2026-07-22)
+  const roomLabel = (key: string) => t(cellByKey.get(key)?.label ?? key);
   const shiftTag = (s: number) => (s === 0 ? t("A조") : t("B조"));
   const num = (n: number) => Math.round(n).toLocaleString();
   useEffect(() => {
