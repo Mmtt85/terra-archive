@@ -75,10 +75,10 @@ export default function EmulatorCapture({ onClose }: { onClose: () => void }) {
   const grabFrame = (): HTMLCanvasElement | null => {
     const v = videoRef.current;
     if (!v?.videoWidth) return frozenRef.current;
-    const canvas = frozenRef.current ?? document.createElement("canvas");
-    frozenRef.current = canvas;
+    const canvas = document.createElement("canvas");
     canvas.width = v.videoWidth; canvas.height = v.videoHeight;
     canvas.getContext("2d")!.drawImage(v, 0, 0);
+    frozenRef.current = canvas;
     setDims({ w: v.videoWidth, h: v.videoHeight });
     return canvas;
   };
