@@ -9,11 +9,14 @@
 import { useEffect, useRef, useState } from "react";
 import { useI18n } from "./i18n";
 import { startDisplayCapture, sampleBrightness } from "./screen-capture";
-import { initOcr, ocrWords, ocrName, terminateOcr, type OcrProgress } from "./scanner-ocr";
+import { initOcr, ocrWords, ocrName, ocrDigits, terminateOcr, type OcrProgress } from "./scanner-ocr";
 import { initNames, groupWords, matchName, type Detection } from "./scanner-names";
+import { initEliteTemplates, classifyElite } from "./scanner-elite";
 
 const conf = (s: number) => (s >= 0.75 ? "good" : s >= 0.5 ? "mid" : "low");
 const pct = (s: number) => Math.round(s * 100);
+// 인식 결과 = 이름 + (있으면) 정예화·레벨. 정예화는 배지 템플릿, 레벨은 1패스 OCR 숫자에서.
+type DetectionEx = Detection & { elite?: 0 | 1 | 2; level?: number };
 
 export default function EmulatorCapture({ onClose }: { onClose: () => void }) {
   const { t } = useI18n();
@@ -24,13 +27,14 @@ export default function EmulatorCapture({ onClose }: { onClose: () => void }) {
   const [dims, setDims] = useState<{ w: number; h: number } | null>(null);
   const [black, setBlack] = useState(false);
   const [mode, setMode] = useState<"live" | "frozen">("live");
-  const [detections, setDetections] = useState<Detection[] | null>(null);
+  const [detections, setDetections] = useState<DetectionEx[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [ocrStatus, setOcrStatus] = useState("");
 
   // 열리면 OCR 엔진·이름 사전 미리 로드
   useEffect(() => {
     void initNames();
+    void initEliteTemplates();
     void initOcr((p: OcrProgress) => setOcrStatus(p.progress >= 1 || p.status === "recognizing text" ? "" : `${p.status} ${Math.round(p.progress * 100)}%`))
       .then(() => setOcrStatus(""));
     return () => { void terminateOcr(); };
@@ -109,7 +113,7 @@ export default function EmulatorCapture({ onClose }: { onClose: () => void }) {
     setDetections(null);
     requestAnimationFrame(paintFrozen);
     try {
-      await Promise.all([initOcr(), initNames()]);
+      await Promise.all([initOcr(), initNames(), initEliteTemplates()]);
       // 1패스: 전체프레임 sparse OCR → 이름 위치(그룹) 찾기
       const words = await ocrWords(frame, frame.width, frame.height);
       const groups = groupWords(words);
@@ -128,9 +132,50 @@ export default function EmulatorCapture({ onClose }: { onClose: () => void }) {
       }
       // 부분문자열 억제 — "텍사스"가 "텍사스 디 오메르토사"의 일부로 잘못 잡히면(멀티워드 분리·OCR 조각)
       // 더 구체적인(긴) 이름만 남긴다. 실버애쉬 vs 실버애쉬 더 레인프로스트 등도 방어.
-      const dets = [...best.values()];
+      const dets: DetectionEx[] = [...best.values()];
       const norm = (s: string) => s.replace(/\s/g, "");
       const filtered = dets.filter((d) => !dets.some((o) => o.id !== d.id && norm(o.name).length > norm(d.name).length && norm(o.name).includes(norm(d.name))));
+
+      // ── 카드 기하 역산 → 정예화 배지 분류 + 레벨 추출 ─────────────────────────
+      // 이름 박스는 카드 하단·가운데 → 이웃 이름 중심 간격(피치)으로 카드 폭을 추정하고,
+      // 이름 위쪽 피치×1.15 영역(배지·레벨 원이 있는 카드 상부)을 탐색한다.
+      const centers = filtered.map((d) => ({ d, cx: (d.box.x0 + d.box.x1) / 2, cy: (d.box.y0 + d.box.y1) / 2 }));
+      const diffs: number[] = [];
+      for (const a of centers) {
+        let nearest = Infinity;
+        for (const b2 of centers) {
+          if (a === b2 || Math.abs(a.cy - b2.cy) > (a.d.box.y1 - a.d.box.y0) * 2) continue; // 같은 행만
+          const dx = Math.abs(a.cx - b2.cx);
+          if (dx > 4 && dx < nearest) nearest = dx;
+        }
+        if (Number.isFinite(nearest)) diffs.push(nearest);
+      }
+      diffs.sort((x, y) => x - y);
+      const nameH = centers.length ? centers.map((c) => c.d.box.y1 - c.d.box.y0).sort((x, y) => x - y)[centers.length >> 1] : 12;
+      const pitch = diffs.length ? diffs[diffs.length >> 1] : nameH * 7; // 이웃 없으면 대략치
+      const digitWords = words.filter((w2) => /^\d{1,2}$/.test(w2.text.trim()) && (w2.conf ?? 0) >= 40);
+      for (const { d, cx } of centers) {
+        const strip = { x: cx - pitch * 0.45, y: d.box.y0 - pitch * 1.15, w: pitch * 0.9, h: pitch * 1.1 };
+        strip.x = Math.max(0, strip.x); strip.y = Math.max(0, strip.y);
+        strip.w = Math.min(strip.w, frame.width - strip.x); strip.h = Math.min(strip.h, d.box.y0 - strip.y);
+        const er = classifyElite(frame, strip);
+        if (er) d.elite = er.elite;
+        // 레벨 = 탐색 영역 안의 1~2자리 숫자(레벨 원의 "90" 등). 여러 개면 가장 큰 것(레벨이 제일 큼).
+        let lv: number | undefined;
+        for (const w2 of digitWords) {
+          const wx = (w2.x0 + w2.x1) / 2, wy = (w2.y0 + w2.y1) / 2;
+          if (wx >= strip.x && wx <= strip.x + strip.w && wy >= strip.y && wy <= strip.y + strip.h) {
+            const n = parseInt(w2.text, 10);
+            if (n >= 1 && n <= 90 && (lv === undefined || n > lv)) lv = n;
+          }
+        }
+        // 1패스가 못 읽었으면 레벨 원 부근(스트립 하부)을 숫자 전용 OCR로 재판독
+        if (lv === undefined) {
+          const found2 = await ocrDigits(frame, strip.x, strip.y + strip.h * 0.5, strip.w, strip.h * 0.5 + nameH * 0.4);
+          if (found2 !== null) lv = found2;
+        }
+        if (lv !== undefined) d.level = lv;
+      }
       setDetections(filtered.sort((a, b) => b.sim - a.sim));
     } finally {
       setBusy(false);
@@ -199,6 +244,8 @@ export default function EmulatorCapture({ onClose }: { onClose: () => void }) {
                 <span key={d.id} className={`cap-chip ${conf(d.sim)}`} title={`OCR "${d.text}" → ${d.name} (${pct(d.sim)}%)`}>
                   <img src={`/avatars/${d.id}.webp`} alt="" width={34} height={34} loading="lazy" />
                   <b>{d.name}</b>
+                  {d.elite !== undefined && <i className="cap-elite">E{d.elite}</i>}
+                  {d.level !== undefined && <i className="cap-lv">Lv{d.level}</i>}
                 </span>
               ))}
             </div>

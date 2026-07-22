@@ -25,7 +25,8 @@ export async function initOcr(onProgress?: (p: OcrProgress) => void): Promise<Wo
         ...(USE_LOCAL ? LOCAL : {}),
         logger: onProgress ? (m: { status: string; progress: number }) => onProgress({ status: m.status, progress: m.progress ?? 0 }) : undefined,
       });
-      await worker.setParameters({ tessedit_pageseg_mode: "7" as unknown as never }); // 7 = 한 줄
+      // ⚠ PSM·whitelist는 워커 전역 상태 — 각 인식 함수(ocrWords/ocrName/ocrDigits)가
+      // 호출마다 자기 파라미터를 설정한다 (안 그러면 직전 호출 모드가 새어든다 — 2026-07-22 버그)
       return worker;
     })();
   }
@@ -51,7 +52,7 @@ export async function ocrWords(frame: CanvasImageSource, fw: number, fh: number)
   ctx.imageSmoothingQuality = "high";
   ctx.drawImage(frame, 0, 0, fw, fh, 0, 0, cw, ch);
   const worker = await initOcr();
-  await worker.setParameters({ tessedit_pageseg_mode: "11" as unknown as never }); // sparse text — 흩어진 글자
+  await worker.setParameters({ tessedit_pageseg_mode: "11", tessedit_char_whitelist: "" } as unknown as never); // sparse — 흩어진 글자
   const { data } = await worker.recognize(canvas, {}, { blocks: true });
   const words: OcrWord[] = [];
   const push = (w: { text?: string; confidence?: number; bbox?: { x0: number; y0: number; x1: number; y1: number } }) => {
@@ -86,6 +87,36 @@ export async function ocrName(frame: CanvasImageSource, sx: number, sy: number, 
   }
   ctx.putImageData(img, 0, 0);
   const worker = await initOcr();
+  await worker.setParameters({ tessedit_pageseg_mode: "7", tessedit_char_whitelist: "" } as unknown as never); // 한 줄
   const { data } = await worker.recognize(canvas);
   return (data.text || "").replace(/\s+/g, " ").trim();
+}
+
+// 레벨 숫자 전용 OCR — 영역을 확대·반전 후 숫자 화이트리스트(PSM 한 줄)로 읽는다.
+// 1패스 sparse OCR이 레벨 원의 작은 숫자를 놓친 카드의 폴백. 1~90 범위만 유효.
+export async function ocrDigits(frame: CanvasImageSource, sx: number, sy: number, sw: number, sh: number): Promise<number | null> {
+  const scale = 3;
+  const cw = Math.max(8, Math.round(sw * scale));
+  const ch = Math.max(8, Math.round(sh * scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = cw; canvas.height = ch;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(frame, sx, sy, sw, sh, 0, 0, cw, ch);
+  const img = ctx.getImageData(0, 0, cw, ch);
+  const d = img.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const g = 255 - (0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]);
+    d[i] = d[i + 1] = d[i + 2] = g;
+  }
+  ctx.putImageData(img, 0, 0);
+  const worker = await initOcr();
+  await worker.setParameters({ tessedit_pageseg_mode: "11", tessedit_char_whitelist: "0123456789" } as unknown as never);
+  const { data } = await worker.recognize(canvas);
+  // 후보 숫자들 중 1~90 범위의 최댓값 (레벨이 화면 내 최대 숫자 — "LV" 옆 잡음 억제)
+  const nums = (data.text || "").match(/\d{1,2}/g) ?? [];
+  let best: number | null = null;
+  for (const s of nums) { const n = parseInt(s, 10); if (n >= 1 && n <= 90 && (best === null || n > best)) best = n; }
+  return best;
 }
