@@ -36,6 +36,36 @@ export async function terminateOcr(): Promise<void> {
   if (workerPromise) { const w = await workerPromise; await w.terminate(); workerPromise = null; }
 }
 
+export type OcrWord = { text: string; x0: number; y0: number; x1: number; y1: number; conf: number };
+
+// 전체 프레임을 한 번에 OCR해 단어+위치(프레임 픽셀 좌표)를 반환. 격자·크롭 없이 화면 어디의
+// 글자든 찾는다(PSM 11 sparse). 호출부가 위치로 카드 이름을 묶어 매칭한다.
+export async function ocrWords(frame: CanvasImageSource, fw: number, fh: number): Promise<OcrWord[]> {
+  // 작은 글자 인식률 위해 목표 폭 ~1900으로 스케일(과확대 방지)
+  const scale = Math.min(2, Math.max(1, 1900 / fw));
+  const cw = Math.round(fw * scale), ch = Math.round(fh * scale);
+  const canvas = document.createElement("canvas");
+  canvas.width = cw; canvas.height = ch;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(frame, 0, 0, fw, fh, 0, 0, cw, ch);
+  const worker = await initOcr();
+  await worker.setParameters({ tessedit_pageseg_mode: "11" as unknown as never }); // sparse text — 흩어진 글자
+  const { data } = await worker.recognize(canvas, {}, { blocks: true });
+  const words: OcrWord[] = [];
+  const push = (w: { text?: string; confidence?: number; bbox?: { x0: number; y0: number; x1: number; y1: number } }) => {
+    if (!w?.bbox || !w.text) return;
+    words.push({ text: w.text, conf: w.confidence ?? 0, x0: w.bbox.x0 / scale, y0: w.bbox.y0 / scale, x1: w.bbox.x1 / scale, y1: w.bbox.y1 / scale });
+  };
+  const blocks = (data as { blocks?: unknown[] }).blocks ?? [];
+  for (const b of blocks as Block[]) {
+    for (const p of b.paragraphs ?? []) for (const l of p.lines ?? []) for (const w of l.words ?? []) push(w);
+  }
+  return words;
+}
+type Block = { paragraphs?: { lines?: { words?: { text?: string; confidence?: number; bbox?: { x0: number; y0: number; x1: number; y1: number } }[] }[] }[] };
+
 // 프레임의 (sx,sy,sw,sh) 이름 밴드를 전처리(3× 확대·그레이·반전) 후 OCR → 텍스트.
 // 게임 UI는 밝은 글자/어두운 배경이라 반전해 어두운 글자/밝은 배경으로 만들면 인식률이 오른다.
 export async function ocrName(frame: CanvasImageSource, sx: number, sy: number, sw: number, sh: number): Promise<string> {

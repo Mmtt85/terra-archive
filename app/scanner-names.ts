@@ -63,6 +63,49 @@ function lev(a: string, b: string): number {
 
 export type NameMatch = { id: string; name: string; sim: number; text: string };
 
+// 전체프레임 OCR 단어들을 카드 이름으로 묶어(행·x간격 클러스터링) 각각 fuzzy 매칭.
+// 격자·크롭 없이 자동. box는 프레임 픽셀 좌표(오버레이용). id별 최고 sim 하나만 남긴다.
+type WordLike = { text: string; x0: number; y0: number; x1: number; y1: number; conf: number };
+export type Detection = NameMatch & { box: { x0: number; y0: number; x1: number; y1: number } };
+
+export function detectFromWords(words: WordLike[], minSim = 0.58): Detection[] {
+  const ws = words.filter((w) => (w.conf ?? 0) >= 30 && w.text.trim().length > 0);
+  if (!ws.length) return [];
+  const heights = ws.map((w) => w.y1 - w.y0).sort((a, b) => a - b);
+  const medH = heights[heights.length >> 1] || 12;
+  // 행 클러스터링 — y중심이 가까운 단어끼리
+  const rows: { yc: number; items: WordLike[] }[] = [];
+  for (const w of [...ws].sort((a, b) => (a.y0 + a.y1) / 2 - (b.y0 + b.y1) / 2)) {
+    const yc = (w.y0 + w.y1) / 2;
+    let row = rows.find((r) => Math.abs(r.yc - yc) < medH * 0.6);
+    if (!row) { row = { yc, items: [] }; rows.push(row); }
+    row.items.push(w);
+  }
+  // 행 안에서 x간격이 좁으면(이름 내 단어) 이어붙이고, 넓으면(카드 사이) 끊는다
+  type Grp = { text: string; x0: number; y0: number; x1: number; y1: number };
+  const groups: Grp[] = [];
+  for (const row of rows) {
+    row.items.sort((a, b) => a.x0 - b.x0);
+    let cur: Grp | null = null;
+    for (const w of row.items) {
+      if (cur && w.x0 - cur.x1 < medH * 1.4) {
+        cur.text += w.text; cur.x1 = w.x1; cur.y0 = Math.min(cur.y0, w.y0); cur.y1 = Math.max(cur.y1, w.y1);
+      } else {
+        cur = { text: w.text, x0: w.x0, y0: w.y0, x1: w.x1, y1: w.y1 }; groups.push(cur);
+      }
+    }
+  }
+  const bestById = new Map<string, Detection>();
+  for (const g of groups) {
+    const m = matchName(g.text);
+    if (m && m.sim >= minSim) {
+      const cur = bestById.get(m.id);
+      if (!cur || m.sim > cur.sim) bestById.set(m.id, { ...m, box: { x0: g.x0, y0: g.y0, x1: g.x1, y1: g.y1 } });
+    }
+  }
+  return [...bestById.values()].sort((a, b) => b.sim - a.sim);
+}
+
 // OCR 텍스트 → 최근접 오퍼. sim = 1 - 편집거리/최대길이 (0~1, 높을수록 확실).
 export function matchName(text: string): NameMatch | null {
   if (!CANDS) return null;
