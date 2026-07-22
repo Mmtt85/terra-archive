@@ -884,7 +884,13 @@ button {
   align-items: stretch;
   gap: 38px;
   width: min(100%, 1600px);
-  height: calc(100dvh - 78px);
+  /* .site-scroll(헤더 제외 나머지 전부)의 실제 높이를 그대로 채운다 — 예전엔
+     calc(100dvh - 78px)로 헤더 높이를 하드코딩해서, 헤더가 접힘/펼침·이벤트 배너 줄바꿈 등으로
+     78px보다 조금이라도 커지면 .explorer가 .site-scroll보다 미세하게 커져 페이지 전체
+     (.site-scroll)가 몇 px 스크롤 가능해지고, 그 몇 px만 스크롤해도 필터 패널 윗부분이
+     통째로 잘려 보이는 버그가 났다 (사용자 리포트 2026-07-22). height:100%는 .site-scroll의
+     flex 계산 높이를 그대로 물려받아 헤더 높이가 얼마든 항상 정확히 맞는다. */
+  height: 100%;
   margin: auto;
   padding: 36px clamp(18px, 4vw, 64px);
   display: grid;

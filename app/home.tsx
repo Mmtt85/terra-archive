@@ -17,6 +17,7 @@ import About from "./about";
 import FeedbackWidget from "./feedback-widget";
 import { feedbackReady, fetchNicknameCounts, submitNickname } from "./feedback";
 import { scrollMainTop } from "./scroll";
+import { useLazyVisible } from "./lazy-img";
 import { I18nProvider, useI18n, conceptName, DT_LOCALE, MAGIC_TRAIT_RE, LOCALES, type Locale, type ExtraI18n } from "./i18n";
 
 type RangeGrid = { row: number; col: number };
@@ -1301,9 +1302,12 @@ function AttributeFilter({ groups }: { groups: AttrGroup[] }) {
 
 function OperatorCard({ operator, index, onSelect }: { operator: Operator; index: number; onSelect: (operator: Operator) => void }) {
   const { locale, t } = useI18n();
+  // 카드가 화면 근처에 실제로 들어오기 전엔 이미지 자체를 마운트하지 않는다 — 진입 즉시
+  // 420장이 전부 요청되던 문제 대응 (스크롤·필터링 시에만 그때그때 받아옴, 2026-07-22)
+  const [portraitRef, visible] = useLazyVisible<HTMLDivElement>();
   return (
     <button type="button" className="operator-card" onClick={() => onSelect(operator)} aria-label={t("{name} 상세 정보 열기", { name: operator.name })} style={{ "--accent": operator.accent, "--delay": `${(index % 12) * 25}ms` } as React.CSSProperties}>
-      <div className="portrait">
+      <div className="portrait" ref={portraitRef}>
         <span className="portrait-grid" />
         <div className="portrait-info">
           <div className="portrait-meta"><span>{"★".repeat(operator.rarity)}</span><b>{operator.job}</b>{operator.unreleased && <em className="future-badge">{t("미실장")}</em>}</div>
@@ -1314,7 +1318,7 @@ function OperatorCard({ operator, index, onSelect }: { operator: Operator; index
             <span><i>{t("종족")}</i>{operator.race ?? t("불명")}</span>
           </small>
         </div>
-        <img src={operator.image} alt={t("{name} 오퍼레이터", { name: operator.name })} width={180} height={180} loading="lazy" decoding="async" />
+        {visible && <img src={operator.image} alt={t("{name} 오퍼레이터", { name: operator.name })} width={180} height={180} decoding="async" />}
       </div>
       <div className="card-body">
         <div className="tags">{operator.concepts.map((tag) => <span key={tag}>{conceptName(locale, tag)}</span>)}</div>
