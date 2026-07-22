@@ -137,25 +137,34 @@ export function ScannerModal({ t, onClose, onApply }: {
     if (!v || !v.videoWidth || busy.current) return;
     busy.current = true; setRecognizing(true);
     try {
-      const scale = Math.min(1, MAX_W / v.videoWidth);
-      const W = Math.round(v.videoWidth * scale), H = Math.round(v.videoHeight * scale);
+      // 원본 해상도 캔버스(OCR용) — 레티나 캡처(~2900px)를 다운스케일한 뒤 OCR하면
+      // 이름 글자가 뭉개져 복구 불가(라이브 4/14 vs 원본 12/14의 원인). 격자 감지만 축소본으로.
+      const FW = v.videoWidth, FH = v.videoHeight;
       let wc = workCanvas.current;
       if (!wc) { wc = document.createElement("canvas"); workCanvas.current = wc; }
-      wc.width = W; wc.height = H;
-      const ctx = wc.getContext("2d", { willReadFrequently: true })!;
-      ctx.drawImage(v, 0, 0, W, H);
-      const frame = ctx.getImageData(0, 0, W, H);
+      wc.width = FW; wc.height = FH;
+      const fctx = wc.getContext("2d", { willReadFrequently: true })!;
+      fctx.drawImage(v, 0, 0, FW, FH);
+      const scale = Math.min(1, MAX_W / FW);
+      const W = Math.round(FW * scale), H = Math.round(FH * scale);
+      const sc = document.createElement("canvas");
+      sc.width = W; sc.height = H;
+      const sctx = sc.getContext("2d", { willReadFrequently: true })!;
+      sctx.drawImage(wc, 0, 0, W, H);
+      const frame = sctx.getImageData(0, 0, W, H);
       const scan = scanFrame({ data: frame.data, width: W, height: H });
       setFrameInfo(t("격자 {c}열 · px {p} · 행 {r}", { c: String(scan.cols.length), p: String(scan.px), r: scan.rows.join(",") }));
       drawOverlay(scan.cells, W, H);
       await initOcr((status, p) => setOcrStatus(`${status} ${Math.round(p * 100)}%`));
       setOcrStatus("");
 
+      const inv = 1 / scale; // 축소좌표 → 원본좌표
       const next = new Map(resultsRef.current);
       for (const cell of scan.cells) {
         if (cell.rarity < 1) continue;
+        const nb = { x: cell.nameBox.x * inv, y: cell.nameBox.y * inv, w: cell.nameBox.w * inv, h: cell.nameBox.h * inv };
         let text = "";
-        try { text = await ocrNameBand(wc, cell.nameBox, W, H); } catch { continue; }
+        try { text = await ocrNameBand(wc, nb, FW, FH); } catch { continue; }
         if (!text) continue;
         const m = matchOperator(text, { rarity: cell.rarity, cls: cell.cls, clsConf: cell.clsConf });
         // 라이브 진단용 — 셀별 OCR 원문과 매칭 결과 (개발자도구 콘솔)
