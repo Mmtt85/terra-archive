@@ -17,6 +17,8 @@ import {
 import type { RaiseRec, InvestProgress } from "./planner-invest";
 // 자동편성·육성 추천의 실제 계산은 Web Worker에서 (INP — 메인 스레드는 진행 표시만, 2026-07-22)
 import { optimizeOff, investOff } from "./planner-offload";
+// 에뮬레이터 화면 연동(화면 캡처) — 오퍼 인식 스캐너의 첫 단계 (2026-07-22)
+import { startDisplayCapture, sampleBrightness } from "./screen-capture";
 import costsData from "./data/costs.json";
 
 // 재료 표시용 카탈로그 (이름·아이콘) — costs.json items (build-costs.py 수확)
@@ -79,6 +81,12 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     setMoreOpen((open) => !open);
   };
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  // 에뮬레이터 화면 연동(getDisplayMedia) — 미리보기 스트림·상태. 캡처는 이 브라우저 안에서만.
+  const captureVideoRef = useRef<HTMLVideoElement | null>(null);
+  const [captureStream, setCaptureStream] = useState<MediaStream | null>(null);
+  const [captureOpen, setCaptureOpen] = useState(false);
+  const [captureDims, setCaptureDims] = useState<{ w: number; h: number } | null>(null);
+  const [captureBlack, setCaptureBlack] = useState(false);
   // 1~5성은 기본 보유, 6성은 미보유로 시작 — 가진 6성만 직접 체크한다
   const [ownedIds, setOwnedIds] = useState<Set<string>>(() => new Set(ops.filter((op) => op.rarity <= 5).map((op) => op.id)));
   // 미지정 = 2정(정예화 2, 최대) 가정 — 정예화 2 스킬이 있는 오퍼만 1정으로 낮출 수 있다
@@ -221,6 +229,53 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     if (imageUrl) URL.revokeObjectURL(imageUrl);
     setImageUrl(null);
   };
+
+  // ── 에뮬레이터 화면 연동 ──────────────────────────────────────────────────────
+  // 버튼 → 브라우저 화면 선택창 → 에뮬레이터(또는 명일방주) 창 선택 → 미리보기.
+  // 스트림은 오직 미리보기용이고, 다음 단계에서 이 프레임으로 오퍼 인식을 붙인다.
+  const stopCapture = () => {
+    captureStream?.getTracks().forEach((track) => track.stop());
+    setCaptureStream(null);
+    setCaptureDims(null);
+    setCaptureBlack(false);
+  };
+  const closeCapture = () => { stopCapture(); setCaptureOpen(false); };
+  const startCapture = async () => {
+    if (!navigator.mediaDevices?.getDisplayMedia) {
+      showToast(t("이 브라우저는 화면 캡처를 지원하지 않습니다."));
+      return;
+    }
+    try {
+      const stream = await startDisplayCapture();
+      stopCapture(); // 이전 연동이 있으면 정리하고 교체
+      setCaptureStream(stream);
+      setCaptureOpen(true);
+      // 사용자가 브라우저의 '공유 중지' UI로 끊으면 상태도 정리
+      stream.getVideoTracks()[0]?.addEventListener("ended", () => { setCaptureStream(null); setCaptureDims(null); setCaptureBlack(false); });
+    } catch (err) {
+      const name = (err as DOMException)?.name;
+      if (name === "NotAllowedError" || name === "AbortError") showToast(t("화면 선택이 취소되었습니다."));
+      else showToast(t("화면 캡처를 시작하지 못했습니다: {msg}", { msg: String((err as Error)?.message ?? err) }));
+    }
+  };
+
+  // 스트림을 미리보기 <video>에 연결하고, 해상도·검은 화면(DRM)을 주기적으로 확인
+  useEffect(() => {
+    const video = captureVideoRef.current;
+    if (!video || !captureStream) return;
+    video.srcObject = captureStream;
+    void video.play().catch(() => { /* 자동재생 실패 무시 (muted라 대개 성공) */ });
+    const tick = () => {
+      if (video.videoWidth) setCaptureDims({ w: video.videoWidth, h: video.videoHeight });
+      setCaptureBlack(sampleBrightness(video) < 0.03);
+    };
+    const id = window.setInterval(tick, 1000);
+    tick();
+    return () => window.clearInterval(id);
+  }, [captureStream, captureOpen]);
+
+  // 언마운트 시 캡처 트랙 정리 (탭 이동 등으로 컴포넌트가 사라져도 카메라/화면 표시가 남지 않게)
+  useEffect(() => () => { captureStream?.getTracks().forEach((track) => track.stop()); }, [captureStream]);
 
   const exportState = () => {
     const payload = JSON.stringify({ version: 1, exported: new Date().toISOString(), owned: Array.from(ownedIds), elite: Array.from(eliteById.entries()), plan, invest: investRecs }, null, 1);
@@ -694,6 +749,8 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           </button>
           <button onClick={fillGaps} title={t("현재 편성(수동 수정 포함)은 그대로 두고, 남은 빈 자리만 효율 순으로 자동 편성합니다")}><span className="btn-icon" aria-hidden>⊕</span>{t("빈 자리만 자동편성")}</button>
           <button onClick={clearAll} title={t("모든 방의 편성을 비웁니다 (보유 오퍼 설정은 유지)")}><span className="btn-icon" aria-hidden>⌫</span>{t("편성 전체 비우기")}</button>
+          {/* 에뮬레이터 화면 연동 — 화면 캡처로 오퍼 보유·육성 인식(개발 중). 클릭 시 브라우저 화면 선택창 (2026-07-22) */}
+          <button className="capture-btn" onClick={() => { void startCapture(); }} title={t("에뮬레이터(또는 명일방주) 창을 캡처해 보유 오퍼를 인식합니다 — 화면은 이 브라우저 안에서만 처리됩니다")}><span className="btn-icon" aria-hidden>🖥</span>{t("에뮬레이터 연동")}</button>
           {/* 이미지·파일·도움말은 '그 외' 드롭다운으로 묶는다 (사용자 요청 2026-07) */}
           <span className="more-group">
             <button className={`more-toggle${dirty ? " save-pending" : ""}`} aria-expanded={moreOpen} aria-haspopup="menu"
@@ -873,6 +930,37 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       )}
 
       {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
+
+      {captureOpen && (
+        <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) closeCapture(); }}>
+          <section className="operator-modal room-modal capture-modal" style={{ "--accent": "var(--lime)" } as React.CSSProperties}>
+            <button type="button" className="modal-close" onClick={closeCapture} aria-label={t("닫기")}>×</button>
+            <header className="room-modal-head">
+              <span className="modal-kicker">SCREEN LINK</span>
+              <h2>{t("에뮬레이터 화면 연동")}</h2>
+              <div className="roster-tools">
+                <button type="button" className="apply" onClick={() => { void startCapture(); }}>{t("다시 선택")}</button>
+                <button type="button" onClick={closeCapture}>{t("연동 해제")}</button>
+              </div>
+            </header>
+            <div className="capture-body">
+              <div className="capture-stage">
+                <video ref={captureVideoRef} className="capture-video" autoPlay muted playsInline />
+                {!captureStream && <p className="capture-hint">{t("화면 선택창에서 에뮬레이터(또는 명일방주) 창을 고르세요.")}</p>}
+              </div>
+              {captureStream && captureBlack && (
+                <p className="capture-warn">{t("검은 화면만 잡힙니다 — 게임 화면 보호(DRM)로 캡처가 막혔을 수 있어요. 에뮬레이터 창을 고르거나 '화면 전체'를 선택해 보세요.")}</p>
+              )}
+              <p className="capture-status">
+                {captureStream
+                  ? (captureDims ? t("연동됨 · {w}×{h}", { w: captureDims.w, h: captureDims.h }) : t("연동됨 · 프레임 대기 중…"))
+                  : t("연동 대기 중")}
+              </p>
+              <p className="capture-privacy">{t("이 영상은 이 브라우저 안에서만 처리되며 어디에도 전송되지 않습니다. 다음 단계에서 이 화면으로 보유 오퍼를 자동 인식합니다.")}</p>
+            </div>
+          </section>
+        </div>
+      )}
 
       {imageUrl && (
         <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) closeImage(); }}>
