@@ -118,6 +118,8 @@ const D: Record<string, Pair> = {
   "언어 선택": ["Language", "言語選択"],
   "다크 모드 전환": ["Toggle dark mode", "ダークモード切替"],
   "닫기": ["Close", "閉じる"],
+  "메뉴 열기": ["Open menu", "メニューを開く"],
+  "검색어 지우기": ["Clear search", "検索語をクリア"],
   "홈": ["Home", "ホーム"],
 
   // 포탈 첫화면 (루트 /)
@@ -368,7 +370,7 @@ const D: Record<string, Pair> = {
   ],
   "자동편성 엔진 계산 중 — 편성 공간 구성…": ["Auto-assign engine running — preparing the assignment space…", "自動編成エンジン計算中 — 編成空間を構成…"],
   "자동편성 엔진 계산 중 — 기본 편성 조립·전수 감사…": ["Auto-assign engine running — building the baseline plan and running full audits…", "自動編成エンジン計算中 — 基本編成の組立・全数検査…"],
-  "자동편성 엔진 계산 중 — 시너지 세트 후보안 {i}/{n} ({sets}) 평가…": ["Auto-assign engine running — evaluating synergy-set candidate {i}/{n} ({sets})…", "自動編成エンジン計算中 — シナジーセット候補案 {i}/{n}（{sets}）を評価…"],
+  "자동편성 엔진 계산 중 — 시너지 세트 후보안 {i}/{n} 평가…": ["Auto-assign engine running — evaluating synergy-set candidate {i}/{n}…", "自動編成エンジン計算中 — シナジーセット候補案 {i}/{n} を評価…"],
   "자동편성 엔진 계산 중 — 최적안 비교·마무리 검증…": ["Auto-assign engine running — comparing candidates and final checks…", "自動編成エンジン計算中 — 最適案の比較・最終検証…"],
   "계산 중…": ["Computing…", "計算中…"],
   "자동편성 엔진 계산 중 — 채택안 전수 감사 {crew}조 {i}/{n}회차 검수…": ["Auto-assign engine running — full audit of the chosen plan, Shift {crew} round {i}/{n}…", "自動編成エンジン計算中 — 採用案の全数検査 {crew}班 {i}/{n}回目…"],
@@ -912,6 +914,7 @@ const D: Record<string, Pair> = {
   "이벤트 이름 검색": ["Search event names", "イベント名で検索"],
   "조건에 맞는 이벤트가 없어요.": ["No events match your search.", "条件に合うイベントがありません。"],
   "AI 요약": ["AI digest", "AI要約"],
+  "AI 요약은 아직 준비 중이에요. 지금은 게임 내 스토리 전문으로 만나 보세요.": ["The AI digest isn't ready yet — enjoy the full in-game story script for now.", "AI要約はまだ準備中です。今はゲーム内ストーリー全文をお楽しみください。"],
   "요약 준비 중": ["Digest coming soon", "要約準備中"],
   "시계열 참조용": ["Timeline ref.", "時系列参照用"],
   "이 테마에 속하는 이야기는 아니지만, 테라력 시계열로는 이 위치에 있어요.": [
