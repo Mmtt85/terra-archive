@@ -17,7 +17,8 @@ type Feature = {
   highlight?: string; // 강조 박스 (인프라 플래너 90/10 어필)
 };
 
-// 기능별 스크린샷 (한국어 UI · 헤드리스 캡처본, 데스크톱+모바일 한 쌍). 로케일 공용 — 탭 키로 매핑.
+// 기능별 스크린샷 (헤드리스 캡처본, 데스크톱+모바일 한 쌍). 경로는 ko 기준 — EN/JA는
+// ShotFrame이 /about/{en,ja}/로 바꿔 그 언어 UI 캡처를 보여준다 (언어별 세트 2026-07-22).
 type ShotPair = { d: string; m: string };
 const SHOTS: Partial<Record<Tab, ShotPair>> = {
   archive: { d: "/about/archive.webp", m: "/about/archive-m.webp" },
@@ -50,7 +51,12 @@ function useTheme(): "light" | "dark" | null {
 // 데스크톱·모바일 캡처의 렌더 높이를 동일하게 맞춘다. 다크모드일 땐 다크 캡처본(-dark)으로 스왑.
 function ShotFrame({ shot, alt, cap }: { shot: ShotPair; alt: string; cap?: string }) {
   const theme = useTheme();
-  const src = (p: string) => (theme === "dark" ? p.replace(/\.webp$/, "-dark.webp") : p);
+  const { locale } = useI18n();
+  // EN/JA는 그 언어 UI 캡처본(/about/{en,ja}/)으로 스왑 — ko는 종전 루트 경로 유지
+  const src = (p: string) => {
+    const localized = locale === "ko" ? p : p.replace("/about/", `/about/${locale}/`);
+    return theme === "dark" ? localized.replace(/\.webp$/, "-dark.webp") : localized;
+  };
   return (
     <figure className="about-shot-fig">
       <div className="about-shots">
