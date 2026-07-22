@@ -82,6 +82,38 @@ export function ScannerModal({ t, onClose, onApply }: {
     }
   }, [stopStream]);
 
+  // ── 디버그 오버레이 ──────────────────────────────────────────────────────────
+  // 비디오는 object-fit:contain → 요소 안에서 콘텐츠가 레터박스(여백)로 중앙 배치된다.
+  // 그 스케일·오프셋을 반영해야 박스가 카드에 정확히 얹힌다(안 하면 밀려서 삐뚤삐뚤).
+  const clearOverlay = useCallback(() => {
+    const ov = overlayRef.current; if (!ov) return;
+    const ctx = ov.getContext("2d"); if (ctx) ctx.clearRect(0, 0, ov.width, ov.height);
+  }, []);
+
+  const drawOverlay = useCallback((cells: CellDetection[], W: number, H: number) => {
+    const ov = overlayRef.current, v = videoRef.current;
+    if (!ov || !v) return;
+    const rect = v.getBoundingClientRect();
+    ov.width = rect.width; ov.height = rect.height;
+    const ctx = ov.getContext("2d")!;
+    ctx.clearRect(0, 0, ov.width, ov.height);
+    if (!debug) return;
+    // contain 매핑: 콘텐츠는 min-스케일로 축소되어 중앙에 놓임
+    const s = Math.min(rect.width / W, rect.height / H);
+    const offX = (rect.width - W * s) / 2, offY = (rect.height - H * s) / 2;
+    const mx = (x: number) => offX + x * s, my = (y: number) => offY + y * s;
+    ctx.lineWidth = 2; ctx.font = "12px sans-serif";
+    for (const c of cells) {
+      const conf = c.clsConf >= 0.8;
+      ctx.strokeStyle = conf ? "#7fe07f" : "#e0a020";
+      ctx.strokeRect(mx(c.card.x), my(c.card.y), c.card.w * s, c.card.h * s);
+      ctx.strokeStyle = "#40a0ff";
+      ctx.strokeRect(mx(c.nameBox.x), my(c.nameBox.y), c.nameBox.w * s, c.nameBox.h * s);
+      ctx.fillStyle = conf ? "#7fe07f" : "#e0a020";
+      ctx.fillText(`${c.rarity}${STAR} ${c.cls.slice(0, 4)}`, mx(c.card.x) + 2, my(c.card.y) - 3);
+    }
+  }, [debug]);
+
   // ── 프레임 처리(안정 화면 1회) ────────────────────────────────────────────────
   const processStableFrame = useCallback(async () => {
     const v = videoRef.current;
@@ -116,29 +148,7 @@ export function ScannerModal({ t, onClose, onApply }: {
       }
     }
     setResults(next);
-  }, [t]);
-
-  // ── 디버그 오버레이 ──────────────────────────────────────────────────────────
-  const drawOverlay = useCallback((cells: CellDetection[], W: number, H: number) => {
-    const ov = overlayRef.current, v = videoRef.current;
-    if (!ov || !v) return;
-    const rect = v.getBoundingClientRect();
-    ov.width = rect.width; ov.height = rect.height;
-    const sx = rect.width / W, sy = rect.height / H;
-    const ctx = ov.getContext("2d")!;
-    ctx.clearRect(0, 0, ov.width, ov.height);
-    if (!debug) return;
-    ctx.lineWidth = 2; ctx.font = "12px sans-serif";
-    for (const c of cells) {
-      const conf = c.clsConf >= 0.8;
-      ctx.strokeStyle = conf ? "#7fe07f" : "#e0a020";
-      ctx.strokeRect(c.card.x * sx, c.card.y * sy, c.card.w * sx, c.card.h * sy);
-      ctx.strokeStyle = "#40a0ff";
-      ctx.strokeRect(c.nameBox.x * sx, c.nameBox.y * sy, c.nameBox.w * sx, c.nameBox.h * sy);
-      ctx.fillStyle = conf ? "#7fe07f" : "#e0a020";
-      ctx.fillText(`${c.rarity}${STAR} ${c.cls.slice(0, 4)}`, c.card.x * sx + 2, c.card.y * sy - 3);
-    }
-  }, [debug]);
+  }, [t, drawOverlay]);
 
   // ── 스캔 루프(안정 감지) ──────────────────────────────────────────────────────
   const tick = useCallback(async () => {
@@ -155,14 +165,16 @@ export function ScannerModal({ t, onClose, onApply }: {
     if (prev) for (let i = 0; i < cur.length; i += 4) diff += Math.abs(cur[i] - prev[i]);
     lastTiny.current = cur.slice();
     const moving = diff > 32 * 24 * 6; // 임계
-    if (moving) { stableCount.current = 0; processedStable.current = false; return; }
+    if (moving) { stableCount.current = 0; processedStable.current = false; clearOverlay(); return; }
     stableCount.current++;
     if (stableCount.current >= 2 && !processedStable.current) {
       processedStable.current = true;
       busy.current = true;
       try { await processStableFrame(); } finally { busy.current = false; }
     }
-  }, [processStableFrame]);
+  }, [processStableFrame, clearOverlay]);
+
+  useEffect(() => { if (!debug) clearOverlay(); }, [debug, clearOverlay]);
 
   const toggleScan = useCallback(() => {
     if (phase === "scanning") {
