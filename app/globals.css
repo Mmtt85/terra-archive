@@ -7398,3 +7398,13 @@ main.site-main > .site-header { flex: 0 0 auto; }
 @media (max-width: 760px) {
   .scanner-body { grid-template-columns: 1fr; overflow-y: auto; }
 }
+
+/* 스캐너 정예화 토글 칩 (2026-07-23) */
+.scanner-elite {
+  flex: 0 0 auto; min-width: 34px; padding: 3px 6px; border-radius: 6px; cursor: pointer;
+  font-size: .72rem; font-weight: 700; border: 1px solid var(--bg-panel2); background: var(--bg-soft); color: var(--ink2);
+}
+.scanner-elite:disabled { opacity: .45; cursor: default; }
+.scanner-elite.e1 { border-color: #7a93c8; color: #4f6fb5; }
+.scanner-elite.e2 { border-color: var(--lime); color: #7a8f1c; background: rgba(195,210,75,.14); }
+.scanner-hint { margin: 4px 0 0; font-size: .82rem; color: var(--muted); }

@@ -883,12 +883,20 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
             <ScannerModal
               t={t}
               onClose={() => setShowScanner(false)}
-              onApply={(ids) => {
+              onApply={(dets) => {
                 const next = new Set(ownedIds);
+                const nextElite = new Map(eliteById);
                 let added = 0;
-                for (const id of ids) if (opById.has(id) && !next.has(id)) { next.add(id); added++; }
+                for (const d of dets) {
+                  if (!opById.has(d.id)) continue;
+                  if (!next.has(d.id)) added++;
+                  next.add(d.id);
+                  // eliteById는 E2를 '없음(기본)'으로 두므로 E2면 삭제, 아니면 설정
+                  if (d.elite === 2) nextElite.delete(d.id); else nextElite.set(d.id, d.elite);
+                }
                 setOwnedIds(next);
-                persist(next, plan);
+                setEliteById(nextElite);
+                persist(next, plan, nextElite);
                 setDirty(true);
                 setShowScanner(false);
                 showToast(t("스캔 결과 {n}명을 보유에 추가했습니다 (기존 보유는 유지)", { n: String(added) }));
