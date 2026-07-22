@@ -242,13 +242,16 @@ export function scanFrame(f: Frame): FrameScan {
       }
       const rarity = countStars(gold, W, sx, cellRy);
       const { cls, conf } = classifyGlyph(L, W, H, sx, cellRy);
+      // 모든 박스를 sx(별) 기준으로 앵커링. cx(밝기 골짜기)는 화면마다 카드 왼쪽에서
+      // ~50px씩 어긋나 박스가 우측으로 삐져나감 → 별은 항상 카드 좌상단에 있어 안정적.
+      const cardLeft = Math.round(sx - px * 0.27);
       const cardTop = cellRy - 22;
       const cardH = Math.round(rowPitch * 0.95);
-      const card: Rect = { x: cx, y: cardTop, w: px, h: cardH };
+      const card: Rect = { x: cardLeft, y: cardTop, w: Math.round(px * 0.94), h: cardH };
       // 이름 띠: 카드 맨 아래 이름 줄(브랜치 아이콘·LV원 제외) — OCR 88% 검증값(px*1.60)
-      const nameBox: Rect = { x: cx + Math.round(px * 0.05), y: cellRy + Math.round(px * 1.60), w: Math.round(px * 0.90), h: Math.round(px * 0.21) };
-      const eliteBox: Rect = { x: cx + 4, y: cellRy + Math.round(px * 1.05), w: Math.round(px * 0.5), h: Math.round(px * 0.45) };
-      cells.push({ row: ri, col: ci, cx, sx, ry: cellRy, rarity, cls, clsConf: conf, card, nameBox, eliteBox });
+      const nameBox: Rect = { x: cardLeft + Math.round(px * 0.05), y: cellRy + Math.round(px * 1.60), w: Math.round(px * 0.88), h: Math.round(px * 0.21) };
+      const eliteBox: Rect = { x: cardLeft + 4, y: cellRy + Math.round(px * 1.05), w: Math.round(px * 0.5), h: Math.round(px * 0.45) };
+      cells.push({ row: ri, col: ci, cx: cardLeft, sx, ry: cellRy, rarity, cls, clsConf: conf, card, nameBox, eliteBox });
     }
   }
   return { cols: validCols, px, rows, colScore: score, cells };
