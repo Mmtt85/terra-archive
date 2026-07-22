@@ -7343,7 +7343,7 @@ main.site-main > .site-header { flex: 0 0 auto; }
 /* ── 보유 오퍼 스캐너 (2026-07-23) ─────────────────────────────────────────── */
 .scanner-backdrop { display: flex; align-items: center; justify-content: center; }
 .scanner-modal {
-  width: min(1100px, 96vw); max-height: 92vh; display: flex; flex-direction: column;
+  width: min(1100px, 96vw); height: 88vh; display: flex; flex-direction: column;
   background: var(--bg); color: var(--ink); border: 1px solid var(--border-strong);
   border-radius: 12px; overflow: hidden;
 }
@@ -7360,7 +7360,7 @@ main.site-main > .site-header { flex: 0 0 auto; }
   padding: 9px 18px; font-weight: 700; cursor: pointer;
 }
 .scanner-primary:disabled { opacity: .5; cursor: default; }
-.scanner-body { display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px; padding: 14px 18px; overflow: hidden; min-height: 0; }
+.scanner-body { display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px; padding: 14px 18px; overflow: hidden; min-height: 0; flex: 1 1 auto; }
 .scanner-stage { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .scanner-video-wrap { position: relative; background: #000; border-radius: 8px; overflow: hidden; aspect-ratio: 16 / 10; }
 .scanner-video { width: 100%; height: 100%; object-fit: contain; display: block; }

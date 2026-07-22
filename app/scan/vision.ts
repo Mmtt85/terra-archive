@@ -232,17 +232,23 @@ export function scanFrame(f: Frame): FrameScan {
       const cx = validCols[ci];
       const sx = leftmostStar(gold, W, cx, ry, px);
       if (sx == null) continue;
-      const rarity = countStars(gold, W, sx, ry);
-      const { cls, conf } = classifyGlyph(L, W, H, sx, ry);
-      // 카드 전체 대략: 배지 위 ~ 다음 행 직전
-      const cardTop = ry - 22;
+      // 카드 기울기(블루스택 원근) 보정: 이 칸의 별 리본 y를 개별로 정밀화.
+      // 한 행에 단일 y를 쓰면 좌↔우로 갈수록 이름 박스가 어긋난다(삐뚤어짐).
+      let cellRy = ry, bestG = -1;
+      for (let yy = ry - 20; yy <= ry + 20; yy++) {
+        let g = 0; const base = yy * W;
+        for (let x = sx; x < sx + 34 && x < W; x++) if (gold[base + x]) g++;
+        if (g > bestG) { bestG = g; cellRy = yy; }
+      }
+      const rarity = countStars(gold, W, sx, cellRy);
+      const { cls, conf } = classifyGlyph(L, W, H, sx, cellRy);
+      const cardTop = cellRy - 22;
       const cardH = Math.round(rowPitch * 0.95);
       const card: Rect = { x: cx, y: cardTop, w: px, h: cardH };
-      // 이름 띠: 카드 맨 아래 이름 줄만 타이트하게(브랜치 아이콘·LV원 제외) — OCR 88% 검증값
-      const nameBox: Rect = { x: cx + Math.round(px * 0.05), y: ry + Math.round(px * 1.60), w: Math.round(px * 0.90), h: Math.round(px * 0.21) };
-      // 정예화 배지: 카드 좌측 하부 ~ (레벨 원 위)
-      const eliteBox: Rect = { x: cx + 4, y: ry + Math.round(px * 1.05), w: Math.round(px * 0.5), h: Math.round(px * 0.45) };
-      cells.push({ row: ri, col: ci, cx, sx, ry, rarity, cls, clsConf: conf, card, nameBox, eliteBox });
+      // 이름 띠: 카드 맨 아래 이름 줄(브랜치 아이콘·LV원 제외) — OCR 88% 검증값(px*1.60)
+      const nameBox: Rect = { x: cx + Math.round(px * 0.05), y: cellRy + Math.round(px * 1.60), w: Math.round(px * 0.90), h: Math.round(px * 0.21) };
+      const eliteBox: Rect = { x: cx + 4, y: cellRy + Math.round(px * 1.05), w: Math.round(px * 0.5), h: Math.round(px * 0.45) };
+      cells.push({ row: ri, col: ci, cx, sx, ry: cellRy, rarity, cls, clsConf: conf, card, nameBox, eliteBox });
     }
   }
   return { cols: validCols, px, rows, colScore: score, cells };

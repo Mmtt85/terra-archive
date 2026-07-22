@@ -108,6 +108,29 @@ export function ScannerModal({ t, onClose, onApply }: {
     }
   }, [debug]);
 
+  // ── 실시간 격자 프리뷰(OCR 없이 격자·성급·직군만, 스냅샷 전에 정렬 확인) ────────
+  const livePreview = useCallback(() => {
+    const v = videoRef.current;
+    if (!v || !v.videoWidth || busy.current) return;
+    const scale = Math.min(1, MAX_W / v.videoWidth);
+    const W = Math.round(v.videoWidth * scale), H = Math.round(v.videoHeight * scale);
+    let wc = workCanvas.current;
+    if (!wc) { wc = document.createElement("canvas"); workCanvas.current = wc; }
+    wc.width = W; wc.height = H;
+    const ctx = wc.getContext("2d", { willReadFrequently: true })!;
+    ctx.drawImage(v, 0, 0, W, H);
+    const frame = ctx.getImageData(0, 0, W, H);
+    const scan = scanFrame({ data: frame.data, width: W, height: H });
+    setFrameInfo(t("격자 {c}열 · px {p} · 행 {r}", { c: String(scan.cols.length), p: String(scan.px), r: scan.rows.join(",") }));
+    drawOverlay(scan.cells, W, H);
+  }, [t, drawOverlay]);
+
+  useEffect(() => {
+    if (phase !== "ready") return;
+    const id = window.setInterval(() => { if (!busy.current) livePreview(); }, 500);
+    return () => clearInterval(id);
+  }, [phase, livePreview]);
+
   // ── 현재 화면 1장 인식 ────────────────────────────────────────────────────────
   const recognizeCurrent = useCallback(async () => {
     const v = videoRef.current;
