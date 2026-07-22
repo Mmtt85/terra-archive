@@ -650,6 +650,7 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
   const [tags, setTags] = useState<string[]>([]);
   const [selectedJobs, setSelectedJobs] = useState<string[]>([]);
   const [selectedSubProfessions, setSelectedSubProfessions] = useState<string[]>([]);
+  const [selectedRarities, setSelectedRarities] = useState<string[]>([]); // 성급 필터 (문자열 "6"~"1")
   const [selected, setSelected] = useState<Operator | null>(null);
   // 경로 기반 라우팅: 서버가 라우트별로 올바른 탭을 렌더하므로 initialTab을 그대로
   // 초기값으로 쓴다 (SSR/클라이언트 첫 렌더 일치 → hydration mismatch 없음).
@@ -695,6 +696,10 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
   const subProfessions = useMemo(() =>
     Array.from(new Set(roster.map((operator) => operator.subProfession))).sort((a, b) => a.localeCompare(b, locale)),
     [roster, locale]);
+  // 성급 필터 목록 — 로스터에 실제 있는 성급을 높은 순으로 (보통 6~1성)
+  const rarities = useMemo(() =>
+    Array.from(new Set(roster.map((operator) => operator.rarity))).sort((a, b) => b - a).map(String),
+    [roster]);
   const positionMethods = useMemo(() => [t("근거리"), t("원거리")], [t]);
   const attackMethods = useMemo(() => [...positionMethods, t("물리"), t("마법")], [positionMethods, t]);
   const damageTypeOf = (operator: Operator) => (MAGIC_TRAIT_RE[locale].test(operator.trait) ? t("마법") : t("물리"));
@@ -990,13 +995,14 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
       const matchesTags = tags.every((tag) => operator.combatTags.includes(tag));
       const matchesJob = selectedJobs.length === 0 || selectedJobs.includes(operator.job);
       const matchesSubProfession = selectedSubProfessions.length === 0 || selectedSubProfessions.includes(operator.subProfession);
+      const matchesRarity = selectedRarities.length === 0 || selectedRarities.includes(String(operator.rarity));
       const communityNicknames = nicknames.get(operator.id)?.filter((nick) => nick.votes >= NICKNAME_MIN_VOTES).map((nick) => nick.name) ?? [];
       const conceptNames = operator.concepts.map((concept) => conceptName(locale, concept));
       const matchesQuery = !keyword || normSearch([operator.name, operator.code, operator.job, operator.subProfession, operator.position, ...operator.combatTags, ...operator.factions, operator.reason, ...operator.aliases, ...communityNicknames, ...operator.concepts, ...conceptNames].join(" ")).includes(keyword);
-      return matchesFaction && matchesConcept && matchesMethod && matchesTags && matchesJob && matchesSubProfession && matchesQuery;
+      return matchesFaction && matchesConcept && matchesMethod && matchesTags && matchesJob && matchesSubProfession && matchesRarity && matchesQuery;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roster, selectedFactions, selectedConcepts, selectedMethods, tags, selectedJobs, selectedSubProfessions, query, nicknames, locale]);
+  }, [roster, selectedFactions, selectedConcepts, selectedMethods, tags, selectedJobs, selectedSubProfessions, selectedRarities, query, nicknames, locale]);
 
   const reset = () => {
     setSelectedFactions([]);
@@ -1005,6 +1011,7 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
     setTags([]);
     setSelectedJobs([]);
     setSelectedSubProfessions([]);
+    setSelectedRarities([]);
     setQuery("");
   };
 
@@ -1012,7 +1019,7 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
     setter((current) => (current.includes(value) ? current.filter((item) => item !== value) : [...current, value]));
   const toggleTag = toggleIn(setTags);
 
-  const hasActiveFilter = selectedFactions.length > 0 || selectedConcepts.length > 0 || selectedMethods.length > 0 || tags.length > 0 || selectedJobs.length > 0 || selectedSubProfessions.length > 0 || query.trim().length > 0;
+  const hasActiveFilter = selectedFactions.length > 0 || selectedConcepts.length > 0 || selectedMethods.length > 0 || tags.length > 0 || selectedJobs.length > 0 || selectedSubProfessions.length > 0 || selectedRarities.length > 0 || query.trim().length > 0;
 
   const sorted = useMemo(() => {
     if (sortKey === "기본") {
@@ -1125,6 +1132,7 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
             <div><span className="section-no">FILTER / 01</span><h2 id="explorer-title">{t("탐색 조건")}</h2></div>
             <button className="reset" onClick={reset}>↻ {t("초기화")}</button>
           </div>
+          <FilterGroup title={t("성급")} items={rarities} labelFor={(item) => `${item}★`} selected={selectedRarities} onToggle={toggleIn(setSelectedRarities)} countForItem={(item) => roster.filter((operator) => String(operator.rarity) === item).length} />
           <FilterGroup title={t("컨셉덱")} items={concepts} labelFor={(item) => conceptName(locale, item)} selected={selectedConcepts} onToggle={toggleIn(setSelectedConcepts)} rows={2} countForItem={(item) => roster.filter((operator) => operator.concepts.includes(item)).length} />
           <FilterGroup title={t("직군")} items={jobs} selected={selectedJobs} onToggle={toggleIn(setSelectedJobs)} countForItem={(item) => roster.filter((operator) => operator.job === item).length} />
           <FilterGroup title={t("세부 직군")} items={subProfessions} selected={selectedSubProfessions} onToggle={toggleIn(setSelectedSubProfessions)} countForItem={(item) => roster.filter((operator) => operator.subProfession === item).length} />
@@ -1155,6 +1163,7 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
             </div>
           </div>
           <div className="active-filters">
+            {selectedRarities.map((item) => <button key={`r-${item}`} onClick={() => toggleIn(setSelectedRarities)(item)}>{item}★ ×</button>)}
             {selectedFactions.map((item) => <button key={`f-${item}`} onClick={() => toggleIn(setSelectedFactions)(item)}>{item} ×</button>)}
             {selectedConcepts.map((item) => <button key={`c-${item}`} onClick={() => toggleIn(setSelectedConcepts)(item)}>{conceptName(locale, item)} ×</button>)}
             {selectedMethods.map((item) => <button key={`p-${item}`} onClick={() => toggleIn(setSelectedMethods)(item)}>{item} ×</button>)}
