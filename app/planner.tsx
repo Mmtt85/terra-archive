@@ -17,8 +17,6 @@ import {
 import type { RaiseRec, InvestProgress } from "./planner-invest";
 // 자동편성·육성 추천의 실제 계산은 Web Worker에서 (INP — 메인 스레드는 진행 표시만, 2026-07-22)
 import { optimizeOff, investOff } from "./planner-offload";
-// 에뮬레이터 화면 연동 + 오퍼 인식 스캐너 (2026-07-22)
-import EmulatorCapture from "./emulator-capture";
 import costsData from "./data/costs.json";
 
 // 재료 표시용 카탈로그 (이름·아이콘) — costs.json items (build-costs.py 수확)
@@ -81,8 +79,6 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     setMoreOpen((open) => !open);
   };
   const [imageUrl, setImageUrl] = useState<string | null>(null);
-  // 에뮬레이터 화면 연동 + 오퍼 인식 스캐너 — 별도 컴포넌트가 스트림·인식을 관리
-  const [captureOpen, setCaptureOpen] = useState(false);
   // 1~5성은 기본 보유, 6성은 미보유로 시작 — 가진 6성만 직접 체크한다
   const [ownedIds, setOwnedIds] = useState<Set<string>>(() => new Set(ops.filter((op) => op.rarity <= 5).map((op) => op.id)));
   // 미지정 = 2정(정예화 2, 최대) 가정 — 정예화 2 스킬이 있는 오퍼만 1정으로 낮출 수 있다
@@ -698,8 +694,6 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           </button>
           <button onClick={fillGaps} title={t("현재 편성(수동 수정 포함)은 그대로 두고, 남은 빈 자리만 효율 순으로 자동 편성합니다")}><span className="btn-icon" aria-hidden>⊕</span>{t("빈 자리만 자동편성")}</button>
           <button onClick={clearAll} title={t("모든 방의 편성을 비웁니다 (보유 오퍼 설정은 유지)")}><span className="btn-icon" aria-hidden>⌫</span>{t("편성 전체 비우기")}</button>
-          {/* 에뮬레이터 화면 연동 — 화면 캡처로 오퍼 보유·육성 인식(개발 중) */}
-          <button className="capture-btn" onClick={() => setCaptureOpen(true)} title={t("에뮬레이터(또는 명일방주) 창을 캡처해 보유 오퍼를 인식합니다 — 화면은 이 브라우저 안에서만 처리됩니다")}><span className="btn-icon" aria-hidden>🖥</span>{t("에뮬레이터 연동")}</button>
           {/* 이미지·파일·도움말은 '그 외' 드롭다운으로 묶는다 (사용자 요청 2026-07) */}
           <span className="more-group">
             <button className={`more-toggle${dirty ? " save-pending" : ""}`} aria-expanded={moreOpen} aria-haspopup="menu"
@@ -879,8 +873,6 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       )}
 
       {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
-
-      {captureOpen && <EmulatorCapture onClose={() => setCaptureOpen(false)} />}
 
       {imageUrl && (
         <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) closeImage(); }}>
