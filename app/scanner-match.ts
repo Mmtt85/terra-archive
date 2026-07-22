@@ -101,14 +101,18 @@ function topKOf(v: Float32Array, k: number): { idx: number; score: number }[] {
   return heap.sort((a, b) => b.score - a.score);
 }
 
-// 카드의 아트 영역(box, 프레임 픽셀)을 식별. 로컬 서치로 격자 오차(±8%)를 흡수한다.
+// 카드 ROI(프레임 픽셀)를 식별. 카드는 portrait를 "상단 정렬·전폭"으로 그리므로 매칭은
+// **카드 상단 정사각(폭×폭)**만 사용 — 카드 비율(이름띠에 하단이 얼마나 가리든)과 무관하게
+// 인덱스(portrait 상단 정사각)와 같은 내용이 보인다 (2026-07-22 실험: 전체상 4/14 → 정사각 14/14).
+// 로컬 서치로 격자 오차(±8%)를 흡수한다.
 export function matchOperator(
   frame: CanvasImageSource,
-  box: { x: number; y: number; w: number; h: number },
+  cardBox: { x: number; y: number; w: number; h: number },
   cfg: MatchConfig = DEFAULT_MATCH,
 ): OperatorMatch | null {
-  if (!MAT || box.w < 8 || box.h < 8) return null;
-  // 1차: 중앙 크롭 벡터로 전 변형 top-K
+  if (!MAT || cardBox.w < 8 || cardBox.h < 8) return null;
+  const box = { x: cardBox.x, y: cardBox.y, w: cardBox.w, h: Math.min(cardBox.w, cardBox.h) }; // 상단 정사각
+  // 1차: 정사각 크롭 벡터로 전 변형 top-K
   const v0 = regionVec(frame, box.x, box.y, box.w, box.h);
   if (!v0) return null;
   const rough = topKOf(v0, Math.max(cfg.topK, 3));

@@ -7,11 +7,11 @@
 
   yuanyan3060/ArknightsGameResource portrait/*.png
     → .portrait-cache/ 원본 캐시 (있으면 다운로드 스킵 — mtime 재계산만)
-    → app/data/portrait-index.json  { id, v(변형), g(그레이 16×24 base64) }
+    → app/data/portrait-index.json  { id, v(변형), g(상단 정사각 그레이 16×16 base64) }
 
 - operators.json에 있는 오퍼의 변형(기본 _1/_2, 스킨 name#N, 특수 _1+)만 수록.
 - variant → operator_id 는 파일명 접두 매칭 (가장 긴 일치 id).
-- ⚠ 런타임(app/scanner-match.ts)과 파리티: 그레이 L601 · 16×24 · 평균0/L2 정규화는
+- ⚠ 런타임(app/scanner-match.ts)과 파리티: 그레이 L601 · 상단 정사각 16×16 · 평균0/L2 정규화는
   런타임이 수행(여기선 원시 그레이 바이트만 저장).
 - 손편집 금지.  실행:  python3 scripts/build-portrait-index.py
 """
@@ -20,6 +20,7 @@ import io
 import json
 import os
 import sys
+import urllib.parse
 import urllib.request
 
 from PIL import Image
@@ -30,7 +31,10 @@ DST = os.path.join(REPO, "app", "data", "portrait-index.json")
 LIST_URL = "https://raw.githubusercontent.com/yuanyan3060/ArknightsGameResource/main/file_dict.json"
 IMG_BASE = "https://raw.githubusercontent.com/yuanyan3060/ArknightsGameResource/main"
 
-W, H = 16, 24  # 카드 아트 종횡비(세로 카드 상부)에 맞춘 축소 크기 — scanner-match.ts와 파리티
+# 상단 정사각(폭×폭) 크롭 — 카드가 portrait를 "상단 정렬·전폭"으로 그리므로, 상단 정사각은
+# 카드 비율과 무관하게 항상 공통으로 보이는 영역이다 (2026-07-22 실험: 전체상 매칭 4/14 →
+# 상단 정사각 14/14). scanner-match.ts와 파리티.
+W, H = 16, 16
 
 OPS = json.load(open(os.path.join(REPO, "app", "data", "operators.json"), encoding="utf-8"))
 # 접두 매칭용 — 긴 id 우선 (char_1001_amiya2 가 char_002_amiya 등과 헷갈리지 않게)
@@ -45,7 +49,9 @@ def op_of(stem: str):
 
 
 def fetch(url: str) -> bytes:
-    req = urllib.request.Request(url, headers={"User-Agent": "terra-archive-scanner"})
+    # 스킨 파일명의 '#'은 URL 프래그먼트로 잘리므로 경로를 반드시 인코딩 (2026-07-22 404 원인)
+    base, path = url.split("/main/", 1)
+    req = urllib.request.Request(f"{base}/main/{urllib.parse.quote(path)}", headers={"User-Agent": "terra-archive-scanner"})
     return urllib.request.urlopen(req, timeout=120).read()
 
 
@@ -76,13 +82,14 @@ def main():
                 continue
         im = Image.open(local).convert("RGBA")
         im = Image.alpha_composite(Image.new("RGBA", im.size, (0, 0, 0, 255)), im).convert("L")
+        im = im.crop((0, 0, im.width, min(im.width, im.height)))  # 상단 정사각
         g = im.resize((W, H), Image.BILINEAR)
         entries.append({"id": op_id, "v": variant, "g": base64.b64encode(g.tobytes()).decode("ascii")})
         if (i + 1) % 100 == 0:
             print(f"  {i + 1}/{len(wanted)}")
 
     out = {
-        "_doc": "오퍼 portrait(리스트 카드 원본 아트) 그레이 16×24 인덱스 — scanner-match.ts 매칭용. build-portrait-index.py 생성, 손편집 금지.",
+        "_doc": "오퍼 portrait(리스트 카드 원본 아트) 상단 정사각 그레이 16×16 인덱스 — scanner-match.ts 매칭용. build-portrait-index.py 생성, 손편집 금지.",
         "w": W, "h": H,
         "count": len(entries),
         "portraits": entries,
