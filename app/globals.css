@@ -7409,3 +7409,4 @@ main.site-main > .site-header { flex: 0 0 auto; }
 .scanner-elite.e1 { border-color: #7a93c8; color: #4f6fb5; }
 .scanner-elite.e2 { border-color: var(--lime); color: #7a8f1c; background: rgba(195,210,75,.14); }
 .scanner-hint { margin: 4px 0 0; font-size: .82rem; color: var(--muted); }
+.scanner-ver { font-size: .7rem; color: var(--lime); vertical-align: super; margin-left: 4px; }

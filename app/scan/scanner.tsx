@@ -158,6 +158,8 @@ export function ScannerModal({ t, onClose, onApply }: {
         try { text = await ocrNameBand(wc, cell.nameBox, W, H); } catch { continue; }
         if (!text) continue;
         const m = matchOperator(text, { rarity: cell.rarity, cls: cell.cls, clsConf: cell.clsConf });
+        // 라이브 진단용 — 셀별 OCR 원문과 매칭 결과 (개발자도구 콘솔)
+        console.debug(`[scan] r${cell.row}c${cell.col} ${cell.rarity}★${cell.cls} ocr=${JSON.stringify(text)} → ${m?.name}(${m?.nameSim.toFixed(2)})`);
         if (!m || m.nameSim < 0.4) continue;
         const op = opById.get(m.id);
         if (!op) continue;
@@ -216,7 +218,7 @@ export function ScannerModal({ t, onClose, onApply }: {
   return (
     <section className="operator-modal scanner-modal" role="dialog" aria-modal="true" aria-label={t("보유 오퍼 스캔")}>
       <header className="scanner-head">
-        <h2>{t("보유 오퍼 스캔")}</h2>
+        <h2>{t("보유 오퍼 스캔")} <span className="scanner-ver">v3</span></h2>
         <button className="modal-close" onClick={() => { stopStream(); onClose(); }} aria-label={t("닫기")}>✕</button>
       </header>
 
