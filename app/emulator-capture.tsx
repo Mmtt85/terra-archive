@@ -160,7 +160,17 @@ export default function EmulatorCapture({ onClose }: { onClose: () => void }) {
       // 더 구체적인(긴) 이름만 남긴다. 실버애쉬 vs 실버애쉬 더 레인프로스트 등도 방어.
       const dets: DetectionEx[] = [...best.values()];
       const norm = (s: string) => s.replace(/\s/g, "");
-      const filtered = dets.filter((d) => !dets.some((o) => o.id !== d.id && norm(o.name).length > norm(d.name).length && norm(o.name).includes(norm(d.name))));
+      let filtered = dets.filter((d) => !dets.some((o) => o.id !== d.id && norm(o.name).length > norm(d.name).length && norm(o.name).includes(norm(d.name))));
+      // 이름 줄(행) 위치 필터 — 카드 이름은 같은 행(이름띠 높이)에 정렬된다. 확실한 앵커(3자 이상
+      // 이름)로 행을 잡고, 행에서 벗어난 검출(배지 그림을 "시" 같은 1자 오퍼로 오독 등)을 버린다.
+      // (사용자 리포트 2026-07-22: 엔텔레키아 정예화 마크가 '시'로 오인식)
+      const anchors = filtered.filter((d) => norm(d.name).length >= 3 && d.sim >= 0.7);
+      const nameH0 = anchors.length ? anchors.map((d) => d.box.y1 - d.box.y0).sort((a, b2) => a - b2)[anchors.length >> 1] : 12;
+      const rowTops0: number[] = [];
+      for (const d of anchors) {
+        if (!rowTops0.some((r) => Math.abs(r - d.box.y0) < nameH0 * 2)) rowTops0.push(d.box.y0);
+      }
+      if (rowTops0.length) filtered = filtered.filter((d) => rowTops0.some((r) => Math.abs(d.box.y0 - r) < nameH0 * 2));
 
       // ── 카드 기하 역산 → 정예화 배지 분류 + 레벨 추출 ─────────────────────────
       // 이름 박스는 카드 하단·가운데 → 이웃 이름 중심 간격(피치)으로 카드 폭을 추정하고,
@@ -219,7 +229,9 @@ export default function EmulatorCapture({ onClose }: { onClose: () => void }) {
       };
       for (const { d, cx } of centers) await annotate(d, cx, d.box.y0);
 
-      // ── 격자 보완: 이름 OCR이 놓친 칸(1~2자 이름 등)을 학습된 아트 지문으로 식별 ──
+      // ── 격자 보완: 이름 OCR이 놓친 칸을 ①학습된 아트 지문 ②이름띠 조준 재판독으로 식별 ──
+      // (1패스 sparse OCR이 그룹 자체를 못 만든 카드는 재판독 기회가 없었다 — 울피아누스·호시구마
+      //  누락, 사용자 리포트 2026-07-22. 빈 칸의 이름띠 위치를 알고 있으니 고해상 단일행 OCR로 조준)
       let learnedHits = 0;
       if (centers.length >= 3) {
         // 행 = nameTop 군집, 열 = 최소 cx부터 피치 간격
@@ -236,15 +248,25 @@ export default function EmulatorCapture({ onClose }: { onClose: () => void }) {
             if (centers.some((c) => Math.abs(c.cx - cx) < pitch * 0.4 && Math.abs(c.d.box.y0 - rowTop) < nameH * 2)) continue;
             const strip = stripOf(cx, rowTop);
             if (strip.h < pitch * 0.9 || strip.w < pitch * 0.85) continue; // 잘린 칸 제외 (스펙 §7)
+            let d: DetectionEx | null = null;
+            // ① 학습된 아트 지문 (두 번째 스캔부터)
             const lm = matchLearned(frame, strip);
-            if (!lm) continue;
-            const d: DetectionEx = {
-              id: lm.operatorId, name: nameOf(lm.operatorId), sim: Math.round(lm.score * 100) / 100, text: "(image)",
-              box: { x0: cx - pitch * 0.3, y0: rowTop, x1: cx + pitch * 0.3, y1: rowTop + nameH }, via: "learned",
-            };
+            if (lm) {
+              d = { id: lm.operatorId, name: nameOf(lm.operatorId), sim: Math.round(lm.score * 100) / 100, text: "(image)",
+                box: { x0: cx - pitch * 0.3, y0: rowTop, x1: cx + pitch * 0.3, y1: rowTop + nameH }, via: "learned" };
+            } else {
+              // ② 이름띠 조준 재판독 — 카드 폭 70% × 이름띠 높이. 블라인드 재판독이라 수용 기준을 높인다
+              //    (1~2자 이름은 정확 일치=1.0만 통과 → 위·슈·혼도 여기서 잡힐 기회)
+              const text2 = await ocrName(frame, cx - pitch * 0.35, rowTop - nameH * 0.3, pitch * 0.7, nameH * 1.7);
+              const m2 = text2 ? matchName(text2) : null;
+              if (m2 && (norm(m2.name).length >= 3 ? m2.sim >= 0.78 : m2.sim >= 0.99)) {
+                d = { ...m2, box: { x0: cx - pitch * 0.3, y0: rowTop, x1: cx + pitch * 0.3, y1: rowTop + nameH } };
+              }
+            }
+            if (!d) continue;
             await annotate(d, cx, rowTop);
             filtered.push(d);
-            learnedHits += 1;
+            if (d.via === "learned") learnedHits += 1;
           }
         }
       }
@@ -288,7 +310,8 @@ export default function EmulatorCapture({ onClose }: { onClose: () => void }) {
                 {detections?.map((d, i) => (
                   <div key={i} className={`cap-cell ${conf(d.sim)}`}
                     style={{ left: pctL(d.box.x0 / W), top: pctL(d.box.y0 / H), width: pctL((d.box.x1 - d.box.x0) / W), height: pctL((d.box.y1 - d.box.y0) / H) }}>
-                    <span className="cap-cell-lbl">{`${d.name}·${pct(d.sim)}`}</span>
+                    {/* 숫자(신뢰도%)는 혼란만 줘서 오버레이에선 제거 — 색(초록/노랑/빨강)이 신뢰도 (사용자 피드백 2026-07-22) */}
+                    <span className="cap-cell-lbl">{d.name}</span>
                   </div>
                 ))}
               </div>
