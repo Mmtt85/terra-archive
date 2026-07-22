@@ -11,10 +11,12 @@ import {
   ELITE_LABEL, LAYOUT, cellByKey, ROOM_ACCENT, UNIT, PARK_KEYS, SHIFT_COUNT,
   JOB_ORDER, ROSTER_SORT_KEYS, PRODUCTION_KEYS, SUPPORT_KEYS,
   AURA_WEIGHT, AURA_LABEL, skillApplies, breakdown, teamScore, aurasOf, ambientFor, capConvFor,
-  ctxFor, sanitizePlan, presentIdsFor, optimize, slotSubstitutes,
+  ctxFor, sanitizePlan, presentIdsFor, slotSubstitutes,
   type InfraOp, type InfraSkill, type Elite, type Plan, type ProdPriority, type TokenFlow, type OptimizeStep,
 } from "./planner-engine";
-import { recommendRaises, type RaiseRec, type InvestProgress } from "./planner-invest";
+import type { RaiseRec, InvestProgress } from "./planner-invest";
+// 자동편성·육성 추천의 실제 계산은 Web Worker에서 (INP — 메인 스레드는 진행 표시만, 2026-07-22)
+import { optimizeOff, investOff } from "./planner-offload";
 import costsData from "./data/costs.json";
 
 // 재료 표시용 카탈로그 (이름·아이콘) — costs.json items (build-costs.py 수확)
@@ -326,7 +328,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     setOptimizing(t("자동편성 엔진 계산 중 — 편성 공간 구성…"));
     try {
       const paced = (step: OptimizeStep) => { setOptimizing(stepMessage(step)); };
-      const next = await optimize(visibleOps.map((op) => withElite(op, elite.get(op.id))).filter((op) => ids.has(op.id)), prio, paced);
+      const next = await optimizeOff({ owned: ids, elite, includeFuture: !!includeFuture, priority: prio }, paced);
       setPlan(next);
       setActiveShift(0);
       // 새 자동편성 → 기존 육성 추천·숨김 무효화 + 임시 적용 세션 종료(새 편성이 기준). 2026-07-21
@@ -345,8 +347,8 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
 
   // 육성(정예화 완성) 추천 — "이 오퍼를 키우면 인프라가 얼마나 좋아지나"를 감으로 추정하지
   // 않고, 현재 상태 로스터와 후보만 완성한 로스터로 각각 자동편성을 돌려 기지 총점 차이(ΔS)로
-  // 증명한다. 후보 수만큼 optimize를 돌려 수십 초 걸릴 수 있어 진행률을 표시하고, 후보 사이마다
-  // 메인 스레드를 양보해 진행 바가 갱신되게 한다 (계산 우선순위는 정확성 — INFRA-RULES §1).
+  // 증명한다. 후보 수만큼 optimize를 돌려 수십 초 걸릴 수 있어 워커에서 계산하고(INP),
+  // 메인 스레드는 진행 바만 갱신한다 (계산 우선순위는 정확성 — INFRA-RULES §1).
   // 버튼: 캐시된 결과가 있으면 다시 계산 없이 그 모달을 연다 (사용자 확정 2026-07-21: 새
   // 자동편성 전까지 같은 결과 유지). 없으면 분석을 돌린다.
   const openInvest = () => {
@@ -359,10 +361,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     endTemp(true); // 다시 분석 → 임시 적용 되돌리고 커밋된 로스터 기준으로 재분석
     setInvesting({ done: 0, total: 0 });
     try {
-      const recs = await recommendRaises(visibleOps, ownedIds, eliteById, priority, async (p) => {
-        setInvesting(p);
-        await new Promise((resolve) => setTimeout(resolve, 0)); // 진행 바 리페인트 양보
-      });
+      const recs = await investOff({ owned: ownedIds, elite: eliteById, includeFuture: !!includeFuture, priority }, setInvesting);
       setInvestRecs(recs);
       setInvestHidden(new Set()); // 새 분석 → 숨김 초기화
       persist(ownedIds, plan, eliteById, priority, recs, new Set());
@@ -386,7 +385,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     setOptimizing(t("자동편성 엔진 계산 중 — 편성 공간 구성…"));
     try {
       const paced = (step: OptimizeStep) => { setOptimizing(stepMessage(step)); };
-      const next = await optimize(visibleOps.map((op) => withElite(op, effElite.get(op.id))).filter((op) => ownedIds.has(op.id)), priority, paced);
+      const next = await optimizeOff({ owned: ownedIds, elite: effElite, includeFuture: !!includeFuture, priority }, paced);
       setPlan(next);
       setActiveShift(0);
     } finally { setOptimizing(null); }
@@ -591,11 +590,11 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         }
         // 마운트 시점엔 미래시 토글이 아직 복원 전(false)일 수 있으므로 미실장은 제외하고
         // 기본 편성을 만든다 — 미래시 포함 편성은 토글 후 자동편성 버튼으로 실행
-        void optimize(ops.filter((op) => !op.unreleased).map((op) => withElite(op, elite.get(op.id))).filter((op) => ids.has(op.id))).then(setPlan);
+        void optimizeOff({ owned: ids, elite, includeFuture: false, priority: "gold" }).then(setPlan);
         return;
       }
     } catch { /* fall through to defaults */ }
-    void optimize(ops.filter((op) => op.rarity <= 5 && !op.unreleased)).then(setPlan);
+    void optimizeOff({ owned: new Set(ops.filter((op) => op.rarity <= 5).map((op) => op.id)), elite: new Map(), includeFuture: false, priority: "gold" }).then(setPlan);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
