@@ -2884,44 +2884,31 @@ footer p {
   font-size: 12px;
   margin-left: 8px;
 }
+/* 신규 기능 배지 — 출시 7일간 표시 (app/whats-new.ts) */
+.new-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--lime);
+  color: var(--on-lime, #17201a);
+  font-size: 9.5px;
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  vertical-align: middle;
+  line-height: 1.5;
+}
 .ship {
   display: grid;
   gap: 10px;
   margin-top: 22px;
   grid-template-columns: repeat(3, minmax(0, 1fr)) repeat(2, minmax(0, 0.9fr));
   grid-template-areas:
-    "raisebar raisebar scanbtn control meeting"
+    "raisebar raisebar . control meeting"
     "trading0 trading1 mfg0 dorm0 workshop"
     "mfg1 mfg2 mfg3 dorm1 hire"
     "power0 power1 power2 dorm2 training"
     ". . . dorm3 .";
-}
-/* 오퍼 스캐너 진입점 — 제어센터 바로 왼쪽 빈 칸(사용자 요청 2026-07-23) */
-.ship-scanbtn {
-  grid-area: scanbtn;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  border: 1px dashed var(--line);
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--lime) 8%, var(--bg-panel));
-  color: var(--ink);
-  cursor: pointer;
-  padding: 8px 10px;
-  font-size: 12.5px;
-  font-weight: 800;
-  line-height: 1.25;
-  text-align: center;
-  align-self: start;
-}
-.ship-scanbtn:hover {
-  border-color: var(--lime);
-  background: color-mix(in srgb, var(--lime) 18%, var(--bg-panel));
-}
-.ship-scanbtn .btn-icon {
-  color: var(--lime);
-  font-weight: 400;
 }
 /* 육성 추천 임시 적용 표시 — 제어센터 왼쪽 빈 3칸(row1)에 넣어 레이아웃을 밀지 않는다
    (사용자 요청 2026-07-21). 임시 적용 중일 때만 렌더. */
@@ -3329,7 +3316,7 @@ footer p {
 @media (max-width: 1100px) {
   .ship {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    grid-template-areas: "raisebar raisebar raisebar" "scanbtn scanbtn scanbtn" "control control meeting" "trading0 trading1 workshop" "mfg0 mfg1 hire" "mfg2 mfg3 training" "power0 power1 power2" "dorm0 dorm1 dorm2" "dorm3 . .";
+    grid-template-areas: "raisebar raisebar raisebar" "control control meeting" "trading0 trading1 workshop" "mfg0 mfg1 hire" "mfg2 mfg3 training" "power0 power1 power2" "dorm0 dorm1 dorm2" "dorm3 . .";
   }
   .planner-summary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -10201,24 +10188,55 @@ main.site-main > .site-header {
 }
 /* 클립보드 자동인식 시작 — 권장 주 진입 CTA (사용자 요청: 더 눈에 띄게 + 안내) */
 .scanner-clip-cta {
-  display: flex; flex-direction: column; gap: 8px; padding: 16px; border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 10px;
   border: 1px solid color-mix(in srgb, var(--lime) 45%, var(--line));
   background: color-mix(in srgb, var(--lime) 12%, var(--bg-panel));
 }
-.scanner-clip-cta p { margin: 0; font-size: .84rem; line-height: 1.6; color: var(--ink2); }
-.scanner-clip-start {
-  display: inline-flex; align-items: center; justify-content: center; gap: 8px; align-self: flex-start;
-  border: none; border-radius: 9px; padding: 11px 22px; cursor: pointer;
-  background: var(--lime); color: var(--on-lime, #17201a); font-size: 15px; font-weight: 800; letter-spacing: -0.01em;
+.scanner-clip-cta p {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.6;
+  color: var(--ink2);
 }
-.scanner-clip-start:hover { filter: brightness(1.06); box-shadow: 0 2px 12px color-mix(in srgb, var(--lime) 40%, transparent); }
-.scanner-clip-start .clip-start-icon { font-size: 17px; }
+.scanner-clip-start {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  align-self: flex-start;
+  border: none;
+  border-radius: 9px;
+  padding: 11px 22px;
+  cursor: pointer;
+  background: var(--lime);
+  color: var(--on-lime, #17201a);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.scanner-clip-start:hover {
+  filter: brightness(1.06);
+  box-shadow: 0 2px 12px color-mix(in srgb, var(--lime) 40%, transparent);
+}
+.scanner-clip-start .clip-start-icon {
+  font-size: 17px;
+}
 .scanner-clip-banner {
-  padding: 10px 14px; border-radius: 8px; font-size: .9rem; font-weight: 700;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 700;
   background: color-mix(in srgb, var(--lime) 10%, var(--bg-panel));
   border: 1px solid color-mix(in srgb, var(--lime) 30%, var(--line));
 }
-.scanner-clip-banner.off { background: color-mix(in srgb, #c08a2e 12%, var(--bg-panel)); border-color: color-mix(in srgb, #c08a2e 35%, var(--line)); }
+.scanner-clip-banner.off {
+  background: color-mix(in srgb, #c08a2e 12%, var(--bg-panel));
+  border-color: color-mix(in srgb, #c08a2e 35%, var(--line));
+}
 .scanner-previews {
   display: flex;
   gap: 8px;
@@ -10314,7 +10332,7 @@ main.site-main > .site-header {
   z-index: 5;
   left: 0;
   right: 0;
-  background: var(--bg);
+  background: var(--bg-panel2);
   border: 1px solid var(--border-strong);
   border-radius: 7px;
   margin-top: 3px;
@@ -10452,10 +10470,4 @@ main.site-main > .site-header {
   margin: 4px 0 0;
   font-size: 0.82rem;
   color: var(--muted);
-}
-.scanner-ver {
-  font-size: 0.7rem;
-  color: var(--lime);
-  vertical-align: super;
-  margin-left: 4px;
 }

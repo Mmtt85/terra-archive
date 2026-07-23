@@ -5,6 +5,7 @@ import { useI18n, tokenName, rich, type ExtraI18n, type Locale, type T } from ".
 import { RULES } from "./rules";
 import { useConfirm } from "./confirm";
 import { normSearch } from "./search";
+import { isNewFeature } from "./whats-new";
 
 import {
   infra, ops, opById, factionsOf, withElite, clueBase, maxElite, eliteOptions,
@@ -69,7 +70,6 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   const [openRoom, setOpenRoom] = useState<string | null>(null);
   const [showFlows, setShowFlows] = useState(false);
   const [showRoster, setShowRoster] = useState(false);
-  const [showScanner, setShowScanner] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false); // '그 외' 드롭다운(이미지·파일·도움말)
   // 일부 모바일 인앱 브라우저(카카오톡·카페 웹뷰 등)는 탭 한 번에 click을 두 번 합성하거나
@@ -687,7 +687,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         </div>
         <div className="planner-buttons">
           {/* startTransition: 로스터 모달(카드 수백 장)은 렌더가 무거워 클릭 페인트부터 내보낸다 (INP, 2026-07-21) */}
-          <button onClick={() => startTransition(() => setShowRoster(true))}><span className="btn-icon" aria-hidden>▦</span>{t("보유 오퍼 설정 ({a}/{b})", { a: visibleOps.filter((op) => ownedIds.has(op.id)).length, b: visibleOps.length })}</button>
+          <button onClick={() => startTransition(() => setShowRoster(true))}><span className="btn-icon" aria-hidden>▦</span>{t("보유 오퍼 설정 ({a}/{b})", { a: visibleOps.filter((op) => ownedIds.has(op.id)).length, b: visibleOps.length })}{isNewFeature("scanner") && <span className="new-badge">NEW</span>}</button>
           {/* 라벨이 '계산 중…'으로 바뀌어도 버튼 폭이 줄지 않게 원 라벨로 폭을 잡아둔다 (사용자 요청 2026-07-21) */}
           <button className="primary" onClick={() => runOptimize()} disabled={!!optimizing}>
             <span className="btn-icon" aria-hidden>⟳</span>
@@ -805,13 +805,6 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
             </button>
           )}
         </div>
-        {/* 오퍼 스캐너 v6 (2026-07-23) — 오퍼 목록 스크린샷(클립보드 자동/⌘V/파일 드롭)을 카드 아트
-            ↔ 초상(스킨 포함) masked ZNCC + 정예화 엠블럼 3-way로 인식. 픽스처 178셀 100%
-            (scripts/verify-scan.ts). 진입점은 제어센터 왼쪽 빈 칸(사용자 요청 2026-07-23). */}
-        <button className="ship-scanbtn" onClick={() => startTransition(() => setShowScanner(true))}
-          title={t("오퍼 목록 스크린샷을 자동 인식해 보유 오퍼로 추가합니다")}>
-          <span className="btn-icon" aria-hidden>◉</span>{t("스크린샷으로 보유 오퍼 스캔")}
-        </button>
         {LAYOUT.map((cell) => {
           if (cell.room === "DORMITORY") {
             const pinned = teamFor(cell.key, 0);
@@ -881,35 +874,6 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           onClose={() => setShowRoster(false)}
           onShowOperator={onShowOperator}
         />
-      )}
-
-      {showScanner && (
-        <div className="modal-backdrop scanner-backdrop">
-          <Suspense fallback={<div className="scanner-loading">{t("스캐너 불러오는 중…")}</div>}>
-            <ScannerModal
-              t={t}
-              onClose={() => setShowScanner(false)}
-              onApply={(dets) => {
-                const next = new Set(ownedIds);
-                const nextElite = new Map(eliteById);
-                let added = 0;
-                for (const d of dets) {
-                  if (!opById.has(d.id)) continue;
-                  if (!next.has(d.id)) added++;
-                  next.add(d.id);
-                  // eliteById는 E2를 '없음(기본)'으로 두므로 E2면 삭제, 아니면 설정
-                  if (d.elite === 2) nextElite.delete(d.id); else nextElite.set(d.id, d.elite);
-                }
-                setOwnedIds(next);
-                setEliteById(nextElite);
-                persist(next, plan, nextElite);
-                setDirty(true);
-                setShowScanner(false);
-                showToast(t("스캔 결과 {n}명을 보유에 추가했습니다 (기존 보유는 유지)", { n: String(added) }));
-              }}
-            />
-          </Suspense>
-        </div>
       )}
 
       {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
@@ -1329,6 +1293,7 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
   const { t } = useI18n();
   const [draft, setDraft] = useState<Set<string>>(new Set(ownedIds));
   const [eliteDraft, setEliteDraft] = useState<Map<string, Elite>>(new Map(eliteById));
+  const [showScan, setShowScan] = useState(false); // 스크린샷 스캐너(모달 내부에서 draft에 병합)
   const [query, setQuery] = useState("");
   const [sortKey, setSortKey] = useState("기본");
   const [sortAsc, setSortAsc] = useState(true);
@@ -1466,6 +1431,7 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
               <span className="btn-icon" aria-hidden>⤒</span>{t("MAA 파일 가져오기")}
               <input type="file" accept="application/json,.json" onChange={(event) => { const file = event.target.files?.[0]; if (file) importMaa(file); event.target.value = ""; }} />
             </label>
+            <button type="button" onClick={() => setShowScan(true)} title={t("오퍼 목록 스크린샷을 자동 인식해 보유·정예화를 채웁니다")}><span className="btn-icon" aria-hidden>◉</span>{t("스크린샷으로 보유 오퍼 스캔")}{isNewFeature("scanner") && <span className="new-badge">NEW</span>}</button>
             <button type="button" className="apply" onClick={() => onApply(draft, eliteDraft)}><span className="btn-icon" aria-hidden>⟳</span>{t("적용 및 자동편성 실행")}</button>
           </div>
         </header>
@@ -1507,6 +1473,32 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
           <div className="roster-grid">{releasedOps.map(renderCard)}</div>
         </div>
       </section>
+      {/* 스크린샷 스캐너 — 모달 내부에서 열고, 인식 결과를 draft/eliteDraft에 병합(MAA 가져오기와 동일
+          흐름: 검토 후 '적용 및 자동편성 실행'). 오퍼 스캐너 v6, 픽스처 178셀 100% (verify-scan.ts). */}
+      {showScan && (
+        <div className="modal-backdrop scanner-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowScan(false); }}>
+          <Suspense fallback={<div className="scanner-loading">{t("스캐너 불러오는 중…")}</div>}>
+            <ScannerModal
+              t={t}
+              onClose={() => setShowScan(false)}
+              onApply={(dets) => {
+                setDraft((prev) => {
+                  const n = new Set(prev);
+                  for (const d of dets) if (opById.has(d.id)) n.add(d.id);
+                  return n;
+                });
+                setEliteDraft((prev) => {
+                  const n = new Map(prev);
+                  for (const d of dets) { if (d.elite === 2) n.delete(d.id); else n.set(d.id, d.elite); }
+                  return n;
+                });
+                setShowScan(false);
+                setImportMsg(t("스캔 결과 {n}명을 반영했습니다 — 확인 후 '적용 및 자동편성 실행'을 누르세요.", { n: String(dets.length) }));
+              }}
+            />
+          </Suspense>
+        </div>
+      )}
     </div>
   );
 }

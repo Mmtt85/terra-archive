@@ -66,7 +66,7 @@ export function ScannerModal({ t, onClose, onApply }: {
   const recognizeFrameData = useCallback((frame: ImageData, capLabel: string): number => {
     const res = analyzeFrame({ data: frame.data, width: frame.width, height: frame.height });
     const { scan } = res;
-    setFrameInfo(`v6 · ${capLabel}${res.cropRetry ? " · crop" : ""} · ` + t("격자 {c}열 · px {p} · 행 {r}", { c: String(scan.cols.length), p: String(scan.px), r: scan.rows.join(",") }));
+    setFrameInfo(`${capLabel}${res.cropRetry ? " · crop" : ""} · ` + t("격자 {c}열 · px {p} · 행 {r}", { c: String(scan.cols.length), p: String(scan.px), r: scan.rows.join(",") }));
 
     const next = new Map(resultsRef.current);
     let added = 0;
@@ -238,7 +238,7 @@ export function ScannerModal({ t, onClose, onApply }: {
     <section className="operator-modal scanner-modal" role="dialog" aria-modal="true" aria-label={t("보유 오퍼 스캔")}
       onDragOver={(e) => e.preventDefault()} onDrop={onDropFiles}>
       <header className="scanner-head">
-        <h2>{t("보유 오퍼 스캔")} <span className="scanner-ver">v6</span></h2>
+        <h2>{t("보유 오퍼 스캔")}</h2>
         <button className="modal-close" onClick={onClose} aria-label={t("닫기")}>✕</button>
       </header>
       <input ref={fileInputRef} type="file" accept="image/*" multiple hidden
@@ -264,12 +264,7 @@ export function ScannerModal({ t, onClose, onApply }: {
           <div className="scanner-dropzone" onClick={() => fileInputRef.current?.click()} role="button" tabIndex={0}>
             {recognizing ? t("인식 중…") : t("또는 여기에 오퍼 목록 스크린샷을 끌어놓거나, 클릭해서 파일을 추가하세요 (여러 장 가능)")}
           </div>
-          <div className="scanner-controls">
-            <button className="scanner-secondary" onClick={() => fileInputRef.current?.click()} disabled={recognizing}>
-              {recognizing ? t("인식 중…") : t("스크린샷 추가")}
-            </button>
-            {frameInfo && <span className="scanner-frame-info">{frameInfo}</span>}
-          </div>
+          {frameInfo && <p className="scanner-frame-info">{frameInfo}</p>}
           {previews.length > 0 && (
             <div className="scanner-previews">
               {previews.map((p) => (
@@ -281,7 +276,6 @@ export function ScannerModal({ t, onClose, onApply }: {
             </div>
           )}
           <ul className="scanner-tips">
-            <li>{t("에뮬레이터의 오퍼레이터 목록을 화면마다 클립보드로 캡처하세요 — 맥은 ⌃⌘⇧4, 윈도우는 Win+Shift+S. 캡처 후 이 탭으로 돌아오면 자동으로 인식됩니다.")}</li>
             <li>{t("정예화(0/1/2정)는 카드 엠블럼으로 자동 인식됩니다 — 잘못 읽힌 오퍼만 이름 옆 배지를 눌러 고치세요.")}</li>
             <li>{t("모든 인식은 100% 브라우저 안에서 처리되며 이미지는 서버로 전송되지 않습니다.")}</li>
           </ul>

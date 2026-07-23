@@ -1138,7 +1138,7 @@ const D: Record<string, Pair> = {
   // ── 보유 오퍼 스캐너 v6 — 스크린샷 인식 (2026-07-23) ────────────────────────
   "보유 오퍼 스캔": ["Scan Owned Operators", "所持オペレータースキャン"],
   "스크린샷으로 보유 오퍼 스캔": ["Scan owned operators from screenshots", "スクリーンショットから所持オペレーターをスキャン"],
-  "오퍼 목록 스크린샷을 자동 인식해 보유 오퍼로 추가합니다": ["Auto-recognizes operator-list screenshots and adds them as owned", "オペレーター一覧のスクリーンショットを自動認識して所持に追加します"],
+  "오퍼 목록 스크린샷을 자동 인식해 보유·정예화를 채웁니다": ["Auto-recognizes operator-list screenshots to fill ownership and Elite", "オペレーター一覧のスクリーンショットを自動認識して所持・昇進を埋めます"],
   "인식 중…": ["Recognizing…", "認識中…"],
   "클립보드 스크린샷": ["clipboard screenshot", "クリップボードのスクリーンショット"],
   "클립보드 자동인식 시작": ["Start clipboard auto-recognition", "クリップボード自動認識を開始"],
@@ -1167,7 +1167,7 @@ const D: Record<string, Pair> = {
   "아직 인식된 오퍼가 없습니다. 오퍼 목록 스크린샷을 추가하면 자동으로 인식됩니다.": ["No operators recognized yet. Add operator-list screenshots and they're recognized automatically.", "まだ認識されたオペレーターがありません。オペレーター一覧のスクリーンショットを追加すると自動認識されます。"],
   "{n}명 보유로 추가": ["Add {n} as owned", "{n}名を所持に追加"],
   "스캐너 불러오는 중…": ["Loading scanner…", "スキャナーを読み込み中…"],
-  "스캔 결과 {n}명을 보유에 추가했습니다 (기존 보유는 유지)": ["Added {n} operators from the scan (existing owned kept)", "スキャン結果から{n}名を所持に追加しました（既存の所持は維持）"],
+  "스캔 결과 {n}명을 반영했습니다 — 확인 후 '적용 및 자동편성 실행'을 누르세요.": ["Reflected {n} operators from the scan — review, then press 'Apply & Auto-plan'.", "スキャン結果{n}名を反映しました — 確認して「適用して自動編成」を押してください。"],
 };
 
 export type T = (key: string, vars?: Record<string, string | number>) => string;
