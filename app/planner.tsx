@@ -790,7 +790,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
             </>
           ) : investRecs && !investing ? (
             <>
-              <span className="srb-top">★ {t("인프라 오퍼 육성 추천")}</span>
+              <span className="srb-top">★ {t("인프라 오퍼 육성 추천")}{isNewFeature("invest") && <span className="new-badge">{t("새기능")}</span>}</span>
               <span className="srb-btns">
                 <button className="run" onClick={() => setShowInvest(true)}>{t("추천 열기 ({n})", { n: visibleRecs?.length ?? 0 })}</button>
                 <button onClick={() => { void runInvest(); }}>{t("다시 분석")}</button>
@@ -800,7 +800,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
             // 대기·분석중 공용 — 두 라벨을 겹쳐(overlay) 폭을 idle 라벨에 고정, 분석 중에도 버튼 길이 불변
             <button className="srb-run" onClick={openInvest} disabled={!!investing}
               title={t("보유했지만 아직 완성하지 않은(정예화를 낮춰 둔) 오퍼 중, 완성하면 인프라 효율이 오르는 오퍼를 실제 자동편성을 다시 돌려 찾아냅니다")}>
-              <span className={`srb-lbl${investing ? " hide" : ""}`}>★ {t("인프라 오퍼 육성 추천")}</span>
+              <span className={`srb-lbl${investing ? " hide" : ""}`}>★ {t("인프라 오퍼 육성 추천")}{isNewFeature("invest") && <span className="new-badge">{t("새기능")}</span>}</span>
               {investing && <span className="srb-over">★ {investing.total ? t("분석 중 {i}/{n}", { i: investing.done, n: investing.total }) : t("분석 중…")}</span>}
             </button>
           )}

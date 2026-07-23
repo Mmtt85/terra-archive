@@ -10587,6 +10587,17 @@ main.site-main > .site-header {
   line-height: 1.6;
   color: var(--ink2);
 }
+/* 토글 + 상태 문구 한 줄 (토글은 스샷 레이더의 .lens-open-btn 재사용, 2026-07-24) */
+.scanner-clip-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 0.86rem;
+}
+.scanner-clip-row .lens-open-btn {
+  border-radius: 8px; /* 단독 사용 — 세그먼트(? 붙는)용 좌측 라운드를 전체로 */
+}
 .scanner-clip-start {
   display: inline-flex;
   align-items: center;
@@ -10632,6 +10643,31 @@ main.site-main > .site-header {
   margin: 0;
   flex: 0 0 auto;
   text-align: center;
+  position: relative; /* 삭제 ✕ 버튼 앵커 */
+}
+/* 스크린샷 삭제 — 그 스샷에서만 인식된 오퍼도 결과에서 함께 빠진다 (2026-07-24) */
+.scanner-preview-x {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 0.7rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.35);
+}
+.scanner-preview-x:hover {
+  background: #c0392b;
+  border-color: #c0392b;
+  color: #fff;
 }
 .scanner-previews img {
   height: 84px;
