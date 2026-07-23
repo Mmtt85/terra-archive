@@ -7369,6 +7369,8 @@ main.site-main > .site-header { flex: 0 0 auto; }
 .scanner-controls .scanner-primary { align-self: auto; padding: 7px 16px; }
 .scanner-check { display: inline-flex; align-items: center; gap: 5px; color: var(--ink2); cursor: pointer; }
 .scanner-ocr-status, .scanner-frame-info { color: var(--muted); }
+.scanner-save-frame { font-size: .8rem; padding: 3px 10px; border-radius: 6px; border: 1px solid var(--line); background: transparent; color: var(--ink2); cursor: pointer; }
+.scanner-save-frame:hover { border-color: var(--ink2); }
 .scanner-live { color: var(--lime); font-weight: 700; }
 .scanner-results { display: flex; flex-direction: column; gap: 10px; min-height: 0; overflow: hidden; }
 .scanner-results-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }

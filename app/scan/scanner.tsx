@@ -70,7 +70,14 @@ export function ScannerModal({ t, onClose, onApply }: {
   const startCapture = useCallback(async () => {
     setErr(""); setPhase("requesting");
     try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+      // 고해상도 명시 필수 — 제약 없이 공유하면 Chrome이 부하에 따라 캡처 해상도를 절반으로
+      // 낮춘 뒤 업스케일한 흐릿한 프레임을 준다(크기는 그대로라 티가 안 남). 흐려지면 골드 별
+      // 검출부터 무너져 전 셀이 오인식된다 (2026-07-23 라이브, first_operator_list 반해상도
+      // 시뮬로 동일 오인식 목록 재현 확인).
+      const stream = await navigator.mediaDevices.getDisplayMedia({
+        video: { width: { ideal: 3840 }, height: { ideal: 2160 }, frameRate: { ideal: 10 } },
+        audio: false,
+      });
       streamRef.current = stream;
       const v = videoRef.current!;
       v.srcObject = stream;
@@ -174,11 +181,12 @@ export function ScannerModal({ t, onClose, onApply }: {
         if (d < STABLE_DIFF) break;
       }
       const scan = scanFrame({ data: frame.data, width: W, height: H });
-      setFrameInfo(t("격자 {c}열 · px {p} · 행 {r}", { c: String(scan.cols.length), p: String(scan.px), r: scan.rows.join(",") }));
+      setFrameInfo(`v5 · ${v.videoWidth}×${v.videoHeight} · ` + t("격자 {c}열 · px {p} · 행 {r}", { c: String(scan.cols.length), p: String(scan.px), r: scan.rows.join(",") }));
       drawOverlay(scan.cells, W, H);
 
       const g = toGray({ data: frame.data, width: W, height: H });
       const next = new Map(resultsRef.current);
+      let cellCount = 0, confCount = 0;
       for (const cell of scan.cells) {
         if (cell.rarity < 1) continue;
         const am = matchArt(g, cell.sx, cell.ry, scan.px);
@@ -188,6 +196,7 @@ export function ScannerModal({ t, onClose, onApply }: {
         const el = classifyElite(g, cell.sx, cell.ry, scan.px);
         const elite = Math.min(el.elite, maxElite(op.rarity)) as Elite;
         const confident = am.best.score >= CONFIDENT_SCORE && am.margin >= CONFIDENT_MARGIN;
+        cellCount++; if (confident) confCount++;
         // 라이브 진단용 — 셀별 매칭 결과 (개발자도구 콘솔)
         console.debug(`[scan] r${cell.row}c${cell.col} ${cell.rarity}★${cell.cls} → ${op.name} ${am.best.score.toFixed(3)} 마진${am.margin.toFixed(3)} E${elite}[${el.s1.toFixed(2)}/${el.s2.toFixed(2)}] ${am.best.pid}`);
         const prev = next.get(op.id);
@@ -204,10 +213,32 @@ export function ScannerModal({ t, onClose, onApply }: {
         }
       }
       setResults(next);
+      // 정상 프레임은 대부분 셀이 0.8+로 잡힌다 — 전 셀이 낮으면 캡처가 흐려진 것
+      // (Chrome이 공유 해상도를 몰래 낮춘 상태). 인식 결과보다 공유 재시작이 답.
+      if (cellCount >= 6 && confCount === 0) {
+        setFrameInfo((prev) => prev + " · ⚠ " + t("캡처가 흐릿해 인식률이 낮습니다 — 화면 공유를 껐다 다시 시작해 보세요"));
+      }
     } finally {
       busy.current = false; setRecognizing(false);
     }
   }, [t, drawOverlay]);
+
+  // ── 진단: 현재 캡처 프레임을 PNG로 저장 (오인식 리포트용 — 그대로 픽스처가 된다) ──
+  const saveFrame = useCallback(() => {
+    const v = videoRef.current;
+    if (!v || !v.videoWidth) return;
+    const c = document.createElement("canvas");
+    c.width = v.videoWidth; c.height = v.videoHeight;
+    c.getContext("2d")!.drawImage(v, 0, 0);
+    c.toBlob((blob) => {
+      if (!blob) return;
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `scan-frame-${Date.now()}.png`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }, "image/png");
+  }, []);
 
   // ── 결과 목록 ────────────────────────────────────────────────────────────────
   const kept = useMemo(() => Array.from(results.values()).filter((d) => !removed.has(d.id)), [results, removed]);
@@ -251,7 +282,7 @@ export function ScannerModal({ t, onClose, onApply }: {
   return (
     <section className="operator-modal scanner-modal" role="dialog" aria-modal="true" aria-label={t("보유 오퍼 스캔")}>
       <header className="scanner-head">
-        <h2>{t("보유 오퍼 스캔")} <span className="scanner-ver">v4</span></h2>
+        <h2>{t("보유 오퍼 스캔")} <span className="scanner-ver">v5</span></h2>
         <button className="modal-close" onClick={() => { stopStream(); onClose(); }} aria-label={t("닫기")}>✕</button>
       </header>
 
@@ -286,6 +317,7 @@ export function ScannerModal({ t, onClose, onApply }: {
                 {recognizing ? t("인식 중…") : t("이 화면 인식")}
               </button>
               <label className="scanner-check"><input type="checkbox" checked={debug} onChange={(e) => setDebug(e.target.checked)} />{t("검출 표시")}</label>
+              {debug && <button className="scanner-save-frame" onClick={saveFrame} title={t("현재 캡처 프레임을 PNG로 저장 — 오인식 제보에 첨부하면 재현·수정에 쓰입니다")}>{t("프레임 저장")}</button>}
               {frameInfo && <span className="scanner-frame-info">{frameInfo}</span>}
             </div>
             <p className="scanner-hint">{t("에뮬레이터에서 목록을 스크롤한 뒤 [이 화면 인식]을 누르세요. 화면을 바꿔가며 반복하면 오퍼가 누적됩니다.")}</p>
