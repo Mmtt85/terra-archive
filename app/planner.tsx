@@ -710,7 +710,9 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
                   <span className="btn-icon" aria-hidden>⤒</span>{t("저장된 상태 파일 가져오기")}
                   <input type="file" accept="application/json" onChange={(event) => { const file = event.target.files?.[0]; if (file) importState(file); event.target.value = ""; setMoreOpen(false); }} />
                 </label>
-                <button role="menuitem" onClick={() => { setMoreOpen(false); setShowScanner(true); }} title={t("에뮬레이터 화면을 공유해 보유 오퍼를 자동 인식합니다")}><span className="btn-icon" aria-hidden>◉</span>{t("화면에서 보유 오퍼 스캔")}</button>
+                {/* 오퍼 스캐너 진입점 — 2026-07-23 보류로 숨김. 라이브 인식률(~85-90%)이 목표(95%) 미달,
+                    Yostar API 임포트도 게임 튕김·로그인 거부감으로 사용자가 보류 결정. 코드(app/scan/)는 보존. */}
+                {false && <button role="menuitem" onClick={() => { setMoreOpen(false); setShowScanner(true); }} title={t("에뮬레이터 화면을 공유해 보유 오퍼를 자동 인식합니다")}><span className="btn-icon" aria-hidden>◉</span>{t("화면에서 보유 오퍼 스캔")}</button>}
                 <button role="menuitem" onClick={() => { setMoreOpen(false); setShowHelp(true); }}><span className="btn-icon" aria-hidden>?</span>{t("도움말")}</button>
               </div>
             )}
