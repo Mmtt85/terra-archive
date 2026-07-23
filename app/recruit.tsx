@@ -10,8 +10,8 @@ import { warmOcr } from "./lens/ocr";
 import { useClipboardWatch } from "./lens/clipwatch";
 import { useDropWatch } from "./lens/dropwatch";
 
-// 스샷으로 태그 입력 — 공개모집 스크린샷 인식 → 태그 자동 선택. 열 때만 로드 (OCR wasm이 무겁다)
-const LensModal = lazy(() => import("./lens/lens"));
+// 스샷 인식 도움말 — 순수 설명 전용 모달 (입력 기능은 페이지 레벨 자동인식이 전담)
+const LensHelpModal = lazy(() => import("./lens/help"));
 
 type RecruitTag = { id: number; name: string; group: number };
 type RecruitOp = { id: string; name: string; rarity: number; tags: string[]; image: string; accent: string; seq: number; pending?: boolean };
@@ -320,7 +320,7 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
       {lensOpen && (
         <div className="modal-backdrop scanner-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) setLensOpen(false); }}>
           <Suspense fallback={null}>
-            <LensModal mode="recruit" onClose={() => setLensOpen(false)} onGoto={onLensGoto} />
+            <LensHelpModal mode="recruit" onClose={() => setLensOpen(false)} />
           </Suspense>
         </div>
       )}

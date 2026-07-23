@@ -15,8 +15,8 @@ import { warmOcr } from "./lens/ocr";
 import { useClipboardWatch } from "./lens/clipwatch";
 import { useDropWatch } from "./lens/dropwatch";
 
-// 스샷 레이더 — 게임 스크린샷 인식 → 가이드의 해당 정보로 이동. 열 때만 로드 (OCR wasm이 무겁다)
-const LensModal = lazy(() => import("./lens/lens"));
+// 스샷 레이더 도움말 — 순수 설명 전용 모달 (입력 기능은 페이지 레벨 자동인식이 전담)
+const LensHelpModal = lazy(() => import("./lens/help"));
 
 type Zone = { id: string; num: number; name: string; time: string | null; desc: string; buff: string | null; hidden: boolean; img?: boolean; variant?: boolean; cn?: string; portal?: boolean; bg?: string };
 type StageEnemy = { key: string; cnt: number };
@@ -449,14 +449,16 @@ function RelicModal({ relic, onClose }: { relic: Relic; onClose: () => void }) {
       <div className="rg-modal rg-rmodal" role="dialog" aria-modal onClick={(ev) => ev.stopPropagation()}>
         <header className="rg-modal-head">
           <div>
-            {relic.img && <img className="rg-relic-icon lg" src={`/rogue/relic/${relic.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
+            {relic.img && <img className="rg-relic-icon lg" src={`/rogue/relic/${relic.iconId ?? relic.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
             {relic.order && <span className="rg-relic-no">{relic.order}</span>}
             <h3><Nm name={relic.name} cn={relic.cn} /></h3>
           </div>
           <button type="button" className="rg-modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
         </header>
+        {/* 해당 소장품의 모든 데이터 — 효과·설명·획득 방법 (사용자 확정 2026-07-24) */}
         {relic.usage && <p className="rg-relic-usage">{relic.usage}</p>}
         {relic.desc && <p className="rg-relic-desc">{relic.desc}</p>}
+        {relic.obtain && <p className="rg-relic-obtain"><em>{t("획득 방법")}</em> {relic.obtain}</p>}
       </div>
     </div>
   );
@@ -613,6 +615,9 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   const [zoneOpen, setZoneOpen] = useState<Zone | null>(null);
   // 스크린샷 렌즈 도착 하이라이트 (전시관 카드) — applyTopic이 리셋하므로 여기(앞)에 선언
   const [lensHits, setLensHits] = useState<Set<string> | null>(null);
+  // 다중 인식 아이템 모아보기 — 유물·도구·음반·시스템 항목 공통 필드 (2026-07-23)
+  type LensItem = { id: string; name: string; usage?: string | null; desc?: string | null; img?: boolean; iconId?: string; order?: string | null; cn?: string };
+  const [lensMulti, setLensMulti] = useState<LensItem[] | null>(null);
   const [stageOpen, setStageOpen] = useState<StagePair | null>(null);
   const [enemyOpen, setEnemyOpen] = useState<{ key: string; ctx: StatCtx } | null>(null);
   const [encOpen, setEncOpen] = useState<Encounter | null>(null);
@@ -629,13 +634,12 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   const hasVariations = (data.variations?.length ?? 0) > 0 || (data.weathers?.length ?? 0) > 0;
   const archiveTabs: [string, string][] = topic === "rogue_6"
     ? [...(hasVariations ? [["hallu", HALLU_LABEL[topic]] as [string, string]] : []),
-       ["scrap", "부품 (零件)"], ["tool", "도구"], ["band", "분대"], ["legacy", "유산"],
+       ["scrap", "부품 (零件)"], ["band", "분대"], ["legacy", "유산"],
        // 부표는 노드가 아니라 격자 지도 위 이벤트 마커 — 전시관으로 이동 (사용자 확정 2026-07-18)
        ...((data.buoys?.length ?? 0) > 0 ? [["buoy", "지도 마커 (부표)"] as [string, string]] : [])]
     : [...(hasVariations && HALLU_LABEL[topic] ? [["hallu", HALLU_LABEL[topic]] as [string, string]] : []),
        ...((data.capsules?.length ?? 0) > 0 ? [["capsule", "레퍼토리 (음반)"] as [string, string]] : []),
        ...(data.mechanics ?? []).map((m) => [m.label, m.label] as [string, string]),
-       ["tool", "무대 도구"],
        ...((data.exploreTools?.length ?? 0) > 0 ? [["explore", "탐사 도구"] as [string, string]] : []),
        ["band", "분대"]];
   const activeArc = archiveTabs.some(([id]) => id === arcTab) ? arcTab : (archiveTabs[0]?.[0] ?? "tool");
@@ -653,7 +657,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
     setGrade(0);
     setZoneOpen(null); setStageOpen(null); setEnemyOpen(null); setEncOpen(null); setRelicOpen(null);
     setEnemyQ(""); setEnemyRank(""); setRelicQ(""); setMapQ(""); setArcTab("relic");
-    setLensHits(null); // 렌즈 하이라이트는 토픽 전환 시 해제
+    setLensHits(null); setLensMulti(null); // 렌즈 하이라이트·모아보기는 토픽 전환 시 해제
   };
   const applyTopicFromUrl = () => applyTopic(topicFromUrl());
   useEffect(() => {
@@ -745,15 +749,23 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
       .sort(([, a], [, b]) => (RANK_SORT[a.rank ?? ""] ?? 0) - (RANK_SORT[b.rank ?? ""] ?? 0) || a.name.localeCompare(b.name, "ko"));
   }, [enemyQ, enemyRank, active]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // 무대 도구는 소장품에 통합해 함께 표시 (사용자 확정 2026-07-24) — 목록 끝에 붙는다
+  const relicsAll = useMemo(() => [
+    ...data.relics,
+    ...data.tools.map((tool, i) => ({
+      id: tool.id, name: tool.name, desc: tool.desc ?? null, usage: tool.usage ?? null,
+      obtain: null, order: null, group: null, sort: 100000 + i, sp: false, img: tool.img,
+    } as Relic)),
+  ], [active]); // eslint-disable-line react-hooks/exhaustive-deps
   const relics = useMemo(() => {
     const q = normSearch(relicQ);
     // 소장품 번호(order)로도 검색 — 순수 숫자 질의는 번호 정확일치 우선 (사용자 요청)
-    return data.relics.filter((r) => !q
+    return relicsAll.filter((r) => !q
       || normSearch(r.name).includes(q)
       || (r.cn && normSearch(r.cn).includes(q))
       || normSearch(r.usage ?? "").includes(q)
       || (r.order != null && (/^\d+$/.test(q) ? String(r.order) === q : normSearch(String(r.order)).includes(q))));
-  }, [relicQ, active]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [relicQ, relicsAll]);
 
   // 맵 탭 이름 검색 — 전투 노드(작전·긴급·보스·조우 전투·특수·시련·추격전·거점전·외나무다리)
   // + 우연한 만남(조우)을 전부 이름/중국어 원문으로 매칭
@@ -770,16 +782,26 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   // 엔딩 조건 문장 속 「이름」 참조를 전부 클릭 가능하게 — 스테이지·조우·유물·적 순으로 매칭
   const stageByName = useMemo(() => new Map(data.stages.filter((s) => s.kind !== "emergency").map((s) => [s.name, s])), [active]);
   const encByTitle = useMemo(() => new Map(data.encounters.map((e) => [e.title, e])), [active]);
-  const relicByName = useMemo(() => new Map(data.relics.map((r) => [r.name, r])), [active]);
+  const relicByName = useMemo(() => new Map(relicsAll.map((r) => [r.name, r])), [relicsAll]);
   const enemyByName = useMemo(() => new Map(Object.entries(data.enemies).map(([k, e]) => [e.name, k])), [active]);
 
   // ─── 딥링크: URL 해시로 뷰 + 열린 모달(노드·적 도감·조우·소장품·층)을 표현 ───
   // 형식 #rg-<view> 또는 #rg-<view>~<type>~<id> (type=zone|stage|enemy|enc|relic).
   // 복붙 URL로 바로 그 모달이 열린다. (사용자 요청 2026-07-20)
   const stageById = useMemo(() => new Map(data.stages.map((s) => [s.id, s])), [active]); // eslint-disable-line react-hooks/exhaustive-deps
-  const relicById = useMemo(() => new Map(data.relics.map((r) => [r.id, r])), [active]); // eslint-disable-line react-hooks/exhaustive-deps
+  const relicById = useMemo(() => new Map(relicsAll.map((r) => [r.id, r])), [relicsAll]); // 무대 도구 포함
   const encByScene = useMemo(() => new Map(data.encounters.map((e) => [e.scene, e])), [active]); // eslint-disable-line react-hooks/exhaustive-deps
   const zoneById = useMemo(() => new Map(data.zones.map((z) => [z.id, z])), [active]); // eslint-disable-line react-hooks/exhaustive-deps
+  // 렌즈 모아보기용 통합 아이템 룩업 — 유물·도구·음반·탐사도구·토픽 고유 시스템 (id는 전역 유일)
+  const lensItemById = useMemo(() => {
+    const m = new Map<string, LensItem>();
+    for (const r of data.relics) m.set(r.id, r);
+    for (const c of data.tools) m.set(c.id, c);
+    for (const c of data.capsules ?? []) m.set(c.id, c);
+    for (const c of data.exploreTools ?? []) m.set(c.id, c);
+    for (const mech of data.mechanics ?? []) for (const it of mech.items) m.set(it.id, it);
+    return m;
+  }, [active]); // eslint-disable-line react-hooks/exhaustive-deps
   const curModal = (): { type: string; id: string } | null =>
     relicOpen ? { type: "relic", id: relicOpen.id }
       : encOpen ? { type: "enc", id: encOpen.scene }
@@ -834,6 +856,13 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
       else if (type === "zone") { const z = zoneById.get(id); if (z) setZoneOpen(z); }
     }
     setLensHits(g.highlight?.length ? new Set(g.highlight) : null);
+    // 아이템(유물·도구·음반·시스템)이 여러 개 인식되면 모아보기 모달로 띄운다 (gather 플래그)
+    if (g.gather && (g.highlight?.length ?? 0) >= 2) {
+      const rs = g.highlight!.map((id) => lensItemById.get(id)).filter((r): r is NonNullable<typeof r> => !!r);
+      setLensMulti(rs.length >= 2 ? rs : null);
+    } else {
+      setLensMulti(null);
+    }
   };
   const applyLensRef = useRef(applyLensHandoff);
   useEffect(() => { applyLensRef.current = applyLensHandoff; });
@@ -888,9 +917,8 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
         onLensGoto(oc.target.goto);
         flashLensMsg(t("인식 완료 — 해당 정보로 이동했습니다."), 2000);
       } else if (oc.target.kind === "tie") {
-        // 테마 선택 칩은 모달에서 — 결과를 들고 모달을 연다
+        // 테마 선택 전용 미니 모달을 연다
         setLensInitial(oc);
-        setLensOpen(true);
         flashLensMsg(null);
       } else {
         flashLensMsg(t("인식된 정보가 없습니다 — 분대·유물·조우·작전 화면을 캡처해 보세요."), 3000);
@@ -904,9 +932,10 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   const lensClip = useClipboardWatch(lensAuto && !lensOpen, handleLensShot);
   // 자동인식 동안 창 전체가 드롭존 — 드래그 중이면 필을 드롭 가능 상태로 강조
   const lensDragging = useDropWatch(lensAuto && !lensOpen, handleLensShot);
-  // 하이라이트 카드로 스크롤 (렌더 뒤 한 프레임 양보)
+  // 하이라이트 카드로 스크롤 (렌더 뒤 한 프레임 양보).
+  // 소장품(relic)은 상세/모아보기 모달이 뜨므로 스크롤 불필요 (사용자 확정 2026-07-23)
   useEffect(() => {
-    if (!lensHits) return;
+    if (!lensHits || view === "relic") return;
     const id = window.setTimeout(() => {
       document.querySelector(".rg-lens-hit")?.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 120);
@@ -1339,16 +1368,18 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
               placeholder={t("유물 검색 (이름·번호)")} aria-label={t("유물 검색 (이름·번호)")} />
             <span className="rg-count">{relics.length}</span>
           </div>
+          {/* 목록 카드는 섬네일·이름·효과만 — 번호·설명은 클릭 시 상세 모달에서 (사용자 요청 2026-07-23) */}
           <div className="rg-relic-grid">
             {relics.map((r) => (
-              <article key={r.id} className={`rg-relic${lensHits?.has(r.id) ? " rg-lens-hit" : ""}`}>
+              <article key={r.id} className={`rg-relic clickable${lensHits?.has(r.id) ? " rg-lens-hit" : ""}`}
+                role="button" tabIndex={0}
+                onClick={() => setRelicOpen(r)}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setRelicOpen(r); } }}>
                 <header>
                   {r.img && <img className="rg-relic-icon" src={`/rogue/relic/${r.iconId ?? r.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
-                  {r.order && <span className="rg-relic-no">{r.order}</span>}
                   <h4><Nm name={r.name} cn={r.cn} /></h4>
                 </header>
                 {r.usage && <p className="rg-relic-usage">{r.usage}</p>}
-                {r.desc && <p className="rg-relic-desc">{r.desc}</p>}
               </article>
             ))}
           </div>
@@ -1368,7 +1399,6 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
                 : activeArc === "legacy" ? data.legacies?.length ?? 0
                 : activeArc === "buoy" ? data.buoys?.length ?? 0
                 : activeArc === "explore" ? data.exploreTools?.length ?? 0
-                : activeArc === "tool" ? data.tools.length
                 : activeArc === "band" ? data.bands.length
                 : (data.mechanics ?? []).find((m) => m.label === activeArc)?.items.length ?? 0}
             </span>
@@ -1440,20 +1470,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
               ))}
             </div>
           )}
-          {activeArc === "tool" && (
-            <div className="rg-relic-grid">
-              {data.tools.map((c) => (
-                <article key={c.id} className={`rg-relic${lensHits?.has(c.id) ? " rg-lens-hit" : ""}`}>
-                  <header>
-                    {c.img && <img className="rg-relic-icon" src={`/rogue/relic/${c.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
-                    <h4><Nm name={c.name} cn={c.cn} /></h4>
-                  </header>
-                  {c.usage && <p className="rg-relic-usage">{c.usage}</p>}
-                  {c.desc && <p className="rg-relic-desc">{c.desc}</p>}
-                </article>
-              ))}
-            </div>
-          )}
+          {/* 무대 도구는 소장품 뷰에 통합됨 (사용자 확정 2026-07-24) — 전용 탭 제거 */}
           {activeArc === "explore" && (
             <div className="rg-relic-grid">
               {(data.exploreTools ?? []).map((c) => (
@@ -1641,11 +1658,55 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
       {encOpen && <EncounterModal enc={encOpen} onClose={() => setEncOpen(null)} link={linkRelic} />}
       {relicOpen && <RelicModal relic={relicOpen} onClose={() => setRelicOpen(null)} />}
       {lensOpen && (
-        <div className="modal-backdrop scanner-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) { setLensOpen(false); setLensInitial(null); } }}>
+        <div className="modal-backdrop scanner-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) setLensOpen(false); }}>
           <Suspense fallback={null}>
-            <LensModal mode="rogue" topic={topic} initial={lensInitial}
-              onClose={() => { setLensOpen(false); setLensInitial(null); }} onGoto={onLensGoto} />
+            <LensHelpModal mode="rogue" onClose={() => setLensOpen(false)} />
           </Suspense>
+        </div>
+      )}
+      {/* 소장품 다중 인식 모아보기 — 인식된 유물들을 상세 카드로 한 화면에 (사용자 요청 2026-07-23) */}
+      {lensMulti && (
+        <div className="rg-modal-back stack" onClick={() => setLensMulti(null)} role="presentation">
+          <div className="rg-modal rg-rmodal rg-rmulti" role="dialog" aria-modal onClick={(ev) => ev.stopPropagation()}>
+            <header className="rg-modal-head">
+              <div><h3>📷 {t("인식된 소장품 {n}개", { n: lensMulti.length })}</h3></div>
+              <button type="button" className="rg-modal-close" onClick={() => setLensMulti(null)} aria-label={t("닫기")}>×</button>
+            </header>
+            <div className="rg-rmulti-list">
+              {lensMulti.map((r) => (
+                <article key={r.id} className="rg-rmulti-item">
+                  <header>
+                    {r.img && <img className="rg-relic-icon lg" src={`/rogue/relic/${r.iconId ?? r.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
+                    {r.order && <span className="rg-relic-no">{r.order}</span>}
+                    <h4><Nm name={r.name} cn={r.cn} /></h4>
+                  </header>
+                  {r.usage && <p className="rg-relic-usage">{r.usage}</p>}
+                  {r.desc && <p className="rg-relic-desc">{r.desc}</p>}
+                </article>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* 자동인식이 테마를 특정 못 한 경우(분대 이름은 테마 공통) — 테마 선택 전용 미니 모달 */}
+      {lensInitial?.target.kind === "tie" && (
+        <div className="modal-backdrop scanner-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) setLensInitial(null); }}>
+          <section className="operator-modal lens-modal lens-tie" role="dialog" aria-modal="true" aria-label={t("테마 선택")}>
+            <header className="scanner-head">
+              <h2>📷 {t("테마 선택")}</h2>
+              <button className="modal-close" onClick={() => setLensInitial(null)} aria-label={t("닫기")}>✕</button>
+            </header>
+            <div className="lens-body">
+              <p className="lens-verdict">{t("인식은 됐지만 어느 테마인지 화면만으론 알 수 없습니다 — 테마를 선택하세요.")}</p>
+              <div className="lens-topic-chips">
+                {lensInitial.target.options.map((o) => (
+                  <button key={o.topic} type="button" className="lens-chip" onClick={() => onLensGoto(o.goto)}>
+                    {t(o.topicName)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </section>
         </div>
       )}
       </>)}

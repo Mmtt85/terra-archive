@@ -9215,6 +9215,25 @@ html.dark.rg-theme.rg6 .site-header {
 .rg-rmodal .rg-relic-usage {
   font-size: 14px;
 }
+/* 소장품 상세 모달 — 좁게, 전체 데이터 표시 (사용자 확정 2026-07-24).
+   ⚠ .rg-modal 기본 규칙(max-width:980)이 뒤에 나오므로 복합 선택자로 이겨야 한다 */
+.rg-modal.rg-rmodal:not(.rg-rmulti) {
+  max-width: 460px;
+}
+.rg-modal.rg-rmulti {
+  max-width: 640px; /* 모아보기는 카드 여러 장이라 살짝 넓게 */
+}
+.rg-relic-obtain {
+  margin: 8px 0 0;
+  font-size: 12.5px;
+  color: var(--ink2);
+}
+.rg-relic-obtain em {
+  font-style: normal;
+  font-weight: 800;
+  margin-right: 6px;
+  color: var(--ink3, var(--ink2));
+}
 .rg-cond-node.relic {
   color: #d8b8f0;
 }
@@ -10308,6 +10327,69 @@ main.site-main > .site-header {
   font-size: 0.84rem;
   cursor: pointer;
 }
+/* 도움말 모달 — 순수 설명 전용 */
+.lens-help h3 {
+  margin: 14px 0 6px;
+  font-size: 0.95rem;
+}
+.lens-help .lens-help-intro {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  font-weight: 700;
+}
+.lens-help ol,
+.lens-help ul {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--ink2);
+}
+/* 테마 선택 미니 모달 */
+.lens-tie {
+  width: min(480px, 94vw);
+}
+/* 소장품 다중 인식 모아보기 */
+.rg-rmulti {
+  max-height: 84vh;
+  overflow-y: auto;
+}
+.rg-rmulti-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.rg-rmulti-item header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.rg-rmulti-item h4 {
+  margin: 0;
+  font-size: 1rem;
+}
+.rg-rmulti-item {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+.rg-rmulti-item:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+/* 소장품 목록 카드 클릭 → 상세 모달 (목록은 섬네일·이름·효과만, 2026-07-23) */
+.rg-relic.clickable {
+  cursor: pointer;
+}
+.rg-relic.clickable:hover {
+  border-color: var(--lime);
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--lime) 25%, transparent);
+}
+
 /* 렌즈 하이라이트 — /rogue 전시관 카드에 도착 표시 (스크롤 타깃) */
 .rg-lens-hit {
   box-shadow: 0 0 0 2px var(--lime), 0 0 14px color-mix(in srgb, var(--lime) 55%, transparent);

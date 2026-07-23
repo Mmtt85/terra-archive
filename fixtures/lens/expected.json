@@ -50,5 +50,18 @@
       "코스트+"
     ],
     "mode": "recruit"
+  },
+  "f6.png": {
+    "section": "relic",
+    "targetKind": "goto",
+    "topic": "rogue_3",
+    "entities": [
+      "지원 - 보급기",
+      "북풍의 창조물",
+      "결박의 손",
+      "비전 초대장",
+      "클로 - 전훈",
+      "오렌지 스톰"
+    ]
   }
 }

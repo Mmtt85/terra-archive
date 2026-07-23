@@ -21,6 +21,7 @@ export type LensGoto =
     page: "rogue"; topic: string; view: string; arcTab?: string;
     modal?: { type: string; id: string };
     highlight?: string[];
+    gather?: boolean; // 아이템 다중 인식 — 모아보기 모달로 표시
   }
   | { page: "recruit"; tags: string[] };
 export type LensTarget =
@@ -132,7 +133,9 @@ export function buildIndex(topics: any[]): LensIndex {
     for (const r of d.relics ?? []) add("relic", r.id, r.name, `${r.usage || ""} ${r.desc || ""}`);
     for (const s of d.stages ?? []) add("stage", s.id, s.name, s.desc || "");
     for (const z of d.zones ?? []) add("zone", z.id, z.name, z.desc || "");
-    for (const t of d.tools ?? []) add("tool", t.id, t.name, `${t.usage || ""} ${t.desc || ""}`);
+    // 무대 도구는 사이트에서 소장품으로 통합 표시 (2026-07-24) — relic 섹션으로 인덱싱해
+    // 단일=유물 모달, 다중=모아보기가 동일하게 동작한다
+    for (const t of d.tools ?? []) add("relic", t.id, t.name, `${t.usage || ""} ${t.desc || ""}`);
     for (const c of d.capsules ?? []) add("capsule", c.id, c.name, `${c.usage || ""} ${c.desc || ""}`);
     for (const e of d.encounters ?? []) {
       const choices = (e.choices ?? []).map((c: { title?: string; desc?: string }) => `${c.title || ""} ${c.desc || ""}`).join(" ");
@@ -179,90 +182,126 @@ export function analyzeLines(
   const allN = linesN.join("");
   const screens = SCREEN_KEYWORDS.filter((k) => allN.includes(k.key)).map((k) => k.label);
 
-  // 라인별 2패스: 매칭 엔티티 수집 후 1/N 가중(IDF식) 분산
-  const hits = new Map<number, number>(); // entryIdx → score
-  for (const line of linesN) {
-    const lineBG = bigrams(line);
-    const lineHits: { ei: number; w: number }[] = [];
-    for (let ei = 0; ei < index.entries.length; ei++) {
-      const e = index.entries[ei];
-      if (e.nameN.length >= 3 && (line.includes(e.nameN) || (line.length >= 4 && e.nameN.includes(line)))) {
-        lineHits.push({ ei, w: 3 });
-      } else if (line.length >= 6 && e.bodyN.length >= 6 && contain(lineBG, e.bodyBG) >= 0.7) {
-        lineHits.push({ ei, w: 1 });
-      }
-    }
-    if (lineHits.length === 0) continue;
-    const idf = 1 / lineHits.length;
-    for (const { ei, w } of lineHits) hits.set(ei, (hits.get(ei) ?? 0) + w * idf);
-  }
-
-  // 토픽·섹션 집계
+  // 1패스: 전체 인덱스 매칭 → 토픽 다수결 (IDF 분산으로 범용 문구 무력화)
+  const hits = matchEntries(linesN, index.entries);
   const topicScore = new Map<string, number>();
   const topicNames = new Map<string, string>();
-  const sectionScore = new Map<string, number>(); // 섹션만 (토픽 무관 — 동점 시에도 섹션은 공유됨)
-  const solids: LensEntity[] = [];
-  for (const [ei, score] of hits) {
-    const e = index.entries[ei];
+  const solidsAll: LensEntity[] = [];
+  for (const [e, score] of hits) {
     topicScore.set(e.topic, (topicScore.get(e.topic) ?? 0) + score);
     topicNames.set(e.topic, e.topicName);
-    sectionScore.set(e.section, (sectionScore.get(e.section) ?? 0) + score);
-    if (score >= SOLID) solids.push({ topic: e.topic, topicName: e.topicName, section: e.section, id: e.id, name: e.name, score, arc: e.arc });
+    if (score >= SOLID) solidsAll.push({ topic: e.topic, topicName: e.topicName, section: e.section, id: e.id, name: e.name, score, arc: e.arc });
   }
   // 현재 토픽 사전확률 부스트
   const ctxTopic = opts?.context?.topic;
   if (ctxTopic && topicScore.has(ctxTopic)) topicScore.set(ctxTopic, topicScore.get(ctxTopic)! * CTX_BOOST);
+  const topics = [...topicScore.entries()]
+    .map(([topic, score]) => ({ topic, topicName: topicNames.get(topic) ?? topic, score }))
+    .sort((a, b) => b.score - a.score);
+  if (!topics.length) return { screens, entities: [], topics, section: null, target: { kind: "none" } };
+
+  // 동점(테마 특정 불가) — 전역 매칭 엔티티로 각 후보의 이동 목표 구성 (분대 선택 화면이 전형)
+  const top = topics[0], second = topics[1];
+  if (second && top.score < second.score * DOMINANCE) {
+    const entities = dedupEntities(solidsAll);
+    const section = topSection(hits) ?? "band";
+    const options = topics
+      .filter((tp) => tp.score >= top.score * TIE_FLOOR)
+      .sort((a, b) => (parseInt(b.topic.split("_")[1] ?? "0", 10) - parseInt(a.topic.split("_")[1] ?? "0", 10)))
+      .map((tp) => ({ topic: tp.topic, topicName: tp.topicName, goto: gotoFor(tp.topic, section, entities) }))
+      .filter((o): o is { topic: string; topicName: string; goto: LensGoto } => o.goto !== null);
+    return options.length
+      ? { screens, entities, topics, section, target: { kind: "tie", section, options } }
+      : { screens, entities, topics, section, target: { kind: "none" } };
+  }
+
+  // 2패스: 승자 토픽 안에서만 재채점 — 토픽 공통 이름("뱅가드 모집권" 등)이 교차 토픽
+  // IDF로 1/6 희석돼 확신 문턱에서 탈락하는 문제 해결 (상점 화면 다중 아이템의 핵심)
+  const wEntries = index.entries.filter((e) => e.topic === top.topic);
+  const hitsW = matchEntries(linesN, wEntries);
+  const solidsW: LensEntity[] = [];
+  for (const [e, score] of hitsW) {
+    if (score >= SOLID) solidsW.push({ topic: e.topic, topicName: e.topicName, section: e.section, id: e.id, name: e.name, score, arc: e.arc });
+  }
+  const entities = dedupEntities(solidsW);
+  const section = topSection(hitsW);
+  const g = section ? gotoFor(top.topic, section, entities) : null;
+  return { screens, entities, topics, section, target: g ? { kind: "goto", goto: g } : { kind: "none" } };
+}
+
+// 라인 ↔ 엔트리 매칭 (IDF는 "전달된 엔트리 집합" 안에서 분산된다)
+function matchEntries(linesN: string[], entries: Entry[]): Map<Entry, number> {
+  const hits = new Map<Entry, number>();
+  for (const line of linesN) {
+    const lineBG = bigrams(line);
+    const lineHits: { e: Entry; w: number }[] = [];
+    for (const e of entries) {
+      if (e.nameN.length >= 3 && (line.includes(e.nameN) || (line.length >= 4 && e.nameN.includes(line)))) {
+        lineHits.push({ e, w: 3 });
+      } else if (line.length >= 6 && e.bodyN.length >= 6 && contain(lineBG, e.bodyBG) >= 0.7) {
+        lineHits.push({ e, w: 1 });
+      }
+    }
+    if (lineHits.length === 0) continue;
+    const idf = 1 / lineHits.length;
+    for (const { e, w } of lineHits) hits.set(e, (hits.get(e) ?? 0) + w * idf);
+  }
+  return hits;
+}
+
+function topSection(hits: Map<Entry, number>): string | null {
+  const sectionScore = new Map<string, number>();
+  for (const [e, score] of hits) sectionScore.set(e.section, (sectionScore.get(e.section) ?? 0) + score);
+  return [...sectionScore.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+}
+
+// 표시용 중복 제거 (일반/긴급 같은 이름 스테이지 등) — 토픽+섹션+이름 기준, 점수순
+function dedupEntities(solids: LensEntity[]): LensEntity[] {
   solids.sort((a, b) => b.score - a.score);
-  // 표시용 중복 제거 (일반/긴급 같은 이름 스테이지 등) — 토픽+섹션+이름 기준
   const seen = new Set<string>();
-  const entities = solids.filter((s) => {
+  return solids.filter((s) => {
     const k = `${s.topic}/${s.section}/${s.name}`;
     if (seen.has(k)) return false;
     seen.add(k);
     return true;
   });
-
-  const topics = [...topicScore.entries()]
-    .map(([topic, score]) => ({ topic, topicName: topicNames.get(topic) ?? topic, score }))
-    .sort((a, b) => b.score - a.score);
-  const section = [...sectionScore.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
-
-  return { screens, entities, topics, section, target: resolveTarget(topics, section, entities) };
 }
 
+// 아이템류 섹션 — 상점·전리품 화면엔 유물/도구/음반/토픽 고유 시스템이 섞여 나오므로
+// 섹션을 가르지 않고 함께 수집한다 (사용자 요청 2026-07-23: 상인 화면 전 품목 인식)
+const ITEM_SECTIONS = new Set(["relic", "tool", "capsule", "mech"]);
+
 // 특정 토픽+섹션의 확신 엔티티들로 LensGoto 구성.
-// 동급 스코어(1위의 절반 이상) 엔티티가 여럿이면 — 유물 2개 중 선택, 영감 여러 개 획득 등 —
-// 단일 모달 대신 목록 뷰에서 전부 하이라이트한다 (사용자 요청 2026-07-23).
+// 동급 스코어(1위의 절반 이상) 엔티티가 여럿이면 단일 모달 대신 모아보기/하이라이트.
 function gotoFor(topic: string, section: string, entities: LensEntity[]): LensGoto | null {
+  // 아이템류: 섹션 경계 없이 cohort 구성 → 1개면 기존 단일 동작, 여럿이면 모아보기(gather)
+  if (ITEM_SECTIONS.has(section)) {
+    const mine = entities.filter((e) => e.topic === topic && ITEM_SECTIONS.has(e.section));
+    const cohort = mine.filter((e) => e.score >= (mine[0]?.score ?? 0) * 0.5);
+    if (!cohort.length) return null;
+    if (cohort.length === 1) {
+      const one = cohort[0];
+      if (one.section === "relic") return { page: "rogue", topic, view: "relic", modal: { type: "relic", id: one.id } };
+      const arcTab = one.section === "mech" ? one.arc : SECTION_NAV[one.section]?.arcTab;
+      return { page: "rogue", topic, view: "archive", ...(arcTab ? { arcTab } : {}), highlight: [one.id] };
+    }
+    const hasRelic = cohort.some((e) => e.section === "relic");
+    const arcTab = hasRelic ? undefined : (cohort[0].section === "mech" ? cohort[0].arc : SECTION_NAV[cohort[0].section]?.arcTab);
+    return {
+      page: "rogue", topic,
+      view: hasRelic ? "relic" : "archive",
+      ...(arcTab ? { arcTab } : {}),
+      highlight: cohort.map((e) => e.id),
+      gather: true, // rogue가 모아보기 모달로 띄운다
+    };
+  }
   const nav = SECTION_NAV[section];
   if (!nav) return null;
   const mine = entities.filter((e) => e.topic === topic && e.section === section);
   const cohort = mine.filter((e) => e.score >= (mine[0]?.score ?? 0) * 0.5);
   const g: LensGoto = { page: "rogue", topic, view: nav.view };
-  const arcTab = nav.arcTab ?? (section === "mech" ? cohort[0]?.arc : undefined);
-  if (arcTab) g.arcTab = arcTab;
+  if (nav.arcTab) g.arcTab = nav.arcTab;
   if (nav.modalType && cohort.length === 1) g.modal = { type: nav.modalType, id: cohort[0].id };
   else if (cohort.length) g.highlight = cohort.map((e) => e.id);
   return g;
-}
-
-function resolveTarget(
-  topics: { topic: string; topicName: string; score: number }[],
-  section: string | null,
-  entities: LensEntity[],
-): LensTarget {
-  if (!topics.length || !section) return { kind: "none" };
-  const top = topics[0];
-  const second = topics[1];
-  if (second && top.score < second.score * DOMINANCE) {
-    // 토픽 동점 — 후보를 최신 토픽(번호 큰 쪽)부터 나열, 각각의 이동 목표 포함
-    const options = topics
-      .filter((t) => t.score >= top.score * TIE_FLOOR)
-      .sort((a, b) => (parseInt(b.topic.split("_")[1] ?? "0", 10) - parseInt(a.topic.split("_")[1] ?? "0", 10)))
-      .map((t) => ({ topic: t.topic, topicName: t.topicName, goto: gotoFor(t.topic, section, entities) }))
-      .filter((o): o is { topic: string; topicName: string; goto: LensGoto } => o.goto !== null);
-    return options.length ? { kind: "tie", section, options } : { kind: "none" };
-  }
-  const g = gotoFor(top.topic, section, entities);
-  return g ? { kind: "goto", goto: g } : { kind: "none" };
 }
