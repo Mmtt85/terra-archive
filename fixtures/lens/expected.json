@@ -170,5 +170,13 @@
       "스피리터스"
     ],
     "grade": 9
+  },
+  "f17.png": {
+    "mode": "story",
+    "section": "story",
+    "targetKind": "goto",
+    "page": "story",
+    "storyId": "act49side",
+    "ep": 15
   }
 }

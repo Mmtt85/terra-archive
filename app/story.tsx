@@ -6,8 +6,14 @@
 // 요약이 있는 이벤트만 카드가 열리고, 상세는 #story-<id> 해시로 공유·뒤로가기 가능.
 // 상세를 읽는 동안, 화면에 보이는 문단에 언급된 인물·용어 카드가 오른쪽 레일에
 // 따라다니며 떠오른다 (IntersectionObserver — 넓은 화면 전용, 좁은 화면은 상단 갤러리).
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { scrollMainTop } from "./scroll";
+// 스샷 레이더 (/stories 설치, 2026-07-24) — 게임 전문 대사 화면을 인식해 해당 에피소드로 이동
+import { warmOcr } from "./lens/ocr";
+import { recognizeShot, warmData } from "./lens/run";
+import { useClipboardWatch } from "./lens/clipwatch";
+import { useDropWatch } from "./lens/dropwatch";
+import { isNewFeature } from "./whats-new";
 import storiesData from "./data/stories.json";
 // 요약 본문은 로케일별(story-summaries.{en,ja}.json)로 갈라져 있어 Home이 활성 로케일 것을
 // prop으로 내려준다. 모듈 레벨(합성 이벤트·해시 확인)은 콘텐츠가 아니라 "요약이 있는 id"만
@@ -105,6 +111,9 @@ export const eventById = new Map<string, StoryEvent>(
 function locText(locale: Locale, text: LocText): string {
   return (locale === "ko" ? text.ko : text[locale]) ?? text.ko;
 }
+
+// 스샷 레이더 도움말 — 순수 설명 전용 모달 (입력 기능은 페이지 레벨 자동인식이 전담)
+const LensHelpModal = lazy(() => import("./lens/help"));
 
 function eventFromHash(): StoryEvent | null {
   const hash = decodeURIComponent(window.location.hash);
@@ -1316,7 +1325,7 @@ function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEve
 }
 
 export default function StoryGuide({ summaries, onShowOperator, includeFuture, opIndex }: { summaries: StorySummaries; onShowOperator?: (id: string) => void; includeFuture?: boolean; opIndex?: OpIndex }) {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const [view, setView] = useState<"digest" | "chronicle">("digest");
   // 기본 뷰는 테마별 (사용자 확정 2026-07-21)
   const [group, setGroup] = useState<"theme" | "kind">("theme");
@@ -1373,10 +1382,85 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
     if (selected) scrollMainTop();
   }, [selected]);
 
+  // ─── 스샷 레이더 — 전문 대사 화면 인식 → 해당 이벤트·에피소드 전문 뷰어로 (2026-07-24) ───
+  // 기본 꺼짐·비영속 (리프레시하면 꺼짐). 인덱스는 public/story/search.bin (앵커 3점 역색인).
+  const [lensAuto, setLensAuto] = useState(false);
+  const [lensHelp, setLensHelp] = useState(false);
+  const [lensMsg, setLensMsg] = useState<string | null>(null);
+  const [lensThumb, setLensThumb] = useState<string | null>(null);
+  const [lensNav, setLensNav] = useState(0); // 같은 스토리 안 다른 ep 재이동 시 전문 뷰어 리마운트용
+  const lensMsgTimer = useRef<number | undefined>(undefined);
+  const flashLensMsg = (msg: string | null, ms?: number) => {
+    if (lensMsgTimer.current !== undefined) window.clearTimeout(lensMsgTimer.current);
+    setLensMsg(msg);
+    if (msg && ms) lensMsgTimer.current = window.setTimeout(() => setLensMsg(null), ms);
+  };
+  const toggleLensAuto = () => setLensAuto((v) => {
+    const next = !v;
+    if (next) { void warmOcr(); warmData("story"); } // 켜는 순간 OCR·검색 인덱스 예열
+    return next;
+  });
+  const lensBusy = useRef(false);
+  const handleLensShot = async (file: File) => {
+    if (lensBusy.current) return;
+    lensBusy.current = true;
+    setLensThumb((prev) => { if (prev) URL.revokeObjectURL(prev); return URL.createObjectURL(file); });
+    flashLensMsg(t("스캔 중…"));
+    try {
+      const oc = await recognizeShot("story", file);
+      const g = oc.target.kind === "goto" && oc.target.goto.page === "story" ? oc.target.goto : null;
+      const ev = g ? eventById.get(g.id) : undefined;
+      if (g && ev && canOpenStory(g.id)) {
+        // 전문 뷰어는 마운트 시 해시에서 ep를 읽는다 — 해시 먼저, 리마운트 강제(lensNav)
+        history.pushState(null, "", `#story-${g.id}${g.ep != null && g.ep > 0 ? `/ep${g.ep + 1}` : ""}`);
+        pushedDetail.current = true;
+        setLensNav((n) => n + 1);
+        setSelected(ev);
+        // 일회성 스캔 — 스토리로 이동했으면 자동인식을 끈다 (사용자 확정 2026-07-24:
+        // 스샷 한 번이면 목적지에 도착하므로 계속 켜 둘 이유가 없음). 실패 시엔 켠 채 재시도.
+        setLensAuto(false);
+        flashLensMsg(g.ep != null
+          ? t("『{name}』 전문 {ep}번째 에피소드로 이동했습니다.", { name: locText(locale, ev.name), ep: g.ep + 1 })
+          : t("『{name}』 전문으로 이동했습니다.", { name: locText(locale, ev.name) }), 3000);
+      } else {
+        flashLensMsg(t("스토리를 찾지 못했습니다 — 대사가 보이는 전문 화면을 캡처해 보세요."), 3000);
+      }
+    } catch {
+      flashLensMsg(t("인식에 실패했습니다 — 다른 스크린샷으로 다시 시도해 주세요."), 3000);
+    } finally {
+      lensBusy.current = false;
+    }
+  };
+  const lensClip = useClipboardWatch(lensAuto, handleLensShot);
+  const lensDragging = useDropWatch(lensAuto, handleLensShot);
+  // 필·도움말은 목록/상세 어느 화면에서도 렌더. 일회성 스캔이라 이동 후 lensAuto는 꺼지지만
+  // 성공 플래시 메시지(lensMsg)가 사라질 때까지는 필을 유지한다
+  const lensPill = locale === "ko" && (lensAuto || lensMsg) ? (
+    <div className={`lens-auto-pill${lensMsg ? " busy" : ""}${lensDragging ? " drop" : ""}`} role="status">
+      {lensThumb && !lensDragging && <img className="lens-auto-thumb" src={lensThumb} alt={t("인식한 스크린샷")} />}
+      <span>{lensDragging ? t("여기든 어디든, 놓으면 바로 인식합니다") : lensMsg ?? (lensClip === "off"
+        ? t("클립보드 접근이 막혀 있습니다 — 이미지를 화면에 드롭하거나 ⌘V로 붙여넣으세요")
+        : t("스샷 자동인식 켜짐 — 게임 화면을 캡처하고 돌아오거나, 이미지를 화면에 드롭하세요"))}</span>
+    </div>
+  ) : null;
+  const lensHelpModal = lensHelp ? (
+    <div className="modal-backdrop scanner-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) setLensHelp(false); }}>
+      <Suspense fallback={null}>
+        <LensHelpModal mode="story" onClose={() => setLensHelp(false)} />
+      </Suspense>
+    </div>
+  ) : null;
+
   const summarized = data.events.filter((event) => summaryIds.has(event.id)).length;
 
   if (selected) {
-    return <StoryDetail key={selected.id} event={selected} summary={summaries[selected.id]} onClose={close} onShowOperator={onShowOperator} opIndex={opIndex} />;
+    return (
+      <>
+        {lensPill}
+        {lensHelpModal}
+        <StoryDetail key={`${selected.id}:${lensNav}`} event={selected} summary={summaries[selected.id]} onClose={close} onShowOperator={onShowOperator} opIndex={opIndex} />
+      </>
+    );
   }
 
   return (
@@ -1395,7 +1479,21 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
         <button type="button" role="tab" aria-selected={view === "digest" && group === "theme"} className={view === "digest" && group === "theme" ? "on" : ""} onClick={() => goGroup("theme")}>{t("테마별")}</button>
         <button type="button" role="tab" aria-selected={view === "digest" && group === "kind"} className={view === "digest" && group === "kind" ? "on" : ""} onClick={() => goGroup("kind")}>{t("종류별")}</button>
         <button type="button" role="tab" aria-selected={view === "chronicle"} className={view === "chronicle" ? "on" : ""} onClick={() => goView("chronicle")}>{t("테라 연대기")}</button>
+        {/* 스샷 레이더 — 버튼 자체가 자동인식 토글, ?는 도움말 (KR 클라 전용) */}
+        {locale === "ko" && (
+          <div className="lens-open-wrap">
+            <button type="button" className={`lens-open-btn${lensAuto ? " on" : ""}`} aria-pressed={lensAuto}
+              title={t("클릭해 스샷 자동인식을 켜고 끕니다 — 켜두면 게임 스토리 화면을 캡처만 해도 해당 이벤트의 에피소드로 이동합니다")}
+              onClick={toggleLensAuto}>
+              <span className="lens-auto-knob" aria-hidden />📷 {t("스샷 레이더")}{isNewFeature("lens") && <span className="new-badge">{t("새기능")}</span>}
+            </button>
+            <button type="button" className="lens-help-btn" aria-label={t("스샷 레이더 도움말")}
+              onClick={() => setLensHelp(true)}>?</button>
+          </div>
+        )}
       </div>
+      {lensPill}
+      {lensHelpModal}
 
       {view === "chronicle" ? (
         <ChronologyView onOpenEvent={openEvent} />

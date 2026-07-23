@@ -10571,23 +10571,13 @@ main.site-main > .site-header {
 .scanner-dropzone:hover {
   border-color: var(--ink2);
 }
-/* 클립보드 자동인식 시작 — 권장 주 진입 CTA (사용자 요청: 더 눈에 띄게 + 안내) */
+/* 클립 토글 줄 — 안내문은 ? 도움말로 이동(2026-07-24)해 박스 없는 슬림한 툴바 한 줄만 남긴다.
+   토글은 스샷 레이더의 .lens-open-btn 재사용 (세그먼트의 margin-left:auto는 여기선 해제) */
 .scanner-clip-cta {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 16px;
-  border-radius: 10px;
-  border: 1px solid color-mix(in srgb, var(--lime) 45%, var(--line));
-  background: color-mix(in srgb, var(--lime) 12%, var(--bg-panel));
 }
-.scanner-clip-cta p {
-  margin: 0;
-  font-size: 0.84rem;
-  line-height: 1.6;
-  color: var(--ink2);
-}
-/* 토글 + 상태 문구 한 줄 (토글은 스샷 레이더의 .lens-open-btn 재사용, 2026-07-24) */
 .scanner-clip-row {
   display: flex;
   align-items: center;
@@ -10595,40 +10585,8 @@ main.site-main > .site-header {
   flex-wrap: wrap;
   font-size: 0.86rem;
 }
-.scanner-clip-start {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  align-self: flex-start;
-  border: none;
-  border-radius: 9px;
-  padding: 11px 22px;
-  cursor: pointer;
-  background: var(--lime);
-  color: var(--on-lime, #17201a);
-  font-size: 15px;
-  font-weight: 800;
-  letter-spacing: -0.01em;
-}
-.scanner-clip-start:hover {
-  filter: brightness(1.06);
-  box-shadow: 0 2px 12px color-mix(in srgb, var(--lime) 40%, transparent);
-}
-.scanner-clip-start .clip-start-icon {
-  font-size: 17px;
-}
-.scanner-clip-banner {
-  padding: 10px 14px;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 700;
-  background: color-mix(in srgb, var(--lime) 10%, var(--bg-panel));
-  border: 1px solid color-mix(in srgb, var(--lime) 30%, var(--line));
-}
-.scanner-clip-banner.off {
-  background: color-mix(in srgb, #c08a2e 12%, var(--bg-panel));
-  border-color: color-mix(in srgb, #c08a2e 35%, var(--line));
+.scanner-clip-row .lens-open-wrap {
+  margin-left: 0;
 }
 .scanner-previews {
   display: flex;

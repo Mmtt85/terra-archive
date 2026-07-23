@@ -14,13 +14,14 @@ import { createWorker } from "tesseract.js";
 import { grayNormalize, upscaleFactor, findDarkChips, chipCropRect, binarizeGlyph, isolateGlyphs } from "../app/lens/preprocess";
 import { DIFF_REGION, parseDifficulty } from "../app/lens/ocr";
 import { buildIndex, analyzeLines, analyzeChinese, analyzeRecruit, wantsChipPass } from "../app/lens/match";
+import { parseStoryIndex, analyzeStoryLines, type StoryIndex } from "../app/lens/storymatch";
 
 const ROOT = resolve(import.meta.dirname ?? __dirname, "..");
 const SHOTS = resolve(ROOT, "fixtures/lens/screenshots");
 const EXPECTED = resolve(ROOT, "fixtures/lens/expected.json");
 
 type Expect = {
-  mode?: "rogue" | "recruit"; // 페이지별 설치 — 어느 모달로 인식하는지 (기본 rogue)
+  mode?: "rogue" | "recruit" | "story"; // 페이지별 설치 — 어느 모달로 인식하는지 (기본 rogue)
   section: string;
   targetKind: "goto" | "tie" | "none";
   topic?: string;
@@ -29,6 +30,8 @@ type Expect = {
   page?: string;    // "recruit" 등 — goto 페이지 검증
   tags?: string[];  // 공개모집: 자동 입력돼야 할 태그 (정확히 일치)
   grade?: number;   // 좌하단 난이도 배지 — 미지정이면 "인식되지 않아야" 한다 (오탐 검출)
+  storyId?: string; // 스토리 모드: 판정돼야 할 스토리 id
+  ep?: number;      // 스토리 모드: 에피소드 인덱스 (0기준)
 };
 
 async function main() {
@@ -46,7 +49,12 @@ async function main() {
   const index = buildIndex(topics);
   const recruitTags: string[] = JSON.parse(readFileSync(resolve(ROOT, "app/data/recruit.json"), "utf8"))
     .tags.map((tg: { name: string }) => tg.name);
-  console.log(`인덱스: ${index.entries.length}개 엔티티 (${topics.length}토픽) + 공개모집 태그 ${recruitTags.length}개`);
+  // 스토리 전문 검색 인덱스 (build-story-search.py 산출물)
+  const storyBin = readFileSync(resolve(ROOT, "public/story/search.bin"));
+  const storyIds: string[] = JSON.parse(readFileSync(resolve(ROOT, "app/data/story-search-meta.json"), "utf8")).ids;
+  const storyIndex: StoryIndex = parseStoryIndex(
+    storyBin.buffer.slice(storyBin.byteOffset, storyBin.byteOffset + storyBin.byteLength) as ArrayBuffer, storyIds);
+  console.log(`인덱스: ${index.entries.length}개 엔티티 (${topics.length}토픽) + 공개모집 태그 ${recruitTags.length}개 + 스토리 그램 ${storyIndex.hashes.length.toLocaleString()}개`);
 
   const worker = await createWorker("kor", 1, {
     langPath: resolve(ROOT, "public/lens"),
@@ -115,6 +123,18 @@ async function main() {
       // 태그는 어두운 버튼 칩이 본체 — 칩 + 전체 프레임 보조
       const lines = (await chipPass()).concat(await fullPass("11"));
       oc = analyzeRecruit(lines, recruitTags);
+    } else if (exp.mode === "story") {
+      // run.ts와 동일: sparse → 표 약하면 auto 폴백 보강
+      let lines = await fullPass("11");
+      let hit = analyzeStoryLines(lines, storyIndex);
+      if (!hit || hit.hits < 2) {
+        lines = lines.concat(await fullPass("3"));
+        const hit2 = analyzeStoryLines(lines, storyIndex);
+        if (hit2 && (!hit || hit2.hits > hit.hits)) hit = hit2;
+      }
+      oc = hit
+        ? { screens: [], entities: [], topics: [], section: "story", target: { kind: "goto", goto: { page: "story", id: hit.id, ep: hit.ep, hits: hit.hits } } }
+        : { screens: [], entities: [], topics: [], section: null, target: { kind: "none" } };
     } else {
       // 프로덕션 rogue 모드는 항상 현재 토픽 컨텍스트가 있다 — 사미 페이지에서 찍는 상황을 재현
       const ctx = { context: { topic: "rogue_3" } };
@@ -179,6 +199,10 @@ async function main() {
         const got = [...g.tags].sort().join(",");
         const want = [...exp.tags].sort().join(",");
         if (got !== want) errs.push(`태그 [${got}] ≠ 기대 [${want}]`);
+      } else if (g.page === "story") {
+        if (exp.storyId && g.id !== exp.storyId) errs.push(`스토리 ${g.id} ≠ 기대 ${exp.storyId}`);
+        if (exp.ep !== undefined && g.ep !== exp.ep) errs.push(`ep ${g.ep ?? "(없음)"} ≠ 기대 ${exp.ep}`);
+        console.log(`  · 스토리 ${g.id} ep${g.ep ?? "?"} 표 ${g.hits}`);
       }
     }
     for (const name of exp.entities ?? []) {

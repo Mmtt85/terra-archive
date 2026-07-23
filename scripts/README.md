@@ -144,6 +144,7 @@ python3 scripts/build-story-scripts.py         # KR 전문 → public/story/scri
 python3 scripts/build-story-scripts.py act49side  # 한 이벤트만 (신규 이벤트 요약 추가 시 같이 실행)
 python3 scripts/build-story-scripts.py --lang en  # EN 전문 → public/story/script/en/ (+ story-script-ids.en.json)
 python3 scripts/build-story-scripts.py --lang ja  # JA 전문 → public/story/script/ja/ ({@nickname}=Doctor/ドクター)
+python3 scripts/build-story-search.py          # 스샷 레이더 전문 검색 인덱스 → public/story/search.bin (KR 전문 갱신 시 같이 실행)
 ```
 
 '전문 보기'는 사이드+메인만 지원 (rogue_N은 원문이 조각이라 제외). 산출 JSON은 정적 파일로

@@ -293,7 +293,6 @@ export function ScannerModal({ t, onClose, onApply }: {
                   : <span className="scanner-clip-off">{t("클립보드 권한을 확인하는 중… (브라우저의 붙여넣기 허용을 눌러주세요)")}</span>
               )}
             </div>
-            <p>{t("한 번 누르면 이후엔 캡처만 반복하면 됩니다 — 에뮬레이터 목록을 클립보드로 캡처(맥 ⌃⌘⇧4 · 윈도우 Win+Shift+S)하고 이 탭으로 돌아오면 자동으로 인식돼 아래에 쌓입니다. 브라우저가 클립보드 접근을 물으면 '허용'을 눌러주세요.")}</p>
           </div>
           <div className="scanner-dropzone" onClick={() => fileInputRef.current?.click()} role="button" tabIndex={0}>
             {recognizing ? t("인식 중…") : t("또는 여기에 오퍼 목록 스크린샷을 끌어놓거나, 클릭해서 파일을 추가하세요 (여러 장 가능)")}
@@ -311,11 +310,6 @@ export function ScannerModal({ t, onClose, onApply }: {
               ))}
             </div>
           )}
-          <ul className="scanner-tips">
-            <li>{t("정예화(0/1/2정)는 카드 엠블럼으로 자동 인식됩니다 — 잘못 읽힌 오퍼만 이름 옆 배지를 눌러 고치세요.")}</li>
-            <li>{t("스크린샷 미리보기의 ✕를 누르면 그 스샷에서만 인식된 오퍼도 목록에서 함께 빠집니다.")}</li>
-            <li>{t("모든 인식은 100% 브라우저 안에서 처리되며 이미지는 서버로 전송되지 않습니다.")}</li>
-          </ul>
         </div>
 
         <div className="scanner-results">
@@ -354,10 +348,6 @@ export function ScannerModal({ t, onClose, onApply }: {
             {sorted.length === 0 && (
               <div className="scanner-empty">
                 <p>{t("아직 인식된 오퍼가 없습니다. 오퍼 목록 스크린샷을 추가하면 자동으로 인식됩니다.")}</p>
-                <figure className="scanner-sample">
-                  <img src="/scan/sample.webp" alt={t("올바른 캡처 예시")} loading="lazy" />
-                  <figcaption>{t("이렇게 오퍼레이터 목록 화면이 온전히 담기도록 캡처하세요 (레벨 정렬 권장).")}</figcaption>
-                </figure>
               </div>
             )}
           </div>

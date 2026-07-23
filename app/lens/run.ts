@@ -4,8 +4,10 @@
 
 import { createOcrSession } from "./ocr";
 import { buildIndex, analyzeLines, analyzeChinese, analyzeRecruit, wantsChipPass, type LensIndex, type LensOutcome } from "./match";
+import { parseStoryIndex, analyzeStoryLines, type StoryIndex } from "./storymatch";
+import storySearchMeta from "../data/story-search-meta.json";
 
-export type LensMode = "rogue" | "recruit";
+export type LensMode = "rogue" | "recruit" | "story";
 
 // 매칭 데이터 지연 로드 — 모드별로 필요한 것만 (recruit는 rogue*.json 2.9MB를 안 내려받는다)
 let rogueIndexP: Promise<LensIndex> | null = null;
@@ -32,10 +34,23 @@ export function getRecruitTags(): Promise<string[]> {
   }
   return recruitTagsP;
 }
+// 스토리 전문 검색 인덱스 (3.4MB 바이너리) — 토글을 켠 동안만 내려받는다
+let storyIndexP: Promise<StoryIndex> | null = null;
+export function getStoryIndex(): Promise<StoryIndex> {
+  if (!storyIndexP) {
+    storyIndexP = fetch("/story/search.bin")
+      .then((r) => { if (!r.ok) throw new Error(`search.bin ${r.status}`); return r.arrayBuffer(); })
+      .then((buf) => parseStoryIndex(buf, (storySearchMeta as { ids: string[] }).ids));
+    storyIndexP.catch(() => { storyIndexP = null; });
+  }
+  return storyIndexP;
+}
 
 /** 데이터 예열 (모달 열림/토글 켜짐 시 호출) */
 export function warmData(mode: LensMode): void {
-  if (mode === "recruit") void getRecruitTags(); else void getRogueIndex();
+  if (mode === "recruit") void getRecruitTags();
+  else if (mode === "story") void getStoryIndex();
+  else void getRogueIndex();
 }
 
 /** 스크린샷 1장 인식 — 모드별 단계형 파이프라인. topic은 rogue 모드의 현재 토픽(사전확률). */
@@ -47,6 +62,21 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string):
     const [tags, session] = await Promise.all([getRecruitTags(), createOcrSession(file)]);
     lines = (await session.chips()).concat(await session.sparse());
     oc = analyzeRecruit(lines, tags);
+  } else if (mode === "story") {
+    // 스토리 전문 대사 화면 — OCR 라인의 10자 그램을 역색인에 투표해 스토리·ep 특정 (2026-07-24)
+    const [idx, session] = await Promise.all([getStoryIndex(), createOcrSession(file)]);
+    lines = await session.sparse();
+    let hit = analyzeStoryLines(lines, idx);
+    // 표가 약하면 PSM3 폴백으로 보강 — 대사 스트립이 sparse에서 안 잡히는 캡처 대비
+    if (!hit || hit.hits < 2) {
+      lines = lines.concat(await session.auto());
+      const hit2 = analyzeStoryLines(lines, idx);
+      if (hit2 && (!hit || hit2.hits > hit.hits)) hit = hit2;
+    }
+    console.debug(`[lens] 스토리 판정: ${hit ? `${hit.id} ep${hit.ep ?? "?"} (표 ${hit.hits})` : "(없음)"}`);
+    oc = hit
+      ? { screens: [], entities: [], topics: [], section: "story", target: { kind: "goto", goto: { page: "story", id: hit.id, ep: hit.ep, hits: hit.hits } } }
+      : { screens: [], entities: [], topics: [], section: null, target: { kind: "none" } };
   } else {
     const [index, session] = await Promise.all([getRogueIndex(), createOcrSession(file)]);
     // 단계형 인식 — PSM11만으로 판정이 나면 나머지 패스를 생략한다 (속도)

@@ -26,6 +26,7 @@ const TAB_FEATURES: Record<string, string[]> = {
   planner: ["scanner", "invest"],
   recruit: ["lens"],
   rogue: ["lens"],
+  story: ["lens"], // 스샷 레이더 /stories 설치 (전문 대사 검색, 2026-07-24)
 };
 
 /** 해당 탭 안에 아직 '새기능' 기간인 기능이 하나라도 있으면 true. */

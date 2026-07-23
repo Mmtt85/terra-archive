@@ -24,7 +24,9 @@ export default function LensHelpModal({ mode, onClose }: { mode: LensMode; onClo
       <div className="lens-body lens-help">
         <p className="lens-help-intro">{mode === "recruit"
           ? t("게임 공개모집 화면의 스크린샷을 인식해, 제시된 태그를 공채 도우미에 자동으로 선택해 주는 기능입니다.")
-          : t("게임 통합전략(로그라이크) 화면의 스크린샷을 인식해, 이 가이드의 해당 정보로 바로 이동시켜 주는 기능입니다.")}</p>
+          : mode === "story"
+            ? t("게임 스토리 대화 화면의 스크린샷을 인식해, 그 대사가 나오는 이벤트 전문의 해당 에피소드로 바로 이동시켜 주는 기능입니다.")
+            : t("게임 통합전략(로그라이크) 화면의 스크린샷을 인식해, 이 가이드의 해당 정보로 바로 이동시켜 주는 기능입니다.")}</p>
 
         {/* 사용법 — 가장 눈에 띄는 스텝 카드 (사용자 요청 2026-07-24: 사용법을 제일 잘 보이게) */}
         <section className="lens-usage" aria-label={t("사용법")}>
@@ -32,7 +34,9 @@ export default function LensHelpModal({ mode, onClose }: { mode: LensMode; onClo
           <ol className="lens-usage-steps">
             <li>
               <strong>{t("📷 버튼으로 자동인식 켜기")}</strong>
-              <span>{t("버튼이 켜져 있는 동안만 클립보드를 감시합니다. 기본은 꺼짐이며, 페이지를 새로 고치면 다시 꺼집니다.")}</span>
+              <span>{mode === "story"
+                ? t("버튼이 켜져 있는 동안만 클립보드를 감시합니다. 스토리로 이동하면 자동으로 꺼지는 일회성 스캔입니다.")
+                : t("버튼이 켜져 있는 동안만 클립보드를 감시합니다. 기본은 꺼짐이며, 페이지를 새로 고치면 다시 꺼집니다.")}</span>
             </li>
             <li>
               <strong>{t("게임 화면을 클립보드로 캡처")}</strong>
@@ -43,10 +47,12 @@ export default function LensHelpModal({ mode, onClose }: { mode: LensMode; onClo
               <span>{t("자동으로 인식이 시작됩니다. 처음 한 번은 브라우저가 클립보드 접근을 물어보니 '허용'을 눌러주세요.")}</span>
             </li>
             <li>
-              <strong>{mode === "recruit" ? t("태그 자동 선택") : t("해당 정보로 자동 이동")}</strong>
+              <strong>{mode === "recruit" ? t("태그 자동 선택") : mode === "story" ? t("해당 에피소드로 자동 이동") : t("해당 정보로 자동 이동")}</strong>
               <span>{mode === "recruit"
                 ? t("인식되면 태그가 자동으로 선택되고 조합 결과가 바로 계산됩니다 (최대 5개).")
-                : t("인식 중에는 상단 알림에 진행 상태와 이미지가 표시되고, 끝나면 해당 정보가 바로 열립니다.")}</span>
+                : mode === "story"
+                  ? t("인식되면 그 대사가 나오는 이벤트 전문 뷰어의 해당 에피소드 탭이 바로 열립니다.")
+                  : t("인식 중에는 상단 알림에 진행 상태와 이미지가 표시되고, 끝나면 해당 정보가 바로 열립니다.")}</span>
             </li>
           </ol>
         </section>
@@ -62,6 +68,14 @@ export default function LensHelpModal({ mode, onClose }: { mode: LensMode; onClo
             <h3>{t("인식 대상")}</h3>
             <ul>
               <li>{t("공개모집의 '모집 요건' 태그 화면 — 태그 버튼이 보이도록 캡처하세요.")}</li>
+            </ul>
+          </>
+        ) : mode === "story" ? (
+          <>
+            <h3>{t("인식 대상")}</h3>
+            <ul>
+              <li>{t("게임 스토리(전문) 대화 화면 — 하단 대사 텍스트가 보이도록 캡처하세요.")}</li>
+              <li>{t("전문이 수록된 모든 이벤트·메인 스토리를 검색합니다. 대사 한 줄만 보여도 어느 이벤트의 몇 번째 에피소드인지 찾아냅니다.")}</li>
             </ul>
           </>
         ) : (
@@ -90,7 +104,9 @@ export default function LensHelpModal({ mode, onClose }: { mode: LensMode; onClo
         <ul>
           <li>{t("모든 인식은 100% 브라우저 안에서 처리되며 이미지는 서버로 전송되지 않습니다.")}</li>
           <li>{t("첫 인식은 인식 엔진을 내려받느라 몇 초 더 걸립니다. 이후에는 빨라집니다.")}</li>
-          <li>{t("한국어 클라이언트 기준이며, 흑류수해는 중국어(CN) 화면도 인식합니다. 캡처가 선명할수록 정확합니다.")}</li>
+          <li>{mode === "rogue"
+            ? t("한국어 클라이언트 기준이며, 흑류수해는 중국어(CN) 화면도 인식합니다. 캡처가 선명할수록 정확합니다.")
+            : t("한국어 클라이언트 화면 전용입니다. 캡처가 선명할수록 정확합니다.")}</li>
         </ul>
       </div>
     </section>
