@@ -1143,7 +1143,7 @@ const D: Record<string, Pair> = {
   "클립보드 스크린샷": ["clipboard screenshot", "クリップボードのスクリーンショット"],
   "클립보드 자동 인식 켜짐": ["Clipboard auto-recognition on", "クリップボード自動認識オン"],
   "클립보드 자동 읽기가 막혀 있어요 — 스크린샷을 ⌘V로 붙여넣거나 파일을 끌어놓으세요": ["Clipboard auto-read is blocked — paste screenshots with ⌘V or drop files", "クリップボードの自動読み取りがブロックされています — ⌘Vで貼り付けるかファイルをドロップしてください"],
-  "에뮬레이터의 오퍼레이터 목록을 화면마다 캡처하세요 — 맥은 ⌃⌘⇧4(클립보드로 캡처)가 편합니다. 캡처 후 이 탭으로 돌아오면 자동으로 인식됩니다.": ["Capture each screen of your emulator's operator list — on Mac, ⌃⌘⇧4 (capture to clipboard) is handy. Return to this tab after capturing and it's recognized automatically.", "エミュレーターのオペレーター一覧を画面ごとにキャプチャしてください — Macでは⌃⌘⇧4（クリップボードへキャプチャ）が便利です。キャプチャ後このタブに戻ると自動認識されます。"],
+  "에뮬레이터의 오퍼레이터 목록을 화면마다 클립보드로 캡처하세요 — 맥은 ⌃⌘⇧4, 윈도우는 Win+Shift+S. 캡처 후 이 탭으로 돌아오면 자동으로 인식됩니다.": ["Capture each screen of your emulator's operator list to the clipboard — ⌃⌘⇧4 on Mac, Win+Shift+S on Windows. Return to this tab after capturing and it's recognized automatically.", "エミュレーターのオペレーター一覧を画面ごとにクリップボードへキャプチャしてください — Macは⌃⌘⇧4、WindowsはWin+Shift+S。キャプチャ後このタブに戻ると自動認識されます。"],
   "정예화 단계 (눌러서 변경)": ["Promotion level (click to change)", "昇進段階（クリックで変更）"],
   "정예화(0/1/2정)는 카드 엠블럼으로 자동 인식됩니다 — 잘못 읽힌 오퍼만 이름 옆 배지를 눌러 고치세요.": ["Promotion (E0/E1/E2) is auto-recognized from the card emblem — only fix misread operators via the badge next to their name.", "昇進（無/1/2）はカードのエンブレムから自動認識されます — 誤認識されたオペレーターだけ名前の横のバッジで直してください。"],
   "모든 인식은 100% 브라우저 안에서 처리되며 이미지는 서버로 전송되지 않습니다.": ["All recognition runs 100% in your browser — images are never sent to a server.", "認識はすべて100%ブラウザ内で処理され、画像はサーバーに送信されません。"],

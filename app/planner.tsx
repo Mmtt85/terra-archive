@@ -710,11 +710,6 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
                   <span className="btn-icon" aria-hidden>⤒</span>{t("저장된 상태 파일 가져오기")}
                   <input type="file" accept="application/json" onChange={(event) => { const file = event.target.files?.[0]; if (file) importState(file); event.target.value = ""; setMoreOpen(false); }} />
                 </label>
-                {/* 오퍼 스캐너 v6 (2026-07-23) — 오퍼 목록 스크린샷(클립보드 자동/⌘V/파일 드롭)을
-                    카드 아트 ↔ 초상(스킨 포함) masked ZNCC + 정예화 엠블럼 3-way로 인식.
-                    픽스처 152셀 식별·정예화 100% (scripts/verify-scan.ts). 라이브 화면 공유는
-                    Chrome 절반해상도 캡처 문제로 v6에서 제거. */}
-                <button role="menuitem" onClick={() => { setMoreOpen(false); setShowScanner(true); }} title={t("오퍼 목록 스크린샷을 자동 인식해 보유 오퍼로 추가합니다")}><span className="btn-icon" aria-hidden>◉</span>{t("스크린샷으로 보유 오퍼 스캔")}</button>
                 <button role="menuitem" onClick={() => { setMoreOpen(false); setShowHelp(true); }}><span className="btn-icon" aria-hidden>?</span>{t("도움말")}</button>
               </div>
             )}
@@ -810,6 +805,13 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
             </button>
           )}
         </div>
+        {/* 오퍼 스캐너 v6 (2026-07-23) — 오퍼 목록 스크린샷(클립보드 자동/⌘V/파일 드롭)을 카드 아트
+            ↔ 초상(스킨 포함) masked ZNCC + 정예화 엠블럼 3-way로 인식. 픽스처 178셀 100%
+            (scripts/verify-scan.ts). 진입점은 제어센터 왼쪽 빈 칸(사용자 요청 2026-07-23). */}
+        <button className="ship-scanbtn" onClick={() => startTransition(() => setShowScanner(true))}
+          title={t("오퍼 목록 스크린샷을 자동 인식해 보유 오퍼로 추가합니다")}>
+          <span className="btn-icon" aria-hidden>◉</span>{t("스크린샷으로 보유 오퍼 스캔")}
+        </button>
         {LAYOUT.map((cell) => {
           if (cell.room === "DORMITORY") {
             const pinned = teamFor(cell.key, 0);
