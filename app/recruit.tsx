@@ -8,6 +8,7 @@ import type { LensGoto } from "./lens/match";
 import { recognizeShot, warmData } from "./lens/run";
 import { warmOcr } from "./lens/ocr";
 import { useClipboardWatch } from "./lens/clipwatch";
+import { useDropWatch } from "./lens/dropwatch";
 
 // 스샷으로 태그 입력 — 공개모집 스크린샷 인식 → 태그 자동 선택. 열 때만 로드 (OCR wasm이 무겁다)
 const LensModal = lazy(() => import("./lens/lens"));
@@ -233,6 +234,8 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
     }
   };
   const lensClip = useClipboardWatch(lensAuto && !lensOpen, handleLensShot);
+  // 자동인식 동안 창 전체가 드롭존 — 드래그 중이면 필을 드롭 가능 상태로 강조
+  const lensDragging = useDropWatch(lensAuto && !lensOpen, handleLensShot);
 
   const results = useMemo(() => comboResults(picked), [picked]);
 
@@ -263,15 +266,14 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
             </div>
           )}
         </div>
-        {/* 자동인식 상태 필 — fixed 오버레이(레이아웃 안 밀음) + 드롭존 + 인식 이미지 미니 썸네일 */}
+        {/* 자동인식 상태 필 — fixed 오버레이(레이아웃 안 밀음) + 인식 이미지 미니 썸네일.
+            드롭은 창 전체가 받고(useDropWatch), 드래그 중이면 필이 드롭 가능 상태로 강조된다 */}
         {locale === "ko" && lensAuto && (
-          <div className={`lens-auto-pill${lensMsg ? " busy" : ""}`} role="status"
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files?.[0]; if (f?.type.startsWith("image/")) void handleLensShot(f); }}>
-            {lensThumb && <img className="lens-auto-thumb" src={lensThumb} alt={t("인식한 스크린샷")} />}
-            <span>{lensMsg ?? (lensClip === "off"
-              ? t("클립보드 접근이 막혀 있습니다 — 이미지를 이 알림에 드롭하거나 ⌘V로 붙여넣으세요")
-              : t("스샷 자동인식 켜짐 — 게임 화면을 캡처하고 돌아오거나, 이미지를 이 알림에 드롭하세요"))}</span>
+          <div className={`lens-auto-pill${lensMsg ? " busy" : ""}${lensDragging ? " drop" : ""}`} role="status">
+            {lensThumb && !lensDragging && <img className="lens-auto-thumb" src={lensThumb} alt={t("인식한 스크린샷")} />}
+            <span>{lensDragging ? t("여기든 어디든, 놓으면 바로 인식합니다") : lensMsg ?? (lensClip === "off"
+              ? t("클립보드 접근이 막혀 있습니다 — 이미지를 화면에 드롭하거나 ⌘V로 붙여넣으세요")
+              : t("스샷 자동인식 켜짐 — 게임 화면을 캡처하고 돌아오거나, 이미지를 화면에 드롭하세요"))}</span>
           </div>
         )}
         {TAG_GROUPS.map(([group, tags]) => {

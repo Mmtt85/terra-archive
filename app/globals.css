@@ -10165,6 +10165,14 @@ main.site-main > .site-header {
   color: var(--ink);
   animation: lens-warp-pulse 1.1s ease-in-out infinite;
 }
+/* 파일 드래그 중 — 드롭 가능 상태 강조 (창 전체가 드롭존, 필은 안내판) */
+.lens-auto-pill.drop {
+  color: var(--ink);
+  border: 2px dashed var(--lime);
+  background: color-mix(in srgb, var(--lime) 28%, var(--paper));
+  transform: translateX(-50%) scale(1.06);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--lime) 30%, transparent), 0 6px 22px rgba(0, 0, 0, 0.35);
+}
 .lens-auto-thumb {
   height: 30px;
   max-width: 52px;
