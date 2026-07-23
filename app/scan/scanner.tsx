@@ -137,7 +137,13 @@ export function ScannerModal({ t, onClose, onApply }: {
 
   // ── 현재 화면 1장 인식 ────────────────────────────────────────────────────────
   // 아트 매칭은 축소본(≤MAX_W)에서 충분 — 픽스처 검증도 같은 해상도 경로로 수행됨.
-  const recognizeCurrent = useCallback(() => {
+  //
+  // 안정 프레임 게이트: 리스트 진입 직후엔 카드 등장 애니메이션(슬라이드 정착) 중이라
+  // 미정착 프레임을 잡으면 격자·성급·아트가 모두 어긋난다(라이브 확인 2026-07-23,
+  // first_operator_list 케이스 — 같은 화면도 정착 후엔 14/14). 스크롤 중 클릭도 동일 보호.
+  const STABLE_DIFF = 1.5;   // 샘플 픽셀 평균 밝기차(0~255) 임계
+  const STABLE_TRIES = 10;   // 150ms 간격 최대 대기 (~1.5s)
+  const recognizeCurrent = useCallback(async () => {
     const v = videoRef.current;
     if (!v || !v.videoWidth || busy.current) return;
     busy.current = true; setRecognizing(true);
@@ -148,8 +154,25 @@ export function ScannerModal({ t, onClose, onApply }: {
       if (!wc) { wc = document.createElement("canvas"); workCanvas.current = wc; }
       wc.width = W; wc.height = H;
       const ctx = wc.getContext("2d", { willReadFrequently: true })!;
-      ctx.drawImage(v, 0, 0, W, H);
-      const frame = ctx.getImageData(0, 0, W, H);
+      const grab = (): ImageData => {
+        ctx.drawImage(v, 0, 0, W, H);
+        return ctx.getImageData(0, 0, W, H);
+      };
+      const sampleDiff = (a: ImageData, b: ImageData): number => {
+        let s = 0, n = 0;
+        for (let i = 0; i < a.data.length; i += 397 * 4) { // ~1만 샘플
+          s += Math.abs(a.data[i] - b.data[i]); n++;
+        }
+        return s / Math.max(n, 1);
+      };
+      let frame = grab();
+      for (let k = 0; k < STABLE_TRIES; k++) {
+        await new Promise((r) => setTimeout(r, 150));
+        const cur = grab();
+        const d = sampleDiff(frame, cur);
+        frame = cur;
+        if (d < STABLE_DIFF) break;
+      }
       const scan = scanFrame({ data: frame.data, width: W, height: H });
       setFrameInfo(t("격자 {c}열 · px {p} · 행 {r}", { c: String(scan.cols.length), p: String(scan.px), r: scan.rows.join(",") }));
       drawOverlay(scan.cells, W, H);
