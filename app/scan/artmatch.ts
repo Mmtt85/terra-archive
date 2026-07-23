@@ -231,8 +231,14 @@ export interface CellMatch {
 }
 export interface FrameAnalysis { scan: FrameScan; cells: CellMatch[]; cropRetry: boolean; }
 
-const RETRY_QUALITY = 0.75; // 1차 최고 셀 점수가 이 미만이면 크롭 파라미터 재시도
-const CROP_OPTS: ScanOpts = { pitchLoFrac: 0.12, pitchHiFrac: 0.52, rowLoFrac: 0 };
+const RETRY_QUALITY = 0.75; // 최고 셀 점수가 이 이상이면 성공으로 보고 다음 시도 생략
+// 시도 순서: ①전체 창 ②부분 크롭(카드가 화면 대부분 — 피치가 큰 비율)
+// ③데스크톱 전체 캡처(에뮬 창이 화면 일부 — 피치가 작은 비율, 행 위치 임의)
+const RETRY_OPTS: (ScanOpts | undefined)[] = [
+  undefined,
+  { pitchLoFrac: 0.12, pitchHiFrac: 0.52, rowLoFrac: 0 },
+  { pitchLoFrac: 0.035, pitchHiFrac: 0.14, rowLoFrac: 0 },
+];
 
 export function analyzeFrame(f: Frame): FrameAnalysis {
   const g = toGray(f);
@@ -249,8 +255,13 @@ export function analyzeFrame(f: Frame): FrameAnalysis {
     return { scan, cells };
   };
   const quality = (a: { cells: CellMatch[] }) => a.cells.reduce((m, c) => Math.max(m, c.score), 0);
-  const first = attempt();
-  if (quality(first) >= RETRY_QUALITY) return { ...first, cropRetry: false };
-  const retry = attempt(CROP_OPTS);
-  return quality(retry) > quality(first) ? { ...retry, cropRetry: true } : { ...first, cropRetry: false };
+  let best: { scan: FrameScan; cells: CellMatch[] } | null = null;
+  let bestQ = -1, bestIdx = 0;
+  for (let i = 0; i < RETRY_OPTS.length; i++) {
+    const a = attempt(RETRY_OPTS[i]);
+    const q = quality(a);
+    if (q > bestQ) { best = a; bestQ = q; bestIdx = i; }
+    if (q >= RETRY_QUALITY) break;
+  }
+  return { ...best!, cropRetry: bestIdx > 0 };
 }
