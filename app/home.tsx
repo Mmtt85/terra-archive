@@ -3,7 +3,7 @@
 // 3개 탭(백과사전·플래너·공채)의 공용 루트. 로케일별 라우트(/ /en /ja)가
 // home-ko/en/ja.tsx 래퍼로 해당 언어의 operators 데이터를 정적 import해 넘긴다 —
 // 런타임 언어 전환은 전체 내비게이션이라 이 컴포넌트 안에서 로케일은 불변이다.
-import { startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { lazy, startTransition, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import broadcastsData from "./data/broadcasts.json";
 import storyEventsData from "./data/stories.json";
@@ -19,6 +19,11 @@ import { feedbackReady, fetchNicknameCounts, submitNickname } from "./feedback";
 import { scrollMainTop } from "./scroll";
 import { useLazyVisible } from "./lazy-img";
 import { I18nProvider, useI18n, conceptName, DT_LOCALE, MAGIC_TRAIT_RE, LOCALES, type Locale, type ExtraI18n } from "./i18n";
+import { isNewFeature } from "./whats-new";
+import type { LensGoto } from "./lens/match";
+
+// 스크린샷 렌즈 — 게임 스크린샷 인식 → 해당 정보로 이동. 열 때만 로드 (OCR wasm이 무겁다)
+const LensModal = lazy(() => import("./lens/lens"));
 
 type RangeGrid = { row: number; col: number };
 
@@ -940,6 +945,16 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
     history.pushState(null, "", `${path}?${params}`);
     window.dispatchEvent(new CustomEvent("ta:rogue-topic"));
   };
+  // ── 스크린샷 렌즈: 인식 결과를 /rogue의 해당 뷰·모달로 핸드오프 ──────────────
+  // sessionStorage에 목표를 적어두고 rogue 탭으로 전환 — RogueGuide가 마운트/이벤트에서
+  // 읽어 뷰·전시관 탭·모달·하이라이트를 적용한다 (해시만으론 arcTab을 못 나르므로).
+  const [lensOpen, setLensOpen] = useState(false);
+  const onLensGoto = (g: LensGoto) => {
+    try { sessionStorage.setItem("ta:lens-handoff", JSON.stringify(g)); } catch { /* 시크릿 등 */ }
+    setLensOpen(false);
+    switchRogueTopic(g.topic);
+    window.dispatchEvent(new CustomEvent("ta:lens-goto"));
+  };
   const [sortKey, setSortKey] = useState("기본");
   const [sortAsc, setSortAsc] = useState(true);
 
@@ -1102,6 +1117,14 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
             </button>
           )}
           <div className="header-sub-right">
+            {/* 스크린샷 렌즈 — 게임 스크린샷 인식 → 해당 정보로 이동. Phase 1: 통합전략, KR 클라 전용
+                (kor.traineddata만 호스팅 — EN/JA 클라 지원 시 언어별 traineddata·인덱스 추가) */}
+            {locale === "ko" && (
+              <button type="button" className="lens-header-btn" onClick={() => setLensOpen(true)}
+                title={t("게임 스크린샷을 인식해 관련 정보로 바로 이동합니다 — 현재 통합전략(로그라이크) 화면 지원")}>
+                <span aria-hidden>📷</span> {t("스크린샷 렌즈")}{isNewFeature("lens") && <span className="new-badge">{t("새기능")}</span>}
+              </button>
+            )}
             {/* 라벨은 데스크탑 "미래시 데이터 포함", 모바일은 "미래시"로 축약 (사용자 요청 2026-07-22) */}
             <label className="future-toggle" title={t("아직 정식 출시되지 않은(중국 서버 선행) 오퍼레이터·재료도 목록·계산기에 표시합니다. 미실장 텍스트는 비공식 AI 번역입니다.")}>
               <input type="checkbox" checked={includeFuture} onChange={(event) => toggleFuture(event.target.checked)} />
@@ -1218,6 +1241,13 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
       </div>{/* /.site-scroll */}
 
       {selected && <OperatorModal operator={selected} nicknames={nicknames.get(selected.id) ?? []} onSubmitNickname={handleSubmitNickname} onClose={closeOperator} />}
+      {lensOpen && (
+        <div className="modal-backdrop scanner-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) setLensOpen(false); }}>
+          <Suspense fallback={null}>
+            <LensModal onClose={() => setLensOpen(false)} onGoto={onLensGoto} />
+          </Suspense>
+        </div>
+      )}
       <FeedbackWidget open={feedbackOpen} setOpen={setFeedbackOpen} />
     </main>
   );

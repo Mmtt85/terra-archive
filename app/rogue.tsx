@@ -602,6 +602,8 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
     return () => { window.removeEventListener("mousedown", onDown); window.removeEventListener("keydown", onEsc); };
   }, [topicMenu]);
   const [zoneOpen, setZoneOpen] = useState<Zone | null>(null);
+  // 스크린샷 렌즈 도착 하이라이트 (전시관 카드) — applyTopic이 리셋하므로 여기(앞)에 선언
+  const [lensHits, setLensHits] = useState<Set<string> | null>(null);
   const [stageOpen, setStageOpen] = useState<StagePair | null>(null);
   const [enemyOpen, setEnemyOpen] = useState<{ key: string; ctx: StatCtx } | null>(null);
   const [encOpen, setEncOpen] = useState<Encounter | null>(null);
@@ -642,6 +644,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
     setGrade(0);
     setZoneOpen(null); setStageOpen(null); setEnemyOpen(null); setEncOpen(null); setRelicOpen(null);
     setEnemyQ(""); setEnemyRank(""); setRelicQ(""); setMapQ(""); setArcTab("relic");
+    setLensHits(null); // 렌즈 하이라이트는 토픽 전환 시 해제
   };
   const applyTopicFromUrl = () => applyTopic(topicFromUrl());
   useEffect(() => {
@@ -795,6 +798,50 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   // (렌더 중 ref 대입은 lint 에러라 effect에서 매 렌더 후 갱신 — 리스너는 렌더 후에만 발화)
   const applyHashRef = useRef(applyHash);
   useEffect(() => { applyHashRef.current = applyHash; });
+
+  // ─── 스크린샷 렌즈 핸드오프: sessionStorage의 이동 목표(뷰·전시관 탭·모달·하이라이트) 적용 ───
+  // 해시 딥링크는 arcTab·하이라이트를 못 나르므로 렌즈는 이 경로로 들어온다 (home.tsx onLensGoto).
+  const applyLensHandoff = () => {
+    let raw: string | null = null;
+    try { raw = sessionStorage.getItem("ta:lens-handoff"); } catch { return; }
+    if (!raw) return;
+    let g: { topic?: string; view?: string; arcTab?: string; modal?: { type: string; id: string }; highlight?: string[] };
+    try { g = JSON.parse(raw); } catch { sessionStorage.removeItem("ta:lens-handoff"); return; }
+    if (g.topic !== topicRef.current) return; // 토픽 전환 완료 후 데이터 로드 effect에서 다시 불린다
+    sessionStorage.removeItem("ta:lens-handoff");
+    if (g.view && viewsFor().some((x) => x.id === g.view)) setView(g.view as View);
+    if (g.arcTab) setArcTab(g.arcTab);
+    setZoneOpen(null); setStageOpen(null); setEnemyOpen(null); setEncOpen(null); setRelicOpen(null);
+    if (g.modal) {
+      const { type, id } = g.modal;
+      if (type === "relic") { const r = relicById.get(id); if (r) setRelicOpen(r); }
+      else if (type === "enc") { const e = encByScene.get(id); if (e) setEncOpen(e); }
+      else if (type === "stage") { const s = stageById.get(id); if (s) setStageOpen(pairOf(s)); }
+      else if (type === "zone") { const z = zoneById.get(id); if (z) setZoneOpen(z); }
+    }
+    setLensHits(g.highlight?.length ? new Set(g.highlight) : null);
+  };
+  const applyLensRef = useRef(applyLensHandoff);
+  useEffect(() => { applyLensRef.current = applyLensHandoff; });
+  // 데이터 로드 후(토픽 전환 포함) + 렌즈가 쏘는 커스텀 이벤트에서 적용
+  useEffect(() => {
+    if (!mounted || !active) return;
+    applyLensRef.current();
+  }, [mounted, active, topic]);
+  useEffect(() => {
+    if (!mounted) return;
+    const onLens = () => applyLensRef.current();
+    window.addEventListener("ta:lens-goto", onLens);
+    return () => window.removeEventListener("ta:lens-goto", onLens);
+  }, [mounted]);
+  // 하이라이트 카드로 스크롤 (렌더 뒤 한 프레임 양보)
+  useEffect(() => {
+    if (!lensHits) return;
+    const id = window.setTimeout(() => {
+      document.querySelector(".rg-lens-hit")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 120);
+    return () => window.clearTimeout(id);
+  }, [lensHits, view, arcTab]);
   const inited = useRef(false);
   // 데이터 로드 후 최초 1회: URL 해시대로 뷰·모달 복원 (복붙 딥링크 진입)
   useEffect(() => {
@@ -1292,7 +1339,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
           {activeArc === "capsule" && (
             <div className="rg-capsule-grid">
               {(data.capsules ?? []).map((c) => (
-                <article key={c.id} className="rg-relic capsule">
+                <article key={c.id} className={`rg-relic capsule${lensHits?.has(c.id) ? " rg-lens-hit" : ""}`}>
                   {c.img && <img className="rg-cap-art" src={`/rogue/capsule/${c.id}.webp`} alt={c.name} loading="lazy" decoding="async" />}
                   <header><h4>{c.name}</h4>{c.en && <span className="rg-cap-en">{c.en}</span>}</header>
                   {c.usage && <p className="rg-relic-usage">{c.usage}</p>}
@@ -1304,7 +1351,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
           {activeArc === "tool" && (
             <div className="rg-relic-grid">
               {data.tools.map((c) => (
-                <article key={c.id} className="rg-relic">
+                <article key={c.id} className={`rg-relic${lensHits?.has(c.id) ? " rg-lens-hit" : ""}`}>
                   <header>
                     {c.img && <img className="rg-relic-icon" src={`/rogue/relic/${c.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
                     <h4><Nm name={c.name} cn={c.cn} /></h4>
@@ -1332,7 +1379,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
           {activeArc === "band" && (
             <div className="rg-relic-grid">
               {data.bands.map((c) => (
-                <article key={c.id} className="rg-relic">
+                <article key={c.id} className={`rg-relic${lensHits?.has(c.id) ? " rg-lens-hit" : ""}`}>
                   <header>
                     {c.img && <img className="rg-relic-icon" src={`/rogue/relic/${c.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
                     <h4><Nm name={c.name} cn={c.cn} /></h4>
