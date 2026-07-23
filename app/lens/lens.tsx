@@ -60,6 +60,8 @@ export default function LensModal({ onClose, onGoto }: {
       setStatus(t("화면 분석 중… (수 초 걸립니다)"));
       const lines = await ocrImage(file);
       const oc = analyzeLines(lines, index);
+      // 필드 진단용 — 오인식 리포트를 받으면 콘솔에서 OCR 라인·판정을 바로 확인한다
+      console.debug(`[lens] OCR ${lines.length}줄 → ${oc.target.kind}/${oc.section ?? "-"} · 엔티티 ${oc.entities.length}`, { lines, outcome: oc });
       setStatus(null);
       setOutcome(oc);
       // 단일 확신 타깃이면 바로 이동 (사용자 요청: 인식되면 자동으로 해당 화면으로)

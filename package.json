@@ -27,6 +27,7 @@
     "@vitejs/plugin-rsc": "0.5.26",
     "eslint": "9.39.4",
     "eslint-config-next": "16.2.6",
+    "playwright": "^1.61.1",
     "react-server-dom-webpack": "19.2.6",
     "sharp": "^0.35.3",
     "tailwindcss": "4.2.1",
