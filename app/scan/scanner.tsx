@@ -31,7 +31,7 @@ const SCORE_MIN = 0.55;      // 미만이면 검출 자체를 버림
 const CONFIDENT_SCORE = 0.8;
 const CONFIDENT_MARGIN = 0.05;
 
-type Phase = "idle" | "requesting" | "ready" | "error";
+type Phase = "idle" | "requesting" | "ready" | "files" | "error";
 
 const STAR = "★";
 const MAX_W = 1600; // 처리 해상도 상한(Retina 캡처 과대해상도 대비 속도)
@@ -79,10 +79,13 @@ export function ScannerModal({ t, onClose, onApply }: {
         audio: false,
       });
       streamRef.current = stream;
+      const track = stream.getVideoTracks()[0];
+      track.contentHint = "detail"; // 해상도 유지 우선 힌트 — 적응형 다운스케일 억제
+      try { await track.applyConstraints({ width: { ideal: 3840 }, height: { ideal: 2160 } }); } catch { /* noop */ }
       const v = videoRef.current!;
       v.srcObject = stream;
       await v.play();
-      stream.getVideoTracks()[0].addEventListener("ended", () => { stopStream(); setPhase("idle"); });
+      track.addEventListener("ended", () => { stopStream(); setPhase("idle"); });
       setPhase("ready");
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
@@ -142,6 +145,73 @@ export function ScannerModal({ t, onClose, onApply }: {
     return () => clearInterval(id);
   }, [phase, livePreview]);
 
+  // ── 프레임 1장 인식 공용 코어 (라이브·파일 공용 — 픽스처 검증과 동일 경로) ──────
+  const recognizeFrameData = useCallback((frame: ImageData, capLabel: string, overlay: boolean) => {
+    const W = frame.width, H = frame.height;
+    const scan = scanFrame({ data: frame.data, width: W, height: H });
+    setFrameInfo(`v5 · ${capLabel} · ` + t("격자 {c}열 · px {p} · 행 {r}", { c: String(scan.cols.length), p: String(scan.px), r: scan.rows.join(",") }));
+    if (overlay) drawOverlay(scan.cells, W, H);
+
+    const g = toGray({ data: frame.data, width: W, height: H });
+    const next = new Map(resultsRef.current);
+    let cellCount = 0, confCount = 0;
+    for (const cell of scan.cells) {
+      if (cell.rarity < 1) continue;
+      const am = matchArt(g, cell.sx, cell.ry, scan.px);
+      if (!am || am.best.score < SCORE_MIN) continue;
+      const op = opById.get(am.best.op);
+      if (!op) continue;
+      const el = classifyElite(g, cell.sx, cell.ry, scan.px);
+      const elite = Math.min(el.elite, maxElite(op.rarity)) as Elite;
+      const confident = am.best.score >= CONFIDENT_SCORE && am.margin >= CONFIDENT_MARGIN;
+      cellCount++; if (confident) confCount++;
+      // 진단용 — 셀별 매칭 결과 (개발자도구 콘솔)
+      console.debug(`[scan] r${cell.row}c${cell.col} ${cell.rarity}★${cell.cls} → ${op.name} ${am.best.score.toFixed(3)} 마진${am.margin.toFixed(3)} E${elite}[${el.s1.toFixed(2)}/${el.s2.toFixed(2)}] ${am.best.pid}`);
+      const prev = next.get(op.id);
+      if (!prev || am.best.score > prev.score) {
+        next.set(op.id, {
+          id: op.id, op, score: am.best.score, margin: am.margin, pid: am.best.pid,
+          confident: confident || (prev?.confident ?? false), seen: (prev?.seen ?? 0) + 1,
+          rarity: cell.rarity, cls: cell.cls,
+          elite: prev?.eliteManual ? prev.elite : elite,
+          eliteManual: prev?.eliteManual ?? false,
+        });
+      } else {
+        next.set(op.id, { ...prev, seen: prev.seen + 1, confident: prev.confident || confident });
+      }
+    }
+    setResults(next);
+    // 정상 프레임은 대부분 셀이 0.8+로 잡힌다 — 전 셀이 낮으면 캡처가 흐려진 것
+    // (Chrome이 공유 해상도를 몰래 낮춘 상태). 인식 결과보다 공유 재시작·스크린샷 파일이 답.
+    if (cellCount >= 6 && confCount === 0) {
+      setFrameInfo((prev) => prev + " · ⚠ " + t("캡처가 흐릿해 인식률이 낮습니다 — 화면 공유를 껐다 다시 시작하거나, 스크린샷 파일 인식을 사용해 보세요"));
+    }
+  }, [t, drawOverlay]);
+
+  // ── 스크린샷 파일 인식 (드래그&드롭/파일 선택 — 캡처 품질 문제를 원천 우회) ─────
+  const recognizeFiles = useCallback(async (files: Iterable<File>) => {
+    if (busy.current) return;
+    busy.current = true; setRecognizing(true);
+    try {
+      for (const f of files) {
+        if (!f.type.startsWith("image/")) continue;
+        const bmp = await createImageBitmap(f);
+        const scale = Math.min(1, MAX_W / bmp.width);
+        const W = Math.round(bmp.width * scale), H = Math.round(bmp.height * scale);
+        const c = document.createElement("canvas");
+        c.width = W; c.height = H;
+        const ctx = c.getContext("2d", { willReadFrequently: true })!;
+        ctx.drawImage(bmp, 0, 0, W, H);
+        bmp.close();
+        recognizeFrameData(ctx.getImageData(0, 0, W, H), f.name, false);
+      }
+      setPhase((p) => (p === "idle" || p === "error" ? "files" : p));
+    } finally {
+      busy.current = false; setRecognizing(false);
+    }
+  }, [recognizeFrameData]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   // ── 현재 화면 1장 인식 ────────────────────────────────────────────────────────
   // 아트 매칭은 축소본(≤MAX_W)에서 충분 — 픽스처 검증도 같은 해상도 경로로 수행됨.
   //
@@ -180,48 +250,11 @@ export function ScannerModal({ t, onClose, onApply }: {
         frame = cur;
         if (d < STABLE_DIFF) break;
       }
-      const scan = scanFrame({ data: frame.data, width: W, height: H });
-      setFrameInfo(`v5 · ${v.videoWidth}×${v.videoHeight} · ` + t("격자 {c}열 · px {p} · 행 {r}", { c: String(scan.cols.length), p: String(scan.px), r: scan.rows.join(",") }));
-      drawOverlay(scan.cells, W, H);
-
-      const g = toGray({ data: frame.data, width: W, height: H });
-      const next = new Map(resultsRef.current);
-      let cellCount = 0, confCount = 0;
-      for (const cell of scan.cells) {
-        if (cell.rarity < 1) continue;
-        const am = matchArt(g, cell.sx, cell.ry, scan.px);
-        if (!am || am.best.score < SCORE_MIN) continue;
-        const op = opById.get(am.best.op);
-        if (!op) continue;
-        const el = classifyElite(g, cell.sx, cell.ry, scan.px);
-        const elite = Math.min(el.elite, maxElite(op.rarity)) as Elite;
-        const confident = am.best.score >= CONFIDENT_SCORE && am.margin >= CONFIDENT_MARGIN;
-        cellCount++; if (confident) confCount++;
-        // 라이브 진단용 — 셀별 매칭 결과 (개발자도구 콘솔)
-        console.debug(`[scan] r${cell.row}c${cell.col} ${cell.rarity}★${cell.cls} → ${op.name} ${am.best.score.toFixed(3)} 마진${am.margin.toFixed(3)} E${elite}[${el.s1.toFixed(2)}/${el.s2.toFixed(2)}] ${am.best.pid}`);
-        const prev = next.get(op.id);
-        if (!prev || am.best.score > prev.score) {
-          next.set(op.id, {
-            id: op.id, op, score: am.best.score, margin: am.margin, pid: am.best.pid,
-            confident: confident || (prev?.confident ?? false), seen: (prev?.seen ?? 0) + 1,
-            rarity: cell.rarity, cls: cell.cls,
-            elite: prev?.eliteManual ? prev.elite : elite,
-            eliteManual: prev?.eliteManual ?? false,
-          });
-        } else {
-          next.set(op.id, { ...prev, seen: prev.seen + 1, confident: prev.confident || confident });
-        }
-      }
-      setResults(next);
-      // 정상 프레임은 대부분 셀이 0.8+로 잡힌다 — 전 셀이 낮으면 캡처가 흐려진 것
-      // (Chrome이 공유 해상도를 몰래 낮춘 상태). 인식 결과보다 공유 재시작이 답.
-      if (cellCount >= 6 && confCount === 0) {
-        setFrameInfo((prev) => prev + " · ⚠ " + t("캡처가 흐릿해 인식률이 낮습니다 — 화면 공유를 껐다 다시 시작해 보세요"));
-      }
+      recognizeFrameData(frame, `${v.videoWidth}×${v.videoHeight}`, true);
     } finally {
       busy.current = false; setRecognizing(false);
     }
-  }, [t, drawOverlay]);
+  }, [recognizeFrameData]);
 
   // ── 진단: 현재 캡처 프레임을 PNG로 저장 (오인식 리포트용 — 그대로 픽스처가 된다) ──
   const saveFrame = useCallback(() => {
@@ -277,7 +310,12 @@ export function ScannerModal({ t, onClose, onApply }: {
     return ops.filter((o) => normSearch(o.name).includes(q) && !results.has(o.id)).slice(0, 6);
   }, [addQuery, results]);
 
-  const active = phase === "requesting" || phase === "ready";
+  const active = phase === "requesting" || phase === "ready" || phase === "files";
+
+  const onDropFiles = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    if (e.dataTransfer.files.length) void recognizeFiles(e.dataTransfer.files);
+  }, [recognizeFiles]);
 
   return (
     <section className="operator-modal scanner-modal" role="dialog" aria-modal="true" aria-label={t("보유 오퍼 스캔")}>
@@ -285,16 +323,22 @@ export function ScannerModal({ t, onClose, onApply }: {
         <h2>{t("보유 오퍼 스캔")} <span className="scanner-ver">v5</span></h2>
         <button className="modal-close" onClick={() => { stopStream(); onClose(); }} aria-label={t("닫기")}>✕</button>
       </header>
+      <input ref={fileInputRef} type="file" accept="image/*" multiple hidden
+        onChange={(e) => { if (e.target.files?.length) void recognizeFiles(e.target.files); e.target.value = ""; }} />
 
       {phase === "idle" && (
-        <div className="scanner-intro">
+        <div className="scanner-intro" onDragOver={(e) => e.preventDefault()} onDrop={onDropFiles}>
           <p>{t("에뮬레이터(블루스택 등)의 오퍼레이터 목록 화면을 열고, 아래 버튼으로 그 창을 화면 공유하세요. 목록을 스크롤한 뒤 [이 화면 인식]을 누르면 그 화면의 보유 오퍼를 인식합니다. 화면마다 반복하면 오퍼가 누적됩니다.")}</p>
           <ul className="scanner-tips">
             <li>{t("전체 화면이 아니라 에뮬레이터 '창'을 선택하면 정확도가 높습니다.")}</li>
             <li>{t("스크롤 후 잠깐 멈추면 그 화면을 인식합니다. 모두 100% 클라이언트에서 처리되며 서버로 전송되지 않습니다.")}</li>
             <li>{t("정예화(0/1/2정)는 카드 엠블럼으로 자동 인식됩니다 — 잘못 읽힌 오퍼만 이름 옆 배지를 눌러 고치세요.")}</li>
+            <li>{t("화면 공유가 흐릿하게 잡히는 환경에서는 오퍼 목록 스크린샷 파일(PNG 여러 장)을 인식하는 쪽이 정확합니다.")}</li>
           </ul>
-          <button className="scanner-primary" onClick={startCapture}>{t("화면 공유 시작")}</button>
+          <div className="scanner-intro-actions">
+            <button className="scanner-primary" onClick={startCapture}>{t("화면 공유 시작")}</button>
+            <button className="scanner-secondary" onClick={() => fileInputRef.current?.click()}>{t("스크린샷 파일로 인식")}</button>
+          </div>
         </div>
       )}
 
@@ -302,25 +346,43 @@ export function ScannerModal({ t, onClose, onApply }: {
         <div className="scanner-intro">
           <p className="scanner-err">{t("화면 공유를 시작하지 못했습니다")}: {err}</p>
           <button className="scanner-primary" onClick={startCapture}>{t("다시 시도")}</button>
+          <button className="scanner-secondary" onClick={() => fileInputRef.current?.click()}>{t("스크린샷 파일로 인식")}</button>
         </div>
       )}
 
       {active && (
         <div className="scanner-body">
           <div className="scanner-stage">
-            <div className="scanner-video-wrap" style={{ aspectRatio: vAspect }}>
-              <video ref={videoRef} muted playsInline className="scanner-video" onLoadedMetadata={onVideoMeta} />
-              <canvas ref={overlayRef} className="scanner-overlay" />
-            </div>
+            {phase === "files" ? (
+              <div className="scanner-dropzone" onDragOver={(e) => e.preventDefault()} onDrop={onDropFiles}
+                onClick={() => fileInputRef.current?.click()} role="button" tabIndex={0}>
+                {recognizing ? t("인식 중…") : t("여기에 오퍼 목록 스크린샷을 끌어놓거나, 클릭해서 파일을 추가하세요 (여러 장 가능)")}
+              </div>
+            ) : (
+              <div className="scanner-video-wrap" style={{ aspectRatio: vAspect }}>
+                <video ref={videoRef} muted playsInline className="scanner-video" onLoadedMetadata={onVideoMeta} />
+                <canvas ref={overlayRef} className="scanner-overlay" />
+              </div>
+            )}
             <div className="scanner-controls">
-              <button className="scanner-primary" onClick={recognizeCurrent} disabled={phase !== "ready" || recognizing}>
-                {recognizing ? t("인식 중…") : t("이 화면 인식")}
-              </button>
-              <label className="scanner-check"><input type="checkbox" checked={debug} onChange={(e) => setDebug(e.target.checked)} />{t("검출 표시")}</label>
-              {debug && <button className="scanner-save-frame" onClick={saveFrame} title={t("현재 캡처 프레임을 PNG로 저장 — 오인식 제보에 첨부하면 재현·수정에 쓰입니다")}>{t("프레임 저장")}</button>}
+              {phase === "files" ? (
+                <button className="scanner-primary" onClick={() => fileInputRef.current?.click()} disabled={recognizing}>
+                  {recognizing ? t("인식 중…") : t("스크린샷 추가")}
+                </button>
+              ) : (
+                <>
+                  <button className="scanner-primary" onClick={recognizeCurrent} disabled={phase !== "ready" || recognizing}>
+                    {recognizing ? t("인식 중…") : t("이 화면 인식")}
+                  </button>
+                  <label className="scanner-check"><input type="checkbox" checked={debug} onChange={(e) => setDebug(e.target.checked)} />{t("검출 표시")}</label>
+                  {debug && <button className="scanner-save-frame" onClick={saveFrame} title={t("현재 캡처 프레임을 PNG로 저장 — 오인식 제보에 첨부하면 재현·수정에 쓰입니다")}>{t("프레임 저장")}</button>}
+                </>
+              )}
               {frameInfo && <span className="scanner-frame-info">{frameInfo}</span>}
             </div>
-            <p className="scanner-hint">{t("에뮬레이터에서 목록을 스크롤한 뒤 [이 화면 인식]을 누르세요. 화면을 바꿔가며 반복하면 오퍼가 누적됩니다.")}</p>
+            <p className="scanner-hint">{phase === "files"
+              ? t("에뮬레이터 스크린샷(⌘⇧4+스페이스로 창 캡처 등)을 계속 추가하면 오퍼가 누적됩니다.")
+              : t("에뮬레이터에서 목록을 스크롤한 뒤 [이 화면 인식]을 누르세요. 화면을 바꿔가며 반복하면 오퍼가 누적됩니다.")}</p>
           </div>
 
           <div className="scanner-results">

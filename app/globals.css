@@ -7371,6 +7371,11 @@ main.site-main > .site-header { flex: 0 0 auto; }
 .scanner-ocr-status, .scanner-frame-info { color: var(--muted); }
 .scanner-save-frame { font-size: .8rem; padding: 3px 10px; border-radius: 6px; border: 1px solid var(--line); background: transparent; color: var(--ink2); cursor: pointer; }
 .scanner-save-frame:hover { border-color: var(--ink2); }
+.scanner-intro-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.scanner-secondary { padding: 7px 16px; border-radius: 8px; border: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; }
+.scanner-secondary:hover { border-color: var(--ink2); }
+.scanner-dropzone { display: flex; align-items: center; justify-content: center; text-align: center; padding: 28px 18px; min-height: 180px; border: 2px dashed var(--line); border-radius: 10px; color: var(--ink2); cursor: pointer; background: color-mix(in srgb, var(--card) 60%, transparent); }
+.scanner-dropzone:hover { border-color: var(--ink2); }
 .scanner-live { color: var(--lime); font-weight: 700; }
 .scanner-results { display: flex; flex-direction: column; gap: 10px; min-height: 0; overflow: hidden; }
 .scanner-results-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
