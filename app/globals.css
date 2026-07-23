@@ -10595,9 +10595,6 @@ main.site-main > .site-header {
   flex-wrap: wrap;
   font-size: 0.86rem;
 }
-.scanner-clip-row .lens-open-btn {
-  border-radius: 8px; /* 단독 사용 — 세그먼트(? 붙는)용 좌측 라운드를 전체로 */
-}
 .scanner-clip-start {
   display: inline-flex;
   align-items: center;

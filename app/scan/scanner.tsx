@@ -71,6 +71,7 @@ export function ScannerModal({ t, onClose, onApply }: {
   const [addQuery, setAddQuery] = useState("");
   const [clip, setClip] = useState<ClipState>("init");
   const [clipStarted, setClipStarted] = useState(false); // 사용자가 '자동인식 시작'을 눌러야 폴링 개시
+  const [helpOpen, setHelpOpen] = useState(false); // ? 도움말 모달 (스샷 레이더와 동일 패턴)
   const fileInputRef = useRef<HTMLInputElement>(null);
   const lastClipHash = useRef("");
 
@@ -277,11 +278,15 @@ export function ScannerModal({ t, onClose, onApply }: {
               않는다 (사용자 요청 2026-07-24). 켜면 폴링 시작, 끄면 즉시 중단. */}
           <div className="scanner-clip-cta">
             <div className="scanner-clip-row">
-              <button type="button" className={`lens-open-btn${clipStarted ? " on" : ""}`} aria-pressed={clipStarted}
-                title={t("클릭해 클립보드 자동인식을 켜고 끕니다")}
-                onClick={() => setClipStarted((v) => { if (v) setClip("init"); return !v; })}>
-                <span className="lens-auto-knob" aria-hidden />📋 {t("클립보드 자동인식")}
-              </button>
+              <div className="lens-open-wrap">
+                <button type="button" className={`lens-open-btn${clipStarted ? " on" : ""}`} aria-pressed={clipStarted}
+                  title={t("클릭해 클립보드 자동인식을 켜고 끕니다")}
+                  onClick={() => setClipStarted((v) => { if (v) setClip("init"); return !v; })}>
+                  <span className="lens-auto-knob" aria-hidden />📋 {t("클립보드 자동인식")}
+                </button>
+                <button type="button" className="lens-help-btn" aria-label={t("클립보드 자동인식 도움말")}
+                  onClick={() => setHelpOpen(true)}>?</button>
+              </div>
               {clipStarted && (
                 clip === "on" ? <span className="scanner-clip-on">● {t("클립보드 자동 인식 켜짐 — 이제 캡처만 반복하세요")}</span>
                   : clip === "off" ? <span className="scanner-clip-off">{t("클립보드 자동 읽기가 막혀 있어요 — 스크린샷을 ⌘V로 붙여넣거나 파일을 끌어놓으세요")}</span>
@@ -366,6 +371,74 @@ export function ScannerModal({ t, onClose, onApply }: {
           {t("{n}명 보유로 추가", { n: String(kept.length) })}
         </button>
       </footer>
+
+      {helpOpen && (
+        <div className="modal-backdrop scanner-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) setHelpOpen(false); }}>
+          <ScanClipHelp t={t} onClose={() => setHelpOpen(false)} />
+        </div>
+      )}
+    </section>
+  );
+}
+
+// 스캔 도움말 모달 — 순수 설명 전용, 스샷 레이더 도움말과 동일 패턴 (사용법 스텝 카드 최상단)
+function ScanClipHelp({ t, onClose }: { t: T; onClose: () => void }) {
+  useEffect(() => {
+    const onKey = (ev: KeyboardEvent) => { if (ev.key === "Escape") { ev.stopPropagation(); onClose(); } };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [onClose]);
+  return (
+    <section className="operator-modal lens-modal" role="dialog" aria-modal="true" aria-label={t("클립보드 자동인식 도움말")}>
+      <header className="scanner-head">
+        <h2>📋 {t("클립보드 자동인식")}</h2>
+        <button className="modal-close" onClick={onClose} aria-label={t("닫기")}>✕</button>
+      </header>
+      <div className="lens-body lens-help">
+        <p className="lens-help-intro">{t("게임 오퍼레이터 목록 화면의 스크린샷을 인식해, 보유 오퍼와 정예화 단계를 자동으로 채워 주는 기능입니다.")}</p>
+
+        <section className="lens-usage" aria-label={t("사용법")}>
+          <h3>{t("사용법")}</h3>
+          <ol className="lens-usage-steps">
+            <li>
+              <strong>{t("📋 토글로 클립보드 자동인식 켜기")}</strong>
+              <span>{t("버튼이 켜져 있는 동안만 클립보드를 감시합니다. 기본은 꺼짐이며, 페이지를 새로 고치면 다시 꺼집니다.")}</span>
+            </li>
+            <li>
+              <strong>{t("오퍼레이터 목록 화면을 클립보드로 캡처")}</strong>
+              <span>{t("맥 ⌃⌘⇧4 · 윈도우 Win+Shift+S — 목록을 넘겨 가며 여러 장 캡처하면 전부 누적됩니다.")}</span>
+            </li>
+            <li>
+              <strong>{t("이 탭으로 돌아오기")}</strong>
+              <span>{t("자동으로 인식이 시작됩니다. 처음 한 번은 브라우저가 클립보드 접근을 물어보니 '허용'을 눌러주세요.")}</span>
+            </li>
+            <li>
+              <strong>{t("결과 확인 후 보유로 추가")}</strong>
+              <span>{t("인식된 오퍼가 오른쪽 목록에 쌓입니다. 정예화 배지와 ✕로 다듬은 뒤 '보유로 추가' 버튼을 누르세요.")}</span>
+            </li>
+          </ol>
+        </section>
+
+        <h3>{t("다른 입력 방법")}</h3>
+        <ul>
+          <li>{t("이미지 파일을 화면 아무 곳에나 드래그앤드롭 — 알림을 정확히 조준할 필요 없습니다.")}</li>
+          <li>{t("복사해 둔 이미지를 ⌘V(윈도우 Ctrl+V)로 붙여넣기.")}</li>
+          <li>{t("점선 영역을 클릭하면 파일 선택으로도 추가할 수 있습니다.")}</li>
+        </ul>
+
+        <h3>{t("올바른 캡처 예시")}</h3>
+        <figure className="scanner-sample">
+          <img src="/scan/sample.webp" alt={t("올바른 캡처 예시")} loading="lazy" />
+          <figcaption>{t("이렇게 오퍼레이터 목록 화면이 온전히 담기도록 캡처하세요 (레벨 정렬 권장).")}</figcaption>
+        </figure>
+
+        <h3>{t("참고")}</h3>
+        <ul>
+          <li>{t("정예화(0/1/2정)는 카드 엠블럼으로 자동 인식됩니다 — 잘못 읽힌 오퍼만 이름 옆 배지를 눌러 고치세요.")}</li>
+          <li>{t("스크린샷 미리보기의 ✕를 누르면 그 스샷에서만 인식된 오퍼도 목록에서 함께 빠집니다.")}</li>
+          <li>{t("모든 인식은 100% 브라우저 안에서 처리되며 이미지는 서버로 전송되지 않습니다.")}</li>
+        </ul>
+      </div>
     </section>
   );
 }
