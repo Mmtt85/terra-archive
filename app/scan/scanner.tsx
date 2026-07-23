@@ -246,18 +246,28 @@ export function ScannerModal({ t, onClose, onApply }: {
 
       <div className="scanner-body">
         <div className="scanner-stage">
+          {!clipStarted ? (
+            <div className="scanner-clip-cta">
+              <button className="scanner-clip-start" onClick={() => setClipStarted(true)}>
+                <span className="clip-start-icon" aria-hidden>📋</span>
+                <span>{t("클립보드 자동인식 시작")}</span>
+              </button>
+              <p>{t("한 번 누르면 이후엔 캡처만 반복하면 됩니다 — 에뮬레이터 목록을 클립보드로 캡처(맥 ⌃⌘⇧4 · 윈도우 Win+Shift+S)하고 이 탭으로 돌아오면 자동으로 인식돼 아래에 쌓입니다. 브라우저가 클립보드 접근을 물으면 '허용'을 눌러주세요.")}</p>
+            </div>
+          ) : (
+            <div className={`scanner-clip-banner ${clip}`}>
+              {clip === "on" ? <span className="scanner-clip-on">● {t("클립보드 자동 인식 켜짐 — 이제 캡처만 반복하세요")}</span>
+                : clip === "off" ? <span className="scanner-clip-off">{t("클립보드 자동 읽기가 막혀 있어요 — 스크린샷을 ⌘V로 붙여넣거나 파일을 끌어놓으세요")}</span>
+                : <span className="scanner-clip-off">{t("클립보드 권한을 확인하는 중… (브라우저의 붙여넣기 허용을 눌러주세요)")}</span>}
+            </div>
+          )}
           <div className="scanner-dropzone" onClick={() => fileInputRef.current?.click()} role="button" tabIndex={0}>
-            {recognizing ? t("인식 중…") : t("여기에 오퍼 목록 스크린샷을 끌어놓거나, 클릭해서 파일을 추가하세요 (여러 장 가능)")}
+            {recognizing ? t("인식 중…") : t("또는 여기에 오퍼 목록 스크린샷을 끌어놓거나, 클릭해서 파일을 추가하세요 (여러 장 가능)")}
           </div>
           <div className="scanner-controls">
-            <button className="scanner-primary" onClick={() => fileInputRef.current?.click()} disabled={recognizing}>
+            <button className="scanner-secondary" onClick={() => fileInputRef.current?.click()} disabled={recognizing}>
               {recognizing ? t("인식 중…") : t("스크린샷 추가")}
             </button>
-            {!clipStarted
-              ? <button className="scanner-secondary" onClick={() => setClipStarted(true)}>{t("클립보드 자동인식 시작")}</button>
-              : clip === "on" ? <span className="scanner-clip-on">● {t("클립보드 자동 인식 켜짐")}</span>
-              : clip === "off" ? <span className="scanner-clip-off">{t("클립보드 자동 읽기가 막혀 있어요 — 스크린샷을 ⌘V로 붙여넣거나 파일을 끌어놓으세요")}</span>
-              : <span className="scanner-clip-off">{t("클립보드 권한을 확인하는 중… (브라우저의 붙여넣기 허용을 눌러주세요)")}</span>}
             {frameInfo && <span className="scanner-frame-info">{frameInfo}</span>}
           </div>
           {previews.length > 0 && (
