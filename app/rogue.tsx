@@ -792,13 +792,14 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   const relicById = useMemo(() => new Map(relicsAll.map((r) => [r.id, r])), [relicsAll]); // 무대 도구 포함
   const encByScene = useMemo(() => new Map(data.encounters.map((e) => [e.scene, e])), [active]); // eslint-disable-line react-hooks/exhaustive-deps
   const zoneById = useMemo(() => new Map(data.zones.map((z) => [z.id, z])), [active]); // eslint-disable-line react-hooks/exhaustive-deps
-  // 렌즈 모아보기용 통합 아이템 룩업 — 유물·도구·음반·탐사도구·토픽 고유 시스템 (id는 전역 유일)
+  // 렌즈 모아보기용 통합 아이템 룩업 — 유물·도구·음반·부품·탐사도구·토픽 고유 시스템 (id는 전역 유일)
   const lensItemById = useMemo(() => {
     const m = new Map<string, LensItem>();
     for (const r of data.relics) m.set(r.id, r);
     for (const c of data.tools) m.set(c.id, c);
     for (const c of data.capsules ?? []) m.set(c.id, c);
     for (const c of data.exploreTools ?? []) m.set(c.id, c);
+    for (const s of data.scraps ?? []) m.set(s.id, s); // 흑류수해 부품 — CN 상인 판매 화면 모아보기
     for (const mech of data.mechanics ?? []) for (const it of mech.items) m.set(it.id, it);
     return m;
   }, [active]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -887,18 +888,11 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
     else applyLensRef.current();
   };
   // ── 페이지 레벨 클립보드 자동인식 토글 — 모달 없이 캡처만 하면 바로 이동 (사용자 요청 2026-07-23)
+  // 기본 꺼짐 + 세션 비영속: 리프레시하면 항상 꺼진 상태로 시작한다 (사용자 확정 2026-07-24 —
+  // 클립보드 폴링을 사용자가 켠 동안에만 돌리기 위해 localStorage 복원을 하지 않는다)
   const [lensAuto, setLensAuto] = useState(false);
-  useEffect(() => {
-    let saved = false;
-    try { saved = localStorage.getItem("ta-lens-auto-rogue") === "1"; } catch { /* 시크릿 등 */ }
-    if (!saved) return;
-    // setTimeout: effect 본문 동기 setState 회피 (react-hooks/set-state-in-effect)
-    const id = window.setTimeout(() => { setLensAuto(true); void warmOcr(); warmData("rogue"); }, 0);
-    return () => window.clearTimeout(id);
-  }, []);
   const toggleLensAuto = () => setLensAuto((v) => {
     const next = !v;
-    try { localStorage.setItem("ta-lens-auto-rogue", next ? "1" : "0"); } catch { /* 무시 */ }
     if (next) { void warmOcr(); warmData("rogue"); } // 켜는 순간 OCR·데이터 예열
     return next;
   });

@@ -11,9 +11,9 @@ import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 import sharp from "sharp";
 import { createWorker } from "tesseract.js";
-import { grayNormalize, upscaleFactor, findDarkChips, chipCropRect, binarizeGlyph } from "../app/lens/preprocess";
+import { grayNormalize, upscaleFactor, findDarkChips, chipCropRect, binarizeGlyph, isolateGlyphs } from "../app/lens/preprocess";
 import { DIFF_REGION, parseDifficulty } from "../app/lens/ocr";
-import { buildIndex, analyzeLines, analyzeRecruit, wantsChipPass } from "../app/lens/match";
+import { buildIndex, analyzeLines, analyzeChinese, analyzeRecruit, wantsChipPass } from "../app/lens/match";
 
 const ROOT = resolve(import.meta.dirname ?? __dirname, "..");
 const SHOTS = resolve(ROOT, "fixtures/lens/screenshots");
@@ -60,6 +60,13 @@ async function main() {
     gzip: false,
   });
   await digitWorker.setParameters({ tessedit_pageseg_mode: "7" as never });
+  // 중국어(흑류수해 CN 클라) 전용 워커 — kor은 중국어 화면에서 한자를 한 글자도 못 읽는다
+  const chiWorker = await createWorker("chi_sim", 1, {
+    langPath: resolve(ROOT, "public/lens"),
+    cachePath: resolve(ROOT, "public/lens"),
+    gzip: false,
+  });
+  await chiWorker.setParameters({ tessedit_pageseg_mode: "11" as never });
 
   let pass = 0, fail = 0, skipped = 0;
   const files = readdirSync(SHOTS).filter((f) => f.endsWith(".png")).sort();
@@ -111,30 +118,47 @@ async function main() {
     } else {
       // 프로덕션 rogue 모드는 항상 현재 토픽 컨텍스트가 있다 — 사미 페이지에서 찍는 상황을 재현
       const ctx = { context: { topic: "rogue_3" } };
+      const zhPass = async (): Promise<string[]> => {
+        const r = await chiWorker.recognize(buf, {}, { blocks: true, text: false, hocr: false, tsv: false });
+        return (r.data.lines ?? []).map((l) => l.text.trim()).filter(Boolean);
+      };
       let lines = await fullPass("11");
       let chipsRan = false;
       if (wantsChipPass(lines)) { chipsRan = true; lines = lines.concat(await chipPass()); }
       oc = analyzeLines(lines, index, ctx);
+      // run.ts와 동일: kor 1차 패스가 완전 무신호면 중국어(chi_sim) 패스 — 흑류수해 CN 스크린샷
+      let zhHit = false;
+      if (oc.target.kind === "none" && !oc.topics.length && !oc.screens.length) {
+        const zoc = analyzeChinese(await zhPass(), index);
+        if (zoc.target.kind !== "none") { oc = zoc; zhHit = true; }
+      }
       // run.ts와 동일: none·tie 또는 하이라이트형 goto(엔티티 완성도)면 폴백 보강
-      const needMore = oc.target.kind !== "goto"
-        || (oc.target.goto.page === "rogue" && !oc.target.goto.modal && !!oc.target.goto.highlight);
+      const needMore = !zhHit && (oc.target.kind !== "goto"
+        || (oc.target.goto.page === "rogue" && !oc.target.goto.modal && !!oc.target.goto.highlight));
       if (needMore) {
         lines = lines.concat(await fullPass("3"));
         if (!chipsRan) lines = lines.concat(await chipPass());
         oc = analyzeLines(lines, index, ctx);
+        if (oc.target.kind === "none") {
+          const zoc = analyzeChinese(await zhPass(), index);
+          if (zoc.target.kind !== "none") oc = zoc;
+        }
       }
       // 좌하단 난이도 배지 — ocr.ts session.difficulty()와 동일: 크롭→4x→글리프 이진화→eng OCR
       if (oc.target.kind !== "none") {
         const dx = Math.round(info.width * DIFF_REGION.x), dy = Math.round(info.height * DIFF_REGION.y);
         const dw = Math.round(info.width * DIFF_REGION.w), dh = Math.min(Math.round(info.height * DIFF_REGION.h), info.height - dy);
-        // 1:1 이진화 → nearest 4x (ocr.ts와 동일 — 리샘플링 결정적)
+        // 1:1 이진화 → 글리프 격리(가장자리 아트 노이즈 제거) → nearest 4x (ocr.ts와 동일)
         const { data: cd, info: ci } = await sharp(buf).extract({ left: dx, top: dy, width: dw, height: dh })
           .ensureAlpha().raw().toBuffer({ resolveWithObject: true });
         binarizeGlyph(cd);
-        const dbuf = await sharp(cd, { raw: { width: ci.width, height: ci.height, channels: 4 } })
-          .resize({ width: ci.width * 4, kernel: "nearest" }).png().toBuffer();
-        const rd = await digitWorker.recognize(dbuf, {}, { blocks: false, text: true, hocr: false, tsv: false });
-        const grade = parseDifficulty(rd.data.text ?? "", rd.data.confidence ?? 0);
+        let grade: number | null = null;
+        if (isolateGlyphs(cd, ci.width, ci.height) > 0) {
+          const dbuf = await sharp(cd, { raw: { width: ci.width, height: ci.height, channels: 4 } })
+            .resize({ width: ci.width * 4, kernel: "nearest" }).png().toBuffer();
+          const rd = await digitWorker.recognize(dbuf, {}, { blocks: false, text: true, hocr: false, tsv: false });
+          grade = parseDifficulty(rd.data.text ?? "", rd.data.confidence ?? 0);
+        }
         if (grade !== null) {
           if (oc.target.kind === "goto" && oc.target.goto.page === "rogue") oc.target.goto.grade = grade;
           else if (oc.target.kind === "tie") for (const o of oc.target.options) { if (o.goto.page === "rogue") o.goto.grade = grade; }
@@ -174,6 +198,7 @@ async function main() {
 
   await worker.terminate();
   await digitWorker.terminate();
+  await chiWorker.terminate();
   console.log(`\n결과: ${pass}/${pass + fail} 통과${skipped ? ` (건너뜀 ${skipped})` : ""}`);
   if (pass + fail === 0) process.exit(2);
   process.exit(fail === 0 ? 0 : 1);

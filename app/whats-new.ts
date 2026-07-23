@@ -3,7 +3,7 @@
 // 판정은 클라이언트 렌더 시각 기준 — 정적 사이트라 서버 시각에 의존하지 않는다.
 export const FEATURE_RELEASED: Record<string, string> = {
   scanner: "2026-07-23", // 스크린샷으로 보유 오퍼 스캔 (보유 오퍼 설정 모달)
-  lens: "2026-07-23", // 스크린샷 렌즈 — 게임 화면 인식 → 해당 정보로 이동 (헤더)
+  lens: "2026-07-23", // 스샷 레이더 — 게임 화면 인식 → 해당 정보로 이동 (/rogue·공채 페이지별 설치)
 };
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -15,4 +15,17 @@ export function isNewFeature(key: string): boolean {
   const released = Date.parse(`${date}T00:00:00+09:00`);
   if (Number.isNaN(released)) return false;
   return Date.now() < released + WEEK_MS;
+}
+
+// 탭 → 그 탭 안에 든 새 기능 키 — 햄버거 메뉴 배지용 (사용자 요청 2026-07-24:
+// 새 기능이 있는 메뉴 항목에도 '새기능'을 표시). 새 기능을 다른 탭에 넣으면 여기도 갱신.
+const TAB_FEATURES: Record<string, string[]> = {
+  planner: ["scanner"],
+  recruit: ["lens"],
+  rogue: ["lens"],
+};
+
+/** 해당 탭 안에 아직 '새기능' 기간인 기능이 하나라도 있으면 true. */
+export function tabHasNewFeature(tab: string): boolean {
+  return (TAB_FEATURES[tab] ?? []).some(isNewFeature);
 }

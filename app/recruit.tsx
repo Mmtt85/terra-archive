@@ -188,19 +188,12 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
     setManualOff([]);
     setManualOn(g.tags.filter((tag) => ALL_TAG_NAMES.includes(tag)).slice(0, 5));
   };
-  // 페이지 레벨 클립보드 자동인식 토글 — 모달 없이 캡처만 하면 태그가 바로 선택된다
+  // 페이지 레벨 클립보드 자동인식 토글 — 모달 없이 캡처만 하면 태그가 바로 선택된다.
+  // 기본 꺼짐 + 세션 비영속: 리프레시하면 항상 꺼진 상태로 시작 (사용자 확정 2026-07-24 —
+  // 클립보드 폴링은 사용자가 켠 동안에만 돌린다, localStorage 복원 안 함)
   const [lensAuto, setLensAuto] = useState(false);
-  useEffect(() => {
-    let saved = false;
-    try { saved = localStorage.getItem("ta-lens-auto-recruit") === "1"; } catch { /* 시크릿 등 */ }
-    if (!saved) return;
-    // setTimeout: effect 본문 동기 setState 회피 (react-hooks/set-state-in-effect)
-    const id = window.setTimeout(() => { setLensAuto(true); void warmOcr(); warmData("recruit"); }, 0);
-    return () => window.clearTimeout(id);
-  }, []);
   const toggleLensAuto = () => setLensAuto((v) => {
     const next = !v;
-    try { localStorage.setItem("ta-lens-auto-recruit", next ? "1" : "0"); } catch { /* 무시 */ }
     if (next) { void warmOcr(); warmData("recruit"); }
     return next;
   });

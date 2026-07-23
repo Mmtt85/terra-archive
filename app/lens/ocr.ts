@@ -5,11 +5,12 @@
 // PSM3(auto)·칩 패스를 생략한다. 칩 패스(공채 태그 등 어두운 버튼 개별 OCR)는
 // 화면 키워드가 보일 때만 — 오케스트레이션은 lens.tsx·verify-lens.ts가 동일 순서로 수행.
 
-import { grayNormalize, upscaleFactor, findDarkChips, chipCropRect, binarizeGlyph } from "./preprocess";
+import { grayNormalize, upscaleFactor, findDarkChips, chipCropRect, binarizeGlyph, isolateGlyphs } from "./preprocess";
 import type { Worker } from "tesseract.js";
 
 let workerP: Promise<Worker> | null = null;
 let digitWorkerP: Promise<Worker> | null = null; // 난이도 배지 숫자 전용 (eng — kor은 숫자를 한글로 읽음)
+let chiWorkerP: Promise<Worker> | null = null;   // 중국어(흑류수해 CN 클라) 전용 — 필요할 때만 지연 로드
 
 function getWorker(): Promise<Worker> {
   if (!workerP) {
@@ -53,6 +54,27 @@ function getDigitWorker(): Promise<Worker> {
   return digitWorkerP;
 }
 
+// 중국어 전용 워커 — kor 모델은 중국어 화면에서 한자를 한 글자도 못 읽으므로(실측: 전부
+// 한글 쓰레기, 한자 0자) 흑류수해 CN 스크린샷은 chi_sim으로 별도 패스를 돌린다 (2026-07-24)
+function getChiWorker(): Promise<Worker> {
+  if (!chiWorkerP) {
+    chiWorkerP = (async () => {
+      const mod = await import("tesseract.js/dist/tesseract.esm.min.js");
+      const { createWorker } = mod.default;
+      const w = await createWorker("chi_sim", 1, {
+        workerPath: "/lens/worker.min.js",
+        corePath: "/lens",
+        langPath: "/lens",
+        gzip: false,
+      });
+      await w.setParameters({ tessedit_pageseg_mode: "11" as never });
+      return w;
+    })();
+    chiWorkerP.catch(() => { chiWorkerP = null; });
+  }
+  return chiWorkerP;
+}
+
 /** 모달을 열자마자 호출해 워커·wasm·언어데이터를 예열한다 (첫 인식 체감 속도 개선). */
 export async function warmOcr(): Promise<void> {
   try { await getWorker(); } catch { /* 실제 인식 시 재시도 */ }
@@ -65,6 +87,8 @@ export type OcrSession = {
   chips(): Promise<string[]>;
   /** PSM3(auto) 전체 프레임 — 1차로 판정 안 될 때만 폴백 */
   auto(): Promise<string[]>;
+  /** 중국어(chi_sim) PSM11 전체 프레임 — kor 매칭이 무신호일 때만 (흑류수해 CN 스크린샷) */
+  zh(): Promise<string[]>;
   /** 좌하단 난이도 배지(육각형 숫자) — 있으면 0~18 반환, 없으면 null */
   difficulty(): Promise<number | null>;
 };
@@ -116,6 +140,11 @@ export async function createOcrSession(blob: Blob): Promise<OcrSession> {
       const r = await worker.recognize(c, {}, OUT);
       return (r.data.lines ?? []).map((l) => l.text.trim()).filter(Boolean);
     },
+    async zh() {
+      const zw = await getChiWorker();
+      const r = await zw.recognize(c, {}, OUT);
+      return (r.data.lines ?? []).map((l) => l.text.trim()).filter(Boolean);
+    },
     async difficulty() {
       // 좌하단 코너를 1:1로 잘라 이진화 → nearest 4배 확대 → eng 워커 한 줄 OCR.
       // ⚠ 확대 후 이진화하면 리샘플링 방식(canvas bilinear vs sharp lanczos)에 따라 결과가
@@ -129,6 +158,11 @@ export async function createOcrSession(blob: Blob): Promise<OcrSession> {
       c1x.drawImage(c, x, y, w, h, 0, 0, w, h);
       const cimg = c1x.getImageData(0, 0, w, h);
       binarizeGlyph(cimg.data);
+      // 가장자리 침입 아트 노이즈 제거 — 글리프가 하나도 안 남으면 배지 없음 (OCR 생략)
+      if (isolateGlyphs(cimg.data, w, h) === 0) {
+        console.debug(`[lens] 난이도 OCR: 글리프 없음 (배지 미검출)`);
+        return null;
+      }
       c1x.putImageData(cimg, 0, 0);
       const cc = document.createElement("canvas");
       cc.width = w * 4; cc.height = h * 4;
@@ -164,13 +198,17 @@ export async function createOcrSession(blob: Blob): Promise<OcrSession> {
 
 /** 모달 닫을 때 워커 정리 (다음 열림에서 재초기화). */
 export async function disposeOcr(): Promise<void> {
-  const p = workerP, dp = digitWorkerP;
+  const p = workerP, dp = digitWorkerP, cp = chiWorkerP;
   workerP = null;
   digitWorkerP = null;
+  chiWorkerP = null;
   if (p) {
     try { await (await p).terminate(); } catch { /* 이미 종료됨 */ }
   }
   if (dp) {
     try { await (await dp).terminate(); } catch { /* 이미 종료됨 */ }
+  }
+  if (cp) {
+    try { await (await cp).terminate(); } catch { /* 이미 종료됨 */ }
   }
 }

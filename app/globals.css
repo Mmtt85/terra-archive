@@ -10349,6 +10349,57 @@ main.site-main > .site-header {
   line-height: 1.55;
   color: var(--ink2);
 }
+/* 사용법 — 제일 눈에 띄는 스텝 카드 (사용자 요청 2026-07-24) */
+.lens-usage {
+  margin-top: 12px;
+  border: 1.5px solid color-mix(in srgb, var(--lime) 55%, var(--line));
+  border-radius: 12px;
+  padding: 12px 14px 14px;
+  background: color-mix(in srgb, var(--lime) 7%, var(--paper));
+}
+.lens-usage h3 {
+  margin: 0 0 10px;
+  font-size: 1.02rem;
+}
+.lens-help ol.lens-usage-steps {
+  list-style: none;
+  padding-left: 0;
+  gap: 10px;
+  counter-reset: lens-step;
+}
+.lens-usage-steps li {
+  counter-increment: lens-step;
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 10px;
+  align-items: baseline;
+}
+.lens-usage-steps li::before {
+  content: counter(lens-step);
+  grid-row: 1 / 3;
+  align-self: start;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--lime);
+  color: #1c2413;
+  font-weight: 800;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.lens-usage-steps li strong {
+  font-size: 0.95rem;
+  color: var(--ink);
+}
+.lens-usage-steps li span {
+  grid-column: 2;
+  font-size: 0.84rem;
+  color: var(--ink2);
+  margin-top: 2px;
+}
 /* 테마 선택 미니 모달 */
 .lens-tie {
   width: min(480px, 94vw);

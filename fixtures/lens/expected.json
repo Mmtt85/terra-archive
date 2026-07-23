@@ -73,5 +73,102 @@
       "고목 신지",
       "구상"
     ]
+  },
+  "_comment_cn": "f8~f16 = 흑류수해(rogue_6) CN 클라 스크린샷 — 중국어 화면은 무조건 흑류수해 (사용자 확정 2026-07-24). 전부 좌하단 난이도 9 배지.",
+  "f8.png": {
+    "section": "stage",
+    "targetKind": "goto",
+    "topic": "rogue_6",
+    "modalType": "stage",
+    "entities": [
+      "불난 집 털기"
+    ],
+    "grade": 9
+  },
+  "f9.png": {
+    "section": "enc",
+    "targetKind": "goto",
+    "topic": "rogue_6",
+    "modalType": "enc",
+    "entities": [
+      "원시적 유흥"
+    ],
+    "grade": 9
+  },
+  "f10.png": {
+    "section": "relic",
+    "targetKind": "goto",
+    "topic": "rogue_6",
+    "entities": [
+      "지원 - 보급기",
+      "영생의 상징",
+      "거짓 날개",
+      "폐기된 의족"
+    ],
+    "grade": 9
+  },
+  "f11.png": {
+    "section": "scrap",
+    "targetKind": "goto",
+    "topic": "rogue_6",
+    "entities": [
+      "메아리 옥수수",
+      "다생 이끼",
+      "표준 엔진",
+      "일회용 제트팩"
+    ],
+    "grade": 9
+  },
+  "f12.png": {
+    "section": "scrap",
+    "targetKind": "goto",
+    "topic": "rogue_6",
+    "entities": [
+      "폐기된 의족",
+      "표준 엔진",
+      "시제품 외골격"
+    ],
+    "grade": 9
+  },
+  "f13.png": {
+    "section": "scrap",
+    "targetKind": "goto",
+    "topic": "rogue_6",
+    "entities": [
+      "메아리 옥수수",
+      "표준 엔진",
+      "일회용 제트팩"
+    ],
+    "grade": 9
+  },
+  "f14.png": {
+    "section": "zone",
+    "targetKind": "goto",
+    "topic": "rogue_6",
+    "modalType": "zone",
+    "entities": [
+      "핏빛 공맥"
+    ],
+    "grade": 9
+  },
+  "f15.png": {
+    "section": "enc",
+    "targetKind": "goto",
+    "topic": "rogue_6",
+    "modalType": "enc",
+    "entities": [
+      "발 디딘 적 없는 나무"
+    ],
+    "grade": 9
+  },
+  "f16.png": {
+    "section": "relic",
+    "targetKind": "goto",
+    "topic": "rogue_6",
+    "entities": [
+      "피에 굶주린 집게 짐승",
+      "스피리터스"
+    ],
+    "grade": 9
   }
 }

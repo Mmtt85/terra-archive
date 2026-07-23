@@ -44,6 +44,45 @@ export function binarizeGlyph(data: Uint8ClampedArray | Uint8Array, cut = 0.65):
   }
 }
 
+/**
+ * 이진화된 배지 크롭에서 숫자 글리프만 남긴다 — 크롭 가장자리에 닿은 검정 성분(침입한
+ * 주변 아트)만 흰색으로 지운다. 숫자는 육각 배지 안쪽에 있어 가장자리에 닿지 않는다.
+ * 흑류수해 CN 배지 실측(2026-07-24): 우상단 눈꽃 아트가 크롭에 침입해 "9"→"97" 22%로
+ * 오독되던 것이 격리 후 해결. ⚠ 크기 필터는 걸지 않는다 — KR 배지 "3"은 이진화에서
+ * 조각나(획 단절) 작은 성분 여럿이 된다. 반환 = 남은 검정 성분 수 (0이면 OCR 생략).
+ */
+export function isolateGlyphs(data: Uint8ClampedArray | Uint8Array, W: number, H: number): number {
+  const seen = new Uint8Array(W * H);
+  const stack = new Int32Array(W * H);
+  const comp = new Int32Array(W * H); // 현재 성분의 픽셀 인덱스 버퍼
+  let kept = 0;
+  for (let i0 = 0; i0 < W * H; i0++) {
+    if (seen[i0] || data[i0 * 4] !== 0) continue;
+    // BFS — 검정(글리프 후보) 연결 성분 수집
+    let top = 0, n = 0, touches = false;
+    stack[top++] = i0; seen[i0] = 1;
+    while (top > 0) {
+      const i = stack[--top];
+      comp[n++] = i;
+      const x = i % W, y = (i / W) | 0;
+      if (x === 0 || y === 0 || x === W - 1 || y === H - 1) touches = true;
+      if (x > 0 && !seen[i - 1] && data[(i - 1) * 4] === 0) { seen[i - 1] = 1; stack[top++] = i - 1; }
+      if (x < W - 1 && !seen[i + 1] && data[(i + 1) * 4] === 0) { seen[i + 1] = 1; stack[top++] = i + 1; }
+      if (y > 0 && !seen[i - W] && data[(i - W) * 4] === 0) { seen[i - W] = 1; stack[top++] = i - W; }
+      if (y < H - 1 && !seen[i + W] && data[(i + W) * 4] === 0) { seen[i + W] = 1; stack[top++] = i + W; }
+    }
+    if (touches) {
+      for (let k = 0; k < n; k++) {
+        const p = comp[k] * 4;
+        data[p] = data[p + 1] = data[p + 2] = 255;
+      }
+    } else {
+      kept++;
+    }
+  }
+  return kept;
+}
+
 export type ChipBox = { x: number; y: number; w: number; h: number };
 
 /**

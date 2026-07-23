@@ -3,7 +3,7 @@
 // 모드별 단계형 OCR + 매칭: 판정이 나면 나머지 패스를 생략한다 (속도).
 
 import { createOcrSession } from "./ocr";
-import { buildIndex, analyzeLines, analyzeRecruit, wantsChipPass, type LensIndex, type LensOutcome } from "./match";
+import { buildIndex, analyzeLines, analyzeChinese, analyzeRecruit, wantsChipPass, type LensIndex, type LensOutcome } from "./match";
 
 export type LensMode = "rogue" | "recruit";
 
@@ -55,14 +55,31 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string):
     if (wantsChipPass(lines)) { chipsRan = true; lines = lines.concat(await session.chips()); }
     const ctx = { context: { topic } };
     oc = analyzeLines(lines, index, ctx);
+    // 중국어(흑류수해 CN 클라) 분기 — kor 모델은 중국어 화면에서 한자를 한 글자도 못 읽어
+    // 쓰레기 한글만 나온다(실측 2026-07-24). kor 1차 패스가 완전 무신호면 chi_sim으로
+    // cn 이름을 매칭한다 (중국어 화면 = 무조건 흑류수해, 사용자 확정).
+    let zhHit = false;
+    if (oc.target.kind === "none" && !oc.topics.length && !oc.screens.length) {
+      const zlines = await session.zh();
+      const zoc = analyzeChinese(zlines, index);
+      console.debug(`[lens] 중국어 패스: OCR ${zlines.length}줄 → ${zoc.target.kind}/${zoc.section ?? "-"}`);
+      if (zoc.target.kind !== "none") { oc = zoc; zhHit = true; lines = zlines; }
+    }
     // 폴백 패스: none·tie(판정 미완) 또는 하이라이트형 goto(목록 표시 — 엔티티 완성도가 중요,
     // 예: 분대 4개 중 PSM11이 3개만 읽은 경우)일 때 PSM3·칩으로 보강 후 재판정.
-    const needMore = oc.target.kind !== "goto"
-      || (oc.target.goto.page === "rogue" && !oc.target.goto.modal && !!oc.target.goto.highlight);
+    const needMore = !zhHit && (oc.target.kind !== "goto"
+      || (oc.target.goto.page === "rogue" && !oc.target.goto.modal && !!oc.target.goto.highlight));
     if (needMore) {
       lines = lines.concat(await session.auto());
       if (!chipsRan) lines = lines.concat(await session.chips());
       oc = analyzeLines(lines, index, ctx);
+      // kor 신호가 약하게 있었지만 폴백까지 실패 — 마지막으로 중국어를 시도한다
+      if (oc.target.kind === "none") {
+        const zlines = await session.zh();
+        const zoc = analyzeChinese(zlines, index);
+        console.debug(`[lens] 중국어 최종 폴백: OCR ${zlines.length}줄 → ${zoc.target.kind}/${zoc.section ?? "-"}`);
+        if (zoc.target.kind !== "none") { oc = zoc; lines = zlines; }
+      }
     }
     // 좌하단 난이도 배지 — 있으면 이동 목표에 스탬프해 난이도 셀렉터에 자동 적용 (2026-07-24)
     if (oc.target.kind !== "none") {

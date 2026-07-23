@@ -42,12 +42,19 @@ type Entry = {
   topic: string; topicName: string; section: string;
   id: string; name: string; nameN: string; bodyN: string; bodyBG: Set<string>;
   arc?: string;
+  cnN?: string; // 중국어 원문 이름 정규화 — CN 선행 토픽(흑류수해)만 존재
 };
 export type LensIndex = { entries: Entry[] };
 
 // ── 텍스트 정규화 ────────────────────────────────────────────────────────────
 export const normText = (s: string | null | undefined): string =>
   (s || "").replace(/[^0-9a-zA-Z가-힣+%]/g, "");
+
+// CN 정규화 — 한자 보존 + 라틴 소문자화. 그리스 문자는 OCR이 라틴으로 읽으므로("沙盘β"→"沙盘B")
+// 같은 라틴 소문자로 접는다 (데이터 실측: cn 이름의 특수문자는 α β γ - 인용부호뿐)
+export const normTextCn = (s: string | null | undefined): string =>
+  (s || "").toLowerCase().replace(/α/g, "a").replace(/β/g, "b").replace(/γ/g, "y")
+    .replace(/[^0-9a-z一-鿿+%]/g, "");
 
 const bigrams = (s: string): Set<string> => {
   const set = new Set<string>();
@@ -125,25 +132,28 @@ export function buildIndex(topics: any[]): LensIndex {
   for (const d of topics) {
     if (!d?.id) continue;
     const topic: string = d.id, topicName: string = d.name;
-    const add = (section: string, id: string, name: string, body: string, arc?: string) => {
+    const add = (section: string, id: string, name: string, body: string, arc?: string, cn?: string) => {
       const nameN = normText(name);
       const bodyN = normText(body);
       if (!nameN && !bodyN) return;
-      entries.push({ topic, topicName, section, id, name, nameN, bodyN, bodyBG: bigrams(bodyN), arc });
+      const cnN = normTextCn(cn);
+      entries.push({ topic, topicName, section, id, name, nameN, bodyN, bodyBG: bigrams(bodyN), arc, ...(cnN ? { cnN } : {}) });
     };
-    for (const b of d.bands ?? []) add("band", b.id, b.name, `${b.usage || ""} ${b.desc || ""}`);
-    for (const r of d.relics ?? []) add("relic", r.id, r.name, `${r.usage || ""} ${r.desc || ""}`);
-    for (const s of d.stages ?? []) add("stage", s.id, s.name, s.desc || "");
-    for (const z of d.zones ?? []) add("zone", z.id, z.name, z.desc || "");
+    for (const b of d.bands ?? []) add("band", b.id, b.name, `${b.usage || ""} ${b.desc || ""}`, undefined, b.cn);
+    for (const r of d.relics ?? []) add("relic", r.id, r.name, `${r.usage || ""} ${r.desc || ""}`, undefined, r.cn);
+    for (const s of d.stages ?? []) add("stage", s.id, s.name, s.desc || "", undefined, s.cn);
+    for (const z of d.zones ?? []) add("zone", z.id, z.name, z.desc || "", undefined, z.cn);
     // 무대 도구는 사이트에서 소장품으로 통합 표시 (2026-07-24) — relic 섹션으로 인덱싱해
     // 단일=유물 모달, 다중=모아보기가 동일하게 동작한다
-    for (const t of d.tools ?? []) add("relic", t.id, t.name, `${t.usage || ""} ${t.desc || ""}`);
-    for (const c of d.capsules ?? []) add("capsule", c.id, c.name, `${c.usage || ""} ${c.desc || ""}`);
+    for (const t of d.tools ?? []) add("relic", t.id, t.name, `${t.usage || ""} ${t.desc || ""}`, undefined, t.cn);
+    for (const c of d.capsules ?? []) add("capsule", c.id, c.name, `${c.usage || ""} ${c.desc || ""}`, undefined, c.cn);
+    // 부품(零件) — 흑류수해 고유, 전시관 scrap 탭. 상인 판매 화면에 여럿 나온다 (2026-07-24)
+    for (const s of d.scraps ?? []) add("scrap", s.id, s.name, `${s.usage || ""} ${s.desc || ""}`, undefined, s.cn);
     for (const e of d.encounters ?? []) {
       const choices = (e.choices ?? []).map((c: { title?: string; desc?: string }) => `${c.title || ""} ${c.desc || ""}`).join(" ");
-      add("enc", e.scene, e.title, `${e.desc || ""} ${choices}`);
+      add("enc", e.scene, e.title, `${e.desc || ""} ${choices}`, undefined, e.cn);
     }
-    for (const e of d.endings ?? []) add("ending", e.id, e.name, e.desc || "");
+    for (const e of d.endings ?? []) add("ending", e.id, e.name, e.desc || "", undefined, e.cn);
     // 토픽 고유 시스템 (사고=염원/영감/구상, 암호판, 붕괴 패러다임, 시대 등) — 전시관 탭 라벨을 arc로
     for (const m of d.mechanics ?? []) {
       for (const it of m.items ?? []) add("mech", it.id, it.name, `${it.usage || ""} ${it.desc || ""}`, m.label);
@@ -166,6 +176,7 @@ const SECTION_NAV: Record<string, { view: string; arcTab?: string; modalType?: s
   band: { view: "archive", arcTab: "band" },
   tool: { view: "archive", arcTab: "tool" },
   capsule: { view: "archive", arcTab: "capsule" },
+  scrap: { view: "archive", arcTab: "scrap" }, // 부품(零件) — 흑류수해 전시관 탭
   mech: { view: "archive" }, // arcTab은 엔티티의 arc(시스템 라벨: 영감·암호판 등)에서
   ending: { view: "ending" },
 };
@@ -231,6 +242,60 @@ export function analyzeLines(
   return { screens, entities, topics, section, target: g ? { kind: "goto", goto: g } : { kind: "none" } };
 }
 
+// ── 중국어(CN 클라) 매칭 — 흑류수해는 CN 선행이라 스크린샷이 중국어다 ─────────
+// 사용자 확정 2026-07-24: "중국어가 나오는 경우는 무조건 흑류수해 록라" — cn 이름은
+// 구조적으로도 rogue_6에만 있으므로 토픽 투표 없이 cn 보유 엔트리만 상대로 매칭한다.
+// cn은 이름뿐(본문 번역 없음)이라 이름 매칭 전용 + 1자 오독 퍼지(바이그램)를 쓴다.
+export function analyzeChinese(rawLines: string[], index: LensIndex): LensOutcome {
+  const linesN = rawLines.map((l) => normTextCn(l)).filter((l) => l.length >= 2);
+  const entries = index.entries.filter((e) => e.cnN);
+  const hits = new Map<Entry, Hit>();
+  for (const line of linesN) {
+    const lineBG = bigrams(line);
+    const lineHits: { e: Entry; w: number }[] = [];
+    for (const e of entries) {
+      const n = e.cnN!;
+      let w = 0;
+      if (n.length >= 3 && (line.includes(n) || (line.length >= 4 && n.includes(line)))) w = 3;
+      else if (n.length === 2 && line === n) w = 3; // 2자 이름은 정확일치만 (KR과 동일 규칙)
+      else if (n.length >= 4 && Math.abs(line.length - n.length) <= 1) {
+        // 카드 제목 라인의 1자 오독 허용 ("多生苔藓"→"多生苔苏" 실측) — 길이가 비슷할 때만
+        const nb = bigrams(n);
+        let hit = 0;
+        for (const b of nb) if (lineBG.has(b)) hit++;
+        if (hit / nb.size >= 0.6) w = 2;
+      }
+      if (w) lineHits.push({ e, w });
+    }
+    if (!lineHits.length) continue;
+    // 존 이름은 모든 화면 헤더에 상시 노출("血色空脉") — 섹션 투표를 오염시키지 않게 반감
+    for (const lh of lineHits) if (lh.e.section === "zone") lh.w *= 0.5;
+    const idf = 1 / lineHits.length;
+    for (const { e, w } of lineHits) {
+      const h = hits.get(e) ?? { score: 0, nameHit: false };
+      h.score += w * idf;
+      h.nameHit = true; // CN은 이름 매칭뿐
+      hits.set(e, h);
+    }
+  }
+  if (!hits.size) return { screens: [], entities: [], topics: [], section: null, target: { kind: "none" } };
+  const solids: LensEntity[] = [];
+  const topicScore = new Map<string, number>();
+  const topicNames = new Map<string, string>();
+  for (const [e, h] of hits) {
+    topicScore.set(e.topic, (topicScore.get(e.topic) ?? 0) + h.score);
+    topicNames.set(e.topic, e.topicName);
+    if (h.score >= SOLID) solids.push({ topic: e.topic, topicName: e.topicName, section: e.section, id: e.id, name: e.name, score: h.score, arc: e.arc, nameHit: h.nameHit });
+  }
+  const topics = [...topicScore.entries()]
+    .map(([topic, score]) => ({ topic, topicName: topicNames.get(topic) ?? topic, score }))
+    .sort((a, b) => b.score - a.score);
+  const entities = dedupEntities(solids);
+  const section = topSection(hits);
+  const g = section ? gotoFor(topics[0].topic, section, entities) : null;
+  return { screens: [], entities, topics, section, target: g ? { kind: "goto", goto: g } : { kind: "none" } };
+}
+
 // 라인 ↔ 엔트리 매칭 (IDF는 "전달된 엔트리 집합" 안에서 분산된다)
 type Hit = { score: number; nameHit: boolean };
 function matchEntries(linesN: string[], entries: Entry[]): Map<Entry, Hit> {
@@ -278,9 +343,9 @@ function dedupEntities(solids: LensEntity[]): LensEntity[] {
   });
 }
 
-// 아이템류 섹션 — 상점·전리품 화면엔 유물/도구/음반/토픽 고유 시스템이 섞여 나오므로
+// 아이템류 섹션 — 상점·전리품 화면엔 유물/도구/음반/부품/토픽 고유 시스템이 섞여 나오므로
 // 섹션을 가르지 않고 함께 수집한다 (사용자 요청 2026-07-23: 상인 화면 전 품목 인식)
-const ITEM_SECTIONS = new Set(["relic", "tool", "capsule", "mech"]);
+const ITEM_SECTIONS = new Set(["relic", "tool", "capsule", "mech", "scrap"]);
 
 // 특정 토픽+섹션의 확신 엔티티들로 LensGoto 구성.
 // 동급 스코어(1위의 절반 이상) 엔티티가 여럿이면 단일 모달 대신 모아보기/하이라이트.
