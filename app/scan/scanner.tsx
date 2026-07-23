@@ -51,6 +51,7 @@ export function ScannerModal({ t, onClose, onApply }: {
   const [removed, setRemoved] = useState<Set<string>>(new Set());
   const [addQuery, setAddQuery] = useState("");
   const [clip, setClip] = useState<ClipState>("init");
+  const [clipStarted, setClipStarted] = useState(false); // 사용자가 '자동인식 시작'을 눌러야 폴링 개시
   const fileInputRef = useRef<HTMLInputElement>(null);
   const lastClipHash = useRef("");
 
@@ -137,11 +138,13 @@ export function ScannerModal({ t, onClose, onApply }: {
     return () => window.removeEventListener("paste", onPaste);
   }, [recognizeFiles]);
 
-  // ── 클립보드 자동 감지 ───────────────────────────────────────────────────────
-  // 에뮬레이터에서 클립보드 캡처(⌃⌘⇧4) → 이 탭으로 돌아오면 새 이미지를 자동 인식.
+  // ── 클립보드 자동 감지 (사용자가 '시작'을 눌러야 개시 — 권한 프롬프트·클립보드 읽기를
+  // 명시적 의사 없이 하지 않도록) ─────────────────────────────────────────────
+  // 에뮬레이터에서 클립보드 캡처(⌃⌘⇧4 / Win+Shift+S) → 이 탭으로 돌아오면 새 이미지를 자동 인식.
   // 같은 클립보드를 중복 처리하지 않도록 크기+샘플 바이트 해시로 판별.
   // 권한: granted면 폴링, prompt면 1회 read()로 권한 요청, denied/미지원이면 ⌘V·드롭 안내.
   useEffect(() => {
+    if (!clipStarted) return;
     let iv: number | undefined;
     let disposed = false;
 
@@ -187,7 +190,7 @@ export function ScannerModal({ t, onClose, onApply }: {
     })();
 
     return () => { disposed = true; if (iv !== undefined) clearInterval(iv); };
-  }, [recognizeFiles, t]);
+  }, [clipStarted, recognizeFiles, t]);
 
   // ── 결과 목록 ────────────────────────────────────────────────────────────────
   const kept = useMemo(() => Array.from(results.values()).filter((d) => !removed.has(d.id)), [results, removed]);
@@ -250,8 +253,11 @@ export function ScannerModal({ t, onClose, onApply }: {
             <button className="scanner-primary" onClick={() => fileInputRef.current?.click()} disabled={recognizing}>
               {recognizing ? t("인식 중…") : t("스크린샷 추가")}
             </button>
-            {clip === "on" && <span className="scanner-clip-on">{t("클립보드 자동 인식 켜짐")}</span>}
-            {clip === "off" && <span className="scanner-clip-off">{t("클립보드 자동 읽기가 막혀 있어요 — 스크린샷을 ⌘V로 붙여넣거나 파일을 끌어놓으세요")}</span>}
+            {!clipStarted
+              ? <button className="scanner-secondary" onClick={() => setClipStarted(true)}>{t("클립보드 자동인식 시작")}</button>
+              : clip === "on" ? <span className="scanner-clip-on">● {t("클립보드 자동 인식 켜짐")}</span>
+              : clip === "off" ? <span className="scanner-clip-off">{t("클립보드 자동 읽기가 막혀 있어요 — 스크린샷을 ⌘V로 붙여넣거나 파일을 끌어놓으세요")}</span>
+              : <span className="scanner-clip-off">{t("클립보드 권한을 확인하는 중… (브라우저의 붙여넣기 허용을 눌러주세요)")}</span>}
             {frameInfo && <span className="scanner-frame-info">{frameInfo}</span>}
           </div>
           {previews.length > 0 && (
@@ -304,7 +310,15 @@ export function ScannerModal({ t, onClose, onApply }: {
                 <button className="scanner-card-x" onClick={() => setRemoved((prev) => new Set(prev).add(d.id))} aria-label={t("제거")}>✕</button>
               </div>
             ))}
-            {sorted.length === 0 && <p className="scanner-empty">{t("아직 인식된 오퍼가 없습니다. 오퍼 목록 스크린샷을 추가하면 자동으로 인식됩니다.")}</p>}
+            {sorted.length === 0 && (
+              <div className="scanner-empty">
+                <p>{t("아직 인식된 오퍼가 없습니다. 오퍼 목록 스크린샷을 추가하면 자동으로 인식됩니다.")}</p>
+                <figure className="scanner-sample">
+                  <img src="/scan/sample.webp" alt={t("올바른 캡처 예시")} loading="lazy" />
+                  <figcaption>{t("이렇게 오퍼레이터 목록 화면이 온전히 담기도록 캡처하세요 (레벨 정렬 권장).")}</figcaption>
+                </figure>
+              </div>
+            )}
           </div>
         </div>
       </div>

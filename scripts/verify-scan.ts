@@ -27,10 +27,12 @@ const maxEliteByOp = new Map<string, number>(
     .map((o) => [o.id, o.rarity >= 4 ? 2 : o.rarity === 3 ? 1 : 0]));
 
 const tmp = mkdtempSync(join(tmpdir(), "scanfix-"));
-let idOk = 0, idBad = 0, elOk = 0, elBad = 0, missing = 0;
+let idOk = 0, idBad = 0, elOk = 0, elBad = 0, missing = 0, skipped = 0;
 try {
   for (const frame of labels.frames) {
     const png = join(FIX, "screenshots", frame.file);
+    // 픽스처는 git 미추적(로컬 전용) — 일부만 있는 머신에서도 있는 것만 검증하고 넘어간다
+    if (!existsSync(png)) { skipped++; console.log(`· ${frame.file}: 파일 없음 — 건너뜀`); continue; }
     const rgba = join(tmp, "f.rgba");
     // PNG → (≤1600px) RGBA — 런타임과 같은 다운스케일 경로
     const dims = execFileSync("python3", ["-c", `
@@ -58,6 +60,7 @@ print(im.width, im.height)`]).toString().trim().split(" ").map(Number);
   rmSync(tmp, { recursive: true, force: true });
 }
 const total = idOk + idBad + missing;
-console.log(`식별 ${idOk}/${total} · 정예화 ${elOk}/${elOk + elBad} · 미검출 ${missing}`);
+console.log(`식별 ${idOk}/${total} · 정예화 ${elOk}/${elOk + elBad} · 미검출 ${missing}${skipped ? ` · 파일없음 ${skipped}장 건너뜀` : ""}`);
+if (total === 0) { console.error("검증할 픽스처 PNG가 하나도 없습니다 — fixtures/scanner/screenshots/ 확인"); process.exit(2); }
 if (idBad + elBad + missing > 0) process.exit(1);
 console.log("✅ 회귀 없음");
