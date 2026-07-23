@@ -805,8 +805,9 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
     let raw: string | null = null;
     try { raw = sessionStorage.getItem("ta:lens-handoff"); } catch { return; }
     if (!raw) return;
-    let g: { topic?: string; view?: string; arcTab?: string; modal?: { type: string; id: string }; highlight?: string[] };
+    let g: { page?: string; topic?: string; view?: string; arcTab?: string; modal?: { type: string; id: string }; highlight?: string[] };
     try { g = JSON.parse(raw); } catch { sessionStorage.removeItem("ta:lens-handoff"); return; }
+    if (g.page && g.page !== "rogue") return; // 공채 등 다른 페이지 핸드오프는 해당 페이지가 소비
     if (g.topic !== topicRef.current) return; // 토픽 전환 완료 후 데이터 로드 effect에서 다시 불린다
     sessionStorage.removeItem("ta:lens-handoff");
     if (g.view && viewsFor().some((x) => x.id === g.view)) setView(g.view as View);

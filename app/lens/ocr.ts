@@ -3,7 +3,7 @@
 // PSM 11(sparse)+PSM 3(auto) 라인 합집합 — 스모크 검증(2026-07-23)으로 확정.
 // (기본 PSM만 쓰면 맵 노드 화면 등 흩어진 텍스트가 전멸한다)
 
-import { grayNormalize, upscaleFactor } from "./preprocess";
+import { grayNormalize, upscaleFactor, findDarkChips, chipCropRect } from "./preprocess";
 import type { Worker } from "tesseract.js";
 
 let workerP: Promise<Worker> | null = null;
@@ -50,9 +50,28 @@ export async function ocrImage(blob: Blob): Promise<string[]> {
     const r11 = await worker.recognize(c);
     await worker.setParameters({ tessedit_pageseg_mode: "3" as never }); // auto
     const r3 = await worker.recognize(c);
-    return [...(r11.data.lines ?? []), ...(r3.data.lines ?? [])]
+    const lines = [...(r11.data.lines ?? []), ...(r3.data.lines ?? [])]
       .map((l) => l.text.trim())
       .filter(Boolean);
+
+    // 어두운 버튼(공개모집 태그 등)은 전체 페이지 OCR이 통째로 버린다 —
+    // 사각형을 검출해 개별 크롭을 PSM7(한 줄)로 읽어 라인에 합류시킨다.
+    const chips = findDarkChips(img.data, W, H);
+    if (chips.length) {
+      await worker.setParameters({ tessedit_pageseg_mode: "7" as never });
+      const cc = document.createElement("canvas");
+      const cctx = cc.getContext("2d", { willReadFrequently: true })!;
+      for (const b of chips) {
+        const r = chipCropRect(b, W, H);
+        if (!r) continue;
+        cc.width = r.w; cc.height = r.h;
+        cctx.drawImage(c, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h);
+        const r7 = await worker.recognize(cc);
+        const txt = (r7.data.text ?? "").trim();
+        if (txt) lines.push(...txt.split("\n").map((l) => l.trim()).filter(Boolean));
+      }
+    }
+    return lines;
   } finally {
     bmp.close();
   }

@@ -1135,12 +1135,12 @@ const D: Record<string, Pair> = {
   "익명으로 전송됩니다": ["Sent anonymously", "匿名で送信されます"],
   "보내기": ["Send", "送信"],
   "💬 제안": ["💬 Feedback", "💬 提案"],
-  // ── 스크린샷 렌즈 — 게임 화면 인식 → 해당 정보로 이동 (2026-07-23) ──────────
+  // ── 스샷 워프 — 게임 화면 인식 → 해당 정보로 순간이동 (2026-07-23) ──────────
   // Phase 1은 KR 클라 전용(kor.traineddata만 호스팅)이라 진입 버튼이 ko에서만 보이지만,
   // 키는 미리 등록해 둔다 (EN/JA 클라 지원 시 버튼 게이트만 풀면 됨).
-  "스크린샷 렌즈": ["Screenshot Lens", "スクリーンショットレンズ"],
-  "게임 스크린샷을 인식해 관련 정보로 바로 이동합니다 — 현재 통합전략(로그라이크) 화면 지원": ["Recognizes game screenshots and jumps straight to the relevant info — currently supports Integrated Strategies (roguelike) screens", "ゲームのスクリーンショットを認識して関連情報へ直行します — 現在は統合戦略（ローグライク）画面に対応"],
-  "통합전략(로그라이크) 화면을 클립보드로 캡처(맥 ⌃⌘⇧4 · 윈도우 Win+Shift+S)하고 이 탭으로 돌아오면, 분대·유물·작전·조우를 인식해 가이드의 해당 정보로 바로 이동합니다. 파일 드롭이나 ⌘V 붙여넣기도 됩니다.": ["Capture an Integrated Strategies screen to the clipboard (Mac ⌃⌘⇧4 · Windows Win+Shift+S) and return to this tab — squads, relics, operations, and encounters are recognized and you jump straight to that info in the guide. File drop and ⌘V paste also work.", "統合戦略の画面をクリップボードにキャプチャ（Mac ⌃⌘⇧4・Windows Win+Shift+S）してこのタブに戻ると、分隊・秘宝・作戦・遭遇を認識してガイドの該当情報へ直行します。ファイルドロップや⌘V貼り付けも使えます。"],
+  "스샷 워프": ["Snap Warp", "スクショワープ"],
+  "게임 스크린샷을 인식해 관련 정보로 바로 이동합니다 — 현재 통합전략(로그라이크)·공개모집 화면 지원": ["Recognizes game screenshots and jumps straight to the relevant info — currently supports Integrated Strategies (roguelike) and Recruitment screens", "ゲームのスクリーンショットを認識して関連情報へ直行します — 現在は統合戦略（ローグライク）と公開求人画面に対応"],
+  "게임 화면을 클립보드로 캡처(맥 ⌃⌘⇧4 · 윈도우 Win+Shift+S)하고 이 탭으로 돌아오면 바로 인식됩니다 — 통합전략 화면(분대·유물·작전·조우)은 가이드의 해당 정보로, 공개모집 태그 화면은 공채 도우미에 태그를 자동 입력해 이동합니다. 파일 드롭이나 ⌘V 붙여넣기도 됩니다.": ["Capture a game screen to the clipboard (Mac ⌃⌘⇧4 · Windows Win+Shift+S) and return to this tab — Integrated Strategies screens (squads, relics, operations, encounters) warp to that info in the guide, and Recruitment tag screens warp to the Recruitment Helper with the tags filled in. File drop and ⌘V paste also work.", "ゲーム画面をクリップボードにキャプチャ（Mac ⌃⌘⇧4・Windows Win+Shift+S）してこのタブに戻ると即認識 — 統合戦略の画面（分隊・秘宝・作戦・遭遇）はガイドの該当情報へ、公開求人タグ画面は求人ヘルパーにタグを自動入力して移動します。ファイルドロップや⌘V貼り付けも使えます。"],
   "인식 엔진 로딩 중…": ["Loading recognition engine…", "認識エンジンを読み込み中…"],
   "화면 분석 중… (수 초 걸립니다)": ["Analyzing screen… (takes a few seconds)", "画面を分析中…（数秒かかります）"],
   "인식에 실패했습니다 — 다른 스크린샷으로 다시 시도해 주세요.": ["Recognition failed — please try again with a different screenshot.", "認識に失敗しました — 別のスクリーンショットでもう一度お試しください。"],
@@ -1149,7 +1149,9 @@ const D: Record<string, Pair> = {
   "인식한 스크린샷": ["Recognized screenshot", "認識したスクリーンショット"],
   "인식 완료 — 해당 정보로 이동했습니다.": ["Recognized — jumped to the matching info.", "認識完了 — 該当情報へ移動しました。"],
   "「{a}」 정보를 인식했지만, 어느 테마인지 화면만으론 알 수 없습니다 — 테마를 선택하세요.": ["Recognized \"{a}\" info, but the theme can't be told from this screen alone — pick a theme.", "「{a}」の情報を認識しましたが、この画面だけではどのテーマか判別できません — テーマを選んでください。"],
-  "인식된 정보가 없습니다 — 현재는 통합전략(로그라이크) 화면만 지원합니다. 분대·유물·조우·작전 화면을 캡처해 보세요.": ["Nothing recognized — only Integrated Strategies (roguelike) screens are supported for now. Try capturing a squad, relic, encounter, or operation screen.", "認識された情報がありません — 現在は統合戦略（ローグライク）画面のみ対応しています。分隊・秘宝・遭遇・作戦の画面をキャプチャしてみてください。"],
+  "인식된 정보가 없습니다 — 현재는 통합전략(로그라이크)·공개모집 화면을 지원합니다. 분대·유물·조우·작전·공개모집 태그 화면을 캡처해 보세요.": ["Nothing recognized — Integrated Strategies (roguelike) and Recruitment screens are supported for now. Try capturing a squad, relic, encounter, operation, or recruitment-tag screen.", "認識された情報がありません — 現在は統合戦略（ローグライク）と公開求人画面に対応しています。分隊・秘宝・遭遇・作戦・公開求人タグの画面をキャプチャしてみてください。"],
+  "공개모집 태그": ["Recruitment tags", "公開求人タグ"],
+  "공개모집 화면": ["Recruitment screen", "公開求人画面"],
   "아직 인식한 스크린샷이 없습니다.": ["No screenshot recognized yet.", "まだ認識したスクリーンショットはありません。"],
   "파일 선택": ["Choose file", "ファイルを選択"],
   "조우": ["Encounter", "遭遇"],

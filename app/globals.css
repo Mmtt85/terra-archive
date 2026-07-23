@@ -10076,25 +10076,35 @@ main.site-main > .site-header {
   align-items: center;
   justify-content: center;
 }
-/* ── 스크린샷 렌즈 — 게임 화면 인식 → 해당 정보로 이동 (2026-07-23) ─────────── */
+/* ── 스샷 워프 — 게임 화면 인식 → 해당 정보로 순간이동 (2026-07-23) ──────────
+   햄버거 바로 왼쪽, 접힘 상태에도 항상 노출 (사용자 확정 2026-07-23) */
 .lens-header-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   white-space: nowrap;
-  border: 1px solid var(--line);
-  background: var(--white);
+  border: 1px solid color-mix(in srgb, var(--lime) 45%, var(--line));
+  background: color-mix(in srgb, var(--lime) 10%, var(--white));
   color: var(--ink);
   padding: 8px 11px;
+  margin-right: 8px;
   font: 700 12px/1 monospace;
   letter-spacing: 0.2px;
   cursor: pointer;
 }
 .lens-header-btn:hover {
   border-color: var(--lime);
+  background: color-mix(in srgb, var(--lime) 22%, var(--white));
 }
-.site-header.collapsed .lens-header-btn {
-  display: none;
+/* 모바일: 1줄이 좁으니 아이콘+새기능 배지만 (라벨 숨김) */
+@media (max-width: 760px) {
+  .lens-header-btn .lens-label {
+    display: none;
+  }
+  .lens-header-btn {
+    margin-right: 6px;
+    padding: 8px 9px;
+  }
 }
 .lens-modal {
   width: min(760px, 96vw);

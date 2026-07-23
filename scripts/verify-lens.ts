@@ -11,7 +11,7 @@ import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 import sharp from "sharp";
 import { createWorker } from "tesseract.js";
-import { grayNormalize, upscaleFactor } from "../app/lens/preprocess";
+import { grayNormalize, upscaleFactor, findDarkChips, chipCropRect } from "../app/lens/preprocess";
 import { buildIndex, analyzeLines } from "../app/lens/match";
 
 const ROOT = resolve(import.meta.dirname ?? __dirname, "..");
@@ -24,6 +24,8 @@ type Expect = {
   topic?: string;
   modalType?: string;
   entities?: string[];
+  page?: string;    // "recruit" 등 — goto 페이지 검증
+  tags?: string[];  // 공개모집: 자동 입력돼야 할 태그 (정확히 일치)
 };
 
 async function main() {
@@ -39,7 +41,9 @@ async function main() {
     .filter((p) => existsSync(p))
     .map((p) => JSON.parse(readFileSync(p, "utf8")));
   const index = buildIndex(topics);
-  console.log(`인덱스: ${index.entries.length}개 엔티티 (${topics.length}토픽)`);
+  const recruitTags: string[] = JSON.parse(readFileSync(resolve(ROOT, "app/data/recruit.json"), "utf8"))
+    .tags.map((tg: { name: string }) => tg.name);
+  console.log(`인덱스: ${index.entries.length}개 엔티티 (${topics.length}토픽) + 공개모집 태그 ${recruitTags.length}개`);
 
   const worker = await createWorker("kor", 1, {
     langPath: resolve(ROOT, "public/lens"),
@@ -66,21 +70,41 @@ async function main() {
     grayNormalize(data);
     const buf = await sharp(data, { raw: { width: info.width, height: info.height, channels: 4 } }).png().toBuffer();
 
-    // OCR — PSM11(sparse)+PSM3(auto) 라인 합집합 (ocr.ts와 동일)
+    // OCR — PSM11(sparse)+PSM3(auto) 라인 합집합 + 어두운 버튼 칩 PSM7 (ocr.ts와 동일)
     await worker.setParameters({ tessedit_pageseg_mode: "11" as never });
     const r11 = await worker.recognize(buf);
     await worker.setParameters({ tessedit_pageseg_mode: "3" as never });
     const r3 = await worker.recognize(buf);
     const lines = [...(r11.data.lines ?? []), ...(r3.data.lines ?? [])].map((l) => l.text.trim()).filter(Boolean);
+    const chips = findDarkChips(data, info.width, info.height);
+    if (chips.length) {
+      await worker.setParameters({ tessedit_pageseg_mode: "7" as never });
+      for (const b of chips) {
+        const r = chipCropRect(b, info.width, info.height);
+        if (!r) continue;
+        const cbuf = await sharp(buf).extract({ left: r.x, top: r.y, width: r.w, height: r.h }).png().toBuffer();
+        const r7 = await worker.recognize(cbuf);
+        const txt = (r7.data.text ?? "").trim();
+        if (txt) lines.push(...txt.split("\n").map((l) => l.trim()).filter(Boolean));
+      }
+    }
 
-    const oc = analyzeLines(lines, index);
+    const oc = analyzeLines(lines, index, { recruitTags });
     const errs: string[] = [];
     if (oc.section !== exp.section) errs.push(`섹션 ${oc.section} ≠ 기대 ${exp.section}`);
     if (oc.target.kind !== exp.targetKind) errs.push(`타깃 ${oc.target.kind} ≠ 기대 ${exp.targetKind}`);
-    if (exp.topic && oc.target.kind === "goto" && oc.target.goto.topic !== exp.topic)
-      errs.push(`토픽 ${oc.target.goto.topic} ≠ 기대 ${exp.topic}`);
-    if (exp.modalType && oc.target.kind === "goto" && oc.target.goto.modal?.type !== exp.modalType)
-      errs.push(`모달 ${oc.target.goto.modal?.type ?? "(없음)"} ≠ 기대 ${exp.modalType}`);
+    if (oc.target.kind === "goto") {
+      const g = oc.target.goto;
+      if (exp.page && g.page !== exp.page) errs.push(`페이지 ${g.page} ≠ 기대 ${exp.page}`);
+      if (g.page === "rogue") {
+        if (exp.topic && g.topic !== exp.topic) errs.push(`토픽 ${g.topic} ≠ 기대 ${exp.topic}`);
+        if (exp.modalType && g.modal?.type !== exp.modalType) errs.push(`모달 ${g.modal?.type ?? "(없음)"} ≠ 기대 ${exp.modalType}`);
+      } else if (g.page === "recruit" && exp.tags) {
+        const got = [...g.tags].sort().join(",");
+        const want = [...exp.tags].sort().join(",");
+        if (got !== want) errs.push(`태그 [${got}] ≠ 기대 [${want}]`);
+      }
+    }
     for (const name of exp.entities ?? []) {
       if (!oc.entities.some((e) => e.name === name)) errs.push(`엔티티 미검출: ${name}`);
     }

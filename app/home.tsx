@@ -952,7 +952,8 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
   const onLensGoto = (g: LensGoto) => {
     try { sessionStorage.setItem("ta:lens-handoff", JSON.stringify(g)); } catch { /* 시크릿 등 */ }
     setLensOpen(false);
-    switchRogueTopic(g.topic);
+    if (g.page === "recruit") switchTab("recruit"); // 공개모집 태그 화면 → 공채 도우미 (태그 자동 입력)
+    else switchRogueTopic(g.topic);
     window.dispatchEvent(new CustomEvent("ta:lens-goto"));
   };
   const [sortKey, setSortKey] = useState("기본");
@@ -1078,6 +1079,14 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
         {/* 햄버거(메뉴) = 1줄 오른쪽 끝 — 데스크탑·모바일 공통 (사용자 확정 2026-07-22).
             모바일은 order로, 데스크탑은 margin-left:auto로 배치되므로 JSX 위치는 자유. */}
         <div className="nav-group">
+          {/* 스샷 워프 — 게임 스크린샷 인식 → 해당 정보로 순간이동. 햄버거 바로 왼쪽, 접힘 상태에도
+              항상 노출 (사용자 확정 2026-07-23). Phase 1: 통합전략·공개모집, KR 클라 전용 */}
+          {locale === "ko" && (
+            <button type="button" className="lens-header-btn" onClick={() => setLensOpen(true)}
+              title={t("게임 스크린샷을 인식해 관련 정보로 바로 이동합니다 — 현재 통합전략(로그라이크)·공개모집 화면 지원")}>
+              <span aria-hidden>📷</span><span className="lens-label"> {t("스샷 워프")}</span>{isNewFeature("lens") && <span className="new-badge">{t("새기능")}</span>}
+            </button>
+          )}
           <button type="button" className="nav-toggle" aria-expanded={navOpen} aria-label={t("메뉴 열기")} onClick={() => setNavOpen((open) => !open)}>
             <span aria-hidden>☰</span>{TAB_LABEL[tab]}
           </button>
@@ -1117,14 +1126,6 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
             </button>
           )}
           <div className="header-sub-right">
-            {/* 스크린샷 렌즈 — 게임 스크린샷 인식 → 해당 정보로 이동. Phase 1: 통합전략, KR 클라 전용
-                (kor.traineddata만 호스팅 — EN/JA 클라 지원 시 언어별 traineddata·인덱스 추가) */}
-            {locale === "ko" && (
-              <button type="button" className="lens-header-btn" onClick={() => setLensOpen(true)}
-                title={t("게임 스크린샷을 인식해 관련 정보로 바로 이동합니다 — 현재 통합전략(로그라이크) 화면 지원")}>
-                <span aria-hidden>📷</span> {t("스크린샷 렌즈")}{isNewFeature("lens") && <span className="new-badge">{t("새기능")}</span>}
-              </button>
-            )}
             {/* 라벨은 데스크탑 "미래시 데이터 포함", 모바일은 "미래시"로 축약 (사용자 요청 2026-07-22) */}
             <label className="future-toggle" title={t("아직 정식 출시되지 않은(중국 서버 선행) 오퍼레이터·재료도 목록·계산기에 표시합니다. 미실장 텍스트는 비공식 AI 번역입니다.")}>
               <input type="checkbox" checked={includeFuture} onChange={(event) => toggleFuture(event.target.checked)} />

@@ -15,11 +15,13 @@ export type LensEntity = {
   topic: string; topicName: string; section: string;
   id: string; name: string; score: number;
 };
-export type LensGoto = {
-  topic: string; view: string; arcTab?: string;
-  modal?: { type: string; id: string };
-  highlight?: string[];
-};
+export type LensGoto =
+  | {
+    page: "rogue"; topic: string; view: string; arcTab?: string;
+    modal?: { type: string; id: string };
+    highlight?: string[];
+  }
+  | { page: "recruit"; tags: string[] };
 export type LensTarget =
   | { kind: "none" }
   | { kind: "tie"; section: string; options: { topic: string; topicName: string; goto: LensGoto }[] }
@@ -61,7 +63,33 @@ const SCREEN_KEYWORDS: { key: string; label: string }[] = [
   { key: "받는다", label: "전리품 획득 화면" },
   { key: "바로가기", label: "맵/작전 노드 화면" },
   { key: "작전준비", label: "작전 준비 화면" },
+  { key: "모집요건", label: "공개모집 화면" },
 ];
+
+// ── 공개모집 화면 감지 — 화면 키워드로 게이트한 뒤 태그 버튼 텍스트를 추출 ────
+// 태그명은 짧아서("메딕" 2자) 로그라이크 설명문에도 흔히 등장 — 반드시 모집 화면
+// 키워드(2개 이상, 또는 1개+태그 2개)로 게이트해야 오발동하지 않는다.
+const RECRUIT_KEYWORDS = ["모집시간", "모집요건", "모집예산", "모집설명", "획득가능오퍼레이터", "인재아웃서칭", "태그갱신"];
+
+function detectRecruit(linesN: string[], recruitTags: string[]): { score: number; tags: string[] } {
+  const allN = linesN.join("");
+  const kw = RECRUIT_KEYWORDS.filter((k) => allN.includes(k)).length;
+  const tagsN = recruitTags.map((t) => ({ name: t, n: normText(t) })).filter((t) => t.n.length >= 2);
+  const found: string[] = [];
+  for (const line of linesN) {
+    for (const tag of tagsN) {
+      if (found.includes(tag.name)) continue;
+      if (!line.includes(tag.n)) continue;
+      // 포함관계 태그 방어 — "뱅가드" 라인이 "가드"로, "고급 특별 채용"이 "특별 채용"으로 잡히지 않게
+      const shadowed = tagsN.some((o) => o.name !== tag.name && o.n.includes(tag.n) && line.includes(o.n));
+      if (shadowed) continue;
+      found.push(tag.name);
+    }
+  }
+  const gate = kw >= 2 || (kw >= 1 && found.length >= 2);
+  // 게임 규칙상 태그는 최대 5개 — 초과분은 OCR 오탐이므로 버린다
+  return gate ? { score: kw * 3 + found.length, tags: found.slice(0, 5) } : { score: 0, tags: [] };
+}
 
 // ── 인덱스 구축 — rogue*.json 형태의 토픽 데이터에서 ────────────────────────
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -108,8 +136,12 @@ const SECTION_NAV: Record<string, { view: string; arcTab?: string; modalType?: s
   ending: { view: "ending" },
 };
 
-export function analyzeLines(rawLines: string[], index: LensIndex): LensOutcome {
-  const linesN = rawLines.map((l) => normText(l)).filter((l) => l.length >= 3);
+export function analyzeLines(
+  rawLines: string[],
+  index: LensIndex,
+  opts?: { recruitTags?: string[] },
+): LensOutcome {
+  const linesN = rawLines.map((l) => normText(l)).filter((l) => l.length >= 2);
   const allN = linesN.join("");
   const screens = SCREEN_KEYWORDS.filter((k) => allN.includes(k.key)).map((k) => k.label);
 
@@ -158,6 +190,18 @@ export function analyzeLines(rawLines: string[], index: LensIndex): LensOutcome 
     .sort((a, b) => b.score - a.score);
   const section = [...sectionScore.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
 
+  // 공개모집 화면이 로그라이크 증거보다 강하면 공채 도우미로 (태그 자동 입력)
+  const recruit = detectRecruit(linesN, opts?.recruitTags ?? []);
+  if (recruit.score > 0 && recruit.score > (topics[0]?.score ?? 0)) {
+    return {
+      screens,
+      entities: recruit.tags.map((name) => ({ topic: "recruit", topicName: "공개모집", section: "recruit", id: name, name, score: 3 })),
+      topics: [{ topic: "recruit", topicName: "공개모집", score: recruit.score }],
+      section: "recruit",
+      target: { kind: "goto", goto: { page: "recruit", tags: recruit.tags } },
+    };
+  }
+
   return { screens, entities, topics, section, target: resolveTarget(topics, section, entities) };
 }
 
@@ -166,7 +210,7 @@ function gotoFor(topic: string, section: string, entities: LensEntity[]): LensGo
   const nav = SECTION_NAV[section];
   if (!nav) return null;
   const mine = entities.filter((e) => e.topic === topic && e.section === section);
-  const g: LensGoto = { topic, view: nav.view };
+  const g: LensGoto = { page: "rogue", topic, view: nav.view };
   if (nav.arcTab) g.arcTab = nav.arcTab;
   if (nav.modalType && mine[0]) g.modal = { type: nav.modalType, id: mine[0].id };
   else if (mine.length) g.highlight = mine.map((e) => e.id);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import recruitData from "./data/recruit.json";
 import { useI18n, rich, type ExtraI18n } from "./i18n";
 
@@ -169,6 +169,25 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
     }
   };
   const clearAll = () => { setQuick(""); setManualOn([]); setManualOff([]); };
+
+  // 스샷 워프 핸드오프 — 공개모집 화면 스크린샷에서 인식한 태그를 자동 선택 (home.tsx onLensGoto)
+  useEffect(() => {
+    const apply = () => {
+      let raw: string | null = null;
+      try { raw = sessionStorage.getItem("ta:lens-handoff"); } catch { return; }
+      if (!raw) return;
+      let g: { page?: string; tags?: string[] };
+      try { g = JSON.parse(raw); } catch { sessionStorage.removeItem("ta:lens-handoff"); return; }
+      if (g.page !== "recruit" || !Array.isArray(g.tags)) return; // 로그라이크 핸드오프는 rogue가 소비
+      sessionStorage.removeItem("ta:lens-handoff");
+      setQuick("");
+      setManualOff([]);
+      setManualOn(g.tags.filter((tag) => ALL_TAG_NAMES.includes(tag)).slice(0, 5));
+    };
+    apply();
+    window.addEventListener("ta:lens-goto", apply);
+    return () => window.removeEventListener("ta:lens-goto", apply);
+  }, []);
 
   const results = useMemo(() => comboResults(picked), [picked]);
 

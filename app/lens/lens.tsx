@@ -9,9 +9,9 @@ import { useI18n } from "../i18n";
 import { ocrImage, disposeOcr } from "./ocr";
 import { buildIndex, analyzeLines, type LensIndex, type LensOutcome, type LensGoto } from "./match";
 
-// 토픽 데이터 지연 로드 — 렌즈에서 실제 인식할 때만 rogue*.json을 내려받는다
-let indexP: Promise<LensIndex> | null = null;
-function getIndex(): Promise<LensIndex> {
+// 매칭 데이터 지연 로드 — 렌즈에서 실제 인식할 때만 rogue*.json·recruit.json을 내려받는다
+let indexP: Promise<{ index: LensIndex; recruitTags: string[] }> | null = null;
+function getIndex(): Promise<{ index: LensIndex; recruitTags: string[] }> {
   if (!indexP) {
     indexP = Promise.all([
       import("../data/rogue1.json"),
@@ -20,7 +20,11 @@ function getIndex(): Promise<LensIndex> {
       import("../data/rogue4.json"),
       import("../data/rogue5.json"),
       import("../data/rogue6.json"),
-    ]).then((mods) => buildIndex(mods.map((m) => m.default)));
+      import("../data/recruit.json"),
+    ]).then((mods) => ({
+      index: buildIndex(mods.slice(0, 6).map((m) => m.default)),
+      recruitTags: (mods[6].default as { tags: { name: string }[] }).tags.map((tg) => tg.name),
+    }));
     indexP.catch(() => { indexP = null; });
   }
   return indexP;
@@ -28,7 +32,7 @@ function getIndex(): Promise<LensIndex> {
 
 const SECTION_LABEL: Record<string, string> = {
   band: "분대", relic: "소장품", stage: "작전", zone: "층", enc: "조우",
-  tool: "도구", capsule: "레퍼토리 (음반)", ending: "엔딩",
+  tool: "도구", capsule: "레퍼토리 (음반)", ending: "엔딩", recruit: "공개모집 태그",
 };
 
 export default function LensModal({ onClose, onGoto }: {
@@ -56,10 +60,10 @@ export default function LensModal({ onClose, onGoto }: {
     try {
       setPreview((prev) => { if (prev) URL.revokeObjectURL(prev); return URL.createObjectURL(file); });
       setStatus(t("인식 엔진 로딩 중…"));
-      const [index] = await Promise.all([getIndex()]);
+      const { index, recruitTags } = await getIndex();
       setStatus(t("화면 분석 중… (수 초 걸립니다)"));
       const lines = await ocrImage(file);
-      const oc = analyzeLines(lines, index);
+      const oc = analyzeLines(lines, index, { recruitTags });
       // 필드 진단용 — 오인식 리포트를 받으면 콘솔에서 OCR 라인·판정을 바로 확인한다
       console.debug(`[lens] OCR ${lines.length}줄 → ${oc.target.kind}/${oc.section ?? "-"} · 엔티티 ${oc.entities.length}`, { lines, outcome: oc });
       setStatus(null);
@@ -142,10 +146,10 @@ export default function LensModal({ onClose, onGoto }: {
   }, [recognizeFiles]);
 
   return (
-    <section className="operator-modal lens-modal" role="dialog" aria-modal="true" aria-label={t("스크린샷 렌즈")}
+    <section className="operator-modal lens-modal" role="dialog" aria-modal="true" aria-label={t("스샷 워프")}
       onDragOver={(e) => e.preventDefault()} onDrop={onDropFiles}>
       <header className="scanner-head">
-        <h2>{t("스크린샷 렌즈")}</h2>
+        <h2>📷 {t("스샷 워프")}</h2>
         <button className="modal-close" onClick={onClose} aria-label={t("닫기")}>✕</button>
       </header>
       <input ref={fileInputRef} type="file" accept="image/*" hidden
@@ -158,7 +162,7 @@ export default function LensModal({ onClose, onGoto }: {
               <span className="clip-start-icon" aria-hidden>📷</span>
               <span>{t("클립보드 자동인식 시작")}</span>
             </button>
-            <p>{t("통합전략(로그라이크) 화면을 클립보드로 캡처(맥 ⌃⌘⇧4 · 윈도우 Win+Shift+S)하고 이 탭으로 돌아오면, 분대·유물·작전·조우를 인식해 가이드의 해당 정보로 바로 이동합니다. 파일 드롭이나 ⌘V 붙여넣기도 됩니다.")}</p>
+            <p>{t("게임 화면을 클립보드로 캡처(맥 ⌃⌘⇧4 · 윈도우 Win+Shift+S)하고 이 탭으로 돌아오면 바로 인식됩니다 — 통합전략 화면(분대·유물·작전·조우)은 가이드의 해당 정보로, 공개모집 태그 화면은 공채 도우미에 태그를 자동 입력해 이동합니다. 파일 드롭이나 ⌘V 붙여넣기도 됩니다.")}</p>
           </div>
         ) : (
           <div className={`scanner-clip-banner ${clip}`}>
@@ -195,7 +199,7 @@ export default function LensModal({ onClose, onGoto }: {
                 </>
               )}
               {outcome.target.kind === "none" && (
-                <p className="lens-verdict none">{t("인식된 정보가 없습니다 — 현재는 통합전략(로그라이크) 화면만 지원합니다. 분대·유물·조우·작전 화면을 캡처해 보세요.")}</p>
+                <p className="lens-verdict none">{t("인식된 정보가 없습니다 — 현재는 통합전략(로그라이크)·공개모집 화면을 지원합니다. 분대·유물·조우·작전·공개모집 태그 화면을 캡처해 보세요.")}</p>
               )}
               {outcome.entities.length > 1 && (
                 <div className="lens-entities">
