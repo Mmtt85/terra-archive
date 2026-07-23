@@ -1136,6 +1136,7 @@ const D: Record<string, Pair> = {
   "보내기": ["Send", "送信"],
   "💬 제안": ["💬 Feedback", "💬 提案"],
   // ── 보유 오퍼 스캐너 v6 — 스크린샷 인식 (2026-07-23) ────────────────────────
+  "새기능": ["NEW", "新機能"],
   "보유 오퍼 스캔": ["Scan Owned Operators", "所持オペレータースキャン"],
   "스크린샷으로 보유 오퍼 스캔": ["Scan owned operators from screenshots", "スクリーンショットから所持オペレーターをスキャン"],
   "오퍼 목록 스크린샷을 자동 인식해 보유·정예화를 채웁니다": ["Auto-recognizes operator-list screenshots to fill ownership and Elite", "オペレーター一覧のスクリーンショットを自動認識して所持・昇進を埋めます"],

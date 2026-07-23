@@ -687,7 +687,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         </div>
         <div className="planner-buttons">
           {/* startTransition: 로스터 모달(카드 수백 장)은 렌더가 무거워 클릭 페인트부터 내보낸다 (INP, 2026-07-21) */}
-          <button onClick={() => startTransition(() => setShowRoster(true))}><span className="btn-icon" aria-hidden>▦</span>{t("보유 오퍼 설정 ({a}/{b})", { a: visibleOps.filter((op) => ownedIds.has(op.id)).length, b: visibleOps.length })}{isNewFeature("scanner") && <span className="new-badge">NEW</span>}</button>
+          <button onClick={() => startTransition(() => setShowRoster(true))}><span className="btn-icon" aria-hidden>▦</span>{t("보유 오퍼 설정 ({a}/{b})", { a: visibleOps.filter((op) => ownedIds.has(op.id)).length, b: visibleOps.length })}{isNewFeature("scanner") && <span className="new-badge">{t("새기능")}</span>}</button>
           {/* 라벨이 '계산 중…'으로 바뀌어도 버튼 폭이 줄지 않게 원 라벨로 폭을 잡아둔다 (사용자 요청 2026-07-21) */}
           <button className="primary" onClick={() => runOptimize()} disabled={!!optimizing}>
             <span className="btn-icon" aria-hidden>⟳</span>
@@ -1431,7 +1431,7 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
               <span className="btn-icon" aria-hidden>⤒</span>{t("MAA 파일 가져오기")}
               <input type="file" accept="application/json,.json" onChange={(event) => { const file = event.target.files?.[0]; if (file) importMaa(file); event.target.value = ""; }} />
             </label>
-            <button type="button" onClick={() => setShowScan(true)} title={t("오퍼 목록 스크린샷을 자동 인식해 보유·정예화를 채웁니다")}><span className="btn-icon" aria-hidden>◉</span>{t("스크린샷으로 보유 오퍼 스캔")}{isNewFeature("scanner") && <span className="new-badge">NEW</span>}</button>
+            <button type="button" onClick={() => setShowScan(true)} title={t("오퍼 목록 스크린샷을 자동 인식해 보유·정예화를 채웁니다")}><span className="btn-icon" aria-hidden>◉</span>{t("스크린샷으로 보유 오퍼 스캔")}{isNewFeature("scanner") && <span className="new-badge">{t("새기능")}</span>}</button>
             <button type="button" className="apply" onClick={() => onApply(draft, eliteDraft)}><span className="btn-icon" aria-hidden>⟳</span>{t("적용 및 자동편성 실행")}</button>
           </div>
         </header>

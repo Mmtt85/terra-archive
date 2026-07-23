@@ -1,0 +1,1321 @@
+{
+ "_note": "오퍼 스캐너 지상값 — 2026-07-23 픽스처 14장 178셀 (desktop_over=에뮬 밖 여백 포함 캡처, crop_partial2=사용자 실측 부분 크롭) (crop_partial=부분 크롭 스샷, 크롭 재시도 경로 검증) (first_operator_list=리스트 진입 상태·선택 하이라이트 포함) 전수 시각 검증 (식별·정예화 100%). 스크린샷과 함께 로컬 전용(git 미추적). scripts/verify-scan.ts가 사용.",
+ "frames": [
+  {
+   "file": "스크린샷 2026-07-22 22.11.13.png",
+   "cells": [
+    {
+     "row": 0,
+     "col": 0,
+     "op": "char_172_svrash",
+     "name": "실버애쉬",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 1,
+     "op": "char_4010_etlchi",
+     "name": "엔텔레키아",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 2,
+     "op": "char_4145_ulpia",
+     "name": "울피아누스",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 3,
+     "op": "char_1050_chen3",
+     "name": "첸 더 던스트릭",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 4,
+     "op": "char_4082_qiubai",
+     "name": "치우바이",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 5,
+     "op": "char_2014_nian",
+     "name": "니엔",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 0,
+     "op": "char_293_thorns",
+     "name": "쏜즈",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 1,
+     "op": "char_4088_hodrer",
+     "name": "외드레르",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 2,
+     "op": "char_4121_zuole",
+     "name": "좌락",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 3,
+     "op": "char_2024_chyue",
+     "name": "총웨",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 4,
+     "op": "char_4182_oblvns",
+     "name": "토가와 사키코",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 5,
+     "op": "char_311_mudrok",
+     "name": "머드락",
+     "elite": 2
+    }
+   ]
+  },
+  {
+   "file": "스크린샷 2026-07-22 22.11.19.png",
+   "cells": [
+    {
+     "row": 0,
+     "col": 0,
+     "op": "char_172_svrash",
+     "name": "실버애쉬",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 1,
+     "op": "char_4010_etlchi",
+     "name": "엔텔레키아",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 2,
+     "op": "char_4145_ulpia",
+     "name": "울피아누스",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 3,
+     "op": "char_1050_chen3",
+     "name": "첸 더 던스트릭",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 4,
+     "op": "char_4082_qiubai",
+     "name": "치우바이",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 5,
+     "op": "char_2014_nian",
+     "name": "니엔",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 6,
+     "op": "char_202_demkni",
+     "name": "사리아",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 0,
+     "op": "char_293_thorns",
+     "name": "쏜즈",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 1,
+     "op": "char_4088_hodrer",
+     "name": "외드레르",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 2,
+     "op": "char_4121_zuole",
+     "name": "좌락",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 3,
+     "op": "char_2024_chyue",
+     "name": "총웨",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 4,
+     "op": "char_4182_oblvns",
+     "name": "토가와 사키코",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 5,
+     "op": "char_311_mudrok",
+     "name": "머드락",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 6,
+     "op": "char_2025_shu",
+     "name": "슈",
+     "elite": 2
+    }
+   ]
+  },
+  {
+   "file": "스크린샷 2026-07-22 22.14.43.png",
+   "cells": [
+    {
+     "row": 0,
+     "col": 0,
+     "op": "char_391_rosmon",
+     "name": "로즈몬티스",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 1,
+     "op": "char_332_archet",
+     "name": "아르케토",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 2,
+     "op": "char_1035_wisdel",
+     "name": "위셔델",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 3,
+     "op": "char_2012_typhon",
+     "name": "티폰",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 4,
+     "op": "char_300_phenxi",
+     "name": "피아메타",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 5,
+     "op": "char_450_necras",
+     "name": "네크라스",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 6,
+     "op": "char_1038_whitw2",
+     "name": "라플란드 더 데카덴차",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 0,
+     "op": "char_4193_lemuen",
+     "name": "르무엔",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 1,
+     "op": "char_103_angel",
+     "name": "엑시아",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 2,
+     "op": "char_1013_chen2",
+     "name": "첸 더 홀룽데이",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 3,
+     "op": "char_4055_bgsnow",
+     "name": "파죰카",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 4,
+     "op": "char_377_gdglow",
+     "name": "골든글로우",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 5,
+     "op": "char_4146_nymph",
+     "name": "님프",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 6,
+     "op": "char_4133_logos",
+     "name": "로고스",
+     "elite": 2
+    }
+   ]
+  },
+  {
+   "file": "스크린샷 2026-07-22 22.19.07.png",
+   "cells": [
+    {
+     "row": 0,
+     "col": 0,
+     "op": "char_391_rosmon",
+     "name": "로즈몬티스",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 1,
+     "op": "char_332_archet",
+     "name": "아르케토",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 2,
+     "op": "char_1035_wisdel",
+     "name": "위셔델",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 3,
+     "op": "char_2012_typhon",
+     "name": "티폰",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 4,
+     "op": "char_300_phenxi",
+     "name": "피아메타",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 5,
+     "op": "char_450_necras",
+     "name": "네크라스",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 6,
+     "op": "char_1038_whitw2",
+     "name": "라플란드 더 데카덴차",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 0,
+     "op": "char_4193_lemuen",
+     "name": "르무엔",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 1,
+     "op": "char_103_angel",
+     "name": "엑시아",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 2,
+     "op": "char_1013_chen2",
+     "name": "첸 더 홀룽데이",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 3,
+     "op": "char_4055_bgsnow",
+     "name": "파죰카",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 4,
+     "op": "char_377_gdglow",
+     "name": "골든글로우",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 5,
+     "op": "char_4146_nymph",
+     "name": "님프",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 6,
+     "op": "char_4133_logos",
+     "name": "로고스",
+     "elite": 2
+    }
+   ]
+  },
+  {
+   "file": "스크린샷 2026-07-22 22.22.01.png",
+   "cells": [
+    {
+     "row": 0,
+     "col": 0,
+     "op": "char_4026_vulpis",
+     "name": "불피스폴리아",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 1,
+     "op": "char_4087_ines",
+     "name": "이네스",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 2,
+     "op": "char_1014_nearl2",
+     "name": "니어 더 래디언트 나이트",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 3,
+     "op": "char_1043_leizi2",
+     "name": "레이즈 더 썬더브링어",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 4,
+     "op": "char_4064_mlynar",
+     "name": "무에나",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 5,
+     "op": "char_350_surtr",
+     "name": "수르트",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 6,
+     "op": "char_172_svrash",
+     "name": "실버애쉬",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 0,
+     "op": "char_1045_svash2",
+     "name": "실버애쉬 더 레인프로스트",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 1,
+     "op": "char_1026_gvial2",
+     "name": "가비알 디 인빈서블",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 2,
+     "op": "char_4116_blkkgt",
+     "name": "데겐블레허",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 3,
+     "op": "char_264_f12yin",
+     "name": "마운틴",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 4,
+     "op": "char_017_huang",
+     "name": "블레이즈",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 5,
+     "op": "char_263_skadi",
+     "name": "스카디",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 6,
+     "op": "char_293_thorns",
+     "name": "쏜즈",
+     "elite": 2
+    }
+   ]
+  },
+  {
+   "file": "스크린샷 2026-07-23 00.24.55.png",
+   "cells": [
+    {
+     "row": 0,
+     "col": 0,
+     "op": "char_4078_bdhkgt",
+     "name": "지에윈",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 1,
+     "op": "char_363_toddi",
+     "name": "토디폰스",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 2,
+     "op": "char_204_platnm",
+     "name": "플래티넘",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 3,
+     "op": "char_166_skfire",
+     "name": "스카이파이어",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 4,
+     "op": "char_275_breeze",
+     "name": "브리즈",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 5,
+     "op": "char_348_ceylon",
+     "name": "실론",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 6,
+     "op": "char_436_whispr",
+     "name": "위스퍼레인",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 0,
+     "op": "char_1021_kroos2",
+     "name": "크루스 더 킨 글린트",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 1,
+     "op": "char_158_milu",
+     "name": "파이어워치",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 2,
+     "op": "char_4054_malist",
+     "name": "미니멀리스트",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 3,
+     "op": "char_446_aroma",
+     "name": "아로마",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 4,
+     "op": "char_108_silent",
+     "name": "사일런스",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 5,
+     "op": "char_171_bldsk",
+     "name": "와파린",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 6,
+     "op": "char_1024_hbisc2",
+     "name": "히비스커스 더 퓨리파이어",
+     "elite": 2
+    }
+   ]
+  },
+  {
+   "file": "스크린샷 2026-07-23 00.25.14.png",
+   "cells": [
+    {
+     "row": 0,
+     "col": 0,
+     "op": "char_210_stward",
+     "name": "스튜어드",
+     "elite": 1
+    },
+    {
+     "row": 0,
+     "col": 1,
+     "op": "char_120_hibisc",
+     "name": "히비스커스",
+     "elite": 1
+    },
+    {
+     "row": 0,
+     "col": 2,
+     "op": "char_349_chiave",
+     "name": "키아베",
+     "elite": 1
+    },
+    {
+     "row": 0,
+     "col": 3,
+     "op": "char_388_mint",
+     "name": "민트",
+     "elite": 1
+    },
+    {
+     "row": 0,
+     "col": 4,
+     "op": "char_149_scave",
+     "name": "스캐빈저",
+     "elite": 1
+    },
+    {
+     "row": 0,
+     "col": 5,
+     "op": "char_381_bubble",
+     "name": "버블",
+     "elite": 1
+    },
+    {
+     "row": 0,
+     "col": 6,
+     "op": "char_109_fmout",
+     "name": "기타노",
+     "elite": 1
+    },
+    {
+     "row": 1,
+     "col": 0,
+     "op": "char_212_ansel",
+     "name": "안셀",
+     "elite": 1
+    },
+    {
+     "row": 1,
+     "col": 1,
+     "op": "char_278_orchid",
+     "name": "오키드",
+     "elite": 1
+    },
+    {
+     "row": 1,
+     "col": 2,
+     "op": "char_333_sidero",
+     "name": "시데로카",
+     "elite": 1
+    },
+    {
+     "row": 1,
+     "col": 3,
+     "op": "char_101_sora",
+     "name": "소라",
+     "elite": 1
+    },
+    {
+     "row": 1,
+     "col": 4,
+     "op": "char_130_doberm",
+     "name": "도베르만",
+     "elite": 1
+    },
+    {
+     "row": 1,
+     "col": 5,
+     "op": "char_190_clour",
+     "name": "버메일",
+     "elite": 1
+    },
+    {
+     "row": 1,
+     "col": 6,
+     "op": "char_117_myrrh",
+     "name": "미르",
+     "elite": 1
+    }
+   ]
+  },
+  {
+   "file": "스크린샷 2026-07-23 00.25.29.png",
+   "cells": [
+    {
+     "row": 0,
+     "col": 0,
+     "op": "char_500_noirc",
+     "name": "느와르 코르네",
+     "elite": 0
+    },
+    {
+     "row": 0,
+     "col": 1,
+     "op": "char_009_12fce",
+     "name": "12F",
+     "elite": 0
+    },
+    {
+     "row": 0,
+     "col": 2,
+     "op": "char_4188_confes",
+     "name": "CONFESS-47",
+     "elite": 0
+    },
+    {
+     "row": 0,
+     "col": 3,
+     "op": "char_4093_frston",
+     "name": "Friston-3",
+     "elite": 0
+    },
+    {
+     "row": 0,
+     "col": 4,
+     "op": "char_4077_palico",
+     "name": "테라 대륙 조사단",
+     "elite": 0
+    },
+    {
+     "row": 0,
+     "col": 5,
+     "op": "char_4136_phonor",
+     "name": "PhonoR-0",
+     "elite": 0
+    },
+    {
+     "row": 0,
+     "col": 6,
+     "op": "char_376_therex",
+     "name": "THRM-EX",
+     "elite": 0
+    },
+    {
+     "row": 1,
+     "col": 0,
+     "op": "char_503_rang",
+     "name": "레인저",
+     "elite": 0
+    },
+    {
+     "row": 1,
+     "col": 1,
+     "op": "char_501_durin",
+     "name": "두린",
+     "elite": 0
+    },
+    {
+     "row": 1,
+     "col": 2,
+     "op": "char_286_cast3",
+     "name": "Castle-3",
+     "elite": 0
+    },
+    {
+     "row": 1,
+     "col": 3,
+     "op": "char_4000_jnight",
+     "name": "저스티스 나이트",
+     "elite": 0
+    },
+    {
+     "row": 1,
+     "col": 4,
+     "op": "char_285_medic2",
+     "name": "Lancet-2",
+     "elite": 0
+    },
+    {
+     "row": 1,
+     "col": 5,
+     "op": "char_4091_ulika",
+     "name": "U-Official",
+     "elite": 0
+    },
+    {
+     "row": 1,
+     "col": 6,
+     "op": "char_4222_taraxa",
+     "name": "타락사쿰",
+     "elite": 0
+    }
+   ]
+  },
+  {
+   "file": "스크린샷 2026-07-23 02.26.38.png",
+   "cells": [
+    {
+     "row": 0,
+     "col": 0,
+     "op": "char_112_siege",
+     "name": "시즈",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 1,
+     "op": "char_479_sleach",
+     "name": "사일라흐",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 2,
+     "op": "char_1019_siege2",
+     "name": "비나 빅토리아",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 3,
+     "op": "char_4009_irene",
+     "name": "아이린",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 4,
+     "op": "char_010_chen",
+     "name": "첸",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 5,
+     "op": "char_4058_pepe",
+     "name": "페페",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 6,
+     "op": "char_423_blemsh",
+     "name": "블레미샤인",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 0,
+     "op": "char_362_saga",
+     "name": "사가",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 1,
+     "op": "char_420_flamtl",
+     "name": "플레임테일",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 2,
+     "op": "char_4098_vvana",
+     "name": "비비아나",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 3,
+     "op": "char_1032_excu2",
+     "name": "이그제큐터 디 엑스 포에데레",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 4,
+     "op": "char_485_pallas",
+     "name": "팔라스",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 5,
+     "op": "char_188_helage",
+     "name": "헬라그",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 6,
+     "op": "char_416_zumama",
+     "name": "유넥티스",
+     "elite": 2
+    }
+   ]
+  },
+  {
+   "file": "스크린샷 2026-07-23 02.27.00.png",
+   "cells": [
+    {
+     "row": 0,
+     "col": 0,
+     "op": "char_472_pasngr",
+     "name": "패신저",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 1,
+     "op": "char_147_shining",
+     "name": "샤이닝",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 2,
+     "op": "char_1031_slent2",
+     "name": "사일런스 더 패러디그매틱",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 3,
+     "op": "char_322_lmlee",
+     "name": "리",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 4,
+     "op": "char_1039_thorn2",
+     "name": "쏜즈 더 로드스타",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 5,
+     "op": "char_250_phatom",
+     "name": "팬텀",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 6,
+     "op": "char_107_liskam",
+     "name": "리스캄",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 0,
+     "op": "char_4042_lumen",
+     "name": "루멘",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 1,
+     "op": "char_4212_nasti",
+     "name": "내스티",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 2,
+     "op": "char_4072_ironmn",
+     "name": "스테인리스",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 3,
+     "op": "char_437_mizuki",
+     "name": "미즈키",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 4,
+     "op": "char_225_haak",
+     "name": "아",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 5,
+     "op": "char_148_nearl",
+     "name": "니어",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 6,
+     "op": "char_260_durnar",
+     "name": "듀나",
+     "elite": 2
+    }
+   ]
+  },
+  {
+   "file": "first_operator_list.png",
+   "cells": [
+    {
+     "row": 0,
+     "col": 0,
+     "op": "char_249_mlyss",
+     "name": "뮤엘시스",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 1,
+     "op": "char_4026_vulpis",
+     "name": "불피스폴리아",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 2,
+     "op": "char_4087_ines",
+     "name": "이네스",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 3,
+     "op": "char_1014_nearl2",
+     "name": "니어 더 래디언트 나이트",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 4,
+     "op": "char_1043_leizi2",
+     "name": "레이즈 더 썬더브링어",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 5,
+     "op": "char_4064_mlynar",
+     "name": "무에나",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 6,
+     "op": "char_350_surtr",
+     "name": "수르트",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 0,
+     "op": "char_222_bpipe",
+     "name": "백파이프",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 1,
+     "op": "char_1045_svash2",
+     "name": "실버애쉬 더 레인프로스트",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 2,
+     "op": "char_1026_gvial2",
+     "name": "가비알 디 인빈서블",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 3,
+     "op": "char_4116_blkkgt",
+     "name": "데겐블레허",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 4,
+     "op": "char_264_f12yin",
+     "name": "마운틴",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 5,
+     "op": "char_017_huang",
+     "name": "블레이즈",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 6,
+     "op": "char_263_skadi",
+     "name": "스카디",
+     "elite": 2
+    }
+   ]
+  },
+  {
+   "file": "crop_partial.png",
+   "cells": [
+    {
+     "row": 0,
+     "col": 0,
+     "op": "char_4087_ines",
+     "name": "이네스",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 1,
+     "op": "char_1014_nearl2",
+     "name": "니어 더 래디언트 나이트",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 2,
+     "op": "char_1043_leizi2",
+     "name": "레이즈 더 썬더브링어",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 0,
+     "op": "char_1026_gvial2",
+     "name": "가비알 디 인빈서블",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 1,
+     "op": "char_4116_blkkgt",
+     "name": "데겐블레허",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 2,
+     "op": "char_264_f12yin",
+     "name": "마운틴",
+     "elite": 2
+    }
+   ]
+  },
+  {
+   "file": "desktop_over.png",
+   "cells": [
+    {
+     "row": 0,
+     "col": 0,
+     "op": "char_2026_yu",
+     "name": "위",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 1,
+     "op": "char_136_hsguma",
+     "name": "호시구마",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 2,
+     "op": "char_4039_horn",
+     "name": "혼",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 3,
+     "op": "char_113_cqbw",
+     "name": "W",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 4,
+     "op": "char_4117_ray",
+     "name": "레이",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 5,
+     "op": "char_391_rosmon",
+     "name": "로즈몬티스",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 6,
+     "op": "char_332_archet",
+     "name": "아르케토",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 0,
+     "op": "char_4065_judge",
+     "name": "페넌스",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 1,
+     "op": "char_1044_hsgma2",
+     "name": "호시구마 더 브리처",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 2,
+     "op": "char_456_ash",
+     "name": "Ash",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 3,
+     "op": "char_4138_narant",
+     "name": "나란투야",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 4,
+     "op": "char_197_poca",
+     "name": "로사",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 5,
+     "op": "char_4193_lemuen",
+     "name": "르무엔",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 6,
+     "op": "char_103_angel",
+     "name": "엑시아",
+     "elite": 2
+    }
+   ]
+  },
+  {
+   "file": "crop_partial2.png",
+   "cells": [
+    {
+     "row": 0,
+     "col": 0,
+     "op": "char_4039_horn",
+     "name": "혼",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 1,
+     "op": "char_113_cqbw",
+     "name": "W",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 2,
+     "op": "char_4117_ray",
+     "name": "레이",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 0,
+     "op": "char_456_ash",
+     "name": "Ash",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 1,
+     "op": "char_4138_narant",
+     "name": "나란투야",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 2,
+     "op": "char_197_poca",
+     "name": "로사",
+     "elite": 2
+    }
+   ]
+  }
+ ]
+}
