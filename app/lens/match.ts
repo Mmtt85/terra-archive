@@ -23,6 +23,7 @@ export type LensGoto =
     modal?: { type: string; id: string };
     highlight?: string[];
     gather?: boolean; // 아이템 다중 인식 — 모아보기 모달로 표시
+    grade?: number;   // 좌하단 난이도 배지 인식값 — 난이도 셀렉터에 자동 적용
   }
   | { page: "recruit"; tags: string[] };
 export type LensTarget =

@@ -839,13 +839,19 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
     let raw: string | null = null;
     try { raw = sessionStorage.getItem("ta:lens-handoff"); } catch { return; }
     if (!raw) return;
-    let g: { page?: string; topic?: string; view?: string; arcTab?: string; modal?: { type: string; id: string }; highlight?: string[] };
+    let g: { page?: string; topic?: string; view?: string; arcTab?: string; modal?: { type: string; id: string }; highlight?: string[]; gather?: boolean; grade?: number };
     try { g = JSON.parse(raw); } catch { sessionStorage.removeItem("ta:lens-handoff"); return; }
     if (g.page && g.page !== "rogue") return; // 공채 등 다른 페이지 핸드오프는 해당 페이지가 소비
     if (g.topic !== topicRef.current) return; // 토픽 전환 완료 후 데이터 로드 effect에서 다시 불린다
     sessionStorage.removeItem("ta:lens-handoff");
     if (g.view && viewsFor().some((x) => x.id === g.view)) setView(g.view as View);
     if (g.arcTab) setArcTab(g.arcTab);
+    // 좌하단 난이도 배지가 인식됐으면 난이도 셀렉터에 자동 적용 (사용자 요청 2026-07-24).
+    // maxGrade memo는 이 함수보다 뒤에 선언되므로 여기서 직접 계산 (토픽별 15 또는 승천 18)
+    if (typeof g.grade === "number" && g.grade >= 0) {
+      const gmax = Math.max(15, ...data.difficulties.filter((df) => df.mode === "NORMAL").map((df) => df.grade));
+      if (g.grade <= gmax) setGrade(g.grade);
+    }
     setRelicQ(""); setMapQ(""); // 검색 필터가 하이라이트 대상을 가리지 않게
     setZoneOpen(null); setStageOpen(null); setEnemyOpen(null); setEncOpen(null); setRelicOpen(null);
     if (g.modal) {

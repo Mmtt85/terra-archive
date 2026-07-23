@@ -5,10 +5,11 @@
 // PSM3(auto)·칩 패스를 생략한다. 칩 패스(공채 태그 등 어두운 버튼 개별 OCR)는
 // 화면 키워드가 보일 때만 — 오케스트레이션은 lens.tsx·verify-lens.ts가 동일 순서로 수행.
 
-import { grayNormalize, upscaleFactor, findDarkChips, chipCropRect } from "./preprocess";
+import { grayNormalize, upscaleFactor, findDarkChips, chipCropRect, binarizeGlyph } from "./preprocess";
 import type { Worker } from "tesseract.js";
 
 let workerP: Promise<Worker> | null = null;
+let digitWorkerP: Promise<Worker> | null = null; // 난이도 배지 숫자 전용 (eng — kor은 숫자를 한글로 읽음)
 
 function getWorker(): Promise<Worker> {
   if (!workerP) {
@@ -31,6 +32,27 @@ function getWorker(): Promise<Worker> {
   return workerP;
 }
 
+// 난이도 숫자 전용 eng 워커 — kor LSTM은 단독 숫자를 한글 글리프로 오독하고,
+// LSTM은 char_whitelist도 무시하므로 (실측 2026-07-24) 별도 모델이 필요하다.
+function getDigitWorker(): Promise<Worker> {
+  if (!digitWorkerP) {
+    digitWorkerP = (async () => {
+      const mod = await import("tesseract.js/dist/tesseract.esm.min.js");
+      const { createWorker } = mod.default;
+      const w = await createWorker("eng", 1, {
+        workerPath: "/lens/worker.min.js",
+        corePath: "/lens",
+        langPath: "/lens",
+        gzip: false,
+      });
+      await w.setParameters({ tessedit_pageseg_mode: "7" as never });
+      return w;
+    })();
+    digitWorkerP.catch(() => { digitWorkerP = null; });
+  }
+  return digitWorkerP;
+}
+
 /** 모달을 열자마자 호출해 워커·wasm·언어데이터를 예열한다 (첫 인식 체감 속도 개선). */
 export async function warmOcr(): Promise<void> {
   try { await getWorker(); } catch { /* 실제 인식 시 재시도 */ }
@@ -43,7 +65,21 @@ export type OcrSession = {
   chips(): Promise<string[]>;
   /** PSM3(auto) 전체 프레임 — 1차로 판정 안 될 때만 폴백 */
   auto(): Promise<string[]>;
+  /** 좌하단 난이도 배지(육각형 숫자) — 있으면 0~18 반환, 없으면 null */
+  difficulty(): Promise<number | null>;
 };
+
+/** 좌하단 난이도 배지(육각형) 크롭 영역 (통합전략 화면 공통 위치) — f6 실측 캘리브레이션 */
+export const DIFF_REGION = { x: 0.012, y: 0.95, w: 0.032, h: 0.05 } as const;
+
+/** OCR 텍스트에서 난이도 숫자 파싱 — 0~18 한정, 그 외는 배지 없음으로 간주 */
+export function parseDifficulty(text: string, confidence: number): number | null {
+  if (confidence < 40) return null;
+  const m = (text ?? "").match(/(\d{1,2})/);
+  if (!m) return null;
+  const n = parseInt(m[1], 10);
+  return n >= 0 && n <= 18 ? n : null;
+}
 
 async function setPsm(worker: Worker, psm: string): Promise<void> {
   await worker.setParameters({ tessedit_pageseg_mode: psm as never });
@@ -80,6 +116,30 @@ export async function createOcrSession(blob: Blob): Promise<OcrSession> {
       const r = await worker.recognize(c, {}, OUT);
       return (r.data.lines ?? []).map((l) => l.text.trim()).filter(Boolean);
     },
+    async difficulty() {
+      // 좌하단 코너를 1:1로 잘라 이진화 → nearest 4배 확대 → eng 워커 한 줄 OCR.
+      // ⚠ 확대 후 이진화하면 리샘플링 방식(canvas bilinear vs sharp lanczos)에 따라 결과가
+      // 갈린다 — 1:1 이진화 + nearest 확대는 결정적이라 브라우저·하네스가 일치 (실측 90%).
+      // kor은 단독 숫자를 한글로 오독하므로 eng 전용 워커를 쓴다 (2026-07-24)
+      const x = Math.round(W * DIFF_REGION.x), y = Math.round(H * DIFF_REGION.y);
+      const w = Math.round(W * DIFF_REGION.w), h = Math.min(Math.round(H * DIFF_REGION.h), H - y);
+      const c1 = document.createElement("canvas");
+      c1.width = w; c1.height = h;
+      const c1x = c1.getContext("2d", { willReadFrequently: true })!;
+      c1x.drawImage(c, x, y, w, h, 0, 0, w, h);
+      const cimg = c1x.getImageData(0, 0, w, h);
+      binarizeGlyph(cimg.data);
+      c1x.putImageData(cimg, 0, 0);
+      const cc = document.createElement("canvas");
+      cc.width = w * 4; cc.height = h * 4;
+      const cctx = cc.getContext("2d")!;
+      cctx.imageSmoothingEnabled = false; // nearest
+      cctx.drawImage(c1, 0, 0, w * 4, h * 4);
+      const dw = await getDigitWorker();
+      const r = await dw.recognize(cc, {}, { blocks: false, text: true, hocr: false, tsv: false });
+      console.debug(`[lens] 난이도 OCR: "${(r.data.text ?? "").trim()}" ${Math.round(r.data.confidence ?? 0)}%`);
+      return parseDifficulty(r.data.text ?? "", r.data.confidence ?? 0);
+    },
     async chips() {
       const boxes = findDarkChips(img.data, W, H);
       if (!boxes.length) return [];
@@ -104,9 +164,13 @@ export async function createOcrSession(blob: Blob): Promise<OcrSession> {
 
 /** 모달 닫을 때 워커 정리 (다음 열림에서 재초기화). */
 export async function disposeOcr(): Promise<void> {
-  const p = workerP;
+  const p = workerP, dp = digitWorkerP;
   workerP = null;
+  digitWorkerP = null;
   if (p) {
     try { await (await p).terminate(); } catch { /* 이미 종료됨 */ }
+  }
+  if (dp) {
+    try { await (await dp).terminate(); } catch { /* 이미 종료됨 */ }
   }
 }

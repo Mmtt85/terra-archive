@@ -11,7 +11,8 @@ import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 import sharp from "sharp";
 import { createWorker } from "tesseract.js";
-import { grayNormalize, upscaleFactor, findDarkChips, chipCropRect } from "../app/lens/preprocess";
+import { grayNormalize, upscaleFactor, findDarkChips, chipCropRect, binarizeGlyph } from "../app/lens/preprocess";
+import { DIFF_REGION, parseDifficulty } from "../app/lens/ocr";
 import { buildIndex, analyzeLines, analyzeRecruit, wantsChipPass } from "../app/lens/match";
 
 const ROOT = resolve(import.meta.dirname ?? __dirname, "..");
@@ -27,6 +28,7 @@ type Expect = {
   entities?: string[];
   page?: string;    // "recruit" 등 — goto 페이지 검증
   tags?: string[];  // 공개모집: 자동 입력돼야 할 태그 (정확히 일치)
+  grade?: number;   // 좌하단 난이도 배지 — 미지정이면 "인식되지 않아야" 한다 (오탐 검출)
 };
 
 async function main() {
@@ -51,6 +53,13 @@ async function main() {
     cachePath: resolve(ROOT, "public/lens"),
     gzip: false,
   });
+  // 난이도 배지 숫자 전용 eng 워커 (kor은 단독 숫자를 한글로 오독)
+  const digitWorker = await createWorker("eng", 1, {
+    langPath: resolve(ROOT, "public/lens"),
+    cachePath: resolve(ROOT, "public/lens"),
+    gzip: false,
+  });
+  await digitWorker.setParameters({ tessedit_pageseg_mode: "7" as never });
 
   let pass = 0, fail = 0, skipped = 0;
   const files = readdirSync(SHOTS).filter((f) => f.endsWith(".png")).sort();
@@ -114,6 +123,23 @@ async function main() {
         if (!chipsRan) lines = lines.concat(await chipPass());
         oc = analyzeLines(lines, index, ctx);
       }
+      // 좌하단 난이도 배지 — ocr.ts session.difficulty()와 동일: 크롭→4x→글리프 이진화→eng OCR
+      if (oc.target.kind !== "none") {
+        const dx = Math.round(info.width * DIFF_REGION.x), dy = Math.round(info.height * DIFF_REGION.y);
+        const dw = Math.round(info.width * DIFF_REGION.w), dh = Math.min(Math.round(info.height * DIFF_REGION.h), info.height - dy);
+        // 1:1 이진화 → nearest 4x (ocr.ts와 동일 — 리샘플링 결정적)
+        const { data: cd, info: ci } = await sharp(buf).extract({ left: dx, top: dy, width: dw, height: dh })
+          .ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+        binarizeGlyph(cd);
+        const dbuf = await sharp(cd, { raw: { width: ci.width, height: ci.height, channels: 4 } })
+          .resize({ width: ci.width * 4, kernel: "nearest" }).png().toBuffer();
+        const rd = await digitWorker.recognize(dbuf, {}, { blocks: false, text: true, hocr: false, tsv: false });
+        const grade = parseDifficulty(rd.data.text ?? "", rd.data.confidence ?? 0);
+        if (grade !== null) {
+          if (oc.target.kind === "goto" && oc.target.goto.page === "rogue") oc.target.goto.grade = grade;
+          else if (oc.target.kind === "tie") for (const o of oc.target.options) { if (o.goto.page === "rogue") o.goto.grade = grade; }
+        }
+      }
     }
     const errs: string[] = [];
     if (oc.section !== exp.section) errs.push(`섹션 ${oc.section} ≠ 기대 ${exp.section}`);
@@ -124,6 +150,7 @@ async function main() {
       if (g.page === "rogue") {
         if (exp.topic && g.topic !== exp.topic) errs.push(`토픽 ${g.topic} ≠ 기대 ${exp.topic}`);
         if (exp.modalType && g.modal?.type !== exp.modalType) errs.push(`모달 ${g.modal?.type ?? "(없음)"} ≠ 기대 ${exp.modalType}`);
+        if (g.grade !== exp.grade) errs.push(`난이도 ${g.grade ?? "(없음)"} ≠ 기대 ${exp.grade ?? "(없음)"}`);
       } else if (g.page === "recruit" && exp.tags) {
         const got = [...g.tags].sort().join(",");
         const want = [...exp.tags].sort().join(",");
@@ -146,6 +173,7 @@ async function main() {
   }
 
   await worker.terminate();
+  await digitWorker.terminate();
   console.log(`\n결과: ${pass}/${pass + fail} 통과${skipped ? ` (건너뜀 ${skipped})` : ""}`);
   if (pass + fail === 0) process.exit(2);
   process.exit(fail === 0 ? 0 : 1);

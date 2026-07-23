@@ -28,6 +28,22 @@ export function upscaleFactor(width: number): number {
   return width < 2000 ? 2 : 1;
 }
 
+/**
+ * 밝은 글리프 강조 이진화 — 난이도 배지처럼 "어두운 배경 위 밝은 숫자"를
+ * 검정 글자/흰 배경으로 뒤집는다 (테서랙트가 가장 잘 읽는 극성).
+ * cut 0.65 실측 확정 (f6 "3" 75%) — 더 높이면 글리프가 끊긴다.
+ */
+export function binarizeGlyph(data: Uint8ClampedArray | Uint8Array, cut = 0.65): void {
+  let min = 255, max = 0;
+  for (let i = 0; i < data.length; i += 4) { const v = data[i]; if (v < min) min = v; if (v > max) max = v; }
+  const thr = min + (max - min) * cut;
+  for (let i = 0; i < data.length; i += 4) {
+    const v = data[i] >= thr ? 0 : 255;
+    data[i] = data[i + 1] = data[i + 2] = v;
+    data[i + 3] = 255;
+  }
+}
+
 export type ChipBox = { x: number; y: number; w: number; h: number };
 
 /**

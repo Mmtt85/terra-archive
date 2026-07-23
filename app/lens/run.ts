@@ -64,6 +64,15 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string):
       if (!chipsRan) lines = lines.concat(await session.chips());
       oc = analyzeLines(lines, index, ctx);
     }
+    // 좌하단 난이도 배지 — 있으면 이동 목표에 스탬프해 난이도 셀렉터에 자동 적용 (2026-07-24)
+    if (oc.target.kind !== "none") {
+      const grade = await session.difficulty();
+      console.debug(`[lens] 난이도 배지: ${grade ?? "(없음)"}`);
+      if (grade !== null) {
+        if (oc.target.kind === "goto" && oc.target.goto.page === "rogue") oc.target.goto.grade = grade;
+        else if (oc.target.kind === "tie") for (const o of oc.target.options) { if (o.goto.page === "rogue") o.goto.grade = grade; }
+      }
+    }
   }
   // 필드 진단용 — 오인식 리포트를 받으면 콘솔에서 OCR 라인·판정을 바로 확인한다
   console.debug(`[lens:${mode}] OCR ${lines.length}줄 → ${oc.target.kind}/${oc.section ?? "-"} · 엔티티 ${oc.entities.length}`, { lines, outcome: oc });
