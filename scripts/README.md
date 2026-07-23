@@ -164,3 +164,20 @@ python3 scripts/measure-story-images.py   # → app/data/story-image-dims.json (
 
 요약 상세의 CG(figure)·장식 삽화(deco) `<img>`에 width/height를 박아 로딩 중 레이아웃
 밀림(CLS)을 없애는 용도. story.tsx가 이 파일을 읽어 이미지마다 고유 비율로 공간을 예약한다.
+
+## 7. 오퍼 스캐너 템플릿 (인프라 플래너 · 보유 오퍼 스캔)
+
+```bash
+python3 scripts/build-scan-templates.py   # → app/scan/portrait-templates.json (KR 전 초상, 스킨 포함)
+npx --yes tsx scripts/verify-scan.ts      # 회귀 검증 — 픽스처 138셀 식별·정예화 100% 기준
+```
+
+- 카드 아트 = **장착 스킨의 초상(portrait) 에셋** → KR skin_table의 portraitId 전부(기본 _1/_2 +
+  스킨)를 미러 5곳에서 받아 카드에 그려지는 영역만 42×30 템플릿으로 굽는다. 초상은
+  `.gamedata/portraits/` 캐시, `#`은 `%23`, 미러에 따라 파일명이 소문자인 경우 폴백.
+- 미러에 아직 없는 최신 스킨(Yostar 콜라보 등)은 `scan-template-overrides.json`(픽스처 실추출)로
+  보강 — 정식 초상이 미러에 올라오면 빌드가 자동으로 그쪽을 우선한다. 빌드 로그의
+  "미러 누락 N장"은 해당 스킨 장착 유저만 영향(기본 초상으로 오퍼 자체는 식별됨).
+- 정예화 엠블럼 템플릿(app/scan/elite-templates.json)은 픽스처에서 추출한 고정 애셋 —
+  게임 UI가 바뀌지 않는 한 재생성 불필요.
+- 신규 오퍼 추가(operators.json 재생성) 후에는 이 스크립트도 한 번 돌려 초상 템플릿을 따라잡게 한다.

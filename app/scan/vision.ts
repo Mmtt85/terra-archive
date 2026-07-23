@@ -1,9 +1,9 @@
-// 오퍼 스캐너 — 순수 컴퓨터비전 코어 (React·DOM 무의존, 워커에서 구동).
-// 검증된 파이프라인(2026-07-23, 실스샷 3장/42카드): 자동 격자 → 별 앵커 성급 → 인-도메인
-// 직군 글리프 ZNCC. 직군 42/42(100%), 성급 38/42(90%). scripts는 scratchpad/scan_reference.py 기준.
-//
-// 카드 아트 자체 이미지 매칭은 불가(신 UI 일러스트가 공개 미러에 없음, 1차 세션 확정) →
-// 이름 OCR(app/scan/ocr.ts)이 주 식별자, 성급=하드제약·직군=신뢰도 게이트 소프트제약(app/scan/match.ts).
+// 오퍼 스캐너 — 순수 컴퓨터비전 코어 (React·DOM 무의존, 워커/Node 하네스에서 구동).
+// 파이프라인: 자동 격자 → 별 앵커 성급 → 인-도메인 직군 글리프 ZNCC.
+// 오퍼 식별·정예화는 app/scan/artmatch.ts(카드 아트 ↔ 초상 매칭)가 담당 —
+// "카드 아트 = 장착 스킨의 초상 에셋"이라 이미지 매칭이 가능하다(2026-07-23 확정,
+// 1차 세션의 '공개 미러에 없음' 판정은 스킨 초상을 빼고 본 오판이었음).
+// 회귀 검증: npx tsx scripts/verify-scan.ts (픽스처 138셀 식별·정예화 100%).
 import TEMPLATES from "./class-templates.json";
 
 export interface Frame {
@@ -154,7 +154,11 @@ function detectRows(gold: Uint8Array, W: number, H: number, cols: number[], px: 
     return by + 2;
   };
   const r0 = firstRibbon(Math.round(H * 0.13), Math.round(H * 0.48));
-  const r1 = firstRibbon(Math.round(H * 0.50), Math.round(H * 0.86));
+  // 2행 리본은 1행에서 카드 피치의 ~2.04배 아래 — E2 카드 하단의 골드 도트 패턴이
+  // 넓은 창에서 리본으로 오인되는 것을 막기 위해 px 기반으로 탐색창을 좁힌다(픽스처 f0 회귀).
+  const lo1 = Math.min(H - BAND - 1, r0 + Math.round(px * 1.7));
+  const hi1 = Math.min(H - BAND, r0 + Math.round(px * 2.35));
+  const r1 = firstRibbon(lo1, hi1);
   return [r0, r1].sort((a, b) => a - b);
 }
 

@@ -18,7 +18,7 @@ import type { RaiseRec, InvestProgress } from "./planner-invest";
 // 자동편성·육성 추천의 실제 계산은 Web Worker에서 (INP — 메인 스레드는 진행 표시만, 2026-07-22)
 import { optimizeOff, investOff } from "./planner-offload";
 
-// 보유 오퍼 화면 스캔(에뮬레이터 화면 공유 → 자동 인식, 2026-07-23) — tesseract 등 무거워 lazy 스플릿
+// 보유 오퍼 화면 스캔(에뮬레이터 화면 공유 → 자동 인식, 2026-07-23) — 초상 템플릿 2.4MB 무거워 lazy 스플릿
 const ScannerModal = lazy(() => import("./scan/scanner").then((m) => ({ default: m.ScannerModal })));
 import costsData from "./data/costs.json";
 
@@ -710,9 +710,9 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
                   <span className="btn-icon" aria-hidden>⤒</span>{t("저장된 상태 파일 가져오기")}
                   <input type="file" accept="application/json" onChange={(event) => { const file = event.target.files?.[0]; if (file) importState(file); event.target.value = ""; setMoreOpen(false); }} />
                 </label>
-                {/* 오퍼 스캐너 진입점 — 2026-07-23 보류로 숨김. 라이브 인식률(~85-90%)이 목표(95%) 미달,
-                    Yostar API 임포트도 게임 튕김·로그인 거부감으로 사용자가 보류 결정. 코드(app/scan/)는 보존. */}
-                {false && <button role="menuitem" onClick={() => { setMoreOpen(false); setShowScanner(true); }} title={t("에뮬레이터 화면을 공유해 보유 오퍼를 자동 인식합니다")}><span className="btn-icon" aria-hidden>◉</span>{t("화면에서 보유 오퍼 스캔")}</button>}
+                {/* 오퍼 스캐너 v4 (2026-07-23 재개) — 카드 아트 ↔ 초상(스킨 포함) masked ZNCC 매칭 +
+                    정예화 엠블럼 3-way 자동 인식. 픽스처 138셀 식별·정예화 100% (scripts/verify-scan.ts). */}
+                <button role="menuitem" onClick={() => { setMoreOpen(false); setShowScanner(true); }} title={t("에뮬레이터 화면을 공유해 보유 오퍼를 자동 인식합니다")}><span className="btn-icon" aria-hidden>◉</span>{t("화면에서 보유 오퍼 스캔")}</button>
                 <button role="menuitem" onClick={() => { setMoreOpen(false); setShowHelp(true); }}><span className="btn-icon" aria-hidden>?</span>{t("도움말")}</button>
               </div>
             )}

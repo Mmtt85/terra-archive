@@ -2,28 +2,34 @@
 
 // 오퍼 보유 스캐너 UI — 에뮬레이터 창을 화면 공유(getDisplayMedia)로 받아, 스크롤한 뒤
 // [이 화면 인식]을 누르면 현재 프레임 1장을 인식한다(수동 스냅샷 방식, 2026-07-23).
-// 자동 감지 루프의 타이밍 버그(스크롤이 OCR 처리와 겹치면 화면을 건너뜀)를 피하려 사용자가
-// 화면마다 직접 누른다. 100% 클라이언트. 파이프라인: 자동 격자 → 별 성급 →
-// 인-도메인 직군 ZNCC → 이름 OCR → 성급/직군 제약 fuzzy 매칭 (검증됨).
+// 100% 클라이언트. 파이프라인(v4): 자동 격자 → 별 성급 → 카드 아트 ↔ 초상(스킨 포함)
+// masked ZNCC 매칭 → 정예화 엠블럼 3-way. 픽스처 138셀 식별·정예화 100% (verify-scan.ts).
+// 이전 이름 OCR(tesseract, 상한 84%)은 아트 매칭으로 대체·제거됨.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { T } from "../i18n";
 import { ops, opById, maxElite, ELITE_LABEL, type Elite, type InfraOp } from "../planner-engine";
 import { normSearch } from "../search";
 import { scanFrame, type CellDetection } from "./vision";
-import { matchOperator } from "./match";
-import { initOcr, ocrNameBand, terminateOcr } from "./ocr";
+import { toGray, matchArt, classifyElite } from "./artmatch";
 
 interface Detected {
   id: string;
   op: InfraOp;
-  score: number;
-  nameSim: number;
+  score: number;       // 아트 ZNCC
+  margin: number;      // 타 오퍼와의 점수 차
+  pid: string;         // 인식된 초상(스킨) id — 진단용
   confident: boolean;
-  seen: number;      // 몇 번 인식됐나
+  seen: number;        // 몇 번 인식됐나
   rarity: number;
   cls: string;
-  elite: Elite;      // 기본 maxElite(완성) — 사용자가 토글로 조정
+  elite: Elite;        // 엠블럼 자동 인식 (성급 상한 클램프) — 배지로 수동 수정 가능
+  eliteManual: boolean; // 사용자가 손으로 고쳤으면 이후 스캔이 덮어쓰지 않음
 }
+
+// 신뢰 판정(픽스처 138셀 실측: 정답 최저 0.80/마진 최저 0.11, 오답 최고 0.75)
+const SCORE_MIN = 0.55;      // 미만이면 검출 자체를 버림
+const CONFIDENT_SCORE = 0.8;
+const CONFIDENT_MARGIN = 0.05;
 
 type Phase = "idle" | "requesting" | "ready" | "error";
 
@@ -43,7 +49,6 @@ export function ScannerModal({ t, onClose, onApply }: {
 
   const [phase, setPhase] = useState<Phase>("idle");
   const [err, setErr] = useState("");
-  const [ocrStatus, setOcrStatus] = useState("");
   const [debug, setDebug] = useState(true);
   const [frameInfo, setFrameInfo] = useState("");
   const [recognizing, setRecognizing] = useState(false);
@@ -59,7 +64,7 @@ export function ScannerModal({ t, onClose, onApply }: {
     streamRef.current = null;
   }, []);
 
-  useEffect(() => () => { stopStream(); terminateOcr(); }, [stopStream]);
+  useEffect(() => () => { stopStream(); }, [stopStream]);
 
   // ── 화면 공유 시작 ───────────────────────────────────────────────────────────
   const startCapture = useCallback(async () => {
@@ -72,7 +77,6 @@ export function ScannerModal({ t, onClose, onApply }: {
       await v.play();
       stream.getVideoTracks()[0].addEventListener("ended", () => { stopStream(); setPhase("idle"); });
       setPhase("ready");
-      initOcr((status, p) => setOcrStatus(`${status} ${Math.round(p * 100)}%`)).then(() => setOcrStatus(""));
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
       setPhase("error");
@@ -132,51 +136,48 @@ export function ScannerModal({ t, onClose, onApply }: {
   }, [phase, livePreview]);
 
   // ── 현재 화면 1장 인식 ────────────────────────────────────────────────────────
-  const recognizeCurrent = useCallback(async () => {
+  // 아트 매칭은 축소본(≤MAX_W)에서 충분 — 픽스처 검증도 같은 해상도 경로로 수행됨.
+  const recognizeCurrent = useCallback(() => {
     const v = videoRef.current;
     if (!v || !v.videoWidth || busy.current) return;
     busy.current = true; setRecognizing(true);
     try {
-      // 원본 해상도 캔버스(OCR용) — 레티나 캡처(~2900px)를 다운스케일한 뒤 OCR하면
-      // 이름 글자가 뭉개져 복구 불가(라이브 4/14 vs 원본 12/14의 원인). 격자 감지만 축소본으로.
-      const FW = v.videoWidth, FH = v.videoHeight;
+      const scale = Math.min(1, MAX_W / v.videoWidth);
+      const W = Math.round(v.videoWidth * scale), H = Math.round(v.videoHeight * scale);
       let wc = workCanvas.current;
       if (!wc) { wc = document.createElement("canvas"); workCanvas.current = wc; }
-      wc.width = FW; wc.height = FH;
-      const fctx = wc.getContext("2d", { willReadFrequently: true })!;
-      fctx.drawImage(v, 0, 0, FW, FH);
-      const scale = Math.min(1, MAX_W / FW);
-      const W = Math.round(FW * scale), H = Math.round(FH * scale);
-      const sc = document.createElement("canvas");
-      sc.width = W; sc.height = H;
-      const sctx = sc.getContext("2d", { willReadFrequently: true })!;
-      sctx.drawImage(wc, 0, 0, W, H);
-      const frame = sctx.getImageData(0, 0, W, H);
+      wc.width = W; wc.height = H;
+      const ctx = wc.getContext("2d", { willReadFrequently: true })!;
+      ctx.drawImage(v, 0, 0, W, H);
+      const frame = ctx.getImageData(0, 0, W, H);
       const scan = scanFrame({ data: frame.data, width: W, height: H });
       setFrameInfo(t("격자 {c}열 · px {p} · 행 {r}", { c: String(scan.cols.length), p: String(scan.px), r: scan.rows.join(",") }));
       drawOverlay(scan.cells, W, H);
-      await initOcr((status, p) => setOcrStatus(`${status} ${Math.round(p * 100)}%`));
-      setOcrStatus("");
 
-      const inv = 1 / scale; // 축소좌표 → 원본좌표
+      const g = toGray({ data: frame.data, width: W, height: H });
       const next = new Map(resultsRef.current);
       for (const cell of scan.cells) {
         if (cell.rarity < 1) continue;
-        const nb = { x: cell.nameBox.x * inv, y: cell.nameBox.y * inv, w: cell.nameBox.w * inv, h: cell.nameBox.h * inv };
-        let text = "";
-        try { text = await ocrNameBand(wc, nb, FW, FH); } catch { continue; }
-        if (!text) continue;
-        const m = matchOperator(text, { rarity: cell.rarity, cls: cell.cls, clsConf: cell.clsConf });
-        // 라이브 진단용 — 셀별 OCR 원문과 매칭 결과 (개발자도구 콘솔)
-        console.debug(`[scan] r${cell.row}c${cell.col} ${cell.rarity}★${cell.cls} ocr=${JSON.stringify(text)} → ${m?.name}(${m?.nameSim.toFixed(2)})`);
-        if (!m || m.nameSim < 0.4) continue;
-        const op = opById.get(m.id);
+        const am = matchArt(g, cell.sx, cell.ry, scan.px);
+        if (!am || am.best.score < SCORE_MIN) continue;
+        const op = opById.get(am.best.op);
         if (!op) continue;
-        const prev = next.get(m.id);
-        if (!prev || m.score > prev.score) {
-          next.set(m.id, { id: m.id, op, score: m.score, nameSim: m.nameSim, confident: m.confident, seen: (prev?.seen ?? 0) + 1, rarity: cell.rarity, cls: cell.cls, elite: prev?.elite ?? maxElite(op.rarity) });
+        const el = classifyElite(g, cell.sx, cell.ry, scan.px);
+        const elite = Math.min(el.elite, maxElite(op.rarity)) as Elite;
+        const confident = am.best.score >= CONFIDENT_SCORE && am.margin >= CONFIDENT_MARGIN;
+        // 라이브 진단용 — 셀별 매칭 결과 (개발자도구 콘솔)
+        console.debug(`[scan] r${cell.row}c${cell.col} ${cell.rarity}★${cell.cls} → ${op.name} ${am.best.score.toFixed(3)} 마진${am.margin.toFixed(3)} E${elite}[${el.s1.toFixed(2)}/${el.s2.toFixed(2)}] ${am.best.pid}`);
+        const prev = next.get(op.id);
+        if (!prev || am.best.score > prev.score) {
+          next.set(op.id, {
+            id: op.id, op, score: am.best.score, margin: am.margin, pid: am.best.pid,
+            confident: confident || (prev?.confident ?? false), seen: (prev?.seen ?? 0) + 1,
+            rarity: cell.rarity, cls: cell.cls,
+            elite: prev?.eliteManual ? prev.elite : elite,
+            eliteManual: prev?.eliteManual ?? false,
+          });
         } else {
-          next.set(m.id, { ...prev, seen: prev.seen + 1 });
+          next.set(op.id, { ...prev, seen: prev.seen + 1, confident: prev.confident || confident });
         }
       }
       setResults(next);
@@ -197,7 +198,7 @@ export function ScannerModal({ t, onClose, onApply }: {
     if (!op) return;
     setResults((prev) => {
       const n = new Map(prev);
-      if (!n.has(id)) n.set(id, { id, op, score: 1, nameSim: 1, confident: true, seen: 0, rarity: op.rarity, cls: op.job, elite: maxElite(op.rarity) });
+      if (!n.has(id)) n.set(id, { id, op, score: 1, margin: 1, pid: "", confident: true, seen: 0, rarity: op.rarity, cls: op.job, elite: maxElite(op.rarity), eliteManual: false });
       return n;
     });
     setRemoved((prev) => { const n = new Set(prev); n.delete(id); return n; });
@@ -211,7 +212,7 @@ export function ScannerModal({ t, onClose, onApply }: {
       if (!d) return prev;
       const cap = maxElite(d.op.rarity);
       const n = new Map(prev);
-      n.set(id, { ...d, elite: (d.elite >= cap ? 0 : ((d.elite + 1) as Elite)) });
+      n.set(id, { ...d, elite: (d.elite >= cap ? 0 : ((d.elite + 1) as Elite)), eliteManual: true });
       return n;
     });
   }, []);
@@ -227,7 +228,7 @@ export function ScannerModal({ t, onClose, onApply }: {
   return (
     <section className="operator-modal scanner-modal" role="dialog" aria-modal="true" aria-label={t("보유 오퍼 스캔")}>
       <header className="scanner-head">
-        <h2>{t("보유 오퍼 스캔")} <span className="scanner-ver">v3</span></h2>
+        <h2>{t("보유 오퍼 스캔")} <span className="scanner-ver">v4</span></h2>
         <button className="modal-close" onClick={() => { stopStream(); onClose(); }} aria-label={t("닫기")}>✕</button>
       </header>
 
@@ -237,7 +238,7 @@ export function ScannerModal({ t, onClose, onApply }: {
           <ul className="scanner-tips">
             <li>{t("전체 화면이 아니라 에뮬레이터 '창'을 선택하면 정확도가 높습니다.")}</li>
             <li>{t("스크롤 후 잠깐 멈추면 그 화면을 인식합니다. 모두 100% 클라이언트에서 처리되며 서버로 전송되지 않습니다.")}</li>
-            <li>{t("정예화는 완성(최대)으로 표시됩니다 — 다른 오퍼는 이름 옆 배지를 눌러 조정하세요.")}</li>
+            <li>{t("정예화(0/1/2정)는 카드 엠블럼으로 자동 인식됩니다 — 잘못 읽힌 오퍼만 이름 옆 배지를 눌러 고치세요.")}</li>
           </ul>
           <button className="scanner-primary" onClick={startCapture}>{t("화면 공유 시작")}</button>
         </div>
@@ -262,7 +263,6 @@ export function ScannerModal({ t, onClose, onApply }: {
                 {recognizing ? t("인식 중…") : t("이 화면 인식")}
               </button>
               <label className="scanner-check"><input type="checkbox" checked={debug} onChange={(e) => setDebug(e.target.checked)} />{t("검출 표시")}</label>
-              {ocrStatus && <span className="scanner-ocr-status">{t("문자 인식 준비")}: {ocrStatus}</span>}
               {frameInfo && <span className="scanner-frame-info">{frameInfo}</span>}
             </div>
             <p className="scanner-hint">{t("에뮬레이터에서 목록을 스크롤한 뒤 [이 화면 인식]을 누르세요. 화면을 바꿔가며 반복하면 오퍼가 누적됩니다.")}</p>
@@ -290,7 +290,7 @@ export function ScannerModal({ t, onClose, onApply }: {
 
             <div className="scanner-grid">
               {sorted.map((d) => (
-                <div key={d.id} className={`scanner-card${d.confident ? "" : " uncertain"}`} title={`${d.op.name} · sim ${d.nameSim.toFixed(2)} · ${d.seen}회`}>
+                <div key={d.id} className={`scanner-card${d.confident ? "" : " uncertain"}`} title={`${d.op.name} · ${d.score.toFixed(2)}/${d.margin.toFixed(2)} · ${d.seen}회${d.pid ? ` · ${d.pid}` : ""}`}>
                   <img src={d.op.image} alt="" width={44} height={44} loading="lazy" />
                   <div className="scanner-card-info">
                     <span className="scanner-card-name">{d.op.name}</span>
