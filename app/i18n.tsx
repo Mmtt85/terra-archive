@@ -1183,7 +1183,7 @@ const D: Record<string, Pair> = {
   "인식된 태그가 없습니다 — 모집 요건 태그가 보이게 캡처해 보세요.": ["No tags recognized — capture so the recruitment tags are visible.", "タグを認識できませんでした — 募集条件タグが見えるようにキャプチャしてください。"],
   "인식된 정보가 없습니다 — 분대·유물·조우·작전 화면을 캡처해 보세요.": ["Nothing recognized — try capturing a squad, relic, encounter, or operation screen.", "認識された情報がありません — 分隊・秘宝・遭遇・作戦の画面をキャプチャしてみてください。"],
   "시스템": ["System", "システム"],
-  "워프 중…": ["Warping…", "ワープ中…"],
+  "스캔 중…": ["Scanning…", "スキャン中…"],
   "인식에 실패했습니다 — 다른 스크린샷으로 다시 시도해 주세요.": ["Recognition failed — please try again with a different screenshot.", "認識に失敗しました — 別のスクリーンショットでもう一度お試しください。"],
   "인식한 스크린샷": ["Recognized screenshot", "認識したスクリーンショット"],
   "인식 완료 — 해당 정보로 이동했습니다.": ["Recognized — jumped to the matching info.", "認識完了 — 該当情報へ移動しました。"],

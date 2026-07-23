@@ -218,7 +218,7 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
     if (lensBusy.current) return;
     lensBusy.current = true;
     setLensThumb((prev) => { if (prev) URL.revokeObjectURL(prev); return URL.createObjectURL(file); });
-    flashLensMsg(t("워프 중…"));
+    flashLensMsg(t("스캔 중…"));
     try {
       const oc = await recognizeShot("recruit", file);
       if (oc.target.kind === "goto") {

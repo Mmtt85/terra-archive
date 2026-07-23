@@ -910,7 +910,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
     if (lensBusy.current) return;
     lensBusy.current = true;
     setLensThumb((prev) => { if (prev) URL.revokeObjectURL(prev); return URL.createObjectURL(file); });
-    flashLensMsg(t("워프 중…"));
+    flashLensMsg(t("스캔 중…"));
     try {
       const oc = await recognizeShot("rogue", file, topicRef.current);
       if (oc.target.kind === "goto") {
