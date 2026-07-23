@@ -19,16 +19,17 @@ const SECTION_LABEL: Record<string, string> = {
   tool: "도구", capsule: "레퍼토리 (음반)", ending: "엔딩", recruit: "공개모집 태그",
 };
 
-export default function LensModal({ mode, topic, onClose, onGoto }: {
+export default function LensModal({ mode, topic, initial, onClose, onGoto }: {
   mode: LensMode;
   topic?: string; // mode "rogue": 현재 토픽 id (사전확률 부스트)
+  initial?: LensOutcome | null; // 페이지 자동인식이 tie를 만나 넘겨준 결과 (테마 칩 표시용)
   onClose: () => void;
   onGoto: (g: LensGoto) => void;
 }) {
   const { t } = useI18n();
   const [clipStarted, setClipStarted] = useState(false);
   const [status, setStatus] = useState<string | null>(null); // 진행 상태 문구
-  const [outcome, setOutcome] = useState<LensOutcome | null>(null);
+  const [outcome, setOutcome] = useState<LensOutcome | null>(initial ?? null);
   const [preview, setPreview] = useState<string | null>(null);
   const busy = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -161,7 +162,7 @@ export default function LensModal({ mode, topic, onClose, onGoto }: {
             </div>
           )}
 
-          {!preview && !status && (
+          {!preview && !status && !outcome && (
             <p className="lens-empty">
               {t("아직 인식한 스크린샷이 없습니다.")}{" "}
               <button type="button" className="lens-pick" onClick={() => fileInputRef.current?.click()}>{t("파일 선택")}</button>

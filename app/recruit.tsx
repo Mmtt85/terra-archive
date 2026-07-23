@@ -211,7 +211,11 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
     setLensMsg(msg);
     if (msg && ms) lensMsgTimer.current = window.setTimeout(() => setLensMsg(null), ms);
   };
-  const lensClip = useClipboardWatch(lensAuto && !lensOpen, async (file) => {
+  // 자동인식·필 드롭 공용 인식 흐름
+  const lensBusy = useRef(false);
+  const handleLensShot = async (file: File) => {
+    if (lensBusy.current) return;
+    lensBusy.current = true;
     setLensThumb((prev) => { if (prev) URL.revokeObjectURL(prev); return URL.createObjectURL(file); });
     flashLensMsg(t("워프 중…"));
     try {
@@ -224,8 +228,11 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
       }
     } catch {
       flashLensMsg(t("인식에 실패했습니다 — 다른 스크린샷으로 다시 시도해 주세요."), 3000);
+    } finally {
+      lensBusy.current = false;
     }
-  });
+  };
+  const lensClip = useClipboardWatch(lensAuto && !lensOpen, handleLensShot);
 
   const results = useMemo(() => comboResults(picked), [picked]);
 
@@ -243,28 +250,28 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
           <input value={quick} onChange={(event) => setQuick(event.target.value)}
             placeholder={t("빠른 입력 — 태그 첫 글자를 이어서 입력 (예: 가메신생범)")} aria-label={t("태그 첫 글자 빠른 입력")} />
           <button type="button" className="clear-btn" onClick={clearAll}><span className="btn-icon" aria-hidden>↻</span>{t("클리어")}</button>
-          {/* 스샷으로 태그 입력 — 공개모집 화면 인식 → 태그 자동 선택. 오른쪽 끝 + 자동 토글 (KR 클라 전용) */}
+          {/* 스샷으로 태그 입력 — 버튼 자체가 자동인식 토글, ?는 도움말 모달 (KR 클라 전용) */}
           {locale === "ko" && (
             <div className="lens-open-wrap">
-              <button type="button" className="lens-open-btn" onClick={() => setLensOpen(true)}
-                title={t("공개모집 화면 스크린샷을 인식해 태그를 자동으로 선택합니다")}>
-                <span aria-hidden>📷</span> {t("스샷으로 태그 입력")}{isNewFeature("lens") && <span className="new-badge">{t("새기능")}</span>}
-              </button>
-              <button type="button" role="switch" aria-checked={lensAuto} className={`lens-auto-toggle${lensAuto ? " on" : ""}`}
-                title={t("클립보드 자동인식 — 켜두면 모달을 열지 않아도 캡처만 하면 바로 인식·적용됩니다")}
+              <button type="button" className={`lens-open-btn${lensAuto ? " on" : ""}`} aria-pressed={lensAuto}
+                title={t("클릭해 스샷 자동인식을 켜고 끕니다 — 켜두면 게임 화면을 캡처만 해도 바로 인식·적용됩니다")}
                 onClick={toggleLensAuto}>
-                <span className="lens-auto-knob" aria-hidden />{t("자동")}
+                <span className="lens-auto-knob" aria-hidden />📷 {t("스샷으로 태그 입력")}{isNewFeature("lens") && <span className="new-badge">{t("새기능")}</span>}
               </button>
+              <button type="button" className="lens-help-btn" aria-label={t("스샷 인식 도움말")}
+                onClick={() => setLensOpen(true)}>?</button>
             </div>
           )}
         </div>
-        {/* 자동인식 상태 필 — fixed 오버레이(레이아웃을 밀지 않음), 인식 이미지 미니 썸네일 포함 */}
+        {/* 자동인식 상태 필 — fixed 오버레이(레이아웃 안 밀음) + 드롭존 + 인식 이미지 미니 썸네일 */}
         {locale === "ko" && lensAuto && (
-          <div className={`lens-auto-pill${lensMsg ? " busy" : ""}`} role="status">
+          <div className={`lens-auto-pill${lensMsg ? " busy" : ""}`} role="status"
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files?.[0]; if (f?.type.startsWith("image/")) void handleLensShot(f); }}>
             {lensThumb && <img className="lens-auto-thumb" src={lensThumb} alt={t("인식한 스크린샷")} />}
             <span>{lensMsg ?? (lensClip === "off"
-              ? t("클립보드 접근이 막혀 있습니다 — ⌘V 붙여넣기나 파일 드롭을 이용하세요")
-              : t("스샷 자동인식 켜짐 — 게임 화면을 캡처하고 이 탭으로 돌아오면 바로 적용됩니다"))}</span>
+              ? t("클립보드 접근이 막혀 있습니다 — 이미지를 이 알림에 드롭하거나 ⌘V로 붙여넣으세요")
+              : t("스샷 자동인식 켜짐 — 게임 화면을 캡처하고 돌아오거나, 이미지를 이 알림에 드롭하세요"))}</span>
           </div>
         )}
         {TAG_GROUPS.map(([group, tags]) => {

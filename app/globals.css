@@ -10101,19 +10101,10 @@ main.site-main > .site-header {
   border-color: var(--lime);
   background: color-mix(in srgb, var(--lime) 22%, var(--white));
 }
-.lens-auto-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  border: 1px solid color-mix(in srgb, var(--lime) 45%, var(--line));
-  border-left: none;
-  background: var(--bg-panel);
-  color: var(--ink2);
-  border-radius: 0 8px 8px 0;
-  padding: 8px 10px;
-  font-size: 0.78rem;
-  font-weight: 800;
-  cursor: pointer;
+/* 버튼 자체가 자동인식 토글 — 켜짐이면 라임으로 채우고 상태 점을 켠다 (2026-07-23) */
+.lens-open-btn.on {
+  background: color-mix(in srgb, var(--lime) 38%, var(--white));
+  border-color: var(--lime);
 }
 .lens-auto-knob {
   width: 8px;
@@ -10121,15 +10112,31 @@ main.site-main > .site-header {
   border-radius: 50%;
   background: var(--ink3, var(--ink2));
   opacity: 0.45;
+  flex: 0 0 auto;
 }
-.lens-auto-toggle.on {
-  background: color-mix(in srgb, var(--lime) 30%, var(--bg-panel));
-  color: var(--ink);
-}
-.lens-auto-toggle.on .lens-auto-knob {
+.lens-open-btn.on .lens-auto-knob {
   background: var(--lime);
   opacity: 1;
   box-shadow: 0 0 6px var(--lime);
+}
+/* ? 도움말 — 오른쪽 세그먼트, 설명 모달을 연다 */
+.lens-help-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  border: 1px solid color-mix(in srgb, var(--lime) 45%, var(--line));
+  border-left: none;
+  background: var(--bg-panel);
+  color: var(--ink2);
+  border-radius: 0 8px 8px 0;
+  font-size: 0.85rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.lens-help-btn:hover {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--lime) 16%, var(--bg-panel));
 }
 /* 자동인식 상태 필 — fixed 토스트 오버레이. 레이아웃 안에 넣으면 다른 요소를 밀어내므로
    (사용자 지적 2026-07-23) 상단 중앙에 띄운다. 배경은 반드시 불투명 — ⚠ var(--bg)는
@@ -10152,7 +10159,7 @@ main.site-main > .site-header {
   background: color-mix(in srgb, var(--lime) 14%, var(--paper));
   border: 1px solid color-mix(in srgb, var(--lime) 45%, var(--line));
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3);
-  pointer-events: none;
+  /* 드롭존을 겸하므로 pointer-events 유지 (사용자 요청 2026-07-23: 필에 이미지 드롭) */
 }
 .lens-auto-pill.busy {
   color: var(--ink);

@@ -9,7 +9,7 @@ import rogue1Data from "./data/rogue1.json";
 import { useI18n } from "./i18n";
 import { normSearch } from "./search";
 import { isNewFeature } from "./whats-new";
-import type { LensGoto } from "./lens/match";
+import type { LensGoto, LensOutcome } from "./lens/match";
 import { recognizeShot, warmData } from "./lens/run";
 import { warmOcr } from "./lens/ocr";
 import { useClipboardWatch } from "./lens/clipwatch";
@@ -811,6 +811,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   // 인식 목표는 sessionStorage 핸드오프로 적용한다 — 다른 토픽이 인식되면 토픽 전환 후
   // 데이터 로드 effect가 마저 적용해야 하므로 (동일 토픽이면 즉시).
   const [lensOpen, setLensOpen] = useState(false);
+  const [lensInitial, setLensInitial] = useState<LensOutcome | null>(null); // tie 결과를 모달에 넘겨 테마 칩 표시
   const applyLensHandoff = () => {
     let raw: string | null = null;
     try { raw = sessionStorage.getItem("ta:lens-handoff"); } catch { return; }
@@ -844,6 +845,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   const onLensGoto = (g: LensGoto) => {
     if (g.page !== "rogue") return;
     setLensOpen(false);
+    setLensInitial(null);
     try { sessionStorage.setItem("ta:lens-handoff", JSON.stringify(g)); } catch { return; }
     if (g.topic !== topicRef.current) goTopic(g.topic);
     else applyLensRef.current();
@@ -872,7 +874,11 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
     setLensMsg(msg);
     if (msg && ms) lensMsgTimer.current = window.setTimeout(() => setLensMsg(null), ms);
   };
-  const lensClip = useClipboardWatch(lensAuto && !lensOpen, async (file) => {
+  // 자동인식·필 드롭 공용 인식 흐름
+  const lensBusy = useRef(false);
+  const handleLensShot = async (file: File) => {
+    if (lensBusy.current) return;
+    lensBusy.current = true;
     setLensThumb((prev) => { if (prev) URL.revokeObjectURL(prev); return URL.createObjectURL(file); });
     flashLensMsg(t("워프 중…"));
     try {
@@ -881,14 +887,20 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
         onLensGoto(oc.target.goto);
         flashLensMsg(t("인식 완료 — 해당 정보로 이동했습니다."), 2000);
       } else if (oc.target.kind === "tie") {
-        flashLensMsg(t("테마를 특정하지 못했습니다 — 📷 버튼을 눌러 테마를 선택하세요"), 3500);
+        // 테마 선택 칩은 모달에서 — 결과를 들고 모달을 연다
+        setLensInitial(oc);
+        setLensOpen(true);
+        flashLensMsg(null);
       } else {
         flashLensMsg(t("인식된 정보가 없습니다 — 분대·유물·조우·작전 화면을 캡처해 보세요."), 3000);
       }
     } catch {
       flashLensMsg(t("인식에 실패했습니다 — 다른 스크린샷으로 다시 시도해 주세요."), 3000);
+    } finally {
+      lensBusy.current = false;
     }
-  });
+  };
+  const lensClip = useClipboardWatch(lensAuto && !lensOpen, handleLensShot);
   // 하이라이트 카드로 스크롤 (렌더 뒤 한 프레임 양보)
   useEffect(() => {
     if (!lensHits) return;
@@ -1038,29 +1050,28 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
         {VIEWS.map((v) => (
           <button key={v.id} type="button" className={view === v.id ? "on" : ""} onClick={() => goView(v.id)}>{t(v.label)}</button>
         ))}
-        {/* 스샷 레이더 — 게임 스크린샷을 인식해 이 가이드의 해당 정보로 (KR 클라 전용).
-            오른쪽 끝 고정 + 자동인식 토글 (사용자 확정 2026-07-23) */}
+        {/* 스샷 레이더 — 버튼 자체가 자동인식 토글, ?는 도움말 모달 (사용자 확정 2026-07-23, KR 클라 전용) */}
         {locale === "ko" && (
           <div className="lens-open-wrap">
-            <button type="button" className="lens-open-btn" onClick={() => setLensOpen(true)}
-              title={t("게임 스크린샷을 인식해 이 가이드의 해당 정보로 바로 이동합니다 — 분대·유물·작전·조우 등")}>
-              <span aria-hidden>📷</span> {t("스샷 레이더")}{isNewFeature("lens") && <span className="new-badge">{t("새기능")}</span>}
-            </button>
-            <button type="button" role="switch" aria-checked={lensAuto} className={`lens-auto-toggle${lensAuto ? " on" : ""}`}
-              title={t("클립보드 자동인식 — 켜두면 모달을 열지 않아도 캡처만 하면 바로 인식·적용됩니다")}
+            <button type="button" className={`lens-open-btn${lensAuto ? " on" : ""}`} aria-pressed={lensAuto}
+              title={t("클릭해 스샷 자동인식을 켜고 끕니다 — 켜두면 게임 화면을 캡처만 해도 바로 인식·적용됩니다")}
               onClick={toggleLensAuto}>
-              <span className="lens-auto-knob" aria-hidden />{t("자동")}
+              <span className="lens-auto-knob" aria-hidden />📷 {t("스샷 레이더")}{isNewFeature("lens") && <span className="new-badge">{t("새기능")}</span>}
             </button>
+            <button type="button" className="lens-help-btn" aria-label={t("스샷 레이더 도움말")}
+              onClick={() => setLensOpen(true)}>?</button>
           </div>
         )}
       </nav>
-      {/* 자동인식 상태 필 — fixed 오버레이(레이아웃을 밀지 않음), 인식 이미지 미니 썸네일 포함 */}
+      {/* 자동인식 상태 필 — fixed 오버레이(레이아웃 안 밀음) + 드롭존 + 인식 이미지 미니 썸네일 */}
       {locale === "ko" && lensAuto && (
-        <div className={`lens-auto-pill${lensMsg ? " busy" : ""}`} role="status">
+        <div className={`lens-auto-pill${lensMsg ? " busy" : ""}`} role="status"
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files?.[0]; if (f?.type.startsWith("image/")) void handleLensShot(f); }}>
           {lensThumb && <img className="lens-auto-thumb" src={lensThumb} alt={t("인식한 스크린샷")} />}
           <span>{lensMsg ?? (lensClip === "off"
-            ? t("클립보드 접근이 막혀 있습니다 — ⌘V 붙여넣기나 파일 드롭을 이용하세요")
-            : t("스샷 자동인식 켜짐 — 게임 화면을 캡처하고 이 탭으로 돌아오면 바로 이동합니다"))}</span>
+            ? t("클립보드 접근이 막혀 있습니다 — 이미지를 이 알림에 드롭하거나 ⌘V로 붙여넣으세요")
+            : t("스샷 자동인식 켜짐 — 게임 화면을 캡처하고 돌아오거나, 이미지를 이 알림에 드롭하세요"))}</span>
         </div>
       )}
 
@@ -1628,9 +1639,10 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
       {encOpen && <EncounterModal enc={encOpen} onClose={() => setEncOpen(null)} link={linkRelic} />}
       {relicOpen && <RelicModal relic={relicOpen} onClose={() => setRelicOpen(null)} />}
       {lensOpen && (
-        <div className="modal-backdrop scanner-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) setLensOpen(false); }}>
+        <div className="modal-backdrop scanner-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) { setLensOpen(false); setLensInitial(null); } }}>
           <Suspense fallback={null}>
-            <LensModal mode="rogue" topic={topic} onClose={() => setLensOpen(false)} onGoto={onLensGoto} />
+            <LensModal mode="rogue" topic={topic} initial={lensInitial}
+              onClose={() => { setLensOpen(false); setLensInitial(null); }} onGoto={onLensGoto} />
           </Suspense>
         </div>
       )}
