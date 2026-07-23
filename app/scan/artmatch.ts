@@ -11,7 +11,7 @@
 // 인-도메인 템플릿 ZNCC, 양쪽 모두 임계 미만이면 E0. 3-way 실측 32/32.
 import PT from "./portrait-templates.json";
 import ET from "./elite-templates.json";
-import type { Frame } from "./vision";
+import { scanFrame, type Frame, type FrameScan, type CellDetection, type ScanOpts } from "./vision";
 
 export interface ArtCandidate {
   op: string;      // charId (operators.json id)
@@ -217,4 +217,40 @@ export function classifyElite(g: GrayFrame, sx: number, ry: number, px: number):
   // es1·es2 대소 비교는 밝은 배경 E2에서 마진 0.03까지 좁아지므로 쓰지 않는다.
   const elite = m2 >= EB.thr ? 2 : m1 >= EB.thr ? 1 : 0;
   return { elite, s1: m1, s2: m2 };
+}
+
+// ── 프레임 1장 종합 분석 (격자 + 아트 매칭 + 정예화, 크롭 재시도 포함) ─────────
+// 전체 창 파라미터로 먼저 스캔하고, 결과가 부실하면(최고 아트 점수 미달) 부분(크롭)
+// 스크린샷 파라미터로 재시도해 더 나은 쪽을 쓴다. 정상 전체 창은 최고 셀이 0.8+라
+// 재시도가 발동하지 않고(픽스처 152셀 실측), 크롭은 기본 피치 범위(W의 7~14%)를
+// 벗어나므로 1차에서 셀이 없거나 저점수가 된다.
+export interface CellMatch {
+  cell: CellDetection;
+  op: string; pid: string; score: number; margin: number; rivalOp: string;
+  elite: 0 | 1 | 2; es1: number; es2: number;
+}
+export interface FrameAnalysis { scan: FrameScan; cells: CellMatch[]; cropRetry: boolean; }
+
+const RETRY_QUALITY = 0.75; // 1차 최고 셀 점수가 이 미만이면 크롭 파라미터 재시도
+const CROP_OPTS: ScanOpts = { pitchLoFrac: 0.12, pitchHiFrac: 0.52, rowLoFrac: 0 };
+
+export function analyzeFrame(f: Frame): FrameAnalysis {
+  const g = toGray(f);
+  const attempt = (opts?: ScanOpts) => {
+    const scan = scanFrame(f, opts);
+    const cells: CellMatch[] = [];
+    for (const c of scan.cells) {
+      if (c.rarity < 1) continue;
+      const am = matchArt(g, c.sx, c.ry, scan.px);
+      if (!am) continue;
+      const el = classifyElite(g, c.sx, c.ry, scan.px);
+      cells.push({ cell: c, op: am.best.op, pid: am.best.pid, score: am.best.score, margin: am.margin, rivalOp: am.rivalOp, elite: el.elite, es1: el.s1, es2: el.s2 });
+    }
+    return { scan, cells };
+  };
+  const quality = (a: { cells: CellMatch[] }) => a.cells.reduce((m, c) => Math.max(m, c.score), 0);
+  const first = attempt();
+  if (quality(first) >= RETRY_QUALITY) return { ...first, cropRetry: false };
+  const retry = attempt(CROP_OPTS);
+  return quality(retry) > quality(first) ? { ...retry, cropRetry: true } : { ...first, cropRetry: false };
 }

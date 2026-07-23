@@ -11,8 +11,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { T } from "../i18n";
 import { ops, opById, maxElite, ELITE_LABEL, type Elite, type InfraOp } from "../planner-engine";
 import { normSearch } from "../search";
-import { scanFrame } from "./vision";
-import { toGray, matchArt, classifyElite } from "./artmatch";
+import { analyzeFrame } from "./artmatch";
 
 interface Detected {
   id: string;
@@ -55,31 +54,36 @@ export function ScannerModal({ t, onClose, onApply }: {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const lastClipHash = useRef("");
 
-  // ── 프레임 1장 인식 코어 (픽스처 검증과 동일 경로) ───────────────────────────
-  const recognizeFrameData = useCallback((frame: ImageData, capLabel: string) => {
-    const W = frame.width, H = frame.height;
-    const scan = scanFrame({ data: frame.data, width: W, height: H });
-    setFrameInfo(`v6 · ${capLabel} · ` + t("격자 {c}열 · px {p} · 행 {r}", { c: String(scan.cols.length), p: String(scan.px), r: scan.rows.join(",") }));
+  // 인식한 이미지 미리보기 (최근 8장, object URL은 밀려날 때/언마운트 시 해제)
+  interface Preview { url: string; label: string; n: number; }
+  const [previews, setPreviews] = useState<Preview[]>([]);
+  const previewsRef = useRef(previews);
+  useEffect(() => { previewsRef.current = previews; }, [previews]);
+  useEffect(() => () => { previewsRef.current.forEach((p) => URL.revokeObjectURL(p.url)); }, []);
 
-    const g = toGray({ data: frame.data, width: W, height: H });
+  // ── 프레임 1장 인식 코어 (픽스처 검증과 동일 경로, 부분 스크린샷은 자동 재시도) ──
+  const recognizeFrameData = useCallback((frame: ImageData, capLabel: string): number => {
+    const res = analyzeFrame({ data: frame.data, width: frame.width, height: frame.height });
+    const { scan } = res;
+    setFrameInfo(`v6 · ${capLabel}${res.cropRetry ? " · crop" : ""} · ` + t("격자 {c}열 · px {p} · 행 {r}", { c: String(scan.cols.length), p: String(scan.px), r: scan.rows.join(",") }));
+
     const next = new Map(resultsRef.current);
-    for (const cell of scan.cells) {
-      if (cell.rarity < 1) continue;
-      const am = matchArt(g, cell.sx, cell.ry, scan.px);
-      if (!am || am.best.score < SCORE_MIN) continue;
-      const op = opById.get(am.best.op);
+    let added = 0;
+    for (const m of res.cells) {
+      if (m.score < SCORE_MIN) continue;
+      const op = opById.get(m.op);
       if (!op) continue;
-      const el = classifyElite(g, cell.sx, cell.ry, scan.px);
-      const elite = Math.min(el.elite, maxElite(op.rarity)) as Elite;
-      const confident = am.best.score >= CONFIDENT_SCORE && am.margin >= CONFIDENT_MARGIN;
+      const elite = Math.min(m.elite, maxElite(op.rarity)) as Elite;
+      const confident = m.score >= CONFIDENT_SCORE && m.margin >= CONFIDENT_MARGIN;
+      added++;
       // 진단용 — 셀별 매칭 결과 (개발자도구 콘솔)
-      console.debug(`[scan] r${cell.row}c${cell.col} ${cell.rarity}★${cell.cls} → ${op.name} ${am.best.score.toFixed(3)} 마진${am.margin.toFixed(3)} E${elite}[${el.s1.toFixed(2)}/${el.s2.toFixed(2)}] ${am.best.pid}`);
+      console.debug(`[scan] r${m.cell.row}c${m.cell.col} ${m.cell.rarity}★${m.cell.cls} → ${op.name} ${m.score.toFixed(3)} 마진${m.margin.toFixed(3)} E${elite}[${m.es1.toFixed(2)}/${m.es2.toFixed(2)}] ${m.pid}`);
       const prev = next.get(op.id);
-      if (!prev || am.best.score > prev.score) {
+      if (!prev || m.score > prev.score) {
         next.set(op.id, {
-          id: op.id, op, score: am.best.score, margin: am.margin, pid: am.best.pid,
+          id: op.id, op, score: m.score, margin: m.margin, pid: m.pid,
           confident: confident || (prev?.confident ?? false), seen: (prev?.seen ?? 0) + 1,
-          rarity: cell.rarity, cls: cell.cls,
+          rarity: m.cell.rarity, cls: m.cell.cls,
           elite: prev?.eliteManual ? prev.elite : elite,
           eliteManual: prev?.eliteManual ?? false,
         });
@@ -88,6 +92,7 @@ export function ScannerModal({ t, onClose, onApply }: {
       }
     }
     setResults(next);
+    return added;
   }, [t]);
 
   // ── 이미지(File/Blob)들 인식 ─────────────────────────────────────────────────
@@ -105,7 +110,14 @@ export function ScannerModal({ t, onClose, onApply }: {
         const ctx = c.getContext("2d", { willReadFrequently: true })!;
         ctx.drawImage(bmp, 0, 0, W, H);
         bmp.close();
-        recognizeFrameData(ctx.getImageData(0, 0, W, H), f.name);
+        const n = recognizeFrameData(ctx.getImageData(0, 0, W, H), f.name);
+        // 인식한 이미지 미리보기에 추가 (최근 8장)
+        const url = URL.createObjectURL(f);
+        setPreviews((prev) => {
+          const next = [{ url, label: f.name, n }, ...prev];
+          for (const e of next.slice(8)) URL.revokeObjectURL(e.url);
+          return next.slice(0, 8);
+        });
       }
     } finally {
       busy.current = false; setRecognizing(false);
@@ -242,6 +254,16 @@ export function ScannerModal({ t, onClose, onApply }: {
             {clip === "off" && <span className="scanner-clip-off">{t("클립보드 자동 읽기가 막혀 있어요 — 스크린샷을 ⌘V로 붙여넣거나 파일을 끌어놓으세요")}</span>}
             {frameInfo && <span className="scanner-frame-info">{frameInfo}</span>}
           </div>
+          {previews.length > 0 && (
+            <div className="scanner-previews">
+              {previews.map((p) => (
+                <figure key={p.url} title={p.label}>
+                  <img src={p.url} alt={p.label} />
+                  <figcaption>{t("{n}칸 인식", { n: String(p.n) })}</figcaption>
+                </figure>
+              ))}
+            </div>
+          )}
           <ul className="scanner-tips">
             <li>{t("에뮬레이터의 오퍼레이터 목록을 화면마다 캡처하세요 — 맥은 ⌃⌘⇧4(클립보드로 캡처)가 편합니다. 캡처 후 이 탭으로 돌아오면 자동으로 인식됩니다.")}</li>
             <li>{t("정예화(0/1/2정)는 카드 엠블럼으로 자동 인식됩니다 — 잘못 읽힌 오퍼만 이름 옆 배지를 눌러 고치세요.")}</li>

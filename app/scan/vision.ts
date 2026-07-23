@@ -88,12 +88,20 @@ function bestPeriod(prof: Float64Array, lo: number, hi: number): { pitch: number
   const d = new Float64Array(prof.length);
   let varSum = 0;
   for (let i = 0; i < prof.length; i++) { d[i] = prof[i] - mean; varSum += d[i] * d[i]; }
+  const scores = new Float64Array(hi + 1);
   let best = 0, bestS = -1;
   for (let lag = lo; lag <= hi; lag++) {
     let s = 0;
     for (let i = 0; i + lag < d.length; i++) s += d[i] * d[i + lag];
     s /= varSum;
+    scores[lag] = s;
     if (s > bestS) { bestS = s; best = lag; }
+  }
+  // 하모닉 방지: 넓은 탐색 범위(크롭 스샷 재시도)에선 진짜 피치의 2배 자기상관도 비슷하게
+  // 높다 — 충분히 작은(≤0.6×) lag 중 0.9·best 이상이 있으면 그쪽(기본 주기)을 채택.
+  // 피크 주변(±수 px) 이웃은 0.6× 조건에 걸리지 않으므로 미세 피치가 흔들리지 않는다.
+  for (let lag = lo; lag <= Math.floor(best * 0.6); lag++) {
+    if (scores[lag] >= bestS * 0.9) { best = lag; bestS = scores[lag]; break; }
   }
   return { pitch: best, score: bestS };
 }
@@ -106,7 +114,7 @@ function valleyPhase(prof: Float64Array, pitch: number): number {
   return best;
 }
 
-function detectColumns(L: Float32Array, W: number, H: number, xMax: number): { cols: number[]; px: number; score: number } {
+function detectColumns(L: Float32Array, W: number, H: number, xMax: number, pitchLoFrac: number, pitchHiFrac: number): { cols: number[]; px: number; score: number } {
   const y0 = Math.round(H * 0.30), y1 = Math.round(H * 0.55);
   const colp = new Float64Array(xMax);
   for (let x = 0; x < xMax; x++) {
@@ -114,7 +122,7 @@ function detectColumns(L: Float32Array, W: number, H: number, xMax: number): { c
     for (let y = y0; y < y1; y++) s += L[y * W + x];
     colp[x] = s / (y1 - y0);
   }
-  const { pitch, score } = bestPeriod(colp, Math.round(W * 0.07), Math.round(W * 0.14));
+  const { pitch, score } = bestPeriod(colp, Math.round(W * pitchLoFrac), Math.round(W * pitchHiFrac));
   const gx = valleyPhase(colp, pitch);
   const cols: number[] = [];
   for (let x = gx; x < xMax - Math.round(pitch * 0.3); x += pitch) cols.push(x);
@@ -122,7 +130,7 @@ function detectColumns(L: Float32Array, W: number, H: number, xMax: number): { c
 }
 
 // ── 행 격자: 성급-독립 (별 리본 = 모든 카드열 최상단의 얇은 골드) ────────────
-function detectRows(gold: Uint8Array, W: number, H: number, cols: number[], px: number): number[] {
+function detectRows(gold: Uint8Array, W: number, H: number, cols: number[], px: number, rowLoFrac: number): number[] {
   const BAND = 16;
   const ncol = Math.max(1, cols.length);
   // spread(y): [y,y+BAND] × 각 카드열에 골드≥2인 열 수
@@ -153,7 +161,7 @@ function detectRows(gold: Uint8Array, W: number, H: number, cols: number[], px: 
     for (let y = y0; y < Math.min(H, y0 + BAND + 6); y++) { const v = goldRow(y); if (v > bv) { bv = v; by = y; } }
     return by + 2;
   };
-  const r0 = firstRibbon(Math.round(H * 0.13), Math.round(H * 0.48));
+  const r0 = firstRibbon(Math.max(0, Math.round(H * rowLoFrac)), Math.round(H * 0.48));
   // 2행 리본은 1행에서 카드 피치의 ~2.04배 아래 — E2 카드 하단의 골드 도트 패턴이
   // 넓은 창에서 리본으로 오인되는 것을 막기 위해 px 기반으로 탐색창을 좁힌다(픽스처 f0 회귀).
   const lo1 = Math.min(H - BAND - 1, r0 + Math.round(px * 1.7));
@@ -221,12 +229,17 @@ export interface FrameScan {
   cells: CellDetection[];
 }
 
-export function scanFrame(f: Frame): FrameScan {
+// 격자 탐색 파라미터 — 기본값은 "전체 창" 기준. 부분(크롭) 스크린샷은 카드가 화면 대부분을
+// 차지해 피치가 W의 14%를 훌쩍 넘고 1행 리본이 최상단에 붙는다 → analyzeFrame이 넓은
+// 범위로 재시도한다 (artmatch.ts).
+export interface ScanOpts { pitchLoFrac?: number; pitchHiFrac?: number; rowLoFrac?: number; }
+
+export function scanFrame(f: Frame, opts?: ScanOpts): FrameScan {
   const { width: W, height: H } = f;
   const { L, gold } = preprocess(f);
   const xMax = Math.round(W * 0.95); // 우측 툴바 대략 제외
-  const { cols, px, score } = detectColumns(L, W, H, xMax);
-  const rows = detectRows(gold, W, H, cols, px);
+  const { cols, px, score } = detectColumns(L, W, H, xMax, opts?.pitchLoFrac ?? 0.07, opts?.pitchHiFrac ?? 0.14);
+  const rows = detectRows(gold, W, H, cols, px, opts?.rowLoFrac ?? 0.13);
   const validCols = cols.filter((c) => c + px <= xMax).slice(0, 7);
   const cells: CellDetection[] = [];
   const rowPitch = rows.length >= 2 ? rows[1] - rows[0] : Math.round(px * 2);

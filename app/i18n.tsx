@@ -1149,6 +1149,7 @@ const D: Record<string, Pair> = {
   "모든 인식은 100% 브라우저 안에서 처리되며 이미지는 서버로 전송되지 않습니다.": ["All recognition runs 100% in your browser — images are never sent to a server.", "認識はすべて100%ブラウザ内で処理され、画像はサーバーに送信されません。"],
   "여기에 오퍼 목록 스크린샷을 끌어놓거나, 클릭해서 파일을 추가하세요 (여러 장 가능)": ["Drop operator-list screenshots here, or click to add files (multiple allowed)", "ここにオペレーター一覧のスクリーンショットをドロップするか、クリックしてファイルを追加してください（複数可）"],
   "스크린샷 추가": ["Add screenshots", "スクリーンショットを追加"],
+  "{n}칸 인식": ["{n} cells read", "{n}マス認識"],
   "격자 {c}열 · px {p} · 행 {r}": ["Grid {c} cols · px {p} · rows {r}", "グリッド{c}列 · px {p} · 行 {r}"],
   "인식된 오퍼 {n}명": ["{n} operators recognized", "認識されたオペレーター{n}名"],
   "확실 {n}": ["{n} confident", "確実{n}"],

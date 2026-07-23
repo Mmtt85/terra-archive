@@ -9,8 +9,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { scanFrame } from "../app/scan/vision";
-import { toGray, matchArt, classifyElite } from "../app/scan/artmatch";
+import { analyzeFrame } from "../app/scan/artmatch";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const FIX = join(ROOT, "fixtures", "scanner");
@@ -43,19 +42,16 @@ open(${JSON.stringify(rgba)}, 'wb').write(im.tobytes())
 print(im.width, im.height)`]).toString().trim().split(" ").map(Number);
     const buf = readFileSync(rgba);
     const f = { data: new Uint8ClampedArray(buf.buffer, buf.byteOffset, buf.length), width: dims[0], height: dims[1] };
-    const scan = scanFrame(f);
-    const g = toGray(f);
-    const found = new Map(scan.cells.map((c) => [`${c.row},${c.col}`, c]));
+    const res = analyzeFrame(f); // 크롭 재시도 포함 — 제품 경로와 동일
+    const found = new Map(res.cells.map((m) => [`${m.cell.row},${m.cell.col}`, m]));
     for (const want of frame.cells) {
-      const cell = found.get(`${want.row},${want.col}`);
-      if (!cell) { missing++; console.log(`✗ ${frame.file} r${want.row}c${want.col} ${want.name}: 셀 미검출`); continue; }
-      const am = matchArt(g, cell.sx, cell.ry, scan.px);
-      if (am?.best.op === want.op) idOk++;
-      else { idBad++; console.log(`✗ ${frame.file} r${want.row}c${want.col} 식별 ${want.name} → ${am?.best.op}(${am?.best.score.toFixed(3)})`); }
-      const el = classifyElite(g, cell.sx, cell.ry, scan.px);
-      const clamped = Math.min(el.elite, maxEliteByOp.get(want.op) ?? 2);
+      const m = found.get(`${want.row},${want.col}`);
+      if (!m) { missing++; console.log(`✗ ${frame.file} r${want.row}c${want.col} ${want.name}: 셀 미검출`); continue; }
+      if (m.op === want.op) idOk++;
+      else { idBad++; console.log(`✗ ${frame.file} r${want.row}c${want.col} 식별 ${want.name} → ${m.op}(${m.score.toFixed(3)})`); }
+      const clamped = Math.min(m.elite, maxEliteByOp.get(want.op) ?? 2);
       if (clamped === want.elite) elOk++;
-      else { elBad++; console.log(`✗ ${frame.file} r${want.row}c${want.col} 정예화 ${want.name} E${want.elite} → E${clamped} [${el.s1.toFixed(2)}/${el.s2.toFixed(2)}]`); }
+      else { elBad++; console.log(`✗ ${frame.file} r${want.row}c${want.col} 정예화 ${want.name} E${want.elite} → E${clamped} [${m.es1.toFixed(2)}/${m.es2.toFixed(2)}]`); }
     }
   }
 } finally {
