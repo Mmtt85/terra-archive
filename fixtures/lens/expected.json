@@ -63,5 +63,14 @@
       "클로 - 전훈",
       "오렌지 스톰"
     ]
+  },
+  "f7.png": {
+    "section": "mech",
+    "targetKind": "goto",
+    "topic": "rogue_4",
+    "entities": [
+      "고목 신지",
+      "구상"
+    ]
   }
 }

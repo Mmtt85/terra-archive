@@ -15,6 +15,7 @@ export type LensEntity = {
   topic: string; topicName: string; section: string;
   id: string; name: string; score: number;
   arc?: string; // 토픽 고유 시스템(mechanics) 항목의 전시관 탭 라벨 (영감·암호판 등)
+  nameHit?: boolean; // 이름 수준 매칭 여부 — 본문 조각만으로 잡힌 것과 구분
 };
 export type LensGoto =
   | {
@@ -187,10 +188,10 @@ export function analyzeLines(
   const topicScore = new Map<string, number>();
   const topicNames = new Map<string, string>();
   const solidsAll: LensEntity[] = [];
-  for (const [e, score] of hits) {
-    topicScore.set(e.topic, (topicScore.get(e.topic) ?? 0) + score);
+  for (const [e, h] of hits) {
+    topicScore.set(e.topic, (topicScore.get(e.topic) ?? 0) + h.score);
     topicNames.set(e.topic, e.topicName);
-    if (score >= SOLID) solidsAll.push({ topic: e.topic, topicName: e.topicName, section: e.section, id: e.id, name: e.name, score, arc: e.arc });
+    if (h.score >= SOLID) solidsAll.push({ topic: e.topic, topicName: e.topicName, section: e.section, id: e.id, name: e.name, score: h.score, arc: e.arc, nameHit: h.nameHit });
   }
   // 현재 토픽 사전확률 부스트
   const ctxTopic = opts?.context?.topic;
@@ -220,8 +221,8 @@ export function analyzeLines(
   const wEntries = index.entries.filter((e) => e.topic === top.topic);
   const hitsW = matchEntries(linesN, wEntries);
   const solidsW: LensEntity[] = [];
-  for (const [e, score] of hitsW) {
-    if (score >= SOLID) solidsW.push({ topic: e.topic, topicName: e.topicName, section: e.section, id: e.id, name: e.name, score, arc: e.arc });
+  for (const [e, h] of hitsW) {
+    if (h.score >= SOLID) solidsW.push({ topic: e.topic, topicName: e.topicName, section: e.section, id: e.id, name: e.name, score: h.score, arc: e.arc, nameHit: h.nameHit });
   }
   const entities = dedupEntities(solidsW);
   const section = topSection(hitsW);
@@ -230,28 +231,37 @@ export function analyzeLines(
 }
 
 // 라인 ↔ 엔트리 매칭 (IDF는 "전달된 엔트리 집합" 안에서 분산된다)
-function matchEntries(linesN: string[], entries: Entry[]): Map<Entry, number> {
-  const hits = new Map<Entry, number>();
+type Hit = { score: number; nameHit: boolean };
+function matchEntries(linesN: string[], entries: Entry[]): Map<Entry, Hit> {
+  const hits = new Map<Entry, Hit>();
   for (const line of linesN) {
     const lineBG = bigrams(line);
-    const lineHits: { e: Entry; w: number }[] = [];
+    const lineHits: { e: Entry; w: number; nm: boolean }[] = [];
     for (const e of entries) {
       if (e.nameN.length >= 3 && (line.includes(e.nameN) || (line.length >= 4 && e.nameN.includes(line)))) {
-        lineHits.push({ e, w: 3 });
+        lineHits.push({ e, w: 3, nm: true });
+      } else if (e.nameN.length === 2 && line === e.nameN) {
+        // 2글자 이름("구상" 등)은 라인 전체가 정확히 일치할 때만 — 부분일치는 오탐투성이
+        lineHits.push({ e, w: 3, nm: true });
       } else if (line.length >= 6 && e.bodyN.length >= 6 && contain(lineBG, e.bodyBG) >= 0.7) {
-        lineHits.push({ e, w: 1 });
+        lineHits.push({ e, w: 1, nm: false });
       }
     }
     if (lineHits.length === 0) continue;
     const idf = 1 / lineHits.length;
-    for (const { e, w } of lineHits) hits.set(e, (hits.get(e) ?? 0) + w * idf);
+    for (const { e, w, nm } of lineHits) {
+      const h = hits.get(e) ?? { score: 0, nameHit: false };
+      h.score += w * idf;
+      h.nameHit ||= nm;
+      hits.set(e, h);
+    }
   }
   return hits;
 }
 
-function topSection(hits: Map<Entry, number>): string | null {
+function topSection(hits: Map<Entry, Hit>): string | null {
   const sectionScore = new Map<string, number>();
-  for (const [e, score] of hits) sectionScore.set(e.section, (sectionScore.get(e.section) ?? 0) + score);
+  for (const [e, h] of hits) sectionScore.set(e.section, (sectionScore.get(e.section) ?? 0) + h.score);
   return [...sectionScore.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
 }
 
@@ -277,7 +287,11 @@ function gotoFor(topic: string, section: string, entities: LensEntity[]): LensGo
   // 아이템류: 섹션 경계 없이 cohort 구성 → 1개면 기존 단일 동작, 여럿이면 모아보기(gather)
   if (ITEM_SECTIONS.has(section)) {
     const mine = entities.filter((e) => e.topic === topic && ITEM_SECTIONS.has(e.section));
-    const cohort = mine.filter((e) => e.score >= (mine[0]?.score ?? 0) * 0.5);
+    // 절반 규칙 + 이름 매칭 특례 — 같은 아이템이 여러 장 반복돼(사고 화면의 고목 신지 ×6)
+    // 1위 점수가 부풀어도 "이름으로" 잡힌 다른 아이템(구상 등)은 잘리지 않게.
+    // 본문 조각만으로 잡힌 항목은 절반 규칙 그대로 (염원류 공유 효과문 오탐 방지)
+    const half = (mine[0]?.score ?? 0) * 0.5;
+    const cohort = mine.filter((e) => e.score >= half || (e.nameHit && e.score >= 1.4));
     if (!cohort.length) return null;
     if (cohort.length === 1) {
       const one = cohort[0];

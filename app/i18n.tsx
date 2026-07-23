@@ -1148,7 +1148,7 @@ const D: Record<string, Pair> = {
   "여기든 어디든, 놓으면 바로 인식합니다": ["Drop anywhere — it's recognized instantly", "どこにでもドロップすれば即認識されます"],
   "테마 선택": ["Pick a theme", "テーマ選択"],
   "인식은 됐지만 어느 테마인지 화면만으론 알 수 없습니다 — 테마를 선택하세요.": ["Recognized, but the theme can't be told from this screen alone — pick a theme.", "認識はできましたが、この画面だけではどのテーマか判別できません — テーマを選んでください。"],
-  "인식된 소장품 {n}개": ["{n} relics recognized", "認識された秘宝{n}個"],
+  "인식된 항목 {n}개": ["{n} items recognized", "認識された項目{n}個"],
   "획득 방법": ["How to obtain", "入手方法"],
   // ── 스샷 레이더 도움말 (순수 설명 전용 모달, 2026-07-23) ─────────────────────
   "게임 통합전략(로그라이크) 화면의 스크린샷을 인식해, 이 가이드의 해당 정보로 바로 이동시켜 주는 기능입니다.": ["Recognizes screenshots of in-game Integrated Strategies (roguelike) screens and jumps you straight to the matching info in this guide.", "ゲームの統合戦略（ローグライク）画面のスクリーンショットを認識し、このガイドの該当情報へ直接移動させる機能です。"],

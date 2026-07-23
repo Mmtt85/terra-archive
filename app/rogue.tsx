@@ -933,14 +933,14 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   // 자동인식 동안 창 전체가 드롭존 — 드래그 중이면 필을 드롭 가능 상태로 강조
   const lensDragging = useDropWatch(lensAuto && !lensOpen, handleLensShot);
   // 하이라이트 카드로 스크롤 (렌더 뒤 한 프레임 양보).
-  // 소장품(relic)은 상세/모아보기 모달이 뜨므로 스크롤 불필요 (사용자 확정 2026-07-23)
+  // 소장품(relic)·모아보기(사고 등 다중 인식)는 모달이 뜨므로 스크롤 불필요 (사용자 확정 2026-07-24)
   useEffect(() => {
-    if (!lensHits || view === "relic") return;
+    if (!lensHits || view === "relic" || lensMulti) return;
     const id = window.setTimeout(() => {
       document.querySelector(".rg-lens-hit")?.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 120);
     return () => window.clearTimeout(id);
-  }, [lensHits, view, arcTab]);
+  }, [lensHits, view, arcTab, lensMulti]);
   const inited = useRef(false);
   // 데이터 로드 후 최초 1회: URL 해시대로 뷰·모달 복원 (복붙 딥링크 진입)
   useEffect(() => {
@@ -1669,7 +1669,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
         <div className="rg-modal-back stack" onClick={() => setLensMulti(null)} role="presentation">
           <div className="rg-modal rg-rmodal rg-rmulti" role="dialog" aria-modal onClick={(ev) => ev.stopPropagation()}>
             <header className="rg-modal-head">
-              <div><h3>📷 {t("인식된 소장품 {n}개", { n: lensMulti.length })}</h3></div>
+              <div><h3>📷 {t("인식된 항목 {n}개", { n: lensMulti.length })}</h3></div>
               <button type="button" className="rg-modal-close" onClick={() => setLensMulti(null)} aria-label={t("닫기")}>×</button>
             </header>
             <div className="rg-rmulti-list">
