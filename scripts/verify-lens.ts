@@ -12,13 +12,14 @@ import { resolve } from "node:path";
 import sharp from "sharp";
 import { createWorker } from "tesseract.js";
 import { grayNormalize, upscaleFactor, findDarkChips, chipCropRect } from "../app/lens/preprocess";
-import { buildIndex, analyzeLines } from "../app/lens/match";
+import { buildIndex, analyzeLines, analyzeRecruit, wantsChipPass } from "../app/lens/match";
 
 const ROOT = resolve(import.meta.dirname ?? __dirname, "..");
 const SHOTS = resolve(ROOT, "fixtures/lens/screenshots");
 const EXPECTED = resolve(ROOT, "fixtures/lens/expected.json");
 
 type Expect = {
+  mode?: "rogue" | "recruit"; // 페이지별 설치 — 어느 모달로 인식하는지 (기본 rogue)
   section: string;
   targetKind: "goto" | "tie" | "none";
   topic?: string;
@@ -70,26 +71,50 @@ async function main() {
     grayNormalize(data);
     const buf = await sharp(data, { raw: { width: info.width, height: info.height, channels: 4 } }).png().toBuffer();
 
-    // OCR — PSM11(sparse)+PSM3(auto) 라인 합집합 + 어두운 버튼 칩 PSM7 (ocr.ts와 동일)
-    await worker.setParameters({ tessedit_pageseg_mode: "11" as never });
-    const r11 = await worker.recognize(buf);
-    await worker.setParameters({ tessedit_pageseg_mode: "3" as never });
-    const r3 = await worker.recognize(buf);
-    const lines = [...(r11.data.lines ?? []), ...(r3.data.lines ?? [])].map((l) => l.text.trim()).filter(Boolean);
-    const chips = findDarkChips(data, info.width, info.height);
-    if (chips.length) {
+    // OCR — lens.tsx와 동일한 단계형: PSM11 → (모집 키워드 시) 칩 PSM7 → 판정 →
+    // none일 때만 PSM3(+미실행 칩) 폴백. 속도 최적화가 하네스에서도 측정되게 한다.
+    const chipPass = async (): Promise<string[]> => {
+      const chips = findDarkChips(data, info.width, info.height);
+      if (!chips.length) return [];
       await worker.setParameters({ tessedit_pageseg_mode: "7" as never });
+      const out: string[] = [];
       for (const b of chips) {
         const r = chipCropRect(b, info.width, info.height);
         if (!r) continue;
         const cbuf = await sharp(buf).extract({ left: r.x, top: r.y, width: r.w, height: r.h }).png().toBuffer();
-        const r7 = await worker.recognize(cbuf);
+        const r7 = await worker.recognize(cbuf, {}, { blocks: false, text: true, hocr: false, tsv: false });
         const txt = (r7.data.text ?? "").trim();
-        if (txt) lines.push(...txt.split("\n").map((l) => l.trim()).filter(Boolean));
+        if (txt) out.push(...txt.split("\n").map((l) => l.trim()).filter(Boolean));
+      }
+      return out;
+    };
+    const fullPass = async (psm: string): Promise<string[]> => {
+      await worker.setParameters({ tessedit_pageseg_mode: psm as never });
+      const r = await worker.recognize(buf, {}, { blocks: true, text: false, hocr: false, tsv: false });
+      return (r.data.lines ?? []).map((l) => l.text.trim()).filter(Boolean);
+    };
+    // 모드별 흐름 — lens.tsx와 동일하게
+    let oc;
+    if (exp.mode === "recruit") {
+      // 태그는 어두운 버튼 칩이 본체 — 칩 + 전체 프레임 보조
+      const lines = (await chipPass()).concat(await fullPass("11"));
+      oc = analyzeRecruit(lines, recruitTags);
+    } else {
+      // 프로덕션 rogue 모드는 항상 현재 토픽 컨텍스트가 있다 — 사미 페이지에서 찍는 상황을 재현
+      const ctx = { context: { topic: "rogue_3" } };
+      let lines = await fullPass("11");
+      let chipsRan = false;
+      if (wantsChipPass(lines)) { chipsRan = true; lines = lines.concat(await chipPass()); }
+      oc = analyzeLines(lines, index, ctx);
+      // run.ts와 동일: none·tie 또는 하이라이트형 goto(엔티티 완성도)면 폴백 보강
+      const needMore = oc.target.kind !== "goto"
+        || (oc.target.goto.page === "rogue" && !oc.target.goto.modal && !!oc.target.goto.highlight);
+      if (needMore) {
+        lines = lines.concat(await fullPass("3"));
+        if (!chipsRan) lines = lines.concat(await chipPass());
+        oc = analyzeLines(lines, index, ctx);
       }
     }
-
-    const oc = analyzeLines(lines, index, { recruitTags });
     const errs: string[] = [];
     if (oc.section !== exp.section) errs.push(`섹션 ${oc.section} ≠ 기대 ${exp.section}`);
     if (oc.target.kind !== exp.targetKind) errs.push(`타깃 ${oc.target.kind} ≠ 기대 ${exp.targetKind}`);

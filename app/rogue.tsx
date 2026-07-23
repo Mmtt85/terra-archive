@@ -4,10 +4,18 @@
 // 데이터는 scripts/build-rogue.py가 생성하는 app/data/rogue1.json / rogue6.json (클뜯 레포 원본).
 // rogue_6은 CN 데이터를 한국어화(rogue6-ko.json)한 것으로, 이름류는 중국어 원문(cn)을 병기한다.
 // 조우의 층별 출현 규칙·엔딩 선제조건은 클라 데이터에 없어 PRTS 기반 큐레이션(rogueN-curated.json)을 병합한다.
-import { startTransition, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { lazy, startTransition, Suspense, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import rogue1Data from "./data/rogue1.json";
 import { useI18n } from "./i18n";
 import { normSearch } from "./search";
+import { isNewFeature } from "./whats-new";
+import type { LensGoto } from "./lens/match";
+import { recognizeShot, warmData } from "./lens/run";
+import { warmOcr } from "./lens/ocr";
+import { useClipboardWatch } from "./lens/clipwatch";
+
+// 스샷 레이더 — 게임 스크린샷 인식 → 가이드의 해당 정보로 이동. 열 때만 로드 (OCR wasm이 무겁다)
+const LensModal = lazy(() => import("./lens/lens"));
 
 type Zone = { id: string; num: number; name: string; time: string | null; desc: string; buff: string | null; hidden: boolean; img?: boolean; variant?: boolean; cn?: string; portal?: boolean; bg?: string };
 type StageEnemy = { key: string; cnt: number };
@@ -799,8 +807,10 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   const applyHashRef = useRef(applyHash);
   useEffect(() => { applyHashRef.current = applyHash; });
 
-  // ─── 스크린샷 렌즈 핸드오프: sessionStorage의 이동 목표(뷰·전시관 탭·모달·하이라이트) 적용 ───
-  // 해시 딥링크는 arcTab·하이라이트를 못 나르므로 렌즈는 이 경로로 들어온다 (home.tsx onLensGoto).
+  // ─── 스샷으로 찾기 (페이지 내 설치, 사용자 확정 2026-07-23) ───────────────────
+  // 인식 목표는 sessionStorage 핸드오프로 적용한다 — 다른 토픽이 인식되면 토픽 전환 후
+  // 데이터 로드 effect가 마저 적용해야 하므로 (동일 토픽이면 즉시).
+  const [lensOpen, setLensOpen] = useState(false);
   const applyLensHandoff = () => {
     let raw: string | null = null;
     try { raw = sessionStorage.getItem("ta:lens-handoff"); } catch { return; }
@@ -812,6 +822,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
     sessionStorage.removeItem("ta:lens-handoff");
     if (g.view && viewsFor().some((x) => x.id === g.view)) setView(g.view as View);
     if (g.arcTab) setArcTab(g.arcTab);
+    setRelicQ(""); setMapQ(""); // 검색 필터가 하이라이트 대상을 가리지 않게
     setZoneOpen(null); setStageOpen(null); setEnemyOpen(null); setEncOpen(null); setRelicOpen(null);
     if (g.modal) {
       const { type, id } = g.modal;
@@ -824,17 +835,60 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   };
   const applyLensRef = useRef(applyLensHandoff);
   useEffect(() => { applyLensRef.current = applyLensHandoff; });
-  // 데이터 로드 후(토픽 전환 포함) + 렌즈가 쏘는 커스텀 이벤트에서 적용
+  // 데이터 로드 후(토픽 전환 포함) 적용 — 다른 토픽 인식 시 goTopic 후 이 effect가 마저 처리
   useEffect(() => {
     if (!mounted || !active) return;
     applyLensRef.current();
   }, [mounted, active, topic]);
+  // 모달의 인식 결과 적용 — 같은 토픽이면 즉시, 다른 토픽이면 전환 후 위 effect가 처리
+  const onLensGoto = (g: LensGoto) => {
+    if (g.page !== "rogue") return;
+    setLensOpen(false);
+    try { sessionStorage.setItem("ta:lens-handoff", JSON.stringify(g)); } catch { return; }
+    if (g.topic !== topicRef.current) goTopic(g.topic);
+    else applyLensRef.current();
+  };
+  // ── 페이지 레벨 클립보드 자동인식 토글 — 모달 없이 캡처만 하면 바로 이동 (사용자 요청 2026-07-23)
+  const [lensAuto, setLensAuto] = useState(false);
   useEffect(() => {
-    if (!mounted) return;
-    const onLens = () => applyLensRef.current();
-    window.addEventListener("ta:lens-goto", onLens);
-    return () => window.removeEventListener("ta:lens-goto", onLens);
-  }, [mounted]);
+    let saved = false;
+    try { saved = localStorage.getItem("ta-lens-auto-rogue") === "1"; } catch { /* 시크릿 등 */ }
+    if (!saved) return;
+    // setTimeout: effect 본문 동기 setState 회피 (react-hooks/set-state-in-effect)
+    const id = window.setTimeout(() => { setLensAuto(true); void warmOcr(); warmData("rogue"); }, 0);
+    return () => window.clearTimeout(id);
+  }, []);
+  const toggleLensAuto = () => setLensAuto((v) => {
+    const next = !v;
+    try { localStorage.setItem("ta-lens-auto-rogue", next ? "1" : "0"); } catch { /* 무시 */ }
+    if (next) { void warmOcr(); warmData("rogue"); } // 켜는 순간 OCR·데이터 예열
+    return next;
+  });
+  const [lensMsg, setLensMsg] = useState<string | null>(null);
+  const [lensThumb, setLensThumb] = useState<string | null>(null); // 인식 중/최근 이미지 미니 썸네일
+  const lensMsgTimer = useRef<number | undefined>(undefined);
+  const flashLensMsg = (msg: string | null, ms?: number) => {
+    if (lensMsgTimer.current !== undefined) window.clearTimeout(lensMsgTimer.current);
+    setLensMsg(msg);
+    if (msg && ms) lensMsgTimer.current = window.setTimeout(() => setLensMsg(null), ms);
+  };
+  const lensClip = useClipboardWatch(lensAuto && !lensOpen, async (file) => {
+    setLensThumb((prev) => { if (prev) URL.revokeObjectURL(prev); return URL.createObjectURL(file); });
+    flashLensMsg(t("워프 중…"));
+    try {
+      const oc = await recognizeShot("rogue", file, topicRef.current);
+      if (oc.target.kind === "goto") {
+        onLensGoto(oc.target.goto);
+        flashLensMsg(t("인식 완료 — 해당 정보로 이동했습니다."), 2000);
+      } else if (oc.target.kind === "tie") {
+        flashLensMsg(t("테마를 특정하지 못했습니다 — 📷 버튼을 눌러 테마를 선택하세요"), 3500);
+      } else {
+        flashLensMsg(t("인식된 정보가 없습니다 — 분대·유물·조우·작전 화면을 캡처해 보세요."), 3000);
+      }
+    } catch {
+      flashLensMsg(t("인식에 실패했습니다 — 다른 스크린샷으로 다시 시도해 주세요."), 3000);
+    }
+  });
   // 하이라이트 카드로 스크롤 (렌더 뒤 한 프레임 양보)
   useEffect(() => {
     if (!lensHits) return;
@@ -984,7 +1038,31 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
         {VIEWS.map((v) => (
           <button key={v.id} type="button" className={view === v.id ? "on" : ""} onClick={() => goView(v.id)}>{t(v.label)}</button>
         ))}
+        {/* 스샷 레이더 — 게임 스크린샷을 인식해 이 가이드의 해당 정보로 (KR 클라 전용).
+            오른쪽 끝 고정 + 자동인식 토글 (사용자 확정 2026-07-23) */}
+        {locale === "ko" && (
+          <div className="lens-open-wrap">
+            <button type="button" className="lens-open-btn" onClick={() => setLensOpen(true)}
+              title={t("게임 스크린샷을 인식해 이 가이드의 해당 정보로 바로 이동합니다 — 분대·유물·작전·조우 등")}>
+              <span aria-hidden>📷</span> {t("스샷 레이더")}{isNewFeature("lens") && <span className="new-badge">{t("새기능")}</span>}
+            </button>
+            <button type="button" role="switch" aria-checked={lensAuto} className={`lens-auto-toggle${lensAuto ? " on" : ""}`}
+              title={t("클립보드 자동인식 — 켜두면 모달을 열지 않아도 캡처만 하면 바로 인식·적용됩니다")}
+              onClick={toggleLensAuto}>
+              <span className="lens-auto-knob" aria-hidden />{t("자동")}
+            </button>
+          </div>
+        )}
       </nav>
+      {/* 자동인식 상태 필 — fixed 오버레이(레이아웃을 밀지 않음), 인식 이미지 미니 썸네일 포함 */}
+      {locale === "ko" && lensAuto && (
+        <div className={`lens-auto-pill${lensMsg ? " busy" : ""}`} role="status">
+          {lensThumb && <img className="lens-auto-thumb" src={lensThumb} alt={t("인식한 스크린샷")} />}
+          <span>{lensMsg ?? (lensClip === "off"
+            ? t("클립보드 접근이 막혀 있습니다 — ⌘V 붙여넣기나 파일 드롭을 이용하세요")
+            : t("스샷 자동인식 켜짐 — 게임 화면을 캡처하고 이 탭으로 돌아오면 바로 이동합니다"))}</span>
+        </div>
+      )}
 
       {view === "map" && (
         <div className="rg-map">
@@ -1250,7 +1328,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
           </div>
           <div className="rg-relic-grid">
             {relics.map((r) => (
-              <article key={r.id} className="rg-relic">
+              <article key={r.id} className={`rg-relic${lensHits?.has(r.id) ? " rg-lens-hit" : ""}`}>
                 <header>
                   {r.img && <img className="rg-relic-icon" src={`/rogue/relic/${r.iconId ?? r.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
                   {r.order && <span className="rg-relic-no">{r.order}</span>}
@@ -1404,7 +1482,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
                 {g.kind && <h4 className="rg-scrap-type">{t(g.kind)}<em>{g.items.length}</em></h4>}
                 <div className="rg-relic-grid">
                   {g.items.map((c) => (
-                    <article key={c.id} className="rg-relic">
+                    <article key={c.id} className={`rg-relic${lensHits?.has(c.id) ? " rg-lens-hit" : ""}`}>
                       <header>
                         {c.img && <img className="rg-relic-icon" src={`/rogue/relic/${c.iconId ?? c.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
                         <h4>{c.name}</h4>
@@ -1549,6 +1627,13 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
       )}
       {encOpen && <EncounterModal enc={encOpen} onClose={() => setEncOpen(null)} link={linkRelic} />}
       {relicOpen && <RelicModal relic={relicOpen} onClose={() => setRelicOpen(null)} />}
+      {lensOpen && (
+        <div className="modal-backdrop scanner-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) setLensOpen(false); }}>
+          <Suspense fallback={null}>
+            <LensModal mode="rogue" topic={topic} onClose={() => setLensOpen(false)} onGoto={onLensGoto} />
+          </Suspense>
+        </div>
+      )}
       </>)}
     </section>
   );

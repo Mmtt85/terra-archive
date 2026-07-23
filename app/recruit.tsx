@@ -1,8 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import recruitData from "./data/recruit.json";
 import { useI18n, rich, type ExtraI18n } from "./i18n";
+import { isNewFeature } from "./whats-new";
+import type { LensGoto } from "./lens/match";
+import { recognizeShot, warmData } from "./lens/run";
+import { warmOcr } from "./lens/ocr";
+import { useClipboardWatch } from "./lens/clipwatch";
+
+// 스샷으로 태그 입력 — 공개모집 스크린샷 인식 → 태그 자동 선택. 열 때만 로드 (OCR wasm이 무겁다)
+const LensModal = lazy(() => import("./lens/lens"));
 
 type RecruitTag = { id: number; name: string; group: number };
 type RecruitOp = { id: string; name: string; rarity: number; tags: string[]; image: string; accent: string; seq: number; pending?: boolean };
@@ -121,7 +129,7 @@ function ComboCard({ result, onShowOperator, tagLabel, opLabel }: { result: Comb
 const ALL_TAG_NAMES = data.tags.map((tag) => tag.name);
 
 export default function RecruitHelper({ onShowOperator, extra }: { onShowOperator?: (id: string) => void; extra?: ExtraI18n | null } = {}) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [showDict, setShowDict] = useState(false);
   const [quick, setQuick] = useState("");
   const [manualOn, setManualOn] = useState<string[]>([]);   // 직접 클릭해 켠 태그
@@ -170,24 +178,54 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
   };
   const clearAll = () => { setQuick(""); setManualOn([]); setManualOff([]); };
 
-  // 스샷 워프 핸드오프 — 공개모집 화면 스크린샷에서 인식한 태그를 자동 선택 (home.tsx onLensGoto)
+  // 스샷으로 태그 입력 (페이지 내 설치, 사용자 확정 2026-07-23) — 인식된 태그를 바로 선택
+  const [lensOpen, setLensOpen] = useState(false);
+  const onLensGoto = (g: LensGoto) => {
+    if (g.page !== "recruit") return;
+    setLensOpen(false);
+    setQuick("");
+    setManualOff([]);
+    setManualOn(g.tags.filter((tag) => ALL_TAG_NAMES.includes(tag)).slice(0, 5));
+  };
+  // 페이지 레벨 클립보드 자동인식 토글 — 모달 없이 캡처만 하면 태그가 바로 선택된다
+  const [lensAuto, setLensAuto] = useState(false);
   useEffect(() => {
-    const apply = () => {
-      let raw: string | null = null;
-      try { raw = sessionStorage.getItem("ta:lens-handoff"); } catch { return; }
-      if (!raw) return;
-      let g: { page?: string; tags?: string[] };
-      try { g = JSON.parse(raw); } catch { sessionStorage.removeItem("ta:lens-handoff"); return; }
-      if (g.page !== "recruit" || !Array.isArray(g.tags)) return; // 로그라이크 핸드오프는 rogue가 소비
-      sessionStorage.removeItem("ta:lens-handoff");
-      setQuick("");
-      setManualOff([]);
-      setManualOn(g.tags.filter((tag) => ALL_TAG_NAMES.includes(tag)).slice(0, 5));
-    };
-    apply();
-    window.addEventListener("ta:lens-goto", apply);
-    return () => window.removeEventListener("ta:lens-goto", apply);
+    let saved = false;
+    try { saved = localStorage.getItem("ta-lens-auto-recruit") === "1"; } catch { /* 시크릿 등 */ }
+    if (!saved) return;
+    // setTimeout: effect 본문 동기 setState 회피 (react-hooks/set-state-in-effect)
+    const id = window.setTimeout(() => { setLensAuto(true); void warmOcr(); warmData("recruit"); }, 0);
+    return () => window.clearTimeout(id);
   }, []);
+  const toggleLensAuto = () => setLensAuto((v) => {
+    const next = !v;
+    try { localStorage.setItem("ta-lens-auto-recruit", next ? "1" : "0"); } catch { /* 무시 */ }
+    if (next) { void warmOcr(); warmData("recruit"); }
+    return next;
+  });
+  const [lensMsg, setLensMsg] = useState<string | null>(null);
+  const [lensThumb, setLensThumb] = useState<string | null>(null); // 인식 중/최근 이미지 미니 썸네일
+  const lensMsgTimer = useRef<number | undefined>(undefined);
+  const flashLensMsg = (msg: string | null, ms?: number) => {
+    if (lensMsgTimer.current !== undefined) window.clearTimeout(lensMsgTimer.current);
+    setLensMsg(msg);
+    if (msg && ms) lensMsgTimer.current = window.setTimeout(() => setLensMsg(null), ms);
+  };
+  const lensClip = useClipboardWatch(lensAuto && !lensOpen, async (file) => {
+    setLensThumb((prev) => { if (prev) URL.revokeObjectURL(prev); return URL.createObjectURL(file); });
+    flashLensMsg(t("워프 중…"));
+    try {
+      const oc = await recognizeShot("recruit", file);
+      if (oc.target.kind === "goto") {
+        onLensGoto(oc.target.goto);
+        flashLensMsg(t("태그를 인식해 선택했습니다."), 2000);
+      } else {
+        flashLensMsg(t("인식된 태그가 없습니다 — 모집 요건 태그가 보이게 캡처해 보세요."), 3000);
+      }
+    } catch {
+      flashLensMsg(t("인식에 실패했습니다 — 다른 스크린샷으로 다시 시도해 주세요."), 3000);
+    }
+  });
 
   const results = useMemo(() => comboResults(picked), [picked]);
 
@@ -205,7 +243,30 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
           <input value={quick} onChange={(event) => setQuick(event.target.value)}
             placeholder={t("빠른 입력 — 태그 첫 글자를 이어서 입력 (예: 가메신생범)")} aria-label={t("태그 첫 글자 빠른 입력")} />
           <button type="button" className="clear-btn" onClick={clearAll}><span className="btn-icon" aria-hidden>↻</span>{t("클리어")}</button>
+          {/* 스샷으로 태그 입력 — 공개모집 화면 인식 → 태그 자동 선택. 오른쪽 끝 + 자동 토글 (KR 클라 전용) */}
+          {locale === "ko" && (
+            <div className="lens-open-wrap">
+              <button type="button" className="lens-open-btn" onClick={() => setLensOpen(true)}
+                title={t("공개모집 화면 스크린샷을 인식해 태그를 자동으로 선택합니다")}>
+                <span aria-hidden>📷</span> {t("스샷으로 태그 입력")}{isNewFeature("lens") && <span className="new-badge">{t("새기능")}</span>}
+              </button>
+              <button type="button" role="switch" aria-checked={lensAuto} className={`lens-auto-toggle${lensAuto ? " on" : ""}`}
+                title={t("클립보드 자동인식 — 켜두면 모달을 열지 않아도 캡처만 하면 바로 인식·적용됩니다")}
+                onClick={toggleLensAuto}>
+                <span className="lens-auto-knob" aria-hidden />{t("자동")}
+              </button>
+            </div>
+          )}
         </div>
+        {/* 자동인식 상태 필 — fixed 오버레이(레이아웃을 밀지 않음), 인식 이미지 미니 썸네일 포함 */}
+        {locale === "ko" && lensAuto && (
+          <div className={`lens-auto-pill${lensMsg ? " busy" : ""}`} role="status">
+            {lensThumb && <img className="lens-auto-thumb" src={lensThumb} alt={t("인식한 스크린샷")} />}
+            <span>{lensMsg ?? (lensClip === "off"
+              ? t("클립보드 접근이 막혀 있습니다 — ⌘V 붙여넣기나 파일 드롭을 이용하세요")
+              : t("스샷 자동인식 켜짐 — 게임 화면을 캡처하고 이 탭으로 돌아오면 바로 적용됩니다"))}</span>
+          </div>
+        )}
         {TAG_GROUPS.map(([group, tags]) => {
           const shown = tags.filter(isVisible);
           if (shown.length === 0) return null;
@@ -247,6 +308,13 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
           </>
         )}
       </div>
+      {lensOpen && (
+        <div className="modal-backdrop scanner-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) setLensOpen(false); }}>
+          <Suspense fallback={null}>
+            <LensModal mode="recruit" onClose={() => setLensOpen(false)} onGoto={onLensGoto} />
+          </Suspense>
+        </div>
+      )}
     </section>
   );
 }

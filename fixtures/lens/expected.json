@@ -1,8 +1,54 @@
 {
-  "_comment": "스크린샷 렌즈 회귀 기대값 — verify-lens.ts가 검증. entities는 인식돼야 할 이름(부분집합), topic은 단독 판정일 때만.",
-  "f1.png": { "section": "band", "targetKind": "tie", "entities": ["지휘 분대", "집합 분대", "지원 분대", "예봉 분대"] },
-  "f2.png": { "section": "stage", "targetKind": "goto", "topic": "rogue_3", "modalType": "stage", "entities": ["펜션의 원혼"] },
-  "f3.png": { "section": "relic", "targetKind": "goto", "topic": "rogue_3", "modalType": "relic", "entities": ["손바닥 위 누각"] },
-  "f4.png": { "section": "enc", "targetKind": "goto", "topic": "rogue_3", "modalType": "enc", "entities": ["우르수스"] },
-  "f5.png": { "section": "recruit", "targetKind": "goto", "page": "recruit", "tags": ["스나이퍼", "메딕", "캐스터", "근거리", "코스트+"] }
+  "_comment": "스샷 레이더 회귀 기대값 — verify-lens.ts가 검증. rogue 모드는 컨텍스트 토픽 rogue_3(사미 페이지에서 찍는 상황)으로 판정. entities는 인식돼야 할 이름(부분집합).",
+  "f1.png": {
+    "section": "band",
+    "targetKind": "goto",
+    "topic": "rogue_3",
+    "entities": [
+      "지휘 분대",
+      "집합 분대",
+      "지원 분대",
+      "예봉 분대"
+    ]
+  },
+  "f2.png": {
+    "section": "stage",
+    "targetKind": "goto",
+    "topic": "rogue_3",
+    "modalType": "stage",
+    "entities": [
+      "펜션의 원혼"
+    ]
+  },
+  "f3.png": {
+    "section": "relic",
+    "targetKind": "goto",
+    "topic": "rogue_3",
+    "modalType": "relic",
+    "entities": [
+      "손바닥 위 누각"
+    ]
+  },
+  "f4.png": {
+    "section": "enc",
+    "targetKind": "goto",
+    "topic": "rogue_3",
+    "modalType": "enc",
+    "entities": [
+      "우르수스"
+    ]
+  },
+  "f5.png": {
+    "section": "recruit",
+    "targetKind": "goto",
+    "page": "recruit",
+    "tags": [
+      "스나이퍼",
+      "메딕",
+      "캐스터",
+      "근거리",
+      "코스트+"
+    ],
+    "mode": "recruit"
+  }
 }

@@ -22,7 +22,8 @@ export function grayNormalize(data: Uint8ClampedArray | Uint8Array): void {
   }
 }
 
-/** 업스케일 배율 — 폭 2000px 미만(비레티나 캡처)이면 2x, 이미 크면 원본 유지. */
+/** 업스케일 배율 — 폭 2000px 미만(비레티나 캡처)이면 2x, 이미 크면 원본 유지.
+ *  ⚠ 1.5x로 낮추면 f1 분대 효과문(소형 텍스트) 인식이 깨진다 (A/B 실측 2026-07-23) — 2x 고정. */
 export function upscaleFactor(width: number): number {
   return width < 2000 ? 2 : 1;
 }

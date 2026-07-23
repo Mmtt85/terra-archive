@@ -1,55 +1,46 @@
 "use client";
-// 스크린샷 렌즈 모달 — 게임 스크린샷을 인식해 사이트의 해당 정보로 바로 이동한다.
-// 입력: 클립보드 자동 감지(시작 버튼 게이트) · ⌘V 붙여넣기 · 파일 드롭/선택 (스캐너 v6 UX 재사용).
-// 파이프라인: ocr.ts(OCR) → match.ts(매칭·타깃 해석) → onGoto(홈 셸이 /rogue로 내비게이션).
-// Phase 1 범위: 통합전략(로그라이크) 화면 — 분대·유물·스테이지·조우·엔딩 등. (KR 클라 전용)
+// 스샷 레이더 모달 — 게임 스크린샷을 인식해 "현재 페이지 안의" 해당 콘텐츠로 이동/입력한다.
+// 페이지별 설치 (사용자 확정 2026-07-23: 전역 워프가 아니라 페이지 내 도구):
+//   mode "rogue"   → /rogue 탭 줄의 버튼. 분대·유물·작전·조우 인식 → 가이드 해당 위치로.
+//                    현재 토픽을 사전확률로 부스트 (사미 페이지에서 분대 스샷 = 사미로 확정).
+//   mode "recruit" → 공채 도우미의 버튼. 태그 인식 → 태그 자동 선택.
+// 입력: 클립보드 자동 감지(시작 버튼 게이트) · ⌘V 붙여넣기 · 파일 드롭/선택.
+// 페이지 레벨 자동인식 토글(모달 밖)은 rogue.tsx·recruit.tsx가 clipwatch+run을 직접 쓴다.
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useI18n } from "../i18n";
-import { ocrImage, disposeOcr } from "./ocr";
-import { buildIndex, analyzeLines, type LensIndex, type LensOutcome, type LensGoto } from "./match";
-
-// 매칭 데이터 지연 로드 — 렌즈에서 실제 인식할 때만 rogue*.json·recruit.json을 내려받는다
-let indexP: Promise<{ index: LensIndex; recruitTags: string[] }> | null = null;
-function getIndex(): Promise<{ index: LensIndex; recruitTags: string[] }> {
-  if (!indexP) {
-    indexP = Promise.all([
-      import("../data/rogue1.json"),
-      import("../data/rogue2.json"),
-      import("../data/rogue3.json"),
-      import("../data/rogue4.json"),
-      import("../data/rogue5.json"),
-      import("../data/rogue6.json"),
-      import("../data/recruit.json"),
-    ]).then((mods) => ({
-      index: buildIndex(mods.slice(0, 6).map((m) => m.default)),
-      recruitTags: (mods[6].default as { tags: { name: string }[] }).tags.map((tg) => tg.name),
-    }));
-    indexP.catch(() => { indexP = null; });
-  }
-  return indexP;
-}
+import { warmOcr, disposeOcr } from "./ocr";
+import { recognizeShot, warmData, type LensMode } from "./run";
+import { useClipboardWatch } from "./clipwatch";
+import type { LensOutcome, LensGoto } from "./match";
 
 const SECTION_LABEL: Record<string, string> = {
   band: "분대", relic: "소장품", stage: "작전", zone: "층", enc: "조우",
   tool: "도구", capsule: "레퍼토리 (음반)", ending: "엔딩", recruit: "공개모집 태그",
 };
 
-export default function LensModal({ onClose, onGoto }: {
+export default function LensModal({ mode, topic, onClose, onGoto }: {
+  mode: LensMode;
+  topic?: string; // mode "rogue": 현재 토픽 id (사전확률 부스트)
   onClose: () => void;
   onGoto: (g: LensGoto) => void;
 }) {
   const { t } = useI18n();
   const [clipStarted, setClipStarted] = useState(false);
-  const [clip, setClip] = useState<"idle" | "on" | "off">("idle");
   const [status, setStatus] = useState<string | null>(null); // 진행 상태 문구
   const [outcome, setOutcome] = useState<LensOutcome | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const busy = useRef(false);
-  const lastClipHash = useRef("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => () => { void disposeOcr(); }, []); // 닫을 때 워커 정리
+  const title = mode === "recruit" ? t("스샷으로 태그 입력") : t("스샷 레이더");
+
+  // 모달 열자마자 OCR 워커·매칭 데이터를 예열 — 첫 드롭의 체감 속도 개선. 닫을 때 워커 정리.
+  useEffect(() => {
+    void warmOcr();
+    warmData(mode);
+    return () => { void disposeOcr(); };
+  }, [mode]);
 
   const recognizeFiles = useCallback(async (files: Iterable<File>) => {
     if (busy.current) return;
@@ -59,16 +50,11 @@ export default function LensModal({ onClose, onGoto }: {
     setOutcome(null);
     try {
       setPreview((prev) => { if (prev) URL.revokeObjectURL(prev); return URL.createObjectURL(file); });
-      setStatus(t("인식 엔진 로딩 중…"));
-      const { index, recruitTags } = await getIndex();
-      setStatus(t("화면 분석 중… (수 초 걸립니다)"));
-      const lines = await ocrImage(file);
-      const oc = analyzeLines(lines, index, { recruitTags });
-      // 필드 진단용 — 오인식 리포트를 받으면 콘솔에서 OCR 라인·판정을 바로 확인한다
-      console.debug(`[lens] OCR ${lines.length}줄 → ${oc.target.kind}/${oc.section ?? "-"} · 엔티티 ${oc.entities.length}`, { lines, outcome: oc });
+      setStatus(t("워프 중…"));
+      const oc = await recognizeShot(mode, file, topic);
       setStatus(null);
       setOutcome(oc);
-      // 단일 확신 타깃이면 바로 이동 (사용자 요청: 인식되면 자동으로 해당 화면으로)
+      // 단일 확신 타깃이면 바로 적용 (사용자 요청: 인식되면 자동으로)
       if (oc.target.kind === "goto") onGoto(oc.target.goto);
     } catch (err) {
       console.error("[lens]", err);
@@ -76,7 +62,7 @@ export default function LensModal({ onClose, onGoto }: {
     } finally {
       busy.current = false;
     }
-  }, [t, onGoto]);
+  }, [t, onGoto, mode, topic]);
 
   // ── ⌘V 붙여넣기 ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -91,54 +77,8 @@ export default function LensModal({ onClose, onGoto }: {
     return () => window.removeEventListener("paste", onPaste);
   }, [recognizeFiles]);
 
-  // ── 클립보드 자동 감지 (스캐너 v6과 동일 패턴 — 시작 버튼 게이트) ────────────
-  useEffect(() => {
-    if (!clipStarted) return;
-    let iv: number | undefined;
-    let disposed = false;
-
-    const tick = async () => {
-      if (disposed || busy.current || !document.hasFocus()) return;
-      try {
-        const items = await navigator.clipboard.read();
-        if (disposed) return;
-        setClip("on");
-        for (const it of items) {
-          const type = it.types.find((tp) => tp.startsWith("image/"));
-          if (!type) continue;
-          const blob = await it.getType(type);
-          const head = new Uint8Array(await blob.slice(0, 65536).arrayBuffer());
-          let h = `${blob.size}:${type}:`;
-          for (let i = 0; i < head.length; i += 997) h += head[i].toString(36);
-          if (h === lastClipHash.current) continue;
-          lastClipHash.current = h;
-          await recognizeFiles([new File([blob], t("클립보드 스크린샷"), { type })]);
-        }
-      } catch {
-        if (!disposed) setClip((c) => (c === "on" ? "on" : "off"));
-      }
-    };
-    const startPolling = () => { if (iv === undefined) iv = window.setInterval(() => { void tick(); }, 1000); };
-
-    (async () => {
-      try {
-        const st = await navigator.permissions.query({ name: "clipboard-read" as PermissionName });
-        const apply = () => {
-          if (disposed) return;
-          if (st.state === "granted") { setClip("on"); startPolling(); }
-          else if (st.state === "prompt") { void tick(); }
-          else setClip("off");
-        };
-        st.addEventListener("change", apply);
-        apply();
-      } catch {
-        await tick();
-        if (!disposed) startPolling();
-      }
-    })();
-
-    return () => { disposed = true; if (iv !== undefined) clearInterval(iv); };
-  }, [clipStarted, recognizeFiles, t]);
+  // ── 클립보드 자동 감지 (시작 버튼 게이트) ───────────────────────────────────
+  const clip = useClipboardWatch(clipStarted, (file) => recognizeFiles([file]));
 
   const onDropFiles = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -146,10 +86,10 @@ export default function LensModal({ onClose, onGoto }: {
   }, [recognizeFiles]);
 
   return (
-    <section className="operator-modal lens-modal" role="dialog" aria-modal="true" aria-label={t("스샷 워프")}
+    <section className="operator-modal lens-modal" role="dialog" aria-modal="true" aria-label={title}
       onDragOver={(e) => e.preventDefault()} onDrop={onDropFiles}>
       <header className="scanner-head">
-        <h2>📷 {t("스샷 워프")}</h2>
+        <h2>📷 {title}</h2>
         <button className="modal-close" onClick={onClose} aria-label={t("닫기")}>✕</button>
       </header>
       <input ref={fileInputRef} type="file" accept="image/*" hidden
@@ -162,7 +102,9 @@ export default function LensModal({ onClose, onGoto }: {
               <span className="clip-start-icon" aria-hidden>📷</span>
               <span>{t("클립보드 자동인식 시작")}</span>
             </button>
-            <p>{t("게임 화면을 클립보드로 캡처(맥 ⌃⌘⇧4 · 윈도우 Win+Shift+S)하고 이 탭으로 돌아오면 바로 인식됩니다 — 통합전략 화면(분대·유물·작전·조우)은 가이드의 해당 정보로, 공개모집 태그 화면은 공채 도우미에 태그를 자동 입력해 이동합니다. 파일 드롭이나 ⌘V 붙여넣기도 됩니다.")}</p>
+            <p>{mode === "recruit"
+              ? t("공개모집 화면을 클립보드로 캡처(맥 ⌃⌘⇧4 · 윈도우 Win+Shift+S)하고 이 탭으로 돌아오면, 인식된 태그가 자동으로 선택됩니다. 파일 드롭이나 ⌘V 붙여넣기도 됩니다.")
+              : t("통합전략 화면(분대 선택·전리품·작전 노드·조우 등)을 클립보드로 캡처(맥 ⌃⌘⇧4 · 윈도우 Win+Shift+S)하고 이 탭으로 돌아오면, 가이드의 해당 정보로 바로 이동합니다. 파일 드롭이나 ⌘V 붙여넣기도 됩니다.")}</p>
           </div>
         ) : (
           <div className={`scanner-clip-banner ${clip}`}>
@@ -173,15 +115,19 @@ export default function LensModal({ onClose, onGoto }: {
         )}
 
         <div className="lens-stage">
-          {preview && <img className="lens-preview" src={preview} alt={t("인식한 스크린샷")} />}
-          {status && <p className="lens-status">{status}</p>}
+          {(preview || status) && (
+            <div className="lens-stage-row">
+              {preview && <img className="lens-preview" src={preview} alt={t("인식한 스크린샷")} />}
+              {status && <p className="lens-status"><span className="lens-warp-icon" aria-hidden>⟫</span>{status}</p>}
+            </div>
+          )}
 
           {outcome && !status && (
             <div className="lens-result">
               {outcome.target.kind === "goto" && (
                 <p className="lens-verdict">
-                  {t("인식 완료 — 해당 정보로 이동했습니다.")}
-                  {outcome.entities[0] && <strong> {outcome.entities[0].name}</strong>}
+                  {mode === "recruit" ? t("태그를 인식해 선택했습니다.") : t("인식 완료 — 해당 정보로 이동했습니다.")}
+                  {outcome.entities[0] && <strong> {outcome.entities.filter((e) => !outcome.section || e.section === outcome.section).map((e) => e.name).slice(0, 5).join(" · ")}</strong>}
                 </p>
               )}
               {outcome.target.kind === "tie" && (
@@ -199,13 +145,15 @@ export default function LensModal({ onClose, onGoto }: {
                 </>
               )}
               {outcome.target.kind === "none" && (
-                <p className="lens-verdict none">{t("인식된 정보가 없습니다 — 현재는 통합전략(로그라이크)·공개모집 화면을 지원합니다. 분대·유물·조우·작전·공개모집 태그 화면을 캡처해 보세요.")}</p>
+                <p className="lens-verdict none">{mode === "recruit"
+                  ? t("인식된 태그가 없습니다 — 모집 요건 태그가 보이게 캡처해 보세요.")
+                  : t("인식된 정보가 없습니다 — 분대·유물·조우·작전 화면을 캡처해 보세요.")}</p>
               )}
-              {outcome.entities.length > 1 && (
+              {outcome.entities.length > 1 && outcome.target.kind !== "goto" && (
                 <div className="lens-entities">
                   {outcome.entities.slice(0, 8).map((e) => (
                     <span key={`${e.topic}/${e.section}/${e.id}`} className="lens-entity">
-                      <em>{t(SECTION_LABEL[e.section] ?? e.section)}</em> {e.name}
+                      <em>{e.section === "mech" ? (e.arc ?? t("시스템")) : t(SECTION_LABEL[e.section] ?? e.section)}</em> {e.name}
                     </span>
                   ))}
                 </div>
