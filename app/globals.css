@@ -2799,6 +2799,15 @@ footer p {
   letter-spacing: 0.4px;
   color: var(--muted);
 }
+/* 기지 배치(243/153) 라벨 — 우선 생산 그룹과 시각 구분 (2026-07-24) */
+.prio-label-layout {
+  margin-left: 10px;
+  padding-left: 14px;
+  border-left: 1px solid var(--line);
+}
+.prio-label-layout .new-badge {
+  margin-left: 6px;
+}
 .prio-setting label {
   display: inline-flex;
   align-items: center;
@@ -2916,6 +2925,15 @@ footer p {
     "raisebar raisebar . control meeting"
     "trading0 trading1 mfg0 dorm0 workshop"
     "mfg1 mfg2 mfg3 dorm1 hire"
+    "power0 power1 power2 dorm2 training"
+    ". . . dorm3 .";
+}
+/* 기지 배치 153 (무역 1 · 제조 5) — 무역소 2 자리가 비므로 제조소 5칸을 재배열 (2026-07-24) */
+.ship.ship-153 {
+  grid-template-areas:
+    "raisebar raisebar . control meeting"
+    "trading0 mfg0 mfg1 dorm0 workshop"
+    "mfg2 mfg3 mfg4 dorm1 hire"
     "power0 power1 power2 dorm2 training"
     ". . . dorm3 .";
 }
@@ -3057,6 +3075,9 @@ footer p {
 }
 .pos-manufacture-3 {
   grid-area: mfg3;
+}
+.pos-manufacture-4 {
+  grid-area: mfg4;
 }
 .pos-power-0 {
   grid-area: power0;
@@ -3326,6 +3347,9 @@ footer p {
   .ship {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     grid-template-areas: "raisebar raisebar raisebar" "control control meeting" "trading0 trading1 workshop" "mfg0 mfg1 hire" "mfg2 mfg3 training" "power0 power1 power2" "dorm0 dorm1 dorm2" "dorm3 . .";
+  }
+  .ship.ship-153 {
+    grid-template-areas: "raisebar raisebar raisebar" "control control meeting" "trading0 mfg0 workshop" "mfg1 mfg2 hire" "mfg3 mfg4 training" "power0 power1 power2" "dorm0 dorm1 dorm2" "dorm3 . .";
   }
   .planner-summary {
     grid-template-columns: repeat(2, minmax(0, 1fr));

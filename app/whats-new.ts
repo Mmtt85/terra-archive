@@ -6,6 +6,7 @@ export const FEATURE_RELEASED: Record<string, string | { date: string; days: num
   lens: "2026-07-23", // 스샷 레이더 — 게임 화면 인식 → 해당 정보로 이동 (/rogue·공채 페이지별 설치)
   invest: { date: "2026-07-24", days: 3 }, // 인프라 오퍼 육성 추천 (사용자 지정 3일)
   "rogue-inv": "2026-07-24", // 통합전략 보유 리스트 — 소장품·테마 자원 인벤토리 (피드백 반영)
+  "layout-153": "2026-07-24", // 인프라 플래너 기지 배치 153 프리셋 (무역 1·제조 5·발전 3)
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -24,7 +25,7 @@ export function isNewFeature(key: string): boolean {
 // 탭 → 그 탭 안에 든 새 기능 키 — 햄버거 메뉴 배지용 (사용자 요청 2026-07-24:
 // 새 기능이 있는 메뉴 항목에도 '새기능'을 표시). 새 기능을 다른 탭에 넣으면 여기도 갱신.
 const TAB_FEATURES: Record<string, string[]> = {
-  planner: ["scanner", "invest"],
+  planner: ["scanner", "invest", "layout-153"],
   recruit: ["lens"],
   rogue: ["lens", "rogue-inv"],
   story: ["lens"], // 스샷 레이더 /stories 설치 (전문 대사 검색, 2026-07-24)

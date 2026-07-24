@@ -43,6 +43,9 @@ export type InfraSkill = {
   tokenUse: TokenUse[];
   convert: { from: string; per: number; to: string; amount: number } | null;
   facilityBased?: boolean;
+  facRoom?: string;    // facilityBased 단위 시설 (TRADING 등) — 활성 레이아웃 시설 수로 재계산 (2026-07-24)
+  facPer?: number;     // facilityBased 시설 1개당 단위값 (value = facPer × 243 시설 수로 구움)
+  goldLine?: { per: number; add: number; base: number } | null; // 순금 라인 N개당 +add% (투예·파죰카) — 활성 레이아웃 순금방 수로 재계산
   basePartners?: string[];      // 기지 어디든(숙소 포함) 있으면 발동하는 동반 조건
   basePartnerBonus?: number | null; // 위 조건 충족 시 추가 효율 (언더플로우 +10)
   gateFaction?: string | null;  // "쉐라그 3명 배치된 무역소" 류 — 진영 N명 배치 조건
@@ -141,17 +144,17 @@ export function eliteOptions(op: InfraOp): Elite[] {
   return op.rarity === 3 ? [0, 1] : [0, 1, 2];
 }
 
-// 243 layout: gold ×2 + battle-record ×2 factories, two 12h crews per day
-export const LAYOUT: { key: string; room: string; label: string; product?: string }[] = [
-  { key: "TRADING-0", room: "TRADING", label: "무역소 1" },
-  { key: "TRADING-1", room: "TRADING", label: "무역소 2" },
-  { key: "MANUFACTURE-0", room: "MANUFACTURE", label: "제조소 1 · 순금", product: "gold" },
-  { key: "MANUFACTURE-1", room: "MANUFACTURE", label: "제조소 2 · 순금", product: "gold" },
-  { key: "MANUFACTURE-2", room: "MANUFACTURE", label: "제조소 3 · 작전기록", product: "exp" },
-  { key: "MANUFACTURE-3", room: "MANUFACTURE", label: "제조소 4 · 작전기록", product: "exp" },
-  { key: "POWER-0", room: "POWER", label: "발전소 1" },
-  { key: "POWER-1", room: "POWER", label: "발전소 2" },
-  { key: "POWER-2", room: "POWER", label: "발전소 3" },
+// ── 기지 배치 프리셋 (사용자 요청 2026-07-24: 243 외에 153 지원) ─────────────
+// 243 = 무역 2 · 제조 4(순금 2+작전기록 2) · 발전 3 (기본값·종전 유일 레이아웃).
+// 153 = 무역 1 · 제조 5(순금 1+작전기록 4) · 발전 3 — 무역소가 1이라 순금 소비도 절반이지만
+// 순금 제조소도 1이라 여전히 조금씩 모자란다(사용자 확정): 유일한 순금방(MANUFACTURE-0)이
+// 병목이므로 기본(gold 우선) 모드가 그 방을 맨 먼저 채워 최정예를 앉힌다.
+// 방 키는 공유한다(MANUFACTURE-0=순금은 양 프리셋 동일) — 프리셋 전환 시 살아남는 키의
+// 편성은 유지되고, 사라진 방(TRADING-1)만 드랍, 새 방(MANUFACTURE-4)은 빈 채로 시작.
+export type LayoutPreset = "243" | "153";
+type LayoutCell = { key: string; room: string; label: string; product?: string };
+
+const SUPPORT_CELLS: LayoutCell[] = [
   { key: "CONTROL", room: "CONTROL", label: "제어 센터" },
   { key: "MEETING", room: "MEETING", label: "응접실" },
   { key: "WORKSHOP", room: "WORKSHOP", label: "가공소" },
@@ -162,8 +165,74 @@ export const LAYOUT: { key: string; room: string; label: string; product?: strin
   { key: "DORM-2", room: "DORMITORY", label: "숙소 3" },
   { key: "DORM-3", room: "DORMITORY", label: "숙소 4" },
 ];
+const POWER_CELLS: LayoutCell[] = [
+  { key: "POWER-0", room: "POWER", label: "발전소 1" },
+  { key: "POWER-1", room: "POWER", label: "발전소 2" },
+  { key: "POWER-2", room: "POWER", label: "발전소 3" },
+];
+const LAYOUT_DEFS: Record<LayoutPreset, {
+  cells: LayoutCell[];
+  priority: Record<ProdPriority, string[]>;   // 방 채우기 순서 (§1 우선 생산 3모드)
+  goldLines: number;                          // 순금 제조소 수 (투예·파죰카 순금 라인 재계산)
+  counts: Record<string, number>;             // 시설 수 (facilityBased 배수 재계산)
+}> = {
+  "243": {
+    cells: [
+      { key: "TRADING-0", room: "TRADING", label: "무역소 1" },
+      { key: "TRADING-1", room: "TRADING", label: "무역소 2" },
+      { key: "MANUFACTURE-0", room: "MANUFACTURE", label: "제조소 1 · 순금", product: "gold" },
+      { key: "MANUFACTURE-1", room: "MANUFACTURE", label: "제조소 2 · 순금", product: "gold" },
+      { key: "MANUFACTURE-2", room: "MANUFACTURE", label: "제조소 3 · 작전기록", product: "exp" },
+      { key: "MANUFACTURE-3", room: "MANUFACTURE", label: "제조소 4 · 작전기록", product: "exp" },
+      ...POWER_CELLS, ...SUPPORT_CELLS,
+    ],
+    priority: {
+      gold: ["MANUFACTURE-0", "MANUFACTURE-1", "MANUFACTURE-2", "MANUFACTURE-3", "TRADING-0", "TRADING-1", "POWER-0", "POWER-1", "POWER-2"],
+      exp: ["MANUFACTURE-2", "MANUFACTURE-3", "MANUFACTURE-0", "MANUFACTURE-1", "TRADING-0", "TRADING-1", "POWER-0", "POWER-1", "POWER-2"],
+      balance: ["MANUFACTURE-0", "MANUFACTURE-2", "MANUFACTURE-1", "MANUFACTURE-3", "TRADING-0", "TRADING-1", "POWER-0", "POWER-1", "POWER-2"],
+    },
+    goldLines: 2,
+    counts: { TRADING: 2, MANUFACTURE: 4, POWER: 3 },
+  },
+  "153": {
+    cells: [
+      { key: "TRADING-0", room: "TRADING", label: "무역소 1" },
+      { key: "MANUFACTURE-0", room: "MANUFACTURE", label: "제조소 1 · 순금", product: "gold" },
+      { key: "MANUFACTURE-1", room: "MANUFACTURE", label: "제조소 2 · 작전기록", product: "exp" },
+      { key: "MANUFACTURE-2", room: "MANUFACTURE", label: "제조소 3 · 작전기록", product: "exp" },
+      { key: "MANUFACTURE-3", room: "MANUFACTURE", label: "제조소 4 · 작전기록", product: "exp" },
+      { key: "MANUFACTURE-4", room: "MANUFACTURE", label: "제조소 5 · 작전기록", product: "exp" },
+      ...POWER_CELLS, ...SUPPORT_CELLS,
+    ],
+    priority: {
+      gold: ["MANUFACTURE-0", "MANUFACTURE-1", "MANUFACTURE-2", "MANUFACTURE-3", "MANUFACTURE-4", "TRADING-0", "POWER-0", "POWER-1", "POWER-2"],
+      exp: ["MANUFACTURE-1", "MANUFACTURE-2", "MANUFACTURE-3", "MANUFACTURE-4", "MANUFACTURE-0", "TRADING-0", "POWER-0", "POWER-1", "POWER-2"],
+      // 밸런스(교차)는 순금방이 1개라 gold 우선과 동일한 순서가 된다
+      balance: ["MANUFACTURE-0", "MANUFACTURE-1", "MANUFACTURE-2", "MANUFACTURE-3", "MANUFACTURE-4", "TRADING-0", "POWER-0", "POWER-1", "POWER-2"],
+    },
+    goldLines: 1,
+    counts: { TRADING: 1, MANUFACTURE: 5, POWER: 3 },
+  },
+};
 
-export const cellByKey = new Map(LAYOUT.map((cell) => [cell.key, cell]));
+// 활성 레이아웃 상태 — export let 라이브 바인딩이라 setLayoutPreset 후 임포터가 새 값을 본다.
+// ⚠ 기본은 반드시 243 (verify-plan 픽스처·기존 저장 플랜 호환). UI가 저장된 프리셋을 복원한다.
+export let activeLayout: LayoutPreset = "243";
+export let LAYOUT: LayoutCell[] = LAYOUT_DEFS["243"].cells;
+export let cellByKey = new Map(LAYOUT.map((cell) => [cell.key, cell]));
+export let GOLD_LINES = LAYOUT_DEFS["243"].goldLines;
+export let FACILITY_COUNTS: Record<string, number> = LAYOUT_DEFS["243"].counts;
+
+export function setLayoutPreset(preset: LayoutPreset) {
+  const def = LAYOUT_DEFS[preset] ?? LAYOUT_DEFS["243"];
+  activeLayout = def === LAYOUT_DEFS["243"] ? "243" : preset;
+  LAYOUT = def.cells;
+  cellByKey = new Map(LAYOUT.map((cell) => [cell.key, cell]));
+  GOLD_LINES = def.goldLines;
+  FACILITY_COUNTS = def.counts;
+  PRODUCTION_KEYS = def.priority.gold;
+  PRIORITY_KEYS = def.priority;
+}
 
 export const ROOM_ACCENT: Record<string, string> = {
   TRADING: "#4d9dd6", MANUFACTURE: "#e0b13e", POWER: "#b7d940", CONTROL: "#c3d24b",
@@ -451,8 +520,17 @@ export function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx):
     // 기본치(flat base)를 항상 더한다. 과거엔 percentUses가 있으면 통째로 건너뛰어,
     // "기본 X% + 토큰 N점당 Y%" 스킬(삼첸·이아나·Blitz·Frost)의 기본 X%가 누락됐다.
     // 이제 파서가 value=순수 기본치(순수 per-token 스킬은 0)로 넣으므로 무조건 더해도 안전하다.
-    if (skill.facilityBased) out.facilityEff += skill.value;
-    else out.efficiency += skill.value;
+    // 레이아웃 프리셋 재계산: 시설 배수(퓨어스트림 '무역소당 +20%')·순금 라인(투예·파죰카)은
+    // baked value(243 기준) 대신 구조 필드로 활성 레이아웃의 시설 수에서 다시 계산한다 (2026-07-24)
+    if (skill.facilityBased) {
+      out.facilityEff += skill.facRoom && skill.facPer != null
+        ? skill.facPer * (FACILITY_COUNTS[skill.facRoom] ?? 1)
+        : skill.value;
+    } else if (skill.goldLine) {
+      out.efficiency += skill.goldLine.base + Math.floor(GOLD_LINES / skill.goldLine.per) * skill.goldLine.add;
+    } else {
+      out.efficiency += skill.value;
+    }
   }
   for (const [token, rate] of tokenRates) out.efficiency += (ctx.tokenPoints[token] ?? 0) * rate;
   // 응접실: RIIC 스킬과 별개로 레어도·정예화 기본 단서속도를 모든 배치 오퍼가 가산.
@@ -598,16 +676,13 @@ export type Plan = {
 
 // 방 채우기 우선순위 (사용자 확정 2026-07): 제조소-순금 > 제조소-작전기록 > 무역소 >
 // 발전소 > 사무실 > 응접실 — 먼저 채우는 방이 최고 요원을 가져간다. 응접실은 최하위
-// (제어센터는 쉐이 시드·오라 요원 전용이라 경합이 적어 발전소 다음에 둔다)
-export const PRODUCTION_KEYS = ["MANUFACTURE-0", "MANUFACTURE-1", "MANUFACTURE-2", "MANUFACTURE-3", "TRADING-0", "TRADING-1", "POWER-0", "POWER-1", "POWER-2"];
+// (제어센터는 쉐이 시드·오라 요원 전용이라 경합이 적어 발전소 다음에 둔다).
+// 순서 자체는 레이아웃 프리셋(LAYOUT_DEFS.priority)이 정의하고, 여기는 활성 바인딩만 둔다.
+export let PRODUCTION_KEYS = LAYOUT_DEFS["243"].priority.gold;
 // 우선 생산 모드 (사용자 확정 2026-07): 먼저 채우는 방이 최고 요원을 가져가므로,
 // 방 순서만 바꾸면 순금 우선 / 작전기록 우선 / 밸런스(교차)가 된다.
 export type ProdPriority = "gold" | "exp" | "balance";
-export const PRIORITY_KEYS: Record<ProdPriority, string[]> = {
-  gold: PRODUCTION_KEYS,
-  exp: ["MANUFACTURE-2", "MANUFACTURE-3", "MANUFACTURE-0", "MANUFACTURE-1", "TRADING-0", "TRADING-1", "POWER-0", "POWER-1", "POWER-2"],
-  balance: ["MANUFACTURE-0", "MANUFACTURE-2", "MANUFACTURE-1", "MANUFACTURE-3", "TRADING-0", "TRADING-1", "POWER-0", "POWER-1", "POWER-2"],
-};
+export let PRIORITY_KEYS: Record<ProdPriority, string[]> = LAYOUT_DEFS["243"].priority;
 export const SUPPORT_KEYS = ["CONTROL", "HIRE", "MEETING", "WORKSHOP", "TRAINING"];
 
 export function ctxFor(key: string, tokenPoints: Record<string, number>, factionCounts?: Record<string, number>, plants?: number, presentIds?: Set<string>, ambient?: AmbientAura[]): Ctx {

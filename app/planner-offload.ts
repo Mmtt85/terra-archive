@@ -2,7 +2,7 @@
 // Web Worker(planner-worker.ts)로 id·정예화만 보내 계산하고, 진행 콜백(step/progress)은
 // postMessage로 돌려받아 메인 스레드는 상태 갱신·리페인트만 한다 (INP 근본 해결, 2026-07-22).
 // 워커 생성 실패·미지원(구형 브라우저)이면 종전대로 메인 스레드에서 직접 계산(폴백).
-import { ops, withElite, optimize, type Elite, type Plan, type ProdPriority, type OptimizeStep } from "./planner-engine";
+import { ops, withElite, optimize, setLayoutPreset, type Elite, type Plan, type ProdPriority, type OptimizeStep, type LayoutPreset } from "./planner-engine";
 import { recommendRaises, type RaiseRec, type InvestProgress } from "./planner-invest";
 
 export type PlannerJob = {
@@ -10,6 +10,7 @@ export type PlannerJob = {
   elite: Map<string, Elite>;
   includeFuture: boolean;
   priority: ProdPriority;
+  layout?: LayoutPreset; // 기지 배치 프리셋 (기본 243) — 워커·폴백 양쪽에 동기화
 };
 
 type Pending = {
@@ -64,7 +65,7 @@ function postJob(cmd: "optimize" | "invest", job: PlannerJob, hooks: Pick<Pendin
   const promise = new Promise<unknown>((resolve, reject) => {
     pending.set(mySeq, { resolve, reject, ...hooks });
   });
-  w.postMessage({ seq: mySeq, cmd, owned: [...job.owned], elite: [...job.elite.entries()], includeFuture: job.includeFuture, priority: job.priority });
+  w.postMessage({ seq: mySeq, cmd, owned: [...job.owned], elite: [...job.elite.entries()], includeFuture: job.includeFuture, priority: job.priority, layout: job.layout ?? "243" });
   return promise;
 }
 
@@ -80,6 +81,7 @@ export async function optimizeOff(job: PlannerJob, onStep?: (step: OptimizeStep)
   if (viaWorker) {
     try { return (await viaWorker) as Plan; } catch (error) { if (!(error instanceof WorkerFailed)) throw error; }
   }
+  setLayoutPreset(job.layout ?? "243"); // 폴백(메인 스레드)도 워커와 동일하게 프리셋 동기화
   return optimize(rosterOf(job), job.priority, onStep && (async (step) => { onStep(step); }));
 }
 
@@ -89,6 +91,7 @@ export async function investOff(job: PlannerJob, onProgress?: (p: InvestProgress
   if (viaWorker) {
     try { return (await viaWorker) as RaiseRec[]; } catch (error) { if (!(error instanceof WorkerFailed)) throw error; }
   }
+  setLayoutPreset(job.layout ?? "243");
   const visible = job.includeFuture ? ops : ops.filter((op) => !op.unreleased);
   return recommendRaises(visible, job.owned, job.elite, job.priority, onProgress && (async (p) => {
     onProgress(p);

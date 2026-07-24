@@ -12,8 +12,8 @@ import {
   ELITE_LABEL, LAYOUT, cellByKey, ROOM_ACCENT, UNIT, PARK_KEYS, SHIFT_COUNT,
   JOB_ORDER, ROSTER_SORT_KEYS, PRODUCTION_KEYS, SUPPORT_KEYS,
   AURA_WEIGHT, AURA_LABEL, skillApplies, breakdown, teamScore, aurasOf, ambientFor, capConvFor,
-  ctxFor, sanitizePlan, presentIdsFor, slotSubstitutes,
-  type InfraOp, type InfraSkill, type Elite, type Plan, type ProdPriority, type TokenFlow, type OptimizeStep,
+  ctxFor, sanitizePlan, presentIdsFor, slotSubstitutes, setLayoutPreset,
+  type InfraOp, type InfraSkill, type Elite, type Plan, type ProdPriority, type TokenFlow, type OptimizeStep, type LayoutPreset,
 } from "./planner-engine";
 import type { RaiseRec, InvestProgress } from "./planner-invest";
 // 자동편성·육성 추천의 실제 계산은 Web Worker에서 (INP — 메인 스레드는 진행 표시만, 2026-07-22)
@@ -66,6 +66,9 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   const { confirm, dialog: confirmDialog } = useConfirm();
   const [plan, setPlan] = useState<Plan | null>(null);
   const [priority, setPriorityState] = useState<ProdPriority>("gold"); // 우선 생산 모드
+  // 기지 배치 프리셋 (사용자 요청 2026-07-24): 243(기본) 또는 153. 엔진 모듈 상태(setLayoutPreset)와
+  // 항상 함께 바꾼다 — LAYOUT은 라이브 바인딩이라 상태 변경 리렌더에서 새 값을 읽는다.
+  const [layout, setLayoutState] = useState<LayoutPreset>("243");
   const [activeShift, setActiveShift] = useState(0);
   const [openRoom, setOpenRoom] = useState<string | null>(null);
   const [showFlows, setShowFlows] = useState(false);
@@ -120,8 +123,8 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   const effectiveOpById = useMemo(() => new Map(effectiveOps.map((op) => [op.id, op])), [effectiveOps]);
   const roster = useMemo(() => effectiveOps.filter((op) => ownedIds.has(op.id)), [effectiveOps, ownedIds]);
 
-  const persist = (ids: Set<string>, nextPlan: Plan | null, elite: Map<string, Elite> = eliteById, prio: ProdPriority = priority, invest: RaiseRec[] | null = investRecs, hidden: Set<string> = investHidden) => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ owned: Array.from(ids), elite: Array.from(elite.entries()), plan: nextPlan, priority: prio, invest, investHidden: Array.from(hidden) })); } catch { /* ignore */ }
+  const persist = (ids: Set<string>, nextPlan: Plan | null, elite: Map<string, Elite> = eliteById, prio: ProdPriority = priority, invest: RaiseRec[] | null = investRecs, hidden: Set<string> = investHidden, lay: LayoutPreset = layout) => {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ owned: Array.from(ids), elite: Array.from(elite.entries()), plan: nextPlan, priority: prio, invest, investHidden: Array.from(hidden), layout: lay })); } catch { /* ignore */ }
   };
 
   // 저장된 숨김 목록 복원 — 실존 오퍼 id만
@@ -227,7 +230,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   };
 
   const exportState = () => {
-    const payload = JSON.stringify({ version: 1, exported: new Date().toISOString(), owned: Array.from(ownedIds), elite: Array.from(eliteById.entries()), plan, invest: investRecs }, null, 1);
+    const payload = JSON.stringify({ version: 1, exported: new Date().toISOString(), owned: Array.from(ownedIds), elite: Array.from(eliteById.entries()), plan, invest: investRecs, layout }, null, 1);
     const blob = new Blob([payload], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
@@ -250,6 +253,9 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           (Array.isArray(data.elite) ? data.elite : [])
             .filter((e: unknown): e is [string, Elite] => Array.isArray(e) && typeof e[0] === "string" && [0, 1, 2].includes(e[1] as number)),
         );
+        // 파일의 기지 배치 프리셋 복원 — sanitizePlan이 활성 LAYOUT을 쓰므로 plan 정규화보다 먼저
+        const lay: LayoutPreset = data.layout === "153" ? "153" : "243";
+        if (lay !== layout) { setLayoutPreset(lay); setLayoutState(lay); }
         const plan = sanitizePlan(data.plan);
         const invest = restoreInvest(data.invest);
         const hidden = restoreHidden(data.investHidden);
@@ -259,7 +265,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         setInvestRecs(invest);
         setInvestHidden(hidden);
         setShowInvest(false);
-        persist(ids, plan, elite, priority, invest, hidden);
+        persist(ids, plan, elite, priority, invest, hidden, lay);
         setDirty(false);
         showToast(t("저장된 상태를 불러왔습니다 · 보유 {n}명 복원", { n: ids.size }));
       } catch { alert(t("가져오기 실패: 파일 형식을 확인해 주세요.")); }
@@ -332,7 +338,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     setOptimizing(t("자동편성 엔진 계산 중 — 편성 공간 구성…"));
     try {
       const paced = (step: OptimizeStep) => { setOptimizing(stepMessage(step)); };
-      const next = await optimizeOff({ owned: ids, elite, includeFuture: !!includeFuture, priority: prio }, paced);
+      const next = await optimizeOff({ owned: ids, elite, includeFuture: !!includeFuture, priority: prio, layout }, paced);
       setPlan(next);
       setActiveShift(0);
       // 새 자동편성 → 기존 육성 추천·숨김 무효화 + 임시 적용 세션 종료(새 편성이 기준). 2026-07-21
@@ -365,7 +371,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     endTemp(true); // 다시 분석 → 임시 적용 되돌리고 커밋된 로스터 기준으로 재분석
     setInvesting({ done: 0, total: 0 });
     try {
-      const recs = await investOff({ owned: ownedIds, elite: eliteById, includeFuture: !!includeFuture, priority }, setInvesting);
+      const recs = await investOff({ owned: ownedIds, elite: eliteById, includeFuture: !!includeFuture, priority, layout }, setInvesting);
       setInvestRecs(recs);
       setInvestHidden(new Set()); // 새 분석 → 숨김 초기화
       persist(ownedIds, plan, eliteById, priority, recs, new Set());
@@ -389,7 +395,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     setOptimizing(t("자동편성 엔진 계산 중 — 편성 공간 구성…"));
     try {
       const paced = (step: OptimizeStep) => { setOptimizing(stepMessage(step)); };
-      const next = await optimizeOff({ owned: ownedIds, elite: effElite, includeFuture: !!includeFuture, priority }, paced);
+      const next = await optimizeOff({ owned: ownedIds, elite: effElite, includeFuture: !!includeFuture, priority, layout }, paced);
       setPlan(next);
       setActiveShift(0);
     } finally { setOptimizing(null); }
@@ -465,6 +471,41 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     setPriorityState(prio);
     persist(ownedIds, plan, eliteById, prio);
     showToast(t("우선 생산 설정을 저장했습니다 — 다음 자동편성부터 적용됩니다"));
+  };
+
+  // 기지 배치 프리셋 전환 (사용자 요청 2026-07-24): 방 구성이 바뀌므로 현재 편성을 새 레이아웃
+  // 키로 정규화한다 — 살아남는 방(243→153: 무역소 1·순금방·작전기록방·발전소)의 편성은 유지,
+  // 사라진 방(무역소 2)은 드랍, 새 방(제조소 5)은 빈 칸. 최적 재배치는 자동편성 버튼으로.
+  const setLayoutChoice = (next: LayoutPreset) => {
+    if (next === layout) return;
+    setLayoutPreset(next);
+    setLayoutState(next);
+    setOpenRoom(null);
+    let migrated: Plan | null = plan;
+    if (plan) {
+      const san = sanitizePlan(plan); // 새 LAYOUT 기준 방 키 정규화
+      if (san) {
+        // 드랍된 방 인원이 빠졌으므로 진영 카운트 재계산 (updateTeam과 동일 규칙)
+        const factionCounts = [0, 1].map((s) => {
+          const counts: Record<string, number> = {};
+          for (const key of Object.keys(san.assignments)) {
+            const cellShifts = san.assignments[key] ?? [];
+            for (const id of cellShifts[Math.min(s, cellShifts.length - 1)] ?? []) {
+              const op = effectiveOpById.get(id);
+              if (op) for (const faction of factionsOf(op)) counts[faction] = (counts[faction] ?? 0) + 1;
+            }
+          }
+          return counts;
+        });
+        migrated = { ...san, factionCounts };
+        setPlan(migrated);
+        setActiveShift(0);
+      }
+    }
+    persist(ownedIds, migrated, eliteById, priority, investRecs, investHidden, next);
+    showToast(next === "153"
+      ? t("기지 배치를 153(무역 1·제조 5·발전 3)으로 바꿨습니다 — 전체 자동편성으로 재편성하세요")
+      : t("기지 배치를 243(무역 2·제조 4·발전 3)으로 바꿨습니다 — 전체 자동편성으로 재편성하세요"));
   };
 
   // 현재 편성(수동 수정 포함)은 그대로 두고, 빈 슬롯만 한계 기여가 큰 미배치 오퍼로
@@ -585,6 +626,9 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         setInvestRecs(restoreInvest(data.invest)); // 저장된 육성 추천 복원 (모달은 버튼으로 연다)
         setInvestHidden(restoreHidden(data.investHidden));
         if (data.priority) setPriorityState(data.priority as ProdPriority);
+        // 기지 배치 프리셋 복원 — sanitizePlan이 활성 LAYOUT을 쓰므로 반드시 plan 복원보다 먼저
+        const savedLayout: LayoutPreset = data.layout === "153" ? "153" : "243";
+        if (savedLayout !== "243") { setLayoutPreset(savedLayout); setLayoutState(savedLayout); }
         // 손상·구버전 저장분 방어 — raw 복원은 assignments 등 누락 시 렌더 크래시
         // (개발 중간 상태가 저장된 localStorage에서 실제 발병, 2026-07-19). 정규화 실패면
         // 아래로 떨어져 새 편성을 만든다.
@@ -594,11 +638,11 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         }
         // 마운트 시점엔 미래시 토글이 아직 복원 전(false)일 수 있으므로 미실장은 제외하고
         // 기본 편성을 만든다 — 미래시 포함 편성은 토글 후 자동편성 버튼으로 실행
-        void optimizeOff({ owned: ids, elite, includeFuture: false, priority: "gold" }).then(setPlan);
+        void optimizeOff({ owned: ids, elite, includeFuture: false, priority: "gold", layout: savedLayout }).then(setPlan);
         return;
       }
     } catch { /* fall through to defaults */ }
-    void optimizeOff({ owned: new Set(ops.filter((op) => op.rarity <= 5).map((op) => op.id)), elite: new Map(), includeFuture: false, priority: "gold" }).then(setPlan);
+    void optimizeOff({ owned: new Set(ops.filter((op) => op.rarity <= 5).map((op) => op.id)), elite: new Map(), includeFuture: false, priority: "gold", layout: "243" }).then(setPlan);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -682,7 +726,9 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       {confirmDialog}
       <div className="planner-controls">
         <div>
-          <span className="section-no">{t("RIIC / 243 · 순금 2 + 작전기록 2 · A조 풀파워, 피로 시 B조 교대")}</span>
+          <span className="section-no">{layout === "153"
+            ? t("RIIC / 153 · 순금 1 + 작전기록 4 · A조 풀파워, 피로 시 B조 교대")
+            : t("RIIC / 243 · 순금 2 + 작전기록 2 · A조 풀파워, 피로 시 B조 교대")}</span>
           <h2>{t("인프라 배치 최적화")}</h2>
         </div>
         <div className="planner-buttons">
@@ -750,6 +796,15 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
             {t(mode === "gold" ? "순금 우선" : mode === "exp" ? "작전기록 우선" : "밸런스")}
           </label>
         ))}
+        {/* 기지 배치 프리셋 (사용자 요청 2026-07-24) — 방 구성은 즉시 바뀌고, 재편성은 자동편성 버튼으로 */}
+        <span className="prio-label prio-label-layout">🏗 {t("기지 배치")}{isNewFeature("layout-153") && <span className="new-badge">{t("새기능")}</span>}</span>
+        {(["243", "153"] as const).map((preset) => (
+          <label key={preset} className={layout === preset ? "on" : ""}
+            title={preset === "243" ? t("무역소 2 · 제조소 4(순금 2+작전기록 2) · 발전소 3") : t("무역소 1 · 제조소 5(순금 1+작전기록 4) · 발전소 3")}>
+            <input type="radio" name="base-layout" checked={layout === preset} onChange={() => setLayoutChoice(preset)} />
+            {preset}
+          </label>
+        ))}
       </div>
 
       {/* 항상 렌더해 높이를 처음부터 예약 — 계산 전엔 '—'로 채운다. 계산 완료 후 값이 튀어나오며
@@ -774,7 +829,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         </div>
       )}
 
-      <div className="ship">
+      <div className={`ship${layout === "153" ? " ship-153" : ""}`}>
         <div className={`ship-raisebar${(investing || (tempApplied.size === 0 && !investRecs)) ? " idle" : " boxed"}`} role="group" aria-label={t("인프라 오퍼 육성 추천")}>
           {tempApplied.size > 0 && !investing ? (
             <>
@@ -1514,6 +1569,7 @@ const HELP_SECTIONS: { title: string; items: string[] }[] = [
     "'전체 자동편성'은 처음부터 다시 계산하고, '빈 자리만 자동편성'은 현재 편성(수동 수정 포함)을 유지한 채 남은 빈 자리만 한계 기여 순으로 채웁니다.",
   ]},
   { title: "방 우선순위", items: [
+    "기지 배치 설정: 243(무역 2·제조 4 — 순금 2+작전기록 2, 기본) 또는 153(무역 1·제조 5 — 순금 1+작전기록 4). 153은 무역소가 하나라 제조소 대부분을 작전기록에 쓰되, 유일한 순금방이 병목이므로 그 방을 맨 먼저(최정예로) 채웁니다. 배치를 바꾸면 방 구성은 즉시 바뀌고, 살아남는 방의 편성은 유지됩니다 — 전체 자동편성으로 새 배치에 맞게 재편성하세요.",
     "우선 생산 설정: 순금 우선(기본) · 작전기록 우선 · 밸런스(교차). 먼저 채우는 방이 최고 요원을 가져갑니다. 설정만 바꾸고, 실제 편성은 전체 자동편성 버튼을 눌러 적용합니다.",
     "채우는 순서: 제조소-순금 > 제조소-작전기록 > 무역소 > 발전소 > 사무실 > 응접실 — 먼저 채우는 방이 좋은 요원을 가져갑니다. 응접실은 최하위라, 응접실 스킬이 있는 오퍼(쉐라 등)도 상위 방 세트가 우선입니다.",
     "응접실 단서 수집 속도는 RIIC 스킬과 별개로 레어도·정예화 기본치가 더해집니다: 6성 +10 / 5성 +9 / 4성 +7 / 3성↓ +5, 정예화 1정 +8 · 2정 +16 (미지정은 그 레어도 최대 승급 가정). 그래서 스킬 없는 2정 6성도 +26%. 카드에 '레어도 기본'으로 따로 표기됩니다.",

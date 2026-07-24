@@ -543,11 +543,16 @@ def parse_skill(entry, oname, oid=None):
             if grow_cap:
                 value = max(value, float(grow_cap.group(1)))
         # facility-count multipliers (쏜즈: 각각의 무역소가 ... +3% → ×2);
-        # these survive automation's zeroing ("시설 수량에 따라 제공" 예외)
+        # these survive automation's zeroing ("시설 수량에 따라 제공" 예외).
+        # 기지 배치 프리셋(243/153) 지원: 구운 value(243 기준)와 별개로 단위값(facPer)·
+        # 대상 시설(facRoom)을 실어 엔진이 활성 레이아웃의 시설 수로 재계산한다 (2026-07-24)
         facility_based = False
+        fac_per, fac_room = None, None
         if kind in ("output", "misc") and value:
             fac = re.search(r"각각의 (무역소|발전소|제조소)", text)
             if fac:
+                fac_per = value
+                fac_room = {"무역소": "TRADING", "발전소": "POWER", "제조소": "MANUFACTURE"}[fac.group(1)]
                 value = value * P["FACILITY_COUNTS"][fac.group(1)]
                 facility_based = True
         # conversion skills ("감지 정보 1점당 무성의 공명 1점으로 전환") re-route
@@ -665,11 +670,15 @@ def parse_skill(entry, oname, oid=None):
         # (§1 순금 2 + 작전기록 2). "순금 생산 라인 N개당 오더 수주 효율 +V%" → (2//N)×V 를 가산.
         # 절 앞부분으로 base 재파싱(투예 조건값 15가 best로 base를 덮는 것 교정). 키라라 '라인 +2'는 %없어 제외.
         gm = re.search(r"순금 생산 라인 (\d+)개당[^%]*?\+\s*(\d+(?:\.\d+)?)\s*%", text)
+        gold_line = None
         if gm and room == "TRADING":
             _n = int(gm.group(1))
             gold_add = (2 // _n) * float(gm.group(2)) if _n > 0 else 0
             _, _bv = parse_metric(room, text[:gm.start()])
             kind, value = "output", (_bv or 0) + gold_add  # 투예 5+15=20, 파죰카 0+10=10
+            # 기지 배치 프리셋 지원: 엔진이 활성 레이아웃의 순금 라인 수로 재계산할 구조 필드
+            # (base + floor(라인수/per)×add — 153은 순금 1라인이라 투예 5, 파죰카 5가 된다)
+            gold_line = {"per": _n, "add": float(gm.group(2)), "base": _bv or 0}
         # buffChar slots already resolved upgrades — every line here stacks
         tier = 1
         group = entry["name"]
@@ -700,6 +709,9 @@ def parse_skill(entry, oname, oid=None):
             # 생산품별 부호 오라는 해당 스킬(플레임테일)에만 싣는다 — null 키로 전 스킬을 불리지 않음
             **({"perProduct": per_product} if per_product else {}),
             "facilityBased": facility_based,
+            # 레이아웃 프리셋 재계산용 구조 필드 — 있으면 엔진이 baked value 대신 이걸 쓴다
+            **({"facRoom": fac_room, "facPer": fac_per} if facility_based else {}),
+            **({"goldLine": gold_line} if gold_line else {}),
             "perSkillTag": per_skill_tag, "perSkillValue": per_skill_value,
             "_stackGrant": stack_grant.group(1) if stack_grant else None,
             "_stackCount": P["DORM_LEVEL"] * (int(stack_grant.group(2)) if stack_grant and stack_grant.group(2) else 1) if stack_grant else 0,

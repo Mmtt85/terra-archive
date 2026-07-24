@@ -267,6 +267,14 @@ const D: Record<string, Pair> = {
 
   // ── 인프라 플래너 ──────────────────────────────────────────────────────────
   "RIIC / 243 · 순금 2 + 작전기록 2 · A조 풀파워, 피로 시 B조 교대": ["RIIC / 243 · Pure Gold ×2 + Battle Records ×2 · A team full power, swap to B on fatigue", "RIIC / 243 · 純金2 + 作戦記録2 · A班フルパワー、疲労時にB班交代"],
+  // 기지 배치 프리셋 153 (사용자 요청 2026-07-24)
+  "RIIC / 153 · 순금 1 + 작전기록 4 · A조 풀파워, 피로 시 B조 교대": ["RIIC / 153 · Pure Gold ×1 + Battle Records ×4 · A team full power, swap to B on fatigue", "RIIC / 153 · 純金1 + 作戦記録4 · A班フルパワー、疲労時にB班交代"],
+  "기지 배치": ["Base layout", "基地配置"],
+  "무역소 2 · 제조소 4(순금 2+작전기록 2) · 발전소 3": ["Trading Posts ×2 · Factories ×4 (Gold 2 + Records 2) · Power Plants ×3", "貿易所2 · 製造所4（純金2+作戦記録2）· 発電所3"],
+  "무역소 1 · 제조소 5(순금 1+작전기록 4) · 발전소 3": ["Trading Post ×1 · Factories ×5 (Gold 1 + Records 4) · Power Plants ×3", "貿易所1 · 製造所5（純金1+作戦記録4）· 発電所3"],
+  "기지 배치를 153(무역 1·제조 5·발전 3)으로 바꿨습니다 — 전체 자동편성으로 재편성하세요": ["Base layout switched to 153 (Trade 1 · Factory 5 · Power 3) — run Auto-assign to rebuild the plan", "基地配置を153（貿易1・製造5・発電3）に変更しました — 全体自動編成で再編成してください"],
+  "기지 배치를 243(무역 2·제조 4·발전 3)으로 바꿨습니다 — 전체 자동편성으로 재편성하세요": ["Base layout switched to 243 (Trade 2 · Factory 4 · Power 3) — run Auto-assign to rebuild the plan", "基地配置を243（貿易2・製造4・発電3）に変更しました — 全体自動編成で再編成してください"],
+  "기지 배치 설정: 243(무역 2·제조 4 — 순금 2+작전기록 2, 기본) 또는 153(무역 1·제조 5 — 순금 1+작전기록 4). 153은 무역소가 하나라 제조소 대부분을 작전기록에 쓰되, 유일한 순금방이 병목이므로 그 방을 맨 먼저(최정예로) 채웁니다. 배치를 바꾸면 방 구성은 즉시 바뀌고, 살아남는 방의 편성은 유지됩니다 — 전체 자동편성으로 새 배치에 맞게 재편성하세요.": ["Base layout setting: 243 (Trade 2 · Factory 4 — Gold 2 + Records 2, default) or 153 (Trade 1 · Factory 5 — Gold 1 + Records 4). With a single trading post, 153 devotes most factories to battle records, but the lone gold factory is the bottleneck, so it is filled first with your best crew. Switching updates the room grid immediately and keeps assignments for surviving rooms — run Auto-assign to rebuild for the new layout.", "基地配置設定：243（貿易2・製造4 — 純金2+作戦記録2、デフォルト）または153（貿易1・製造5 — 純金1+作戦記録4）。153は貿易所が1つのため製造所の大半を作戦記録に充てますが、唯一の純金製造所がボトルネックになるため、その部屋を最優先（最精鋭）で埋めます。配置を切り替えると部屋構成は即座に変わり、残る部屋の編成は維持されます — 全体自動編成で新配置に合わせて再編成してください。"],
   "인프라 배치 최적화": ["Base Assignment Optimizer", "基地配置最適化"],
   "보유 오퍼 설정 ({a}/{b})": ["My operators ({a}/{b})", "所持オペレーター設定（{a}/{b}）"],
   "전체 자동편성": ["Auto-assign all", "全自動編成"],
