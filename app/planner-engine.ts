@@ -7,7 +7,7 @@
 import infraData from "./data/infra.json";
 import { C, RULES, type SynergySetDef } from "./rules";
 
-export type TokenGen = { token: string; estimate: number; perMember?: { per: number; cap: number; match: string } };
+export type TokenGen = { token: string; estimate: number; perMember?: { per: number; cap: number; match: string }; perDormLevel?: number };
 export type TokenUse = { token: string; per: number; value: number; percent: boolean };
 
 // 용량(오더 상한/창고 용량) → 출력(효율/생산력) 변환기. 팀이 쌓은 용량을 다시 % 로 바꾼다.
@@ -46,6 +46,12 @@ export type InfraSkill = {
   facRoom?: string;    // facilityBased 단위 시설 (TRADING 등) — 활성 레이아웃 시설 수로 재계산 (2026-07-24)
   facPer?: number;     // facilityBased 시설 1개당 단위값 (value = facPer × 243 시설 수로 구움)
   goldLine?: { per: number; add: number; base: number } | null; // 순금 라인 N개당 +add% (투예·파죰카) — 활성 레이아웃 순금방 수로 재계산
+  // 시설 레벨 연동 단위값 (전력·레벨 시스템 2026-07-24) — baked value는 만렙 기준,
+  // 엔진이 실제 레벨과의 차이만큼 보정한다: value + per×(현재 − 만렙), 하한 0
+  dormLevels?: { per: number };     // "모든 숙소의 레벨 1당 +N%" (아르케토·틴맨·나란투야·필라에, 만렙 합 20)
+  meetingLevel?: { per: number };   // "응접실 레벨 1당 추가 +N%" (비질·미틈, 만렙 3)
+  trainingLevel?: { per: number };  // "훈련실 레벨 1당 +N%" (Вий, 만렙 3)
+  roboLevels?: { cap: number; per: number; add: number }; // 공사용 로봇 = 전 시설 레벨 합(만렙 64) — floor(합/per)×add (미니멀리스트)
   basePartners?: string[];      // 기지 어디든(숙소 포함) 있으면 발동하는 동반 조건
   basePartnerBonus?: number | null; // 위 조건 충족 시 추가 효율 (언더플로우 +10)
   gateFaction?: string | null;  // "쉐라그 3명 배치된 무역소" 류 — 진영 N명 배치 조건
@@ -101,7 +107,12 @@ export const factionsOf = (op: InfraOp): string[] => op.factions ?? [op.faction]
 export const memberOf = (op: InfraOp, name: string): boolean =>
   factionsOf(op).includes(name) || ((C.OP_GROUPS ?? {})[name] ?? []).includes(op.id);
 
-export type RoomSpec = { name: string; slots: number; electricity: number; maxCount: number };
+export type RoomSpec = {
+  name: string; slots: number; electricity: number; maxCount: number;
+  // 레벨별 스펙 (전력·시설 레벨 시스템 2026-07-24): phases[레벨-1] = {슬롯, 전력}.
+  // 발전소 +60/+130/+270, 제조·무역 슬롯 1/2/3, 제어센터 슬롯=레벨(1~5), 숙소 Lv1~5 전력만 증가
+  phases?: { slots: number; electricity: number }[];
+};
 
 export const infra = infraData as { rooms: Record<string, RoomSpec>; ops: InfraOp[] };
 export const ops = infra.ops;
@@ -149,9 +160,11 @@ export function eliteOptions(op: InfraOp): Elite[] {
 // 153 = 무역 1 · 제조 5(순금 1+작전기록 4) · 발전 3 — 무역소가 1이라 순금 소비도 절반이지만
 // 순금 제조소도 1이라 여전히 조금씩 모자란다(사용자 확정): 유일한 순금방(MANUFACTURE-0)이
 // 병목이므로 기본(gold 우선) 모드가 그 방을 맨 먼저 채워 최정예를 앉힌다.
-// 방 키는 공유한다(MANUFACTURE-0=순금은 양 프리셋 동일) — 프리셋 전환 시 살아남는 키의
-// 편성은 유지되고, 사라진 방(TRADING-1)만 드랍, 새 방(MANUFACTURE-4)은 빈 채로 시작.
-export type LayoutPreset = "243" | "153";
+// 252 = 무역 2 · 제조 5(순금 2+작전기록 3) · 발전 2 — 만렙 소비 870 > 공급 540이라
+// 시설 레벨을 낮춰야만 성립하는 배치. 권장 기본 레벨(숙소4·훈련실·응접실·사무실 Lv1)로
+// 소비 500 ≤ 540. 프리셋 전환 시 각 프리셋의 저장된 편성·레벨 버킷이 그대로 복원된다
+// (사용자 확정 2026-07-24: 전환마다 재편성 금지 — plan·levels를 프리셋별로 따로 저장).
+export type LayoutPreset = "243" | "153" | "252";
 type LayoutCell = { key: string; room: string; label: string; product?: string };
 
 const SUPPORT_CELLS: LayoutCell[] = [
@@ -175,6 +188,7 @@ const LAYOUT_DEFS: Record<LayoutPreset, {
   priority: Record<ProdPriority, string[]>;   // 방 채우기 순서 (§1 우선 생산 3모드)
   goldLines: number;                          // 순금 제조소 수 (투예·파죰카 순금 라인 재계산)
   counts: Record<string, number>;             // 시설 수 (facilityBased 배수 재계산)
+  plantsBase: number;                         // 발전소 수 (자동화 오퍼 스케일·그레이 시 +1)
 }> = {
   "243": {
     cells: [
@@ -193,6 +207,7 @@ const LAYOUT_DEFS: Record<LayoutPreset, {
     },
     goldLines: 2,
     counts: { TRADING: 2, MANUFACTURE: 4, POWER: 3 },
+    plantsBase: 3,
   },
   "153": {
     cells: [
@@ -212,8 +227,41 @@ const LAYOUT_DEFS: Record<LayoutPreset, {
     },
     goldLines: 1,
     counts: { TRADING: 1, MANUFACTURE: 5, POWER: 3 },
+    plantsBase: 3,
+  },
+  "252": {
+    cells: [
+      { key: "TRADING-0", room: "TRADING", label: "무역소 1" },
+      { key: "TRADING-1", room: "TRADING", label: "무역소 2" },
+      { key: "MANUFACTURE-0", room: "MANUFACTURE", label: "제조소 1 · 순금", product: "gold" },
+      { key: "MANUFACTURE-1", room: "MANUFACTURE", label: "제조소 2 · 순금", product: "gold" },
+      { key: "MANUFACTURE-2", room: "MANUFACTURE", label: "제조소 3 · 작전기록", product: "exp" },
+      { key: "MANUFACTURE-3", room: "MANUFACTURE", label: "제조소 4 · 작전기록", product: "exp" },
+      { key: "MANUFACTURE-4", room: "MANUFACTURE", label: "제조소 5 · 작전기록", product: "exp" },
+      ...POWER_CELLS.slice(0, 2), ...SUPPORT_CELLS,
+    ],
+    priority: {
+      gold: ["MANUFACTURE-0", "MANUFACTURE-1", "MANUFACTURE-2", "MANUFACTURE-3", "MANUFACTURE-4", "TRADING-0", "TRADING-1", "POWER-0", "POWER-1"],
+      exp: ["MANUFACTURE-2", "MANUFACTURE-3", "MANUFACTURE-4", "MANUFACTURE-0", "MANUFACTURE-1", "TRADING-0", "TRADING-1", "POWER-0", "POWER-1"],
+      balance: ["MANUFACTURE-0", "MANUFACTURE-2", "MANUFACTURE-1", "MANUFACTURE-3", "MANUFACTURE-4", "TRADING-0", "TRADING-1", "POWER-0", "POWER-1"],
+    },
+    goldLines: 2,
+    counts: { TRADING: 2, MANUFACTURE: 5, POWER: 2 },
+    plantsBase: 2,
   },
 };
+
+// 프리셋별 권장 기본 레벨 — 252는 전력 부족(만렙 -330)이라 저우선 시설을 Lv1로 (소비 500/540).
+// 243·153은 만렙 수지가 정확히 ±0이라 전부 만렙이 기본
+const LEVEL_DEFAULTS: Partial<Record<LayoutPreset, Levels>> = {
+  "252": { "DORM-0": 1, "DORM-1": 1, "DORM-2": 1, "DORM-3": 1, "TRAINING": 1, "MEETING": 1, "HIRE": 1 },
+};
+// 활성 레이아웃 기준 권장 레벨 전체 맵 (만렙 + 프리셋별 오버라이드)
+export function suggestedLevels(preset: LayoutPreset): Levels {
+  const out: Levels = {};
+  for (const cell of (LAYOUT_DEFS[preset] ?? LAYOUT_DEFS["243"]).cells) out[cell.key] = maxLevelOf(cell.room);
+  return { ...out, ...(LEVEL_DEFAULTS[preset] ?? {}) };
+}
 
 // 활성 레이아웃 상태 — export let 라이브 바인딩이라 setLayoutPreset 후 임포터가 새 값을 본다.
 // ⚠ 기본은 반드시 243 (verify-plan 픽스처·기존 저장 플랜 호환). UI가 저장된 프리셋을 복원한다.
@@ -222,6 +270,7 @@ export let LAYOUT: LayoutCell[] = LAYOUT_DEFS["243"].cells;
 export let cellByKey = new Map(LAYOUT.map((cell) => [cell.key, cell]));
 export let GOLD_LINES = LAYOUT_DEFS["243"].goldLines;
 export let FACILITY_COUNTS: Record<string, number> = LAYOUT_DEFS["243"].counts;
+export let PLANTS_BASE_RT = LAYOUT_DEFS["243"].plantsBase; // 발전소 수 — 252는 2 (그레이 배치 시 +1)
 
 export function setLayoutPreset(preset: LayoutPreset) {
   const def = LAYOUT_DEFS[preset] ?? LAYOUT_DEFS["243"];
@@ -232,6 +281,62 @@ export function setLayoutPreset(preset: LayoutPreset) {
   FACILITY_COUNTS = def.counts;
   PRODUCTION_KEYS = def.priority.gold;
   PRIORITY_KEYS = def.priority;
+  PLANTS_BASE_RT = def.plantsBase;
+}
+
+// ── 시설 레벨 (전력·레벨 시스템, 사용자 요청 2026-07-24) ─────────────────────
+// 방(셀)별 레벨. 빈 맵 = 전부 만렙 — verify-plan 픽스처·기존 저장분과의 호환 기본값.
+// 워커는 엔진 모듈 인스턴스가 따로라 setLayoutPreset처럼 매 잡마다 setLevels로 동기화한다.
+export type Levels = Record<string, number>;
+export let LEVELS: Levels = {};
+export function setLevels(levels?: Levels | null) { LEVELS = levels ?? {}; }
+export function maxLevelOf(room: string): number { return infra.rooms[room]?.phases?.length ?? 3; }
+export function levelOf(key: string): number {
+  const room = cellByKey.get(key)?.room ?? key;
+  const max = maxLevelOf(room);
+  const v = LEVELS[key];
+  return typeof v === "number" && v >= 1 && v <= max ? Math.floor(v) : max;
+}
+// 방 슬롯 수 = 레벨별 phases (제조·무역 1/2/3, 제어센터 = 레벨). 레벨 미지정은 만렙 슬롯
+export function slotsFor(key: string): number {
+  const room = cellByKey.get(key)?.room ?? key;
+  const spec = infra.rooms[room];
+  return spec?.phases?.[levelOf(key) - 1]?.slots ?? spec?.slots ?? 1;
+}
+export function defaultLevels(): Levels {
+  const out: Levels = {};
+  for (const cell of LAYOUT) out[cell.key] = maxLevelOf(cell.room);
+  return out;
+}
+// 전력 수지 — 발전소 phases가 공급(+60/+130/+270), 그 외 시설이 소비(음수)
+export function powerBudget(levels?: Levels | null): { provide: number; consume: number; net: number } {
+  const saved = LEVELS;
+  if (levels) LEVELS = levels;
+  let provide = 0, consume = 0;
+  for (const cell of LAYOUT) {
+    const e = infra.rooms[cell.room]?.phases?.[levelOf(cell.key) - 1]?.electricity ?? 0;
+    if (e > 0) provide += e; else consume += -e;
+  }
+  LEVELS = saved;
+  return { provide, consume, net: provide - consume };
+}
+const dormLevelSum = () => LAYOUT.filter((c) => c.room === "DORMITORY").reduce((s, c) => s + levelOf(c.key), 0);
+const dormLevelMax = () => Math.max(1, ...LAYOUT.filter((c) => c.room === "DORMITORY").map((c) => levelOf(c.key)));
+const totalLevelSum = () => LAYOUT.reduce((s, c) => s + levelOf(c.key), 0);
+// 레벨 연동 스킬 값 보정 — baked(만렙) 값에 실제 레벨과의 차이만큼 가감 (하한 0).
+// 로봇(미니멀리스트)은 전 시설 레벨 합으로 전량 재계산 (만렙 합 64 = baked 40과 일치)
+function levelAdjusted(skill: InfraSkill): number {
+  if (!skill.dormLevels && !skill.meetingLevel && !skill.trainingLevel && !skill.roboLevels) return skill.value;
+  let v = skill.value;
+  if (skill.dormLevels) v += skill.dormLevels.per * (dormLevelSum() - 4 * maxLevelOf("DORMITORY"));
+  if (skill.meetingLevel) v += skill.meetingLevel.per * (levelOf("MEETING") - maxLevelOf("MEETING"));
+  if (skill.trainingLevel) v += skill.trainingLevel.per * (levelOf("TRAINING") - maxLevelOf("TRAINING"));
+  if (skill.roboLevels) v = Math.floor(Math.min(skill.roboLevels.cap, totalLevelSum()) / skill.roboLevels.per) * skill.roboLevels.add;
+  return Math.max(0, v);
+}
+// 숙소 레벨당 토큰 생성(센시·아이리스·체르니 — 숙소 고정 요원은 최고 레벨 숙소에 앉는다 가정)
+export function genEstimate(g: TokenGen): number {
+  return g.perDormLevel != null ? g.perDormLevel * dormLevelMax() : g.estimate;
 }
 
 export const ROOM_ACCENT: Record<string, string> = {
@@ -504,7 +609,7 @@ export function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx):
       if (rate > (tokenRates.get(use.token) ?? 0)) tokenRates.set(use.token, rate);
     }
     if (skill.kind === "override") { out.override = Math.max(out.override, skill.value); continue; }
-    if (skill.kind === "automation") { out.automation += skill.value * (ctx.plants ?? C.PLANTS_BASE); continue; }
+    if (skill.kind === "automation") { out.automation += skill.value * (ctx.plants ?? PLANTS_BASE_RT); continue; }
     // 스네구로치카: 위디·유넥티스와 같은 제로아웃이지만 발전소가 아니라 같은 방 인원수로 스케일
     if (skill.kind === "automation_crew") { out.automation += skill.value * teamSize; continue; }
     // 와이후·스노우상트 증폭: 팀 제공 효율에 스케일 — teamScore에서 opProvided 합산 후 계상
@@ -529,7 +634,8 @@ export function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx):
     } else if (skill.goldLine) {
       out.efficiency += skill.goldLine.base + Math.floor(GOLD_LINES / skill.goldLine.per) * skill.goldLine.add;
     } else {
-      out.efficiency += skill.value;
+      // 시설 레벨 연동 스킬(숙소 레벨합·응접실·훈련실·로봇)은 실제 레벨로 보정 (2026-07-24)
+      out.efficiency += levelAdjusted(skill);
     }
   }
   for (const [token, rate] of tokenRates) out.efficiency += (ctx.tokenPoints[token] ?? 0) * rate;
@@ -716,7 +822,7 @@ export function sanitizePlan(raw: unknown): Plan | null {
     : [];
   return {
     assignments,
-    plants: typeof p.plants === "number" ? p.plants : C.PLANTS_BASE,
+    plants: typeof p.plants === "number" ? p.plants : PLANTS_BASE_RT,
     tokenPoints: (p.tokenPoints && typeof p.tokenPoints === "object") ? p.tokenPoints as Record<string, number> : {},
     factionCounts,
     flows,
@@ -856,12 +962,12 @@ function seedSynergySet(def: SynergySetDef, roster: InfraOp[], used: Set<string>
     : def.target.cell === "byAnchorProduct" ? cells.find((c) => c.product === product)
     : cells[0];
   if (!cell) return;
-  seeds[cell.key] = [...(seeds[cell.key] ?? []), ...bodies].slice(0, infra.rooms[room]?.slots ?? 3);
+  seeds[cell.key] = [...(seeds[cell.key] ?? []), ...bodies].slice(0, slotsFor(cell.key));
   for (const op of seeds[cell.key]) reserved.set(op.id, cell.key);
   if (anchorOp && def.anchor) {
     const anchorCell = LAYOUT.find((c) => c.room === def.anchor!.room);
     if (anchorCell) {
-      seeds[anchorCell.key] = [...(seeds[anchorCell.key] ?? []), anchorOp].slice(0, infra.rooms[def.anchor.room]?.slots ?? 1);
+      seeds[anchorCell.key] = [...(seeds[anchorCell.key] ?? []), anchorOp].slice(0, slotsFor(anchorCell.key));
       reserved.set(anchorOp.id, anchorCell.key);
     }
   }
@@ -880,7 +986,7 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
   // 그레이 더 라이트닝베어러: 다른 발전소에 1성 로봇(작업 플랫폼)만 없으면
   // 발전소 +1개로 간주 — 발전소에 고정 배치하고 4기로 계산
   const plantBooster = roster.find((op) => op.skills.some((skill) => skill.kind === "plantbonus"));
-  const plants = plantBooster ? C.PLANTS_BOOSTED : C.PLANTS_BASE;
+  const plants = PLANTS_BASE_RT + (plantBooster ? 1 : 0); // 243/153=3(그레이 4), 252=2(그레이 3)
 
   const dormPins: InfraOp[][] = [[], [], [], []];
   for (let shift = 0; shift < SHIFT_COUNT; shift += 1) {
@@ -899,7 +1005,7 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
       const placedAt = new Map<string, string>();
       const place = (op: InfraOp, key: string) => {
         seeds[key] = seeds[key] ?? [];
-        const slots = infra.rooms[cellByKey.get(key)?.room ?? key]?.slots ?? 1;
+        const slots = slotsFor(key);
         if (seeds[key].length >= slots || parked.has(op.id)) return false;
         seeds[key].push(op);
         parked.add(op.id);
@@ -917,7 +1023,7 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
         flows.push(flow);
         const generatesFor = (op: InfraOp) => op.skills.some((skill) => skill.tokenGen.some((g) => g.token === token || sources.has(g.token)));
         const members = roster.filter((op) => !used.has(op.id) && (generatesFor(op) || op.skills.some((skill) => skill.tokenUse.some((u) => u.token === token))));
-        const estTotal = roster.reduce((sum, member) => sum + member.skills.reduce((inner, skill) => inner + skill.tokenGen.reduce((acc, g) => acc + (g.token === token ? g.estimate : sources.has(g.token) ? g.estimate * (sources.get(g.token) ?? 0) : 0), 0), 0), 0);
+        const estTotal = roster.reduce((sum, member) => sum + member.skills.reduce((inner, skill) => inner + skill.tokenGen.reduce((acc, g) => acc + (g.token === token ? genEstimate(g) : sources.has(g.token) ? genEstimate(g) * (sources.get(g.token) ?? 0) : 0), 0), 0), 0);
         for (const op of members) {
           for (const skill of op.skills) {
             const use = skill.tokenUse.find((u) => u.token === token && u.percent);
@@ -948,7 +1054,7 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
               if (converterPlaced) {
                 for (const g of gen) {
                   const convRate = g.token === token ? 1 : sources.get(g.token) ?? 0;
-                  const amount = g.estimate * convRate;
+                  const amount = genEstimate(g) * convRate; // 숙소 레벨당 생성(센시 등)은 실제 레벨로
                   if (amount <= 0) continue;
                   flow.generators.push({ opId: op.id, at: placedAt.get(op.id) ?? "기존 배치", amount, via: g.token === token ? undefined : g.token, convRate, perMember: g.perMember });
                   tokenPoints[token] = (tokenPoints[token] ?? 0) + amount;
@@ -982,7 +1088,7 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
       // 이유가 없다 (사용자 확정 2026-07-19)
       if (PARK_KEYS.includes(key) && shift > 0) { assignments[key].push([]); continue; }
       const room = cellByKey.get(key)?.room ?? key;
-      const slots = infra.rooms[room]?.slots ?? 1;
+      const slots = slotsFor(key);
       // 예약(시드)은 조 불문 강제 — A조 세트(쉐라그·토큰 코어)뿐 아니라 B조 세트(피누스)도
       // 앞 순서 방이 시드를 채가지 못하게 한다 (A조 예약 오퍼는 이미 used라 B풀에 없음)
       const pool = new Map(roster.filter((op) => !used.has(op.id) && (!reserved.has(op.id) || reserved.get(op.id) === key)).map((op) => [op.id, op]));
@@ -1107,7 +1213,7 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
       {
         for (const aKey of orderKeys) {
           const room = cellByKey.get(aKey)?.room ?? aKey;
-          const slots = infra.rooms[room]?.slots ?? 1;
+          const slots = slotsFor(aKey);
           // 이 조의 현재 배치 지도 (매 방마다 갱신) + 반대 조 근무자(동시 배치 금지 대상)
           const roomKeyOf = new Map<string, string>();
           for (const k of workKeys) for (const id of assignments[k]?.[shift] ?? []) roomKeyOf.set(id, k);
@@ -1168,7 +1274,7 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
                 if (!op || !isFam(op) || team.some((t) => t.id === op.id)) continue;
                 const gain = score([...team, op]) - score(team);
                 const dRoom = cellByKey.get(fromKey)?.room ?? fromKey;
-                const dSlots = infra.rooms[dRoom]?.slots ?? 1;
+                const dSlots = slotsFor(fromKey);
                 const dCtx = { ...ctxFor(fromKey, tp, factionCountsPerShift[shift], plants, present), roomOf: roomOfS };
                 const dTeam = (assignments[fromKey][shift] ?? []).map((x) => byIdAll.get(x)).filter((o): o is InfraOp => Boolean(o));
                 const rest = dTeam.filter((o) => o.id !== id);
@@ -1233,7 +1339,7 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
             if (fromKey) {
               const t0 = teamOf(fromKey);
               const room0 = cellByKey.get(fromKey)?.room ?? fromKey;
-              const slots0 = infra.rooms[room0]?.slots ?? 1;
+              const slots0 = slotsFor(fromKey);
               const pool0 = new Map(bench.map((o) => [o.id, o]));
               srcRefill = bestTeam(room0, slots0, pool0, ctxOf(fromKey), t0.filter((o) => o.id !== S.id));
               g0 = scoreOf(fromKey, srcRefill) - scoreOf(fromKey, t0);
@@ -1257,7 +1363,7 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
                   if (!M.skills.some((sk) => skillApplies(sk, room2, cellByKey.get(cand)?.product))) continue;
                   const t2 = teamOf(cand);
                   const base2 = scoreOf(cand, t2);
-                  const slots2 = infra.rooms[room2]?.slots ?? 1;
+                  const slots2 = slotsFor(cand);
                   if (t2.length < slots2) {
                     const g = scoreOf(cand, [...t2, M]) - base2;
                     if (g > g2) { g2 = g; r2Key = cand; wIdx = -1; }
@@ -1300,7 +1406,7 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
         for (let dd = 0; dd < 4; dd += 1) for (const id of assignments[`DORM-${dd}`]?.[0] ?? []) roomOfS.set(id, "DORMITORY");
         for (const key of workKeys) {
           const room = cellByKey.get(key)?.room ?? key;
-          const slots = infra.rooms[room]?.slots ?? 1;
+          const slots = slotsFor(key);
           const team = assignments[key][shift] ?? [];
           if (team.length >= slots) continue;
           const present = new Set<string>([...usedThisShift, ...dormIds]);

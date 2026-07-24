@@ -2808,6 +2808,64 @@ footer p {
 .prio-label-layout .new-badge {
   margin-left: 6px;
 }
+
+/* ── 전력·시설 레벨 시스템 (2026-07-24) ─────────────────────────────────────
+   요약 행 전력 수지 셀 + 방 카드 Lv 배지 + 방 모달 레벨 셀렉터 */
+.power-cell b {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+}
+.power-cell.over b {
+  color: #c43c3c;
+}
+.power-detail {
+  font: 700 11px/1 monospace;
+  font-style: normal;
+  color: var(--muted);
+}
+.room-lv {
+  font: 800 10px/1 monospace;
+  font-style: normal;
+  margin-left: 6px;
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--room-accent, var(--lime)) 30%, transparent);
+  color: var(--ink);
+  vertical-align: 1px;
+}
+.room-level-sel {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 6px 0 2px;
+}
+.room-level-lbl {
+  font: 800 11px monospace;
+  letter-spacing: 0.4px;
+  color: var(--ink2);
+  margin-right: 2px;
+}
+.room-level-sel button {
+  min-width: 26px;
+  padding: 4px 0;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink2);
+  font: 700 12px/1 monospace;
+  cursor: pointer;
+  border-radius: 5px;
+}
+.room-level-sel button.on {
+  background: var(--accent, var(--lime));
+  border-color: var(--accent, var(--lime));
+  color: #14140f;
+}
+.room-level-power {
+  font: 700 11px/1 monospace;
+  color: var(--ink2);
+  margin-left: 4px;
+}
 .prio-setting label {
   display: inline-flex;
   align-items: center;
@@ -2845,7 +2903,8 @@ footer p {
 }
 .planner-summary {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 1.6fr);
+  /* 전력 셀 추가로 6열 (2026-07-24) — 마지막(기용 인원)만 살짝 넓게 */
+  grid-template-columns: repeat(5, minmax(0, 1fr)) minmax(0, 1.4fr);
   gap: 10px;
   margin-top: 18px;
 }
@@ -2935,6 +2994,15 @@ footer p {
     "trading0 mfg0 mfg1 dorm0 workshop"
     "mfg2 mfg3 mfg4 dorm1 hire"
     "power0 power1 power2 dorm2 training"
+    ". . . dorm3 .";
+}
+/* 기지 배치 252 (무역 2 · 제조 5 · 발전 2) — 발전소 3 자리에 제조소 5가 들어온다 (2026-07-24) */
+.ship.ship-252 {
+  grid-template-areas:
+    "raisebar raisebar . control meeting"
+    "trading0 trading1 mfg0 dorm0 workshop"
+    "mfg1 mfg2 mfg3 dorm1 hire"
+    "mfg4 power0 power1 dorm2 training"
     ". . . dorm3 .";
 }
 /* 육성 추천 임시 적용 표시 — 제어센터 왼쪽 빈 3칸(row1)에 넣어 레이아웃을 밀지 않는다
@@ -3350,6 +3418,9 @@ footer p {
   }
   .ship.ship-153 {
     grid-template-areas: "raisebar raisebar raisebar" "control control meeting" "trading0 mfg0 workshop" "mfg1 mfg2 hire" "mfg3 mfg4 training" "power0 power1 power2" "dorm0 dorm1 dorm2" "dorm3 . .";
+  }
+  .ship.ship-252 {
+    grid-template-areas: "raisebar raisebar raisebar" "control control meeting" "trading0 trading1 workshop" "mfg0 mfg1 hire" "mfg2 mfg3 training" "mfg4 power0 power1" "dorm0 dorm1 dorm2" "dorm3 . .";
   }
   .planner-summary {
     grid-template-columns: repeat(2, minmax(0, 1fr));

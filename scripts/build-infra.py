@@ -80,16 +80,19 @@ def tr_buff(text, ctx):
     untranslated_buffs.append({"ctx": ctx, "cn": text})
     return text
 
-# room specs at max level (phases[-1])
+# room specs at max level (phases[-1]) + 레벨별 phases (전력·시설 레벨 시스템, 2026-07-24:
+# 발전소 Lv1~3 = +60/+130/+270, 제조·무역 레벨당 슬롯 1/2/3, 제어센터 슬롯=레벨 등)
 rooms_out = {}
 for rid, room in (building.get("rooms") or {}).items():
     if rid not in ROOM_KO: continue
-    ph = (room.get("phases") or [{}])[-1]
+    phases = room.get("phases") or [{}]
+    ph = phases[-1]
     rooms_out[rid] = {
         "name": ROOM_KO[rid],
         "slots": ph.get("maxStationedNum", 1),
         "electricity": ph.get("electricity", 0),
         "maxCount": room.get("maxCount", 1),
+        "phases": [{"slots": p.get("maxStationedNum", 1), "electricity": p.get("electricity", 0)} for p in phases],
     }
 
 # all KR operator names for partner detection (longest first so 스카디 doesn't
@@ -305,10 +308,11 @@ def parse_tokens(text, room):
             entry_gen = {"token": token, "estimate": amount}
             if per_member: entry_gen["perMember"] = per_member
             gen.append(entry_gen)
-    # dorm level grants (센시: 숙소 레벨 1당 마물 요리 1개 제공 → Lv5 = 5개)
+    # dorm level grants (센시: 숙소 레벨 1당 마물 요리 1개 제공 → Lv5 = 5개).
+    # perDormLevel = 레벨당 생성량 — 엔진이 실제 숙소 레벨로 estimate를 재계산 (2026-07-24)
     for token in TOKENS:
         m = re.search(r"레벨(?: ?1)?당 " + re.escape(token) + r" ?(\d+)개", text)
-        if m: gen.append({"token": token, "estimate": float(m.group(1)) * P["DORM_LEVEL"]})
+        if m: gen.append({"token": token, "estimate": float(m.group(1)) * P["DORM_LEVEL"], "perDormLevel": float(m.group(1))})
     # dorm stack systems (아이리스 꿈나라, 체르니 소절): Lv5 dorm grants 5 stacks
     stack = re.search(r"레벨(?: ?1)?당 ([가-힣]+) ?(\d*)스택", text)
     conv = re.search(r"([가-힣]+) (\d+)스택당 (" + "|".join(map(re.escape, TOKENS)) + r") (\d+)점으로 전환", text)
@@ -448,8 +452,10 @@ def parse_skill(entry, oname, oid=None):
                 re.escape(_tok) + r"\s*\d+(?:\.\d+)?(?:점|개)당[^%\d]{0,34}?[+\-]?\d+(?:\.\d+)?\s*%?",
                 "", metric_text)
         kind, value = parse_metric(room, metric_text)
+        dorm_per = None  # 레벨 연동 재계산용 — "모든 숙소의 레벨 1당 +N%"의 단위값 (2026-07-24)
         if dorm_lvl and kind in ("output", "misc"):
-            kind, value = "output", (value or 0) + float(dorm_lvl.group(1)) * P["DORM_TOTAL_LEVELS"]
+            dorm_per = float(dorm_lvl.group(1))
+            kind, value = "output", (value or 0) + dorm_per * P["DORM_TOTAL_LEVELS"]
         # 자기 컨디션 낙차 페널티·게이트 (토터 흐려진 시야/창밖 눈보라): 만컨디션 최대치가
         # 아니라 대표 운용 낙차(DROP_ASSUMED)에서의 실효율로 보정 — 40% 고정 표기 방지
         if kind in ("output", "misc") and value:
@@ -679,6 +685,16 @@ def parse_skill(entry, oname, oid=None):
             # 기지 배치 프리셋 지원: 엔진이 활성 레이아웃의 순금 라인 수로 재계산할 구조 필드
             # (base + floor(라인수/per)×add — 153은 순금 1라인이라 투예 5, 파죰카 5가 된다)
             gold_line = {"per": _n, "add": float(gm.group(2)), "base": _bv or 0}
+        # ── 시설 레벨 연동 구조 필드 (전력·레벨 시스템, 2026-07-24) ─────────────
+        # baked value(만렙 기준)는 그대로 두고, 엔진이 실제 시설 레벨로 재계산할 단위값을
+        # 병기한다. 관례: value_L = value + per×(L − 만렙L), 하한 0 (파서 상한 채택과 역산 일치).
+        lvl_meeting = lvl_training = None
+        if room == "TRADING" and kind == "output":
+            _g = re.search(r"응접실 레벨 ?1?(?:레벨)?당 추가로 수주 효율 (\d+(?:\.\d+)?)% 제공", text)
+            if _g: lvl_meeting = {"per": float(_g.group(1))}
+        if room == "MANUFACTURE" and kind == "output":
+            _g = re.search(r"훈련실 레벨 ?1(?:레벨)?당[^%\d]{0,16}\+?\s*(\d+(?:\.\d+)?)\s*%", text)
+            if _g: lvl_training = {"per": float(_g.group(1))}
         # buffChar slots already resolved upgrades — every line here stacks
         tier = 1
         group = entry["name"]
@@ -712,6 +728,10 @@ def parse_skill(entry, oname, oid=None):
             # 레이아웃 프리셋 재계산용 구조 필드 — 있으면 엔진이 baked value 대신 이걸 쓴다
             **({"facRoom": fac_room, "facPer": fac_per} if facility_based else {}),
             **({"goldLine": gold_line} if gold_line else {}),
+            # 시설 레벨 연동 단위값 (전력·레벨 시스템 2026-07-24) — 만렙이 아니면 엔진이 재계산
+            **({"dormLevels": {"per": dorm_per}} if dorm_per else {}),
+            **({"meetingLevel": lvl_meeting} if lvl_meeting else {}),
+            **({"trainingLevel": lvl_training} if lvl_training else {}),
             "perSkillTag": per_skill_tag, "perSkillValue": per_skill_value,
             "_stackGrant": stack_grant.group(1) if stack_grant else None,
             "_stackCount": P["DORM_LEVEL"] * (int(stack_grant.group(2)) if stack_grant and stack_grant.group(2) else 1) if stack_grant else 0,
@@ -768,13 +788,17 @@ for o in operators:
     for sk in skills:
         sc = sk["_stackConv"]
         if sc and sc["name"] in grants:
-            sk["tokenGen"].append({"token": sc["token"], "estimate": grants[sc["name"]] / sc["per"] * sc["amount"]})
-    # 공사용 로봇 세트 결합 (미니멀리스트): 형제 스킬의 로봇 상한 × 소비 스킬 배율
+            # 스택은 숙소 레벨당 부여(아이리스·체르니 Lv5=5) → perDormLevel = 레벨당 환산 생성량
+            sk["tokenGen"].append({"token": sc["token"], "estimate": grants[sc["name"]] / sc["per"] * sc["amount"],
+                                   "perDormLevel": grants[sc["name"]] / P["DORM_LEVEL"] / sc["per"] * sc["amount"]})
+    # 공사용 로봇 세트 결합 (미니멀리스트): 형제 스킬의 로봇 상한 × 소비 스킬 배율.
+    # 로봇 수 = 전 시설 레벨 합(만렙 기지 = 정확히 64) — roboLevels로 엔진이 실제 레벨 합으로 재계산
     robo_caps = [sk["_roboCap"] for sk in skills if sk["_roboCap"]]
     for sk in skills:
         if sk["_roboUse"] and robo_caps:
             per, val = sk["_roboUse"]
             sk["kind"], sk["value"] = "output", robo_caps[0] / per * val  # 64/8×5 = +40%
+            sk["roboLevels"] = {"cap": robo_caps[0], "per": per, "add": val}
     for sk in skills:
         for s in [sk, *sk.get("tiers", [])]:  # 하위 tier의 임시 필드도 함께 정리
             for k in ("_stackGrant", "_stackCount", "_stackConv", "_roboCap", "_roboUse"):
