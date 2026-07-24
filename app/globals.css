@@ -2511,6 +2511,24 @@ footer p {
   color: #e2e6e8;
   font-weight: 600;
 }
+/* 서버 운영 후원 — 비상업 고지 아래, 작고 눈에 안 띄는 알약형 링크 (레이아웃 안 밀게 compact) */
+.footer-donate {
+  margin: 0;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+.footer-donate a {
+  color: #b6bbbd;
+  text-decoration: none;
+  border: 1px solid #303536;
+  border-radius: 999px;
+  padding: 3px 10px;
+  transition: color 0.15s, border-color 0.15s;
+}
+.footer-donate a:hover {
+  color: #f5c877;
+  border-color: #6b5324;
+}
 @keyframes rise {
   0% {
     opacity: 0;

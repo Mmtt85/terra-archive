@@ -881,6 +881,8 @@ const D: Record<string, Pair> = {
     "未実装（中国サーバー先行）イベントのタイトルは非公式のAI翻訳であり、正式実装時の公式翻訳と異なる場合があります。",
   ],
   "{ym}쯤 예정 (추정)": ["~{ym} (est.)", "{ym}頃 予定（推定）"],
+  "서버 운영 후원": ["Support the server", "サーバー運営を支援"],
+  "광고 없이 운영되는 이 사이트의 서버·도메인 비용에 자발적으로 보태 주실 수 있어요 (Buy Me a Coffee). 후원은 전적으로 선택이며 아무 대가가 없습니다.": ["This ad-free site runs on donated server and domain costs — you can chip in voluntarily via Buy Me a Coffee. It's entirely optional and comes with no perks.", "広告なしで運営されるこのサイトのサーバー・ドメイン費用に、任意でご支援いただけます（Buy Me a Coffee）。支援は完全に任意で、見返りはありません。"],
   "향후 다가올 이벤트": ["Coming later", "今後のイベント"],
   "중국 서버 선행 이벤트예요. 한국 출시일은 미정이며, 표시 월은 중↔한 시차로 추정한 대략적 시점입니다.": [
     "These run on the CN server first. Korean dates aren't set yet; the months shown are rough estimates from the CN↔KR gap.",
