@@ -13,7 +13,7 @@ import {
   JOB_ORDER, ROSTER_SORT_KEYS, PRODUCTION_KEYS, SUPPORT_KEYS,
   AURA_WEIGHT, AURA_LABEL, skillApplies, breakdown, teamScore, aurasOf, ambientFor, capConvFor,
   ctxFor, sanitizePlan, presentIdsFor, slotSubstitutes, setLayoutPreset, memberOf, DEFAULT_CUSTOM_ROOMS, DEFAULT_CUSTOM_PRODUCTS,
-  setLevels as setEngineLevels, slotsFor, maxLevelOf, levelOf, powerBudget, suggestedLevels,
+  setLevels as setEngineLevels, slotsFor, maxLevelOf, levelOf, powerBudget, suggestedLevels, TERMS,
   type InfraOp, type InfraSkill, type Elite, type Plan, type ProdPriority, type TokenFlow, type OptimizeStep, type LayoutPreset, type Levels, type CustomRoom, type CustomProduct,
 } from "./planner-engine";
 import type { RaiseRec, InvestProgress } from "./planner-invest";
@@ -1261,9 +1261,74 @@ function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onTogg
   );
 }
 
+// ── RIIC 용어 클릭 (왕 외세·실리, 우미리 시라쿠사 등 — 사용자 요청 2026-07-24) ──────
+// 스킬 설명 속 게임 용어(termRefs, <$cc.*> 참조)를 클릭 가능하게 렌더한다. 클릭하면
+// TermPopup이 게임 용어 사전(infra.json terms)의 정의를 보여주고, 정의 속 오퍼 명단 줄은
+// 아바타 칩(배치 중=컬러·미배치=흑백)으로, 정의가 참조하는 다른 용어는 다시 클릭 가능.
+// EN/JA는 스킬 설명이 로케일 텍스트라 참조 문자열이 안 맞아 자연히 평문으로 남는다(무해).
+const opByName = new Map(ops.map((op) => [op.name, op]));
+function escRe(s: string) { return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+function TermText({ text, refs, onTerm }: { text: string; refs?: [string, string][]; onTerm: (k: string) => void }) {
+  const parts = useMemo(() => {
+    if (!refs?.length) return null;
+    const map = new Map(refs.map(([key, label]) => [label, key]));
+    const re = new RegExp(`(${[...map.keys()].sort((a, b) => b.length - a.length).map(escRe).join("|")})`, "g");
+    return { map, segs: text.split(re) };
+  }, [text, refs]);
+  if (!parts) return <>{text}</>;
+  return <>{parts.segs.map((seg, i) => {
+    const key = parts.map.get(seg);
+    return key
+      ? <button key={i} type="button" className="term-link" title={TERMS[key]?.name ?? seg}
+          onClick={(ev) => { ev.stopPropagation(); onTerm(key); }}>{seg}</button>
+      : seg;
+  })}</>;
+}
+function TermPopup({ termKey, presentIds, onNavigate, onShowOperator, onClose }: {
+  termKey: string; presentIds: Set<string>; onNavigate: (k: string) => void;
+  onShowOperator?: (id: string) => void; onClose: () => void;
+}) {
+  const { t } = useI18n();
+  const term = TERMS[termKey];
+  if (!term) return null;
+  return (
+    <div className="modal-backdrop term-backdrop" onMouseDown={(ev) => { if (ev.target === ev.currentTarget) onClose(); }}>
+      <section className="operator-modal term-modal" role="dialog" aria-modal="true" aria-label={term.name}>
+        <button type="button" className="modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
+        <header className="term-head">
+          <span className="modal-kicker">RIIC TERM</span>
+          <h2>{term.name}</h2>
+        </header>
+        <div className="term-body">
+          {term.desc.split("\n").map((line, i) => {
+            // 오퍼 명단 줄(쉼표 나열 전원이 오퍼명)은 아바타 칩으로 — "시라쿠사 오퍼레이터
+            // 클릭 → 연결된 오퍼 전부" 요구의 핵심. 그 외 줄은 평문(+중첩 용어 클릭).
+            const names = line.split(/,\s*/).map((s) => s.trim()).filter(Boolean);
+            const hit = names.map((n) => opByName.get(n));
+            if (names.length > 0 && hit.every((o): o is InfraOp => !!o)) {
+              return (
+                <span key={i} className="rel-chips term-ops">
+                  {hit.map((o) => (
+                    <img key={o.id} src={o.image} alt={o.name} width={44} height={44} loading="lazy"
+                      className={presentIds.has(o.id) ? "on" : ""}
+                      title={presentIds.has(o.id) ? o.name : t("{name} — 미배치", { name: o.name })}
+                      onClick={(ev) => { ev.stopPropagation(); onShowOperator?.(o.id); }} />
+                  ))}
+                </span>
+              );
+            }
+            return <p key={i} className="term-line"><TermText text={line} refs={term.refs} onTerm={onNavigate} /></p>;
+          })}
+        </div>
+      </section>
+    </div>
+  );
+}
+
 function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClose, onShowOperator, onUpdateTeam, eliteById, onSetElite, tempIds, onRevertTempOne, onSetLevel }: { cell: { key: string; room: string; label: string; product?: string }; plan: Plan; allAssigned: Set<string>; roster: InfraOp[]; opMap: Map<string, InfraOp>; initialShift: number; onClose: () => void; onShowOperator?: (id: string) => void; onUpdateTeam?: (cellKey: string, shiftIdx: number, ids: string[]) => void; eliteById: Map<string, Elite>; onSetElite: (id: string, elite: Elite) => void; tempIds: Set<string>; onRevertTempOne: (opId: string) => void; onSetLevel?: (key: string, lv: number) => void }) {
   const { locale, t } = useI18n();
   const [shift, setShift] = useState(initialShift);
+  const [termOpen, setTermOpen] = useState<string | null>(null); // RIIC 용어 팝업 (외세·실리 등)
   const shiftIndex = Math.min(shift, (plan.assignments[cell.key]?.length ?? 1) - 1);
   const rawIds = plan.assignments[cell.key]?.[shiftIndex] ?? [];
   const team = rawIds.map((id) => opMap.get(id)).filter(Boolean) as InfraOp[];
@@ -1565,7 +1630,7 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                         const rels = relsOf(skill, op);
                         return (
                           <p key={skill.name}>
-                            <em>{skill.name}</em> — {skill.description}
+                            <em>{skill.name}</em> — <TermText text={skill.description} refs={skill.termRefs} onTerm={setTermOpen} />
                             {rels.map((rel) => (
                               <span key={rel.note} className="skill-rel">
                                 <i className="rel-note">{rel.note}</i>
@@ -1632,6 +1697,12 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
 
         </div>
       </section>
+      {/* RIIC 용어 정의 팝업 — 스킬 설명의 용어(외세·실리·시라쿠사 등) 클릭 시. 중첩 백드롭이라
+          ESC 전역 핸들러(z-index 최상단)와 자기-타깃 클릭 닫기가 이 팝업만 먼저 닫는다. */}
+      {termOpen && (
+        <TermPopup termKey={termOpen} presentIds={presentNow} onNavigate={setTermOpen}
+          onShowOperator={onShowOperator} onClose={() => setTermOpen(null)} />
+      )}
     </div>
   );
 }
@@ -1979,6 +2050,7 @@ const HELP_SECTIONS: { title: string; items: string[] }[] = [
   { title: "대체 추천", items: [
     "각 자리의 대체 후보는 실제로 교체해 본 방 점수로 순위를 매기고, 동점이면 낮은 성급(육성 저렴)을 우선합니다.",
     "토큰 생성·소비자, 오버라이드·수익 역할, 쉐이 카운트 인원 같은 시너지 코어는 '대체 불가'로 표시됩니다.",
+    "방 상세의 스킬 설명에서 점선 밑줄 용어(외세·실리·시라쿠사 등)를 클릭하면 게임 용어 사전의 정의가 뜹니다 — 오퍼 명단이 있는 용어(진영·그룹)는 연결된 오퍼 전원이 아바타로 표시됩니다 (배치 중 = 컬러, 미배치 = 흑백).",
   ]},
   { title: "미래시(미실장) 오퍼", items: [
     "헤더의 '미래시 데이터 포함'을 켜면 미출시(중국 서버 선행) 오퍼도 보유 오퍼 설정과 자동편성 계산에 포함됩니다. 스킬 텍스트는 비공식 AI 번역이며, 정식 출시 시 공식 데이터로 대체됩니다.",

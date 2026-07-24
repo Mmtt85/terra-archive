@@ -75,7 +75,12 @@ export type InfraSkill = {
                        // 조건부 가산: 같은 방 진영(faction)/오퍼(ids)/타방(ids+room) 충족 시 +value (르무엔·비나 등)
   families?: string[]; // 이 스킬이 속한 "~류" 계열 태그 (build-infra.py skillFamilies 카탈로그)
   tiers?: InfraSkill[]; // 같은 슬롯의 하위 정예화 단계 (스푸리아 기술 교류 α) — 정예화 낮추면 대체
+  termRefs?: [string, string][]; // 설명 속 게임 용어 참조 [키, 표시어] — 클릭 시 TERMS 정의 표시 (2026-07-24)
 };
+
+// RIIC 용어 정의 (외세·실리·시라쿠사 등) — 스킬 설명 용어 클릭 팝업용.
+// desc의 개행은 의미 단위(오퍼 명단 줄 등), refs는 정의 속 다른 용어 참조.
+export type InfraTerm = { name: string; desc: string; refs?: [string, string][] };
 
 export type InfraOp = {
   id: string;
@@ -117,6 +122,8 @@ export type RoomSpec = {
 };
 
 export const infra = infraData as { rooms: Record<string, RoomSpec>; ops: InfraOp[] };
+export const TERMS: Record<string, InfraTerm> =
+  (infraData as unknown as { terms?: Record<string, InfraTerm> }).terms ?? {};
 export const ops = infra.ops;
 export const opById = new Map(ops.map((op) => [op.id, op]));
 

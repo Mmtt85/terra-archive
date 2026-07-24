@@ -60,6 +60,29 @@ def strip_tags(s):
     s = re.sub(r"<[a-zA-Z][^>]*>", "", s)
     return re.sub(r"\s+", " ", s).strip()
 
+# ── RIIC 용어 사전 (외세·실리·시라쿠사 등, 사용자 요청 2026-07-24) ─────────────────────
+# 스킬 원문의 <$cc.키>표시어</> 참조를 보존해(termRefs) UI가 클릭 가능한 용어로 만들고,
+# 정의는 gamedata_const.termDescriptionDict에서 발췌해 infra.json terms로 내보낸다.
+# 용어 설명 속 개행은 의미 단위(오퍼 명단 줄 등)라 strip_tags와 달리 개행을 보존한다.
+TERM_DICT = (load(f"{S}/kr_gamedata_const.json").get("termDescriptionDict") or {})
+
+def strip_tags_ml(s):
+    if not s: return ""
+    s = re.sub(r"<[@$/][^>]*>", "", s).replace("</>", "")
+    s = re.sub(r"<[a-zA-Z][^>]*>", "", s)
+    s = re.sub(r"[ \t]+", " ", s)
+    return re.sub(r"\n{2,}", "\n", s).strip()
+
+def term_refs(raw):
+    """원문 마크업의 <$cc.키>표시어</> 참조 추출 → [[키, 표시어], …] (등장 순, 중복 제거)"""
+    out, seen = [], set()
+    for m in re.finditer(r"<\$([a-zA-Z0-9_.]+)>(.*?)</>", raw or ""):
+        k, txt = m.group(1), strip_tags(m.group(2))
+        if txt and (k, txt) not in seen:
+            seen.add((k, txt))
+            out.append([k, txt])
+    return out
+
 # CN→KR 버프 텍스트 사전: 같은 buffId가 양 서버에 있으면 렌더링(strip_tags) 기준으로 짝짓기
 CJK_RE = re.compile(r"[㐀-鿿]")
 _kr_buffs = building.get("buffs") or {}
@@ -791,15 +814,24 @@ for o in operators:
             unlock = f"Lv.{cond.get('level', 1)}" if ph == 0 else f"정예화 {ph}"
             name = strip_tags(bf.get("buffName"))
             desc = strip_tags(bf.get("description"))
+            # 용어 참조는 KR 원문에서만 — 미실장(CN 폴백)은 번역된 desc와 참조 텍스트가
+            # 어긋나므로 생략 (UI는 참조 없으면 평문 표시)
+            refs = [] if is_unrel else term_refs(bf.get("description"))
             if is_unrel:
                 name = tr_buff(name, f"{o['name']}·buffName")
                 desc = tr_buff(desc, f"{o['name']}·description")
             tier_entries.append({"buffId": bd["buffId"], "name": name, "room": bf.get("roomType"),
-                                 "unlock": unlock, "description": desc})
+                                 "unlock": unlock, "description": desc, "termRefs": refs})
         if not tier_entries: continue
         main = parse_skill(tier_entries[-1], o["name"], o["id"])
         if main is None: continue
-        lowers = [s for s in (parse_skill(e, o["name"], o["id"]) for e in tier_entries[:-1]) if s is not None]
+        if tier_entries[-1].get("termRefs"): main["termRefs"] = tier_entries[-1]["termRefs"]
+        lowers = []
+        for e in tier_entries[:-1]:
+            ps = parse_skill(e, o["name"], o["id"])
+            if ps is None: continue
+            if e.get("termRefs"): ps["termRefs"] = e["termRefs"]
+            lowers.append(ps)
         if lowers: main["tiers"] = lowers
         # 지식 베이스 파싱 교정(skillOverrides): 파서가 새 문구를 오분류하면 정규식 대신
         # rules.json에 buffId 교정 행을 추가한다 — 최종 단계와 하위 tier 모두에 적용
@@ -867,7 +899,31 @@ for op in infra_ops:
                 if op["name"] not in skill_families[tag]:
                     skill_families[tag].append(op["name"])
 
-out = {"rooms": rooms_out, "ops": infra_ops, "skillFamilies": skill_families}
+# ── 용어 사전 발췌 — 스킬이 참조하는 용어 + 용어 설명이 참조하는 용어(전이 폐쇄) ──────
+# UI: 스킬 설명의 용어 클릭 → 정의 팝업(오퍼 명단 줄은 아바타 칩으로), 정의 속 용어도 클릭 가능
+_used = []
+for _op in infra_ops:
+    for _sk in _op["skills"]:
+        for _s in [_sk, *_sk.get("tiers", [])]:
+            for _k, _t in _s.get("termRefs") or []:
+                if _k not in _used: _used.append(_k)
+terms_out = {}
+_queue = list(_used)
+while _queue:
+    _k = _queue.pop(0)
+    if _k in terms_out: continue
+    _td = TERM_DICT.get(_k)
+    if not _td: continue
+    _raw = _td.get("description") or ""
+    _refs = term_refs(_raw)
+    terms_out[_k] = {"name": strip_tags(_td.get("termName")), "desc": strip_tags_ml(_raw),
+                     **({"refs": _refs} if _refs else {})}
+    _queue += [rk for rk, _ in _refs if rk not in terms_out]
+_missing_terms = [k for k in _used if k not in terms_out]
+if _missing_terms:
+    print("⚠ 용어 사전에 없는 참조:", _missing_terms, file=sys.stderr)
+
+out = {"rooms": rooms_out, "ops": infra_ops, "skillFamilies": skill_families, "terms": terms_out}
 json.dump(out, open(f"{REPO}/app/data/infra.json", "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
 print("skill families:", json.dumps({k: len(v) for k, v in skill_families.items()}, ensure_ascii=False))
 

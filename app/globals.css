@@ -11177,3 +11177,19 @@ main.site-main > .site-header {
   font-size: 0.82rem;
   color: var(--muted);
 }
+
+/* ── RIIC 용어 클릭 (외세·실리·시라쿠사 등, 2026-07-24) ─────────────────────────
+   스킬 설명 속 용어는 점선 밑줄 버튼 — 클릭하면 정의 팝업(.term-modal)이 방 모달 위에
+   중첩(z-index 110 > .modal-backdrop 100). 오퍼 명단 줄은 .rel-chips 재사용(배치=컬러). */
+.term-link {
+  background: none; border: 0; padding: 0; margin: 0; font: inherit;
+  color: var(--accent, #6ea8fe); cursor: pointer;
+  text-decoration: underline dotted; text-underline-offset: 3px;
+}
+.term-link:hover { text-decoration-style: solid; filter: brightness(1.15); }
+.term-backdrop { z-index: 110; }
+.term-modal { max-width: 480px; width: min(480px, 92vw); padding: 20px 22px 18px; }
+.term-modal .term-head h2 { margin: 2px 0 10px; font-size: 20px; }
+.term-modal .term-line { margin: 0 0 7px; font-size: 13.5px; line-height: 1.6; white-space: pre-line; }
+.term-modal .term-ops { display: flex; flex-wrap: wrap; gap: 5px; margin: 4px 0 10px; }
+.term-modal .term-ops img { width: 34px; height: 34px; }
