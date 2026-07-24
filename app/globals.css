@@ -2859,6 +2859,34 @@ footer p {
   opacity: 0.95;
   min-width: 0;
 }
+/* 편성 근거 — 스킬 발동 조건 상태 + 연관 오퍼 칩 (2026-07-24) */
+.skill-rel {
+  display: block;
+  margin-top: 3px;
+}
+.skill-rel .rel-note {
+  font-size: 11px;
+  font-style: normal;
+  color: var(--muted);
+}
+.rel-chips {
+  display: inline-flex;
+  gap: 3px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+.rel-chips img {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  object-fit: cover;
+  cursor: pointer;
+  border: 1px solid var(--line);
+}
+.rel-chips img:not(.on) {
+  opacity: 0.35;
+  filter: grayscale(1);
+}
 .room-level-sel {
   display: flex;
   align-items: center;

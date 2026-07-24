@@ -12,7 +12,7 @@ import {
   ELITE_LABEL, LAYOUT, cellByKey, ROOM_ACCENT, UNIT, PARK_KEYS, SHIFT_COUNT,
   JOB_ORDER, ROSTER_SORT_KEYS, PRODUCTION_KEYS, SUPPORT_KEYS,
   AURA_WEIGHT, AURA_LABEL, skillApplies, breakdown, teamScore, aurasOf, ambientFor, capConvFor,
-  ctxFor, sanitizePlan, presentIdsFor, slotSubstitutes, setLayoutPreset,
+  ctxFor, sanitizePlan, presentIdsFor, slotSubstitutes, setLayoutPreset, memberOf,
   setLevels as setEngineLevels, slotsFor, maxLevelOf, levelOf, powerBudget, suggestedLevels,
   type InfraOp, type InfraSkill, type Elite, type Plan, type ProdPriority, type TokenFlow, type OptimizeStep, type LayoutPreset, type Levels,
 } from "./planner-engine";
@@ -1234,6 +1234,61 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
       skill.tokenUse.some((use) => use.percent && activeTokens.has(use.token))) ||
     counterMatches.some((match) => factionsOf(op).some((faction) => faction.includes(match)));
 
+  // 편성 근거 표시 (사용자 요청 2026-07-24): 스킬의 발동 조건(진영 카운트·파트너·타방 조건)을
+  // 현재 편성 기준 상태 + 관련 오퍼 칩으로 풀어 보여준다 — "우미리(시라쿠사 0명)가 왜
+  // 제어센터에?" 류 혼동 방지: 0명이면 그 스킬은 0% 적용으로 표시되고, 채택 근거인 다른
+  // 스킬(사무실 오라 등)이 구분돼 보인다. 칩은 보유 로스터 내 관련 오퍼만(배치 중 = 컬러).
+  const presentNow = presentIdsFor(plan, shiftIndex);
+  const typeTeamIds = (roomType: string): Set<string> => {
+    const ids = new Set<string>();
+    for (const c of LAYOUT) {
+      if (c.room !== roomType) continue;
+      const shifts = plan.assignments[c.key] ?? [];
+      for (const id of shifts[Math.min(shiftIndex, shifts.length - 1)] ?? []) ids.add(id);
+    }
+    return ids;
+  };
+  const relOf = (skill: InfraSkill, self: InfraOp): { note: string; chips: { op: InfraOp; on: boolean }[] } | null => {
+    if (skill.perFaction && !skill.perSkillTag) {
+      const scope = skill.kind === "ctrl_trade" ? "TRADING" : skill.perScope === "mfg" ? "MANUFACTURE" : skill.perScope === "room" ? "room" : "base";
+      const inScope = scope === "room" ? new Set(team.map((member) => member.id)) : scope === "base" ? presentNow : typeTeamIds(scope);
+      const members = roster.filter((member) => member.id !== self.id && memberOf(member, skill.perFaction!));
+      const n = members.filter((member) => inScope.has(member.id)).length;
+      const total = skill.value > 0 && skill.perCap != null ? Math.min(skill.value * n, skill.perCap) : skill.value * n;
+      const where = t(scope === "TRADING" ? "무역소" : scope === "MANUFACTURE" ? "제조소" : scope === "room" ? "이 방" : "기지 전체");
+      return {
+        note: t("{faction} 1명당 {per}% — 현재 {where} {n}명 · {total}% 적용", { faction: skill.perFaction, per: skill.value, where, n, total: Math.round(total) }),
+        chips: members.map((member) => ({ op: member, on: inScope.has(member.id) })).sort((a, b) => Number(b.on) - Number(a.on)).slice(0, 8),
+      };
+    }
+    if (skill.roomPartner) {
+      const partner = opById.get(skill.roomPartner.id) ?? opMap.get(skill.roomPartner.id);
+      if (!partner) return null;
+      const on = typeTeamIds(skill.roomPartner.room).has(partner.id);
+      return {
+        note: t("{name}이(가) {room}에 배치되어 있을 때 발동", { name: partner.name, room: t(infra.rooms[skill.roomPartner.room]?.name ?? skill.roomPartner.room) }),
+        chips: [{ op: partner, on }],
+      };
+    }
+    if (skill.partners.length) {
+      const chips = skill.partners
+        .map((id) => opById.get(id) ?? opMap.get(id))
+        .filter((partner): partner is InfraOp => Boolean(partner))
+        .map((partner) => ({ op: partner, on: teamIds.has(partner.id) }));
+      if (!chips.length) return null;
+      return { note: t("파트너 스킬 — 전원이 같은 방에 있을 때 발동"), chips };
+    }
+    if (skill.gateFaction) {
+      const members = roster.filter((member) => member.id !== self.id && memberOf(member, skill.gateFaction!));
+      const count = members.filter((member) => teamIds.has(member.id)).length + (memberOf(self, skill.gateFaction!) ? 1 : 0);
+      return {
+        note: t("{faction} {n}명 이상일 때 발동 — 현재 {c}명", { faction: skill.gateFaction, n: skill.gateCount ?? 1, c: count }),
+        chips: members.map((member) => ({ op: member, on: teamIds.has(member.id) })).sort((a, b) => Number(b.on) - Number(a.on)).slice(0, 8),
+      };
+    }
+    return null;
+  };
+
   return (
     <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <section className="operator-modal room-modal" role="dialog" aria-modal="true" style={{ "--accent": ROOM_ACCENT[cell.room] } as React.CSSProperties}>
@@ -1354,7 +1409,27 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                           );
                         })()}
                       </b>
-                      {shown.length ? shown.map((skill) => <p key={skill.name}><em>{skill.name}</em> — {skill.description}</p>) : <p>{t("이 시설에 적용되는 스킬이 없습니다 (세트 대기 요원).")}</p>}
+                      {shown.length ? shown.map((skill) => {
+                        const rel = relOf(skill, op);
+                        return (
+                          <p key={skill.name}>
+                            <em>{skill.name}</em> — {skill.description}
+                            {rel && (
+                              <span className="skill-rel">
+                                <i className="rel-note">{rel.note}</i>
+                                <span className="rel-chips">
+                                  {rel.chips.map(({ op: relOp, on }) => (
+                                    <img key={relOp.id} src={relOp.image} alt={relOp.name} width={44} height={44} loading="lazy"
+                                      className={on ? "on" : ""}
+                                      title={on ? relOp.name : t("{name} — 미배치", { name: relOp.name })}
+                                      onClick={(event) => { event.stopPropagation(); onShowOperator?.(relOp.id); }} />
+                                  ))}
+                                </span>
+                              </span>
+                            )}
+                          </p>
+                        );
+                      }) : <p>{t("이 시설에 적용되는 스킬이 없습니다 (세트 대기 요원).")}</p>}
                       {parts.map((part) => <small key={part}>{part}</small>)}
                       {op.skills.flatMap((skill) => skill.tokenGen).map((gen) => (
                         <small key={`${op.id}-${gen.token}`} className="token-chip">{t("{token} +{n}점 생성", { token: tokenName(locale, gen.token), n: Math.round(gen.estimate) })}</small>
