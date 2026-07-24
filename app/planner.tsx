@@ -959,13 +959,16 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       {/* 항상 렌더해 높이를 처음부터 예약 — 계산 전엔 '—'로 채운다. 계산 완료 후 값이 튀어나오며
           아래 배치도를 밀어내던 CLS 방지 (사용자 리포트 2026-07-20). summary가 있으면 plan도 항상 있음. */}
       <div className="planner-summary">
-        <button type="button" className="strategy-cell" onClick={() => setShowFlows(true)} disabled={!plan}>
-          <span>{t("전략 (클릭해 시너지 트리 보기)")}</span>
-          <b className="strategy">{plan ? `${strategyLabel(plan, locale, t)}${Object.keys(plan.tokenPoints).length > 0 ? ` · ${Object.entries(plan.tokenPoints).map(([token, points]) => t("{token} {n}점", { token: tokenName(locale, token), n: Math.round(points) })).join(" · ")}` : ""}` : "—"}</b>
+        {/* 전략 상세(패키지 구성·토큰 점수)는 길어서 카드를 세로로 늘리므로 시너지 트리
+            모달로 넘기고, 카드엔 클릭 안내만 둔다 (사용자 요청 2026-07-25) */}
+        <button type="button" className="strategy-cell" onClick={() => setShowFlows(true)} disabled={!plan}
+          title={plan ? `${strategyLabel(plan, locale, t)}${Object.keys(plan.tokenPoints).length > 0 ? ` · ${Object.entries(plan.tokenPoints).map(([token, points]) => t("{token} {n}점", { token: tokenName(locale, token), n: Math.round(points) })).join(" · ")}` : ""}` : undefined}>
+          <span>{t("전략")}</span>
+          <b className="strategy">{plan ? t("시너지 트리 보기 ▸") : "—"}</b>
         </button>
         <div><span>{t("제조소 평균")}</span><b>{summary ? `+${summary.manufacture}%` : "—"}</b></div>
         <div><span>{t("무역소 평균")}</span><b>{summary ? `+${summary.trading}%` : "—"}</b></div>
-        <div><span>{t("발전소 평균")}</span><b>{summary ? `+${summary.power}%` : "—"}</b></div>
+        <div><span>{t("드론 회복 평균 효율")}</span><b>{summary ? `+${summary.power}%` : "—"}</b></div>
         {/* 전력 수지 — 발전소 phases 공급(만렙 270×기수) vs 시설 소비. 음수면 게임에서 성립 불가.
             소비/공급 슬래시 표기 + 시설별 내역 툴팁 (사용자 요청 2026-07-24) */}
         <div className={power.net < 0 ? "power-cell over" : "power-cell"}
