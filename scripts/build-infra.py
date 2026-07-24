@@ -82,6 +82,33 @@ def tr_buff(text, ctx):
 
 # room specs at max level (phases[-1]) + 레벨별 phases (전력·시설 레벨 시스템, 2026-07-24:
 # 발전소 Lv1~3 = +60/+130/+270, 제조·무역 레벨당 슬롯 1/2/3, 제어센터 슬롯=레벨 등)
+# 레벨별 기능 효과 fx (2026-07-24, 방 상세 모달 레벨 표): tradingData(오더 상한·등급)·
+# manufactData(보관함)·dormData(회복·분위기)·meetingData(친구 상한)·trainingData(특화 상한)·
+# workshopFormulas(레시피 해금 누적 수) — 전부 kr_building_data 원본.
+_ws_by_lv = {}
+for f in (building.get("workshopFormulas") or {}).values():
+    lv = (f.get("requireRooms") or [{}])[0].get("roomLevel", 1)
+    _ws_by_lv[lv] = _ws_by_lv.get(lv, 0) + 1
+def _room_fx(rid, idx):
+    fx = {}
+    if rid == "TRADING":
+        p = (building.get("tradingData") or {}).get("phases") or []
+        if idx < len(p): fx = {"orderLimit": p[idx]["orderLimit"], "orderRarity": p[idx]["orderRarity"]}
+    elif rid == "MANUFACTURE":
+        p = (building.get("manufactData") or {}).get("phases") or []
+        if idx < len(p): fx = {"capacity": p[idx]["outputCapacity"]}
+    elif rid == "DORMITORY":
+        p = (building.get("dormData") or {}).get("phases") or []
+        if idx < len(p): fx = {"recover": p[idx]["manpowerRecover"], "ambience": p[idx]["decorationLimit"]}
+    elif rid == "MEETING":
+        p = (building.get("meetingData") or {}).get("phases") or []
+        if idx < len(p): fx = {"friendSlots": p[idx]["friendSlotInc"]}
+    elif rid == "TRAINING":
+        p = (building.get("trainingData") or {}).get("phases") or []
+        if idx < len(p): fx = {"specLimit": p[idx]["specSkillLvlLimit"]}
+    elif rid == "WORKSHOP":
+        fx = {"recipes": sum(n for lv, n in _ws_by_lv.items() if lv <= idx + 1)}
+    return fx
 rooms_out = {}
 for rid, room in (building.get("rooms") or {}).items():
     if rid not in ROOM_KO: continue
@@ -92,7 +119,7 @@ for rid, room in (building.get("rooms") or {}).items():
         "slots": ph.get("maxStationedNum", 1),
         "electricity": ph.get("electricity", 0),
         "maxCount": room.get("maxCount", 1),
-        "phases": [{"slots": p.get("maxStationedNum", 1), "electricity": p.get("electricity", 0)} for p in phases],
+        "phases": [{"slots": p.get("maxStationedNum", 1), "electricity": p.get("electricity", 0), **_room_fx(rid, i)} for i, p in enumerate(phases)],
     }
 
 # all KR operator names for partner detection (longest first so 스카디 doesn't

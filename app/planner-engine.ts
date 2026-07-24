@@ -111,7 +111,9 @@ export type RoomSpec = {
   name: string; slots: number; electricity: number; maxCount: number;
   // 레벨별 스펙 (전력·시설 레벨 시스템 2026-07-24): phases[레벨-1] = {슬롯, 전력}.
   // 발전소 +60/+130/+270, 제조·무역 슬롯 1/2/3, 제어센터 슬롯=레벨(1~5), 숙소 Lv1~5 전력만 증가
-  phases?: { slots: number; electricity: number }[];
+  // fx 필드 (2026-07-24, 방 상세 레벨 표): 방 종류별 레벨 기능 — 오더 상한·등급(무역),
+  // 보관함(제조), 회복·분위기(숙소), 친구 상한(응접), 특화 상한(훈련), 레시피 누적(가공)
+  phases?: { slots: number; electricity: number; orderLimit?: number; orderRarity?: number; capacity?: number; recover?: number; ambience?: number; friendSlots?: number; specLimit?: number; recipes?: number }[];
 };
 
 export const infra = infraData as { rooms: Record<string, RoomSpec>; ops: InfraOp[] };
@@ -1424,6 +1426,66 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
 
       if (!changed) break;
     }
+    }
+  }
+
+  // ── 절대룰: 슬롯 백필 (사용자 확정 2026-07-24, INFRA-RULES §1) ────────────────
+  // "시설은 오퍼레이터 총 숫자가 모자란 게 아니면 반드시 꽉 채운다." 점수 모델은 보너스%만
+  // 다루지만 실제 게임은 배치 인원 자체가 기본 생산분을 낸다 — 스킬 무관 몸빵이라도 빈
+  // 슬롯보다 항상 낫다 (153 순금방 슈 단독 사례). 대상은 인원 자체가 기본 기여를 하는
+  // 제조소·무역소·응접실·사무실. 제어센터·발전소는 스킬 없는 배치가 사기 소모뿐이라 제외,
+  // 훈련실(특화 대기)·가공소(상시 1조)·숙소(휴식)는 의도적 공실 유지. 벤치에서 한계 기여
+  // 최고 순으로 채우고(대개 0 — 동률이면 저레어·선출시 우선), 점수가 내려가도(솔로 스킬 방)
+  // 채운다 — 절대룰이 점수에 우선. A·B 동시 배치 금지 유지: 한 번 채운 벤치는 재사용 금지.
+  {
+    const BODY_ROOMS = new Set(["TRADING", "MANUFACTURE", "HIRE", "MEETING"]);
+    const targets: string[] = [];
+    for (const key of keys) {
+      const room = cellByKey.get(key)?.room ?? key;
+      if (BODY_ROOMS.has(room) && !PARK_KEYS.includes(key) && !targets.includes(key)) targets.push(key);
+    }
+    const dormIds = new Set<string>();
+    for (let d = 0; d < 4; d += 1) for (const id of assignments[`DORM-${d}`]?.[0] ?? []) dormIds.add(id);
+    const workingAny = new Set<string>();
+    for (const key of Object.keys(assignments)) {
+      const room = cellByKey.get(key)?.room ?? key;
+      if (room === "DORMITORY") continue;
+      for (const arr of assignments[key]) for (const id of arr) workingAny.add(id);
+    }
+    const bench = roster.filter((op) => !workingAny.has(op.id) && !dormIds.has(op.id) && !reserved.has(op.id));
+    for (let shift = 0; shift < SHIFT_COUNT && bench.length; shift += 1) {
+      const roomOfS = new Map<string, string>();
+      for (const key of Object.keys(assignments)) {
+        const room = cellByKey.get(key)?.room ?? key;
+        for (const id of assignments[key][Math.min(shift, assignments[key].length - 1)] ?? []) roomOfS.set(id, room);
+      }
+      for (const id of dormIds) roomOfS.set(id, "DORMITORY");
+      const present = new Set<string>(roomOfS.keys());
+      for (const key of targets) {
+        if (!bench.length) break;
+        const room = cellByKey.get(key)?.room ?? key;
+        const slots = slotsFor(key);
+        const team = (assignments[key][shift] ?? []).map((id) => byIdAll.get(id)).filter((op): op is InfraOp => Boolean(op));
+        let added = false;
+        while (team.length < slots && bench.length) {
+          const ctx = { ...ctxFor(key, shift === 0 ? tokenPoints : {}, factionCountsPerShift[shift], plants, present), roomOf: roomOfS };
+          const base = teamScore(team, room, ctx);
+          let at = 0;
+          let best = teamScore([...team, bench[0]], room, ctx) - base;
+          for (let i = 1; i < bench.length; i += 1) {
+            const d = teamScore([...team, bench[i]], room, ctx) - base;
+            const tie = Math.abs(d - best) <= 1e-9;
+            if (d > best + 1e-9 || (tie && (bench[i].rarity < bench[at].rarity || (bench[i].rarity === bench[at].rarity && bench[i].seq < bench[at].seq)))) { best = d; at = i; }
+          }
+          const [pick] = bench.splice(at, 1);
+          team.push(pick);
+          present.add(pick.id);
+          roomOfS.set(pick.id, room);
+          for (const faction of factionsOf(pick)) factionCountsPerShift[shift][faction] = (factionCountsPerShift[shift][faction] ?? 0) + 1;
+          added = true;
+        }
+        if (added) assignments[key][shift] = team.map((op) => op.id);
+      }
     }
   }
 
