@@ -462,9 +462,10 @@ function RelicModal({ relic, owned, onToggleOwn, onClose }: {
           </div>
           <button type="button" className="rg-modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
         </header>
-        {/* 해당 소장품의 모든 데이터 — 효과·설명·획득 방법 (사용자 확정 2026-07-24) */}
+        {/* 해당 소장품의 모든 데이터 — 효과·설명·획득 방법 (사용자 확정 2026-07-24).
+            desc도 pre-line: 붕괴 패러다임 심화(2단계) 플레이버가 줄로 병합돼 있다 */}
         {relic.usage && <p className="rg-relic-usage rg-multiline">{relic.usage}</p>}
-        {relic.desc && <p className="rg-relic-desc">{relic.desc}</p>}
+        {relic.desc && <p className="rg-relic-desc rg-multiline">{relic.desc}</p>}
         {relic.obtain && <p className="rg-relic-obtain"><em>{t("획득 방법")}</em> {relic.obtain}</p>}
         {onToggleOwn && (
           <button type="button" className={`rg-inv-toggle${owned ? " on" : ""}`} onClick={onToggleOwn}>
