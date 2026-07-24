@@ -1421,6 +1421,19 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
         chips: [],
       });
     }
+    // 자동화 (위디·유넥티스 — 발전소 수 스케일): 그레이 더 라이트닝베어러의 "발전소 +1개로
+    // 간주"가 끼면 물리 발전소 3개인데 60%(15×4)가 나와 어리둥절해진다 — 근거를 칩으로 명시
+    if (skill.kind === "automation") {
+      const plants = ctx.plants ?? 3;
+      const booster = roster.find((member) => member.skills.some((s) => s.kind === "plantbonus"));
+      const boosterOn = booster ? presentNow.has(booster.id) : false;
+      rels.push({
+        note: boosterOn
+          ? t("발전소 1개당 {per}% — 현재 {n}개(+1개 간주 포함) 기준 {total}%", { per: skill.value, n: plants, total: Math.round(skill.value * plants) })
+          : t("발전소 1개당 {per}% — 현재 {n}개 기준 {total}%", { per: skill.value, n: plants, total: Math.round(skill.value * plants) }),
+        chips: booster ? [{ op: booster, on: boosterOn }] : [],
+      });
+    }
     if (skill.perFaction && !skill.perSkillTag) {
       const scope = skill.kind === "ctrl_trade" ? "TRADING" : skill.perScope === "mfg" ? "MANUFACTURE" : skill.perScope === "room" ? "room" : "base";
       const inScope = scope === "room" ? new Set(team.map((member) => member.id)) : scope === "base" ? presentNow : typeTeamIds(scope);
