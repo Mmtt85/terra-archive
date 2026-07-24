@@ -433,11 +433,9 @@ function BroadcastBadges({ includeFuture }: { includeFuture?: boolean }) {
             <ul>
               {futureEvents.map((event) => {
                 const name = (locale === "ko" ? event.name.ko : event.name[locale]) ?? event.name.ko;
-                const thumb = (locale === "ja" ? event.thumbJa : locale === "en" ? event.thumbEn : undefined) ?? event.thumb;
                 return (
                   <li key={event.id}>
                     <span className="event-row-plain">
-                      {thumb && <span className="event-banner"><img src={thumb} alt="" loading="lazy" /></span>}
                       <span className="event-row-name">{name}</span>
                       {event.eta && <small>{t("{ym}쯤 예정 (추정)", { ym: fmtYm(locale, event.eta) })}</small>}
                     </span>
