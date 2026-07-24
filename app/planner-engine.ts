@@ -166,8 +166,12 @@ export function eliteOptions(op: InfraOp): Elite[] {
 // 시설 레벨을 낮춰야만 성립하는 배치. 권장 기본 레벨(숙소4·훈련실·응접실·사무실 Lv1)로
 // 소비 500 ≤ 540. 프리셋 전환 시 각 프리셋의 저장된 편성·레벨 버킷이 그대로 복원된다
 // (사용자 확정 2026-07-24: 전환마다 재편성 금지 — plan·levels를 프리셋별로 따로 저장).
-export type LayoutPreset = "243" | "153" | "252";
-type LayoutCell = { key: string; room: string; label: string; product?: string };
+// "custom"(그외) = 제조·무역·발전 9칸을 자유 구성 (사용자 요청 2026-07-24). 칸별 시설 종류만
+// 정하면 buildCustomDef가 셀·우선순위·순금 라인(= min(무역, 제조) — 프리셋 3종과 동일 규칙)을
+// 유도한다. slot = 배치도 3×3 왼쪽 블록의 고정 칸 번호(0~8, CSS pos-slot-N).
+export type LayoutPreset = "243" | "153" | "252" | "custom";
+export type CustomRoom = "MANUFACTURE" | "TRADING" | "POWER";
+type LayoutCell = { key: string; room: string; label: string; product?: string; slot?: number };
 
 const SUPPORT_CELLS: LayoutCell[] = [
   { key: "CONTROL", room: "CONTROL", label: "제어 센터" },
@@ -185,7 +189,7 @@ const POWER_CELLS: LayoutCell[] = [
   { key: "POWER-1", room: "POWER", label: "발전소 2" },
   { key: "POWER-2", room: "POWER", label: "발전소 3" },
 ];
-const LAYOUT_DEFS: Record<LayoutPreset, {
+const LAYOUT_DEFS: Record<Exclude<LayoutPreset, "custom">, {
   cells: LayoutCell[];
   priority: Record<ProdPriority, string[]>;   // 방 채우기 순서 (§1 우선 생산 3모드)
   goldLines: number;                          // 순금 제조소 수 (투예·파죰카 순금 라인 재계산)
@@ -260,11 +264,53 @@ const LAYOUT_DEFS: Record<LayoutPreset, {
 const LEVEL_DEFAULTS: Partial<Record<LayoutPreset, Levels>> = {
   "252": { "MANUFACTURE-2": 2, "MANUFACTURE-3": 2, "MANUFACTURE-4": 2, "DORM-0": 2, "DORM-1": 1, "DORM-2": 1, "DORM-3": 1, "HIRE": 2 },
 };
-// 활성 레이아웃 기준 권장 레벨 전체 맵 (만렙 + 프리셋별 오버라이드)
+// 활성 레이아웃 기준 권장 레벨 전체 맵 (만렙 + 프리셋별 오버라이드. custom = 전부 만렙)
 export function suggestedLevels(preset: LayoutPreset): Levels {
+  const cells = preset === "custom" ? buildCustomDef(CUSTOM_ROOMS).cells : (LAYOUT_DEFS[preset] ?? LAYOUT_DEFS["243"]).cells;
   const out: Levels = {};
-  for (const cell of (LAYOUT_DEFS[preset] ?? LAYOUT_DEFS["243"]).cells) out[cell.key] = maxLevelOf(cell.room);
+  for (const cell of cells) out[cell.key] = maxLevelOf(cell.room);
   return { ...out, ...(LEVEL_DEFAULTS[preset] ?? {}) };
+}
+
+// ── 그외(커스텀) 배치: 9칸 시설 종류 배열 → 레이아웃 정의 유도 ─────────────────
+// 순금 방 수 = min(무역소 수, 제조소 수) — 243(무역2→순금2)·153(무역1→순금1)·252(무역2→순금2)와
+// 동일한 도메인 규칙. 순금은 앞쪽 제조소부터. 우선순위(gold/exp/balance)도 프리셋과 같은 패턴.
+export const DEFAULT_CUSTOM_ROOMS: CustomRoom[] = ["TRADING", "TRADING", "MANUFACTURE", "MANUFACTURE", "MANUFACTURE", "MANUFACTURE", "POWER", "POWER", "POWER"]; // = 243 모양
+export let CUSTOM_ROOMS: CustomRoom[] = [...DEFAULT_CUSTOM_ROOMS];
+function buildCustomDef(rooms: CustomRoom[]) {
+  const counts: Record<string, number> = { TRADING: 0, MANUFACTURE: 0, POWER: 0 };
+  for (const room of rooms) counts[room] += 1;
+  const goldN = Math.min(counts.TRADING, counts.MANUFACTURE);
+  const cells: LayoutCell[] = [];
+  let ti = 0, mi = 0, pi = 0;
+  rooms.forEach((room, slot) => {
+    if (room === "TRADING") { cells.push({ key: `TRADING-${ti}`, room, label: `무역소 ${ti + 1}`, slot }); ti += 1; }
+    else if (room === "MANUFACTURE") {
+      const product = mi < goldN ? "gold" : "exp";
+      cells.push({ key: `MANUFACTURE-${mi}`, room, label: `제조소 ${mi + 1} · ${product === "gold" ? "순금" : "작전기록"}`, product, slot });
+      mi += 1;
+    } else { cells.push({ key: `POWER-${pi}`, room, label: `발전소 ${pi + 1}`, slot }); pi += 1; }
+  });
+  const goldKeys = cells.filter((cell) => cell.product === "gold").map((cell) => cell.key);
+  const expKeys = cells.filter((cell) => cell.product === "exp").map((cell) => cell.key);
+  const tradeKeys = cells.filter((cell) => cell.room === "TRADING").map((cell) => cell.key);
+  const powerKeys = cells.filter((cell) => cell.room === "POWER").map((cell) => cell.key);
+  const balance: string[] = [];
+  for (let i = 0; i < Math.max(goldKeys.length, expKeys.length); i += 1) {
+    if (goldKeys[i]) balance.push(goldKeys[i]);
+    if (expKeys[i]) balance.push(expKeys[i]);
+  }
+  return {
+    cells: [...cells, ...SUPPORT_CELLS],
+    priority: {
+      gold: [...goldKeys, ...expKeys, ...tradeKeys, ...powerKeys],
+      exp: [...expKeys, ...goldKeys, ...tradeKeys, ...powerKeys],
+      balance: [...balance, ...tradeKeys, ...powerKeys],
+    } as Record<ProdPriority, string[]>,
+    goldLines: goldN,
+    counts,
+    plantsBase: counts.POWER,
+  };
 }
 
 // 활성 레이아웃 상태 — export let 라이브 바인딩이라 setLayoutPreset 후 임포터가 새 값을 본다.
@@ -276,9 +322,10 @@ export let GOLD_LINES = LAYOUT_DEFS["243"].goldLines;
 export let FACILITY_COUNTS: Record<string, number> = LAYOUT_DEFS["243"].counts;
 export let PLANTS_BASE_RT = LAYOUT_DEFS["243"].plantsBase; // 발전소 수 — 252는 2 (그레이 배치 시 +1)
 
-export function setLayoutPreset(preset: LayoutPreset) {
-  const def = LAYOUT_DEFS[preset] ?? LAYOUT_DEFS["243"];
-  activeLayout = def === LAYOUT_DEFS["243"] ? "243" : preset;
+export function setLayoutPreset(preset: LayoutPreset, customRooms?: CustomRoom[] | null) {
+  if (customRooms && customRooms.length === 9) CUSTOM_ROOMS = [...customRooms];
+  const def = preset === "custom" ? buildCustomDef(CUSTOM_ROOMS) : LAYOUT_DEFS[preset] ?? LAYOUT_DEFS["243"];
+  activeLayout = preset === "custom" ? "custom" : def === LAYOUT_DEFS["243"] ? "243" : preset;
   LAYOUT = def.cells;
   cellByKey = new Map(LAYOUT.map((cell) => [cell.key, cell]));
   GOLD_LINES = def.goldLines;

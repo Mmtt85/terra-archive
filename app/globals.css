@@ -3058,6 +3058,48 @@ footer p {
     "mfg4 power0 power1 dorm2 training"
     ". . . dorm3 .";
 }
+/* 기지 배치 그외(커스텀) — 왼쪽 9칸을 고정 슬롯(slot0~8)으로, 종류는 카드에서 전환 (2026-07-24) */
+.ship.ship-custom {
+  grid-template-areas:
+    "raisebar raisebar . control meeting"
+    "slot0 slot1 slot2 dorm0 workshop"
+    "slot3 slot4 slot5 dorm1 hire"
+    "slot6 slot7 slot8 dorm2 training"
+    ". . . dorm3 .";
+}
+.pos-slot-0 { grid-area: slot0; }
+.pos-slot-1 { grid-area: slot1; }
+.pos-slot-2 { grid-area: slot2; }
+.pos-slot-3 { grid-area: slot3; }
+.pos-slot-4 { grid-area: slot4; }
+.pos-slot-5 { grid-area: slot5; }
+.pos-slot-6 { grid-area: slot6; }
+.pos-slot-7 { grid-area: slot7; }
+.pos-slot-8 { grid-area: slot8; }
+/* 칸의 시설 종류 전환 (그외 배치 전용) — 카드 안 미니 토글 */
+.room-type-switch {
+  display: inline-flex;
+  gap: 3px;
+  margin: 5px 0 3px;
+}
+.room-type-switch [role="button"] {
+  font: 700 10px/1 monospace;
+  padding: 3px 7px;
+  border: 1px solid #3a4144;
+  border-radius: 4px;
+  color: #aeb8bc;
+  cursor: pointer;
+  user-select: none;
+}
+.room-type-switch [role="button"]:hover {
+  border-color: #5a6468;
+  color: #e8ecec;
+}
+.room-type-switch .on {
+  background: color-mix(in srgb, var(--room-accent, var(--lime)) 35%, transparent);
+  border-color: transparent;
+  color: #fff;
+}
 /* 육성 추천 임시 적용 표시 — 제어센터 왼쪽 빈 3칸(row1)에 넣어 레이아웃을 밀지 않는다
    (사용자 요청 2026-07-21). 임시 적용 중일 때만 렌더. */
 .ship-raisebar {
@@ -3474,6 +3516,9 @@ footer p {
   }
   .ship.ship-252 {
     grid-template-areas: "raisebar raisebar raisebar" "control control meeting" "trading0 trading1 workshop" "mfg0 mfg1 hire" "mfg2 mfg3 training" "mfg4 power0 power1" "dorm0 dorm1 dorm2" "dorm3 . .";
+  }
+  .ship.ship-custom {
+    grid-template-areas: "raisebar raisebar raisebar" "control control meeting" "slot0 slot1 workshop" "slot2 slot3 hire" "slot4 slot5 training" "slot6 slot7 slot8" "dorm0 dorm1 dorm2" "dorm3 . .";
   }
   .planner-summary {
     grid-template-columns: repeat(2, minmax(0, 1fr));

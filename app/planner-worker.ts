@@ -4,7 +4,7 @@
 // 옮기는 것만이 근본 해결 (2026-07-22 /infra INP Poor 10% 리포트).
 // 엔진은 React 무의존 순수 계산이라 그대로 임포트한다 (verify-plan.mjs와 같은 성질).
 // 호출부는 planner-offload.ts — 오퍼 객체 대신 id·정예화만 주고받는다 (직렬화 최소화).
-import { ops, withElite, optimize, setLayoutPreset, setLevels, type Elite, type ProdPriority, type LayoutPreset, type Levels } from "./planner-engine";
+import { ops, withElite, optimize, setLayoutPreset, setLevels, type Elite, type ProdPriority, type LayoutPreset, type Levels, type CustomRoom } from "./planner-engine";
 import { recommendRaises } from "./planner-invest";
 
 export type PlannerJobMsg = {
@@ -16,6 +16,7 @@ export type PlannerJobMsg = {
   priority: ProdPriority;
   layout?: LayoutPreset; // 기지 배치 프리셋 — 워커는 엔진 모듈 인스턴스가 따로라 매 잡마다 동기화 (2026-07-24)
   levels?: Levels | null; // 시설 레벨 (미지정 = 만렙) — 프리셋과 같은 이유로 매 잡마다 동기화
+  customRooms?: CustomRoom[] | null; // 그외(커스텀) 배치의 9칸 구성 — layout === "custom"일 때 필수
 };
 
 // DOM lib의 Window 타입과 겹치지 않게 postMessage(1인자)만 뽑아 쓴다
@@ -26,7 +27,7 @@ self.addEventListener("message", (event) => {
     const msg = (event as MessageEvent<PlannerJobMsg>).data;
     try {
       // 기지 배치 프리셋·시설 레벨 동기화 — 메인 스레드의 set*은 이 워커 인스턴스에 안 미친다
-      setLayoutPreset(msg.layout ?? "243");
+      setLayoutPreset(msg.layout ?? "243", msg.customRooms ?? null);
       setLevels(msg.levels ?? null);
       // 메인 스레드의 visibleOps와 동일 규칙 — 미래시 OFF면 미실장 제외. 로케일 오버레이는
       // 표시 문자열만 바꾸므로(구조 필드 KR 원본 유지) 엔진 결과(id 기반)에 영향 없다.
