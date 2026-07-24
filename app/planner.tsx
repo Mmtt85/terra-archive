@@ -1235,20 +1235,44 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
         <button type="button" className="modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
         <header className="room-modal-head">
           <span className="modal-kicker">FACILITY FILE · {cell.room}</span>
-          {/* 레벨은 시설 이름 오른쪽에 (사용자 요청 2026-07-24) */}
-          <h2>{t(cell.label)}{maxLevelOf(cell.room) > 1 && <em className={`room-lv${levelOf(cell.key) < maxLevelOf(cell.room) ? "" : " max"}`}>Lv{levelOf(cell.key)}</em>}</h2>
-          {/* 시설 레벨 선택 (전력·레벨 시스템 2026-07-24) — 슬롯·전력·레벨 연동 스킬에 즉시 반영 */}
-          {onSetLevel && maxLevelOf(cell.room) > 1 && (
-            <div className="room-level-sel" role="radiogroup" aria-label={t("시설 레벨")}
-              title={t("레벨을 낮추면 전력 소비가 줄고, 제조소·무역소는 근무 슬롯도 줄어듭니다")}>
-              <span className="room-level-lbl">{t("레벨")}</span>
-              {Array.from({ length: maxLevelOf(cell.room) }, (_, i) => i + 1).map((lv) => (
-                <button key={lv} type="button" className={levelOf(cell.key) === lv ? "on" : ""}
-                  onClick={() => onSetLevel(cell.key, lv)}>{lv}</button>
-              ))}
-              <span className="room-level-power">{(infra.rooms[cell.room]?.phases?.[levelOf(cell.key) - 1]?.electricity ?? 0) > 0 ? "⚡+" : "⚡"}{infra.rooms[cell.room]?.phases?.[levelOf(cell.key) - 1]?.electricity ?? 0}</span>
-            </div>
-          )}
+          {/* 레벨 조절 버튼은 시설 이름 오른쪽에 (사용자 요청 2026-07-24) */}
+          <div className="room-head-row">
+            <h2>{t(cell.label)}</h2>
+            {/* 시설 레벨 선택 (전력·레벨 시스템 2026-07-24) — 슬롯·전력·레벨 연동 스킬에 즉시 반영 */}
+            {onSetLevel && maxLevelOf(cell.room) > 1 && (
+              <div className="room-level-sel" role="radiogroup" aria-label={t("시설 레벨")}
+                title={t("레벨을 낮추면 전력 소비가 줄고, 제조소·무역소는 근무 슬롯도 줄어듭니다")}>
+                <span className="room-level-lbl">{t("레벨")}</span>
+                {Array.from({ length: maxLevelOf(cell.room) }, (_, i) => i + 1).map((lv) => (
+                  <button key={lv} type="button" className={levelOf(cell.key) === lv ? "on" : ""}
+                    onClick={() => onSetLevel(cell.key, lv)}>{lv}</button>
+                ))}
+                <span className="room-level-power">{(infra.rooms[cell.room]?.phases?.[levelOf(cell.key) - 1]?.electricity ?? 0) > 0 ? "⚡+" : "⚡"}{infra.rooms[cell.room]?.phases?.[levelOf(cell.key) - 1]?.electricity ?? 0}</span>
+              </div>
+            )}
+            {/* 현재 레벨의 효과 한 줄 — 헤더 높이를 늘리지 않게 (사용자 요청 2026-07-24) */}
+            {(() => {
+              const i = levelOf(cell.key) - 1;
+              const p = infra.rooms[cell.room]?.phases?.[i];
+              if (!p) return null;
+              const fx = (() => {
+                switch (cell.room) {
+                  case "TRADING": return t("오더 대기 상한 {n} · 오더 등급 {r}", { n: p.orderLimit ?? 0, r: p.orderRarity ?? 0 });
+                  case "MANUFACTURE": return t("제품 보관함 {n}칸", { n: p.capacity ?? 0 });
+                  case "POWER": return t("무인기 회복 가속");
+                  case "DORMITORY": return t("기본 회복 계수 {n} · 인테리어 분위기 상한 {m}", { n: p.recover ?? 0, m: p.ambience ?? 0 });
+                  case "MEETING": return t("친구 상한 +{n} · 단서 수집", { n: p.friendSlots ?? 0 });
+                  // 공개모집 슬롯 해금은 building_data 밖 게임 내 기준 (INFRA-RULES §1) — Lv1/2/3 = 2/3/4 슬롯
+                  case "HIRE": return t("연락 속도 가속 · 공개모집 슬롯 {n}개 (제어센터 만렙 기준)", { n: [2, 3, 4][i] ?? 4 });
+                  case "TRAINING": return t("특화 훈련 상한: 특화 {n}", { n: p.specLimit ?? 0 });
+                  case "WORKSHOP": return t("가공 레시피 누적 {n}종", { n: p.recipes ?? 0 });
+                  case "CONTROL": return t("기지 확장 해금 — 제어센터 레벨이 다른 시설의 최대 레벨·개수를 결정합니다");
+                  default: return "";
+                }
+              })();
+              return <span className="room-level-fxline">{t("{n}인", { n: p.slots ?? 1 })} · {fx}</span>;
+            })()}
+          </div>
           {cell.room !== "DORMITORY" && (
             <div className="shift-tabs in-modal">
               {Array.from({ length: SHIFT_COUNT }, (_, i) => (
@@ -1258,40 +1282,6 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
           )}
         </header>
         <div className="modal-scroll">
-          {/* 레벨별 효과 표 (사용자 요청 2026-07-24) — kr_building_data 기능 필드(infra.json rooms.phases.fx) */}
-          {(infra.rooms[cell.room]?.phases?.length ?? 0) > 1 && (
-            <section className="detail-section">
-              <span className="detail-no">LEVEL</span>
-              <h3>{t("레벨별 효과")}</h3>
-              <ul className="room-level-fx">
-                {(infra.rooms[cell.room]?.phases ?? []).map((p, i) => {
-                  const fx = (() => {
-                    switch (cell.room) {
-                      case "TRADING": return t("오더 대기 상한 {n} · 오더 등급 {r}", { n: p.orderLimit ?? 0, r: p.orderRarity ?? 0 });
-                      case "MANUFACTURE": return t("제품 보관함 {n}칸", { n: p.capacity ?? 0 });
-                      case "POWER": return t("무인기 회복 가속");
-                      case "DORMITORY": return t("기본 회복 계수 {n} · 인테리어 분위기 상한 {m}", { n: p.recover ?? 0, m: p.ambience ?? 0 });
-                      case "MEETING": return t("친구 상한 +{n} · 단서 수집", { n: p.friendSlots ?? 0 });
-                      // 공개모집 슬롯 해금은 building_data 밖 게임 내 기준 (INFRA-RULES §1) — Lv1/2/3 = 2/3/4 슬롯
-                      case "HIRE": return t("연락 속도 가속 · 공개모집 슬롯 {n}개 (제어센터 만렙 기준)", { n: [2, 3, 4][i] ?? 4 });
-                      case "TRAINING": return t("특화 훈련 상한: 특화 {n}", { n: p.specLimit ?? 0 });
-                      case "WORKSHOP": return t("가공 레시피 누적 {n}종", { n: p.recipes ?? 0 });
-                      case "CONTROL": return t("기지 확장 해금 — 제어센터 레벨이 다른 시설의 최대 레벨·개수를 결정합니다");
-                      default: return "";
-                    }
-                  })();
-                  return (
-                    <li key={i} className={levelOf(cell.key) === i + 1 ? "on" : ""}>
-                      <b>Lv{i + 1}</b>
-                      <span className="fx-power">⚡{(p.electricity ?? 0) > 0 ? `+${p.electricity}` : p.electricity ?? 0}</span>
-                      <span className="fx-slots">{t("{n}인", { n: p.slots ?? 1 })}</span>
-                      <span className="fx-desc">{fx}</span>
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
-          )}
           {scored && (
             <section className="detail-section room-summary">
               <span className="detail-no">RESULT / 00</span>

@@ -2839,54 +2839,25 @@ footer p {
   background: color-mix(in srgb, var(--ink) 7%, transparent);
   color: var(--muted);
 }
-/* 방 상세 모달: 이름 오른쪽 레벨 배지 — 헤더가 어두워 흰 기반 대비로 (모달 악센트 사용) */
-.room-modal h2 .room-lv {
-  background: color-mix(in srgb, var(--accent, var(--lime)) 45%, transparent);
-  color: #fff;
+/* 방 상세 모달 헤더: 이름 오른쪽에 레벨 조절 버튼 (사용자 요청 2026-07-24) */
+.room-head-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.room-head-row h2 {
+  margin: 0;
+}
+.room-head-row .room-level-sel {
+  margin: 0;
+}
+/* 현재 레벨 효과 한 줄 — 레벨 셀렉터 오른쪽, 헤더 높이 불변 (2026-07-24) */
+.room-level-fxline {
   font-size: 12px;
-  padding: 3px 7px;
-  vertical-align: 4px;
-}
-.room-modal h2 .room-lv.max {
-  background: rgba(255, 255, 255, 0.16);
-  color: #d5dcdf;
-}
-/* 레벨별 효과 표 (방 상세 모달, 2026-07-24) */
-.room-level-fx {
-  list-style: none;
-  margin: 6px 0 0;
-  padding: 0;
-  display: grid;
-  gap: 4px;
-}
-.room-level-fx li {
-  display: grid;
-  grid-template-columns: 36px 56px 42px minmax(0, 1fr);
-  gap: 8px;
-  align-items: baseline;
-  padding: 6px 9px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--bg-panel);
-}
-.room-level-fx li.on {
-  border-color: color-mix(in srgb, var(--accent, var(--lime)) 55%, var(--line));
-  background: color-mix(in srgb, var(--accent, var(--lime)) 12%, var(--white));
-}
-.room-level-fx b {
-  font: 800 11px/1.4 monospace;
-}
-.room-level-fx .fx-power {
-  font: 700 11px/1.4 monospace;
-  color: var(--muted);
-}
-.room-level-fx .fx-slots {
-  font-size: 11px;
-  color: var(--ink2);
-}
-.room-level-fx .fx-desc {
-  font-size: 12px;
-  color: var(--ink2);
+  color: #dfe5e7;
+  opacity: 0.95;
+  min-width: 0;
 }
 .room-level-sel {
   display: flex;
