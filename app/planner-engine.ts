@@ -1077,7 +1077,7 @@ function seedSynergySet(def: SynergySetDef, roster: InfraOp[], used: Set<string>
   }
 }
 
-export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSets: FactionSets = {}, priority: ProdPriority = "gold"): Plan {
+export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSets: FactionSets = {}, priority: ProdPriority = "gold", extraSeeds: { opId: string; room: string }[] = []): Plan {
   const prodKeys = PRIORITY_KEYS[priority];
   const assignments: Record<string, string[][]> = {};
   const used = new Set<string>();
@@ -1104,6 +1104,17 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
     // 이 후보안(factionSets)에 포함된 것만 연다. 도메인 근거는 INFRA-RULES §4·§5.
     for (const def of SYNERGY_SETS) {
       if ((def.shift ?? 0) === shift && factionSets[def.key]) seedSynergySet(def, roster, used, reserved, seeds);
+    }
+    // perMember 캡 확장 시드 (optimizeConfig 변형 전용, 2026-07-24) — 카운터 진영의 오라
+    // 요원(왕)을 지정 방에 예약해 캡 초과를 만든다. 시드 자체는 자리 하나를 쓰지만, 초과가
+    // 되면 잉여 소비자(슈)의 패키지 예약이 풀려 방 업그레이드가 연쇄된다. 채택은 planScore.
+    if (shift === 0) for (const ex of extraSeeds) {
+      const op = roster.find((o) => o.id === ex.opId);
+      if (!op || used.has(op.id) || reserved.has(op.id)) continue;
+      const cell = LAYOUT.find((c) => c.room === ex.room && (seeds[c.key]?.length ?? 0) < slotsFor(c.key));
+      if (!cell) continue;
+      seeds[cell.key] = [...(seeds[cell.key] ?? []), op];
+      reserved.set(op.id, cell.key);
     }
     if (shift === 0 && packageTokens.length) {
       const parked = new Set<string>();
@@ -1773,6 +1784,36 @@ export async function optimizeConfig(roster: InfraOp[], priority: ProdPriority =
     const plan = buildPlan(tokenChoice, roster, variants[i], priority);
     const score = planScore(plan, byId);
     if (score > bestScore) { best = plan; bestScore = score; bestSets = variants[i]; }
+  }
+  // ── perMember 캡 확장 변형 (사용자 통찰 2026-07-24: "왕을 앉히면 슈가 풀린다") ────────
+  // 채택안의 perMember 카운터(총웨 '쉐이 1명당 +5, 최대 5명')가 **정확히 캡**이면, 카운터
+  // 진영의 미배치 오라 보유자(왕)를 그 오라 방에 시드한 변형을 추가 평가한다. 자리 하나를
+  // 쓰는 대신 캡 초과로 잉여 소비자(슈)의 예약이 풀려 방 업그레이드가 연쇄된다 — 국소 감사
+  // (자리 대 자리 비교)는 이 교차방 사슬을 못 보므로, 미니 토큰 조합과 같은 관례로 후보는
+  // L0이 만들고 채택은 planScore가 판정한다. 이미 캡 초과면 해제 규칙이 알아서 처리하므로 제외.
+  {
+    const aPlaced = new Set<string>();
+    for (const key of [...PRODUCTION_KEYS, ...SUPPORT_KEYS]) for (const id of best.assignments[key]?.[0] ?? []) aPlaced.add(id);
+    const expansions = new Map<string, { opId: string; room: string }>();
+    for (const flow of best.flows) for (const gen of flow.generators) {
+      const pm = gen.perMember;
+      if (!pm) continue;
+      const members = [...aPlaced].map((id) => byId.get(id))
+        .filter((op): op is InfraOp => Boolean(op && factionsOf(op).some((f) => f.includes(pm.match))));
+      if (members.length !== pm.cap) continue;
+      for (const op of roster) {
+        if (aPlaced.has(op.id) || expansions.has(op.id)) continue;
+        if (!factionsOf(op).some((f) => f.includes(pm.match))) continue;
+        const skill = op.skills.find((sk) => sk.kind in AURA_WEIGHT); // 오라 자리값 있는 방으로만
+        if (skill) expansions.set(op.id, { opId: op.id, room: skill.room });
+      }
+    }
+    for (const ex of [...expansions.values()].slice(0, 2)) {
+      await breathe();
+      const plan = buildPlan(tokenChoice, roster, bestSets, priority, [ex]);
+      const score = planScore(plan, byId);
+      if (score > bestScore) { best = plan; bestScore = score; }
+    }
   }
   // 채택안의 전수 감사 수렴 회차를 조별로 재생 — "몇 회 반복으로 최선을 확인했는지"를
   // 보여준다 (사용자 확정 2026-07-19). 페이싱(랜덤 간격)은 UI 콜백 몫.
