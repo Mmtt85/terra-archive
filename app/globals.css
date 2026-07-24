@@ -10469,12 +10469,13 @@ main.site-main > .site-header {
   border: 1px solid var(--rgline);
   background: transparent;
   color: var(--rgmut);
-  font: 700 10px/1 inherit;
-  padding: 3px 6px;
+  /* 버튼 박스는 유지, 폰트만 작게 — 글자가 버튼에 꽉 차 보이던 위화감 해소 (사용자 확정 2026-07-24) */
+  font: 700 9px/1 inherit;
+  padding: 4px 8px;
   border-radius: 999px;
   cursor: pointer;
   white-space: nowrap;
-  opacity: 0.85; /* 이름보다 낮은 위계 — 호버 시 원복 */
+  opacity: 0.8; /* 이름보다 낮은 위계 — 호버 시 원복 */
 }
 .rg-inv-btn:hover {
   opacity: 1;
