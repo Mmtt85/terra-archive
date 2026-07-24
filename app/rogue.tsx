@@ -833,10 +833,10 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
 
   // ─── 보유 리스트 (인벤토리) — 게임에서 얻은 소장품·테마 자원을 담아두는 개인 목록 ───
   // (피드백 반영 2026-07-24) 테마별 localStorage(ta:rogue-inv:<topic>)에 영속.
-  // 자원 탭은 테마 고유 '수집 자원'만: 살카즈=사고, 쉐이=주화, 흑류수해=부품
+  // 자원 탭은 테마 고유 '수집 자원'만: 사미=암호판, 살카즈=사고, 쉐이=주화, 흑류수해=부품
   // (거부반응·시대·분노 등 판 규칙류는 수집물이 아니라 제외). EN/JA 데이터는 mechanics
   // 라벨이 현지어라 라벨 매칭이 깨진다 — 아이템 id 접두사로 자원 시스템을 찾는다.
-  const RES_MECH_PREFIX: Record<string, string> = { rogue_4: "rogue_4_fragment", rogue_5: "rogue_5_copper" };
+  const RES_MECH_PREFIX: Record<string, string> = { rogue_3: "rogue_3_totem", rogue_4: "rogue_4_fragment", rogue_5: "rogue_5_copper" };
   const resMech = useMemo(
     () => (data.mechanics ?? []).find((m) => m.items[0]?.id.startsWith(RES_MECH_PREFIX[topic] ?? " ")),
     [active, topic]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -1622,7 +1622,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
                 {g.kind && <h4 className="rg-scrap-type">{t(g.kind)}<em>{g.items.length}</em></h4>}
                 <div className="rg-relic-grid">
                   {/* 시스템 갤러리(암호판·사고·주화 등)도 소장품처럼 클릭 → 상세 모달
-                      (사용자 요청 2026-07-24). 보유 토글은 테마 수집 자원(사고·주화)에만 */}
+                      (사용자 요청 2026-07-24). 보유 토글은 테마 수집 자원(암호판·사고·주화)에만 */}
                   {g.items.map((c) => (
                     <article key={c.id} className={`rg-relic clickable${lensHits?.has(c.id) ? " rg-lens-hit" : ""}`}
                       role="button" tabIndex={0}
