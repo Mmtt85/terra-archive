@@ -1316,6 +1316,109 @@
      "elite": 2
     }
    ]
+  },
+  {
+   "file": "ipad_4to3_first_list.png",
+   "cells": [
+    {
+     "row": 0,
+     "col": 0,
+     "op": "char_249_mlyss",
+     "name": "뮤엘시스",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 1,
+     "op": "char_4026_vulpis",
+     "name": "불피스폴리아",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 2,
+     "op": "char_4087_ines",
+     "name": "이네스",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 3,
+     "op": "char_1014_nearl2",
+     "name": "니어 더 래디언트 나이트",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 4,
+     "op": "char_1043_leizi2",
+     "name": "레이즈 더 썬더브링어",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 5,
+     "op": "char_4064_mlynar",
+     "name": "무에나",
+     "elite": 2
+    },
+    {
+     "row": 0,
+     "col": 6,
+     "op": "char_350_surtr",
+     "name": "수르트",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 0,
+     "op": "char_222_bpipe",
+     "name": "백파이프",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 1,
+     "op": "char_1045_svash2",
+     "name": "실버애쉬 더 레인프로스트",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 2,
+     "op": "char_1026_gvial2",
+     "name": "가비알 디 인빈서블",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 3,
+     "op": "char_4116_blkkgt",
+     "name": "데겐블레허",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 4,
+     "op": "char_264_f12yin",
+     "name": "마운틴",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 5,
+     "op": "char_017_huang",
+     "name": "블레이즈",
+     "elite": 2
+    },
+    {
+     "row": 1,
+     "col": 6,
+     "op": "char_263_skadi",
+     "name": "스카디",
+     "elite": 2
+    }
+   ]
   }
  ]
 }

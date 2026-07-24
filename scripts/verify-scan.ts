@@ -3,7 +3,7 @@
 // + iPad 4:3 스샷)과 대조한다.
 //
 // 실행:  npx --yes tsx scripts/verify-scan.ts
-// 요구:  python3 + PIL (PNG → RGBA 변환용) · fixtures/scanner/ (git 미추적, 로컬 전용)
+// 요구:  python3 + PIL (PNG → RGBA 변환용) · fixtures/scanner/ (git 추적됨 — 스샷+라벨 정본)
 // 기준:  식별 100% · 정예화 100% (2026-07-23 확립). 하나라도 어긋나면 exit 1.
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
