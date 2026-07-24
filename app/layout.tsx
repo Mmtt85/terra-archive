@@ -66,12 +66,12 @@ export default function RootLayout({
           }}
         />
         {/* 모든 모달 ESC 닫기 (사용자 요청 2026-07-24) — 공통 .modal-backdrop 패턴 전역 처리.
-            최상단(마지막) 오버레이만 닫는다: .modal-close 버튼이 있으면 클릭, 없으면 백드롭
-            자기-타깃 mousedown 디스패치(React 백드롭 클릭 닫기 핸들러가 받는다).
+            겹친 모달은 z-index 최상단(동률이면 DOM 마지막)만 닫는다: .modal-close 버튼이 있으면
+            클릭, 없으면 백드롭 자기-타깃 mousedown 디스패치(React 백드롭 클릭 닫기 핸들러가 받는다).
             rogue(rg-*) 모달은 자체 Esc 핸들러가 이미 있어 제외. 한글 IME 조합 중엔 무시. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `document.addEventListener('keydown',function(e){if(e.key!=='Escape'||e.isComposing)return;var els=document.querySelectorAll('.modal-backdrop');var top=els[els.length-1];if(!top)return;var btn=top.querySelector('.modal-close');if(btn){btn.click();return;}top.dispatchEvent(new MouseEvent('mousedown',{bubbles:true}));});`,
+            __html: `document.addEventListener('keydown',function(e){if(e.key!=='Escape'||e.isComposing)return;var els=document.querySelectorAll('.modal-backdrop');if(!els.length)return;var top=null,tz=-1;for(var i=0;i<els.length;i++){var z=parseInt(getComputedStyle(els[i]).zIndex,10)||0;if(z>=tz){tz=z;top=els[i];}}if(!top)return;var btn=top.querySelector('.modal-close');if(btn){btn.click();return;}top.dispatchEvent(new MouseEvent('mousedown',{bubbles:true}));});`,
           }}
         />
         {children}

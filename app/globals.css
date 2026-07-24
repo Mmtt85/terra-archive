@@ -3076,11 +3076,21 @@ footer p {
 .pos-slot-6 { grid-area: slot6; }
 .pos-slot-7 { grid-area: slot7; }
 .pos-slot-8 { grid-area: slot8; }
-/* 칸의 시설 종류 전환 (그외 배치 전용) — 카드 안 미니 토글 */
+/* 칸의 시설 종류 전환 (사용자 지정 배치 전용) — 카드 안 미니 토글 */
 .room-type-switch {
   display: inline-flex;
   gap: 3px;
-  margin: 5px 0 3px;
+}
+/* 종류(제조/무역/발전) 토글은 카드 우하단 코너에 (사용자 요청 2026-07-24) */
+.room-type-switch.type-corner {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  z-index: 2;
+}
+/* 토글이 있는 카드만 하단 여백 확보 — 점수 줄과 겹침 방지 */
+.ship-room:has(.type-corner) {
+  padding-bottom: 34px;
 }
 .room-type-switch [role="button"] {
   font: 700 10px/1 monospace;
@@ -3100,9 +3110,10 @@ footer p {
   border-color: transparent;
   color: #fff;
 }
-/* 제조소 품목(순금/작전기록) 토글 — 종류 토글 옆에 나란히 */
-.room-type-switch.product-switch {
-  margin-left: 8px;
+/* 제조소 품목(순금/작전기록) 2버튼 — 카드 제목 자리, 종류 토글과 같은 모양 */
+.room-type-switch.product-inline {
+  margin: 0 0 0 8px;
+  vertical-align: 2px;
 }
 /* 그외 진입 직후 토글 위치 안내 — 두 번 반짝 (2026-07-24) */
 @keyframes switch-flash {
