@@ -1,5 +1,6 @@
 // 오퍼 스캐너 회귀 하네스 — 픽스처 스크린샷에 실제 파이프라인(vision.ts + artmatch.ts)을
-// 돌려 지상값(fixtures/scanner/expected/labels.json, 138셀 전수 시각 검증)과 대조한다.
+// 돌려 지상값(fixtures/scanner/expected/labels.json, 192셀 전수 시각 검증 — 16:9 에뮬레이터
+// + iPad 4:3 스샷)과 대조한다.
 //
 // 실행:  npx --yes tsx scripts/verify-scan.ts
 // 요구:  python3 + PIL (PNG → RGBA 변환용) · fixtures/scanner/ (git 미추적, 로컬 전용)

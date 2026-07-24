@@ -3,7 +3,7 @@
 // 오퍼 식별·정예화는 app/scan/artmatch.ts(카드 아트 ↔ 초상 매칭)가 담당 —
 // "카드 아트 = 장착 스킨의 초상 에셋"이라 이미지 매칭이 가능하다(2026-07-23 확정,
 // 1차 세션의 '공개 미러에 없음' 판정은 스킨 초상을 빼고 본 오판이었음).
-// 회귀 검증: npx tsx scripts/verify-scan.ts (픽스처 138셀 식별·정예화 100%).
+// 회귀 검증: npx tsx scripts/verify-scan.ts (픽스처 192셀 식별·정예화 100% — iPad 4:3 포함).
 import TEMPLATES from "./class-templates.json";
 
 export interface Frame {
@@ -27,7 +27,7 @@ export interface Rect { x: number; y: number; w: number; h: number; }
 export interface CellDetection {
   row: number;
   col: number;
-  cx: number;      // 카드 좌측 경계(열 골짜기)
+  cx: number;      // 카드 좌측 경계 근사(별 앵커 기준)
   sx: number;      // 첫 별 x(앵커)
   ry: number;      // 별 리본 중심 y
   rarity: number;  // 1~6
@@ -106,11 +106,16 @@ function bestPeriod(prof: Float64Array, lo: number, hi: number): { pitch: number
   return { pitch: best, score: bestS };
 }
 
-function valleyPhase(prof: Float64Array, pitch: number): number {
+// 열 위상 = "가장 밝은" 위상 — 카드 사이 배경 틈(밝은 회색, 콘텐츠 없음)에 앵커한다.
+// 이전엔 가장 어두운 위상(카드 내부)을 썼는데, 어두운 지점은 카드 아트 내용에 좌우돼
+// 화면비·로스터에 따라 첫 별 뒤로 밀리거나(iPad 4:3 — 2번째 별을 앵커로 오인, 인식 붕괴)
+// 별보다 한참 앞(이웃 카드 아트 안)으로 갈 수 있다(2026-07-24). 틈에서 시작하면
+// 별 탐색이 처음 만나는 금색이 항상 진짜 첫 별이다.
+function gapPhase(prof: Float64Array, pitch: number): number {
   const acc = new Float64Array(pitch), cnt = new Float64Array(pitch);
   for (let i = 0; i < prof.length; i++) { acc[i % pitch] += prof[i]; cnt[i % pitch] += 1; }
-  let best = 0, bestV = Infinity;
-  for (let k = 0; k < pitch; k++) { const v = acc[k] / Math.max(cnt[k], 1); if (v < bestV) { bestV = v; best = k; } }
+  let best = 0, bestV = -Infinity;
+  for (let k = 0; k < pitch; k++) { const v = acc[k] / Math.max(cnt[k], 1); if (v > bestV) { bestV = v; best = k; } }
   return best;
 }
 
@@ -123,7 +128,7 @@ function detectColumns(L: Float32Array, W: number, H: number, xMax: number, pitc
     colp[x] = s / (y1 - y0);
   }
   const { pitch, score } = bestPeriod(colp, Math.round(W * pitchLoFrac), Math.round(W * pitchHiFrac));
-  const gx = valleyPhase(colp, pitch);
+  const gx = gapPhase(colp, pitch);
   const cols: number[] = [];
   for (let x = gx; x < xMax - Math.round(pitch * 0.3); x += pitch) cols.push(x);
   return { cols, px: pitch, score };
@@ -171,6 +176,8 @@ function detectRows(gold: Uint8Array, W: number, H: number, cols: number[], px: 
 }
 
 // ── 별 앵커 + 성급 ───────────────────────────────────────────────────────────
+// cx(카드 사이 배경 틈)에서 오른쪽으로 처음 만나는 금색 열 = 이 카드의 첫 별.
+// 틈은 콘텐츠 없는 배경이라(gapPhase 참고) 이웃 카드 아트의 금색을 밟을 일이 없다.
 function leftmostStar(gold: Uint8Array, W: number, cx: number, ry: number, px: number): number | null {
   const xe = cx + Math.min(px, 195);
   for (let x = cx; x < xe; x++) {
@@ -259,7 +266,7 @@ export function scanFrame(f: Frame, opts?: ScanOpts): FrameScan {
       }
       const rarity = countStars(gold, W, sx, cellRy);
       const { cls, conf } = classifyGlyph(L, W, H, sx, cellRy);
-      // 모든 박스를 sx(별) 기준으로 앵커링. cx(밝기 골짜기)는 화면마다 카드 왼쪽에서
+      // 모든 박스를 sx(별) 기준으로 앵커링. cx(밝기 틈 위상)는 화면마다 카드 왼쪽에서
       // ~50px씩 어긋나 박스가 우측으로 삐져나감 → 별은 항상 카드 좌상단에 있어 안정적.
       const cardLeft = Math.round(sx - px * 0.31);
       const cardTop = cellRy - Math.round(px * 0.16);
