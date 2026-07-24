@@ -253,10 +253,12 @@ const LAYOUT_DEFS: Record<LayoutPreset, {
   },
 };
 
-// 프리셋별 권장 기본 레벨 — 252는 전력 부족(만렙 -330)이라 저우선 시설을 Lv1로 (소비 500/540).
+// 프리셋별 권장 기본 레벨 — 252는 전력 부족(만렙 -330)이라 조정 필요. 기본값은 사용자 확정
+// 구성(2026-07-24 스크린샷): 순금 2방·응접실·훈련실(특화 3 유지)은 만렙, 작전기록 3방 Lv2,
+// 사무실 Lv2, 숙소는 첫 방만 Lv2·나머지 Lv1 → 소비 540 = 공급 540 (수지 정확히 ±0).
 // 243·153은 만렙 수지가 정확히 ±0이라 전부 만렙이 기본
 const LEVEL_DEFAULTS: Partial<Record<LayoutPreset, Levels>> = {
-  "252": { "DORM-0": 1, "DORM-1": 1, "DORM-2": 1, "DORM-3": 1, "TRAINING": 1, "MEETING": 1, "HIRE": 1 },
+  "252": { "MANUFACTURE-2": 2, "MANUFACTURE-3": 2, "MANUFACTURE-4": 2, "DORM-0": 2, "DORM-1": 1, "DORM-2": 1, "DORM-3": 1, "HIRE": 2 },
 };
 // 활성 레이아웃 기준 권장 레벨 전체 맵 (만렙 + 프리셋별 오버라이드)
 export function suggestedLevels(preset: LayoutPreset): Levels {

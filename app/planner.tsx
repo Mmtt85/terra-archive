@@ -643,13 +643,18 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       danger: true,
     });
     if (!ok) return;
+    // 시설 레벨도 프리셋 권장 기본값으로 리셋 (사용자 확정 2026-07-24) — 252 비우기 = 첫 진입과
+    // 동일한 시작점(작전기록 Lv2·사무실 Lv2·숙소1 Lv2·숙소 Lv1, 540/540). 243·153은 만렙.
+    const lvls = suggestedLevels(layout);
+    setEngineLevels(lvls);
+    setLevelsState(lvls);
     const assignments: Record<string, string[][]> = Object.fromEntries(
       Object.entries(plan.assignments).map(([key, shifts]) => [key, shifts.map(() => [])])
     );
     const next = { ...plan, assignments, tokenPoints: {}, factionCounts: plan.factionCounts.map(() => ({})) };
     setPlan(next);
     setActiveShift(0);
-    persist(ownedIds, next);
+    persist(ownedIds, next, eliteById, priority, investRecs, investHidden, layout, lvls);
     setDirty(true);
     showToast(t("편성을 전부 비웠습니다 — 방을 눌러 수동 배치하거나 자동편성하세요"));
   };
@@ -881,7 +886,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           <label key={preset} className={layout === preset ? "on" : ""}
             title={preset === "243" ? t("무역소 2 · 제조소 4(순금 2+작전기록 2) · 발전소 3")
               : preset === "153" ? t("무역소 1 · 제조소 5(순금 1+작전기록 4) · 발전소 3")
-              : t("무역소 2 · 제조소 5(순금 2+작전기록 3) · 발전소 2 — 전력이 모자라 숙소·훈련실·응접실·사무실 Lv1 권장")}>
+              : t("무역소 2 · 제조소 5(순금 2+작전기록 3) · 발전소 2 — 전력 부족: 작전기록 제조소 Lv2·사무실 Lv2·숙소 Lv1(첫 숙소만 Lv2) 권장, 정확히 540/540")}>
             <input type="radio" name="base-layout" checked={layout === preset} onChange={() => setLayoutChoice(preset)} />
             {preset}
           </label>
@@ -1703,7 +1708,7 @@ const HELP_SECTIONS: { title: string; items: string[] }[] = [
   ]},
   { title: "방 우선순위", items: [
     "기지 배치 설정: 243(무역 2·제조 4 — 순금 2+작전기록 2, 기본) · 153(무역 1·제조 5 — 순금 1+작전기록 4) · 252(무역 2·제조 5 — 순금 2+작전기록 3, 발전 2). 153은 무역소가 하나라 제조소 대부분을 작전기록에 쓰되, 유일한 순금방이 병목이므로 그 방을 맨 먼저(최정예로) 채웁니다. 각 배치의 편성·시설 레벨은 따로 저장됩니다 — 배치마다 한 번씩 자동편성해 두면 전환할 때 그대로 복원됩니다.",
-    "전력·시설 레벨: 발전소가 전력을 공급하고(레벨 3 기준 1기 270, 3기 810) 나머지 시설이 소비합니다. 방을 눌러 시설 레벨을 바꾸면 전력 소비·근무 슬롯(제조소·무역소 Lv1/2/3 = 1/2/3인)·레벨 연동 스킬(숙소 레벨 합·응접실·훈련실 레벨 등)이 함께 재계산됩니다. 243·153은 전부 만렙일 때 소비가 정확히 810이라 여유가 0이고, 252는 발전소가 2기(540)뿐이라 숙소·훈련실·응접실·사무실을 Lv1로 낮춰야 성립합니다(기본값으로 적용됨). 상단 ⚡ 전력이 음수면 게임에서 지을 수 없는 구성입니다.",
+    "전력·시설 레벨: 발전소가 전력을 공급하고(레벨 3 기준 1기 270, 3기 810) 나머지 시설이 소비합니다. 방을 눌러 시설 레벨을 바꾸면 전력 소비·근무 슬롯(제조소·무역소 Lv1/2/3 = 1/2/3인)·레벨 연동 스킬(숙소 레벨 합·응접실·훈련실 레벨 등)이 함께 재계산됩니다. 243·153은 전부 만렙일 때 소비가 정확히 810이라 여유가 0이고, 252는 발전소가 2기(540)뿐이라 시설 레벨을 낮춰야 성립합니다 — 기본값은 순금 제조소·응접실·훈련실 만렙 유지, 작전기록 제조소 Lv2, 사무실 Lv2, 숙소 Lv1(첫 숙소만 Lv2)로 소비가 정확히 540입니다. 상단 ⚡ 전력이 음수면 게임에서 지을 수 없는 구성입니다.",
     "우선 생산 설정: 순금 우선(기본) · 작전기록 우선 · 밸런스(교차). 먼저 채우는 방이 최고 요원을 가져갑니다. 설정만 바꾸고, 실제 편성은 전체 자동편성 버튼을 눌러 적용합니다.",
     "채우는 순서: 제조소-순금 > 제조소-작전기록 > 무역소 > 발전소 > 사무실 > 응접실 — 먼저 채우는 방이 좋은 요원을 가져갑니다. 응접실은 최하위라, 응접실 스킬이 있는 오퍼(쉐라 등)도 상위 방 세트가 우선입니다.",
     "응접실 단서 수집 속도는 RIIC 스킬과 별개로 레어도·정예화 기본치가 더해집니다: 6성 +10 / 5성 +9 / 4성 +7 / 3성↓ +5, 정예화 1정 +8 · 2정 +16 (미지정은 그 레어도 최대 승급 가정). 그래서 스킬 없는 2정 6성도 +26%. 카드에 '레어도 기본'으로 따로 표기됩니다.",
