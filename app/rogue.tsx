@@ -862,6 +862,13 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   // 보유 담기가 가능한 항목인지 — 소장품(무대 도구 포함) 또는 테마 자원. 그 외(분대·음반 등)는 대상 아님
   const invSection = (id: string): "relic" | "res" | null =>
     relicById.has(id) ? "relic" : resIds.has(id) ? "res" : null;
+  // 여러 개 일괄 담기/빼기 — 모아보기 모달의 전체 보유 토글용 (사용자 요청 2026-07-24)
+  const toggleInvAll = (ids: string[], own: boolean) => setInvState((prev) => {
+    const next = new Set(prev);
+    for (const id of ids) { if (own) next.add(id); else next.delete(id); }
+    saveInv(next);
+    return next;
+  });
   const [invOpen, setInvOpen] = useState(false);
   const [invTab, setInvTab] = useState<"relic" | "res">("relic");
   const ownedRelics = useMemo(() => relicsAll.filter((r) => inv.has(r.id)), [relicsAll, inv]);
@@ -1819,11 +1826,24 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
         </div>
       )}
       {/* 소장품 다중 인식 모아보기 — 인식된 유물들을 상세 카드로 한 화면에 (사용자 요청 2026-07-23) */}
-      {lensMulti && (
+      {lensMulti && (() => {
+        // 전체 보유 토글 — 담기 가능한 항목만 대상 (사용자 요청 2026-07-24)
+        const multiIds = lensMulti.filter((r) => invSection(r.id)).map((r) => r.id);
+        const multiAllOwned = multiIds.length > 0 && multiIds.every((id) => inv.has(id));
+        return (
         <div className="rg-modal-back stack" onClick={() => setLensMulti(null)} role="presentation">
           <div className="rg-modal rg-rmodal rg-rmulti" role="dialog" aria-modal onClick={(ev) => ev.stopPropagation()}>
             <header className="rg-modal-head">
-              <div><h3>📷 {t("인식된 항목 {n}개", { n: lensMulti.length })}</h3></div>
+              <div>
+                <h3>📷 {t("인식된 항목 {n}개", { n: lensMulti.length })}</h3>
+                {multiIds.length > 0 && (
+                  <button type="button" className={`rg-inv-btn rg-inv-all${multiAllOwned ? " on" : ""}`}
+                    title={multiAllOwned ? t("인식된 항목을 모두 보유 리스트에서 뺍니다") : t("인식된 항목을 모두 보유 리스트에 담습니다")}
+                    onClick={() => toggleInvAll(multiIds, !multiAllOwned)}>
+                    {multiAllOwned ? t("✓ 전체 보유중") : t("＋ 전체 보유")}
+                  </button>
+                )}
+              </div>
               <button type="button" className="rg-modal-close" onClick={() => setLensMulti(null)} aria-label={t("닫기")}>×</button>
             </header>
             <div className="rg-rmulti-list">
@@ -1843,7 +1863,8 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
       {/* 자동인식이 테마를 특정 못 한 경우(분대 이름은 테마 공통) — 테마 선택 전용 미니 모달 */}
       {lensInitial?.target.kind === "tie" && (
         <div className="modal-backdrop scanner-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) setLensInitial(null); }}>
