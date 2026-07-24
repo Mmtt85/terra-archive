@@ -37,7 +37,9 @@ type SubWeather = { id: string; name: string; desc: string | null; img?: boolean
 type Variation = { id: string; name: string; func: string | null; desc: string | null; fusion: boolean; img?: boolean; cn?: string };
 type Difficulty = { mode: string; grade: number; name: string; rule: string | null; score: number | null };
 // 상세 모달·보유 리스트가 다루는 공통 형태 — 소장품(유물·무대 도구)·부품·사고·주화가 전부 맞는다
-type InvItem = { id: string; name: string; usage?: string | null; desc?: string | null; obtain?: string | null; order?: string | null; kind?: string | null; typeName?: string | null; img?: boolean; iconId?: string; cn?: string };
+type InvStage = { label: string; name: string; usage?: string | null; desc?: string | null };
+// stages: 붕괴 패러다임 등 다단계 시스템 — 카드 1장 안에 단계별 [섬네일+이름+효과] 행 (사용자 확정 2026-07-24)
+type InvItem = { id: string; name: string; usage?: string | null; desc?: string | null; obtain?: string | null; order?: string | null; kind?: string | null; typeName?: string | null; img?: boolean; iconId?: string; cn?: string; stages?: InvStage[] };
 type Ending = { id: string; name: string; desc: string | null; boss: string | null; priority: number; change: string | null; cond?: string[]; cn?: string };
 // 선택지는 계단식 트리 — next.desc는 그 선택의 결과 서사, next.choices는 이어지는 하위 선택지
 // (현재 데이터는 대부분 결과 서사까지 깊이 2. 하위 선택지가 생기면 재귀로 중첩 렌더).
@@ -53,7 +55,7 @@ type RogueData = {
   variations: Variation[]; endings: Ending[]; encounters: Encounter[];
   // 토픽 고유 시스템 갤러리 (거부반응·암호판·붕괴 패러다임·사고·시대·주화·분노 등) — 전시관 서브탭.
   // kind=하위 분류(사고: 염원/영감/구상), usage의 개행은 단계 효과(심화·형성기 등) 줄바꿈.
-  mechanics?: { label: string; items: { id: string; name: string; kind?: string; usage?: string | null; desc?: string | null; img?: boolean; iconId?: string }[] }[];
+  mechanics?: { label: string; items: { id: string; name: string; kind?: string; usage?: string | null; desc?: string | null; img?: boolean; iconId?: string; stages?: InvStage[] }[] }[];
 };
 
 const rogue1 = rogue1Data as unknown as RogueData;
@@ -463,9 +465,20 @@ function RelicModal({ relic, owned, onToggleOwn, onClose }: {
           <button type="button" className="rg-modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
         </header>
         {/* 해당 소장품의 모든 데이터 — 효과·설명·획득 방법 (사용자 확정 2026-07-24).
-            desc도 pre-line: 붕괴 패러다임 심화(2단계) 플레이버가 줄로 병합돼 있다 */}
-        {relic.usage && <p className="rg-relic-usage rg-multiline">{relic.usage}</p>}
-        {relic.desc && <p className="rg-relic-desc rg-multiline">{relic.desc}</p>}
+            다단계(stages, 붕괴 패러다임)는 단계별 [섬네일+이름+효과+플레이버] 블록으로 */}
+        {relic.stages ? relic.stages.map((s) => (
+          <div key={s.name} className="rg-stage rg-stage-modal">
+            {relic.img && <img className="rg-relic-icon" src={`/rogue/relic/${relic.iconId ?? relic.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
+            <div className="rg-stage-txt">
+              <h4>{s.name} <em className="rg-stage-lb">{s.label}</em></h4>
+              {s.usage && <p className="rg-relic-usage rg-multiline">{s.usage}</p>}
+              {s.desc && <p className="rg-relic-desc rg-multiline">{s.desc}</p>}
+            </div>
+          </div>
+        )) : (<>
+          {relic.usage && <p className="rg-relic-usage rg-multiline">{relic.usage}</p>}
+          {relic.desc && <p className="rg-relic-desc rg-multiline">{relic.desc}</p>}
+        </>)}
         {relic.obtain && <p className="rg-relic-obtain"><em>{t("획득 방법")}</em> {relic.obtain}</p>}
         {onToggleOwn && (
           <button type="button" className={`rg-inv-toggle${owned ? " on" : ""}`} onClick={onToggleOwn}>
@@ -1635,13 +1648,29 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
                       role="button" tabIndex={0}
                       onClick={() => setRelicOpen(c)}
                       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setRelicOpen(c); } }}>
-                      <header>
-                        {c.img && <img className="rg-relic-icon" src={`/rogue/relic/${c.iconId ?? c.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
-                        <h4>{c.name}</h4>
-                        {resIds.has(c.id) && <InvPill owned={inv.has(c.id)} onToggle={() => toggleInv(c.id)} />}
-                      </header>
-                      {/* 미리보기는 효과까지만 — 플레이버 설명은 상세에서 (사용자 확정 2026-07-24) */}
-                      {c.usage && <p className="rg-relic-usage rg-multiline">{c.usage}</p>}
+                      {c.stages ? (
+                        /* 다단계 시스템(붕괴 패러다임) — 카드 1장 안에 단계별 [섬네일+이름+효과] 행
+                           (사용자 확정 2026-07-24). 아이콘은 단계 공용 1장(게임 원본에 _a 전용 아트 없음) */
+                        <div className="rg-stage-list">
+                          {c.stages.map((s) => (
+                            <div key={s.name} className="rg-stage">
+                              {c.img && <img className="rg-relic-icon" src={`/rogue/relic/${c.iconId ?? c.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
+                              <div className="rg-stage-txt">
+                                <h4>{s.name} <em className="rg-stage-lb">{s.label}</em></h4>
+                                {s.usage && <p className="rg-relic-usage rg-multiline">{s.usage}</p>}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (<>
+                        <header>
+                          {c.img && <img className="rg-relic-icon" src={`/rogue/relic/${c.iconId ?? c.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
+                          <h4>{c.name}</h4>
+                          {resIds.has(c.id) && <InvPill owned={inv.has(c.id)} onToggle={() => toggleInv(c.id)} />}
+                        </header>
+                        {/* 미리보기는 효과까지만 — 플레이버 설명은 상세에서 (사용자 확정 2026-07-24) */}
+                        {c.usage && <p className="rg-relic-usage rg-multiline">{c.usage}</p>}
+                      </>)}
                     </article>
                   ))}
                 </div>

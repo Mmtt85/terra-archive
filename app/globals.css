@@ -11193,3 +11193,11 @@ main.site-main > .site-header {
 .term-modal .term-line { margin: 0 0 7px; font-size: 13.5px; line-height: 1.6; white-space: pre-line; }
 .term-modal .term-ops { display: flex; flex-wrap: wrap; gap: 5px; margin: 4px 0 10px; }
 .term-modal .term-ops img { width: 34px; height: 34px; }
+
+/* ── 다단계 시스템 카드(붕괴 패러다임) — 카드 1장 안 단계별 [섬네일+이름+효과] 행 ── */
+.rg-stage-list { display: flex; flex-direction: column; gap: 10px; }
+.rg-stage { display: flex; gap: 9px; align-items: flex-start; }
+.rg-stage .rg-relic-icon { flex: none; }
+.rg-stage h4 { margin: 0 0 3px; }
+.rg-stage-lb { font-size: 11px; font-style: normal; opacity: 0.6; margin-left: 5px; }
+.rg-stage-modal { margin: 0 0 12px; }

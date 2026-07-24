@@ -957,23 +957,23 @@ def build_topic(tid="rogue_1", loc=None):
                 while nxt and nxt in datas:
                     chain.append(datas[nxt])
                     nxt = datas[nxt].get("nextChaosId")
-                if len(chain) > 1:
-                    lines, descs = [], []
-                    for i, cv in enumerate(chain):
-                        head = stage_label(i + 1) if i == 0 else f"{stage_label(i + 1)} · {cv.get('name')}"
-                        lines.append(f"〔{head}〕 {cv.get('functionDesc') or ''}")
-                        dsc = (cv.get("desc") or "").strip()
-                        if dsc:
-                            descs.append(dsc if i == 0 else f"〔{cv.get('name')}〕 {dsc}")
-                    usage = "\n".join(x for x in lines if x.strip()) or None
-                    desc = "\n".join(descs) or None
-                else:
-                    usage = (v.get("functionDesc") or "").strip() or None
-                    desc = (v.get("desc") or "").strip() or None
                 ic = v.get("iconId") or v["chaosId"]
                 mech_jobs.add((f"{ASSETS}/ui/rogueliketopic/topics/{tid}/misc/{ic}.png", ic))
-                entries.append({"id": v["chaosId"], "name": v.get("name"),
-                                "usage": usage, "desc": desc, "_cands": [ic]})
+                e = {"id": v["chaosId"], "name": v.get("name"),
+                     "usage": (v.get("functionDesc") or "").strip() or None,
+                     "desc": (v.get("desc") or "").strip() or None, "_cands": [ic]}
+                if len(chain) > 1:
+                    # 카드 1장 안에 단계별 [섬네일+이름+효과] 행 — UI가 stages로 렌더
+                    # (사용자 확정 2026-07-24: 분리 카드도, 한 줄 병합도 아닌 행 분리).
+                    # 아이콘은 게임 데이터·CDN 번들 모두 단계 공용 1장(실사 확인).
+                    e["stages"] = [{"label": stage_label(i + 1), "name": cv.get("name"),
+                                    "usage": (cv.get("functionDesc") or "").strip() or None,
+                                    "desc": (cv.get("desc") or "").strip() or None}
+                                   for i, cv in enumerate(chain)]
+                    # 폴백·검색·모아보기용 병합 텍스트는 유지
+                    e["usage"] = "\n".join(f"〔{s['label']} · {s['name']}〕 {s['usage'] or ''}" for s in e["stages"]) or None
+                    e["desc"] = "\n".join(x for x in [e["desc"], *(f"〔{s['name']}〕 {s['desc']}" for s in e["stages"][1:] if s["desc"])] if x) or None
+                entries.append(e)
         elif source == "module_disaster":
             # 시대 — modules.disaster.disasterData (유형 9종 × 형성기/확장기/… 단계).
             # 유형별 한 카드, 단계 효과를 usage 줄로 병합.
