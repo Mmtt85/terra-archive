@@ -277,16 +277,26 @@ export function suggestedLevels(preset: LayoutPreset): Levels {
 // 동일한 도메인 규칙. 순금은 앞쪽 제조소부터. 우선순위(gold/exp/balance)도 프리셋과 같은 패턴.
 export const DEFAULT_CUSTOM_ROOMS: CustomRoom[] = ["TRADING", "TRADING", "MANUFACTURE", "MANUFACTURE", "MANUFACTURE", "MANUFACTURE", "POWER", "POWER", "POWER"]; // = 243 모양
 export let CUSTOM_ROOMS: CustomRoom[] = [...DEFAULT_CUSTOM_ROOMS];
-function buildCustomDef(rooms: CustomRoom[]) {
+// 제조소 칸별 품목 (사용자 요청 2026-07-24: 순금/작전기록 직접 선택). null = 자동
+// (min(무역, 제조) 쿼터를 앞 제조소부터) — 기본값은 243 모양(순금 2 + 작전기록 2)과 일치.
+export type CustomProduct = "gold" | "exp";
+export const DEFAULT_CUSTOM_PRODUCTS: (CustomProduct | null)[] = [null, null, "gold", "gold", "exp", "exp", null, null, null];
+export let CUSTOM_PRODUCTS: (CustomProduct | null)[] = [...DEFAULT_CUSTOM_PRODUCTS];
+function buildCustomDef(rooms: CustomRoom[], products: (CustomProduct | null)[] = CUSTOM_PRODUCTS) {
   const counts: Record<string, number> = { TRADING: 0, MANUFACTURE: 0, POWER: 0 };
   for (const room of rooms) counts[room] += 1;
-  const goldN = Math.min(counts.TRADING, counts.MANUFACTURE);
+  // 명시 품목 우선 — 미지정(null) 제조소만 자동 배정: 명시 순금을 뺀 잔여 쿼터를 앞에서부터
+  const goldQuota = Math.min(counts.TRADING, counts.MANUFACTURE);
+  const explicitGold = rooms.filter((room, i) => room === "MANUFACTURE" && products[i] === "gold").length;
+  let autoGoldLeft = Math.max(0, goldQuota - explicitGold);
   const cells: LayoutCell[] = [];
   let ti = 0, mi = 0, pi = 0;
   rooms.forEach((room, slot) => {
     if (room === "TRADING") { cells.push({ key: `TRADING-${ti}`, room, label: `무역소 ${ti + 1}`, slot }); ti += 1; }
     else if (room === "MANUFACTURE") {
-      const product = mi < goldN ? "gold" : "exp";
+      let product: CustomProduct;
+      if (products[slot] === "gold" || products[slot] === "exp") product = products[slot]!;
+      else { product = autoGoldLeft > 0 ? "gold" : "exp"; if (product === "gold") autoGoldLeft -= 1; }
       cells.push({ key: `MANUFACTURE-${mi}`, room, label: `제조소 ${mi + 1} · ${product === "gold" ? "순금" : "작전기록"}`, product, slot });
       mi += 1;
     } else { cells.push({ key: `POWER-${pi}`, room, label: `발전소 ${pi + 1}`, slot }); pi += 1; }
@@ -307,7 +317,7 @@ function buildCustomDef(rooms: CustomRoom[]) {
       exp: [...expKeys, ...goldKeys, ...tradeKeys, ...powerKeys],
       balance: [...balance, ...tradeKeys, ...powerKeys],
     } as Record<ProdPriority, string[]>,
-    goldLines: goldN,
+    goldLines: goldKeys.length, // 실제 순금 방 수 (명시 선택 반영 — 투예·파죰카 라인 상수)
     counts,
     plantsBase: counts.POWER,
   };
@@ -322,9 +332,10 @@ export let GOLD_LINES = LAYOUT_DEFS["243"].goldLines;
 export let FACILITY_COUNTS: Record<string, number> = LAYOUT_DEFS["243"].counts;
 export let PLANTS_BASE_RT = LAYOUT_DEFS["243"].plantsBase; // 발전소 수 — 252는 2 (그레이 배치 시 +1)
 
-export function setLayoutPreset(preset: LayoutPreset, customRooms?: CustomRoom[] | null) {
+export function setLayoutPreset(preset: LayoutPreset, customRooms?: CustomRoom[] | null, customProducts?: (CustomProduct | null)[] | null) {
   if (customRooms && customRooms.length === 9) CUSTOM_ROOMS = [...customRooms];
-  const def = preset === "custom" ? buildCustomDef(CUSTOM_ROOMS) : LAYOUT_DEFS[preset] ?? LAYOUT_DEFS["243"];
+  if (customProducts && customProducts.length === 9) CUSTOM_PRODUCTS = [...customProducts];
+  const def = preset === "custom" ? buildCustomDef(CUSTOM_ROOMS, CUSTOM_PRODUCTS) : LAYOUT_DEFS[preset] ?? LAYOUT_DEFS["243"];
   activeLayout = preset === "custom" ? "custom" : def === LAYOUT_DEFS["243"] ? "243" : preset;
   LAYOUT = def.cells;
   cellByKey = new Map(LAYOUT.map((cell) => [cell.key, cell]));

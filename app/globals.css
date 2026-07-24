@@ -3100,6 +3100,25 @@ footer p {
   border-color: transparent;
   color: #fff;
 }
+/* 제조소 품목(순금/작전기록) 토글 — 종류 토글 옆에 나란히 */
+.room-type-switch.product-switch {
+  margin-left: 8px;
+}
+/* 그외 진입 직후 토글 위치 안내 — 두 번 반짝 (2026-07-24) */
+@keyframes switch-flash {
+  0%, 100% {
+    box-shadow: 0 0 0 0 transparent;
+    background: transparent;
+  }
+  50% {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--room-accent, var(--lime)) 55%, transparent);
+    background: color-mix(in srgb, var(--room-accent, var(--lime)) 16%, transparent);
+  }
+}
+.room-type-switch.flash {
+  border-radius: 6px;
+  animation: switch-flash 0.8s ease-in-out 2;
+}
 /* 육성 추천 임시 적용 표시 — 제어센터 왼쪽 빈 3칸(row1)에 넣어 레이아웃을 밀지 않는다
    (사용자 요청 2026-07-21). 임시 적용 중일 때만 렌더. */
 .ship-raisebar {

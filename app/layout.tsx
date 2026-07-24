@@ -65,6 +65,15 @@ export default function RootLayout({
             __html: `try{var t=localStorage.getItem('ta-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark');}catch(e){}`,
           }}
         />
+        {/* 모든 모달 ESC 닫기 (사용자 요청 2026-07-24) — 공통 .modal-backdrop 패턴 전역 처리.
+            최상단(마지막) 오버레이만 닫는다: .modal-close 버튼이 있으면 클릭, 없으면 백드롭
+            자기-타깃 mousedown 디스패치(React 백드롭 클릭 닫기 핸들러가 받는다).
+            rogue(rg-*) 모달은 자체 Esc 핸들러가 이미 있어 제외. 한글 IME 조합 중엔 무시. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `document.addEventListener('keydown',function(e){if(e.key!=='Escape'||e.isComposing)return;var els=document.querySelectorAll('.modal-backdrop');var top=els[els.length-1];if(!top)return;var btn=top.querySelector('.modal-close');if(btn){btn.click();return;}top.dispatchEvent(new MouseEvent('mousedown',{bubbles:true}));});`,
+          }}
+        />
         {children}
         {/* Cloudflare Web Analytics — 정본 도메인에서만 + 자동화 브라우저 제외.
             localhost·프리뷰(해시.pages.dev)에 더해 navigator.webdriver(Playwright·Selenium 등
