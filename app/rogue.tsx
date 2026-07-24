@@ -902,8 +902,11 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
           : stageOpen?.n ? { type: "stage", id: stageOpen.n.id }
             : zoneOpen ? { type: "zone", id: zoneOpen.id }
               : null;
+  // 전시관 서브탭도 URL에 실린다: #rg-archive~arc~<탭id> (사용자 요청 2026-07-24).
+  // 모달이 열려 있으면 모달 해시가 우선 — 뒤로가기로 모달을 닫으면 arc 해시로 복귀한다.
   const hashFor = (v: string, m: { type: string; id: string } | null) =>
-    `#rg-${v}${m ? `~${m.type}~${encodeURIComponent(m.id)}` : ""}`;
+    `#rg-${v}${m ? `~${m.type}~${encodeURIComponent(m.id)}`
+      : v === "archive" ? `~arc~${encodeURIComponent(activeArc)}` : ""}`;
   const applyHash = () => {
     const mt = window.location.hash.match(/^#rg-([a-z]+)(?:~([a-z]+)~(.+))?$/);
     if (!mt) return;
@@ -918,6 +921,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
     else if (type === "enemy") { if (data.enemies[id]) setEnemyOpen({ key: id, ctx: dexCtx(id) }); }
     else if (type === "stage") { const s = stageById.get(id); if (s) setStageOpen(pairOf(s)); }
     else if (type === "zone") { const z = zoneById.get(id); if (z) setZoneOpen(z); }
+    else if (type === "arc") setArcTab(id); // 무효 탭이면 activeArc 폴백이 첫 탭으로 처리
   };
   // 최신 applyHash를 ref로 노출 — 리스너가 stale 클로저를 잡지 않게
   // (렌더 중 ref 대입은 lint 에러라 effect에서 매 렌더 후 갱신 — 리스너는 렌더 후에만 발화)
@@ -1054,7 +1058,9 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
     if (!mounted || !inited.current) return;
     const want = hashFor(view, curModal());
     if (want === (window.location.hash || "#rg-map")) { prevHash.current = want; return; }
-    const opening = curModal() !== null && !prevHash.current.includes("~");
+    // arc 해시(~arc~)도 "~"를 포함하므로, 모달 열림 판정은 모달 타입 페어에만 반응해야 한다
+    const hadModal = /~(relic|enc|enemy|stage|zone)~/.test(prevHash.current);
+    const opening = curModal() !== null && !hadModal;
     // ⚠ vinext가 history.pushState를 인스턴스 패치해 내비게이션으로 취급 — .site-scroll을
     // 맨 위로 리셋한다 (사용자 리포트 2026-07-24: 모달 열면 스크롤이 튐). 모달 해시 기록은
     // 스크롤을 건드리면 안 되므로 네이티브 프로토타입을 직접 불러 라우터를 우회한다
@@ -1062,7 +1068,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
     if (opening) History.prototype.pushState.call(history, null, "", want);
     else history.replaceState(null, "", want);
     prevHash.current = want;
-  }, [view, zoneOpen, stageOpen, enemyOpen, encOpen, relicOpen, mounted]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [view, zoneOpen, stageOpen, enemyOpen, encOpen, relicOpen, activeArc, mounted]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const renderCond = (text: string) => {
     const parts = text.split(/「([^」]+)」/g);

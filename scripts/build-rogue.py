@@ -943,36 +943,33 @@ def build_topic(tid="rogue_1", loc=None):
         elif source == "module_chaos":
             # 붕괴 패러다임 — modules.chaos.chaosDatas (실명: '수적 붕괴' 등). 모든 패러다임은
             # 붕괴가 깊어지면 2단계로 심화되며 이름도 바뀐다(nextChaosId 체인, 예: 이미지 에러
-            # →블랙아웃). 게임 집록처럼 패러다임당 한 카드로 두되, 단계 번호·심화명을 명시하고
-            # 심화 단계의 플레이버 텍스트도 함께 수록한다 (사용자 요청 2026-07-24).
+            # →블랙아웃). 단계마다 카드를 따로 두고 쌍을 나란히 배치한다 — 2단계도 섬네일
+            # 포함(사용자 요청 2026-07-24). 아이콘은 게임 데이터·CDN 번들(rglktopic) 모두
+            # 단계 공용 1장뿐(pic_rogue_3_chaos_N, 실사 확인)이라 두 단계가 같은 아트를 쓴다.
             datas = (mods.get("chaos") or {}).get("chaosDatas") or {}
             base = sorted([v for v in datas.values() if not v.get("prevChaosId")],
                           key=lambda v: v.get("sortId", 0))
             def stage_label(n):
                 return {"en": f"Stage {n}", "ja": f"第{n}段階"}.get(loc, f"{n}단계")
+            deep = {"en": "Deepened", "ja": "深化"}.get(loc, "심화")
             for v in base:
                 chain = [v]
                 nxt = v.get("nextChaosId")
                 while nxt and nxt in datas:
                     chain.append(datas[nxt])
                     nxt = datas[nxt].get("nextChaosId")
-                if len(chain) > 1:
-                    lines, descs = [], []
-                    for i, cv in enumerate(chain):
-                        head = stage_label(i + 1) if i == 0 else f"{stage_label(i + 1)} · {cv.get('name')}"
-                        lines.append(f"〔{head}〕 {cv.get('functionDesc') or ''}")
-                        dsc = (cv.get("desc") or "").strip()
-                        if dsc:
-                            descs.append(dsc if i == 0 else f"〔{cv.get('name')}〕 {dsc}")
-                    usage = "\n".join(x for x in lines if x.strip()) or None
-                    desc = "\n".join(descs) or None
-                else:
-                    usage = (v.get("functionDesc") or "").strip() or None
-                    desc = (v.get("desc") or "").strip() or None
-                ic = v.get("iconId") or v["chaosId"]
-                mech_jobs.add((f"{ASSETS}/ui/rogueliketopic/topics/{tid}/misc/{ic}.png", ic))
-                entries.append({"id": v["chaosId"], "name": v.get("name"),
-                                "usage": usage, "desc": desc, "_cands": [ic]})
+                for i, cv in enumerate(chain):
+                    usage = (cv.get("functionDesc") or "").strip() or None
+                    if usage and len(chain) > 1:
+                        head = stage_label(i + 1) if i == 0 else f"{stage_label(i + 1)} · {deep}"
+                        usage = f"〔{head}〕 {usage}"
+                    ic = cv.get("iconId") or cv["chaosId"]
+                    mech_jobs.add((f"{ASSETS}/ui/rogueliketopic/topics/{tid}/misc/{ic}.png", ic))
+                    e = {"id": cv["chaosId"], "name": cv.get("name"), "usage": usage,
+                         "desc": (cv.get("desc") or "").strip() or None, "_cands": [ic]}
+                    if len(chain) > 1:
+                        e["typeName"] = stage_label(i + 1) if i == 0 else f"{stage_label(i + 1)} · {deep}"
+                    entries.append(e)
         elif source == "module_disaster":
             # 시대 — modules.disaster.disasterData (유형 9종 × 형성기/확장기/… 단계).
             # 유형별 한 카드, 단계 효과를 usage 줄로 병합.
