@@ -1054,7 +1054,12 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
     const want = hashFor(view, curModal());
     if (want === (window.location.hash || "#rg-map")) { prevHash.current = want; return; }
     const opening = curModal() !== null && !prevHash.current.includes("~");
-    history[opening ? "pushState" : "replaceState"](null, "", want);
+    // ⚠ vinext가 history.pushState를 인스턴스 패치해 내비게이션으로 취급 — .site-scroll을
+    // 맨 위로 리셋한다 (사용자 리포트 2026-07-24: 모달 열면 스크롤이 튐). 모달 해시 기록은
+    // 스크롤을 건드리면 안 되므로 네이티브 프로토타입을 직접 불러 라우터를 우회한다
+    // (replaceState는 패치돼 있어도 스크롤 리셋 없음 — 실측).
+    if (opening) History.prototype.pushState.call(history, null, "", want);
+    else history.replaceState(null, "", want);
     prevHash.current = want;
   }, [view, zoneOpen, stageOpen, enemyOpen, encOpen, relicOpen, mounted]); // eslint-disable-line react-hooks/exhaustive-deps
 
