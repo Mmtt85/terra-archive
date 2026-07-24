@@ -6,6 +6,7 @@
 // 조우의 층별 출현 규칙·엔딩 선제조건은 클라 데이터에 없어 PRTS 기반 큐레이션(rogueN-curated.json)을 병합한다.
 import { lazy, startTransition, Suspense, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import rogue1Data from "./data/rogue1.json";
+import { useConfirm } from "./confirm";
 import { useI18n } from "./i18n";
 import { normSearch } from "./search";
 import { isNewFeature } from "./whats-new";
@@ -35,6 +36,8 @@ type Weather = { id: string; name: string; levels: { lv: string; desc: string | 
 type SubWeather = { id: string; name: string; desc: string | null; img?: boolean; cn?: string };
 type Variation = { id: string; name: string; func: string | null; desc: string | null; fusion: boolean; img?: boolean; cn?: string };
 type Difficulty = { mode: string; grade: number; name: string; rule: string | null; score: number | null };
+// 상세 모달·보유 리스트가 다루는 공통 형태 — 소장품(유물·무대 도구)·부품·사고·주화가 전부 맞는다
+type InvItem = { id: string; name: string; usage?: string | null; desc?: string | null; obtain?: string | null; order?: string | null; kind?: string | null; typeName?: string | null; img?: boolean; iconId?: string; cn?: string };
 type Ending = { id: string; name: string; desc: string | null; boss: string | null; priority: number; change: string | null; cond?: string[]; cn?: string };
 // 선택지는 계단식 트리 — next.desc는 그 선택의 결과 서사, next.choices는 이어지는 하위 선택지
 // (현재 데이터는 대부분 결과 서사까지 깊이 2. 하위 선택지가 생기면 재귀로 중첩 렌더).
@@ -436,8 +439,11 @@ function EncounterModal({ enc, onClose, link }: { enc: Encounter; onClose: () =>
   );
 }
 
-// ── 유물 상세 모달 — 엔딩 조건의 분기 아이템 참조에서 연다 ───────────────────
-function RelicModal({ relic, onClose }: { relic: Relic; onClose: () => void }) {
+// ── 아이템 상세 모달 — 소장품·부품·사고·주화 공용 (부품·자원도 소장품처럼 상세를 연다,
+// 피드백 반영 2026-07-24). owned/onToggleOwn이 오면 보유 리스트 토글 버튼을 붙인다.
+function RelicModal({ relic, owned, onToggleOwn, onClose }: {
+  relic: InvItem; owned?: boolean; onToggleOwn?: () => void; onClose: () => void;
+}) {
   const { t } = useI18n();
   useEffect(() => {
     const onKey = (ev: KeyboardEvent) => { if (ev.key === "Escape") onClose(); };
@@ -452,15 +458,35 @@ function RelicModal({ relic, onClose }: { relic: Relic; onClose: () => void }) {
             {relic.img && <img className="rg-relic-icon lg" src={`/rogue/relic/${relic.iconId ?? relic.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
             {relic.order && <span className="rg-relic-no">{relic.order}</span>}
             <h3><Nm name={relic.name} cn={relic.cn} /></h3>
+            {(relic.kind || relic.typeName) && <span className="rg-modal-zone">{t((relic.kind ?? relic.typeName)!)}</span>}
           </div>
           <button type="button" className="rg-modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
         </header>
         {/* 해당 소장품의 모든 데이터 — 효과·설명·획득 방법 (사용자 확정 2026-07-24) */}
-        {relic.usage && <p className="rg-relic-usage">{relic.usage}</p>}
+        {relic.usage && <p className="rg-relic-usage rg-multiline">{relic.usage}</p>}
         {relic.desc && <p className="rg-relic-desc">{relic.desc}</p>}
         {relic.obtain && <p className="rg-relic-obtain"><em>{t("획득 방법")}</em> {relic.obtain}</p>}
+        {onToggleOwn && (
+          <button type="button" className={`rg-inv-toggle${owned ? " on" : ""}`} onClick={onToggleOwn}>
+            {owned ? `✓ ${t("보유중 — 누르면 보유 리스트에서 뺍니다")}` : `🎒 ${t("보유 리스트에 추가")}`}
+          </button>
+        )}
       </div>
     </div>
+  );
+}
+
+// 카드 우상단 보유 토글 — 소장품 목록·전시관 자원·모아보기·보유 리스트 카드 공용
+// (피드백 반영 2026-07-24). 카드 자체 클릭(상세 열기)과 겹치지 않게 전파를 끊는다.
+function InvPill({ owned, onToggle }: { owned: boolean; onToggle: () => void }) {
+  const { t } = useI18n();
+  return (
+    <button type="button" className={`rg-inv-btn${owned ? " on" : ""}`}
+      title={owned ? t("보유 리스트에서 제거") : t("보유 리스트에 추가")}
+      onClick={(e) => { e.stopPropagation(); onToggle(); }}
+      onKeyDown={(e) => e.stopPropagation()}>
+      {owned ? t("✓ 보유중") : t("＋ 보유")}
+    </button>
   );
 }
 
@@ -621,7 +647,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   const [stageOpen, setStageOpen] = useState<StagePair | null>(null);
   const [enemyOpen, setEnemyOpen] = useState<{ key: string; ctx: StatCtx } | null>(null);
   const [encOpen, setEncOpen] = useState<Encounter | null>(null);
-  const [relicOpen, setRelicOpen] = useState<Relic | null>(null);
+  const [relicOpen, setRelicOpen] = useState<InvItem | null>(null); // 소장품·부품·자원 공용 상세
   const [enemyQ, setEnemyQ] = useState("");
   const [enemyRank, setEnemyRank] = useState<string>("");
   const [relicQ, setRelicQ] = useState("");
@@ -658,6 +684,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
     setZoneOpen(null); setStageOpen(null); setEnemyOpen(null); setEncOpen(null); setRelicOpen(null);
     setEnemyQ(""); setEnemyRank(""); setRelicQ(""); setMapQ(""); setArcTab("relic");
     setLensHits(null); setLensMulti(null); // 렌즈 하이라이트·모아보기는 토픽 전환 시 해제
+    setInvOpen(false); setInvTab("relic"); // 보유 리스트 모달·탭 리셋 (목록 자체는 테마별 저장)
   };
   const applyTopicFromUrl = () => applyTopic(topicFromUrl());
   useEffect(() => {
@@ -803,6 +830,63 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
     for (const mech of data.mechanics ?? []) for (const it of mech.items) m.set(it.id, it);
     return m;
   }, [active]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ─── 보유 리스트 (인벤토리) — 게임에서 얻은 소장품·테마 자원을 담아두는 개인 목록 ───
+  // (피드백 반영 2026-07-24) 테마별 localStorage(ta:rogue-inv:<topic>)에 영속.
+  // 자원 탭은 테마 고유 '수집 자원'만: 살카즈=사고, 쉐이=주화, 흑류수해=부품
+  // (거부반응·시대·분노 등 판 규칙류는 수집물이 아니라 제외). EN/JA 데이터는 mechanics
+  // 라벨이 현지어라 라벨 매칭이 깨진다 — 아이템 id 접두사로 자원 시스템을 찾는다.
+  const RES_MECH_PREFIX: Record<string, string> = { rogue_4: "rogue_4_fragment", rogue_5: "rogue_5_copper" };
+  const resMech = useMemo(
+    () => (data.mechanics ?? []).find((m) => m.items[0]?.id.startsWith(RES_MECH_PREFIX[topic] ?? " ")),
+    [active, topic]); // eslint-disable-line react-hooks/exhaustive-deps
+  const resItems: InvItem[] = topic === "rogue_6" ? (data.scraps ?? []) : (resMech?.items ?? []);
+  const resLabel = topic === "rogue_6" ? ((data.scraps?.length ?? 0) > 0 ? "부품 (零件)" : null) : resMech?.label ?? null;
+  const resIds = useMemo(() => new Set(resItems.map((i) => i.id)), [resItems]);
+  const [inv, setInvState] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(`ta:rogue-inv:${topic}`);
+      setInvState(new Set(raw ? (JSON.parse(raw) as string[]) : []));
+    } catch { setInvState(new Set()); }
+  }, [topic]);
+  const saveInv = (next: Set<string>) => {
+    try { localStorage.setItem(`ta:rogue-inv:${topic}`, JSON.stringify([...next])); } catch { /* 프라이빗 모드 등 */ }
+  };
+  const toggleInv = (id: string) => setInvState((prev) => {
+    const next = new Set(prev);
+    if (!next.delete(id)) next.add(id);
+    saveInv(next);
+    return next;
+  });
+  // 보유 담기가 가능한 항목인지 — 소장품(무대 도구 포함) 또는 테마 자원. 그 외(분대·음반 등)는 대상 아님
+  const invSection = (id: string): "relic" | "res" | null =>
+    relicById.has(id) ? "relic" : resIds.has(id) ? "res" : null;
+  const [invOpen, setInvOpen] = useState(false);
+  const [invTab, setInvTab] = useState<"relic" | "res">("relic");
+  const ownedRelics = useMemo(() => relicsAll.filter((r) => inv.has(r.id)), [relicsAll, inv]);
+  const ownedRes = useMemo(() => resItems.filter((i) => inv.has(i.id)), [resItems, inv]); // eslint-disable-line react-hooks/exhaustive-deps
+  // 비우기 확인은 사이트 공용 확인 모달(useConfirm) — window.confirm 금지 (사용자 확정 2026-07-24)
+  const { confirm, dialog: confirmDialog } = useConfirm();
+  const [confirmBusy, setConfirmBusy] = useState(false); // 확인 모달이 떠 있는 동안 Esc 중복 처리 방지
+  const clearInvTab = async (section: "relic" | "res") => {
+    setConfirmBusy(true);
+    const okd = await confirm({ message: t("이 탭의 보유 항목을 전부 비웁니다 — 계속할까요?"), danger: true });
+    setConfirmBusy(false);
+    if (!okd) return;
+    setInvState((prev) => {
+      const next = new Set([...prev].filter((id) => invSection(id) !== section));
+      saveInv(next);
+      return next;
+    });
+  };
+  // Esc로 보유 모달 닫기 — 위에 상세 모달·확인 모달이 스택돼 있으면 그쪽 리스너만 닫는다
+  useEffect(() => {
+    if (!invOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape" && !relicOpen && !confirmBusy) setInvOpen(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [invOpen, relicOpen, confirmBusy]);
   const curModal = (): { type: string; id: string } | null =>
     relicOpen ? { type: "relic", id: relicOpen.id }
       : encOpen ? { type: "enc", id: encOpen.scene }
@@ -820,7 +904,8 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
     setZoneOpen(null); setStageOpen(null); setEnemyOpen(null); setEncOpen(null); setRelicOpen(null);
     if (!type || !rawId) return;
     const id = decodeURIComponent(rawId);
-    if (type === "relic") { const r = relicById.get(id); if (r) setRelicOpen(r); }
+    // 부품·사고·주화 상세도 같은 relic 해시를 쓴다 — 소장품에 없으면 통합 룩업으로 폴백
+    if (type === "relic") { const r = relicById.get(id) ?? lensItemById.get(id); if (r) setRelicOpen(r); }
     else if (type === "enc") { const e = encByScene.get(id); if (e) setEncOpen(e); }
     else if (type === "enemy") { if (data.enemies[id]) setEnemyOpen({ key: id, ctx: dexCtx(id) }); }
     else if (type === "stage") { const s = stageById.get(id); if (s) setStageOpen(pairOf(s)); }
@@ -1082,6 +1167,13 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
         {VIEWS.map((v) => (
           <button key={v.id} type="button" className={view === v.id ? "on" : ""} onClick={() => goView(v.id)}>{t(v.label)}</button>
         ))}
+        {/* 보유 리스트 — 게임에서 얻은 소장품·자원을 담아두고 한눈에 보는 개인 목록 (피드백 반영 2026-07-24) */}
+        <button type="button" className="rg-inv-open" onClick={() => setInvOpen(true)}
+          title={t("소장품·자원 카드의 「＋ 보유」 버튼으로 담아두고 여기서 한눈에 봅니다")}>
+          🎒 {t("보유 리스트")}
+          {inv.size > 0 && <em className="rg-inv-count">{inv.size}</em>}
+          {isNewFeature("rogue-inv") && <span className="new-badge">{t("새기능")}</span>}
+        </button>
         {/* 스샷 레이더 — 버튼 자체가 자동인식 토글, ?는 도움말 모달 (사용자 확정 2026-07-23, KR 클라 전용) */}
         {locale === "ko" && (
           <div className="lens-open-wrap">
@@ -1378,6 +1470,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
                 <header>
                   {r.img && <img className="rg-relic-icon" src={`/rogue/relic/${r.iconId ?? r.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
                   <h4><Nm name={r.name} cn={r.cn} /></h4>
+                  <InvPill owned={inv.has(r.id)} onToggle={() => toggleInv(r.id)} />
                 </header>
                 {r.usage && <p className="rg-relic-usage">{r.usage}</p>}
               </article>
@@ -1414,14 +1507,19 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
                       <span className="rg-scrap-hint">{st === "GOODS" ? t("팔면 오리지늄각뿔이 되는 자연물") : st === "MOVE" ? t("장착하면 지도 이동 능력을 주는 가공품") : t("특정 조건에서 발동하는 개념체")}</span>
                     </h4>
                     <div className="rg-relic-grid">
+                      {/* 부품도 소장품처럼 클릭 → 상세 모달 + 보유 토글 (피드백 반영 2026-07-24) */}
                       {items.map((s) => (
-                        <article key={s.id} className="rg-relic">
+                        <article key={s.id} className={`rg-relic clickable${lensHits?.has(s.id) ? " rg-lens-hit" : ""}`}
+                          role="button" tabIndex={0}
+                          onClick={() => setRelicOpen(s)}
+                          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setRelicOpen(s); } }}>
                           <header>
                             {s.img && <img className="rg-relic-icon" src={`/rogue/relic/${s.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
                             <h4><Nm name={s.name} cn={s.cn} /></h4>
+                            <InvPill owned={inv.has(s.id)} onToggle={() => toggleInv(s.id)} />
                           </header>
+                          {/* 미리보기는 효과까지만 — 플레이버 설명은 상세에서 (사용자 확정 2026-07-24) */}
                           {s.usage && <p className="rg-relic-usage">{s.usage}</p>}
-                          {s.desc && <p className="rg-relic-desc">{s.desc}</p>}
                         </article>
                       ))}
                     </div>
@@ -1511,14 +1609,20 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
               <div key={`${m.label}-${g.kind ?? "all"}`} className={g.kind ? "rg-scrap-group" : undefined}>
                 {g.kind && <h4 className="rg-scrap-type">{t(g.kind)}<em>{g.items.length}</em></h4>}
                 <div className="rg-relic-grid">
+                  {/* 시스템 갤러리(암호판·사고·주화 등)도 소장품처럼 클릭 → 상세 모달
+                      (사용자 요청 2026-07-24). 보유 토글은 테마 수집 자원(사고·주화)에만 */}
                   {g.items.map((c) => (
-                    <article key={c.id} className={`rg-relic${lensHits?.has(c.id) ? " rg-lens-hit" : ""}`}>
+                    <article key={c.id} className={`rg-relic clickable${lensHits?.has(c.id) ? " rg-lens-hit" : ""}`}
+                      role="button" tabIndex={0}
+                      onClick={() => setRelicOpen(c)}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setRelicOpen(c); } }}>
                       <header>
                         {c.img && <img className="rg-relic-icon" src={`/rogue/relic/${c.iconId ?? c.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
                         <h4>{c.name}</h4>
+                        {resIds.has(c.id) && <InvPill owned={inv.has(c.id)} onToggle={() => toggleInv(c.id)} />}
                       </header>
+                      {/* 미리보기는 효과까지만 — 플레이버 설명은 상세에서 (사용자 확정 2026-07-24) */}
                       {c.usage && <p className="rg-relic-usage rg-multiline">{c.usage}</p>}
-                      {c.desc && <p className="rg-relic-desc">{c.desc}</p>}
                     </article>
                   ))}
                 </div>
@@ -1656,7 +1760,57 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
           onOpenStage={(s) => { setEnemyOpen(null); setStageOpen(pairOf(s)); }} />
       )}
       {encOpen && <EncounterModal enc={encOpen} onClose={() => setEncOpen(null)} link={linkRelic} />}
-      {relicOpen && <RelicModal relic={relicOpen} onClose={() => setRelicOpen(null)} />}
+      {relicOpen && (
+        <RelicModal relic={relicOpen} onClose={() => setRelicOpen(null)}
+          owned={inv.has(relicOpen.id)}
+          onToggleOwn={invSection(relicOpen.id) ? () => toggleInv(relicOpen.id) : undefined} />
+      )}
+      {/* 보유 리스트 모달 — 소장품/테마 자원 탭으로 구분해 담아둔 항목을 한눈에 (피드백 반영 2026-07-24) */}
+      {invOpen && (
+        <div className="rg-modal-back" onClick={() => setInvOpen(false)} role="presentation">
+          <div className="rg-modal rg-invmodal" role="dialog" aria-modal onClick={(ev) => ev.stopPropagation()}>
+            <header className="rg-modal-head">
+              <div>
+                <h3>🎒 {t("보유 리스트")}</h3>
+                <span className="rg-modal-zone">{t(TOPICS.find((tp) => tp.id === topic)?.name ?? "")}</span>
+              </div>
+              <button type="button" className="rg-modal-close" onClick={() => setInvOpen(false)} aria-label={t("닫기")}>×</button>
+            </header>
+            <p className="rg-zone-desc">{t("게임에서 얻은 소장품·자원을 담아두는 목록입니다. 카드의 「＋ 보유」 버튼으로 추가하며, 이 브라우저에 테마별로 저장됩니다.")}</p>
+            <div className="rg-filterbar rg-inv-tabs">
+              <button type="button" className={invTab === "relic" ? "on" : ""} onClick={() => setInvTab("relic")}>
+                {t("소장품")} <em className="rg-inv-tabcnt">{ownedRelics.length}</em>
+              </button>
+              {resLabel && (
+                <button type="button" className={invTab === "res" ? "on" : ""} onClick={() => setInvTab("res")}>
+                  {t(resLabel)} <em className="rg-inv-tabcnt">{ownedRes.length}</em>
+                </button>
+              )}
+              {(invTab === "relic" ? ownedRelics : ownedRes).length > 0 && (
+                <button type="button" className="rg-inv-clear" onClick={() => void clearInvTab(invTab)}>{t("전체 비우기")}</button>
+              )}
+            </div>
+            {(invTab === "relic" ? ownedRelics : ownedRes).length === 0 ? (
+              <p className="rg-inv-empty">{t("아직 담은 항목이 없습니다 — 소장품·전시관 카드의 「＋ 보유」 버튼으로 추가하세요.")}</p>
+            ) : (
+              <div className="rg-relic-grid">
+                {(invTab === "relic" ? ownedRelics : (ownedRes as InvItem[])).map((r) => (
+                  <article key={r.id} className="rg-relic clickable" role="button" tabIndex={0}
+                    onClick={() => setRelicOpen(r)}
+                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setRelicOpen(r); } }}>
+                    <header>
+                      {r.img && <img className="rg-relic-icon" src={`/rogue/relic/${r.iconId ?? r.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
+                      <h4><Nm name={r.name} cn={r.cn} /></h4>
+                      <InvPill owned onToggle={() => toggleInv(r.id)} />
+                    </header>
+                    {r.usage && <p className="rg-relic-usage">{r.usage}</p>}
+                  </article>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       {lensOpen && (
         <div className="modal-backdrop scanner-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) setLensOpen(false); }}>
           <Suspense fallback={null}>
@@ -1679,6 +1833,8 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
                     {r.img && <img className="rg-relic-icon lg" src={`/rogue/relic/${r.iconId ?? r.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
                     {r.order && <span className="rg-relic-no">{r.order}</span>}
                     <h4><Nm name={r.name} cn={r.cn} /></h4>
+                    {/* 스샷 인식 → 바로 보유 담기 (피드백 반영 2026-07-24) */}
+                    {invSection(r.id) && <InvPill owned={inv.has(r.id)} onToggle={() => toggleInv(r.id)} />}
                   </header>
                   {r.usage && <p className="rg-relic-usage">{r.usage}</p>}
                   {r.desc && <p className="rg-relic-desc">{r.desc}</p>}
@@ -1709,6 +1865,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
           </section>
         </div>
       )}
+      {confirmDialog}
       </>)}
     </section>
   );

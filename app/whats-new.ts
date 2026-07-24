@@ -5,6 +5,7 @@ export const FEATURE_RELEASED: Record<string, string | { date: string; days: num
   scanner: "2026-07-23", // 스크린샷으로 보유 오퍼 스캔 (보유 오퍼 설정 모달)
   lens: "2026-07-23", // 스샷 레이더 — 게임 화면 인식 → 해당 정보로 이동 (/rogue·공채 페이지별 설치)
   invest: { date: "2026-07-24", days: 3 }, // 인프라 오퍼 육성 추천 (사용자 지정 3일)
+  "rogue-inv": "2026-07-24", // 통합전략 보유 리스트 — 소장품·테마 자원 인벤토리 (피드백 반영)
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -25,7 +26,7 @@ export function isNewFeature(key: string): boolean {
 const TAB_FEATURES: Record<string, string[]> = {
   planner: ["scanner", "invest"],
   recruit: ["lens"],
-  rogue: ["lens"],
+  rogue: ["lens", "rogue-inv"],
   story: ["lens"], // 스샷 레이더 /stories 설치 (전문 대사 검색, 2026-07-24)
 };
 

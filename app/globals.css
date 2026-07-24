@@ -9208,9 +9208,10 @@ html.dark.rg-theme.rg6 .site-header {
   width: 100%;
   margin: 0 0 10px;
 }
+/* 상세 모달 섬네일은 목록(40px)보다 확실히 크게 (사용자 확정 2026-07-24) */
 .rg-relic-icon.lg {
-  width: 56px;
-  height: 56px;
+  width: 72px;
+  height: 72px;
 }
 .rg-rmodal .rg-relic-usage {
   font-size: 14px;
@@ -10439,6 +10440,98 @@ main.site-main > .site-header {
 .rg-relic.clickable:hover {
   border-color: var(--lime);
   box-shadow: 0 2px 10px color-mix(in srgb, var(--lime) 25%, transparent);
+}
+
+/* ── 보유 리스트 (인벤토리) — 게임에서 얻은 소장품·테마 자원(사고·주화·부품)을 담아두는
+   개인 목록 (피드백 반영 2026-07-24). 탭바 우측 🎒 버튼 → 모달, 카드 헤더 우측 ＋보유 토글 ── */
+.rg-tabs .rg-inv-open {
+  margin-left: auto; /* 뷰 탭 묶음과 분리해 줄 오른쪽으로 */
+  border-color: color-mix(in srgb, var(--rggold) 55%, var(--rgline));
+}
+.rg-tabs .rg-inv-open:hover {
+  border-color: var(--rggold);
+}
+/* 스샷 레이더가 같은 줄에 있으면(KR) auto 마진은 보유 버튼이 대신 맡는다 */
+.rg-tabs .rg-inv-open ~ .lens-open-wrap {
+  margin-left: 0;
+}
+.rg-inv-count {
+  font: 800 11px/1 monospace;
+  font-style: normal;
+  background: var(--rggold);
+  color: #241616;
+  border-radius: 999px;
+  padding: 2px 6px;
+  margin-left: 6px;
+}
+.rg-inv-btn {
+  margin-left: auto;
+  border: 1px solid var(--rgline);
+  background: transparent;
+  color: var(--rgmut);
+  font: 700 10px/1 inherit;
+  padding: 3px 6px;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+  opacity: 0.85; /* 이름보다 낮은 위계 — 호버 시 원복 */
+}
+.rg-inv-btn:hover {
+  opacity: 1;
+}
+.rg-inv-btn:hover {
+  border-color: var(--rggold);
+  color: var(--rggold);
+}
+.rg-inv-btn.on {
+  background: var(--rggold);
+  border-color: var(--rggold);
+  color: #241616;
+  opacity: 1;
+}
+/* 상세 모달 하단의 보유 토글 (카드 필과 동일 동작, 문구는 풀 텍스트) */
+.rg-inv-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  border: 1px solid color-mix(in srgb, var(--rggold) 55%, var(--rgline));
+  background: transparent;
+  color: var(--rgink);
+  padding: 7px 12px;
+  font: 700 12.5px/1 inherit;
+  cursor: pointer;
+}
+.rg-inv-toggle:hover {
+  border-color: var(--rggold);
+  color: var(--rggold);
+}
+.rg-inv-toggle.on {
+  background: var(--rggold);
+  border-color: var(--rggold);
+  color: #241616;
+}
+.rg-invmodal .rg-zone-desc {
+  margin: 4px 0 12px;
+}
+.rg-inv-tabs {
+  margin-bottom: 12px;
+}
+.rg-inv-tabcnt {
+  font: 800 11px/1 monospace;
+  font-style: normal;
+  margin-left: 4px;
+  opacity: 0.85;
+}
+.rg-inv-clear {
+  margin-left: auto;
+  color: var(--rgmut);
+}
+.rg-inv-empty {
+  color: var(--rgmut);
+  font-size: 13.5px;
+  line-height: 1.7;
+  margin: 18px 4px;
 }
 
 /* 렌즈 하이라이트 — /rogue 전시관 카드에 도착 표시 (스크롤 타깃) */
