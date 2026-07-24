@@ -876,10 +876,11 @@ const D: Record<string, Pair> = {
     "This operator is not yet released — data comes from the CN server, and skill/talent text is an unofficial AI translation that may differ from the official localization.",
     "未実装のオペレーターです — 中国サーバーのデータ基準であり、スキル・素質などのテキストは非公式のAI翻訳のため、正式実装時の公式翻訳と異なる場合があります。",
   ],
-  "미실장(중국 서버 선행) 이벤트의 제목은 비공식 AI 번역으로, 정식 출시 시 공식 번역과 다를 수 있습니다.": [
-    "Titles of unreleased (CN-first) events are unofficial AI translations and may differ from the official localization.",
-    "未実装（中国サーバー先行）イベントのタイトルは非公式のAI翻訳であり、正式実装時の公式翻訳と異なる場合があります。",
+  "미실장(중국 서버 선행) 이벤트는 앞으로 이 순서대로 한국에 옵니다. 실제 출시일은 요스타가 정해 아직 알 수 없고, 표시된 예정월은 중국↔한국 출시 시차로 추정한 대략적 시점입니다. 제목도 비공식 AI 번역이라 정식 출시 시 공식 번역과 다를 수 있습니다.": [
+    "Unreleased (CN-first) events will reach Korea in this order. The actual release dates are up to Yostar and not yet known; the listed months are rough estimates based on the CN↔KR release gap. Titles are also unofficial AI translations and may differ from the official localization.",
+    "未実装（中国サーバー先行）イベントは今後この順で韓国サーバーに実装されます。実際の配信日はYostar次第でまだ分からず、表示の予定月は中国↔韓国の配信時差から推定したおおよその時期です。タイトルも非公式のAI翻訳で、正式実装時の公式翻訳と異なる場合があります。",
   ],
+  "{ym}쯤 예정 (추정)": ["~{ym} (est.)", "{ym}頃 予定（推定）"],
   "미실장(중국 서버 선행) 오퍼레이터·재료의 텍스트는 비공식 AI 번역으로, 정식 출시 시 공식 번역과 다를 수 있습니다.": [
     "Text for unreleased (CN-first) operators and materials is an unofficial AI translation and may differ from the official localization.",
     "未実装（中国サーバー先行）のオペレーター・素材のテキストは非公式のAI翻訳であり、正式実装時の公式翻訳と異なる場合があります。",

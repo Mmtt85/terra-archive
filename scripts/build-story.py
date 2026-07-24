@@ -485,6 +485,17 @@ cn_dir = os.path.join(thumb_dir, "cn")
 os.makedirs(cn_dir, exist_ok=True)
 cn_acts = sorted((v for v in cn.values() if v["entryType"] == "ACTIVITY" and v["id"] not in kr),
                  key=lambda v: -v["startTime"])
+
+# ── 중↔한 출시 시차 자동 산출 → 미실장 이벤트의 KR 추정월(eta) ──
+# 실제 KR 출시일은 요스타가 정하므로 **알 수 없다**. 다만 양 서버에 다 있는 '가장 최근'
+# 사이드 이벤트의 KR·CN 출시 간격을 시차로 잡아, (CN 출시일 + 시차)를 대략적 추정월로만
+# 붙인다. UI엔 "정확한 날짜가 아니라 이 순서로·이때쯤 온다" 정도로만 표기한다.
+_paired = [(kr[a]["startTime"], cn[a]["startTime"]) for a in kr
+           if a in cn and kr[a].get("entryType") == "ACTIVITY"
+           and kr[a].get("startTime") and cn[a].get("startTime")]
+_gap_sec = (max(_paired, key=lambda p: p[0])[0] - max(_paired, key=lambda p: p[0])[1]) if _paired else 0
+print(f"KR↔CN 출시 시차: {_gap_sec/86400:.0f}일 (미실장 eta 산출용)", file=sys.stderr)
+
 for act in cn_acts:
     eid = act["id"]
     codes = []
@@ -506,14 +517,17 @@ for act in cn_acts:
     trans = CN_PROVISIONAL_NAMES.get(eid)
     if not trans:
         print("untranslated cn event (원문 노출):", eid, act["name"], file=sys.stderr)
-    events.append({
+    ev_obj = {
         "id": eid,
         "name": trans or {"ko": act["name"]},  # 임시 번역 없으면 중국어 원문
-        "start": time.strftime("%Y-%m", time.gmtime(act["startTime"])),  # CN 출시월
+        "start": time.strftime("%Y-%m", time.gmtime(act["startTime"])),  # CN 출시월(정렬·시차 기준)
         "episodes": len(codes),
         "thumb": thumb_path,
         "unreleased": True,
-    })
+    }
+    if _gap_sec:  # CN 출시월 + 시차 = KR 추정월 (확정 아님)
+        ev_obj["eta"] = time.strftime("%Y-%m", time.gmtime(act["startTime"] + _gap_sec))
+    events.append(ev_obj)
 
 out = {"updated": time.strftime("%Y-%m-%d"), "events": events}
 json.dump(out, open(f"{REPO}/app/data/stories.json", "w", encoding="utf-8"),
