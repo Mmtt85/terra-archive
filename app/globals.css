@@ -525,6 +525,13 @@ button {
   font: 600 11.5px monospace;
   color: var(--muted);
 }
+/* 향후 다가올(중섭 선행) 이벤트 섹션 하단 안내 — 날짜가 추정치임을 알림 */
+.event-menu-note {
+  margin: 8px 0 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--muted);
+}
 
 /* 공식 방송 — 목록 모달 */
 .bcast-modal {

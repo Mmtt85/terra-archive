@@ -489,7 +489,7 @@ cn_acts = sorted((v for v in cn.values() if v["entryType"] == "ACTIVITY" and v["
 # ── 중↔한 출시 시차 자동 산출 → 미실장 이벤트의 KR 추정월(eta) ──
 # 실제 KR 출시일은 요스타가 정하므로 **알 수 없다**. 다만 양 서버에 다 있는 '가장 최근'
 # 사이드 이벤트의 KR·CN 출시 간격을 시차로 잡아, (CN 출시일 + 시차)를 대략적 추정월로만
-# 붙인다. UI엔 "정확한 날짜가 아니라 이 순서로·이때쯤 온다" 정도로만 표기한다.
+# 붙인다. 헤더 이벤트 드롭다운 '향후 다가올 이벤트'에서 "이 순서로·이때쯤"으로만 표기한다.
 _paired = [(kr[a]["startTime"], cn[a]["startTime"]) for a in kr
            if a in cn and kr[a].get("entryType") == "ACTIVITY"
            and kr[a].get("startTime") and cn[a].get("startTime")]

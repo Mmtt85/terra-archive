@@ -177,6 +177,11 @@ function fmtDate(locale: Locale, iso: string, withTime: boolean) {
   }).format(new Date(iso));
 }
 
+// eta "2026-09" → 로케일별 "연월"(일 없음). 미실장 이벤트 추정월 표기용 — KST 기준.
+function fmtYm(locale: Locale, ym: string): string {
+  return new Intl.DateTimeFormat(DT_LOCALE[locale], { timeZone: "Asia/Seoul", year: "numeric", month: "long" }).format(new Date(`${ym}-01T00:00:00+09:00`));
+}
+
 function BroadcastThumb({ b }: { b: Broadcast }) {
   const id = youTubeId(b);
   const [broken, setBroken] = useState(false);
@@ -198,11 +203,16 @@ function bcastKey(b: Broadcast): string {
   return youTubeId(b) ?? `${b.server}:${new Date(b.start).toISOString().slice(0, 10)}`;
 }
 
-// AI 스토리 요약이 있는 이벤트 — 진행중 배지에서 이름 현지화 + 배너 썸네일 + 스토리 페이지 링크에 사용
-const storyEventById = new Map(
-  (storyEventsData as { events: { id: string; name: { ko: string; en?: string; ja?: string }; thumb?: string; thumbEn?: string; thumbJa?: string }[] }).events
-    .map((event) => [event.id, event]),
-);
+// AI 스토리 요약이 있는 이벤트 — 진행중 배지에서 이름 현지화 + 배너 썸네일 + 스토리 페이지 링크에 사용.
+// eta = 미실장(중섭 선행) 이벤트의 KR 추정 출시월("2026-11") — build-story.py가 중↔한 시차로 산출.
+type StoryEventLite = { id: string; name: { ko: string; en?: string; ja?: string }; thumb?: string; thumbEn?: string; thumbJa?: string; unreleased?: boolean; eta?: string };
+const storyEventsList = (storyEventsData as { events: StoryEventLite[] }).events;
+const storyEventById = new Map(storyEventsList.map((event) => [event.id, event]));
+// 미실장(중섭 선행) 이벤트 — 헤더 이벤트 드롭다운 '향후 다가올'에 추정월과 함께 노출 (미래시 ON일 때만).
+// 정렬은 추정월 이른(= 먼저 KR에 올) 순 — 다음에 올 이벤트가 위로.
+const futureEvents = storyEventsList
+  .filter((event) => event.unreleased)
+  .sort((a, b) => (a.eta ?? a.id).localeCompare(b.eta ?? b.id));
 // 사이드스토리·복각 등 굵직한 이벤트 — 배지 대표로 우선한다 (로그인·출석류보다)
 const MAJOR_EVENT_TYPES = new Set(["SIDESTORY", "BRANCHLINE", "MINISTORY"]);
 // 로그인·출석·기원 등 "보상 수령만" 하는 잔이벤트 — 헤더에서 아예 숨긴다 (사용자 확정 2026-07-17).
@@ -246,7 +256,7 @@ function eventThumb(locale: Locale, event: GameEvent): string | undefined {
 }
 const eventDday = (event: GameEvent, now: number): number => Math.max(0, Math.ceil((Date.parse(event.end) - now) / DAY));
 
-function BroadcastBadges() {
+function BroadcastBadges({ includeFuture }: { includeFuture?: boolean }) {
   const { locale, t } = useI18n();
   const shortStatus = (b: Broadcast, now: number): string => {
     const state = bcastState(b, now);
@@ -415,6 +425,27 @@ function BroadcastBadges() {
                 );
               })}
             </ul>
+          </>}
+          {/* 향후 다가올 이벤트 — 아직 KR 미출시(중섭 선행) 이벤트를 순서대로 + 추정월과 함께.
+              미래시 데이터 포함이 켜져 있을 때만 노출한다 (사이트 공통 규칙, 사용자 확정 2026-07-25). */}
+          {includeFuture && futureEvents.length > 0 && <>
+            <h3 className="event-menu-upcoming">{t("향후 다가올 이벤트")}</h3>
+            <ul>
+              {futureEvents.map((event) => {
+                const name = (locale === "ko" ? event.name.ko : event.name[locale]) ?? event.name.ko;
+                const thumb = (locale === "ja" ? event.thumbJa : locale === "en" ? event.thumbEn : undefined) ?? event.thumb;
+                return (
+                  <li key={event.id}>
+                    <span className="event-row-plain">
+                      {thumb && <span className="event-banner"><img src={thumb} alt="" loading="lazy" /></span>}
+                      <span className="event-row-name">{name}</span>
+                      {event.eta && <small>{t("{ym}쯤 예정 (추정)", { ym: fmtYm(locale, event.eta) })}</small>}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+            <p className="event-menu-note">{t("중국 서버 선행 이벤트예요. 한국 출시일은 미정이며, 표시 월은 중↔한 시차로 추정한 대략적 시점입니다.")}</p>
           </>}
         </div>
       )}
@@ -1064,7 +1095,7 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
         </a>
         {/* 공식방송 + 진행중 이벤트 — PC: 공식방송은 로고 바로 오른쪽(1줄), 이벤트는 1줄 정중앙
             absolute (사용자 확정 2026-07-22, 접힘 상태에도 항상 표시). 모바일: order로 2줄 배치. */}
-        <BroadcastBadges />
+        <BroadcastBadges includeFuture={includeFuture} />
         {/* 햄버거(메뉴) = 1줄 오른쪽 끝 — 데스크탑·모바일 공통 (사용자 확정 2026-07-22).
             모바일은 order로, 데스크탑은 margin-left:auto로 배치되므로 JSX 위치는 자유. */}
         <div className="nav-group">

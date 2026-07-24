@@ -41,8 +41,7 @@ import { normSearch } from "./search";
 const imageDims = imageDimsData as Record<string, [number, number]>;
 
 type LocText = { ko: string; en?: string; ja?: string };
-// eta = 미실장(중섭 선행) 이벤트의 KR 추정 출시월("2026-11"). 실제 날짜는 요스타가 정하므로
-// 확정이 아니라 중↔한 시차 기반 추정치다 (build-story.py가 산출).
+// eta = 미실장(중섭 선행) 이벤트의 KR 추정 출시월("2026-11") — 헤더 이벤트 드롭다운에서만 쓴다.
 type StoryEvent = { id: string; name: LocText; start: string; episodes: number; thumb: string; thumbEn?: string; thumbJa?: string; unreleased?: boolean; eta?: string; epNo?: number; mini?: boolean };
 type Block =
   | { t: "h"; x: string }
@@ -65,16 +64,6 @@ type Chronology = { note: string; updated?: string; arcs: Arc[]; entries: RawEnt
 type ChronItem = { key: string; kind: ChronKind; name: LocText; start?: string; thumb?: string; thumbEn?: string; thumbJa?: string; terraYear: number | null; arc: string | null; eventId?: string; dateNote?: string; epNo?: number; ep?: LocText };
 
 const data = storiesData as { updated: string; events: StoryEvent[] };
-
-// 미실장 eta("2026-11") → 로케일별 "연월" 표기. 정확한 날짜가 아니므로 월 단위까지만.
-const MONTHS_EN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const fmtYm = (ym: string, locale: string) => {
-  const [y, m] = ym.split("-").map(Number);
-  if (!y || !m) return ym;
-  if (locale === "en") return `${MONTHS_EN[m - 1]} ${y}`;
-  if (locale === "ja") return `${y}年${m}月`;
-  return `${y}년 ${m}월`;
-};
 const summaryIds = new Set(summaryIdsData as string[]);
 const scriptIds = new Set(scriptIdsData as string[]);
 // 로케일별 전문 가용성 — 해당 언어 스크립트가 있으면 그 언어로, 없으면 KR로 폴백한다.
@@ -1141,13 +1130,6 @@ function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEve
     const fa = a.eventId && eventById.get(a.eventId)?.unreleased ? 1 : 0;
     const fb = b.eventId && eventById.get(b.eventId)?.unreleased ? 1 : 0;
     if (fa !== fb) return fb - fa;
-    if (fa && fb) {
-      // 미실장끼리는 '먼저 올(추정월 이른) 것'을 위에 — 다음에 올 이벤트가 맨 위 (CN 순서대로 도착)
-      const ea = (a.eventId && eventById.get(a.eventId)?.eta) || recency(a);
-      const eb = (b.eventId && eventById.get(b.eventId)?.eta) || recency(b);
-      const c = ea.localeCompare(eb);
-      if (c) return c;
-    }
     const sa = recency(a), sb = recency(b);
     if (sa && sb) { const c = sb.localeCompare(sa); if (c) return c; }
     else if (sa) return -1;
@@ -1229,11 +1211,7 @@ function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEve
       : ((locale === "ja" ? it.thumbJa : locale === "en" ? it.thumbEn : undefined) ?? it.thumb);
     // 메타는 종류(사이드/미니 이벤트, 에피소드 N, 통합 전략)만 — 발행연월·에피소드 개수는
     // 표시하지 않는다 (사용자 요청 2026-07-21 — 출시월은 정렬용으로만 쓴다)
-    const kindLabel = it.ep ? locText(locale, it.ep) : t(KIND_KO[it.kind]);
-    // 미실장(중섭 선행)은 종류 옆에 KR 추정 출시월을 붙인다 — "이 순서로·이때쯤 온다"만 전달
-    const meta = ev?.unreleased && ev.eta
-      ? `${kindLabel} · ${t("{ym}쯤 예정 (추정)", { ym: fmtYm(ev.eta, locale) })}`
-      : kindLabel;
+    const meta = it.ep ? locText(locale, it.ep) : t(KIND_KO[it.kind]);
     const body = (
       <>
         <div className={`story-thumb${thumb ? "" : " story-thumb-none"}`}>
@@ -1494,7 +1472,7 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
         <p>{t("출시된 스토리 {count}개의 아카이브입니다. AI가 스토리 스크립트 전문을 정독하고 컷씬과 함께 10분 분량으로 요약합니다. 현재 {done}개 수록 — 계속 추가됩니다.", { count: data.events.filter((event) => !event.unreleased).length, done: summarized })}</p>
         <p className="story-source">{t("요약에는 결말 포함 스포일러가 있습니다. 이벤트 제목·썸네일 출처: 게임 데이터 · {date} 기준.", { date: data.updated })}</p>
         {includeFuture && data.events.some((event) => event.unreleased) && (
-          <p className="story-source">{t("미실장(중국 서버 선행) 이벤트는 앞으로 이 순서대로 한국에 옵니다. 실제 출시일은 요스타가 정해 아직 알 수 없고, 표시된 예정월은 중국↔한국 출시 시차로 추정한 대략적 시점입니다. 제목도 비공식 AI 번역이라 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>
+          <p className="story-source">{t("미실장(중국 서버 선행) 이벤트의 제목은 비공식 AI 번역으로, 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>
         )}
       </div>
 
