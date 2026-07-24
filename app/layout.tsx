@@ -65,13 +65,14 @@ export default function RootLayout({
             __html: `try{var t=localStorage.getItem('ta-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark');}catch(e){}`,
           }}
         />
-        {/* 모든 모달 ESC 닫기 (사용자 요청 2026-07-24) — 공통 .modal-backdrop 패턴 전역 처리.
-            겹친 모달은 z-index 최상단(동률이면 DOM 마지막)만 닫는다: .modal-close 버튼이 있으면
-            클릭, 없으면 백드롭 자기-타깃 mousedown 디스패치(React 백드롭 클릭 닫기 핸들러가 받는다).
-            rogue(rg-*) 모달은 자체 Esc 핸들러가 이미 있어 제외. 한글 IME 조합 중엔 무시. */}
+        {/* 모든 모달 ESC 닫기 (사용자 요청 2026-07-24) — app/esc-close.ts와 동일 로직의 인라인판.
+            React 셸(home.tsx)도 같은 바인딩을 하므로 window.__taEsc 가드로 1회만 붙는다
+            (인라인이 안 도는 환경 ↔ React가 안 뜨는 환경 상호 보완). 규칙: 겹친 모달은 z-index
+            최상단만, .modal-close 클릭 → 없으면 백드롭 자기-타깃 mousedown. 로직 수정 시
+            esc-close.ts와 함께 고칠 것. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `document.addEventListener('keydown',function(e){if(e.key!=='Escape'||e.isComposing)return;var els=document.querySelectorAll('.modal-backdrop');if(!els.length)return;var top=null,tz=-1;for(var i=0;i<els.length;i++){var z=parseInt(getComputedStyle(els[i]).zIndex,10)||0;if(z>=tz){tz=z;top=els[i];}}if(!top)return;var btn=top.querySelector('.modal-close');if(btn){btn.click();return;}top.dispatchEvent(new MouseEvent('mousedown',{bubbles:true}));});`,
+            __html: `if(!window.__taEsc){window.__taEsc=1;document.addEventListener('keydown',function(e){if((e.key!=='Escape'&&e.key!=='Esc'&&e.keyCode!==27)||e.isComposing)return;var els=document.querySelectorAll('.modal-backdrop');if(!els.length)return;var top=null,tz=-1;for(var i=0;i<els.length;i++){var z=parseInt(getComputedStyle(els[i]).zIndex,10)||0;if(z>=tz){tz=z;top=els[i];}}if(!top)return;var btn=top.querySelector('.modal-close');if(btn){btn.click();return;}top.dispatchEvent(new MouseEvent('mousedown',{bubbles:true}));});}`,
           }}
         />
         {children}

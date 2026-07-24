@@ -15,6 +15,7 @@ import StoryGuide, { type StorySummaries, type OpIndex } from "./story";
 import RogueGuide, { TOPICS as ROGUE_TOPICS, slugOf as rogueSlugOf } from "./rogue";
 import About from "./about";
 import FeedbackWidget from "./feedback-widget";
+import { bindEscClose } from "./esc-close";
 import { feedbackReady, fetchNicknameCounts, submitNickname } from "./feedback";
 import { tabHasNewFeature } from "./whats-new";
 import { scrollMainTop } from "./scroll";
@@ -749,6 +750,9 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
   useEffect(() => {
     document.documentElement.lang = locale;
   }, [locale]);
+
+  // 모든 모달 ESC 닫기 — layout.tsx 인라인 스크립트의 이중 장치 (esc-close.ts, 가드로 1회만)
+  useEffect(() => { bindEscClose(); }, []);
 
   useLayoutEffect(() => {
     // 구 해시 링크(#infra 등) 하위호환 — 서버는 경로 기준으로 archive를 렌더하므로,
