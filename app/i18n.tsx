@@ -1314,7 +1314,7 @@ const D: Record<string, Pair> = {
   "버튼이 켜져 있는 동안만 클립보드를 감시합니다. 스토리로 이동하면 자동으로 꺼지는 일회성 스캔입니다.": ["The clipboard is only watched while the button is on. It's a one-shot scan that turns itself off once you've moved to the story.", "ボタンがオンの間だけクリップボードを監視します。ストーリーへ移動すると自動でオフになる、一回限りのスキャンです。"],
   "참고": ["Notes", "備考"],
   "첫 인식은 인식 엔진을 내려받느라 몇 초 더 걸립니다. 이후에는 빨라집니다.": ["The first recognition takes a few extra seconds to download the engine; it's faster afterwards.", "初回の認識はエンジンのダウンロードで数秒余分にかかります。以降は速くなります。"],
-  "한국어 클라이언트 기준이며, 흑류수해는 중국어(CN) 화면도 인식합니다. 캡처가 선명할수록 정확합니다.": ["Built for the Korean game client; Blackflow Forest of the Sunken also recognizes Chinese (CN) screens. The sharper the capture, the more accurate.", "韓国語クライアント基準ですが、黒流樹海は中国語（CN）画面も認識します。キャプチャが鮮明なほど正確です。"],
+  "지금 보고 있는 언어(한국어·영어·일본어)의 게임 화면을 인식하며, CN 선행 테마(흑류수해)는 중국어 화면도 인식합니다. 캡처가 선명할수록 정확합니다.": ["It reads game screens in the language you're viewing (Korean, English, or Japanese); the CN-first theme (Blackflow Forest of the Sunken) also reads Chinese screens. The sharper the capture, the more accurate.", "表示中の言語（韓国語・英語・日本語）のゲーム画面を認識し、CN先行テーマ（黒流樹海）は中国語画面も認識します。キャプチャが鮮明なほど正確です。"],
   "게임 스크린샷을 인식해 이 가이드의 해당 정보로 바로 이동합니다 — 분대·유물·작전·조우 등": ["Recognizes a game screenshot and jumps straight to that info in this guide — squads, relics, operations, encounters, and more", "ゲームのスクリーンショットを認識してこのガイドの該当情報へ直行します — 分隊・秘宝・作戦・遭遇など"],
   "공개모집 화면 스크린샷을 인식해 태그를 자동으로 선택합니다": ["Recognizes a recruitment-screen screenshot and selects the tags automatically", "公開求人画面のスクリーンショットを認識してタグを自動選択します"],
   "태그를 인식해 선택했습니다.": ["Tags recognized and selected.", "タグを認識して選択しました。"],

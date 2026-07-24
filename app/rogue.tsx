@@ -11,7 +11,7 @@ import { useI18n } from "./i18n";
 import { normSearch } from "./search";
 import { isNewFeature } from "./whats-new";
 import type { LensGoto, LensOutcome } from "./lens/match";
-import { recognizeShot, warmData } from "./lens/run";
+import { recognizeShot, warmData, ocrLangFor } from "./lens/run";
 import { warmOcr } from "./lens/ocr";
 import { useClipboardWatch } from "./lens/clipwatch";
 import { useDropWatch } from "./lens/dropwatch";
@@ -1003,7 +1003,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   const [lensAuto, setLensAuto] = useState(false);
   const toggleLensAuto = () => setLensAuto((v) => {
     const next = !v;
-    if (next) { void warmOcr(); warmData("rogue"); } // 켜는 순간 OCR·데이터 예열
+    if (next) { void warmOcr(ocrLangFor(locale)); warmData("rogue", locale); } // 켜는 순간 화면 언어의 OCR·데이터 예열
     return next;
   });
   const [lensMsg, setLensMsg] = useState<string | null>(null);
@@ -1022,7 +1022,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
     setLensThumb((prev) => { if (prev) URL.revokeObjectURL(prev); return URL.createObjectURL(file); });
     flashLensMsg(t("스캔 중…"));
     try {
-      const oc = await recognizeShot("rogue", file, topicRef.current);
+      const oc = await recognizeShot("rogue", file, topicRef.current, locale);
       if (oc.target.kind === "goto") {
         onLensGoto(oc.target.goto);
         flashLensMsg(t("인식 완료 — 해당 정보로 이동했습니다."), 2000);
@@ -1206,22 +1206,21 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
           {inv.size > 0 && <em className="rg-inv-count">{inv.size}</em>}
           {isNewFeature("rogue-inv") && <span className="new-badge">{t("새기능")}</span>}
         </button>
-        {/* 스샷 레이더 — 버튼 자체가 자동인식 토글, ?는 도움말 모달 (사용자 확정 2026-07-23, KR 클라 전용) */}
-        {locale === "ko" && (
-          <div className="lens-open-wrap">
-            <button type="button" className={`lens-open-btn${lensAuto ? " on" : ""}`} aria-pressed={lensAuto}
-              title={t("클릭해 스샷 자동인식을 켜고 끕니다 — 켜두면 게임 화면을 캡처만 해도 바로 인식·적용됩니다")}
-              onClick={toggleLensAuto}>
-              <span className="lens-auto-knob" aria-hidden />📷 {t("스샷 레이더")}{isNewFeature("lens") && <span className="new-badge">{t("새기능")}</span>}
-            </button>
-            <button type="button" className="lens-help-btn" aria-label={t("스샷 레이더 도움말")}
-              onClick={() => setLensOpen(true)}>?</button>
-          </div>
-        )}
+        {/* 스샷 레이더 — 버튼 자체가 자동인식 토글, ?는 도움말 모달. KR/EN/JA 화면 인식 (2026-07-25).
+            흑류수해(rogue_6)는 CN 선행이라 중국어 화면도 전 로케일에서 인식한다. */}
+        <div className="lens-open-wrap">
+          <button type="button" className={`lens-open-btn${lensAuto ? " on" : ""}`} aria-pressed={lensAuto}
+            title={t("클릭해 스샷 자동인식을 켜고 끕니다 — 켜두면 게임 화면을 캡처만 해도 바로 인식·적용됩니다")}
+            onClick={toggleLensAuto}>
+            <span className="lens-auto-knob" aria-hidden />📷 {t("스샷 레이더")}{isNewFeature("lens") && <span className="new-badge">{t("새기능")}</span>}
+          </button>
+          <button type="button" className="lens-help-btn" aria-label={t("스샷 레이더 도움말")}
+            onClick={() => setLensOpen(true)}>?</button>
+        </div>
       </nav>
       {/* 자동인식 상태 필 — fixed 오버레이(레이아웃 안 밀음) + 인식 이미지 미니 썸네일.
           드롭은 창 전체가 받고(useDropWatch), 드래그 중이면 필이 드롭 가능 상태로 강조된다 */}
-      {locale === "ko" && lensAuto && (
+      {lensAuto && (
         <div className={`lens-auto-pill${lensMsg ? " busy" : ""}${lensDragging ? " drop" : ""}`} role="status">
           {lensThumb && !lensDragging && <img className="lens-auto-thumb" src={lensThumb} alt={t("인식한 스크린샷")} />}
           <span>{lensDragging ? t("여기든 어디든, 놓으면 바로 인식합니다") : lensMsg ?? (lensClip === "off"

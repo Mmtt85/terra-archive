@@ -8,29 +8,34 @@
 import { grayNormalize, upscaleFactor, findDarkChips, chipCropRect, binarizeGlyph, isolateGlyphs } from "./preprocess";
 import type { Worker } from "tesseract.js";
 
-let workerP: Promise<Worker> | null = null;
+// 프라이머리 OCR 워커 — 화면 언어별로 다른 traineddata를 쓴다: KR=kor, EN=eng, JA=jpn.
+// 로케일별로 필요한 것만 지연 로드하고 lang별로 캐시한다 (JA 사이트는 jpn만 내려받음).
+const primaryWorkers = new Map<string, Promise<Worker>>();
 let digitWorkerP: Promise<Worker> | null = null; // 난이도 배지 숫자 전용 (eng — kor은 숫자를 한글로 읽음)
 let chiWorkerP: Promise<Worker> | null = null;   // 중국어(흑류수해 CN 클라) 전용 — 필요할 때만 지연 로드
 
-function getWorker(): Promise<Worker> {
-  if (!workerP) {
-    workerP = (async () => {
+/** lang(kor|eng|jpn) 프라이머리 워커 — 화면 언어에 맞춰 run.ts가 고른다. */
+function getWorker(lang = "kor"): Promise<Worker> {
+  let p = primaryWorkers.get(lang);
+  if (!p) {
+    p = (async () => {
       // ⚠ 반드시 브라우저 전용 번들을 명시 import — 패키지 루트("tesseract.js")를 import하면
       // vinext가 package.json browser 필드를 무시하고 Node용 어댑터를 번들해, 캔버스 입력이
       // 워커에 전달되지 않아 OCR이 조용히 0줄을 반환한다 (2026-07-23 실브라우저 재현으로 확인).
       // esm.min.js는 CJS 래핑이라 default export 하나뿐 — 구조분해는 default에서 한다.
       const mod = await import("tesseract.js/dist/tesseract.esm.min.js");
       const { createWorker } = mod.default;
-      return createWorker("kor", 1, {
+      return createWorker(lang, 1, {
         workerPath: "/lens/worker.min.js",
         corePath: "/lens", // 디렉토리 지정 → tesseract-core(-simd)-lstm.wasm.js를 알아서 선택
         langPath: "/lens",
-        gzip: false, // kor.traineddata를 비압축 그대로 호스팅
+        gzip: false, // <lang>.traineddata를 비압축 그대로 호스팅
       });
     })();
-    workerP.catch(() => { workerP = null; }); // 로드 실패 시 다음 시도에서 재생성
+    p.catch(() => { primaryWorkers.delete(lang); }); // 로드 실패 시 다음 시도에서 재생성
+    primaryWorkers.set(lang, p);
   }
-  return workerP;
+  return p;
 }
 
 // 난이도 숫자 전용 eng 워커 — kor LSTM은 단독 숫자를 한글 글리프로 오독하고,
@@ -76,8 +81,8 @@ function getChiWorker(): Promise<Worker> {
 }
 
 /** 모달을 열자마자 호출해 워커·wasm·언어데이터를 예열한다 (첫 인식 체감 속도 개선). */
-export async function warmOcr(): Promise<void> {
-  try { await getWorker(); } catch { /* 실제 인식 시 재시도 */ }
+export async function warmOcr(lang = "kor"): Promise<void> {
+  try { await getWorker(lang); } catch { /* 실제 인식 시 재시도 */ }
 }
 
 export type OcrSession = {
@@ -109,8 +114,8 @@ async function setPsm(worker: Worker, psm: string): Promise<void> {
   await worker.setParameters({ tessedit_pageseg_mode: psm as never });
 }
 
-/** 스크린샷 Blob → 전처리 캔버스를 쥔 단계형 OCR 세션. */
-export async function createOcrSession(blob: Blob): Promise<OcrSession> {
+/** 스크린샷 Blob → 전처리 캔버스를 쥔 단계형 OCR 세션. lang = 화면 언어(kor|eng|jpn). */
+export async function createOcrSession(blob: Blob, lang = "kor"): Promise<OcrSession> {
   const bmp = await createImageBitmap(blob);
   const scale = upscaleFactor(bmp.width);
   const W = bmp.width * scale, H = bmp.height * scale;
@@ -124,7 +129,7 @@ export async function createOcrSession(blob: Blob): Promise<OcrSession> {
   const img = ctx.getImageData(0, 0, W, H);
   grayNormalize(img.data);
   ctx.putImageData(img, 0, 0);
-  const worker = await getWorker();
+  const worker = await getWorker(lang);
 
   // 출력은 blocks(→lines)만 생성 — 기본값의 hocr·tsv 생성 비용을 끈다 (속도)
   const OUT = { blocks: true, text: false, hocr: false, tsv: false } as const;
@@ -198,12 +203,13 @@ export async function createOcrSession(blob: Blob): Promise<OcrSession> {
 
 /** 모달 닫을 때 워커 정리 (다음 열림에서 재초기화). */
 export async function disposeOcr(): Promise<void> {
-  const p = workerP, dp = digitWorkerP, cp = chiWorkerP;
-  workerP = null;
+  const primaries = [...primaryWorkers.values()];
+  const dp = digitWorkerP, cp = chiWorkerP;
+  primaryWorkers.clear();
   digitWorkerP = null;
   chiWorkerP = null;
-  if (p) {
-    try { await (await p).terminate(); } catch { /* 이미 종료됨 */ }
+  for (const wp of primaries) {
+    try { await (await wp).terminate(); } catch { /* 이미 종료됨 */ }
   }
   if (dp) {
     try { await (await dp).terminate(); } catch { /* 이미 종료됨 */ }

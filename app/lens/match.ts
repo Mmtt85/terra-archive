@@ -41,7 +41,8 @@ export type LensOutcome = {
 
 type Entry = {
   topic: string; topicName: string; section: string;
-  id: string; name: string; nameN: string; bodyN: string; bodyBG: Set<string>;
+  id: string; name: string; nameN: string; bodyN: string; bodyTG: Set<string>;
+  shortLatin: boolean; // 짧은 순라틴 이름(2~5자) — 부분문자열 오탐이 심해 정확 일치만 허용
   arc?: string;
   cnN?: string; // 중국어 원문 이름 정규화 — CN 선행 토픽(흑류수해)만 존재
 };
@@ -56,18 +57,45 @@ export const normText = (s: string | null | undefined): string =>
 export const normTextCn = (s: string | null | undefined): string =>
   (s || "").toLowerCase().replace(/α/g, "a").replace(/β/g, "b").replace(/γ/g, "y")
     .replace(/[^0-9a-z一-鿿+%]/g, "");
+// EN 정규화 — 대소문자 무시(인덱스·OCR 양쪽 소문자). 게임 UI는 전부 대문자 제목이 흔하다.
+// NFKD+결합문자 제거로 악센트를 ASCII로 접는다(Café→cafe). 그리스 문자는 OCR이 라틴으로
+// 읽으므로(β→b) normTextCn과 같게 접는다 (샌드박스 α/β/γ 대비).
+export const normTextEn = (s: string | null | undefined): string =>
+  (s || "").normalize("NFKD").replace(/[̀-ͯ]/g, "")
+    .toLowerCase().replace(/α/g, "a").replace(/β/g, "b").replace(/γ/g, "y")
+    .replace(/[^0-9a-z+%]/g, "");
+// JA 정규화 — 히라가나(3041-3096)·가타카나(30A1-30FA)·장음ー·반복부호々·한자(4E00-9FFF) 보존 +
+// 라틴 소문자 + 그리스 접기. NFKC로 전각 숫자·라틴을 반각, 반각 가나를 전각(탁점 보존)으로
+// 접는다 — jpn/chi_sim OCR이 CJK 맥락에서 전각/반각을 섞어 내는 것을 흡수. normText는 가나·
+// 한자를 전부 버려 JA엔 못 쓴다 (중점 ・ 등 구분자 제거).
+export const normTextJa = (s: string | null | undefined): string =>
+  (s || "").normalize("NFKC")
+    .toLowerCase().replace(/α/g, "a").replace(/β/g, "b").replace(/γ/g, "y")
+    .replace(/[^0-9a-zぁ-ゖァ-ヺー々一-鿿+%]/g, "");
+// 로케일 → 이름/본문 정규화기. 인덱스와 질의는 반드시 같은 것을 써야 한다 (run.ts가 짝지어 호출).
+export type LensLocale = "ko" | "en" | "ja";
+export type Normalizer = (s: string | null | undefined) => string;
+export const normFor = (locale?: string): Normalizer =>
+  locale === "en" ? normTextEn : locale === "ja" ? normTextJa : normText;
 
 const bigrams = (s: string): Set<string> => {
   const set = new Set<string>();
   for (let i = 0; i < s.length - 1; i++) set.add(s.slice(i, i + 2));
   return set;
 };
-// line의 바이그램이 entry 본문에 얼마나 포함되는지 (0~1)
-const contain = (lineBG: Set<string>, bodyBG: Set<string>): number => {
-  if (lineBG.size === 0) return 0;
+// 본문 포함 판정용 트라이그램 — 바이그램은 영어(저엔트로피)에서 흔한 산문이 무관한 본문에
+// 70% 포함돼 오탐 goto를 냈다(리뷰 확정). 3-그램은 엔트로피가 훨씬 높아 이를 걸러낸다.
+const trigrams = (s: string): Set<string> => {
+  const set = new Set<string>();
+  for (let i = 0; i < s.length - 2; i++) set.add(s.slice(i, i + 3));
+  return set;
+};
+// line의 n-그램이 entry 본문에 얼마나 포함되는지 (0~1)
+const contain = (lineNG: Set<string>, bodyNG: Set<string>): number => {
+  if (lineNG.size === 0) return 0;
   let hit = 0;
-  for (const b of lineBG) if (bodyBG.has(b)) hit++;
-  return hit / lineBG.size;
+  for (const b of lineNG) if (bodyNG.has(b)) hit++;
+  return hit / lineNG.size;
 };
 
 // ── 화면 타이틀 키워드 (수동 사전 — 표시용 라벨은 i18n 키) ───────────────────
@@ -127,18 +155,27 @@ export function analyzeRecruit(rawLines: string[], recruitTags: string[]): LensO
 }
 
 // ── 인덱스 구축 — rogue*.json 형태의 토픽 데이터에서 ────────────────────────
+// norm = 이름/본문 정규화기(로케일별). cnN(흑류수해 CN 원문)은 로케일 무관하게 항상 normTextCn.
+// EN/JA 인덱스라도 rogue_6은 KR/CN 병기 파일이라, ko 이름은 norm에서 비게 되지만 cnN이 남아
+// 중국어 패스(analyzeChinese)가 rogue_6을 잡는다 — 그래서 cnN만 있어도 엔트리를 버리지 않는다.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function buildIndex(topics: any[]): LensIndex {
+export function buildIndex(topics: any[], norm: Normalizer = normText): LensIndex {
   const entries: Entry[] = [];
   for (const d of topics) {
     if (!d?.id) continue;
     const topic: string = d.id, topicName: string = d.name;
     const add = (section: string, id: string, name: string, body: string, arc?: string, cn?: string) => {
-      const nameN = normText(name);
-      const bodyN = normText(body);
-      if (!nameN && !bodyN) return;
       const cnN = normTextCn(cn);
-      entries.push({ topic, topicName, section, id, name, nameN, bodyN, bodyBG: bigrams(bodyN), arc, ...(cnN ? { cnN } : {}) });
+      // EN/JA 인덱스(norm!==normText)에선 CN 선행 항목(cn 필드 보유 = rogue_6)의 ko 이름/본문을
+      // 비운다 — normTextEn/Ja가 한글을 버려도 라틴·숫자 조각("투기장 VIP 티켓"→vip, "IoT"→iot)이
+      // 남아 "Patriot"⊃iot 같은 오탐 goto를 내기 때문. cnN(중국어 패스)만 남겨 rogue_6은 CN으로만.
+      const cnOnly = !!cnN && norm !== normText;
+      const nameN = cnOnly ? "" : norm(name);
+      const bodyN = cnOnly ? "" : norm(body);
+      if (!nameN && !bodyN && !cnN) return;
+      // 짧은 순라틴 이름(2~5자)은 흔한 영단어의 부분문자열로 가짜 매칭돼(moment⊃omen) 정확 일치만
+      const shortLatin = nameN.length >= 2 && nameN.length <= 5 && /^[0-9a-z]+$/.test(nameN);
+      entries.push({ topic, topicName, section, id, name, nameN, bodyN, bodyTG: trigrams(bodyN), shortLatin, arc, ...(cnN ? { cnN } : {}) });
     };
     for (const b of d.bands ?? []) add("band", b.id, b.name, `${b.usage || ""} ${b.desc || ""}`, undefined, b.cn);
     for (const r of d.relics ?? []) add("relic", r.id, r.name, `${r.usage || ""} ${r.desc || ""}`, undefined, r.cn);
@@ -190,9 +227,10 @@ const CTX_BOOST = 1.6;
 export function analyzeLines(
   rawLines: string[],
   index: LensIndex,
-  opts?: { context?: { topic?: string } },
+  opts?: { context?: { topic?: string }; norm?: Normalizer },
 ): LensOutcome {
-  const linesN = rawLines.map((l) => normText(l)).filter((l) => l.length >= 2);
+  const norm = opts?.norm ?? normText;
+  const linesN = rawLines.map((l) => norm(l)).filter((l) => l.length >= 2);
   const allN = linesN.join("");
   const screens = SCREEN_KEYWORDS.filter((k) => allN.includes(k.key)).map((k) => k.label);
 
@@ -302,25 +340,36 @@ type Hit = { score: number; nameHit: boolean };
 function matchEntries(linesN: string[], entries: Entry[]): Map<Entry, Hit> {
   const hits = new Map<Entry, Hit>();
   for (const line of linesN) {
-    const lineBG = bigrams(line);
-    const lineHits: { e: Entry; w: number; nm: boolean }[] = [];
+    const lineTG = trigrams(line);
+    const lineLatin = /^[0-9a-z]+$/.test(line); // 순라틴 라인은 역포함(reverse) 문턱을 높인다
+    const nameHits: Entry[] = [];
+    const bodyHits: Entry[] = [];
     for (const e of entries) {
-      if (e.nameN.length >= 3 && (line.includes(e.nameN) || (line.length >= 4 && e.nameN.includes(line)))) {
-        lineHits.push({ e, w: 3, nm: true });
-      } else if (e.nameN.length === 2 && line === e.nameN) {
-        // 2글자 이름("구상" 등)은 라인 전체가 정확히 일치할 때만 — 부분일치는 오탐투성이
-        lineHits.push({ e, w: 3, nm: true });
-      } else if (line.length >= 6 && e.bodyN.length >= 6 && contain(lineBG, e.bodyBG) >= 0.7) {
-        lineHits.push({ e, w: 1, nm: false });
+      const n = e.nameN;
+      let nm = false;
+      if (e.shortLatin || (n.length === 2)) {
+        // 짧은 라틴 이름 + 2글자 이름("구상" 등)은 라인 전체가 정확히 일치할 때만 (부분일치 오탐 차단)
+        nm = line === n;
+      } else if (n.length >= 3) {
+        // 부분일치 — 역포함(라인이 이름의 조각)은 라틴 라인이면 6자 이상만 허용(저엔트로피 오탐 방지)
+        nm = line.includes(n) || (n.includes(line) && line.length >= (lineLatin ? 6 : 4));
       }
+      if (nm) nameHits.push(e);
+      else if (line.length >= 6 && e.bodyN.length >= 6 && contain(lineTG, e.bodyTG) >= 0.7) bodyHits.push(e);
     }
-    if (lineHits.length === 0) continue;
-    const idf = 1 / lineHits.length;
-    for (const { e, w, nm } of lineHits) {
+    // 이름 매칭과 본문 매칭은 IDF 풀을 분리한다 — 영어처럼 바이그램 엔트로피가 낮은 언어에서
+    // 이름 한 줄이 수백 개 본문에 공통 바이그램(in·ng·er…)으로 저확신 매칭돼 IDF가 폭발,
+    // 진짜 이름 매칭(w=3) 점수를 0에 수렴시키던 문제를 막는다. 한글·한자·가나는 엔트로피가
+    // 높아 본문 오매칭이 원래 적어 영향이 미미하다 (KO 회귀는 verify-lens로 확인).
+    const idfName = nameHits.length ? 3 / nameHits.length : 0;
+    const idfBody = bodyHits.length ? 1 / bodyHits.length : 0;
+    for (const e of nameHits) {
       const h = hits.get(e) ?? { score: 0, nameHit: false };
-      h.score += w * idf;
-      h.nameHit ||= nm;
-      hits.set(e, h);
+      h.score += idfName; h.nameHit = true; hits.set(e, h);
+    }
+    for (const e of bodyHits) {
+      const h = hits.get(e) ?? { score: 0, nameHit: false };
+      h.score += idfBody; hits.set(e, h);
     }
   }
   return hits;
