@@ -185,17 +185,34 @@ def extract_encounters(choice_scenes, choices, tree_overrides=None, items=None):
         # 서로 다른 소장품을 주면(곱사등이의 그림자/칼춤/배풍등) variants가 자동 분리된다.
         dd = c.get("displayData") or {}
         iid = dd.get("itemId")
-        if not iid or dd.get("type") != "ITEM":
+        if not iid:
             return desc
         it = relic_items.get(iid)
         if not it or it.get("type") != "RELIC":
             return desc
         nm = (it.get("name") or "").strip()
-        # 이미 설명에 이름이 박혀 있으면(장식 따옴표·괄호 차이 무시) 병기하지 않는다.
-        bare = lambda s: re.sub(r"""[\s'"‘’“”「」『』()（）《》]""", "", s or "")
-        if not nm or bare(nm) in bare(desc):
+        if not nm:
             return desc
         # 「소장품명」으로 감싸 프론트가 소장품 상세 모달로 링크(사용자 요청 2026-07-20).
+        # 설명에 이름이 이미 평문으로 박혀 있으면 displayData.type과 무관하게 그 자리만
+        # 감싼다 — 예전엔 건너뛰어서 "추억기 획득"류가 링크가 안 됐고(화룡점정, 2026-07-24),
+        # '연구한다→불사'처럼 type=NORMAL인 확정 보상도 놓쳤다.
+        bare = lambda s: re.sub(r"""[\s'"‘’“”「」『』()（）《》]""", "", s or "")
+        if f"「{nm}」" in (desc or ""):
+            return desc
+        if desc and nm in desc:
+            # 이미 따옴표류로 장식된 표기(“翱翼”·'꾸물이' 등)는 건드리지 않는다 —
+            # 안에 「」를 겹치면 이중 장식이 되고, rogue6은 CN 원문이 번역 사전 키라
+            # 문자열이 바뀌면 한국어 번역이 통째로 떨어져 나간다.
+            i = desc.index(nm)
+            deco = set("'\"‘’“”「」『』《》")
+            if (i > 0 and desc[i - 1] in deco) or (i + len(nm) < len(desc) and desc[i + len(nm)] in deco):
+                return desc
+            return desc.replace(nm, f"「{nm}」", 1)
+        # 이름이 설명에 없을 때의 끝 병기는 확정 보상 표기(type=ITEM)에만 — NORMAL 등에
+        # 무턱대고 붙이면 보상이 아닌 항목까지 보상처럼 읽힌다.
+        if dd.get("type") != "ITEM" or bare(nm) in bare(desc):
+            return desc
         return f"{desc} 「{nm}」" if desc and desc.strip() else f"「{nm}」"
 
     from collections import defaultdict
@@ -206,8 +223,13 @@ def extract_encounters(choice_scenes, choices, tree_overrides=None, items=None):
             base + "_enter" if base + "_enter" in choice_scenes else None)
         if parent:
             scene_ch[parent].append((cid, c))
+    def cnum_of(cid):
+        m = re.search(r"_(\d+)$", cid)
+        return int(m.group(1)) if m else 999
     for k in scene_ch:
-        scene_ch[k].sort(key=lambda x: (x[1].get("sortId", 0), x[0]))
+        # 끝번호 숫자 정렬 — 문자열 정렬이면 _10이 _2보다 앞에 와서 게임의 저작 순서
+        # (대리인 6종 → 떠나기 → 반복 → 특수 분기)가 흐트러진다 (화룡점정, 2026-07-24).
+        scene_ch[k].sort(key=lambda x: (x[1].get("sortId") or 0, cnum_of(x[0]), x[0]))
 
     def group_by_title(nodes):
         # 다라운드 조우(춤 루프 '被歌颂的影子' 등)는 같은 선택지가 라운드마다 설명만 달리
@@ -227,14 +249,23 @@ def extract_encounters(choice_scenes, choices, tree_overrides=None, items=None):
                 out.append(g[0])
                 continue
             variants, seen = [], set()
+            nxt = None
             for n in g:
-                d = n.get("desc")
-                if d and d not in seen:
-                    seen.add(d)
-                    variants.append(d)
+                # 이미 그룹화된 노드를 재그룹해도(동명 씬 병합 후 폴드) variants가 살도록
+                # desc와 기존 variants를 함께 편입한다.
+                for d in [n.get("desc")] + (n.get("variants") or []):
+                    if d and d not in seen:
+                        seen.add(d)
+                        variants.append(d)
+                # 변형 묶음이 돼도 첫 서사·하위 트리는 보존 — 예전엔 통째로 버려져서
+                # '쉐이시를 바꾼다'(각뿔⇄촛불 변형)의 류아 분기가 사라졌다 (2026-07-24).
+                if nxt is None and n.get("next"):
+                    nxt = n["next"]
             node = {"title": title, "desc": None}
             if variants:
                 node["variants"] = variants
+            if nxt:
+                node["next"] = nxt
             out.append(node)
         return out
 
@@ -317,7 +348,17 @@ def extract_encounters(choice_scenes, choices, tree_overrides=None, items=None):
         })
     encounters.sort(key=lambda x: x["scene"])
     # 동명 enter 씬(溯源 19변형·三重身 3변형 등)은 대표 1개만 — 예전엔 선택지를 union해
-    # 중복이 폭발했다. 트리는 첫 대표 것을 유지하고 배경/지문만 보충한다.
+    # 중복이 폭발했다. 트리는 첫 대표 것을 유지하고 배경/지문만 보충하되, 대표 트리 어디에도
+    # 없는 고유 선택지만 뒤에 덧붙인다(화룡점정 marketsp 진입 변형의 촛불 교환 등 —
+    # 사용자 요청 2026-07-24). (제목,설명) 재귀 대조라 溯源류 동일 변형은 전처럼 무시된다.
+    def tree_keys(chs, acc):
+        for c in chs:
+            acc.add((c["title"], c.get("desc")))
+            for v in c.get("variants") or []:
+                acc.add((c["title"], v))
+            if c.get("next"):
+                tree_keys(c["next"]["choices"], acc)
+        return acc
     merged, by_title = [], {}
     for e in encounters:
         m = by_title.get(e["title"])
@@ -327,6 +368,12 @@ def extract_encounters(choice_scenes, choices, tree_overrides=None, items=None):
             continue
         m["desc"] = m["desc"] or e["desc"]
         m["bg"] = m["bg"] or e["bg"]
+        have = tree_keys(m["choices"], set())
+        extra = [c for c in e["choices"]
+                 if (c["title"], c.get("desc")) not in have
+                 and not any((c["title"], v) in have for v in c.get("variants") or [])]
+        if extra:
+            m["choices"] = group_by_title(m["choices"] + extra)
     return merged
 
 
