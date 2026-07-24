@@ -10469,9 +10469,14 @@ main.site-main > .site-header {
   border: 1px solid var(--rgline);
   background: transparent;
   color: var(--rgmut);
-  /* 버튼 박스는 유지, 폰트만 작게 — 글자가 버튼에 꽉 차 보이던 위화감 해소 (사용자 확정 2026-07-24) */
-  font: 700 9px/1 inherit;
-  padding: 4px 8px;
+  /* ⚠ font 단축 표기에 inherit(패밀리 자리)를 섞으면 선언 전체가 무효 — 폰트가 16px로
+     상속돼 "글자가 버튼에 꽉 차는" 원인이었다. 반드시 롱핸드로 쓸 것.
+     박스는 원래 보이던 크기(약 58×30) 유지, 안의 글자만 12px — 폰트를 줄인 만큼
+     패딩으로 보상한다. 박스 크기 바꾸지 말 것 (사용자 확정 2026-07-24) */
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 1;
+  padding: 8px 10px;
   border-radius: 999px;
   cursor: pointer;
   white-space: nowrap;
@@ -10499,8 +10504,11 @@ main.site-main > .site-header {
   border: 1px solid color-mix(in srgb, var(--rggold) 55%, var(--rgline));
   background: transparent;
   color: var(--rgink);
-  padding: 7px 12px;
-  font: 700 12.5px/1 inherit;
+  /* 박스 크기는 유지, 폰트만 축소 — font 단축+inherit는 무효라 롱핸드 (사용자 확정 2026-07-24) */
+  padding: 11px 14px;
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 1;
   cursor: pointer;
 }
 .rg-inv-toggle:hover {
