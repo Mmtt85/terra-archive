@@ -447,7 +447,11 @@ export function growAvg(g: { first: number; rate: number; cap: number }, hours: 
 // 리셋되므로 이 주기가 성장 스킬의 평균 구간이 된다. **생산 라인(제조·무역·발전·제어)만**
 // 시계에 넣는다 — 응접실·사무실의 고소모 요원(인포서 +2 등)은 개별 교대가 가능한 지원방이라
 // 전 기지 교대를 8h로 끌어내리지 않는다. 링 '멈추지 않는 술잔'은 같은 방 쉐이의 자기 소모
-// 가산을 무효화한다(selfDrainNegate — 음수 가산은 유지).
+// 가산을 무효화한다(selfDrainNegate).
+// **양수 소모만 반영 (사용자 정정 2026-07-25: "피로도가 빨리 줄면 좀 더 빨리 바꾸면 돼")**:
+// 소모 감소(슈 방 전체 -0.1·트라고디아 본인 -0.25)로 교대가 늦어지는 건 타이밍 편의일 뿐
+// 생산 가치가 아니므로 시계에 넣지 않는다 — 안 그러면 감소 요원이 "시계를 늘려 성장형을
+// 올려주는" 유령 좌석 근거를 얻어 더 강한 효율 요원을 밀어낸다 (슈가 왕 확장을 막던 원인).
 const CLOCK_ROOMS = new Set(["MANUFACTURE", "TRADING", "POWER", "CONTROL"]);
 export function shiftHoursFor(teams: { room: string; ops: InfraOp[] }[]): number {
   let maxDrain = 1;
@@ -458,7 +462,7 @@ export function shiftHoursFor(teams: { room: string; ops: InfraOp[] }[]): number
     let roomAdd = 0;
     const negates: string[] = [];
     for (const member of team) for (const sk of activeSkills(member, room)) {
-      roomAdd += sk.drainRoom ?? 0;
+      roomAdd += Math.max(0, sk.drainRoom ?? 0);
       if (sk.selfDrainNegate) negates.push(sk.selfDrainNegate);
     }
     for (const member of team) {
@@ -466,7 +470,7 @@ export function shiftHoursFor(teams: { room: string; ops: InfraOp[] }[]): number
       for (const sk of activeSkills(member, room)) self += sk.moraleDrain;
       // 진영 판정은 부분 일치 — 스킬 원문의 "쉐이"가 데이터의 "염-쉐이"를 가리킨다 (토큰 카운터와 동일 관례)
       if (self > 0 && negates.some((f) => factionsOf(member).some((fac) => fac.includes(f)))) self = 0;
-      maxDrain = Math.max(maxDrain, base + self + roomAdd);
+      maxDrain = Math.max(maxDrain, base + Math.max(0, self) + roomAdd);
     }
   }
   return 24 / maxDrain;
