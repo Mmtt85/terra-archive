@@ -312,6 +312,7 @@ const D: Record<string, Pair> = {
   "{from} → {to} 전환 — 공급 오퍼": ["Converts {from} → {to} — suppliers", "{from}→{to}変換 — 供給オペレーター"],
   "{tag}류 스킬 1개당 {per}% — 현재 이 방 {n}개 · {total}%": ["Per {tag}-family skill: {per}% — {n} in this room · {total}%", "{tag}系スキル1つにつき{per}% — 現在この部屋に{n}個・{total}%"],
   "동료 1명당 {per}% — 현재 {n}명 · {total}%": ["Per coworker: {per}% — {n} now · {total}%", "同僚1名につき{per}% — 現在{n}名・{total}%"],
+  "시간 성장형 — 만개 {cap}%는 배치 {full}시간 후 도달하므로, 교대 주기 {hours}시간의 시간 평균 {avg}%로 계상": ["Ramps over time — the {cap}% cap is only reached {full}h after deployment, so it is scored as its {avg}% time average over the {hours}h shift cycle", "時間成長型 — 最大{cap}%は配置{full}時間後に到達するため、シフト周期{hours}時間の時間平均{avg}%で計上"],
   "같은 방 전원의 효율을 대체합니다 — 인당 {per}%": ["Overrides every teammate's efficiency — {per}% per seat", "同室全員の効率を置き換え — 1枠あたり{per}%"],
   "혼자 근무할 때만 발동 — 현재 이 방 {n}명": ["Activates only while working alone — {n} in this room now", "単独勤務時のみ発動 — 現在この部屋{n}名"],
   "고품질 확률 — 오더 수익 오퍼와 결합 시 극대화": ["Quality chance — strongest with payout operators", "高品質確率 — 収益オペレーターと組むと最大化"],

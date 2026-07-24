@@ -12,7 +12,7 @@ import {
   ELITE_LABEL, LAYOUT, cellByKey, ROOM_ACCENT, UNIT, PARK_KEYS, SHIFT_COUNT,
   JOB_ORDER, ROSTER_SORT_KEYS, PRODUCTION_KEYS, SUPPORT_KEYS,
   AURA_WEIGHT, AURA_LABEL, skillApplies, breakdown, teamScore, aurasOf, ambientFor, capConvFor,
-  ctxFor, sanitizePlan, presentIdsFor, slotSubstitutes, setLayoutPreset, memberOf, DEFAULT_CUSTOM_ROOMS, DEFAULT_CUSTOM_PRODUCTS,
+  ctxFor, sanitizePlan, presentIdsFor, slotSubstitutes, setLayoutPreset, memberOf, growAvg, DEFAULT_CUSTOM_ROOMS, DEFAULT_CUSTOM_PRODUCTS,
   setLevels as setEngineLevels, slotsFor, maxLevelOf, levelOf, powerBudget, suggestedLevels, TERMS,
   type InfraOp, type InfraSkill, type Elite, type Plan, type ProdPriority, type TokenFlow, type OptimizeStep, type LayoutPreset, type Levels, type CustomRoom, type CustomProduct,
 } from "./planner-engine";
@@ -1409,6 +1409,18 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
   const chipSort = (chips: { op: InfraOp; on: boolean }[]) => chips.sort((a, b) => Number(b.on) - Number(a.on) || b.op.rarity - a.op.rarity).slice(0, 8);
   const relsOf = (skill: InfraSkill, self: InfraOp): Rel[] => {
     const rels: Rel[] = [];
+    // 시간 성장형 (아로마·크루스·이네스 등): 표시·점수가 만개값이 아니라 교대 주기의
+    // 시간 평균임을 명시 (사용자 요청 2026-07-25 — "처음부터 45%로 잡는 건 안 맞다")
+    if (skill.growHourly) {
+      const g = skill.growHourly;
+      const hours = Math.round((ctx.shiftHours ?? 24) * 10) / 10;
+      const full = g.rate > 0 ? Math.ceil(Math.max(0, g.cap - g.first) / g.rate) : 0;
+      rels.push({
+        note: t("시간 성장형 — 만개 {cap}%는 배치 {full}시간 후 도달하므로, 교대 주기 {hours}시간의 시간 평균 {avg}%로 계상", {
+          cap: g.cap, full, hours, avg: Math.round(growAvg(g, ctx.shiftHours ?? 24) * 10) / 10 }),
+        chips: [],
+      });
+    }
     if (skill.perFaction && !skill.perSkillTag) {
       const scope = skill.kind === "ctrl_trade" ? "TRADING" : skill.perScope === "mfg" ? "MANUFACTURE" : skill.perScope === "room" ? "room" : "base";
       const inScope = scope === "room" ? new Set(team.map((member) => member.id)) : scope === "base" ? presentNow : typeTeamIds(scope);
