@@ -506,6 +506,34 @@ def parse_skill(entry, oname, oid=None):
         if dorm_lvl and kind in ("output", "misc"):
             dorm_per = float(dorm_lvl.group(1))
             kind, value = "output", (value or 0) + dorm_per * P["DORM_TOTAL_LEVELS"]
+        # 배타 시설 수 비교 분기 (왕 '임기응변', 2026-07-24): "외세가 실리보다 크거나 같을 경우
+        # 모든 무역소의 오더 수주 효율 +7%. 만약 실리가 외세보다 클 경우 모든 제조소의 생산력 +2%"
+        # — 외세·실리는 용어 사전상 시설 수 집계(무역소·발전소 1개당 +1 / 제조소 1개당 +1)라
+        # 어느 분기가 사느냐가 기지 배치 프리셋(243/153/252/커스텀)에 달렸다. 두 분기의 효과와
+        # 각 용어의 대상 시설을 구조 필드(facCompare)로 병기해 엔진이 활성 레이아웃의 시설 수로
+        # 판정하게 하고, 구운 kind/value는 243 기준 해석을 따른다(레이아웃 구운 값 관례).
+        # 오퍼별 특례가 아니라 같은 문구·용어 구조(termRefs)의 모든 현재·미래 오퍼에 적용된다.
+        fac_compare = None
+        if room == "CONTROL":
+            cmp_a = re.search(r"([가-힣]{2,8})(?:이|가) ([가-힣]{2,8})보다 크거나 같을 경우", text)
+            cmp_b = re.search(r"([가-힣]{2,8})(?:이|가) ([가-힣]{2,8})보다 클 경우", text)
+            if cmp_a and cmp_b and cmp_b.start() > cmp_a.end() \
+                    and {cmp_a.group(1), cmp_a.group(2)} == {cmp_b.group(1), cmp_b.group(2)}:
+                ref_keys = {t: k for k, t in (entry.get("termRefs") or [])}
+                def _term_rooms(term):
+                    d = strip_tags_ml(((TERM_DICT.get(ref_keys.get(term)) or {}).get("description")) or "")
+                    m = re.search(r"([가-힣,· ]+?) ?1개당 ?" + re.escape(term) + r" ?\+ ?1", d)
+                    if not m: return None
+                    rooms = [KO_ROOM.get(p.strip()) for p in re.split(r"[,·]", m.group(1))]
+                    return rooms if rooms and all(rooms) else None
+                rooms_a, rooms_b = _term_rooms(cmp_a.group(1)), _term_rooms(cmp_b.group(1))
+                ka, va = parse_metric(room, text[cmp_a.end():cmp_b.start()])
+                kb, vb = parse_metric(room, text[cmp_b.end():])
+                if rooms_a and rooms_b and ka and kb and ka.startswith("ctrl_") and kb.startswith("ctrl_"):
+                    fac_compare = {"a": {"rooms": rooms_a, "kind": ka, "value": va},
+                                   "b": {"rooms": rooms_b, "kind": kb, "value": vb}}
+                    _cnt = lambda rs: sum(P["FACILITY_COUNTS"].get(ROOM_KO[r], 0) for r in rs)
+                    kind, value = (ka, va) if _cnt(rooms_a) >= _cnt(rooms_b) else (kb, vb)
         # 자기 컨디션 낙차 페널티·게이트 (토터 흐려진 시야/창밖 눈보라): 만컨디션 최대치가
         # 아니라 대표 운용 낙차(DROP_ASSUMED)에서의 실효율로 보정 — 40% 고정 표기 방지
         if kind in ("output", "misc") and value:
@@ -777,6 +805,7 @@ def parse_skill(entry, oname, oid=None):
             "facilityBased": facility_based,
             # 레이아웃 프리셋 재계산용 구조 필드 — 있으면 엔진이 baked value 대신 이걸 쓴다
             **({"facRoom": fac_room, "facPer": fac_per} if facility_based else {}),
+            **({"facCompare": fac_compare} if fac_compare else {}),
             **({"goldLine": gold_line} if gold_line else {}),
             # 시설 레벨 연동 단위값 (전력·레벨 시스템 2026-07-24) — 만렙이 아니면 엔진이 재계산
             **({"dormLevels": {"per": dorm_per}} if dorm_per else {}),

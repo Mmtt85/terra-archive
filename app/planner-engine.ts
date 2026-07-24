@@ -45,6 +45,10 @@ export type InfraSkill = {
   facilityBased?: boolean;
   facRoom?: string;    // facilityBased 단위 시설 (TRADING 등) — 활성 레이아웃 시설 수로 재계산 (2026-07-24)
   facPer?: number;     // facilityBased 시설 1개당 단위값 (value = facPer × 243 시설 수로 구움)
+  // 배타 시설 수 비교 분기 (왕 '임기응변': 외세 = 무역소+발전소 수, 실리 = 제조소 수 —
+  // 외세 ≥ 실리면 a(무역 오라), 실리 > 외세면 b(제조 오라)). 구운 kind/value는 243 기준이며,
+  // 엔진이 활성 레이아웃의 시설 수로 분기를 다시 판정한다 (동수는 a — "크거나 같을 경우")
+  facCompare?: { a: { rooms: string[]; kind: string; value: number }; b: { rooms: string[]; kind: string; value: number } };
   goldLine?: { per: number; add: number; base: number } | null; // 순금 라인 N개당 +add% (투예·파죰카) — 활성 레이아웃 순금방 수로 재계산
   // 시설 레벨 연동 단위값 (전력·레벨 시스템 2026-07-24) — baked value는 만렙 기준,
   // 엔진이 실제 레벨과의 차이만큼 보정한다: value + per×(현재 − 만렙), 하한 0
@@ -429,6 +433,16 @@ export function skillApplies(skill: InfraSkill, room: string, product?: string):
   return true;
 }
 
+// 배타 시설 수 비교 분기(facCompare) 해석 — 구운 kind/value(243 기준)를 활성 레이아웃의
+// 시설 수로 다시 판정한다. 153·252·커스텀에서 왕 '임기응변'이 무역 오라 ↔ 제조 오라로 갈린다
+function resolveFacCompare(skill: InfraSkill): InfraSkill {
+  const fc = skill.facCompare;
+  if (!fc) return skill;
+  const count = (rooms: string[]) => rooms.reduce((sum, r) => sum + (FACILITY_COUNTS[r] ?? 0), 0);
+  const pick = count(fc.a.rooms) >= count(fc.b.rooms) ? fc.a : fc.b;
+  return pick.kind === skill.kind && pick.value === skill.value ? skill : { ...skill, kind: pick.kind, value: pick.value };
+}
+
 // every distinct skill line (group) applies at once; α/β tiers replace each other
 export function activeSkills(op: InfraOp, room: string, product?: string): InfraSkill[] {
   const byGroup = new Map<string, InfraSkill>();
@@ -437,7 +451,7 @@ export function activeSkills(op: InfraOp, room: string, product?: string): Infra
     const existing = byGroup.get(skill.group);
     if (!existing || skill.tier > existing.tier) byGroup.set(skill.group, skill);
   }
-  return Array.from(byGroup.values());
+  return Array.from(byGroup.values(), resolveFacCompare);
 }
 
 export type OpBreakdown = {
@@ -639,13 +653,34 @@ export function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx):
       const baseCount = groupIds
         ? groupIds.filter((id) => ctx.presentIds?.has(id)).length
         : ctx.factionCounts?.[skill.perFaction] ?? 0;
+      // 제어센터 무역소 인원 오라(야하타 '무역소 내 시라쿠사 1명당'·델핀·노시스)의 자리 평가:
+      // 실제 적용(ambientFor)은 **그 무역소에 앉은** 진영원 수인데, 종전 근사는 기지 전체
+      // 인원(factionCounts) × 전 무역소 가중이라 무역소 밖 진영원까지 유령 가치로 잡혔고,
+      // Math.max 동종 경쟁이 왕 '임기응변'의 진짜 +7 플랫 오라를 삼켰다 (2026-07-24 —
+      // 야하타가 무역소 시라쿠사 1명뿐인데도 왕을 밀어내던 원인). 노시스 원칙("오라는
+      // base가 아니라 방내 인원으로 스케일")대로 배치 지도(roomOf)가 있으면 무역소 재적만 센다
+      const tradeAura = room === "CONTROL" && skill.kind === "ctrl_trade" && skill.perScope !== "mfg";
+      let tradeSeated: number | null = null;
+      if (tradeAura && ctx.roomOf) {
+        tradeSeated = 0;
+        for (const [id, r] of ctx.roomOf) {
+          if (r !== "TRADING" || id === op.id) continue;
+          const member = opById.get(id);
+          if (member && isMember(member)) tradeSeated += 1;
+        }
+      }
       // "자신을 제외한 <진영> 1명당"(뮤엘시스): 본인이 그 진영이면 카운트에서 자신을 뺀다
       const selfEx = skill.perExclSelf && isMember(op) ? 1 : 0;
       const count = Math.max(0, (skill.perScope === "room"
         ? team.filter(isMember).length
-        : Math.max(0, baseCount - seated)) - selfEx);
+        : tradeSeated ?? Math.max(0, baseCount - seated)) - selfEx);
       const gained = Math.min(skill.value * count, skill.perCap ?? Infinity);
       if (skill.kind in AURA_WEIGHT) {
+        // 무역소 인원 오라는 ① 가산 채널 — 적용 모델(ambientFor productAdd)이 플랫 오라와
+        // 중첩이므로 동종 최고 경쟁에 넣지 않고, ② 방 수 나눔 — AURA_WEIGHT(ctrl_trade)는
+        // "전 무역소" 배율인데 이 오라는 진영원이 앉은 그 방에만 닿으므로 가중을 상쇄해
+        // 1개 방 실효로 환산한다 (243 야하타: 5%×1명 → 2.5 ×가중2 = 실효 5)
+        if (tradeAura) { out.aurasAdd[skill.kind] = (out.aurasAdd[skill.kind] ?? 0) + gained / Math.max(1, FACILITY_COUNTS.TRADING ?? 1); continue; }
         // 인원 카운트형(mfg)은 중첩 — 플레임테일+비비아나가 같은 방에 함께 실리는 실측 반영.
         // 음수 오라(노시스 '쉐라그 1명당 오더 효율 -15%')도 가산 채널로 — Math.max에 삼켜지면
         // -45 페널티가 통째로 사라진다. 양수는 동종 최고만(중복 오라 이중계상 방지) 유지.
@@ -1052,6 +1087,7 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
   const flows: TokenFlow[] = [];
   const factionCountsPerShift: Record<string, number>[] = [];
   const reserved = new Map<string, string>(); // seeded ops belong to their room
+  const packageReserved = new Set<string>();  // 토큰 패키지發 예약(세트 시딩과 구분) — 감사 해제 판정용
   // 그레이 더 라이트닝베어러: 다른 발전소에 1성 로봇(작업 플랫폼)만 없으면
   // 발전소 +1개로 간주 — 발전소에 고정 배치하고 4기로 계산
   const plantBooster = roster.find((op) => op.skills.some((skill) => skill.kind === "plantbonus"));
@@ -1079,6 +1115,7 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
         seeds[key].push(op);
         parked.add(op.id);
         reserved.set(op.id, key);
+        packageReserved.add(op.id);
         placedAt.set(op.id, cellByKey.get(key)?.label ?? key);
         return true;
       };
@@ -1293,9 +1330,31 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
           const present = new Set<string>([...roomKeyOf.keys(), ...dormIds]);
           const ctx = { ...ctxFor(aKey, tp, factionCountsPerShift[shift], plants, present), roomOf: roomOfS };
           const curTeam = (assignments[aKey][shift] ?? []).map((id) => byIdAll.get(id)).filter((op): op is InfraOp => Boolean(op));
+          // 패키지 예약 해제 (사용자 통찰 2026-07-24: "쉐이가 5명까지라 슈가 필요 없다"):
+          // 토큰을 직접 생성·전환하지 않는 패키지 예약자는, 자신이 빠져도 모든 perMember
+          // 카운터(총웨 '쉐이 1명당 +5, 최대 5명')가 상한을 유지하면 시드 고정을 풀고 일반
+          // 경쟁에 부친다 — 왕이 제어센터에 앉아 쉐이가 6명이 되면 슈의 순금방 자리는 더 강한
+          // 평범 제조 요원에게 넘어갈 수 있다. 생성원·전환원이거나 상한 미달이면 종전대로 고정.
+          // 카운트는 원장 재집계와 같은 범위(A조 근무방 전체 — 가공소 포함, 숙소 제외).
+          const packageReleasable = (op: InfraOp): boolean => {
+            if (shift !== 0 || !packageReserved.has(op.id)) return false;
+            if (op.skills.some((sk) => sk.tokenGen.length > 0 || sk.convert)) return false;
+            for (const flow of flows) for (const gen of flow.generators) {
+              const pm = gen.perMember;
+              if (!pm || !factionsOf(op).some((f) => f.includes(pm.match))) continue;
+              let count = 0;
+              for (const k of keys) for (const id of assignments[k]?.[0] ?? []) {
+                if (id === op.id) continue;
+                const member = byIdAll.get(id);
+                if (member && factionsOf(member).some((f) => f.includes(pm.match))) count += 1;
+              }
+              if (count < pm.cap) return false;
+            }
+            return true;
+          };
           // 예약 시드는 조 불문 유지 — A조 세트(쉐라그 등)와 B조 세트(피누스, 2026-07-19)
           // 모두 감사 재편성(ⓑ flat)이 쓸어내지 않도록 현재 방에 예약된 멤버를 시드로 고정
-          const seedKeep = curTeam.filter((op) => reserved.get(op.id) === aKey);
+          const seedKeep = curTeam.filter((op) => reserved.get(op.id) === aKey && !packageReleasable(op));
           // 자유 풀 = 벤치 + 이 방의 현재 멤버 (같은 조 다른 방·반대 조 근무·숙소 고정·타방 예약 제외)
           const freeOps = roster.filter((op) =>
             !dormIds.has(op.id) && !otherWork.has(op.id) &&
