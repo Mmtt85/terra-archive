@@ -142,6 +142,10 @@ for rid, room in (building.get("rooms") or {}).items():
         "slots": ph.get("maxStationedNum", 1),
         "electricity": ph.get("electricity", 0),
         "maxCount": room.get("maxCount", 1),
+        # 시간당 기본 컨디션 소모 (교대 시계용, 2026-07-25): manpowerCost 100 = 최대
+        # 8,640,000(=24컨디션)을 86,400초에 소진 = 정확히 1/h. 근무방 일괄 100,
+        # 가공소·숙소 0 — 게임 데이터 팩트(L1)라 그대로 발췌한다.
+        "drain": (ph.get("manpowerCost") or 0) / 100,
         "phases": [{"slots": p.get("maxStationedNum", 1), "electricity": p.get("electricity", 0), **_room_fx(rid, i)} for i, p in enumerate(phases)],
     }
 
@@ -369,11 +373,26 @@ def parse_tokens(text, room):
     return gen, use, stack, conv
 
 def parse_morale_drain(text):
-    m = re.findall(r"시간당 컨디션 소모[^+\-]{0,8}([+\-])\s*(\d+(?:\.\d+)?)", text)
-    delta = 0.0
-    for sign, val in m:
-        delta += float(val) * (1 if sign == "+" else -1)
-    return delta
+    """시간당 컨디션 소모 보정 — (자신, 방 전체) 분리 (교대 시계용, 2026-07-25).
+    '…내 모든 오퍼레이터의' 수식이 붙으면 방 전체 가산(슈 -0.1·'아' +1.5), 아니면 본인."""
+    self_d = room_d = 0.0
+    for m in re.finditer(r"시간당 컨디션 소모[^+\-]{0,8}([+\-])\s*(\d+(?:\.\d+)?)", text):
+        delta = float(m.group(2)) * (1 if m.group(1) == "+" else -1)
+        if "모든 오퍼레이터의" in text[max(0, m.start() - 24):m.start()]:
+            room_d += delta
+        else:
+            self_d += delta
+    return self_d, room_d
+
+def grow_avg(first, rate, cap, hours):
+    """시간 성장형 교대 평균 — k시간째 값 = min(first + rate×(k−1), cap), 마지막 부분 시간은 비례.
+    교대마다 스택이 리셋되므로 만개값이 아니라 주기 평균이 실효치다 (사용자 확정 2026-07-25)."""
+    total, h = 0.0, 0.0
+    while h < hours:
+        step = min(1.0, hours - h)
+        total += min(first + rate * h, cap) * step
+        h += 1.0
+    return round(total / hours, 2)
 
 # 오퍼 이름이 진영 이름의 접두어인 경우("쉐라" ⊂ "쉐라그") 진영 언급을 파트너로
 # 오인하지 않도록, 매치 지점이 더 긴 진영명으로 시작하면 무시한다
@@ -626,6 +645,26 @@ def parse_skill(entry, oname, oid=None):
             grow_cap = re.search(r"최대 \+?(\d+(?:\.\d+)?)\s*%", text)
             if grow_cap:
                 value = max(value, float(grow_cap.group(1)))
+        # 시간 성장형 = 교대 평균 (사용자 확정 2026-07-25 — 종전 '상한 채택(이네스 원칙)' 대체):
+        # "(첫 시간 +B%,) (그 )이후 시간당 +r%, 최대 +C%"(아로마·크루스·씬·팽·케오베·스푸리아·
+        # 이네스)는 교대마다 스택이 리셋되므로 만개값이 아니라 **교대 주기 평균**으로 계산한다.
+        # 구운 value = 무보정 기준 교대 24h(방 기본 소모 1/h × 컨디션 24 — 게임 팩트)의 평균이고,
+        # 구조 필드(growHourly)를 병기해 엔진이 실제 편성의 교대 시계(최대 소모 오퍼 기준)로
+        # 재계산한다. 레벨 성장형(레벨 1당)·드론 상한형(이격 그레이)은 시간과 무관하므로 종전
+        # 상한 채택 유지 (§2). 위의 방별 상한 채택이 먼저 돌아도 여기서 평균으로 덮어쓴다.
+        grow_hourly = None
+        gm = re.search(r"(?:(?:그 )?이후 )?시간당 (?!컨디션)[^,%]{0,14}?\+?\s*(\d+(?:\.\d+)?)\s*%"
+                       r"(?:\s*상승)?\s*, ?최대 \+?(\d+(?:\.\d+)?)\s*%(?:까지)?(?:\s*상승)?", text)
+        if gm and kind in ("output", "misc") and not per_faction and not per_skill_tag:
+            rate, cap_total = float(gm.group(1)), float(gm.group(2))
+            _k2, first = parse_metric(room, text[:gm.start()] + text[gm.end():])
+            grow_hourly = {"first": first or 0.0, "rate": rate, "cap": cap_total}
+            kind, value = "output", grow_avg(first or 0.0, rate, cap_total, 24.0)
+        # 본인 컨디션 소모 무효화 (링 '멈추지 않는 술잔': "제어 센터 내 모든 쉐이 오퍼레이터
+        # 본인의 컨디션 소모로 인해 받는 영향 제거") — 같은 방 해당 진영원의 자기 소모 가산
+        # (총웨·시 +0.5)을 0으로 만든다. 교대 시계 계산에 쓰이는 구조 필드.
+        neg = re.search(r"모든 ([가-힣A-Za-z]{2,12}) 오퍼레이터 본인의 컨디션 소모로 인해 받는 영향(?:을)? 제거", text)
+        self_drain_negate = neg.group(1) if neg else None
         # facility-count multipliers (쏜즈: 각각의 무역소가 ... +3% → ×2);
         # these survive automation's zeroing ("시설 수량에 따라 제공" 예외).
         # 기지 배치 프리셋(243/153) 지원: 구운 value(243 기준)와 별개로 단위값(facPer)·
@@ -776,12 +815,16 @@ def parse_skill(entry, oname, oid=None):
         # buffChar slots already resolved upgrades — every line here stacks
         tier = 1
         group = entry["name"]
+        drain_self, drain_room = parse_morale_drain(text)
         return {
             "buffId": entry["buffId"],  # 다국어 오버레이(build-i18n.py) 매핑 키
             "name": entry["name"], "room": room, "unlock": entry["unlock"],
             "description": text, "kind": kind, "value": value, "product": product,
             "group": group, "tier": tier,
-            "moraleDrain": parse_morale_drain(text),
+            "moraleDrain": drain_self,
+            **({"drainRoom": drain_room} if drain_room else {}),
+            **({"selfDrainNegate": self_drain_negate} if self_drain_negate else {}),
+            **({"growHourly": grow_hourly} if grow_hourly else {}),
             # 교차방 파트너(roomPartner)·기지 존재 파트너(basePartners)는 같은 방 동반 조건이
             # 아니므로 partners에서 제외 — 이중 게이트 방지 (레토는 '굼'이 1글자라 우연히 회피)
             "partners": [p for p in partners_list if p not in base_partner_ids],

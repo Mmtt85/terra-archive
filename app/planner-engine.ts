@@ -49,6 +49,12 @@ export type InfraSkill = {
   // 외세 ≥ 실리면 a(무역 오라), 실리 > 외세면 b(제조 오라)). 구운 kind/value는 243 기준이며,
   // 엔진이 활성 레이아웃의 시설 수로 분기를 다시 판정한다 (동수는 a — "크거나 같을 경우")
   facCompare?: { a: { rooms: string[]; kind: string; value: number }; b: { rooms: string[]; kind: string; value: number } };
+  // 시간 성장형 (아로마·크루스·씬·팽·케오베·스푸리아·이네스, 2026-07-25): k시간째 값 =
+  // min(first + rate×(k−1), cap). 교대마다 리셋되므로 구운 value = 24h 기준 교대 평균이고,
+  // 엔진이 실제 편성의 교대 시계(ctx.shiftHours)로 재계산한다
+  growHourly?: { first: number; rate: number; cap: number };
+  drainRoom?: number;             // "방 내 모든 오퍼레이터의 시간당 컨디션 소모 ±X" (슈 -0.1·'아' +1.5)
+  selfDrainNegate?: string | null; // "<진영> 오퍼레이터 본인의 컨디션 소모 영향 제거" (링: 쉐이)
   goldLine?: { per: number; add: number; base: number } | null; // 순금 라인 N개당 +add% (투예·파죰카) — 활성 레이아웃 순금방 수로 재계산
   // 시설 레벨 연동 단위값 (전력·레벨 시스템 2026-07-24) — baked value는 만렙 기준,
   // 엔진이 실제 레벨과의 차이만큼 보정한다: value + per×(현재 − 만렙), 하한 0
@@ -118,6 +124,7 @@ export const memberOf = (op: InfraOp, name: string): boolean =>
 
 export type RoomSpec = {
   name: string; slots: number; electricity: number; maxCount: number;
+  drain?: number; // 시간당 기본 컨디션 소모 (근무방 1/h·가공소·숙소 0 — 게임 팩트, 교대 시계용)
   // 레벨별 스펙 (전력·시설 레벨 시스템 2026-07-24): phases[레벨-1] = {슬롯, 전력}.
   // 발전소 +60/+130/+270, 제조·무역 슬롯 1/2/3, 제어센터 슬롯=레벨(1~5), 숙소 Lv1~5 전력만 증가
   // fx 필드 (2026-07-24, 방 상세 레벨 표): 방 종류별 레벨 기능 — 오더 상한·등급(무역),
@@ -425,7 +432,45 @@ export const UNIT: Record<string, string> = {
 export const PARK_KEYS = ["WORKSHOP"];
 export const SHIFT_COUNT = 2;
 
-export type Ctx = { product?: string; tokenPoints: Record<string, number>; factionCounts?: Record<string, number>; plants?: number; presentIds?: Set<string>; ambient?: AmbientAura[]; roomOf?: Map<string, string> };
+export type Ctx = { product?: string; tokenPoints: Record<string, number>; factionCounts?: Record<string, number>; plants?: number; presentIds?: Set<string>; ambient?: AmbientAura[]; roomOf?: Map<string, string>; shiftHours?: number };
+
+// 시간 성장형 스킬의 교대 주기 평균 — k시간째 값 = min(first + rate×(k−1), cap),
+// 마지막 부분 시간은 비례 (파서 grow_avg와 동일 공식, 구운 값 = 24h 기준)
+export function growAvg(g: { first: number; rate: number; cap: number }, hours: number): number {
+  let total = 0;
+  for (let h = 0; h < hours; h += 1) total += Math.min(g.first + g.rate * h, g.cap) * Math.min(1, hours - h);
+  return total / hours;
+}
+
+// 교대 시계 (사용자 확정 2026-07-25): A조에서 컨디션 소모가 가장 높은 오퍼가 24 컨디션을
+// 소진하는 시간 = 24 ÷ max(방 기본 소모 + 본인 가산 + 방 전체 가산). 성장형 스택은 교대마다
+// 리셋되므로 이 주기가 성장 스킬의 평균 구간이 된다. **생산 라인(제조·무역·발전·제어)만**
+// 시계에 넣는다 — 응접실·사무실의 고소모 요원(인포서 +2 등)은 개별 교대가 가능한 지원방이라
+// 전 기지 교대를 8h로 끌어내리지 않는다. 링 '멈추지 않는 술잔'은 같은 방 쉐이의 자기 소모
+// 가산을 무효화한다(selfDrainNegate — 음수 가산은 유지).
+const CLOCK_ROOMS = new Set(["MANUFACTURE", "TRADING", "POWER", "CONTROL"]);
+export function shiftHoursFor(teams: { room: string; ops: InfraOp[] }[]): number {
+  let maxDrain = 1;
+  for (const { room, ops: team } of teams) {
+    if (!CLOCK_ROOMS.has(room)) continue;
+    const base = infra.rooms[room]?.drain ?? 1;
+    if (base <= 0) continue;
+    let roomAdd = 0;
+    const negates: string[] = [];
+    for (const member of team) for (const sk of activeSkills(member, room)) {
+      roomAdd += sk.drainRoom ?? 0;
+      if (sk.selfDrainNegate) negates.push(sk.selfDrainNegate);
+    }
+    for (const member of team) {
+      let self = 0;
+      for (const sk of activeSkills(member, room)) self += sk.moraleDrain;
+      // 진영 판정은 부분 일치 — 스킬 원문의 "쉐이"가 데이터의 "염-쉐이"를 가리킨다 (토큰 카운터와 동일 관례)
+      if (self > 0 && negates.some((f) => factionsOf(member).some((fac) => fac.includes(f)))) self = 0;
+      maxDrain = Math.max(maxDrain, base + self + roomAdd);
+    }
+  }
+  return 24 / maxDrain;
+}
 
 export function skillApplies(skill: InfraSkill, room: string, product?: string): boolean {
   if (skill.room !== room) return false;
@@ -737,6 +782,9 @@ export function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx):
         : skill.value;
     } else if (skill.goldLine) {
       out.efficiency += skill.goldLine.base + Math.floor(GOLD_LINES / skill.goldLine.per) * skill.goldLine.add;
+    } else if (skill.growHourly) {
+      // 시간 성장형: 편성의 교대 시계가 있으면 그 주기 평균으로 재계산, 없으면 구운 24h 기준
+      out.efficiency += ctx.shiftHours ? growAvg(skill.growHourly, ctx.shiftHours) : skill.value;
     } else {
       // 시설 레벨 연동 스킬(숙소 레벨합·응접실·훈련실·로봇)은 실제 레벨로 보정 (2026-07-24)
       out.efficiency += levelAdjusted(skill);
@@ -881,6 +929,7 @@ export type Plan = {
   strategySet?: boolean;
   priority?: ProdPriority;    // 우선 생산 모드 (기본 gold)
   auditRounds?: number[];     // 조별 전수 감사 수렴 회차 [A, B] — 진행 안내 재생용
+  shiftHours?: number[];      // 조별 교대 시계 [A, B] — 성장형 평균 기준 주기 (최대 소모 오퍼 기준)
 };
 
 
@@ -934,6 +983,9 @@ export function sanitizePlan(raw: unknown): Plan | null {
     strategyTokens: Array.isArray(p.strategyTokens) ? (p.strategyTokens as unknown[]).filter((x): x is string => typeof x === "string") : [],
     strategySet: !!p.strategySet,
     priority: (p.priority === "gold" || p.priority === "exp" || p.priority === "balance") ? p.priority : "gold",
+    // 교대 시계 — 숫자 배열만 인정 (구버전 저장엔 없음 → planScore·UI가 편성에서 재계산)
+    ...(Array.isArray(p.shiftHours) && (p.shiftHours as unknown[]).every((n) => typeof n === "number")
+      ? { shiftHours: p.shiftHours as number[] } : {}),
   };
 }
 
@@ -1314,6 +1366,11 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
       auditRounds[auditShift] = pass + 1;
       let changed = false;
       const shift = auditShift;
+      // 이 조의 교대 시계 — 패스 시작 시점 편성 기준 (패스 내 교체는 다음 패스에서 수렴)
+      const shiftClock = shiftHoursFor(workKeys.map((k) => {
+        const idx = Math.min(shift, (assignments[k]?.length ?? 1) - 1);
+        return { room: cellByKey.get(k)?.room ?? k, ops: (assignments[k]?.[idx] ?? []).map((id) => byIdAll.get(id)).filter(Boolean) as InfraOp[] };
+      }));
 
       // ① 방별 통째 검수 (사용자 규칙 2026-07): 시설을 하나하나 보며
       //    세 후보를 만들어 "총 생산력"을 직접 비교하고 높은 쪽을 배치한다. 한 자리씩 바꾸는
@@ -1339,7 +1396,7 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
           for (const [id, k] of roomKeyOf) roomOfS.set(id, cellByKey.get(k)?.room ?? k);
           for (const id of dormIds) roomOfS.set(id, "DORMITORY");
           const present = new Set<string>([...roomKeyOf.keys(), ...dormIds]);
-          const ctx = { ...ctxFor(aKey, tp, factionCountsPerShift[shift], plants, present), roomOf: roomOfS };
+          const ctx = { ...ctxFor(aKey, tp, factionCountsPerShift[shift], plants, present), roomOf: roomOfS, shiftHours: shiftClock };
           const curTeam = (assignments[aKey][shift] ?? []).map((id) => byIdAll.get(id)).filter((op): op is InfraOp => Boolean(op));
           // 패키지 예약 해제 (사용자 통찰 2026-07-24: "쉐이가 5명까지라 슈가 필요 없다"):
           // 토큰을 직접 생성·전환하지 않는 패키지 예약자는, 자신이 빠져도 모든 perMember
@@ -1668,7 +1725,12 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
   }
   const setUsed = SYNERGY_SETS.some((def) => def.badge && factionSets[def.key]);
   const strategy = (packageTokens.length ? `${packageTokens.join(" + ")} 패키지` : "기본 편성") + (setUsed ? " + 진영 세트" : "");
-  return { assignments, plants, tokenPoints, factionCounts: factionCountsPerShift, flows, strategy, strategyTokens: packageTokens, strategySet: setUsed, priority, auditRounds };
+  // 조별 교대 시계 — 최종 편성 기준. 성장형 평균의 근거 주기이며 planScore·UI가 재사용한다
+  const shiftHours = [0, 1].map((shift) => shiftHoursFor([...prodKeys, ...SUPPORT_KEYS].map((k) => ({
+    room: cellByKey.get(k)?.room ?? k,
+    ops: (assignments[k]?.[Math.min(shift, (assignments[k]?.length ?? 1) - 1)] ?? []).map((id) => rosterById.get(id)).filter(Boolean) as InfraOp[],
+  }))));
+  return { assignments, plants, tokenPoints, factionCounts: factionCountsPerShift, flows, strategy, strategyTokens: packageTokens, strategySet: setUsed, priority, auditRounds, shiftHours };
 }
 
 // 세트 채택 비교 시 조별 가중 — A조는 풀파워 주력, B조는 회복 교대(§1). 동일 가중이면
@@ -1689,10 +1751,13 @@ export function planScore(plan: Plan, byId: Map<string, InfraOp>): number {
     const counts = plan.factionCounts[shift] ?? {};
     const present = presentIdsFor(plan, shift);
     const ambient = aurasOf(teamAt("CONTROL"), ctxFor("CONTROL", points, counts, plan.plants, present));
+    // 교대 시계 — 플랜에 실린 값을 재사용하고, 없으면(구버전 저장·수기 편집) 편성에서 재계산
+    const clock = plan.shiftHours?.[shift]
+      ?? shiftHoursFor([...PRODUCTION_KEYS, ...SUPPORT_KEYS].map((key) => ({ room: cellByKey.get(key)!.room, ops: teamAt(key) })));
     for (const key of [...PRODUCTION_KEYS, ...SUPPORT_KEYS]) {
       const cell = cellByKey.get(key)!;
       if (PARK_KEYS.includes(key)) continue;
-      total += shiftWeight * teamScore(teamAt(key), cell.room, ctxFor(key, points, counts, plan.plants, present, ambient));
+      total += shiftWeight * teamScore(teamAt(key), cell.room, { ...ctxFor(key, points, counts, plan.plants, present, ambient), shiftHours: clock });
     }
   }
   return total;
