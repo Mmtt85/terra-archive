@@ -780,9 +780,12 @@ const D: Record<string, Pair> = {
     "各スロットの代替候補は実際に入れ替えた部屋スコアで順位付けし、同点なら低レア（育成が安い）を優先します。",
   ],
   "토큰 생성·소비자, 오버라이드·수익 역할, 쉐이 카운트 인원 같은 시너지 코어는 '대체 불가'로 표시됩니다.": [
-  "방 상세의 스킬 설명에서 점선 밑줄 용어(외세·실리·시라쿠사 등)를 클릭하면 게임 용어 사전의 정의가 뜹니다 — 오퍼 명단이 있는 용어(진영·그룹)는 연결된 오퍼 전원이 아바타로 표시됩니다 (배치 중 = 컬러, 미배치 = 흑백).": ["In room details, click dotted-underlined terms in skill descriptions (Foreign Influence, Practical Gain, Siracusa, etc.) to see the in-game glossary definition — terms with an operator roster (factions/groups) show every linked operator as avatars (deployed = color, not deployed = grayscale).", "施設詳細のスキル説明で点線下線の用語（外勢・実利・シラクーザなど）をクリックすると、ゲーム内用語辞典の定義が表示されます — オペレーター名簿を持つ用語（陣営・グループ）は、関連オペレーター全員がアバターで表示されます（配置中＝カラー、未配置＝グレー）。"],
     "Synergy cores — token generators/consumers, override/payout roles, Sui count members — are marked 'Locked'.",
     "トークン生成・消費者、オーバーライド・収益役、スイのカウント要員などのシナジーコアは「代替不可」と表示されます。",
+  ],
+  "방 상세의 스킬 설명에서 점선 밑줄 용어(외세·실리·시라쿠사 등)를 클릭하면 게임 용어 사전의 정의가 뜹니다 — 오퍼 명단이 있는 용어(진영·그룹)는 연결된 오퍼 전원이 아바타로 표시됩니다 (배치 중 = 컬러, 미배치 = 흑백).": [
+    "In room details, click dotted-underlined terms in skill descriptions (Foreign Influence, Practical Gain, Siracusa, etc.) to see the in-game glossary definition — terms with an operator roster (factions/groups) show every linked operator as avatars (deployed = color, not deployed = grayscale).",
+    "施設詳細のスキル説明で点線下線の用語（外勢・実利・シラクーザなど）をクリックすると、ゲーム内用語辞典の定義が表示されます — オペレーター名簿を持つ用語（陣営・グループ）は、関連オペレーター全員がアバターで表示されます（配置中＝カラー、未配置＝グレー）。",
   ],
   "수치는 근사치": ["Numbers are approximations", "数値は近似値"],
   "숙소는 풀 인원(20명), 모집 4칸, 발전소 3(그레이 알터 시 4) 기준의 추정 상한으로 계산합니다. 실제 게임 수치와 약간 다를 수 있습니다.": [
