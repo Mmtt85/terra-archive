@@ -1234,10 +1234,11 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
       skill.tokenUse.some((use) => use.percent && activeTokens.has(use.token))) ||
     counterMatches.some((match) => factionsOf(op).some((faction) => faction.includes(match)));
 
-  // 편성 근거 표시 (사용자 요청 2026-07-24): 스킬의 발동 조건(진영 카운트·파트너·타방 조건)을
-  // 현재 편성 기준 상태 + 관련 오퍼 칩으로 풀어 보여준다 — "우미리(시라쿠사 0명)가 왜
-  // 제어센터에?" 류 혼동 방지: 0명이면 그 스킬은 0% 적용으로 표시되고, 채택 근거인 다른
-  // 스킬(사무실 오라 등)이 구분돼 보인다. 칩은 보유 로스터 내 관련 오퍼만(배치 중 = 컬러).
+  // 편성 근거 표시 (사용자 요청 2026-07-24, **모든 오퍼**): 각 스킬의 발동 조건·관계를 현재
+  // 편성 기준 상태 + 관련 오퍼 칩으로 풀어 보여준다 — 진영 카운트(우미리·노시스), 파트너,
+  // 타방 조건(레토·굼), 토큰 생성↔소비, 전환 공급, 계열 카운트(도로시), 동료 보너스,
+  // 효율 대체(샤마르), 솔로 조건, 품질↔수익 결합, 용량↔변환(베나벌컨버블)까지.
+  // 칩은 보유 로스터 내 관련 오퍼만(배치 중 = 컬러, 미배치 = 흑백), 스킬당 최대 3관계·칩 8개.
   const presentNow = presentIdsFor(plan, shiftIndex);
   const typeTeamIds = (roomType: string): Set<string> => {
     const ids = new Set<string>();
@@ -1248,7 +1249,10 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
     }
     return ids;
   };
-  const relOf = (skill: InfraSkill, self: InfraOp): { note: string; chips: { op: InfraOp; on: boolean }[] } | null => {
+  type Rel = { note: string; chips: { op: InfraOp; on: boolean }[] };
+  const chipSort = (chips: { op: InfraOp; on: boolean }[]) => chips.sort((a, b) => Number(b.on) - Number(a.on) || b.op.rarity - a.op.rarity).slice(0, 8);
+  const relsOf = (skill: InfraSkill, self: InfraOp): Rel[] => {
+    const rels: Rel[] = [];
     if (skill.perFaction && !skill.perSkillTag) {
       const scope = skill.kind === "ctrl_trade" ? "TRADING" : skill.perScope === "mfg" ? "MANUFACTURE" : skill.perScope === "room" ? "room" : "base";
       const inScope = scope === "room" ? new Set(team.map((member) => member.id)) : scope === "base" ? presentNow : typeTeamIds(scope);
@@ -1256,37 +1260,94 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
       const n = members.filter((member) => inScope.has(member.id)).length;
       const total = skill.value > 0 && skill.perCap != null ? Math.min(skill.value * n, skill.perCap) : skill.value * n;
       const where = t(scope === "TRADING" ? "무역소" : scope === "MANUFACTURE" ? "제조소" : scope === "room" ? "이 방" : "기지 전체");
-      return {
+      rels.push({
         note: t("{faction} 1명당 {per}% — 현재 {where} {n}명 · {total}% 적용", { faction: skill.perFaction, per: skill.value, where, n, total: Math.round(total) }),
-        chips: members.map((member) => ({ op: member, on: inScope.has(member.id) })).sort((a, b) => Number(b.on) - Number(a.on)).slice(0, 8),
-      };
+        chips: chipSort(members.map((member) => ({ op: member, on: inScope.has(member.id) }))),
+      });
     }
     if (skill.roomPartner) {
       const partner = opById.get(skill.roomPartner.id) ?? opMap.get(skill.roomPartner.id);
-      if (!partner) return null;
-      const on = typeTeamIds(skill.roomPartner.room).has(partner.id);
-      return {
+      if (partner) rels.push({
         note: t("{name}이(가) {room}에 배치되어 있을 때 발동", { name: partner.name, room: t(infra.rooms[skill.roomPartner.room]?.name ?? skill.roomPartner.room) }),
-        chips: [{ op: partner, on }],
-      };
+        chips: [{ op: partner, on: typeTeamIds(skill.roomPartner.room).has(partner.id) }],
+      });
     }
     if (skill.partners.length) {
       const chips = skill.partners
         .map((id) => opById.get(id) ?? opMap.get(id))
         .filter((partner): partner is InfraOp => Boolean(partner))
         .map((partner) => ({ op: partner, on: teamIds.has(partner.id) }));
-      if (!chips.length) return null;
-      return { note: t("파트너 스킬 — 전원이 같은 방에 있을 때 발동"), chips };
+      if (chips.length) rels.push({ note: t("파트너 스킬 — 전원이 같은 방에 있을 때 발동"), chips });
     }
     if (skill.gateFaction) {
       const members = roster.filter((member) => member.id !== self.id && memberOf(member, skill.gateFaction!));
       const count = members.filter((member) => teamIds.has(member.id)).length + (memberOf(self, skill.gateFaction!) ? 1 : 0);
-      return {
+      rels.push({
         note: t("{faction} {n}명 이상일 때 발동 — 현재 {c}명", { faction: skill.gateFaction, n: skill.gateCount ?? 1, c: count }),
-        chips: members.map((member) => ({ op: member, on: teamIds.has(member.id) })).sort((a, b) => Number(b.on) - Number(a.on)).slice(0, 8),
-      };
+        chips: chipSort(members.map((member) => ({ op: member, on: teamIds.has(member.id) }))),
+      });
     }
-    return null;
+    // 토큰 생성 → 소비 오퍼 (총웨·아이리스류가 "왜" 앉는지)
+    for (const gen of skill.tokenGen.slice(0, 2)) {
+      const consumers = roster.filter((member) => member.id !== self.id && member.skills.some((s) => s.tokenUse.some((u) => u.token === gen.token) || s.convert?.from === gen.token));
+      if (consumers.length) rels.push({
+        note: t("{token} 생성 → 소비 오퍼", { token: tokenName(locale, gen.token) }),
+        chips: chipSort(consumers.map((member) => ({ op: member, on: presentNow.has(member.id) }))),
+      });
+    }
+    // 토큰 소비 ← 생성 오퍼 (슈·마르실류)
+    for (const use of skill.tokenUse.slice(0, 2)) {
+      const gens = roster.filter((member) => member.id !== self.id && member.skills.some((s) => s.tokenGen.some((g) => g.token === use.token) || s.convert?.to === use.token));
+      if (gens.length) rels.push({
+        note: t("{token} 소비 ← 생성 오퍼", { token: tokenName(locale, use.token) }),
+        chips: chipSort(gens.map((member) => ({ op: member, on: presentNow.has(member.id) }))),
+      });
+    }
+    // 전환 (에벤홀츠·지에윈): 원료 토큰 공급자
+    if (skill.convert) {
+      const sources = roster.filter((member) => member.id !== self.id && member.skills.some((s) => s.tokenGen.some((g) => g.token === skill.convert!.from)));
+      if (sources.length) rels.push({
+        note: t("{from} → {to} 전환 — 공급 오퍼", { from: tokenName(locale, skill.convert.from), to: tokenName(locale, skill.convert.to) }),
+        chips: chipSort(sources.map((member) => ({ op: member, on: presentNow.has(member.id) }))),
+      });
+    }
+    // 계열 카운트 (도로시·브라이오피타): 같은 방의 계열 스킬 보유자
+    if (skill.perSkillTag && skill.perSkillValue) {
+      const tag = skill.perSkillTag;
+      const holders = roster.filter((member) => member.id !== self.id && member.skills.some((s) => (s.families ?? []).includes(tag) && skillApplies(s, cell.room, cell.product)));
+      const n = team.filter((member) => member.id !== self.id && member.skills.some((s) => (s.families ?? []).includes(tag) && skillApplies(s, cell.room, cell.product))).length;
+      rels.push({
+        note: t("{tag}류 스킬 1개당 {per}% — 현재 이 방 {n}개 · {total}%", { tag, per: skill.perSkillValue, n, total: Math.round(skill.perSkillValue * n) }),
+        chips: chipSort(holders.map((member) => ({ op: member, on: teamIds.has(member.id) }))),
+      });
+    }
+    if (skill.kind === "percoworker") {
+      const n = Math.max(0, team.length - 1);
+      rels.push({ note: t("동료 1명당 {per}% — 현재 {n}명 · {total}%", { per: skill.value, n, total: Math.round(skill.value * n) }), chips: [] });
+    }
+    if (skill.kind === "override") rels.push({ note: t("같은 방 전원의 효율을 대체합니다 — 인당 {per}%", { per: skill.value }), chips: [] });
+    if (skill.kind === "solo") rels.push({ note: t("혼자 근무할 때만 발동 — 현재 이 방 {n}명", { n: team.length }), chips: [] });
+    if (skill.kind === "quality") {
+      const payoutOps = team.filter((member) => member.id !== self.id && member.skills.some((s) => (s.kind === "payout" || s.kind === "payout_v") && skillApplies(s, cell.room, cell.product)));
+      rels.push({ note: t("고품질 확률 — 오더 수익 오퍼와 결합 시 극대화"), chips: payoutOps.map((member) => ({ op: member, on: true })) });
+    }
+    if (skill.kind === "payout" || skill.kind === "payout_v") {
+      const qualityOps = team.filter((member) => member.id !== self.id && member.skills.some((s) => s.kind === "quality" && skillApplies(s, cell.room, cell.product)));
+      rels.push({ note: t("고품질 오더 수익 — 확률 오퍼와 결합 시 극대화"), chips: qualityOps.map((member) => ({ op: member, on: true })) });
+    }
+    // 용량 ↔ 변환 (베나·벌컨 ↔ 버블·데겐블레허)
+    if ((skill.cap ?? 0) !== 0) {
+      const converters = roster.filter((member) => member.id !== self.id && member.skills.some((s) => s.capConv != null && skillApplies(s, cell.room, cell.product)));
+      if (converters.length) rels.push({
+        note: t("용량 {n}칸 — 변환 오퍼가 생산력으로 되돌립니다", { n: skill.cap! > 0 ? `+${skill.cap}` : skill.cap }),
+        chips: chipSort(converters.map((member) => ({ op: member, on: teamIds.has(member.id) }))),
+      });
+    }
+    if (skill.capConv != null) {
+      const providers = team.filter((member) => member.id !== self.id && member.skills.some((s) => (s.cap ?? 0) !== 0 && skillApplies(s, cell.room, cell.product)));
+      rels.push({ note: t("적립 용량을 생산력으로 전환"), chips: providers.map((member) => ({ op: member, on: true })) });
+    }
+    return rels.slice(0, 3);
   };
 
   return (
@@ -1410,12 +1471,12 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                         })()}
                       </b>
                       {shown.length ? shown.map((skill) => {
-                        const rel = relOf(skill, op);
+                        const rels = relsOf(skill, op);
                         return (
                           <p key={skill.name}>
                             <em>{skill.name}</em> — {skill.description}
-                            {rel && (
-                              <span className="skill-rel">
+                            {rels.map((rel) => (
+                              <span key={rel.note} className="skill-rel">
                                 <i className="rel-note">{rel.note}</i>
                                 <span className="rel-chips">
                                   {rel.chips.map(({ op: relOp, on }) => (
@@ -1426,7 +1487,7 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                                   ))}
                                 </span>
                               </span>
-                            )}
+                            ))}
                           </p>
                         );
                       }) : <p>{t("이 시설에 적용되는 스킬이 없습니다 (세트 대기 요원).")}</p>}
