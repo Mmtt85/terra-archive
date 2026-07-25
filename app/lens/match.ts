@@ -226,6 +226,8 @@ const CTX_BOOST = 1.6;
 // 현재 테마를 버리고 갈아타려면 다른 테마가 이만큼 압도해야 한다 (사용자 확정 2026-07-26 —
 // 한 판 도는 중에 테마가 바뀌는 일은 없으므로, 애매하면 무조건 지금 테마가 맞다)
 const SWITCH_MARGIN = 2.5;
+// 테마 이름 앵커의 바이그램 포함율 하한 — OCR 오독·줄바꿈을 넘기되 오탐은 막는 선
+const ANCHOR_MIN = 0.7;
 
 export function analyzeLines(
   rawLines: string[],
@@ -255,13 +257,23 @@ export function analyzeLines(
   //
   // ① 앵커 — 화면에 테마 **이름**이 그대로 보이면 그것이 결정적이다. 테마 메인·로비가
   //    전형이고, 이름이 보이는데 다른 테마로 넘어가는 일은 있을 수 없다.
+  //    OCR은 긴 제목을 여러 줄로 쪼개거나 한두 글자를 틀리므로 한 줄 정확일치로는 못 잡는다
+  //    (2026-07-26 실기: 사미 메인화면이 안 잡힘). 전체 텍스트를 이어붙여 보고, 그래도
+  //    안 맞으면 바이그램 포함율로 본다.
   const anchor = (() => {
     const seen = new Set<string>();
+    const allBG = bigrams(allN);
     for (const e of index.entries) {
       if (seen.has(e.topic)) continue;
       seen.add(e.topic);
       const nm = norm(e.topicName);
-      if (nm.length >= 5 && linesN.some((l) => l.includes(nm))) return { topic: e.topic, name: e.topicName };
+      if (nm.length < 5) continue;
+      if (allN.includes(nm)) return { topic: e.topic, name: e.topicName };
+      const bg = bigrams(nm);
+      if (!bg.size) continue;
+      let hit = 0;
+      for (const g of bg) if (allBG.has(g)) hit++;
+      if (hit / bg.size >= ANCHOR_MIN) return { topic: e.topic, name: e.topicName };
     }
     return null;
   })();
