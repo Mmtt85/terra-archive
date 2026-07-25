@@ -8,7 +8,7 @@ import { lazy, startTransition, Suspense, useEffect, useMemo, useRef, useState, 
 import rogue1Data from "./data/rogue1.json";
 import { useConfirm } from "./confirm";
 import { useI18n } from "./i18n";
-import { normSearch } from "./search";
+import { normSearch, useDebounced } from "./search";
 import { isNewFeature } from "./whats-new";
 import type { LensGoto, LensOutcome } from "./lens/match";
 import { recognizeShot, warmData, ocrLangFor } from "./lens/run";
@@ -663,9 +663,12 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   const [encOpen, setEncOpen] = useState<Encounter | null>(null);
   const [relicOpen, setRelicOpen] = useState<InvItem | null>(null); // 소장품·부품·자원 공용 상세
   const [enemyQ, setEnemyQ] = useState("");
+  const enemyTerm = useDebounced(enemyQ);   // 검색은 타이핑 멈춘 뒤 1초 (search.ts)
   const [enemyRank, setEnemyRank] = useState<string>("");
   const [relicQ, setRelicQ] = useState("");
+  const relicTerm = useDebounced(relicQ);
   const [mapQ, setMapQ] = useState(""); // 맵·노드 이름 검색 (작전·조우 전투·우연한 만남 전부)
+  const mapTerm = useDebounced(mapQ);
   // 표준 카테고리 + 토픽 고유 시스템(mechanics)의 라벨을 탭 id로 쓰므로 string
   const [arcTab, setArcTab] = useState<string>("relic");
   const VIEWS = viewsFor();
@@ -788,12 +791,12 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   };
 
   const enemies = useMemo(() => {
-    const q = normSearch(enemyQ);
+    const q = normSearch(enemyTerm);
     return Object.entries(data.enemies)
       .filter(([, e]) => (!enemyRank || e.rank === enemyRank))
       .filter(([, e]) => !q || normSearch(e.name).includes(q) || (e.cn && normSearch(e.cn).includes(q)))
       .sort(([, a], [, b]) => (RANK_SORT[a.rank ?? ""] ?? 0) - (RANK_SORT[b.rank ?? ""] ?? 0) || a.name.localeCompare(b.name, "ko"));
-  }, [enemyQ, enemyRank, active]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [enemyTerm, enemyRank, active]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 무대 도구는 소장품에 통합해 함께 표시 (사용자 확정 2026-07-24) — 목록 끝에 붙는다
   const relicsAll = useMemo(() => [
@@ -804,25 +807,25 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
     } as Relic)),
   ], [active]); // eslint-disable-line react-hooks/exhaustive-deps
   const relics = useMemo(() => {
-    const q = normSearch(relicQ);
+    const q = normSearch(relicTerm);
     // 소장품 번호(order)로도 검색 — 순수 숫자 질의는 번호 정확일치 우선 (사용자 요청)
     return relicsAll.filter((r) => !q
       || normSearch(r.name).includes(q)
       || (r.cn && normSearch(r.cn).includes(q))
       || normSearch(r.usage ?? "").includes(q)
       || (r.order != null && (/^\d+$/.test(q) ? String(r.order) === q : normSearch(String(r.order)).includes(q))));
-  }, [relicQ, relicsAll]);
+  }, [relicTerm, relicsAll]);
 
   // 맵 탭 이름 검색 — 전투 노드(작전·긴급·보스·조우 전투·특수·시련·추격전·거점전·외나무다리)
   // + 우연한 만남(조우)을 전부 이름/중국어 원문으로 매칭
   const mapHits = useMemo(() => {
-    const q = normSearch(mapQ);
+    const q = normSearch(mapTerm);
     if (!q) return null;
     const nm = (name: string, cn?: string) => normSearch(name).includes(q) || (cn ? normSearch(cn).includes(q) : false);
     const stages = data.stages.filter((s) => s.kind !== "emergency" && nm(s.name, s.cn));
     const encs = data.encounters.filter((e) => nm(e.title, e.cn));
     return { stages, encs };
-  }, [mapQ, active]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [mapTerm, active]); // eslint-disable-line react-hooks/exhaustive-deps
 
 
   // 엔딩 조건 문장 속 「이름」 참조를 전부 클릭 가능하게 — 스테이지·조우·유물·적 순으로 매칭

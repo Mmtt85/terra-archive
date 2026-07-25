@@ -10,7 +10,7 @@ import storyEventsData from "./data/stories.json";
 import InfraPlanner from "./planner";
 import RecruitHelper from "./recruit";
 import FarmGuide, { UpgradeSim } from "./farm";
-import { normSearch } from "./search";
+import { normSearch, useDebounced } from "./search";
 import OmniSearch from "./omni-search";
 import type { OmniTarget } from "./omni";
 import { notifyHandoff, stashHandoff } from "./handoff";
@@ -714,6 +714,8 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
   const [selectedFactions, setSelectedFactions] = useState<string[]>([]);
   const [selectedConcepts, setSelectedConcepts] = useState<string[]>([]);
   const [query, setQuery] = useState("");
+  // 목록 필터는 타이핑이 멈춘 뒤 1초에만 돈다 (search.ts useDebounced — 사용자 확정 2026-07-25)
+  const searchTerm = useDebounced(query);
   const [selectedMethods, setSelectedMethods] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [selectedJobs, setSelectedJobs] = useState<string[]>([]);
@@ -1095,7 +1097,7 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
   }, [navOpen]);
 
   const filtered = useMemo(() => {
-    const keyword = normSearch(query);
+    const keyword = normSearch(searchTerm);
     return roster.filter((operator) => {
       const matchesFaction = selectedFactions.length === 0 || selectedFactions.some((faction) => operator.factions.includes(faction));
       const matchesConcept = selectedConcepts.length === 0 || selectedConcepts.some((concept) => operator.concepts.includes(concept));
@@ -1112,7 +1114,7 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
       return matchesFaction && matchesConcept && matchesMethod && matchesTags && matchesJob && matchesSubProfession && matchesRarity && matchesQuery;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roster, selectedFactions, selectedConcepts, selectedMethods, tags, selectedJobs, selectedSubProfessions, selectedRarities, query, nicknames, locale]);
+  }, [roster, selectedFactions, selectedConcepts, selectedMethods, tags, selectedJobs, selectedSubProfessions, selectedRarities, searchTerm, nicknames, locale]);
 
   const reset = () => {
     setSelectedFactions([]);

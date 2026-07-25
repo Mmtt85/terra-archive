@@ -19,6 +19,7 @@ import { canOpenStory, eventById } from "./story";
 import { TOPICS } from "./rogue";
 import { normSearch } from "./search";
 import { gotoForEntity, type LensGoto, type LensIndex } from "./lens/match";
+import { PICK_BONUS_MAX, type PickMap } from "./omni-picks";
 import type { Operator, Tab } from "./home";
 import type { ExtraI18n, Locale, T } from "./i18n";
 
@@ -41,7 +42,7 @@ export type OmniItem = {
   keys: string[];     // 정규화된 검색 키 — 0번이 표시 이름, 뒤쪽은 별명/코드(가중치 감점)
   target: OmniTarget;
 };
-export type OmniHit = OmniItem & { score: number };
+export type OmniHit = OmniItem & { score: number; votes: number };  // votes = 이 검색어에서 선택된 표수(학습)
 
 // 점수: 완전일치 > 접두일치 > 부분일치. 접두·부분은 검색어가 후보를 얼마나 덮는지(비율)로 스케일.
 const EXACT = 120;
@@ -178,9 +179,15 @@ export function rogueOmniItems(index: LensIndex, includeFuture: boolean, t: T): 
   return items;
 }
 
-export function searchOmni(items: OmniItem[], raw: string, limit = 12): OmniHit[] {
+/** 선택 학습 보너스 — 표수 p가 쌓일수록 완만하게 오르고 PICK_BONUS_MAX에서 멈춘다.
+ *  상한이 있어야 학습이 **비슷한 후보들의 순서만** 바꾸고, 관련 없는 항목을 끌어올리지 않는다
+ *  (완전일치 120 vs 부분일치 60+45=105 → 완전일치가 여전히 이긴다). */
+const pickBonus = (p: number) => (p > 0 ? Math.min(PICK_BONUS_MAX, 18 + 9 * Math.log2(1 + p)) : 0);
+
+export function searchOmni(items: OmniItem[], raw: string, opts?: { limit?: number; picks?: PickMap }): OmniHit[] {
   const q = norm(raw);
   if (!q) return [];
+  const picks = opts?.picks;
   const hits: OmniHit[] = [];
   for (const it of items) {
     let best = 0;
@@ -194,10 +201,11 @@ export function searchOmni(items: OmniItem[], raw: string, limit = 12): OmniHit[
       if (score > best) best = score;
     }
     if (best < MIN_SCORE) continue;
-    hits.push({ ...it, score: best + KIND_BONUS[it.kind] });
+    const votes = picks?.[it.uid] ?? 0;
+    hits.push({ ...it, score: best + KIND_BONUS[it.kind] + pickBonus(votes), votes });
   }
   hits.sort((a, b) => b.score - a.score || a.name.length - b.name.length || a.name.localeCompare(b.name));
-  return hits.slice(0, limit);
+  return hits.slice(0, opts?.limit ?? 10);
 }
 
 /** 바로 이동해도 되는 1위인가 — 애매하면 null(= "이 중에 무엇인가요?" 선택지).

@@ -11241,9 +11241,9 @@ main.site-main > .site-header {
   position: fixed;
   inset: 0;
   z-index: 120;
-  background: #111719a8;
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
+  /* ⚠ backdrop-filter 금지 — 결과 목록이 바뀔 때마다 전체 화면을 블러로 다시 합성해
+     입력 지연(실측 프레젠테이션 딜레이 130~380ms)의 주범이었다 (2026-07-25). */
+  background: #111719c4;
   display: flex;
   justify-content: center;
   align-items: flex-start;
@@ -11441,4 +11441,28 @@ main.site-main > .site-header {
 /* 만능검색 '새기능' 배지 — 라벨이 보이는 넓은 화면에서만 (아이콘만 남는 폭에선 넘친다) */
 .omni-trigger .new-badge {
   margin-left: 5px;
+}
+
+/* 디바운스 대기 중(타이핑 중) — 아래 목록은 아직 이전 검색어 결과임을 흐리게 알린다.
+   opacity만 바꾸므로 레이아웃·리페인트 비용이 거의 없다. */
+.omni-list.stale {
+  opacity: 0.5;
+}
+.omni-ask em {
+  font-style: normal;
+  font-weight: 600;
+  opacity: 0.72;
+  margin-left: 8px;
+  font-size: 11.5px;
+}
+.omni-learned {
+  flex: none;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--tint-lime, var(--bg-soft));
+  color: var(--tint-lime-ink, var(--ink2));
+  font-size: 10.5px;
+  font-weight: 800;
+  white-space: nowrap;
 }

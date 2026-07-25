@@ -34,7 +34,7 @@ import chronologyData from "./data/chronology.json";
 import storylinesData from "./data/storylines.json";
 import imageDimsData from "./data/story-image-dims.json";
 import { rich, useI18n, type Locale } from "./i18n";
-import { normSearch } from "./search";
+import { normSearch, useDebounced } from "./search";
 
 // CG·삽화의 실측 크기 (scripts/measure-story-images.py) — width/height를 박아 로딩 중
 // 레이아웃 밀림(CLS)을 없앤다. 브라우저가 렌더 폭에 맞춰 높이를 미리 예약한다.
@@ -1045,6 +1045,7 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
 function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEvent) => void; includeFuture?: boolean; group: "theme" | "kind" }) {
   const { locale, t } = useI18n();
   const [query, setQuery] = useState("");
+  const searchTerm = useDebounced(query);   // 타이핑 멈춘 뒤 1초 (search.ts)
   const [searchOpen, setSearchOpen] = useState(false); // 검색창 클릭 시 전체 이벤트 목록 드롭다운
   const searchRef = useRef<HTMLDivElement>(null);
 
@@ -1080,7 +1081,7 @@ function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEve
     return [...future, ...CHRON_ITEMS.filter((it) => !futureKeys.has(it.key))];
   }, [includeFuture]);
 
-  const keyword = normSearch(query);
+  const keyword = normSearch(searchTerm);
   const filtered = useMemo(() => {
     if (!keyword) return allItems;
     return allItems.filter((it) =>

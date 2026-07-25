@@ -14,7 +14,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { T } from "../i18n";
 import { ops, opById, maxElite, ELITE_LABEL, type Elite, type InfraOp } from "../planner-engine";
-import { normSearch } from "../search";
+import { normSearch, useDebounced } from "../search";
 import { analyzeFrame } from "./artmatch";
 
 // 스크린샷 1장에서 나온 오퍼별 최고 검출 (결과 목록은 이걸 전부 병합해 파생)
@@ -69,6 +69,7 @@ export function ScannerModal({ t, onClose, onApply }: {
   const [eliteOverride, setEliteOverride] = useState<Map<string, Elite>>(new Map());
   const [removed, setRemoved] = useState<Set<string>>(new Set());
   const [addQuery, setAddQuery] = useState("");
+  const addTerm = useDebounced(addQuery);   // 타이핑 멈춘 뒤 1초 (search.ts)
   const [clip, setClip] = useState<ClipState>("init");
   const [clipStarted, setClipStarted] = useState(false); // 사용자가 '자동인식 시작'을 눌러야 폴링 개시
   const [helpOpen, setHelpOpen] = useState(false); // ? 도움말 모달 (스샷 레이더와 동일 패턴)
@@ -252,10 +253,10 @@ export function ScannerModal({ t, onClose, onApply }: {
   }, [results]);
 
   const addMatches = useMemo(() => {
-    const q = normSearch(addQuery);
+    const q = normSearch(addTerm);
     if (q.length < 1) return [];
     return ops.filter((o) => normSearch(o.name).includes(q) && !results.has(o.id)).slice(0, 6);
-  }, [addQuery, results]);
+  }, [addTerm, results]);
 
   const onDropFiles = useCallback((e: React.DragEvent) => {
     e.preventDefault();

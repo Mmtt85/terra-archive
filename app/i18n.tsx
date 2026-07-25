@@ -1432,6 +1432,8 @@ const D: Record<string, Pair> = {
   "구역": ["Zone", "エリア"],
   "음반": ["Record", "レコード"],
   "부품": ["Scrap", "パーツ"],
+  "고른 항목을 기억해 다음엔 바로 이동해요": ["We'll remember your pick and jump straight there next time", "選んだ項目を覚えて、次回は直接移動します"],
+  "자주 선택": ["Often picked", "よく選ばれる"],
 };
 
 export type T = (key: string, vars?: Record<string, string | number>) => string;

@@ -13,7 +13,7 @@ import farmData from "./data/farm.json";
 import costsData from "./data/costs.json";
 import type { Operator } from "./home";
 import { useI18n, type Locale } from "./i18n";
-import { normSearch } from "./search";
+import { normSearch, useDebounced } from "./search";
 import { HANDOFF_EVENT, takeHandoff } from "./handoff";
 
 type LocText = { ko: string; en?: string; ja?: string };
@@ -123,6 +123,7 @@ export default function FarmGuide({ includeFuture }: { includeFuture: boolean })
   const { locale, t } = useI18n();
   const [tiers, setTiers] = useState<number[]>([]);
   const [query, setQuery] = useState("");
+  const searchTerm = useDebounced(query);   // 타이핑 멈춘 뒤 1초 (search.ts)
   const [permOnly, setPermOnly] = useState(false);
   // 재료 상세 모달 — 효율표·계산기의 모든 재료 아이콘에서 연다 (id = item id)
   const [shownItem, setShownItem] = useState<string | null>(null);
@@ -152,7 +153,7 @@ export default function FarmGuide({ includeFuture }: { includeFuture: boolean })
   }, []);
 
   const visible = useMemo(() => {
-    const keyword = normSearch(query);
+    const keyword = normSearch(searchTerm);
     return ALL_MATERIALS
       // 상시 파밍 토글은 파밍 가능 재료의 스테이지만 거른다 (파밍 불가 재료는 스테이지가 없음)
       .map((item) => permOnly && item.farmable ? { ...item, stages: item.stages.filter((stage) => PERMANENT_KINDS.has(stage.kind)) } : item)
@@ -166,7 +167,7 @@ export default function FarmGuide({ includeFuture }: { includeFuture: boolean })
         (!keyword ||
           normSearch([item.name.ko, item.name.en, item.name.ja].filter(Boolean).join(" ")).includes(keyword) ||
           (MATERIAL_ALIASES[item.id] ?? []).some((alias) => normSearch(alias).includes(keyword))));
-  }, [tiers, query, permOnly, includeFuture]);
+  }, [tiers, searchTerm, permOnly, includeFuture]);
 
   return (
     <section className="farm" aria-label={t("재료 파밍 효율표")}>
@@ -372,6 +373,7 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
   const { locale, t } = useI18n();
   const [picked, setPicked] = useState<string[]>([]);
   const [draft, setDraft] = useState("");
+  const draftTerm = useDebounced(draft);   // 후보 목록은 타이핑 멈춘 뒤 1초 (search.ts)
   // 검색창 포커스 여부 — 입력이 없어도 포커스만 하면 전체 오퍼 목록을 펼쳐 보여준다.
   const [focused, setFocused] = useState(false);
   // 그룹별 목표 단계 — "opId/groupKey" → 포함할 앞쪽 단계 수. 없으면 전체(steps.length) 기본.
@@ -405,7 +407,7 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
   const pool = useMemo(() =>
     operators.filter((operator) => costs.ops[operator.id] && (includeFuture || !operator.unreleased)),
     [operators, includeFuture]);
-  const keyword = normSearch(draft);
+  const keyword = normSearch(draftTerm);
   // 포커스만 해도 전체 목록(선택 안 된 오퍼)을 보여주고, 입력이 있으면 그 안에서 필터링한다.
   // operators는 성급 오름차순이라 그대로 자르면 저성급만 나온다 → 성급·출시순 내림차순으로 정렬.
   const candidates = pool

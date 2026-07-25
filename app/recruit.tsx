@@ -4,6 +4,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import recruitData from "./data/recruit.json";
 import { useI18n, rich, type ExtraI18n } from "./i18n";
 import { HANDOFF_EVENT, takeHandoff } from "./handoff";
+import { useDebounced } from "./search";
 import { isNewFeature } from "./whats-new";
 import type { LensGoto } from "./lens/match";
 import { recognizeShot, warmData } from "./lens/run";
@@ -134,6 +135,8 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
   const { t, locale } = useI18n();
   const [showDict, setShowDict] = useState(false);
   const [quick, setQuick] = useState("");
+  // 태그 자동 선택·조합 계산도 타이핑이 멈춘 뒤 1초에만 (사용자 확정 2026-07-25)
+  const quickTerm = useDebounced(quick);
   const [manualOn, setManualOn] = useState<string[]>([]);   // 직접 클릭해 켠 태그
   const [manualOff, setManualOff] = useState<string[]>([]); // 자동 선택을 직접 꺼둔 태그
 
@@ -154,14 +157,14 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
   // 선택은 현재 입력 문자열에서 매번 다시 계산한다 — 한글 IME 조합 중간 상태
   // (예: "가메" 입력 도중 '감')에서 잘못 붙은 자동 선택이 다음 키 입력에서 스스로 풀리게.
   // 영문/일문 로케일에서는 번역된 태그명의 첫 글자(대소문자 무시)로 매칭한다.
-  const quickChars = Array.from(new Set(quick.replace(/\s/g, "").toLowerCase().split("")));
+  const quickChars = Array.from(new Set(quickTerm.replace(/\s/g, "").toLowerCase().split("")));
   const autoPicks = useMemo(() =>
     quickChars
       .map((char) => ALL_TAG_NAMES.filter((name) => tagLabel(name).toLowerCase()[0] === char))
       .filter((candidates) => candidates.length === 1)
       .map((candidates) => candidates[0]),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [quick, tagLabelMap]);
+    [quickTerm, tagLabelMap]);
   const picked = useMemo(() => {
     const merged = [...autoPicks.filter((tag) => !manualOff.includes(tag))];
     for (const tag of manualOn) if (!merged.includes(tag)) merged.push(tag);

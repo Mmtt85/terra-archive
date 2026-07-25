@@ -4,7 +4,7 @@ import { lazy, startTransition, Suspense, useEffect, useMemo, useRef, useState }
 import { useI18n, tokenName, rich, type ExtraI18n, type Locale, type T } from "./i18n";
 import { RULES } from "./rules";
 import { useConfirm } from "./confirm";
-import { normSearch } from "./search";
+import { normSearch, useDebounced } from "./search";
 import { isNewFeature } from "./whats-new";
 
 import {
@@ -1464,6 +1464,7 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
   // 추가 후보: 어디에도 배치 안 된 보유 오퍼를 한계 기여 순으로
   const [benchAll, setBenchAll] = useState(false);
   const [benchQuery, setBenchQuery] = useState("");
+  const benchTerm = useDebounced(benchQuery);   // 타이핑 멈춘 뒤 1초 (search.ts)
   // 숙소에 두면 다른 방의 조건을 켜 주는 오퍼("…가 기반시설 어디든 있으면 +N%"의 짝) —
   // 언더플로우의 울피아누스처럼, 숙소 후보 목록에서 이들을 맨 앞에 세운다 (2026-07-25)
   const enablerFor = useMemo(() => {
@@ -1486,7 +1487,7 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
         .sort((a, b) => (enablerFor.has(b.op.id) ? 1 : 0) - (enablerFor.has(a.op.id) ? 1 : 0)
           || b.delta - a.delta || b.op.rarity - a.op.rarity)
     : [];
-  const benchKeyword = normSearch(benchQuery);
+  const benchKeyword = normSearch(benchTerm);
   const benchFiltered = benchKeyword
     ? benchFull.filter(({ op }) => normSearch(op.name).includes(benchKeyword) || normSearch(op.faction).includes(benchKeyword))
     : benchFull;
@@ -2039,9 +2040,10 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
   const [eliteDraft, setEliteDraft] = useState<Map<string, Elite>>(new Map(eliteById));
   const [showScan, setShowScan] = useState(false); // 스크린샷 스캐너(모달 내부에서 draft에 병합)
   const [query, setQuery] = useState("");
+  const searchTerm = useDebounced(query);   // 타이핑 멈춘 뒤 1초 (search.ts)
   const [sortKey, setSortKey] = useState("기본");
   const [sortAsc, setSortAsc] = useState(true);
-  const keyword = query.trim().toLowerCase();
+  const keyword = searchTerm.trim().toLowerCase();
   // 백과사전과 동일한 정렬 (직군·세부 직군·출신지·종족 포함). 기본 = 6성↓ → KR 출시 최신순
   const filteredOps = allOps.filter((op) => !keyword || op.name.toLowerCase().includes(keyword) || op.faction.toLowerCase().includes(keyword));
   const sortOps = (list: InfraOp[]): InfraOp[] => {
