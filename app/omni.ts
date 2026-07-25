@@ -60,7 +60,10 @@ const DECIDE_GAP = 30;       // 1위-2위 점수차가 이 이상이면 되묻�
 // 종류별 미세 가중 — 같은 점수면 사람이 먼저 떠올릴 법한 쪽을 위로
 const KIND_BONUS: Record<OmniKind, number> = { op: 3, tab: 2, topic: 2, story: 2, material: 1, tag: 0, rogue: 0 };
 
-const norm = (s: string) => normSearch(s);
+// 검색 정규화 + **장식 문자 제거** — 통합전략 항목 이름은 《글로리어스 카시미어》·'글로리 팩'처럼
+// 괄호·따옴표를 달고 있어서, 그대로 두면 "글로리"가 접두로 안 걸린다 (사용자 리포트 2026-07-26).
+const DECOR = /[《》〈〉「」『』【】〔〕（）()[\]{}"'“”‘’·・,、。~!?！？:：;；\/\\|+*=_-]/g;
+const norm = (s: string) => normSearch(s).replace(DECOR, "");
 // 조합 별칭은 **완전일치일 때만** 맞는 키로 넣는다 — "사미엔딩"이 "사미" 부분일치로 새어
 // 후보를 어지럽히지 않게. 키 앞의 "=" 한 글자가 그 표시다 (searchOmni·fuzzyHits가 해석).
 const exactKey = (raw: string) => `=${norm(raw)}`;
@@ -382,6 +385,121 @@ const HINT_TOKENS: { token: string; kinds: OmniKind[] }[] = [
 ];
 const HINT_BONUS = 34;   // 힌트가 지목한 종류에 얹는 가중 (확신 문턱 30을 넘겨 바로 이동 가능)
 
+// ── 여러 낱말 검색 ("사미 글로리") ──────────────────────────────────────────
+// 낱말 하나가 **범위**(어느 테마·어느 종류·어느 섹션)를 정하고, 나머지가 이름 조각이다.
+// "사미 글로리" = 탐험가의 은빛 서리 끝자락 안에서 이름에 '글로리'가 든 것 → 《글로리어스 카시미어》.
+// 범위 낱말은 테마 별명(TOPIC_NICKS·+록라 조합), 분류어(HINT_TOKENS), 아래 섹션어를 받는다.
+// 섹션 → 그 섹션을 보여 주는 화면(뷰) — 범위만 준 검색("쉐이 조우")의 도착지
+const SECTION_VIEW: Record<string, string> = {
+  relic: "relic", enc: "map", stage: "map", zone: "map",
+  band: "archive", capsule: "archive", scrap: "archive", mech: "archive", ending: "ending",
+};
+const SECTION_WORDS: Record<string, string> = {
+  유물: "relic", 소장품: "relic", 아이템: "relic", 도구: "relic",
+  조우: "enc", 이벤트칸: "enc",
+  작전: "stage", 스테이지: "stage", 전투: "stage",
+  구역: "zone", 지역: "zone", 층: "zone",
+  분대: "band",
+  음반: "capsule", 레퍼토리: "capsule",
+  부품: "scrap",
+  엔딩: "ending", 결말: "ending",
+  시스템: "mech", 사고: "mech",
+};
+// 테마 별명·이름 → 토픽 id (별명 + "사미록라" 같은 붙임말 포함)
+const topicByToken = (() => {
+  const map = new Map<string, string>();
+  for (const [topic, nicks] of Object.entries(TOPIC_NICKS)) {
+    for (const nick of nicks) {
+      map.set(norm(nick), topic);
+      for (const word of ROGUE_WORDS) map.set(norm(nick + word), topic);
+    }
+  }
+  for (const tp of TOPICS) {
+    map.set(norm(tp.name), tp.id);
+    for (const word of words(tp.name)) if (word.length >= 2) map.set(norm(word), tp.id);
+    map.set(`is${tp.id.split("_")[1]}`, tp.id);
+  }
+  return map;
+})();
+
+const topicOf = (item: OmniItem): string | null =>
+  item.target.kind === "rogue" ? item.target.topic : null;
+const sectionOf = (item: OmniItem): string | null => {
+  const parts = item.uid.split(":");
+  return item.uid.startsWith("rg:") && parts.length >= 4 ? parts[2] : null;
+};
+
+/** 낱말이 여럿인 검색어를 (범위 + 이름 조각)으로 나눠 훑는다. 범위가 하나도 없으면 빈 결과. */
+function tokenSearch(items: OmniItem[], raw: string, picks?: PickMap): OmniHit[] {
+  const parts = raw.trim().split(/\s+/).map(norm).filter(Boolean);
+  if (parts.length < 2) return [];
+  const topics = new Set<string>();
+  const kinds = new Set<OmniKind>();
+  const sections = new Set<string>();
+  const texts: string[] = [];
+  for (const part of parts) {
+    const topic = topicByToken.get(part);
+    if (topic) { topics.add(topic); continue; }
+    const hint = HINT_TOKENS.find((h) => h.token === part);
+    if (hint) { for (const kind of hint.kinds) kinds.add(kind); continue; }
+    const section = SECTION_WORDS[part];
+    if (section) { sections.add(section); continue; }
+    texts.push(part);
+  }
+  if (!topics.size && !kinds.size && !sections.size) return [];
+  // 이름 조각 없이 범위만 준 경우 — "쉐이 조우"는 그 테마의 해당 화면으로, "사미 스토리"는
+  // 그 테마 이름으로 스토리를 찾는다 (범위만으로 수백 개를 쏟아내지 않는다).
+  if (!texts.length) {
+    if (sections.size && topics.size) {
+      const views = new Set([...sections].map((section) => SECTION_VIEW[section] ?? "archive"));
+      return items
+        .filter((item) => item.uid.startsWith("rgview:")
+          && topics.has(item.uid.split(":")[1]) && views.has(item.uid.split(":")[2]))
+        .map((item) => ({ ...item, score: LEARNED_BASE + HINT_BONUS, votes: 0, hinted: true }));
+    }
+    if (topics.size && kinds.size) {
+      for (const topic of topics) {
+        const name = TOPICS.find((tp) => tp.id === topic)?.name;
+        if (name) texts.push(norm(name));
+      }
+    }
+    if (!texts.length) return [];
+  }
+  const hits: OmniHit[] = [];
+  for (const item of items) {
+    if (topics.size) {
+      const topic = topicOf(item);
+      if (!topic || !topics.has(topic)) continue;
+    }
+    if (kinds.size && !kinds.has(item.kind)) continue;
+    if (sections.size) {
+      const section = sectionOf(item);
+      if (!section || !sections.has(section)) continue;
+    }
+    // 이름 조각은 **전부** 맞아야 한다 (AND) — 하나라도 안 맞으면 후보 아님
+    let total = 0;
+    let ok = true;
+    for (const text of texts) {
+      let best = 0;
+      for (let i = 0; i < item.keys.length; i += 1) {
+        const key = item.keys[i];
+        if (key.startsWith("=")) continue;
+        const score = key === text ? EXACT
+          : key.startsWith(text) ? PREFIX * (text.length / key.length)
+            : key.includes(text) ? PART * (text.length / key.length)
+              : 0;
+        if (score > best) best = score;
+      }
+      if (best < 12) { ok = false; break; }     // 다중 낱말은 조각이 짧아 문턱을 낮춘다
+      total += best;
+    }
+    if (!ok) continue;
+    const votes = picks?.[item.uid] ?? 0;
+    hits.push({ ...item, score: total / texts.length + HINT_BONUS + pickBonus(votes), votes, hinted: true });
+  }
+  return hits;
+}
+
 /** 검색어에서 분류어를 떼어낸다. learned = 선택 학습으로 익힌 은어(토큰 → 종류). */
 export function splitHint(q: string, learned?: Record<string, OmniKind[]>): { rest: string; kinds: OmniKind[]; token: string } | null {
   const table = [
@@ -409,6 +527,9 @@ export function searchSmart(items: OmniItem[], raw: string, opts?: {
     if (!cur || cur.score < hit.score) merged.set(hit.uid, hit);
   };
   for (const hit of searchOmni(items, q, { picks: opts?.picks, limit: 40 })) put(hit);
+
+  // 여러 낱말: "사미 글로리" = 범위(사미) + 이름 조각(글로리)
+  for (const hit of tokenSearch(items, raw, opts?.picks)) put(hit);
 
   const hint = splitHint(q, opts?.hints);
   if (hint) {
