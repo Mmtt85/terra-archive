@@ -10,6 +10,7 @@ import type { LensGoto } from "./lens/match";
 import { recognizeShot, warmData } from "./lens/run";
 import { warmOcr } from "./lens/ocr";
 import { useClipboardWatch } from "./lens/clipwatch";
+import { useBridgeWatch } from "./lens/bridge";
 import { useDropWatch } from "./lens/dropwatch";
 
 // 스샷 인식 도움말 — 순수 설명 전용 모달 (입력 기능은 페이지 레벨 자동인식이 전담)
@@ -245,6 +246,7 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
     }
   };
   const lensClip = useClipboardWatch(lensAuto && !lensOpen, handleLensShot);
+  useBridgeWatch(!lensOpen, handleLensShot);   // 게임 브리지 — 같은 프레임 공급원
   // 자동인식 동안 창 전체가 드롭존 — 드래그 중이면 필을 드롭 가능 상태로 강조
   const lensDragging = useDropWatch(lensAuto && !lensOpen, handleLensShot);
 

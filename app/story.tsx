@@ -12,6 +12,7 @@ import { scrollMainTop } from "./scroll";
 import { warmOcr } from "./lens/ocr";
 import { recognizeShot, warmData } from "./lens/run";
 import { useClipboardWatch } from "./lens/clipwatch";
+import { useBridgeWatch } from "./lens/bridge";
 import { useDropWatch } from "./lens/dropwatch";
 import { isNewFeature } from "./whats-new";
 import storiesData from "./data/stories.json";
@@ -1398,6 +1399,7 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
     }
   };
   const lensClip = useClipboardWatch(lensAuto, handleLensShot);
+  useBridgeWatch(true, handleLensShot);        // 게임 브리지 — 같은 프레임 공급원
   const lensDragging = useDropWatch(lensAuto, handleLensShot);
   // 필·도움말은 목록/상세 어느 화면에서도 렌더. 일회성 스캔이라 이동 후 lensAuto는 꺼지지만
   // 성공 플래시 메시지(lensMsg)가 사라질 때까지는 필을 유지한다

@@ -10,7 +10,7 @@
 // 인식(OCR·매칭·이동)은 전부 사이트(app/lens/*)가 한다 — 확장은 프레임 수도꼭지일 뿐이라
 // 규칙·데이터가 바뀌어도 갱신할 일이 없다.
 
-const PAGE_URL = "https://terra-archive.net/bridge";
+const PAGE_URL = "https://terra-archive.net/";
 
 chrome.action.onClicked.addListener(() => {
   chrome.tabs.create({ url: PAGE_URL });

@@ -1403,6 +1403,16 @@ const D: Record<string, Pair> = {
 
   // 헤더 만능검색 (omni-search.tsx / omni.ts)
   "검색": ["Search", "検索"],
+  // 게임 브리지 (크롬 확장) — 확장이 깔린 사람 헤더에만 나타나는 버튼
+  "게임 연결": ["Connect game", "ゲーム接続"],
+  "게임 연결됨": ["Game connected", "ゲーム接続中"],
+  "게임 창 연결": ["Connect game window", "ゲームウィンドウを接続"],
+  "게임 연결 끊기": ["Disconnect game", "ゲーム接続を解除"],
+  "게임 창을 골라 화면을 자동으로 인식시킵니다": [
+    "Pick your game window and the site follows what you're looking at",
+    "ゲームウィンドウを選ぶと、見ている画面をサイトが自動で認識します",
+  ],
+  "전송": ["sent", "送信"],
   "유니버셜 서치": ["Universal Search", "ユニバーサルサーチ"],
   "유니버셜 서치 — 사이트 전체 검색": ["Universal Search — search the whole site", "ユニバーサルサーチ — サイト全体を検索"],
   "유니버셜 서치 — 오퍼·재료·스토리·통합전략·기능을 한 번에 찾아 이동합니다 (⌘K)": ["Universal Search — find operators, materials, stories, IS entries and tools anywhere on the site and jump there (⌘K)", "ユニバーサルサーチ — オペレーター・素材・ストーリー・ローグライク・機能をまとめて検索して移動します（⌘K）"],

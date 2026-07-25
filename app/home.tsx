@@ -12,6 +12,7 @@ import RecruitHelper from "./recruit";
 import FarmGuide, { UpgradeSim } from "./farm";
 import { normSearch, useSearchInput } from "./search";
 import OmniSearch from "./omni-search";
+import BridgeButton from "./lens/bridge-button";
 import type { OmniTarget } from "./omni";
 import { notifyHandoff, stashHandoff } from "./handoff";
 import { noteAction, noteArrival, noteMiss } from "./trail";
@@ -1196,6 +1197,9 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
         <BroadcastBadges includeFuture={includeFuture} slot="events" />
         {/* 만능검색 = 1줄 오른쪽(햄버거 왼쪽) — 헤더를 접어도 남는다 (사용자 요청 2026-07-25) */}
         <OmniSearch roster={roster} includeFuture={includeFuture} extra={extra} onGo={runOmni} />
+        {/* 게임 연결 — 크롬 확장(extension/)이 깔린 사람에게만 나타난다. 누르면 게임 창
+            프레임이 흐르고, 인식·이동은 각 탭의 스샷 레이더 경로가 그대로 처리한다. */}
+        <BridgeButton t={t} />
         {/* 햄버거(메뉴) = 1줄 오른쪽 끝 — 데스크탑·모바일 공통 (사용자 확정 2026-07-22).
             모바일은 order로, 데스크탑은 margin-left:auto로 배치되므로 JSX 위치는 자유. */}
         <div className="nav-group">

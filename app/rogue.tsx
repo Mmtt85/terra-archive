@@ -14,6 +14,7 @@ import type { LensGoto, LensOutcome } from "./lens/match";
 import { recognizeShot, warmData, ocrLangFor } from "./lens/run";
 import { warmOcr } from "./lens/ocr";
 import { useClipboardWatch } from "./lens/clipwatch";
+import { useBridgeWatch } from "./lens/bridge";
 import { useDropWatch } from "./lens/dropwatch";
 
 // 스샷 레이더 도움말 — 순수 설명 전용 모달 (입력 기능은 페이지 레벨 자동인식이 전담)
@@ -1047,6 +1048,9 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
     }
   };
   const lensClip = useClipboardWatch(lensAuto && !lensOpen, handleLensShot);
+  // 게임 브리지(크롬 확장) — 클립보드와 같은 프레임 공급원. 스샷 레이더 토글과 무관하게,
+  // 연결돼 있으면 게임 화면이 바뀔 때마다 여기로 들어와 같은 판정·이동 경로를 탄다.
+  useBridgeWatch(!lensOpen, handleLensShot);
   // 자동인식 동안 창 전체가 드롭존 — 드래그 중이면 필을 드롭 가능 상태로 강조
   const lensDragging = useDropWatch(lensAuto && !lensOpen, handleLensShot);
   // 하이라이트 카드로 스크롤 (렌더 뒤 한 프레임 양보).
