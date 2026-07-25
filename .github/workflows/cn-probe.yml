@@ -1,0 +1,13 @@
+name: cn-probe
+on: { workflow_dispatch: }
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: bilibili 도달성
+        run: |
+          for u in "https://api.live.bilibili.com/room/v1/Room/get_info?room_id=5555734" "https://ak.hypergryph.com/news"; do
+            code=$(curl -s -o /tmp/out -w "%{http_code}" -m 20 -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/126.0 Safari/537.36" "$u")
+            echo "=== $u → $code"
+            head -c 220 /tmp/out; echo
+          done
