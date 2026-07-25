@@ -178,8 +178,8 @@ export default function FarmGuide({ includeFuture }: { includeFuture: boolean })
 
   // 재료 검색이 0건이면 "실패한 검색"으로 남긴다 (app/trail.ts — 이후 도착지에 이어 붙는다)
   useEffect(() => {
-    if (searchTerm.trim() && !visible.length) noteMiss(normSearch(searchTerm));
-  }, [searchTerm, visible.length]);
+    if (searchTerm.trim() && !visible.length) noteMiss(normSearch(searchTerm), locale);
+  }, [searchTerm, visible.length, locale]);
 
   return (
     <section className="farm" aria-label={t("재료 파밍 효율표")}>

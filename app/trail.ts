@@ -1,65 +1,43 @@
 "use client";
 
-// 실패한 검색의 **최종 목적지 추적** (사용자 요청 2026-07-25).
+// 실패한 검색 → 최종 목적지 잇기 (사용자 요청 2026-07-25).
 //
 //   "날시"로 검색 → 아무것도 없음 → 검색창을 닫고 백과사전에서 "켈시"를 찾아
-//   Kal'tsit Esperanta를 클릭 → 그러면 날시 = Kal'tsit Esperanta다.
-//   "뱅제" → 없음 → "은재" → 없음 → "실버애쉬" → 실버애쉬 더 레인프로스트 클릭
-//   → 뱅제·은재 둘 다 그 오퍼로 이어진다.
+//   Kal'tsit·Esperanta를 클릭 → 그러면 날시 = Kal'tsit·Esperanta다.
+//   "뱅제" → 없음 → "은재" → 없음 → 실버애쉬 더 레인프로스트 클릭도 같은 방식.
 //
-// 동작: 결과가 0건인 검색어를 **미해결 미스**로 쌓아 두고, 이후 몇 번의 행동 안에
-// 실제 컨텐츠(오퍼·스토리·재료·통합전략 상세)에 도착하면 그 미스들에 귀속시킨다.
-// 귀속된 표는 직접 클릭(pick)이 아니라 **추론(trail)**이라 가중치를 절반만 준다.
+// **연결은 브라우저가 아니라 DB에서 한다** (사용자 확정: 학습은 전부 DB에 쌓는다).
+// 클라이언트는 사실 두 가지만 보고한다:
+//   · miss  — "이 검색어로 0건이 나왔다"
+//   · visit — "이 컨텐츠에 도착했다"
+// 같은 session의 miss 뒤 10분 안의 **첫 visit**을 SQL 뷰(omni_trail_counts)가 짝지어
+// 가중치로 만든다. 그래서 이 파일에는 학습 데이터도, 저장소도 없다.
 //
-// 저장은 sessionStorage(탭 단위) — 창을 닫으면 사라지는 임시 흔적이고, 확정된 학습만
-// omni-picks(로컬 + Supabase 집계)로 넘어간다.
+// 메모리에 두는 건 "최근에 못 찾은 게 있나" 플래그뿐이다 — 그게 있을 때만 visit을 보내
+// 모든 방문을 서버로 밀어 올리지 않는다. 새로고침하면 그 한 번의 연결은 놓친다(임시 상태).
 
-import { recordTrail } from "./omni-picks";
+import { recordMiss, recordVisit } from "./omni-picks";
 
-const KEY = "ta-omni-trail";
-const MAX_ACTIONS = 10;             // 미스 이후 이 횟수 안의 도착만 귀속 (사용자 제안 5~10)
-const MAX_AGE_MS = 10 * 60_000;     // 10분이 지나면 다른 볼일로 본다
-const MAX_MISSES = 6;               // 동시에 추적하는 미스 수 (뱅제→은재→이격은재…)
+const WINDOW_MS = 10 * 60_000;   // DB 뷰의 짝짓기 창(10분)과 같게 유지할 것
 
-type Miss = { q: string; at: number; actions: number };
+let lastMissAt = 0;
+const reported = new Set<string>();   // 같은 검색어를 반복해서 보내지 않는다 (페이지 수명)
 
-function read(): Miss[] {
-  try {
-    const raw = sessionStorage.getItem(KEY);
-    const list = raw ? (JSON.parse(raw) as Miss[]) : [];
-    const now = Date.now();
-    return Array.isArray(list) ? list.filter((m) => m && now - m.at < MAX_AGE_MS && m.actions <= MAX_ACTIONS) : [];
-  } catch { return []; }
-}
-
-function write(list: Miss[]): void {
-  try { sessionStorage.setItem(KEY, JSON.stringify(list.slice(-MAX_MISSES))); } catch { /* ignore */ }
-}
-
-/** 결과가 0건이었던 검색어를 기억한다 (정규화된 문자열). 유니버셜 서치·탭 검색창 공용. */
-export function noteMiss(q: string): void {
+/** 결과가 0건이었던 검색어 — DB에 남기고, 잠시 visit 보고를 켠다. */
+export function noteMiss(q: string, locale = "ko"): void {
   if (!q || q.length < 2 || q.length > 40) return;
-  const list = read();
-  if (list.some((m) => m.q === q)) return;         // 같은 검색어는 한 번만
-  list.push({ q, at: Date.now(), actions: 0 });
-  write(list);
+  lastMissAt = Date.now();
+  if (reported.has(q)) return;
+  reported.add(q);
+  recordMiss(q, locale);
 }
 
-/** 사용자의 행동 1회 (탭 이동·새 검색어 입력 등) — 미스에서 너무 멀어지면 추적을 끊는다. */
-export function noteAction(): void {
-  const list = read();
-  if (!list.length) return;
-  write(list.map((m) => ({ ...m, actions: m.actions + 1 })).filter((m) => m.actions <= MAX_ACTIONS));
-}
-
-/** 실제 컨텐츠 도착 — 미해결 미스 전부에 귀속시키고 흔적을 지운다.
+/** 실제 컨텐츠 도착 — 최근에 못 찾은 검색이 있을 때만 보고한다.
  *  uid는 유니버셜 서치 색인과 같은 형식(op:char_… / story:… / mat:… / rg:토픽:섹션:id). */
 export function noteArrival(uid: string, meta: { kind: string; name: string; locale: string }): void {
-  const list = read();
-  if (!list.length) return;
-  write([]);
-  for (const miss of list) recordTrail(miss.q, uid, { ...meta, steps: miss.actions });
+  if (!lastMissAt || Date.now() - lastMissAt > WINDOW_MS) return;
+  recordVisit(uid, meta);
 }
 
-/** 추적 중인 미스가 있는지 (디버깅·표시용) */
-export const pendingMisses = (): string[] => read().map((m) => m.q);
+/** 탭 이동·새 검색어 등 — 지금은 DB 쪽 시간 창이 판정하므로 아무 상태도 두지 않는다. */
+export function noteAction(): void { /* 호환용 (시간 창 기반으로 바뀌며 비었다) */ }

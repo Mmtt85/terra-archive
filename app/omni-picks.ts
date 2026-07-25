@@ -1,41 +1,41 @@
 "use client";
 
-// 유니버셜 서치 선택 학습 — 되묻기("이 중에 무엇인가요?")에서 **사이트를 쓰는 사람들 전체가**
-// 무엇을 골랐는지 모아 같은 검색어의 1순위를 정한다 (사용자 확정 2026-07-25:
-// "자기 자신한테만 적용되면 안돼 — 모든 사람 데이터를 수집해서 가중치를").
+// 유니버셜 서치 학습 — **가중치는 전부 DB(Supabase)에 쌓인다** (사용자 확정 2026-07-25:
+// "모두가 검색해서 빅데이터를 쌓아야 하기 때문에 기본적으로 디비에 가중치가 쌓여야 해").
+// 브라우저에는 학습 데이터를 보관하지 않는다 — localStorage에 두는 건 익명 세션 id 하나뿐이고,
+// 그건 "한 사람이 100번 눌러도 1표"를 만들기 위한 중복 제거용이다.
 //
-// 가중치 = **사람 수(voters)** 기준으로 센다:
-//   · 사람들의 선택 (Supabase `omni_pick` → 뷰 `omni_pick_counts`) = 정본.
-//     같은 사람이 반복 클릭해도 1표(session으로 중복 제거)이고, **서로 다른 2명 이상**이
-//     고른 조합만 공개된다 → 한 사람이 전역 순위를 흔들 수 없다.
-//   · 내 선택 (localStorage) = 그 기기에서만 **2표 상당**으로 얹힌다. 내가 한 번 고르면
-//     내 화면에서는 즉시 1순위(보너스 32 > 확신 문턱 30)가 되지만, 남의 화면은 안 바뀐다.
-//   → 최종 가중 = crowdVoters + (내가 고른 적 있으면 2)  ·  보너스 = min(45, 18+9·log2(1+가중))
+// 쌓는 신호 (전부 `omni_pick` 한 표에 source로 구분해 들어간다)
+//   · pick  — 되묻기에서 직접 고른 항목                        (표 1.0)
+//   · miss  — 결과가 0건이었던 검색어 자체                     (그 자체로는 가중치 아님)
+//   · visit — 컨텐츠에 도착 (app/trail.ts) — 같은 세션의 직전 miss와 **DB에서 짝지어져**
+//             "실패한 검색 → 최종 목적지" 가중치가 된다 (표 0.5, omni_trail_counts 뷰)
+//   · 은어 힌트("록라"=통합전략)는 q가 `~록라`, uid가 `hint:<종류>`인 pick 행.
 //
-// 테이블이 없거나(설치 전 404) 네트워크가 죽어도 로컬 학습만으로 정상 동작한다.
-// 설치 SQL: docs/supabase-omni-picks.sql · 스팸 삭제는 /admin과 같은 x-admin-key.
+// 읽기: 공개 집계 뷰 `omni_weights(q, uid, voters, trail_voters)`를 세션 1회 받아 메모리에 둔다
+// (직접 클릭 집계 + DB가 짝지은 실패→도착 집계를 합쳐 놓은 뷰). 내가 방금 누른 표는 서버 왕복 없이 그 메모리 지도에 낙관적으로 얹어 같은
+// 세션에서 즉시 반영되고, 다음 접속 땐 DB에서 그대로 돌아온다.
 //
-// 저장 값: 정규화된 검색어 + 고른 항목 id + (종류·이름·언어·순위·후보수·근사/힌트 여부) +
-// 익명 랜덤 session id. 개인 식별 정보나 입력 이력은 저장하지 않는다.
+// 가중 = voters + 0.5×trail_voters  ·  보너스 = min(45, 18+9·log2(1+가중))
+//   1표 → 27점: 1순위로 올라오지만 되묻기는 유지 (확신 문턱 30 미만)
+//   2표 → 32점: 되묻지 않고 바로 이동 — **서로 다른 두 사람이 합의하면 확정**
+//
+// 설치 SQL: docs/supabase-omni-picks.sql (없으면 404 한 번 확인 후 전송을 끊는다).
 
 import { SUPABASE_ANON_KEY, SUPABASE_URL, feedbackReady } from "./feedback";
 
-export type PickMap = Record<string, number>;                 // uid → 표수
+export type PickMap = Record<string, number>;                 // uid → 가중(표)
 export type PickIndex = Record<string, PickMap>;              // 정규화 검색어 → PickMap
 
+const SESSION_KEY = "ta-omni-session";   // 익명 랜덤 id — 표 중복 제거용(개인 식별 아님)
+const TRAIL_WEIGHT = 0.5;                // 추론(trail) 표는 직접 클릭의 절반
+export const PICK_BONUS_MAX = 45;
+
 // 힌트 학습 — "쉐이록라"에서 이름(쉐이)을 뺀 조각 "록라"가 통합전략을 뜻한다는 걸 배운다.
-// 같은 저장소를 쓰되 검색어 키에 "~"를 붙여(`~록라`) 일반 검색어와 섞이지 않게 한다.
+// 같은 표를 쓰되 검색어 키에 "~"를 붙여(`~록라`) 일반 검색어와 섞이지 않게 한다.
 const HINT_PREFIX = "~";
 const HINT_UID = "hint:";
-const HINT_MIN = 2;      // 이 표수 이상 모인 조각만 힌트로 쓴다 (내 선택 1회 = 2표라 즉시 성립)
-
-const LS_KEY = "ta-omni-picks";
-const SESSION_KEY = "ta-omni-session";   // 익명 랜덤 id — 표 중복 제거용(개인 식별 아님)
-const MAX_QUERIES = 150;      // 로컬 보관 검색어 수 (오래된 것부터 버린다)
-const MINE_WEIGHT = 2;        // 내가 직접 고른 것 = 내 기기에서 2표 상당 (남의 화면엔 영향 없음)
-const TRAIL_WEIGHT = 1;       // 실패한 검색의 최종 목적지(추론) = 절반 무게
-const TRAIL_CROWD_WEIGHT = 0.5;  // 사람들의 추론 표도 직접 클릭의 절반
-export const PICK_BONUS_MAX = 45;
+const HINT_MIN = 1;      // 이 표수 이상 모인 조각만 힌트로 쓴다
 
 /** 브라우저별 익명 id — 같은 사람의 반복 클릭을 서버 집계에서 1표로 접기 위한 것뿐이다. */
 function sessionId(): string {
@@ -51,62 +51,15 @@ function sessionId(): string {
   }
 }
 
-type LocalEntry = { at: number; p: PickMap; t?: PickMap };   // p=직접 클릭, t=추론(trail)
-type LocalStore = Record<string, LocalEntry>;
+// 세션 1회만 받아 온다 (검색 패널을 처음 열 때). 낙관적 갱신도 이 지도에 얹는다.
+let crowdPromise: Promise<PickIndex> | null = null;
+const crowdIndex: PickIndex = {};
+// 테이블 미설치(404)를 확인했으면 그 뒤 전송을 아예 하지 않는다 — 콘솔 404 잡음·헛트래픽 방지
+let tableMissing = false;
 
-function readLocal(): LocalStore {
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw) as LocalStore;
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch { return {}; }
-}
+type Source = "pick" | "miss" | "visit";
 
-function writeLocal(store: LocalStore) {
-  try {
-    const keys = Object.keys(store);
-    if (keys.length > MAX_QUERIES) {
-      keys.sort((a, b) => (store[a].at ?? 0) - (store[b].at ?? 0));
-      for (const key of keys.slice(0, keys.length - MAX_QUERIES)) delete store[key];
-    }
-    localStorage.setItem(LS_KEY, JSON.stringify(store));
-  } catch { /* 사파리 프라이빗 모드 등 — 학습만 안 되고 검색은 정상 */ }
-}
-
-/** 내 선택 기록 (localStorage). 검색어는 정규화된 문자열.
- *  직접 클릭은 MINE_WEIGHT(2)표, 추론(trail)은 그 절반(1표) 상당으로 합쳐 돌려준다. */
-export function myPicks(): PickIndex {
-  const store = readLocal();
-  const out: PickIndex = {};
-  for (const [q, entry] of Object.entries(store)) {
-    const map: PickMap = {};
-    for (const [uid, n] of Object.entries(entry.p ?? {})) if (n > 0) map[uid] = MINE_WEIGHT;
-    for (const [uid, n] of Object.entries(entry.t ?? {})) if (n > 0) map[uid] = Math.max(map[uid] ?? 0, TRAIL_WEIGHT);
-    out[q] = map;
-  }
-  return out;
-}
-
-/** 후보가 둘 이상이었을 때의 클릭만 기록한다 (단일 결과는 학습 가치가 없다). */
-export function recordPick(q: string, uid: string, meta: {
-  kind: string; name: string; locale: string;
-  rank?: number; candidates?: number; fuzzy?: boolean; hinted?: boolean;
-  source?: "pick" | "trail"; steps?: number;
-}): void {
-  if (!q || q.length > 40) return;
-  const store = readLocal();
-  const entry = store[q] ?? { at: 0, p: {} };
-  if (meta.source === "trail") {
-    entry.t = entry.t ?? {};
-    entry.t[uid] = (entry.t[uid] ?? 0) + 1;
-  } else {
-    entry.p[uid] = (entry.p[uid] ?? 0) + 1;
-  }
-  entry.at = Date.now();
-  store[q] = entry;
-  writeLocal(store);
-  // 서버 집계는 실패해도 무시 — 내 선택만으로도 다음 검색은 정확해진다
+function send(row: Record<string, unknown>): void {
   if (!feedbackReady || tableMissing) return;
   void fetch(`${SUPABASE_URL}/rest/v1/omni_pick`, {
     method: "POST",
@@ -116,24 +69,56 @@ export function recordPick(q: string, uid: string, meta: {
       "Content-Type": "application/json",
       Prefer: "return=minimal",
     },
-    body: JSON.stringify({
-      q, uid, kind: meta.kind, name: meta.name.slice(0, 80), locale: meta.locale,
-      session: sessionId(),
-      rank: meta.rank ?? null, candidates: meta.candidates ?? null,
-      fuzzy: meta.fuzzy ?? null, hinted: meta.hinted ?? null,
-      source: meta.source ?? "pick", steps: meta.steps ?? null,
-    }),
+    body: JSON.stringify({ ...row, session: sessionId() }),
     keepalive: true,   // 클릭 직후 페이지가 바뀌어도 전송이 끊기지 않게
   }).catch(() => { /* 테이블 미설치·오프라인 */ });
 }
 
-// 세션 1회만 받아 온다 (검색 패널을 처음 열 때)
-let crowdPromise: Promise<PickIndex> | null = null;
-// 테이블 미설치(404)를 확인했으면 그 뒤 전송을 아예 하지 않는다 — 콘솔 404 잡음·헛트래픽 방지
-let tableMissing = false;
+/** 메모리 집계에 내 표를 즉시 얹는다 (다음 접속엔 DB에서 같은 값이 돌아온다).
+ *  실패→도착 추론은 DB가 짝지으므로 여기서 미리 얹지 않는다 — 다음 접속부터 반영된다. */
+function bump(q: string, uid: string, weight: number): void {
+  const map = crowdIndex[q] ?? (crowdIndex[q] = {});
+  map[uid] = (map[uid] ?? 0) + weight;
+}
+
+/** 되묻기에서 직접 고른 항목 — 후보가 둘 이상이었을 때만 기록한다. */
+export function recordPick(q: string, uid: string, meta: {
+  kind: string; name: string; locale: string;
+  rank?: number; candidates?: number; fuzzy?: boolean; hinted?: boolean;
+  source?: Source;
+}): void {
+  if (!q || q.length > 41) return;
+  const source: Source = meta.source ?? "pick";
+  bump(q, uid, 1);
+  send({
+    q, uid, kind: meta.kind, name: meta.name.slice(0, 80), locale: meta.locale,
+    rank: meta.rank ?? null, candidates: meta.candidates ?? null,
+    fuzzy: meta.fuzzy ?? null, hinted: meta.hinted ?? null,
+    source,
+  });
+}
+
+/** 컨텐츠 도착 — app/trail.ts가 부른다. 짝짓기(직전 miss와 연결)는 **DB 뷰가** 한다. */
+export function recordVisit(uid: string, meta: { kind: string; name: string; locale: string }): void {
+  send({ q: "-", uid, kind: meta.kind, name: meta.name.slice(0, 80), locale: meta.locale, source: "visit" });
+}
+
+/** 결과가 0건이었던 검색어 자체 — 가중치가 아니라 **무엇을 못 찾는지** 모으는 통계다
+ *  (omni_miss_top 뷰로 자주 실패하는 말을 확인해 별칭·힌트 사전에 반영한다). */
+export function recordMiss(q: string, locale: string): void {
+  if (!q || q.length < 2 || q.length > 41) return;
+  send({ q, uid: "-", kind: "miss", name: null, locale, source: "miss" });
+}
+
+/** 검색어에서 이름을 뺀 조각 → 종류 ("쉐이록라"에서 쉐이 테마를 고르면 록라=통합전략). */
+export function recordHint(token: string, kind: string): void {
+  if (token.length < 2 || token.length > 6) return;
+  recordPick(HINT_PREFIX + token, HINT_UID + kind, { kind: "hint", name: token, locale: "-" });
+}
+
 export function fetchCrowdPicks(): Promise<PickIndex> {
   if (!crowdPromise) {
-    crowdPromise = fetch(`${SUPABASE_URL}/rest/v1/omni_pick_counts?select=q,uid,voters,trail_voters&order=voters.desc&limit=4000`, {
+    crowdPromise = fetch(`${SUPABASE_URL}/rest/v1/omni_weights?select=q,uid,voters,trail_voters&order=voters.desc&limit=6000`, {
       headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
     })
       .then((res) => {
@@ -141,65 +126,41 @@ export function fetchCrowdPicks(): Promise<PickIndex> {
         return res.ok ? res.json() : [];
       })
       .then((rows: { q: string; uid: string; voters: number; trail_voters?: number }[]) => {
-        const index: PickIndex = {};
         for (const row of rows ?? []) {
           if (!row?.q || !row?.uid) continue;
-          // 가중치는 **사람 수**로 센다 (한 사람의 반복 클릭은 서버 뷰에서 이미 1표로 접혔다).
-          // 추론(trail) 표는 직접 클릭의 절반만 인정한다.
-          const weight = (row.voters ?? 0) + TRAIL_CROWD_WEIGHT * (row.trail_voters ?? 0);
-          (index[row.q] = index[row.q] ?? {})[row.uid] = weight;
+          // 가중치는 **사람 수**로 센다 (같은 사람의 반복 클릭은 뷰에서 이미 1표로 접혔다)
+          const weight = (row.voters ?? 0) + TRAIL_WEIGHT * (row.trail_voters ?? 0);
+          const map = crowdIndex[row.q] ?? (crowdIndex[row.q] = {});
+          map[row.uid] = Math.max(map[row.uid] ?? 0, weight);   // 낙관적으로 얹어둔 내 표 보존
         }
-        return index;
+        return crowdIndex;
       })
-      .catch(() => ({}));
+      .catch(() => crowdIndex);
   }
   return crowdPromise;
 }
 
-/** 검색어에서 이름을 뺀 조각 → 종류를 기록한다 ("쉐이록라"에서 쉐이 테마를 고르면 록라=통합전략). */
-export function recordHint(token: string, kind: string): void {
-  if (token.length < 2 || token.length > 6) return;
-  recordPick(HINT_PREFIX + token, HINT_UID + kind, { kind: "hint", name: token, locale: "-" });
-}
+/** 지금까지 아는 전역 집계 (서버 응답 + 이번 세션에 내가 만든 표). */
+export const crowdPicks = (): PickIndex => crowdIndex;
 
-/** 실패한 검색(q)의 최종 목적지(uid)를 기록한다 — app/trail.ts가 부른다.
- *  직접 클릭이 아니라 추론이므로 source='trail'로 남겨 가중치를 절반만 갖는다. */
-export function recordTrail(q: string, uid: string, meta: { kind: string; name: string; locale: string; steps?: number }): void {
-  recordPick(q, uid, { ...meta, source: "trail", steps: meta.steps });
-}
-
-/** 내가 이 항목을 고른 적 있는지 — '자주 선택' 배지에서 내 선택과 군중 합의를 구분하려면 필요. */
-export const pickedByMe = (q: string, uid: string, mine: PickIndex): boolean => (mine[q]?.[uid] ?? 0) > 0;
-
-/** 학습된 은어 사전 (토큰 → 종류들). 내 선택은 가중 3이라 한 번만 골라도 바로 성립한다. */
-export function learnedHints(mine: PickIndex, crowd: PickIndex): Record<string, string[]> {
+/** 학습된 은어 사전 (토큰 → 종류들) — 전역 집계에서 뽑는다. */
+export function learnedHints(crowd: PickIndex): Record<string, string[]> {
   const out: Record<string, string[]> = {};
-  const scan = (index: PickIndex, weight: number) => {
-    for (const [key, map] of Object.entries(index)) {
-      if (!key.startsWith(HINT_PREFIX)) continue;
-      const token = key.slice(HINT_PREFIX.length);
-      for (const [uid, n] of Object.entries(map)) {
-        if (!uid.startsWith(HINT_UID) || n * weight < HINT_MIN) continue;
-        const kind = uid.slice(HINT_UID.length);
-        const list = out[token] ?? (out[token] = []);
-        if (!list.includes(kind)) list.push(kind);
-      }
+  for (const [key, map] of Object.entries(crowd)) {
+    if (!key.startsWith(HINT_PREFIX)) continue;
+    const token = key.slice(HINT_PREFIX.length);
+    for (const [uid, weight] of Object.entries(map)) {
+      if (!uid.startsWith(HINT_UID) || weight < HINT_MIN) continue;
+      const kind = uid.slice(HINT_UID.length);
+      const list = out[token] ?? (out[token] = []);
+      if (!list.includes(kind)) list.push(kind);
     }
-  };
-  scan(crowd, 1);
-  scan(mine, 1);   // myPicks()가 이미 가중을 환산해 돌려준다
+  }
   return out;
 }
 
-/** 이 검색어의 최종 가중 = 사람들의 표수(voters) + (내가 고른 적 있으면 MINE_WEIGHT).
- *  내 클릭 횟수에 비례시키지 않는다 — 나는 어디까지나 한 명이다. */
-export function picksFor(q: string, mine: PickIndex, crowd: PickIndex): PickMap | undefined {
-  const my = mine[q];
-  const theirs = crowd[q];
-  if (!my && !theirs) return undefined;
-  const merged: PickMap = {};
-  for (const [uid, voters] of Object.entries(theirs ?? {})) merged[uid] = voters;
-  // myPicks()가 이미 직접 클릭 2 / 추론 1로 환산해 돌려준다
-  for (const [uid, weight] of Object.entries(my ?? {})) merged[uid] = (merged[uid] ?? 0) + weight;
-  return merged;
+/** 이 검색어의 가중치 지도 (없으면 undefined). */
+export function picksFor(q: string, crowd: PickIndex): PickMap | undefined {
+  const map = crowd[q];
+  return map && Object.keys(map).length ? map : undefined;
 }

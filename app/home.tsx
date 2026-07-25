@@ -1186,8 +1186,8 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
   // 백과사전 검색이 0건이면 그것도 "실패한 검색"이다 (뱅제 → 은재 → … 연쇄를 잇기 위해)
   useEffect(() => {
     if (!searchTerm.trim() || filtered.length) return;
-    noteMiss(normSearch(searchTerm));
-  }, [searchTerm, filtered.length]);
+    noteMiss(normSearch(searchTerm), locale);
+  }, [searchTerm, filtered.length, locale]);
 
   const reset = () => {
     setSelectedFactions([]);

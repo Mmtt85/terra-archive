@@ -15,7 +15,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { getRogueIndex } from "./lens/run";
 import { buildOmniIndex, currentRogueTopic, decideOmni, rogueOmniItems, searchSmart, splitHint, type OmniHit, type OmniItem, type OmniKind, type OmniTarget } from "./omni";
-import { fetchCrowdPicks, learnedHints, myPicks, picksFor, recordHint, recordPick, type PickIndex } from "./omni-picks";
+import { crowdPicks, fetchCrowdPicks, learnedHints, picksFor, recordHint, recordPick, type PickIndex } from "./omni-picks";
 import { normSearch, SEARCH_DEBOUNCE_MS } from "./search";
 import { noteAction, noteMiss } from "./trail";
 import { useI18n, type ExtraI18n } from "./i18n";
@@ -45,8 +45,10 @@ export default function OmniSearch({ roster, nicknames, includeFuture, extra, on
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [rogueItems, setRogueItems] = useState<OmniItem[] | null>(null);  // 지연 로드된 통합전략 항목
-  const [mine, setMine] = useState<PickIndex>({});   // 내 선택 기록 (localStorage, 열 때 읽음)
-  const [crowd, setCrowd] = useState<PickIndex>({}); // 사람들의 선택 집계 (세션 1회)
+  // 전역 집계(사람들의 표) — 학습은 전부 DB에 쌓이고, 여기선 세션 1회 받아 온 지도를 읽는다.
+  // tick은 내 표를 낙관적으로 얹은 뒤 다시 그리기 위한 신호 (지도 자체는 omni-picks 모듈 소유).
+  const [crowd, setCrowd] = useState<PickIndex>({});
+  const [, setTick] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);   // 'stale'(대기 중) 표시는 클래스만 직접 토글
   const timerRef = useRef<number | undefined>(undefined);
@@ -56,15 +58,15 @@ export default function OmniSearch({ roster, nicknames, includeFuture, extra, on
     () => (open ? buildOmniIndex({ roster, nicknames, includeFuture, locale, t, extra }) : []),
     [open, roster, nicknames, includeFuture, locale, t, extra]);
   const items = useMemo(() => (rogueItems ? base.concat(rogueItems) : base), [base, rogueItems]);
-  const picks = useMemo(() => picksFor(normSearch(term), mine, crowd), [term, mine, crowd]);
+  const picks = useMemo(() => picksFor(normSearch(term), crowd), [term, crowd]);
   // 선택 학습으로 익힌 은어 사전 ("록라" → 통합전략) — 내장 사전 위에 얹힌다
-  const hints = useMemo(() => learnedHints(mine, crowd) as Record<string, OmniKind[]>, [mine, crowd]);
+  const hints = useMemo(() => learnedHints(crowd) as Record<string, OmniKind[]>, [crowd]);
   const hits = useMemo(() => searchSmart(items, term, { picks, hints }), [items, term, picks, hints]);
 
   const openPanel = () => {
     setOpen(true);
-    setMine(myPicks());                                    // localStorage는 클라이언트에서만
-    void fetchCrowdPicks().then(setCrowd).catch(() => { /* 테이블 미설치 — 내 선택만 반영 */ });
+    setCrowd({ ...crowdPicks() });                          // 이미 받아 둔 집계 즉시 반영
+    void fetchCrowdPicks().then((index) => setCrowd({ ...index })).catch(() => { /* 테이블 미설치 */ });
   };
   // 상태 리셋은 이펙트가 아니라 닫기·입력 핸들러에서 직접 한다 (이펙트 setState = 연쇄 렌더)
   const close = () => {
@@ -138,15 +140,13 @@ export default function OmniSearch({ roster, nicknames, includeFuture, extra, on
         kind: hit.kind, name: hit.name, locale,
         rank, candidates, fuzzy: hit.fuzzy, hinted: hit.hinted,
       });
-      // 낙관적 반영 — 다음 검색부터 바로 이 선택이 1위가 된다
-      setMine((prev) => ({ ...prev, [q]: { ...(prev[q] ?? {}), [hit.uid]: (prev[q]?.[hit.uid] ?? 0) + 1 } }));
       // 은어 학습 — 검색어에서 고른 항목의 이름(공통 접두)을 뺀 조각을 그 종류의 힌트로 기억한다.
       // "쉐이록라"에서 쉐이 테마를 고르면 → "록라"는 통합전략 (다음엔 "미즈키록라"도 통한다).
       const rest = leftoverToken(q, hit);
-      if (rest) {
-        recordHint(rest, hit.kind);
-        setMine((prev) => ({ ...prev, [`~${rest}`]: { ...(prev[`~${rest}`] ?? {}), [`hint:${hit.kind}`]: (prev[`~${rest}`]?.[`hint:${hit.kind}`] ?? 0) + 1 } }));
-      }
+      if (rest) recordHint(rest, hit.kind);
+      // 방금 만든 표를 화면에도 즉시 반영 (지도는 omni-picks가 이미 갱신했다)
+      setCrowd({ ...crowdPicks() });
+      setTick((n) => n + 1);
     }
     close();
     onGo(hit.target);
@@ -189,8 +189,8 @@ export default function OmniSearch({ roster, nicknames, includeFuture, extra, on
   useEffect(() => {
     if (!open || busy || !term.trim() || hits.length) return;
     if (!rogueItems) return;                 // 아직 확장 검색 전 — 진짜 미스인지 모른다
-    noteMiss(normSearch(term));
-  }, [open, busy, term, hits.length, rogueItems]);
+    noteMiss(normSearch(term), locale);
+  }, [open, busy, term, hits.length, rogueItems, locale]);
 
   // 되묻기로 전환 — 포커스를 입력란으로 되돌려 ↑↓·⏎로 바로 고를 수 있게 한다
   const askUser = () => { setAsk(true); setActive(0); inputRef.current?.focus(); };
@@ -204,7 +204,7 @@ export default function OmniSearch({ roster, nicknames, includeFuture, extra, on
     listRef.current?.classList.remove("stale");
     setTerm(query);                                   // 화면 목록도 이 검색어에 맞춘다
     const here = currentRogueTopic();                 // 통합전략 가이드를 보는 중이면 그 테마를 사전확률로
-    const now = picksFor(normSearch(query), mine, crowd);
+    const now = picksFor(normSearch(query), crowd);
     const list = searchSmart(items, query, { picks: now, hints });
     const direct = decideOmni(list, here);
     if (direct) { go(direct, false, list.length, query); return; }
