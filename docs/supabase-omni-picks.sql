@@ -13,7 +13,11 @@
 --     흔들리지 않게. (본인 기기에서는 로컬 학습으로 이미 1순위가 된다.)
 --  4. 은어 힌트("쉐이록라"의 록라 = 통합전략)도 같은 표에 쌓인다 — q가 '~토큰', uid가
 --     'hint:<종류>'인 행. 그래서 스키마·뷰를 따로 두지 않는다.
---  5. rank/candidates/fuzzy/hinted는 품질 분석용 — 1순위가 정말 맞았는지(사람들이 몇 번째
+--  5. source='trail' 행은 **실패한 검색의 최종 목적지**다 — 검색 결과가 0건이던 검색어를
+--     기억했다가, 그 사람이 몇 번의 행동 안에 실제 컨텐츠(오퍼·스토리·재료·통합전략 상세)에
+--     도착하면 그 검색어에 이어 붙인다. "뱅제"→없음→"은재"→없음→실버애쉬 더 레인프로스트
+--     클릭이면 뱅제·은재 둘 다 그 오퍼로 이어진다. 직접 클릭보다 확실도가 낮아 절반 무게.
+--  6. rank/candidates/fuzzy/hinted는 품질 분석용 — 1순위가 정말 맞았는지(사람들이 몇 번째
 --     후보를 골랐는지), 근사·힌트 매칭이 실제로 쓸모 있는지 나중에 확인할 수 있다.
 
 create table if not exists public.omni_pick (
@@ -31,7 +35,12 @@ create table if not exists public.omni_pick (
   rank int,          -- 클릭한 후보의 목록 순위 (0 = 맨 위)
   candidates int,    -- 그때 보여준 후보 수
   fuzzy boolean,     -- 오탈자 근사로 걸린 후보였는지
-  hinted boolean     -- 분류 힌트(록라 등)로 걸린 후보였는지
+  hinted boolean,    -- 분류 힌트(록라 등)로 걸린 후보였는지
+  -- 'pick' = 검색 결과를 직접 클릭. 'trail' = **실패한 검색의 최종 목적지 추론**
+  -- ("날시"로 아무것도 못 찾고 → 백과사전에서 켈시 이격을 열었다 → 날시 = 그 오퍼).
+  -- 추론은 확실도가 낮아 집계에서 절반 무게만 갖는다 (app/trail.ts).
+  source text default 'pick' check (source in ('pick', 'trail')),
+  steps int          -- trail 전용: 미스 이후 몇 번의 행동 만에 도착했나 (작을수록 강한 신호)
 );
 
 -- v1(초판, session/rank/candidates/fuzzy/hinted 없음)에서 올리는 경우
@@ -40,6 +49,8 @@ alter table public.omni_pick add column if not exists rank int;
 alter table public.omni_pick add column if not exists candidates int;
 alter table public.omni_pick add column if not exists fuzzy boolean;
 alter table public.omni_pick add column if not exists hinted boolean;
+alter table public.omni_pick add column if not exists source text default 'pick';
+alter table public.omni_pick add column if not exists steps int;
 
 create index if not exists omni_pick_q_idx on public.omni_pick (q);
 create index if not exists omni_pick_created_idx on public.omni_pick (created_at desc);
@@ -59,7 +70,10 @@ create policy "anon insert omni pick"
 create or replace view public.omni_pick_counts as
   select q, uid,
          count(*)::int as picks,
-         count(distinct coalesce(session, id::text))::int as voters
+         -- 직접 클릭한 사람 수 (가중치 1.0)
+         count(distinct coalesce(session, id::text)) filter (where source is distinct from 'trail')::int as voters,
+         -- 실패 후 결국 여기로 온 사람 수 (추론, 가중치 0.5)
+         count(distinct coalesce(session, id::text)) filter (where source = 'trail')::int as trail_voters
   from public.omni_pick
   group by q, uid
   having count(distinct coalesce(session, id::text)) >= 2;

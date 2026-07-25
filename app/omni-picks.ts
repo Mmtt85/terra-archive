@@ -32,7 +32,9 @@ const HINT_MIN = 2;      // 이 표수 이상 모인 조각만 힌트로 쓴다 
 const LS_KEY = "ta-omni-picks";
 const SESSION_KEY = "ta-omni-session";   // 익명 랜덤 id — 표 중복 제거용(개인 식별 아님)
 const MAX_QUERIES = 150;      // 로컬 보관 검색어 수 (오래된 것부터 버린다)
-const MINE_WEIGHT = 2;        // 내 선택 = 내 기기에서 2표 상당 (남의 화면엔 영향 없음)
+const MINE_WEIGHT = 2;        // 내가 직접 고른 것 = 내 기기에서 2표 상당 (남의 화면엔 영향 없음)
+const TRAIL_WEIGHT = 1;       // 실패한 검색의 최종 목적지(추론) = 절반 무게
+const TRAIL_CROWD_WEIGHT = 0.5;  // 사람들의 추론 표도 직접 클릭의 절반
 export const PICK_BONUS_MAX = 45;
 
 /** 브라우저별 익명 id — 같은 사람의 반복 클릭을 서버 집계에서 1표로 접기 위한 것뿐이다. */
@@ -49,7 +51,7 @@ function sessionId(): string {
   }
 }
 
-type LocalEntry = { at: number; p: PickMap };
+type LocalEntry = { at: number; p: PickMap; t?: PickMap };   // p=직접 클릭, t=추론(trail)
 type LocalStore = Record<string, LocalEntry>;
 
 function readLocal(): LocalStore {
@@ -72,11 +74,17 @@ function writeLocal(store: LocalStore) {
   } catch { /* 사파리 프라이빗 모드 등 — 학습만 안 되고 검색은 정상 */ }
 }
 
-/** 내 선택 기록 (localStorage). 검색어는 정규화된 문자열. */
+/** 내 선택 기록 (localStorage). 검색어는 정규화된 문자열.
+ *  직접 클릭은 MINE_WEIGHT(2)표, 추론(trail)은 그 절반(1표) 상당으로 합쳐 돌려준다. */
 export function myPicks(): PickIndex {
   const store = readLocal();
   const out: PickIndex = {};
-  for (const [q, entry] of Object.entries(store)) out[q] = entry.p ?? {};
+  for (const [q, entry] of Object.entries(store)) {
+    const map: PickMap = {};
+    for (const [uid, n] of Object.entries(entry.p ?? {})) if (n > 0) map[uid] = MINE_WEIGHT;
+    for (const [uid, n] of Object.entries(entry.t ?? {})) if (n > 0) map[uid] = Math.max(map[uid] ?? 0, TRAIL_WEIGHT);
+    out[q] = map;
+  }
   return out;
 }
 
@@ -84,11 +92,17 @@ export function myPicks(): PickIndex {
 export function recordPick(q: string, uid: string, meta: {
   kind: string; name: string; locale: string;
   rank?: number; candidates?: number; fuzzy?: boolean; hinted?: boolean;
+  source?: "pick" | "trail"; steps?: number;
 }): void {
   if (!q || q.length > 40) return;
   const store = readLocal();
   const entry = store[q] ?? { at: 0, p: {} };
-  entry.p[uid] = (entry.p[uid] ?? 0) + 1;
+  if (meta.source === "trail") {
+    entry.t = entry.t ?? {};
+    entry.t[uid] = (entry.t[uid] ?? 0) + 1;
+  } else {
+    entry.p[uid] = (entry.p[uid] ?? 0) + 1;
+  }
   entry.at = Date.now();
   store[q] = entry;
   writeLocal(store);
@@ -107,6 +121,7 @@ export function recordPick(q: string, uid: string, meta: {
       session: sessionId(),
       rank: meta.rank ?? null, candidates: meta.candidates ?? null,
       fuzzy: meta.fuzzy ?? null, hinted: meta.hinted ?? null,
+      source: meta.source ?? "pick", steps: meta.steps ?? null,
     }),
     keepalive: true,   // 클릭 직후 페이지가 바뀌어도 전송이 끊기지 않게
   }).catch(() => { /* 테이블 미설치·오프라인 */ });
@@ -118,19 +133,21 @@ let crowdPromise: Promise<PickIndex> | null = null;
 let tableMissing = false;
 export function fetchCrowdPicks(): Promise<PickIndex> {
   if (!crowdPromise) {
-    crowdPromise = fetch(`${SUPABASE_URL}/rest/v1/omni_pick_counts?select=q,uid,voters&order=voters.desc&limit=4000`, {
+    crowdPromise = fetch(`${SUPABASE_URL}/rest/v1/omni_pick_counts?select=q,uid,voters,trail_voters&order=voters.desc&limit=4000`, {
       headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
     })
       .then((res) => {
         if (res.status === 404) tableMissing = true;   // docs/supabase-omni-picks.sql 미실행
         return res.ok ? res.json() : [];
       })
-      .then((rows: { q: string; uid: string; voters: number }[]) => {
+      .then((rows: { q: string; uid: string; voters: number; trail_voters?: number }[]) => {
         const index: PickIndex = {};
         for (const row of rows ?? []) {
           if (!row?.q || !row?.uid) continue;
-          // 가중치는 **사람 수**로 센다 (한 사람의 반복 클릭은 서버 뷰에서 이미 1표로 접혔다)
-          (index[row.q] = index[row.q] ?? {})[row.uid] = row.voters;
+          // 가중치는 **사람 수**로 센다 (한 사람의 반복 클릭은 서버 뷰에서 이미 1표로 접혔다).
+          // 추론(trail) 표는 직접 클릭의 절반만 인정한다.
+          const weight = (row.voters ?? 0) + TRAIL_CROWD_WEIGHT * (row.trail_voters ?? 0);
+          (index[row.q] = index[row.q] ?? {})[row.uid] = weight;
         }
         return index;
       })
@@ -143,6 +160,12 @@ export function fetchCrowdPicks(): Promise<PickIndex> {
 export function recordHint(token: string, kind: string): void {
   if (token.length < 2 || token.length > 6) return;
   recordPick(HINT_PREFIX + token, HINT_UID + kind, { kind: "hint", name: token, locale: "-" });
+}
+
+/** 실패한 검색(q)의 최종 목적지(uid)를 기록한다 — app/trail.ts가 부른다.
+ *  직접 클릭이 아니라 추론이므로 source='trail'로 남겨 가중치를 절반만 갖는다. */
+export function recordTrail(q: string, uid: string, meta: { kind: string; name: string; locale: string; steps?: number }): void {
+  recordPick(q, uid, { ...meta, source: "trail", steps: meta.steps });
 }
 
 /** 내가 이 항목을 고른 적 있는지 — '자주 선택' 배지에서 내 선택과 군중 합의를 구분하려면 필요. */
@@ -164,7 +187,7 @@ export function learnedHints(mine: PickIndex, crowd: PickIndex): Record<string, 
     }
   };
   scan(crowd, 1);
-  scan(mine, MINE_WEIGHT);
+  scan(mine, 1);   // myPicks()가 이미 가중을 환산해 돌려준다
   return out;
 }
 
@@ -176,6 +199,7 @@ export function picksFor(q: string, mine: PickIndex, crowd: PickIndex): PickMap 
   if (!my && !theirs) return undefined;
   const merged: PickMap = {};
   for (const [uid, voters] of Object.entries(theirs ?? {})) merged[uid] = voters;
-  for (const [uid, n] of Object.entries(my ?? {})) if (n > 0) merged[uid] = (merged[uid] ?? 0) + MINE_WEIGHT;
+  // myPicks()가 이미 직접 클릭 2 / 추론 1로 환산해 돌려준다
+  for (const [uid, weight] of Object.entries(my ?? {})) merged[uid] = (merged[uid] ?? 0) + weight;
   return merged;
 }

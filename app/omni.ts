@@ -47,6 +47,7 @@ export type OmniHit = OmniItem & {
   votes: number;      // 이 검색어에서 선택된 표수(학습)
   fuzzy?: boolean;    // 오탈자 근사로 걸린 후보 ("첸 더 더스트릭" → 첸 더 던스트릭)
   hinted?: boolean;   // 분류 힌트로 걸린 후보 ("쉐이록라" = 쉐이 + 록라(통합전략))
+  learned?: boolean;  // 글자는 안 맞지만 학습된 별명으로 끌어온 항목 ("날시" → 켈시 이격)
 };
 
 // 점수: 완전일치 > 접두일치 > 부분일치. 접두·부분은 검색어가 후보를 얼마나 덮는지(비율)로 스케일.
@@ -333,6 +334,7 @@ const dice = (a: Set<string>, b: Set<string>): number => {
 const FUZZY_MIN = 0.55;    // 이 밑은 "아예 다른 단어"로 본다
 const FUZZY_GATE = 72;     // 정상 매칭 최고점이 이보다 낮을 때만 근사 검색을 돌린다
 const FUZZY_BASE = 30;     // 근사 후보 점수: 30 ~ 85 (완전일치 120은 절대 못 넘는다)
+const LEARNED_BASE = 55;   // 학습된 별명(텍스트 불일치)로 끌어온 항목의 기본 점수
 
 function fuzzyHits(items: OmniItem[], q: string, picks?: PickMap, kinds?: OmniKind[]): OmniHit[] {
   const qj = jamoOf(q);
@@ -415,6 +417,19 @@ export function searchSmart(items: OmniItem[], raw: string, opts?: {
     for (const hit of searchOmni(items, hint.rest, { picks: opts?.picks, limit: 40 })) {
       if (!hint.kinds.includes(hit.kind)) continue;
       put({ ...hit, score: hit.score + HINT_BONUS, hinted: true });
+    }
+  }
+
+  // 학습된 별명 — 글자가 하나도 안 맞아도 넣는다. "날시"는 어떤 이름과도 안 겹치지만
+  // 사람들이 그렇게 검색한 뒤 결국 그 오퍼로 갔다면 답은 그 오퍼다 (app/trail.ts).
+  if (opts?.picks) {
+    const wanted = Object.entries(opts.picks).filter(([uid, weight]) => weight > 0 && !merged.has(uid));
+    if (wanted.length) {
+      const byUid = new Map(items.map((item) => [item.uid, item]));
+      for (const [uid, weight] of wanted) {
+        const item = byUid.get(uid);
+        if (item) put({ ...item, score: LEARNED_BASE + pickBonus(weight), votes: weight, learned: true });
+      }
     }
   }
 

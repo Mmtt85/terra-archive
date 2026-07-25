@@ -15,6 +15,7 @@ import type { Operator } from "./home";
 import { useI18n, type Locale } from "./i18n";
 import { normSearch, useSearchInput } from "./search";
 import { HANDOFF_EVENT, takeHandoff } from "./handoff";
+import { noteArrival, noteMiss } from "./trail";
 
 type LocText = { ko: string; en?: string; ja?: string };
 type FarmStage = {
@@ -127,6 +128,12 @@ export default function FarmGuide({ includeFuture }: { includeFuture: boolean })
   const [permOnly, setPermOnly] = useState(false);
   // 재료 상세 모달 — 효율표·계산기의 모든 재료 아이콘에서 연다 (id = item id)
   const [shownItem, setShownItem] = useState<string | null>(null);
+  // 재료 상세를 여는 건 "도착"이다 — 앞서 실패한 검색어를 이 재료에 이어 붙인다 (app/trail.ts)
+  const openItem = (id: string) => {
+    const found = ALL_MATERIALS.find((item) => item.id === id);
+    noteArrival(`mat:${id}`, { kind: "material", name: found ? locText(locale, found.name) : id, locale });
+    setShownItem(id);
+  };
   // 스테이지 목록 펼침 — 기본은 최고 효율 1개만, '더 보기'로 나머지 전부 (2026-07 사용자 확정)
   const [expandedStages, setExpandedStages] = useState<Set<string>>(new Set());
   const toggleStages = (id: string) => setExpandedStages((current) => {
@@ -169,6 +176,11 @@ export default function FarmGuide({ includeFuture }: { includeFuture: boolean })
           (MATERIAL_ALIASES[item.id] ?? []).some((alias) => normSearch(alias).includes(keyword))));
   }, [tiers, searchTerm, permOnly, includeFuture]);
 
+  // 재료 검색이 0건이면 "실패한 검색"으로 남긴다 (app/trail.ts — 이후 도착지에 이어 붙는다)
+  useEffect(() => {
+    if (searchTerm.trim() && !visible.length) noteMiss(normSearch(searchTerm));
+  }, [searchTerm, visible.length]);
+
   return (
     <section className="farm" aria-label={t("재료 파밍 효율표")}>
       <div className="farm-head">
@@ -206,7 +218,7 @@ export default function FarmGuide({ includeFuture }: { includeFuture: boolean })
             return (
               <article key={item.id} className={`farm-card${item.farmable ? "" : " nonfarm"}`} style={{ "--tier": item.rarity } as React.CSSProperties}>
                 <header>
-                  <button type="button" className="farm-item-btn" onClick={() => setShownItem(item.id)} title={t("{name} 상세 정보 열기", { name: locText(locale, item.name) })}>
+                  <button type="button" className="farm-item-btn" onClick={() => openItem(item.id)} title={t("{name} 상세 정보 열기", { name: locText(locale, item.name) })}>
                     <img src={item.image} alt={locText(locale, item.name)} width={183} height={183} loading="lazy" decoding="async" />
                   </button>
                   <div>
@@ -260,7 +272,7 @@ export default function FarmGuide({ includeFuture }: { includeFuture: boolean })
                           if (!sub) return null;
                           // 조합 재료 아이콘은 각자 자기 상세를 연다 (예전엔 카드 전체가 버튼이라 재료를 눌러도 이 재료 상세가 떴음)
                           return (
-                            <button key={subId} type="button" className="cost-mini farmable" title={t("{name} 상세 정보 열기", { name: locText(locale, sub.name) })} onClick={() => setShownItem(subId)}>
+                            <button key={subId} type="button" className="cost-mini farmable" title={t("{name} 상세 정보 열기", { name: locText(locale, sub.name) })} onClick={() => openItem(subId)}>
                               <img src={sub.image} alt={locText(locale, sub.name)} width={183} height={183} /><i>{count}</i>
                             </button>
                           );
@@ -279,7 +291,7 @@ export default function FarmGuide({ includeFuture }: { includeFuture: boolean })
         <ItemModal
           id={shownItem}
           onClose={() => setShownItem(null)}
-          onShowItem={setShownItem}
+          onShowItem={openItem}
           onSearchItem={(name) => { setSearchTerm(name); setTiers([]); setShownItem(null); }}
         />
       )}

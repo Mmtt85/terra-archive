@@ -14,6 +14,7 @@ import { normSearch, useSearchInput } from "./search";
 import OmniSearch from "./omni-search";
 import type { OmniTarget } from "./omni";
 import { notifyHandoff, stashHandoff } from "./handoff";
+import { noteAction, noteArrival, noteMiss } from "./trail";
 import StoryGuide, { type StorySummaries, type OpIndex } from "./story";
 import RogueGuide, { TOPICS as ROGUE_TOPICS, slugOf as rogueSlugOf } from "./rogue";
 import About from "./about";
@@ -888,6 +889,48 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ── 실패한 검색의 목적지 추적 (app/trail.ts) ────────────────────────────
+  // URL 해시로 표현되는 도착(오퍼 상세·스토리 상세·통합전략 상세)을 한 곳에서 잡아,
+  // 앞서 아무것도 못 찾았던 검색어들에 "결국 여기로 갔다"를 이어 붙인다.
+  useEffect(() => {
+    const seen = { hash: "" };
+    const check = () => {
+      const hash = decodeURIComponent(window.location.hash);
+      if (hash === seen.hash) return;
+      seen.hash = hash;
+      if (hash.startsWith("#op-")) {
+        const id = hash.slice(4);
+        const op = operators.find((candidate) => candidate.id === id);
+        if (op) noteArrival(`op:${id}`, { kind: "op", name: op.name, locale });
+        return;
+      }
+      if (hash.startsWith("#story-")) {
+        const id = hash.slice(7).split("/")[0];
+        noteArrival(`story:${id}`, { kind: "story", name: id, locale });
+        return;
+      }
+      // 통합전략 상세 모달: #rg-<뷰>~<타입>~<id> · 토픽은 ?topic=isN
+      const rg = /^#rg-[a-z]+~([a-z]+)~(.+)$/.exec(hash);
+      if (rg) {
+        const slug = new URLSearchParams(window.location.search).get("topic") ?? "is1";
+        const num = /^is(\d+)$/.exec(slug);
+        const topic = num ? `rogue_${num[1]}` : "rogue_1";
+        noteArrival(`rg:${topic}:${rg[1]}:${decodeURIComponent(rg[2])}`, { kind: "rogue", name: decodeURIComponent(rg[2]), locale });
+      }
+    };
+    check();
+    window.addEventListener("hashchange", check);
+    window.addEventListener("popstate", check);
+    const timer = window.setInterval(check, 700);   // replaceState는 이벤트를 안 쏜다
+    return () => {
+      window.removeEventListener("hashchange", check);
+      window.removeEventListener("popstate", check);
+      window.clearInterval(timer);
+    };
+    // operators는 라우트 수명 동안 불변
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locale]);
+
   // 스크롤 복원: 페이지(탭·스토리) 이동 시 top으로, 뒤로/앞으로 시 직전 스크롤 복구.
   // pushState를 감싸 (1) 떠나는 위치 저장 (2) 엔트리에 고유 키 부여 (3) 페이지가 바뀌면 top.
   // (오퍼 모달은 #op- 해시만 바뀌거나 URL이 그대로라 '같은 페이지'로 보고 스크롤을 건드리지 않는다)
@@ -1007,6 +1050,7 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
   };
   const switchTab = (next: Tab) => {
     setNavOpen(false);
+    noteAction();                       // 실패 추적 창 카운트 (app/trail.ts)
     if (next === tab && !selected) return;
     history.pushState(null, "", tabPath(next));
     // 탭 마운트(특히 플래너)는 렌더가 무거워 클릭 페인트부터 내보낸다 (INP 600ms → 개선, 2026-07-21)
@@ -1138,6 +1182,12 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roster, selectedFactions, selectedConcepts, selectedMethods, tags, selectedJobs, selectedSubProfessions, selectedRarities, searchTerm, nicknames, locale]);
+
+  // 백과사전 검색이 0건이면 그것도 "실패한 검색"이다 (뱅제 → 은재 → … 연쇄를 잇기 위해)
+  useEffect(() => {
+    if (!searchTerm.trim() || filtered.length) return;
+    noteMiss(normSearch(searchTerm));
+  }, [searchTerm, filtered.length]);
 
   const reset = () => {
     setSelectedFactions([]);

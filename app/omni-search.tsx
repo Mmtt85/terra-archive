@@ -17,6 +17,7 @@ import { getRogueIndex } from "./lens/run";
 import { buildOmniIndex, currentRogueTopic, decideOmni, rogueOmniItems, searchSmart, splitHint, type OmniHit, type OmniItem, type OmniKind, type OmniTarget } from "./omni";
 import { fetchCrowdPicks, learnedHints, myPicks, picksFor, recordHint, recordPick, type PickIndex } from "./omni-picks";
 import { normSearch, SEARCH_DEBOUNCE_MS } from "./search";
+import { noteAction, noteMiss } from "./trail";
 import { useI18n, type ExtraI18n } from "./i18n";
 import { isNewFeature } from "./whats-new";
 import type { Operator } from "./home";
@@ -81,6 +82,7 @@ export default function OmniSearch({ roster, nicknames, includeFuture, extra, on
       listRef.current?.classList.remove("stale");
       setAsk(false); setActive(-1); setMsg(null);
       setTerm(value);
+      if (value.trim()) noteAction();     // 새 검색어 = 행동 1회 (실패 추적 창을 좁힌다)
     }, value ? SEARCH_DEBOUNCE_MS : 0);
   };
   const clearInput = () => {
@@ -181,6 +183,14 @@ export default function OmniSearch({ roster, nicknames, includeFuture, extra, on
     // loadRogue·hints는 렌더마다 새로 만들어지지만 하는 일이 같다 (term 기준으로만 재시도)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, term, hits.length, rogueItems, busy]);
+
+  // 결과가 하나도 없으면 "실패한 검색"으로 남긴다 — 이후 다른 경로로 도착한 목적지를
+  // 이 검색어에 이어 붙이기 위해서다 (app/trail.ts). 통합전략 자동 로드가 끝난 뒤에만 센다.
+  useEffect(() => {
+    if (!open || busy || !term.trim() || hits.length) return;
+    if (!rogueItems) return;                 // 아직 확장 검색 전 — 진짜 미스인지 모른다
+    noteMiss(normSearch(term));
+  }, [open, busy, term, hits.length, rogueItems]);
 
   // 되묻기로 전환 — 포커스를 입력란으로 되돌려 ↑↓·⏎로 바로 고를 수 있게 한다
   const askUser = () => { setAsk(true); setActive(0); inputRef.current?.focus(); };
