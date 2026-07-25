@@ -724,6 +724,10 @@ const D: Record<string, Pair> = {
     "Underflow (+30%) becomes +40% while Ulpianus is anywhere in the base (dorms included) — keep him pinned in a dorm. Standard Shift B trading crew: Vigil + Archetto + Underflow.",
     "アンダーフロー（+30%）はウルピアヌスが基地内のどこか（宿舎含む）にいれば+40%になります — ウルピアヌスを宿舎に固定しておきましょう。B班貿易所の定番：ヴィジェル+アルケット+アンダーフロー。",
   ],
+  "외드레르(+30%)는 이네스·W가 '작업 시설'(발전소·제조소·무역소·사무실·응접실·제어 센터·훈련실 — 숙소·가공소 제외)에 배치되면 각각 +5%가 붙어 최대 +40%입니다. 같은 무역소에 앉힐 필요는 없습니다 — 이네스는 사무실이 제자리입니다.": [
+    "Hoederer (+30%) gains +5% for each of Ines and W stationed in a \"work facility\" (power plant, factory, trading post, HR office, reception room, control center, training room — dorms and workshop excluded), up to +40%. They do not need to share his trading post — Ines belongs in the HR office.",
+    "ヘドリー（+30%）はイネスとWが「作業施設」（発電所・製造所・貿易所・人事室・応接室・制御中枢・訓練室 — 宿舎と加工所は除く）に配置されるとそれぞれ+5%が加わり、最大+40%になります。同じ貿易所に座らせる必要はありません — イネスは人事室が適所です。",
+  ],
   "자동화 제조소": ["Automation factories", "自動化製造所"],
   "위디·유넥티스·윈드플릿·패신저는 방 내 다른 오퍼의 생산력을 0으로 만들고 발전소 1기당 +15%/+10%/+5%/+5%를 받습니다 — 이들과 같은 방에 넣은 일반 +30%/+35%류 생산력 스킬은 전부 0%가 되므로, 직접 수치가 아니라 이런 제로아웃 오퍼와 궁합이 맞는지 먼저 확인해야 합니다.": [
     "Weedy, Eunectes, Windflit, and Passenger zero out other operators' productivity in their room and gain +15%/+10%/+5%/+5% per power plant — ordinary +30%/+35% productivity skills in the same room all become 0%, so check compatibility with these zero-out operators before comparing raw numbers.",

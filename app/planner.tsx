@@ -12,7 +12,7 @@ import {
   ELITE_LABEL, LAYOUT, cellByKey, ROOM_ACCENT, UNIT, PARK_KEYS, SHIFT_COUNT,
   JOB_ORDER, ROSTER_SORT_KEYS, PRODUCTION_KEYS, SUPPORT_KEYS,
   AURA_WEIGHT, AURA_LABEL, skillApplies, breakdown, teamScore, aurasOf, ambientFor, capConvFor,
-  ctxFor, sanitizePlan, presentIdsFor, slotSubstitutes, setLayoutPreset, memberOf, growAvg, DEFAULT_CUSTOM_ROOMS, DEFAULT_CUSTOM_PRODUCTS,
+  ctxFor, sanitizePlan, presentIdsFor, roomOfFor, slotSubstitutes, setLayoutPreset, memberOf, growAvg, DEFAULT_CUSTOM_ROOMS, DEFAULT_CUSTOM_PRODUCTS,
   setLevels as setEngineLevels, slotsFor, maxLevelOf, levelOf, powerBudget, suggestedLevels, TERMS,
   type InfraOp, type InfraSkill, type Elite, type Plan, type ProdPriority, type TokenFlow, type OptimizeStep, type LayoutPreset, type Levels, type CustomRoom, type CustomProduct,
 } from "./planner-engine";
@@ -185,12 +185,13 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       const shifts = plan.assignments["CONTROL"] ?? [];
       return (shifts[Math.min(shift, shifts.length - 1)] ?? []).map((id) => effectiveOpById.get(id)).filter(Boolean) as InfraOp[];
     };
-    const ambientAt = [0, 1].map((shift) => aurasOf(controlTeamAt(shift), ctxFor("CONTROL", shift === 0 ? plan.tokenPoints : {}, plan.factionCounts[shift] ?? {}, plan.plants, presentIdsFor(plan, shift))));
+    const roomOfAt = [0, 1].map((shift) => roomOfFor(plan, shift));
+    const ambientAt = [0, 1].map((shift) => aurasOf(controlTeamAt(shift), ctxFor("CONTROL", shift === 0 ? plan.tokenPoints : {}, plan.factionCounts[shift] ?? {}, plan.plants, presentIdsFor(plan, shift), undefined, roomOfAt[shift])));
     const rows: Row[] = LAYOUT.map((cell) => {
       const shifts = plan.assignments[cell.key] ?? [];
       const scoreFor = (team: InfraOp[], shift: number) =>
         cell.room === "DORMITORY" || PARK_KEYS.includes(cell.key) ? null
-          : Math.round(teamScore(team, cell.room, { ...ctxFor(cell.key, shift === 0 ? plan.tokenPoints : {}, plan.factionCounts[shift] ?? {}, plan.plants, presentIdsFor(plan, shift), ambientAt[shift]), shiftHours: plan.shiftHours?.[shift] }));
+          : Math.round(teamScore(team, cell.room, { ...ctxFor(cell.key, shift === 0 ? plan.tokenPoints : {}, plan.factionCounts[shift] ?? {}, plan.plants, presentIdsFor(plan, shift), ambientAt[shift], roomOfAt[shift]), shiftHours: plan.shiftHours?.[shift] }));
       const teamAt = (shift: number) => (shifts[Math.min(shift, shifts.length - 1)] ?? []).map((id) => effectiveOpById.get(id)).filter(Boolean) as InfraOp[];
       const single = cell.room === "DORMITORY" || cell.key === "TRAINING";
       if (single) {
@@ -629,9 +630,11 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       const points = shift === 0 ? plan.tokenPoints : {};
       const counts: Record<string, number> = {};
       const present = new Set<string>(); // 이 조 기준 기지 내 배치 전원
-      for (const shifts of Object.values(assignments)) {
+      const roomOf = new Map<string, string>(); // 방까지 보는 조건(작업 시설 동반) 판정용
+      for (const [key, shifts] of Object.entries(assignments)) {
         for (const id of shifts[Math.min(shift, shifts.length - 1)] ?? []) {
           present.add(id);
+          roomOf.set(id, cellByKey.get(key)?.room ?? key);
           const op = effectiveOpById.get(id);
           if (op) for (const faction of factionsOf(op)) counts[faction] = (counts[faction] ?? 0) + 1;
         }
@@ -645,8 +648,8 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         while (shifts[index].length < slots) {
           const controlIds = assignments["CONTROL"]?.[Math.min(shift, (assignments["CONTROL"]?.length ?? 1) - 1)] ?? [];
           const controlTeam = controlIds.map((id) => effectiveOpById.get(id)).filter(Boolean) as InfraOp[];
-          const ambientNow = aurasOf(controlTeam, ctxFor("CONTROL", points, counts, plan.plants, present));
-          const ctx = { ...ctxFor(key, points, counts, plan.plants, present, ambientNow), shiftHours: plan.shiftHours?.[shift] };
+          const ambientNow = aurasOf(controlTeam, ctxFor("CONTROL", points, counts, plan.plants, present, undefined, roomOf));
+          const ctx = { ...ctxFor(key, points, counts, plan.plants, present, ambientNow, roomOf), shiftHours: plan.shiftHours?.[shift] };
           const team = shifts[index].map((id) => effectiveOpById.get(id)).filter(Boolean) as InfraOp[];
           const current = teamScore(team, cell.room, ctx);
           let best: InfraOp | null = null;
@@ -661,6 +664,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           shifts[index].push(best.id);
           usedAll.add(best.id);
           present.add(best.id);
+          roomOf.set(best.id, cell.room);
           for (const faction of factionsOf(best)) counts[faction] = (counts[faction] ?? 0) + 1;
           added += 1;
         }
@@ -791,12 +795,14 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
 
   // 현재 조 기준 기지 내 배치 전원 — 기반시설 존재 조건(언더플로우+울피아누스) 판정용
   const presentIds = useMemo(() => (plan ? presentIdsFor(plan, activeShift) : undefined), [plan, activeShift]);
+  // 배치 지도 — 숙소에서 쉬는 오퍼를 "작업 시설에 배치"로 오인하지 않도록 방까지 판정 (외드레르)
+  const roomOf = useMemo(() => (plan ? roomOfFor(plan, activeShift) : undefined), [plan, activeShift]);
 
   // 제어센터 오라 — 대상 방(제조·무역·사무·응접) 점수와 서머리에 실제 합산된다
   const ambient = useMemo(() => {
     if (!plan) return undefined;
     const control = teamFor("CONTROL", activeShift);
-    return aurasOf(control, ctxFor("CONTROL", pointsFor(activeShift), plan.factionCounts[activeShift], plan.plants, presentIds));
+    return aurasOf(control, ctxFor("CONTROL", pointsFor(activeShift), plan.factionCounts[activeShift], plan.plants, presentIds, undefined, roomOf));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plan, activeShift, presentIds, eliteById]);
 
@@ -804,7 +810,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     if (!plan) return null;
     const avg = (prefix: string) => {
       const keys = LAYOUT.filter((cell) => cell.key.startsWith(prefix)).map((cell) => cell.key);
-      const totals = keys.map((key) => teamScore(teamFor(key, activeShift), cellByKey.get(key)!.room, { ...ctxFor(key, pointsFor(activeShift), plan.factionCounts[activeShift], plan.plants, presentIds, ambient), shiftHours: plan.shiftHours?.[activeShift] }));
+      const totals = keys.map((key) => teamScore(teamFor(key, activeShift), cellByKey.get(key)!.room, { ...ctxFor(key, pointsFor(activeShift), plan.factionCounts[activeShift], plan.plants, presentIds, ambient, roomOf), shiftHours: plan.shiftHours?.[activeShift] }));
       return totals.length ? Math.round(totals.reduce((a, b) => a + b, 0) / totals.length) : 0;
     };
     return {
@@ -828,8 +834,9 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     const points = shift === 0 ? p.tokenPoints : {};
     const counts = p.factionCounts[shift] ?? {};
     const present = presentIdsFor(p, shift);
-    const amb = aurasOf(teamAt("CONTROL"), ctxFor("CONTROL", points, counts, p.plants, present));
-    return teamScore(teamAt(key), room, { ...ctxFor(key, points, counts, p.plants, present, amb), shiftHours: p.shiftHours?.[shift] });
+    const rooms = roomOfFor(p, shift);
+    const amb = aurasOf(teamAt("CONTROL"), ctxFor("CONTROL", points, counts, p.plants, present, undefined, rooms));
+    return teamScore(teamAt(key), room, { ...ctxFor(key, points, counts, p.plants, present, amb, rooms), shiftHours: p.shiftHours?.[shift] });
   };
 
   // 임시 적용 전(tempBasePlan·커밋 정예화) → 후(현재 plan·임시 정예화) 방별 %효율 변화 — 전체 표시용.
@@ -1038,11 +1045,11 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           }
           const team = teamFor(cell.key, activeShift);
           const spec = infra.rooms[cell.room];
-          const cellCtx = { ...ctxFor(cell.key, pointsFor(activeShift), plan?.factionCounts?.[activeShift], plan?.plants, presentIds, ambient), shiftHours: plan?.shiftHours?.[activeShift] };
+          const cellCtx = { ...ctxFor(cell.key, pointsFor(activeShift), plan?.factionCounts?.[activeShift], plan?.plants, presentIds, ambient, roomOf), shiftHours: plan?.shiftHours?.[activeShift] };
           const score = Math.round(teamScore(team, cell.room, cellCtx));
           // 제어센터 오라 수신분 — 카드 총점이 "오퍼 스킬 합과 달라 보이는" 이유를 명시
           // (플레임테일 B조: 작전기록 +30 / 순금 -30 등. 사용자 지적 2026-07-19)
-          const ambientPart = score - Math.round(teamScore(team, cell.room, { ...ctxFor(cell.key, pointsFor(activeShift), plan?.factionCounts?.[activeShift], plan?.plants, presentIds), shiftHours: plan?.shiftHours?.[activeShift] }));
+          const ambientPart = score - Math.round(teamScore(team, cell.room, { ...ctxFor(cell.key, pointsFor(activeShift), plan?.factionCounts?.[activeShift], plan?.plants, presentIds, undefined, roomOf), shiftHours: plan?.shiftHours?.[activeShift] }));
           // 임시 적용 중이면 원래(스냅샷·커밋 정예화) 효율 대비 변화를 방 카드에 인플레이스 표시
           const raiseBefore = tempApplied.size > 0 && tempBasePlan && cell.room !== "CONTROL" && !PARK_KEYS.includes(cell.key)
             ? Math.round(scoreRoomIn(tempBasePlan, committedOpById, cell.key, activeShift)) : null;
@@ -1340,9 +1347,10 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
   // 제어센터 오라를 이 방 점수에도 합산 (제어센터 자신을 볼 때는 미적용)
   const controlShifts = plan.assignments["CONTROL"] ?? [];
   const controlTeam = (controlShifts[Math.min(shiftIndex, controlShifts.length - 1)] ?? []).map((id) => opMap.get(id)).filter(Boolean) as InfraOp[];
+  const roomOf = roomOfFor(plan, shiftIndex);
   const ambient = cell.key === "CONTROL" ? undefined
-    : aurasOf(controlTeam, ctxFor("CONTROL", points, plan.factionCounts[shiftIndex] ?? {}, plan.plants, presentIdsFor(plan, shiftIndex)));
-  const ctx = { ...ctxFor(cell.key, points, plan.factionCounts[shiftIndex] ?? {}, plan.plants, presentIdsFor(plan, shiftIndex), ambient), shiftHours: plan.shiftHours?.[shiftIndex] };
+    : aurasOf(controlTeam, ctxFor("CONTROL", points, plan.factionCounts[shiftIndex] ?? {}, plan.plants, presentIdsFor(plan, shiftIndex), undefined, roomOf));
+  const ctx = { ...ctxFor(cell.key, points, plan.factionCounts[shiftIndex] ?? {}, plan.plants, presentIdsFor(plan, shiftIndex), ambient, roomOf), shiftHours: plan.shiftHours?.[shiftIndex] };
   const excluded = new Set([...allAssigned, ...teamIds]);
   const currentScore = Math.round(teamScore(team, cell.room, ctx));
   const slots = slotsFor(cell.key); // 시설 레벨 반영 (2026-07-24)
@@ -2053,6 +2061,7 @@ const HELP_SECTIONS: { title: string; items: string[] }[] = [
     "프로바이조는 반대로 저품질 오더를 위약 처리해 수익을 내므로 고품질 확률과는 반시너지입니다. 처리량이 높은 우요우+에벤홀츠 방에 넣습니다.",
     "레벨 성장형은 만렙 기지 기준 상한으로 계산합니다: 비질 +40%(응접실 Lv3), 아르케토 +40%(숙소 20레벨), 미틈 +30%, 만트라 +45%(시설 10개).",
     "언더플로우(+30%)는 울피아누스가 기지 어디든(숙소 포함) 있으면 +40%가 됩니다 — 울피아누스를 숙소에 고정해 두세요. B조 무역소 정배: 비질+아르케토+언더플로우.",
+    "외드레르(+30%)는 이네스·W가 '작업 시설'(발전소·제조소·무역소·사무실·응접실·제어 센터·훈련실 — 숙소·가공소 제외)에 배치되면 각각 +5%가 붙어 최대 +40%입니다. 같은 무역소에 앉힐 필요는 없습니다 — 이네스는 사무실이 제자리입니다.",
   ]},
   { title: "자동화 제조소", items: [
     "위디·유넥티스·윈드플릿·패신저는 방 내 다른 오퍼의 생산력을 0으로 만들고 발전소 1기당 +15%/+10%/+5%/+5%를 받습니다 — 이들과 같은 방에 넣은 일반 +30%/+35%류 생산력 스킬은 전부 0%가 되므로, 직접 수치가 아니라 이런 제로아웃 오퍼와 궁합이 맞는지 먼저 확인해야 합니다.",

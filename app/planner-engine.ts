@@ -64,6 +64,13 @@ export type InfraSkill = {
   roboLevels?: { cap: number; per: number; add: number }; // 공사용 로봇 = 전 시설 레벨 합(만렙 64) — floor(합/per)×add (미니멀리스트)
   basePartners?: string[];      // 기지 어디든(숙소 포함) 있으면 발동하는 동반 조건
   basePartnerBonus?: number | null; // 위 조건 충족 시 추가 효율 (언더플로우 +10)
+  // 시설 집합 동반 조건 (외드레르 '자수성가', 2026-07-25): "이네스와 W가 **작업 시설**에 배치 시
+  // 각각 추가로 +5%". 같은 방 동반(partners)도 숙소 포함 기지 전체(basePartners)도 아니라,
+  // 용어 사전이 정의하는 시설 집합(작업 시설 = 발전소·제조소·무역소·사무실·응접실·제어 센터·
+  // 훈련실, **숙소·가공소 제외**)에 있으면 **파트너 1명당** 가산된다.
+  workPartners?: string[];
+  workPartnerBonus?: number | null;
+  workRooms?: string[];         // 조건을 충족하는 방 코드 (용어 사전 정의에서 파싱)
   gateFaction?: string | null;  // "쉐라그 3명 배치된 무역소" 류 — 진영 N명 배치 조건
   gateCount?: number | null;
   gatePlatforms?: number | null; // "작업 플랫폼 2대+ 발전소 배치 시" (푸딩) — 자동편성 미충족 조건
@@ -691,6 +698,17 @@ export function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx):
     if (skill.basePartners?.length && skill.basePartnerBonus && skill.basePartners.every((p) => ctx.presentIds?.has(p))) {
       out.efficiency += skill.basePartnerBonus;
     }
+    // 작업 시설 동반 (외드레르 '자수성가'): 파트너가 그 시설 집합(숙소·가공소 제외)에 배치돼
+    // 있으면 **각각** +bonus. 기본치를 게이트하지 않는다 — 조건 미충족이어도 본체(+30%)는 산다.
+    // 배치 지도(roomOf)가 있으면 방까지 엄격 판정, 없으면 재적만 확인(레토 조건과 같은 관례).
+    if (skill.workPartners?.length && skill.workPartnerBonus) {
+      for (const pid of skill.workPartners) {
+        if (!ctx.presentIds?.has(pid)) continue;
+        const at = ctx.roomOf?.get(pid);
+        if (at && skill.workRooms && !skill.workRooms.includes(at)) continue;
+        out.efficiency += skill.workPartnerBonus;
+      }
+    }
     // per-faction counting (바르카리스: 미노스 오퍼레이터 1명당 +v%, 최대 cap).
     // perScope "mfg"(플레임테일·제시카 이격·비비아나 "제조소에 배치된 <진영·그룹> 1명당")의
     // 기지 전체 근사는 같은 제어센터에 앉은 동일 소속(본인 포함)을 빼서 과산정을 줄인다.
@@ -948,8 +966,8 @@ export type ProdPriority = "gold" | "exp" | "balance";
 export let PRIORITY_KEYS: Record<ProdPriority, string[]> = LAYOUT_DEFS["243"].priority;
 export const SUPPORT_KEYS = ["CONTROL", "HIRE", "MEETING", "WORKSHOP", "TRAINING"];
 
-export function ctxFor(key: string, tokenPoints: Record<string, number>, factionCounts?: Record<string, number>, plants?: number, presentIds?: Set<string>, ambient?: AmbientAura[]): Ctx {
-  return { product: cellByKey.get(key)?.product, tokenPoints, factionCounts, plants, presentIds, ambient };
+export function ctxFor(key: string, tokenPoints: Record<string, number>, factionCounts?: Record<string, number>, plants?: number, presentIds?: Set<string>, ambient?: AmbientAura[], roomOf?: Map<string, string>): Ctx {
+  return { product: cellByKey.get(key)?.product, tokenPoints, factionCounts, plants, presentIds, ambient, roomOf };
 }
 
 // 불러온(import) plan을 렌더가 안전하게 다룰 수 있는 형태로 정규화한다.
@@ -1000,6 +1018,17 @@ export function presentIdsFor(plan: Plan, shift: number): Set<string> {
     for (const id of shifts[Math.min(shift, shifts.length - 1)] ?? []) ids.add(id);
   }
   return ids;
+}
+
+// 조 배치 지도 (오퍼 id → 방 종류) — 방까지 봐야 하는 조건(작업 시설 동반·교차방 파트너)의
+// 엄격 판정용. presentIds만으론 숙소에서 쉬는 오퍼까지 "배치됨"으로 세게 된다 (2026-07-25).
+export function roomOfFor(plan: Plan, shift: number): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const [key, shifts] of Object.entries(plan.assignments)) {
+    const room = cellByKey.get(key)?.room ?? key;
+    for (const id of shifts[Math.min(shift, shifts.length - 1)] ?? []) map.set(id, room);
+  }
+  return map;
 }
 
 // ── 시너지 세트(팟) — L2 카탈로그 기반 제네릭 조립 (Phase 3, 2026-07-19) ──────────────

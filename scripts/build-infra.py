@@ -432,6 +432,34 @@ def find_partners(text, self_name, self_id=None):
             break
     return found
 
+def find_names_in(clause, self_id=None):
+    """짧은 절 안에서 언급된 오퍼 이름을 전부 찾는다 (긴 이름 우선 매칭).
+
+    find_partners와 달리 **1글자 이름('W')도 인정**한다 — 절이 짧아 오탐 위험이 낮고,
+    W가 빠지면 "이네스와 W가 …" 같은 다중 파트너 조건이 비대칭으로 파싱된다.
+    """
+    found, scan = [], clause
+    for n in sorted(names, key=len, reverse=True):
+        oid = name_to_id.get(n)
+        if not oid or oid == self_id or oid in found: continue
+        pat = (r"(?<![A-Za-z0-9])" + re.escape(n) + r"(?![A-Za-z0-9])") if re.fullmatch(r"[A-Za-z0-9\-]+", n) \
+            else (r"(?<![가-힣])" + re.escape(n))
+        m = re.search(pat, scan)
+        if not m: continue
+        found.append(oid)
+        scan = scan[:m.start()] + "§" * (m.end() - m.start()) + scan[m.end():]
+    return found
+
+def term_facilities(key):
+    """용어 사전이 '다음 시설 포함' 목록으로 정의하는 시설 집합 → 방 코드 리스트.
+
+    작업 시설(cc.c.room3) = 발전소·제조소·무역소·사무실·응접실·제어 센터·훈련실
+    (숙소·가공소 **제외**) — 사용자 확인 2026-07-25, 인게임 용어 정의와 일치.
+    """
+    d = strip_tags_ml(((TERM_DICT.get(key) or {}).get("description")) or "")
+    rooms = [KO_ROOM[p] for p in (t.strip() for t in re.split(r"[,·\n]", d)) if p in KO_ROOM]
+    return rooms if len(rooms) >= 2 else None
+
 _ROOM_KW = {"제어 센터": "CONTROL", "무역소": "TRADING", "제조소": "MANUFACTURE",
             "발전소": "POWER", "응접실": "MEETING", "사무실": "HIRE"}
 
@@ -789,6 +817,26 @@ def parse_skill(entry, oname, oid=None):
                 cond_bonus = {"value": _cond["value"], "ids": _cond["ids"]}
             elif _cond["type"] == "crossRoom":
                 cond_bonus = {"value": _cond["value"], "ids": _cond["ids"], "room": _cond["room"]}
+        # ── 시설 집합 동반 조건 (`workPartners`, 외드레르 '자수성가', 사용자 확인 2026-07-25) ──
+        # "무역소에 배치 시 오더 수주 효율 +30%, **이네스와 W가 작업 시설에 배치 시**(어시스턴트
+        # 미포함), 오더 수주 효율이 **각각** 추가로 +5%" — 같은 방 동반(partners)도, 숙소를 포함한
+        # 기지 전체(basePartners)도 아니라 **용어 사전이 정의하는 시설 집합**에 있으면 발동한다.
+        # partners 게이트로 오인하면 이네스가 같은 무역소에 앉지 않는 한 기본 +30%까지 통째로
+        # 사라진다(외드레르가 자동편성에서 아예 안 뽑히던 원인). 오퍼별 특례가 아니라 termRefs가
+        # 시설 목록을 정의하는 모든 현재·미래 스킬에 일반 적용된다.
+        work_partners, work_partner_bonus, work_rooms = [], None, None
+        for _tkey, _term in (entry.get("termRefs") or []):
+            wm = re.search(r"([^,.]{1,40}?)(?:이|가) " + re.escape(_term)
+                           + r"에 배치[^%]*?추가로 \+?\s*(\d+(?:\.\d+)?)\s*%", text)
+            if not wm: continue
+            _rooms = term_facilities(_tkey)
+            _ids = find_names_in(wm.group(1), oid)
+            if not _rooms or not _ids: continue
+            work_partners, work_partner_bonus, work_rooms = _ids, float(wm.group(2)), _rooms
+            partners_list = [p for p in partners_list if p not in _ids]
+            _bk, _bv = parse_metric(room, text[:wm.start()])  # 조건절 앞부분으로 기본치 재파싱
+            if _bv: kind, value = _bk, _bv
+            break
         # 순금 생산 라인 차원 (투예·파죰카, 사용자 제보 2026-07-21): 243 기지의 순금 제조소 = 2방
         # (§1 순금 2 + 작전기록 2). "순금 생산 라인 N개당 오더 수주 효율 +V%" → (2//N)×V 를 가산.
         # 절 앞부분으로 base 재파싱(투예 조건값 15가 best로 base를 덮는 것 교정). 키라라 '라인 +2'는 %없어 제외.
@@ -829,6 +877,9 @@ def parse_skill(entry, oname, oid=None):
             # 아니므로 partners에서 제외 — 이중 게이트 방지 (레토는 '굼'이 1글자라 우연히 회피)
             "partners": [p for p in partners_list if p not in base_partner_ids],
             "basePartners": base_partner_ids, "basePartnerBonus": base_partner_bonus,
+            # 작업 시설 동반(외드레르): 파트너가 workRooms 중 한 곳에 배치돼 있으면 **1명당** 가산
+            **({"workPartners": work_partners, "workPartnerBonus": work_partner_bonus,
+                "workRooms": work_rooms} if work_partners and work_partner_bonus else {}),
             **({"condBonus": cond_bonus} if cond_bonus else {}),
             **({"perBase": per_base} if per_base else {}),
             "gateFaction": gate_faction, "gateCount": gate_count,
