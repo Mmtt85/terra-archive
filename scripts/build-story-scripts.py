@@ -18,6 +18,7 @@ Usage:
   {"br": "1;2"}            (직전 opts 의 값 참조 — 분기 시작 마커)
 """
 import json, os, re, sys, urllib.request
+from collections import Counter, defaultdict
 from concurrent.futures import ThreadPoolExecutor
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -159,6 +160,45 @@ def parse_story(txt):
     return out
 
 
+# CG 레이어 (`[cgitem(...)]`) — 컷씬 `[Image(image="X")]` 위에 얹히는 인물 파츠.
+# 이걸 무시하면 **배경만** 남은 그림이 나온다 (사용자 제보 2026-07-25: "지와 이가 대화하는
+# CG에서 배경만 출력됨"). 레이어 png는 avg/items/ 에 있고, layer 오름차순으로 겹친다.
+RE_CGITEM = re.compile(r'\[cgitem\s*\(([^)]*)\)', re.I)
+RE_ATTR_STR = lambda k: re.compile(k + r'\s*=\s*"([^"]*)"', re.I)
+RE_ATTR_NUM = lambda k: re.compile(k + r'\s*=\s*(-?\d+(?:\.\d+)?)', re.I)
+
+def scan_cg_layers(txt, layers):
+    """컷씬 이름 → [{img, layer, pos, scale}] 수집. 위치·배율은 **등장 시점**(pfrom/sfrom)을
+    쓴다 — 이후 tween은 느린 패럴랙스라 첫 구도가 그림의 정본에 가깝다."""
+    cur = None
+    for line in txt.splitlines():
+        m = RE_IMAGE.match(line.strip())
+        if m:
+            cur = m.group(1)
+            continue
+        m = RE_CGITEM.search(line)
+        if not m or not cur:
+            continue
+        a = m.group(1)
+        name = RE_ATTR_STR("image").search(a)
+        if not name:
+            continue
+        pos = RE_ATTR_STR("pfrom").search(a) or RE_ATTR_STR("pto").search(a)
+        px, py = (0.0, 0.0)
+        if pos:
+            parts = pos.group(1).split(",")
+            if len(parts) == 2:
+                try: px, py = float(parts[0]), float(parts[1])
+                except ValueError: pass
+        sc = RE_ATTR_NUM("sfrom").search(a) or RE_ATTR_NUM("sto").search(a)
+        lay = RE_ATTR_NUM("layer").search(a)
+        entry = {"img": name.group(1), "layer": float(lay.group(1)) if lay else 0.0,
+                 "pos": (px, py), "scale": float(sc.group(1)) if sc else 1.0}
+        bucket = layers.setdefault(cur, [])
+        if entry not in bucket:
+            bucket.append(entry)
+
+
 RE_CHARTAG = re.compile(r'\[[Cc]har(?:acter|slot)\s*\(([^)]*)\)', )
 RE_CHARNAME = re.compile(r'name2?\s*=\s*"([^"]+)"')
 RE_FOCUS = re.compile(r'focus\s*=\s*(\d)')
@@ -189,16 +229,69 @@ def scan_faces(txt, votes):
 # 안내방송·시스템 음성 등 실체 없는 화자 — 무대 위 스프라이트를 물려받아 얼굴이 오귀속되므로
 # 배정에서 제외 (예: '수송차 안내 방송'이 옆에 선 워미 얼굴로 붙던 버그, 사용자 리포트 2026-07-20).
 ANNOUNCE_RE = re.compile(r"(방송|안내음|알림음|스피커|자동\s*음성|시스템\s*음성|아나운스)")
+# 실체 없는 '목소리' 화자 — 정체를 감추려고 붙인 서술형 이름이라 무대 위 스프라이트를 물려받으면
+# 엉뚱한 인물 얼굴이 붙는다 (사용자 제보 2026-07-25: '쉬어버린 목소리'가 아미야로,
+# '망연자실한 목소리'가 몬삼터로, '중후한 남성의 목소리'가 기업 직원으로 뜨던 건).
+VOICE_RE = re.compile(r"(목소리|비명|외침|함성|음성|울음|웃음|중얼거림|속삭임|소리)")
+
+# 스프라이트 base → 오퍼레이터 이름 (avg_1037_amiya3_1 → char_1037_amiya3 → 아미야).
+# 스탠딩이 오퍼레이터 것이면 그 오퍼가 곧 주인이라, 본인이 화자로 등장하면 무조건 본인에게 준다.
+_OPS_JSON = json.load(open(os.path.join(REPO, "app", "data", "operators.json"), encoding="utf-8"))
+OP_NAME_BY_ID = {o["id"]: o["name"] for o in _OPS_JSON}
+
+def sprite_op_name(spr):
+    s = re.sub(r"_\d+$", "", spr)
+    s = re.sub(r"_na$", "", s)
+    for cand in (("char_" + s[4:]) if s.startswith("avg_") else None, s if s.startswith("char_") else None):
+        if cand and cand in OP_NAME_BY_ID:
+            return OP_NAME_BY_ID[cand]
+    return None
 
 def resolve_faces(votes):
-    """화자별 다수결 스프라이트 — 과반+2표 이상일 때만 채택 (오귀속 방지)."""
+    """화자 ↔ 스탠딩을 **1:1**로 배정한다 (전수조사 후 전면 교체, 2026-07-25).
+
+    종전에는 화자별 다수결만 봤다 — 무대에 선 스프라이트는 '지금 말하는 사람'이 아니라 그냥
+    무대 상태라, 같은 장면에서 말한 단역·익명 화자가 옆에 선 주역의 스탠딩을 그대로 물려받았다
+    (전수조사: 오퍼 스탠딩 오귀속 434건, 한 스프라이트를 여러 화자가 공유 448건).
+    새 규칙:
+      ① 서술형 화자(목소리·비명·방송·'???')는 아예 얼굴을 주지 않는다.
+      ② 스프라이트마다 **주인 한 명**만 둔다 — 최다 득표자, 동률이면 아무에게도 주지 않는다.
+         단 오퍼레이터 스탠딩은 그 오퍼 본인이 화자 목록에 있으면 **무조건 본인** 것.
+      ③ 화자는 자기가 주인인 스프라이트 중 다수결(2표 이상·과반) 조건을 만족하는 것만 갖는다.
+    """
+    def skip(who):
+        return (not who) or who.startswith("?") or ANNOUNCE_RE.search(who) or VOICE_RE.search(who)
+
+    by_spr = {}
+    for who, cnt in votes.items():
+        if skip(who):
+            continue
+        for spr, n in cnt.items():
+            by_spr.setdefault(spr, Counter())[who] += n
+
+    owner = {}
+    for spr, cnt in by_spr.items():
+        oname = sprite_op_name(spr)
+        mine = [w for w in cnt if oname and w.strip("'\"‘’“”") == oname]
+        if mine:
+            owner[spr] = mine[0]
+            continue
+        top = cnt.most_common(2)
+        if len(top) > 1 and top[0][1] == top[1][1]:
+            continue  # 동률 — 누구 얼굴인지 알 수 없으므로 배정하지 않는다
+        owner[spr] = top[0][0]
+
     faces = {}
     for who, cnt in votes.items():
-        if not who or who.startswith("?") or ANNOUNCE_RE.search(who):
+        if skip(who):
             continue
-        (spr, n), total = cnt.most_common(1)[0], sum(cnt.values())
-        if n >= 2 and n * 2 > total:
-            faces[who] = spr
+        total = sum(cnt.values())
+        for spr, n in cnt.most_common():
+            if owner.get(spr) != who:
+                continue
+            if n >= 2 and n * 2 > total:
+                faces[who] = spr
+            break
     return faces
 
 
@@ -227,10 +320,10 @@ def download_sprites(names):
 
 
 def build_event(eid, entry):
-    from collections import Counter, defaultdict
     infos = sorted(entry["infoUnlockDatas"], key=lambda i: i["storySort"])
     eps, images = [], []
     votes = defaultdict(Counter)
+    cg_layers = {}   # 컷씬 이름 → 인물 파츠 레이어 (배경만 나오는 CG 방지)
     txts = {}
     with ThreadPoolExecutor(8) as ex:
         for info, txt in zip(infos, ex.map(lambda i: fetch_txt_cached(i["storyTxt"]), infos)):
@@ -243,6 +336,7 @@ def build_event(eid, entry):
         if not lines:
             continue
         scan_faces(txt, votes)
+        scan_cg_layers(txt, cg_layers)
         for ln in lines:
             if "img" in ln and ln["img"] not in images:
                 images.append(ln["img"])
@@ -258,7 +352,7 @@ def build_event(eid, entry):
     if failed:
         bad = set(failed)
         faces = {w: s for w, s in faces.items() if s not in bad}
-    return eps, images, faces
+    return eps, images, faces, cg_layers
 
 
 def actual_case_map(directory):
@@ -281,22 +375,64 @@ def normalize_case(eps, faces):
     return {w: char_case.get(s.lower(), s) for w, s in (faces or {}).items()}
 
 
-def download_cuts(names):
-    """컷씬 webp — 이미 있으면 스킵. 404(에셋 미러 누락)는 건너뛰고 목록 반환."""
+def fetch_cut_png(name):
+    """컷씬/레이어 원본 png — 대문자 참조(21_I1)는 소문자로도 재시도. 없으면 None."""
+    for cand in dict.fromkeys([name, name.lower()]):
+        try:
+            return fetch(f"{ASSETS}/avg/images/{cand}.png", binary=True)
+        except urllib.error.HTTPError:
+            continue
+    for cand in dict.fromkeys([name, name.lower()]):
+        try:
+            return fetch(f"{ASSETS}/avg/items/{cand}.png", binary=True)
+        except urllib.error.HTTPError:
+            continue
+    return None
+
+
+def composite_cg(base_png, layers):
+    """배경 CG 위에 인물 파츠(cgitem)를 layer 오름차순으로 얹어 한 장으로 만든다.
+    좌표는 화면 중앙 기준 오프셋(y는 위가 +), 배율은 등장 시점 값. 파츠를 못 받으면 건너뛴다."""
+    from io import BytesIO
+    from PIL import Image
+    base = Image.open(BytesIO(base_png)).convert("RGBA")
+    W, H = base.size
+    for spec in sorted(layers, key=lambda d: d["layer"]):
+        png = fetch_cut_png(spec["img"])
+        if not png:
+            continue
+        im = Image.open(BytesIO(png)).convert("RGBA")
+        scale = spec.get("scale") or 1.0
+        if scale != 1.0:
+            im = im.resize((max(1, int(im.width * scale)), max(1, int(im.height * scale))), Image.LANCZOS)
+        px, py = spec.get("pos") or (0, 0)
+        base.paste(im, ((W - im.width) // 2 + int(px), (H - im.height) // 2 - int(py)), im)
+    out = BytesIO()
+    base.convert("RGB").save(out, format="PNG")
+    return out.getvalue()
+
+
+def download_cuts(names, cg_layers=None):
+    """컷씬 webp — 이미 있으면 스킵. 404(에셋 미러 누락)는 건너뛰고 목록 반환.
+    cgitem 레이어가 있는 컷씬은 **항상 다시 합성**한다 (배경만 저장된 구버전 교체)."""
     from imgutil import save_webp
+    cg_layers = cg_layers or {}
     os.makedirs(CUT_DIR, exist_ok=True)
-    missing, failed = [n for n in names if not os.path.exists(os.path.join(CUT_DIR, f"{n}.webp"))], []
+    missing = [n for n in names
+               if n in cg_layers or not os.path.exists(os.path.join(CUT_DIR, f"{n}.webp"))]
+    failed = []
 
     def dl(name):
-        # 레포 파일명은 소문자 — 스크립트 참조가 대문자(21_I1 등)면 소문자로 재시도
-        for cand in dict.fromkeys([name, name.lower()]):
+        png = fetch_cut_png(name)
+        if png is None:
+            failed.append(name)
+            return
+        if cg_layers.get(name):
             try:
-                png = fetch(f"{ASSETS}/avg/images/{cand}.png", binary=True)
-                save_webp(png, os.path.join(CUT_DIR, f"{name}.webp"), photo=True, max_px=1080)
-                return
-            except urllib.error.HTTPError:
-                continue
-        failed.append(name)
+                png = composite_cg(png, cg_layers[name])
+            except Exception as exc:   # 합성 실패는 배경만이라도 살린다
+                print(f"  ! CG 합성 실패 {name}: {exc}")
+        save_webp(png, os.path.join(CUT_DIR, f"{name}.webp"), photo=True, max_px=1080)
 
     with ThreadPoolExecutor(8) as ex:
         list(ex.map(dl, missing))
@@ -417,10 +553,10 @@ def main():
         entry = review.get(eid)
         if not entry:  # rogue_N 등 리뷰 테이블에 없는 합성 이벤트
             continue
-        eps, images, faces = build_event(eid, entry)
+        eps, images, faces, cg_layers = build_event(eid, entry)
         if not eps:
             continue
-        failed = download_cuts(images)
+        failed = download_cuts(images, cg_layers)
         all_failed += failed
         # 다운로드 실패(미러 누락) 컷씬 마커는 빼서 UI 깨짐 방지
         if failed:
