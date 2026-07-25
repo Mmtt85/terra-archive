@@ -629,6 +629,34 @@ button {
   padding: 3px 7px;
   border-radius: 3px;
 }
+/* 중국(비리비리) 방송 — 미래시 배지 + B站 마크 */
+.bcast-future {
+  font: 800 11px/1 sans-serif;
+  border: 1px solid var(--lime);
+  color: var(--ink);
+  padding: 3px 6px;
+  border-radius: 3px;
+}
+.bili-mark {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 18px;
+  border-radius: 5px;
+  background: #00a1d6;
+  color: #fff;
+  font: 800 11px/1 sans-serif;
+}
+.bcast-note {
+  grid-column: 1 / -1;
+  margin: 4px 2px 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
 .bcast-state {
   font-size: 12px;
   font-weight: 800;

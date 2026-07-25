@@ -15,8 +15,15 @@ description: 명일방주 공식 방송 자동 수집 시스템(크론 워커) �
     (KR 생방송이 completed 검색 인덱스에 안 잡히는 사례가 있어 재생목록 방식 사용).
   - YouTube Data API 키는 워커 secret `YOUTUBE_API_KEY` (코드·git에 없음). 쿼터 일 ~2,420/10,000.
   - 결과는 KV(binding BCAST)에 저장, **GET https://terra-archive-broadcast.nzkonaru.workers.dev/** 로 서빙 (CORS 허용, 5분 캐시).
+- **중국 서버(미래시)**: 중섭 공식 방송은 유튜브가 아니라 **비리비리 라이브룸**(明日方舟 uid 161775300 / room 5555734)이다.
+  운영팀이 방 소개문에 다음 방송 일정을 적어 두므로(`description`의 "…计划将于7月15日20:00进行"), 거기서 뽑는다.
+  **비리비리는 클라우드플레어 이그레스를 리스크컨트롤로 막는다**(워커에서 전 엔드포인트 412 "request was banned",
+  2026-07-25 확인) — 그래서 워커가 아니라 **GitHub Actions 러너**(도달 확인됨)에서 `scripts/build-broadcasts-cn.py`가
+  수집해 `app/data/broadcasts.json`에 `server:"cn"` 항목으로 커밋한다 (결정론 레인 `scripts/ci-refresh.sh`에 포함).
+  프론트는 **미래시 데이터 포함이 켜졌을 때만** cn 항목을 보여준다. 수동 확인은 `python3 scripts/build-broadcasts-cn.py`.
 - **프론트**: `BroadcastBadges`(app/page.tsx)가 워커 API를 fetch, 실패 시 `app/data/broadcasts.json` 폴백.
-  원격·정적 중복은 videoId(없으면 서버+UTC날짜)로 제거하고 원격 우선. 상태(예약/생방송/지난방송)는 클라이언트가 시각 비교로 계산.
+  원격·정적 중복은 videoId **또는 서버+UTC날짜**로 제거하고 원격 우선 (정적 폴백엔 채널 URL만 있는 항목이 있어
+  id로는 안 겹친다 — 보조 키가 없으면 같은 방송이 두 번 뜬다, 2026-07-25 수정). 상태(예약/생방송/지난방송)는 클라이언트가 시각 비교로 계산.
 - **워커 배포**: `bash workers/broadcast/deploy.sh` (루트 vinext 빌드 산출물과의 wrangler 설정 충돌을 우회함).
   워커 배포는 사이트 배포 금지 규칙과 별개지만, 사용자에게 한 줄 보고할 것.
 

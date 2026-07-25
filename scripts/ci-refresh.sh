@@ -49,6 +49,11 @@ run "build-story"      python3 scripts/build-story.py
 # 인게임 스토리라인(테마 시계열) — stories.json을 참조하므로 build-story 뒤에
 run "build-storylines" python3 scripts/build-storylines.py "$G"
 
+# 3-1) 중섭(미래시) 공식 방송 일정 — 비리비리 라이브룸. 크론 워커(클라우드플레어)는 비리비리에
+# 412로 막혀서 여기(GitHub 러너)서 수집한다. 외부 서비스라 실패해도 파이프라인을 죽이지 않는다.
+run "broadcasts-cn"    python3 scripts/build-broadcasts-cn.py \
+  || echo "[broadcasts-cn] 비리비리 조회 실패 — 기존 broadcasts.json 유지, 다음 실행 때 재시도" | tee -a "$WARN" >&2
+
 # 4) 다국어(EN/JA) 데이터 — operators/infra/recruit 재생성했으면 필수
 run "build-i18n"       python3 scripts/build-i18n.py "$G"
 

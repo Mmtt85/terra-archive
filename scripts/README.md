@@ -116,6 +116,19 @@ python3 scripts/build-farm.py .gamedata   # → app/data/farm.json + public/item
 재료당 상위 8개 스테이지 수록. 이벤트 개방/종료 시점마다 재실행해야 목록이 최신으로 유지된다.
 상세 규칙: PROJECT-GUIDE §6.5.
 
+## 5.2 중국 서버(미래시) 공식 방송 일정
+
+```bash
+python3 scripts/build-broadcasts-cn.py   # → app/data/broadcasts.json 의 server:"cn" 항목
+```
+
+중섭 공식 방송은 유튜브가 아니라 **비리비리 라이브룸**(明日方舟 room 5555734)이라, 유튜브 3개
+채널을 도는 크론 워커(workers/broadcast)가 못 잡는다. 운영팀이 방 소개문에 다음 방송 일정을
+적어 두므로("…计划将于7月15日20:00进行") 거기서 제목·시각·커버를 뽑아 정적 파일에 넣는다.
+**비리비리는 클라우드플레어 이그레스를 412로 밴**하지만 GitHub 러너는 통과해서, 크론 워커가
+아니라 결정론 레인(`scripts/ci-refresh.sh`)에 있다. 사이트는 **미래시 데이터 포함이 켜졌을
+때만** 이 항목을 보여준다. 실패해도 파이프라인을 죽이지 않는다(기존 파일 유지).
+
 ## 5.5 육성 비용 계산기 데이터
 
 ```bash

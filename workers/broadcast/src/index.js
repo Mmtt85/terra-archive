@@ -15,14 +15,10 @@ const KV_KEY = "broadcasts";
 const MAX_ENTRIES = 40; // 지난 방송 이력 보존 상한
 const DEFAULT_DURATION_MIN = 150;
 
-async function yt(path, params, apiKey) {
-  const url = new URL(`https://www.googleapis.com/youtube/v3/${path}`);
-  for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
-  url.searchParams.set("key", apiKey);
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`YouTube ${path} ${res.status}: ${await res.text()}`);
-  return res.json();
-}
+// 중국 서버(미래시) 방송은 여기서 수집하지 않는다 — 비리비리는 클라우드플레어 이그레스를
+// 리스크컨트롤로 막는다(모든 엔드포인트 412 "request was banned", 2026-07-25 확인). 대신
+// GitHub Actions 러너(도달 확인됨)에서 scripts/build-broadcasts-cn.py가 수집해
+// app/data/broadcasts.json에 커밋하고, 프론트가 워커 payload와 합쳐 보여준다.
 
 async function poll(env) {
   const apiKey = env.YOUTUBE_API_KEY;
@@ -39,8 +35,9 @@ async function poll(env) {
     // 최근 업로드를 스캔해 종료된 생방송(지난 방송 이력)을 찾는다.
     // 생방송 기록이 없는 일반 영상은 아래 videos.list 단계에서 걸러진다.
     const uploads = "UU" + ch.id.slice(2); // 채널 ID → 업로드 재생목록 ID
+    // maxResults는 쿼터에 영향이 없다(playlistItems = 1유닛) — 넓게 훑어 지난 생방송 이력을 더 건진다
     const pl = await yt("playlistItems", {
-      part: "contentDetails", playlistId: uploads, maxResults: "10",
+      part: "contentDetails", playlistId: uploads, maxResults: "50",
     }, apiKey);
     for (const item of pl.items ?? []) videoIds.set(item.contentDetails.videoId, ch.server);
   }
@@ -53,12 +50,19 @@ async function poll(env) {
     if (b.videoId && fresh && !videoIds.has(b.videoId)) videoIds.set(b.videoId, b.server);
   }
 
-  const merged = new Map(prev.broadcasts.filter((b) => b.videoId).map((b) => [b.videoId, b]));
-  if (videoIds.size > 0) {
-    const data = await yt("videos", {
-      part: "snippet,liveStreamingDetails", id: [...videoIds.keys()].join(","),
-    }, apiKey);
-    for (const v of data.items ?? []) {
+  // 항목 키 — 유튜브는 영상 id, 중섭(비리비리)은 수집기가 붙인 key. 둘 다 없으면 서버+날짜
+  const entryKey = (b) => b.videoId ?? b.key ?? `${b.server}:${String(b.start).slice(0, 10)}`;
+  const merged = new Map(prev.broadcasts.map((b) => [entryKey(b), b]));
+  {
+    const ids = [...videoIds.keys()];
+    const items = [];
+    for (let i = 0; i < ids.length; i += 50) { // videos.list는 한 번에 50개까지
+      const data = await yt("videos", {
+        part: "snippet,liveStreamingDetails", id: ids.slice(i, i + 50).join(","),
+      }, apiKey);
+      items.push(...(data.items ?? []));
+    }
+    for (const v of items) {
       const live = v.liveStreamingDetails ?? {};
       const start = live.actualStartTime ?? live.scheduledStartTime;
       if (!start) continue;
@@ -77,6 +81,7 @@ async function poll(env) {
   }
 
   const broadcasts = [...merged.values()]
+    .filter((b) => !Number.isNaN(Date.parse(b.start)))
     .sort((a, b) => Date.parse(b.start) - Date.parse(a.start))
     .slice(0, MAX_ENTRIES);
   // 진행중 게임 이벤트도 같은 payload에 실어 헤더가 fetch 한 번으로 다 받게 한다.
