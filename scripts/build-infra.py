@@ -161,6 +161,8 @@ for o in operators:
     for n in [o["name"], *(o.get("aliases") or [])]:
         if n and len(n) >= 2: name_to_id.setdefault(n, o["id"])
 names = sorted(name_to_id.keys(), key=len, reverse=True)
+# 로스터(플래너에 실제로 실리는 오퍼) 이름 → id. 용어 사전 명단 해석은 이쪽을 우선한다
+OP_NAME_ID = {o["name"]: o["id"] for o in operators}
 # id → 대표 표시명 (별칭 여럿이면 첫 등록명) — "대상이 <이름>일 경우" 같은 역방향 조회용
 id_to_name = {}
 for n in names:
@@ -173,25 +175,29 @@ PCT = r"(?:\+\s*(\d+(?:\.\d+)?)\s*%|(\d+(?:\.\d+)?)\s*%(?:\s*추가)?\s*상승)"
 # 실존 정예 오퍼 수만큼만 시설을 채울 수 있다 (현재 6명 → +12%). 신규 정예 오퍼가
 # 추가되면 파이프라인 재생성 시 자동으로 반영된다 (사용자 확정)
 ELITE_TEAM = "로도스 아일랜드-정예 오퍼레이터"
-elite_count = sum(1 for o in operators if ELITE_TEAM in (o.get("factions") or []))
+elite_ids = [o["id"] for o in operators if ELITE_TEAM in (o.get("factions") or [])]
 
 # "X 오퍼레이터가 배치된 시설 1개당 +v% (최대 c개)" 시설 카운트 절 — 만트라(정예)뿐
 # 아니라 타락사쿰(쉐이) 같은 진영 조건도 지원. 게임 상한(c)과 실존 오퍼 수 중 작은 쪽.
 # 절을 떼어낸 텍스트를 함께 돌려줘 기본치 파싱이 이 절의 %를 이중 계상하지 않게 한다.
+# 세 번째 반환값(spec)은 엔진이 **실제 편성의 시설 수**로 다시 스케일하기 위한 구조 명세 —
+# 상한(count)은 위 사용자 확정 규칙 그대로, 스케일은 배치된 칸 수로 (2026-07-25).
 # ⚠ 토큰은 화이트리스트 alternation으로만 잡는다 — 자유 캡처는 leftmost 매칭이
 # "내 정예" 같은 조사구를 물어 카운트가 0이 되는 회귀를 냈다 (2026-07).
 # 실제 정의는 FACTION_NAMES 확정 후(아래) — 호출은 parse_skill 시점이라 문제없다.
 def facility_clause(text):
     m = FAC_RE.search(text)
-    if not m: return 0.0, text
+    if not m: return 0.0, text, None
     token = m.group(1)
     per, cap = float(m.group(2)), float(m.group(3))
     if token == "정예":
-        count = elite_count
+        ids = list(elite_ids)
     else:  # 진영명 토큰 — 정확 일치 또는 하이픈 꼬리 일치(쉐이 = 염-쉐이)
-        count = sum(1 for o in operators
-                    if any(token == f or f.split("-")[-1] == token for f in (o.get("factions") or [])))
-    return per * min(cap, count), text[:m.start()] + text[m.end():]
+        ids = [o["id"] for o in operators
+               if any(token == f or f.split("-")[-1] == token for f in (o.get("factions") or []))]
+    count = int(min(cap, len(ids)))
+    spec = {"group": token, "ids": ids, "per": per, "cap": int(cap), "count": count}
+    return per * count, text[:m.start()] + text[m.end():], spec
 
 # 자기 컨디션 낙차(소진)로 생산력이 변하는 오퍼(토터)의 대표 운용 낙차.
 # 만컨디션(낙차 0)이 아니라 12h 교대 평균 기준 — 컨디션 9~12 구간 (사용자 제보 2026-07)
@@ -224,7 +230,7 @@ def parse_metric(room, text):
         m = re.search(r"자신을 제외한 작업 중인 오퍼레이터 1명당[^+%\d]{0,20}\+\s*(\d+(?:\.\d+)?)\s*%", text)
         if m: return "percoworker", float(m.group(1))
         # 시설 카운트 절(만트라 정예 / 타락사쿰 쉐이)을 먼저 떼어 기본치와 분리 계상
-        fac_add, fac_text = facility_clause(text)
+        fac_add, fac_text, _ = facility_clause(text)
         v = best(r"(?:오더 수주 효율|주문 획득 효율)[^+%\d]{0,24}" + PCT, fac_text)
         if v or fac_add:
             # 응접실 레벨 성장형 (비질·미틈): "응접실 레벨 1레벨당 추가로 5% 제공,
@@ -260,7 +266,7 @@ def parse_metric(room, text):
             if re.search(r"단서 공유 상태에서", text): return "shared", v
             return "output", v
     if room == "HIRE":
-        fac_add, fac_text = facility_clause(text)  # 켈시 '테라의 방주': 정예 시설 1개당 +4% (최대 5개)
+        fac_add, fac_text, _ = facility_clause(text)  # 켈시 '테라의 방주': 정예 시설 1개당 +4% (최대 5개)
         v = best(r"(?:인맥 레퍼런스|연락).{0,16}(?:누적 |획득 )?속도[^+%\d]{0,18}" + PCT, fac_text)
         if v or fac_add: return "output", (v or 0) + fac_add
     if room == "WORKSHOP":
@@ -454,6 +460,27 @@ def find_names_in(clause, self_id=None):
         scan = scan[:m.start()] + "§" * (m.end() - m.start()) + scan[m.end():]
     return found
 
+def term_ops(key):
+    """용어 사전이 오퍼 명단으로 정의하는 그룹 → 오퍼 id 리스트 (없으면 []).
+
+    쉐이(cc.g.sui)·정예 오퍼레이터(cc.g.elite)·아이루와 유쾌한 친구들(cc.tag.mh)처럼
+    진영 데이터에 없는 게임 내부 그룹을 명단으로 확정한다. 엔진의 동석 게이트와 UI의
+    '관련 오퍼' 칩이 같은 명단을 쓴다 (사용자 요청 2026-07-25 — 전부 다 표시).
+    명단 줄 = 쉼표 나열이 **전원 오퍼명**인 줄. 시설·스킬 나열 줄은 자연히 걸러진다.
+    이름 해석은 로스터(operators) 우선 — 캐릭터 테이블엔 같은 이름의 중복 항목이 있어
+    (라이디언 = char_614_acsupo / char_4195_radian) name_to_id만 보면 엉뚱한 id가 잡힌다.
+    """
+    d = strip_tags_ml(((TERM_DICT.get(key) or {}).get("description")) or "")
+    ids = []
+    for line in d.split("\n"):
+        parts = [p.strip() for p in line.split(",") if p.strip()]
+        if not parts or not all(p in OP_NAME_ID or p in name_to_id for p in parts): continue
+        for p in parts:
+            oid = OP_NAME_ID.get(p) or name_to_id[p]
+            if oid not in ids: ids.append(oid)
+    return ids
+
+
 def term_facilities(key):
     """용어 사전이 '다음 시설 포함' 목록으로 정의하는 시설 집합 → 방 코드 리스트.
 
@@ -616,16 +643,28 @@ def parse_skill(entry, oname, oid=None):
         gen, use, stack_grant, stack_conv = parse_tokens(text, room)
         # faction-conditional control skills: "용문근위국 오퍼레이터와 함께
         # 제어 센터에 배치 시" (gate) / "미노스 오퍼레이터 1명당 +v% (최대 c%)"
-        req_faction = None
-        # 알려진 진영명 우선(길이 내림차순) — 공백 포함 진영("우르수스 학생자치단")이
-        # 자유 캡처에서 '학생자치단'으로 잘리는 것을 방지. 플래너는 factions 정확 일치 게이트
-        for f in FACTION_NAMES:
-            if re.search(re.escape(f) + r" 오퍼레이터와 함께", text):
-                req_faction = f
-                break
-        if not req_faction:
-            m = re.search(r"([가-힣A-Za-z·]{2,14}) 오퍼레이터와 함께", text)
-            if m: req_faction = m.group(1)
+        req_faction = req_group = None
+        # 동석 게이트는 **문장 첫머리**의 "<진영·그룹> 오퍼레이터와 함께 …에 배치 시"만 인정한다
+        # (전수조사 2026-07-25): 문장 중간의 동석 절은 부수 효과만 좌우한다 — 바르카리스
+        # '영웅의 긍지'는 "…사르곤 오퍼레이터와 함께 배치 시 자신의 컨디션 소모 +0.02"인데
+        # 게이트로 잡히는 바람에 본체(미노스 1명당 단서 +5%)가 통째로 죽어 있었다.
+        # 진영 데이터에 없는 명단형 그룹("아이루와 유쾌한 친구들")은 termRefs 명단으로 판정한다 —
+        # 자유 캡처가 '친구들'로 잘려 영영 발동하지 않던 레우스S·키린R 교정.
+        _gate = re.match(r"([가-힣A-Za-z·\s]{2,24}?) 오퍼레이터와 함께", text)
+        if _gate:
+            _label = _gate.group(1).strip()
+            _gkey = next((k for k, t in (entry.get("termRefs") or []) if t == _label), None)
+            _gids = term_ops(_gkey) if _gkey else []
+            if _gids:
+                req_group = {"term": _gkey, "name": _label, "ids": _gids}
+            elif _label in FACTION_NAMES:
+                req_faction = _label
+        # "다른 <진영> 오퍼레이터가 <이 방>에 배치되어 있으면" (CONFESS-47 '정비 중') —
+        # 같은 방 동석 조건이라 reqFaction과 동일 판정
+        if not req_faction and not req_group:
+            _rm = re.search(r"다른 ([가-힣A-Za-z·]{2,14}) 오퍼레이터가 ([가-힣 ]{2,8})에 배치되어 있", text)
+            if _rm and _rm.group(1) in FACTION_NAMES and KO_ROOM.get(_rm.group(2).strip()) == room:
+                req_faction = _rm.group(1)
         per_faction = per_scope = per_cap = None
         # "<진영·그룹> 오퍼레이터(최대 N명)? 1명당/1명 증가할 때마다" — 알려진 진영 +
         # 명단형 그룹(OP_GROUPS: 비비아나 '기사')으로 한정 매칭한다(공백 포함 '라인 랩'도,
@@ -819,6 +858,12 @@ def parse_skill(entry, oname, oid=None):
         partners_list = [p for p in find_partners(text, oname, oid)
                          if p not in base_partner_ids and p not in rp_ids
                          and not re.search(r"대상이 " + re.escape(id_to_name.get(p, "\x00")) + r"(?:일|이라면|인)", text)]
+        # 1글자 이름 동반 조건 (리 '한가하고 덧없는 인생' — "아와 함께 제어 센터에 배치 시"):
+        # find_partners는 오탐 방지로 2글자 이상만 보므로 **문장 첫머리 동반 절**에서만 따로 집는다
+        _p1 = re.match(r"([가-힣A-Za-z]{1,2})(?:와|과) 함께", text)
+        if _p1 and name_to_id.get(_p1.group(1)) and name_to_id[_p1.group(1)] != oid \
+                and name_to_id[_p1.group(1)] not in partners_list:
+            partners_list.append(name_to_id[_p1.group(1)])
         _base_text, _cond = detect_cond_bonus(text, oname, oid)
         if _cond and _cond["type"] == "perFacBase" and not _cond.get("bonus"):
             # 뮤엘시스: 기본 flat + "진영 1명당 +V%(≤cap)". 모건류(bonus 동반)는 자기-카운트
@@ -904,6 +949,23 @@ def parse_skill(entry, oname, oid=None):
         if room == "MANUFACTURE" and kind == "output":
             _g = re.search(r"훈련실 레벨 ?1(?:레벨)?당[^%\d]{0,16}\+?\s*(\d+(?:\.\d+)?)\s*%", text)
             if _g: lvl_training = {"per": float(_g.group(1))}
+        # ── 시설 카운트 절을 기본치에서 떼어 구조 필드로 (타락사쿰 쉐이·만트라/켈시 이격 정예) ──
+        # 종전엔 상한치(4%×5 = +20%)가 value에 통째로 구워져, 쉐이를 한 명도 안 앉힌 편성에서도
+        # 만점이 붙었다. 상한 규칙(게임 상한 vs 실존 오퍼 수)은 그대로 두고 스케일만 엔진으로
+        # 넘긴다 — 엔진이 그룹원이 실제로 앉은 **칸 수**로 곱한다 (2026-07-25 전수조사).
+        per_facility = None
+        _fac_add, _, _fac_spec = facility_clause(text)
+        if _fac_spec:
+            # 그룹 명단은 게임 용어 사전을 우선한다 — 진영 매칭은 미실장·중복 항목까지 물어
+            # 상한이 한두 명 부풀 수 있다 (정예 오퍼레이터: 진영 7 vs 용어 사전 6)
+            _tids = next((term_ops(_k) for _k, _t in (entry.get("termRefs") or [])
+                          if _fac_spec["group"] in _t and term_ops(_k)), None)
+            if _tids:
+                _fac_spec["ids"] = _tids
+                _fac_spec["count"] = int(min(_fac_spec["cap"], len(_tids)))
+        if _fac_spec and _fac_add and value and value >= _fac_add:
+            value = round(value - _fac_add, 2)
+            per_facility = _fac_spec
         # buffChar slots already resolved upgrades — every line here stacks
         tier = 1
         group = entry["name"]
@@ -936,6 +998,9 @@ def parse_skill(entry, oname, oid=None):
             "_roboUse": (float(robo_use.group(1)), float(robo_use.group(2))) if robo_use else None,
             "tokenGen": gen, "tokenUse": use, "convert": convert,
             "reqFaction": req_faction, "perFaction": per_faction, "perScope": per_scope, "perCap": per_cap,
+            # 명단형 그룹 동석 게이트(레우스S·키린R) / 그룹원이 앉은 시설 수 스케일(타락사쿰·만트라)
+            **({"reqGroup": req_group} if req_group else {}),
+            **({"perFacility": per_facility} if per_facility else {}),
             # "자신을 제외한 <진영> 1명당" (뮤엘시스): 본인이 그 진영이면 카운트에서 자신을 뺀다
             **({"perExclSelf": True} if per_faction and "자신을 제외" in text else {}),
             # 생산품별 부호 오라는 해당 스킬(플레임테일)에만 싣는다 — null 키로 전 스킬을 불리지 않음
@@ -1083,8 +1148,11 @@ while _queue:
     if not _td: continue
     _raw = _td.get("description") or ""
     _refs = term_refs(_raw)
+    _ops = term_ops(_k)
     terms_out[_k] = {"name": strip_tags(_td.get("termName")), "desc": strip_tags_ml(_raw),
-                     **({"refs": _refs} if _refs else {})}
+                     **({"refs": _refs} if _refs else {}),
+                     # 명단형 그룹의 확정 오퍼 id — UI 관련 오퍼 칩·엔진 동석 게이트 공용
+                     **({"ops": _ops} if _ops else {})}
     _queue += [rk for rk, _ in _refs if rk not in terms_out]
 _missing_terms = [k for k in _used if k not in terms_out]
 if _missing_terms:

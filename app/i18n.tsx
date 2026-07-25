@@ -305,6 +305,14 @@ const D: Record<string, Pair> = {
   "{faction} 1명당 {per}% — 현재 {where} {n}명 · {total}% 적용": ["Per {faction} member: {per}% — {n} in {where} now · {total}% applied", "{faction}1名につき{per}% — 現在{where}に{n}名・{total}%適用"],
   "{name}이(가) {room}에 배치되어 있을 때 발동": ["Activates while {name} is stationed in {room}", "{name}が{room}に配置されている間のみ発動"],
   "파트너 스킬 — 전원이 같은 방에 있을 때 발동": ["Partner skill — activates only when every partner shares this room", "パートナースキル — 全員が同室のときのみ発動"],
+  "{name}과(와) 같은 방이면 추가 +{v}%": ["+{v}% extra while sharing this room with {name}", "{name}と同室なら追加+{v}%"],
+  "{name}이(가) {room}에 있으면 추가 +{v}%": ["+{v}% extra while {name} is in {room}", "{name}が{room}にいると追加+{v}%"],
+  "{faction} 오퍼와 같은 방이면 추가 +{v}% — 현재 {n}명": ["+{v}% extra while a {faction} operator shares this room — {n} here now", "{faction}オペレーターと同室なら追加+{v}% — 現在{n}名"],
+  "{name}이(가) 기지 어디든(숙소 포함) 있으면 추가 +{v}%": ["+{v}% extra while {name} is anywhere in the base (dormitories included)", "{name}が基地内（宿舎含む）にいれば追加+{v}%"],
+  "{rooms}에 배치될 때마다 각각 추가 +{v}% — 현재 {n}명 충족": ["+{v}% each for every partner stationed in {rooms} — {n} qualifying now", "{rooms}に配置されるごとにそれぞれ追加+{v}% — 現在{n}名が条件を満たす"],
+  "{group} 오퍼가 배치된 시설 1개당 +{per}% — 현재 {n}개 · {total}% (최대 {cap}개)": ["Per facility staffed by a {group} operator: +{per}% — {n} now · {total}% (max {cap})", "{group}オペレーターが配置された施設1つにつき+{per}% — 現在{n}か所・{total}%（最大{cap}か所）"],
+  "{group} 오퍼와 함께 배치되어야 발동": ["Activates only alongside a {group} operator", "{group}オペレーターと一緒に配置されて初めて発動"],
+  "{term} — 관련 오퍼": ["{term} — related operators", "{term} — 関連オペレーター"],
   "{faction} {n}명 이상일 때 발동 — 현재 {c}명": ["Activates with at least {n} {faction} members — currently {c}", "{faction}{n}名以上で発動 — 現在{c}名"],
   "{name} — 미배치": ["{name} — not stationed", "{name} — 未配置"],
   "{token} 생성 → 소비 오퍼": ["Generates {token} → consumers", "{token}生成 → 消費オペレーター"],
@@ -674,7 +682,7 @@ const D: Record<string, Pair> = {
     "Dorm/synergy-pinned members (dorm generators, Nian, …) stay put regardless of A/B. The Reception Room also rotates A/B — nobody works 24 hours straight.",
     "宿舎・シナジー固定要員（宿舎生成要員、ニェンなど）はA/B交代と無関係に固定されます。応接室もA/Bで交代運用 — 同じ人員を24時間回しません。",
   ],
-  "훈련실은 실제 스킬 특화 훈련에 쓰도록 비워 둡니다.": ["The Training Room is kept empty for actual mastery training.", "訓練室は実際のスキル特化訓練用に空けておきます。"],
+  "훈련실은 실제 스킬 특화 훈련에 쓰도록 기본적으로 비워 둡니다. 다만 절대 규칙은 아닙니다 — 훈련실도 '작업 시설'이라, 다른 오퍼의 조건이 훈련실 배치로만 충족될 때(외드레르의 W가 앉을 작업 시설이 훈련실밖에 안 남은 경우)는 그쪽 이득이 실제로 더 클 때만 배치합니다.": ["The Training Room is normally kept empty for actual mastery training — but that is not an absolute rule. It also counts as a Work Facility, so when another operator's condition can only be met there (Hoederer's W with no other Work Facility left), someone is stationed there, and only when the gain elsewhere genuinely outweighs it.", "訓練室は実際のスキル特化訓練用に基本的に空けておきますが、絶対的な規則ではありません。訓練室も「作業施設」なので、他オペレーターの条件が訓練室配置でしか満たせない場合（ヘドリーのWが座れる作業施設が訓練室しか残っていない等）には、他所の利益が実際に上回るときだけ配置します。"],
   "'전체 자동편성'은 처음부터 다시 계산하고, '빈 자리만 자동편성'은 현재 편성(수동 수정 포함)을 유지한 채 남은 빈 자리만 한계 기여 순으로 채웁니다.": [
     "'Auto-assign all' recomputes from scratch; 'Fill empty slots' keeps the current assignment (manual edits included) and fills only the remaining seats by marginal gain.",
     "「全自動編成」は最初から再計算し、「空きスロットのみ自動編成」は現在の編成（手動修正含む）を維持したまま残りの空きだけを限界貢献順に埋めます。",
@@ -716,9 +724,9 @@ const D: Record<string, Pair> = {
     "Proviso instead profits from breaching low-count orders, so she anti-synergizes with quality odds — put her in the high-throughput Wuyou + Ebenholz post.",
     "プロヴァイゾは逆に低品質受注を違約処理して収益を出すため、高品質確率とは反シナジー。処理量の多いウーユウ+エーベンホルツの部屋に入れます。",
   ],
-  "레벨 성장형은 만렙 기지 기준 상한으로 계산합니다: 비질 +40%(응접실 Lv3), 아르케토 +40%(숙소 20레벨), 미틈 +30%, 만트라 +45%(시설 10개).": [
-    "Level-scaling skills use max-base caps: Vigil +40% (Reception Lv3), Archetto +40% (dorm levels 20), Mitm +30%, Mantra +45% (10 facilities).",
-    "レベル成長型は最大レベル基地基準の上限で計算：ヴィジェル+40%（応接室Lv3）、アルケット+40%（宿舎20レベル）、ミトム+30%、マントラ+45%（施設10）。",
+  "레벨 성장형은 만렙 기지 기준 상한으로 계산합니다: 비질 +40%(응접실 Lv3), 아르케토 +40%(숙소 20레벨), 미틈 +30%.": [
+    "Level-scaling skills use max-base caps: Vigil +40% (Reception Lv3), Archetto +40% (dorm levels 20), Mitm +30%.",
+    "レベル成長型は最大レベル基地基準の上限で計算：ヴィジェル+40%（応接室Lv3）、アルケット+40%（宿舎20レベル）、ミトム+30%。",
   ],
   "언더플로우(+30%)는 울피아누스가 기지 어디든(숙소 포함) 있으면 +40%가 됩니다 — 울피아누스를 숙소에 고정해 두세요. B조 무역소 정배: 비질+아르케토+언더플로우.": [
     "Underflow (+30%) becomes +40% while Ulpianus is anywhere in the base (dorms included) — keep him pinned in a dorm. Standard Shift B trading crew: Vigil + Archetto + Underflow.",
@@ -769,9 +777,9 @@ const D: Record<string, Pair> = {
     "With SilverAsh the Rimefrost, a set plan gathers 3 Kjerag operators (strongest trading skills first) into one Trading Post, but it is adopted only if the total base score beats the no-set plan. Faction checks use multi-affiliation (Karlan Trade operators count as Kjerag).",
     "異格シルバーアッシュ所持時はイェラグ3人（貿易スキルが強い順）を貿易所1箇所に集めるセット案を作りますが、セットなしの編成と基地総合スコアを比較して得な場合のみ採用します。陣営判定は多重所属基準（カラン貿易のオペレーターもイェラグと認定）。",
   ],
-  "만트라 정예 소대는 실존 정예 오퍼 수 기준으로 계산합니다 (현재 6명 → +37%, 신규 정예 오퍼 추가 시 데이터 갱신에서 자동 반영).": [
-    "Mantra's elite-squad count uses the number of elite operators that actually exist (currently 6 → +37%; new elite operators are picked up automatically on data refresh).",
-    "マントラの精鋭小隊は実在する精鋭オペレーター数基準で計算します（現在6人 → +37%、新規精鋭追加時はデータ更新で自動反映）。",
+  "시설 카운트 스킬(타락사쿰 '쉐이'·만트라 '정예 오퍼레이터')은 그 그룹원이 실제로 앉은 시설 수만큼만 붙습니다 — 한 방에 둘이 앉아도 1개로 세고, 숙소·가공소도 시설로 셉니다. 상한은 게임 상한과 실존 오퍼 수 중 작은 쪽입니다 (만트라는 정예 6명이라 최대 6개 = +12%).": [
+    "Facility-count skills (Taraxacum's Sui, Mantra's Elite Operators) only pay out for facilities where that group is actually stationed — two of them in one room still counts as one, and dorms and the Workshop count as facilities. The cap is the lower of the in-game cap and the number of such operators that exist (Mantra: 6 elites → 6 facilities = +12%).",
+    "施設カウント系スキル（タラクサカムの「歳」、マントラの「精鋭オペレーター」）は、そのグループが実際に配置されている施設の数だけ加算されます — 同じ部屋に2人いても1か所と数え、宿舎・加工所も施設として数えます。上限はゲーム上限と実在オペレーター数の小さい方です（マントラは精鋭6人なので最大6か所＝+12%）。",
   ],
   "정예화 단계 (1정/2정)": ["Promotion stages (E1/E2)", "昇進段階（昇進1/昇進2）"],
   "보유 오퍼 설정에서 오퍼별로 기본값(2정 · 정예화 2)을 노정예/1정으로 낮출 수 있습니다 (3성 이상 전원 — 스킬이 노정예부터 있는 오퍼도 선택 가능).": [

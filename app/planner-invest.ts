@@ -20,7 +20,7 @@
 import costsData from "./data/costs.json";
 import {
   optimizeConfig, buildPlan, planScore, teamScore, opSolo, withElite, maxElite, eliteLocks,
-  availableSetKeys, synergySetMembers, cellByKey, aurasOf, ctxFor, presentIdsFor, roomOfFor, SHIFT_COUNT,
+  availableSetKeys, synergySetMembers, cellByKey, aurasOf, ctxFor, presentIdsFor, roomOfFor, cellOfFor, SHIFT_COUNT,
   type InfraOp, type Elite, type Plan, type ProdPriority, type FactionSets,
 } from "./planner-engine";
 
@@ -90,8 +90,9 @@ function cellEff(plan: Plan, key: string, shift: number, byId: Map<string, Infra
   const counts = plan.factionCounts[shift] ?? {};
   const present = presentIdsFor(plan, shift);
   const rooms = roomOfFor(plan, shift);
-  const ambient = aurasOf(teamAt(plan, "CONTROL", shift, byId), ctxFor("CONTROL", points, counts, plan.plants, present, undefined, rooms));
-  return teamScore(teamAt(plan, key, shift, byId), cell.room, ctxFor(key, points, counts, plan.plants, present, ambient, rooms));
+  const cells = cellOfFor(plan, shift);
+  const ambient = aurasOf(teamAt(plan, "CONTROL", shift, byId), ctxFor("CONTROL", points, counts, plan.plants, present, undefined, rooms, cells));
+  return teamScore(teamAt(plan, key, shift, byId), cell.room, ctxFor(key, points, counts, plan.plants, present, ambient, rooms, cells));
 }
 
 // 오퍼가 최적 편성에서 실제로 앉은 근무 방 (기여 판정 + "여기 넣으세요" 설명용)

@@ -61,12 +61,6 @@
       "type": "invariant"
     },
     {
-      "check": "trainingEmpty",
-      "name": "훈련실은 비워 둔다",
-      "note": "INFRA-RULES §1 — 특화 훈련용",
-      "type": "invariant"
-    },
-    {
       "allOf": [
         "char_2014_nian"
       ],

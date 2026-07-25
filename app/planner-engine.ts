@@ -77,6 +77,12 @@ export type InfraSkill = {
   roomPartner?: { id: string; room: string } | null; // "만약 굼이 무역소에 배치되어 있다면" (레토) — 교차방 파트너
   belowThreshold?: number | null; // "누적 속도 30% 미만인 경우" 류 — 대상 방 수치가 임계값 미만일 때만 (사일라흐)
   reqFaction: string | null;
+  // 명단형 그룹 동석 게이트 (레우스S·키린R '아이루와 유쾌한 친구들' — 진영 데이터에 없는
+  // 게임 내부 그룹이라 용어 사전 명단으로 판정한다, 2026-07-25)
+  reqGroup?: { term?: string; name?: string; ids: string[] } | null;
+  // 그룹원이 앉은 **시설(칸) 수** 1개당 가산 (타락사쿰 '쉐이'·만트라/켈시 이격 '정예',
+  // 2026-07-25): count = min(게임 상한, 실존 오퍼 수). 배치 지도가 없으면 상한 낙관 적용.
+  perFacility?: { group?: string; ids: string[]; per: number; cap: number; count: number } | null;
   perFaction: string | null;
   perScope: string | null;
   perCap: number | null;
@@ -97,7 +103,7 @@ export type InfraSkill = {
 
 // RIIC 용어 정의 (외세·실리·시라쿠사 등) — 스킬 설명 용어 클릭 팝업용.
 // desc의 개행은 의미 단위(오퍼 명단 줄 등), refs는 정의 속 다른 용어 참조.
-export type InfraTerm = { name: string; desc: string; refs?: [string, string][] };
+export type InfraTerm = { name: string; desc: string; refs?: [string, string][]; ops?: string[] };
 
 export type InfraOp = {
   id: string;
@@ -439,7 +445,9 @@ export const UNIT: Record<string, string> = {
 export const PARK_KEYS = ["WORKSHOP"];
 export const SHIFT_COUNT = 2;
 
-export type Ctx = { product?: string; tokenPoints: Record<string, number>; factionCounts?: Record<string, number>; plants?: number; presentIds?: Set<string>; ambient?: AmbientAura[]; roomOf?: Map<string, string>; shiftHours?: number };
+// cellOf = 오퍼 id → 배치된 **칸**(LAYOUT key). roomOf(방 종류)로는 "제조소 2곳에 쉐이가
+// 앉았다" 같은 시설 개수를 셀 수 없어 시설 카운트 스킬(타락사쿰·만트라)용으로 함께 싣는다.
+export type Ctx = { product?: string; tokenPoints: Record<string, number>; factionCounts?: Record<string, number>; plants?: number; presentIds?: Set<string>; ambient?: AmbientAura[]; roomOf?: Map<string, string>; cellOf?: Map<string, string>; shiftHours?: number };
 
 // 시간 성장형 스킬의 교대 주기 평균 — k시간째 값 = min(first + rate×(k−1), cap),
 // 마지막 부분 시간은 비례 (파서 grow_avg와 동일 공식, 구운 값 = 24h 기준)
@@ -663,6 +671,8 @@ export function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx):
     if (skill.partners.length > 0 && !skill.partners.every((p) => teamIds.has(p))) continue;
     // faction companion gate (호시구마: 용문근위국 오퍼와 함께 배치 시)
     if (skill.reqFaction && !team.some((member) => member.id !== op.id && factionsOf(member).includes(skill.reqFaction!))) continue;
+    // 명단형 그룹 동석 게이트 (레우스S·키린R: 아이루와 유쾌한 친구들 — 진영이 아니라 명단)
+    if (skill.reqGroup && !team.some((member) => member.id !== op.id && skill.reqGroup!.ids.includes(member.id))) continue;
     // 진영 N명 배치 게이트 (실버애쉬 이격: 쉐라그 3명 배치된 무역소) — 조 전체 인원수 근사
     if (skill.gateFaction && (ctx.factionCounts?.[skill.gateFaction] ?? 0) < (skill.gateCount ?? 1)) continue;
     // 교차방 파트너 조건(레토: 굼이 무역소에): roomOf가 주어진 검증 단계에선 파트너가 지정 방에
@@ -708,6 +718,20 @@ export function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx):
         if (at && skill.workRooms && !skill.workRooms.includes(at)) continue;
         out.efficiency += skill.workPartnerBonus;
       }
+    }
+    // 시설 카운트 (타락사쿰 '쉐이 오퍼레이터가 배치된 시설 1개당 +4%', 만트라·켈시 이격 '정예'):
+    // 그룹원이 한 명이라도 앉은 **칸 수**로 스케일한다. 상한(count)은 게임 상한과 실존 오퍼 수
+    // 중 작은 쪽(파서 확정). 배치 지도(cellOf)가 없는 그리디 1차에선 상한을 낙관 적용해
+    // 후보 자격을 주고, 감사·검증·UI 단계(cellOf 보유)에서 실제 시설 수로 엄격 계상한다.
+    if (skill.perFacility) {
+      const pf = skill.perFacility;
+      let cells = pf.count;
+      if (ctx.cellOf) {
+        const seen = new Set<string>();
+        for (const id of pf.ids) { const at = ctx.cellOf.get(id); if (at) seen.add(at); }
+        cells = Math.min(pf.count, seen.size);
+      }
+      out.efficiency += pf.per * cells;
     }
     // per-faction counting (바르카리스: 미노스 오퍼레이터 1명당 +v%, 최대 cap).
     // perScope "mfg"(플레임테일·제시카 이격·비비아나 "제조소에 배치된 <진영·그룹> 1명당")의
@@ -966,8 +990,8 @@ export type ProdPriority = "gold" | "exp" | "balance";
 export let PRIORITY_KEYS: Record<ProdPriority, string[]> = LAYOUT_DEFS["243"].priority;
 export const SUPPORT_KEYS = ["CONTROL", "HIRE", "MEETING", "WORKSHOP", "TRAINING"];
 
-export function ctxFor(key: string, tokenPoints: Record<string, number>, factionCounts?: Record<string, number>, plants?: number, presentIds?: Set<string>, ambient?: AmbientAura[], roomOf?: Map<string, string>): Ctx {
-  return { product: cellByKey.get(key)?.product, tokenPoints, factionCounts, plants, presentIds, ambient, roomOf };
+export function ctxFor(key: string, tokenPoints: Record<string, number>, factionCounts?: Record<string, number>, plants?: number, presentIds?: Set<string>, ambient?: AmbientAura[], roomOf?: Map<string, string>, cellOf?: Map<string, string>): Ctx {
+  return { product: cellByKey.get(key)?.product, tokenPoints, factionCounts, plants, presentIds, ambient, roomOf, cellOf };
 }
 
 // 불러온(import) plan을 렌더가 안전하게 다룰 수 있는 형태로 정규화한다.
@@ -1027,6 +1051,16 @@ export function roomOfFor(plan: Plan, shift: number): Map<string, string> {
   for (const [key, shifts] of Object.entries(plan.assignments)) {
     const room = cellByKey.get(key)?.room ?? key;
     for (const id of shifts[Math.min(shift, shifts.length - 1)] ?? []) map.set(id, room);
+  }
+  return map;
+}
+
+// 조 배치 지도 (오퍼 id → 배치된 칸) — 시설 **개수**를 세는 조건(타락사쿰 '쉐이가 배치된
+// 시설 1개당')용. 같은 종류 방이 여럿이라 roomOf로는 개수를 셀 수 없다 (2026-07-25).
+export function cellOfFor(plan: Plan, shift: number): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const [key, shifts] of Object.entries(plan.assignments)) {
+    for (const id of shifts[Math.min(shift, shifts.length - 1)] ?? []) map.set(id, key);
   }
   return map;
 }
@@ -1165,6 +1199,15 @@ function seedSynergySet(def: SynergySetDef, roster: InfraOp[], used: Set<string>
 export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSets: FactionSets = {}, priority: ProdPriority = "gold", extraSeeds: { opId: string; room: string }[] = [], concentrate = true): Plan {
   const prodKeys = PRIORITY_KEYS[priority];
   const assignments: Record<string, string[][]> = {};
+  // 시설 카운트 스킬(타락사쿰·만트라)용 배치 지도 — 숙소·가공소까지 **모든 칸**을 센다.
+  // 감사 패스의 roomOfS는 근무 방 + 숙소만 담아 시설 개수 판정엔 못 쓴다 (2026-07-25).
+  const cellMapFor = (shift: number): Map<string, string> => {
+    const map = new Map<string, string>();
+    for (const [key, shifts] of Object.entries(assignments)) {
+      for (const id of shifts[Math.min(shift, shifts.length - 1)] ?? []) map.set(id, key);
+    }
+    return map;
+  };
   const used = new Set<string>();
   const keys = [...prodKeys, ...SUPPORT_KEYS];
   for (const key of keys) assignments[key] = [];
@@ -1339,7 +1382,7 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
         const idx = Math.min(shift, assignments[key].length - 1);
         const team = (assignments[key][idx] ?? []).map((id) => byIdAll.get(id)).filter((op): op is InfraOp => Boolean(op));
         if (!team.length) continue;
-        const ctx: Ctx = { product: cellByKey.get(key)?.product, tokenPoints: shift === 0 ? tokenPoints : {}, factionCounts: fc, plants, presentIds: placed, roomOf };
+        const ctx: Ctx = { product: cellByKey.get(key)?.product, tokenPoints: shift === 0 ? tokenPoints : {}, factionCounts: fc, plants, presentIds: placed, roomOf, cellOf: cellMapFor(shift) };
         // 조건(roomPartner)이 실제 미충족인 멤버 — 시드/예약 오퍼는 건드리지 않는다
         const member = team.find((op) => reserved.get(op.id) !== key && op.skills.some((sk) =>
           sk.roomPartner && skillApplies(sk, room, ctx.product) && roomOf.get(sk.roomPartner.id) !== sk.roomPartner.room));
@@ -1428,8 +1471,9 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
           const roomOfS = new Map<string, string>();
           for (const [id, k] of roomKeyOf) roomOfS.set(id, cellByKey.get(k)?.room ?? k);
           for (const id of dormIds) roomOfS.set(id, "DORMITORY");
+          const cellOfS = cellMapFor(shift);
           const present = new Set<string>([...roomKeyOf.keys(), ...dormIds]);
-          const ctx = { ...ctxFor(aKey, tp, factionCountsPerShift[shift], plants, present), roomOf: roomOfS, shiftHours: shiftClock };
+          const ctx = { ...ctxFor(aKey, tp, factionCountsPerShift[shift], plants, present), roomOf: roomOfS, cellOf: cellOfS, shiftHours: shiftClock };
           const curTeam = (assignments[aKey][shift] ?? []).map((id) => byIdAll.get(id)).filter((op): op is InfraOp => Boolean(op));
           // 패키지 예약 해제 (사용자 통찰 2026-07-24: "쉐이가 5명까지라 슈가 필요 없다"):
           // 토큰을 직접 생성·전환하지 않는 패키지 예약자는, 자신이 빠져도 모든 perMember
@@ -1504,7 +1548,7 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
                 const gain = score([...team, op]) - score(team);
                 const dRoom = cellByKey.get(fromKey)?.room ?? fromKey;
                 const dSlots = slotsFor(fromKey);
-                const dCtx = { ...ctxFor(fromKey, tp, factionCountsPerShift[shift], plants, present), roomOf: roomOfS };
+                const dCtx = { ...ctxFor(fromKey, tp, factionCountsPerShift[shift], plants, present), roomOf: roomOfS, cellOf: cellOfS };
                 const dTeam = (assignments[fromKey][shift] ?? []).map((x) => byIdAll.get(x)).filter((o): o is InfraOp => Boolean(o));
                 const rest = dTeam.filter((o) => o.id !== id);
                 const claimed = new Set(team.map((t) => t.id));
@@ -1551,8 +1595,9 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
           const roomOfS = new Map<string, string>();
           for (const [id, k] of roomKeyOf) roomOfS.set(id, cellByKey.get(k)?.room ?? k);
           for (const id of dormIds) roomOfS.set(id, "DORMITORY");
+          const cellOfS = cellMapFor(shift);
           const present = new Set<string>([...roomKeyOf.keys(), ...dormIds]);
-          const ctxOf = (key: string) => ({ ...ctxFor(key, tp, factionCountsPerShift[shift], plants, present), roomOf: roomOfS });
+          const ctxOf = (key: string) => ({ ...ctxFor(key, tp, factionCountsPerShift[shift], plants, present), roomOf: roomOfS, cellOf: cellOfS });
           const scoreOf = (key: string, team: InfraOp[]) => teamScore(team, cellByKey.get(key)?.room ?? key, ctxOf(key));
           const teamOf = (key: string) => (assignments[key]?.[shift] ?? []).map((id) => byIdAll.get(id)).filter((op): op is InfraOp => Boolean(op));
           const bench = roster.filter((op) => !dormIds.has(op.id) && !roomKeyOf.has(op.id) && !otherWork.has(op.id) && !reserved.has(op.id));
@@ -1633,13 +1678,14 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
         const roomOfS = new Map<string, string>();
         for (const k of workKeys) { const rm = cellByKey.get(k)?.room ?? k; for (const id of assignments[k]?.[shift] ?? []) roomOfS.set(id, rm); }
         for (let dd = 0; dd < 4; dd += 1) for (const id of assignments[`DORM-${dd}`]?.[0] ?? []) roomOfS.set(id, "DORMITORY");
+        const cellOfS = cellMapFor(shift);
         for (const key of workKeys) {
           const room = cellByKey.get(key)?.room ?? key;
           const slots = slotsFor(key);
           const team = assignments[key][shift] ?? [];
           if (team.length >= slots) continue;
           const present = new Set<string>([...usedThisShift, ...dormIds]);
-          const ctx = { ...ctxFor(key, shift === 0 ? tokenPoints : {}, factionCountsPerShift[shift], plants, present), roomOf: roomOfS };
+          const ctx = { ...ctxFor(key, shift === 0 ? tokenPoints : {}, factionCountsPerShift[shift], plants, present), roomOf: roomOfS, cellOf: cellOfS };
           const pool = new Map(roster.filter((op) =>
             !usedThisShift.has(op.id) && !otherWorking.has(op.id) &&
             (!reserved.has(op.id) || reserved.get(op.id) === key)).map((op) => [op.id, op]));
@@ -1687,6 +1733,7 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
         for (const id of assignments[key][Math.min(shift, assignments[key].length - 1)] ?? []) roomOfS.set(id, room);
       }
       for (const id of dormIds) roomOfS.set(id, "DORMITORY");
+      const cellOfS = cellMapFor(shift);
       const present = new Set<string>(roomOfS.keys());
       for (const key of targets) {
         if (!bench.length) break;
@@ -1695,7 +1742,7 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
         const team = (assignments[key][shift] ?? []).map((id) => byIdAll.get(id)).filter((op): op is InfraOp => Boolean(op));
         let added = false;
         while (team.length < slots && bench.length) {
-          const ctx = { ...ctxFor(key, shift === 0 ? tokenPoints : {}, factionCountsPerShift[shift], plants, present), roomOf: roomOfS };
+          const ctx = { ...ctxFor(key, shift === 0 ? tokenPoints : {}, factionCountsPerShift[shift], plants, present), roomOf: roomOfS, cellOf: cellOfS };
           const base = teamScore(team, room, ctx);
           let at = 0;
           let best = teamScore([...team, bench[0]], room, ctx) - base;
@@ -1745,11 +1792,12 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
         const rko = new Map<string, string>();
         for (const k of work5) for (const id of assignments[k]?.[shift] ?? []) rko.set(id, cellByKey.get(k)?.room ?? k);
         for (const id of dorm5) rko.set(id, "DORMITORY");
+        const cko = cellMapFor(shift);
         const pres = new Set<string>([...rko.keys(), ...dorm5]);
         const tp5 = shift === 0 ? tokenPoints : {};
         const amb = aurasOf(team5("CONTROL"), ctxFor("CONTROL", tp5, factionCountsPerShift[shift], plants, pres));
         let t = 0;
-        for (const k of prefKeys) t += teamScore(team5(k), "MANUFACTURE", { ...ctxFor(k, tp5, factionCountsPerShift[shift], plants, pres, amb), roomOf: rko });
+        for (const k of prefKeys) t += teamScore(team5(k), "MANUFACTURE", { ...ctxFor(k, tp5, factionCountsPerShift[shift], plants, pres, amb), roomOf: rko, cellOf: cko });
         return t;
       };
       let swapped5 = true; let g5 = 0;
@@ -1780,6 +1828,73 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
           }
           if (done5) break; // 지도가 바뀌었으니 처음부터 다시 스캔
         }
+      }
+    }
+  }
+
+  // ── 훈련실 파킹 (사용자 정정 2026-07-25: "훈련실에 절대로 아무것도 넣으면 안 되는 건 아니다") ──
+  // 훈련실은 특화 훈련용으로 비워 두는 게 정배지만 **금지**는 아니다. 다른 오퍼의 조건이
+  // 훈련실 배치로만 충족되는 경우 — 외드레르 '자수성가'의 W처럼 작업 시설(발전소·제조소·
+  // 무역소·사무실·응접실·제어 센터·훈련실)이 훈련실밖에 안 남았을 때 — 는 넣는다.
+  // 훈련실 자체 산출(훈련 속도)을 노리고 채우지는 않으므로, ⓐ 후보는 **이미 배치된 오퍼의
+  // 조건이 지목하는 오퍼**로만 한정하고 ⓑ 판정 점수에서 훈련실 자신은 뺀다.
+  {
+    const teamAtKey = (key: string, shift: number): InfraOp[] =>
+      (assignments[key]?.[Math.min(shift, (assignments[key]?.length ?? 1) - 1)] ?? [])
+        .map((id) => byIdAll.get(id)).filter((op): op is InfraOp => Boolean(op));
+    // 훈련실을 뺀 기지 총점 — 파킹이 "다른 방"에 이득을 줬을 때만 채택하기 위한 판정치
+    const scoreExTraining = (shift: number): number => {
+      const cellOf = cellMapFor(shift);
+      const present = new Set(cellOf.keys());
+      const roomOf = new Map<string, string>();
+      for (const [id, k] of cellOf) roomOf.set(id, cellByKey.get(k)?.room ?? k);
+      const fc: Record<string, number> = {};
+      for (const id of present) { const op = byIdAll.get(id); if (op) for (const f of factionsOf(op)) fc[f] = (fc[f] ?? 0) + 1; }
+      const tp = shift === 0 ? tokenPoints : {};
+      const amb = aurasOf(teamAtKey("CONTROL", shift), ctxFor("CONTROL", tp, fc, plants, present, undefined, roomOf, cellOf));
+      let total = 0;
+      for (const key of [...prodKeys, ...SUPPORT_KEYS]) {
+        if (key === "TRAINING" || PARK_KEYS.includes(key)) continue;
+        total += teamScore(teamAtKey(key, shift), cellByKey.get(key)!.room, ctxFor(key, tp, fc, plants, present, amb, roomOf, cellOf));
+      }
+      return total;
+    };
+    for (let shift = 0; shift < SHIFT_COUNT; shift += 1) {
+      const idx = Math.min(shift, (assignments["TRAINING"]?.length ?? 1) - 1);
+      if (!assignments["TRAINING"]) break;
+      // 두 조 통틀어 어느 근무 방에든 이미 들어간 오퍼는 제외 — A·B 동시 배치 금지 (§1)
+      const otherWorking = new Set<string>();
+      for (const key of [...prodKeys, ...SUPPORT_KEYS]) {
+        if (key === "TRAINING") continue;
+        for (const team of assignments[key] ?? []) for (const id of team) otherWorking.add(id);
+      }
+      for (let slot = 0; slot < slotsFor("TRAINING"); slot += 1) {
+        const cellOf = cellMapFor(shift);
+        const placed = new Set(cellOf.keys());
+        // 배치된 오퍼의 조건이 지목하는 미배치 오퍼만 후보 (훈련실을 조건 충족용으로만 쓴다)
+        const wanted = new Set<string>();
+        for (const [id, key] of cellOf) {
+          const op = byIdAll.get(id);
+          const cell = cellByKey.get(key);
+          if (!op || !cell) continue;
+          for (const skill of op.skills) {
+            if (!skillApplies(skill, cell.room, cell.product)) continue;
+            if (skill.workRooms?.includes("TRAINING")) for (const pid of skill.workPartners ?? []) wanted.add(pid);
+            if (skill.roomPartner?.room === "TRAINING") wanted.add(skill.roomPartner.id);
+            if (skill.perFacility) for (const pid of skill.perFacility.ids) wanted.add(pid);
+          }
+        }
+        const before = scoreExTraining(shift);
+        let best: { id: string; score: number } | null = null;
+        for (const op of roster) {
+          if (!wanted.has(op.id) || placed.has(op.id) || otherWorking.has(op.id) || reserved.has(op.id)) continue;
+          assignments["TRAINING"][idx] = [...(assignments["TRAINING"][idx] ?? []), op.id];
+          const after = scoreExTraining(shift);
+          assignments["TRAINING"][idx] = (assignments["TRAINING"][idx] ?? []).filter((id) => id !== op.id);
+          if (after > before + 1e-6 && (!best || after > best.score)) best = { id: op.id, score: after };
+        }
+        if (!best) break;
+        assignments["TRAINING"][idx] = [...(assignments["TRAINING"][idx] ?? []), best.id];
       }
     }
   }

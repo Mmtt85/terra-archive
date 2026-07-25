@@ -35,7 +35,9 @@
 
 ## 3. 픽스처 타입
 
-- `invariant` — 절대룰 검사: `noDualShift`(근무 방 A·B 중복 금지), `trainingEmpty`
+- `invariant` — 절대룰 검사: `noDualShift`(근무 방 A·B 중복 금지), `trainingEmpty`(훈련실 공실 —
+  **2026-07-25 사용자 정정으로 기본 픽스처에서 제외**. 조건 충족용 파킹이 허용되므로 절대룰이
+  아니다, INFRA-RULES §1. 검사 코드는 남아 있어 원하면 다시 켤 수 있다)
 - `planContains` — 전체 자동편성 결과에 특정 조합이 있어야 함.
   `roomKey`(특정 방) 또는 `roomType`(그 종류의 어느 한 방에 `allOf` 전원이 **함께**)
 - `teamCompare` — `teamScore(better) > teamScore(worse)` 직접 비교 (방·product 지정)
