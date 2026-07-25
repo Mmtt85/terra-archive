@@ -230,6 +230,45 @@
         "char_381_bubble",
         "char_163_hpsts"
       ]
+    },
+    {
+      "better": [
+        "char_4193_lemuen",
+        "char_1041_angel2"
+      ],
+      "name": "르무엔 '동반자'는 이격 엑시아도 발동",
+      "note": "이격 엑시아와도 +25% (60) > 같은 방 30% 범용(야토, 50). 확장 전엔 35라 역전됐다",
+      "product": "any",
+      "room": "TRADING",
+      "type": "teamCompare",
+      "worse": [
+        "char_4193_lemuen",
+        "char_502_nblade"
+      ]
+    },
+    {
+      "allOf": [
+        "char_4145_ulpia"
+      ],
+      "name": "숙소 파킹 — 울피아누스 숙소 고정",
+      "note": "'짝이 기지 어디든' 조건은 빈 숙소 주차로 켠다. 풀로스터는 A/B가 기각하므로 얇은 로스터로 검증",
+      "priority": "gold",
+      "roomType": "DORMITORY",
+      "roster": "thinTrade",
+      "shift": 0,
+      "type": "planContains"
+    },
+    {
+      "allOf": [
+        "char_4137_udflow"
+      ],
+      "name": "숙소 파킹 — 언더플로우 무역소 배치",
+      "note": "울피아누스가 숙소에 있으면 30% → 40%가 되어 무역소 자리를 얻는다",
+      "priority": "gold",
+      "roomType": "TRADING",
+      "roster": "thinTrade",
+      "shift": 0,
+      "type": "planContains"
     }
   ],
   "parser": {
@@ -326,5 +365,5 @@
     "주술 결정",
     "마물 요리"
   ],
-  "version": 7
+  "version": 8
 }

@@ -1200,7 +1200,7 @@ function seedSynergySet(def: SynergySetDef, roster: InfraOp[], used: Set<string>
   }
 }
 
-export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSets: FactionSets = {}, priority: ProdPriority = "gold", extraSeeds: { opId: string; room: string }[] = [], concentrate = true): Plan {
+export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSets: FactionSets = {}, priority: ProdPriority = "gold", extraSeeds: { opId: string; room: string }[] = [], concentrate = true, park = false): Plan {
   const prodKeys = PRIORITY_KEYS[priority];
   const assignments: Record<string, string[][]> = {};
   // 시설 카운트 스킬(타락사쿰·만트라)용 배치 지도 — 숙소·가공소까지 **모든 칸**을 센다.
@@ -1363,6 +1363,96 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
   // 보고, 조건이 실제로 미충족인 오퍼는 그 자리에서 더 나은 벤치 오퍼로 교체(없으면 제거)한다.
   // 조건 미충족 오퍼만 손대므로(그리디 결과를 갈아엎지 않음) 안전. 안정될 때까지 최대 5회.
   const byIdAll = new Map(roster.map((op) => [op.id, op]));
+
+  const teamAtKey = (key: string, shift: number): InfraOp[] =>
+    (assignments[key]?.[Math.min(shift, (assignments[key]?.length ?? 1) - 1)] ?? [])
+      .map((id) => byIdAll.get(id)).filter((op): op is InfraOp => Boolean(op));
+  // 근무 방 총점 (훈련실·가공소 제외) — 파킹이 "다른 방"에 이득을 줬을 때만 채택하는 판정치
+  const scoreExTraining = (shift: number): number => {
+    const cellOf = cellMapFor(shift);
+    const present = new Set(cellOf.keys());
+    const roomOf = new Map<string, string>();
+    for (const [id, k] of cellOf) roomOf.set(id, cellByKey.get(k)?.room ?? k);
+    const fc: Record<string, number> = {};
+    for (const id of present) { const op = byIdAll.get(id); if (op) for (const f of factionsOf(op)) fc[f] = (fc[f] ?? 0) + 1; }
+    const tp = shift === 0 ? tokenPoints : {};
+    const amb = aurasOf(teamAtKey("CONTROL", shift), ctxFor("CONTROL", tp, fc, plants, present, undefined, roomOf, cellOf));
+    let total = 0;
+    for (const key of [...prodKeys, ...SUPPORT_KEYS]) {
+      if (key === "TRAINING" || PARK_KEYS.includes(key)) continue;
+      total += teamScore(teamAtKey(key, shift), cellByKey.get(key)!.room, ctxFor(key, tp, fc, plants, present, amb, roomOf, cellOf));
+    }
+    return total;
+  };
+
+  // ── 숙소 파킹 (사용자 제보 2026-07-25: "언더플로우 + 울피아누스를 숙소에 고정시켜 쓴다") ──
+  // '짝이 기반시설(숙소 포함) 어디에든 있으면 +N%' 조건 — 언더플로우←울피아누스,
+  // Bellone←비질, 산크타 믹사파라토←피아메타 — 은 짝이 **일하지 않아도** 성립한다.
+  // 울피아누스는 훈련실 전용이라 자동편성이 어디에도 안 앉혔고, 그래서 이 조건은 영영
+  // 거짓이었다: 언더플로우가 30%로 평가돼 같은 30%인 야토·팽·굼 무리 뒤(무역소 후보 23위)로
+  // 밀렸다 — 짝이 있으면 40%로 3위. 여기서 교착이 하나 생긴다. 짝을 주차할 이유는 수혜
+  // 오퍼가 배치돼야 생기고, 수혜 오퍼가 배치되려면 짝이 먼저 있어야 한다. 그래서 감사 **전에**
+  // 씨앗 주차(seedParks)로 짝을 빈 숙소에 넣어 두고, 감사가 끝난 뒤 쓸모없어진 주차를 뺀다.
+  // 주차해도 근무 후보 자격은 유지한다 — 피아메타처럼 원래 일할 오퍼를 숙소에 가둬 응접실
+  // 자리를 잃으면 오히려 손해였다(-3.8). 근무에 뽑히면 그 즉시 숙소에서 뺀다.
+  const dormKeys = LAYOUT.filter((cell) => cell.room === "DORMITORY").map((cell) => cell.key);
+  const parked = new Set<string>();
+  const workKeysAll = [...prodKeys, ...SUPPORT_KEYS];
+  const workingSomewhere = (id: string) => workKeysAll.some((key) => (assignments[key] ?? []).some((team) => team.includes(id)));
+  const unparkOne = (id: string, mirror?: Set<string>) => {
+    for (const key of dormKeys) assignments[key][0] = (assignments[key][0] ?? []).filter((other) => other !== id);
+    parked.delete(id);
+    mirror?.delete(id);
+  };
+  const unparkEmployed = (mirror?: Set<string>) => {
+    for (const id of [...parked]) if (workingSomewhere(id)) unparkOne(id, mirror);
+  };
+  const freeDorm = () => dormKeys.find((key) => (assignments[key]?.[0]?.length ?? 0) < slotsFor(key));
+  // 로스터에 짝이 있는 조건은 전부 미리 주차 — 감사가 수혜 오퍼를 실제로 뽑을 기회를 준다
+  const seedParks = () => {
+    const partners = new Set<string>();
+    for (const op of roster) {
+      for (const skill of op.skills) {
+        if (!skill.basePartnerBonus) continue;
+        for (const pid of skill.basePartners ?? []) if (byIdAll.has(pid)) partners.add(pid);
+      }
+    }
+    for (const pid of partners) {
+      if (reserved.has(pid) || workingSomewhere(pid) || dormKeys.some((key) => (assignments[key]?.[0] ?? []).includes(pid))) continue;
+      const spot = freeDorm();
+      if (!spot) break;
+      assignments[spot][0] = [...(assignments[spot][0] ?? []), pid];
+      parked.add(pid);
+    }
+  };
+  // 편성이 확정된 뒤 정리 — 수혜 오퍼가 실제로 배치된 짝만 남기고, 새로 필요해진 짝은 넣는다
+  const parkEnablers = () => {
+    const wanted = new Set<string>();
+    for (let shift = 0; shift < SHIFT_COUNT; shift += 1) {
+      for (const [id, key] of cellMapFor(shift)) {
+        const op = byIdAll.get(id);
+        const cell = cellByKey.get(key);
+        if (!op || !cell) continue;
+        for (const skill of op.skills) {
+          if (!skill.basePartnerBonus || !skillApplies(skill, cell.room, cell.product)) continue;
+          for (const pid of skill.basePartners ?? []) wanted.add(pid);
+        }
+      }
+    }
+    for (const id of [...parked]) if (!wanted.has(id)) unparkOne(id);
+    const present = new Set<string>([...cellMapFor(0).keys(), ...cellMapFor(1).keys()]);
+    for (const pid of wanted) {
+      if (present.has(pid) || reserved.has(pid) || !byIdAll.has(pid)) continue;
+      const spot = freeDorm();
+      if (!spot) break;
+      const before = scoreExTraining(0) + scoreExTraining(1);
+      assignments[spot][0] = [...(assignments[spot][0] ?? []), pid];
+      if (scoreExTraining(0) + scoreExTraining(1) > before + 1e-6) { parked.add(pid); present.add(pid); }
+      else assignments[spot][0] = (assignments[spot][0] ?? []).filter((id) => id !== pid);
+    }
+  };
+  if (park) seedParks();
+
   for (let shift = 0; shift < SHIFT_COUNT; shift += 1) {
     for (let pass = 0; pass < 5; pass += 1) {
       const roomOf = new Map<string, string>();
@@ -1506,7 +1596,7 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
           const seedKeep = curTeam.filter((op) => reserved.get(op.id) === aKey && !packageReleasable(op));
           // 자유 풀 = 벤치 + 이 방의 현재 멤버 (같은 조 다른 방·반대 조 근무·숙소 고정·타방 예약 제외)
           const freeOps = roster.filter((op) =>
-            !dormIds.has(op.id) && !otherWork.has(op.id) &&
+            (!dormIds.has(op.id) || parked.has(op.id)) && !otherWork.has(op.id) &&  // 주차는 근무 후보 자격을 뺏지 않는다
             (!roomKeyOf.has(op.id) || roomKeyOf.get(op.id) === aKey) &&
             (!reserved.has(op.id) || reserved.get(op.id) === aKey));
           const score = (team: InfraOp[]) => teamScore(team, room, ctx);
@@ -1578,6 +1668,7 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
           if (newIds.join() !== (assignments[aKey][shift] ?? []).join()) {
             assignments[aKey][shift] = newIds;
             for (const d of bestDonors) assignments[d.fromKey][shift] = d.refill.map((o) => o.id);
+            unparkEmployed(dormIds);  // 주차해 뒀던 짝이 근무에 뽑혔으면 숙소에서 뺀다(이중 배치 방지)
             changed = true;
           }
         }
@@ -1604,7 +1695,7 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
           const ctxOf = (key: string) => ({ ...ctxFor(key, tp, factionCountsPerShift[shift], plants, present), roomOf: roomOfS, cellOf: cellOfS });
           const scoreOf = (key: string, team: InfraOp[]) => teamScore(team, cellByKey.get(key)?.room ?? key, ctxOf(key));
           const teamOf = (key: string) => (assignments[key]?.[shift] ?? []).map((id) => byIdAll.get(id)).filter((op): op is InfraOp => Boolean(op));
-          const bench = roster.filter((op) => !dormIds.has(op.id) && !roomKeyOf.has(op.id) && !otherWork.has(op.id) && !reserved.has(op.id));
+          const bench = roster.filter((op) => (!dormIds.has(op.id) || parked.has(op.id)) && !roomKeyOf.has(op.id) && !otherWork.has(op.id) && !reserved.has(op.id));
           // 후보 S = 벤치(이탈 비용 0) + 같은 조 다른 방 근무자(이탈 시 그 방을 벤치로 재충원한
           // 손실 g0 부담) — 미틈이 다른 무역소에 묶여 샤마르·테킬라 조합에 못 가는 케이스 회수
           const sources: { S: InfraOp; fromKey: string | null }[] = [
@@ -1729,7 +1820,7 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
       if (room === "DORMITORY") continue;
       for (const arr of assignments[key]) for (const id of arr) workingAny.add(id);
     }
-    const bench = roster.filter((op) => !workingAny.has(op.id) && !dormIds.has(op.id) && !reserved.has(op.id));
+    const bench = roster.filter((op) => !workingAny.has(op.id) && (!dormIds.has(op.id) || parked.has(op.id)) && !reserved.has(op.id));
     for (let shift = 0; shift < SHIFT_COUNT && bench.length; shift += 1) {
       const roomOfS = new Map<string, string>();
       for (const key of Object.keys(assignments)) {
@@ -1843,26 +1934,6 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
   // 훈련실 자체 산출(훈련 속도)을 노리고 채우지는 않으므로, ⓐ 후보는 **이미 배치된 오퍼의
   // 조건이 지목하는 오퍼**로만 한정하고 ⓑ 판정 점수에서 훈련실 자신은 뺀다.
   {
-    const teamAtKey = (key: string, shift: number): InfraOp[] =>
-      (assignments[key]?.[Math.min(shift, (assignments[key]?.length ?? 1) - 1)] ?? [])
-        .map((id) => byIdAll.get(id)).filter((op): op is InfraOp => Boolean(op));
-    // 훈련실을 뺀 기지 총점 — 파킹이 "다른 방"에 이득을 줬을 때만 채택하기 위한 판정치
-    const scoreExTraining = (shift: number): number => {
-      const cellOf = cellMapFor(shift);
-      const present = new Set(cellOf.keys());
-      const roomOf = new Map<string, string>();
-      for (const [id, k] of cellOf) roomOf.set(id, cellByKey.get(k)?.room ?? k);
-      const fc: Record<string, number> = {};
-      for (const id of present) { const op = byIdAll.get(id); if (op) for (const f of factionsOf(op)) fc[f] = (fc[f] ?? 0) + 1; }
-      const tp = shift === 0 ? tokenPoints : {};
-      const amb = aurasOf(teamAtKey("CONTROL", shift), ctxFor("CONTROL", tp, fc, plants, present, undefined, roomOf, cellOf));
-      let total = 0;
-      for (const key of [...prodKeys, ...SUPPORT_KEYS]) {
-        if (key === "TRAINING" || PARK_KEYS.includes(key)) continue;
-        total += teamScore(teamAtKey(key, shift), cellByKey.get(key)!.room, ctxFor(key, tp, fc, plants, present, amb, roomOf, cellOf));
-      }
-      return total;
-    };
     for (let shift = 0; shift < SHIFT_COUNT; shift += 1) {
       const idx = Math.min(shift, (assignments["TRAINING"]?.length ?? 1) - 1);
       if (!assignments["TRAINING"]) break;
@@ -1902,6 +1973,9 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
       }
     }
   }
+  // 편성 확정 — 씨앗 주차 중 수혜 오퍼가 결국 배치되지 않은 짝은 숙소에서 빼고(이유 없는
+  // 숙소 인원은 편성을 읽을 수 없게 만든다), 새로 필요해진 짝은 이득일 때만 넣는다.
+  if (park) parkEnablers();
 
   // ledger: recount per-member generators against the actual A-crew roster,
   // then record who cashes the points in
@@ -1992,7 +2066,7 @@ export type OptimizeStep = { phase: "base" | "variant" | "final"; index?: number
 // optimize가 고른 전략(토큰 패키지·시너지 세트)까지 함께 반환 — 육성 추천(planner-invest)이
 // 후보마다 전체 재탐색을 반복하지 않고, 이 config를 재사용해 buildPlan을 1회만 돌려 빠르게
 // 반사실 평가를 하도록 한다 (2026-07-21 성능: 후보당 buildPlan 15회 → 1회).
-export type OptimizeResult = { plan: Plan; tokenChoice: string[]; factionSets: FactionSets };
+export type OptimizeResult = { plan: Plan; tokenChoice: string[]; factionSets: FactionSets; park: boolean };
 export async function optimizeConfig(roster: InfraOp[], priority: ProdPriority = "gold", onStep?: (step: OptimizeStep) => void | Promise<void>): Promise<OptimizeResult> {
   // 진행 콜백(페이싱 포함) 후 매크로태스크 양보 — 브라우저가 안내 문구를 리페인트할 틈을 준다
   const tick = async (step: OptimizeStep) => {
@@ -2062,9 +2136,26 @@ export async function optimizeConfig(roster: InfraOp[], priority: ProdPriority =
   if (variants.length > 15) variants.length = 15;
   // 채택 config에 최종 ⑤(우선 생산 집중)를 입혀 반환 — 탐색은 ⑤-무관이라 선택이 원래대로 유지되고,
   // 여기서만 planScore 단조 개선(무승부 이상)을 얹는다. 밸런스는 ⑤가 no-op이라 그대로.
-  const withConcentration = (tokens: string[], sets: FactionSets, seeds: { opId: string; room: string }[]) =>
-    (priority === "gold" || priority === "exp") ? buildPlan(tokens, roster, sets, priority, seeds, true) : buildPlan(tokens, roster, sets, priority, seeds, false);
-  if (!variants.length) return { plan: withConcentration(tokenChoice, {}, []), tokenChoice, factionSets: {} };
+  const withConcentration = (tokens: string[], sets: FactionSets, seeds: { opId: string; room: string }[], park = false) =>
+    (priority === "gold" || priority === "exp") ? buildPlan(tokens, roster, sets, priority, seeds, true, park) : buildPlan(tokens, roster, sets, priority, seeds, false, park);
+  // 숙소 파킹 A/B — '짝이 기지 어디든 있으면 +N%'(언더플로우←울피아누스 등)를 켜려고 노는 짝을
+  // 빈 숙소에 주차한 안을 따로 만들고, **planScore가 실제로 오를 때만** 채택한다. 로스터가 두꺼우면
+  // 대체 후보가 많아 파킹이 부른 재편성이 르무엔+엑시아 같은 기존 조합을 깨 손해일 수도 있다
+  // (404명 박스 −3.8) — 그래서 규칙이 아니라 후보안이다. 켤 짝이 없으면 아예 안 돌린다.
+  const finish = (tokens: string[], sets: FactionSets, seeds: { opId: string; room: string }[]): OptimizeResult => {
+    const plain = withConcentration(tokens, sets, seeds);
+    const pairIds = new Set<string>();
+    for (const op of roster) for (const skill of op.skills) {
+      if (skill.basePartnerBonus) for (const pid of skill.basePartners ?? []) if (byId.has(pid)) pairIds.add(pid);
+    }
+    const idle = [...pairIds].some((pid) => !presentIdsFor(plain, 0).has(pid) && !presentIdsFor(plain, 1).has(pid));
+    if (!idle) return { plan: plain, tokenChoice: tokens, factionSets: sets, park: false };
+    const parkedPlan = withConcentration(tokens, sets, seeds, true);
+    return planScore(parkedPlan, byId) > planScore(plain, byId) + 1e-6
+      ? { plan: parkedPlan, tokenChoice: tokens, factionSets: sets, park: true }
+      : { plan: plain, tokenChoice: tokens, factionSets: sets, park: false };
+  };
+  if (!variants.length) return finish(tokenChoice, {}, []);
   let best = base;
   let bestScore = planScore(base, byId);
   let bestSets: FactionSets = {};
@@ -2121,7 +2212,7 @@ export async function optimizeConfig(roster: InfraOp[], priority: ProdPriority =
   } else {
     await tick({ phase: "final" });
   }
-  return { plan: withConcentration(tokenChoice, bestSets, bestSeeds), tokenChoice, factionSets: bestSets };
+  return finish(tokenChoice, bestSets, bestSeeds);
 }
 
 // 얇은 래퍼 — 편성만 필요한 호출부(planner.tsx·verify-plan)는 종전대로 Plan을 받는다.

@@ -44,6 +44,11 @@ const rosters = {
   no56: released.filter((o) => o.rarity <= 4),
   evenSeq: released.filter((o) => o.seq % 2 === 0),
   early150: [...released].sort((a, b) => a.seq - b.seq).slice(0, 150),
+  // 무역소 후보가 얇은 박스 + '기지 어디든' 짝 한 쌍 — 숙소 파킹(언더플로우←울피아누스)이
+  // 실제로 이득이 되는 상황. 풀로스터는 대체 후보가 많아 파킹 A/B가 기각하므로 별도 로스터가
+  // 필요하다 (INFRA-RULES §1 숙소 파킹, 사용자 제보 2026-07-25)
+  thinTrade: [...[...released].sort((a, b) => a.seq - b.seq).slice(0, 150),
+    ...released.filter((o) => ["char_4137_udflow", "char_4145_ulpia"].includes(o.id))],
 };
 
 const planCache = new Map();
