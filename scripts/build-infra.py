@@ -865,6 +865,18 @@ def parse_skill(entry, oname, oid=None):
                 and name_to_id[_p1.group(1)] not in partners_list:
             partners_list.append(name_to_id[_p1.group(1)])
         _base_text, _cond = detect_cond_bonus(text, oname, oid)
+        # 조건의 이름이 **게임 용어 링크**로 표기돼 있으면(<$cc.angel>엑시아</>), 그 용어가
+        # 정의하는 명단 전원이 조건을 만족한다 — 르무엔 '동반자'의 "엑시아"는 원본과 이격
+        # (엑시아 더 뉴 커버넌트) 둘 다 +25%를 발동시킨다 (사용자 확인 2026-07-25, 스킬 원문
+        # 기준). detect_cond_bonus는 이름→id 1:1이라 이격이 빠지던 자리. 용어 라벨이 그 조건
+        # 오퍼의 이름과 같을 때만 편다 — 진영 용어(시라쿠사 등)가 섞인 스킬에서 명단이
+        # 통째로 부풀지 않도록.
+        # 확장은 같은 방/타방 **동반 조건**(condBonus)에만 — basePartners는 절이 여럿 쌓이는
+        # AND 명단이라(울피아누스류) 명단을 부풀리면 조건이 영영 거짓이 된다.
+        if _cond and _cond["type"] in ("roomPartner", "crossRoom") and _cond.get("ids"):
+            for _tk, _tl in (entry.get("termRefs") or []):
+                if (OP_NAME_ID.get(_tl) or name_to_id.get(_tl)) in _cond["ids"]:
+                    _cond["ids"] = list(dict.fromkeys(_cond["ids"] + term_ops(_tk)))
         if _cond and _cond["type"] == "perFacBase" and not _cond.get("bonus"):
             # 뮤엘시스: 기본 flat + "진영 1명당 +V%(≤cap)". 모건류(bonus 동반)는 자기-카운트
             # 복잡성 때문에 제외 — 별도 후속 (INFRA-RULES 노트). per값은 '1명당' 직후 값.

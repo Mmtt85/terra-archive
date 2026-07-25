@@ -1517,8 +1517,8 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
       const cb = skill.condBonus;
       const ids = cb.ids ?? [];
       if (ids.length) {
-        // ⚠ 명단은 스킬이 지목한 id만 쓴다 — 르무엔 '동반자'의 엑시아는 **원본 엑시아만**
-        //   해당하고 이격(엑시아 더 뉴 커버넌트)은 대상이 아니다 (사용자 확인 2026-07-25).
+        // 명단은 스킬이 지목한 id(condBonus.ids)를 그대로 쓴다 — 이름이 용어 링크인 조건은
+        // 빌드 때 용어 명단으로 확장돼 있다(르무엔 '동반자' = 엑시아 + 이격 둘 다).
         const chips = ids.map((id) => opById.get(id) ?? opMap.get(id))
           .filter((partner): partner is InfraOp => Boolean(partner))
           .map((partner) => ({ op: partner, on: cb.room ? typeTeamIds(cb.room).has(partner.id) : teamIds.has(partner.id) }));
@@ -1653,8 +1653,8 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
     }
     // 용어 명단 폴백 — 스킬이 참조하는 게임 용어가 오퍼 명단으로 정의된 그룹(쉐이·정예
     // 오퍼레이터·라이오스 파티·작업 플랫폼 등)이면 그 오퍼들을 칩으로 보여 준다.
-    // 위에서 **지목 id로 이미 관계를 편 스킬은 건너뛴다** — 르무엔 '동반자'에 용어 명단
-    // (엑시아 + 엑시아 더 뉴 커버넌트)을 덧붙이면 대상이 아닌 이격까지 표시된다.
+    // 위에서 **지목 id로 이미 관계를 편 스킬은 건너뛴다** — 같은 명단이 두 줄로 중복된다
+    // (르무엔 '동반자'의 엑시아 2명은 condBonus 줄이 이미 보여 준다).
     const named = Boolean(skill.condBonus?.ids?.length || skill.partners.length || skill.basePartners?.length
       || skill.workPartners?.length || skill.roomPartner || skill.perFacility || skill.reqGroup);
     if (!named) {

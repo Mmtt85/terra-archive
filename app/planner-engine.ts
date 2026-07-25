@@ -687,11 +687,15 @@ export function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx):
     // 게이트와 같은 관례로 roomOf 없으면 낙관 통과, 있으면 엄격 판정.
     if (skill.condBonus) {
       const cb = skill.condBonus;
+      // ids는 **조건이 지목한 한 오퍼**(용어 링크면 그 용어의 명단 전원)라 판정은 OR다 —
+      // 르무엔 '동반자'의 "엑시아"는 원본·이격 아무나 같은 방이면 +25% (사용자 확인 2026-07-25).
+      // AND로 두면 명단이 2명 이상인 순간 조건이 영원히 거짓이 된다(엠브리엘+이격엑시아+르무엔
+      // = 105가 80으로 나오던 자리). 두 오퍼를 동시에 요구하는 조건은 basePartners 쪽 규약.
       const ok = cb.faction
         ? team.some((m) => m.id !== op.id && factionsOf(m).includes(cb.faction!))
         : cb.room
-          ? (!ctx.roomOf || (cb.ids ?? []).every((id) => ctx.roomOf!.get(id) === cb.room))
-          : (cb.ids ?? []).every((id) => teamIds.has(id));
+          ? (!ctx.roomOf || (cb.ids ?? []).some((id) => ctx.roomOf!.get(id) === cb.room))
+          : (cb.ids ?? []).some((id) => teamIds.has(id));
       if (ok) out.efficiency += cb.value;
     }
     // 용량 기여(오더 상한/창고 용량) + 변환기 수집. perFaction(노시스 '쉐라그 1명당 +6')은
