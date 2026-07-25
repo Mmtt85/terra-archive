@@ -11490,3 +11490,12 @@ main.site-main > .site-header {
   font-weight: 700;
   white-space: nowrap;
 }
+/* 통합전략 자료 자동 로딩 상태 (버튼이 아니라 안내 — 사용자 요청 2026-07-25) */
+.omni-loading {
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 700;
+}
+.omni-loading::before {
+  content: "⋯ ";
+}

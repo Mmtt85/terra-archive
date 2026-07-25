@@ -1421,7 +1421,6 @@ const D: Record<string, Pair> = {
   "검색 결과": ["Search results", "検索結果"],
   "‘{q}’와(과) 관련된 항목을 찾지 못했어요.": ["Nothing on the site matches “{q}”.", "「{q}」に関連する項目は見つかりませんでした。"],
   "통합전략 데이터를 불러오지 못했어요 — 잠시 후 다시 시도해 주세요.": ["Couldn't load the Integrated Strategies data — please try again in a moment.", "ローグライクのデータを読み込めませんでした — しばらくしてからもう一度お試しください。"],
-  "통합전략 세부 항목까지 찾기": ["Also search Integrated Strategies entries", "ローグライクの項目も検索"],
   "통합전략 데이터를 불러오는 중…": ["Loading Integrated Strategies data…", "ローグライクのデータを読み込み中…"],
   "↑↓ 이동 · ⏎ 바로가기 · Esc 닫기": ["↑↓ move · ⏎ go · Esc close", "↑↓ 移動 · ⏎ 移動 · Esc 閉じる"],
   "사이트 기능": ["Site tool", "サイト機能"],

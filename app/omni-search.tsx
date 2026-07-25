@@ -103,6 +103,7 @@ export default function OmniSearch({ roster, nicknames, includeFuture, extra, on
 
   useEffect(() => { if (open) inputRef.current?.focus(); }, [open]);
 
+
   // Esc는 창 전체에서 받는다 — [바로가기] 버튼을 눌러 포커스가 입력란을 떠난 뒤에도 닫히게
   // (전역 esc-close.ts는 .modal-backdrop만 다루므로 이 패널은 스스로 처리한다)
   useEffect(() => {
@@ -166,6 +167,20 @@ export default function OmniSearch({ roster, nicknames, includeFuture, extra, on
       setBusy(false);
     }
   };
+
+  // 통합전략 세부 항목(2.9MB)은 **알아서** 불러온다 (사용자 요청 2026-07-25: 버튼 없이 바로 찾기).
+  // 조건: 가벼운 색인이 빈손이거나, 검색어가 통합전략을 가리킬 때. 한 세션에 한 번뿐이고
+  // 통합전략을 안 찾는 사람은 영영 안 받는다. (setTimeout = 이펙트 안 동기 setState 회피)
+  useEffect(() => {
+    if (!open || rogueItems || busy || !term.trim()) return;
+    const hint = splitHint(normSearch(term), hints);
+    const wantsRogue = !hits.length || hint?.kinds.some((kind) => kind === "rogue" || kind === "topic");
+    if (!wantsRogue) return;
+    const timer = window.setTimeout(() => { void loadRogue(); }, 0);
+    return () => window.clearTimeout(timer);
+    // loadRogue·hints는 렌더마다 새로 만들어지지만 하는 일이 같다 (term 기준으로만 재시도)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, term, hits.length, rogueItems, busy]);
 
   // 되묻기로 전환 — 포커스를 입력란으로 되돌려 ↑↓·⏎로 바로 고를 수 있게 한다
   const askUser = () => { setAsk(true); setActive(0); inputRef.current?.focus(); };
@@ -247,14 +262,7 @@ export default function OmniSearch({ roster, nicknames, includeFuture, extra, on
         )}
 
         <div className="omni-foot">
-          {!rogueItems && term.trim() && (
-            <button type="button" className="omni-more" onClick={() => void (async () => {
-              const extraItems = await loadRogue();
-              if (extraItems.length) { setTerm(rawRef.current); askUser(); }
-            })()} disabled={busy}>
-              {busy ? t("통합전략 데이터를 불러오는 중…") : t("통합전략 세부 항목까지 찾기")}
-            </button>
-          )}
+          {busy && <span className="omni-loading">{t("통합전략 데이터를 불러오는 중…")}</span>}
           <span className="omni-hint">{t("↑↓ 이동 · ⏎ 바로가기 · Esc 닫기")}</span>
         </div>
       </div>
