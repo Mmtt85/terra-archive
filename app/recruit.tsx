@@ -3,6 +3,7 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import recruitData from "./data/recruit.json";
 import { useI18n, rich, type ExtraI18n } from "./i18n";
+import { HANDOFF_EVENT, takeHandoff } from "./handoff";
 import { isNewFeature } from "./whats-new";
 import type { LensGoto } from "./lens/match";
 import { recognizeShot, warmData } from "./lens/run";
@@ -178,6 +179,21 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
     }
   };
   const clearAll = () => { setQuick(""); setManualOn([]); setManualOff([]); };
+
+  // 헤더 만능검색이 태그를 지목하면 그 태그를 켠 상태로 시작한다 (app/handoff.ts).
+  // 태그 정본은 KR 이름이라 로케일과 무관하게 그대로 받는다.
+  useEffect(() => {
+    const apply = () => {
+      const h = takeHandoff("recruit");
+      if (!h?.tags?.length) return;
+      setQuick("");
+      setManualOff([]);
+      setManualOn(h.tags.filter((tag) => ALL_TAG_NAMES.includes(tag)).slice(0, 5));
+    };
+    apply();
+    window.addEventListener(HANDOFF_EVENT, apply);
+    return () => window.removeEventListener(HANDOFF_EVENT, apply);
+  }, []);
 
   // 스샷으로 태그 입력 (페이지 내 설치, 사용자 확정 2026-07-23) — 인식된 태그를 바로 선택
   const [lensOpen, setLensOpen] = useState(false);

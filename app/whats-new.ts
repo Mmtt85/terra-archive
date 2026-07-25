@@ -7,6 +7,7 @@ export const FEATURE_RELEASED: Record<string, string | { date: string; days: num
   invest: { date: "2026-07-24", days: 3 }, // 인프라 오퍼 육성 추천 (사용자 지정 3일)
   "rogue-inv": "2026-07-24", // 통합전략 보유 리스트 — 소장품·테마 자원 인벤토리 (피드백 반영)
   "layout-153": "2026-07-24", // 인프라 플래너 기지 배치 153 프리셋 (무역 1·제조 5·발전 3)
+  omni: "2026-07-25", // 헤더 만능검색 — 단어 하나로 사이트 안 아무 컨텐츠나 찾아 이동
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;

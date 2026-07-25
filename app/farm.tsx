@@ -14,6 +14,7 @@ import costsData from "./data/costs.json";
 import type { Operator } from "./home";
 import { useI18n, type Locale } from "./i18n";
 import { normSearch } from "./search";
+import { HANDOFF_EVENT, takeHandoff } from "./handoff";
 
 type LocText = { ko: string; en?: string; ja?: string };
 type FarmStage = {
@@ -56,7 +57,8 @@ const costs = costsData as unknown as CostsData;
 // 화면에 뿌릴 재료 통합 목록 — 효율표(파밍 가능) + costs 사전(칩·조합 T5 등 파밍 불가).
 // 파밍 불가 재료도 정보는 봐야 하므로(2026-07 사용자 확정) stages 없이 카드로 노출한다.
 type MaterialCard = { id: string; name: LocText; rarity: number; sortId: number; image: string; stages: FarmStage[]; farmable: boolean; unreleased: boolean };
-const ALL_MATERIALS: MaterialCard[] = (() => {
+// 헤더 만능검색(omni.ts)도 이 목록을 그대로 색인한다 — 재료 이름·별칭의 정본은 여기 하나뿐
+export const ALL_MATERIALS: MaterialCard[] = (() => {
   const map = new Map<string, MaterialCard>();
   for (const item of data.items) map.set(item.id, { ...item, farmable: true, unreleased: false });
   for (const [id, meta] of Object.entries(costs.items)) {
@@ -73,7 +75,7 @@ const TIERS = Array.from(new Set(ALL_MATERIALS.map((item) => item.rarity))).sort
 // 커뮤니티 별칭 검색 (사용자 확정 2026-07-14) — 데이터 재생성과 무관하게 여기서 관리.
 // 오줌=아케톤, 돌=원암+RMA70-24, 장치/좆치=장치류, 방석=연마석, 젤리=콜(로식·화이트 호스),
 // 별사탕=RMA70 계열. 한국어 은어라 로케일과 무관하게 항상 검색에 걸린다.
-const SEARCH_ALIASES: Record<string, string[]> = {
+export const MATERIAL_ALIASES: Record<string, string[]> = {
   "30011": ["돌"], "30012": ["돌"], "30013": ["돌"], "30014": ["돌"],
   "30051": ["오줌"], "30052": ["오줌"], "30053": ["오줌"], "30054": ["오줌"],
   "30061": ["장치", "좆치"], "30062": ["장치", "좆치"], "30063": ["장치", "좆치"], "30064": ["장치", "좆치"],
@@ -135,6 +137,20 @@ export default function FarmGuide({ includeFuture }: { includeFuture: boolean })
   const toggleTier = (tier: number) =>
     setTiers((current) => (current.includes(tier) ? current.filter((value) => value !== tier) : [...current, tier]));
 
+  // 헤더 만능검색이 재료를 지목하면 상세 모달을 연다 — 탭 전환이면 마운트 시, 이미 파밍 탭이면
+  // 이벤트로 (app/handoff.ts). 필터가 걸려 있으면 카드가 안 보일 수 있어 등급 필터도 푼다.
+  useEffect(() => {
+    const apply = () => {
+      const h = takeHandoff("farm");
+      if (!h) return;
+      if (h.item) { setShownItem(h.item); setTiers([]); setQuery(""); }
+      else if (h.query) { setQuery(h.query); setTiers([]); }
+    };
+    apply();
+    window.addEventListener(HANDOFF_EVENT, apply);
+    return () => window.removeEventListener(HANDOFF_EVENT, apply);
+  }, []);
+
   const visible = useMemo(() => {
     const keyword = normSearch(query);
     return ALL_MATERIALS
@@ -149,7 +165,7 @@ export default function FarmGuide({ includeFuture }: { includeFuture: boolean })
         (tiers.length === 0 || tiers.includes(item.rarity)) &&
         (!keyword ||
           normSearch([item.name.ko, item.name.en, item.name.ja].filter(Boolean).join(" ")).includes(keyword) ||
-          (SEARCH_ALIASES[item.id] ?? []).some((alias) => normSearch(alias).includes(keyword))));
+          (MATERIAL_ALIASES[item.id] ?? []).some((alias) => normSearch(alias).includes(keyword))));
   }, [tiers, query, permOnly, includeFuture]);
 
   return (

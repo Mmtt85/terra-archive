@@ -11,6 +11,9 @@ import InfraPlanner from "./planner";
 import RecruitHelper from "./recruit";
 import FarmGuide, { UpgradeSim } from "./farm";
 import { normSearch } from "./search";
+import OmniSearch from "./omni-search";
+import type { OmniTarget } from "./omni";
+import { notifyHandoff, stashHandoff } from "./handoff";
 import StoryGuide, { type StorySummaries, type OpIndex } from "./story";
 import RogueGuide, { TOPICS as ROGUE_TOPICS, slugOf as rogueSlugOf } from "./rogue";
 import About from "./about";
@@ -1007,6 +1010,45 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
     history.pushState(null, "", `${path}?${params}`);
     window.dispatchEvent(new CustomEvent("ta:rogue-topic"));
   };
+  // 헤더 만능검색의 이동 — 종류별로 **기존** 딥링크·핸드오프 경로를 그대로 탄다
+  // (오퍼=#op- 해시 모달, 스토리=#story- 해시, 통합전략=스샷 레이더 핸드오프,
+  //  파밍·공채=탭 내부 상태라 sessionStorage 우편함). 새 라우팅을 만들지 않는다.
+  const runOmni = (target: OmniTarget) => {
+    switch (target.kind) {
+      case "tab":
+        switchTab(target.tab);
+        break;
+      case "op": {
+        const operator = operators.find((candidate) => candidate.id === target.id);
+        if (!operator) return;
+        startTransition(() => setSelected(operator));
+        history.replaceState(null, "", `${tabPath(tab)}#op-${target.id}`);
+        break;
+      }
+      case "story":
+        // 스토리 상세는 해시로 연다 — 탭 전환보다 URL을 먼저 맞춰 두고(마운트 시 읽는다),
+        // 이미 스토리 탭이면 hashchange로 깨운다 (pushState/replaceState는 hashchange를 안 쏜다)
+        switchTab("story");
+        history.replaceState(null, "", `${tabPath("story")}#story-${target.id}`);
+        window.dispatchEvent(new Event("hashchange"));
+        break;
+      case "rogue":
+        // 세부 항목(유물·조우…)은 스샷 레이더와 같은 우편함으로 넘긴다 — rogue.tsx가 소비
+        if (target.goto) { try { sessionStorage.setItem("ta:lens-handoff", JSON.stringify(target.goto)); } catch { /* ignore */ } }
+        switchRogueTopic(target.topic);
+        break;
+      case "recruit":
+        stashHandoff({ page: "recruit", tags: target.tags });
+        switchTab("recruit");
+        notifyHandoff();
+        break;
+      case "farm":
+        stashHandoff({ page: "farm", item: target.item });
+        switchTab("farm");
+        notifyHandoff();
+        break;
+    }
+  };
   const [sortKey, setSortKey] = useState("기본");
   const [sortAsc, setSortAsc] = useState(true);
 
@@ -1127,6 +1169,8 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
         {/* 진행중 이벤트 배지 — 1줄(접힘 상태에도 표시). 공식 방송 버튼은 확장부로 내려갔다
             (사용자 요청 2026-07-25 — 미래시 토글 왼쪽). */}
         <BroadcastBadges includeFuture={includeFuture} slot="events" />
+        {/* 만능검색 = 1줄 오른쪽(햄버거 왼쪽) — 헤더를 접어도 남는다 (사용자 요청 2026-07-25) */}
+        <OmniSearch roster={roster} nicknames={nicknames} includeFuture={includeFuture} extra={extra} onGo={runOmni} />
         {/* 햄버거(메뉴) = 1줄 오른쪽 끝 — 데스크탑·모바일 공통 (사용자 확정 2026-07-22).
             모바일은 order로, 데스크탑은 margin-left:auto로 배치되므로 JSX 위치는 자유. */}
         <div className="nav-group">

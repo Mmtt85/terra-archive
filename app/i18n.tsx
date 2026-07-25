@@ -1408,6 +1408,30 @@ const D: Record<string, Pair> = {
   "{n}명 보유로 추가": ["Add {n} as owned", "{n}名を所持に追加"],
   "스캐너 불러오는 중…": ["Loading scanner…", "スキャナーを読み込み中…"],
   "스캔 결과 {n}명을 반영했습니다 — 확인 후 '적용 및 자동편성 실행'을 누르세요.": ["Reflected {n} operators from the scan — review, then press 'Apply & Auto-plan'.", "スキャン結果{n}名を反映しました — 確認して「適用して自動編成」を押してください。"],
+
+  // 헤더 만능검색 (omni-search.tsx / omni.ts)
+  "검색": ["Search", "検索"],
+  "사이트 통합 검색": ["Search the whole site", "サイト内検索"],
+  "사이트 통합 검색 (⌘K)": ["Search the whole site (⌘K)", "サイト内検索（⌘K）"],
+  "오퍼레이터 · 재료 · 스토리 · 통합전략 · 기능 검색": ["Operators, materials, stories, IS, tools…", "オペレーター・素材・ストーリー・ローグライク・機能を検索"],
+  "바로가기": ["Go", "移動"],
+  "찾는 중…": ["Searching…", "検索中…"],
+  "이 중에 무엇인가요?": ["Which one did you mean?", "この中のどれですか？"],
+  "검색 결과": ["Search results", "検索結果"],
+  "‘{q}’와(과) 관련된 항목을 찾지 못했어요.": ["Nothing on the site matches “{q}”.", "「{q}」に関連する項目は見つかりませんでした。"],
+  "통합전략 데이터를 불러오지 못했어요 — 잠시 후 다시 시도해 주세요.": ["Couldn't load the Integrated Strategies data — please try again in a moment.", "ローグライクのデータを読み込めませんでした — しばらくしてからもう一度お試しください。"],
+  "통합전략 세부 항목까지 찾기": ["Also search Integrated Strategies entries", "ローグライクの項目も検索"],
+  "통합전략 데이터를 불러오는 중…": ["Loading Integrated Strategies data…", "ローグライクのデータを読み込み中…"],
+  "↑↓ 이동 · ⏎ 바로가기 · Esc 닫기": ["↑↓ move · ⏎ go · Esc close", "↑↓ 移動 · ⏎ 移動 · Esc 閉じる"],
+  "사이트 기능": ["Site tool", "サイト機能"],
+  "통합전략 테마": ["IS theme", "ローグライクテーマ"],
+  "메인 스토리": ["Main story", "メインストーリー"],
+  "이벤트 스토리": ["Event story", "イベントストーリー"],
+  "재료": ["Material", "素材"],
+  "공채 태그": ["Recruit tag", "公開求人タグ"],
+  "구역": ["Zone", "エリア"],
+  "음반": ["Record", "レコード"],
+  "부품": ["Scrap", "パーツ"],
 };
 
 export type T = (key: string, vars?: Record<string, string | number>) => string;

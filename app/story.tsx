@@ -72,7 +72,7 @@ const scriptIdsByLocale: Record<string, Set<string>> = {
   ja: new Set(scriptIdsJaData as string[]),
 };
 // 전문(풀 스크립트)이나 AI 요약 중 하나만 있어도 열 수 있다 (사용자 확정 2026-07-20).
-const canOpenStory = (id: string) => summaryIds.has(id) || scriptIds.has(id);
+export const canOpenStory = (id: string) => summaryIds.has(id) || scriptIds.has(id);
 
 // 전문(풀 스크립트) 스키마 — build-story-scripts.py 라인 스키마와 1:1
 type ScriptLine = { n?: string; x?: string; st?: string; img?: string; loc?: string; opts?: string[]; vals?: string[]; br?: string };

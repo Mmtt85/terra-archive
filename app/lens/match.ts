@@ -435,3 +435,20 @@ function gotoFor(topic: string, section: string, entities: LensEntity[]): LensGo
   else if (cohort.length) g.highlight = cohort.map((e) => e.id);
   return g;
 }
+
+/** 엔티티 **1건**의 이동 목표 — 헤더 만능검색(omni.ts)이 검색 결과 한 줄을 이동시킬 때 쓴다.
+ *  스샷 렌즈의 gotoFor는 "한 화면에서 인식된 여러 항목"을 묶는 cohort 규칙이라 서로 다르다. */
+export function gotoForEntity(e: { topic: string; section: string; id: string; arc?: string }): LensGoto | null {
+  if (ITEM_SECTIONS.has(e.section)) {
+    if (e.section === "relic") return { page: "rogue", topic: e.topic, view: "relic", modal: { type: "relic", id: e.id } };
+    const arcTab = e.section === "mech" ? e.arc : SECTION_NAV[e.section]?.arcTab;
+    return { page: "rogue", topic: e.topic, view: "archive", ...(arcTab ? { arcTab } : {}), highlight: [e.id] };
+  }
+  const nav = SECTION_NAV[e.section];
+  if (!nav) return null;
+  const g: LensGoto = { page: "rogue", topic: e.topic, view: nav.view };
+  if (nav.arcTab) g.arcTab = nav.arcTab;
+  if (nav.modalType) g.modal = { type: nav.modalType, id: e.id };
+  else g.highlight = [e.id];
+  return g;
+}
