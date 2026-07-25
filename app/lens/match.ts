@@ -223,6 +223,9 @@ const SECTION_NAV: Record<string, { view: string; arcTab?: string; modalType?: s
 // 현재 토픽의 표를 배수로 키운다. 동점(분대 선택)은 현재 토픽으로 자동 확정되고,
 // 다른 토픽의 강한 증거(스테이지명 등, 통상 10~20배)는 그대로 이긴다.
 const CTX_BOOST = 1.6;
+// 현재 테마를 버리고 갈아타려면 다른 테마가 이만큼 압도해야 한다 (사용자 확정 2026-07-26 —
+// 한 판 도는 중에 테마가 바뀌는 일은 없으므로, 애매하면 무조건 지금 테마가 맞다)
+const SWITCH_MARGIN = 2.5;
 
 export function analyzeLines(
   rawLines: string[],
@@ -244,8 +247,54 @@ export function analyzeLines(
     topicNames.set(e.topic, e.topicName);
     if (h.score >= SOLID) solidsAll.push({ topic: e.topic, topicName: e.topicName, section: e.section, id: e.id, name: e.name, score: h.score, arc: e.arc, nameHit: h.nameHit });
   }
-  // 현재 토픽 사전확률 부스트
   const ctxTopic = opts?.context?.topic;
+
+  // ── 테마 고정 (사용자 확정 2026-07-26) ─────────────────────────────────────
+  // "사미록라 메인화면을 띄우면 사이트도 사미록라를 띄우고, 그 뒤 진행하는 화면은
+  //  제일 먼저 사미라고 판단해야 한다. 지금은 사미 보다가 갑자기 쉐이로 넘어간다."
+  //
+  // ① 앵커 — 화면에 테마 **이름**이 그대로 보이면 그것이 결정적이다. 테마 메인·로비가
+  //    전형이고, 이름이 보이는데 다른 테마로 넘어가는 일은 있을 수 없다.
+  const anchor = (() => {
+    const seen = new Set<string>();
+    for (const e of index.entries) {
+      if (seen.has(e.topic)) continue;
+      seen.add(e.topic);
+      const nm = norm(e.topicName);
+      if (nm.length >= 5 && linesN.some((l) => l.includes(nm))) return { topic: e.topic, name: e.topicName };
+    }
+    return null;
+  })();
+  if (anchor) {
+    const w = within(anchor.topic, linesN, index);
+    // 이름만 보이고 항목이 없다 = 테마 메인 화면 → 그 테마의 지도로 보낸다
+    const goto: LensGoto = w ? w.goto : { page: "rogue", topic: anchor.topic, view: "map" };
+    return {
+      screens, entities: w ? w.entities : [],
+      topics: [{ topic: anchor.topic, topicName: anchor.name, score: Number.MAX_SAFE_INTEGER }],
+      section: w ? w.section : null, target: { kind: "goto", goto },
+    };
+  }
+
+  // ② 현재 테마 우선 — 곱셈 부스트만으론 약하다(현재 테마 점수가 0이면 부스트가 없다).
+  //    현재 테마 **안에서만** 먼저 판정해 확신이 나오면 그대로 간다. 테마를 갈아타려면
+  //    다른 테마가 SWITCH_MARGIN배로 압도해야 한다 — 한 판 도는 중엔 사실상 안 바뀐다.
+  if (ctxTopic) {
+    const mineScore = topicScore.get(ctxTopic) ?? 0;
+    const bestOther = Math.max(0, ...[...topicScore.entries()].filter(([tp]) => tp !== ctxTopic).map(([, s]) => s));
+    if (bestOther < mineScore * SWITCH_MARGIN) {
+      const g = within(ctxTopic, linesN, index);
+      if (g) {
+        return {
+          screens, entities: g.entities,
+          topics: [{ topic: ctxTopic, topicName: topicNames.get(ctxTopic) ?? ctxTopic, score: mineScore }],
+          section: g.section, target: { kind: "goto", goto: g.goto },
+        };
+      }
+    }
+  }
+
+  // 현재 토픽 사전확률 부스트
   if (ctxTopic && topicScore.has(ctxTopic)) topicScore.set(ctxTopic, topicScore.get(ctxTopic)! * CTX_BOOST);
   const topics = [...topicScore.entries()]
     .map(([topic, score]) => ({ topic, topicName: topicNames.get(topic) ?? topic, score }))
@@ -267,18 +316,28 @@ export function analyzeLines(
       : { screens, entities, topics, section, target: { kind: "none" } };
   }
 
-  // 2패스: 승자 토픽 안에서만 재채점 — 토픽 공통 이름("뱅가드 모집권" 등)이 교차 토픽
-  // IDF로 1/6 희석돼 확신 문턱에서 탈락하는 문제 해결 (상점 화면 다중 아이템의 핵심)
-  const wEntries = index.entries.filter((e) => e.topic === top.topic);
-  const hitsW = matchEntries(linesN, wEntries);
-  const solidsW: LensEntity[] = [];
+  // 2패스: 승자 토픽 안에서만 재채점 (within 참고)
+  const w = within(top.topic, linesN, index);
+  return w
+    ? { screens, entities: w.entities, topics, section: w.section, target: { kind: "goto", goto: w.goto } }
+    : { screens, entities: [], topics, section: null, target: { kind: "none" } };
+}
+
+/** 한 테마 **안에서만** 재채점 — 토픽 공통 이름("뱅가드 모집권" 등)이 교차 토픽 IDF로
+ *  1/6 희석돼 확신 문턱에서 탈락하는 문제를 푼다(상점 화면 다중 아이템의 핵심).
+ *  1패스 승자 확정 후의 2패스와, 테마 고정(앵커·현재 테마 우선) 판정이 함께 쓴다. */
+function within(topic: string, linesN: string[], index: LensIndex):
+  { goto: LensGoto; entities: LensEntity[]; section: string } | null {
+  const hitsW = matchEntries(linesN, index.entries.filter((e) => e.topic === topic));
+  const solids: LensEntity[] = [];
   for (const [e, h] of hitsW) {
-    if (h.score >= SOLID) solidsW.push({ topic: e.topic, topicName: e.topicName, section: e.section, id: e.id, name: e.name, score: h.score, arc: e.arc, nameHit: h.nameHit });
+    if (h.score >= SOLID) solids.push({ topic: e.topic, topicName: e.topicName, section: e.section, id: e.id, name: e.name, score: h.score, arc: e.arc, nameHit: h.nameHit });
   }
-  const entities = dedupEntities(solidsW);
+  const entities = dedupEntities(solids);
   const section = topSection(hitsW);
-  const g = section ? gotoFor(top.topic, section, entities) : null;
-  return { screens, entities, topics, section, target: g ? { kind: "goto", goto: g } : { kind: "none" } };
+  if (!section) return null;
+  const goto = gotoFor(topic, section, entities);
+  return goto ? { goto, entities, section } : null;
 }
 
 // ── 중국어(CN 클라) 매칭 — 흑류수해는 CN 선행이라 스크린샷이 중국어다 ─────────

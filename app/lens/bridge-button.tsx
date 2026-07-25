@@ -14,9 +14,10 @@ export default function BridgeButton({ t }: { t: T }) {
   if (installed !== true) return null;
 
   const on = !!settings;
+  // 진단 순서: 해상도 → 수신 프레임(탭이 가려져도 늘어야 한다) → 전송/틱 → 지금 국면
   const detail = on && settings
-    ? `${settings.width}×${settings.height}${settings.frameRate ? ` · ${Math.round(settings.frameRate)}fps` : ""}`
-      + (gate ? ` · ${t("전송")} ${gate.emitted}/${gate.ticks}` : "")
+    ? `${settings.width}×${settings.height}`
+      + (gate ? ` · ${t("수신")} ${gate.framesIn} · ${t("전송")} ${gate.emitted}/${gate.ticks} · ${gate.phase}` : "")
     : error || t("게임 창을 골라 화면을 자동으로 인식시킵니다");
 
   return (

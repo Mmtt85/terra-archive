@@ -19,7 +19,9 @@ export type BridgeSettings = {
   reportedWidth: number | null; reportedHeight: number | null;
   frameRate: number | null; devicePixelRatio: number;
 };
-export type BridgeGate = { phase: string; ticks: number; emitted: number; moving: number };
+// framesIn = 확장이 캡처에서 실제로 받은 프레임 수. 탭이 가려진 동안에도 이게 늘어야
+// 백그라운드 인식이 도는 것이다 — 헤더 버튼 툴팁에 그대로 노출한다(진단용).
+export type BridgeGate = { phase: string; ticks: number; emitted: number; moving: number; framesIn: number };
 export type BridgeFrame = { url: string; w: number; h: number; at: number };
 
 let installed: boolean | null = null;   // null = 아직 모름
@@ -51,7 +53,7 @@ function wire(): void {
     if (msg.type === "state") {
       const p = msg.payload as { phase: string; settings?: BridgeSettings } & Partial<BridgeGate>;
       if (p.settings) { settings = p.settings; error = ""; }
-      else gate = { phase: p.phase, ticks: p.ticks ?? 0, emitted: p.emitted ?? 0, moving: p.moving ?? 0 };
+      else gate = { phase: p.phase, ticks: p.ticks ?? 0, emitted: p.emitted ?? 0, moving: p.moving ?? 0, framesIn: p.framesIn ?? 0 };
       notify();
       return;
     }

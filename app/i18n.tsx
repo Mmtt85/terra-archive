@@ -1413,6 +1413,7 @@ const D: Record<string, Pair> = {
     "ゲームウィンドウを選ぶと、見ている画面をサイトが自動で認識します",
   ],
   "전송": ["sent", "送信"],
+  "수신": ["frames", "受信"],
   "유니버셜 서치": ["Universal Search", "ユニバーサルサーチ"],
   "유니버셜 서치 — 사이트 전체 검색": ["Universal Search — search the whole site", "ユニバーサルサーチ — サイト全体を検索"],
   "유니버셜 서치 — 오퍼·재료·스토리·통합전략·기능을 한 번에 찾아 이동합니다 (⌘K)": ["Universal Search — find operators, materials, stories, IS entries and tools anywhere on the site and jump there (⌘K)", "ユニバーサルサーチ — オペレーター・素材・ストーリー・ローグライク・機能をまとめて検索して移動します（⌘K）"],

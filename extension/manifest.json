@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "테라 브리지 (실험)",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "게임 창(에뮬레이터·PC 클라이언트)을 테라 아카이브에 연결해 화면을 자동 인식시킵니다.",
   "minimum_chrome_version": "116",
   "permissions": [
