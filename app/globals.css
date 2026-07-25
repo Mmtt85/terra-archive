@@ -8390,26 +8390,32 @@ html.rg-theme.rg5 main.site-main {
    헤더 텍스트·버튼은 전역 다크 변수(--ink 등)를 그대로 쓰므로 배경·경계선만 토픽색으로. ── */
 html.dark.rg-theme .site-header {
   background: #150a0ee6;
+  --header-solid: #150a0e;
   border-bottom-color: #3c2129;
 }
 html.dark.rg-theme.rg2 .site-header {
   background: #070d1ce6;
+  --header-solid: #070d1c;
   border-bottom-color: #213858;
 }
 html.dark.rg-theme.rg3 .site-header {
   background: #13151ae6;
+  --header-solid: #13151a;
   border-bottom-color: #3e434e;
 }
 html.dark.rg-theme.rg4 .site-header {
   background: #0f0505e6;
+  --header-solid: #0f0505;
   border-bottom-color: #3d1815;
 }
 html.dark.rg-theme.rg5 .site-header {
   background: #22131be6;
+  --header-solid: #22131b;
   border-bottom-color: #573448;
 }
 html.dark.rg-theme.rg6 .site-header {
   background: #0a1413e6;
+  --header-solid: #0a1413;
   border-bottom-color: #1f3a34;
 }
 
@@ -11132,8 +11138,42 @@ main.site-main > .site-header {
     display: inline;
   }
 }
-/* 게임 브리지 버튼 — 확장이 깔린 사람에게만 렌더된다(app/lens/bridge-button.tsx).
-   연결 중에는 계속 캡처가 도는 상태이므로 켜져 있다는 게 한눈에 보여야 한다. */
+/* 게임 연결 버튼 — 연결 중에는 계속 캡처가 도는 상태이므로 한눈에 보여야 한다. */
+.bridge-wrap {
+  position: relative;
+  display: inline-flex;
+}
+/* 상태줄 — 헤더 아래로 흘려 쓴다. 배경에서 도는 기능이라 상태가 안 보이면
+   "느리다/안 된다"의 원인을 짚을 수 없다 (사용자 요청 2026-07-26). */
+.bridge-status {
+  position: absolute;
+  top: calc(100% + 5px);
+  right: 0;
+  z-index: 3;
+  max-width: min(46vw, 420px);
+  padding: 3px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--header-solid);
+  color: var(--muted);
+  font-size: 10.5px;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+.bridge-status b {
+  color: var(--ink2);
+  font-weight: 700;
+}
+.bridge-status.busy b {
+  color: var(--accent, #b98a2f);
+}
+.bridge-status.err {
+  color: #c0392b;
+}
 .bridge-trigger.on {
   background: var(--bg-soft2);
   border-color: var(--accent, #b98a2f);

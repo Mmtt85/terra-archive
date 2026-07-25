@@ -3,6 +3,10 @@
 // 헤더의 "게임 연결" 버튼 — 누르면 크롬 창 선택 피커가 뜨고, 고른 게임 창의 화면이
 // 흐르기 시작한다. 그 뒤 인식·이동은 각 탭의 스샷 레이더 경로가 그대로 처리한다.
 // (설치할 것 없음 — 크롬 확장은 얻는 게 없어서 걷어냈다. app/lens/bridge.ts 참고)
+//
+// 버튼 아래에 상태를 실시간으로 적는다 (사용자 요청 2026-07-26). 배경에서 도는
+// 기능이라 상태가 안 보이면 "느리다/안 된다"의 원인을 짚을 수가 없다:
+//   해상도 · 수신(캡처가 준 프레임) · 인식 횟수 · 지금 국면 · 마지막 판정 결과
 
 import { useSyncExternalStore } from "react";
 import { useBridgeStatus, connectBridge, disconnectBridge, bridgeSupported } from "./bridge";
@@ -13,28 +17,39 @@ import type { T } from "../i18n";
 // 서버 스냅샷을 false로 고정하는 useSyncExternalStore로 읽는다.
 const noSubscribe = () => () => { /* 값이 바뀌지 않는다 */ };
 
+const PHASE: Record<string, string> = {
+  moving: "화면 변하는 중", settling: "멈추길 기다리는 중", same: "같은 화면", emit: "새 화면",
+};
+
 export default function BridgeButton({ t }: { t: T }) {
-  const { settings, gate, error } = useBridgeStatus();
+  const { settings, gate, error, busy, note } = useBridgeStatus();
   const supported = useSyncExternalStore(noSubscribe, bridgeSupported, () => false);
   if (!supported) return null;   // 사파리·파이어폭스 — 스샷 경로는 그대로 쓸 수 있다
 
   const on = !!settings;
-  // 진단 순서: 해상도 → 수신 프레임(탭이 가려져도 늘어야 한다) → 인식 횟수/틱 → 지금 국면
-  const detail = on && settings
-    ? `${settings.width}×${settings.height}`
-      + (gate ? ` · ${t("수신")} ${gate.framesIn} · ${t("인식")} ${gate.emitted}/${gate.ticks} · ${gate.phase}` : "")
-    : error || t("게임 창을 골라 화면을 자동으로 인식시킵니다");
+  const phase = busy ? t("인식 중…") : t(PHASE[gate?.phase ?? ""] ?? "연결됨");
 
   return (
-    <button
-      type="button"
-      className={`omni-trigger bridge-trigger${on ? " on" : ""}`}
-      title={detail}
-      aria-label={on ? t("게임 연결 끊기") : t("게임 창 연결")}
-      onClick={() => (on ? disconnectBridge() : void connectBridge())}
-    >
-      <span aria-hidden>{on ? "◉" : "○"}</span>
-      {on ? t("게임 연결됨") : t("게임 연결")}
-    </button>
+    <span className="bridge-wrap">
+      <button
+        type="button"
+        className={`omni-trigger bridge-trigger${on ? " on" : ""}`}
+        aria-label={on ? t("게임 연결 끊기") : t("게임 창 연결")}
+        title={on ? "" : error || t("게임 창을 골라 화면을 자동으로 인식시킵니다")}
+        onClick={() => (on ? disconnectBridge() : void connectBridge())}
+      >
+        <span aria-hidden>{on ? "◉" : "○"}</span>
+        {on ? t("게임 연결됨") : t("게임 연결")}
+      </button>
+      {on && settings && (
+        <span className={`bridge-status${busy ? " busy" : ""}`} aria-live="polite">
+          <b>{phase}</b>
+          {` · ${settings.width}×${settings.height}`}
+          {gate ? ` · ${t("수신")} ${gate.framesIn} · ${t("인식")} ${gate.emitted}` : ""}
+          {note ? ` · ${note}` : ""}
+        </span>
+      )}
+      {!on && error && <span className="bridge-status err">{error}</span>}
+    </span>
   );
 }

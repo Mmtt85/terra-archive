@@ -65,6 +65,8 @@ let framesIn = 0, ticks = 0, emitted = 0;
 let settings: BridgeSettings | null = null;
 let gate: BridgeGate | null = null;
 let error = "";
+let busy = false;   // 지금 인식이 도는 중인가 (useBridgeWatch가 갱신)
+let note = "";      // 마지막 인식 결과 — 각 탭이 알려준다 (헤더 상태줄에 그대로 보인다)
 
 const frameSubs = new Set<(f: File) => void>();
 const statusSubs = new Set<() => void>();
@@ -73,6 +75,11 @@ const notify = () => { for (const cb of statusSubs) cb(); };
 export const bridgeSettings = () => settings;
 export const bridgeGate = () => gate;
 export const bridgeError = () => error;
+export const bridgeBusy = () => busy;
+export const bridgeNote = () => note;
+/** 각 탭의 handleLensShot이 판정 결과를 한 줄로 알려준다 — "잘 안된다"의 원인을
+ *  헤더에서 바로 보기 위한 것이다 (사용자 요청 2026-07-26). */
+export function noteBridge(text: string): void { note = text; notify(); }
 
 /** 창 선택 → 캡처 시작. 사용자 제스처(버튼 클릭) 안에서만 부를 수 있다. */
 export async function connectBridge(): Promise<void> {
@@ -130,7 +137,7 @@ export function disconnectBridge(): void {
   if (lockRelease) { lockRelease(); lockRelease = null; }
   if (reader) { void reader.cancel().catch(() => { /* 이미 닫힘 */ }); reader = null; }
   if (stream) { stream.getTracks().forEach((t) => t.stop()); stream = null; }
-  settings = null; gate = null; latestGray = null; latestW = 0;
+  settings = null; gate = null; latestGray = null; latestW = 0; note = ""; busy = false;
   notify();
 }
 
@@ -189,26 +196,56 @@ function tick(): void {
   if (now - lastMoveAt < SETTLE_MS) { say("settling"); return; }
   if (diff(latestGray, sentGray) < NEW_SCENE) { say("same"); return; }
   if (fullCv.width < 4) return;
+  // ⚠ 인식이 도는 중에는 내보내지 않는다. 내보내면 소비자가 버리는데 여기서는 이미
+  //   "보냈다"(sentGray)고 기록해버려, **그 화면은 영영 인식되지 않는다.**
+  //   다음 틱에 다시 시도하면 되므로 그냥 기다린다 (사용자 지적 2026-07-26:
+  //   "너무 빠르게 인식 시도해서 오히려 느려지는 건 없나" — 정확히 이 문제였다).
+  if (busy) { say("emit"); return; }
 
   sentGray = latestGray;
   emitted++;
   const w = fullCv.width, h = fullCv.height;
-  // 상한을 넘으면 줄여서 넘긴다 (OCR 비용 = 픽셀 수). 원본이 이미 작으면 그대로.
-  const outW = Math.min(w, OCR_MAX_W);
-  const outH = Math.round((h / w) * outW);
+  // 여백 잘라내기 — 에뮬·미러링 창은 기기 베젤·레터박스 때문에 실제 게임 화면이
+  // 프레임의 절반뿐인 경우가 흔하다(2026-07-26 사용자 제보 스크린샷). 그대로 축소하면
+  // 글자가 그만큼 더 작아져 인식률이 떨어진다. 어두운 테두리를 먼저 떼고 축소한다.
+  const c = contentRect(latestGray, w, h);
+  // 상한을 넘으면 줄여서 넘긴다 (OCR 비용 = 픽셀 수). 이미 작으면 그대로.
+  const outW = Math.min(c.w, OCR_MAX_W);
+  const outH = Math.round((c.h / c.w) * outW);
   let out: OffscreenCanvas = fullCv;
-  if (outW < w) {
+  if (outW !== w || outH !== h) {
     outCv ??= new OffscreenCanvas(2, 2);
     if (outCv.width !== outW || outCv.height !== outH) { outCv.width = outW; outCv.height = outH; }
-    outCv.getContext("2d")!.drawImage(fullCv, 0, 0, outW, outH);
+    outCv.getContext("2d")!.drawImage(fullCv, c.x, c.y, c.w, c.h, 0, 0, outW, outH);
     out = outCv;
   }
-  console.debug(`[bridge] 새 화면 → 인식 #${emitted} · ${w}×${h}${outW < w ? ` → ${outW}×${outH}` : ""} (틱 ${ticks} · 수신 ${framesIn})`);
+  const cropped = c.w < w || c.h < h ? ` (여백 잘라 ${c.w}×${c.h})` : "";
+  console.debug(`[bridge] 새 화면 → 인식 #${emitted} · ${w}×${h}${cropped} → ${outW}×${outH} (틱 ${ticks} · 수신 ${framesIn})`);
   say("emit");
   void out.convertToBlob({ type: "image/jpeg", quality: 0.9 }).then((blob) => {
     const file = new File([blob], "bridge.jpg", { type: "image/jpeg" });
     for (const cb of frameSubs) cb(file);
   });
+}
+
+/** 64×36 축소본에서 어두운 테두리(기기 베젤·레터박스)를 떼어낸 내용 영역을 원본 좌표로 준다.
+ *  잘라낸 뒤가 원본의 40% 미만이면 오검출로 보고 통째로 쓴다 (어두운 화면 오판 방지). */
+function contentRect(g: Uint8Array, w: number, h: number): { x: number; y: number; w: number; h: number } {
+  const DARK = 40;
+  const rowLit = (y: number) => { for (let x = 0; x < SMALL_W; x++) if (g[y * SMALL_W + x] > DARK) return true; return false; };
+  const colLit = (x: number) => { for (let y = 0; y < SMALL_H; y++) if (g[y * SMALL_W + x] > DARK) return true; return false; };
+  let top = 0, bottom = SMALL_H - 1, left = 0, right = SMALL_W - 1;
+  while (top < bottom && !rowLit(top)) top++;
+  while (bottom > top && !rowLit(bottom)) bottom--;
+  while (left < right && !colLit(left)) left++;
+  while (right > left && !colLit(right)) right--;
+  const fx = left / SMALL_W, fy = top / SMALL_H;
+  const fw = (right + 1 - left) / SMALL_W, fh = (bottom + 1 - top) / SMALL_H;
+  if (fw * fh < 0.4) return { x: 0, y: 0, w, h };
+  return {
+    x: Math.round(fx * w), y: Math.round(fy * h),
+    w: Math.max(4, Math.round(fw * w)), h: Math.max(4, Math.round(fh * h)),
+  };
 }
 
 function diff(a: Uint8Array | null, b: Uint8Array | null): number {
@@ -226,14 +263,15 @@ export function useBridgeStatus() {
     statusSubs.add(cb);
     return () => { statusSubs.delete(cb); };
   }, []);
-  return { settings, gate, error };
+  return { settings, gate, error, busy, note };
 }
 
 /** 프레임 공급원 — useClipboardWatch와 같은 모양이라 각 탭이 그대로 갈아 끼울 수 있다.
  *  화면 하나당 1장만 오므로 여기서 더 조를 필요는 없고, 인식 중에 온 프레임만 흘려보낸다. */
+let busyLocal = false;   // 인식 중복 실행 방지 (구독자 공용 — 캡처는 하나뿐이다)
+
 export function useBridgeWatch(enabled: boolean, onImage: (file: File) => Promise<void> | void): boolean {
   const [on, setOn] = useState(false);
-  const busy = useRef(false);
   const cb = useRef(onImage);
   useEffect(() => { cb.current = onImage; });
 
@@ -247,10 +285,11 @@ export function useBridgeWatch(enabled: boolean, onImage: (file: File) => Promis
   useEffect(() => {
     if (!enabled) return;
     const onFrame = (file: File) => {
-      if (busy.current) return;
-      busy.current = true;
+      if (busyLocal) return;
+      busyLocal = true; busy = true; notify();
       void (async () => {
-        try { await cb.current(file); } catch { /* 한 장 실패는 넘긴다 */ } finally { busy.current = false; }
+        try { await cb.current(file); } catch { /* 한 장 실패는 넘긴다 */ }
+        finally { busyLocal = false; busy = false; notify(); }
       })();
     };
     frameSubs.add(onFrame);

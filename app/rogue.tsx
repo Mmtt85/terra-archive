@@ -14,7 +14,7 @@ import type { LensGoto, LensOutcome } from "./lens/match";
 import { recognizeShot, warmData, ocrLangFor } from "./lens/run";
 import { warmOcr } from "./lens/ocr";
 import { useClipboardWatch } from "./lens/clipwatch";
-import { useBridgeWatch } from "./lens/bridge";
+import { useBridgeWatch, noteBridge } from "./lens/bridge";
 import { useDropWatch } from "./lens/dropwatch";
 
 // 스샷 레이더 도움말 — 순수 설명 전용 모달 (입력 기능은 페이지 레벨 자동인식이 전담)
@@ -1033,12 +1033,15 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
       const oc = await recognizeShot("rogue", file, topicRef.current, locale);
       if (oc.target.kind === "goto") {
         onLensGoto(oc.target.goto);
+        noteBridge(oc.entities[0]?.name ?? t("이동"));
         flashLensMsg(t("인식 완료 — 해당 정보로 이동했습니다."), 2000);
       } else if (oc.target.kind === "tie") {
         // 테마 선택 전용 미니 모달을 연다
         setLensInitial(oc);
+        noteBridge(t("테마 되묻기"));
         flashLensMsg(null);
       } else {
+        noteBridge(t("못 찾음"));
         flashLensMsg(t("인식된 정보가 없습니다 — 분대·유물·조우·작전 화면을 캡처해 보세요."), 3000);
       }
     } catch {
