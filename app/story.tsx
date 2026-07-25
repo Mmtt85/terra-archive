@@ -4,8 +4,8 @@
 // 이벤트 목록·썸네일은 scripts/build-story.py가 생성하는 app/data/stories.json,
 // 요약 본문은 AI(Claude)가 스토리 스크립트를 정독하고 집필하는 app/data/story-summaries.json.
 // 요약이 있는 이벤트만 카드가 열리고, 상세는 #story-<id> 해시로 공유·뒤로가기 가능.
-// 상세를 읽는 동안, 화면에 보이는 문단에 언급된 인물·용어 카드가 오른쪽 레일에
-// 따라다니며 떠오른다 (IntersectionObserver — 넓은 화면 전용, 좁은 화면은 상단 갤러리).
+// 본문의 인물·용어는 점선 밑줄로 표시하고, 마우스오버(데스크탑)·탭(모바일)하면 설명 카드가
+// 뜬다 (`useEntityPeek` — 2026-07-25에 종전 오른쪽 참조 레일을 대체).
 import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { scrollMainTop } from "./scroll";
 // 스샷 레이더 (/stories 설치, 2026-07-24) — 게임 전문 대사 화면을 인식해 해당 에피소드로 이동
@@ -125,16 +125,6 @@ function eventFromHash(): StoryEvent | null {
   return ev && canOpenStory(id) ? ev : null;
 }
 
-function blockText(block: Block): string {
-  if (block.t === "img") return block.cap ?? "";
-  if (block.t === "deco") return "";   // 장식 삽화는 레일 매칭 대상 아님
-  if (block.t === "quote") return `${block.who} ${block.x}`;
-  return block.t === "h" || block.t === "p" ? block.x : "";
-}
-
-// 세로 중앙 정렬 스택이 일반 노트북 뷰포트(~800px)를 넘지 않는 개수
-const MAX_RAIL_CARDS = 4;
-
 // 엔티티 이름들 → 매칭 정규식. 이름 앞에 한글이 오면 제외(negative lookbehind — '-이신' 오탐 방지).
 // 한 글자 이름(위·시·첸 등)은 '위해·시간' 같은 일반 단어 첫 글자에 오탐되므로
 // 단독으로 서 있거나 바로 뒤가 조사일 때만 매칭 (사용자 리포트 2026-07-18).
@@ -174,10 +164,14 @@ function entMatchOf(matchers: RegExp[]): EntMatch {
   return matchers.map((r, ei) => ({ re: new RegExp(r.source, "g"), ei }));
 }
 
-// 본문에서 레일 매칭 단어에 점선 밑줄 — 레일 카드가 왜 떴는지 본문에서 직접 보여준다
-// (사용자 확정 2026-07-18: 카드 옆 배지 대신 본문 밑줄). 클릭하면 onEntity(ei)로 그 단어가
-// 연결된 레일 카드를 강조/펼친다 (사용자 요청 2026-07-20).
-function markEntities(text: string, em: EntMatch | null, onEntity?: (ei: number) => void): React.ReactNode {
+// 본문에서 인물·용어 단어에 점선 밑줄. 오른쪽 참조 레일을 없애고(2026-07-25 사용자 확정)
+// **이 단어 자체가 설명 진입점**이 됐다 — 데스크탑은 마우스오버, 모바일은 탭으로 카드를 띄운다.
+// onEntity(ei, 단어 요소, hover 여부) / onLeave 는 useEntityPeek이 내려준다.
+type EntHandlers = {
+  onEntity: (ei: number, el: HTMLElement, hover: boolean) => void;
+  onLeave: () => void;
+};
+function markEntities(text: string, em: EntMatch | null, ent?: EntHandlers): React.ReactNode {
   if (typeof text !== "string") return null; // 잘못된 블록(x 누락)이 페이지 전체를 죽이지 않게 방어
   if (!em || em.length === 0) return text;
   const hits: { s: number; e: number; w: string; ei: number }[] = [];
@@ -200,8 +194,13 @@ function markEntities(text: string, em: EntMatch | null, onEntity?: (ei: number)
     if (h.s > last) out.push(text.slice(last, h.s));
     out.push(
       <i key={k++} className="ent-mark" role="button" tabIndex={0}
-        onClick={onEntity ? (ev) => { ev.stopPropagation(); onEntity(h.ei); } : undefined}
-        onKeyDown={onEntity ? (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); ev.stopPropagation(); onEntity(h.ei); } } : undefined}>
+        onClick={ent ? (ev) => { ev.stopPropagation(); ent.onEntity(h.ei, ev.currentTarget, false); } : undefined}
+        onPointerEnter={ent ? (ev) => { if (ev.pointerType === "mouse") ent.onEntity(h.ei, ev.currentTarget, true); } : undefined}
+        onPointerLeave={ent ? (ev) => { if (ev.pointerType === "mouse") ent.onLeave(); } : undefined}
+        // 키보드 사용자: 포커스만으로 설명이 뜨고(hover와 동등), Enter/Space는 클릭과 같다
+        onFocus={ent ? (ev) => ent.onEntity(h.ei, ev.currentTarget, true) : undefined}
+        onBlur={ent ? () => ent.onLeave() : undefined}
+        onKeyDown={ent ? (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); ev.stopPropagation(); ent.onEntity(h.ei, ev.currentTarget, false); } } : undefined}>
         {h.w}
       </i>,
     );
@@ -212,12 +211,12 @@ function markEntities(text: string, em: EntMatch | null, onEntity?: (ei: number)
 }
 
 // **볼드** 마크업 + 엔티티 밑줄을 같이 처리 (요약 본문용 — i18n rich 대체)
-function richMark(s: string, em: EntMatch | null, onEntity?: (ei: number) => void): React.ReactNode {
+function richMark(s: string, em: EntMatch | null, ent?: EntHandlers): React.ReactNode {
   if (typeof s !== "string") return null; // 잘못된 블록(x 누락) 방어
   const parts = s.split(/\*\*(.+?)\*\*/g);
-  if (parts.length === 1) return markEntities(s, em, onEntity);
+  if (parts.length === 1) return markEntities(s, em, ent);
   return parts.map((part, i) =>
-    i % 2 ? <b key={i}>{markEntities(part, em, onEntity)}</b> : <span key={i}>{markEntities(part, em, onEntity)}</span>);
+    i % 2 ? <b key={i}>{markEntities(part, em, ent)}</b> : <span key={i}>{markEntities(part, em, ent)}</span>);
 }
 
 // ── 읽기 설정(글자·삽화 크기) — 요약/전문 공용, localStorage에 기억 (사용자 피드백 2026-07-20) ──
@@ -268,159 +267,134 @@ function ReaderPrefsBar({ prefs, setPrefs }: { prefs: ReaderPrefs; setPrefs: (fn
   );
 }
 
-// ── 참조 레일 공용 로직 — 요약 본문과 전문(스크립트) 뷰가 같이 쓴다 (2026-07-18) ──
-// texts[i] = data-idx=i 요소의 매칭용 텍스트. 화면에 보이는 요소들에 언급된 엔티티를 추적.
-function useEntityRail(texts: string[], matchers: RegExp[]) {
-  const bodyRef = useRef<HTMLDivElement>(null);
-  const [inView, setInView] = useState<Set<number>>(new Set());
-  const mentions = useMemo(
-    () =>
-      texts.map((text) => {
-        // 매칭된 실제 단어도 포착 — 레일 카드에 '왜 떴는지' 표시용 (사용자 요청 2026-07-18)
-        const found: { ei: number; word: string }[] = [];
-        matchers.forEach((re, index) => {
-          const m = re.exec(text);
-          if (m) found.push({ ei: index, word: m[0] });
-        });
-        return found;
-      }),
-    [texts, matchers],
+// ── 인물·용어 팝오버 (`ent-peek`) — 오른쪽 참조 레일 대체 (사용자 확정 2026-07-25) ──
+// 종전엔 화면에 보이는 문단을 IntersectionObserver로 추적해 오른쪽(모바일은 상단) 레일에
+// 카드를 띄웠지만, 읽는 흐름을 방해한다는 판단으로 레일을 없애고 **점선 밑줄 단어 자체**를
+// 설명 진입점으로 삼는다:
+//   · 데스크탑 — 단어에 마우스오버(또는 키보드 포커스)하면 **커서 위쪽**에 카드가 뜨고,
+//     클릭하면 고정된다(마우스를 떼도 남음). 오퍼레이터 상세는 고정된 카드를 눌러 들어간다.
+//   · 모바일(≤1180px) — 탭하면 **옛 레일 자리**(뒤로가기 아래 sticky 위치)에 카드가 뜬다.
+//     같은 단어를 한 번 더 탭하면 오퍼레이터 상세 (옛 레일 재탭 관례).
+// 어느 쪽이든 **닫는 건 바깥 클릭뿐** — 스크롤해도 남는다 (사용자 확정 2026-07-25).
+// 모바일 카드는 높이 0인 sticky 슬롯 안에 절대배치라 **본문 레이아웃을 밀지 않는다**
+// (레일 시절 카드 등장·소멸이 본문을 밀어 깜빡임 루프를 만들던 문제의 근원 제거).
+const PEEK_MOBILE_Q = "(max-width: 1180px)";
+type PeekAnchor = { left: number; top: number; right: number; bottom: number; width: number };
+// pinned = 클릭으로 고정한 카드 — 마우스를 떼도 남고, 바깥을 클릭해야 닫힌다 (사용자 확정 2026-07-25)
+type Peek = { ei: number; anchor: PeekAnchor | null; mobile: boolean; pinned: boolean };
+
+function useEntityPeek(entities: Entity[], onShowOperator?: (id: string) => void) {
+  const { t } = useI18n();
+  const [peek, setPeek] = useState<Peek | null>(null);
+  const mq = (q: string) => typeof window !== "undefined" && window.matchMedia(q).matches;
+
+  // 닫히는 조건은 **바깥 클릭 하나뿐**이다 (사용자 확정 2026-07-25: "스크롤 다운했을 때는
+  // 사라지지 않아야 함. 다른 데 클릭해야지만 사라지게"). 스크롤해도 그 자리에 남아 있어
+  // 본문을 내리면서 설명을 계속 읽을 수 있다. 리사이즈만은 좌표계가 통째로 바뀌므로 닫는다.
+  // (마우스 hover로 뜬 카드는 고정 전이라 커서가 단어를 벗어나면 onLeave가 닫는다.)
+  useEffect(() => {
+    if (!peek) return;
+    const off = () => setPeek(null);
+    const onDown = (event: PointerEvent) => {
+      const el = event.target as HTMLElement | null;
+      if (!el?.closest(".ent-peek") && !el?.closest(".ent-mark")) setPeek(null);
+    };
+    window.addEventListener("resize", off);
+    document.addEventListener("pointerdown", onDown);
+    return () => {
+      window.removeEventListener("resize", off);
+      document.removeEventListener("pointerdown", onDown);
+    };
+  }, [peek]);
+
+  const ent: EntHandlers = {
+    onEntity: (ei, el, hover) => {
+      const mobile = mq(PEEK_MOBILE_Q);
+      const entity = entities[ei];
+      if (!entity) return;
+      const rectOf = () => { const r = el.getBoundingClientRect(); return { left: r.left, top: r.top, right: r.right, bottom: r.bottom, width: r.width }; };
+      if (hover) {
+        // 터치 기기는 탭으로만 — 포인터 hover가 없는 환경에서 유령 팝오버를 막는다
+        if (mobile || !mq("(hover: hover)")) return;
+        if (peek?.pinned) return;  // 고정된 카드는 다른 단어에 스쳐도 바뀌지 않는다
+        setPeek({ ei, anchor: rectOf(), mobile: false, pinned: false });
+        return;
+      }
+      if (mobile) {
+        // 첫 탭: 띄우기 / 같은 단어 재탭: 오퍼 상세 (없으면 닫기)
+        if (peek?.ei !== ei) { setPeek({ ei, anchor: null, mobile: true, pinned: true }); return; }
+        if (entity.op && onShowOperator) onShowOperator(entity.op);
+        else setPeek(null);
+        return;
+      }
+      // 데스크탑 클릭 = **고정** (사용자 확정 2026-07-25). 마우스를 떼도 남아 있고, 바깥을
+      // 클릭하면 닫힌다. 오퍼레이터 상세는 고정된 카드를 클릭해서 들어간다.
+      setPeek({ ei, anchor: rectOf(), mobile: false, pinned: true });
+    },
+    onLeave: () => { if (!mq(PEEK_MOBILE_Q)) setPeek((p) => (p && !p.pinned ? null : p)); },
+  };
+
+  const entity = peek ? entities[peek.ei] : null;
+  const linked = Boolean(entity?.op && onShowOperator);
+  // 전용 스탠딩 CG(img)가 없으면 연결된 오퍼레이터 아바타로 폴백 (레일과 같은 규칙)
+  const imgSrc = entity ? entity.img ?? (entity.op ? `/avatars/${entity.op}.webp` : undefined) : undefined;
+  const card = entity && peek && (
+    <EntityPeekCard anchor={peek.anchor} mobile={peek.mobile} pinned={peek.pinned} label={t("등장인물")}>
+      <div className={`ent-peek-card${linked ? " op-linked" : ""}`}
+        {...(linked ? {
+          role: "button", tabIndex: 0,
+          title: t("오퍼레이터 정보 보기"),
+          onClick: () => onShowOperator!(entity.op!),
+          onKeyDown: (e: React.KeyboardEvent) => { if (e.key === "Enter") onShowOperator!(entity.op!); },
+        } : {})}>
+        {imgSrc && <div className={`cast-img${entity.img ? "" : " cast-avatar"}`}><img src={imgSrc} alt="" loading="lazy" decoding="async" /></div>}
+        <div className="ent-peek-text">
+          <b>{entity.name}{linked && <i className="op-mark" aria-hidden>↗</i>}</b>
+          <span>{entity.desc}</span>
+        </div>
+      </div>
+    </EntityPeekCard>
   );
-  useEffect(() => {
-    const root = bodyRef.current;
-    if (!root) return;
-    setInView(new Set());
-    const observer = new IntersectionObserver(
-      (entries) => {
-        setInView((previous) => {
-          const next = new Set(previous);
-          let changed = false;
-          for (const entry of entries) {
-            const index = Number((entry.target as HTMLElement).dataset.idx);
-            if (entry.isIntersecting) { if (!next.has(index)) { next.add(index); changed = true; } }
-            else if (next.delete(index)) changed = true;
-          }
-          // 실제 변화가 없으면 이전 Set을 그대로 반환 — 스크롤 중 불필요한 리렌더로
-          // 모바일에서 스크롤이 툭툭 끊기던 문제를 막는다 (2026-07)
-          return changed ? next : previous;
-        });
-      },
-      // '읽는 중' 영역: 화면 18%~90%. 아래쪽(하단 10% 지점)에서 문단이 나타나면 카드가 뜨고,
-      // 위로 스크롤돼 상단 ~18%까지 올라가면(거의 화면 밖) 사라진다. 아래쪽 문단 기준으로 판정.
-      { rootMargin: "-18% 0px -10% 0px" },
-    );
-    root.querySelectorAll<HTMLElement>("[data-idx]").forEach((node) => observer.observe(node));
-    return () => observer.disconnect();
-  }, [texts]);
-
-  // 지금 화면(아래 문단 우선)에 언급된 엔티티. 한 번 뜬 카드는 그 문단이 완전히 사라질 때까지
-  // 자리를 지켜, 4장 제한 때문에 밀렸다 다시 뜨는 깜빡임을 막는다. 빈 자리엔 아래쪽 새 엔티티를 채운다.
-  const [active, setActive] = useState<{ ei: number; word: string }[]>([]);
-  useEffect(() => {
-    const ordered: { ei: number; word: string }[] = [];
-    [...inView].sort((a, b) => b - a).forEach((blockIndex) => {
-      for (const m of mentions[blockIndex] ?? []) {
-        if (!ordered.some((o) => o.ei === m.ei)) ordered.push(m);
-      }
-    });
-    const present = new Set(ordered.map((o) => o.ei));
-    setActive((prev) => {
-      const next = prev.filter((o) => present.has(o.ei)); // 아직 보이는 카드는 순서 그대로 유지
-      for (const o of ordered) {                           // 빈 자리에만 아래쪽 새 엔티티 추가
-        if (next.length >= MAX_RAIL_CARDS) break;
-        if (!next.some((x) => x.ei === o.ei)) next.push(o);
-      }
-      return next.length === prev.length && next.every((o, i) => o.ei === prev[i].ei) ? prev : next;
-    });
-  }, [inView, mentions]);
-
-  return { bodyRef, active };
+  return { ent, peekNode: card ?? null };
 }
 
-// 참조 레일 렌더 — 요약/전문 공용 (모바일 펼침 상태 포함)
-// focus: 본문 점선밑줄 단어를 클릭하면 {ei, k}가 넘어와 해당 카드를 강조(데스크탑)하거나
-// 펼친다(모바일). k는 같은 단어를 다시 눌러도 강조가 재발동하도록 하는 nonce.
-function EntityRail({ entities, active, onShowOperator, focus }: {
-  entities: Entity[]; active: { ei: number; word: string }[]; onShowOperator?: (id: string) => void;
-  focus?: { ei: number; k: number } | null;
+// 팝오버 껍데기 — 데스크탑은 단어에 붙는 fixed 카드(뷰포트 밖으로 나가지 않게 보정),
+// 모바일은 옛 레일 자리(sticky) 슬롯. 폭·높이를 실측해 위치를 정하므로 첫 페인트는 감춘다.
+function EntityPeekCard({ anchor, mobile, pinned, label, children }: {
+  anchor: PeekAnchor | null; mobile: boolean; pinned: boolean; label: string; children: React.ReactNode;
 }) {
-  const { t } = useI18n();
-  const [openCard, setOpenCard] = useState<string | null>(null); // 모바일 레일에서 펼친 카드(이름)
-  const [flashEi, setFlashEi] = useState<number | null>(null);    // 데스크탑에서 잠깐 강조할 카드
-  const railRef = useRef<HTMLElement>(null);
-  // 펼친 카드 바깥을 누르면 자동으로 접는다
-  useEffect(() => {
-    if (!openCard) return;
-    const onDown = (event: PointerEvent) => {
-      if (!(event.target as HTMLElement).closest(".story-rail .rail-card")) setOpenCard(null);
-    };
-    document.addEventListener("pointerdown", onDown);
-    return () => document.removeEventListener("pointerdown", onDown);
-  }, [openCard]);
-  // 본문 밑줄 단어 클릭 → 해당 카드로 스크롤 + 강조(데스크탑) / 펼침(모바일)
-  useEffect(() => {
-    if (!focus) return;
-    const entity = entities[focus.ei];
-    if (!entity) return;
-    const mobile = typeof window !== "undefined" && window.matchMedia("(max-width: 1180px)").matches;
-    if (mobile) setOpenCard(entity.name); // 모바일: 펼치면 100% 폭이 되므로 레이아웃 후 스크롤
-    setFlashEi(focus.ei);
-    // 펼침(.open)으로 폭이 바뀐 뒤에 가운데로 스크롤해야 오른쪽 잘림 없이 정확히 중앙에 온다.
-    // scrollIntoView는 sticky 가로 레일에서 축을 헷갈려 안 먹는 사례가 있어, 레일을 직접
-    // scrollBy 한다(뷰포트 기준 rect 차이로 중앙 오프셋 계산 — 2026-07-20 사용자 리포트).
-    const raf = window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
-      const rail = railRef.current;
-      const el = rail?.querySelector<HTMLElement>(`[data-ei="${focus.ei}"]`);
-      if (!rail || !el) return;
-      const rRect = rail.getBoundingClientRect();
-      const eRect = el.getBoundingClientRect();
-      const delta = (eRect.left - rRect.left) - (rRect.width - eRect.width) / 2;
-      rail.scrollBy({ left: delta, behavior: "instant" });
-    }));
-    const timer = window.setTimeout(() => setFlashEi((cur) => (cur === focus.ei ? null : cur)), 1400);
-    return () => { window.cancelAnimationFrame(raf); window.clearTimeout(timer); };
-  }, [focus, entities]);
-  // 강조 대상이 현재 active에 없으면(스크롤로 밀려남) 임시로 끼워 넣어 카드를 띄운다
-  const shown = focus && !active.some((a) => a.ei === focus.ei)
-    ? [{ ei: focus.ei, word: "" }, ...active]
-    : active;
+  const ref = useRef<HTMLDivElement>(null);
+  const [style, setStyle] = useState<React.CSSProperties>({ visibility: "hidden" });
+  // 좌표는 **문서(컨테이너) 기준 absolute**다 — position:fixed로 두면 스크롤할 때 카드가 화면에
+  // 붙어 따라 내려온다(사용자 지적 2026-07-25: "고정된 상태로 그 자리에 붙어있어야지").
+  // 띄울 때 한 번 계산해 본문에 못 박고, 그 뒤엔 본문과 함께 흘러간다.
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const host = (el.offsetParent as HTMLElement | null) ?? document.body;
+    const hostRect = host.getBoundingClientRect();
+    if (mobile) {
+      // 옛 레일 자리 = 뒤로가기 버튼 바로 아래. 그 시점의 화면 위치를 문서 좌표로 굳힌다.
+      const back = document.querySelector<HTMLElement>(".story-back-top");
+      const band = back ? back.getBoundingClientRect().bottom + 8 : hostRect.top;
+      setStyle({ top: Math.max(0, band - hostRect.top), left: 0, right: 0, visibility: "visible" });
+      return;
+    }
+    if (!anchor) return;
+    const box = el.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const left = Math.min(Math.max(8, anchor.left + anchor.width / 2 - box.width / 2), Math.max(8, vw - box.width - 8));
+    // **커서 위쪽**이 기본 (사용자 확정 2026-07-25) — 위에 자리가 없을 때만 아래로 뒤집는다
+    const above = anchor.top - 10 - box.height >= 8;
+    const top = above ? anchor.top - box.height - 10 : Math.min(anchor.bottom + 10, Math.max(8, vh - box.height - 8));
+    setStyle({ left: left - hostRect.left, top: top - hostRect.top, visibility: "visible" });
+  }, [anchor, mobile]);
   return (
-    <aside className="story-rail" aria-label={t("등장인물")} ref={railRef}>
-      {shown.map(({ ei: entityIndex }) => {
-        const entity = entities[entityIndex];
-        // 에피소드 전환 직후 한 렌더 동안 active/focus의 ei가 이전 에피소드(더 큰) 엔티티
-        // 배열을 가리켜 entities[ei]가 undefined가 되는 순간이 있다 — 다음/이전 에피소드 클릭 시
-        // "Cannot read properties of undefined (reading 'op')" 크래시의 원인. 방어적으로 건너뛴다.
-        if (!entity) return null;
-        const linked = Boolean(entity.op && onShowOperator);
-        // 전용 스탠딩 CG(img)가 없으면 연결된 오퍼레이터 아바타로 폴백
-        const imgSrc = entity.img ?? (entity.op ? `/avatars/${entity.op}.webp` : undefined);
-        // 모바일(≤1180px): 스니펫(이름만) → 탭하면 펼쳐 설명 표시, 한 번 더 탭하면 오퍼 상세(있으면)·접기.
-        // 데스크탑: 종전대로 카드를 누르면 바로 오퍼 상세.
-        const handleClick = () => {
-          const mobile = typeof window !== "undefined" && window.matchMedia("(max-width: 1180px)").matches;
-          if (mobile) {
-            if (openCard !== entity.name) { setOpenCard(entity.name); return; } // 첫 탭: 펼침
-            if (linked) onShowOperator!(entity.op!);                             // 펼친 카드 재탭: 오퍼 상세 (닫기는 바깥 클릭)
-          } else if (linked) {
-            onShowOperator!(entity.op!);
-          }
-        };
-        return (
-          <div className={`rail-card${linked ? " op-linked" : ""}${openCard === entity.name ? " open" : ""}${flashEi === entityIndex ? " flash" : ""}`} key={entity.name}
-            data-ei={entityIndex}
-            onClick={handleClick}
-            role="button" tabIndex={0}
-            onKeyDown={(keyEvent) => { if (keyEvent.key === "Enter") handleClick(); }}
-            title={linked ? t("오퍼레이터 정보 보기") : undefined}>
-            {imgSrc && (
-              <div className={`cast-img${entity.img ? "" : " cast-avatar"}`}><img src={imgSrc} alt="" loading="lazy" decoding="async" /></div>
-            )}
-            <div className="rail-card-text"><b>{entity.name}{linked && <i className="op-mark" aria-hidden>↗</i>}</b><span><span className="rail-desc-full">{entity.desc}</span><span className="rail-desc-snip">{entity.desc.slice(0, 5).trim()}…</span></span></div>
-          </div>
-        );
-      })}
-    </aside>
+    <div className={`ent-peek${mobile ? " ent-peek-mobile" : ""}${pinned ? " pinned" : ""}`} ref={ref} style={style}
+      role="tooltip" aria-label={label}>
+      {children}
+    </div>
   );
 }
 
@@ -530,12 +504,8 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
     }
     return merged;
   }, [ep, script, opIndex, entities]);
-  const lineTexts = useMemo(
-    () => lines.map((ln) => [ln.n, ln.x, ln.st, ln.loc, ...(ln.opts ?? [])].filter(Boolean).join(" ")),
-    [lines],
-  );
-  // 이 에피소드에서 썸네일 달고 말하는 인물은 레일에서 제외 — 왼쪽에 이미 얼굴이 보이므로
-  // 중복 표시하지 않는다 (사용자 요청 2026-07-18). 언급만 되는 편에서는 레일에 그대로 뜬다.
+  // 이 에피소드에서 썸네일 달고 말하는 인물은 밑줄 대상에서 제외 — 왼쪽에 이미 얼굴이 보이므로
+  // 중복 표시하지 않는다 (사용자 요청 2026-07-18). 언급만 되는 편에서는 그대로 밑줄이 붙는다.
   const facedSpeakers = useMemo(() => {
     const s = new Set<string>();
     for (const ln of lines) {
@@ -552,10 +522,8 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
     () => railEntities.map((e) => entityMatcher([e.name, ...(e.alias ?? [])])),
     [railEntities],
   );
-  const { bodyRef, active } = useEntityRail(lineTexts, railMatchers);
   const em = useMemo(() => entMatchOf(railMatchers), [railMatchers]);
-  const [railFocus, setRailFocus] = useState<{ ei: number; k: number } | null>(null);
-  const focusEntity = (ei: number) => setRailFocus((p) => ({ ei, k: (p?.k ?? 0) + 1 }));
+  const { ent, peekNode } = useEntityPeek(railEntities, onShowOperator);
   if (error) return <p className="story-disclaimer">{t("스크립트를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.")}</p>;
   if (!script || !ep) return <p className="sc-loading">{t("스크립트 불러오는 중…")}</p>;
   return (
@@ -572,7 +540,8 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
       </div>
       <h3 className="sc-ep-title">{ep.code} {ep.name}{ep.tag && <small>{ep.tag}</small>}</h3>
       <div className="story-detail-grid">
-        <div className="story-body sc-body" ref={bodyRef}>
+        {peekNode}
+        <div className="story-body sc-body">
         {lines.map((ln, i) => {
           if (ln.opts) return (
             <div key={i} className="sc-opts" data-idx={i}><i>{t("선택지")}</i>{ln.opts.map((o, j) => <span key={j}>{o}</span>)}</div>
@@ -591,7 +560,7 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
             );
           }
           if (ln.loc) return <div key={i} className="sc-loc" data-idx={i}>{ln.loc}</div>;
-          if (ln.st) return <p key={i} className="sc-st" data-idx={i}>{markEntities(ln.st, em, focusEntity)}</p>;
+          if (ln.st) return <p key={i} className="sc-st" data-idx={i}>{markEntities(ln.st, em, ent)}</p>;
           if (ln.n) {
             const { showN, face, opId } = ln as ScriptLine & { showN?: boolean; face?: string; opId?: string };
             // 클릭: 오퍼레이터(별칭 연결 포함)는 오퍼 상세 모달, 그 외 얼굴 있는 화자는 스탠딩 크게 보기
@@ -614,14 +583,13 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
                   )}
                   {showN !== false && ln.n}
                 </b>
-                <span>{markEntities(ln.x ?? "", em, focusEntity)}</span>
+                <span>{markEntities(ln.x ?? "", em, ent)}</span>
               </p>
             );
           }
-          return <p key={i} className="sc-narr" data-idx={i}>{markEntities(ln.x ?? "", em, focusEntity)}</p>;
+          return <p key={i} className="sc-narr" data-idx={i}>{markEntities(ln.x ?? "", em, ent)}</p>;
         })}
         </div>
-        <EntityRail entities={railEntities} active={active} onShowOperator={onShowOperator} focus={railFocus} />
       </div>
       <div className="sc-ep-foot">
         {epIdx > 0 && <button type="button" onClick={() => goEp(epIdx - 1, true)}>← {t("이전 에피소드")}</button>}
@@ -701,12 +669,8 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }
     () => entities.map((entity) => entityMatcher([entity.name, ...(entity.alias ?? [])])),
     [entities],
   );
-  // 참조 레일 — 블록 텍스트 기준 매칭 (전문 뷰는 ScriptReader가 라인 기준으로 동일 훅 사용)
-  const blockTexts = useMemo(() => (summary?.blocks ?? []).map(blockText), [summary]);
-  const { bodyRef, active } = useEntityRail(blockTexts, matchers);
   const em = useMemo(() => entMatchOf(matchers), [matchers]);
-  const [railFocus, setRailFocus] = useState<{ ei: number; k: number } | null>(null);
-  const focusEntity = (ei: number) => setRailFocus((p) => ({ ei, k: (p?.k ?? 0) + 1 }));
+  const { ent, peekNode } = useEntityPeek(entities, onShowOperator);
 
   return (
     <section className="story story-detail" aria-label={locText(locale, event.name)}>
@@ -755,7 +719,8 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }
           </div>
         )}
         <div className="story-detail-grid" hidden={scriptView || !hasSummary}>
-          <div className="story-body" ref={bodyRef}>
+          {peekNode}
+          <div className="story-body">
             {(summary?.blocks ?? []).map((block, index) => {
               if (block.t === "h") return <h3 key={index} data-idx={index}>{block.x}</h3>;
               if (block.t === "img") {
@@ -771,7 +736,7 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }
               if (block.t === "quote")
                 return (
                   <blockquote key={index} data-idx={index}>
-                    <p>{richMark(block.x, em, focusEntity)}</p>
+                    <p>{richMark(block.x, em, ent)}</p>
                     <cite>— {block.who}</cite>
                   </blockquote>
                 );
@@ -786,10 +751,9 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }
                   </figure>
                 );
               }
-              return <p key={index} data-idx={index}>{richMark(block.x, em, focusEntity)}</p>;
+              return <p key={index} data-idx={index}>{richMark(block.x, em, ent)}</p>;
             })}
           </div>
-          <EntityRail entities={entities} active={active} onShowOperator={onShowOperator} focus={railFocus} />
         </div>
         <footer className="story-detail-foot">
           <button type="button" className="story-back" onClick={onClose}>← {t("스토리 목록으로")}</button>

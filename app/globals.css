@@ -6366,10 +6366,12 @@ html.dark .story-card:hover .story-thumb img {
     white-space: nowrap;
   }
 }
-/* 상세 콘텐츠(본문+레일 합산 966px) 한 덩어리를 섹션 안에서 가운데 정렬 —
-   개별 요소에 margin:auto를 걸면 display:block 버튼이 늘어나므로, 바깥 래퍼를 센터링한다 */
+/* 상세 콘텐츠 한 덩어리를 섹션 안에서 가운데 정렬 — 개별 요소에 margin:auto를 걸면
+   display:block 버튼이 늘어나므로, 바깥 래퍼를 센터링한다.
+   폭은 본문 칼럼(720px)과 같다 — 오른쪽 참조 레일(216px)을 없앤 2026-07-25부터 머리말·본문이
+   같은 왼쪽 선을 공유하는 단일 리더 칼럼이 됐다 (종전 966 = 720 + 30 + 216). */
 .story-detail-inner {
-  max-width: 966px;
+  max-width: 720px;
   margin: 0 auto;
 }
 .story-detail-head {
@@ -6440,9 +6442,10 @@ html.dark .story-card:hover .story-thumb img {
   height: 100%;
   object-fit: contain;
 }
-/* 본문 + 스크롤 추적 참조 레일 (넓은 화면) */
+/* 본문 칼럼 + 인물·용어 팝오버 슬롯(모바일에서 옛 레일 자리) */
 .story-detail-grid {
   display: flex;
+  position: relative; /* 인물·용어 팝오버(absolute)의 기준 상자 */
   gap: 30px;
   align-items: flex-start;
   margin-top: 26px;
@@ -6837,39 +6840,9 @@ html.dark .story-card:hover .story-thumb img {
     padding: 12px 14px;
   }
 }
-/* 레일은 뷰포트 전체 높이를 차지하고 카드를 세로 중앙에 모은다 —
-   읽는 시선(화면 중간)과 같은 높이에서 카드가 열리고 닫히게 */
-.story-rail {
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  width: 216px;
-  flex: 0 0 216px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 10px;
-  overflow: hidden;
-  padding: 12px 0;
-}
-.rail-card {
-  border: 1px solid var(--line);
-  background: var(--white);
-  /* 스크롤 중 카드 슬라이드-인 애니메이션 제거 — 스크롤이 매끄럽지 않게 느껴진다는
-     사용자 리포트(2026-07-20)로 즉시 표시. 클릭 강조(rail-flash)는 유지. */
-}
-.rail-card-text {
-  padding: 7px 10px 9px;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-.rail-card-text b {
-  font-size: 12.5px;
-  letter-spacing: -0.3px;
-}
-/* 본문에서 레일 카드로 연결되는 단어 — 점선 밑줄 (사용자 확정 2026-07-18).
-   클릭하면 연결된 레일 카드가 강조(데스크탑)·펼쳐진다(모바일) — 2026-07-20 */
+/* 본문의 인물·용어 단어 — 점선 밑줄 (사용자 확정 2026-07-18).
+   2026-07-25부터 이 단어가 설명 진입점이다: 마우스오버(데스크탑)·탭(모바일)하면 팝오버가 뜬다
+   (오른쪽 참조 레일 폐기 — 읽는 흐름을 방해한다는 사용자 판단). */
 .ent-mark {
   font-style: inherit;
   text-decoration: underline dotted;
@@ -6882,54 +6855,67 @@ html.dark .story-card:hover .story-thumb img {
     background 0.12s,
     text-decoration-color 0.12s;
 }
-.ent-mark:hover {
+.ent-mark:hover,
+.ent-mark:focus-visible {
   text-decoration-color: var(--gold-ink);
   background: var(--tint-gold);
+  outline: none;
 }
-/* 밑줄 단어를 눌러 지목된 레일 카드 — 잠깐 금색 링으로 눈에 띄게 */
-.rail-card.flash {
-  animation: rail-flash 1.4s ease;
+/* 팝오버 — 단어 위쪽에 뜨는 카드. **본문 기준 absolute**라 스크롤하면 본문과 함께 흘러간다
+   (화면에 붙어 따라다니지 않는다 — 사용자 확정 2026-07-25). 좌표는 JS가 띄울 때 한 번 계산한다. */
+.ent-peek {
+  position: absolute;
+  z-index: 30;
+  width: min(320px, calc(100vw - 16px));
+  animation: ent-peek-in 0.12s ease;
 }
-@keyframes rail-flash {
-  0% {
-    box-shadow: 0 0 0 0 var(--gold-ink);
-  }
-  12% {
-    box-shadow: 0 0 0 3px var(--gold-ink);
-    border-color: var(--gold-ink);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(184, 134, 11, 0);
-  }
-}
-.rail-card-text span {
-  font: 600 11px/1.5 monospace;
-  color: var(--muted);
-  word-break: keep-all;
-}
-/* 데스크탑 레일은 설명 전문을 보여주므로 스니펫 변형은 숨긴다 (모바일에서만 노출) */
-.rail-desc-snip {
-  display: none;
-}
-@keyframes rail-in {
+@keyframes ent-peek-in {
   from {
     opacity: 0;
-    transform: translateX(16px);
+    transform: translateY(-4px);
   }
   to {
     opacity: 1;
     transform: none;
   }
 }
-/* 오퍼레이터인 인물 카드 — 클릭하면 오퍼 상세 모달 */
-.op-linked {
+.ent-peek-card {
+  border: 1px solid var(--border-strong);
+  background: var(--white);
+  box-shadow: 0 10px 26px rgba(19, 23, 25, 0.16);
+  overflow: hidden;
+}
+/* 클릭으로 고정한 카드 — 마우스를 떼도 남는다는 걸 테두리로 알린다 (2026-07-25) */
+.ent-peek.pinned .ent-peek-card {
+  border-color: var(--gold-ink);
+  box-shadow: 0 12px 30px rgba(19, 23, 25, 0.2);
+}
+.ent-peek-text {
+  padding: 8px 11px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.ent-peek-text b {
+  font-size: 12.5px;
+  letter-spacing: -0.3px;
+}
+.ent-peek-text span {
+  font: 600 11px/1.55 monospace;
+  color: var(--muted);
+  word-break: keep-all;
+}
+/* 오퍼레이터로 이어지는 카드 — 클릭하면 오퍼 상세. 레일 시절 hover 리프트는 팝오버에선
+   좌표가 어긋나 보이므로 테두리 강조만 한다 */
+.ent-peek-card.op-linked {
   cursor: pointer;
-  transition: 0.15s;
+  transform: none;
 }
-.op-linked:hover {
-  border-color: var(--border-strong);
-  transform: translateY(-2px);
+.ent-peek-card.op-linked:hover {
+  border-color: var(--gold-ink);
+  transform: none;
 }
+/* 오퍼레이터로 이어짐을 알리는 화살표 (이름 옆) */
 .op-mark {
   margin-left: 4px;
   font: 800 11px monospace;
@@ -6939,126 +6925,39 @@ html.dark .story-card:hover .story-thumb img {
 .op-linked:hover .op-mark {
   color: var(--ink);
 }
-/* 좁은 화면(≤1180px): 우측 세로 레일 대신 상단에 가로 sticky 바로 붙는다.
-   데스크탑과 동일하게 읽는 위치(active)에 따라 카드가 나타났다 사라진다. */
+/* 좁은 화면(≤1180px): 팝오버를 단어에 띄우면 손가락·화면에 가려지므로, **옛 레일 자리**
+   (뒤로가기 버튼 아래 sticky 위치)에 가로 카드로 띄운다. 슬롯 높이는 0이라 본문을 밀지 않는다
+   (레일 시절 카드 등장·소멸이 본문을 밀어 만들던 깜빡임 루프의 근원 제거). sticky라 스크롤해도
+   같은 자리에 남고, 닫히는 건 바깥 탭뿐 (사용자 확정 2026-07-25). */
 @media (max-width: 1180px) {
   .story-detail-grid {
     flex-direction: column;
   }
-  .story-rail {
-    order: -1;
-    position: sticky;
-    /* 뒤로가기 버튼(약 46px) 바로 밑에 붙는다 — 스크롤러가 헤더 아래서 시작하므로
-       헤더 높이는 더하지 않는다 (스크롤 컨테이너 분리 2026-07-22) */
-    top: 46px;
-    z-index: 8;
-    /* 카드 유무와 상관없이 높이를 고정한다. 상단 sticky 레일이 정상 흐름에서 높이를
-       가지므로, 카드가 떴다 사라지면 본문이 밀렸다 되돌아오고 → 관찰 밴드 밖으로 나간
-       문단 때문에 카드가 다시 꺼지는 무한 깜빡임이 생겼다(사용자 리포트 2026-07-20).
-       높이 바닥을 고정하면 카드 등장·소멸이 레이아웃을 흔들지 않아 루프가 끊긴다.
-       min-height라 카드를 탭해 펼치면(.open) 그때만 늘어난다.
-       ※ height:auto로 데스크탑 base(height:100vh)를 반드시 덮어쓴다 — 안 그러면
-         모바일 레일이 화면 전체 높이를 먹어 본문이 통째로 밀려난다. */
-    height: auto;
-    min-height: 62px;
-    box-sizing: border-box;
-    width: 100%;
-    flex: none;
-    flex-direction: row;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 8px;
-    padding: 8px 0;
-    margin-bottom: 6px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scrollbar-width: none;
-    background: var(--paper);
-    border-bottom: 1px solid var(--line);
+  .ent-peek-mobile {
+    /* 뜨는 자리는 JS가 뒤로가기 버튼 아래(옛 레일 자리)로 잡아 문서 좌표에 못 박는다 */
+    width: auto;
+    z-index: 9;
   }
-  .story-rail::-webkit-scrollbar {
-    display: none;
-  }
-  /* 빈 상태에서도 자리(높이)는 유지하되 배경·테두리만 감춰 빈 줄처럼 보이지 않게 한다.
-     display:none 으로 접으면 위 깜빡임 루프가 되살아나므로 접지 않는다. */
-  .story-rail:empty {
-    background: transparent;
-    border-bottom-color: transparent;
-  }
-  /* 스니펫: 기본은 아바타+이름만. 탭하면 .open 이 붙어 설명까지 펼친다. */
-  .story-rail .rail-card {
-    flex: 0 0 auto;
-    max-width: 82vw;
+  .ent-peek-mobile .ent-peek-card {
     display: flex;
-    align-items: center;
-    gap: 7px;
-    background: var(--white);
-    cursor: pointer;
+    align-items: stretch;
+    gap: 0;
   }
-  .story-rail .cast-img {
-    flex: 0 0 32px;
-    width: 32px;
-    height: 32px;
+  .ent-peek-mobile .cast-img {
+    flex: 0 0 54px;
+    width: 54px;
+    height: auto;
+    min-height: 54px;
   }
-  .story-rail .cast-img img {
-    height: 180%;
+  .ent-peek-mobile .cast-img img {
+    height: 160%;
   }
-  .story-rail .cast-avatar img {
+  .ent-peek-mobile .cast-avatar img {
     height: 100%;
   }
-  .story-rail .rail-card-text {
-    padding: 6px 11px;
+  .ent-peek-mobile .ent-peek-text {
     min-width: 0;
-  }
-  .story-rail .rail-card-text b {
-    font-size: 12.5px;
-    white-space: nowrap;
-  }
-  /* 접힘 상태: 이름 + 짧은 스니펫(서너 글자 + …). 펼치면 전문(full)으로 교체 */
-  .story-rail .rail-card-text > span {
-    display: block;
-    margin-top: 2px;
-    font: 600 11px/1.4 monospace;
-    color: var(--muted);
-    white-space: nowrap;
-  }
-  .story-rail .rail-desc-full {
-    display: none;
-  }
-  .story-rail .rail-desc-snip {
-    display: inline;
-  }
-  /* 카드를 펼치면(.open) 레일 전체 폭(100%)을 차지한다.
-     ★ 펼친 카드가 가로 스크롤 스트립에서 다른 카드 뒤에 있으면 오른쪽이 화면 밖으로 잘렸다
-       (카드 탭은 밑줄단어와 달리 자동 스크롤이 없어서). 그래서 펼침 상태에선 나머지 카드를
-       숨기고 가로 스크롤을 끄면, 펼친 카드가 항상 왼쪽 끝에서 시작해 전부 보인다 (2026-07-20). */
-  .story-rail:has(.rail-card.open) {
-    overflow-x: hidden;
-  }
-  .story-rail:has(.rail-card.open) .rail-card:not(.open) {
-    display: none;
-  }
-  .story-rail .rail-card.open {
-    flex: 0 0 100%;
-    max-width: 100%;
-    width: 100%;
-  }
-  .story-rail .rail-card.open .rail-card-text b {
-    white-space: normal;
-  }
-  .story-rail .rail-card.open .rail-card-text > span {
-    white-space: normal;
-    word-break: keep-all;
-    line-height: 1.5;
-  }
-  .story-rail .rail-card.open .rail-desc-full {
-    display: inline;
-  }
-  .story-rail .rail-card.open .rail-desc-snip {
-    display: none;
-  }
-  .rail-card {
-    animation: none; /* 가로 바에선 슬라이드 인 생략 */
+    padding: 7px 11px 8px;
   }
 }
 .story-body {
