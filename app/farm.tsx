@@ -13,7 +13,7 @@ import farmData from "./data/farm.json";
 import costsData from "./data/costs.json";
 import type { Operator } from "./home";
 import { useI18n, type Locale } from "./i18n";
-import { normSearch, useDebounced } from "./search";
+import { normSearch, useSearchInput } from "./search";
 import { HANDOFF_EVENT, takeHandoff } from "./handoff";
 
 type LocText = { ko: string; en?: string; ja?: string };
@@ -122,8 +122,8 @@ function locText(locale: Locale, text: LocText): string {
 export default function FarmGuide({ includeFuture }: { includeFuture: boolean }) {
   const { locale, t } = useI18n();
   const [tiers, setTiers] = useState<number[]>([]);
-  const [query, setQuery] = useState("");
-  const searchTerm = useDebounced(query);   // 타이핑 멈춘 뒤 1초 (search.ts)
+  // 비제어 입력 — 타이핑 중 렌더 0회, 멈춘 뒤 0.5초에 searchTerm만 갱신 (search.ts)
+  const { term: searchTerm, set: setSearchTerm, inputProps: searchProps } = useSearchInput();
   const [permOnly, setPermOnly] = useState(false);
   // 재료 상세 모달 — 효율표·계산기의 모든 재료 아이콘에서 연다 (id = item id)
   const [shownItem, setShownItem] = useState<string | null>(null);
@@ -144,8 +144,8 @@ export default function FarmGuide({ includeFuture }: { includeFuture: boolean })
     const apply = () => {
       const h = takeHandoff("farm");
       if (!h) return;
-      if (h.item) { setShownItem(h.item); setTiers([]); setQuery(""); }
-      else if (h.query) { setQuery(h.query); setTiers([]); }
+      if (h.item) { setShownItem(h.item); setTiers([]); setSearchTerm(""); }
+      else if (h.query) { setSearchTerm(h.query); setTiers([]); }
     };
     apply();
     window.addEventListener(HANDOFF_EVENT, apply);
@@ -189,7 +189,7 @@ export default function FarmGuide({ includeFuture }: { includeFuture: boolean })
             </button>
           ))}
         </div>
-        <div className="search-wrap farm-search"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("재료 이름·별명 검색")} aria-label={t("재료 이름·별명 검색")} /></div>
+        <div className="search-wrap farm-search"><span>⌕</span><input {...searchProps} placeholder={t("재료 이름·별명 검색")} aria-label={t("재료 이름·별명 검색")} /></div>
         <label className="farm-perm-toggle">
           <input type="checkbox" checked={permOnly} onChange={(event) => setPermOnly(event.target.checked)} />
           {t("상시 파밍 가능한 스테이지만 (이벤트 한정 제외)")}
@@ -280,7 +280,7 @@ export default function FarmGuide({ includeFuture }: { includeFuture: boolean })
           id={shownItem}
           onClose={() => setShownItem(null)}
           onShowItem={setShownItem}
-          onSearchItem={(name) => { setQuery(name); setTiers([]); setShownItem(null); }}
+          onSearchItem={(name) => { setSearchTerm(name); setTiers([]); setShownItem(null); }}
         />
       )}
     </section>
@@ -372,8 +372,8 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
 }) {
   const { locale, t } = useI18n();
   const [picked, setPicked] = useState<string[]>([]);
-  const [draft, setDraft] = useState("");
-  const draftTerm = useDebounced(draft);   // 후보 목록은 타이핑 멈춘 뒤 1초 (search.ts)
+  // 비제어 입력 — 후보 목록은 타이핑 멈춘 뒤 0.5초에만 (search.ts)
+  const { term: draftTerm, set: setDraftTerm, inputProps: draftProps } = useSearchInput();
   // 검색창 포커스 여부 — 입력이 없어도 포커스만 하면 전체 오퍼 목록을 펼쳐 보여준다.
   const [focused, setFocused] = useState(false);
   // 그룹별 목표 단계 — "opId/groupKey" → 포함할 앞쪽 단계 수. 없으면 전체(steps.length) 기본.
@@ -512,7 +512,7 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
   // 검색창을 클릭(포커스)하면 목록이 다시 열린다.
   const addOp = (id: string) => {
     setPicked((current) => [...current, id]);
-    setDraft("");
+    setDraftTerm("");
     setFocused(false);
     searchRef.current?.blur();
   };
@@ -530,9 +530,8 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
         <div className="search-wrap cost-search">
           <span>⌕</span>
           <input
-            ref={searchRef}
-            value={draft}
-            onChange={(event) => { setDraft(event.target.value); setFocused(true); }}
+            {...draftProps}
+            onInput={(event) => { draftProps.onInput(event); setFocused(true); }}
             onFocus={() => setFocused(true)}
             // 목록 항목 클릭이 먼저 처리되도록 blur는 살짝 지연
             onBlur={() => window.setTimeout(() => setFocused(false), 150)}

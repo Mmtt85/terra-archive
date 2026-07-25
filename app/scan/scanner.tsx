@@ -14,7 +14,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { T } from "../i18n";
 import { ops, opById, maxElite, ELITE_LABEL, type Elite, type InfraOp } from "../planner-engine";
-import { normSearch, useDebounced } from "../search";
+import { normSearch, useSearchInput } from "../search";
 import { analyzeFrame } from "./artmatch";
 
 // 스크린샷 1장에서 나온 오퍼별 최고 검출 (결과 목록은 이걸 전부 병합해 파생)
@@ -68,8 +68,8 @@ export function ScannerModal({ t, onClose, onApply }: {
   const [manualAdds, setManualAdds] = useState<Set<string>>(new Set());
   const [eliteOverride, setEliteOverride] = useState<Map<string, Elite>>(new Map());
   const [removed, setRemoved] = useState<Set<string>>(new Set());
-  const [addQuery, setAddQuery] = useState("");
-  const addTerm = useDebounced(addQuery);   // 타이핑 멈춘 뒤 1초 (search.ts)
+  // 비제어 입력 — 타이핑 중 렌더 0회 (search.ts)
+  const { term: addTerm, set: setAddTerm, inputProps: addProps } = useSearchInput();
   const [clip, setClip] = useState<ClipState>("init");
   const [clipStarted, setClipStarted] = useState(false); // 사용자가 '자동인식 시작'을 눌러야 폴링 개시
   const [helpOpen, setHelpOpen] = useState(false); // ? 도움말 모달 (스샷 레이더와 동일 패턴)
@@ -240,7 +240,7 @@ export function ScannerModal({ t, onClose, onApply }: {
     if (!opById.has(id)) return;
     setManualAdds((prev) => new Set(prev).add(id));
     setRemoved((prev) => { const n = new Set(prev); n.delete(id); return n; });
-    setAddQuery("");
+    setAddTerm("");
   }, []);
 
   // 정예화 토글 (0→1→2→0, 성급 상한까지만) — 수동 수정은 이후 스캔이 덮어쓰지 않음
@@ -321,7 +321,7 @@ export function ScannerModal({ t, onClose, onApply }: {
           </div>
 
           <div className="scanner-add">
-            <input value={addQuery} onChange={(e) => setAddQuery(e.target.value)} placeholder={t("빠진 오퍼 직접 추가 (이름 검색)")} />
+            <input {...addProps} placeholder={t("빠진 오퍼 직접 추가 (이름 검색)")} />
             {addMatches.length > 0 && (
               <div className="scanner-add-list">
                 {addMatches.map((o) => (

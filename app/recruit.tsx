@@ -4,7 +4,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import recruitData from "./data/recruit.json";
 import { useI18n, rich, type ExtraI18n } from "./i18n";
 import { HANDOFF_EVENT, takeHandoff } from "./handoff";
-import { useDebounced } from "./search";
+import { useSearchInput } from "./search";
 import { isNewFeature } from "./whats-new";
 import type { LensGoto } from "./lens/match";
 import { recognizeShot, warmData } from "./lens/run";
@@ -134,9 +134,8 @@ const ALL_TAG_NAMES = data.tags.map((tag) => tag.name);
 export default function RecruitHelper({ onShowOperator, extra }: { onShowOperator?: (id: string) => void; extra?: ExtraI18n | null } = {}) {
   const { t, locale } = useI18n();
   const [showDict, setShowDict] = useState(false);
-  const [quick, setQuick] = useState("");
-  // 태그 자동 선택·조합 계산도 타이핑이 멈춘 뒤 1초에만 (사용자 확정 2026-07-25)
-  const quickTerm = useDebounced(quick);
+  // 비제어 입력 — 타이핑 중 렌더 0회, 태그 자동 선택·조합 계산은 멈춘 뒤 0.5초에 (search.ts)
+  const { term: quickTerm, set: setQuickTerm, inputProps: quickProps } = useSearchInput();
   const [manualOn, setManualOn] = useState<string[]>([]);   // 직접 클릭해 켠 태그
   const [manualOff, setManualOff] = useState<string[]>([]); // 자동 선택을 직접 꺼둔 태그
 
@@ -181,7 +180,7 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
       if (picked.length < 5 && !autoPicks.includes(tag)) setManualOn((current) => [...current, tag]);
     }
   };
-  const clearAll = () => { setQuick(""); setManualOn([]); setManualOff([]); };
+  const clearAll = () => { setQuickTerm(""); setManualOn([]); setManualOff([]); };
 
   // 헤더 만능검색이 태그를 지목하면 그 태그를 켠 상태로 시작한다 (app/handoff.ts).
   // 태그 정본은 KR 이름이라 로케일과 무관하게 그대로 받는다.
@@ -189,7 +188,7 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
     const apply = () => {
       const h = takeHandoff("recruit");
       if (!h?.tags?.length) return;
-      setQuick("");
+      setQuickTerm("");
       setManualOff([]);
       setManualOn(h.tags.filter((tag) => ALL_TAG_NAMES.includes(tag)).slice(0, 5));
     };
@@ -203,7 +202,7 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
   const onLensGoto = (g: LensGoto) => {
     if (g.page !== "recruit") return;
     setLensOpen(false);
-    setQuick("");
+    setQuickTerm("");
     setManualOff([]);
     setManualOn(g.tags.filter((tag) => ALL_TAG_NAMES.includes(tag)).slice(0, 5));
   };
@@ -262,7 +261,7 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
 
       <div className="recruit-tags">
         <div className="quick-wrap">
-          <input value={quick} onChange={(event) => setQuick(event.target.value)}
+          <input {...quickProps}
             placeholder={t("빠른 입력 — 태그 첫 글자를 이어서 입력 (예: 가메신생범)")} aria-label={t("태그 첫 글자 빠른 입력")} />
           <button type="button" className="clear-btn" onClick={clearAll}><span className="btn-icon" aria-hidden>↻</span>{t("클리어")}</button>
           {/* 스샷으로 태그 입력 — 버튼 자체가 자동인식 토글, ?는 도움말 모달 (KR 클라 전용) */}

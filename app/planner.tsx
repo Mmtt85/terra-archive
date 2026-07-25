@@ -4,7 +4,7 @@ import { lazy, startTransition, Suspense, useEffect, useMemo, useRef, useState }
 import { useI18n, tokenName, rich, type ExtraI18n, type Locale, type T } from "./i18n";
 import { RULES } from "./rules";
 import { useConfirm } from "./confirm";
-import { normSearch, useDebounced } from "./search";
+import { normSearch, useSearchInput } from "./search";
 import { isNewFeature } from "./whats-new";
 
 import {
@@ -1463,8 +1463,8 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
   agg["증폭"] = ampSpecs.reduce((sum, spec) => sum + Math.min(spec.cap, Math.floor(agg["스킬 효율"] / spec.per) * spec.add), 0);
   // 추가 후보: 어디에도 배치 안 된 보유 오퍼를 한계 기여 순으로
   const [benchAll, setBenchAll] = useState(false);
-  const [benchQuery, setBenchQuery] = useState("");
-  const benchTerm = useDebounced(benchQuery);   // 타이핑 멈춘 뒤 1초 (search.ts)
+  // 비제어 입력 — 타이핑 중 렌더 0회, 멈춘 뒤 0.5초에만 후보 목록 갱신 (search.ts)
+  const { term: benchTerm, inputProps: benchProps } = useSearchInput();
   // 숙소에 두면 다른 방의 조건을 켜 주는 오퍼("…가 기반시설 어디든 있으면 +N%"의 짝) —
   // 언더플로우의 울피아누스처럼, 숙소 후보 목록에서 이들을 맨 앞에 세운다 (2026-07-25)
   const enablerFor = useMemo(() => {
@@ -1923,7 +1923,7 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                 <span>{cell.room === "DORMITORY"
                   ? t("빈 자리에 추가 — 클릭 시 즉시 배치·고정 (다른 방의 조건을 켜 주는 오퍼가 맨 앞):")
                   : t("빈 자리에 추가 — 클릭 시 즉시 배치 (기여 예상):")}</span>
-                <input className="bench-search" value={benchQuery} onChange={(event) => setBenchQuery(event.target.value)} placeholder={t("이름·소속으로 후보 검색")} />
+                <input className="bench-search" {...benchProps} placeholder={t("이름·소속으로 후보 검색")} />
                 {bench.length > 0 ? (
                   <div className="bench-chips">
                     {bench.map(({ op, delta }) => {
@@ -2039,8 +2039,8 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
   const [draft, setDraft] = useState<Set<string>>(new Set(ownedIds));
   const [eliteDraft, setEliteDraft] = useState<Map<string, Elite>>(new Map(eliteById));
   const [showScan, setShowScan] = useState(false); // 스크린샷 스캐너(모달 내부에서 draft에 병합)
-  const [query, setQuery] = useState("");
-  const searchTerm = useDebounced(query);   // 타이핑 멈춘 뒤 1초 (search.ts)
+  // 비제어 입력 — 450칩 목록을 한 글자마다 다시 그리지 않는다 (search.ts)
+  const { term: searchTerm, inputProps: searchProps } = useSearchInput();
   const [sortKey, setSortKey] = useState("기본");
   const [sortAsc, setSortAsc] = useState(true);
   const keyword = searchTerm.trim().toLowerCase();
@@ -2183,7 +2183,7 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
           <span className="modal-kicker">ROSTER · {t("{n}/{m} 보유", { n: draft.size, m: allOps.length })}</span>
           <h2>{t("보유 오퍼레이터 설정")}</h2>
           <div className="roster-tools">
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("이름·소속 검색")} />
+            <input {...searchProps} placeholder={t("이름·소속 검색")} />
             <button type="button" onClick={() => setDraft(new Set(allOps.map((op) => op.id)))}><span className="btn-icon" aria-hidden>✓</span>{t("전체 선택")}</button>
             <button type="button" onClick={() => setDraft(new Set())}><span className="btn-icon" aria-hidden>✕</span>{t("전체 해제")}</button>
             <label className="maa-import" title={t("MAA(MaaAssistantArknights)의 오퍼 박스 인식 결과 JSON을 불러와 보유·정예화를 한 번에 설정합니다")}>

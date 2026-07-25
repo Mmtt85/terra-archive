@@ -1411,8 +1411,9 @@ const D: Record<string, Pair> = {
 
   // 헤더 만능검색 (omni-search.tsx / omni.ts)
   "검색": ["Search", "検索"],
-  "사이트 통합 검색": ["Search the whole site", "サイト内検索"],
-  "사이트 통합 검색 (⌘K)": ["Search the whole site (⌘K)", "サイト内検索（⌘K）"],
+  "유니버셜 서치": ["Universal Search", "ユニバーサルサーチ"],
+  "유니버셜 서치 — 사이트 전체 검색": ["Universal Search — search the whole site", "ユニバーサルサーチ — サイト全体を検索"],
+  "유니버셜 서치 — 오퍼·재료·스토리·통합전략·기능을 한 번에 찾아 이동합니다 (⌘K)": ["Universal Search — find operators, materials, stories, IS entries and tools anywhere on the site and jump there (⌘K)", "ユニバーサルサーチ — オペレーター・素材・ストーリー・ローグライク・機能をまとめて検索して移動します（⌘K）"],
   "오퍼레이터 · 재료 · 스토리 · 통합전략 · 기능 검색": ["Operators, materials, stories, IS, tools…", "オペレーター・素材・ストーリー・ローグライク・機能を検索"],
   "바로가기": ["Go", "移動"],
   "찾는 중…": ["Searching…", "検索中…"],
@@ -1434,6 +1435,8 @@ const D: Record<string, Pair> = {
   "부품": ["Scrap", "パーツ"],
   "고른 항목을 기억해 다음엔 바로 이동해요": ["We'll remember your pick and jump straight there next time", "選んだ項目を覚えて、次回は直接移動します"],
   "자주 선택": ["Often picked", "よく選ばれる"],
+  "비슷한 이름": ["Close match", "似た名前"],
+  "화면": ["View", "画面"],
 };
 
 export type T = (key: string, vars?: Record<string, string | number>) => string;

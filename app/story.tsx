@@ -34,7 +34,7 @@ import chronologyData from "./data/chronology.json";
 import storylinesData from "./data/storylines.json";
 import imageDimsData from "./data/story-image-dims.json";
 import { rich, useI18n, type Locale } from "./i18n";
-import { normSearch, useDebounced } from "./search";
+import { normSearch, useSearchInput } from "./search";
 
 // CG·삽화의 실측 크기 (scripts/measure-story-images.py) — width/height를 박아 로딩 중
 // 레이아웃 밀림(CLS)을 없앤다. 브라우저가 렌더 폭에 맞춰 높이를 미리 예약한다.
@@ -1044,8 +1044,8 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
 // 각 그룹은 최신순(이벤트=출시월, 메인=에피소드 번호). 요약이 있는 이벤트만 열린다.
 function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEvent) => void; includeFuture?: boolean; group: "theme" | "kind" }) {
   const { locale, t } = useI18n();
-  const [query, setQuery] = useState("");
-  const searchTerm = useDebounced(query);   // 타이핑 멈춘 뒤 1초 (search.ts)
+  // 비제어 입력 — 타이핑 중 렌더 0회, 멈춘 뒤 0.5초에만 목록 갱신 (search.ts)
+  const { term: searchTerm, inputProps: searchProps } = useSearchInput();
   const [searchOpen, setSearchOpen] = useState(false); // 검색창 클릭 시 전체 이벤트 목록 드롭다운
   const searchRef = useRef<HTMLDivElement>(null);
 
@@ -1232,7 +1232,7 @@ function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEve
       <div className="story-tools">
         <div className="search-wrap story-search" ref={searchRef}>
           <span>⌕</span>
-          <input value={query} onChange={(event) => { setQuery(event.target.value); setSearchOpen(true); }}
+          <input {...searchProps} onInput={(event) => { searchProps.onInput(event); setSearchOpen(true); }}
             onFocus={() => setSearchOpen(true)} onClick={() => setSearchOpen(true)}
             placeholder={t("이벤트 이름 검색")} aria-label={t("이벤트 이름 검색")}
             role="combobox" aria-expanded={searchOpen} aria-controls="story-search-list" />

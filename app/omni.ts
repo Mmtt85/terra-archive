@@ -23,7 +23,7 @@ import { PICK_BONUS_MAX, type PickMap } from "./omni-picks";
 import type { Operator, Tab } from "./home";
 import type { ExtraI18n, Locale, T } from "./i18n";
 
-export type OmniKind = "op" | "story" | "material" | "tag" | "rogue" | "tab";
+export type OmniKind = "op" | "story" | "material" | "tag" | "rogue" | "topic" | "tab";
 
 export type OmniTarget =
   | { kind: "tab"; tab: Tab }
@@ -42,7 +42,12 @@ export type OmniItem = {
   keys: string[];     // 정규화된 검색 키 — 0번이 표시 이름, 뒤쪽은 별명/코드(가중치 감점)
   target: OmniTarget;
 };
-export type OmniHit = OmniItem & { score: number; votes: number };  // votes = 이 검색어에서 선택된 표수(학습)
+export type OmniHit = OmniItem & {
+  score: number;
+  votes: number;      // 이 검색어에서 선택된 표수(학습)
+  fuzzy?: boolean;    // 오탈자 근사로 걸린 후보 ("첸 더 더스트릭" → 첸 더 던스트릭)
+  hinted?: boolean;   // 분류 힌트로 걸린 후보 ("쉐이록라" = 쉐이 + 록라(통합전략))
+};
 
 // 점수: 완전일치 > 접두일치 > 부분일치. 접두·부분은 검색어가 후보를 얼마나 덮는지(비율)로 스케일.
 const EXACT = 120;
@@ -52,9 +57,12 @@ const ALIAS_PENALTY = 8;     // 별명·코드로 잡힌 건 이름으로 잡힌
 const MIN_SCORE = 18;        // 이 밑은 잡음 (한 글자 검색어가 전 항목에 걸리는 것 방지)
 const DECIDE_GAP = 30;       // 1위-2위 점수차가 이 이상이면 되묻지 않고 바로 이동
 // 종류별 미세 가중 — 같은 점수면 사람이 먼저 떠올릴 법한 쪽을 위로
-const KIND_BONUS: Record<OmniKind, number> = { op: 3, tab: 2, story: 2, material: 1, tag: 0, rogue: 0 };
+const KIND_BONUS: Record<OmniKind, number> = { op: 3, tab: 2, topic: 2, story: 2, material: 1, tag: 0, rogue: 0 };
 
 const norm = (s: string) => normSearch(s);
+// 조합 별칭은 **완전일치일 때만** 맞는 키로 넣는다 — "사미엔딩"이 "사미" 부분일치로 새어
+// 후보를 어지럽히지 않게. 키 앞의 "=" 한 글자가 그 표시다 (searchOmni·fuzzyHits가 해석).
+const exactKey = (raw: string) => `=${norm(raw)}`;
 const keysOf = (...raw: (string | null | undefined)[]) => {
   const out: string[] = [];
   for (const s of raw) {
@@ -63,6 +71,9 @@ const keysOf = (...raw: (string | null | undefined)[]) => {
   }
   return out;
 };
+// 이름을 띄어쓰기 단위로도 키에 넣는다 (0번 이후라 별명 가중) — "던스트릭"으로 '첸 더 던스트릭',
+// "쉐이"로 '쉐이의 기이한 계원'이 잡히게. 한 글자 조각(더·의)은 잡음이라 버린다.
+const words = (name: string) => name.split(/[\s·&,/]+/).filter((w) => w.length >= 2);
 
 // ── 기능 탭 ────────────────────────────────────────────────────────────────
 // 동의어는 로케일과 무관하게 전부 실어 둔다 — 한국 사용자가 "riic", "IS3"로 찾기도 한다.
@@ -76,6 +87,27 @@ const TAB_ENTRIES: { tab: Tab; label: string; alt: string[] }[] = [
   { tab: "story", label: "스토리", alt: ["story", "요약", "전문", "연대기"] },
   { tab: "rogue", label: "통합전략 가이드", alt: ["rogue", "integrated strategies", "로그라이크", "통합전략", "is"] },
   { tab: "about", label: "소개", alt: ["about", "소개", "문의", "제작"] },
+];
+
+// 통합전략 테마의 커뮤니티 호칭 — 대부분 이 이름으로 부른다 (사용자 확인 2026-07-25:
+// "탐험가의 은빛 서리 끝자락은 사미라고 부름"). 여기에 분류어를 붙인 "사미록라"도 자동 생성된다.
+const TOPIC_NICKS: Record<string, string[]> = {
+  rogue_1: ["팬텀", "크림슨솔리테어", "솔리테어"],
+  rogue_2: ["미즈키", "카이룰라", "카이룰라아버", "아버"],
+  rogue_3: ["사미", "은빛서리", "서리끝자락", "탐험가"],
+  rogue_4: ["살카즈", "영겁기담", "기담"],
+  rogue_5: ["쉐이", "기이한계원", "계원"],
+  rogue_6: ["흑류수해", "침몰자", "흑수"],
+};
+const ROGUE_WORDS = ["록라", "로라", "로그라이크", "통합전략", "통전"];
+// 통합전략 화면(뷰) — rogue.tsx viewsFor()와 같은 id·라벨을 쓴다 (딥링크가 그 id로 동작)
+const ROGUE_VIEWS: { id: string; label: string }[] = [
+  { id: "map", label: "맵·노드" },
+  { id: "enemy", label: "적 도감" },
+  { id: "relic", label: "소장품" },
+  { id: "archive", label: "전시관" },
+  { id: "diff", label: "난이도" },
+  { id: "ending", label: "엔딩" },
 ];
 
 const SECTION_LABEL: Record<string, string> = {
@@ -107,12 +139,39 @@ export function buildOmniIndex({ roster, nicknames, includeFuture, locale, t, ex
   for (const tp of TOPICS) {
     if (!tp.ready || (tp.future && !includeFuture)) continue;
     const num = tp.id.split("_")[1];
+    const nicks = TOPIC_NICKS[tp.id] ?? [];
+    // 테마 별명("사미")과 별명+분류어("사미록라") 조합까지 키로 — 커뮤니티가 쓰는 호칭이 정답이다
+    const nickKeys = [...nicks, ...nicks.flatMap((nick) => ROGUE_WORDS.map((w) => exactKey(`${nick}${w}`)))];
     items.push({
-      uid: `topic:${tp.id}`, kind: "tab", name: t(tp.name), sub: t("통합전략 테마"),
-      keys: keysOf(t(tp.name), tp.name, `is${num}`, `통합전략${num}`),
+      uid: `topic:${tp.id}`, kind: "topic", name: t(tp.name), sub: t("통합전략 테마"),
+      keys: keysOf(t(tp.name), ...words(t(tp.name)), ...words(tp.name), ...nickKeys, `is${num}`, `통합전략${num}`),
       target: { kind: "rogue", topic: tp.id },
     });
+    // 테마 안의 **화면 이름**도 찾을 수 있어야 한다 (사용자 요청 2026-07-25: "전시관" 검색).
+    // 전시관 안 서브탭(암호판·사고 등)은 테마 데이터에 있어 지연 로드 후 rogueOmniItems가 얹는다.
+    for (const view of ROGUE_VIEWS) {
+      items.push({
+        uid: `rgview:${tp.id}:${view.id}`, kind: "rogue", name: t(view.label),
+        sub: `${t(tp.name)} · ${t("화면")}`,
+        keys: [...keysOf(t(view.label), view.label),
+          ...nicks.map((nick) => exactKey(`${nick}${view.label}`)), exactKey(`${t(tp.name)}${view.label}`)],
+        target: { kind: "rogue", topic: tp.id, goto: { page: "rogue", topic: tp.id, view: view.id } },
+      });
+    }
   }
+
+  // 이격(알터) 오퍼는 "이격첸"·"첸알터"로도 찾아야 한다 (사용자 요청 2026-07-25).
+  // 알터 이름은 언제나 "원본 이름 + 수식어"(첸 더 던스트릭 / 실버애쉬 더 레인프로스트)라,
+  // 첫 단어가 다른 오퍼의 이름과 같으면 그 오퍼의 이격으로 본다 — 로케일 데이터에도 그대로
+  // 성립한다(Chen the Holungday → Chen). 별칭이 하나 늘 뿐이라 오탐도 무해하다.
+  const baseNames = new Set(roster.map((op) => norm(op.name)));
+  const alterKeys = (name: string): string[] => {
+    // words()는 한 글자 단어(첸·팽)를 버리므로 여기선 원문 첫 토큰을 그대로 본다
+    const parts = name.split(/\s+/).filter(Boolean);
+    const head = parts[0];
+    if (parts.length < 2 || !head || !baseNames.has(norm(head))) return [];
+    return [`이격${head}`, `${head}이격`, `알터${head}`, `${head}알터`, `${head} alter`].map(exactKey);
+  };
 
   for (const op of roster) {
     const nicks = (nicknames?.get(op.id) ?? []).filter((n) => n.votes >= 3).map((n) => n.name);
@@ -120,10 +179,14 @@ export function buildOmniIndex({ roster, nicknames, includeFuture, locale, t, ex
       uid: `op:${op.id}`, kind: "op", name: op.name,
       sub: `${op.rarity}★ ${op.job}`,
       img: `/avatars/${op.id}.webp`,
-      keys: keysOf(op.name, ...op.aliases, ...nicks, op.code),
+      keys: keysOf(op.name, ...words(op.name), ...alterKeys(op.name), ...op.aliases, ...nicks, op.code),
       target: { kind: "op", id: op.id },
     });
   }
+
+  // 이름이 통합전략 테마와 같은 스토리(사미·미즈키 등)는 테마 별명으로도 찾히게 한다
+  const nickByKoName = new Map<string, string[]>();
+  for (const tp of TOPICS) if (TOPIC_NICKS[tp.id]) nickByKoName.set(norm(tp.name), TOPIC_NICKS[tp.id]);
 
   for (const ev of eventById.values()) {
     if (!canOpenStory(ev.id) || (ev.unreleased && !includeFuture)) continue;
@@ -131,7 +194,7 @@ export function buildOmniIndex({ roster, nicknames, includeFuture, locale, t, ex
     items.push({
       uid: `story:${ev.id}`, kind: "story", name,
       sub: ev.epNo != null ? t("메인 스토리") : t("이벤트 스토리"),
-      keys: keysOf(name, ev.name.ko, ev.name.en, ev.name.ja),
+      keys: keysOf(name, ...words(name), ev.name.ko, ev.name.en, ev.name.ja, ...(nickByKoName.get(norm(ev.name.ko)) ?? [])),
       target: { kind: "story", id: ev.id },
     });
   }
@@ -142,7 +205,7 @@ export function buildOmniIndex({ roster, nicknames, includeFuture, locale, t, ex
     items.push({
       uid: `mat:${item.id}`, kind: "material", name,
       sub: `T${item.rarity} · ${t("재료")}`, img: item.image,
-      keys: keysOf(name, item.name.ko, item.name.en, item.name.ja, ...(MATERIAL_ALIASES[item.id] ?? [])),
+      keys: keysOf(name, ...words(name), item.name.ko, item.name.en, item.name.ja, ...(MATERIAL_ALIASES[item.id] ?? [])),
       target: { kind: "farm", item: item.id },
     });
   }
@@ -159,10 +222,30 @@ export function buildOmniIndex({ roster, nicknames, includeFuture, locale, t, ex
   return items;
 }
 
-/** 통합전략 세부 항목 — 스샷 레이더 인덱스(지연 로드)를 그대로 재활용한다. */
+/** 통합전략 세부 항목 — 스샷 레이더 인덱스(지연 로드)를 그대로 재활용한다.
+ *  덧붙여 **전시관 서브탭 이름**(암호판·사고·레퍼토리…)도 항목으로 만든다 — 탭 목록은 테마
+ *  데이터에만 있어서(mechanics[].label) 지연 로드 시점에야 알 수 있다. */
 export function rogueOmniItems(index: LensIndex, includeFuture: boolean, t: T): OmniItem[] {
   const allowed = new Set(TOPICS.filter((tp) => tp.ready && (!tp.future || includeFuture)).map((tp) => tp.id));
+  const topicName = new Map<string, string>();
+  const arcTabs = new Map<string, Set<string>>();   // 토픽 → 전시관 탭 라벨
   const items: OmniItem[] = [];
+  for (const e of index.entries) {
+    if (!allowed.has(e.topic)) continue;
+    topicName.set(e.topic, e.topicName);
+    if (e.section === "mech" && e.arc) (arcTabs.get(e.topic) ?? arcTabs.set(e.topic, new Set()).get(e.topic)!).add(e.arc);
+  }
+  for (const [topic, labels] of arcTabs) {
+    const nicks = TOPIC_NICKS[topic] ?? [];
+    for (const label of labels) {
+      items.push({
+        uid: `rgarc:${topic}:${label}`, kind: "rogue", name: label,
+        sub: `${topicName.get(topic) ?? topic} · ${t("전시관")}`,
+        keys: [...keysOf(label), ...nicks.map((nick) => exactKey(`${nick}${label}`))],
+        target: { kind: "rogue", topic, goto: { page: "rogue", topic, view: "archive", arcTab: label } },
+      });
+    }
+  }
   for (const e of index.entries) {
     // nameN이 빈 엔트리 = EN/JA 인덱스의 CN 선행 항목 (중국어 패스 전용) — 검색에 안 걸린다
     if (!e.nameN || !allowed.has(e.topic)) continue;
@@ -172,7 +255,7 @@ export function rogueOmniItems(index: LensIndex, includeFuture: boolean, t: T): 
       uid: `rg:${e.topic}:${e.section}:${e.id}`, kind: "rogue", name: e.name,
       // topicName은 로케일 데이터(rogueN.<loc>.json)에서 온 이름이라 그대로 쓴다
       sub: `${e.topicName} · ${t(SECTION_LABEL[e.section] ?? e.section)}`,
-      keys: [e.nameN],
+      keys: [e.nameN, ...words(e.name).map(norm).filter((w) => w && w !== e.nameN)],
       target: { kind: "rogue", topic: e.topic, goto },
     });
   }
@@ -193,10 +276,12 @@ export function searchOmni(items: OmniItem[], raw: string, opts?: { limit?: numb
     let best = 0;
     for (let i = 0; i < it.keys.length; i += 1) {
       const k = it.keys[i];
-      let score = k === q ? EXACT
-        : k.startsWith(q) ? PREFIX * (q.length / k.length)
-          : k.includes(q) ? PART * (q.length / k.length)
-            : 0;
+      let score = k.startsWith("=")
+        ? (k.slice(1) === q ? EXACT : 0)                       // 조합 별칭 — 완전일치 전용
+        : k === q ? EXACT
+          : k.startsWith(q) ? PREFIX * (q.length / k.length)
+            : k.includes(q) ? PART * (q.length / k.length)
+              : 0;
       if (score && i > 0) score -= ALIAS_PENALTY;
       if (score > best) best = score;
     }
@@ -206,6 +291,144 @@ export function searchOmni(items: OmniItem[], raw: string, opts?: { limit?: numb
   }
   hits.sort((a, b) => b.score - a.score || a.name.length - b.name.length || a.name.localeCompare(b.name));
   return hits.slice(0, opts?.limit ?? 10);
+}
+
+// ── 오탈자 근사 매칭 (사용자 요청 2026-07-25) ───────────────────────────────
+// "첸 더 더스트릭"으로 첸 더 던스트릭, "네스티"로 내스티가 나와야 한다. 둘 다 **자모 한 개**
+// 차이(받침 ㄴ, 모음 ㅐ/ㅔ)라 음절 단위로는 잡기 어렵다 → 한글을 자모로 풀어 2-그램
+// 유사도(Dice)를 본다. 편집거리보다 싸고(선형), 수천 항목을 훑어도 부담이 없다.
+const jamoOf = (s: string): string => {
+  let out = "";
+  for (const ch of s) {
+    const code = ch.charCodeAt(0) - 0xac00;
+    if (code >= 0 && code < 11172) {
+      out += String.fromCharCode(0x1100 + Math.floor(code / 588));          // 초성
+      out += String.fromCharCode(0x1161 + Math.floor((code % 588) / 28));   // 중성
+      const jong = code % 28;
+      if (jong) out += String.fromCharCode(0x11a7 + jong);                  // 종성
+    } else {
+      out += ch;
+    }
+  }
+  return out;
+};
+const gramCache = new Map<string, Set<string>>();      // 키 문자열 → 자모 2-그램 (재검색 시 재활용)
+function grams(key: string): Set<string> {
+  let g = gramCache.get(key);
+  if (!g) {
+    const j = jamoOf(key);
+    g = new Set<string>();
+    for (let i = 0; i + 1 < j.length; i += 1) g.add(j.slice(i, i + 2));
+    if (!g.size && j) g.add(j);
+    gramCache.set(key, g);
+  }
+  return g;
+}
+const dice = (a: Set<string>, b: Set<string>): number => {
+  if (!a.size || !b.size) return 0;
+  let hit = 0;
+  for (const g of a) if (b.has(g)) hit += 1;
+  return (2 * hit) / (a.size + b.size);
+};
+const FUZZY_MIN = 0.55;    // 이 밑은 "아예 다른 단어"로 본다
+const FUZZY_GATE = 72;     // 정상 매칭 최고점이 이보다 낮을 때만 근사 검색을 돌린다
+const FUZZY_BASE = 30;     // 근사 후보 점수: 30 ~ 85 (완전일치 120은 절대 못 넘는다)
+
+function fuzzyHits(items: OmniItem[], q: string, picks?: PickMap, kinds?: OmniKind[]): OmniHit[] {
+  const qj = jamoOf(q);
+  if (qj.length < 4) return [];        // 자모 4개(=2음절) 미만은 근사 검색이 잡음만 낸다
+  const qg = grams(q);
+  const out: OmniHit[] = [];
+  for (const it of items) {
+    if (kinds && !kinds.includes(it.kind)) continue;
+    let best = 0;
+    for (let i = 0; i < Math.min(it.keys.length, 4); i += 1) {
+      const key = it.keys[i];
+      if (key.startsWith("=")) continue;      // 조합 별칭은 근사 매칭 대상이 아니다
+      const kj = jamoOf(key).length;
+      if (kj < qj.length * 0.5 || kj > qj.length * 2) continue;   // 길이가 너무 다르면 후보 아님
+      const d = dice(qg, grams(key)) - (i > 0 ? 0.04 : 0);
+      if (d > best) best = d;
+    }
+    if (best < FUZZY_MIN) continue;
+    const votes = picks?.[it.uid] ?? 0;
+    const score = FUZZY_BASE + 55 * ((best - FUZZY_MIN) / (1 - FUZZY_MIN)) + pickBonus(votes);
+    out.push({ ...it, score, votes, fuzzy: true });
+  }
+  return out;
+}
+
+// ── 분류 힌트 (별명·은어) ────────────────────────────────────────────────────
+// "쉐이록라" = 쉐이(이름) + 록라(=로그라이크=통합전략). 이름 뒤에 붙은 분류어를 떼고
+// 남은 이름으로 그 분류만 검색한다. 사용자가 새 은어를 쓰면 omni-picks의 힌트 학습이
+// (검색어에서 남는 조각 → 고른 항목의 종류)를 기억해 이 사전에 얹힌다.
+const HINT_TOKENS: { token: string; kinds: OmniKind[] }[] = [
+  { token: "로그라이크", kinds: ["topic", "rogue"] },
+  { token: "통합전략", kinds: ["topic", "rogue"] },
+  { token: "록라", kinds: ["topic", "rogue"] },
+  { token: "로라", kinds: ["topic", "rogue"] },
+  { token: "통전", kinds: ["topic", "rogue"] },
+  { token: "이벤트스토리", kinds: ["story"] },
+  { token: "스토리", kinds: ["story"] },
+  { token: "이벤트", kinds: ["story"] },
+  { token: "썰", kinds: ["story"] },
+  { token: "재료", kinds: ["material"] },
+  { token: "파밍", kinds: ["material"] },
+  { token: "공채", kinds: ["tag"] },
+  { token: "태그", kinds: ["tag"] },
+  { token: "오퍼레이터", kinds: ["op"] },
+  { token: "오퍼", kinds: ["op"] },
+  { token: "캐릭", kinds: ["op"] },
+];
+const HINT_BONUS = 34;   // 힌트가 지목한 종류에 얹는 가중 (확신 문턱 30을 넘겨 바로 이동 가능)
+
+/** 검색어에서 분류어를 떼어낸다. learned = 선택 학습으로 익힌 은어(토큰 → 종류). */
+export function splitHint(q: string, learned?: Record<string, OmniKind[]>): { rest: string; kinds: OmniKind[]; token: string } | null {
+  const table = [
+    ...Object.entries(learned ?? {}).map(([token, kinds]) => ({ token, kinds })),
+    ...HINT_TOKENS,
+  ].filter((h) => h.token && h.kinds.length).sort((a, b) => b.token.length - a.token.length);
+  for (const h of table) {
+    if (!q.includes(h.token)) continue;
+    const rest = q.split(h.token).join("");        // 이름 + 분류어(앞·뒤 무관)
+    if (rest.length >= 1) return { rest, kinds: h.kinds, token: h.token };
+  }
+  return null;
+}
+
+/** 사이트 검색 한 방 — 정확 매칭 + 분류 힌트 + (그래도 약하면) 오탈자 근사. */
+export function searchSmart(items: OmniItem[], raw: string, opts?: {
+  picks?: PickMap; hints?: Record<string, OmniKind[]>; limit?: number;
+}): OmniHit[] {
+  const q = norm(raw);
+  if (!q) return [];
+  const limit = opts?.limit ?? 10;
+  const merged = new Map<string, OmniHit>();
+  const put = (hit: OmniHit) => {
+    const cur = merged.get(hit.uid);
+    if (!cur || cur.score < hit.score) merged.set(hit.uid, hit);
+  };
+  for (const hit of searchOmni(items, q, { picks: opts?.picks, limit: 40 })) put(hit);
+
+  const hint = splitHint(q, opts?.hints);
+  if (hint) {
+    for (const hit of searchOmni(items, hint.rest, { picks: opts?.picks, limit: 40 })) {
+      if (!hint.kinds.includes(hit.kind)) continue;
+      put({ ...hit, score: hit.score + HINT_BONUS, hinted: true });
+    }
+  }
+
+  // 정상 매칭이 시원찮을 때만 근사 검색 (오탈자·기억 안 나는 이름)
+  const best = Math.max(0, ...[...merged.values()].map((hit) => hit.score));
+  if (best < FUZZY_GATE) {
+    for (const hit of fuzzyHits(items, q, opts?.picks)) put(hit);
+    if (hint) for (const hit of fuzzyHits(items, hint.rest, opts?.picks, hint.kinds)) {
+      put({ ...hit, score: hit.score + HINT_BONUS, hinted: true });
+    }
+  }
+  return [...merged.values()]
+    .sort((a, b) => b.score - a.score || a.name.length - b.name.length || a.name.localeCompare(b.name))
+    .slice(0, limit);
 }
 
 /** 바로 이동해도 되는 1위인가 — 애매하면 null(= "이 중에 무엇인가요?" 선택지).

@@ -10,7 +10,7 @@ import storyEventsData from "./data/stories.json";
 import InfraPlanner from "./planner";
 import RecruitHelper from "./recruit";
 import FarmGuide, { UpgradeSim } from "./farm";
-import { normSearch, useDebounced } from "./search";
+import { normSearch, useSearchInput } from "./search";
 import OmniSearch from "./omni-search";
 import type { OmniTarget } from "./omni";
 import { notifyHandoff, stashHandoff } from "./handoff";
@@ -713,9 +713,10 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
   }, [operators]);
   const [selectedFactions, setSelectedFactions] = useState<string[]>([]);
   const [selectedConcepts, setSelectedConcepts] = useState<string[]>([]);
-  const [query, setQuery] = useState("");
-  // 목록 필터는 타이핑이 멈춘 뒤 1초에만 돈다 (search.ts useDebounced — 사용자 확정 2026-07-25)
-  const searchTerm = useDebounced(query);
+  // 오퍼 검색은 **비제어 입력** — 타이핑 한 글자마다 420장 카드 트리를 다시 렌더하면
+  // 그 렌더가 끝나야 글자가 보인다(한글 IME는 더 심함). 입력값은 DOM에만 두고, 멈춘 뒤
+  // 0.5초에 searchTerm만 갱신한다 (사용자 리포트 2026-07-25). search.ts가 정본.
+  const { term: searchTerm, clear: clearSearch, inputProps: searchProps } = useSearchInput();
   const [selectedMethods, setSelectedMethods] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [selectedJobs, setSelectedJobs] = useState<string[]>([]);
@@ -773,6 +774,28 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
   const positionMethods = useMemo(() => [t("근거리"), t("원거리")], [t]);
   const attackMethods = useMemo(() => [...positionMethods, t("물리"), t("마법")], [positionMethods, t]);
   const damageTypeOf = (operator: Operator) => (MAGIC_TRAIT_RE[locale].test(operator.trait) ? t("마법") : t("물리"));
+
+  // 필터 칩의 개수 배지 — 렌더마다 로스터를 훑지 않도록 한 번에 집계해 둔다.
+  // (컨셉덱만 40종 × 420명 = 1.7만 회 스캔이 **매 렌더** 돌아 타이핑을 굼뜨게 했다, 2026-07-25)
+  const chipCount = useMemo(() => {
+    const concept = new Map<string, number>(), faction = new Map<string, number>(), tag = new Map<string, number>();
+    const job = new Map<string, number>(), sub = new Map<string, number>(), rarity = new Map<string, number>();
+    const method = new Map<string, number>();
+    const bump = (map: Map<string, number>, key: string) => map.set(key, (map.get(key) ?? 0) + 1);
+    for (const operator of roster) {
+      for (const concept0 of operator.concepts) bump(concept, concept0);
+      for (const faction0 of operator.factions) bump(faction, faction0);
+      for (const tag0 of operator.combatTags) bump(tag, tag0);
+      bump(job, operator.job);
+      bump(sub, operator.subProfession);
+      bump(rarity, String(operator.rarity));
+      bump(method, operator.position);            // 근거리/원거리
+      bump(method, damageTypeOf(operator));       // 물리/마법
+    }
+    return { concept, faction, tag, job, sub, rarity, method };
+    // damageTypeOf는 locale·t 클로저 (로케일이 바뀌면 라벨도 바뀐다)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roster, locale, t]);
 
   // 커뮤니티 제보 별명 — (오퍼 id → 득표순 목록). 검색 대상에도 병합된다.
   const [nicknames, setNicknames] = useState<Map<string, Nickname[]>>(new Map());
@@ -953,10 +976,10 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
   // (카톡·네이버 카페 웹뷰 — bfcache 미지원)에서 back()이 문서를 통째로 리로드시켜
   // 목록·필터·스크롤이 전부 초기화되는 버그가 있었다 (사용자 리포트 2026-07-18).
   // replaceState는 네비게이션이 아니라 리로드가 원천적으로 발생하지 않는다.
-  const openOperator = (operator: Operator) => {
+  const openOperator = useCallback((operator: Operator) => {
     setSelected(operator);
     history.replaceState(null, "", `${tabPath(tab)}#op-${operator.id}`);
-  };
+  }, [tab, tabPath]);
   const closeOperator = () => {
     setSelected(null);
     if (decodeURIComponent(window.location.hash).startsWith("#op-")) {
@@ -1124,14 +1147,14 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
     setSelectedJobs([]);
     setSelectedSubProfessions([]);
     setSelectedRarities([]);
-    setQuery("");
+    clearSearch();
   };
 
   const toggleIn = (setter: React.Dispatch<React.SetStateAction<string[]>>) => (value: string) =>
     setter((current) => (current.includes(value) ? current.filter((item) => item !== value) : [...current, value]));
   const toggleTag = toggleIn(setTags);
 
-  const hasActiveFilter = selectedFactions.length > 0 || selectedConcepts.length > 0 || selectedMethods.length > 0 || tags.length > 0 || selectedJobs.length > 0 || selectedSubProfessions.length > 0 || selectedRarities.length > 0 || query.trim().length > 0;
+  const hasActiveFilter = selectedFactions.length > 0 || selectedConcepts.length > 0 || selectedMethods.length > 0 || tags.length > 0 || selectedJobs.length > 0 || selectedSubProfessions.length > 0 || selectedRarities.length > 0 || searchTerm.trim().length > 0;
 
   const sorted = useMemo(() => {
     if (sortKey === "기본") {
@@ -1159,6 +1182,14 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
       return compared !== 0 ? compared * direction : a.name.localeCompare(b.name, locale);
     });
   }, [filtered, sortKey, sortAsc, jobs, locale]);
+
+  // 카드 그리드를 **요소로 메모**한다 — 정렬 결과가 그대로면 리액트가 이 서브트리 재조정을
+  // 통째로 건너뛰므로, 필터 칩·검색 결과 갱신 렌더에서 420장을 다시 만들지 않는다 (2026-07-25)
+  const operatorGrid = useMemo(() => (
+    <div className="operator-grid">
+      {sorted.map((operator, index) => <OperatorCard key={operator.id ?? `${operator.name}-${index}`} operator={operator} index={index} onSelect={openOperator} />)}
+    </div>
+  ), [sorted, openOperator]);
 
   return (
     <main className={tab === "archive" ? "site-main" : "base-main site-main"}>
@@ -1249,15 +1280,15 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
             <button className="reset" onClick={reset}>↻ {t("초기화")}</button>
           </div>
           {/* 컨셉덱은 시그니처 기능이라 맨 위에 항상 펼쳐 둔다 (사용자 요청 2026-07-22). */}
-          <FilterGroup title={t("컨셉덱")} items={concepts} labelFor={(item) => conceptName(locale, item)} selected={selectedConcepts} onToggle={toggleIn(setSelectedConcepts)} rows={2} countForItem={(item) => roster.filter((operator) => operator.concepts.includes(item)).length} />
+          <FilterGroup title={t("컨셉덱")} items={concepts} labelFor={(item) => conceptName(locale, item)} selected={selectedConcepts} onToggle={toggleIn(setSelectedConcepts)} rows={2} countForItem={(item) => chipCount.concept.get(item) ?? 0} />
           {/* 성급·직군·세부직군·전투태그·공격방식·소속은 한 컨트롤로 합쳐 카테고리→값 방식으로. */}
           <AttributeFilter groups={[
-            { title: t("성급"), items: rarities, selected: selectedRarities, onToggle: toggleIn(setSelectedRarities), labelFor: (item) => `${item}★`, countForItem: (item) => roster.filter((operator) => String(operator.rarity) === item).length },
-            { title: t("직군"), items: jobs, selected: selectedJobs, onToggle: toggleIn(setSelectedJobs), countForItem: (item) => roster.filter((operator) => operator.job === item).length },
-            { title: t("세부 직군"), items: subProfessions, selected: selectedSubProfessions, onToggle: toggleIn(setSelectedSubProfessions), countForItem: (item) => roster.filter((operator) => operator.subProfession === item).length },
-            { title: t("전투 태그"), items: combatTags, selected: tags, onToggle: toggleTag, countForItem: (item) => roster.filter((operator) => operator.combatTags.includes(item)).length },
-            { title: t("공격 방식"), items: attackMethods, selected: selectedMethods, onToggle: toggleIn(setSelectedMethods), countForItem: (item) => roster.filter((operator) => positionMethods.includes(item) ? operator.position === item : damageTypeOf(operator) === item).length },
-            { title: t("공식 소속"), items: factions, selected: selectedFactions, onToggle: toggleIn(setSelectedFactions), countForItem: (item) => roster.filter((operator) => operator.factions.includes(item)).length },
+            { title: t("성급"), items: rarities, selected: selectedRarities, onToggle: toggleIn(setSelectedRarities), labelFor: (item) => `${item}★`, countForItem: (item) => chipCount.rarity.get(item) ?? 0 },
+            { title: t("직군"), items: jobs, selected: selectedJobs, onToggle: toggleIn(setSelectedJobs), countForItem: (item) => chipCount.job.get(item) ?? 0 },
+            { title: t("세부 직군"), items: subProfessions, selected: selectedSubProfessions, onToggle: toggleIn(setSelectedSubProfessions), countForItem: (item) => chipCount.sub.get(item) ?? 0 },
+            { title: t("전투 태그"), items: combatTags, selected: tags, onToggle: toggleTag, countForItem: (item) => chipCount.tag.get(item) ?? 0 },
+            { title: t("공격 방식"), items: attackMethods, selected: selectedMethods, onToggle: toggleIn(setSelectedMethods), countForItem: (item) => chipCount.method.get(item) ?? 0 },
+            { title: t("공식 소속"), items: factions, selected: selectedFactions, onToggle: toggleIn(setSelectedFactions), countForItem: (item) => chipCount.faction.get(item) ?? 0 },
           ]} />
 
           <aside className="data-note"><span>DATA NOTE</span><p>{t("오퍼레이터 {count}명 · 전원 이미지 · 다국어 이름 및 커뮤니티 별명 검색 · 스킬과 재능 기반 {concepts}개 컨셉 태그를 제공합니다. 모든 필터는 토글식이며 아무것도 선택하지 않으면 전체가 표시됩니다.", { count: roster.length, concepts: concepts.length })}</p></aside>
@@ -1268,8 +1299,9 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
             <div><span className="section-no">RESULT / 02</span><h2>{selectedConcepts.length === 1 ? t("{concept} 컨셉덱", { concept: conceptName(locale, selectedConcepts[0]) }) : selectedFactions.length === 1 ? selectedFactions[0] : hasActiveFilter ? t("탐색 결과") : t("전체 오퍼레이터")}</h2></div>
             <div className="search-wrap heading-search">
               <span>⌕</span>
-              <input id="operator-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("이름, 별명, 직군, 효과 검색")} />
-              {query && <button type="button" className="search-clear" onClick={() => setQuery("")} aria-label={t("검색어 지우기")}>×</button>}
+              {/* 비제어 입력 — 지우기(×) 표시는 CSS(:placeholder-shown)가 담당한다 */}
+              <input id="operator-search" {...searchProps} placeholder={t("이름, 별명, 직군, 효과 검색")} />
+              <button type="button" className="search-clear" onClick={() => clearSearch()} aria-label={t("검색어 지우기")}>×</button>
             </div>
             <div className="results-tools">
               <label className="sort-wrap">
@@ -1290,16 +1322,14 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
             {tags.map((tag) => <button key={`t-${tag}`} onClick={() => toggleTag(tag)}>{tag} ×</button>)}
             {selectedJobs.map((item) => <button key={`j-${item}`} onClick={() => toggleIn(setSelectedJobs)(item)}>{item} ×</button>)}
             {selectedSubProfessions.map((item) => <button key={`s-${item}`} onClick={() => toggleIn(setSelectedSubProfessions)(item)}>{item} ×</button>)}
-            {query && <button onClick={() => setQuery("")}>“{query}” ×</button>}
+            {searchTerm && <button onClick={() => clearSearch()}>“{searchTerm}” ×</button>}
           </div>
 
           {/* 스크롤은 카드 그리드에서만 시작 — 헤딩(제목·검색·정렬)과 활성 필터 칩은 위에 고정
               (사용자 요청 2026-07-22: 스크롤바가 헤딩까지 올라오지 않게). */}
           <div className="results-scroll">
           {sorted.length > 0 ? (
-            <div className="operator-grid">
-              {sorted.map((operator, index) => <OperatorCard key={operator.id ?? `${operator.name}-${index}`} operator={operator} index={index} onSelect={openOperator} />)}
-            </div>
+            operatorGrid
           ) : (
             <div className="empty"><span>NO MATCH</span><h3>{t("조건에 맞는 오퍼레이터가 없어요.")}</h3><p>{t("소속이나 컨셉 태그를 하나씩 해제해 보세요.")}</p><button onClick={reset}><span className="btn-icon" aria-hidden>↻</span>{t("전체 보기")}</button></div>
           )}

@@ -5,7 +5,7 @@
 //  · 트리거는 헤더 1줄(로고·햄버거와 같은 줄)이라 **헤더를 접어도 남는다**.
 //  · 패널: 입력란 + [바로가기] 버튼 + 결과 목록. 1위가 확실하면 곧장 이동하고,
 //    애매하면(동점·완전일치 여럿) "이 중에 무엇인가요?" 선택지를 띄운다 — 판정은 omni.ts.
-//  · **검색은 타이핑이 멈춘 뒤 1초에만** 돈다 (사용자 확정 2026-07-25 — 한 글자마다 목록을
+//  · **검색은 타이핑이 멈춘 뒤 0.5초에만** 돈다 (사용자 확정 2026-07-25 — 한 글자마다 목록을
 //    다시 그리던 게 입력 지연의 원인이었다). [바로가기]·⏎는 기다리지 않고 즉시 검색한다.
 //  · 되묻기에서 고른 항목은 기억한다 (omni-picks.ts) — 내 선택은 즉시, 사람들의 선택은
 //    2표부터 반영돼 같은 검색어가 점점 정확해진다.
@@ -14,15 +14,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { getRogueIndex } from "./lens/run";
-import { buildOmniIndex, currentRogueTopic, decideOmni, rogueOmniItems, searchOmni, type OmniHit, type OmniItem, type OmniTarget } from "./omni";
-import { fetchCrowdPicks, myPicks, picksFor, recordPick, type PickIndex } from "./omni-picks";
+import { buildOmniIndex, currentRogueTopic, decideOmni, rogueOmniItems, searchSmart, splitHint, type OmniHit, type OmniItem, type OmniKind, type OmniTarget } from "./omni";
+import { fetchCrowdPicks, learnedHints, myPicks, picksFor, recordHint, recordPick, type PickIndex } from "./omni-picks";
 import { normSearch, SEARCH_DEBOUNCE_MS } from "./search";
 import { useI18n, type ExtraI18n } from "./i18n";
 import { isNewFeature } from "./whats-new";
 import type { Operator } from "./home";
 
 // 이미지가 없는 종류의 아이콘 — 햄버거 탭 아이콘과 같은 글리프를 써서 어디로 가는지 읽히게
-const KIND_GLYPH: Record<string, string> = { story: "✦", tag: "◎", rogue: "❖", tab: "◇" };
+const KIND_GLYPH: Record<string, string> = { story: "✦", tag: "◎", rogue: "❖", topic: "❖", tab: "◇" };
 const LEARNED_MIN = 3;   // 이 표수 이상이면 '자주 선택' 표시 (내 선택 1회 = 3표)
 
 export default function OmniSearch({ roster, nicknames, includeFuture, extra, onGo }: {
@@ -34,8 +34,11 @@ export default function OmniSearch({ roster, nicknames, includeFuture, extra, on
 }) {
   const { locale, t } = useI18n();
   const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");         // 입력란 값 (즉시 반영)
-  const [term, setTerm] = useState("");           // 실제 검색어 (타이핑 멈춘 뒤 1초)
+  // ⚠ 입력란은 **비제어(uncontrolled)** — 타이핑 한 글자마다 React 렌더를 돌리면 그 렌더가
+  // 끝난 뒤에야 글자가 보인다(특히 한글 IME 조합 중). 입력값은 ref에만 담고, 화면 갱신은
+  // 0.5초 디바운스가 끝난 뒤 term 한 번으로 처리한다 (사용자 리포트 2026-07-25).
+  const rawRef = useRef("");
+  const [term, setTerm] = useState("");           // 실제 검색어 (타이핑 멈춘 뒤 0.5초)
   const [ask, setAsk] = useState(false);          // "이 중에 무엇인가요?" (되묻기)
   const [active, setActive] = useState(-1);       // ↑↓로 고른 줄 (-1 = 아직 안 고름)
   const [busy, setBusy] = useState(false);
@@ -44,6 +47,7 @@ export default function OmniSearch({ roster, nicknames, includeFuture, extra, on
   const [mine, setMine] = useState<PickIndex>({});   // 내 선택 기록 (localStorage, 열 때 읽음)
   const [crowd, setCrowd] = useState<PickIndex>({}); // 사람들의 선택 집계 (세션 1회)
   const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);   // 'stale'(대기 중) 표시는 클래스만 직접 토글
   const timerRef = useRef<number | undefined>(undefined);
 
   // 색인은 패널을 처음 열 때 만든다 (헤더만 있는 상태에선 아무 비용도 들이지 않는다)
@@ -52,8 +56,9 @@ export default function OmniSearch({ roster, nicknames, includeFuture, extra, on
     [open, roster, nicknames, includeFuture, locale, t, extra]);
   const items = useMemo(() => (rogueItems ? base.concat(rogueItems) : base), [base, rogueItems]);
   const picks = useMemo(() => picksFor(normSearch(term), mine, crowd), [term, mine, crowd]);
-  const hits = useMemo(() => searchOmni(items, term, { picks }), [items, term, picks]);
-  const stale = normSearch(query) !== normSearch(term);   // 타이핑 중 — 목록은 아직 이전 검색어 결과
+  // 선택 학습으로 익힌 은어 사전 ("록라" → 통합전략) — 내장 사전 위에 얹힌다
+  const hints = useMemo(() => learnedHints(mine, crowd) as Record<string, OmniKind[]>, [mine, crowd]);
+  const hits = useMemo(() => searchSmart(items, term, { picks, hints }), [items, term, picks, hints]);
 
   const openPanel = () => {
     setOpen(true);
@@ -63,13 +68,25 @@ export default function OmniSearch({ roster, nicknames, includeFuture, extra, on
   // 상태 리셋은 이펙트가 아니라 닫기·입력 핸들러에서 직접 한다 (이펙트 setState = 연쇄 렌더)
   const close = () => {
     window.clearTimeout(timerRef.current);
-    setOpen(false); setQuery(""); setTerm(""); setAsk(false); setActive(-1); setMsg(null);
+    rawRef.current = "";
+    setOpen(false); setTerm(""); setAsk(false); setActive(-1); setMsg(null);
   };
-  // 타이핑 중엔 검색하지 않는다 — 멈춘 뒤 1초. 지우기(빈 문자열)는 기다리지 않는다.
-  const onChange = (value: string) => {
-    setQuery(value); setAsk(false); setActive(-1); setMsg(null);
+  // 타이핑 중엔 **아무 setState도 하지 않는다** (렌더 0회) — 멈춘 뒤 0.5초에 한 번만 검색한다.
+  // 대기 중 표시는 목록 DOM에 클래스만 붙였다 떼므로 리액트 렌더가 필요 없다.
+  const onInput = (value: string) => {
+    rawRef.current = value;
+    if (value) listRef.current?.classList.add("stale");
     window.clearTimeout(timerRef.current);
-    timerRef.current = window.setTimeout(() => setTerm(value), value ? SEARCH_DEBOUNCE_MS : 0);
+    timerRef.current = window.setTimeout(() => {
+      listRef.current?.classList.remove("stale");
+      setAsk(false); setActive(-1); setMsg(null);
+      setTerm(value);
+    }, value ? SEARCH_DEBOUNCE_MS : 0);
+  };
+  const clearInput = () => {
+    if (inputRef.current) inputRef.current.value = "";
+    onInput("");
+    inputRef.current?.focus();
   };
 
   // ⌘K·Ctrl+K로 열기 ("/"는 입력 중이 아닐 때만 — 검색어 타이핑을 가로채지 않게)
@@ -95,18 +112,43 @@ export default function OmniSearch({ roster, nicknames, includeFuture, extra, on
     return () => window.removeEventListener("keydown", onEsc);
   }, [open]);
 
+  /** 검색어에서 고른 항목 이름과 겹치는 앞부분을 뺀 조각 (은어 후보). 예: 쉐이록라 → 록라 */
+  const leftoverToken = (q: string, hit: OmniHit): string | null => {
+    // 이미 아는 분류어면 다시 배울 필요 없다
+    if (splitHint(q, hints)) return null;
+    let best = 0;
+    for (const key of hit.keys) {
+      let i = 0;
+      while (i < key.length && i < q.length && key[i] === q[i]) i += 1;
+      if (i > best) best = i;
+    }
+    if (best < 2) return null;
+    const rest = q.slice(best);
+    return /^[0-9a-z가-힣]{2,6}$/.test(rest) ? rest : null;
+  };
+
   /** 이동. learn=true(되묻기에서 직접 고른 경우)면 그 선택을 기억한다. */
-  const go = (hit: OmniHit, learn: boolean, candidates: number, rawQuery: string) => {
+  const go = (hit: OmniHit, learn: boolean, candidates: number, rawQuery: string, rank?: number) => {
     const q = normSearch(rawQuery);
     if (learn && q && candidates >= 2) {
-      recordPick(q, hit.uid, { kind: hit.kind, name: hit.name, locale });
+      recordPick(q, hit.uid, {
+        kind: hit.kind, name: hit.name, locale,
+        rank, candidates, fuzzy: hit.fuzzy, hinted: hit.hinted,
+      });
       // 낙관적 반영 — 다음 검색부터 바로 이 선택이 1위가 된다
       setMine((prev) => ({ ...prev, [q]: { ...(prev[q] ?? {}), [hit.uid]: (prev[q]?.[hit.uid] ?? 0) + 1 } }));
+      // 은어 학습 — 검색어에서 고른 항목의 이름(공통 접두)을 뺀 조각을 그 종류의 힌트로 기억한다.
+      // "쉐이록라"에서 쉐이 테마를 고르면 → "록라"는 통합전략 (다음엔 "미즈키록라"도 통한다).
+      const rest = leftoverToken(q, hit);
+      if (rest) {
+        recordHint(rest, hit.kind);
+        setMine((prev) => ({ ...prev, [`~${rest}`]: { ...(prev[`~${rest}`] ?? {}), [`hint:${hit.kind}`]: (prev[`~${rest}`]?.[`hint:${hit.kind}`] ?? 0) + 1 } }));
+      }
     }
     close();
     onGo(hit.target);
   };
-  const pick = (hit: OmniHit) => go(hit, true, hits.length, term || query);
+  const pick = (hit: OmniHit, rank?: number) => go(hit, true, hits.length, term || rawRef.current, rank);
 
   // 통합전략 세부 항목까지 확장 (한 세션에 한 번만 내려받는다)
   const loadRogue = async (): Promise<OmniItem[]> => {
@@ -130,19 +172,21 @@ export default function OmniSearch({ roster, nicknames, includeFuture, extra, on
 
   // [바로가기]·⏎ — 디바운스를 기다리지 않고 **지금 입력값으로** 즉시 검색한다
   const submit = async () => {
+    const query = rawRef.current;
     const raw = query.trim();
     if (!raw || busy) return;
     window.clearTimeout(timerRef.current);
+    listRef.current?.classList.remove("stale");
     setTerm(query);                                   // 화면 목록도 이 검색어에 맞춘다
     const here = currentRogueTopic();                 // 통합전략 가이드를 보는 중이면 그 테마를 사전확률로
     const now = picksFor(normSearch(query), mine, crowd);
-    const list = searchOmni(items, query, { picks: now });
+    const list = searchSmart(items, query, { picks: now, hints });
     const direct = decideOmni(list, here);
     if (direct) { go(direct, false, list.length, query); return; }
     // 가벼운 색인이 아무것도 못 찾았으면 통합전략 항목까지 뒤진다
     if (!list.length && !rogueItems) {
       const extraItems = await loadRogue();
-      const merged = searchOmni(base.concat(extraItems), query, { picks: now });
+      const merged = searchSmart(base.concat(extraItems), query, { picks: now, hints });
       const second = decideOmni(merged, here);
       if (second) { go(second, false, merged.length, query); return; }
       if (!merged.length) { setMsg(t("‘{q}’와(과) 관련된 항목을 찾지 못했어요.", { q: raw })); return; }
@@ -159,21 +203,23 @@ export default function OmniSearch({ roster, nicknames, includeFuture, extra, on
     if (e.key === "ArrowUp") { e.preventDefault(); setActive((i) => Math.max(-1, i - 1)); return; }
     if (e.key === "Enter" && !e.nativeEvent.isComposing) {
       e.preventDefault();
-      if (active >= 0 && hits[active]) pick(hits[active]);
+      if (active >= 0 && hits[active]) pick(hits[active], active);
       else void submit();
     }
   };
 
   const panel = open ? createPortal(
     <div className="omni-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) close(); }}>
-      <div className="omni-panel" role="dialog" aria-modal="true" aria-label={t("사이트 통합 검색")}>
+      <div className="omni-panel" role="dialog" aria-modal="true" aria-label={t("유니버셜 서치 — 사이트 전체 검색")}>
         <div className="omni-bar">
           <span className="omni-bar-icon" aria-hidden>⌕</span>
-          <input ref={inputRef} value={query} onChange={(e) => onChange(e.target.value)} onKeyDown={onKeyDown}
+          {/* 비제어 입력 — value를 React가 되돌려 쓰지 않으므로 글자는 브라우저 속도로 바로 뜬다.
+              지우기(×)·바로가기의 비활성 표시는 :placeholder-shown CSS로 (상태 렌더 없이). */}
+          <input ref={inputRef} defaultValue="" onInput={(e) => onInput(e.currentTarget.value)} onKeyDown={onKeyDown}
             placeholder={t("오퍼레이터 · 재료 · 스토리 · 통합전략 · 기능 검색")}
-            aria-label={t("사이트 통합 검색")} enterKeyHint="go" />
-          {query && <button type="button" className="omni-clear" onClick={() => { onChange(""); inputRef.current?.focus(); }} aria-label={t("검색어 지우기")}>×</button>}
-          <button type="button" className="omni-go" onClick={() => void submit()} disabled={busy || !query.trim()}>
+            aria-label={t("유니버셜 서치 — 사이트 전체 검색")} enterKeyHint="go" />
+          <button type="button" className="omni-clear" onClick={clearInput} aria-label={t("검색어 지우기")}>×</button>
+          <button type="button" className="omni-go" onClick={() => void submit()} disabled={busy}>
             {busy ? t("찾는 중…") : t("바로가기")}
           </button>
         </div>
@@ -182,15 +228,16 @@ export default function OmniSearch({ roster, nicknames, includeFuture, extra, on
         {msg && <p className="omni-msg">{msg}</p>}
 
         {hits.length > 0 && (
-          <ul className={`omni-list${stale ? " stale" : ""}`} role="listbox" aria-label={t("검색 결과")}>
+          <ul className="omni-list" ref={listRef} role="listbox" aria-label={t("검색 결과")}>
             {hits.map((hit, i) => (
               <li key={hit.uid} role="option" aria-selected={i === active}>
-                <button type="button" className={i === active ? "active" : ""} onClick={() => pick(hit)} onMouseEnter={() => setActive(i)}>
+                <button type="button" className={i === active ? "active" : ""} onClick={() => pick(hit, i)} onMouseEnter={() => setActive(i)}>
                   <span className="omni-icon" data-kind={hit.kind}>
                     {hit.img ? <img src={hit.img} alt="" width={40} height={40} loading="lazy" decoding="async" />
                       : <em aria-hidden>{KIND_GLYPH[hit.kind] ?? "◆"}</em>}
                   </span>
                   <span className="omni-name">{hit.name}</span>
+                  {hit.fuzzy && <span className="omni-approx">{t("비슷한 이름")}</span>}
                   {hit.votes >= LEARNED_MIN && <span className="omni-learned">{t("자주 선택")}</span>}
                   <span className="omni-sub">{hit.sub}</span>
                 </button>
@@ -200,10 +247,10 @@ export default function OmniSearch({ roster, nicknames, includeFuture, extra, on
         )}
 
         <div className="omni-foot">
-          {!rogueItems && query.trim() && (
+          {!rogueItems && term.trim() && (
             <button type="button" className="omni-more" onClick={() => void (async () => {
               const extraItems = await loadRogue();
-              if (extraItems.length) { setTerm(query); askUser(); }
+              if (extraItems.length) { setTerm(rawRef.current); askUser(); }
             })()} disabled={busy}>
               {busy ? t("통합전략 데이터를 불러오는 중…") : t("통합전략 세부 항목까지 찾기")}
             </button>
@@ -215,9 +262,10 @@ export default function OmniSearch({ roster, nicknames, includeFuture, extra, on
 
   return (
     <div className="omni">
-      <button type="button" className="omni-trigger" onClick={openPanel} aria-label={t("사이트 통합 검색")} title={t("사이트 통합 검색 (⌘K)")}>
+      <button type="button" className="omni-trigger" onClick={openPanel} aria-label={t("유니버셜 서치 — 사이트 전체 검색")}
+        title={t("유니버셜 서치 — 오퍼·재료·스토리·통합전략·기능을 한 번에 찾아 이동합니다 (⌘K)")}>
         <span aria-hidden>⌕</span>
-        <span className="omni-trigger-label">{t("검색")}{isNewFeature("omni") && <span className="new-badge">{t("새기능")}</span>}</span>
+        <span className="omni-trigger-label">{t("유니버셜 서치")}{isNewFeature("omni") && <span className="new-badge">{t("새기능")}</span>}</span>
       </button>
       {panel}
     </div>

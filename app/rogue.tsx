@@ -8,7 +8,7 @@ import { lazy, startTransition, Suspense, useEffect, useMemo, useRef, useState, 
 import rogue1Data from "./data/rogue1.json";
 import { useConfirm } from "./confirm";
 import { useI18n } from "./i18n";
-import { normSearch, useDebounced } from "./search";
+import { normSearch, useSearchInput } from "./search";
 import { isNewFeature } from "./whats-new";
 import type { LensGoto, LensOutcome } from "./lens/match";
 import { recognizeShot, warmData, ocrLangFor } from "./lens/run";
@@ -662,13 +662,12 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   const [enemyOpen, setEnemyOpen] = useState<{ key: string; ctx: StatCtx } | null>(null);
   const [encOpen, setEncOpen] = useState<Encounter | null>(null);
   const [relicOpen, setRelicOpen] = useState<InvItem | null>(null); // 소장품·부품·자원 공용 상세
-  const [enemyQ, setEnemyQ] = useState("");
-  const enemyTerm = useDebounced(enemyQ);   // 검색은 타이핑 멈춘 뒤 1초 (search.ts)
+  // 비제어 입력 3종 — 타이핑 중 렌더 0회, 멈춘 뒤 0.5초에만 목록 갱신 (search.ts)
+  const { term: enemyTerm, set: setEnemyTerm, inputProps: enemyProps } = useSearchInput();
   const [enemyRank, setEnemyRank] = useState<string>("");
-  const [relicQ, setRelicQ] = useState("");
-  const relicTerm = useDebounced(relicQ);
-  const [mapQ, setMapQ] = useState(""); // 맵·노드 이름 검색 (작전·조우 전투·우연한 만남 전부)
-  const mapTerm = useDebounced(mapQ);
+  const { term: relicTerm, set: setRelicTerm, inputProps: relicProps } = useSearchInput();
+  // 맵·노드 이름 검색 (작전·조우 전투·우연한 만남 전부)
+  const { term: mapTerm, set: setMapTerm, inputProps: mapProps } = useSearchInput();
   // 표준 카테고리 + 토픽 고유 시스템(mechanics)의 라벨을 탭 id로 쓰므로 string
   const [arcTab, setArcTab] = useState<string>("relic");
   const VIEWS = viewsFor();
@@ -701,7 +700,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
     setView("map");
     setGrade(0);
     setZoneOpen(null); setStageOpen(null); setEnemyOpen(null); setEncOpen(null); setRelicOpen(null);
-    setEnemyQ(""); setEnemyRank(""); setRelicQ(""); setMapQ(""); setArcTab("relic");
+    setEnemyTerm("", false); setEnemyRank(""); setRelicTerm("", false); setMapTerm("", false); setArcTab("relic");
     setLensHits(null); setLensMulti(null); // 렌즈 하이라이트·모아보기는 토픽 전환 시 해제
     setInvOpen(false); setInvTab("relic"); // 보유 리스트 모달·탭 리셋 (목록 자체는 테마별 저장)
   };
@@ -971,7 +970,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
       const gmax = Math.max(15, ...data.difficulties.filter((df) => df.mode === "NORMAL").map((df) => df.grade));
       if (g.grade <= gmax) setGrade(g.grade);
     }
-    setRelicQ(""); setMapQ(""); // 검색 필터가 하이라이트 대상을 가리지 않게
+    setRelicTerm("", false); setMapTerm("", false); // 검색 필터가 하이라이트 대상을 가리지 않게
     setZoneOpen(null); setStageOpen(null); setEnemyOpen(null); setEncOpen(null); setRelicOpen(null);
     if (g.modal) {
       const { type, id } = g.modal;
@@ -1241,7 +1240,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
         <div className="rg-map">
           {/* 노드 이름 검색 — 작전·보스·조우 전투·특수·우연한 만남 전부 (사용자 요청 2026-07-18) */}
           <div className="rg-filterbar rg-map-search">
-            <input type="search" value={mapQ} onChange={(e) => setMapQ(e.target.value)}
+            <input type="search" {...mapProps}
               placeholder={t("노드 이름 검색 (작전·조우·우연한 만남)")} aria-label={t("노드 이름 검색 (작전·조우·우연한 만남)")} />
             {mapHits && <span className="rg-count">{mapHits.stages.length + mapHits.encs.length}</span>}
           </div>
@@ -1462,7 +1461,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
       {view === "enemy" && (
         <div className="rg-enemy-view">
           <div className="rg-filterbar">
-            <input type="search" value={enemyQ} onChange={(e) => setEnemyQ(e.target.value)}
+            <input type="search" {...enemyProps}
               placeholder={t("적 이름 검색")} aria-label={t("적 이름 검색")} />
             {["", "NORMAL", "ELITE", "BOSS"].map((rk) => (
               <button key={rk || "all"} type="button" className={enemyRank === rk ? "on" : ""}
@@ -1495,7 +1494,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
       {view === "relic" && (
         <div className="rg-archive">
           <div className="rg-filterbar">
-            <input type="search" value={relicQ} onChange={(e) => setRelicQ(e.target.value)}
+            <input type="search" {...relicProps}
               placeholder={t("유물 검색 (이름·번호)")} aria-label={t("유물 검색 (이름·번호)")} />
             <span className="rg-count">{relics.length}</span>
           </div>
