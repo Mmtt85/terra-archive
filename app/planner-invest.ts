@@ -187,6 +187,7 @@ export async function recommendRaises(
   eliteById: Map<string, Elite>,
   priority: ProdPriority = "gold",
   onProgress?: (p: InvestProgress) => void | Promise<void>,
+  pinnedDorms: Record<string, string[]> = {},  // 사용자가 숙소에 고정한 인원 — 반사실도 같은 기지 조건에서
 ): Promise<RaiseRec[]> {
   const cur = (op: InfraOp): Elite => eliteById.get(op.id) ?? maxElite(op.rarity);
   // 정예화는 **지정이 없으면 만정예로 간주**하므로(성급 상한), 보유 설정에서 아무도 낮춰 두지
@@ -197,7 +198,7 @@ export async function recommendRaises(
   const { roster: baseRoster, byId: byId0 } = stampRoster(visibleOps, ownedIds, eliteById);
   // 베이스라인 편성 + 그 편성이 고른 전략(토큰·시너지 세트) — 순수 가산 후보 평가에 재사용
   // park = 베이스라인이 채택한 숙소 파킹 여부 — 반사실도 같은 전략으로 지어야 ΔplanScore가 공정하다
-  const { plan: baseline, tokenChoice, factionSets, park } = await optimizeConfig(baseRoster, priority);
+  const { plan: baseline, tokenChoice, factionSets, park } = await optimizeConfig(baseRoster, priority, undefined, pinnedDorms);
   const S0 = planScore(baseline, byId0);
 
   type Cand = { op: InfraOp; from: Elite; to: Elite; synergy: boolean };
@@ -233,7 +234,7 @@ export async function recommendRaises(
     for (const cfg of configs) {
       // ⑤(우선 생산 집중)는 planScore 중립(gold↔exp 등량 재배치)이라 육성 이득 델타를 안 바꾸고
       // config 비교만 교란하므로 끈다 — 반사실 평가는 ⑤-무관 원가치로 본다 (planner-engine 참고).
-      const plan = buildPlan(tokenChoice, upRoster, cfg, priority, [], false, park);
+      const plan = buildPlan(tokenChoice, upRoster, cfg, priority, [], false, park, pinnedDorms);
       const score = planScore(plan, byId1);
       if (score > bestS) { bestS = score; best = plan; }
     }

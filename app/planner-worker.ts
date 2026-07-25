@@ -18,6 +18,7 @@ export type PlannerJobMsg = {
   levels?: Levels | null; // 시설 레벨 (미지정 = 만렙) — 프리셋과 같은 이유로 매 잡마다 동기화
   customRooms?: CustomRoom[] | null; // 그외(커스텀) 배치의 9칸 구성 — layout === "custom"일 때 필수
   customProducts?: (CustomProduct | null)[] | null; // 커스텀 제조소 품목(순금/작전기록) 명시 선택
+  dormPins?: Record<string, string[]>; // 사용자가 숙소에 고정한 인원 — 자동편성·육성추천 양쪽에 반영
 };
 
 // DOM lib의 Window 타입과 겹치지 않게 postMessage(1인자)만 뽑아 쓴다
@@ -37,10 +38,10 @@ self.addEventListener("message", (event) => {
       const ownedIds = new Set(msg.owned);
       if (msg.cmd === "optimize") {
         const roster = visible.map((op) => withElite(op, eliteById.get(op.id))).filter((op) => ownedIds.has(op.id));
-        const plan = await optimize(roster, msg.priority, (step) => { post({ seq: msg.seq, type: "step", step }); });
+        const plan = await optimize(roster, msg.priority, (step) => { post({ seq: msg.seq, type: "step", step }); }, msg.dormPins ?? {});
         post({ seq: msg.seq, type: "done", result: plan });
       } else {
-        const recs = await recommendRaises(visible, ownedIds, eliteById, msg.priority, (p) => { post({ seq: msg.seq, type: "progress", progress: p }); });
+        const recs = await recommendRaises(visible, ownedIds, eliteById, msg.priority, (p) => { post({ seq: msg.seq, type: "progress", progress: p }); }, msg.dormPins ?? {});
         post({ seq: msg.seq, type: "done", result: recs });
       }
     } catch (error) {

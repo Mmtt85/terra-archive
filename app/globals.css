@@ -4458,6 +4458,39 @@ footer p {
   border-color: #c0392b;
   color: #fff;
 }
+/* 숙소 고정 토글 (📌) — ✕ 왼쪽. 켜져 있으면 라임 테두리로 "자동편성이 안 건드림"을 표시 */
+.crew-pin {
+  position: absolute;
+  top: 8px;
+  right: 36px;
+  border: 1px solid var(--line);
+  background: var(--white);
+  width: 24px;
+  height: 24px;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  filter: grayscale(1);
+  opacity: 0.55;
+}
+.crew-pin:hover { opacity: 1; }
+.crew-pin.on {
+  filter: none;
+  opacity: 1;
+  border-color: var(--lime);
+  box-shadow: inset 0 0 0 1px var(--lime);
+}
+/* 기지 그리드의 숙소 고정 인원 */
+.dorm-room .ship-room-crew img.dorm-locked {
+  outline: 2px solid var(--lime);
+  outline-offset: -2px;
+}
+/* 숙소 후보 중 '다른 방의 조건을 켜 주는' 오퍼 */
+.sub-chip.enabler {
+  border-style: solid;
+  border-color: var(--lime);
+}
+.sub-chip.enabler em { color: var(--ink); }
 .sub-chip.swappable {
   cursor: pointer;
 }

@@ -1200,7 +1200,7 @@ function seedSynergySet(def: SynergySetDef, roster: InfraOp[], used: Set<string>
   }
 }
 
-export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSets: FactionSets = {}, priority: ProdPriority = "gold", extraSeeds: { opId: string; room: string }[] = [], concentrate = true, park = false): Plan {
+export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSets: FactionSets = {}, priority: ProdPriority = "gold", extraSeeds: { opId: string; room: string }[] = [], concentrate = true, park = false, pinnedDorms: Record<string, string[]> = {}): Plan {
   const prodKeys = PRIORITY_KEYS[priority];
   const assignments: Record<string, string[][]> = {};
   // 시설 카운트 스킬(타락사쿰·만트라)용 배치 지도 — 숙소·가공소까지 **모든 칸**을 센다.
@@ -1226,8 +1226,28 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
   const plants = PLANTS_BASE_RT + (plantBooster ? 1 : 0); // 243/153=3(그레이 4), 252=2(그레이 3)
 
   const dormPins: InfraOp[][] = [[], [], [], []];
+  // ── 숙소 수동 고정 (사용자 요청 2026-07-25: "숙소도 배치 변경·고정") ──────────────
+  // 사용자가 숙소 칸에 직접 넣어 고정한 오퍼는 자동편성이 건드리지 않는다 — 울피아누스를
+  // 숙소에 박아 언더플로우(+10%)를 켜는 운용이 대표 사례다. 근무 방 후보에서도 빼(used)
+  // 이중 배치를 막고, 조 전환과 무관하게(숙소 규칙) 양 조 모두 그 자리에 남는다.
+  const dormLockOps: Record<string, InfraOp[]> = {};
+  const dormLocked = new Set<string>();
+  for (let d = 0; d < 4; d += 1) {
+    const key = `DORM-${d}`;
+    for (const id of (pinnedDorms[key] ?? []).slice(0, slotsFor(key))) {
+      const op = roster.find((member) => member.id === id);
+      if (!op || dormLocked.has(id)) continue;
+      (dormLockOps[key] = dormLockOps[key] ?? []).push(op);
+      dormLocked.add(id);
+      used.add(id);
+      reserved.set(id, key);
+    }
+    dormPins[d] = [...(dormLockOps[key] ?? [])];
+  }
   for (let shift = 0; shift < SHIFT_COUNT; shift += 1) {
     const seeds: Record<string, InfraOp[]> = {};
+    // 고정 인원을 시드로 먼저 깔아 둔다 — 토큰 패키지의 숙소 배치가 남은 슬롯만 쓰게
+    for (const [key, list] of Object.entries(dormLockOps)) seeds[key] = [...list];
     if (shift === 0 && plantBooster) {
       seeds["POWER-0"] = [plantBooster];
       reserved.set(plantBooster.id, "POWER-0");
@@ -2067,7 +2087,7 @@ export type OptimizeStep = { phase: "base" | "variant" | "final"; index?: number
 // 후보마다 전체 재탐색을 반복하지 않고, 이 config를 재사용해 buildPlan을 1회만 돌려 빠르게
 // 반사실 평가를 하도록 한다 (2026-07-21 성능: 후보당 buildPlan 15회 → 1회).
 export type OptimizeResult = { plan: Plan; tokenChoice: string[]; factionSets: FactionSets; park: boolean };
-export async function optimizeConfig(roster: InfraOp[], priority: ProdPriority = "gold", onStep?: (step: OptimizeStep) => void | Promise<void>): Promise<OptimizeResult> {
+export async function optimizeConfig(roster: InfraOp[], priority: ProdPriority = "gold", onStep?: (step: OptimizeStep) => void | Promise<void>, pinnedDorms: Record<string, string[]> = {}): Promise<OptimizeResult> {
   // 진행 콜백(페이싱 포함) 후 매크로태스크 양보 — 브라우저가 안내 문구를 리페인트할 틈을 준다
   const tick = async (step: OptimizeStep) => {
     if (!onStep) return;
@@ -2106,13 +2126,13 @@ export async function optimizeConfig(roster: InfraOp[], priority: ProdPriority =
   const minis = open.filter(isMini).slice(0, 3);
   const coreTokens = open.filter((token) => !minis.includes(token));
   let tokenChoice = open;
-  let base = buildPlan(open, roster, {}, priority, [], false);
+  let base = buildPlan(open, roster, {}, priority, [], false, false, pinnedDorms);
   if (minis.length) {
     let bestTokScore = planScore(base, byId);
     for (let mask = 0; mask < (1 << minis.length) - 1; mask += 1) { // 마지막 mask(전부 포함) = base
       await breathe();
       const subset = coreTokens.concat(minis.filter((_, index) => mask & (1 << index)));
-      const candidate = buildPlan(subset, roster, {}, priority, [], false);
+      const candidate = buildPlan(subset, roster, {}, priority, [], false, false, pinnedDorms);
       const score = planScore(candidate, byId);
       if (score > bestTokScore) { base = candidate; bestTokScore = score; tokenChoice = subset; }
     }
@@ -2137,7 +2157,7 @@ export async function optimizeConfig(roster: InfraOp[], priority: ProdPriority =
   // 채택 config에 최종 ⑤(우선 생산 집중)를 입혀 반환 — 탐색은 ⑤-무관이라 선택이 원래대로 유지되고,
   // 여기서만 planScore 단조 개선(무승부 이상)을 얹는다. 밸런스는 ⑤가 no-op이라 그대로.
   const withConcentration = (tokens: string[], sets: FactionSets, seeds: { opId: string; room: string }[], park = false) =>
-    (priority === "gold" || priority === "exp") ? buildPlan(tokens, roster, sets, priority, seeds, true, park) : buildPlan(tokens, roster, sets, priority, seeds, false, park);
+    (priority === "gold" || priority === "exp") ? buildPlan(tokens, roster, sets, priority, seeds, true, park, pinnedDorms) : buildPlan(tokens, roster, sets, priority, seeds, false, park, pinnedDorms);
   // 숙소 파킹 A/B — '짝이 기지 어디든 있으면 +N%'(언더플로우←울피아누스 등)를 켜려고 노는 짝을
   // 빈 숙소에 주차한 안을 따로 만들고, **planScore가 실제로 오를 때만** 채택한다. 로스터가 두꺼우면
   // 대체 후보가 많아 파킹이 부른 재편성이 르무엔+엑시아 같은 기존 조합을 깨 손해일 수도 있다
@@ -2162,7 +2182,7 @@ export async function optimizeConfig(roster: InfraOp[], priority: ProdPriority =
   let bestSeeds: { opId: string; room: string }[] = [];
   for (let i = 0; i < variants.length; i += 1) {
     await tick({ phase: "variant", index: i + 1, total: variants.length, sets: Object.keys(variants[i]) });
-    const plan = buildPlan(tokenChoice, roster, variants[i], priority, [], false);
+    const plan = buildPlan(tokenChoice, roster, variants[i], priority, [], false, false, pinnedDorms);
     const score = planScore(plan, byId);
     if (score > bestScore) { best = plan; bestScore = score; bestSets = variants[i]; bestSeeds = []; }
   }
@@ -2191,7 +2211,7 @@ export async function optimizeConfig(roster: InfraOp[], priority: ProdPriority =
     }
     for (const ex of [...expansions.values()].slice(0, 2)) {
       await breathe();
-      const plan = buildPlan(tokenChoice, roster, bestSets, priority, [ex], false);
+      const plan = buildPlan(tokenChoice, roster, bestSets, priority, [ex], false, false, pinnedDorms);
       const score = planScore(plan, byId);
       if (score > bestScore) { best = plan; bestScore = score; bestSeeds = [ex]; }
     }
@@ -2216,8 +2236,8 @@ export async function optimizeConfig(roster: InfraOp[], priority: ProdPriority =
 }
 
 // 얇은 래퍼 — 편성만 필요한 호출부(planner.tsx·verify-plan)는 종전대로 Plan을 받는다.
-export async function optimize(roster: InfraOp[], priority: ProdPriority = "gold", onStep?: (step: OptimizeStep) => void | Promise<void>): Promise<Plan> {
-  return (await optimizeConfig(roster, priority, onStep)).plan;
+export async function optimize(roster: InfraOp[], priority: ProdPriority = "gold", onStep?: (step: OptimizeStep) => void | Promise<void>, pinnedDorms: Record<string, string[]> = {}): Promise<Plan> {
+  return (await optimizeConfig(roster, priority, onStep, pinnedDorms)).plan;
 }
 
 export function slotSubstitutes(team: InfraOp[], index: number, key: string, ctx: Ctx, excluded: Set<string>, roster: InfraOp[], count = 3): { op: InfraOp; score: number }[] {
