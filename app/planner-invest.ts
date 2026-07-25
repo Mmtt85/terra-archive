@@ -20,7 +20,7 @@
 import costsData from "./data/costs.json";
 import {
   optimizeConfig, buildPlan, planScore, teamScore, opSolo, withElite, maxElite, eliteLocks,
-  availableSetKeys, synergySetMembers, cellByKey, aurasOf, ctxFor, presentIdsFor, roomOfFor, cellOfFor, SHIFT_COUNT,
+  availableSetKeys, synergySetMembers, cellByKey, LAYOUT, aurasOf, ctxFor, presentIdsFor, roomOfFor, cellOfFor, SHIFT_COUNT,
   type InfraOp, type Elite, type Plan, type ProdPriority, type FactionSets,
 } from "./planner-engine";
 
@@ -31,7 +31,10 @@ const OPS_COST = (costsData as { ops: Record<string, OpCost> }).ops;
 
 // 보고 대상 방 (설명용 %효율 변화). 제조소·무역소·발전소·사무실·응접실. 제어센터 변화는
 // 버프받는 방 델타로 자연히 드러나므로 뺀다. 가공소·숙소·훈련실은 planScore 무관/무의미.
-const REPORTED_CELLS = ["MANUFACTURE-0", "MANUFACTURE-1", "MANUFACTURE-2", "MANUFACTURE-3", "TRADING-0", "TRADING-1", "POWER-0", "HIRE", "MEETING"];
+// ⚠ 칸 목록을 하드코딩하면 배치 프리셋(153의 제조소 5칸·252·그외)에서 칸이 새거나 없는
+// 칸을 보게 된다 — 활성 LAYOUT에서 방 종류로 골라 쓴다 (2026-07-25).
+const REPORTED_ROOMS = new Set(["MANUFACTURE", "TRADING", "POWER", "HIRE", "MEETING"]);
+const reportedCells = () => LAYOUT.filter((cell) => REPORTED_ROOMS.has(cell.room)).map((cell) => cell.key);
 // 기여 판정용 근무 방 — 여기 배치돼야 "실제로 일하는" 것으로 본다 (숙소·가공소·훈련실 제외)
 const WORK_ROOMS = new Set(["MANUFACTURE", "TRADING", "POWER", "CONTROL", "HIRE", "MEETING"]);
 const CAND_CAP = 140;     // 정밀 평가 후보 상한 — 유망순(시너지·성급) 정렬 후 상위만 (성능)
@@ -186,6 +189,11 @@ export async function recommendRaises(
   onProgress?: (p: InvestProgress) => void | Promise<void>,
 ): Promise<RaiseRec[]> {
   const cur = (op: InfraOp): Elite => eliteById.get(op.id) ?? maxElite(op.rarity);
+  // 정예화는 **지정이 없으면 만정예로 간주**하므로(성급 상한), 보유 설정에서 아무도 낮춰 두지
+  // 않았으면 완성할 게 없어 후보가 수학적으로 0이다. 그런데도 베이스라인 전체 optimize를
+  // 끝까지 돌린 뒤 빈 결과를 보여줬다 — 보유 405명이면 16초(모바일은 3~10배)를 통째로 버린다.
+  // 후보 유무는 optimize 없이 판정되므로 먼저 끊는다 (2026-07-25).
+  if (!visibleOps.some((op) => ownedIds.has(op.id) && raiseTarget(op, cur(op)) != null)) return [];
   const { roster: baseRoster, byId: byId0 } = stampRoster(visibleOps, ownedIds, eliteById);
   // 베이스라인 편성 + 그 편성이 고른 전략(토큰·시너지 세트) — 순수 가산 후보 평가에 재사용
   const { plan: baseline, tokenChoice, factionSets } = await optimizeConfig(baseRoster, priority);
@@ -243,14 +251,33 @@ export async function recommendRaises(
     const placement = placementOf(plan, op.id);
     if (!placement) continue;                        // 근무 방에 안 앉으면 귀속 실패 → 억제
 
-    const roomDeltas: RoomDelta[] = [];
-    for (const key of REPORTED_CELLS) {
+    const cellDeltas: RoomDelta[] = [];
+    for (const key of reportedCells()) {
       for (let shift = 0; shift < SHIFT_COUNT; shift += 1) {
         const before = cellEff(baseline, key, shift, byId0);
         const after = cellEff(plan, key, shift, byId1);
         if (Math.abs(after - before) < 0.05) continue;
-        roomDeltas.push({ key, shift, before, after });
+        cellDeltas.push({ key, shift, before, after });
       }
+    }
+    // 같은 종류 방끼리 팀이 통째로 자리를 맞바꾼 것(제조소3↔제조소4)은 **어느 칸이 어느 팀인지가
+    // 임의**일 뿐 실제 변화가 아니다. 칸 단위로 보면 한쪽이 -72%p로 잡혀 아래 하락 가드에
+    // 걸려버리므로(육성 추천이 통째로 0건이던 원인, 2026-07-25), 한 종류·한 조에서 두 칸 이상이
+    // 바뀌었으면 **방 종류 단위로 합산**해 판정하고 표시한다 — "제조소 B조 280% → 290%".
+    const groups = new Map<string, RoomDelta[]>();
+    for (const d of cellDeltas) {
+      const room = cellByKey.get(d.key)?.room ?? d.key;
+      const tag = `${room}/${d.shift}`;
+      groups.set(tag, [...(groups.get(tag) ?? []), d]);
+    }
+    const roomDeltas: RoomDelta[] = [];
+    for (const [tag, list] of groups) {
+      if (list.length === 1) { roomDeltas.push(list[0]); continue; }
+      const room = tag.split("/")[0];
+      const before = list.reduce((sum, d) => sum + d.before, 0);
+      const after = list.reduce((sum, d) => sum + d.after, 0);
+      if (Math.abs(after - before) < 0.05) continue;  // 순수 자리 맞바꿈 — 표시할 변화 없음
+      roomDeltas.push({ key: room, shift: list[0].shift, before, after });
     }
     // 재배치 잡음 억제 — 어떤 방이 눈에 띄게 하락했는데 총이득(ΔS)이 작으면, 그 오퍼를 키운
     // 효과가 아니라 그리디가 다른 방 인원을 뒤섞은 부작용이다("왜 키웠는데 다른 방이 나빠지지?"

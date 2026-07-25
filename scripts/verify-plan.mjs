@@ -190,6 +190,10 @@ let sharedRecs = null;
 // ② 모든 추천이 신뢰 가드를 통과 (ΔS>0 · 배치됨 · 비용>0 · 방 하락 없음 or 큰 시너지)
 await invCheck("육성추천: 모든 추천이 신뢰 가드 통과", async () => {
   sharedRecs = await invRun(loweredElite);
+  // ⚠ 0건이면 아래 가드 검사가 전부 공허하게 통과한다 — 실제로 이 시나리오는 추천이 나와야
+  // 한다(정예화2 인프라 스킬 12명을 1정으로 낮춘 로스터). 2026-07-25까지 하락 가드가
+  // "같은 종류 방끼리 자리 맞바꿈"을 실제 하락으로 오판해 전건 억제, 0건인 채로 통과 중이었다.
+  if (!sharedRecs.length) return { ok: false, detail: "추천 0건 — 억제 가드 회귀 의심(공허한 통과 방지)" };
   for (const r of sharedRecs) {
     if (!(r.deltaScore > 0)) return { ok: false, detail: `${r.opId} ΔS=${r.deltaScore}` };
     if (!r.placement) return { ok: false, detail: `${r.opId} 배치 없음` };

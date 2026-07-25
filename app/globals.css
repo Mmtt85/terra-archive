@@ -3195,6 +3195,14 @@ footer p {
 .srb-run:disabled {
   cursor: default;
 }
+/* 육성 추천 전제조건 배지 — 정예화를 낮춰 둔(=완성 안 한) 보유 오퍼 수 */
+.srb-run .srb-sub {
+  margin-left: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  font-style: normal;
+  opacity: 0.72;
+}
 /* 분석 중 라벨은 idle 라벨 위에 겹쳐(가운데) — idle 라벨은 visibility:hidden으로 폭만 유지 */
 .srb-run .srb-lbl.hide {
   visibility: hidden;

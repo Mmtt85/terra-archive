@@ -127,9 +127,6 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   const [tempBasePlan, setTempBasePlan] = useState<Plan | null>(null);
   // 아직 적용 안 한 '선택' 오퍼 — 개별 클릭은 선택만 하고, '선택 임시 적용'으로 한 번에 재편성
   const [selectedRaise, setSelectedRaise] = useState<Set<string>>(new Set());
-  // 표시용 추천 = 숨김 제외 후 상위 20 — 숨기면 다음 순위가 자동으로 올라온다
-  const visibleRecs = useMemo(() => (investRecs ? investRecs.filter((r) => !investHidden.has(r.opId)).slice(0, INVEST_SHOW) : null), [investRecs, investHidden]);
-
   // 화면 표시용 정예화 = 커밋된 eliteById에 임시 적용(tempApplied)을 덮어쓴 것. 임시 적용 중엔
   // 플랜이 그 정예화로 재계산되므로, 방 내용·스킬·정예화 배지도 같은 정예화로 그려야 어긋나지
   // 않는다(E2로 편성됐는데 배지는 E1로 뜨던 버그, 사용자 제보 2026-07-21). 로스터 설정 모달은
@@ -143,6 +140,19 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   const effectiveOps = useMemo(() => visibleOps.map((op) => withElite(op, viewElite.get(op.id))), [visibleOps, viewElite]);
   const effectiveOpById = useMemo(() => new Map(effectiveOps.map((op) => [op.id, op])), [effectiveOps]);
   const roster = useMemo(() => effectiveOps.filter((op) => ownedIds.has(op.id)), [effectiveOps, ownedIds]);
+  // 보유 중 아직 정예화를 완성 안 한(= 육성 추천 후보가 될 수 있는) 오퍼 수
+  const unfinishedCount = useMemo(() => [...ownedIds].filter((id) => {
+    const op = opById.get(id);
+    return op && (eliteById.get(id) ?? maxElite(op.rarity)) < maxElite(op.rarity);
+  }).length, [ownedIds, eliteById]);
+
+  // 표시용 추천 = 숨김 제외 후 상위 20 — 숨기면 다음 순위가 자동으로 올라온다
+  // ⚠ 카드 렌더는 현재 보이는 로스터(effectiveOpById)에 없는 오퍼를 말없이 버리므로, 여기서
+  // 같은 기준으로 걸러야 "N명"과 실제 목록이 어긋나지 않는다 — 미래시 ON으로 분석해 두고
+  // OFF로 돌아오면 헤더는 N명인데 목록이 텅 비던 경로 (사용자 제보 2026-07-25)
+  const visibleRecs = useMemo(() => (investRecs
+    ? investRecs.filter((r) => !investHidden.has(r.opId) && effectiveOpById.has(r.opId)).slice(0, INVEST_SHOW)
+    : null), [investRecs, investHidden, effectiveOpById]);
 
   const persist = (ids: Set<string>, nextPlan: Plan | null, elite: Map<string, Elite> = eliteById, prio: ProdPriority = priority, invest: RaiseRec[] | null = investRecs, hidden: Set<string> = investHidden, lay: LayoutPreset = layout, lvls: Levels = levels, rooms: CustomRoom[] = customRooms, products: (CustomProduct | null)[] = customProducts) => {
     // 현재 프리셋 버킷을 최신 상태로 갱신한 뒤 전체 버킷을 저장 — 다른 프리셋의 편성은 보존된다
@@ -413,7 +423,10 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   // 자동편성 전까지 같은 결과 유지). 없으면 분석을 돌린다.
   const openInvest = () => {
     if (investing) return;
-    if (investRecs) { setShowInvest(true); return; }
+    // 캐시가 **비어 있으면** 그대로 열지 않고 다시 계산한다 — 0건 결과도 localStorage에
+    // 저장되므로, 예전에 한 번 0건이 나왔으면(정예화를 아직 안 채웠을 때 등) 이후 아무리
+    // 눌러도 빈 모달만 뜨고 재계산이 안 되던 문제 (사용자 제보 2026-07-25 "아무것도 안 뜬다")
+    if (investRecs?.length) { setShowInvest(true); return; }
     void runInvest();
   };
   const runInvest = async () => {
@@ -426,7 +439,16 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       setInvestHidden(new Set()); // 새 분석 → 숨김 초기화
       persist(ownedIds, plan, eliteById, priority, recs, new Set());
       setShowInvest(true);
-      if (!recs.length) showToast(t("완성하면 이득인 오퍼를 찾지 못했습니다 — 보유 설정에서 정예화를 낮춰 두면 후보가 됩니다"));
+      if (!recs.length) {
+        // 후보 자체가 없는 경우(전원 만정예 간주)와 후보는 있는데 이득이 없는 경우를 구분해 안내
+        const lowered = [...ownedIds].filter((id) => { const op = opById.get(id); return op && (eliteById.get(id) ?? maxElite(op.rarity)) < maxElite(op.rarity); }).length;
+        showToast(lowered
+          ? t("완성하면 이득인 오퍼를 찾지 못했습니다 — 미완성 {n}명 모두 지금 편성을 바꾸지 못합니다", { n: lowered })
+          : t("보유 오퍼 전원이 정예화 완성 상태로 잡혀 있습니다 — 보유 설정에서 아직 안 키운 오퍼의 정예화를 낮춰 주세요"));
+      }
+    } catch (error) {
+      // 종전엔 catch가 없어 워커가 에러를 돌려주면 아무 일도 안 일어났다(모달·토스트 없음)
+      showToast(t("육성 추천 계산에 실패했습니다 — {msg}", { msg: String((error as Error)?.message ?? error).slice(0, 120) }));
     } finally {
       setInvesting(null);
     }
@@ -1018,7 +1040,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
                 <button className="revert" onClick={revertTemp}>{t("되돌리기")}</button>
               </span>
             </>
-          ) : investRecs && !investing ? (
+          ) : visibleRecs?.length && !investing ? (
             <>
               <span className="srb-top">★ {t("인프라 오퍼 육성 추천")}{isNewFeature("invest") && <span className="new-badge">{t("새기능")}</span>}</span>
               <span className="srb-btns">
@@ -1030,7 +1052,9 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
             // 대기·분석중 공용 — 두 라벨을 겹쳐(overlay) 폭을 idle 라벨에 고정, 분석 중에도 버튼 길이 불변
             <button className="srb-run" onClick={openInvest} disabled={!!investing}
               title={t("보유했지만 아직 완성하지 않은(정예화를 낮춰 둔) 오퍼 중, 완성하면 인프라 효율이 오르는 오퍼를 실제 자동편성을 다시 돌려 찾아냅니다")}>
-              <span className={`srb-lbl${investing ? " hide" : ""}`}>★ {t("인프라 오퍼 육성 추천")}{isNewFeature("invest") && <span className="new-badge">{t("새기능")}</span>}</span>
+              {/* 전제조건을 눈에 보이게 — 정예화를 낮춰 둔 오퍼가 0명이면 분석해도 후보가 없다
+                  (전원 만정예 가정이 기본값이라 "왜 아무것도 안 뜨지"의 최대 원인, 2026-07-25) */}
+              <span className={`srb-lbl${investing ? " hide" : ""}`}>★ {t("인프라 오퍼 육성 추천")}{isNewFeature("invest") && <span className="new-badge">{t("새기능")}</span>}<em className="srb-sub">{t("미완성 {n}명", { n: unfinishedCount })}</em></span>
               {investing && <span className="srb-over">★ {investing.total ? t("분석 중 {i}/{n}", { i: investing.done, n: investing.total }) : t("분석 중…")}</span>}
             </button>
           )}
@@ -1189,7 +1213,9 @@ function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onTogg
 }) {
   // 방 라벨은 i18n 사전 키("제조소 1 · 순금" 등) — 배 뷰(t(cell.label))처럼 번역해 표시
   // (일어판 육성 추천 모달에 방 이름만 한국어로 남던 문제, 사용자 리포트 2026-07-22)
-  const roomLabel = (key: string) => t(cellByKey.get(key)?.label ?? key);
+  // 칸 키(MANUFACTURE-2)면 그 칸 이름, 방 종류 키(MANUFACTURE)면 시설 이름 —
+  // 같은 종류 방이 여럿 바뀌면 육성 추천이 방 종류로 합산해 내려보낸다 (2026-07-25)
+  const roomLabel = (key: string) => t(cellByKey.get(key)?.label ?? infra.rooms[key]?.name ?? key);
   const shiftTag = (s: number) => (s === 0 ? t("A조") : t("B조"));
   const num = (n: number) => Math.round(n).toLocaleString();
   useEffect(() => {
@@ -1926,6 +1952,7 @@ function FlowModal({ plan, opMap, onClose, onShowOperator }: { plan: Plan; opMap
 
 function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOperator }: { allOps: InfraOp[]; ownedIds: Set<string>; eliteById: Map<string, Elite>; onApply: (ids: Set<string>, elite: Map<string, Elite>) => void; onClose: () => void; onShowOperator?: (id: string) => void }) {
   const { t } = useI18n();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const [draft, setDraft] = useState<Set<string>>(new Set(ownedIds));
   const [eliteDraft, setEliteDraft] = useState<Map<string, Elite>>(new Map(eliteById));
   const [showScan, setShowScan] = useState(false); // 스크린샷 스캐너(모달 내부에서 draft에 병합)
@@ -2051,10 +2078,23 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
     { label: "3성", test: (rarity) => rarity === 3, elites: [0, 1] },
     { label: "2성 이하", test: (rarity) => rarity <= 2, elites: [] },
   ];
+  // 스캔·MAA 가져오기로 채운 보유·정예화는 '적용 및 자동편성 실행'을 눌러야 커밋된다 —
+  // 배경 클릭·✕로 닫으면 통째로 사라져, 스캔했는데 정예화가 전부 만정예로 남고 육성 추천이
+  // 0건이 되는 조용한 유실 경로였다 (2026-07-25). 변경분이 있으면 닫기 전에 확인한다.
+  const dirtyDraft = draft.size !== ownedIds.size || [...draft].some((id) => !ownedIds.has(id))
+    || eliteDraft.size !== eliteById.size || [...eliteDraft].some(([id, e]) => eliteById.get(id) !== e);
+  const closeGuarded = async () => {
+    if (dirtyDraft && !(await confirm({
+      message: t("적용하지 않은 보유·정예화 변경이 있습니다. 그냥 닫으면 변경이 사라집니다."),
+      confirmLabel: t("변경 버리고 닫기"),
+    }))) return;
+    onClose();
+  };
   return (
-    <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+    <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) void closeGuarded(); }}>
       <section className="operator-modal room-modal" role="dialog" aria-modal="true" style={{ "--accent": "var(--lime)" } as React.CSSProperties}>
-        <button type="button" className="modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
+        {confirmDialog}
+        <button type="button" className="modal-close" onClick={() => { void closeGuarded(); }} aria-label={t("닫기")}>×</button>
         <header className="room-modal-head">
           <span className="modal-kicker">ROSTER · {t("{n}/{m} 보유", { n: draft.size, m: allOps.length })}</span>
           <h2>{t("보유 오퍼레이터 설정")}</h2>
