@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { adminDeleteFeedback, adminDeleteNickname, adminListFeedback, adminSetHandling, adminSetReviewed, handlingAt, withHandling, fetchNicknameCounts, type FeedbackRow, type NicknameCount } from "../feedback";
+import { adminDeleteFeedback, adminListFeedback, adminSetHandling, adminSetReviewed, handlingAt, withHandling, type FeedbackRow } from "../feedback";
 import { adminDeleteRelease, adminDeleteRule, adminListRules, adminPublishRelease, adminUpsertRule, fetchLatestRelease, type ReleaseRow } from "../rules-api";
 import { useConfirm } from "../confirm";
 import { compileSnapshot, validateRules, RULE_KINDS, type RuleRow } from "../rules-compile";
@@ -94,8 +94,7 @@ export default function AdminPage() {
   const [status, setStatus] = useState("");
   const [filter, setFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("open"); // open(대응미완료) | reviewed(대응완료)
-  const [tab, setTab] = useState<"feedback" | "nick" | "rules">("feedback"); // 상단 탭
-  const [nicknames, setNicknames] = useState<NicknameCount[]>([]);
+  const [tab, setTab] = useState<"feedback" | "rules">("feedback"); // 상단 탭
   const [dataCheck, setDataCheck] = useState<DataCheck | null>(null);
   // 플래너 규칙 원장 + 최신 발행 (null = 조회 실패 → 미설치 안내)
   const [rules, setRules] = useState<RuleRow[] | null>(null);
@@ -120,7 +119,6 @@ export default function AdminPage() {
       setStatus(data.length ? "" : "항목이 없습니다 — 비밀번호가 틀리면 목록이 비어 보입니다");
       setEntered(true);
       sessionStorage.setItem("ta-admin-key", pw);
-      fetchNicknameCounts().then(setNicknames).catch(() => { /* 별명 테이블 미설치 시 무시 */ });
       loadRules(pw);
     } catch {
       setStatus("조회 실패 — 잠시 후 다시 시도해주세요");
@@ -181,16 +179,6 @@ export default function AdminPage() {
       setRelease(await fetchLatestRelease());
       setRulesStatus(`v${release.version} 롤백됨`);
     } catch { setRulesStatus("롤백 실패"); }
-  };
-
-  const removeNickname = async (item: NicknameCount) => {
-    if (!(await confirm({ message: `'${OP_NAME.get(item.op_id) ?? item.op_id}'의 별명 '${item.name}' (${item.votes}표)을 전부 삭제할까요?`, danger: true }))) return;
-    try {
-      await adminDeleteNickname(password, item.op_id, item.name);
-      setNicknames((current) => current.filter((row) => !(row.op_id === item.op_id && row.name === item.name)));
-    } catch {
-      setStatus("별명 삭제 실패");
-    }
   };
 
   useEffect(() => {
@@ -301,7 +289,6 @@ export default function AdminPage() {
         <h1>TERRA ARCHIVE 관리</h1>
         <div className="admin-tools admin-tabs">
           <button className={tab === "feedback" ? "selected" : ""} onClick={() => setTab("feedback")}>피드백 ({rows.length})</button>
-          <button className={tab === "nick" ? "selected" : ""} onClick={() => setTab("nick")}>별명 제보 ({nicknames.length})</button>
           <button className={tab === "rules" ? "selected" : ""} onClick={() => setTab("rules")}>
             플래너 규칙{release ? ` (v${release.version}${release.version !== bundledRules.version ? " ⚠" : ""})` : ""}
           </button>
@@ -398,20 +385,6 @@ export default function AdminPage() {
         {shown.length === 0 && <p className="admin-status">표시할 항목이 없습니다.</p>}
       </div>
       </>)}
-
-      {tab === "nick" && (
-      <div className="admin-nicknames">
-        {nicknames.map((item) => (
-          <span key={`${item.op_id}-${item.name}`} className="admin-nick">
-            <b>{OP_NAME.get(item.op_id) ?? item.op_id}</b>
-            {item.name}
-            <i>{item.votes}표</i>
-            <button onClick={() => removeNickname(item)} title="이 별명의 제보를 전부 삭제">×</button>
-          </span>
-        ))}
-        {nicknames.length === 0 && <p className="admin-status">제보된 별명이 없습니다.</p>}
-      </div>
-      )}
 
       {tab === "rules" && (<>
       <p className="admin-status">

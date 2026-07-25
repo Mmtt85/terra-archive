@@ -3,7 +3,7 @@
 // 헤더 만능검색 — 사이트 전체 컨텐츠 색인 + 점수 매김 (순수 로직, UI는 omni.tsx).
 //
 // 색인 대상과 이동 방법:
-//   오퍼레이터   → #op-<id> 모달 (별명·코드·다국어 이름 포함)
+//   오퍼레이터   → #op-<id> 모달 (다국어 이름·별칭·이격 별명·코드)
 //   스토리       → 스토리 탭 #story-<id>
 //   재료         → 파밍 탭 재료 상세 모달 (커뮤니티 은어 별칭 포함)
 //   공채 태그    → 공채 도우미 탭 태그 선택
@@ -118,7 +118,6 @@ const SECTION_LABEL: Record<string, string> = {
 
 export type OmniSource = {
   roster: Operator[];                                  // 미래시 토글이 이미 반영된 목록
-  nicknames?: Map<string, { name: string; votes: number }[]>;
   includeFuture: boolean;
   locale: Locale;
   t: T;
@@ -126,7 +125,7 @@ export type OmniSource = {
 };
 
 /** 가벼운 색인 — 이미 번들에 들어 있는 데이터만 쓴다 (통합전략 세부 항목 제외). */
-export function buildOmniIndex({ roster, nicknames, includeFuture, locale, t, extra }: OmniSource): OmniItem[] {
+export function buildOmniIndex({ roster, includeFuture, locale, t, extra }: OmniSource): OmniItem[] {
   const items: OmniItem[] = [];
 
   for (const entry of TAB_ENTRIES) {
@@ -175,12 +174,11 @@ export function buildOmniIndex({ roster, nicknames, includeFuture, locale, t, ex
   };
 
   for (const op of roster) {
-    const nicks = (nicknames?.get(op.id) ?? []).filter((n) => n.votes >= 3).map((n) => n.name);
     items.push({
       uid: `op:${op.id}`, kind: "op", name: op.name,
       sub: `${op.rarity}★ ${op.job}`,
       img: `/avatars/${op.id}.webp`,
-      keys: keysOf(op.name, ...words(op.name), ...alterKeys(op.name), ...op.aliases, ...nicks, op.code),
+      keys: keysOf(op.name, ...words(op.name), ...alterKeys(op.name), ...op.aliases, op.code),
       target: { kind: "op", id: op.id },
     });
   }

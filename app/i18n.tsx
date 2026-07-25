@@ -179,9 +179,9 @@ const D: Record<string, Pair> = {
   "항목을 눌러 값을 고르세요 · 복수 선택 가능": ["Tap a category to pick values · multi-select", "項目を押して値を選択 · 複数選択可"],
   "접기": ["Collapse", "閉じる"],
   "더보기 +{n}": ["More +{n}", "もっと見る +{n}"],
-  "오퍼레이터 {count}명 · 전원 이미지 · 다국어 이름 및 커뮤니티 별명 검색 · 스킬과 재능 기반 {concepts}개 컨셉 태그를 제공합니다. 모든 필터는 토글식이며 아무것도 선택하지 않으면 전체가 표시됩니다.": [
-    "{count} operators · full artwork · multilingual name & community nickname search · {concepts} concept tags derived from skills and talents. Every filter is a toggle; with nothing selected, all operators are shown.",
-    "オペレーター{count}名 · 全員画像付き · 多言語名・コミュニティ愛称検索 · スキルと素質に基づく{concepts}種のコンセプトタグを提供。フィルターはすべてトグル式で、何も選択しなければ全員が表示されます。",
+  "오퍼레이터 {count}명 · 전원 이미지 · 다국어 이름·별칭 검색 · 스킬과 재능 기반 {concepts}개 컨셉 태그를 제공합니다. 모든 필터는 토글식이며 아무것도 선택하지 않으면 전체가 표시됩니다.": [
+    "{count} operators · full artwork · multilingual name & alias search · {concepts} concept tags derived from skills and talents. Every filter is a toggle; with nothing selected, all operators are shown.",
+    "オペレーター{count}名 · 全員画像付き · 多言語名・別名検索 · スキルと素質に基づく{concepts}種のコンセプトタグを提供。フィルターはすべてトグル式で、何も選択しなければ全員が表示されます。",
   ],
   "{concept} 컨셉덱": ["{concept} concept", "{concept}コンセプト"],
   "탐색 결과": ["Results", "検索結果"],
@@ -211,15 +211,7 @@ const D: Record<string, Pair> = {
   "{name} 상세 정보 열기": ["Open {name} details", "{name}の詳細を開く"],
   "{name} 오퍼레이터": ["Operator {name}", "オペレーター{name}"],
 
-  // 별명 제보
-  "별명 제보": ["Suggest a nickname", "愛称を投稿"],
-  "이 오퍼의 별명 (16자 이내)": ["Nickname for this operator (max 16 chars)", "このオペレーターの愛称（16字以内）"],
   "전송 중…": ["Sending…", "送信中…"],
-  "제보": ["Send", "投稿"],
-  "별명을 입력해 주세요": ["Please enter a nickname", "愛称を入力してください"],
-  "별명은 16자 이내로 부탁드려요": ["Please keep nicknames within 16 characters", "愛称は16字以内でお願いします"],
-  "이미 이 별명을 제보하셨어요, 감사합니다!": ["You already sent this nickname — thank you!", "この愛称は投稿済みです、ありがとうございます！"],
-  "제보 감사합니다!": ["Thanks for the suggestion!", "ご投稿ありがとうございます！"],
   "전송 실패 — 잠시 후 다시 시도해주세요": ["Failed to send — please try again later", "送信失敗 — しばらくしてから再試行してください"],
 
   // 오퍼 상세 모달

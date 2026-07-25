@@ -75,6 +75,14 @@ create policy "anon insert omni pick"
   with check (true);
 
 -- ── 공개 집계 ────────────────────────────────────────────────────────────────
+-- ⚠ 뷰는 먼저 지우고 다시 만든다 — `create or replace view`는 **컬럼 구성이 바뀌면**
+--    "42P16: cannot drop columns from view"로 실패한다 (이전 버전을 이미 실행한 경우).
+drop view if exists public.omni_weights;
+drop view if exists public.omni_pick_counts cascade;
+drop view if exists public.omni_trail_counts cascade;
+drop view if exists public.omni_miss_top;
+drop view if exists public.omni_query_top;
+
 -- 1) 직접 클릭 — (검색어, 항목)별 **서로 다른 사람 수**.
 create or replace view public.omni_pick_counts as
   select q, uid,

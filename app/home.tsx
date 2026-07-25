@@ -20,7 +20,7 @@ import RogueGuide, { TOPICS as ROGUE_TOPICS, slugOf as rogueSlugOf } from "./rog
 import About from "./about";
 import FeedbackWidget from "./feedback-widget";
 import { bindEscClose } from "./esc-close";
-import { feedbackReady, fetchNicknameCounts, submitNickname } from "./feedback";
+import { feedbackReady } from "./feedback";
 import { tabHasNewFeature } from "./whats-new";
 import { scrollMainTop } from "./scroll";
 import { useLazyVisible } from "./lazy-img";
@@ -619,24 +619,6 @@ function ThemeToggle() {
   );
 }
 
-type Nickname = { name: string; votes: number };
-
-// 별명은 제보 3회 이상 쌓여야 노출·검색에 반영된다 (스팸·오타 필터)
-const NICKNAME_MIN_VOTES = 3;
-
-// 같은 (오퍼, 별명) 중복 제보를 이 브라우저에서 막는 가드
-const NICK_SENT_KEY = "ta-nick-sent";
-function nickAlreadySent(opId: string, name: string): boolean {
-  try { return (JSON.parse(localStorage.getItem(NICK_SENT_KEY) ?? "[]") as string[]).includes(`${opId} ${name}`); } catch { return false; }
-}
-function rememberNickSent(opId: string, name: string) {
-  try {
-    const sent = new Set(JSON.parse(localStorage.getItem(NICK_SENT_KEY) ?? "[]") as string[]);
-    sent.add(`${opId} ${name}`);
-    localStorage.setItem(NICK_SENT_KEY, JSON.stringify(Array.from(sent)));
-  } catch { /* ignore */ }
-}
-
 // 포탈 첫화면 — 루트(/)의 랜딩. 각 도구로 가는 큰 버튼만 두어, 진입 시 오퍼 이미지 로딩이
 // 전혀 없다 (사용자 확정 2026-07-17: 데이터 소진 방지). 오퍼 백과사전은 여기서 /operators로 이동.
 function Portal({ onOpenTab }: { onOpenTab: (tab: Tab) => void }) {
@@ -797,45 +779,6 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
     // damageTypeOf는 locale·t 클로저 (로케일이 바뀌면 라벨도 바뀐다)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roster, locale, t]);
-
-  // 커뮤니티 제보 별명 — (오퍼 id → 득표순 목록). 검색 대상에도 병합된다.
-  const [nicknames, setNicknames] = useState<Map<string, Nickname[]>>(new Map());
-
-  useEffect(() => {
-    fetchNicknameCounts()
-      .then((rows) => {
-        const byOp = new Map<string, Nickname[]>();
-        for (const row of rows) {
-          const list = byOp.get(row.op_id) ?? [];
-          list.push({ name: row.name, votes: row.votes });
-          byOp.set(row.op_id, list);
-        }
-        for (const list of byOp.values()) list.sort((a, b) => b.votes - a.votes || a.name.localeCompare(b.name, "ko"));
-        setNicknames(byOp);
-      })
-      .catch(() => { /* 별명 서버 불통이어도 사이트는 정상 동작 */ });
-  }, []);
-
-  const handleSubmitNickname = async (opId: string, rawName: string): Promise<string> => {
-    const name = rawName.trim().replace(/\s+/g, " ");
-    if (name.length < 1) return t("별명을 입력해 주세요");
-    if (name.length > 16) return t("별명은 16자 이내로 부탁드려요");
-    if (nickAlreadySent(opId, name)) return t("이미 이 별명을 제보하셨어요, 감사합니다!");
-    await submitNickname(opId, name);
-    rememberNickSent(opId, name);
-    // 낙관적 반영 — 새로고침 없이 득표가 즉시 갱신돼 보인다
-    setNicknames((current) => {
-      const next = new Map(current);
-      const list = [...(next.get(opId) ?? [])];
-      const idx = list.findIndex((item) => item.name === name);
-      if (idx >= 0) list[idx] = { ...list[idx], votes: list[idx].votes + 1 };
-      else list.push({ name, votes: 1 });
-      list.sort((a, b) => b.votes - a.votes || a.name.localeCompare(b.name, "ko"));
-      next.set(opId, list);
-      return next;
-    });
-    return "";
-  };
 
   // 루트 레이아웃은 lang="ko" 고정이라, 로케일 라우트에서는 클라이언트에서 맞춘다
   useEffect(() => {
@@ -1175,13 +1118,12 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
       const matchesJob = selectedJobs.length === 0 || selectedJobs.includes(operator.job);
       const matchesSubProfession = selectedSubProfessions.length === 0 || selectedSubProfessions.includes(operator.subProfession);
       const matchesRarity = selectedRarities.length === 0 || selectedRarities.includes(String(operator.rarity));
-      const communityNicknames = nicknames.get(operator.id)?.filter((nick) => nick.votes >= NICKNAME_MIN_VOTES).map((nick) => nick.name) ?? [];
       const conceptNames = operator.concepts.map((concept) => conceptName(locale, concept));
-      const matchesQuery = !keyword || normSearch([operator.name, operator.code, operator.job, operator.subProfession, operator.position, ...operator.combatTags, ...operator.factions, operator.reason, ...operator.aliases, ...communityNicknames, ...operator.concepts, ...conceptNames].join(" ")).includes(keyword);
+      const matchesQuery = !keyword || normSearch([operator.name, operator.code, operator.job, operator.subProfession, operator.position, ...operator.combatTags, ...operator.factions, operator.reason, ...operator.aliases, ...operator.concepts, ...conceptNames].join(" ")).includes(keyword);
       return matchesFaction && matchesConcept && matchesMethod && matchesTags && matchesJob && matchesSubProfession && matchesRarity && matchesQuery;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roster, selectedFactions, selectedConcepts, selectedMethods, tags, selectedJobs, selectedSubProfessions, selectedRarities, searchTerm, nicknames, locale]);
+  }, [roster, selectedFactions, selectedConcepts, selectedMethods, tags, selectedJobs, selectedSubProfessions, selectedRarities, searchTerm, locale]);
 
   // 백과사전 검색이 0건이면 그것도 "실패한 검색"이다 (뱅제 → 은재 → … 연쇄를 잇기 위해)
   useEffect(() => {
@@ -1253,7 +1195,7 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
             (사용자 요청 2026-07-25 — 미래시 토글 왼쪽). */}
         <BroadcastBadges includeFuture={includeFuture} slot="events" />
         {/* 만능검색 = 1줄 오른쪽(햄버거 왼쪽) — 헤더를 접어도 남는다 (사용자 요청 2026-07-25) */}
-        <OmniSearch roster={roster} nicknames={nicknames} includeFuture={includeFuture} extra={extra} onGo={runOmni} />
+        <OmniSearch roster={roster} includeFuture={includeFuture} extra={extra} onGo={runOmni} />
         {/* 햄버거(메뉴) = 1줄 오른쪽 끝 — 데스크탑·모바일 공통 (사용자 확정 2026-07-22).
             모바일은 order로, 데스크탑은 margin-left:auto로 배치되므로 JSX 위치는 자유. */}
         <div className="nav-group">
@@ -1341,7 +1283,7 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
             { title: t("공식 소속"), items: factions, selected: selectedFactions, onToggle: toggleIn(setSelectedFactions), countForItem: (item) => chipCount.faction.get(item) ?? 0 },
           ]} />
 
-          <aside className="data-note"><span>DATA NOTE</span><p>{t("오퍼레이터 {count}명 · 전원 이미지 · 다국어 이름 및 커뮤니티 별명 검색 · 스킬과 재능 기반 {concepts}개 컨셉 태그를 제공합니다. 모든 필터는 토글식이며 아무것도 선택하지 않으면 전체가 표시됩니다.", { count: roster.length, concepts: concepts.length })}</p></aside>
+          <aside className="data-note"><span>DATA NOTE</span><p>{t("오퍼레이터 {count}명 · 전원 이미지 · 다국어 이름·별칭 검색 · 스킬과 재능 기반 {concepts}개 컨셉 태그를 제공합니다. 모든 필터는 토글식이며 아무것도 선택하지 않으면 전체가 표시됩니다.", { count: roster.length, concepts: concepts.length })}</p></aside>
         </div>
 
         <div className="results">
@@ -1419,7 +1361,7 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
       </footer>
       </div>{/* /.site-scroll */}
 
-      {selected && <OperatorModal operator={selected} nicknames={nicknames.get(selected.id) ?? []} onSubmitNickname={handleSubmitNickname} onClose={closeOperator} />}
+      {selected && <OperatorModal operator={selected} onClose={closeOperator} />}
       <FeedbackWidget open={feedbackOpen} setOpen={setFeedbackOpen} />
     </main>
   );
@@ -1533,41 +1475,7 @@ function OperatorCard({ operator, index, onSelect }: { operator: Operator; index
   );
 }
 
-function NicknameForm({ operator, onSubmit }: { operator: Operator; onSubmit: (opId: string, name: string) => Promise<string> }) {
-  const { t } = useI18n();
-  const [draft, setDraft] = useState("");
-  const [message, setMessage] = useState("");
-  const [busy, setBusy] = useState(false);
-  const submit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (busy) return;
-    setBusy(true);
-    try {
-      const error = await onSubmit(operator.id, draft);
-      if (error) { setMessage(error); return; }
-      setDraft("");
-      setMessage(t("제보 감사합니다!"));
-    } catch {
-      setMessage(t("전송 실패 — 잠시 후 다시 시도해주세요"));
-    } finally {
-      setBusy(false);
-    }
-  };
-  if (!feedbackReady) return null;
-  return (
-    <div className="nickname-row">
-      <span className="nickname-label">{t("별명 제보")}</span>
-      <form className="nickname-form" onSubmit={submit}>
-        <input value={draft} maxLength={16} placeholder={t("이 오퍼의 별명 (16자 이내)")}
-          onChange={(event) => { setDraft(event.target.value); setMessage(""); }} />
-        <button type="submit" disabled={busy || !draft.trim()}>{busy ? t("전송 중…") : <><span className="btn-icon" aria-hidden>✎</span>{t("제보")}</>}</button>
-      </form>
-      {message && <small className="nickname-msg">{message}</small>}
-    </div>
-  );
-}
-
-function OperatorModal({ operator, nicknames, onSubmitNickname, onClose }: { operator: Operator; nicknames: Nickname[]; onSubmitNickname: (opId: string, name: string) => Promise<string>; onClose: () => void }) {
+function OperatorModal({ operator, onClose }: { operator: Operator; onClose: () => void }) {
   const { locale, t } = useI18n();
   return (
     <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
@@ -1580,9 +1488,6 @@ function OperatorModal({ operator, nicknames, onSubmitNickname, onClose }: { ope
               <span className="modal-kicker">OPERATOR FILE · {operator.code}</span>
               <div className="modal-name-row">
                 <h2 id="operator-modal-title">{operator.name}</h2>
-                {nicknames.some((nick) => nick.votes >= NICKNAME_MIN_VOTES) && (
-                  <span className="nickname-inline">{nicknames.filter((nick) => nick.votes >= NICKNAME_MIN_VOTES).slice(0, 3).map((nick) => <b key={nick.name}>{nick.name}</b>)}</span>
-                )}
               </div>
               <div className="modal-rarity">{"★".repeat(operator.rarity)} <span>{t("{n}성", { n: operator.rarity })}</span>{operator.unreleased && <em className="future-badge">{t("미실장")}</em>}</div>
               <div className="class-line">
@@ -1590,7 +1495,6 @@ function OperatorModal({ operator, nicknames, onSubmitNickname, onClose }: { ope
               </div>
               {operator.unreleased && <p className="future-note">{t("미실장 오퍼레이터입니다 — 중국 서버 데이터 기준이며, 스킬·재능 등 텍스트는 비공식 AI 번역이라 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>}
             </div>
-            <NicknameForm key={operator.id} operator={operator} onSubmit={onSubmitNickname} />
           </div>
         </header>
         <div className="modal-scroll">

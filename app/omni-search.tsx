@@ -26,9 +26,8 @@ import type { Operator } from "./home";
 const KIND_GLYPH: Record<string, string> = { story: "✦", tag: "◎", rogue: "❖", topic: "❖", tab: "◇" };
 const LEARNED_MIN = 3;   // 이 표수 이상이면 '자주 선택' 표시 (내 선택 1회 = 3표)
 
-export default function OmniSearch({ roster, nicknames, includeFuture, extra, onGo }: {
+export default function OmniSearch({ roster, includeFuture, extra, onGo }: {
   roster: Operator[];
-  nicknames?: Map<string, { name: string; votes: number }[]>;
   includeFuture: boolean;
   extra?: ExtraI18n | null;
   onGo: (target: OmniTarget) => void;
@@ -55,8 +54,8 @@ export default function OmniSearch({ roster, nicknames, includeFuture, extra, on
 
   // 색인은 패널을 처음 열 때 만든다 (헤더만 있는 상태에선 아무 비용도 들이지 않는다)
   const base = useMemo(
-    () => (open ? buildOmniIndex({ roster, nicknames, includeFuture, locale, t, extra }) : []),
-    [open, roster, nicknames, includeFuture, locale, t, extra]);
+    () => (open ? buildOmniIndex({ roster, includeFuture, locale, t, extra }) : []),
+    [open, roster, includeFuture, locale, t, extra]);
   const items = useMemo(() => (rogueItems ? base.concat(rogueItems) : base), [base, rogueItems]);
   const picks = useMemo(() => picksFor(normSearch(term), crowd), [term, crowd]);
   // 선택 학습으로 익힌 은어 사전 ("록라" → 통합전략) — 내장 사전 위에 얹힌다
