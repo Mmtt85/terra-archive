@@ -1,10 +1,12 @@
 {
   "manifest_version": 3,
   "name": "테라 브리지 (실험)",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "게임 창(에뮬레이터·PC 클라이언트)을 테라 아카이브에 연결해 화면을 자동 인식시킵니다.",
   "minimum_chrome_version": "116",
-  "permissions": ["desktopCapture", "offscreen"],
+  "permissions": [
+    "desktopCapture"
+  ],
   "background": {
     "service_worker": "background.js"
   },
@@ -18,7 +20,9 @@
         "http://localhost:3000/*",
         "http://127.0.0.1:3000/*"
       ],
-      "js": ["content.js"],
+      "js": [
+        "content.js"
+      ],
       "run_at": "document_start"
     }
   ],
