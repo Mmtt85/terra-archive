@@ -155,6 +155,7 @@ const FUTURE_SERVERS = new Set(["cn"]);
 const HOUR = 3_600_000;
 const DAY = 86_400_000;
 const STATE_RANK: Record<BState, number> = { live: 0, upcoming: 1, past: 2 };
+const PAST_LIMIT = 10; // 목록에 남기는 지난 방송 수 (사용자 확정 2026-07-25)
 
 function YtIcon() {
   return <span className="yt-icon" aria-label="YouTube"><i /></span>;
@@ -272,7 +273,10 @@ function eventThumb(locale: Locale, event: GameEvent): string | undefined {
 }
 const eventDday = (event: GameEvent, now: number): number => Math.max(0, Math.ceil((Date.parse(event.end) - now) / DAY));
 
-function BroadcastBadges({ includeFuture }: { includeFuture?: boolean }) {
+// slot — 헤더 두 곳에 나눠 그린다: 진행중 이벤트 배지는 1줄(접어도 보임), 공식 방송 버튼은
+// 확장부(header-sub)의 미래시 토글 왼쪽 (사용자 요청 2026-07-25). 워커 fetch는 모듈 공유
+// 프라미스라 인스턴스가 둘이어도 요청은 한 번이다.
+function BroadcastBadges({ includeFuture, slot }: { includeFuture?: boolean; slot?: "broadcast" | "events" }) {
   const { locale, t } = useI18n();
   const shortStatus = (b: Broadcast, now: number): string => {
     const state = bcastState(b, now);
@@ -326,11 +330,13 @@ function BroadcastBadges({ includeFuture }: { includeFuture?: boolean }) {
   if (now == null || !settled) {
     return (
       <>
-        <span className="bcast-trigger is-skeleton" aria-hidden>
-          <YtIcon />
-          <span>{t("공식 방송")}</span>
-        </span>
-        <div className="event-group" aria-hidden>
+        {slot !== "events" && (
+          <span className="bcast-trigger is-skeleton" aria-hidden>
+            <YtIcon />
+            <span>{t("공식 방송")}</span>
+          </span>
+        )}
+        {slot !== "broadcast" && <div className="event-group" aria-hidden>
           <div className="event-trigger has-banner is-skeleton">
             <span className="event-trigger-thumb"><span className="sk-box" /></span>
             <span className="event-trigger-main">
@@ -340,7 +346,7 @@ function BroadcastBadges({ includeFuture }: { includeFuture?: boolean }) {
             </span>
             <span className="event-caret" aria-hidden>▾</span>
           </div>
-        </div>
+        </div>}
       </>
     );
   }
@@ -466,30 +472,36 @@ function BroadcastBadges({ includeFuture }: { includeFuture?: boolean }) {
     </div>
   );
 
-  if (all.length === 0) return eventBadge || null;
-  // 정렬: 생방송 > 가까운 예약 > 최근 지난 방송 (세 서버 전부 목록에 표시)
+  if (all.length === 0) return (slot === "broadcast" ? null : eventBadge) || null;
+  // 정렬: 생방송 > 가까운 예약 > 최근 지난 방송 (서버 전부 목록에 표시)
   const sorted = [...all].sort((a, b) => {
     const sa = bcastState(a, now), sb = bcastState(b, now);
     if (STATE_RANK[sa] !== STATE_RANK[sb]) return STATE_RANK[sa] - STATE_RANK[sb];
     return sa === "past" ? Date.parse(b.start) - Date.parse(a.start) : Date.parse(a.start) - Date.parse(b.start);
-  });
+  })
+    // 지난 방송 이력은 최근 10건까지만 (사용자 확정 2026-07-25 — 그 이상은 안 봄).
+    // 생방송·예약은 개수 제한 없이 전부 남긴다.
+    .filter((b, _i, list) => bcastState(b, now) !== "past"
+      || list.filter((x) => bcastState(x, now) === "past").indexOf(b) < PAST_LIMIT);
   // 헤더 버튼 힌트: 생방송이 있으면 LIVE, 없으면 가장 가까운 예약을 표시
   const liveOne = all.find((b) => bcastState(b, now) === "live");
   const nextUp = all.filter((b) => bcastState(b, now) === "upcoming").sort((a, b) => Date.parse(a.start) - Date.parse(b.start))[0];
   const hint = liveOne ? { cls: "live", text: t("생방송 중") } : nextUp ? { cls: "upcoming", text: t("예약 {s}", { s: shortStatus(nextUp, now) }) } : null;
   return (
     <>
-      <button type="button" className={`bcast-trigger ${hint?.cls ?? ""}`} onClick={() => setOpen(true)}
-        title={includeFuture ? t("명일방주 한국·일본·글로벌·중국 공식 방송 일정 보기") : t("명일방주 한국·일본·글로벌 공식 방송 일정 보기")}>
-        <YtIcon />
-        <span>{t("공식 방송")}</span>
-        {hint && <span className="bcast-hint">· {hint.text}</span>}
-      </button>
-      {/* 진행중 게임 이벤트 배지 — 공식 방송 버튼 바로 오른쪽 (사용자 요청 2026-07) */}
-      {eventBadge}
+      {slot !== "events" && (
+        <button type="button" className={`bcast-trigger ${hint?.cls ?? ""}`} onClick={() => setOpen(true)}
+          title={includeFuture ? t("명일방주 한국·일본·글로벌·중국 공식 방송 일정 보기") : t("명일방주 한국·일본·글로벌 공식 방송 일정 보기")}>
+          <YtIcon />
+          <span>{t("공식 방송")}</span>
+          {hint && <span className="bcast-hint">· {hint.text}</span>}
+        </button>
+      )}
+      {/* 진행중 게임 이벤트 배지 — 1줄(접어도 보임) */}
+      {slot !== "broadcast" && eventBadge}
       {/* 사이트 헤더의 backdrop-filter가 fixed 기준을 헤더로 만들어버리므로,
           모달은 portal로 body에 직접 렌더링해야 화면 전체를 덮는다 */}
-      {open && createPortal(
+      {open && slot !== "events" && createPortal(
         <div className="modal-backdrop bcast-backdrop" onClick={() => setOpen(false)}>
           <div className="bcast-modal" onClick={(event) => event.stopPropagation()} role="dialog" aria-label={t("명일방주 공식 방송 일정")}>
             <header>
@@ -1112,9 +1124,9 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
           <span className="brand-mark"><img src="/avatars/char_1012_skadi2.webp" alt="" width={180} height={180} /></span>
           <span>{t("테라 아카이브")}<small>{t("명일방주(Arknights) 팬사이트")}</small></span>
         </a>
-        {/* 공식방송 + 진행중 이벤트 — PC: 공식방송은 로고 바로 오른쪽(1줄), 이벤트는 1줄 정중앙
-            absolute (사용자 확정 2026-07-22, 접힘 상태에도 항상 표시). 모바일: order로 2줄 배치. */}
-        <BroadcastBadges includeFuture={includeFuture} />
+        {/* 진행중 이벤트 배지 — 1줄(접힘 상태에도 표시). 공식 방송 버튼은 확장부로 내려갔다
+            (사용자 요청 2026-07-25 — 미래시 토글 왼쪽). */}
+        <BroadcastBadges includeFuture={includeFuture} slot="events" />
         {/* 햄버거(메뉴) = 1줄 오른쪽 끝 — 데스크탑·모바일 공통 (사용자 확정 2026-07-22).
             모바일은 order로, 데스크탑은 margin-left:auto로 배치되므로 JSX 위치는 자유. */}
         <div className="nav-group">
@@ -1157,6 +1169,8 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
             </button>
           )}
           <div className="header-sub-right">
+            {/* 공식 방송 — 미래시 토글 바로 왼쪽 (사용자 요청 2026-07-25) */}
+            <BroadcastBadges includeFuture={includeFuture} slot="broadcast" />
             {/* 라벨은 데스크탑 "미래시 데이터 포함", 모바일은 "미래시"로 축약 (사용자 요청 2026-07-22) */}
             <label className="future-toggle" title={t("아직 정식 출시되지 않은(중국 서버 선행) 오퍼레이터·재료도 목록·계산기에 표시합니다. 미실장 텍스트는 비공식 AI 번역입니다.")}>
               <input type="checkbox" checked={includeFuture} onChange={(event) => toggleFuture(event.target.checked)} />

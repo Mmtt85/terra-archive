@@ -40,7 +40,7 @@ UA = {
 }
 CST = timezone(timedelta(hours=8))
 DEFAULT_DURATION_MIN = 150
-MAX_CN = 12  # 지난 방송 이력 보존 상한 (서버별)
+MAX_CN = 4   # 중섭 방송 이력 보존 수 — 화면 전체 지난 방송 상한이 10건이라 중섭은 소수만
 
 
 def fetch_room():

@@ -12,7 +12,7 @@ const CHANNELS = [
 ];
 
 const KV_KEY = "broadcasts";
-const MAX_ENTRIES = 40; // 지난 방송 이력 보존 상한
+const MAX_ENTRIES = 10; // 지난 방송 이력 보존 상한 (사용자 확정 2026-07-25 — 10건이면 충분)
 const DEFAULT_DURATION_MIN = 150;
 
 // 중국 서버(미래시) 방송은 여기서 수집하지 않는다 — 비리비리는 클라우드플레어 이그레스를

@@ -4677,6 +4677,10 @@ footer p {
     margin-left: 0; /* base의 우측 밀어내기(auto)는 한 줄 헤더용 — 여기선 해제 */
     margin-right: 0;
   }
+  /* 공식 방송 버튼은 확장부(미래시 왼쪽)에 산다 — 컨테이너 gap이 있으므로 base의 좌측 여백 해제 */
+  .header-sub .bcast-trigger {
+    margin-left: 0;
+  }
   /* 햄버거 드롭다운은 왼쪽으로 연다 — 햄버거가 오른쪽 끝이라 left:0(기본)이면 화면 밖으로
      잘린다 (2026-07-22 사용자 리포트) */
   .site-header .nav-group .main-tabs {
