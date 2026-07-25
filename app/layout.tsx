@@ -50,6 +50,17 @@ export default function RootLayout({
             __html: `if(location.hostname==='terra-archive.pages.dev'){location.replace('https://terra-archive.net'+location.pathname+location.search+location.hash);}`,
           }}
         />
+        {/* 죽은 청크 자동 복구 (사용자 요청 2026-07-25) — 열어 둔 탭이 물고 있는
+            /assets/index-<해시>.js 는 재빌드·재배포가 일어나면 사라져서, 지연 로딩(lazy import)이
+            "Failed to fetch dynamically imported module"로 터진다. 개발 중 npm run build를 돌릴
+            때마다, 그리고 실사용자가 배포 직후 오래된 탭에서 이동할 때 똑같이 발생한다.
+            Vite의 vite:preloadError + 청크 로드 실패를 잡아 **한 번만** 새로고침한다
+            (새 HTML을 받으면 해시가 갱신돼 그대로 복구). 10초 가드로 새로고침 루프 방지. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){var K='ta-chunk-reload';function bust(){try{var l=+(sessionStorage.getItem(K)||0);if(Date.now()-l<10000)return;sessionStorage.setItem(K,Date.now());}catch(e){}location.reload();}window.addEventListener('vite:preloadError',function(e){e.preventDefault();bust();});window.addEventListener('unhandledrejection',function(e){var m=''+((e&&e.reason&&(e.reason.message||e.reason))||'');if(/dynamically imported module|Importing a module script failed|error loading dynamically imported/i.test(m))bust();});window.addEventListener('error',function(e){var t=e&&e.target;if(t&&t.tagName==='SCRIPT'&&t.src&&t.src.indexOf('/assets/')>-1)bust();},true);})();`,
+          }}
+        />
         {/* 첫 페인트 전에 해시를 읽어 초기 탭을 표시 — 서버 HTML은 항상 백과사전이라
             #infra·#recruit로 새로고침 시 백과사전이 잠깐 보이는 플래시를 막는다.
             React 하이드레이션 후 home.tsx의 useLayoutEffect가 data-route를 지운다. */}

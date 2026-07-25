@@ -161,6 +161,10 @@ for o in operators:
     for n in [o["name"], *(o.get("aliases") or [])]:
         if n and len(n) >= 2: name_to_id.setdefault(n, o["id"])
 names = sorted(name_to_id.keys(), key=len, reverse=True)
+# id → 대표 표시명 (별칭 여럿이면 첫 등록명) — "대상이 <이름>일 경우" 같은 역방향 조회용
+id_to_name = {}
+for n in names:
+    id_to_name[name_to_id[n]] = n
 
 # matches "+30%" and "30% 상승" / "30% 추가 상승"
 PCT = r"(?:\+\s*(\d+(?:\.\d+)?)\s*%|(\d+(?:\.\d+)?)\s*%(?:\s*추가)?\s*상승)"
@@ -749,10 +753,30 @@ def parse_skill(entry, oname, oid=None):
         # 교차방 파트너 조건 (레토 환난지교: "만약 굼이 무역소에 배치되어 있다면 +35%") —
         # 특정 오퍼가 특정 방 종류에 배치돼야 스킬 발동. 같은 방 동반도 기지 존재도 아님.
         # 방 순서상 그리디 1차엔 판정 불가 → 플래너가 낙관 배치 후 리페어 패스에서 엄격 검증
+        # 어미 변형 전수 지원 (2026-07-25 전수조사): "…배치되어 있다면"(레토) 외에
+        # "…배치되어 있으면"(Friston-3 켈시@제어센터), "…배치된 경우"(유넥티스 Lancet-2@발전소),
+        # "…있으면"(위셔델 이네스@응접실), "훈련실**의 협조 위치**에"(PhonoR-0) 까지 잡는다.
+        # 종전엔 전부 같은 방 동반(partners)으로 오분류돼 영구 미발동이었다.
         room_partner = None
-        rp = re.search(r"만약 ([가-힣A-Za-z0-9·' ]{1,20}?)(?:이|가) (제조소|무역소|발전소|응접실|사무실|가공소|훈련실|제어 센터|숙소)에 배치(?:되어 있|돼 있)다면", text)
-        if rp and rp.group(1).strip() in name_to_id:
-            room_partner = {"id": name_to_id[rp.group(1).strip()], "room": KO_ROOM[rp.group(2)]}
+        # ⚠ 이름을 **자유 캡처하지 않는다** — 이름 클래스에 공백을 넣으면 "만약 굼"처럼 앞말을
+        # 삼킨 매치가 leftmost로 이겨 진짜 절을 가려버리고(레토 조건 소실), 공백을 빼면 여러 단어
+        # 이름(타마미츠네 오키드)이 잘려 엉뚱한 원본 오퍼로 매칭된다. 알려진 이름(길이 내림차순)을
+        # 부분문자열 사전필터로 좁혀 검색하고, 절이 여럿이면 **가장 앞선 절**을 대표로 삼는다.
+        RP_TAIL = (r"(?:이|가) (제조소|무역소|발전소|응접실|사무실|가공소|훈련실|제어 센터|숙소)"
+                   r"(?:의 [가-힣 ]{2,8})?에 "
+                   r"(?:배치(?:되어 있|돼 있|되어있|돼있)?(?:다면|으면|된 경우|될 경우|된)?|있으면|있을 경우)")
+        _rp_hits = []
+        for n in names:
+            # 1글자 이름도 인정 — 레토의 짝 '굼'이 1글자다. 뒤따르는 절("…이 무역소에 배치되어
+            # 있다면")이 매우 특정적이라 오탐 위험이 낮고, 긴 이름부터 돌아 접두어 충돌도 없다
+            if not n or n not in text or name_to_id[n] == oid: continue
+            m = re.search(r"(?<![가-힣])" + re.escape(n) + RP_TAIL, text)
+            if m and name_to_id[n] not in [h[1] for h in _rp_hits]:
+                _rp_hits.append((m.start(), name_to_id[n], KO_ROOM[m.group(1)]))
+        _rp_hits.sort()
+        rp_ids = [h[1] for h in _rp_hits]
+        if _rp_hits:
+            room_partner = {"id": _rp_hits[0][1], "room": _rp_hits[0][2]}
         # ── 용량 차원 (오더 상한 / 창고 용량) ─────────────────────────────────
         # 다수 무역·제조 오퍼가 효율/생산력과 **함께** 상한/용량을 ±N 부여하고(실버애쉬 효율+20 &
         # 상한+4, 벌컨 생산력-5 & 용량+19, 데겐블레허 효율+25 & 상한-6), 일부 오퍼는 팀이 쌓은
@@ -787,8 +811,14 @@ def parse_skill(entry, oname, oid=None):
         # 문제를 교정한다. detect_cond_bonus가 유형·기본치·보너스를 분리한다.
         cond_bonus = None
         per_base = None
+        # 교차방 절에 등장한 오퍼는 **전부** 게이트에서 뺀다 — 절이 둘인 스킬(위셔델 '공모':
+        # 이네스@응접실 + 외드레르@무역소)은 roomPartner 하나만 모델링하므로, 남은 이름을
+        # partners로 두면 나머지 절 때문에 스킬 전체가 다시 게이트된다.
+        # "대상이 <이름>일 경우"(슈바르츠·토미미·인디고 숙소 회복)는 배치 조건이 아니라
+        # **수혜 대상** 지정이라 게이트가 아니다 — 기본 +0.55가 통째로 사라지던 원인.
         partners_list = [p for p in find_partners(text, oname, oid)
-                         if p not in base_partner_ids and not (room_partner and p == room_partner["id"])]
+                         if p not in base_partner_ids and p not in rp_ids
+                         and not re.search(r"대상이 " + re.escape(id_to_name.get(p, "\x00")) + r"(?:일|이라면|인)", text)]
         _base_text, _cond = detect_cond_bonus(text, oname, oid)
         if _cond and _cond["type"] == "perFacBase" and not _cond.get("bonus"):
             # 뮤엘시스: 기본 flat + "진영 1명당 +V%(≤cap)". 모건류(bonus 동반)는 자기-카운트
@@ -817,6 +847,12 @@ def parse_skill(entry, oname, oid=None):
                 cond_bonus = {"value": _cond["value"], "ids": _cond["ids"]}
             elif _cond["type"] == "crossRoom":
                 cond_bonus = {"value": _cond["value"], "ids": _cond["ids"], "room": _cond["room"]}
+        # 조건부 **가산**으로 이미 분리된 절(산크타+피아메타@숙소·프라마닉스+실버애쉬@제어센터)은
+        # roomPartner **게이트**로 중복 판정하면 안 된다 — 기본치가 다시 통째로 날아간다.
+        # roomPartner는 절 하나가 스킬 전체를 좌우하는 경우(레토 '만약 굼이 무역소에')만 남긴다.
+        if room_partner and (room_partner["id"] in base_partner_ids
+                             or room_partner["id"] in ((cond_bonus or {}).get("ids") or [])):
+            room_partner = None
         # ── 시설 집합 동반 조건 (`workPartners`, 외드레르 '자수성가', 사용자 확인 2026-07-25) ──
         # "무역소에 배치 시 오더 수주 효율 +30%, **이네스와 W가 작업 시설에 배치 시**(어시스턴트
         # 미포함), 오더 수주 효율이 **각각** 추가로 +5%" — 같은 방 동반(partners)도, 숙소를 포함한
@@ -824,17 +860,25 @@ def parse_skill(entry, oname, oid=None):
         # partners 게이트로 오인하면 이네스가 같은 무역소에 앉지 않는 한 기본 +30%까지 통째로
         # 사라진다(외드레르가 자동편성에서 아예 안 뽑히던 원인). 오퍼별 특례가 아니라 termRefs가
         # 시설 목록을 정의하는 모든 현재·미래 스킬에 일반 적용된다.
+        # 어순 두 가지를 모두 지원한다(2026-07-25 전수조사): ① "<이름>이 <시설집합>에 배치 시"
+        # (외드레르), ② "<방>에 <이름> 배치 시"(캐서린 "숙소에 스테인리스 배치 시 추가로 10%") —
+        # ②도 같은 구조(파트너가 특정 시설에 있으면 가산)라 workRooms=[그 방]으로 환원한다.
+        # 캐서린은 스테인리스가 **숙소** 조건인데 같은 가공소 동반으로 오파싱돼 기본 +50%
+        # (부산물 산출 확률)가 통째로 사라졌었다.
         work_partners, work_partner_bonus, work_rooms = [], None, None
-        for _tkey, _term in (entry.get("termRefs") or []):
-            wm = re.search(r"([^,.]{1,40}?)(?:이|가) " + re.escape(_term)
-                           + r"에 배치[^%]*?추가로 \+?\s*(\d+(?:\.\d+)?)\s*%", text)
-            if not wm: continue
-            _rooms = term_facilities(_tkey)
-            _ids = find_names_in(wm.group(1), oid)
+        _cands = [(re.search(r"([^,.]{1,40}?)(?:이|가) " + re.escape(_term)
+                             + r"에 배치[^%]*?추가로 \+?\s*(\d+(?:\.\d+)?)\s*%", text), _tkey, None)
+                  for _tkey, _term in (entry.get("termRefs") or [])]
+        _cands.append((re.search(r"(?:^|[,.] ?)(제조소|무역소|발전소|응접실|사무실|가공소|훈련실|제어 센터|숙소)에 "
+                                 r"([^,.%]{1,20}?)(?:을|를)? ?배치[^%]*?추가로 \+?\s*(\d+(?:\.\d+)?)\s*%", text), None, "roomFirst"))
+        for _m, _tkey, _mode in _cands:
+            if not _m: continue
+            _rooms = [KO_ROOM[_m.group(1)]] if _mode == "roomFirst" else term_facilities(_tkey)
+            _ids = find_names_in(_m.group(2) if _mode == "roomFirst" else _m.group(1), oid)
             if not _rooms or not _ids: continue
-            work_partners, work_partner_bonus, work_rooms = _ids, float(wm.group(2)), _rooms
+            work_partners, work_partner_bonus, work_rooms = _ids, float(_m.group(3 if _mode == "roomFirst" else 2)), _rooms
             partners_list = [p for p in partners_list if p not in _ids]
-            _bk, _bv = parse_metric(room, text[:wm.start()])  # 조건절 앞부분으로 기본치 재파싱
+            _bk, _bv = parse_metric(room, text[:_m.start()])  # 조건절 앞부분으로 기본치 재파싱
             if _bv: kind, value = _bk, _bv
             break
         # 순금 생산 라인 차원 (투예·파죰카, 사용자 제보 2026-07-21): 243 기지의 순금 제조소 = 2방

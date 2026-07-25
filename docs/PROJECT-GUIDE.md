@@ -309,6 +309,17 @@ npm run build                             # 9. 빌드 확인 → 커밋 → 푸�
 - CSS는 `app/globals.css` 단일 파일 (배포본에서 복원한 스타일 + 플래너/공채 추가분).
 - 한 줄 압축 스타일(`selector { ... }`)을 유지한다. 미디어쿼리는 `width<=NNNpx` 표기.
 
+### 죽은 청크(stale chunk) — "Failed to fetch dynamically imported module"
+
+`npm run build`를 돌리면 `dist/assets/index-<해시>.js` 의 해시가 바뀌므로, **그전에 열어 둔
+탭**(localhost:3000이든 배포본이든)이 물고 있던 청크 URL이 404가 되고 지연 로딩 컴포넌트
+(스캐너 모달·렌즈 도움말)가 `Failed to fetch dynamically imported module`로 터진다.
+개발 중 빌드할 때마다, 그리고 실사용자가 배포 직후 오래된 탭에서 이동할 때 똑같이 난다.
+
+**대응은 `app/layout.tsx`의 인라인 스크립트**(2026-07-25) — `vite:preloadError`와 청크 로드
+실패를 잡아 **한 번만** 새로고침한다(새 HTML을 받으면 해시가 갱신돼 복구, 10초 가드로 루프 방지).
+그래도 화면이 깨져 보이면 그냥 새로고침(⌘R)하면 된다. 코드 문제가 아니다.
+
 ---
 
 ## 9. 신규 버전 대응 체크리스트
