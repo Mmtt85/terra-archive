@@ -10,7 +10,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const APP = join(ROOT, "app");
 const SITE_URL = "https://terra-archive.net";
 const LOCALES = ["ko", "en", "ja"]; // ko가 기본(접두 없음) — x-default 대상
-const EXCLUDE = new Set(["admin"]); // 색인 금지 라우트
+const EXCLUDE = new Set(["admin", "bridge"]); // 색인 금지 라우트 (bridge = 크롬 확장 실험 페이지)
 
 // app/ 아래 page.tsx 경로 수집 → "/en/farm" 같은 라우트 경로로
 function collectRoutes(dir, base = "") {
