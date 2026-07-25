@@ -220,7 +220,9 @@ export async function recommendRaises(
     let best: Plan | null = null;
     let bestS = -Infinity;
     for (const cfg of configs) {
-      const plan = buildPlan(tokenChoice, upRoster, cfg, priority);
+      // ⑤(우선 생산 집중)는 planScore 중립(gold↔exp 등량 재배치)이라 육성 이득 델타를 안 바꾸고
+      // config 비교만 교란하므로 끈다 — 반사실 평가는 ⑤-무관 원가치로 본다 (planner-engine 참고).
+      const plan = buildPlan(tokenChoice, upRoster, cfg, priority, [], false);
       const score = planScore(plan, byId1);
       if (score > bestS) { bestS = score; best = plan; }
     }

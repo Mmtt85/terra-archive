@@ -1133,7 +1133,7 @@ function seedSynergySet(def: SynergySetDef, roster: InfraOp[], used: Set<string>
   }
 }
 
-export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSets: FactionSets = {}, priority: ProdPriority = "gold", extraSeeds: { opId: string; room: string }[] = []): Plan {
+export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSets: FactionSets = {}, priority: ProdPriority = "gold", extraSeeds: { opId: string; room: string }[] = [], concentrate = true): Plan {
   const prodKeys = PRIORITY_KEYS[priority];
   const assignments: Record<string, string[][]> = {};
   const used = new Set<string>();
@@ -1687,6 +1687,74 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
     }
   }
 
+  // ── ⑤ 우선 생산 집중 — 무승부 타이브레이크 (사용자 확정 2026-07-25) ─────────────────
+  // 순금/작전기록 우선일 때, product:any 요원을 비우선 제조소에서 우선 제조소로 끌어와 **우선 방
+  // 생산력을 올리되 전체 plan 총점(planScore)은 보존(무승부 이상)**할 때만 스왑한다. product:any는
+  // 어느 제조소든 생산력이 같아(순금%=작전기록%) 순금↔작전기록 재배치가 총점 무승부라, 총점만 보는
+  // 감사(①④)는 안 옮긴다 — 화식 소비자(슈·지에윈)가 순금방을 시드로 점유하고 미니멀·와이후가
+  // 작전기록방에 낭비되던 갭. **감사·백필 완료 후 최종 폴리시로 1회만** 돈다: 감사 패스 중간(과도
+  // 상태·B조 미수렴)에 돌리면 수렴 궤도를 틀고 config 채택까지 뒤집혀 총점이 되레 샌다(전례:
+  // full/gold −5.82·withFuture/exp −2.75). 컨빅션 등 product:exp 전용은 우선방서 점수가 안 올라
+  // 자동 제외, 시너지·파트너·교대시계 손실은 **실제 planScore 가드**가 걸러낸다. 밸런스 모드는 건너뜀.
+  // concentrate=false는 optimizeConfig의 **config 탐색 단계** — ⑤가 config별 planScore를 바꿔
+  // 토큰 패키지 채택을 뒤집으면(전례: withFuture/exp에서 주술 결정 패키지가 밀려 −2.75) 안 되므로,
+  // 탐색은 ⑤-무관(원래 선택 그대로)으로 돌리고 **채택된 config에만 최종 1회 ⑤를 입힌다**.
+  const preferProduct = concentrate ? (priority === "gold" ? "gold" : priority === "exp" ? "exp" : null) : null;
+  if (preferProduct) {
+    const isManu = (k: string) => cellByKey.get(k)?.room === "MANUFACTURE";
+    const prefKeys = prodKeys.filter((k) => isManu(k) && cellByKey.get(k)?.product === preferProduct);
+    const otherKeys = prodKeys.filter((k) => isManu(k) && cellByKey.get(k)?.product && cellByKey.get(k)?.product !== preferProduct);
+    const work5 = keys.filter((k) => { const r = cellByKey.get(k)?.room ?? k; return r !== "DORMITORY" && r !== "WORKSHOP" && k !== "TRAINING"; });
+    const dorm5 = new Set<string>();
+    for (let d = 0; d < 4; d += 1) for (const id of assignments[`DORM-${d}`]?.[0] ?? []) dorm5.add(id);
+    const producesInPref = (op: InfraOp) => op.skills.some((sk) => sk.room === "MANUFACTURE" && (sk.product === "any" || sk.product === preferProduct));
+    const provPlan = { assignments, plants, tokenPoints, factionCounts: factionCountsPerShift } as unknown as Plan;
+    for (let shift = 0; shift < SHIFT_COUNT; shift += 1) {
+      const team5 = (key: string) => (assignments[key]?.[shift] ?? []).map((id) => byIdAll.get(id)).filter((o): o is InfraOp => Boolean(o));
+      // 우선 제품 방들의 생산력 합 — 스왑이 실제로 우선 제품을 올렸는지 방향 판정용(제어센터 오라 포함)
+      const prefScore = () => {
+        const rko = new Map<string, string>();
+        for (const k of work5) for (const id of assignments[k]?.[shift] ?? []) rko.set(id, cellByKey.get(k)?.room ?? k);
+        for (const id of dorm5) rko.set(id, "DORMITORY");
+        const pres = new Set<string>([...rko.keys(), ...dorm5]);
+        const tp5 = shift === 0 ? tokenPoints : {};
+        const amb = aurasOf(team5("CONTROL"), ctxFor("CONTROL", tp5, factionCountsPerShift[shift], plants, pres));
+        let t = 0;
+        for (const k of prefKeys) t += teamScore(team5(k), "MANUFACTURE", { ...ctxFor(k, tp5, factionCountsPerShift[shift], plants, pres, amb), roomOf: rko });
+        return t;
+      };
+      let swapped5 = true; let g5 = 0;
+      while (swapped5 && g5 < 30) {
+        swapped5 = false; g5 += 1;
+        const prefBefore = prefScore();
+        const fullBefore = planScore(provPlan, byIdAll);
+        let done5 = false;
+        for (const pKey of prefKeys) {
+          const pIds0 = [...(assignments[pKey]?.[shift] ?? [])];
+          for (const nKey of otherKeys) {
+            const nIds0 = [...(assignments[nKey]?.[shift] ?? [])];
+            for (const a of team5(nKey)) {
+              if (reserved.has(a.id) || !producesInPref(a)) continue; // 예약 안 됐고 우선방서 생산 가능한 요원만
+              for (const b of team5(pKey)) {
+                // 스왑을 임시 적용해 우선 제품 합·전체 plan 총점(planScore)을 재평가한다
+                assignments[pKey][shift] = [...pIds0.filter((id) => id !== b.id), a.id];
+                assignments[nKey][shift] = [...nIds0.filter((id) => id !== a.id), b.id];
+                // 우선 제품 생산력이 실제로 오르고, 전체 plan 총점이 안 내려갈 때만 채택(무승부 이상)
+                if (prefScore() > prefBefore + 1e-6 && planScore(provPlan, byIdAll) >= fullBefore - 1e-6) {
+                  swapped5 = true; done5 = true; break;
+                }
+                assignments[pKey][shift] = pIds0; assignments[nKey][shift] = nIds0; // 되돌림
+              }
+              if (done5) break;
+            }
+            if (done5) break;
+          }
+          if (done5) break; // 지도가 바뀌었으니 처음부터 다시 스캔
+        }
+      }
+    }
+  }
+
   // ledger: recount per-member generators against the actual A-crew roster,
   // then record who cashes the points in
   const rosterById = new Map(roster.map((op) => [op.id, op]));
@@ -1816,13 +1884,13 @@ export async function optimizeConfig(roster: InfraOp[], priority: ProdPriority =
   const minis = open.filter(isMini).slice(0, 3);
   const coreTokens = open.filter((token) => !minis.includes(token));
   let tokenChoice = open;
-  let base = buildPlan(open, roster, {}, priority);
+  let base = buildPlan(open, roster, {}, priority, [], false);
   if (minis.length) {
     let bestTokScore = planScore(base, byId);
     for (let mask = 0; mask < (1 << minis.length) - 1; mask += 1) { // 마지막 mask(전부 포함) = base
       await breathe();
       const subset = coreTokens.concat(minis.filter((_, index) => mask & (1 << index)));
-      const candidate = buildPlan(subset, roster, {}, priority);
+      const candidate = buildPlan(subset, roster, {}, priority, [], false);
       const score = planScore(candidate, byId);
       if (score > bestTokScore) { base = candidate; bestTokScore = score; tokenChoice = subset; }
     }
@@ -1844,15 +1912,20 @@ export async function optimizeConfig(roster: InfraOp[], priority: ProdPriority =
   // 조합 폭발 가드 — 카탈로그가 5종 이상이면 후보 상한 15안 (2^4-1). 넘게 등록할 일이
   // 생기면 세트 우선순위 필드를 도입할 것 (지금은 3종 = 최대 7안)
   if (variants.length > 15) variants.length = 15;
-  if (!variants.length) return { plan: base, tokenChoice, factionSets: {} };
+  // 채택 config에 최종 ⑤(우선 생산 집중)를 입혀 반환 — 탐색은 ⑤-무관이라 선택이 원래대로 유지되고,
+  // 여기서만 planScore 단조 개선(무승부 이상)을 얹는다. 밸런스는 ⑤가 no-op이라 그대로.
+  const withConcentration = (tokens: string[], sets: FactionSets, seeds: { opId: string; room: string }[]) =>
+    (priority === "gold" || priority === "exp") ? buildPlan(tokens, roster, sets, priority, seeds, true) : buildPlan(tokens, roster, sets, priority, seeds, false);
+  if (!variants.length) return { plan: withConcentration(tokenChoice, {}, []), tokenChoice, factionSets: {} };
   let best = base;
   let bestScore = planScore(base, byId);
   let bestSets: FactionSets = {};
+  let bestSeeds: { opId: string; room: string }[] = [];
   for (let i = 0; i < variants.length; i += 1) {
     await tick({ phase: "variant", index: i + 1, total: variants.length, sets: Object.keys(variants[i]) });
-    const plan = buildPlan(tokenChoice, roster, variants[i], priority);
+    const plan = buildPlan(tokenChoice, roster, variants[i], priority, [], false);
     const score = planScore(plan, byId);
-    if (score > bestScore) { best = plan; bestScore = score; bestSets = variants[i]; }
+    if (score > bestScore) { best = plan; bestScore = score; bestSets = variants[i]; bestSeeds = []; }
   }
   // ── perMember 캡 확장 변형 (사용자 통찰 2026-07-24: "왕을 앉히면 슈가 풀린다") ────────
   // 채택안의 perMember 카운터(총웨 '쉐이 1명당 +5, 최대 5명')가 **정확히 캡**이면, 카운터
@@ -1879,9 +1952,9 @@ export async function optimizeConfig(roster: InfraOp[], priority: ProdPriority =
     }
     for (const ex of [...expansions.values()].slice(0, 2)) {
       await breathe();
-      const plan = buildPlan(tokenChoice, roster, bestSets, priority, [ex]);
+      const plan = buildPlan(tokenChoice, roster, bestSets, priority, [ex], false);
       const score = planScore(plan, byId);
-      if (score > bestScore) { best = plan; bestScore = score; }
+      if (score > bestScore) { best = plan; bestScore = score; bestSeeds = [ex]; }
     }
   }
   // 채택안의 전수 감사 수렴 회차를 조별로 재생 — "몇 회 반복으로 최선을 확인했는지"를
@@ -1900,7 +1973,7 @@ export async function optimizeConfig(roster: InfraOp[], priority: ProdPriority =
   } else {
     await tick({ phase: "final" });
   }
-  return { plan: best, tokenChoice, factionSets: bestSets };
+  return { plan: withConcentration(tokenChoice, bestSets, bestSeeds), tokenChoice, factionSets: bestSets };
 }
 
 // 얇은 래퍼 — 편성만 필요한 호출부(planner.tsx·verify-plan)는 종전대로 Plan을 받는다.
