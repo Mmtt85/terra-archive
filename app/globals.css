@@ -11361,6 +11361,15 @@ main.site-main > .site-header {
 .br-name small {
   color: var(--muted);
 }
+/* 연속 중복 병합 배지 (×N) */
+.br-dup {
+  margin-left: 6px;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0 4px;
+  font-size: 10px;
+}
 .br-emg {
   font-style: normal;
   color: #c0392b;

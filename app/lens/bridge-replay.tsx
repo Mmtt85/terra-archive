@@ -21,7 +21,7 @@ const hhmmss = (iso: string): string => {
   return isNaN(d.getTime()) ? iso : d.toTimeString().slice(0, 8);
 };
 
-function Row({ ev, t }: { ev: BridgeLogEvent; t: T }) {
+function Row({ ev, n, t }: { ev: BridgeLogEvent; n: number; t: T }) {
   const label = t(TYPE_LABEL[ev.type] ?? ev.type);
   return (
     <li className={`bridge-replay-row t-${ev.type}`}>
@@ -33,6 +33,7 @@ function Row({ ev, t }: { ev: BridgeLogEvent; t: T }) {
         {ev.names && ev.names.length > 1 && ev.name && (
           <small> +{ev.names.length - 1}</small>
         )}
+        {n > 1 && <small className="br-dup">×{n}</small>}
       </span>
       <span className="br-meta">
         {ev.result && <b>{ev.result === "success" ? t("작전 성공") : t("작전 실패")}</b>}
@@ -43,6 +44,32 @@ function Row({ ev, t }: { ev: BridgeLogEvent; t: T }) {
       </span>
     </li>
   );
+}
+
+// 연속 중복 병합 — 같은 화면이 여러 번 인식되면(재안착·미세 변화) 같은 줄이 줄줄이 쌓인다.
+// 표시용으로만 하나로 합치고 ×N을 단다 (사용자 요청 2026-07-26). JSON 원본은 그대로다.
+// 수치(HP·레벨·결과)는 뒤 이벤트가 최신이므로 갱신해 담는다.
+function mergeRuns(events: BridgeLogEvent[]): { ev: BridgeLogEvent; n: number }[] {
+  const key = (e: BridgeLogEvent) => `${e.type}|${e.name ?? ""}|${(e.names ?? []).join(",")}`;
+  const out: { ev: BridgeLogEvent; n: number }[] = [];
+  for (const ev of events) {
+    const last = out[out.length - 1];
+    if (last && key(last.ev) === key(ev)) {
+      last.n++;
+      last.ev = {
+        ...last.ev,
+        hp: ev.hp ?? last.ev.hp,
+        levelExp: ev.levelExp ?? last.ev.levelExp,
+        result: ev.result ?? last.ev.result,
+        grade: ev.grade ?? last.ev.grade,
+        emergency: last.ev.emergency || ev.emergency,
+        cached: last.ev.cached && ev.cached,
+      };
+    } else {
+      out.push({ ev: { ...ev }, n: 1 });
+    }
+  }
+  return out;
 }
 
 export default function BridgeReplayModal({ t, onClose }: { t: T; onClose: () => void }) {
@@ -80,14 +107,21 @@ export default function BridgeReplayModal({ t, onClose }: { t: T; onClose: () =>
         </header>
         {payload ? (
           <>
-            {/* 인식 실패(none)는 보여주지 않는다 — 지난 버전이 저장한 JSON에도 적용 */}
-            <p className="br-range">
-              {hhmmss(payload.startedAt)} ~ {hhmmss(payload.endedAt)}
-              {" · "}{t("기록")} {payload.events.filter((ev) => ev.type !== "none").length}
-            </p>
-            <ul className="bridge-replay-list">
-              {payload.events.filter((ev) => ev.type !== "none").map((ev, i) => <Row key={i} ev={ev} t={t} />)}
-            </ul>
+            {/* 인식 실패(none)는 숨기고 연속 중복은 ×N 한 줄로 — 옛 JSON에도 적용 */}
+            {(() => {
+              const rows = mergeRuns(payload.events.filter((ev) => ev.type !== "none"));
+              return (
+                <>
+                  <p className="br-range">
+                    {hhmmss(payload.startedAt)} ~ {hhmmss(payload.endedAt)}
+                    {" · "}{t("기록")} {rows.length}
+                  </p>
+                  <ul className="bridge-replay-list">
+                    {rows.map((r, i) => <Row key={i} ev={r.ev} n={r.n} t={t} />)}
+                  </ul>
+                </>
+              );
+            })()}
           </>
         ) : (
           <p className="br-empty">{t("아직 기록이 없습니다 — 게임 연결로 플레이하면 자동으로 쌓입니다. 저장해둔 JSON을 가져와 볼 수도 있습니다.")}</p>
