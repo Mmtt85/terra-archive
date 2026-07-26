@@ -333,7 +333,7 @@ const dice = (a: Set<string>, b: Set<string>): number => {
   return (2 * hit) / (a.size + b.size);
 };
 const FUZZY_MIN = 0.55;    // 이 밑은 "아예 다른 단어"로 본다
-const FUZZY_GATE = 72;     // 정상 매칭 최고점이 이보다 낮을 때만 근사 검색을 돌린다
+export const FUZZY_GATE = 72;   // 정상 매칭 최고점이 이보다 낮을 때만 근사 검색을 돌린다 (miss 판정도 공유)
 const FUZZY_BASE = 30;     // 근사 후보 점수: 30 ~ 85 (완전일치 120은 절대 못 넘는다)
 const LEARNED_BASE = 55;   // 학습된 별명(텍스트 불일치)로 끌어온 항목의 기본 점수
 

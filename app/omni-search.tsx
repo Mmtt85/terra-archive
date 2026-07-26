@@ -14,10 +14,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { getRogueIndex } from "./lens/run";
-import { buildOmniIndex, currentRogueTopic, decideOmni, rogueOmniItems, searchSmart, splitHint, type OmniHit, type OmniItem, type OmniKind, type OmniTarget } from "./omni";
+import { buildOmniIndex, currentRogueTopic, decideOmni, FUZZY_GATE, rogueOmniItems, searchSmart, splitHint, type OmniHit, type OmniItem, type OmniKind, type OmniTarget } from "./omni";
 import { crowdPicks, fetchCrowdPicks, learnedHints, picksFor, recordHint, recordPick, type PickIndex } from "./omni-picks";
 import { normSearch, SEARCH_DEBOUNCE_MS } from "./search";
-import { noteAction, noteMiss } from "./trail";
+import { consumeMiss, noteAction, noteMiss, recentMissQ } from "./trail";
 import { useI18n, type ExtraI18n } from "./i18n";
 import { isNewFeature } from "./whats-new";
 import type { Operator } from "./home";
@@ -147,10 +147,18 @@ export default function OmniSearch({ roster, includeFuture, extra, onGo }: {
       // "쉐이록라"에서 쉐이 테마를 고르면 → "록라"는 통합전략 (다음엔 "미즈키록라"도 통한다).
       const rest = leftoverToken(q, hit);
       if (rest) recordHint(rest, hit.kind);
-      // 방금 만든 표를 화면에도 즉시 반영 (지도는 omni-picks가 이미 갱신했다)
-      setCrowd({ ...crowdPicks() });
-      setTick((n) => n + 1);
     }
+    // 실패 검색 → 재검색해 고른 선택 잇기 (사용자 제보 2026-07-26: "보텀" 실패 후
+    // "트라고디아"를 검색해 클릭해도 보텀이 학습되지 않았다). 10분 안의 실패 검색어를
+    // 이 선택에 표로 연결한다 — 같은 세션에서 즉시 반영되고 DB에도 남는다.
+    const missQ = recentMissQ();
+    if (q && missQ && missQ !== q) {
+      recordPick(missQ, hit.uid, { kind: hit.kind, name: hit.name, locale });
+      consumeMiss();
+    }
+    // 방금 만든 표를 화면에도 즉시 반영 (지도는 omni-picks가 이미 갱신했다)
+    setCrowd({ ...crowdPicks() });
+    setTick((n) => n + 1);
     close();
     onGo(hit.target);
   };
@@ -181,7 +189,9 @@ export default function OmniSearch({ roster, includeFuture, extra, onGo }: {
     const hint = splitHint(normSearch(term), hints);
     // 학습된 별명이 통합전략 항목(rg:)을 가리키면 색인을 불러와야 주입이 된다 —
     // 잡음 결과가 몇 개 떠 있어도(hits.length>0) 학습 항목이 빠지면 안 되므로 함께 본다.
-    const wantsRogue = !hits.length
+    // 퍼지 잡음뿐인 검색(확신 매칭 없음)도 확장 색인에서 진짜 답을 찾아본다.
+    const solid = hits.some((h) => h.learned || h.hinted || h.score >= FUZZY_GATE);
+    const wantsRogue = !solid
       || hint?.kinds.some((kind) => kind === "rogue" || kind === "topic")
       || (picks && Object.keys(picks).some((uid) => uid.startsWith("rg:")));
     if (!wantsRogue) return;
@@ -191,13 +201,16 @@ export default function OmniSearch({ roster, includeFuture, extra, onGo }: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, term, hits.length, rogueItems, busy]);
 
-  // 결과가 하나도 없으면 "실패한 검색"으로 남긴다 — 이후 다른 경로로 도착한 목적지를
-  // 이 검색어에 이어 붙이기 위해서다 (app/trail.ts). 통합전략 자동 로드가 끝난 뒤에만 센다.
+  // 확신 매칭이 하나도 없으면 "실패한 검색"으로 남긴다 — 이후 도착한 목적지를 이 검색어에
+  // 이어 붙이기 위해서다 (app/trail.ts). ⚠ 0건일 때만 세면 안 된다: "보텀" 같은 검색은
+  // 퍼지 잡음(토터)이 몇 개 떠서 미스로 안 잡혔고, 그래서 실패→도착 학습이 영영 시작되지
+  // 않았다 (사용자 제보 2026-07-26). 통합전략 자동 로드가 끝난 뒤에만 센다.
   useEffect(() => {
-    if (!open || busy || !term.trim() || hits.length) return;
+    if (!open || busy || !term.trim()) return;
+    if (hits.some((h) => h.learned || h.hinted || h.score >= FUZZY_GATE)) return;
     if (!rogueItems) return;                 // 아직 확장 검색 전 — 진짜 미스인지 모른다
     noteMiss(normSearch(term), locale);
-  }, [open, busy, term, hits.length, rogueItems, locale]);
+  }, [open, busy, term, hits, rogueItems, locale]);
 
   // 되묻기로 전환 — 포커스를 입력란으로 되돌려 ↑↓·⏎로 바로 고를 수 있게 한다
   const askUser = () => { setAsk(true); setActive(0); inputRef.current?.focus(); };

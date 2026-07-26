@@ -21,16 +21,26 @@ import { recordMiss, recordVisit } from "./omni-picks";
 const WINDOW_MS = 10 * 60_000;   // DB 뷰의 짝짓기 창(10분)과 같게 유지할 것
 
 let lastMissAt = 0;
+let lastMissQ = "";
 const reported = new Set<string>();   // 같은 검색어를 반복해서 보내지 않는다 (페이지 수명)
 
 /** 결과가 0건이었던 검색어 — DB에 남기고, 잠시 visit 보고를 켠다. */
 export function noteMiss(q: string, locale = "ko"): void {
   if (!q || q.length < 2 || q.length > 40) return;
   lastMissAt = Date.now();
+  lastMissQ = q;
   if (reported.has(q)) return;
   reported.add(q);
   recordMiss(q, locale);
 }
+
+/** 최근(10분)의 실패 검색어 — 검색 패널이 "실패 후 재검색해 고른" 선택을 즉시 연결하는 데 쓴다
+ *  (사용자 제보 2026-07-26: '보텀' 실패 → '트라고디아'로 재검색해 클릭해도 학습이 안 됐다). */
+export function recentMissQ(): string | null {
+  return lastMissAt && Date.now() - lastMissAt <= WINDOW_MS ? (lastMissQ || null) : null;
+}
+/** 실패 검색을 선택에 연결해 소진 — 다음 클릭에 또 붙지 않게. */
+export function consumeMiss(): void { lastMissAt = 0; lastMissQ = ""; }
 
 /** 실제 컨텐츠 도착 — 최근에 못 찾은 검색이 있을 때만 보고한다.
  *  uid는 유니버셜 서치 색인과 같은 형식(op:char_… / story:… / mat:… / rg:토픽:섹션:id). */
