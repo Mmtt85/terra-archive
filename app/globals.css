@@ -11124,7 +11124,7 @@ main.site-main > .site-header {
   font-size: 12.5px;
   font-weight: 500;
   line-height: 1;
-  cursor: text;
+  cursor: pointer;
   white-space: nowrap;
   text-align: left;
 }
@@ -11151,7 +11151,7 @@ main.site-main > .site-header {
 }
 @media (min-width: 1180px) {
   .omni-trigger {
-    width: clamp(210px, 17vw, 300px);
+    width: clamp(160px, 12vw, 220px);
   }
   .omni-trigger-label {
     display: inline;
