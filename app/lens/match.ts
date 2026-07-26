@@ -99,6 +99,8 @@ const contain = (lineNG: Set<string>, bodyNG: Set<string>): number => {
 };
 
 // ── 화면 타이틀 키워드 (수동 사전 — 표시용 라벨은 i18n 키) ───────────────────
+// 전투 진행 중 화면의 배치 UI 문구 (KR/EN/JA 클라) — 이게 보이면 판정을 포기한다
+const BATTLE_WORDS = ["배치가능인원", "배치코스트", "deployable", "deploymentpoints", "配置可能人数"];
 const SCREEN_KEYWORDS: { key: string; label: string }[] = [
   { key: "분대선택", label: "분대 선택 화면" },
   { key: "받는다", label: "전리품 획득 화면" },
@@ -239,6 +241,16 @@ export function analyzeLines(
   const allN = linesN.join("");
   const screens = SCREEN_KEYWORDS.filter((k) => allN.includes(k.key)).map((k) => k.label);
 
+  // ── 전투 중 화면은 인식 대상이 아니다 (사용자 제보 2026-07-26) ──────────────
+  // 사미 전투 도중에 갑자기 '대이동' 작전으로 튀었다. 전투 화면에는 매칭할 이름이
+  // 하나도 없고("17/22", "2X", "99", "배치 가능 인원: 4"), OCR 잡음이 약한 항목
+  // 하나에 붙으면 그대로 확신 이동해버린다. 배치 UI 문구로 통째로 걸러낸다.
+  // normText는 대소문자를 보존하므로 라틴 키워드는 소문자로 접어서 본다
+  const allL = allN.toLowerCase();
+  if (BATTLE_WORDS.some((k) => allL.includes(k))) {
+    return { screens, entities: [], topics: [], section: null, target: { kind: "none" } };
+  }
+
   // 1패스: 전체 인덱스 매칭 → 토픽 다수결 (IDF 분산으로 범용 문구 무력화)
   const hits = matchEntries(linesN, index.entries);
   const topicScore = new Map<string, number>();
@@ -296,7 +308,10 @@ export function analyzeLines(
     const bestOther = Math.max(0, ...[...topicScore.entries()].filter(([tp]) => tp !== ctxTopic).map(([, s]) => s));
     if (bestOther < mineScore * SWITCH_MARGIN) {
       const g = within(ctxTopic, linesN, index);
-      if (g) {
+      // ⚠ 이 지름길은 토픽 투표·동점 검사를 건너뛰므로 **이름 수준 매칭**이 있을 때만
+      //   쓴다. 본문 조각만으로 잡힌 것에 이 길을 열어주면 전투 화면처럼 이름이 없는
+      //   화면에서 OCR 잡음이 그대로 확신 이동이 된다 (2026-07-26 오인식 사례).
+      if (g && g.entities.some((e) => e.nameHit)) {
         return {
           screens, entities: g.entities,
           topics: [{ topic: ctxTopic, topicName: topicNames.get(ctxTopic) ?? ctxTopic, score: mineScore }],
