@@ -131,10 +131,14 @@ export default function OmniSearch({ roster, includeFuture, extra, onGo }: {
     return /^[0-9a-z가-힣]{2,6}$/.test(rest) ? rest : null;
   };
 
-  /** 이동. learn=true(되묻기에서 직접 고른 경우)면 그 선택을 기억한다. */
+  /** 이동. learn=true(목록에서 직접 고른 경우)면 그 선택을 기억한다.
+   *  ⚠ 후보가 하나뿐이어도 검색어가 그 항목의 이름과 다르면(퍼지·별칭) 기록한다 —
+   *  "크슬"의 유일 후보 크라운슬레이어를 클릭해도 candidates=1이라 학습이 안 쌓여,
+   *  확장 색인이 없는 다음 세션엔 재검색이 실패했다 (사용자 제보 2026-07-26). */
   const go = (hit: OmniHit, learn: boolean, candidates: number, rawQuery: string, rank?: number) => {
     const q = normSearch(rawQuery);
-    if (learn && q && candidates >= 2) {
+    const informative = candidates >= 2 || hit.fuzzy || hit.learned || !hit.keys.includes(q);
+    if (learn && q && informative) {
       recordPick(q, hit.uid, {
         kind: hit.kind, name: hit.name, locale,
         rank, candidates, fuzzy: hit.fuzzy, hinted: hit.hinted,
@@ -175,7 +179,11 @@ export default function OmniSearch({ roster, includeFuture, extra, onGo }: {
   useEffect(() => {
     if (!open || rogueItems || busy || !term.trim()) return;
     const hint = splitHint(normSearch(term), hints);
-    const wantsRogue = !hits.length || hint?.kinds.some((kind) => kind === "rogue" || kind === "topic");
+    // 학습된 별명이 통합전략 항목(rg:)을 가리키면 색인을 불러와야 주입이 된다 —
+    // 잡음 결과가 몇 개 떠 있어도(hits.length>0) 학습 항목이 빠지면 안 되므로 함께 본다.
+    const wantsRogue = !hits.length
+      || hint?.kinds.some((kind) => kind === "rogue" || kind === "topic")
+      || (picks && Object.keys(picks).some((uid) => uid.startsWith("rg:")));
     if (!wantsRogue) return;
     const timer = window.setTimeout(() => { void loadRogue(); }, 0);
     return () => window.clearTimeout(timer);

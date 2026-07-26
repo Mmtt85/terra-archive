@@ -159,8 +159,26 @@ export function learnedHints(crowd: PickIndex): Record<string, string[]> {
   return out;
 }
 
-/** 이 검색어의 가중치 지도 (없으면 undefined). */
+/** 이 검색어의 가중치 지도 (없으면 undefined).
+ *  정확 키에 더해 **접두 관계** 키도 합친다 (사용자 요청 2026-07-26: "금뵝어"→하루카를
+ *  배웠으면 "금뵝"까지만 쳐도 나와야 한다). 접두 확장은 0.7배로 접어 정확 키가 우선하고,
+ *  한 글자 키/검색어는 확장하지 않는다 (저엔트로피 오염 방지). */
 export function picksFor(q: string, crowd: PickIndex): PickMap | undefined {
-  const map = crowd[q];
-  return map && Object.keys(map).length ? map : undefined;
+  if (!q) return undefined;
+  const out: PickMap = {};
+  const add = (map: PickMap, scale: number) => {
+    for (const [uid, w] of Object.entries(map)) {
+      const v = w * scale;
+      if (v > (out[uid] ?? 0)) out[uid] = v;
+    }
+  };
+  const exact = crowd[q];
+  if (exact) add(exact, 1);
+  if (q.length >= 2) {
+    for (const [key, map] of Object.entries(crowd)) {
+      if (key === q || key.startsWith(HINT_PREFIX)) continue;
+      if (key.startsWith(q) || (key.length >= 2 && q.startsWith(key))) add(map, 0.7);
+    }
+  }
+  return Object.keys(out).length ? out : undefined;
 }
