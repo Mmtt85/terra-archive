@@ -113,7 +113,7 @@ const D: Record<string, Pair> = {
   "테라 아카이브 홈": ["Terra Archive home", "テラアーカイブ ホーム"],
   "주요 탭": ["Main tabs", "メインタブ"],
   "오퍼 백과사전": ["Operator Archive", "オペレーター図鑑"],
-  "인프라 자동편성기": ["Base Auto-Planner", "基地自動編成"],
+  "인프라 자동편성 시뮬레이터": ["Base Auto-Assign Simulator", "基地自動編成シミュレーター"],
   "공채 도우미": ["Recruit Helper", "公開求人ヘルパー"],
   "언어 선택": ["Language", "言語選択"],
   "다크 모드 전환": ["Toggle dark mode", "ダークモード切替"],
@@ -253,7 +253,7 @@ const D: Record<string, Pair> = {
   ],
   "테라 아카이브 | 명일방주(Arknights) 팬사이트": ["Terra Archive | Arknights Fansite", "テラアーカイブ | アークナイツのファンサイト"],
   "{name} - 명일방주 오퍼레이터 | 테라 아카이브": ["{name} - Arknights Operator | Terra Archive", "{name} - アークナイツ オペレーター | テラアーカイブ"],
-  "인프라 자동편성기 - 명일방주 기반시설 편성 | 테라 아카이브": ["Base Auto-Planner - Arknights RIIC Base | Terra Archive", "基地自動編成 - アークナイツ基地編成 | テラアーカイブ"],
+  "인프라 자동편성 시뮬레이터 - 명일방주 기반시설 편성 | 테라 아카이브": ["Base Auto-Assign Simulator - Arknights RIIC Base | Terra Archive", "基地自動編成シミュレーター - アークナイツ基地編成 | テラアーカイブ"],
   "공채 도우미 - 명일방주 공개모집 계산기 | 테라 아카이브": ["Recruit Helper - Arknights Recruitment Calculator | Terra Archive", "公開求人ヘルパー - アークナイツ公開求人計算機 | テラアーカイブ"],
 
   // ── 인프라 플래너 ──────────────────────────────────────────────────────────
@@ -360,7 +360,6 @@ const D: Record<string, Pair> = {
   "제조소 9 · 작전기록": ["Factory 9 · Battle Records", "製造所9・作戦記録"],
   "사용자 지정 배치: 제조소·무역소·발전소 9칸을 자유롭게 구성합니다. 방 카드의 제조소/무역소/발전소 버튼으로 각 칸의 종류를 바꾸면 순금 제조소 수는 무역소 수에 맞춰 자동 배정되고(프리셋과 동일 규칙), 전력·자동화 스케일도 발전소 수를 따라갑니다. 칸을 바꾼 뒤엔 전체 자동편성으로 재편성하세요 — 그외 배치의 편성·레벨도 별도 버킷으로 저장됩니다.": ["Custom layout: freely arrange the 9 production tiles among factories, trading posts and power plants. Switch a tile's type with the Factory/Trading/Power buttons on its card — the number of gold factories follows your trading post count (same rule as the presets), and power/automation scale with plant count. After changing tiles, run full auto-assign; the custom layout keeps its own plan/level bucket too.", "カスタム配置：製造所・貿易所・発電所の9マスを自由に構成します。カードの製造所/貿易所/発電所ボタンでタイプを切り替えると、純金製造所の数は貿易所数に合わせて自動配分され（プリセットと同じ規則）、電力・自動化も発電所数に追従します。変更後は全体自動編成で再編成を。カスタム配置の編成・レベルも専用バケットに保存されます。"],
   "기지 확장 해금 — 제어센터 레벨이 다른 시설의 최대 레벨·개수를 결정합니다": ["Base expansion gate — control center level caps every other facility's max level and count", "基地拡張の解放 — 制御センターのレベルが他施設の最大レベル・数を決めます"],
-  "인프라 배치 최적화": ["Base Assignment Optimizer", "基地配置最適化"],
   "보유 오퍼 설정 ({a}/{b})": ["My operators ({a}/{b})", "所持オペレーター設定（{a}/{b}）"],
   "전체 자동편성": ["Auto-assign all", "全自動編成"],
   "빈 자리만 자동편성": ["Fill empty slots", "空きスロットのみ自動編成"],
@@ -1488,11 +1487,105 @@ const D: Record<string, Pair> = {
 
   // 헤더 만능검색 (omni-search.tsx / omni.ts)
   "검색": ["Search", "検索"],
-  // 게임 연결 — 게임 창 화면을 받아 스샷 레이더에 태우는 헤더 버튼
-  "게임 연결": ["Connect game", "ゲーム接続"],
-  "게임 연결됨": ["Game connected", "ゲーム接続中"],
+  // PRTS 링크 — 에뮬레이터·PC 클라이언트 창을 실시간으로 읽어 사이트가 따라가는 기능
+  // (이름 확정 2026-07-26: 종전 '게임 연결'. PRTS는 로도스 아일랜드의 시스템 이름)
+  "PRTS 링크": ["PRTS Link", "PRTSリンク"],
+  "PRTS 링크 연결됨": ["PRTS Link on", "PRTSリンク接続中"],
+  "PRTS 링크 끊기": ["Disconnect PRTS Link", "PRTSリンクを解除"],
+  "PRTS 링크 도움말": ["PRTS Link help", "PRTSリンクのヘルプ"],
   "게임 창 연결": ["Connect game window", "ゲームウィンドウを接続"],
-  "게임 연결 끊기": ["Disconnect game", "ゲーム接続を解除"],
+  // PRTS 링크 도움말 모달 (bridge-help.tsx)
+  "불러오는 중…": ["Loading…", "読み込み中…"],
+  "에뮬레이터나 PC 클라이언트의 게임 창을 사이트에 물려, 화면이 바뀔 때마다 자동으로 인식해 이 가이드가 따라오게 하는 기능입니다. 스샷 레이더가 '캡처 한 장'을 읽는다면, PRTS 링크는 '보고 있는 화면'을 계속 읽습니다 — 층을 오르는 동안 손댈 일이 없습니다.": [
+    "Hooks your emulator or PC client window up to the site so that every time the screen changes it is recognized automatically and this guide follows along. Where the screenshot radar reads a single capture, PRTS Link keeps reading whatever you are looking at — you never touch it while climbing floors.",
+    "エミュレーターやPCクライアントのゲームウィンドウをサイトにつなぎ、画面が変わるたびに自動で認識してこのガイドが追従します。スクショレーダーが「1枚のキャプチャ」を読むのに対し、PRTSリンクは「見ている画面」を読み続けます — 階を上っている間、何も操作する必要がありません。",
+  ],
+  "지금 보는 테마의 PRTS 링크 버튼 누르기": [
+    "Press PRTS Link on the theme you're viewing",
+    "今見ているテーマのPRTSリンクボタンを押す",
+  ],
+  "연결은 테마별입니다 — 사미에서 연결하면 사미 항목만 인식합니다. 다른 테마를 플레이하려면 그 테마에서 다시 연결하세요.": [
+    "The link is per theme — connect from Sami and only Sami content is recognized. To play another theme, reconnect from that theme.",
+    "接続はテーマごとです — サーミで接続するとサーミの項目のみ認識します。別のテーマをプレイするなら、そのテーマで接続し直してください。",
+  ],
+  "공유할 창 고르기": ["Pick the window to share", "共有するウィンドウを選ぶ"],
+  "브라우저가 공유 대상을 물어봅니다. 게임이 돌아가는 에뮬레이터(또는 PC 클라이언트) 창을 고르세요. '창' 단위로 고르면 그 창만 읽으므로 다른 작업이 새지 않습니다.": [
+    "The browser asks what to share. Pick the emulator (or PC client) window running the game. Choosing a single window means only that window is read, so nothing else leaks.",
+    "ブラウザが共有対象を尋ねます。ゲームが動いているエミュレーター（またはPCクライアント）のウィンドウを選んでください。「ウィンドウ」単位で選べばそのウィンドウだけを読むので、他の作業は漏れません。",
+  ],
+  "그냥 게임하기": ["Just play", "あとは普通にプレイ"],
+  "화면이 바뀌면 알아서 인식하고 해당 정보를 엽니다. 진행 상태는 화면 위쪽 가운데 표시줄에서 볼 수 있습니다.": [
+    "When the screen changes it recognizes it and opens the matching info. The status bar at the top center shows what it's doing.",
+    "画面が変わると自動で認識して該当情報を開きます。進行状況は画面上部中央のバーで確認できます。",
+  ],
+  "리플레이로 되돌아보기": ["Look back with Replay", "リプレイで振り返る"],
+  "연결 중 지나온 여정이 기록됩니다 — '리플레이' 버튼으로 어느 작전에 들어가 결과가 어땠는지, 무슨 소장품을 골랐는지 보고 JSON으로 내보낼 수 있습니다.": [
+    "Your run is logged while connected — the Replay button shows which operations you entered and how they went, and which collectibles you picked, and can export it as JSON.",
+    "接続中の道のりが記録されます — 「リプレイ」ボタンでどの作戦に入って結果がどうだったか、どのコレクションを選んだかを見られ、JSONで書き出せます。",
+  ],
+  "무엇이 자동으로 열리나": ["What opens automatically", "何が自動で開くか"],
+  "맵의 작전 노드 → 해당 작전 상세 (긴급 작전이면 긴급 정보로)": [
+    "Operation node on the map → that operation's details (emergency info if it's an emergency)",
+    "マップの作戦ノード → その作戦の詳細（緊急作戦なら緊急情報）",
+  ],
+  "조우·우연한 만남 → 선택지와 결과": [
+    "Encounters and chance meetings → their options and outcomes",
+    "遭遇・偶然の出会い → 選択肢と結果",
+  ],
+  "전리품·상점 화면 → 해당 소장품 상세, 여러 개면 모아보기": [
+    "Loot and shop screens → that collectible's details, or a combined view when there are several",
+    "戦利品・ショップ画面 → そのコレクションの詳細、複数ならまとめ表示",
+  ],
+  "분대·도구·음반 등 → 전시관 해당 탭에서 하이라이트": [
+    "Squads, tools, records and so on → highlighted in the matching Archive tab",
+    "分隊・道具・レコードなど → アーカイブの該当タブでハイライト",
+  ],
+  "좌하단 난이도 배지 → 난이도 셀렉터에 자동 반영": [
+    "Difficulty badge at bottom left → applied to the difficulty selector",
+    "左下の難易度バッジ → 難易度セレクターに自動反映",
+  ],
+  "알아두면 좋은 것": ["Worth knowing", "知っておくと良いこと"],
+  "**전투 중에는 일부러 쉽니다.** 전투 화면은 인식 대상이 아니라, 전투에 들어가면 판정을 멈추고 전투가 끝나면 다시 따라옵니다.": [
+    "**It deliberately rests during battle.** Battle screens aren't recognition targets, so it stops judging when a battle starts and picks up again when it ends.",
+    "**戦闘中はあえて休みます。** 戦闘画面は認識対象ではないため、戦闘に入ると判定を止め、終わると再び追従します。",
+  ],
+  "**탭을 다른 곳에 두어도 됩니다.** 사이트 탭이 뒤에 있어도 인식은 계속됩니다 — 게임 창과 브라우저를 나란히 놓고 쓰는 것이 가장 편합니다.": [
+    "**The tab can sit in the background.** Recognition keeps running even when this tab isn't in front — side by side with the game window is the easiest setup.",
+    "**タブは裏にあっても構いません。** サイトのタブが背面でも認識は続きます — ゲームウィンドウとブラウザを並べて使うのが一番楽です。",
+  ],
+  "**같은 화면을 다시 보면 다시 읽지 않습니다.** 최근에 본 화면은 기억해 두고 그대로 재적용하므로, 지도와 모달을 왕복해도 느려지지 않습니다.": [
+    "**Screens you revisit aren't re-read.** Recent screens are remembered and reapplied, so bouncing between the map and a modal never slows down.",
+    "**同じ画面に戻っても読み直しません。** 最近見た画面は記憶して再適用するので、マップとモーダルを往復しても遅くなりません。",
+  ],
+  "난이도처럼 한 판 안에서 바뀌지 않는 값은 한 번 확정하면 다시 읽지 않습니다. 연결을 끊고 새로 연결하면 초기화됩니다.": [
+    "Values that can't change within a run, like difficulty, are read once and then left alone. Disconnecting and reconnecting resets them.",
+    "難易度のように1回のランで変わらない値は、一度確定したら読み直しません。接続を切って繋ぎ直すとリセットされます。",
+  ],
+  "연결을 끊는 방법": ["How to disconnect", "接続を切る方法"],
+  "화면 위쪽 표시줄의 '연결 끊기', 또는 테마의 PRTS 링크 버튼을 다시 누르면 끊깁니다.": [
+    "Use 'Disconnect' in the status bar at the top, or press the theme's PRTS Link button again.",
+    "画面上部のバーの「接続解除」か、テーマのPRTSリンクボタンをもう一度押します。",
+  ],
+  "브라우저가 표시하는 '공유 중지'를 눌러도 됩니다. 탭을 닫거나 새로 고쳐도 연결은 유지되지 않습니다.": [
+    "The browser's own 'Stop sharing' works too. Closing or reloading the tab always ends the link.",
+    "ブラウザの「共有を停止」でも構いません。タブを閉じたり再読み込みしても接続は維持されません。",
+  ],
+  "**화면은 서버로 가지 않습니다.** 인식은 100% 브라우저 안에서 처리되고, 프레임을 저장하거나 녹화하지 않습니다.": [
+    "**Your screen never leaves the browser.** Recognition runs entirely on your machine, and no frame is stored or recorded.",
+    "**画面はサーバーに送られません。** 認識は100%ブラウザ内で処理され、フレームの保存や録画もしません。",
+  ],
+  "화면 공유를 지원하는 데스크톱 브라우저(크롬·엣지 등)에서만 버튼이 보입니다. 모바일에서는 스샷 레이더를 쓰세요.": [
+    "The button only appears in desktop browsers that support screen sharing (Chrome, Edge and friends). On mobile, use the screenshot radar.",
+    "画面共有に対応したデスクトップブラウザ（Chrome・Edgeなど）でのみボタンが表示されます。モバイルではスクショレーダーをお使いください。",
+  ],
+  "한국어·영어·일본어 게임 화면을 인식하며, 중국 서버 선행 테마(흑류수해)는 중국어 화면도 인식합니다.": [
+    "It reads Korean, English and Japanese game screens, and Chinese ones too for the CN-first theme (Sarkaz-flooded waters).",
+    "韓国語・英語・日本語のゲーム画面を認識し、中国サーバー先行テーマ（黒流樹海）は中国語画面も認識します。",
+  ],
+  "게임 창이 너무 작거나 가려져 있으면 글자를 못 읽습니다 — 창을 다른 창으로 덮지 마세요.": [
+    "If the game window is tiny or covered, the text can't be read — don't let other windows sit on top of it.",
+    "ゲームウィンドウが小さすぎたり隠れていると文字が読めません — 他のウィンドウで覆わないでください。",
+  ],
   "게임 창을 골라 화면을 자동으로 인식시킵니다": [
     "Pick your game window and the site follows what you're looking at",
     "ゲームウィンドウを選ぶと、見ている画面をサイトが自動で認識します",

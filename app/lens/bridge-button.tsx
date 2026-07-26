@@ -5,7 +5,7 @@
 // 연결 자체는 /rogue 각 테마의 게임 연결 버튼에서 한다 (BridgeTopicButton — 테마 하드 고정).
 // 연결 전에는 아무것도 그리지 않는다.
 
-import { useState, useSyncExternalStore } from "react";
+import { lazy, Suspense, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { useBridgeStatus, connectBridge, disconnectBridge, bridgeSupported, bridgeLogCount } from "./bridge";
 import BridgeReplayModal from "./bridge-replay";
@@ -33,12 +33,12 @@ export default function BridgeButton({ t }: { t: T }) {
     <div className={`bridge-toast${busy ? " busy" : ""}`} aria-live="polite" role="status">
       <span className="bridge-dot" aria-hidden>◉</span>
       <span className="bridge-toast-text">
-        {lock ? <b>{t(lock.name)}</b> : <b>{t("게임 연결됨")}</b>}
+        {lock ? <b>{t(lock.name)}</b> : <b>{t("PRTS 링크 연결됨")}</b>}
         {` · `}<b>{phase}</b>
         {gate ? ` · ${t("인식")} ${gate.emitted} · ${t("기록")} ${bridgeLogCount()}` : ""}
         {note ? ` · ${note}` : ""}
       </span>
-      <button type="button" className="bridge-toast-off" onClick={disconnectBridge} title={t("게임 연결 끊기")}>
+      <button type="button" className="bridge-toast-off" onClick={disconnectBridge} title={t("PRTS 링크 끊기")}>
         {t("연결 끊기")}
       </button>
     </div>,
@@ -46,13 +46,17 @@ export default function BridgeButton({ t }: { t: T }) {
   );
 }
 
-/** 테마별 게임연결 — /rogue 툴바용 (사용자 확정 2026-07-26: "사미록라의 게임연결 버튼은
+// 도움말은 설명만 담긴 모달이라 필요할 때만 받아온다
+const BridgeHelpModal = lazy(() => import("./bridge-help"));
+
+/** 테마별 PRTS 링크 — /rogue 툴바용 (사용자 확정 2026-07-26: "사미록라의 연결 버튼은
  *  무조건 사미록라만"). 여기서 연결하면 인식이 그 테마 밖을 아예 보지 않는다.
  *  리플레이 버튼은 프리뷰 모달을 연다 (즉시 다운로드 아님 — JSON 가져오기/내보내기는 모달 안). */
 export function BridgeTopicButton({ topic, name, t }: { topic: string; name: string; t: T }) {
   const { settings, lock } = useBridgeStatus();
   const supported = useSyncExternalStore(noSubscribe, bridgeSupported, () => false);
   const [replayOpen, setReplayOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   if (!supported) return null;
 
   const mine = !!settings && lock?.topic === topic;   // 이 테마로 고정 연결됨
@@ -63,13 +67,13 @@ export function BridgeTopicButton({ topic, name, t }: { topic: string; name: str
         type="button"
         className={`lens-open-btn bridge-topic-btn${mine ? " on" : ""}`}
         title={mine
-          ? t("게임 연결 끊기")
+          ? t("PRTS 링크 끊기")
           : other
             ? t("다시 연결하면 이 테마로만 인식하도록 고정됩니다")
             : t("게임 창을 골라 이 테마로만 인식하도록 연결합니다")}
         onClick={() => (mine ? disconnectBridge() : void connectBridge({ topic, name }))}
       >
-        <span aria-hidden>{mine ? "◉" : "○"}</span> {mine ? t("게임 연결됨") : t("게임 연결")}
+        <span aria-hidden>{mine ? "◉" : "○"}</span> {mine ? t("PRTS 링크 연결됨") : t("PRTS 링크")}
         {!settings && isNewFeature("bridge") && <span className="new-badge">{t("새기능")}</span>}
       </button>
       <button
@@ -80,7 +84,18 @@ export function BridgeTopicButton({ topic, name, t }: { topic: string; name: str
       >
         <span aria-hidden>▤</span> {t("리플레이")}
       </button>
+      {/* 스샷 레이더와 같은 위치·모양의 ? 도움말 (사용자 요청 2026-07-26) */}
+      <button type="button" className="lens-help-btn bridge-help-btn" aria-label={t("PRTS 링크 도움말")}
+        onClick={() => setHelpOpen(true)}>?</button>
       {replayOpen && <BridgeReplayModal t={t} onClose={() => setReplayOpen(false)} />}
+      {helpOpen && createPortal(
+        <div className="modal-backdrop" onMouseDown={(ev) => { if (ev.target === ev.currentTarget) setHelpOpen(false); }}>
+          <Suspense fallback={<div className="scanner-loading">{t("불러오는 중…")}</div>}>
+            <BridgeHelpModal onClose={() => setHelpOpen(false)} />
+          </Suspense>
+        </div>,
+        document.body,
+      )}
     </>
   );
 }
