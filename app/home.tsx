@@ -13,6 +13,7 @@ import FarmGuide, { UpgradeSim } from "./farm";
 import { normSearch, useSearchInput } from "./search";
 import OmniSearch from "./omni-search";
 import BridgeButton from "./lens/bridge-button";
+import ChangelogButton from "./changelog";
 import type { OmniTarget } from "./omni";
 import { notifyHandoff, stashHandoff } from "./handoff";
 import { noteAction, noteArrival, noteMiss } from "./trail";
@@ -1242,6 +1243,8 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
             </button>
           )}
           <div className="header-sub-right">
+            {/* 업데이트 내역 — 확장부 왼쪽 끝 (사용자 요청 2026-07-26) */}
+            <ChangelogButton />
             {/* 공식 방송 — 미래시 토글 바로 왼쪽 (사용자 요청 2026-07-25) */}
             <BroadcastBadges includeFuture={includeFuture} slot="broadcast" />
             {/* 라벨은 데스크탑 "미래시 데이터 포함", 모바일은 "미래시"로 축약 (사용자 요청 2026-07-22) */}

@@ -132,6 +132,70 @@ const D: Record<string, Pair> = {
   "각 기능이 무엇이고 언제 쓰는지 안내": ["What each tool is and when to use it.", "各機能が何で、いつ使うのかを案内。"],
   "오퍼레이터 백과사전 - 명일방주 오퍼 도감 | 테라 아카이브": ["Operator Archive - Arknights Operator Database | Terra Archive", "オペレーター図鑑 - アークナイツ オペレーター一覧 | テラアーカイブ"],
 
+  // 업데이트 내역 (헤더 버튼 + 모달, 2026-07-26)
+  "업데이트 내역": ["What's New", "更新履歴"],
+  "최근 업데이트 내역 보기": ["See recent site updates", "最近の更新内容を見る"],
+  "신기능": ["NEW", "新機能"],
+  "개선": ["Improved", "改善"],
+  "수정": ["Fixed", "修正"],
+  "2026년 7월 26일": ["July 26, 2026", "2026年7月26日"],
+  "2026년 7월 25일": ["July 25, 2026", "2026年7月25日"],
+  "2026년 7월 24일 (17시 이후)": ["July 24, 2026 (after 17:00)", "2026年7月24日（17時以降）"],
+  "보유 오퍼레이터 가져오기 — 직접 입력 외에 MAA 파일·스크린샷·게임 계정 로그인 3가지 방식이 생겼습니다. 요스타 계정으로 로그인하면 실제 보유 목록을 통째로 동기화합니다.":
+    ["Roster import — besides manual entry, you can now import via MAA file, screenshots, or game account login. Signing in with your Yostar account syncs your actual roster in one go.",
+     "所持オペレーターのインポート — 手動入力に加え、MAAファイル・スクリーンショット・ゲームアカウントログインの3方式が追加。Yostarアカウントでログインすると実際の所持リストを丸ごと同期します。"],
+  "PRTS 링크 (BETA) — 통합전략 가이드에서 게임 화면을 실시간으로 연결하면 조우·소장품·작전을 자동 인식해 해당 정보로 이동합니다. 자세한 사용법은 버튼 옆 ? 도움말에.":
+    ["PRTS Link (BETA) — connect your game screen live in the Integrated Strategies guide and it auto-recognizes encounters, collectibles, and operations, jumping to the matching info. See the ? help next to the button.",
+     "PRTSリンク（BETA）— 統合戦略ガイドでゲーム画面をライブ接続すると、遭遇・秘宝・作戦を自動認識して該当情報へ移動します。詳しい使い方はボタン横の「?」ヘルプへ。"],
+  "리플레이 — PRTS 링크로 플레이한 여정(작전 진입·조우·소장품 획득)이 자동 기록됩니다. 프리뷰로 훑어보고 JSON으로 내보내기·가져오기가 됩니다.":
+    ["Replay — your journey while playing with PRTS Link (operations entered, encounters, collectibles picked up) is recorded automatically. Preview it and export/import as JSON.",
+     "リプレイ — PRTSリンクでプレイした行程（作戦突入・遭遇・秘宝入手）を自動記録。プレビューで確認でき、JSONの書き出し・読み込みに対応。"],
+  "유니버셜 서치 — 검색창 폭을 정리하고, 실패한 검색어가 재검색 끝에 고른 결과와 즉시 짝지어지도록 학습을 강화했습니다.":
+    ["Universal search — tidied the search box width and strengthened learning so failed queries pair up immediately with the result you eventually pick.",
+     "ユニバーサル検索 — 検索欄の幅を整理し、失敗した検索語が再検索の末に選んだ結果とすぐ結び付くよう学習を強化。"],
+  "보유 오퍼레이터 설정 모달이 가벼워졌습니다 — 카드를 눌렀을 때 전체가 다시 그려지던 문제를 없앴습니다.":
+    ["The roster settings modal is lighter — clicking a card no longer re-renders the whole grid.",
+     "所持オペレーター設定モーダルが軽くなりました — カードを押すたび全体が再描画される問題を解消。"],
+  "사이트 전역의 버튼·카드·모달 모서리를 통일감 있게 둥글렸습니다.":
+    ["Rounded the corners of buttons, cards, and modals consistently across the site.",
+     "サイト全体のボタン・カード・モーダルの角を統一感を持って丸めました。"],
+  "통합전략 가이드 — 시비경·금석경의 시련 작전을 채우고, 짙푸른 요람에 원더랜드 배지를 달았습니다.":
+    ["Integrated Strategies guide — filled in the trial operations of the boundary zones in the garden theme, and added a Wonderland badge to the matching collectible.",
+     "統合戦略ガイド — 界園テーマの境界エリアの試練作戦を追加し、該当コレクションにワンダーランドバッジを付けました。"],
+  "이름 정리 — 메뉴 '소개'는 '테라 아카이브 소개'로, 검색어 '인프라 딸깍'으로도 인프라 자동편성기에 들어갑니다.":
+    ["Naming cleanup — the About menu is now 'About Terra Archive', and searching for the slang 'infra one-click' also reaches the base planner.",
+     "名称整理 — メニュー「紹介」は「テラアーカイブについて」に。俗称の検索でも基地自動編成に入れます。"],
+  "만능검색 — 헤더 검색창에서 단어 하나로 사이트 안 아무 컨텐츠나 찾아 이동합니다. 오탈자 근사·은어 별칭을 알아듣고, 선택할수록 똑똑해집니다.":
+    ["Universal search — type one word in the header to find and jump to any content on the site. It handles typos and slang aliases, and gets smarter as you pick results.",
+     "ユニバーサル検索 — ヘッダーの検索欄に一語入力するだけでサイト内のあらゆるコンテンツへ移動。誤字の近似や俗称も理解し、選ぶほど賢くなります。"],
+  "스샷 레이더가 일본어·영어 게임 화면도 인식합니다 (KR 전용 → KR/EN/JA).":
+    ["Screenshot Radar now recognizes Japanese and English game screens too (KR-only → KR/EN/JA).",
+     "スクショレーダーが日本語・英語のゲーム画面にも対応（KR専用 → KR/EN/JA）。"],
+  "공식 방송 — 버튼을 미래시 토글 옆으로 옮기고, 지난 방송 10건 이력을 담았습니다. 미래시를 켜면 중국 서버(비리비리) 일정도 보입니다.":
+    ["Official streams — moved the button next to the future-data toggle and added a history of the last 10 streams. With future data on, CN server (bilibili) schedules show too.",
+     "公式配信 — ボタンを未来視トグルの横に移動し、過去配信10件の履歴を追加。未来視をオンにすると中国サーバー（bilibili）の日程も表示されます。"],
+  "헤더 이벤트 드롭다운에 '향후 다가올 이벤트'를 추가하고, 미실장 이벤트에 KR 추정 출시월을 표시합니다.":
+    ["Added an 'Upcoming events' section to the header event dropdown, with estimated KR release months for unreleased events.",
+     "ヘッダーのイベントドロップダウンに「今後のイベント」を追加し、未実装イベントにKR推定実装月を表示。"],
+  "인프라 자동편성기 — 숙소 직접 편성과 📌 고정, 파트너·이름 조건 오판 전수 정정, 육성 추천이 안 뜨던 원인 수정, 스킬 설명 속 RIIC 용어 클릭 팝업(79종).":
+    ["Base planner — manual dorm assignment with 📌 pinning, a full audit of partner/name condition misjudgments, fixed upgrade recommendations not appearing, and clickable RIIC term popups in skill descriptions (79 terms).",
+     "基地自動編成 — 宿舎の手動編成と📌固定、パートナー・名前条件の誤判定を全数修正、育成おすすめが出ない原因を修正、スキル説明内のRIIC用語クリックポップアップ（79種）。"],
+  "스토리 — 본문의 점선 밑줄 단어를 누르면 인물·용어 팝오버가 뜹니다. 화자와 스탠딩 CG가 어긋나던 장면도 전수 정정했습니다.":
+    ["Story — tap dotted-underlined words in the text for character/term popovers. Also fixed every scene where the speaker and standing CG were mismatched.",
+     "ストーリー — 本文の点線下線の単語を押すと人物・用語ポップオーバーが表示。話者と立ち絵CGがずれていた場面も全数修正しました。"],
+  "푸터에 서버 운영 후원 링크를 달았습니다.":
+    ["Added a server-cost donation link to the footer.",
+     "フッターにサーバー運営支援リンクを追加しました。"],
+  "통합전략 가이드 — 사미 암호판을 보유 리스트 수집 자원으로, 붕괴 패러다임을 1·2단계 카드로, 화룡점정 조우 트리를 큐레이션했습니다.":
+    ["Integrated Strategies guide — Sami runestones are now a collectible resource in the inventory, Collapsal Paradigms show stage 1/2 cards, and the finale encounter tree is curated.",
+     "統合戦略ガイド — サーミの符呪を所持リストの収集資源に、崩壊パラダイムを1・2段階カードに、締めの遭遇ツリーをキュレーション。"],
+  "스크린샷 스캐너가 iPad(4:3) 화면도 인식합니다.":
+    ["The screenshot scanner now recognizes iPad (4:3) screens too.",
+     "スクリーンショットスキャナーがiPad（4:3）画面にも対応。"],
+  "인프라 자동편성기 — 왕 '임기응변'의 외세·실리 분기, 왕 착석→슈 해방 교차방 사슬 평가 등 편성 정확도를 올렸습니다.":
+    ["Base planner — improved assignment accuracy: Ling's 'Improvisation' faction branching, cross-room chains like seating Ling to free Shu, and more.",
+     "基地自動編成 — リィンの「臨機応変」の勢力分岐、リィン着席→シュー解放のクロスルーム連鎖評価など編成精度を向上。"],
+
   // 공식 방송
   "공식 방송": ["Official Streams", "公式配信"],
   "생방송 중": ["Live now", "配信中"],

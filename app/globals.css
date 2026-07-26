@@ -376,6 +376,107 @@ button {
   }
 }
 
+/* 업데이트 내역 — 헤더 확장부 버튼 + 모달 (2026-07-26) */
+.chlog-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: transparent;
+  padding: 6px 11px;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--ink);
+  cursor: pointer;
+  transition: 0.15s;
+  white-space: nowrap;
+}
+.chlog-trigger:hover {
+  border-color: var(--border-strong);
+}
+.chlog-modal {
+  position: relative;
+  background: var(--white, #fff);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  width: min(620px, 100%);
+  max-height: calc(100dvh - 48px);
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 30px 100px #0008;
+}
+.chlog-modal > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  flex: none;
+}
+.chlog-modal > header h2 {
+  font-size: 16px;
+  font-weight: 900;
+}
+.chlog-list {
+  padding: 14px 16px 18px;
+  overflow-y: auto;
+}
+.chlog-list section + section {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.chlog-list h3 {
+  margin: 0 0 8px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.chlog-list ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.chlog-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.chlog-kind {
+  flex: none;
+  margin-top: 1px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+.chlog-kind.new {
+  background: var(--tint-lime);
+  color: var(--tint-lime-ink);
+  border-color: transparent;
+}
+.chlog-kind.improve {
+  background: var(--tint-gold);
+  color: var(--tint-warm2-ink);
+  border-color: transparent;
+}
+.chlog-text {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ink2);
+}
+
 /* 진행중 게임 이벤트 — 헤더 중앙 배지 + 팝오버 */
 /* 방송 버튼 오른쪽에 그대로 흐름 배치한다. (절대 중앙배치는 방송 버튼·토글과 겹쳐
    레이아웃이 깨지고 스켈레톤 예약도 무력화되어 제거 — 사용자 확정 2026-07-17) */
@@ -764,6 +865,13 @@ button {
     flex-basis: 100%;
     height: 0;
   }
+  /* 업데이트 내역 — 3줄, 제안 버튼 바로 오른쪽 (order 동률은 DOM 순서로 제안 다음) */
+  .chlog-trigger {
+    order: 7;
+    padding: 4px 8px;
+    font-size: 11.5px;
+    gap: 4px;
+  }
   .feedback-header-btn {
     order: 7;
     display: inline-flex;
@@ -804,6 +912,7 @@ button {
   /* 접힘: 로고·햄버거 한 줄만 남긴다. 공식방송은 2줄 오른쪽 고정이므로 접으면 같이
      사라진다 (사용자 확정 2026-07-22 — 접힘 상태에 공식방송을 남기지 않는다) */
   .site-header.collapsed .feedback-header-btn,
+  .site-header.collapsed .chlog-trigger,
   .site-header.collapsed .event-group,
   .site-header.collapsed .bcast-trigger,
   .site-header.collapsed .future-toggle,
