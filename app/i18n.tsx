@@ -147,7 +147,7 @@ const D: Record<string, Pair> = {
   "업데이트 내역을 불러오지 못했습니다 — 잠시 뒤 다시 시도해 주세요.": ["Couldn't load the update history — please try again in a moment.", "更新履歴を読み込めませんでした — しばらくしてからもう一度お試しください。"],
   "아직 등록된 업데이트 내역이 없습니다.": ["No update entries yet.", "まだ登録された更新履歴はありません。"],
   "이 기간에 새로 나온 기능은 없습니다 — 상세보기로 개선·수정 내역을 확인하세요.": ["No new features in this period — use \u201cShow details\u201d for improvements and fixes.", "この期間に新機能はありません — 「詳細を見る」で改善・修正の内容を確認できます。"],
-  "사이트 후원 버튼도 달았습니다 — 광고 없이 운영되는 사이트라, 후원해 주시면 서버·도메인 비용에 큰 힘이 됩니다. 감사하겠습니다!":
+  "사이트 후원 버튼도 달았습니다 — 광고 없이 운영되는 사이트라, 후원해 주시면 서버·도메인 비용에 큰 힘이 됩니다. 감사합니다!":
     ["We also added a site donation button — the site runs ad-free, so any support toward server & domain costs is deeply appreciated. Thank you!",
      "サイト支援ボタンも設置しました — 広告なしで運営しているサイトなので、支援していただけるとサーバー・ドメイン費用の大きな助けになります。ありがとうございます！"],
 

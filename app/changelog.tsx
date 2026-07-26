@@ -169,7 +169,7 @@ export default function ChangelogButton() {
               )}
               {/* 후원 안내 — 항상 보이는 하단 노트 (사용자 요청 2026-07-27) */}
               <p className="chlog-donate">
-                ☕ {t("사이트 후원 버튼도 달았습니다 — 광고 없이 운영되는 사이트라, 후원해 주시면 서버·도메인 비용에 큰 힘이 됩니다. 감사하겠습니다!")}{" "}
+                ☕ {t("사이트 후원 버튼도 달았습니다 — 광고 없이 운영되는 사이트라, 후원해 주시면 서버·도메인 비용에 큰 힘이 됩니다. 감사합니다!")}{" "}
                 <a href="https://buymeacoffee.com/terra_archive" target="_blank" rel="noopener noreferrer">{t("서버 운영 후원")}</a>
               </p>
             </div>
