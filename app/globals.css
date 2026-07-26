@@ -2923,6 +2923,8 @@ footer p {
   gap: 20px;
   border-bottom: 2px solid var(--border-strong);
   padding-bottom: 16px;
+  /* 전수 라운딩이 border-bottom 구분선 양끝을 위로 말아 올린다 — 직선 유지 (사용자 지적 2026-07-27) */
+  border-radius: 0;
 }
 .planner-controls h2 {
   margin: 6px 0 0;
@@ -2951,6 +2953,9 @@ footer p {
   margin-left: 10px;
   padding-left: 14px;
   border-left: 1px solid var(--line);
+  /* 전수 라운딩(:where(.prio-label))이 border-left 구분선 끝을 휘게 만든다 — 직선 유지
+     (사용자 지적 2026-07-27) */
+  border-radius: 0;
 }
 .prio-label-layout .new-badge {
   margin-left: 6px;
@@ -3085,21 +3090,33 @@ footer p {
   display: flex;
   gap: 8px;
 }
+/* 보조 버튼(빈 자리만·비우기·그 외) — 핵심 2버튼과 위계를 가르려 한 톤 낮춘다 (2026-07-27) */
 .planner-buttons button {
-  border: 1px solid var(--border-strong);
-  background: var(--white);
-  padding: 11px 16px;
-  font-size: 13.5px;
+  border: 1px solid var(--line);
+  background: var(--bg-panel);
+  color: var(--ink2);
+  padding: 10px 13px;
+  font-size: 12.5px;
   font-weight: 800;
   cursor: pointer;
   transition: 0.15s;
 }
 .planner-buttons button:hover {
   background: var(--lime);
+  color: var(--on-lime);
+  border-color: var(--border-strong);
 }
+/* 핵심 2버튼 — 보유 오퍼 설정 · 전체 자동편성 (사용자 확정 2026-07-27: 제일 눈에 띄게) */
 .planner-buttons button.primary {
   background: var(--chip);
   color: var(--lime);
+  border-color: var(--border-strong);
+  padding: 11px 18px;
+  font-size: 13.5px;
+}
+.planner-buttons button.primary:hover {
+  background: var(--ink);
+  filter: brightness(1.25);
 }
 .planner-summary {
   display: grid;

@@ -977,7 +977,9 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         </div>
         <div className="planner-buttons">
           {/* startTransition: 로스터 모달(카드 수백 장)은 렌더가 무거워 클릭 페인트부터 내보낸다 (INP, 2026-07-21) */}
-          <button onClick={() => startTransition(() => { setRosterMode("direct"); setShowRoster(true); })}><span className="btn-icon" aria-hidden>▦</span>{t("보유 오퍼 설정 ({a}/{b})", { a: visibleOps.filter((op) => ownedIds.has(op.id)).length, b: visibleOps.length })}{isNewFeature("scanner") && <span className="new-badge">{t("새기능")}</span>}</button>
+          {/* 보유 오퍼 설정·전체 자동편성 = 핵심 2버튼(.primary) — 나머지는 보조 톤으로 낮춰
+              위계를 만든다 (사용자 요청 2026-07-27: "버튼이 너무 많아 헷갈림") */}
+          <button className="primary" onClick={() => startTransition(() => { setRosterMode("direct"); setShowRoster(true); })}><span className="btn-icon" aria-hidden>▦</span>{t("보유 오퍼 설정 ({a}/{b})", { a: visibleOps.filter((op) => ownedIds.has(op.id)).length, b: visibleOps.length })}{isNewFeature("scanner") && <span className="new-badge">{t("새기능")}</span>}</button>
           {/* 라벨이 '계산 중…'으로 바뀌어도 버튼 폭이 줄지 않게 원 라벨로 폭을 잡아둔다 (사용자 요청 2026-07-21) */}
           <button className="primary" onClick={() => runOptimize()} disabled={!!optimizing}>
             <span className="btn-icon" aria-hidden>⟳</span>
