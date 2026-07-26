@@ -170,7 +170,9 @@ export function bridgeLogPayload(): BridgeLogPayload | null {
         endedAt: new Date().toISOString(), width: settings.width, height: settings.height }
     : logMeta;
   if (!meta) return null;
-  const grade = runLog.find((e) => e.grade !== undefined)?.grade;
+  // 난이도는 **마지막** 기록을 쓴다 — 배지 오독으로 잘못 잡혔다가 사용자가 셀렉터를 고쳤으면
+  // 그 뒤 기록이 맞다 (2026-07-26 제보: 3인데 4로 남던 문제). 처음 값을 쥐면 오독이 박힌다.
+  const grade = [...runLog].reverse().find((e) => e.grade !== undefined)?.grade;
   return {
     site: "terra-archive",
     theme: meta.topic,

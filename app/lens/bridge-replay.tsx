@@ -50,7 +50,9 @@ function Row({ ev, n, t }: { ev: BridgeLogEvent; n: number; t: T }) {
         {n > 1 && <small className="br-dup">×{n}</small>}
       </span>
       <span className="br-meta">
-        {ev.result && <b>{ev.result === "success" ? t("작전 성공") : t("작전 실패")}</b>}
+        {/* 값은 파이프라인이 넣는 success|fail 뿐 — 가져온 파일에 다른 값이 있으면 아무것도
+            쓰지 않는다 (모르는 값을 '실패'로 단정하지 않게, 2026-07-26) */}
+        {ev.result === "success" ? <b>{t("작전 성공")}</b> : ev.result === "fail" ? <b>{t("작전 실패")}</b> : null}
         {ev.hp && ` HP ${ev.hp[0]}/${ev.hp[1]}`}
         {ev.levelExp && ` · Lv ${ev.levelExp[0]}/${ev.levelExp[1]}`}
         {ev.cached && <i className="br-cached">{t("캐시 재적용")}</i>}
@@ -61,7 +63,7 @@ function Row({ ev, n, t }: { ev: BridgeLogEvent; n: number; t: T }) {
 
 // 난이도 — 판 내 불변이라 헤더에 1회만 표시 (페이로드 수준 grade, 옛 파일은 이벤트에서 탐색)
 const gradeOf = (p: BridgeLogPayload): number | undefined =>
-  p.grade ?? p.events.find((e) => e.grade !== undefined)?.grade;
+  p.grade ?? [...p.events].reverse().find((e) => e.grade !== undefined)?.grade;
 
 // 연속 중복 병합 — 같은 화면이 여러 번 인식되면(재안착·미세 변화) 같은 줄이 줄줄이 쌓인다.
 // 표시용으로만 하나로 합치고 ×N을 단다 (사용자 요청 2026-07-26). JSON 원본은 그대로다.

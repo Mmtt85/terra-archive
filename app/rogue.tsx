@@ -1069,6 +1069,11 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   // 화면을 훑어본 작전 — 아직 입장한 게 아니라 리플레이에 넣지 않고 쥐고만 있는다.
   // 입장이 확인되면(암전 로딩 또는 전투 화면) 그때 한 줄로 기록한다.
   const pendingStage = useRef<BridgeLogEvent | null>(null);
+  // 리플레이의 난이도는 **사이트 난이도 셀렉터 값**을 쓴다 (사용자 제보 2026-07-26: "난이도 3인데
+  // 자꾸 4로 기록됨"). 배지 OCR은 셀렉터를 자동으로 맞추는 데까지만 쓰고, 오독했으면 사용자가
+  // 셀렉터를 고칠 수 있으므로 기록의 기준은 사람이 확인한 그 값이어야 한다.
+  const gradeRef = useRef(grade);
+  gradeRef.current = grade;
   // 여정 이벤트 변환 — 리플레이는 원시 인식이 아니라 **유저가 실제로 한 일**만 기록한다.
   // 사용자 확정 2026-07-26:
   //  · 작전은 노드를 눌러 봤다고 남기면 안 된다 → **입장 신호**(암전 로딩·전투 화면)가 와야 기록
@@ -1084,7 +1089,8 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
       name: oc.entities[0]?.name,
       names: oc.entities.length > 1 ? oc.entities.slice(0, 8).map((e) => e.name) : undefined,
       arc: g?.arcTab,
-      emergency: g?.emergency, grade: g?.grade,
+      emergency: g?.emergency,
+      grade: gradeRef.current >= 0 ? gradeRef.current : undefined, // 셀렉터 값 (EASY=-1은 등급 없음)
       hp: cached ? undefined : oc.hud?.hp,
       levelExp: cached ? undefined : oc.hud?.levelExp,
       result,
