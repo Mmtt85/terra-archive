@@ -29,7 +29,8 @@ import { useEffect, useRef, useState } from "react";
 const SMALL_W = 96, SMALL_H = 54;
 const TILE = 8;            // 국소 비교 타일 크기 (96×54 → 12×6 타일)
 const TICK_MS = 400;       // 판정 주기 (숨겨진 탭에서는 크롬이 1초로 늘린다 — 그래도 충분)
-const FULL_MS = 300;       // 원본 해상도 캔버스 갱신 주기 (매 프레임 그리면 낭비)
+const GRAY_MS = 200;       // 그레이 변환 최소 간격 — 더 자주 온 프레임은 들고만 있는다
+const FPS_IDEAL = 4;       // 캡처 프레임레이트 — 판정 주기(400ms)에 이 이상은 낭비다
 const MOVING = 6.0;        // 평균 절대차(0~255) 이 이상이면 움직이는 중
 const SETTLE_MS = 600;     // 마지막 움직임 이후 이만큼 잠잠하면 안착
 const NEW_SCENE = 6.0;     // 마지막 전송본과 **전체 평균**이 이 이상 다르면 새 화면
@@ -60,13 +61,15 @@ let lockRelease: (() => void) | null = null;
 let running = false;
 
 let smallCx: OffscreenCanvasRenderingContext2D | null = null;
-let fullCv: OffscreenCanvas | null = null;
-let fullCx: OffscreenCanvasRenderingContext2D | null = null;
-let outCv: OffscreenCanvas | null = null;   // 인식용 축소본 (OCR_MAX_W)
+let outCv: OffscreenCanvas | null = null;   // 인식용 캔버스 (여백 크롭 + OCR_MAX_W 축소)
+// 최신 프레임은 **그리지 않고 들고만 있는다** — 매 프레임 원본 해상도 캔버스 복사가
+// "연결만 해도 느리다"(2026-07-26)의 주범이었다. 인식이 필요한 순간(화면당 1회)에만
+// 이 프레임을 그린다. VideoFrame은 하나만 쥐고 새 프레임이 오면 이전 것을 닫는다.
+let heldFrame: VideoFrame | null = null;
 let latestGray: Uint8Array | null = null;
 let prevGray: Uint8Array | null = null;
 let sentGray: Uint8Array | null = null;
-let latestW = 0, latestH = 0, lastFullAt = 0, lastMoveAt = 0;
+let latestW = 0, latestH = 0, lastGrayAt = 0, lastMoveAt = 0;
 let framesIn = 0, ticks = 0, emitted = 0;
 
 let settings: BridgeSettings | null = null;
@@ -95,7 +98,7 @@ export async function connectBridge(): Promise<void> {
   try {
     stream = await navigator.mediaDevices.getDisplayMedia({
       audio: false,
-      video: { frameRate: { ideal: 10 } },
+      video: { frameRate: { ideal: FPS_IDEAL, max: 8 } },
       // 자기 탭은 피커에서 숨긴다(무한거울 방지). 공유 중 창을 바꿔도 다시 안 골라도 된다.
       selfBrowserSurface: "exclude",
       surfaceSwitching: "include",
@@ -112,10 +115,8 @@ export async function connectBridge(): Promise<void> {
 
   const smallCv = new OffscreenCanvas(SMALL_W, SMALL_H);
   smallCx = smallCv.getContext("2d", { willReadFrequently: true });
-  fullCv = new OffscreenCanvas(2, 2);
-  fullCx = fullCv.getContext("2d");
   latestGray = prevGray = sentGray = null;
-  latestW = latestH = lastFullAt = 0;
+  latestW = latestH = lastGrayAt = 0;
   framesIn = ticks = emitted = 0;
   lastMoveAt = Date.now();
 
@@ -144,36 +145,36 @@ export function disconnectBridge(): void {
   if (lockRelease) { lockRelease(); lockRelease = null; }
   if (reader) { void reader.cancel().catch(() => { /* 이미 닫힘 */ }); reader = null; }
   if (stream) { stream.getTracks().forEach((t) => t.stop()); stream = null; }
+  if (heldFrame) { try { heldFrame.close(); } catch { /* 이미 닫힘 */ } heldFrame = null; }
   settings = null; gate = null; latestGray = null; latestW = 0; note = ""; busy = false;
   notify();
 }
 
-/** 수신 — 도착 즉시 그려 두고 close한다. 판정은 하지 않는다(정지 화면이면 여기가 멈추므로). */
+/** 수신 — 최신 프레임을 들고만 있고, 그레이 변환도 GRAY_MS로 조른다. 원본 해상도 그리기는
+ *  여기서 하지 않는다(인식 순간에만). 판정도 하지 않는다(정지 화면이면 여기가 멈추므로). */
 async function pump(): Promise<void> {
   while (running && reader) {
     let res: ReadableStreamReadResult<VideoFrame>;
     try { res = await reader.read(); } catch { break; }
     if (res.done || !res.value) break;
     const frame = res.value;
-    try {
-      const w = frame.displayWidth, h = frame.displayHeight;
-      if (w && h && smallCx && fullCv && fullCx) {
-        latestW = w; latestH = h;
+    const w = frame.displayWidth, h = frame.displayHeight;
+    if (!running || !w || !h || !smallCx) { frame.close(); continue; }
+    // 이전 프레임을 닫고 최신 것으로 교체 — 쥐는 건 항상 하나뿐이다
+    if (heldFrame) { try { heldFrame.close(); } catch { /* 이미 닫힘 */ } }
+    heldFrame = frame;
+    latestW = w; latestH = h;
+    framesIn++;
+    const now = Date.now();
+    if (now - lastGrayAt >= GRAY_MS) {
+      lastGrayAt = now;
+      try {
         smallCx.drawImage(frame, 0, 0, SMALL_W, SMALL_H);
         const px = smallCx.getImageData(0, 0, SMALL_W, SMALL_H).data;
         const g = new Uint8Array(SMALL_W * SMALL_H);
         for (let i = 0, p = 0; i < g.length; i++, p += 4) g[i] = (px[p] * 77 + px[p + 1] * 150 + px[p + 2] * 29) >> 8;
         latestGray = g;
-        framesIn++;
-        const now = Date.now();
-        if (now - lastFullAt >= FULL_MS) {
-          lastFullAt = now;
-          if (fullCv.width !== w || fullCv.height !== h) { fullCv.width = w; fullCv.height = h; }
-          fullCx.drawImage(frame, 0, 0, w, h);
-        }
-      }
-    } catch { /* 프레임 하나는 건너뛴다 */ } finally {
-      frame.close();   // ⚠ 반드시 닫는다 — 안 닫으면 파이프가 막힌다
+      } catch { /* 이 프레임은 건너뛴다 */ }
     }
   }
 }
@@ -187,15 +188,21 @@ function holdLock(): void {
 }
 
 /** 판정 — 프레임 도착과 무관하게 돈다. 그래서 정지 화면도 안착이 확정된다. */
+let lastSayAt = 0;
 function tick(): void {
-  if (!latestGray || !fullCv) return;
+  if (!latestGray) return;
   const now = Date.now();
   ticks++;
   const first = !prevGray;
   const dMove = diff(latestGray, prevGray);
   prevGray = latestGray;
 
-  const say = (phase: string) => { gate = { phase, ticks, emitted, framesIn }; notify(); };
+  // 상태줄 갱신은 국면이 바뀔 때 + 1초 주기로만 — 매 틱 리렌더는 낭비다
+  const say = (phase: string) => {
+    const changed = gate?.phase !== phase;
+    gate = { phase, ticks, emitted, framesIn };
+    if (changed || now - lastSayAt >= 1000) { lastSayAt = now; notify(); }
+  };
 
   if (first) { lastMoveAt = now; say("settling"); return; }
   if (dMove > MOVING) { lastMoveAt = now; say("moving"); return; }
@@ -206,34 +213,33 @@ function tick(): void {
   if (diff(latestGray, sentGray) < NEW_SCENE && tileMax(latestGray, sentGray) < NEW_TILE) {
     say("same"); return;
   }
-  if (fullCv.width < 4) return;
+  if (!heldFrame) return;
   // ⚠ 인식이 도는 중에는 내보내지 않는다. 내보내면 소비자가 버리는데 여기서는 이미
   //   "보냈다"(sentGray)고 기록해버려, **그 화면은 영영 인식되지 않는다.**
   //   다음 틱에 다시 시도하면 되므로 그냥 기다린다 (사용자 지적 2026-07-26:
   //   "너무 빠르게 인식 시도해서 오히려 느려지는 건 없나" — 정확히 이 문제였다).
   if (busy) { say("emit"); return; }
 
-  sentGray = latestGray;
-  emitted++;
-  const w = fullCv.width, h = fullCv.height;
+  const w = latestW, h = latestH;
   // 여백 잘라내기 — 에뮬·미러링 창은 기기 베젤·레터박스 때문에 실제 게임 화면이
   // 프레임의 절반뿐인 경우가 흔하다(2026-07-26 사용자 제보 스크린샷). 그대로 축소하면
   // 글자가 그만큼 더 작아져 인식률이 떨어진다. 어두운 테두리를 먼저 떼고 축소한다.
   const c = contentRect(latestGray, w, h);
-  // 상한을 넘으면 줄여서 넘긴다 (OCR 비용 = 픽셀 수). 이미 작으면 그대로.
+  // 상한을 넘으면 줄여서 넘긴다 (OCR 비용 = 픽셀 수). 원본 해상도 그리기는 여기가
+  // 유일하다 — 들고 있던 프레임에서 크롭·축소를 한 번에 한다 (화면당 1회).
   const outW = Math.min(c.w, OCR_MAX_W);
   const outH = Math.round((c.h / c.w) * outW);
-  let out: OffscreenCanvas = fullCv;
-  if (outW !== w || outH !== h) {
-    outCv ??= new OffscreenCanvas(2, 2);
-    if (outCv.width !== outW || outCv.height !== outH) { outCv.width = outW; outCv.height = outH; }
-    outCv.getContext("2d")!.drawImage(fullCv, c.x, c.y, c.w, c.h, 0, 0, outW, outH);
-    out = outCv;
-  }
+  outCv ??= new OffscreenCanvas(2, 2);
+  if (outCv.width !== outW || outCv.height !== outH) { outCv.width = outW; outCv.height = outH; }
+  try {
+    outCv.getContext("2d")!.drawImage(heldFrame, c.x, c.y, c.w, c.h, 0, 0, outW, outH);
+  } catch { return; }   // 프레임이 막 닫힌 찰나 — sentGray 갱신 전이라 다음 틱에 재시도된다
+  sentGray = latestGray;
+  emitted++;
   const cropped = c.w < w || c.h < h ? ` (여백 잘라 ${c.w}×${c.h})` : "";
   console.debug(`[bridge] 새 화면 → 인식 #${emitted} · ${w}×${h}${cropped} → ${outW}×${outH} (틱 ${ticks} · 수신 ${framesIn})`);
   say("emit");
-  void out.convertToBlob({ type: "image/jpeg", quality: 0.9 }).then((blob) => {
+  void outCv.convertToBlob({ type: "image/jpeg", quality: 0.9 }).then((blob) => {
     const file = new File([blob], "bridge.jpg", { type: "image/jpeg" });
     for (const cb of frameSubs) cb(file);
   });
