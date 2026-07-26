@@ -11783,3 +11783,41 @@ main.site-main > .site-header {
 .story-mode-bar button {
   border-radius: 0;
 }
+
+/* 드롭다운 패널들 — 이벤트 현황·햄버거(주요 탭)·언어·테마 선택 (2026-07-26 사용자 지적) */
+:where(.event-menu, .more-menu, .lang-menu, .rg-topicsel-menu) {
+  border-radius: var(--r-md);
+  overflow: hidden;   /* 내부 행이 모서리를 덮지 않게 */
+}
+/* ⚠ 햄버거 메뉴는 overflow를 자르면 안 된다 — '통합전략 가이드' 호버 서브메뉴가
+   패널 밖으로 펼쳐지는데 hidden이 그걸 잘라 안 보였다 (2026-07-26 회귀).
+   대신 첫/끝 항목에 맞춤 radius를 줘 모서리 덮임을 막는다. */
+.main-tabs.open {
+  border-radius: var(--r-md);
+}
+.main-tabs.open > button:first-child {
+  border-radius: var(--r-md) var(--r-md) 0 0;
+}
+.main-tabs.open > button:last-child {
+  border-radius: 0 0 var(--r-md) var(--r-md);
+}
+
+/* 전수검사 3차 (2026-07-26) — 소개 카드·헤더 로고·스캔 요소·스토리 리더(글자/삽화 크기,
+   대사 블록·컷씬)·플래너 잔여물. 세그먼트(글자·삽화 크기 버튼 그룹)는 컨테이너만 굴린다. */
+:where(.brand-mark, .prio-label, .sc-st) {
+  border-radius: var(--r-sm);
+}
+:where(.about-card, .about-note, .about-card-highlight, .story-disclaimer,
+  .base-main, .cost-calc, .sc-cut, .rg-tabs) {
+  border-radius: var(--r-md);
+}
+:where(.about-hero) {
+  border-radius: var(--r-lg);
+}
+.story-reader-prefs-btns {
+  border-radius: var(--r-sm);
+  overflow: hidden;
+}
+.story-reader-prefs-btns button {
+  border-radius: 0;
+}
