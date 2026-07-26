@@ -14,7 +14,8 @@ import type { LensGoto, LensOutcome } from "./lens/match";
 import { recognizeShot, warmData, ocrLangFor } from "./lens/run";
 import { warmOcr } from "./lens/ocr";
 import { useClipboardWatch } from "./lens/clipwatch";
-import { useBridgeWatch, noteBridge } from "./lens/bridge";
+import { useBridgeWatch, noteBridge, bridgeLock } from "./lens/bridge";
+import { BridgeTopicButton } from "./lens/bridge-button";
 import { useDropWatch } from "./lens/dropwatch";
 
 // 스샷 레이더 도움말 — 순수 설명 전용 모달 (입력 기능은 페이지 레벨 자동인식이 전담)
@@ -1028,13 +1029,16 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   // (2026-07-26 제보: 사미 플레이 중 쉐이·살카즈로 튐). 다른 테마 메인화면을 띄우면 교체된다.
   const lensAnchor = useRef<string | null>(null);
   const lensBusy = useRef(false);
-  const handleLensShot = async (file: File) => {
+  const handleLensShot = async (file: File, live = false) => {
     if (lensBusy.current) return;
     lensBusy.current = true;
     setLensThumb((prev) => { if (prev) URL.revokeObjectURL(prev); return URL.createObjectURL(file); });
     flashLensMsg(t("스캔 중…"));
     try {
-      const oc = await recognizeShot("rogue", file, lensAnchor.current ?? topicRef.current, locale);
+      // 테마별 게임연결로 고정돼 있으면 그 테마가 절대 기준 — 앵커·사이트 토픽보다 우선
+      const lock = bridgeLock();
+      const oc = await recognizeShot("rogue", file, lock?.topic ?? lensAnchor.current ?? topicRef.current,
+        locale, { lock: !!lock, live });
       if (oc.anchor) lensAnchor.current = oc.anchor;
       if (oc.target.kind === "goto") {
         onLensGoto(oc.target.goto);
@@ -1058,7 +1062,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   const lensClip = useClipboardWatch(lensAuto && !lensOpen, handleLensShot);
   // 게임 브리지(크롬 확장) — 클립보드와 같은 프레임 공급원. 스샷 레이더 토글과 무관하게,
   // 연결돼 있으면 게임 화면이 바뀔 때마다 여기로 들어와 같은 판정·이동 경로를 탄다.
-  useBridgeWatch(!lensOpen, handleLensShot);
+  useBridgeWatch(!lensOpen, (file) => handleLensShot(file, true));
   // 자동인식 동안 창 전체가 드롭존 — 드래그 중이면 필을 드롭 가능 상태로 강조
   const lensDragging = useDropWatch(lensAuto && !lensOpen, handleLensShot);
   // 하이라이트 카드로 스크롤 (렌더 뒤 한 프레임 양보).
@@ -1228,6 +1232,8 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
         {/* 스샷 레이더 — 버튼 자체가 자동인식 토글, ?는 도움말 모달. KR/EN/JA 화면 인식 (2026-07-25).
             흑류수해(rogue_6)는 CN 선행이라 중국어 화면도 전 로케일에서 인식한다. */}
         <div className="lens-open-wrap">
+          {/* 테마별 게임연결 — 여기서 연결하면 이 테마로만 인식이 고정된다 (2026-07-26) */}
+          <BridgeTopicButton topic={topic} name={TOPICS.find((tp) => tp.id === topic)?.name ?? topic} t={t} />
           <button type="button" className={`lens-open-btn${lensAuto ? " on" : ""}`} aria-pressed={lensAuto}
             title={t("클릭해 스샷 자동인식을 켜고 끕니다 — 켜두면 게임 화면을 캡처만 해도 바로 인식·적용됩니다")}
             onClick={toggleLensAuto}>

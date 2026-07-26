@@ -1416,6 +1416,16 @@ const D: Record<string, Pair> = {
   "수신": ["frames", "受信"],
   "인식": ["read", "認識"],
   "인식 중…": ["Reading…", "認識中…"],
+  "고정": ["locked", "固定"],
+  "다시 연결하면 이 테마로만 인식하도록 고정됩니다": [
+    "Reconnect here to lock recognition to this theme only",
+    "ここで接続し直すと、このテーマのみ認識するよう固定されます",
+  ],
+  "게임 창을 골라 이 테마로만 인식하도록 연결합니다": [
+    "Pick your game window — recognition will be locked to this theme",
+    "ゲームウィンドウを選ぶと、このテーマのみ認識するよう接続します",
+  ],
+
   "화면 변하는 중": ["Screen changing", "画面が変化中"],
   "멈추길 기다리는 중": ["Waiting for it to settle", "静止待ち"],
   "같은 화면": ["Same screen", "同じ画面"],

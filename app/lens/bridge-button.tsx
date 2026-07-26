@@ -22,7 +22,7 @@ const PHASE: Record<string, string> = {
 };
 
 export default function BridgeButton({ t }: { t: T }) {
-  const { settings, gate, error, busy, note } = useBridgeStatus();
+  const { settings, gate, error, busy, note, lock } = useBridgeStatus();
   const supported = useSyncExternalStore(noSubscribe, bridgeSupported, () => false);
   if (!supported) return null;   // 사파리·파이어폭스 — 스샷 경로는 그대로 쓸 수 있다
 
@@ -43,6 +43,7 @@ export default function BridgeButton({ t }: { t: T }) {
       </button>
       {on && settings && (
         <span className={`bridge-status${busy ? " busy" : ""}`} aria-live="polite">
+          {lock && <b>{t(lock.name)} {t("고정")} · </b>}
           <b>{phase}</b>
           {` · ${settings.width}×${settings.height}`}
           {gate ? ` · ${t("수신")} ${gate.framesIn} · ${t("인식")} ${gate.emitted}` : ""}
@@ -51,5 +52,30 @@ export default function BridgeButton({ t }: { t: T }) {
       )}
       {!on && error && <span className="bridge-status err">{error}</span>}
     </span>
+  );
+}
+
+/** 테마별 게임연결 — /rogue 툴바용 (사용자 확정 2026-07-26: "사미록라의 게임연결 버튼은
+ *  무조건 사미록라만"). 여기서 연결하면 인식이 그 테마 밖을 아예 보지 않는다. */
+export function BridgeTopicButton({ topic, name, t }: { topic: string; name: string; t: T }) {
+  const { settings, lock } = useBridgeStatus();
+  const supported = useSyncExternalStore(noSubscribe, bridgeSupported, () => false);
+  if (!supported) return null;
+
+  const mine = !!settings && lock?.topic === topic;   // 이 테마로 고정 연결됨
+  const other = !!settings && !mine;                  // 다른 곳에서 연결됨 (전역 or 다른 테마)
+  return (
+    <button
+      type="button"
+      className={`lens-open-btn bridge-topic-btn${mine ? " on" : ""}`}
+      title={mine
+        ? t("게임 연결 끊기")
+        : other
+          ? t("다시 연결하면 이 테마로만 인식하도록 고정됩니다")
+          : t("게임 창을 골라 이 테마로만 인식하도록 연결합니다")}
+      onClick={() => (mine ? disconnectBridge() : void connectBridge({ topic, name }))}
+    >
+      <span aria-hidden>{mine ? "◉" : "○"}</span> {mine ? t("게임 연결됨") : t("게임 연결")}
+    </button>
   );
 }

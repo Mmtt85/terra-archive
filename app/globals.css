@@ -11138,6 +11138,15 @@ main.site-main > .site-header {
     display: inline;
   }
 }
+/* 테마별 게임연결 버튼 (/rogue 툴바) — 켜지면 그 테마로 인식이 고정된 상태 */
+.bridge-topic-btn.on {
+  border-color: var(--accent, #b98a2f);
+  color: var(--accent, #b98a2f);
+}
+.bridge-topic-btn.on > span[aria-hidden] {
+  animation: bridge-pulse 2s ease-in-out infinite;
+}
+
 /* 게임 연결 버튼 — 연결 중에는 계속 캡처가 도는 상태이므로 한눈에 보여야 한다. */
 .bridge-wrap {
   position: relative;

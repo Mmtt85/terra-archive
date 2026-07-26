@@ -81,6 +81,15 @@ export type Normalizer = (s: string | null | undefined) => string;
 export const normFor = (locale?: string): Normalizer =>
   locale === "en" ? normTextEn : locale === "ja" ? normTextJa : normText;
 
+/** nm의 바이그램이 전체 텍스트에 얼마나 포함되는지 (0~1) — 테마 이름 앵커 판정용 */
+function bigramShare(nm: string, allN: string): number {
+  const bg = bigrams(nm);
+  if (!bg.size) return 0;
+  const allBG = bigrams(allN);
+  let hit = 0;
+  for (const g of bg) if (allBG.has(g)) hit++;
+  return hit / bg.size;
+}
 const bigrams = (s: string): Set<string> => {
   const set = new Set<string>();
   for (let i = 0; i < s.length - 1; i++) set.add(s.slice(i, i + 2));
@@ -237,7 +246,7 @@ const ANCHOR_MIN = 0.7;
 export function analyzeLines(
   rawLines: string[],
   index: LensIndex,
-  opts?: { context?: { topic?: string }; norm?: Normalizer },
+  opts?: { context?: { topic?: string; lock?: boolean }; norm?: Normalizer },
 ): LensOutcome {
   const norm = opts?.norm ?? normText;
   const linesN = rawLines.map((l) => norm(l)).filter((l) => l.length >= 2);
@@ -260,6 +269,31 @@ export function analyzeLines(
   // 각뿔을 받을 때마다 암호판이 열렸다. 테마 정보가 전혀 없는 줄이므로 통째로 버린다.
   const linesM = linesN.filter((l) =>
     !l.startsWith("오리지늄각뿔") && !/모집권\d*$/.test(l) && !/1명모집$/.test(l));
+
+  // ── 테마 하드 고정 (테마별 게임연결, 사용자 확정 2026-07-26) ─────────────────
+  // "사미록라의 게임연결 버튼은 무조건 사미록라만" — 이 테마 밖은 아예 보지 않는다.
+  // 다른 테마로의 전환·되묻기가 원천적으로 불가능하고, 매칭도 1/6 인덱스만 봐서 빠르다.
+  if (opts?.context?.lock && opts.context.topic) {
+    const topic = opts.context.topic;
+    const name = index.entries.find((e) => e.topic === topic)?.topicName ?? topic;
+    const w = within(topic, linesM, index);
+    if (w && w.entities.some((e) => e.nameHit)) {
+      return {
+        screens, entities: w.entities,
+        topics: [{ topic, topicName: name, score: 1 }],
+        section: w.section, target: { kind: "goto", goto: w.goto },
+      };
+    }
+    // 이름 매칭이 없어도 테마 이름(메인 화면)이 보이면 지도로
+    const nm = norm(name);
+    if (nm.length >= 5 && (allN.includes(nm) || bigramShare(nm, allN) >= ANCHOR_MIN)) {
+      return {
+        screens, entities: [], topics: [{ topic, topicName: name, score: 1 }],
+        section: null, target: { kind: "goto", goto: { page: "rogue", topic, view: "map" } }, anchor: topic,
+      };
+    }
+    return { screens, entities: [], topics: [], section: null, target: { kind: "none" } };
+  }
 
   // 1패스: 전체 인덱스 매칭 → 토픽 다수결 (IDF 분산으로 범용 문구 무력화)
   const hits = matchEntries(linesM, index.entries);

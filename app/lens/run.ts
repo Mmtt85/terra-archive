@@ -72,8 +72,13 @@ export function warmData(mode: LensMode, locale = "ko"): void {
 }
 
 /** 스크린샷 1장 인식 — 모드별 단계형 파이프라인. topic은 rogue 모드의 현재 토픽(사전확률).
- *  locale(ko|en|ja)은 rogue 모드에서 OCR 모델·인덱스·정규화를 화면 언어에 맞춘다. */
-export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, locale = "ko"): Promise<LensOutcome> {
+ *  locale(ko|en|ja)은 rogue 모드에서 OCR 모델·인덱스·정규화를 화면 언어에 맞춘다.
+ *  opts.lock — 테마 하드 고정(테마별 게임연결): topic 밖은 아예 보지 않는다.
+ *  opts.live — 라이브 스트림용 빠른 경로: 비싼 폴백 패스(PSM3·칩 재시도)를 생략한다.
+ *    스샷은 한 장이 전부라 폴백까지 짜내야 하지만, 스트림은 다음 프레임이 오므로
+ *    못 읽으면 그냥 넘기는 게 총 지연이 짧다 (사용자 체감 "너무 느림" 대응 2026-07-26). */
+export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, locale = "ko",
+  opts?: { lock?: boolean; live?: boolean }): Promise<LensOutcome> {
   let lines: string[];
   let oc: LensOutcome;
   if (mode === "recruit") {
@@ -104,7 +109,7 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
     lines = await session.sparse();
     let chipsRan = false;
     if (wantsChipPass(lines)) { chipsRan = true; lines = lines.concat(await session.chips()); }
-    const ctx = { context: { topic }, norm };
+    const ctx = { context: { topic, lock: opts?.lock }, norm };
     oc = analyzeLines(lines, index, ctx);
     // 중국어(흑류수해 CN 클라) 분기 — cn 화면은 무조건 흑류수해(사용자 확정). chi_sim으로 cn
     // 이름을 매칭한다. 이미지가 고정이라 zh 패스는 결정적 → 한 번만 돌리고 캐시(zhRan).
@@ -119,20 +124,23 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
     };
     // 1차 게이트 — KR(kor)은 중국어에서 무신호라 완전 무신호일 때만. EN/JA는 프라이머리(특히
     // jpn)가 한자를 kanji로 읽어 약한 표·tie를 낼 수 있어(cn 화면), 확신 goto가 아니면 시도한다.
-    if ((oc.target.kind === "none" && !oc.topics.length && !oc.screens.length)
-        || (locale !== "ko" && oc.target.kind !== "goto")) {
+    // 테마 고정 시 흑류수해(CN 화면)가 아니면 중국어 패스 자체가 무의미하다 — 생략.
+    const zhPossible = !opts?.lock || topic === "rogue_6";
+    if (zhPossible && ((oc.target.kind === "none" && !oc.topics.length && !oc.screens.length)
+        || (locale !== "ko" && oc.target.kind !== "goto"))) {
       await tryZh();
     }
     // 폴백 패스: none·tie(판정 미완) 또는 하이라이트형 goto(목록 표시 — 엔티티 완성도가 중요,
     // 예: 분대 4개 중 PSM11이 3개만 읽은 경우)일 때 PSM3·칩으로 보강 후 재판정.
-    const needMore = !zhHit && (oc.target.kind !== "goto"
+    // 라이브 스트림은 생략 — 다음 프레임이 오므로 짜내지 않는 쪽이 총 지연이 짧다.
+    const needMore = !opts?.live && !zhHit && (oc.target.kind !== "goto"
       || (oc.target.goto.page === "rogue" && !oc.target.goto.modal && !!oc.target.goto.highlight));
     if (needMore) {
       lines = lines.concat(await session.auto());
       if (!chipsRan) lines = lines.concat(await session.chips());
       oc = analyzeLines(lines, index, ctx);
       // 폴백까지 실패(무신호)면 마지막으로 중국어를 시도한다 (zhRan이면 이미 돌려 스킵)
-      if (oc.target.kind === "none") await tryZh();
+      if (zhPossible && oc.target.kind === "none") await tryZh();
     }
     // 좌하단 난이도 배지 — 있으면 이동 목표에 스탬프해 난이도 셀렉터에 자동 적용 (2026-07-24)
     if (oc.target.kind !== "none") {

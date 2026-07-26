@@ -48,6 +48,9 @@ export type BridgeSettings = {
   frameRate: number | null; devicePixelRatio: number;
 };
 export type BridgeGate = { phase: string; ticks: number; emitted: number; framesIn: number };
+// 테마별 게임연결(사용자 확정 2026-07-26: "사미록라의 게임연결 버튼은 무조건 사미록라만") —
+// 연결 시 테마를 하드 고정하면 인식이 그 테마 밖을 아예 보지 않는다.
+export type BridgeLock = { topic: string; name: string };
 
 export const bridgeSupported = (): boolean =>
   typeof navigator !== "undefined"
@@ -76,6 +79,7 @@ let settings: BridgeSettings | null = null;
 let gate: BridgeGate | null = null;
 let error = "";
 let busy = false;   // 지금 인식이 도는 중인가 (useBridgeWatch가 갱신)
+let lock: BridgeLock | null = null;   // 테마 하드 고정 (테마별 연결 버튼)
 let note = "";      // 마지막 인식 결과 — 각 탭이 알려준다 (헤더 상태줄에 그대로 보인다)
 
 const frameSubs = new Set<(f: File) => void>();
@@ -86,14 +90,17 @@ export const bridgeSettings = () => settings;
 export const bridgeGate = () => gate;
 export const bridgeError = () => error;
 export const bridgeBusy = () => busy;
+export const bridgeLock = () => lock;
 export const bridgeNote = () => note;
 /** 각 탭의 handleLensShot이 판정 결과를 한 줄로 알려준다 — "잘 안된다"의 원인을
  *  헤더에서 바로 보기 위한 것이다 (사용자 요청 2026-07-26). */
 export function noteBridge(text: string): void { note = text; notify(); }
 
-/** 창 선택 → 캡처 시작. 사용자 제스처(버튼 클릭) 안에서만 부를 수 있다. */
-export async function connectBridge(): Promise<void> {
+/** 창 선택 → 캡처 시작. 사용자 제스처(버튼 클릭) 안에서만 부를 수 있다.
+ *  withLock을 주면 그 테마로 하드 고정 — 인식이 다른 테마로 절대 넘어가지 않는다. */
+export async function connectBridge(withLock?: BridgeLock): Promise<void> {
   disconnectBridge();
+  lock = withLock ?? null;
   error = ""; notify();
   try {
     stream = await navigator.mediaDevices.getDisplayMedia({
@@ -146,7 +153,7 @@ export function disconnectBridge(): void {
   if (reader) { void reader.cancel().catch(() => { /* 이미 닫힘 */ }); reader = null; }
   if (stream) { stream.getTracks().forEach((t) => t.stop()); stream = null; }
   if (heldFrame) { try { heldFrame.close(); } catch { /* 이미 닫힘 */ } heldFrame = null; }
-  settings = null; gate = null; latestGray = null; latestW = 0; note = ""; busy = false;
+  settings = null; gate = null; latestGray = null; latestW = 0; note = ""; busy = false; lock = null;
   notify();
 }
 
@@ -298,7 +305,7 @@ export function useBridgeStatus() {
     statusSubs.add(cb);
     return () => { statusSubs.delete(cb); };
   }, []);
-  return { settings, gate, error, busy, note };
+  return { settings, gate, error, busy, note, lock };
 }
 
 /** 프레임 공급원 — useClipboardWatch와 같은 모양이라 각 탭이 그대로 갈아 끼울 수 있다.
