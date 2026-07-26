@@ -1,6 +1,6 @@
 "use client";
 
-import { lazy, startTransition, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, memo, startTransition, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useI18n, tokenName, rich, type ExtraI18n, type Locale, type T } from "./i18n";
 import { RULES } from "./rules";
 import { useConfirm } from "./confirm";
@@ -2036,7 +2036,35 @@ function FlowModal({ plan, opMap, onClose, onShowOperator }: { plan: Plan; opMap
   );
 }
 
-function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOperator }: { allOps: InfraOp[]; ownedIds: Set<string>; eliteById: Map<string, Elite>; onApply: (ids: Set<string>, elite: Map<string, Elite>) => void; onClose: () => void; onShowOperator?: (id: string) => void }) {
+// 보유 오퍼 카드 — memo로 감싼다. 카드가 405장이라 memo가 없으면 체크 한 번에 전 카드가
+// 다시 렌더돼 클릭 응답이 CPU 4배 느린 환경에서 ~49ms까지 늘었다 (INP 악화, 2026-07-26 실측).
+// props를 전부 원시값·안정 참조로 유지해야 memo가 듣는다 — options는 op에서 파생되므로
+// 배열을 넘기지 않고 안에서 계산한다.
+const RosterCard = memo(function RosterCard({ op, owned, elite, onToggle, onElite, onShowOperator, t }: {
+  op: InfraOp; owned: boolean; elite: Elite;
+  onToggle: (id: string) => void; onElite: (id: string, elite: Elite) => void;
+  onShowOperator?: (id: string) => void; t: T;
+}) {
+  const options = eliteOptions(op);
+  return (
+    <div className={`roster-card${owned ? " owned" : ""}${op.unreleased ? " future" : ""}`}>
+      <button type="button" onClick={() => onToggle(op.id)} title={op.name}>
+        <img src={op.image} alt={op.name} width={180} height={180} loading="lazy" className={onShowOperator ? "op-link" : undefined}
+          onClick={(event) => { if (onShowOperator) { event.stopPropagation(); onShowOperator(op.id); } }} />
+        <span>{op.name}{op.unreleased && <em className="future-badge">{t("미실장")}</em>}</span>
+      </button>
+      {owned && options.length > 0 && (
+        <div className="elite-toggle" role="group" aria-label={t("{name} 정예화 단계", { name: op.name })}>
+          {options.map((option) => (
+            <button key={option} type="button" className={elite === option ? "selected" : ""} onClick={() => onElite(op.id, option)}>{t(ELITE_LABEL[option])}</button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+});
+
+function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOperator }:{ allOps: InfraOp[]; ownedIds: Set<string>; eliteById: Map<string, Elite>; onApply: (ids: Set<string>, elite: Map<string, Elite>) => void; onClose: () => void; onShowOperator?: (id: string) => void }) {
   const { t } = useI18n();
   const { confirm, dialog: confirmDialog } = useConfirm();
   const [draft, setDraft] = useState<Set<string>>(new Set(ownedIds));
@@ -2050,58 +2078,50 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
   const [sortKey, setSortKey] = useState("기본");
   const [sortAsc, setSortAsc] = useState(true);
   const keyword = searchTerm.trim().toLowerCase();
-  // 백과사전과 동일한 정렬 (직군·세부 직군·출신지·종족 포함). 기본 = 6성↓ → KR 출시 최신순
-  const filteredOps = allOps.filter((op) => !keyword || op.name.toLowerCase().includes(keyword) || op.faction.toLowerCase().includes(keyword));
-  const sortOps = (list: InfraOp[]): InfraOp[] => {
-    if (sortKey === "기본") {
-      const base = [...list].sort((a, b) => b.rarity - a.rarity || b.seq - a.seq);
-      return sortAsc ? base : base.reverse();
-    }
-    const valueOf = (op: InfraOp): string | number =>
-      sortKey === "이름" ? op.name : sortKey === "성급" ? op.rarity : sortKey === "발매순" ? op.seq
-      : sortKey === "출신지" ? op.birthplace : sortKey === "종족" ? op.race
-      : sortKey === "직군" ? JOB_ORDER.indexOf(op.jobCode) : sortKey === "세부 직군" ? op.subProfession
-      : op.faction;
-    const direction = sortAsc ? 1 : -1;
-    return [...list].sort((a, b) => {
-      const left = valueOf(a), right = valueOf(b);
-      const compared = typeof left === "number" && typeof right === "number" ? left - right : String(left).localeCompare(String(right), "ko");
-      return compared !== 0 ? compared * direction : a.name.localeCompare(b.name, "ko");
-    });
-  };
-  // 미실장(중국 선행) 오퍼는 위쪽에 따로 빼서 보여준다 (사용자 요청) — 각 그룹 내부는 선택 정렬
-  const futureOps = sortOps(filteredOps.filter((op) => op.unreleased));
-  const releasedOps = sortOps(filteredOps.filter((op) => !op.unreleased));
-  const visible = [...futureOps, ...releasedOps];
-  const toggle = (id: string) => setDraft((current) => {
+  // 백과사전과 동일한 정렬 (직군·세부 직군·출신지·종족 포함). 기본 = 6성↓ → KR 출시 최신순.
+  // **검색어·정렬이 그대로면 다시 계산하지 않는다** — 체크 한 번마다 405개를 필터 + 두 번
+  // 정렬하던 것이 클릭 응답(INP)의 최대 비용이었다 (2026-07-26 실측).
+  const { futureOps, releasedOps, visible } = useMemo(() => {
+    const filtered = allOps.filter((op) => !keyword || op.name.toLowerCase().includes(keyword) || op.faction.toLowerCase().includes(keyword));
+    const sortOps = (list: InfraOp[]): InfraOp[] => {
+      if (sortKey === "기본") {
+        const base = [...list].sort((a, b) => b.rarity - a.rarity || b.seq - a.seq);
+        return sortAsc ? base : base.reverse();
+      }
+      const valueOf = (op: InfraOp): string | number =>
+        sortKey === "이름" ? op.name : sortKey === "성급" ? op.rarity : sortKey === "발매순" ? op.seq
+        : sortKey === "출신지" ? op.birthplace : sortKey === "종족" ? op.race
+        : sortKey === "직군" ? JOB_ORDER.indexOf(op.jobCode) : sortKey === "세부 직군" ? op.subProfession
+        : op.faction;
+      const direction = sortAsc ? 1 : -1;
+      return [...list].sort((a, b) => {
+        const left = valueOf(a), right = valueOf(b);
+        const compared = typeof left === "number" && typeof right === "number" ? left - right : String(left).localeCompare(String(right), "ko");
+        return compared !== 0 ? compared * direction : a.name.localeCompare(b.name, "ko");
+      });
+    };
+    // 미실장(중국 선행) 오퍼는 위쪽에 따로 빼서 보여준다 (사용자 요청) — 각 그룹 내부는 선택 정렬
+    const future = sortOps(filtered.filter((op) => op.unreleased));
+    const released = sortOps(filtered.filter((op) => !op.unreleased));
+    return { futureOps: future, releasedOps: released, visible: [...future, ...released] };
+  }, [allOps, keyword, sortKey, sortAsc]);
+  // useCallback 필수 — RosterCard의 memo가 이 참조로 판정한다
+  const toggle = useCallback((id: string) => setDraft((current) => {
     const next = new Set(current);
     if (next.has(id)) next.delete(id); else next.add(id);
     return next;
-  });
-  const setElite = (id: string, elite: Elite) => setEliteDraft((current) => {
+  }), []);
+  const setElite = useCallback((id: string, elite: Elite) => setEliteDraft((current) => {
     const next = new Map(current);
     if (elite === 2) next.delete(id); else next.set(id, elite); // 2정이 기본값이라 별도 저장 불필요
     return next;
-  });
+  }), []);
   const renderCard = (op: InfraOp) => {
-    const owned = draft.has(op.id);
     const options = eliteOptions(op);
     const elite = Math.min(eliteDraft.get(op.id) ?? 2, options.length ? options[options.length - 1] : 2) as Elite;
     return (
-      <div key={op.id} className={`roster-card${owned ? " owned" : ""}${op.unreleased ? " future" : ""}`}>
-        <button type="button" onClick={() => toggle(op.id)} title={op.name}>
-          <img src={op.image} alt={op.name} width={180} height={180} loading="lazy" className={onShowOperator ? "op-link" : undefined}
-            onClick={(event) => { if (onShowOperator) { event.stopPropagation(); onShowOperator(op.id); } }} />
-          <span>{op.name}{op.unreleased && <em className="future-badge">{t("미실장")}</em>}</span>
-        </button>
-        {owned && options.length > 0 && (
-          <div className="elite-toggle" role="group" aria-label={t("{name} 정예화 단계", { name: op.name })}>
-            {options.map((option) => (
-              <button key={option} type="button" className={elite === option ? "selected" : ""} onClick={() => setElite(op.id, option)}>{t(ELITE_LABEL[option])}</button>
-            ))}
-          </div>
-        )}
-      </div>
+      <RosterCard key={op.id} op={op} owned={draft.has(op.id)} elite={elite}
+        onToggle={toggle} onElite={setElite} onShowOperator={onShowOperator} t={t} />
     );
   };
   // 성급 단위 일괄 조작 — 보유 체크/해제, 정예화 노정예/1정/2정
