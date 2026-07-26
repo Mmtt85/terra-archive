@@ -6,7 +6,7 @@
 // 연결 전에는 아무것도 그리지 않아 헤더에 늘어나는 것이 없다.
 
 import { useSyncExternalStore } from "react";
-import { useBridgeStatus, connectBridge, disconnectBridge, bridgeSupported, bridgeLogCount } from "./bridge";
+import { useBridgeStatus, connectBridge, disconnectBridge, bridgeSupported, bridgeLogCount, bridgeLogFor, downloadBridgeLog } from "./bridge";
 import type { T } from "../i18n";
 
 // 지원 여부는 navigator를 봐야 알 수 있어 서버에선 판단할 수 없다. 그냥 호출하면
@@ -16,6 +16,7 @@ const noSubscribe = () => () => { /* 값이 바뀌지 않는다 */ };
 
 const PHASE: Record<string, string> = {
   moving: "화면 변하는 중", settling: "멈추길 기다리는 중", same: "같은 화면", emit: "새 화면",
+  battle: "전투 중", replay: "본 화면 재적용",
 };
 
 /** 헤더 상태 표시 — **현황만** 보여준다 (사용자 확정 2026-07-26: 헤더에 버튼 없음).
@@ -47,17 +48,31 @@ export function BridgeTopicButton({ topic, name, t }: { topic: string; name: str
   const mine = !!settings && lock?.topic === topic;   // 이 테마로 고정 연결됨
   const other = !!settings && !mine;                  // 다른 테마에서 연결됨
   return (
-    <button
-      type="button"
-      className={`lens-open-btn bridge-topic-btn${mine ? " on" : ""}`}
-      title={mine
-        ? t("게임 연결 끊기")
-        : other
-          ? t("다시 연결하면 이 테마로만 인식하도록 고정됩니다")
-          : t("게임 창을 골라 이 테마로만 인식하도록 연결합니다")}
-      onClick={() => (mine ? disconnectBridge() : void connectBridge({ topic, name }))}
-    >
-      <span aria-hidden>{mine ? "◉" : "○"}</span> {mine ? t("게임 연결됨") : t("게임 연결")}
-    </button>
+    <>
+      <button
+        type="button"
+        className={`lens-open-btn bridge-topic-btn${mine ? " on" : ""}`}
+        title={mine
+          ? t("게임 연결 끊기")
+          : other
+            ? t("다시 연결하면 이 테마로만 인식하도록 고정됩니다")
+            : t("게임 창을 골라 이 테마로만 인식하도록 연결합니다")}
+        onClick={() => (mine ? disconnectBridge() : void connectBridge({ topic, name }))}
+      >
+        <span aria-hidden>{mine ? "◉" : "○"}</span> {mine ? t("게임 연결됨") : t("게임 연결")}
+      </button>
+      {/* 플레이 로그는 자동으로 내려가지 않는다 (사용자 확정 2026-07-26) — 이 버튼으로만.
+          연결 중에도, 끊은 뒤에도(다음 연결 전까지) 받을 수 있다. */}
+      {bridgeLogFor(topic) && (
+        <button
+          type="button"
+          className="lens-open-btn bridge-log-btn"
+          title={t("이번 게임 연결의 플레이 기록을 JSON으로 내려받습니다")}
+          onClick={downloadBridgeLog}
+        >
+          <span aria-hidden>⤓</span> {t("리플레이 다운받기")}
+        </button>
+      )}
+    </>
   );
 }

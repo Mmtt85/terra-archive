@@ -22,6 +22,7 @@
 //   안 와도 틱은 돈다)로 나눴다. 5분 뒤의 '집중 스로틀'은 Web Lock을 쥐어 면제받는다.
 
 import { useEffect, useRef, useState } from "react";
+import type { LensOutcome } from "./match";
 
 // 변화 감지용 축소본. 전투노드 화면끼리는 맵·패널이 그대로고 **오른쪽 패널 글자만**
 // 바뀌므로, 너무 거칠면 그 차이가 전체 평균에 묻힌다 (2026-07-26 제보: 전투노드 →
@@ -37,6 +38,12 @@ const NEW_SCENE = 6.0;     // 마지막 전송본과 **전체 평균**이 이 �
 // 한 타일이라도 이만큼 바뀌면 새 화면으로 본다 — 화면 대부분이 같고 글자만 바뀌는
 // 경우(전투노드 → 전투노드)를 잡는 조건이다. 전체 평균만 보면 절대 못 넘는다.
 const NEW_TILE = 11.0;  // 15→11 (영상5: 작전노드→작전노드 전환 누락 — 패널 글자 변화가 15를 못 넘는 케이스)
+// 전투 홀드 — 전투 화면으로 판정된 뒤에는 이만큼 **전체**가 바뀔 때만 인식을 재개한다
+// (승리/실패·일시정지처럼 화면이 통째로 바뀌는 전환). 전투 중 타이머·이펙트의 국소
+// 변화가 매번 tileMax를 넘어 헛 OCR을 돌리던 낭비 제거 (2026-07-26 "무시가능한 건 무시").
+const BATTLE_EXIT = 8.0;
+const BATTLE_RECHECK_MS = 20_000;  // 안전망 — 이만큼 지나면 한 번 다시 읽어 홀드 오진을 자가치유
+const MEMO_MAX = 8;                // 화면 판정 캐시 크기 (맵↔노드 왕복 재인식 생략)
 // 인식에 넘기기 전 가로 상한 — OCR 비용은 픽셀 수에 비례해서 여기가 속도의 전부다.
 // 픽스처 2배 축소 회귀에서 이동 판정이 14/17로 살아남았고(실패는 대부분 난이도 배지),
 // 브라우저 실측도 1368×832 3.3초 → 684×416 1.3초였다. 게임을 돌리는 중에 도는 처리라
@@ -64,6 +71,7 @@ export type BridgeLogEvent = {
   levelExp?: [number, number];      // 지휘 레벨 경험치 추정 (OCR)
   result?: string;                  // 작전 성공/실패
   fractions?: [number, number][];   // 화면의 모든 x/y 원시값 (검증용)
+  cached?: boolean;                 // 화면 판정 캐시 재적용 (OCR 없이 지난 판정 — HUD 수치 없음)
 };
 
 export const bridgeSupported = (): boolean =>
@@ -95,10 +103,20 @@ let error = "";
 let busy = false;   // 지금 인식이 도는 중인가 (useBridgeWatch가 갱신)
 let lock: BridgeLock | null = null;   // 테마 하드 고정 (테마별 연결 버튼)
 let note = "";      // 마지막 인식 결과 — 각 탭이 알려준다 (헤더 상태줄에 그대로 보인다)
-let runLog: BridgeLogEvent[] = [];   // 이번 연결의 플레이 로그
+let runLog: BridgeLogEvent[] = [];   // 이번 연결의 플레이 로그 — 끊은 뒤에도 다음 연결까지 유지
 let startedAt = "";
+// 연결을 끊은 뒤 리플레이 다운로드용 스냅샷 — lock/settings는 끊는 순간 사라지므로 여기 남긴다
+let logMeta: { topic: string | null; name: string | null; startedAt: string; endedAt: string;
+  width: number | null; height: number | null } | null = null;
+
+// 화면 판정 캐시 — 최근에 본 화면(축소 그레이)과 그때의 판정. 같은 화면으로 돌아오면
+// (맵↔노드 모달 왕복이 전형) OCR 없이 판정을 재적용한다 (2026-07-26 속도 요청).
+let lastEmitGray: Uint8Array | null = null;
+let sceneMemos: { gray: Uint8Array; outcome: LensOutcome }[] = [];
+let battleHold = false, battleHoldAt = 0;
 
 const frameSubs = new Set<(f: File) => void>();
+const replaySubs = new Set<(oc: LensOutcome) => void>();
 const statusSubs = new Set<() => void>();
 const notify = () => { for (const cb of statusSubs) cb(); };
 
@@ -118,16 +136,36 @@ export function logBridgeEvent(ev: BridgeLogEvent): void {
   notify();
 }
 export const bridgeLogCount = () => runLog.length;
+/** 이 테마의 리플레이(플레이 로그)가 있는가 — 연결 중이든 끊은 뒤든 (다음 연결 전까지). */
+export const bridgeLogFor = (topic: string): boolean =>
+  runLog.length > 0 && (settings ? lock?.topic === topic : logMeta?.topic === topic);
 
-/** 로그를 JSON 파일로 내려준다 — 연결 종료 시 자동 호출 (기록이 있을 때만). */
-function downloadRunLog(): void {
+/** 각 탭이 라이브 인식 결과를 알려준다 — ① 전투 화면이면 전투 홀드에 들어가고(큰 전환까지
+ *  인식 중단), ② 확신 이동(goto)이면 화면 판정 캐시에 남겨 같은 화면 복귀 시 OCR을 생략한다. */
+export function memoBridgeScene(outcome: LensOutcome): void {
+  if (outcome.battle) { battleHold = true; battleHoldAt = Date.now(); return; }
+  if (!lastEmitGray || outcome.target.kind !== "goto") return;
+  const g = lastEmitGray;
+  sceneMemos = sceneMemos.filter((m) => m.gray !== g);
+  sceneMemos.push({ gray: g, outcome });
+  if (sceneMemos.length > MEMO_MAX) sceneMemos.shift();
+}
+
+/** 리플레이 다운받기 — 버튼을 눌러야만 내려간다 (사용자 확정 2026-07-26: 자동 다운로드 금지).
+ *  연결 중에도, 끊은 뒤에도(다음 연결 전까지) 받을 수 있다. */
+export function downloadBridgeLog(): void {
   if (!runLog.length) return;
+  const meta = settings
+    ? { topic: lock?.topic ?? null, name: lock?.name ?? null, startedAt,
+        endedAt: new Date().toISOString(), width: settings.width, height: settings.height }
+    : logMeta;
+  if (!meta) return;
   const payload = {
     site: "terra-archive",
-    theme: lock?.topic ?? null,
-    themeName: lock?.name ?? null,
-    startedAt, endedAt: new Date().toISOString(),
-    capture: settings ? { width: settings.width, height: settings.height } : null,
+    theme: meta.topic,
+    themeName: meta.name,
+    startedAt: meta.startedAt, endedAt: meta.endedAt,
+    capture: meta.width ? { width: meta.width, height: meta.height } : null,
     events: runLog,
   };
   try {
@@ -135,7 +173,7 @@ function downloadRunLog(): void {
     const a = document.createElement("a");
     const stamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-");
     a.href = URL.createObjectURL(blob);
-    a.download = `테라아카이브-록라기록-${lock?.name ?? "게임"}-${stamp}.json`;
+    a.download = `테라아카이브-록라기록-${meta.name ?? "게임"}-${stamp}.json`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
   } catch { /* 다운로드 차단 환경 — 로그는 콘솔에 남긴다 */ }
@@ -147,7 +185,8 @@ function downloadRunLog(): void {
 export async function connectBridge(withLock?: BridgeLock): Promise<void> {
   disconnectBridge();
   lock = withLock ?? null;
-  runLog = []; startedAt = new Date().toISOString();
+  runLog = []; logMeta = null; startedAt = new Date().toISOString();
+  sceneMemos = []; lastEmitGray = null; battleHold = false;
   error = ""; notify();
   try {
     stream = await navigator.mediaDevices.getDisplayMedia({
@@ -194,8 +233,12 @@ export async function connectBridge(withLock?: BridgeLock): Promise<void> {
 }
 
 export function disconnectBridge(): void {
-  downloadRunLog();   // 기록이 있으면 JSON으로 내려준다 (사용자 요청 2026-07-26)
-  runLog = [];
+  // 로그는 지우지 않는다 — '리플레이 다운받기' 버튼으로만 내려간다 (다음 연결 때 초기화).
+  // lock/settings는 곧 사라지므로 다운로드용 스냅샷을 남긴다.
+  if (runLog.length && settings) {
+    logMeta = { topic: lock?.topic ?? null, name: lock?.name ?? null, startedAt,
+      endedAt: new Date().toISOString(), width: settings.width, height: settings.height };
+  }
   running = false;
   if (timer !== undefined) { window.clearInterval(timer); timer = undefined; }
   if (lockRelease) { lockRelease(); lockRelease = null; }
@@ -264,6 +307,15 @@ function tick(): void {
   if (dMove > MOVING) { lastMoveAt = now; say("moving"); return; }
   // 시간 기준 안착 — 숨겨진 탭에서 틱 간격이 늘어도 판정이 흔들리지 않는다
   if (now - lastMoveAt < SETTLE_MS) { say("settling"); return; }
+  // 전투 홀드 — 전투 화면으로 판정된 뒤에는 타이머·이펙트의 국소 변화를 전부 무시하고,
+  // 화면이 통째로 바뀌는 전환(승리/실패·모달)만 기다린다. 안전망으로 20초마다 한 번은
+  // 다시 읽어, 홀드가 오진이었어도 자가치유된다 (다시 전투로 판정되면 홀드 재진입).
+  if (battleHold) {
+    if (diff(latestGray, sentGray) < BATTLE_EXIT && now - battleHoldAt < BATTLE_RECHECK_MS) {
+      say("battle"); return;
+    }
+    battleHold = false;
+  }
   // 새 화면 판정 — 전체 평균 **또는** 한 타일의 국소 변화. 전투노드끼리는 맵이 그대로고
   // 패널 글자만 바뀌어 평균으로는 절대 안 잡히므로 tileMax가 실질적인 판정자다.
   if (diff(latestGray, sentGray) < NEW_SCENE && tileMax(latestGray, sentGray) < NEW_TILE) {
@@ -275,6 +327,19 @@ function tick(): void {
   //   다음 틱에 다시 시도하면 되므로 그냥 기다린다 (사용자 지적 2026-07-26:
   //   "너무 빠르게 인식 시도해서 오히려 느려지는 건 없나" — 정확히 이 문제였다).
   if (busy) { say("emit"); return; }
+
+  // 화면 판정 캐시 — 최근에 본 화면과 같으면(같은 판정 기준: 평균+타일) OCR을 통째로
+  // 생략하고 지난 판정을 재적용한다. 맵↔노드 모달 왕복이 즉시(~0.5초) 반응하게 된다.
+  for (const m of sceneMemos) {
+    if (diff(latestGray, m.gray) < NEW_SCENE && tileMax(latestGray, m.gray) < NEW_TILE) {
+      sentGray = latestGray;
+      emitted++;
+      console.debug(`[bridge] 이미 본 화면 → 판정 재적용 #${emitted} (OCR 생략)`);
+      say("replay");
+      for (const cb of replaySubs) cb(m.outcome);
+      return;
+    }
+  }
 
   const w = latestW, h = latestH;
   // 여백 잘라내기 — 에뮬·미러링 창은 기기 베젤·레터박스 때문에 실제 게임 화면이
@@ -291,6 +356,7 @@ function tick(): void {
     outCv.getContext("2d")!.drawImage(heldFrame, c.x, c.y, c.w, c.h, 0, 0, outW, outH);
   } catch { return; }   // 프레임이 막 닫힌 찰나 — sentGray 갱신 전이라 다음 틱에 재시도된다
   sentGray = latestGray;
+  lastEmitGray = latestGray;   // 판정이 끝나면 memoBridgeScene이 이 화면과 짝지어 캐시한다
   emitted++;
   const cropped = c.w < w || c.h < h ? ` (여백 잘라 ${c.w}×${c.h})` : "";
   console.debug(`[bridge] 새 화면 → 인식 #${emitted} · ${w}×${h}${cropped} → ${outW}×${outH} (틱 ${ticks} · 수신 ${framesIn})`);
@@ -361,10 +427,12 @@ export function useBridgeStatus() {
  *  화면 하나당 1장만 오므로 여기서 더 조를 필요는 없고, 인식 중에 온 프레임만 흘려보낸다. */
 let busyLocal = false;   // 인식 중복 실행 방지 (구독자 공용 — 캡처는 하나뿐이다)
 
-export function useBridgeWatch(enabled: boolean, onImage: (file: File) => Promise<void> | void): boolean {
+export function useBridgeWatch(enabled: boolean, onImage: (file: File) => Promise<void> | void,
+  onReplay?: (oc: LensOutcome) => void): boolean {
   const [on, setOn] = useState(false);
   const cb = useRef(onImage);
-  useEffect(() => { cb.current = onImage; });
+  const rp = useRef(onReplay);
+  useEffect(() => { cb.current = onImage; rp.current = onReplay; });
 
   useEffect(() => {
     const sync = () => setOn(!!settings);
@@ -383,8 +451,11 @@ export function useBridgeWatch(enabled: boolean, onImage: (file: File) => Promis
         finally { busyLocal = false; busy = false; notify(); }
       })();
     };
+    // 화면 판정 캐시 재적용 — OCR이 없어 빠르므로 busy 없이 바로 넘긴다
+    const onCached = (oc: LensOutcome) => { try { rp.current?.(oc); } catch { /* 한 건 실패는 넘긴다 */ } };
     frameSubs.add(onFrame);
-    return () => { frameSubs.delete(onFrame); };
+    replaySubs.add(onCached);
+    return () => { frameSubs.delete(onFrame); replaySubs.delete(onCached); };
   }, [enabled]);
 
   return on;

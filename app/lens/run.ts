@@ -9,8 +9,13 @@ import storySearchMeta from "../data/story-search-meta.json";
 
 export type LensMode = "rogue" | "recruit" | "story";
 
-// 라이브 스트림용 난이도 캐시 — 한 판 도는 동안 불변 (배지 OCR 생략, 10분 TTL)
+// 라이브 스트림용 난이도 캐시 — 한 판 도는 동안 불변 (배지 OCR 생략, 10분 TTL).
+// 미검출(배지 없는 화면·모달)도 기억해 10초 쿨다운을 둔다 — 없는 배지를 화면마다
+// 0.3초씩 다시 찾는 낭비 제거 ("고정되면 안 바뀌는 항목은 무시", 2026-07-26).
 let gradeCache: { grade: number; at: number } | null = null;
+let gradeMissAt = 0;
+/** 게임 연결 시작 시 호출 — 지난 판의 난이도가 새 판에 새지 않게 캐시를 비운다. */
+export function resetGradeCache(): void { gradeCache = null; gradeMissAt = 0; }
 
 /** 게임 HUD 수치 파싱 (원시 OCR 라인) — 브리지 플레이 로그용 추정치 */
 function parseHud(rawLines: string[]): LensHud {
@@ -128,6 +133,17 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
     // 화면 언어(로케일)로 OCR 모델·인덱스·정규화를 맞춘다 — KR=kor, EN=eng, JA=jpn.
     const norm = normFor(locale);
     const [index, session] = await Promise.all([getRogueIndex(locale), createOcrSession(file, OCR_LANG[locale] ?? "kor")]);
+    // 난이도 배지 — 전용 eng 워커라 본 패스와 **병렬**로 미리 돌린다 (직렬 ~0.3초 제거).
+    // 라이브(게임 연결)는 세션 캐시가 유효하거나 미검출 쿨다운 중이면 아예 생략한다.
+    const gradeFresh = !!gradeCache && Date.now() - gradeCache.at < 10 * 60_000;
+    const skipGradeOcr = !!opts?.live && (gradeFresh || Date.now() - gradeMissAt < 10_000);
+    const gradeP = skipGradeOcr ? null : session.difficulty()
+      .then((g) => {
+        if (g !== null) gradeCache = { grade: g, at: Date.now() };
+        else gradeMissAt = Date.now();
+        return g;
+      })
+      .catch(() => null);
     // 단계형 인식 — PSM11만으로 판정이 나면 나머지 패스를 생략한다 (속도)
     lines = await session.sparse();
     let chipsRan = false;
@@ -175,17 +191,11 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
       else if (oc.target.kind === "tie") for (const o of oc.target.options) { if (o.goto.page === "rogue" && o.goto.modal?.type === "stage") o.goto.emergency = true; }
     }
     // 좌하단 난이도 배지 — 있으면 이동 목표에 스탬프해 난이도 셀렉터에 자동 적용 (2026-07-24)
-    // 라이브 스트림에선 캐시를 쓴다 — 한 판 도는 동안 난이도는 안 바뀌므로 화면마다
-    // 배지 OCR(~0.3초)을 다시 돌릴 이유가 없다 (속도, 2026-07-26).
+    // ⚠ 배지는 **좌하단 육각형**이다 — 화면 상단 중앙의 숫자는 난이도가 아니라 별개
+    // 게임 수치(간섭 방지 지수, 사용자 교정 2026-07-26)이므로 절대 읽지 않는다.
     if (oc.target.kind !== "none") {
-      let grade: number | null;
-      if (opts?.live && gradeCache && Date.now() - gradeCache.at < 10 * 60_000) {
-        grade = gradeCache.grade;
-      } else {
-        grade = await session.difficulty();
-        if (grade !== null) gradeCache = { grade, at: Date.now() };
-      }
-      console.debug(`[lens] 난이도 배지: ${grade ?? "(없음)"}`);
+      const grade = gradeP ? await gradeP : gradeFresh ? gradeCache!.grade : null;
+      console.debug(`[lens] 난이도 배지: ${grade ?? "(없음)"}${gradeP ? "" : " (캐시)"}`);
       if (grade !== null) {
         if (oc.target.kind === "goto" && oc.target.goto.page === "rogue") oc.target.goto.grade = grade;
         else if (oc.target.kind === "tie") for (const o of oc.target.options) { if (o.goto.page === "rogue") o.goto.grade = grade; }

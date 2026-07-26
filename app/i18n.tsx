@@ -1431,10 +1431,17 @@ const D: Record<string, Pair> = {
   "멈추길 기다리는 중": ["Waiting for it to settle", "静止待ち"],
   "같은 화면": ["Same screen", "同じ画面"],
   "새 화면": ["New screen", "新しい画面"],
+  "전투 중": ["In battle", "戦闘中"],
+  "본 화면 재적용": ["Seen — reapplied", "既知画面を再適用"],
   "연결됨": ["Connected", "接続中"],
   "이동": ["Jumped", "移動"],
   "테마 되묻기": ["Asking which theme", "テーマ確認"],
   "못 찾음": ["Nothing matched", "見つからず"],
+  "리플레이 다운받기": ["Download replay", "リプレイをダウンロード"],
+  "이번 게임 연결의 플레이 기록을 JSON으로 내려받습니다": [
+    "Download this session's play log as JSON",
+    "今回のゲーム接続のプレイ記録をJSONでダウンロードします",
+  ],
 
   "유니버셜 서치": ["Universal Search", "ユニバーサルサーチ"],
   "유니버셜 서치 — 사이트 전체 검색": ["Universal Search — search the whole site", "ユニバーサルサーチ — サイト全体を検索"],

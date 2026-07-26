@@ -85,6 +85,12 @@ export async function warmOcr(lang = "kor"): Promise<void> {
   try { await getWorker(lang); } catch { /* 실제 인식 시 재시도 */ }
 }
 
+/** 난이도 배지 전용 eng 워커 예열 — 게임 연결 직후 부른다. 배지 OCR은 본 패스와
+ *  병렬이라(run.ts) 워커 초기화만 미리 해두면 첫 판정에서 완전히 숨는다. */
+export async function warmDigitOcr(): Promise<void> {
+  try { await getDigitWorker(); } catch { /* 실제 인식 시 재시도 */ }
+}
+
 export type OcrSession = {
   /** PSM11(sparse) 전체 프레임 — 흩어진 텍스트에 강함, 1차 패스 */
   sparse(): Promise<string[]>;

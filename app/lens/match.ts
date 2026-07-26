@@ -43,6 +43,8 @@ export type LensOutcome = {
   anchor?: string;
   // 게임 HUD에서 읽은 수치 — 브리지 플레이 로그용 (run.ts가 원시 라인에서 파싱해 얹는다)
   hud?: LensHud;
+  // 전투 중 화면 (배치 UI 문구 검출) — 브리지가 전투 홀드(큰 전환까지 인식 중단)에 쓴다
+  battle?: boolean;
 };
 export type LensHud = {
   fractions: [number, number][];   // 화면의 모든 x/y 분수 (원시)
@@ -269,7 +271,8 @@ export function analyzeLines(
   // normText는 대소문자를 보존하므로 라틴 키워드는 소문자로 접어서 본다
   const allL = allN.toLowerCase();
   if (BATTLE_WORDS.some((k) => allL.includes(k))) {
-    return { screens, entities: [], topics: [], section: null, target: { kind: "none" } };
+    // battle 표식 — 브리지가 이걸 보고 전투 홀드에 들어간다 (큰 화면 전환까지 OCR 중단)
+    return { screens, entities: [], topics: [], section: null, target: { kind: "none" }, battle: true };
   }
 
   // 전 테마 공용 보상 문구 제거 (2026-07-26 제보) — 데이터 색인이 비대칭이라 이런 줄이
