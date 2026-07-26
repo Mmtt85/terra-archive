@@ -80,12 +80,13 @@ export default function BridgeReplayModal({ t, onClose }: { t: T; onClose: () =>
         </header>
         {payload ? (
           <>
+            {/* 인식 실패(none)는 보여주지 않는다 — 지난 버전이 저장한 JSON에도 적용 */}
             <p className="br-range">
               {hhmmss(payload.startedAt)} ~ {hhmmss(payload.endedAt)}
-              {" · "}{t("기록")} {payload.events.length}
+              {" · "}{t("기록")} {payload.events.filter((ev) => ev.type !== "none").length}
             </p>
             <ul className="bridge-replay-list">
-              {payload.events.map((ev, i) => <Row key={i} ev={ev} t={t} />)}
+              {payload.events.filter((ev) => ev.type !== "none").map((ev, i) => <Row key={i} ev={ev} t={t} />)}
             </ul>
           </>
         ) : (

@@ -1045,9 +1045,11 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
         // 브리지에 판정을 알려준다 — 전투면 전투 홀드, 확신 이동이면 화면 판정 캐시
         memoBridgeScene(oc);
         const g = oc.target.kind === "goto" && oc.target.goto.page === "rogue" ? oc.target.goto : null;
-        logBridgeEvent({
+        const evType = oc.hud?.result ? "battle-result" : g ? (g.modal?.type ?? g.view) : oc.battle ? "battle" : oc.target.kind;
+        // 인식 실패(none)는 기록하지 않는다 — 리플레이에 잡음만 된다 (사용자 확정 2026-07-26)
+        if (evType !== "none") logBridgeEvent({
           at: new Date().toISOString(),
-          type: oc.hud?.result ? "battle-result" : g ? (g.modal?.type ?? g.view) : oc.battle ? "battle" : oc.target.kind,
+          type: evType,
           name: oc.entities[0]?.name,
           names: oc.entities.length > 1 ? oc.entities.slice(0, 8).map((e) => e.name) : undefined,
           emergency: g?.emergency, grade: g?.grade,
