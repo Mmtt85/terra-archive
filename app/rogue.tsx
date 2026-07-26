@@ -16,12 +16,11 @@ import { warmOcr, warmDigitOcr } from "./lens/ocr";
 import { useClipboardWatch } from "./lens/clipwatch";
 import { useBridgeWatch, noteBridge, bridgeLock, logBridgeEvent, memoBridgeScene, type BridgeLogEvent } from "./lens/bridge";
 import { BridgeTopicButton } from "./lens/bridge-button";
-
-// 게임연결·리플레이 배포 스위치 — 기능은 완성돼 game-bridge 브랜치에 보관 중이고,
-// 배포는 보류 상태다 (사용자 확정 2026-07-26). 켜려면 true로만 바꾸면 된다 —
-// 연결 진입 버튼(BridgeTopicButton)만 숨기므로 나머지 코드는 죽은 경로로 남는다.
-const BRIDGE_LIVE = false;
 import { useDropWatch } from "./lens/dropwatch";
+
+// 게임연결·리플레이 배포 스위치 — 2026-07-26 켜짐(사용자 지시). 끄면 진입 버튼
+// (BridgeTopicButton)만 사라지고 인식 파이프라인은 죽은 경로로 남는다.
+const BRIDGE_LIVE = true;
 
 // 스샷 레이더 도움말 — 순수 설명 전용 모달 (입력 기능은 페이지 레벨 자동인식이 전담)
 const LensHelpModal = lazy(() => import("./lens/help"));
@@ -1304,9 +1303,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
         {/* 스샷 레이더 — 버튼 자체가 자동인식 토글, ?는 도움말 모달. KR/EN/JA 화면 인식 (2026-07-25).
             흑류수해(rogue_6)는 CN 선행이라 중국어 화면도 전 로케일에서 인식한다. */}
         <div className="lens-open-wrap">
-          {/* 테마별 게임연결 — 여기서 연결하면 이 테마로만 인식이 고정된다 (2026-07-26) */}
-          {/* 게임연결·리플레이 — 배포 보류 (사용자 확정 2026-07-26). 완성본은 game-bridge
-              브랜치에 있고, 배포할 때 BRIDGE_LIVE만 true로 바꾸면 된다. */}
+          {/* 테마별 게임연결 + 리플레이 — 여기서 연결하면 이 테마로만 인식이 고정된다 (2026-07-26) */}
           {BRIDGE_LIVE && <BridgeTopicButton topic={topic} name={TOPICS.find((tp) => tp.id === topic)?.name ?? topic} t={t} />}
           <button type="button" className={`lens-open-btn${lensAuto ? " on" : ""}`} aria-pressed={lensAuto}
             title={t("클릭해 스샷 자동인식을 켜고 끕니다 — 켜두면 게임 화면을 캡처만 해도 바로 인식·적용됩니다")}

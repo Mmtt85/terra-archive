@@ -11,6 +11,7 @@ export const FEATURE_RELEASED: Record<string, string | { date: string; days: num
   "layout-153": "2026-07-24", // 인프라 플래너 기지 배치 153 프리셋 (무역 1·제조 5·발전 3)
   omni: "2026-07-25", // 헤더 만능검색 — 단어 하나로 사이트 안 아무 컨텐츠나 찾아 이동
   account: "2026-07-26", // 보유 오퍼 가져오기 — 요스타 계정 로그인으로 실제 보유 목록 동기화
+  bridge: "2026-07-26", // 게임 연결 — 게임 창 라이브 캡처를 렌즈에 태워 자동 인식 (/rogue 테마별)
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -31,7 +32,7 @@ export function isNewFeature(key: string): boolean {
 const TAB_FEATURES: Record<string, string[]> = {
   planner: ["scanner", "invest", "layout-153", "account"],
   recruit: ["lens"],
-  rogue: ["lens", "rogue-inv"],
+  rogue: ["lens", "rogue-inv", "bridge"],
   story: ["lens"], // 스샷 레이더 /stories 설치 (전문 대사 검색, 2026-07-24)
 };
 

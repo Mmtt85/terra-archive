@@ -9,6 +9,7 @@ import { useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { useBridgeStatus, connectBridge, disconnectBridge, bridgeSupported, bridgeLogCount } from "./bridge";
 import BridgeReplayModal from "./bridge-replay";
+import { isNewFeature } from "../whats-new";
 import type { T } from "../i18n";
 
 // 지원 여부는 navigator를 봐야 알 수 있어 서버에선 판단할 수 없다. 그냥 호출하면
@@ -69,6 +70,7 @@ export function BridgeTopicButton({ topic, name, t }: { topic: string; name: str
         onClick={() => (mine ? disconnectBridge() : void connectBridge({ topic, name }))}
       >
         <span aria-hidden>{mine ? "◉" : "○"}</span> {mine ? t("게임 연결됨") : t("게임 연결")}
+        {!settings && isNewFeature("bridge") && <span className="new-badge">{t("새기능")}</span>}
       </button>
       <button
         type="button"
