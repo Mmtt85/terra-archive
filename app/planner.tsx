@@ -6,6 +6,7 @@ import { RULES } from "./rules";
 import { useConfirm } from "./confirm";
 import { normSearch, useSearchInput } from "./search";
 import { isNewFeature } from "./whats-new";
+import { useHashSync } from "./hash-modal";
 
 import {
   infra, ops, opById, factionsOf, withElite, clueBase, maxElite, eliteOptions,
@@ -102,6 +103,25 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   const [showFlows, setShowFlows] = useState(false);
   const [showRoster, setShowRoster] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  // 보유 오퍼 설정의 입력 방식 탭 — 딥링크(#roster/#roster-import)와 동기화하려 여기서 쥔다
+  const [rosterMode, setRosterMode] = useState<"direct" | "import">("direct");
+  // 딥링크 (사용자 요청 2026-07-27: 링크 가능한 상태 전부 URL로) — /infra 경로 위에서
+  // #roster(직접 입력)·#roster-import(가져오기 탭)·#help·#flows·#room-<방키> 를 양방향 동기화.
+  // #invest(육성 추천)는 분석 결과가 있어야만 열리는 모달이라 딥링크 대상이 아니다.
+  useHashSync(
+    showRoster ? (rosterMode === "import" ? "#roster-import" : "#roster")
+      : showHelp ? "#help"
+        : showFlows ? "#flows"
+          : openRoom ? `#room-${openRoom}` : null,
+    (h) => {
+      setShowRoster(h === "#roster" || h === "#roster-import");
+      if (h === "#roster") setRosterMode("direct");
+      else if (h === "#roster-import") setRosterMode("import");
+      setShowHelp(h === "#help");
+      setShowFlows(h === "#flows");
+      setOpenRoom(h.startsWith("#room-") && LAYOUT.some((cell) => cell.key === h.slice(6)) ? h.slice(6) : null);
+    },
+  );
   const [moreOpen, setMoreOpen] = useState(false); // '그 외' 드롭다운(이미지·파일·도움말)
   // 일부 모바일 인앱 브라우저(카카오톡·카페 웹뷰 등)는 탭 한 번에 click을 두 번 합성하거나
   // ~300ms 지연 mousedown을 쏜다 — 토글이 열리자마자 닫혀 "안 보임"이 된다
@@ -957,7 +977,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         </div>
         <div className="planner-buttons">
           {/* startTransition: 로스터 모달(카드 수백 장)은 렌더가 무거워 클릭 페인트부터 내보낸다 (INP, 2026-07-21) */}
-          <button onClick={() => startTransition(() => setShowRoster(true))}><span className="btn-icon" aria-hidden>▦</span>{t("보유 오퍼 설정 ({a}/{b})", { a: visibleOps.filter((op) => ownedIds.has(op.id)).length, b: visibleOps.length })}{isNewFeature("scanner") && <span className="new-badge">{t("새기능")}</span>}</button>
+          <button onClick={() => startTransition(() => { setRosterMode("direct"); setShowRoster(true); })}><span className="btn-icon" aria-hidden>▦</span>{t("보유 오퍼 설정 ({a}/{b})", { a: visibleOps.filter((op) => ownedIds.has(op.id)).length, b: visibleOps.length })}{isNewFeature("scanner") && <span className="new-badge">{t("새기능")}</span>}</button>
           {/* 라벨이 '계산 중…'으로 바뀌어도 버튼 폭이 줄지 않게 원 라벨로 폭을 잡아둔다 (사용자 요청 2026-07-21) */}
           <button className="primary" onClick={() => runOptimize()} disabled={!!optimizing}>
             <span className="btn-icon" aria-hidden>⟳</span>
@@ -1209,6 +1229,8 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           onApply={(ids, elite) => { setOwnedIds(ids); setEliteById(elite); setShowRoster(false); runOptimize(ids, elite); setDirty(true); }}
           onClose={() => setShowRoster(false)}
           onShowOperator={onShowOperator}
+          mode={rosterMode}
+          onMode={setRosterMode}
         />
       )}
 
@@ -2064,7 +2086,7 @@ const RosterCard = memo(function RosterCard({ op, owned, elite, onToggle, onElit
   );
 });
 
-function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOperator }:{ allOps: InfraOp[]; ownedIds: Set<string>; eliteById: Map<string, Elite>; onApply: (ids: Set<string>, elite: Map<string, Elite>) => void; onClose: () => void; onShowOperator?: (id: string) => void }) {
+function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOperator, mode, onMode }:{ allOps: InfraOp[]; ownedIds: Set<string>; eliteById: Map<string, Elite>; onApply: (ids: Set<string>, elite: Map<string, Elite>) => void; onClose: () => void; onShowOperator?: (id: string) => void; mode: "direct" | "import"; onMode: (m: "direct" | "import") => void }) {
   const { t } = useI18n();
   const { confirm, dialog: confirmDialog } = useConfirm();
   const [draft, setDraft] = useState<Set<string>>(new Set(ownedIds));
@@ -2072,7 +2094,8 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
   const [showScan, setShowScan] = useState(false); // 스크린샷 스캐너(모달 내부에서 draft에 병합)
   // 입력 방식 두 종류 (사용자 확정 2026-07-26): 직접 입력 = 카드 격자에서 손으로 체크,
   // 가져오기 = MAA 파일·스크린샷·게임 로그인. 가져온 결과는 직접 입력 화면에서 검토한 뒤 적용한다.
-  const [mode, setMode] = useState<"direct" | "import">("direct");
+  // 상태는 부모(딥링크 #roster/#roster-import 동기화)가 쥔다 (2026-07-27)
+  const setMode = onMode;
   // 비제어 입력 — 450칩 목록을 한 글자마다 다시 그리지 않는다 (search.ts)
   const { term: searchTerm, inputProps: searchProps } = useSearchInput();
   const [sortKey, setSortKey] = useState("기본");

@@ -14,6 +14,7 @@ import { normSearch, useSearchInput } from "./search";
 import OmniSearch from "./omni-search";
 import BridgeButton from "./lens/bridge-button";
 import ChangelogButton from "./changelog";
+import { useHashSync } from "./hash-modal";
 import type { OmniTarget } from "./omni";
 import { notifyHandoff, stashHandoff } from "./handoff";
 import { noteAction, noteArrival, noteMiss } from "./trail";
@@ -322,6 +323,10 @@ function BroadcastBadges({ includeFuture, slot }: { includeFuture?: boolean; slo
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
+  // 딥링크: #broadcast — 모달을 소유한 슬롯(≠events)만 동기화 (events 슬롯은 배지 전용)
+  useHashSync(slot !== "events" && open ? "#broadcast" : null, (h) => {
+    if (slot !== "events") setOpen(h === "#broadcast");
+  });
   // 진행중 이벤트 팝오버 — 바깥 클릭/Esc로 닫기
   useEffect(() => {
     if (!evOpen) return;

@@ -10,6 +10,7 @@ import { createPortal } from "react-dom";
 import { useBridgeStatus, connectBridge, disconnectBridge, bridgeSupported, bridgeLogCount } from "./bridge";
 import BridgeReplayModal from "./bridge-replay";
 import { isNewFeature } from "../whats-new";
+import { useHashSync } from "../hash-modal";
 import type { T } from "../i18n";
 
 // 지원 여부는 navigator를 봐야 알 수 있어 서버에선 판단할 수 없다. 그냥 호출하면
@@ -57,6 +58,12 @@ export function BridgeTopicButton({ topic, name, t }: { topic: string; name: str
   const supported = useSyncExternalStore(noSubscribe, bridgeSupported, () => false);
   const [replayOpen, setReplayOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  // 딥링크: #replay(리플레이 프리뷰)·#prts-help(도움말) — /rogue 툴바엔 활성 테마의
+  // 버튼 인스턴스 하나만 마운트되므로 여기서 동기화해도 중복이 없다 (2026-07-27)
+  useHashSync(replayOpen ? "#replay" : helpOpen ? "#prts-help" : null, (h) => {
+    setReplayOpen(h === "#replay");
+    setHelpOpen(h === "#prts-help");
+  });
   if (!supported) return null;
 
   const mine = !!settings && lock?.topic === topic;   // 이 테마로 고정 연결됨

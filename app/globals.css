@@ -514,6 +514,18 @@ button {
   border-color: var(--border-strong);
   color: var(--ink);
 }
+/* 후원 안내 — 목록 하단 상시 노트 */
+.chlog-donate {
+  margin: 12px 0 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.chlog-donate a {
+  color: var(--ink);
+  font-weight: 800;
+  text-underline-offset: 3px;
+}
 
 /* 진행중 게임 이벤트 — 헤더 중앙 배지 + 팝오버 */
 /* 방송 버튼 오른쪽에 그대로 흐름 배치한다. (절대 중앙배치는 방송 버튼·토글과 겹쳐

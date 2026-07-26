@@ -33,6 +33,25 @@
 | 재료 파밍 효율표 | `#farm` | `app/farm.tsx` |
 
 URL 복붙으로 해당 탭/오퍼 모달이 바로 열려야 한다 (hashchange + 초기 로드 처리).
+(위 `#infra` 류는 구 해시 — 지금 탭은 경로(`/infra` 등)가 정본이고 구 해시는 하위호환 치환만 된다.)
+
+**모달 딥링크 (2026-07-27, "링크 만들 수 있는 모든 곳에 URL")** — 공용 훅
+`app/hash-modal.ts`의 `useHashSync(value, apply)`가 모달 상태 ↔ 해시를 양방향 동기화한다
+(열림 pushState → 뒤로가기로 닫힘 · 모달 내 전환 replaceState · UI 닫기는 해시 제거).
+vinext의 pushState 패치(스크롤 리셋)를 피하려 네이티브 `History.prototype.pushState`를 부른다.
+
+| 해시 | 어디서나/경로 | 여는 것 |
+|---|---|---|
+| `#changelog` / `#changelog-all` | 어디서나 | 업데이트 내역 (신기능만 / 상세) |
+| `#broadcast` | 어디서나 | 공식 방송 일정 모달 |
+| `#roster` / `#roster-import` | `/infra` | 보유 오퍼 설정 (직접 입력 / 가져오기 탭) |
+| `#help` · `#flows` · `#room-<방키>` | `/infra` | 플래너 도움말 · 자원 흐름 · 방 상세 (방키 = `TRADING-0` 등 LAYOUT key) |
+| `#replay` · `#prts-help` | `/rogue` | 리플레이 프리뷰 · PRTS 링크 도움말 |
+| `#item-<재료id>` | `/farm` · `/upgrade` | 재료 상세 모달 |
+
+전역 모달 해시는 `GLOBAL_MODAL_HASH` 정규식에 등록해야 rogue의 `#rg-…` 해시 머신이
+덮어쓰지 않는다. `#invest`(육성 추천)는 분석 결과가 있어야 열려 딥링크 대상이 아니다.
+검색·필터 조합(백과 필터, 공채 태그 선택 등) 폼 상태는 딥링크 범위 밖.
 
 **언어 경로 (2026-07 도입)**: `/` = 한국어, `/en` = 영어, `/ja` = 일본어.
 헤더 우측 "KR SERVER" 칩이 언어 드롭다운(전체 내비게이션, 해시 유지)이다.

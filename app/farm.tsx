@@ -14,6 +14,7 @@ import costsData from "./data/costs.json";
 import type { Operator } from "./home";
 import { useI18n, type Locale } from "./i18n";
 import { normSearch, useSearchInput } from "./search";
+import { useHashSync } from "./hash-modal";
 import { HANDOFF_EVENT, takeHandoff } from "./handoff";
 import { noteArrival, noteMiss } from "./trail";
 
@@ -128,6 +129,11 @@ export default function FarmGuide({ includeFuture }: { includeFuture: boolean })
   const [permOnly, setPermOnly] = useState(false);
   // 재료 상세 모달 — 효율표·계산기의 모든 재료 아이콘에서 연다 (id = item id)
   const [shownItem, setShownItem] = useState<string | null>(null);
+  // 딥링크: #item-<재료id> — /farm 경로에서 재료 상세를 URL로 공유 (2026-07-27)
+  useHashSync(shownItem ? `#item-${shownItem}` : null, (h) => {
+    const id = h.startsWith("#item-") ? h.slice(6) : null;
+    setShownItem(id && costs.items[id] ? id : null);
+  });
   // 재료 상세를 여는 건 "도착"이다 — 앞서 실패한 검색어를 이 재료에 이어 붙인다 (app/trail.ts)
   const openItem = (id: string) => {
     const found = ALL_MATERIALS.find((item) => item.id === id);
@@ -305,6 +311,11 @@ export default function FarmGuide({ includeFuture }: { includeFuture: boolean })
 export function UpgradeSim({ operators, includeFuture, onShowOperator }: { operators: Operator[]; includeFuture: boolean; onShowOperator: (id: string) => void }) {
   const { t } = useI18n();
   const [shownItem, setShownItem] = useState<string | null>(null);
+  // 딥링크: #item-<재료id> — /upgrade 경로에서도 재료 상세를 URL로 공유 (2026-07-27)
+  useHashSync(shownItem ? `#item-${shownItem}` : null, (h) => {
+    const id = h.startsWith("#item-") ? h.slice(6) : null;
+    setShownItem(id && costs.items[id] ? id : null);
+  });
   return (
     <section className="farm" aria-label={t("육성 비용 계산기")}>
       {includeFuture && (

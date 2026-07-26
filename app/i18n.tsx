@@ -140,6 +140,9 @@ const D: Record<string, Pair> = {
   "수정": ["Fixed", "修正"],
   "상세보기 — 개선·수정 내역까지": ["Show details — improvements & fixes", "詳細を見る — 改善・修正まで"],
   "신기능만 보기": ["Show new features only", "新機能のみ表示"],
+  "사이트 후원 버튼도 달았습니다 — 광고 없이 운영되는 사이트라, 후원해 주시면 서버·도메인 비용에 큰 힘이 됩니다. 감사하겠습니다!":
+    ["We also added a site donation button — the site runs ad-free, so any support toward server & domain costs is deeply appreciated. Thank you!",
+     "サイト支援ボタンも設置しました — 広告なしで運営しているサイトなので、支援していただけるとサーバー・ドメイン費用の大きな助けになります。ありがとうございます！"],
   "2026년 7월 26일": ["July 26, 2026", "2026年7月26日"],
   "2026년 7월 25일": ["July 25, 2026", "2026年7月25日"],
   "2026년 7월 24일 (17시 이후)": ["July 24, 2026 (after 17:00)", "2026年7月24日（17時以降）"],

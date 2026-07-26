@@ -10,6 +10,7 @@ import { useConfirm } from "./confirm";
 import { useI18n } from "./i18n";
 import { normSearch, useSearchInput } from "./search";
 import { isNewFeature } from "./whats-new";
+import { GLOBAL_MODAL_HASH } from "./hash-modal";
 import type { LensGoto, LensOutcome } from "./lens/match";
 import { recognizeShot, warmData, ocrLangFor, resetGradeCache } from "./lens/run";
 import { warmOcr, warmDigitOcr } from "./lens/ocr";
@@ -1201,6 +1202,8 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   const prevHash = useRef("");
   useEffect(() => {
     if (!mounted || !inited.current) return;
+    // 전역 모달 딥링크(#changelog·#replay 등)가 떠 있으면 내 해시로 덮어쓰지 않는다 (2026-07-27)
+    if (GLOBAL_MODAL_HASH.test(window.location.hash)) return;
     const want = hashFor(view, curModal());
     if (want === (window.location.hash || "#rg-map")) { prevHash.current = want; return; }
     // arc 해시(~arc~)도 "~"를 포함하므로, 모달 열림 판정은 모달 타입 페어에만 반응해야 한다
