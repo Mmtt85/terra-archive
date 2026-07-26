@@ -474,6 +474,11 @@ button {
   color: var(--tint-warm2-ink);
   border-color: transparent;
 }
+.chlog-kind.change {
+  background: var(--tint-warm2);
+  color: var(--tint-warm2-ink);
+  border-color: transparent;
+}
 .chlog-kind.fix {
   background: var(--tint-red);
   color: var(--tint-warm-ink);

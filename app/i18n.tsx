@@ -138,6 +138,7 @@ const D: Record<string, Pair> = {
   "최근 업데이트 내역 보기": ["See recent site updates", "最近の更新内容を見る"],
   "신기능": ["NEW", "新機能"],
   "개선": ["Improved", "改善"],
+  "수정": ["Changed", "変更"],
   "버그 수정": ["Fixed", "不具合修正"],
   "데이터 갱신": ["Data", "データ更新"],
   "상세보기 — 개선·수정 내역까지": ["Show details — improvements & fixes", "詳細を見る — 改善・修正まで"],

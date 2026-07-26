@@ -7,7 +7,8 @@
 create table if not exists public.changelog (
   id uuid primary key default gen_random_uuid(),
   released_at date not null default current_date,   -- 표시·정렬 기준일 (배포한 날)
-  kind text not null check (kind in ('new', 'improve', 'fix', 'data')),
+  -- new=신기능 · improve=개선 · change=수정(버그 아닌 일반 변경) · fix=버그 수정 · data=데이터 갱신
+  kind text not null check (kind in ('new', 'improve', 'change', 'fix', 'data')),
   ko text not null,                                  -- 한국어 원문 (필수)
   en text,                                           -- 없으면 프론트가 ko로 폴백
   ja text,
@@ -15,6 +16,11 @@ create table if not exists public.changelog (
   seq int not null default 0,                        -- 같은 날짜 안 정렬 (작을수록 위)
   created_at timestamptz not null default now()
 );
+
+-- 종류 추가 마이그레이션 (2026-07-27, change 분리) — 이미 설치했어도 이 파일을 다시 돌리면 갱신된다
+alter table public.changelog drop constraint if exists changelog_kind_check;
+alter table public.changelog add constraint changelog_kind_check
+  check (kind in ('new', 'improve', 'change', 'fix', 'data'));
 
 create index if not exists changelog_released_idx on public.changelog (released_at desc, seq);
 
@@ -76,7 +82,7 @@ from (values
    '사이트 전역의 버튼·카드·모달 모서리를 통일감 있게 둥글렸습니다.',
    'Rounded the corners of buttons, cards, and modals consistently across the site.',
    'サイト全体のボタン・カード・モーダルの角を統一感を持って丸めました。'),
-  ('2026-07-26', 'fix', 6, '',
+  ('2026-07-26', 'change', 6, '',
    '이름 정리 — 메뉴 ''소개''는 ''테라 아카이브 소개''로, 검색어 ''인프라 딸깍''으로도 인프라 자동편성기에 들어갑니다.',
    'Naming cleanup — the About menu is now "About Terra Archive", and searching for the slang "infra one-click" also reaches the base planner.',
    '名称整理 — メニュー「紹介」は「テラアーカイブについて」に。俗称の検索でも基地自動編成に入れます。'),

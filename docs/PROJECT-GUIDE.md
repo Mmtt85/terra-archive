@@ -468,7 +468,9 @@ npm run build                             # 9. 빌드 확인 → 커밋 → 푸�
 
 - 테이블: `public.changelog` — 스키마·RLS·시드 [supabase-changelog.sql](supabase-changelog.sql).
   열: `released_at`(날짜) · `kind` · `ko`/`en`/`ja` · `href`(바로가기, 선택) · `seq`(같은 날짜 정렬).
-- 종류: `new`(신기능) · `improve`(개선) · `fix`(버그 수정) · `data`(데이터 갱신).
+- 종류 5종: `new`(신기능) · `improve`(개선) · `change`(수정) · `fix`(버그 수정) · `data`(데이터 갱신).
+  **`change`와 `fix`는 별개다** (사용자 확정 2026-07-27) — 이름 정리·문구 교체처럼 버그가 아닌
+  일반 변경은 `change`, 실제 오작동을 고친 것만 `fix`.
 - **3개 언어를 행에 함께 저장**한다. `en`/`ja`가 비면 프론트가 `ko`로 폴백하고,
   관리자 목록엔 "번역 미완" 칩이 붙는다 — i18n 사전(app/i18n.tsx)에는 **UI 라벨만** 둔다.
 - 표시 규칙 (사용자 확정 2026-07-27) — **종류 필터와 기간 확장은 별개 축**이다:

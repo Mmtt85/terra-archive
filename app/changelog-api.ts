@@ -6,7 +6,9 @@
 
 import { SUPABASE_URL, SUPABASE_ANON_KEY, adminHeaders } from "./feedback";
 
-export type ChangeKind = "new" | "improve" | "fix" | "data";
+// 종류 5종 (사용자 확정 2026-07-27: "버그픽스인지 수정인지" — 둘은 별개다).
+// change = 버그가 아닌 일반 변경(이름 정리·문구 교체·배치 조정), fix = 실제 오작동 수정.
+export type ChangeKind = "new" | "improve" | "change" | "fix" | "data";
 
 export type ChangeRow = {
   id: string;
@@ -21,10 +23,10 @@ export type ChangeRow = {
 
 /** 종류 표시명 (i18n 키 — app/i18n.tsx 사전에 EN/JA가 있다) */
 export const CHANGE_KIND_LABEL: Record<ChangeKind, string> = {
-  new: "신기능", improve: "개선", fix: "버그 수정", data: "데이터 갱신",
+  new: "신기능", improve: "개선", change: "수정", fix: "버그 수정", data: "데이터 갱신",
 };
 
-export const CHANGE_KINDS: ChangeKind[] = ["new", "improve", "fix", "data"];
+export const CHANGE_KINDS: ChangeKind[] = ["new", "improve", "change", "fix", "data"];
 
 const anonHeaders = { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` };
 
