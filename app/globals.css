@@ -476,6 +476,44 @@ button {
   line-height: 1.55;
   color: var(--ink2);
 }
+/* 신기능 바로가기 — 본문 끝에 붙는 작은 칩 (a·button 공용) */
+.chlog-go {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: transparent;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ink);
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: 0.15s;
+}
+.chlog-go:hover {
+  border-color: var(--border-strong);
+}
+
+/* 상세보기 토글 — 기본은 신기능만 보이므로 목록 맨 아래에서 개선·수정을 펼친다 */
+.chlog-detail-btn {
+  margin-top: 14px;
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px dashed var(--line);
+  border-radius: 6px;
+  background: transparent;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--muted);
+  cursor: pointer;
+  transition: 0.15s;
+}
+.chlog-detail-btn:hover {
+  border-color: var(--border-strong);
+  color: var(--ink);
+}
 
 /* 진행중 게임 이벤트 — 헤더 중앙 배지 + 팝오버 */
 /* 방송 버튼 오른쪽에 그대로 흐름 배치한다. (절대 중앙배치는 방송 버튼·토글과 겹쳐

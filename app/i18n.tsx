@@ -138,6 +138,8 @@ const D: Record<string, Pair> = {
   "신기능": ["NEW", "新機能"],
   "개선": ["Improved", "改善"],
   "수정": ["Fixed", "修正"],
+  "상세보기 — 개선·수정 내역까지": ["Show details — improvements & fixes", "詳細を見る — 改善・修正まで"],
+  "신기능만 보기": ["Show new features only", "新機能のみ表示"],
   "2026년 7월 26일": ["July 26, 2026", "2026年7月26日"],
   "2026년 7월 25일": ["July 25, 2026", "2026年7月25日"],
   "2026년 7월 24일 (17시 이후)": ["July 24, 2026 (after 17:00)", "2026年7月24日（17時以降）"],
@@ -183,9 +185,6 @@ const D: Record<string, Pair> = {
   "스토리 — 본문의 점선 밑줄 단어를 누르면 인물·용어 팝오버가 뜹니다. 화자와 스탠딩 CG가 어긋나던 장면도 전수 정정했습니다.":
     ["Story — tap dotted-underlined words in the text for character/term popovers. Also fixed every scene where the speaker and standing CG were mismatched.",
      "ストーリー — 本文の点線下線の単語を押すと人物・用語ポップオーバーが表示。話者と立ち絵CGがずれていた場面も全数修正しました。"],
-  "푸터에 서버 운영 후원 링크를 달았습니다.":
-    ["Added a server-cost donation link to the footer.",
-     "フッターにサーバー運営支援リンクを追加しました。"],
   "통합전략 가이드 — 사미 암호판을 보유 리스트 수집 자원으로, 붕괴 패러다임을 1·2단계 카드로, 화룡점정 조우 트리를 큐레이션했습니다.":
     ["Integrated Strategies guide — Sami runestones are now a collectible resource in the inventory, Collapsal Paradigms show stage 1/2 cards, and the finale encounter tree is curated.",
      "統合戦略ガイド — サーミの符呪を所持リストの収集資源に、崩壊パラダイムを1・2段階カードに、締めの遭遇ツリーをキュレーション。"],
