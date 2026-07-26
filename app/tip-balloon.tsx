@@ -19,9 +19,13 @@ const DISMISS_HOURS = 12;
 const FIRST_DELAY_MS = 5000;        // 들어오자마자 튀어나오지 않게
 const ROAM_MS = 17_000;             // 자리 옮기고 다음 팁으로
 const WATCH_MS = 2500;              // 자리가 더럽혀졌는지 감시
+const FADE_MS = 200;                // 사라졌다 나타나는 시간 (globals.css .tip-balloon transition과 맞춤)
 const COLLAPSED = { w: 252, h: 40 };
 const EXPANDED_W = 330;
 const MARGIN = 12;
+// 구름처럼 오르내리는 폭 (globals.css @keyframes tip-float와 맞춤) — 빈 자리 판정에
+// 이만큼 위아래 여유를 둬서 떠다니는 동안에도 본문을 덮지 않게 한다
+const FLOAT = 6;
 
 // ── 빈 자리 찾기 ──────────────────────────────────────────────────────────────
 // 이 태그들은 그 자체가 눈에 보이는 내용이다 (글자가 없어도 가리면 안 된다)
@@ -43,10 +47,24 @@ function paintsContent(el: Element, pageBg: string): boolean {
   return false;
 }
 
-/** 사각형 안 9점을 찍어 전부 배경이면 true */
-function rectFree(x: number, y: number, w: number, h: number, pageBg: string): boolean {
-  for (const cx of [x + 3, x + w / 2, x + w - 3]) {
-    for (const cy of [y + 3, y + h / 2, y + h - 3]) {
+/**
+ * 사각형 안 9점을 찍어 전부 배경이면 true.
+ * 위아래로 넓혀 검사하는데, 샘플이 모서리에서 3px 안쪽을 찍으므로 **FLOAT보다 더** 넓힌다 —
+ * 그러지 않으면 떠다니는 아래끝이 검사선 바깥으로 나가 푸터 같은 걸 살짝 덮는다 (실측 2026-07-27).
+ */
+function rectFree(x: number, y0: number, w: number, h0: number, pageBg: string): boolean {
+  const pad = FLOAT + 4;
+  const y = y0 - pad, h = h0 + pad * 2;
+  // 모서리·중앙 9점만 찍으면 헤더 접기 핸들처럼 작은 요소가 샘플 사이로 빠져나간다
+  // (실측 2026-07-27: 252px 폭에 3열이면 126px 간격) — 촘촘한 격자로 훑는다.
+  const xs: number[] = [];
+  for (let v = x; v < x + w; v += 20) xs.push(v);
+  xs.push(x + w - 1);
+  const ys: number[] = [];
+  for (let v = y; v < y + h; v += 14) ys.push(v);
+  ys.push(y + h - 1);
+  for (const cx of xs) {
+    for (const cy of ys) {
       const el = document.elementFromPoint(cx, cy);
       if (!el) continue;                        // 화면 밖 — 빈 것으로 본다
       if (el.closest(".tip-balloon")) continue; // 자기 자신은 무시
@@ -112,8 +130,12 @@ export default function TipBalloon() {
   const [tips, setTips] = useState<TipRow[]>([]);
   const [index, setIndex] = useState(0);
   const [spot, setSpot] = useState<Spot | null>(null);
+  const [visible, setVisible] = useState(true); // 이동 중 잠깐 사라지는 페이드
   const [open, setOpen] = useState(false);      // 펼침
   const [gone, setGone] = useState(true);       // 마운트 전·닫음
+  const fadeTimer = useRef(0);
+  const spotRef = useRef<Spot | null>(null);
+  spotRef.current = spot;
   const hovering = useRef(false);               // 마우스가 올라가 있으면 자리를 옮기지 않는다
   const openRef = useRef(false);
   openRef.current = open;
@@ -151,12 +173,17 @@ export default function TipBalloon() {
     el.style.transform = dx || dy ? `translate(${Math.round(dx)}px, ${Math.round(dy)}px)` : "";
   });
 
+  // 자리를 옮길 땐 **화면을 가로질러 미끄러지지 않는다** — 사라졌다가 새 자리에서 나타난다
+  // (사용자 지적 2026-07-27: "애니메이션으로 돌아다니니까 엄청 거슬리네").
   const place = useCallback((next: boolean) => {
     if (openRef.current || hovering.current) return;   // 펼쳐져 있거나 만지는 중이면 그대로
-    const found = findSpot(COLLAPSED.w, COLLAPSED.h, spot);
-    if (found) setSpot(found);
-    else setSpot(null);                                // 빈 곳이 없으면 잠시 숨는다
-    if (next) setIndex((i) => (i + 1) % Math.max(1, tips.length));
+    setVisible(false);                                 // ① 먼저 사라지고
+    window.clearTimeout(fadeTimer.current);
+    fadeTimer.current = window.setTimeout(() => {
+      setSpot(findSpot(COLLAPSED.w, COLLAPSED.h, spot));   // ② 새 자리 (없으면 null=숨김)
+      if (next) setIndex((i) => (i + 1) % Math.max(1, tips.length));
+      setVisible(true);                                    // ③ 거기서 나타난다
+    }, FADE_MS);
   }, [spot, tips.length]);
   // 타이머가 첫 렌더의 place를 붙잡고 있으면 '직전 자리에서 멀리'가 늘 null 기준이 된다 —
   // 최신 place를 ref로 넘겨 준다 (타이머는 재설치하지 않는다)
@@ -172,16 +199,19 @@ export default function TipBalloon() {
       if (openRef.current || hovering.current) return;
       // 모달이 열려 있으면 잠시 비운다 (백드롭 뒤에서 어른거리지 않게)
       if (document.querySelector(".modal-backdrop")) { setSpot(null); return; }
-      setSpot((cur) => {
-        if (!cur) { const f = findSpot(COLLAPSED.w, COLLAPSED.h, null); return f; }
-        const pageBg = getComputedStyle(document.body).backgroundColor;
-        if (rectFree(cur.x, cur.y, COLLAPSED.w, COLLAPSED.h, pageBg)) return cur;
-        return findSpot(COLLAPSED.w, COLLAPSED.h, cur);
-      });
+      // 자리가 없거나 더럽혀졌으면 같은 방식(사라졌다 나타나기)으로 옮긴다
+      const cur = spotRef.current;
+      if (!cur) { placeRef.current(false); return; }
+      const pageBg = getComputedStyle(document.body).backgroundColor;
+      if (!rectFree(cur.x, cur.y, COLLAPSED.w, COLLAPSED.h, pageBg)) placeRef.current(false);
     }, WATCH_MS);
     const onResize = () => placeRef.current(false);
     window.addEventListener("resize", onResize);
-    return () => { window.clearInterval(roam); window.clearInterval(watch); window.removeEventListener("resize", onResize); };
+    return () => {
+      window.clearInterval(roam); window.clearInterval(watch);
+      window.clearTimeout(fadeTimer.current);
+      window.removeEventListener("resize", onResize);
+    };
   }, [gone, tips.length]);
 
   // Esc로 접기
@@ -210,7 +240,7 @@ export default function TipBalloon() {
   return createPortal(
     <div
       ref={boxRef}
-      className={`tip-balloon${open ? " open" : ""}`}
+      className={`tip-balloon${open ? " open" : ""}${visible ? "" : " hidden"}`}
       style={{ left, top, width: open ? EXPANDED_W : undefined }}
       onMouseEnter={() => { hovering.current = true; }}
       onMouseLeave={() => { hovering.current = false; }}
@@ -218,7 +248,8 @@ export default function TipBalloon() {
       aria-label={t("사이트 이용 팁")}
     >
       {!open ? (
-        <button type="button" className="tip-head" onClick={() => setOpen(true)} aria-expanded={false}>
+        // key에 자리를 넣어 자리를 옮길 때마다 다시 마운트 → 등장 애니메이션이 새로 재생된다
+        <button key={`${spot.x},${spot.y}`} type="button" className="tip-head" onClick={() => setOpen(true)} aria-expanded={false}>
           <span className="tip-mark" aria-hidden>💡</span>
           <span className="tip-title">{tipTitle(tip, locale)}</span>
           <span className="tip-more" aria-hidden>＋</span>
