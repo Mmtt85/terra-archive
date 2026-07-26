@@ -132,6 +132,10 @@ const D: Record<string, Pair> = {
   "각 기능이 무엇이고 언제 쓰는지 안내": ["What each tool is and when to use it.", "各機能が何で、いつ使うのかを案内。"],
   "오퍼레이터 백과사전 - 명일방주 오퍼 도감 | 테라 아카이브": ["Operator Archive - Arknights Operator Database | Terra Archive", "オペレーター図鑑 - アークナイツ オペレーター一覧 | テラアーカイブ"],
 
+  // 팁 풍선 (app/tip-balloon.tsx) — 팁 내용은 Supabase tips 테이블에 ko/en/ja로 들어 있다
+  "사이트 이용 팁": ["Site tips", "サイトの使い方ヒント"],
+  "팁 그만 보기": ["Don't show tips", "ヒントを表示しない"],
+
   // 업데이트 내역 (헤더 🛠 버튼 + 모달) — 항목 본문은 코드가 아니라 Supabase changelog
   // 테이블에 ko/en/ja가 함께 들어 있다 (docs/supabase-changelog.sql). 여기엔 UI 라벨만.
   "업데이트 내역": ["What's New", "更新履歴"],

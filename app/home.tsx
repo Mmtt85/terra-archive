@@ -14,6 +14,7 @@ import { normSearch, useSearchInput } from "./search";
 import OmniSearch from "./omni-search";
 import BridgeButton from "./lens/bridge-button";
 import ChangelogButton from "./changelog";
+import TipBalloon from "./tip-balloon";
 import { useHashSync } from "./hash-modal";
 import type { OmniTarget } from "./omni";
 import { notifyHandoff, stashHandoff } from "./handoff";
@@ -1376,6 +1377,8 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
 
       {selected && <OperatorModal operator={selected} onClose={closeOperator} />}
       <FeedbackWidget open={feedbackOpen} setOpen={setFeedbackOpen} />
+      {/* 팁 풍선 — 화면 빈 곳을 찾아 떠다닌다 (본문을 가리면 스스로 자리를 옮긴다) */}
+      <TipBalloon />
     </main>
   );
 }

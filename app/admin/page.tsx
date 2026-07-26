@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { adminDeleteFeedback, adminListFeedback, adminSetHandling, adminSetReviewed, handlingAt, withHandling, type FeedbackRow } from "../feedback";
 import { adminDeleteRelease, adminDeleteRule, adminListRules, adminPublishRelease, adminUpsertRule, fetchLatestRelease, type ReleaseRow } from "../rules-api";
 import { adminDeleteChange, adminUpsertChange, fetchAllChanges, CHANGE_KINDS, CHANGE_KIND_LABEL, daysAgoKst, type ChangeDraft, type ChangeRow } from "../changelog-api";
+import { adminDeleteTip, adminUpsertTip, fetchAllTips, type TipDraft, type TipRow } from "../tips-api";
 import { useConfirm } from "../confirm";
 import { compileSnapshot, validateRules, RULE_KINDS, type RuleRow } from "../rules-compile";
 import { RULES as bundledRules } from "../rules";
@@ -116,6 +117,46 @@ function ChangeEditor({ row, onSave, onCancel }: { row: ChangeDraft; onSave: (ne
   );
 }
 
+// ── 팁 풍선 편집기 (docs/supabase-tips.sql) ─────────────────────────────────────
+// 제목은 풍선에 접힌 채로 보이므로 짧게. 이미지는 사이트 내부 경로(/about/*.webp 등).
+function TipEditor({ row, onSave, onCancel }: { row: TipDraft; onSave: (next: TipDraft) => Promise<void>; onCancel: () => void }) {
+  const [v, setV] = useState<TipDraft>(row);
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const set = (patch: Partial<TipDraft>) => setV((cur) => ({ ...cur, ...patch }));
+  const save = async () => {
+    if (!v.title_ko.trim() || !v.body_ko.trim()) { setError("한국어 제목·설명은 필수입니다"); return; }
+    setSaving(true);
+    try { await onSave(v); } catch (err) { setError(String((err as Error).message ?? err)); }
+    setSaving(false);
+  };
+  return (
+    <div className="rule-editor chlog-editor">
+      <header>
+        <b>{row.id ? "팁 편집" : "새 팁"}</b>
+        <label className="tip-active-lbl">
+          <input type="checkbox" checked={v.active} onChange={(e) => set({ active: e.target.checked })} /> 표시
+        </label>
+        <input className="rule-seq" value={String(v.seq)} onChange={(e) => set({ seq: Number(e.target.value) || 0 })} title="정렬 순서" />
+      </header>
+      <input value={v.title_ko} onChange={(e) => set({ title_ko: e.target.value })} placeholder="제목 · 한국어 (필수, 20자 안팎 — 풍선에 그대로 보입니다)" />
+      <input value={v.title_en ?? ""} onChange={(e) => set({ title_en: e.target.value })} placeholder="Title · English" />
+      <input value={v.title_ja ?? ""} onChange={(e) => set({ title_ja: e.target.value })} placeholder="タイトル · 日本語" />
+      <textarea value={v.body_ko} onChange={(e) => set({ body_ko: e.target.value })} rows={3} placeholder="설명 · 한국어 (필수) — 풍선을 펼치면 나옵니다" />
+      <textarea value={v.body_en ?? ""} onChange={(e) => set({ body_en: e.target.value })} rows={3} placeholder="Description · English" />
+      <textarea value={v.body_ja ?? ""} onChange={(e) => set({ body_ja: e.target.value })} rows={3} placeholder="説明 · 日本語" />
+      <input value={v.image ?? ""} onChange={(e) => set({ image: e.target.value })} placeholder="이미지 경로 (선택) — 예: /about/planner.webp" />
+      <input value={v.image_dark ?? ""} onChange={(e) => set({ image_dark: e.target.value })} placeholder="다크 모드 이미지 (선택) — 예: /about/planner-dark.webp" />
+      <input value={v.href ?? ""} onChange={(e) => set({ href: e.target.value })} placeholder="바로가기 경로 (선택) — 예: /infra#roster-import" />
+      {error && <p className="admin-status">{error}</p>}
+      <div className="admin-tools">
+        <button onClick={save} disabled={saving}>{saving ? "저장 중…" : "저장"}</button>
+        <button onClick={onCancel}>취소</button>
+      </div>
+    </div>
+  );
+}
+
 // payload.page("/#infra" 등)를 사람이 읽을 라벨로 — 클릭하면 그 페이지가 새 탭에 열린다
 function pageOf(payload: unknown): string | undefined {
   const page = payload && typeof payload === "object" ? (payload as { page?: unknown }).page : undefined;
@@ -139,7 +180,11 @@ export default function AdminPage() {
   const [status, setStatus] = useState("");
   const [filter, setFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("open"); // open(대응미완료) | reviewed(대응완료)
-  const [tab, setTab] = useState<"feedback" | "rules" | "changelog">("feedback"); // 상단 탭
+  const [tab, setTab] = useState<"feedback" | "rules" | "changelog" | "tips">("feedback"); // 상단 탭
+  // 팁 풍선 원장 (null = 조회 실패 → 미설치 안내)
+  const [tips, setTips] = useState<TipRow[] | null>(null);
+  const [tipStatus, setTipStatus] = useState("");
+  const [editingTip, setEditingTip] = useState<TipDraft | null>(null);
   // 업데이트 내역 원장 (null = 조회 실패 → 미설치 안내)
   const [changes, setChanges] = useState<ChangeRow[] | null>(null);
   const [changeStatus, setChangeStatus] = useState("");
@@ -170,6 +215,7 @@ export default function AdminPage() {
       sessionStorage.setItem("ta-admin-key", pw);
       loadRules(pw);
       loadChanges();
+      loadTips();
     } catch {
       setStatus("조회 실패 — 잠시 후 다시 시도해주세요");
     }
@@ -200,6 +246,28 @@ export default function AdminPage() {
       setChangeStatus("삭제됨");
       loadChanges();
     } catch { setChangeStatus("삭제 실패"); }
+  };
+
+  // ── 팁 풍선 (docs/supabase-tips.sql) — 저장하면 사이트에 바로 반영 ──
+  const loadTips = async () => {
+    try { setTips(await fetchAllTips()); setTipStatus(""); }
+    catch {
+      setTips(null);
+      setTipStatus("팁 테이블 조회 실패 — docs/supabase-tips.sql을 Supabase SQL Editor에서 실행했는지 확인");
+    }
+  };
+
+  const saveTip = async (next: TipDraft) => {
+    await adminUpsertTip(password, next);
+    setEditingTip(null);
+    setTipStatus("저장됨 — 사이트 팁 풍선에 즉시 반영됩니다");
+    loadTips();
+  };
+
+  const removeTip = async (row: TipRow) => {
+    if (!(await confirm({ message: `'${row.title_ko}' 팁을 삭제할까요?`, danger: true }))) return;
+    try { await adminDeleteTip(password, row.id); setTipStatus("삭제됨"); loadTips(); }
+    catch { setTipStatus("삭제 실패"); }
   };
 
   // ── 플래너 규칙 (docs/PLANNER-RULES-DB.md Phase 2) ────────────────────────────
@@ -372,6 +440,9 @@ export default function AdminPage() {
           <button className={tab === "changelog" ? "selected" : ""} onClick={() => setTab("changelog")}>
             업데이트 내역{changes ? ` (${changes.length})` : ""}
           </button>
+          <button className={tab === "tips" ? "selected" : ""} onClick={() => setTab("tips")}>
+            팁 풍선{tips ? ` (${tips.filter((row) => row.active).length}/${tips.length})` : ""}
+          </button>
           <button onClick={() => load(password)}>새로고침</button>
           <button onClick={() => { sessionStorage.removeItem("ta-admin-key"); setEntered(false); setRows([]); }}>잠금</button>
         </div>
@@ -494,6 +565,41 @@ export default function AdminPage() {
                   {row.href && <span className="rule-note" title={row.href}>{row.href}</span>}
                   <button onClick={() => setEditingChange(row)}>편집</button>
                   <button onClick={() => removeChange(row)}>삭제</button>
+                </div>
+              )
+          ))}
+        </div>
+      )}
+      </>)}
+
+      {tab === "tips" && (<>
+      <p className="admin-status">
+        사이트 화면 빈 곳을 떠다니는 힌트 풍선입니다. 저장하면 <b>배포 없이</b> 바로 반영됩니다.
+        제목은 접힌 풍선에 그대로 보이니 짧게, 설명·이미지는 눌러서 펼쳤을 때 나옵니다.
+      </p>
+      {tipStatus && <p className="admin-status">{tipStatus}</p>}
+      {tips === null ? (
+        <p className="admin-status">팁 테이블이 아직 없습니다 — <code>docs/supabase-tips.sql</code>을 Supabase SQL Editor에서 실행하세요.</p>
+      ) : (
+        <div className="admin-rules">
+          <div className="admin-tools">
+            <button onClick={() => setEditingTip({ title_ko: "", title_en: "", title_ja: "", body_ko: "", body_en: "", body_ja: "", image: "", image_dark: "", href: "", active: true, seq: (tips.at(-1)?.seq ?? -1) + 1 })}>+ 새 팁</button>
+            <button onClick={loadTips}>새로고침</button>
+          </div>
+          {editingTip && !editingTip.id && <TipEditor row={editingTip} onSave={saveTip} onCancel={() => setEditingTip(null)} />}
+          {tips.length === 0 && <p className="admin-status">아직 등록된 팁이 없습니다.</p>}
+          {tips.map((row) => (
+            editingTip && editingTip.id === row.id
+              ? <TipEditor key={row.id} row={editingTip} onSave={saveTip} onCancel={() => setEditingTip(null)} />
+              : (
+                <div key={row.id} className={`rule-row${row.active ? "" : " status-draft"}`}>
+                  <code>{row.seq}</code>
+                  {!row.active && <i className="rule-status-chip">숨김</i>}
+                  <span className="rule-preview">💡 {row.title_ko}</span>
+                  {!row.title_en || !row.title_ja || !row.body_en || !row.body_ja ? <span className="rule-note" title="번역이 비면 한국어로 표시됩니다">번역 미완</span> : null}
+                  {row.image && <span className="rule-note" title={row.image}>이미지</span>}
+                  <button onClick={() => setEditingTip(row)}>편집</button>
+                  <button onClick={() => removeTip(row)}>삭제</button>
                 </div>
               )
           ))}

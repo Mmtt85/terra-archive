@@ -376,6 +376,124 @@ button {
   }
 }
 
+/* ── 팁 풍선 (2026-07-27) — 화면 빈 곳을 찾아 떠다니는 힌트, 눌러서 그 자리에서 펼침 ──
+   z-index는 모달(100)보다 낮게 둔다 — 모달이 열리면 컴포넌트가 스스로 숨지만 이중 안전장치. */
+.tip-balloon {
+  position: fixed;
+  z-index: 90;
+  transition: left 0.9s cubic-bezier(0.22, 1, 0.36, 1), top 0.9s cubic-bezier(0.22, 1, 0.36, 1), width 0.22s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tip-balloon { transition: none; }
+}
+.tip-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 252px;
+  padding: 9px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--white);
+  box-shadow: 0 6px 20px #0000001f;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--ink);
+  cursor: pointer;
+  animation: tip-in 0.35s both;
+}
+.tip-head:hover {
+  background: var(--tint-lime);
+  color: var(--tint-lime-ink);
+}
+.tip-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tip-more {
+  font-size: 11px;
+  color: var(--muted);
+}
+.tip-card {
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  background: var(--white);
+  box-shadow: 0 18px 50px #00000030;
+  overflow: hidden auto;
+  /* 화면보다 길어지면 카드 안에서 스크롤 (세로 보정은 JS 실측이 맡는다) */
+  max-height: calc(100dvh - 24px);
+  animation: tip-in 0.22s both;
+}
+.tip-card-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+}
+.tip-card-head b {
+  flex: 1;
+  min-width: 0;
+  font-weight: 900;
+}
+.tip-close {
+  flex: none;
+  border: 0;
+  background: transparent;
+  font-size: 17px;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+}
+.tip-shot {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  object-position: top center;
+  border-bottom: 1px solid var(--line);
+}
+.tip-body {
+  margin: 0;
+  padding: 11px 13px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--ink2);
+}
+.tip-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 13px 12px;
+}
+.tip-go {
+  padding: 5px 11px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--chip);
+  color: var(--lime);
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+}
+.tip-off {
+  margin-left: auto;
+  border: 0;
+  background: transparent;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+@keyframes tip-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+
 /* 업데이트 내역 — 로고 바로 오른쪽(1줄 소속, 접어도 보임) 버튼 + 모달 (2026-07-27 이동) */
 .chlog-trigger {
   display: inline-flex;
@@ -5604,10 +5722,17 @@ footer p {
   resize: vertical;
   white-space: pre;
 }
-/* 업데이트 내역 편집기 — 본문은 JSON이 아니라 사람이 읽는 문장이라 줄바꿈·본문 글꼴 */
+/* 업데이트 내역·팁 편집기 — 본문은 JSON이 아니라 사람이 읽는 문장이라 줄바꿈·본문 글꼴 */
 .chlog-editor textarea {
   font: 500 13px/1.6 inherit;
   white-space: pre-wrap;
+}
+.tip-active-lbl {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 700;
 }
 .recruit-combo li.pending {
   border-style: dashed;
