@@ -136,9 +136,6 @@ export function logBridgeEvent(ev: BridgeLogEvent): void {
   notify();
 }
 export const bridgeLogCount = () => runLog.length;
-/** 이 테마의 리플레이(플레이 로그)가 있는가 — 연결 중이든 끊은 뒤든 (다음 연결 전까지). */
-export const bridgeLogFor = (topic: string): boolean =>
-  runLog.length > 0 && (settings ? lock?.topic === topic : logMeta?.topic === topic);
 
 /** 각 탭이 라이브 인식 결과를 알려준다 — ① 전투 화면이면 전투 홀드에 들어가고(큰 전환까지
  *  인식 중단), ② 확신 이동(goto)이면 화면 판정 캐시에 남겨 같은 화면 복귀 시 OCR을 생략한다. */
@@ -151,29 +148,45 @@ export function memoBridgeScene(outcome: LensOutcome): void {
   if (sceneMemos.length > MEMO_MAX) sceneMemos.shift();
 }
 
-/** 리플레이 다운받기 — 버튼을 눌러야만 내려간다 (사용자 확정 2026-07-26: 자동 다운로드 금지).
- *  연결 중에도, 끊은 뒤에도(다음 연결 전까지) 받을 수 있다. */
-export function downloadBridgeLog(): void {
-  if (!runLog.length) return;
+/** 리플레이 JSON의 파일 형태 — 익스포트가 만들고 임포트가 읽는 공통 스키마. */
+export type BridgeLogPayload = {
+  site: string;
+  theme: string | null;
+  themeName: string | null;
+  startedAt: string;
+  endedAt: string;
+  capture: { width: number; height: number } | null;
+  events: BridgeLogEvent[];
+};
+
+/** 현재(또는 마지막) 연결의 플레이 로그 — 리플레이 프리뷰 모달이 표시용으로 읽는다.
+ *  연결 중에도, 끊은 뒤에도(다음 연결 전까지) 살아 있다. */
+export function bridgeLogPayload(): BridgeLogPayload | null {
+  if (!runLog.length) return null;
   const meta = settings
     ? { topic: lock?.topic ?? null, name: lock?.name ?? null, startedAt,
         endedAt: new Date().toISOString(), width: settings.width, height: settings.height }
     : logMeta;
-  if (!meta) return;
-  const payload = {
+  if (!meta) return null;
+  return {
     site: "terra-archive",
     theme: meta.topic,
     themeName: meta.name,
     startedAt: meta.startedAt, endedAt: meta.endedAt,
-    capture: meta.width ? { width: meta.width, height: meta.height } : null,
+    capture: meta.width != null ? { width: meta.width, height: meta.height! } : null,
     events: runLog,
   };
+}
+
+/** 페이로드를 JSON 파일로 저장 — 리플레이 모달의 'JSON 내보내기'가 부른다.
+ *  자동 다운로드는 없다 (사용자 확정 2026-07-26: 버튼을 눌러야만 내려간다). */
+export function downloadBridgePayload(payload: BridgeLogPayload): void {
   try {
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
     const a = document.createElement("a");
     const stamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-");
     a.href = URL.createObjectURL(blob);
-    a.download = `테라아카이브-록라기록-${meta.name ?? "게임"}-${stamp}.json`;
+    a.download = `테라아카이브-록라기록-${payload.themeName ?? "게임"}-${stamp}.json`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
   } catch { /* 다운로드 차단 환경 — 로그는 콘솔에 남긴다 */ }

@@ -279,10 +279,13 @@ export default function OmniSearch({ roster, includeFuture, extra, onGo }: {
 
   return (
     <div className="omni">
+      {/* 입력창처럼 생긴 트리거 (사용자 확정 2026-07-26) — 실제 입력은 클릭 시 열리는
+          패널에서 한다. 검색창으로 보이도록 placeholder풍 문구 + ⌘K 힌트. */}
       <button type="button" className="omni-trigger" onClick={openPanel} aria-label={t("유니버셜 서치 — 사이트 전체 검색")}
         title={t("유니버셜 서치 — 오퍼·재료·스토리·통합전략·기능을 한 번에 찾아 이동합니다 (⌘K)")}>
         <span aria-hidden>⌕</span>
         <span className="omni-trigger-label">{t("유니버셜 서치")}{isNewFeature("omni") && <span className="new-badge">{t("새기능")}</span>}</span>
+        <kbd className="omni-trigger-kbd" aria-hidden>⌘K</kbd>
       </button>
       {panel}
     </div>

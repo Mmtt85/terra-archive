@@ -12,10 +12,13 @@ export type LensMode = "rogue" | "recruit" | "story";
 // 라이브 스트림용 난이도 캐시 — 한 판 도는 동안 불변 (배지 OCR 생략, 10분 TTL).
 // 미검출(배지 없는 화면·모달)도 기억해 10초 쿨다운을 둔다 — 없는 배지를 화면마다
 // 0.3초씩 다시 찾는 낭비 제거 ("고정되면 안 바뀌는 항목은 무시", 2026-07-26).
+// ⚠ 확정은 **2회 연속 같은 값**일 때만 — 배지 OCR은 가끔 오독하는데(영상6: 3을 4로),
+// 한 번 읽고 세션 캐시에 박으면 그 오독이 판 내내 남는다. 첫 읽기는 보류만 한다.
 let gradeCache: { grade: number; at: number } | null = null;
+let gradePend: number | null = null;
 let gradeMissAt = 0;
 /** 게임 연결 시작 시 호출 — 지난 판의 난이도가 새 판에 새지 않게 캐시를 비운다. */
-export function resetGradeCache(): void { gradeCache = null; gradeMissAt = 0; }
+export function resetGradeCache(): void { gradeCache = null; gradePend = null; gradeMissAt = 0; }
 
 /** 게임 HUD 수치 파싱 (원시 OCR 라인) — 브리지 플레이 로그용 추정치 */
 function parseHud(rawLines: string[]): LensHud {
@@ -139,9 +142,12 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
     const skipGradeOcr = !!opts?.live && (gradeFresh || Date.now() - gradeMissAt < 10_000);
     const gradeP = skipGradeOcr ? null : session.difficulty()
       .then((g) => {
-        if (g !== null) gradeCache = { grade: g, at: Date.now() };
-        else gradeMissAt = Date.now();
-        return g;
+        if (g === null) { gradeMissAt = Date.now(); return null; }
+        if (!opts?.live) return g;                       // 수동 스샷 1장은 그대로 쓴다 (기존 동작)
+        if (gradePend === g) { gradeCache = { grade: g, at: Date.now() }; return g; }
+        gradePend = g;                                   // 첫 읽기 — 다음 화면과 일치해야 확정
+        console.debug(`[lens] 난이도 배지 보류: ${g} (재확인 대기)`);
+        return null;
       })
       .catch(() => null);
     // 단계형 인식 — PSM11만으로 판정이 나면 나머지 패스를 생략한다 (속도)

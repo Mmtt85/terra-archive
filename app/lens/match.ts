@@ -289,13 +289,20 @@ export function analyzeLines(
     return g;
   };
 
+  // 테마 **제목 조각** 라인 제거 — 메인 화면 제목("탐험가의 은빛 서리 끝자락")이 여러 줄로
+  // 쪼개져 읽히면 "은빛 서리" 같은 조각이 역포함 규칙으로 항목 이름("우뚝 솟은 은빛 서리")의
+  // 조각과 겹쳐 가짜 nameHit를 만든다 (2026-07-26 영상6: 사미 메인 → 5층 작전 모달 오발).
+  // 제목의 부분 문자열인 라인은 항목 특정 근거가 될 수 없으므로 매칭 전에 버린다.
+  const dropTitleFrags = (ls: string[], titleN: string): string[] =>
+    titleN.length >= 5 ? ls.filter((l) => !titleN.includes(l)) : ls;
+
   // ── 테마 하드 고정 (테마별 게임연결, 사용자 확정 2026-07-26) ─────────────────
   // "사미록라의 게임연결 버튼은 무조건 사미록라만" — 이 테마 밖은 아예 보지 않는다.
   // 다른 테마로의 전환·되묻기가 원천적으로 불가능하고, 매칭도 1/6 인덱스만 봐서 빠르다.
   if (opts?.context?.lock && opts.context.topic) {
     const topic = opts.context.topic;
     const name = index.entries.find((e) => e.topic === topic)?.topicName ?? topic;
-    const w = within(topic, linesM, index);
+    const w = within(topic, dropTitleFrags(linesM, norm(name)), index);
     // 이름 매칭 또는 **조우 본문 우세** — 조우 스토리 화면은 제목이 장식 서체라 이름을 못
     // 읽지만, 본문 문단이 데이터의 조우 설명과 그대로 일치한다(트라이그램 포함율). 단독
     // 조우 모달 + 점수 2 이상(장문 여러 줄 일치)이면 이름 없이도 확정한다 (영상3 f172).
@@ -367,7 +374,7 @@ export function analyzeLines(
     return null;
   })();
   if (anchor) {
-    const w = within(anchor.topic, linesM, index);
+    const w = within(anchor.topic, dropTitleFrags(linesM, norm(anchor.name)), index);
     // 항목은 **이름 수준 매칭**이 있을 때만 연다 — 테마 메인처럼 이름이 없는 화면에서
     // 본문 조각 잡음이 유물 모달을 여는 오작동 방지 (2026-07-26 제보: 사미 메인에서
     // '캔낫의 표식'이 뜸). 잡음뿐이면 그 테마의 지도로만 보낸다.
@@ -518,7 +525,7 @@ function matchEntries(linesN: string[], entries: Entry[]): Map<Entry, Hit> {
   for (const line of linesN) {
     const lineTG = trigrams(line);
     const lineLatin = /^[0-9a-z]+$/.test(line); // 순라틴 라인은 역포함(reverse) 문턱을 높인다
-    const nameHits: Entry[] = [];
+    let nameHits: Entry[] = [];
     const bodyHits: Entry[] = [];
     for (const e of entries) {
       const n = e.nameN;
@@ -535,6 +542,18 @@ function matchEntries(linesN: string[], entries: Entry[]): Map<Entry, Hit> {
       }
       if (nm) nameHits.push(e);
       else if (line.length >= 6 && e.bodyN.length >= 6 && contain(lineTG, e.bodyTG) >= 0.7) bodyHits.push(e);
+    }
+    // 같은 라인의 포함관계 이름 이중 매칭 제거 — '개선의 뿔피리' 한 줄이 별개 유물 '뿔피리'
+    // 까지 nameHit시키면 모아보기에 유령 항목이 낀다 (2026-07-26 영상6: 상점마다 뿔피리 등장).
+    // 더 긴(구체적) 이름이 같은 라인에 맞았으면 그 부분 문자열 이름은 떨어뜨린다.
+    if (nameHits.length > 1) {
+      const drop = new Set<Entry>();
+      for (const a of nameHits) {
+        for (const b of nameHits) {
+          if (a !== b && a.nameN.length > b.nameN.length && a.nameN.includes(b.nameN)) drop.add(b);
+        }
+      }
+      if (drop.size) nameHits = nameHits.filter((e) => !drop.has(e));
     }
     // 이름 매칭과 본문 매칭은 IDF 풀을 분리한다 — 영어처럼 바이그램 엔트로피가 낮은 언어에서
     // 이름 한 줄이 수백 개 본문에 공통 바이그램(in·ng·er…)으로 저확신 매칭돼 IDF가 폭발,
