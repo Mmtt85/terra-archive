@@ -1,0 +1,7 @@
+# 테라 아카이브 계정 연동 워커 (사이트 배포와 별개)
+# Yostar(KR/JP/EN) 이메일 인증코드 → 게임 서버 syncData → 보유 오퍼 목록.
+# 무상태: KV/D1 바인딩도 시크릿도 없다 (이메일·코드·토큰을 저장하지 않는다).
+# 배포: `bash deploy.sh`  ·  점검: curl "https://terra-archive-account.nzkonaru.workers.dev/probe?server=kr"
+name = "terra-archive-account"
+main = "src/index.js"
+compatibility_date = "2026-07-01"

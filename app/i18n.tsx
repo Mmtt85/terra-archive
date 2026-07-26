@@ -646,6 +646,91 @@ const D: Record<string, Pair> = {
   "전체 해제": ["Clear all", "全解除"],
   "적용 및 자동편성 실행": ["Apply & run auto-assign", "適用して自動編成を実行"],
   "MAA 파일 가져오기": ["Import MAA file", "MAAファイル読み込み"],
+  // 입력 방식 (직접 입력 / 가져오기: MAA·스크린샷·게임 로그인) — 2026-07-26
+  "보유 오퍼 입력 방식": ["Input method", "入力方式"],
+  "직접 입력": ["Enter manually", "手動で入力"],
+  "가져오기": ["Import", "読み込み"],
+  "MAA 파일": ["MAA file", "MAAファイル"],
+  "MAA(MaaAssistantArknights)의 오퍼 박스 인식 결과 JSON을 불러옵니다. 파일에 있는 오퍼만 갱신하므로, MAA가 모르는 최신 오퍼는 현재 설정이 그대로 남습니다.": [
+    "Loads an operator-box recognition JSON from MAA (MaaAssistantArknights). Only operators listed in the file are updated, so newer operators MAA doesn't know about keep their current setting.",
+    "MAA（MaaAssistantArknights）のオペレーターBOX認識結果JSONを読み込みます。ファイルに載っているオペレーターのみ更新するので、MAAが知らない最新オペレーターは現在の設定が残ります。",
+  ],
+  "스크린샷": ["Screenshot", "スクリーンショット"],
+  "게임의 오퍼레이터 목록 화면을 캡처해 붙여넣으면 카드 그림과 정예화를 자동으로 읽습니다. 게임 세션을 건드리지 않아 플레이 중에도 쓸 수 있습니다.": [
+    "Paste a capture of the in-game operator list and the card art and promotion levels are read automatically. It never touches your game session, so you can use it while playing.",
+    "ゲームのオペレーター一覧画面をキャプチャして貼り付けると、カードの絵と昇進段階を自動で読み取ります。ゲームのセッションに触れないのでプレイ中でも使えます。",
+  ],
+  "게임 로그인": ["Game login", "ゲームログイン"],
+  "요스타 계정 이메일로 인증코드를 받아 로그인하면, 계정의 실제 보유 목록과 정예화를 그대로 가져옵니다 — 가장 정확한 방법입니다.": [
+    "Sign in with a verification code sent to your Yostar account email to import your account's actual roster and promotion levels — the most accurate method.",
+    "Yostarアカウントのメールに届く認証コードでログインすると、アカウントの実際の所持リストと昇進段階をそのまま取り込みます — 最も正確な方法です。",
+  ],
+  "**주의: 가져오는 순간 게임 접속이 끊깁니다.** 데이터를 받으려면 게임 서버에 접속을 새로 열어야 하고, 명일방주는 계정당 접속을 하나만 허용하기 때문입니다. 게임을 하지 않을 때 쓰세요 — 계정에는 아무 문제가 없고, 다시 실행하면 그대로 접속됩니다.": [
+    "**Note: importing disconnects your game session.** Fetching the data requires opening a new session on the game server, and Arknights allows only one session per account. Use it while you are not playing — your account is unaffected and you can simply log back in.",
+    "**注意：取り込むとゲームの接続が切れます。** データを受け取るにはゲームサーバーに新しく接続する必要があり、アークナイツはアカウントごとに接続を1つしか許可しないためです。プレイしていないときに使ってください — アカウントには何の問題もなく、再起動すればそのまま接続できます。",
+  ],
+  "서버": ["Server", "サーバー"],
+  // 서버 이름(한국·일본·글로벌)은 방송 배지 쪽 키를 그대로 쓴다 (사전 상단)
+  "요스타 계정 이메일": ["Yostar account email", "Yostarアカウントのメール"],
+  "인증코드 받기": ["Send code", "認証コードを送る"],
+  "인증코드 다시 받기": ["Resend code", "認証コードを再送"],
+  "보내는 중…": ["Sending…", "送信中…"],
+  "인증코드": ["Verification code", "認証コード"],
+  "로그인해서 보유 오퍼 가져오기": ["Sign in and import roster", "ログインして所持リストを取り込む"],
+  "가져오는 중…": ["Importing…", "取り込み中…"],
+  "인증코드를 보냈습니다 — 메일함(스팸함 포함)을 확인해 주세요.": [
+    "Code sent — check your inbox (including spam).",
+    "認証コードを送りました — メールボックス（迷惑メールも）を確認してください。",
+  ],
+  "이메일과 인증코드는 저장하지 않습니다 — 요스타 인증을 대신 호출하는 데만 쓰고 바로 버립니다. 받은 보유 목록도 이 브라우저 안에만 남습니다.": [
+    "We never store your email or code — they are used only to call Yostar's authentication on your behalf and then discarded. The imported roster stays in this browser.",
+    "メールアドレスと認証コードは保存しません — Yostarの認証を代行するためだけに使い、すぐ破棄します。取り込んだ所持リストもこのブラウザ内にのみ残ります。",
+  ],
+  "{name} 독타의 계정에서 보유 {own}명을 가져왔습니다 — 확인 후 '적용 및 자동편성 실행'을 누르세요.": [
+    "Imported {own} owned operators from Dr. {name}'s account — review, then press 'Apply & run auto-assign'.",
+    "{name}ドクターのアカウントから所持{own}名を取り込みました — 確認後「適用して自動編成を実行」を押してください。",
+  ],
+  "{name} 독타의 계정에서 보유 {own}명을 가져왔습니다 (사이트 미수록 {skip}명 제외) — 확인 후 '적용 및 자동편성 실행'을 누르세요.": [
+    "Imported {own} owned operators from Dr. {name}'s account ({skip} not in this site's data were skipped) — review, then press 'Apply & run auto-assign'.",
+    "{name}ドクターのアカウントから所持{own}名を取り込みました（当サイト未収録の{skip}名は除外） — 確認後「適用して自動編成を実行」を押してください。",
+  ],
+  // 계정 연동 오류 (app/account.ts accountErrorText)
+  "계정 서버에 연결할 수 없습니다 — 잠시 뒤 다시 시도해 주세요.": [
+    "Could not reach the account service — please try again in a moment.",
+    "アカウントサーバーに接続できません — 少し待ってから再試行してください。",
+  ],
+  "인증코드 요청이 너무 잦습니다 — 1~2분 뒤에 다시 시도해 주세요.": [
+    "Too many code requests — please try again in a minute or two.",
+    "認証コードの要求が多すぎます — 1〜2分後に再試行してください。",
+  ],
+  "요스타가 캡차 확인을 요구했습니다 — 잠시 뒤 다시 시도해 주세요.": [
+    "Yostar asked for a captcha — please try again in a moment.",
+    "Yostarがキャプチャ認証を要求しました — 少し待ってから再試行してください。",
+  ],
+  "그 이메일로 등록된 요스타 계정을 찾지 못했습니다 — 서버 선택과 이메일을 확인해 주세요.": [
+    "No Yostar account found for that email — check the server selection and the address.",
+    "そのメールで登録されたYostarアカウントが見つかりません — サーバー選択とアドレスを確認してください。",
+  ],
+  "인증코드가 맞지 않거나 만료되었습니다 — 코드를 다시 받아 주세요.": [
+    "The code is wrong or expired — please request a new one.",
+    "認証コードが違うか期限切れです — コードを再取得してください。",
+  ],
+  "이메일 형식과 서버 선택을 확인해 주세요.": [
+    "Please check the email address and the selected server.",
+    "メールアドレスとサーバー選択を確認してください。",
+  ],
+  "로그인 정보가 만료되었습니다 — 인증코드로 다시 로그인해 주세요.": [
+    "Your sign-in expired — please sign in again with a verification code.",
+    "ログイン情報の期限が切れました — 認証コードで再ログインしてください。",
+  ],
+  "게임 서버 로그인에 실패했습니다 — 게임을 완전히 종료한 뒤 다시 시도해 주세요.": [
+    "Game server sign-in failed — close the game completely and try again.",
+    "ゲームサーバーへのログインに失敗しました — ゲームを完全に終了してから再試行してください。",
+  ],
+  "계정 연동에 실패했습니다 ({code}) — 잠시 뒤 다시 시도해 주세요.": [
+    "Account import failed ({code}) — please try again in a moment.",
+    "アカウント連携に失敗しました（{code}） — 少し待ってから再試行してください。",
+  ],
   "MAA(MaaAssistantArknights)의 오퍼 박스 인식 결과 JSON을 불러와 보유·정예화를 한 번에 설정합니다": [
     "Load an operator-box recognition JSON from MAA (MaaAssistantArknights) to set ownership and promotions at once",
     "MAA（MaaAssistantArknights）のオペレーターBOX認識結果JSONを読み込み、所持と昇進を一括設定します",
@@ -1416,8 +1501,8 @@ const D: Record<string, Pair> = {
   "수신": ["frames", "受信"],
   "인식": ["read", "認識"],
   "기록": ["log", "記録"],
-  "인식 중…": ["Reading…", "認識中…"],
-  "고정": ["locked", "固定"],
+  // '인식 중…'(1447줄)·'고정'(517줄)은 위쪽에 이미 있어 여기 다시 두지 않는다 —
+  // 같은 키를 두 번 쓰면 뒤쪽이 앞쪽을 덮어써서 플래너 📌 툴팁 번역이 바뀌었다 (2026-07-26)
   "다시 연결하면 이 테마로만 인식하도록 고정됩니다": [
     "Reconnect here to lock recognition to this theme only",
     "ここで接続し直すと、このテーマのみ認識するよう固定されます",

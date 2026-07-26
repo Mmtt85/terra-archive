@@ -17,6 +17,7 @@
 | Git | `github.com:Mmtt85/terra-archive.git` (main 브랜치) |
 | 배포 (주) | **https://terra-archive.pages.dev** — Cloudflare Pages. `bash scripts/deploy.sh` 한 방 (빌드→스테이징→pages deploy). wrangler는 이 기기에 OAuth 로그인됨(nzkonaru@gmail.com), 프로젝트에 nodejs_compat 플래그 설정됨. **⚠️ 자동 실행 금지 — 배포는 사용자가 변경분을 모아서 직접 돌린다** (2026-07 규칙 변경). |
 | 방송 워커 | `terra-archive-broadcast` (workers/broadcast) — 6시간마다 유튜브 공식 채널 3개(KR·JP·GL)에서 방송 일정 자동 수집 → KV → https://terra-archive-broadcast.nzkonaru.workers.dev (프론트 폴백: app/data/broadcasts.json). 배포는 `bash workers/broadcast/deploy.sh`, 상세는 `.claude/skills/broadcast-check`. **중국 서버(미래시)는 비리비리 라이브룸**이라 워커가 아니라 GitHub Actions(`scripts/build-broadcasts-cn.py`)가 수집한다 — 비리비리가 클라우드플레어 이그레스를 412로 밴하기 때문 |
+| 계정 워커 | `terra-archive-account` (workers/account) — **요스타(KR/JP/EN) 이메일 인증코드 로그인 → 게임서버 syncData → 보유 오퍼 목록**. 보유 오퍼 설정 → 가져오기 → 게임 로그인이 호출한다 (`app/account.ts`). 무상태(KV·시크릿 없음, 이메일/코드/토큰 저장·로깅 안 함), Origin은 사이트+localhost만 허용. 배포 `bash workers/account/deploy.sh` · 점검 `curl ".../probe?server=kr"`. 브라우저에서 직접 못 부르는 이유: Yostar API가 CORS를 안 주고 MD5/HMAC 서명 + 안드로이드 UA 위장이 필요(Workers에 MD5가 없어 `src/md5.js` 자체 구현). **동기화하면 게임 세션이 끊긴다**(계정당 접속 1개) — UI에 반드시 경고를 남겨둘 것 |
 | 스택 | vinext(Cloudflare용 Next 호환 런타임) + Next.js 16 / React 19 / Tailwind 4 |
 | 명령 | `npm run dev`(localhost:3000) / `npm run build` / `npm run lint` |
 | 운영 수칙 | 수정하면 **빌드 확인 → 커밋 → git push 까지만** 진행하고 **멈춘다**. `scripts/deploy.sh`는 절대 자동 실행하지 않음 — 세션마다 자동 배포하면 토큰이 낭비되므로, 배포는 사용자가 여러 변경을 모아서 직접 실행한다 (2026-07 규칙). 모든 허가 요청은 기본 YES |
@@ -295,6 +296,14 @@ npm run build                             # 9. 빌드 확인 → 커밋 → 푸�
 - 순금 병목 우선, 토큰 시너지(속세의 화식/감지 정보/무성의 공명/생각의 사슬/주술 결정/마물 요리),
   시너지 흐름 트리 모달, 슬롯별 대체 오퍼(시너지 코어는 대체 불가 표시), 도움말 모달(HelpModal).
 - **보유 오퍼 설정**: 전원 표시하되 1~5성은 기본 보유 체크, 6성은 기본 미보유.
+  입력 방식은 헤더 세그먼트로 **두 종류**다 (사용자 확정 2026-07-26):
+  **① 직접 입력** = 카드 격자에서 손으로 체크(검색·성급 일괄·정렬 포함),
+  **② 가져오기** = MAA 파일 · 스크린샷 · 게임 로그인 세 경로를 한 패널에 모음(`app/roster-import.tsx`).
+  세 경로 모두 결과를 draft에 넣고 **직접 입력 화면으로 돌려보내** 검토 후 "적용 및 자동편성 실행"을 누르게 한다.
+  **게임 로그인(2026-07-26)**: 요스타 이메일 인증코드 → 계정 워커(위 §1 표) → 계정의 실제 보유 목록.
+  MAA/스캔과 달리 **보유 체크를 통째로 덮어쓴다**(계정에 없으면 미보유가 정답). 정예화도 evolvePhase 그대로.
+  UI에 반드시 남겨야 하는 고지 2개: ⓐ 가져오는 순간 **게임 접속이 끊긴다**(계정당 세션 1개),
+  ⓑ 이메일·코드·토큰은 저장하지 않는다(토큰은 브라우저 메모리, localStorage 금지 — 계정 접근 권한 값).
   **MAA 파일 가져오기**: MAA(MaaAssistantArknights) 오퍼 박스 인식 JSON을 불러와 보유+정예화를
   일괄 반영 (플랫 배열 Arknights_OperBox_Export.json / 원본 operbox {own_opers, all_opers} 둘 다,
   UTF-8 BOM 처리, 파일에 없는 오퍼는 현재 체크 상태 유지).

@@ -22,6 +22,9 @@ import { optimizeOff, investOff } from "./planner-offload";
 
 // 보유 오퍼 화면 스캔(에뮬레이터 화면 공유 → 자동 인식, 2026-07-23) — 초상 템플릿 2.4MB 무거워 lazy 스플릿
 const ScannerModal = lazy(() => import("./scan/scanner").then((m) => ({ default: m.ScannerModal })));
+// 보유 오퍼 가져오기(MAA 파일·스크린샷·게임 로그인) 패널 — 2026-07-26
+import { RosterImportPanel } from "./roster-import";
+import type { AccountRoster } from "./account";
 import costsData from "./data/costs.json";
 
 // 재료 표시용 카탈로그 (이름·아이콘) — costs.json items (build-costs.py 수확)
@@ -2039,6 +2042,9 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
   const [draft, setDraft] = useState<Set<string>>(new Set(ownedIds));
   const [eliteDraft, setEliteDraft] = useState<Map<string, Elite>>(new Map(eliteById));
   const [showScan, setShowScan] = useState(false); // 스크린샷 스캐너(모달 내부에서 draft에 병합)
+  // 입력 방식 두 종류 (사용자 확정 2026-07-26): 직접 입력 = 카드 격자에서 손으로 체크,
+  // 가져오기 = MAA 파일·스크린샷·게임 로그인. 가져온 결과는 직접 입력 화면에서 검토한 뒤 적용한다.
+  const [mode, setMode] = useState<"direct" | "import">("direct");
   // 비제어 입력 — 450칩 목록을 한 글자마다 다시 그리지 않는다 (search.ts)
   const { term: searchTerm, inputProps: searchProps } = useSearchInput();
   const [sortKey, setSortKey] = useState("기본");
@@ -2154,6 +2160,28 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
     };
     reader.readAsText(file);
   };
+  // 게임 로그인(요스타 계정)으로 받아온 보유 목록 반영. MAA·스캔과 달리 **계정의 실제 전체
+  // 목록**이라 보유 체크를 통째로 덮어쓴다 — 계정에 없는 오퍼는 미보유가 정답이다.
+  // 사이트에 없는 오퍼(미실장 데이터를 끈 상태의 중섭 선행분 등)는 건너뛰고 건수만 알린다.
+  const applyAccount = (roster: AccountRoster) => {
+    const byId = new Map(allOps.map((op) => [op.id, op]));
+    const nextDraft = new Set<string>();
+    const nextElite = new Map<string, Elite>();
+    let unmatched = 0;
+    for (const char of roster.chars) {
+      const op = byId.get(char.id);
+      if (!op) { unmatched += 1; continue; }
+      nextDraft.add(op.id);
+      const elite = Math.max(0, Math.min(2, char.elite)) as Elite;
+      if (elite < 2 && eliteOptions(op).length > 0) nextElite.set(op.id, elite);
+    }
+    setDraft(nextDraft);
+    setEliteDraft(nextElite);
+    setMode("direct");
+    setImportMsg(unmatched > 0
+      ? t("{name} 독타의 계정에서 보유 {own}명을 가져왔습니다 (사이트 미수록 {skip}명 제외) — 확인 후 '적용 및 자동편성 실행'을 누르세요.", { name: roster.player.nickName, own: nextDraft.size, skip: unmatched })
+      : t("{name} 독타의 계정에서 보유 {own}명을 가져왔습니다 — 확인 후 '적용 및 자동편성 실행'을 누르세요.", { name: roster.player.nickName, own: nextDraft.size }));
+  };
   // 성급별 가능한 정예화 단계: 4성+ = 노정예/1정/2정, 3성 = 노정예/1정, 2성 이하 = 노정예뿐(선택지 없음)
   const BULK_GROUPS: { label: string; test: (rarity: number) => boolean; elites: Elite[] }[] = [
     { label: "6성", test: (rarity) => rarity === 6, elites: [0, 1, 2] },
@@ -2183,19 +2211,33 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
           <span className="modal-kicker">ROSTER · {t("{n}/{m} 보유", { n: draft.size, m: allOps.length })}</span>
           <h2>{t("보유 오퍼레이터 설정")}</h2>
           <div className="roster-tools">
-            <input {...searchProps} placeholder={t("이름·소속 검색")} />
-            <button type="button" onClick={() => setDraft(new Set(allOps.map((op) => op.id)))}><span className="btn-icon" aria-hidden>✓</span>{t("전체 선택")}</button>
-            <button type="button" onClick={() => setDraft(new Set())}><span className="btn-icon" aria-hidden>✕</span>{t("전체 해제")}</button>
-            <label className="maa-import" title={t("MAA(MaaAssistantArknights)의 오퍼 박스 인식 결과 JSON을 불러와 보유·정예화를 한 번에 설정합니다")}>
-              <span className="btn-icon" aria-hidden>⤒</span>{t("MAA 파일 가져오기")}
-              <input type="file" accept="application/json,.json" onChange={(event) => { const file = event.target.files?.[0]; if (file) importMaa(file); event.target.value = ""; }} />
-            </label>
-            <button type="button" onClick={() => setShowScan(true)} title={t("오퍼 목록 스크린샷을 자동 인식해 보유·정예화를 채웁니다")}><span className="btn-icon" aria-hidden>◉</span>{t("스크린샷으로 보유 오퍼 스캔")}{isNewFeature("scanner") && <span className="new-badge">{t("새기능")}</span>}</button>
+            {/* 입력 방식 — 직접 입력(카드 격자) / 가져오기(MAA·스크린샷·게임 로그인) */}
+            <div className="roster-mode" role="group" aria-label={t("보유 오퍼 입력 방식")}>
+              <button type="button" className={mode === "direct" ? "selected" : ""} onClick={() => setMode("direct")}><span className="btn-icon" aria-hidden>▦</span>{t("직접 입력")}</button>
+              <button type="button" className={mode === "import" ? "selected" : ""} onClick={() => setMode("import")}><span className="btn-icon" aria-hidden>⤒</span>{t("가져오기")}{isNewFeature("account") && <span className="new-badge">{t("새기능")}</span>}</button>
+            </div>
+            {mode === "direct" && (
+              <>
+                <input {...searchProps} placeholder={t("이름·소속 검색")} />
+                <button type="button" onClick={() => setDraft(new Set(allOps.map((op) => op.id)))}><span className="btn-icon" aria-hidden>✓</span>{t("전체 선택")}</button>
+                <button type="button" onClick={() => setDraft(new Set())}><span className="btn-icon" aria-hidden>✕</span>{t("전체 해제")}</button>
+              </>
+            )}
             <button type="button" className="apply" onClick={() => onApply(draft, eliteDraft)}><span className="btn-icon" aria-hidden>⟳</span>{t("적용 및 자동편성 실행")}</button>
           </div>
         </header>
         <div className="modal-scroll">
           {importMsg && <p className="dorm-note maa-import-msg">{importMsg}</p>}
+          {mode === "import" ? (
+            <RosterImportPanel
+              t={t}
+              onMaaFile={(file) => { importMaa(file); setMode("direct"); }}
+              onScan={() => setShowScan(true)}
+              onAccount={applyAccount}
+              scanBadge={isNewFeature("scanner") ? <span className="new-badge">{t("새기능")}</span> : null}
+            />
+          ) : (
+          <>
           <p className="dorm-note">{rich(t("3성 이상 오퍼는 카드 아래에서 **노정예/1정/2정**(3성은 1정까지)을 선택할 수 있습니다 (기본값 최대 정예화). 얼굴을 클릭하면 상세 정보가 열립니다."))}</p>
           {allOps.some((op) => op.unreleased) && (
             <p className="dorm-note">{rich(t("**미실장** 배지가 붙은 오퍼는 미출시(중국 서버 선행) 오퍼입니다 — 미래시 데이터 포함이 켜져 있을 때만 표시되며, 스킬 텍스트는 비공식 AI 번역입니다."))}</p>
@@ -2230,6 +2272,8 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
             </>
           )}
           <div className="roster-grid">{releasedOps.map(renderCard)}</div>
+          </>
+          )}
         </div>
       </section>
       {/* 스크린샷 스캐너 — 모달 내부에서 열고, 인식 결과를 draft/eliteDraft에 병합(MAA 가져오기와 동일
@@ -2252,6 +2296,7 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
                   return n;
                 });
                 setShowScan(false);
+                setMode("direct"); // 인식 결과를 카드 격자에서 바로 검토하게 한다
                 setImportMsg(t("스캔 결과 {n}명을 반영했습니다 — 확인 후 '적용 및 자동편성 실행'을 누르세요.", { n: String(dets.length) }));
               }}
             />
