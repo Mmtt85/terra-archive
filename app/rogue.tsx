@@ -1023,6 +1023,10 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
     if (msg && ms) lensMsgTimer.current = window.setTimeout(() => setLensMsg(null), ms);
   };
   // 자동인식·필 드롭 공용 인식 흐름
+  // 브리지 테마 고정 — 화면에 테마 이름이 보인 순간(앵커) 그 테마를 판의 기준으로 삼는다.
+  // 사이트의 현재 토픽은 오인식 한 번에 오염돼 사전확률로 쓰면 연쇄 오판이 난다
+  // (2026-07-26 제보: 사미 플레이 중 쉐이·살카즈로 튐). 다른 테마 메인화면을 띄우면 교체된다.
+  const lensAnchor = useRef<string | null>(null);
   const lensBusy = useRef(false);
   const handleLensShot = async (file: File) => {
     if (lensBusy.current) return;
@@ -1030,7 +1034,8 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
     setLensThumb((prev) => { if (prev) URL.revokeObjectURL(prev); return URL.createObjectURL(file); });
     flashLensMsg(t("스캔 중…"));
     try {
-      const oc = await recognizeShot("rogue", file, topicRef.current, locale);
+      const oc = await recognizeShot("rogue", file, lensAnchor.current ?? topicRef.current, locale);
+      if (oc.anchor) lensAnchor.current = oc.anchor;
       if (oc.target.kind === "goto") {
         onLensGoto(oc.target.goto);
         noteBridge(oc.entities[0]?.name ?? t("이동"));

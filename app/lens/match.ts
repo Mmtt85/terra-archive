@@ -37,6 +37,9 @@ export type LensOutcome = {
   topics: { topic: string; topicName: string; score: number }[];
   section: string | null;          // 우세 섹션 (band|stage|enc|relic|zone|tool|capsule|ending)
   target: LensTarget;
+  // 화면에 테마 **이름**이 그대로 보여 확정된 경우 그 토픽 — 브리지가 이걸로 판(세션)의
+  // 테마를 고정한다. 사이트의 현재 토픽은 오인식 한 번에 오염되므로 사전확률로 부적합.
+  anchor?: string;
 };
 
 type Entry = {
@@ -251,8 +254,15 @@ export function analyzeLines(
     return { screens, entities: [], topics: [], section: null, target: { kind: "none" } };
   }
 
+  // 전 테마 공용 보상 문구 제거 (2026-07-26 제보) — 데이터 색인이 비대칭이라 이런 줄이
+  // 특정 테마에 강한 표를 만든다: '뱅가드 모집권'은 rogue_1에만 색인돼 있어 보상 화면마다
+  // 팬텀으로 갈아타게 했고, '오리지늄각뿔'은 사미의 '오리지늄' 항목(암호판 탭)에 부분일치해
+  // 각뿔을 받을 때마다 암호판이 열렸다. 테마 정보가 전혀 없는 줄이므로 통째로 버린다.
+  const linesM = linesN.filter((l) =>
+    !l.startsWith("오리지늄각뿔") && !/모집권\d*$/.test(l) && !/1명모집$/.test(l));
+
   // 1패스: 전체 인덱스 매칭 → 토픽 다수결 (IDF 분산으로 범용 문구 무력화)
-  const hits = matchEntries(linesN, index.entries);
+  const hits = matchEntries(linesM, index.entries);
   const topicScore = new Map<string, number>();
   const topicNames = new Map<string, string>();
   const solidsAll: LensEntity[] = [];
@@ -290,13 +300,17 @@ export function analyzeLines(
     return null;
   })();
   if (anchor) {
-    const w = within(anchor.topic, linesN, index);
-    // 이름만 보이고 항목이 없다 = 테마 메인 화면 → 그 테마의 지도로 보낸다
-    const goto: LensGoto = w ? w.goto : { page: "rogue", topic: anchor.topic, view: "map" };
+    const w = within(anchor.topic, linesM, index);
+    // 항목은 **이름 수준 매칭**이 있을 때만 연다 — 테마 메인처럼 이름이 없는 화면에서
+    // 본문 조각 잡음이 유물 모달을 여는 오작동 방지 (2026-07-26 제보: 사미 메인에서
+    // '캔낫의 표식'이 뜸). 잡음뿐이면 그 테마의 지도로만 보낸다.
+    const solid = w && w.entities.some((e) => e.nameHit);
+    const goto: LensGoto = solid ? w.goto : { page: "rogue", topic: anchor.topic, view: "map" };
     return {
-      screens, entities: w ? w.entities : [],
+      screens, entities: solid ? w.entities : [],
       topics: [{ topic: anchor.topic, topicName: anchor.name, score: Number.MAX_SAFE_INTEGER }],
-      section: w ? w.section : null, target: { kind: "goto", goto },
+      section: solid ? w.section : null, target: { kind: "goto", goto },
+      anchor: anchor.topic,
     };
   }
 
@@ -307,7 +321,7 @@ export function analyzeLines(
     const mineScore = topicScore.get(ctxTopic) ?? 0;
     const bestOther = Math.max(0, ...[...topicScore.entries()].filter(([tp]) => tp !== ctxTopic).map(([, s]) => s));
     if (bestOther < mineScore * SWITCH_MARGIN) {
-      const g = within(ctxTopic, linesN, index);
+      const g = within(ctxTopic, linesM, index);
       // ⚠ 이 지름길은 토픽 투표·동점 검사를 건너뛰므로 **이름 수준 매칭**이 있을 때만
       //   쓴다. 본문 조각만으로 잡힌 것에 이 길을 열어주면 전투 화면처럼 이름이 없는
       //   화면에서 OCR 잡음이 그대로 확신 이동이 된다 (2026-07-26 오인식 사례).
@@ -344,7 +358,16 @@ export function analyzeLines(
   }
 
   // 2패스: 승자 토픽 안에서만 재채점 (within 참고)
-  const w = within(top.topic, linesN, index);
+  const w = within(top.topic, linesM, index);
+  // 테마 전환 가드 — 현재 테마가 있는데 다른 테마가 이겼다면 **이름 수준 매칭**이 있어야
+  // 넘어간다. 본문 조각 잡음만으로는 절대 테마를 갈아타지 않는다 (2026-07-26 제보:
+  // 사미 플레이 중 쉐이·살카즈로 튐). 이름이 없으면 현재 테마 안에서 다시 시도한다.
+  if (ctxTopic && top.topic !== ctxTopic && !(w && w.entities.some((e) => e.nameHit))) {
+    const g = within(ctxTopic, linesM, index);
+    return g
+      ? { screens, entities: g.entities, topics, section: g.section, target: { kind: "goto", goto: g.goto } }
+      : { screens, entities: [], topics, section: null, target: { kind: "none" } };
+  }
   return w
     ? { screens, entities: w.entities, topics, section: w.section, target: { kind: "goto", goto: w.goto } }
     : { screens, entities: [], topics, section: null, target: { kind: "none" } };
