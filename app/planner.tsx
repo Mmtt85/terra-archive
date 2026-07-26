@@ -964,17 +964,10 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   return (
     <section className="planner">
       {confirmDialog}
+      {/* 헤더 재구성 (사용자 요청 2026-07-27): RIIC 문구는 기지 배치·우선 생산 행 밑으로
+          내려보내고, 버튼 5개는 전폭 한 줄(오른쪽 정렬)로 — '그 외'가 밑줄로 밀리지 않게 */}
       <div className="planner-controls">
-        <div>
-          <span className="section-no">{layout === "153"
-            ? t("RIIC / 153 · 순금 1 + 작전기록 4 · A조 풀파워, 피로 시 B조 교대")
-            : layout === "252"
-              ? t("RIIC / 252 · 순금 2 + 작전기록 3 · 발전 2 — 시설 레벨로 전력 관리")
-              : layout === "custom"
-                ? t("RIIC / 사용자 지정 · 제조 {m} · 무역 {r} · 발전 {p} — 방 카드에서 종류 변경", { m: customRooms.filter((room) => room === "MANUFACTURE").length, r: customRooms.filter((room) => room === "TRADING").length, p: customRooms.filter((room) => room === "POWER").length })
-                : t("RIIC / 243 · 순금 2 + 작전기록 2 · A조 풀파워, 피로 시 B조 교대")}</span>
-          <h2>{t("인프라 자동편성기")}</h2>
-        </div>
+        <h2>{t("인프라 자동편성기")}</h2>
         <div className="planner-buttons">
           {/* startTransition: 로스터 모달(카드 수백 장)은 렌더가 무거워 클릭 페인트부터 내보낸다 (INP, 2026-07-21) */}
           {/* 보유 오퍼 설정·전체 자동편성 = 핵심 2버튼(.primary) — 나머지는 보조 톤으로 낮춰
@@ -1060,6 +1053,15 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         )}
       </div>
 
+      {/* 현재 배치 요약 문구 — 기지 배치·우선 생산 밑 한 줄 (사용자 요청 2026-07-27, 종전 제목 위 kicker) */}
+      <p className="planner-riic-line">{layout === "153"
+        ? t("RIIC / 153 · 순금 1 + 작전기록 4 · A조 풀파워, 피로 시 B조 교대")
+        : layout === "252"
+          ? t("RIIC / 252 · 순금 2 + 작전기록 3 · 발전 2 — 시설 레벨로 전력 관리")
+          : layout === "custom"
+            ? t("RIIC / 사용자 지정 · 제조 {m} · 무역 {r} · 발전 {p} — 방 카드에서 종류 변경", { m: customRooms.filter((room) => room === "MANUFACTURE").length, r: customRooms.filter((room) => room === "TRADING").length, p: customRooms.filter((room) => room === "POWER").length })
+            : t("RIIC / 243 · 순금 2 + 작전기록 2 · A조 풀파워, 피로 시 B조 교대")}</p>
+
       {/* 항상 렌더해 높이를 처음부터 예약 — 계산 전엔 '—'로 채운다. 계산 완료 후 값이 튀어나오며
           아래 배치도를 밀어내던 CLS 방지 (사용자 리포트 2026-07-20). summary가 있으면 plan도 항상 있음. */}
       <div className="planner-summary">
@@ -1085,17 +1087,19 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         <div><span>{t("기용 인원")}</span><b>{summary ? t("{n}명", { n: summary.staffed }) : "—"}</b></div>
       </div>
 
-      {plan && (
-        <div className="shift-tabs">
-          {Array.from({ length: SHIFT_COUNT }, (_, i) => (
-            <button key={i} className={activeShift === i ? "selected" : ""} onClick={() => setActiveShift(i)}>{[t("A조 (풀파워)"), t("B조 (회복 교대)")][i]}</button>
-          ))}
-          <span className="shift-hint">{t("A조 컨디션 소진 시 B조 투입 · 시너지 세트는 A조 집중 · 숙소·고정 요원은 조 전환과 무관 · ")}<b>{t("숙소는 항상 5명 꽉 채워 유지")}</b></span>
-        </div>
-      )}
-
       <div className={`ship${layout !== "243" ? ` ship-${layout}` : ""}`}>
-        <div className={`ship-raisebar${(investing || (tempApplied.size === 0 && !investRecs)) ? " idle" : " boxed"}`} role="group" aria-label={t("인프라 오퍼 육성 추천")}>
+        {/* 교대 탭 + 육성 추천을 그리드 첫 행(제어센터·응접실과 같은 행)에 세로로 쌓는다 —
+            탭은 행 맨 위, 추천 바는 행 바닥(=무역소 바로 위) (사용자 요청 2026-07-27) */}
+        <div className="ship-leftcol">
+          {plan && (
+            <div className="shift-tabs">
+              {Array.from({ length: SHIFT_COUNT }, (_, i) => (
+                <button key={i} className={activeShift === i ? "selected" : ""} onClick={() => setActiveShift(i)}>{[t("A조 (풀파워)"), t("B조 (회복 교대)")][i]}</button>
+              ))}
+              <span className="shift-hint">{t("A조 컨디션 소진 시 B조 투입 · 시너지 세트는 A조 집중 · 숙소·고정 요원은 조 전환과 무관 · ")}<b>{t("숙소는 항상 5명 꽉 채워 유지")}</b></span>
+            </div>
+          )}
+          <div className={`ship-raisebar${(investing || (tempApplied.size === 0 && !investRecs)) ? " idle" : " boxed"}`} role="group" aria-label={t("인프라 오퍼 육성 추천")}>
           {tempApplied.size > 0 && !investing ? (
             <>
               <span className="srb-top">★ {t("임시 적용 중 · {n}명", { n: tempApplied.size })}</span>
@@ -1126,6 +1130,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
               {investing && <span className="srb-over">★ {investing.total ? t("분석 중 {i}/{n}", { i: investing.done, n: investing.total }) : t("분석 중…")}</span>}
             </button>
           )}
+          </div>
         </div>
         {LAYOUT.map((cell) => {
           if (cell.room === "DORMITORY") {

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { adminDeleteFeedback, adminListFeedback, adminSetHandling, adminSetReviewed, handlingAt, withHandling, type FeedbackRow } from "../feedback";
 import { adminDeleteRelease, adminDeleteRule, adminListRules, adminPublishRelease, adminUpsertRule, fetchLatestRelease, type ReleaseRow } from "../rules-api";
+import { adminDeleteChange, adminUpsertChange, fetchChangelog, CHANGE_KINDS, CHANGE_KIND_LABEL, daysAgoKst, type ChangeDraft, type ChangeRow } from "../changelog-api";
 import { useConfirm } from "../confirm";
 import { compileSnapshot, validateRules, RULE_KINDS, type RuleRow } from "../rules-compile";
 import { RULES as bundledRules } from "../rules";
@@ -71,6 +72,50 @@ function RuleEditor({ rule, onSave, onCancel }: { rule: RuleRow; onSave: (next: 
   );
 }
 
+// ── 업데이트 내역 편집기 (docs/supabase-changelog.sql) ──────────────────────────
+// 저장 즉시 사이트 헤더 🛠 모달에 뜬다 (빌드·배포 불필요). ko는 필수, en/ja는 비우면 ko로 폴백.
+function ChangeEditor({ row, onSave, onCancel }: { row: ChangeDraft; onSave: (next: ChangeDraft) => Promise<void>; onCancel: () => void }) {
+  const [date, setDate] = useState(row.released_at);
+  const [kind, setKind] = useState(row.kind);
+  const [ko, setKo] = useState(row.ko);
+  const [en, setEn] = useState(row.en ?? "");
+  const [ja, setJa] = useState(row.ja ?? "");
+  const [href, setHref] = useState(row.href ?? "");
+  const [seq, setSeq] = useState(String(row.seq));
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const save = async () => {
+    if (!ko.trim()) { setError("한국어 본문은 필수입니다"); return; }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { setError("날짜는 YYYY-MM-DD 형식이어야 합니다"); return; }
+    setSaving(true);
+    try {
+      await onSave({ ...row, released_at: date, kind, ko, en, ja, href, seq: Number(seq) || 0 });
+    } catch (err) { setError(String((err as Error).message ?? err)); }
+    setSaving(false);
+  };
+  return (
+    <div className="rule-editor chlog-editor">
+      <header>
+        <b>{row.id ? "항목 편집" : "새 항목"}</b>
+        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} title="표시·정렬 기준일" />
+        <select value={kind} onChange={(e) => setKind(e.target.value as ChangeRow["kind"])}>
+          {CHANGE_KINDS.map((k) => <option key={k} value={k}>{CHANGE_KIND_LABEL[k]}</option>)}
+        </select>
+        <input className="rule-seq" value={seq} onChange={(e) => setSeq(e.target.value)} title="같은 날짜 안 정렬 (작을수록 위)" />
+      </header>
+      <textarea value={ko} onChange={(e) => setKo(e.target.value)} rows={3} placeholder="한국어 본문 (필수) — 사용자가 읽을 문장 그대로" />
+      <textarea value={en} onChange={(e) => setEn(e.target.value)} rows={3} placeholder="English (비우면 한국어로 표시됩니다)" />
+      <textarea value={ja} onChange={(e) => setJa(e.target.value)} rows={3} placeholder="日本語 (비우면 한국어로 표시됩니다)" />
+      <input value={href} onChange={(e) => setHref(e.target.value)} placeholder="바로가기 경로 (선택) — 예: /infra#roster-import · /rogue#replay" />
+      {error && <p className="admin-status">{error}</p>}
+      <div className="admin-tools">
+        <button onClick={save} disabled={saving}>{saving ? "저장 중…" : "저장"}</button>
+        <button onClick={onCancel}>취소</button>
+      </div>
+    </div>
+  );
+}
+
 // payload.page("/#infra" 등)를 사람이 읽을 라벨로 — 클릭하면 그 페이지가 새 탭에 열린다
 function pageOf(payload: unknown): string | undefined {
   const page = payload && typeof payload === "object" ? (payload as { page?: unknown }).page : undefined;
@@ -94,7 +139,11 @@ export default function AdminPage() {
   const [status, setStatus] = useState("");
   const [filter, setFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("open"); // open(대응미완료) | reviewed(대응완료)
-  const [tab, setTab] = useState<"feedback" | "rules">("feedback"); // 상단 탭
+  const [tab, setTab] = useState<"feedback" | "rules" | "changelog">("feedback"); // 상단 탭
+  // 업데이트 내역 원장 (null = 조회 실패 → 미설치 안내)
+  const [changes, setChanges] = useState<ChangeRow[] | null>(null);
+  const [changeStatus, setChangeStatus] = useState("");
+  const [editingChange, setEditingChange] = useState<ChangeDraft | null>(null);
   const [dataCheck, setDataCheck] = useState<DataCheck | null>(null);
   // 플래너 규칙 원장 + 최신 발행 (null = 조회 실패 → 미설치 안내)
   const [rules, setRules] = useState<RuleRow[] | null>(null);
@@ -120,9 +169,37 @@ export default function AdminPage() {
       setEntered(true);
       sessionStorage.setItem("ta-admin-key", pw);
       loadRules(pw);
+      loadChanges();
     } catch {
       setStatus("조회 실패 — 잠시 후 다시 시도해주세요");
     }
+  };
+
+  // ── 업데이트 내역 (docs/supabase-changelog.sql) — 저장하면 사이트에 바로 반영 ──
+  const loadChanges = async () => {
+    try {
+      setChanges(await fetchChangelog(true));
+      setChangeStatus("");
+    } catch {
+      setChanges(null);
+      setChangeStatus("업데이트 내역 테이블 조회 실패 — docs/supabase-changelog.sql을 Supabase SQL Editor에서 실행했는지 확인");
+    }
+  };
+
+  const saveChange = async (next: ChangeDraft) => {
+    await adminUpsertChange(password, next);
+    setEditingChange(null);
+    setChangeStatus(`저장됨 — 사이트 헤더 🛠 모달에 즉시 반영됩니다 (${next.released_at})`);
+    loadChanges();
+  };
+
+  const removeChange = async (row: ChangeRow) => {
+    if (!(await confirm({ message: `'${row.ko.slice(0, 40)}…' 항목을 삭제할까요?`, danger: true }))) return;
+    try {
+      await adminDeleteChange(password, row.id);
+      setChangeStatus("삭제됨");
+      loadChanges();
+    } catch { setChangeStatus("삭제 실패"); }
   };
 
   // ── 플래너 규칙 (docs/PLANNER-RULES-DB.md Phase 2) ────────────────────────────
@@ -292,6 +369,9 @@ export default function AdminPage() {
           <button className={tab === "rules" ? "selected" : ""} onClick={() => setTab("rules")}>
             플래너 규칙{release ? ` (v${release.version}${release.version !== bundledRules.version ? " ⚠" : ""})` : ""}
           </button>
+          <button className={tab === "changelog" ? "selected" : ""} onClick={() => setTab("changelog")}>
+            업데이트 내역{changes ? ` (${changes.length})` : ""}
+          </button>
           <button onClick={() => load(password)}>새로고침</button>
           <button onClick={() => { sessionStorage.removeItem("ta-admin-key"); setEntered(false); setRows([]); }}>잠금</button>
         </div>
@@ -384,6 +464,41 @@ export default function AdminPage() {
         ))}
         {shown.length === 0 && <p className="admin-status">표시할 항목이 없습니다.</p>}
       </div>
+      </>)}
+
+      {tab === "changelog" && (<>
+      <p className="admin-status">
+        여기에 저장하면 <b>배포 없이</b> 사이트 헤더 🛠 업데이트 내역에 바로 뜹니다.
+        기본 표시는 최근 7일치이고, 그 이전 항목은 방문자가 &lsquo;지난 기록 전체보기&rsquo;를 눌러야 보입니다.
+      </p>
+      {changeStatus && <p className="admin-status">{changeStatus}</p>}
+      {changes === null ? (
+        <p className="admin-status">업데이트 내역 테이블이 아직 없습니다 — <code>docs/supabase-changelog.sql</code>을 Supabase SQL Editor에서 실행하세요.</p>
+      ) : (
+        <div className="admin-rules">
+          <div className="admin-tools">
+            <button onClick={() => setEditingChange({ released_at: daysAgoKst(0), kind: "new", ko: "", en: "", ja: "", href: "", seq: 0 })}>+ 새 항목</button>
+            <button onClick={loadChanges}>새로고침</button>
+          </div>
+          {editingChange && !editingChange.id && <ChangeEditor row={editingChange} onSave={saveChange} onCancel={() => setEditingChange(null)} />}
+          {changes.length === 0 && <p className="admin-status">아직 등록된 항목이 없습니다.</p>}
+          {changes.map((row) => (
+            editingChange && editingChange.id === row.id
+              ? <ChangeEditor key={row.id} row={editingChange} onSave={saveChange} onCancel={() => setEditingChange(null)} />
+              : (
+                <div key={row.id} className="rule-row">
+                  <code>{row.released_at}</code>
+                  <i className="rule-status-chip">{CHANGE_KIND_LABEL[row.kind]}</i>
+                  <span className="rule-preview">{row.ko.slice(0, 70)}</span>
+                  {!row.en || !row.ja ? <span className="rule-note" title="번역이 비면 한국어로 표시됩니다">번역 미완</span> : null}
+                  {row.href && <span className="rule-note" title={row.href}>{row.href}</span>}
+                  <button onClick={() => setEditingChange(row)}>편집</button>
+                  <button onClick={() => removeChange(row)}>삭제</button>
+                </div>
+              )
+          ))}
+        </div>
+      )}
       </>)}
 
       {tab === "rules" && (<>

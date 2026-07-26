@@ -474,6 +474,16 @@ button {
   color: var(--tint-warm2-ink);
   border-color: transparent;
 }
+.chlog-kind.fix {
+  background: var(--tint-red);
+  color: var(--tint-warm-ink);
+  border-color: transparent;
+}
+.chlog-kind.data {
+  background: var(--bg-soft);
+  color: var(--ink2);
+  border-color: transparent;
+}
 .chlog-text {
   font-size: 13px;
   line-height: 1.55;
@@ -499,8 +509,8 @@ button {
   border-color: var(--border-strong);
 }
 
-/* 상세보기 토글 — 기본은 신기능만 보이므로 목록 맨 아래에서 개선·수정을 펼친다 */
-.chlog-detail-btn {
+/* 지난 기록 전체보기 — 기본은 최근 7일치만 보여주고 그 이전을 여기서 펼친다 */
+.chlog-more-btn {
   margin-top: 14px;
   width: 100%;
   padding: 8px 12px;
@@ -513,7 +523,7 @@ button {
   cursor: pointer;
   transition: 0.15s;
 }
-.chlog-detail-btn:hover {
+.chlog-more-btn:hover {
   border-color: var(--border-strong);
   color: var(--ink);
 }
@@ -2920,7 +2930,10 @@ footer p {
   display: flex;
   align-items: end;
   justify-content: space-between;
-  gap: 20px;
+  /* 제목 옆에 안 들어가면 버튼 묶음이 통째로 다음 줄(전폭)로 내려간다 — 버튼끼리
+     쪼개져 '그 외'만 밀리는 일이 없게 (사용자 요청 2026-07-27) */
+  flex-wrap: wrap;
+  gap: 12px 20px;
   border-bottom: 2px solid var(--border-strong);
   padding-bottom: 16px;
   /* 전수 라운딩이 border-bottom 구분선 양끝을 위로 말아 올린다 — 직선 유지 (사용자 지적 2026-07-27) */
@@ -2947,6 +2960,13 @@ footer p {
   font: 800 12px monospace;
   letter-spacing: 0.4px;
   color: var(--muted);
+}
+/* 현재 배치 요약 한 줄 — 기지 배치·우선 생산 행 바로 밑 (종전 제목 위 kicker, 2026-07-27 이동) */
+.planner-riic-line {
+  margin: 6px 2px 0;
+  letter-spacing: 1.2px;
+  color: var(--muted);
+  font: 700 11px monospace;
 }
 /* 기지 배치(243/153) 라벨 — 우선 생산 그룹과 시각 구분 (2026-07-24) */
 .prio-label-layout {
@@ -3088,6 +3108,13 @@ footer p {
 }
 .planner-buttons {
   display: flex;
+  /* 기본 stretch면 보조 버튼이 핵심 버튼 높이만큼 늘어난다 — 각자 제 높이 유지
+     (사용자 지적 2026-07-27: "다른 버튼들도 다 커졌잖아") */
+  align-items: center;
+  /* 한 줄 유지 + 좁아져 밀리면 오른쪽 정렬로 (사용자 요청 2026-07-27: '그 외'가
+     왼쪽에 붙지 않게). 제목과 나눠 쓰던 행을 전폭으로 바꿔 애초에 안 밀리게 했다. */
+  justify-content: flex-end;
+  margin-left: auto;
   gap: 8px;
 }
 /* 보조 버튼(빈 자리만·비우기·그 외) — 핵심 2버튼과 위계를 가르려 한 톤 낮춘다 (2026-07-27) */
@@ -3106,17 +3133,22 @@ footer p {
   color: var(--on-lime);
   border-color: var(--border-strong);
 }
-/* 핵심 2버튼 — 보유 오퍼 설정 · 전체 자동편성 (사용자 확정 2026-07-27: 제일 눈에 띄게) */
+/* 핵심 2버튼 — 보유 오퍼 설정 · 전체 자동편성. 색만이 아니라 **크기로도** 도드라지게
+   (사용자 확정 2026-07-27: "눈에 띄는 크기의 커다란 버튼"). */
 .planner-buttons button.primary {
   background: var(--chip);
   color: var(--lime);
   border-color: var(--border-strong);
-  padding: 11px 18px;
-  font-size: 13.5px;
+  padding: 16px 26px;
+  font-size: 15.5px;
+  border-radius: 9px;
 }
+/* 호버는 배경을 갈아치우지 않는다 — var(--ink)는 다크 모드에서 거의 흰색이라
+   "새하얗게" 뒤집혔다 (사용자 지적 2026-07-27). 같은 배경에서 살짝 밝게만. */
 .planner-buttons button.primary:hover {
-  background: var(--ink);
-  filter: brightness(1.25);
+  background: var(--chip);
+  color: var(--lime);
+  filter: brightness(1.2);
 }
 .planner-summary {
   display: grid;
@@ -3125,10 +3157,11 @@ footer p {
   gap: 10px;
   margin-top: 18px;
 }
+/* 요약 카드(전략·평균·전력·기용 인원) — 낮게 (사용자 요청 2026-07-27) */
 .planner-summary > div {
   background: var(--white);
   border: 1px solid var(--line);
-  padding: 13px 15px;
+  padding: 8px 13px;
 }
 .planner-summary span {
   display: block;
@@ -3138,8 +3171,8 @@ footer p {
 }
 .planner-summary b {
   display: block;
-  margin-top: 6px;
-  font: 800 21px monospace;
+  margin-top: 3px;
+  font: 800 18px monospace;
 }
 .planner-summary .wide b {
   font-size: 14.5px;
@@ -3314,9 +3347,21 @@ footer p {
 }
 /* 육성 추천 임시 적용 표시 — 제어센터 왼쪽 빈 3칸(row1)에 넣어 레이아웃을 밀지 않는다
    (사용자 요청 2026-07-21). 임시 적용 중일 때만 렌더. */
-.ship-raisebar {
+/* 그리드 첫 행 왼쪽 — 교대 탭(맨 위, 제어센터·응접실과 같은 높이에서 시작)과
+   육성 추천 바(행 바닥 = 무역소 바로 위)를 세로로 쌓는다 (사용자 요청 2026-07-27) */
+.ship-leftcol {
   grid-area: raisebar;
-  align-self: start;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+.ship-leftcol .shift-tabs {
+  margin-top: 0;
+  flex-wrap: wrap;
+}
+.ship-raisebar {
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -3890,7 +3935,7 @@ footer p {
   cursor: pointer;
   background: var(--white);
   border: 1px solid var(--line);
-  padding: 13px 15px;
+  padding: 8px 13px; /* 요약 카드와 함께 낮게 (2026-07-27) */
   transition: 0.15s;
 }
 .strategy-cell:hover {
@@ -5548,6 +5593,11 @@ footer p {
   font: 500 12px/1.55 monospace;
   resize: vertical;
   white-space: pre;
+}
+/* 업데이트 내역 편집기 — 본문은 JSON이 아니라 사람이 읽는 문장이라 줄바꿈·본문 글꼴 */
+.chlog-editor textarea {
+  font: 500 13px/1.6 inherit;
+  white-space: pre-wrap;
 }
 .recruit-combo li.pending {
   border-style: dashed;

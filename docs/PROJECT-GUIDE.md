@@ -42,7 +42,7 @@ vinext의 pushState 패치(스크롤 리셋)를 피하려 네이티브 `History.
 
 | 해시 | 어디서나/경로 | 여는 것 |
 |---|---|---|
-| `#changelog` / `#changelog-all` | 어디서나 | 업데이트 내역 (신기능만 / 상세) |
+| `#changelog` / `#changelog-all` | 어디서나 | 업데이트 내역 (최근 7일 / 전체) |
 | `#broadcast` | 어디서나 | 공식 방송 일정 모달 |
 | `#roster` / `#roster-import` | `/infra` | 보유 오퍼 설정 (직접 입력 / 가져오기 탭) |
 | `#help` · `#flows` · `#room-<방키>` | `/infra` | 플래너 도움말 · 자원 흐름 · 방 상세 (방키 = `TRADING-0` 등 LAYOUT key) |
@@ -459,6 +459,23 @@ npm run build                             # 9. 빌드 확인 → 커밋 → 푸�
   (reviewed_at), 새로고침. 미확정/예정 데이터는 UI에서 "추가 예정" 배지로만 표시.
 - 공채 "추가 예정"(`RECRUIT_PENDING`): pending 플래그 → 조합 결과에 "추가 예정" 배지.
   실제 적용되면 `RECRUIT_SUPPLEMENT`로 옮기거나 데이터마인 반영을 기다린다.
+
+### 업데이트 내역 — DB 원장 (2026-07-27, 사용자 확정)
+
+헤더 로고 오른쪽 🛠 버튼 모달. **내용은 코드에 두지 않는다** — "매번 빌드해서 올리지 말고,
+디비에 저장하면 자동으로 나오게" (사용자 지시). 새 항목은 `/admin` → **업데이트 내역** 탭에서
+넣으면 **배포 없이 즉시** 사이트에 뜬다.
+
+- 테이블: `public.changelog` — 스키마·RLS·시드 [supabase-changelog.sql](supabase-changelog.sql).
+  열: `released_at`(날짜) · `kind` · `ko`/`en`/`ja` · `href`(바로가기, 선택) · `seq`(같은 날짜 정렬).
+- 종류: `new`(신기능) · `improve`(개선) · `fix`(버그 수정) · `data`(데이터 갱신).
+- **3개 언어를 행에 함께 저장**한다. `en`/`ja`가 비면 프론트가 `ko`로 폴백하고,
+  관리자 목록엔 "번역 미완" 칩이 붙는다 — i18n 사전(app/i18n.tsx)에는 **UI 라벨만** 둔다.
+- 표시 규칙: 기본은 **최근 7일치**(`released_at=gte.오늘-7`), '지난 기록 전체보기'를 누르면
+  전체를 한 번 더 조회한다. 범위별로 따로 캐시한다(한 변수에 담으면 전체를 본 뒤 다시 열었을 때
+  표시 범위와 버튼이 어긋난다 — 2026-07-27 수정).
+- 읽기는 anon 공개(`using (true)`), 쓰기·수정·삭제는 `x-admin-key` 헤더로만.
+- 프론트: `app/changelog-api.ts`(조회·관리자 CRUD) + `app/changelog.tsx`(버튼·모달).
 
 ## 8. 디자인 시스템
 

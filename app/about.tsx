@@ -92,7 +92,7 @@ const CONTENT: Record<Locale, Content> = {
     title: "테라 아카이브 소개",
     tagline: "명일방주(Arknights) 도우미 · 한국어 / English / 日本語",
     intro:
-      "테라 아카이브는 명일방주 독타를 위한 비영리 팬 도구 모음입니다. 오퍼레이터 자료 조사부터 기반시설 편성, 공개모집, 재료 파밍, 오퍼 육성 계획, 스토리 요약까지 — 게임 데이터를 직접 파싱해 자동 파이프라인으로 항상 최신 상태를 유지합니다. 설치·로그인 없이 웹에서 바로 쓸 수 있습니다.",
+      "테라 아카이브는 명일방주 독타를 위한 비영리 팬 도구 모음입니다. 오퍼레이터 자료 조사부터 기반시설 편성, 공개모집, 재료 파밍, 오퍼 육성 계획, 스토리 요약까지 — 게임 데이터를 직접 파싱해 자동 파이프라인으로 항상 최신 상태를 유지합니다. 설치·로그인 없이 웹에서 바로 쓸 수 있고, 헤더의 만능검색(⌘K)에 단어 하나만 넣으면 오퍼·재료·스토리·기능 어디로든 한 번에 이동합니다.",
     featureLead: "일곱 가지 도구가 있습니다. 카드를 누르면 해당 기능으로 이동합니다.",
     features: [
       {
@@ -103,7 +103,8 @@ const CONTENT: Record<Locale, Content> = {
         bullets: [
           "순금 우선 / 작전기록 우선 / 밸런스 등 우선 생산 모드 선택",
           "쉐라그 무역소 세트 같은 진영 시너지와 속세의 화식 등 토큰 시스템 자동 판정",
-          "MAA(MaaAssistantArknights) 오퍼 박스 인식 결과를 불러와 보유·정예화 일괄 설정",
+          "보유 오퍼 가져오기 3종 — MAA 파일 · 게임 스크린샷 인식 · 요스타 계정 로그인(실제 보유 목록 통째 동기화)",
+          "기지 배치 243·153·252·사용자 지정 프리셋, 전력·시설 레벨 관리, 다음에 키울 오퍼 육성 추천까지",
           "편성 내보내기/불러오기, 미래시(중국 선행) 오퍼 포함 계산 지원",
         ],
       },
@@ -148,7 +149,7 @@ const CONTENT: Record<Locale, Content> = {
         summary: "이벤트·메인스토리를 전문(풀 스크립트)과 AI 요약, 두 가지 방식으로 읽습니다.",
         bullets: [
           "전문 보기 — 인게임 대사 전체를 컷씬·화자 얼굴과 함께, 게임 밖에서 그대로 정주행",
-          "본문에 등장하는 오퍼레이터·용어는 오른쪽 인물 레일과 자동 연결, 클릭하면 상세 확인",
+          "본문 속 점선 밑줄 인물·용어를 누르면 읽던 자리에서 팝오버로 바로 확인",
           "바쁜 독타를 위한 AI 요약 — 스크립트 전문을 정독하고 10분 분량으로 줄거리 정리",
           "테라 연대기 타임라인과 테마별 묶음 보기 — 테마 링크는 URL로 바로 공유",
         ],
@@ -161,6 +162,7 @@ const CONTENT: Record<Locale, Content> = {
           "층별 노드 맵과 인게임 맵 미리보기, 등장 적·스폰 수·긴급 작전 배율, 우연한 만남의 출현 층(위키 실측)까지 표시",
           "적 도감은 난이도 등급을 바꾸면 스탯이 실시간으로 재계산",
           "유물·조우 이벤트·엔딩 해금 조건을 클릭 가능한 상호 링크로 연결 — 노드가 실제로 뭘 하는지 기능 설명 병기",
+          "보유 리스트(소장품·테마 자원 체크)와 게임 화면 인식 — 스샷 레이더는 스크린샷으로, PRTS 링크(BETA)는 게임 창을 실시간으로 물려 자동 인식·이동하고 플레이 여정을 리플레이로 남깁니다",
         ],
       },
     ],
@@ -187,7 +189,7 @@ const CONTENT: Record<Locale, Content> = {
     title: "About Terra Archive",
     tagline: "An Arknights companion · 한국어 / English / 日本語",
     intro:
-      "Terra Archive is a non-commercial fan toolkit for Arknights players (Doctors). From researching operators to planning your base, recruitment, material farming, upgrade budgeting, and catching up on the story — it parses the game data directly and an automated pipeline keeps everything up to date. No install, no login; it runs right in the browser.",
+      "Terra Archive is a non-commercial fan toolkit for Arknights players (Doctors). From researching operators to planning your base, recruitment, material farming, upgrade budgeting, and catching up on the story — it parses the game data directly and an automated pipeline keeps everything up to date. No install, no login; it runs right in the browser, and the universal search in the header (⌘K) jumps to any operator, material, story, or tool from a single word.",
     featureLead: "Seven tools in one. Tap a card to jump to that feature.",
     features: [
       {
@@ -198,7 +200,8 @@ const CONTENT: Record<Locale, Content> = {
         bullets: [
           "Choose a production priority: Gold-first, Battle Record–first, or Balanced",
           "Auto-detects faction synergies (e.g. the Kjerag trading-post set) and token systems (Worldly Plight, etc.)",
-          "Import your MAA (MaaAssistantArknights) operator-box scan to set ownership and Elite at once",
+          "Three roster-import paths — MAA file, game-screenshot recognition, or Yostar account login (syncs your actual roster in one go)",
+          "Base layout presets (243 · 153 · 252 · custom), power & facility-level management, and recommendations for which operator to raise next",
           "Export/import assignments; can include future (CN-first) operators in the calculation",
         ],
       },
@@ -243,7 +246,7 @@ const CONTENT: Record<Locale, Content> = {
         summary: "Read event and main stories two ways: the full script, or an AI digest.",
         bullets: [
           "Full-script reader — every in-game line with cutscenes and speaker portraits, binge the story outside the game",
-          "Operators and terms in the text link to a reference rail on the right — click for details",
+          "Dotted-underlined characters and terms in the text open a popover right where you're reading",
           "AI digests for busy Doctors — written from the full script, the plot in about 10 minutes",
           "A Terra chronology timeline plus by-theme grouping — theme links are shareable URLs",
         ],
@@ -256,6 +259,7 @@ const CONTENT: Record<Locale, Content> = {
           "Node maps per floor with in-game previews, enemy rosters, spawn counts, emergency multipliers, and wiki-verified encounter floors",
           "The enemy dex recalculates stats live as you change the difficulty grade",
           "Relics, encounters, and ending unlock conditions are cross-linked and clickable — with plain explanations of what each node actually does",
+          "An inventory for collectibles & theme resources, plus game-screen recognition — Screenshot Radar reads screenshots, and PRTS Link (BETA) attaches to your game window live, auto-navigating as you play and recording the run as a replay",
         ],
       },
     ],
@@ -282,7 +286,7 @@ const CONTENT: Record<Locale, Content> = {
     title: "テラアーカイブについて",
     tagline: "アークナイツの補助ツール · 한국어 / English / 日本語",
     intro:
-      "テラアーカイブは、アークナイツのプレイヤー（ドクター）のための非営利ファンツール集です。オペレーターの調査から基地編成、公開求人、素材周回、オペレーター育成の計画、ストーリー要約まで — ゲームデータを直接解析し、自動パイプラインで常に最新の状態を保ちます。インストールもログインも不要、ブラウザですぐに使えます。",
+      "テラアーカイブは、アークナイツのプレイヤー（ドクター）のための非営利ファンツール集です。オペレーターの調査から基地編成、公開求人、素材周回、オペレーター育成の計画、ストーリー要約まで — ゲームデータを直接解析し、自動パイプラインで常に最新の状態を保ちます。インストールもログインも不要、ブラウザですぐに使えます。ヘッダーのユニバーサル検索（⌘K）に一語入れるだけで、オペレーター・素材・ストーリー・機能のどこへでも一度に移動できます。",
     featureLead: "7つのツールがあります。カードを押すとその機能へ移動します。",
     features: [
       {
@@ -293,7 +297,8 @@ const CONTENT: Record<Locale, Content> = {
         bullets: [
           "純金優先／作戦記録優先／バランスなど、優先生産モードを選択",
           "カジミエーシュ…ではなくクルビア等の陣営シナジー（イェラグ貿易所セット）やトークンシステム（俗世之憂ほか）を自動判定",
-          "MAA（MaaAssistantArknights）のオペレーターボックス認識結果を読み込み、所持・昇進を一括設定",
+          "所持オペレーターの取り込み3方式 — MAAファイル・ゲームスクリーンショット認識・Yostarアカウントログイン（実際の所持リストを丸ごと同期）",
+          "基地配置プリセット（243・153・252・カスタム）、電力・施設レベル管理、次に育てるオペレーターのおすすめまで",
           "編成のエクスポート／インポート、未実装（中国先行）オペレーターを含めた計算に対応",
         ],
       },
@@ -338,7 +343,7 @@ const CONTENT: Record<Locale, Content> = {
         summary: "イベント・メインストーリーを、全文（フルスクリプト）とAI要約の2つの方式で読めます。",
         bullets: [
           "全文ビュー — ゲーム内のセリフ全文をカットシーン・話者の顔と共に、ゲーム外でそのまま一気読み",
-          "本文に登場するオペレーター・用語は右側の人物レールと自動連携、クリックで詳細を確認",
+          "本文中の点線下線の人物・用語を押すと、読んでいるその場でポップオーバー表示",
           "忙しいドクターのためのAI要約 — スクリプト全文を読み込み、約10分のあらすじに整理",
           "テラ年代記のタイムラインとテーマ別のまとめ表示 — テーマリンクはURLでそのまま共有",
         ],
@@ -351,6 +356,7 @@ const CONTENT: Record<Locale, Content> = {
           "階層ごとのノードマップとゲーム内プレビュー、出現する敵・スポーン数・緊急作戦の倍率、思わぬ遭遇の出現階層（Wiki実測）まで表示",
           "敵図鑑は難易度等級を変えるとステータスをリアルタイムに再計算",
           "秘宝・遭遇イベント・エンディング解放条件をクリック可能な相互リンクで接続 — 各ノードが実際に何をするのかの機能説明つき",
+          "所持リスト（秘宝・テーマ資源のチェック）とゲーム画面認識 — スクショレーダーはスクリーンショットで、PRTSリンク（BETA）はゲームウィンドウをライブ接続して自動認識・移動し、プレイの行程をリプレイとして記録",
         ],
       },
     ],
