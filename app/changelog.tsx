@@ -79,7 +79,8 @@ export default function ChangelogButton() {
       {/* 버튼으로 열 땐 항상 신기능만부터 — 딥링크(#changelog-all)로는 상세로 바로 진입 */}
       <button type="button" className="chlog-trigger" onClick={() => { setDetail(false); setOpen(true); }} title={t("최근 업데이트 내역 보기")}>
         <span aria-hidden>🛠</span>
-        <span>{t("업데이트 내역")}</span>
+        {/* 모바일은 아이콘만 (1줄 로고 옆 — 폭이 좁다) */}
+        <span className="chlog-label">{t("업데이트 내역")}</span>
       </button>
       {/* 헤더의 backdrop-filter가 fixed 기준을 헤더로 만들어버리므로 portal로 body에 렌더 */}
       {open && createPortal(

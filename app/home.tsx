@@ -1198,6 +1198,9 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
           <span className="brand-mark"><img src="/avatars/char_1012_skadi2.webp" alt="" width={180} height={180} /></span>
           <span>{t("테라 아카이브")}<small>{t("명일방주(Arknights) 팬사이트")}</small></span>
         </a>
+        {/* 업데이트 내역 — 로고 바로 오른쪽 1줄 소속: 헤더를 접어도 보인다
+            (사용자 요청 2026-07-27: "헤더를 열어보지 않으면 알 수가 없으니") */}
+        <ChangelogButton />
         {/* 진행중 이벤트 배지 — 1줄(접힘 상태에도 표시). 공식 방송 버튼은 확장부로 내려갔다
             (사용자 요청 2026-07-25 — 미래시 토글 왼쪽). */}
         <BroadcastBadges includeFuture={includeFuture} slot="events" />
@@ -1248,8 +1251,6 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
             </button>
           )}
           <div className="header-sub-right">
-            {/* 업데이트 내역 — 확장부 왼쪽 끝 (사용자 요청 2026-07-26) */}
-            <ChangelogButton />
             {/* 공식 방송 — 미래시 토글 바로 왼쪽 (사용자 요청 2026-07-25) */}
             <BroadcastBadges includeFuture={includeFuture} slot="broadcast" />
             {/* 라벨은 데스크탑 "미래시 데이터 포함", 모바일은 "미래시"로 축약 (사용자 요청 2026-07-22) */}
