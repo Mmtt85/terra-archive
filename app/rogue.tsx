@@ -900,9 +900,19 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   const saveInv = (next: Set<string>) => {
     try { localStorage.setItem(`ta:rogue-inv:${topic}`, JSON.stringify([...next])); } catch { /* 프라이빗 모드 등 */ }
   };
+  // 보유 리스트에 **담을 때만** 리플레이에 소장품 한 줄을 남긴다 (사용자 확정 2026-07-26:
+  // "본인이 직접 집어서 보유 상태로 변한 게 아니면, 한번 클릭해봤다고 리플레이에 남기면 안 됨").
+  // 화면 인식으로 소장품 상세가 열린 것만으로는 아무것도 기록하지 않는다. 빼는 건 기록 대상 아님.
+  const logInvPick = (id: string) => {
+    if (!bridgeLock()) return;                      // PRTS 링크로 플레이 중일 때만
+    const item = relicById.get(id) ?? lensItemById.get(id);
+    const section = invSection(id);
+    if (!item?.name || !section) return;
+    logBridgeEvent({ at: new Date().toISOString(), type: section === "res" ? "res" : "relic", name: item.name });
+  };
   const toggleInv = (id: string) => setInvState((prev) => {
     const next = new Set(prev);
-    if (!next.delete(id)) next.add(id);
+    if (!next.delete(id)) { next.add(id); logInvPick(id); }
     saveInv(next);
     return next;
   });
@@ -912,7 +922,10 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   // 여러 개 일괄 담기/빼기 — 모아보기 모달의 전체 보유 토글용 (사용자 요청 2026-07-24)
   const toggleInvAll = (ids: string[], own: boolean) => setInvState((prev) => {
     const next = new Set(prev);
-    for (const id of ids) { if (own) next.add(id); else next.delete(id); }
+    for (const id of ids) {
+      if (!own) { next.delete(id); continue; }
+      if (!next.has(id)) { next.add(id); logInvPick(id); }
+    }
     saveInv(next);
     return next;
   });
@@ -983,7 +996,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
     let raw: string | null = null;
     try { raw = sessionStorage.getItem("ta:lens-handoff"); } catch { return; }
     if (!raw) return;
-    let g: { page?: string; topic?: string; view?: string; arcTab?: string; modal?: { type: string; id: string }; highlight?: string[]; gather?: boolean; grade?: number };
+    let g: { page?: string; topic?: string; view?: string; arcTab?: string; modal?: { type: string; id: string }; highlight?: string[]; gather?: boolean; grade?: number; emergency?: boolean };
     try { g = JSON.parse(raw); } catch { sessionStorage.removeItem("ta:lens-handoff"); return; }
     if (g.page && g.page !== "rogue") return; // 공채 등 다른 페이지 핸드오프는 해당 페이지가 소비
     if (g.topic !== topicRef.current) return; // 토픽 전환 완료 후 데이터 로드 effect에서 다시 불린다
@@ -1053,18 +1066,21 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   // (2026-07-26 제보: 사미 플레이 중 쉐이·살카즈로 튐). 다른 테마 메인화면을 띄우면 교체된다.
   const lensAnchor = useRef<string | null>(null);
   const lensBusy = useRef(false);
-  // 여정 이벤트 변환 — 리플레이는 원시 인식이 아니라 **유저의 선택**만 기록한다 (2026-07-26):
-  // 작전 진입·작전 결과·조우·소장품·지역 진입·전시관 시스템(암호판/붕괴 패러다임 등, arc 라벨).
-  // 지도 복귀·전투 중·상점 나열(모아보기)·인식 실패는 잡음이라 남기지 않는다.
-  const journeyEvent = (oc: LensOutcome, cached: boolean): BridgeLogEvent | null => {
+  // 화면을 훑어본 작전 — 아직 입장한 게 아니라 리플레이에 넣지 않고 쥐고만 있는다.
+  // 입장이 확인되면(암전 로딩 또는 전투 화면) 그때 한 줄로 기록한다.
+  const pendingStage = useRef<BridgeLogEvent | null>(null);
+  // 여정 이벤트 변환 — 리플레이는 원시 인식이 아니라 **유저가 실제로 한 일**만 기록한다.
+  // 사용자 확정 2026-07-26:
+  //  · 작전은 노드를 눌러 봤다고 남기면 안 된다 → **입장 신호**(암전 로딩·전투 화면)가 와야 기록
+  //  · 소장품도 화면에 떴다고 남기면 안 된다 → **보유 리스트에 담은 것만** (logInvPick)
+  // 지도 복귀·상점 나열(모아보기)·인식 실패는 잡음이라 남기지 않는다.
+  const journeyEvents = (oc: LensOutcome, cached: boolean): BridgeLogEvent[] => {
     const g = oc.target.kind === "goto" && oc.target.goto.page === "rogue" ? oc.target.goto : null;
     const result = cached ? undefined : oc.hud?.result;
     const type = result ? "battle-result" : g ? (g.modal?.type ?? g.view) : "";
-    if (type !== "battle-result" && !["stage", "enc", "relic", "zone", "archive"].includes(type)) return null;
-    if (type === "archive" && !oc.entities[0]?.name) return null;   // 특정 항목 없는 전시관 이동은 제외
-    return {
+    const base = (t2: string): BridgeLogEvent => ({
       at: new Date().toISOString(),
-      type,
+      type: t2,
       name: oc.entities[0]?.name,
       names: oc.entities.length > 1 ? oc.entities.slice(0, 8).map((e) => e.name) : undefined,
       arc: g?.arcTab,
@@ -1073,7 +1089,25 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
       levelExp: cached ? undefined : oc.hud?.levelExp,
       result,
       cached: cached || undefined,
+    });
+    // 쥐고 있던 작전을 흘려보낸다 — 전투 화면이나 결과가 보이면 그 작전에 들어간 게 확실하다
+    const flush = (): BridgeLogEvent[] => {
+      const held = pendingStage.current;
+      pendingStage.current = null;
+      return held ? [held] : [];
     };
+    if (type === "battle-result") return [...flush(), base("battle-result")];
+    if (oc.battle) return flush();                      // 전투 화면 자체는 기록하지 않는다
+    if (type === "stage") {
+      const ev = base("stage");
+      // 암전 로딩(입장) 화면이면 그 자리에서 확정, 지도의 노드 미리보기면 보류
+      if (oc.dark) { pendingStage.current = null; return [ev]; }
+      pendingStage.current = ev;
+      return [];
+    }
+    if (!["enc", "zone", "archive"].includes(type)) return [];
+    if (type === "archive" && !oc.entities[0]?.name) return [];   // 특정 항목 없는 전시관 이동은 제외
+    return [base(type)];
   };
   const handleLensShot = async (file: File, live = false) => {
     if (lensBusy.current) return;
@@ -1090,8 +1124,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
       if (live) {
         // 브리지에 판정을 알려준다 — 전투면 전투 홀드, 확신 이동이면 화면 판정 캐시
         memoBridgeScene(oc);
-        const ev = journeyEvent(oc, false);
-        if (ev) logBridgeEvent(ev);
+        for (const ev of journeyEvents(oc, false)) logBridgeEvent(ev);
       }
       if (oc.target.kind === "goto") {
         onLensGoto(oc.target.goto);
@@ -1119,8 +1152,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
     // 화면 판정 캐시 재적용 — 이미 본 화면으로 돌아온 것. OCR 없이 지난 판정으로 바로 이동.
     // HUD 수치는 그때 것이라 신선하지 않으므로 로그에 싣지 않는다 (cached 표기).
     if (oc.target.kind !== "goto") return;
-    const ev = journeyEvent(oc, true);
-    if (ev) logBridgeEvent(ev);
+    for (const ev of journeyEvents(oc, true)) logBridgeEvent(ev);
     onLensGoto(oc.target.goto);
     noteBridge(oc.entities[0]?.name ?? t("이동"));
   });

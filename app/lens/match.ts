@@ -45,6 +45,9 @@ export type LensOutcome = {
   hud?: LensHud;
   // 전투 중 화면 (배치 UI 문구 검출) — 브리지가 전투 홀드(큰 전환까지 인식 중단)에 쓴다
   battle?: boolean;
+  // 전투 입장 암전 화면 (평균 밝기가 낮다) — 리플레이가 "노드를 눌러 봤다"와
+  // "실제로 전투에 들어갔다"를 가르는 신호 (run.ts가 얹는다, 2026-07-26)
+  dark?: boolean;
 };
 export type LensHud = {
   fractions: [number, number][];   // 화면의 모든 x/y 분수 (원시)

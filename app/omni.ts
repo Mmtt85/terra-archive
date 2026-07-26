@@ -9,7 +9,7 @@
 //   공채 태그    → 공채 도우미 탭 태그 선택
 //   통합전략 테마 → /rogue?topic=isN
 //   통합전략 항목 → 유물·조우·작전·분대… (스샷 레이더 인덱스 재사용, **지연 로드 2.9MB**)
-//   기능 탭      → 인프라 자동편성 시뮬레이터·파밍·육성 시뮬 등 (동의어: riic, base, is3 …)
+//   기능 탭      → 인프라 자동편성기·파밍·육성 시뮬 등 (동의어: riic, base, is3 …)
 //
 // 무거운 통합전략 항목은 기본 색인에서 빠져 있다 — 가벼운 색인으로 답이 안 나올 때만
 // omni.tsx가 getRogueIndex()로 받아 rogueOmniItems()로 합친다.
@@ -85,13 +85,13 @@ const TAB_ENTRIES: { tab: Tab; label: string; alt: string[] }[] = [
   { tab: "portal", label: "홈", alt: ["home", "portal", "메인", "첫화면"] },
   { tab: "archive", label: "오퍼 백과사전", alt: ["operator archive", "도감", "오퍼레이터", "백과", "캐릭터"] },
   // "인프라 딸깍" — 커뮤니티에서 기지 편성을 그렇게 부른다 (사용자 지정 2026-07-26)
-  { tab: "planner", label: "인프라 자동편성 시뮬레이터", alt: ["riic", "base", "기지", "기반시설", "인프라", "편성", "자동편성", "딸깍", "인프라딸깍", "시뮬레이터"] },
+  { tab: "planner", label: "인프라 자동편성기", alt: ["riic", "base", "기지", "기반시설", "인프라", "편성", "자동편성", "딸깍", "인프라딸깍", "시뮬레이터"] },
   { tab: "recruit", label: "공채 도우미", alt: ["recruit", "공개모집", "공채", "태그계산"] },
   { tab: "farm", label: "파밍 도우미", alt: ["farm", "재료", "파밍", "효율표", "드랍"] },
   { tab: "upgrade", label: "오퍼 육성 시뮬", alt: ["upgrade", "육성", "비용", "계산기", "스킬특화", "모듈"] },
   { tab: "story", label: "스토리", alt: ["story", "요약", "전문", "연대기"] },
   { tab: "rogue", label: "통합전략 가이드", alt: ["rogue", "integrated strategies", "로그라이크", "통합전략", "is"] },
-  { tab: "about", label: "소개", alt: ["about", "소개", "문의", "제작"] },
+  { tab: "about", label: "테라 아카이브 소개", alt: ["about", "소개", "문의", "제작", "어바웃"] },
 ];
 
 // 통합전략 테마의 커뮤니티 호칭 — 대부분 이 이름으로 부른다 (사용자 확인 2026-07-25:

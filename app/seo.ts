@@ -44,7 +44,7 @@ const TAB_META: Record<Exclude<SeoTab, "portal">, Record<SeoLocale, { title: str
     ja: { title: "オペレーター図鑑 - アークナイツ オペレーター一覧 | テラアーカイブ", description: "アークナイツのオペレーター図鑑 — 所属・クラス・タグ・シナジーで絞り込み検索し、オペレーターの詳細情報を確認できます。" },
   },
   planner: {
-    ko: { title: "인프라 자동편성 시뮬레이터 - 명일방주 기반시설 편성 | 테라 아카이브", description: "명일방주 기반시설(RIIC) 자동 편성 플래너 — 보유 오퍼레이터만 입력하면 제조소·무역소·발전소 편성을 자동으로 짜줍니다." },
+    ko: { title: "인프라 자동편성기 - 명일방주 기반시설 편성 | 테라 아카이브", description: "명일방주 기반시설(RIIC) 자동 편성 플래너 — 보유 오퍼레이터만 입력하면 제조소·무역소·발전소 편성을 자동으로 짜줍니다." },
     en: { title: "Base Auto-Planner - Arknights RIIC Base | Terra Archive", description: "Arknights RIIC base auto-assignment planner — just enter your roster and it builds the optimal factory, trading post, and power plant layout for you." },
     ja: { title: "基地自動編成 - アークナイツ基地編成 | テラアーカイブ", description: "アークナイツ基地（インフラ）自動編成プランナー — 手持ちオペレーターを入力するだけで製造所・貿易所・発電所の編成を自動で組んでくれます。" },
   },
@@ -74,7 +74,7 @@ const TAB_META: Record<Exclude<SeoTab, "portal">, Record<SeoLocale, { title: str
     ja: { title: "統合戦略ガイド - アークナイツ統合戦略攻略 | テラアーカイブ", description: "アークナイツ統合戦略ガイド — ファントムと緋き貴石の各階層ノード、難易度0～15対応の敵図鑑、収蔵品・レパートリー、幻覚、エンディング条件を整理します。" },
   },
   about: {
-    ko: { title: "소개 - 기능 안내 | 테라 아카이브", description: "테라 아카이브의 기능 소개 — 오퍼 백과사전, 인프라 자동편성 시뮬레이터, 공채 도우미, 파밍·육성 시뮬, AI 스토리 요약이 각각 무엇이고 어떤 상황에 쓰는지 안내합니다." },
+    ko: { title: "소개 - 기능 안내 | 테라 아카이브", description: "테라 아카이브의 기능 소개 — 오퍼 백과사전, 인프라 자동편성기, 공채 도우미, 파밍·육성 시뮬, AI 스토리 요약이 각각 무엇이고 어떤 상황에 쓰는지 안내합니다." },
     en: { title: "About - Feature Guide | Terra Archive", description: "About Terra Archive — what the operator encyclopedia, base auto-planner, recruitment helper, farming/upgrade simulator, and AI story digest do, and when to use each." },
     ja: { title: "紹介 - 機能ガイド | テラアーカイブ", description: "テラアーカイブの機能紹介 — オペレーター図鑑、基地自動編成、公開求人ヘルパー、周回・育成シミュ、AIストーリー要約が何で、どんな時に使うのかを案内します。" },
   },

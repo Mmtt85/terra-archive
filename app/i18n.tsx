@@ -113,7 +113,7 @@ const D: Record<string, Pair> = {
   "테라 아카이브 홈": ["Terra Archive home", "テラアーカイブ ホーム"],
   "주요 탭": ["Main tabs", "メインタブ"],
   "오퍼 백과사전": ["Operator Archive", "オペレーター図鑑"],
-  "인프라 자동편성 시뮬레이터": ["Base Auto-Assign Simulator", "基地自動編成シミュレーター"],
+  "인프라 자동편성기": ["Base Auto-Planner", "基地自動編成"],
   "공채 도우미": ["Recruit Helper", "公開求人ヘルパー"],
   "언어 선택": ["Language", "言語選択"],
   "다크 모드 전환": ["Toggle dark mode", "ダークモード切替"],
@@ -253,7 +253,7 @@ const D: Record<string, Pair> = {
   ],
   "테라 아카이브 | 명일방주(Arknights) 팬사이트": ["Terra Archive | Arknights Fansite", "テラアーカイブ | アークナイツのファンサイト"],
   "{name} - 명일방주 오퍼레이터 | 테라 아카이브": ["{name} - Arknights Operator | Terra Archive", "{name} - アークナイツ オペレーター | テラアーカイブ"],
-  "인프라 자동편성 시뮬레이터 - 명일방주 기반시설 편성 | 테라 아카이브": ["Base Auto-Assign Simulator - Arknights RIIC Base | Terra Archive", "基地自動編成シミュレーター - アークナイツ基地編成 | テラアーカイブ"],
+  "인프라 자동편성기 - 명일방주 기반시설 편성 | 테라 아카이브": ["Base Auto-Planner - Arknights RIIC Base | Terra Archive", "基地自動編成 - アークナイツ基地編成 | テラアーカイブ"],
   "공채 도우미 - 명일방주 공개모집 계산기 | 테라 아카이브": ["Recruit Helper - Arknights Recruitment Calculator | Terra Archive", "公開求人ヘルパー - アークナイツ公開求人計算機 | テラアーカイブ"],
 
   // ── 인프라 플래너 ──────────────────────────────────────────────────────────
@@ -1012,6 +1012,7 @@ const D: Record<string, Pair> = {
   "미실장 (중국 서버 선행)": ["Unreleased (CN server)", "未実装（中国サーバー先行）"],
   "정식 출시": ["Released", "実装済み"],
   "소개": ["About", "紹介"],
+  "테라 아카이브 소개": ["About Terra Archive", "テラアーカイブについて"],
   "헤더의 '미래시 데이터 포함'을 켜면 미출시(중국 서버 선행) 오퍼도 보유 오퍼 설정과 자동편성 계산에 포함됩니다. 스킬 텍스트는 비공식 AI 번역이며, 정식 출시 시 공식 데이터로 대체됩니다.": [
     "Turn on 'Include future data' in the header to include operators not yet released (CN-first) in the roster settings and auto-assignment. Their skill text is an unofficial AI translation, replaced by official data when they release.",
     "ヘッダーの「未実装データを含む」をオンにすると、未実装（中国サーバー先行）のオペレーターも所持設定と自動編成の計算に含まれます。スキルテキストは非公式のAI翻訳で、正式実装時に公式データへ置き換えられます。",
@@ -1527,6 +1528,10 @@ const D: Record<string, Pair> = {
     "**This is still BETA.** Recognition isn't always perfect — it may open the wrong entry or miss a screen. If you hit a bad call, send feedback and it gets fixed against that screen.",
     "**まだBETAです。** 画面認識は常に完璧ではありません — 見当違いの項目が開いたり、読めずに通り過ぎることがあります。おかしな判定に出会ったらフィードバックでお知らせください。その画面を基準に修正します。",
   ],
+  // 리플레이 줄 라벨 — 작전은 입장만, 소장품·자원은 보유 리스트에 담은 것만 기록된다
+  "작전 진입": ["Entered operation", "作戦に進入"],
+  "소장품 획득": ["Collectible taken", "秘宝を獲得"],
+  "자원 획득": ["Resource taken", "資源を獲得"],
   "이런 식으로 따라옵니다": ["This is how it follows along", "こんな風に追従します"],
   "에뮬레이터에서 작전 노드를 고르자 사이트가 그 작전 상세를 자동으로 연 화면": [
     "Screenshot of the site automatically opening an operation's details after the node was selected in the emulator",

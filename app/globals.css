@@ -2993,15 +2993,19 @@ footer p {
    달리 시간이 지나도 사라지지 않고, 시선을 덜 끌게 무채색 + 애니메이션 없음. */
 .beta-badge {
   display: inline-block;
-  margin-left: 6px;
-  padding: 1.5px 6px;
+  margin-left: 4px;
+  padding: 0.5px 4px;
   border-radius: 999px;
   border: 1px solid currentColor;
   color: var(--muted);
   background: transparent;
-  font: 900 9px/1.5 inherit;
-  letter-spacing: 0.06em;
+  /* ⚠ font 단축 속성에 family로 inherit을 쓰면 선언 전체가 무효다 — 개별 속성으로 쓴다 */
+  font-size: 8px;
+  font-weight: 800;
+  line-height: 1.4;
+  letter-spacing: 0.04em;
   vertical-align: middle;
+  opacity: 0.75;
 }
 .new-badge {
   display: inline-block;

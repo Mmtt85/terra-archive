@@ -104,6 +104,8 @@ export type OcrSession = {
   difficulty(): Promise<number | null>;
   /** 강한 빨강 픽셀 비율(0~1) — 긴급 작전 화면이면 ~0.02, 평시 ≤0.009 (실측) */
   redness: number;
+  /** 화면 평균 밝기(0~255) — 전투 입장 암전 화면 판정용 (DARK_LUMA 미만) */
+  luma: number;
 };
 
 /** 좌하단 난이도 배지(육각형) 크롭 영역 (통합전략 화면 공통 위치) — f6 실측 캘리브레이션 */
@@ -137,13 +139,18 @@ export async function createOcrSession(blob: Blob, lang = "kor"): Promise<OcrSes
   const img = ctx.getImageData(0, 0, W, H);
   // 강한 빨강 비율 — 긴급 작전 화면 감지용 (그레이 변환 전에 재야 한다).
   // 캘리브레이션(2026-07-26 영상3): 긴급 노드 2.0% vs 일반 노드·전투 0.8~0.9% vs 조우 0.03%.
-  let redPx = 0, redN = 0;
+  // 같은 루프에서 평균 밝기도 잰다 — **전투 입장 암전 화면** 판정용 (2026-07-26 사용자 확정:
+  // "전투 입장할 때 화면이 암전되면서 전투 이름이 나온다"). 노드를 눌러 훑어본 것과 실제
+  // 입장을 구분하는 유일한 화면 신호다.
+  let redPx = 0, redN = 0, lumSum = 0;
   for (let i = 0; i < img.data.length; i += 4 * 7) {   // 7픽셀 스트라이드 — 전수 불필요
     const r = img.data[i], g = img.data[i + 1], b = img.data[i + 2];
     if (r > 130 && g < 70 && b < 80 && r > g * 2) redPx++;
+    lumSum += (r * 299 + g * 587 + b * 114) / 1000;
     redN++;
   }
   const redness = redN ? redPx / redN : 0;
+  const luma = redN ? lumSum / redN : 255;
   grayNormalize(img.data);
   ctx.putImageData(img, 0, 0);
   const worker = await getWorker(lang);
@@ -153,6 +160,7 @@ export async function createOcrSession(blob: Blob, lang = "kor"): Promise<OcrSes
 
   return {
     redness,
+    luma,
     async sparse() {
       await setPsm(worker, "11");
       const r = await worker.recognize(c, {}, OUT);

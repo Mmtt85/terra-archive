@@ -11,8 +11,10 @@ import type { T } from "../i18n";
 
 // 여정 이벤트 type → 표시 라벨 (i18n 키). 여기 없는 type(옛 파일의 map·none·battle 등)은
 // 여정이 아니므로 표시하지 않는다 — 사용자 확정 2026-07-26: "유저가 뭘 선택했는지만".
+// 작전은 **입장**만, 소장품·자원은 **보유 리스트에 담은 것**만 들어온다 (rogue.tsx, 2026-07-26)
 const TYPE_LABEL: Record<string, string> = {
-  stage: "작전", enc: "조우", relic: "소장품", zone: "지역", "battle-result": "작전 결과",
+  stage: "작전 진입", enc: "조우", relic: "소장품 획득", res: "자원 획득",
+  zone: "지역", "battle-result": "작전 결과",
 };
 // 전시관(archive) 이벤트는 arc 탭으로 구분 — band 같은 영문 키는 한국어로, 테마 고유
 // 시스템(암호판·붕괴 패러다임 등)은 데이터의 한국어 라벨이 그대로 온다.

@@ -20,6 +20,10 @@ let gradeMissAt = 0;
 /** 게임 연결 시작 시 호출 — 지난 판의 난이도가 새 판에 새지 않게 캐시를 비운다. */
 export function resetGradeCache(): void { gradeCache = null; gradePend = null; gradeMissAt = 0; }
 
+// 전투 입장 암전 화면의 평균 밝기 상한. 사미 지도·모달은 아트가 깔려 훨씬 밝고, 입장
+// 로딩은 검은 배경에 작전 이름만 뜬다 (2026-07-26). 여유를 두되 지도가 걸리지 않는 값.
+const DARK_LUMA = 46;
+
 /** 게임 HUD 수치 파싱 (원시 OCR 라인) — 브리지 플레이 로그용 추정치 */
 function parseHud(rawLines: string[]): LensHud {
   const fractions: [number, number][] = [];
@@ -187,6 +191,10 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
       // 폴백까지 실패(무신호)면 마지막으로 중국어를 시도한다 (zhRan이면 이미 돌려 스킵)
       if (zhPossible && oc.target.kind === "none") await tryZh();
     }
+    // 전투 입장 암전 — 화면이 검게 덮이고 전투 이름만 뜨는 로딩 화면 (사용자 확정 2026-07-26).
+    // 리플레이가 "노드를 눌러 본 것"과 "실제로 들어간 것"을 가르는 신호다. 지도·모달은
+    // 아트가 깔려 평균 밝기가 훨씬 높다.
+    oc.dark = session.luma < DARK_LUMA;
     // HUD 수치 파싱 — 브리지 플레이 로그용. 정규화가 '/'를 지우므로 **원시 라인**에서 읽는다.
     // OCR 오독(8/8→878)이 흔해 추정치다: 분수 전부를 원시로 남기고, 분모 크기로 HP/경험치를 가른다.
     oc.hud = parseHud(lines);

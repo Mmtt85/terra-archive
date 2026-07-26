@@ -624,16 +624,16 @@ function ThemeToggle() {
 // 전혀 없다 (사용자 확정 2026-07-17: 데이터 소진 방지). 오퍼 백과사전은 여기서 /operators로 이동.
 function Portal({ onOpenTab }: { onOpenTab: (tab: Tab) => void }) {
   const { t } = useI18n();
-  // 메뉴 순서는 햄버거 메뉴와 동일하게 유지 (사용자 확정 2026-07-17: 인프라 자동편성 시뮬레이터 최상단).
+  // 메뉴 순서는 햄버거 메뉴와 동일하게 유지 (사용자 확정 2026-07-17: 인프라 자동편성기 최상단).
   const cards: { tab: Tab; icon: string; name: string; desc: string }[] = [
-    { tab: "planner", icon: "⌂", name: t("인프라 자동편성 시뮬레이터"), desc: t("보유 오퍼만 입력하면 기반시설 편성을 자동으로 계산") },
+    { tab: "planner", icon: "⌂", name: t("인프라 자동편성기"), desc: t("보유 오퍼만 입력하면 기반시설 편성을 자동으로 계산") },
     { tab: "archive", icon: "▤", name: t("오퍼 백과사전"), desc: t("소속·직군·태그·시너지로 필터·검색하는 오퍼레이터 도감") },
     { tab: "recruit", icon: "◎", name: t("공채 도우미"), desc: t("공개모집 태그 조합으로 확정·고성급 오퍼를 탐색") },
     { tab: "farm", icon: "◈", name: t("파밍 도우미"), desc: t("정예화 재료의 최적 파밍 스테이지와 이성 효율표") },
     { tab: "upgrade", icon: "▦", name: t("오퍼 육성 시뮬"), desc: t("오퍼 육성에 필요한 용문폐·재료 총량을 단계별로 계산") },
     { tab: "story", icon: "✦", name: t("스토리"), desc: t("이벤트 스토리를 AI 요약과 전문(풀 스크립트)으로") },
     { tab: "rogue", icon: "❖", name: t("통합전략 가이드"), desc: t("층별 노드·적 도감·유물·엔딩 조건을 난이도별로 정리") },
-    { tab: "about", icon: "ⓘ", name: t("소개"), desc: t("각 기능이 무엇이고 언제 쓰는지 안내") },
+    { tab: "about", icon: "ⓘ", name: t("테라 아카이브 소개"), desc: t("각 기능이 무엇이고 언제 쓰는지 안내") },
   ];
   return (
     <section className="portal" aria-labelledby="portal-title">
@@ -942,7 +942,7 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
     document.title = selected
       ? t("{name} - 명일방주 오퍼레이터 | 테라 아카이브", { name: selected.name })
       : tab === "planner"
-        ? t("인프라 자동편성 시뮬레이터 - 명일방주 기반시설 편성 | 테라 아카이브")
+        ? t("인프라 자동편성기 - 명일방주 기반시설 편성 | 테라 아카이브")
         : tab === "recruit"
           ? t("공채 도우미 - 명일방주 공개모집 계산기 | 테라 아카이브")
           : tab === "farm"
@@ -984,13 +984,13 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
   const TAB_LABEL: Record<Tab, string> = {
     portal: t("홈"),
     archive: t("오퍼 백과사전"),
-    planner: t("인프라 자동편성 시뮬레이터"),
+    planner: t("인프라 자동편성기"),
     recruit: t("공채 도우미"),
     farm: t("파밍 도우미"),
     upgrade: t("오퍼 육성 시뮬"),
     story: t("스토리"),
     rogue: t("통합전략 가이드"),
-    about: t("소개"),
+    about: t("테라 아카이브 소개"),
   };
   const switchTab = (next: Tab) => {
     setNavOpen(false);
@@ -1210,7 +1210,7 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
           {/* 순서는 포탈 카드와 동일 (사용자 확정 2026-07-17): 홈 · 인프라 · 백과사전 · 공채 · 파밍 · 스토리 · 소개 */}
           <nav className={`main-tabs${navOpen ? " open" : ""}`} aria-label={t("주요 탭")}>
             <button className={`tab-portal${tab === "portal" ? " selected" : ""}`} onClick={() => switchTab("portal")}><span className="tab-icon" aria-hidden>◇</span>{t("홈")}</button>
-            <button className={`tab-planner${tab === "planner" ? " selected" : ""}`} onClick={() => switchTab("planner")}><span className="tab-icon" aria-hidden>⌂</span>{t("인프라 자동편성 시뮬레이터")}{tabHasNewFeature("planner") && <span className="new-badge">{t("새기능")}</span>}</button>
+            <button className={`tab-planner${tab === "planner" ? " selected" : ""}`} onClick={() => switchTab("planner")}><span className="tab-icon" aria-hidden>⌂</span>{t("인프라 자동편성기")}{tabHasNewFeature("planner") && <span className="new-badge">{t("새기능")}</span>}</button>
             <button className={`tab-archive${tab === "archive" ? " selected" : ""}`} onClick={() => switchTab("archive")}><span className="tab-icon" aria-hidden>▤</span>{t("오퍼 백과사전")}</button>
             <button className={`tab-recruit${tab === "recruit" ? " selected" : ""}`} onClick={() => switchTab("recruit")}><span className="tab-icon" aria-hidden>◎</span>{t("공채 도우미")}{tabHasNewFeature("recruit") && <span className="new-badge">{t("새기능")}</span>}</button>
             <button className={`tab-farm${tab === "farm" ? " selected" : ""}`} onClick={() => switchTab("farm")}><span className="tab-icon" aria-hidden>◈</span>{t("파밍 도우미")}</button>
@@ -1229,7 +1229,7 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
                 ))}
               </div>
             </div>
-            <button className={`tab-about${tab === "about" ? " selected" : ""}`} onClick={() => switchTab("about")}><span className="tab-icon" aria-hidden>ⓘ</span>{t("소개")}</button>
+            <button className={`tab-about${tab === "about" ? " selected" : ""}`} onClick={() => switchTab("about")}><span className="tab-icon" aria-hidden>ⓘ</span>{t("테라 아카이브 소개")}</button>
           </nav>
         </div>
         {/* 2줄(확장부) — 데스크탑: 미래시·다크모드·언어(오른쪽 끝). 모바일: display:contents로

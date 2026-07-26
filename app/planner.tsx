@@ -953,7 +953,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
               : layout === "custom"
                 ? t("RIIC / 사용자 지정 · 제조 {m} · 무역 {r} · 발전 {p} — 방 카드에서 종류 변경", { m: customRooms.filter((room) => room === "MANUFACTURE").length, r: customRooms.filter((room) => room === "TRADING").length, p: customRooms.filter((room) => room === "POWER").length })
                 : t("RIIC / 243 · 순금 2 + 작전기록 2 · A조 풀파워, 피로 시 B조 교대")}</span>
-          <h2>{t("인프라 자동편성 시뮬레이터")}</h2>
+          <h2>{t("인프라 자동편성기")}</h2>
         </div>
         <div className="planner-buttons">
           {/* startTransition: 로스터 모달(카드 수백 장)은 렌더가 무거워 클릭 페인트부터 내보낸다 (INP, 2026-07-21) */}
