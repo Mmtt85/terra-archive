@@ -11755,3 +11755,31 @@ main.site-main > .site-header {
 :where(.rg-modal, .omni-panel, .rg-hero, .rg-topicsel, .rg-tabs-panel) {
   border-radius: var(--r-lg);
 }
+
+/* ── 전역 라운딩 2차 보강 (2026-07-26 사용자 지적: 인프라 요약·시설 상세·오퍼 상세 모달·
+   공채 시간표·태그 결과·조합 사전·스토리 전문/AI요약 토글·미래시 토글 등) ─────────── */
+:where(li, label, summary) {
+  border-radius: var(--r-sm);
+}
+:where(.core-chip, .op-link, .time-req, .low-time, .future-toggle) {
+  border-radius: var(--r-sm);
+}
+:where(.planner-summary > div, .detail-section, .crew-card, .summary-note,
+  .recruit-time-note, .recruit-tags, .recruit-picked, .recruit-combo, .low-time-note) {
+  border-radius: var(--r-md);
+}
+/* 모달 패널 전부 — 컨테이너급만 (백드롭·내부 조각 제외) */
+:where(.operator-modal, .room-modal, .item-modal, .lens-modal, .scanner-modal,
+  .term-modal, .confirm-modal, .bcast-modal, .rg-emodal, .rg-rmodal, .rg-zmodal,
+  .rg-invmodal, .rg-modal, .omni-panel, .bridge-replay) {
+  border-radius: var(--r-lg);
+}
+/* 세그먼트 컨트롤은 **컨테이너**를 굴리고 내부 버튼은 각지게 되돌린다 —
+   내부 버튼까지 굴리면 이음매 모서리에 배경이 비쳐 보인다 */
+.story-mode-bar {
+  border-radius: var(--r-sm);
+  overflow: hidden;
+}
+.story-mode-bar button {
+  border-radius: 0;
+}
