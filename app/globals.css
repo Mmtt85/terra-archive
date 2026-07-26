@@ -3862,6 +3862,16 @@ footer p {
 }
 /* ── 보유 오퍼 입력 방식 (직접 입력 / 가져오기, 2026-07-26) ───────────────
    모달 헤더(어두운 배경)에 놓이는 세그먼트 컨트롤 — 컨테이너만 굴리고 내부 버튼은 각지게. */
+/* 제목 줄 — "보유 오퍼레이터 설정" 오른쪽에 입력 방식 세그먼트 (사용자 지정 2026-07-26) */
+.roster-head-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+.roster-head-row h2 {
+  margin-bottom: 8px !important; /* 세그먼트와 수직 중심을 맞춘다 */
+}
 .roster-mode {
   display: inline-flex;
   background: #00000038; /* 헤더 그라데이션 위에서 컨트롤로 읽히게 */
@@ -3893,19 +3903,31 @@ footer p {
   background: var(--lime);
   color: var(--on-lime);
 }
-/* 가져오기 패널 — 세 경로(MAA 파일·스크린샷·게임 로그인)를 카드로 나란히 */
+/* 가져오기 패널 — MAA 파일·스크린샷을 반반씩 한 줄에 꽉 채우고, 게임 로그인은 아래 한 줄 전체.
+   같은 줄 카드는 높이를 맞추고(그리드 기본 stretch) 버튼은 카드 아래쪽에 정렬한다. */
 .roster-import {
   display: grid;
   gap: 14px;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  align-items: start;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   margin-bottom: 8px;
 }
 .import-way {
+  display: flex;
+  flex-direction: column;
   border: 1px solid var(--line);
   border-radius: var(--r-md, 9px);
   background: var(--bg-soft2);
   padding: 15px 16px;
+}
+/* 설명 길이가 달라도 버튼 줄이 같은 높이에 오게 — 남는 공간을 설명 아래로 몰아준다 */
+.import-way:not(.import-login) .import-action {
+  margin-top: auto;
+  align-self: flex-start;
+}
+@media (max-width: 720px) {
+  .roster-import {
+    grid-template-columns: 1fr;
+  }
 }
 .import-way h4 {
   margin: 0 0 8px;
@@ -3948,10 +3970,16 @@ footer p {
   opacity: 0.45;
   cursor: not-allowed;
 }
+/* 로그인 실행 버튼 — 라임(모달 헤더 강조색)을 밝은 카드 위에 쓰면 겉돌아서
+   잉크 채움으로 간다 (사용자 지적 2026-07-26) */
 .import-action.apply {
-  background: var(--lime);
-  border-color: var(--lime);
-  color: var(--on-lime);
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--white);
+}
+.import-action.apply:hover:not(:disabled) {
+  background: var(--ink2);
+  border-color: var(--ink2);
 }
 .import-way .maa-import input {
   display: none;

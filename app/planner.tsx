@@ -2209,13 +2209,15 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
         <button type="button" className="modal-close" onClick={() => { void closeGuarded(); }} aria-label={t("닫기")}>×</button>
         <header className="room-modal-head">
           <span className="modal-kicker">ROSTER · {t("{n}/{m} 보유", { n: draft.size, m: allOps.length })}</span>
-          <h2>{t("보유 오퍼레이터 설정")}</h2>
-          <div className="roster-tools">
-            {/* 입력 방식 — 직접 입력(카드 격자) / 가져오기(MAA·스크린샷·게임 로그인) */}
+          {/* 제목 오른쪽에 입력 방식 — 직접 입력(카드 격자) / 가져오기(MAA·스크린샷·게임 로그인) */}
+          <div className="roster-head-row">
+            <h2>{t("보유 오퍼레이터 설정")}</h2>
             <div className="roster-mode" role="group" aria-label={t("보유 오퍼 입력 방식")}>
               <button type="button" className={mode === "direct" ? "selected" : ""} onClick={() => setMode("direct")}><span className="btn-icon" aria-hidden>▦</span>{t("직접 입력")}</button>
               <button type="button" className={mode === "import" ? "selected" : ""} onClick={() => setMode("import")}><span className="btn-icon" aria-hidden>⤒</span>{t("가져오기")}{isNewFeature("account") && <span className="new-badge">{t("새기능")}</span>}</button>
             </div>
+          </div>
+          <div className="roster-tools">
             {mode === "direct" && (
               <>
                 <input {...searchProps} placeholder={t("이름·소속 검색")} />

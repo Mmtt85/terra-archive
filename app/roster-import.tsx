@@ -10,6 +10,7 @@
 
 import React, { useState } from "react";
 import { rich, type T } from "./i18n";
+import { isNewFeature } from "./whats-new";
 import {
   ACCOUNT_SERVERS, AccountError, accountErrorText, loginAccount, sendAccountCode,
   type AccountRoster, type AccountServer,
@@ -78,7 +79,7 @@ export function RosterImportPanel({ t, onMaaFile, onScan, onAccount, scanBadge }
       </section>
 
       <section className="import-way import-login">
-        <h4>{t("게임 로그인")}</h4>
+        <h4>{t("게임 로그인")}{isNewFeature("account") && <span className="new-badge">{t("새기능")}</span>}</h4>
         <p>{t("요스타 계정 이메일로 인증코드를 받아 로그인하면, 계정의 실제 보유 목록과 정예화를 그대로 가져옵니다 — 가장 정확한 방법입니다.")}</p>
         <p className="import-warn">{rich(t("**주의: 가져오는 순간 게임 접속이 끊깁니다.** 데이터를 받으려면 게임 서버에 접속을 새로 열어야 하고, 명일방주는 계정당 접속을 하나만 허용하기 때문입니다. 게임을 하지 않을 때 쓰세요 — 계정에는 아무 문제가 없고, 다시 실행하면 그대로 접속됩니다."))}</p>
         <div className="import-form">
