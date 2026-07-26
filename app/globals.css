@@ -11356,9 +11356,14 @@ main.site-main > .site-header {
     display: inline-block;
   }
 }
-/* 게임연결·리플레이 — .lens-open-btn을 빌려 쓰지만 스샷 레이더 세그먼트(좌측 조각,
-   radius 8 0 0 8)가 아니라 **독립 버튼**이다: 네 귀퉁이 radius + 옆 버튼과 간격 (2026-07-26) */
-.bridge-topic-btn,
+/* PRTS 링크 + ? 는 스샷 레이더처럼 **붙은 세그먼트**(왼쪽 조각 + ? 조각)이고,
+   리플레이는 독립 버튼이다 (2026-07-26). ?를 리플레이 뒤에 두면 리플레이 도움말로 읽힌다. */
+.bridge-topic-btn {
+  border-radius: 8px 0 0 8px;
+}
+.bridge-help-btn {
+  margin-right: 8px;
+}
 .bridge-log-btn {
   border-radius: 8px;
   margin-right: 8px;

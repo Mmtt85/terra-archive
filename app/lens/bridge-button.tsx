@@ -76,6 +76,10 @@ export function BridgeTopicButton({ topic, name, t }: { topic: string; name: str
         <span aria-hidden>{mine ? "◉" : "○"}</span> {mine ? t("PRTS 링크 연결됨") : t("PRTS 링크")}
         {!settings && isNewFeature("bridge") && <span className="new-badge">{t("새기능")}</span>}
       </button>
+      {/* ?는 **PRTS 링크 버튼 바로 오른쪽**에 붙는 세그먼트다 — 리플레이 뒤에 두면 리플레이
+          도움말처럼 보인다 (사용자 지적 2026-07-26) */}
+      <button type="button" className="lens-help-btn bridge-help-btn" aria-label={t("PRTS 링크 도움말")}
+        onClick={() => setHelpOpen(true)}>?</button>
       <button
         type="button"
         className="lens-open-btn bridge-log-btn"
@@ -84,9 +88,6 @@ export function BridgeTopicButton({ topic, name, t }: { topic: string; name: str
       >
         <span aria-hidden>▤</span> {t("리플레이")}
       </button>
-      {/* 스샷 레이더와 같은 위치·모양의 ? 도움말 (사용자 요청 2026-07-26) */}
-      <button type="button" className="lens-help-btn bridge-help-btn" aria-label={t("PRTS 링크 도움말")}
-        onClick={() => setHelpOpen(true)}>?</button>
       {replayOpen && <BridgeReplayModal t={t} onClose={() => setReplayOpen(false)} />}
       {helpOpen && createPortal(
         <div className="modal-backdrop" onMouseDown={(ev) => { if (ev.target === ev.currentTarget) setHelpOpen(false); }}>
