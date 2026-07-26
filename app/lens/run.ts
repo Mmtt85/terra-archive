@@ -169,8 +169,8 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
     // OCR 오독(8/8→878)이 흔해 추정치다: 분수 전부를 원시로 남기고, 분모 크기로 HP/경험치를 가른다.
     oc.hud = parseHud(lines);
     // 긴급 작전 화면 색 감지 — 붉은 배너 위 '긴급 작전' 글자는 OCR이 자주 놓친다
-    // (2026-07-26 영상3 실측: 텍스트 0회 검출). 강한 빨강 비율 1.4% 이상이면 긴급으로 본다.
-    if (session.redness >= 0.014) {
+    // (2026-07-26 영상3 실측: 텍스트 0회 검출). 강한 빨강 비율 1.1% 이상이면 긴급으로 본다 (영상5에서 1.4 미달 사례 → 하향, 음성 최대 0.9%).
+    if (session.redness >= 0.011) {
       if (oc.target.kind === "goto" && oc.target.goto.page === "rogue" && oc.target.goto.modal?.type === "stage") oc.target.goto.emergency = true;
       else if (oc.target.kind === "tie") for (const o of oc.target.options) { if (o.goto.page === "rogue" && o.goto.modal?.type === "stage") o.goto.emergency = true; }
     }

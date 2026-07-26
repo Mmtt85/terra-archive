@@ -298,10 +298,15 @@ export function analyzeLines(
     // 조우 모달 + 점수 2 이상(장문 여러 줄 일치)이면 이름 없이도 확정한다 (영상3 f172).
     const encSolid = w && w.section === "enc" && w.goto.page === "rogue"
       && w.goto.modal?.type === "enc" && (w.entities[0]?.score ?? 0) >= 2;
+    // 암호판 선택 화면 — 암호판 아이템 이름은 대부분 2글자(결정·배척·교목…)라 2글자
+    // 약화 규칙에 걸려 영영 안 열렸다 (2026-07-26 영상5). 화면에 '암호판 선택' 문구가
+    // 있으면(선택 카드 화면 전용 — 하단바 상시 '암호판'과 구분) 2글자 mech도 인정한다.
+    const mechSolid = w && w.entities[0]?.section === "mech"
+      && (w.entities[0].score >= 2 || allN.includes("암호판선택"));
     // **1위 엔티티**가 이름 매칭이어야 확정 — 하위의 약한 이름 매칭이 상위 잡음(룬 문양
     // 오독 등)을 통과시키는 것을 막는다 (2026-07-26 영상3 f140: 배척 4.0 + 오리지늄
     // 아이리스 1.5·이름 → relic 뷰 오발). 정상 화면은 항상 1위가 이름이다(실측).
-    if (w && (w.entities[0]?.nameHit || encSolid)) {
+    if (w && (w.entities[0]?.nameHit || encSolid || mechSolid)) {
       markEmg(w.goto);
       return {
         screens, entities: w.entities,

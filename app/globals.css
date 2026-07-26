@@ -11173,13 +11173,19 @@ main.site-main > .site-header {
   font-variant-numeric: tabular-nums;
   pointer-events: none;
 }
-/* 헤더 인라인 상태 (버튼 없이 현황만 — 2026-07-26) */
+/* 헤더 인라인 상태 (버튼 없이 현황만 — 2026-07-26).
+   ⚠ 폭을 고정한다 — 국면·카운트 텍스트가 매초 바뀌며 폭이 출렁이면 옆의 유니버셜 서치
+   버튼이 계속 밀렸다 당겨진다 (사용자 제보). 넘치는 글자는 말줄임. */
 .bridge-status.alone {
   position: static;
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  max-width: 34vw;
+  width: clamp(200px, 20vw, 330px);
+  flex: 0 0 auto;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   pointer-events: none;
 }
 .bridge-dot {
