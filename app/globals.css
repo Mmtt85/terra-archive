@@ -11728,3 +11728,30 @@ main.site-main > .site-header {
 .omni-loading::before {
   content: "⋯ ";
 }
+
+/* ═══ 전역 라운딩 (2026-07-26 사용자 요청: "사이트가 너무 네모네모") ═══════════════
+   :where(...)는 특이도 0 — 명시적으로 radius를 준 규칙(알약 999px·원형 50%·
+   세그먼트 8 0 0 8 등)이 항상 이긴다. 즉 여기는 "radius가 없던 곳"에만 스민다.
+   대상 클래스는 실렌더 감사(테두리/배경이 있는데 radius 0인 요소 수집)로 뽑았다. */
+:root {
+  --r-sm: 6px;    /* 버튼·입력·배지·링크 칩 */
+  --r-md: 9px;    /* 카드·리스트 행·썸네일 */
+  --r-lg: 12px;   /* 모달·큰 패널·히어로 */
+}
+:where(button, input, select, textarea, kbd, a, h3) {
+  border-radius: var(--r-sm);
+}
+:where(.story-ready-badge, .story-guest-badge, .kind-badge, .farm-nonfarm-tag,
+  .cost-mini, .rg-nodetype, .best) {
+  border-radius: var(--r-sm);
+}
+:where(.farm-card, .farm-cols, .farm-nonfarm-body, .farm-more-stages, .rg-enc-item,
+  .rg-stagecard, .rg-stagecard-map, .rg-zonecard, .rg-zone, .portal-card,
+  .portal-card-icon, .ship-room, .story-thumb, .search-wrap, .rg-diffbar,
+  .prio-setting, .planner-controls, .data-note, .digest-group-kind, .strategy-cell,
+  .power-cell) {
+  border-radius: var(--r-md);
+}
+:where(.rg-modal, .omni-panel, .rg-hero, .rg-topicsel, .rg-tabs-panel) {
+  border-radius: var(--r-lg);
+}
