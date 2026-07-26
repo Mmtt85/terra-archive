@@ -2989,6 +2989,20 @@ footer p {
   margin-left: 8px;
 }
 /* 신규 기능 배지 — 출시 7일간 표시 (app/whats-new.ts) */
+/* BETA 딱지 — 아직 다듬는 중인 기능에 붙인다 (PRTS 링크, 2026-07-26). 새기능 배지와
+   달리 시간이 지나도 사라지지 않고, 시선을 덜 끌게 무채색 + 애니메이션 없음. */
+.beta-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1.5px 6px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  color: var(--muted);
+  background: transparent;
+  font: 900 9px/1.5 inherit;
+  letter-spacing: 0.06em;
+  vertical-align: middle;
+}
 .new-badge {
   display: inline-block;
   margin-left: 6px;
@@ -11084,6 +11098,10 @@ main.site-main > .site-header {
   border-radius: 8px;
   border: 1px solid var(--bg-panel2);
   display: block;
+}
+/* PRTS 링크 예시 스샷은 게임+사이트가 나란한 넓은 화면이라 스캐너 예시(360px)보다 크게 */
+.bridge-sample img {
+  max-width: 100%;
 }
 .scanner-sample figcaption {
   font-size: 0.8rem;

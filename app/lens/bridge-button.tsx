@@ -74,6 +74,8 @@ export function BridgeTopicButton({ topic, name, t }: { topic: string; name: str
         onClick={() => (mine ? disconnectBridge() : void connectBridge({ topic, name }))}
       >
         <span aria-hidden>{mine ? "◉" : "○"}</span> {mine ? t("PRTS 링크 연결됨") : t("PRTS 링크")}
+        {/* 아직 다듬는 중이라 BETA 표시 (사용자 지시 2026-07-26) — 새기능 배지와 달리 상시 */}
+        <span className="beta-badge">BETA</span>
         {!settings && isNewFeature("bridge") && <span className="new-badge">{t("새기능")}</span>}
       </button>
       {/* ?는 **PRTS 링크 버튼 바로 오른쪽**에 붙는 세그먼트다 — 리플레이 뒤에 두면 리플레이

@@ -18,7 +18,7 @@ export default function BridgeHelpModal({ onClose }: { onClose: () => void }) {
   return (
     <section className="operator-modal lens-modal" role="dialog" aria-modal="true" aria-label={t("PRTS 링크 도움말")}>
       <header className="scanner-head">
-        <h2>◉ {t("PRTS 링크")}</h2>
+        <h2>◉ {t("PRTS 링크")}<span className="beta-badge">BETA</span></h2>
         <button className="modal-close" onClick={onClose} aria-label={t("닫기")}>✕</button>
       </header>
       <div className="lens-body lens-help">
@@ -46,6 +46,14 @@ export default function BridgeHelpModal({ onClose }: { onClose: () => void }) {
           </ol>
         </section>
 
+        {/* 실사용 예시 — 사용자 실제 화면(2026-07-26 제공): 오른쪽 에뮬레이터가 작전 노드에
+            올라가자 왼쪽 사이트가 그 작전 상세를 스스로 열었다 */}
+        <h3>{t("이런 식으로 따라옵니다")}</h3>
+        <figure className="scanner-sample bridge-sample">
+          <img src="/lens/prts-link-sample.webp" alt={t("에뮬레이터에서 작전 노드를 고르자 사이트가 그 작전 상세를 자동으로 연 화면")} loading="lazy" />
+          <figcaption>{t("오른쪽 에뮬레이터에서 '적의 칼로 적 베기' 노드를 고르자, 왼쪽 사이트가 그 작전의 적 구성·지형을 스스로 열었습니다. 위쪽 가운데 표시줄이 연결 상태와 지금 읽은 화면을 알려줍니다.")}</figcaption>
+        </figure>
+
         <h3>{t("무엇이 자동으로 열리나")}</h3>
         <ul>
           <li>{t("맵의 작전 노드 → 해당 작전 상세 (긴급 작전이면 긴급 정보로)")}</li>
@@ -71,6 +79,7 @@ export default function BridgeHelpModal({ onClose }: { onClose: () => void }) {
 
         <h3>{t("참고")}</h3>
         <ul>
+          <li>{rich(t("**아직 BETA입니다.** 화면 인식이 늘 완벽하지는 않습니다 — 엉뚱한 항목이 열리거나 못 읽고 지나갈 수 있습니다. 이상한 판정을 만나면 피드백으로 알려주시면 그 화면을 기준으로 고칩니다."))}</li>
           <li>{rich(t("**화면은 서버로 가지 않습니다.** 인식은 100% 브라우저 안에서 처리되고, 프레임을 저장하거나 녹화하지 않습니다."))}</li>
           <li>{t("화면 공유를 지원하는 데스크톱 브라우저(크롬·엣지 등)에서만 버튼이 보입니다. 모바일에서는 스샷 레이더를 쓰세요.")}</li>
           <li>{t("한국어·영어·일본어 게임 화면을 인식하며, 중국 서버 선행 테마(흑류수해)는 중국어 화면도 인식합니다.")}</li>

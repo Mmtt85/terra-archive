@@ -1523,6 +1523,19 @@ const D: Record<string, Pair> = {
     "Your run is logged while connected — the Replay button shows which operations you entered and how they went, and which collectibles you picked, and can export it as JSON.",
     "接続中の道のりが記録されます — 「リプレイ」ボタンでどの作戦に入って結果がどうだったか、どのコレクションを選んだかを見られ、JSONで書き出せます。",
   ],
+  "**아직 BETA입니다.** 화면 인식이 늘 완벽하지는 않습니다 — 엉뚱한 항목이 열리거나 못 읽고 지나갈 수 있습니다. 이상한 판정을 만나면 피드백으로 알려주시면 그 화면을 기준으로 고칩니다.": [
+    "**This is still BETA.** Recognition isn't always perfect — it may open the wrong entry or miss a screen. If you hit a bad call, send feedback and it gets fixed against that screen.",
+    "**まだBETAです。** 画面認識は常に完璧ではありません — 見当違いの項目が開いたり、読めずに通り過ぎることがあります。おかしな判定に出会ったらフィードバックでお知らせください。その画面を基準に修正します。",
+  ],
+  "이런 식으로 따라옵니다": ["This is how it follows along", "こんな風に追従します"],
+  "에뮬레이터에서 작전 노드를 고르자 사이트가 그 작전 상세를 자동으로 연 화면": [
+    "Screenshot of the site automatically opening an operation's details after the node was selected in the emulator",
+    "エミュレーターで作戦ノードを選ぶと、サイトがその作戦の詳細を自動で開いた画面",
+  ],
+  "오른쪽 에뮬레이터에서 '적의 칼로 적 베기' 노드를 고르자, 왼쪽 사이트가 그 작전의 적 구성·지형을 스스로 열었습니다. 위쪽 가운데 표시줄이 연결 상태와 지금 읽은 화면을 알려줍니다.": [
+    "Selecting the operation node in the emulator on the right made the site on the left open that operation's enemy line-up and terrain by itself. The bar at the top center shows the link status and what was just read.",
+    "右のエミュレーターで作戦ノードを選ぶと、左のサイトがその作戦の敵構成・地形を自ら開きました。上部中央のバーが接続状態と今読み取った画面を知らせます。",
+  ],
   "무엇이 자동으로 열리나": ["What opens automatically", "何が自動で開くか"],
   "맵의 작전 노드 → 해당 작전 상세 (긴급 작전이면 긴급 정보로)": [
     "Operation node on the map → that operation's details (emergency info if it's an emergency)",
