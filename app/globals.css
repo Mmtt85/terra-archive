@@ -509,10 +509,15 @@ button {
   border-color: var(--border-strong);
 }
 
-/* 지난 기록 전체보기 — 기본은 최근 7일치만 보여주고 그 이전을 여기서 펼친다 */
-.chlog-more-btn {
+/* 목록 하단 버튼 줄 — 상세보기 토글 + 지난 기록 7일씩 더 불러오기 (2026-07-27) */
+.chlog-actions {
+  display: flex;
+  gap: 8px;
   margin-top: 14px;
-  width: 100%;
+}
+.chlog-more-btn {
+  flex: 1;
+  min-width: 0;
   padding: 8px 12px;
   border: 1px dashed var(--line);
   border-radius: 6px;

@@ -3,15 +3,17 @@
 // 업데이트 내역 — 헤더 로고 오른쪽 🛠 버튼 + 모달.
 // 내용은 코드가 아니라 **Supabase `changelog` 테이블**에서 실시간으로 읽는다
 // (사용자 확정 2026-07-27: 새 항목은 /admin에서 넣으면 배포 없이 바로 뜬다).
-// 기본은 최근 1주일치, '지난 기록 전체보기'를 누르면 전부 불러온다.
+// 표시 규칙 (사용자 확정 2026-07-27):
+//  ① 기본은 **신기능만** — '상세보기'를 눌러야 개선·버그 수정·데이터 갱신까지 보인다.
+//  ② 기간은 최근 7일치부터, '지난 기록'을 누를 때마다 **7일씩 더 과거로** 무한히 이어 붙인다.
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useI18n, DT_LOCALE } from "./i18n";
 import { useHashSync } from "./hash-modal";
 import {
-  fetchChangelog, changeText, CHANGE_KIND_LABEL, RECENT_DAYS,
-  type ChangeRow,
+  fetchChangelogRange, fetchOldestReleaseDate, windowRange, changeText,
+  CHANGE_KIND_LABEL, RECENT_DAYS, daysAgoKst, type ChangeRow,
 } from "./changelog-api";
 
 const dateLabel = (iso: string, locale: string): string => {
@@ -21,7 +23,7 @@ const dateLabel = (iso: string, locale: string): string => {
     { timeZone: "Asia/Seoul", year: "numeric", month: "long", day: "numeric" }).format(d);
 };
 
-// 날짜별 묶기 — 서버가 released_at desc, seq asc로 정렬해 주므로 순서대로 담기만 하면 된다
+// 날짜별 묶기 — 서버가 released_at desc, seq asc로 주므로 순서대로 담기만 하면 된다
 function groupByDate(rows: ChangeRow[]): { date: string; rows: ChangeRow[] }[] {
   const out: { date: string; rows: ChangeRow[] }[] = [];
   for (const row of rows) {
@@ -32,34 +34,43 @@ function groupByDate(rows: ChangeRow[]): { date: string; rows: ChangeRow[] }[] {
   return out;
 }
 
+// 빈 주가 이어질 때 클릭 한 번이 헛돌지 않게 자동으로 다음 창까지 넘어간다.
+// 1년 반 넘게 빈 구간이면 멈춘다 (런어웨이 방지).
+const MAX_SKIP = 80;
+
 export default function ChangelogButton() {
   const { locale, t } = useI18n();
   const localeBase = locale === "ko" ? "" : `/${locale}`;
   const [open, setOpen] = useState(false);
-  const [all, setAll] = useState(false);          // false = 최근 1주일, true = 전체
-  // 범위별로 따로 캐시한다 — 한 변수에 담으면 전체를 본 뒤 버튼으로 다시 열었을 때
-  // 표시는 전체인데 버튼은 '전체보기'로 남는 어긋남이 생긴다
-  const [recent, setRecent] = useState<ChangeRow[] | null>(null);
-  const [full, setFull] = useState<ChangeRow[] | null>(null);
+  const [detail, setDetail] = useState(false);        // false = 신기능만
+  const [rows, setRows] = useState<ChangeRow[] | null>(null);
+  const [weeks, setWeeks] = useState(1);              // 지금까지 불러온 7일 창 수
+  const [oldest, setOldest] = useState<string | null>(null); // 전체에서 가장 오래된 항목 날짜
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState("");
-  const rows = all ? full : recent;
+  const loaded = useRef(false);                       // 첫 로드 1회 가드
 
-  // 딥링크: #changelog(최근 1주일) · #changelog-all(전체) — 어느 탭에서든 열린다
-  useHashSync(open ? (all ? "#changelog-all" : "#changelog") : null, (h) => {
-    if (h === "#changelog" || h === "#changelog-all") { setOpen(true); setAll(h === "#changelog-all"); }
+  // 딥링크: #changelog(신기능만) · #changelog-all(상세) — 기간 확장 상태는 URL에 담지 않는다
+  useHashSync(open ? (detail ? "#changelog-all" : "#changelog") : null, (h) => {
+    if (h === "#changelog" || h === "#changelog-all") { setOpen(true); setDetail(h === "#changelog-all"); }
     else setOpen(false);
   });
 
+  // 첫 로드 — 최근 7일 + 전체 최고(最古) 날짜(더 볼 게 남았는지 판정용)
   useEffect(() => {
-    if (!open || rows !== null) return;   // 이미 받아둔 범위면 재요청 안 함
+    if (!open || loaded.current) return;
+    loaded.current = true;
     let alive = true;
-    setError("");
-    const wantAll = all;
-    fetchChangelog(wantAll)
-      .then((data) => { if (!alive) return; if (wantAll) setFull(data); else setRecent(data); })
-      .catch(() => { if (alive) setError(t("업데이트 내역을 불러오지 못했습니다 — 잠시 뒤 다시 시도해 주세요.")); });
+    const { from } = windowRange(0);
+    Promise.all([fetchChangelogRange(from), fetchOldestReleaseDate()])
+      .then(([data, min]) => { if (!alive) return; setRows(data); setOldest(min); })
+      .catch(() => {
+        if (!alive) return;
+        loaded.current = false;   // 실패는 재시도 가능하게
+        setError(t("업데이트 내역을 불러오지 못했습니다 — 잠시 뒤 다시 시도해 주세요."));
+      });
     return () => { alive = false; };
-  }, [open, all, rows, t]);
+  }, [open, t]);
 
   useEffect(() => {
     if (!open) return;
@@ -68,12 +79,42 @@ export default function ChangelogButton() {
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
-  const groups = groupByDate(rows ?? []);
+  // 불러온 구간의 시작일 — 이보다 오래된 항목이 있으면 '지난 기록' 버튼을 보인다
+  const loadedFrom = daysAgoKst(RECENT_DAYS * weeks);
+  const hasOlder = oldest !== null && oldest < loadedFrom;
+
+  const loadOlder = useCallback(async () => {
+    if (loadingMore) return;
+    setLoadingMore(true);
+    try {
+      let i = weeks;
+      // 항목이 하나도 없는 주는 건너뛰고, 뭔가 나오거나 더 과거가 없을 때까지 이어 간다
+      for (let step = 0; step < MAX_SKIP; step += 1) {
+        const { from, to } = windowRange(i);
+        const page = await fetchChangelogRange(from, to);
+        i += 1;
+        if (page.length) {
+          setRows((prev) => [...(prev ?? []), ...page]);
+          break;
+        }
+        if (!(oldest !== null && oldest < from)) break;   // 더 과거가 없으면 중단
+      }
+      setWeeks(i);
+    } catch {
+      setError(t("업데이트 내역을 불러오지 못했습니다 — 잠시 뒤 다시 시도해 주세요."));
+    }
+    setLoadingMore(false);
+  }, [weeks, oldest, loadingMore, t]);
+
+  // 표시 대상 — 기본은 신기능만, 상세보기면 전부
+  const shown = (rows ?? []).filter((row) => detail || row.kind === "new");
+  const groups = groupByDate(shown);
+  const hiddenCount = (rows?.length ?? 0) - shown.length;
 
   return (
     <>
-      {/* 버튼으로 열 땐 항상 최근 1주일부터 — 딥링크(#changelog-all)로는 전체로 바로 진입 */}
-      <button type="button" className="chlog-trigger" onClick={() => { setAll(false); setOpen(true); }} title={t("최근 업데이트 내역 보기")}>
+      {/* 버튼으로 열 땐 항상 신기능만부터 — 딥링크(#changelog-all)로는 상세로 바로 진입 */}
+      <button type="button" className="chlog-trigger" onClick={() => { setDetail(false); setOpen(true); }} title={t("최근 업데이트 내역 보기")}>
         <span aria-hidden>🛠</span>
         {/* 모바일은 아이콘만 (1줄 로고 옆 — 폭이 좁다) */}
         <span className="chlog-label">{t("업데이트 내역")}</span>
@@ -89,10 +130,11 @@ export default function ChangelogButton() {
             <div className="chlog-list">
               {rows === null && !error && <p className="chlog-empty">{t("불러오는 중…")}</p>}
               {error && <p className="chlog-empty">{error}</p>}
-              {rows !== null && rows.length === 0 && !error && (
+              {rows !== null && !error && shown.length === 0 && (
                 <p className="chlog-empty">
-                  {all ? t("아직 등록된 업데이트 내역이 없습니다.")
-                    : t("최근 {n}일 사이의 업데이트가 없습니다 — 지난 기록 전체보기로 이전 내역을 확인하세요.", { n: RECENT_DAYS })}
+                  {hiddenCount > 0
+                    ? t("이 기간에 새로 나온 기능은 없습니다 — 상세보기로 개선·수정 내역을 확인하세요.")
+                    : t("아직 등록된 업데이트 내역이 없습니다.")}
                 </p>
               )}
               {groups.map((day) => (
@@ -113,10 +155,17 @@ export default function ChangelogButton() {
                   </ul>
                 </section>
               ))}
-              {!all && (
-                <button type="button" className="chlog-more-btn" onClick={() => setAll(true)}>
-                  {t("지난 기록 전체보기")}
-                </button>
+              {rows !== null && !error && (
+                <div className="chlog-actions">
+                  <button type="button" className="chlog-more-btn" onClick={() => setDetail((d) => !d)}>
+                    {detail ? t("신기능만 보기") : t("상세보기 — 개선·수정 내역까지")}
+                  </button>
+                  {hasOlder && (
+                    <button type="button" className="chlog-more-btn" onClick={() => { void loadOlder(); }} disabled={loadingMore}>
+                      {loadingMore ? t("불러오는 중…") : weeks === 1 ? t("지난 기록 전체보기") : t("지난 기록 더 보기 (7일씩)")}
+                    </button>
+                  )}
+                </div>
               )}
               {/* 후원 안내 — 항상 보이는 하단 노트 (사용자 요청 2026-07-27) */}
               <p className="chlog-donate">

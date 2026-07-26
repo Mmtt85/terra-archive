@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { adminDeleteFeedback, adminListFeedback, adminSetHandling, adminSetReviewed, handlingAt, withHandling, type FeedbackRow } from "../feedback";
 import { adminDeleteRelease, adminDeleteRule, adminListRules, adminPublishRelease, adminUpsertRule, fetchLatestRelease, type ReleaseRow } from "../rules-api";
-import { adminDeleteChange, adminUpsertChange, fetchChangelog, CHANGE_KINDS, CHANGE_KIND_LABEL, daysAgoKst, type ChangeDraft, type ChangeRow } from "../changelog-api";
+import { adminDeleteChange, adminUpsertChange, fetchAllChanges, CHANGE_KINDS, CHANGE_KIND_LABEL, daysAgoKst, type ChangeDraft, type ChangeRow } from "../changelog-api";
 import { useConfirm } from "../confirm";
 import { compileSnapshot, validateRules, RULE_KINDS, type RuleRow } from "../rules-compile";
 import { RULES as bundledRules } from "../rules";
@@ -178,7 +178,7 @@ export default function AdminPage() {
   // ── 업데이트 내역 (docs/supabase-changelog.sql) — 저장하면 사이트에 바로 반영 ──
   const loadChanges = async () => {
     try {
-      setChanges(await fetchChangelog(true));
+      setChanges(await fetchAllChanges());
       setChangeStatus("");
     } catch {
       setChanges(null);

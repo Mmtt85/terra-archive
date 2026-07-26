@@ -37,18 +37,43 @@ export function daysAgoKst(n: number): string {
   return new Date(kstNow - n * 86400_000).toISOString().slice(0, 10);
 }
 
+const SELECT = "select=id,released_at,kind,ko,en,ja,href,seq&order=released_at.desc,seq.asc";
+
 /**
- * 목록 조회. all=false면 최근 RECENT_DAYS일치만, true면 전체.
+ * 날짜 구간 조회 — [from, to) (둘 다 YYYY-MM-DD, to를 비우면 상한 없음 = 오늘까지).
  * 실패(테이블 미설치·네트워크)는 예외를 던진다 — 모달이 안내 문구로 처리.
  */
-export async function fetchChangelog(all: boolean): Promise<ChangeRow[]> {
-  const range = all ? "" : `&released_at=gte.${daysAgoKst(RECENT_DAYS)}`;
+export async function fetchChangelogRange(from: string, to?: string | null): Promise<ChangeRow[]> {
+  const upper = to ? `&released_at=lt.${to}` : "";
   const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/changelog?select=id,released_at,kind,ko,en,ja,href,seq&order=released_at.desc,seq.asc${range}&limit=${all ? 500 : 100}`,
+    `${SUPABASE_URL}/rest/v1/changelog?${SELECT}&released_at=gte.${from}${upper}&limit=200`,
     { headers: anonHeaders },
   );
   if (!res.ok) throw new Error(`조회 실패 (${res.status})`);
   return res.json();
+}
+
+/** 전체에서 가장 오래된 항목의 날짜 — "더 볼 게 남았나" 판정용 (없으면 null) */
+export async function fetchOldestReleaseDate(): Promise<string | null> {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/changelog?select=released_at&order=released_at.asc&limit=1`,
+    { headers: anonHeaders },
+  );
+  if (!res.ok) throw new Error(`조회 실패 (${res.status})`);
+  const rows = (await res.json()) as { released_at: string }[];
+  return rows[0]?.released_at ?? null;
+}
+
+/** 관리자 목록 — 기간 제한 없이 최신순 전체 (사이트 모달은 7일 창 단위로 나눠 읽는다) */
+export async function fetchAllChanges(): Promise<ChangeRow[]> {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/changelog?${SELECT}&limit=500`, { headers: anonHeaders });
+  if (!res.ok) throw new Error(`조회 실패 (${res.status})`);
+  return res.json();
+}
+
+/** i번째 7일 창의 [from, to) — 0번은 상한 없음(오늘 항목 포함) */
+export function windowRange(i: number): { from: string; to: string | null } {
+  return { from: daysAgoKst(RECENT_DAYS * (i + 1)), to: i === 0 ? null : daysAgoKst(RECENT_DAYS * i) };
 }
 
 /** 로케일별 본문 — 번역이 비었으면 한국어로 폴백 */
