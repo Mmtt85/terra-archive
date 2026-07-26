@@ -9,11 +9,15 @@ import { createPortal } from "react-dom";
 import { bridgeLogPayload, downloadBridgePayload, type BridgeLogPayload, type BridgeLogEvent } from "./bridge";
 import type { T } from "../i18n";
 
-// 이벤트 type → 표시 라벨 (i18n 키)
+// 여정 이벤트 type → 표시 라벨 (i18n 키). 여기 없는 type(옛 파일의 map·none·battle 등)은
+// 여정이 아니므로 표시하지 않는다 — 사용자 확정 2026-07-26: "유저가 뭘 선택했는지만".
 const TYPE_LABEL: Record<string, string> = {
-  map: "지도", stage: "작전", enc: "조우", relic: "유물", zone: "지역", mech: "암호판",
-  band: "분대", archive: "전시관", ending: "엔딩", grade: "난이도",
-  battle: "전투", "battle-result": "작전 결과", none: "인식 실패", tie: "테마 되묻기",
+  stage: "작전", enc: "조우", relic: "소장품", zone: "지역", "battle-result": "작전 결과",
+};
+// 전시관(archive) 이벤트는 arc 탭으로 구분 — band 같은 영문 키는 한국어로, 테마 고유
+// 시스템(암호판·붕괴 패러다임 등)은 데이터의 한국어 라벨이 그대로 온다.
+const ARC_LABEL: Record<string, string> = {
+  band: "분대", tool: "탐사 도구", scrap: "부품",
 };
 
 const hhmmss = (iso: string): string => {
@@ -21,15 +25,23 @@ const hhmmss = (iso: string): string => {
   return isNaN(d.getTime()) ? iso : d.toTimeString().slice(0, 8);
 };
 
+const rowLabel = (ev: BridgeLogEvent, t: T): string | null => {
+  if (ev.type === "archive") {
+    const arc = ev.arc ?? "";
+    return ARC_LABEL[arc] ? t(ARC_LABEL[arc]) : arc || t("전시관");
+  }
+  const key = TYPE_LABEL[ev.type];
+  return key ? t(key) : null;   // 여정 밖 type — 표시 제외
+};
+
 function Row({ ev, n, t }: { ev: BridgeLogEvent; n: number; t: T }) {
-  const label = t(TYPE_LABEL[ev.type] ?? ev.type);
   return (
     <li className={`bridge-replay-row t-${ev.type}`}>
       <span className="br-time">{hhmmss(ev.at)}</span>
-      <span className="br-type">{label}</span>
+      <span className="br-type">{rowLabel(ev, t)}</span>
       <span className="br-name">
         {ev.emergency && <em className="br-emg">{t("긴급")}</em>}
-        {ev.name ?? (ev.names?.length ? ev.names.join(" · ") : "—")}
+        {ev.name ?? (ev.names?.length ? ev.names.join(" · ") : ev.type === "battle-result" ? "" : "—")}
         {ev.names && ev.names.length > 1 && ev.name && (
           <small> +{ev.names.length - 1}</small>
         )}
@@ -39,12 +51,15 @@ function Row({ ev, n, t }: { ev: BridgeLogEvent; n: number; t: T }) {
         {ev.result && <b>{ev.result === "success" ? t("작전 성공") : t("작전 실패")}</b>}
         {ev.hp && ` HP ${ev.hp[0]}/${ev.hp[1]}`}
         {ev.levelExp && ` · Lv ${ev.levelExp[0]}/${ev.levelExp[1]}`}
-        {ev.grade !== undefined && ` · ${t("난이도")} ${ev.grade}`}
         {ev.cached && <i className="br-cached">{t("캐시 재적용")}</i>}
       </span>
     </li>
   );
 }
+
+// 난이도 — 판 내 불변이라 헤더에 1회만 표시 (페이로드 수준 grade, 옛 파일은 이벤트에서 탐색)
+const gradeOf = (p: BridgeLogPayload): number | undefined =>
+  p.grade ?? p.events.find((e) => e.grade !== undefined)?.grade;
 
 // 연속 중복 병합 — 같은 화면이 여러 번 인식되면(재안착·미세 변화) 같은 줄이 줄줄이 쌓인다.
 // 표시용으로만 하나로 합치고 ×N을 단다 (사용자 요청 2026-07-26). JSON 원본은 그대로다.
@@ -101,15 +116,18 @@ export default function BridgeReplayModal({ t, onClose }: { t: T; onClose: () =>
           <h3>
             {t("리플레이")}
             {payload?.themeName ? <span className="br-theme">{t(payload.themeName)}</span> : null}
+            {payload && gradeOf(payload) !== undefined && (
+              <span className="br-grade">{t("난이도")} {gradeOf(payload)}</span>
+            )}
             {imported && <span className="br-imported">{t("가져온 파일")}</span>}
           </h3>
           <button type="button" className="br-close" onClick={onClose} aria-label={t("닫기")}>×</button>
         </header>
         {payload ? (
           <>
-            {/* 인식 실패(none)는 숨기고 연속 중복은 ×N 한 줄로 — 옛 JSON에도 적용 */}
+            {/* 여정 이벤트만 보여주고(옛 파일의 잡음 type 제외) 연속 중복은 ×N 한 줄로 */}
             {(() => {
-              const rows = mergeRuns(payload.events.filter((ev) => ev.type !== "none"));
+              const rows = mergeRuns(payload.events.filter((ev) => rowLabel(ev, t) !== null));
               return (
                 <>
                   <p className="br-range">

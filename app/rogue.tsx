@@ -14,7 +14,7 @@ import type { LensGoto, LensOutcome } from "./lens/match";
 import { recognizeShot, warmData, ocrLangFor, resetGradeCache } from "./lens/run";
 import { warmOcr, warmDigitOcr } from "./lens/ocr";
 import { useClipboardWatch } from "./lens/clipwatch";
-import { useBridgeWatch, noteBridge, bridgeLock, logBridgeEvent, memoBridgeScene } from "./lens/bridge";
+import { useBridgeWatch, noteBridge, bridgeLock, logBridgeEvent, memoBridgeScene, type BridgeLogEvent } from "./lens/bridge";
 import { BridgeTopicButton } from "./lens/bridge-button";
 import { useDropWatch } from "./lens/dropwatch";
 
@@ -1029,6 +1029,28 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   // (2026-07-26 제보: 사미 플레이 중 쉐이·살카즈로 튐). 다른 테마 메인화면을 띄우면 교체된다.
   const lensAnchor = useRef<string | null>(null);
   const lensBusy = useRef(false);
+  // 여정 이벤트 변환 — 리플레이는 원시 인식이 아니라 **유저의 선택**만 기록한다 (2026-07-26):
+  // 작전 진입·작전 결과·조우·소장품·지역 진입·전시관 시스템(암호판/붕괴 패러다임 등, arc 라벨).
+  // 지도 복귀·전투 중·상점 나열(모아보기)·인식 실패는 잡음이라 남기지 않는다.
+  const journeyEvent = (oc: LensOutcome, cached: boolean): BridgeLogEvent | null => {
+    const g = oc.target.kind === "goto" && oc.target.goto.page === "rogue" ? oc.target.goto : null;
+    const result = cached ? undefined : oc.hud?.result;
+    const type = result ? "battle-result" : g ? (g.modal?.type ?? g.view) : "";
+    if (type !== "battle-result" && !["stage", "enc", "relic", "zone", "archive"].includes(type)) return null;
+    if (type === "archive" && !oc.entities[0]?.name) return null;   // 특정 항목 없는 전시관 이동은 제외
+    return {
+      at: new Date().toISOString(),
+      type,
+      name: oc.entities[0]?.name,
+      names: oc.entities.length > 1 ? oc.entities.slice(0, 8).map((e) => e.name) : undefined,
+      arc: g?.arcTab,
+      emergency: g?.emergency, grade: g?.grade,
+      hp: cached ? undefined : oc.hud?.hp,
+      levelExp: cached ? undefined : oc.hud?.levelExp,
+      result,
+      cached: cached || undefined,
+    };
+  };
   const handleLensShot = async (file: File, live = false) => {
     if (lensBusy.current) return;
     lensBusy.current = true;
@@ -1044,18 +1066,8 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
       if (live) {
         // 브리지에 판정을 알려준다 — 전투면 전투 홀드, 확신 이동이면 화면 판정 캐시
         memoBridgeScene(oc);
-        const g = oc.target.kind === "goto" && oc.target.goto.page === "rogue" ? oc.target.goto : null;
-        const evType = oc.hud?.result ? "battle-result" : g ? (g.modal?.type ?? g.view) : oc.battle ? "battle" : oc.target.kind;
-        // 인식 실패(none)는 기록하지 않는다 — 리플레이에 잡음만 된다 (사용자 확정 2026-07-26)
-        if (evType !== "none") logBridgeEvent({
-          at: new Date().toISOString(),
-          type: evType,
-          name: oc.entities[0]?.name,
-          names: oc.entities.length > 1 ? oc.entities.slice(0, 8).map((e) => e.name) : undefined,
-          emergency: g?.emergency, grade: g?.grade,
-          hp: oc.hud?.hp, levelExp: oc.hud?.levelExp, result: oc.hud?.result,
-          fractions: oc.hud?.fractions.length ? oc.hud.fractions : undefined,
-        });
+        const ev = journeyEvent(oc, false);
+        if (ev) logBridgeEvent(ev);
       }
       if (oc.target.kind === "goto") {
         onLensGoto(oc.target.goto);
@@ -1083,14 +1095,8 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
     // 화면 판정 캐시 재적용 — 이미 본 화면으로 돌아온 것. OCR 없이 지난 판정으로 바로 이동.
     // HUD 수치는 그때 것이라 신선하지 않으므로 로그에 싣지 않는다 (cached 표기).
     if (oc.target.kind !== "goto") return;
-    const g = oc.target.goto.page === "rogue" ? oc.target.goto : null;
-    logBridgeEvent({
-      at: new Date().toISOString(),
-      type: g ? (g.modal?.type ?? g.view) : "goto",
-      name: oc.entities[0]?.name,
-      emergency: g?.emergency, grade: g?.grade,
-      cached: true,
-    });
+    const ev = journeyEvent(oc, true);
+    if (ev) logBridgeEvent(ev);
     onLensGoto(oc.target.goto);
     noteBridge(oc.entities[0]?.name ?? t("이동"));
   });

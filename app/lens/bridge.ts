@@ -58,19 +58,20 @@ export type BridgeGate = { phase: string; ticks: number; emitted: number; frames
 // 테마별 게임연결(사용자 확정 2026-07-26: "사미록라의 게임연결 버튼은 무조건 사미록라만") —
 // 연결 시 테마를 하드 고정하면 인식이 그 테마 밖을 아예 보지 않는다.
 export type BridgeLock = { topic: string; name: string };
-// 플레이 로그 한 줄 — 게임 화면을 인식할 때마다 쌓이고, 연결을 끊으면 JSON으로 내려받는다
-// (사용자 요청 2026-07-26: "노드 진입 이력·작전 종료 체력/레벨 등 모든 플레이 데이터를 JSON으로").
+// 플레이 로그 한 줄 — **여정 기록**: 원시 인식 전부가 아니라 유저가 뭘 골랐는지만 남긴다
+// (사용자 확정 2026-07-26: "어느 작전에 들어갔고 결과가 어땠고, 조우에서 뭐가 나왔고,
+//  무슨 소장품을 골랐고, 무슨 붕괴 패러다임이 발생했는지 사람이 알아보게").
 export type BridgeLogEvent = {
   at: string;                       // ISO 시각
-  type: string;                     // stage|enc|relic|zone|map|battle-result|none|…
+  type: string;                     // stage|enc|relic|zone|archive|battle-result
   name?: string;                    // 대표 항목 (작전·조우·유물 이름)
   names?: string[];                 // 함께 인식된 항목들
+  arc?: string;                     // 전시관 탭 라벨 (band|tool|… 또는 암호판·붕괴 패러다임 등)
   emergency?: boolean;              // 긴급 작전 화면
-  grade?: number;                   // 난이도 배지
+  grade?: number;                   // 난이도 배지 (표시는 헤더에 1회 — 판 내 불변)
   hp?: [number, number];            // 목표 HP 추정 (OCR)
   levelExp?: [number, number];      // 지휘 레벨 경험치 추정 (OCR)
   result?: string;                  // 작전 성공/실패
-  fractions?: [number, number][];   // 화면의 모든 x/y 원시값 (검증용)
   cached?: boolean;                 // 화면 판정 캐시 재적용 (OCR 없이 지난 판정 — HUD 수치 없음)
 };
 
@@ -155,6 +156,7 @@ export type BridgeLogPayload = {
   themeName: string | null;
   startedAt: string;
   endedAt: string;
+  grade?: number;                   // 난이도 — 판 내 불변이라 페이로드 수준에 1개
   capture: { width: number; height: number } | null;
   events: BridgeLogEvent[];
 };
@@ -168,11 +170,13 @@ export function bridgeLogPayload(): BridgeLogPayload | null {
         endedAt: new Date().toISOString(), width: settings.width, height: settings.height }
     : logMeta;
   if (!meta) return null;
+  const grade = runLog.find((e) => e.grade !== undefined)?.grade;
   return {
     site: "terra-archive",
     theme: meta.topic,
     themeName: meta.name,
     startedAt: meta.startedAt, endedAt: meta.endedAt,
+    ...(grade !== undefined ? { grade } : {}),
     capture: meta.width != null ? { width: meta.width, height: meta.height! } : null,
     events: runLog,
   };

@@ -11299,6 +11299,16 @@ main.site-main > .site-header {
   border-radius: 4px;
   padding: 1px 5px;
 }
+/* 난이도 — 판 내 불변이라 제목 옆에 1회만 (매 줄 표시 제거, 사용자 확정 2026-07-26) */
+.br-grade {
+  font-size: 11px;
+  color: var(--ink2);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
 .br-close {
   border: none;
   background: none;
@@ -11317,10 +11327,18 @@ main.site-main > .site-header {
 .bridge-replay-list {
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 0 12px 0 0;   /* 스크롤바가 내용에 딱 붙지 않게 오른쪽 여백 */
   overflow-y: auto;
+  scrollbar-width: thin;
   border-top: 1px solid var(--line);
   flex: 1;
+}
+.bridge-replay-list::-webkit-scrollbar {
+  width: 8px;
+}
+.bridge-replay-list::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 4px;
 }
 .bridge-replay-row {
   display: flex;
