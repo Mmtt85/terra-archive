@@ -213,12 +213,12 @@ function StatRow({ e, grade, ctx }: { e: Enemy; grade: number; ctx: StatCtx }) {
 }
 
 // ── 스테이지 상세 모달 — 일반/긴급이 같은 맵을 공유하므로 페어로 받아 탭 전환 ──
-export type StagePair = { n: Stage; e?: Stage };
+export type StagePair = { n: Stage; e?: Stage; init?: "n" | "e" };   // init — 렌즈가 긴급 화면을 인식하면 "e"
 function StageModal({ pair, grade, onClose, onOpenEnemy }: {
   pair: StagePair; grade: number; onClose: () => void; onOpenEnemy: (key: string, ctx: StatCtx) => void;
 }) {
   const { t } = useI18n();
-  const [mode, setMode] = useState<"n" | "e">("n");
+  const [mode, setMode] = useState<"n" | "e">(pair.init === "e" && pair.e ? "e" : "n");
   const [mapZoom, setMapZoom] = useState(false); // 미리보기 클릭 → 2배 확대, 축소는 아무 곳이나 클릭
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -978,7 +978,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
       const { type, id } = g.modal;
       if (type === "relic") { const r = relicById.get(id); if (r) setRelicOpen(r); }
       else if (type === "enc") { const e = encByScene.get(id); if (e) setEncOpen(e); }
-      else if (type === "stage") { const s = stageById.get(id); if (s) setStageOpen(pairOf(s)); }
+      else if (type === "stage") { const s = stageById.get(id); if (s) setStageOpen({ ...pairOf(s), init: g.emergency ? "e" : undefined }); }
       else if (type === "zone") { const z = zoneById.get(id); if (z) setZoneOpen(z); }
     }
     setLensHits(g.highlight?.length ? new Set(g.highlight) : null);

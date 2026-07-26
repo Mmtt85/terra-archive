@@ -142,6 +142,12 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
       // 폴백까지 실패(무신호)면 마지막으로 중국어를 시도한다 (zhRan이면 이미 돌려 스킵)
       if (zhPossible && oc.target.kind === "none") await tryZh();
     }
+    // 긴급 작전 화면 색 감지 — 붉은 배너 위 '긴급 작전' 글자는 OCR이 자주 놓친다
+    // (2026-07-26 영상3 실측: 텍스트 0회 검출). 강한 빨강 비율 1.4% 이상이면 긴급으로 본다.
+    if (session.redness >= 0.014) {
+      if (oc.target.kind === "goto" && oc.target.goto.page === "rogue" && oc.target.goto.modal?.type === "stage") oc.target.goto.emergency = true;
+      else if (oc.target.kind === "tie") for (const o of oc.target.options) { if (o.goto.page === "rogue" && o.goto.modal?.type === "stage") o.goto.emergency = true; }
+    }
     // 좌하단 난이도 배지 — 있으면 이동 목표에 스탬프해 난이도 셀렉터에 자동 적용 (2026-07-24)
     if (oc.target.kind !== "none") {
       const grade = await session.difficulty();

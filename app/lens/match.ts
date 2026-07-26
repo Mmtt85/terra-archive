@@ -21,6 +21,7 @@ export type LensGoto =
   | {
     page: "rogue"; topic: string; view: string; arcTab?: string;
     modal?: { type: string; id: string };
+    emergency?: boolean; // 화면에 '긴급 작전'이 보임 — 스테이지 모달을 긴급 탭으로 연다
     highlight?: string[];
     gather?: boolean; // 아이템 다중 인식 — 모아보기 모달로 표시
     grade?: number;   // 좌하단 난이도 배지 인식값 — 난이도 셀렉터에 자동 적용
@@ -270,6 +271,13 @@ export function analyzeLines(
   const linesM = linesN.filter((l) =>
     !l.startsWith("오리지늄각뿔") && !/모집권\d*$/.test(l) && !/1명모집$/.test(l));
 
+  // 화면에 '긴급 작전'이 보이면 스테이지 모달을 긴급 탭으로 (2026-07-26 제보:
+  // 긴급 작전맵의 '긴급'이 반영 안 됨 — 일반 탭으로만 열렸다)
+  const markEmg = (g: LensGoto): LensGoto => {
+    if (g.page === "rogue" && g.modal?.type === "stage" && allN.includes("긴급작전")) g.emergency = true;
+    return g;
+  };
+
   // ── 테마 하드 고정 (테마별 게임연결, 사용자 확정 2026-07-26) ─────────────────
   // "사미록라의 게임연결 버튼은 무조건 사미록라만" — 이 테마 밖은 아예 보지 않는다.
   // 다른 테마로의 전환·되묻기가 원천적으로 불가능하고, 매칭도 1/6 인덱스만 봐서 빠르다.
@@ -277,7 +285,16 @@ export function analyzeLines(
     const topic = opts.context.topic;
     const name = index.entries.find((e) => e.topic === topic)?.topicName ?? topic;
     const w = within(topic, linesM, index);
-    if (w && w.entities.some((e) => e.nameHit)) {
+    // 이름 매칭 또는 **조우 본문 우세** — 조우 스토리 화면은 제목이 장식 서체라 이름을 못
+    // 읽지만, 본문 문단이 데이터의 조우 설명과 그대로 일치한다(트라이그램 포함율). 단독
+    // 조우 모달 + 점수 2 이상(장문 여러 줄 일치)이면 이름 없이도 확정한다 (영상3 f172).
+    const encSolid = w && w.section === "enc" && w.goto.page === "rogue"
+      && w.goto.modal?.type === "enc" && (w.entities[0]?.score ?? 0) >= 2;
+    // **1위 엔티티**가 이름 매칭이어야 확정 — 하위의 약한 이름 매칭이 상위 잡음(룬 문양
+    // 오독 등)을 통과시키는 것을 막는다 (2026-07-26 영상3 f140: 배척 4.0 + 오리지늄
+    // 아이리스 1.5·이름 → relic 뷰 오발). 정상 화면은 항상 1위가 이름이다(실측).
+    if (w && (w.entities[0]?.nameHit || encSolid)) {
+      markEmg(w.goto);
       return {
         screens, entities: w.entities,
         topics: [{ topic, topicName: name, score: 1 }],
@@ -339,7 +356,7 @@ export function analyzeLines(
     // 본문 조각 잡음이 유물 모달을 여는 오작동 방지 (2026-07-26 제보: 사미 메인에서
     // '캔낫의 표식'이 뜸). 잡음뿐이면 그 테마의 지도로만 보낸다.
     const solid = w && w.entities.some((e) => e.nameHit);
-    const goto: LensGoto = solid ? w.goto : { page: "rogue", topic: anchor.topic, view: "map" };
+    const goto: LensGoto = solid ? markEmg(w.goto) : { page: "rogue", topic: anchor.topic, view: "map" };
     return {
       screens, entities: solid ? w.entities : [],
       topics: [{ topic: anchor.topic, topicName: anchor.name, score: Number.MAX_SAFE_INTEGER }],
@@ -363,7 +380,7 @@ export function analyzeLines(
         return {
           screens, entities: g.entities,
           topics: [{ topic: ctxTopic, topicName: topicNames.get(ctxTopic) ?? ctxTopic, score: mineScore }],
-          section: g.section, target: { kind: "goto", goto: g.goto },
+          section: g.section, target: { kind: "goto", goto: markEmg(g.goto) },
         };
       }
     }
@@ -399,11 +416,11 @@ export function analyzeLines(
   if (ctxTopic && top.topic !== ctxTopic && !(w && w.entities.some((e) => e.nameHit))) {
     const g = within(ctxTopic, linesM, index);
     return g
-      ? { screens, entities: g.entities, topics, section: g.section, target: { kind: "goto", goto: g.goto } }
+      ? { screens, entities: g.entities, topics, section: g.section, target: { kind: "goto", goto: markEmg(g.goto) } }
       : { screens, entities: [], topics, section: null, target: { kind: "none" } };
   }
   return w
-    ? { screens, entities: w.entities, topics, section: w.section, target: { kind: "goto", goto: w.goto } }
+    ? { screens, entities: w.entities, topics, section: w.section, target: { kind: "goto", goto: markEmg(w.goto) } }
     : { screens, entities: [], topics, section: null, target: { kind: "none" } };
 }
 
@@ -495,7 +512,10 @@ function matchEntries(linesN: string[], entries: Entry[]): Map<Entry, Hit> {
         nm = line === n;
       } else if (n.length >= 3) {
         // 부분일치 — 역포함(라인이 이름의 조각)은 라틴 라인이면 6자 이상만 허용(저엔트로피 오탐 방지)
-        nm = line.includes(n) || (n.includes(line) && line.length >= (lineLatin ? 6 : 4));
+        // 정포함은 라인이 이름+12자 이내일 때만 — 스토리 문단이 '오리지늄' 같은 짧은 이름을
+        // 품어 가짜 nameHit를 만드는 것을 막는다 (2026-07-26 영상3: 조우 본문 → 오리지늄 모아보기)
+        nm = (line.includes(n) && line.length <= n.length + 12)
+          || (n.includes(line) && line.length >= (lineLatin ? 6 : 4));
       }
       if (nm) nameHits.push(e);
       else if (line.length >= 6 && e.bodyN.length >= 6 && contain(lineTG, e.bodyTG) >= 0.7) bodyHits.push(e);
@@ -508,7 +528,12 @@ function matchEntries(linesN: string[], entries: Entry[]): Map<Entry, Hit> {
     const idfBody = bodyHits.length ? 1 / bodyHits.length : 0;
     for (const e of nameHits) {
       const h = hits.get(e) ?? { score: 0, nameHit: false };
-      h.score += idfName; h.nameHit = true; hits.set(e, h);
+      h.score += idfName;
+      // 2글자 한글 이름('구상' 등)의 정확일치는 점수만 주고 nameHit로 치지 않는다 —
+      // OCR이 룬 문양·장식을 2글자 낱말로 환각해("배척") 잠금 모드 확정·테마 전환의
+      // 근거가 되는 사고를 막는다 (2026-07-26 영상3 f140). 라틴 약어(ISW 등)는 유지.
+      if (e.nameN.length >= 3 || e.shortLatin) h.nameHit = true;
+      hits.set(e, h);
     }
     for (const e of bodyHits) {
       const h = hits.get(e) ?? { score: 0, nameHit: false };

@@ -96,6 +96,8 @@ export type OcrSession = {
   zh(): Promise<string[]>;
   /** 좌하단 난이도 배지(육각형 숫자) — 있으면 0~18 반환, 없으면 null */
   difficulty(): Promise<number | null>;
+  /** 강한 빨강 픽셀 비율(0~1) — 긴급 작전 화면이면 ~0.02, 평시 ≤0.009 (실측) */
+  redness: number;
 };
 
 /** 좌하단 난이도 배지(육각형) 크롭 영역 (통합전략 화면 공통 위치) — f6 실측 캘리브레이션 */
@@ -127,6 +129,15 @@ export async function createOcrSession(blob: Blob, lang = "kor"): Promise<OcrSes
   ctx.drawImage(bmp, 0, 0, W, H);
   bmp.close();
   const img = ctx.getImageData(0, 0, W, H);
+  // 강한 빨강 비율 — 긴급 작전 화면 감지용 (그레이 변환 전에 재야 한다).
+  // 캘리브레이션(2026-07-26 영상3): 긴급 노드 2.0% vs 일반 노드·전투 0.8~0.9% vs 조우 0.03%.
+  let redPx = 0, redN = 0;
+  for (let i = 0; i < img.data.length; i += 4 * 7) {   // 7픽셀 스트라이드 — 전수 불필요
+    const r = img.data[i], g = img.data[i + 1], b = img.data[i + 2];
+    if (r > 130 && g < 70 && b < 80 && r > g * 2) redPx++;
+    redN++;
+  }
+  const redness = redN ? redPx / redN : 0;
   grayNormalize(img.data);
   ctx.putImageData(img, 0, 0);
   const worker = await getWorker(lang);
@@ -135,6 +146,7 @@ export async function createOcrSession(blob: Blob, lang = "kor"): Promise<OcrSes
   const OUT = { blocks: true, text: false, hocr: false, tsv: false } as const;
 
   return {
+    redness,
     async sparse() {
       await setPsm(worker, "11");
       const r = await worker.recognize(c, {}, OUT);
