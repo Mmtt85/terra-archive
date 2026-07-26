@@ -23,12 +23,19 @@
 
 import { useEffect, useRef, useState } from "react";
 
-const SMALL_W = 64, SMALL_H = 36;
+// 변화 감지용 축소본. 전투노드 화면끼리는 맵·패널이 그대로고 **오른쪽 패널 글자만**
+// 바뀌므로, 너무 거칠면 그 차이가 전체 평균에 묻힌다 (2026-07-26 제보: 전투노드 →
+// 전투노드 전환을 못 잡음). 조금 키우고, 아래 tileMax로 국소 변화를 따로 본다.
+const SMALL_W = 96, SMALL_H = 54;
+const TILE = 8;            // 국소 비교 타일 크기 (96×54 → 12×6 타일)
 const TICK_MS = 400;       // 판정 주기 (숨겨진 탭에서는 크롬이 1초로 늘린다 — 그래도 충분)
 const FULL_MS = 300;       // 원본 해상도 캔버스 갱신 주기 (매 프레임 그리면 낭비)
 const MOVING = 6.0;        // 평균 절대차(0~255) 이 이상이면 움직이는 중
 const SETTLE_MS = 600;     // 마지막 움직임 이후 이만큼 잠잠하면 안착
-const NEW_SCENE = 6.0;     // 마지막 전송본과 이 이상 다르면 새 화면
+const NEW_SCENE = 6.0;     // 마지막 전송본과 **전체 평균**이 이 이상 다르면 새 화면
+// 한 타일이라도 이만큼 바뀌면 새 화면으로 본다 — 화면 대부분이 같고 글자만 바뀌는
+// 경우(전투노드 → 전투노드)를 잡는 조건이다. 전체 평균만 보면 절대 못 넘는다.
+const NEW_TILE = 15.0;
 // 인식에 넘기기 전 가로 상한 — OCR 비용은 픽셀 수에 비례해서 여기가 속도의 전부다.
 // 픽스처 2배 축소 회귀에서 이동 판정이 14/17로 살아남았고(실패는 대부분 난이도 배지),
 // 브라우저 실측도 1368×832 3.3초 → 684×416 1.3초였다. 게임을 돌리는 중에 도는 처리라
@@ -194,7 +201,11 @@ function tick(): void {
   if (dMove > MOVING) { lastMoveAt = now; say("moving"); return; }
   // 시간 기준 안착 — 숨겨진 탭에서 틱 간격이 늘어도 판정이 흔들리지 않는다
   if (now - lastMoveAt < SETTLE_MS) { say("settling"); return; }
-  if (diff(latestGray, sentGray) < NEW_SCENE) { say("same"); return; }
+  // 새 화면 판정 — 전체 평균 **또는** 한 타일의 국소 변화. 전투노드끼리는 맵이 그대로고
+  // 패널 글자만 바뀌어 평균으로는 절대 안 잡히므로 tileMax가 실질적인 판정자다.
+  if (diff(latestGray, sentGray) < NEW_SCENE && tileMax(latestGray, sentGray) < NEW_TILE) {
+    say("same"); return;
+  }
   if (fullCv.width < 4) return;
   // ⚠ 인식이 도는 중에는 내보내지 않는다. 내보내면 소비자가 버리는데 여기서는 이미
   //   "보냈다"(sentGray)고 기록해버려, **그 화면은 영영 인식되지 않는다.**
@@ -246,6 +257,24 @@ function contentRect(g: Uint8Array, w: number, h: number): { x: number; y: numbe
     x: Math.round(fx * w), y: Math.round(fy * h),
     w: Math.max(4, Math.round(fw * w)), h: Math.max(4, Math.round(fh * h)),
   };
+}
+
+/** 타일별 평균 절대차의 **최대값** — 화면 대부분이 같고 한 구석만 바뀐 경우를 잡는다.
+ *  (전투노드 → 전투노드처럼 오른쪽 패널 글자만 바뀌는 전환이 전형) */
+function tileMax(a: Uint8Array | null, b: Uint8Array | null): number {
+  if (!a || !b) return 255;
+  let worst = 0;
+  for (let ty = 0; ty < SMALL_H; ty += TILE) {
+    for (let tx = 0; tx < SMALL_W; tx += TILE) {
+      let sum = 0, n = 0;
+      const yEnd = Math.min(ty + TILE, SMALL_H), xEnd = Math.min(tx + TILE, SMALL_W);
+      for (let y = ty; y < yEnd; y++) {
+        for (let x = tx; x < xEnd; x++) { const i = y * SMALL_W + x; sum += Math.abs(a[i] - b[i]); n++; }
+      }
+      if (n) { const m = sum / n; if (m > worst) worst = m; }
+    }
+  }
+  return worst;
 }
 
 function diff(a: Uint8Array | null, b: Uint8Array | null): number {
