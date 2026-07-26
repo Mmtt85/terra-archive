@@ -33,8 +33,10 @@ export function RosterImportPanel({ t, onMaaFile, onScan, onAccount, scanBadge }
   const [notice, setNotice] = useState<string | null>(null);
 
   const fail = (caught: unknown) => {
-    const code2 = caught instanceof AccountError ? caught.code : "internal";
-    setError(t(accountErrorText(code2), { code: code2 }));
+    const failCode = caught instanceof AccountError ? caught.code : "internal";
+    setError(t(accountErrorText(failCode), { code: failCode }));
+    // 쿨다운(too-many)은 직전 요청의 코드가 아직 유효하다는 뜻이라 입력칸을 닫지 않는다
+    if (failCode === "too-many") setSent(true);
   };
 
   const requestCode = async () => {

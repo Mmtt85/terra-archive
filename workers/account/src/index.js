@@ -117,9 +117,10 @@ async function sendCode(email, server) {
 
 // Yostar 오류를 프론트가 문구로 바꿀 수 있는 짧은 코드로 정리.
 // Yostar는 HTTP 200 + Code로 실패를 알리고 Msg는 중국어다 (실측 2026-07-26):
+//   100302 같은 주소로 코드 재요청     → 쿨다운 (직전에 보낸 코드가 아직 유효)
 //   100303 获取授权信息失败       → 인증코드 불일치·만료
 //   100400 客户端参数有误 / 서명 불일치 → 요청 값 문제
-const YOSTAR_CODE = { 100303: "bad-code", 100400: "bad-request" };
+const YOSTAR_CODE = { 100302: "too-many", 100303: "bad-code", 100400: "bad-request" };
 
 function yostarReason(data) {
   const known = YOSTAR_CODE[data?.Code];

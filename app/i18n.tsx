@@ -699,9 +699,9 @@ const D: Record<string, Pair> = {
     "Could not reach the account service — please try again in a moment.",
     "アカウントサーバーに接続できません — 少し待ってから再試行してください。",
   ],
-  "인증코드 요청이 너무 잦습니다 — 1~2분 뒤에 다시 시도해 주세요.": [
-    "Too many code requests — please try again in a minute or two.",
-    "認証コードの要求が多すぎます — 1〜2分後に再試行してください。",
+  "요스타가 코드 재요청을 거절했습니다 — 이미 받은 코드가 있으면 그대로 입력하고, 없으면 1~2분 뒤에 다시 시도해 주세요.": [
+    "Yostar refused another code request — if you already received a code, enter it; otherwise try again in a minute or two.",
+    "Yostarがコードの再要求を拒否しました — すでに届いたコードがあればそれを入力し、なければ1〜2分後に再試行してください。",
   ],
   "요스타가 캡차 확인을 요구했습니다 — 잠시 뒤 다시 시도해 주세요.": [
     "Yostar asked for a captcha — please try again in a moment.",

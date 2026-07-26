@@ -92,7 +92,8 @@ export async function syncAccount(token: AccountToken, server: AccountServer): P
 export function accountErrorText(code: string): string {
   switch (code) {
     case "offline": return "계정 서버에 연결할 수 없습니다 — 잠시 뒤 다시 시도해 주세요.";
-    case "too-many": return "인증코드 요청이 너무 잦습니다 — 1~2분 뒤에 다시 시도해 주세요.";
+    // 요스타는 같은 주소로 곧바로 재요청하면 거절한다 — 직전에 보낸 코드가 아직 유효하다는 뜻
+    case "too-many": return "요스타가 코드 재요청을 거절했습니다 — 이미 받은 코드가 있으면 그대로 입력하고, 없으면 1~2분 뒤에 다시 시도해 주세요.";
     case "captcha": return "요스타가 캡차 확인을 요구했습니다 — 잠시 뒤 다시 시도해 주세요.";
     case "no-account": return "그 이메일로 등록된 요스타 계정을 찾지 못했습니다 — 서버 선택과 이메일을 확인해 주세요.";
     case "bad-code": return "인증코드가 맞지 않거나 만료되었습니다 — 코드를 다시 받아 주세요.";
