@@ -28,11 +28,11 @@ import { useEffect, useRef, useState } from "react";
 // 전투노드 전환을 못 잡음). 조금 키우고, 아래 tileMax로 국소 변화를 따로 본다.
 const SMALL_W = 96, SMALL_H = 54;
 const TILE = 8;            // 국소 비교 타일 크기 (96×54 → 12×6 타일)
-const TICK_MS = 300;       // 판정 주기 (숨겨진 탭에서는 크롬이 1초로 늘린다 — 그래도 충분)
+const TICK_MS = 250;       // 판정 주기 (숨겨진 탭에서는 크롬이 1초로 늘린다 — 그래도 충분)
 const GRAY_MS = 200;       // 그레이 변환 최소 간격 — 더 자주 온 프레임은 들고만 있는다
 const FPS_IDEAL = 4;       // 캡처 프레임레이트 — 판정 주기(400ms)에 이 이상은 낭비다
 const MOVING = 6.0;        // 평균 절대차(0~255) 이 이상이면 움직이는 중
-const SETTLE_MS = 450;     // 마지막 움직임 이후 이만큼 잠잠하면 안착 (4~5초 체감 단축, 2026-07-26)
+const SETTLE_MS = 350;     // 마지막 움직임 이후 이만큼 잠잠하면 안착 (4~5초 체감 단축, 2026-07-26)
 const NEW_SCENE = 6.0;     // 마지막 전송본과 **전체 평균**이 이 이상 다르면 새 화면
 // 한 타일이라도 이만큼 바뀌면 새 화면으로 본다 — 화면 대부분이 같고 글자만 바뀌는
 // 경우(전투노드 → 전투노드)를 잡는 조건이다. 전체 평균만 보면 절대 못 넘는다.
@@ -51,6 +51,20 @@ export type BridgeGate = { phase: string; ticks: number; emitted: number; frames
 // 테마별 게임연결(사용자 확정 2026-07-26: "사미록라의 게임연결 버튼은 무조건 사미록라만") —
 // 연결 시 테마를 하드 고정하면 인식이 그 테마 밖을 아예 보지 않는다.
 export type BridgeLock = { topic: string; name: string };
+// 플레이 로그 한 줄 — 게임 화면을 인식할 때마다 쌓이고, 연결을 끊으면 JSON으로 내려받는다
+// (사용자 요청 2026-07-26: "노드 진입 이력·작전 종료 체력/레벨 등 모든 플레이 데이터를 JSON으로").
+export type BridgeLogEvent = {
+  at: string;                       // ISO 시각
+  type: string;                     // stage|enc|relic|zone|map|battle-result|none|…
+  name?: string;                    // 대표 항목 (작전·조우·유물 이름)
+  names?: string[];                 // 함께 인식된 항목들
+  emergency?: boolean;              // 긴급 작전 화면
+  grade?: number;                   // 난이도 배지
+  hp?: [number, number];            // 목표 HP 추정 (OCR)
+  levelExp?: [number, number];      // 지휘 레벨 경험치 추정 (OCR)
+  result?: string;                  // 작전 성공/실패
+  fractions?: [number, number][];   // 화면의 모든 x/y 원시값 (검증용)
+};
 
 export const bridgeSupported = (): boolean =>
   typeof navigator !== "undefined"
@@ -81,6 +95,8 @@ let error = "";
 let busy = false;   // 지금 인식이 도는 중인가 (useBridgeWatch가 갱신)
 let lock: BridgeLock | null = null;   // 테마 하드 고정 (테마별 연결 버튼)
 let note = "";      // 마지막 인식 결과 — 각 탭이 알려준다 (헤더 상태줄에 그대로 보인다)
+let runLog: BridgeLogEvent[] = [];   // 이번 연결의 플레이 로그
+let startedAt = "";
 
 const frameSubs = new Set<(f: File) => void>();
 const statusSubs = new Set<() => void>();
@@ -95,12 +111,43 @@ export const bridgeNote = () => note;
 /** 각 탭의 handleLensShot이 판정 결과를 한 줄로 알려준다 — "잘 안된다"의 원인을
  *  헤더에서 바로 보기 위한 것이다 (사용자 요청 2026-07-26). */
 export function noteBridge(text: string): void { note = text; notify(); }
+/** 플레이 로그 적재 — rogue 탭이 라이브 인식 1건마다 부른다. 연결 중에만 쌓는다. */
+export function logBridgeEvent(ev: BridgeLogEvent): void {
+  if (!settings) return;
+  runLog.push(ev);
+  notify();
+}
+export const bridgeLogCount = () => runLog.length;
+
+/** 로그를 JSON 파일로 내려준다 — 연결 종료 시 자동 호출 (기록이 있을 때만). */
+function downloadRunLog(): void {
+  if (!runLog.length) return;
+  const payload = {
+    site: "terra-archive",
+    theme: lock?.topic ?? null,
+    themeName: lock?.name ?? null,
+    startedAt, endedAt: new Date().toISOString(),
+    capture: settings ? { width: settings.width, height: settings.height } : null,
+    events: runLog,
+  };
+  try {
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    const stamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-");
+    a.href = URL.createObjectURL(blob);
+    a.download = `테라아카이브-록라기록-${lock?.name ?? "게임"}-${stamp}.json`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
+  } catch { /* 다운로드 차단 환경 — 로그는 콘솔에 남긴다 */ }
+  console.debug("[bridge] 플레이 로그", payload);
+}
 
 /** 창 선택 → 캡처 시작. 사용자 제스처(버튼 클릭) 안에서만 부를 수 있다.
  *  withLock을 주면 그 테마로 하드 고정 — 인식이 다른 테마로 절대 넘어가지 않는다. */
 export async function connectBridge(withLock?: BridgeLock): Promise<void> {
   disconnectBridge();
   lock = withLock ?? null;
+  runLog = []; startedAt = new Date().toISOString();
   error = ""; notify();
   try {
     stream = await navigator.mediaDevices.getDisplayMedia({
@@ -147,6 +194,8 @@ export async function connectBridge(withLock?: BridgeLock): Promise<void> {
 }
 
 export function disconnectBridge(): void {
+  downloadRunLog();   // 기록이 있으면 JSON으로 내려준다 (사용자 요청 2026-07-26)
+  runLog = [];
   running = false;
   if (timer !== undefined) { window.clearInterval(timer); timer = undefined; }
   if (lockRelease) { lockRelease(); lockRelease = null; }

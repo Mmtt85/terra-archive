@@ -3,11 +3,34 @@
 // 모드별 단계형 OCR + 매칭: 판정이 나면 나머지 패스를 생략한다 (속도).
 
 import { createOcrSession } from "./ocr";
-import { buildIndex, analyzeLines, analyzeChinese, analyzeRecruit, wantsChipPass, normFor, type LensIndex, type LensOutcome } from "./match";
+import { buildIndex, analyzeLines, analyzeChinese, analyzeRecruit, wantsChipPass, normFor, type LensIndex, type LensOutcome, type LensHud } from "./match";
 import { parseStoryIndex, analyzeStoryLines, type StoryIndex } from "./storymatch";
 import storySearchMeta from "../data/story-search-meta.json";
 
 export type LensMode = "rogue" | "recruit" | "story";
+
+// 라이브 스트림용 난이도 캐시 — 한 판 도는 동안 불변 (배지 OCR 생략, 10분 TTL)
+let gradeCache: { grade: number; at: number } | null = null;
+
+/** 게임 HUD 수치 파싱 (원시 OCR 라인) — 브리지 플레이 로그용 추정치 */
+function parseHud(rawLines: string[]): LensHud {
+  const fractions: [number, number][] = [];
+  for (const l of rawLines) {
+    const m = l.match(/(\d{1,3})\s*\/\s*(\d{1,3})/);
+    if (!m) continue;
+    const cur = parseInt(m[1], 10), max = parseInt(m[2], 10);
+    if (max >= 1 && max <= 999 && cur <= max) fractions.push([cur, max]);
+  }
+  const all = rawLines.join("").replace(/\s/g, "");
+  const hud: LensHud = { fractions };
+  const hp = fractions.find(([, mx]) => mx >= 3 && mx <= 12);
+  const exp = fractions.find(([, mx]) => mx >= 13 && mx <= 99);
+  if (hp) hud.hp = hp;
+  if (exp) hud.levelExp = exp;
+  if (all.includes("작전성공")) hud.result = "success";
+  else if (all.includes("작전실패")) hud.result = "fail";
+  return hud;
+}
 
 // 화면 언어 → tesseract 프라이머리 모델 (KR=kor, EN=eng, JA=jpn). 그 외는 kor.
 const OCR_LANG: Record<string, string> = { ko: "kor", en: "eng", ja: "jpn" };
@@ -142,6 +165,9 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
       // 폴백까지 실패(무신호)면 마지막으로 중국어를 시도한다 (zhRan이면 이미 돌려 스킵)
       if (zhPossible && oc.target.kind === "none") await tryZh();
     }
+    // HUD 수치 파싱 — 브리지 플레이 로그용. 정규화가 '/'를 지우므로 **원시 라인**에서 읽는다.
+    // OCR 오독(8/8→878)이 흔해 추정치다: 분수 전부를 원시로 남기고, 분모 크기로 HP/경험치를 가른다.
+    oc.hud = parseHud(lines);
     // 긴급 작전 화면 색 감지 — 붉은 배너 위 '긴급 작전' 글자는 OCR이 자주 놓친다
     // (2026-07-26 영상3 실측: 텍스트 0회 검출). 강한 빨강 비율 1.4% 이상이면 긴급으로 본다.
     if (session.redness >= 0.014) {
@@ -149,8 +175,16 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
       else if (oc.target.kind === "tie") for (const o of oc.target.options) { if (o.goto.page === "rogue" && o.goto.modal?.type === "stage") o.goto.emergency = true; }
     }
     // 좌하단 난이도 배지 — 있으면 이동 목표에 스탬프해 난이도 셀렉터에 자동 적용 (2026-07-24)
+    // 라이브 스트림에선 캐시를 쓴다 — 한 판 도는 동안 난이도는 안 바뀌므로 화면마다
+    // 배지 OCR(~0.3초)을 다시 돌릴 이유가 없다 (속도, 2026-07-26).
     if (oc.target.kind !== "none") {
-      const grade = await session.difficulty();
+      let grade: number | null;
+      if (opts?.live && gradeCache && Date.now() - gradeCache.at < 10 * 60_000) {
+        grade = gradeCache.grade;
+      } else {
+        grade = await session.difficulty();
+        if (grade !== null) gradeCache = { grade, at: Date.now() };
+      }
       console.debug(`[lens] 난이도 배지: ${grade ?? "(없음)"}`);
       if (grade !== null) {
         if (oc.target.kind === "goto" && oc.target.goto.page === "rogue") oc.target.goto.grade = grade;

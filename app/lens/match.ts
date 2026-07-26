@@ -41,6 +41,14 @@ export type LensOutcome = {
   // 화면에 테마 **이름**이 그대로 보여 확정된 경우 그 토픽 — 브리지가 이걸로 판(세션)의
   // 테마를 고정한다. 사이트의 현재 토픽은 오인식 한 번에 오염되므로 사전확률로 부적합.
   anchor?: string;
+  // 게임 HUD에서 읽은 수치 — 브리지 플레이 로그용 (run.ts가 원시 라인에서 파싱해 얹는다)
+  hud?: LensHud;
+};
+export type LensHud = {
+  fractions: [number, number][];   // 화면의 모든 x/y 분수 (원시)
+  hp?: [number, number];           // 목표 HP 추정 (분모 ≤ 12)
+  levelExp?: [number, number];     // 지휘 레벨 경험치 추정 (분모 13~99)
+  result?: "success" | "fail";     // '작전 성공/실패' 문구 검출
 };
 
 type Entry = {

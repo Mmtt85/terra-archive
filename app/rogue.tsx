@@ -14,7 +14,7 @@ import type { LensGoto, LensOutcome } from "./lens/match";
 import { recognizeShot, warmData, ocrLangFor } from "./lens/run";
 import { warmOcr } from "./lens/ocr";
 import { useClipboardWatch } from "./lens/clipwatch";
-import { useBridgeWatch, noteBridge, bridgeLock } from "./lens/bridge";
+import { useBridgeWatch, noteBridge, bridgeLock, logBridgeEvent } from "./lens/bridge";
 import { BridgeTopicButton } from "./lens/bridge-button";
 import { useDropWatch } from "./lens/dropwatch";
 
@@ -1040,6 +1040,19 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
       const oc = await recognizeShot("rogue", file, lock?.topic ?? lensAnchor.current ?? topicRef.current,
         locale, { lock: !!lock, live });
       if (oc.anchor) lensAnchor.current = oc.anchor;
+      // 플레이 로그 — 라이브(게임 연결) 인식은 전부 기록한다. 연결을 끊으면 JSON으로 내려간다.
+      if (live) {
+        const g = oc.target.kind === "goto" && oc.target.goto.page === "rogue" ? oc.target.goto : null;
+        logBridgeEvent({
+          at: new Date().toISOString(),
+          type: oc.hud?.result ? "battle-result" : g ? (g.modal?.type ?? g.view) : oc.target.kind,
+          name: oc.entities[0]?.name,
+          names: oc.entities.length > 1 ? oc.entities.slice(0, 8).map((e) => e.name) : undefined,
+          emergency: g?.emergency, grade: g?.grade,
+          hp: oc.hud?.hp, levelExp: oc.hud?.levelExp, result: oc.hud?.result,
+          fractions: oc.hud?.fractions.length ? oc.hud.fractions : undefined,
+        });
+      }
       if (oc.target.kind === "goto") {
         onLensGoto(oc.target.goto);
         noteBridge(oc.entities[0]?.name ?? t("이동"));
@@ -1062,7 +1075,13 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   const lensClip = useClipboardWatch(lensAuto && !lensOpen, handleLensShot);
   // 게임 브리지(크롬 확장) — 클립보드와 같은 프레임 공급원. 스샷 레이더 토글과 무관하게,
   // 연결돼 있으면 게임 화면이 바뀔 때마다 여기로 들어와 같은 판정·이동 경로를 탄다.
-  useBridgeWatch(!lensOpen, (file) => handleLensShot(file, true));
+  const bridgeOn = useBridgeWatch(!lensOpen, (file) => handleLensShot(file, true));
+  useEffect(() => {
+    if (!bridgeOn) return;
+    // 첫 인식에서 wasm·traineddata(~9MB) 로드로 수 초를 잃지 않게 연결 즉시 예열
+    warmOcr(ocrLangFor(locale));
+    warmData("rogue", locale);
+  }, [bridgeOn, locale]);
   // 자동인식 동안 창 전체가 드롭존 — 드래그 중이면 필을 드롭 가능 상태로 강조
   const lensDragging = useDropWatch(lensAuto && !lensOpen, handleLensShot);
   // 하이라이트 카드로 스크롤 (렌더 뒤 한 프레임 양보).

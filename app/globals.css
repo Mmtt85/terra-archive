@@ -11173,6 +11173,22 @@ main.site-main > .site-header {
   font-variant-numeric: tabular-nums;
   pointer-events: none;
 }
+/* 헤더 인라인 상태 (버튼 없이 현황만 — 2026-07-26) */
+.bridge-status.alone {
+  position: static;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 34vw;
+  pointer-events: none;
+}
+.bridge-dot {
+  color: var(--accent, #b98a2f);
+  animation: bridge-pulse 2s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bridge-dot { animation: none; }
+}
 .bridge-status b {
   color: var(--ink2);
   font-weight: 700;
