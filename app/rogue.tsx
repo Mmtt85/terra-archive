@@ -1223,6 +1223,17 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
     );
   }
 
+  // 보유 리스트 진입 버튼 — 각 뷰의 검색·필터 줄 **맨 오른쪽**에 붙인다 (사용자 지정 2026-07-26,
+  // 종전 위치는 탭 줄). 뷰마다 필터 줄이 따로라 같은 엘리먼트를 재사용한다(동시에 그려지지 않음).
+  const invButton = (
+    <button type="button" className="rg-inv-open" onClick={() => setInvOpen(true)}
+      title={t("소장품·자원 카드의 「＋ 보유」 버튼으로 담아두고 여기서 한눈에 봅니다")}>
+      🎒 {t("보유 리스트")}
+      {inv.size > 0 && <em className="rg-inv-count">{inv.size}</em>}
+      {isNewFeature("rogue-inv") && <span className="new-badge">{t("새기능")}</span>}
+    </button>
+  );
+
   return (
     <section className={`rg${topic === "rogue_1" ? "" : " rg" + topic.split("_")[1]}`} aria-labelledby="rg-title">
       <header className="rg-head">
@@ -1256,9 +1267,24 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
           </div>
         </div>
 
-        {/* 테마 변경 드롭다운 — 배너 오른쪽 위. 네이티브 select 대신 테마 톤에 맞춘 커스텀
-            리스트박스 (사용자 요청 2026-07-19). ⚠ .rg-hero 안에 두면 overflow:hidden에
-            펼친 메뉴가 잘린다 — 반드시 .rg-head 직속(클리핑 밖)에 두고 absolute로 겹칠 것 */}
+        {/* 배너 오른쪽 위 도구 열 — 위: 게임연결·리플레이·스샷 레이더, 아래: 테마 변경
+            (사용자 지정 2026-07-26). ⚠ .rg-hero 안에 두면 overflow:hidden에 펼친 메뉴가
+            잘린다 — 반드시 .rg-head 직속(클리핑 밖)에 두고 absolute로 겹칠 것 */}
+        <div className="rg-headtools">
+        {/* 스샷 레이더 — 버튼 자체가 자동인식 토글, ?는 도움말 모달. KR/EN/JA 화면 인식 (2026-07-25).
+            흑류수해(rogue_6)는 CN 선행이라 중국어 화면도 전 로케일에서 인식한다. */}
+        <div className="lens-open-wrap">
+          {/* 테마별 게임연결 + 리플레이 — 여기서 연결하면 이 테마로만 인식이 고정된다 (2026-07-26) */}
+          {BRIDGE_LIVE && <BridgeTopicButton topic={topic} name={TOPICS.find((tp) => tp.id === topic)?.name ?? topic} t={t} />}
+          <button type="button" className={`lens-open-btn${lensAuto ? " on" : ""}`} aria-pressed={lensAuto}
+            title={t("클릭해 스샷 자동인식을 켜고 끕니다 — 켜두면 게임 화면을 캡처만 해도 바로 인식·적용됩니다")}
+            onClick={toggleLensAuto}>
+            <span className="lens-auto-knob" aria-hidden />📷 {t("스샷 레이더")}{isNewFeature("lens") && <span className="new-badge">{t("새기능")}</span>}
+          </button>
+          <button type="button" className="lens-help-btn" aria-label={t("스샷 레이더 도움말")}
+            onClick={() => setLensOpen(true)}>?</button>
+        </div>
+        {/* 테마 변경 드롭다운 — 네이티브 select 대신 테마 톤에 맞춘 커스텀 리스트박스 (2026-07-19) */}
         <div className="rg-topicsel" ref={topicSelRef}>
           <button type="button" className="rg-topicsel-btn" aria-haspopup="listbox" aria-expanded={topicMenu}
             onClick={() => setTopicMenu((v) => !v)}>
@@ -1284,6 +1310,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
             </ul>
           )}
         </div>
+        </div>
       </header>
 
       {loading && <p className="rg-loading">{t("데이터를 불러오는 중...")}</p>}
@@ -1293,26 +1320,6 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
         {VIEWS.map((v) => (
           <button key={v.id} type="button" className={view === v.id ? "on" : ""} onClick={() => goView(v.id)}>{t(v.label)}</button>
         ))}
-        {/* 보유 리스트 — 게임에서 얻은 소장품·자원을 담아두고 한눈에 보는 개인 목록 (피드백 반영 2026-07-24) */}
-        <button type="button" className="rg-inv-open" onClick={() => setInvOpen(true)}
-          title={t("소장품·자원 카드의 「＋ 보유」 버튼으로 담아두고 여기서 한눈에 봅니다")}>
-          🎒 {t("보유 리스트")}
-          {inv.size > 0 && <em className="rg-inv-count">{inv.size}</em>}
-          {isNewFeature("rogue-inv") && <span className="new-badge">{t("새기능")}</span>}
-        </button>
-        {/* 스샷 레이더 — 버튼 자체가 자동인식 토글, ?는 도움말 모달. KR/EN/JA 화면 인식 (2026-07-25).
-            흑류수해(rogue_6)는 CN 선행이라 중국어 화면도 전 로케일에서 인식한다. */}
-        <div className="lens-open-wrap">
-          {/* 테마별 게임연결 + 리플레이 — 여기서 연결하면 이 테마로만 인식이 고정된다 (2026-07-26) */}
-          {BRIDGE_LIVE && <BridgeTopicButton topic={topic} name={TOPICS.find((tp) => tp.id === topic)?.name ?? topic} t={t} />}
-          <button type="button" className={`lens-open-btn${lensAuto ? " on" : ""}`} aria-pressed={lensAuto}
-            title={t("클릭해 스샷 자동인식을 켜고 끕니다 — 켜두면 게임 화면을 캡처만 해도 바로 인식·적용됩니다")}
-            onClick={toggleLensAuto}>
-            <span className="lens-auto-knob" aria-hidden />📷 {t("스샷 레이더")}{isNewFeature("lens") && <span className="new-badge">{t("새기능")}</span>}
-          </button>
-          <button type="button" className="lens-help-btn" aria-label={t("스샷 레이더 도움말")}
-            onClick={() => setLensOpen(true)}>?</button>
-        </div>
       </nav>
       {/* 자동인식 상태 필 — fixed 오버레이(레이아웃 안 밀음) + 인식 이미지 미니 썸네일.
           드롭은 창 전체가 받고(useDropWatch), 드래그 중이면 필이 드롭 가능 상태로 강조된다 */}
@@ -1332,6 +1339,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
             <input type="search" {...mapProps}
               placeholder={t("노드 이름 검색 (작전·조우·우연한 만남)")} aria-label={t("노드 이름 검색 (작전·조우·우연한 만남)")} />
             {mapHits && <span className="rg-count">{mapHits.stages.length + mapHits.encs.length}</span>}
+            {invButton}
           </div>
 
           {mapHits && (<>
@@ -1557,6 +1565,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
                 onClick={() => setEnemyRank(rk)}>{rk ? t(RANK_KO[rk]) : t("전체")}</button>
             ))}
             <span className="rg-count">{enemies.length}</span>
+            {invButton}
           </div>
           {/* 도감은 사진 왼쪽·정보 오른쪽 가로형 카드 (피드백 반영 2026-07-18) */}
           <div className="rg-enemy-grid">
@@ -1586,6 +1595,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
             <input type="search" {...relicProps}
               placeholder={t("유물 검색 (이름·번호)")} aria-label={t("유물 검색 (이름·번호)")} />
             <span className="rg-count">{relics.length}</span>
+            {invButton}
           </div>
           {/* 목록 카드는 섬네일·이름·효과만 — 번호·설명은 클릭 시 상세 모달에서 (사용자 요청 2026-07-23) */}
           <div className="rg-relic-grid">
@@ -1622,6 +1632,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
                 : activeArc === "band" ? data.bands.length
                 : (data.mechanics ?? []).find((m) => m.label === activeArc)?.items.length ?? 0}
             </span>
+            {invButton}
           </div>
           {activeArc === "scrap" && (
             <div className="rg-scrap-view">
