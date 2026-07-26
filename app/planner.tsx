@@ -2217,16 +2217,16 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
               <button type="button" className={mode === "import" ? "selected" : ""} onClick={() => setMode("import")}><span className="btn-icon" aria-hidden>⤒</span>{t("가져오기")}{isNewFeature("account") && <span className="new-badge">{t("새기능")}</span>}</button>
             </div>
           </div>
+          {/* 가져오기 모드에는 도구 줄이 없다 — 세 경로 모두 결과를 직접 입력으로 되돌리므로
+              검색·일괄·적용 버튼은 그쪽에서만 닿는다 (사용자 지적 2026-07-26) */}
+          {mode === "direct" && (
           <div className="roster-tools">
-            {mode === "direct" && (
-              <>
-                <input {...searchProps} placeholder={t("이름·소속 검색")} />
-                <button type="button" onClick={() => setDraft(new Set(allOps.map((op) => op.id)))}><span className="btn-icon" aria-hidden>✓</span>{t("전체 선택")}</button>
-                <button type="button" onClick={() => setDraft(new Set())}><span className="btn-icon" aria-hidden>✕</span>{t("전체 해제")}</button>
-              </>
-            )}
+            <input {...searchProps} placeholder={t("이름·소속 검색")} />
+            <button type="button" onClick={() => setDraft(new Set(allOps.map((op) => op.id)))}><span className="btn-icon" aria-hidden>✓</span>{t("전체 선택")}</button>
+            <button type="button" onClick={() => setDraft(new Set())}><span className="btn-icon" aria-hidden>✕</span>{t("전체 해제")}</button>
             <button type="button" className="apply" onClick={() => onApply(draft, eliteDraft)}><span className="btn-icon" aria-hidden>⟳</span>{t("적용 및 자동편성 실행")}</button>
           </div>
+          )}
         </header>
         <div className="modal-scroll">
           {importMsg && <p className="dorm-note maa-import-msg">{importMsg}</p>}
