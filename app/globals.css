@@ -11821,3 +11821,12 @@ main.site-main > .site-header {
 .story-reader-prefs-btns button {
   border-radius: 0;
 }
+
+/* NOTE(안내문) 계열은 **각지게 유지** — 라운딩 전면 롤백 (사용자 확정 2026-07-26:
+   "NOTE 부분은 전부 사각으로"). 왼쪽 악센트 바 스타일과 각진 모양이 세트다. */
+.about-note, .about-notes, .bcast-note, .chron-note, .data-note, .dorm-note,
+.event-menu-note, .future-note, .invest-note, .invest-note-sub, .low-time-note,
+.recruit-time-note, .rg-ctx-note, .rg-disclaimer, .rg-enc-note, .rule-note,
+.sc-future-note, .story-disclaimer, .summary-note {
+  border-radius: 0;
+}

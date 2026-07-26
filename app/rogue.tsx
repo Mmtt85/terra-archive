@@ -512,8 +512,8 @@ function InvPill({ owned, onToggle }: { owned: boolean; onToggle: () => void }) 
 }
 
 // ── 층 상세 모달 — 층 카드 클릭 시 (설명 + 작전/보스 카드) ───────────────────
-function ZoneModal({ zone, pairs, bosses, onOpenStage, onClose }: {
-  zone: Zone; pairs: StagePair[]; bosses: Stage[];
+function ZoneModal({ zone, badge, pairs, bosses, onOpenStage, onClose }: {
+  zone: Zone; badge: string; pairs: StagePair[]; bosses: Stage[];
   onOpenStage: (p: StagePair) => void; onClose: () => void;
 }) {
   const { t } = useI18n();
@@ -527,7 +527,7 @@ function ZoneModal({ zone, pairs, bosses, onOpenStage, onClose }: {
       <div className="rg-modal rg-zmodal" role="dialog" aria-modal onClick={(ev) => ev.stopPropagation()}>
         <header className="rg-modal-head">
           <div>
-            <span className="rg-zone-num">{zone.portal ? t("특수 구역") : zone.hidden ? "?" : t("{n}층", { n: zone.num })}</span>
+            <span className="rg-zone-num">{badge}</span>
             <h3><Nm name={zone.name} cn={zone.cn} /></h3>
             {zone.variant && <span className="rg-zone-hidden">{t("변형 구역")}</span>}
             {zone.hidden && <span className="rg-zone-hidden">{t("히든 층")}</span>}
@@ -761,6 +761,26 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   const specialStages = useMemo(() => data.stages.filter((s) => s.kind === "special"), [active]);
   const duelStages = useMemo(() => data.stages.filter((s) => s.kind === "duel"), [active]);
   const trialStages = useMemo(() => data.stages.filter((s) => s.kind === "trial"), [active]);
+  // 특수 구역(경) ↔ 시련 작전 수동 매핑 — 게임데이터에는 존 연결이 없다 (2026-07-26 사용자
+  // 제보: 쉐이 시비경·금석경 모달이 텅 빔). 이름이 근거다: sv·dv = 시비 판정류(우쭐함·
+  // 노여움·탐욕과 망념…) → 시비경, fs = 대사냥류(방천·영뢰·멸진·부운·척홍) → 금석경.
+  // 변형판(_b·_c·_dlc1)은 같은 이름의 강화판이라 기본판만 카드로 싣는다.
+  const TRIAL_ZONE_RE: Record<string, RegExp> = {
+    zone_sky_1: /^ro5_(?:sv|dv)_\d+$/,
+    zone_sky_2: /^ro5_fs_\d+$/,
+  };
+  const trialPairsFor = (z: Zone): StagePair[] => {
+    const re = TRIAL_ZONE_RE[z.id];
+    return re ? trialStages.filter((s) => re.test(s.id)).map((s) => ({ n: s })) : [];
+  };
+  // 층 배지 — 히든 층 중 진입 경로명이 확정된 곳은 ? 대신 그 이름 (사용자 확정 2026-07-26:
+  // 미즈키 '짙푸른 요람'은 원더랜드로 진입)
+  const ZONE_BADGE: Record<string, string> = { "rogue_2:zone_7": "원더랜드" };
+  const zoneBadge = (z: Zone): string => {
+    const custom = ZONE_BADGE[`${data.id}:${z.id}`];
+    if (custom) return t(custom);
+    return z.portal ? t("특수 구역") : z.hidden ? "?" : t("{n}층", { n: z.num });
+  };
   const chaseStages = useMemo(() => data.stages.filter((s) => s.kind === "chase"), [active]);
   const savageStages = useMemo(() => data.stages.filter((s) => s.kind === "savage"), [active]);
   const incidentStages = useMemo(() => data.stages.filter((s) => s.kind === "incident"), [active]);
@@ -1355,13 +1375,13 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
           {/* 층 카드 — 가로 일렬, 클릭하면 층 상세 모달 (사용자 확정 2026-07) */}
           <div className="rg-zone-cards">
           {data.zones.map((z) => {
-            const pairs = z.variant ? [] : pairsByZone.get(z.num) ?? [];
+            const pairs = z.variant ? [] : (pairsByZone.get(z.num) ?? []).concat(trialPairsFor(z));
             const zoneBosses = z.variant ? [] : bossStages.filter((s) => s.zone === z.num);
             return (
               <button type="button" key={z.id} className={`rg-zonecard${z.hidden ? " hidden-zone" : ""}`}
                 onClick={() => setZoneOpen(z)}>
                 {z.img && <img className="rg-zonecard-bg" src={`/rogue/zone/${z.bg ?? `${data.id}_map_${z.num}`}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
-                <span className="rg-zone-num">{z.portal ? t("특수 구역") : z.hidden ? "?" : t("{n}층", { n: z.num })}</span>
+                <span className="rg-zone-num">{zoneBadge(z)}</span>
                 <span className="rg-zonecard-name"><Nm name={z.name} cn={z.cn} /></span>
                 {z.variant && <span className="rg-zone-hidden">{t("변형 구역")}</span>}
                 {z.hidden && <span className="rg-zone-hidden">{t("히든 층")}</span>}
@@ -1871,8 +1891,8 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
       )}
 
       {zoneOpen && (
-        <ZoneModal zone={zoneOpen}
-          pairs={zoneOpen.variant ? [] : pairsByZone.get(zoneOpen.num) ?? []}
+        <ZoneModal zone={zoneOpen} badge={zoneBadge(zoneOpen)}
+          pairs={zoneOpen.variant ? [] : (pairsByZone.get(zoneOpen.num) ?? []).concat(trialPairsFor(zoneOpen))}
           bosses={zoneOpen.variant ? [] : bossStages.filter((s) => s.zone === zoneOpen.num)}
           onOpenStage={setStageOpen} onClose={() => setZoneOpen(null)} />
       )}

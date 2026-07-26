@@ -1463,6 +1463,7 @@ const D: Record<string, Pair> = {
   "작전 성공": ["Operation clear", "作戦成功"],
   "작전 실패": ["Operation failed", "作戦失敗"],
   "캐시 재적용": ["cache replay", "キャッシュ再適用"],
+  "원더랜드": ["Wonderland", "ワンダーランド"],
 
   "유니버셜 서치": ["Universal Search", "ユニバーサルサーチ"],
   "유니버셜 서치 — 사이트 전체 검색": ["Universal Search — search the whole site", "ユニバーサルサーチ — サイト全体を検索"],
