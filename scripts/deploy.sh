@@ -67,3 +67,6 @@ done < <(find "$STAGE" -name "*.rsc" -type f | sort)
 echo ".rsc content-type 규칙 $(find "$STAGE" -name "*.rsc" -type f | wc -l | tr -d ' ')건 추가"
 
 npx wrangler pages deploy "$STAGE" --project-name terra-archive --branch main --commit-dirty=true
+
+# 관리자 사이트(admin.terra-archive.net)도 같은 빌드로 함께 배포 — 한 명령으로 둘 다 (2026-07-27)
+bash scripts/deploy-admin.sh
