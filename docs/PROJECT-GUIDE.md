@@ -475,8 +475,11 @@ CRUD가 늘며 위험해진 /admin을 본사이트에서 떼어냈다. **비밀�
   **브라우저에는 어떤 관리자 키도 없다.** `workers_dev = false`(Access 우회 경로 차단),
   ACCESS_TEAM/AUD 미설정이면 503 거부가 기본값.
 - 프론트 규약: 모든 admin CRUD는 같은 오리진 **`/api`** 상대경로(`ADMIN_REST` 등,
-  feedback.ts) — Access 쿠키가 자동 동반된다. localhost 개발 서버에서는 관리자 API를
-  못 쓴다(Access 쿠키 없음) — admin 작업은 실서비스 admin 도메인에서.
+  feedback.ts) — Access 쿠키가 자동 동반된다.
+- **로컬 개발**: dev 서버 전용 vite 플러그인(`scripts/admin-dev-proxy.ts`)이 `/api/*`를
+  가로채 레포 루트 키 파일(`.supabase-admin-key`·`.upload-admin-key` — gitignore)로
+  직접 중계한다 → localhost:3000/admin이 실서비스와 동일하게 동작. 키 파일이 없는
+  기기에서는 503 + 게이트 안내. 빌드 산출물에는 포함되지 않는다(`apply: "serve"`).
 - **키 회전**: `node scripts/make-admin-rotate-sql.mjs` → `.supabase-admin-key`(gitignore) +
   `.admin-rotate.generated.sql`(Supabase SQL Editor에서 실행) → admin-api 워커 시크릿
   `SUPABASE_ADMIN_KEY`/`UPLOAD_ADMIN_KEY` 갱신. 옛 키('admin')는 SQL 문서에 평문

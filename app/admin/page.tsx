@@ -589,7 +589,9 @@ export default function AdminPage() {
                 Cloudflare Access(구글 SSO)를 통과해야 열립니다.
               </p>
               <p className="admin-status">
-                localhost 개발 서버에서는 관리자 API를 쓸 수 없습니다 (Access 쿠키가 없음).
+                localhost에서 개발하려면 레포 루트에 키 파일(<code>.supabase-admin-key</code> ·
+                <code>.upload-admin-key</code>)이 있어야 합니다 — dev 서버가 Access 대신
+                키 파일로 중계합니다 (scripts/admin-dev-proxy.ts).
               </p>
             </>
           )}

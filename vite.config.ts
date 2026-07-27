@@ -1,5 +1,6 @@
 import vinext from "vinext";
 import { defineConfig } from "vite";
+import { adminDevProxy } from "./scripts/admin-dev-proxy";
 
 export default defineConfig(async () => {
   // Keep Wrangler and Miniflare state project-local. These are non-secret tool
@@ -13,6 +14,8 @@ export default defineConfig(async () => {
 
   return {
     plugins: [
+      // dev 전용: localhost /api/* → 키 파일로 Supabase·업로드 워커 중계 (관리자 로컬 개발용)
+      adminDevProxy(),
       vinext(),
       cloudflare({
         viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },
