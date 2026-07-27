@@ -524,22 +524,29 @@ const RECOVER_SCOPE_ROOMS: Record<string, string[]> = {
 };
 // 방 인원 시너지 감면 (사용자 인게임 통제 실험 2026-07-28로 확정): 같은 방의 **동료 1명당
 // 시간당 컨디션 소모 -0.05** (자신 제외 — 3인 방 -0.1, 2인 -0.05, 1인 0. 실험: 총웨를 빼도
-// 유지, 방 인원을 줄이면 정확히 이 공식대로 감소·소멸). 제어센터 5인 = 동료 4×0.05 = -0.2가
-// 시의 회복 +0.05와 합쳐 실측 "전원 -0.25"를 설명한다. ⚠ 종전의 "제어센터 횡단 기본 효과"
-// (인원당 전 시설 감면)는 **존재하지 않음이 실증됨** — 제어센터 5인 가동 중에도 1인 방에선
-// 감면이 완전 소멸했다. 가이드의 "제어센터 1명당 0.25" 문장은 이 방 인원 메커니즘의 오기.
+// 유지, 방 인원을 줄이면 정확히 이 공식대로 감소·소멸).
 // endless 순소모 모델에만 반영 — 생산 3모드의 교대 시계는 종전 관례(방 기본 1/h)를 유지한다.
 const CREW_RELIEF = 0.05;
-// 횡단 회복 오라 실효값 — perToken(총웨 '외로운 빛과 함께': 화식 20점당 +0.05)은 **1스텝 상한**.
-// 사용자 인게임 직접 관찰 (2026-07-28): 기지 화식 80점인데 총웨 오라 표시가 -0.1 고정 —
-// "20점당"이 무한 누적이 아니라 20점 이상 1회 가산으로 동작한다 (0.05 기본 + 0.05 = 0.1).
+// 제어센터 진주 감면 (v18, 사용자 전 방 실측 + 판별 실험 + PRTS 원문으로 확정): 제어센터에
+// 앉은 **인원 1명당 다른 모든 작업 시설의 소모 -0.05** (제어센터 자신은 미적용 — 실측 CC 0.75
+// = 1 − 동료 0.2 − 시 0.05가 인원항 없이 성립). 판별 실험: 5인→4인 시 전 방이 정확히 +0.05,
+// 총웨만 빼면 무역소1이 0.40→0.70 (인원항 -0.05 + 오라 -0.25 동시 소실) — 모델 예측과 일치.
+// ⚠ v17의 "횡단 감면 부존재" 결론은 오판(1인 방 실험은 방 동료항의 소멸이었음) — 정정.
+const CC_OCC_RELIEF = 0.05;
+// 횡단 회복 오라 실효값 — perToken(총웨 '외로운 빛과 함께': 화식 20점당 +0.05)은 **무상한 누적**
+// (클뜯 원문 그대로, 스텝 상한 없음). 사용자 전 방 실측(2026-07-28): 화식 80 → 오라 0.05+4스텝
+// = 0.25가 스킬 없는 전 방의 균일 -0.25를 정확히 설명. v17의 "1스텝 상한"은 오판 — 정정.
 function recoverAuraValue(skill: InfraSkill, tokenPoints: Record<string, number>): number {
   const aura = skill.recoverAura!;
-  const extra = aura.perToken ? Math.min(1, Math.floor((tokenPoints[aura.perToken.token] ?? 0) / aura.perToken.per)) * aura.perToken.add : 0;
+  const extra = aura.perToken ? Math.floor((tokenPoints[aura.perToken.token] ?? 0) / aura.perToken.per) * aura.perToken.add : 0;
   return aura.value + extra;
 }
-// 방 최대 순소모 (endless 모델): 기본 소모 + 본인 가산(부호 유지) + 방 전체 가산(부호 유지)
-// − 방 내 회복(고정 recoverRoom + 그룹 1명당 recoverRoomPer) − 제어센터 횡단 회복 오라.
+// 방 최대 순소모 (endless 모델, v18 = 인게임 전 방 실측 공식): 오퍼별
+//   순소모 = 기본 + 본인 소모증가 + 방 전체 가산(부호 유지) − 방 내 회복 − 방 동료 시너지
+//            − 제어센터 인원 감면 − **max(본인 소모감소, 횡단 회복 오라)**
+// 마지막 항이 v18의 핵심 "동종 최고 규칙": 오라(무에나·총웨·위셔델 중 최대 1개)와 오퍼 자신의
+// 소모 감소 스킬은 합산되지 않고 큰 쪽 하나만 적용된다 — 실측: 자기 -0.25 보유 방(샤마르 트리오·
+// 트라고디아)은 오라 0.25에서 추가 이득 0, 스킬 없는 방만 오라 -0.25를 온전히 받았다.
 // 오퍼별 하한 0(과회복은 낭비) 후 최댓값 — 방을 제일 먼저 지치는 오퍼가 교대를 부른다.
 // 소모 없는 방(숙소·가공소)·빈 팀은 null. 동반 게이트 회복(리 '한가하고 덧없는 인생': 아와
 // 함께)은 partners 전원이 같은 방일 때만 계상한다.
@@ -558,14 +565,13 @@ export function roomMaxNetDrain(team: InfraOp[], room: string, ctx: Ctx): number
     if (sk.recoverRoomPer) recover += sk.recoverRoomPer.value * team.filter((member2) => memberOf(member2, sk.recoverRoomPer!.faction)).length;
   }
   // 특별 비교 규칙 (용어 사전 cc.c.sui2_1): 무에나·총웨·위셔델의 횡단 회복 오라는 **최대
-  // 수치 1개만** 적용 — 합산 금지. 제어센터 기본 효과(비오라 앰비언트)는 별도로 온전히 적용.
+  // 수치 1개만** 적용 — 합산 금지. 제어센터 인원 감면(비오라 앰비언트)은 별도로 온전히 적용.
   let auraMax = 0;
   for (const aura of ctx.ambient ?? []) {
     if (aura.kind !== "drain_recover" || !aura.rooms?.includes(room)) continue;
     if (aura.aura) auraMax = Math.max(auraMax, aura.value);
     else recover += aura.value;
   }
-  recover += auraMax;
   // 방 인원 시너지 — 동료 1명당 -0.05 (자신 제외, 전 근무방 공통)
   recover += CREW_RELIEF * (team.length - 1);
   let maxNet = 0;
@@ -573,7 +579,10 @@ export function roomMaxNetDrain(team: InfraOp[], room: string, ctx: Ctx): number
     let self = 0;
     for (const sk of activeSkills(member, room, ctx.product)) self += sk.moraleDrain;
     if (self > 0 && negates.some((f) => factionsOf(member).some((fac) => fac.includes(f)))) self = 0;
-    maxNet = Math.max(maxNet, Math.max(0, base + self + roomAdd - recover));
+    // 동종 최고 규칙 — 본인 소모 감소(self<0)와 횡단 오라 중 큰 쪽 하나만
+    const personal = Math.max(Math.max(0, -self), auraMax);
+    const selfPos = Math.max(0, self);
+    maxNet = Math.max(maxNet, Math.max(0, base + selfPos + roomAdd - recover - personal));
   }
   return maxNet;
 }
@@ -610,12 +619,15 @@ export function endlessBonus(team: InfraOp[], room: string, ctx: Ctx): number {
 
 export function shiftHoursFor(teams: { room: string; ops: InfraOp[] }[]): number {
   // endless 모드: 순소모 모델(감소·회복 포함)로 시계를 계산한다 — 무한동력 방은 상한 72h.
-  // 횡단 회복 오라는 근사상 제외(보수적 — 시계가 실제보다 짧게 잡혀도 성장형 평균만 소폭 영향).
+  // 제어센터 인원 감면·횡단 오라는 전달받은 편성의 CONTROL 팀에서 직접 만든다 (화식 토큰 점수는
+  // 이 단계에 없어 0으로 근사 — 총웨 스텝 가산만 보수적으로 빠진다).
   if (ENDLESS_ON) {
+    const ccTeam = teams.find((entry) => entry.room === "CONTROL")?.ops ?? [];
+    const ambient = ccTeam.length ? aurasOf(ccTeam, { tokenPoints: {} }) : [];
     let maxDrain = 24 / ENDLESS_CLOCK_CAP;
     for (const { room, ops: team } of teams) {
       if (!CLOCK_ROOMS.has(room)) continue;
-      const net = roomMaxNetDrain(team, room, { tokenPoints: {} });
+      const net = roomMaxNetDrain(team, room, { tokenPoints: {}, ambient });
       if (net != null) maxDrain = Math.max(maxDrain, net);
     }
     return 24 / maxDrain;
@@ -710,8 +722,9 @@ export const ROOM_BASE_RATE: Record<string, number> = C.ROOM_BASE_RATE;
 // 제어센터 팀의 활성 오라 목록 — 대상 방 점수에 앰비언트로 더해 준다
 export function aurasOf(controlTeam: InfraOp[], ctx: Ctx): AmbientAura[] {
   const list: AmbientAura[] = [];
-  // 제어센터 기본 효과 — 배치 인원 1명당 전 작업 시설 소모 -0.05 (endless 순소모 모델 전용 소비.
-  // 제어센터 자신은 roomMaxNetDrain이 자기 인원수로 직접 계산하므로 대상에서 제외)
+  // 제어센터 진주 감면 — 배치 인원 1명당 다른 작업 시설 소모 -0.05 (PRTS 확인·인게임 판별 실험
+  // 2026-07-28 확정, v18 복원). endless 순소모 모델·시계 표시 전용 소비 — 제어센터 자신은 미적용.
+  if (controlTeam.length) list.push({ kind: "drain_recover", value: CC_OCC_RELIEF * controlTeam.length, rooms: RECOVER_SCOPE_ROOMS.other });
   for (const op of controlTeam) {
     const b = breakdown(op, "CONTROL", controlTeam, ctx);
     for (const skill of b.skills) {
