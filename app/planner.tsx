@@ -907,12 +907,13 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plan, activeShift, presentIds, eliteById]);
 
-  // A조 방별 지속 시계 (소모 모드 전용, 사용자 요청 2026-07-28) — 풀 컨디션 24 ÷ 방 순소모.
+  // A조 방별 지속 시계 (사용자 요청 2026-07-28, 전 모드 표시) — 풀 컨디션 24 ÷ 방 순소모.
   // 병목(제일 빨리 닳는 방)에 맞춰 A조 전체를 한 번에 B조로 교대하는 운용이라, 방마다 배지 +
   // 조 탭에 병목 기준 전체 시계를 표시한다. 순소모 0(무한동력·양조 고정)은 ∞. 회복 오라·제어센터
-  // 기본 효과를 반영한 모델값이라 저장된 보수적 시계(plan.shiftHours)와는 다르다.
+  // 기본 효과를 반영한 모델값이라 저장된 보수적 시계(plan.shiftHours)와는 다르다. 표시 전용이라
+  // 편성·점수엔 영향 없음(생산 3모드 --compare 무관).
   const drainClock = useMemo(() => {
-    if (!plan || (plan.priority !== "endless" && plan.priority !== "perpetual")) return null;
+    if (!plan) return null;
     const present = presentIdsFor(plan, 0);
     const amb = aurasOf(teamFor("CONTROL", 0), ctxFor("CONTROL", pointsFor(0), plan.factionCounts[0], plan.plants, present));
     const rooms = new Map<string, number>();
@@ -1232,7 +1233,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
                       <em className="room-clock" title={net <= 1e-9
                         ? t("순소모 0 — 무한동력, 이 방은 교대가 필요 없습니다")
                         : t("A조 지속 — 풀 컨디션 24를 이 방 순소모 {d}/h로 나눈 값 (회복 오라·제어센터 기본 효과 반영)", { d: net.toFixed(2) })}>
-                        {net <= 1e-9 ? "∞" : `${Math.round(24 / net)}h`}
+                        {net <= 1e-9 ? "∞" : t("{n}시간", { n: Math.round(24 / net) })}
                       </em>
                     );
                   })()}

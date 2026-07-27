@@ -504,6 +504,7 @@ const D: Record<string, Pair> = {
     "Shift A ≈{h}h — swap everyone when {room} runs dry",
     "A班 約{h}時間 — {room}の消耗を基準に一斉交代",
   ],
+  "{n}시간": ["{n}h", "{n}時間"],
   "먼저 채우는 방이 최고 요원을 가져갑니다 — 다음 자동편성부터 적용됩니다": [
     "Rooms filled first get the best operators — applies from the next auto-assign",
     "先に埋める部屋が最高の要員を確保します — 次回の自動編成から適用されます",
