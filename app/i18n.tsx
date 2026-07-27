@@ -488,21 +488,21 @@ const D: Record<string, Pair> = {
     "Zero net drain — perpetual; this room never needs a swap",
     "実質消費0 — 永久機関。この部屋は交代不要です",
   ],
-  "A조 지속 — 풀 컨디션 24를 이 방 순소모 {d}/h로 나눈 값 (회복 오라·제어센터 기본 효과 반영)": [
-    "Shift A duration — full morale 24 divided by this room's net drain of {d}/h (recovery auras and the Control Center base effect included)",
-    "A班の持続時間 — 満タンのコンディション24をこの部屋の実質消費{d}/hで割った値（回復オーラ・制御中枢の基本効果を反映）",
+  "A조 지속 — 교대 체감 구간(컨디션 24→12)을 이 방 순소모 {d}/h로 나눈 값 (회복 오라·제어센터 기본 효과 반영)": [
+    "Shift A duration — the practical swap window (morale 24→12) divided by this room's net drain of {d}/h (recovery auras and the Control Center base effect included)",
+    "A班の持続時間 — 交代の体感区間（コンディション24→12）をこの部屋の実質消費{d}/hで割った値（回復オーラ・制御中枢の基本効果を反映）",
   ],
-  "제일 빨리 컨디션을 다 쓰는 시설 기준 — 그 시점에 A조 전체를 B조로 한 번에 교대합니다 (방 카드의 시간 배지 = 방별 지속)": [
-    "Based on the room that runs out of morale first — at that point swap all of Shift A to Shift B at once (the hour badge on each room card = per-room duration)",
-    "最も早くコンディションを使い切る施設基準 — その時点でA班全体を一斉にB班へ交代します（各部屋カードの時間バッジ = 部屋別の持続時間）",
+  "제일 빨리 닳는 시설이 컨디션 12에 닿는 시점 기준 — 그때 A조 전체를 B조로 한 번에 교대합니다 (방 카드의 시간 배지 = 방별 체감 지속, 컨디션 24→12)": [
+    "Based on when the fastest-draining room hits morale 12 — swap all of Shift A to Shift B at that point (the hour badge on each room card = per-room practical duration, morale 24→12)",
+    "最も早く消耗する施設がコンディション12に達する時点基準 — そこでA班全体を一斉にB班へ交代します（各部屋カードの時間バッジ = 部屋別の体感持続、コンディション24→12）",
   ],
   "A조 전체 무한동력 ∞ — 교대 불필요": [
     "Shift A is fully perpetual ∞ — no swaps needed",
     "A班全体が永久機関 ∞ — 交代不要",
   ],
-  "A조 ~{h}시간 — {room} 소진 기준 일괄 교대": [
-    "Shift A ≈{h}h — swap everyone when {room} runs dry",
-    "A班 約{h}時間 — {room}の消耗を基準に一斉交代",
+  "A조 ~{h}시간 — {room} 기준 일괄 교대": [
+    "Shift A ≈{h}h — swap everyone based on {room}",
+    "A班 約{h}時間 — {room}基準で一斉交代",
   ],
   "{n}시간": ["{n}h", "{n}時間"],
   "먼저 채우는 방이 최고 요원을 가져갑니다 — 다음 자동편성부터 적용됩니다": [

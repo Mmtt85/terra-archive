@@ -907,7 +907,9 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plan, activeShift, presentIds, eliteById]);
 
-  // A조 방별 지속 시계 (사용자 요청 2026-07-28, 전 모드 표시) — 풀 컨디션 24 ÷ 방 순소모.
+  // A조 방별 지속 시계 (사용자 요청 2026-07-28, 전 모드 표시) — 교대 체감 구간(컨디션 24→12,
+  // 사용자 확정: 실제 교대 주기는 완전 소진의 정확히 절반) ÷ 방 순소모. 12는 게임 시스템 임계
+  // (링·시 스킬이 12 경계로 발동 전환).
   // 병목(제일 빨리 닳는 방)에 맞춰 A조 전체를 한 번에 B조로 교대하는 운용이라, 방마다 배지 +
   // 조 탭에 병목 기준 전체 시계를 표시한다. 순소모 0(무한동력·양조 고정)은 ∞. 회복 오라·제어센터
   // 기본 효과를 반영한 모델값이라 저장된 보수적 시계(plan.shiftHours)와는 다르다. 표시 전용이라
@@ -929,7 +931,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       rooms.set(cell.key, net);
       if (net > worst) { worst = net; worstKey = cell.key; }
     }
-    return { rooms, worstKey, hours: worst <= 1e-9 ? Infinity : 24 / worst };
+    return { rooms, worstKey, hours: worst <= 1e-9 ? Infinity : 12 / worst };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plan, eliteById]);
 
@@ -1133,10 +1135,10 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
                 <button key={i} className={activeShift === i ? "selected" : ""} onClick={() => setActiveShift(i)}>{[t("A조 (풀파워)"), t("B조 (회복 교대)")][i]}</button>
               ))}
               {drainClock && (
-                <span className="shift-clock" title={t("제일 빨리 컨디션을 다 쓰는 시설 기준 — 그 시점에 A조 전체를 B조로 한 번에 교대합니다 (방 카드의 시간 배지 = 방별 지속)")}>
+                <span className="shift-clock" title={t("제일 빨리 닳는 시설이 컨디션 12에 닿는 시점 기준 — 그때 A조 전체를 B조로 한 번에 교대합니다 (방 카드의 시간 배지 = 방별 체감 지속, 컨디션 24→12)")}>
                   {drainClock.hours === Infinity
                     ? t("A조 전체 무한동력 ∞ — 교대 불필요")
-                    : t("A조 ~{h}시간 — {room} 소진 기준 일괄 교대", { h: Math.round(drainClock.hours), room: t(cellByKey.get(drainClock.worstKey!)?.label ?? "") })}
+                    : t("A조 ~{h}시간 — {room} 기준 일괄 교대", { h: Math.round(drainClock.hours), room: t(cellByKey.get(drainClock.worstKey!)?.label ?? "") })}
                 </span>
               )}
               <span className="shift-hint">{t("A조 컨디션 소진 시 B조 투입 · 시너지 세트는 A조 집중 · 숙소·고정 요원은 조 전환과 무관 · ")}<b>{t("숙소는 항상 5명 꽉 채워 유지")}</b></span>
@@ -1232,8 +1234,8 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
                     return (
                       <em className="room-clock" title={net <= 1e-9
                         ? t("순소모 0 — 무한동력, 이 방은 교대가 필요 없습니다")
-                        : t("A조 지속 — 풀 컨디션 24를 이 방 순소모 {d}/h로 나눈 값 (회복 오라·제어센터 기본 효과 반영)", { d: net.toFixed(2) })}>
-                        {net <= 1e-9 ? "∞" : t("{n}시간", { n: Math.round(24 / net) })}
+                        : t("A조 지속 — 교대 체감 구간(컨디션 24→12)을 이 방 순소모 {d}/h로 나눈 값 (회복 오라·제어센터 기본 효과 반영)", { d: net.toFixed(2) })}>
+                        {net <= 1e-9 ? "∞" : t("{n}시간", { n: Math.round(12 / net) })}
                       </em>
                     );
                   })()}
