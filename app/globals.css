@@ -548,7 +548,7 @@ button {
   border-radius: 12px;
   width: min(620px, 100%);
   max-height: calc(100dvh - 48px);
-  margin: auto;
+  margin: clamp(10px, 4dvh, 40px) auto auto; /* 상단 고정 — DB fetch 도착 시 재중앙 CLS 방지 */
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -859,7 +859,7 @@ button {
   border: 1px solid var(--border-strong);
   width: min(540px, 100%);
   max-height: calc(100dvh - 48px);
-  margin: auto;
+  margin: clamp(10px, 4dvh, 40px) auto auto; /* 상단 고정 — 워커 fetch 도착 시 재중앙 CLS 방지 */
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -1846,7 +1846,9 @@ legend {
   grid-template-rows: auto minmax(0, 1fr);
   width: min(960px, 100%);
   max-height: min(880px, 100dvh - 48px);
-  margin: auto;
+  /* 상단 고정 — margin:auto 중앙 정렬은 비동기 내용(스캔 결과·이미지)이 도착해 모달이
+     자랄 때마다 재중앙되며 모달 전체가 CLS로 잡힌다 (RUM room-modal 0.714, 실측 재현 2026-07-27) */
+  margin: clamp(10px, 4dvh, 40px) auto auto;
   display: grid;
   position: relative;
   overflow: hidden;
