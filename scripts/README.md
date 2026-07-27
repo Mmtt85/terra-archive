@@ -199,7 +199,8 @@ npx --yes tsx scripts/verify-scan.ts      # 회귀 검증 — 픽스처 138셀 �
 ## 8. 정적 에셋 R2 동기화 (2026-07-27~)
 
 public/의 story·rogue·lens·tesseract·avatars·about·og·items·scan은 사이트 배포(Pages)가
-아니라 **R2(files.terra-archive.net)** 에서 서빙된다. 파이프라인이 이 폴더들에 파일을
+아니라 **R2(files.terra-archive.net/assets/…)** 에서 서빙된다. 버킷은 assets/(이 스크립트 관할)와
+uploads/(/admin 수동 업로드)로 나뉘며, --prune은 로컬에 없는 assets/ 키만 지운다. 파이프라인이 이 폴더들에 파일을
 새로 만들었으면(신규 오퍼 아바타, 이벤트 섬네일·전문 스크립트, 통합전략 에셋, OG 이미지,
 소개 스크린샷 등) R2에 밀어 올려야 사이트에 보인다:
 

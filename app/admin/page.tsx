@@ -189,6 +189,76 @@ function TipEditor({ row, onSave, onCancel, upload }: { row: TipDraft; onSave: (
   );
 }
 
+// ── 파일 저장소 표시 (R2) — 공용 행 + assets/ 폴더 트리 ─────────────────────────
+function FileRow({ row, label, showDate, onStatus, onDelete }: {
+  row: StoredFile; label: string; showDate?: boolean;
+  onStatus: (s: string) => void; onDelete?: () => void;
+}) {
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(row.url); onStatus(`URL 복사됨 — ${row.key}`); }
+    catch { onStatus(row.url); } // 클립보드 미지원 환경이면 그냥 보여준다
+  };
+  return (
+    <div className="rule-row file-row">
+      {isImageKey(row.key)
+        ? <img className="file-thumb" src={row.url} alt="" loading="lazy" />
+        : <span className="file-thumb file-thumb-blank">📄</span>}
+      <code title={row.url}>{label}</code>
+      <span className="rule-note">{formatSize(row.size)}</span>
+      {showDate && <span className="rule-note">{new Date(row.uploaded).toLocaleDateString("ko-KR")}</span>}
+      <button onClick={copy}>URL 복사</button>
+      <button onClick={() => window.open(row.url, "_blank")}>열기</button>
+      {onDelete && <button onClick={onDelete}>삭제</button>}
+    </div>
+  );
+}
+
+// 키 목록 → 중첩 폴더 트리. skip = 최상위 접두사 세그먼트 수 (assets/ = 1)
+type FileTreeDir = { dirs: Map<string, FileTreeDir>; files: StoredFile[]; count: number; size: number };
+function buildFileTree(rows: StoredFile[], skip: number): FileTreeDir {
+  const root: FileTreeDir = { dirs: new Map(), files: [], count: 0, size: 0 };
+  for (const row of rows) {
+    const parts = row.key.split("/");
+    let node = root;
+    node.count += 1; node.size += row.size;
+    for (let i = skip; i < parts.length - 1; i += 1) {
+      let dir = node.dirs.get(parts[i]);
+      if (!dir) { dir = { dirs: new Map(), files: [], count: 0, size: 0 }; node.dirs.set(parts[i], dir); }
+      node = dir;
+      node.count += 1; node.size += row.size;
+    }
+    node.files.push(row);
+  }
+  return root;
+}
+
+// 폴더 노드 — 열 때만 자식을 렌더한다 (7,700행을 한꺼번에 DOM에 올리지 않기)
+const FOLDER_SHOW_MAX = 400;
+function FolderNode({ name, node, depth, onStatus }: { name: string; node: FileTreeDir; depth: number; onStatus: (s: string) => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="ftree-dir" style={depth ? { marginLeft: 16 } : undefined}>
+      <button type="button" className="ftree-toggle" onClick={() => setOpen((o) => !o)}>
+        <i aria-hidden>{open ? "▾" : "▸"}</i> {name}/
+        <small>{node.count.toLocaleString()}개 · {formatSize(node.size)}</small>
+      </button>
+      {open && (
+        <div className="ftree-body">
+          {[...node.dirs.keys()].sort().map((sub) => (
+            <FolderNode key={sub} name={sub} node={node.dirs.get(sub)!} depth={depth + 1} onStatus={onStatus} />
+          ))}
+          {[...node.files].sort((a, b) => (a.key < b.key ? -1 : 1)).slice(0, FOLDER_SHOW_MAX).map((row) => (
+            <FileRow key={row.key} row={row} label={row.key.split("/").pop()!} onStatus={onStatus} />
+          ))}
+          {node.files.length > FOLDER_SHOW_MAX && (
+            <p className="rule-note">… 외 {(node.files.length - FOLDER_SHOW_MAX).toLocaleString()}개 — 검색으로 찾으세요</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // payload.page("/#infra" 등)를 사람이 읽을 라벨로 — 클릭하면 그 페이지가 새 탭에 열린다
 function pageOf(payload: unknown): string | undefined {
   const page = payload && typeof payload === "object" ? (payload as { page?: unknown }).page : undefined;
@@ -222,6 +292,8 @@ export default function AdminPage() {
   const [fileStatus, setFileStatus] = useState("");
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [fileSub, setFileSub] = useState<"uploads" | "assets">("uploads"); // 내 업로드 | 사이트 에셋
+  const [fileQuery, setFileQuery] = useState("");
   // 업데이트 내역 원장 (null = 조회 실패 → 미설치 안내)
   const [changes, setChanges] = useState<ChangeRow[] | null>(null);
   const [changeStatus, setChangeStatus] = useState("");
@@ -341,11 +413,6 @@ export default function AdminPage() {
     loadFiles(password);
   };
 
-  const copyFileUrl = async (row: StoredFile) => {
-    try { await navigator.clipboard.writeText(row.url); setFileStatus(`URL 복사됨 — ${row.key}`); }
-    catch { setFileStatus(row.url); } // 클립보드 미지원 환경이면 그냥 보여준다
-  };
-
   const removeFile = async (row: StoredFile) => {
     if (!(await confirm({ message: `'${row.key}' 파일을 삭제할까요? 이 URL을 쓰는 팁·페이지에선 이미지가 깨집니다.`, danger: true }))) return;
     try { await adminDeleteFile(password, row.key); setFileStatus("삭제됨"); loadFiles(password); }
@@ -463,6 +530,14 @@ export default function AdminPage() {
     }
   };
 
+  // 파일 탭 파생 상태 — uploads/(수동)와 assets/(r2-sync 관할) 분리, 검색은 부분 문자열 매치
+  const fileFilter = fileQuery.trim().toLowerCase();
+  const uploadRows = (files ?? []).filter((row) => row.key.startsWith("uploads/"));
+  const assetRows = (files ?? []).filter((row) => !row.key.startsWith("uploads/"));
+  const shownUploads = fileFilter ? uploadRows.filter((row) => row.key.toLowerCase().includes(fileFilter)) : uploadRows;
+  const shownAssets = fileFilter ? assetRows.filter((row) => row.key.toLowerCase().includes(fileFilter)) : assetRows;
+  const assetTree = buildFileTree(assetRows, 1); // 7.7천 건 순회 — 렌더당 수 ms라 메모 불필요
+
   // 상태 필터는 대응완료/대응미완료 둘뿐 (사용자 요청 2026-07-19). 미완료 안에서는
   // 대응중이 맨 위, 신규가 그 아래 (사용자 요청 2026-07-21) — 같은 그룹은 최신순
   const statusRank = (row: FeedbackRow) => (row.reviewed_at ? 2 : handlingAt(row.payload) ? 0 : 1);
@@ -529,7 +604,7 @@ export default function AdminPage() {
             팁 풍선{tips ? ` (${tips.filter((row) => row.active).length}/${tips.length})` : ""}
           </button>
           <button className={tab === "files" ? "selected" : ""} onClick={() => setTab("files")}>
-            파일{files ? ` (${files.length})` : ""}
+            파일{files ? ` (${uploadRows.length})` : ""}
           </button>
           <button onClick={() => load(password)}>새로고침</button>
           <button onClick={() => { sessionStorage.removeItem("ta-admin-key"); setEntered(false); setRows([]); }}>잠금</button>
@@ -697,45 +772,57 @@ export default function AdminPage() {
 
       {tab === "files" && (<>
       <p className="admin-status">
-        Cloudflare R2 파일 저장소입니다. 올린 파일은 <code>uploads/</code> 폴더에 들어가고
-        <code>files.terra-archive.net</code> 공개 URL이 생겨 팁 이미지 등 어디에나 쓸 수 있습니다.
-        같은 이름을 다시 올리면 <b>덮어씁니다</b> (URL 캐시 때문에 반영은 최대 1일).
-        사이트 에셋(story·avatars 등)은 여기 안 보입니다 — 그건 <code>scripts/r2-sync.mjs</code> 관할.
+        Cloudflare R2 파일 저장소입니다. <b>내 업로드</b>(<code>uploads/</code>)는 여기서 올리고 지우며,
+        <b>사이트 에셋</b>(<code>assets/</code> — story·avatars 등)은 <code>scripts/r2-sync.mjs</code>가
+        public/과 동기화합니다 (여기선 열람·URL 복사만). 같은 이름을 다시 올리면 <b>덮어씁니다</b>
+        (URL 캐시 때문에 반영은 최대 1일).
       </p>
       {fileStatus && <p className="admin-status">{fileStatus}</p>}
       <div className="admin-rules">
-        <label
-          className={`file-drop${dragOver ? " drag" : ""}${uploading ? " busy" : ""}`}
-          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-          onDragLeave={() => setDragOver(false)}
-          onDrop={(e) => { e.preventDefault(); setDragOver(false); if (!uploading) uploadPicked(e.dataTransfer.files); }}
-        >
-          {uploading ? "올리는 중…" : "파일을 끌어다 놓거나 눌러서 선택 (여러 개 가능 · 95MB 이하)"}
-          <input type="file" multiple disabled={uploading} onChange={(e) => { if (e.target.files) uploadPicked(e.target.files); e.target.value = ""; }} />
-        </label>
         <div className="admin-tools">
+          <button className={fileSub === "uploads" ? "selected" : ""} onClick={() => setFileSub("uploads")}>내 업로드 ({uploadRows.length})</button>
+          <button className={fileSub === "assets" ? "selected" : ""} onClick={() => setFileSub("assets")}>사이트 에셋 ({assetRows.length.toLocaleString()})</button>
+          <input className="file-search" value={fileQuery} onChange={(e) => setFileQuery(e.target.value)} placeholder="파일 이름 검색…" />
           <button onClick={() => loadFiles(password)}>새로고침</button>
         </div>
         {files === null ? (
           <p className="admin-status">
             목록을 못 불러왔습니다 — R2 활성화 · <code>workers/upload</code> 배포 · <code>ADMIN_KEY</code> 시크릿(= 이 페이지 비밀번호)을 확인하세요.
           </p>
-        ) : files.length === 0 ? (
-          <p className="admin-status">아직 올린 파일이 없습니다.</p>
-        ) : (
-          files.map((row) => (
-            <div key={row.key} className="rule-row file-row">
-              {isImageKey(row.key)
-                ? <img className="file-thumb" src={row.url} alt="" loading="lazy" />
-                : <span className="file-thumb file-thumb-blank">📄</span>}
-              <code title={row.url}>{row.key}</code>
-              <span className="rule-note">{formatSize(row.size)}</span>
-              <span className="rule-note">{new Date(row.uploaded).toLocaleDateString("ko-KR")}</span>
-              <button onClick={() => copyFileUrl(row)}>URL 복사</button>
-              <button onClick={() => window.open(row.url, "_blank")}>열기</button>
-              <button onClick={() => removeFile(row)}>삭제</button>
-            </div>
-          ))
+        ) : fileSub === "uploads" ? (<>
+          <label
+            className={`file-drop${dragOver ? " drag" : ""}${uploading ? " busy" : ""}`}
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={(e) => { e.preventDefault(); setDragOver(false); if (!uploading) uploadPicked(e.dataTransfer.files); }}
+          >
+            {uploading ? "올리는 중…" : "파일을 끌어다 놓거나 눌러서 선택 (여러 개 가능 · 95MB 이하)"}
+            <input type="file" multiple disabled={uploading} onChange={(e) => { if (e.target.files) uploadPicked(e.target.files); e.target.value = ""; }} />
+          </label>
+          {shownUploads.length === 0 ? (
+            <p className="admin-status">{fileFilter ? "검색 결과가 없습니다." : "아직 올린 파일이 없습니다."}</p>
+          ) : (
+            shownUploads.map((row) => (
+              <FileRow key={row.key} row={row} label={row.key.slice("uploads/".length)} showDate
+                onStatus={setFileStatus} onDelete={() => removeFile(row)} />
+            ))
+          )}
+        </>) : fileFilter ? (<>
+          {shownAssets.length === 0 && <p className="admin-status">검색 결과가 없습니다.</p>}
+          {shownAssets.slice(0, 300).map((row) => (
+            <FileRow key={row.key} row={row} label={row.key.slice("assets/".length)} onStatus={setFileStatus} />
+          ))}
+          {shownAssets.length > 300 && <p className="admin-status">{shownAssets.length.toLocaleString()}개 중 300개만 표시 — 검색어를 더 좁혀보세요.</p>}
+        </>) : (
+          <div className="ftree">
+            {[...assetTree.dirs.keys()].sort().map((name) => (
+              <FolderNode key={name} name={name} node={assetTree.dirs.get(name)!} depth={0} onStatus={setFileStatus} />
+            ))}
+            {assetTree.files.map((row) => (
+              <FileRow key={row.key} row={row} label={row.key.slice("assets/".length)} onStatus={setFileStatus} />
+            ))}
+            {assetRows.length === 0 && <p className="admin-status">아직 동기화된 에셋이 없습니다 — <code>node scripts/r2-sync.mjs</code></p>}
+          </div>
         )}
       </div>
       </>)}

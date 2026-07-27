@@ -5803,6 +5803,53 @@ footer p {
   justify-content: center;
   font-size: 15px;
 }
+.admin-tools .file-search {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  padding: 5px 10px;
+  font-size: 12px;
+  min-width: 200px;
+}
+/* assets/ 폴더 트리 — 열 때만 자식 렌더 */
+.ftree {
+  display: grid;
+  gap: 2px;
+}
+.ftree-toggle {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: none;
+  padding: 5px 4px;
+  font: 800 12.5px/1.4 monospace;
+  color: inherit;
+  cursor: pointer;
+}
+.ftree-toggle:hover {
+  background: var(--chip);
+}
+.ftree-toggle i {
+  font-style: normal;
+  color: var(--muted);
+  width: 12px;
+}
+.ftree-toggle small {
+  color: var(--muted);
+  font-weight: 600;
+}
+.ftree-body {
+  margin-left: 9px;
+  border-left: 1px dashed var(--line);
+  padding-left: 10px;
+}
+.ftree .rule-row,
+.ftree-body .rule-row {
+  border-top: 0;
+  padding: 3px 0;
+}
 /* 팁 편집기 이미지칸 + 올리기 버튼 */
 .file-inline {
   display: flex;

@@ -11,7 +11,8 @@
 
 export const ASSET_BASE = "https://files.terra-archive.net";
 
-/** 루트 상대 에셋 경로 → R2 URL. 이미 절대 URL이면 그대로 돌려준다. */
+/** 루트 상대 에셋 경로 → R2 URL. 이미 절대 URL이면 그대로 돌려준다.
+ *  버킷은 assets/(사이트 에셋 — r2-sync 관할)와 uploads/(수동 업로드)로 나뉜다 (2026-07-27). */
 export function asset(path: string): string {
-  return path.startsWith("/") ? ASSET_BASE + path : path;
+  return path.startsWith("/") ? `${ASSET_BASE}/assets${path}` : path;
 }

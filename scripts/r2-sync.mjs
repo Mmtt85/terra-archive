@@ -4,7 +4,9 @@
 //
 //   node scripts/r2-sync.mjs           # 바뀐 것만 업로드 (md5 ↔ R2 etag 비교)
 //   node scripts/r2-sync.mjs --dry     # 올릴 목록만 출력
+//   node scripts/r2-sync.mjs --prune   # 로컬에 없는 assets/ 원격 키 삭제 (uploads/는 절대 안 건드림)
 //
+// 버킷 구조: assets/<public 상대경로> = 이 스크립트 관할 · uploads/ = /admin 수동 업로드 관할.
 // 인증: 레포 루트 .r2-sync-key (gitignore됨) 또는 env R2_SYNC_KEY.
 //   키 재발급: openssl rand -hex 32 > .r2-sync-key
 //            && (cd workers/upload && npx wrangler secret put SYNC_KEY < ../../.r2-sync-key)
@@ -24,7 +26,9 @@ const API = "https://terra-archive-upload.nzkonaru.workers.dev";
 // 옮기는 폴더 — 여기 없는 루트 파일(파비콘·구글 인증 HTML)은 Pages에 남는다
 const DIRS = ["story", "rogue", "lens", "tesseract", "avatars", "about", "og", "items", "scan"];
 
+const PREFIX = "assets/"; // 에셋은 전부 이 폴더 밑 — uploads/(수동 업로드)와 격리
 const DRY = process.argv.includes("--dry");
+const PRUNE = process.argv.includes("--prune");
 const CONCURRENCY = 16;
 
 const KEY =
@@ -78,19 +82,28 @@ for (const dir of DIRS) {
 }
 
 const todo = [];
+const localKeys = new Set();
 let same = 0;
 for (const p of files) {
-  const key = relative(PUBLIC, p).split("\\").join("/"); // R2 키 = public/ 기준 상대경로
+  const key = PREFIX + relative(PUBLIC, p).split("\\").join("/"); // R2 키 = assets/<public 상대경로>
+  localKeys.add(key);
   const body = await readFile(p);
   const md5 = createHash("md5").update(body).digest("hex");
   if (remote.get(key) === md5) { same += 1; continue; }
   todo.push({ key, p, size: statSync(p).size });
 }
 
-console.log(`로컬 ${files.length}개 · 이미 동일 ${same}개 · 올릴 것 ${todo.length}개 (${(todo.reduce((a, f) => a + f.size, 0) / 1048576).toFixed(1)}MB)`);
+// --prune: 로컬에 없는 원격 키 삭제 대상 — assets/ 밖(uploads/ 등)은 절대 건드리지 않는다.
+// 접두사 없는 옛 키(2026-07-27 assets/ 재편 이전)도 여기서 함께 청소된다.
+const stale = PRUNE
+  ? [...remote.keys()].filter((key) => !key.startsWith("uploads/") && !localKeys.has(key))
+  : [];
+
+console.log(`로컬 ${files.length}개 · 이미 동일 ${same}개 · 올릴 것 ${todo.length}개 (${(todo.reduce((a, f) => a + f.size, 0) / 1048576).toFixed(1)}MB)${PRUNE ? ` · 지울 것 ${stale.length}개` : ""}`);
 if (DRY) {
   for (const f of todo.slice(0, 40)) console.log("  ", f.key);
   if (todo.length > 40) console.log(`   … 외 ${todo.length - 40}개`);
+  if (stale.length) console.log(`  삭제 예정: ${stale.slice(0, 10).join(", ")}${stale.length > 10 ? ` … 외 ${stale.length - 10}개` : ""}`);
   process.exit(0);
 }
 
@@ -130,6 +143,23 @@ await Promise.all(
     while (queue.length) await put(queue.shift());
   }),
 );
+
+// ── 4. --prune 삭제 ──
+let pruned = 0;
+if (stale.length) {
+  const delQueue = [...stale];
+  await Promise.all(
+    Array.from({ length: CONCURRENCY }, async () => {
+      while (delQueue.length) {
+        const key = delQueue.shift();
+        const res = await fetch(`${API}/files/${encodeURIComponent(key)}`, { method: "DELETE", headers: { "x-admin-key": KEY } }).catch(() => null);
+        if (res?.ok) { pruned += 1; if (pruned % 1000 === 0) console.log(`  삭제 ${pruned}/${stale.length}…`); }
+        else console.error(`  ✗ 삭제 실패: ${key}`);
+      }
+    }),
+  );
+  console.log(`오래된 키 ${pruned}/${stale.length}개 삭제`);
+}
 
 console.log(failed ? `완료 — 실패 ${failed}개 (다시 돌리면 실패분만 재시도됨)` : "완료 — 전부 동기화됨");
 process.exit(failed ? 1 : 0);

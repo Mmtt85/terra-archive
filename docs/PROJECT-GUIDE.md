@@ -511,10 +511,11 @@ npm run build                             # 9. 빌드 확인 → 커밋 → 푸�
   업로드·목록·삭제(`/files…`)는 `x-admin-key` 헤더가 **`ADMIN_KEY` 시크릿**(= /admin 입장
   비밀번호) 또는 **`SYNC_KEY`**(에셋 동기화 전용 무작위 키, 레포 루트 `.r2-sync-key` —
   gitignore)와 일치할 때만. 공개 서빙은 커스텀 도메인이 담당(워커 `GET /f/<key>`는 폴백).
-- **스코프 격리 (2026-07-27)**: admin 키의 수동 업로드는 전부 **`uploads/` 폴더로 강제**되고
-  목록·삭제도 그 안으로 제한된다 — 파일 탭에 에셋 7,700개가 쏟아지거나 story/·avatars/를
-  실수로 지우는 사고 방지. sync 키는 버킷 전체를 본다. 공개 URL은
-  `https://files.terra-archive.net/uploads/<이름>`.
+- **버킷 구조 (2026-07-27)**: `uploads/`(수동 업로드) · `assets/`(사이트 에셋 — r2-sync 관할)
+  두 갈래. admin 키의 **쓰기·삭제는 `uploads/` 안으로 강제**(에셋 트리 실수 삭제 방지 —
+  워커가 403), sync 키만 전체를 만진다. 목록은 둘 다 전체 — /admin 파일 탭이
+  **내 업로드 / 사이트 에셋** 두 하위 탭으로 나눠 보여준다(에셋은 폴더 트리 + 검색,
+  업로드도 검색). 수동 업로드 URL은 `https://files.terra-archive.net/uploads/<이름>`.
 - 프론트: `app/files-api.ts`. `/admin` → **파일** 탭에서 드래그/선택 업로드 → URL 복사,
   팁 편집기 이미지칸 옆 **올리기** 버튼은 올리자마자 URL을 칸에 채운다.
 - **같은 이름은 덮어쓴다** — 공개 URL 캐시 때문에 반영이 늦을 수 있다(이미지 30일·JSON 1일).
@@ -533,9 +534,10 @@ public/의 대용량 폴더 **story·rogue·lens·tesseract·avatars·about·og�
   `<img src>`·`fetch()`·tesseract 경로처럼 **요청이 나가는 경계에서만 `asset()`**
   (`app/assets.ts`)으로 감싼다. 데이터 재생성 파이프라인은 손대지 않는다.
 - **동기화**: public/에 파일은 그대로 두고(파이프라인·git 유지) `node scripts/r2-sync.mjs`가
-  md5↔etag 증분 업로드. `deploy.sh`가 배포 전에 자동 실행(키 없으면 경고 후 스킵 —
-  GH Actions는 `R2_SYNC_KEY` 시크릿 등록 시 활성화). 캐시 정책은 확장자별
-  (이미지·엔진 30일, json/bin 1일).
+  **`assets/<public 상대경로>`** 키로 md5↔etag 증분 업로드. `deploy.sh`가 배포 전에 자동
+  실행(키 없으면 경고 후 스킵 — GH Actions는 `R2_SYNC_KEY` 시크릿 등록 시 활성화).
+  `--prune`은 로컬에 없는 assets/ 원격 키를 지운다(uploads/는 절대 안 건드림).
+  캐시 정책은 확장자별(이미지·엔진 30일, json/bin 1일).
 - **안전망**: deploy.sh가 스테이징에서 위 폴더를 지우고 `_redirects`(301→R2)를 깐다.
   ⚠ `/rogue`·`/about`은 **페이지 경로와 겹치므로 통짜 와일드카드 금지** — Pages splat은
   빈 문자열에도 매치되어 페이지를 삼킨다. rogue는 하위 폴더별로만, about은 코드 전환으로만.

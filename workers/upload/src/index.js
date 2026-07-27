@@ -2,7 +2,7 @@
 // 사용자 혼자 올리고 사이트가 <img src>로 쓰는 구조 (2026-07-27 확정, S3 대체).
 //
 //   GET    /f/<key>      공개 서빙(폴백) — 평소엔 버킷 커스텀 도메인 files.terra-archive.net이 서빙
-//   GET    /files        목록 — admin은 uploads/만, sync는 전체
+//   GET    /files        목록 — 전체 (admin UI가 uploads/·assets/ 탭으로 나눔)
 //   PUT    /files/<key>  업로드 — admin은 uploads/<key>로 강제, 같은 이름은 덮어쓴다
 //   DELETE /files/<key>  삭제 — admin은 uploads/ 안에서만 (에셋 트리 보호)
 //
@@ -43,9 +43,9 @@ function keyEquals(given, secret) {
   return crypto.subtle.timingSafeEqual(a, b);
 }
 
-// 누구로 인증됐는지에 따라 볼 수 있는 범위가 다르다:
-//   admin(/admin 파일 탭) → uploads/ 폴더만 (에셋 트리를 실수로 지우는 사고 방지)
-//   sync(r2-sync.mjs)     → 버킷 전체 (story/·avatars/ 등 에셋 동기화)
+// 누구로 인증됐는지에 따라 쓰기·삭제 범위가 다르다 (목록은 둘 다 전체):
+//   admin(/admin 파일 탭) → uploads/ 안에서만 쓰고 지운다 (에셋 트리 실수 삭제 방지)
+//   sync(r2-sync.mjs)     → 버킷 전체 (assets/ 동기화·프룬)
 function authKind(request, env) {
   const given = request.headers.get("x-admin-key") ?? "";
   if (keyEquals(given, env.SYNC_KEY)) return "sync";
@@ -111,8 +111,9 @@ export default {
         const files = [];
         let cursor;
         do {
-          // admin에겐 uploads/만 — 파일 탭에 에셋 7,700개가 쏟아지지 않게
-          const page = await env.FILES.list({ limit: 500, cursor, prefix: kind === "admin" ? UPLOADS : undefined });
+          // 목록은 admin에게도 전체 공개 — /admin 파일 탭이 내 업로드/사이트 에셋 탭으로
+          // 나눠 보여준다 (2026-07-27). 쓰기·삭제 스코프는 아래에서 계속 uploads/로 제한.
+          const page = await env.FILES.list({ limit: 500, cursor });
           for (const obj of page.objects)
             // etag = 단일 PUT이면 본문 md5 (r2-sync.mjs 증분 판정에 쓴다)
             files.push({ key: obj.key, size: obj.size, uploaded: obj.uploaded, etag: obj.etag, url: fileUrl(env, url, obj.key) });

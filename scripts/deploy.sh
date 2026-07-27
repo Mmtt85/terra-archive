@@ -35,20 +35,20 @@ done
 # ⚠ /rogue·/about은 페이지 경로와 겹치므로 통짜 와일드카드 금지 — 하위 폴더만 건다.
 #   (Pages 리다이렉트는 정적 파일보다 먼저 평가되고, splat은 빈 문자열에도 매치된다)
 cat > "$STAGE/_redirects" <<'EOF'
-/story/* https://files.terra-archive.net/story/:splat 301
-/avatars/* https://files.terra-archive.net/avatars/:splat 301
-/items/* https://files.terra-archive.net/items/:splat 301
-/og/* https://files.terra-archive.net/og/:splat 301
-/lens/* https://files.terra-archive.net/lens/:splat 301
-/tesseract/* https://files.terra-archive.net/tesseract/:splat 301
-/scan/* https://files.terra-archive.net/scan/:splat 301
-/rogue/map/* https://files.terra-archive.net/rogue/map/:splat 301
-/rogue/relic/* https://files.terra-archive.net/rogue/relic/:splat 301
-/rogue/enemy/* https://files.terra-archive.net/rogue/enemy/:splat 301
-/rogue/scene/* https://files.terra-archive.net/rogue/scene/:splat 301
-/rogue/zone/* https://files.terra-archive.net/rogue/zone/:splat 301
-/rogue/capsule/* https://files.terra-archive.net/rogue/capsule/:splat 301
-/rogue/misc/* https://files.terra-archive.net/rogue/misc/:splat 301
+/story/* https://files.terra-archive.net/assets/story/:splat 301
+/avatars/* https://files.terra-archive.net/assets/avatars/:splat 301
+/items/* https://files.terra-archive.net/assets/items/:splat 301
+/og/* https://files.terra-archive.net/assets/og/:splat 301
+/lens/* https://files.terra-archive.net/assets/lens/:splat 301
+/tesseract/* https://files.terra-archive.net/assets/tesseract/:splat 301
+/scan/* https://files.terra-archive.net/assets/scan/:splat 301
+/rogue/map/* https://files.terra-archive.net/assets/rogue/map/:splat 301
+/rogue/relic/* https://files.terra-archive.net/assets/rogue/relic/:splat 301
+/rogue/enemy/* https://files.terra-archive.net/assets/rogue/enemy/:splat 301
+/rogue/scene/* https://files.terra-archive.net/assets/rogue/scene/:splat 301
+/rogue/zone/* https://files.terra-archive.net/assets/rogue/zone/:splat 301
+/rogue/capsule/* https://files.terra-archive.net/assets/rogue/capsule/:splat 301
+/rogue/misc/* https://files.terra-archive.net/assets/rogue/misc/:splat 301
 EOF
 
 # ⚠ .rsc(RSC 페이로드)는 반드시 text/x-component 로 서빙해야 한다 (2026-07-18 근본 원인 수정).
