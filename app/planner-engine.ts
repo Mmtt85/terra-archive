@@ -507,10 +507,14 @@ export function setPriorityMode(priority?: ProdPriority) {
   DRAIN_MODE = priority === "endless" ? "endless" : priority === "perpetual" ? "perpetual" : "off";
   ENDLESS_ON = DRAIN_MODE !== "off";
 }
-export const ENDLESS_DRAIN_W: number = (C as unknown as Record<string, number | undefined>).ENDLESS_DRAIN_W ?? 600; // 장기 지속: 소모 1.0/h당 점수 등가 (L2 상수로 조정 가능)
-export const PERPETUAL_DRAIN_W: number = (C as unknown as Record<string, number | undefined>).PERPETUAL_DRAIN_W ?? 20000; // 무한동력: 사전식 우위 가중
+// 두 모드의 유일한 차이는 제어센터 (사용자 확정 2026-07-27 재설계: "차이는 제어센터 무한동력만,
+// 얘네들도 피로도를 1순위로 잡아버리면 안 됨") — 일반 방은 양 모드 공통으로 소모와 효율을
+// 저울질(ENDLESS_ROOM_W)하고, 제어센터만 종전 가중(ENDLESS_DRAIN_W — 회복 오라 코어 성립) +
+// perpetual의 순소모 0 강제 락으로 갈린다. 종전 사전식(W=20000 전 방)은 샤마르 조합(+132%p)을
+// 0.25/h 아끼자고 B조로 밀었다 — "피로도 고작 조금 먹고 희생하는 효율이 너무 높다".
+export const ENDLESS_DRAIN_W: number = (C as unknown as Record<string, number | undefined>).ENDLESS_DRAIN_W ?? 600; // 제어센터: 소모 1.0/h당 점수 등가 (L2 상수로 조정 가능)
+export const ENDLESS_ROOM_W: number = (C as unknown as Record<string, number | undefined>).ENDLESS_ROOM_W ?? 300; // 일반 방: 0.25 감소 ≈ 75점 — 통상 격차(<30)는 저소모, 대형 시너지(샤마르 132)는 효율이 이긴다
 const PERPETUAL_CC_LOCK = 1e6; // 무한동력 모드: 순소모 0 제어센터 조합의 절대 우선 보너스 (오라 자리 가치 합 최대 ~10만을 압도)
-const drainW = () => (DRAIN_MODE === "perpetual" ? PERPETUAL_DRAIN_W : ENDLESS_DRAIN_W);
 const ENDLESS_CLOCK_CAP = 72; // 순소모 0(무한동력) 방의 교대 시계 상한 — growAvg 발산 방지
 // 시설 집합 용어(INFRA-RULES §5 전수조사): 기타 시설 = 작업 시설 − 제어센터·훈련실,
 // 일부 시설 = 발전소·사무실·응접실. 위셔델·총웨·무에나의 횡단 회복 오라 대상.
@@ -573,7 +577,7 @@ export function endlessBonus(team: InfraOp[], room: string, ctx: Ctx): number {
   const maxNet = roomMaxNetDrain(team, room, ctx);
   if (maxNet == null) return 0;
   const base = infra.rooms[room]?.drain ?? 1;
-  const W = drainW();
+  const W = room === "CONTROL" ? ENDLESS_DRAIN_W : ENDLESS_ROOM_W;
   let bonus = W * (base - maxNet);
   if (room === "CONTROL") {
     // 기본 효과 자리 가치 — 몸빵이라도 제어센터 한 자리가 전 작업 시설 -0.05를 낸다 (만석 유도)
@@ -1389,10 +1393,6 @@ function seedSynergySet(def: SynergySetDef, roster: InfraOp[], used: Set<string>
 
 export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSets: FactionSets = {}, priority: ProdPriority = "gold", extraSeeds: { opId: string; room: string }[] = [], concentrate = true, park = false, pinnedDorms: Record<string, string[]> = {}): Plan {
   setPriorityMode(priority); // endless면 teamValue·시계가 순소모 모델로 전환 (모듈 플래그)
-  // 무한동력 모드: 토큰 패키지 전면 미채택 (사용자 확정 2026-07-27: "효율따위 신경쓰지 않고").
-  // 제어센터만 막으면(구 place 가드) 생성자(링·시·총웨)는 못 앉는데 소비자(슈·우요우·
-  // 에벤홀츠)만 A조 예약석을 차지하는 죽은 사슬이 남는다 — 토큰 0점인데 소모는 그대로.
-  if (priority === "perpetual") packageTokens = [];
   const prodKeys = PRIORITY_KEYS[priority];
   const assignments: Record<string, string[][]> = {};
   // 시설 카운트 스킬(타락사쿰·만트라)용 배치 지도 — 숙소·가공소까지 **모든 칸**을 센다.
@@ -1464,6 +1464,9 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
       const parked = new Set<string>();
       const placedAt = new Map<string, string>();
       const place = (op: InfraOp, key: string) => {
+        // 무한동력 모드: 제어센터는 순소모 0 조합 전용 — 토큰 패키지가 선점하지 않는다
+        // (화식 코어 링·시·총웨가 시드로 앉으면 레인보우/이격 조합이 영영 못 서는 원인)
+        if (DRAIN_MODE === "perpetual" && key === "CONTROL") return false;
         seeds[key] = seeds[key] ?? [];
         const slots = slotsFor(key);
         if (seeds[key].length >= slots || parked.has(op.id)) return false;
@@ -1484,7 +1487,10 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
         flows.push(flow);
         const generatesFor = (op: InfraOp) => op.skills.some((skill) => skill.tokenGen.some((g) => g.token === token || sources.has(g.token)));
         const members = roster.filter((op) => !used.has(op.id) && (generatesFor(op) || op.skills.some((skill) => skill.tokenUse.some((u) => u.token === token))));
-        const estTotal = roster.reduce((sum, member) => sum + member.skills.reduce((inner, skill) => inner + skill.tokenGen.reduce((acc, g) => acc + (g.token === token ? genEstimate(g) : sources.has(g.token) ? genEstimate(g) * (sources.get(g.token) ?? 0) : 0), 0), 0), 0);
+        // 무한동력: 제어센터 생성분(화식 코어 링·시·총웨)은 place 가드로 앉을 수 없으니 기대치에서
+        // 제외한다 — 종전엔 전량 계상돼 소비자(슈)만 예약석을 먹는 죽은 사슬이 생겼다 (2026-07-27).
+        // 비제어센터 잔량(우요우 화식 등 미니 생태)은 정직하게 남아 그만큼만 시드·계상된다.
+        const estTotal = roster.reduce((sum, member) => sum + member.skills.reduce((inner, skill) => inner + (DRAIN_MODE === "perpetual" && skill.room === "CONTROL" ? 0 : skill.tokenGen.reduce((acc, g) => acc + (g.token === token ? genEstimate(g) : sources.has(g.token) ? genEstimate(g) * (sources.get(g.token) ?? 0) : 0), 0)), 0), 0);
         for (const op of members) {
           for (const skill of op.skills) {
             const use = skill.tokenUse.find((u) => u.token === token && u.percent);
@@ -2276,6 +2282,11 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
 // 약한 쉐라그 세트를 A조에 앉히고 강한 샤마르 조합을 B조로 밀어도 총점이 같아 세트가 잘못
 // 채택된다(사용자 지적 2026-07). A조를 더 높게 쳐서 강조합이 A조에 남게 한다.
 export const SHIFT_WEIGHT: number[] = C.SHIFT_WEIGHT;
+// 소모 모드의 B조 가중 (사용자 확정 2026-07-27: "샤마르 조합이 피로도 이득 없어도 무조건 A조 —
+// 희생하는 효율이 너무 높다"): A조가 주력(~32h 근무), B조는 A조 휴식(~12h)만 메우는 커버라
+// 듀티 비율(≈12/32)로 가중한다. 생산 모드 0.6이면 210짜리 팀을 B에 보관하는 게 이득으로
+// 계산돼(126 > 대체 54) 고효율 결집이 A조에 못 올라오던 원인. gold/exp/balance는 종전 0.6 유지.
+export const ENDLESS_B_WEIGHT: number = (C as unknown as Record<string, number | undefined>).ENDLESS_B_WEIGHT ?? 0.35;
 
 // 계획 전체 총점 (양 조 전 방, 앰비언트 오라 포함) — 세트 포함/미포함 두 안 비교용
 export function planScore(plan: Plan, byId: Map<string, InfraOp>): number {
@@ -2284,7 +2295,7 @@ export function planScore(plan: Plan, byId: Map<string, InfraOp>): number {
   if (plan.priority) setPriorityMode(plan.priority);
   let total = 0;
   for (let shift = 0; shift < SHIFT_COUNT; shift += 1) {
-    const shiftWeight = SHIFT_WEIGHT[shift] ?? 1;
+    const shiftWeight = ENDLESS_ON && shift === 1 ? ENDLESS_B_WEIGHT : SHIFT_WEIGHT[shift] ?? 1;
     const teamAt = (key: string): InfraOp[] => {
       const shifts = plan.assignments[key] ?? [];
       return (shifts[Math.min(shift, shifts.length - 1)] ?? []).map((id) => byId.get(id)).filter(Boolean) as InfraOp[];
@@ -2330,9 +2341,7 @@ export async function optimizeConfig(roster: InfraOp[], priority: ProdPriority =
   // assembled into A조 — B조 is the recovery crew that steps in when A조's
   // morale runs out
   const allTokens = new Set<string>();
-  // 무한동력: 패키지 미채택(buildPlan에서도 차단)이라 수집·멱집합 비교 자체를 생략
-  if (priority !== "perpetual")
-    for (const op of roster) for (const skill of op.skills) for (const use of skill.tokenUse) if (use.percent) allTokens.add(use.token);
+  for (const op of roster) for (const skill of op.skills) for (const use of skill.tokenUse) if (use.percent) allTokens.add(use.token);
   // closed single-team systems (정보 저장 = 레인보우 팀 전용) stay out of the
   // base-wide packages — they'd hijack control/meeting slots from the mains
   const open = Array.from(allTokens).filter((token) => {
@@ -2374,9 +2383,9 @@ export async function optimizeConfig(roster: InfraOp[], priority: ProdPriority =
   // 손해보다 작을 수 있다 (실측 −7.5). 토큰을 통째로 빼면 자가 생성자(로즈몬티스) 가치까지
   // 죽으므로, **전환자 한 명만 로스터에서 뺀** 재편성을 총점 비교로 판정한다. 채택되면 그
   // 오퍼는 이 플랜에서 휴식 — 이후 세트·마무리 재편성도 같은 제외 로스터로 돈다.
-  // perpetual은 패키지 자체가 없고 gold/exp/balance는 이 블록을 안 타 기존 편성 불변.
+  // 소모 모드 공통(장기 지속·무한동력) — gold/exp/balance는 이 블록을 안 타 기존 편성 불변.
   let effRoster = roster;
-  if (priority === "endless" && tokenChoice.length) {
+  if (ENDLESS_ON && tokenChoice.length) {
     let curScore = planScore(base, byId);
     const converterIds = [...new Set(base.flows.flatMap((flow) => flow.converters.map((c) => c.opId)))].slice(0, 3);
     for (const cid of converterIds) {
