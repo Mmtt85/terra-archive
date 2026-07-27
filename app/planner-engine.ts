@@ -499,6 +499,12 @@ const RECOVER_SCOPE_ROOMS: Record<string, string[]> = {
   other: ["MANUFACTURE", "TRADING", "POWER", "HIRE", "MEETING"],
   some: ["POWER", "HIRE", "MEETING"],
 };
+// 제어센터 기본 효과 (사용자 제공 게임 팩트 2026-07-27): 배치 인원 1명당, 가공소·숙소를 제외한
+// 모든 작업 시설(**제어센터 자신 포함**)의 시간당 컨디션 소모 -0.05 — 만석(5인) 기준 총 -0.25.
+// 사용자 예시로 역산 확정: 레인보우 4인만 배치 시 기본 효과 -0.2(=4×0.05), 5인 시 -0.25 추가.
+// endless 순소모 모델에만 반영 — 생산 3모드의 교대 시계는 종전 관례(방 기본 1/h)를 유지한다.
+const CC_BASE_RELIEF = 0.05;
+const CC_RELIEF_ROOMS = ["MANUFACTURE", "TRADING", "POWER", "HIRE", "MEETING", "TRAINING"];
 // 횡단 회복 오라 실효값 — perToken(총웨 '외로운 빛과 함께': 화식 20점당 +0.05)은 현 원장 기준
 function recoverAuraValue(skill: InfraSkill, tokenPoints: Record<string, number>): number {
   const aura = skill.recoverAura!;
@@ -527,6 +533,8 @@ export function roomMaxNetDrain(team: InfraOp[], room: string, ctx: Ctx): number
   for (const aura of ctx.ambient ?? []) {
     if (aura.kind === "drain_recover" && aura.rooms?.includes(room)) recover += aura.value;
   }
+  // 제어센터 자신이 받는 기본 효과는 자기 인원수로 직접 계산 (타방은 aurasOf 앰비언트 경유)
+  if (room === "CONTROL") recover += CC_BASE_RELIEF * team.length;
   let maxNet = 0;
   for (const member of team) {
     let self = 0;
@@ -546,11 +554,16 @@ export function endlessBonus(team: InfraOp[], room: string, ctx: Ctx): number {
   if (maxNet == null) return 0;
   const base = infra.rooms[room]?.drain ?? 1;
   let bonus = ENDLESS_DRAIN_W * (base - maxNet);
-  if (room === "CONTROL") for (const member of team) for (const sk of activeSkills(member, room, ctx.product)) {
-    if (!sk.recoverAura) continue;
-    const targets = RECOVER_SCOPE_ROOMS[sk.recoverAura.scope] ?? [];
-    const roomCount = targets.reduce((sum, r) => sum + (FACILITY_COUNTS[r] ?? 1), 0);
-    bonus += recoverAuraValue(sk, ctx.tokenPoints) * ENDLESS_DRAIN_W * roomCount;
+  if (room === "CONTROL") {
+    // 기본 효과 자리 가치 — 몸빵이라도 제어센터 한 자리가 전 작업 시설 -0.05를 낸다 (만석 유도)
+    const reliefRooms = CC_RELIEF_ROOMS.reduce((sum, r) => sum + (FACILITY_COUNTS[r] ?? 1), 0);
+    bonus += team.length * CC_BASE_RELIEF * ENDLESS_DRAIN_W * reliefRooms;
+    for (const member of team) for (const sk of activeSkills(member, room, ctx.product)) {
+      if (!sk.recoverAura) continue;
+      const targets = RECOVER_SCOPE_ROOMS[sk.recoverAura.scope] ?? [];
+      const roomCount = targets.reduce((sum, r) => sum + (FACILITY_COUNTS[r] ?? 1), 0);
+      bonus += recoverAuraValue(sk, ctx.tokenPoints) * ENDLESS_DRAIN_W * roomCount;
+    }
   }
   return bonus;
 }
@@ -559,11 +572,13 @@ export function shiftHoursFor(teams: { room: string; ops: InfraOp[] }[]): number
   // endless 모드: 순소모 모델(감소·회복 포함)로 시계를 계산한다 — 무한동력 방은 상한 72h.
   // 횡단 회복 오라는 근사상 제외(보수적 — 시계가 실제보다 짧게 잡혀도 성장형 평균만 소폭 영향).
   if (ENDLESS_ON) {
+    // 제어센터 기본 효과(인원×-0.05)는 전 작업 시설에 미친다 — 제어센터 자신은 roomMaxNetDrain이 반영
+    const ccRelief = CC_BASE_RELIEF * (teams.find((entry) => entry.room === "CONTROL")?.ops.length ?? 0);
     let maxDrain = 24 / ENDLESS_CLOCK_CAP;
     for (const { room, ops: team } of teams) {
       if (!CLOCK_ROOMS.has(room)) continue;
       const net = roomMaxNetDrain(team, room, { tokenPoints: {} });
-      if (net != null) maxDrain = Math.max(maxDrain, net);
+      if (net != null) maxDrain = Math.max(maxDrain, Math.max(0, net - (room === "CONTROL" ? 0 : ccRelief)));
     }
     return 24 / maxDrain;
   }
@@ -657,6 +672,9 @@ export const ROOM_BASE_RATE: Record<string, number> = C.ROOM_BASE_RATE;
 // 제어센터 팀의 활성 오라 목록 — 대상 방 점수에 앰비언트로 더해 준다
 export function aurasOf(controlTeam: InfraOp[], ctx: Ctx): AmbientAura[] {
   const list: AmbientAura[] = [];
+  // 제어센터 기본 효과 — 배치 인원 1명당 전 작업 시설 소모 -0.05 (endless 순소모 모델 전용 소비.
+  // 제어센터 자신은 roomMaxNetDrain이 자기 인원수로 직접 계산하므로 대상에서 제외)
+  if (controlTeam.length) list.push({ kind: "drain_recover", value: CC_BASE_RELIEF * controlTeam.length, rooms: CC_RELIEF_ROOMS });
   for (const op of controlTeam) {
     const b = breakdown(op, "CONTROL", controlTeam, ctx);
     for (const skill of b.skills) {

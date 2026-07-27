@@ -36,6 +36,45 @@
         "char_4000_jnight",
         "char_237_gravel",
         "char_4098_vvana"
+      ],
+      "얼터네이트": [
+        "char_1011_lava2",
+        "char_1012_skadi2",
+        "char_1013_chen2",
+        "char_1014_nearl2",
+        "char_1016_agoat2",
+        "char_1019_siege2",
+        "char_1020_reed2",
+        "char_1021_kroos2",
+        "char_1022_flwr2",
+        "char_1023_ghost2",
+        "char_1024_hbisc2",
+        "char_1026_gvial2",
+        "char_1027_greyy2",
+        "char_1028_texas2",
+        "char_1029_yato2",
+        "char_1030_noirc2",
+        "char_1031_slent2",
+        "char_1032_excu2",
+        "char_1033_swire2",
+        "char_1034_jesca2",
+        "char_1035_wisdel",
+        "char_1036_fang2",
+        "char_1038_whitw2",
+        "char_1039_thorn2",
+        "char_1040_blaze2",
+        "char_1041_angel2",
+        "char_1042_phatm2",
+        "char_1043_leizi2",
+        "char_1044_hsgma2",
+        "char_1045_svash2",
+        "char_1046_sbell2",
+        "char_1047_halo2",
+        "char_1048_orchd2",
+        "char_1049_catap2",
+        "char_1050_chen3",
+        "char_1051_headb2",
+        "char_1052_kalts2"
       ]
     },
     "PAYOUT_QUALITY_CAP": 2,
@@ -286,16 +325,29 @@
     },
     {
       "allOf": [
-        "char_456_ash",
+        "char_1011_lava2",
+        "char_1021_kroos2",
+        "char_1024_hbisc2"
+      ],
+      "name": "무한동력 — 3성 이격 제어센터 (무6성)",
+      "note": "INFRA-RULES §1 무한동력 모드 (2026-07-27)",
+      "priority": "endless",
+      "roomKey": "CONTROL",
+      "roster": "no6",
+      "shift": 0,
+      "type": "planContains"
+    },
+    {
+      "allOf": [
         "char_457_blitz",
         "char_458_rfrost",
         "char_459_tachak"
       ],
-      "name": "무한동력 — B조 레인보우 팀 제어센터",
+      "name": "무한동력 — 레인보우 팀 제어센터 (무6성 B조)",
       "note": "INFRA-RULES §1 무한동력 모드 (2026-07-27)",
       "priority": "endless",
       "roomKey": "CONTROL",
-      "roster": "full",
+      "roster": "no6",
       "shift": 1,
       "type": "planContains"
     }
@@ -394,5 +446,5 @@
     "주술 결정",
     "마물 요리"
   ],
-  "version": 9
+  "version": 11
 }
