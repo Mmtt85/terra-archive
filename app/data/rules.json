@@ -80,6 +80,7 @@
     "PAYOUT_QUALITY_CAP": 2,
     "PAYOUT_QUALITY_STEP": 0.5,
     "PAYOUT_VIOLATION_CAP": 3,
+    "PAYOUT_VIOLATION_STEP": 1,
     "PLANTS_BASE": 3,
     "PLANTS_BOOSTED": 4,
     "ROOM_BASE_RATE": {
@@ -380,6 +381,22 @@
       "roster": "full",
       "shift": 1,
       "type": "planContains"
+    },
+    {
+      "better": [
+        "char_254_vodfox",
+        "char_486_takila",
+        "char_252_bibeak"
+      ],
+      "name": "품질 방: 품질 결집(바이비크) > 위약 혼합(프로바이조)",
+      "note": "INFRA-RULES §4 — PAYOUT_VIOLATION_STEP=1 (2026-07-27)",
+      "room": "TRADING",
+      "type": "teamCompare",
+      "worse": [
+        "char_254_vodfox",
+        "char_486_takila",
+        "char_4032_provs"
+      ]
     }
   ],
   "parser": {
@@ -476,5 +493,5 @@
     "주술 결정",
     "마물 요리"
   ],
-  "version": 13
+  "version": 14
 }

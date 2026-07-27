@@ -964,7 +964,10 @@ export function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx):
     if (skill.kind === "payout_v") { out.payoutViolation += skill.value; continue; }
     if (skill.kind === "percoworker") { out.perCoworker += skill.value; continue; }
     if (skill.kind === "solo") { if (teamSize === 1) out.efficiency += skill.value; continue; }
-    if (skill.kind === "shared") { out.efficiency += skill.value; continue; } // 단서 공유 상태 기준
+    // 단서 공유 상태 기준 — 소모 모드에선 미계상 (사용자 확정 2026-07-27: "케이퍼는 엔간하면
+    // 빼는 게 좋음, 단서를 못 받으면 10%로 떨어져 넣었다 뺐다 해야 함" — 장기 지속·무한동력은
+    // 방치 운용이 계약이라 공유 상태 유지를 전제할 수 없다. 생산 3모드는 종전대로 낙관 계상.)
+    if (skill.kind === "shared") { if (!ENDLESS_ON) out.efficiency += skill.value; continue; }
     if (skill.kind in AURA_WEIGHT) { out.auras[skill.kind] = Math.max(out.auras[skill.kind] ?? 0, skill.value); continue; }
     if (room === "DORMITORY") continue;
     // 기본치(flat base)를 항상 더한다. 과거엔 percentUses가 있으면 통째로 건너뛰어,
@@ -1014,9 +1017,14 @@ export function teamScore(team: InfraOp[], room: string, ctx: Ctx): number {
   const quality = parts.reduce((sum, p) => sum + p.quality, 0);
   // quality payouts (테킬라) profit from quality orders; violation payouts
   // (프로바이조) need low-count orders — quality crew works against them, but
-  // a high-throughput post (우요우·에벤홀츠) multiplies her per-order bonus
+  // a high-throughput post (우요우·에벤홀츠) multiplies her per-order bonus.
+  // 위약 감쇄는 별도 상수(사용자 확정 2026-07-27: "샤마르는 고품질 확률 상승, 프로바이조는
+  // 위약 오더여야 — 상충이라 효율이 안 좋음"): VIOLATION_STEP=1이면 품질 요원 1명으로 위약
+  // 배상이 0이 되어 같은 방에 안 앉는다. 테킬라 쪽 QUALITY_STEP을 같이 올리면 부스트가 1명
+  // 만에 캡에 닿아 품질 결집 유인이 죽으므로(바이비크가 제이에 밀림) 반드시 분리 유지.
+  const violationStep = (C as unknown as Record<string, number | undefined>).PAYOUT_VIOLATION_STEP ?? C.PAYOUT_QUALITY_STEP;
   const payout = parts.reduce((sum, p) => sum + p.payout, 0) * Math.min(1 + C.PAYOUT_QUALITY_STEP * probCount, C.PAYOUT_QUALITY_CAP)
-    + parts.reduce((sum, p) => sum + p.payoutViolation, 0) * Math.max(1 - C.PAYOUT_QUALITY_STEP * probCount, 0) * Math.min(1 + efficiency / 100, C.PAYOUT_VIOLATION_CAP);
+    + parts.reduce((sum, p) => sum + p.payoutViolation, 0) * Math.max(1 - violationStep * probCount, 0) * Math.min(1 + efficiency / 100, C.PAYOUT_VIOLATION_CAP);
   let auras = 0;
   for (const kind of Object.keys(AURA_WEIGHT)) {
     const bestOfKind = Math.max(...parts.map((p) => p.auras[kind] ?? 0), 0);
