@@ -315,7 +315,7 @@
         "char_2024_chyue",
         "char_4064_mlynar"
       ],
-      "name": "무한동력 — A조 제어센터 회복 오라 코어",
+      "name": "장기 지속 — A조 제어센터 회복 오라 코어",
       "note": "INFRA-RULES §1 무한동력 모드 (2026-07-27)",
       "priority": "endless",
       "roomKey": "CONTROL",
@@ -329,7 +329,7 @@
         "char_1021_kroos2",
         "char_1024_hbisc2"
       ],
-      "name": "무한동력 — 3성 이격 제어센터 (무6성)",
+      "name": "장기 지속 — 3성 이격 제어센터 (무6성)",
       "note": "INFRA-RULES §1 무한동력 모드 (2026-07-27)",
       "priority": "endless",
       "roomKey": "CONTROL",
@@ -343,11 +343,41 @@
         "char_1021_kroos2",
         "char_1024_hbisc2"
       ],
-      "name": "무한동력 — 제어센터 양조 고정 (무6성)",
+      "name": "장기 지속 — 제어센터 양조 고정 (무6성)",
       "note": "INFRA-RULES §1 무한동력 모드 — 양조 고정 (2026-07-27)",
       "priority": "endless",
       "roomKey": "CONTROL",
       "roster": "no6",
+      "shift": 1,
+      "type": "planContains"
+    },
+    {
+      "allOf": [
+        "char_456_ash",
+        "char_457_blitz",
+        "char_458_rfrost",
+        "char_459_tachak"
+      ],
+      "name": "무한동력 — A조 제어센터 레인보우 (풀 로스터)",
+      "note": "INFRA-RULES §1 무한동력 모드 (2026-07-27)",
+      "priority": "perpetual",
+      "roomKey": "CONTROL",
+      "roster": "full",
+      "shift": 0,
+      "type": "planContains"
+    },
+    {
+      "allOf": [
+        "char_456_ash",
+        "char_457_blitz",
+        "char_458_rfrost",
+        "char_459_tachak"
+      ],
+      "name": "무한동력 — 제어센터 양조 고정 (풀 로스터)",
+      "note": "INFRA-RULES §1 무한동력 모드 — 양조 고정 (2026-07-27)",
+      "priority": "perpetual",
+      "roomKey": "CONTROL",
+      "roster": "full",
       "shift": 1,
       "type": "planContains"
     }
@@ -446,5 +476,5 @@
     "주술 결정",
     "마물 요리"
   ],
-  "version": 12
+  "version": 13
 }

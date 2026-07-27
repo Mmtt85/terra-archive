@@ -72,7 +72,7 @@ async function takeSnapshot() {
   const out = {};
   for (const name of Object.keys(rosters)) {
     out[name] = {};
-    for (const priority of ["gold", "exp", "balance", "endless"]) {
+    for (const priority of ["gold", "exp", "balance", "endless", "perpetual"]) {
       const p = await planFor(name, priority);
       out[name][priority] = {
         assignments: p.assignments, plants: p.plants,

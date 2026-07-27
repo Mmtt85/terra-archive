@@ -475,9 +475,14 @@ const D: Record<string, Pair> = {
   "작전기록 우선": ["Records first", "作戦記録優先"],
   "밸런스": ["Balanced", "バランス"],
   "무한동력": ["Perpetual", "永久機関"],
-  "컨디션 소모 감소·근무 중 회복까지 계산해 교대 없이 오래가는 조합을 우선합니다 — 레인보우 팀 제어센터(소모 0) 같은 무한동력 편성": [
-    "Accounts for morale drain reduction and on-duty recovery, favoring squads that run as long as possible without swaps — e.g. a Team Rainbow control center with zero net drain",
-    "コンディション消費の減少・勤務中の回復まで計算し、交代なしで長持ちする編成を優先します — 実質消費0のレインボー部隊制御中枢など",
+  "장기 지속": ["Endurance", "長期持続"],
+  "A조를 컨디션 소모·회복까지 계산해 최대한 오래가게 짭니다(기지 전체 교대 최소·효율 겸비) — B조는 A조가 쉬는 동안의 생산 교대": [
+    "Builds Shift A to last as long as possible, accounting for morale drain and recovery (fewest swaps base-wide, efficiency as tiebreak) — Shift B is a production crew covering A's rest",
+    "A班をコンディション消費・回復まで計算してできるだけ長持ちさせます（基地全体の交代最少・効率も両立） — B班はA班が休む間の生産クルーです",
+  ],
+  "효율을 따지지 않습니다 — 제어센터는 무조건 무한동력(순소모 0·양조 고정) 조합으로 만들고, 나머지 방도 최대한 오래가게 짭니다": [
+    "Ignores efficiency — the Control Center is always built as a perpetual (zero net drain, pinned to both shifts) squad, and every other room minimizes drain first",
+    "効率は問いません — 制御中枢は必ず永久機関（実質消費0・両班固定）の編成にし、他の部屋も消費最少を最優先します",
   ],
   "먼저 채우는 방이 최고 요원을 가져갑니다 — 다음 자동편성부터 적용됩니다": [
     "Rooms filled first get the best operators — applies from the next auto-assign",
@@ -487,9 +492,9 @@ const D: Record<string, Pair> = {
     "Production priority saved — applies from the next auto-assign",
     "優先生産設定を保存しました — 次回の自動編成から適用されます",
   ],
-  "우선 생산 설정: 순금 우선(기본) · 작전기록 우선 · 밸런스(교차) · 무한동력. 먼저 채우는 방이 최고 요원을 가져가고, 순금(또는 작전기록) 우선이면 어느 제조소에서나 생산력이 같은 요원을 그 제조소로 몰아줍니다 — 총 생산력이 같을 때만. 무한동력은 A조를 컨디션 소모 감소·근무 중 회복까지 계산해 최대한 오래가게 짜고(같은 소모면 효율 우선), B조는 A조가 쉬는 동안을 메우는 생산 편성입니다. 제어센터 순소모가 0이 되면(레인보우 팀·3성 이격 조합) 그 크루는 컨디션이 닳지 않아 A·B 양조에 고정됩니다. 설정만 바꾸고, 실제 편성은 전체 자동편성 버튼을 눌러 적용합니다.": [
-    "Production priority setting: Gold first (default) · Records first · Balanced (interleaved) · Perpetual. Rooms filled first get the best operators, and under Gold (or Records) first, operators whose output is the same in any factory are concentrated into that product's factories — but only when total output stays the same. Perpetual builds Shift A to last as long as possible by accounting for morale drain reduction and on-duty recovery (efficiency breaks ties), while Shift B is a production crew covering A's rest window. If the Control Center reaches zero net drain (Team Rainbow or the 3★ alter trio), that crew never tires and is pinned to both shifts. This is only a setting — press Auto-assign All to apply.",
-    "優先生産設定：純金優先（デフォルト）・作戦記録優先・バランス（交互）・永久機関。先に埋める部屋が最高の要員を確保し、純金（または作戦記録）優先では、どの製造所でも生産力が同じ要員をその製造所へ集めます — 総生産力が変わらない場合のみ。永久機関はA班をコンディション消費の減少・勤務中の回復まで計算してできるだけ長持ちさせ（同じ消費なら効率優先）、B班はA班が休む間を埋める生産編成にします。制御中枢の実質消費が0になると（レインボー部隊・星3昇変トリオ）、そのクルーは疲れないためA・B両班に固定されます。設定のみ変更され、実際の編成は全自動編成ボタンで適用します。",
+  "우선 생산 설정: 순금 우선(기본) · 작전기록 우선 · 밸런스(교차) · 장기 지속 · 무한동력. 먼저 채우는 방이 최고 요원을 가져가고, 순금(또는 작전기록) 우선이면 어느 제조소에서나 생산력이 같은 요원을 그 제조소로 몰아줍니다 — 총 생산력이 같을 때만. 장기 지속은 A조를 컨디션 소모 감소·근무 중 회복까지 계산해 기지 전체 교대가 가장 적어지게 짜고(같은 소모면 효율 우선), 무한동력은 효율을 따지지 않고 제어센터를 무조건 무한동력(순소모 0) 조합 — 레인보우 팀·3성 이격 — 으로 만들며 나머지 방도 소모 최소를 최우선합니다. 두 모드 모두 B조는 A조가 쉬는 동안을 메우는 생산 편성이고, 순소모 0이 된 방의 크루는 컨디션이 닳지 않아 A·B 양조에 고정됩니다. 설정만 바꾸고, 실제 편성은 전체 자동편성 버튼을 눌러 적용합니다.": [
+    "Production priority setting: Gold first (default) · Records first · Balanced (interleaved) · Endurance · Perpetual. Rooms filled first get the best operators, and under Gold (or Records) first, operators whose output is the same in any factory are concentrated into that product's factories — but only when total output stays the same. Endurance builds Shift A for the fewest swaps base-wide, accounting for drain reduction and on-duty recovery (efficiency breaks ties). Perpetual ignores efficiency: the Control Center is always built as a zero-net-drain squad — Team Rainbow or the 3★ alter trio — and every other room minimizes drain first. In both modes Shift B is a production crew covering A's rest window, and any zero-drain crew never tires and is pinned to both shifts. This is only a setting — press Auto-assign All to apply.",
+    "優先生産設定：純金優先（デフォルト）・作戦記録優先・バランス（交互）・長期持続・永久機関。先に埋める部屋が最高の要員を確保し、純金（または作戦記録）優先では、どの製造所でも生産力が同じ要員をその製造所へ集めます — 総生産力が変わらない場合のみ。長期持続はA班をコンディション消費の減少・勤務中の回復まで計算して基地全体の交代が最少になるよう編成し（同じ消費なら効率優先）、永久機関は効率を問わず制御中枢を必ず実質消費0の編成 — レインボー部隊・星3昇変トリオ — にし、他の部屋も消費最少を最優先します。どちらのモードもB班はA班が休む間を埋める生産編成で、実質消費0のクルーは疲れないためA・B両班に固定されます。設定のみ変更され、実際の編成は全自動編成ボタンで適用します。",
   ],
   "A조를 먼저 반복 전수검사로 풀파워로 완성한 뒤(안정될 때까지), 남은 오퍼레이터만으로 B조를 같은 방식으로 검수해 편성합니다. 시너지 세트 후보안도 가능한 조합을 전부 만들어 총점으로 비교하므로 계산에 몇 초가 걸릴 수 있습니다.": [
     "Shift A is audited repeatedly until it stabilizes at full power, then Shift B is audited the same way using only the remaining operators. Every combination of synergy-set candidate plans is also built and compared by total score, so the computation may take a few seconds.",

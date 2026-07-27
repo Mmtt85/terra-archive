@@ -245,8 +245,9 @@ const LAYOUT_DEFS: Record<Exclude<LayoutPreset, "custom">, {
       gold: ["MANUFACTURE-0", "MANUFACTURE-1", "MANUFACTURE-2", "MANUFACTURE-3", "TRADING-0", "TRADING-1", "POWER-0", "POWER-1", "POWER-2"],
       exp: ["MANUFACTURE-2", "MANUFACTURE-3", "MANUFACTURE-0", "MANUFACTURE-1", "TRADING-0", "TRADING-1", "POWER-0", "POWER-1", "POWER-2"],
       balance: ["MANUFACTURE-0", "MANUFACTURE-2", "MANUFACTURE-1", "MANUFACTURE-3", "TRADING-0", "TRADING-1", "POWER-0", "POWER-1", "POWER-2"],
-      // 무한동력: 품목 무관(순서는 밸런스와 동일) — 채택은 teamValue의 순소모 보너스가 결정
+      // 장기 지속·무한동력: 품목 무관(순서는 밸런스와 동일) — 채택은 teamValue의 순소모 보너스가 결정
       endless: ["MANUFACTURE-0", "MANUFACTURE-2", "MANUFACTURE-1", "MANUFACTURE-3", "TRADING-0", "TRADING-1", "POWER-0", "POWER-1", "POWER-2"],
+      perpetual: ["MANUFACTURE-0", "MANUFACTURE-2", "MANUFACTURE-1", "MANUFACTURE-3", "TRADING-0", "TRADING-1", "POWER-0", "POWER-1", "POWER-2"],
     },
     goldLines: 2,
     counts: { TRADING: 2, MANUFACTURE: 4, POWER: 3 },
@@ -268,6 +269,7 @@ const LAYOUT_DEFS: Record<Exclude<LayoutPreset, "custom">, {
       // 밸런스(교차)는 순금방이 1개라 gold 우선과 동일한 순서가 된다
       balance: ["MANUFACTURE-0", "MANUFACTURE-1", "MANUFACTURE-2", "MANUFACTURE-3", "MANUFACTURE-4", "TRADING-0", "POWER-0", "POWER-1", "POWER-2"],
       endless: ["MANUFACTURE-0", "MANUFACTURE-1", "MANUFACTURE-2", "MANUFACTURE-3", "MANUFACTURE-4", "TRADING-0", "POWER-0", "POWER-1", "POWER-2"],
+      perpetual: ["MANUFACTURE-0", "MANUFACTURE-1", "MANUFACTURE-2", "MANUFACTURE-3", "MANUFACTURE-4", "TRADING-0", "POWER-0", "POWER-1", "POWER-2"],
     },
     goldLines: 1,
     counts: { TRADING: 1, MANUFACTURE: 5, POWER: 3 },
@@ -289,6 +291,7 @@ const LAYOUT_DEFS: Record<Exclude<LayoutPreset, "custom">, {
       exp: ["MANUFACTURE-2", "MANUFACTURE-3", "MANUFACTURE-4", "MANUFACTURE-0", "MANUFACTURE-1", "TRADING-0", "TRADING-1", "POWER-0", "POWER-1"],
       balance: ["MANUFACTURE-0", "MANUFACTURE-2", "MANUFACTURE-1", "MANUFACTURE-3", "MANUFACTURE-4", "TRADING-0", "TRADING-1", "POWER-0", "POWER-1"],
       endless: ["MANUFACTURE-0", "MANUFACTURE-2", "MANUFACTURE-1", "MANUFACTURE-3", "MANUFACTURE-4", "TRADING-0", "TRADING-1", "POWER-0", "POWER-1"],
+      perpetual: ["MANUFACTURE-0", "MANUFACTURE-2", "MANUFACTURE-1", "MANUFACTURE-3", "MANUFACTURE-4", "TRADING-0", "TRADING-1", "POWER-0", "POWER-1"],
     },
     goldLines: 2,
     counts: { TRADING: 2, MANUFACTURE: 5, POWER: 2 },
@@ -356,6 +359,7 @@ function buildCustomDef(rooms: CustomRoom[], products: (CustomProduct | null)[] 
       exp: [...expKeys, ...goldKeys, ...tradeKeys, ...powerKeys],
       balance: [...balance, ...tradeKeys, ...powerKeys],
       endless: [...balance, ...tradeKeys, ...powerKeys],
+      perpetual: [...balance, ...tradeKeys, ...powerKeys],
     } as Record<ProdPriority, string[]>,
     goldLines: goldKeys.length, // 실제 순금 방 수 (명시 선택 반영 — 투예·파죰카 라인 상수)
     counts,
@@ -492,9 +496,21 @@ const CLOCK_ROOMS = new Set(["MANUFACTURE", "TRADING", "POWER", "CONTROL"]);
 // 고소모팀(인포서 +2 등) 음수. 절대 페널티가 아니라 기본 소모 대비 상대치라 슬롯 백필
 // 절대룰(방은 꽉 채운다)과 충돌하지 않는다. 비교 전용 함수(teamValue·planScore·감사·백필)
 // 에만 더하고 표시용 teamScore(방 % 배지)는 순수 생산 점수로 유지한다.
-export let ENDLESS_ON = false;
-export function setPriorityMode(priority?: ProdPriority) { ENDLESS_ON = priority === "endless"; }
-export const ENDLESS_DRAIN_W: number = (C as unknown as Record<string, number | undefined>).ENDLESS_DRAIN_W ?? 600; // 소모 1.0/h당 점수 등가 (0.25 감소 ≈ 150점 — 편함이 생산에 우선하는 가중, L2 상수로 조정 가능)
+// 소모 모드 2종 (사용자 확정 2026-07-27): endless(장기 지속) = 총 교대 최소 — 소모 가중과
+// 생산이 균형(W=600, 0.25 감소 ≈ 150점). perpetual(무한동력) = "효율따위 신경쓰지 않고" —
+// 소모가 사전식으로 우선(W=20000, 0.05 감소 ≈ 1000점 > 어떤 생산 차이)하고, 제어센터는
+// 순소모 0 조합이 로스터에 있으면 **무조건** 그걸 앉힌다(아래 PERPETUAL_CC_LOCK).
+export type DrainMode = "off" | "endless" | "perpetual";
+export let DRAIN_MODE: DrainMode = "off";
+export let ENDLESS_ON = false; // 소모 모델 활성 여부 (두 모드 공통 게이트)
+export function setPriorityMode(priority?: ProdPriority) {
+  DRAIN_MODE = priority === "endless" ? "endless" : priority === "perpetual" ? "perpetual" : "off";
+  ENDLESS_ON = DRAIN_MODE !== "off";
+}
+export const ENDLESS_DRAIN_W: number = (C as unknown as Record<string, number | undefined>).ENDLESS_DRAIN_W ?? 600; // 장기 지속: 소모 1.0/h당 점수 등가 (L2 상수로 조정 가능)
+export const PERPETUAL_DRAIN_W: number = (C as unknown as Record<string, number | undefined>).PERPETUAL_DRAIN_W ?? 20000; // 무한동력: 사전식 우위 가중
+const PERPETUAL_CC_LOCK = 1e6; // 무한동력 모드: 순소모 0 제어센터 조합의 절대 우선 보너스 (오라 자리 가치 합 최대 ~10만을 압도)
+const drainW = () => (DRAIN_MODE === "perpetual" ? PERPETUAL_DRAIN_W : ENDLESS_DRAIN_W);
 const ENDLESS_CLOCK_CAP = 72; // 순소모 0(무한동력) 방의 교대 시계 상한 — growAvg 발산 방지
 // 시설 집합 용어(INFRA-RULES §5 전수조사): 기타 시설 = 작업 시설 − 제어센터·훈련실,
 // 일부 시설 = 발전소·사무실·응접실. 위셔델·총웨·무에나의 횡단 회복 오라 대상.
@@ -557,17 +573,21 @@ export function endlessBonus(team: InfraOp[], room: string, ctx: Ctx): number {
   const maxNet = roomMaxNetDrain(team, room, ctx);
   if (maxNet == null) return 0;
   const base = infra.rooms[room]?.drain ?? 1;
-  let bonus = ENDLESS_DRAIN_W * (base - maxNet);
+  const W = drainW();
+  let bonus = W * (base - maxNet);
   if (room === "CONTROL") {
     // 기본 효과 자리 가치 — 몸빵이라도 제어센터 한 자리가 전 작업 시설 -0.05를 낸다 (만석 유도)
     const reliefRooms = CC_RELIEF_ROOMS.reduce((sum, r) => sum + (FACILITY_COUNTS[r] ?? 1), 0);
-    bonus += team.length * CC_BASE_RELIEF * ENDLESS_DRAIN_W * reliefRooms;
+    bonus += team.length * CC_BASE_RELIEF * W * reliefRooms;
     for (const member of team) for (const sk of activeSkills(member, room, ctx.product)) {
       if (!sk.recoverAura) continue;
       const targets = RECOVER_SCOPE_ROOMS[sk.recoverAura.scope] ?? [];
       const roomCount = targets.reduce((sum, r) => sum + (FACILITY_COUNTS[r] ?? 1), 0);
-      bonus += recoverAuraValue(sk, ctx.tokenPoints) * ENDLESS_DRAIN_W * roomCount;
+      bonus += recoverAuraValue(sk, ctx.tokenPoints) * W * roomCount;
     }
+    // 무한동력 모드 (사용자 확정 2026-07-27: "제어센터는 무조건 무한동력"): 순소모 0 제어센터
+    // 조합은 오라 자리 가치·생산과 무관하게 절대 우선 — 로스터에 있으면 반드시 채택된다
+    if (DRAIN_MODE === "perpetual" && maxNet <= 1e-9) bonus += PERPETUAL_CC_LOCK;
   }
   return bonus;
 }
@@ -1149,7 +1169,7 @@ export let PRODUCTION_KEYS = LAYOUT_DEFS["243"].priority.gold;
 // 방 순서만 바꾸면 순금 우선 / 작전기록 우선 / 밸런스(교차)가 된다.
 // endless(무한동력, 2026-07-27)는 순서가 아니라 점수 결합이 다르다 — 방 순서는 밸런스와
 // 동일하고, teamValue의 컨디션 순소모 보너스(위 ENDLESS 블록)가 채택을 뒤집는다.
-export type ProdPriority = "gold" | "exp" | "balance" | "endless";
+export type ProdPriority = "gold" | "exp" | "balance" | "endless" | "perpetual";
 export let PRIORITY_KEYS: Record<ProdPriority, string[]> = LAYOUT_DEFS["243"].priority;
 export const SUPPORT_KEYS = ["CONTROL", "HIRE", "MEETING", "WORKSHOP", "TRAINING"];
 
@@ -1191,7 +1211,7 @@ export function sanitizePlan(raw: unknown): Plan | null {
     strategy: typeof p.strategy === "string" ? p.strategy : "",
     strategyTokens: Array.isArray(p.strategyTokens) ? (p.strategyTokens as unknown[]).filter((x): x is string => typeof x === "string") : [],
     strategySet: !!p.strategySet,
-    priority: (p.priority === "gold" || p.priority === "exp" || p.priority === "balance" || p.priority === "endless") ? p.priority : "gold",
+    priority: (p.priority === "gold" || p.priority === "exp" || p.priority === "balance" || p.priority === "endless" || p.priority === "perpetual") ? p.priority : "gold",
     // 교대 시계 — 숫자 배열만 인정 (구버전 저장엔 없음 → planScore·UI가 편성에서 재계산)
     ...(Array.isArray(p.shiftHours) && (p.shiftHours as unknown[]).every((n) => typeof n === "number")
       ? { shiftHours: p.shiftHours as number[] } : {}),
@@ -1432,6 +1452,9 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
       const parked = new Set<string>();
       const placedAt = new Map<string, string>();
       const place = (op: InfraOp, key: string) => {
+        // 무한동력 모드: 제어센터는 순소모 0 조합 전용 — 토큰 패키지가 선점하지 않는다
+        // (화식 코어 링·시·총웨가 시드로 앉으면 레인보우/이격 조합이 영영 못 서는 원인)
+        if (DRAIN_MODE === "perpetual" && key === "CONTROL") return false;
         seeds[key] = seeds[key] ?? [];
         const slots = slotsFor(key);
         if (seeds[key].length >= slots || parked.has(op.id)) return false;
@@ -1726,6 +1749,10 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
             const net = roomMaxNetDrain(team, room, { ...ctxFor(key, tokenPoints, factionCountsPerShift[0], plants, undefined, amb), shift: 0 });
             if (net == null || net > 1e-9) continue;
             const idx = Math.min(1, (assignments[key]?.length ?? 1) - 1);
+            // 밀려나는 기존 B조 예약자(피누스 세트 플레임테일 등)는 예약을 풀어 재배치 가능하게
+            for (const id of assignments[key]?.[idx] ?? []) {
+              if (!team.some((op) => op.id === id) && reserved.get(id) === key) reserved.delete(id);
+            }
             assignments[key][idx] = team.map((op) => op.id);
             for (const op of team) { permaBoth.set(op.id, key); reserved.set(op.id, key); }
           }
