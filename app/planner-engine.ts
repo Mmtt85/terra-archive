@@ -459,7 +459,10 @@ export const SHIFT_COUNT = 2;
 
 // cellOf = 오퍼 id → 배치된 **칸**(LAYOUT key). roomOf(방 종류)로는 "제조소 2곳에 쉐이가
 // 앉았다" 같은 시설 개수를 셀 수 없어 시설 카운트 스킬(타락사쿰·만트라)용으로 함께 싣는다.
-export type Ctx = { product?: string; tokenPoints: Record<string, number>; factionCounts?: Record<string, number>; plants?: number; presentIds?: Set<string>; ambient?: AmbientAura[]; roomOf?: Map<string, string>; cellOf?: Map<string, string>; shiftHours?: number };
+// shift: 평가 중인 조 (0=A·1=B). endless 컨디션 보너스는 **A조에만** 적용된다 (사용자 확정
+// 2026-07-27: "A조를 최대한 오래 쓰고, B조는 그동안 휴식했다가 교대" — B조는 A조가 쉬는
+// ~12h만 뛰면 되므로 소모 무관, 남은 오퍼로 생산만 최적화). 미지정은 A조 취급.
+export type Ctx = { product?: string; tokenPoints: Record<string, number>; factionCounts?: Record<string, number>; plants?: number; presentIds?: Set<string>; ambient?: AmbientAura[]; roomOf?: Map<string, string>; cellOf?: Map<string, string>; shiftHours?: number; shift?: number };
 
 // 시간 성장형 스킬의 교대 주기 평균 — k시간째 값 = min(first + rate×(k−1), cap),
 // 마지막 부분 시간은 비례 (파서 grow_avg와 동일 공식, 구운 값 = 24h 기준)
@@ -549,7 +552,8 @@ export function roomMaxNetDrain(team: InfraOp[], room: string, ctx: Ctx): number
 // 제어센터 오라의 §6 자리 평가와 같은 관례(자리 평가와 대상 방 실적용의 의도적 이중 계상).
 // 위셔델(기타 +0.1)·총웨(+0.05+화식 스케일)·무에나(일부 +0.1)가 이 값으로 제어센터에 온다.
 export function endlessBonus(team: InfraOp[], room: string, ctx: Ctx): number {
-  if (!ENDLESS_ON) return 0;
+  // A조(shift 0·미지정)만 — B조는 회복 교대(~12h 근무)라 소모 무관, 생산 점수로만 편성한다
+  if (!ENDLESS_ON || (ctx.shift ?? 0) !== 0) return 0;
   const maxNet = roomMaxNetDrain(team, room, ctx);
   if (maxNet == null) return 0;
   const base = infra.rooms[room]?.drain ?? 1;
@@ -1517,7 +1521,7 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
       // 예약(시드)은 조 불문 강제 — A조 세트(쉐라그·토큰 코어)뿐 아니라 B조 세트(피누스)도
       // 앞 순서 방이 시드를 채가지 못하게 한다 (A조 예약 오퍼는 이미 used라 B풀에 없음)
       const pool = new Map(roster.filter((op) => !used.has(op.id) && (!reserved.has(op.id) || reserved.get(op.id) === key)).map((op) => [op.id, op]));
-      const ctx = ctxFor(key, shift === 0 ? tokenPoints : {}, shiftFactionCounts, plants, placedIds);
+      const ctx = { ...ctxFor(key, shift === 0 ? tokenPoints : {}, shiftFactionCounts, plants, placedIds), shift };
       const seed = (seeds[key] ?? []).filter((op) => pool.has(op.id));
       const team = bestTeam(room, slots, pool, ctx, seed);
       team.forEach((op) => {
@@ -1556,7 +1560,7 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
     let total = 0;
     for (const key of [...prodKeys, ...SUPPORT_KEYS]) {
       if (key === "TRAINING" || PARK_KEYS.includes(key)) continue;
-      total += teamValue(teamAtKey(key, shift), cellByKey.get(key)!.room, ctxFor(key, tp, fc, plants, present, amb, roomOf, cellOf));
+      total += teamValue(teamAtKey(key, shift), cellByKey.get(key)!.room, { ...ctxFor(key, tp, fc, plants, present, amb, roomOf, cellOf), shift });
     }
     return total;
   };
@@ -1699,14 +1703,42 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
     // 완성하고(전체 로스터에서 선발), 그 뒤 B조를 "남은 오퍼만으로" 수렴까지 전수검사한다.
     // A·B를 한 번에 섞어 보면 서로 자리를 뺏고 되돌리는 진동이 생긴다.
     const orderKeys = [...prodKeys, ...SUPPORT_KEYS].filter((k) => workKeys.includes(k));
+    // 무한동력 방의 양조 고정 인원 (opId → 방 키) — 동시 배치 금지의 유일한 근무 방 예외
+    const permaBoth = new Map<string, string>();
     for (let auditShift = 0; auditShift < SHIFT_COUNT; auditShift += 1) {
+      // ── 무한동력 방 양조 고정 (사용자 확정 2026-07-27: "무한동력이면 절대룰(A·B 동시 배치
+      // 금지)을 깨고 같이 넣어도 됨") ── A조 감사 수렴 직후: 제어센터의 A조 순소모가 0이면
+      // (판정이 자기 방 인원만으로 닫혀 있어 조 전환과 무관) 컨디션이 닳지 않으므로 숙소·
+      // 가공소처럼 그 크루를 **양조 고정**한다 — 한무(레인보우·이격)센터를 영원히 안 건드리는
+      // 운용. 제어센터가 고정되면 그 오라(기본 효과·횡단 회복)가 양조에 동일하게 걸리므로,
+      // 그 오라 아래 순소모 0인 다른 근무 방(로봇 발전소 등)도 함께 고정한다. 고정 인원은
+      // reserved에 올려 B조 감사가 유지하고, 동시 배치 제거에서 자기 방만 면제된다.
+      if (ENDLESS_ON && auditShift === 1) {
+        const teamOf0 = (key: string) => (assignments[key]?.[0] ?? []).map((id) => byIdAll.get(id)).filter((op): op is InfraOp => Boolean(op));
+        const ccTeam = teamOf0("CONTROL");
+        const ccNet = ccTeam.length ? roomMaxNetDrain(ccTeam, "CONTROL", { ...ctxFor("CONTROL", tokenPoints, factionCountsPerShift[0], plants), shift: 0 }) : null;
+        if (ccNet != null && ccNet <= 1e-9) {
+          const amb = aurasOf(ccTeam, ctxFor("CONTROL", tokenPoints, factionCountsPerShift[0], plants));
+          for (const key of workKeys) {
+            const room = cellByKey.get(key)?.room ?? key;
+            const team = teamOf0(key);
+            if (!team.length) continue;
+            const net = roomMaxNetDrain(team, room, { ...ctxFor(key, tokenPoints, factionCountsPerShift[0], plants, undefined, amb), shift: 0 });
+            if (net == null || net > 1e-9) continue;
+            const idx = Math.min(1, (assignments[key]?.length ?? 1) - 1);
+            assignments[key][idx] = team.map((op) => op.id);
+            for (const op of team) { permaBoth.set(op.id, key); reserved.set(op.id, key); }
+          }
+        }
+      }
       const tp = auditShift === 0 ? tokenPoints : {};
       // 앞서 확정한 조의 근무자 — 이번 조에서 사용 금지(동시 배치 금지), 남아 있으면 제거
       const lockedPrev = new Set<string>();
       for (let s2 = 0; s2 < auditShift; s2 += 1) for (const k of workKeys) for (const id of assignments[k]?.[s2] ?? []) lockedPrev.add(id);
       for (const k of workKeys) {
         const idx = Math.min(auditShift, (assignments[k]?.length ?? 1) - 1);
-        assignments[k][idx] = (assignments[k]?.[idx] ?? []).filter((id) => !lockedPrev.has(id));
+        // 무한동력 양조 고정 인원은 자기 방에서만 동시 배치 허용 (그 외 방에선 종전대로 제거)
+        assignments[k][idx] = (assignments[k]?.[idx] ?? []).filter((id) => !lockedPrev.has(id) || permaBoth.get(id) === k);
       }
     for (let pass = 0; pass < 8; pass += 1) {
       auditRounds[auditShift] = pass + 1;
@@ -1743,7 +1775,7 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
           for (const id of dormIds) roomOfS.set(id, "DORMITORY");
           const cellOfS = cellMapFor(shift);
           const present = new Set<string>([...roomKeyOf.keys(), ...dormIds]);
-          const ctx = { ...ctxFor(aKey, tp, factionCountsPerShift[shift], plants, present), roomOf: roomOfS, cellOf: cellOfS, shiftHours: shiftClock };
+          const ctx = { ...ctxFor(aKey, tp, factionCountsPerShift[shift], plants, present), roomOf: roomOfS, cellOf: cellOfS, shiftHours: shiftClock, shift };
           const curTeam = (assignments[aKey][shift] ?? []).map((id) => byIdAll.get(id)).filter((op): op is InfraOp => Boolean(op));
           // 패키지 예약 해제 (사용자 통찰 2026-07-24: "쉐이가 5명까지라 슈가 필요 없다"):
           // 토큰을 직접 생성·전환하지 않는 패키지 예약자는, 자신이 빠져도 모든 perMember
@@ -1818,7 +1850,7 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
                 const gain = score([...team, op]) - score(team);
                 const dRoom = cellByKey.get(fromKey)?.room ?? fromKey;
                 const dSlots = slotsFor(fromKey);
-                const dCtx = { ...ctxFor(fromKey, tp, factionCountsPerShift[shift], plants, present), roomOf: roomOfS, cellOf: cellOfS };
+                const dCtx = { ...ctxFor(fromKey, tp, factionCountsPerShift[shift], plants, present), roomOf: roomOfS, cellOf: cellOfS, shift };
                 const dTeam = (assignments[fromKey][shift] ?? []).map((x) => byIdAll.get(x)).filter((o): o is InfraOp => Boolean(o));
                 const rest = dTeam.filter((o) => o.id !== id);
                 const claimed = new Set(team.map((t) => t.id));
@@ -1868,7 +1900,7 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
           for (const id of dormIds) roomOfS.set(id, "DORMITORY");
           const cellOfS = cellMapFor(shift);
           const present = new Set<string>([...roomKeyOf.keys(), ...dormIds]);
-          const ctxOf = (key: string) => ({ ...ctxFor(key, tp, factionCountsPerShift[shift], plants, present), roomOf: roomOfS, cellOf: cellOfS });
+          const ctxOf = (key: string) => ({ ...ctxFor(key, tp, factionCountsPerShift[shift], plants, present), roomOf: roomOfS, cellOf: cellOfS, shift });
           const scoreOf = (key: string, team: InfraOp[]) => teamValue(team, cellByKey.get(key)?.room ?? key, ctxOf(key));
           const teamOf = (key: string) => (assignments[key]?.[shift] ?? []).map((id) => byIdAll.get(id)).filter((op): op is InfraOp => Boolean(op));
           const bench = roster.filter((op) => (!dormIds.has(op.id) || parked.has(op.id)) && !roomKeyOf.has(op.id) && !otherWork.has(op.id) && !reserved.has(op.id));
@@ -1940,7 +1972,8 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
         const otherWorking = lockedPrev;
         const usedThisShift = new Set<string>();
         for (const key of workKeys) {
-          const kept = (assignments[key][shift] ?? []).filter((id) => !otherWorking.has(id) && !usedThisShift.has(id));
+          // 무한동력 양조 고정(permaBoth)은 자기 방에 한해 동시 배치 허용 — 절대룰의 유일한 예외
+          const kept = (assignments[key][shift] ?? []).filter((id) => (!otherWorking.has(id) || permaBoth.get(id) === key) && !usedThisShift.has(id));
           if (kept.length !== (assignments[key][shift] ?? []).length) changed = true;
           assignments[key][shift] = kept;
           for (const id of kept) usedThisShift.add(id);
@@ -1956,7 +1989,7 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
           const team = assignments[key][shift] ?? [];
           if (team.length >= slots) continue;
           const present = new Set<string>([...usedThisShift, ...dormIds]);
-          const ctx = { ...ctxFor(key, shift === 0 ? tokenPoints : {}, factionCountsPerShift[shift], plants, present), roomOf: roomOfS, cellOf: cellOfS };
+          const ctx = { ...ctxFor(key, shift === 0 ? tokenPoints : {}, factionCountsPerShift[shift], plants, present), roomOf: roomOfS, cellOf: cellOfS, shift };
           const pool = new Map(roster.filter((op) =>
             !usedThisShift.has(op.id) && !otherWorking.has(op.id) &&
             (!reserved.has(op.id) || reserved.get(op.id) === key)).map((op) => [op.id, op]));
@@ -2013,7 +2046,7 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
         const team = (assignments[key][shift] ?? []).map((id) => byIdAll.get(id)).filter((op): op is InfraOp => Boolean(op));
         let added = false;
         while (team.length < slots && bench.length) {
-          const ctx = { ...ctxFor(key, shift === 0 ? tokenPoints : {}, factionCountsPerShift[shift], plants, present), roomOf: roomOfS, cellOf: cellOfS };
+          const ctx = { ...ctxFor(key, shift === 0 ? tokenPoints : {}, factionCountsPerShift[shift], plants, present), roomOf: roomOfS, cellOf: cellOfS, shift };
           const base = teamValue(team, room, ctx);
           let at = 0;
           let best = teamValue([...team, bench[0]], room, ctx) - base;
@@ -2230,7 +2263,7 @@ export function planScore(plan: Plan, byId: Map<string, InfraOp>): number {
     for (const key of [...PRODUCTION_KEYS, ...SUPPORT_KEYS]) {
       const cell = cellByKey.get(key)!;
       if (PARK_KEYS.includes(key)) continue;
-      total += shiftWeight * teamValue(teamAt(key), cell.room, { ...ctxFor(key, points, counts, plan.plants, present, ambient), shiftHours: clock });
+      total += shiftWeight * teamValue(teamAt(key), cell.room, { ...ctxFor(key, points, counts, plan.plants, present, ambient), shiftHours: clock, shift });
     }
   }
   return total;
