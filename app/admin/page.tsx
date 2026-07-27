@@ -697,8 +697,10 @@ export default function AdminPage() {
 
       {tab === "files" && (<>
       <p className="admin-status">
-        Cloudflare R2 파일 저장소입니다. 올린 파일은 공개 URL이 생겨 팁 이미지 등 어디에나 쓸 수 있습니다.
+        Cloudflare R2 파일 저장소입니다. 올린 파일은 <code>uploads/</code> 폴더에 들어가고
+        <code>files.terra-archive.net</code> 공개 URL이 생겨 팁 이미지 등 어디에나 쓸 수 있습니다.
         같은 이름을 다시 올리면 <b>덮어씁니다</b> (URL 캐시 때문에 반영은 최대 1일).
+        사이트 에셋(story·avatars 등)은 여기 안 보입니다 — 그건 <code>scripts/r2-sync.mjs</code> 관할.
       </p>
       {fileStatus && <p className="admin-status">{fileStatus}</p>}
       <div className="admin-rules">

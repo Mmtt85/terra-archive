@@ -11,6 +11,6 @@ binding = "FILES"
 bucket_name = "terra-archive-files"
 
 [vars]
-# 공개 URL 앞부분. 비우면 요청이 들어온 호스트(워커 주소)를 그대로 쓴다.
-# 나중에 files.terra-archive.net 커스텀 도메인을 붙이면 여기만 바꾸면 된다.
-PUBLIC_BASE = ""
+# 공개 URL 앞부분 — 버킷 커스텀 도메인(키가 곧 경로, CDN 캐시).
+# 비우면 워커 주소 + /f/<key> 경로로 폴백.
+PUBLIC_BASE = "https://files.terra-archive.net"

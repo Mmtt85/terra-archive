@@ -1,10 +1,10 @@
 // 테라 아카이브 파일 저장소 워커 — R2 버킷(terra-archive-files) 앞단.
 // 사용자 혼자 올리고 사이트가 <img src>로 쓰는 구조 (2026-07-27 확정, S3 대체).
 //
-//   GET    /f/<key>      공개 서빙 — 캐시 1일, ETag 304 지원. CORS *
-//   GET    /files        목록 (관리자)
-//   PUT    /files/<key>  업로드 (관리자) — 같은 이름은 덮어쓴다
-//   DELETE /files/<key>  삭제 (관리자)
+//   GET    /f/<key>      공개 서빙(폴백) — 평소엔 버킷 커스텀 도메인 files.terra-archive.net이 서빙
+//   GET    /files        목록 — admin은 uploads/만, sync는 전체
+//   PUT    /files/<key>  업로드 — admin은 uploads/<key>로 강제, 같은 이름은 덮어쓴다
+//   DELETE /files/<key>  삭제 — admin은 uploads/ 안에서만 (에셋 트리 보호)
 //
 // 관리자 판정: x-admin-key 헤더가 ADMIN_KEY(= /admin 입장 비밀번호) 또는
 // SYNC_KEY(scripts/r2-sync.mjs 전용 무작위 키 — 사이트 정적 에셋 동기화) 시크릿과 일치할 때만.
@@ -43,10 +43,17 @@ function keyEquals(given, secret) {
   return crypto.subtle.timingSafeEqual(a, b);
 }
 
-function isAdmin(request, env) {
+// 누구로 인증됐는지에 따라 볼 수 있는 범위가 다르다:
+//   admin(/admin 파일 탭) → uploads/ 폴더만 (에셋 트리를 실수로 지우는 사고 방지)
+//   sync(r2-sync.mjs)     → 버킷 전체 (story/·avatars/ 등 에셋 동기화)
+function authKind(request, env) {
   const given = request.headers.get("x-admin-key") ?? "";
-  return keyEquals(given, env.ADMIN_KEY) || keyEquals(given, env.SYNC_KEY);
+  if (keyEquals(given, env.SYNC_KEY)) return "sync";
+  if (keyEquals(given, env.ADMIN_KEY)) return "admin";
+  return null;
 }
+
+const UPLOADS = "uploads/"; // /admin 수동 업로드 전용 폴더
 
 // URL 경로에서 키 추출 — 퍼센트 디코딩 + 경로 탈출 차단
 function keyFrom(pathname, prefix) {
@@ -61,8 +68,12 @@ function keyFrom(pathname, prefix) {
   return key;
 }
 
-const publicBase = (env, url) => (env.PUBLIC_BASE || url.origin).replace(/\/+$/, "");
-const fileUrl = (env, url, key) => `${publicBase(env, url)}/f/${encodeURIComponent(key)}`;
+// 공개 URL: PUBLIC_BASE(버킷 커스텀 도메인 — 키가 곧 경로)가 있으면 그쪽, 없으면 워커 /f/ 경로
+const fileUrl = (env, url, key) => {
+  const encoded = key.split("/").map(encodeURIComponent).join("/");
+  const base = (env.PUBLIC_BASE || "").replace(/\/+$/, "");
+  return base ? `${base}/${encoded}` : `${url.origin}/f/${encoded}`;
+};
 
 export default {
   async fetch(request, env) {
@@ -93,13 +104,15 @@ export default {
 
     // ── 이하 관리자 전용 ──
     if (url.pathname === "/files" || url.pathname.startsWith("/files/")) {
-      if (!isAdmin(request, env)) return json({ ok: false, error: "unauthorized" }, origin, 401);
+      const kind = authKind(request, env);
+      if (!kind) return json({ ok: false, error: "unauthorized" }, origin, 401);
 
       if (request.method === "GET" && url.pathname === "/files") {
         const files = [];
         let cursor;
         do {
-          const page = await env.FILES.list({ limit: 500, cursor });
+          // admin에겐 uploads/만 — 파일 탭에 에셋 7,700개가 쏟아지지 않게
+          const page = await env.FILES.list({ limit: 500, cursor, prefix: kind === "admin" ? UPLOADS : undefined });
           for (const obj of page.objects)
             // etag = 단일 PUT이면 본문 md5 (r2-sync.mjs 증분 판정에 쓴다)
             files.push({ key: obj.key, size: obj.size, uploaded: obj.uploaded, etag: obj.etag, url: fileUrl(env, url, obj.key) });
@@ -109,8 +122,11 @@ export default {
         return json({ ok: true, files }, origin);
       }
 
-      const key = keyFrom(url.pathname, "/files/");
+      let key = keyFrom(url.pathname, "/files/");
       if (!key) return json({ ok: false, error: "bad-key" }, origin, 400);
+      // admin의 수동 업로드는 전부 uploads/ 폴더로 (에셋 트리와 격리, 삭제도 그 안에서만)
+      if (kind === "admin" && request.method === "PUT" && !key.startsWith(UPLOADS)) key = UPLOADS + key;
+      if (kind === "admin" && !key.startsWith(UPLOADS)) return json({ ok: false, error: "outside-uploads" }, origin, 403);
 
       if (request.method === "PUT") {
         // 워커 요청 본문 한도(100MB)를 넘기 전에 거절
@@ -119,8 +135,9 @@ export default {
         const object = await env.FILES.put(key, request.body, {
           httpMetadata: {
             contentType: request.headers.get("Content-Type") ?? "application/octet-stream",
-            // 에셋 동기화가 확장자별 캐시 정책을 넣는다 (이미지 30일 등). 생략하면 서빙 기본값(1일)
-            cacheControl: request.headers.get("x-cache-control") ?? undefined,
+            // 에셋 동기화는 확장자별 캐시 정책을 명시한다 (이미지 30일 등). 수동 업로드는 1일 —
+            // 커스텀 도메인은 오브젝트 메타데이터를 그대로 서빙하므로 쓰기 시점에 박아둔다
+            cacheControl: request.headers.get("x-cache-control") ?? "public, max-age=86400",
           },
         });
         return json({ ok: true, key, size: object.size, uploaded: object.uploaded, url: fileUrl(env, url, key) }, origin);

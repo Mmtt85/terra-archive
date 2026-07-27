@@ -508,9 +508,13 @@ npm run build                             # 9. 빌드 확인 → 커밋 → 푸�
 (같은 Cloudflare 계정 + 이그레스 무료 + 무료 10GB). 사용자 혼자 올리고 사이트가 공개 URL로 쓴다.
 
 - 버킷: `terra-archive-files` · 앞단 워커: [workers/upload](../workers/upload/) (`terra-archive-upload`).
-  공개 서빙 `GET /f/<key>`(캐시 1일·ETag)는 인증 없음, 업로드·목록·삭제(`/files…`)는
-  `x-admin-key` 헤더가 **`ADMIN_KEY` 시크릿**(= /admin 입장 비밀번호) 또는 **`SYNC_KEY`**
-  (에셋 동기화 전용 무작위 키, 레포 루트 `.r2-sync-key` — gitignore)와 일치할 때만.
+  업로드·목록·삭제(`/files…`)는 `x-admin-key` 헤더가 **`ADMIN_KEY` 시크릿**(= /admin 입장
+  비밀번호) 또는 **`SYNC_KEY`**(에셋 동기화 전용 무작위 키, 레포 루트 `.r2-sync-key` —
+  gitignore)와 일치할 때만. 공개 서빙은 커스텀 도메인이 담당(워커 `GET /f/<key>`는 폴백).
+- **스코프 격리 (2026-07-27)**: admin 키의 수동 업로드는 전부 **`uploads/` 폴더로 강제**되고
+  목록·삭제도 그 안으로 제한된다 — 파일 탭에 에셋 7,700개가 쏟아지거나 story/·avatars/를
+  실수로 지우는 사고 방지. sync 키는 버킷 전체를 본다. 공개 URL은
+  `https://files.terra-archive.net/uploads/<이름>`.
 - 프론트: `app/files-api.ts`. `/admin` → **파일** 탭에서 드래그/선택 업로드 → URL 복사,
   팁 편집기 이미지칸 옆 **올리기** 버튼은 올리자마자 URL을 칸에 채운다.
 - **같은 이름은 덮어쓴다** — 공개 URL 캐시 때문에 반영이 늦을 수 있다(이미지 30일·JSON 1일).
