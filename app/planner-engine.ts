@@ -1381,6 +1381,10 @@ function seedSynergySet(def: SynergySetDef, roster: InfraOp[], used: Set<string>
 
 export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSets: FactionSets = {}, priority: ProdPriority = "gold", extraSeeds: { opId: string; room: string }[] = [], concentrate = true, park = false, pinnedDorms: Record<string, string[]> = {}): Plan {
   setPriorityMode(priority); // endless면 teamValue·시계가 순소모 모델로 전환 (모듈 플래그)
+  // 무한동력 모드: 토큰 패키지 전면 미채택 (사용자 확정 2026-07-27: "효율따위 신경쓰지 않고").
+  // 제어센터만 막으면(구 place 가드) 생성자(링·시·총웨)는 못 앉는데 소비자(슈·우요우·
+  // 에벤홀츠)만 A조 예약석을 차지하는 죽은 사슬이 남는다 — 토큰 0점인데 소모는 그대로.
+  if (priority === "perpetual") packageTokens = [];
   const prodKeys = PRIORITY_KEYS[priority];
   const assignments: Record<string, string[][]> = {};
   // 시설 카운트 스킬(타락사쿰·만트라)용 배치 지도 — 숙소·가공소까지 **모든 칸**을 센다.
@@ -1452,9 +1456,6 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
       const parked = new Set<string>();
       const placedAt = new Map<string, string>();
       const place = (op: InfraOp, key: string) => {
-        // 무한동력 모드: 제어센터는 순소모 0 조합 전용 — 토큰 패키지가 선점하지 않는다
-        // (화식 코어 링·시·총웨가 시드로 앉으면 레인보우/이격 조합이 영영 못 서는 원인)
-        if (DRAIN_MODE === "perpetual" && key === "CONTROL") return false;
         seeds[key] = seeds[key] ?? [];
         const slots = slotsFor(key);
         if (seeds[key].length >= slots || parked.has(op.id)) return false;
@@ -2321,7 +2322,9 @@ export async function optimizeConfig(roster: InfraOp[], priority: ProdPriority =
   // assembled into A조 — B조 is the recovery crew that steps in when A조's
   // morale runs out
   const allTokens = new Set<string>();
-  for (const op of roster) for (const skill of op.skills) for (const use of skill.tokenUse) if (use.percent) allTokens.add(use.token);
+  // 무한동력: 패키지 미채택(buildPlan에서도 차단)이라 수집·멱집합 비교 자체를 생략
+  if (priority !== "perpetual")
+    for (const op of roster) for (const skill of op.skills) for (const use of skill.tokenUse) if (use.percent) allTokens.add(use.token);
   // closed single-team systems (정보 저장 = 레인보우 팀 전용) stay out of the
   // base-wide packages — they'd hijack control/meeting slots from the mains
   const open = Array.from(allTokens).filter((token) => {
@@ -2357,6 +2360,25 @@ export async function optimizeConfig(roster: InfraOp[], priority: ProdPriority =
       if (score > bestTokScore) { base = candidate; bestTokScore = score; tokenChoice = subset; }
     }
   }
+  // ── 장기 지속: 패키지 전환자 개인 제외 변형 (사용자 제보 2026-07-27: "위셔델·이네스는
+  // 있는데 외드레르가 없다" 추적 중 검출) — 전환자(에벤홀츠)는 패키지 예약 보호로 감사가
+  // 못 빼는데, 소모 가중 planScore에선 사슬 가치가 저소모 팀(파이어휘슬 -0.1)을 밀어낸
+  // 손해보다 작을 수 있다 (실측 −7.5). 토큰을 통째로 빼면 자가 생성자(로즈몬티스) 가치까지
+  // 죽으므로, **전환자 한 명만 로스터에서 뺀** 재편성을 총점 비교로 판정한다. 채택되면 그
+  // 오퍼는 이 플랜에서 휴식 — 이후 세트·마무리 재편성도 같은 제외 로스터로 돈다.
+  // perpetual은 패키지 자체가 없고 gold/exp/balance는 이 블록을 안 타 기존 편성 불변.
+  let effRoster = roster;
+  if (priority === "endless" && tokenChoice.length) {
+    let curScore = planScore(base, byId);
+    const converterIds = [...new Set(base.flows.flatMap((flow) => flow.converters.map((c) => c.opId)))].slice(0, 3);
+    for (const cid of converterIds) {
+      await breathe();
+      const sub = effRoster.filter((op) => op.id !== cid);
+      const candidate = buildPlan(tokenChoice, sub, {}, priority, [], false, false, pinnedDorms);
+      const score = planScore(candidate, byId);
+      if (score > curScore) { base = candidate; curScore = score; effRoster = sub; }
+    }
+  }
   // 세트 후보 — 쉐라그(게이트 오라, A조 무역소)·피누스(생산품별 진영 오라, B조 작전기록방)·
   // 품질 조합(오버라이드+수익+품질, A조 무역소) 보유 시 **가능한 모든 조합(멱집합)**의
   // 후보안을 만들어 기지 총점이 가장 높은 안을 채택한다. 세트를 한 플래그로 묶으면 한
@@ -2364,7 +2386,7 @@ export async function optimizeConfig(roster: InfraOp[], priority: ProdPriority =
   // 두 세트가 함께일 때만 이기는 안을 놓친다 — 계산이 수 초 걸려도 전수 비교가 우선
   // (사용자 확정 2026-07-19). 귀금속 감산 등 세트의 비용도 planScore에 그대로 반영되며,
   // 동률이면 세트 없는 안 유지(쉐라그 "이득일 때만" 규칙).
-  const flags = SYNERGY_SETS.filter((def) => synergySetAvailable(def, roster)).map((def) => def.key);
+  const flags = SYNERGY_SETS.filter((def) => synergySetAvailable(def, effRoster)).map((def) => def.key);
   const variants: FactionSets[] = [];
   for (let mask = 1; mask < (1 << flags.length); mask += 1) {
     const sets: FactionSets = {};
@@ -2377,7 +2399,7 @@ export async function optimizeConfig(roster: InfraOp[], priority: ProdPriority =
   // 채택 config에 최종 ⑤(우선 생산 집중)를 입혀 반환 — 탐색은 ⑤-무관이라 선택이 원래대로 유지되고,
   // 여기서만 planScore 단조 개선(무승부 이상)을 얹는다. 밸런스는 ⑤가 no-op이라 그대로.
   const withConcentration = (tokens: string[], sets: FactionSets, seeds: { opId: string; room: string }[], park = false) =>
-    (priority === "gold" || priority === "exp") ? buildPlan(tokens, roster, sets, priority, seeds, true, park, pinnedDorms) : buildPlan(tokens, roster, sets, priority, seeds, false, park, pinnedDorms);
+    (priority === "gold" || priority === "exp") ? buildPlan(tokens, effRoster, sets, priority, seeds, true, park, pinnedDorms) : buildPlan(tokens, effRoster, sets, priority, seeds, false, park, pinnedDorms);
   // 숙소 파킹 A/B — '짝이 기지 어디든 있으면 +N%'(언더플로우←울피아누스 등)를 켜려고 노는 짝을
   // 빈 숙소에 주차한 안을 따로 만들고, **planScore가 실제로 오를 때만** 채택한다. 로스터가 두꺼우면
   // 대체 후보가 많아 파킹이 부른 재편성이 르무엔+엑시아 같은 기존 조합을 깨 손해일 수도 있다
@@ -2402,7 +2424,7 @@ export async function optimizeConfig(roster: InfraOp[], priority: ProdPriority =
   let bestSeeds: { opId: string; room: string }[] = [];
   for (let i = 0; i < variants.length; i += 1) {
     await tick({ phase: "variant", index: i + 1, total: variants.length, sets: Object.keys(variants[i]) });
-    const plan = buildPlan(tokenChoice, roster, variants[i], priority, [], false, false, pinnedDorms);
+    const plan = buildPlan(tokenChoice, effRoster, variants[i], priority, [], false, false, pinnedDorms);
     const score = planScore(plan, byId);
     if (score > bestScore) { best = plan; bestScore = score; bestSets = variants[i]; bestSeeds = []; }
   }
@@ -2422,7 +2444,7 @@ export async function optimizeConfig(roster: InfraOp[], priority: ProdPriority =
       const members = [...aPlaced].map((id) => byId.get(id))
         .filter((op): op is InfraOp => Boolean(op && factionsOf(op).some((f) => f.includes(pm.match))));
       if (members.length !== pm.cap) continue;
-      for (const op of roster) {
+      for (const op of effRoster) {
         if (aPlaced.has(op.id) || expansions.has(op.id)) continue;
         if (!factionsOf(op).some((f) => f.includes(pm.match))) continue;
         const skill = op.skills.find((sk) => sk.kind in AURA_WEIGHT); // 오라 자리값 있는 방으로만
@@ -2431,7 +2453,7 @@ export async function optimizeConfig(roster: InfraOp[], priority: ProdPriority =
     }
     for (const ex of [...expansions.values()].slice(0, 2)) {
       await breathe();
-      const plan = buildPlan(tokenChoice, roster, bestSets, priority, [ex], false, false, pinnedDorms);
+      const plan = buildPlan(tokenChoice, effRoster, bestSets, priority, [ex], false, false, pinnedDorms);
       const score = planScore(plan, byId);
       if (score > bestScore) { best = plan; bestScore = score; bestSeeds = [ex]; }
     }
