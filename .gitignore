@@ -57,3 +57,5 @@ scripts/story-cn/
 .ci/
 .gamedata-ci/
 .r2-sync-key
+.supabase-admin-key
+.admin-rotate.generated.sql

@@ -1,6 +1,6 @@
 // 플래너 지식 베이스 Supabase API — 테이블·RLS는 docs/supabase-planner-rules.sql.
-// 읽기(발행 스냅샷)는 anon, 원장 CRUD·발행·롤백은 x-admin-key 헤더 (기존 admin 패턴).
-import { SUPABASE_URL, SUPABASE_ANON_KEY, adminHeaders } from "./feedback";
+// 읽기(발행 스냅샷)는 anon, 원장 CRUD·발행·롤백은 /api 프록시(Access 인증 — feedback.ts 참고).
+import { SUPABASE_URL, SUPABASE_ANON_KEY, ADMIN_REST } from "./feedback";
 import type { PlannerRules } from "./rules";
 import type { RuleRow } from "./rules-compile";
 
@@ -16,20 +16,17 @@ export async function fetchLatestRelease(): Promise<ReleaseRow | null> {
   return rows[0] ?? null;
 }
 
-export async function adminListRules(password: string): Promise<RuleRow[]> {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/planner_rules?select=*&order=kind.asc,seq.asc,key.asc&limit=2000`, {
-    headers: adminHeaders(password),
-  });
+export async function adminListRules(): Promise<RuleRow[]> {
+  const res = await fetch(`${ADMIN_REST}/planner_rules?select=*&order=kind.asc,seq.asc,key.asc&limit=2000`);
   if (!res.ok) throw new Error(`규칙 조회 실패 (${res.status}) — supabase-planner-rules.sql을 실행했는지 확인`);
   return res.json();
 }
 
 // upsert — (kind, key) 충돌 시 body·status·note·seq를 갱신 (updated_at 갱신 포함)
-export async function adminUpsertRule(password: string, rule: RuleRow) {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/planner_rules?on_conflict=kind,key`, {
+export async function adminUpsertRule(rule: RuleRow) {
+  const res = await fetch(`${ADMIN_REST}/planner_rules?on_conflict=kind,key`, {
     method: "POST",
     headers: {
-      ...adminHeaders(password),
       "Content-Type": "application/json",
       Prefer: "resolution=merge-duplicates,return=minimal",
     },
@@ -42,28 +39,26 @@ export async function adminUpsertRule(password: string, rule: RuleRow) {
   if (!res.ok) throw new Error(`규칙 저장 실패 (${res.status})`);
 }
 
-export async function adminDeleteRule(password: string, id: string) {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/planner_rules?id=eq.${id}`, {
+export async function adminDeleteRule(id: string) {
+  const res = await fetch(`${ADMIN_REST}/planner_rules?id=eq.${id}`, {
     method: "DELETE",
-    headers: adminHeaders(password),
   });
   if (!res.ok) throw new Error(`규칙 삭제 실패 (${res.status})`);
 }
 
-export async function adminPublishRelease(password: string, version: number, snapshot: PlannerRules, note: string) {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/rule_releases`, {
+export async function adminPublishRelease(version: number, snapshot: PlannerRules, note: string) {
+  const res = await fetch(`${ADMIN_REST}/rule_releases`, {
     method: "POST",
-    headers: { ...adminHeaders(password), "Content-Type": "application/json", Prefer: "return=minimal" },
+    headers: { "Content-Type": "application/json", Prefer: "return=minimal" },
     body: JSON.stringify({ version, snapshot, note: note || null }),
   });
   if (!res.ok) throw new Error(`발행 실패 (${res.status})${res.status === 409 ? " — 같은 버전이 이미 있습니다 (새로고침 후 재시도)" : ""}`);
 }
 
 // 롤백 = 최신 발행 행 삭제 → 이전 버전이 자동으로 최신이 된다 (원장 행은 그대로)
-export async function adminDeleteRelease(password: string, version: number) {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/rule_releases?version=eq.${version}`, {
+export async function adminDeleteRelease(version: number) {
+  const res = await fetch(`${ADMIN_REST}/rule_releases?version=eq.${version}`, {
     method: "DELETE",
-    headers: adminHeaders(password),
   });
   if (!res.ok) throw new Error(`롤백 실패 (${res.status})`);
 }

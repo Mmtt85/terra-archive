@@ -31,10 +31,15 @@ for dir in story rogue lens tesseract avatars about og items scan; do
   rm -rf "${STAGE:?}/$dir"
 done
 
+# 관리자 페이지는 본사이트에서 제거 — admin.terra-archive.net(Cloudflare Access 뒤)으로
+# 분리됐다 (2026-07-27, scripts/deploy-admin.sh). 옛 주소는 아래 _redirects가 넘겨준다.
+rm -f "$STAGE/admin.html" "$STAGE/admin.rsc"
+
 # 안전망: 코드가 asset()으로 못 감싼 옛 링크·외부 북마크가 남아 있으면 R2로 301.
 # ⚠ /rogue·/about은 페이지 경로와 겹치므로 통짜 와일드카드 금지 — 하위 폴더만 건다.
 #   (Pages 리다이렉트는 정적 파일보다 먼저 평가되고, splat은 빈 문자열에도 매치된다)
 cat > "$STAGE/_redirects" <<'EOF'
+/admin https://admin.terra-archive.net/admin 301
 /story/* https://files.terra-archive.net/assets/story/:splat 301
 /avatars/* https://files.terra-archive.net/assets/avatars/:splat 301
 /items/* https://files.terra-archive.net/assets/items/:splat 301

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { adminDeleteFeedback, adminListFeedback, adminSetHandling, adminSetReviewed, handlingAt, withHandling, type FeedbackRow } from "../feedback";
+import { adminDeleteFeedback, adminListFeedback, adminMe, adminSetHandling, adminSetReviewed, handlingAt, withHandling, type FeedbackRow } from "../feedback";
 import { adminDeleteRelease, adminDeleteRule, adminListRules, adminPublishRelease, adminUpsertRule, fetchLatestRelease, type ReleaseRow } from "../rules-api";
 import { adminDeleteChange, adminUpsertChange, fetchAllChanges, CHANGE_KINDS, CHANGE_KIND_LABEL, daysAgoKst, type ChangeDraft, type ChangeRow } from "../changelog-api";
 import { adminDeleteTip, adminUpsertTip, fetchAllTips, type TipDraft, type TipRow } from "../tips-api";
@@ -276,8 +276,8 @@ export default function AdminPage() {
   // window.confirm/prompt는 VSCode 웹뷰 등 일부 임베디드 브라우저에서 미지원
   // ("prompt() is not supported" 크래시, 2026-07-22) — 사이트 공용 확인 모달로 대체
   const { confirm, dialog: confirmDialog } = useConfirm();
-  const [password, setPassword] = useState("");
-  const [entered, setEntered] = useState(false);
+  // 인증은 Cloudflare Access(구글 SSO) — /api/me가 통과하면 입장 (비밀번호 게이트 제거 2026-07-27)
+  const [me, setMe] = useState<string | null | undefined>(undefined); // undefined=확인 중
   const [rows, setRows] = useState<FeedbackRow[]>([]);
   const [status, setStatus] = useState("");
   const [filter, setFilter] = useState<string>("all");
@@ -307,22 +307,20 @@ export default function AdminPage() {
   const [publishNote, setPublishNote] = useState(""); // 발행 메모 — prompt() 미지원 환경 대응 인라인 입력
 
   useEffect(() => {
-    if (!entered) return;
+    if (!me) return;
     fetch(DATACHECK_API)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => { if (Array.isArray(data?.operators)) setDataCheck(data); })
       .catch(() => { /* 워커 불통 시 섹션이 '확인 중'으로 남음 */ });
-  }, [entered]);
+  }, [me]);
 
-  const load = async (pw: string) => {
+  const load = async () => {
     setStatus("불러오는 중…");
     try {
-      const data = await adminListFeedback(pw);
+      const data = await adminListFeedback();
       setRows(data);
-      setStatus(data.length ? "" : "항목이 없습니다 — 비밀번호가 틀리면 목록이 비어 보입니다");
-      setEntered(true);
-      sessionStorage.setItem("ta-admin-key", pw);
-      loadRules(pw);
+      setStatus(data.length ? "" : "항목이 없습니다");
+      loadRules();
       loadChanges();
       loadTips();
     } catch {
@@ -342,7 +340,7 @@ export default function AdminPage() {
   };
 
   const saveChange = async (next: ChangeDraft) => {
-    await adminUpsertChange(password, next);
+    await adminUpsertChange(next);
     setEditingChange(null);
     setChangeStatus(`저장됨 — 사이트 헤더 🛠 모달에 즉시 반영됩니다 (${next.released_at})`);
     loadChanges();
@@ -351,7 +349,7 @@ export default function AdminPage() {
   const removeChange = async (row: ChangeRow) => {
     if (!(await confirm({ message: `'${row.ko.slice(0, 40)}…' 항목을 삭제할까요?`, danger: true }))) return;
     try {
-      await adminDeleteChange(password, row.id);
+      await adminDeleteChange(row.id);
       setChangeStatus("삭제됨");
       loadChanges();
     } catch { setChangeStatus("삭제 실패"); }
@@ -367,7 +365,7 @@ export default function AdminPage() {
   };
 
   const saveTip = async (next: TipDraft) => {
-    await adminUpsertTip(password, next);
+    await adminUpsertTip(next);
     setEditingTip(null);
     setTipStatus("저장됨 — 사이트 팁 풍선에 즉시 반영됩니다");
     loadTips();
@@ -375,7 +373,7 @@ export default function AdminPage() {
 
   const removeTip = async (row: TipRow) => {
     if (!(await confirm({ message: `'${row.title_ko}' 팁을 삭제할까요?`, danger: true }))) return;
-    try { await adminDeleteTip(password, row.id); setTipStatus("삭제됨"); loadTips(); }
+    try { await adminDeleteTip(row.id); setTipStatus("삭제됨"); loadTips(); }
     catch { setTipStatus("삭제 실패"); }
   };
 
@@ -390,9 +388,9 @@ export default function AdminPage() {
 
   // 파일 탭을 처음 열 때 목록을 불러온다 (입장 시점엔 안 부른다 — 워커가 없어도 다른 탭은 멀쩡해야)
   useEffect(() => {
-    if (tab === "files" && files === null && entered) loadFiles(password);
+    if (tab === "files" && files === null && me) loadFiles();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, entered]);
+  }, [tab, me]);
 
   const uploadPicked = async (list: FileList | File[]) => {
     const picked = [...list];
@@ -401,7 +399,7 @@ export default function AdminPage() {
     let done = 0;
     for (const file of picked) {
       try {
-        const stored = await adminUploadFile(password, file);
+        const stored = await adminUploadFile(file);
         done += 1;
         setFileStatus(`올림 (${done}/${picked.length}) — ${stored.key}`);
       } catch (err) {
@@ -410,17 +408,17 @@ export default function AdminPage() {
       }
     }
     setUploading(false);
-    loadFiles(password);
+    loadFiles();
   };
 
   const removeFile = async (row: StoredFile) => {
     if (!(await confirm({ message: `'${row.key}' 파일을 삭제할까요? 이 URL을 쓰는 팁·페이지에선 이미지가 깨집니다.`, danger: true }))) return;
-    try { await adminDeleteFile(password, row.key); setFileStatus("삭제됨"); loadFiles(password); }
+    try { await adminDeleteFile(row.key); setFileStatus("삭제됨"); loadFiles(); }
     catch { setFileStatus("삭제 실패"); }
   };
 
   // 팁 편집기 이미지칸 "올리기" — 올리고 나서 공개 URL을 돌려준다
-  const uploadForTip = async (file: File) => (await adminUploadFile(password, file)).url;
+  const uploadForTip = async (file: File) => (await adminUploadFile(file)).url;
 
   // ── 플래너 규칙 (docs/PLANNER-RULES-DB.md Phase 2) ────────────────────────────
   const loadRules = async (pw: string) => {
@@ -436,19 +434,19 @@ export default function AdminPage() {
   };
 
   const saveRule = async (next: RuleRow) => {
-    await adminUpsertRule(password, next);
+    await adminUpsertRule(next);
     setEditingRule(null);
     setRulesStatus(`저장됨: ${next.kind}/${next.key} — 발행해야 반영됩니다`);
-    loadRules(password);
+    loadRules();
   };
 
   const removeRule = async (rule: RuleRow) => {
     if (!rule.id) return;
     if (!(await confirm({ message: `${RULE_KIND_LABEL[rule.kind]} '${rule.key}'를 삭제할까요? (이력을 남기려면 삭제 대신 편집에서 retired로)`, danger: true }))) return;
     try {
-      await adminDeleteRule(password, rule.id);
+      await adminDeleteRule(rule.id);
       setRulesStatus(`삭제됨: ${rule.kind}/${rule.key} — 발행해야 반영됩니다`);
-      loadRules(password);
+      loadRules();
     } catch { setRulesStatus("규칙 삭제 실패"); }
   };
 
@@ -461,7 +459,7 @@ export default function AdminPage() {
     // 발행 메모는 window.prompt 대신 발행 버튼 옆 인라인 입력(publishNote)에서 받는다
     if (!(await confirm({ message: `v${nextVersion}으로 발행할까요? (active 규칙 ${activeCount}건 · 메모: ${publishNote.trim() || "없음"})` }))) return;
     try {
-      await adminPublishRelease(password, nextVersion, compileSnapshot(rules, nextVersion), publishNote.trim());
+      await adminPublishRelease(nextVersion, compileSnapshot(rules, nextVersion), publishNote.trim());
       setRelease(await fetchLatestRelease());
       setPublishNote("");
       setRulesStatus(`v${nextVersion} 발행 완료 — 로컬에서 python3 scripts/build-rules.py 베이크 → 안내되는 검증 절차 → 커밋·배포`);
@@ -472,21 +470,25 @@ export default function AdminPage() {
     if (!release) return;
     if (!(await confirm({ message: `최신 발행 v${release.version}을 삭제(롤백)할까요? 이전 버전이 최신이 됩니다.`, danger: true }))) return;
     try {
-      await adminDeleteRelease(password, release.version);
+      await adminDeleteRelease(release.version);
       setRelease(await fetchLatestRelease());
       setRulesStatus(`v${release.version} 롤백됨`);
     } catch { setRulesStatus("롤백 실패"); }
   };
 
+  // 입장 판정 — Access(구글 SSO)를 통과했는지 /api/me로 확인하고, 통과면 바로 로드
   useEffect(() => {
-    const saved = sessionStorage.getItem("ta-admin-key");
-    if (saved) { setPassword(saved); load(saved); }
+    adminMe().then((email) => {
+      setMe(email);
+      if (email) load();
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const toggleReviewed = async (row: FeedbackRow) => {
     const next = !row.reviewed_at;
     try {
-      await adminSetReviewed(password, row.id, next);
+      await adminSetReviewed(row.id, next);
       setRows((current) => current.map((item) => item.id === row.id ? { ...item, reviewed_at: next ? new Date().toISOString() : null } : item));
     } catch {
       setStatus("갱신 실패");
@@ -496,7 +498,7 @@ export default function AdminPage() {
   const toggleHandling = async (row: FeedbackRow) => {
     const next = !handlingAt(row.payload);
     try {
-      await adminSetHandling(password, row.id, row.payload, next);
+      await adminSetHandling(row.id, row.payload, next);
       setRows((current) => current.map((item) => item.id === row.id ? { ...item, payload: withHandling(item.payload, next) } : item));
     } catch {
       setStatus("갱신 실패");
@@ -512,7 +514,7 @@ export default function AdminPage() {
     let done = 0;
     for (const row of targets) {
       try {
-        await adminSetHandling(password, row.id, row.payload, true);
+        await adminSetHandling(row.id, row.payload, true);
         setRows((current) => current.map((item) => item.id === row.id ? { ...item, payload: withHandling(item.payload, true) } : item));
       } catch { /* 개별 실패는 건너뛴다 */ }
       setStatus(`대응중 표시 중… (${++done}/${targets.length})`);
@@ -523,7 +525,7 @@ export default function AdminPage() {
   const remove = async (id: string) => {
     if (!(await confirm({ message: "이 항목을 삭제할까요?", danger: true }))) return;
     try {
-      await adminDeleteFeedback(password, id);
+      await adminDeleteFeedback(id);
       setRows((current) => current.filter((row) => row.id !== id));
     } catch {
       setStatus("삭제 실패");
@@ -572,16 +574,25 @@ export default function AdminPage() {
   const farmNeeds = farmOpened.length > 0 || farmClosed.length > 0 || farmNewItems.length > 0;
   const needsUpdate = newOps.length > 0 || newRecruit.length > 0 || farmNeeds;
 
-  if (!entered) {
+  if (!me) {
     return (
       <main className="admin-gate">
         <section>
           <h1>TERRA ARCHIVE // ADMIN</h1>
-          <form onSubmit={(event) => { event.preventDefault(); load(password); }}>
-            <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="비밀번호" autoFocus />
-            <button type="submit">입장</button>
-          </form>
-          {status && <p>{status}</p>}
+          {me === undefined ? (
+            <p>인증 확인 중…</p>
+          ) : (
+            <>
+              <p>
+                구글 로그인이 필요합니다 — 이 페이지는{" "}
+                <a href="https://admin.terra-archive.net/admin">admin.terra-archive.net</a>에서
+                Cloudflare Access(구글 SSO)를 통과해야 열립니다.
+              </p>
+              <p className="admin-status">
+                localhost 개발 서버에서는 관리자 API를 쓸 수 없습니다 (Access 쿠키가 없음).
+              </p>
+            </>
+          )}
         </section>
       </main>
     );
@@ -606,8 +617,9 @@ export default function AdminPage() {
           <button className={tab === "files" ? "selected" : ""} onClick={() => setTab("files")}>
             파일{files ? ` (${uploadRows.length})` : ""}
           </button>
-          <button onClick={() => load(password)}>새로고침</button>
-          <button onClick={() => { sessionStorage.removeItem("ta-admin-key"); setEntered(false); setRows([]); }}>잠금</button>
+          <button onClick={() => load()}>새로고침</button>
+          {/* Access 세션 종료 — 다시 들어오려면 구글 로그인 필요 */}
+          <button onClick={() => { window.location.href = "/cdn-cgi/access/logout"; }}>로그아웃</button>
         </div>
       </header>
       {status && <p className="admin-status">{status}</p>}
@@ -783,7 +795,7 @@ export default function AdminPage() {
           <button className={fileSub === "uploads" ? "selected" : ""} onClick={() => setFileSub("uploads")}>내 업로드 ({uploadRows.length})</button>
           <button className={fileSub === "assets" ? "selected" : ""} onClick={() => setFileSub("assets")}>사이트 에셋 ({assetRows.length.toLocaleString()})</button>
           <input className="file-search" value={fileQuery} onChange={(e) => setFileQuery(e.target.value)} placeholder="파일 이름 검색…" />
-          <button onClick={() => loadFiles(password)}>새로고침</button>
+          <button onClick={() => loadFiles()}>새로고침</button>
         </div>
         {files === null ? (
           <p className="admin-status">
@@ -843,7 +855,7 @@ export default function AdminPage() {
                 + {RULE_KIND_LABEL[kind]}
               </button>
             ))}
-            <button onClick={() => loadRules(password)}>새로고침</button>
+            <button onClick={() => loadRules()}>새로고침</button>
             <input className="publish-note" value={publishNote} onChange={(e) => setPublishNote(e.target.value)} placeholder="발행 메모 (무엇을 왜 바꿨나)" />
             <button className="bulk-handling-btn" onClick={publishRules} title="active 규칙을 스냅샷으로 컴파일해 새 버전으로 발행">🚀 발행 (v{(release?.version ?? 0) + 1})</button>
             {release && <button onClick={rollbackRelease} title="최신 발행을 삭제해 이전 버전으로 롤백 (원장은 그대로)">↩ v{release.version} 롤백</button>}

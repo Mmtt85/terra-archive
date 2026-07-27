@@ -1,17 +1,16 @@
 "use client";
 
-// 파일 저장소 API — 실체는 Cloudflare R2 버킷(terra-archive-files)이고
-// 업로드·목록·삭제는 workers/upload 워커를 거친다 (x-admin-key = /admin 입장 비밀번호).
-// 올린 파일의 공개 URL(<워커>/f/<key>)은 팁 풍선 이미지 등 어디에나 쓸 수 있다.
+// 파일 저장소 API — 실체는 Cloudflare R2 버킷(terra-archive-files).
+// 인증은 Cloudflare Access(구글 SSO)가 담당: 브라우저는 키를 모르고, 같은 오리진
+// /api/files(admin-api 프록시 워커)가 JWT 검증 후 키를 붙여 업로드 워커에 중계한다.
+// 올린 파일의 공개 URL은 팁 풍선 이미지 등 어디에나 쓸 수 있다.
 
-export const FILES_API = "https://terra-archive-upload.nzkonaru.workers.dev";
+export const FILES_API = "/api/files";
 
 export type StoredFile = { key: string; size: number; uploaded: string; url: string };
 
-const auth = (password: string) => ({ "x-admin-key": password });
-
 async function parse<T>(res: Response, verb: string): Promise<T> {
-  if (res.status === 401) throw new Error("비밀번호가 틀립니다 — 워커 ADMIN_KEY 시크릿과 /admin 비밀번호가 같아야 합니다");
+  if (res.status === 401) throw new Error("인증 실패 — admin.terra-archive.net에서 구글 로그인 후 이용하세요");
   if (res.status === 413) throw new Error("파일이 너무 큽니다 (95MB 이하)");
   if (!res.ok) throw new Error(`${verb} 실패 (${res.status})`);
   return res.json();
@@ -29,25 +28,25 @@ export function safeKey(name: string): string {
   return cleaned || "file";
 }
 
-export async function adminListFiles(password: string): Promise<StoredFile[]> {
-  const res = await fetch(`${FILES_API}/files`, { headers: auth(password) });
+export async function adminListFiles(): Promise<StoredFile[]> {
+  const res = await fetch(FILES_API);
   const data = await parse<{ files: StoredFile[] }>(res, "목록 조회");
   return data.files;
 }
 
 /** 업로드 — 같은 이름은 덮어쓴다 (공개 URL 캐시 때문에 반영은 최대 1일). */
-export async function adminUploadFile(password: string, file: File): Promise<StoredFile> {
+export async function adminUploadFile(file: File): Promise<StoredFile> {
   const key = safeKey(file.name);
-  const res = await fetch(`${FILES_API}/files/${encodeURIComponent(key)}`, {
+  const res = await fetch(`${FILES_API}/${encodeURIComponent(key)}`, {
     method: "PUT",
-    headers: { ...auth(password), "Content-Type": file.type || "application/octet-stream" },
+    headers: { "Content-Type": file.type || "application/octet-stream" },
     body: file,
   });
   return parse<StoredFile>(res, "업로드");
 }
 
-export async function adminDeleteFile(password: string, key: string): Promise<void> {
-  const res = await fetch(`${FILES_API}/files/${encodeURIComponent(key)}`, { method: "DELETE", headers: auth(password) });
+export async function adminDeleteFile(key: string): Promise<void> {
+  const res = await fetch(`${FILES_API}/${encodeURIComponent(key)}`, { method: "DELETE" });
   await parse(res, "삭제");
 }
 

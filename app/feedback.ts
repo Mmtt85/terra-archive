@@ -24,29 +24,34 @@ export async function sendFeedback(kind: FeedbackKind, message: string, payload?
   if (!res.ok) throw new Error(`전송 실패 (${res.status})`);
 }
 
-// ─ 관리자 (/admin) — RLS 정책이 x-admin-key 헤더를 검사한다 (docs/supabase-admin.sql) ─
+// ─ 관리자 (/admin) — 인증은 Cloudflare Access(구글 SSO)가 담당한다 (2026-07-27).
+// 브라우저는 관리자 키를 모른다: 모든 관리자 호출은 같은 오리진 /api(admin-api 프록시
+// 워커)로 나가고, 워커가 Access JWT를 검증한 뒤 x-admin-key를 붙여 Supabase에 중계한다.
+export const ADMIN_REST = "/api/supabase"; // + /<table>?<PostgREST query>
 export type FeedbackRow = { id: string; created_at: string; kind: FeedbackKind; message: string; payload: unknown; reviewed_at: string | null };
 
-export function adminHeaders(password: string) {
-  return {
-    apikey: SUPABASE_ANON_KEY,
-    Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-    "x-admin-key": password,
-  };
+/** 로그인 확인 — Access를 통과했으면 이메일, 아니면 null (localhost 등) */
+export async function adminMe(): Promise<string | null> {
+  try {
+    const res = await fetch("/api/me");
+    if (!res.ok) return null;
+    const data = await res.json();
+    return typeof data.email === "string" ? data.email : null;
+  } catch {
+    return null;
+  }
 }
 
-export async function adminListFeedback(password: string): Promise<FeedbackRow[]> {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/feedback?select=*&order=created_at.desc&limit=500`, {
-    headers: adminHeaders(password),
-  });
+export async function adminListFeedback(): Promise<FeedbackRow[]> {
+  const res = await fetch(`${ADMIN_REST}/feedback?select=*&order=created_at.desc&limit=500`);
   if (!res.ok) throw new Error(`조회 실패 (${res.status})`);
   return res.json();
 }
 
-export async function adminSetReviewed(password: string, id: string, reviewed: boolean) {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/feedback?id=eq.${id}`, {
+export async function adminSetReviewed(id: string, reviewed: boolean) {
+  const res = await fetch(`${ADMIN_REST}/feedback?id=eq.${id}`, {
     method: "PATCH",
-    headers: { ...adminHeaders(password), "Content-Type": "application/json", Prefer: "return=minimal" },
+    headers: { "Content-Type": "application/json", Prefer: "return=minimal" },
     body: JSON.stringify({ reviewed_at: reviewed ? new Date().toISOString() : null }),
   });
   if (!res.ok) throw new Error(`갱신 실패 (${res.status})`);
@@ -67,19 +72,16 @@ export function withHandling(payload: unknown, handling: boolean): Record<string
   return base;
 }
 
-export async function adminSetHandling(password: string, id: string, payload: unknown, handling: boolean) {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/feedback?id=eq.${id}`, {
+export async function adminSetHandling(id: string, payload: unknown, handling: boolean) {
+  const res = await fetch(`${ADMIN_REST}/feedback?id=eq.${id}`, {
     method: "PATCH",
-    headers: { ...adminHeaders(password), "Content-Type": "application/json", Prefer: "return=minimal" },
+    headers: { "Content-Type": "application/json", Prefer: "return=minimal" },
     body: JSON.stringify({ payload: withHandling(payload, handling) }),
   });
   if (!res.ok) throw new Error(`갱신 실패 (${res.status})`);
 }
 
-export async function adminDeleteFeedback(password: string, id: string) {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/feedback?id=eq.${id}`, {
-    method: "DELETE",
-    headers: adminHeaders(password),
-  });
+export async function adminDeleteFeedback(id: string) {
+  const res = await fetch(`${ADMIN_REST}/feedback?id=eq.${id}`, { method: "DELETE" });
   if (!res.ok) throw new Error(`삭제 실패 (${res.status})`);
 }

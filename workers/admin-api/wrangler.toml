@@ -1,0 +1,26 @@
+# 테라 아카이브 관리자 API 프록시 워커 (2026-07-27)
+# admin.terra-archive.net 은 Cloudflare Access(구글 SSO) 뒤에 있고, 이 워커는 /api/* 에서
+# Access가 발급한 JWT를 검증한 뒤에야 진짜 관리자 키를 붙여 Supabase·R2(업로드 워커)에
+# 대신 요청한다 — 브라우저에는 관리자 비밀번호가 존재하지 않는다.
+#
+# 배포: `bash deploy.sh`
+# 시크릿: npx wrangler secret put SUPABASE_ADMIN_KEY   (RLS x-admin-key — 회전 후 값)
+#         npx wrangler secret put UPLOAD_ADMIN_KEY     (업로드 워커 ADMIN_KEY — 회전 후 값)
+name = "terra-archive-admin-api"
+main = "src/index.js"
+compatibility_date = "2026-07-01"
+workers_dev = false # workers.dev 직접 접근 금지 — Access를 우회하는 경로를 만들지 않는다
+
+routes = [
+  { pattern = "admin.terra-archive.net/api/*", zone_id = "d15076ad004b938113c8a122aeaeaf79" },
+]
+
+[vars]
+# Zero Trust 설정 후 채운다 — 비어 있으면 워커는 모든 요청을 503으로 거부한다 (안전 기본값)
+ACCESS_TEAM = ""    # <team>.cloudflareaccess.com 의 <team> 부분
+ACCESS_AUD = ""     # Access 애플리케이션의 Audience(AUD) 태그
+ALLOWED_EMAIL = "nzkonaru@gmail.com"
+SUPABASE_URL = "https://exirlkhpkgxsflbglhld.supabase.co"
+# anon 키는 공개 값(사이트 번들에 이미 들어있음) — 시크릿 아님
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV4aXJsa2hwa2d4c2ZsYmdsaGxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyNTAwNDEsImV4cCI6MjA5ODgyNjA0MX0.IKwvqp0OyHOacl89JWIoRwzvJRDc2t0678qs3NPZ4fw"
+UPLOAD_API = "https://terra-archive-upload.nzkonaru.workers.dev"

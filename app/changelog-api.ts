@@ -4,7 +4,7 @@
 // (사용자 확정 2026-07-27: "매번 빌드해서 올리지 말고, 디비에 저장하면 자동으로 나오게").
 // 스키마·RLS·시드: docs/supabase-changelog.sql
 
-import { SUPABASE_URL, SUPABASE_ANON_KEY, adminHeaders } from "./feedback";
+import { SUPABASE_URL, SUPABASE_ANON_KEY, ADMIN_REST } from "./feedback";
 
 // 종류 5종 (사용자 확정 2026-07-27: "버그픽스인지 수정인지" — 둘은 별개다).
 // change = 버그가 아닌 일반 변경(이름 정리·문구 교체·배치 조정), fix = 실제 오작동 수정.
@@ -88,7 +88,7 @@ export function changeText(row: ChangeRow, locale: string): string {
 
 export type ChangeDraft = Omit<ChangeRow, "id"> & { id?: string };
 
-export async function adminUpsertChange(password: string, row: ChangeDraft) {
+export async function adminUpsertChange(row: ChangeDraft) {
   const isNew = !row.id;
   const body = {
     released_at: row.released_at,
@@ -100,20 +100,19 @@ export async function adminUpsertChange(password: string, row: ChangeDraft) {
     seq: row.seq,
   };
   const res = await fetch(
-    isNew ? `${SUPABASE_URL}/rest/v1/changelog` : `${SUPABASE_URL}/rest/v1/changelog?id=eq.${row.id}`,
+    isNew ? `${ADMIN_REST}/changelog` : `${ADMIN_REST}/changelog?id=eq.${row.id}`,
     {
       method: isNew ? "POST" : "PATCH",
-      headers: { ...adminHeaders(password), "Content-Type": "application/json", Prefer: "return=minimal" },
+      headers: { "Content-Type": "application/json", Prefer: "return=minimal" },
       body: JSON.stringify(body),
     },
   );
-  if (!res.ok) throw new Error(`저장 실패 (${res.status}) — 테이블·비밀번호를 확인하세요`);
+  if (!res.ok) throw new Error(`저장 실패 (${res.status}) — 테이블·Access 로그인을 확인하세요`);
 }
 
-export async function adminDeleteChange(password: string, id: string) {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/changelog?id=eq.${id}`, {
+export async function adminDeleteChange(id: string) {
+  const res = await fetch(`${ADMIN_REST}/changelog?id=eq.${id}`, {
     method: "DELETE",
-    headers: adminHeaders(password),
   });
   if (!res.ok) throw new Error(`삭제 실패 (${res.status})`);
 }

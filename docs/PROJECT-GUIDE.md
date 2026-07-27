@@ -455,10 +455,32 @@ npm run build                             # 9. 빌드 확인 → 커밋 → 푸�
 - UI: 우하단 플로팅 위젯(전 탭 공통, 열고 닫기), 플래너 헤더 "전체 편성 제안"(커스텀 확인
   다이얼로그), 시설 모달 "이 편성을 제안". ⚠️ **이 런타임은 `window.prompt/confirm/alert`가
   차단됨** — 확인창은 반드시 커스텀 React 다이얼로그로 구현할 것.
-- 관리자 `/admin`: 비번(RLS `x-admin-key`) 입장, 종류 필터, 삭제, **확인완료 토글**
-  (reviewed_at), 새로고침. 미확정/예정 데이터는 UI에서 "추가 예정" 배지로만 표시.
+- 관리자 `/admin`: 종류 필터, 삭제, **확인완료 토글**(reviewed_at), 새로고침.
+  미확정/예정 데이터는 UI에서 "추가 예정" 배지로만 표시.
 - 공채 "추가 예정"(`RECRUIT_PENDING`): pending 플래그 → 조합 결과에 "추가 예정" 배지.
   실제 적용되면 `RECRUIT_SUPPLEMENT`로 옮기거나 데이터마인 반영을 기다린다.
+
+### 관리자 페이지 분리 + Cloudflare Access 구글 SSO (2026-07-27, 사용자 확정)
+
+CRUD가 늘며 위험해진 /admin을 본사이트에서 떼어냈다. **비밀번호 게이트는 없다.**
+
+- **admin.terra-archive.net** (Pages 프로젝트 `terra-archive-admin`, `scripts/deploy-admin.sh`) —
+  같은 빌드 산출물에서 /admin이 입구. 본사이트 deploy.sh는 admin.html/.rsc를 지우고
+  옛 주소를 301로 넘긴다. 도메인 전체를 **Cloudflare Access(Zero Trust, 구글 SSO,
+  nzkonaru@gmail.com만 허용)** 가 막는다.
+- **admin-api 프록시 워커** ([workers/admin-api](../workers/admin-api/), 라우트
+  `admin.terra-archive.net/api/*`) — Access JWT(RS256, 팀 JWKS)를 검증한 뒤에야
+  관리자 키를 붙여 중계: `/api/supabase/<table>` → Supabase REST(+`x-admin-key`),
+  `/api/files…` → 업로드 워커(+`x-admin-key`), `/api/me` = 로그인 확인.
+  **브라우저에는 어떤 관리자 키도 없다.** `workers_dev = false`(Access 우회 경로 차단),
+  ACCESS_TEAM/AUD 미설정이면 503 거부가 기본값.
+- 프론트 규약: 모든 admin CRUD는 같은 오리진 **`/api`** 상대경로(`ADMIN_REST` 등,
+  feedback.ts) — Access 쿠키가 자동 동반된다. localhost 개발 서버에서는 관리자 API를
+  못 쓴다(Access 쿠키 없음) — admin 작업은 실서비스 admin 도메인에서.
+- **키 회전**: `node scripts/make-admin-rotate-sql.mjs` → `.supabase-admin-key`(gitignore) +
+  `.admin-rotate.generated.sql`(Supabase SQL Editor에서 실행) → admin-api 워커 시크릿
+  `SUPABASE_ADMIN_KEY`/`UPLOAD_ADMIN_KEY` 갱신. 옛 키('admin')는 SQL 문서에 평문
+  커밋돼 있었으므로 **Access가 동작 확인된 직후 반드시 회전**한다.
 
 ### 업데이트 내역 — DB 원장 (2026-07-27, 사용자 확정)
 
