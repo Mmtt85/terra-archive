@@ -12,6 +12,7 @@ export const FEATURE_RELEASED: Record<string, string | { date: string; days: num
   omni: "2026-07-25", // 헤더 만능검색 — 단어 하나로 사이트 안 아무 컨텐츠나 찾아 이동
   account: "2026-07-26", // 보유 오퍼 가져오기 — 요스타 계정 로그인으로 실제 보유 목록 동기화
   bridge: "2026-07-26", // 게임 연결 — 게임 창 라이브 캡처를 렌즈에 태워 자동 인식 (/rogue 테마별)
+  endless: "2026-07-27", // 인프라 플래너 우선 생산 '무한동력' 모드 — 컨디션 순소모 최소 편성
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -30,7 +31,7 @@ export function isNewFeature(key: string): boolean {
 // 탭 → 그 탭 안에 든 새 기능 키 — 햄버거 메뉴 배지용 (사용자 요청 2026-07-24:
 // 새 기능이 있는 메뉴 항목에도 '새기능'을 표시). 새 기능을 다른 탭에 넣으면 여기도 갱신.
 const TAB_FEATURES: Record<string, string[]> = {
-  planner: ["scanner", "invest", "layout-153", "account"],
+  planner: ["scanner", "invest", "layout-153", "account", "endless"],
   recruit: ["lens"],
   rogue: ["lens", "rogue-inv", "bridge"],
   story: ["lens"], // 스샷 레이더 /stories 설치 (전문 대사 검색, 2026-07-24)

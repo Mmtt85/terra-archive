@@ -14,7 +14,7 @@ import {
   ELITE_LABEL, LAYOUT, cellByKey, ROOM_ACCENT, UNIT, PARK_KEYS, SHIFT_COUNT,
   JOB_ORDER, ROSTER_SORT_KEYS, PRODUCTION_KEYS, SUPPORT_KEYS,
   AURA_WEIGHT, AURA_LABEL, skillApplies, breakdown, teamScore, aurasOf, ambientFor, capConvFor,
-  ctxFor, sanitizePlan, presentIdsFor, roomOfFor, cellOfFor, slotSubstitutes, setLayoutPreset, memberOf, growAvg, DEFAULT_CUSTOM_ROOMS, DEFAULT_CUSTOM_PRODUCTS,
+  ctxFor, sanitizePlan, presentIdsFor, roomOfFor, cellOfFor, slotSubstitutes, setLayoutPreset, setPriorityMode, memberOf, growAvg, DEFAULT_CUSTOM_ROOMS, DEFAULT_CUSTOM_PRODUCTS,
   setLevels as setEngineLevels, slotsFor, maxLevelOf, levelOf, powerBudget, suggestedLevels, TERMS,
   type InfraOp, type InfraSkill, type Elite, type Plan, type ProdPriority, type TokenFlow, type OptimizeStep, type LayoutPreset, type Levels, type CustomRoom, type CustomProduct,
 } from "./planner-engine";
@@ -603,6 +603,10 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     setTempBasePlan(null);
   };
 
+  // endless(무한동력) 모드 동기화 — 메인 스레드 엔진 인스턴스의 비교 함수(대체 추천 순위 등)가
+  // 현재 모드의 컨디션 보너스를 쓰도록 모듈 플래그를 맞춘다 (워커 쪽은 잡마다 buildPlan이 설정)
+  useEffect(() => { setPriorityMode(priority); }, [priority]);
+
   // 우선 생산 모드는 설정(라디오)일 뿐 — 실제 편성은 기존처럼 자동편성 버튼으로 실행한다
   // (사용자 확정 2026-07: 설정 변경이 편성을 갈아엎으면 안 됨)
   const setPriority = (prio: ProdPriority) => {
@@ -1046,10 +1050,12 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         {layout !== "custom" && (
           <>
             <span className="prio-label prio-label-layout" title={t("먼저 채우는 방이 최고 요원을 가져갑니다 — 다음 자동편성부터 적용됩니다")}>⚙ {t("우선 생산")}</span>
-            {(["gold", "exp", "balance"] as const).map((mode) => (
-              <label key={mode} className={priority === mode ? "on" : ""}>
+            {(["gold", "exp", "balance", "endless"] as const).map((mode) => (
+              <label key={mode} className={priority === mode ? "on" : ""}
+                title={mode === "endless" ? t("컨디션 소모 감소·근무 중 회복까지 계산해 교대 없이 오래가는 조합을 우선합니다 — 레인보우 팀 제어센터(소모 0) 같은 무한동력 편성") : undefined}>
                 <input type="radio" name="prod-priority" checked={priority === mode} onChange={() => setPriority(mode)} />
-                {t(mode === "gold" ? "순금 우선" : mode === "exp" ? "작전기록 우선" : "밸런스")}
+                {t(mode === "gold" ? "순금 우선" : mode === "exp" ? "작전기록 우선" : mode === "balance" ? "밸런스" : "무한동력")}
+                {mode === "endless" && isNewFeature("endless") && <span className="new-badge">{t("새기능")}</span>}
               </label>
             ))}
           </>
@@ -2379,7 +2385,7 @@ const HELP_SECTIONS: { title: string; items: string[] }[] = [
     "기지 배치 설정: 243(무역 2·제조 4 — 순금 2+작전기록 2, 기본) · 153(무역 1·제조 5 — 순금 1+작전기록 4) · 252(무역 2·제조 5 — 순금 2+작전기록 3, 발전 2). 153은 무역소가 하나라 제조소 대부분을 작전기록에 쓰되, 유일한 순금방이 병목이므로 그 방을 맨 먼저(최정예로) 채웁니다. 각 배치의 편성·시설 레벨은 따로 저장됩니다 — 배치마다 한 번씩 자동편성해 두면 전환할 때 그대로 복원됩니다.",
     "전력·시설 레벨: 발전소가 전력을 공급하고(레벨 3 기준 1기 270, 3기 810) 나머지 시설이 소비합니다. 방을 눌러 시설 레벨을 바꾸면 전력 소비·근무 슬롯(제조소·무역소 Lv1/2/3 = 1/2/3인)·레벨 연동 스킬(숙소 레벨 합·응접실·훈련실 레벨 등)이 함께 재계산됩니다. 243·153은 전부 만렙일 때 소비가 정확히 810이라 여유가 0이고, 252는 발전소가 2기(540)뿐이라 시설 레벨을 낮춰야 성립합니다 — 기본값은 순금 제조소·응접실·훈련실 만렙 유지, 작전기록 제조소 Lv2, 사무실 Lv2, 숙소 Lv1(첫 숙소만 Lv2)로 소비가 정확히 540입니다. 상단 ⚡ 전력이 음수면 게임에서 지을 수 없는 구성입니다.",
     "사용자 지정 배치: 제조소·무역소·발전소 9칸을 자유롭게 구성합니다. 방 카드의 제조소/무역소/발전소 버튼으로 각 칸의 종류를 바꾸면 순금 제조소 수는 무역소 수에 맞춰 자동 배정되고(프리셋과 동일 규칙), 전력·자동화 스케일도 발전소 수를 따라갑니다. 칸을 바꾼 뒤엔 전체 자동편성으로 재편성하세요 — 그외 배치의 편성·레벨도 별도 버킷으로 저장됩니다.",
-    "우선 생산 설정: 순금 우선(기본) · 작전기록 우선 · 밸런스(교차). 먼저 채우는 방이 최고 요원을 가져가고, 순금(또는 작전기록) 우선이면 어느 제조소에서나 생산력이 같은 요원을 그 제조소로 몰아줍니다 — 총 생산력이 같을 때만. 설정만 바꾸고, 실제 편성은 전체 자동편성 버튼을 눌러 적용합니다.",
+    "우선 생산 설정: 순금 우선(기본) · 작전기록 우선 · 밸런스(교차) · 무한동력. 먼저 채우는 방이 최고 요원을 가져가고, 순금(또는 작전기록) 우선이면 어느 제조소에서나 생산력이 같은 요원을 그 제조소로 몰아줍니다 — 총 생산력이 같을 때만. 무한동력은 컨디션 소모 감소·근무 중 회복까지 계산해 교대 없이 오래가는 조합을 우선합니다 — 레인보우 팀 5명 제어센터(소모 0)나 위셔델·총웨 회복 오라 편성이 여기서 나옵니다. 설정만 바꾸고, 실제 편성은 전체 자동편성 버튼을 눌러 적용합니다.",
     "채우는 순서: 제조소-순금 > 제조소-작전기록 > 무역소 > 발전소 > 사무실 > 응접실 — 먼저 채우는 방이 좋은 요원을 가져갑니다. 응접실은 최하위라, 응접실 스킬이 있는 오퍼(쉐라 등)도 상위 방 세트가 우선입니다.",
     "응접실 단서 수집 속도는 RIIC 스킬과 별개로 레어도·정예화 기본치가 더해집니다: 6성 +10 / 5성 +9 / 4성 +7 / 3성↓ +5, 정예화 1정 +8 · 2정 +16 (미지정은 그 레어도 최대 승급 가정). 그래서 스킬 없는 2정 6성도 +26%. 카드에 '레어도 기본'으로 따로 표기됩니다.",
     "순금 2 + 작전기록 2 분할. 무역소 효율이 오르면 순금이 병목이 되므로 가장 강한 생산 팀을 순금 2방에 먼저 배치하고, 남는 효율을 작전기록으로 돌립니다.",

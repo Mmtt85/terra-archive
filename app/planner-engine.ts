@@ -53,7 +53,11 @@ export type InfraSkill = {
   // min(first + rate×(k−1), cap). 교대마다 리셋되므로 구운 value = 24h 기준 교대 평균이고,
   // 엔진이 실제 편성의 교대 시계(ctx.shiftHours)로 재계산한다
   growHourly?: { first: number; rate: number; cap: number };
-  drainRoom?: number;             // "방 내 모든 오퍼레이터의 시간당 컨디션 소모 ±X" (슈 -0.1·'아' +1.5)
+  drainRoom?: number;             // "방 내 (모든) 오퍼레이터의 시간당 컨디션 소모 ±X" (슈 -0.1·'아' +1.5·파이어휘슬 -0.1·샤마르 속삭임 +0.25)
+  // 근무 중 컨디션 회복 구조 필드 (무한동력 모드, 2026-07-27 — build-infra.py parse_recover):
+  recoverRoom?: number;           // "제어 센터 내 모든 오퍼레이터의 시간당 컨디션 회복 +X" 고정형 (도베르만류)
+  recoverRoomPer?: { faction: string; value: number }; // "<그룹> 1명 증가할 때마다 방 전체 회복 +X" (레인보우 팀 — 4보유×5명×0.05 = 소모 1.0 정확 상쇄)
+  recoverAura?: { scope: string; value: number; perToken?: { token: string; per: number; add: number } }; // 제어센터→기타/일부 시설 횡단 회복 (위셔델·총웨·무에나)
   selfDrainNegate?: string | null; // "<진영> 오퍼레이터 본인의 컨디션 소모 영향 제거" (링: 쉐이)
   goldLine?: { per: number; add: number; base: number } | null; // 순금 라인 N개당 +add% (투예·파죰카) — 활성 레이아웃 순금방 수로 재계산
   // 시설 레벨 연동 단위값 (전력·레벨 시스템 2026-07-24) — baked value는 만렙 기준,
@@ -222,7 +226,7 @@ const POWER_CELLS: LayoutCell[] = [
 ];
 const LAYOUT_DEFS: Record<Exclude<LayoutPreset, "custom">, {
   cells: LayoutCell[];
-  priority: Record<ProdPriority, string[]>;   // 방 채우기 순서 (§1 우선 생산 3모드)
+  priority: Record<ProdPriority, string[]>;   // 방 채우기 순서 (§1 우선 생산 4모드 — endless는 balance와 동일 순서)
   goldLines: number;                          // 순금 제조소 수 (투예·파죰카 순금 라인 재계산)
   counts: Record<string, number>;             // 시설 수 (facilityBased 배수 재계산)
   plantsBase: number;                         // 발전소 수 (자동화 오퍼 스케일·그레이 시 +1)
@@ -241,6 +245,8 @@ const LAYOUT_DEFS: Record<Exclude<LayoutPreset, "custom">, {
       gold: ["MANUFACTURE-0", "MANUFACTURE-1", "MANUFACTURE-2", "MANUFACTURE-3", "TRADING-0", "TRADING-1", "POWER-0", "POWER-1", "POWER-2"],
       exp: ["MANUFACTURE-2", "MANUFACTURE-3", "MANUFACTURE-0", "MANUFACTURE-1", "TRADING-0", "TRADING-1", "POWER-0", "POWER-1", "POWER-2"],
       balance: ["MANUFACTURE-0", "MANUFACTURE-2", "MANUFACTURE-1", "MANUFACTURE-3", "TRADING-0", "TRADING-1", "POWER-0", "POWER-1", "POWER-2"],
+      // 무한동력: 품목 무관(순서는 밸런스와 동일) — 채택은 teamValue의 순소모 보너스가 결정
+      endless: ["MANUFACTURE-0", "MANUFACTURE-2", "MANUFACTURE-1", "MANUFACTURE-3", "TRADING-0", "TRADING-1", "POWER-0", "POWER-1", "POWER-2"],
     },
     goldLines: 2,
     counts: { TRADING: 2, MANUFACTURE: 4, POWER: 3 },
@@ -261,6 +267,7 @@ const LAYOUT_DEFS: Record<Exclude<LayoutPreset, "custom">, {
       exp: ["MANUFACTURE-1", "MANUFACTURE-2", "MANUFACTURE-3", "MANUFACTURE-4", "MANUFACTURE-0", "TRADING-0", "POWER-0", "POWER-1", "POWER-2"],
       // 밸런스(교차)는 순금방이 1개라 gold 우선과 동일한 순서가 된다
       balance: ["MANUFACTURE-0", "MANUFACTURE-1", "MANUFACTURE-2", "MANUFACTURE-3", "MANUFACTURE-4", "TRADING-0", "POWER-0", "POWER-1", "POWER-2"],
+      endless: ["MANUFACTURE-0", "MANUFACTURE-1", "MANUFACTURE-2", "MANUFACTURE-3", "MANUFACTURE-4", "TRADING-0", "POWER-0", "POWER-1", "POWER-2"],
     },
     goldLines: 1,
     counts: { TRADING: 1, MANUFACTURE: 5, POWER: 3 },
@@ -281,6 +288,7 @@ const LAYOUT_DEFS: Record<Exclude<LayoutPreset, "custom">, {
       gold: ["MANUFACTURE-0", "MANUFACTURE-1", "MANUFACTURE-2", "MANUFACTURE-3", "MANUFACTURE-4", "TRADING-0", "TRADING-1", "POWER-0", "POWER-1"],
       exp: ["MANUFACTURE-2", "MANUFACTURE-3", "MANUFACTURE-4", "MANUFACTURE-0", "MANUFACTURE-1", "TRADING-0", "TRADING-1", "POWER-0", "POWER-1"],
       balance: ["MANUFACTURE-0", "MANUFACTURE-2", "MANUFACTURE-1", "MANUFACTURE-3", "MANUFACTURE-4", "TRADING-0", "TRADING-1", "POWER-0", "POWER-1"],
+      endless: ["MANUFACTURE-0", "MANUFACTURE-2", "MANUFACTURE-1", "MANUFACTURE-3", "MANUFACTURE-4", "TRADING-0", "TRADING-1", "POWER-0", "POWER-1"],
     },
     goldLines: 2,
     counts: { TRADING: 2, MANUFACTURE: 5, POWER: 2 },
@@ -347,6 +355,7 @@ function buildCustomDef(rooms: CustomRoom[], products: (CustomProduct | null)[] 
       gold: [...goldKeys, ...expKeys, ...tradeKeys, ...powerKeys],
       exp: [...expKeys, ...goldKeys, ...tradeKeys, ...powerKeys],
       balance: [...balance, ...tradeKeys, ...powerKeys],
+      endless: [...balance, ...tradeKeys, ...powerKeys],
     } as Record<ProdPriority, string[]>,
     goldLines: goldKeys.length, // 실제 순금 방 수 (명시 선택 반영 — 투예·파죰카 라인 상수)
     counts,
@@ -471,7 +480,93 @@ export function growAvg(g: { first: number; rate: number; cap: number }, hours: 
 // 생산 가치가 아니므로 시계에 넣지 않는다 — 안 그러면 감소 요원이 "시계를 늘려 성장형을
 // 올려주는" 유령 좌석 근거를 얻어 더 강한 효율 요원을 밀어낸다 (슈가 왕 확장을 막던 원인).
 const CLOCK_ROOMS = new Set(["MANUFACTURE", "TRADING", "POWER", "CONTROL"]);
+
+// ── 무한동력(endless) 우선 생산 모드 (사용자 요청 2026-07-27) ─────────────────────
+// "오랫동안 쓰는 걸 우선": 교대 없이 오래가는 편성이 목적 함수다. 기존 3모드의 "양수 소모만"
+// 교대 시계 규칙(INFRA-RULES §2 — 감소 요원이 유령 좌석 근거를 얻는 것을 막는 규칙)은
+// 생산 우선 모드에 한정되고, 이 모드에서는 소모 감소·근무 중 회복이 곧 가치다.
+// 결합은 방별 보너스: W × (방 기본 소모 − 방 최대 순소모) — 빈 방 0, 저소모팀 양수,
+// 고소모팀(인포서 +2 등) 음수. 절대 페널티가 아니라 기본 소모 대비 상대치라 슬롯 백필
+// 절대룰(방은 꽉 채운다)과 충돌하지 않는다. 비교 전용 함수(teamValue·planScore·감사·백필)
+// 에만 더하고 표시용 teamScore(방 % 배지)는 순수 생산 점수로 유지한다.
+export let ENDLESS_ON = false;
+export function setPriorityMode(priority?: ProdPriority) { ENDLESS_ON = priority === "endless"; }
+export const ENDLESS_DRAIN_W: number = (C as unknown as Record<string, number | undefined>).ENDLESS_DRAIN_W ?? 600; // 소모 1.0/h당 점수 등가 (0.25 감소 ≈ 150점 — 편함이 생산에 우선하는 가중, L2 상수로 조정 가능)
+const ENDLESS_CLOCK_CAP = 72; // 순소모 0(무한동력) 방의 교대 시계 상한 — growAvg 발산 방지
+// 시설 집합 용어(INFRA-RULES §5 전수조사): 기타 시설 = 작업 시설 − 제어센터·훈련실,
+// 일부 시설 = 발전소·사무실·응접실. 위셔델·총웨·무에나의 횡단 회복 오라 대상.
+const RECOVER_SCOPE_ROOMS: Record<string, string[]> = {
+  other: ["MANUFACTURE", "TRADING", "POWER", "HIRE", "MEETING"],
+  some: ["POWER", "HIRE", "MEETING"],
+};
+// 횡단 회복 오라 실효값 — perToken(총웨 '외로운 빛과 함께': 화식 20점당 +0.05)은 현 원장 기준
+function recoverAuraValue(skill: InfraSkill, tokenPoints: Record<string, number>): number {
+  const aura = skill.recoverAura!;
+  const extra = aura.perToken ? Math.floor((tokenPoints[aura.perToken.token] ?? 0) / aura.perToken.per) * aura.perToken.add : 0;
+  return aura.value + extra;
+}
+// 방 최대 순소모 (endless 모델): 기본 소모 + 본인 가산(부호 유지) + 방 전체 가산(부호 유지)
+// − 방 내 회복(고정 recoverRoom + 그룹 1명당 recoverRoomPer) − 제어센터 횡단 회복 오라.
+// 오퍼별 하한 0(과회복은 낭비) 후 최댓값 — 방을 제일 먼저 지치는 오퍼가 교대를 부른다.
+// 소모 없는 방(숙소·가공소)·빈 팀은 null. 동반 게이트 회복(리 '한가하고 덧없는 인생': 아와
+// 함께)은 partners 전원이 같은 방일 때만 계상한다.
+export function roomMaxNetDrain(team: InfraOp[], room: string, ctx: Ctx): number | null {
+  const base = infra.rooms[room]?.drain ?? 1;
+  if (base <= 0 || !team.length) return null;
+  const teamIds = new Set(team.map((member) => member.id));
+  let roomAdd = 0;
+  let recover = 0;
+  const negates: string[] = [];
+  for (const member of team) for (const sk of activeSkills(member, room, ctx.product)) {
+    roomAdd += sk.drainRoom ?? 0;
+    if (sk.selfDrainNegate) negates.push(sk.selfDrainNegate);
+    if (sk.partners.length && !sk.partners.every((pid) => teamIds.has(pid))) continue;
+    if (sk.recoverRoom) recover += sk.recoverRoom;
+    if (sk.recoverRoomPer) recover += sk.recoverRoomPer.value * team.filter((member2) => memberOf(member2, sk.recoverRoomPer!.faction)).length;
+  }
+  for (const aura of ctx.ambient ?? []) {
+    if (aura.kind === "drain_recover" && aura.rooms?.includes(room)) recover += aura.value;
+  }
+  let maxNet = 0;
+  for (const member of team) {
+    let self = 0;
+    for (const sk of activeSkills(member, room, ctx.product)) self += sk.moraleDrain;
+    if (self > 0 && negates.some((f) => factionsOf(member).some((fac) => fac.includes(f)))) self = 0;
+    maxNet = Math.max(maxNet, Math.max(0, base + self + roomAdd - recover));
+  }
+  return maxNet;
+}
+// endless 모드의 방별 컨디션 보너스 — teamValue·planScore·감사·백필이 생산 점수에 더한다.
+// 제어센터는 횡단 회복 오라 보유자의 자리 가치(오라값 × W × 대상 방 수)를 추가한다 —
+// 제어센터 오라의 §6 자리 평가와 같은 관례(자리 평가와 대상 방 실적용의 의도적 이중 계상).
+// 위셔델(기타 +0.1)·총웨(+0.05+화식 스케일)·무에나(일부 +0.1)가 이 값으로 제어센터에 온다.
+export function endlessBonus(team: InfraOp[], room: string, ctx: Ctx): number {
+  if (!ENDLESS_ON) return 0;
+  const maxNet = roomMaxNetDrain(team, room, ctx);
+  if (maxNet == null) return 0;
+  const base = infra.rooms[room]?.drain ?? 1;
+  let bonus = ENDLESS_DRAIN_W * (base - maxNet);
+  if (room === "CONTROL") for (const member of team) for (const sk of activeSkills(member, room, ctx.product)) {
+    if (!sk.recoverAura) continue;
+    const targets = RECOVER_SCOPE_ROOMS[sk.recoverAura.scope] ?? [];
+    const roomCount = targets.reduce((sum, r) => sum + (FACILITY_COUNTS[r] ?? 1), 0);
+    bonus += recoverAuraValue(sk, ctx.tokenPoints) * ENDLESS_DRAIN_W * roomCount;
+  }
+  return bonus;
+}
+
 export function shiftHoursFor(teams: { room: string; ops: InfraOp[] }[]): number {
+  // endless 모드: 순소모 모델(감소·회복 포함)로 시계를 계산한다 — 무한동력 방은 상한 72h.
+  // 횡단 회복 오라는 근사상 제외(보수적 — 시계가 실제보다 짧게 잡혀도 성장형 평균만 소폭 영향).
+  if (ENDLESS_ON) {
+    let maxDrain = 24 / ENDLESS_CLOCK_CAP;
+    for (const { room, ops: team } of teams) {
+      if (!CLOCK_ROOMS.has(room)) continue;
+      const net = roomMaxNetDrain(team, room, { tokenPoints: {} });
+      if (net != null) maxDrain = Math.max(maxDrain, net);
+    }
+    return 24 / maxDrain;
+  }
   let maxDrain = 1;
   for (const { room, ops: team } of teams) {
     if (!CLOCK_ROOMS.has(room)) continue;
@@ -552,7 +647,9 @@ export const AURA_TARGET: Record<string, string> = { MANUFACTURE: "ctrl_mfg", TR
 // perFaction+perProduct: 제조소 배치 진영원 오라(플레임테일·제시카 이격) — 기지 전체 일률이
 // 아니라 **그 진영원이 앉은 제조소에만** 1명당 적용 (사용자 정정 2026-07-19). perProduct는
 // 1명당 생산품별 가감 맵({exp:+10, gold:-10} 또는 {any:+5}), 방별 인원은 ambientFor가 센다.
-export type AmbientAura = { kind: string; value: number; gateFaction?: string | null; gateCount?: number | null; belowThreshold?: number | null; perFaction?: string | null; perProduct?: Record<string, number> | null; cap?: number; capPer?: number };
+// rooms: drain_recover(제어센터 횡단 컨디션 회복 — 위셔델·총웨·무에나) 오라의 대상 방 집합.
+// 동종 최고 경쟁(ambientFor)이 아니라 endless 순소모 모델(roomMaxNetDrain)만 소비한다.
+export type AmbientAura = { kind: string; value: number; gateFaction?: string | null; gateCount?: number | null; belowThreshold?: number | null; perFaction?: string | null; perProduct?: Record<string, number> | null; cap?: number; capPer?: number; rooms?: string[] };
 
 // 방 기본 속도 — 임계값 조건("N% 미만인 경우, 기본 속도 포함") 판정용 (사무실 기본 누적 5%)
 export const ROOM_BASE_RATE: Record<string, number> = C.ROOM_BASE_RATE;
@@ -563,6 +660,10 @@ export function aurasOf(controlTeam: InfraOp[], ctx: Ctx): AmbientAura[] {
   for (const op of controlTeam) {
     const b = breakdown(op, "CONTROL", controlTeam, ctx);
     for (const skill of b.skills) {
+      // 횡단 컨디션 회복 오라 (endless 모델 전용 소비 — 생산 모드에선 아무도 안 읽어 무해)
+      if (skill.recoverAura) {
+        list.push({ kind: "drain_recover", value: recoverAuraValue(skill, ctx.tokenPoints), rooms: RECOVER_SCOPE_ROOMS[skill.recoverAura.scope] ?? [] });
+      }
       if (!(skill.kind in AURA_WEIGHT)) continue;
       if (skill.gateFaction || skill.belowThreshold != null) {
         list.push({ kind: skill.kind, value: skill.value, gateFaction: skill.gateFaction, gateCount: skill.gateCount ?? 1, belowThreshold: skill.belowThreshold });
@@ -891,11 +992,19 @@ export function teamScore(team: InfraOp[], room: string, ctx: Ctx): number {
   return efficiency + clueBaseSum + quality + payout + auras + capConvEff + ambientFor(room, team, ctx.ambient, efficiency, ctx.product);
 }
 
+// 비교용 팀 가치 = 생산 점수 + endless 컨디션 보너스 (생산 모드에선 teamScore와 동일).
+// 자동편성의 모든 채택 비교(그리디·감사·백필·planScore·대체 추천 순위)는 이 값을 쓰고,
+// 표시용 방 % 배지는 순수 teamScore를 유지한다 — 무한동력 모드 2026-07-27.
+export function teamValue(team: InfraOp[], room: string, ctx: Ctx): number {
+  return teamScore(team, room, ctx) + endlessBonus(team, room, ctx);
+}
+
 export function opSolo(op: InfraOp, room: string, slots: number, ctx: Ctx): number {
   const b = breakdown(op, room, [op], ctx);
   let auras = 0;
   for (const kind of Object.keys(AURA_WEIGHT)) auras += ((b.auras[kind] ?? 0) + (b.aurasAdd[kind] ?? 0)) * AURA_WEIGHT[kind];
-  return b.efficiency + b.clueBase + b.facilityEff + b.automation + b.quality + b.payout + b.payoutViolation + b.override * slots + b.perCoworker * (slots - 1) + auras;
+  // endless 모드: 단독 순소모 보너스(쇼트리스트 순위) — 회복·저소모 오퍼가 top-40에서 잘리지 않게
+  return b.efficiency + b.clueBase + b.facilityEff + b.automation + b.quality + b.payout + b.payoutViolation + b.override * slots + b.perCoworker * (slots - 1) + auras + endlessBonus([op], room, ctx);
 }
 
 export function bestTeam(room: string, slots: number, pool: Map<string, InfraOp>, ctx: Ctx, seedOps: InfraOp[] = []): InfraOp[] {
@@ -912,17 +1021,21 @@ export function bestTeam(room: string, slots: number, pool: Map<string, InfraOp>
   const rankedIds = new Set(rankedBase.map((op) => op.id));
   const ranked = [...rankedBase, ...cands.filter((op) =>
     !rankedIds.has(op.id) && op.skills.some((skill) => skillApplies(skill, room, ctx.product)
-      && (TEAM_KINDS.has(skill.kind) || (skill.cap ?? 0) !== 0 || skill.capConv != null)))];
+      && (TEAM_KINDS.has(skill.kind) || (skill.cap ?? 0) !== 0 || skill.capConv != null
+        // endless 모드: 소모 감소·근무 회복 보유자도 상시 포함 (cap/capConv와 같은 관례 —
+        // 단독 생산 0인 레인보우 팀·THRM-EX류가 top-40에서 잘리면 저소모 조합을 영영 못 본다)
+        || (ENDLESS_ON && ((skill.moraleDrain ?? 0) < 0 || (skill.drainRoom ?? 0) < 0
+          || skill.selfDrainNegate != null || skill.recoverRoom != null || skill.recoverRoomPer != null || skill.recoverAura != null)))))];
   // 점수가 실제로 오를 때만 슬롯을 채운다 — 0 기여 몸빵으로 컨디션을 낭비하지 않고,
   // 아르모니류 '자신만 업무 중' 스킬은 혼자 남을 수 있다
   const fill = (seed: InfraOp[], shortlist: InfraOp[] = ranked): InfraOp[] => {
     const team = [...seed].slice(0, slots);
     while (team.length < slots) {
       let pick: InfraOp | null = null;
-      let pickScore = teamScore(team, room, ctx); // 현재 점수보다 나아야 추가
+      let pickScore = teamValue(team, room, ctx); // 현재 점수보다 나아야 추가
       for (const op of shortlist) {
         if (team.includes(op)) continue;
-        const score = teamScore([...team, op], room, ctx);
+        const score = teamValue([...team, op], room, ctx);
         if (score > pickScore) { pickScore = score; pick = op; }
       }
       if (!pick) break;
@@ -931,13 +1044,13 @@ export function bestTeam(room: string, slots: number, pool: Map<string, InfraOp>
     return team;
   };
   let best = fill(seedOps);
-  let bestScore = teamScore(best, room, ctx);
+  let bestScore = teamValue(best, room, ctx);
   // 솔로 스킬 오퍼가 상위에 있으면 그리디가 '혼자 50%'에 갇혀 '둘이 60%' 조합을 놓친다
   // — 솔로 오퍼를 뺀 대안 팀도 만들어 비교한다
   const noSolo = ranked.filter((op) => !op.skills.some((skill) => skill.kind === "solo" && skillApplies(skill, room, ctx.product)));
   if (noSolo.length !== ranked.length) {
     const alt = fill(seedOps, noSolo);
-    const altScore = teamScore(alt, room, ctx);
+    const altScore = teamValue(alt, room, ctx);
     if (altScore > bestScore) { best = alt; bestScore = altScore; }
   }
   for (const cand of cands) {
@@ -953,7 +1066,26 @@ export function bestTeam(room: string, slots: number, pool: Map<string, InfraOp>
       }
       if (!valid || seed.length > slots) continue;
       const team = fill(seed);
-      const score = teamScore(team, room, ctx);
+      const score = teamValue(team, room, ctx);
+      if (score > bestScore) { best = team; bestScore = score; }
+    }
+  }
+  // endless 모드 · 그룹 회복 결집 후보 (레인보우 팀 무한동력, 2026-07-27): recoverRoomPer는
+  // "보유자 수 × 방 내 그룹원 수"로 스케일해 4보유×5명 = 소모 1.0 정확 상쇄가 정점인데,
+  // 그리디 등반은 첫 자리(단독 0.05)가 약해 이 언덕을 못 오른다 — 보유자+그룹원을 시드로
+  // 결집한 후보를 만들어 teamValue로 비교한다 (아 같은 고소모 그룹원이 섞이면 비교가 거른다).
+  if (ENDLESS_ON) {
+    const groups = new Set<string>();
+    for (const cand of cands) for (const sk of cand.skills) {
+      if (sk.recoverRoomPer && skillApplies(sk, room, ctx.product)) groups.add(sk.recoverRoomPer.faction);
+    }
+    for (const group of groups) {
+      const holders = cands.filter((op) => op.skills.some((sk) => sk.recoverRoomPer?.faction === group && skillApplies(sk, room, ctx.product)));
+      const members = Array.from(pool.values()).filter((op) => memberOf(op, group) && !holders.some((h) => h.id === op.id));
+      const seed = [...seedOps];
+      for (const op of [...holders, ...members]) if (!seed.some((s) => s.id === op.id) && seed.length < slots) seed.push(op);
+      const team = fill(seed);
+      const score = teamValue(team, room, ctx);
       if (score > bestScore) { best = team; bestScore = score; }
     }
   }
@@ -993,7 +1125,9 @@ export type Plan = {
 export let PRODUCTION_KEYS = LAYOUT_DEFS["243"].priority.gold;
 // 우선 생산 모드 (사용자 확정 2026-07): 먼저 채우는 방이 최고 요원을 가져가므로,
 // 방 순서만 바꾸면 순금 우선 / 작전기록 우선 / 밸런스(교차)가 된다.
-export type ProdPriority = "gold" | "exp" | "balance";
+// endless(무한동력, 2026-07-27)는 순서가 아니라 점수 결합이 다르다 — 방 순서는 밸런스와
+// 동일하고, teamValue의 컨디션 순소모 보너스(위 ENDLESS 블록)가 채택을 뒤집는다.
+export type ProdPriority = "gold" | "exp" | "balance" | "endless";
 export let PRIORITY_KEYS: Record<ProdPriority, string[]> = LAYOUT_DEFS["243"].priority;
 export const SUPPORT_KEYS = ["CONTROL", "HIRE", "MEETING", "WORKSHOP", "TRAINING"];
 
@@ -1035,7 +1169,7 @@ export function sanitizePlan(raw: unknown): Plan | null {
     strategy: typeof p.strategy === "string" ? p.strategy : "",
     strategyTokens: Array.isArray(p.strategyTokens) ? (p.strategyTokens as unknown[]).filter((x): x is string => typeof x === "string") : [],
     strategySet: !!p.strategySet,
-    priority: (p.priority === "gold" || p.priority === "exp" || p.priority === "balance") ? p.priority : "gold",
+    priority: (p.priority === "gold" || p.priority === "exp" || p.priority === "balance" || p.priority === "endless") ? p.priority : "gold",
     // 교대 시계 — 숫자 배열만 인정 (구버전 저장엔 없음 → planScore·UI가 편성에서 재계산)
     ...(Array.isArray(p.shiftHours) && (p.shiftHours as unknown[]).every((n) => typeof n === "number")
       ? { shiftHours: p.shiftHours as number[] } : {}),
@@ -1204,6 +1338,7 @@ function seedSynergySet(def: SynergySetDef, roster: InfraOp[], used: Set<string>
 }
 
 export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSets: FactionSets = {}, priority: ProdPriority = "gold", extraSeeds: { opId: string; room: string }[] = [], concentrate = true, park = false, pinnedDorms: Record<string, string[]> = {}): Plan {
+  setPriorityMode(priority); // endless면 teamValue·시계가 순소모 모델로 전환 (모듈 플래그)
   const prodKeys = PRIORITY_KEYS[priority];
   const assignments: Record<string, string[][]> = {};
   // 시설 카운트 스킬(타락사쿰·만트라)용 배치 지도 — 숙소·가공소까지 **모든 칸**을 센다.
@@ -1403,7 +1538,7 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
     let total = 0;
     for (const key of [...prodKeys, ...SUPPORT_KEYS]) {
       if (key === "TRAINING" || PARK_KEYS.includes(key)) continue;
-      total += teamScore(teamAtKey(key, shift), cellByKey.get(key)!.room, ctxFor(key, tp, fc, plants, present, amb, roomOf, cellOf));
+      total += teamValue(teamAtKey(key, shift), cellByKey.get(key)!.room, ctxFor(key, tp, fc, plants, present, amb, roomOf, cellOf));
     }
     return total;
   };
@@ -1622,7 +1757,7 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
             (!dormIds.has(op.id) || parked.has(op.id)) && !otherWork.has(op.id) &&  // 주차는 근무 후보 자격을 뺏지 않는다
             (!roomKeyOf.has(op.id) || roomKeyOf.get(op.id) === aKey) &&
             (!reserved.has(op.id) || reserved.get(op.id) === aKey));
-          const score = (team: InfraOp[]) => teamScore(team, room, ctx);
+          const score = (team: InfraOp[]) => teamValue(team, room, ctx);
           let bestPickTeam = curTeam;
           let bestNet = score(curTeam);
           let bestDonors: { fromKey: string; refill: InfraOp[] }[] = [];
@@ -1671,7 +1806,7 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
                 const claimed = new Set(team.map((t) => t.id));
                 const dPool = new Map(freeOps.filter((o) => !claimed.has(o.id)).map((o) => [o.id, o]));
                 const refill = bestTeam(dRoom, dSlots, dPool, dCtx, rest);
-                const cost = teamScore(dTeam, dRoom, dCtx) - teamScore(refill, dRoom, dCtx);
+                const cost = teamValue(dTeam, dRoom, dCtx) - teamValue(refill, dRoom, dCtx);
                 if (gain - cost > 1e-6) { team.push(op); donors.push({ fromKey, refill }); net -= cost; }
               }
             }
@@ -1716,7 +1851,7 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
           const cellOfS = cellMapFor(shift);
           const present = new Set<string>([...roomKeyOf.keys(), ...dormIds]);
           const ctxOf = (key: string) => ({ ...ctxFor(key, tp, factionCountsPerShift[shift], plants, present), roomOf: roomOfS, cellOf: cellOfS });
-          const scoreOf = (key: string, team: InfraOp[]) => teamScore(team, cellByKey.get(key)?.room ?? key, ctxOf(key));
+          const scoreOf = (key: string, team: InfraOp[]) => teamValue(team, cellByKey.get(key)?.room ?? key, ctxOf(key));
           const teamOf = (key: string) => (assignments[key]?.[shift] ?? []).map((id) => byIdAll.get(id)).filter((op): op is InfraOp => Boolean(op));
           const bench = roster.filter((op) => (!dormIds.has(op.id) || parked.has(op.id)) && !roomKeyOf.has(op.id) && !otherWork.has(op.id) && !reserved.has(op.id));
           // 후보 S = 벤치(이탈 비용 0) + 같은 조 다른 방 근무자(이탈 시 그 방을 벤치로 재충원한
@@ -1861,11 +1996,11 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
         let added = false;
         while (team.length < slots && bench.length) {
           const ctx = { ...ctxFor(key, shift === 0 ? tokenPoints : {}, factionCountsPerShift[shift], plants, present), roomOf: roomOfS, cellOf: cellOfS };
-          const base = teamScore(team, room, ctx);
+          const base = teamValue(team, room, ctx);
           let at = 0;
-          let best = teamScore([...team, bench[0]], room, ctx) - base;
+          let best = teamValue([...team, bench[0]], room, ctx) - base;
           for (let i = 1; i < bench.length; i += 1) {
-            const d = teamScore([...team, bench[i]], room, ctx) - base;
+            const d = teamValue([...team, bench[i]], room, ctx) - base;
             const tie = Math.abs(d - best) <= 1e-9;
             if (d > best + 1e-9 || (tie && (bench[i].rarity < bench[at].rarity || (bench[i].rarity === bench[at].rarity && bench[i].seq < bench[at].seq)))) { best = d; at = i; }
           }
@@ -2057,6 +2192,9 @@ export const SHIFT_WEIGHT: number[] = C.SHIFT_WEIGHT;
 
 // 계획 전체 총점 (양 조 전 방, 앰비언트 오라 포함) — 세트 포함/미포함 두 안 비교용
 export function planScore(plan: Plan, byId: Map<string, InfraOp>): number {
+  // 플랜에 모드가 실려 있으면 그 모드로 채점 — endless 플랜은 컨디션 보너스 포함 총점이
+  // 채택 기준이다. buildPlan 중간의 임시 플랜(priority 미기재)은 현재 모듈 플래그 유지.
+  if (plan.priority) setPriorityMode(plan.priority);
   let total = 0;
   for (let shift = 0; shift < SHIFT_COUNT; shift += 1) {
     const shiftWeight = SHIFT_WEIGHT[shift] ?? 1;
@@ -2074,7 +2212,7 @@ export function planScore(plan: Plan, byId: Map<string, InfraOp>): number {
     for (const key of [...PRODUCTION_KEYS, ...SUPPORT_KEYS]) {
       const cell = cellByKey.get(key)!;
       if (PARK_KEYS.includes(key)) continue;
-      total += shiftWeight * teamScore(teamAt(key), cell.room, { ...ctxFor(key, points, counts, plan.plants, present, ambient), shiftHours: clock });
+      total += shiftWeight * teamValue(teamAt(key), cell.room, { ...ctxFor(key, points, counts, plan.plants, present, ambient), shiftHours: clock });
     }
   }
   return total;
@@ -2091,6 +2229,7 @@ export type OptimizeStep = { phase: "base" | "variant" | "final"; index?: number
 // 반사실 평가를 하도록 한다 (2026-07-21 성능: 후보당 buildPlan 15회 → 1회).
 export type OptimizeResult = { plan: Plan; tokenChoice: string[]; factionSets: FactionSets; park: boolean };
 export async function optimizeConfig(roster: InfraOp[], priority: ProdPriority = "gold", onStep?: (step: OptimizeStep) => void | Promise<void>, pinnedDorms: Record<string, string[]> = {}): Promise<OptimizeResult> {
+  setPriorityMode(priority); // config 탐색 전 구간(buildPlan 사이 planScore 비교 포함) 모드 고정
   // 진행 콜백(페이싱 포함) 후 매크로태스크 양보 — 브라우저가 안내 문구를 리페인트할 틈을 준다
   const tick = async (step: OptimizeStep) => {
     if (!onStep) return;
@@ -2249,8 +2388,10 @@ export function slotSubstitutes(team: InfraOp[], index: number, key: string, ctx
     .filter((op) => !excluded.has(op.id) && op.skills.some((skill) => skillApplies(skill, room, ctx.product)))
     .map((op) => {
       const swapped = team.map((member, i) => (i === index ? op : member));
-      return { op, score: Math.round(teamScore(swapped, room, ctx)) };
+      // 순위는 teamValue(endless면 컨디션 보너스 포함), 표시 점수는 순수 생산 %(teamScore)
+      return { op, score: Math.round(teamScore(swapped, room, ctx)), value: teamValue(swapped, room, ctx) };
     })
-    .sort((a, b) => b.score - a.score || a.op.rarity - b.op.rarity)
+    .sort((a, b) => b.value - a.value || a.op.rarity - b.op.rarity)
+    .map(({ op, score }) => ({ op, score }))
     .slice(0, count);
 }

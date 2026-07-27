@@ -72,7 +72,7 @@ async function takeSnapshot() {
   const out = {};
   for (const name of Object.keys(rosters)) {
     out[name] = {};
-    for (const priority of ["gold", "exp", "balance"]) {
+    for (const priority of ["gold", "exp", "balance", "endless"]) {
       const p = await planFor(name, priority);
       out[name][priority] = {
         assignments: p.assignments, plants: p.plants,
@@ -97,7 +97,7 @@ if (mode === "--compare") {
     if (a !== b) { diffs += 1; console.error(`DIFF: ${r}/${p}`); }
   }
   if (diffs) { console.error(`✗ 스냅샷과 ${diffs}개 편성이 다릅니다`); process.exit(1); }
-  console.log(`✓ 스냅샷 일치 (${Object.keys(saved).length}개 로스터 × 3모드)`);
+  console.log(`✓ 스냅샷 일치 (${Object.keys(saved).length}개 로스터 × 저장된 모드 전부)`);
   process.exit(0);
 }
 

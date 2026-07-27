@@ -474,6 +474,11 @@ const D: Record<string, Pair> = {
   "순금 우선": ["Gold first", "純金優先"],
   "작전기록 우선": ["Records first", "作戦記録優先"],
   "밸런스": ["Balanced", "バランス"],
+  "무한동력": ["Perpetual", "永久機関"],
+  "컨디션 소모 감소·근무 중 회복까지 계산해 교대 없이 오래가는 조합을 우선합니다 — 레인보우 팀 제어센터(소모 0) 같은 무한동력 편성": [
+    "Accounts for morale drain reduction and on-duty recovery, favoring squads that run as long as possible without swaps — e.g. a Team Rainbow control center with zero net drain",
+    "コンディション消費の減少・勤務中の回復まで計算し、交代なしで長持ちする編成を優先します — 実質消費0のレインボー部隊制御中枢など",
+  ],
   "먼저 채우는 방이 최고 요원을 가져갑니다 — 다음 자동편성부터 적용됩니다": [
     "Rooms filled first get the best operators — applies from the next auto-assign",
     "先に埋める部屋が最高の要員を確保します — 次回の自動編成から適用されます",
@@ -482,9 +487,9 @@ const D: Record<string, Pair> = {
     "Production priority saved — applies from the next auto-assign",
     "優先生産設定を保存しました — 次回の自動編成から適用されます",
   ],
-  "우선 생산 설정: 순금 우선(기본) · 작전기록 우선 · 밸런스(교차). 먼저 채우는 방이 최고 요원을 가져가고, 순금(또는 작전기록) 우선이면 어느 제조소에서나 생산력이 같은 요원을 그 제조소로 몰아줍니다 — 총 생산력이 같을 때만. 설정만 바꾸고, 실제 편성은 전체 자동편성 버튼을 눌러 적용합니다.": [
-    "Production priority setting: Gold first (default) · Records first · Balanced (interleaved). Rooms filled first get the best operators, and under Gold (or Records) first, operators whose output is the same in any factory are concentrated into that product's factories — but only when total output stays the same. This is only a setting — press Auto-assign All to apply.",
-    "優先生産設定：純金優先（デフォルト）・作戦記録優先・バランス（交互）。先に埋める部屋が最高の要員を確保し、純金（または作戦記録）優先では、どの製造所でも生産力が同じ要員をその製造所へ集めます — 総生産力が変わらない場合のみ。設定のみ変更され、実際の編成は全自動編成ボタンで適用します。",
+  "우선 생산 설정: 순금 우선(기본) · 작전기록 우선 · 밸런스(교차) · 무한동력. 먼저 채우는 방이 최고 요원을 가져가고, 순금(또는 작전기록) 우선이면 어느 제조소에서나 생산력이 같은 요원을 그 제조소로 몰아줍니다 — 총 생산력이 같을 때만. 무한동력은 컨디션 소모 감소·근무 중 회복까지 계산해 교대 없이 오래가는 조합을 우선합니다 — 레인보우 팀 5명 제어센터(소모 0)나 위셔델·총웨 회복 오라 편성이 여기서 나옵니다. 설정만 바꾸고, 실제 편성은 전체 자동편성 버튼을 눌러 적용합니다.": [
+    "Production priority setting: Gold first (default) · Records first · Balanced (interleaved) · Perpetual. Rooms filled first get the best operators, and under Gold (or Records) first, operators whose output is the same in any factory are concentrated into that product's factories — but only when total output stays the same. Perpetual also accounts for morale drain reduction and on-duty recovery, favoring squads that run as long as possible without shift swaps — this is where a five-member Team Rainbow control center (zero drain) or Wiš'adel/Chongyue recovery-aura cores appear. This is only a setting — press Auto-assign All to apply.",
+    "優先生産設定：純金優先（デフォルト）・作戦記録優先・バランス（交互）・永久機関。先に埋める部屋が最高の要員を確保し、純金（または作戦記録）優先では、どの製造所でも生産力が同じ要員をその製造所へ集めます — 総生産力が変わらない場合のみ。永久機関はコンディション消費の減少・勤務中の回復まで計算し、交代なしで長持ちする編成を優先します — レインボー部隊5人の制御中枢（消費0）やウィシャデル・重岳の回復オーラ編成がここで選ばれます。設定のみ変更され、実際の編成は全自動編成ボタンで適用します。",
   ],
   "A조를 먼저 반복 전수검사로 풀파워로 완성한 뒤(안정될 때까지), 남은 오퍼레이터만으로 B조를 같은 방식으로 검수해 편성합니다. 시너지 세트 후보안도 가능한 조합을 전부 만들어 총점으로 비교하므로 계산에 몇 초가 걸릴 수 있습니다.": [
     "Shift A is audited repeatedly until it stabilizes at full power, then Shift B is audited the same way using only the remaining operators. Every combination of synergy-set candidate plans is also built and compared by total score, so the computation may take a few seconds.",

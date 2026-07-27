@@ -384,15 +384,50 @@ def parse_tokens(text, room):
 
 def parse_morale_drain(text):
     """시간당 컨디션 소모 보정 — (자신, 방 전체) 분리 (교대 시계용, 2026-07-25).
-    '…내 모든 오퍼레이터의' 수식이 붙으면 방 전체 가산(슈 -0.1·'아' +1.5), 아니면 본인."""
+    방 전체 수식(무한동력 모드 2026-07-27 확장): '…내 모든 오퍼레이터의'(슈 -0.1·'아' +1.5)
+    외에 '<방> 내 오퍼레이터의'(파이어휘슬·윈드차임스 -0.1 — 종전엔 본인으로 오파싱)와
+    '모든 인원의'(샤마르 속삭임 +0.25)도 방 전체다. Ela '자신을 제외한 기타 오퍼레이터의'는
+    본인 유지(방 최대 소모 기준이라 어느 쪽이든 최댓값 동일 — 근사 허용)."""
     self_d = room_d = 0.0
     for m in re.finditer(r"시간당 컨디션 소모[^+\-]{0,8}([+\-])\s*(\d+(?:\.\d+)?)", text):
         delta = float(m.group(2)) * (1 if m.group(1) == "+" else -1)
-        if "모든 오퍼레이터의" in text[max(0, m.start() - 24):m.start()]:
+        before = text[max(0, m.start() - 24):m.start()]
+        if "모든 오퍼레이터의" in before or "내 오퍼레이터의" in before or "모든 인원의" in before:
             room_d += delta
         else:
             self_d += delta
     return self_d, room_d
+
+def parse_recover(text, room, partners=None):
+    """근무 중 컨디션 회복의 구조 필드 (무한동력 모드, 2026-07-27). 제어센터 스킬만 —
+    숙소 회복(kind=morale DORMITORY·'모든 숙소 안에' 오라)은 도메인 규칙상 미모델 유지.
+    - recoverAura: '기타/일부 시설의 작업 중인 오퍼레이터의 시간당 컨디션 회복 +X'
+      (위셔델 0.1·총웨 0.05+화식 20점당 0.05·무에나 원칙주의 0.1) — 방 집합은 용어 사전
+      (기타 = 작업 시설 − 제어센터·훈련실, 일부 = 발전소·사무실·응접실), 엔진 상수로 해석.
+    - recoverRoomPer: '제어 센터 내 <그룹> 1명 증가할 때마다 … 회복 +X' (레인보우 팀 0.05×4인
+      = 5명 배치 시 소모 1.0 정확 상쇄 = 무한동력 · 용문근위국·쉐라그·우르수스 학생자치단·
+      리 탐정사무소). 그룹은 알려진 진영·명단만 — '얼터네이트'는 명단이 없어 미모델(보수 근사).
+    - recoverRoom: '제어 센터 내 모든 오퍼레이터의 … 회복 +X' 고정형 (도베르만류 다수).
+      리 '한가하고 덧없는 인생'처럼 동반 게이트(아)가 있으면 엔진이 partners로 판정한다."""
+    if room != "CONTROL":
+        return {}
+    m = re.search(r"(기타|일부) 시설의 작업 중인 오퍼레이터의 시간당 컨디션 회복\s*\+\s*(\d+(?:\.\d+)?)", text)
+    if m:
+        aura = {"scope": "other" if m.group(1) == "기타" else "some", "value": float(m.group(2))}
+        for tk in TOKENS:
+            t = re.search(re.escape(tk) + r"\s*(\d+)점당 추가로\s*\+\s*(\d+(?:\.\d+)?)", text)
+            if t:
+                aura["perToken"] = {"token": tk, "per": int(t.group(1)), "add": float(t.group(2))}
+                break
+        return {"recoverAura": aura}
+    names = "|".join(re.escape(n) for n in PER_COUNT_NAMES)
+    m = re.search(r"제어 센터 내 (" + names + r") 오퍼레이터가 1명 증가할 때마다.{0,60}?제어 센터 내 모든 오퍼레이터의 시간당 컨디션 회복\s*\+\s*(\d+(?:\.\d+)?)", text)
+    if m:
+        return {"recoverRoomPer": {"faction": m.group(1), "value": float(m.group(2))}}
+    m = re.search(r"제어 센터 내 모든 오퍼레이터의 시간당 컨디션 회복\s*\+\s*(\d+(?:\.\d+)?)", text)
+    if m:
+        return {"recoverRoom": float(m.group(1))}
+    return {}
 
 def grow_avg(first, rate, cap, hours):
     """시간 성장형 교대 평균 — k시간째 값 = min(first + rate×(k−1), cap), 마지막 부분 시간은 비례.
@@ -989,6 +1024,8 @@ def parse_skill(entry, oname, oid=None):
             "group": group, "tier": tier,
             "moraleDrain": drain_self,
             **({"drainRoom": drain_room} if drain_room else {}),
+            # 근무 중 회복 구조 필드 (무한동력 모드 2026-07-27) — 제어센터 회복 3형
+            **parse_recover(text, room),
             **({"selfDrainNegate": self_drain_negate} if self_drain_negate else {}),
             **({"growHourly": grow_hourly} if grow_hourly else {}),
             # 교차방 파트너(roomPartner)·기지 존재 파트너(basePartners)는 같은 방 동반 조건이
