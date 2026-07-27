@@ -5782,11 +5782,17 @@ footer p {
 .file-drop input {
   display: none;
 }
-.file-row code {
-  overflow: hidden;
-  text-overflow: ellipsis;
+.file-row .file-name {
   flex: 1;
   min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: inherit;
+  text-decoration: none;
+}
+.file-row .file-name:hover code {
+  text-decoration: underline;
 }
 .file-thumb {
   flex: 0 0 44px;

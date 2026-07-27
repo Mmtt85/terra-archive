@@ -203,11 +203,11 @@ function FileRow({ row, label, showDate, onStatus, onDelete }: {
       {isImageKey(row.key)
         ? <img className="file-thumb" src={row.url} alt="" loading="lazy" />
         : <span className="file-thumb file-thumb-blank">📄</span>}
-      <code title={row.url}>{label}</code>
+      {/* 파일 이름 클릭 = 새 탭에서 열기 (사용자 요청 2026-07-27 — 별도 열기 버튼 없음) */}
+      <a className="file-name" href={row.url} target="_blank" rel="noreferrer" title={row.url}><code>{label}</code></a>
       <span className="rule-note">{formatSize(row.size)}</span>
       {showDate && <span className="rule-note">{new Date(row.uploaded).toLocaleDateString("ko-KR")}</span>}
       <button onClick={copy}>URL 복사</button>
-      <button onClick={() => window.open(row.url, "_blank")}>열기</button>
       {onDelete && <button onClick={onDelete}>삭제</button>}
     </div>
   );
