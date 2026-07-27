@@ -17,8 +17,8 @@ routes = [
 
 [vars]
 # Zero Trust 설정 후 채운다 — 비어 있으면 워커는 모든 요청을 503으로 거부한다 (안전 기본값)
-ACCESS_TEAM = ""    # <team>.cloudflareaccess.com 의 <team> 부분
-ACCESS_AUD = ""     # Access 애플리케이션의 Audience(AUD) 태그
+ACCESS_TEAM = "terra-archive" # terra-archive.cloudflareaccess.com (2026-07-27 사용자 개명)
+ACCESS_AUD = "5f09936a7650645f7b55c3c45139b6e789a8a7b8b91eb1f8ad9a3dfdc08188ad" # Access 앱 AUD 태그
 ALLOWED_EMAIL = "nzkonaru@gmail.com"
 SUPABASE_URL = "https://exirlkhpkgxsflbglhld.supabase.co"
 # anon 키는 공개 값(사이트 번들에 이미 들어있음) — 시크릿 아님

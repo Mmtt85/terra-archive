@@ -59,3 +59,4 @@ scripts/story-cn/
 .r2-sync-key
 .supabase-admin-key
 .admin-rotate.generated.sql
+.upload-admin-key
