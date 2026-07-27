@@ -312,9 +312,9 @@
     },
     {
       "allOf": [
-        "char_1035_wisdel",
+        "char_2023_ling",
         "char_2024_chyue",
-        "char_4064_mlynar"
+        "char_2015_dusk"
       ],
       "name": "장기 지속 — A조 제어센터 회복 오라 코어",
       "note": "INFRA-RULES §1 무한동력 모드 (2026-07-27)",
@@ -493,5 +493,5 @@
     "주술 결정",
     "마물 요리"
   ],
-  "version": 16
+  "version": 17
 }

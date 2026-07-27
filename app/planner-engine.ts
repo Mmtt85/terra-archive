@@ -522,16 +522,20 @@ const RECOVER_SCOPE_ROOMS: Record<string, string[]> = {
   other: ["MANUFACTURE", "TRADING", "POWER", "HIRE", "MEETING"],
   some: ["POWER", "HIRE", "MEETING"],
 };
-// 제어센터 기본 효과 (사용자 제공 게임 팩트 2026-07-27): 배치 인원 1명당, 가공소·숙소를 제외한
-// 모든 작업 시설(**제어센터 자신 포함**)의 시간당 컨디션 소모 -0.05 — 만석(5인) 기준 총 -0.25.
-// 사용자 예시로 역산 확정: 레인보우 4인만 배치 시 기본 효과 -0.2(=4×0.05), 5인 시 -0.25 추가.
+// 방 인원 시너지 감면 (사용자 인게임 통제 실험 2026-07-28로 확정): 같은 방의 **동료 1명당
+// 시간당 컨디션 소모 -0.05** (자신 제외 — 3인 방 -0.1, 2인 -0.05, 1인 0. 실험: 총웨를 빼도
+// 유지, 방 인원을 줄이면 정확히 이 공식대로 감소·소멸). 제어센터 5인 = 동료 4×0.05 = -0.2가
+// 시의 회복 +0.05와 합쳐 실측 "전원 -0.25"를 설명한다. ⚠ 종전의 "제어센터 횡단 기본 효과"
+// (인원당 전 시설 감면)는 **존재하지 않음이 실증됨** — 제어센터 5인 가동 중에도 1인 방에선
+// 감면이 완전 소멸했다. 가이드의 "제어센터 1명당 0.25" 문장은 이 방 인원 메커니즘의 오기.
 // endless 순소모 모델에만 반영 — 생산 3모드의 교대 시계는 종전 관례(방 기본 1/h)를 유지한다.
-const CC_BASE_RELIEF = 0.05;
-const CC_RELIEF_ROOMS = ["MANUFACTURE", "TRADING", "POWER", "HIRE", "MEETING", "TRAINING"];
-// 횡단 회복 오라 실효값 — perToken(총웨 '외로운 빛과 함께': 화식 20점당 +0.05)은 현 원장 기준
+const CREW_RELIEF = 0.05;
+// 횡단 회복 오라 실효값 — perToken(총웨 '외로운 빛과 함께': 화식 20점당 +0.05)은 **1스텝 상한**.
+// 사용자 인게임 직접 관찰 (2026-07-28): 기지 화식 80점인데 총웨 오라 표시가 -0.1 고정 —
+// "20점당"이 무한 누적이 아니라 20점 이상 1회 가산으로 동작한다 (0.05 기본 + 0.05 = 0.1).
 function recoverAuraValue(skill: InfraSkill, tokenPoints: Record<string, number>): number {
   const aura = skill.recoverAura!;
-  const extra = aura.perToken ? Math.floor((tokenPoints[aura.perToken.token] ?? 0) / aura.perToken.per) * aura.perToken.add : 0;
+  const extra = aura.perToken ? Math.min(1, Math.floor((tokenPoints[aura.perToken.token] ?? 0) / aura.perToken.per)) * aura.perToken.add : 0;
   return aura.value + extra;
 }
 // 방 최대 순소모 (endless 모델): 기본 소모 + 본인 가산(부호 유지) + 방 전체 가산(부호 유지)
@@ -553,11 +557,17 @@ export function roomMaxNetDrain(team: InfraOp[], room: string, ctx: Ctx): number
     if (sk.recoverRoom) recover += sk.recoverRoom;
     if (sk.recoverRoomPer) recover += sk.recoverRoomPer.value * team.filter((member2) => memberOf(member2, sk.recoverRoomPer!.faction)).length;
   }
+  // 특별 비교 규칙 (용어 사전 cc.c.sui2_1): 무에나·총웨·위셔델의 횡단 회복 오라는 **최대
+  // 수치 1개만** 적용 — 합산 금지. 제어센터 기본 효과(비오라 앰비언트)는 별도로 온전히 적용.
+  let auraMax = 0;
   for (const aura of ctx.ambient ?? []) {
-    if (aura.kind === "drain_recover" && aura.rooms?.includes(room)) recover += aura.value;
+    if (aura.kind !== "drain_recover" || !aura.rooms?.includes(room)) continue;
+    if (aura.aura) auraMax = Math.max(auraMax, aura.value);
+    else recover += aura.value;
   }
-  // 제어센터 자신이 받는 기본 효과는 자기 인원수로 직접 계산 (타방은 aurasOf 앰비언트 경유)
-  if (room === "CONTROL") recover += CC_BASE_RELIEF * team.length;
+  recover += auraMax;
+  // 방 인원 시너지 — 동료 1명당 -0.05 (자신 제외, 전 근무방 공통)
+  recover += CREW_RELIEF * (team.length - 1);
   let maxNet = 0;
   for (const member of team) {
     let self = 0;
@@ -580,14 +590,16 @@ export function endlessBonus(team: InfraOp[], room: string, ctx: Ctx): number {
   const W = room === "CONTROL" ? ENDLESS_DRAIN_W : ENDLESS_ROOM_W;
   let bonus = W * (base - maxNet);
   if (room === "CONTROL") {
-    // 기본 효과 자리 가치 — 몸빵이라도 제어센터 한 자리가 전 작업 시설 -0.05를 낸다 (만석 유도)
-    const reliefRooms = CC_RELIEF_ROOMS.reduce((sum, r) => sum + (FACILITY_COUNTS[r] ?? 1), 0);
-    bonus += team.length * CC_BASE_RELIEF * W * reliefRooms;
+    // 횡단 회복 오라 자리 가치 — 특별 비교 규칙(방마다 최대 1개)대로 대상 방별 최댓값만 계상.
+    // 합산하면 회복 오라 다인 결집(위셔델+총웨+무에나)을 과대평가한다 (겹쳐도 이득 없음).
+    const auraSkills: { value: number; targets: string[] }[] = [];
     for (const member of team) for (const sk of activeSkills(member, room, ctx.product)) {
       if (!sk.recoverAura) continue;
-      const targets = RECOVER_SCOPE_ROOMS[sk.recoverAura.scope] ?? [];
-      const roomCount = targets.reduce((sum, r) => sum + (FACILITY_COUNTS[r] ?? 1), 0);
-      bonus += recoverAuraValue(sk, ctx.tokenPoints) * W * roomCount;
+      auraSkills.push({ value: recoverAuraValue(sk, ctx.tokenPoints), targets: RECOVER_SCOPE_ROOMS[sk.recoverAura.scope] ?? [] });
+    }
+    for (const target of RECOVER_SCOPE_ROOMS.other) {
+      const best = auraSkills.reduce((acc, entry) => entry.targets.includes(target) ? Math.max(acc, entry.value) : acc, 0);
+      if (best > 0) bonus += best * W * (FACILITY_COUNTS[target] ?? 1);
     }
     // 무한동력 모드 (사용자 확정 2026-07-27: "제어센터는 무조건 무한동력"): 순소모 0 제어센터
     // 조합은 오라 자리 가치·생산과 무관하게 절대 우선 — 로스터에 있으면 반드시 채택된다
@@ -600,13 +612,11 @@ export function shiftHoursFor(teams: { room: string; ops: InfraOp[] }[]): number
   // endless 모드: 순소모 모델(감소·회복 포함)로 시계를 계산한다 — 무한동력 방은 상한 72h.
   // 횡단 회복 오라는 근사상 제외(보수적 — 시계가 실제보다 짧게 잡혀도 성장형 평균만 소폭 영향).
   if (ENDLESS_ON) {
-    // 제어센터 기본 효과(인원×-0.05)는 전 작업 시설에 미친다 — 제어센터 자신은 roomMaxNetDrain이 반영
-    const ccRelief = CC_BASE_RELIEF * (teams.find((entry) => entry.room === "CONTROL")?.ops.length ?? 0);
     let maxDrain = 24 / ENDLESS_CLOCK_CAP;
     for (const { room, ops: team } of teams) {
       if (!CLOCK_ROOMS.has(room)) continue;
       const net = roomMaxNetDrain(team, room, { tokenPoints: {} });
-      if (net != null) maxDrain = Math.max(maxDrain, Math.max(0, net - (room === "CONTROL" ? 0 : ccRelief)));
+      if (net != null) maxDrain = Math.max(maxDrain, net);
     }
     return 24 / maxDrain;
   }
@@ -692,7 +702,7 @@ export const AURA_TARGET: Record<string, string> = { MANUFACTURE: "ctrl_mfg", TR
 // 1명당 생산품별 가감 맵({exp:+10, gold:-10} 또는 {any:+5}), 방별 인원은 ambientFor가 센다.
 // rooms: drain_recover(제어센터 횡단 컨디션 회복 — 위셔델·총웨·무에나) 오라의 대상 방 집합.
 // 동종 최고 경쟁(ambientFor)이 아니라 endless 순소모 모델(roomMaxNetDrain)만 소비한다.
-export type AmbientAura = { kind: string; value: number; gateFaction?: string | null; gateCount?: number | null; belowThreshold?: number | null; perFaction?: string | null; perProduct?: Record<string, number> | null; cap?: number; capPer?: number; rooms?: string[] };
+export type AmbientAura = { kind: string; value: number; gateFaction?: string | null; gateCount?: number | null; belowThreshold?: number | null; perFaction?: string | null; perProduct?: Record<string, number> | null; cap?: number; capPer?: number; rooms?: string[]; aura?: boolean };
 
 // 방 기본 속도 — 임계값 조건("N% 미만인 경우, 기본 속도 포함") 판정용 (사무실 기본 누적 5%)
 export const ROOM_BASE_RATE: Record<string, number> = C.ROOM_BASE_RATE;
@@ -702,13 +712,12 @@ export function aurasOf(controlTeam: InfraOp[], ctx: Ctx): AmbientAura[] {
   const list: AmbientAura[] = [];
   // 제어센터 기본 효과 — 배치 인원 1명당 전 작업 시설 소모 -0.05 (endless 순소모 모델 전용 소비.
   // 제어센터 자신은 roomMaxNetDrain이 자기 인원수로 직접 계산하므로 대상에서 제외)
-  if (controlTeam.length) list.push({ kind: "drain_recover", value: CC_BASE_RELIEF * controlTeam.length, rooms: CC_RELIEF_ROOMS });
   for (const op of controlTeam) {
     const b = breakdown(op, "CONTROL", controlTeam, ctx);
     for (const skill of b.skills) {
       // 횡단 컨디션 회복 오라 (endless 모델 전용 소비 — 생산 모드에선 아무도 안 읽어 무해)
       if (skill.recoverAura) {
-        list.push({ kind: "drain_recover", value: recoverAuraValue(skill, ctx.tokenPoints), rooms: RECOVER_SCOPE_ROOMS[skill.recoverAura.scope] ?? [] });
+        list.push({ kind: "drain_recover", aura: true, value: recoverAuraValue(skill, ctx.tokenPoints), rooms: RECOVER_SCOPE_ROOMS[skill.recoverAura.scope] ?? [] });
       }
       if (!(skill.kind in AURA_WEIGHT)) continue;
       if (skill.gateFaction || skill.belowThreshold != null) {

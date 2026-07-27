@@ -488,13 +488,13 @@ const D: Record<string, Pair> = {
     "Zero net drain — perpetual; this room never needs a swap",
     "実質消費0 — 永久機関。この部屋は交代不要です",
   ],
-  "A조 지속 — 교대 체감 구간(컨디션 24→12)을 이 방 순소모 {d}/h로 나눈 값 (회복 오라·제어센터 기본 효과 반영)": [
-    "Shift A duration — the practical swap window (morale 24→12) divided by this room's net drain of {d}/h (recovery auras and the Control Center base effect included)",
-    "A班の持続時間 — 交代の体感区間（コンディション24→12）をこの部屋の実質消費{d}/hで割った値（回復オーラ・制御中枢の基本効果を反映）",
+  "A조 지속 — 풀 컨디션 24를 이 방 순소모 {d}/h로 나눈 완전 소진 시간 (총웨류 회복 오라·제어센터 인원당 -0.05 반영). 실제 교대는 컨디션 12(지침 신호)쯤에서 이르게 하는 게 보통입니다": [
+    "Shift A duration — full morale 24 divided by this room's net drain of {d}/h (Chongyue-type recovery auras and the Control Center's -0.05 per member included). In practice you usually swap earlier, around morale 12",
+    "A班の持続時間 — 満タンのコンディション24をこの部屋の実質消費{d}/hで割った完全消耗時間（重岳系回復オーラ・制御中枢の1人あたり-0.05を反映）。実際の交代はコンディション12（疲労サイン）頃に早めに行うのが普通です",
   ],
-  "제일 빨리 닳는 시설이 컨디션 12에 닿는 시점 기준 — 그때 A조 전체를 B조로 한 번에 교대합니다 (방 카드의 시간 배지 = 방별 체감 지속, 컨디션 24→12)": [
-    "Based on when the fastest-draining room hits morale 12 — swap all of Shift A to Shift B at that point (the hour badge on each room card = per-room practical duration, morale 24→12)",
-    "最も早く消耗する施設がコンディション12に達する時点基準 — そこでA班全体を一斉にB班へ交代します（各部屋カードの時間バッジ = 部屋別の体感持続、コンディション24→12）",
+  "제일 빨리 닳는 시설의 완전 소진 기준 — 그 전에(대개 컨디션 12 신호쯤) A조 전체를 B조로 한 번에 교대합니다. 특히 제어센터가 먼저 지치면 감면이 꺼져 전 방이 가속되니 병목보다 늦으면 안 됩니다": [
+    "Based on full depletion of the fastest-draining room — swap all of Shift A to Shift B before that (usually around the morale-12 fatigue sign). If the Control Center tires first its relief turns off and every room accelerates, so never run past the bottleneck",
+    "最も早く消耗する施設の完全消耗基準 — その前（通常はコンディション12の疲労サイン頃）にA班全体を一斉にB班へ交代します。制御中枢が先に疲れると軽減が切れて全部屋が加速するため、ボトルネックより遅らせないこと",
   ],
   "A조 전체 무한동력 ∞ — 교대 불필요": [
     "Shift A is fully perpetual ∞ — no swaps needed",
