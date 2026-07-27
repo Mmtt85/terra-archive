@@ -7,6 +7,7 @@
 // 본문의 인물·용어는 점선 밑줄로 표시하고, 마우스오버(데스크탑)·탭(모바일)하면 설명 카드가
 // 뜬다 (`useEntityPeek` — 2026-07-25에 종전 오른쪽 참조 레일을 대체).
 import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { asset } from "./assets";
 import { scrollMainTop } from "./scroll";
 // 스샷 레이더 (/stories 설치, 2026-07-24) — 게임 전문 대사 화면을 인식해 해당 에피소드로 이동
 import { warmOcr } from "./lens/ocr";
@@ -348,7 +349,7 @@ function useEntityPeek(entities: Entity[], onShowOperator?: (id: string) => void
           onClick: () => onShowOperator!(entity.op!),
           onKeyDown: (e: React.KeyboardEvent) => { if (e.key === "Enter") onShowOperator!(entity.op!); },
         } : {})}>
-        {imgSrc && <div className={`cast-img${entity.img ? "" : " cast-avatar"}`}><img src={imgSrc} alt="" loading="lazy" decoding="async" /></div>}
+        {imgSrc && <div className={`cast-img${entity.img ? "" : " cast-avatar"}`}><img src={asset(imgSrc)} alt="" loading="lazy" decoding="async" /></div>}
         <div className="ent-peek-text">
           <b>{entity.name}{linked && <i className="op-mark" aria-hidden>↗</i>}</b>
           <span>{entity.desc}</span>
@@ -556,7 +557,7 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
             const cutDim = imageDims[cutSrc];
             return (
               <figure key={i} className="sc-cut">
-                <img src={cutSrc} alt="" loading="lazy" decoding="async" width={cutDim?.[0]} height={cutDim?.[1]} />
+                <img src={asset(cutSrc)} alt="" loading="lazy" decoding="async" width={cutDim?.[0]} height={cutDim?.[1]} />
               </figure>
             );
           }
@@ -579,7 +580,7 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
                   } : {})}>
                   {showN !== false && face && (
                     <span className={`sc-face${face.startsWith("/story/char/") ? " sprite" : ""}`} aria-hidden>
-                      <img src={face} alt="" loading="lazy" decoding="async" />
+                      <img src={asset(face)} alt="" loading="lazy" decoding="async" />
                     </span>
                   )}
                   {showN !== false && ln.n}
@@ -599,7 +600,7 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
       {/* 화자 스탠딩 크게 보기 — 아무 곳이나 클릭하면 닫힘 */}
       {faceZoom && (
         <div className="sc-face-zoom" role="presentation" onClick={() => setFaceZoom(null)}>
-          <img src={faceZoom} alt="" />
+          <img src={asset(faceZoom)} alt="" />
         </div>
       )}
     </div>
@@ -638,7 +639,7 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }
     if (!hasScript) return;
     let alive = true;
     const path = scriptLoc === "ko" ? `/story/script/${event.id}.json` : `/story/script/${scriptLoc}/${event.id}.json`;
-    fetch(path)
+    fetch(asset(path))
       .then((res) => { if (!res.ok) throw new Error(String(res.status)); return res.json(); })
       .then((json) => { if (alive) setScript(json as ScriptData); })
       .catch(() => { if (alive) setScriptErr(true); });
@@ -728,7 +729,7 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }
                 const dim = imageDims[block.src];
                 return (
                   <figure key={index} data-idx={index}>
-                    <img src={block.src} alt={block.cap ?? ""} loading="lazy" decoding="async"
+                    <img src={asset(block.src)} alt={block.cap ?? ""} loading="lazy" decoding="async"
                       width={dim?.[0]} height={dim?.[1]} />
                     {block.cap && <figcaption>{block.cap}</figcaption>}
                   </figure>
@@ -746,7 +747,7 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }
                 const dim = imageDims[block.src];
                 return (
                   <figure key={index} className={`story-deco story-deco-${block.side ?? "right"}`}>
-                    <img src={block.src} alt={block.cap ?? ""} loading="lazy" decoding="async"
+                    <img src={asset(block.src)} alt={block.cap ?? ""} loading="lazy" decoding="async"
                       width={dim?.[0]} height={dim?.[1]} />
                     {block.cap && <figcaption>{block.cap}</figcaption>}
                   </figure>
@@ -1182,7 +1183,7 @@ function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEve
       <>
         <div className={`story-thumb${thumb ? "" : " story-thumb-none"}`}>
           {thumb
-            ? <img src={thumb} alt="" loading="lazy" decoding="async" />
+            ? <img src={asset(thumb)} alt="" loading="lazy" decoding="async" />
             : <span className="story-thumb-kind">{t(KIND_KO[it.kind])}</span>}
           {ready
             ? <em className="story-ready-badge">{t("AI 요약")}</em>

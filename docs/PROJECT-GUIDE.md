@@ -509,14 +509,38 @@ npm run build                             # 9. 빌드 확인 → 커밋 → 푸�
 
 - 버킷: `terra-archive-files` · 앞단 워커: [workers/upload](../workers/upload/) (`terra-archive-upload`).
   공개 서빙 `GET /f/<key>`(캐시 1일·ETag)는 인증 없음, 업로드·목록·삭제(`/files…`)는
-  `x-admin-key` 헤더가 **`ADMIN_KEY` 시크릿**과 일치할 때만 — Supabase RLS와 같은 비밀번호로
-  맞춰 두어 `/admin` 입장 비밀번호 하나로 전부 통한다.
+  `x-admin-key` 헤더가 **`ADMIN_KEY` 시크릿**(= /admin 입장 비밀번호) 또는 **`SYNC_KEY`**
+  (에셋 동기화 전용 무작위 키, 레포 루트 `.r2-sync-key` — gitignore)와 일치할 때만.
 - 프론트: `app/files-api.ts`. `/admin` → **파일** 탭에서 드래그/선택 업로드 → URL 복사,
   팁 편집기 이미지칸 옆 **올리기** 버튼은 올리자마자 URL을 칸에 채운다.
-- **같은 이름은 덮어쓴다** — 공개 URL이 `max-age=86400`이라 덮어쓴 내용 반영은 최대 1일.
+- **같은 이름은 덮어쓴다** — 공개 URL 캐시 때문에 반영이 늦을 수 있다(이미지 30일·JSON 1일).
   키는 `safeKey()`가 정리(NFC 정규화 — macOS 한글 파일명은 자모 분리형이라 필수).
 - 워커 배포·시크릿: `cd workers/upload && bash deploy.sh`,
   `npx wrangler secret put ADMIN_KEY`. R2는 대시보드에서 최초 1회 활성화 필요.
+
+### 정적 에셋 전체 R2 이관 (2026-07-27, 사용자 확정 "싹 다 옮겨줘")
+
+public/의 대용량 폴더 **story·rogue·lens·tesseract·avatars·about·og·items·scan**
+(334MB/7,744파일)은 Pages가 아니라 **R2 버킷 커스텀 도메인 `files.terra-archive.net`**
+(요청 수 무제한 · CDN 캐시 · 워커 경유 없음)에서 서빙한다.
+사이트 배포가 **7,859개/423MB → 115개/26MB**로 줄어든 이유의 전부.
+
+- **경로 규약**: 데이터 JSON·내부 상태에는 종전대로 루트 상대경로(`/avatars/…`)를 두고,
+  `<img src>`·`fetch()`·tesseract 경로처럼 **요청이 나가는 경계에서만 `asset()`**
+  (`app/assets.ts`)으로 감싼다. 데이터 재생성 파이프라인은 손대지 않는다.
+- **동기화**: public/에 파일은 그대로 두고(파이프라인·git 유지) `node scripts/r2-sync.mjs`가
+  md5↔etag 증분 업로드. `deploy.sh`가 배포 전에 자동 실행(키 없으면 경고 후 스킵 —
+  GH Actions는 `R2_SYNC_KEY` 시크릿 등록 시 활성화). 캐시 정책은 확장자별
+  (이미지·엔진 30일, json/bin 1일).
+- **안전망**: deploy.sh가 스테이징에서 위 폴더를 지우고 `_redirects`(301→R2)를 깐다.
+  ⚠ `/rogue`·`/about`은 **페이지 경로와 겹치므로 통짜 와일드카드 금지** — Pages splat은
+  빈 문자열에도 매치되어 페이지를 삼킨다. rogue는 하위 폴더별로만, about은 코드 전환으로만.
+- **CORS 함정 (실측)**: 같은 URL을 `<img>`(Origin 없음)로 먼저 받으면 무-ACAO 응답이
+  브라우저 캐시(30일)에 남아, 이후 `crossOrigin` 캔버스 로드가 CORS로 죽는다.
+  캔버스용 로드는 **`?cors` 쿼리로 캐시 키를 분리**한다 (planner 편성 이미지 저장).
+  tesseract.js v5는 워커를 blob으로 만들어 크로스 오리진에서도 동작한다(버킷 CORS GET/HEAD *).
+- 검증: 스크래치패드 verify-r2 하네스 16항목(그리드·스토리 전문·OCR 예열·캔버스 픽셀
+  읽기·/about 페이지 생존 등) — lazy 이미지는 `complete`만 세야 오탐이 없다.
 
 ## 8. 디자인 시스템
 

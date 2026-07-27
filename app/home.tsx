@@ -13,6 +13,7 @@ import FarmGuide, { UpgradeSim } from "./farm";
 import { normSearch, useSearchInput } from "./search";
 import OmniSearch from "./omni-search";
 import BridgeButton from "./lens/bridge-button";
+import { asset } from "./assets";
 import ChangelogButton from "./changelog";
 import TipBalloon from "./tip-balloon";
 import { useHashSync } from "./hash-modal";
@@ -277,7 +278,7 @@ function eventName(locale: Locale, event: GameEvent): string {
 function eventThumb(locale: Locale, event: GameEvent): string | undefined {
   const story = storyEventById.get(event.id);
   if (!story) return undefined;
-  return (locale === "ja" ? story.thumbJa : locale === "en" ? story.thumbEn : undefined) ?? story.thumb;
+  { const p = (locale === "ja" ? story.thumbJa : locale === "en" ? story.thumbEn : undefined) ?? story.thumb; return p ? asset(p) : undefined; }
 }
 const eventDday = (event: GameEvent, now: number): number => Math.max(0, Math.ceil((Date.parse(event.end) - now) / DAY));
 
@@ -1196,7 +1197,7 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
       <header className={`site-header${headerCollapsed ? " collapsed" : ""}`} id="top">
         <a className="brand" href={localeBase || "/"} aria-label={t("테라 아카이브 홈")}
           onClick={(event) => { event.preventDefault(); switchTab("portal"); scrollMainTop(); }}>
-          <span className="brand-mark"><img src="/avatars/char_1012_skadi2.webp" alt="" width={180} height={180} /></span>
+          <span className="brand-mark"><img src={asset("/avatars/char_1012_skadi2.webp")} alt="" width={180} height={180} /></span>
           <span>{t("테라 아카이브")}<small>{t("명일방주(Arknights) 팬사이트")}</small></span>
         </a>
         {/* 업데이트 내역 — 로고 바로 오른쪽 1줄 소속: 헤더를 접어도 보인다
@@ -1482,7 +1483,7 @@ function OperatorCard({ operator, index, onSelect }: { operator: Operator; index
             <span><i>{t("종족")}</i>{operator.race ?? t("불명")}</span>
           </small>
         </div>
-        {visible && <img src={operator.image} alt={t("{name} 오퍼레이터", { name: operator.name })} width={180} height={180} decoding="async" />}
+        {visible && <img src={asset(operator.image)} alt={t("{name} 오퍼레이터", { name: operator.name })} width={180} height={180} decoding="async" />}
       </div>
       <div className="card-body">
         <div className="tags">{operator.concepts.map((tag) => <span key={tag}>{conceptName(locale, tag)}</span>)}</div>
@@ -1498,7 +1499,7 @@ function OperatorModal({ operator, onClose }: { operator: Operator; onClose: () 
       <section className="operator-modal" role="dialog" aria-modal="true" aria-labelledby="operator-modal-title" style={{ "--accent": operator.accent } as React.CSSProperties}>
         <button type="button" className="modal-close" onClick={onClose} aria-label={t("상세 정보 닫기")}>×</button>
         <header className="modal-hero">
-          <img src={operator.image} alt={t("{name} 오퍼레이터", { name: operator.name })} width={180} height={180} />
+          <img src={asset(operator.image)} alt={t("{name} 오퍼레이터", { name: operator.name })} width={180} height={180} />
           <div className="modal-title-block">
             <div className="modal-title-main">
               <span className="modal-kicker">OPERATOR FILE · {operator.code}</span>

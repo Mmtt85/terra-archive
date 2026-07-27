@@ -97,6 +97,7 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          R2_SYNC_KEY: ${{ secrets.R2_SYNC_KEY }} # 에셋 R2 동기화 — 미등록이면 deploy.sh가 경고 후 건너뜀
         run: bash scripts/deploy.sh
 
       - name: 이메일 리포트 (변동 또는 경고 있을 때만)

@@ -3,6 +3,7 @@
 // 모드별 단계형 OCR + 매칭: 판정이 나면 나머지 패스를 생략한다 (속도).
 
 import { createOcrSession } from "./ocr";
+import { asset } from "../assets";
 import { buildIndex, analyzeLines, analyzeChinese, analyzeRecruit, wantsChipPass, normFor, type LensIndex, type LensOutcome, type LensHud } from "./match";
 import { parseStoryIndex, analyzeStoryLines, type StoryIndex } from "./storymatch";
 import storySearchMeta from "../data/story-search-meta.json";
@@ -91,7 +92,7 @@ export function getRecruitTags(): Promise<string[]> {
 let storyIndexP: Promise<StoryIndex> | null = null;
 export function getStoryIndex(): Promise<StoryIndex> {
   if (!storyIndexP) {
-    storyIndexP = fetch("/story/search.bin")
+    storyIndexP = fetch(asset("/story/search.bin"))
       .then((r) => { if (!r.ok) throw new Error(`search.bin ${r.status}`); return r.arrayBuffer(); })
       .then((buf) => parseStoryIndex(buf, (storySearchMeta as { ids: string[] }).ids));
     storyIndexP.catch(() => { storyIndexP = null; });

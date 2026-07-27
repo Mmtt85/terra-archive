@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { asset } from "./assets";
 import { useI18n, rich, type Locale } from "./i18n";
 import { scrollMainTop } from "./scroll";
 import type { Tab } from "./home";
@@ -55,7 +56,7 @@ function ShotFrame({ shot, alt, cap }: { shot: ShotPair; alt: string; cap?: stri
   // EN/JA는 그 언어 UI 캡처본(/about/{en,ja}/)으로 스왑 — ko는 종전 루트 경로 유지
   const src = (p: string) => {
     const localized = locale === "ko" ? p : p.replace("/about/", `/about/${locale}/`);
-    return theme === "dark" ? localized.replace(/\.webp$/, "-dark.webp") : localized;
+    return asset(theme === "dark" ? localized.replace(/\.webp$/, "-dark.webp") : localized);
   };
   return (
     <figure className="about-shot-fig">

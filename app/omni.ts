@@ -14,6 +14,7 @@
 // 무거운 통합전략 항목은 기본 색인에서 빠져 있다 — 가벼운 색인으로 답이 안 나올 때만
 // omni.tsx가 getRogueIndex()로 받아 rogueOmniItems()로 합친다.
 import recruitData from "./data/recruit.json";
+import { asset } from "./assets";
 import { ALL_MATERIALS, MATERIAL_ALIASES } from "./farm";
 import { canOpenStory, eventById } from "./story";
 import { TOPICS } from "./rogue";
@@ -181,7 +182,7 @@ export function buildOmniIndex({ roster, includeFuture, locale, t, extra }: Omni
     items.push({
       uid: `op:${op.id}`, kind: "op", name: op.name,
       sub: `${op.rarity}★ ${op.job}`,
-      img: `/avatars/${op.id}.webp`,
+      img: asset(`/avatars/${op.id}.webp`),
       keys: keysOf(op.name, ...words(op.name), ...alterKeys(op.name), ...op.aliases, op.code),
       target: { kind: "op", id: op.id },
     });

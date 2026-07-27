@@ -6,6 +6,7 @@
 // 화면 키워드가 보일 때만 — 오케스트레이션은 lens.tsx·verify-lens.ts가 동일 순서로 수행.
 
 import { grayNormalize, upscaleFactor, findDarkChips, chipCropRect, binarizeGlyph, isolateGlyphs } from "./preprocess";
+import { asset } from "../assets";
 import type { Worker } from "tesseract.js";
 
 // 프라이머리 OCR 워커 — 화면 언어별로 다른 traineddata를 쓴다: KR=kor, EN=eng, JA=jpn.
@@ -26,9 +27,9 @@ function getWorker(lang = "kor"): Promise<Worker> {
       const mod = await import("tesseract.js/dist/tesseract.esm.min.js");
       const { createWorker } = mod.default;
       return createWorker(lang, 1, {
-        workerPath: "/lens/worker.min.js",
-        corePath: "/lens", // 디렉토리 지정 → tesseract-core(-simd)-lstm.wasm.js를 알아서 선택
-        langPath: "/lens",
+        workerPath: asset("/lens/worker.min.js"),
+        corePath: asset("/lens"), // 디렉토리 지정 → tesseract-core(-simd)-lstm.wasm.js를 알아서 선택
+        langPath: asset("/lens"),
         gzip: false, // <lang>.traineddata를 비압축 그대로 호스팅
       });
     })();
@@ -46,9 +47,9 @@ function getDigitWorker(): Promise<Worker> {
       const mod = await import("tesseract.js/dist/tesseract.esm.min.js");
       const { createWorker } = mod.default;
       const w = await createWorker("eng", 1, {
-        workerPath: "/lens/worker.min.js",
-        corePath: "/lens",
-        langPath: "/lens",
+        workerPath: asset("/lens/worker.min.js"),
+        corePath: asset("/lens"),
+        langPath: asset("/lens"),
         gzip: false,
       });
       await w.setParameters({ tessedit_pageseg_mode: "7" as never });
@@ -67,9 +68,9 @@ function getChiWorker(): Promise<Worker> {
       const mod = await import("tesseract.js/dist/tesseract.esm.min.js");
       const { createWorker } = mod.default;
       const w = await createWorker("chi_sim", 1, {
-        workerPath: "/lens/worker.min.js",
-        corePath: "/lens",
-        langPath: "/lens",
+        workerPath: asset("/lens/worker.min.js"),
+        corePath: asset("/lens"),
+        langPath: asset("/lens"),
         gzip: false,
       });
       await w.setParameters({ tessedit_pageseg_mode: "11" as never });

@@ -1,6 +1,7 @@
 "use client";
 
 import { lazy, memo, startTransition, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { asset } from "./assets";
 import { useI18n, tokenName, rich, type ExtraI18n, type Locale, type T } from "./i18n";
 import { RULES } from "./rules";
 import { useConfirm } from "./confirm";
@@ -254,10 +255,12 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     const avatars = new Map<string, HTMLImageElement>();
     await Promise.all(uniqueOps.map((op) => new Promise<void>((resolve) => {
       const img = new Image();
-      img.crossOrigin = "anonymous";
+      img.crossOrigin = "anonymous"; // R2(files.terra-archive.net) 아바타 — CORS 없이는 캔버스가 오염된다
       img.onload = () => { avatars.set(op.id, img); resolve(); };
       img.onerror = () => resolve();
-      img.src = op.image;
+      // ?cors: 그리드 <img>가 Origin 없이 받아 브라우저 캐시에 남긴 무-ACAO 응답을
+      // crossOrigin 요청이 재사용하며 터지는 것을 캐시 키 분리로 차단 (실측 2026-07-27)
+      img.src = `${asset(op.image)}?cors`;
     })));
     const W = 1240; const lineH = 46; const top = 150;
     const rowHeights = rows.map((row) => row.crews.length * lineH + 12);
@@ -1143,7 +1146,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
                 <div className="ship-room-head"><b>{t(cell.label)}<em className={`room-lv${levelOf(cell.key) < maxLevelOf(cell.room) ? "" : " max"}`}>Lv{levelOf(cell.key)}</em></b><span>{locked.length ? t("고정 {n}명", { n: locked.length }) : t("휴식")}</span></div>
                 <div className="ship-room-crew">
                   {pinned.map((op) => (
-                    <img key={op.id} src={op.image} alt={op.name} width={180} height={180}
+                    <img key={op.id} src={asset(op.image)} alt={op.name} width={180} height={180}
                       className={`${onShowOperator ? "op-link" : ""}${locked.includes(op.id) ? " dorm-locked" : ""}`}
                       title={locked.includes(op.id) ? t("{name} — 숙소 고정 (자동편성이 유지)", { name: op.name }) : t("{name} 상세 정보", { name: op.name })}
                       loading="lazy" onClick={(event) => { event.stopPropagation(); onShowOperator?.(op.id); }} />
@@ -1204,7 +1207,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
                   const isTemp = tempApplied.has(op.id); // 육성 추천 임시 적용 오퍼 — 미리보기임을 썸네일에 표시
                   return (
                     <span key={op.id} className={`op-av${isTemp ? " temp" : ""}`} title={isTemp ? t("{name} — 임시 적용 중 (완성 가정 미리보기)", { name: op.name }) : undefined}>
-                      <img src={op.image} alt={op.name} width={180} height={180} title={isTemp ? undefined : op.name} loading="lazy" />
+                      <img src={asset(op.image)} alt={op.name} width={180} height={180} title={isTemp ? undefined : op.name} loading="lazy" />
                       <em className={`op-elite e${elite}`} title={t("정예화 {n}", { n: elite })}>E{elite}</em>
                       {isTemp && <i className="op-temp-badge" aria-hidden>{t("임시")}</i>}
                     </span>
@@ -1883,7 +1886,7 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                     )}
                     {onUpdateTeam && <button type="button" className="crew-remove" title={t("이 자리에서 빼기")} onClick={() => setIds(rawIds.filter((id) => id !== op.id))}>✕</button>}
                     <span className={`crew-face${tempIds.has(op.id) ? " temp" : ""}`}>
-                      <img src={op.image} alt={op.name} width={180} height={180} loading="lazy" className={onShowOperator ? "op-link" : undefined}
+                      <img src={asset(op.image)} alt={op.name} width={180} height={180} loading="lazy" className={onShowOperator ? "op-link" : undefined}
                         title={tempIds.has(op.id) ? t("{name} — 임시 적용 중 (완성 가정 미리보기)", { name: op.name }) : t("{name} 상세 정보", { name: op.name })} onClick={() => onShowOperator?.(op.id)} />
                       {tempIds.has(op.id) && <i className="op-temp-badge" aria-hidden>{t("임시")}</i>}
                     </span>
@@ -1963,7 +1966,7 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                       const wakes = enablerFor.get(op.id);
                       return (
                         <small key={op.id} className={`sub-chip swappable${wakes ? " enabler" : ""}`} title={wakes ? t("{name}의 조건을 켭니다 (기지 어디든 있으면 발동)", { name: wakes }) : t("{name} 추가", { name: op.name })} onClick={() => setIds([...rawIds, op.id])}>
-                          <img src={op.image} alt="" width={180} height={180} loading="lazy" className={onShowOperator ? "op-link" : undefined} onClick={(event) => { event.stopPropagation(); onShowOperator?.(op.id); }} />{op.name}{" "}
+                          <img src={asset(op.image)} alt="" width={180} height={180} loading="lazy" className={onShowOperator ? "op-link" : undefined} onClick={(event) => { event.stopPropagation(); onShowOperator?.(op.id); }} />{op.name}{" "}
                           <em>{wakes ? t("{name} 조건", { name: wakes }) : delta >= 0 ? `+${delta}` : delta}</em>
                         </small>
                       );
@@ -1997,7 +2000,7 @@ function FlowModal({ plan, opMap, onClose, onShowOperator }: { plan: Plan; opMap
   const { locale, t } = useI18n();
   const flows = plan.flows.filter((flow) => flow.generators.length > 0 || flow.consumers.length > 0);
   const avatar = (op: InfraOp | undefined) => op ? (
-    <img src={op.image} alt="" width={180} height={180} loading="lazy" className={onShowOperator ? "op-link" : undefined}
+    <img src={asset(op.image)} alt="" width={180} height={180} loading="lazy" className={onShowOperator ? "op-link" : undefined}
       title={onShowOperator ? t("{name} 상세 정보", { name: op.name }) : undefined} onClick={() => onShowOperator?.(op.id)} />
   ) : null;
   return (
@@ -2078,7 +2081,7 @@ const RosterCard = memo(function RosterCard({ op, owned, elite, onToggle, onElit
   return (
     <div className={`roster-card${owned ? " owned" : ""}${op.unreleased ? " future" : ""}`}>
       <button type="button" onClick={() => onToggle(op.id)} title={op.name}>
-        <img src={op.image} alt={op.name} width={180} height={180} loading="lazy" className={onShowOperator ? "op-link" : undefined}
+        <img src={asset(op.image)} alt={op.name} width={180} height={180} loading="lazy" className={onShowOperator ? "op-link" : undefined}
           onClick={(event) => { if (onShowOperator) { event.stopPropagation(); onShowOperator(op.id); } }} />
         <span>{op.name}{op.unreleased && <em className="future-badge">{t("미실장")}</em>}</span>
       </button>

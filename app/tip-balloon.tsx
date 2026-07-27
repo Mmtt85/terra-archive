@@ -13,6 +13,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExter
 import { createPortal } from "react-dom";
 import { useI18n } from "./i18n";
 import { fetchTips, tipTitle, tipBody, tipImage, type TipRow } from "./tips-api";
+import { asset } from "./assets";
 
 const DISMISS_KEY = "ta-tip-off";   // 값 = 다시 보여도 되는 시각(ms)
 const DISMISS_HOURS = 12;
@@ -261,7 +262,7 @@ export default function TipBalloon() {
             <b>{tipTitle(tip, locale)}</b>
             <button type="button" className="tip-close" onClick={() => setOpen(false)} aria-label={t("접기")}>×</button>
           </div>
-          {img && <img className="tip-shot" src={img} alt="" loading="lazy" decoding="async" />}
+          {img && <img className="tip-shot" src={asset(img)} alt="" loading="lazy" decoding="async" />}
           <p className="tip-body">{tipBody(tip, locale)}</p>
           <div className="tip-actions">
             {tip.href && (

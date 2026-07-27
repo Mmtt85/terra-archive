@@ -12,6 +12,7 @@
 // 스크린샷을 삭제하면 그 스샷으로 추가된 오퍼도 함께 사라져야 함 — 다른 스샷에도 나온
 // 오퍼는 남는다). 수동 추가/제거/정예화 수정은 별도 상태로 두고 파생 결과에 덧입힌다.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { asset } from "../assets";
 import type { T } from "../i18n";
 import { ops, opById, maxElite, ELITE_LABEL, type Elite, type InfraOp } from "../planner-engine";
 import { normSearch, useSearchInput } from "../search";
@@ -326,7 +327,7 @@ export function ScannerModal({ t, onClose, onApply }: {
               <div className="scanner-add-list">
                 {addMatches.map((o) => (
                   <button key={o.id} onClick={() => addManual(o.id)}>
-                    <img src={o.image} alt="" width={28} height={28} />{o.name}
+                    <img src={asset(o.image)} alt="" width={28} height={28} />{o.name}
                   </button>
                 ))}
               </div>
@@ -336,7 +337,7 @@ export function ScannerModal({ t, onClose, onApply }: {
           <div className="scanner-grid">
             {sorted.map((d) => (
               <div key={d.id} className={`scanner-card${d.confident ? "" : " uncertain"}`} title={`${d.op.name} · ${d.score.toFixed(2)}/${d.margin.toFixed(2)} · ${d.seen}회${d.pid ? ` · ${d.pid}` : ""}`}>
-                <img src={d.op.image} alt="" width={44} height={44} loading="lazy" />
+                <img src={asset(d.op.image)} alt="" width={44} height={44} loading="lazy" />
                 <div className="scanner-card-info">
                   <span className="scanner-card-name">{d.op.name}</span>
                   <span className="scanner-card-meta">{STAR.repeat(d.op.rarity)} · {d.op.job}{d.confident ? "" : ` · ${t("확인 필요")}`}</span>
@@ -419,7 +420,7 @@ function ScanClipHelp({ t, onClose }: { t: T; onClose: () => void }) {
 
         <h3>{t("올바른 캡처 예시")}</h3>
         <figure className="scanner-sample">
-          <img src="/scan/sample.webp" alt={t("올바른 캡처 예시")} loading="lazy" />
+          <img src={asset("/scan/sample.webp")} alt={t("올바른 캡처 예시")} loading="lazy" />
           <figcaption>{t("이렇게 오퍼레이터 목록 화면이 온전히 담기도록 캡처하세요 (레벨 정렬 권장).")}</figcaption>
         </figure>
 

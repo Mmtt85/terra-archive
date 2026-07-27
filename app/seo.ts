@@ -5,6 +5,7 @@
 // (중복 콘텐츠 방지). 도메인을 바꾸면 여기 + scripts/build-sitemap.mjs + public/robots.txt를 함께 수정
 // (sitemap.xml은 빌드 시 build-sitemap.mjs가 라우트 스캔으로 자동 생성 — 직접 수정 금지).
 import type { Metadata } from "next";
+import { asset } from "./assets";
 
 export const SITE_URL = "https://terra-archive.net";
 
@@ -121,7 +122,7 @@ export function pageMetadata(locale: SeoLocale, tab: SeoTab = "portal"): Metadat
   const description = tabMeta?.description ?? meta.description;
   const url = `${SITE_URL}${pathFor(locale, tab)}`;
   // 로케일×탭별 전용 OG 이미지 (scripts/build-og.py 생성) — '모든 페이지 동일' 문제 해결.
-  const ogImage = `/og/${locale}/${tab}.jpg`;
+  const ogImage = asset(`/og/${locale}/${tab}.jpg`);
   return {
     title,
     description,

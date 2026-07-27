@@ -18,6 +18,7 @@ import { useClipboardWatch } from "./lens/clipwatch";
 import { useBridgeWatch, noteBridge, bridgeLock, logBridgeEvent, memoBridgeScene, type BridgeLogEvent } from "./lens/bridge";
 import { BridgeTopicButton } from "./lens/bridge-button";
 import { useDropWatch } from "./lens/dropwatch";
+import { asset } from "./assets";
 
 // 게임연결·리플레이 배포 스위치 — 2026-07-26 켜짐(사용자 지시). 끄면 진입 버튼
 // (BridgeTopicButton)만 사라지고 인식 파이프라인은 죽은 경로로 남는다.
@@ -265,7 +266,7 @@ function StageModal({ pair, grade, onClose, onOpenEnemy }: {
               <button type="button" className={`rg-map-zoom${mapZoom ? " zoom" : ""}`}
                 onClick={() => setMapZoom((z) => !z)}
                 title={mapZoom ? t("아무 곳이나 클릭하면 원래 크기로 돌아갑니다") : t("클릭하면 2배로 확대됩니다")}>
-                <img className="rg-modal-map" src={`/rogue/map/${stage.map}.webp`} alt={t("전장 미니맵")} loading="lazy" decoding="async" />
+                <img className="rg-modal-map" src={asset(`/rogue/map/${stage.map}.webp`)} alt={t("전장 미니맵")} loading="lazy" decoding="async" />
               </button>
             )}
             {stage.desc && <p className="rg-modal-desc">{stage.desc}</p>}
@@ -302,7 +303,7 @@ function StageModal({ pair, grade, onClose, onOpenEnemy }: {
             if (!e) return null;
             return (
               <button type="button" key={se.key} className="rg-enemy-cell" onClick={() => onOpenEnemy(key, { ...ctx, enemyKey: key })}>
-                {e.img ? <img className="rg-enemy-face" src={`/rogue/enemy/${e.img}.webp`} alt="" aria-hidden width={158} height={158} loading="lazy" decoding="async" />
+                {e.img ? <img className="rg-enemy-face" src={asset(`/rogue/enemy/${e.img}.webp`)} alt="" aria-hidden width={158} height={158} loading="lazy" decoding="async" />
                   : <span className="rg-enemy-face none" aria-hidden>?</span>}
                 <span className="rg-enemy-cell-head">
                   <span className={`rg-rank r-${e.rank ?? "NORMAL"}`}>{t(RANK_KO[e.rank ?? ""] ?? "일반")}</span>
@@ -337,7 +338,7 @@ function StageCard({ pair, onOpen, boss }: { pair: StagePair; onOpen: (p: StageP
   const s = pair.n;
   return (
     <button type="button" className={`rg-stagecard${boss ? " boss" : ""}`} onClick={() => onOpen(pair)}>
-      {s.map && <img className="rg-stagecard-map" src={`/rogue/map/${s.map}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
+      {s.map && <img className="rg-stagecard-map" src={asset(`/rogue/map/${s.map}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />}
       <span className="rg-stagecard-name"><Nm name={s.name} cn={s.cn} /></span>
     </button>
   );
@@ -369,7 +370,7 @@ function EnemyModal({ ekey, grade, ctx, onClose, onOpenStage, appear }: {
         </header>
         {/* 초상은 원본 해상도(158px) 그대로 크게 — 작은 헤더 아이콘 대신 (피드백 반영 2026-07-18) */}
         <div className="rg-emodal-cols">
-          {e.img ? <img className="rg-emodal-portrait" src={`/rogue/enemy/${e.img}.webp`} alt="" aria-hidden width={158} height={158} loading="lazy" decoding="async" />
+          {e.img ? <img className="rg-emodal-portrait" src={asset(`/rogue/enemy/${e.img}.webp`)} alt="" aria-hidden width={158} height={158} loading="lazy" decoding="async" />
             : <span className="rg-emodal-portrait none" aria-hidden>?</span>}
           <div className="rg-emodal-main">
             {e.attack && <p className="rg-emodal-row"><strong>{t("공격 방식")}</strong> {e.attack}</p>}
@@ -431,7 +432,7 @@ function EncounterModal({ enc, onClose, link }: { enc: Encounter; onClose: () =>
         </header>
         <div className="rg-modal-cols enc">
           <div className="rg-modal-left">
-            {enc.bg && <img className="rg-enc-cg modal" src={`/rogue/scene/${enc.bg}.webp`} alt={enc.title} loading="lazy" decoding="async" />}
+            {enc.bg && <img className="rg-enc-cg modal" src={asset(`/rogue/scene/${enc.bg}.webp`)} alt={enc.title} loading="lazy" decoding="async" />}
           </div>
           <div className="rg-enc-body">
             {enc.desc && <p className="rg-modal-desc">{enc.desc}</p>}
@@ -464,7 +465,7 @@ function RelicModal({ relic, owned, onToggleOwn, onClose }: {
       <div className="rg-modal rg-rmodal" role="dialog" aria-modal onClick={(ev) => ev.stopPropagation()}>
         <header className="rg-modal-head">
           <div>
-            {relic.img && <img className="rg-relic-icon lg" src={`/rogue/relic/${relic.iconId ?? relic.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
+            {relic.img && <img className="rg-relic-icon lg" src={asset(`/rogue/relic/${relic.iconId ?? relic.id}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />}
             {relic.order && <span className="rg-relic-no">{relic.order}</span>}
             <h3><Nm name={relic.name} cn={relic.cn} /></h3>
             {(relic.kind || relic.typeName) && <span className="rg-modal-zone">{t((relic.kind ?? relic.typeName)!)}</span>}
@@ -475,7 +476,7 @@ function RelicModal({ relic, owned, onToggleOwn, onClose }: {
             다단계(stages, 붕괴 패러다임)는 단계별 [섬네일+이름+효과+플레이버] 블록으로 */}
         {relic.stages ? relic.stages.map((s) => (
           <div key={s.name} className="rg-stage rg-stage-modal">
-            {relic.img && <img className="rg-relic-icon" src={`/rogue/relic/${relic.iconId ?? relic.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
+            {relic.img && <img className="rg-relic-icon" src={asset(`/rogue/relic/${relic.iconId ?? relic.id}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />}
             <div className="rg-stage-txt">
               <h4>{s.name} <em className="rg-stage-lb">{s.label}</em></h4>
               {s.usage && <p className="rg-relic-usage rg-multiline">{s.usage}</p>}
@@ -1279,7 +1280,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
     <section className={`rg${topic === "rogue_1" ? "" : " rg" + topic.split("_")[1]}`} aria-labelledby="rg-title">
       <header className="rg-head">
         <div className="rg-hero">
-          <img className="rg-hero-kv" src={`/rogue/kv${topic.split("_")[1]}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />
+          <img className="rg-hero-kv" src={asset(`/rogue/kv${topic.split("_")[1]}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />
           <div className="rg-hero-text">
             <span className="rg-eyebrow">INTEGRATED STRATEGIES</span>
             {/* 제목은 현재 테마 이름 — 테마 전환은 햄버거 '통합전략 가이드' 부메뉴/드롭다운 (사용자 확정 2026-07-18) */}
@@ -1404,7 +1405,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
                   {mapHits.encs.map((enc) => (
                     <button key={enc.scene} type="button" className="rg-enc-item" onClick={() => setEncOpen(enc)}>
                       {enc.bg
-                        ? <img className="rg-enc-thumb" src={`/rogue/scene/${enc.bg}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />
+                        ? <img className="rg-enc-thumb" src={asset(`/rogue/scene/${enc.bg}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />
                         : <span className="rg-enc-thumb none" aria-hidden />}
                       <span className="rg-enc-txt">
                         {enc.floors && <span className="rg-enc-floors">{enc.floors.join("·")}{t("층")}</span>}
@@ -1426,7 +1427,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
             return (
               <button type="button" key={z.id} className={`rg-zonecard${z.hidden ? " hidden-zone" : ""}`}
                 onClick={() => setZoneOpen(z)}>
-                {z.img && <img className="rg-zonecard-bg" src={`/rogue/zone/${z.bg ?? `${data.id}_map_${z.num}`}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
+                {z.img && <img className="rg-zonecard-bg" src={asset(`/rogue/zone/${z.bg ?? `${data.id}_map_${z.num}`}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />}
                 <span className="rg-zone-num">{zoneBadge(z)}</span>
                 <span className="rg-zonecard-name"><Nm name={z.name} cn={z.cn} /></span>
                 {z.variant && <span className="rg-zone-hidden">{t("변형 구역")}</span>}
@@ -1581,7 +1582,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
                   .map((enc) => (
                     <button key={enc.scene} type="button" className="rg-enc-item" onClick={() => setEncOpen(enc)}>
                       {enc.bg
-                        ? <img className="rg-enc-thumb" src={`/rogue/scene/${enc.bg}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />
+                        ? <img className="rg-enc-thumb" src={asset(`/rogue/scene/${enc.bg}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />
                         : <span className="rg-enc-thumb none" aria-hidden />}
                       <span className="rg-enc-txt">
                         {enc.floors && <span className="rg-enc-floors">{enc.floors.join("·")}{t("층")}</span>}
@@ -1613,7 +1614,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
             {enemies.map(([key, e]) => (
               <button type="button" key={key} className="rg-enemy-cell row" id={`rg-en-${key}`}
                 onClick={() => setEnemyOpen({ key, ctx: dexCtx(key) })}>
-                {e.img ? <img className="rg-enemy-face" src={`/rogue/enemy/${e.img}.webp`} alt="" aria-hidden width={158} height={158} loading="lazy" decoding="async" />
+                {e.img ? <img className="rg-enemy-face" src={asset(`/rogue/enemy/${e.img}.webp`)} alt="" aria-hidden width={158} height={158} loading="lazy" decoding="async" />
                   : <span className="rg-enemy-face none" aria-hidden>?</span>}
                 <span className="rg-enemy-cell-info">
                   <span className="rg-enemy-cell-head">
@@ -1646,7 +1647,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
                 onClick={() => setRelicOpen(r)}
                 onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setRelicOpen(r); } }}>
                 <header>
-                  {r.img && <img className="rg-relic-icon" src={`/rogue/relic/${r.iconId ?? r.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
+                  {r.img && <img className="rg-relic-icon" src={asset(`/rogue/relic/${r.iconId ?? r.id}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />}
                   <h4><Nm name={r.name} cn={r.cn} /></h4>
                   <InvPill owned={inv.has(r.id)} onToggle={() => toggleInv(r.id)} />
                 </header>
@@ -1693,7 +1694,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
                           onClick={() => setRelicOpen(s)}
                           onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setRelicOpen(s); } }}>
                           <header>
-                            {s.img && <img className="rg-relic-icon" src={`/rogue/relic/${s.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
+                            {s.img && <img className="rg-relic-icon" src={asset(`/rogue/relic/${s.id}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />}
                             <h4><Nm name={s.name} cn={s.cn} /></h4>
                             <InvPill owned={inv.has(s.id)} onToggle={() => toggleInv(s.id)} />
                           </header>
@@ -1712,7 +1713,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
               {(data.legacies ?? []).map((c) => (
                 <article key={c.id} className="rg-relic">
                   <header>
-                    {c.img && <img className="rg-relic-icon" src={`/rogue/relic/${c.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
+                    {c.img && <img className="rg-relic-icon" src={asset(`/rogue/relic/${c.id}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />}
                     <h4><Nm name={c.name} cn={c.cn} /></h4>
                   </header>
                   {c.usage && <p className="rg-relic-usage">{c.usage}</p>}
@@ -1727,7 +1728,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
               {(data.buoys ?? []).map((b) => (
                 <article key={b.id} className="rg-relic">
                   <header>
-                    {b.img && <img className="rg-relic-icon" src={`/rogue/misc/${b.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
+                    {b.img && <img className="rg-relic-icon" src={asset(`/rogue/misc/${b.id}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />}
                     <h4><Nm name={b.name} cn={b.cn} /></h4>
                   </header>
                   {b.usage && <p className="rg-relic-desc">{b.usage}</p>}
@@ -1739,7 +1740,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
             <div className="rg-capsule-grid">
               {(data.capsules ?? []).map((c) => (
                 <article key={c.id} className={`rg-relic capsule${lensHits?.has(c.id) ? " rg-lens-hit" : ""}`}>
-                  {c.img && <img className="rg-cap-art" src={`/rogue/capsule/${c.id}.webp`} alt={c.name} loading="lazy" decoding="async" />}
+                  {c.img && <img className="rg-cap-art" src={asset(`/rogue/capsule/${c.id}.webp`)} alt={c.name} loading="lazy" decoding="async" />}
                   <header><h4>{c.name}</h4>{c.en && <span className="rg-cap-en">{c.en}</span>}</header>
                   {c.usage && <p className="rg-relic-usage">{c.usage}</p>}
                   {c.desc && <p className="rg-relic-desc">{c.desc}</p>}
@@ -1753,7 +1754,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
               {(data.exploreTools ?? []).map((c) => (
                 <article key={c.id} className="rg-relic">
                   <header>
-                    {c.img && <img className="rg-relic-icon" src={`/rogue/relic/${c.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
+                    {c.img && <img className="rg-relic-icon" src={asset(`/rogue/relic/${c.id}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />}
                     <h4><Nm name={c.name} cn={c.cn} /></h4>
                   </header>
                   {c.usage && <p className="rg-relic-usage">{c.usage}</p>}
@@ -1767,7 +1768,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
               {data.bands.map((c) => (
                 <article key={c.id} className={`rg-relic${lensHits?.has(c.id) ? " rg-lens-hit" : ""}`}>
                   <header>
-                    {c.img && <img className="rg-relic-icon" src={`/rogue/relic/${c.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
+                    {c.img && <img className="rg-relic-icon" src={asset(`/rogue/relic/${c.id}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />}
                     <h4><Nm name={c.name} cn={c.cn} /></h4>
                   </header>
                   {c.usage && <p className="rg-relic-usage">{c.usage}</p>}
@@ -1801,7 +1802,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
                         <div className="rg-stage-list">
                           {c.stages.map((s) => (
                             <div key={s.name} className="rg-stage">
-                              {c.img && <img className="rg-relic-icon" src={`/rogue/relic/${c.iconId ?? c.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
+                              {c.img && <img className="rg-relic-icon" src={asset(`/rogue/relic/${c.iconId ?? c.id}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />}
                               <div className="rg-stage-txt">
                                 <h4>{s.name} <em className="rg-stage-lb">{s.label}</em></h4>
                                 {s.usage && <p className="rg-relic-usage rg-multiline">{s.usage}</p>}
@@ -1811,7 +1812,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
                         </div>
                       ) : (<>
                         <header>
-                          {c.img && <img className="rg-relic-icon" src={`/rogue/relic/${c.iconId ?? c.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
+                          {c.img && <img className="rg-relic-icon" src={asset(`/rogue/relic/${c.iconId ?? c.id}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />}
                           <h4>{c.name}</h4>
                           {resIds.has(c.id) && <InvPill owned={inv.has(c.id)} onToggle={() => toggleInv(c.id)} />}
                         </header>
@@ -1856,7 +1857,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
             {(data.weathers ?? []).map((w) => (
               <article key={w.id} className="rg-relic">
                 <header>
-                  {w.img && <img className="rg-relic-icon" src={`/rogue/misc/${w.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
+                  {w.img && <img className="rg-relic-icon" src={asset(`/rogue/misc/${w.id}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />}
                   <h4><Nm name={w.name} cn={w.cn} /></h4>
                 </header>
                 {w.levels.map((l) => (
@@ -1872,7 +1873,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
             {(data.subweathers ?? []).map((w) => (
               <article key={w.id} className="rg-relic">
                 <header>
-                  {w.img && <img className="rg-relic-icon" src={`/rogue/misc/${w.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
+                  {w.img && <img className="rg-relic-icon" src={asset(`/rogue/misc/${w.id}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />}
                   <h4><Nm name={w.name} cn={w.cn} /></h4>
                 </header>
                 {w.desc && <p className="rg-relic-usage">{w.desc}</p>}
@@ -1886,7 +1887,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
             {data.variations.map((v) => (
               <article key={v.id} className="rg-relic">
                 <header>
-                  {v.img && <img className="rg-relic-icon" src={`/rogue/misc/rogue_6_${v.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
+                  {v.img && <img className="rg-relic-icon" src={asset(`/rogue/misc/rogue_6_${v.id}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />}
                   <h4><Nm name={v.name} cn={v.cn} /></h4>
                 </header>
                 {v.func && <p className="rg-relic-usage">{v.func}</p>}
@@ -1994,7 +1995,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
                     onClick={() => setRelicOpen(r)}
                     onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setRelicOpen(r); } }}>
                     <header>
-                      {r.img && <img className="rg-relic-icon" src={`/rogue/relic/${r.iconId ?? r.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
+                      {r.img && <img className="rg-relic-icon" src={asset(`/rogue/relic/${r.iconId ?? r.id}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />}
                       <h4><Nm name={r.name} cn={r.cn} /></h4>
                       <InvPill owned onToggle={() => toggleInv(r.id)} />
                     </header>
@@ -2038,7 +2039,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
               {lensMulti.map((r) => (
                 <article key={r.id} className="rg-rmulti-item">
                   <header>
-                    {r.img && <img className="rg-relic-icon lg" src={`/rogue/relic/${r.iconId ?? r.id}.webp`} alt="" aria-hidden loading="lazy" decoding="async" />}
+                    {r.img && <img className="rg-relic-icon lg" src={asset(`/rogue/relic/${r.iconId ?? r.id}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />}
                     {r.order && <span className="rg-relic-no">{r.order}</span>}
                     <h4><Nm name={r.name} cn={r.cn} /></h4>
                     {/* 스샷 인식 → 바로 보유 담기 (피드백 반영 2026-07-24) */}

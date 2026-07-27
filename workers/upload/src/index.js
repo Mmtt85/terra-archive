@@ -6,8 +6,8 @@
 //   PUT    /files/<key>  업로드 (관리자) — 같은 이름은 덮어쓴다
 //   DELETE /files/<key>  삭제 (관리자)
 //
-// 관리자 판정: x-admin-key 헤더가 ADMIN_KEY 시크릿과 일치할 때만.
-// Supabase RLS(x-admin-key)와 같은 비밀번호를 쓴다 — /admin이 입장 비밀번호를 그대로 보낸다.
+// 관리자 판정: x-admin-key 헤더가 ADMIN_KEY(= /admin 입장 비밀번호) 또는
+// SYNC_KEY(scripts/r2-sync.mjs 전용 무작위 키 — 사이트 정적 에셋 동기화) 시크릿과 일치할 때만.
 
 // 관리자 API는 계정 워커와 같은 원칙 — 사이트와 로컬 개발만 허용
 const ORIGIN_OK = (origin) =>
@@ -21,7 +21,7 @@ function corsHeaders(origin) {
   return {
     "Access-Control-Allow-Origin": ORIGIN_OK(origin) ? origin : "https://terra-archive.net",
     "Access-Control-Allow-Methods": "GET, PUT, DELETE, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, x-admin-key",
+    "Access-Control-Allow-Headers": "Content-Type, x-admin-key, x-cache-control",
     "Access-Control-Max-Age": "86400",
     Vary: "Origin",
   };
@@ -34,15 +34,18 @@ const json = (payload, origin, status = 200) =>
   });
 
 // 비밀번호 비교는 길이를 맞춘 뒤 timingSafeEqual — === 는 타이밍이 샌다
-async function isAdmin(request, env) {
-  const given = request.headers.get("x-admin-key") ?? "";
-  const secret = env.ADMIN_KEY ?? "";
-  if (!secret) return false; // 시크릿 미설정이면 전부 거부 (열린 채 뜨는 사고 방지)
+function keyEquals(given, secret) {
+  if (!secret) return false; // 시크릿 미설정이면 거부 (열린 채 뜨는 사고 방지)
   const enc = new TextEncoder();
   const a = enc.encode(given);
   const b = enc.encode(secret);
   if (a.byteLength !== b.byteLength) return false;
   return crypto.subtle.timingSafeEqual(a, b);
+}
+
+function isAdmin(request, env) {
+  const given = request.headers.get("x-admin-key") ?? "";
+  return keyEquals(given, env.ADMIN_KEY) || keyEquals(given, env.SYNC_KEY);
 }
 
 // URL 경로에서 키 추출 — 퍼센트 디코딩 + 경로 탈출 차단
@@ -78,7 +81,8 @@ export default {
       const object = await env.FILES.get(key, { onlyIf: request.headers });
       if (!object) return new Response("not found", { status: 404 });
       const headers = {
-        "Cache-Control": "public, max-age=86400", // 덮어쓰기 반영은 최대 1일 늦는다
+        // 업로드 때 지정한 캐시 정책(에셋 동기화는 확장자별로 넣는다), 없으면 1일
+        "Cache-Control": object.httpMetadata?.cacheControl ?? "public, max-age=86400",
         ETag: object.httpEtag,
         "Content-Type": object.httpMetadata?.contentType ?? "application/octet-stream",
         "Access-Control-Allow-Origin": "*",
@@ -89,7 +93,7 @@ export default {
 
     // ── 이하 관리자 전용 ──
     if (url.pathname === "/files" || url.pathname.startsWith("/files/")) {
-      if (!(await isAdmin(request, env))) return json({ ok: false, error: "unauthorized" }, origin, 401);
+      if (!isAdmin(request, env)) return json({ ok: false, error: "unauthorized" }, origin, 401);
 
       if (request.method === "GET" && url.pathname === "/files") {
         const files = [];
@@ -97,7 +101,8 @@ export default {
         do {
           const page = await env.FILES.list({ limit: 500, cursor });
           for (const obj of page.objects)
-            files.push({ key: obj.key, size: obj.size, uploaded: obj.uploaded, url: fileUrl(env, url, obj.key) });
+            // etag = 단일 PUT이면 본문 md5 (r2-sync.mjs 증분 판정에 쓴다)
+            files.push({ key: obj.key, size: obj.size, uploaded: obj.uploaded, etag: obj.etag, url: fileUrl(env, url, obj.key) });
           cursor = page.truncated ? page.cursor : undefined;
         } while (cursor);
         files.sort((a, b) => (a.uploaded < b.uploaded ? 1 : -1)); // 최신이 위
@@ -112,7 +117,11 @@ export default {
         const size = Number(request.headers.get("Content-Length") ?? 0);
         if (size > 95 * 1024 * 1024) return json({ ok: false, error: "too-large" }, origin, 413);
         const object = await env.FILES.put(key, request.body, {
-          httpMetadata: { contentType: request.headers.get("Content-Type") ?? "application/octet-stream" },
+          httpMetadata: {
+            contentType: request.headers.get("Content-Type") ?? "application/octet-stream",
+            // 에셋 동기화가 확장자별 캐시 정책을 넣는다 (이미지 30일 등). 생략하면 서빙 기본값(1일)
+            cacheControl: request.headers.get("x-cache-control") ?? undefined,
+          },
         });
         return json({ ok: true, key, size: object.size, uploaded: object.uploaded, url: fileUrl(env, url, key) }, origin);
       }

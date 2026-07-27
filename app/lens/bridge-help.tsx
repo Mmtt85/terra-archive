@@ -5,6 +5,7 @@
 // 시스템 이름(PRTS)을 빌렸다.
 
 import React, { useEffect } from "react";
+import { asset } from "../assets";
 import { useI18n, rich } from "../i18n";
 
 export default function BridgeHelpModal({ onClose }: { onClose: () => void }) {
@@ -50,7 +51,7 @@ export default function BridgeHelpModal({ onClose }: { onClose: () => void }) {
             올라가자 왼쪽 사이트가 그 작전 상세를 스스로 열었다 */}
         <h3>{t("이런 식으로 따라옵니다")}</h3>
         <figure className="scanner-sample bridge-sample">
-          <img src="/lens/prts-link-sample.webp" alt={t("에뮬레이터에서 작전 노드를 고르자 사이트가 그 작전 상세를 자동으로 연 화면")} loading="lazy" />
+          <img src={asset("/lens/prts-link-sample.webp")} alt={t("에뮬레이터에서 작전 노드를 고르자 사이트가 그 작전 상세를 자동으로 연 화면")} loading="lazy" />
           <figcaption>{t("오른쪽 에뮬레이터에서 '적의 칼로 적 베기' 노드를 고르자, 왼쪽 사이트가 그 작전의 적 구성·지형을 스스로 열었습니다. 위쪽 가운데 표시줄이 연결 상태와 지금 읽은 화면을 알려줍니다.")}</figcaption>
         </figure>
 

@@ -195,3 +195,19 @@ npx --yes tsx scripts/verify-scan.ts      # 회귀 검증 — 픽스처 138셀 �
 - 정예화 엠블럼 템플릿(app/scan/elite-templates.json)은 픽스처에서 추출한 고정 애셋 —
   게임 UI가 바뀌지 않는 한 재생성 불필요.
 - 신규 오퍼 추가(operators.json 재생성) 후에는 이 스크립트도 한 번 돌려 초상 템플릿을 따라잡게 한다.
+
+## 8. 정적 에셋 R2 동기화 (2026-07-27~)
+
+public/의 story·rogue·lens·tesseract·avatars·about·og·items·scan은 사이트 배포(Pages)가
+아니라 **R2(files.terra-archive.net)** 에서 서빙된다. 파이프라인이 이 폴더들에 파일을
+새로 만들었으면(신규 오퍼 아바타, 이벤트 섬네일·전문 스크립트, 통합전략 에셋, OG 이미지,
+소개 스크린샷 등) R2에 밀어 올려야 사이트에 보인다:
+
+```bash
+node scripts/r2-sync.mjs        # md5 증분 — 바뀐 것만 올린다
+node scripts/r2-sync.mjs --dry  # 올릴 목록 미리 보기
+```
+
+`bash scripts/deploy.sh`가 배포 전에 자동으로 돌리므로 보통은 신경 쓸 일 없다.
+인증은 레포 루트 `.r2-sync-key`(gitignore) — 잃어버리면
+`openssl rand -hex 32 > .r2-sync-key && (cd workers/upload && npx wrangler secret put SYNC_KEY < ../../.r2-sync-key)`.
