@@ -484,6 +484,26 @@ const D: Record<string, Pair> = {
     "Same as Endurance, except the Control Center is always built as a perpetual (zero net drain, pinned to both shifts) squad — Team Rainbow or the 3★ alter trio",
     "長期持続と同じですが、制御中枢だけは必ず永久機関（実質消費0・両班固定）の編成 — レインボー部隊・星3昇変トリオ — に固定します",
   ],
+  "순소모 0 — 무한동력, 이 방은 교대가 필요 없습니다": [
+    "Zero net drain — perpetual; this room never needs a swap",
+    "実質消費0 — 永久機関。この部屋は交代不要です",
+  ],
+  "A조 지속 — 풀 컨디션 24를 이 방 순소모 {d}/h로 나눈 값 (회복 오라·제어센터 기본 효과 반영)": [
+    "Shift A duration — full morale 24 divided by this room's net drain of {d}/h (recovery auras and the Control Center base effect included)",
+    "A班の持続時間 — 満タンのコンディション24をこの部屋の実質消費{d}/hで割った値（回復オーラ・制御中枢の基本効果を反映）",
+  ],
+  "제일 빨리 컨디션을 다 쓰는 시설 기준 — 그 시점에 A조 전체를 B조로 한 번에 교대합니다 (방 카드의 시간 배지 = 방별 지속)": [
+    "Based on the room that runs out of morale first — at that point swap all of Shift A to Shift B at once (the hour badge on each room card = per-room duration)",
+    "最も早くコンディションを使い切る施設基準 — その時点でA班全体を一斉にB班へ交代します（各部屋カードの時間バッジ = 部屋別の持続時間）",
+  ],
+  "A조 전체 무한동력 ∞ — 교대 불필요": [
+    "Shift A is fully perpetual ∞ — no swaps needed",
+    "A班全体が永久機関 ∞ — 交代不要",
+  ],
+  "A조 ~{h}시간 — {room} 소진 기준 일괄 교대": [
+    "Shift A ≈{h}h — swap everyone when {room} runs dry",
+    "A班 約{h}時間 — {room}の消耗を基準に一斉交代",
+  ],
   "먼저 채우는 방이 최고 요원을 가져갑니다 — 다음 자동편성부터 적용됩니다": [
     "Rooms filled first get the best operators — applies from the next auto-assign",
     "先に埋める部屋が最高の要員を確保します — 次回の自動編成から適用されます",

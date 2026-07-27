@@ -3357,6 +3357,28 @@ footer p {
   font-size: 12px;
   margin-left: 8px;
 }
+/* A조 지속 시계 (소모 모드 전용) — 조 탭의 병목 기준 일괄 교대 시계 + 방 카드의 방별 배지.
+   풀 컨디션 24 ÷ 방 순소모, 순소모 0(무한동력)은 ∞ (사용자 요청 2026-07-28) */
+.shift-clock {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 5px;
+  background: var(--chip);
+  color: var(--lime);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.room-clock {
+  margin-right: 6px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--chip);
+  color: var(--lime);
+  font: 800 11px monospace;
+  font-style: normal;
+}
 /* 신규 기능 배지 — 출시 7일간 표시 (app/whats-new.ts) */
 /* BETA 딱지 — 아직 다듬는 중인 기능에 붙인다 (PRTS 링크, 2026-07-26). 새기능 배지와
    달리 시간이 지나도 사라지지 않고, 시선을 덜 끌게 무채색 + 애니메이션 없음. */

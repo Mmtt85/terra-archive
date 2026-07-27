@@ -13,7 +13,7 @@ import {
   infra, ops, opById, factionsOf, withElite, clueBase, maxElite, eliteOptions,
   ELITE_LABEL, LAYOUT, cellByKey, ROOM_ACCENT, UNIT, PARK_KEYS, SHIFT_COUNT,
   JOB_ORDER, ROSTER_SORT_KEYS, PRODUCTION_KEYS, SUPPORT_KEYS,
-  AURA_WEIGHT, AURA_LABEL, skillApplies, breakdown, teamScore, aurasOf, ambientFor, capConvFor,
+  AURA_WEIGHT, AURA_LABEL, skillApplies, breakdown, teamScore, aurasOf, ambientFor, capConvFor, roomMaxNetDrain,
   ctxFor, sanitizePlan, presentIdsFor, roomOfFor, cellOfFor, slotSubstitutes, setLayoutPreset, setPriorityMode, memberOf, growAvg, DEFAULT_CUSTOM_ROOMS, DEFAULT_CUSTOM_PRODUCTS,
   setLevels as setEngineLevels, slotsFor, maxLevelOf, levelOf, powerBudget, suggestedLevels, TERMS,
   type InfraOp, type InfraSkill, type Elite, type Plan, type ProdPriority, type TokenFlow, type OptimizeStep, type LayoutPreset, type Levels, type CustomRoom, type CustomProduct,
@@ -907,6 +907,31 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plan, activeShift, presentIds, eliteById]);
 
+  // A조 방별 지속 시계 (소모 모드 전용, 사용자 요청 2026-07-28) — 풀 컨디션 24 ÷ 방 순소모.
+  // 병목(제일 빨리 닳는 방)에 맞춰 A조 전체를 한 번에 B조로 교대하는 운용이라, 방마다 배지 +
+  // 조 탭에 병목 기준 전체 시계를 표시한다. 순소모 0(무한동력·양조 고정)은 ∞. 회복 오라·제어센터
+  // 기본 효과를 반영한 모델값이라 저장된 보수적 시계(plan.shiftHours)와는 다르다.
+  const drainClock = useMemo(() => {
+    if (!plan || (plan.priority !== "endless" && plan.priority !== "perpetual")) return null;
+    const present = presentIdsFor(plan, 0);
+    const amb = aurasOf(teamFor("CONTROL", 0), ctxFor("CONTROL", pointsFor(0), plan.factionCounts[0], plan.plants, present));
+    const rooms = new Map<string, number>();
+    let worst = 0;
+    let worstKey: string | null = null;
+    for (const cell of LAYOUT) {
+      if (PARK_KEYS.includes(cell.key) || cell.key === "TRAINING" || cell.key.startsWith("DORM")) continue;
+      const team = teamFor(cell.key, 0);
+      if (!team.length) continue;
+      const ctx = { ...ctxFor(cell.key, pointsFor(0), plan.factionCounts[0], plan.plants, present, amb), shift: 0 };
+      const net = roomMaxNetDrain(team, cell.room, ctx);
+      if (net == null) continue;
+      rooms.set(cell.key, net);
+      if (net > worst) { worst = net; worstKey = cell.key; }
+    }
+    return { rooms, worstKey, hours: worst <= 1e-9 ? Infinity : 24 / worst };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plan, eliteById]);
+
   const summary = useMemo(() => {
     if (!plan) return null;
     const avg = (prefix: string) => {
@@ -1106,6 +1131,13 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
               {Array.from({ length: SHIFT_COUNT }, (_, i) => (
                 <button key={i} className={activeShift === i ? "selected" : ""} onClick={() => setActiveShift(i)}>{[t("A조 (풀파워)"), t("B조 (회복 교대)")][i]}</button>
               ))}
+              {drainClock && (
+                <span className="shift-clock" title={t("제일 빨리 컨디션을 다 쓰는 시설 기준 — 그 시점에 A조 전체를 B조로 한 번에 교대합니다 (방 카드의 시간 배지 = 방별 지속)")}>
+                  {drainClock.hours === Infinity
+                    ? t("A조 전체 무한동력 ∞ — 교대 불필요")
+                    : t("A조 ~{h}시간 — {room} 소진 기준 일괄 교대", { h: Math.round(drainClock.hours), room: t(cellByKey.get(drainClock.worstKey!)?.label ?? "") })}
+                </span>
+              )}
               <span className="shift-hint">{t("A조 컨디션 소진 시 B조 투입 · 시너지 세트는 A조 집중 · 숙소·고정 요원은 조 전환과 무관 · ")}<b>{t("숙소는 항상 5명 꽉 채워 유지")}</b></span>
             </div>
           )}
@@ -1193,7 +1225,19 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
                     : t(cell.label)}
                   <em className={`room-lv${levelOf(cell.key) < maxLevelOf(cell.room) ? "" : " max"}`}>Lv{levelOf(cell.key)}</em>
                 </b>
-                <span>{team.length}/{slotsFor(cell.key)}</span>
+                <span>
+                  {activeShift === 0 && drainClock?.rooms.has(cell.key) && (() => {
+                    const net = drainClock.rooms.get(cell.key)!;
+                    return (
+                      <em className="room-clock" title={net <= 1e-9
+                        ? t("순소모 0 — 무한동력, 이 방은 교대가 필요 없습니다")
+                        : t("A조 지속 — 풀 컨디션 24를 이 방 순소모 {d}/h로 나눈 값 (회복 오라·제어센터 기본 효과 반영)", { d: net.toFixed(2) })}>
+                        {net <= 1e-9 ? "∞" : `${Math.round(24 / net)}h`}
+                      </em>
+                    );
+                  })()}
+                  {team.length}/{slotsFor(cell.key)}
+                </span>
               </div>
               {/* 그외(커스텀) 배치: 칸의 시설 종류 전환 (중첩 button 금지 — span[role=button]) */}
               {layout === "custom" && cell.slot != null && (
