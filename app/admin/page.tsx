@@ -5,6 +5,7 @@ import { adminDeleteFeedback, adminListFeedback, adminSetHandling, adminSetRevie
 import { adminDeleteRelease, adminDeleteRule, adminListRules, adminPublishRelease, adminUpsertRule, fetchLatestRelease, type ReleaseRow } from "../rules-api";
 import { adminDeleteChange, adminUpsertChange, fetchAllChanges, CHANGE_KINDS, CHANGE_KIND_LABEL, daysAgoKst, type ChangeDraft, type ChangeRow } from "../changelog-api";
 import { adminDeleteTip, adminUpsertTip, fetchAllTips, type TipDraft, type TipRow } from "../tips-api";
+import { adminDeleteFile, adminListFiles, adminUploadFile, formatSize, isImageKey, type StoredFile } from "../files-api";
 import { useConfirm } from "../confirm";
 import { compileSnapshot, validateRules, RULE_KINDS, type RuleRow } from "../rules-compile";
 import { RULES as bundledRules } from "../rules";
@@ -117,13 +118,38 @@ function ChangeEditor({ row, onSave, onCancel }: { row: ChangeDraft; onSave: (ne
   );
 }
 
+// 이미지 입력칸 옆의 "올리기" 버튼 — 파일을 고르면 R2에 올리고 URL을 칸에 채운다
+function UploadButton({ onPick }: { onPick: (file: File) => void }) {
+  return (
+    <label className="file-pick-btn" title="파일을 R2에 올리고 URL을 채웁니다">
+      올리기
+      <input
+        type="file"
+        accept="image/*"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) onPick(file);
+          e.target.value = ""; // 같은 파일을 다시 골라도 change가 뜨게
+        }}
+      />
+    </label>
+  );
+}
+
 // ── 팁 풍선 편집기 (docs/supabase-tips.sql) ─────────────────────────────────────
-// 제목은 풍선에 접힌 채로 보이므로 짧게. 이미지는 사이트 내부 경로(/about/*.webp 등).
-function TipEditor({ row, onSave, onCancel }: { row: TipDraft; onSave: (next: TipDraft) => Promise<void>; onCancel: () => void }) {
+// 제목은 풍선에 접힌 채로 보이므로 짧게. 이미지는 사이트 내부 경로(/about/*.webp 등)나
+// 파일 저장소(R2) URL — 옆의 올리기 버튼으로 그 자리에서 올릴 수 있다.
+function TipEditor({ row, onSave, onCancel, upload }: { row: TipDraft; onSave: (next: TipDraft) => Promise<void>; onCancel: () => void; upload?: (file: File) => Promise<string> }) {
   const [v, setV] = useState<TipDraft>(row);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const set = (patch: Partial<TipDraft>) => setV((cur) => ({ ...cur, ...patch }));
+  const pickImage = (field: "image" | "image_dark") => async (file: File) => {
+    if (!upload) return;
+    setError("");
+    try { set({ [field]: await upload(file) }); }
+    catch (err) { setError(String((err as Error).message ?? err)); }
+  };
   const save = async () => {
     if (!v.title_ko.trim() || !v.body_ko.trim()) { setError("한국어 제목·설명은 필수입니다"); return; }
     setSaving(true);
@@ -145,8 +171,14 @@ function TipEditor({ row, onSave, onCancel }: { row: TipDraft; onSave: (next: Ti
       <textarea value={v.body_ko} onChange={(e) => set({ body_ko: e.target.value })} rows={3} placeholder="설명 · 한국어 (필수) — 풍선을 펼치면 나옵니다" />
       <textarea value={v.body_en ?? ""} onChange={(e) => set({ body_en: e.target.value })} rows={3} placeholder="Description · English" />
       <textarea value={v.body_ja ?? ""} onChange={(e) => set({ body_ja: e.target.value })} rows={3} placeholder="説明 · 日本語" />
-      <input value={v.image ?? ""} onChange={(e) => set({ image: e.target.value })} placeholder="이미지 경로 (선택) — 예: /about/planner.webp" />
-      <input value={v.image_dark ?? ""} onChange={(e) => set({ image_dark: e.target.value })} placeholder="다크 모드 이미지 (선택) — 예: /about/planner-dark.webp" />
+      <div className="file-inline">
+        <input value={v.image ?? ""} onChange={(e) => set({ image: e.target.value })} placeholder="이미지 경로 (선택) — 예: /about/planner.webp 또는 R2 URL" />
+        {upload && <UploadButton onPick={pickImage("image")} />}
+      </div>
+      <div className="file-inline">
+        <input value={v.image_dark ?? ""} onChange={(e) => set({ image_dark: e.target.value })} placeholder="다크 모드 이미지 (선택) — 예: /about/planner-dark.webp" />
+        {upload && <UploadButton onPick={pickImage("image_dark")} />}
+      </div>
       <input value={v.href ?? ""} onChange={(e) => set({ href: e.target.value })} placeholder="바로가기 경로 (선택) — 예: /infra#roster-import" />
       {error && <p className="admin-status">{error}</p>}
       <div className="admin-tools">
@@ -180,11 +212,16 @@ export default function AdminPage() {
   const [status, setStatus] = useState("");
   const [filter, setFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("open"); // open(대응미완료) | reviewed(대응완료)
-  const [tab, setTab] = useState<"feedback" | "rules" | "changelog" | "tips">("feedback"); // 상단 탭
+  const [tab, setTab] = useState<"feedback" | "rules" | "changelog" | "tips" | "files">("feedback"); // 상단 탭
   // 팁 풍선 원장 (null = 조회 실패 → 미설치 안내)
   const [tips, setTips] = useState<TipRow[] | null>(null);
   const [tipStatus, setTipStatus] = useState("");
   const [editingTip, setEditingTip] = useState<TipDraft | null>(null);
+  // 파일 저장소(R2) — 워커 미배포·비밀번호 불일치면 null + 안내
+  const [files, setFiles] = useState<StoredFile[] | null>(null);
+  const [fileStatus, setFileStatus] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
   // 업데이트 내역 원장 (null = 조회 실패 → 미설치 안내)
   const [changes, setChanges] = useState<ChangeRow[] | null>(null);
   const [changeStatus, setChangeStatus] = useState("");
@@ -269,6 +306,54 @@ export default function AdminPage() {
     try { await adminDeleteTip(password, row.id); setTipStatus("삭제됨"); loadTips(); }
     catch { setTipStatus("삭제 실패"); }
   };
+
+  // ── 파일 저장소 (workers/upload → R2) ────────────────────────────────────────
+  const loadFiles = async (pw: string) => {
+    try { setFiles(await adminListFiles(pw)); setFileStatus(""); }
+    catch (err) {
+      setFiles(null);
+      setFileStatus(`파일 목록 조회 실패 — ${String((err as Error).message ?? err)}`);
+    }
+  };
+
+  // 파일 탭을 처음 열 때 목록을 불러온다 (입장 시점엔 안 부른다 — 워커가 없어도 다른 탭은 멀쩡해야)
+  useEffect(() => {
+    if (tab === "files" && files === null && entered) loadFiles(password);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, entered]);
+
+  const uploadPicked = async (list: FileList | File[]) => {
+    const picked = [...list];
+    if (!picked.length) return;
+    setUploading(true);
+    let done = 0;
+    for (const file of picked) {
+      try {
+        const stored = await adminUploadFile(password, file);
+        done += 1;
+        setFileStatus(`올림 (${done}/${picked.length}) — ${stored.key}`);
+      } catch (err) {
+        setFileStatus(`업로드 실패: ${file.name} — ${String((err as Error).message ?? err)}`);
+        break;
+      }
+    }
+    setUploading(false);
+    loadFiles(password);
+  };
+
+  const copyFileUrl = async (row: StoredFile) => {
+    try { await navigator.clipboard.writeText(row.url); setFileStatus(`URL 복사됨 — ${row.key}`); }
+    catch { setFileStatus(row.url); } // 클립보드 미지원 환경이면 그냥 보여준다
+  };
+
+  const removeFile = async (row: StoredFile) => {
+    if (!(await confirm({ message: `'${row.key}' 파일을 삭제할까요? 이 URL을 쓰는 팁·페이지에선 이미지가 깨집니다.`, danger: true }))) return;
+    try { await adminDeleteFile(password, row.key); setFileStatus("삭제됨"); loadFiles(password); }
+    catch { setFileStatus("삭제 실패"); }
+  };
+
+  // 팁 편집기 이미지칸 "올리기" — 올리고 나서 공개 URL을 돌려준다
+  const uploadForTip = async (file: File) => (await adminUploadFile(password, file)).url;
 
   // ── 플래너 규칙 (docs/PLANNER-RULES-DB.md Phase 2) ────────────────────────────
   const loadRules = async (pw: string) => {
@@ -443,6 +528,9 @@ export default function AdminPage() {
           <button className={tab === "tips" ? "selected" : ""} onClick={() => setTab("tips")}>
             팁 풍선{tips ? ` (${tips.filter((row) => row.active).length}/${tips.length})` : ""}
           </button>
+          <button className={tab === "files" ? "selected" : ""} onClick={() => setTab("files")}>
+            파일{files ? ` (${files.length})` : ""}
+          </button>
           <button onClick={() => load(password)}>새로고침</button>
           <button onClick={() => { sessionStorage.removeItem("ta-admin-key"); setEntered(false); setRows([]); }}>잠금</button>
         </div>
@@ -586,11 +674,11 @@ export default function AdminPage() {
             <button onClick={() => setEditingTip({ title_ko: "", title_en: "", title_ja: "", body_ko: "", body_en: "", body_ja: "", image: "", image_dark: "", href: "", active: true, seq: (tips.at(-1)?.seq ?? -1) + 1 })}>+ 새 팁</button>
             <button onClick={loadTips}>새로고침</button>
           </div>
-          {editingTip && !editingTip.id && <TipEditor row={editingTip} onSave={saveTip} onCancel={() => setEditingTip(null)} />}
+          {editingTip && !editingTip.id && <TipEditor row={editingTip} onSave={saveTip} onCancel={() => setEditingTip(null)} upload={uploadForTip} />}
           {tips.length === 0 && <p className="admin-status">아직 등록된 팁이 없습니다.</p>}
           {tips.map((row) => (
             editingTip && editingTip.id === row.id
-              ? <TipEditor key={row.id} row={editingTip} onSave={saveTip} onCancel={() => setEditingTip(null)} />
+              ? <TipEditor key={row.id} row={editingTip} onSave={saveTip} onCancel={() => setEditingTip(null)} upload={uploadForTip} />
               : (
                 <div key={row.id} className={`rule-row${row.active ? "" : " status-draft"}`}>
                   <code>{row.seq}</code>
@@ -605,6 +693,49 @@ export default function AdminPage() {
           ))}
         </div>
       )}
+      </>)}
+
+      {tab === "files" && (<>
+      <p className="admin-status">
+        Cloudflare R2 파일 저장소입니다. 올린 파일은 공개 URL이 생겨 팁 이미지 등 어디에나 쓸 수 있습니다.
+        같은 이름을 다시 올리면 <b>덮어씁니다</b> (URL 캐시 때문에 반영은 최대 1일).
+      </p>
+      {fileStatus && <p className="admin-status">{fileStatus}</p>}
+      <div className="admin-rules">
+        <label
+          className={`file-drop${dragOver ? " drag" : ""}${uploading ? " busy" : ""}`}
+          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(e) => { e.preventDefault(); setDragOver(false); if (!uploading) uploadPicked(e.dataTransfer.files); }}
+        >
+          {uploading ? "올리는 중…" : "파일을 끌어다 놓거나 눌러서 선택 (여러 개 가능 · 95MB 이하)"}
+          <input type="file" multiple disabled={uploading} onChange={(e) => { if (e.target.files) uploadPicked(e.target.files); e.target.value = ""; }} />
+        </label>
+        <div className="admin-tools">
+          <button onClick={() => loadFiles(password)}>새로고침</button>
+        </div>
+        {files === null ? (
+          <p className="admin-status">
+            목록을 못 불러왔습니다 — R2 활성화 · <code>workers/upload</code> 배포 · <code>ADMIN_KEY</code> 시크릿(= 이 페이지 비밀번호)을 확인하세요.
+          </p>
+        ) : files.length === 0 ? (
+          <p className="admin-status">아직 올린 파일이 없습니다.</p>
+        ) : (
+          files.map((row) => (
+            <div key={row.key} className="rule-row file-row">
+              {isImageKey(row.key)
+                ? <img className="file-thumb" src={row.url} alt="" loading="lazy" />
+                : <span className="file-thumb file-thumb-blank">📄</span>}
+              <code title={row.url}>{row.key}</code>
+              <span className="rule-note">{formatSize(row.size)}</span>
+              <span className="rule-note">{new Date(row.uploaded).toLocaleDateString("ko-KR")}</span>
+              <button onClick={() => copyFileUrl(row)}>URL 복사</button>
+              <button onClick={() => window.open(row.url, "_blank")}>열기</button>
+              <button onClick={() => removeFile(row)}>삭제</button>
+            </div>
+          ))
+        )}
+      </div>
       </>)}
 
       {tab === "rules" && (<>

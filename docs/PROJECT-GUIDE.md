@@ -502,6 +502,22 @@ npm run build                             # 9. 빌드 확인 → 커밋 → 푸�
 - 빈 자리가 없으면(좁은 화면 등) 그냥 표시하지 않는다. '팁 그만 보기'는 localStorage에 12시간 저장.
   조회 실패(테이블 미설치 포함)도 조용히 숨긴다.
 
+### 파일 저장소 — Cloudflare R2 (2026-07-27, 사용자 확정)
+
+팁 이미지처럼 "배포 없이 넣는 콘텐츠"가 쓸 파일의 저장소. S3류 후보 중 **R2로 확정**
+(같은 Cloudflare 계정 + 이그레스 무료 + 무료 10GB). 사용자 혼자 올리고 사이트가 공개 URL로 쓴다.
+
+- 버킷: `terra-archive-files` · 앞단 워커: [workers/upload](../workers/upload/) (`terra-archive-upload`).
+  공개 서빙 `GET /f/<key>`(캐시 1일·ETag)는 인증 없음, 업로드·목록·삭제(`/files…`)는
+  `x-admin-key` 헤더가 **`ADMIN_KEY` 시크릿**과 일치할 때만 — Supabase RLS와 같은 비밀번호로
+  맞춰 두어 `/admin` 입장 비밀번호 하나로 전부 통한다.
+- 프론트: `app/files-api.ts`. `/admin` → **파일** 탭에서 드래그/선택 업로드 → URL 복사,
+  팁 편집기 이미지칸 옆 **올리기** 버튼은 올리자마자 URL을 칸에 채운다.
+- **같은 이름은 덮어쓴다** — 공개 URL이 `max-age=86400`이라 덮어쓴 내용 반영은 최대 1일.
+  키는 `safeKey()`가 정리(NFC 정규화 — macOS 한글 파일명은 자모 분리형이라 필수).
+- 워커 배포·시크릿: `cd workers/upload && bash deploy.sh`,
+  `npx wrangler secret put ADMIN_KEY`. R2는 대시보드에서 최초 1회 활성화 필요.
+
 ## 8. 디자인 시스템
 
 - 팔레트: `--ink #131719 / --paper #f1f0eb / --lime #dfff00` 계열, 각 오퍼 `accent` 색.

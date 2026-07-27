@@ -1,0 +1,16 @@
+# 테라 아카이브 파일 저장소 워커 (사이트 배포와 별개)
+# Cloudflare R2 버킷(terra-archive-files)에 /admin에서 올린 파일을 넣고 꺼낸다.
+# 팁 풍선 이미지처럼 "배포 없이 넣는 콘텐츠"가 쓸 이미지·파일의 원장 — R2는 이그레스 무료.
+# 배포: `bash deploy.sh` · 시크릿: `npx wrangler secret put ADMIN_KEY` (/admin 입장 비밀번호와 동일하게)
+name = "terra-archive-upload"
+main = "src/index.js"
+compatibility_date = "2026-07-01"
+
+[[r2_buckets]]
+binding = "FILES"
+bucket_name = "terra-archive-files"
+
+[vars]
+# 공개 URL 앞부분. 비우면 요청이 들어온 호스트(워커 주소)를 그대로 쓴다.
+# 나중에 files.terra-archive.net 커스텀 도메인을 붙이면 여기만 바꾸면 된다.
+PUBLIC_BASE = ""
