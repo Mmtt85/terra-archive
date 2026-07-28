@@ -3704,8 +3704,12 @@ footer p {
   gap: 10px;
   margin-top: 18px;
 }
-/* 요약 카드(전략·평균·전력·기용 인원) — 낮게 (사용자 요청 2026-07-27) */
-.planner-summary > div {
+/* 요약 카드(전략·평균·전력·기용 인원) — 낮게 (사용자 요청 2026-07-27).
+   min-height는 자동편성 전후로 값이 —에서 숫자로 바뀔 때 줄 수가 달라져도
+   칸 높이가 흔들리지 않게 잡아 둔 것 (사용자 지정 55px, 2026-07-29) */
+.planner-summary > div,
+.planner-summary > .strategy-cell {
+  min-height: 55px;
   background: var(--white);
   border: 1px solid var(--line);
   padding: 8px 13px;
@@ -4154,7 +4158,9 @@ footer p {
   color: #e8ecec;
   border: 1px solid #2c3234;
   border-left: 4px solid var(--room-accent);
-  min-height: 96px;
+  /* 자동편성 전후로 카드 안 내용(지속 시계 배지·점수 줄)이 늘었다 줄었다 해도 칸 높이가
+     흔들리지 않게 바닥을 잡아 둔다 (사용자 지정 122px, 2026-07-29) */
+  min-height: 122px;
   padding: 11px 12px;
   cursor: pointer;
   transition: 0.15s;
@@ -4263,7 +4269,7 @@ footer p {
   letter-spacing: 0.5px;
 }
 .pos-control.ship-room {
-  min-height: 110px;
+  min-height: 122px;
   background: linear-gradient(120deg, #1d2325, #12161a);
 }
 .room-modal .room-modal-head {

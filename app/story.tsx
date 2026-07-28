@@ -1044,7 +1044,7 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
 
 // 요약 뷰 — 이벤트·메인스토리·로그라이크 카드 그리드 + 검색 + 종류별/테마별 그룹핑(기본 종류별).
 // 각 그룹은 최신순(이벤트=출시월, 메인=에피소드 번호). 요약이 있는 이벤트만 열린다.
-function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEvent) => void; includeFuture?: boolean; group: "theme" | "kind" | "mini" }) {
+function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEvent) => void; includeFuture?: boolean; group: "theme" | "kind" }) {
   const { locale, t } = useI18n();
   // 비제어 입력 — 타이핑 중 렌더 0회, 멈춘 뒤 0.5초에만 목록 갱신 (search.ts)
   const { term: searchTerm, inputProps: searchProps } = useSearchInput();
@@ -1111,8 +1111,7 @@ function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEve
   type GroupItem = { it: ChronItem; guest?: boolean };
   const groups = useMemo(() => {
     const out: { key: string; label: string; sub?: string; color?: string; items: GroupItem[] }[] = [];
-    // 미니스토리 탭 = 종류별의 미니 그룹만 (게임 내 ‘특별작전진술’). 2026-07-29
-    let leftover = group === "mini" ? filtered.filter((it) => it.kind === "mini") : filtered;
+    let leftover = filtered;
     if (group === "theme") {
       const matches = (it: ChronItem) =>
         !keyword || normSearch([it.name.ko, it.name.en, it.name.ja].filter(Boolean).join(" ")).includes(keyword);
@@ -1151,7 +1150,8 @@ function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEve
     }
     out.push(...Array.from(map.values()).sort((a, b) => a.sort - b.sort)
       .map((g) => ({ key: g.key, label: g.label, color: g.color,
-        sub: group === "mini" ? t("게임 내 ‘특별작전진술’ — 사이드 이벤트와 별개인 짧은 단편 모음") : undefined,
+        // 미니 그룹엔 게임 내 명칭을 부제로 — 사이트의 '미니 이벤트'가 게임 어디인지 (2026-07-29)
+        sub: g.key === "mini" ? t("게임 내 ‘특별작전진술’ — 사이드 이벤트와 별개인 짧은 단편 모음") : undefined,
         items: sortItems(g.items).map((it) => ({ it })) })));
     return out.filter((g) => g.items.length);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1299,7 +1299,7 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
   const { locale, t } = useI18n();
   const [view, setView] = useState<"digest" | "chronicle">("digest");
   // 기본 뷰는 테마별 (사용자 확정 2026-07-21)
-  const [group, setGroup] = useState<"theme" | "kind" | "mini">("theme");
+  const [group, setGroup] = useState<"theme" | "kind">("theme");
   const [selected, setSelected] = useState<StoryEvent | null>(null);
 
   const pushedDetail = useRef(false);
@@ -1314,7 +1314,6 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
       if (detail) return;                              // 상세 진입 시 뷰/그룹 상태는 유지
       if (h === "#chronicle") setView("chronicle");
       else if (h === "#kind") { setView("digest"); setGroup("kind"); }
-      else if (h === "#mini") { setView("digest"); setGroup("mini"); }   // 미니스토리(게임 내 특별작전진술)
       // 기본(해시 없음·#story)은 테마별 (사용자 확정 2026-07-21)
       else if (h === "#theme" || h.startsWith("#theme-") || h === "#story" || h === "") { setView("digest"); setGroup("theme"); }
     };
@@ -1341,12 +1340,12 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
     if (ev && canOpenStory(eventId)) open(ev);
   };
   // 뷰·그룹 전환을 복붙 가능한 해시로 남긴다 (뒤로가기로 오갈 수 있게 pushState)
-  const GROUP_HASH: Record<"theme" | "kind" | "mini", string> = { theme: "#theme", kind: "#kind", mini: "#mini" };
+  const GROUP_HASH: Record<"theme" | "kind", string> = { theme: "#theme", kind: "#kind" };
   const goView = (v: "digest" | "chronicle") => {
     history.pushState(null, "", v === "chronicle" ? "#chronicle" : GROUP_HASH[group]);
     setView(v);
   };
-  const goGroup = (g: "theme" | "kind" | "mini") => {
+  const goGroup = (g: "theme" | "kind") => {
     history.pushState(null, "", GROUP_HASH[g]);
     setView("digest"); setGroup(g);
   };
@@ -1452,7 +1451,6 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
       <div className="story-viewtabs" role="tablist">
         <button type="button" role="tab" aria-selected={view === "digest" && group === "theme"} className={view === "digest" && group === "theme" ? "on" : ""} onClick={() => goGroup("theme")}>{t("테마별")}</button>
         <button type="button" role="tab" aria-selected={view === "digest" && group === "kind"} className={view === "digest" && group === "kind" ? "on" : ""} onClick={() => goGroup("kind")}>{t("종류별")}</button>
-        <button type="button" role="tab" aria-selected={view === "digest" && group === "mini"} className={view === "digest" && group === "mini" ? "on" : ""} onClick={() => goGroup("mini")} title={t("게임 내 ‘특별작전진술’ — 사이드 이벤트와 별개인 짧은 단편 모음")}>{t("미니스토리")}</button>
         <button type="button" role="tab" aria-selected={view === "chronicle"} className={view === "chronicle" ? "on" : ""} onClick={() => goView("chronicle")}>{t("테라 연대기")}</button>
         {/* 스샷 레이더 — 버튼 자체가 자동인식 토글, ?는 도움말 (KR 클라 전용) */}
         {locale === "ko" && (

@@ -143,6 +143,7 @@ const D: Record<string, Pair> = {
   "승진 {n}": ["Promotion {n}", "昇進 {n}"],
   "추가 해금": ["Extra unlock", "追加解放"],
   "메뉴 열기": ["Open menu", "メニューを開く"],
+  "메뉴": ["Menu", "メニュー"],   // 햄버거 버튼 고정 라벨 (현재 탭 이름을 넣으면 폭이 흔들린다)
   "검색어 지우기": ["Clear search", "検索語をクリア"],
   "홈": ["Home", "ホーム"],
 
@@ -1253,8 +1254,7 @@ const D: Record<string, Pair> = {
   "테마 미분류": ["Unsorted", "未分類"],
   "이벤트": ["Event", "イベント"],
   "사이드 이벤트": ["Side Story", "サイドストーリー"],
-  // 스토리 탭 — 미니스토리(게임 내 ‘특별작전진술’) 전용 탭 (2026-07-29)
-  "미니스토리": ["Mini Stories", "ミニストーリー"],
+  // 종류별 뷰의 미니 그룹 부제 — 사이트의 '미니 이벤트'가 게임 어디인지 (2026-07-29)
   "게임 내 ‘특별작전진술’ — 사이드 이벤트와 별개인 짧은 단편 모음":
     ["In-game “Special Operation” records — short standalone tales, separate from Side Stories.",
      "ゲーム内「特殊行動記録」 — サイドストーリーとは別の短編集です。"],

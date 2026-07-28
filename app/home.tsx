@@ -1215,7 +1215,9 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
             모바일은 order로, 데스크탑은 margin-left:auto로 배치되므로 JSX 위치는 자유. */}
         <div className="nav-group">
           <button type="button" className="nav-toggle" aria-expanded={navOpen} aria-label={t("메뉴 열기")} onClick={() => setNavOpen((open) => !open)}>
-            <span aria-hidden>☰</span>{TAB_LABEL[tab]}
+            {/* 라벨은 "메뉴"로 **고정** — 현재 탭 이름을 넣으면 페이지를 옮길 때마다 버튼 폭이
+                늘었다 줄었다 해서 헤더가 흔들린다 (사용자 요청 2026-07-29) */}
+            <span aria-hidden>☰</span>{t("메뉴")}
           </button>
           {/* 드롭다운은 햄버거 버튼 바로 밑에 딱 붙여 연다 (사용자 요청 2026-07) */}
           {/* 순서는 포탈 카드와 동일 (사용자 확정 2026-07-17): 홈 · 인프라 · 백과사전 · 공채 · 파밍 · 스토리 · 소개 */}
