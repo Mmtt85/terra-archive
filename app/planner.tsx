@@ -1111,15 +1111,6 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         )}
       </div>
 
-      {/* 현재 배치 요약 문구 — 기지 배치·우선 생산 밑 한 줄 (사용자 요청 2026-07-27, 종전 제목 위 kicker) */}
-      <p className="planner-riic-line">{layout === "153"
-        ? t("RIIC / 153 · 순금 1 + 작전기록 4 · A조 풀파워, 피로 시 B조 교대")
-        : layout === "252"
-          ? t("RIIC / 252 · 순금 2 + 작전기록 3 · 발전 2 — 시설 레벨로 전력 관리")
-          : layout === "custom"
-            ? t("RIIC / 사용자 지정 · 제조 {m} · 무역 {r} · 발전 {p} — 방 카드에서 종류 변경", { m: customRooms.filter((room) => room === "MANUFACTURE").length, r: customRooms.filter((room) => room === "TRADING").length, p: customRooms.filter((room) => room === "POWER").length })
-            : t("RIIC / 243 · 순금 2 + 작전기록 2 · A조 풀파워, 피로 시 B조 교대")}</p>
-
       {/* 항상 렌더해 높이를 처음부터 예약 — 계산 전엔 '—'로 채운다. 계산 완료 후 값이 튀어나오며
           아래 배치도를 밀어내던 CLS 방지 (사용자 리포트 2026-07-20). summary가 있으면 plan도 항상 있음. */}
       <div className="planner-summary">
@@ -1224,14 +1215,17 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
               // 편성은 시너지 고정 전용이라 모달에서 읽기 전용.
               <button key={cell.key} type="button" className={`ship-room dorm-room pos-${cell.key.toLowerCase()}`} onClick={() => setOpenRoom(cell.key)} style={{ "--room-accent": ROOM_ACCENT[cell.room] } as React.CSSProperties}>
                 <div className="ship-room-head"><b>{t(cell.label)}<em className={`room-lv${levelOf(cell.key) < maxLevelOf(cell.room) ? "" : " max"}`}>Lv{levelOf(cell.key)}</em></b><span>{locked.length ? t("고정 {n}명", { n: locked.length }) : t("휴식")}</span></div>
+                {/* 얼굴은 **클릭 대상이 아니다** — 다른 시설 카드와 동일하게 카드 전체가 방 상세를
+                    여는 버튼이고 썸네일은 표시 전용 (사용자 요청 2026-07-28). 편성 안내 문구도
+                    카드에서 빼 숙소 상세 안으로 옮겼다. */}
                 <div className="ship-room-crew">
                   {pinned.map((op) => (
                     <img key={op.id} src={asset(op.image)} alt={op.name} width={180} height={180}
-                      className={`${onShowOperator ? "op-link" : ""}${locked.includes(op.id) ? " dorm-locked" : ""}`}
-                      title={locked.includes(op.id) ? t("{name} — 숙소 고정 (자동편성이 유지)", { name: op.name }) : t("{name} 상세 정보", { name: op.name })}
-                      loading="lazy" onClick={(event) => { event.stopPropagation(); onShowOperator?.(op.id); }} />
+                      className={locked.includes(op.id) ? "dorm-locked" : undefined}
+                      title={locked.includes(op.id) ? t("{name} — 숙소 고정 (자동편성이 유지)", { name: op.name }) : op.name}
+                      loading="lazy" />
                   ))}
-                  <i>{pinned.length ? t("눌러서 배치 변경 · 📌는 자동편성 유지") : t("휴식 공간 · 눌러서 인원 배치")}</i>
+                  {!pinned.length && <i>{t("휴식 공간")}</i>}
                 </div>
               </button>
             );
@@ -1320,8 +1314,6 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           );
         })}
       </div>
-
-      <aside className="data-note"><span>PLANNER NOTE</span><p>{t("오퍼레이터의 모든 인프라 스킬을 동시에 적용하고(α/β는 상위 티어만), 시설 간 포인트 시스템(속세의 화식·무성의 공명 등)을 겹쳐 쌓을 수 있을 때까지 패키지로 조합합니다. 고품질 귀금속 오더 확률(샤마르·카프카·디아만테·바이비크)과 오더당 수익(테킬라·프로바이조)의 상호작용, 샤마르의 효율 대체를 반영합니다. 조건부·누적 버프는 추정 상한 기준 근사치입니다.")}</p></aside>
 
       {showRoster && (
         <RosterModal
@@ -1946,8 +1938,10 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
             {cell.room === "DORMITORY" && (
               <p className="dorm-note">{rich(t("숙소는 **항상 5명을 꽉 채운 상태로 유지**하세요. 고정 생성원 외의 빈 자리는 휴식이 필요한 아무 오퍼레이터로 채우면 됩니다 — 토큰 생성과 회복 효율은 풀 인원 기준으로 계산됩니다."))}</p>
             )}
+            {/* 배치 방법 안내는 방 카드가 아니라 여기(숙소 상세) 몫이다 — 카드는 다른 시설과
+                똑같이 표시 전용 (사용자 요청 2026-07-28) */}
             {cell.room === "DORMITORY" && onToggleDormPin && (
-              <p className="dorm-note">{rich(t("여기서 직접 넣은 오퍼는 **📌 고정**되어 자동편성이 그대로 둡니다 — 울피아누스를 숙소에 고정해 언더플로우(+10%)를 켜는 식입니다. 카드의 📌를 눌러 고정을 걸거나 풀 수 있고, ✕로 빼면 고정도 함께 풀립니다."))}</p>
+              <p className="dorm-note">{rich(t("**숙소 인원은 여기서 직접 넣고 뺍니다** — 아래 후보를 누르면 즉시 배치되고, 이렇게 직접 넣은 오퍼는 **📌 고정**되어 자동편성이 그대로 둡니다 (울피아누스를 숙소에 고정해 언더플로우 +10%를 켜는 식). 카드의 📌를 눌러 고정을 걸거나 풀 수 있고, ✕로 빼면 고정도 함께 풀립니다."))}</p>
             )}
             <div className="crew-list">
               {team.map((op) => {
@@ -2476,10 +2470,15 @@ const DRAIN_NOTE_ITEMS = [
   "그래서 이 숫자는 상한이 아니라 기준점으로 보세요. 병목(가장 빨리 닳는 방)보다 늦게 교대하면 안 되고, 보통은 컨디션 12(지침 신호)쯤에서 A조 전체를 한 번에 B조로 바꿉니다.",
 ];
 
-const SHIFT_NOTE_SPEC: Record<ShiftNoteKind, { kicker: string; title: string; items: string[] }> = {
+// tldr = 제목 오른쪽 한 줄 요약 — "그래서 뭘 하면 되는지"만 (사용자 요청 2026-07-28)
+const SHIFT_NOTE_SPEC: Record<ShiftNoteKind, { kicker: string; title: string; tldr?: string; items: string[] }> = {
   drain: { kicker: "SHIFT CLOCK", title: "지속 시간이 달라지는 이유", items: DRAIN_NOTE_ITEMS },
   // 교대 정책은 도움말의 같은 섹션을 그대로 쓴다 — 이미 검증·번역된 본문이라 어긋날 일이 없다
-  policy: { kicker: "SHIFT POLICY", title: "교대 정책", items: [] },
+  policy: {
+    kicker: "SHIFT POLICY", title: "교대 정책",
+    tldr: "A조로 계속 돌리다 컨디션이 바닥나면 B조로 통째 교대, 회복되면 다시 A조로",
+    items: [],
+  },
 };
 
 function ShiftNoteModal({ kind, onClose }: { kind: ShiftNoteKind; onClose: () => void }) {
@@ -2494,12 +2493,13 @@ function ShiftNoteModal({ kind, onClose }: { kind: ShiftNoteKind; onClose: () =>
         <button type="button" className="modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
         <header className="room-modal-head">
           <span className="modal-kicker">{spec.kicker}</span>
-          <h2>{t(spec.title)}</h2>
+          <h2>{t(spec.title)}{spec.tldr && <em className="modal-head-tldr">{t(spec.tldr)}</em>}</h2>
         </header>
         <div className="modal-scroll">
-          <ul className="help-list">
+          {/* 번호를 매겨 항목을 구분하기 쉽게 (사용자 요청 2026-07-28) */}
+          <ol className="help-list help-list-numbered">
             {items.map((item, index) => <li key={index}>{emphasize(t(item))}</li>)}
-          </ul>
+          </ol>
         </div>
       </section>
     </div>

@@ -3152,13 +3152,6 @@ footer p {
   letter-spacing: 0.4px;
   color: var(--muted);
 }
-/* 현재 배치 요약 한 줄 — 기지 배치·우선 생산 행 바로 밑 (종전 제목 위 kicker, 2026-07-27 이동) */
-.planner-riic-line {
-  margin: 6px 2px 0;
-  letter-spacing: 1.2px;
-  color: var(--muted);
-  font: 700 11px monospace;
-}
 /* 기지 배치(243/153) 라벨 — 우선 생산 그룹과 시각 구분 (2026-07-24) */
 .prio-label-layout {
   margin-left: 10px;
@@ -3933,6 +3926,20 @@ footer p {
   font-size: clamp(28px, 4vw, 44px);
   letter-spacing: -0.05em;
 }
+/* 제목 **오른쪽**에 붙는 한 줄 요약 — "그래서 뭘 하면 되는지" (사용자 요청 2026-07-28).
+   ⚠ font 단축 속성에 inherit를 섞으면 선언 전체가 무효가 된다 — 그러면 h2의 44px를 그대로
+   물려받아 글자가 거대해지고 폭을 넘겨 제목 아래로 내려간다 (사용자 지적). 반드시 개별 속성으로.
+   max-width도 걸지 말 것 — 좁게 잡으면 같은 이유로 두 줄이 되어 헤더가 길어진다. */
+.room-modal .room-modal-head h2 .modal-head-tldr {
+  display: inline-block;
+  margin-left: 14px;
+  vertical-align: middle;
+  color: #ffffffcc;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: 0;
+}
 .room-modal .shift-tabs.in-modal {
   margin-top: 0;
 }
@@ -4700,6 +4707,36 @@ footer p {
   font-size: 12.5px;
   line-height: 1.75;
   margin-top: 6px;
+}
+/* 번호 목록 — 항목 경계를 눈으로 세기 쉽게 (사용자 요청 2026-07-28).
+   번호를 왼쪽 여백에 빼고 항목 간격을 벌려 문단이 통짜로 보이지 않게 한다. */
+.help-list-numbered {
+  padding-left: 0;
+  list-style: none;
+  counter-reset: help-item;
+}
+.help-list-numbered li {
+  position: relative;
+  margin-top: 14px;
+  padding-left: 30px;
+  counter-increment: help-item;
+}
+.help-list-numbered li:first-child {
+  margin-top: 0;
+}
+.help-list-numbered li::before {
+  content: counter(help-item);
+  position: absolute;
+  left: 0;
+  top: 2px;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--chip);
+  color: var(--lime);
+  font: 800 11px monospace;
 }
 .image-preview .modal-scroll img {
   width: 100%;

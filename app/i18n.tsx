@@ -282,12 +282,9 @@ const D: Record<string, Pair> = {
   "공채 도우미 - 명일방주 공개모집 계산기 | 테라 아카이브": ["Recruit Helper - Arknights Recruitment Calculator | Terra Archive", "公開求人ヘルパー - アークナイツ公開求人計算機 | テラアーカイブ"],
 
   // ── 인프라 플래너 ──────────────────────────────────────────────────────────
-  "RIIC / 243 · 순금 2 + 작전기록 2 · A조 풀파워, 피로 시 B조 교대": ["RIIC / 243 · Pure Gold ×2 + Battle Records ×2 · A team full power, swap to B on fatigue", "RIIC / 243 · 純金2 + 作戦記録2 · A班フルパワー、疲労時にB班交代"],
   // 기지 배치 프리셋 153 (사용자 요청 2026-07-24)
-  "RIIC / 153 · 순금 1 + 작전기록 4 · A조 풀파워, 피로 시 B조 교대": ["RIIC / 153 · Pure Gold ×1 + Battle Records ×4 · A team full power, swap to B on fatigue", "RIIC / 153 · 純金1 + 作戦記録4 · A班フルパワー、疲労時にB班交代"],
   "기지 배치": ["Base layout", "基地配置"],
   // 전력·시설 레벨 시스템 + 252 (2026-07-24)
-  "RIIC / 252 · 순금 2 + 작전기록 3 · 발전 2 — 시설 레벨로 전력 관리": ["RIIC / 252 · Pure Gold ×2 + Battle Records ×3 · Power Plants ×2 — manage electricity via facility levels", "RIIC / 252 · 純金2 + 作戦記録3 · 発電所2 — 施設レベルで電力管理"],
   "무역소 2 · 제조소 5(순금 2+작전기록 3) · 발전소 2 — 전력 부족: 작전기록 제조소 Lv2·사무실 Lv2·숙소 Lv1(첫 숙소만 Lv2) 권장, 정확히 540/540": ["Trade 2 · Factory 5 (Gold 2 + Records 3) · Power 2 — power-limited: records factories Lv2, office Lv2, dorms Lv1 (first dorm Lv2) recommended, exactly 540/540", "貿易所2・製造所5（純金2+作戦記録3）・発電所2 — 電力不足：作戦記録製造所Lv2・事務室Lv2・宿舎Lv1（最初の宿舎のみLv2）推奨、ちょうど540/540"],
   "기지 배치 {p} — 저장된 편성을 복원했습니다": ["Base layout {p} — restored its saved plan", "基地配置 {p} — 保存された編成を復元しました"],
   "기지 배치 {p} — 처음이라 편성이 비어 있습니다. 전체 자동편성을 눌러 만들어 두면 유지됩니다": ["Base layout {p} — empty for now. Run Auto-assign once and it will be kept for this layout", "基地配置 {p} — 初回のため編成は空です。全体自動編成を一度実行すれば保持されます"],
@@ -349,7 +346,6 @@ const D: Record<string, Pair> = {
   "사용자 지정": ["Custom", "カスタム"],
   "시설 종류 변경": ["Change facility type", "施設タイプ変更"],
   "제조소·무역소·발전소 9칸을 자유 구성합니다 — 방 카드의 제조소/무역소/발전소 버튼으로 종류를 바꿉니다": ["Freely arrange the 9 production tiles among factories, trading posts and power plants — switch each tile's type with the Factory/Trading/Power buttons on its card", "製造所・貿易所・発電所の9マスを自由構成 — 各カードの製造所/貿易所/発電所ボタンでタイプを切り替え"],
-  "RIIC / 사용자 지정 · 제조 {m} · 무역 {r} · 발전 {p} — 방 카드에서 종류 변경": ["RIIC / Custom · Factory {m} · Trade {r} · Power {p} — switch types on room cards", "RIIC / カスタム · 製造{m}・貿易{r}・発電{p} — 部屋カードでタイプ変更"],
   "칸 구성을 바꿨습니다 — 전체 자동편성으로 새 구성에 맞게 재편성하세요": ["Tile layout changed — run full auto-assign to rebuild for the new arrangement", "マス構成を変更しました — 全体自動編成で新構成に合わせて再編成してください"],
   "순금": ["Gold", "純金"],
   "작전기록": ["Battle Records", "作戦記録"],
@@ -514,6 +510,10 @@ const D: Record<string, Pair> = {
   "※ 지속시간은 피로도에 따라 변동": ["※ duration varies with fatigue", "※ 持続時間は疲労度により変動"],
   "※ A조 지치면 B조 교대": ["※ Shift B takes over when A tires", "※ A班が疲れたらB班に交代"],
   "지속 시간이 달라지는 이유": ["Why the duration shifts", "持続時間が変わる理由"],
+  "A조로 계속 돌리다 컨디션이 바닥나면 B조로 통째 교대, 회복되면 다시 A조로": [
+    "Run Shift A until morale runs out, swap the whole crew to Shift B, then go back to A once they recover",
+    "A班で回し続け、コンディションが尽きたらB班へ丸ごと交代。回復したらまたA班に戻す",
+  ],
   "표시된 시간은 **전원이 풀 컨디션 24로 근무를 시작한다**고 본 계산값입니다. 실제 오퍼는 저마다 남은 컨디션이 다르므로, 이미 지친 인원이 섞여 있으면 그만큼 교대가 앞당겨집니다.": [
     "The figure assumes **everyone clocks in at full morale (24)**. Real operators each have their own morale left, so if some are already tired the swap comes correspondingly sooner.",
     "表示時間は**全員がフルコンディション24で勤務を始める**前提の計算値です。実際のオペレーターは各自の残りコンディションが違うため、すでに疲れている人員が混ざっていればその分だけ交代が早まります。",
@@ -623,13 +623,11 @@ const D: Record<string, Pair> = {
   "명일방주 한국·일본·글로벌·중국 공식 방송 일정 보기": ["See Arknights official broadcast schedules (KR · JP · Global · CN)", "アークナイツ公式放送スケジュール（韓国・日本・グローバル・中国）を見る"],
   "중국 서버 방송은 비리비리 공식 라이브룸에서 가져옵니다 — 일정은 방송 소개문 기준이라 실제와 다를 수 있어요. 미래시 데이터 포함을 끄면 숨겨집니다.": ["CN broadcasts come from the official bilibili live room — the schedule is read from the room description, so it may differ from the actual stream. Turn off \"include future data\" to hide them.", "中国サーバーの放送はbilibili公式配信ルームから取得しています — 日程はルーム紹介文が出典のため、実際と異なる場合があります。「先行データを含む」をオフにすると非表示になります。"],
   "시너지 고정 + 휴식 공간": ["Synergy pins + rest space", "シナジー固定 + 休憩スペース"],
-  "눌러서 배치 변경 · 📌는 자동편성 유지": ["Tap to edit · 📌 survives auto-planning", "タップで配置変更 · 📌は自動編成でも維持"],
-  "휴식 공간 · 눌러서 인원 배치": ["Rest space · tap to assign", "休憩スペース · タップで配置"],
   "고정 {n}명": ["{n} pinned", "固定{n}名"],
   "{name} — 숙소 고정 (자동편성이 유지)": ["{name} — pinned to this dormitory (kept by auto-planning)", "{name} — 宿舎に固定（自動編成でも維持）"],
   "숙소에 고정 — 자동편성이 이 인원을 그대로 둡니다": ["Pin to this dormitory — auto-planning leaves them in place", "宿舎に固定 — 自動編成はこの人員をそのまま残します"],
   "숙소 고정 해제 — 다음 자동편성이 이 자리를 다시 짤 수 있습니다": ["Unpin — the next auto-plan may reassign this slot", "固定解除 — 次の自動編成でこの枠は組み直される可能性があります"],
-  "여기서 직접 넣은 오퍼는 **📌 고정**되어 자동편성이 그대로 둡니다 — 울피아누스를 숙소에 고정해 언더플로우(+10%)를 켜는 식입니다. 카드의 📌를 눌러 고정을 걸거나 풀 수 있고, ✕로 빼면 고정도 함께 풀립니다.": ["Operators you place here yourself are **📌 pinned**, so auto-planning leaves them alone — this is how you park Ulpianus in a dormitory to switch Underflow's +10% on. Use 📌 on a card to pin or unpin, and ✕ removes them (which also unpins).", "ここで自分で入れたオペレーターは**📌固定**され、自動編成はそのまま残します — ウルピアヌスを宿舎に固定してアンダーフローの+10%を点ける運用がこれです。カードの📌で固定・解除、✕で外すと固定も一緒に解けます。"],
+  "**숙소 인원은 여기서 직접 넣고 뺍니다** — 아래 후보를 누르면 즉시 배치되고, 이렇게 직접 넣은 오퍼는 **📌 고정**되어 자동편성이 그대로 둡니다 (울피아누스를 숙소에 고정해 언더플로우 +10%를 켜는 식). 카드의 📌를 눌러 고정을 걸거나 풀 수 있고, ✕로 빼면 고정도 함께 풀립니다.": ["**You add and remove dormitory residents right here** — tap a candidate below to place them instantly, and anyone you place yourself is **📌 pinned**, so auto-planning leaves them alone (this is how you park Ulpianus in a dormitory to switch Underflow's +10% on). Use 📌 on a card to pin or unpin, and ✕ removes them, which also unpins.", "**宿舎の人員はここで直接出し入れします** — 下の候補を押せばすぐ配置され、こうして自分で入れたオペレーターは**📌固定**されて自動編成もそのまま残します（ウルピアヌスを宿舎に固定してアンダーフローの+10%を点ける運用がこれです）。カードの📌で固定・解除、✕で外すと固定も一緒に解けます。"],
   "빈 자리에 추가 — 클릭 시 즉시 배치·고정 (다른 방의 조건을 켜 주는 오퍼가 맨 앞):": ["Add to an empty slot — click to place and pin (operators who switch on another room's condition come first):", "空きスロットに追加 — クリックで即配置・固定（他の部屋の条件を点けるオペレーターを先頭に）："],
   "{name}의 조건을 켭니다 (기지 어디든 있으면 발동)": ["Switches on {name}'s condition (triggers while anywhere in the base)", "{name}の条件を点けます（基地内のどこかにいれば発動）"],
   "{name} 조건": ["for {name}", "{name}用"],
@@ -655,10 +653,6 @@ const D: Record<string, Pair> = {
   "무역소 오더 효율 오라": ["Trading order efficiency aura", "貿易所受注効率オーラ"],
   "인맥 레퍼런스 오라": ["HR contact aura", "人脈オーラ"],
   "단서 수집 오라": ["Clue collection aura", "手がかり収集オーラ"],
-  "오퍼레이터의 모든 인프라 스킬을 동시에 적용하고(α/β는 상위 티어만), 시설 간 포인트 시스템(속세의 화식·무성의 공명 등)을 겹쳐 쌓을 수 있을 때까지 패키지로 조합합니다. 고품질 귀금속 오더 확률(샤마르·카프카·디아만테·바이비크)과 오더당 수익(테킬라·프로바이조)의 상호작용, 샤마르의 효율 대체를 반영합니다. 조건부·누적 버프는 추정 상한 기준 근사치입니다.": [
-    "Every base skill of an operator applies at once (only the higher tier of α/β), and cross-facility point systems (Worldly Plight, Soundless Resonance, …) are combined into packages while they still stack. Interactions between quality-order odds (Shamare, Kafka, Diamante, Bibeak) and per-order payouts (Tequila, Proviso), and Shamare's efficiency override are modeled. Conditional/stacking buffs are approximations based on estimated caps.",
-    "オペレーターの基地スキルはすべて同時適用（α/βは上位ティアのみ）、施設間ポイントシステム（俗世之憂・静かなる共鳴など）は積める限りパッケージとして組み合わせます。高品質受注確率（シャマル・カフカ・ディアマンテ・バイビーク）と受注ごとの収益（テキーラ・プロヴァイゾ）の相互作用、シャマルの効率オーバーライドを反映。条件付き・累積バフは推定上限に基づく近似値です。",
-  ],
   // 토스트
   "현재 상태를 파일로 저장했습니다": ["Saved the current state to a file", "現在の状態をファイルに保存しました"],
   "저장된 상태를 불러왔습니다 · 보유 {n}명 복원": ["Loaded saved state · restored {n} owned operators", "保存した状態を読み込みました · 所持{n}名を復元"],
