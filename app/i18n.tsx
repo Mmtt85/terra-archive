@@ -428,6 +428,21 @@ const D: Record<string, Pair> = {
   "교대는 12시간 고정이 아닙니다 — A조를 풀파워로 돌리다 A조 오퍼 중 하나라도 피로도가 소진되면 B조로 전환하고, A조가 전부 회복되면 즉시 A조로 되돌립니다. 그래서 A조 이득을 우선합니다.": ["Shifts aren't fixed 12h — run A team at full power until any A-team operator runs out of morale, switch to B team, and switch straight back to A once A team has fully recovered. That's why A-team gains come first.", "交代は12時間固定ではありません — A班をフルパワーで回し、A班のオペレーターが一人でも疲労が尽きたらB班に切り替え、A班が全員回復したら即座にA班へ戻します。だからA班の利得を優先します。"],
   "시너지": ["Synergy", "シナジー"],
   "팀 시너지를 여는 오퍼 — 완성 시 열리는 세트의 총 시너지 효율까지 반영해 평가했습니다": ["Opens a team synergy — evaluated including the total synergy efficiency of the set unlocked on completion", "チームシナジーを開くオペレーター — 完成時に開くセットの総シナジー効率まで反映して評価しました"],
+  // 육성 추천 0건 안내 — 이유별 분기 (2026-07-29)
+  "추천 {n}건을 모두 숨겼습니다 — 숨김을 풀면 다시 보입니다.":
+    ["You've hidden all {n} recommendations — unhide to see them again.",
+     "おすすめ{n}件をすべて非表示にしています — 非表示を解除すると再び表示されます。"],
+  "숨김 해제": ["Unhide all", "非表示を解除"],
+  "보유 오퍼가 전원 정예화 완성 상태로 잡혀 있어 검증할 후보가 없습니다 — 아직 안 키운 오퍼의 정예화를 낮춰 주세요. (스캔·계정 연동 결과를 '적용' 없이 닫으면 정예화가 반영되지 않습니다)":
+    ["Every operator you own is recorded as fully elited, so there is nothing to test — lower the elite level of operators you haven't raised yet. (Closing a scan or account import without pressing Apply leaves elite levels unset.)",
+     "所持オペレーターが全員「昇進完了」として記録されているため、検証する候補がありません — まだ育てていないオペレーターの昇進を下げてください。（スキャンやアカウント連携の結果を「適用」せずに閉じると昇進が反映されません）"],
+  "보유 오퍼 설정 열기": ["Open roster settings", "所持オペレーター設定を開く"],
+  "미완성 {n}명 중 정예화로 인프라 스킬이 새로 열리는 오퍼가 없습니다 — 완성해도 편성이 바뀌지 않습니다.":
+    ["None of the {n} unfinished operators unlock a new base skill by eliting — completing them wouldn't change the plan.",
+     "未完成の{n}名の中に、昇進で新しい基地スキルが解放されるオペレーターはいません — 完成させても編成は変わりません。"],
+  "미완성 {n}명 중 후보 {c}명을 실제로 완성해 편성을 다시 계산해 봤지만, 어느 쪽도 지금 편성을 바꾸지 못했습니다.":
+    ["We completed {c} of the {n} unfinished operators and re-ran the planner for each, but none of them changed the current plan.",
+     "未完成の{n}名のうち候補{c}名を実際に完成させて編成を再計算しましたが、どれも現在の編成を変えられませんでした。"],
   "완성해도 최적 편성이 바뀌는 오퍼가 없습니다. 보유 오퍼 설정에서 아직 안 키운 오퍼의 정예화를 낮춰 두면, 완성 시 이득이 있는지 여기서 확인할 수 있습니다.": ["No operator changes the optimal plan when completed. In roster settings, lower the elite of operators you haven't raised yet, and you can check here whether completing them helps.", "完成させても最適編成が変わるオペレーターはいません。所持オペレーター設定でまだ育てていないオペレーターの昇進を下げておくと、完成させたときに利得があるかをここで確認できます。"],
   "완성": ["Complete", "完成"],
   "완성 시 오르는 방 %효율의 조별 합계 — 아래 방 변화의 합입니다": ["Per-crew sum of the room %-efficiency gained on completion — the total of the room changes below", "完成時に上がる部屋%効率の班別合計 — 下の部屋変化の合計です"],

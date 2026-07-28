@@ -149,6 +149,10 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   // 결과는 한 번 분석하면 새 자동편성 전까지 유지된다 (persist·export 포함, 사용자 확정 2026-07-21)
   const [investRecs, setInvestRecs] = useState<RaiseRec[] | null>(null);
   const [investing, setInvesting] = useState<InvestProgress | null>(null);
+  // 0건일 때 "왜 없는지"를 패널이 말하게 하는 진단값 — 토스트는 사라지고 패널만 남아서
+  // "아무것도 안 나온다"로 보이던 문제 (사용자 제보 2026-07-29). candidates는 엔진이
+  // 진행 콜백으로 알려주는 정밀 평가 후보 수(total)를 그대로 받는다.
+  const [investDiag, setInvestDiag] = useState<{ unfinished: number; candidates: number } | null>(null);
   const [showInvest, setShowInvest] = useState(false);
   // 숨긴 추천 오퍼 — 목록에서 빠지고 21위 이후 후보가 순서대로 올라온다 (사용자 요청 2026-07-21).
   // recommendRaises가 정렬 전체를 반환하므로 표시는 "숨김 제외 후 상위 INVEST_SHOW개".
@@ -475,6 +479,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       // 새 자동편성 → 기존 육성 추천·숨김 무효화 + 임시 적용 세션 종료(새 편성이 기준). 2026-07-21
       setInvestRecs(null);
       setInvestHidden(new Set());
+      setInvestDiag(null);   // 진단값도 옛 편성 기준이라 함께 버린다
       setShowInvest(false);
       endTemp(false);
       persist(ids, next, elite, prio, null, new Set());
@@ -505,7 +510,10 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     endTemp(true); // 다시 분석 → 임시 적용 되돌리고 커밋된 로스터 기준으로 재분석
     setInvesting({ done: 0, total: 0 });
     try {
-      const recs = await investOff({ owned: ownedIds, elite: eliteById, includeFuture: !!includeFuture, priority, layout, levels, customRooms, customProducts, dormPins }, setInvesting);
+      let candidates = 0; // 엔진이 정밀 평가한 후보 수 — 0건 안내를 후보 유무로 갈라 쓴다
+      const recs = await investOff({ owned: ownedIds, elite: eliteById, includeFuture: !!includeFuture, priority, layout, levels, customRooms, customProducts, dormPins },
+        (p) => { if (p.total) candidates = p.total; setInvesting(p); });
+      setInvestDiag({ unfinished: unfinishedCount, candidates });
       setInvestRecs(recs);
       setInvestHidden(new Set()); // 새 분석 → 숨김 초기화
       persist(ownedIds, plan, eliteById, priority, recs, new Set());
@@ -1068,6 +1076,9 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           onClose={() => setShowInvest(false)} onReanalyze={() => { void runInvest(); }}
           onToggleSelect={toggleSelectRaise} onApplySelected={applySelected} onApplyAll={applyAllRaises} onHide={hideRaise}
           selected={selectedRaise} applied={new Set(tempApplied.keys())} onRevert={revertTemp}
+          diag={investDiag} hiddenCount={investRecs?.filter((r) => investHidden.has(r.opId)).length ?? 0}
+          onUnhideAll={() => { setInvestHidden(new Set()); persist(ownedIds, plan, eliteById, priority, investRecs, new Set()); }}
+          onOpenRoster={() => { setShowInvest(false); startTransition(() => { setRosterMode("direct"); setShowRoster(true); }); }}
           t={t} locale={locale} />
       )}
 
@@ -1378,10 +1389,12 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
 // 육성 추천 결과 모달 — recommendRaises가 증명한 "완성하면 이득인 정예화 투자"를 ΔS 순으로.
 // 방 %효율 변화·완성 비용은 실제 편성·게임 데이터 기준(근사 환산 없음). 한 번 분석하면 새
 // 자동편성 전까지 유지되며, 모달 안 '다시 분석'으로 강제 재계산한다.
-function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onToggleSelect, onApplySelected, onApplyAll, onHide, selected, applied, onRevert, t, locale }: {
+function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onToggleSelect, onApplySelected, onApplyAll, onHide, selected, applied, onRevert, diag, hiddenCount, onUnhideAll, onOpenRoster, t, locale }: {
   recs: RaiseRec[]; opMap: Map<string, InfraOp>; onShowOperator?: (id: string) => void;
   onClose: () => void; onReanalyze: () => void; onToggleSelect: (opId: string) => void; onApplySelected: () => void; onApplyAll: () => void;
-  onHide: (opId: string) => void; selected: Set<string>; applied: Set<string>; onRevert: () => void; t: T; locale: Locale;
+  onHide: (opId: string) => void; selected: Set<string>; applied: Set<string>; onRevert: () => void;
+  diag: { unfinished: number; candidates: number } | null; hiddenCount: number; onUnhideAll: () => void; onOpenRoster: () => void;
+  t: T; locale: Locale;
 }) {
   // 방 라벨은 i18n 사전 키("제조소 1 · 순금" 등) — 배 뷰(t(cell.label))처럼 번역해 표시
   // (일어판 육성 추천 모달에 방 이름만 한국어로 남던 문제, 사용자 리포트 2026-07-22)
@@ -1415,7 +1428,25 @@ function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onTogg
       </div>
       <p className="invest-note">{t("아직 완성 안 한(정예화를 낮춰 둔) 오퍼를 완성했다고 가정해 자동편성을 다시 돌리고, 방 %효율이 실제로 얼마나 오르는지로 이득을 증명합니다. 숫자는 그 방 %효율 변화의 합계(%p)이며, A조(주력)를 우선해 정렬합니다. '적용'은 완성했다 가정해 편성에 임시 반영합니다 — 되돌리기 가능하고, 전체 자동편성·다시 분석 전까지 추천은 그대로 유지됩니다.")}</p>
       <p className="invest-note invest-note-sub">{t("교대는 12시간 고정이 아닙니다 — A조를 풀파워로 돌리다 A조 오퍼 중 하나라도 피로도가 소진되면 B조로 전환하고, A조가 전부 회복되면 즉시 A조로 되돌립니다. 그래서 A조 이득을 우선합니다.")}</p>
-      {!recs.length && <p className="invest-empty">{t("완성해도 최적 편성이 바뀌는 오퍼가 없습니다. 보유 오퍼 설정에서 아직 안 키운 오퍼의 정예화를 낮춰 두면, 완성 시 이득이 있는지 여기서 확인할 수 있습니다.")}</p>}
+      {/* 0건 안내는 **이유별로** 다르게 — 종전엔 한 문장뿐이라 "정예화를 입력 안 해서 후보가
+          0인" 경우와 "후보는 다 검증했는데 이득이 없는" 경우가 구분되지 않았다 (2026-07-29). */}
+      {!recs.length && (
+        <div className="invest-empty">
+          {hiddenCount > 0 ? (<>
+            <p>{t("추천 {n}건을 모두 숨겼습니다 — 숨김을 풀면 다시 보입니다.", { n: hiddenCount })}</p>
+            <button type="button" className="invest-empty-act" onClick={onUnhideAll}>{t("숨김 해제")}</button>
+          </>) : diag && diag.unfinished === 0 ? (<>
+            <p>{t("보유 오퍼가 전원 정예화 완성 상태로 잡혀 있어 검증할 후보가 없습니다 — 아직 안 키운 오퍼의 정예화를 낮춰 주세요. (스캔·계정 연동 결과를 '적용' 없이 닫으면 정예화가 반영되지 않습니다)")}</p>
+            <button type="button" className="invest-empty-act" onClick={onOpenRoster}>{t("보유 오퍼 설정 열기")}</button>
+          </>) : diag && diag.candidates === 0 ? (
+            <p>{t("미완성 {n}명 중 정예화로 인프라 스킬이 새로 열리는 오퍼가 없습니다 — 완성해도 편성이 바뀌지 않습니다.", { n: diag.unfinished })}</p>
+          ) : diag ? (
+            <p>{t("미완성 {n}명 중 후보 {c}명을 실제로 완성해 편성을 다시 계산해 봤지만, 어느 쪽도 지금 편성을 바꾸지 못했습니다.", { n: diag.unfinished, c: diag.candidates })}</p>
+          ) : (
+            <p>{t("완성해도 최적 편성이 바뀌는 오퍼가 없습니다. 보유 오퍼 설정에서 아직 안 키운 오퍼의 정예화를 낮춰 두면, 완성 시 이득이 있는지 여기서 확인할 수 있습니다.")}</p>
+          )}
+        </div>
+      )}
       <ul className="invest-list">
         {recs.map((r) => {
           const op = opMap.get(r.opId);

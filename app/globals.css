@@ -2808,6 +2808,27 @@ legend {
 .invest-empty {
   margin: 10px 0 2px;
 }
+.invest-empty p {
+  margin: 0;
+}
+/* 0건 안내의 해결 버튼 (보유 오퍼 설정 열기 · 숨김 해제) — 2026-07-29 */
+.invest-empty-act {
+  margin-top: 8px;
+  padding: 6px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink);
+  cursor: pointer;
+  transition: 0.15s;
+}
+.invest-empty-act:hover {
+  background: var(--lime);
+  border-color: var(--lime);
+  color: var(--on-lime);
+}
 .invest-list {
   list-style: none;
   margin: 12px 0 0;
