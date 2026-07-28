@@ -1637,7 +1637,9 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
     // 이 조에서 지금까지 배치된 오퍼가 누적된다
     const placedIds = new Set<string>(dormPins.flat().map((op) => op.id));
     for (const key of keys) {
-      if (key === "TRAINING") { assignments[key].push([]); continue; } // 특화 훈련용으로 비워둠
+      // 훈련실은 이 그리디에선 건너뛴다 — 생산 방이 좋은 오퍼를 먼저 가져가야 하기 때문이다.
+      // 빈 채로 두는 게 아니라 **말미 채우기 패스**가 남는 인원으로 채운다 (2026-07-29).
+      if (key === "TRAINING") { assignments[key].push([]); continue; }
       // 가공소(상시 슬롯)는 조 전환과 무관하게 A조 한 팀만 고정 — B조는 비운다.
       // 사기 비소모 방이라 교대 개념이 없고, 회복 교대에 가공 요원(혼 등)을 끌어올
       // 이유가 없다 (사용자 확정 2026-07-19)
@@ -2284,6 +2286,9 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
         if (key === "TRAINING") continue;
         for (const team of assignments[key] ?? []) for (const id of team) otherWorking.add(id);
       }
+      // 훈련실은 위에서 건너뛰므로 **다른 조 훈련실** 인원을 따로 더한다 — 안 그러면
+      // A조 훈련실에 앉은 오퍼가 B조 훈련실에도 또 앉는다 (A·B 동시 배치 금지, §1)
+      (assignments["TRAINING"] ?? []).forEach((team, i) => { if (i !== idx) for (const id of team) otherWorking.add(id); });
       for (let slot = 0; slot < slotsFor("TRAINING"); slot += 1) {
         const cellOf = cellMapFor(shift);
         const placed = new Set(cellOf.keys());
@@ -2311,6 +2316,25 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
         }
         if (!best) break;
         assignments["TRAINING"][idx] = [...(assignments["TRAINING"][idx] ?? []), best.id];
+      }
+      // ⓒ 남는 자리는 **잉여 인원 중 훈련 속도가 가장 높은 오퍼**로 채운다
+      // (사용자 정정 2026-07-29: "훈련실 굳이 안 비워도 됨. 필요하면 채워줘").
+      // 생산 방을 먼저 다 채운 뒤 남은 인원만 쓰므로 자원 생산을 한 톨도 양보하지 않고,
+      // 훈련실은 교대 시계 방(CLOCK_ROOMS)이 아니라 지속 시간도 줄지 않는다.
+      // 훈련 속도 스킬은 전부 단독 가산(output)이라 solo 점수 정렬이 곧 최적이다.
+      {
+        const cellOf = cellMapFor(shift);
+        const placed = new Set(cellOf.keys());
+        const cands = roster
+          .filter((op) => !placed.has(op.id) && !otherWorking.has(op.id) && !reserved.has(op.id))
+          .map((op) => ({ op, v: opSolo(op, "TRAINING", slotsFor("TRAINING"), { tokenPoints: {} }) }))
+          .filter((entry) => entry.v > 0)
+          .sort((a, b) => b.v - a.v || a.op.rarity - b.op.rarity || a.op.seq - b.op.seq);
+        for (const { op } of cands) {
+          if ((assignments["TRAINING"][idx] ?? []).length >= slotsFor("TRAINING")) break;
+          assignments["TRAINING"][idx] = [...(assignments["TRAINING"][idx] ?? []), op.id];
+          otherWorking.add(op.id); // 다른 조 훈련실에 중복 배치 금지 (§1 A·B 동시 배치 금지)
+        }
       }
     }
   }
@@ -2400,6 +2424,10 @@ export function planScore(plan: Plan, byId: Map<string, InfraOp>): number {
     for (const key of [...PRODUCTION_KEYS, ...SUPPORT_KEYS]) {
       const cell = cellByKey.get(key)!;
       if (PARK_KEYS.includes(key)) continue;
+      // 훈련실 점수(훈련 속도 %)는 총점에서 뺀다 — 자원 생산과 단위가 다르다. 넣으면
+      // "W를 무역소에서 빼 훈련실에 앉히면 총점이 오른다" 같은 교환이 생긴다. 훈련실은
+      // 생산 방을 다 채운 뒤 **남는 인원으로** 채우는 방이다 (buildPlan 말미 채우기 패스).
+      if (key === "TRAINING") continue;
       total += shiftWeight * teamValue(teamAt(key), cell.room, { ...ctxFor(key, points, counts, plan.plants, present, ambient), shiftHours: clock, shift });
     }
   }

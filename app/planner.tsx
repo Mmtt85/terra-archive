@@ -306,7 +306,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         }
         if (!crew.team.length) {
           g.fillStyle = "#9aa0a3"; g.font = "700 12px sans-serif";
-          g.fillText(row.cell.key === "TRAINING" ? t("비워둠 (특화 훈련용)") : t("휴식 공간"), 248, cy + 28);
+          g.fillText(t("휴식 공간"), 248, cy + 28);   // 훈련실도 이제 채우므로 전용 문구 없음
         }
         if (crew.score != null) {
           g.fillStyle = "#687176"; g.font = "800 13px monospace";
@@ -754,7 +754,9 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         }
       }
       for (const key of [...PRODUCTION_KEYS, ...SUPPORT_KEYS]) {
-        if (key === "TRAINING" || PARK_KEYS.includes(key)) continue; // 훈련실 비움·가공소 고정 정책 유지
+        if (PARK_KEYS.includes(key)) continue; // 가공소 상시 1조 고정 정책 유지
+        // 훈련실도 채운다 — 비움은 정책이 아니다 (사용자 정정 2026-07-29). 훈련 속도 스킬
+        // 보유자만 후보가 되고(아래 skillApplies), 생산 방을 먼저 채운 뒤라 자원 손해가 없다.
         const cell = cellByKey.get(key)!;
         const shifts = assignments[key] ?? (assignments[key] = [[]]);
         const index = Math.min(shift, shifts.length - 1);
@@ -1309,7 +1311,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
                       {isTemp && <i className="op-temp-badge" aria-hidden>{t("임시")}</i>}
                     </span>
                   );
-                }) : <i>{cell.key === "TRAINING" ? t("비워둠 · 특화 훈련 시 사용") : plan ? t("비어 있음") : t("자동 편성 대기")}</i>}
+                }) : <i>{plan ? t("비어 있음") : t("자동 편성 대기")}</i>}
               </div>
               {plan && team.length > 0 && !PARK_KEYS.includes(cell.key) && (
                 <small title={cell.room === "CONTROL"
@@ -2550,7 +2552,7 @@ const HELP_SECTIONS: { title: string; items: string[] }[] = [
     "같은 오퍼를 A조·B조에 동시 배치하지 않는 것이 기본 원칙입니다 — 근무를 이중으로 서면 못 쉬고 24시간 돌아야 하기 때문입니다. 사기를 소모하지 않는 숙소(휴식)·가공소(상시 슬롯)만 예외로 조 전환과 무관하게 고정됩니다.",
     "숙소·시너지 고정 요원(숙소 생성원, 니엔 등)은 A/B 전환과 무관하게 고정됩니다. 응접실도 A/B 교대로 운영합니다 — 같은 인원을 24시간 돌리지 않습니다.",
     "가공소는 상시 슬롯이라 A조 한 팀(니엔 고정)만 편성하고 B조 칸은 비워 둡니다 — 회복 교대에 가공 요원을 따로 두지 않습니다.",
-    "훈련실은 두 자리 모두 인프라 스킬·시너지가 적용됩니다 (실제 기지 검증 — 한때 트레이너 1석만 쓴다고 봤던 것을 정정했습니다). 다만 두 자리 다 실제 스킬 특화 훈련에 쓰도록 기본적으로는 비워 둡니다. 비움이 절대 규칙은 아닙니다 — 훈련실도 '작업 시설'이라, 다른 오퍼의 조건이 훈련실 배치로만 충족될 때(외드레르의 W가 앉을 작업 시설이 훈련실밖에 안 남은 경우)는 그쪽 이득이 실제로 더 클 때만 배치합니다.",
+    "훈련실은 두 자리 모두 인프라 스킬·시너지가 적용되며(실제 기지 검증), 비워 두지 않고 채웁니다. 다만 훈련 속도는 자원 생산과 단위가 달라 총점 계산에서는 빼둡니다 — 그래서 생산 방(제조소·무역소·발전소·사무실·응접실·제어 센터)을 먼저 다 채운 뒤 남는 인원 중 훈련 속도가 가장 높은 오퍼로 훈련실을 채웁니다. 자원 생산은 한 톨도 양보하지 않고, 훈련실은 교대 시계에 들어가는 방이 아니라 지속 시간도 줄지 않습니다. 다른 오퍼의 조건이 훈련실 배치로만 충족되는 경우(외드레르의 W가 앉을 작업 시설이 훈련실밖에 안 남은 경우)에는 그쪽이 우선입니다.",
     "숙소도 방을 눌러 직접 편성할 수 있습니다 — 직접 넣은 오퍼는 📌로 고정되어 전체 자동편성이 그대로 둡니다(카드의 📌로 잠그거나 풀고, ✕로 빼면 고정도 풀립니다). 울피아누스를 숙소에 고정해 두면 다음 자동편성이 언더플로우(+10%)를 자연히 뽑아 갑니다. 고정 인원은 근무 방 후보에서 빠지므로 이중 배치되지 않습니다.",
     "'짝이 기반시설(숙소 포함) 어디에든 있으면 +N%'인 조건(언더플로우←울피아누스, Bellone←비질, 산크타 믹사파라토←피아메타)은 짝이 일하지 않아도 성립합니다. 그래서 자동편성은 노는 짝을 빈 숙소에 '주차'해 조건을 켜는 안을 따로 만들어 보고, 기지 총점이 실제로 오를 때만 채택합니다 — 보유 오퍼가 두터워 대체 후보가 많으면 주차가 부른 재편성이 오히려 손해라 채택하지 않습니다.",
     "자동편성은 제조소·무역소·응접실·사무실을 반드시 정원까지 채웁니다 — 인프라 스킬이 없는 오퍼라도 배치 인원 자체가 기본 생산분을 내므로, 슬롯을 비우는 것이 항상 손해이기 때문입니다. 보유 오퍼 총원이 모자랄 때만 빈 자리가 남습니다. 제어센터·발전소는 스킬 없는 배치가 사기만 소모해 예외입니다.",
