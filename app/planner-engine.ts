@@ -226,7 +226,7 @@ const POWER_CELLS: LayoutCell[] = [
 ];
 const LAYOUT_DEFS: Record<Exclude<LayoutPreset, "custom">, {
   cells: LayoutCell[];
-  priority: Record<ProdPriority, string[]>;   // 방 채우기 순서 (§1 우선 생산 4모드 — endless는 balance와 동일 순서)
+  priority: Record<ProdAxis, string[]>;       // 방 채우기 순서 (§1 생산 축 3종 — 운용 축은 순서를 안 바꾼다)
   goldLines: number;                          // 순금 제조소 수 (투예·파죰카 순금 라인 재계산)
   counts: Record<string, number>;             // 시설 수 (facilityBased 배수 재계산)
   plantsBase: number;                         // 발전소 수 (자동화 오퍼 스케일·그레이 시 +1)
@@ -245,9 +245,6 @@ const LAYOUT_DEFS: Record<Exclude<LayoutPreset, "custom">, {
       gold: ["MANUFACTURE-0", "MANUFACTURE-1", "MANUFACTURE-2", "MANUFACTURE-3", "TRADING-0", "TRADING-1", "POWER-0", "POWER-1", "POWER-2"],
       exp: ["MANUFACTURE-2", "MANUFACTURE-3", "MANUFACTURE-0", "MANUFACTURE-1", "TRADING-0", "TRADING-1", "POWER-0", "POWER-1", "POWER-2"],
       balance: ["MANUFACTURE-0", "MANUFACTURE-2", "MANUFACTURE-1", "MANUFACTURE-3", "TRADING-0", "TRADING-1", "POWER-0", "POWER-1", "POWER-2"],
-      // 장기 지속·무한동력: 품목 무관(순서는 밸런스와 동일) — 채택은 teamValue의 순소모 보너스가 결정
-      endless: ["MANUFACTURE-0", "MANUFACTURE-2", "MANUFACTURE-1", "MANUFACTURE-3", "TRADING-0", "TRADING-1", "POWER-0", "POWER-1", "POWER-2"],
-      perpetual: ["MANUFACTURE-0", "MANUFACTURE-2", "MANUFACTURE-1", "MANUFACTURE-3", "TRADING-0", "TRADING-1", "POWER-0", "POWER-1", "POWER-2"],
     },
     goldLines: 2,
     counts: { TRADING: 2, MANUFACTURE: 4, POWER: 3 },
@@ -268,8 +265,6 @@ const LAYOUT_DEFS: Record<Exclude<LayoutPreset, "custom">, {
       exp: ["MANUFACTURE-1", "MANUFACTURE-2", "MANUFACTURE-3", "MANUFACTURE-4", "MANUFACTURE-0", "TRADING-0", "POWER-0", "POWER-1", "POWER-2"],
       // 밸런스(교차)는 순금방이 1개라 gold 우선과 동일한 순서가 된다
       balance: ["MANUFACTURE-0", "MANUFACTURE-1", "MANUFACTURE-2", "MANUFACTURE-3", "MANUFACTURE-4", "TRADING-0", "POWER-0", "POWER-1", "POWER-2"],
-      endless: ["MANUFACTURE-0", "MANUFACTURE-1", "MANUFACTURE-2", "MANUFACTURE-3", "MANUFACTURE-4", "TRADING-0", "POWER-0", "POWER-1", "POWER-2"],
-      perpetual: ["MANUFACTURE-0", "MANUFACTURE-1", "MANUFACTURE-2", "MANUFACTURE-3", "MANUFACTURE-4", "TRADING-0", "POWER-0", "POWER-1", "POWER-2"],
     },
     goldLines: 1,
     counts: { TRADING: 1, MANUFACTURE: 5, POWER: 3 },
@@ -290,8 +285,6 @@ const LAYOUT_DEFS: Record<Exclude<LayoutPreset, "custom">, {
       gold: ["MANUFACTURE-0", "MANUFACTURE-1", "MANUFACTURE-2", "MANUFACTURE-3", "MANUFACTURE-4", "TRADING-0", "TRADING-1", "POWER-0", "POWER-1"],
       exp: ["MANUFACTURE-2", "MANUFACTURE-3", "MANUFACTURE-4", "MANUFACTURE-0", "MANUFACTURE-1", "TRADING-0", "TRADING-1", "POWER-0", "POWER-1"],
       balance: ["MANUFACTURE-0", "MANUFACTURE-2", "MANUFACTURE-1", "MANUFACTURE-3", "MANUFACTURE-4", "TRADING-0", "TRADING-1", "POWER-0", "POWER-1"],
-      endless: ["MANUFACTURE-0", "MANUFACTURE-2", "MANUFACTURE-1", "MANUFACTURE-3", "MANUFACTURE-4", "TRADING-0", "TRADING-1", "POWER-0", "POWER-1"],
-      perpetual: ["MANUFACTURE-0", "MANUFACTURE-2", "MANUFACTURE-1", "MANUFACTURE-3", "MANUFACTURE-4", "TRADING-0", "TRADING-1", "POWER-0", "POWER-1"],
     },
     goldLines: 2,
     counts: { TRADING: 2, MANUFACTURE: 5, POWER: 2 },
@@ -358,9 +351,7 @@ function buildCustomDef(rooms: CustomRoom[], products: (CustomProduct | null)[] 
       gold: [...goldKeys, ...expKeys, ...tradeKeys, ...powerKeys],
       exp: [...expKeys, ...goldKeys, ...tradeKeys, ...powerKeys],
       balance: [...balance, ...tradeKeys, ...powerKeys],
-      endless: [...balance, ...tradeKeys, ...powerKeys],
-      perpetual: [...balance, ...tradeKeys, ...powerKeys],
-    } as Record<ProdPriority, string[]>,
+    } as Record<ProdAxis, string[]>,
     goldLines: goldKeys.length, // 실제 순금 방 수 (명시 선택 반영 — 투예·파죰카 라인 상수)
     counts,
     plantsBase: counts.POWER,
@@ -496,22 +487,25 @@ const CLOCK_ROOMS = new Set(["MANUFACTURE", "TRADING", "POWER", "CONTROL"]);
 // 고소모팀(인포서 +2 등) 음수. 절대 페널티가 아니라 기본 소모 대비 상대치라 슬롯 백필
 // 절대룰(방은 꽉 채운다)과 충돌하지 않는다. 비교 전용 함수(teamValue·planScore·감사·백필)
 // 에만 더하고 표시용 teamScore(방 % 배지)는 순수 생산 점수로 유지한다.
-// 소모 모드 2종 (사용자 확정 2026-07-27): endless(장기 지속) = 총 교대 최소 — 소모 가중과
-// 생산이 균형(W=600, 0.25 감소 ≈ 150점). perpetual(무한동력) = "효율따위 신경쓰지 않고" —
-// 소모가 사전식으로 우선(W=20000, 0.05 감소 ≈ 1000점 > 어떤 생산 차이)하고, 제어센터는
-// 순소모 0 조합이 로스터에 있으면 **무조건** 그걸 앉힌다(아래 PERPETUAL_CC_LOCK).
-export type DrainMode = "off" | "endless" | "perpetual";
+// 운용 축 (사용자 확정 2026-07-28 축 분리): off(효율 우선) = 컨디션 무시, endless(장기 지속) =
+// A조를 오래가게 — 소모 가중과 생산이 균형(제어센터 W=600, 일반 방 W=300)이고 **제어센터는
+// 순소모 0 조합이 로스터에 있으면 무조건 그걸 앉힌다**(아래 PERPETUAL_CC_LOCK — 종전 별도
+// 모드였던 '무한동력'을 장기 지속에 흡수. 사용자: "장기지속일 시, 무한동력 오퍼가 있다면
+// 무한동력 조합 우선으로"). 생산 축(gold/exp/balance)과 자유 조합된다.
+export type DrainMode = "off" | "endless";
 export let DRAIN_MODE: DrainMode = "off";
-export let ENDLESS_ON = false; // 소모 모델 활성 여부 (두 모드 공통 게이트)
+export let ENDLESS_ON = false; // 소모 모델 활성 여부
 export function setPriorityMode(priority?: ProdPriority) {
-  DRAIN_MODE = priority === "endless" ? "endless" : priority === "perpetual" ? "perpetual" : "off";
+  DRAIN_MODE = splitPriority(priority).drain;
   ENDLESS_ON = DRAIN_MODE !== "off";
 }
-// 두 모드의 유일한 차이는 제어센터 (사용자 확정 2026-07-27 재설계: "차이는 제어센터 무한동력만,
-// 얘네들도 피로도를 1순위로 잡아버리면 안 됨") — 일반 방은 양 모드 공통으로 소모와 효율을
-// 저울질(ENDLESS_ROOM_W)하고, 제어센터만 종전 가중(ENDLESS_DRAIN_W — 회복 오라 코어 성립) +
-// perpetual의 순소모 0 강제 락으로 갈린다. 종전 사전식(W=20000 전 방)은 샤마르 조합(+132%p)을
-// 0.25/h 아끼자고 B조로 밀었다 — "피로도 고작 조금 먹고 희생하는 효율이 너무 높다".
+// 제어센터 무한동력 성립 여부 — 로스터에 순소모 0 제어센터 조합이 있으면 buildPlan이 켠다.
+// 켜지면 ① 그 조합에 절대 우선 락 ② 토큰 패키지가 제어센터를 예약석으로 못 씀(죽은 사슬 방지).
+// 불가능한 로스터에선 꺼진 채로 종전 장기 지속 경쟁(화식 코어 등)이 그대로 돈다.
+export let PERPETUAL_CC = false;
+// 일반 방은 소모와 효율을 저울질(ENDLESS_ROOM_W)하고, 제어센터만 종전 가중(ENDLESS_DRAIN_W —
+// 회복 오라 코어 성립) + 순소모 0 강제 락으로 갈린다. 종전 사전식(W=20000 전 방)은 샤마르
+// 조합(+132%p)을 0.25/h 아끼자고 B조로 밀었다 — "피로도 고작 조금 먹고 희생하는 효율이 너무 높다".
 export const ENDLESS_DRAIN_W: number = (C as unknown as Record<string, number | undefined>).ENDLESS_DRAIN_W ?? 600; // 제어센터: 소모 1.0/h당 점수 등가 (L2 상수로 조정 가능)
 export const ENDLESS_ROOM_W: number = (C as unknown as Record<string, number | undefined>).ENDLESS_ROOM_W ?? 300; // 일반 방: 0.25 감소 ≈ 75점 — 통상 격차(<30)는 저소모, 대형 시너지(샤마르 132)는 효율이 이긴다
 const PERPETUAL_CC_LOCK = 1e6; // 무한동력 모드: 순소모 0 제어센터 조합의 절대 우선 보너스 (오라 자리 가치 합 최대 ~10만을 압도)
@@ -610,9 +604,10 @@ export function endlessBonus(team: InfraOp[], room: string, ctx: Ctx): number {
       const best = auraSkills.reduce((acc, entry) => entry.targets.includes(target) ? Math.max(acc, entry.value) : acc, 0);
       if (best > 0) bonus += best * W * (FACILITY_COUNTS[target] ?? 1);
     }
-    // 무한동력 모드 (사용자 확정 2026-07-27: "제어센터는 무조건 무한동력"): 순소모 0 제어센터
-    // 조합은 오라 자리 가치·생산과 무관하게 절대 우선 — 로스터에 있으면 반드시 채택된다
-    if (DRAIN_MODE === "perpetual" && maxNet <= 1e-9) bonus += PERPETUAL_CC_LOCK;
+    // 무한동력 자동 우선 (사용자 확정 2026-07-28: "장기지속일 시, 무한동력 오퍼가 있다면 무한동력
+    // 조합 우선으로"): 순소모 0 제어센터 조합은 오라 자리 가치·생산과 무관하게 절대 우선 —
+    // 로스터에 성립하면(PERPETUAL_CC 사전 판정) 반드시 채택된다
+    if (PERPETUAL_CC && maxNet <= 1e-9) bonus += PERPETUAL_CC_LOCK;
   }
   return bonus;
 }
@@ -1158,11 +1153,17 @@ export function bestTeam(room: string, slots: number, pool: Map<string, InfraOp>
     for (const group of groups) {
       const holders = cands.filter((op) => op.skills.some((sk) => sk.recoverRoomPer?.faction === group && skillApplies(sk, room, ctx.product)));
       const members = Array.from(pool.values()).filter((op) => memberOf(op, group) && !holders.some((h) => h.id === op.id));
-      const seed = [...seedOps];
-      for (const op of [...holders, ...members]) if (!seed.some((s) => s.id === op.id) && seed.length < slots) seed.push(op);
-      const team = fill(seed);
-      const score = teamValue(team, room, ctx);
-      if (score > bestScore) { best = team; bestScore = score; }
+      // 두 안을 다 본다 — ② 그룹 결집(보유자+그룹원으로 자리를 다 채움: 레인보우 4보유×5명)과
+      // ① 보유자만 시드(남는 자리는 그리디에 맡겨 **타 그룹 회복 보강**이 들어올 수 있게).
+      // ①이 없으면 얼터네이트 3보유(0.95)에 훔(리 탐정 +0.2)을 얹어 정확히 0을 만드는 교차
+      // 조합을 영영 못 본다 — 무6성 로스터의 무한동력이 이 형태다 (2026-07-28).
+      for (const seedBase of [holders, [...holders, ...members]]) {
+        const seed = [...seedOps];
+        for (const op of seedBase) if (!seed.some((s) => s.id === op.id) && seed.length < slots) seed.push(op);
+        const team = fill(seed);
+        const score = teamValue(team, room, ctx);
+        if (score > bestScore) { best = team; bestScore = score; }
+      }
     }
   }
   return best;
@@ -1201,10 +1202,26 @@ export type Plan = {
 export let PRODUCTION_KEYS = LAYOUT_DEFS["243"].priority.gold;
 // 우선 생산 모드 (사용자 확정 2026-07): 먼저 채우는 방이 최고 요원을 가져가므로,
 // 방 순서만 바꾸면 순금 우선 / 작전기록 우선 / 밸런스(교차)가 된다.
-// endless(무한동력, 2026-07-27)는 순서가 아니라 점수 결합이 다르다 — 방 순서는 밸런스와
-// 동일하고, teamValue의 컨디션 순소모 보너스(위 ENDLESS 블록)가 채택을 뒤집는다.
-export type ProdPriority = "gold" | "exp" | "balance" | "endless" | "perpetual";
-export let PRIORITY_KEYS: Record<ProdPriority, string[]> = LAYOUT_DEFS["243"].priority;
+// ── 2축 구조 (사용자 확정 2026-07-28: "순금우선 + 효율우선이 디폴트, 순금우선 + 장기지속도 가능") ──
+// **생산 축**(ProdAxis)이 방 채우기 순서를, **운용 축**(DrainMode)이 컨디션 모델 on/off를 정한다.
+// 저장·전달은 결합 문자열 하나("gold" = 효율 우선, "gold+endless" = 장기 지속)로 해서 기존
+// priority 배관(저장 파일·워커 메시지·플랜 필드)을 그대로 쓴다.
+export type ProdAxis = "gold" | "exp" | "balance";
+export type ProdPriority = ProdAxis | "gold+endless" | "exp+endless" | "balance+endless";
+// 결합 문자열 → 두 축. 레거시 저장값 "endless"·"perpetual"(축 분리 전 단일 모드)은 종전 방 순서가
+// 밸런스와 같았으므로 balance+endless로 읽는다 — 무한동력은 장기 지속에 흡수됐다(PERPETUAL_CC).
+export function splitPriority(priority?: string): { prod: ProdAxis; drain: DrainMode } {
+  if (priority === "endless" || priority === "perpetual") return { prod: "balance", drain: "endless" };
+  const [prod, drain] = String(priority ?? "gold").split("+");
+  return {
+    prod: prod === "exp" ? "exp" : prod === "balance" ? "balance" : "gold",
+    drain: drain === "endless" ? "endless" : "off",
+  };
+}
+export function joinPriority(prod: ProdAxis, drain: DrainMode): ProdPriority {
+  return (drain === "endless" ? `${prod}+endless` : prod) as ProdPriority;
+}
+export let PRIORITY_KEYS: Record<ProdAxis, string[]> = LAYOUT_DEFS["243"].priority;
 export const SUPPORT_KEYS = ["CONTROL", "HIRE", "MEETING", "WORKSHOP", "TRAINING"];
 
 export function ctxFor(key: string, tokenPoints: Record<string, number>, factionCounts?: Record<string, number>, plants?: number, presentIds?: Set<string>, ambient?: AmbientAura[], roomOf?: Map<string, string>, cellOf?: Map<string, string>): Ctx {
@@ -1245,7 +1262,8 @@ export function sanitizePlan(raw: unknown): Plan | null {
     strategy: typeof p.strategy === "string" ? p.strategy : "",
     strategyTokens: Array.isArray(p.strategyTokens) ? (p.strategyTokens as unknown[]).filter((x): x is string => typeof x === "string") : [],
     strategySet: !!p.strategySet,
-    priority: (p.priority === "gold" || p.priority === "exp" || p.priority === "balance" || p.priority === "endless" || p.priority === "perpetual") ? p.priority : "gold",
+    // 축 분리 후 정규화 — 레거시 "endless"·"perpetual"은 splitPriority가 balance+endless로 읽는다
+    priority: typeof p.priority === "string" ? joinPriority(splitPriority(p.priority).prod, splitPriority(p.priority).drain) : "gold",
     // 교대 시계 — 숫자 배열만 인정 (구버전 저장엔 없음 → planScore·UI가 편성에서 재계산)
     ...(Array.isArray(p.shiftHours) && (p.shiftHours as unknown[]).every((n) => typeof n === "number")
       ? { shiftHours: p.shiftHours as number[] } : {}),
@@ -1413,9 +1431,34 @@ function seedSynergySet(def: SynergySetDef, roster: InfraOp[], used: Set<string>
   }
 }
 
+// 무한동력 제어센터 사전 판정 (사용자 확정 2026-07-28: "장기지속일 시, 무한동력 오퍼가 있다면
+// 무한동력 조합 우선으로"). 종전 별도 모드(perpetual)가 하던 일을 로스터 판정으로 대체한다 —
+// 락을 켠 상태로 제어센터만 최적화해 순소모 0이 나오면 그 로스터엔 무한동력 조합이 실재하므로
+// place 가드(패키지 선점 금지)·CC 락을 계속 켜 두고, 안 나오면 꺼서 종전 장기 지속 경쟁으로 둔다.
+// 결과는 로스터별 캐시 — optimizeConfig가 buildPlan을 수십 번 부르므로 재판정 비용을 없앤다.
+let PERP_CACHE: { key: string; value: boolean } | null = null;
+export function detectPerpetualControl(roster: InfraOp[]): boolean {
+  if (!ENDLESS_ON) { PERPETUAL_CC = false; return false; }
+  const slots = slotsFor("CONTROL");
+  const key = `${slots}|${roster.map((op) => op.id).join(",")}`;
+  if (PERP_CACHE?.key === key) { PERPETUAL_CC = PERP_CACHE.value; return PERPETUAL_CC; }
+  const pool = new Map(roster.map((op) => [op.id, op] as const));
+  const ctx = ctxFor("CONTROL", {}, {}, PLANTS_BASE_RT);
+  const prev = PERPETUAL_CC;
+  PERPETUAL_CC = true; // 락을 켜야 bestTeam이 순소모 0 조합을 최우선으로 탐색한다
+  let team: InfraOp[] = [];
+  try { team = bestTeam("CONTROL", slots, pool, ctx); } finally { PERPETUAL_CC = prev; }
+  const net = roomMaxNetDrain(team, "CONTROL", ctx);
+  const value = net != null && net <= 1e-9;
+  PERP_CACHE = { key, value };
+  PERPETUAL_CC = value;
+  return value;
+}
+
 export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSets: FactionSets = {}, priority: ProdPriority = "gold", extraSeeds: { opId: string; room: string }[] = [], concentrate = true, park = false, pinnedDorms: Record<string, string[]> = {}): Plan {
-  setPriorityMode(priority); // endless면 teamValue·시계가 순소모 모델로 전환 (모듈 플래그)
-  const prodKeys = PRIORITY_KEYS[priority];
+  setPriorityMode(priority); // 장기 지속이면 teamValue·시계가 순소모 모델로 전환 (모듈 플래그)
+  detectPerpetualControl(roster); // 무한동력 제어센터 성립 여부 — place 가드·CC 락을 함께 켠다
+  const prodKeys = PRIORITY_KEYS[splitPriority(priority).prod];
   const assignments: Record<string, string[][]> = {};
   // 시설 카운트 스킬(타락사쿰·만트라)용 배치 지도 — 숙소·가공소까지 **모든 칸**을 센다.
   // 감사 패스의 roomOfS는 근무 방 + 숙소만 담아 시설 개수 판정엔 못 쓴다 (2026-07-25).
@@ -1486,9 +1529,9 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
       const parked = new Set<string>();
       const placedAt = new Map<string, string>();
       const place = (op: InfraOp, key: string) => {
-        // 무한동력 모드: 제어센터는 순소모 0 조합 전용 — 토큰 패키지가 선점하지 않는다
+        // 무한동력 성립 시: 제어센터는 순소모 0 조합 전용 — 토큰 패키지가 선점하지 않는다
         // (화식 코어 링·시·총웨가 시드로 앉으면 레인보우/이격 조합이 영영 못 서는 원인)
-        if (DRAIN_MODE === "perpetual" && key === "CONTROL") return false;
+        if (PERPETUAL_CC && key === "CONTROL") return false;
         seeds[key] = seeds[key] ?? [];
         const slots = slotsFor(key);
         if (seeds[key].length >= slots || parked.has(op.id)) return false;
@@ -1509,10 +1552,10 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
         flows.push(flow);
         const generatesFor = (op: InfraOp) => op.skills.some((skill) => skill.tokenGen.some((g) => g.token === token || sources.has(g.token)));
         const members = roster.filter((op) => !used.has(op.id) && (generatesFor(op) || op.skills.some((skill) => skill.tokenUse.some((u) => u.token === token))));
-        // 무한동력: 제어센터 생성분(화식 코어 링·시·총웨)은 place 가드로 앉을 수 없으니 기대치에서
-        // 제외한다 — 종전엔 전량 계상돼 소비자(슈)만 예약석을 먹는 죽은 사슬이 생겼다 (2026-07-27).
+        // 무한동력 성립 시: 제어센터 생성분(화식 코어 링·시·총웨)은 place 가드로 앉을 수 없으니
+        // 기대치에서 제외한다 — 종전엔 전량 계상돼 소비자(슈)만 예약석을 먹는 죽은 사슬이 생겼다.
         // 비제어센터 잔량(우요우 화식 등 미니 생태)은 정직하게 남아 그만큼만 시드·계상된다.
-        const estTotal = roster.reduce((sum, member) => sum + member.skills.reduce((inner, skill) => inner + (DRAIN_MODE === "perpetual" && skill.room === "CONTROL" ? 0 : skill.tokenGen.reduce((acc, g) => acc + (g.token === token ? genEstimate(g) : sources.has(g.token) ? genEstimate(g) * (sources.get(g.token) ?? 0) : 0), 0)), 0), 0);
+        const estTotal = roster.reduce((sum, member) => sum + member.skills.reduce((inner, skill) => inner + (PERPETUAL_CC && skill.room === "CONTROL" ? 0 : skill.tokenGen.reduce((acc, g) => acc + (g.token === token ? genEstimate(g) : sources.has(g.token) ? genEstimate(g) * (sources.get(g.token) ?? 0) : 0), 0)), 0), 0);
         for (const op of members) {
           for (const skill of op.skills) {
             const use = skill.tokenUse.find((u) => u.token === token && u.percent);
@@ -2143,7 +2186,9 @@ export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSet
   // concentrate=false는 optimizeConfig의 **config 탐색 단계** — ⑤가 config별 planScore를 바꿔
   // 토큰 패키지 채택을 뒤집으면(전례: withFuture/exp에서 주술 결정 패키지가 밀려 −2.75) 안 되므로,
   // 탐색은 ⑤-무관(원래 선택 그대로)으로 돌리고 **채택된 config에만 최종 1회 ⑤를 입힌다**.
-  const preferProduct = concentrate ? (priority === "gold" ? "gold" : priority === "exp" ? "exp" : null) : null;
+  // 생산 축만 본다 — 운용 축(장기 지속)은 품목 집중과 직교한다 ("순금 우선 + 장기 지속"도 순금 집중)
+  const prodAxis = splitPriority(priority).prod;
+  const preferProduct = concentrate ? (prodAxis === "gold" ? "gold" : prodAxis === "exp" ? "exp" : null) : null;
   if (preferProduct) {
     const isManu = (k: string) => cellByKey.get(k)?.room === "MANUFACTURE";
     const prefKeys = prodKeys.filter((k) => isManu(k) && cellByKey.get(k)?.product === preferProduct);
@@ -2437,8 +2482,9 @@ export async function optimizeConfig(roster: InfraOp[], priority: ProdPriority =
   if (variants.length > 15) variants.length = 15;
   // 채택 config에 최종 ⑤(우선 생산 집중)를 입혀 반환 — 탐색은 ⑤-무관이라 선택이 원래대로 유지되고,
   // 여기서만 planScore 단조 개선(무승부 이상)을 얹는다. 밸런스는 ⑤가 no-op이라 그대로.
+  const concentrates = splitPriority(priority).prod !== "balance"; // 생산 축 기준 — 장기 지속과 직교
   const withConcentration = (tokens: string[], sets: FactionSets, seeds: { opId: string; room: string }[], park = false) =>
-    (priority === "gold" || priority === "exp") ? buildPlan(tokens, effRoster, sets, priority, seeds, true, park, pinnedDorms) : buildPlan(tokens, effRoster, sets, priority, seeds, false, park, pinnedDorms);
+    buildPlan(tokens, effRoster, sets, priority, seeds, concentrates, park, pinnedDorms);
   // 숙소 파킹 A/B — '짝이 기지 어디든 있으면 +N%'(언더플로우←울피아누스 등)를 켜려고 노는 짝을
   // 빈 숙소에 주차한 안을 따로 만들고, **planScore가 실제로 오를 때만** 채택한다. 로스터가 두꺼우면
   // 대체 후보가 많아 파킹이 부른 재편성이 르무엔+엑시아 같은 기존 조합을 깨 손해일 수도 있다

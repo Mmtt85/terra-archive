@@ -16,7 +16,8 @@ import {
   AURA_WEIGHT, AURA_LABEL, skillApplies, breakdown, teamScore, aurasOf, ambientFor, capConvFor, roomMaxNetDrain,
   ctxFor, sanitizePlan, presentIdsFor, roomOfFor, cellOfFor, slotSubstitutes, setLayoutPreset, setPriorityMode, memberOf, growAvg, DEFAULT_CUSTOM_ROOMS, DEFAULT_CUSTOM_PRODUCTS,
   setLevels as setEngineLevels, slotsFor, maxLevelOf, levelOf, powerBudget, suggestedLevels, TERMS,
-  type InfraOp, type InfraSkill, type Elite, type Plan, type ProdPriority, type TokenFlow, type OptimizeStep, type LayoutPreset, type Levels, type CustomRoom, type CustomProduct,
+  splitPriority, joinPriority,
+  type InfraOp, type InfraSkill, type Elite, type Plan, type ProdPriority, type ProdAxis, type DrainMode, type TokenFlow, type OptimizeStep, type LayoutPreset, type Levels, type CustomRoom, type CustomProduct,
 } from "./planner-engine";
 import type { RaiseRec, InvestProgress } from "./planner-invest";
 // 자동편성·육성 추천의 실제 계산은 Web Worker에서 (INP — 메인 스레드는 진행 표시만, 2026-07-22)
@@ -607,14 +608,19 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   // 현재 모드의 컨디션 보너스를 쓰도록 모듈 플래그를 맞춘다 (워커 쪽은 잡마다 buildPlan이 설정)
   useEffect(() => { setPriorityMode(priority); }, [priority]);
 
-  // 우선 생산 모드는 설정(라디오)일 뿐 — 실제 편성은 기존처럼 자동편성 버튼으로 실행한다
+  // 편성 설정(라디오)은 설정일 뿐 — 실제 편성은 기존처럼 자동편성 버튼으로 실행한다
   // (사용자 확정 2026-07: 설정 변경이 편성을 갈아엎으면 안 됨)
   const setPriority = (prio: ProdPriority) => {
     if (prio === priority) return;
     setPriorityState(prio);
     persist(ownedIds, plan, eliteById, prio);
-    showToast(t("우선 생산 설정을 저장했습니다 — 다음 자동편성부터 적용됩니다"));
+    showToast(t("편성 설정을 저장했습니다 — 다음 자동편성부터 적용됩니다"));
   };
+  // 2축 구조 (사용자 확정 2026-07-28): 생산 축(무엇을 많이) × 운용 축(얼마나 오래) —
+  // 저장은 결합 문자열 하나("gold" = 순금+효율, "gold+endless" = 순금+장기 지속)로 한다
+  const { prod: prodAxis, drain: drainAxis } = splitPriority(priority);
+  const setProdAxis = (axis: ProdAxis) => setPriority(joinPriority(axis, drainAxis));
+  const setDrainAxis = (axis: DrainMode) => setPriority(joinPriority(prodAxis, axis));
 
   // 기지 배치 프리셋 전환 (사용자 요청 2026-07-24): 프리셋마다 편성·레벨·육성추천 버킷을
   // 따로 보관한다 — 현재 상태를 현 프리셋 버킷에 넣고, 대상 프리셋의 저장분을 그대로 복원
@@ -1079,13 +1085,20 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         {layout !== "custom" && (
           <>
             <span className="prio-label prio-label-layout" title={t("먼저 채우는 방이 최고 요원을 가져갑니다 — 다음 자동편성부터 적용됩니다")}>⚙ {t("우선 생산")}</span>
-            {(["gold", "exp", "balance", "endless", "perpetual"] as const).map((mode) => (
-              <label key={mode} className={priority === mode ? "on" : ""}
-                title={mode === "endless" ? t("주력인 A조를 컨디션 소모·회복까지 계산해 오래가게 짭니다 — 소모는 효율과 저울질(1순위 아님), B조는 A조가 쉬는 동안의 생산 교대")
-                  : mode === "perpetual" ? t("장기 지속과 같되, 제어센터만 무조건 무한동력(순소모 0·양조 고정) 조합 — 레인보우 팀·3성 이격 — 으로 고정합니다") : undefined}>
-                <input type="radio" name="prod-priority" checked={priority === mode} onChange={() => setPriority(mode)} />
-                {t(mode === "gold" ? "순금 우선" : mode === "exp" ? "작전기록 우선" : mode === "balance" ? "밸런스" : mode === "endless" ? "장기 지속" : "무한동력")}
-                {mode === "perpetual" && isNewFeature("endless") && <span className="new-badge">{t("새기능")}</span>}
+            {(["gold", "exp", "balance"] as const).map((axis) => (
+              <label key={axis} className={prodAxis === axis ? "on" : ""}>
+                <input type="radio" name="prod-priority" checked={prodAxis === axis} onChange={() => setProdAxis(axis)} />
+                {t(axis === "gold" ? "순금 우선" : axis === "exp" ? "작전기록 우선" : "밸런스")}
+              </label>
+            ))}
+            <span className="prio-label prio-label-layout" title={t("컨디션(피로도)을 어떻게 다룰지 — 우선 생산과 자유롭게 조합됩니다 (예: 순금 우선 + 장기 지속)")}>⏱ {t("운용 방식")}</span>
+            {(["off", "endless"] as const).map((axis) => (
+              <label key={axis} className={drainAxis === axis ? "on" : ""}
+                title={axis === "off" ? t("컨디션은 따지지 않고 생산 효율만 봅니다 — 자주 들여다보며 교대해 주는 운용")
+                  : t("주력인 A조를 컨디션 소모·회복까지 계산해 오래가게 짭니다 — 소모는 효율과 저울질(1순위 아님), B조는 A조가 쉬는 동안의 생산 교대. 제어센터에 무한동력(순소모 0) 조합이 가능한 로스터면 그 조합을 무조건 우선합니다")}>
+                <input type="radio" name="drain-mode" checked={drainAxis === axis} onChange={() => setDrainAxis(axis)} />
+                {t(axis === "off" ? "효율 우선" : "장기 지속")}
+                {axis === "endless" && isNewFeature("endless") && <span className="new-badge">{t("새기능")}</span>}
               </label>
             ))}
           </>
@@ -2434,7 +2447,8 @@ const HELP_SECTIONS: { title: string; items: string[] }[] = [
     "기지 배치 설정: 243(무역 2·제조 4 — 순금 2+작전기록 2, 기본) · 153(무역 1·제조 5 — 순금 1+작전기록 4) · 252(무역 2·제조 5 — 순금 2+작전기록 3, 발전 2). 153은 무역소가 하나라 제조소 대부분을 작전기록에 쓰되, 유일한 순금방이 병목이므로 그 방을 맨 먼저(최정예로) 채웁니다. 각 배치의 편성·시설 레벨은 따로 저장됩니다 — 배치마다 한 번씩 자동편성해 두면 전환할 때 그대로 복원됩니다.",
     "전력·시설 레벨: 발전소가 전력을 공급하고(레벨 3 기준 1기 270, 3기 810) 나머지 시설이 소비합니다. 방을 눌러 시설 레벨을 바꾸면 전력 소비·근무 슬롯(제조소·무역소 Lv1/2/3 = 1/2/3인)·레벨 연동 스킬(숙소 레벨 합·응접실·훈련실 레벨 등)이 함께 재계산됩니다. 243·153은 전부 만렙일 때 소비가 정확히 810이라 여유가 0이고, 252는 발전소가 2기(540)뿐이라 시설 레벨을 낮춰야 성립합니다 — 기본값은 순금 제조소·응접실·훈련실 만렙 유지, 작전기록 제조소 Lv2, 사무실 Lv2, 숙소 Lv1(첫 숙소만 Lv2)로 소비가 정확히 540입니다. 상단 ⚡ 전력이 음수면 게임에서 지을 수 없는 구성입니다.",
     "사용자 지정 배치: 제조소·무역소·발전소 9칸을 자유롭게 구성합니다. 방 카드의 제조소/무역소/발전소 버튼으로 각 칸의 종류를 바꾸면 순금 제조소 수는 무역소 수에 맞춰 자동 배정되고(프리셋과 동일 규칙), 전력·자동화 스케일도 발전소 수를 따라갑니다. 칸을 바꾼 뒤엔 전체 자동편성으로 재편성하세요 — 그외 배치의 편성·레벨도 별도 버킷으로 저장됩니다.",
-    "우선 생산 설정: 순금 우선(기본) · 작전기록 우선 · 밸런스(교차) · 장기 지속 · 무한동력. 먼저 채우는 방이 최고 요원을 가져가고, 순금(또는 작전기록) 우선이면 어느 제조소에서나 생산력이 같은 요원을 그 제조소로 몰아줍니다 — 총 생산력이 같을 때만. 장기 지속은 주력인 A조를 컨디션 소모·근무 중 회복까지 계산해 오래가게 짜되 소모를 1순위로 두지는 않습니다 — 소모가 조금 늘어도 크게 이득인 고효율 조합(샤마르 조합 등)은 A조에 올립니다. 무한동력은 장기 지속과 같고, 차이는 제어센터 하나 — 무조건 무한동력(순소모 0) 조합(레인보우 팀·3성 이격)으로 고정합니다. 두 모드 모두 B조는 A조가 쉬는 동안을 메우는 생산 편성이고, 순소모 0이 된 방의 크루는 컨디션이 닳지 않아 A·B 양조에 고정됩니다. 설정만 바꾸고, 실제 편성은 전체 자동편성 버튼을 눌러 적용합니다.",
+    "편성 설정은 두 축입니다 — 무엇을 많이 뽑을지(우선 생산: 순금 우선 · 작전기록 우선 · 밸런스) × 컨디션을 어떻게 다룰지(운용 방식: 효율 우선 · 장기 지속). 기본은 순금 우선 + 효율 우선이고, 순금 우선 + 장기 지속처럼 자유롭게 조합됩니다. 먼저 채우는 방이 최고 요원을 가져가고, 순금(또는 작전기록) 우선이면 어느 제조소에서나 생산력이 같은 요원을 그 제조소로 몰아줍니다 — 총 생산력이 같을 때만.",
+    "운용 방식 — 효율 우선은 컨디션을 따지지 않고 생산 효율만 봅니다(자주 들여다보며 교대해 주는 운용). 장기 지속은 주력인 A조를 컨디션 소모·근무 중 회복까지 계산해 오래가게 짜되 소모를 1순위로 두지는 않습니다 — 소모가 조금 늘어도 크게 이득인 고효율 조합(샤마르 조합 등)은 A조에 올립니다. 제어센터에 무한동력(순소모 0) 조합을 세울 수 있는 로스터라면(레인보우 팀·3성 이격 등) 그 조합을 무조건 우선합니다. B조는 A조가 쉬는 동안을 메우는 생산 편성이고, 순소모 0이 된 방의 크루는 컨디션이 닳지 않아 A·B 양조에 고정됩니다. 설정만 바꾸고, 실제 편성은 전체 자동편성 버튼을 눌러 적용합니다.",
     "채우는 순서: 제조소-순금 > 제조소-작전기록 > 무역소 > 발전소 > 사무실 > 응접실 — 먼저 채우는 방이 좋은 요원을 가져갑니다. 응접실은 최하위라, 응접실 스킬이 있는 오퍼(쉐라 등)도 상위 방 세트가 우선입니다.",
     "응접실 단서 수집 속도는 RIIC 스킬과 별개로 레어도·정예화 기본치가 더해집니다: 6성 +10 / 5성 +9 / 4성 +7 / 3성↓ +5, 정예화 1정 +8 · 2정 +16 (미지정은 그 레어도 최대 승급 가정). 그래서 스킬 없는 2정 6성도 +26%. 카드에 '레어도 기본'으로 따로 표기됩니다.",
     "순금 2 + 작전기록 2 분할. 무역소 효율이 오르면 순금이 병목이 되므로 가장 강한 생산 팀을 순금 2방에 먼저 배치하고, 남는 효율을 작전기록으로 돌립니다.",

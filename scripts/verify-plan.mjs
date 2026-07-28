@@ -72,7 +72,9 @@ async function takeSnapshot() {
   const out = {};
   for (const name of Object.keys(rosters)) {
     out[name] = {};
-    for (const priority of ["gold", "exp", "balance", "endless", "perpetual"]) {
+    // 2축 (2026-07-28): 생산 축 3 × 운용 축 2 — 저장된 스냅샷의 레거시 키(endless·perpetual)는
+    // 비교 루프가 saved 쪽 키를 돌며 현재값과 맞춰 보므로, 여기선 현행 조합만 찍는다
+    for (const priority of ["gold", "exp", "balance", "gold+endless", "exp+endless", "balance+endless"]) {
       const p = await planFor(name, priority);
       out[name][priority] = {
         assignments: p.assignments, plants: p.plants,
