@@ -512,6 +512,25 @@ const D: Record<string, Pair> = {
     "最も早く消耗する施設の完全消耗基準 — その前（通常はコンディション12の疲労サイン頃）にA班全体を一斉にB班へ交代します。制御中枢が先に疲れると軽減が切れて全部屋が加速するため、ボトルネックより遅らせないこと。全員がフルコンディション（24）で始まる前提の推定値なので、オペレーターごとの現在の疲労度によって実際の時間は変わります",
   ],
   "※ 피로도에 따라 변동": ["※ varies with fatigue", "※ 疲労度により変動"],
+  "A조 지치면 B조 교대": ["Shift B takes over when A tires", "A班が疲れたらB班に交代"],
+  "자세히": ["details", "詳細"],
+  "지속 시간이 달라지는 이유": ["Why the duration shifts", "持続時間が変わる理由"],
+  "표시된 시간은 **전원이 풀 컨디션 24로 근무를 시작한다**고 본 계산값입니다. 실제 오퍼는 저마다 남은 컨디션이 다르므로, 이미 지친 인원이 섞여 있으면 그만큼 교대가 앞당겨집니다.": [
+    "The figure assumes **everyone clocks in at full morale (24)**. Real operators each have their own morale left, so if some are already tired the swap comes correspondingly sooner.",
+    "表示時間は**全員がフルコンディション24で勤務を始める**前提の計算値です。実際のオペレーターは各自の残りコンディションが違うため、すでに疲れている人員が混ざっていればその分だけ交代が早まります。",
+  ],
+  "특히 **제어센터가 먼저 지치면 기지 전체가 함께 빨라집니다**. 제어센터에 앉은 인원은 다른 모든 작업 시설의 시간당 컨디션 소모를 1명당 0.05씩 깎아 주는데, 제어센터 크루가 먼저 소진돼 자리가 비면 그 감면이 사라져 제조소·무역소·발전소가 일제히 더 빨리 닳습니다. 표시된 시간은 감면이 계속 걸려 있다고 보고 계산한 값입니다.": [
+    "In particular, **if the Control Center tires first the whole base speeds up**. Each operator seated in the Control Center cuts hourly morale drain in every other work facility by 0.05, so when that crew burns out and the seats empty, the relief disappears and factories, trading posts and power plants all drain faster at once. The figure shown assumes the relief stays on the whole time.",
+    "特に**制御中枢が先に疲れると基地全体が一緒に速くなります**。制御中枢に座った人員は他のすべての作業施設の毎時コンディション消費を1人あたり0.05軽減しますが、制御中枢のクルーが先に消耗して席が空くとその軽減が消え、製造所・貿易所・発電所が一斉に速く消耗します。表示時間は軽減がかかり続ける前提の値です。",
+  ],
+  "같은 방 동료 시너지(동료 1명당 -0.05)와 회복 오라(총웨·위셔델·무에나)도 표시값에 반영돼 있지만, 이 역시 **그 배치가 그대로 유지될 때**의 값입니다. 오퍼를 빼거나 옮기면 남은 인원의 소모가 즉시 올라갑니다.": [
+    "Same-room crew synergy (-0.05 per co-worker) and recovery auras (Chongyue, Wis'adel, Muelsyse) are included in the figure too, but again only **while that assignment stays intact**. Pull someone out or move them and the remaining crew's drain rises immediately.",
+    "同じ部屋の同僚シナジー（同僚1人あたり-0.05）と回復オーラ（重岳・ウィスデル・ミュルジス）も表示値に反映されていますが、これも**その配置が保たれている間**の値です。オペレーターを外したり移したりすると、残った人員の消費がすぐ上がります。",
+  ],
+  "그래서 이 숫자는 상한이 아니라 기준점으로 보세요. 병목(가장 빨리 닳는 방)보다 늦게 교대하면 안 되고, 보통은 컨디션 12(지침 신호)쯤에서 A조 전체를 한 번에 B조로 바꿉니다.": [
+    "So treat the number as a reference point, not a ceiling. Never swap later than the bottleneck (the fastest-draining room); in practice you swap all of Shift A to Shift B at once around morale 12, the fatigue sign.",
+    "そのため、この数字は上限ではなく目安として見てください。ボトルネック（最も早く消耗する部屋）より遅く交代してはいけません。通常はコンディション12（疲労サイン）頃にA班全体を一斉にB班へ切り替えます。",
+  ],
   "표시된 시간은 전원 풀 컨디션(24)으로 시작한다고 본 추정치입니다 — 오퍼별 현재 피로도에 따라 실제 교대 시점은 달라질 수 있습니다": [
     "The hours shown are an estimate that assumes everyone starts at full morale (24) — the actual swap timing varies with each operator's current fatigue",
     "表示時間は全員がフルコンディション（24）で始まる前提の推定値です — 実際の交代タイミングはオペレーターごとの現在の疲労度によって変わります",
@@ -581,8 +600,6 @@ const D: Record<string, Pair> = {
   "B조 (회복 교대)": ["Shift B (recovery)", "B班（回復交代）"],
   "A조": ["Shift A", "A班"],
   "B조": ["Shift B", "B班"],
-  "A조 컨디션 소진 시 B조 투입 · 시너지 세트는 A조 집중 · 숙소·고정 요원은 조 전환과 무관 · ": ["Send in Shift B when Shift A's morale runs out · synergy sets concentrate in Shift A · dorm/pinned operators ignore shift changes · ", "A班の体力が尽きたらB班を投入 · シナジーセットはA班に集中 · 宿舎・固定要員は交代と無関係 · "],
-  "숙소는 항상 5명 꽉 채워 유지": ["keep every dorm filled with 5 at all times", "宿舎は常に5人満員を維持"],
   // 243 레이아웃 라벨
   "무역소 1": ["Trading Post 1", "貿易所1"],
   "무역소 2": ["Trading Post 2", "貿易所2"],

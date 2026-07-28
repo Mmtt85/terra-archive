@@ -105,6 +105,9 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   const [showFlows, setShowFlows] = useState(false);
   const [showRoster, setShowRoster] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  // 교대 탭의 짧은 링크 두 개가 여는 상세 모달 (사용자 요청 2026-07-28) —
+  // "drain" = 지속 시간이 달라지는 이유, "policy" = A조·B조 교대 정책
+  const [shiftNote, setShiftNote] = useState<ShiftNoteKind | null>(null);
   // 보유 오퍼 설정의 입력 방식 탭 — 딥링크(#roster/#roster-import)와 동기화하려 여기서 쥔다
   const [rosterMode, setRosterMode] = useState<"direct" | "import">("direct");
   // 딥링크 (사용자 요청 2026-07-27: 링크 가능한 상태 전부 URL로) — /infra 경로 위에서
@@ -1158,15 +1161,18 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
                     : t("A조 ~{h}시간 — {room} 기준 일괄 교대", { h: Math.round(drainClock.hours), room: t(cellByKey.get(drainClock.worstKey!)?.label ?? "") })}
                 </span>
               )}
-              {/* 지속 시계는 풀 컨디션 24 기준 모델값 — 실제 피로도는 오퍼마다 다르다는 안내.
-                  ⚠ 시계 배지 **옆에 한 줄로** 붙인다 (사용자 지적 2026-07-28: 두 줄짜리 문장이
-                  왼쪽 칸을 늘려 제어센터·응접실 높이까지 밀어올렸다). 긴 설명은 title로. */}
+              {/* 시계 배지 옆 짧은 단서 + 그 아래 짧은 교대 정책 — 둘 다 **클릭하면 상세 모달**
+                  (사용자 요청 2026-07-28). 왼쪽 칸이 제어센터·응접실 높이를 밀어올리지 않도록
+                  줄글은 전부 모달로 내리고 여기엔 한 줄짜리 링크만 남긴다. */}
               {drainClock && drainClock.hours !== Infinity && (
-                <em className="shift-clock-note" title={t("표시된 시간은 전원 풀 컨디션(24)으로 시작한다고 본 추정치입니다 — 오퍼별 현재 피로도에 따라 실제 교대 시점은 달라질 수 있습니다")}>
+                <button type="button" className="shift-note-link" onClick={() => setShiftNote("drain")}
+                  title={t("표시된 시간은 전원 풀 컨디션(24)으로 시작한다고 본 추정치입니다 — 오퍼별 현재 피로도에 따라 실제 교대 시점은 달라질 수 있습니다")}>
                   {t("※ 피로도에 따라 변동")}
-                </em>
+                </button>
               )}
-              <span className="shift-hint">{t("A조 컨디션 소진 시 B조 투입 · 시너지 세트는 A조 집중 · 숙소·고정 요원은 조 전환과 무관 · ")}<b>{t("숙소는 항상 5명 꽉 채워 유지")}</b></span>
+              <button type="button" className="shift-note-link shift-policy-link" onClick={() => setShiftNote("policy")}>
+                {t("A조 지치면 B조 교대")} <em>{t("자세히")}</em>
+              </button>
             </div>
           )}
           <div className={`ship-raisebar${(investing || (tempApplied.size === 0 && !investRecs)) ? " idle" : " boxed"}`} role="group" aria-label={t("인프라 오퍼 육성 추천")}>
@@ -1324,6 +1330,8 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       )}
 
       {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
+
+      {shiftNote && <ShiftNoteModal kind={shiftNote} onClose={() => setShiftNote(null)} />}
 
       {imageUrl && (
         <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) closeImage(); }}>
@@ -2445,6 +2453,56 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
       )}
     </div>
   );
+}
+
+// ── 교대 탭의 짧은 링크가 여는 상세 모달 (사용자 요청 2026-07-28) ────────────────
+// 왼쪽 칸에 줄글을 깔면 그리드 첫 행(제어센터·응접실) 높이가 밀린다 — 화면엔 한 줄짜리
+// 링크만 두고 설명은 전부 여기로 내린다.
+export type ShiftNoteKind = "drain" | "policy";
+
+// "왜 표시된 시간이 그대로 안 가는가" — 사용자가 짚은 제어센터 연쇄가 핵심이다.
+// 수치는 INFRA-RULES §1 컨디션 모델 v18(실측 9건 재현) 기준.
+const DRAIN_NOTE_ITEMS = [
+  "표시된 시간은 **전원이 풀 컨디션 24로 근무를 시작한다**고 본 계산값입니다. 실제 오퍼는 저마다 남은 컨디션이 다르므로, 이미 지친 인원이 섞여 있으면 그만큼 교대가 앞당겨집니다.",
+  "특히 **제어센터가 먼저 지치면 기지 전체가 함께 빨라집니다**. 제어센터에 앉은 인원은 다른 모든 작업 시설의 시간당 컨디션 소모를 1명당 0.05씩 깎아 주는데, 제어센터 크루가 먼저 소진돼 자리가 비면 그 감면이 사라져 제조소·무역소·발전소가 일제히 더 빨리 닳습니다. 표시된 시간은 감면이 계속 걸려 있다고 보고 계산한 값입니다.",
+  "같은 방 동료 시너지(동료 1명당 -0.05)와 회복 오라(총웨·위셔델·무에나)도 표시값에 반영돼 있지만, 이 역시 **그 배치가 그대로 유지될 때**의 값입니다. 오퍼를 빼거나 옮기면 남은 인원의 소모가 즉시 올라갑니다.",
+  "그래서 이 숫자는 상한이 아니라 기준점으로 보세요. 병목(가장 빨리 닳는 방)보다 늦게 교대하면 안 되고, 보통은 컨디션 12(지침 신호)쯤에서 A조 전체를 한 번에 B조로 바꿉니다.",
+];
+
+const SHIFT_NOTE_SPEC: Record<ShiftNoteKind, { kicker: string; title: string; items: string[] }> = {
+  drain: { kicker: "SHIFT CLOCK", title: "지속 시간이 달라지는 이유", items: DRAIN_NOTE_ITEMS },
+  // 교대 정책은 도움말의 같은 섹션을 그대로 쓴다 — 이미 검증·번역된 본문이라 어긋날 일이 없다
+  policy: { kicker: "SHIFT POLICY", title: "교대 정책", items: [] },
+};
+
+function ShiftNoteModal({ kind, onClose }: { kind: ShiftNoteKind; onClose: () => void }) {
+  const { t } = useI18n();
+  const spec = SHIFT_NOTE_SPEC[kind];
+  const items = kind === "policy"
+    ? (HELP_SECTIONS.find((section) => section.title === "교대 정책")?.items ?? [])
+    : spec.items;
+  return (
+    <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+      <section className="operator-modal room-modal" role="dialog" aria-modal="true" style={{ "--accent": "var(--lime)" } as React.CSSProperties}>
+        <button type="button" className="modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
+        <header className="room-modal-head">
+          <span className="modal-kicker">{spec.kicker}</span>
+          <h2>{t(spec.title)}</h2>
+        </header>
+        <div className="modal-scroll">
+          <ul className="help-list">
+            {items.map((item, index) => <li key={index}>{emphasize(t(item))}</li>)}
+          </ul>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+// **강조** 마크업만 해석 — 모달 본문에서 핵심 절을 굵게 (번역문도 같은 표기를 쓴다)
+function emphasize(text: string): React.ReactNode {
+  const parts = text.split("**");
+  return parts.map((part, index) => (index % 2 ? <b key={index}>{part}</b> : part));
 }
 
 const HELP_SECTIONS: { title: string; items: string[] }[] = [

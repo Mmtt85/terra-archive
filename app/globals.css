@@ -3397,16 +3397,38 @@ footer p {
   font-size: 12px;
   margin-left: 8px;
 }
-/* 지속 시계 옆 짧은 단서 — 풀 컨디션 24 기준 추정치임을 알린다 (사용자 요청 2026-07-28).
-   ⚠ 시계 배지와 **같은 줄**에 붙어야 한다: 종전 두 줄짜리 block 문장이 왼쪽 칸 높이를 늘려
-   같은 그리드 행의 제어센터·응접실까지 키웠다 (사용자 지적). nowrap이라 폭이 모자라면
-   문장이 쪼개지지 않고 통째로 다음 줄로 내려간다. 긴 설명은 title 툴팁·도움말에 있다. */
-.shift-clock-note {
+/* 교대 탭의 짧은 링크 2종 — 시계 옆 '※ 피로도에 따라 변동'(같은 줄)과 그 아래 교대 정책
+   한 줄. 둘 다 누르면 상세 모달이 열린다 (사용자 요청 2026-07-28).
+   ⚠ 줄글을 여기 깔면 안 된다: 왼쪽 칸이 늘어나면 같은 그리드 행의 제어센터·응접실 높이까지
+   끌려 올라간다 (사용자 지적). nowrap이라 폭이 모자라면 통째로 다음 줄로 내려간다. */
+/* ⚠ `.shift-tabs` 로 감싸야 한다 — `.shift-tabs button`(0,1,1)이 클래스 하나(0,1,0)를
+   이겨서 탭 버튼의 테두리·패딩·13.5px가 그대로 남는다 (실측: 링크가 탭처럼 박스로 보이고
+   왼쪽 칸이 129px로 되레 커졌다). */
+.shift-tabs .shift-note-link {
+  border: 0;
+  padding: 0;
+  background: none;
   color: var(--muted);
   font-size: 11px;
-  font-style: normal;
+  font-weight: 600;
+  font-family: inherit;
   white-space: nowrap;
-  cursor: help;
+  cursor: pointer;
+  text-align: left;
+}
+.shift-tabs .shift-note-link:hover {
+  color: var(--ink);
+}
+.shift-tabs .shift-policy-link {
+  font-size: 12px;
+}
+/* '자세히' — 링크임을 드러내는 유일한 장식 (문장 전체 밑줄은 시끄럽다).
+   ⚠ --accent는 방 카드가 인라인으로만 넣는 변수라 여기선 비어 있다 — 본문색을 쓴다. */
+.shift-tabs .shift-note-link em {
+  font-style: normal;
+  font-weight: 800;
+  color: var(--ink);
+  border-bottom: 1px solid currentColor;
 }
 /* A조 지속 시계 (소모 모드 전용) — 조 탭의 병목 기준 일괄 교대 시계 + 방 카드의 방별 배지.
    풀 컨디션 24 ÷ 방 순소모, 순소모 0(무한동력)은 ∞ (사용자 요청 2026-07-28) */
