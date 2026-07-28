@@ -2,13 +2,21 @@
 # 관리자 사이트 배포: admin.terra-archive.net (Pages 프로젝트 terra-archive-admin)
 # 본사이트와 같은 빌드 산출물을 쓰되 /admin이 입구다. Cloudflare Access(구글 SSO)가
 # 도메인 전체를 막고, CRUD는 /api(admin-api 워커)가 Access JWT 검증 후 중계한다.
-# 사전 조건: npm run build 완료 (이 스크립트는 다시 빌드하지 않음 — deploy.sh와 묶어 쓰거나 단독 실행)
+# 본사이트 배포(deploy.sh)와는 **완전히 분리된 명령**이다 (2026-07-28 재분리) — 관리자 UI를
+# 고쳤을 때만 돌린다. 데이터·본사이트만 바뀐 배포에 관리자까지 따라 나갈 이유가 없다.
+# 단독 실행이 기본이라 스스로 빌드한다. 방금 deploy.sh로 빌드한 직후라 재빌드가 아까우면
+# SKIP_BUILD=1 bash scripts/deploy-admin.sh 로 현재 dist/를 그대로 쓴다.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-if [ ! -f dist/client/admin.html ]; then
-  echo "dist/client/admin.html 없음 — 먼저 npm run build" >&2
-  exit 1
+if [ -n "${SKIP_BUILD:-}" ]; then
+  if [ ! -f dist/client/admin.html ]; then
+    echo "SKIP_BUILD인데 dist/client/admin.html이 없음 — 먼저 npm run build" >&2
+    exit 1
+  fi
+  echo "SKIP_BUILD=1 — 기존 dist/ 산출물로 배포합니다"
+else
+  npm run build
 fi
 
 STAGE=$(mktemp -d)

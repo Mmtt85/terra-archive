@@ -480,6 +480,12 @@ CRUD가 늘며 위험해진 /admin을 본사이트에서 떼어냈다. **비밀�
   같은 빌드 산출물에서 /admin이 입구. 본사이트 deploy.sh는 admin.html/.rsc를 지우고
   옛 주소를 301로 넘긴다. 도메인 전체를 **Cloudflare Access(Zero Trust, 구글 SSO,
   nzkonaru@gmail.com만 허용)** 가 막는다.
+  **배포는 본사이트와 완전히 분리 (2026-07-28 사용자 확정 — 한때 deploy.sh 끝에서 함께
+  돌렸으나 되돌림)**: `bash scripts/deploy-admin.sh`는 스스로 빌드하는 단독 명령이고
+  (방금 빌드했으면 `SKIP_BUILD=1`), **관리자 UI를 고쳤을 때만** 돌린다. 데이터 갱신·본사이트
+  변경 배포에는 관리자가 따라 나가지 않는다 — GitHub Actions 무인 파이프라인도 마찬가지
+  (`deploy.sh`만 호출하므로 본사이트만 갱신). 관리자 화면 내용 대부분은 Supabase에서
+  읽으므로 데이터 배포와 무관하다.
 - **admin-api 프록시 워커** ([workers/admin-api](../workers/admin-api/), 라우트
   `admin.terra-archive.net/api/*`) — Access JWT(RS256, 팀 JWKS)를 검증한 뒤에야
   관리자 키를 붙여 중계: `/api/supabase/<table>` → Supabase REST(+`x-admin-key`),

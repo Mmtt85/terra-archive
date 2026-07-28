@@ -1068,9 +1068,9 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           t={t} locale={locale} />
       )}
 
-      {/* 우선 생산 설정 (라디오) — 다음 자동편성부터 적용, 편성 실행은 버튼으로 */}
-      {/* 설정 행 — 기지 배치가 왼쪽, 우선 생산은 오른쪽. 사용자 지정 배치에선 품목을 칸마다
-          직접 고르므로 우선 생산 라디오를 숨긴다 (사용자 요청 2026-07-24) */}
+      {/* 편성 설정 (라디오) — 다음 자동편성부터 적용, 편성 실행은 버튼으로 */}
+      {/* 설정 행 — 기지 배치 → 운용 방식 → 우선 생산 순 (2026-07-28 순서 교체). 사용자 지정
+          배치에선 품목을 칸마다 직접 고르므로 우선 생산 라디오를 숨긴다 (사용자 요청 2026-07-24) */}
       <div className="prio-setting">
         <span className="prio-label">🏗 {t("기지 배치")}{isNewFeature("layout-153") && <span className="new-badge">{t("새기능")}</span>}</span>
         {(["243", "153", "252", "custom"] as const).map((preset) => (
@@ -1085,13 +1085,8 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         ))}
         {layout !== "custom" && (
           <>
-            <span className="prio-label prio-label-layout" title={t("먼저 채우는 방이 최고 요원을 가져갑니다 — 다음 자동편성부터 적용됩니다")}>⚙ {t("우선 생산")}</span>
-            {(["gold", "exp", "balance"] as const).map((axis) => (
-              <label key={axis} className={prodAxis === axis ? "on" : ""}>
-                <input type="radio" name="prod-priority" checked={prodAxis === axis} onChange={() => setProdAxis(axis)} />
-                {t(axis === "gold" ? "순금 우선" : axis === "exp" ? "작전기록 우선" : "밸런스")}
-              </label>
-            ))}
+            {/* 운용 방식 ⇄ 우선 생산 순서 교체 (사용자 요청 2026-07-28) — 두 축은 직교라
+                순서만 바뀌고 동작·저장 값은 그대로다 */}
             <span className="prio-label prio-label-layout" title={t("컨디션(피로도)을 어떻게 다룰지 — 우선 생산과 자유롭게 조합됩니다 (예: 순금 우선 + 장기 지속)")}>⏱ {t("운용 방식")}</span>
             {(["off", "endless"] as const).map((axis) => (
               <label key={axis} className={drainAxis === axis ? "on" : ""}
@@ -1100,6 +1095,13 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
                 <input type="radio" name="drain-mode" checked={drainAxis === axis} onChange={() => setDrainAxis(axis)} />
                 {t(axis === "off" ? "효율 우선" : "장기 지속")}
                 {axis === "endless" && isNewFeature("endless") && <span className="new-badge">{t("새기능")}</span>}
+              </label>
+            ))}
+            <span className="prio-label prio-label-layout" title={t("먼저 채우는 방이 최고 요원을 가져갑니다 — 다음 자동편성부터 적용됩니다")}>⚙ {t("우선 생산")}</span>
+            {(["gold", "exp", "balance"] as const).map((axis) => (
+              <label key={axis} className={prodAxis === axis ? "on" : ""}>
+                <input type="radio" name="prod-priority" checked={prodAxis === axis} onChange={() => setProdAxis(axis)} />
+                {t(axis === "gold" ? "순금 우선" : axis === "exp" ? "작전기록 우선" : "밸런스")}
               </label>
             ))}
           </>

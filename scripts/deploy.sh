@@ -68,5 +68,8 @@ echo ".rsc content-type 규칙 $(find "$STAGE" -name "*.rsc" -type f | wc -l | t
 
 npx wrangler pages deploy "$STAGE" --project-name terra-archive --branch main --commit-dirty=true
 
-# 관리자 사이트(admin.terra-archive.net)도 같은 빌드로 함께 배포 — 한 명령으로 둘 다 (2026-07-27)
-bash scripts/deploy-admin.sh
+# 관리자 사이트(admin.terra-archive.net)는 **별도 배포**다 (2026-07-28 재분리 — 한때 여기서
+# deploy-admin.sh를 이어 불렀지만, 본사이트 배포마다 관리자까지 딸려 나갈 이유가 없다).
+# 관리자 UI를 고쳤을 때만: bash scripts/deploy-admin.sh
+echo ""
+echo "✓ 본사이트 배포 완료 — 관리자 사이트는 별도입니다: bash scripts/deploy-admin.sh"

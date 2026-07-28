@@ -18,7 +18,8 @@ vinext(Cloudflare용 Next 호환 런타임) + React 19 + Tailwind 4, Cloudflare 
 npm run dev     # localhost:3000
 npm run build   # 빌드 확인
 npm run lint
-bash scripts/deploy.sh              # 사이트 배포 (Cloudflare Pages) — 사용자가 직접 실행
+bash scripts/deploy.sh              # 본사이트 배포 (Cloudflare Pages) — 사용자가 직접 실행
+bash scripts/deploy-admin.sh        # 관리자 사이트(admin.terra-archive.net) 별도 배포
 bash workers/broadcast/deploy.sh    # 방송 수집 워커 배포
 ```
 
