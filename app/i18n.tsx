@@ -511,9 +511,8 @@ const D: Record<string, Pair> = {
     "Based on full depletion of the fastest-draining room — swap all of Shift A to Shift B before that (usually around the morale-12 fatigue sign). If the Control Center tires first its relief turns off and every room accelerates, so never run past the bottleneck. It is an estimate that assumes everyone starts at full morale (24), so the real duration shifts with each operator's current fatigue",
     "最も早く消耗する施設の完全消耗基準 — その前（通常はコンディション12の疲労サイン頃）にA班全体を一斉にB班へ交代します。制御中枢が先に疲れると軽減が切れて全部屋が加速するため、ボトルネックより遅らせないこと。全員がフルコンディション（24）で始まる前提の推定値なので、オペレーターごとの現在の疲労度によって実際の時間は変わります",
   ],
-  "※ 피로도에 따라 변동": ["※ varies with fatigue", "※ 疲労度により変動"],
-  "A조 지치면 B조 교대": ["Shift B takes over when A tires", "A班が疲れたらB班に交代"],
-  "자세히": ["details", "詳細"],
+  "※ 지속시간은 피로도에 따라 변동": ["※ duration varies with fatigue", "※ 持続時間は疲労度により変動"],
+  "※ A조 지치면 B조 교대": ["※ Shift B takes over when A tires", "※ A班が疲れたらB班に交代"],
   "지속 시간이 달라지는 이유": ["Why the duration shifts", "持続時間が変わる理由"],
   "표시된 시간은 **전원이 풀 컨디션 24로 근무를 시작한다**고 본 계산값입니다. 실제 오퍼는 저마다 남은 컨디션이 다르므로, 이미 지친 인원이 섞여 있으면 그만큼 교대가 앞당겨집니다.": [
     "The figure assumes **everyone clocks in at full morale (24)**. Real operators each have their own morale left, so if some are already tired the swap comes correspondingly sooner.",

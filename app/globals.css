@@ -1828,11 +1828,16 @@ legend {
     color: color-mix(in srgb, var(--accent) 80%, var(--ink));
   }
 }
+/* ⚠ backdrop-filter 금지 (사용자 지적 2026-07-28: "모달에서 드래그로 문자 블록 씌울 때
+   이상하게 느리고 반응이 느림"). 원인 확정 — 선택 영역이 바뀔 때마다 전체 화면 블러가 다시
+   돌아, 뒤에 무거운 DOM(인프라 방 격자)이 깔린 /infra에서 특히 심하다. 실측(1440px, 드래그
+   60스텝): blur 8px 중앙값 5832ms vs 블러 없음 999ms — **약 6배**.
+   레이어 승격(will-change·translateZ)·contain:paint·블러 반경 축소는 전부 효과 없었다
+   (오히려 나빠짐) — 블러가 걸려 있다는 사실 자체가 비용이라 걷어내는 것 말고는 답이 없다.
+   대신 오버레이를 더 불투명하게 해 뒤 화면을 가리던 역할을 대신한다. */
 .modal-backdrop {
   z-index: 100;
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-  background: #111719c9;
+  background: #111719ec;
   padding: 24px;
   animation: 0.18s both fadeIn;
   display: grid;
@@ -3419,16 +3424,15 @@ footer p {
 .shift-tabs .shift-note-link:hover {
   color: var(--ink);
 }
-.shift-tabs .shift-policy-link {
-  font-size: 12px;
+/* 두 링크 + 구분선을 flex 아이템 하나로 — 폭이 줄어도 둘이 갈라지지 않는다 */
+.shift-notes {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
-/* '자세히' — 링크임을 드러내는 유일한 장식 (문장 전체 밑줄은 시끄럽다).
-   ⚠ --accent는 방 카드가 인라인으로만 넣는 변수라 여기선 비어 있다 — 본문색을 쓴다. */
-.shift-tabs .shift-note-link em {
+.shift-notes i {
   font-style: normal;
-  font-weight: 800;
-  color: var(--ink);
-  border-bottom: 1px solid currentColor;
+  color: var(--line);
 }
 /* A조 지속 시계 (소모 모드 전용) — 조 탭의 병목 기준 일괄 교대 시계 + 방 카드의 방별 배지.
    풀 컨디션 24 ÷ 방 순소모, 순소모 0(무한동력)은 ∞ (사용자 요청 2026-07-28) */

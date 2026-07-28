@@ -1164,15 +1164,22 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
               {/* 시계 배지 옆 짧은 단서 + 그 아래 짧은 교대 정책 — 둘 다 **클릭하면 상세 모달**
                   (사용자 요청 2026-07-28). 왼쪽 칸이 제어센터·응접실 높이를 밀어올리지 않도록
                   줄글은 전부 모달로 내리고 여기엔 한 줄짜리 링크만 남긴다. */}
-              {drainClock && drainClock.hours !== Infinity && (
-                <button type="button" className="shift-note-link" onClick={() => setShiftNote("drain")}
-                  title={t("표시된 시간은 전원 풀 컨디션(24)으로 시작한다고 본 추정치입니다 — 오퍼별 현재 피로도에 따라 실제 교대 시점은 달라질 수 있습니다")}>
-                  {t("※ 피로도에 따라 변동")}
+              {/* 두 링크는 한 덩어리(flex 아이템 하나)로 묶어 구분선 '|'과 함께 같은 줄에
+                  머물게 한다 — 따로 두면 폭에 따라 둘이 갈라진다 (사용자 요청 2026-07-28) */}
+              <span className="shift-notes">
+                {drainClock && drainClock.hours !== Infinity && (
+                  <>
+                    <button type="button" className="shift-note-link" onClick={() => setShiftNote("drain")}
+                      title={t("표시된 시간은 전원 풀 컨디션(24)으로 시작한다고 본 추정치입니다 — 오퍼별 현재 피로도에 따라 실제 교대 시점은 달라질 수 있습니다")}>
+                      {t("※ 지속시간은 피로도에 따라 변동")}
+                    </button>
+                    <i aria-hidden>|</i>
+                  </>
+                )}
+                <button type="button" className="shift-note-link" onClick={() => setShiftNote("policy")}>
+                  {t("※ A조 지치면 B조 교대")}
                 </button>
-              )}
-              <button type="button" className="shift-note-link shift-policy-link" onClick={() => setShiftNote("policy")}>
-                {t("A조 지치면 B조 교대")} <em>{t("자세히")}</em>
-              </button>
+              </span>
             </div>
           )}
           <div className={`ship-raisebar${(investing || (tempApplied.size === 0 && !investRecs)) ? " idle" : " boxed"}`} role="group" aria-label={t("인프라 오퍼 육성 추천")}>
