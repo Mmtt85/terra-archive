@@ -4,8 +4,9 @@
 // 내용은 코드가 아니라 **Supabase `changelog` 테이블**에서 실시간으로 읽는다
 // (사용자 확정 2026-07-27: 새 항목은 /admin에서 넣으면 배포 없이 바로 뜬다).
 // 표시 규칙 (사용자 확정 2026-07-27):
-//  ① 기본은 **신기능만** — '상세보기'를 눌러야 개선·버그 수정·데이터 갱신까지 보인다.
-//  ② 기간은 최근 7일치부터, '지난 기록'을 누를 때마다 **7일씩 더 과거로** 무한히 이어 붙인다.
+//  ① 기본은 **신기능만** — 제목 옆 '상세보기'를 눌러야 개선·버그 수정·데이터 갱신까지 보인다.
+//  ② 기간은 최근 7일치부터, 목록 아래 '예전 기록 가져오기'를 누를 때마다 **7일씩 더 과거로** 이어 붙인다.
+// 두 축은 별개다 — 그래서 종류 필터는 헤더, 기간 확장은 목록 끝에 둔다 (2026-07-28).
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -125,6 +126,14 @@ export default function ChangelogButton() {
           <div className="chlog-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-label={t("업데이트 내역")}>
             <header>
               <h2>🛠 {t("업데이트 내역")}</h2>
+              {/* 종류 필터는 제목 옆 (사용자 요청 2026-07-28) — 아래 줄은 기간 확장 전용 */}
+              {rows !== null && !error && (
+                <button type="button" className="chlog-detail-toggle" aria-pressed={detail}
+                  onClick={() => setDetail((d) => !d)}
+                  title={detail ? t("신기능만 보기") : t("상세보기 — 개선·수정 내역까지")}>
+                  {detail ? t("신기능만") : t("상세보기")}
+                </button>
+              )}
               <button type="button" className="modal-close" onClick={() => setOpen(false)} aria-label={t("닫기")}>×</button>
             </header>
             <div className="chlog-list">
@@ -155,16 +164,11 @@ export default function ChangelogButton() {
                   </ul>
                 </section>
               ))}
-              {rows !== null && !error && (
+              {rows !== null && !error && hasOlder && (
                 <div className="chlog-actions">
-                  <button type="button" className="chlog-more-btn" onClick={() => setDetail((d) => !d)}>
-                    {detail ? t("신기능만 보기") : t("상세보기 — 개선·수정 내역까지")}
+                  <button type="button" className="chlog-more-btn" onClick={() => { void loadOlder(); }} disabled={loadingMore}>
+                    {loadingMore ? t("불러오는 중…") : t("예전 기록 가져오기")}
                   </button>
-                  {hasOlder && (
-                    <button type="button" className="chlog-more-btn" onClick={() => { void loadOlder(); }} disabled={loadingMore}>
-                      {loadingMore ? t("불러오는 중…") : weeks === 1 ? t("지난 기록 전체보기") : t("지난 기록 더 보기 (7일씩)")}
-                    </button>
-                  )}
                 </div>
               )}
               {/* 후원 안내 — 항상 보이는 하단 노트 (사용자 요청 2026-07-27) */}

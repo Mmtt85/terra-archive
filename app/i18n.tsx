@@ -171,8 +171,10 @@ const D: Record<string, Pair> = {
   "데이터 갱신": ["Data", "データ更新"],
   "상세보기 — 개선·수정 내역까지": ["Show details — improvements & fixes", "詳細を見る — 改善・修正まで"],
   "신기능만 보기": ["Show new features only", "新機能のみ表示"],
-  "지난 기록 전체보기": ["Show past entries", "過去の履歴を表示"],
-  "지난 기록 더 보기 (7일씩)": ["Load 7 more days", "さらに7日分を読み込む"],
+  // 헤더 토글 라벨은 짧게 — 긴 문구는 title 툴팁으로 (2026-07-28)
+  "상세보기": ["Details", "詳細"],
+  "신기능만": ["New only", "新機能のみ"],
+  "예전 기록 가져오기": ["Load older entries", "過去の履歴を読み込む"],
   "업데이트 내역을 불러오지 못했습니다 — 잠시 뒤 다시 시도해 주세요.": ["Couldn't load the update history — please try again in a moment.", "更新履歴を読み込めませんでした — しばらくしてからもう一度お試しください。"],
   "아직 등록된 업데이트 내역이 없습니다.": ["No update entries yet.", "まだ登録された更新履歴はありません。"],
   "이 기간에 새로 나온 기능은 없습니다 — 상세보기로 개선·수정 내역을 확인하세요.": ["No new features in this period — use \u201cShow details\u201d for improvements and fixes.", "この期間に新機能はありません — 「詳細を見る」で改善・修正の内容を確認できます。"],

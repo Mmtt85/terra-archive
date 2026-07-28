@@ -717,7 +717,8 @@ export default function AdminPage() {
       {tab === "changelog" && (<>
       <p className="admin-status">
         여기에 저장하면 <b>배포 없이</b> 사이트 헤더 🛠 업데이트 내역에 바로 뜹니다.
-        기본 표시는 최근 7일치이고, 그 이전 항목은 방문자가 &lsquo;지난 기록 전체보기&rsquo;를 눌러야 보입니다.
+        기본 표시는 최근 7일치·신기능만이고, 그 이전 항목은 방문자가 &lsquo;예전 기록 가져오기&rsquo;를,
+        개선·수정·데이터 갱신은 제목 옆 &lsquo;상세보기&rsquo;를 눌러야 보입니다.
       </p>
       {changeStatus && <p className="admin-status">{changeStatus}</p>}
       {changes === null ? (
