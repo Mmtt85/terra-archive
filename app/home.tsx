@@ -1773,8 +1773,9 @@ function SkinLightbox({ skin, alt, onClose }: { skin: SkinEntry; alt: string; on
     return () => window.removeEventListener("keydown", onKey, true);
   }, [onClose]);
   return (
-    <div className="skin-lightbox" role="dialog" aria-modal="true"
-      onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+    // 확대 상태에서는 **어디를 눌러도** 닫힌다 (사용자 요청 2026-07-28) — 배경만 받으면
+    // 그림 위를 눌렀을 때 아무 일도 안 일어나 갇힌 느낌이 든다
+    <div className="skin-lightbox" role="dialog" aria-modal="true" onMouseDown={onClose}>
       <button type="button" className="modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
       {broken ? (
         <p className="skin-lightbox-empty">{t("전체 일러스트가 아직 없습니다.")}</p>

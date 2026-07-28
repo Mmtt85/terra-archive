@@ -2427,6 +2427,7 @@ legend {
 }
 /* 전체 일러스트 확대 — 오퍼 모달(z 100) 위 */
 .skin-lightbox {
+  cursor: zoom-out; /* 어디를 눌러도 닫힌다 */
   position: fixed;
   inset: 0;
   z-index: 130;
