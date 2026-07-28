@@ -60,3 +60,9 @@ scripts/story-cn/
 .supabase-admin-key
 .admin-rotate.generated.sql
 .upload-admin-key
+
+# 스킨 이미지(반신 초상 + 전체 일러, ~296MB) — git에 넣지 않는다 (2026-07-28 사용자 확정).
+# 서빙은 R2(files.terra-archive.net)가 하고, 로컬 사본은 scripts/build-skins.py로 언제든
+# 다시 받을 수 있다(멱등 — 있는 파일은 건너뜀). .git이 이미 9.6GB라 더 불리지 않는다.
+# ⚠ 메타(public/skins/*.json)와 프로필(public/profiles/*.json)은 작아서 커밋한다.
+/public/skin/

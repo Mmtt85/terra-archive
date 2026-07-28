@@ -2330,6 +2330,311 @@ legend {
   color: var(--ink);
   font-weight: 800;
 }
+/* ── 복장(스킨) — 상세 모달 SKIN 섹션 (2026-07-28) ────────────────────────────
+   이미지는 게임 내 스킨 선택 화면과 같은 반신 포트레이트(180×360 webp, R2). */
+.skin-block {
+  display: grid;
+  gap: 12px;
+}
+.skin-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.skin-tabs button {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink2);
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: 0.15s;
+}
+.skin-tabs button:hover {
+  border-color: var(--border-strong);
+  color: var(--ink);
+}
+.skin-tabs button.selected {
+  background: var(--chip);
+  color: var(--lime);
+  border-color: var(--border-strong);
+}
+/* 기본 복장 표시 — 이름이 같은 항목이 여럿이라(정예화 전/후) 점으로 구분 */
+.skin-tabs button i {
+  margin-left: 5px;
+  opacity: 0.55;
+  font-style: normal;
+}
+.skin-view {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 18px;
+  align-items: start;
+  border: 1px solid var(--line);
+  background: var(--bg-faint);
+  padding: 16px;
+}
+.skin-portrait,
+.skin-portrait-empty {
+  width: 180px;
+  height: 360px;
+  padding: 0;
+  background: var(--chip);
+  border: 1px solid var(--line);
+}
+/* 포트레이트는 버튼 — 누르면 전체 일러스트 확대 (사용자 요청 2026-07-28) */
+.skin-portrait {
+  position: relative;
+  display: block;
+  height: auto;
+  cursor: zoom-in;
+  overflow: hidden;
+}
+.skin-portrait img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.skin-portrait > span {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 5px;
+  background: #111719c4;
+  color: #fff;
+  font-size: 13px;
+}
+.skin-portrait:hover > span {
+  background: var(--lime);
+  color: var(--on-lime);
+}
+/* 기본 복장 구분 꼬리표 (1정 일러 / 2정 일러) */
+.skin-tabs button i,
+.skin-stage {
+  margin-left: 6px;
+  opacity: 0.7;
+  font-size: 10.5px;
+  font-weight: 700;
+  font-style: normal;
+}
+.skin-stage {
+  color: var(--muted);
+}
+/* 전체 일러스트 확대 — 오퍼 모달(z 100) 위 */
+.skin-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 130;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  place-items: center;
+  gap: 12px;
+  padding: 32px 24px 24px;
+  background: #0d1113f2;
+  animation: 0.16s both fadeIn;
+}
+.skin-lightbox > img {
+  /* min-height:0 이 없으면 그리드 아이템이 내재 크기(1200px)로 버텨 화면 밖으로 넘치고
+     캡션이 잘린다 (실측 2026-07-28) */
+  min-height: 0;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  cursor: zoom-out;
+}
+.skin-lightbox figcaption {
+  color: #ffffffd0;
+  font-size: 12.5px;
+  font-weight: 800;
+  text-align: center;
+}
+.skin-lightbox figcaption em {
+  color: #ffffff88;
+  font-style: normal;
+  font-weight: 700;
+}
+.skin-lightbox-empty {
+  color: #ffffffaa;
+  font-size: 13px;
+}
+.skin-portrait-empty {
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font: 800 11px monospace;
+}
+.skin-meta h4 {
+  margin: 0 0 10px;
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+.skin-meta dl {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 12px;
+}
+.skin-meta dl > div {
+  display: flex;
+  gap: 10px;
+  font-size: 12px;
+}
+.skin-meta dt {
+  flex: none;
+  width: 62px;
+  color: var(--muted);
+  font-weight: 800;
+}
+.skin-meta dd {
+  margin: 0;
+  color: var(--ink);
+  font-weight: 700;
+}
+.skin-content,
+.skin-usage {
+  margin: 0 0 8px;
+  color: var(--ink3);
+  font-size: 12.5px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+.skin-usage {
+  color: var(--muted);
+  font-size: 12px;
+}
+.skin-quote {
+  margin: 0;
+  padding-left: 12px;
+  border-left: 2px solid var(--accent);
+  color: var(--ink3);
+  font-size: 12.5px;
+  font-style: italic;
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+/* 섹션 제목 옆 개수 배지 */
+.detail-count {
+  margin-left: 8px;
+  color: var(--muted);
+  font: 800 11px monospace;
+  font-style: normal;
+}
+@media (max-width: 620px) {
+  .skin-view {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+  .skin-meta {
+    width: 100%;
+  }
+}
+/* ── 오퍼레이터 파일(프로필 문서) — 상세 모달 PROFILE 섹션 (2026-07-28) ─────────
+   클뜯 handbook_info_table 전문. 즉시 열람 문서는 펼쳐 두고, 신뢰도·승진으로 잠긴
+   문서는 <details>로 접는다 (스포일러 + 모달 길이). */
+.profile-docs {
+  display: grid;
+  gap: 10px;
+}
+.profile-doc {
+  border: 1px solid var(--line);
+  background: var(--bg-faint);
+  padding: 14px 16px;
+}
+.profile-doc h4 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+.profile-doc-locked {
+  padding: 0;
+}
+.profile-doc-locked > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 13px 16px;
+  cursor: pointer;
+  list-style: none;
+}
+.profile-doc-locked > summary::-webkit-details-marker {
+  display: none;
+}
+/* 접힘 표시 — ▸/▾ 를 제목 앞에 (마커를 지웠으므로 직접 그린다) */
+.profile-doc-locked > summary h4::before {
+  content: "▸";
+  margin-right: 7px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.profile-doc-locked[open] > summary h4::before {
+  content: "▾";
+}
+.profile-doc-locked > summary em {
+  flex: none;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: var(--chip);
+  color: var(--lime);
+  font: 800 10.5px monospace;
+  font-style: normal;
+}
+.profile-doc-locked > summary:hover {
+  background: var(--paper);
+}
+.profile-doc-locked > .profile-text,
+.profile-doc-locked > .profile-facts {
+  padding: 0 16px 15px;
+}
+.profile-text p {
+  margin: 8px 0 0;
+  color: var(--ink3);
+  font-size: 12.5px;
+  line-height: 1.85;
+  white-space: pre-wrap;
+}
+.profile-lead {
+  display: block;
+  margin-top: 12px;
+  color: var(--ink);
+  font-size: 11.5px;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+}
+/* 기본정보·종합검진 — "[항목] 값" 나열이라 표로 */
+.profile-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 6px 16px;
+  margin: 10px 0 0;
+}
+.profile-facts > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--line);
+}
+.profile-facts dt {
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.profile-facts dd {
+  margin: 0;
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 700;
+  text-align: right;
+}
 .infra-list {
   gap: 8px;
   display: grid;

@@ -1672,8 +1672,242 @@ function OperatorModal({ operator, onClose }: { operator: Operator; onClose: () 
               <p className="no-detail">{t("등록된 인프라 스킬이 없습니다.")}</p>
             )}
           </section>
+
+          <SkinSection operator={operator} />
+
+          <ProfileSection operator={operator} />
         </div>
       </section>
+    </div>
+  );
+}
+
+// ── 스킨(복장) ───────────────────────────────────────────────────────────────
+// 클뜯 skin_table + yuanyan3060 포트레이트(반신 초상). 프로필과 같은 지연 로딩 —
+// 오퍼당 메타 파일 1개를 모달 열 때만 받는다 (scripts/build-skins.py).
+type SkinEntry = {
+  id: string; name: string; stage: string; group: string; artists: string[];
+  content: string; usage: string; quote: string; obtain: string;
+  portrait: string; sort: number; default: boolean;
+};
+type SkinDoc = { id: string; skins: SkinEntry[] };
+
+const skinCache = new Map<string, SkinDoc | null>();
+
+function SkinSection({ operator }: { operator: Operator }) {
+  const { locale, t } = useI18n();
+  const key = `${locale}/${operator.id}`;
+  const [doc, setDoc] = useState<SkinDoc | null | undefined>(() => skinCache.get(key));
+  const [picked, setPicked] = useState(0);
+  const [zoom, setZoom] = useState<SkinEntry | null>(null); // 전체 일러스트 확대 보기
+
+  useEffect(() => { setPicked(0); setZoom(null); }, [operator.id]);
+  useEffect(() => {
+    if (skinCache.has(key)) { setDoc(skinCache.get(key)); return; }
+    let alive = true;
+    fetch(asset(`/skins/${locale}/${operator.id}.json`))
+      .then((res) => (res.ok ? res.json() : null))
+      .catch(() => null)
+      .then((data: SkinDoc | null) => {
+        skinCache.set(key, data);
+        if (alive) setDoc(data);
+      });
+    return () => { alive = false; };
+  }, [key, locale, operator.id]);
+
+  const skins = doc?.skins ?? [];
+  const current = skins[Math.min(picked, skins.length - 1)];
+  return (
+    <section className="detail-section">
+      <span className="detail-no">SKIN / 08</span>
+      <h3>{t("복장")}{skins.length > 0 && <em className="detail-count">{skins.length}</em>}</h3>
+      {doc === undefined ? (
+        <p className="no-detail">{t("불러오는 중…")}</p>
+      ) : !skins.length ? (
+        <p className="no-detail">{t("등록된 복장이 없습니다.")}</p>
+      ) : (
+        <div className="skin-block">
+          <div className="skin-tabs" role="tablist">
+            {skins.map((skin, index) => (
+              <button key={skin.id} type="button" role="tab" aria-selected={index === picked}
+                className={index === picked ? "selected" : ""} onClick={() => setPicked(index)}>
+                {skin.name || t("기본 복장")}
+                {/* 기본 복장은 전부 이름이 같다 — 정예화 단계로 구분 (사용자 요청 2026-07-28) */}
+                {skin.stage && <i>{t(skin.stage)}</i>}
+              </button>
+            ))}
+          </div>
+          {current && (
+            <article className="skin-view">
+              {/* 공개 미러에 아직 안 올라온 최신 스킨이 있다 (2026-07-28 기준 1,265종 중 41종) —
+                  깨진 이미지 아이콘 대신 자리표시자로 대체한다 */}
+              <SkinPortrait skin={current} fallbackAlt={operator.name} onZoom={() => setZoom(current)} />
+              <div className="skin-meta">
+                <h4>{current.name || t("기본 복장")}{current.stage && <em className="skin-stage">{t(current.stage)}</em>}</h4>
+                <dl>
+                  {current.group && <div><dt>{t("시리즈")}</dt><dd>{current.group}</dd></div>}
+                  {current.artists.length > 0 && <div><dt>{t("일러스트")}</dt><dd>{current.artists.join(" · ")}</dd></div>}
+                  {current.obtain && <div><dt>{t("획득처")}</dt><dd>{current.obtain}</dd></div>}
+                </dl>
+                {current.content && <p className="skin-content">{current.content}</p>}
+                {current.usage && <p className="skin-usage">{current.usage}</p>}
+                {current.quote && <blockquote className="skin-quote">{current.quote}</blockquote>}
+              </div>
+            </article>
+          )}
+        </div>
+      )}
+      {zoom && <SkinLightbox skin={zoom} alt={operator.name} onClose={() => setZoom(null)} />}
+    </section>
+  );
+}
+
+// 전체 일러스트 확대 — 원본 2500px를 1200px로 줄여 받아 둔 것을 화면에 맞춰 띄운다.
+// 모달 위에 겹치므로 z-index는 .modal-backdrop(100)보다 위.
+function SkinLightbox({ skin, alt, onClose }: { skin: SkinEntry; alt: string; onClose: () => void }) {
+  const { t } = useI18n();
+  const [broken, setBroken] = useState(false);
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") { event.stopPropagation(); onClose(); } };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [onClose]);
+  return (
+    <div className="skin-lightbox" role="dialog" aria-modal="true"
+      onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+      <button type="button" className="modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
+      {broken ? (
+        <p className="skin-lightbox-empty">{t("전체 일러스트가 아직 없습니다.")}</p>
+      ) : (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={asset(`/skin/full/${encodeURIComponent(skin.portrait)}.webp`)}
+          alt={skin.name || alt} onError={() => setBroken(true)} />
+      )}
+      <figcaption>{skin.name || alt}{skin.artists.length > 0 && <em> · {skin.artists.join(" · ")}</em>}</figcaption>
+    </div>
+  );
+}
+
+function SkinPortrait({ skin, fallbackAlt, onZoom }: { skin: SkinEntry; fallbackAlt: string; onZoom: () => void }) {
+  const { t } = useI18n();
+  const [broken, setBroken] = useState(false);
+  useEffect(() => { setBroken(false); }, [skin.portrait]);
+  if (!skin.portrait || broken) {
+    return <div className="skin-portrait-empty" aria-hidden>{t("이미지 없음")}</div>;
+  }
+  return (
+    <button type="button" className="skin-portrait" onClick={onZoom} title={t("클릭하면 전체 일러스트로 봅니다")}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={asset(`/skin/portrait/${encodeURIComponent(skin.portrait)}.webp`)}
+        alt={skin.name || fallbackAlt} loading="lazy" width={180} height={360}
+        onError={() => setBroken(true)} />
+      <span aria-hidden>⤢</span>
+    </button>
+  );
+}
+
+// ── 오퍼레이터 파일(프로필 텍스트) ───────────────────────────────────────────
+// 게임 내 기록실 문서 전문(기본정보·종합검진·프로필·임상 진단·파일 자료·승진 기록).
+// 전문 합계가 4.5MB라 operators.json에 못 싣고 **오퍼당 파일 1개**(~11KB)로 쪼개
+// R2에서 서빙한다 (scripts/build-profiles.py) — 모달을 열 때만 그 한 장을 받는다.
+type ProfileSectionData = { title: string; text: string; unlock: { type: string; param: string | null } | null };
+type ProfileDoc = { id: string; sections: ProfileSectionData[]; source?: string };
+
+const profileCache = new Map<string, ProfileDoc | null>();
+
+function ProfileSection({ operator }: { operator: Operator }) {
+  const { locale, t } = useI18n();
+  const key = `${locale}/${operator.id}`;
+  const [doc, setDoc] = useState<ProfileDoc | null | undefined>(() => profileCache.get(key));
+
+  useEffect(() => {
+    if (profileCache.has(key)) { setDoc(profileCache.get(key)); return; }
+    let alive = true;
+    fetch(asset(`/profiles/${locale}/${operator.id}.json`))
+      .then((res) => (res.ok ? res.json() : null))
+      .catch(() => null)
+      .then((data: ProfileDoc | null) => {
+        profileCache.set(key, data);
+        if (alive) setDoc(data);
+      });
+    return () => { alive = false; };
+  }, [key, locale, operator.id]);
+
+  // 해금 조건 배지 — FAVOR=신뢰도, AWAKE=승진("2;1" = 정예화 2 이후 1단계)
+  const unlockLabel = (unlock: ProfileSectionData["unlock"]) => {
+    if (!unlock) return null;
+    if (unlock.type === "FAVOR") return t("신뢰도 {n}", { n: unlock.param ?? "?" });
+    if (unlock.type === "AWAKE") return t("승진 {n}", { n: (unlock.param ?? "").split(";")[0] || "?" });
+    return t("추가 해금");
+  };
+
+  return (
+    <section className="detail-section">
+      <span className="detail-no">PROFILE / 09</span>
+      <h3>{t("오퍼레이터 파일")}</h3>
+      {doc === undefined ? (
+        <p className="no-detail">{t("불러오는 중…")}</p>
+      ) : !doc?.sections?.length ? (
+        <p className="no-detail">{t("등록된 프로필 문서가 없습니다.")}</p>
+      ) : (
+        <>
+          {doc.source === "cn" && (
+            <p className="future-note">{t("중국 서버 원문입니다 — 아직 한국 서버에 등록되지 않아 번역 전 텍스트입니다.")}</p>
+          )}
+          <div className="profile-docs">
+            {doc.sections.map((section, index) => (
+              // 해금이 걸린 문서(신뢰도·승진)는 접어 둔다 — 스포일러이자, 안 접으면 모달이 배로 길어진다
+              <ProfileDoc key={index} section={section} badge={unlockLabel(section.unlock)} />
+            ))}
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
+function ProfileDoc({ section, badge }: { section: ProfileSectionData; badge: string | null }) {
+  const body = <ProfileBody text={section.text} />;
+  if (!badge) {
+    return (
+      <article className="profile-doc">
+        <h4>{section.title}</h4>
+        {body}
+      </article>
+    );
+  }
+  return (
+    <details className="profile-doc profile-doc-locked">
+      <summary><h4>{section.title}</h4><em>{badge}</em></summary>
+      {body}
+    </details>
+  );
+}
+
+// 기본정보·종합검진은 "[항목] 값" 줄의 나열이라 표로, 나머지 서술형 문서는 문단으로.
+const FACT_LINE = /^[[【]([^\]】]+)[\]】]\s*(.*)$/;
+
+function ProfileBody({ text }: { text: string }) {
+  const lines = text.split("\n").filter((line) => line.trim());
+  const facts = lines.map((line) => FACT_LINE.exec(line.trim()));
+  if (facts.length && facts.every(Boolean) && facts.length > 1) {
+    return (
+      <dl className="profile-facts">
+        {facts.map((fact, index) => (
+          <div key={index}><dt>{fact![1]}</dt><dd>{fact![2] || "—"}</dd></div>
+        ))}
+      </dl>
+    );
+  }
+  return (
+    <div className="profile-text">
+      {lines.map((line, index) => {
+        const fact = FACT_LINE.exec(line.trim());
+        // 서술형 문서 중간에 끼는 [제한된 기록] 같은 머리표는 소제목으로 띄운다
+        return fact && !fact[2]
+          ? <b key={index} className="profile-lead">{fact[1]}</b>
+          : <p key={index}>{line}</p>;
+      })}
     </div>
   );
 }
