@@ -1757,9 +1757,113 @@ def unpack_icons(topic="rogue_1"):
     print(f"{topic} 아이콘 {count}장 언팩 (resVersion {ver['resVersion']}) → public/rogue/relic/")
 
 
+def unpack_node_icons(topics=("rogue_1", "rogue_2", "rogue_3", "rogue_4", "rogue_5", "rogue_6")):
+    """노드 종류 아이콘 언팩 → public/rogue/node/<tid>/<NODE_TYPE>.webp.
+
+    출처는 클라 번들 `ui/rglktopic/<tid>[_update].ab` — 그 안에 **노드 타입 ID를 그대로
+    이름으로 쓴 스프라이트**가 들어 있다(BATTLE_NORMAL·SCRAP_SHOP·EVACUATE …). 공개
+    에셋 미러(ArknightsAssets2)의 arts/ui/rogueliketopic/dungeon 은 rogue_1 시절 8종뿐이라
+    쓸 수 없다 (2026-07-29 전수 확인).
+
+    ⚠ 산출물은 커밋하지 않는다 (.gitignore /public/rogue/node/) — R2로만 서빙한다:
+      node scripts/r2-sync.mjs   (DIRS의 "rogue" 하위라 자동 포함)
+    """
+    import io as _io, zipfile
+    try:
+        import lz4inv, UnityPy
+        from UnityPy.enums.BundleFile import CompressionFlags
+        from UnityPy.helpers.CompressionHelper import DECOMPRESSION_MAP
+        DECOMPRESSION_MAP[CompressionFlags.LZHAM] = lz4inv.decompress_buffer
+    except ImportError:
+        sys.exit("pip3 install --user UnityPy lz4inv 후 다시 실행")
+
+    def fetch(url, binary=False):
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        raw = urllib.request.urlopen(req, timeout=180).read()
+        return raw if binary else json.loads(raw)
+
+    def cdn(topic):
+        # KR 미출시 토픽(rogue_6)만 중국 공식 CDN, 나머지는 한국 CDN (유물 언팩과 같은 규약)
+        conf = fetch("https://ak-conf.hypergryph.com/config/prod/official/network_config"
+                     if topic == "rogue_6" else
+                     "https://ak-conf.arknights.kr/config/prod/official/network_config")
+        network = json.loads(conf["content"])
+        urls = network["configs"][network["funcVer"]]["network"]
+        ver = fetch(urls["hv"].replace("{0}", "Android"))
+        return f"{urls['hu']}/Android/assets/{ver['resVersion']}", ver["resVersion"]
+
+    # 어떤 이름을 뽑을지 = 그 토픽의 실제 노드 타입 ID (app/data/rogueN.json 정본)
+    def node_ids(tid):
+        path = os.path.join(REPO, "app", "data", f"rogue{tid[-1]}.json")
+        if not os.path.exists(path):
+            return set()
+        return {n["id"] for n in json.load(open(path, encoding="utf-8"))["nodeTypes"]}
+
+    # rogue_1~5는 노드 타입별 스프라이트가 클라 번들에 **없다** (KR·CN 양쪽 전수 확인
+    # 2026-07-29 — rogue_6만 새 지도 UI라 타입 ID 이름의 스프라이트를 싣는다). 그 세대는
+    # 공용 지도 글리프 한 벌(arts/ui/rogueliketopic/dungeon)을 돌려 쓰므로, 실제로 대응되는
+    # 것만 골라 복사한다. 대응이 없는 타입(파견·소원성취 등)은 아이콘 없이 둔다.
+    SHARED = "https://raw.githubusercontent.com/ArknightsAssets/ArknightsAssets2/cn/assets/dyn/arts/ui/rogueliketopic/dungeon"
+    SHARED_MAP = {
+        "BATTLE_NORMAL": "img_battle_active", "BATTLE_ELITE": "img_elite_active",
+        "BATTLE_BOSS": "img_boss_active", "SHOP": "img_shop_active",
+        "BATTLE_SHOP": "img_shop_active", "REST": "img_rest_active",
+        "INCIDENT": "img_incident_active", "ENTERTAINMENT": "img_entertainment_active",
+        "TREASURE": "img_treasure_active", "UNKNOWN": "img_unknown",
+    }
+
+    total = 0
+    for tid in topics:
+        wanted = node_ids(tid)
+        if not wanted:
+            print(f"{tid}: app/data 없음 — 건너뜀"); continue
+        base, res = cdn(tid)
+        dest = os.path.join(REPO, "public", "rogue", "node", tid)
+        os.makedirs(dest, exist_ok=True)
+        found = {}
+        for bundle in (f"ui/rglktopic/{tid}_update.ab", f"ui/rglktopic/{tid}.ab"):
+            dat = bundle.replace("/", "_").replace("#", "__").split(".")[0] + ".dat"
+            try:
+                with zipfile.ZipFile(_io.BytesIO(fetch(f"{base}/{dat}", binary=True))) as z:
+                    env = UnityPy.load(_io.BytesIO(z.read(z.filelist[0])))
+            except Exception as err:  # noqa: BLE001 — 토픽마다 번들 구성이 다르다
+                print(f"  {bundle}: {err}"); continue
+            for obj in env.objects:
+                if obj.type.name != "Sprite":
+                    continue
+                d = obj.read()
+                if d.m_Name not in wanted or d.m_Name in found:
+                    continue
+                buf = _io.BytesIO()
+                d.image.save(buf, "PNG")
+                save_webp(buf.getvalue(), os.path.join(dest, f"{d.m_Name}.webp"),
+                          photo=False, max_px=160, method=4, try_lossless=False)
+                found[d.m_Name] = True
+        # 번들에 없던 타입은 공용 글리프로 메운다 (rogue_1~5)
+        for nid in sorted(wanted - set(found)):
+            src = SHARED_MAP.get(nid)
+            if not src:
+                continue
+            try:
+                png = fetch(f"{SHARED}/{src}.png", binary=True)
+            except Exception:  # noqa: BLE001 — 공용 글리프가 없으면 그 타입은 아이콘 없음
+                continue
+            save_webp(png, os.path.join(dest, f"{nid}.webp"), photo=False, max_px=160,
+                      method=4, try_lossless=False)
+            found[nid] = True
+        miss = sorted(wanted - set(found))
+        total += len(found)
+        print(f"{tid}: {len(found)}/{len(wanted)}종 (resVersion {res})"
+              + (f" · 누락 {miss}" if miss else ""))
+    print(f"\n합계 {total}장 → public/rogue/node/  ·  R2 반영: node scripts/r2-sync.mjs")
+
+
 if __name__ == "__main__":
     arg = sys.argv[1] if len(sys.argv) > 1 else ""
-    if arg == "--icons":
+    if arg == "--node-icons":
+        unpack_node_icons(tuple(sys.argv[2:]) or None or (
+            "rogue_1", "rogue_2", "rogue_3", "rogue_4", "rogue_5", "rogue_6"))
+    elif arg == "--icons":
         unpack_icons(sys.argv[2] if len(sys.argv) > 2 else "rogue_1")
     elif arg == "rogue6":
         build_rogue6()

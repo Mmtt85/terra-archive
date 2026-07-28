@@ -66,3 +66,8 @@ scripts/story-cn/
 # 다시 받을 수 있다(멱등 — 있는 파일은 건너뜀). .git이 이미 9.6GB라 더 불리지 않는다.
 # ⚠ 메타(public/skins/*.json)와 프로필(public/profiles/*.json)은 작아서 커밋한다.
 /public/skin/
+
+# 로그라이크 노드 종류 아이콘 — git에 넣지 않는다 (2026-07-29 사용자 지시 "깃에 올리지말고
+# R2에 올려줘"). 서빙은 R2(files.terra-archive.net/assets/rogue/node/…), 재생성은
+# python3 scripts/build-rogue.py --node-icons (멱등).
+/public/rogue/node/
