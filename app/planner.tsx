@@ -1158,10 +1158,13 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
                     : t("A조 ~{h}시간 — {room} 기준 일괄 교대", { h: Math.round(drainClock.hours), room: t(cellByKey.get(drainClock.worstKey!)?.label ?? "") })}
                 </span>
               )}
-              {/* 지속 시계는 풀 컨디션 24 기준 모델값 — 실제 피로도는 오퍼마다 다르다는 안내
-                  (사용자 요청 2026-07-28) */}
+              {/* 지속 시계는 풀 컨디션 24 기준 모델값 — 실제 피로도는 오퍼마다 다르다는 안내.
+                  ⚠ 시계 배지 **옆에 한 줄로** 붙인다 (사용자 지적 2026-07-28: 두 줄짜리 문장이
+                  왼쪽 칸을 늘려 제어센터·응접실 높이까지 밀어올렸다). 긴 설명은 title로. */}
               {drainClock && drainClock.hours !== Infinity && (
-                <span className="shift-clock-note">{t("표시된 시간은 전원 풀 컨디션(24)으로 시작한다고 본 추정치입니다 — 오퍼별 현재 피로도에 따라 실제 교대 시점은 달라질 수 있습니다")}</span>
+                <em className="shift-clock-note" title={t("표시된 시간은 전원 풀 컨디션(24)으로 시작한다고 본 추정치입니다 — 오퍼별 현재 피로도에 따라 실제 교대 시점은 달라질 수 있습니다")}>
+                  {t("※ 피로도에 따라 변동")}
+                </em>
               )}
               <span className="shift-hint">{t("A조 컨디션 소진 시 B조 투입 · 시너지 세트는 A조 집중 · 숙소·고정 요원은 조 전환과 무관 · ")}<b>{t("숙소는 항상 5명 꽉 채워 유지")}</b></span>
             </div>

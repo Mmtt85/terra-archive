@@ -3397,13 +3397,16 @@ footer p {
   font-size: 12px;
   margin-left: 8px;
 }
-/* 지속 시계 아래 안내 — 풀 컨디션 24 기준 추정치임을 명시 (사용자 요청 2026-07-28) */
+/* 지속 시계 옆 짧은 단서 — 풀 컨디션 24 기준 추정치임을 알린다 (사용자 요청 2026-07-28).
+   ⚠ 시계 배지와 **같은 줄**에 붙어야 한다: 종전 두 줄짜리 block 문장이 왼쪽 칸 높이를 늘려
+   같은 그리드 행의 제어센터·응접실까지 키웠다 (사용자 지적). nowrap이라 폭이 모자라면
+   문장이 쪼개지지 않고 통째로 다음 줄로 내려간다. 긴 설명은 title 툴팁·도움말에 있다. */
 .shift-clock-note {
-  display: block;
-  margin-top: 4px;
   color: var(--muted);
-  font-size: 11.5px;
-  line-height: 1.45;
+  font-size: 11px;
+  font-style: normal;
+  white-space: nowrap;
+  cursor: help;
 }
 /* A조 지속 시계 (소모 모드 전용) — 조 탭의 병목 기준 일괄 교대 시계 + 방 카드의 방별 배지.
    풀 컨디션 24 ÷ 방 순소모, 순소모 0(무한동력)은 ∞ (사용자 요청 2026-07-28) */

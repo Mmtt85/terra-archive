@@ -511,6 +511,7 @@ const D: Record<string, Pair> = {
     "Based on full depletion of the fastest-draining room — swap all of Shift A to Shift B before that (usually around the morale-12 fatigue sign). If the Control Center tires first its relief turns off and every room accelerates, so never run past the bottleneck. It is an estimate that assumes everyone starts at full morale (24), so the real duration shifts with each operator's current fatigue",
     "最も早く消耗する施設の完全消耗基準 — その前（通常はコンディション12の疲労サイン頃）にA班全体を一斉にB班へ交代します。制御中枢が先に疲れると軽減が切れて全部屋が加速するため、ボトルネックより遅らせないこと。全員がフルコンディション（24）で始まる前提の推定値なので、オペレーターごとの現在の疲労度によって実際の時間は変わります",
   ],
+  "※ 피로도에 따라 변동": ["※ varies with fatigue", "※ 疲労度により変動"],
   "표시된 시간은 전원 풀 컨디션(24)으로 시작한다고 본 추정치입니다 — 오퍼별 현재 피로도에 따라 실제 교대 시점은 달라질 수 있습니다": [
     "The hours shown are an estimate that assumes everyone starts at full morale (24) — the actual swap timing varies with each operator's current fatigue",
     "表示時間は全員がフルコンディション（24）で始まる前提の推定値です — 実際の交代タイミングはオペレーターごとの現在の疲労度によって変わります",
@@ -519,8 +520,10 @@ const D: Record<string, Pair> = {
     "Shift A is fully perpetual ∞ — no swaps needed",
     "A班全体が永久機関 ∞ — 交代不要",
   ],
+  // EN 배지가 길면 옆의 '피로도에 따라 변동'이 줄바꿈돼 왼쪽 칸이 한 줄 늘어난다 —
+  // 짧게 유지할 것 (전문은 배지 툴팁에, 2026-07-28)
   "A조 ~{h}시간 — {room} 기준 일괄 교대": [
-    "Shift A ≈{h}h — swap everyone based on {room}",
+    "Shift A ≈{h}h — swap on {room}",
     "A班 約{h}時間 — {room}基準で一斉交代",
   ],
   "{n}시간": ["{n}h", "{n}時間"],
