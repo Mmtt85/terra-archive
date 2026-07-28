@@ -3314,9 +3314,14 @@ footer p {
   cursor: pointer;
   transition: 0.15s;
 }
+/* 보조 버튼 호버는 **한 톤만** 바뀐다 (사용자 요청 2026-07-28: "빈 자리만 자동편성 같은
+   다른 버튼들은 좀 덜 티나게"). 종전엔 라임으로 통째로 뒤집혀 핵심 2버튼보다 더 요란했다 —
+   위계가 거꾸로였다. 라임 반전은 아래 .primary:hover로 옮겼다. */
 .planner-buttons button:hover {
-  background: var(--lime);
-  color: var(--on-lime);
+  background: var(--paper);
+  color: var(--ink);
+  /* 보더만 또렷하게 — 라이트 모드는 --paper와 --bg-panel이 거의 같은 색이라 배경 변화만으론
+     호버 신호가 아예 안 보인다 (실측 확인). 채움 대신 테두리로 조용히 알린다. */
   border-color: var(--border-strong);
 }
 /* 핵심 2버튼 — 보유 오퍼 설정 · 전체 자동편성. 색만이 아니라 **크기로도** 도드라지게
@@ -3329,12 +3334,16 @@ footer p {
   font-size: 15.5px;
   border-radius: 9px;
 }
-/* 호버는 배경을 갈아치우지 않는다 — var(--ink)는 다크 모드에서 거의 흰색이라
-   "새하얗게" 뒤집혔다 (사용자 지적 2026-07-27). 같은 배경에서 살짝 밝게만. */
+/* 핵심 2버튼 호버는 **확실히 티나게** (사용자 요청 2026-07-28) — 라임 반전 + 살짝 떠오름.
+   종전 brightness(1.2)는 보조 버튼의 라임 반전보다 약해 위계가 뒤집혀 있었다.
+   ⚠ var(--ink)로는 뒤집지 않는다 — 다크 모드에서 거의 흰색이라 "새하얗게" 터진다
+   (사용자 지적 2026-07-27). 라임은 양 모드 고정색이고 --on-lime이 짝 텍스트색이라 안전. */
 .planner-buttons button.primary:hover {
-  background: var(--chip);
-  color: var(--lime);
-  filter: brightness(1.2);
+  background: var(--lime);
+  color: var(--on-lime);
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px #00000026;
 }
 .planner-summary {
   display: grid;
@@ -4983,9 +4992,15 @@ footer p {
   justify-content: flex-start;
   text-align: left;
 }
+/* ⚠ 배경만 덮어쓰면 안 된다 — color까지 명시 (사용자 지적 2026-07-28: "마우스오버하면
+   글자가 사라져서 안 보임"). 원인은 상위 .planner-buttons button:hover가 라임 배경 전제로
+   color를 --on-lime(#131719 고정)으로 바꾸는데 여기선 배경만 --paper로 갈아, 다크 모드의
+   --paper(#111517)와 --on-lime이 거의 같은 색이라 글자가 배경에 묻힌 것. 상위 규칙도 함께
+   고쳤지만(보조 버튼 호버 톤 다운), 메뉴 항목은 라임을 안 쓰므로 본문색을 못 박아 둔다. */
 .more-menu button:hover,
 .more-menu .import-label:hover {
   background: var(--paper);
+  color: var(--ink);
 }
 .planner-buttons {
   flex-wrap: wrap;
