@@ -503,13 +503,17 @@ const D: Record<string, Pair> = {
     "Zero net drain — perpetual; this room never needs a swap",
     "実質消費0 — 永久機関。この部屋は交代不要です",
   ],
-  "A조 지속 — 풀 컨디션 24를 이 방 순소모 {d}/h로 나눈 완전 소진 시간 (총웨류 회복 오라·제어센터 인원당 -0.05 반영). 실제 교대는 컨디션 12(지침 신호)쯤에서 이르게 하는 게 보통입니다": [
-    "Shift A duration — full morale 24 divided by this room's net drain of {d}/h (Chongyue-type recovery auras and the Control Center's -0.05 per member included). In practice you usually swap earlier, around morale 12",
-    "A班の持続時間 — 満タンのコンディション24をこの部屋の実質消費{d}/hで割った完全消耗時間（重岳系回復オーラ・制御中枢の1人あたり-0.05を反映）。実際の交代はコンディション12（疲労サイン）頃に早めに行うのが普通です",
+  "A조 지속 — 풀 컨디션 24를 이 방 순소모 {d}/h로 나눈 완전 소진 시간 (총웨류 회복 오라·제어센터 인원당 -0.05 반영). 실제 교대는 컨디션 12(지침 신호)쯤에서 이르게 하는 게 보통입니다. 전원 풀 컨디션 가정이라 오퍼별 현재 피로도에 따라 실제 시간은 달라집니다": [
+    "Shift A duration — full morale 24 divided by this room's net drain of {d}/h (Chongyue-type recovery auras and the Control Center's -0.05 per member included). In practice you usually swap earlier, around morale 12. It assumes everyone starts at full morale, so the real duration shifts with each operator's current fatigue",
+    "A班の持続時間 — 満タンのコンディション24をこの部屋の実質消費{d}/hで割った完全消耗時間（重岳系回復オーラ・制御中枢の1人あたり-0.05を反映）。実際の交代はコンディション12（疲労サイン）頃に早めに行うのが普通です。全員フルコンディション前提の値なので、オペレーターごとの現在の疲労度によって実際の時間は変わります",
   ],
-  "제일 빨리 닳는 시설의 완전 소진 기준 — 그 전에(대개 컨디션 12 신호쯤) A조 전체를 B조로 한 번에 교대합니다. 특히 제어센터가 먼저 지치면 감면이 꺼져 전 방이 가속되니 병목보다 늦으면 안 됩니다": [
-    "Based on full depletion of the fastest-draining room — swap all of Shift A to Shift B before that (usually around the morale-12 fatigue sign). If the Control Center tires first its relief turns off and every room accelerates, so never run past the bottleneck",
-    "最も早く消耗する施設の完全消耗基準 — その前（通常はコンディション12の疲労サイン頃）にA班全体を一斉にB班へ交代します。制御中枢が先に疲れると軽減が切れて全部屋が加速するため、ボトルネックより遅らせないこと",
+  "제일 빨리 닳는 시설의 완전 소진 기준 — 그 전에(대개 컨디션 12 신호쯤) A조 전체를 B조로 한 번에 교대합니다. 특히 제어센터가 먼저 지치면 감면이 꺼져 전 방이 가속되니 병목보다 늦으면 안 됩니다. 전원이 풀 컨디션(24)에서 시작한다고 본 추정치라, 오퍼별 현재 피로도에 따라 실제 시간은 달라집니다": [
+    "Based on full depletion of the fastest-draining room — swap all of Shift A to Shift B before that (usually around the morale-12 fatigue sign). If the Control Center tires first its relief turns off and every room accelerates, so never run past the bottleneck. It is an estimate that assumes everyone starts at full morale (24), so the real duration shifts with each operator's current fatigue",
+    "最も早く消耗する施設の完全消耗基準 — その前（通常はコンディション12の疲労サイン頃）にA班全体を一斉にB班へ交代します。制御中枢が先に疲れると軽減が切れて全部屋が加速するため、ボトルネックより遅らせないこと。全員がフルコンディション（24）で始まる前提の推定値なので、オペレーターごとの現在の疲労度によって実際の時間は変わります",
+  ],
+  "표시된 시간은 전원 풀 컨디션(24)으로 시작한다고 본 추정치입니다 — 오퍼별 현재 피로도에 따라 실제 교대 시점은 달라질 수 있습니다": [
+    "The hours shown are an estimate that assumes everyone starts at full morale (24) — the actual swap timing varies with each operator's current fatigue",
+    "表示時間は全員がフルコンディション（24）で始まる前提の推定値です — 実際の交代タイミングはオペレーターごとの現在の疲労度によって変わります",
   ],
   "A조 전체 무한동력 ∞ — 교대 불필요": [
     "Shift A is fully perpetual ∞ — no swaps needed",
@@ -700,6 +704,11 @@ const D: Record<string, Pair> = {
   "동급": ["equal", "同等"],
   "빈 자리에 추가 — 클릭 시 즉시 배치 (기여 예상):": ["Add to an empty slot — click to place (estimated gain):", "空きスロットに追加 — クリックで即配置（貢献予想）："],
   "{name} 추가": ["Add {name}", "{name}を追加"],
+  "수동 전용": ["manual only", "手動のみ"],
+  "자동편성 제외 — 조건을 많이 타고 컨디션 소모가 커서 자동으로는 배치하지 않습니다. 직접 넣는 건 가능합니다": [
+    "Excluded from auto-assign — too condition-dependent and burns morale too fast, so the planner never places them automatically. You can still add them by hand",
+    "自動編成から除外 — 条件に左右されやすくコンディション消費が大きいため、自動では配置しません。手動での配置は可能です",
+  ],
   "이름·소속으로 후보 검색": ["Search candidates by name or affiliation", "名前・所属で候補検索"],
   "검색 결과가 없습니다.": ["No results.", "検索結果がありません。"],
   "더 많이 보기 (전체 {n}명)": ["Show more (all {n})", "もっと見る（全{n}名）"],
@@ -864,6 +873,14 @@ const D: Record<string, Pair> = {
   "'전체 자동편성'은 처음부터 다시 계산하고, '빈 자리만 자동편성'은 현재 편성(수동 수정 포함)을 유지한 채 남은 빈 자리만 한계 기여 순으로 채웁니다.": [
     "'Auto-assign all' recomputes from scratch; 'Fill empty slots' keeps the current assignment (manual edits included) and fills only the remaining seats by marginal gain.",
     "「全自動編成」は最初から再計算し、「空きスロットのみ自動編成」は現在の編成（手動修正含む）を維持したまま残りの空きだけを限界貢献順に埋めます。",
+  ],
+  "조 탭의 'A조 ~N시간'과 방 카드의 시간 배지는 전원이 풀 컨디션(24)에서 근무를 시작한다고 본 추정치입니다 — 실제 교대 시점은 오퍼별 현재 피로도에 따라 달라집니다. 이미 지친 오퍼가 섞여 있으면 표시보다 빨리 교대해야 하고, 보통은 컨디션 12(지침 신호)쯤에서 이르게 바꿉니다.": [
+    "The 'Shift A ≈Nh' figure on the shift tabs and the hour badges on room cards are estimates that assume everyone clocks in at full morale (24) — the real swap point depends on each operator's current fatigue. If some of them are already tired you need to swap sooner than shown, and in practice you usually swap early, around morale 12.",
+    "班タブの「A班 約N時間」と部屋カードの時間バッジは、全員がフルコンディション（24）で勤務を始める前提の推定値です — 実際の交代時期はオペレーターごとの現在の疲労度によって変わります。すでに疲れているオペレーターが混ざっていれば表示より早く交代する必要があり、通常はコンディション12（疲労サイン）頃に早めに交代します。",
+  ],
+  "케이퍼·인포서는 자동편성에서 제외됩니다 — 케이퍼는 단서 공유가 끊기면 효율이 10%로 떨어져 넣었다 뺐다 해야 하고, 인포서는 단서 속도 +35%의 대가로 시간당 컨디션 -2를 태워 응접실 하나 때문에 기지 전체 교대 주기가 짧아집니다. 완전히 사라지는 건 아니고 방 상세의 후보 목록에 '수동 전용'으로 남으므로, 필요하면 직접 넣을 수 있습니다.": [
+    "Caper and Enforcer are excluded from auto-assign — Caper drops to 10% the moment clue sharing lapses, so you would have to shuffle them in and out, and Enforcer pays for its +35% clue speed with -2 morale per hour, letting a single Reception seat shorten the whole base's shift cycle. They are not gone: both stay in each room's candidate list marked 'manual only', so you can still place them yourself.",
+    "ケイパー・エンフォーサーは自動編成から除外されます — ケイパーは手がかり共有が切れると効率が10%まで落ちて出し入れが必要になり、エンフォーサーは手がかり速度+35%の代償に毎時コンディション-2を消費するため、応接室ひとつのせいで基地全体の交代周期が短くなります。完全に消えるわけではなく、部屋詳細の候補リストに「手動のみ」として残るので、必要なら自分で配置できます。",
   ],
   "방 우선순위": ["Room priority", "部屋の優先順位"],
   "채우는 순서: 제조소-순금 > 제조소-작전기록 > 무역소 > 발전소 > 사무실 > 응접실 — 먼저 채우는 방이 좋은 요원을 가져갑니다. 응접실은 최하위라, 응접실 스킬이 있는 오퍼(쉐라 등)도 상위 방 세트가 우선입니다.": [

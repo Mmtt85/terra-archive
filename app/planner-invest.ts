@@ -20,7 +20,7 @@
 import costsData from "./data/costs.json";
 import {
   optimizeConfig, buildPlan, planScore, teamScore, opSolo, withElite, maxElite, eliteLocks,
-  availableSetKeys, synergySetMembers, cellByKey, LAYOUT, aurasOf, ctxFor, presentIdsFor, roomOfFor, cellOfFor, SHIFT_COUNT,
+  availableSetKeys, synergySetMembers, cellByKey, LAYOUT, aurasOf, ctxFor, presentIdsFor, roomOfFor, cellOfFor, SHIFT_COUNT, AUTO_BENCH_IDS,
   type InfraOp, type Elite, type Plan, type ProdPriority, type FactionSets,
 } from "./planner-engine";
 
@@ -205,6 +205,7 @@ export async function recommendRaises(
   const candidates: Cand[] = [];
   for (const op of visibleOps) {
     if (!ownedIds.has(op.id)) continue;
+    if (AUTO_BENCH_IDS.has(op.id)) continue; // 자동편성 제외 명단(케이퍼·인포서)은 완성해도 편성이 안 바뀐다
     const from = cur(op);
     const to = raiseTarget(op, from);
     if (to == null) continue;

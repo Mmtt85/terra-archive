@@ -192,6 +192,26 @@ export function eliteOptions(op: InfraOp): Elite[] {
   return op.rarity === 3 ? [0, 1] : [0, 1, 2];
 }
 
+// ── 자동편성 제외 명단 (사용자 확정 2026-07-28) ────────────────────────────────
+// "케이퍼랑 인포서는 너무 조건을 많이 타고 피로도가 심하게 닳으니 둘 다 빼 줘 — 그냥
+// 후보로만 올려줘". 케이퍼(단서 수집 β)는 단서 **공유 상태**에서만 값이 나오고 공유가
+// 끊기면 10%로 추락해 넣었다 뺐다 해야 하고, 인포서(논리적 추리)는 단서속도 +35%의 대가로
+// 시간당 컨디션 -2를 태워 응접실 하나 때문에 교대 주기를 통째로 끌어내린다. 방치 운용이
+// 계약인 플래너 편성에는 맞지 않으므로 **자동편성 로스터에서 제외**한다. 완전 삭제가 아니라
+// 벤치다 — 방 상세의 대체 후보(slotSubstitutes)·인원 추가 목록에는 그대로 남아 사용자가
+// 직접 앉힐 수 있고, 숙소에 수동 고정한 경우도 그대로 유지된다.
+// 명단은 rules.json constant AUTO_BENCH로 덮어쓸 수 있고, 없으면 이 기본값을 쓴다.
+const AUTO_BENCH_DEFAULT = ["char_4100_caper", "char_4036_forcer"]; // 케이퍼 · 인포서
+export const AUTO_BENCH_IDS = new Set<string>(
+  (C as unknown as { AUTO_BENCH?: string[] }).AUTO_BENCH ?? AUTO_BENCH_DEFAULT
+);
+// 자동편성용 로스터 — 벤치 명단 제거. 단, 사용자가 숙소에 직접 고정한 인원은 남긴다.
+export function autoRoster(roster: InfraOp[], pinnedDorms: Record<string, string[]> = {}): InfraOp[] {
+  if (!AUTO_BENCH_IDS.size) return roster;
+  const pinned = new Set(Object.values(pinnedDorms).flat());
+  return roster.filter((op) => !AUTO_BENCH_IDS.has(op.id) || pinned.has(op.id));
+}
+
 // ── 기지 배치 프리셋 (사용자 요청 2026-07-24: 243 외에 153 지원) ─────────────
 // 243 = 무역 2 · 제조 4(순금 2+작전기록 2) · 발전 3 (기본값·종전 유일 레이아웃).
 // 153 = 무역 1 · 제조 5(순금 1+작전기록 4) · 발전 3 — 무역소가 1이라 순금 소비도 절반이지만
@@ -1455,7 +1475,10 @@ export function detectPerpetualControl(roster: InfraOp[]): boolean {
   return value;
 }
 
-export function buildPlan(packageTokens: string[], roster: InfraOp[], factionSets: FactionSets = {}, priority: ProdPriority = "gold", extraSeeds: { opId: string; room: string }[] = [], concentrate = true, park = false, pinnedDorms: Record<string, string[]> = {}): Plan {
+export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factionSets: FactionSets = {}, priority: ProdPriority = "gold", extraSeeds: { opId: string; room: string }[] = [], concentrate = true, park = false, pinnedDorms: Record<string, string[]> = {}): Plan {
+  // 자동편성 제외 명단(케이퍼·인포서)은 여기서 한 번에 걷어낸다 — buildPlan이 모든 편성
+  // 생성의 유일한 관문이라 optimize·육성 추천·감사 재편성이 전부 같은 로스터를 본다.
+  const roster = autoRoster(fullRoster, pinnedDorms);
   setPriorityMode(priority); // 장기 지속이면 teamValue·시계가 순소모 모델로 전환 (모듈 플래그)
   detectPerpetualControl(roster); // 무한동력 제어센터 성립 여부 — place 가드·CC 락을 함께 켠다
   const prodKeys = PRIORITY_KEYS[splitPriority(priority).prod];
@@ -2393,7 +2416,10 @@ export type OptimizeStep = { phase: "base" | "variant" | "final"; index?: number
 // 후보마다 전체 재탐색을 반복하지 않고, 이 config를 재사용해 buildPlan을 1회만 돌려 빠르게
 // 반사실 평가를 하도록 한다 (2026-07-21 성능: 후보당 buildPlan 15회 → 1회).
 export type OptimizeResult = { plan: Plan; tokenChoice: string[]; factionSets: FactionSets; park: boolean };
-export async function optimizeConfig(roster: InfraOp[], priority: ProdPriority = "gold", onStep?: (step: OptimizeStep) => void | Promise<void>, pinnedDorms: Record<string, string[]> = {}): Promise<OptimizeResult> {
+export async function optimizeConfig(fullRoster: InfraOp[], priority: ProdPriority = "gold", onStep?: (step: OptimizeStep) => void | Promise<void>, pinnedDorms: Record<string, string[]> = {}): Promise<OptimizeResult> {
+  // 자동편성 제외 명단은 탐색 시작부터 뺀다 — 토큰 패키지·세트 성립 판정도 벤치 없는
+  // 로스터 기준이어야 buildPlan(내부에서 같은 필터)과 결과가 어긋나지 않는다.
+  const roster = autoRoster(fullRoster, pinnedDorms);
   setPriorityMode(priority); // config 탐색 전 구간(buildPlan 사이 planScore 비교 포함) 모드 고정
   // 진행 콜백(페이싱 포함) 후 매크로태스크 양보 — 브라우저가 안내 문구를 리페인트할 틈을 준다
   const tick = async (step: OptimizeStep) => {

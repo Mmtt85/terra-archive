@@ -252,5 +252,24 @@ console.log("");
   for (const [name, ok] of checks) { console.log(`${ok ? "✓" : "✗"} ${name}`); if (!ok) failed += 1; }
 }
 
+// ── 자동편성 제외 명단 (케이퍼·인포서, 사용자 확정 2026-07-28 — INFRA-RULES §1) ─────
+// 조건 의존·고소모라 자동으로는 절대 앉히지 않는다. 후보 목록에는 남지만 편성엔 없어야 한다.
+console.log("");
+{
+  const benched = [...engine.AUTO_BENCH_IDS];
+  const plan = await planFor("full", "gold");
+  const placed = benched.filter((id) =>
+    Object.values(plan.assignments).some((shifts) => shifts.some((team) => team.includes(id))));
+  const inRoster = benched.filter((id) => released.some((op) => op.id === id));
+  const checks = [
+    ["자동편성 제외 명단이 로스터에 실재", inRoster.length === benched.length && benched.length > 0],
+    ["자동편성 제외 명단 미배치 (풀 로스터)", placed.length === 0],
+  ];
+  for (const [name, ok] of checks) {
+    console.log(`${ok ? "✓" : "✗"} ${name}${!ok && placed.length ? ` (배치됨: ${names(placed)})` : ""}`);
+    if (!ok) failed += 1;
+  }
+}
+
 if (failed) { console.error(`\n✗ 검사 ${failed}건 실패`); process.exit(1); }
-console.log(`\n✓ 픽스처 ${rules.fixtures.length}건 + 육성추천 불변식 4건 + 노시스 오라 2건 전부 통과`);
+console.log(`\n✓ 픽스처 ${rules.fixtures.length}건 + 육성추천 불변식 4건 + 노시스 오라 2건 + 자동편성 제외 2건 전부 통과`);

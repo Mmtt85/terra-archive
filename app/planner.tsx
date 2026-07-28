@@ -16,7 +16,7 @@ import {
   AURA_WEIGHT, AURA_LABEL, skillApplies, breakdown, teamScore, aurasOf, ambientFor, capConvFor, roomMaxNetDrain,
   ctxFor, sanitizePlan, presentIdsFor, roomOfFor, cellOfFor, slotSubstitutes, setLayoutPreset, setPriorityMode, memberOf, growAvg, DEFAULT_CUSTOM_ROOMS, DEFAULT_CUSTOM_PRODUCTS,
   setLevels as setEngineLevels, slotsFor, maxLevelOf, levelOf, powerBudget, suggestedLevels, TERMS,
-  splitPriority, joinPriority,
+  splitPriority, joinPriority, AUTO_BENCH_IDS,
   type InfraOp, type InfraSkill, type Elite, type Plan, type ProdPriority, type ProdAxis, type DrainMode, type TokenFlow, type OptimizeStep, type LayoutPreset, type Levels, type CustomRoom, type CustomProduct,
 } from "./planner-engine";
 import type { RaiseRec, InvestProgress } from "./planner-invest";
@@ -759,6 +759,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           let bestDelta = 0;
           for (const op of roster) {
             if (usedAll.has(op.id)) continue;
+            if (AUTO_BENCH_IDS.has(op.id)) continue; // 자동편성 제외 명단 — 빈 자리 채우기도 자동이므로 동일 적용
             if (!op.skills.some((skill) => skillApplies(skill, cell.room, ctx.product))) continue;
             const delta = teamScore([...team, op], cell.room, ctx) - current;
             if (delta > bestDelta) { bestDelta = delta; best = op; }
@@ -1149,11 +1150,16 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
                 <button key={i} className={activeShift === i ? "selected" : ""} onClick={() => setActiveShift(i)}>{[t("A조 (풀파워)"), t("B조 (회복 교대)")][i]}</button>
               ))}
               {drainClock && (
-                <span className="shift-clock" title={t("제일 빨리 닳는 시설의 완전 소진 기준 — 그 전에(대개 컨디션 12 신호쯤) A조 전체를 B조로 한 번에 교대합니다. 특히 제어센터가 먼저 지치면 감면이 꺼져 전 방이 가속되니 병목보다 늦으면 안 됩니다")}>
+                <span className="shift-clock" title={t("제일 빨리 닳는 시설의 완전 소진 기준 — 그 전에(대개 컨디션 12 신호쯤) A조 전체를 B조로 한 번에 교대합니다. 특히 제어센터가 먼저 지치면 감면이 꺼져 전 방이 가속되니 병목보다 늦으면 안 됩니다. 전원이 풀 컨디션(24)에서 시작한다고 본 추정치라, 오퍼별 현재 피로도에 따라 실제 시간은 달라집니다")}>
                   {drainClock.hours === Infinity
                     ? t("A조 전체 무한동력 ∞ — 교대 불필요")
                     : t("A조 ~{h}시간 — {room} 기준 일괄 교대", { h: Math.round(drainClock.hours), room: t(cellByKey.get(drainClock.worstKey!)?.label ?? "") })}
                 </span>
+              )}
+              {/* 지속 시계는 풀 컨디션 24 기준 모델값 — 실제 피로도는 오퍼마다 다르다는 안내
+                  (사용자 요청 2026-07-28) */}
+              {drainClock && drainClock.hours !== Infinity && (
+                <span className="shift-clock-note">{t("표시된 시간은 전원 풀 컨디션(24)으로 시작한다고 본 추정치입니다 — 오퍼별 현재 피로도에 따라 실제 교대 시점은 달라질 수 있습니다")}</span>
               )}
               <span className="shift-hint">{t("A조 컨디션 소진 시 B조 투입 · 시너지 세트는 A조 집중 · 숙소·고정 요원은 조 전환과 무관 · ")}<b>{t("숙소는 항상 5명 꽉 채워 유지")}</b></span>
             </div>
@@ -1248,7 +1254,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
                     return (
                       <em className="room-clock" title={net <= 1e-9
                         ? t("순소모 0 — 무한동력, 이 방은 교대가 필요 없습니다")
-                        : t("A조 지속 — 풀 컨디션 24를 이 방 순소모 {d}/h로 나눈 완전 소진 시간 (총웨류 회복 오라·제어센터 인원당 -0.05 반영). 실제 교대는 컨디션 12(지침 신호)쯤에서 이르게 하는 게 보통입니다", { d: net.toFixed(2) })}>
+                        : t("A조 지속 — 풀 컨디션 24를 이 방 순소모 {d}/h로 나눈 완전 소진 시간 (총웨류 회복 오라·제어센터 인원당 -0.05 반영). 실제 교대는 컨디션 12(지침 신호)쯤에서 이르게 하는 게 보통입니다. 전원 풀 컨디션 가정이라 오퍼별 현재 피로도에 따라 실제 시간은 달라집니다", { d: net.toFixed(2) })}>
                         {net <= 1e-9 ? "∞" : t("{n}시간", { n: Math.round(24 / net) })}
                       </em>
                     );
@@ -2032,10 +2038,16 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                     {bench.map(({ op, delta }) => {
                       // 숙소는 자체 산출이 없어 기여가 전부 0 — 대신 "누구의 조건을 켜 주는지"를 보여준다
                       const wakes = enablerFor.get(op.id);
+                      // 자동편성 제외 명단(케이퍼·인포서)은 후보로만 뜬다 — 직접 넣는 건 자유 (2026-07-28)
+                      const manualOnly = AUTO_BENCH_IDS.has(op.id);
                       return (
-                        <small key={op.id} className={`sub-chip swappable${wakes ? " enabler" : ""}`} title={wakes ? t("{name}의 조건을 켭니다 (기지 어디든 있으면 발동)", { name: wakes }) : t("{name} 추가", { name: op.name })} onClick={() => setIds([...rawIds, op.id])}>
+                        <small key={op.id} className={`sub-chip swappable${wakes ? " enabler" : ""}${manualOnly ? " manual-only" : ""}`}
+                          title={manualOnly
+                            ? t("자동편성 제외 — 조건을 많이 타고 컨디션 소모가 커서 자동으로는 배치하지 않습니다. 직접 넣는 건 가능합니다")
+                            : wakes ? t("{name}의 조건을 켭니다 (기지 어디든 있으면 발동)", { name: wakes }) : t("{name} 추가", { name: op.name })}
+                          onClick={() => setIds([...rawIds, op.id])}>
                           <img src={asset(op.image)} alt="" width={180} height={180} loading="lazy" className={onShowOperator ? "op-link" : undefined} onClick={(event) => { event.stopPropagation(); onShowOperator?.(op.id); }} />{op.name}{" "}
-                          <em>{wakes ? t("{name} 조건", { name: wakes }) : delta >= 0 ? `+${delta}` : delta}</em>
+                          <em>{manualOnly ? t("수동 전용") : wakes ? t("{name} 조건", { name: wakes }) : delta >= 0 ? `+${delta}` : delta}</em>
                         </small>
                       );
                     })}
@@ -2442,6 +2454,8 @@ const HELP_SECTIONS: { title: string; items: string[] }[] = [
     "'짝이 기반시설(숙소 포함) 어디에든 있으면 +N%'인 조건(언더플로우←울피아누스, Bellone←비질, 산크타 믹사파라토←피아메타)은 짝이 일하지 않아도 성립합니다. 그래서 자동편성은 노는 짝을 빈 숙소에 '주차'해 조건을 켜는 안을 따로 만들어 보고, 기지 총점이 실제로 오를 때만 채택합니다 — 보유 오퍼가 두터워 대체 후보가 많으면 주차가 부른 재편성이 오히려 손해라 채택하지 않습니다.",
     "자동편성은 제조소·무역소·응접실·사무실을 반드시 정원까지 채웁니다 — 인프라 스킬이 없는 오퍼라도 배치 인원 자체가 기본 생산분을 내므로, 슬롯을 비우는 것이 항상 손해이기 때문입니다. 보유 오퍼 총원이 모자랄 때만 빈 자리가 남습니다. 제어센터·발전소는 스킬 없는 배치가 사기만 소모해 예외입니다.",
     "'전체 자동편성'은 처음부터 다시 계산하고, '빈 자리만 자동편성'은 현재 편성(수동 수정 포함)을 유지한 채 남은 빈 자리만 한계 기여 순으로 채웁니다.",
+    "조 탭의 'A조 ~N시간'과 방 카드의 시간 배지는 전원이 풀 컨디션(24)에서 근무를 시작한다고 본 추정치입니다 — 실제 교대 시점은 오퍼별 현재 피로도에 따라 달라집니다. 이미 지친 오퍼가 섞여 있으면 표시보다 빨리 교대해야 하고, 보통은 컨디션 12(지침 신호)쯤에서 이르게 바꿉니다.",
+    "케이퍼·인포서는 자동편성에서 제외됩니다 — 케이퍼는 단서 공유가 끊기면 효율이 10%로 떨어져 넣었다 뺐다 해야 하고, 인포서는 단서 속도 +35%의 대가로 시간당 컨디션 -2를 태워 응접실 하나 때문에 기지 전체 교대 주기가 짧아집니다. 완전히 사라지는 건 아니고 방 상세의 후보 목록에 '수동 전용'으로 남으므로, 필요하면 직접 넣을 수 있습니다.",
   ]},
   { title: "방 우선순위", items: [
     "기지 배치 설정: 243(무역 2·제조 4 — 순금 2+작전기록 2, 기본) · 153(무역 1·제조 5 — 순금 1+작전기록 4) · 252(무역 2·제조 5 — 순금 2+작전기록 3, 발전 2). 153은 무역소가 하나라 제조소 대부분을 작전기록에 쓰되, 유일한 순금방이 병목이므로 그 방을 맨 먼저(최정예로) 채웁니다. 각 배치의 편성·시설 레벨은 따로 저장됩니다 — 배치마다 한 번씩 자동편성해 두면 전환할 때 그대로 복원됩니다.",

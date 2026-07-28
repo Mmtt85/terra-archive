@@ -3388,6 +3388,14 @@ footer p {
   font-size: 12px;
   margin-left: 8px;
 }
+/* 지속 시계 아래 안내 — 풀 컨디션 24 기준 추정치임을 명시 (사용자 요청 2026-07-28) */
+.shift-clock-note {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.45;
+}
 /* A조 지속 시계 (소모 모드 전용) — 조 탭의 병목 기준 일괄 교대 시계 + 방 카드의 방별 배지.
    풀 컨디션 24 ÷ 방 순소모, 순소모 0(무한동력)은 ∞ (사용자 요청 2026-07-28) */
 .shift-clock {
@@ -5082,6 +5090,12 @@ footer p {
   border-color: var(--lime);
 }
 .sub-chip.enabler em { color: var(--ink); }
+/* 자동편성 제외 명단(케이퍼·인포서) — 후보로만 뜨고 자동 배치는 안 된다 (2026-07-28) */
+.sub-chip.manual-only {
+  border-style: dashed;
+  opacity: 0.78;
+}
+.sub-chip.manual-only em { color: var(--muted); }
 .sub-chip.swappable {
   cursor: pointer;
 }
