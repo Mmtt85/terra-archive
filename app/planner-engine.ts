@@ -417,9 +417,9 @@ export function levelOf(key: string): number {
 // 방 슬롯 수 = 레벨별 phases (제조·무역 1/2/3, 제어센터 = 레벨). 레벨 미지정은 만렙 슬롯
 export function slotsFor(key: string): number {
   const room = cellByKey.get(key)?.room ?? key;
-  // 훈련실 정원 2는 트레이너석 + 훈련대상석 — 인프라 스킬 효과는 **트레이너 1명**만 반영된다
-  // (사용자 절대룰 2026-07-27). 훈련대상은 편성 대상이 아니므로 플래너의 근무석은 1석뿐.
-  if (room === "TRAINING") return 1;
+  // ⚠ 훈련실은 게임 데이터 그대로 **2석**이다. 한때 "트레이너석 1석만 스킬이 먹는다"는
+  // 규칙으로 1로 하드 캡했는데(2026-07-27), 사용자가 실제 기지에서 검증한 결과 **두 자리
+  // 모두 인프라 스킬·시너지가 적용**됐다 — 캡을 되돌렸다 (사용자 정정 2026-07-29).
   const spec = infra.rooms[room];
   return spec?.phases?.[levelOf(key) - 1]?.slots ?? spec?.slots ?? 1;
 }
