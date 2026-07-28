@@ -2,6 +2,7 @@
 // 페이지가 늘어나면 빌드 시 자동 반영된다 (package.json build 스크립트가 vinext build 전에 실행).
 // 규칙: /admin 제외 · 같은 탭의 ko/en/ja를 xhtml:link hreflang으로 상호 참조 ·
 //       x-default=한국어 (사용자 확정 2026-07-18) · 정본 도메인 terra-archive.net (app/seo.ts와 동일).
+import { execFileSync } from "node:child_process";
 import { readdirSync, statSync, writeFileSync } from "node:fs";
 import { join, dirname, relative } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -25,6 +26,34 @@ function collectRoutes(dir, base = "") {
     }
   }
   return routes;
+}
+
+// ── lastmod (2026-07-28) ────────────────────────────────────────────────────
+// Google은 sitemap의 changefreq·priority를 **무시하고 lastmod만** 크롤 신호로 쓴다. 값이
+// 없으면 "언제 바뀌었는지 모름"이라 크롤 우선순위가 바닥에 깔린다 (GSC "발견됨 — 현재 색인이
+// 생성되지 않음"). 매 빌드 시각을 넣으면 안 된다 — 안 바뀐 페이지까지 갱신됐다고 거짓 신고하는
+// 꼴이라 Google이 lastmod 자체를 신뢰하지 않게 된다. 그래서 **그 페이지 내용을 좌우하는 데이터
+// 파일의 마지막 커밋 시각**(git)을 쓴다 — 데이터가 실제로 바뀐 날만 갱신된다.
+const SEG_SOURCES = {
+  "": ["app/data/operators.json", "app/data/broadcasts.json"], // 포탈 = 허브(진행 이벤트·오퍼)
+  operators: ["app/data/operators.json"],
+  infra: ["app/data/infra.json", "app/data/rules.json"],
+  recruit: ["app/data/recruit.json"],
+  farm: ["app/data/farm.json"],
+  upgrade: ["app/data/costs.json", "app/data/operators.json"],
+  stories: ["app/data/story-summaries.json", "app/data/stories.json", "app/data/chronology.json"],
+  rogue: ["app/data/rogue1.json", "app/data/rogue2.json", "app/data/rogue3.json", "app/data/rogue4.json", "app/data/rogue5.json", "app/data/rogue6.json"],
+  about: ["app/about/page.tsx"],
+};
+function lastmodFor(seg) {
+  let latest = null;
+  for (const file of SEG_SOURCES[seg] ?? []) {
+    try {
+      const iso = execFileSync("git", ["log", "-1", "--format=%cI", "--", file], { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+      if (iso && (!latest || iso > latest)) latest = iso;
+    } catch { /* git 없음·shallow clone·미추적 파일 — lastmod 생략(없는 게 거짓말보다 낫다) */ }
+  }
+  return latest;
 }
 
 // 라우트 → { locale, seg } (seg="" = 포탈 루트)
@@ -56,13 +85,14 @@ for (const seg of segs) {
     .map((l) => `    <xhtml:link rel="alternate" hreflang="${l}" href="${SITE_URL}${variants[l] === "/" ? "/" : variants[l]}"/>`)
     .concat(`    <xhtml:link rel="alternate" hreflang="x-default" href="${SITE_URL}${variants.ko === "/" ? "/" : variants.ko}"/>`)
     .join("\n");
+  const lastmod = lastmodFor(seg);
   for (const l of LOCALES) {
     if (!variants[l]) continue;
     const loc = variants[l] === "/" ? "/" : variants[l];
     const priority = seg === "" ? (l === "ko" ? "1.0" : "0.9") : "0.8";
     urls.push(`  <url>
     <loc>${SITE_URL}${loc}</loc>
-    <changefreq>weekly</changefreq>
+${lastmod ? `    <lastmod>${lastmod}</lastmod>\n` : ""}    <changefreq>weekly</changefreq>
     <priority>${priority}</priority>
 ${alt}
   </url>`);

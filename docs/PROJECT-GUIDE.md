@@ -66,8 +66,20 @@ vinext의 pushState 패치(스크롤 리셋)를 피하려 네이티브 `History.
   표시(이름·스킬 텍스트·태그명)만 extra-i18n 오버레이로 바꾼다
   (스킬 태그 카운트 등 텍스트 매칭 로직은 `krName` 원본 사용).
 - SEO: 언어별 title/description/OG + hreflang 상호 참조(`app/seo.ts`),
-  `public/sitemap.xml`에 3개 URL + xhtml:link alternates. html lang은 서버에선 ko,
-  하이드레이션 후 로케일로 교체.
+  `public/sitemap.xml`은 `scripts/build-sitemap.mjs`가 라우트 스캔으로 자동 생성
+  (직접 수정 금지 · 빌드 시 실행). html lang은 서버에선 ko, 하이드레이션 후 로케일로 교체.
+- **⚠ 크롤러용 앵커는 푸터가 책임진다 (2026-07-28 색인 사고)**: 헤더 탭·언어 전환기가 전부
+  **버튼(SPA 전환)**이라 정적 HTML에 내부 링크가 하나도 없었고, 검색엔진에는 모든 탭이
+  **고아 페이지**였다 (GSC "발견됨 — 현재 색인이 생성되지 않음": /stories·/en/stories·
+  /ja/stories·/ja/about). 푸터의 `.footer-tabs`(탭)·`.footer-langs`(언어)가 유일한 실제
+  `<a href>`이므로 **지우거나 버튼으로 바꾸지 말 것**. href는 반드시 **쿼리 없는 정본 경로**
+  (`tabPath()`는 `?future=1`을 실어 나르므로 링크에 쓰지 않는다 — 파라미터 URL이 색인
+  후보로 잡히면 "대체 페이지"만 늘어난다). 클릭은 preventDefault→`switchTab`으로 SPA 유지,
+  수식어·중클릭은 브라우저 기본 동작에 맡긴다.
+- **sitemap `lastmod`**: Google은 `changefreq`·`priority`를 **무시하고 lastmod만** 크롤 신호로
+  쓴다. 빌드 시각을 넣으면 안 바뀐 페이지까지 갱신됐다고 거짓 신고하는 꼴이라 Google이
+  lastmod 자체를 불신하게 된다 — 그래서 **탭별 데이터 파일의 마지막 git 커밋 시각**을 쓴다
+  (`SEG_SOURCES` 맵). 새 탭을 추가하면 이 맵에도 데이터 파일을 등록할 것.
 
 ### 헤더 **유니버셜 서치** (2026-07-25, 사용자 요청)
 

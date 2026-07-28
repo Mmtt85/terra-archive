@@ -1362,6 +1362,27 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
             ☕ {t("서버 운영 후원")}
           </a>
         </p>
+        {/* 크롤러용 실제 탭 링크 — 헤더 메뉴는 전부 버튼(SPA 탭 전환)이라 정적 HTML에 내부
+            앵커가 하나도 없었고, 검색엔진에는 모든 탭이 고아 페이지였다 (GSC "발견됨 — 현재
+            색인이 생성되지 않음": /stories·/en/stories·/ja/stories·/ja/about, 2026-07-28).
+            href는 **파라미터 없는 정본 경로**여야 한다 — tabPath는 ?future=1을 실어 나르므로
+            쓰지 않는다(그 URL이 색인 후보로 잡히면 "대체 페이지"가 늘어난다).
+            클릭은 기존대로 SPA 전환 — 새 탭/수식어 클릭만 브라우저 기본 동작에 맡긴다. */}
+        <nav className="footer-tabs" aria-label={t("사이트 메뉴")}>
+          {(Object.keys(TAB_SEG) as Tab[]).map((tb) => {
+            const seg = TAB_SEG[tb];
+            const href = (localeBase + (seg ? `/${seg}` : "")) || "/";
+            return tb === tab
+              ? <strong key={tb}>{TAB_LABEL[tb]}</strong>
+              : (
+                <a key={tb} href={href} onClick={(e) => {
+                  if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+                  e.preventDefault();
+                  switchTab(tb);
+                }}>{TAB_LABEL[tb]}</a>
+              );
+          })}
+        </nav>
         {/* 크롤러용 실제 언어 링크 — 헤더 전환기는 조건부 렌더 드롭다운이라 정적 HTML에
             /en·/ja 앵커가 하나도 없었다 (2026-07 색인 문제). 현재 탭 세그먼트를 보존한다. */}
         <nav className="footer-langs" aria-label={t("언어 선택")}>
