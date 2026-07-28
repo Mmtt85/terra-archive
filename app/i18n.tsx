@@ -1253,6 +1253,11 @@ const D: Record<string, Pair> = {
   "테마 미분류": ["Unsorted", "未分類"],
   "이벤트": ["Event", "イベント"],
   "사이드 이벤트": ["Side Story", "サイドストーリー"],
+  // 스토리 탭 — 미니스토리(게임 내 ‘특별작전진술’) 전용 탭 (2026-07-29)
+  "미니스토리": ["Mini Stories", "ミニストーリー"],
+  "게임 내 ‘특별작전진술’ — 사이드 이벤트와 별개인 짧은 단편 모음":
+    ["In-game “Special Operation” records — short standalone tales, separate from Side Stories.",
+     "ゲーム内「特殊行動記録」 — サイドストーリーとは別の短編集です。"],
   "미니 이벤트": ["Mini Event", "ミニイベント"],
   "메인스토리": ["Main Story", "メインストーリー"],
   "통합 전략": ["Integrated Strategies", "統合戦略"],
