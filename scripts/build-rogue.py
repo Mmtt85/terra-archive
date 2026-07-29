@@ -524,6 +524,30 @@ EFF_LEVEL = {
 }
 EFF_CHAR = {"char_attribute_mul": True, "char_squad_attribute_mul": True, "layer_char_attribute_mul": True,
             "char_attribute_add": False, "layer_char_attribute_add": False}
+# global_buff_* 계열 — 안쪽 blackboard의 `key`가 효과 이름이다. 이 계열은 대부분
+# "스킬 발동 시", "특정 지형에서" 같은 조건부라 통째로 더할 수 없다(전 토픽 222종).
+# **무조건 전역으로 걸리는 것만** 골라 쓴다 (사용자 리포트 2026-07-29: 적 공격력 -12%·
+# 받는 물리 대미지 +35%·초기 SP +32 같은 건 분명히 합산 가능한데 0개로 나왔다).
+#   mul   = 소수 델타(-0.12 → -12%)
+#   add   = 실수치 가산(초기 SP +6, 적 공격 속도 -15)
+#   scale = 1이 기준인 배율(1.35 → +35%). global_buff_stack_base_one은 겹치면 곱해진다.
+# ⚠ heal_scale·hp_recovery_per_sec[mul]·hp_recovery_per_sec_by_max_hp_ratio[mul]은
+#   **항상 셋이 같이 나오는 한 효과의 세 갈래**다(실측 18/18). heal_scale만 쓴다 — 셋 다
+#   넣으면 "+20%" 하나가 세 줄로 불어난다.
+EFF_GLOBAL = {
+    "enemy_atk_down": ("e_atk", "mul"),
+    "enemy_def_down": ("e_def", "mul"),
+    "enemy_max_hp_down": ("e_hp", "mul"),
+    "enemy_move_speed_down": ("e_ms", "mul"),
+    "enemy_attack_speed_down": ("e_aspd", "add"),
+    "enemy_damage_scale[phy]": ("dmg_phy", "scale"),
+    "enemy_damage_scale[mag]": ("dmg_mag", "scale"),
+    "enemy_damage_scale[pure]": ("dmg_pure", "scale"),
+    "modify_sp[born]": ("sp_born", "add"),
+    "modify_sp_recover[normal]": ("sp_regen", "add"),
+    "heal_scale": ("heal", "scale"),
+}
+GLOBAL_FAMS = {"global_buff_normal", "global_buff_stack", "global_buff_stack_base_one"}
 # 즉시 획득(immediate_reward)으로 주는 판 자원 — '편성 가능 인원수 +N'이 여기 있다.
 # 아이템 id는 rogue_<N>_<suffix> 꼴이라 접두사만 떼면 토픽·언어 무관하게 잡힌다.
 EFF_REWARD = {
@@ -545,6 +569,21 @@ def relic_effects(buffs):
             v = (bb.get("value") or {}).get("value")
             if v:
                 out.append({"k": EFF_LEVEL[key], "v": v, "m": "add", "sel": None})
+            continue
+        if key in GLOBAL_FAMS:
+            inner = (bb.get("key") or {}).get("valueStr") or ""
+            hit = EFF_GLOBAL.get(inner)
+            if not hit:
+                continue                       # 조건부·고유 효과 — 합산 대상이 아니다
+            # 셀렉터가 붙어 있으면(전직업 나열 제외) 전역이 아니므로 버린다
+            prof = (bb.get("selector.profession") or {}).get("valueStr") or ""
+            if any(k.startswith("selector.") and k != "selector.profession" for k in bb):
+                continue
+            if prof and set(prof.split("|")) != ALL_PROFESSIONS:
+                continue
+            nums = [x for k, x in bb.items() if k != "key" and not k.startswith("selector.") and x.get("value")]
+            if len(nums) == 1:                 # 값이 여럿이면 단순 효과가 아니다 — 건너뛴다
+                out.append({"k": hit[0], "v": nums[0]["value"], "m": hit[1], "sel": None})
             continue
         if key == "immediate_reward":
             iid = (bb.get("id") or {}).get("valueStr") or ""

@@ -133,20 +133,37 @@ KR 매핑 attack_of)과 `abilityList[].text`(개행 join, ability_of)에서 뽑�
 - **모달 4종**: StageModal(적 행 클릭→EnemyModal 스택) · EnemyModal(초상·전체 스탯·등장
   노드) · EncounterModal(CG·층·선택지) · RelicModal(아이콘·효과). 스택 모달은
   `.rg-modal-back.stack`(z-index 90).
-- **보유 리스트 효과 총합** (`EffectTotals`, 사용자 요청 2026-07-29): 담아둔 소장품의 수치
-  효과를 더해 목록 위에 보여준다 (소장품 탭만 — 자원엔 수치 효과가 없다).
+- **보유 리스트 = 떠 있는 창** (사용자 지시 2026-07-29). 모달이 아니다:
+  백드롭을 렌더하지 않아 **바깥을 눌러도 닫히지 않고 뒤를 덮지도 않는다**(닫기는 × 뿐).
+  `.rg-invmodal { position: fixed; z-index: 150 }` — 사이트 모든 모달보다 위
+  (`.modal-backdrop` 100 · `.term-backdrop` 110 · `.rg-modal-back` 80/90 · 최대 140).
+  담으면서 가이드를 계속 보라는 창이라 화면을 막으면 목적이 사라진다.
+  - **머리를 잡아 이동**(`.rg-inv-grab`, pointer capture) + **CSS `resize: both`로 크기 조절**.
+    위치·크기는 `ta:rogue-inv-{pos,size}`에 저장(테마 무관 — 작업 공간이라 하나만).
+    복원할 때 화면 밖이면 `clampInv`로 안으로 당긴다. resize는 이벤트가 없어 ResizeObserver.
+  - 창이 좁으므로 카드는 1열·작은 글씨, 안내문은 헤더 `title` 툴팁으로 내렸다.
+- **효과 총합** (`EffectTotals`, 사용자 요청 2026-07-29): 보유 리스트의 「Σ 효과 총합」
+  버튼 → 모달(`.rg-effback` z-index 160 — 떠 있는 창보다 위). 소장품 탭에서만 낸다.
   - 수치는 **usage 문장을 파싱하지 않는다.** `details.relics[<id>].buffs[].blackboard`에서
     빌더(`relic_effects`)가 뽑아 `relics[].eff = [{k, v, m, sel}]`로 심고, EN/JA 파일에도
     **같은 배열**이 들어간다 (문장 파싱은 로케일에서 깨진다).
-  - `m`: `mul` 배율 · `add` 가산 · `get` 즉시 획득(편성 인원·희망·목표 HP — immediate_reward의
-    `rogue_N_<suffix>` 아이템, 접두사만 떼면 토픽·언어 무관).
+  - `m`: `mul` 배율 델타(0.35→+35%) · `add` 가산 · `scale` **1이 기준인 배율**(1.35→+35%,
+    겹치면 **곱한다** — `global_buff_stack_base_one`이 그렇게 쌓인다) · `get` 즉시 획득
+    (편성 인원·희망·목표 HP — immediate_reward의 `rogue_N_<suffix>`, 접두사만 떼면 토픽·언어 무관).
   - `sel`: null이면 전체. **`selector.profession`이 8개 직업 전부면 조건이 아니라 전체다**
     (실측 48건) — 조건으로 분류하면 총합이 엉뚱하게 쪼개진다.
-  - ⚠ **전부 더할 수 있는 게 아니다** — 수치 효과를 가진 소장품은 40% 남짓이고 나머지는
+  - **`global_buff_*` 계열은 안쪽 `key`가 효과 이름**이고 전 토픽 222종이나 된다. 대부분
+    조건부·고유라 `EFF_GLOBAL` 화이트리스트로 **무조건 전역인 것만** 쓴다 (적 공격력/HP/방어력/
+    이·공속 하락, 적이 받는 물리·마법·진 대미지, 초기 SP, 자연 회복 SP, 받는 치료).
+    이걸 빠뜨렸다가 "적 공격력 -12%·초기 SP +32가 왜 0개 합산이냐"는 리포트를 받았다(2026-07-29).
+  - ⚠ `heal_scale`·`hp_recovery_per_sec[mul]`·`hp_recovery_per_sec_by_max_hp_ratio[mul]`은
+    **한 효과의 세 갈래로 항상 함께 나온다**(실측 18/18). `heal_scale`만 쓸 것 — 셋 다 넣으면
+    "+20%" 하나가 세 줄로 불어난다.
+  - ⚠ **전부 더할 수 있는 게 아니다** — 수치 효과를 가진 소장품은 절반 안팎이고 나머지는
     조건부·고유 효과다. UI는 "N개 중 M개 합산"과 "나머지 N개는 합산 대상 아님"을 **반드시
     함께 적는다**. 감추면 없는 효과를 다 셈한 것처럼 읽힌다.
-  - 표시 위계: 전체 적용 → 조건부(근접/원거리/직업별) → 누계 획득 순, 뒤로 갈수록 작게.
-    직업명 번역은 `operators.{en,ja}.json`의 공식 표기를 i18n 사전에 옮겨 쓴다.
+  - 표시 묶음: **아군 / 적군 / 판 수치 / 조건부 / 누계 획득** — 섞으면 '공격력'이 누구
+    것인지 알 수 없다. 직업명 번역은 `operators.{en,ja}.json`의 공식 표기를 i18n 사전에 옮겨 쓴다.
 - **스탯 컨텍스트 일관성 (사용자 리포트로 확정)**: EnemyModal은 연 곳의 StatCtx를 그대로
   물려받는다(스테이지 모달→긴급 룬·험난한 길 배율 포함, 도감→dexCtx). 도감은 험난한 길
   전용 적(보스)만 g10+ 배율 자동 적용. 반영된 배율은 .rg-ctx-note로 명시 — 도감/노드

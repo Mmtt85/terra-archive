@@ -42,9 +42,10 @@ type Stage = { id: string; kind: string; zone: number | null; code: string | nul
 type Enemy = { name: string; rank: string | null; index: string | null; attack: string | null; desc: string | null; ability: string | null; hp: number; atk: number; def: number; res: number; aspd: number; ms: number; weight: number; lifePoint: number; immune?: string[]; img?: string | null; cn?: string };
 // 소장품 효과의 수치 (scripts/build-rogue.py relic_effects) — usage 문장이 아니라 게임
 // 데이터의 blackboard에서 뽑아 3개 로케일에 같은 배열로 심는다(언어 무관 합산).
-// m: mul=배율(%) · add=가산 · get=즉시 획득(편성 인원·희망·목표 HP 등)
+// m: mul=배율 델타(0.35 → +35%) · add=가산 · scale=1 기준 배율(1.35 → +35%, 겹치면 곱)
+//    · get=즉시 획득(편성 인원·희망·목표 HP 등)
 // sel: null이면 전체 적용, 아니면 직업(warrior|sniper…)이나 melee/ranged 조건
-type Eff = { k: string; v: number; m: "mul" | "add" | "get"; sel: string | null };
+type Eff = { k: string; v: number; m: "mul" | "add" | "scale" | "get"; sel: string | null };
 type Relic = { id: string; name: string; desc: string | null; usage: string | null; obtain: string | null; order: string | null; group: number | null; sort: number; sp: boolean; img?: boolean; iconId?: string; cn?: string; eff?: Eff[] };
 type Capsule = { id: string; name: string; en: string | null; desc: string | null; usage: string | null; img?: boolean; cn?: string };
 type Simple = { id: string; name: string; desc?: string | null; usage: string | null; img?: boolean; cn?: string };
@@ -563,11 +564,19 @@ function InvPill({ owned, onToggle }: { owned: boolean; onToggle: () => void }) 
 // ⚠ 전부 더할 수 있는 게 아니다 — 실측상 수치 효과를 가진 소장품은 40% 남짓이고,
 // 나머지는 "스킬 발동 시", "특정 지형에서" 같은 조건부·고유 효과라 애초에 합이 없다.
 // 그래서 못 더한 개수를 감추지 않고 함께 적는다.
-const EFF_ORDER = ["atk", "hp", "def", "aspd", "res", "cost", "block", "respawn", "regen", "regen_pct", "pen", "deploy", "initcost", "costlimit"];
+// 표시 묶음 — 아군 / 적군 / 판 수치. 섞어 놓으면 '공격력'이 누구 것인지 알 수 없다.
+const EFF_ALLY = ["atk", "hp", "def", "aspd", "res", "cost", "block", "respawn", "regen", "regen_pct", "pen", "heal", "sp_born", "sp_regen"];
+const EFF_ENEMY = ["e_atk", "e_hp", "e_def", "e_aspd", "e_ms", "dmg_phy", "dmg_mag", "dmg_pure"];
+const EFF_FIELD = ["deploy", "initcost", "costlimit"];
+const EFF_ORDER = [...EFF_ALLY, ...EFF_ENEMY, ...EFF_FIELD];
 const EFF_LABEL: Record<string, string> = {
   atk: "공격력", hp: "HP", def: "방어력", aspd: "공격 속도", res: "마법 저항",
   cost: "배치 코스트", block: "저지 가능 수", respawn: "재배치 시간",
   regen: "초당 HP 회복", regen_pct: "초당 HP 회복(최대 HP 비례)", pen: "방어 관통",
+  heal: "받는 치료·회복 효과", sp_born: "초기 SP", sp_regen: "자연 회복 SP",
+  e_atk: "적 공격력", e_hp: "적 HP", e_def: "적 방어력", e_aspd: "적 공격 속도",
+  e_ms: "적 이동 속도", dmg_phy: "적이 받는 물리 대미지", dmg_mag: "적이 받는 마법 대미지",
+  dmg_pure: "적이 받는 진 대미지",
   deploy: "배치 가능 인원수", initcost: "초기 코스트", costlimit: "코스트 상한",
 };
 // 즉시 획득분 — 배율이 아니라 '누계로 얼마를 받았나'
@@ -581,7 +590,10 @@ const SEL_LABEL: Record<string, string> = {
   warrior: "가드", sniper: "스나이퍼", tank: "디펜더", medic: "메딕",
   support: "서포터", caster: "캐스터", special: "스페셜리스트", pioneer: "뱅가드",
 };
-type EffSum = { mul: number; add: number };
+// scale은 1이 기준인 배율(1.35 = +35%)이라 더하지 않고 **곱한다** — 데이터의
+// global_buff_stack_base_one이 그렇게 겹친다. 초기값이 0이 아니라 1인 이유.
+type EffSum = { mul: number; add: number; scale: number };
+const emptySum = (): EffSum => ({ mul: 0, add: 0, scale: 1 });
 
 /** 보유 항목 → 조건별 스탯 합·즉시 획득 합·수치화 못 한 개수 */
 function sumEffects(items: { eff?: Eff[] }[]) {
@@ -595,8 +607,9 @@ function sumEffects(items: { eff?: Eff[] }[]) {
       const sel = e.sel ?? "";
       let bucket = stats.get(sel);
       if (!bucket) { bucket = new Map(); stats.set(sel, bucket); }
-      const cur = bucket.get(e.k) ?? { mul: 0, add: 0 };
-      cur[e.m] += e.v;
+      const cur = bucket.get(e.k) ?? emptySum();
+      if (e.m === "scale") cur.scale *= e.v;
+      else cur[e.m] += e.v;
       bucket.set(e.k, cur);
     }
   }
@@ -604,69 +617,93 @@ function sumEffects(items: { eff?: Eff[] }[]) {
 }
 
 // 배율은 소수(0.35)로 들어오므로 %로, 가산은 그대로. 부호는 데이터가 가진 걸 그대로 쓴다
-// (재배치 시간 -25% 같은 감소 효과가 있다).
+// (재배치 시간 -25%, 적 공격력 -12% 같은 감소 효과가 있다).
 const signed = (v: number, pct: boolean) => {
   const n = pct ? v * 100 : v;
   const s = Math.round(n * 100) / 100;
   return `${s > 0 ? "+" : ""}${s}${pct ? "%" : ""}`;
 };
+/** 한 스탯의 합을 사람이 읽는 문자열로 — 배율·가산·곱배율이 섞여 있으면 나란히 적는다 */
+const sumText = (s: EffSum) => [
+  s.mul && signed(s.mul, true),
+  s.scale !== 1 && signed(s.scale - 1, true),
+  s.add && signed(s.add, false),
+].filter(Boolean).join(" ");
 
-function EffectTotals({ items, label }: { items: { eff?: Eff[] }[]; label: string }) {
+// 효과 총합 모달 — 보유 리스트의 「Σ 효과 총합」 버튼으로 연다 (사용자 지시 2026-07-29:
+// 목록 안에 붙박이로 두지 말고 버튼→모달로). 떠 있는 보유 창(z-150)보다 위에 뜬다.
+function EffectTotals({ items, label, onClose }: { items: { eff?: Eff[] }[]; label: string; onClose: () => void }) {
   const { t } = useI18n();
   const { stats, got, plain } = useMemo(() => sumEffects(items), [items]);
-  const order = (m: Map<string, EffSum>, keys: string[]) => keys.filter((k) => m.has(k));
   const global = stats.get("") ?? new Map<string, EffSum>();
   // 조건부는 대상 이름 순으로 — 근접/원거리 먼저, 그다음 직업
   const conds = [...stats.entries()].filter(([sel]) => sel).sort((a, b) => a[0].localeCompare(b[0]));
   const selName = (sel: string) => sel.split("+").map((s) => t(SEL_LABEL[s] ?? s)).join(" · ");
-  const chip = (k: string, sum: EffSum, dict: Record<string, string>) => (
-    <li key={k}>
-      <span>{t(dict[k] ?? k)}</span>
-      <b>{[sum.mul && signed(sum.mul, true), sum.add && signed(sum.add, false)].filter(Boolean).join(" ")}</b>
-    </li>
+  const chip = (k: string, sum: EffSum) => (
+    <li key={k}><span>{t(EFF_LABEL[k] ?? k)}</span><b>{sumText(sum)}</b></li>
   );
-  if (!items.length) return null;
+  // 아군/적군/판 수치를 나눠 낸다 — 섞으면 '공격력'이 누구 것인지 알 수 없다
+  const group = (keys: string[], title: string) => {
+    const hit = keys.filter((k) => global.has(k));
+    if (!hit.length) return null;
+    return (
+      <div className="rg-efftot-grp" key={title}>
+        <h5>{t(title)}</h5>
+        <ul className="rg-efftot-row">{hit.map((k) => chip(k, global.get(k)!))}</ul>
+      </div>
+    );
+  };
   const nothing = !global.size && !conds.length && !got.size;
   return (
-    <section className="rg-efftot">
-      <header>
-        <h4>{t("효과 총합")}</h4>
-        {/* 몇 개를 더했는지 밝힌다 — 조건부·고유 효과는 합이 없으므로 감추면 거짓말이 된다 */}
-        <span>{t("{n}개 중 {m}개 합산", { n: items.length, m: items.length - plain })}</span>
-      </header>
-      {nothing ? (
-        <p className="rg-efftot-none">{t("담아둔 항목에는 더할 수 있는 수치 효과가 없습니다 — 조건부·고유 효과뿐입니다.")}</p>
-      ) : (
-        <>
-          {global.size > 0 && (
-            <ul className="rg-efftot-row">
-              {order(global, EFF_ORDER).map((k) => chip(k, global.get(k)!, EFF_LABEL))}
-            </ul>
-          )}
-          {conds.map(([sel, m]) => (
-            <ul className="rg-efftot-row cond" key={sel}>
-              <li className="rg-efftot-sel">{selName(sel)}</li>
-              {order(m, EFF_ORDER).map((k) => chip(k, m.get(k)!, EFF_LABEL))}
-            </ul>
-          ))}
-          {got.size > 0 && (
-            <ul className="rg-efftot-row get">
-              <li className="rg-efftot-sel">{t("누계 획득")}</li>
-              {GET_ORDER.filter((k) => got.has(k)).map((k) => (
-                <li key={k}><span>{t(GET_LABEL[k])}</span><b>{signed(got.get(k)!, false)}</b></li>
-              ))}
-            </ul>
-          )}
-        </>
-      )}
-      {/* 합산된 게 하나도 없으면 위 안내가 이미 같은 말을 하므로 겹쳐 적지 않는다 */}
-      {plain > 0 && !nothing && (
-        <p className="rg-efftot-rest">
-          {t("나머지 {n}개는 조건부·고유 효과라 합산 대상이 아닙니다 (카드에서 개별 확인).", { n: plain })}
-        </p>
-      )}
-      <p className="rg-efftot-note">{t("같은 종류의 배율은 더해서 적용됩니다. {label} 기준.", { label })}</p>
-    </section>
+    <div className="rg-modal-back rg-effback" onClick={onClose} role="presentation">
+      <div className="rg-modal rg-effmodal" role="dialog" aria-modal onClick={(ev) => ev.stopPropagation()}>
+        <header className="rg-modal-head">
+          <div>
+            <h3>Σ {t("효과 총합")}</h3>
+            {/* 몇 개를 더했는지 밝힌다 — 조건부·고유 효과는 합이 없으므로 감추면 거짓말이 된다 */}
+            <span className="rg-modal-zone">{t("{n}개 중 {m}개 합산", { n: items.length, m: items.length - plain })}</span>
+          </div>
+          <button type="button" className="rg-modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
+        </header>
+        {nothing ? (
+          <p className="rg-efftot-none">{t("담아둔 항목에는 더할 수 있는 수치 효과가 없습니다 — 조건부·고유 효과뿐입니다.")}</p>
+        ) : (
+          <>
+            {group(EFF_ALLY, "아군")}
+            {group(EFF_ENEMY, "적군")}
+            {group(EFF_FIELD, "판 수치")}
+            {conds.length > 0 && (
+              <div className="rg-efftot-grp">
+                <h5>{t("조건부")}</h5>
+                {conds.map(([sel, m]) => (
+                  <ul className="rg-efftot-row cond" key={sel}>
+                    <li className="rg-efftot-sel">{selName(sel)}</li>
+                    {EFF_ORDER.filter((k) => m.has(k)).map((k) => chip(k, m.get(k)!))}
+                  </ul>
+                ))}
+              </div>
+            )}
+            {got.size > 0 && (
+              <div className="rg-efftot-grp">
+                <h5>{t("누계 획득")}</h5>
+                <ul className="rg-efftot-row get">
+                  {GET_ORDER.filter((k) => got.has(k)).map((k) => (
+                    <li key={k}><span>{t(GET_LABEL[k])}</span><b>{signed(got.get(k)!, false)}</b></li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </>
+        )}
+        {/* 합산된 게 하나도 없으면 위 안내가 이미 같은 말을 하므로 겹쳐 적지 않는다 */}
+        {plain > 0 && !nothing && (
+          <p className="rg-efftot-rest">
+            {t("나머지 {n}개는 조건부·고유 효과라 합산 대상이 아닙니다 (카드에서 개별 확인).", { n: plain })}
+          </p>
+        )}
+        <p className="rg-efftot-note">{t("같은 종류의 배율은 더해서, 「받는 대미지」류는 곱해서 적용됩니다. {label} 기준.", { label })}</p>
+      </div>
+    </div>
   );
 }
 
@@ -1091,6 +1128,99 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   });
   const [invOpen, setInvOpen] = useState(false);
   const [invTab, setInvTab] = useState<"relic" | "res">("relic");
+  // ── 떠 있는 창의 위치 (사용자 지시 2026-07-29: "윗쪽 잡고 드래그하면 위치이동")
+  // 위치는 토픽과 무관한 작업 공간이라 테마별이 아니라 하나만 저장한다.
+  const INV_POS_KEY = "ta:rogue-inv-pos";
+  const invPanelRef = useRef<HTMLDivElement>(null);
+  const invDragRef = useRef<{ dx: number; dy: number } | null>(null);
+  const [invPos, setInvPos] = useState<{ x: number; y: number } | null>(null);
+  const [invDragging, setInvDragging] = useState(false);
+  const [effOpen, setEffOpen] = useState(false);          // 효과 총합 모달
+  // 사용자가 CSS resize 손잡이로 바꾼 크기를 기억한다 (사용자 지시 2026-07-29)
+  const INV_SIZE_KEY = "ta:rogue-inv-size";
+  const [invSize, setInvSize] = useState<{ w: number; h: number } | null>(null);
+  useEffect(() => {
+    if (!invOpen) return;
+    try {
+      const raw = localStorage.getItem(INV_SIZE_KEY);
+      if (raw) setInvSize(JSON.parse(raw) as { w: number; h: number });
+    } catch { /* 프라이빗 모드 등 */ }
+  }, [invOpen]);
+  // resize는 이벤트가 없어 ResizeObserver로 잡는다 (드래그 중 위치 재보정과 겹치지 않게 크기만)
+  useEffect(() => {
+    const el = invPanelRef.current;
+    if (!invOpen || !el || typeof ResizeObserver === "undefined") return;
+    let idle = 0;
+    const ob = new ResizeObserver(() => {
+      window.clearTimeout(idle);
+      idle = window.setTimeout(() => {
+        const next = { w: el.offsetWidth, h: el.offsetHeight };
+        try { localStorage.setItem(INV_SIZE_KEY, JSON.stringify(next)); } catch { /* 프라이빗 모드 등 */ }
+        setInvPos((p) => (p ? clampInv(p.x, p.y) : p));   // 커지면서 화면 밖으로 나가지 않게
+      }, 250);
+    });
+    ob.observe(el);
+    return () => { window.clearTimeout(idle); ob.disconnect(); };
+  }, [invOpen]);
+  // 창이 화면 밖으로 나가지 않게 — 저장된 위치를 복원할 때 창 크기가 달라졌을 수 있다.
+  // 창이 화면보다 크면(모바일) 위쪽에 붙인다.
+  const clampInv = (x: number, y: number) => {
+    const el = invPanelRef.current;
+    const w = el?.offsetWidth ?? 420;
+    const h = el?.offsetHeight ?? 320;
+    return {
+      x: Math.max(8, Math.min(x, window.innerWidth - w - 8)),
+      y: Math.max(8, Math.min(y, Math.max(8, window.innerHeight - h - 8))),
+    };
+  };
+  // 처음 열 때 위치 결정 — 저장된 값이 있으면 그걸로, 없으면 오른쪽 위(가이드 본문을 덜 가린다)
+  useEffect(() => {
+    if (!invOpen) return;
+    let saved: { x: number; y: number } | null = null;
+    try {
+      const raw = localStorage.getItem(INV_POS_KEY);
+      if (raw) saved = JSON.parse(raw) as { x: number; y: number };
+    } catch { /* 프라이빗 모드 등 */ }
+    // 레이아웃이 잡힌 뒤에 재보정해야 창 크기를 알 수 있다
+    const place = () => setInvPos(clampInv(
+      saved?.x ?? window.innerWidth - (invPanelRef.current?.offsetWidth ?? 440) - 24,
+      saved?.y ?? 84,
+    ));
+    place();
+    const raf = requestAnimationFrame(place);
+    return () => cancelAnimationFrame(raf);
+  }, [invOpen]);
+  // 창 크기가 바뀌면 화면 밖으로 밀려나지 않게 다시 안으로
+  useEffect(() => {
+    if (!invOpen) return;
+    const onResize = () => setInvPos((p) => (p ? clampInv(p.x, p.y) : p));
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [invOpen]);
+  const onInvDragStart = (e: React.PointerEvent) => {
+    if ((e.target as HTMLElement).closest("button")) return;   // 닫기 버튼은 드래그가 아니다
+    const el = invPanelRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    invDragRef.current = { dx: e.clientX - r.left, dy: e.clientY - r.top };
+    setInvDragging(true);
+    e.currentTarget.setPointerCapture(e.pointerId);
+    e.preventDefault();                                        // 헤더 텍스트가 드래그 선택되지 않게
+  };
+  const onInvDragMove = (e: React.PointerEvent) => {
+    const d = invDragRef.current;
+    if (d) setInvPos(clampInv(e.clientX - d.dx, e.clientY - d.dy));
+  };
+  const onInvDragEnd = (e: React.PointerEvent) => {
+    if (!invDragRef.current) return;
+    invDragRef.current = null;
+    setInvDragging(false);
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
+    setInvPos((p) => {
+      if (p) try { localStorage.setItem(INV_POS_KEY, JSON.stringify(p)); } catch { /* 프라이빗 모드 등 */ }
+      return p;
+    });
+  };
   const ownedRelics = useMemo(() => relicsAll.filter((r) => inv.has(r.id)), [relicsAll, inv]);
   const ownedRes = useMemo(() => resItems.filter((i) => inv.has(i.id)), [resItems, inv]); // eslint-disable-line react-hooks/exhaustive-deps
   // 비우기 확인은 사이트 공용 확인 모달(useConfirm) — window.confirm 금지 (사용자 확정 2026-07-24)
@@ -2126,17 +2256,25 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
           onToggleOwn={invSection(relicOpen.id) ? () => toggleInv(relicOpen.id) : undefined} />
       )}
       {/* 보유 리스트 모달 — 소장품/테마 자원 탭으로 구분해 담아둔 항목을 한눈에 (피드백 반영 2026-07-24) */}
+      {/* 보유 리스트는 모달이 아니라 **떠 있는 창** (사용자 지시 2026-07-29):
+          바깥을 눌러도 닫히지 않고, 뒤를 어둡게 덮지 않으며(백드롭 없음), 항상 맨 위에 있고,
+          머리를 잡아 옮길 수 있다. 담으면서 가이드를 계속 보라는 창이라 화면을 막으면 안 된다.
+          닫기는 × 버튼뿐 — Esc도 막지 않는다(다른 모달과 달리 여긴 Esc 핸들러 자체가 없다). */}
       {invOpen && (
-        <div className="rg-modal-back" onClick={() => setInvOpen(false)} role="presentation">
-          <div className="rg-modal rg-invmodal" role="dialog" aria-modal onClick={(ev) => ev.stopPropagation()}>
-            <header className="rg-modal-head">
-              <div>
+        <div className="rg-modal rg-invmodal" role="dialog" aria-label={t("보유 리스트")}
+          ref={invPanelRef}
+          style={{ ...(invPos ? { left: invPos.x, top: invPos.y } : {}),
+                   ...(invSize ? { width: invSize.w, height: invSize.h } : {}) }}>
+          <header className={`rg-modal-head rg-inv-grab${invDragging ? " dragging" : ""}`}
+            onPointerDown={onInvDragStart} onPointerMove={onInvDragMove}
+            onPointerUp={onInvDragEnd} onPointerCancel={onInvDragEnd}>
+              <div title={t("게임에서 얻은 소장품·자원을 담아두는 목록입니다. 카드의 「＋ 보유」 버튼으로 추가하며, 이 브라우저에 테마별로 저장됩니다.")}>
                 <h3>🎒 {t("보유 리스트")}</h3>
                 <span className="rg-modal-zone">{t(TOPICS.find((tp) => tp.id === topic)?.name ?? "")}</span>
               </div>
               <button type="button" className="rg-modal-close" onClick={() => setInvOpen(false)} aria-label={t("닫기")}>×</button>
             </header>
-            <p className="rg-zone-desc">{t("게임에서 얻은 소장품·자원을 담아두는 목록입니다. 카드의 「＋ 보유」 버튼으로 추가하며, 이 브라우저에 테마별로 저장됩니다.")}</p>
+            {/* 안내문은 창을 키우지 않도록 헤더 툴팁으로 내렸다 (사용자 지시 2026-07-29: 내용 줄이기) */}
             <div className="rg-filterbar rg-inv-tabs">
               <button type="button" className={invTab === "relic" ? "on" : ""} onClick={() => setInvTab("relic")}>
                 {t("소장품")} <em className="rg-inv-tabcnt">{ownedRelics.length}</em>
@@ -2146,14 +2284,15 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
                   {t(resLabel)} <em className="rg-inv-tabcnt">{ownedRes.length}</em>
                 </button>
               )}
+              {/* 효과 총합은 붙박이 패널이 아니라 버튼→모달 (사용자 지시 2026-07-29).
+                  자원 탭엔 수치 효과가 없어 소장품 탭에서만 낸다. */}
+              {invTab === "relic" && ownedRelics.length > 0 && (
+                <button type="button" className="rg-inv-sum" onClick={() => setEffOpen(true)}>Σ {t("효과 총합")}</button>
+              )}
               {(invTab === "relic" ? ownedRelics : ownedRes).length > 0 && (
                 <button type="button" className="rg-inv-clear" onClick={() => void clearInvTab(invTab)}>{t("전체 비우기")}</button>
               )}
             </div>
-            {/* 효과 총합 — 목록 위에 (사용자 요청 2026-07-29). 자원 탭엔 수치 효과가 없어 소장품 탭만 */}
-            {invTab === "relic" && ownedRelics.length > 0 && (
-              <EffectTotals items={ownedRelics} label={t(TOPICS.find((tp) => tp.id === topic)?.name ?? "")} />
-            )}
             {(invTab === "relic" ? ownedRelics : ownedRes).length === 0 ? (
               <p className="rg-inv-empty">{t("아직 담은 항목이 없습니다 — 소장품·전시관 카드의 「＋ 보유」 버튼으로 추가하세요.")}</p>
             ) : (
@@ -2172,8 +2311,11 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
                 ))}
               </div>
             )}
-          </div>
         </div>
+      )}
+      {effOpen && (
+        <EffectTotals items={ownedRelics} onClose={() => setEffOpen(false)}
+          label={t(TOPICS.find((tp) => tp.id === topic)?.name ?? "")} />
       )}
       {lensOpen && (
         <div className="modal-backdrop scanner-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) setLensOpen(false); }}>

@@ -11902,29 +11902,93 @@ main.site-main > .site-header {
 .rg-filterbar .rg-inv-open:hover {
   border-color: var(--rggold);
 }
-/* ── 보유 소장품 효과 총합 — 보유 리스트 맨 위 (사용자 요청 2026-07-29) ──
-   조건부 줄(cond)·누계 획득 줄(get)은 전체 적용 줄보다 한 단계 낮은 위계로 둔다. */
-.rg-efftot {
-  margin: 10px 0 14px;
+/* ── 보유 리스트는 '떠 있는 창' (사용자 지시 2026-07-29) ──────────────────
+   모달이 아니다: 백드롭을 렌더하지 않으므로 바깥 클릭으로 닫히지 않고 뒤를 덮지도 않는다.
+   담으면서 가이드를 계속 보라는 창이라 화면을 막으면 목적이 사라진다.
+   z-index 150 = 사이트의 모든 모달(.modal-backdrop 100 · .term-backdrop 110 ·
+   .rg-modal-back 80/90 · 그 외 최대 140)보다 위. 연결 상태 토스트(10000)만 더 위다. */
+.rg-invmodal {
+  position: fixed;
+  z-index: 150;
+  width: min(420px, calc(100vw - 16px));
+  max-width: none;
+  height: min(62vh, calc(100vh - 16px));
+  max-height: calc(100vh - 16px);
+  min-width: 260px;
+  min-height: 180px;
   padding: 12px 14px;
-  border: 1px solid var(--rgline);
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--rggold) 7%, transparent);
+  box-shadow: 0 12px 40px #000d, 0 0 0 1px #0006;
+  /* 크기 조절 손잡이 (사용자 지시 2026-07-29) — overflow가 visible이 아니어야 나온다.
+     바뀐 크기는 ResizeObserver로 잡아 저장한다(resize에는 이벤트가 없다). */
+  resize: both;
+  overflow: auto;
 }
-.rg-efftot > header {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
+/* 창 안에서는 카드를 한 단계 작게 — 떠 있는 창이라 폭이 좁다 (사용자 지시: 내용 줄이기) */
+.rg-invmodal .rg-relic-grid {
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+.rg-invmodal .rg-relic {
+  padding: 7px 9px;
+}
+.rg-invmodal .rg-relic h4 {
+  font-size: 12.5px;
+}
+.rg-invmodal .rg-relic-icon {
+  width: 26px;
+  height: 26px;
+}
+.rg-invmodal .rg-relic-usage {
+  margin-top: 3px;
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+.rg-invmodal .rg-inv-tabs {
   margin-bottom: 8px;
 }
-.rg-efftot h4 {
-  margin: 0;
-  font-size: 13px;
+/* 효과 총합 열기 버튼 — 탭 줄 오른쪽, '전체 비우기' 앞 */
+.rg-inv-sum {
+  margin-left: auto;
+  border-color: color-mix(in srgb, var(--rggold) 55%, var(--rgline)) !important;
+  color: var(--rggold) !important;
   font-weight: 800;
-  color: var(--rgink);
 }
-.rg-efftot > header span {
+.rg-filterbar .rg-inv-sum + .rg-inv-clear {
+  margin-left: 6px;
+}
+/* 효과 총합 모달 — 떠 있는 보유 창(150)보다 위 */
+.rg-effback {
+  z-index: 160;
+}
+.rg-effmodal {
+  max-width: 640px;
+}
+/* 머리 = 손잡이. 버튼(닫기)은 위에서 제외하므로 여기선 커서만 바꾼다 */
+.rg-inv-grab {
+  cursor: grab;
+  touch-action: none;          /* 모바일에서 창을 끌 때 페이지가 같이 스크롤되지 않게 */
+  user-select: none;
+  margin: -14px -16px 10px;    /* 패딩 밖까지 손잡이로 — 모서리 근처를 잡아도 잡힌다 */
+  padding: 14px 16px 10px;
+}
+.rg-inv-grab.dragging {
+  cursor: grabbing;
+}
+.rg-inv-grab .rg-modal-close {
+  cursor: pointer;
+}
+
+/* ── 보유 소장품 효과 총합 — 보유 리스트 맨 위 (사용자 요청 2026-07-29) ──
+   조건부 줄(cond)·누계 획득 줄(get)은 전체 적용 줄보다 한 단계 낮은 위계로 둔다. */
+/* 묶음(아군·적군·판 수치·조건부·누계) — 제목 + 알약 줄 */
+.rg-efftot-grp {
+  margin-bottom: 10px;
+}
+.rg-efftot-grp h5 {
+  margin: 0 0 5px;
   font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
   color: var(--rgmuted);
 }
 .rg-efftot-row {
