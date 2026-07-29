@@ -13,7 +13,7 @@ import nodeIconData from "./data/rogue-node-icons.json";
 import { useConfirm } from "./confirm";
 import { useI18n } from "./i18n";
 import { normSearch, useSearchInput } from "./search";
-import { isNewFeature } from "./whats-new";
+import { anyNewFeature, isNewFeature } from "./whats-new";
 import { GLOBAL_MODAL_HASH } from "./hash-modal";
 import type { LensGoto, LensOutcome } from "./lens/match";
 import { recognizeShot, warmData, ocrLangFor, resetGradeCache } from "./lens/run";
@@ -1610,7 +1610,8 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
       title={t("소장품·자원 카드의 「＋ 보유」 버튼으로 담아두고 여기서 한눈에 봅니다")}>
       🎒 {t("보유 리스트")}
       {inv.size > 0 && <em className="rg-inv-count">{inv.size}</em>}
-      {isNewFeature("rogue-inv") && <span className="new-badge">{t("새기능")}</span>}
+      {/* 창을 열어야 보이는 기능(Σ 효과 총합)도 여기서 알린다 — 새 기능을 창 안에 넣으면 키를 추가 */}
+      {anyNewFeature("rogue-inv", "rogue-eff") && <span className="new-badge">{t("새기능")}</span>}
     </button>
   );
 

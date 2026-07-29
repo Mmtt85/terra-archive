@@ -32,6 +32,15 @@ export function isNewFeature(key: string): boolean {
   return Date.now() < released + days * DAY_MS;
 }
 
+/**
+ * 여러 기능을 품은 진입점(모달을 여는 버튼·탭)에 쓴다 — 안에 든 것 중 하나라도
+ * 아직 새 기능이면 true. 열어 봐야 보이는 기능은 바깥 버튼에도 표시해 줘야 눈에 띈다
+ * (사용자 요청 2026-07-29: "보유리스트 안에 버튼에 새 기능 있으니 보유리스트에도").
+ */
+export function anyNewFeature(...keys: string[]): boolean {
+  return keys.some(isNewFeature);
+}
+
 // 탭 → 그 탭 안에 든 새 기능 키 — 햄버거 메뉴 배지용 (사용자 요청 2026-07-24:
 // 새 기능이 있는 메뉴 항목에도 '새기능'을 표시). 새 기능을 다른 탭에 넣으면 여기도 갱신.
 const TAB_FEATURES: Record<string, string[]> = {
@@ -43,5 +52,5 @@ const TAB_FEATURES: Record<string, string[]> = {
 
 /** 해당 탭 안에 아직 '새기능' 기간인 기능이 하나라도 있으면 true. */
 export function tabHasNewFeature(tab: string): boolean {
-  return (TAB_FEATURES[tab] ?? []).some(isNewFeature);
+  return anyNewFeature(...(TAB_FEATURES[tab] ?? []));
 }
