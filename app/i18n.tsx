@@ -995,9 +995,9 @@ const D: Record<string, Pair> = {
     "Snegurochka zeroes out the same way but scales at +10% per operator actually assigned to that factory instead of per power plant.",
     "スネグロチカは同様にゼロアウトしますが、発電所ではなくその製造所の実配置人数1人につき+10%でスケールします。",
   ],
-  "단 시설 수량 기반 생산력(퓨어스트림·쏜즈의 '각각의 무역소가…')은 살아남아 함께 쓸 수 있습니다.": [
-    "Facility-count productivity ('for each Trading Post…' — Purestream, Thorns) survives the zero-out and can be combined.",
-    "ただし施設数ベースの生産力（ピュアストリーム・ソーンズの「各貿易所が…」）はゼロアウトを生き残り、併用できます。",
+  "단 시설 수량 기반 생산력(퓨어스트림·쏜즈의 '각각의 무역소가…')은 살아남아 함께 쓸 수 있습니다. 원문의 예외가 '시설 수량'뿐이라, 창고 용량을 생산력으로 되돌리는 변환(버메일 재활용·버블 큰 게 좋아)은 함께 0이 됩니다 — 버메일+스네구로치카는 +46%가 아니라 자동화 +20%뿐입니다.": [
+    "Facility-count productivity ('for each Trading Post…' — Purestream, Thorns) survives the zero-out and can be combined. Since facility count is the only exception in the skill text, capacity-to-productivity conversions (Vermeil's Recycling, Bubble's Bigger Is Better) are zeroed along with everything else — Vermeil + Snegurochka is not +46%, just the +20% from automation.",
+    "ただし施設数ベースの生産力（ピュアストリーム・ソーンズの「各貿易所が…」）はゼロアウトを生き残り、併用できます。原文の例外は「施設数」だけなので、倉庫容量を生産力に還元する変換（ヴァーミルの再利用・バブルの大きいの大好き）は一緒に0になります — ヴァーミル+スネグラーチカは+46%ではなく自動化の+20%だけです。",
   ],
   "그레이 더 라이트닝베어러를 발전소에 두면(다른 발전소에 1성 로봇이 없는 한) 발전소 4기로 간주되어 자동화 방이 최대 140%까지 오릅니다.": [
     "Greyy the Lightningbearer in a Power Plant (as long as no 1★ robot sits in another plant) counts the base as 4 plants, pushing automation rooms up to 140%.",

@@ -268,8 +268,23 @@ console.log("");
     ["버메일 단독은 재활용이 그대로 산다", Math.abs(conv(["char_190_clour"]) - 16) < 1e-6],
     // 버블이 없는 방은 종전대로 — 베나+벌컨+버메일 = (17+19+8)×2% = 88
     ["버블 없는 방의 재활용은 무영향", Math.abs(conv(["char_190_clour", "char_163_hpsts", "char_369_bena"]) - 88) < 1e-6],
+    // 자동화(스네구로치카·위디)·오버라이드(샤마르)는 "오퍼가 제공하는 생산력이 전부 0"이라
+    // 변환분도 죽는다 (사용자 제보 2026-07-29: "버메일+스네구로치카 실제로는 +23%인데 48%")
+    ["자동화 방(스네구로치카)은 변환 0", conv(["char_190_clour", "char_4208_wintim"]) === 0],
+    ["자동화 방(위디)은 변환 0", conv(["char_400_weedy", "char_190_clour", "char_381_bubble"]) === 0],
+    // 스네구로치카 2인 방 = 자동화 10%×2명 = 20 (재활용 26이 얹히면 46이었다)
+    ["버메일+스네구로치카 = 자동화 20", Math.abs(teamScore(["char_190_clour", "char_4208_wintim"].map(E), "MANUFACTURE", ctx) - 20) < 1e-6],
   ];
   for (const [name, ok] of checks) { console.log(`${ok ? "✓" : "✗"} ${name}`); if (!ok) failed += 1; }
+}
+{
+  // 샤마르 '속삭임'은 무역소 오버라이드 — 제이 시장경제 변환도 함께 죽는다
+  const byId = new Map(ops.map((o) => [o.id, o]));
+  const E = (id) => withElite(byId.get(id), maxElite(byId.get(id).rarity));
+  const ctx = { product: "gold", tokenPoints: {} };
+  const ok = engine.capConvFor(["char_254_vodfox", "char_272_strong"].map(E), "TRADING", ctx) === 0;
+  console.log(`${ok ? "✓" : "✗"} 오버라이드 방(샤마르)은 변환 0`);
+  if (!ok) failed += 1;
 }
 
 // ── 자동편성 제외 명단 (케이퍼·인포서, 사용자 확정 2026-07-28 — INFRA-RULES §1) ─────
@@ -292,4 +307,4 @@ console.log("");
 }
 
 if (failed) { console.error(`\n✗ 검사 ${failed}건 실패`); process.exit(1); }
-console.log(`\n✓ 픽스처 ${rules.fixtures.length}건 + 육성추천 불변식 4건 + 노시스 오라 2건 + 용량 변환 비중첩 3건 + 자동편성 제외 2건 전부 통과`);
+console.log(`\n✓ 픽스처 ${rules.fixtures.length}건 + 육성추천 불변식 4건 + 노시스 오라 2건 + 용량 변환 비중첩·자동화 7건 + 자동편성 제외 2건 전부 통과`);

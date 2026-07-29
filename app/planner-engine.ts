@@ -837,9 +837,20 @@ function capConvOf(parts: OpBreakdown[], room: string, ambient?: AmbientAura[], 
   // 원문이 이름으로 못 박은 관계라 build-infra.py가 `capConv.over`로 옮기고 여기서 이름으로
   // 억제한다. 죽는 건 변환뿐 — 버메일이 올린 창고 용량(+8)은 그대로 남아 버블의 변환에 실린다.
   const suppressed = new Set(parts.flatMap((p) => p.capConv.flatMap((entry) => entry.conv.over ?? [])));
+  // 자동화·오버라이드가 걸린 방에선 **변환분도 죽는다** (사용자 제보 2026-07-29: "버메일 +
+  // 스네구로치카 둘 넣으면 실제로는 +23%인데 왜 48%가 찍히나"). 스네구로치카·위디·유넥티스·
+  // 윈드플릿·패신저 원문이 "해당 제조소 내의 오퍼레이터가 제공하는 생산력이 **전부 0**이
+  // 되고(**시설 수량에 따라** 제공하는 생산력 미포함)"인데, 변환(버메일 재활용·버블)은 오퍼가
+  // 제공하는 생산력이지 시설 수량 기반이 아니다 — 예외 조항에 안 걸린다. 종전엔 teamScore가
+  // efficiency만 0으로 눌러 capConv가 그대로 살아남았다(버메일+스네구로치카 46 = 자동화 20 +
+  // 재활용 26). 샤마르 '속삭임'도 같은 꼴이지만 "**다른 인원**이 제공하는"이라 자기 몫만 남긴다.
+  // 창고 용량(+8)은 생산력이 아니라 그대로 있지만, 되돌릴 변환기가 없으니 점수엔 안 잡힌다.
+  const automated = parts.some((p) => p.automation > 0);
+  const overrider = parts.find((p) => p.override > 0);
   let eff = 0;
   for (const p of parts) for (const { conv, name } of p.capConv) {
     if (suppressed.has(name)) continue;
+    if (automated || (overrider != null && p !== overrider)) continue;
     if (conv.t === "tier") {
       // 버블 '큰 게 좋아' — 실측 역산으로 확정 (사용자 제보 2026-07-20, 베나+벌컨+버블 = +93):
       // **오퍼별 개별 용량**에 **문턱식**으로 적용한다 — 그 오퍼의 상승 용량이 at(16) 이하면
