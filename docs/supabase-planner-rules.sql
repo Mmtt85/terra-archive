@@ -26,12 +26,22 @@ alter table public.planner_rules add constraint planner_rules_kind_check
 
 alter table public.planner_rules enable row level security;
 
-drop policy if exists "admin all planner_rules" on public.planner_rules;
-create policy "admin all planner_rules"
+-- ⚠ 이미 있으면 건드리지 않는다 — 이 파일을 다시 돌려도 관리자 키가 아래 플레이스홀더로
+--   되돌아가지 않게 (2026-07-29 changelog에서 실제로 당한 사고). 키를 바꾸거나 복구할 땐
+--   drop policy … ; 를 손으로 먼저 실행한 뒤 이 블록을 돌린다.
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public' and tablename = 'planner_rules' and policyname = 'admin all planner_rules'
+  ) then
+    execute $p$create policy "admin all planner_rules"
   on public.planner_rules for all
   to anon
   using ((current_setting('request.headers', true)::json ->> 'x-admin-key') = 'admin')
-  with check ((current_setting('request.headers', true)::json ->> 'x-admin-key') = 'admin');
+  with check ((current_setting('request.headers', true)::json ->> 'x-admin-key') = 'admin')$p$;
+  end if;
+end $$;
 
 -- ── 발행 스냅샷: 프론트/파이프라인이 읽는 것은 이것뿐 (원자적 버전 + 롤백) ──
 create table if not exists public.rule_releases (
@@ -49,18 +59,38 @@ create policy "anon read releases"
   to anon
   using (true);
 
-drop policy if exists "admin insert releases" on public.rule_releases;
-create policy "admin insert releases"
+-- ⚠ 이미 있으면 건드리지 않는다 — 이 파일을 다시 돌려도 관리자 키가 아래 플레이스홀더로
+--   되돌아가지 않게 (2026-07-29 changelog에서 실제로 당한 사고). 키를 바꾸거나 복구할 땐
+--   drop policy … ; 를 손으로 먼저 실행한 뒤 이 블록을 돌린다.
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public' and tablename = 'rule_releases' and policyname = 'admin insert releases'
+  ) then
+    execute $p$create policy "admin insert releases"
   on public.rule_releases for insert
   to anon
-  with check ((current_setting('request.headers', true)::json ->> 'x-admin-key') = 'admin');
+  with check ((current_setting('request.headers', true)::json ->> 'x-admin-key') = 'admin')$p$;
+  end if;
+end $$;
 
 -- 롤백 = 최신 발행 행 삭제 (이전 버전이 자동으로 최신이 된다)
-drop policy if exists "admin delete releases" on public.rule_releases;
-create policy "admin delete releases"
+-- ⚠ 이미 있으면 건드리지 않는다 — 이 파일을 다시 돌려도 관리자 키가 아래 플레이스홀더로
+--   되돌아가지 않게 (2026-07-29 changelog에서 실제로 당한 사고). 키를 바꾸거나 복구할 땐
+--   drop policy … ; 를 손으로 먼저 실행한 뒤 이 블록을 돌린다.
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public' and tablename = 'rule_releases' and policyname = 'admin delete releases'
+  ) then
+    execute $p$create policy "admin delete releases"
   on public.rule_releases for delete
   to anon
-  using ((current_setting('request.headers', true)::json ->> 'x-admin-key') = 'admin');
+  using ((current_setting('request.headers', true)::json ->> 'x-admin-key') = 'admin')$p$;
+  end if;
+end $$;
 
 -- ── 시드: 현재 app/data/rules.json (v1) — 이미 행이 있으면 건드리지 않는다 ──
 insert into public.planner_rules (kind, key, body, seq, status, source)

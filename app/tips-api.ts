@@ -4,7 +4,7 @@
 // (사용자 확정 2026-07-27: 업데이트 내역과 같은 방식으로 /admin에서 넣으면 배포 없이 반영).
 // 스키마·RLS·시드: docs/supabase-tips.sql
 
-import { SUPABASE_URL, SUPABASE_ANON_KEY, ADMIN_REST } from "./feedback";
+import { SUPABASE_URL, SUPABASE_ANON_KEY, adminWrite } from "./feedback";
 
 export type TipRow = {
   id: string;
@@ -61,18 +61,13 @@ export async function adminUpsertTip(row: TipDraft) {
     image: trim(row.image), image_dark: trim(row.image_dark), href: trim(row.href),
     active: row.active, seq: row.seq,
   };
-  const res = await fetch(
-    isNew ? `${ADMIN_REST}/tips` : `${ADMIN_REST}/tips?id=eq.${row.id}`,
-    {
-      method: isNew ? "POST" : "PATCH",
-      headers: { "Content-Type": "application/json", Prefer: "return=minimal" },
-      body: JSON.stringify(body),
-    },
-  );
-  if (!res.ok) throw new Error(`저장 실패 (${res.status}) — 테이블·Access 로그인을 확인하세요`);
+  await adminWrite(isNew ? "/tips" : `/tips?id=eq.${row.id}`, {
+    method: isNew ? "POST" : "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  }, "저장");
 }
 
 export async function adminDeleteTip(id: string) {
-  const res = await fetch(`${ADMIN_REST}/tips?id=eq.${id}`, { method: "DELETE" });
-  if (!res.ok) throw new Error(`삭제 실패 (${res.status})`);
+  await adminWrite(`/tips?id=eq.${id}`, { method: "DELETE" }, "삭제");
 }

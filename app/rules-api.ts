@@ -1,6 +1,6 @@
 // 플래너 지식 베이스 Supabase API — 테이블·RLS는 docs/supabase-planner-rules.sql.
 // 읽기(발행 스냅샷)는 anon, 원장 CRUD·발행·롤백은 /api 프록시(Access 인증 — feedback.ts 참고).
-import { SUPABASE_URL, SUPABASE_ANON_KEY, ADMIN_REST } from "./feedback";
+import { SUPABASE_URL, SUPABASE_ANON_KEY, ADMIN_REST, adminWrite } from "./feedback";
 import type { PlannerRules } from "./rules";
 import type { RuleRow } from "./rules-compile";
 
@@ -24,26 +24,19 @@ export async function adminListRules(): Promise<RuleRow[]> {
 
 // upsert — (kind, key) 충돌 시 body·status·note·seq를 갱신 (updated_at 갱신 포함)
 export async function adminUpsertRule(rule: RuleRow) {
-  const res = await fetch(`${ADMIN_REST}/planner_rules?on_conflict=kind,key`, {
+  await adminWrite("/planner_rules?on_conflict=kind,key", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Prefer: "resolution=merge-duplicates,return=minimal",
-    },
+    headers: { "Content-Type": "application/json", Prefer: "resolution=merge-duplicates" },
     body: JSON.stringify({
       kind: rule.kind, key: rule.key, body: rule.body, status: rule.status,
       source: rule.source ?? "manual", note: rule.note ?? null, seq: rule.seq,
       updated_at: new Date().toISOString(),
     }),
-  });
-  if (!res.ok) throw new Error(`규칙 저장 실패 (${res.status})`);
+  }, "규칙 저장");
 }
 
 export async function adminDeleteRule(id: string) {
-  const res = await fetch(`${ADMIN_REST}/planner_rules?id=eq.${id}`, {
-    method: "DELETE",
-  });
-  if (!res.ok) throw new Error(`규칙 삭제 실패 (${res.status})`);
+  await adminWrite(`/planner_rules?id=eq.${id}`, { method: "DELETE" }, "규칙 삭제");
 }
 
 export async function adminPublishRelease(version: number, snapshot: PlannerRules, note: string) {

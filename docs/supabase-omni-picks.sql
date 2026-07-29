@@ -159,14 +159,34 @@ create or replace view public.omni_query_top as
 grant select on public.omni_query_top to anon;
 
 -- ── 관리자 (feedback과 동일한 x-admin-key 패턴, 비번 동기화 유지) ─────────────
-drop policy if exists "admin read omni pick" on public.omni_pick;
-create policy "admin read omni pick"
+-- ⚠ 이미 있으면 건드리지 않는다 — 이 파일을 다시 돌려도 관리자 키가 아래 플레이스홀더로
+--   되돌아가지 않게 (2026-07-29 changelog에서 실제로 당한 사고). 키를 바꾸거나 복구할 땐
+--   drop policy … ; 를 손으로 먼저 실행한 뒤 이 블록을 돌린다.
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public' and tablename = 'omni_pick' and policyname = 'admin read omni pick'
+  ) then
+    execute $p$create policy "admin read omni pick"
   on public.omni_pick for select
   to anon
-  using ((current_setting('request.headers', true)::json ->> 'x-admin-key') = 'admin');
+  using ((current_setting('request.headers', true)::json ->> 'x-admin-key') = 'admin')$p$;
+  end if;
+end $$;
 
-drop policy if exists "admin delete omni pick" on public.omni_pick;
-create policy "admin delete omni pick"
+-- ⚠ 이미 있으면 건드리지 않는다 — 이 파일을 다시 돌려도 관리자 키가 아래 플레이스홀더로
+--   되돌아가지 않게 (2026-07-29 changelog에서 실제로 당한 사고). 키를 바꾸거나 복구할 땐
+--   drop policy … ; 를 손으로 먼저 실행한 뒤 이 블록을 돌린다.
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public' and tablename = 'omni_pick' and policyname = 'admin delete omni pick'
+  ) then
+    execute $p$create policy "admin delete omni pick"
   on public.omni_pick for delete
   to anon
-  using ((current_setting('request.headers', true)::json ->> 'x-admin-key') = 'admin');
+  using ((current_setting('request.headers', true)::json ->> 'x-admin-key') = 'admin')$p$;
+  end if;
+end $$;

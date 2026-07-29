@@ -40,13 +40,37 @@ create policy "anon read changelog"
   to anon
   using (true);
 
--- 쓰기·수정·삭제는 관리자 헤더로만
-drop policy if exists "admin write changelog" on public.changelog;
-create policy "admin write changelog"
-  on public.changelog for all
-  to anon
-  using ((current_setting('request.headers', true)::json ->> 'x-admin-key') = 'admin')
-  with check ((current_setting('request.headers', true)::json ->> 'x-admin-key') = 'admin');
+-- 쓰기·수정·삭제는 관리자 헤더로만.
+-- ⚠ **이미 정책이 있으면 건드리지 않는다.** 예전엔 drop → create 였는데, 컬럼 추가 같은
+--   스키마 변경 때문에 이 파일을 다시 돌리면 **정책의 관리자 키가 아래 'admin' 플레이스홀더로
+--   되돌아갔다** (2026-07-29 실제 사고: /admin이 조용히 아무것도 저장하지 않으면서 "저장됨"만
+--   띄웠고, 그동안 누구나 x-admin-key: admin 으로 이 테이블에 쓸 수 있었다).
+--   비밀번호를 바꾸거나 복구할 때만 아래 '키 재설정' 블록을 따로 실행할 것.
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public' and tablename = 'changelog' and policyname = 'admin write changelog'
+  ) then
+    execute $p$
+      create policy "admin write changelog"
+        on public.changelog for all
+        to anon
+        using ((current_setting('request.headers', true)::json ->> 'x-admin-key') = 'admin')
+        with check ((current_setting('request.headers', true)::json ->> 'x-admin-key') = 'admin')
+    $p$;
+  end if;
+end $$;
+
+-- ── 키 재설정 (필요할 때만 손으로 실행) ────────────────────────────────────────
+-- 'admin' 두 곳을 실제 관리자 키(.supabase-admin-key)로 바꿔서 통째로 실행한다.
+--
+--   drop policy if exists "admin write changelog" on public.changelog;
+--   create policy "admin write changelog"
+--     on public.changelog for all
+--     to anon
+--     using ((current_setting('request.headers', true)::json ->> 'x-admin-key') = 'admin')
+--     with check ((current_setting('request.headers', true)::json ->> 'x-admin-key') = 'admin');
 
 -- ── 시드: 2026-07-24 17시 이후 배포분 (종전 app/changelog.tsx 하드코딩 내용) ──
 -- 이미 같은 (released_at, ko) 행이 있으면 넣지 않는다 — 이 파일을 다시 돌려도 안전.

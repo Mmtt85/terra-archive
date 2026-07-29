@@ -30,6 +30,28 @@ export async function sendFeedback(kind: FeedbackKind, message: string, payload?
 export const ADMIN_REST = "/api/supabase"; // + /<table>?<PostgREST query>
 export type FeedbackRow = { id: string; created_at: string; kind: FeedbackKind; message: string; payload: unknown; reviewed_at: string | null };
 
+/**
+ * 관리자 쓰기 — **0행이 바뀌면 실패로 본다**.
+ *
+ * RLS에 걸린 UPDATE/DELETE는 에러가 아니라 "0행 처리"다. PostgREST는 그때도 200을 주므로,
+ * res.ok만 보면 아무것도 저장되지 않았는데 UI가 "저장됨"이라고 말한다 —
+ * 2026-07-29에 실제로 당했다: docs/supabase-changelog.sql을 통째로 다시 돌리는 바람에
+ * RLS 정책의 관리자 키가 플레이스홀더로 되돌아갔고, /admin은 조용히 아무것도 저장하지
+ * 않으면서 성공 문구만 띄웠다. 그래서 return=representation으로 바꿔 실제 행 수를 센다.
+ */
+export async function adminWrite(path: string, init: RequestInit & { method: string }, what: string) {
+  const res = await fetch(`${ADMIN_REST}${path}`, {
+    ...init,
+    headers: { ...(init.headers ?? {}), Prefer: "return=representation" },
+  });
+  if (!res.ok) throw new Error(`${what} 실패 (${res.status})`);
+  const rows = await res.json().catch(() => null);
+  if (Array.isArray(rows) && rows.length === 0) {
+    throw new Error(`${what} 실패 — 서버가 0행을 처리했습니다. 권한(RLS 정책의 관리자 키)을 확인하세요.`);
+  }
+  return rows;
+}
+
 /** 로그인 확인 — Access를 통과했으면 이메일, 아니면 null (localhost 등) */
 export async function adminMe(): Promise<string | null> {
   try {
@@ -49,12 +71,11 @@ export async function adminListFeedback(): Promise<FeedbackRow[]> {
 }
 
 export async function adminSetReviewed(id: string, reviewed: boolean) {
-  const res = await fetch(`${ADMIN_REST}/feedback?id=eq.${id}`, {
+  await adminWrite(`/feedback?id=eq.${id}`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json", Prefer: "return=minimal" },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ reviewed_at: reviewed ? new Date().toISOString() : null }),
-  });
-  if (!res.ok) throw new Error(`갱신 실패 (${res.status})`);
+  }, "갱신");
 }
 
 // '대응중' 상태 — 스키마 변경 없이 payload.handling(ISO 문자열)로 저장한다.
@@ -73,15 +94,13 @@ export function withHandling(payload: unknown, handling: boolean): Record<string
 }
 
 export async function adminSetHandling(id: string, payload: unknown, handling: boolean) {
-  const res = await fetch(`${ADMIN_REST}/feedback?id=eq.${id}`, {
+  await adminWrite(`/feedback?id=eq.${id}`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json", Prefer: "return=minimal" },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ payload: withHandling(payload, handling) }),
-  });
-  if (!res.ok) throw new Error(`갱신 실패 (${res.status})`);
+  }, "갱신");
 }
 
 export async function adminDeleteFeedback(id: string) {
-  const res = await fetch(`${ADMIN_REST}/feedback?id=eq.${id}`, { method: "DELETE" });
-  if (!res.ok) throw new Error(`삭제 실패 (${res.status})`);
+  await adminWrite(`/feedback?id=eq.${id}`, { method: "DELETE" }, "삭제");
 }
