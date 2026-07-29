@@ -11967,9 +11967,12 @@ main.site-main > .site-header {
   border-bottom: 2px solid color-mix(in srgb, var(--rggold) 55%, transparent);
   border-bottom-right-radius: 3px;
 }
-/* 창 안에서는 카드를 한 단계 작게 — 떠 있는 창이라 폭이 좁다 (사용자 지시: 내용 줄이기) */
+/* 창 안에서는 카드를 한 단계 작게 — 떠 있는 창이라 폭이 좁다 (사용자 지시: 내용 줄이기).
+   창을 오른쪽으로 늘리면 한 줄에 여러 장이 들어간다 (사용자 요청 2026-07-29) —
+   고정 1열이 아니라 auto-fill. 230px는 [아이콘+이름+보유중 알약]이 눌리지 않는 최소폭이라,
+   기본 폭(420px)에선 1열이고 대략 500px부터 2열이 된다. */
 .rg-invmodal .rg-relic-grid {
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
   gap: 6px;
 }
 .rg-invmodal .rg-relic {
