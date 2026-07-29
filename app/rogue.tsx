@@ -255,7 +255,7 @@ function StageModal({ pair, grade, onClose, onOpenEnemy }: {
         <header className="rg-modal-head">
           <div>
             <span className={`rg-kind k-${stage.kind}`}>{t(KIND_LABEL[stage.kind] ?? stage.kind)}</span>
-            <h3><NodeIco id={KIND_NODE[stage.kind]} cls="rg-modal-ico" /><span className="rg-modal-title"><Nm name={stage.name} cn={stage.cn} /></span></h3>
+            <h3><NodeIco id={KIND_NODE[stage.kind]} cls={`rg-modal-ico${isEmg ? " emg" : ""}`} /><span className="rg-modal-title"><Nm name={stage.name} cn={stage.cn} /></span></h3>
             {stage.zone != null && <span className="rg-modal-zone">{t("{n}층", { n: stage.zone })}</span>}
           </div>
           <button type="button" className="rg-modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
