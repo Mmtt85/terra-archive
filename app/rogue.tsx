@@ -1103,7 +1103,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   // 라벨이 현지어라 라벨 매칭이 깨진다 — 아이템 id 접두사로 자원 시스템을 찾는다.
   const RES_MECH_PREFIX: Record<string, string> = { rogue_3: "rogue_3_totem", rogue_4: "rogue_4_fragment", rogue_5: "rogue_5_copper" };
   const resMech = useMemo(
-    () => (data.mechanics ?? []).find((m) => m.items[0]?.id.startsWith(RES_MECH_PREFIX[topic] ?? " ")),
+    () => (data.mechanics ?? []).find((m) => m.items[0]?.id.startsWith(RES_MECH_PREFIX[topic] ?? "\u0000")),
     [active, topic]); // eslint-disable-line react-hooks/exhaustive-deps
   const resItems: InvItem[] = topic === "rogue_6" ? (data.scraps ?? []) : (resMech?.items ?? []);
   const resLabel = topic === "rogue_6" ? ((data.scraps?.length ?? 0) > 0 ? "부품 (零件)" : null) : resMech?.label ?? null;
@@ -2342,7 +2342,8 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
               {/* 효과 총합은 붙박이 패널이 아니라 버튼→모달 (사용자 지시 2026-07-29).
                   자원 탭엔 수치 효과가 없어 소장품 탭에서만 낸다. */}
               {invTab === "relic" && ownedRelics.length > 0 && (
-                <button type="button" className="rg-inv-sum" onClick={() => setEffOpen(true)}>Σ {t("효과 총합")}</button>
+                <button type="button" className="rg-inv-sum" onClick={() => setEffOpen(true)}>Σ {t("효과 총합")}
+                  {isNewFeature("rogue-eff") && <span className="new-badge">{t("새기능")}</span>}</button>
               )}
               {(invTab === "relic" ? ownedRelics : ownedRes).length > 0 && (
                 <button type="button" className="rg-inv-clear" onClick={() => void clearInvTab(invTab)}>{t("전체 비우기")}</button>
