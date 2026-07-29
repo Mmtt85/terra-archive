@@ -133,6 +133,20 @@ KR 매핑 attack_of)과 `abilityList[].text`(개행 join, ability_of)에서 뽑�
 - **모달 4종**: StageModal(적 행 클릭→EnemyModal 스택) · EnemyModal(초상·전체 스탯·등장
   노드) · EncounterModal(CG·층·선택지) · RelicModal(아이콘·효과). 스택 모달은
   `.rg-modal-back.stack`(z-index 90).
+- **보유 리스트 효과 총합** (`EffectTotals`, 사용자 요청 2026-07-29): 담아둔 소장품의 수치
+  효과를 더해 목록 위에 보여준다 (소장품 탭만 — 자원엔 수치 효과가 없다).
+  - 수치는 **usage 문장을 파싱하지 않는다.** `details.relics[<id>].buffs[].blackboard`에서
+    빌더(`relic_effects`)가 뽑아 `relics[].eff = [{k, v, m, sel}]`로 심고, EN/JA 파일에도
+    **같은 배열**이 들어간다 (문장 파싱은 로케일에서 깨진다).
+  - `m`: `mul` 배율 · `add` 가산 · `get` 즉시 획득(편성 인원·희망·목표 HP — immediate_reward의
+    `rogue_N_<suffix>` 아이템, 접두사만 떼면 토픽·언어 무관).
+  - `sel`: null이면 전체. **`selector.profession`이 8개 직업 전부면 조건이 아니라 전체다**
+    (실측 48건) — 조건으로 분류하면 총합이 엉뚱하게 쪼개진다.
+  - ⚠ **전부 더할 수 있는 게 아니다** — 수치 효과를 가진 소장품은 40% 남짓이고 나머지는
+    조건부·고유 효과다. UI는 "N개 중 M개 합산"과 "나머지 N개는 합산 대상 아님"을 **반드시
+    함께 적는다**. 감추면 없는 효과를 다 셈한 것처럼 읽힌다.
+  - 표시 위계: 전체 적용 → 조건부(근접/원거리/직업별) → 누계 획득 순, 뒤로 갈수록 작게.
+    직업명 번역은 `operators.{en,ja}.json`의 공식 표기를 i18n 사전에 옮겨 쓴다.
 - **스탯 컨텍스트 일관성 (사용자 리포트로 확정)**: EnemyModal은 연 곳의 StatCtx를 그대로
   물려받는다(스테이지 모달→긴급 룬·험난한 길 배율 포함, 도감→dexCtx). 도감은 험난한 길
   전용 적(보스)만 g10+ 배율 자동 적용. 반영된 배율은 .rg-ctx-note로 명시 — 도감/노드

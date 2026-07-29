@@ -501,6 +501,77 @@ NODE_FUNC = {
 def node_func(tid, ntype):
     return (NODE_FUNC.get(tid) or {}).get(ntype) or NODE_FUNC_COMMON.get(ntype)
 
+
+# ── 소장품 효과의 수치화 (보유 리스트 총합용, 2026-07-29) ─────────────────────
+# details.relics[<id>].buffs[].blackboard 에 언어 무관 수치가 들어 있다. usage 문장을
+# 파싱하면 EN/JA에서 깨지므로 여기서 뽑아 rogueN.json 전 로케일에 같은 배열로 심는다.
+#
+# 실측(전 토픽): 스탯 버프를 가진 소장품은 전체의 1/4 남짓이고, 나머지는 조건부·고유
+# 효과라 애초에 더할 수 없다. 그래서 UI는 "더할 수 있는 것만 더하고 나머지는 개수로"
+# 보여준다 — 여기서도 못 더하는 건 버리지 않고 eff를 비워 그 사실이 드러나게 둔다.
+ALL_PROFESSIONS = {"warrior", "sniper", "tank", "medic", "support", "caster", "special", "pioneer"}
+# 합산 대상 스탯 (blackboard 키 → 우리 키). cost는 '재배치 시간'이 아니라 배치 코스트다.
+EFF_STATS = {
+    "atk": "atk", "def": "def", "max_hp": "hp", "attack_speed": "aspd",
+    "magic_resistance": "res", "cost": "cost", "block_cnt": "block",
+    "respawn_time": "respawn", "hp_recovery_per_sec": "regen",
+    "hp_recovery_per_sec_by_max_hp_ratio": "regen_pct", "def_penetrate": "pen",
+}
+# 캐릭터 스탯이 아닌 판 수치 — blackboard가 {"value": N} 하나뿐인 단순형
+EFF_LEVEL = {
+    "level_char_limit_add": "deploy", "level_life_point_add": "life",
+    "level_init_cost_add": "initcost", "level_cost_limit_add": "costlimit",
+}
+EFF_CHAR = {"char_attribute_mul": True, "char_squad_attribute_mul": True, "layer_char_attribute_mul": True,
+            "char_attribute_add": False, "layer_char_attribute_add": False}
+# 즉시 획득(immediate_reward)으로 주는 판 자원 — '편성 가능 인원수 +N'이 여기 있다.
+# 아이템 id는 rogue_<N>_<suffix> 꼴이라 접두사만 떼면 토픽·언어 무관하게 잡힌다.
+EFF_REWARD = {
+    "squad_capacity": "squad", "population": "hope", "hp": "life",
+    "hpmax": "lifemax", "shield": "shield", "gold": "gold",
+}
+
+
+def relic_effects(buffs):
+    """소장품 buffs → [{k, v, m, sel}] (m: mul=배율, add=가산 / sel: None이면 전체 적용).
+
+    selector.profession이 8개 직업 전부면 조건이 아니라 '전체'다 (실측 48건) — 조건부로
+    분류하면 총합이 엉뚱하게 쪼개진다."""
+    out = []
+    for b in buffs or []:
+        key = b.get("key")
+        bb = {x["key"]: x for x in b.get("blackboard") or []}
+        if key in EFF_LEVEL:
+            v = (bb.get("value") or {}).get("value")
+            if v:
+                out.append({"k": EFF_LEVEL[key], "v": v, "m": "add", "sel": None})
+            continue
+        if key == "immediate_reward":
+            iid = (bb.get("id") or {}).get("valueStr") or ""
+            cnt = (bb.get("count") or {}).get("value")
+            suffix = re.sub(r"^rogue_\d+_", "", iid)
+            if cnt and suffix in EFF_REWARD:
+                out.append({"k": EFF_REWARD[suffix], "v": cnt, "m": "get", "sel": None})
+            continue
+        if key not in EFF_CHAR:
+            continue
+        sel = None
+        prof = bb.get("selector.profession")
+        build = bb.get("selector.buildable")
+        if prof and (prof.get("valueStr") or ""):
+            names = set((prof["valueStr"] or "").split("|"))
+            if names != ALL_PROFESSIONS:
+                sel = prof["valueStr"]
+        if build and (build.get("valueStr") or ""):
+            sel = f"{sel}+{build['valueStr']}" if sel else build["valueStr"]
+        mul = EFF_CHAR[key]
+        for raw, k in EFF_STATS.items():
+            ent = bb.get(raw)
+            if not ent or not ent.get("value"):
+                continue
+            out.append({"k": k, "v": ent["value"], "m": "mul" if mul else "add", "sel": sel})
+    return out
+
 def build_topic(tid="rogue_1", loc=None):
     """KR 정식 출시 토픽(rogue_1~5) 공통 빌더 — 스테이지 id 접두 roN_ 공통,
     토픽 고유 시스템(음반/메아리/탐사 도구 등)은 데이터 존재 여부로 분기한다.
@@ -779,11 +850,14 @@ def build_topic(tid="rogue_1", loc=None):
         if it.get("type") != "RELIC":
             continue
         arc = relic_order.get(iid, {})
+        # 보유 리스트 총합용 수치 — 없으면 키 자체를 넣지 않는다(파일 크기·"못 더하는 효과" 구분)
+        eff = relic_effects((r.get("relics") or {}).get(iid, {}).get("buffs"))
         relics.append({
             "id": iid, "name": it["name"], "desc": it.get("description"),
             "usage": it.get("usage"), "obtain": it.get("obtainApproach"),
             "order": arc.get("orderId"), "group": arc.get("relicGroupId"),
             "sort": arc.get("relicSortId", 9999), "sp": bool(arc.get("isSpRelic")),
+            **({"eff": eff} if eff else {}),
         })
     # 유물번호(orderId) 정렬 — 숫자 번호 오름차순, 특수 번호(PCS01 등)는 뒤에, 번호 없으면 맨 뒤
     def relic_order_key(x):
@@ -1430,11 +1504,14 @@ def build_rogue6():
         if it.get("type") != "RELIC":
             continue
         arc = relic_order.get(iid, {})
+        # 보유 리스트 총합용 수치 — 없으면 키 자체를 넣지 않는다(파일 크기·"못 더하는 효과" 구분)
+        eff = relic_effects((r.get("relics") or {}).get(iid, {}).get("buffs"))
         relics.append({
             "id": iid, "name": it["name"], "desc": it.get("description"),
             "usage": it.get("usage"), "obtain": it.get("obtainApproach"),
             "order": arc.get("orderId"), "group": arc.get("relicGroupId"),
             "sort": arc.get("relicSortId", 9999), "sp": bool(arc.get("isSpRelic")),
+            **({"eff": eff} if eff else {}),
         })
     # 유물번호(orderId) 정렬 — 숫자 번호 오름차순, 특수 번호(PCS01 등)는 뒤에, 번호 없으면 맨 뒤
     def relic_order_key(x):

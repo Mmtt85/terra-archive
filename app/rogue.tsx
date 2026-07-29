@@ -40,7 +40,12 @@ type Emg = {
 } | null;
 type Stage = { id: string; kind: string; zone: number | null; code: string | null; name: string; desc: string | null; eliteDesc: string | null; emg: Emg; map?: string | null; enemies: StageEnemy[]; cn?: string };
 type Enemy = { name: string; rank: string | null; index: string | null; attack: string | null; desc: string | null; ability: string | null; hp: number; atk: number; def: number; res: number; aspd: number; ms: number; weight: number; lifePoint: number; immune?: string[]; img?: string | null; cn?: string };
-type Relic = { id: string; name: string; desc: string | null; usage: string | null; obtain: string | null; order: string | null; group: number | null; sort: number; sp: boolean; img?: boolean; iconId?: string; cn?: string };
+// 소장품 효과의 수치 (scripts/build-rogue.py relic_effects) — usage 문장이 아니라 게임
+// 데이터의 blackboard에서 뽑아 3개 로케일에 같은 배열로 심는다(언어 무관 합산).
+// m: mul=배율(%) · add=가산 · get=즉시 획득(편성 인원·희망·목표 HP 등)
+// sel: null이면 전체 적용, 아니면 직업(warrior|sniper…)이나 melee/ranged 조건
+type Eff = { k: string; v: number; m: "mul" | "add" | "get"; sel: string | null };
+type Relic = { id: string; name: string; desc: string | null; usage: string | null; obtain: string | null; order: string | null; group: number | null; sort: number; sp: boolean; img?: boolean; iconId?: string; cn?: string; eff?: Eff[] };
 type Capsule = { id: string; name: string; en: string | null; desc: string | null; usage: string | null; img?: boolean; cn?: string };
 type Simple = { id: string; name: string; desc?: string | null; usage: string | null; img?: boolean; cn?: string };
 type Scrap = { id: string; name: string; type: string | null; typeName: string | null; usage: string | null; desc: string | null; img?: boolean; cn?: string };
@@ -548,6 +553,120 @@ function InvPill({ owned, onToggle }: { owned: boolean; onToggle: () => void }) 
       onKeyDown={(e) => e.stopPropagation()}>
       {owned ? t("✓ 보유중") : t("＋ 보유")}
     </button>
+  );
+}
+
+// ── 보유 소장품 효과 총합 (사용자 요청 2026-07-29) ───────────────────────────
+// 담아둔 소장품의 수치 효과를 더해 보유 리스트 맨 위에 보여준다. 수치는 usage 문장이
+// 아니라 게임 데이터 blackboard에서 뽑은 eff 배열이라 EN/JA에서도 그대로 계산된다.
+//
+// ⚠ 전부 더할 수 있는 게 아니다 — 실측상 수치 효과를 가진 소장품은 40% 남짓이고,
+// 나머지는 "스킬 발동 시", "특정 지형에서" 같은 조건부·고유 효과라 애초에 합이 없다.
+// 그래서 못 더한 개수를 감추지 않고 함께 적는다.
+const EFF_ORDER = ["atk", "hp", "def", "aspd", "res", "cost", "block", "respawn", "regen", "regen_pct", "pen", "deploy", "initcost", "costlimit"];
+const EFF_LABEL: Record<string, string> = {
+  atk: "공격력", hp: "HP", def: "방어력", aspd: "공격 속도", res: "마법 저항",
+  cost: "배치 코스트", block: "저지 가능 수", respawn: "재배치 시간",
+  regen: "초당 HP 회복", regen_pct: "초당 HP 회복(최대 HP 비례)", pen: "방어 관통",
+  deploy: "배치 가능 인원수", initcost: "초기 코스트", costlimit: "코스트 상한",
+};
+// 즉시 획득분 — 배율이 아니라 '누계로 얼마를 받았나'
+const GET_ORDER = ["squad", "life", "lifemax", "hope", "shield", "gold"];
+const GET_LABEL: Record<string, string> = {
+  squad: "편성 가능 인원수", life: "목표 HP", lifemax: "최대 목표 HP",
+  hope: "희망", shield: "실드", gold: "오리지늄각뿔",
+};
+const SEL_LABEL: Record<string, string> = {
+  melee: "근접", ranged: "원거리", token: "소환물",
+  warrior: "가드", sniper: "스나이퍼", tank: "디펜더", medic: "메딕",
+  support: "서포터", caster: "캐스터", special: "스페셜리스트", pioneer: "뱅가드",
+};
+type EffSum = { mul: number; add: number };
+
+/** 보유 항목 → 조건별 스탯 합·즉시 획득 합·수치화 못 한 개수 */
+function sumEffects(items: { eff?: Eff[] }[]) {
+  const stats = new Map<string, Map<string, EffSum>>();   // sel("" = 전체) → 스탯 → 합
+  const got = new Map<string, number>();
+  let plain = 0;                                          // 수치 효과가 없는 소장품 수
+  for (const it of items) {
+    if (!it.eff?.length) { plain += 1; continue; }
+    for (const e of it.eff) {
+      if (e.m === "get") { got.set(e.k, (got.get(e.k) ?? 0) + e.v); continue; }
+      const sel = e.sel ?? "";
+      let bucket = stats.get(sel);
+      if (!bucket) { bucket = new Map(); stats.set(sel, bucket); }
+      const cur = bucket.get(e.k) ?? { mul: 0, add: 0 };
+      cur[e.m] += e.v;
+      bucket.set(e.k, cur);
+    }
+  }
+  return { stats, got, plain };
+}
+
+// 배율은 소수(0.35)로 들어오므로 %로, 가산은 그대로. 부호는 데이터가 가진 걸 그대로 쓴다
+// (재배치 시간 -25% 같은 감소 효과가 있다).
+const signed = (v: number, pct: boolean) => {
+  const n = pct ? v * 100 : v;
+  const s = Math.round(n * 100) / 100;
+  return `${s > 0 ? "+" : ""}${s}${pct ? "%" : ""}`;
+};
+
+function EffectTotals({ items, label }: { items: { eff?: Eff[] }[]; label: string }) {
+  const { t } = useI18n();
+  const { stats, got, plain } = useMemo(() => sumEffects(items), [items]);
+  const order = (m: Map<string, EffSum>, keys: string[]) => keys.filter((k) => m.has(k));
+  const global = stats.get("") ?? new Map<string, EffSum>();
+  // 조건부는 대상 이름 순으로 — 근접/원거리 먼저, 그다음 직업
+  const conds = [...stats.entries()].filter(([sel]) => sel).sort((a, b) => a[0].localeCompare(b[0]));
+  const selName = (sel: string) => sel.split("+").map((s) => t(SEL_LABEL[s] ?? s)).join(" · ");
+  const chip = (k: string, sum: EffSum, dict: Record<string, string>) => (
+    <li key={k}>
+      <span>{t(dict[k] ?? k)}</span>
+      <b>{[sum.mul && signed(sum.mul, true), sum.add && signed(sum.add, false)].filter(Boolean).join(" ")}</b>
+    </li>
+  );
+  if (!items.length) return null;
+  const nothing = !global.size && !conds.length && !got.size;
+  return (
+    <section className="rg-efftot">
+      <header>
+        <h4>{t("효과 총합")}</h4>
+        {/* 몇 개를 더했는지 밝힌다 — 조건부·고유 효과는 합이 없으므로 감추면 거짓말이 된다 */}
+        <span>{t("{n}개 중 {m}개 합산", { n: items.length, m: items.length - plain })}</span>
+      </header>
+      {nothing ? (
+        <p className="rg-efftot-none">{t("담아둔 항목에는 더할 수 있는 수치 효과가 없습니다 — 조건부·고유 효과뿐입니다.")}</p>
+      ) : (
+        <>
+          {global.size > 0 && (
+            <ul className="rg-efftot-row">
+              {order(global, EFF_ORDER).map((k) => chip(k, global.get(k)!, EFF_LABEL))}
+            </ul>
+          )}
+          {conds.map(([sel, m]) => (
+            <ul className="rg-efftot-row cond" key={sel}>
+              <li className="rg-efftot-sel">{selName(sel)}</li>
+              {order(m, EFF_ORDER).map((k) => chip(k, m.get(k)!, EFF_LABEL))}
+            </ul>
+          ))}
+          {got.size > 0 && (
+            <ul className="rg-efftot-row get">
+              <li className="rg-efftot-sel">{t("누계 획득")}</li>
+              {GET_ORDER.filter((k) => got.has(k)).map((k) => (
+                <li key={k}><span>{t(GET_LABEL[k])}</span><b>{signed(got.get(k)!, false)}</b></li>
+              ))}
+            </ul>
+          )}
+        </>
+      )}
+      {/* 합산된 게 하나도 없으면 위 안내가 이미 같은 말을 하므로 겹쳐 적지 않는다 */}
+      {plain > 0 && !nothing && (
+        <p className="rg-efftot-rest">
+          {t("나머지 {n}개는 조건부·고유 효과라 합산 대상이 아닙니다 (카드에서 개별 확인).", { n: plain })}
+        </p>
+      )}
+      <p className="rg-efftot-note">{t("같은 종류의 배율은 더해서 적용됩니다. {label} 기준.", { label })}</p>
+    </section>
   );
 }
 
@@ -2031,6 +2150,10 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
                 <button type="button" className="rg-inv-clear" onClick={() => void clearInvTab(invTab)}>{t("전체 비우기")}</button>
               )}
             </div>
+            {/* 효과 총합 — 목록 위에 (사용자 요청 2026-07-29). 자원 탭엔 수치 효과가 없어 소장품 탭만 */}
+            {invTab === "relic" && ownedRelics.length > 0 && (
+              <EffectTotals items={ownedRelics} label={t(TOPICS.find((tp) => tp.id === topic)?.name ?? "")} />
+            )}
             {(invTab === "relic" ? ownedRelics : ownedRes).length === 0 ? (
               <p className="rg-inv-empty">{t("아직 담은 항목이 없습니다 — 소장품·전시관 카드의 「＋ 보유」 버튼으로 추가하세요.")}</p>
             ) : (
