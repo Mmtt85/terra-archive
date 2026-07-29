@@ -10453,8 +10453,9 @@ html.dark.rg-theme.rg6 .site-header {
    원형 배경을 깔아 게임 지도에서 보던 모양 그대로 읽히게 한다 (2026-07-29) */
 .rg-nodetype-ico {
   flex: none;
-  width: 42px;
-  height: 42px;
+  /* 42px에서는 원판 안 글리프가 너무 작아 종류가 안 읽힌다 (사용자 지적 2026-07-29) */
+  width: 54px;
+  height: 54px;
   object-fit: contain;
   /* 원본이 이미 어두운 원판 + 발광 글리프라 테두리·배경을 덧대지 않는다 (덧대면 이중 원이 된다) */
 }
@@ -11247,12 +11248,13 @@ html.dark.rg-theme.rg6 .site-header {
   height: 52px;
   object-fit: contain;
 }
-/* 긴급 작전은 게임 지도에서 **붉은 노드**로 그려진다 (사용자 지적 2026-07-29). 클라는
-   같은 글리프에 색만 입히고(런타임 틴트) 붉은 스프라이트를 따로 두지 않아서 — 번들 전수
-   확인 — 여기서도 같은 방식으로 원판만 청록→적색으로 돌린다. 흰 글리프는 그대로 남는다. */
-.rg-modal-ico.emg {
-  filter: hue-rotate(200deg) saturate(1.7);
-}
+/* 노드 종류별 색 (2026-07-29). 클라 스프라이트는 전부 청록 한 벌이고 게임이 런타임에
+   색을 입히므로 — 번들 전수 확인 — 여기서도 원판만 돌린다. 흰 글리프는 그대로 남는다.
+   각도는 청록 원판 기준 실렌더로 고름: 보라 90 · 빨강 200 · 금색 255 · 초록 320. */
+.nt-purple { filter: hue-rotate(90deg) saturate(1.6); }
+.nt-red    { filter: hue-rotate(200deg) saturate(1.7); }
+.nt-gold   { filter: hue-rotate(255deg) saturate(1.8); }
+.nt-green  { filter: hue-rotate(320deg) saturate(1.5); }
 .rg-modal-zone {
   font: 800 12px/1 monospace;
   color: var(--rggold);

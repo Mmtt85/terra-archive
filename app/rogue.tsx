@@ -255,7 +255,7 @@ function StageModal({ pair, grade, onClose, onOpenEnemy }: {
         <header className="rg-modal-head">
           <div>
             <span className={`rg-kind k-${stage.kind}`}>{t(KIND_LABEL[stage.kind] ?? stage.kind)}</span>
-            <h3><NodeIco id={KIND_NODE[stage.kind]} cls={`rg-modal-ico${isEmg ? " emg" : ""}`} /><span className="rg-modal-title"><Nm name={stage.name} cn={stage.cn} /></span></h3>
+            <h3><NodeIco id={KIND_NODE[stage.kind]} cls="rg-modal-ico" /><span className="rg-modal-title"><Nm name={stage.name} cn={stage.cn} /></span></h3>
             {stage.zone != null && <span className="rg-modal-zone">{t("{n}층", { n: stage.zone })}</span>}
           </div>
           <button type="button" className="rg-modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
@@ -343,10 +343,24 @@ const KIND_NODE: Record<string, string> = {
   event: "INCIDENT", incident: "INCIDENT", duel: "DUEL", savage: "BATTLE_SAVAGE",
 };
 
+// 노드 종류별 색 — 게임 지도는 같은 글리프에 **타입마다 다른 색**을 입힌다(런타임 틴트).
+// 붉은 긴급 작전·초록 험난한 길의 끝처럼 색 자체가 종류 구분 신호라, 클라 스프라이트가
+// 전부 청록 한 벌인 것을 여기서 같은 방식으로 돌린다 (사용자 제공 게임 화면 대조 2026-07-29).
+// 화면에서 색을 확인한 타입만 넣는다 — 확인 못 한 타입은 기본 청록 그대로.
+const NODE_TINT: Record<string, string> = {
+  BATTLE_NORMAL: "nt-purple",   // 作战 — 보라
+  BATTLE_ELITE: "nt-red",       // 紧急作战 — 붉은 노드
+  FINAL: "nt-green",            // 险路尽头 — 초록
+  SCRAP_SHOP: "nt-gold",        // 秘境行商 — 금빛
+  EVACUATE: "nt-gold",          // 险路小径 — 금빛
+};
+
 /** 노드 종류 글리프 — 이 테마에 그 타입 아이콘이 있을 때만 그린다 */
 function NodeIco({ id, cls = "rg-nodetype-ico" }: { id?: string | null; cls?: string }) {
   if (!id || !hasNodeIcon(data.id, id)) return null;
-  return <img className={cls} src={asset(`/rogue/node/${data.id}/${id}.webp`)}
+  const tint = NODE_TINT[id];
+  // ?v=2 — 트리밍 전 이미지가 CDN 엣지에 남아 몇 시간째 옛 그림이 나오던 것을 끊는다
+  return <img className={`${cls}${tint ? ` ${tint}` : ""}`} src={asset(`/rogue/node/${data.id}/${id}.webp?v=2`)}
     alt="" width={160} height={160} loading="lazy" decoding="async" />;
 }
 
