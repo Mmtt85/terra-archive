@@ -4367,6 +4367,24 @@ footer p {
   font-weight: 800;
   color: var(--ink);
 }
+/* 이 방에선 안 걸리는 스킬 (씬 '편집 α'·팔라스 '승리의 계책'은 작전기록 전용) — 목록에서
+   지우면 데이터가 빠진 것처럼 보여서, 흐리게 남기고 왜 안 걸리는지 꼬리표를 단다. */
+.crew-card p.skill-off {
+  opacity: 0.55;
+}
+.crew-card p.skill-off em { color: var(--ink3); }
+.crew-card .skill-off-tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink3);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 700;
+  white-space: nowrap;
+}
 .crew-card small {
   display: inline-block;
   margin: 7px 6px 0 0;

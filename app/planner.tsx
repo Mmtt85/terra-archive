@@ -2000,7 +2000,15 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                 if (Math.round(b.perCoworker * (team.length - 1)) !== 0) parts.push(t("동료 보너스 +{n}%", { n: Math.round(b.perCoworker * (team.length - 1)) }));
                 if (Math.round(b.clueBase) !== 0) parts.push(t("레어도 기본 {r}성·{e} +{n}%", { r: op.rarity, e: t(ELITE_LABEL[op.elite ?? maxElite(op.rarity)]), n: Math.round(b.clueBase) }));
                 for (const [kind, value] of Object.entries(b.auras)) if (value > 0) parts.push(`${t(AURA_LABEL[kind] ?? kind)} +${Math.round(value)}%`);
-                const shown = b.skills.length ? b.skills : op.skills.filter((skill) => skill.room === cell.room);
+                // 이 방에 걸리는 스킬 + **생산품이 안 맞아 잠긴 스킬**까지 함께 보여 준다
+                // (사용자 제보 2026-07-29: "씬·팔라스 2정예화 인프라 누락"). 씬 '편집 α'와
+                // 팔라스 '승리의 계책'은 작전기록 전용이라 순금방에선 안 걸리는 게 맞는데,
+                // 종전엔 목록에서 통째로 사라져 데이터가 빠진 것처럼 보였다. 이제 회색으로
+                // 남기고 "작전기록 방에서만" 꼬리표를 단다 — 계산엔 여전히 안 들어간다.
+                const active = new Set(b.skills.map((skill) => skill.name));
+                const gated = op.skills.filter((skill) => skill.room === cell.room && !active.has(skill.name)
+                  && !(skill.tiers ?? []).some((tier) => active.has(tier.name)));
+                const shown = [...b.skills, ...gated];
                 return (
                   <article key={op.id} className="crew-card">
                     {tempIds.has(op.id) && <button type="button" className="crew-revert" title={t("이 오퍼만 임시 적용을 되돌립니다")} onClick={() => onRevertTempOne(op.id)}>↩</button>}
@@ -2034,10 +2042,18 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                         })()}
                       </b>
                       {shown.length ? shown.map((skill) => {
-                        const rels = relsOf(skill, op);
+                        const off = !active.has(skill.name);
+                        const rels = off ? [] : relsOf(skill, op);
                         return (
-                          <p key={skill.name}>
+                          <p key={skill.name} className={off ? "skill-off" : undefined}>
                             <em>{skill.name}</em> — <TermText text={skill.description} refs={skill.termRefs} onTerm={setTermOpen} />
+                            {off && (
+                              <i className="skill-off-tag">
+                                {skill.product === "gold" ? t("순금 제조소에서만 적용")
+                                  : skill.product === "exp" ? t("작전기록 제조소에서만 적용")
+                                  : t("이 방에서는 적용되지 않음")}
+                              </i>
+                            )}
                             {rels.map((rel) => (
                               <span key={rel.note} className="skill-rel">
                                 <i className="rel-note">{rel.note}</i>

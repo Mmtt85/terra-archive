@@ -287,6 +287,27 @@ console.log("");
   if (!ok) failed += 1;
 }
 
+// ── 여러 홉 전환 사슬 (사용자 제보 2026-07-29: "로즈몬티스가 있어도 위스퍼레인 대신
+// 레퍼런스 속도 높은 오퍼가 먼저 배치됨") ──────────────────────────────────────────
+// 위스퍼레인은 모집마다 **기억 조각**을 만들고(Lv.1) 자기 E2로 감지 정보로 바꾼다 →
+// 로즈몬티스가 생각의 사슬로 바꿔 생산력으로 쓴다. 한 홉만 따라가던 종전 엔진은 감지 정보를
+// **직접** 만들지 않는 위스퍼레인을 사슬에서 통째로 빠뜨려, 사무실을 원시 레퍼런스 속도로만
+// 줄 세웠다(멀베리). 여러 홉 추적 + 밀려난 생성원 시드 변형으로 총점 2049.7 → 2060.7.
+console.log("");
+{
+  const plan = await planFor("full", "gold");
+  const hire = plan.assignments.HIRE?.[0] ?? [];
+  const chain = plan.flows.find((f) => f.token === "생각의 사슬");
+  const gen = chain?.generators.find((g) => g.opId === "char_436_whispr");
+  const checks = [
+    ["여러 홉 사슬 — 위스퍼레인이 사무실 (풀 로스터)", hire.includes("char_436_whispr")],
+    ["위스퍼레인의 기억 조각이 생각의 사슬로 계상", !!gen && gen.via === "기억 조각" && gen.amount > 0],
+    // 경로 전환자 명단(위스퍼레인 자신 + 로즈몬티스)이 실려야 원장 재집계가 사슬 생사를 판정한다
+    ["경로 전환자 명단(need) 기록", !!gen?.need?.includes("char_391_rosmon") && !!gen?.need?.includes("char_436_whispr")],
+  ];
+  for (const [name, ok] of checks) { console.log(`${ok ? "✓" : "✗"} ${name}`); if (!ok) failed += 1; }
+}
+
 // ── 자동편성 제외 명단 (케이퍼·인포서, 사용자 확정 2026-07-28 — INFRA-RULES §1) ─────
 // 조건 의존·고소모라 자동으로는 절대 앉히지 않는다. 후보 목록에는 남지만 편성엔 없어야 한다.
 console.log("");
@@ -307,4 +328,4 @@ console.log("");
 }
 
 if (failed) { console.error(`\n✗ 검사 ${failed}건 실패`); process.exit(1); }
-console.log(`\n✓ 픽스처 ${rules.fixtures.length}건 + 육성추천 불변식 4건 + 노시스 오라 2건 + 용량 변환 비중첩·자동화 7건 + 자동편성 제외 2건 전부 통과`);
+console.log(`\n✓ 픽스처 ${rules.fixtures.length}건 + 육성추천 불변식 4건 + 노시스 오라 2건 + 용량 변환 비중첩·자동화 7건 + 여러 홉 사슬 3건 + 자동편성 제외 2건 전부 통과`);

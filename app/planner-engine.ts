@@ -1211,7 +1211,9 @@ export function bestTeam(room: string, slots: number, pool: Map<string, InfraOp>
   return best;
 }
 
-export type FlowGenerator = { opId: string; at: string; amount: number; via?: string; convRate?: number; perMember?: { per: number; cap: number; match: string } };
+// need = 이 생성분이 기대는 **경로 전환자** opId 명단 (위스퍼레인의 기억 조각 → 감지 정보 →
+// 생각의 사슬이면 [위스퍼레인, 로즈몬티스]). 하나라도 안 앉아 있으면 그 생성분은 죽는다.
+export type FlowGenerator = { opId: string; at: string; amount: number; via?: string; convRate?: number; need?: string[]; perMember?: { per: number; cap: number; match: string } };
 export type FlowConsumer = { opId: string; at: string; room: string; rate: number; percent: boolean; gain: number };
 
 export type TokenFlow = {
@@ -1228,6 +1230,7 @@ export type Plan = {
   tokenPoints: Record<string, number>;
   factionCounts: Record<string, number>[]; // per shift, base-wide placements
   flows: TokenFlow[];
+  crowdedOut?: { opId: string; room: string }[]; // 자리가 없어 밀려난 토큰 생성원 (탐색 힌트)
   strategy: string;             // KR 조합 문자열 (구버전 저장 호환용)
   strategyTokens?: string[];    // 표시용 구조 필드 — 로케일에서 토큰명 번역해 재조립
   strategySet?: boolean;
@@ -1519,6 +1522,8 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
   for (const key of keys) assignments[key] = [];
   const tokenPoints: Record<string, number> = {};
   const flows: TokenFlow[] = [];
+  // 자리가 없어 밀려난 토큰 생성원 (optimizeConfig 시드 변형용 — 아래 패키지 루프 참조)
+  const crowdedOut: { opId: string; room: string }[] = [];
   const factionCountsPerShift: Record<string, number>[] = [];
   const reserved = new Map<string, string>(); // seeded ops belong to their room
   const packageReserved = new Set<string>();  // 토큰 패키지發 예약(세트 시딩과 구분) — 감사 해제 판정용
@@ -1562,6 +1567,11 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
     // perMember 캡 확장 시드 (optimizeConfig 변형 전용, 2026-07-24) — 카운터 진영의 오라
     // 요원(왕)을 지정 방에 예약해 캡 초과를 만든다. 시드 자체는 자리 하나를 쓰지만, 초과가
     // 되면 잉여 소비자(슈)의 패키지 예약이 풀려 방 업그레이드가 연쇄된다. 채택은 planScore.
+    // 시드로 먼저 앉은 오퍼는 패키지 루프에서도 **이미 앉은 것**으로 취급해야 한다 — 안 그러면
+    // 자기 토큰 생성분이 원장에 안 실린다(위스퍼레인을 사무실에 시드해 놓고 그가 만드는 감지
+    // 정보를 계상 못 하던 문제). 2026-07-29.
+    const preSeeded = new Set<string>();
+    const preSeededAt = new Map<string, string>();
     if (shift === 0) for (const ex of extraSeeds) {
       const op = roster.find((o) => o.id === ex.opId);
       if (!op || used.has(op.id) || reserved.has(op.id)) continue;
@@ -1569,10 +1579,12 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
       if (!cell) continue;
       seeds[cell.key] = [...(seeds[cell.key] ?? []), op];
       reserved.set(op.id, cell.key);
+      preSeeded.add(op.id);
+      preSeededAt.set(op.id, cell.label);
     }
     if (shift === 0 && packageTokens.length) {
-      const parked = new Set<string>();
-      const placedAt = new Map<string, string>();
+      const parked = new Set<string>(preSeeded);
+      const placedAt = new Map<string, string>(preSeededAt);
       const place = (op: InfraOp, key: string) => {
         // 무한동력 성립 시: 제어센터는 순소모 0 조합 전용 — 토큰 패키지가 선점하지 않는다
         // (화식 코어 링·시·총웨가 시드로 앉으면 레인보우/이격 조합이 영영 못 서는 원인)
@@ -1591,8 +1603,36 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
         // converters (에벤홀츠) pull a source token into this one, so source
         // generators (숙소의 아이리스·체르니 등) join the package too
         const converters = roster.filter((op) => op.skills.some((skill) => skill.convert?.to === token));
-        const sources = new Map<string, number>(); // source token -> rate
-        for (const op of converters) for (const skill of op.skills) if (skill.convert?.to === token) sources.set(skill.convert.from, skill.convert.amount / skill.convert.per);
+        // ── 전환은 **여러 홉**을 탄다 (사용자 제보 2026-07-29: "로즈몬티스가 있어도 위스퍼레인
+        // 대신 레퍼런스 속도 높은 오퍼가 먼저 배치됨") ─────────────────────────────────
+        // 위스퍼레인: 모집마다 **기억 조각** 생성 → (자기 E2) 감지 정보 → (로즈몬티스) 생각의 사슬.
+        // 한 홉만 따라가면(종전) 상류 토큰이 '감지 정보'까지라, 감지 정보를 **직접 생성**하지 않는
+        // 위스퍼레인은 사슬에서 통째로 빠져 사무실에서 원시 레퍼런스 속도(페넌스 50·하루카 45)로만
+        // 줄 세워졌다. 역방향 BFS로 상류 토큰마다 **누적 전환율**과 **그 경로에 필요한 전환자 명단**을
+        // 모은다 — 명단이 다 앉아야 사슬이 살아 있다고 본다(중간 전환자가 없으면 죽은 사슬).
+        // seen 가드로 순환·중복 경로를 막고 최단 경로 하나만 남긴다.
+        const sources = new Map<string, number>();          // 상류 토큰 → 이 토큰 기준 누적 환산율
+        const chainNeeds = new Map<string, string[]>();      // 상류 토큰 → 필요한 전환자 opId 명단
+        {
+          const seen = new Set<string>([token]);
+          let frontier: { token: string; rate: number; need: string[] }[] = [{ token, rate: 1, need: [] }];
+          while (frontier.length) {
+            const next: typeof frontier = [];
+            for (const cur of frontier) {
+              for (const op of roster) for (const skill of op.skills) {
+                const cv = skill.convert;
+                if (!cv || cv.to !== cur.token || seen.has(cv.from) || cv.per <= 0) continue;
+                seen.add(cv.from);
+                const rate = cur.rate * (cv.amount / cv.per);
+                const need = [...cur.need, op.id];
+                sources.set(cv.from, rate);
+                chainNeeds.set(cv.from, need);
+                next.push({ token: cv.from, rate, need });
+              }
+            }
+            frontier = next;
+          }
+        }
         const flow: TokenFlow = { token, total: 0, generators: [], converters: converters.map((op) => ({ opId: op.id, from: op.skills.find((skill) => skill.convert?.to === token)?.convert?.from ?? "" })), consumers: [] };
         flows.push(flow);
         const generatesFor = (op: InfraOp) => op.skills.some((skill) => skill.tokenGen.some((g) => g.token === token || sources.has(g.token)));
@@ -1620,7 +1660,11 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
           for (const skill of op.skills) {
             const gen = skill.tokenGen.filter((g) => g.token === token || sources.has(g.token));
             if (!gen.length) continue;
-            const converterPlaced = gen.some((g) => g.token === token) || converters.some((c) => parked.has(c.id) || c === op);
+            // 사슬이 사는 조건: 직접 생성이거나, 그 상류 토큰의 **경로 전환자가 전부** 앉아 있을 것
+            // (위스퍼레인 기억 조각 → 자기 전환 → 로즈몬티스 전환. 자기 자신은 지금 앉히는 중이라 산 것으로 본다)
+            const needsOf = (g: TokenGen) => (g.token === token ? [] : chainNeeds.get(g.token) ?? []);
+            const live = (g: TokenGen) => needsOf(g).every((cid) => parked.has(cid) || cid === op.id);
+            const converterPlaced = gen.some(live);
             const already = parked.has(op.id);
             // 죽은 전환 사슬의 공급원은 앉히지 않는다 (사용자 확정 2026-07-19): 전환으로만
             // 이 토큰에 기여하는 오퍼(우요우: 화식→주술)는 전환자(지에윈)가 배치돼 있을 때만
@@ -1630,15 +1674,24 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
             if (already || LAYOUT.filter((c) => c.room === skill.room).some((cell) => place(op, cell.key))) {
               if (converterPlaced) {
                 for (const g of gen) {
+                  if (!live(g)) continue; // 여러 홉 중 하나라도 전환자가 없으면 그 생성분은 죽는다
                   const convRate = g.token === token ? 1 : sources.get(g.token) ?? 0;
                   const amount = genEstimate(g) * convRate; // 숙소 레벨당 생성(센시 등)은 실제 레벨로
                   if (amount <= 0) continue;
-                  flow.generators.push({ opId: op.id, at: placedAt.get(op.id) ?? "기존 배치", amount, via: g.token === token ? undefined : g.token, convRate, perMember: g.perMember });
+                  // need = 이 생성분이 기대는 전환자 명단 — 원장 재집계가 "그들이 아직 앉아 있나"를 본다
+                  flow.generators.push({ opId: op.id, at: placedAt.get(op.id) ?? "기존 배치", amount, via: g.token === token ? undefined : g.token, convRate, perMember: g.perMember, need: needsOf(g) });
                   tokenPoints[token] = (tokenPoints[token] ?? 0) + amount;
                 }
               }
               break;
             }
+            // 자리가 없어 밀려난 생성원 — 앞서 처리된 다른 토큰의 시드가 방을 선점했다는 뜻이다
+            // (사무실 1석: 화식이 먼저 돌아 멀베리가 앉으면 위스퍼레인의 기억 조각→감지 정보→
+            // 생각의 사슬 사슬은 자리가 없어 통째로 죽는다 — 사용자 제보 2026-07-29).
+            // 여기서 억지로 밀어내지 않고 **사실만 기록**한다. 누가 나은지는 방 점수가 아니라
+            // 기지 총점이 판정할 문제라, optimizeConfig가 이 명단으로 시드 변형을 만들어
+            // planScore로 고른다 (미니 토큰 조합·캡 확장과 같은 관례).
+            if (converterPlaced && !crowdedOut.some((c) => c.opId === op.id)) crowdedOut.push({ opId: op.id, room: skill.room });
           }
         }
         // 가공소는 토큰 패키지가 선점하지 않는다 — 상시 슬롯(PARK_KEYS)이라 일반 방 채우기가
@@ -2369,10 +2422,13 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
   const presentA = new Set(placedA.map((op) => op.id));
   for (let d = 0; d < 4; d += 1) for (const id of assignments[`DORM-${d}`]?.[0] ?? []) presentA.add(id);
   for (const flow of flows) {
-    // 전환 사슬(via)은 전환자가 실제로 앉아 있을 때만 산다 — 지에윈이 벤치로 가면
-    // 화식→주술 결정 환산분은 전부 죽는다(원장에 유령 점수가 남지 않게).
+    // 전환 사슬(via)은 **경로 전환자가 전부** 앉아 있을 때만 산다 — 지에윈이 벤치로 가면
+    // 화식→주술 결정 환산분이 전부 죽고, 로즈몬티스가 빠지면 위스퍼레인의 기억 조각→감지 정보→
+    // 생각의 사슬도 통째로 죽는다(원장에 유령 점수가 남지 않게). 구버전 저장 플랜은 need가
+    // 없으니 종전 판정(직접 전환자 아무나 존재)으로 되돌린다.
     const converterLive = flow.converters.some((conv) => presentA.has(conv.opId));
-    flow.generators = flow.generators.filter((gen) => presentA.has(gen.opId) && (!gen.via || converterLive));
+    flow.generators = flow.generators.filter((gen) => presentA.has(gen.opId)
+      && (!gen.via || (gen.need ? gen.need.every((id) => presentA.has(id)) : converterLive)));
     let total = 0;
     for (const gen of flow.generators) {
       if (gen.perMember) {
@@ -2409,7 +2465,7 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
     room: cellByKey.get(k)?.room ?? k,
     ops: (assignments[k]?.[Math.min(shift, (assignments[k]?.length ?? 1) - 1)] ?? []).map((id) => rosterById.get(id)).filter(Boolean) as InfraOp[],
   }))));
-  return { assignments, plants, tokenPoints, factionCounts: factionCountsPerShift, flows, strategy, strategyTokens: packageTokens, strategySet: setUsed, priority, auditRounds, shiftHours };
+  return { assignments, plants, tokenPoints, factionCounts: factionCountsPerShift, flows, crowdedOut, strategy, strategyTokens: packageTokens, strategySet: setUsed, priority, auditRounds, shiftHours };
 }
 
 // 세트 채택 비교 시 조별 가중 — A조는 풀파워 주력, B조는 회복 교대(§1). 동일 가중이면
@@ -2616,6 +2672,23 @@ export async function optimizeConfig(fullRoster: InfraOp[], priority: ProdPriori
       const plan = buildPlan(tokenChoice, effRoster, bestSets, priority, [ex], false, false, pinnedDorms);
       const score = planScore(plan, byId);
       if (score > bestScore) { best = plan; bestScore = score; bestSeeds = [ex]; }
+    }
+  }
+  // ── 자리에서 밀려난 토큰 생성원 시드 변형 (사용자 제보 2026-07-29: "로즈몬티스가 있어도
+  // 위스퍼레인 대신 사무실 레퍼런스 속도 높은 오퍼가 먼저 배치됨") ────────────────────────
+  // 사무실은 1석인데 토큰 패키지는 토큰을 하나씩 순서대로 처리한다. 화식이 먼저 돌아 멀베리가
+  // 자리를 먹으면, 뒤에 도는 생각의 사슬의 상류 생성원(위스퍼레인: 기억 조각 → 감지 정보 →
+  // 생각의 사슬)은 앉을 자리가 없어 통째로 미배치가 되고, 방 감사도 상대가 패키지 예약이라
+  // 못 건드린다. 결과적으로 사무실은 **원시 레퍼런스 속도**(페넌스 50·하루카 45)로만 줄 세워진다.
+  // 누가 나은지는 방 점수가 아니라 기지 총점이 판정할 문제이므로, buildPlan이 남긴 밀려난
+  // 명단(crowdedOut)을 시드로 넣은 변형을 만들어 planScore로 고른다.
+  {
+    const tried = new Set<string>(bestSeeds.map((s) => s.opId));
+    for (const ex of (best.crowdedOut ?? []).filter((c) => !tried.has(c.opId)).slice(0, 2)) {
+      await breathe();
+      const plan = buildPlan(tokenChoice, effRoster, bestSets, priority, [...bestSeeds, ex], false, false, pinnedDorms);
+      const score = planScore(plan, byId);
+      if (score > bestScore) { best = plan; bestScore = score; bestSeeds = [...bestSeeds, ex]; }
     }
   }
   // ── 자기 소비 사슬 전환자 제외 변형 (사용자 지적 2026-07-29: "슈 지에윈 빼고 더 효율 좋은
