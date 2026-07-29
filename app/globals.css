@@ -12196,12 +12196,13 @@ main.site-main > .site-header {
   color: var(--rgmut);
   /* ⚠ font 단축 표기에 inherit(패밀리 자리)를 섞으면 선언 전체가 무효 — 폰트가 16px로
      상속돼 "글자가 버튼에 꽉 차는" 원인이었다. 반드시 롱핸드로 쓸 것.
-     박스는 원래 보이던 크기(약 58×30) 유지, 안의 글자만 12px — 폰트를 줄인 만큼
-     패딩으로 보상한다. 박스 크기 바꾸지 말 것 (사용자 확정 2026-07-24) */
+     크기: 57×30 → 50×23 (사용자 지적 2026-07-29 "버튼 좀 큰 것 같다").
+     카드 제목이 14px인데 알약이 12px+상하 8px 패딩이라 이름만큼 눈에 띄었다.
+     종전 주석의 "박스 크기 바꾸지 말 것(2026-07-24)"은 이 지시로 대체됐다. */
   font-weight: 700;
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1;
-  padding: 8px 10px;
+  padding: 5px 8px;
   border-radius: 999px;
   cursor: pointer;
   white-space: nowrap;
@@ -13413,6 +13414,12 @@ main.site-main > .site-header {
 }
 .main-tabs.open > button:last-child {
   border-radius: 0 0 var(--r-md) var(--r-md);
+}
+/* '통합전략 가이드' 부메뉴 패널도 같은 반경으로 — 여기만 각져 있었다 (사용자 지적 2026-07-29).
+   본체와 달리 overflow:hidden을 써도 되지만(더 펼쳐지는 게 없다) 굳이 맞출 필요는 없다:
+   패널에 padding 6px이 있어 항목이 모서리를 덮지 않는다. */
+.tab-submenu {
+  border-radius: var(--r-md);
 }
 
 /* 전수검사 3차 (2026-07-26) — 소개 카드·헤더 로고·스캔 요소·스토리 리더(글자/삽화 크기,
