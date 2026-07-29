@@ -6307,7 +6307,9 @@ footer p {
 }
 /* 업데이트 내역·팁 편집기 — 본문은 JSON이 아니라 사람이 읽는 문장이라 줄바꿈·본문 글꼴 */
 .chlog-editor textarea {
-  font: 500 13px/1.6 inherit;
+  font-weight: 500;
+  font-size: 13px;
+  line-height: 1.6;
   white-space: pre-wrap;
 }
 .tip-active-lbl {
@@ -7701,7 +7703,8 @@ html.dark .story-card:hover .story-thumb img {
   border: 0;
   background: var(--white);
   padding: 9px 18px;
-  font: 700 13px inherit;
+  font-weight: 700;
+  font-size: 13px;
   cursor: pointer;
   color: var(--muted);
 }
@@ -7738,7 +7741,8 @@ html.dark .story-card:hover .story-thumb img {
   border: 0;
   background: var(--white);
   padding: 5px 11px;
-  font: 700 11.5px inherit;
+  font-weight: 700;
+  font-size: 11.5px;
   cursor: pointer;
   color: var(--muted);
 }
@@ -8048,7 +8052,8 @@ html.dark .story-card:hover .story-thumb img {
   border: 1px solid var(--line);
   background: var(--white);
   padding: 10px 16px;
-  font: 700 13px inherit;
+  font-weight: 700;
+  font-size: 13px;
   cursor: pointer;
 }
 .sc-ep-foot button:last-child {
@@ -9832,7 +9837,9 @@ html.dark.rg-theme.rg6 .site-header {
   position: relative;
 }
 .rg-zonecard-name {
-  font: 700 14px/1.3 inherit;
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1.3;
 }
 
 .rg-zonecard .rg-zone-counts {
@@ -9954,7 +9961,9 @@ html.dark.rg-theme.rg6 .site-header {
   flex-wrap: wrap;
 }
 .rg-topic {
-  font: 700 13px/1.2 inherit;
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1.2;
   padding: 5px 12px;
   border: 1px solid var(--rgline);
   border-radius: 999px;
@@ -9969,7 +9978,9 @@ html.dark.rg-theme.rg6 .site-header {
   color: var(--rgmut);
   background: 0 0;
   cursor: default;
-  font: 700 13px/1.2 inherit;
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1.2;
 }
 .rg-topic.off.ready {
   color: var(--rgink);
@@ -10072,7 +10083,9 @@ html.dark.rg-theme.rg6 .site-header {
 }
 .rg-topicsel-label {
   grid-column: 1;
-  font: 700 9.5px/1 inherit;
+  font-weight: 700;
+  font-size: 9.5px;
+  line-height: 1;
   letter-spacing: 1.6px;
   text-transform: uppercase;
   color: var(--rggold);
@@ -10083,7 +10096,9 @@ html.dark.rg-theme.rg6 .site-header {
   display: flex;
   align-items: center;
   gap: 8px;
-  font: 700 13.5px/1.25 inherit;
+  font-weight: 700;
+  font-size: 13.5px;
+  line-height: 1.25;
 }
 .rg-topicsel-arrow {
   grid-column: 2;
@@ -10128,7 +10143,9 @@ html.dark.rg-theme.rg6 .site-header {
   background: none;
   border: 0;
   color: var(--rgtext2);
-  font: 600 13px/1.3 inherit;
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 1.3;
   cursor: pointer;
 }
 .rg-topicsel-menu li button:hover {
@@ -10144,7 +10161,9 @@ html.dark.rg-theme.rg6 .site-header {
   flex: 1;
 }
 .rg-topicsel-future {
-  font: 700 10px/1 inherit;
+  font-weight: 700;
+  font-size: 10px;
+  line-height: 1;
   font-style: normal;
   color: var(--rggold);
   border: 1px solid;
@@ -10206,7 +10225,9 @@ html.dark.rg-theme.rg6 .site-header {
   background: 0 0;
   color: var(--rgink);
   padding: 4px 10px;
-  font: 700 12.5px/1 inherit;
+  font-weight: 700;
+  font-size: 12.5px;
+  line-height: 1;
   cursor: pointer;
   border-radius: 999px;
 }
@@ -10259,7 +10280,9 @@ html.dark.rg-theme.rg6 .site-header {
   white-space: nowrap;
   display: flex;
   align-items: center;
-  font: 800 13px/1.2 inherit;
+  font-weight: 800;
+  font-size: 13px;
+  line-height: 1.2;
   color: var(--rgmut);
 }
 .rg-diff-cur.on {
@@ -10280,7 +10303,9 @@ html.dark.rg-theme.rg6 .site-header {
   background: var(--rgcard);
   color: var(--rgink);
   padding: 7px 14px;
-  font: 700 13.5px/1 inherit;
+  font-weight: 700;
+  font-size: 13.5px;
+  line-height: 1;
   cursor: pointer;
   transition: 0.12s;
 }
@@ -10361,7 +10386,9 @@ html.dark.rg-theme.rg6 .site-header {
   padding: 2px 18px 16px;
 }
 .rg-stage-hint {
-  font: 500 11.5px/1 inherit;
+  font-weight: 500;
+  font-size: 11.5px;
+  line-height: 1;
   color: var(--rgmut);
   margin-left: 6px;
 }
@@ -10375,7 +10402,9 @@ html.dark.rg-theme.rg6 .site-header {
   background: var(--rgdeep);
   color: var(--rgink);
   padding: 7px 16px;
-  font: 700 13px/1 inherit;
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1;
   cursor: pointer;
 }
 .rg-modal-modes button.on {
@@ -10554,7 +10583,9 @@ html.dark.rg-theme.rg6 .site-header {
   margin-bottom: 5px;
 }
 .rg-stagecard-name {
-  font: 700 12.5px/1.35 inherit;
+  font-weight: 700;
+  font-size: 12.5px;
+  line-height: 1.35;
   padding: 0 6px;
   display: block;
 }
@@ -10775,7 +10806,9 @@ html.dark.rg-theme.rg6 .site-header {
   background: var(--rgdeep);
   color: var(--rgink);
   padding: 7px 11px;
-  font: 500 13.5px/1 inherit;
+  font-weight: 500;
+  font-size: 13.5px;
+  line-height: 1;
   min-width: 180px;
 }
 .rg-filterbar input[type="search"]::placeholder {
@@ -10795,7 +10828,9 @@ html.dark.rg-theme.rg6 .site-header {
   background: var(--rgcard);
   color: var(--rgink);
   padding: 6px 12px;
-  font: 700 12.5px/1 inherit;
+  font-weight: 700;
+  font-size: 12.5px;
+  line-height: 1;
   cursor: pointer;
 }
 .rg-filterbar button.on {
@@ -10941,7 +10976,9 @@ html.dark.rg-theme.rg6 .site-header {
   background: var(--rgdeep);
   color: var(--rgink);
   padding: 4px 9px;
-  font: 600 12.5px/1.3 inherit;
+  font-weight: 600;
+  font-size: 12.5px;
+  line-height: 1.3;
   cursor: pointer;
   border-radius: 3px;
   transition: 0.12s;
@@ -11003,7 +11040,9 @@ html.dark.rg-theme.rg6 .site-header {
   margin-bottom: 9px;
 }
 .rg-cap-en {
-  font: 600 12px/1.2 inherit;
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 1.2;
   font-style: italic;
   color: var(--rggold);
 }

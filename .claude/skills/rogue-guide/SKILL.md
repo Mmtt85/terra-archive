@@ -148,8 +148,10 @@ KR 매핑 attack_of)과 `abilityList[].text`(개행 join, ability_of)에서 뽑�
     안쪽 `.rg-inv-body`만 세로 스크롤.
 - ⚠ **CSS `font` 단축에 `inherit`을 쓰면 선언이 통째로 버려진다** — `font: 700 11px/1.5 inherit`
   은 font-family 자리가 무효라 **글자 크기가 안 먹는다**(실측: 같은 규칙의 padding만 적용되고
-  글자는 16px 기본값). globals.css에 이 형태가 **22곳** 있고 전부 조용히 무시되는 중이다.
-  새로 쓸 땐 반드시 `font-size`/`font-weight`/`line-height` 롱핸드로.
+  글자는 16px 기본값). globals.css에 이 형태가 22곳 있었고 **2026-07-29에 전부 롱핸드로 정리**
+  (탭 16→13.5px, 필터 버튼 16→12.5px 등 원래 의도대로 복원. 6개 뷰 × 2해상도 깨짐 없음 확인).
+  새로 쓸 땐 반드시 `font-size`/`font-weight`/`line-height` 롱핸드로 —
+  값 없는 `font: inherit;`(button/input 리셋)만 유효하다.
 - **효과 총합** (`EffectTotals`, 사용자 요청 2026-07-29): 보유 리스트의 「Σ 효과 총합」
   버튼 → 모달(`.rg-effback` z-index 160 — 떠 있는 창보다 위). 소장품 탭에서만 낸다.
   - 수치는 **usage 문장을 파싱하지 않는다.** `details.relics[<id>].buffs[].blackboard`에서
