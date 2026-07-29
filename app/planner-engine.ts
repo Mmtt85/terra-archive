@@ -2318,25 +2318,14 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
         if (!best) break;
         assignments["TRAINING"][idx] = [...(assignments["TRAINING"][idx] ?? []), best.id];
       }
-      // ⓒ 남는 자리는 **잉여 인원 중 훈련 속도가 가장 높은 오퍼**로 채운다
-      // (사용자 정정 2026-07-29: "훈련실 굳이 안 비워도 됨. 필요하면 채워줘").
-      // 생산 방을 먼저 다 채운 뒤 남은 인원만 쓰므로 자원 생산을 한 톨도 양보하지 않고,
-      // 훈련실은 교대 시계 방(CLOCK_ROOMS)이 아니라 지속 시간도 줄지 않는다.
-      // 훈련 속도 스킬은 전부 단독 가산(output)이라 solo 점수 정렬이 곧 최적이다.
-      {
-        const cellOf = cellMapFor(shift);
-        const placed = new Set(cellOf.keys());
-        const cands = roster
-          .filter((op) => !placed.has(op.id) && !otherWorking.has(op.id) && !reserved.has(op.id))
-          .map((op) => ({ op, v: opSolo(op, "TRAINING", slotsFor("TRAINING"), { tokenPoints: {} }) }))
-          .filter((entry) => entry.v > 0)
-          .sort((a, b) => b.v - a.v || a.op.rarity - b.op.rarity || a.op.seq - b.op.seq);
-        for (const { op } of cands) {
-          if ((assignments["TRAINING"][idx] ?? []).length >= slotsFor("TRAINING")) break;
-          assignments["TRAINING"][idx] = [...(assignments["TRAINING"][idx] ?? []), op.id];
-          otherWorking.add(op.id); // 다른 조 훈련실에 중복 배치 금지 (§1 A·B 동시 배치 금지)
-        }
-      }
+      // ⓒ **남는 자리는 비워 둔다** — 잉여 인원으로 훈련실을 채우는 패스는 폐기했다
+      // (사용자 지시 2026-07-29: "훈련실은 그냥 비워줘"). 훈련 속도는 총점에 안 들어가니
+      // 공짜처럼 보였지만 실제론 두 가지를 망가뜨렸다. ① 훈련실도 총웨 '자신을 아는 자'가
+      // 세는 시설이라(숙소·활동실만 제외) 남는 쉐이(왕)를 여기 앉히면 캡이 **초과**되고,
+      // 그러면 optimizeConfig의 'perMember 캡 확장 변형'이 "정확히 캡일 때만" 걸리는 조건에
+      // 안 걸려 통째로 죽는다 — 왕을 제어센터에 앉혀 슈의 예약을 푸는 더 좋은 안(실측 +12.2)을
+      // 영영 못 찾았다. ② 채우기 패스는 감사가 끝난 **뒤**에 도는 후처리라, 이렇게 판을 흔들면
+      // 앞선 판정의 전제가 사후에 바뀐다. 훈련실은 ⓐ 다른 오퍼의 조건이 지목할 때만 쓴다.
     }
   }
   // 편성 확정 — 씨앗 주차 중 수혜 오퍼가 결국 배치되지 않은 짝은 숙소에서 빼고(이유 없는
@@ -2353,7 +2342,16 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
       if (op) placedA.push(op);
     }
   }
+  // 원장에 실린 생성원 중 **감사가 결국 빼 버린 오퍼**는 재집계에서 뺀다 — 패키지 예약
+  // 해제(자기 소비 전환자 등)로 지에윈이 벤치로 가면 그가 만들던 주술 결정도 0이어야 한다.
+  // 숙소 생성원(센시 마물 요리)이 있으니 존재 판정은 숙소까지 포함한다.
+  const presentA = new Set(placedA.map((op) => op.id));
+  for (let d = 0; d < 4; d += 1) for (const id of assignments[`DORM-${d}`]?.[0] ?? []) presentA.add(id);
   for (const flow of flows) {
+    // 전환 사슬(via)은 전환자가 실제로 앉아 있을 때만 산다 — 지에윈이 벤치로 가면
+    // 화식→주술 결정 환산분은 전부 죽는다(원장에 유령 점수가 남지 않게).
+    const converterLive = flow.converters.some((conv) => presentA.has(conv.opId));
+    flow.generators = flow.generators.filter((gen) => presentA.has(gen.opId) && (!gen.via || converterLive));
     let total = 0;
     for (const gen of flow.generators) {
       if (gen.perMember) {
@@ -2426,8 +2424,9 @@ export function planScore(plan: Plan, byId: Map<string, InfraOp>): number {
       const cell = cellByKey.get(key)!;
       if (PARK_KEYS.includes(key)) continue;
       // 훈련실 점수(훈련 속도 %)는 총점에서 뺀다 — 자원 생산과 단위가 다르다. 넣으면
-      // "W를 무역소에서 빼 훈련실에 앉히면 총점이 오른다" 같은 교환이 생긴다. 훈련실은
-      // 생산 방을 다 채운 뒤 **남는 인원으로** 채우는 방이다 (buildPlan 말미 채우기 패스).
+      // "W를 무역소에서 빼 훈련실에 앉히면 총점이 오른다" 같은 교환이 생긴다. 그렇다고
+      // "총점에 안 잡히니 남는 인원으로 채우면 공짜"도 아니다 — 훈련실도 시설로 세는 방이라
+      // 잉여를 앉히면 카운터가 엉뚱하게 찬다 (buildPlan 훈련실 파킹 ⓒ 주석 참조).
       if (key === "TRAINING") continue;
       total += shiftWeight * teamValue(teamAt(key), cell.room, { ...ctxFor(key, points, counts, plan.plants, present, ambient), shiftHours: clock, shift });
     }
@@ -2596,6 +2595,35 @@ export async function optimizeConfig(fullRoster: InfraOp[], priority: ProdPriori
       const plan = buildPlan(tokenChoice, effRoster, bestSets, priority, [ex], false, false, pinnedDorms);
       const score = planScore(plan, byId);
       if (score > bestScore) { best = plan; bestScore = score; bestSeeds = [ex]; }
+    }
+  }
+  // ── 자기 소비 사슬 전환자 제외 변형 (사용자 지적 2026-07-29: "슈 지에윈 빼고 더 효율 좋은
+  // 오퍼가 있을 텐데") ─────────────────────────────────────────────────────────────
+  // 지에윈은 화식→주술 결정을 만들어 그 주술 결정을 **자기 혼자** 쓴다. 전환자를 패키지
+  // 예약으로 지켜 주는 이유는 하류에 남이 있기 때문인데, 하류가 자기뿐이면 지켜 봐야 남는 게
+  // 없고 사슬 값이 평범한 제조 요원보다 낮을 수 있다. 그렇다고 "자기 소비면 무조건 푼다"로
+  // 규칙화하면 안 된다 — 로즈몬티스(감지 정보→생각의 사슬→자기 생산력)도 같은 모양인데
+  // 그쪽은 순금방 정배라, 규칙으로 풀었더니 순금 −1.8에 검증 픽스처가 깨졌다. 그래서
+  // **후보만 만들고 채택은 planScore**. 위 장기 지속 변형과 달리 세트·캡 확장이 확정된
+  // **뒤에** 재는데, 자리 값은 그 결집이 선 다음에야 제대로 보이기 때문이다 (같은 지에윈이
+  // 세트 전 −1.3, 세트 후 +2.2로 부호가 뒤집힌다). 소모 모드는 위 갈래가 이미 전 전환자를
+  // 훑으므로 중복 평가하지 않는다.
+  if (!ENDLESS_ON && tokenChoice.length) {
+    const aPlaced = new Set<string>();
+    for (const key of [...PRODUCTION_KEYS, ...SUPPORT_KEYS]) for (const id of best.assignments[key]?.[0] ?? []) aPlaced.add(id);
+    const selfChain: string[] = [];
+    for (const flow of best.flows) for (const conv of flow.converters) {
+      if (!aPlaced.has(conv.opId) || selfChain.includes(conv.opId)) continue; // 안 앉은 전환자는 빼 봐야 그대로
+      const downstream = effRoster.some((op) => op.id !== conv.opId && op.skills.some((sk) =>
+        sk.tokenUse.some((use) => use.token === flow.token) || sk.convert?.from === flow.token));
+      if (!downstream) selfChain.push(conv.opId);
+    }
+    for (const cid of selfChain.slice(0, 3)) {
+      await breathe();
+      const sub = effRoster.filter((op) => op.id !== cid);
+      const plan = buildPlan(tokenChoice, sub, bestSets, priority, bestSeeds, false, false, pinnedDorms);
+      const score = planScore(plan, byId);
+      if (score > bestScore) { best = plan; bestScore = score; effRoster = sub; }
     }
   }
   // 채택안의 전수 감사 수렴 회차를 조별로 재생 — "몇 회 반복으로 최선을 확인했는지"를
