@@ -547,8 +547,14 @@ button {
   border: 1px solid var(--border-strong);
   border-radius: 12px;
   width: min(620px, 100%);
-  max-height: calc(100dvh - 48px);
-  margin: clamp(10px, 4dvh, 40px) auto auto; /* 상단 고정 — DB fetch 도착 시 재중앙 CLS 방지 */
+  /* 위 여백만큼 아래도 남긴다 (사용자 지적 2026-07-30: 아래에 딱 달라붙는다).
+     빼야 할 것이 **둘**이다 — ⓐ .modal-backdrop의 padding 24px×2 ⓑ 이 모달의 위 margin×2.
+     종전 `100dvh - 48px`는 ⓐ만 빼서, 위 margin 40px이 그대로 아래로 넘쳤다(위 64·아래 16).
+     중앙 정렬(align-self:center) 대신 상단 고정을 유지하는 이유는 CLS — DB fetch가 도착해
+     내용이 자라면 모달이 재중앙되며 화면 전체가 밀린다. */
+  --modal-gap: clamp(10px, 4dvh, 40px);
+  max-height: calc(100dvh - 48px - var(--modal-gap) * 2);
+  margin: var(--modal-gap) auto auto;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -912,8 +918,10 @@ button {
   background: var(--white, #fff);
   border: 1px solid var(--border-strong);
   width: min(540px, 100%);
-  max-height: calc(100dvh - 48px);
-  margin: clamp(10px, 4dvh, 40px) auto auto; /* 상단 고정 — 워커 fetch 도착 시 재중앙 CLS 방지 */
+  /* 상단 고정(워커 fetch 재중앙 CLS 방지) + 아래 여백 확보 — .chlog-modal과 같은 계산 */
+  --modal-gap: clamp(10px, 4dvh, 40px);
+  max-height: calc(100dvh - 48px - var(--modal-gap) * 2);
+  margin: var(--modal-gap) auto auto;
   display: flex;
   flex-direction: column;
   overflow: hidden;
