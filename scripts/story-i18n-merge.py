@@ -6,6 +6,15 @@
 # KO로 폴백(파일은 항상 73개 완비 — 사이트가 깨지지 않게). 구조 불일치는 리포트만 하고
 # 그 이벤트는 KO 폴백 처리(잘못된 번역이 반영되지 않게).
 #
+# ⚠ 현재 이 스크립트를 그냥 돌리면 **EN 24건·JA 39건이 한국어로 되돌아간다** (2026-07-29 확인).
+#   원인은 번역 품질이 아니라 **KO 원본과 번역본의 alias 배열이 어긋나 있는 것**이다 —
+#   스캐폴드(scripts/story-i18n/ko)를 뜬 뒤 app/data/story-summaries.json 쪽 chars/terms의
+#   alias가 따로 편집돼(예: act49side terms[6]·[8]) 길이 검사에서 걸리고, 걸린 이벤트는
+#   설계대로 KO 폴백된다. 즉 **멀쩡한 번역이 통째로 날아간다**.
+#   → 요약 한 곳을 고칠 때는 merge를 돌리지 말고 story-summaries.{en,ja}.json의 그 블록만
+#     직접 고친다. merge를 다시 쓰려면 먼저 story-i18n-setup.py로 ko 스캐폴드를 새로 뜨고
+#     번역본 alias 길이를 KO에 맞춘 뒤(전수 점검) 돌릴 것.
+#
 # 검증 불변식: 블록 개수·타입·비번역 필드(t/src/side/op/img/alias 길이)는 KO와 동일해야 하고,
 # 번역 필드(tagline·block x/cap/who·entity name/desc)는 비어 있지 않아야 한다.
 # **볼드** 마크다운 개수도 KO와 같아야 한다(누락/추가 방지). EN에 한글이 남으면 경고.
