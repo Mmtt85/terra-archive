@@ -11228,10 +11228,24 @@ html.dark.rg-theme.rg6 .site-header {
   flex-wrap: wrap;
 }
 .rg-modal-head h3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin: 0;
   font-size: 18px;
   letter-spacing: -0.3px;
   color: #f4e7d3;
+}
+/* cn 병기(Nm)는 두 줄 — 한 덩어리로 묶어 글리프 오른쪽에 세로로 쌓는다 */
+.rg-modal-title {
+  min-width: 0;
+}
+/* 노드 종류 글리프 — 상세 모달 제목 왼쪽. 목록보다 조금 크게 (2026-07-29) */
+.rg-modal-ico {
+  flex: none;
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
 }
 .rg-modal-zone {
   font: 800 12px/1 monospace;

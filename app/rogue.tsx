@@ -255,7 +255,7 @@ function StageModal({ pair, grade, onClose, onOpenEnemy }: {
         <header className="rg-modal-head">
           <div>
             <span className={`rg-kind k-${stage.kind}`}>{t(KIND_LABEL[stage.kind] ?? stage.kind)}</span>
-            <h3><Nm name={stage.name} cn={stage.cn} /></h3>
+            <h3><NodeIco id={KIND_NODE[stage.kind]} cls="rg-modal-ico" /><span className="rg-modal-title"><Nm name={stage.name} cn={stage.cn} /></span></h3>
             {stage.zone != null && <span className="rg-modal-zone">{t("{n}층", { n: stage.zone })}</span>}
           </div>
           <button type="button" className="rg-modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
@@ -333,6 +333,22 @@ function StageModal({ pair, grade, onClose, onOpenEnemy }: {
 const SPECIAL_LAST_IDS = new Set(["enemy_2002_bearmi", "enemy_2001_duckmi", "enemy_2085_skzjxd", "enemy_2034_sythef",
   "enemy_2059_smbox", "enemy_2067_skzcy", "enemy_2091_skzgds", "enemy_2086_skzdwx", "enemy_2069_skzbox", "enemy_2062_smcar"]);
 const isSpecialLast = (key: string) => SPECIAL_LAST_IDS.has(key.replace(/_\d+$/, ""));
+
+// 전투 노드 kind → 노드 타입 ID. 상세 모달 머리에 지도 글리프를 같이 띄우기 위한 것
+// (제보 2026-07-29 "노드 상세 모달에도 노드 아이콘을 표시해 달라").
+// 조우 전투(event/incident)는 '우연한 만남'에서 이어지는 전투라 INCIDENT 글리프를 쓴다.
+// 매핑이 없는 kind(특수·시련 등)는 아이콘 없이 배지만 나온다.
+const KIND_NODE: Record<string, string> = {
+  normal: "BATTLE_NORMAL", emergency: "BATTLE_ELITE", boss: "BATTLE_BOSS",
+  event: "INCIDENT", incident: "INCIDENT", duel: "DUEL", savage: "BATTLE_SAVAGE",
+};
+
+/** 노드 종류 글리프 — 이 테마에 그 타입 아이콘이 있을 때만 그린다 */
+function NodeIco({ id, cls = "rg-nodetype-ico" }: { id?: string | null; cls?: string }) {
+  if (!id || !hasNodeIcon(data.id, id)) return null;
+  return <img className={cls} src={asset(`/rogue/node/${data.id}/${id}.webp`)}
+    alt="" width={160} height={160} loading="lazy" decoding="async" />;
+}
 
 const KIND_LABEL: Record<string, string> = {
   normal: "작전", emergency: "긴급 작전", boss: "험난한 길", event: "조우 전투", special: "특수",
@@ -431,7 +447,7 @@ function EncounterModal({ enc, onClose, link }: { enc: Encounter; onClose: () =>
         <header className="rg-modal-head">
           <div>
             <span className="rg-kind">{t("우연한 만남")}</span>
-            <h3><Nm name={enc.title} cn={enc.cn} /></h3>
+            <h3><NodeIco id="INCIDENT" cls="rg-modal-ico" /><span className="rg-modal-title"><Nm name={enc.title} cn={enc.cn} /></span></h3>
             {enc.floors && <span className="rg-modal-zone">{enc.floors.join("·")}{t("층")}</span>}
           </div>
           <button type="button" className="rg-modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
@@ -1560,10 +1576,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
                     <h4>
                       {/* 게임 지도에 그려지는 그 글리프를 그대로 병기 — 종류가 많은 테마일수록
                           글자보다 그림이 빠르다 (제보 2026-07-29). 아이콘이 없는 타입은 글자만. */}
-                      {hasNodeIcon(data.id, nt.id) && (
-                        <img className="rg-nodetype-ico" src={asset(`/rogue/node/${data.id}/${nt.id}.webp`)}
-                          alt="" width={160} height={160} loading="lazy" decoding="async" />
-                      )}
+                      <NodeIco id={nt.id} />
                       {/* cn 병기(Nm)는 두 줄짜리라 flex 아이템 하나로 묶어야 아이콘 옆에 쌓인다 */}
                       <span className="rg-nodetype-title"><Nm name={nt.name} cn={nt.cn} /></span>
                     </h4>
