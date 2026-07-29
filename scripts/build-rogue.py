@@ -1782,6 +1782,27 @@ def unpack_node_icons(topics=("rogue_1", "rogue_2", "rogue_3", "rogue_4", "rogue
         raw = urllib.request.urlopen(req, timeout=180).read()
         return raw if binary else json.loads(raw)
 
+    def trim_glyph(im):
+        """원판·발광(약한 알파)을 잘라내고 **선명한 글리프만** 남긴다.
+
+        원본 160x160에서 알파>90인 실제 그림은 ~62x68(40%)뿐이라, 그대로 42px로 줄이면
+        보이는 글리프가 17px밖에 안 돼 종류를 구분할 수 없다 (실측 2026-07-29).
+        여백 6%만 남기고 잘라 같은 크기에서 글리프가 꽉 차게 한다."""
+        from PIL import Image as _Im
+        im = im.convert("RGBA")
+        box = im.split()[3].point(lambda v: 255 if v > 90 else 0).getbbox() or im.getbbox()
+        if not box:
+            return im
+        pad = int(max(box[2] - box[0], box[3] - box[1]) * 0.06) + 1
+        box = (max(0, box[0] - pad), max(0, box[1] - pad),
+               min(im.width, box[2] + pad), min(im.height, box[3] + pad))
+        im = im.crop(box)
+        # 정사각 캔버스에 가운데 정렬 — 가로/세로 비가 제각각이면 UI에서 크기가 들쭉날쭉해진다
+        side = max(im.size)
+        sq = _Im.new("RGBA", (side, side), (0, 0, 0, 0))
+        sq.paste(im, ((side - im.width) // 2, (side - im.height) // 2), im)
+        return sq
+
     def cdn(topic):
         # KR 미출시 토픽(rogue_6)만 중국 공식 CDN, 나머지는 한국 CDN (유물 언팩과 같은 규약)
         conf = fetch("https://ak-conf.hypergryph.com/config/prod/official/network_config"
@@ -1835,7 +1856,7 @@ def unpack_node_icons(topics=("rogue_1", "rogue_2", "rogue_3", "rogue_4", "rogue
                 if d.m_Name not in wanted or d.m_Name in found:
                     continue
                 buf = _io.BytesIO()
-                d.image.save(buf, "PNG")
+                trim_glyph(d.image).save(buf, "PNG")
                 save_webp(buf.getvalue(), os.path.join(dest, f"{d.m_Name}.webp"),
                           photo=False, max_px=160, method=4, try_lossless=False)
                 found[d.m_Name] = True
@@ -1848,13 +1869,28 @@ def unpack_node_icons(topics=("rogue_1", "rogue_2", "rogue_3", "rogue_4", "rogue
                 png = fetch(f"{SHARED}/{src}.png", binary=True)
             except Exception:  # noqa: BLE001 — 공용 글리프가 없으면 그 타입은 아이콘 없음
                 continue
-            save_webp(png, os.path.join(dest, f"{nid}.webp"), photo=False, max_px=160,
+            from PIL import Image as _Im2
+            tb = _io.BytesIO()
+            trim_glyph(_Im2.open(_io.BytesIO(png))).save(tb, "PNG")
+            save_webp(tb.getvalue(), os.path.join(dest, f"{nid}.webp"), photo=False, max_px=160,
                       method=4, try_lossless=False)
             found[nid] = True
         miss = sorted(wanted - set(found))
         total += len(found)
         print(f"{tid}: {len(found)}/{len(wanted)}종 (resVersion {res})"
               + (f" · 누락 {miss}" if miss else ""))
+    # 어떤 (테마, 노드 타입) 조합에 아이콘이 있는지 목록을 남긴다 — 이미지 자체는 커밋하지
+    # 않으므로(.gitignore) 프론트가 파일 존재 여부를 알 길이 없다. 이 작은 JSON만 커밋해
+    # UI가 아이콘 있는 것만 <img>로 그린다 (없는 타입에 404를 쏘지 않는다).
+    inv_path = os.path.join(REPO, "app", "data", "rogue-node-icons.json")
+    inv = {}
+    node_root = os.path.join(REPO, "public", "rogue", "node")
+    for tid in sorted(os.listdir(node_root)) if os.path.isdir(node_root) else []:
+        d = os.path.join(node_root, tid)
+        if os.path.isdir(d):
+            inv[tid] = sorted(f[:-5] for f in os.listdir(d) if f.endswith(".webp"))
+    json.dump(inv, open(inv_path, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
+    print(f"보유 목록 → app/data/rogue-node-icons.json ({sum(len(v) for v in inv.values())}건)")
     print(f"\n합계 {total}장 → public/rogue/node/  ·  R2 반영: node scripts/r2-sync.mjs")
 
 

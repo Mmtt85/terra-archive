@@ -6,6 +6,10 @@
 // 조우의 층별 출현 규칙·엔딩 선제조건은 클라 데이터에 없어 PRTS 기반 큐레이션(rogueN-curated.json)을 병합한다.
 import { lazy, startTransition, Suspense, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import rogue1Data from "./data/rogue1.json";
+// 노드 종류 아이콘 보유 목록 — 이미지 자체는 R2에만 있고 커밋되지 않는다(.gitignore
+// /public/rogue/node/). 어느 (테마,타입) 조합에 아이콘이 있는지는 이 목록으로만 안다.
+// 생성: python3 scripts/build-rogue.py --node-icons
+import nodeIconData from "./data/rogue-node-icons.json";
 import { useConfirm } from "./confirm";
 import { useI18n } from "./i18n";
 import { normSearch, useSearchInput } from "./search";
@@ -67,6 +71,8 @@ type RogueData = {
 };
 
 const rogue1 = rogue1Data as unknown as RogueData;
+const NODE_ICONS: Record<string, string[]> = nodeIconData as Record<string, string[]>;
+const hasNodeIcon = (topic: string, nodeId: string) => (NODE_ICONS[topic] ?? []).includes(nodeId);
 // 현재 활성 토픽 데이터 — RogueGuide 렌더 최상단에서 갱신한다 (모달·applyDiff 등이 참조).
 // 자식 컴포넌트는 항상 RogueGuide 렌더 뒤에 동기 렌더되므로 안전하다.
 let data = rogue1;
@@ -1551,7 +1557,16 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
               <div className="rg-nodetype-list">
                 {otherNodes.map((nt) => (
                   <article key={nt.id} className={`rg-nodetype${nt.id === "DUEL" && duelStages.length > 0 ? " wide" : ""}`}>
-                    <h4><Nm name={nt.name} cn={nt.cn} /></h4>
+                    <h4>
+                      {/* 게임 지도에 그려지는 그 글리프를 그대로 병기 — 종류가 많은 테마일수록
+                          글자보다 그림이 빠르다 (제보 2026-07-29). 아이콘이 없는 타입은 글자만. */}
+                      {hasNodeIcon(data.id, nt.id) && (
+                        <img className="rg-nodetype-ico" src={asset(`/rogue/node/${data.id}/${nt.id}.webp`)}
+                          alt="" width={160} height={160} loading="lazy" decoding="async" />
+                      )}
+                      {/* cn 병기(Nm)는 두 줄짜리라 flex 아이템 하나로 묶어야 아이콘 옆에 쌓인다 */}
+                      <span className="rg-nodetype-title"><Nm name={nt.name} cn={nt.cn} /></span>
+                    </h4>
                     {nt.func && <p className="rg-nodetype-func">{nt.func}</p>}
                     {nt.desc && <p>{nt.desc}</p>}
                     {nt.id === "DUEL" && duelStages.length > 0 && (
