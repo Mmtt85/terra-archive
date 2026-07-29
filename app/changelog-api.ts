@@ -10,10 +10,15 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY, ADMIN_REST } from "./feedback";
 // change = 버그가 아닌 일반 변경(이름 정리·문구 교체·배치 조정), fix = 실제 오작동 수정.
 export type ChangeKind = "new" | "improve" | "change" | "fix" | "data";
 
+/** 어느 기능의 이야기인가 — 배지를 '인프라 개선'처럼 읽히게 한다 (사용자 요청 2026-07-29) */
+export type ChangeArea = "infra" | "archive" | "recruit" | "farm" | "upgrade" | "story" | "rogue" | "site";
+
 export type ChangeRow = {
   id: string;
   released_at: string;   // YYYY-MM-DD
   kind: ChangeKind;
+  /** 없으면 href로 유추 (컬럼 추가 전 기존 행 대응 — areaOf 참조) */
+  area?: ChangeArea | null;
   ko: string;
   en: string | null;
   ja: string | null;
@@ -28,6 +33,32 @@ export const CHANGE_KIND_LABEL: Record<ChangeKind, string> = {
 
 export const CHANGE_KINDS: ChangeKind[] = ["new", "improve", "change", "fix", "data"];
 
+/** 영역 표시명 (i18n 키). 배지에 들어가므로 탭 정식명이 아니라 짧은 쪽을 쓴다. */
+export const CHANGE_AREA_LABEL: Record<ChangeArea, string> = {
+  infra: "인프라", archive: "오퍼 백과사전", recruit: "공채", farm: "파밍",
+  upgrade: "육성", story: "스토리", rogue: "통합전략", site: "사이트",
+};
+
+export const CHANGE_AREAS: ChangeArea[] = [
+  "infra", "archive", "recruit", "farm", "upgrade", "story", "rogue", "site",
+];
+
+/** 바로가기 경로 → 영역 (area가 비어 있는 옛 행의 폴백) */
+const AREA_BY_PATH: [string, ChangeArea][] = [
+  ["/infra", "infra"], ["/operators", "archive"], ["/recruit", "recruit"],
+  ["/farm", "farm"], ["/upgrade", "upgrade"], ["/stories", "story"], ["/rogue", "rogue"],
+];
+
+/**
+ * 행의 영역 — 명시값이 우선, 없으면 href로 유추하고, 그래도 모르면 '사이트'.
+ * href가 없는 옛 행은 전부 '사이트'가 되므로 /admin에서 채워 주는 게 정확하다.
+ */
+export function areaOf(row: ChangeRow): ChangeArea {
+  if (row.area) return row.area;
+  const href = row.href ?? "";
+  return AREA_BY_PATH.find(([p]) => href.startsWith(p))?.[1] ?? "site";
+}
+
 const anonHeaders = { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` };
 
 /** 기본 표시 기간 — 최근 1주일 (사용자 확정 2026-07-27) */
@@ -39,7 +70,9 @@ export function daysAgoKst(n: number): string {
   return new Date(kstNow - n * 86400_000).toISOString().slice(0, 10);
 }
 
-const SELECT = "select=id,released_at,kind,ko,en,ja,href,seq&order=released_at.desc,seq.asc";
+// select=* 인 이유: `area` 컬럼 마이그레이션(docs/supabase-changelog.sql) 전에도 조회가
+// 깨지지 않게 — 없는 컬럼을 명시하면 PostgREST가 400을 내고 모달 전체가 안 뜬다.
+const SELECT = "select=*&order=released_at.desc,seq.asc";
 
 /**
  * 날짜 구간 조회 — [from, to) (둘 다 YYYY-MM-DD, to를 비우면 상한 없음 = 오늘까지).
@@ -84,6 +117,34 @@ export function changeText(row: ChangeRow, locale: string): string {
   return (text ?? "").trim() || row.ko;
 }
 
+/** 이보다 짧으면 접지 않는다 — 한 줄로 끝나는 항목에 '상세보기'를 붙여봐야 클릭만 늘어난다 */
+const HEAD_MAX = 90;
+/** 접었을 때 감출 분량이 이보다 적으면 그냥 다 보여준다 */
+const REST_MIN = 20;
+
+/**
+ * 항목을 '핵심 한 줄 + 상세'로 가른다 (사용자 요청 2026-07-29 — 목록이 너무 길어졌다).
+ * 집필 관례상 `" — "` 앞이 핵심 한 줄이다 (실측: 등록된 28행 중 KO 85%·EN 82%가 이 형식이고,
+ * 80자를 넘는 긴 항목은 3개 언어 모두 예외 없이 이 구분자를 갖고 있다).
+ * 구분자가 없으면 첫 문장에서 자르고, 그마저 짧으면 통째로 둔다 — /admin에서 자유롭게
+ * 쓰는 항목도 있으므로 폴백이 필요하다.
+ */
+export function splitChange(text: string): { head: string; rest: string } {
+  const whole = { head: text, rest: "" };
+  const dash = text.indexOf(" — ");
+  if (dash > 0) {
+    const rest = text.slice(dash + 3).trim();
+    return rest.length >= REST_MIN ? { head: text.slice(0, dash), rest } : whole;
+  }
+  if (text.length <= HEAD_MAX) return whole;
+  // 첫 문장 끝. 일본어 구두점(。！？)은 **뒤에 공백을 두지 않으므로** 공백을 요구하면 안 된다
+  // (실측: JA 항목이 하나도 접히지 않았다). ASCII 마침표는 소수점·약어를 피하려 공백을 요구.
+  const m = /[。！？]|[.!?](?=\s|$)/.exec(text);
+  if (!m) return whole;
+  const rest = text.slice(m.index + 1).trim();
+  return rest.length >= REST_MIN ? { head: text.slice(0, m.index + 1), rest } : whole;
+}
+
 // ── 관리자 (/admin) — RLS가 x-admin-key 헤더를 검사한다 ──
 
 export type ChangeDraft = Omit<ChangeRow, "id"> & { id?: string };
@@ -93,6 +154,7 @@ export async function adminUpsertChange(row: ChangeDraft) {
   const body = {
     released_at: row.released_at,
     kind: row.kind,
+    area: row.area ?? null,
     ko: row.ko.trim(),
     en: row.en?.trim() || null,
     ja: row.ja?.trim() || null,

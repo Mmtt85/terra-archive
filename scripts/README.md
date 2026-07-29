@@ -170,6 +170,24 @@ UI(story.tsx ScriptReader)가 fetch — **JS 번들에 import 금지** (home 청
 **요약 본문(`app/data/story-summaries.json`)은 스크립트가 만들지 않는다** — AI(Claude)가
 스토리 스크립트를 정독하고 집필해 넣는다 (`story-summary` 스킬, PROJECT-GUIDE §6.6).
 
+### 6.1 요약 EN/JA 번역
+
+집필(한국어)이 끝나면 번역까지 돌려야 발행이 끝난다. 작업본 `scripts/story-i18n/`은 gitignore.
+
+```bash
+python3 scripts/story-i18n-setup.py       # KO 스캐폴드 + 고유명사 용어집 → scripts/story-i18n/
+#   → scripts/story-i18n/{en,ja}/<id>.json 을 서브에이전트가 채운다 (TRANSLATE.md 참조)
+python3 scripts/story-i18n-merge.py       # 검증·병합 → app/data/story-summaries.{en,ja}.json
+python3 scripts/story-i18n-merge.py --publish   # 이미 발행된 번역이 바뀌는 걸 승인
+python3 scripts/story-i18n-backport.py    # 발행본을 직접 고쳤을 때 작업본으로 되돌리기
+```
+
+merge는 **이미 발행된 번역이 달라지면 아무것도 쓰지 않고 멈춘다**(exit 1). 발행본을 손으로
+고친 뒤라면 backport를 먼저 돌린다. 구조 파손·번역 누락만 KO 폴백이고, alias 길이·볼드
+개수는 경고로 발행한다. KO 본문이 번역 이후 바뀌면 "낡음 — 재번역 필요"로 보고한다.
+`alias`는 로케일 본문 하이라이트와 한국어 원문 화자 매칭을 겸해 **언어가 섞이는 게 정상**이며
+KO와 개수가 달라도 된다.
+
 컷씬 CG·삽화를 새로 받았으면(`--cuts`/`--chars`) **이미지 실측 크기도 재생성**한다:
 
 ```bash

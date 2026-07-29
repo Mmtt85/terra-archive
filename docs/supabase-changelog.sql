@@ -22,6 +22,13 @@ alter table public.changelog drop constraint if exists changelog_kind_check;
 alter table public.changelog add constraint changelog_kind_check
   check (kind in ('new', 'improve', 'change', 'fix', 'data'));
 
+-- 기능 영역 (2026-07-29, 사용자 요청 "인프라 개선 / 사이트 개선처럼 나누자")
+-- 배지가 '{영역} {종류}'로 읽힌다. 비워 두면 프론트가 href로 유추하고(areaOf), 그래도
+-- 모르면 'site'. **href가 없는 옛 행은 전부 site가 되므로 /admin에서 채워 주는 게 정확하다.**
+-- 사이트 조회는 select=* 라서 이 컬럼이 없어도 깨지지 않는다 — 다만 /admin 저장은 필요하다.
+alter table public.changelog add column if not exists area text
+  check (area is null or area in ('infra', 'archive', 'recruit', 'farm', 'upgrade', 'story', 'rogue', 'site'));
+
 create index if not exists changelog_released_idx on public.changelog (released_at desc, seq);
 
 alter table public.changelog enable row level security;

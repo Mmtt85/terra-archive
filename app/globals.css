@@ -622,14 +622,22 @@ button {
   align-items: flex-start;
   gap: 8px;
 }
+/* 배지 = '{영역} {종류}' (2026-07-29). 영역 이름 길이가 로케일마다 크게 달라
+   (KO "인프라 개선" 67px vs EN "Integrated Strategies · Improved" 190px), 폭 상한을 두지 않으면
+   좁은 화면에서 본문 칸을 절반 넘게 잡아먹는다 — 실측: 390px에서 본문이 138px로 눌리고
+   행 높이가 41px→102px로 튀었다. 상한을 넘으면 배지가 두 줄로 접힌다. */
 .chlog-kind {
   flex: none;
+  max-width: 38%;
   margin-top: 1px;
   padding: 2px 7px;
   border-radius: 6px;
   font-size: 10.5px;
   font-weight: 800;
   letter-spacing: 0.04em;
+  line-height: 1.35;
+  text-align: center;
+  word-break: keep-all;      /* 한국어·일본어가 글자 단위로 쪼개지지 않게 */
   border: 1px solid var(--line);
   color: var(--muted);
 }
@@ -681,6 +689,25 @@ button {
 }
 .chlog-go:hover {
   border-color: var(--border-strong);
+}
+/* 항목 안 '상세보기/접기' — 본문 끝에 붙는 조용한 인라인 링크.
+   테두리 칩인 .chlog-go(바로가기)와 위계를 벌려 둘이 나란히 있어도 구분된다. */
+.chlog-more {
+  margin-left: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.chlog-more:hover {
+  color: var(--ink);
 }
 
 /* 목록 하단 버튼 줄 — 예전 기록 7일씩 더 불러오기 전용

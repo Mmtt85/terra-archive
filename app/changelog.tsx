@@ -5,16 +5,20 @@
 // (사용자 확정 2026-07-27: 새 항목은 /admin에서 넣으면 배포 없이 바로 뜬다).
 // 표시 규칙 (사용자 확정 2026-07-27):
 //  ① 기본은 **신기능만** — 제목 옆 '상세보기'를 눌러야 개선·버그 수정·데이터 갱신까지 보인다.
+//     (2026-07-29부터 버튼으로 열면 상세가 기본. 개선·수정이 변경의 대부분이라 신기능만 띄우면
+//      "바뀐 게 없네"로 읽혔다.)
 //  ② 기간은 최근 7일치부터, 목록 아래 '예전 기록 가져오기'를 누를 때마다 **7일씩 더 과거로** 이어 붙인다.
-// 두 축은 별개다 — 그래서 종류 필터는 헤더, 기간 확장은 목록 끝에 둔다 (2026-07-28).
+//  ③ 항목은 **핵심 한 줄만** 보이고, 끝의 '상세보기'로 나머지를 펼친다 (2026-07-29).
+// 세 축은 별개다 — 종류 필터는 헤더, 기간 확장은 목록 끝, 항목 펼침은 항목 안에 둔다.
+// ①과 ③이 같은 '상세보기' 라벨을 쓰지만 위계가 다르다(헤더 알약 vs 본문 인라인 링크).
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useI18n, DT_LOCALE } from "./i18n";
 import { useHashSync } from "./hash-modal";
 import {
-  fetchChangelogRange, fetchOldestReleaseDate, windowRange, changeText,
-  CHANGE_KIND_LABEL, RECENT_DAYS, daysAgoKst, type ChangeRow,
+  fetchChangelogRange, fetchOldestReleaseDate, windowRange, changeText, splitChange, areaOf,
+  CHANGE_KIND_LABEL, CHANGE_AREA_LABEL, RECENT_DAYS, daysAgoKst, type ChangeRow,
 } from "./changelog-api";
 
 const dateLabel = (iso: string, locale: string): string => {
@@ -51,6 +55,16 @@ export default function ChangelogButton() {
   const [oldest, setOldest] = useState<string | null>(null); // 전체에서 가장 오래된 항목 날짜
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState("");
+  // 항목별 펼침 — 기본은 핵심 한 줄만 (사용자 요청 2026-07-29: "줄줄줄줄 너무 길어지니까").
+  // 헤더의 '상세보기'는 어떤 **종류**를 보일지 고르는 필터라 축이 다르다.
+  const [opened, setOpened] = useState<Set<string>>(new Set());
+  const toggleRow = useCallback((id: string) => {
+    setOpened((prev) => {
+      const next = new Set(prev);
+      if (!next.delete(id)) next.add(id);
+      return next;
+    });
+  }, []);
   const loaded = useRef(false);                       // 첫 로드 1회 가드
 
   // 딥링크: #changelog(신기능만) · #changelog-all(상세, 버튼으로 여는 기본) — 기간 확장 상태는 URL에 담지 않는다
@@ -153,17 +167,36 @@ export default function ChangelogButton() {
                 <section key={day.date}>
                   <h3>{dateLabel(day.date, locale)}</h3>
                   <ul>
-                    {day.rows.map((row) => (
-                      <li key={row.id}>
-                        <span className={`chlog-kind ${row.kind}`}>{t(CHANGE_KIND_LABEL[row.kind] ?? row.kind)}</span>
-                        <span className="chlog-text">
-                          {changeText(row, locale)}
-                          {row.href && (
-                            <a className="chlog-go" href={row.href.startsWith("/") ? `${localeBase}${row.href}` : row.href}>{t("바로가기")} →</a>
-                          )}
-                        </span>
-                      </li>
-                    ))}
+                    {day.rows.map((row) => {
+                      // 펼치면 원문을 그대로 — head+rest로 이어 붙이면 " — " 구분자가 사라진다
+                      const full = changeText(row, locale);
+                      const { head, rest } = splitChange(full);
+                      const open = opened.has(row.id);
+                      return (
+                        <li key={row.id}>
+                          {/* 배지는 '인프라 개선'처럼 기능+종류로 읽힌다 (사용자 요청 2026-07-29).
+                              어순은 로케일마다 다르므로 "{area} {kind}" 서식 키로 조립한다. */}
+                          <span className={`chlog-kind ${row.kind}`}>
+                            {t("{area} {kind}", {
+                              area: t(CHANGE_AREA_LABEL[areaOf(row)]),
+                              kind: t(CHANGE_KIND_LABEL[row.kind] ?? row.kind),
+                            })}
+                          </span>
+                          <span className="chlog-text">
+                            {open ? full : head}
+                            {rest && (
+                              <button type="button" className="chlog-more" aria-expanded={open}
+                                onClick={() => toggleRow(row.id)}>
+                                {open ? t("접기") : t("상세보기")}
+                              </button>
+                            )}
+                            {row.href && (
+                              <a className="chlog-go" href={row.href.startsWith("/") ? `${localeBase}${row.href}` : row.href}>{t("바로가기")} →</a>
+                            )}
+                          </span>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </section>
               ))}

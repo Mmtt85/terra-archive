@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { adminDeleteFeedback, adminListFeedback, adminMe, adminSetHandling, adminSetReviewed, handlingAt, withHandling, type FeedbackRow } from "../feedback";
 import { adminDeleteRelease, adminDeleteRule, adminListRules, adminPublishRelease, adminUpsertRule, fetchLatestRelease, type ReleaseRow } from "../rules-api";
-import { adminDeleteChange, adminUpsertChange, fetchAllChanges, CHANGE_KINDS, CHANGE_KIND_LABEL, daysAgoKst, type ChangeDraft, type ChangeRow } from "../changelog-api";
+import { adminDeleteChange, adminUpsertChange, fetchAllChanges, areaOf, CHANGE_KINDS, CHANGE_KIND_LABEL, CHANGE_AREAS, CHANGE_AREA_LABEL, daysAgoKst, type ChangeArea, type ChangeDraft, type ChangeRow } from "../changelog-api";
 import { adminDeleteTip, adminUpsertTip, fetchAllTips, type TipDraft, type TipRow } from "../tips-api";
 import { adminDeleteFile, adminListFiles, adminUploadFile, formatSize, isImageKey, type StoredFile } from "../files-api";
 import { useConfirm } from "../confirm";
@@ -79,6 +79,8 @@ function RuleEditor({ rule, onSave, onCancel }: { rule: RuleRow; onSave: (next: 
 function ChangeEditor({ row, onSave, onCancel }: { row: ChangeDraft; onSave: (next: ChangeDraft) => Promise<void>; onCancel: () => void }) {
   const [date, setDate] = useState(row.released_at);
   const [kind, setKind] = useState(row.kind);
+  // 영역 — 배지가 '인프라 개선'처럼 읽히게 한다. 비워 두면 사이트가 href로 유추한다(areaOf).
+  const [area, setArea] = useState(row.area ?? areaOf(row as ChangeRow));
   const [ko, setKo] = useState(row.ko);
   const [en, setEn] = useState(row.en ?? "");
   const [ja, setJa] = useState(row.ja ?? "");
@@ -91,7 +93,7 @@ function ChangeEditor({ row, onSave, onCancel }: { row: ChangeDraft; onSave: (ne
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { setError("날짜는 YYYY-MM-DD 형식이어야 합니다"); return; }
     setSaving(true);
     try {
-      await onSave({ ...row, released_at: date, kind, ko, en, ja, href, seq: Number(seq) || 0 });
+      await onSave({ ...row, released_at: date, kind, area, ko, en, ja, href, seq: Number(seq) || 0 });
     } catch (err) { setError(String((err as Error).message ?? err)); }
     setSaving(false);
   };
@@ -100,6 +102,9 @@ function ChangeEditor({ row, onSave, onCancel }: { row: ChangeDraft; onSave: (ne
       <header>
         <b>{row.id ? "항목 편집" : "새 항목"}</b>
         <input type="date" value={date} onChange={(e) => setDate(e.target.value)} title="표시·정렬 기준일" />
+        <select value={area} onChange={(e) => setArea(e.target.value as ChangeArea)} title="어느 기능 이야기인가 — 배지에 '인프라 개선'처럼 붙는다">
+          {CHANGE_AREAS.map((a) => <option key={a} value={a}>{CHANGE_AREA_LABEL[a]}</option>)}
+        </select>
         <select value={kind} onChange={(e) => setKind(e.target.value as ChangeRow["kind"])}>
           {CHANGE_KINDS.map((k) => <option key={k} value={k}>{CHANGE_KIND_LABEL[k]}</option>)}
         </select>
@@ -737,7 +742,7 @@ export default function AdminPage() {
               : (
                 <div key={row.id} className="rule-row">
                   <code>{row.released_at}</code>
-                  <i className="rule-status-chip">{CHANGE_KIND_LABEL[row.kind]}</i>
+                  <i className="rule-status-chip">{CHANGE_AREA_LABEL[areaOf(row)]} {CHANGE_KIND_LABEL[row.kind]}</i>
                   <span className="rule-preview">{row.ko.slice(0, 70)}</span>
                   {!row.en || !row.ja ? <span className="rule-note" title="번역이 비면 한국어로 표시됩니다">번역 미완</span> : null}
                   {row.href && <span className="rule-note" title={row.href}>{row.href}</span>}
