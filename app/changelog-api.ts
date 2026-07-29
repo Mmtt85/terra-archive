@@ -72,7 +72,12 @@ export function daysAgoKst(n: number): string {
 
 // select=* 인 이유: `area` 컬럼 마이그레이션(docs/supabase-changelog.sql) 전에도 조회가
 // 깨지지 않게 — 없는 컬럼을 명시하면 PostgREST가 400을 내고 모달 전체가 안 뜬다.
-const SELECT = "select=*&order=released_at.desc,seq.asc";
+//
+// 정렬 (사용자 확정 2026-07-29): 날짜 최신순 → 같은 날짜 안에서는 `seq`(작을수록 위) →
+// **seq가 같으면 나중에 등록한 것이 위**. 마지막 기준이 없으면 /admin에서 seq를 안 건드리고
+// 새 항목을 넣었을 때(기본값 0) 기존 0번들과 섞여 순서가 뒤죽박죽으로 보인다.
+// 날짜 안 배치 규칙은 "신기능 먼저, 나머지는 최신순" — 이건 seq 값으로 표현한다.
+const SELECT = "select=*&order=released_at.desc,seq.asc,created_at.desc";
 
 /**
  * 날짜 구간 조회 — [from, to) (둘 다 YYYY-MM-DD, to를 비우면 상한 없음 = 오늘까지).
