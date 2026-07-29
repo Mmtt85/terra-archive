@@ -417,9 +417,10 @@ export function levelOf(key: string): number {
 // 방 슬롯 수 = 레벨별 phases (제조·무역 1/2/3, 제어센터 = 레벨). 레벨 미지정은 만렙 슬롯
 export function slotsFor(key: string): number {
   const room = cellByKey.get(key)?.room ?? key;
-  // ⚠ 훈련실은 게임 데이터 그대로 **2석**이다. 한때 "트레이너석 1석만 스킬이 먹는다"는
-  // 규칙으로 1로 하드 캡했는데(2026-07-27), 사용자가 실제 기지에서 검증한 결과 **두 자리
-  // 모두 인프라 스킬·시너지가 적용**됐다 — 캡을 되돌렸다 (사용자 정정 2026-07-29).
+  // 훈련실 근무석은 **1석**으로 고정한다. 게임 데이터 정원은 2(트레이너석+훈련대상석)이고
+  // 2026-07-29에 2석으로 풀어봤지만, 뒤따르는 편성이 계속 꼬여 사용자가 1석으로 되돌리라고
+  // 지시했다("2명으로 늘린 거 다시 1명으로 롤백") — 그 판단이 이 캡의 근거다.
+  if (room === "TRAINING") return 1;
   const spec = infra.rooms[room];
   return spec?.phases?.[levelOf(key) - 1]?.slots ?? spec?.slots ?? 1;
 }
