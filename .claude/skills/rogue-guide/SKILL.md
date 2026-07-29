@@ -142,6 +142,14 @@ KR 매핑 attack_of)과 `abilityList[].text`(개행 join, ability_of)에서 뽑�
     위치·크기는 `ta:rogue-inv-{pos,size}`에 저장(테마 무관 — 작업 공간이라 하나만).
     복원할 때 화면 밖이면 `clampInv`로 안으로 당긴다. resize는 이벤트가 없어 ResizeObserver.
   - 창이 좁으므로 카드는 1열·작은 글씨, 안내문은 헤더 `title` 툴팁으로 내렸다.
+  - 배경은 `color-mix`로 카드색을 흰색 8% 띄운다 — `--rgmodal(#0d1a17)`과 `--rgbg(#0a1413)`이
+    거의 같은 색이라, 백드롭이 없으면 창 경계가 안 보인다(사용자 지적).
+  - **가로 스크롤 금지** — 좁은 창에서 옆으로 잘리면 읽을 수 없다. 패널은 `overflow: hidden`,
+    안쪽 `.rg-inv-body`만 세로 스크롤.
+- ⚠ **CSS `font` 단축에 `inherit`을 쓰면 선언이 통째로 버려진다** — `font: 700 11px/1.5 inherit`
+  은 font-family 자리가 무효라 **글자 크기가 안 먹는다**(실측: 같은 규칙의 padding만 적용되고
+  글자는 16px 기본값). globals.css에 이 형태가 **22곳** 있고 전부 조용히 무시되는 중이다.
+  새로 쓸 땐 반드시 `font-size`/`font-weight`/`line-height` 롱핸드로.
 - **효과 총합** (`EffectTotals`, 사용자 요청 2026-07-29): 보유 리스트의 「Σ 효과 총합」
   버튼 → 모달(`.rg-effback` z-index 160 — 떠 있는 창보다 위). 소장품 탭에서만 낸다.
   - 수치는 **usage 문장을 파싱하지 않는다.** `details.relics[<id>].buffs[].blackboard`에서
@@ -150,6 +158,24 @@ KR 매핑 attack_of)과 `abilityList[].text`(개행 join, ability_of)에서 뽑�
   - `m`: `mul` 배율 델타(0.35→+35%) · `add` 가산 · `scale` **1이 기준인 배율**(1.35→+35%,
     겹치면 **곱한다** — `global_buff_stack_base_one`이 그렇게 쌓인다) · `get` 즉시 획득
     (편성 인원·희망·목표 HP — immediate_reward의 `rogue_N_<suffix>`, 접두사만 떼면 토픽·언어 무관).
+  - ⚠ **`enemy_*_down`은 값 규약이 둘이다** (실측 150건): 음수(−0.07)는 델타 감소,
+    **1 이상(1.25)은 배율(+25%)**, 0~1(0.5)도 배율(−50%). 부호만 보고 전부 델타로 다루면
+    "적 공격력 +25%"짜리 페널티 유물이 **+125%**로 찍힌다. `ENEMY_STAT_KEYS`에서 분기.
+  - 백분율 표시는 **덧셈분과 곱배율분을 하나로 합쳐** 낸다: `(1+mul)×scale − 1`.
+    "적 공격력 −7% +25%"처럼 두 수를 나란히 찍으면 순값을 알 수 없다.
+    → 감소 유물과 페널티 유물이 겹치면 **소수점이 나오는 게 정상**이다
+    (로즈몬티스의 포옹 −30% × 재주조 1.35 = 0.945 → −5.5%. 원본 값은 둘 다 깔끔한 수).
+  - 합이 정확히 0이어도 값을 지우지 말 것 — `0`을 falsy로 걸렀다가 "전투 획득 경험치"에
+    라벨만 남고 숫자가 사라졌다(+20%+30%−50%=0). `EffSum.pct/flat` 플래그로 구분한다.
+  - `up_reward`(mask=battle) = 전투 보상 증감률 → `exp_up`·`gold_up`.
+  - `evade[non_pure]`("물리 및 마법 회피")는 **`ev_phy`·`ev_mag` 두 키에 각각** 더한다 —
+    별도 줄로 두면 "물리 25%·마법 10%" 같은 실제 합을 읽을 수 없다.
+  - `atk_up_on_skill_start`("스킬 발동 후 1초간 공격력")는 라벨을 **강타**로 줄인다(사용자 지시).
+    값이 둘(atk·duration)이라 `EFF_GLOBAL` 셋째 칸으로 쓸 필드를 못박는다. duration은 전 건 1초 고정.
+  - `regen_pct`는 값이 비율(0.01=1%)인데 버프 계열이 `char_attribute_add`라 그대로 두면
+    "+0.01"로 찍힌다 — `EFF_PCT_STATS`로 백분율 고정.
+  - `global_buff_*`에 셀렉터가 붙어 있으면 **버리지 말고 조건부로 남긴다**(char_attribute와 동일).
+    예전엔 통째로 버려서 "[가드] 물리 회피 +15%"가 사라졌다.
   - `sel`: null이면 전체. **`selector.profession`이 8개 직업 전부면 조건이 아니라 전체다**
     (실측 48건) — 조건으로 분류하면 총합이 엉뚱하게 쪼개진다.
   - **`global_buff_*` 계열은 안쪽 `key`가 효과 이름**이고 전 토픽 222종이나 된다. 대부분

@@ -517,6 +517,8 @@ EFF_STATS = {
     "respawn_time": "respawn", "hp_recovery_per_sec": "regen",
     "hp_recovery_per_sec_by_max_hp_ratio": "regen_pct", "def_penetrate": "pen",
 }
+# 값이 비율이라 버프 계열과 무관하게 %로 보여야 하는 스탯
+EFF_PCT_STATS = {"regen_pct"}
 # 캐릭터 스탯이 아닌 판 수치 — blackboard가 {"value": N} 하나뿐인 단순형
 EFF_LEVEL = {
     "level_char_limit_add": "deploy", "level_life_point_add": "life",
@@ -546,6 +548,16 @@ EFF_GLOBAL = {
     "modify_sp[born]": ("sp_born", "add"),
     "modify_sp_recover[normal]": ("sp_regen", "add"),
     "heal_scale": ("heal", "scale"),
+    # "모든 오퍼레이터가 스킬 발동 후 1초간 공격력 +N%" — 문구가 길어 UI에선 '강타'로 줄인다
+    # (사용자 지시 2026-07-29). 값이 둘(atk·duration)이라 쓸 필드를 셋째 칸으로 못박는다.
+    # duration은 전 건 1.0초 고정이고 셀렉터도 전직업뿐이라 atk만 더하면 된다 (실측 13/13).
+    "atk_up_on_skill_start": ("burst", "mul", "atk"),
+    # 회피 — prob은 소수(0.15=15%). non_pure는 "물리 및 마법" 양쪽에 걸리므로 **두 키에 각각**
+    # 더한다 (사용자 요청 2026-07-29 "물리및 마법회피도 다 합산"). 따로 세 번째 줄을 만들면
+    # 물리 25%·마법 10% 같은 실제 합을 읽을 수 없다.
+    "evade[physical]": ("ev_phy", "mul", "prob"),
+    "evade[magical]": ("ev_mag", "mul", "prob"),
+    "evade[non_pure]": (("ev_phy", "ev_mag"), "mul", "prob"),
 }
 GLOBAL_FAMS = {"global_buff_normal", "global_buff_stack", "global_buff_stack_base_one"}
 # 즉시 획득(immediate_reward)으로 주는 판 자원 — '편성 가능 인원수 +N'이 여기 있다.
@@ -554,6 +566,13 @@ EFF_REWARD = {
     "squad_capacity": "squad", "population": "hope", "hp": "life",
     "hpmax": "lifemax", "shield": "shield", "gold": "gold",
 }
+# up_reward — 전투 보상 증감률(전 26건 mask=battle). up은 델타(0.2=+20%, -0.5=-50%).
+# (사용자 요청 2026-07-29 "전투 획득 경험치 +도 다 합산")
+EFF_UP_REWARD = {"exp": "exp_up", "gold": "gold_up"}
+# ⚠ enemy_*_down 은 **값 규약이 둘**이다 (실측 150건):
+#   음수(-0.07) = 델타 감소 · 1 이상(1.25) = 배율(+25%) · 0~1(0.5) = 배율(-50%).
+#   부호만 보고 전부 델타로 다루면 "적 공격력 +25%"짜리 페널티 유물이 "+125%"로 찍힌다.
+ENEMY_STAT_KEYS = {"e_atk", "e_def", "e_hp", "e_ms"}
 
 
 def relic_effects(buffs):
@@ -575,15 +594,35 @@ def relic_effects(buffs):
             hit = EFF_GLOBAL.get(inner)
             if not hit:
                 continue                       # 조건부·고유 효과 — 합산 대상이 아니다
-            # 셀렉터가 붙어 있으면(전직업 나열 제외) 전역이 아니므로 버린다
+            # 셀렉터가 붙어 있으면 버리지 않고 조건부로 남긴다 (char_attribute와 같은 규칙).
+            # 예전엔 통째로 버려서 "[가드] 물리 회피 +15%" 같은 게 사라졌다.
+            sel = None
             prof = (bb.get("selector.profession") or {}).get("valueStr") or ""
-            if any(k.startswith("selector.") and k != "selector.profession" for k in bb):
-                continue
+            build = (bb.get("selector.buildable") or {}).get("valueStr") or ""
             if prof and set(prof.split("|")) != ALL_PROFESSIONS:
+                sel = prof
+            if build:
+                sel = f"{sel}+{build}" if sel else build
+            keys = hit[0] if isinstance(hit[0], tuple) else (hit[0],)
+            if len(hit) > 2:                   # 쓸 필드를 못박은 경우 (값이 여럿인 버프)
+                ent = bb.get(hit[2])
+                val = ent.get("value") if ent else None
+            else:
+                nums = [x for k, x in bb.items() if k != "key" and not k.startswith("selector.") and x.get("value")]
+                val = nums[0]["value"] if len(nums) == 1 else None   # 값이 여럿이면 단순 효과가 아니다
+            if val is None:
                 continue
-            nums = [x for k, x in bb.items() if k != "key" and not k.startswith("selector.") and x.get("value")]
-            if len(nums) == 1:                 # 값이 여럿이면 단순 효과가 아니다 — 건너뛴다
-                out.append({"k": hit[0], "v": nums[0]["value"], "m": hit[1], "sel": None})
+            for k in keys:
+                # 적 스탯은 음수만 델타, 양수는 1 기준 배율 (위 ENEMY_STAT_KEYS 주석 참조)
+                mode = "scale" if (k in ENEMY_STAT_KEYS and val > 0) else hit[1]
+                out.append({"k": k, "v": val, "m": mode, "sel": sel})
+            continue
+        if key == "up_reward":
+            iid = (bb.get("id") or {}).get("valueStr") or ""
+            up = (bb.get("up") or {}).get("value")
+            k = EFF_UP_REWARD.get(re.sub(r"^rogue_\d+_", "", iid))
+            if up and k:
+                out.append({"k": k, "v": up, "m": "mul", "sel": None})
             continue
         if key == "immediate_reward":
             iid = (bb.get("id") or {}).get("valueStr") or ""
@@ -608,7 +647,10 @@ def relic_effects(buffs):
             ent = bb.get(raw)
             if not ent or not ent.get("value"):
                 continue
-            out.append({"k": k, "v": ent["value"], "m": "mul" if mul else "add", "sel": sel})
+            # 최대 HP 비례 초당 회복은 버프 계열이 char_attribute_add라도 값이 비율(0.01=1%)이라
+            # 가산으로 두면 "+0.01"로 찍힌다 (사용자 지적 2026-07-29). 이 스탯만 백분율로 못박는다.
+            m = "mul" if (mul or k in EFF_PCT_STATS) else "add"
+            out.append({"k": k, "v": ent["value"], "m": m, "sel": sel})
     return out
 
 def build_topic(tid="rogue_1", loc=None):

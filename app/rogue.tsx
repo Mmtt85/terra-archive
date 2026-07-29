@@ -565,19 +565,27 @@ function InvPill({ owned, onToggle }: { owned: boolean; onToggle: () => void }) 
 // 나머지는 "스킬 발동 시", "특정 지형에서" 같은 조건부·고유 효과라 애초에 합이 없다.
 // 그래서 못 더한 개수를 감추지 않고 함께 적는다.
 // 표시 묶음 — 아군 / 적군 / 판 수치. 섞어 놓으면 '공격력'이 누구 것인지 알 수 없다.
-const EFF_ALLY = ["atk", "hp", "def", "aspd", "res", "cost", "block", "respawn", "regen", "regen_pct", "pen", "heal", "sp_born", "sp_regen"];
+const EFF_ALLY = ["atk", "burst", "hp", "def", "aspd", "res", "ev_phy", "ev_mag", "cost", "block", "respawn", "regen", "regen_pct", "pen", "heal", "sp_born", "sp_regen"];
 const EFF_ENEMY = ["e_atk", "e_hp", "e_def", "e_aspd", "e_ms", "dmg_phy", "dmg_mag", "dmg_pure"];
-const EFF_FIELD = ["deploy", "initcost", "costlimit"];
+const EFF_FIELD = ["deploy", "initcost", "costlimit", "exp_up", "gold_up"];
 const EFF_ORDER = [...EFF_ALLY, ...EFF_ENEMY, ...EFF_FIELD];
 const EFF_LABEL: Record<string, string> = {
   atk: "공격력", hp: "HP", def: "방어력", aspd: "공격 속도", res: "마법 저항",
   cost: "배치 코스트", block: "저지 가능 수", respawn: "재배치 시간",
   regen: "초당 HP 회복", regen_pct: "초당 HP 회복(최대 HP 비례)", pen: "방어 관통",
+  burst: "강타", ev_phy: "물리 회피", ev_mag: "마법 회피",
   heal: "받는 치료·회복 효과", sp_born: "초기 SP", sp_regen: "자연 회복 SP",
   e_atk: "적 공격력", e_hp: "적 HP", e_def: "적 방어력", e_aspd: "적 공격 속도",
   e_ms: "적 이동 속도", dmg_phy: "적이 받는 물리 대미지", dmg_mag: "적이 받는 마법 대미지",
-  dmg_pure: "적이 받는 진 대미지",
+  dmg_pure: "적이 받는 트루 대미지",
   deploy: "배치 가능 인원수", initcost: "초기 코스트", costlimit: "코스트 상한",
+  exp_up: "전투 획득 경험치", gold_up: "전투 획득 오리지늄각뿔",
+};
+// 줄여 쓴 라벨의 본뜻 — 알약에 title로 붙인다 (사용자 지시 2026-07-29: 긴 문구는 '강타'로 줄이되
+// 무슨 뜻인지는 알 수 있어야 한다)
+const EFF_HINT: Record<string, string> = {
+  burst: "스킬 발동 후 1초간 공격력",
+  regen_pct: "최대 HP 비례 초당 회복",
 };
 // 즉시 획득분 — 배율이 아니라 '누계로 얼마를 받았나'
 const GET_ORDER = ["squad", "life", "lifemax", "hope", "shield", "gold"];
@@ -592,8 +600,10 @@ const SEL_LABEL: Record<string, string> = {
 };
 // scale은 1이 기준인 배율(1.35 = +35%)이라 더하지 않고 **곱한다** — 데이터의
 // global_buff_stack_base_one이 그렇게 겹친다. 초기값이 0이 아니라 1인 이유.
-type EffSum = { mul: number; add: number; scale: number };
-const emptySum = (): EffSum => ({ mul: 0, add: 0, scale: 1 });
+// pct/flat 플래그가 따로 있는 이유: 합이 정확히 0이어도(예: 경험치 +20%+30%-50%) 값을
+// 지우지 않고 "0%"로 보여줘야 한다. 0을 falsy로 걸러 냈다가 라벨만 남고 숫자가 사라졌다.
+type EffSum = { mul: number; add: number; scale: number; pct: boolean; flat: boolean };
+const emptySum = (): EffSum => ({ mul: 0, add: 0, scale: 1, pct: false, flat: false });
 
 /** 보유 항목 → 조건별 스탯 합·즉시 획득 합·수치화 못 한 개수 */
 function sumEffects(items: { eff?: Eff[] }[]) {
@@ -608,8 +618,9 @@ function sumEffects(items: { eff?: Eff[] }[]) {
       let bucket = stats.get(sel);
       if (!bucket) { bucket = new Map(); stats.set(sel, bucket); }
       const cur = bucket.get(e.k) ?? emptySum();
-      if (e.m === "scale") cur.scale *= e.v;
-      else cur[e.m] += e.v;
+      if (e.m === "scale") { cur.scale *= e.v; cur.pct = true; }
+      else if (e.m === "mul") { cur.mul += e.v; cur.pct = true; }
+      else { cur.add += e.v; cur.flat = true; }
       bucket.set(e.k, cur);
     }
   }
@@ -623,12 +634,20 @@ const signed = (v: number, pct: boolean) => {
   const s = Math.round(n * 100) / 100;
   return `${s > 0 ? "+" : ""}${s}${pct ? "%" : ""}`;
 };
-/** 한 스탯의 합을 사람이 읽는 문자열로 — 배율·가산·곱배율이 섞여 있으면 나란히 적는다 */
-const sumText = (s: EffSum) => [
-  s.mul && signed(s.mul, true),
-  s.scale !== 1 && signed(s.scale - 1, true),
-  s.add && signed(s.add, false),
-].filter(Boolean).join(" ");
+/**
+ * 한 스탯의 합을 사람이 읽는 한 줄로.
+ *
+ * 백분율은 **덧셈분과 곱배율분을 하나로 합쳐** 낸다: (1+mul)×scale − 1.
+ * 예전엔 "적 공격력 -7% +25%"처럼 두 수를 나란히 찍어 순값을 알 수 없었다.
+ * 같은 종류끼리는 더하고(게임 표기 그대로), 성격이 다른 곱배율은 곱해서 한 번에 반영한다.
+ * 가산(마법 저항 +15, 초기 SP +32)은 단위가 달라 백분율과 나란히 둔다.
+ */
+const sumText = (s: EffSum) => {
+  const parts: string[] = [];
+  if (s.pct) parts.push(signed((1 + s.mul) * s.scale - 1, true));
+  if (s.flat) parts.push(signed(s.add, false));
+  return parts.join(" ");
+};
 
 // 효과 총합 모달 — 보유 리스트의 「Σ 효과 총합」 버튼으로 연다 (사용자 지시 2026-07-29:
 // 목록 안에 붙박이로 두지 말고 버튼→모달로). 떠 있는 보유 창(z-150)보다 위에 뜬다.
@@ -640,7 +659,9 @@ function EffectTotals({ items, label, onClose }: { items: { eff?: Eff[] }[]; lab
   const conds = [...stats.entries()].filter(([sel]) => sel).sort((a, b) => a[0].localeCompare(b[0]));
   const selName = (sel: string) => sel.split("+").map((s) => t(SEL_LABEL[s] ?? s)).join(" · ");
   const chip = (k: string, sum: EffSum) => (
-    <li key={k}><span>{t(EFF_LABEL[k] ?? k)}</span><b>{sumText(sum)}</b></li>
+    <li key={k} title={EFF_HINT[k] ? t(EFF_HINT[k]) : undefined}>
+      <span>{t(EFF_LABEL[k] ?? k)}</span><b>{sumText(sum)}</b>
+    </li>
   );
   // 아군/적군/판 수치를 나눠 낸다 — 섞으면 '공격력'이 누구 것인지 알 수 없다
   const group = (keys: string[], title: string) => {
@@ -1146,22 +1167,51 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
       if (raw) setInvSize(JSON.parse(raw) as { w: number; h: number });
     } catch { /* 프라이빗 모드 등 */ }
   }, [invOpen]);
-  // resize는 이벤트가 없어 ResizeObserver로 잡는다 (드래그 중 위치 재보정과 겹치지 않게 크기만)
-  useEffect(() => {
+  // 크기 조절 — CSS `resize`는 **오른쪽 아래 한 곳뿐**이라 네 변 어디서나 잡을 수 있게
+  // 직접 만든다 (사용자 지시 2026-07-29). 왼쪽·위 변을 끌면 크기와 함께 위치도 움직인다.
+  const INV_MIN_W = 260;
+  const INV_MIN_H = 180;
+  const INV_GRIPS = ["n", "s", "e", "w", "ne", "nw", "se", "sw"];   // 모서리를 뒤에 둬서 변보다 위에
+  const invRsRef = useRef<{ dir: string; px: number; py: number; x: number; y: number; w: number; h: number } | null>(null);
+  const onInvResizeStart = (e: React.PointerEvent, dir: string) => {
     const el = invPanelRef.current;
-    if (!invOpen || !el || typeof ResizeObserver === "undefined") return;
-    let idle = 0;
-    const ob = new ResizeObserver(() => {
-      window.clearTimeout(idle);
-      idle = window.setTimeout(() => {
-        const next = { w: el.offsetWidth, h: el.offsetHeight };
-        try { localStorage.setItem(INV_SIZE_KEY, JSON.stringify(next)); } catch { /* 프라이빗 모드 등 */ }
-        setInvPos((p) => (p ? clampInv(p.x, p.y) : p));   // 커지면서 화면 밖으로 나가지 않게
-      }, 250);
-    });
-    ob.observe(el);
-    return () => { window.clearTimeout(idle); ob.disconnect(); };
-  }, [invOpen]);
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    invRsRef.current = { dir, px: e.clientX, py: e.clientY, x: r.left, y: r.top, w: r.width, h: r.height };
+    e.currentTarget.setPointerCapture(e.pointerId);
+    e.preventDefault();
+    e.stopPropagation();                      // 헤더 드래그(이동)와 겹치지 않게
+  };
+  const onInvResizeMove = (e: React.PointerEvent) => {
+    const s = invRsRef.current;
+    if (!s) return;
+    const dx = e.clientX - s.px;
+    const dy = e.clientY - s.py;
+    let { x, y, w, h } = s;
+    // 오른쪽·아래로 늘릴 땐 **창을 움직이지 말고 크기를 화면 끝에서 멈춘다** — 그러지 않으면
+    // 화면 끝에 닿는 순간 창 전체가 왼쪽으로 끌려간다(실측). 왼쪽·위는 원래 위치가 함께 움직인다.
+    if (s.dir.includes("e")) w = Math.min(Math.max(INV_MIN_W, s.w + dx), window.innerWidth - 8 - s.x);
+    if (s.dir.includes("s")) h = Math.min(Math.max(INV_MIN_H, s.h + dy), window.innerHeight - 8 - s.y);
+    if (s.dir.includes("w")) {
+      w = Math.min(Math.max(INV_MIN_W, s.w - dx), s.x + s.w - 8);
+      x = s.x + (s.w - w);
+    }
+    if (s.dir.includes("n")) {
+      h = Math.min(Math.max(INV_MIN_H, s.h - dy), s.y + s.h - 8);
+      y = s.y + (s.h - h);
+    }
+    setInvSize({ w, h });
+    setInvPos({ x, y });
+  };
+  const onInvResizeEnd = (e: React.PointerEvent) => {
+    if (!invRsRef.current) return;
+    invRsRef.current = null;
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
+    try {
+      if (invSize) localStorage.setItem(INV_SIZE_KEY, JSON.stringify(invSize));
+      if (invPos) localStorage.setItem(INV_POS_KEY, JSON.stringify(invPos));
+    } catch { /* 프라이빗 모드 등 */ }
+  };
   // 창이 화면 밖으로 나가지 않게 — 저장된 위치를 복원할 때 창 크기가 달라졌을 수 있다.
   // 창이 화면보다 크면(모바일) 위쪽에 붙인다.
   const clampInv = (x: number, y: number) => {
@@ -2265,6 +2315,11 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
           ref={invPanelRef}
           style={{ ...(invPos ? { left: invPos.x, top: invPos.y } : {}),
                    ...(invSize ? { width: invSize.w, height: invSize.h } : {}) }}>
+          {/* 네 변 + 네 모서리 크기 손잡이 (사용자 지시 2026-07-29) */}
+          {INV_GRIPS.map((d) => (
+            <div key={d} className={`rg-rs rg-rs-${d}`} onPointerDown={(e) => onInvResizeStart(e, d)}
+              onPointerMove={onInvResizeMove} onPointerUp={onInvResizeEnd} onPointerCancel={onInvResizeEnd} />
+          ))}
           <header className={`rg-modal-head rg-inv-grab${invDragging ? " dragging" : ""}`}
             onPointerDown={onInvDragStart} onPointerMove={onInvDragMove}
             onPointerUp={onInvDragEnd} onPointerCancel={onInvDragEnd}>
@@ -2293,6 +2348,9 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
                 <button type="button" className="rg-inv-clear" onClick={() => void clearInvTab(invTab)}>{t("전체 비우기")}</button>
               )}
             </div>
+            {/* 머리·탭은 고정하고 목록만 스크롤 — 창을 줄여도 손잡이·탭이 따라 밀리지 않는다.
+                가로 스크롤은 두지 않는다(사용자 지적): 좁은 창에서 옆으로 잘리면 못 읽는다. */}
+            <div className="rg-inv-body">
             {(invTab === "relic" ? ownedRelics : ownedRes).length === 0 ? (
               <p className="rg-inv-empty">{t("아직 담은 항목이 없습니다 — 소장품·전시관 카드의 「＋ 보유」 버튼으로 추가하세요.")}</p>
             ) : (
@@ -2311,6 +2369,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
                 ))}
               </div>
             )}
+            </div>
         </div>
       )}
       {effOpen && (

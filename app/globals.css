@@ -11917,11 +11917,55 @@ main.site-main > .site-header {
   min-width: 260px;
   min-height: 180px;
   padding: 12px 14px;
-  box-shadow: 0 12px 40px #000d, 0 0 0 1px #0006;
-  /* 크기 조절 손잡이 (사용자 지시 2026-07-29) — overflow가 visible이 아니어야 나온다.
-     바뀐 크기는 ResizeObserver로 잡아 저장한다(resize에는 이벤트가 없다). */
-  resize: both;
-  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  /* 백드롭이 없으니 배경이 페이지와 같으면 창 경계가 안 보인다 (사용자 지적 2026-07-29:
+     --rgmodal #0d1a17 vs --rgbg #0a1413 — 거의 같은 색이었다). 카드색을 흰색으로 살짝
+     띄우고 테두리에 테마 강조색을 섞어 '떠 있는 창'으로 읽히게 한다. 테마 3종 공용이라
+     하드코딩 대신 color-mix로 상대 계산. */
+  background: color-mix(in srgb, var(--rgcard) 92%, #fff 8%);
+  border: 1px solid color-mix(in srgb, var(--rggold) 42%, var(--rgmodalline));
+  box-shadow: 0 18px 56px #000e, 0 0 0 1px #0009;
+  /* 손잡이를 직접 만들었으므로 네이티브 resize는 쓰지 않는다.
+     가로 스크롤도 두지 않는다 (사용자 지적) — 좁은 창에서 옆으로 잘리면 읽을 수 없다. */
+  overflow: hidden;
+}
+/* 머리·탭 고정, 목록만 세로 스크롤 */
+.rg-inv-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  margin: 0 -14px -12px;
+  padding: 0 14px 12px;
+}
+/* ── 크기 손잡이 — 네 변 + 네 모서리 (사용자 지시 2026-07-29).
+   CSS resize는 오른쪽 아래 한 곳뿐이라 직접 만든다. 모서리가 변보다 위에 오도록
+   JSX에서 뒤에 그린다(같은 z-index면 나중 것이 위). */
+.rg-rs {
+  position: absolute;
+  z-index: 3;
+  touch-action: none;
+}
+.rg-rs-n, .rg-rs-s { left: 10px; right: 10px; height: 6px; cursor: ns-resize; }
+.rg-rs-e, .rg-rs-w { top: 10px; bottom: 10px; width: 6px; cursor: ew-resize; }
+.rg-rs-n { top: 0; }
+.rg-rs-s { bottom: 0; }
+.rg-rs-w { left: 0; }
+.rg-rs-e { right: 0; }
+.rg-rs-ne, .rg-rs-nw, .rg-rs-se, .rg-rs-sw { width: 12px; height: 12px; }
+.rg-rs-nw { top: 0; left: 0; cursor: nwse-resize; }
+.rg-rs-ne { top: 0; right: 0; cursor: nesw-resize; }
+.rg-rs-sw { bottom: 0; left: 0; cursor: nesw-resize; }
+.rg-rs-se { bottom: 0; right: 0; cursor: nwse-resize; }
+/* 오른쪽 아래에만 잡는 곳임을 알리는 빗금 — 나머지 변은 커서로 안내 */
+.rg-rs-se::after {
+  content: "";
+  position: absolute;
+  inset: 3px 3px 2px 2px;
+  border-right: 2px solid color-mix(in srgb, var(--rggold) 55%, transparent);
+  border-bottom: 2px solid color-mix(in srgb, var(--rggold) 55%, transparent);
+  border-bottom-right-radius: 3px;
 }
 /* 창 안에서는 카드를 한 단계 작게 — 떠 있는 창이라 폭이 좁다 (사용자 지시: 내용 줄이기) */
 .rg-invmodal .rg-relic-grid {
@@ -11945,6 +11989,23 @@ main.site-main > .site-header {
 }
 .rg-invmodal .rg-inv-tabs {
   margin-bottom: 8px;
+  gap: 4px;
+}
+/* 창 안 버튼(소장품·부품·Σ 효과 총합·전체 비우기)은 기본보다 한 단계 작게 —
+   좁은 창에서 기본 크기면 목록보다 버튼이 더 눈에 띈다 (사용자 지적 2026-07-29).
+   ⚠ `font: 700 11px/1.5 inherit` 같은 단축 표기는 **무효라 통째로 버려진다** —
+   font 단축의 font-family 자리에 inherit을 쓸 수 없다(실측: padding만 먹고 글자는 16px
+   기본값 그대로였다). 반드시 롱핸드로 쓸 것. 같은 실수가 globals.css에 21곳 더 있다. */
+.rg-invmodal .rg-filterbar button {
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.5;
+  border-radius: var(--r-sm);
+}
+.rg-invmodal .rg-inv-tabcnt {
+  font-size: 9.5px;
+  padding: 1px 5px;
 }
 /* 효과 총합 열기 버튼 — 탭 줄 오른쪽, '전체 비우기' 앞 */
 .rg-inv-sum {
