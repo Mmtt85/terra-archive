@@ -15,11 +15,13 @@ export type TokenUse = { token: string; per: number; value: number; percent: boo
 //  bundle 데겐블레허 챔피언의 품격(제공 상한 per개당 rate%, 최대 max)
 //  tier   버블 큰 게 좋아(≤at칸 lo%/칸, 초과분 hi%/칸)
 //  diff   제이 시장경제(기본상한+팀용량 1당 rate%, 현재 오더 0 가정 — 유리 분기 관례)
-export type CapConv =
+// over = 이 변환기가 **죽이는** 다른 변환 스킬 이름 (버블 '큰 게 좋아!' 원문:
+// "재활용 스킬과 중첩되지 않음. 우선으로 발동됨" — 사용자 제보 2026-07-29).
+export type CapConv = { over?: string[] } & (
   | { t: "lin"; rate: number }
   | { t: "bundle"; per: number; rate: number; max: number | null }
   | { t: "tier"; at: number; lo: number; hi: number }
-  | { t: "diff"; rate: number };
+  | { t: "diff"; rate: number });
 
 // 증폭형 (와이후 협동의식·스노우상트 근면성실): 같은 방 오퍼가 제공한 효율(시설 기반 제외)의
 // per% 마다 add% 를 추가로 되돌린다(계단식). cap = 이 스킬이 제공하는 상한.
@@ -712,7 +714,9 @@ export type OpBreakdown = {
                                     // 스킬에 "동종 효과 중 가장 높은 수치만" 문구가 없고, 실측
                                     // (+131% 제보)으로 플레임테일+비비아나 스택 확인 (2026-07-19)
   cap: number;          // 이 오퍼의 오더 상한/창고 용량 기여 (음수 포함, perFaction이면 인원 스케일)
-  capConv: CapConv[];   // 이 오퍼가 가진 용량→출력 변환기 (보통 0~1개)
+  capConv: { conv: CapConv; name: string }[]; // 이 오퍼의 용량→출력 변환기 (보통 0~1개).
+                                    // 이름을 함께 들고 다니는 건 비중첩 판정(버블이 재활용을
+                                    // 죽인다)이 **스킬 이름**으로 지목되기 때문이다.
   amplify: AmpSpec[];   // 이 오퍼가 가진 증폭기 (와이후·스노우상트, 보통 0~1개)
   skills: InfraSkill[];
 };
@@ -828,8 +832,14 @@ function capConvOf(parts: OpBreakdown[], room: string, ambient?: AmbientAura[], 
   if (target !== "ctrl_trade" && target !== "ctrl_mfg") return 0;
   const capOp = Math.max(0, parts.reduce((sum, p) => sum + p.cap, 0) + ambientCapFor(room, ambient, team));
   const capTotal = (C.CAP_BASE?.[room] ?? 0) + capOp;
+  // 비중첩 — 같은 방에 지목된 변환 스킬이 함께 있으면 그쪽은 죽는다 (사용자 제보 2026-07-29:
+  // "버메일과 버블은 중첩되지 않음. 버블 스킬 설명에 재활용과 같이 쓸 시 버블이 우선 발동됨").
+  // 원문이 이름으로 못 박은 관계라 build-infra.py가 `capConv.over`로 옮기고 여기서 이름으로
+  // 억제한다. 죽는 건 변환뿐 — 버메일이 올린 창고 용량(+8)은 그대로 남아 버블의 변환에 실린다.
+  const suppressed = new Set(parts.flatMap((p) => p.capConv.flatMap((entry) => entry.conv.over ?? [])));
   let eff = 0;
-  for (const p of parts) for (const conv of p.capConv) {
+  for (const p of parts) for (const { conv, name } of p.capConv) {
+    if (suppressed.has(name)) continue;
     if (conv.t === "tier") {
       // 버블 '큰 게 좋아' — 실측 역산으로 확정 (사용자 제보 2026-07-20, 베나+벌컨+버블 = +93):
       // **오퍼별 개별 용량**에 **문턱식**으로 적용한다 — 그 오퍼의 상승 용량이 at(16) 이하면
@@ -895,7 +905,7 @@ export function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx):
         : 1;
       out.cap += skill.cap * scale;
     }
-    if (skill.capConv) out.capConv.push(skill.capConv);
+    if (skill.capConv) out.capConv.push({ conv: skill.capConv, name: skill.name });
     // 기반시설 어디든 존재 조건 (언더플로우: 울피아누스가 숙소 포함 기지 내에 있으면 +10%)
     if (skill.basePartners?.length && skill.basePartnerBonus && skill.basePartners.every((p) => ctx.presentIds?.has(p))) {
       out.efficiency += skill.basePartnerBonus;

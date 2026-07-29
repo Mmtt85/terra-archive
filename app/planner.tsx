@@ -1868,8 +1868,14 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
       });
     }
     if (skill.capConv != null) {
+      // 비중첩 (사용자 제보 2026-07-29) — 같은 방에 이 스킬을 죽이는 변환기(버블 '큰 게 좋아!'가
+      // 버메일 '재활용'을)가 있으면 "전환한다"가 아니라 "안 걸린다"고 말해야 한다.
+      const killers = team.filter((member) => member.id !== self.id && member.skills.some((s) =>
+        s.capConv?.over?.includes(skill.name) && skillApplies(s, cell.room, cell.product)));
       const providers = team.filter((member) => member.id !== self.id && member.skills.some((s) => (s.cap ?? 0) !== 0 && skillApplies(s, cell.room, cell.product)));
-      rels.push({ note: t("적립 용량을 생산력으로 전환"), chips: providers.map((member) => ({ op: member, on: true })) });
+      rels.push(killers.length
+        ? { note: t("중첩되지 않음 — 같은 방의 변환 스킬이 우선 발동됩니다"), chips: killers.map((member) => ({ op: member, on: true })) }
+        : { note: t("적립 용량을 생산력으로 전환"), chips: providers.map((member) => ({ op: member, on: true })) });
     }
     // 용어 명단 폴백 — 스킬이 참조하는 게임 용어가 오퍼 명단으로 정의된 그룹(쉐이·정예
     // 오퍼레이터·라이오스 파티·작업 플랫폼 등)이면 그 오퍼들을 칩으로 보여 준다.

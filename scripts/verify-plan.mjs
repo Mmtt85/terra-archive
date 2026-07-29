@@ -252,6 +252,26 @@ console.log("");
   for (const [name, ok] of checks) { console.log(`${ok ? "✓" : "✗"} ${name}`); if (!ok) failed += 1; }
 }
 
+// ── 버메일 '재활용'과 버블 '큰 게 좋아!'는 중첩되지 않는다 (사용자 제보 2026-07-29) ─────
+// 버블 원문 끝: "(재활용 스킬과 중첩되지 않음. 우선으로 발동됨)". 같은 제조소에 둘이 앉으면
+// 재활용(오퍼가 늘린 용량 1칸당 +2%)은 죽고 버블의 계단식만 산다. 죽는 건 **변환뿐**이라
+// 버메일이 올린 창고 용량(+8칸)은 그대로 남아 버블의 변환에 실린다.
+console.log("");
+{
+  const byId = new Map(ops.map((o) => [o.id, o]));
+  const E = (id) => withElite(byId.get(id), maxElite(byId.get(id).rarity));
+  const ctx = { product: "gold", tokenPoints: {} };
+  const conv = (ids) => engine.capConvFor(ids.map(E), "MANUFACTURE", ctx);
+  const checks = [
+    // 버메일 8칸 → 8%, 버블 10칸 → 10% = 18. 재활용까지 살면 +36(18칸×2%) = 54였다.
+    ["버블+버메일은 버블 변환만 (재활용 비중첩)", Math.abs(conv(["char_381_bubble", "char_190_clour"]) - 18) < 1e-6],
+    ["버메일 단독은 재활용이 그대로 산다", Math.abs(conv(["char_190_clour"]) - 16) < 1e-6],
+    // 버블이 없는 방은 종전대로 — 베나+벌컨+버메일 = (17+19+8)×2% = 88
+    ["버블 없는 방의 재활용은 무영향", Math.abs(conv(["char_190_clour", "char_163_hpsts", "char_369_bena"]) - 88) < 1e-6],
+  ];
+  for (const [name, ok] of checks) { console.log(`${ok ? "✓" : "✗"} ${name}`); if (!ok) failed += 1; }
+}
+
 // ── 자동편성 제외 명단 (케이퍼·인포서, 사용자 확정 2026-07-28 — INFRA-RULES §1) ─────
 // 조건 의존·고소모라 자동으로는 절대 앉히지 않는다. 후보 목록에는 남지만 편성엔 없어야 한다.
 console.log("");
@@ -272,4 +292,4 @@ console.log("");
 }
 
 if (failed) { console.error(`\n✗ 검사 ${failed}건 실패`); process.exit(1); }
-console.log(`\n✓ 픽스처 ${rules.fixtures.length}건 + 육성추천 불변식 4건 + 노시스 오라 2건 + 자동편성 제외 2건 전부 통과`);
+console.log(`\n✓ 픽스처 ${rules.fixtures.length}건 + 육성추천 불변식 4건 + 노시스 오라 2건 + 용량 변환 비중첩 3건 + 자동편성 제외 2건 전부 통과`);

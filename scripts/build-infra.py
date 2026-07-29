@@ -876,6 +876,16 @@ def parse_skill(entry, oname, oid=None):
             cap_conv = {"t": "diff", "rate": float(_diff.group(1))}
         elif _lin:
             cap_conv = {"t": "lin", "rate": float(_lin.group(1))}
+        # 비중첩 명시 (사용자 제보 2026-07-29): 버블 '큰 게 좋아!' 원문 끝에
+        # "(재활용 스킬과 중첩되지 않음. 우선으로 발동됨)" — 같은 방에 버메일 '재활용'이
+        # 있어도 둘이 더해지지 않고 **버블만** 발동한다. 원문이 스킬 이름으로 못 박은
+        # 관계라 파서가 그대로 옮기고(over = 내가 죽이는 스킬 이름들), 엔진 capConvOf가
+        # 이름으로 억제한다. "우선"이 명시된 경우만 잡는다 — 우선순위 없는 비중첩이
+        # 생기면 어느 쪽이 사는지 원문만으론 못 정하므로 그때 규칙을 따로 세운다.
+        if cap_conv:
+            _nostack = re.search(r"\(([^()]*?)\s*스킬과 중첩되지\s*않[^()]*?우선[^()]*?\)", text)
+            if _nostack:
+                cap_conv["over"] = [n.strip() for n in re.split(r"[,·/]", _nostack.group(1)) if n.strip()]
         # 변환기의 % 는 "용량 1당" 단위값이라 헤드라인 효율로 이중 계상되면 안 된다
         # (제이 시장경제 "차이 1당 +4%"가 output=4로도 잡히는 것 방지) — 변환기면 헤드라인 0
         if cap_conv:

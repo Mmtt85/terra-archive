@@ -369,6 +369,7 @@ const D: Record<string, Pair> = {
   "고품질 오더 수익 — 확률 오퍼와 결합 시 극대화": ["Quality payout — strongest with chance operators", "高品質収益 — 確率オペレーターと組むと最大化"],
   "용량 {n}칸 — 변환 오퍼가 생산력으로 되돌립니다": ["Capacity {n} — converters turn it into productivity", "容量{n} — 変換オペレーターが生産力に還元"],
   "적립 용량을 생산력으로 전환": ["Converts stored capacity into productivity", "蓄積した容量を生産力へ変換"],
+  "중첩되지 않음 — 같은 방의 변환 스킬이 우선 발동됩니다": ["Does not stack — the other conversion skill in this room takes priority", "重複しません — 同じ部屋の変換スキルが優先して発動します"],
   "사용자 지정": ["Custom", "カスタム"],
   "시설 종류 변경": ["Change facility type", "施設タイプ変更"],
   "제조소·무역소·발전소 9칸을 자유 구성합니다 — 방 카드의 제조소/무역소/발전소 버튼으로 종류를 바꿉니다": ["Freely arrange the 9 production tiles among factories, trading posts and power plants — switch each tile's type with the Factory/Trading/Power buttons on its card", "製造所・貿易所・発電所の9マスを自由構成 — 各カードの製造所/貿易所/発電所ボタンでタイプを切り替え"],
