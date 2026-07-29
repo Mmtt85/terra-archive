@@ -353,7 +353,10 @@ const NODE_TINT: Record<string, string> = {
   FINAL: "nt-green",            // 险路尽头 — 초록
   SCRAP_SHOP: "nt-gold",        // 秘境行商 — 금빛
   EVACUATE: "nt-gold",          // 险路小径 — 금빛
+  PORTAL: "nt-gold",            // 误入奇境(원더랜드) — 금빛
 };
+// 화면에서 확인한 나머지: 不期而遇(INCIDENT)·诡意行商(BATTLE_SHOP)·曲折密道(DOOR)는
+// 기본 청록 그대로다. 그 외 타입은 지도 화면을 못 봐서 손대지 않는다.
 
 /** 노드 종류 글리프 — 이 테마에 그 타입 아이콘이 있을 때만 그린다 */
 function NodeIco({ id, cls = "rg-nodetype-ico" }: { id?: string | null; cls?: string }) {
