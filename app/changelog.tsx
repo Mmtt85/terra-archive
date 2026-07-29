@@ -43,7 +43,9 @@ export default function ChangelogButton() {
   const { locale, t } = useI18n();
   const localeBase = locale === "ko" ? "" : `/${locale}`;
   const [open, setOpen] = useState(false);
-  const [detail, setDetail] = useState(false);        // false = 신기능만
+  // 열면 **상세보기가 기본** (사용자 지시 2026-07-29) — 신기능만 보는 건 헤더 토글로.
+  // 개선·수정이 실제 변경의 대부분이라, 신기능만 띄우면 "바뀐 게 없네"로 읽혔다.
+  const [detail, setDetail] = useState(true);
   const [rows, setRows] = useState<ChangeRow[] | null>(null);
   const [weeks, setWeeks] = useState(1);              // 지금까지 불러온 7일 창 수
   const [oldest, setOldest] = useState<string | null>(null); // 전체에서 가장 오래된 항목 날짜
@@ -51,7 +53,7 @@ export default function ChangelogButton() {
   const [error, setError] = useState("");
   const loaded = useRef(false);                       // 첫 로드 1회 가드
 
-  // 딥링크: #changelog(신기능만) · #changelog-all(상세) — 기간 확장 상태는 URL에 담지 않는다
+  // 딥링크: #changelog(신기능만) · #changelog-all(상세, 버튼으로 여는 기본) — 기간 확장 상태는 URL에 담지 않는다
   useHashSync(open ? (detail ? "#changelog-all" : "#changelog") : null, (h) => {
     if (h === "#changelog" || h === "#changelog-all") { setOpen(true); setDetail(h === "#changelog-all"); }
     else setOpen(false);
@@ -114,8 +116,9 @@ export default function ChangelogButton() {
 
   return (
     <>
-      {/* 버튼으로 열 땐 항상 신기능만부터 — 딥링크(#changelog-all)로는 상세로 바로 진입 */}
-      <button type="button" className="chlog-trigger" onClick={() => { setDetail(false); setOpen(true); }} title={t("최근 업데이트 내역 보기")}>
+      {/* 버튼으로 열면 **상세보기**가 기본 (사용자 지시 2026-07-29) — 신기능만 보려면
+          헤더 토글을 누르거나 #changelog 딥링크로 들어온다 */}
+      <button type="button" className="chlog-trigger" onClick={() => { setDetail(true); setOpen(true); }} title={t("최근 업데이트 내역 보기")}>
         <span aria-hidden>🛠</span>
         {/* 모바일은 아이콘만 (1줄 로고 옆 — 폭이 좁다) */}
         <span className="chlog-label">{t("업데이트 내역")}</span>
