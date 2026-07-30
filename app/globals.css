@@ -9239,11 +9239,13 @@ html.dark .story-card:hover .story-thumb img {
 .pt-art {
   position: absolute;
   z-index: -2;
-  left: -4%;
+  left: -2%;
   bottom: 0;
-  height: 106%;
+  /* 살짝 줄임 (사용자 요청 2026-07-30): 106% → 90%. contain + 왼쪽 아래 고정이라
+     높이를 줄이면 바닥에 붙은 채 작아진다. */
+  height: 90%;
   width: auto;
-  max-width: 56%;
+  max-width: 48%;
   object-fit: contain;
   object-position: left bottom;
   pointer-events: none;
