@@ -9315,7 +9315,9 @@ html.dark .story-card:hover .story-thumb img {
 /* ── 타일 배치 — 게임 홈의 칸 구성을 그대로 (tile.area와 1:1) ── */
 .pt-tiles {
   grid-area: tiles;
-  align-self: start;   /* 위로 붙인다 (사용자 요청 2026-07-30) — 가운데면 위가 휑했다 */
+  /* 위로 붙이되(가운데면 위가 휑하다) 아트 윗변보다 한 뼘 아래로 (사용자 요청 2026-07-30) */
+  align-self: start;
+  margin-top: clamp(14px, 2.6vh, 30px);
   /* 스테이지가 화면 높이만큼 커져도 타일은 이 높이를 지킨다 — 안 그러면 1fr 행이 늘어나
      칸이 다시 휑해진다(줄여 놓은 것이 되돌아간다) */
   height: min(66vh, 540px);
