@@ -761,20 +761,22 @@ button {
   display: inline-flex;
   margin-left: 8px;
 }
+/* 확장부의 작은 버튼 — 옆에 붙는 '공식 방송'(.bcast-trigger)과 같은 치수로 맞춘다.
+   종전엔 배너 섬네일을 통째로 품은 큰 버튼이 헤더 1줄에 누워 있었다
+   (사용자 요청 2026-07-30: "확장헤더에 넣자, 누르면 섬네일이랑 이벤트 보이도록"). */
 .event-trigger {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 7px;
   border: 1px solid var(--line);
   background: transparent;
-  padding: 6px 12px;
-  font-size: 14px;
+  padding: 6px 11px;
+  font-size: 12.5px;
   font-weight: 800;
   color: var(--ink);
   cursor: pointer;
   transition: 0.15s;
   white-space: nowrap;
-  text-align: left;
 }
 .event-trigger:hover {
   border-color: var(--border-strong);
@@ -782,55 +784,18 @@ button {
 .event-trigger .event-mark {
   color: var(--accent, #b98a2f);
 }
-.event-trigger-main {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  /* 폭 고정 — 스켈레톤→실제 배너 교체 시 헤더(nav-group)가 가로로 밀리던 CLS 방지
-     (event-name max-width와 맞춤, 2026-07-20). */
-  width: 210px;
-  flex: 0 0 210px;
-}
-.event-trigger .event-kicker {
-  font: 800 10px monospace;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
+.event-trigger .event-hint {
+  font-family: monospace;
+  font-size: 11px;
+  font-weight: 700;
   color: var(--muted);
 }
-.event-trigger .event-name {
-  max-width: 210px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.event-trigger .event-dates {
-  font: 700 11.5px monospace;
-  color: var(--muted);
-}
-/* 대표 이벤트 배너가 버튼 안에 통째로 들어가는 형태 */
-.event-trigger.has-banner {
-  padding: 4px 12px 4px 4px;
-  border: none; /* 배너를 감싸는 프레임 제거 (사용자 요청 2026-07-17) */
-}
-.event-trigger.has-banner:hover {
-  border: none;
-}
-.event-trigger-thumb {
-  display: block;
-  width: 153px; /* 배너 1.5배 확대 (사용자 요청 2026-07) */
-  overflow: hidden;
-}
-.event-trigger-thumb img {
-  display: block;
-  width: 100%;
-  aspect-ratio: 16 / 7;
-  object-fit: cover;
+/* 아직 시작 전이면 눈에 띄게 — 진행중(D-N)과 구분 */
+.event-trigger .event-hint.upcoming {
+  color: var(--accent, #b98a2f);
 }
 .event-trigger .event-caret {
   font-size: 11px;
-  color: var(--muted);
-}
-.event-trigger .event-dday {
-  font: 700 11px monospace;
   color: var(--muted);
 }
 .event-menu {
@@ -1203,45 +1168,11 @@ button {
   .site-header.collapsed::after {
     display: none;
   }
-  /* 배너 + 이벤트 설명(라벨·이름·기간)을 PC판처럼 함께 표시 —
-     1줄 오른쪽 남는 공간을 채운다 (사용자 요청 2026-07-20). */
+  /* 이벤트 칩도 방송 버튼과 같은 크기의 작은 버튼 (2026-07-30 — 배너형 폐기) */
   .event-trigger {
     padding: 4px 8px;
-    font-size: 12.5px;
-    gap: 8px;
-    max-width: 100%;
-    width: 100%;
-  }
-  /* 데스크톱 210px 고정폭 대신 남는 공간을 유연하게 채우고, 이름은 말줄임 */
-  .event-trigger-main {
-    width: auto;
-    flex: 1 1 auto;
-    min-width: 0;
-  }
-  .event-trigger.has-banner .event-trigger-main {
-    display: flex;
-  }
-  .event-trigger .event-kicker,
-  .event-trigger .event-dates,
-  .event-trigger.has-banner .event-name {
-    display: block;
-  }
-  .event-trigger .event-kicker {
-    font-size: 9px;
-  }
-  .event-trigger .event-dates {
-    font-size: 10.5px;
-  }
-  .event-trigger .event-name {
-    max-width: none;
-    font-size: 13px;
-  }
-  .event-trigger.has-banner {
-    padding: 2px 8px 2px 2px;
-  }
-  .event-trigger-thumb {
-    width: 64px;
-    flex: none;
+    font-size: 12px;
+    gap: 6px;
   }
   /* 이벤트 칩이 헤더 오른쪽에 있어 드롭다운이 오른쪽으로 넘쳐 잘리던 문제 —
      모바일에선 헤더 바로 아래 화면 폭(좌우 16px 여백)에 고정해 넘침 방지 (2026-07-20). */
@@ -5712,46 +5643,8 @@ footer p {
   .site-header .nav-group {
     margin-left: auto;
   }
-  /* 진행중 이벤트 = 1줄 정 가운데 고정(absolute — 로고·공식방송·햄버거 폭과 무관하게 화면
-     중앙), 접힘 상태에서도 항상 보인다 (사용자 확정 2026-07-22). top 39px = 접힘 헤더(78px)의
-     세로 중앙 기준 — 펼쳐져도 1줄 영역이 그대로라 위치가 변하지 않는다. */
-  .site-header .event-group {
-    position: absolute;
-    left: 50%;
-    top: 39px;
-    transform: translate(-50%, -50%);
-    margin: 0;
-    /* transform이 스택 컨텍스트를 만들어 내부 드롭다운(z:40)이 칩 레벨에 갇힌다 —
-       칩 자체를 접기 핸들(z:1)보다 위로 올려 드롭다운이 핸들에 가리지 않게 (2026-07-22) */
-    z-index: 2;
-  }
-  /* 공식방송 = 이벤트 칩 바로 오른쪽에 밀착 (사용자 확정 2026-07-22). 칩은 고정폭(CLS 방지
-     설계, 총 ~346px)이라 중앙 + half폭 + 간격의 absolute 오프셋으로 정확히 붙는다.
-     1줄 소속이라 접힘 상태에도 보인다. */
-  .site-header > .bcast-trigger {
-    position: absolute;
-    left: calc(50% + 185px);
-    top: 39px;
-    transform: translateY(-50%);
-    margin: 0;
-    padding: 5px 9px;
-  }
-  /* 이벤트 칩 컴팩트화 — ① 높이를 살짝 줄여 위아래 공백 확보(사용자 요청 2026-07-22)
-     ② 폭도 줄여 로고·주변 버튼과 중앙 칩이 겹칠 여지 축소 */
-  .site-header .event-trigger.has-banner {
-    padding: 3px 10px 3px 3px;
-    gap: 8px;
-  }
-  .site-header .event-trigger-thumb {
-    width: 133px;
-  }
-  .site-header .event-trigger-main {
-    width: 176px;
-    flex: 0 0 176px;
-  }
-  .site-header .event-trigger .event-name {
-    max-width: 176px;
-  }
+  /* 이벤트 칩은 2026-07-30부터 확장부(.header-sub-right)의 작은 버튼이다 — 1줄 절대중앙
+     배치와, 그 오른쪽에 방송 버튼을 붙이던 offset 계산은 함께 걷어냈다. */
   /* 2줄(펼침 시) = 미래시·다크모드·언어(오른쪽 끝) */
   .site-header .header-sub {
     flex-basis: 100%;

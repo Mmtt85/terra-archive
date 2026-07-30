@@ -85,7 +85,7 @@ jobs:
             git commit -m "AI 스토리 요약 자동 집필 — ${{ steps.detect.outputs.ids }}
 
             Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
-            git push
+            bash scripts/ci-push.sh
           else
             echo "변경 없음 — Claude가 집필을 완료하지 못했을 수 있음"
           fi

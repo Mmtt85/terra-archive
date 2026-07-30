@@ -350,13 +350,9 @@ function BroadcastBadges({ includeFuture, slot }: { includeFuture?: boolean; slo
           </span>
         )}
         {slot !== "broadcast" && <div className="event-group" aria-hidden>
-          <div className="event-trigger has-banner is-skeleton">
-            <span className="event-trigger-thumb"><span className="sk-box" /></span>
-            <span className="event-trigger-main">
-              <small className="event-kicker">{t("현재 진행중 이벤트")}</small>
-              <span className="event-name sk-line" />
-              <span className="event-dates sk-line" />
-            </span>
+          <div className="event-trigger is-skeleton">
+            <span className="event-mark" aria-hidden>✦</span>
+            <span>{t("이벤트")}</span>
             <span className="event-caret" aria-hidden>▾</span>
           </div>
         </div>}
@@ -392,24 +388,18 @@ function BroadcastBadges({ includeFuture, slot }: { includeFuture?: boolean; slo
     new Intl.DateTimeFormat(DT_LOCALE[locale], { timeZone: "Asia/Seoul", month: "long", day: "numeric" }).format(new Date(iso));
   // 스토리 탭용으로 이미 받아둔 이벤트 배너를 재활용 (로케일 변형 → ko 폴백)
   const evThumb = (event: GameEvent): string | undefined => eventThumb(locale, event);
-  const headlineThumb = headline ? evThumb(headline) : undefined;
   const eventBadge = headline && (
     <div className="event-group" ref={evRef}>
-      {/* 대표 이벤트는 배너째로 버튼에 — 라벨·기간 포함 (사용자 요청 2026-07).
-          클릭하면 나머지 진행중·예정 이벤트 드롭다운. */}
-      <button type="button" className={`event-trigger${headlineThumb ? " has-banner" : ""}`} aria-expanded={evOpen}
+      {/* 배너째로 1줄에 눕히던 것을 확장부의 작은 버튼으로 (사용자 요청 2026-07-30).
+          라벨은 "이벤트"로 **고정** — 이벤트 이름을 넣으면 이름 길이에 따라 헤더 폭이
+          흔들린다(햄버거 '메뉴' 라벨을 고정한 것과 같은 이유). 상태는 짧은 힌트로만 붙이고,
+          섬네일·기간·전체 목록은 눌렀을 때 드롭다운에서 보여준다. */}
+      <button type="button" className="event-trigger" aria-expanded={evOpen}
         onClick={() => setEvOpen((o) => !o)} title={t("진행중·예정 이벤트 보기")}>
-        {headlineThumb
-          ? <span className="event-trigger-thumb"><img src={headlineThumb} alt="" /></span>
-          : <span className="event-mark" aria-hidden>✦</span>}
-        <span className="event-trigger-main">
-          <small className="event-kicker">{headlineUpcoming ? t("진행 예정 이벤트") : t("현재 진행중 이벤트")}</small>
-          <span className="event-name">{evName(headline)}</span>
-          <span className="event-dates">
-            {headlineUpcoming
-              ? <>{t("{date} 시작", { date: mdLong(headline.start) })} · D-{startDday(headline)}</>
-              : <>{mdLong(headline.start)} ~ {mdLong(headline.end)} · D-{dday(headline)}</>}
-          </span>
+        <span className="event-mark" aria-hidden>✦</span>
+        <span>{t("이벤트")}</span>
+        <span className={`event-hint${headlineUpcoming ? " upcoming" : ""}`}>
+          · {headlineUpcoming ? t("시작 D-{n}", { n: startDday(headline) }) : `D-${dday(headline)}`}
         </span>
         <span className="event-caret" aria-hidden>▾</span>
       </button>
@@ -419,8 +409,8 @@ function BroadcastBadges({ includeFuture, slot }: { includeFuture?: boolean; slo
             <h3>{t("진행중 이벤트")}</h3>
             <ul>
               {running.map((event) => {
-                // 대표 배너는 버튼에 이미 보이므로 드롭다운에서는 중복 표시하지 않는다
-                const thumb = event.id === headline.id ? undefined : evThumb(event);
+                // 버튼이 작아졌으니 대표 이벤트도 여기서 섬네일을 보여준다 (사용자 요청 2026-07-30)
+                const thumb = evThumb(event);
                 const body = (
                   <>
                     {thumb && <span className="event-banner"><img src={thumb} alt="" loading="lazy" /></span>}
@@ -443,7 +433,7 @@ function BroadcastBadges({ includeFuture, slot }: { includeFuture?: boolean; slo
             <h3 className="event-menu-upcoming">{t("진행 예정")}</h3>
             <ul>
               {upcoming.map((event) => {
-                const thumb = event.id === headline.id ? undefined : evThumb(event);
+                const thumb = evThumb(event);
                 const body = (
                   <>
                     {thumb && <span className="event-banner"><img src={thumb} alt="" loading="lazy" /></span>}
@@ -1203,9 +1193,6 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
         {/* 업데이트 내역 — 로고 바로 오른쪽 1줄 소속: 헤더를 접어도 보인다
             (사용자 요청 2026-07-27: "헤더를 열어보지 않으면 알 수가 없으니") */}
         <ChangelogButton />
-        {/* 진행중 이벤트 배지 — 1줄(접힘 상태에도 표시). 공식 방송 버튼은 확장부로 내려갔다
-            (사용자 요청 2026-07-25 — 미래시 토글 왼쪽). */}
-        <BroadcastBadges includeFuture={includeFuture} slot="events" />
         {/* 만능검색 = 1줄 오른쪽(햄버거 왼쪽) — 헤더를 접어도 남는다 (사용자 요청 2026-07-25) */}
         <OmniSearch roster={roster} includeFuture={includeFuture} extra={extra} onGo={runOmni} />
         {/* 게임 연결 — 크롬 확장(extension/)이 깔린 사람에게만 나타난다. 누르면 게임 창
@@ -1255,7 +1242,9 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
             </button>
           )}
           <div className="header-sub-right">
-            {/* 공식 방송 — 미래시 토글 바로 왼쪽 (사용자 요청 2026-07-25) */}
+            {/* 진행중 이벤트 · 공식 방송 — 둘 다 확장부로 (이벤트 배지는 사용자 요청 2026-07-30에
+                1줄 배너에서 여기 작은 버튼으로 내려왔다. 방송은 2026-07-25부터 여기). */}
+            <BroadcastBadges includeFuture={includeFuture} slot="events" />
             <BroadcastBadges includeFuture={includeFuture} slot="broadcast" />
             {/* 라벨은 데스크탑 "미래시 데이터 포함", 모바일은 "미래시"로 축약 (사용자 요청 2026-07-22) */}
             <label className="future-toggle" title={t("아직 정식 출시되지 않은(중국 서버 선행) 오퍼레이터·재료도 목록·계산기에 표시합니다. 미실장 텍스트는 비공식 AI 번역입니다.")}>

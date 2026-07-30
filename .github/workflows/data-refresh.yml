@@ -90,7 +90,7 @@ jobs:
           $(cat .ci/subject.txt)
 
           Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
-          git push
+          bash scripts/ci-push.sh
 
       - name: Cloudflare Pages 배포 (변동 있을 때만)
         if: steps.report.outputs.meaningful == 'true' && !inputs.dry_run
