@@ -26,7 +26,9 @@ const API = "https://terra-archive-upload.nzkonaru.workers.dev";
 // 옮기는 폴더 — 여기 없는 루트 파일(파비콘·구글 인증 HTML)은 Pages에 남는다
 const DIRS = ["story", "rogue", "lens", "tesseract", "avatars", "about", "og", "items", "scan",
   // 오퍼 상세 모달이 열릴 때만 받아가는 지연 로딩 데이터·이미지 (2026-07-28)
-  "profiles", "skins", "skin"];
+  "profiles", "skins", "skin",
+  // 대문(포탈) 홈 화면 테마 배경 — scripts/build-portal-themes.py가 만든다 (2026-07-30)
+  "portal"];
 
 const PREFIX = "assets/"; // 에셋은 전부 이 폴더 밑 — uploads/(수동 업로드)와 격리
 const DRY = process.argv.includes("--dry");

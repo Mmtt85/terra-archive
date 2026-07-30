@@ -9205,117 +9205,415 @@ html.dark .story-card:hover .story-thumb img {
   }
 }
 
-/* ── 포탈 첫화면 (루트 /) — 진입 시 이미지 로딩 없는 랜딩 (사용자 확정 2026-07-17) ── */
-/* 헤더는 다른 메뉴 페이지와 동일하게 풀폭이어야 하므로 main에 align-items:center를 주지 않는다.
-   포탈 콘텐츠는 .portal 자체의 max-width + margin:0 auto로 중앙 정렬한다 (사용자 확정 2026-07-17). */
-.portal {
+/* ── 포탈 첫화면 (루트 /) = 게임 홈 화면 UI (사용자 요청 2026-07-30) ─────────────
+   색은 전부 --pt-* 변수로만 쓴다. 그 값은 app/portal-themes.ts의 테마가 인라인으로
+   얹으므로, 새 테마를 추가해도 이 파일은 손대지 않는다. 사이트 다크모드와도 무관하다
+   (게임 홈 UI는 자기 팔레트를 갖는다 — 첫 방문 때만 사이트 밝기로 테마를 고른다). */
+.pt-stage {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  /* ⚠ 부모(.site-scroll)가 세로 flex라 기본값(flex-shrink:1)이면 화면이 모자랄 때
+     스테이지가 눌리고, overflow:hidden 때문에 **마지막 줄 타일이 잘린다**
+     (실측 2026-07-30: 모바일에서 필요 745px인데 658px로 눌림). 내용 높이를 지킨다. */
+  flex: 0 0 auto;
   width: 100%;
-  max-width: 920px;
+  max-width: 1240px;
   margin: 0 auto;
-  padding: clamp(32px, 7vw, 72px) 20px 64px;
-  display: flex;
-  flex-direction: column;
-  gap: clamp(24px, 4vw, 40px);
-}
-.portal-hero {
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.portal-kicker {
-  font-size: 12.5px;
-  letter-spacing: 3px;
-  font-weight: 700;
-  color: var(--accent, #b98a2f);
-}
-.portal-hero h1 {
-  font-size: clamp(30px, 6vw, 48px);
-  margin: 0;
-  letter-spacing: -1px;
-  color: var(--ink);
-}
-.portal-hero p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 15px;
-  line-height: 1.6;
-}
-.portal-grid {
+  min-height: min(72vh, 660px);
+  padding: 12px 16px 16px;
+  border-radius: var(--r-lg);
+  background: var(--pt-backdrop);
+  color: var(--pt-ink);
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  grid-template-columns: minmax(190px, 0.85fr) minmax(0, 1.5fr);
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    "top    top"
+    "player tiles"
+    "theme  tiles";
+  gap: 14px 20px;
 }
-.portal-card {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  text-align: left;
-  padding: 20px 22px;
-  border: 1px solid var(--line);
-  background: var(--white);
-  cursor: pointer;
-  transition:
-    transform 0.15s ease,
-    border-color 0.15s ease,
-    box-shadow 0.15s ease;
+/* 배경 캐릭터 아트 — 왼쪽 아래를 채우고 타일 뒤로 물러난다 */
+.pt-art {
+  position: absolute;
+  z-index: -2;
+  left: -4%;
+  bottom: 0;
+  height: 106%;
+  width: auto;
+  max-width: 56%;
+  object-fit: contain;
+  object-position: left bottom;
+  pointer-events: none;
 }
-.portal-card:hover {
-  transform: translateY(-2px);
-  border-color: var(--border-strong);
-  box-shadow: 0 8px 24px -14px rgba(19, 23, 25, 0.5);
-}
-.portal-card-icon {
-  font-size: 26px;
-  line-height: 1;
-  flex: 0 0 auto;
-  width: 44px;
-  height: 44px;
-  display: grid;
-  place-items: center;
-  border: 1px solid var(--line);
-  background: var(--paper);
-  color: var(--accent, #b98a2f);
-}
-.portal-card-body {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-  flex: 1 1 auto;
-}
-.portal-card-body b {
-  font-size: 16px;
-  letter-spacing: -0.3px;
-  color: var(--ink);
-}
-.portal-card-body small {
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--muted);
-}
-.portal-card-go {
-  flex: 0 0 auto;
-  font-size: 18px;
-  color: var(--muted);
-  transition:
-    transform 0.15s ease,
-    color 0.15s ease;
-}
-.portal-card:hover .portal-card-go {
-  transform: translateX(3px);
-  color: var(--ink);
-}
-/* 인프라 자동편성기 = 대표 도구라 최상단 한 줄 전체.
-   소개는 통합전략 가이드 오른쪽 같은 줄 (사용자 변경 2026-07-18 — 종전 마지막 줄 전체) */
-.portal-card.portal-planner {
-  grid-column: 1 / -1;
+/* 아트 위에 얇게 깔아 글자 대비를 지킨다 — 아트가 밝든 어둡든 라벨이 읽히게 */
+.pt-scrim {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background:
+    linear-gradient(100deg, color-mix(in srgb, var(--pt-strip) 62%, transparent) 0%,
+      color-mix(in srgb, var(--pt-strip) 18%, transparent) 42%, transparent 68%);
+  pointer-events: none;
 }
 
-@media (max-width: 640px) {
-  .portal-grid {
-    grid-template-columns: 1fr;
+/* 상단바 — 게임의 시계·재화 줄 */
+.pt-top {
+  grid-area: top;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+  font-family: monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--pt-strip-ink);
+  text-shadow: 0 1px 3px #0009;
+}
+.pt-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.pt-count i {
+  color: var(--pt-accent);
+  font-style: normal;
+}
+
+/* 좌측 독타 프로필 자리 */
+.pt-player {
+  grid-area: player;
+  align-self: end;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 340px;
+}
+.pt-lv {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  width: fit-content;
+  padding: 4px 14px 4px 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pt-strip) 72%, transparent);
+  color: var(--pt-strip-ink);
+}
+.pt-lv b {
+  font-size: 30px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.pt-lv small {
+  font-family: monospace;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  opacity: 0.7;
+}
+.pt-name {
+  font-size: clamp(22px, 3vw, 30px);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: var(--pt-strip-ink);
+  text-shadow: 0 2px 10px #000a;
+}
+.pt-sub {
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.6;
+  color: color-mix(in srgb, var(--pt-strip-ink) 78%, transparent);
+  text-shadow: 0 1px 6px #0009;
+}
+
+/* ── 타일 배치 — 게임 홈의 칸 구성을 그대로 (tile.area와 1:1) ── */
+.pt-tiles {
+  grid-area: tiles;
+  display: grid;
+  gap: 8px;
+  /* 6열 — 게임 홈의 칸 비율(제일 큰 칸 2/3 · 이벤트 배너 1/3)을 4열로는 못 맞춘다 */
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-rows: 1.35fr 1fr 1fr 0.9fr;
+  grid-template-areas:
+    "terminal terminal terminal terminal banner   banner  "
+    "base     base     operator operator story    story   "
+    "squads   squads   recruit  recruit  depot    depot   "
+    "mission  mission  archives archives friends  friends ";
+}
+.pt-tile {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 9px 12px;
+  border: 1px solid var(--pt-line);
+  border-radius: 4px;   /* 게임 UI는 각진 판 — 사이트 전역 라운딩을 여기서만 낮춘다 */
+  background: var(--pt-plate);
+  color: var(--pt-ink);
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+}
+.pt-tile:hover:not(.dead) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px #0006, inset 0 0 0 1px var(--pt-accent);
+}
+.pt-tile:focus-visible {
+  outline: 2px solid var(--pt-accent);
+  outline-offset: 2px;
+}
+/* 사이트에 대응 기능이 없는 칸 — 게임 UI를 채우되 눌리지 않는다 */
+.pt-tile.dead {
+  cursor: default;
+  opacity: 0.42;
+  filter: saturate(0.4);
+}
+/* 영문 제목(Terminal·Squads…)은 사용자 지시로 뺐다 (2026-07-30) — 한국어 이름이 제목이다 */
+.pt-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.pt-ic {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pt-accent) 18%, transparent);
+  color: var(--pt-accent);
+  font-size: 12px;
+}
+.pt-ko {
+  font-size: clamp(13px, 1.4vw, 16px);
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  color: var(--pt-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* 제일 큰 칸은 이름도 크게 — 게임의 위계 그대로 */
+.pt-t-terminal .pt-ko { font-size: clamp(19px, 2.3vw, 28px); }
+.pt-t-terminal .pt-ic { width: 30px; height: 30px; font-size: 15px; }
+/* 큰 칸 가운데를 채우는 한 줄 설명 — 게임에선 이성 시계가 있던 자리 */
+.pt-desc {
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--pt-mut);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+/* 이벤트 배너 칸 — 게이지(이성 시계 자리) + 배너 이미지 */
+.pt-banner {
+  padding: 0;
+  background: var(--pt-plate-2);
+}
+/* 좌우 넘김 — 진행 예정 이벤트까지 본다 (사용자 요청 2026-07-30) */
+.pt-nav {
+  position: absolute;
+  z-index: 3;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 30px;
+  border-radius: 4px;
+  background: #0009;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.55;
+  transition: 0.12s;
+}
+.pt-nav:hover, .pt-nav:focus-visible { opacity: 1; }
+.pt-nav.prev { left: 4px; }
+.pt-nav.next { right: 4px; }
+.pt-dots {
+  position: absolute;
+  z-index: 3;
+  right: 8px;
+  top: 8px;
+  display: flex;
+  gap: 3px;
+}
+.pt-dots i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #ffffff66;
+}
+.pt-dots i.on { background: var(--pt-accent); }
+.pt-banner-in {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+  padding: 8px 10px;
+}
+.pt-banner-img {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.5;
+}
+.pt-banner-txt {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  margin-top: auto;
+}
+.pt-banner-txt b {
+  font-size: 12.5px;
+  font-weight: 900;
+  color: var(--pt-strip-ink);
+  text-shadow: 0 1px 5px #000c;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pt-banner-txt small {
+  font-family: monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: color-mix(in srgb, var(--pt-strip-ink) 72%, transparent);
+  text-shadow: 0 1px 5px #000c;
+}
+/* 게이지 — 게임의 이성 시계. 채움 비율(--pt-ratio)은 이벤트 실제 기간에서 계산한다. */
+.pt-gauge {
+  position: relative;
+  z-index: 2;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background:
+    conic-gradient(var(--pt-accent) calc(var(--pt-ratio, 0) * 360deg), #ffffff2e 0),
+    var(--pt-strip);
+  box-shadow: 0 0 0 1px #0006, 0 0 16px var(--pt-glow);
+}
+.pt-gauge::after {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border-radius: 50%;
+  background: var(--pt-strip);
+}
+.pt-gauge b,
+.pt-gauge small {
+  position: relative;
+  z-index: 1;
+  color: var(--pt-strip-ink);
+  line-height: 1;
+}
+.pt-gauge b {
+  font-family: monospace;
+  font-size: 14px;
+  font-weight: 900;
+}
+.pt-gauge small {
+  font-size: 8px;
+  font-weight: 800;
+  opacity: 0.62;
+}
+
+/* 테마 전환 — 게임 홈 UI 테마를 갈아끼우는 자리 */
+.pt-themebar {
+  grid-area: theme;
+  align-self: end;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.pt-themebtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 11px;
+  border: 1px solid color-mix(in srgb, var(--pt-strip-ink) 32%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pt-strip) 55%, transparent);
+  color: var(--pt-strip-ink);
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: 0.12s;
+}
+.pt-themebtn:hover { border-color: var(--pt-accent); }
+.pt-themebtn em {
+  font-family: monospace;
+  font-style: normal;
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+/* 좁은 화면 — 아트를 배경으로 눕히고 타일을 2열로. 게임도 세로에선 칸을 접는다. */
+@media (max-width: 900px) {
+  .pt-stage {
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "top"
+      "player"
+      "tiles"
+      "theme";
   }
+  .pt-art {
+    left: auto;
+    right: -12%;
+    height: 100%;
+    max-width: 78%;
+    opacity: 0.5;
+  }
+  .pt-scrim {
+    background: linear-gradient(180deg, color-mix(in srgb, var(--pt-strip) 40%, transparent), color-mix(in srgb, var(--pt-strip) 72%, transparent));
+  }
+  .pt-tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: none;
+    grid-auto-rows: minmax(58px, auto);
+    grid-template-areas:
+      "terminal terminal"
+      "banner   banner  "
+      "base     operator"
+      "story    squads  "
+      "recruit  depot   "
+      "mission  archives"
+      "friends  friends ";
+  }
+  .pt-t-terminal .pt-ko { font-size: 19px; }
+}
+@media (max-width: 520px) {
+  .pt-player { max-width: none; }
+  .pt-tiles { gap: 6px; }
+  .pt-tile { padding: 7px 9px; }
+}
+/* 모션을 줄이는 설정에서는 타일이 뛰지 않게 */
+@media (prefers-reduced-motion: reduce) {
+  .pt-tile:hover:not(.dead) { transform: none; }
 }
 
 /* ── 공식방송·이벤트 배지 로딩 스켈레톤 — 헤더 슬롯 고정 예약 (CLS 방지, 사용자 요청 2026-07-17) ── */
@@ -10449,8 +10747,8 @@ html.dark.rg-theme.rg6 .site-header {
 .rg-nodetype-ico {
   flex: none;
   /* 42px에서는 원판 안 글리프가 너무 작아 종류가 안 읽힌다 (사용자 지적 2026-07-29) */
-  width: 54px;
-  height: 54px;
+  width: 48px;
+  height: 48px;
   object-fit: contain;
   /* 원본이 이미 어두운 원판 + 발광 글리프라 테두리·배경을 덧대지 않는다 (덧대면 이중 원이 된다) */
 }
@@ -13261,8 +13559,8 @@ main.site-main > .site-header {
   border-radius: var(--r-sm);
 }
 :where(.farm-card, .farm-cols, .farm-nonfarm-body, .farm-more-stages, .rg-enc-item,
-  .rg-stagecard, .rg-stagecard-map, .rg-zonecard, .rg-zone, .portal-card,
-  .portal-card-icon, .ship-room, .story-thumb, .search-wrap, .rg-diffbar,
+  .rg-stagecard, .rg-stagecard-map, .rg-zonecard, .rg-zone,
+  .ship-room, .story-thumb, .search-wrap, .rg-diffbar,
   .prio-setting, .planner-controls, .data-note, .digest-group-kind, .strategy-cell,
   .power-cell) {
   border-radius: var(--r-md);

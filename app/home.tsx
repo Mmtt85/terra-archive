@@ -28,6 +28,7 @@ import { bindEscClose } from "./esc-close";
 import { feedbackReady } from "./feedback";
 import { tabHasNewFeature } from "./whats-new";
 import { scrollMainTop } from "./scroll";
+import { PORTAL_TILES, PORTAL_THEMES, PORTAL_ART, themeById, backdropOf, randomTheme, stageClock, type PortalTile } from "./portal-themes";
 import { useLazyVisible } from "./lazy-img";
 import { I18nProvider, useI18n, conceptName, DT_LOCALE, MAGIC_TRAIT_RE, LOCALES, type Locale, type ExtraI18n } from "./i18n";
 
@@ -618,37 +619,147 @@ function ThemeToggle() {
   );
 }
 
-// 포탈 첫화면 — 루트(/)의 랜딩. 각 도구로 가는 큰 버튼만 두어, 진입 시 오퍼 이미지 로딩이
-// 전혀 없다 (사용자 확정 2026-07-17: 데이터 소진 방지). 오퍼 백과사전은 여기서 /operators로 이동.
-function Portal({ onOpenTab }: { onOpenTab: (tab: Tab) => void }) {
-  const { t } = useI18n();
-  // 메뉴 순서는 햄버거 메뉴와 동일하게 유지 (사용자 확정 2026-07-17: 인프라 자동편성기 최상단).
-  const cards: { tab: Tab; icon: string; name: string; desc: string }[] = [
-    { tab: "planner", icon: "⌂", name: t("인프라 자동편성기"), desc: t("보유 오퍼만 입력하면 기반시설 편성을 자동으로 계산") },
-    { tab: "archive", icon: "▤", name: t("오퍼 백과사전"), desc: t("소속·직군·태그·시너지로 필터·검색하는 오퍼레이터 도감") },
-    { tab: "recruit", icon: "◎", name: t("공채 도우미"), desc: t("공개모집 태그 조합으로 확정·고성급 오퍼를 탐색") },
-    { tab: "farm", icon: "◈", name: t("파밍 도우미"), desc: t("정예화 재료의 최적 파밍 스테이지와 이성 효율표") },
-    { tab: "upgrade", icon: "▦", name: t("오퍼 육성 시뮬"), desc: t("오퍼 육성에 필요한 용문폐·재료 총량을 단계별로 계산") },
-    { tab: "story", icon: "✦", name: t("스토리"), desc: t("이벤트 스토리를 AI 요약과 전문(풀 스크립트)으로") },
-    { tab: "rogue", icon: "❖", name: t("통합전략 가이드"), desc: t("층별 노드·적 도감·유물·엔딩 조건을 난이도별로 정리") },
-    { tab: "about", icon: "ⓘ", name: t("테라 아카이브 소개"), desc: t("각 기능이 무엇이고 언제 쓰는지 안내") },
-  ];
+// 포탈 첫화면 — 게임 홈 화면을 본뜬 대문 (사용자 요청 2026-07-30: "인게임 UI에 맞춰보자").
+// 칸 ↔ 기능 매핑과 테마(겉모습)는 app/portal-themes.ts에 분리해 뒀다 — 테마를 갈아끼워도
+// 버튼 구성은 그대로다. 새 테마는 PORTAL_THEMES에 항목 하나만 추가하면 된다.
+//
+// ⚠ 종전 규칙 변경: 포탈은 "진입 시 오퍼 이미지 로딩이 전혀 없다"(2026-07-17)였는데,
+//    게임 UI를 흉내 내려면 배경 캐릭터 아트가 필요하다. 대신 **한 장(약 180KB)만** 쓰고
+//    fetchpriority=low·decoding=async로 내려, 종전 카드 그리드보다 요청 수는 오히려 적다.
+const SITE_OPENED = Date.parse("2026-07-11T00:00:00+09:00"); // 첫 커밋일 — LV 자리의 '운영 일수'
+
+function Portal({ onOpenTab, onFeedback, stats }: {
+  onOpenTab: (tab: Tab) => void;
+  onFeedback: () => void;
+  stats: { operators: number; summaries: number };
+}) {
+  const { locale, t } = useI18n();
+  const [themeId, setThemeId] = useState(PORTAL_THEMES[0].id);
+  const [now, setNow] = useState<number | null>(null); // 서버 렌더엔 시각이 없다 → 마운트 후
+  const [events, setEvents] = useState<GameEvent[]>([]);
+  const [slide, setSlide] = useState(0);   // 배너에서 몇 번째 이벤트를 보고 있나
+  useEffect(() => {
+    setThemeId(randomTheme());   // 들어올 때마다 무작위 (저장하지 않는다)
+    setNow(Date.now());
+    const id = setInterval(() => setNow(Date.now()), 30_000);
+    void fetchBcastPayload().then((data) => { if (data) setEvents(data.events); });
+    return () => clearInterval(id);
+  }, []);
+  const theme = themeById(themeId);
+  const shuffle = () => setThemeId((cur) => randomTheme(cur));
+
+  // 배너 칸 = 진행중 + 진행 예정을 좌우로 넘겨 본다 (사용자 요청 2026-07-30).
+  // 진행중이 앞, 그 뒤에 시작이 임박한 순으로 예정 이벤트.
+  const running = now == null ? [] : sortRunning(events, now);
+  const upcoming = now == null ? [] : events
+    .filter((e) => Date.parse(e.start) > now && !MINOR_EVENT_TYPES.has(e.type ?? ""))
+    .sort((a, b) => Date.parse(a.start) - Date.parse(b.start));
+  const reel = [...running, ...upcoming];
+  const at = reel.length ? ((slide % reel.length) + reel.length) % reel.length : 0;
+  const headline = reel[at];
+  const soon = headline != null && now != null && Date.parse(headline.start) > now;
+  // 게이지: 이벤트 기간 중 지난 비율 (게임의 이성 시계 자리 — 값은 실제 기간에서 계산)
+  const ratio = headline && now != null
+    ? Math.min(1, Math.max(0, (now - Date.parse(headline.start)) / (Date.parse(headline.end) - Date.parse(headline.start))))
+    : 0;
+  const dleft = headline && now != null
+    ? Math.max(0, Math.ceil((Date.parse(soon ? headline.start : headline.end) - now) / DAY))
+    : 0;
+
+  const openTile = (tile: PortalTile) => {
+    // 이벤트 칸은 공식 카페 공지로 (사용자 지시 2026-07-30). 공지가 없는 이벤트만 스토리로.
+    if (tile.kind === "banner") {
+      if (headline?.url) { window.open(headline.url, "_blank", "noopener"); return; }
+      onOpenTab("story"); scrollMainTop(); return;
+    }
+    if (tile.action === "feedback") return onFeedback();
+    if (tile.action === "changelog") { window.location.hash = "#changelog-all"; return; }
+    if (tile.action === "donate") { window.open("https://buymeacoffee.com/terra_archive", "_blank", "noopener"); return; }
+    if (tile.href) { window.open(tile.href, "_blank", "noopener"); return; }
+    if (tile.tab) { onOpenTab(tile.tab as Tab); scrollMainTop(); }
+  };
+
+  const days = now == null ? 0 : Math.max(1, Math.floor((now - SITE_OPENED) / DAY) + 1);
+
   return (
-    <section className="portal" aria-labelledby="portal-title">
-      <div className="portal-hero">
-        <span className="portal-kicker">TERRA ARCHIVE</span>
-        <h1 id="portal-title">{t("테라 아카이브")}</h1>
-        <p>{t("명일방주(아크나이츠) 팬사이트 — 필요한 도구를 골라 들어가세요.")}</p>
+    <section className="pt-stage" data-pt={theme.id} aria-labelledby="portal-title"
+      style={{ ...theme.vars, "--pt-backdrop": backdropOf(theme) } as React.CSSProperties}>
+      {/* 배경 아트 — 장식이므로 alt는 비운다. 늦게 떠도 레이아웃이 밀리지 않게 절대배치. */}
+      <img className="pt-art" src={asset(PORTAL_ART)} alt="" decoding="async" fetchPriority="low" />
+      <span className="pt-scrim" aria-hidden />
+
+      {/* 상단바 — 게임의 시계 줄. 재화 카운터는 뜻이 안 통해 뺐다 (사용자 지시 2026-07-30). */}
+      <div className="pt-top">
+        <span className="pt-clock">{now == null ? "—" : stageClock(locale, now)}</span>
       </div>
-      <div className="portal-grid">
-        {cards.map((card) => (
-          <button key={card.tab} type="button" className={`portal-card portal-${card.tab}`}
-            onClick={() => { onOpenTab(card.tab); scrollMainTop(); }}>
-            <span className="portal-card-icon" aria-hidden>{card.icon}</span>
-            <span className="portal-card-body"><b>{card.name}</b><small>{card.desc}</small></span>
-            <span className="portal-card-go" aria-hidden>→</span>
-          </button>
-        ))}
+
+      {/* 좌측 — 게임의 독타 프로필 자리 */}
+      <div className="pt-player">
+        <span className="pt-lv"><b>{days}</b><small>DAY</small></span>
+        <h1 id="portal-title" className="pt-name">{t("테라 아카이브")}</h1>
+        <p className="pt-sub">{t("명일방주(아크나이츠) 팬사이트 — 필요한 도구를 골라 들어가세요.")}</p>
+      </div>
+
+      {/* 우측 타일 — 배치는 CSS grid-template-areas(=tile.area)가 잡는다 */}
+      <div className="pt-tiles">
+        {PORTAL_TILES.map((tile) => {
+          // 배너는 tab/action이 없어도 이벤트 공지를 여는 칸이다 — 장식 판정에서 제외
+          const dead = tile.kind !== "banner" && !tile.tab && !tile.action && !tile.href;
+          const isBanner = tile.kind === "banner";
+          const thumb = isBanner && headline ? eventThumb(locale, headline) : undefined;
+          return (
+            <button key={tile.id} type="button" disabled={dead}
+              className={`pt-tile pt-${tile.kind} pt-t-${tile.id}${dead ? " dead" : ""}`}
+              style={{ gridArea: tile.area }}
+              onClick={() => openTile(tile)}
+              title={dead ? t("사이트에는 없는 기능이에요") : t(tile.label)}>
+              {isBanner ? (
+                <span className="pt-banner-in">
+                  {thumb && <img className="pt-banner-img" src={thumb} alt="" loading="lazy" decoding="async" />}
+                  {/* 게이지 = 이벤트 진행률. 게임의 이성 시계 자리를 실제 기간에서 계산해 채운다. */}
+                  <span className="pt-gauge" style={{ "--pt-ratio": ratio } as React.CSSProperties}>
+                    <b>{headline ? `D-${dleft}` : "—"}</b>
+                    <small>{soon ? t("시작") : t("종료")}</small>
+                  </span>
+                  <span className="pt-banner-txt">
+                    <b>{headline ? eventName(locale, headline) : t("진행중 이벤트")}</b>
+                    <small>{headline ? t(soon ? "곧 시작합니다" : "진행중") : t("불러오는 중…")}</small>
+                  </span>
+                  {/* 좌우로 진행 예정 이벤트까지 넘겨 본다. 버튼이라 안쪽에 두면 중첩되므로
+                      배너 클릭(카페 공지 열기)과 겹치지 않게 이벤트 전파를 막는다. */}
+                  {reel.length > 1 && (
+                    <>
+                      <span className="pt-nav prev" role="button" tabIndex={0} aria-label={t("이전 이벤트")}
+                        onClick={(e) => { e.stopPropagation(); setSlide(at - 1); }}
+                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setSlide(at - 1); } }}>‹</span>
+                      <span className="pt-nav next" role="button" tabIndex={0} aria-label={t("다음 이벤트")}
+                        onClick={(e) => { e.stopPropagation(); setSlide(at + 1); }}
+                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setSlide(at + 1); } }}>›</span>
+                      <span className="pt-dots" aria-hidden>{reel.map((_, i) => <i key={i} className={i === at ? "on" : ""} />)}</span>
+                    </>
+                  )}
+                </span>
+              ) : (
+                <>
+                  <span className="pt-head">
+                    <span className="pt-ic" aria-hidden>{tile.icon}</span>
+                    <span className="pt-ko">{t(tile.label)}</span>
+                  </span>
+                  {tile.desc && <span className="pt-desc">{t(tile.desc)}</span>}
+                </>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* 테마 — 들어올 때마다 무작위. 🎲로 그 자리에서 다음 것으로 넘긴다. */}
+      <div className="pt-themebar">
+        <button type="button" className="pt-themebtn" onClick={shuffle}
+          title={t("홈 화면 테마")} aria-label={t("홈 화면 테마")}>
+          <span aria-hidden>🎲</span>
+          <em>{PORTAL_THEMES.findIndex((th) => th.id === theme.id) + 1}/{PORTAL_THEMES.length}</em>
+        </button>
       </div>
     </section>
   );
@@ -1269,7 +1380,8 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
           올라오지 않도록 — 사용자 요청 2026-07-22, 모바일·PC 공통). 모달·제안 위젯은 fixed라 밖에 둔다. */}
       <div className="site-scroll">
 
-      {tab === "portal" && <Portal onOpenTab={switchTab} />}
+      {tab === "portal" && <Portal onOpenTab={switchTab} onFeedback={() => setFeedbackOpen(true)}
+        stats={{ operators: operators.length, summaries: Object.keys(summaries).length }} />}
 
       {tab === "archive" && <section className="explorer" aria-labelledby="explorer-title">
         <div className="filter-panel">
