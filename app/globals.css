@@ -9425,6 +9425,23 @@ html.dark .story-card:hover .story-thumb img {
   padding: 0;
   background: var(--pt-plate-2);
 }
+/* 섬네일이 없는 게임 모드 이벤트 — 빈 판 대신 포인트색 바탕 + 종류 기호 하나로 통일
+   (사용자 확정 2026-07-30). 그림이 생기면 이 규칙은 저절로 빠진다. */
+.pt-banner.nothumb {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--pt-accent) 26%, var(--pt-plate-2)) 0%,
+      var(--pt-plate-2) 68%);
+}
+.pt-mode {
+  position: absolute;
+  z-index: 0;
+  right: 6px;
+  bottom: -14px;
+  font-size: 92px;
+  line-height: 1;
+  color: color-mix(in srgb, var(--pt-accent) 34%, transparent);
+  pointer-events: none;
+}
 /* 좌우 넘김 — 진행 예정 이벤트까지 본다 (사용자 요청 2026-07-30) */
 /* 좌우 넘김은 오른쪽 위 한 곳에 모은다 — 세로 가운데에 두면 왼쪽 게이지와 겹친다
    (실측 2026-07-30: 게이지 48px + 화살표 22px가 배너 198px 안에서 포개졌다) */

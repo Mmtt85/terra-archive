@@ -240,6 +240,20 @@ const storyEventById = new Map(storyEventsList.map((event) => [event.id, event])
 const futureEvents = storyEventsList
   .filter((event) => event.unreleased)
   .sort((a, b) => (a.eta ?? a.id).localeCompare(b.eta ?? b.id));
+// 섬네일이 없는 이벤트(= 스토리 이벤트가 아닌 **게임 모드**)를 위한 글리프.
+// 벡터 돌파·생존 연산 같은 모드는 story_review_table에 없어 storyEntryPicId 자체가 없다
+// (실측 2026-07-30: act2break는 KR·CN 어느 저장소에도 배너 에셋이 없다).
+// 빈 칸으로 두는 대신 종류를 알아볼 수 있는 기호 하나로 통일한다 (사용자 확정 2026-07-30).
+const MODE_GLYPH: [RegExp, string][] = [
+  [/VEC_BREAK/, "⇉"],      // 벡터 돌파
+  [/SANDBOX/, "▣"],        // 생존 연산
+  [/ROGUELIKE/, "❖"],      // 통합전략
+  [/BOSS|CHALLENGE/, "⚔"],
+  [/COLLECTION|SWITCH/, "◇"],
+];
+const modeGlyph = (event: GameEvent): string =>
+  MODE_GLYPH.find(([re]) => re.test(event.type ?? ""))?.[1] ?? "✦";
+
 // 사이드스토리·복각 등 굵직한 이벤트 — 배지 대표로 우선한다 (로그인·출석류보다)
 const MAJOR_EVENT_TYPES = new Set(["SIDESTORY", "BRANCHLINE", "MINISTORY"]);
 // 로그인·출석·기원 등 "보상 수령만" 하는 잔이벤트 — 헤더에서 아예 숨긴다 (사용자 확정 2026-07-17).
@@ -727,7 +741,9 @@ function Portal({ onOpenTab, onFeedback, stats }: {
               title={dead ? t("사이트에는 없는 기능이에요") : t(tile.label)}>
               {isBanner ? (
                 <span className="pt-banner-in">
-                  {thumb && <img className="pt-banner-img" src={thumb} alt="" loading="lazy" decoding="async" />}
+                  {thumb
+                    ? <img className="pt-banner-img" src={thumb} alt="" loading="lazy" decoding="async" />
+                    : headline && <span className="pt-mode" aria-hidden>{modeGlyph(headline)}</span>}
                   {/* 게이지 = 이벤트 진행률. 게임의 이성 시계 자리를 실제 기간에서 계산해 채운다. */}
                   <span className="pt-gauge" style={{ "--pt-ratio": ratio } as React.CSSProperties}>
                     <b>{headline ? `D-${dleft}` : "—"}</b>
