@@ -820,10 +820,6 @@ const D: Record<string, Pair> = {
   "용량 변환": ["Capacity → output", "容量→出力変換"],
   "증폭": ["Amplify", "増幅"],
   "편성 없음": ["No assignment", "編成なし"],
-  "아래에서 오퍼를 빼거나(✕) 대체 오퍼·추가 후보를 클릭하면 즉시 다시 계산됩니다. 단, 토큰 포인트(속세의 화식 등)와 패키지 구성은 마지막 자동편성 기준이므로, 토큰 생성원을 바꿨다면 자동편성 실행으로 재계산하세요.": [
-    "Remove operators (✕) or click substitutes/candidates below to recalculate instantly. Token points (Worldly Plight, etc.) and package composition follow the last auto-assign — rerun it if you changed token generators.",
-    "下でオペレーターを外す（✕）か、代替・追加候補をクリックすると即座に再計算されます。ただしトークンポイント（俗世之憂など）とパッケージ構成は最後の自動編成基準なので、生成要員を変えた場合は自動編成を実行し直してください。",
-  ],
   "편성 ({a}/{b})": ["Crew ({a}/{b})", "編成（{a}/{b}）"],
   "숙소는 **항상 5명을 꽉 채운 상태로 유지**하세요. 고정 생성원 외의 빈 자리는 휴식이 필요한 아무 오퍼레이터로 채우면 됩니다 — 토큰 생성과 회복 효율은 풀 인원 기준으로 계산됩니다.": [
     "Keep dorms **filled with 5 at all times**. Fill non-pinned seats with any operator who needs rest — token generation and recovery are computed at full occupancy.",

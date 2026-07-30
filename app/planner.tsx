@@ -1947,28 +1947,35 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
               return <span className="room-level-fxline">{t("{n}인", { n: p.slots ?? 1 })} · {fx}</span>;
             })()}
           </div>
+          {/* 조 탭 + 종합 효율을 헤더 한 줄에 (사용자 요청 2026-07-30: "밑으로 드르륵 하면
+              종합효율이 안 보여서 곤란"). 모달은 grid(헤더 auto + 본문 1fr)라 헤더는 원래부터
+              스크롤 밖 고정이므로, 요약을 여기로 올리는 것만으로 항상 보인다 — 본문의
+              RESULT/00 섹션은 그래서 없앴다(같은 숫자를 두 번 그리지 않는다). */}
           {cell.room !== "DORMITORY" && (
-            <div className="shift-tabs in-modal">
-              {Array.from({ length: SHIFT_COUNT }, (_, i) => (
-                <button key={i} className={shift === i ? "selected" : ""} onClick={() => setShift(i)}>{[t("A조"), t("B조")][i]}</button>
-              ))}
+            <div className="room-head-foot">
+              <div className="shift-tabs in-modal">
+                {Array.from({ length: SHIFT_COUNT }, (_, i) => (
+                  <button key={i} className={shift === i ? "selected" : ""} onClick={() => setShift(i)}>{[t("A조"), t("B조")][i]}</button>
+                ))}
+              </div>
+              {scored && (
+                <div className="room-head-eff">
+                  <span className="rh-eff-total">
+                    {t("종합 효율")}{cell.product ? ` · ${t(cell.product === "gold" ? "순금" : "작전기록")}` : ""}
+                    <b>+{currentScore}{cell.room === "CONTROL" ? "" : "%"}</b>
+                  </span>
+                  <span className="rh-eff-parts">
+                    {Object.entries(agg).filter(([, value]) => Math.round(value) !== 0).map(([name, value]) => (
+                      <span key={name}>{t(name)} <b>{Math.round(value) >= 0 ? "+" : ""}{Math.round(value)}</b></span>
+                    ))}
+                    {team.length === 0 && <span>{t("편성 없음")}</span>}
+                  </span>
+                </div>
+              )}
             </div>
           )}
         </header>
         <div className="modal-scroll">
-          {scored && (
-            <section className="detail-section room-summary">
-              <span className="detail-no">RESULT / 00</span>
-              <h3>{t("종합 효율")}{cell.product ? ` · ${cell.product}` : ""} <b className="summary-total">+{currentScore}{cell.room === "CONTROL" ? "" : "%"}</b></h3>
-              <div className="summary-parts">
-                {Object.entries(agg).filter(([, value]) => Math.round(value) !== 0).map(([name, value]) => (
-                  <span key={name}>{t(name)} <b>{Math.round(value) >= 0 ? "+" : ""}{Math.round(value)}</b></span>
-                ))}
-                {team.length === 0 && <span>{t("편성 없음")}</span>}
-              </div>
-              <p className="summary-note">{t("아래에서 오퍼를 빼거나(✕) 대체 오퍼·추가 후보를 클릭하면 즉시 다시 계산됩니다. 단, 토큰 포인트(속세의 화식 등)와 패키지 구성은 마지막 자동편성 기준이므로, 토큰 생성원을 바꿨다면 자동편성 실행으로 재계산하세요.")}</p>
-            </section>
-          )}
           <section className="detail-section">
             <span className="detail-no">CREW / 01</span>
             <h3>{t("편성 ({a}/{b})", { a: team.length, b: slots })}</h3>
