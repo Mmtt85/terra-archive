@@ -2293,14 +2293,36 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
     return { futureOps: future, releasedOps: released, visible: [...future, ...released] };
   }, [allOps, keyword, sortKey, sortAsc]);
   // useCallback 필수 — RosterCard의 memo가 이 참조로 판정한다
-  const toggle = useCallback((id: string) => setDraft((current) => {
-    const next = new Set(current);
-    if (next.has(id)) next.delete(id); else next.add(id);
-    return next;
-  }), []);
+  // 새로 체크한 오퍼는 **노정예로 시작**한다 (사용자 확정 2026-07-30: "체크하면 기본적으로는
+  // 노정예로 해 줘"). 체크하는 순간 0을 명시로 써 넣는 방식이다 — 저장 규약(맵에 값이 없으면
+  // 만정예)까지 뒤집으면 **이미 저장된 로스터가 통째로 노정예가 되어** 기존 편성이 무너진다.
+  // 그래서 새로 들어오는 오퍼만 노정예고, 예전에 체크해 둔 오퍼는 건드리지 않는다.
+  // 가져오기(MAA·스캐너·계정 연동)는 진짜 정예화를 실어 오므로 이 기본값을 타지 않는다.
+  const draftRef = useRef(draft);
+  draftRef.current = draft;
+  const startAtE0 = (map: Map<string, Elite>, ids: string[]) => {
+    let next: Map<string, Elite> | null = null;
+    for (const id of ids) {
+      if (map.has(id)) continue;                       // 이미 지정된 값은 존중
+      const op = opById.get(id);
+      if (!op || eliteOptions(op).length === 0) continue; // 1~2성은 승급 자체가 없다
+      next ??= new Map(map);
+      next.set(id, 0);
+    }
+    return next ?? map;
+  };
+  const toggle = useCallback((id: string) => {
+    const adding = !draftRef.current.has(id);
+    setDraft((current) => {
+      const next = new Set(current);
+      if (adding) next.add(id); else next.delete(id);
+      return next;
+    });
+    if (adding) setEliteDraft((current) => startAtE0(current, [id]));
+  }, []);
   const setElite = useCallback((id: string, elite: Elite) => setEliteDraft((current) => {
     const next = new Map(current);
-    if (elite === 2) next.delete(id); else next.set(id, elite); // 2정이 기본값이라 별도 저장 불필요
+    if (elite === 2) next.delete(id); else next.set(id, elite); // 2정 = 맵에 없음 (저장 규약)
     return next;
   }), []);
   const renderCard = (op: InfraOp) => {
@@ -2313,11 +2335,18 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
   };
   // 성급 단위 일괄 조작 — 보유 체크/해제, 정예화 노정예/1정/2정
   // (정예화는 3성 이상에만 적용 — 2성 이하는 승급이 없어 보유/해제만)
-  const bulkOwn = (test: (rarity: number) => boolean, own: boolean) => setDraft((current) => {
-    const next = new Set(current);
-    for (const op of allOps) if (test(op.rarity)) { if (own) next.add(op.id); else next.delete(op.id); }
-    return next;
-  });
+  const bulkOwn = (test: (rarity: number) => boolean, own: boolean) => {
+    const added: string[] = [];
+    setDraft((current) => {
+      const next = new Set(current);
+      for (const op of allOps) {
+        if (!test(op.rarity)) continue;
+        if (own) { if (!next.has(op.id)) added.push(op.id); next.add(op.id); } else next.delete(op.id);
+      }
+      return next;
+    });
+    if (own) setEliteDraft((current) => startAtE0(current, added)); // 일괄 체크도 노정예로 시작
+  };
   const bulkElite = (test: (rarity: number) => boolean, elite: Elite) => setEliteDraft((current) => {
     const next = new Map(current);
     for (const op of allOps) {
@@ -2447,7 +2476,7 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
             />
           ) : (
           <>
-          <p className="dorm-note">{rich(t("3성 이상 오퍼는 카드 아래에서 **노정예/1정/2정**(3성은 1정까지)을 선택할 수 있습니다 (기본값 최대 정예화). 얼굴을 클릭하면 상세 정보가 열립니다."))}</p>
+          <p className="dorm-note">{rich(t("3성 이상 오퍼는 카드 아래에서 **노정예/1정/2정**(3성은 1정까지)을 선택할 수 있습니다 — 새로 체크하면 **노정예로 시작**하니 키운 만큼 올려 주세요. 얼굴을 클릭하면 상세 정보가 열립니다."))}</p>
           {allOps.some((op) => op.unreleased) && (
             <p className="dorm-note">{rich(t("**미실장** 배지가 붙은 오퍼는 미출시(중국 서버 선행) 오퍼입니다 — 미래시 데이터 포함이 켜져 있을 때만 표시되며, 스킬 텍스트는 비공식 AI 번역입니다."))}</p>
           )}

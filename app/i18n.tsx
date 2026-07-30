@@ -976,9 +976,9 @@ const D: Record<string, Pair> = {
     "Could not read the MAA file — make sure it is an operator-box recognition JSON (e.g. Arknights_OperBox_Export.json).",
     "MAAファイルを認識できませんでした — オペレーターBOX認識結果のJSON（Arknights_OperBox_Export.json など）か確認してください。",
   ],
-  "3성 이상 오퍼는 카드 아래에서 **노정예/1정/2정**(3성은 1정까지)을 선택할 수 있습니다 (기본값 최대 정예화). 얼굴을 클릭하면 상세 정보가 열립니다.": [
-    "Operators of 3★ and above can be set to **E0/E1/E2** under their card (3★ up to E1; default: max promotion). Click a portrait to open details.",
-    "星3以上のオペレーターは、カード下で**未昇進/昇進1/昇進2**（星3は昇進1まで）を選択できます（デフォルトは最大昇進）。顔をクリックすると詳細が開きます。",
+  "3성 이상 오퍼는 카드 아래에서 **노정예/1정/2정**(3성은 1정까지)을 선택할 수 있습니다 — 새로 체크하면 **노정예로 시작**하니 키운 만큼 올려 주세요. 얼굴을 클릭하면 상세 정보가 열립니다.": [
+    "Operators of 3★ and above can be set to **E0/E1/E2** under their card (3★ up to E1) — a newly ticked operator **starts at E0**, so raise it to match what you actually own. Click a portrait to open details.",
+    "星3以上のオペレーターは、カード下で**未昇進/昇進1/昇進2**（星3は昇進1まで）を選択できます — 新しくチェックしたオペレーターは**未昇進から始まる**ので、育てた分だけ上げてください。顔をクリックすると詳細が開きます。",
   ],
   "6성": ["6★", "星6"],
   "5성": ["5★", "星5"],
