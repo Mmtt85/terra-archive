@@ -3558,13 +3558,22 @@ footer p {
 }
 .rel-chips {
   display: inline-flex;
+  /* 명단이 길면 줄바꿈 — 라테라노 15명 같은 진영 명단이 모달 밖으로 밀려 나갔다
+     (사용자 제보 2026-07-31). max-width로 줄 폭을 방 모달 안에 가둔다. */
+  flex-wrap: wrap;
+  max-width: 100%;
   gap: 3px;
   margin-left: 6px;
   vertical-align: middle;
 }
-.rel-chips img {
-  width: 22px;
-  height: 22px;
+/* 얼굴 크기 42px — 원래 CSS의 22px와 실제로 그려지던 62px의 가운데 (사용자 요청 2026-07-31:
+   22px는 "누군지 보이지도 않는다", 62px는 너무 크다). 62px는 아래 .crew-card img가 같은
+   특이도·뒤 순서로 이 줄을 덮어 우연히 나오던 값이라, 여기서 명시해 고정한다.
+   넘침의 원인은 크기가 아니라 위의 flex-wrap 부재였다. */
+.rel-chips img,
+.crew-card .rel-chips img {
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
   object-fit: cover;
   cursor: pointer;
