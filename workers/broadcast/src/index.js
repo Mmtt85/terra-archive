@@ -20,7 +20,24 @@ const DEFAULT_DURATION_MIN = 150;
 // GitHub Actions 러너(도달 확인됨)에서 scripts/build-broadcasts-cn.py가 수집해
 // app/data/broadcasts.json에 커밋하고, 프론트가 워커 payload와 합쳐 보여준다.
 
-async function poll(env) {
+// ⚠ 이 헬퍼는 4c2eaba6(2026-07-25)에서 위 주석 블록으로 **실수로 덮여 사라졌다**. 호출부 3곳은
+// 그대로 남아 poll()이 매번 ReferenceError로 죽었고, KV가 7/25 19:40에 얼어붙어 5일간
+// 방송·이벤트가 갱신되지 않았다(2026-07-30 발견·복구). 크론 실패는 아무 데도 안 알려주므로
+// payload.updated가 오래됐는지 가끔 봐야 한다.
+async function yt(path, params, apiKey) {
+  const url = new URL(`https://www.googleapis.com/youtube/v3/${path}`);
+  for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+  url.searchParams.set("key", apiKey);
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`YouTube ${path} ${res.status}: ${await res.text()}`);
+  return res.json();
+}
+
+// 방송 수집(유튜브)과 이벤트 수집(클뜯)은 **서로 인질이 되면 안 된다** — 종전엔 한 덩어리라
+// 유튜브 호출이 한 번 실패하면 KV 쓰기까지 통째로 건너뛰어 이벤트 목록도 같이 얼어붙었다
+// (실제로 5일 얼었다, 위 yt 주석 참조). 이제 방송 쪽이 죽어도 이전 목록을 그대로 들고
+// 이벤트만 갱신해 저장한다.
+async function collectBroadcasts(env, prev) {
   const apiKey = env.YOUTUBE_API_KEY;
   const videoIds = new Map(); // videoId -> server
 
@@ -43,7 +60,6 @@ async function poll(env) {
   }
 
   // 이전 저장분도 다시 조회 대상에 포함 — 예약→라이브→종료 전환과 시각 변경을 반영
-  const prev = (await env.BCAST.get(KV_KEY, "json")) ?? { broadcasts: [], events: [] };
   const now = Date.now();
   for (const b of prev.broadcasts) {
     const fresh = now - Date.parse(b.start) < 7 * 86_400_000; // 최근 7일 것만 재확인
@@ -80,14 +96,24 @@ async function poll(env) {
     }
   }
 
-  const broadcasts = [...merged.values()]
+  return [...merged.values()]
     .filter((b) => !Number.isNaN(Date.parse(b.start)))
     .sort((a, b) => Date.parse(b.start) - Date.parse(a.start))
     .slice(0, MAX_ENTRIES);
+}
+
+async function poll(env) {
+  const prev = (await env.BCAST.get(KV_KEY, "json")) ?? { broadcasts: [], events: [] };
+  // 한쪽이 죽어도 나머지는 갱신한다. 실패 사유는 payload에 남겨 /admin·수동 점검에서 보이게.
+  const notes = [];
+  const broadcasts = await collectBroadcasts(env, prev)
+    .catch((e) => { notes.push(`broadcasts: ${e.message ?? e}`); return prev.broadcasts ?? []; });
   // 진행중 게임 이벤트도 같은 payload에 실어 헤더가 fetch 한 번으로 다 받게 한다.
   // 클뜯 불통 시 이전 저장분 유지 — 판정은 클라이언트가 start/end로 하므로 하루쯤 묵어도 된다.
-  const events = await fetchEvents().catch(() => prev.events ?? []);
+  const events = await fetchEvents()
+    .catch((e) => { notes.push(`events: ${e.message ?? e}`); return prev.events ?? []; });
   const payload = { updated: new Date().toISOString(), broadcasts, events };
+  if (notes.length) payload.errors = notes;
   await env.BCAST.put(KV_KEY, JSON.stringify(payload));
   return payload;
 }
@@ -128,6 +154,28 @@ function noticeUrlFor(name, articles) {
   return best ? `https://cafe.naver.com/arknightskor/${best.id}` : undefined;
 }
 
+// 손으로 넣는 임시 이벤트 — 클뜯 레포는 **패치가 끝난 뒤에야** 갱신된다.
+// (실측: 사세행은 7/16 16:00 시작인데 activity_table 커밋은 같은 날 18:09 — 2시간 늦었다.
+//  거기에 이 워커의 크론 주기 6시간이 더해지면 최대 반나절 늦게 뜬다.)
+// 그 공백만 메우는 자리다. 규칙:
+//   · 진짜 activity_table에 같은 id가 들어오면 **그 즉시 이쪽은 버려진다** (실데이터 우선).
+//   · `until`이 지나면 무시 — 손으로 넣은 값이 잊힌 채 남는 걸 막는 안전장치.
+//   · 값은 실제 행과 똑같은 모양으로 적는다(type·displayType 포함). 그래야 실데이터로
+//     바뀌는 순간 화면이 달라지지 않는다.
+const MANUAL_EVENTS = [
+  {
+    // 벡터 돌파#2 — KR 2026-07-30 16:00 시작(공식 카페 공지). 종료는 중섭 act2break와 같은
+    // 길이(20.5일)로 잡은 **추정치**다. 실데이터가 오면 바로 대체된다.
+    id: "act2break",
+    name: "벡터 돌파#2: 주술의 밤",
+    type: "VEC_BREAK_V2",
+    displayType: "NONE",
+    start: "2026-07-30T07:00:00.000Z", // KST 07-30 16:00
+    end: "2026-08-19T18:59:59.000Z",   // KST 08-20 03:59:59 (추정)
+    until: "2026-08-21",
+  },
+];
+
 async function fetchEvents() {
   const res = await fetch(`${GAMEDATA_BASE}/activity_table.json`);
   if (!res.ok) throw new Error(`activity fetch ${res.status}`);
@@ -135,7 +183,7 @@ async function fetchEvents() {
   const now = Date.now();
   const soon = now + 21 * 86_400_000;
   const articles = await fetchEventNotices().catch(() => []); // 카페 불통이어도 이벤트는 살린다
-  return Object.values(table.basicInfo ?? {})
+  const real = Object.values(table.basicInfo ?? {})
     .filter((a) => a.startTime > 0 && a.endTime * 1000 > now && a.startTime * 1000 < soon)
     .map((a) => ({
       id: a.id,
@@ -145,8 +193,13 @@ async function fetchEvents() {
       start: new Date(a.startTime * 1000).toISOString(),
       end: new Date(a.endTime * 1000).toISOString(),
       url: noticeUrlFor(a.name, articles),
-    }))
-    .sort((a, b) => Date.parse(a.end) - Date.parse(b.end));
+    }));
+  const known = new Set(real.map((e) => e.id));
+  const manual = MANUAL_EVENTS
+    .filter((m) => !known.has(m.id) && Date.parse(m.until) > now
+      && Date.parse(m.end) > now && Date.parse(m.start) < soon)
+    .map(({ until, ...m }) => ({ ...m, url: noticeUrlFor(m.name, articles) }));
+  return [...real, ...manual].sort((a, b) => Date.parse(a.end) - Date.parse(b.end));
 }
 
 // ── 게임 데이터 신규 항목 감지 ─────────────────────────────
