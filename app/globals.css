@@ -9221,7 +9221,9 @@ html.dark .story-card:hover .story-thumb img {
   /* 위아래로도 화면을 채운다 (사용자 요청 2026-07-30). --header-h는 home.tsx가 헤더 실제
      높이를 재서 넣어 준다 — 접힘/펼침으로 달라지므로 고정값을 쓰면 어긋난다. */
   min-height: calc(100dvh - var(--header-h, 56px));
-  padding: 14px 16px 18px;
+  /* 위 여백: 가운데 정렬은 위가 휑했고(약 160px) start는 헤더에 딱 붙었다(14px) —
+     그 사이 (사용자 지적 2026-07-30) */
+  padding: clamp(22px, 5vh, 52px) 16px 18px;
   /* 배경은 화면 끝까지 (사용자 요청 2026-07-30) — 다른 섹션에 걸리는 전역 70% 컬럼 규칙을
      여기서만 풀고, 대신 안쪽 padding으로 내용을 같은 자리에 맞춘다. 풀블리드라 모서리는 각지게. */
   border-radius: 0;
@@ -9237,15 +9239,17 @@ html.dark .story-card:hover .story-thumb img {
 .pt-art {
   position: absolute;
   z-index: -2;
-  left: -2%;
+  left: -1%;
+  /* 윗변을 타일 첫 줄과 같은 선에 맞춘다 (사용자 요청 2026-07-30) — 스테이지 위 여백과
+     같은 값을 top에 주고 object-position도 위로 잡아야 실제로 그 선에 붙는다.
+     크기는 한 단계 더 축소(48% → 42%). */
+  top: clamp(22px, 5vh, 52px);
   bottom: 0;
-  /* 살짝 줄임 (사용자 요청 2026-07-30): 106% → 90%. contain + 왼쪽 아래 고정이라
-     높이를 줄이면 바닥에 붙은 채 작아진다. */
-  height: 90%;
+  height: auto;
   width: auto;
-  max-width: 48%;
+  max-width: 42%;
   object-fit: contain;
-  object-position: left bottom;
+  object-position: left top;
   pointer-events: none;
 }
 /* 아트 위에 얇게 깔아 글자 대비를 지킨다 — 아트가 밝든 어둡든 라벨이 읽히게 */
