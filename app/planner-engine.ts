@@ -522,6 +522,12 @@ export function setPriorityMode(priority?: ProdPriority) {
   DRAIN_MODE = splitPriority(priority).drain;
   ENDLESS_ON = DRAIN_MODE !== "off";
 }
+// 용량 변환 결집 후보(bestTeam)의 on/off. 방 점수는 분명히 오르는데 그 방이 가져간 오퍼 때문에
+// 옆방 결집(도로시 라인테크)이 깨져 **기지 총점은 내려가는** 경우가 있어(실측 exp −1.57),
+// optimizeConfig가 마지막에 켠 안과 끈 안을 planScore로 맞대 본다 (2026-07-30).
+export let CAP_CLUSTER_ON = true;
+let capClusterUsed = false; // 이번 buildPlan에서 결집 후보가 실제로 채택됐나 — A/B를 돌릴지 판단
+export function setCapCluster(on: boolean) { CAP_CLUSTER_ON = on; }
 // 제어센터 무한동력 성립 여부 — 로스터에 순소모 0 제어센터 조합이 있으면 buildPlan이 켠다.
 // 켜지면 ① 그 조합에 절대 우선 락 ② 토큰 패키지가 제어센터를 예약석으로 못 씀(죽은 사슬 방지).
 // 불가능한 로스터에선 꺼진 채로 종전 장기 지속 경쟁(화식 코어 등)이 그대로 돈다.
@@ -1181,6 +1187,36 @@ export function bestTeam(room: string, slots: number, pool: Map<string, InfraOp>
       const team = fill(seed);
       const score = teamValue(team, room, ctx);
       if (score > bestScore) { best = team; bestScore = score; }
+    }
+  }
+  // 용량 변환 결집 후보 (사용자 제보 2026-07-30: "창고 수량으로 생산량 늘리는 시너지 조합이
+  // 아예 적용이 안 되고 있나?"). 변환기(버메일 '재활용' 1칸당 2%·버블 '큰 게 좋아!')는 혼자면
+  // 0이고 용량 부여기도 대개 0~음수라(벌컨 −5%/+19칸·베나 −20%/+17칸), 한계 기여 등반은
+  // 개별 점수가 높은 언덕(표준화 3인 = 90)에 먼저 갇혀 **셋이 모여야 서는 정점**(버메일·씬·
+  // 팔라스 = 105)을 영영 못 본다 — 쇼트리스트 상시 포함(위 cap/capConv)만으론 부족했다.
+  // endless 그룹 회복 결집과 같은 관례로 **변환기를 시드**한 후보를 만들고, 남는 자리는
+  // ① 그리디 ② 용량 큰 순으로 채운 두 안을 teamValue로 비교한다. ②가 필요한 이유는 tier식
+  // (버블)이 **오퍼별 16칸 문턱**을 넘겨야 1%/칸 → 3%/칸이 되는 계단이라, 문턱 앞에서
+  // 한계 기여가 꺾여 등반이 멈추기 때문이다. 변환기는 방당 2~3명뿐이라 비용도 작다.
+  {
+    const converters = CAP_CLUSTER_ON ? cands.filter((op) => activeSkills(op, room, ctx.product).some((sk) => sk.capConv)) : [];
+    if (converters.length) {
+      const capOf = (op: InfraOp) => activeSkills(op, room, ctx.product).reduce((sum, sk) => sum + (sk.cap ?? 0), 0);
+      const givers = cands.filter((op) => capOf(op) > 0).sort((a, b) => capOf(b) - capOf(a));
+      for (const conv of converters) {
+        for (const withGivers of [false, true]) {
+          const seed = [...seedOps];
+          if (!seed.some((s) => s.id === conv.id)) seed.push(conv);
+          if (seed.length > slots) continue;
+          if (withGivers) for (const op of givers) {
+            if (seed.length >= slots) break;
+            if (!seed.some((s) => s.id === op.id)) seed.push(op);
+          }
+          const team = fill(seed);
+          const score = teamValue(team, room, ctx);
+          if (score > bestScore) { best = team; bestScore = score; capClusterUsed = true; }
+        }
+      }
     }
   }
   // endless 모드 · 그룹 회복 결집 후보 (레인보우 팀 무한동력, 2026-07-27): recoverRoomPer는
@@ -2526,6 +2562,7 @@ export async function optimizeConfig(fullRoster: InfraOp[], priority: ProdPriori
   // 로스터 기준이어야 buildPlan(내부에서 같은 필터)과 결과가 어긋나지 않는다.
   const roster = autoRoster(fullRoster, pinnedDorms);
   setPriorityMode(priority); // config 탐색 전 구간(buildPlan 사이 planScore 비교 포함) 모드 고정
+  setCapCluster(true);       // 앞 실행이 A/B 도중 끊겨 꺼진 채 남아 있을 수 있다 — 탐색은 항상 켠 상태로
   // 진행 콜백(페이싱 포함) 후 매크로태스크 양보 — 브라우저가 안내 문구를 리페인트할 틈을 준다
   const tick = async (step: OptimizeStep) => {
     if (!onStep) return;
@@ -2620,7 +2657,7 @@ export async function optimizeConfig(fullRoster: InfraOp[], priority: ProdPriori
   // 빈 숙소에 주차한 안을 따로 만들고, **planScore가 실제로 오를 때만** 채택한다. 로스터가 두꺼우면
   // 대체 후보가 많아 파킹이 부른 재편성이 르무엔+엑시아 같은 기존 조합을 깨 손해일 수도 있다
   // (404명 박스 −3.8) — 그래서 규칙이 아니라 후보안이다. 켤 짝이 없으면 아예 안 돌린다.
-  const finish = (tokens: string[], sets: FactionSets, seeds: { opId: string; room: string }[]): OptimizeResult => {
+  const finishOnce = (tokens: string[], sets: FactionSets, seeds: { opId: string; room: string }[]): OptimizeResult => {
     const plain = withConcentration(tokens, sets, seeds);
     const pairIds = new Set<string>();
     for (const op of roster) for (const skill of op.skills) {
@@ -2632,6 +2669,21 @@ export async function optimizeConfig(fullRoster: InfraOp[], priority: ProdPriori
     return planScore(parkedPlan, byId) > planScore(plain, byId) + 1e-6
       ? { plan: parkedPlan, tokenChoice: tokens, factionSets: sets, park: true }
       : { plan: plain, tokenChoice: tokens, factionSets: sets, park: false };
+  };
+  // 용량 변환 결집 A/B (2026-07-30) — bestTeam의 결집 후보가 실제로 채택된 플랜에 한해, 끈 안을
+  // 한 번 더 지어 총점을 맞대 본다. 방 하나가 오르는 건 확실한데(B조 제조소 92 → 107) 그 방이
+  // 데려간 오퍼 때문에 옆방 계열 결집이 깨져 총점이 내려가는 로스터가 있다(실측: 순금 +3.7 ·
+  // 밸런스 +2.0인데 작전기록 −1.6). 미니 토큰 조합·숙소 파킹과 같은 관례 — 후보는 L0이 만들고
+  // 채택은 planScore가 한다. 결집이 안 걸린 플랜(변환기 미보유 로스터)은 A/B를 아예 안 돈다.
+  const finish = (tokens: string[], sets: FactionSets, seeds: { opId: string; room: string }[]): OptimizeResult => {
+    setCapCluster(true);
+    capClusterUsed = false;
+    const on = finishOnce(tokens, sets, seeds);
+    if (!capClusterUsed) return on;
+    setCapCluster(false);
+    const off = finishOnce(tokens, sets, seeds);
+    setCapCluster(true);
+    return planScore(off.plan, byId) > planScore(on.plan, byId) + 1e-6 ? off : on;
   };
   if (!variants.length) return finish(tokenChoice, {}, []);
   let best = base;

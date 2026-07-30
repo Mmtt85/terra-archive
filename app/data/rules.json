@@ -395,6 +395,30 @@
         "char_486_takila",
         "char_4032_provs"
       ]
+    },
+    {
+      "allOf": [
+        "char_190_clour",
+        "char_336_folivo"
+      ],
+      "name": "용량 변환 결집 — 버메일 재활용 방 (무6성 A조)",
+      "priority": "gold",
+      "roomType": "MANUFACTURE",
+      "roster": "no6",
+      "shift": 0,
+      "type": "planContains"
+    },
+    {
+      "allOf": [
+        "char_381_bubble",
+        "char_163_hpsts"
+      ],
+      "name": "용량 변환 결집 — 버블 문턱 방 (짝수seq 로스터)",
+      "priority": "exp",
+      "roomType": "MANUFACTURE",
+      "roster": "evenSeq",
+      "shift": 0,
+      "type": "planContains"
     }
   ],
   "parser": {
@@ -491,5 +515,5 @@
     "주술 결정",
     "마물 요리"
   ],
-  "version": 19
+  "version": 21
 }
