@@ -2556,7 +2556,21 @@ export type OptimizeStep = { phase: "base" | "variant" | "final"; index?: number
 // optimize가 고른 전략(토큰 패키지·시너지 세트)까지 함께 반환 — 육성 추천(planner-invest)이
 // 후보마다 전체 재탐색을 반복하지 않고, 이 config를 재사용해 buildPlan을 1회만 돌려 빠르게
 // 반사실 평가를 하도록 한다 (2026-07-21 성능: 후보당 buildPlan 15회 → 1회).
-export type OptimizeResult = { plan: Plan; tokenChoice: string[]; factionSets: FactionSets; park: boolean };
+// 채택안이 실제로 쓴 **전략 전부**를 돌려준다 — 육성 추천(planner-invest)이 반사실 편성을
+// 지을 때 같은 조건을 재현해야 하기 때문이다. tokenChoice·factionSets·park만 넘기던 종전엔
+// seeds(캡 확장·밀려난 생성원)·excluded(사슬 전환자 제외)·capCluster를 못 재현해서, 반사실이
+// 베이스라인보다 **상수만큼 낮게** 지어졌다(실계정 −1.521). 그 상수가 모든 후보의 ΔS에서
+// 똑같이 빠지니, 진짜 이득이 그보다 작은 후보는 전부 음수가 되어 추천이 0건이 됐다
+// (사용자 제보 2026-07-30 "추천 오퍼가 또 안 나온다").
+export type OptimizeResult = {
+  plan: Plan; tokenChoice: string[]; factionSets: FactionSets; park: boolean;
+  /** 채택안이 쓴 시드(perMember 캡 확장 · 자리에서 밀려난 생성원) */
+  seeds: { opId: string; room: string }[];
+  /** 채택안이 로스터에서 뺀 오퍼 id (패키지/자기 소비 사슬 전환자 제외 변형) */
+  excluded: string[];
+  /** 채택안이 용량 변환 결집 후보를 켠 안인지 */
+  capCluster: boolean;
+};
 export async function optimizeConfig(fullRoster: InfraOp[], priority: ProdPriority = "gold", onStep?: (step: OptimizeStep) => void | Promise<void>, pinnedDorms: Record<string, string[]> = {}): Promise<OptimizeResult> {
   // 자동편성 제외 명단은 탐색 시작부터 뺀다 — 토큰 패키지·세트 성립 판정도 벤치 없는
   // 로스터 기준이어야 buildPlan(내부에서 같은 필터)과 결과가 어긋나지 않는다.
@@ -2658,17 +2672,24 @@ export async function optimizeConfig(fullRoster: InfraOp[], priority: ProdPriori
   // 대체 후보가 많아 파킹이 부른 재편성이 르무엔+엑시아 같은 기존 조합을 깨 손해일 수도 있다
   // (404명 박스 −3.8) — 그래서 규칙이 아니라 후보안이다. 켤 짝이 없으면 아예 안 돌린다.
   const finishOnce = (tokens: string[], sets: FactionSets, seeds: { opId: string; room: string }[]): OptimizeResult => {
+    // effRoster는 위 제외 변형들이 줄여 놓은 로스터다 — 그 명단을 결과에 함께 실어야
+    // 육성 추천의 반사실이 같은 조건으로 지어진다 (OptimizeResult 주석 참고).
+    const strategy = {
+      tokenChoice: tokens, factionSets: sets, seeds,
+      excluded: roster.filter((op) => !effRoster.includes(op)).map((op) => op.id),
+      capCluster: CAP_CLUSTER_ON,
+    };
     const plain = withConcentration(tokens, sets, seeds);
     const pairIds = new Set<string>();
     for (const op of roster) for (const skill of op.skills) {
       if (skill.basePartnerBonus) for (const pid of skill.basePartners ?? []) if (byId.has(pid)) pairIds.add(pid);
     }
     const idle = [...pairIds].some((pid) => !presentIdsFor(plain, 0).has(pid) && !presentIdsFor(plain, 1).has(pid));
-    if (!idle) return { plan: plain, tokenChoice: tokens, factionSets: sets, park: false };
+    if (!idle) return { plan: plain, ...strategy, park: false };
     const parkedPlan = withConcentration(tokens, sets, seeds, true);
     return planScore(parkedPlan, byId) > planScore(plain, byId) + 1e-6
-      ? { plan: parkedPlan, tokenChoice: tokens, factionSets: sets, park: true }
-      : { plan: plain, tokenChoice: tokens, factionSets: sets, park: false };
+      ? { plan: parkedPlan, ...strategy, park: true }
+      : { plan: plain, ...strategy, park: false };
   };
   // 용량 변환 결집 A/B (2026-07-30) — bestTeam의 결집 후보가 실제로 채택된 플랜에 한해, 끈 안을
   // 한 번 더 지어 총점을 맞대 본다. 방 하나가 오르는 건 확실한데(B조 제조소 92 → 107) 그 방이

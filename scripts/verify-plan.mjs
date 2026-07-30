@@ -228,6 +228,33 @@ await invCheck("육성추천: A조 이득 내림차순 정렬", async () => {
   return { ok: true, detail: `${rs.length}건` };
 });
 
+// ── 육성 추천 반사실은 베이스라인 전략을 **완전히** 재현해야 한다 (사용자 제보 2026-07-30) ──
+// optimizeConfig가 채택안에 얹는 것: 토큰 조합 · 시너지 세트 · 숙소 파킹 · **시드(캡 확장·밀려난
+// 생성원)** · **로스터 제외(사슬 전환자)** · **용량 결집 on/off**. 앞 셋만 돌려받아 반사실을 지으면
+// 뒤 셋만큼 통째로 낮게 지어지고, 그 상수가 모든 후보의 ΔS에서 똑같이 깎여 **추천이 0건**이 된다
+// (실계정 −1.521로 후보 66건 전멸, 풀 로스터 −12.7 · 초기150 −18.8). 격차가 정확히 0인지 잠근다.
+console.log("");
+{
+  const cases = [["full", "gold"], ["early150", "gold"], ["no6", "gold+endless"]];
+  for (const [rosterName, priority] of cases) {
+    const roster = rosters[rosterName];
+    const byId = new Map(roster.map((o) => [o.id, o]));
+    engine.setPriorityMode(priority);
+    const r = await engine.optimizeConfig(roster, priority);
+    const S0 = engine.planScore(r.plan, byId);
+    const drop = new Set(r.excluded);
+    engine.setCapCluster(r.capCluster);
+    const redone = engine.buildPlan(r.tokenChoice, roster.filter((o) => !drop.has(o.id)),
+      r.factionSets, priority, r.seeds, false, r.park, {});
+    engine.setCapCluster(true);
+    const gap = engine.planScore(redone, byId) - S0;
+    const ok = Math.abs(gap) < 1e-6;
+    console.log(`${ok ? "✓" : "✗"} 반사실이 베이스라인 전략을 재현 (${rosterName}/${priority}) `
+      + `(시드 ${r.seeds.length} · 제외 ${r.excluded.length} · 결집 ${r.capCluster ? "on" : "off"} · 격차 ${gap.toFixed(3)})`);
+    if (!ok) failed += 1;
+  }
+}
+
 // ── 제어센터 "무역소 내 진영 1명당" 오라는 방 단위 (노시스·델핀·야하타, 사용자 제보 2026-07-22) ──
 // 노시스 '정밀 계산'(무역소 내 쉐라그 1명당 오더효율 -15%·상한 +6)은 **그 무역소에 앉은 쉐라그
 // 수**로만 걸려야 한다 — 기지 전체 쉐라그 수(노시스 자신·타 무역소 포함)로 세거나, 쉐라그 0명
@@ -328,4 +355,4 @@ console.log("");
 }
 
 if (failed) { console.error(`\n✗ 검사 ${failed}건 실패`); process.exit(1); }
-console.log(`\n✓ 픽스처 ${rules.fixtures.length}건 + 육성추천 불변식 4건 + 노시스 오라 2건 + 용량 변환 비중첩·자동화 7건 + 여러 홉 사슬 3건 + 자동편성 제외 2건 전부 통과`);
+console.log(`\n✓ 픽스처 ${rules.fixtures.length}건 + 육성추천 불변식 4건 + 반사실 전략 재현 3건 + 노시스 오라 2건 + 용량 변환 비중첩·자동화 7건 + 여러 홉 사슬 3건 + 자동편성 제외 2건 전부 통과`);
