@@ -9218,11 +9218,11 @@ html.dark .story-card:hover .story-thumb img {
      (실측 2026-07-30: 모바일에서 필요 745px인데 658px로 눌림). 내용 높이를 지킨다. */
   flex: 0 0 auto;
   width: 100%;
-  max-width: 1240px;
-  margin: 0 auto;
   min-height: min(58vh, 520px);
-  padding: 12px 16px 16px;
-  border-radius: var(--r-lg);
+  padding: 14px 16px 18px;
+  /* 배경은 화면 끝까지 (사용자 요청 2026-07-30) — 다른 섹션에 걸리는 전역 70% 컬럼 규칙을
+     여기서만 풀고, 대신 안쪽 padding으로 내용을 같은 자리에 맞춘다. 풀블리드라 모서리는 각지게. */
+  border-radius: 0;
   background: var(--pt-backdrop);
   color: var(--pt-ink);
   display: grid;
@@ -9331,7 +9331,7 @@ html.dark .story-card:hover .story-thumb img {
 .pt-tiles {
   grid-area: tiles;
   display: grid;
-  gap: 8px;
+  gap: 13px;   /* 8px는 붙어 보였다 (사용자 지적 2026-07-30) */
   /* 6열 — 게임 홈의 칸 비율(제일 큰 칸 2/3 · 이벤트 배너 1/3)을 4열로는 못 맞춘다 */
   grid-template-columns: repeat(6, minmax(0, 1fr));
   grid-template-rows: 1.15fr 1fr 1fr 1fr;
@@ -9419,33 +9419,34 @@ html.dark .story-card:hover .story-thumb img {
   background: var(--pt-plate-2);
 }
 /* 좌우 넘김 — 진행 예정 이벤트까지 본다 (사용자 요청 2026-07-30) */
+/* 좌우 넘김은 오른쪽 위 한 곳에 모은다 — 세로 가운데에 두면 왼쪽 게이지와 겹친다
+   (실측 2026-07-30: 게이지 48px + 화살표 22px가 배너 198px 안에서 포개졌다) */
 .pt-nav {
   position: absolute;
   z-index: 3;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 5px;
   display: grid;
   place-items: center;
-  width: 22px;
-  height: 30px;
+  width: 20px;
+  height: 20px;
   border-radius: 4px;
-  background: #0009;
+  background: #000000a6;
   color: #fff;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 900;
   line-height: 1;
   cursor: pointer;
-  opacity: 0.55;
+  opacity: 0.72;
   transition: 0.12s;
 }
 .pt-nav:hover, .pt-nav:focus-visible { opacity: 1; }
-.pt-nav.prev { left: 4px; }
-.pt-nav.next { right: 4px; }
+.pt-nav.prev { right: 51px; }
+.pt-nav.next { right: 5px; }
 .pt-dots {
   position: absolute;
   z-index: 3;
-  right: 8px;
-  top: 8px;
+  right: 29px;
+  top: 12px;
   display: flex;
   gap: 3px;
 }
@@ -9506,9 +9507,10 @@ html.dark .story-card:hover .story-thumb img {
   flex: none;
   display: grid;
   place-items: center;
-  width: 48px;
-  height: 48px;
+  width: 46px;
+  height: 46px;
   border-radius: 50%;
+  overflow: hidden;
   background:
     conic-gradient(var(--pt-accent) calc(var(--pt-ratio, 0) * 360deg), #ffffff2e 0),
     var(--pt-strip);
@@ -9517,7 +9519,7 @@ html.dark .story-card:hover .story-thumb img {
 .pt-gauge::after {
   content: "";
   position: absolute;
-  inset: 5px;
+  inset: 4px;
   border-radius: 50%;
   background: var(--pt-strip);
 }
@@ -9530,8 +9532,9 @@ html.dark .story-card:hover .story-thumb img {
 }
 .pt-gauge b {
   font-family: monospace;
-  font-size: 14px;
+  font-size: 12.5px;
   font-weight: 900;
+  letter-spacing: -0.03em;
 }
 .pt-gauge small {
   font-size: 8px;
@@ -9576,8 +9579,8 @@ html.dark .story-card:hover .story-thumb img {
 }
 @media (max-width: 520px) {
   .pt-player { max-width: none; }
-  .pt-tiles { gap: 6px; }
-  .pt-tile { padding: 7px 9px; }
+  .pt-tiles { gap: 10px; }
+  .pt-tile { padding: 8px 10px; }
 }
 /* 모션을 줄이는 설정에서는 타일이 뛰지 않게 */
 @media (prefers-reduced-motion: reduce) {
@@ -11709,6 +11712,12 @@ html.dark.rg-theme.rg6 .site-header {
     width: auto;
     max-width: none;
     min-width: 0;
+  }
+  /* 대문만 예외 — 배경이 화면 끝까지 가야 하므로 여백을 padding으로 옮긴다
+     (내용이 앉는 자리는 다른 페이지와 똑같은 가운데 70%) */
+  .site-scroll > .pt-stage {
+    margin-inline: 0;
+    padding-inline: 15%;
   }
   /* 제안 버튼은 오른쪽 15% 여백 기둥의 가운데에 (사용자 확정 2026-07-18) */
   .feedback-widget {
