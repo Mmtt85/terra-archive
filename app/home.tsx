@@ -28,7 +28,7 @@ import { bindEscClose } from "./esc-close";
 import { feedbackReady } from "./feedback";
 import { tabHasNewFeature } from "./whats-new";
 import { scrollMainTop } from "./scroll";
-import { PORTAL_TILES, PORTAL_THEMES, PORTAL_ART, type PortalTile } from "./portal-themes";
+import { PORTAL_TILES, PORTAL_ART, type PortalTile } from "./portal-themes";
 import { useLazyVisible } from "./lazy-img";
 import { I18nProvider, useI18n, conceptName, DT_LOCALE, MAGIC_TRAIT_RE, LOCALES, type Locale, type ExtraI18n } from "./i18n";
 
@@ -635,7 +635,7 @@ function ThemeToggle() {
 
 // 포탈 첫화면 — 게임 홈 화면을 본뜬 대문 (사용자 요청 2026-07-30: "인게임 UI에 맞춰보자").
 // 칸 ↔ 기능 매핑과 테마(겉모습)는 app/portal-themes.ts에 분리해 뒀다 — 테마를 갈아끼워도
-// 버튼 구성은 그대로다. 새 테마는 PORTAL_THEMES에 항목 하나만 추가하면 된다.
+// 버튼 구성은 그대로다. 색(--pt-*)은 globals.css의 .pt-stage / html.dark .pt-stage.
 //
 // ⚠ 종전 규칙 변경: 포탈은 "진입 시 오퍼 이미지 로딩이 전혀 없다"(2026-07-17)였는데,
 //    게임 UI를 흉내 내려면 배경 캐릭터 아트가 필요하다. 대신 **한 장(약 180KB)만** 쓰고
@@ -661,9 +661,9 @@ function Portal({ onOpenTab, onFeedback, stats }: {
   }, []);
   // 팔레트는 사이트 밝기를 그대로 따라간다 — 별도 테마 선택지를 두지 않는다
   // (사용자 확정 2026-07-30). 헤더에서 다크 모드를 켜면 그 자리에서 같이 바뀐다.
-  const dark = useSyncExternalStore(subscribeThemeClass,
-    () => document.documentElement.classList.contains("dark"), () => false);
-  const theme = PORTAL_THEMES[dark ? "dark" : "light"];
+  // ⚠ 여기서 JS로 고르지 않는다 — 서버 렌더는 다크 여부를 알 수 없어 항상 라이트 팔레트를
+  //    내보냈고, 다크 사용자가 새로고침하면 하이드레이션 전까지 밝은 판이 번쩍였다
+  //    (사용자 제보 2026-07-31 "눈이 부신데"). --pt-* 값은 globals.css의 html.dark가 쥔다.
 
   // 배너 칸 = 진행중 + 진행 예정을 좌우로 넘겨 본다 (사용자 요청 2026-07-30).
   // 진행중이 앞, 그 뒤에 시작이 임박한 순으로 예정 이벤트.
@@ -708,8 +708,7 @@ function Portal({ onOpenTab, onFeedback, stats }: {
   const days = now == null ? 0 : Math.max(1, Math.floor((now - SITE_OPENED) / DAY) + 1);
 
   return (
-    <section className="pt-stage" data-pt={theme.id} aria-labelledby="portal-title"
-      style={{ ...theme.vars, "--pt-backdrop": theme.backdrop } as React.CSSProperties}>
+    <section className="pt-stage" aria-labelledby="portal-title">
       <span className="pt-scrim" aria-hidden />
 
       {/* 좌측 — 일러스트와 독타 프로필. 아트를 이 칸 기준으로 잡아야 타일 옆에 붙는다

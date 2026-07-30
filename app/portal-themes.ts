@@ -5,9 +5,9 @@
 // 구조를 둘로 나눈 이유: 게임의 홈 UI 테마는 **버튼 구성은 그대로 두고 겉모습만 갈아끼운다.**
 // 그래서 여기서도
 //   · PORTAL_TILES = 어떤 칸이 어디로 가는가 (사이트 기능 매핑 — 테마와 무관, 하나뿐)
-//   · PORTAL_THEMES = 그 칸들을 어떻게 그리는가 (배경 아트 + 색 변수 — 갈아끼우는 대상)
-// 로 갈랐다. 새 테마를 넣을 때 PORTAL_THEMES에 항목 하나만 추가하면 되고,
-// 기능 매핑은 건드리지 않는다.
+//   · 겉모습(배경 아트 PORTAL_ART + 색 변수 --pt-*) = 갈아끼우는 대상
+// 로 갈랐다. 색 변수는 globals.css의 `.pt-stage` / `html.dark .pt-stage`에 있다
+// (아래 주석 참고 — 다크모드 번쩍임 때문에 JS가 아니라 CSS가 쥔다).
 
 
 /** 홈 화면의 칸 하나. area는 CSS grid-template-areas 이름과 1:1로 맞춘다. */
@@ -58,14 +58,6 @@ export const PORTAL_TILES: PortalTile[] = [
     desc: "잘못된 정보나 아쉬운 점을 알려주세요", icon: "💬" },
 ];
 
-/** 인터페이스 팔레트. 사이트의 밝기(다크 모드)를 그대로 따른다 — 별도 선택지를 두지 않는다
- *  (사용자 확정 2026-07-30: "색깔만 바꿀 거면 다크/라이트 두 가지만"). */
-export type PortalTheme = {
-  id: "light" | "dark";
-  vars: Record<string, string>;
-  backdrop: string;
-};
-
 /**
  * 배경은 **이격 스카디 일러스트로 고정** (사용자 지시 2026-07-30).
  * ⚠ 게임 홈 스크린샷을 배경으로 쓰지 말 것 — 독타 ID·보유 재화가 찍혀 있는 개인 화면이다.
@@ -73,43 +65,8 @@ export type PortalTheme = {
  */
 export const PORTAL_ART = "/skin/full/char_1012_skadi2_1.webp";
 
-export const PORTAL_THEMES: Record<"light" | "dark", PortalTheme> = {
-  light: {
-    id: "light",
-    // 밝은 모드에서 뒷배경만 어두우면 따로 논다 (사용자 지적 2026-07-30)
-    backdrop: "linear-gradient(120deg, #eae4d8 0%, #ded8ca 44%, #c8d0cb 100%)",
-    vars: {
-      // 배경 위에 바로 얹히는 글자(시계·이름·소개)와, 아트 위에 까는 베일 색
-      "--pt-over": "#22201d",
-      "--pt-over-shadow": "0 1px 6px #ffffffcc",
-      "--pt-veil": "#ffffff",
-      "--pt-plate": "#f4efe4",
-      "--pt-plate-2": "#e9e2d3",
-      "--pt-ink": "#1d1c1a",
-      "--pt-mut": "#7b7468",
-      "--pt-accent": "#e2622a",
-      "--pt-strip": "#17171a",
-      "--pt-strip-ink": "#efe9dc",
-      "--pt-line": "#00000018",
-      "--pt-glow": "#e2622a55",
-    },
-  },
-  dark: {
-    id: "dark",
-    backdrop: "linear-gradient(120deg, #0d1114 0%, #161d21 50%, #202a2b 100%)",
-    vars: {
-      "--pt-over": "#dfe8dd",
-      "--pt-over-shadow": "0 2px 10px #000000aa",
-      "--pt-veil": "#0a0d0f",
-      "--pt-plate": "#1b2126",
-      "--pt-plate-2": "#141a1e",
-      "--pt-ink": "#e8efe6",
-      "--pt-mut": "#93a89b",
-      "--pt-accent": "#c8e64f",
-      "--pt-strip": "#0a0d0f",
-      "--pt-strip-ink": "#dfe8dd",
-      "--pt-line": "#ffffff1a",
-      "--pt-glow": "#c8e64f44",
-    },
-  },
-};
+/** 인터페이스 팔레트(--pt-*)는 **app/globals.css의 `.pt-stage` / `html.dark .pt-stage`** 가
+ *  쥔다. 사이트 밝기를 그대로 따르므로(사용자 확정 2026-07-30: "색깔만 바꿀 거면 다크/라이트
+ *  두 가지만") 여기서 JS로 고르지 않는다 — 서버 렌더가 다크 여부를 몰라 정적 HTML이 늘
+ *  라이트 팔레트로 나갔고, 다크 사용자의 새로고침마다 밝은 판이 번쩍였다 (2026-07-31 수정).
+ */

@@ -638,6 +638,17 @@ public/의 대용량 폴더 **story·rogue·lens·tesseract·avatars·about·og�
   신규 오퍼 accent는 `regen-operators.py`의 `NEW_ACCENTS`에 추가.
 - CSS는 `app/globals.css` 단일 파일 (배포본에서 복원한 스타일 + 플래너/공채 추가분).
 - 한 줄 압축 스타일(`selector { ... }`)을 유지한다. 미디어쿼리는 `width<=NNNpx` 표기.
+- **테마(다크/라이트)로 갈리는 값은 CSS가 쥔다 — JS로 고르지 말 것** (2026-07-31 사용자 제보로 확정).
+  다크 여부는 `layout.tsx`의 인라인 스크립트가 첫 페인트 전에 `html.dark`로 붙여 주지만,
+  **정적 프리렌더 HTML은 늘 라이트**다. React에서 `document.documentElement.classList.contains("dark")`로
+  색을 골라 인라인 style로 얹으면 서버 HTML·하이드레이션 첫 렌더가 라이트로 나가고, 마운트
+  직후 다크로 뒤집혀 **새로고침마다 밝은 화면이 번쩍인다** (실측 배포본 포탈: +116ms 라이트 →
+  +173ms 다크). 팔레트는 `.sel { --x: 라이트 }` + `html.dark .sel { --x: 다크 }`로 쓴다.
+  - 남아 있는 같은 패턴: `app/about.tsx`의 스크린샷 `-dark.webp` 스왑(이미지라 첫 페인트
+    번쩍임은 없지만 라이트 캡처를 먼저 받는다), 헤더 다크 토글 글리프(☾→☀ 한 프레임).
+- 같은 특이도면 **뒤에 있는 규칙이 이긴다** — 무심코 뒤쪽에 추가한 넓은 선택자(`.crew-card img`)가
+  앞의 좁은 규칙(`.rel-chips img`)을 조용히 덮은 적이 있다(2026-07-31). 크기·색이 의도와
+  다르면 특이도보다 **파일 순서**를 먼저 의심할 것.
 
 ### 죽은 청크(stale chunk) — "Failed to fetch dynamically imported module"
 
