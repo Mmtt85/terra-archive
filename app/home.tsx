@@ -638,6 +638,7 @@ function Portal({ onOpenTab, onFeedback, stats }: {
   const [now, setNow] = useState<number | null>(null); // 서버 렌더엔 시각이 없다 → 마운트 후
   const [events, setEvents] = useState<GameEvent[]>([]);
   const [slide, setSlide] = useState(0);   // 배너에서 몇 번째 이벤트를 보고 있나
+  const [hold, setHold] = useState(false); // 마우스를 올린 동안은 자동 넘김을 멈춘다
   useEffect(() => {
     setNow(Date.now());
     const id = setInterval(() => setNow(Date.now()), 30_000);
@@ -668,6 +669,15 @@ function Portal({ onOpenTab, onFeedback, stats }: {
     ? Math.max(0, Math.ceil((Date.parse(soon ? headline.start : headline.end) - now) / DAY))
     : 0;
 
+  // 이벤트가 둘 이상이면 6초마다 다음 칸으로 (사용자 요청 2026-07-30).
+  // 읽는 중에 넘어가면 성가시므로 마우스를 올린 동안은 멈춘다.
+  const reelLen = reel.length;
+  useEffect(() => {
+    if (reelLen < 2 || hold) return;
+    const id = setInterval(() => setSlide((n) => n + 1), 6000);
+    return () => clearInterval(id);
+  }, [reelLen, hold]);
+
   const openTile = (tile: PortalTile) => {
     // 이벤트 칸은 공식 카페 공지로 (사용자 지시 2026-07-30). 공지가 없는 이벤트만 스토리로.
     if (tile.kind === "banner") {
@@ -686,15 +696,18 @@ function Portal({ onOpenTab, onFeedback, stats }: {
   return (
     <section className="pt-stage" data-pt={theme.id} aria-labelledby="portal-title"
       style={{ ...theme.vars, "--pt-backdrop": theme.backdrop } as React.CSSProperties}>
-      {/* 배경 아트 — 장식이므로 alt는 비운다. 늦게 떠도 레이아웃이 밀리지 않게 절대배치. */}
-      <img className="pt-art" src={asset(PORTAL_ART)} alt="" decoding="async" fetchPriority="low" />
       <span className="pt-scrim" aria-hidden />
 
-      {/* 좌측 — 게임의 독타 프로필 자리 */}
+      {/* 좌측 — 일러스트와 독타 프로필. 아트를 이 칸 기준으로 잡아야 타일 옆에 붙는다
+          (스테이지 기준이면 화면이 넓어질수록 타일과 멀어진다 — 사용자 지적 2026-07-30). */}
+      <div className="pt-left">
+        {/* 장식이므로 alt는 비운다. 늦게 떠도 레이아웃이 안 밀리게 절대배치. */}
+        <img className="pt-art" src={asset(PORTAL_ART)} alt="" decoding="async" fetchPriority="low" />
       <div className="pt-player">
         <span className="pt-lv"><b>{days}</b><small>DAY</small></span>
         <h1 id="portal-title" className="pt-name">{t("테라 아카이브")}</h1>
         <p className="pt-sub">{t("명일방주(아크나이츠) 팬사이트 — 필요한 도구를 골라 들어가세요.")}</p>
+        </div>
       </div>
 
       {/* 우측 타일 — 배치는 CSS grid-template-areas(=tile.area)가 잡는다 */}
@@ -706,8 +719,10 @@ function Portal({ onOpenTab, onFeedback, stats }: {
           const thumb = isBanner && headline ? eventThumb(locale, headline) : undefined;
           return (
             <button key={tile.id} type="button" disabled={dead}
-              className={`pt-tile pt-${tile.kind} pt-t-${tile.id}${dead ? " dead" : ""}`}
+              className={`pt-tile pt-${tile.kind} pt-t-${tile.id}${dead ? " dead" : ""}${isBanner && !thumb ? " nothumb" : ""}`}
               style={{ gridArea: tile.area }}
+              onMouseEnter={isBanner ? () => setHold(true) : undefined}
+              onMouseLeave={isBanner ? () => setHold(false) : undefined}
               onClick={() => openTile(tile)}
               title={dead ? t("사이트에는 없는 기능이에요") : t(tile.label)}>
               {isBanner ? (

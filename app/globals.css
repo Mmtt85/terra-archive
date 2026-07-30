@@ -9216,14 +9216,17 @@ html.dark .story-card:hover .story-thumb img {
   /* ⚠ 부모(.site-scroll)가 세로 flex라 기본값(flex-shrink:1)이면 화면이 모자랄 때
      스테이지가 눌리고, overflow:hidden 때문에 **마지막 줄 타일이 잘린다**
      (실측 2026-07-30: 모바일에서 필요 745px인데 658px로 눌림). 내용 높이를 지킨다. */
-  flex: 0 0 auto;
+  /* 남는 높이를 전부 먹되(배경이 위아래로 꽉) **푸터 자리는 남긴다** — .site-scroll이
+     세로 flex이므로 flex:1이면 스크롤 없이 푸터까지 한 화면에 들어온다
+     (사용자 요청 2026-07-30). min-height:fit-content가 있어야 화면이 모자랄 때
+     내용보다 작게 눌려 overflow:hidden에 잘리는 일이 없다. */
+  flex: 1 1 auto;
+  min-height: fit-content;
   width: 100%;
-  /* 위아래로도 화면을 채운다 (사용자 요청 2026-07-30). --header-h는 home.tsx가 헤더 실제
-     높이를 재서 넣어 준다 — 접힘/펼침으로 달라지므로 고정값을 쓰면 어긋난다. */
-  min-height: calc(100dvh - var(--header-h, 56px));
-  /* 위 여백: 가운데 정렬은 위가 휑했고(약 160px) start는 헤더에 딱 붙었다(14px) —
-     그 사이 (사용자 지적 2026-07-30) */
-  padding: clamp(22px, 5vh, 52px) 16px 18px;
+  /* 위아래 여백을 **같게** 둔다 (사용자 지적 2026-07-30: 위는 고정으로 띄우고 아래만
+     줄어들었다). 타일이 stretch로 늘어나므로, 위아래가 같으려면 이 padding이 대칭이고
+     타일의 margin-block도 대칭이어야 한다. */
+  padding: clamp(18px, 3.4vh, 38px) 16px;
   /* 배경은 화면 끝까지 (사용자 요청 2026-07-30) — 다른 섹션에 걸리는 전역 70% 컬럼 규칙을
      여기서만 풀고, 대신 안쪽 padding으로 내용을 같은 자리에 맞춘다. 풀블리드라 모서리는 각지게. */
   border-radius: 0;
@@ -9235,22 +9238,33 @@ html.dark .story-card:hover .story-thumb img {
   grid-template-areas: "player tiles";
   gap: 12px 26px;
 }
-/* 배경 캐릭터 아트 — 왼쪽 아래를 채우고 타일 뒤로 물러난다 */
+/* 왼쪽 칸 — 일러스트(배경)와 독타 프로필이 겹쳐 앉는 자리 */
+.pt-left {
+  grid-area: player;
+  position: relative;
+  min-width: 0;
+}
+/* 캐릭터 아트 — **왼쪽 칸의 오른쪽 끝**에 붙인다. 스테이지 기준(left)으로 두면 화면이
+   넓어질수록 타일과 멀어졌다 (사용자 지적 2026-07-30). 칸을 넘어 왼쪽으로 흘러나가는 건
+   스테이지의 overflow:hidden이 잘라 준다. */
 .pt-art {
   position: absolute;
   z-index: -2;
-  left: -1%;
-  /* 윗변을 타일 첫 줄과 같은 선에 맞춘다 (사용자 요청 2026-07-30) — 스테이지 위 여백과
-     같은 값을 top에 주고 object-position도 위로 잡아야 실제로 그 선에 붙는다.
-     크기는 한 단계 더 축소(48% → 42%). */
-  top: clamp(22px, 5vh, 52px);
+  right: -6px;
+  top: 0;
   bottom: 0;
+  width: min(42vw, 640px);
+  max-width: none;
   height: auto;
-  width: auto;
-  max-width: 42%;
   object-fit: contain;
-  object-position: left top;
+  object-position: right top;
   pointer-events: none;
+}
+.pt-left .pt-player {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
 }
 /* 아트 위에 얇게 깔아 글자 대비를 지킨다 — 아트가 밝든 어둡든 라벨이 읽히게 */
 .pt-scrim {
@@ -9267,8 +9281,6 @@ html.dark .story-card:hover .story-thumb img {
 
 /* 좌측 독타 프로필 자리 */
 .pt-player {
-  grid-area: player;
-  align-self: end;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -9316,11 +9328,12 @@ html.dark .story-card:hover .story-thumb img {
 .pt-tiles {
   grid-area: tiles;
   /* 위로 붙이되(가운데면 위가 휑하다) 아트 윗변보다 한 뼘 아래로 (사용자 요청 2026-07-30) */
-  align-self: start;
-  margin-top: clamp(14px, 2.6vh, 30px);
-  /* 스테이지가 화면 높이만큼 커져도 타일은 이 높이를 지킨다 — 안 그러면 1fr 행이 늘어나
-     칸이 다시 휑해진다(줄여 놓은 것이 되돌아간다) */
-  height: min(66vh, 540px);
+  /* 남는 높이를 채우되 상한(max-height)에 걸리면 **가운데**로 — stretch면 상한에 걸린 만큼이
+     전부 아래 여백으로 몰려 위아래가 달라진다 (실측 1920px: 위 48 / 아래 110). */
+  align-self: center;
+  height: 100%;
+  /* 남는 높이에 맞춰 늘되 상한을 둔다 — 없으면 큰 화면에서 칸이 다시 휑해진다 */
+  max-height: 640px;
   display: grid;
   gap: 13px;   /* 8px는 붙어 보였다 (사용자 지적 2026-07-30) */
   /* 사용자 지정 배치 (2026-07-30): 1줄 인프라 통째, 2줄 통합전략 2칸 + 이벤트 1칸,
@@ -9340,8 +9353,9 @@ html.dark .story-card:hover .story-thumb img {
   display: flex;
   flex-direction: column;
   justify-content: center;   /* 제목+설명을 세로 가운데로 — 위아래로 벌어져 허전하던 것 정리 */
-  gap: 5px;
-  padding: 8px 12px;
+  gap: 4px;
+  padding: 7px 12px;
+  min-height: 0;             /* 화면이 짧으면 칸도 같이 줄어야 푸터가 한 화면에 들어온다 */
   border: 1px solid var(--pt-line);
   border-radius: 4px;   /* 게임 UI는 각진 판 — 사이트 전역 라운딩을 여기서만 낮춘다 */
   background: var(--pt-plate);
@@ -9540,6 +9554,23 @@ html.dark .story-card:hover .story-thumb img {
   opacity: 0.62;
 }
 
+/* 세로가 짧은 화면 — 푸터까지 한 화면에 들어와야 하므로 여백·간격을 한 단계 줄인다
+   (실측 1280x720: 종전 설정이 9px 넘쳤다) */
+@media (max-height: 780px) and (min-width: 901px) {
+  .pt-stage {
+    padding-block: 20px;
+  }
+  .pt-tiles {
+    gap: 9px;
+  }
+  .pt-tile {
+    padding: 6px 11px;
+  }
+  .pt-desc {
+    -webkit-line-clamp: 1;
+  }
+}
+
 /* 좁은 화면 — 아트를 배경으로 눕히고 타일을 2열로. 게임도 세로에선 칸을 접는다. */
 @media (max-width: 900px) {
   .pt-stage {
@@ -9551,12 +9582,14 @@ html.dark .story-card:hover .story-thumb img {
       "tiles";
   }
   .pt-art {
-    left: auto;
     right: -12%;
-    height: 100%;
-    max-width: 78%;
+    top: 0;
+    bottom: 0;
+    width: 78%;
     opacity: 0.5;
   }
+  .pt-left { min-height: 190px; }
+  .pt-left .pt-player { position: static; }
   .pt-scrim {
     background: linear-gradient(180deg, color-mix(in srgb, var(--pt-veil) 40%, transparent), color-mix(in srgb, var(--pt-veil) 72%, transparent));
   }
@@ -11715,7 +11748,9 @@ html.dark.rg-theme.rg6 .site-header {
      (내용이 앉는 자리는 다른 페이지와 똑같은 가운데 70%) */
   .site-scroll > .pt-stage {
     margin-inline: 0;
-    padding-inline: 15%;
+    /* 다른 섹션과 같은 15%지만 상한을 둔다 — 1920px에서 288px씩 먹어 가운데가 좁아 보였다
+       (사용자 리포트 2026-07-30, 큰 화면 스크린샷). 1440px에선 종전과 같은 216px. */
+    padding-inline: min(15%, 232px);
   }
   /* 제안 버튼은 오른쪽 15% 여백 기둥의 가운데에 (사용자 확정 2026-07-18) */
   .feedback-widget {
