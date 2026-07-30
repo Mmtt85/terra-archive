@@ -9229,11 +9229,9 @@ html.dark .story-card:hover .story-thumb img {
   color: var(--pt-ink);
   display: grid;
   grid-template-columns: minmax(190px, 0.85fr) minmax(0, 1.5fr);
-  grid-template-rows: auto 1fr;
-  grid-template-areas:
-    "top    top"
-    "player tiles";
-  gap: 12px 20px;
+  grid-template-rows: 1fr;
+  grid-template-areas: "player tiles";
+  gap: 12px 26px;
 }
 /* 배경 캐릭터 아트 — 왼쪽 아래를 채우고 타일 뒤로 물러난다 */
 .pt-art {
@@ -9255,39 +9253,18 @@ html.dark .story-card:hover .story-thumb img {
   position: absolute;
   z-index: -1;
   inset: 0;
+  /* 아트 위에 얇게 깔아 글자 대비를 지킨다. 밝은 테마에선 흰 베일, 어두운 테마에선 검은 베일
+     (--pt-veil) — 한쪽 색으로 고정하면 반대 모드에서 배경만 따로 논다 (사용자 지적 2026-07-30) */
   background:
-    linear-gradient(100deg, color-mix(in srgb, var(--pt-strip) 62%, transparent) 0%,
-      color-mix(in srgb, var(--pt-strip) 18%, transparent) 42%, transparent 68%);
+    linear-gradient(100deg, color-mix(in srgb, var(--pt-veil) 62%, transparent) 0%,
+      color-mix(in srgb, var(--pt-veil) 18%, transparent) 42%, transparent 68%);
   pointer-events: none;
-}
-
-/* 상단바 — 게임의 시계·재화 줄 */
-.pt-top {
-  grid-area: top;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 14px;
-  font-family: monospace;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--pt-strip-ink);
-  text-shadow: 0 1px 3px #0009;
-}
-.pt-count {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-.pt-count i {
-  color: var(--pt-accent);
-  font-style: normal;
 }
 
 /* 좌측 독타 프로필 자리 */
 .pt-player {
   grid-area: player;
-  align-self: center;
+  align-self: end;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -9320,21 +9297,21 @@ html.dark .story-card:hover .story-thumb img {
   font-size: clamp(22px, 3vw, 30px);
   font-weight: 900;
   letter-spacing: -0.02em;
-  color: var(--pt-strip-ink);
-  text-shadow: 0 2px 10px #000a;
+  color: var(--pt-over);
+  text-shadow: var(--pt-over-shadow);
 }
 .pt-sub {
   font-size: 12.5px;
   font-weight: 600;
   line-height: 1.6;
-  color: color-mix(in srgb, var(--pt-strip-ink) 78%, transparent);
-  text-shadow: 0 1px 6px #0009;
+  color: color-mix(in srgb, var(--pt-over) 78%, transparent);
+  text-shadow: var(--pt-over-shadow);
 }
 
 /* ── 타일 배치 — 게임 홈의 칸 구성을 그대로 (tile.area와 1:1) ── */
 .pt-tiles {
   grid-area: tiles;
-  align-self: center;
+  align-self: start;   /* 위로 붙인다 (사용자 요청 2026-07-30) — 가운데면 위가 휑했다 */
   /* 스테이지가 화면 높이만큼 커져도 타일은 이 높이를 지킨다 — 안 그러면 1fr 행이 늘어나
      칸이 다시 휑해진다(줄여 놓은 것이 되돌아간다) */
   height: min(66vh, 540px);
@@ -9564,7 +9541,6 @@ html.dark .story-card:hover .story-thumb img {
     min-height: calc(100dvh - var(--header-h, 56px));
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
-      "top"
       "player"
       "tiles";
   }
@@ -9576,7 +9552,7 @@ html.dark .story-card:hover .story-thumb img {
     opacity: 0.5;
   }
   .pt-scrim {
-    background: linear-gradient(180deg, color-mix(in srgb, var(--pt-strip) 40%, transparent), color-mix(in srgb, var(--pt-strip) 72%, transparent));
+    background: linear-gradient(180deg, color-mix(in srgb, var(--pt-veil) 40%, transparent), color-mix(in srgb, var(--pt-veil) 72%, transparent));
   }
   .pt-tiles {
     height: auto;

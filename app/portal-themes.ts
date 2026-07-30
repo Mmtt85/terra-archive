@@ -9,7 +9,6 @@
 // 로 갈랐다. 새 테마를 넣을 때 PORTAL_THEMES에 항목 하나만 추가하면 되고,
 // 기능 매핑은 건드리지 않는다.
 
-import type { Locale } from "./i18n";
 
 /** 홈 화면의 칸 하나. area는 CSS grid-template-areas 이름과 1:1로 맞춘다. */
 export type PortalTile = {
@@ -77,8 +76,13 @@ export const PORTAL_ART = "/skin/full/char_1012_skadi2_1.webp";
 export const PORTAL_THEMES: Record<"light" | "dark", PortalTheme> = {
   light: {
     id: "light",
-    backdrop: "linear-gradient(120deg, #2b3a41 0%, #47585c 45%, #6d7f7a 100%)",
+    // 밝은 모드에서 뒷배경만 어두우면 따로 논다 (사용자 지적 2026-07-30)
+    backdrop: "linear-gradient(120deg, #eae4d8 0%, #ded8ca 44%, #c8d0cb 100%)",
     vars: {
+      // 배경 위에 바로 얹히는 글자(시계·이름·소개)와, 아트 위에 까는 베일 색
+      "--pt-over": "#22201d",
+      "--pt-over-shadow": "0 1px 6px #ffffffcc",
+      "--pt-veil": "#ffffff",
       "--pt-plate": "#f4efe4",
       "--pt-plate-2": "#e9e2d3",
       "--pt-ink": "#1d1c1a",
@@ -94,6 +98,9 @@ export const PORTAL_THEMES: Record<"light" | "dark", PortalTheme> = {
     id: "dark",
     backdrop: "linear-gradient(120deg, #0d1114 0%, #161d21 50%, #202a2b 100%)",
     vars: {
+      "--pt-over": "#dfe8dd",
+      "--pt-over-shadow": "0 2px 10px #000000aa",
+      "--pt-veil": "#0a0d0f",
       "--pt-plate": "#1b2126",
       "--pt-plate-2": "#141a1e",
       "--pt-ink": "#e8efe6",
@@ -106,13 +113,3 @@ export const PORTAL_THEMES: Record<"light" | "dark", PortalTheme> = {
     },
   },
 };
-
-/** 게임 상단바의 날짜·시각 표기 (YYYY/MM/DD HH:MM, KST) */
-export function stageClock(locale: Locale, at: number): string {
-  const parts = new Intl.DateTimeFormat(locale === "ko" ? "ko-KR" : locale === "ja" ? "ja-JP" : "en-US", {
-    timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit",
-    hour: "2-digit", minute: "2-digit", hour12: false,
-  }).formatToParts(new Date(at));
-  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
-  return `${get("year")}/${get("month")}/${get("day")} ${get("hour")}:${get("minute")}`;
-}

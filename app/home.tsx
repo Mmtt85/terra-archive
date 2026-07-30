@@ -28,7 +28,7 @@ import { bindEscClose } from "./esc-close";
 import { feedbackReady } from "./feedback";
 import { tabHasNewFeature } from "./whats-new";
 import { scrollMainTop } from "./scroll";
-import { PORTAL_TILES, PORTAL_THEMES, PORTAL_ART, stageClock, type PortalTile } from "./portal-themes";
+import { PORTAL_TILES, PORTAL_THEMES, PORTAL_ART, type PortalTile } from "./portal-themes";
 import { useLazyVisible } from "./lazy-img";
 import { I18nProvider, useI18n, conceptName, DT_LOCALE, MAGIC_TRAIT_RE, LOCALES, type Locale, type ExtraI18n } from "./i18n";
 
@@ -689,11 +689,6 @@ function Portal({ onOpenTab, onFeedback, stats }: {
       {/* 배경 아트 — 장식이므로 alt는 비운다. 늦게 떠도 레이아웃이 밀리지 않게 절대배치. */}
       <img className="pt-art" src={asset(PORTAL_ART)} alt="" decoding="async" fetchPriority="low" />
       <span className="pt-scrim" aria-hidden />
-
-      {/* 상단바 — 게임의 시계 줄. 재화 카운터는 뜻이 안 통해 뺐다 (사용자 지시 2026-07-30). */}
-      <div className="pt-top">
-        <span className="pt-clock">{now == null ? "—" : stageClock(locale, now)}</span>
-      </div>
 
       {/* 좌측 — 게임의 독타 프로필 자리 */}
       <div className="pt-player">
