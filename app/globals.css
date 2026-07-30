@@ -9218,7 +9218,9 @@ html.dark .story-card:hover .story-thumb img {
      (실측 2026-07-30: 모바일에서 필요 745px인데 658px로 눌림). 내용 높이를 지킨다. */
   flex: 0 0 auto;
   width: 100%;
-  min-height: min(58vh, 520px);
+  /* 위아래로도 화면을 채운다 (사용자 요청 2026-07-30). --header-h는 home.tsx가 헤더 실제
+     높이를 재서 넣어 준다 — 접힘/펼침으로 달라지므로 고정값을 쓰면 어긋난다. */
+  min-height: calc(100dvh - var(--header-h, 56px));
   padding: 14px 16px 18px;
   /* 배경은 화면 끝까지 (사용자 요청 2026-07-30) — 다른 섹션에 걸리는 전역 70% 컬럼 규칙을
      여기서만 풀고, 대신 안쪽 padding으로 내용을 같은 자리에 맞춘다. 풀블리드라 모서리는 각지게. */
@@ -9283,7 +9285,7 @@ html.dark .story-card:hover .story-thumb img {
 /* 좌측 독타 프로필 자리 */
 .pt-player {
   grid-area: player;
-  align-self: end;
+  align-self: center;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -9330,16 +9332,22 @@ html.dark .story-card:hover .story-thumb img {
 /* ── 타일 배치 — 게임 홈의 칸 구성을 그대로 (tile.area와 1:1) ── */
 .pt-tiles {
   grid-area: tiles;
+  align-self: center;
+  /* 스테이지가 화면 높이만큼 커져도 타일은 이 높이를 지킨다 — 안 그러면 1fr 행이 늘어나
+     칸이 다시 휑해진다(줄여 놓은 것이 되돌아간다) */
+  height: min(66vh, 540px);
   display: grid;
   gap: 13px;   /* 8px는 붙어 보였다 (사용자 지적 2026-07-30) */
-  /* 6열 — 게임 홈의 칸 비율(제일 큰 칸 2/3 · 이벤트 배너 1/3)을 4열로는 못 맞춘다 */
+  /* 사용자 지정 배치 (2026-07-30): 1줄 인프라 통째, 2줄 통합전략 2칸 + 이벤트 1칸,
+     나머지는 PORTAL_TILES 순서대로. 6열이라야 "2칸 : 1칸"이 정확히 떨어진다. */
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  grid-template-rows: 1.15fr 1fr 1fr 1fr;
+  grid-template-rows: 1.25fr 1.1fr 1fr 1fr 1fr;
   grid-template-areas:
-    "terminal terminal terminal terminal banner   banner  "
+    "terminal terminal terminal terminal terminal terminal"
+    "squads   squads   squads   squads   banner   banner  "
     "base     base     operator operator story    story   "
-    "squads   squads   recruit  recruit  depot    depot   "
-    "mission  mission  archives archives friends  friends ";
+    "recruit  recruit  depot    depot    mission  mission "
+    "archives archives archives friends  friends  friends ";
 }
 .pt-tile {
   position: relative;
@@ -9505,8 +9513,13 @@ html.dark .story-card:hover .story-thumb img {
   position: relative;
   z-index: 2;
   flex: none;
-  display: grid;
-  place-items: center;
+  /* ⚠ grid + place-items:center면 b·small이 암시적 2행으로 갈려 각자 위·아래 가장자리에
+     붙는다 (실측 2026-07-30). 세로 flex로 한 덩어리를 가운데에 둔다. */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
   width: 46px;
   height: 46px;
   border-radius: 50%;
@@ -9545,7 +9558,8 @@ html.dark .story-card:hover .story-thumb img {
 /* 좁은 화면 — 아트를 배경으로 눕히고 타일을 2열로. 게임도 세로에선 칸을 접는다. */
 @media (max-width: 900px) {
   .pt-stage {
-    min-height: 0;
+    /* 좁은 화면에서도 배경은 화면을 채운다 — 내용이 더 길면 min-height라 알아서 늘어난다 */
+    min-height: calc(100dvh - var(--header-h, 56px));
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
       "top"
@@ -9563,17 +9577,17 @@ html.dark .story-card:hover .story-thumb img {
     background: linear-gradient(180deg, color-mix(in srgb, var(--pt-strip) 40%, transparent), color-mix(in srgb, var(--pt-strip) 72%, transparent));
   }
   .pt-tiles {
+    height: auto;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-template-rows: none;
-    grid-auto-rows: minmax(58px, auto);
+    grid-auto-rows: minmax(64px, auto);
     grid-template-areas:
       "terminal terminal"
-      "banner   banner  "
+      "squads   banner  "
       "base     operator"
-      "story    squads  "
-      "recruit  depot   "
-      "mission  archives"
-      "friends  friends ";
+      "story    recruit "
+      "depot    mission "
+      "archives friends ";
   }
   .pt-t-terminal .pt-ko { font-size: 19px; }
 }
