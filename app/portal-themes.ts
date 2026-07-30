@@ -10,7 +10,6 @@
 // 기능 매핑은 건드리지 않는다.
 
 import type { Locale } from "./i18n";
-import themeData from "./data/portal-themes.json";
 
 /** 홈 화면의 칸 하나. area는 CSS grid-template-areas 이름과 1:1로 맞춘다. */
 export type PortalTile = {
@@ -42,59 +41,71 @@ export const PORTAL_TILES: PortalTile[] = [
   { id: "banner", label: "진행중 이벤트", area: "banner", kind: "banner", icon: "✦" },
   { id: "base", label: "파밍 도우미", tab: "farm", area: "base", kind: "plate",
     desc: "정예화 재료의 최적 파밍 스테이지와 이성 효율표", icon: "◈" },
-  { id: "operator", label: "오퍼 백과사전", tab: "archive", area: "operator", kind: "plate", icon: "▤" },
-  { id: "story", label: "스토리", tab: "story", area: "story", kind: "plate", icon: "✦" },
-  { id: "squads", label: "통합전략 가이드", tab: "rogue", area: "squads", kind: "plate", icon: "❖" },
-  { id: "recruit", label: "공채 도우미", tab: "recruit", area: "recruit", kind: "plate", icon: "◎" },
-  { id: "depot", label: "오퍼 육성 시뮬", tab: "upgrade", area: "depot", kind: "plate", icon: "▦" },
-  { id: "mission", label: "업데이트 내역", action: "changelog", area: "mission", kind: "plate", icon: "🛠" },
-  { id: "archives", label: "테라 아카이브 소개", tab: "about", area: "archives", kind: "plate", icon: "ⓘ" },
-  { id: "friends", label: "제안 보내기", action: "feedback", area: "friends", kind: "plate", icon: "💬" },
+  { id: "operator", label: "오퍼 백과사전", tab: "archive", area: "operator", kind: "plate",
+    desc: "소속·직군·태그·시너지로 필터·검색하는 오퍼레이터 도감", icon: "▤" },
+  { id: "story", label: "스토리", tab: "story", area: "story", kind: "plate",
+    desc: "이벤트 스토리를 AI 요약과 전문(풀 스크립트)으로", icon: "✦" },
+  { id: "squads", label: "통합전략 가이드", tab: "rogue", area: "squads", kind: "plate",
+    desc: "층별 노드·적 도감·유물·엔딩 조건을 난이도별로 정리", icon: "❖" },
+  { id: "recruit", label: "공채 도우미", tab: "recruit", area: "recruit", kind: "plate",
+    desc: "공개모집 태그 조합으로 확정·고성급 오퍼를 탐색", icon: "◎" },
+  { id: "depot", label: "오퍼 육성 시뮬", tab: "upgrade", area: "depot", kind: "plate",
+    desc: "오퍼 육성에 필요한 용문폐·재료 총량을 단계별로 계산", icon: "▦" },
+  { id: "mission", label: "업데이트 내역", action: "changelog", area: "mission", kind: "plate",
+    desc: "최근 무엇이 바뀌었는지, 지난 기록까지 한 곳에", icon: "🛠" },
+  { id: "archives", label: "테라 아카이브 소개", tab: "about", area: "archives", kind: "plate",
+    desc: "각 기능이 무엇이고 언제 쓰는지 안내", icon: "ⓘ" },
+  { id: "friends", label: "제안 보내기", action: "feedback", area: "friends", kind: "plate",
+    desc: "잘못된 정보나 아쉬운 점을 알려주세요", icon: "💬" },
 ];
 
-/** 갈아끼우는 대상 — 인터페이스 색만 바꾼다. 배경 아트와 칸 배치는 테마가 건드리지 않는다. */
+/** 인터페이스 팔레트. 사이트의 밝기(다크 모드)를 그대로 따른다 — 별도 선택지를 두지 않는다
+ *  (사용자 확정 2026-07-30: "색깔만 바꿀 거면 다크/라이트 두 가지만"). */
 export type PortalTheme = {
-  id: string;
-  dark: boolean;
-  /** .pt-stage에 그대로 얹는 CSS 변수 */
+  id: "light" | "dark";
   vars: Record<string, string>;
+  backdrop: string;
 };
 
 /**
  * 배경은 **이격 스카디 일러스트로 고정** (사용자 지시 2026-07-30).
  * ⚠ 게임 홈 스크린샷을 배경으로 쓰지 말 것 — 독타 ID·보유 재화가 찍혀 있는 개인 화면이다.
- *   (한 번 그렇게 넣었다가 공개 R2에 올라가 회수했다. 스크린샷은 색을 뽑는 재료일 뿐이다.)
+ *   (한 번 그렇게 넣었다가 공개 R2에 올라가 회수했다.)
  */
 export const PORTAL_ART = "/skin/full/char_1012_skadi2_1.webp";
 
-/**
- * 홈 화면 인터페이스 테마 — 사용자가 준 게임 홈 UI 테마 11종에서
- * scripts/build-portal-themes.py가 판 색·포인트 색만 뽑아 만든 팔레트.
- * 이미지를 더 넣고 스크립트만 다시 돌리면 늘어난다.
- */
-export const PORTAL_THEMES: PortalTheme[] = themeData as PortalTheme[];
-
-export function themeById(id: string | null | undefined): PortalTheme {
-  return PORTAL_THEMES.find((theme) => theme.id === id) ?? PORTAL_THEMES[0];
-}
-
-/** 테마에 맞춘 뒷배경 — 아트 뒤에 깔리는 분위기 */
-export function backdropOf(theme: PortalTheme): string {
-  return theme.dark
-    ? "linear-gradient(120deg, #0d1114 0%, #161d21 50%, #202a2b 100%)"
-    : "linear-gradient(120deg, #2b3a41 0%, #47585c 45%, #6d7f7a 100%)";
-}
-
-/**
- * 들어올 때마다 무작위로 고른다 (사용자 지시 2026-07-30: "랜덤으로 적용").
- * 저장하지 않는 것이 요점 — 고정하면 랜덤이 아니게 된다. 마음에 드는 걸 계속 보고 싶으면
- * 화면의 🎲 버튼으로 그 자리에서 넘긴다.
- */
-export function randomTheme(exceptId?: string): string {
-  const pool = PORTAL_THEMES.filter((theme) => theme.id !== exceptId);
-  const list = pool.length ? pool : PORTAL_THEMES;
-  return list[Math.floor(Math.random() * list.length)].id;
-}
+export const PORTAL_THEMES: Record<"light" | "dark", PortalTheme> = {
+  light: {
+    id: "light",
+    backdrop: "linear-gradient(120deg, #2b3a41 0%, #47585c 45%, #6d7f7a 100%)",
+    vars: {
+      "--pt-plate": "#f4efe4",
+      "--pt-plate-2": "#e9e2d3",
+      "--pt-ink": "#1d1c1a",
+      "--pt-mut": "#7b7468",
+      "--pt-accent": "#e2622a",
+      "--pt-strip": "#17171a",
+      "--pt-strip-ink": "#efe9dc",
+      "--pt-line": "#00000018",
+      "--pt-glow": "#e2622a55",
+    },
+  },
+  dark: {
+    id: "dark",
+    backdrop: "linear-gradient(120deg, #0d1114 0%, #161d21 50%, #202a2b 100%)",
+    vars: {
+      "--pt-plate": "#1b2126",
+      "--pt-plate-2": "#141a1e",
+      "--pt-ink": "#e8efe6",
+      "--pt-mut": "#93a89b",
+      "--pt-accent": "#c8e64f",
+      "--pt-strip": "#0a0d0f",
+      "--pt-strip-ink": "#dfe8dd",
+      "--pt-line": "#ffffff1a",
+      "--pt-glow": "#c8e64f44",
+    },
+  },
+};
 
 /** 게임 상단바의 날짜·시각 표기 (YYYY/MM/DD HH:MM, KST) */
 export function stageClock(locale: Locale, at: number): string {

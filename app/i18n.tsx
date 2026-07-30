@@ -244,7 +244,8 @@ const D: Record<string, Pair> = {
   // 테마 이름은 게임 홈 UI 테마 이름을 딴 것 — 고유명사라 음차한다.
   "파이오니어": ["Pioneer", "パイオニア"],
   "로도스": ["Rhodes", "ロドス"],
-  "홈 화면 테마": ["Home theme", "ホーム画面テーマ"],
+  "최근 무엇이 바뀌었는지, 지난 기록까지 한 곳에": ["What changed recently, plus the full history", "最近の変更と過去の記録をまとめて"],
+  "잘못된 정보나 아쉬운 점을 알려주세요": ["Tell us what's wrong or missing", "誤りや気になる点をお知らせください"],
   "수록 오퍼레이터": ["Operators listed", "収録オペレーター"],
   "요약된 이벤트": ["Events summarised", "要約済みイベント"],
   "사이트에는 없는 기능이에요": ["Not available on this site", "このサイトにはない機能です"],

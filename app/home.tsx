@@ -28,7 +28,7 @@ import { bindEscClose } from "./esc-close";
 import { feedbackReady } from "./feedback";
 import { tabHasNewFeature } from "./whats-new";
 import { scrollMainTop } from "./scroll";
-import { PORTAL_TILES, PORTAL_THEMES, PORTAL_ART, themeById, backdropOf, randomTheme, stageClock, type PortalTile } from "./portal-themes";
+import { PORTAL_TILES, PORTAL_THEMES, PORTAL_ART, stageClock, type PortalTile } from "./portal-themes";
 import { useLazyVisible } from "./lazy-img";
 import { I18nProvider, useI18n, conceptName, DT_LOCALE, MAGIC_TRAIT_RE, LOCALES, type Locale, type ExtraI18n } from "./i18n";
 
@@ -634,19 +634,21 @@ function Portal({ onOpenTab, onFeedback, stats }: {
   stats: { operators: number; summaries: number };
 }) {
   const { locale, t } = useI18n();
-  const [themeId, setThemeId] = useState(PORTAL_THEMES[0].id);
+
   const [now, setNow] = useState<number | null>(null); // 서버 렌더엔 시각이 없다 → 마운트 후
   const [events, setEvents] = useState<GameEvent[]>([]);
   const [slide, setSlide] = useState(0);   // 배너에서 몇 번째 이벤트를 보고 있나
   useEffect(() => {
-    setThemeId(randomTheme());   // 들어올 때마다 무작위 (저장하지 않는다)
     setNow(Date.now());
     const id = setInterval(() => setNow(Date.now()), 30_000);
     void fetchBcastPayload().then((data) => { if (data) setEvents(data.events); });
     return () => clearInterval(id);
   }, []);
-  const theme = themeById(themeId);
-  const shuffle = () => setThemeId((cur) => randomTheme(cur));
+  // 팔레트는 사이트 밝기를 그대로 따라간다 — 별도 테마 선택지를 두지 않는다
+  // (사용자 확정 2026-07-30). 헤더에서 다크 모드를 켜면 그 자리에서 같이 바뀐다.
+  const dark = useSyncExternalStore(subscribeThemeClass,
+    () => document.documentElement.classList.contains("dark"), () => false);
+  const theme = PORTAL_THEMES[dark ? "dark" : "light"];
 
   // 배너 칸 = 진행중 + 진행 예정을 좌우로 넘겨 본다 (사용자 요청 2026-07-30).
   // 진행중이 앞, 그 뒤에 시작이 임박한 순으로 예정 이벤트.
@@ -683,7 +685,7 @@ function Portal({ onOpenTab, onFeedback, stats }: {
 
   return (
     <section className="pt-stage" data-pt={theme.id} aria-labelledby="portal-title"
-      style={{ ...theme.vars, "--pt-backdrop": backdropOf(theme) } as React.CSSProperties}>
+      style={{ ...theme.vars, "--pt-backdrop": theme.backdrop } as React.CSSProperties}>
       {/* 배경 아트 — 장식이므로 alt는 비운다. 늦게 떠도 레이아웃이 밀리지 않게 절대배치. */}
       <img className="pt-art" src={asset(PORTAL_ART)} alt="" decoding="async" fetchPriority="low" />
       <span className="pt-scrim" aria-hidden />
@@ -753,14 +755,6 @@ function Portal({ onOpenTab, onFeedback, stats }: {
         })}
       </div>
 
-      {/* 테마 — 들어올 때마다 무작위. 🎲로 그 자리에서 다음 것으로 넘긴다. */}
-      <div className="pt-themebar">
-        <button type="button" className="pt-themebtn" onClick={shuffle}
-          title={t("홈 화면 테마")} aria-label={t("홈 화면 테마")}>
-          <span aria-hidden>🎲</span>
-          <em>{PORTAL_THEMES.findIndex((th) => th.id === theme.id) + 1}/{PORTAL_THEMES.length}</em>
-        </button>
-      </div>
     </section>
   );
 }

@@ -9220,19 +9220,18 @@ html.dark .story-card:hover .story-thumb img {
   width: 100%;
   max-width: 1240px;
   margin: 0 auto;
-  min-height: min(72vh, 660px);
+  min-height: min(58vh, 520px);
   padding: 12px 16px 16px;
   border-radius: var(--r-lg);
   background: var(--pt-backdrop);
   color: var(--pt-ink);
   display: grid;
   grid-template-columns: minmax(190px, 0.85fr) minmax(0, 1.5fr);
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto 1fr;
   grid-template-areas:
     "top    top"
-    "player tiles"
-    "theme  tiles";
-  gap: 14px 20px;
+    "player tiles";
+  gap: 12px 20px;
 }
 /* 배경 캐릭터 아트 — 왼쪽 아래를 채우고 타일 뒤로 물러난다 */
 .pt-art {
@@ -9335,7 +9334,7 @@ html.dark .story-card:hover .story-thumb img {
   gap: 8px;
   /* 6열 — 게임 홈의 칸 비율(제일 큰 칸 2/3 · 이벤트 배너 1/3)을 4열로는 못 맞춘다 */
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  grid-template-rows: 1.35fr 1fr 1fr 0.9fr;
+  grid-template-rows: 1.15fr 1fr 1fr 1fr;
   grid-template-areas:
     "terminal terminal terminal terminal banner   banner  "
     "base     base     operator operator story    story   "
@@ -9347,9 +9346,9 @@ html.dark .story-card:hover .story-thumb img {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 4px;
-  padding: 9px 12px;
+  justify-content: center;   /* 제목+설명을 세로 가운데로 — 위아래로 벌어져 허전하던 것 정리 */
+  gap: 5px;
+  padding: 8px 12px;
   border: 1px solid var(--pt-line);
   border-radius: 4px;   /* 게임 UI는 각진 판 — 사이트 전역 라운딩을 여기서만 낮춘다 */
   background: var(--pt-plate);
@@ -9383,30 +9382,31 @@ html.dark .story-card:hover .story-thumb img {
   flex: none;
   display: grid;
   place-items: center;
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--pt-accent) 18%, transparent);
   color: var(--pt-accent);
   font-size: 12px;
 }
 .pt-ko {
-  font-size: clamp(13px, 1.4vw, 16px);
+  font-size: clamp(14.5px, 1.6vw, 18px);
   font-weight: 900;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
   color: var(--pt-ink);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 /* 제일 큰 칸은 이름도 크게 — 게임의 위계 그대로 */
-.pt-t-terminal .pt-ko { font-size: clamp(19px, 2.3vw, 28px); }
-.pt-t-terminal .pt-ic { width: 30px; height: 30px; font-size: 15px; }
+.pt-t-terminal .pt-ko { font-size: clamp(20px, 2.4vw, 29px); }
+.pt-t-terminal .pt-ic { width: 32px; height: 32px; font-size: 16px; }
+.pt-t-terminal .pt-desc { font-size: 13px; }
 /* 큰 칸 가운데를 채우는 한 줄 설명 — 게임에선 이성 시계가 있던 자리 */
 .pt-desc {
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
-  line-height: 1.5;
+  line-height: 1.45;
   color: var(--pt-mut);
   overflow: hidden;
   display: -webkit-box;
@@ -9539,37 +9539,6 @@ html.dark .story-card:hover .story-thumb img {
   opacity: 0.62;
 }
 
-/* 테마 전환 — 게임 홈 UI 테마를 갈아끼우는 자리 */
-.pt-themebar {
-  grid-area: theme;
-  align-self: end;
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.pt-themebtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 11px;
-  border: 1px solid color-mix(in srgb, var(--pt-strip-ink) 32%, transparent);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--pt-strip) 55%, transparent);
-  color: var(--pt-strip-ink);
-  font-size: 11px;
-  font-weight: 800;
-  cursor: pointer;
-  transition: 0.12s;
-}
-.pt-themebtn:hover { border-color: var(--pt-accent); }
-.pt-themebtn em {
-  font-family: monospace;
-  font-style: normal;
-  font-size: 10px;
-  opacity: 0.7;
-}
-
 /* 좁은 화면 — 아트를 배경으로 눕히고 타일을 2열로. 게임도 세로에선 칸을 접는다. */
 @media (max-width: 900px) {
   .pt-stage {
@@ -9578,8 +9547,7 @@ html.dark .story-card:hover .story-thumb img {
     grid-template-areas:
       "top"
       "player"
-      "tiles"
-      "theme";
+      "tiles";
   }
   .pt-art {
     left: auto;
