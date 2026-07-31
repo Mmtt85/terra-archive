@@ -259,9 +259,19 @@ const modeGlyph = (event: GameEvent): string =>
 // 사이드스토리·복각 등 굵직한 이벤트 — 배지 대표로 우선한다 (로그인·출석류보다)
 const MAJOR_EVENT_TYPES = new Set(["SIDESTORY", "BRANCHLINE", "MINISTORY"]);
 // 로그인·출석·기원 등 "보상 수령만" 하는 잔이벤트 — 헤더에서 아예 숨긴다 (사용자 확정 2026-07-17).
-// 콜라보(SWITCH_ONLY)·한정임무(COLLECTION) 같은 실제 콘텐츠 이벤트는 "_ONLY"라도 남기므로
-// 접미사 일괄 필터가 아니라 명시적 블록리스트로 관리한다.
-const MINOR_EVENT_TYPES = new Set(["LOGIN_ONLY", "CHECKIN_ONLY", "PRAY_ONLY", "BLESS_ONLY"]);
+// 콜라보(SWITCH_ONLY)·한정임무(COLLECTION/MISSION_ONLY) 같은 실제 콘텐츠 이벤트는 "_ONLY"라도
+// 남기므로 접미사 일괄 필터가 아니라 명시적 블록리스트로 관리한다.
+// 2026-07-31 보강 (사용자 지적 "부 이벤트는 표시 안 하기로 했다") — activity_table 전수로
+// 확인한 출석·로그인 계열을 마저 넣는다. 괄호는 그 type의 실제 이벤트명:
+//   UNIQUE_ONLY(부활의 찬가 출석·축전 특별·나인컬러드 디어 재개방 출석)
+//   CHECKIN_VS('햇빛이여 비추소서' 출석) · CHECKIN_ACCESS(추천 먼슬리카드)
+//   CHECKIN_ALL_PLAYER(미래서곡 출석) · GRID_GACHA(_V2)(밸리 광산 로그인·채굴 허가증)
+//   FLIP_ONLY(와르르 소원패)
+const MINOR_EVENT_TYPES = new Set([
+  "LOGIN_ONLY", "CHECKIN_ONLY", "PRAY_ONLY", "BLESS_ONLY",
+  "UNIQUE_ONLY", "CHECKIN_VS", "CHECKIN_ACCESS", "CHECKIN_ALL_PLAYER",
+  "GRID_GACHA", "GRID_GACHA_V2", "FLIP_ONLY",
+]);
 
 // 워커 fetch는 모듈 공유 프라미스로 1회만 — 헤더 배지와 이벤트 스트립이 같이 쓴다
 let bcastFetch: Promise<{ broadcasts: Broadcast[]; events: GameEvent[] } | null> | null = null;
