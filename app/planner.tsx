@@ -2048,9 +2048,14 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                 // 종전엔 목록에서 통째로 사라져 데이터가 빠진 것처럼 보였다. 이제 회색으로
                 // 남기고 "작전기록 방에서만" 꼬리표를 단다 — 계산엔 여전히 안 들어간다.
                 const active = new Set(b.skills.map((skill) => skill.name));
-                const gated = op.skills.filter((skill) => skill.room === cell.room && !active.has(skill.name)
-                  && !(skill.tiers ?? []).some((tier) => active.has(tier.name)));
-                const shown = [...b.skills, ...gated];
+                const unused = (skill: InfraSkill) => !active.has(skill.name)
+                  && !(skill.tiers ?? []).some((tier) => active.has(tier.name));
+                const gated = op.skills.filter((skill) => skill.room === cell.room && unused(skill));
+                // **다른 시설 스킬도 지우지 않는다** — 흐릿하게 남기고 어느 시설 것인지 꼬리표를
+                // 단다 (사용자 요청 2026-07-31: "에이야 같은 경우 제조소에 넣으면 사무실 관련
+                // 인프라가 아예 사라짐"). 위 생산품 잠금 스킬과 같은 관례로, 계산엔 안 들어간다.
+                const elsewhere = op.skills.filter((skill) => skill.room !== cell.room && unused(skill));
+                const shown = [...b.skills, ...gated, ...elsewhere];
                 return (
                   <article key={op.id} className="crew-card">
                     {tempIds.has(op.id) && <button type="button" className="crew-revert" title={t("이 오퍼만 임시 적용을 되돌립니다")} onClick={() => onRevertTempOne(op.id)}>↩</button>}
@@ -2091,7 +2096,8 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                             <em>{skill.name}</em> — <TermText text={skill.description} refs={skill.termRefs} onTerm={setTermOpen} />
                             {off && (
                               <i className="skill-off-tag">
-                                {skill.product === "gold" ? t("순금 제조소에서만 적용")
+                                {skill.room !== cell.room ? t("{room} 스킬 — 이 시설에서는 적용되지 않음", { room: t(infra.rooms[skill.room]?.name ?? skill.room) })
+                                  : skill.product === "gold" ? t("순금 제조소에서만 적용")
                                   : skill.product === "exp" ? t("작전기록 제조소에서만 적용")
                                   : t("이 방에서는 적용되지 않음")}
                               </i>

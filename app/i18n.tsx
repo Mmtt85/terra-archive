@@ -853,6 +853,10 @@ const D: Record<string, Pair> = {
     "自動編成から除外 — 条件に左右されやすくコンディション消費が大きいため、自動では配置しません。手動での配置は可能です",
   ],
   "이름·소속으로 후보 검색": ["Search candidates by name or affiliation", "名前・所属で候補検索"],
+  "{room} 스킬 — 이 시설에서는 적용되지 않음": [
+    "{room} skill — not active in this facility",
+    "{room}スキル — この施設では適用されません",
+  ],
   "검색 결과가 없습니다.": ["No results.", "検索結果がありません。"],
   "이미 근무 중 — 빼려면 그 시설에서 ✕를 누르세요:": [
     "Already on shift — remove them from that facility (✕) first:",

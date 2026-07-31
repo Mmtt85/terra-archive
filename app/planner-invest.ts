@@ -19,7 +19,7 @@
 // 도메인 규칙 정본은 docs/INFRA-RULES.md, 엔진은 app/planner-engine.ts.
 import costsData from "./data/costs.json";
 import {
-  optimizeConfig, buildPlan, planScore, teamScore, opSolo, withElite, maxElite, eliteLocks, setCapCluster,
+  optimizeConfig, buildPlan, planScore, teamScore, opSolo, withElite, maxElite, eliteLocks, setCapCluster, setShiftTiebreak,
   availableSetKeys, synergySetMembers, cellByKey, LAYOUT, aurasOf, ctxFor, presentIdsFor, roomOfFor, cellOfFor, SHIFT_COUNT, AUTO_BENCH_IDS,
   type InfraOp, type Elite, type Plan, type ProdPriority, type FactionSets,
 } from "./planner-engine";
@@ -202,7 +202,7 @@ export async function recommendRaises(
   // 시드(캡 확장·밀려난 생성원)·제외 명단(사슬 전환자)·용량 결집 on/off를 빠뜨리면, 반사실이
   // 통째로 상수만큼 낮게 지어져 그 상수가 모든 후보의 ΔS에서 똑같이 깎인다. 실계정 404명
   // 박스에서 −1.521이 걸려 후보 66건이 전부 음수 → **추천 0건**이었다 (2026-07-30).
-  const { plan: baseline, tokenChoice, factionSets, park, seeds, excluded, capCluster } =
+  const { plan: baseline, tokenChoice, factionSets, park, seeds, excluded, capCluster, shiftTiebreak } =
     await optimizeConfig(baseRoster, priority, undefined, pinnedDorms);
   const S0 = planScore(baseline, byId0);
   const droppedIds = new Set(excluded);
@@ -241,6 +241,7 @@ export async function recommendRaises(
     // 베이스라인이 로스터에서 뺐던 오퍼는 반사실에서도 뺀다 (후보 본인이면 그대로 두어 평가).
     const roster1 = droppedIds.size ? upRoster.filter((op) => op.id === opId || !droppedIds.has(op.id)) : upRoster;
     setCapCluster(capCluster);
+    setShiftTiebreak(shiftTiebreak);
     for (const cfg of configs) {
       // ⑤(우선 생산 집중)는 planScore 중립(gold↔exp 등량 재배치)이라 육성 이득 델타를 안 바꾸고
       // config 비교만 교란하므로 끈다 — 반사실 평가는 ⑤-무관 원가치로 본다 (planner-engine 참고).
@@ -249,6 +250,7 @@ export async function recommendRaises(
       if (score > bestS) { bestS = score; best = plan; }
     }
     setCapCluster(true);
+    setShiftTiebreak(true);
     return { plan: best!, score: bestS };
   };
 

@@ -528,6 +528,12 @@ export function setPriorityMode(priority?: ProdPriority) {
 export let CAP_CLUSTER_ON = true;
 let capClusterUsed = false; // 이번 buildPlan에서 결집 후보가 실제로 채택됐나 — A/B를 돌릴지 판단
 export function setCapCluster(on: boolean) { CAP_CLUSTER_ON = on; }
+// 지속시간 타이브레이크(bestTeam 후보 정렬)의 on/off — "효율이 동급이면 A조엔 오래 버티는 쪽"
+// (사용자 확정 2026-07-31). 방 점수는 같지만 데려가는 오퍼가 달라져 옆방이 손해를 볼 수 있어
+// (실측 full/gold −1.6), 용량 변환 결집과 같은 관례로 optimizeConfig가 총점을 맞대 본다.
+export let SHIFT_TIEBREAK_ON = true;
+let shiftTiebreakUsed = false; // 이번 buildPlan에서 종전(성급) 순서와 실제로 어긋났나
+export function setShiftTiebreak(on: boolean) { SHIFT_TIEBREAK_ON = on; }
 // 제어센터 무한동력 성립 여부 — 로스터에 순소모 0 제어센터 조합이 있으면 buildPlan이 켠다.
 // 켜지면 ① 그 조합에 절대 우선 락 ② 토큰 패키지가 제어센터를 예약석으로 못 씀(죽은 사슬 방지).
 // 불가능한 로스터에선 꺼진 채로 종전 장기 지속 경쟁(화식 코어 등)이 그대로 돈다.
@@ -1128,7 +1134,27 @@ export function opSolo(op: InfraOp, room: string, slots: number, ctx: Ctx): numb
 
 export function bestTeam(room: string, slots: number, pool: Map<string, InfraOp>, ctx: Ctx, seedOps: InfraOp[] = []): InfraOp[] {
   const cands = Array.from(pool.values()).filter((op) => op.skills.some((skill) => skillApplies(skill, room, ctx.product)));
-  const solo = cands.map((op) => ({ op, v: opSolo(op, room, slots, ctx) })).sort((a, b) => b.v - a.v || a.op.rarity - b.op.rarity);
+  // 동점 타이브레이크 = **덜 지치는 쪽 먼저** (사용자 확정 2026-07-31: "효율이 동급일 경우
+  // A조에 지속시간 긴 놈을 놔야 하는데 이게 고려되지 않고 있음 — 하루카·어스스피릿 둘 다
+  // 사무실 +45%인데 A조에 어스스피릿을 박음"). 종전엔 동점이면 **낮은 성급 우선**(6성 아끼기)
+  // 이라 어스스피릿(★4·소모+2)이 하루카(★6·소모 0)보다 먼저 뽑혔다.
+  // A조를 먼저 채우고 남은 인원으로 B조를 채우므로, 이 순서만 바꾸면 고소모 쪽이 B조로 밀린다.
+  // 소모가 없는 방(숙소·가공소, infra.rooms[].drain=0)은 지속시간 개념이 없어 종전 순서 유지.
+  const drains = (infra.rooms[room]?.drain ?? 0) > 0;
+  const shiftCost = (op: InfraOp) => (drains
+    ? activeSkills(op, room, ctx.product).reduce((sum, sk) =>
+        sum + sk.moraleDrain + (sk.drainRoom ?? 0) - (sk.recoverRoom ?? 0), 0)
+    : 0);
+  const solo = cands.map((op) => ({ op, v: opSolo(op, room, slots, ctx), c: shiftCost(op) }))
+    .sort((a, b) => {
+      if (b.v !== a.v) return b.v - a.v;
+      if (SHIFT_TIEBREAK_ON && a.c !== b.c) {
+        // 종전(낮은 성급 우선)과 순서가 뒤집힐 때만 A/B를 부른다 — 같은 방향이면 공짜다
+        if ((a.c - b.c) * (a.op.rarity - b.op.rarity) < 0) shiftTiebreakUsed = true;
+        return a.c - b.c;
+      }
+      return a.op.rarity - b.op.rarity;
+    });
   // 쇼트리스트 = 단독 점수 상위 40 + **팀 의존 역할군 전원**. override/payout/quality/
   // percoworker는 팀이 갖춰져야 가치가 드러나 단독 점수로는 저평가되는데, 쇼트리스트에서
   // 잘리면 그리디·감사 모두 완성형 조합을 영영 못 본다 — 무6성 로스터에서 디아만테(단독 15)가
@@ -2570,6 +2596,8 @@ export type OptimizeResult = {
   excluded: string[];
   /** 채택안이 용량 변환 결집 후보를 켠 안인지 */
   capCluster: boolean;
+  /** 채택안이 지속시간 타이브레이크를 켠 안인지 (동점 시 저소모 우선) */
+  shiftTiebreak: boolean;
 };
 export async function optimizeConfig(fullRoster: InfraOp[], priority: ProdPriority = "gold", onStep?: (step: OptimizeStep) => void | Promise<void>, pinnedDorms: Record<string, string[]> = {}): Promise<OptimizeResult> {
   // 자동편성 제외 명단은 탐색 시작부터 뺀다 — 토큰 패키지·세트 성립 판정도 벤치 없는
@@ -2577,6 +2605,7 @@ export async function optimizeConfig(fullRoster: InfraOp[], priority: ProdPriori
   const roster = autoRoster(fullRoster, pinnedDorms);
   setPriorityMode(priority); // config 탐색 전 구간(buildPlan 사이 planScore 비교 포함) 모드 고정
   setCapCluster(true);       // 앞 실행이 A/B 도중 끊겨 꺼진 채 남아 있을 수 있다 — 탐색은 항상 켠 상태로
+  setShiftTiebreak(true);    // 위와 같은 이유 (지속시간 타이브레이크 A/B)
   // 진행 콜백(페이싱 포함) 후 매크로태스크 양보 — 브라우저가 안내 문구를 리페인트할 틈을 준다
   const tick = async (step: OptimizeStep) => {
     if (!onStep) return;
@@ -2678,6 +2707,7 @@ export async function optimizeConfig(fullRoster: InfraOp[], priority: ProdPriori
       tokenChoice: tokens, factionSets: sets, seeds,
       excluded: roster.filter((op) => !effRoster.includes(op)).map((op) => op.id),
       capCluster: CAP_CLUSTER_ON,
+      shiftTiebreak: SHIFT_TIEBREAK_ON,
     };
     const plain = withConcentration(tokens, sets, seeds);
     const pairIds = new Set<string>();
@@ -2696,7 +2726,7 @@ export async function optimizeConfig(fullRoster: InfraOp[], priority: ProdPriori
   // 데려간 오퍼 때문에 옆방 계열 결집이 깨져 총점이 내려가는 로스터가 있다(실측: 순금 +3.7 ·
   // 밸런스 +2.0인데 작전기록 −1.6). 미니 토큰 조합·숙소 파킹과 같은 관례 — 후보는 L0이 만들고
   // 채택은 planScore가 한다. 결집이 안 걸린 플랜(변환기 미보유 로스터)은 A/B를 아예 안 돈다.
-  const finish = (tokens: string[], sets: FactionSets, seeds: { opId: string; room: string }[]): OptimizeResult => {
+  const finishCap = (tokens: string[], sets: FactionSets, seeds: { opId: string; room: string }[]): OptimizeResult => {
     setCapCluster(true);
     capClusterUsed = false;
     const on = finishOnce(tokens, sets, seeds);
@@ -2704,6 +2734,21 @@ export async function optimizeConfig(fullRoster: InfraOp[], priority: ProdPriori
     setCapCluster(false);
     const off = finishOnce(tokens, sets, seeds);
     setCapCluster(true);
+    return planScore(off.plan, byId) > planScore(on.plan, byId) + 1e-6 ? off : on;
+  };
+  // 지속시간 타이브레이크 A/B (2026-07-31) — "효율이 동급일 경우 A조에 지속시간 긴 놈"은
+  // **방 점수가 같을 때**의 규칙이다. 그런데 같은 점수라도 데려가는 오퍼가 달라지면 옆방이
+  // 손해를 볼 수 있어(실측 full/gold −1.6 · no6/balance −1.2, 반대로 evenSeq/balance +4.8),
+  // 총점이 내려가는 로스터에선 종전 순서를 쓴다 — 총점이 갈리면 효율이 이긴다.
+  // 종전(성급) 순서와 실제로 어긋난 플랜만 A/B를 돈다.
+  const finish = (tokens: string[], sets: FactionSets, seeds: { opId: string; room: string }[]): OptimizeResult => {
+    setShiftTiebreak(true);
+    shiftTiebreakUsed = false;
+    const on = finishCap(tokens, sets, seeds);
+    if (!shiftTiebreakUsed) return on;
+    setShiftTiebreak(false);
+    const off = finishCap(tokens, sets, seeds);
+    setShiftTiebreak(true);
     return planScore(off.plan, byId) > planScore(on.plan, byId) + 1e-6 ? off : on;
   };
   if (!variants.length) return finish(tokenChoice, {}, []);

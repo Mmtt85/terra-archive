@@ -244,9 +244,11 @@ console.log("");
     const S0 = engine.planScore(r.plan, byId);
     const drop = new Set(r.excluded);
     engine.setCapCluster(r.capCluster);
+    engine.setShiftTiebreak(r.shiftTiebreak);
     const redone = engine.buildPlan(r.tokenChoice, roster.filter((o) => !drop.has(o.id)),
       r.factionSets, priority, r.seeds, false, r.park, {});
     engine.setCapCluster(true);
+    engine.setShiftTiebreak(true);
     const gap = engine.planScore(redone, byId) - S0;
     const ok = Math.abs(gap) < 1e-6;
     console.log(`${ok ? "✓" : "✗"} 반사실이 베이스라인 전략을 재현 (${rosterName}/${priority}) `
