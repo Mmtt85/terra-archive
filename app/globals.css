@@ -2266,6 +2266,39 @@ legend {
   justify-content: space-between;
   gap: 24px;
 }
+/* 헤더 오른쪽 바로가기 (육성 시뮬 등, 2026-08-01). 히어로가 어두운 그라데이션이라
+   흰 테두리 고스트 버튼으로 두고, 좁아지면 제목 아래로 떨어뜨린다. */
+.modal-actions {
+  flex: none;
+  gap: 8px;
+  display: flex;
+}
+.modal-action {
+  color: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+  background: #ffffff1f;
+  border: 1px solid #ffffff59;
+  border-radius: 4px;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 800;
+  transition: all 0.15s;
+  display: inline-flex;
+}
+.modal-action:hover {
+  background: #ffffff33;
+  border-color: #fff;
+}
+@media (width <= 760px) {
+  .modal-title-block {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}
 .modal-title-main {
   flex: none;
   min-width: 0;
@@ -2470,6 +2503,72 @@ legend {
 .attack-range i.origin {
   border-color: var(--border-strong);
   background: var(--chip);
+}
+/* 스킬로 늘어나는 칸 / 빠지는 칸 (2026-08-01) — 색만으로 구분하지 않도록 늘어난 칸은
+   채우고 빠지는 칸은 점선 빈칸으로 둔다 (색각 이상·흑백 인쇄 대비). */
+.attack-range i.added {
+  background: #f97316;
+  border-color: #c2410c;
+}
+.attack-range i.removed {
+  background: 0 0;
+  border-style: dashed;
+  border-color: #c2410c;
+}
+/* 스킬 카드 안 범위 비교 — 평소 → 스킬 사용 중 */
+.skill-range {
+  border-top: 1px dashed var(--line);
+  margin-top: 9px;
+  padding-top: 9px;
+}
+.skill-range > b {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+.skill-range-grids {
+  align-items: center;
+  gap: 12px;
+  margin-top: 7px;
+  display: flex;
+}
+.skill-range-grids figure {
+  margin: 0;
+  text-align: center;
+}
+.skill-range-grids figcaption {
+  color: var(--muted);
+  margin-top: 4px;
+  font-size: 10px;
+}
+.skill-range-arrow {
+  color: var(--muted);
+  font-size: 13px;
+}
+.skill-range-legend {
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 7px 0 0;
+  font-size: 10.5px;
+  display: flex;
+}
+.skill-range-legend span {
+  color: var(--muted);
+  align-items: center;
+  gap: 4px;
+  display: inline-flex;
+}
+.skill-range-legend span:before {
+  border: 1px solid #c2410c;
+  width: 8px;
+  height: 8px;
+  content: "";
+}
+.skill-range-legend .rl-added:before {
+  background: #f97316;
+}
+.skill-range-legend .rl-removed:before {
+  border-style: dashed;
 }
 .no-range {
   color: var(--muted);
@@ -14129,4 +14228,98 @@ main.site-main > .site-header {
 .recruit-time-note, .rg-ctx-note, .rg-disclaimer, .rg-enc-note, .rule-note,
 .sc-future-note, .story-disclaimer {
   border-radius: 0;
+}
+
+/* ── 소환물(토큰) — 오퍼 상세 재능 섹션(04) 안 (2026-08-01) ─────────────────
+   본체와 헷갈리지 않게 카드로 감싸고, 스탯은 최종 단계 한 줄만 보여준다. */
+.summon-block {
+  border-top: 1px dashed var(--line);
+  margin-top: 12px;
+  padding-top: 11px;
+}
+.summon-block-label {
+  color: var(--muted);
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 9px;
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+}
+.summon-list {
+  gap: 12px;
+  display: grid;
+}
+.summon-card {
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--lime);
+  border-radius: 6px;
+  padding: 12px 14px;
+}
+.summon-card header h4 {
+  margin: 0;
+  font-size: 14px;
+}
+.summon-trait {
+  color: var(--muted);
+  margin: 3px 0 0;
+  font-size: 12px;
+}
+.summon-body {
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin-top: 10px;
+  display: flex;
+}
+.summon-stats {
+  flex: 1;
+  grid-template-columns: repeat(auto-fit, minmax(58px, 1fr));
+  gap: 8px 10px;
+  min-width: 220px;
+  margin: 0;
+  display: grid;
+}
+.summon-stats dt {
+  color: var(--muted);
+  font-size: 10px;
+}
+.summon-stats dd {
+  margin: 1px 0 0;
+  font-size: 13px;
+  font-weight: 800;
+}
+.summon-range {
+  flex: none;
+  margin: 0;
+  text-align: center;
+}
+.summon-range figcaption {
+  color: var(--muted);
+  margin-top: 4px;
+  font-size: 10px;
+}
+.summon-sub {
+  border-top: 1px dashed var(--line);
+  margin-top: 10px;
+  padding-top: 9px;
+}
+.summon-sub > b {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+.summon-sub p {
+  margin: 5px 0 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+.summon-sub i {
+  color: var(--ink);
+  margin-right: 6px;
+  font-style: normal;
+  font-weight: 800;
+}
+.summon-skill + .summon-skill {
+  margin-top: 8px;
 }

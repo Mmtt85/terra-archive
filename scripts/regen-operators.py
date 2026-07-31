@@ -129,6 +129,40 @@ def build_stats(c):
                      "rangeId": rid, "range": grids})
     return rows
 
+def build_summons(c):
+    """소환물(토큰) — displayTokenDict가 정본 (KR 48명이 보유, 사용자 요청 2026-08-01).
+
+    토큰은 character_table에 char_와 같은 형태로 들어 있어 스탯·범위·재능·스킬을
+    오퍼와 똑같이 뽑을 수 있다. 스탯은 **최종 단계(phases 마지막)** 한 줄만 — 소환물은
+    본체를 따라 성장하므로 정예화 표를 통째로 보여줄 필요가 없다.
+    """
+    out = []
+    for tid in (c.get("displayTokenDict") or {}):
+        # 미실장(CN 선행) 오퍼의 토큰은 KR 테이블에 없다 — CN으로 폴백한다
+        t = chars.get(tid) or cn.get(tid)
+        if not t or not t.get("phases"):
+            continue
+        ph = t["phases"][-1]
+        kf = (ph.get("attributesKeyFrames") or [{}])[-1].get("data", {})
+        rid = ph.get("rangeId")
+        res = kf.get("magicResistance", 0)
+        if isinstance(res, float) and res.is_integer(): res = int(res)
+        bat = kf.get("baseAttackTime", 0)
+        if isinstance(bat, float) and bat.is_integer(): bat = int(bat)
+        out.append({
+            "id": tid, "name": t.get("name"),
+            "trait": strip_tags(t.get("description") or ""),
+            "rangeId": rid,
+            "range": ([{"row": g["row"], "col": g["col"]} for g in ranges[rid]["grids"]]
+                      if rid and rid in ranges else []),
+            "hp": kf.get("maxHp"), "atk": kf.get("atk"), "def": kf.get("def"),
+            "res": res, "block": kf.get("blockCnt"),
+            "redeploy": kf.get("respawnTime"), "interval": bat,
+            "talents": build_talents(t),
+            "skills": build_skills(t),
+        })
+    return out
+
 def build_skills(c):
     out = []
     for s in c.get("skills") or []:
@@ -139,11 +173,18 @@ def build_skills(c):
         dur = lv.get("duration")
         if dur is not None and dur <= 0: dur = None
         if isinstance(dur, float) and dur.is_integer(): dur = int(dur)
+        # 스킬이 공격 범위를 바꾸는 경우에만 rangeId가 붙는다 (KR 1,598개 중 385개) —
+        # 범위 확대·변경 스킬이 어떻게 바뀌는지 UI가 기본 범위와 겹쳐 보여준다
+        # (사용자 요청 2026-08-01). 안 바꾸는 스킬은 rangeId가 없어 키 자체가 안 나간다.
+        rid = lv.get("rangeId")
+        rng = ([{"row": g["row"], "col": g["col"]} for g in ranges[rid]["grids"]]
+               if rid and rid in ranges else None)
         out.append({"id": sid, "name": lv.get("name"),
                     "spType": SP_KO.get(sp.get("spType"), str(sp.get("spType"))),
                     "initialSp": sp.get("initSp"), "spCost": sp.get("spCost"),
                     "duration": dur,
-                    "description": interpolate(lv.get("description"), lv.get("blackboard"))})
+                    "description": interpolate(lv.get("description"), lv.get("blackboard")),
+                    **({"rangeId": rid, "range": rng} if rng else {})})
     return out
 
 def build_talents(c):
@@ -335,6 +376,7 @@ def build_op(cid, c):
         "talents": build_talents(c),
         "stats": stats,
         "skills": build_skills(c),
+        "summons": build_summons(c),
         "potentials": build_potentials(c),
         "modules": build_modules(cid),
         "infrastructure": build_infra(cid),
@@ -437,7 +479,7 @@ unknown_powers = _saved_unknown  # 수확 중 생긴 노이즈 제거
 CN2KR_TEXT = {k: v.most_common(1)[0][0] for k, v in _pair_votes.items()}
 
 TR_FIELDS = ("subProfession", "reason", "trait", "talents", "skills", "potentials",
-             "modules", "infrastructure")
+             "modules", "infrastructure", "summons")
 untranslated = []
 def translate_cn(x, ctx):
     if isinstance(x, dict):

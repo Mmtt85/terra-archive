@@ -33,7 +33,9 @@ Usage: python3 scripts/build-skill-levels.py [gamedata-dir]   # default: .gameda
      "v":   [["9","105%","2"], …],   # 레벨별 값 (변하는 자리만, tpl 마커 순서)
      "sp":  [[20,40], …],            # [초기 SP, 소모 SP] — 레벨을 탈 때만
      "d":   [20, …],                 # 지속시간(초) — 레벨을 탈 때만
-     "ti":  [0,0,0,0,0,0,0,1,1,1]}}  # 레벨→tpl 색인 — 템플릿이 2개 이상일 때만
+     "ti":  [0,0,0,0,0,0,0,1,1,1],   # 레벨→tpl 색인 — 템플릿이 2개 이상일 때만
+     "rg":  [[{"row":0,"col":1}, …], …],  # 공격 범위 — **레벨마다 달라질 때만** (7개 스킬)
+     "ri":  [0,0,0,0,0,1,1,1,1,1]}}  # 레벨→rg 색인. 레벨을 안 타면 operators.json의 것 하나로 충분
   배열 길이 = 레벨 수(보통 10, 특화가 없는 스킬은 7).
 """
 import json
@@ -141,7 +143,7 @@ def retemplate(text, values):
     return "".join(out)
 
 
-def build_skill(entry):
+def build_skill(entry, ranges=None):
     """스킬 하나 → {tpl, v, sp, d, ti}. 레벨이 하나뿐이면 None."""
     levels = entry.get("levels") or []
     if len(levels) < 2:
@@ -186,8 +188,17 @@ def build_skill(entry):
         doc["d"] = dur
     if len(groups) > 1:
         doc["ti"] = [groups.index(r) for r in raws]
+    # 공격 범위가 레벨마다 달라지는 스킬(실측 7개) — 화면의 Lv 탭을 따라가야 하므로
+    # 여기 실어 보낸다. 레벨 내내 같으면 operators.json의 skill.range 하나로 충분하다.
+    rids = [l.get("rangeId") for l in levels]
+    if ranges and len(set(rids)) > 1:
+        uniq = sorted({r for r in rids if r})
+        if all(r in ranges for r in uniq):
+            doc["rg"] = [[{"row": g["row"], "col": g["col"]} for g in ranges[r]["grids"]] for r in uniq]
+            # rangeId가 없는 레벨(= 기본 범위)은 -1로 둔다 — 화면이 오퍼 기본 범위를 쓴다
+            doc["ri"] = [uniq.index(r) if r else -1 for r in rids]
     # 레벨을 타는 게 하나도 없으면(패시브 등) 레벨 표시가 무의미하다
-    if not any(k in doc for k in ("v", "sp", "d", "ti")):
+    if not any(k in doc for k in ("v", "sp", "d", "ti", "ri")):
         return None
     return doc
 
@@ -214,6 +225,14 @@ def main():
         path = f"{REPO}/app/data/operators.json" if locale == "ko" else f"{REPO}/app/data/operators.{locale}.json"
         rows = load(path) if os.path.exists(path) else []
         op_text[locale] = {o["id"]: {s["id"]: s.get("description") or "" for s in o["skills"]} for o in rows}
+    # 범위 격자는 언어와 무관하다 — KR 우선, 없으면 CN
+    ranges = {}
+    for prefix in ("kr", "cn"):
+        rp = f"{S}/{prefix}_range_table.json"
+        if os.path.exists(rp):
+            raw = load(rp)
+            ranges = raw.get("range", raw)
+            break
     tables = {}
     for prefix in {p for pair in LOCALES.values() for p in pair}:
         path = f"{S}/{prefix}_skill_table.json"
@@ -241,7 +260,7 @@ def main():
                     from_cn = used_fallback = entry is not None
                 if entry is None:
                     continue
-                built = build_skill(entry)
+                built = build_skill(entry, ranges)
                 if built and from_cn:
                     built = localize_fallback(built, (op_text[locale].get(op["id"]) or {}).get(sid, ""))
                     if not any(k in built for k in ("v", "sp", "d")):

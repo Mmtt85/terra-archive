@@ -209,6 +209,22 @@ def build_locale(prefix):
                         "description": interpolate(best.get("description"), best.get("blackboard"))})
         return out if len(out) == len(kr_talents) else kr_talents
 
+    def build_summons(kr_summons):
+        """소환물(토큰) — 토큰도 character_table에 있으므로 이름·특성·재능·스킬을 그대로 번역한다.
+        스탯·범위 격자는 KR 값을 그대로 쓴다 (엔진 필드)."""
+        out = []
+        for s_kr in kr_summons:
+            t = chars.get(s_kr["id"])
+            if not t:
+                out.append(s_kr)      # 로케일 테이블이 밀렸으면 KR 그대로
+                continue
+            out.append({**s_kr,
+                        "name": t.get("name") or s_kr["name"],
+                        "trait": strip_tags(t.get("description") or "") or s_kr.get("trait", ""),
+                        "talents": build_talents(t, s_kr.get("talents") or []),
+                        "skills": build_skills(t, s_kr.get("skills") or [])})
+        return out
+
     def build_potentials(c, kr_pot):
         out = []
         for i, p in enumerate(c.get("potentialRanks") or []):
@@ -324,6 +340,7 @@ def build_locale(prefix):
             "talents": build_talents(c, op["talents"]),
             "stats": [{**s, "phase": C["phase"](i)} for i, s in enumerate(op["stats"])],
             "skills": build_skills(c, op["skills"]),
+            "summons": build_summons(op.get("summons") or []),
             "potentials": build_potentials(c, op["potentials"]),
             "modules": build_modules(cid, op["modules"]),
             "infrastructure": build_infra_texts(cid, op["infrastructure"]),

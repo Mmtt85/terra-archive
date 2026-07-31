@@ -58,9 +58,22 @@ type Skill = {
   spCost: number;
   duration: number | null;
   description: string;
+  // 스킬이 공격 범위를 바꿀 때만 붙는다 (범위 확대·변경 계열 228개) — 없으면 기본 범위 그대로
+  rangeId?: string;
+  range?: RangeGrid[];
 };
 
 type Talent = { name: string; description: string };
+
+// 소환물(토큰) — displayTokenDict 기준, KR 48명 + CN 선행 5명 (사용자 요청 2026-08-01).
+// 스탯은 최종 단계 한 줄만: 소환물은 본체를 따라 크므로 정예화 표가 의미 없다.
+type Summon = {
+  id: string; name: string; trait: string;
+  rangeId?: string; range: RangeGrid[];
+  hp: number; atk: number; def: number; res: number;
+  block: number; redeploy: number; interval: number;
+  talents: Talent[]; skills: Skill[];
+};
 
 type Potential = { rank: number; description: string };
 
@@ -102,6 +115,7 @@ export type Operator = {
   talents: Talent[];
   stats: StatRow[];
   skills: Skill[];
+  summons: Summon[];
   potentials: Potential[];
   modules: OperatorModule[];
   infrastructure: Infrastructure[];
@@ -1153,6 +1167,16 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
       setSelected(null);
     });
   };
+  // 오퍼 상세 → 육성 시뮬로 그 오퍼를 담아 이동 (사용자 요청 2026-08-01).
+  // UpgradeSim은 마운트 때 ?ops를 한 번 읽으므로 URL을 먼저 맞춰 두고 탭을 바꾼다.
+  // ⚠ tabPath가 ?future=1을 달고 올 수 있어 문자열 이어붙이기 금지 — switchRogueTopic과 같은 함정.
+  const openUpgradeFor = (operatorId: string) => {
+    const [path, query] = tabPath("upgrade").split("?");
+    const params = new URLSearchParams(query);
+    params.set("ops", operatorId);
+    history.pushState(null, "", `${path}?${params}`);
+    startTransition(() => { setTab("upgrade"); setSelected(null); });
+  };
   // 햄버거의 '통합전략 가이드' 부메뉴에서 특정 테마로 바로 진입 — /rogue?topic=isN 으로 이동.
   // 이미 rogue 탭이면 커스텀 이벤트(ta:rogue-topic)로 RogueGuide가 토픽을 동기화하고, 다른
   // 탭이면 탭 전환 시 RogueGuide가 마운트되며 URL의 topic을 읽는다.
@@ -1542,7 +1566,7 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
       </footer>
       </div>{/* /.site-scroll */}
 
-      {selected && <OperatorModal operator={selected} onClose={closeOperator} />}
+      {selected && <OperatorModal operator={selected} onClose={closeOperator} onUpgrade={openUpgradeFor} />}
       <FeedbackWidget open={feedbackOpen} setOpen={setFeedbackOpen} />
       {/* 팁 풍선 — 화면 빈 곳을 찾아 떠다닌다 (본문을 가리면 스스로 자리를 옮긴다) */}
       <TipBalloon />
@@ -1862,7 +1886,7 @@ function ModalRail({ scrollRef }: { scrollRef: React.RefObject<HTMLDivElement | 
   );
 }
 
-function OperatorModal({ operator, onClose }: { operator: Operator; onClose: () => void }) {
+function OperatorModal({ operator, onClose, onUpgrade }: { operator: Operator; onClose: () => void; onUpgrade?: (operatorId: string) => void }) {
   const { locale, t } = useI18n();
   const scrollRef = useRef<HTMLDivElement>(null);
   return (
@@ -1883,6 +1907,14 @@ function OperatorModal({ operator, onClose }: { operator: Operator; onClose: () 
               </div>
               {operator.unreleased && <p className="future-note">{t("미실장 오퍼레이터입니다 — 중국 서버 데이터 기준이며, 스킬·재능 등 텍스트는 비공식 AI 번역이라 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>}
             </div>
+            {/* 이 오퍼를 담은 채로 육성 시뮬 열기 (사용자 요청 2026-08-01) */}
+            {onUpgrade && (
+              <div className="modal-actions">
+                <button type="button" className="modal-action" onClick={() => onUpgrade(operator.id)}>
+                  <span className="btn-icon" aria-hidden>▦</span>{t("육성 비용 계산")}
+                </button>
+              </div>
+            )}
           </div>
         </header>
         <div className="modal-body">
@@ -1947,6 +1979,9 @@ function OperatorModal({ operator, onClose }: { operator: Operator; onClose: () 
             ) : (
               <p className="no-detail">{t("등록된 재능이 없습니다.")}</p>
             )}
+            {/* 소환물은 보통 재능 문구가 "○○를 소환할 수 있다"라고 알려 준다 — 그래서
+                별도 섹션이 아니라 재능 바로 밑에 붙인다 (사용자 요청 2026-08-01). */}
+            {operator.summons.length > 0 && <SummonList summons={operator.summons} />}
           </section>
 
           <section className="detail-section" id="op-trait">
@@ -2020,7 +2055,9 @@ function OperatorModal({ operator, onClose }: { operator: Operator; onClose: () 
 // 문장 속 숫자를 그 자리에서 갈아 끼운다 — 바뀌는 값은 강조돼 있어 뭘 사는지 바로 보인다.
 // operators.json의 description은 최고 레벨 문장이라, 데이터가 오기 전에도 그대로 쓴다
 // (빌드 시 최고 레벨 렌더 == description을 948개 전부 대조해 맞춰 뒀다).
-type SkillLevels = { tpl?: string[]; v?: string[][]; sp?: [number, number][]; d?: (number | null)[]; ti?: number[] };
+// rg/ri = 레벨마다 공격 범위가 달라지는 스킬(실측 4개)의 레벨별 범위. ri[level] === -1 이면
+// 그 레벨에선 범위를 안 바꾼다(오퍼 기본 범위). 레벨을 안 타면 아예 없고 skill.range를 쓴다.
+type SkillLevels = { tpl?: string[]; v?: string[][]; sp?: [number, number][]; d?: (number | null)[]; ti?: number[]; rg?: RangeGrid[][]; ri?: number[] };
 type SkillLevelDoc = Record<string, SkillLevels>;
 const skillLevelCache = new Map<string, SkillLevelDoc | null>();
 // 8~10레벨은 게임 표기대로 특화 M1~M3 (특화가 없는 7레벨 스킬은 1~7만)
@@ -2051,7 +2088,8 @@ function SkillSection({ operator }: { operator: Operator }) {
       {operator.skills.length ? (
         <div className="skill-list">
           {operator.skills.map((skill, index) => (
-            <SkillCard key={skill.id} skill={skill} index={index} levels={doc?.[skill.id]} />
+            <SkillCard key={skill.id} skill={skill} index={index} levels={doc?.[skill.id]}
+              baseRange={operator.stats[operator.stats.length - 1]?.range} summons={operator.summons} />
           ))}
         </div>
       ) : (
@@ -2061,7 +2099,24 @@ function SkillSection({ operator }: { operator: Operator }) {
   );
 }
 
-function SkillCard({ skill, index, levels }: { skill: Skill; index: number; levels?: SkillLevels }) {
+/**
+ * 이 스킬로 실제 공격 범위가 정해지는 주체가 **소환물**인 경우를 찾는다.
+ * 판정: 소환물이 **같은 이름의 스킬**을 갖고 있고 그쪽에 범위가 붙어 있으면 그 범위다.
+ *  · 메이어 '교란 장치'처럼 본체 스킬에도 같은 범위가 붙어 있는 경우(8건)
+ *  · 도로시 '고속 공진 제거'처럼 **본체 스킬엔 범위가 아예 없고** 소환물(공진 장치)
+ *    스킬에만 붙어 있는 경우(6건) — 스킬마다 범위가 달라 스킬 칸에서 봐야 한다
+ *    (사용자 지적 2026-08-01).
+ * 클뜯 데이터에 본체/소환물을 가르는 플래그가 없어 이름 일치로 잇는다.
+ */
+function summonSkillRange(skill: Skill, summons: Summon[]): { summon: Summon; range: RangeGrid[] } | undefined {
+  for (const summon of summons) {
+    const hit = summon.skills.find((s) => s.name === skill.name && s.range?.length);
+    if (hit) return { summon, range: hit.range as RangeGrid[] };
+  }
+  return undefined;
+}
+
+function SkillCard({ skill, index, levels, baseRange, summons = [] }: { skill: Skill; index: number; levels?: SkillLevels; baseRange?: RangeGrid[]; summons?: Summon[] }) {
   const { t } = useI18n();
   const count = (levels?.v ?? levels?.sp ?? levels?.d ?? levels?.ti)?.length ?? 0;
   const [picked, setPicked] = useState<number | null>(null); // null = 최고 레벨
@@ -2072,6 +2127,12 @@ function SkillCard({ skill, index, levels }: { skill: Skill; index: number; leve
   const duration = levels?.d ? levels.d[at] : skill.duration;
   const template = levels?.tpl?.[levels.ti ? levels.ti[at] : 0];
   const values = levels?.v?.[at] ?? [];
+  // 범위가 레벨마다 달라지는 스킬은 Lv 탭을 따라간다 (ri[at] === -1 = 그 레벨엔 변화 없음).
+  // 그 외엔 operators.json의 최고레벨 범위 하나 — 레벨을 안 타므로 그게 곧 전 레벨 값이다.
+  const skillRange = levels?.rg && levels.ri && at >= 0
+    ? (levels.ri[at] >= 0 ? levels.rg[levels.ri[at]] : undefined)
+    : skill.range;
+  const owned = summonSkillRange(skill, summons);   // 범위 주인이 소환물이면 그걸 기준으로
 
   return (
     <article className="skill-detail">
@@ -2105,6 +2166,12 @@ function SkillCard({ skill, index, levels }: { skill: Skill; index: number; leve
               })
             : skill.description}
         </p>
+        {/* 소환물 것이어도 격자는 **레벨을 따르는 본체 값**이 우선이다 — 메이어 '교란 장치'는
+            특화에서 장치 범위가 넓어진다. 본체 스킬에 범위가 아예 없는 도로시류만 소환물 값. */}
+        {owned
+          ? <SkillRange grids={skillRange?.length ? skillRange : owned.range}
+              base={owned.summon.range} ownerName={owned.summon.name} />
+          : skillRange && skillRange.length > 0 && <SkillRange grids={skillRange} base={baseRange} />}
       </div>
     </article>
   );
@@ -2442,21 +2509,137 @@ function VoiceSection({ operator }: { operator: Operator }) {
   );
 }
 
-function AttackRange({ grids }: { grids: RangeGrid[] }) {
+const cellKey = (grid: RangeGrid) => `${grid.row}:${grid.col}`;
+
+/**
+ * 공격 범위 격자. `base`를 주면 그와 견줘 **늘어난 칸·줄어든 칸을 갈라 칠한다** —
+ * 범위를 바꾸는 스킬이 어떻게 바뀌는지 보이게 (사용자 요청 2026-08-01).
+ * base 없이 쓰면 기존 그대로(스탯표의 기본 범위).
+ */
+// ── 소환물(토큰) ─────────────────────────────────────────────────────────────
+// 재능 섹션(04) 안에 붙는다 — 재능 문구가 소환을 설명하는 경우가 대부분이라 같이 읽힌다
+// (사용자 요청 2026-08-01). 스탯은 최종 단계 한 줄, 범위는 소환물 자신의 공격 범위.
+// 소환물 스킬이 범위를 바꾸면 그 스킬 밑에 다시 격자를 붙인다 — 본체와 같은 규칙.
+function SummonList({ summons }: { summons: Summon[] }) {
+  const { t } = useI18n();
+  return (
+    <div className="summon-block">
+      <b className="summon-block-label">{t("소환물")}<em className="detail-count">{summons.length}</em></b>
+      <div className="summon-list">
+        {summons.map((summon) => (
+          <article key={summon.id} className="summon-card">
+            <header>
+              <h4>{summon.name}</h4>
+              {summon.trait && <p className="summon-trait">{summon.trait}</p>}
+            </header>
+            <div className="summon-body">
+              <dl className="summon-stats">
+                <div><dt>HP</dt><dd>{summon.hp}</dd></div>
+                <div><dt>{t("공격")}</dt><dd>{summon.atk}</dd></div>
+                <div><dt>{t("방어")}</dt><dd>{summon.def}</dd></div>
+                <div><dt>{t("마저")}</dt><dd>{summon.res}</dd></div>
+                <div><dt>{t("저지")}</dt><dd>{summon.block}</dd></div>
+                <div><dt>{t("공격 간격")}</dt><dd>{summon.interval}</dd></div>
+                <div><dt>{t("재배치")}</dt><dd>{summon.redeploy}</dd></div>
+              </dl>
+              <figure className="summon-range">
+                <AttackRange grids={summon.range} />
+                <figcaption>{t("공격 범위")}</figcaption>
+              </figure>
+            </div>
+            {summon.talents.length > 0 && (
+              <div className="summon-sub">
+                <b>{t("재능")}</b>
+                {summon.talents.map((talent, i) => (
+                  <p key={i}><i>{talent.name}</i>{talent.description}</p>
+                ))}
+              </div>
+            )}
+            {summon.skills.length > 0 && (
+              <div className="summon-sub">
+                <b>{t("스킬")}</b>
+                {/* 소환물 스킬의 범위 격자는 여기 두지 않는다 — 같은 이름의 본체 스킬 카드
+                    (스킬 03)에서 보여준다 (사용자 요청 2026-08-01). 스킬마다 범위가 다른
+                    도로시 같은 경우 스킬을 읽는 자리에 범위가 있어야 한다. */}
+                {summon.skills.map((skill) => (
+                  <p key={skill.id}><i>{skill.name}</i>{skill.description}</p>
+                ))}
+              </div>
+            )}
+          </article>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AttackRange({ grids, base }: { grids: RangeGrid[]; base?: RangeGrid[] }) {
   if (!grids.length) return <small className="no-range">-</small>;
-  const withOrigin = [...grids, { row: 0, col: 0 }];
+  // 줄어든 칸도 격자 안에 그려야 하므로 범위 계산에 base까지 넣는다
+  const withOrigin = [...grids, ...(base ?? []), { row: 0, col: 0 }];
   const rows = withOrigin.map((grid) => grid.row);
   const cols = withOrigin.map((grid) => grid.col);
   const minRow = Math.min(...rows);
   const maxRow = Math.max(...rows);
   const minCol = Math.min(...cols);
   const maxCol = Math.max(...cols);
-  const active = new Set(grids.map((grid) => `${grid.row}:${grid.col}`));
+  const active = new Set(grids.map(cellKey));
+  const before = base && new Set(base.map(cellKey));
   const cells = [];
   for (let row = minRow; row <= maxRow; row += 1) {
     for (let col = minCol; col <= maxCol; col += 1) {
-      cells.push(<i key={`${row}:${col}`} className={row === 0 && col === 0 ? "origin" : active.has(`${row}:${col}`) ? "active" : ""} />);
+      const key = `${row}:${col}`;
+      const on = active.has(key);
+      let kind = "";
+      if (row === 0 && col === 0) kind = "origin";
+      else if (!before) kind = on ? "active" : "";
+      else if (on) kind = before.has(key) ? "active" : "added";     // 그대로 / 늘어남
+      else if (before.has(key)) kind = "removed";                    // 줄어듦
+      cells.push(<i key={key} className={kind} />);
     }
   }
   return <span className="attack-range" style={{ gridTemplateColumns: `repeat(${maxCol - minCol + 1},8px)` }}>{cells}</span>;
+}
+
+/** 두 범위가 같은 칸 집합인가 — 같으면 "바뀐다"고 보여줄 게 없다 */
+function sameRange(a: RangeGrid[], b: RangeGrid[]) {
+  if (a.length !== b.length) return false;
+  const set = new Set(a.map(cellKey));
+  return b.every((grid) => set.has(cellKey(grid)));
+}
+
+/**
+ * 스킬이 범위를 바꿀 때 카드에 붙는 격자 — 기본 범위와 겹쳐 늘어남/줄어듦을 보여준다.
+ * 기본 범위는 **최종 정예화(스탯표 마지막 줄)** 기준이다: 범위를 바꾸는 스킬은 대부분
+ * 2스킬·3스킬이라 정예화가 끝난 상태에서 쓰게 된다.
+ */
+function SkillRange({ grids, base, ownerName }: { grids: RangeGrid[]; base?: RangeGrid[]; ownerName?: string }) {
+  const { t } = useI18n();
+  const changed = base && base.length > 0 && !sameRange(grids, base);
+  const added = changed && grids.some((g) => !base.some((b) => cellKey(b) === cellKey(g)));
+  const removed = changed && base.some((b) => !grids.some((g) => cellKey(g) === cellKey(b)));
+  return (
+    <div className="skill-range">
+      <b>{ownerName ? t("소환물 {name}의 범위", { name: ownerName }) : t("스킬 사용 시 공격 범위")}</b>
+      <div className="skill-range-grids">
+        {changed && (
+          <figure>
+            <AttackRange grids={base} />
+            <figcaption>{ownerName ? t("{name} 기본", { name: ownerName }) : t("평소")}</figcaption>
+          </figure>
+        )}
+        {changed && <span className="skill-range-arrow" aria-hidden>→</span>}
+        <figure>
+          <AttackRange grids={grids} base={changed ? base : undefined} />
+          <figcaption>{changed ? t("스킬 사용 중") : t("변화 없음")}</figcaption>
+        </figure>
+      </div>
+      {changed && (
+        <p className="skill-range-legend">
+          {added && <span className="rl-added">{t("늘어난 칸")}</span>}
+          {removed && <span className="rl-removed">{t("빠지는 칸")}</span>}
+        </p>
+      )}
+    </div>
+  );
 }
