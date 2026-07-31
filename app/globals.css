@@ -2515,11 +2515,33 @@ legend {
   border-style: dashed;
   border-color: #c2410c;
 }
-/* 스킬 카드 안 범위 비교 — 평소 → 스킬 사용 중 */
-.skill-range {
+/* 스킬 카드 안 범위 비교 — 평소 → 스킬 사용 중.
+   본체 범위와 소환물 범위가 둘 다 있으면 한 줄에 나란히 (2026-08-01). */
+.skill-range-row {
   border-top: 1px dashed var(--line);
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 14px 0;
   margin-top: 9px;
   padding-top: 9px;
+  display: flex;
+}
+.skill-range {
+  flex: none;
+}
+/* 본체 범위와 소환물 범위를 확실히 갈라 둔다 — 붙어 있으면 한 덩어리로 읽힌다
+   (사용자 요청 2026-08-01). 좁아서 줄바꿈되면 세로선을 지운다. */
+.skill-range + .skill-range {
+  border-left: 1px dashed var(--line);
+  margin-left: 34px;
+  padding-left: 34px;
+}
+@media (width <= 620px) {
+  .skill-range + .skill-range {
+    border-left: 0;
+    margin-left: 0;
+    padding-left: 0;
+  }
 }
 .skill-range > b {
   color: var(--muted);

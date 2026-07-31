@@ -2100,13 +2100,14 @@ function SkillSection({ operator }: { operator: Operator }) {
 }
 
 /**
- * 이 스킬로 실제 공격 범위가 정해지는 주체가 **소환물**인 경우를 찾는다.
- * 판정: 소환물이 **같은 이름의 스킬**을 갖고 있고 그쪽에 범위가 붙어 있으면 그 범위다.
- *  · 메이어 '교란 장치'처럼 본체 스킬에도 같은 범위가 붙어 있는 경우(8건)
- *  · 도로시 '고속 공진 제거'처럼 **본체 스킬엔 범위가 아예 없고** 소환물(공진 장치)
- *    스킬에만 붙어 있는 경우(6건) — 스킬마다 범위가 달라 스킬 칸에서 봐야 한다
- *    (사용자 지적 2026-08-01).
- * 클뜯 데이터에 본체/소환물을 가르는 플래그가 없어 이름 일치로 잇는다.
+ * 같은 이름의 스킬을 가진 소환물 — 그 스킬의 범위는 **소환물 쪽 범위**다.
+ * (클뜯에 본체/소환물을 가르는 플래그가 없어 이름으로 잇는다. 실측 14건.)
+ *
+ * ⚠ 본체와 소환물은 **서로 다른 범위를 따로** 갖는다 (사용자 지적 2026-08-01):
+ *  · 왕 '천하겁' — 본체 25칸(본인 공격 범위 확대) + 바둑돌 9칸(돌 주변 효과). 둘 다 보여준다.
+ *  · 도로시 '고속 공진 제거' — 본체엔 범위가 없고 공진 장치에만 있다. 소환물 것만.
+ *  · 메이어 '교란 장치' — 본체 스킬 범위가 소환물 것과 **같은 칸**이다. 장치 범위가 본체
+ *    스킬에 그대로 실린 것이라 중복이므로 소환물 것 하나로 합친다.
  */
 function summonSkillRange(skill: Skill, summons: Summon[]): { summon: Summon; range: RangeGrid[] } | undefined {
   for (const summon of summons) {
@@ -2132,7 +2133,9 @@ function SkillCard({ skill, index, levels, baseRange, summons = [] }: { skill: S
   const skillRange = levels?.rg && levels.ri && at >= 0
     ? (levels.ri[at] >= 0 ? levels.rg[levels.ri[at]] : undefined)
     : skill.range;
-  const owned = summonSkillRange(skill, summons);   // 범위 주인이 소환물이면 그걸 기준으로
+  const owned = summonSkillRange(skill, summons);
+  // 본체 스킬 범위가 소환물 것과 같은 칸이면 같은 이야기다 — 하나로 합쳐 소환물 쪽만 보여준다
+  const mergedIntoSummon = Boolean(owned && skill.range?.length && sameRange(skill.range, owned.range));
 
   return (
     <article className="skill-detail">
@@ -2166,12 +2169,21 @@ function SkillCard({ skill, index, levels, baseRange, summons = [] }: { skill: S
               })
             : skill.description}
         </p>
-        {/* 소환물 것이어도 격자는 **레벨을 따르는 본체 값**이 우선이다 — 메이어 '교란 장치'는
-            특화에서 장치 범위가 넓어진다. 본체 스킬에 범위가 아예 없는 도로시류만 소환물 값. */}
-        {owned
-          ? <SkillRange grids={skillRange?.length ? skillRange : owned.range}
-              base={owned.summon.range} ownerName={owned.summon.name} />
-          : skillRange && skillRange.length > 0 && <SkillRange grids={skillRange} base={baseRange} />}
+        {/* 본체 범위와 소환물 범위는 **한 줄에 나란히** 둔다 (사용자 요청 2026-08-01) —
+            왕 '천하겁'처럼 둘 다 있는 스킬에서 위아래로 쌓이면 카드가 길어진다.
+            본체 격자는 레벨을 따르는 값(skillRange): 메이어는 특화에서 장치 범위가 넓어진다.
+            소환물 것과 같은 칸이면 합쳐서 소환물 블록 하나만 낸다. */}
+        {(owned || (skillRange && skillRange.length > 0)) && (
+          <div className="skill-range-row">
+            {!mergedIntoSummon && skillRange && skillRange.length > 0 && (
+              <SkillRange grids={skillRange} base={baseRange} />
+            )}
+            {owned && (
+              <SkillRange grids={mergedIntoSummon && skillRange?.length ? skillRange : owned.range}
+                base={owned.summon.range} ownerName={owned.summon.name} />
+            )}
+          </div>
+        )}
       </div>
     </article>
   );
