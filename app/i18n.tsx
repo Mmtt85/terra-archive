@@ -98,6 +98,9 @@ const CONCEPT_I18N: Record<string, Pair> = {
   "포트리스": ["Fortress", "フォートレス"],
   "공포": ["Fear", "恐怖"],
   "체력 소모": ["HP Drain", "HP消耗"],
+  // 태그가 아닌 특수 컨셉(app/concepts.ts SPECIAL_CONCEPTS) — 표시명은 여기서 옮긴다
+  "통합전략 전용 모듈": ["IS-Exclusive Module", "統合戦略専用モジュール"],
+  "생존 연산 전용 모듈": ["RA-Exclusive Module", "生存演算専用モジュール"],
 };
 
 export function conceptName(locale: Locale, ko: string): string {
@@ -315,6 +318,15 @@ const D: Record<string, Pair> = {
   "전투 태그": ["Combat Tags", "戦闘タグ"],
   "공식 소속": ["Affiliation", "所属"],
   "복수 선택 가능 · 전부 해제 시 전체": ["Multi-select · none selected = all", "複数選択可 · 全解除で全表示"],
+  // 컨셉덱 검색 (2026-08-01) — 별칭 사전은 app/concepts.ts
+  "이름을 입력하고 검색 · 한 번에 하나만 골라집니다": [
+    "Type a name and search · one concept at a time",
+    "名前を入力して検索 · 一度に一つだけ選べます"],
+  "컨셉덱 검색": ["Search concepts", "コンセプト検索"],
+  "예: 어비설, 슬로우, 트루뎀, 알파모듈": [
+    "e.g. Abyssal, Slow, True damage, IS module",
+    "例: アビサル, 減速, 確定ダメージ, ISモジュール"],
+  "“{q}”에 맞는 컨셉이 없어요.": ["No concept matches “{q}”.", "「{q}」に合うコンセプトがありません。"],
   "세부 조건": ["Attributes", "属性で絞り込み"],
   "항목을 눌러 값을 고르세요 · 복수 선택 가능": ["Tap a category to pick values · multi-select", "項目を押して値を選択 · 複数選択可"],
   "접기": ["Collapse", "閉じる"],
@@ -377,6 +389,11 @@ const D: Record<string, Pair> = {
   "초기 SP {n}": ["Initial SP {n}", "初期SP {n}"],
   "소모 SP {n}": ["SP cost {n}", "消費SP {n}"],
   "지속 {n}초": ["Duration {n}s", "持続{n}秒"],
+  "스킬 레벨": ["Skill level", "スキルレベル"],
+  "섹션 이동": ["Jump to section", "セクション移動"],
+  // 포탈 이벤트 캐러셀 화살표 — 사전에서 빠져 있던 것 (2026-08-01 발견)
+  "이전 이벤트": ["Previous event", "前のイベント"],
+  "다음 이벤트": ["Next event", "次のイベント"],
   "등록된 전투 스킬이 없습니다.": ["No combat skills.", "戦闘スキルがありません。"],
   "재능": ["Talents", "素質"],
   "등록된 재능이 없습니다.": ["No talents.", "素質がありません。"],

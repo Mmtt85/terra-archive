@@ -31,6 +31,7 @@ import { scrollMainTop } from "./scroll";
 import { PORTAL_TILES, PORTAL_ART, type PortalTile } from "./portal-themes";
 import { useLazyVisible } from "./lazy-img";
 import { I18nProvider, useI18n, conceptName, DT_LOCALE, MAGIC_TRAIT_RE, LOCALES, type Locale, type ExtraI18n } from "./i18n";
+import { SPECIAL_CONCEPTS, conceptTitle, conceptMatches, resolveConcepts, suggestConcepts } from "./concepts";
 
 type RangeGrid = { row: number; col: number };
 
@@ -883,6 +884,8 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
     return [
       ...SYNERGY_POTS.filter((pot) => counts.has(pot)),
       ...Array.from(counts.keys()).filter((concept) => !SYNERGY_POTS.includes(concept)).sort((a, b) => (counts.get(b) ?? 0) - (counts.get(a) ?? 0)),
+      // 태그가 아닌 특수 조건(통합전략 전용 모듈 등)도 같은 검색창에서 찾힌다 — app/concepts.ts
+      ...SPECIAL_CONCEPTS.filter((entry) => roster.some((operator) => entry.match(operator))).map((entry) => entry.key),
     ];
   }, [roster]);
   const combatTags = useMemo(() =>
@@ -914,6 +917,7 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
     const bump = (map: Map<string, number>, key: string) => map.set(key, (map.get(key) ?? 0) + 1);
     for (const operator of roster) {
       for (const concept0 of operator.concepts) bump(concept, concept0);
+      for (const entry of SPECIAL_CONCEPTS) if (entry.match(operator)) bump(concept, entry.key);
       for (const faction0 of operator.factions) bump(faction, faction0);
       for (const tag0 of operator.combatTags) bump(tag, tag0);
       bump(job, operator.job);
@@ -1257,7 +1261,7 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
     const keyword = normSearch(searchTerm);
     return roster.filter((operator) => {
       const matchesFaction = selectedFactions.length === 0 || selectedFactions.some((faction) => operator.factions.includes(faction));
-      const matchesConcept = selectedConcepts.length === 0 || selectedConcepts.some((concept) => operator.concepts.includes(concept));
+      const matchesConcept = selectedConcepts.length === 0 || selectedConcepts.some((concept) => conceptMatches(concept, operator));
       const positionPicks = selectedMethods.filter((method) => positionMethods.includes(method));
       const damagePicks = selectedMethods.filter((method) => !positionMethods.includes(method));
       const matchesMethod = (positionPicks.length === 0 || positionPicks.includes(operator.position)) && (damagePicks.length === 0 || damagePicks.includes(damageTypeOf(operator)));
@@ -1426,8 +1430,10 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
             <div><span className="section-no">FILTER / 01</span><h2 id="explorer-title">{t("탐색 조건")}</h2></div>
             <button className="reset" onClick={reset}>↻ {t("초기화")}</button>
           </div>
-          {/* 컨셉덱은 시그니처 기능이라 맨 위에 항상 펼쳐 둔다 (사용자 요청 2026-07-22). */}
-          <FilterGroup title={t("컨셉덱")} items={concepts} labelFor={(item) => conceptName(locale, item)} selected={selectedConcepts} onToggle={toggleIn(setSelectedConcepts)} rows={2} countForItem={(item) => chipCount.concept.get(item) ?? 0} />
+          {/* 컨셉덱은 시그니처 기능이라 맨 위에 항상 펼쳐 둔다 (사용자 요청 2026-07-22).
+              태그 벽 대신 검색으로 (사용자 요청 2026-08-01) — 별칭 사전은 app/concepts.ts. */}
+          <ConceptSearch keys={concepts} selected={selectedConcepts} onSet={setSelectedConcepts}
+            countFor={(item) => chipCount.concept.get(item) ?? 0} />
           {/* 성급·직군·세부직군·전투태그·공격방식·소속은 한 컨트롤로 합쳐 카테고리→값 방식으로. */}
           <AttributeFilter groups={[
             { title: t("성급"), items: rarities, selected: selectedRarities, onToggle: toggleIn(setSelectedRarities), labelFor: (item) => `${item}★`, countForItem: (item) => chipCount.rarity.get(item) ?? 0 },
@@ -1437,13 +1443,12 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
             { title: t("공격 방식"), items: attackMethods, selected: selectedMethods, onToggle: toggleIn(setSelectedMethods), countForItem: (item) => chipCount.method.get(item) ?? 0 },
             { title: t("공식 소속"), items: factions, selected: selectedFactions, onToggle: toggleIn(setSelectedFactions), countForItem: (item) => chipCount.faction.get(item) ?? 0 },
           ]} />
-
-          <aside className="data-note"><span>DATA NOTE</span><p>{t("오퍼레이터 {count}명 · 전원 이미지 · 다국어 이름·별칭 검색 · 스킬과 재능 기반 {concepts}개 컨셉 태그를 제공합니다. 모든 필터는 토글식이며 아무것도 선택하지 않으면 전체가 표시됩니다.", { count: roster.length, concepts: concepts.length })}</p></aside>
+          {/* (2026-08-01 삭제) DATA NOTE — 사용자 판단 "의미가 없어보임" */}
         </div>
 
         <div className="results">
           <div className="results-heading">
-            <div><span className="section-no">RESULT / 02</span><h2>{selectedConcepts.length === 1 ? t("{concept} 컨셉덱", { concept: conceptName(locale, selectedConcepts[0]) }) : selectedFactions.length === 1 ? selectedFactions[0] : hasActiveFilter ? t("탐색 결과") : t("전체 오퍼레이터")}</h2></div>
+            <div><span className="section-no">RESULT / 02</span><h2>{selectedConcepts.length === 1 ? t("{concept} 컨셉덱", { concept: conceptTitle(locale, selectedConcepts[0]) }) : selectedFactions.length === 1 ? selectedFactions[0] : hasActiveFilter ? t("탐색 결과") : t("전체 오퍼레이터")}</h2></div>
             <div className="search-wrap heading-search">
               <span>⌕</span>
               {/* 비제어 입력 — 지우기(×) 표시는 CSS(:placeholder-shown)가 담당한다 */}
@@ -1464,7 +1469,7 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
           <div className="active-filters">
             {selectedRarities.map((item) => <button key={`r-${item}`} onClick={() => toggleIn(setSelectedRarities)(item)}>{item}★ ×</button>)}
             {selectedFactions.map((item) => <button key={`f-${item}`} onClick={() => toggleIn(setSelectedFactions)(item)}>{item} ×</button>)}
-            {selectedConcepts.map((item) => <button key={`c-${item}`} onClick={() => toggleIn(setSelectedConcepts)(item)}>{conceptName(locale, item)} ×</button>)}
+            {selectedConcepts.map((item) => <button key={`c-${item}`} onClick={() => toggleIn(setSelectedConcepts)(item)}>{conceptTitle(locale, item)} ×</button>)}
             {selectedMethods.map((item) => <button key={`p-${item}`} onClick={() => toggleIn(setSelectedMethods)(item)}>{item} ×</button>)}
             {tags.map((tag) => <button key={`t-${tag}`} onClick={() => toggleTag(tag)}>{tag} ×</button>)}
             {selectedJobs.map((item) => <button key={`j-${item}`} onClick={() => toggleIn(setSelectedJobs)(item)}>{item} ×</button>)}
@@ -1545,6 +1550,118 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
   );
 }
 
+// 컨셉덱 검색 — 태그 40여 개를 벽처럼 깔던 걸 입력창으로 바꿨다 (사용자 요청 2026-08-01).
+// **검색 버튼(또는 Enter)을 눌러야** 필터가 걸린다 — 글자마다 목록이 튀지 않게.
+// 입력 중에는 후보만 띄우고, 후보를 직접 누르면 그건 명시적 선택이므로 바로 적용한다.
+// 별칭 사전("슬로우"→감속·정지, "록라모듈"→통합전략 전용 모듈)은 app/concepts.ts.
+// ⚠ 컨셉덱은 **한 번에 하나만** 고른다 (사용자 확정 2026-08-01) — 새로 고르면 앞의 것을
+// 밀어내고, 같은 걸 두 번 담지 않는다.
+function ConceptSearch({ keys, selected, onSet, countFor }: {
+  keys: string[]; selected: string[]; onSet: (values: string[]) => void; countFor: (value: string) => number;
+}) {
+  const { locale, t } = useI18n();
+  const [text, setText] = useState("");
+  const [miss, setMiss] = useState("");
+  const [open, setOpen] = useState(false);   // 후보 드롭다운 (사용자 요청 2026-08-01)
+  const [cursor, setCursor] = useState(-1);  // 방향키로 짚은 후보
+  const boxRef = useRef<HTMLDivElement>(null);
+  const pendingEnter = useRef(false);        // 한글 조합 중에 눌린 Enter (아래 onCompositionEnd)
+
+  // 입력이 비어 있으면 전체 목록 — 드롭다운이라 자리를 안 먹으니 여기서 훑어볼 수 있다
+  const list = useMemo(() => {
+    const pool = text.trim() ? suggestConcepts(text, keys, 40) : keys;
+    return pool.filter((key) => !selected.includes(key));
+  }, [text, keys, selected]);
+
+  useEffect(() => { setCursor(-1); }, [text]);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (event: PointerEvent) => {
+      if (!boxRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener("pointerdown", onDown);
+    return () => document.removeEventListener("pointerdown", onDown);
+  }, [open]);
+
+  const pick = (key: string) => {
+    onSet([key]);                              // 하나만 — 앞서 고른 건 밀어낸다
+    setText(""); setMiss(""); setOpen(false); setCursor(-1);
+  };
+  // 검색 버튼/Enter — 딱 하나면 바로 걸고, 여럿이면 드롭다운에서 고르게 둔다
+  const run = (raw = text) => {
+    const query = raw.trim();
+    if (!query) { setOpen(true); return; }
+    const hit = resolveConcepts(query, keys);
+    if (!hit.length) { setMiss(query); setOpen(false); return; }
+    if (hit.length === 1) { pick(hit[0]); return; }
+    setMiss(""); setOpen(true);
+  };
+  const onKey = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    // ⚠ 한글 IME 조합 중의 Enter는 '글자 확정'이지 검색 신호가 아니다. 여기서 입력을
+    // 비우면 확정된 글자가 뒤늦게 다시 들어와 “탄약”→“약”처럼 한 글자가 남는다.
+    // 조합이 끝난 뒤(onCompositionEnd)로 미룬다 — 사용자는 Enter 한 번만 치면 된다.
+    if (event.nativeEvent.isComposing) {
+      if (event.key === "Enter") pendingEnter.current = true;
+      return;
+    }
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      setOpen(true);
+      setCursor((current) => {
+        const next = current + (event.key === "ArrowDown" ? 1 : -1);
+        return Math.max(-1, Math.min(next, list.length - 1));
+      });
+      return;
+    }
+    if (event.key === "Escape") { setOpen(false); return; }
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    if (open && cursor >= 0 && list[cursor]) pick(list[cursor]);
+    else run();
+  };
+
+  return (
+    <fieldset className="concept-search">
+      <legend>{t("컨셉덱")}<small className="multi-hint">{t("이름을 입력하고 검색 · 한 번에 하나만 골라집니다")}</small></legend>
+      <div className="concept-box" ref={boxRef}>
+        <input value={text} aria-label={t("컨셉덱 검색")} placeholder={t("예: 어비설, 슬로우, 트루뎀, 알파모듈")}
+          role="combobox" aria-expanded={open} aria-autocomplete="list"
+          onFocus={() => setOpen(true)} onClick={() => setOpen(true)} onKeyDown={onKey}
+          onCompositionEnd={(event) => {
+            if (!pendingEnter.current) return;
+            pendingEnter.current = false;
+            // compositionend 뒤에 input(onChange)이 한 번 더 오므로 그다음 틱에 검색한다
+            const value = event.currentTarget.value;
+            window.setTimeout(() => { setText(value); run(value); }, 0);
+          }}
+          onChange={(event) => { setText(event.target.value); setMiss(""); setOpen(true); }} />
+        <button type="button" onClick={() => run()}><span className="btn-icon" aria-hidden>⌕</span>{t("검색")}</button>
+        {open && list.length > 0 && (
+          <ul className="concept-drop" role="listbox" aria-label={t("컨셉덱 검색")}>
+            {list.map((key, index) => (
+              <li key={key}>
+                <button type="button" role="option" aria-selected={index === cursor}
+                  className={index === cursor ? "active" : ""}
+                  onMouseEnter={() => setCursor(index)} onClick={() => pick(key)}>
+                  {conceptTitle(locale, key)}<span>{countFor(key)}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      {miss && <p className="concept-miss">{t("“{q}”에 맞는 컨셉이 없어요.", { q: miss })}</p>}
+      {selected.length > 0 && (
+        <div className="concept-picked">
+          {selected.map((key) => (
+            <button key={key} type="button" onClick={() => onSet([])}>{conceptTitle(locale, key)}<span>{countFor(key)}</span> ×</button>
+          ))}
+        </div>
+      )}
+    </fieldset>
+  );
+}
+
 // rows줄까지만 보여주고 넘치는 항목은 더보기로 접는다 (기본 1줄, 컨셉덱만 2줄)
 function FilterGroup({ title, items, selected, onToggle, rows = 1, countForItem, labelFor }: { title: string; items: string[]; selected: string[]; onToggle: (value: string) => void; rows?: number; countForItem: (item: string) => number; labelFor?: (item: string) => string }) {
   const { t } = useI18n();
@@ -1589,17 +1706,35 @@ function FilterGroup({ title, items, selected, onToggle, rows = 1, countForItem,
 }
 
 // 여러 속성 필터(성급·직군·세부직군·전투태그·공격방식·소속)를 한 컨트롤로 — 카테고리를 누르면
-// 그 값 태그가 펼쳐진다. 필터 패널이 세로로 끝없이 늘어나던 문제 해소 (사용자 요청 2026-07-22).
-// 컨셉덱은 시그니처 기능이라 별도 유지.
+// 그 값 태그가 나온다. 필터 패널이 세로로 끝없이 늘어나던 문제 해소 (사용자 요청 2026-07-22).
+// 값 목록은 아래로 밀어내지 않고 **떠 있는 드롭다운**으로 (사용자 요청 2026-08-01) —
+// 컨셉덱 검색과 같은 방식. 값은 복수 선택이라 고르는 동안 열린 채로 두고,
+// 바깥을 누르거나 ESC를 눌러야 닫힌다. 컨셉덱은 시그니처 기능이라 별도 유지.
 type AttrGroup = { title: string; items: string[]; selected: string[]; onToggle: (value: string) => void; labelFor?: (value: string) => string; countForItem: (value: string) => number };
 function AttributeFilter({ groups }: { groups: AttrGroup[] }) {
   const { t } = useI18n();
   const [open, setOpen] = useState<string | null>(null);
   const active = groups.find((g) => g.title === open);
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (event: PointerEvent) => {
+      if (!wrapRef.current?.contains(event.target as Node)) setOpen(null);
+    };
+    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") setOpen(null); };
+    document.addEventListener("pointerdown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
   return (
     <fieldset className="attr-filter">
       <legend>{t("세부 조건")}<small className="multi-hint">{t("항목을 눌러 값을 고르세요 · 복수 선택 가능")}</small></legend>
-      <div className="attr-cats">
+      <div className="attr-cats" ref={wrapRef}>
         {groups.map((g) => (
           <button key={g.title} type="button"
             className={`attr-cat${open === g.title ? " open" : ""}${g.selected.length ? " has-sel" : ""}`}
@@ -1609,19 +1744,19 @@ function AttributeFilter({ groups }: { groups: AttrGroup[] }) {
             <span className="attr-caret" aria-hidden>{open === g.title ? "▴" : "▾"}</span>
           </button>
         ))}
+        {active && (
+          <div className="filter-list attr-values" role="group" aria-label={active.title}>
+            {active.items.map((item) => {
+              const isSelected = active.selected.includes(item);
+              return (
+                <button key={item} className={isSelected ? "selected" : ""} aria-pressed={isSelected} onClick={() => active.onToggle(item)}>
+                  {active.labelFor ? active.labelFor(item) : item}<span>{active.countForItem(item)}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
-      {active && (
-        <div className="filter-list attr-values">
-          {active.items.map((item) => {
-            const isSelected = active.selected.includes(item);
-            return (
-              <button key={item} className={isSelected ? "selected" : ""} aria-pressed={isSelected} onClick={() => active.onToggle(item)}>
-                {active.labelFor ? active.labelFor(item) : item}<span>{active.countForItem(item)}</span>
-              </button>
-            );
-          })}
-        </div>
-      )}
     </fieldset>
   );
 }
@@ -1653,8 +1788,67 @@ function OperatorCard({ operator, index, onSelect }: { operator: Operator; index
   );
 }
 
+// 오퍼 상세 목차 — 모달 오른쪽 세로 레일 (사용자 요청 2026-08-01). 순서·id는 아래
+// 모달 본문의 <section id="…">와 1:1로 맞춘다. 라벨은 각 섹션 h3와 같은 사전 키다.
+const MODAL_SECTIONS = [
+  { id: "op-potential", label: "잠재능력" },
+  { id: "op-stat", label: "스탯" },
+  { id: "op-skill", label: "스킬" },
+  { id: "op-talent", label: "재능" },
+  { id: "op-trait", label: "특성" },
+  { id: "op-module", label: "모듈" },
+  { id: "op-infra", label: "인프라 스킬" },
+  { id: "op-skin", label: "복장" },
+  { id: "op-profile", label: "오퍼레이터 파일" },
+  { id: "op-voice", label: "보이스 대사" },
+];
+
+function ModalRail({ scrollRef }: { scrollRef: React.RefObject<HTMLDivElement | null> }) {
+  const { t } = useI18n();
+  const [active, setActive] = useState(MODAL_SECTIONS[0].id);
+
+  useEffect(() => {
+    const scroller = scrollRef.current;
+    if (!scroller) return;
+    // 지금 읽고 있는 섹션 = 스크롤러 위쪽 28% 선을 마지막으로 지나간 섹션
+    const sync = () => {
+      const line = scroller.scrollTop + scroller.clientHeight * 0.28;
+      let current = MODAL_SECTIONS[0].id;
+      for (const section of MODAL_SECTIONS) {
+        const el = document.getElementById(section.id);
+        if (el && el.offsetTop <= line) current = section.id;
+      }
+      setActive(current);
+    };
+    sync();
+    scroller.addEventListener("scroll", sync, { passive: true });
+    // 지연 로딩(복장·프로필·보이스)이 도착하면 섹션 높이가 바뀐다
+    const observer = new ResizeObserver(sync);
+    observer.observe(scroller.firstElementChild ?? scroller);
+    return () => { scroller.removeEventListener("scroll", sync); observer.disconnect(); };
+  }, [scrollRef]);
+
+  const go = (id: string) => {
+    const scroller = scrollRef.current, el = document.getElementById(id);
+    if (!scroller || !el) return;
+    scroller.scrollTo({ top: Math.max(0, el.offsetTop - 12), behavior: "smooth" });
+  };
+
+  return (
+    <nav className="modal-rail" aria-label={t("섹션 이동")}>
+      {MODAL_SECTIONS.map((section, index) => (
+        <button key={section.id} type="button" className={active === section.id ? "active" : ""}
+          aria-current={active === section.id ? "true" : undefined} onClick={() => go(section.id)}>
+          <em>{String(index + 1).padStart(2, "0")}</em>{t(section.label)}
+        </button>
+      ))}
+    </nav>
+  );
+}
+
 function OperatorModal({ operator, onClose }: { operator: Operator; onClose: () => void }) {
   const { locale, t } = useI18n();
+  const scrollRef = useRef<HTMLDivElement>(null);
   return (
     <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <section className="operator-modal" role="dialog" aria-modal="true" aria-labelledby="operator-modal-title" style={{ "--accent": operator.accent } as React.CSSProperties}>
@@ -1675,7 +1869,8 @@ function OperatorModal({ operator, onClose }: { operator: Operator; onClose: () 
             </div>
           </div>
         </header>
-        <div className="modal-scroll">
+        <div className="modal-body">
+        <div className="modal-scroll" ref={scrollRef}>
           <div className="modal-facts">
             <div><span>{t("공식 소속")}</span><b>{operator.factions.join(" · ")}</b></div>
             <div><span>{t("출신지")}</span><b>{operator.birthplace ?? t("불명")}</b></div>
@@ -1684,7 +1879,7 @@ function OperatorModal({ operator, onClose }: { operator: Operator; onClose: () 
             <div><span>{t("컨셉")}</span><b>{operator.concepts.length ? operator.concepts.map((concept) => conceptName(locale, concept)).join(" · ") : t("분류 없음")}</b></div>
           </div>
 
-          <section className="detail-section">
+          <section className="detail-section" id="op-potential">
             <span className="detail-no">POTENTIAL / 01</span>
             <h3>{t("잠재능력")}</h3>
             {operator.potentials.length ? (
@@ -1700,7 +1895,7 @@ function OperatorModal({ operator, onClose }: { operator: Operator; onClose: () 
             )}
           </section>
 
-          <section className="detail-section">
+          <section className="detail-section" id="op-stat">
             <span className="detail-no">STAT / 02</span>
             <h3>{t("스탯")}</h3>
             <div className="stat-table">
@@ -1722,33 +1917,9 @@ function OperatorModal({ operator, onClose }: { operator: Operator; onClose: () 
             </div>
           </section>
 
-          <section className="detail-section">
-            <span className="detail-no">SKILL / 03</span>
-            <h3>{t("스킬")}</h3>
-            {operator.skills.length ? (
-              <div className="skill-list">
-                {operator.skills.map((skill, index) => (
-                  <article key={skill.id} className="skill-detail">
-                    <div className="skill-index">S{index + 1}</div>
-                    <div>
-                      <h4>{skill.name}</h4>
-                      <div className="skill-meta">
-                        <span>{skill.spType}</span>
-                        <span>{t("초기 SP {n}", { n: skill.initialSp })}</span>
-                        <span>{t("소모 SP {n}", { n: skill.spCost })}</span>
-                        {skill.duration && <span>{t("지속 {n}초", { n: skill.duration })}</span>}
-                      </div>
-                      <p>{skill.description}</p>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            ) : (
-              <p className="no-detail">{t("등록된 전투 스킬이 없습니다.")}</p>
-            )}
-          </section>
+          <SkillSection operator={operator} />
 
-          <section className="detail-section">
+          <section className="detail-section" id="op-talent">
             <span className="detail-no">TALENT / 04</span>
             <h3>{t("재능")}</h3>
             {operator.talents.length ? (
@@ -1762,13 +1933,13 @@ function OperatorModal({ operator, onClose }: { operator: Operator; onClose: () 
             )}
           </section>
 
-          <section className="detail-section">
+          <section className="detail-section" id="op-trait">
             <span className="detail-no">TRAIT / 05</span>
             <h3>{t("특성")}</h3>
             <p>{operator.trait}</p>
           </section>
 
-          <section className="detail-section">
+          <section className="detail-section" id="op-module">
             <span className="detail-no">MODULE / 06</span>
             <h3>{t("모듈")}</h3>
             {operator.modules.length ? (
@@ -1796,7 +1967,7 @@ function OperatorModal({ operator, onClose }: { operator: Operator; onClose: () 
             )}
           </section>
 
-          <section className="detail-section">
+          <section className="detail-section" id="op-infra">
             <span className="detail-no">INFRA / 07</span>
             <h3>{t("인프라 스킬")}</h3>
             {operator.infrastructure.length ? (
@@ -1819,8 +1990,107 @@ function OperatorModal({ operator, onClose }: { operator: Operator; onClose: () 
 
           <VoiceSection operator={operator} />
         </div>
+        <ModalRail scrollRef={scrollRef} />
+        </div>
       </section>
     </div>
+  );
+}
+
+// ── 전투 스킬 (레벨별 수치) ──────────────────────────────────────────────────
+// 설명 문장은 레벨마다 같고 숫자만 바뀌므로, 데이터는 **템플릿 + 레벨별 값**으로 온다
+// (scripts/build-skill-levels.py → public/skills/<locale>/<id>.json, R2).
+// 레벨 10개를 세로로 늘어놓으면 모달이 배로 길어지므로 **레벨 탭 한 줄**만 두고
+// 문장 속 숫자를 그 자리에서 갈아 끼운다 — 바뀌는 값은 강조돼 있어 뭘 사는지 바로 보인다.
+// operators.json의 description은 최고 레벨 문장이라, 데이터가 오기 전에도 그대로 쓴다
+// (빌드 시 최고 레벨 렌더 == description을 948개 전부 대조해 맞춰 뒀다).
+type SkillLevels = { tpl?: string[]; v?: string[][]; sp?: [number, number][]; d?: (number | null)[]; ti?: number[] };
+type SkillLevelDoc = Record<string, SkillLevels>;
+const skillLevelCache = new Map<string, SkillLevelDoc | null>();
+// 8~10레벨은 게임 표기대로 특화 M1~M3 (특화가 없는 7레벨 스킬은 1~7만)
+const skillLevelLabel = (index: number, total: number) => (total > 7 && index >= 7 ? `M${index - 6}` : String(index + 1));
+
+function SkillSection({ operator }: { operator: Operator }) {
+  const { locale, t } = useI18n();
+  const key = `${locale}/${operator.id}`;
+  const [doc, setDoc] = useState<SkillLevelDoc | null | undefined>(() => skillLevelCache.get(key));
+
+  useEffect(() => {
+    if (skillLevelCache.has(key)) { setDoc(skillLevelCache.get(key)); return; }
+    let alive = true;
+    fetch(asset(`/skills/${locale}/${operator.id}.json`))
+      .then((res) => (res.ok ? res.json() : null))
+      .catch(() => null)
+      .then((data: SkillLevelDoc | null) => {
+        skillLevelCache.set(key, data);
+        if (alive) setDoc(data);
+      });
+    return () => { alive = false; };
+  }, [key, locale, operator.id]);
+
+  return (
+    <section className="detail-section" id="op-skill">
+      <span className="detail-no">SKILL / 03</span>
+      <h3>{t("스킬")}</h3>
+      {operator.skills.length ? (
+        <div className="skill-list">
+          {operator.skills.map((skill, index) => (
+            <SkillCard key={skill.id} skill={skill} index={index} levels={doc?.[skill.id]} />
+          ))}
+        </div>
+      ) : (
+        <p className="no-detail">{t("등록된 전투 스킬이 없습니다.")}</p>
+      )}
+    </section>
+  );
+}
+
+function SkillCard({ skill, index, levels }: { skill: Skill; index: number; levels?: SkillLevels }) {
+  const { t } = useI18n();
+  const count = (levels?.v ?? levels?.sp ?? levels?.d ?? levels?.ti)?.length ?? 0;
+  const [picked, setPicked] = useState<number | null>(null); // null = 최고 레벨
+  const at = count ? Math.min(picked ?? count - 1, count - 1) : -1;
+
+  // 레벨을 타지 않는 값은 operators.json(최고 레벨)의 것을 그대로 쓴다
+  const sp = levels?.sp?.[at];
+  const duration = levels?.d ? levels.d[at] : skill.duration;
+  const template = levels?.tpl?.[levels.ti ? levels.ti[at] : 0];
+  const values = levels?.v?.[at] ?? [];
+
+  return (
+    <article className="skill-detail">
+      <div className="skill-index">S{index + 1}</div>
+      <div>
+        <h4>{skill.name}</h4>
+        <div className="skill-meta">
+          <span>{skill.spType}</span>
+          <span>{t("초기 SP {n}", { n: sp ? sp[0] : skill.initialSp })}</span>
+          <span>{t("소모 SP {n}", { n: sp ? sp[1] : skill.spCost })}</span>
+          {duration ? <span>{t("지속 {n}초", { n: duration })}</span> : null}
+        </div>
+        {count > 1 && (
+          <div className="skill-levels" role="group" aria-label={t("스킬 레벨")}>
+            <span className="skill-levels-label">Lv</span>
+            {Array.from({ length: count }, (unused, level) => (
+              <button key={level} type="button" className={level === at ? "selected" : ""}
+                aria-pressed={level === at} onClick={() => setPicked(level)}>
+                {skillLevelLabel(level, count)}
+              </button>
+            ))}
+          </div>
+        )}
+        <p>
+          {template
+            ? template.split(/(\{\d+\})/).map((part, slot) => {
+                const marker = /^\{(\d+)\}$/.exec(part);
+                return marker
+                  ? <b key={slot} className="skill-val">{values[Number(marker[1])] ?? ""}</b>
+                  : <span key={slot}>{part}</span>;
+              })
+            : skill.description}
+        </p>
+      </div>
+    </article>
   );
 }
 
@@ -1860,7 +2130,7 @@ function SkinSection({ operator }: { operator: Operator }) {
   const skins = doc?.skins ?? [];
   const current = skins[Math.min(picked, skins.length - 1)];
   return (
-    <section className="detail-section">
+    <section className="detail-section" id="op-skin">
       <span className="detail-no">SKIN / 08</span>
       <h3>{t("복장")}{skins.length > 0 && <em className="detail-count">{skins.length}</em>}</h3>
       {doc === undefined ? (
@@ -1985,7 +2255,7 @@ function ProfileSection({ operator }: { operator: Operator }) {
   };
 
   return (
-    <section className="detail-section">
+    <section className="detail-section" id="op-profile">
       <span className="detail-no">PROFILE / 09</span>
       <h3>{t("오퍼레이터 파일")}</h3>
       {doc === undefined ? (
@@ -1999,7 +2269,6 @@ function ProfileSection({ operator }: { operator: Operator }) {
           )}
           <div className="profile-docs">
             {doc.sections.map((section, index) => (
-              // 해금이 걸린 문서(신뢰도·승진)는 접어 둔다 — 스포일러이자, 안 접으면 모달이 배로 길어진다
               <ProfileDoc key={index} section={section} badge={unlockLabel(section.unlock)} />
             ))}
           </div>
@@ -2009,20 +2278,13 @@ function ProfileSection({ operator }: { operator: Operator }) {
   );
 }
 
+// 문서는 전부 접었다 폈다 할 수 있다 (사용자 요청 2026-08-01). 해금이 걸린 문서
+// (신뢰도·승진)만 접힌 채로 시작한다 — 스포일러이자, 안 접으면 모달이 배로 길어진다.
 function ProfileDoc({ section, badge }: { section: ProfileSectionData; badge: string | null }) {
-  const body = <ProfileBody text={section.text} />;
-  if (!badge) {
-    return (
-      <article className="profile-doc">
-        <h4>{section.title}</h4>
-        {body}
-      </article>
-    );
-  }
   return (
-    <details className="profile-doc profile-doc-locked">
-      <summary><h4>{section.title}</h4><em>{badge}</em></summary>
-      {body}
+    <details className={`profile-doc${badge ? " profile-doc-locked" : ""}`} open={!badge}>
+      <summary><h4>{section.title}</h4>{badge && <em>{badge}</em>}</summary>
+      <ProfileBody text={section.text} />
     </details>
   );
 }
@@ -2096,7 +2358,7 @@ function VoiceSection({ operator }: { operator: Operator }) {
   const lines = doc?.lines ?? [];
   const shown = all ? lines : lines.slice(0, VOICE_HEAD);
   return (
-    <section className="detail-section">
+    <section className="detail-section" id="op-voice">
       <span className="detail-no">VOICE / 10</span>
       <h3>{t("보이스 대사")}{lines.length > 0 && <em className="detail-count">{lines.length}</em>}</h3>
       {doc === undefined ? (

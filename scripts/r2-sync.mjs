@@ -28,7 +28,9 @@ const DIRS = ["story", "rogue", "lens", "tesseract", "avatars", "about", "og", "
   // 오퍼 상세 모달이 열릴 때만 받아가는 지연 로딩 데이터·이미지 (2026-07-28)
   "profiles", "skins", "skin",
   // 오퍼 보이스 대사 텍스트 — scripts/build-voicelines.py (2026-07-31)
-  "voice"];
+  "voice",
+  // 전투 스킬 레벨별 수치 — scripts/build-skill-levels.py (2026-08-01)
+  "skills"];
 // (2026-08-01 제거) "portal" — 대문 배경 전용 폴더였는데 포탈이 이격 스카디 일러 한 장
 // (PORTAL_ART = /skin/full/…)으로 굳으면서 로컬·R2 양쪽에서 비었다. 남겨 두면 아래
 // prune 안전장치가 매번 "빈 폴더"로 걸린다.

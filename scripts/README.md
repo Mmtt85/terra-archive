@@ -237,9 +237,31 @@ python3 scripts/build-voicelines.py .gamedata   # → public/voice/{ko,en,ja}/<o
   받아간다 — profiles·skins와 같은 관례. **R2 동기화(아래 8절)를 돌려야 사이트에 보인다.**
 - 예비 인원 10명은 대사가 없어 파일도 안 만든다(UI가 "등록된 보이스 대사가 없습니다"를 띄운다).
 
+## 7.6 전투 스킬 레벨별 수치 (Lv.1~7 · 특화 M1~M3, 2026-08-01~)
+
+```bash
+python3 scripts/build-skill-levels.py .gamedata   # → public/skills/{ko,en,ja}/<opId>.json
+```
+
+- 출처는 이미 받아 둔 `<prefix>_skill_table.json`의 `levels[]` — 추가 다운로드가 필요 없다.
+- **operators.json에 넣지 않는다.** 948개 스킬 × 10레벨 = 370KB(gzip 75KB)라
+  operators.json(gzip 276KB)을 27% 불리는데, 그 파일은 **번들에 통째로 실려** 모든 페이지
+  첫 로딩에 들어간다. 레벨 수치는 상세 모달에서만 쓰므로 profiles·skins·voice와 같은
+  관례로 오퍼당 파일 1개(평균 0.9KB)를 만든다. **R2 동기화(아래 8절)를 돌려야 보인다.**
+- 설명 문장은 레벨마다 같고 숫자만 바뀌므로 **템플릿 + 값**으로 쪼갠다. 레벨 사이에 실제로
+  변하는 자리만 `{0}`·`{1}` 마커로 남기고 나머지는 문장에 박아 둔다 — 화면은 마커 자리에
+  그 레벨 값을 끼워 넣고 강조 표시한다(어느 수치가 레벨을 타는지 한눈에 보인다).
+- 특화에서 **문장 자체가 바뀌는 스킬이 83개** 있어 `tpl`은 배열이고 `ti`(레벨→템플릿 색인)가 붙는다.
+- ⚠ 미실장 오퍼는 로케일 테이블에 없어 CN 폴백인데, 그대로 쓰면 **중국어가 화면에 샌다**
+  (operators.json 설명은 이미 AI 번역본이므로). 폴백일 땐 CN 템플릿을 버리고
+  operators.json(로케일본)의 최고레벨 설명에서 값의 자리를 찾아 템플릿을 되만든다.
+  못 찾으면 tpl 없이 sp·지속만 내고 화면은 기존 설명을 그대로 쓴다(현재 7개).
+- 검증: 만든 최고레벨 문장이 operators.json의 `description`과 **948개 전부 일치**해야 한다
+  (`python3 -c` 한 줄 대조 — 안 맞으면 interpolate 규칙이 어긋난 것).
+
 ## 8. 정적 에셋 R2 동기화 (2026-07-27~)
 
-public/의 story·rogue·lens·tesseract·avatars·about·og·items·scan·profiles·skins·voice는 사이트 배포(Pages)가
+public/의 story·rogue·lens·tesseract·avatars·about·og·items·scan·profiles·skins·voice·skills는 사이트 배포(Pages)가
 아니라 **R2(files.terra-archive.net/assets/…)** 에서 서빙된다. 버킷은 assets/(이 스크립트 관할)와
 uploads/(/admin 수동 업로드)로 나뉘며, --prune은 로컬에 없는 assets/ 키만 지운다. 파이프라인이 이 폴더들에 파일을
 새로 만들었으면(신규 오퍼 아바타, 이벤트 섬네일·전문 스크립트, 통합전략 에셋, OG 이미지,

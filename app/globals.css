@@ -1486,8 +1486,120 @@ legend {
 .filter-list button.selected span {
   color: var(--lime);
 }
+/* 컨셉덱 검색 — 태그 벽 대신 입력창 + 검색 버튼 (2026-08-01, app/concepts.ts) */
+.concept-box {
+  position: relative;
+  gap: 7px;
+  display: flex;
+}
+.concept-box input {
+  color: var(--ink);
+  background: var(--white);
+  border: 1px solid var(--line);
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  font-size: 12.5px;
+}
+.concept-box input:focus {
+  border-color: var(--border-strong);
+  outline: 0;
+}
+.concept-box button {
+  color: #fff;
+  cursor: pointer;
+  background: var(--chip);
+  border: 1px solid var(--border-strong);
+  flex: none;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 800;
+  display: inline-flex;
+}
+/* ⚠ --accent는 오퍼 카드·모달에만 걸리는 변수라 필터 패널에선 비어 있다 —
+   여기서 쓰면 배경이 통째로 날아간다. 강조는 사이트 공통 라임으로. */
+.concept-box button:hover {
+  color: var(--lime);
+}
+/* 해당되는 태그 드롭다운 — 누르면 그 자리에서 적용된다 (사용자 요청 2026-08-01).
+   입력이 비어 있으면 전체 목록이라, 태그 벽을 없애고도 훑어볼 수 있다. */
+.concept-drop {
+  z-index: 5;
+  background: var(--white);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;   /* 입력창·검색 버튼과 같은 값 */
+  max-height: 260px;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  position: absolute;
+  inset: calc(100% + 4px) 0 auto 0;
+  overflow-y: auto;
+  box-shadow: 0 8px 22px #0000001f;
+}
+.concept-drop li {
+  margin: 0;
+}
+.concept-drop button {
+  color: var(--ink);
+  cursor: pointer;
+  background: 0 0;
+  border: 0;
+  border-radius: 4px;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 8px;
+  font-size: 12.5px;
+  display: flex;
+}
+.concept-drop button.active,
+.concept-drop button:hover {
+  background: var(--bg-soft);
+}
+.concept-drop button span {
+  color: #8b9294;
+  font: 10px monospace;
+}
+.concept-picked {
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+  display: flex;
+}
+.concept-picked button {
+  border: 1px solid var(--line);
+  cursor: pointer;
+  background: 0 0;
+  padding: 6px 8px;
+  font-size: 12px;
+  transition: all 0.15s;
+}
+.concept-picked button span {
+  color: #8b9294;
+  margin-left: 6px;
+  font: 10px monospace;
+}
+.concept-picked button {
+  background: var(--chip);
+  color: #fff;
+  border-color: var(--border-strong);
+  font-weight: 700;
+}
+.concept-picked button span {
+  color: var(--lime);
+}
+.concept-miss {
+  color: var(--muted);
+  margin: 8px 0 0;
+  font-size: 11.5px;
+}
 /* 통합 속성 필터 — 카테고리 버튼 행 + 선택 시 값 태그 펼침 (2026-07-22) */
 .attr-cats {
+  position: relative;   /* 값 드롭다운(.attr-values)의 기준 */
   display: flex;
   flex-wrap: wrap;
   gap: 7px;
@@ -1532,12 +1644,20 @@ legend {
   color: #fff;
 }
 /* 펼쳐지는 값 패널 — 카테고리 버튼과 확연히 구분되도록 옅은 배경 드로어 + 라임 액센트 */
+/* 값 목록 = 떠 있는 드롭다운 (2026-08-01). 카테고리 버튼이 여러 줄로 접힐 수 있어
+   특정 버튼이 아니라 **행 전체 아래**에 폭을 꽉 채워 띄운다 — 좌우로 삐져나가지 않는다. */
 .attr-values {
-  margin-top: 9px;
-  padding: 11px 12px;
-  background: var(--bg-soft);
-  border: 1px solid var(--line);
+  z-index: 5;
+  background: var(--white);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
   border-left: 3px solid var(--lime);
+  max-height: 300px;
+  padding: 11px 12px;
+  position: absolute;
+  inset: calc(100% + 6px) 0 auto 0;
+  overflow-y: auto;
+  box-shadow: 0 8px 22px #0000001f;
 }
 .attr-values button {
   background: var(--white);
@@ -2046,8 +2166,59 @@ legend {
 .modal-scroll {
   overscroll-behavior: contain;
   min-height: 0;
+  /* 섹션의 offsetTop이 **스크롤러 기준**이어야 목차 레일이 정확히 뛴다 (offsetParent 고정) */
+  position: relative;
   padding: 28px 36px 42px;
   overflow-y: auto;
+}
+/* 오퍼 상세 목차 — 본문 오른쪽에 붙는 실제 칸(겹치지 않게 grid 열로, 2026-08-01) */
+.modal-body {
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-height: 0;
+  display: grid;
+}
+.modal-rail {
+  border-left: 1px solid var(--line);
+  background: var(--bg-faint);
+  flex-direction: column;
+  gap: 2px;
+  width: 146px;      /* "오퍼레이터 파일"이 한 줄에 들어가는 폭 */
+  padding: 24px 10px;
+  display: flex;
+  overflow-y: auto;
+}
+.modal-rail button {
+  color: var(--ink3);
+  text-align: left;
+  cursor: pointer;
+  background: 0 0;
+  border: 1px solid #0000;
+  border-radius: 6px;
+  align-items: baseline;
+  gap: 7px;
+  padding: 6px 8px;
+  font-size: 12px;
+  transition: background .12s, color .12s, border-color .12s;
+  display: flex;
+}
+.modal-rail button em {
+  color: var(--muted);
+  flex: none;
+  font: 700 9.5px monospace;
+  font-style: normal;
+}
+.modal-rail button:hover {
+  background: var(--bg-soft);
+  border-color: var(--line);
+}
+.modal-rail button.active {
+  color: var(--ink);
+  background: var(--bg-soft);
+  border-color: var(--border-strong);
+  font-weight: 800;
+}
+.modal-rail button.active em {
+  color: var(--accent);
 }
 .modal-facts {
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2188,6 +2359,44 @@ legend {
   margin: 10px 0 0;
   font-size: 13.5px;
   line-height: 1.7;
+}
+/* 스킬 레벨 탭 — 1~7 + 특화 M1~M3을 **한 줄**로. 레벨마다 설명을 늘어놓으면 모달이
+   배로 길어져서, 여기서 고른 레벨의 숫자를 문장 안에 갈아 끼운다 (사용자 요청 2026-08-01). */
+.skill-levels {
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px;
+  margin: 9px 0 0;
+  display: flex;
+}
+.skill-levels-label {
+  color: var(--muted);
+  margin-right: 3px;
+  font: 700 10.5px monospace;
+}
+.skill-levels button {
+  color: var(--ink3);
+  cursor: pointer;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  min-width: 25px;
+  padding: 3px 5px;
+  font: 700 11px monospace;
+  transition: background .12s, color .12s, border-color .12s;
+}
+.skill-levels button:hover {
+  border-color: var(--accent);
+}
+.skill-levels button.selected {
+  color: var(--white);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+/* 레벨을 타는 수치 — 어느 숫자가 레벨로 바뀌는지 문장에서 바로 보이게 */
+.skill-val {
+  color: var(--accent);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
 }
 .no-detail {
   color: var(--muted) !important;
@@ -2644,10 +2853,12 @@ legend {
   display: grid;
   gap: 10px;
 }
+/* 기본정보·종합검진·프로필도 전부 접을 수 있다 (사용자 요청 2026-08-01) — 해금이 걸린
+   문서만 접힌 채로 시작하고, 나머지는 펴진 채로 시작한다. */
 .profile-doc {
   border: 1px solid var(--line);
   background: var(--bg-faint);
-  padding: 14px 16px;
+  padding: 0;
 }
 .profile-doc h4 {
   margin: 0;
@@ -2655,10 +2866,7 @@ legend {
   font-weight: 900;
   letter-spacing: -0.01em;
 }
-.profile-doc-locked {
-  padding: 0;
-}
-.profile-doc-locked > summary {
+.profile-doc > summary {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2667,20 +2875,20 @@ legend {
   cursor: pointer;
   list-style: none;
 }
-.profile-doc-locked > summary::-webkit-details-marker {
+.profile-doc > summary::-webkit-details-marker {
   display: none;
 }
 /* 접힘 표시 — ▸/▾ 를 제목 앞에 (마커를 지웠으므로 직접 그린다) */
-.profile-doc-locked > summary h4::before {
+.profile-doc > summary h4::before {
   content: "▸";
   margin-right: 7px;
   color: var(--muted);
   font-size: 11px;
 }
-.profile-doc-locked[open] > summary h4::before {
+.profile-doc[open] > summary h4::before {
   content: "▾";
 }
-.profile-doc-locked > summary em {
+.profile-doc > summary em {
   flex: none;
   padding: 3px 8px;
   border-radius: 4px;
@@ -2689,11 +2897,11 @@ legend {
   font: 800 10.5px monospace;
   font-style: normal;
 }
-.profile-doc-locked > summary:hover {
+.profile-doc > summary:hover {
   background: var(--paper);
 }
-.profile-doc-locked > .profile-text,
-.profile-doc-locked > .profile-facts {
+.profile-doc > .profile-text,
+.profile-doc > .profile-facts {
   padding: 0 16px 15px;
 }
 .profile-text p {
@@ -3445,6 +3653,13 @@ footer p {
   .modal-scroll {
     padding: 20px 18px 30px;
   }
+  /* 좁은 화면에선 목차 레일이 본문 폭을 너무 먹는다 — 숨기고 본문만 (2026-08-01) */
+  .modal-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .modal-rail {
+    display: none;
+  }
   .modal-facts,
   .detail-list {
     grid-template-columns: 1fr;
@@ -3457,6 +3672,11 @@ footer p {
   .skill-index {
     width: 34px;
     height: 34px;
+  }
+  /* 좁은 화면에서도 레벨 10칸이 한 줄에 들어가게 (1~7 + M1~M3) */
+  .skill-levels button {
+    min-width: 21px;
+    padding: 3px 2px;
   }
   footer {
     line-height: 1.6;
