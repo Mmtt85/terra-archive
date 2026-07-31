@@ -1560,18 +1560,26 @@ function ConceptSearch({ keys, selected, onSet, countFor }: {
   keys: string[]; selected: string[]; onSet: (values: string[]) => void; countFor: (value: string) => number;
 }) {
   const { locale, t } = useI18n();
-  const [text, setText] = useState("");
+  // text === null = "안 치는 중" — 그때 입력창은 **지금 걸린 컨셉 이름**을 보여준다
+  // (사용자 요청 2026-08-01: 뭘로 검색됐는지는 검색란에 표시). 상태를 따로 동기화하지 않고
+  // 이렇게 파생시켜야 활성 필터 칩(×)으로 해제됐을 때 입력창도 저절로 비워진다.
+  const [text, setText] = useState<string | null>(null);
   const [miss, setMiss] = useState("");
   const [open, setOpen] = useState(false);   // 후보 드롭다운 (사용자 요청 2026-08-01)
   const [cursor, setCursor] = useState(-1);  // 방향키로 짚은 후보
   const boxRef = useRef<HTMLDivElement>(null);
   const pendingEnter = useRef(false);        // 한글 조합 중에 눌린 Enter (아래 onCompositionEnd)
 
-  // 입력이 비어 있으면 전체 목록 — 드롭다운이라 자리를 안 먹으니 여기서 훑어볼 수 있다
+  const typed = text ?? "";                                                  // 실제로 친 글자
+  const shown = text ?? (selected.length ? conceptTitle(locale, selected[0]) : "");   // 화면에 보이는 값
+
+  // 입력이 비어 있으면 전체 목록 — 드롭다운이라 자리를 안 먹으니 여기서 훑어볼 수 있다.
+  // 걸린 컨셉 이름이 비쳐 보이는 것뿐일 땐(text === null) 그걸 검색어로 치지 않는다 —
+  // 다시 열었을 때 후보가 그 하나로 쪼그라들면 다른 컨셉으로 갈아탈 수가 없다.
   const list = useMemo(() => {
-    const pool = text.trim() ? suggestConcepts(text, keys, 40) : keys;
+    const pool = typed.trim() ? suggestConcepts(typed, keys, 40) : keys;
     return pool.filter((key) => !selected.includes(key));
-  }, [text, keys, selected]);
+  }, [typed, keys, selected]);
 
   useEffect(() => { setCursor(-1); }, [text]);
   useEffect(() => {
@@ -1585,10 +1593,10 @@ function ConceptSearch({ keys, selected, onSet, countFor }: {
 
   const pick = (key: string) => {
     onSet([key]);                              // 하나만 — 앞서 고른 건 밀어낸다
-    setText(""); setMiss(""); setOpen(false); setCursor(-1);
+    setText(null); setMiss(""); setOpen(false); setCursor(-1);   // null = 고른 컨셉이 입력창에 비친다
   };
   // 검색 버튼/Enter — 딱 하나면 바로 걸고, 여럿이면 드롭다운에서 고르게 둔다
-  const run = (raw = text) => {
+  const run = (raw = typed) => {
     const query = raw.trim();
     if (!query) { setOpen(true); return; }
     const hit = resolveConcepts(query, keys);
@@ -1624,9 +1632,12 @@ function ConceptSearch({ keys, selected, onSet, countFor }: {
     <fieldset className="concept-search">
       <legend>{t("컨셉덱")}<small className="multi-hint">{t("이름을 입력하고 검색 · 한 번에 하나만 골라집니다")}</small></legend>
       <div className="concept-box" ref={boxRef}>
-        <input value={text} aria-label={t("컨셉덱 검색")} placeholder={t("예: 어비설, 슬로우, 트루뎀, 알파모듈")}
+        <input value={shown} aria-label={t("컨셉덱 검색")} placeholder={t("예: 어비설, 슬로우, 트루뎀, 알파모듈")}
+          className={text === null && selected.length ? "has-pick" : ""}
           role="combobox" aria-expanded={open} aria-autocomplete="list"
-          onFocus={() => setOpen(true)} onClick={() => setOpen(true)} onKeyDown={onKey}
+          // 비쳐 보이는 컨셉 이름은 통째로 잡아 둔다 — 바로 타이핑하면 갈아 끼워진다
+          onFocus={(event) => { setOpen(true); if (text === null && selected.length) event.currentTarget.select(); }}
+          onClick={() => setOpen(true)} onKeyDown={onKey}
           onCompositionEnd={(event) => {
             if (!pendingEnter.current) return;
             pendingEnter.current = false;
@@ -1651,13 +1662,8 @@ function ConceptSearch({ keys, selected, onSet, countFor }: {
         )}
       </div>
       {miss && <p className="concept-miss">{t("“{q}”에 맞는 컨셉이 없어요.", { q: miss })}</p>}
-      {selected.length > 0 && (
-        <div className="concept-picked">
-          {selected.map((key) => (
-            <button key={key} type="button" onClick={() => onSet([])}>{conceptTitle(locale, key)}<span>{countFor(key)}</span> ×</button>
-          ))}
-        </div>
-      )}
+      {/* 고른 컨셉을 여기 뱃지로 또 보여주지 않는다 (사용자 요청 2026-08-01) — 어차피 하나만
+          고르는 기능이라 결과 헤딩("○○ 컨셉덱")과 활성 필터 칩(× 로 해제)에 이미 나온다. */}
     </fieldset>
   );
 }
@@ -1709,9 +1715,11 @@ function FilterGroup({ title, items, selected, onToggle, rows = 1, countForItem,
 // 그 값 태그가 나온다. 필터 패널이 세로로 끝없이 늘어나던 문제 해소 (사용자 요청 2026-07-22).
 // 값 목록은 아래로 밀어내지 않고 **떠 있는 드롭다운**으로 (사용자 요청 2026-08-01) —
 // 태그를 흩뿌리지 않고 컨셉덱 검색(.concept-drop)과 같은 **한 줄에 하나씩 세로 리스트**다
-// (사용자 요청 2026-08-01). 값은 복수 선택이라 고르는 동안 열린 채로 두고, 바깥을 누르거나
-// ESC를 눌러야 닫힌다 — 고른 항목은 목록에서 빼지 않고 ✓로 표시한다(컨셉덱은 하나만 고르는
-// 기능이라 고른 걸 목록에서 뺀다 — 그 차이만 다르다). 컨셉덱은 시그니처 기능이라 별도 유지.
+// (사용자 요청 2026-08-01). ⚠ 하나 고르면 **바로 닫는다** (사용자 요청 2026-08-01) — 값이
+// 복수 선택이긴 하지만 고른 뒤에도 목록이 화면을 덮고 있으면 결과를 볼 수 없다. 더 고를 땐
+// 카테고리를 다시 누르면 되고, 이미 고른 값은 ✓로 표시돼 있어 다시 열어도 바로 보인다.
+// (컨셉덱은 하나만 고르는 기능이라 고른 걸 아예 목록에서 뺀다 — 그 차이만 다르다.)
+// 컨셉덱은 시그니처 기능이라 별도 유지.
 type AttrGroup = { title: string; items: string[]; selected: string[]; onToggle: (value: string) => void; labelFor?: (value: string) => string; countForItem: (value: string) => number };
 function AttributeFilter({ groups }: { groups: AttrGroup[] }) {
   const { t } = useI18n();
@@ -1753,7 +1761,8 @@ function AttributeFilter({ groups }: { groups: AttrGroup[] }) {
               return (
                 <li key={item}>
                   <button type="button" role="option" aria-selected={isSelected}
-                    className={isSelected ? "selected" : ""} onClick={() => active.onToggle(item)}>
+                    className={isSelected ? "selected" : ""}
+                    onClick={() => { active.onToggle(item); setOpen(null); }}>
                     <i aria-hidden>{isSelected ? "✓" : ""}</i>
                     {active.labelFor ? active.labelFor(item) : item}
                     <span>{active.countForItem(item)}</span>

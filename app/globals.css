@@ -1505,6 +1505,13 @@ legend {
   border-color: var(--border-strong);
   outline: 0;
 }
+/* 지금 걸려 있는 컨셉이 입력창에 비쳐 보이는 상태 (2026-08-01) — 방금 친 검색어와
+   구분되게 라임 굵은 글씨. 별도 뱃지를 없앤 대신 여기가 유일한 표시라 눈에 띄어야 한다. */
+.concept-box input.has-pick {
+  color: var(--lime);
+  border-color: var(--border-strong);
+  font-weight: 800;
+}
 .concept-box button {
   color: #fff;
   cursor: pointer;
@@ -1564,34 +1571,8 @@ legend {
   color: #8b9294;
   font: 10px monospace;
 }
-.concept-picked {
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 8px;
-  display: flex;
-}
-.concept-picked button {
-  border: 1px solid var(--line);
-  cursor: pointer;
-  background: 0 0;
-  padding: 6px 8px;
-  font-size: 12px;
-  transition: all 0.15s;
-}
-.concept-picked button span {
-  color: #8b9294;
-  margin-left: 6px;
-  font: 10px monospace;
-}
-.concept-picked button {
-  background: var(--chip);
-  color: #fff;
-  border-color: var(--border-strong);
-  font-weight: 700;
-}
-.concept-picked button span {
-  color: var(--lime);
-}
+/* .concept-picked(고른 컨셉 뱃지)는 제거했다 (2026-08-01) — 결과 헤딩과 활성 필터 칩에
+   이미 나오는 중복 표시였다. */
 .concept-miss {
   color: var(--muted);
   margin: 8px 0 0;
