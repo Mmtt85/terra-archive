@@ -1042,9 +1042,12 @@ function ChronologyView({ onOpenEvent }: { onOpenEvent: (eventId: string) => voi
   );
 }
 
+// 묶는 방식 — 테마별(인게임 스토리라인) · 종류별 · 출시순(나온 순서, 사용자 요청 2026-08-01)
+type GroupMode = "theme" | "kind" | "release";
+
 // 요약 뷰 — 이벤트·메인스토리·로그라이크 카드 그리드 + 검색 + 종류별/테마별 그룹핑(기본 종류별).
 // 각 그룹은 최신순(이벤트=출시월, 메인=에피소드 번호). 요약이 있는 이벤트만 열린다.
-function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEvent) => void; includeFuture?: boolean; group: "theme" | "kind" }) {
+function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEvent) => void; includeFuture?: boolean; group: GroupMode }) {
   const { locale, t } = useI18n();
   // 비제어 입력 — 타이핑 중 렌더 0회, 멈춘 뒤 0.5초에만 목록 갱신 (search.ts)
   const { term: searchTerm, inputProps: searchProps } = useSearchInput();
@@ -1142,6 +1145,21 @@ function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEve
         color = it.arc ? arcColor(it.arc) : undefined;
         // 잔여 테마 그룹은 arcs 배열 순서대로, 미분류는 맨 끝
         sort = it.arc ? chronology.arcs.findIndex((a) => a.id === it.arc) : 999;
+      } else if (group === "release") {
+        // 출시순 = 나온 순서 (사용자 요청 2026-08-01). 출시월(YYYY-MM)의 연도로 묶고 최신 해가 위.
+        const ev = it.eventId ? eventById.get(it.eventId) : undefined;
+        const year = ev?.unreleased ? "" : recency(it).slice(0, 4);
+        if (ev?.unreleased) {
+          // 중섭 선행분은 CN 출시월이 KR 최신작보다 과거일 수 있어 연도에 섞지 않고 맨 위에 둔다
+          k = "__future"; label = t("미실장"); sort = -1e9;
+        } else if (year) {
+          k = year; label = t("{y}년", { y: year }); sort = -Number(year);
+        } else {
+          // ⚠ 메인스토리·통합전략은 데이터에 출시월이 없다 (chronology.json에 terraYear만 있고
+          // stories.json의 합성 이벤트에도 start가 없다) — 지어내지 않고 종류별로 맨 뒤에 모은다.
+          k = it.kind; label = t(KIND_KO[it.kind]);
+          sort = 1e9 + ["main", "roguelike", "event", "mini"].indexOf(it.kind);
+        }
       } else {
         k = it.kind; label = t(KIND_KO[it.kind]); sort = ["event", "mini", "main", "roguelike"].indexOf(it.kind);
       }
@@ -1151,7 +1169,9 @@ function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEve
     out.push(...Array.from(map.values()).sort((a, b) => a.sort - b.sort)
       .map((g) => ({ key: g.key, label: g.label, color: g.color,
         // 미니 그룹엔 게임 내 명칭을 부제로 — 사이트의 '미니 이벤트'가 게임 어디인지 (2026-07-29)
-        sub: g.key === "mini" ? t("게임 내 ‘특별작전진술’ — 사이드 이벤트와 별개인 짧은 단편 모음") : undefined,
+        sub: group === "kind" && g.key === "mini" ? t("게임 내 ‘특별작전진술’ — 사이드 이벤트와 별개인 짧은 단편 모음")
+          : group === "release" && (g.key === "main" || g.key === "roguelike")
+            ? t("출시월 정보가 없어 맨 뒤에 모았습니다") : undefined,
         items: sortItems(g.items).map((it) => ({ it })) })));
     return out.filter((g) => g.items.length);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1299,7 +1319,7 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
   const { locale, t } = useI18n();
   const [view, setView] = useState<"digest" | "chronicle">("digest");
   // 기본 뷰는 테마별 (사용자 확정 2026-07-21)
-  const [group, setGroup] = useState<"theme" | "kind">("theme");
+  const [group, setGroup] = useState<GroupMode>("theme");
   const [selected, setSelected] = useState<StoryEvent | null>(null);
 
   const pushedDetail = useRef(false);
@@ -1314,6 +1334,7 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
       if (detail) return;                              // 상세 진입 시 뷰/그룹 상태는 유지
       if (h === "#chronicle") setView("chronicle");
       else if (h === "#kind") { setView("digest"); setGroup("kind"); }
+      else if (h === "#release") { setView("digest"); setGroup("release"); }
       // 기본(해시 없음·#story)은 테마별 (사용자 확정 2026-07-21)
       else if (h === "#theme" || h.startsWith("#theme-") || h === "#story" || h === "") { setView("digest"); setGroup("theme"); }
     };
@@ -1340,12 +1361,12 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
     if (ev && canOpenStory(eventId)) open(ev);
   };
   // 뷰·그룹 전환을 복붙 가능한 해시로 남긴다 (뒤로가기로 오갈 수 있게 pushState)
-  const GROUP_HASH: Record<"theme" | "kind", string> = { theme: "#theme", kind: "#kind" };
+  const GROUP_HASH: Record<GroupMode, string> = { theme: "#theme", kind: "#kind", release: "#release" };
   const goView = (v: "digest" | "chronicle") => {
     history.pushState(null, "", v === "chronicle" ? "#chronicle" : GROUP_HASH[group]);
     setView(v);
   };
-  const goGroup = (g: "theme" | "kind") => {
+  const goGroup = (g: GroupMode) => {
     history.pushState(null, "", GROUP_HASH[g]);
     setView("digest"); setGroup(g);
   };
@@ -1451,6 +1472,7 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
       <div className="story-viewtabs" role="tablist">
         <button type="button" role="tab" aria-selected={view === "digest" && group === "theme"} className={view === "digest" && group === "theme" ? "on" : ""} onClick={() => goGroup("theme")}>{t("테마별")}</button>
         <button type="button" role="tab" aria-selected={view === "digest" && group === "kind"} className={view === "digest" && group === "kind" ? "on" : ""} onClick={() => goGroup("kind")}>{t("종류별")}</button>
+        <button type="button" role="tab" aria-selected={view === "digest" && group === "release"} className={view === "digest" && group === "release" ? "on" : ""} onClick={() => goGroup("release")}>{t("출시순")}</button>
         <button type="button" role="tab" aria-selected={view === "chronicle"} className={view === "chronicle" ? "on" : ""} onClick={() => goView("chronicle")}>{t("테라 연대기")}</button>
         {/* 스샷 레이더 — 버튼 자체가 자동인식 토글, ?는 도움말 (KR 클라 전용) */}
         {locale === "ko" && (

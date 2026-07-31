@@ -1403,6 +1403,12 @@ const D: Record<string, Pair> = {
   "테마별": ["By theme", "テーマ別"],
   "클릭하면 주소가 이 테마의 공유 링크로 바뀝니다": ["Click to set the URL to a shareable link for this theme", "クリックするとURLがこのテーマの共有リンクになります"],
   "종류별": ["By type", "種類別"],
+  "출시순": ["Release order", "実装順"],
+  "{y}년": ["{y}", "{y}年"],
+  "출시월 정보가 없어 맨 뒤에 모았습니다": [
+    "No release date on record — grouped at the end.",
+    "配信時期のデータがないため末尾にまとめています",
+  ],
   "클릭해서 열기": ["click to open", "クリックで開く"],
   "**테라 연대기** — 인게임 스토리라인(테마 시계열)을 하나로 병합한 상대 순서입니다. 메인 에피소드가 구간 경계가 되고, 사이 항목들은 그 시점 언저리의 이야기입니다. 정확한 테라력 연도는 확정된 것만 표기하며, 스토리라인에 없는 콜라보·통합 전략은 맨 뒤에 모았습니다.": [
     "**Terra Chronicle** — the in-game storylines merged into one relative timeline. Main story episodes mark the section boundaries, and items between them take place around that point. Exact Terra-calendar years are shown only where confirmed; collabs and Integrated Strategies, absent from the storylines, are gathered at the end.",
