@@ -250,6 +250,19 @@ node scripts/r2-sync.mjs        # md5 증분 — 바뀐 것만 올린다
 node scripts/r2-sync.mjs --dry  # 올릴 목록 미리 보기
 ```
 
+**`--prune` 안전장치 (2026-08-01)** — prune은 "로컬에 없다 = 지워도 된다"로 판단하는데,
+로컬이 빈 이유가 삭제 의도가 아닌 경우가 있다: `build-profiles/skins/voicelines.py`는
+**출력 폴더를 통째로 지우고 다시 굽기 때문에** 중간에 죽으면 부분 상태로 남고(git에 원본이
+있어도 작업 폴더는 이미 빈 상태), 부분 클론·CI 체크아웃도 마찬가지다. 그래서 두 겹을 건다:
+
+- **원격엔 키가 있는데 로컬 폴더가 빈** DIRS 항목이 있으면 삭제를 건너뛴다
+  (양쪽 다 비었으면 그냥 안 쓰는 항목이라 통과)
+- 삭제 대상이 원격 `assets/` 키의 **10%를 넘으면** 건너뛴다
+- 업로드는 정상 진행하고 **삭제만** 막는다 — 진짜 대량 정리는 `--prune --force`
+
+실측(2026-08-01): 이 장치를 넣자마자 죽은 항목 `portal`(로컬·R2 양쪽 0개)이 걸려서 DIRS에서
+제거했다. 대문 배경이 이격 스카디 일러 한 장(`/skin/full/…`)으로 굳으면서 빈 폴더가 된 것.
+
 `bash scripts/deploy.sh`가 배포 전에 자동으로 돌리므로 보통은 신경 쓸 일 없다.
 인증은 레포 루트 `.r2-sync-key`(gitignore) — 잃어버리면
 `openssl rand -hex 32 > .r2-sync-key && (cd workers/upload && npx wrangler secret put SYNC_KEY < ../../.r2-sync-key)`.

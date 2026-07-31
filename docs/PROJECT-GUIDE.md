@@ -626,6 +626,9 @@ public/의 대용량 폴더 **story·rogue·lens·tesseract·avatars·about·og�
   **`assets/<public 상대경로>`** 키로 md5↔etag 증분 업로드. `deploy.sh`가 배포 전에 자동
   실행(키 없으면 경고 후 스킵 — GH Actions는 `R2_SYNC_KEY` 시크릿 등록 시 활성화).
   `--prune`은 로컬에 없는 assets/ 원격 키를 지운다(uploads/는 절대 안 건드림).
+  **안전장치**: 원격엔 있는데 로컬이 빈 폴더가 있거나 삭제량이 원격의 10%를 넘으면 삭제를
+  건너뛴다 — 빌드가 중간에 죽어 출력 폴더가 비었을 때 R2가 지워지는 것을 막는다
+  (2026-08-01, scripts/README.md §8). 진짜 대량 정리는 `--prune --force`.
   캐시 정책은 확장자별(이미지·엔진 30일, json/bin 1일).
 - **안전망**: deploy.sh가 스테이징에서 위 폴더를 지우고 `_redirects`(301→R2)를 깐다.
   ⚠ `/rogue`·`/about`은 **페이지 경로와 겹치므로 통짜 와일드카드 금지** — Pages splat은

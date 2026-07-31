@@ -28,9 +28,10 @@ const DIRS = ["story", "rogue", "lens", "tesseract", "avatars", "about", "og", "
   // 오퍼 상세 모달이 열릴 때만 받아가는 지연 로딩 데이터·이미지 (2026-07-28)
   "profiles", "skins", "skin",
   // 오퍼 보이스 대사 텍스트 — scripts/build-voicelines.py (2026-07-31)
-  "voice",
-  // 대문(포탈) 홈 화면 테마 배경 — scripts/build-portal-themes.py가 만든다 (2026-07-30)
-  "portal"];
+  "voice"];
+// (2026-08-01 제거) "portal" — 대문 배경 전용 폴더였는데 포탈이 이격 스카디 일러 한 장
+// (PORTAL_ART = /skin/full/…)으로 굳으면서 로컬·R2 양쪽에서 비었다. 남겨 두면 아래
+// prune 안전장치가 매번 "빈 폴더"로 걸린다.
 
 const PREFIX = "assets/"; // 에셋은 전부 이 폴더 밑 — uploads/(수동 업로드)와 격리
 const DRY = process.argv.includes("--dry");
@@ -105,11 +106,42 @@ const stale = PRUNE
   ? [...remote.keys()].filter((key) => !key.startsWith("uploads/") && !localKeys.has(key))
   : [];
 
+// ── 2.5 prune 안전장치 (2026-08-01) ────────────────────────────────────────
+// prune은 "로컬에 없다 = 지워도 된다"로 판단하는데, **로컬이 비어 있는 이유가 삭제 의도가
+// 아닌 경우**가 실제로 있다:
+//   · build-profiles/skins/voicelines.py는 출력 폴더를 rmtree하고 다시 굽는다 —
+//     중간에 죽으면 폴더가 부분 상태로 남는다 (git에 원본이 있어도 작업 폴더는 이미 빈 상태).
+//   · 부분 클론·sparse checkout·CI 체크아웃 등 애초에 폴더를 안 받은 환경.
+// 이 상태로 prune을 돌리면 R2에서 조용히 대량 삭제된다. 두 겹으로 막는다:
+//   ① DIRS 중 로컬에 없거나 빈 폴더가 하나라도 있으면 중단
+//   ② 삭제량이 원격 assets/ 키의 PRUNE_MAX_RATIO를 넘으면 중단
+// 진짜 대량 정리(폴더 폐지 등)는 --force로 뚫는다.
+// 판단은 여기서 하고 **실제 차단은 삭제 직전(§4)** 에 건다 — 업로드는 정상적으로 끝내고
+// 위험한 삭제만 건너뛰는 게 안전하다. --dry도 이 사유를 함께 보여준다.
+const PRUNE_MAX_RATIO = 0.1;
+const FORCE = process.argv.includes("--force");
+const pruneBlock = (() => {
+  if (!PRUNE || FORCE) return null;
+  // 위험한 건 "원격엔 있는데 로컬이 빈" 폴더뿐이다 — 양쪽 다 비었으면 그냥 안 쓰는 항목이다
+  const emptyDirs = DIRS.filter((dir) =>
+    !files.some((p) => p.startsWith(join(PUBLIC, dir) + "/"))
+    && [...remote.keys()].some((key) => key.startsWith(`${PREFIX}${dir}/`)));
+  if (emptyDirs.length) return `원격엔 있는데 로컬이 빈 폴더: ${emptyDirs.join(", ")}`;
+  const remoteAssets = [...remote.keys()].filter((key) => key.startsWith(PREFIX)).length;
+  const ratio = remoteAssets ? stale.length / remoteAssets : 0;
+  if (ratio > PRUNE_MAX_RATIO) {
+    return `삭제 대상이 원격 에셋의 ${(ratio * 100).toFixed(1)}%`
+      + ` (${stale.length}/${remoteAssets}개, 한도 ${PRUNE_MAX_RATIO * 100}%)`;
+  }
+  return null;
+})();
+
 console.log(`로컬 ${files.length}개 · 이미 동일 ${same}개 · 올릴 것 ${todo.length}개 (${(todo.reduce((a, f) => a + f.size, 0) / 1048576).toFixed(1)}MB)${PRUNE ? ` · 지울 것 ${stale.length}개` : ""}`);
 if (DRY) {
   for (const f of todo.slice(0, 40)) console.log("  ", f.key);
   if (todo.length > 40) console.log(`   … 외 ${todo.length - 40}개`);
   if (stale.length) console.log(`  삭제 예정: ${stale.slice(0, 10).join(", ")}${stale.length > 10 ? ` … 외 ${stale.length - 10}개` : ""}`);
+  if (pruneBlock) console.log(`  ⚠ 안전장치가 삭제를 막습니다 — ${pruneBlock} (--force로 무시)`);
   process.exit(0);
 }
 
@@ -150,9 +182,16 @@ await Promise.all(
   }),
 );
 
-// ── 4. --prune 삭제 ──
+// ── 4. --prune 삭제 (안전장치가 걸리면 건너뛴다) ──
 let pruned = 0;
-if (stale.length) {
+if (stale.length && pruneBlock) {
+  console.error(`\n✗ 삭제 ${stale.length}개를 건너뜁니다 — ${pruneBlock}`);
+  console.error("  로컬이 비어서 지우려는 것인지, 정말 지워야 하는 것인지 구분이 안 됩니다.");
+  console.error("  · 빌드가 중간에 죽었을 수 있습니다(build-profiles/skins/voicelines.py는 출력 폴더를");
+  console.error("    통째로 지우고 다시 굽습니다) — 파이프라인을 다시 돌린 뒤 재시도하세요.");
+  console.error("  · 정말 지우려는 것이면 --prune --force 로 다시 실행하세요.");
+  console.error("  (업로드는 정상적으로 끝났습니다)");
+} else if (stale.length) {
   const delQueue = [...stale];
   await Promise.all(
     Array.from({ length: CONCURRENCY }, async () => {
