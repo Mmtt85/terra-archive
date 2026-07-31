@@ -129,6 +129,31 @@ def build_stats(c):
                      "rangeId": rid, "range": grids})
     return rows
 
+# ── 소환물 발동 범위 수동 보정 ─────────────────────────────────────────────────
+# 클뜯 skill_table의 rangeId가 **실제 게임과 다른** 경우가 있다 — 돌·장치의 발동 범위는
+# prefabId(스킬 로직)로 계산돼 rangeId에 안 실리기 때문이다. 왕 '천하겁'이 그 예로,
+# 데이터엔 x-6(십자 9칸)만 있는데 게임에선 반경2 마름모(13칸)이고 십자는 오히려 S2 모양이다
+# (KR·CN 어디에도 마름모 참조 없음 — 사용자 확인 2026-08-01).
+# 여기 적은 값은 **사용자가 게임에서 직접 확인한 것**이며, 격자는 range_table에 이미 있는
+# id를 그대로 빌려 쓴다(좌표를 손으로 적지 않는다). note는 i18n 사전 키다.
+SUMMON_SKILL_RANGE = {
+    # 왕 S2 삼연성 — 돌이 놓인 줄 방향을 타서 가로·세로 직선(5칸)이 되기도 한다
+    "skchr_wang_2": {"token": "token_10064_wang_stone1", "range": "x-6",
+                     "note": "돌이 놓인 줄 방향에 따라 가로·세로 직선(5칸)으로 나오기도 합니다"},
+    # 왕 S3 천하겁 — 반경2 마름모
+    "skchr_wang_3": {"token": "token_10064_wang_stone1", "range": "x-1"},
+}
+
+def apply_summon_range(skills):
+    """SUMMON_SKILL_RANGE를 스킬에 얹는다 — summonRange(격자)·summonId·summonNote."""
+    for sk in skills:
+        ov = SUMMON_SKILL_RANGE.get(sk["id"])
+        if not ov or ov["range"] not in ranges: continue
+        sk["summonId"] = ov["token"]
+        sk["summonRange"] = [{"row": g["row"], "col": g["col"]} for g in ranges[ov["range"]]["grids"]]
+        if ov.get("note"): sk["summonNote"] = ov["note"]
+    return skills
+
 def build_summons(c):
     """소환물(토큰) — displayTokenDict가 정본 (KR 48명이 보유, 사용자 요청 2026-08-01).
 
@@ -159,8 +184,32 @@ def build_summons(c):
             "res": res, "block": kf.get("blockCnt"),
             "redeploy": kf.get("respawnTime"), "interval": bat,
             "talents": build_talents(t),
-            "skills": build_skills(t),
+            # ⚠ 토큰은 같은 skillId를 슬롯 수만큼 반복해 갖는다 (위셔델 '레버넌트의 그림자' 3회 등
+            #   31종) — 그대로 두면 같은 문장이 3번 나온다 (사용자 지적 2026-08-01).
+            "skills": dedup_by_id(build_skills(t)),
         })
+    # 같은 소환물이 개체 수만큼 따로 들어 있는 경우(실버애쉬 더 레인프로스트의 '눈보라의 눈' 3개)
+    # 하나로 합치고 마릿수만 남긴다 — 스탯·스킬이 완전히 같을 때만.
+    merged = []
+    for su in out:
+        key = json.dumps({k: v for k, v in su.items() if k != "id"}, ensure_ascii=False, sort_keys=True)
+        prev = next((m for m in merged if m["_key"] == key), None)
+        if prev: prev["count"] += 1
+        else: merged.append({**su, "count": 1, "_key": key})
+    for m in merged: m.pop("_key")
+    return merged
+
+def dedup_by_id(rows):
+    """같은 스킬을 슬롯 수만큼 반복해 가진 토큰 정리 — id가 같은 것뿐 아니라 **id는 달라도
+    이름·설명이 똑같은 것**까지 지운다 (읽는 사람에겐 같은 문장이 반복될 뿐이다)."""
+    seen, out = set(), []
+    for r in rows:
+        key = (r["id"],) if r.get("id") else None
+        text = (r.get("name"), r.get("description"))
+        if text in seen or (key and key in seen): continue
+        seen.add(text)
+        if key: seen.add(key)
+        out.append(r)
     return out
 
 def build_skills(c):
@@ -375,7 +424,7 @@ def build_op(cid, c):
         "trait": build_trait(c),
         "talents": build_talents(c),
         "stats": stats,
-        "skills": build_skills(c),
+        "skills": apply_summon_range(build_skills(c)),
         "summons": build_summons(c),
         "potentials": build_potentials(c),
         "modules": build_modules(cid),

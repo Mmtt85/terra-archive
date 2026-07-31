@@ -387,6 +387,10 @@ const D: Record<string, Pair> = {
   "스킬 사용 시 공격 범위": ["Range while the skill is active", "スキル発動中の攻撃範囲"],
   "소환물 {name}의 범위": ["Range of the summon {name}", "召喚物「{name}」の範囲"],
   "{name} 기본": ["{name} normally", "{name} 通常時"],
+  "돌이 놓인 줄 방향에 따라 가로·세로 직선(5칸)으로 나오기도 합니다": [
+    "Depending on the line the stones form, this can instead be a straight row or column (5 tiles).",
+    "碁石が並ぶ向きによって、縦または横の直線（5マス）になることもあります。",
+  ],
   "평소": ["Normal", "通常時"],
   "스킬 사용 중": ["Skill active", "スキル発動中"],
   "변화 없음": ["No change", "変化なし"],

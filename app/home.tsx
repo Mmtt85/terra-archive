@@ -61,6 +61,11 @@ type Skill = {
   // 스킬이 공격 범위를 바꿀 때만 붙는다 (범위 확대·변경 계열 228개) — 없으면 기본 범위 그대로
   rangeId?: string;
   range?: RangeGrid[];
+  // 소환물 발동 범위 — 클뜯 rangeId가 실제와 달라 손수 확인해 넣은 값
+  // (scripts/regen-operators.py의 SUMMON_SKILL_RANGE, 현재 왕 S2·S3). note는 i18n 키.
+  summonId?: string;
+  summonRange?: RangeGrid[];
+  summonNote?: string;
 };
 
 type Talent = { name: string; description: string };
@@ -2101,13 +2106,15 @@ function SkillSection({ operator }: { operator: Operator }) {
 
 /**
  * 같은 이름의 스킬을 가진 소환물 — 그 스킬의 범위는 **소환물 쪽 범위**다.
- * (클뜯에 본체/소환물을 가르는 플래그가 없어 이름으로 잇는다. 실측 14건.)
+ * (클뜯에 본체/소환물을 가르는 플래그가 없어 이름으로 잇는다.)
  *
- * ⚠ 본체와 소환물은 **서로 다른 범위를 따로** 갖는다 (사용자 지적 2026-08-01):
- *  · 왕 '천하겁' — 본체 25칸(본인 공격 범위 확대) + 바둑돌 9칸(돌 주변 효과). 둘 다 보여준다.
- *  · 도로시 '고속 공진 제거' — 본체엔 범위가 없고 공진 장치에만 있다. 소환물 것만.
- *  · 메이어 '교란 장치' — 본체 스킬 범위가 소환물 것과 **같은 칸**이다. 장치 범위가 본체
- *    스킬에 그대로 실린 것이라 중복이므로 소환물 것 하나로 합친다.
+ * ⚠ 소환물 스킬의 rangeId는 **실제 발동 범위와 다를 수 있다** (사용자 지적 2026-08-01):
+ *   왕 '천하겁'의 바둑돌 범위는 게임에선 반경2 마름모(13칸)인데 데이터엔 십자 9칸(x-6)뿐이고,
+ *   그건 오히려 S2 쪽 모양이다. KR·CN 어디에도 마름모는 참조되지 않는다 — 돌의 발동 범위는
+ *   prefabId(스킬 로직)로 계산돼 rangeId에 안 실린다.
+ *   그래서 **본체 스킬이 같은 범위를 함께 갖고 있어 교차 검증되는 경우에만** 소환물 것으로
+ *   본다 (메이어 '교란 장치'·위디·팬텀). 본체와 값이 다르면(왕·Mon3tr·파죰카) 데이터를
+ *   믿을 수 없으므로 **본체 범위만** 낸다.
  */
 function summonSkillRange(skill: Skill, summons: Summon[]): { summon: Summon; range: RangeGrid[] } | undefined {
   for (const summon of summons) {
@@ -2133,9 +2140,17 @@ function SkillCard({ skill, index, levels, baseRange, summons = [] }: { skill: S
   const skillRange = levels?.rg && levels.ri && at >= 0
     ? (levels.ri[at] >= 0 ? levels.rg[levels.ri[at]] : undefined)
     : skill.range;
-  const owned = summonSkillRange(skill, summons);
-  // 본체 스킬 범위가 소환물 것과 같은 칸이면 같은 이야기다 — 하나로 합쳐 소환물 쪽만 보여준다
-  const mergedIntoSummon = Boolean(owned && skill.range?.length && sameRange(skill.range, owned.range));
+  // 손수 확인해 넣은 값이 있으면 그게 정본 — 클뜯에서 유추한 것보다 우선한다
+  const pinned = skill.summonRange?.length
+    ? { summon: summons.find((su) => su.id === skill.summonId), range: skill.summonRange }
+    : undefined;
+  const summonHit = pinned?.summon ? { summon: pinned.summon, range: pinned.range } : summonSkillRange(skill, summons);
+  // 본체 스킬에 범위가 없으면 소환물 것이 유일한 후보, 있으면 **같은 칸일 때만** 교차 검증된다.
+  // 값이 어긋나면(왕 '천하겁' 등) 데이터를 믿을 수 없으므로 소환물 쪽은 아예 안 낸다.
+  const owned = pinned?.summon ? summonHit
+    : summonHit && (!skill.range?.length || sameRange(skill.range, summonHit.range)) ? summonHit : undefined;
+  // 손수 넣은 값은 본체 범위와 별개다 — 왕 '천하겁'은 본체 25칸 + 바둑돌 13칸을 둘 다 낸다
+  const mergedIntoSummon = Boolean(owned && !pinned && skill.range?.length);
 
   return (
     <article className="skill-detail">
@@ -2173,14 +2188,18 @@ function SkillCard({ skill, index, levels, baseRange, summons = [] }: { skill: S
             왕 '천하겁'처럼 둘 다 있는 스킬에서 위아래로 쌓이면 카드가 길어진다.
             본체 격자는 레벨을 따르는 값(skillRange): 메이어는 특화에서 장치 범위가 넓어진다.
             소환물 것과 같은 칸이면 합쳐서 소환물 블록 하나만 낸다. */}
-        {(owned || (skillRange && skillRange.length > 0)) && (
+        {(owned || (skillRange && skillRange.length > 0)) && !(
+          // 낼 격자가 하나도 없으면(전부 기본과 동일) 구분선까지 통째로 감춘다
+          (!owned || sameRange(owned.range, owned.summon.range)) &&
+          (mergedIntoSummon || !skillRange?.length || (baseRange ? sameRange(skillRange, baseRange) : false))
+        ) && (
           <div className="skill-range-row">
             {!mergedIntoSummon && skillRange && skillRange.length > 0 && (
               <SkillRange grids={skillRange} base={baseRange} />
             )}
             {owned && (
               <SkillRange grids={mergedIntoSummon && skillRange?.length ? skillRange : owned.range}
-                base={owned.summon.range} ownerName={owned.summon.name} />
+                base={owned.summon.range} ownerName={owned.summon.name} note={skill.summonNote} />
             )}
           </div>
         )}
@@ -2625,33 +2644,40 @@ function sameRange(a: RangeGrid[], b: RangeGrid[]) {
  * 기본 범위는 **최종 정예화(스탯표 마지막 줄)** 기준이다: 범위를 바꾸는 스킬은 대부분
  * 2스킬·3스킬이라 정예화가 끝난 상태에서 쓰게 된다.
  */
-function SkillRange({ grids, base, ownerName }: { grids: RangeGrid[]; base?: RangeGrid[]; ownerName?: string }) {
+function SkillRange({ grids, base, ownerName, note }: { grids: RangeGrid[]; base?: RangeGrid[]; ownerName?: string; note?: string }) {
   const { t } = useI18n();
-  const changed = base && base.length > 0 && !sameRange(grids, base);
-  const added = changed && grids.some((g) => !base.some((b) => cellKey(b) === cellKey(g)));
-  const removed = changed && base.some((b) => !grids.some((g) => cellKey(g) === cellKey(b)));
+  // ⚠ 기본 범위와 **같은 칸이면 아무것도 내지 않는다** (사용자 요청 2026-08-01) — Mon3tr
+  // '책략: 초연결'처럼 rangeId만 붙어 있고 실제로는 안 바뀌는 스킬이 14건 있다. "변화 없음"
+  // 격자를 띄워봐야 읽을 게 없다. 기준 범위 자체가 없을 때만 격자 하나로 보여준다.
+  const before = base?.length ? base : undefined;          // 견줄 기준 (없으면 격자 하나만)
+  if (before && sameRange(grids, before)) return null;
+  const added = before && grids.some((g) => !before.some((b) => cellKey(b) === cellKey(g)));
+  const removed = before && before.some((b) => !grids.some((g) => cellKey(g) === cellKey(b)));
   return (
     <div className="skill-range">
       <b>{ownerName ? t("소환물 {name}의 범위", { name: ownerName }) : t("스킬 사용 시 공격 범위")}</b>
       <div className="skill-range-grids">
-        {changed && (
-          <figure>
-            <AttackRange grids={base} />
-            <figcaption>{ownerName ? t("{name} 기본", { name: ownerName }) : t("평소")}</figcaption>
-          </figure>
+        {before && (
+          <>
+            <figure>
+              <AttackRange grids={before} />
+              <figcaption>{ownerName ? t("{name} 기본", { name: ownerName }) : t("평소")}</figcaption>
+            </figure>
+            <span className="skill-range-arrow" aria-hidden>→</span>
+          </>
         )}
-        {changed && <span className="skill-range-arrow" aria-hidden>→</span>}
         <figure>
-          <AttackRange grids={grids} base={changed ? base : undefined} />
-          <figcaption>{changed ? t("스킬 사용 중") : t("변화 없음")}</figcaption>
+          <AttackRange grids={grids} base={before} />
+          <figcaption>{t("스킬 사용 중")}</figcaption>
         </figure>
       </div>
-      {changed && (
+      {before && (
         <p className="skill-range-legend">
           {added && <span className="rl-added">{t("늘어난 칸")}</span>}
           {removed && <span className="rl-removed">{t("빠지는 칸")}</span>}
         </p>
       )}
+      {note && <p className="skill-range-note">{t(note)}</p>}
     </div>
   );
 }

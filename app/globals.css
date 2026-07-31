@@ -14345,3 +14345,11 @@ main.site-main > .site-header {
 .summon-skill + .summon-skill {
   margin-top: 8px;
 }
+/* 손수 확인해 넣은 소환물 범위에 붙는 주석 (왕 S2 등, 2026-08-01) */
+.skill-range-note {
+  color: var(--muted);
+  max-width: 260px;
+  margin: 5px 0 0;
+  font-size: 10.5px;
+  line-height: 1.5;
+}
