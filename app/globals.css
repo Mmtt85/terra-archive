@@ -5632,6 +5632,31 @@ footer p {
   gap: 6px;
   margin-top: 8px;
 }
+/* 검색어에 걸렸지만 이미 근무 중이라 후보로는 못 넣는 오퍼 (사용자 요청 2026-07-31) —
+   추가 가능한 후보와 헷갈리지 않게 실선·흐린 배경으로 구분하고, 클릭은 상세 열기만 한다.
+   .sub-chip 뒤에 와야 배경·보더가 먹는다(같은 특이도면 뒤가 이긴다). */
+.bench-busy {
+  margin-top: 10px;
+}
+.bench-busy > span {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--muted);
+}
+.sub-chip.busy {
+  border-style: solid;
+  background: var(--bg-soft);
+  color: var(--ink3);
+  cursor: pointer;
+}
+.sub-chip.busy img {
+  opacity: 0.6;
+}
+.sub-chip.busy em {
+  font-family: inherit;
+  font-size: 10.5px;
+  color: var(--muted);
+}
 /* ─ 피드백 위젯 ─ */
 /* bottom을 footer 높이보다 살짝 크게 띄워 버튼이 푸터 위에 겹치지 않게 한다 */
 .feedback-widget {

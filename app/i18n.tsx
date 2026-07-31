@@ -854,6 +854,14 @@ const D: Record<string, Pair> = {
   ],
   "이름·소속으로 후보 검색": ["Search candidates by name or affiliation", "名前・所属で候補検索"],
   "검색 결과가 없습니다.": ["No results.", "検索結果がありません。"],
+  "이미 근무 중 — 빼려면 그 시설에서 ✕를 누르세요:": [
+    "Already on shift — remove them from that facility (✕) first:",
+    "すでに勤務中 — 外すにはその施設で✕を押してください：",
+  ],
+  "{at}로 이동 — {name}은(는) 여기서 근무 중입니다": [
+    "Go to {at} — {name} is on shift there",
+    "{at}へ移動 — {name}はそこで勤務中です",
+  ],
   "더 많이 보기 (전체 {n}명)": ["Show more (all {n})", "もっと見る（全{n}名）"],
   "자동 편성을 먼저 실행해 주세요.": ["Run auto-assign first.", "先に自動編成を実行してください。"],
   // 시너지 트리

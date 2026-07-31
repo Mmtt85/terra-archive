@@ -1363,6 +1363,9 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
 
       {openCell && plan && (
         <RoomModal
+          /* 방을 바꾸면 새로 마운트한다 — 조 탭·후보 검색어가 이전 방 것으로 남지 않게
+             (근무 중 오퍼 칩으로 다른 시설을 열 때 필요, 2026-07-31) */
+          key={openCell.key}
           cell={openCell}
           plan={plan}
           allAssigned={allAssigned}
@@ -1370,6 +1373,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           opMap={effectiveOpById}
           initialShift={activeShift}
           onClose={() => setOpenRoom(null)}
+          onOpenRoom={(key, shift) => { setActiveShift(shift); setOpenRoom(key); }}
           onShowOperator={onShowOperator}
           onSetLevel={setRoomLevel}
           onUpdateTeam={openCell.room === "DORMITORY" ? (key, _shift, ids) => updateDorm(key, ids) : updateTeam}
@@ -1571,7 +1575,7 @@ function TermPopup({ termKey, presentIds, onNavigate, onShowOperator, onClose }:
   );
 }
 
-function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClose, onShowOperator, onUpdateTeam, eliteById, onSetElite, tempIds, onRevertTempOne, onSetLevel, dormPins, onToggleDormPin }: { cell: { key: string; room: string; label: string; product?: string }; plan: Plan; allAssigned: Set<string>; roster: InfraOp[]; opMap: Map<string, InfraOp>; initialShift: number; onClose: () => void; onShowOperator?: (id: string) => void; onUpdateTeam?: (cellKey: string, shiftIdx: number, ids: string[]) => void; eliteById: Map<string, Elite>; onSetElite: (id: string, elite: Elite) => void; tempIds: Set<string>; onRevertTempOne: (opId: string) => void; onSetLevel?: (key: string, lv: number) => void; dormPins?: string[]; onToggleDormPin?: (opId: string) => void }) {
+function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClose, onOpenRoom, onShowOperator, onUpdateTeam, eliteById, onSetElite, tempIds, onRevertTempOne, onSetLevel, dormPins, onToggleDormPin }: { cell: { key: string; room: string; label: string; product?: string }; plan: Plan; allAssigned: Set<string>; roster: InfraOp[]; opMap: Map<string, InfraOp>; initialShift: number; onClose: () => void; onOpenRoom?: (key: string, shift: number) => void; onShowOperator?: (id: string) => void; onUpdateTeam?: (cellKey: string, shiftIdx: number, ids: string[]) => void; eliteById: Map<string, Elite>; onSetElite: (id: string, elite: Elite) => void; tempIds: Set<string>; onRevertTempOne: (opId: string) => void; onSetLevel?: (key: string, lv: number) => void; dormPins?: string[]; onToggleDormPin?: (opId: string) => void }) {
   const { locale, t } = useI18n();
   const [shift, setShift] = useState(initialShift);
   const [termOpen, setTermOpen] = useState<string | null>(null); // RIIC 용어 팝업 (외세·실리 등)
@@ -1644,6 +1648,37 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
     ? benchFull.filter(({ op }) => normSearch(op.name).includes(benchKeyword) || normSearch(op.faction).includes(benchKeyword))
     : benchFull;
   const bench = benchAll ? benchFiltered : benchFiltered.slice(0, 12);
+  // 검색어에 걸렸는데 **이미 어딘가 근무 중**이라 후보에서 빠진 오퍼 — "검색 결과가 없습니다"로
+  // 끝내지 말고 어느 시설 어느 조에 있는지 알려준다 (사용자 요청 2026-07-31).
+  // 한 오퍼가 A조·B조에 따로 들어가 있을 수 있으므로 시설별로 조를 모아 표시한다.
+  const busyMatches = useMemo(() => {
+    if (!benchKeyword) return [];
+    const where = new Map<string, Map<string, number[]>>(); // opId → (방 키 → 조 번호들)
+    for (const [key, shifts] of Object.entries(plan.assignments)) {
+      shifts.forEach((ids, shift) => {
+        for (const id of ids) {
+          const rooms = where.get(id) ?? new Map<string, number[]>();
+          rooms.set(key, [...(rooms.get(key) ?? []), shift]);
+          where.set(id, rooms);
+        }
+      });
+    }
+    return roster
+      .filter((op) => where.has(op.id)
+        && (normSearch(op.name).includes(benchKeyword) || normSearch(op.faction).includes(benchKeyword)))
+      .map((op) => {
+        const spots = [...where.get(op.id)!];
+        return {
+          op,
+          // 클릭 시 열 시설 — 여러 군데면 첫 자리 (조도 그 자리 기준으로 맞춘다)
+          go: { key: spots[0][0], shift: spots[0][1][0] },
+          at: spots.map(([key, shifts]) =>
+            `${t(cellByKey.get(key)?.label ?? key)} ${shifts.map((s) => (s === 0 ? t("A조") : t("B조"))).join("·")}`).join(", "),
+        };
+      })
+      .sort((a, b) => b.op.rarity - a.op.rarity || a.op.name.localeCompare(b.op.name))
+      .slice(0, 12);
+  }, [benchKeyword, plan, roster, t]);
   // synergy cores can't be swapped: token generators/consumers of active
   // systems, override/payout roles, and per-member counter bodies (쉐이)
   const activeTokens = new Set(Object.entries(plan.tokenPoints).filter(([, points]) => points > 0).map(([token]) => token));
@@ -2126,8 +2161,27 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                       );
                     })}
                   </div>
-                ) : (
+                ) : busyMatches.length === 0 && (
                   <p className="no-detail">{t("검색 결과가 없습니다.")}</p>
+                )}
+                {/* 이미 근무 중이라 후보에 못 뜨는 오퍼 — 어디 있는지 알려주고, 누르면 그 시설
+                    상세로 건너뛴다 (사용자 요청 2026-07-31: 오퍼 상세는 얼굴 클릭으로 충분) */}
+                {busyMatches.length > 0 && (
+                  <div className="bench-busy">
+                    <span>{t("이미 근무 중 — 빼려면 그 시설에서 ✕를 누르세요:")}</span>
+                    <div className="bench-chips">
+                      {busyMatches.map(({ op, at, go }) => (
+                        <small key={op.id} className="sub-chip busy"
+                          title={t("{at}로 이동 — {name}은(는) 여기서 근무 중입니다", { at, name: op.name })}
+                          onClick={() => onOpenRoom?.(go.key, go.shift)}>
+                          <img src={asset(op.image)} alt="" width={180} height={180} loading="lazy"
+                            className={onShowOperator ? "op-link" : undefined}
+                            onClick={(event) => { event.stopPropagation(); onShowOperator?.(op.id); }} />{op.name}{" "}
+                          <em>{at}</em>
+                        </small>
+                      ))}
+                    </div>
+                  </div>
                 )}
                 {benchFiltered.length > 12 && (
                   <button type="button" className="more-filter" onClick={() => setBenchAll((current) => !current)}>
