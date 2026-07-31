@@ -235,6 +235,8 @@ function dayKey(b: Broadcast): string {
 type StoryEventLite = { id: string; name: { ko: string; en?: string; ja?: string }; thumb?: string; thumbEn?: string; thumbJa?: string; unreleased?: boolean; eta?: string };
 const storyEventsList = (storyEventsData as { events: StoryEventLite[] }).events;
 const storyEventById = new Map(storyEventsList.map((event) => [event.id, event]));
+// 공식 카페 이벤트 게시판 — 개별 공지를 못 찾은 이벤트의 착지점 (2026-07-31 실확인: 로그인 없이 열린다)
+const CAFE_EVENT_BOARD = "https://cafe.naver.com/f-e/cafes/29703924/menus/3";
 // 미실장(중섭 선행) 이벤트 — 헤더 이벤트 드롭다운 '향후 다가올'에 추정월과 함께 노출 (미래시 ON일 때만).
 // 정렬은 추정월 이른(= 먼저 KR에 올) 순 — 다음에 올 이벤트가 위로.
 const futureEvents = storyEventsList
@@ -696,6 +698,12 @@ function Portal({ onOpenTab, onFeedback, stats }: {
     // 이벤트 칸은 공식 카페 공지로 (사용자 지시 2026-07-30). 공지가 없는 이벤트만 스토리로.
     if (tile.kind === "banner") {
       if (headline?.url) { window.open(headline.url, "_blank", "noopener"); return; }
+      // 공지를 못 찾았을 때: **스토리가 있는 이벤트만** 스토리 탭으로 보낸다. 벡터 돌파처럼
+      // 스토리가 없는 이벤트를 스토리로 보내면 엉뚱한 곳에 떨어진다 (사용자 지적 2026-07-31
+      // "왜 스토리로 연결이 돼?") — 그런 이벤트는 공식 카페 이벤트 게시판으로.
+      if (headline && !storyEventById.has(headline.id)) {
+        window.open(CAFE_EVENT_BOARD, "_blank", "noopener"); return;
+      }
       onOpenTab("story"); scrollMainTop(); return;
     }
     if (tile.action === "feedback") return onFeedback();

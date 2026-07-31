@@ -141,10 +141,17 @@ async function fetchEventNotices() {
   return (data?.message?.result?.articleList ?? []).map((a) => ({ id: a.articleId, subject: a.subject ?? "" }));
 }
 
+// 공지 제목과 게임 데이터의 이벤트명은 **문장부호·띄어쓰기가 서로 다르다** — 게임은
+// "벡터 돌파#2 주술의 밤", 공지는 "벡터 돌파#2: 주술의 밤"이라 그대로 비교하면 정작
+// 메인 이벤트가 안 걸리고, 같은 공지에 딸린 곁다리 출석 이벤트만 링크됐다
+// (사용자 지적 2026-07-31). 한글·영숫자만 남겨 비교한다.
+const normTitle = (s) => s.replace(/&[a-z]+;/gi, " ").replace(/[^0-9a-z가-힣ㄱ-ㅎㅏ-ㅣ]+/gi, "").toLowerCase();
+
 function noticeUrlFor(name, articles) {
   let best = null;
   for (const art of articles) {
-    if (!eventMatchKeys(name).some((k) => k && art.subject.includes(k))) continue;
+    const subject = normTitle(art.subject);
+    if (!eventMatchKeys(name).some((k) => k && subject.includes(normTitle(k)))) continue;
     // 업데이트 공지 본문을 우선 — PV·캘린더·가이드·축전은 후순위
     let score = art.subject.includes("안내") ? 2 : 1;
     if (/PV|트레일러|캘린더|가이드|축전/.test(art.subject)) score -= 2;
