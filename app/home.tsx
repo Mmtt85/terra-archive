@@ -1708,8 +1708,10 @@ function FilterGroup({ title, items, selected, onToggle, rows = 1, countForItem,
 // 여러 속성 필터(성급·직군·세부직군·전투태그·공격방식·소속)를 한 컨트롤로 — 카테고리를 누르면
 // 그 값 태그가 나온다. 필터 패널이 세로로 끝없이 늘어나던 문제 해소 (사용자 요청 2026-07-22).
 // 값 목록은 아래로 밀어내지 않고 **떠 있는 드롭다운**으로 (사용자 요청 2026-08-01) —
-// 컨셉덱 검색과 같은 방식. 값은 복수 선택이라 고르는 동안 열린 채로 두고,
-// 바깥을 누르거나 ESC를 눌러야 닫힌다. 컨셉덱은 시그니처 기능이라 별도 유지.
+// 태그를 흩뿌리지 않고 컨셉덱 검색(.concept-drop)과 같은 **한 줄에 하나씩 세로 리스트**다
+// (사용자 요청 2026-08-01). 값은 복수 선택이라 고르는 동안 열린 채로 두고, 바깥을 누르거나
+// ESC를 눌러야 닫힌다 — 고른 항목은 목록에서 빼지 않고 ✓로 표시한다(컨셉덱은 하나만 고르는
+// 기능이라 고른 걸 목록에서 뺀다 — 그 차이만 다르다). 컨셉덱은 시그니처 기능이라 별도 유지.
 type AttrGroup = { title: string; items: string[]; selected: string[]; onToggle: (value: string) => void; labelFor?: (value: string) => string; countForItem: (value: string) => number };
 function AttributeFilter({ groups }: { groups: AttrGroup[] }) {
   const { t } = useI18n();
@@ -1745,16 +1747,21 @@ function AttributeFilter({ groups }: { groups: AttrGroup[] }) {
           </button>
         ))}
         {active && (
-          <div className="filter-list attr-values" role="group" aria-label={active.title}>
+          <ul className="attr-drop" role="listbox" aria-multiselectable aria-label={active.title}>
             {active.items.map((item) => {
               const isSelected = active.selected.includes(item);
               return (
-                <button key={item} className={isSelected ? "selected" : ""} aria-pressed={isSelected} onClick={() => active.onToggle(item)}>
-                  {active.labelFor ? active.labelFor(item) : item}<span>{active.countForItem(item)}</span>
-                </button>
+                <li key={item}>
+                  <button type="button" role="option" aria-selected={isSelected}
+                    className={isSelected ? "selected" : ""} onClick={() => active.onToggle(item)}>
+                    <i aria-hidden>{isSelected ? "✓" : ""}</i>
+                    {active.labelFor ? active.labelFor(item) : item}
+                    <span>{active.countForItem(item)}</span>
+                  </button>
+                </li>
               );
             })}
-          </div>
+          </ul>
         )}
       </div>
     </fieldset>
