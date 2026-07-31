@@ -2173,7 +2173,10 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                       {busyMatches.map(({ op, at, go }) => (
                         <small key={op.id} className="sub-chip busy"
                           title={t("{at}로 이동 — {name}은(는) 여기서 근무 중입니다", { at, name: op.name })}
-                          onClick={() => onOpenRoom?.(go.key, go.shift)}>
+                          /* 같은 방의 다른 조면 openRoom 값이 그대로라 모달이 새로 마운트되지
+                             않는다 — 그 경우엔 여기서 조 탭만 바꾼다 (사용자 제보 2026-07-31:
+                             제어센터 A조에서 B조 근무자를 눌러도 A조가 그대로였다) */
+                          onClick={() => (go.key === cell.key ? setShift(go.shift) : onOpenRoom?.(go.key, go.shift))}>
                           <img src={asset(op.image)} alt="" width={180} height={180} loading="lazy"
                             className={onShowOperator ? "op-link" : undefined}
                             onClick={(event) => { event.stopPropagation(); onShowOperator?.(op.id); }} />{op.name}{" "}
