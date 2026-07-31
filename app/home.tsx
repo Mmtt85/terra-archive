@@ -1814,7 +1814,7 @@ const MODAL_SECTIONS = [
   { id: "op-trait", label: "특성" },
   { id: "op-module", label: "모듈" },
   { id: "op-infra", label: "인프라 스킬" },
-  { id: "op-skin", label: "복장" },
+  { id: "op-skin", label: "스킨" },
   { id: "op-profile", label: "오퍼레이터 파일" },
   { id: "op-voice", label: "보이스 대사" },
 ];
@@ -2120,6 +2120,11 @@ type SkinEntry = {
 };
 type SkinDoc = { id: string; skins: SkinEntry[] };
 
+// 클뜯 원문에서 기본 스킨의 name·group은 게임 표기 그대로 "기본 복장"이다. 사이트 용어는
+// "스킨"으로 통일했으므로(사용자 요청 2026-08-01) 데이터는 원문대로 두고 화면에서만 바꿔 부른다.
+// EN/JA 원문은 이미 "Default Outfit"/"デフォルト"라 t("기본 스킨")과 같은 값 → 한국어만 바뀐다.
+const isDefaultSkin = (skin: SkinEntry) => skin.default || !skin.name;
+
 const skinCache = new Map<string, SkinDoc | null>();
 
 function SkinSection({ operator }: { operator: Operator }) {
@@ -2148,19 +2153,19 @@ function SkinSection({ operator }: { operator: Operator }) {
   return (
     <section className="detail-section" id="op-skin">
       <span className="detail-no">SKIN / 08</span>
-      <h3>{t("복장")}{skins.length > 0 && <em className="detail-count">{skins.length}</em>}</h3>
+      <h3>{t("스킨")}{skins.length > 0 && <em className="detail-count">{skins.length}</em>}</h3>
       {doc === undefined ? (
         <p className="no-detail">{t("불러오는 중…")}</p>
       ) : !skins.length ? (
-        <p className="no-detail">{t("등록된 복장이 없습니다.")}</p>
+        <p className="no-detail">{t("등록된 스킨이 없습니다.")}</p>
       ) : (
         <div className="skin-block">
           <div className="skin-tabs" role="tablist">
             {skins.map((skin, index) => (
               <button key={skin.id} type="button" role="tab" aria-selected={index === picked}
                 className={index === picked ? "selected" : ""} onClick={() => setPicked(index)}>
-                {skin.name || t("기본 복장")}
-                {/* 기본 복장은 전부 이름이 같다 — 정예화 단계로 구분 (사용자 요청 2026-07-28) */}
+                {isDefaultSkin(skin) ? t("기본 스킨") : skin.name}
+                {/* 기본 스킨은 전부 이름이 같다 — 정예화 단계로 구분 (사용자 요청 2026-07-28) */}
                 {skin.stage && <i>{t(skin.stage)}</i>}
               </button>
             ))}
@@ -2171,9 +2176,9 @@ function SkinSection({ operator }: { operator: Operator }) {
                   깨진 이미지 아이콘 대신 자리표시자로 대체한다 */}
               <SkinPortrait skin={current} fallbackAlt={operator.name} onZoom={() => setZoom(current)} />
               <div className="skin-meta">
-                <h4>{current.name || t("기본 복장")}{current.stage && <em className="skin-stage">{t(current.stage)}</em>}</h4>
+                <h4>{isDefaultSkin(current) ? t("기본 스킨") : current.name}{current.stage && <em className="skin-stage">{t(current.stage)}</em>}</h4>
                 <dl>
-                  {current.group && <div><dt>{t("시리즈")}</dt><dd>{current.group}</dd></div>}
+                  {current.group && <div><dt>{t("시리즈")}</dt><dd>{current.default ? t("기본 스킨") : current.group}</dd></div>}
                   {current.artists.length > 0 && <div><dt>{t("일러스트")}</dt><dd>{current.artists.join(" · ")}</dd></div>}
                   {current.obtain && <div><dt>{t("획득처")}</dt><dd>{current.obtain}</dd></div>}
                 </dl>
@@ -2210,9 +2215,9 @@ function SkinLightbox({ skin, alt, onClose }: { skin: SkinEntry; alt: string; on
       ) : (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={asset(`/skin/full/${encodeURIComponent(skin.portrait)}.webp`)}
-          alt={skin.name || alt} onError={() => setBroken(true)} />
+          alt={isDefaultSkin(skin) ? alt : skin.name} onError={() => setBroken(true)} />
       )}
-      <figcaption>{skin.name || alt}{skin.artists.length > 0 && <em> · {skin.artists.join(" · ")}</em>}</figcaption>
+      <figcaption>{isDefaultSkin(skin) ? t("기본 스킨") : skin.name}{skin.artists.length > 0 && <em> · {skin.artists.join(" · ")}</em>}</figcaption>
     </div>
   );
 }
@@ -2228,7 +2233,7 @@ function SkinPortrait({ skin, fallbackAlt, onZoom }: { skin: SkinEntry; fallback
     <button type="button" className="skin-portrait" onClick={onZoom} title={t("클릭하면 전체 일러스트로 봅니다")}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={asset(`/skin/portrait/${encodeURIComponent(skin.portrait)}.webp`)}
-        alt={skin.name || fallbackAlt} loading="lazy" width={180} height={360}
+        alt={isDefaultSkin(skin) ? fallbackAlt : skin.name} loading="lazy" width={180} height={360}
         onError={() => setBroken(true)} />
       <span aria-hidden>⤢</span>
     </button>
@@ -2415,7 +2420,7 @@ function VoiceSection({ operator }: { operator: Operator }) {
           {doc?.sets?.map((set) => (
             <details key={set.name} className="voice-set">
               <summary>
-                <b>{t("{name} 복장 전용 보이스", { name: set.name })}</b>
+                <b>{t("{name} 스킨 전용 보이스", { name: set.name })}</b>
                 <em>{set.lines.length}</em>
               </summary>
               <dl className="voice-lines">
