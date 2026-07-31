@@ -214,9 +214,32 @@ npx --yes tsx scripts/verify-scan.ts      # 회귀 검증 — 픽스처 138셀 �
   게임 UI가 바뀌지 않는 한 재생성 불필요.
 - 신규 오퍼 추가(operators.json 재생성) 후에는 이 스크립트도 한 번 돌려 초상 템플릿을 따라잡게 한다.
 
+## 7.5 오퍼레이터 보이스 대사 (텍스트, 2026-07-31~)
+
+```bash
+# 추가 테이블: {kr,en,jp,cn}/gamedata/excel/charword_table.json → <prefix>_charword_table.json
+python3 scripts/build-voicelines.py .gamedata   # → public/voice/{ko,en,ja}/<opId>.json
+```
+
+- 출처는 `charword_table.json` — 대사 본문·제목·해금 조건(신뢰도/승진)·재생 위치 + 언어별 성우.
+  KR·EN·JP 테이블이 각각 공식 번역이라 AI 번역을 쓰지 않는다 (미실장 오퍼만 CN 폴백).
+- **음성 파일(mp3)은 넣지 않는다** (사용자 확정 2026-07-31 "텍스트만 할까"). 음성은
+  `ArknightsAssets/ArknightsAssets2`의 **voice 브랜치**
+  (`assets/dyn/audio/sound_beta_2/{voice,voice_cn,voice_en,voice_kr}/<charId>/<voiceId>.mp3`)에
+  언어당 약 1GB 있지만, 게임 에셋 원본 재배포라 성격이 다르다 — 넣으려면 별도 결정이 필요하다.
+- **대사는 charId가 아니라 wordKey로 묶는다.** 한 charId 밑에 세 종류가 섞여 있다:
+  - 언어 변종(`…_ITA`·`…_CN_TOPOLECT`) = 같은 대본을 그 언어 성우가 읽은 것(문장부호만 다름).
+    `voiceLangDict[charId].wordkeys`로 걸러낸다 — 안 거르면 **모든 줄이 두 번** 나온다(실측).
+  - 복장 전용 세트(`…_epoque#7` 등, 14개) = 38줄 중 37줄이 다른 별개 대본이라 살리고
+    skin_table의 `charId@suffix`에서 이름을 붙인다.
+  - 다른 형태(가드/메딕 아미야)는 그 자체가 오퍼 id — 사이트 로스터에 없으면 표시하지 않는다.
+- 산출물은 오퍼당 파일 1개(평균 8KB, 로케일당 3MB)로 `public/voice/`에 쓰고 상세 모달이 열릴 때만
+  받아간다 — profiles·skins와 같은 관례. **R2 동기화(아래 8절)를 돌려야 사이트에 보인다.**
+- 예비 인원 10명은 대사가 없어 파일도 안 만든다(UI가 "등록된 보이스 대사가 없습니다"를 띄운다).
+
 ## 8. 정적 에셋 R2 동기화 (2026-07-27~)
 
-public/의 story·rogue·lens·tesseract·avatars·about·og·items·scan은 사이트 배포(Pages)가
+public/의 story·rogue·lens·tesseract·avatars·about·og·items·scan·profiles·skins·voice는 사이트 배포(Pages)가
 아니라 **R2(files.terra-archive.net/assets/…)** 에서 서빙된다. 버킷은 assets/(이 스크립트 관할)와
 uploads/(/admin 수동 업로드)로 나뉘며, --prune은 로컬에 없는 assets/ 키만 지운다. 파이프라인이 이 폴더들에 파일을
 새로 만들었으면(신규 오퍼 아바타, 이벤트 섬네일·전문 스크립트, 통합전략 에셋, OG 이미지,

@@ -27,6 +27,8 @@ const API = "https://terra-archive-upload.nzkonaru.workers.dev";
 const DIRS = ["story", "rogue", "lens", "tesseract", "avatars", "about", "og", "items", "scan",
   // 오퍼 상세 모달이 열릴 때만 받아가는 지연 로딩 데이터·이미지 (2026-07-28)
   "profiles", "skins", "skin",
+  // 오퍼 보이스 대사 텍스트 — scripts/build-voicelines.py (2026-07-31)
+  "voice",
   // 대문(포탈) 홈 화면 테마 배경 — scripts/build-portal-themes.py가 만든다 (2026-07-30)
   "portal"];
 

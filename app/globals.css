@@ -2542,6 +2542,104 @@ legend {
 /* ── 오퍼레이터 파일(프로필 문서) — 상세 모달 PROFILE 섹션 (2026-07-28) ─────────
    클뜯 handbook_info_table 전문. 즉시 열람 문서는 펼쳐 두고, 신뢰도·승진으로 잠긴
    문서는 <details>로 접는다 (스포일러 + 모달 길이). */
+/* ── 보이스 대사 (오퍼 상세 VOICE/10) ─────────────────────────────────────────
+   제목/대사 2열 정의 목록. 오퍼당 최대 114줄이라 12줄만 펴고 나머지는 버튼으로 (home.tsx). */
+.voice-cv {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+  margin: 0 0 12px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.voice-cv > span {
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+.voice-cv em {
+  font-style: normal;
+}
+.voice-cv em b {
+  font-weight: 800;
+  color: var(--ink3);
+  margin-right: 4px;
+}
+.voice-lines {
+  display: grid;
+  gap: 1px;
+  margin: 0;
+  background: var(--line);
+  border: 1px solid var(--line);
+}
+.voice-lines > div {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.28fr) 1fr;
+  gap: 0 14px;
+  background: var(--bg-faint);
+  padding: 9px 14px;
+}
+.voice-lines dt {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink3);
+  min-width: 0;
+}
+.voice-lines dt em {
+  font: 700 10px monospace;
+  font-style: normal;
+  padding: 1px 5px;
+  background: var(--bg-soft);
+  color: var(--muted);
+}
+.voice-lines dd {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-line;
+  min-width: 0;
+}
+.voice-set {
+  margin-top: 10px;
+  border: 1px solid var(--line);
+  background: var(--bg-faint);
+}
+.voice-set > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 11px 14px;
+  cursor: pointer;
+  list-style: none;
+  font-size: 12.5px;
+}
+.voice-set > summary::-webkit-details-marker {
+  display: none;
+}
+.voice-set > summary em {
+  font: 700 10px monospace;
+  font-style: normal;
+  padding: 1px 6px;
+  background: var(--bg-soft);
+  color: var(--muted);
+}
+.voice-set[open] > summary {
+  border-bottom: 1px solid var(--line);
+}
+.voice-set .voice-lines {
+  border: 0;
+}
+@media (max-width: 640px) {
+  .voice-lines > div {
+    grid-template-columns: 1fr;
+    gap: 3px;
+  }
+}
 .profile-docs {
   display: grid;
   gap: 10px;

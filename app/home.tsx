@@ -1816,6 +1816,8 @@ function OperatorModal({ operator, onClose }: { operator: Operator; onClose: () 
           <SkinSection operator={operator} />
 
           <ProfileSection operator={operator} />
+
+          <VoiceSection operator={operator} />
         </div>
       </section>
     </div>
@@ -2050,6 +2052,110 @@ function ProfileBody({ text }: { text: string }) {
           : <p key={index}>{line}</p>;
       })}
     </div>
+  );
+}
+
+// ── 보이스 대사 ──────────────────────────────────────────────────────────────
+// 클뜯 charword_table — 대사 본문·제목·해금 조건 + 언어별 성우 (scripts/build-voicelines.py).
+// 프로필·복장과 같은 지연 로딩: 오퍼당 파일 1개(평균 8KB)를 모달 열 때만 받는다.
+// 음성 파일(mp3)은 넣지 않는다 — 텍스트만 (사용자 확정 2026-07-31).
+type VoiceLine = { t: string; x: string; u: { type: string; param: string | null } | null; p?: string };
+type VoiceSet = { name: string; lines: VoiceLine[] };
+type VoiceDoc = { cv: { lang: string; names: string[] }[]; lines: VoiceLine[]; sets?: VoiceSet[]; source?: string };
+const voiceCache = new Map<string, VoiceDoc | null>();
+const VOICE_HEAD = 12; // 처음 보이는 줄 수 — 오퍼당 최대 114줄이라 접어 둔다
+
+function VoiceSection({ operator }: { operator: Operator }) {
+  const { locale, t } = useI18n();
+  const key = `${locale}/${operator.id}`;
+  const [doc, setDoc] = useState<VoiceDoc | null | undefined>(() => voiceCache.get(key));
+  const [all, setAll] = useState(false);
+
+  useEffect(() => {
+    setAll(false);
+    if (voiceCache.has(key)) { setDoc(voiceCache.get(key)); return; }
+    let alive = true;
+    fetch(asset(`/voice/${locale}/${operator.id}.json`))
+      .then((res) => (res.ok ? res.json() : null))
+      .catch(() => null)
+      .then((data: VoiceDoc | null) => {
+        voiceCache.set(key, data);
+        if (alive) setDoc(data);
+      });
+    return () => { alive = false; };
+  }, [key, locale, operator.id]);
+
+  // 해금 배지 — 프로필 문서와 같은 표기 (FAVOR=신뢰도, AWAKE=승진)
+  const unlockLabel = (unlock: VoiceLine["u"]) => {
+    if (!unlock) return null;
+    if (unlock.type === "FAVOR") return t("신뢰도 {n}", { n: unlock.param ?? "?" });
+    if (unlock.type === "AWAKE") return t("승진 {n}", { n: (unlock.param ?? "").split(";")[0] || "?" });
+    return t("추가 해금");
+  };
+
+  const lines = doc?.lines ?? [];
+  const shown = all ? lines : lines.slice(0, VOICE_HEAD);
+  return (
+    <section className="detail-section">
+      <span className="detail-no">VOICE / 10</span>
+      <h3>{t("보이스 대사")}{lines.length > 0 && <em className="detail-count">{lines.length}</em>}</h3>
+      {doc === undefined ? (
+        <p className="no-detail">{t("불러오는 중…")}</p>
+      ) : !lines.length ? (
+        <p className="no-detail">{t("등록된 보이스 대사가 없습니다.")}</p>
+      ) : (
+        <>
+          {doc?.source === "cn" && (
+            <p className="future-note">{t("중국 서버 원문입니다 — 아직 한국 서버에 등록되지 않아 번역 전 텍스트입니다.")}</p>
+          )}
+          {(doc?.cv.length ?? 0) > 0 && (
+            <p className="voice-cv">
+              <span>{t("성우")}</span>
+              {doc!.cv.map((entry) => (
+                <em key={entry.lang}><b>{t(entry.lang)}</b> {entry.names.join(", ")}</em>
+              ))}
+            </p>
+          )}
+          <dl className="voice-lines">
+            {shown.map((line, index) => {
+              const badge = unlockLabel(line.u);
+              return (
+                <div key={index}>
+                  <dt>{line.t}{badge && <em>{badge}</em>}</dt>
+                  <dd>{line.x}</dd>
+                </div>
+              );
+            })}
+          </dl>
+          {lines.length > VOICE_HEAD && (
+            <button type="button" className="more-filter" onClick={() => setAll((current) => !current)} aria-expanded={all}>
+              <span className="btn-icon" aria-hidden>{all ? "▴" : "▾"}</span>
+              {all ? t("접기") : t("전체 {n}줄 보기", { n: lines.length })}
+            </button>
+          )}
+          {/* 복장 전용 보이스 — 기본 대본과 거의 전부 다른 별개 대사라 세트째 접어 둔다 */}
+          {doc?.sets?.map((set) => (
+            <details key={set.name} className="voice-set">
+              <summary>
+                <b>{t("{name} 복장 전용 보이스", { name: set.name })}</b>
+                <em>{set.lines.length}</em>
+              </summary>
+              <dl className="voice-lines">
+                {set.lines.map((line, index) => {
+                  const badge = unlockLabel(line.u);
+                  return (
+                    <div key={index}>
+                      <dt>{line.t}{badge && <em>{badge}</em>}</dt>
+                      <dd>{line.x}</dd>
+                    </div>
+                  );
+                })}
+              </dl>
+            </details>
+          ))}
+        </>
+      )}
+    </section>
   );
 }
 
