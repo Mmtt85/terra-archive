@@ -83,6 +83,8 @@ type Summon = {
 type Potential = { rank: number; description: string };
 
 type ModuleLevel = { level: number; stats: string | null; effects: string[] };
+// unreleased = KR엔 아직 없고 중섭에만 있는 모듈 — '미래시 포함'이 켜졌을 때만 보여준다
+// (사용자 요청 2026-08-01, 실측 18건: 피아메타 통합전략 전용 등)
 
 type OperatorModule = {
   id: string;
@@ -90,6 +92,8 @@ type OperatorModule = {
   type: string;
   unlock: string;
   levels: ModuleLevel[];
+  /** KR엔 아직 없고 중섭에만 있는 모듈 — '미래시 포함'이 켜졌을 때만 노출 */
+  unreleased?: boolean;
 };
 
 type Infrastructure = {
@@ -1573,7 +1577,7 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
       </footer>
       </div>{/* /.site-scroll */}
 
-      {selected && <OperatorModal operator={selected} onClose={closeOperator} onUpgrade={openUpgradeFor} />}
+      {selected && <OperatorModal operator={selected} onClose={closeOperator} onUpgrade={openUpgradeFor} includeFuture={includeFuture} />}
       <FeedbackWidget open={feedbackOpen} setOpen={setFeedbackOpen} />
       {/* 팁 풍선 — 화면 빈 곳을 찾아 떠다닌다 (본문을 가리면 스스로 자리를 옮긴다) */}
       <TipBalloon />
@@ -1893,9 +1897,11 @@ function ModalRail({ scrollRef }: { scrollRef: React.RefObject<HTMLDivElement | 
   );
 }
 
-function OperatorModal({ operator, onClose, onUpgrade }: { operator: Operator; onClose: () => void; onUpgrade?: (operatorId: string) => void }) {
+function OperatorModal({ operator, onClose, onUpgrade, includeFuture }: { operator: Operator; onClose: () => void; onUpgrade?: (operatorId: string) => void; includeFuture?: boolean }) {
   const { locale, t } = useI18n();
   const scrollRef = useRef<HTMLDivElement>(null);
+  // 미래 모듈은 '미래시 포함'이 켜졌을 때만 (사용자 요청 2026-08-01)
+  const shownModules = operator.modules.filter((m) => includeFuture || !m.unreleased);
   return (
     <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <section className="operator-modal" role="dialog" aria-modal="true" aria-labelledby="operator-modal-title" style={{ "--accent": operator.accent } as React.CSSProperties}>
@@ -2006,13 +2012,16 @@ function OperatorModal({ operator, onClose, onUpgrade }: { operator: Operator; o
           <section className="detail-section" id="op-module">
             <span className="detail-no">MODULE / 06</span>
             <h3>{t("모듈")}</h3>
-            {operator.modules.length ? (
+            {shownModules.length ? (
               <div className="module-list">
-                {operator.modules.map((module) => (
-                  <article key={module.id} className="module-card">
+                {shownModules.map((module) => (
+                  <article key={module.id} className={`module-card${module.unreleased ? " future" : ""}`}>
                     <header>
                       <span>{module.type}</span>
-                      <div><h4>{module.name}</h4><small>{module.unlock}</small></div>
+                      <div>
+                        <h4>{module.name}{module.unreleased && <em className="future-badge">{t("미실장")}</em>}</h4>
+                        <small>{module.unlock}</small>
+                      </div>
                     </header>
                     <div className="module-levels">
                       {module.levels.map((level) => (

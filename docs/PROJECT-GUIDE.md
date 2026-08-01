@@ -330,6 +330,10 @@ npm run build                             # 9. 빌드 확인 → 커밋 → 푸�
   있고 그건 오히려 S2 모양이다(KR·CN 모두 마름모 참조 없음). 이런 건 `regen-operators.py`의
   **`SUMMON_SKILL_RANGE`**에 손수 확인한 값을 적는다(격자는 range_table의 기존 id를 빌려 쓰고,
   note는 i18n 키). 손수 넣은 값이 유추보다 우선한다.
+- **미래 모듈**: 이미 KR에 실장된 오퍼에 중섭에서만 추가된 모듈(피아메타 통합전략 전용 ISW-A 등
+  실측 18건)은 `regen-operators`가 CN uniequip에서 따로 긁어 `modules[].unreleased`로 표시한다.
+  화면은 **'미래시 포함' 토글이 켜졌을 때만** 보여주고 카드에 '미실장' 뱃지를 단다.
+  매 갱신마다 `scripts/audit-modules.py`가 현황을 훑는다 (fast 레인).
 - **소환물(토큰)**: `displayTokenDict`가 정본 (KR 48 + CN 선행 5). 스탯·범위·재능·스킬을 오퍼와
   같은 방식으로 뽑아 `operators.json`의 `summons`에 넣고, **재능 섹션(04) 안**에 카드로 보여준다 —
   재능 문구가 "○○를 소환할 수 있다"라고 알려 주는 경우가 대부분이라 같이 읽힌다 (사용자 요청).

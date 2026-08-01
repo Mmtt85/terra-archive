@@ -61,8 +61,11 @@ for cid, op in ops.items():
     for e in mods_of(cid, cn_eq, cn_ce):
         if e["uniEquipId"] not in have:
             future.append((op["name"], e.get("uniEquipName"), mtype(e)))
+# 2026-08-01부터 미래 모듈은 operators.json에 unreleased로 실려 '미래시 포함' 토글에 걸린다.
+# 그래도 계속 세어 둔다 — 새로 붙은 게 있으면 번역이 필요하기 때문이다.
+site_future = sum(1 for o in ops.values() for m in (o.get("modules") or []) if m.get("unreleased"))
 if future:
-    warn.append(f"미래 모듈(KR 실장 오퍼 · CN 선행) {len(future)}건 — 사이트엔 아직 안 나온다")
+    warn.append(f"미래 모듈(KR 실장 오퍼 · CN 선행) {len(future)}건 · 사이트 수록 {site_future}건")
     for n, en, t in sorted(future):
         lines.append(f"  [미래] {n}: {en} ({t})")
 
@@ -74,11 +77,19 @@ for cid, op in ops.items():
     # ⚠ 이름으로 비교하면 안 된다 — 미실장 오퍼의 모듈 이름은 operators.json에서 **번역돼**
     #   있어 원문과 절대 안 맞는다(첫 판에서 15건이 통째로 오탐이었다). id로 대조한다.
     want = {e["uniEquipId"]: e.get("uniEquipName") for e in mods_of(cid, src, srcce)}
-    got = {m.get("id"): m.get("name") for m in (op.get("modules") or [])}
+    # 실장 오퍼의 **미래 모듈**(CN 선행)은 unreleased 표시로 정상 수록된 것이다 — 유령이 아니다.
+    cn_ids = {e["uniEquipId"] for e in mods_of(cid, cn_eq, cn_ce)}
+    got = {m.get("id"): m for m in (op.get("modules") or [])}
     for i in want.keys() - got.keys():
         missing.append((op["name"], want[i]))
     for i in got.keys() - want.keys():
-        ghost.append((op["name"], got[i] or i))
+        m = got[i]
+        if i in cn_ids and m.get("unreleased"):
+            continue                       # 미래 모듈 — 1번 항목에서 이미 센다
+        if i in cn_ids and not m.get("unreleased"):
+            warn.append(f"미래 모듈인데 unreleased 표시가 없다: {op['name']} / {m.get('name')}")
+            continue
+        ghost.append((op["name"], m.get("name") or i))
 if missing:
     warn.append(f"누락 모듈 {len(missing)}건 — 테이블엔 있는데 operators.json에 없다 (파서 회귀 의심)")
     for n, en in sorted(missing)[:20]:

@@ -527,6 +527,7 @@ for _cid in set(chars) & set(cn):
 unknown_powers = _saved_unknown  # 수확 중 생긴 노이즈 제거
 CN2KR_TEXT = {k: v.most_common(1)[0][0] for k, v in _pair_votes.items()}
 
+
 TR_FIELDS = ("subProfession", "reason", "trait", "talents", "skills", "potentials",
              "modules", "infrastructure", "summons")
 untranslated = []
@@ -541,6 +542,24 @@ def translate_cn(x, ctx):
         untranslated.append({"ctx": ctx, "cn": x})
         return x
     return x
+
+# ── 미래 모듈: KR 실장 오퍼에 CN에서만 추가된 모듈 (사용자 요청 2026-08-01) ──────────
+# regen이 KR 오퍼는 KR uniequip만 보므로, 이미 실장된 오퍼에 중섭에서 조용히 붙는 모듈
+# (피아메타 통합전략 전용 ISW-A 등 18건)이 통째로 빠져 있었다. 여기선 전역 테이블이 이미
+# CN으로 바뀐 뒤라 build_modules(cid)가 CN 모듈을 준다 — KR에 없는 것만 골라 unreleased로
+# 표시해 붙인다. 화면은 '미래시 포함' 토글이 켜졌을 때만 보여준다.
+# ⚠ translate_cn 정의보다 뒤에 와야 한다 (모듈 텍스트를 한국어로 옮겨야 하므로).
+_future_mods = 0
+for _cid, _op in _kr_built.items():
+    _have = {m["id"] for m in (_op.get("modules") or [])}
+    for _m in build_modules(_cid):
+        if _m["id"] in _have:
+            continue
+        _t = translate_cn(_m, f"{_op['name']}.modules(미래)")
+        _t["unreleased"] = True
+        _op.setdefault("modules", []).append(_t)
+        _future_mods += 1
+print("future modules (KR 실장 오퍼 · CN 선행):", _future_mods)
 
 # 출시순(seq): KR 전체 뒤에 CN 도감 순서대로 이어 붙인다 → '출시순 최신'에 미래시가 맨 앞
 cn_seq = {c2: i for i, c2 in enumerate(cn_tables["handbook"].keys())}
