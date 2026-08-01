@@ -19,18 +19,21 @@ BASE = "https://raw.githubusercontent.com/ArknightsAssets/ArknightsGamedata/mast
 
 # 로케일별 필요한 테이블 (현행 .gamedata 세트 = 스크립트가 실제 로드하는 것)
 TABLES = {
+    # ⚠ charword_table은 build-voicelines.py의 유일한 입력이다. 2026-08-01에 이게 빠져 있어
+    #   CI가 보이스 파일 1,280개를 통째로 지우고 커밋했다 — 빼먹지 말 것.
     "kr": ["character_table", "skill_table", "uniequip_table", "battle_equip_table",
            "building_data", "range_table", "handbook_team_table", "handbook_info_table",
-           "gamedata_const", "item_table", "gacha_table", "stage_table", "skin_table"],
+           "gamedata_const", "item_table", "gacha_table", "stage_table", "skin_table",
+           "charword_table"],
     "cn": ["character_table", "skill_table", "uniequip_table", "battle_equip_table",
            "building_data", "range_table", "handbook_team_table", "handbook_info_table",
-           "gamedata_const", "item_table"],
+           "gamedata_const", "item_table", "charword_table", "skin_table"],
     "en": ["character_table", "skill_table", "uniequip_table", "battle_equip_table",
            "building_data", "handbook_team_table", "handbook_info_table",
-           "item_table", "gacha_table", "stage_table", "skin_table"],
+           "item_table", "gacha_table", "stage_table", "skin_table", "charword_table"],
     "jp": ["character_table", "skill_table", "uniequip_table", "battle_equip_table",
            "building_data", "handbook_team_table", "handbook_info_table",
-           "item_table", "gacha_table", "stage_table", "skin_table"],
+           "item_table", "gacha_table", "stage_table", "skin_table", "charword_table"],
 }
 
 target = sys.argv[1] if len(sys.argv) > 1 else ".gamedata"

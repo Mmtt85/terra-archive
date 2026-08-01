@@ -193,6 +193,14 @@ def main():
         else:
             print(f"  ⚠ {path} 없음 — 이 접두사는 건너뜁니다")
 
+    # ⚠ 안전장치 (2026-08-01): 입력 테이블이 하나도 없는데 rmtree부터 하면 **기존 산출물을
+    #   통째로 날린다**. 실제로 CI에 charword_table이 없어 보이스 1,280개가 지워지고 그대로
+    #   커밋·배포됐다. 입력이 없으면 지우기 전에 죽어서 파이프라인을 세운다.
+    if not tables:
+        print("charword_table을 하나도 못 읽었다 — 기존 보이스를 지우지 않고 중단한다 "
+              f"(찾은 경로: {S}/*_charword_table.json)", file=sys.stderr)
+        sys.exit(1)
+
     op_ids = set(ops)
     for locale, (main_prefix, fallback) in LOCALES.items():
         out_dir = f"{OUT_ROOT}/{locale}"
