@@ -5,6 +5,7 @@
 //   node scripts/r2-sync.mjs           # 바뀐 것만 업로드 (md5 ↔ R2 etag 비교)
 //   node scripts/r2-sync.mjs --dry     # 올릴 목록만 출력
 //   node scripts/r2-sync.mjs --prune   # 로컬에 없는 assets/ 원격 키 삭제 (uploads/는 절대 안 건드림)
+//   node scripts/r2-sync.mjs --recache # 내용이 같아도 데이터 파일을 다시 올려 캐시 헤더 갱신
 //
 // 버킷 구조: assets/<public 상대경로> = 이 스크립트 관할 · uploads/ = /admin 수동 업로드 관할.
 // 인증: 레포 루트 .r2-sync-key (gitignore됨) 또는 env R2_SYNC_KEY.
@@ -38,6 +39,10 @@ const DIRS = ["story", "rogue", "lens", "tesseract", "avatars", "about", "og", "
 const PREFIX = "assets/"; // 에셋은 전부 이 폴더 밑 — uploads/(수동 업로드)와 격리
 const DRY = process.argv.includes("--dry");
 const PRUNE = process.argv.includes("--prune");
+// --recache: 내용이 같아도 데이터 파일(json/txt/bin)을 다시 올려 **Cache-Control을 새로 씌운다**.
+// 캐시 정책은 오브젝트 메타데이터라 cacheFor()만 고치면 이미 올라간 파일엔 반영되지 않는다.
+// 정책을 바꾼 뒤 딱 한 번 돌리면 된다 (2026-08-02, 86400 → 60+must-revalidate 전환 때 사용).
+const RECACHE = process.argv.includes("--recache");
 const CONCURRENCY = 16;
 
 const KEY =
@@ -57,10 +62,17 @@ const MIME = {
 };
 
 // 캐시 정책: 게임 에셋 이미지·OCR 엔진은 id당 내용이 사실상 불변 → 30일.
-// 재생성되는 데이터(스토리 스크립트 JSON·검색 인덱스 bin)는 1일.
+//
+// 재생성되는 데이터(오퍼 스킬·프로필·보이스·복장, 스토리 스크립트, 검색 인덱스)는
+// **파일 이름이 그대로인 채 내용만 바뀐다** — URL이 안 변하니 브라우저가 캐시를 버릴
+// 계기가 없다. 예전 값 max-age=86400은 그래서 "갱신 후 최대 하루 동안 옛 데이터"를
+// 뜻했다. 2026-08-02에 실제로 당했다: 이격 안젤리나 S2의 레벨별 수치를 고쳐 올렸는데
+// 사용자 브라우저는 하루 지난 캐시를 계속 써서 "다시 안 바뀌는 상태로 돌아갔다"고 보였다
+// (R2·배포본은 정상이었다). 60초 후부터는 조건부 요청으로 확인하게 해 둔다 —
+// 안 바뀌었으면 304(본문 없음)라 사실상 공짜고, 바뀌었으면 즉시 새 데이터를 받는다.
 function cacheFor(key) {
   const ext = extname(key).toLowerCase();
-  if ([".json", ".txt", ".bin"].includes(ext)) return "public, max-age=86400";
+  if ([".json", ".txt", ".bin"].includes(ext)) return "public, max-age=60, must-revalidate";
   return "public, max-age=2592000";
 }
 
@@ -98,7 +110,8 @@ for (const p of files) {
   localKeys.add(key);
   const body = await readFile(p);
   const md5 = createHash("md5").update(body).digest("hex");
-  if (remote.get(key) === md5) { same += 1; continue; }
+  const recache = RECACHE && [".json", ".txt", ".bin"].includes(extname(key).toLowerCase());
+  if (remote.get(key) === md5 && !recache) { same += 1; continue; }
   todo.push({ key, p, size: statSync(p).size });
 }
 

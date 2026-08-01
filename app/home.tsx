@@ -2401,7 +2401,7 @@ function ProfileSection({ operator }: { operator: Operator }) {
       ) : (
         <>
           {doc.source === "cn" && (
-            <p className="future-note">{t("중국 서버 원문입니다 — 아직 한국 서버에 등록되지 않아 번역 전 텍스트입니다.")}</p>
+            <p className="future-note">{t("중국 서버 선행 데이터입니다 — 비공식 AI 번역이라 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>
           )}
           <div className="profile-docs">
             {doc.sections.map((section, index) => (
@@ -2504,7 +2504,7 @@ function VoiceSection({ operator }: { operator: Operator }) {
       ) : (
         <>
           {doc?.source === "cn" && (
-            <p className="future-note">{t("중국 서버 원문입니다 — 아직 한국 서버에 등록되지 않아 번역 전 텍스트입니다.")}</p>
+            <p className="future-note">{t("중국 서버 선행 데이터입니다 — 비공식 AI 번역이라 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>
           )}
           {(doc?.cv.length ?? 0) > 0 && (
             <p className="voice-cv">

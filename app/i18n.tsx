@@ -138,9 +138,9 @@ const D: Record<string, Pair> = {
   "오퍼레이터 파일": ["Operator file", "オペレーターファイル"],
   "불러오는 중…": ["Loading…", "読み込み中…"],
   "등록된 프로필 문서가 없습니다.": ["No archive documents on record.", "登録されたプロフィール文書がありません。"],
-  "중국 서버 원문입니다 — 아직 한국 서버에 등록되지 않아 번역 전 텍스트입니다.": [
-    "This is the original CN-server text — the operator has not reached this server yet, so it is untranslated.",
-    "中国サーバーの原文です — まだこのサーバーに実装されていないため、未翻訳のテキストです。",
+  "중국 서버 선행 데이터입니다 — 비공식 AI 번역이라 정식 출시 시 공식 번역과 다를 수 있습니다.": [
+    "CN-server data, ahead of this server — an unofficial AI translation that may differ from the official one at launch.",
+    "中国サーバー先行データです — 非公式のAI翻訳のため、正式実装時の公式訳とは異なる場合があります。",
   ],
   "신뢰도 {n}": ["Trust {n}", "信頼度 {n}"],
   "승진 {n}": ["Promotion {n}", "昇進 {n}"],

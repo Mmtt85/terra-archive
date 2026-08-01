@@ -38,6 +38,7 @@ import os
 import re
 import shutil
 import sys
+from collections import Counter
 
 S = sys.argv[1] if len(sys.argv) > 1 else os.environ.get("GAMEDATA_DIR", ".gamedata")
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -180,6 +181,54 @@ def build(table, op_id, op_ids, variants, names):
     return base, extras
 
 
+# 미실장(CN 선행) 오퍼의 대사는 CN 원문 그대로다 — 프로필·스킬과 같은 사전으로 덮어쓴다
+# (사용자 지적 2026-08-01: 배포본에서 신캐 보이스가 하나도 번역 안 돼 있다).
+MANUAL_PATH = f"{REPO}/scripts/cn-translations.json"
+MANUAL = load(MANUAL_PATH) if os.path.exists(MANUAL_PATH) else {}
+CJK_RE = re.compile(r"[\u3400-\u9fff]")
+untranslated = []
+TITLES = {}   # locale → {CN 제목: 공식 제목} — harvest_titles()가 채운다
+
+
+def harvest_titles(tables):
+    """대사 제목("任命助理" 등)의 **공식 역어**를 클뜯에서 캐낸다.
+
+    제목은 오퍼별 창작이 아니라 voiceId(CN_001…)마다 고정된 UI 라벨이라, 이미 실장된
+    오퍼 456명의 CN↔KR/EN/JP 엔트리를 (charId, voiceId)로 짝지으면 공식 표기가 만장일치로
+    떨어진다(39종). 번역기에 맡길 이유가 없다 — 미실장 오퍼에도 그대로 쓴다.
+    """
+    cn = tables.get("cn")
+    if not cn:
+        return
+    cn_title = {(e["charId"], e["voiceId"]): e["voiceTitle"] for e in cn["charWords"].values()}
+    for locale, (prefix, _) in LOCALES.items():
+        t = tables.get(prefix)
+        if not t:
+            continue
+        votes = {}
+        for e in t["charWords"].values():
+            src = cn_title.get((e["charId"], e["voiceId"]))
+            if src and e["voiceTitle"] and src != e["voiceTitle"]:
+                votes.setdefault(src, Counter())[e["voiceTitle"]] += 1
+        TITLES[locale] = {k: v.most_common(1)[0][0] for k, v in votes.items()}
+
+
+def localize(text, loc, cid):
+    """CN 대사 한 줄 → 공식 제목/사전에 있으면 그 로케일 표기, 없으면 원문 유지(+경고 집계)."""
+    if not text:
+        return text
+    key = text.strip()
+    official = TITLES.get(loc, {}).get(key)
+    if official:
+        return official
+    hit = MANUAL.get(key)
+    if hit and hit.get(loc):
+        return hit[loc]
+    if CJK_RE.search(text):
+        untranslated.append((loc, cid, len(text)))
+    return text
+
+
 def main():
     tables = {}
     for prefix in {p for pair in LOCALES.values() for p in pair}:
@@ -200,6 +249,8 @@ def main():
         print("charword_table을 하나도 못 읽었다 — 기존 보이스를 지우지 않고 중단한다 "
               f"(찾은 경로: {S}/*_charword_table.json)", file=sys.stderr)
         sys.exit(1)
+
+    harvest_titles(tables)
 
     op_ids = set(ops)
     for locale, (main_prefix, fallback) in LOCALES.items():
@@ -222,6 +273,14 @@ def main():
             if not base:
                 empty += 1
                 continue
+            if source == "cn":
+                # CN 폴백 = 미실장 오퍼. 제목·본문·복장 세트명을 사전으로 갈아 끼운다.
+                base = [{**r, "t": localize(r.get("t"), locale, op_id),
+                         "x": localize(r.get("x"), locale, op_id)} for r in base]
+                extras = [{**e, "name": localize(e.get("name"), locale, op_id),
+                           "lines": [{**r, "t": localize(r.get("t"), locale, op_id),
+                                      "x": localize(r.get("x"), locale, op_id)} for r in (e.get("lines") or [])]}
+                          for e in extras]
             doc = {"cv": cv_for(table, op_id), "lines": base}
             if extras:
                 doc["sets"] = extras
@@ -239,3 +298,10 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# 미번역 CN 대사 집계 — cn-translations.json에 채우면 사라진다 (무인 리포트가 이 경고를 잡는다)
+if untranslated:
+    ko = [x for x in untranslated if x[0] == "ko"]
+    ops_n = len({x[1] for x in ko})
+    print(f"  ⚠ 미번역 CN 보이스 대사: {ops_n}명 · {sum(x[2] for x in ko):,}자 "
+          f"— scripts/cn-translations.json에 채울 것", file=sys.stderr)
