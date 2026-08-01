@@ -43,6 +43,7 @@ import os
 import re
 import shutil
 import sys
+from collections import Counter
 
 S = sys.argv[1] if len(sys.argv) > 1 else os.environ.get("GAMEDATA_DIR", ".gamedata")
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -114,22 +115,44 @@ def standalone(text, value):
     for m in re.finditer(re.escape(value), text):
         before = text[m.start() - 1] if m.start() else ""
         after = text[m.end()] if m.end() < len(text) else ""
+        after2 = text[m.end() + 1] if m.end() + 1 < len(text) else ""
         if before.isdigit() or before in ".%":
             continue
-        if after.isdigit() or after in ".%":
+        if after.isdigit() or after == "%":
+            continue
+        # ⚠ 마침표는 소수점일 때만 거른다 — "공격력 +70%. 앞쪽으로…"처럼 **문장이 끝나는
+        #   마침표**까지 소수점으로 보는 바람에 멀쩡한 자리를 버렸다. 그 탓에 Thumpy S2·S3,
+        #   안젤리나 얼터 S3의 레벨 탭이 문구를 못 바꿨다 (사용자 지적 2026-08-01).
+        if after == "." and after2.isdigit():
             continue
         spans.append((m.start(), m.end()))
     return spans
 
 
 def retemplate(text, values):
-    """이미 번역된 최고레벨 문장에서 변하는 값의 자리를 찾아 {n} 마커로. 실패하면 None."""
+    """이미 번역된 최고레벨 문장에서 변하는 값의 자리를 찾아 {n} 마커로. 실패하면 None.
+
+    ⚠ **같은 값이 여러 번 나오는 문장**은 예전엔 통째로 포기했다 — Thumpy S1
+    "공격력 +50%, 방어력 +50%"처럼 최고레벨에서 두 수치가 우연히 같으면 그렇게 된다.
+    그 바람에 CN 폴백 오퍼의 레벨 탭이 **설명은 그대로인 채 SP만 바뀌어**, 레벨을 눌러도
+    아무것도 안 변하는 것처럼 보였다 (사용자 지적 2026-08-01).
+    이제 **CN 템플릿의 슬롯 순서와 번역문의 등장 순서를 1:1로** 짝지어 나눠 갖는다.
+    값 개수와 등장 횟수가 정확히 맞을 때만 — 남거나 모자라면 어느 자리인지 알 수 없으므로
+    종전대로 포기한다(원문 유출·오표기보다 텍스트를 안 내는 쪽이 낫다).
+    """
+    need = Counter(values)
+    spans_by_value = {}
+    for value, count in need.items():
+        spans = standalone(text, value)
+        if len(spans) != count:
+            return None
+        spans_by_value[value] = spans
+    used = Counter()
     picked = []
     for i, value in enumerate(values):
-        spans = standalone(text, value)
-        if len(spans) != 1:
-            return None
-        picked.append((spans[0][0], spans[0][1], i))
+        start, end = spans_by_value[value][used[value]]
+        used[value] += 1
+        picked.append((start, end, i))
     picked.sort()
     for a, b in zip(picked, picked[1:]):
         if a[1] > b[0]:
