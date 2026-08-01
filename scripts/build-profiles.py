@@ -170,6 +170,23 @@ def harvest_values(loc_table, cn_table):
     return {k: max(v.items(), key=lambda kv: kv[1])[0] for k, v in votes.items()}
 
 
+def manual_field_values(loc):
+    """수동 사전에서 **필드 줄 항목의 값 부분만** 뽑아 {CN 값: 로케일 값}으로.
+
+    ⚠ 수동 사전의 필드 줄 키는 **ko로 라벨이 옮겨진 뒤의 형태**다(추출을 ko 프로필에서 했다).
+    그래서 en/ja에선 키가 안 맞아 값이 중국어로 남았다 — GALLUS²의 '[Model] 自称原鸡'
+    (2026-08-01, GALLUS² 담당 에이전트 지적). 라벨을 떼고 값끼리 짝지어 그 구멍을 메운다.
+    """
+    out = {}
+    for k, v in MANUAL.items():
+        if not isinstance(v, dict) or not v.get(loc):
+            continue
+        mk, mv = FIELD_LOC.match(k.strip()), FIELD_LOC.match(str(v[loc]).strip())
+        if mk and mv and CJK_RE.search(mk.group(2)):
+            out[mk.group(2).strip()] = mv.group(2).strip()
+    return out
+
+
 def localize_value(value, loc, op_name, values=None):
     """필드 값 — 생일은 로케일 날짜 형식, 코드명은 그 오퍼의 이름, 나머지는 수확 사전."""
     if values and value in values:
@@ -258,7 +275,7 @@ for loc, (prefix, fallback) in LOCALES.items():
 
     harvested.setdefault(loc, harvest_lines(table, fb))
     harvested_fields.setdefault(loc, harvest_fields(table, fb))
-    harvested_values.setdefault(loc, harvest_values(table, fb))
+    harvested_values.setdefault(loc, {**harvest_values(table, fb), **manual_field_values(loc)})
     n = fallbacks = 0
     for cid in ops:
         entry = table.get(cid)
