@@ -2478,8 +2478,8 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
     setEliteDraft(nextElite);
     setMode("direct");
     setImportMsg(unmatched > 0
-      ? t("{name} 독타의 계정에서 보유 {own}명을 가져왔습니다 (사이트 미수록 {skip}명 제외) — 확인 후 '적용 및 자동편성 실행'을 누르세요.", { name: roster.player.nickName, own: nextDraft.size, skip: unmatched })
-      : t("{name} 독타의 계정에서 보유 {own}명을 가져왔습니다 — 확인 후 '적용 및 자동편성 실행'을 누르세요.", { name: roster.player.nickName, own: nextDraft.size }));
+      ? t("{name} 박사의 계정에서 보유 {own}명을 가져왔습니다 (사이트 미수록 {skip}명 제외) — 확인 후 '적용 및 자동편성 실행'을 누르세요.", { name: roster.player.nickName, own: nextDraft.size, skip: unmatched })
+      : t("{name} 박사의 계정에서 보유 {own}명을 가져왔습니다 — 확인 후 '적용 및 자동편성 실행'을 누르세요.", { name: roster.player.nickName, own: nextDraft.size }));
   };
   // 성급별 가능한 정예화 단계: 4성+ = 노정예/1정/2정, 3성 = 노정예/1정, 2성 이하 = 노정예뿐(선택지 없음)
   const BULK_GROUPS: { label: string; test: (rarity: number) => boolean; elites: Elite[] }[] = [

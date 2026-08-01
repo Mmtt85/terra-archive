@@ -32,8 +32,8 @@ CUT_DIR = os.path.join(REPO, "public", "story", "cut")
 # 빌드 대상 언어 — main()이 설정. story txt는 언어별 폴더(kr/en/jp)에서 받고,
 # 컷씬·스프라이트·storyTxt 경로는 언어 공용이라 KR 빌드 산출물을 그대로 재사용한다.
 LANG = "kr"                                             # 레포 폴더명 (kr/en/jp)
-NICKNAME = "독타"                                       # {@nickname} 플레이어 호칭 (언어별)
-NICK = {"kr": "독타", "en": "Doctor", "jp": "ドクター"}
+NICKNAME = "박사"                                       # {@nickname} 플레이어 호칭 (언어별)
+NICK = {"kr": "박사", "en": "Doctor", "jp": "ドクター"}
 LOC = {"kr": "ko", "en": "en", "jp": "ja"}              # 레포 폴더 → 사이트 로케일
 
 
@@ -61,11 +61,11 @@ def fetch_txt_cached(path):
     return raw.decode("utf-8")
 
 
-# 인라인 마크업 제거 — <p=2>·</>·<color=…>·<i> 류. {@nickname} 은 플레이어 호칭 '독타'.
+# 인라인 마크업 제거 — <p=2>·</>·<color=…>·<i> 류. {@nickname} 은 플레이어 호칭 '박사'.
 MARKUP = re.compile(r"</?[@$a-zA-Z][^>]*>|</>")
 
 def clean(s):
-    s = re.sub(r"\{@nickname\}", NICKNAME, s, flags=re.I)  # 플레이어 호칭 (언어별: 독타/Doctor/ドクター)
+    s = re.sub(r"\{@nickname\}", NICKNAME, s, flags=re.I)  # 플레이어 호칭 (언어별: 박사/Doctor/ドクター)
     s = s.replace("{@nbs}", " ")          # 비개행 공백 토큰 → 일반 공백 (예: "Ave Mujica")
     s = re.sub(r"\{@[^}]*\}", "", s)        # 그 외 미처리 제어 토큰({@...}) 제거
     s = MARKUP.sub("", s)

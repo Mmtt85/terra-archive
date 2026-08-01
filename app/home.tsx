@@ -753,7 +753,7 @@ function Portal({ onOpenTab, onFeedback, stats }: {
     <section className="pt-stage" aria-labelledby="portal-title">
       <span className="pt-scrim" aria-hidden />
 
-      {/* 좌측 — 일러스트와 독타 프로필. 아트를 이 칸 기준으로 잡아야 타일 옆에 붙는다
+      {/* 좌측 — 일러스트와 박사 프로필. 아트를 이 칸 기준으로 잡아야 타일 옆에 붙는다
           (스테이지 기준이면 화면이 넓어질수록 타일과 멀어진다 — 사용자 지적 2026-07-30). */}
       <div className="pt-left">
         {/* 장식이므로 alt는 비운다. 늦게 떠도 레이아웃이 안 밀리게 절대배치. */}

@@ -977,11 +977,11 @@ const D: Record<string, Pair> = {
     "We never store your email or code — they are used only to call Yostar's authentication on your behalf and then discarded. The imported roster stays in this browser.",
     "メールアドレスと認証コードは保存しません — Yostarの認証を代行するためだけに使い、すぐ破棄します。取り込んだ所持リストもこのブラウザ内にのみ残ります。",
   ],
-  "{name} 독타의 계정에서 보유 {own}명을 가져왔습니다 — 확인 후 '적용 및 자동편성 실행'을 누르세요.": [
+  "{name} 박사의 계정에서 보유 {own}명을 가져왔습니다 — 확인 후 '적용 및 자동편성 실행'을 누르세요.": [
     "Imported {own} owned operators from Dr. {name}'s account — review, then press 'Apply & run auto-assign'.",
     "{name}ドクターのアカウントから所持{own}名を取り込みました — 確認後「適用して自動編成を実行」を押してください。",
   ],
-  "{name} 독타의 계정에서 보유 {own}명을 가져왔습니다 (사이트 미수록 {skip}명 제외) — 확인 후 '적용 및 자동편성 실행'을 누르세요.": [
+  "{name} 박사의 계정에서 보유 {own}명을 가져왔습니다 (사이트 미수록 {skip}명 제외) — 확인 후 '적용 및 자동편성 실행'을 누르세요.": [
     "Imported {own} owned operators from Dr. {name}'s account ({skip} not in this site's data were skipped) — review, then press 'Apply & run auto-assign'.",
     "{name}ドクターのアカウントから所持{own}名を取り込みました（当サイト未収録の{skip}名は除外） — 確認後「適用して自動編成を実行」を押してください。",
   ],
