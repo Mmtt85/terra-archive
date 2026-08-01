@@ -60,4 +60,15 @@ run "build-i18n"       python3 scripts/build-i18n.py "$G"
 # 5) 신규 오퍼 아바타 (이미 있으면 건너뜀; 다운로드 실패는 치명적이지 않게 경고만)
 run "download-avatars" python3 scripts/download-avatars.py || echo "[download-avatars] 일부 아바타 다운로드 실패 — 수동 확인 필요" | tee -a "$WARN" >&2
 
+# 6) 오퍼당 지연 로딩 파일 — 스킬 레벨 수치 · 프로필 · 보이스 대사 · 스킨 메타.
+# ⚠ 이 넷이 파이프라인에 빠져 있어서 신규 오퍼가 들어와도 상세 모달의 레벨 탭·프로필·
+#   대사가 비어 있었다 (2026-08-01 사용자 지적: "Thumpy·안젤리나 얼터는 왜 스킬 레벨
+#   조정이 없냐"). operators.json을 읽으므로 반드시 build-i18n 뒤에 온다.
+# ⚠ build-skins는 **--meta-only** — 스킨 이미지 296MB는 git에 없고(gitignore) R2가 서빙하므로
+#   CI가 매번 새로 받으면 러너 디스크·시간을 통째로 날린다. 이미지는 로컬에서 별도로 받는다.
+run "build-skill-levels" python3 scripts/build-skill-levels.py "$G"
+run "build-profiles"     python3 scripts/build-profiles.py "$G"
+run "build-voicelines"   python3 scripts/build-voicelines.py "$G"
+run "build-skins-meta"   python3 scripts/build-skins.py "$G" --meta-only
+
 echo "✔ 결정론 리프레시 완료"

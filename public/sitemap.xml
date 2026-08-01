@@ -4,7 +4,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://terra-archive.net/</loc>
-    <lastmod>2026-08-01T03:05:28+09:00</lastmod>
+    <lastmod>2026-08-01T15:19:12+09:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
     <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/"/>
@@ -14,7 +14,7 @@
   </url>
   <url>
     <loc>https://terra-archive.net/en</loc>
-    <lastmod>2026-08-01T03:05:28+09:00</lastmod>
+    <lastmod>2026-08-01T15:19:12+09:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
     <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/"/>
@@ -24,7 +24,7 @@
   </url>
   <url>
     <loc>https://terra-archive.net/ja</loc>
-    <lastmod>2026-08-01T03:05:28+09:00</lastmod>
+    <lastmod>2026-08-01T15:19:12+09:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
     <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/"/>
@@ -64,7 +64,7 @@
   </url>
   <url>
     <loc>https://terra-archive.net/farm</loc>
-    <lastmod>2026-07-28T10:43:33Z</lastmod>
+    <lastmod>2026-08-01T15:19:12+09:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/farm"/>
@@ -74,7 +74,7 @@
   </url>
   <url>
     <loc>https://terra-archive.net/en/farm</loc>
-    <lastmod>2026-07-28T10:43:33Z</lastmod>
+    <lastmod>2026-08-01T15:19:12+09:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/farm"/>
@@ -84,7 +84,7 @@
   </url>
   <url>
     <loc>https://terra-archive.net/ja/farm</loc>
-    <lastmod>2026-07-28T10:43:33Z</lastmod>
+    <lastmod>2026-08-01T15:19:12+09:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/farm"/>
@@ -94,7 +94,7 @@
   </url>
   <url>
     <loc>https://terra-archive.net/infra</loc>
-    <lastmod>2026-07-30T18:20:31+09:00</lastmod>
+    <lastmod>2026-08-01T15:19:12+09:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/infra"/>
@@ -104,7 +104,7 @@
   </url>
   <url>
     <loc>https://terra-archive.net/en/infra</loc>
-    <lastmod>2026-07-30T18:20:31+09:00</lastmod>
+    <lastmod>2026-08-01T15:19:12+09:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/infra"/>
@@ -114,7 +114,7 @@
   </url>
   <url>
     <loc>https://terra-archive.net/ja/infra</loc>
-    <lastmod>2026-07-30T18:20:31+09:00</lastmod>
+    <lastmod>2026-08-01T15:19:12+09:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/infra"/>
@@ -124,7 +124,7 @@
   </url>
   <url>
     <loc>https://terra-archive.net/operators</loc>
-    <lastmod>2026-08-01T03:05:28+09:00</lastmod>
+    <lastmod>2026-08-01T15:19:12+09:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/operators"/>
@@ -134,7 +134,7 @@
   </url>
   <url>
     <loc>https://terra-archive.net/en/operators</loc>
-    <lastmod>2026-08-01T03:05:28+09:00</lastmod>
+    <lastmod>2026-08-01T15:19:12+09:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/operators"/>
@@ -144,7 +144,7 @@
   </url>
   <url>
     <loc>https://terra-archive.net/ja/operators</loc>
-    <lastmod>2026-08-01T03:05:28+09:00</lastmod>
+    <lastmod>2026-08-01T15:19:12+09:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/operators"/>
@@ -214,7 +214,7 @@
   </url>
   <url>
     <loc>https://terra-archive.net/stories</loc>
-    <lastmod>2026-07-29T14:45:26+09:00</lastmod>
+    <lastmod>2026-08-01T15:19:12+09:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/stories"/>
@@ -224,7 +224,7 @@
   </url>
   <url>
     <loc>https://terra-archive.net/en/stories</loc>
-    <lastmod>2026-07-29T14:45:26+09:00</lastmod>
+    <lastmod>2026-08-01T15:19:12+09:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/stories"/>
@@ -234,7 +234,7 @@
   </url>
   <url>
     <loc>https://terra-archive.net/ja/stories</loc>
-    <lastmod>2026-07-29T14:45:26+09:00</lastmod>
+    <lastmod>2026-08-01T15:19:12+09:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/stories"/>
@@ -244,7 +244,7 @@
   </url>
   <url>
     <loc>https://terra-archive.net/upgrade</loc>
-    <lastmod>2026-08-01T03:05:28+09:00</lastmod>
+    <lastmod>2026-08-01T15:19:12+09:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/upgrade"/>
@@ -254,7 +254,7 @@
   </url>
   <url>
     <loc>https://terra-archive.net/en/upgrade</loc>
-    <lastmod>2026-08-01T03:05:28+09:00</lastmod>
+    <lastmod>2026-08-01T15:19:12+09:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/upgrade"/>
@@ -264,7 +264,7 @@
   </url>
   <url>
     <loc>https://terra-archive.net/ja/upgrade</loc>
-    <lastmod>2026-08-01T03:05:28+09:00</lastmod>
+    <lastmod>2026-08-01T15:19:12+09:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/upgrade"/>

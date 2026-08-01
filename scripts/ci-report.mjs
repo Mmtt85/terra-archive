@@ -62,11 +62,17 @@ try {
 
 const dataFiles = [...changed].filter((f) => f.startsWith("app/data/") && f.endsWith(".json"));
 const meaningfulData = dataFiles.filter(meaningfulChange);
-const newAvatars = [...changed].filter((f) => f.startsWith("public/avatars/"));
-const newStory = [...changed].filter((f) => f.startsWith("public/story/"));
-const newItems = [...changed].filter((f) => f.startsWith("public/items/"));
+// R2로 서빙되는 에셋 폴더 — 여기 새 파일이 생기면 **배포(=r2-sync)가 돌아야** 사이트에 보인다.
+// skills·profiles·voice·skins는 오퍼당 지연 로딩 파일로, 신규 오퍼가 들어오면 함께 생긴다
+// (2026-08-01: 이 넷이 빠져 있어 신규 오퍼 섬네일·레벨 탭이 R2에 안 올라갔다).
+const ASSET_DIRS = ["public/avatars/", "public/story/", "public/items/",
+                    "public/skills/", "public/profiles/", "public/voice/", "public/skins/"];
+const newAssets = [...changed].filter((f) => ASSET_DIRS.some((d) => f.startsWith(d)));
+const newAvatars = newAssets.filter((f) => f.startsWith("public/avatars/"));
+const newStory = newAssets.filter((f) => f.startsWith("public/story/"));
+const newItems = newAssets.filter((f) => f.startsWith("public/items/"));
 
-const meaningful = meaningfulData.length > 0 || newAvatars.length > 0 || newStory.length > 0 || newItems.length > 0;
+const meaningful = meaningfulData.length > 0 || newAssets.length > 0;
 
 // ── 세부 요약: 오퍼/공채/파밍 diff ────────────────────────────────────
 const lines = [];

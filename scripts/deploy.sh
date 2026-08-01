@@ -12,8 +12,10 @@ npm run build
 
 # 대용량 정적 에셋(story·rogue·아바타 등 334MB/7,700파일)은 Pages가 아니라 R2에서
 # 서빙한다 (2026-07-27, files.terra-archive.net). 배포 전에 증분 동기화로 R2를 맞춰둔다.
-# 키가 없으면(예: GH Actions에 R2_SYNC_KEY 시크릿 미등록) 경고만 하고 건너뛴다 —
-# 무인 파이프라인은 app/data(번들)만 바꾸고 public/ 에셋은 안 만지므로 no-op이 맞다.
+# ⚠ 키가 없으면 경고만 하고 건너뛴다. **무인 파이프라인에도 R2_SYNC_KEY가 반드시 필요하다** —
+# ci-refresh가 신규 오퍼의 아바타·스킬 레벨·프로필·보이스·스킨 메타를 public/에 만들기 때문에
+# 키가 없으면 그 에셋이 R2에 안 올라가 사이트에서 404가 난다 (2026-08-01 실제로 발생:
+# 중섭 신규 4명 섬네일 누락). "app/data만 바꾸므로 no-op"이라는 옛 가정은 더 이상 맞지 않는다.
 if [ -f .r2-sync-key ] || [ -n "${R2_SYNC_KEY:-}" ]; then
   node scripts/r2-sync.mjs
 else

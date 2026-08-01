@@ -1241,8 +1241,10 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
         break;
     }
   };
-  const [sortKey, setSortKey] = useState("기본");
-  const [sortAsc, setSortAsc] = useState(true);
+  const [sortKey, setSortKey] = useState("발매순");
+  // 기본 정렬 = 발매순 내림차순(최신 오퍼가 맨 앞) — 사용자 요청 2026-08-01.
+  // ↑로 뒤집으면 오래된 순. 다른 정렬 키로 바꾸면 그 키의 내림차순으로 시작한다.
+  const [sortAsc, setSortAsc] = useState(false);
 
   useEffect(() => {
     if (!selected) return;
