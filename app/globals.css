@@ -9087,27 +9087,19 @@ html.dark .story-card:hover .story-thumb img {
   font-size: 11.5px;
   line-height: 1.55;
 }
-.operator-modal > .future-note {
-  z-index: 4;
+/* 미실장 안내 — 헤더 오른쪽 세로단에서 '육성 비용 계산' 버튼 위에 쌓인다.
+   제목 블록(왼쪽 열)에 두면 문장이 길어 히어로 높이를 밀어 올렸고, 흐름 밖으로 띄우니
+   버튼과 겹쳤다 — 같은 열에 쌓는 게 둘 다 피하는 방법이다 (사용자 지적 2026-08-01). */
+.modal-actions .future-note {
   color: #e9e2f7;
   background: #ffffff14;
   border-left: 3px solid #b06dff;
-  max-width: 300px;
+  border-radius: 0 4px 4px 0;
   margin: 0;
   padding: 7px 9px;
   font-size: 10.5px;
-  line-height: 1.5;
-  position: absolute;
-  top: 14px;
-  right: 60px;      /* 닫기 버튼(38px + 여백) 왼쪽 */
-}
-/* 좁은 화면에선 겹치므로 흐름 안으로 되돌린다 — 여기선 헤더가 어차피 세로로 쌓인다 */
-@media (width <= 760px) {
-  .operator-modal > .future-note {
-    max-width: none;
-    margin: 0 14px 12px;
-    position: static;
-  }
+  line-height: 1.55;
+  text-align: left;
 }
 
 /* ── 육성 비용 계산기 (재료 파밍 탭) ──────────────────────────────────────── */
