@@ -1675,7 +1675,7 @@
   "ja": "アフリッサの攻撃の向きを変えることができ、その攻撃の射程+2"
  },
  "罗德岛术师干员、信使安洁莉娜，用精妙的源石技艺将你的心愿送达大地上的每个角落。": {
-  "ko": "로도스 아일랜드 캐스터 오퍼레이터이자 메신저인 안젤리나가, 정교한 오리지늄 아츠로 당신의 소원을 대지의 구석구석까지 전달합니다.",
+  "ko": "로도스 아일랜드 캐스터 오퍼레이터이자 전달자인 안젤리나가, 정교한 오리지늄 아츠로 당신의 소원을 대지의 구석구석까지 전달합니다.",
   "en": "Rhodes Island Caster Operator and courier Angelina delivers your wishes to every corner of the land with her exquisite Originium Arts.",
   "ja": "ロドスのキャスターオペレーターにして配達人のアンジェリーナが、精緻なアーツであなたの願いを大地の隅々まで届けます。"
  },
@@ -1730,7 +1730,7 @@
   "ja": "即座に離陸、攻撃力+30%、65%の対空加護を獲得、攻撃範囲拡大。周囲8マスも自身の追加攻撃範囲とみなされ、攻撃は敵3体に攻撃力380%の物理ダメージを与え、さらに飛行の敵1体を追加で攻撃する。範囲内の飛行の敵は移動速度-60%。元のスキル範囲内にブロックされていないブロック可能な飛行の敵がおり、自身がブロックしていない場合、その敵のいるマスへ移動する。攻撃は弾薬33発を持ち、撃ち尽くすとスキル終了（途中でいつでもスキルを停止可能）"
  },
  "资深信使": {
-  "ko": "베테랑 메신저",
+  "ko": "베테랑 전달자",
   "en": "Veteran Courier",
   "ja": "ベテラン配達人"
  },
@@ -1898,5 +1898,990 @@
   "ko": "종합 성능 검사 결과",
   "en": "Performance Test Results",
   "ja": "総合性能検査結果"
+ },
+ "安洁莉娜，服务于罗德岛的资深信使，足迹遍布迄今为止已知的大多数国家。同时，她也作为资深术师干员，利用其独特的源石技艺为罗德岛提供帮助。": {
+  "ko": "안젤리나. 로도스 아일랜드에 몸담은 베테랑 전달자로, 그 발자취는 지금까지 알려진 대부분의 국가에 미친다. 동시에 그녀는 베테랑 캐스터 오퍼레이터로서, 자신만의 독특한 오리지늄 아츠로 로도스 아일랜드를 돕고 있다.",
+  "en": "Angelina, a veteran courier in the service of Rhodes Island, whose footsteps have reached most of the nations known to us so far. She also serves as a veteran Caster Operator, aiding Rhodes Island with her singular Originium Arts.",
+  "ja": "アンジェリーナ。ロドスに籍を置くベテラントランスポーターであり、その足跡は現時点で知られるほとんどの国に及ぶ。同時にベテラン術師オペレーターとして、独特なアーツでロドスに貢献している。"
+ },
+ "与刚来到罗德岛不久时的情况相比，感染加重的程度较小，可以说控制得相当不错。": {
+  "ko": "로도스 아일랜드에 막 왔을 무렵과 비교하면 감염이 악화된 폭은 작은 편으로, 상당히 잘 억제되고 있다고 할 수 있다.",
+  "en": "Compared to her condition shortly after she first arrived at Rhodes Island, the progression of her infection has been slight, and can be said to be rather well controlled.",
+  "ja": "ロドスに来て間もない頃と比べると、感染の進行はわずかであり、かなり良好にコントロールできていると言える。"
+ },
+ "尽管安洁莉娜的防护工作已经做得足够细心，她的这项指标仍然无法彻底降低到让人完全放心的水平。": {
+  "ko": "안젤리나가 충분히 세심하게 방호에 힘쓰고 있음에도, 이 수치는 완전히 안심할 수 있는 수준까지 내려가지는 않고 있다.",
+  "en": "Although Angelina is careful enough in her protective measures, this figure still cannot be brought down to a level that would be entirely reassuring.",
+  "ja": "アンジェリーナは十分に注意深く防護を行っているものの、この数値を完全に安心できる水準まで下げるには至っていない。"
+ },
+ "罗德岛的外勤干员中不乏在源石技艺方面颇有建树的人才，其中有些堪称大师。但如果要问哪位干员在罗德岛任职期间的进步最令人瞩目，绝大多数以法术见长的外勤干员都会提起安洁莉娜的名字。": {
+  "ko": "로도스 아일랜드의 외근 오퍼레이터 중에는 오리지늄 아츠 분야에서 상당한 성취를 이룬 인재가 적지 않으며, 그중 몇몇은 대가라 불릴 만하다. 하지만 로도스 아일랜드에 재직하는 동안 가장 눈부시게 성장한 오퍼레이터가 누구냐고 묻는다면, 마법에 능한 외근 오퍼레이터 대부분이 안젤리나의 이름을 꺼낼 것이다.",
+  "en": "Rhodes Island has no shortage of field Operators who have made real achievements in Originium Arts, some of whom could be called masters. But ask which Operator has made the most remarkable progress during her time at Rhodes Island, and the great majority of Arts-oriented field Operators will bring up Angelina's name.",
+  "ja": "ロドスの外勤オペレーターには、アーツの分野で相応の実績を築いた人材が少なくなく、中には達人と呼べる者もいる。だが、ロドス在職中に最も目覚ましい成長を遂げたオペレーターは誰かと問えば、術を得意とする外勤オペレーターのほとんどがアンジェリーナの名を挙げるだろう。"
+ },
+ "在安洁莉娜刚刚开始参加外勤工作时，罗德岛将她归为实习术师干员，不希望她在外勤任务中承担过重的压力。不过，安洁莉娜的主要身份并非术师，而是信使。她很少会长期留在罗德岛，就算在本舰也往往是忙着揽收和打包，几乎找不到参加实习术师转正测试的机会。因此，这个“实习术师干员”的名头她顶了好长时间，直到某次时间表终于安排得开，她才惴惴不安地参加了转正测试——结果给后面上场的实习干员制造了相当程度的精神压力。": {
+  "ko": "안젤리나가 막 외근 업무에 참여하기 시작했을 무렵, 로도스 아일랜드는 그녀가 외근 임무에서 지나친 부담을 지지 않도록 그녀를 인턴 캐스터 오퍼레이터로 분류했다. 다만 안젤리나의 본업은 캐스터가 아니라 전달자였다. 그녀는 로도스 아일랜드에 오래 머무는 일이 드물었고, 본함에 있을 때조차 수거와 포장에 쫓기기 일쑤여서 인턴 캐스터의 정식 전환 테스트에 참가할 기회를 좀처럼 잡지 못했다. 그래서 '인턴 캐스터 오퍼레이터'라는 꼬리표를 아주 오랫동안 달고 다녔고, 어느 날 마침내 일정에 여유가 생기고 나서야 조마조마한 마음으로 전환 테스트에 응했다——그 결과, 뒤이어 시험을 치른 인턴 오퍼레이터들에게 상당한 정신적 압박을 안겨 주고 말았다.",
+  "en": "When Angelina first began taking part in field work, Rhodes Island classified her as an apprentice Caster Operator, not wishing to place too heavy a burden on her during field missions. Angelina's primary role, however, was not that of a Caster but of a courier. She rarely stayed at Rhodes Island for long, and even aboard the Landship she was usually busy collecting and packing parcels, so she could hardly find an opportunity to sit the certification test for apprentice Casters. As a result she carried the title of 'apprentice Caster Operator' for a very long time, and it was only when her schedule finally opened up that she nervously took the test—and ended up putting no small amount of mental pressure on the apprentice Operators who took the field after her.",
+  "ja": "アンジェリーナが外勤業務に加わりはじめた頃、ロドスは外勤任務で過度な負担がかからないようにと、彼女を術師オペレーターの実習生として分類した。しかしアンジェリーナの本分は術師ではなくトランスポーターである。彼女がロドスに長く留まることは稀で、本艦にいる時も集荷や梱包に追われており、実習術師の正式登用試験を受ける機会はほとんど見つからなかった。そのため「術師オペレーター実習生」の肩書きを長らく背負い続け、ようやくスケジュールに空きができたある日、彼女は不安げに登用試験へ臨んだ――結果、後に控えていた実習オペレーターたちに相当な精神的プレッシャーを与えることとなった。"
+ },
+ "尽管顺利通过了测试，安洁莉娜仍然觉得自己的法术能力有诸多需要提升之处，并一直在为此努力——这倒不能苛责她过分追求完美，对重力施加影响是极为罕见的天赋，罗德岛上并无能手把手指导她的人。不仅如此，这种源石技艺还极难操控，很难达到百分百的成功率，这也影响了安洁莉娜对自己能力的正确评估。": {
+  "ko": "테스트를 무난히 통과했음에도 안젤리나는 여전히 자신의 마법 능력에 손볼 곳이 많다고 여기며 줄곧 그것을 위해 노력하고 있다——이를 두고 완벽을 지나치게 좇는다며 나무랄 수는 없다. 중력에 영향을 미치는 것은 극히 드문 재능이라, 로도스 아일랜드에는 그녀를 손수 가르쳐 줄 수 있는 사람이 없기 때문이다. 게다가 이 오리지늄 아츠는 다루기가 지극히 까다로워 백 퍼센트의 성공률에 이르기 어려운데, 이 점 또한 안젤리나가 자신의 능력을 정확히 평가하는 데 영향을 미치고 있다.",
+  "en": "Even after passing the test without trouble, Angelina still feels there is much about her Arts that needs improving, and she has been working toward it ever since—though she can hardly be faulted for chasing perfection. Influencing gravity is an exceedingly rare gift, and there is no one aboard Rhodes Island who can guide her hand in hand. What is more, these Originium Arts are extraordinarily difficult to control and almost impossible to land at a hundred-percent success rate, which likewise colors Angelina's assessment of her own ability.",
+  "ja": "試験を難なく通過した後も、アンジェリーナは自分の術にはまだ改善すべき点が多いと考え、そのために努力を続けている――完璧を求めすぎだと責めるわけにもいくまい。重力に干渉するというのは極めて稀な才能であり、ロドスに手取り足取り指導できる者はいないのだ。さらにこのアーツは制御が非常に難しく、成功率を百パーセントにするのは至難であるため、それもアンジェリーナが自身の能力を正しく評価しきれない一因となっている。"
+ },
+ "不过无论如何，此次雷姆必拓之行结束之后，安洁莉娜显然比先前自信了很多。对此最深有体会的不是别人，而是和安洁莉娜私交甚好的可颂。两人经常举办“法术vs蛮力”的举重比赛，一开始只比重量，后来安洁莉娜对法术的控制上了一个台阶，两人开始比谁能举得又重又稳。再后来，可颂只能靠“在一整摞行李箱上摆一个小球还不能让小球掉下来”这样的规则偶尔反败为胜，直到最近这次......": {
+  "ko": "어쨌든 이번 림 빌리턴 여정을 마친 뒤의 안젤리나는 예전보다 눈에 띄게 자신감이 붙었다. 이를 누구보다 절감한 사람은 다름 아닌, 안젤리나와 사이가 각별한 크루아상이다. 두 사람은 '마법 vs 완력' 역도 시합을 자주 벌였는데, 처음에는 무게만 겨루다가 안젤리나의 마법 제어가 한 단계 올라선 뒤로는 누가 더 무겁고 안정적으로 들어 올리는지를 겨루기 시작했다. 그 뒤로 크루아상은 '여행 가방을 잔뜩 쌓아 올린 위에 작은 공을 얹고 떨어뜨리지 않기' 같은 규칙에 기대야 가끔 역전할 수 있었는데, 가장 최근의 이 시합에서는……",
+  "en": "In any case, after this trip to Rim Billiton, Angelina is plainly far more confident than she was before. No one feels this more keenly than Croissant, who is on very good terms with her. The two of them often hold 'Arts vs. Brawn' weightlifting contests. At first they only compared sheer weight, but once Angelina's control over her Arts reached a new level, they began competing over who could lift heavy and hold steady. After that, Croissant could only pull off the occasional upset with rules like 'stack a whole tower of suitcases and balance a little ball on top without letting it fall'—until this most recent match...",
+  "ja": "とはいえ、今回のレム・ビリトン行を終えたアンジェリーナは、以前よりも明らかに自信をつけたようだ。それを誰よりも痛感しているのは、彼女と親交の深いクロワッサンである。二人はよく「アーツvs力任せ」の重量挙げ勝負を開いていた。最初は重さだけを競っていたが、アンジェリーナのアーツ制御が一段上がってからは、重く、かつ安定して持ち上げられるかを競うようになった。その後クロワッサンは「積み上げたスーツケースの上に小さなボールを乗せ、落とさないこと」といったルールでどうにかたまに勝ちを拾う有様で、そして今回の勝負では……"
+ },
+ "不管多重的东西，她都能在我举起来之后连重物带我一同举起来！这样以后没人再和她比举重了，呜呜呜......": {
+  "ko": "아무리 무거운 물건이든, 내가 들어 올리고 나면 그 물건이랑 나까지 통째로 들어 올린다고요! 이러면 앞으로 아무도 쟤랑 역도 안 할 거예요, 흑흑흑……",
+  "en": "No matter how heavy it is, once I've lifted it she just lifts me and the whole load together! Nobody's ever going to challenge her to lifting again, boo hoo hoo...",
+  "ja": "どんなに重い物でも、あたしが持ち上げた後に、その荷物ごとあたしまで持ち上げちゃうんですよ！これじゃもう誰も彼女と重量挙げなんてしません、うぅぅ……"
+ },
+ "——可颂": {
+  "ko": "——크루아상",
+  "en": "—Croissant",
+  "ja": "――クロワッサン"
+ },
+ "话虽如此，当安洁莉娜用法术把重物排成空中阶梯，请可颂上到最高处一览风景的时候，可颂仍然兴冲冲地接受了邀请。": {
+  "ko": "그렇게 말하면서도, 안젤리나가 마법으로 무거운 짐들을 공중 계단처럼 늘어놓고 가장 높은 곳에 올라 경치를 보라고 청하자, 크루아상은 신이 나서 그 초대에 응했다.",
+  "en": "That said, when Angelina used her Arts to arrange the weights into a staircase in midair and invited Croissant to climb to the top and take in the view, Croissant accepted the invitation with great enthusiasm all the same.",
+  "ja": "そう言いつつも、アンジェリーナがアーツで重い荷物を空中の階段のように並べ、一番上から景色を眺めないかと誘った時、クロワッサンは意気揚々とその招待を受けたのだった。"
+ },
+ "且不论源石技艺水平如何，安洁莉娜在罗德岛的首要身份仍然是罗德岛的信使。": {
+  "ko": "오리지늄 아츠의 수준이야 어떻든, 로도스 아일랜드에서 안젤리나의 첫 번째 신분은 여전히 로도스 아일랜드의 전달자다.",
+  "en": "Whatever the level of her Originium Arts, Angelina's foremost identity at Rhodes Island remains that of a Rhodes Island courier.",
+  "ja": "アーツの腕前がどうであれ、ロドスにおけるアンジェリーナの第一の肩書きは、依然としてロドスのトランスポーターである。"
+ },
+ "我们在这方面能说的话其实并不算多，原因无他，一个称职的信使就是不会给人留下太多谈资。包裹送达，信件寄到，信使的身形就会理所当然地隐去。然而，在沉默的同时，信使又必定会知道许多事情——谁给谁寄了信，谁收了信一直不回，谁的地址一直在变......仅仅是这种零碎的信息，就能拼凑出一些未必特别模糊的真相。因而许多信使都视沉默——至少是在适当的时机沉默——为一种美德。": {
+  "ko": "이 부분에 대해 우리가 할 수 있는 말은 사실 그리 많지 않다. 이유는 다른 데 있지 않다. 제 몫을 하는 전달자란 남에게 이야깃거리를 별로 남기지 않는 법이기 때문이다. 소포가 도착하고 편지가 전해지면, 전달자의 모습은 당연하다는 듯 자취를 감춘다. 그러나 침묵하는 한편으로, 전달자는 반드시 많은 것을 알게 된다——누가 누구에게 편지를 부쳤는지, 누가 편지를 받고도 계속 답장을 하지 않는지, 누구의 주소가 자꾸 바뀌는지…… 이런 자잘한 정보만으로도 그리 흐릿하지만은 않은 진실을 꿰맞출 수 있다. 그래서 많은 전달자가 침묵을——적어도 적절한 때에 침묵하는 것을——하나의 미덕으로 여긴다.",
+  "en": "There is, in truth, not a great deal we can say on this front, for the simple reason that a competent courier leaves little for others to talk about. The parcel is delivered, the letter arrives, and the courier's figure naturally fades from sight. Yet for all that silence, a courier inevitably comes to know a great many things—who wrote to whom, who received a letter and never wrote back, whose address keeps changing... Fragments like these alone can be pieced together into truths that are not always so very vague. And so many couriers regard silence—or at least silence at the right moment—as a virtue.",
+  "ja": "この点について我々が語れることは、実のところ多くない。理由は単純で、有能なトランスポーターというのは、他人に語る種をほとんど残さないからだ。荷物が届き、手紙が渡れば、トランスポーターの姿は当然のように消え去る。しかし沈黙する一方で、トランスポーターは必ず多くのことを知ってしまう――誰が誰に手紙を出したか、誰が手紙を受け取ったまま返事をしないか、誰の住所が変わり続けているか……そんな断片的な情報だけでも、決して曖昧とは言えない真実を組み立てられてしまう。だからこそ多くのトランスポーターは、沈黙を――少なくとも然るべき時に沈黙することを――一つの美徳とみなしている。"
+ },
+ "叙拉古出身的信使比其他人更明白这个道理，安洁莉娜也不例外。她当然是那个普普通通的女孩子，会与同龄人畅谈时尚、流行与打扮，但她也会在很多时候把情绪藏起来、吞下去，任由那些让心脏狂跳不止的东西慢慢干燥、风化，变成再不会说出口的秘密。": {
+  "ko": "시라쿠사 출신 전달자는 이 이치를 누구보다 잘 알고 있으며, 안젤리나 역시 예외가 아니다. 물론 그녀는 또래와 패션과 유행, 꾸미는 이야기를 실컷 나누는 지극히 평범한 여자아이다. 하지만 동시에 많은 순간 감정을 숨기고 삼켜 버린 채, 심장을 요란하게 뛰게 만들던 것들이 천천히 마르고 풍화되어 다시는 입 밖에 내지 않을 비밀이 되도록 내버려 두기도 한다.",
+  "en": "Couriers born in Siracusa understand this better than most, and Angelina is no exception. She is, of course, an utterly ordinary girl, happy to talk fashion, trends, and dressing up with girls her age—but there are also many times when she hides her feelings and swallows them down, letting the things that once set her heart pounding slowly dry out and weather away into secrets she will never speak aloud.",
+  "ja": "シラクーザ出身のトランスポーターは、この道理を誰よりもよく心得ている。アンジェリーナとて例外ではない。彼女はもちろん、同世代の子とファッションや流行、おしゃれの話に花を咲かせるごく普通の女の子だ。けれど同時に、多くの場面で感情を隠し、飲み込んでしまう。心臓を激しく高鳴らせたものが、ゆっくりと乾き、風化し、二度と口にすることのない秘密へと変わっていくのに任せながら。"
+ },
+ "我们无意干涉信使的工作方式，但我们确实希望安洁莉娜能以她真心想要的方式度过这段人生中独一无二的时光，而我们能给予她的最好的支持，就是对她的善良和尽责报以无条件的信任。": {
+  "ko": "우리는 전달자의 일하는 방식에 간섭할 뜻이 없다. 다만 안젤리나가 인생에서 단 한 번뿐인 이 시간을 진심으로 원하는 방식으로 보내기를 바랄 뿐이다. 그리고 우리가 그녀에게 줄 수 있는 최선의 지지란, 그녀의 선량함과 성실함에 무조건적인 신뢰로 답하는 것이다.",
+  "en": "We have no intention of meddling in how a courier goes about her work, but we do hope that Angelina can spend this one-of-a-kind stretch of her life in the way she truly wishes to. The best support we can offer her is to answer her kindness and her sense of duty with unconditional trust.",
+  "ja": "我々にトランスポーターの仕事のやり方に口を出すつもりはない。ただ、アンジェリーナが人生でただ一度きりのこの時間を、心から望む形で過ごせるようにと願っている。そして我々が彼女に与えられる最良の支援とは、彼女の優しさと責任感に、無条件の信頼をもって応えることだ。"
+ },
+ "她显然意识到了这一点。她现在是长期服务于罗德岛的信使之中最资深的一位，无论是寄出和送达的件数还是投递的完成情况都数一数二，还经常能对一些物流方面的事项提出自己的见解；与此同时，她也越来越把罗德岛当成一个真正可以信赖、可以依靠、可以做她自己的地方。她会把宿舍装饰成自己喜欢的样子，会在体检后给医生留下一个小礼物，也会在焦躁的时候一言不发地走进游戏室打上一整天的游戏，或者坐到食堂，以节制但不中断的节奏一盒又一盒地吃冰淇淋。": {
+  "ko": "그녀는 분명 그 점을 알아차렸다. 지금 그녀는 로도스 아일랜드에 오래 몸담은 전달자 가운데 가장 경력이 깊은 한 사람으로, 발송·배달 건수든 배송 완수 성적이든 손에 꼽히며, 물류와 관련된 사안에 자기 나름의 견해를 내놓는 일도 잦다. 동시에 그녀는 로도스 아일랜드를 정말로 믿고 기댈 수 있으며 자기 자신으로 있을 수 있는 곳으로 점점 더 여기게 되었다. 숙소를 자기 취향대로 꾸미기도 하고, 건강검진이 끝나면 의사에게 작은 선물을 남기기도 하며, 초조할 때면 아무 말 없이 게임룸에 들어가 하루 종일 게임을 하거나, 식당에 앉아 절제된, 그러나 끊이지 않는 리듬으로 아이스크림을 한 통 또 한 통 비우기도 한다.",
+  "en": "She has clearly realized as much. She is now the most senior of the couriers in long-term service at Rhodes Island—second to none in the number of parcels sent and delivered and in her completion record—and she often offers her own views on matters of logistics. At the same time, she has come more and more to see Rhodes Island as a place she can truly trust, truly lean on, and truly be herself in. She decorates her dorm to her own taste, leaves a little gift for the doctor after a physical, and when she is restless, walks wordlessly into the game room to play all day, or sits down in the cafeteria and works through carton after carton of ice cream at a measured but unbroken pace.",
+  "ja": "彼女は明らかにそのことに気づいている。今の彼女はロドスに長く勤めるトランスポーターの中で最も経験を積んだ一人であり、発送・配達の件数も、配達の完遂状況も指折りで、物流に関する事柄について自分なりの意見を述べることも多い。それと同時に彼女は、ロドスを本当に信頼でき、頼ることができ、自分自身でいられる場所だとますます思うようになっている。宿舎を自分好みに飾り、健康診断の後には医師に小さな贈り物を残し、苛立った時には何も言わずゲームルームに入って一日中ゲームをしたり、食堂に座って、控えめだが途切れないペースでアイスクリームを一箱また一箱と平らげたりもする。"
+ },
+ "所以你真的没在称体重的时候施术吗？": {
+  "ko": "그래서, 몸무게 잴 때 정말로 아츠 안 쓴 거야?",
+  "en": "So you really didn't use your Arts when you got on the scale?",
+  "ja": "それで、体重を量る時に本当にアーツを使ってないの？"
+ },
+ "——好奇的塔妮": {
+  "ko": "——궁금해하는 타니",
+  "en": "—Tani, curious",
+  "ja": "――興味津々のタニ"
+ },
+ "谁会带着施术单元上体重秤啊！": {
+  "ko": "누가 아츠 유닛을 들고 체중계에 올라가요!",
+  "en": "Who would step onto a scale still carrying an Arts Unit?!",
+  "ja": "誰がアーツユニットを持ったまま体重計に乗るんですか！"
+ },
+ "——哭笑不得的安洁莉娜": {
+  "ko": "——울지도 웃지도 못하는 안젤리나",
+  "en": "—Angelina, not knowing whether to laugh or cry",
+  "ja": "――苦笑いのアンジェリーナ"
+ },
+ "安洁莉娜的雷姆必拓之旅首先为我们带来的当然是三位性格各异的新干员，其次是雷姆必拓南境的活性源石相关数据，最后是一些与希尔达的所谓追随者相关的消息。": {
+  "ko": "안젤리나의 림 빌리턴 여정이 우리에게 가져다준 것은, 무엇보다 성격이 제각각인 신입 오퍼레이터 세 명이었고, 그다음은 림 빌리턴 남부의 활성 오리지늄 관련 데이터, 마지막은 이른바 힐다의 추종자들에 관한 몇 가지 소식이었다.",
+  "en": "What Angelina's journey to Rim Billiton brought us was, first of all, three new Operators of wildly differing temperaments; second, data on the active Originium in Rim Billiton's southern reaches; and last, some news concerning the so-called followers of Hilda.",
+  "ja": "アンジェリーナのレム・ビリトンへの旅がもたらしたのは、まず個性の異なる三名の新オペレーターであり、次いでレム・ビリトン南境の活性源石に関するデータ、そして最後に、いわゆるヒルダの信奉者たちに関するいくつかの情報だった。"
+ },
+ "不过那些人在其追随者中所处的位置实在太过边缘。他们之中有一个人，在跟随乌露露离开红砂镇后辗转来到了某个罗德岛办事处，在那里度过了临终前最后一段时光。据其所说，他们之中最核心的那个人甚至都不敢宣称自己曾见过希尔达。": {
+  "ko": "다만 그 사람들이 추종자 무리에서 차지한 위치는 지나치게 변두리였다. 그중 한 사람은 울루루를 따라 레드샌드 타운을 떠난 뒤 여기저기를 전전하다 어느 로도스 아일랜드 사무소에 이르렀고, 그곳에서 임종 전 마지막 시간을 보냈다. 그의 말에 따르면, 그들 중 가장 중심에 있던 인물조차 자신이 힐다를 본 적이 있다고는 감히 주장하지 못했다고 한다.",
+  "en": "Those people, however, stood far too far out on the fringes of her following. One of them, after leaving Red Sand Town in Uluru's company, drifted from place to place until he reached one of Rhodes Island's offices, where he spent the last of his days. By his account, even the man at the very center of their circle never dared to claim that he had laid eyes on Hilda.",
+  "ja": "とはいえ、その者たちが信奉者の中で占めていた位置はあまりにも周縁だった。そのうちの一人は、ウルルに付いてレッドサンドタウンを離れた後、各地を転々としてあるロドス事務所にたどり着き、そこで最期の時を過ごした。彼が言うには、彼らの中で最も中心にいた人物ですら、自分がヒルダに会ったことがあるとは名乗り出られなかったという。"
+ },
+ "在之后途经雷姆必拓的旅途中，安洁莉娜不止一次追查那些人的来历，成功拼凑出了其中一些人的身世和遭蛊惑的经历，但绝大多数线索最终都中断了。": {
+  "ko": "이후 림 빌리턴을 지나는 여정에서 안젤리나는 몇 번이고 그 사람들의 내력을 캐물었고, 그중 몇몇의 신상과 미혹당한 경위를 꿰맞추는 데 성공했지만, 대부분의 단서는 결국 끊기고 말았다.",
+  "en": "On her later journeys through Rim Billiton, Angelina looked into the backgrounds of these people more than once, and managed to piece together the histories of a few of them and how they came to be led astray—but the great majority of the leads eventually went cold.",
+  "ja": "その後レム・ビリトンを通る旅路の中で、アンジェリーナは幾度となく彼らの素性を追い、そのうち数人の生い立ちと惑わされた経緯を組み立てることに成功した。しかし、手がかりのほとんどは最終的に途絶えてしまった。"
+ },
+ "“那位伟大的跋涉者从雷姆必拓出发，也终将在雷姆必拓建成她超然的国度。”": {
+  "ko": "“그 위대한 방랑자는 림 빌리턴에서 길을 나섰으니, 끝내 림 빌리턴에 그녀의 초연한 나라를 세우리라.”",
+  "en": "'That great Wayfarer set out from Rim Billiton, and in Rim Billiton she shall at last raise her transcendent kingdom.'",
+  "ja": "「かの偉大なる旅人はレム・ビリトンより出立した。ゆえに彼女は必ずやレム・ビリトンに、超然たる国を築くだろう。」"
+ },
+ "这是安洁莉娜在终极大铁屯某个贫民聚居的街区听见的传言。她没能追踪到说话者的踪迹，但这句话一直让她非常在意。": {
+  "ko": "이는 안젤리나가 얼티밋 빅아이언 타운의 어느 빈민 밀집 구역에서 들은 소문이다. 그녀는 말을 꺼낸 이의 행방을 쫓지 못했지만, 이 한마디는 줄곧 그녀의 마음에 걸렸다.",
+  "en": "This was a rumor Angelina overheard in a poor quarter of Ultimate Big Iron Town. She was unable to trace the speaker, but the words have stayed on her mind ever since.",
+  "ja": "これはアンジェリーナがアルティメット・ビッグアイアンタウンのとある貧民街で耳にした噂である。話し手の行方を追うことはできなかったが、この一言は長く彼女の心に引っかかっている。"
+ },
+ "先把红砂镇的事件放在一边，安洁莉娜自己也是一位感染者。她刚刚来到罗德岛的时候情况很不好，时至今日，她自己的矿石病也并非毫无加重的迹象，而她这次交到的朋友之一，嘉辛塔，更是一名中晚期矿石病患者......我们的确担心这些因素加起来会对安洁莉娜的心理状况产生不利影响。": {
+  "ko": "레드샌드 타운의 사건은 잠시 접어 두더라도, 안젤리나 자신 역시 감염자다. 로도스 아일랜드에 막 왔을 때는 상태가 매우 좋지 않았고, 오늘날에 이르러서도 그녀의 광석병에 악화의 징후가 전혀 없는 것은 아니다. 게다가 이번에 사귄 친구 중 한 명인 자신타는 중후기 광석병 환자이기까지 하다…… 이런 요인들이 겹쳐 안젤리나의 심리 상태에 좋지 않은 영향을 주지 않을까, 우리는 실로 우려했다.",
+  "en": "Setting the incident at Red Sand Town aside, Angelina is herself Infected. Her condition was very poor when she first came to Rhodes Island, and even now her Oripathy is not entirely without signs of worsening. What is more, one of the friends she made on this trip, Jacinta, is a patient in the middle-to-late stages of Oripathy... We were genuinely worried that all of these factors together might take a toll on Angelina's state of mind.",
+  "ja": "レッドサンドタウンでの一件はさておき、アンジェリーナ自身もまた感染者である。ロドスに来たばかりの頃は状態が非常に悪く、今日に至っても彼女の鉱石病に悪化の兆しがまったくないわけではない。加えて、今回できた友人の一人であるジャシンタは、中期から末期にかけての鉱石病患者でもある……これらの要素が重なることで、アンジェリーナの精神状態に悪影響が出るのではないかと、我々は確かに懸念していた。"
+ },
+ "出乎意料的是，安洁莉娜是这样回答我们的：": {
+  "ko": "뜻밖에도, 안젤리나는 우리에게 이렇게 답했다.",
+  "en": "Unexpectedly, this was how Angelina answered us:",
+  "ja": "意外にも、アンジェリーナは我々にこう答えた。"
+ },
+ "“我不会说‘总会有办法的’这样的话。有些事情就是没有办法。我们只能看着它发生，尽量延缓、尽量补救，即便做到最好，很多时候还是得不到自己想要的结局。": {
+  "ko": "“'어떻게든 방법이 있을 거야' 같은 말은 하지 않을래요. 어떤 일에는 정말로 방법이 없으니까요. 우리는 그저 그 일이 벌어지는 걸 지켜보면서 최대한 늦추고, 최대한 손을 쓸 수 있을 뿐이에요. 아무리 최선을 다해도 원하는 결말을 얻지 못할 때가 많고요.",
+  "en": "'I'm not going to say things like \"there's always a way.\" Some things simply have no way out. All we can do is watch them happen, delay them as much as we can and mend what we can—and even at our very best, more often than not we don't get the ending we wanted.",
+  "ja": "「『きっと何とかなる』なんて言い方はしません。どうにもならないことって、あるんです。わたしたちにできるのは、それが起こるのを見ていることと、できるだけ引き延ばして、できるだけ手を尽くすことだけ。精一杯やったとしても、望んだ結末にたどり着けないことの方が多いんです。"
+ },
+ "“但我无论如何不会失去希望。博士一开始带给我的希望中......的确有不切实际的成分，但哪怕是虚假的希望，对我而言也弥足珍贵，甚至可以说，没有那点希望，我不可能直到今天还像这样站在大家面前。": {
+  "ko": "“하지만 무슨 일이 있어도 희망만은 잃지 않을 거예요. 독타가 처음에 저에게 안겨 준 희망에는…… 분명 현실적이지 않은 부분도 있었어요. 그래도 설령 거짓된 희망이라 해도 저에게는 더없이 소중했고, 심지어 그 한 줌의 희망이 없었다면 저는 오늘까지 이렇게 모두의 앞에 서 있지 못했을 거예요.",
+  "en": "'But no matter what, I won't lose hope. The hope the Doctor first gave me... did have something unrealistic in it, yet even a false hope was precious to me. I'd even say that without that little bit of hope, there's no way I would still be standing in front of everyone like this today.",
+  "ja": "「でも、何があっても希望を失ったりはしません。ドクターが最初にわたしにくれた希望には……確かに現実的でない部分もありました。それでも、たとえ偽りの希望だとしても、わたしにとってはかけがえのないものでした。あの少しの希望がなかったら、今日までこうしてみんなの前に立っていられなかったと思います。"
+ },
+ "“更何况，哪怕希望没能建立在完全坚实的地基上，其中蕴含的心意也毫无虚假。”": {
+  "ko": "“게다가, 설령 그 희망이 완전히 단단한 토대 위에 세워진 것이 아니었다 해도, 그 안에 담긴 마음만은 조금도 거짓이 아니었으니까요.”",
+  "en": "'And besides, even if that hope wasn't built on entirely solid ground, the feeling behind it was never false.'",
+  "ja": "「それに、たとえその希望が完全に堅固な土台の上に築かれたものではなかったとしても、そこに込められた気持ちには、少しの偽りもありませんでしたから。」"
+ },
+ "......这样一来，纸星星就又折满了一罐。": {
+  "ko": "……그렇게 해서, 종이별이 또 한 병 가득 채워졌다.",
+  "en": "...And so another jar was filled to the brim with paper stars.",
+  "ja": "……こうして、折り紙の星がまた一瓶いっぱいになった。"
+ },
+ "其实后来我自己也分不清这些星星究竟是为何而折的了。这已经成了一种习惯，当我送出了信的时候，当我做到了什么的时候，当我没做到什么的时候，当我说了事后想起来会有些得意的话的时候，当我有什么没能说出口的时候......": {
+  "ko": "사실 나중에는 저조차도 이 별들을 대체 무엇 때문에 접는지 알 수 없게 됐어요. 이젠 하나의 습관이 되어 버렸거든요. 편지를 부쳤을 때, 무언가를 해냈을 때, 무언가를 해내지 못했을 때, 나중에 떠올리면 조금 우쭐해지는 말을 했을 때, 그리고 끝내 입 밖에 내지 못한 말이 있을 때……",
+  "en": "The truth is, before long even I couldn't tell what I was folding these stars for anymore. It had become a habit—when I'd sent a letter off, when I'd managed to do something, when I'd failed to do something, when I'd said something I felt a little proud of thinking back on it, when there was something I couldn't bring myself to say...",
+  "ja": "実のところ、後になるとこの星たちが一体何のために折られたのか、わたし自身にも分からなくなっていました。もう習慣になっていたんです。手紙を送り届けた時、何かをやり遂げた時、何かをやり遂げられなかった時、後から思い返すと少し得意になるようなことを言えた時、そして、どうしても言い出せなかったことがある時……"
+ },
+ "但只是折纸的话，只是把心情藏在纸折的星星里的话......有些事情，就永远不会被其他人知道。星星不会说话。星星是沉默的眼睛。它们知晓，但从不诉说。没人知道星星在想什么。": {
+  "ko": "하지만 그저 종이를 접기만 한다면, 그저 마음을 종이별 속에 숨겨 두기만 한다면…… 어떤 일들은 영영 다른 사람에게 알려지지 않아요. 별은 말을 하지 않으니까요. 별은 침묵하는 눈이에요. 별들은 알고 있지만, 결코 말하지 않아요. 별이 무슨 생각을 하는지는 아무도 몰라요.",
+  "en": "But if all I do is fold paper, if I just hide how I feel inside a paper star... then some things will never be known to anyone else. Stars don't speak. Stars are silent eyes. They know, but they never tell. No one knows what a star is thinking.",
+  "ja": "でも、ただ紙を折るだけなら、ただ気持ちを折り紙の星の中に隠すだけなら……いくつかのことは、永遠に誰にも知られないままです。星は喋りません。星は沈黙する瞳です。星たちは知っていても、決して語らない。星が何を考えているのかは、誰にも分からないんです。"
+ },
+ "而我......我知道自己不可能像繁星一样永远在天空中闪烁。玛蒂娜说藏在心中的感情终有一日会改变，可对我来说，也许在感情还没改变的某个时刻，我就已经化作了天边划过的那颗流星。所以，我应该去大胆地说出口，去把对爸爸妈妈的思念、把对罗德岛的眷恋、把对朋友们的关怀说出口，去把那些藏在心底最深处的话......说给重要的人听，别留下更多遗憾。": {
+  "ko": "그리고 저는…… 제가 뭇별처럼 영원히 하늘에서 빛날 수는 없다는 걸 알아요. 마르티나는 마음속에 감춘 감정도 언젠가는 변한다고 했지만, 저는 어쩌면 감정이 변하기도 전 어느 순간에 이미 하늘가를 스쳐 가는 유성이 되어 있을지도 몰라요. 그러니까 저는 용기를 내어 말해야 해요. 아빠 엄마를 향한 그리움도, 로도스 아일랜드를 향한 애틋함도, 친구들을 향한 마음도 소리 내어 말하고, 마음 가장 깊은 곳에 숨겨 둔 그 말들을…… 소중한 사람에게 들려줘야 해요. 더는 후회를 남기지 않도록.",
+  "en": "And me... I know I can't go on shining in the sky forever the way the stars do. Martina says that feelings kept hidden in your heart will change one day, but for me, maybe at some moment before those feelings have changed at all, I'll already have become that meteor streaking across the horizon. So I ought to be brave and say it out loud—to say how much I miss Mom and Dad, how attached I am to Rhodes Island, how much I care about my friends—and to say the words buried deepest in my heart... to say them to the people who matter to me, so that I leave behind no more regrets.",
+  "ja": "そしてわたしは……自分が星々のようにいつまでも空で瞬いていられるわけではないと知っています。マルティナは、心に秘めた想いもいつかは変わると言いました。でもわたしの場合、想いが変わるより前のどこかの瞬間に、もう空の端を流れる流れ星になってしまっているかもしれません。だから、勇気を出して口に出さなきゃいけないんです。お父さんとお母さんへの想いも、ロドスへの愛着も、友達への気持ちも声にして、心の一番深いところにしまい込んだ言葉を……大切な人に伝えなきゃ。これ以上、後悔を残さないように。"
+ },
+ "嗯，安洁莉娜的纸星星就只有这么多。如果还有一时间不好意思说出口的话......就用这个吧，妈妈最开始教会我的，纸折的沃尔珀兽亲，“小狐狸”。": {
+  "ko": "네, 안젤리나의 종이별은 이게 전부예요. 그래도 당장은 부끄러워서 입 밖에 내지 못할 말이 남아 있다면…… 이걸 쓰면 돼요. 엄마가 맨 처음 가르쳐 준, 종이로 접은 불포의 비스트 스튜어드, '작은 여우'.",
+  "en": "Mm, that's all the paper stars Angelina has. And if there's still something too embarrassing to say out loud just yet... then use this—the paper-folded Vulpo Beast Steward my mother first taught me to make, the 'little fox.'",
+  "ja": "うん、アンジェリーナの折り紙の星はこれで全部です。それでも、今はまだ恥ずかしくて言えない言葉が残っているなら……これを使いましょう。お母さんが一番最初に教えてくれた、折り紙のヴァルポの獣眷、「子ギツネ」を。"
+ },
+ "它不是星星，它不必用余生等待一颗伴星。它会主动找到那个它希望陪伴的人，陪在那个人身边，依靠那个人，偶尔也被那个人依靠。": {
+  "ko": "이건 별이 아니니까, 남은 생을 다 바쳐 짝별을 기다릴 필요가 없어요. 이 아이는 곁에 있고 싶은 사람을 스스로 찾아가서, 그 사람 옆에 머물고, 그 사람에게 기대고, 가끔은 그 사람이 기댈 자리가 되어 주기도 해요.",
+  "en": "It isn't a star, so it doesn't have to spend the rest of its life waiting for a companion star. It goes and finds the person it wants to be with, stays by their side, leans on them—and now and then, lets itself be leaned on.",
+  "ja": "これは星ではないから、残りの生涯をかけて伴星を待つ必要はありません。この子は寄り添いたい人のもとへ自分から向かって、その人のそばにいて、その人に頼って、時にはその人に頼られもするんです。"
+ },
+ "不仅是拥抱和起舞，更是危险时背靠着背的倚仗，力竭时托起肩膀的支撑。": {
+  "ko": "그저 끌어안고 함께 춤추는 것만이 아니라, 위험할 때 등을 맞대고 믿을 수 있는 상대가 되고, 힘이 다했을 때 어깨를 받쳐 주는 버팀목이 되어 주는 거예요.",
+  "en": "Not just for embraces and dances, but as the one you can put your back against in danger, the shoulder that holds you up when your strength runs out.",
+  "ja": "抱きしめ合って踊るためだけじゃなくて、危ない時には背中を預けられる相手として、力尽きた時には肩を支えてくれる存在として。"
+ },
+ "没关系的。我刚训练完，时间上正好，一点都不早。": {
+  "ko": "괜찮아요. 방금 훈련이 끝나서 시간도 딱 맞아요. 하나도 이르지 않은걸요.",
+  "en": "It's all right. I just finished training, so the timing's perfect—it's not early at all.",
+  "ja": "大丈夫ですよ。ちょうど訓練が終わったところですから、時間もぴったりです。全然早くなんてありません。"
+ },
+ "呃......不是。我找你没什么要紧事。这样是不是不太好？如果你有更重要的事要忙——": {
+  "ko": "어…… 아니에요. 딱히 급한 용건이 있어서 찾아온 건 아니에요. 이러면 좀 곤란한가요? 더 중요한 일이 있으시다면——",
+  "en": "Uh... no. It's nothing urgent that I came to see you about. Is that not okay? If you have something more important to attend to—",
+  "ja": "えっと……いえ。特に急ぎの用があって来たわけじゃないんです。こういうのって、よくないですか？もっと大事な用事があるなら――"
+ },
+ "唔——嗯，好的！博士能为我特意空出时间，我很开心。": {
+  "ko": "으음—— 네, 좋아요! 독타가 저를 위해 일부러 시간을 비워 주다니, 정말 기뻐요.",
+  "en": "Mm—okay, all right! I'm really happy that the Doctor would set aside time just for me.",
+  "ja": "うーん――はい、わかりました！ドクターがわたしのためにわざわざ時間を空けてくれるなんて、とっても嬉しいです。"
+ },
+ "其实是这样的。之前我帮远山小姐送了一封对她而言很重要的信，于是她帮我占卜了一次......很认真的占卜，对她的消耗也很大。": {
+  "ko": "실은 이런 일이에요. 얼마 전에 기타노 씨에게 아주 중요한 편지를 한 통 전해 드렸더니, 답례로 점을 봐 주셨거든요…… 아주 진지한 점이었어요. 기타노 씨에게도 소모가 큰.",
+  "en": "So here's the thing. A while ago I delivered a letter that meant a great deal to Miss Gitano, and in return she read my fortune... a very serious reading, one that took a lot out of her.",
+  "ja": "実はこういうことなんです。少し前にギターノさんにとってとても大切な手紙を一通お届けしたら、お礼に占ってくれたんです……とても真剣な占いで、ギターノさんの消耗も大きいものでした。"
+ },
+ "她在水晶球里看见了我的身影，她说应该是未来的我......但这其实不太重要，重要的是，我身处一场战争之中，似乎正在扼守一道防线。": {
+  "ko": "기타노 씨는 수정구 속에서 제 모습을 봤대요. 아마 미래의 저일 거라고 했어요…… 사실 그건 그렇게 중요하지 않아요. 중요한 건, 그 속의 제가 어떤 전쟁 한복판에 있었고, 어떤 방어선을 지키고 있는 것처럼 보였다는 거예요.",
+  "en": "She saw me in her crystal ball—she said it must be me in the future... But that isn't really the important part. What matters is that I was in the middle of a war, and it looked as though I was holding a defensive line.",
+  "ja": "ギターノさんは水晶玉の中にわたしの姿を見たそうです。きっと未来のわたしだろうって……でも、そこはあまり重要じゃないんです。大事なのは、そのわたしが戦争のただ中にいて、防衛線を守っているように見えた、ということなんです。"
+ },
+ "再怎么参加罗德岛的外勤任务，我仍然是一名信使。如果战争到了连信使都义不容辞的时候，罗德岛，甚至这片大地......究竟会变成什么样？": {
+  "ko": "로도스 아일랜드의 외근 임무에 아무리 많이 나간다 해도, 저는 여전히 한 명의 전달자예요. 전달자마저 나서지 않을 수 없을 만큼 전쟁이 커진다면, 로도스 아일랜드는, 아니 이 대지는…… 대체 어떻게 되어 있을까요?",
+  "en": "No matter how many field missions I take on for Rhodes Island, I'm still a courier. If a war ever reaches the point where even couriers are duty-bound to fight, then what... what would have become of Rhodes Island, or even of this whole land?",
+  "ja": "ロドスの外勤任務にどれだけ参加しても、わたしはやっぱりトランスポーターです。トランスポーターまでもが立ち上がらずにいられないほどの戦争になったら、ロドスは、いえ、この大地は……一体どうなってしまうんでしょうか？"
+ },
+ "......说不怕当然是骗人的。我很怕那样的未来，哪怕远山小姐后来又看见了一些不同的景象，那片模糊不清的战场仍然会出现在我的梦中，所以我才会来找你。": {
+  "ko": "……무섭지 않다고 하면 당연히 거짓말이에요. 저는 그런 미래가 정말 무서워요. 나중에 기타노 씨가 또 다른 광경을 보긴 했지만, 그 흐릿한 전장은 여전히 제 꿈에 나와요. 그래서 독타를 찾아온 거예요.",
+  "en": "...It would be a lie to say I'm not afraid. That future frightens me. Even though Miss Gitano later saw some different scenes as well, that hazy battlefield still shows up in my dreams. That's why I came to you.",
+  "ja": "……怖くないと言えば、もちろん嘘になります。あんな未来が、わたしはとても怖いんです。ギターノさんはその後、別の光景も見てくれましたけど、あのぼんやりとした戦場は今も夢に出てくるんです。だから、ドクターのところに来たんです。"
+ },
+ "水晶球中的我？唔......远山小姐说，水晶球中我的身影毫无畏惧......如果那时的我真的能做到，那就太好了。": {
+  "ko": "수정구 속의 저요? 으음…… 기타노 씨 말로는, 수정구 속 제 모습에는 두려움이 조금도 없었대요…… 그때의 제가 정말 그럴 수 있다면, 정말 좋겠어요.",
+  "en": "The me in the crystal ball? Um... Miss Gitano said that figure of mine showed no fear at all... If the me of that time really can manage it, then I'd be so glad.",
+  "ja": "水晶玉の中のわたし、ですか？うーん……ギターノさんは、水晶玉の中のわたしの姿には恐れがまったくなかったと言っていました……その時のわたしが本当にそうできるなら、とても嬉しいです。"
+ },
+ "但......假如我们真的要面对一场战争，我希望，我仍然能为一顿饱含心意的餐食雀跃，为一封报平安的信件感到宽慰，为精心调配的香气稍稍舒展眉头......为一朵刚刚绽放的花，留下至少一瞥的时间。": {
+  "ko": "하지만…… 만약 정말로 전쟁을 마주해야 한다면, 저는 그래도 마음이 담긴 한 끼에 신이 나고, 무사하다는 편지 한 통에 안도하고, 정성껏 조합한 향기에 잠시 미간을 펼 수 있기를 바라요…… 그리고 막 피어난 꽃 한 송이에, 적어도 한 번 눈길을 줄 시간만큼은 남겨 두고 싶어요.",
+  "en": "But... if we really do have to face a war, I hope I can still get excited over a meal made with care, feel relieved by a letter saying someone is safe, let my brow relax a little at a carefully blended scent... and keep at least a moment to spare for a flower that has just come into bloom.",
+  "ja": "でも……もし本当に戦争と向き合うことになっても、心のこもった食事に胸を躍らせて、無事を知らせる手紙にほっとして、丁寧に調合された香りに少しだけ眉をゆるめられたら、と思うんです……そして、咲いたばかりの花に、せめて一度目を向けるくらいの時間は残しておきたいんです。"
+ },
+ "你不知道能否让我实现这个愿望，但你会为之努力？": {
+  "ko": "그 소원을 이루게 해 줄 수 있을지는 모르지만, 그래도 그렇게 되도록 애써 주겠다고요?",
+  "en": "You don't know whether you can make that wish come true, but you'll work toward it anyway?",
+  "ja": "その願いを叶えてあげられるかは分からない、でもそのために努力してくれる……ですか？"
+ },
+ "我很开心，不过，我可能......还有一个稍微有点强人所难的请求。": {
+  "ko": "정말 기뻐요. 그런데 저, 어쩌면…… 조금 무리한 부탁이 하나 더 있어요.",
+  "en": "That makes me really happy. But I might... have one more request that's a little much to ask.",
+  "ja": "とても嬉しいです。でも、わたし……もう一つ、少しだけ無理なお願いがあるかもしれません。"
+ },
+ "这......能不能也成为你的愿望？": {
+  "ko": "이건…… 독타의 소원도 되어 줄 수 있을까요?",
+  "en": "Could this... become your wish as well?",
+  "ja": "これを……ドクターの願いにもしてもらえませんか？"
+ },
+ "......谢谢你，博士。": {
+  "ko": "……고마워요, 독타.",
+  "en": "...Thank you, Doctor.",
+  "ja": "……ありがとうございます、ドクター。"
+ },
+ "和你一样，我也会为这个愿望......拼尽全力。": {
+  "ko": "독타와 마찬가지로, 저도 이 소원을 위해…… 온 힘을 다할게요.",
+  "en": "Just like you, I'll give this wish... everything I have.",
+  "ja": "ドクターと同じように、わたしもこの願いのために……全力を尽くします。"
+ },
+ "【补测记录-11】": {
+  "ko": "【보충 테스트 기록-11】",
+  "en": "[Supplementary Test Record-11]",
+  "ja": "【追試記録-11】"
+ },
+ "“源石技艺理论测试不及格，源石技艺实操测试也不合格，唯一达到标准水平的是适应性......你这已经是第多少次补测了，要不我们就......？”": {
+  "ko": "“오리지늄 아츠 이론 테스트 불합격, 오리지늄 아츠 실기 테스트도 불합격, 유일하게 표준 수준에 도달한 건 적응성뿐이고...... 이게 대체 몇 번째 보충 테스트니, 우리 그냥 이쯤에서......?”",
+  "en": "\"Failed the Originium Arts theory test, failed the Originium Arts practical test as well, and the only thing that reached Standard was your Assimilation... How many make-up tests does this make now? Maybe we should just...?\"",
+  "ja": "「アーツ理論テスト不合格、アーツ実技テストも不合格、唯一標準に達しているのはアーツ適性だけ……これでもう何回目の追試かしら。いっそのこと、私たち……？」"
+ },
+ "“啊啊啊！那、那我用奶奶的怀表再试试呢？”": {
+  "ko": "“으아아아! 그, 그럼 할머니 회중시계로 한 번만 더 해 보면 안 될까요?”",
+  "en": "\"Aaaah! Th-then what if I try again with Grandma's pocket watch?\"",
+  "ja": "「ああああ！じゃ、じゃあおばあちゃんの懐中時計でもう一回試したらどうですか？」"
+ },
+ "“嗯......这块怀表确实是个很厉害的施术单元，但......咳，你学不会，用再厉害的东西也没有用啊。”": {
+  "ko": "“음...... 그 회중시계가 굉장한 아츠 유닛인 건 확실해. 하지만...... 흠, 네가 배우질 못하면 아무리 대단한 물건을 써도 소용이 없단다.”",
+  "en": "\"Hmm... That pocket watch really is a remarkable Arts Unit, but... ahem, if you can't learn it, no tool—however remarkable—is going to help.\"",
+  "ja": "「うーん……その懐中時計が大したアーツユニットなのは確かよ。でも……コホン、あなたが習得できないなら、どんなにすごい物を使っても意味がないの。」"
+ },
+ "（绝望的倒地声）": {
+  "ko": "（절망에 찬 채 바닥에 쓰러지는 소리）",
+  "en": "(The sound of someone collapsing to the floor in despair)",
+  "ja": "（絶望して倒れ込む音）"
+ },
+ "“哎呀，别太难过啦，我学数学和物理的时候也是这种感觉，有些东西学不会......就是学不会嘛。”": {
+  "ko": "“아이참, 너무 상심하지 마. 나도 수학이랑 물리를 배울 때 딱 그런 기분이었어. 어떤 건 아무리 해도...... 안 되는 건 안 되는 거야.”",
+  "en": "\"Aw, don't take it so hard. I felt exactly the same when I was studying math and physics. Some things you just can't learn... and that's that.\"",
+  "ja": "「まあまあ、そんなに落ち込まないで。私も数学と物理を勉強していた時は同じ気持ちだったわ。どうしても身につかないものは……身につかないのよ。」"
+ },
+ "来自雷姆必拓大涌泉镇的珊比，前来罗德岛接受矿石病治疗，并经由干员安洁莉娜的推荐，以及根据本人意愿，加入外勤部作为重装干员为罗德岛提供帮助。": {
+  "ko": "림 빌리턴 대용천 마을 출신의 썸피는 광석병 치료를 받기 위해 로도스 아일랜드를 찾아왔으며, 오퍼레이터 안젤리나의 추천과 본인의 뜻에 따라 외근부에 합류해 디펜더 오퍼레이터로서 로도스 아일랜드를 돕고 있다.",
+  "en": "Thumpy, from Great Geyser Town in Rim Billiton, came to Rhodes Island for Oripathy treatment. On the recommendation of Operator Angelina, and in accordance with her own wishes, she joined the Field Operations Department as a Defender Operator to assist Rhodes Island.",
+  "ja": "レム・ビリトンの大涌泉の町出身のサンビは、鉱石病の治療を受けるためロドスを訪れ、オペレーターアンジェリーナの推薦および本人の希望により、外勤部に加入し重装オペレーターとしてロドスに協力している。"
+ },
+ "干员珊比的手腕处有少量源石结晶分布。": {
+  "ko": "오퍼레이터 썸피의 손목 부근에는 소량의 오리지늄 결정이 분포되어 있음.",
+  "en": "A small amount of Originium crystals is distributed around Operator Thumpy's wrists.",
+  "ja": "オペレーターサンビの手首には少量の源石結晶の分布が見られる。"
+ },
+ "干员珊比的病情已经得到了很好的控制，目前较为稳定。": {
+  "ko": "오퍼레이터 썸피의 병세는 매우 잘 통제되고 있으며, 현재 비교적 안정적임.",
+  "en": "Operator Thumpy's condition has been kept well under control and is currently relatively stable.",
+  "ja": "オペレーターサンビの病状は良好にコントロールされており、現在は比較的安定している。"
+ },
+ "得知量身高不会计入耳朵长度时，珊比更加满意她这双和奶奶一样的短耳朵了。但在被发现偷藏了增高鞋垫以后，珊比看起来比吃到了受潮的胡萝卜干还要难受。": {
+  "ko": "신장을 잴 때 귀 길이는 포함되지 않는다는 사실을 알게 된 뒤, 썸피는 할머니와 똑같은 이 짧은 귀가 더욱 마음에 들었다. 하지만 키높이 깔창을 몰래 숨겨 둔 것이 들통난 뒤의 썸피는, 눅눅해진 당근 말랭이를 씹었을 때보다 더 괴로운 표정이었다.",
+  "en": "Upon learning that height measurements do not count ear length, Thumpy grew even fonder of the short ears she shares with her grandmother. But after being caught hiding a pair of height-boosting insoles, Thumpy looked more miserable than if she had bitten into a damp, stale carrot stick.",
+  "ja": "身長測定に耳の長さは含まれないと知ったサンビは、おばあちゃんと同じこの短い耳をますます気に入った。だが、シークレットインソールをこっそり隠し持っていたのがバレた後のサンビは、湿気たニンジンの干物を食べた時よりもつらそうな顔をしていた。"
+ },
+ "“（极其小声）黄萝卜、绿萝卜，粉红萝卜红萝卜。”": {
+  "ko": "“（아주 작은 목소리로）노란 무, 초록 무, 분홍 무 빨간 무.”",
+  "en": "\"(Extremely quietly) Yellow radish, green radish, pink radish, red radish.\"",
+  "ja": "「（ごく小さな声で）黄大根、緑大根、ピンク大根、赤大根。」"
+ },
+ "“好的珊比，请问他刚才说的最后一句是什么？”": {
+  "ko": "“좋아 썸피, 방금 저 사람이 말한 마지막 구절은 뭐였지?”",
+  "en": "\"All right, Thumpy, what was the last line he just said?\"",
+  "ja": "「よし、サンビ。今あの人が言った最後の一節は何だった？」"
+ },
+ "“嘿嘿，我听到了！是‘粉红萝卜红萝卜’！”": {
+  "ko": "“헤헤, 들었어요! ‘분홍 무 빨간 무’요!”",
+  "en": "\"Hehe, I heard it! It was 'pink radish, red radish'!\"",
+  "ja": "「へへっ、聞こえました！『ピンク大根、赤大根』です！」"
+ },
+ "在入职体检的那一天，珊比就展现出了令人惊叹的听力。不论是听声辨位，还是频率范围测试，甚至是说出在另一个房间角落里低声念雷姆必拓最难绕口令《萝卜》的干员说的究竟是哪一句，珊比都表现优异。于是来围观这次听力测试的人越来越多，可露希尔凑热闹带着仪器过来让珊比听一下是哪里出了故障，现场排查出问题后兴致勃勃地邀请她加入工程部当一名检修工程师；本来在隔壁忙的医疗干员拿来不同的助听器，让她试试看能否听出区别；还有红豆拿着自己的吉他过来让珊比听听几种琴弦音色的不同，老鲤散着步拿来骰盅说看能不能听出来摇出了什么数......": {
+  "ko": "입사 신체검사를 받던 날, 썸피는 이미 놀라운 청력을 선보였다. 소리로 위치를 알아맞히는 것도, 주파수 범위 테스트도, 심지어 다른 방 구석에서 림 빌리턴에서 가장 어려운 잰말놀이 《무》를 나직이 읊던 오퍼레이터가 정확히 어느 구절을 말했는지 맞히는 것까지, 썸피는 모두 훌륭하게 해냈다. 그러자 이 청력 테스트를 구경하러 오는 사람이 점점 늘어났다. 클로저는 재미 삼아 계측기를 들고 와 어디가 고장 났는지 들어 보라고 했고, 썸피가 그 자리에서 문제를 짚어내자 신이 나서 엔지니어링부에 들어와 정비 엔지니어를 하지 않겠냐고 권했다. 옆방에서 일하던 의료 오퍼레이터는 서로 다른 보청기를 가져와 차이를 구분할 수 있는지 시험해 보게 했고, 비그나는 자기 기타를 들고 와 기타 줄마다 음색이 어떻게 다른지 들려주었으며, 산책 중이던 리는 주사위 통을 가져와 흔들어 나온 숫자를 알아맞힐 수 있는지 보자고 했다......",
+  "en": "On the day of her onboarding physical, Thumpy already displayed astonishing hearing. Whether it was pinpointing sounds by ear, the frequency range test, or even identifying exactly which line an Operator was murmuring in the corner of another room from \"Radishes,\" Rim Billiton's hardest tongue twister, Thumpy performed superbly. More and more people came to watch the hearing test. Closure joined the fun with an instrument in hand and asked Thumpy to listen for where the fault was; when Thumpy pinpointed the problem on the spot, Closure eagerly invited her to join the Engineering Department as a maintenance engineer. A Medic Operator who had been busy next door brought over an assortment of hearing aids to see whether she could tell them apart; Vigna came with her guitar so Thumpy could hear the difference in tone between the strings; and Lee, out for a stroll, produced a dice cup to see whether she could hear what numbers had been rolled...",
+  "ja": "入職時の健康診断の日、サンビは早くも驚くべき聴力を見せた。音による位置の聞き分けも、周波数範囲のテストも、さらには別の部屋の隅でレム・ビリトンで最も難しい早口言葉『大根』を小声で唱えていたオペレーターがどの一節を口にしたかを言い当てることまで、サンビはすべて見事にこなした。すると、この聴力テストを見物しに来る者がどんどん増えていった。クロージャは面白がって計器を持ち込み、どこが故障しているか聞いてみてほしいと言い、その場で問題を突き止めたサンビを、意気揚々とエンジニア部に来て整備エンジニアにならないかと誘った。隣で仕事をしていた医療オペレーターは種類の違う補聴器を持ってきて聞き分けられるか試させ、ヴィグナは自分のギターを持ってきて弦ごとの音色の違いを聞かせ、散歩中だったリーはサイコロの筒を持ってきて、振った目が分かるか試してみようと言い出した……"
+ },
+ "这场小小的混乱最后在大家不需要很好的听力也能听到珊比肚子里传来的咕咕叫声时结束。大家纷纷掏出饭卡给珊比买饭表示感谢，一边聚在一起吃饭，一边继续讨论珊比以后可能的发展方向，这时几个阿达克利斯人突然疑惑起来：“雷姆必拓人有没有什么长耳朵短耳朵的派别之争？”": {
+  "ko": "이 자그마한 소동은, 굳이 좋은 청력이 없어도 모두가 썸피의 배에서 나는 꼬르륵 소리를 들을 수 있게 되었을 때 비로소 끝이 났다. 사람들은 저마다 식사 카드를 꺼내 고맙다는 뜻으로 썸피에게 밥을 사 주었고, 다 함께 모여 식사를 하면서 썸피의 앞날에 대해 계속 이야기했다. 그때 아다크리스인 몇 명이 문득 궁금해했다. “림 빌리턴 사람들한테는 긴 귀와 짧은 귀를 두고 벌어지는 파벌 다툼 같은 게 없어?”",
+  "en": "The little commotion finally ended when everyone—no keen hearing required—could hear Thumpy's stomach growling. They all pulled out their meal cards to buy her a meal as thanks, and while they ate together they went on discussing where Thumpy's career might take her. At that point a few Archosaurians grew curious: \"Do Rim Billitonians have any sort of long-ear versus short-ear factional feud?\"",
+  "ja": "このささやかな騒ぎは、優れた聴力がなくてもサンビのお腹の音が全員に聞こえた時、ようやく終わった。皆はそれぞれ食事カードを取り出してお礼にサンビへ食事をおごり、一緒に食べながらサンビの今後の進路について話し続けた。その時、数人のアダクリスがふと疑問を口にした。「レム・ビリトンの人たちには、長い耳と短い耳の派閥争いみたいなものはないのか？」"
+ },
+ "珊比第一反应就是回答“完全没有”，不过想了想又重新回答“可能有的，但我没有注意过”，她很骄傲地补充：“因为我的耳朵和奶奶的长得一模一样！”": {
+  "ko": "썸피는 곧바로 “전혀 없어요”라고 답했지만, 잠시 생각하더니 “있을지도 모르지만, 저는 신경 써 본 적이 없어요”라고 고쳐 대답했다. 그리고 아주 자랑스럽게 덧붙였다. “제 귀는 할머니 귀랑 똑같이 생겼으니까요!”",
+  "en": "Thumpy's first response was \"Absolutely not,\" but after a moment's thought she revised it to \"There might be, but I've never paid attention.\" Then she added proudly, \"Because my ears look exactly like Grandma's!\"",
+  "ja": "サンビはすぐさま「全然ないです」と答えたが、少し考えてから「あるのかもしれませんけど、気にしたことがありません」と答え直した。そして誇らしげにこう付け加えた。「だって私の耳、おばあちゃんとそっくり同じなんです！」"
+ },
+ "第十三次源石技艺适应性测试仍旧以“标准”的成绩结束。珊比发现自己不论是拿着奶奶的施术单元怀表上场，还是把源石技艺理论背得滚瓜烂熟，拜托安洁莉娜对她进行特训，甚至是学着时隙在测试前跪在地上求求她的施术单元起作用，都没有办法改变自己在源石技艺方面毫无天赋的现实：“我怎么就没有遗传奶奶的源石技艺天赋！”": {
+  "ko": "열세 번째 오리지늄 아츠 적응성 테스트도 여전히 “표준”이라는 성적으로 끝났다. 할머니의 아츠 유닛인 회중시계를 들고 나가 봐도, 오리지늄 아츠 이론을 줄줄 외울 만큼 익혀 봐도, 안젤리나에게 특훈을 부탁해 봐도, 심지어 타임슬롯을 따라 테스트 전에 바닥에 무릎을 꿇고 자기 아츠 유닛이 제발 말을 들어 달라고 빌어 봐도, 오리지늄 아츠 방면에 아무런 재능이 없다는 현실은 바꿀 수 없다는 것을 썸피는 깨달았다. “나는 왜 할머니의 오리지늄 아츠 재능을 물려받지 못한 거야!”",
+  "en": "The thirteenth Originium Arts Assimilation test once again ended with a grade of \"Standard.\" Thumpy found that nothing could change the reality of her utter lack of talent for Originium Arts—not taking the field with her grandmother's Arts Unit pocket watch, not memorizing Arts theory back to front, not begging Angelina for special training, not even copying Timeslot by kneeling on the floor before the test and pleading with her Arts Unit to work: \"Why didn't I inherit Grandma's talent for Originium Arts?!\"",
+  "ja": "十三回目のアーツ適性テストも、やはり「標準」という成績で終わった。おばあちゃんのアーツユニットである懐中時計を持って臨んでも、アーツ理論をすらすら暗唱できるまで覚え込んでも、アンジェリーナに特訓を頼んでも、さらにはタイムスロットを真似してテスト前に床にひざまずき、自分のアーツユニットがどうか働いてくれますようにと祈ってみても、アーツの才能がまるでないという現実は変えられない――サンビはそう思い知った。「どうしておばあちゃんのアーツの才能を受け継がなかったんだろう！」"
+ },
+ "虽然源石技艺适应性是否会遗传这个问题如今在医学上还并无定论，奶奶会把自己的某些特性遗传给孙女也不是有理论依据支持的说法，但珊比一直认为她的奶奶遗传给她了很多东西，那对标志性的短耳朵和淡粉的发色就是她的有力论据。": {
+  "ko": "오리지늄 아츠 적응성이 유전되는지는 의학적으로 아직 결론이 나지 않았고, 할머니의 어떤 특성이 손녀에게 유전된다는 것 또한 이론적 근거가 있는 이야기는 아니다. 그럼에도 썸피는 할머니에게서 많은 것을 물려받았다고 줄곧 믿어 왔으며, 그 상징적인 짧은 귀와 연분홍빛 머리색이야말로 그녀의 강력한 논거다.",
+  "en": "Whether Originium Arts Assimilation is hereditary remains medically unsettled, and the notion that a grandmother passes certain traits on to her granddaughter has no theoretical grounding either. Even so, Thumpy has always believed her grandmother handed a great deal down to her, and those signature short ears and pale pink hair are her strongest evidence.",
+  "ja": "アーツ適性が遺伝するかどうかは医学的にいまだ結論が出ておらず、祖母が自らの特徴を孫娘に遺伝させるという説にも理論的な裏付けはない。それでもサンビは、おばあちゃんから多くのものを受け継いだとずっと信じており、あの象徴的な短い耳と淡いピンクの髪色こそが彼女の有力な論拠なのだ。"
+ },
+ "基于她的这套“遗传理论”，珊比将很多事情都判定为她遗传了奶奶的力量、智慧，或者是追赶着自己奶奶的脚步才做到的：比如她也和奶奶一样独自一人从地下救出了一个被困的人，一样贯穿了雷姆必拓，一样到达了那个传说中有着最美风景的南境......": {
+  "ko": "이런 “유전 이론”에 근거해, 썸피는 여러 일들을 할머니의 힘과 지혜를 물려받은 덕분이거나, 할머니의 발자취를 뒤쫓았기에 해낼 수 있었던 일이라고 판단한다. 이를테면 그녀도 할머니처럼 혼자서 지하에 갇힌 사람을 구해냈고, 마찬가지로 림 빌리턴을 가로질렀으며, 마찬가지로 가장 아름다운 풍경이 있다는 전설 속 남쪽 변경에 도달했다는 식으로......",
+  "en": "On the strength of this \"theory of inheritance,\" Thumpy chalks all sorts of feats up to the strength and wisdom she inherited from her grandmother, or to following in her grandmother's footsteps: she too pulled a trapped person out from underground all by herself, she too crossed the length of Rim Billiton, and she too reached the fabled Southern Reaches said to hold the most beautiful scenery of all...",
+  "ja": "この「遺伝理論」に基づき、サンビは多くの出来事を、おばあちゃんの力と知恵を受け継いだおかげ、あるいはおばあちゃんの足跡を追いかけたからこそ成し遂げられたことだと判定している。たとえば彼女もおばあちゃんと同じくたった一人で地下に閉じ込められた人を救い出し、同じくレム・ビリトンを縦断し、同じく最も美しい景色があるという伝説の南境にたどり着いた……というように。"
+ },
+ "不过珊比自己也知道，她做到的这些事跟遗传实在是没什么关系。不仅如此，“想做什么”和“真的做到了”之间，可是有着很长一段距离的，而珊比已经越过了那段距离，一步一步成长为一个更加厉害的自己。": {
+  "ko": "물론 썸피 자신도 알고 있다. 그녀가 해낸 이 일들은 사실 유전과는 아무런 상관이 없다는 것을. 그뿐만이 아니다. “무언가를 하고 싶다”와 “정말로 해냈다” 사이에는 아주 긴 거리가 있는데, 썸피는 이미 그 거리를 건너와 한 걸음 한 걸음 더 대단한 자신으로 성장해 왔다.",
+  "en": "Thumpy herself knows, of course, that what she accomplished has nothing to do with heredity. What is more, there is a long distance between \"wanting to do something\" and \"actually having done it\"—and Thumpy has already crossed that distance, growing step by step into a stronger version of herself.",
+  "ja": "もっとも、サンビ自身も分かっている。彼女が成し遂げたこれらの事柄は、遺伝とは実のところ何の関係もないと。それだけではない。「やりたい」と「本当にやり遂げた」の間には長い距離があるが、サンビはすでにその距離を越え、一歩ずつより立派な自分へと成長してきたのだ。"
+ },
+ "珊比刚才突然询问医疗干员，她觉得自己说不定也遗传了奶奶的身高，是不是还能再长高一点？这个嘛......伊娜拉奶奶应该是卡特斯当中不论身高还是体型都天赋异禀的那一类，以珊比现在的年龄来看，她应该是没有办法长得像奶奶那样高大了！": {
+  "ko": "조금 전 썸피가 갑자기 의료 오퍼레이터에게 물었다. 자기도 할머니의 키를 물려받았을지 모르니 앞으로 조금 더 클 수 있지 않겠냐고. 음, 그건...... 이나라 할머니는 카우투스 중에서도 신장이든 체격이든 남다른 축에 속하는 분이고, 지금 썸피의 나이를 생각하면 할머니처럼 크고 우람하게 자라기는 어려울 것이다!",
+  "en": "Thumpy suddenly asked one of our Medic Operators just now whether she might have inherited her grandmother's height as well, and whether she could still grow a little taller. Well... Grandma Inara is the sort of Cautus exceptionally gifted in both height and build, and given Thumpy's current age, she is unlikely to ever grow as tall and imposing as her grandmother!",
+  "ja": "先ほどサンビが突然、医療オペレーターに尋ねてきた。自分もおばあちゃんの身長を受け継いでいるかもしれないから、もう少し背が伸びるのではないか、と。それは……イナラおばあちゃんはコータスの中でも身長も体格も並外れた部類のはずで、今のサンビの年齢から見て、おばあちゃんのように大きく育つことはもう無理だろう！"
+ },
+ "不会的不会的不会的！我还能再长个的！": {
+  "ko": "아니야 아니야 아니라고요! 저 아직 더 클 수 있어요!",
+  "en": "No way, no way, no way! I can still grow taller!",
+  "ja": "そんなことないそんなことないそんなことない！わたし、まだ背が伸びます！"
+ },
+ "——珊比": {
+  "ko": "——썸피",
+  "en": "—Thumpy",
+  "ja": "――サンビ"
+ },
+ "生活在一个人口众多的国家，雷姆必拓人习惯给身边的每个人都起一个特色鲜明的外号，以便他们在众多同名人之中快速区分出究竟指的是哪一个人，珊比就有很多个外号。": {
+  "ko": "인구가 많은 나라에서 살다 보니, 림 빌리턴 사람들은 주변의 모든 이에게 특징이 뚜렷한 별명을 붙이는 데 익숙하다. 같은 이름을 가진 사람이 수두룩한 가운데 대체 누구를 가리키는지 빠르게 구분하기 위해서다. 썸피에게도 별명이 여럿 있다.",
+  "en": "Living in a country with a vast population, Rim Billitonians are used to giving everyone around them a distinctive nickname, so that they can quickly tell which of the many people sharing a name is meant. Thumpy has quite a few nicknames of her own.",
+  "ja": "人口の多い国で暮らしているため、レム・ビリトンの人々は身の回りの一人ひとりに特徴のはっきりしたあだ名をつける習慣がある。同じ名前の人が大勢いる中で、誰を指しているのかをすぐに区別するためだ。サンビにもあだ名がいくつもある。"
+ },
+ "小的时候，她被叫做“小玩偶”。因为她个头小小耳朵也小小，什么都小小的，想和大家一起玩的时候，其他人都会笑着说“小玩偶太小啦，玩不了这个”不带上她。可珊比不太高兴，因为她也是想玩的，她也觉得自己能够做到，所以她不喜欢这个外号。": {
+  "ko": "어릴 적 그녀는 “꼬마 인형”이라고 불렸다. 키도 작고 귀도 작고, 뭐든 다 작았기 때문이다. 다 같이 놀고 싶어 할 때면 다른 아이들은 웃으며 “꼬마 인형은 너무 작아서 이건 못 해”라고 말하며 그녀를 끼워 주지 않았다. 하지만 썸피는 별로 기쁘지 않았다. 그녀도 놀고 싶었고, 자기도 할 수 있다고 생각했기 때문이다. 그래서 그녀는 이 별명을 좋아하지 않았다.",
+  "en": "As a child she was called \"Little Doll,\" because she was small in stature, small in the ears, small in everything. Whenever she wanted to play with the others, they would laugh and say, \"Little Doll's too little, she can't do this,\" and leave her out. Thumpy was not happy about it, because she wanted to play too and believed she could manage it, so she never liked that nickname.",
+  "ja": "幼い頃、彼女は「小さなお人形」と呼ばれていた。背も小さく耳も小さく、何もかもが小さかったからだ。みんなと一緒に遊びたがると、他の子たちは笑いながら「お人形は小さすぎるから、これは無理だよ」と言って仲間に入れてくれなかった。けれどサンビはあまり嬉しくなかった。彼女だって遊びたかったし、自分にもできると思っていたからだ。だから、このあだ名は好きではなかった。"
+ },
+ "后来珊比又有了几个外号，“好脑袋”，来源是她能记住几乎全镇的人名；还有“接线员”，只是因为她在镇子里担任接线员......那时的珊比对它们也谈不上不喜欢，只是越来越羡慕奶奶的外号：“探路者伊娜拉”——多么威风，多么厉害！“要是也能有这么一个外号就好了......”珊比说她曾时不时就会这样想象。": {
+  "ko": "이후 썸피에게는 별명이 몇 개 더 생겼다. “똑똑이”는 마을 사람들 이름을 거의 다 외운다는 데서 온 것이고, “교환원”은 그저 마을에서 교환원 일을 맡고 있었기에 붙은 것이다...... 그 무렵의 썸피는 이 별명들이 딱히 싫지는 않았지만, 할머니의 별명이 점점 더 부러워졌다. “개척자 이나라”——얼마나 위풍당당하고, 얼마나 대단한가! “나도 저런 별명이 있으면 좋을 텐데......” 썸피는 그때 종종 그런 상상을 하곤 했다고 말한다.",
+  "en": "Later Thumpy picked up a few more nicknames. \"Brainy,\" because she could remember the name of nearly everyone in town; and \"Switchboard,\" simply because she worked as the town's switchboard operator... Back then she could not really say she disliked them, but she grew ever more envious of her grandmother's nickname: \"Inara the Pathfinder\"—how commanding, how impressive! \"If only I had a nickname like that...\" Thumpy says she used to imagine it from time to time.",
+  "ja": "その後、サンビにはあだ名がいくつか増えた。「おりこう頭」は、町のほぼ全員の名前を覚えていたことに由来する。「交換手」は、単に町で交換手を務めていたからだ……当時のサンビはそれらが嫌いというわけでもなかったが、おばあちゃんのあだ名がますます羨ましくなっていった。「先駆者イナラ」――なんて威風堂々として、なんてすごいのだろう！「私にもそんなあだ名があればいいのに……」サンビは、よくそう想像していたと語る。"
+ },
+ "这个愿望很快就实现了。": {
+  "ko": "이 소원은 머지않아 이루어졌다.",
+  "en": "That wish came true before long.",
+  "ja": "この願いはほどなくして叶った。"
+ },
+ "从南境返程回大涌泉镇的时候，珊比惊喜地发现似乎她经过的每一个站点里都还有一些人记得她，甚至给她起了新的外号：": {
+  "ko": "남쪽 변경에서 대용천 마을로 돌아오는 길에, 썸피는 자신이 지나온 거의 모든 정거장마다 그녀를 기억하는 사람들이 남아 있고, 심지어 새로운 별명까지 붙여 주었다는 사실을 알고 뜻밖의 기쁨을 느꼈다.",
+  "en": "On the way back from the Southern Reaches to Great Geyser Town, Thumpy was delighted to find that at nearly every stop she passed through there were still people who remembered her—and had even given her new nicknames:",
+  "ja": "南境から大涌泉の町へ戻る道中、サンビは自分が通り過ぎたどの拠点にも彼女を覚えている人がいて、しかも新しいあだ名までつけられていることに気づき、驚き喜んだ。"
+ },
+ "“大嗓门”——是因为她和嘉辛塔一起飞车救下朋友，途中大喊大叫得来的；“热心肠”——是洋蓟村的人们感谢她帮阿梅利亚说话，这才让他们的通讯塔被修好给起的；“短耳朵塔妮”——太阳谷工业的矿工们感谢她救出了他们的维修员，于是沿用了她奶奶的前缀；还有“小勇士”——珊比的父母还有她几十个亲戚现在这么叫她，因为他们勇敢的小珊比做到了她出发前说自己想做的事，完成了她的梦想；以及“寻路人”——现在的珊比已经走出了雷姆必拓，和我们的外勤小队一起在广阔的泰拉大地上四处探索，为更多的感染者找寻适合生活的地方。": {
+  "ko": "“큰 목청”——자신타와 함께 차를 몰아 친구를 구하러 가는 동안 내내 고래고래 소리를 질러서 붙은 별명이다. “따뜻한 마음”——아티초크 마을 사람들이, 그녀가 아멜리아를 대신해 목소리를 내 준 덕분에 통신탑을 고칠 수 있었다며 고마운 마음으로 붙여 주었다. “짧은 귀 타니”——선 밸리 공업의 광부들이 자신들의 정비공을 구해 준 것에 감사하며 할머니 별명의 앞부분을 그대로 따서 붙였다. 그리고 “꼬마 용사”——썸피의 부모님과 수십 명의 친척들이 지금 그녀를 이렇게 부른다. 그들의 용감한 꼬마 썸피가 떠나기 전에 하고 싶다고 말했던 일을 해내고, 자신의 꿈을 이뤘기 때문이다. 마지막으로 “길잡이”——지금의 썸피는 이미 림 빌리턴 밖으로 나와, 우리 외근 소대와 함께 드넓은 테라 대지를 누비며 더 많은 감염자들이 살아갈 만한 곳을 찾고 있다.",
+  "en": "\"Loudmouth\"—because she hollered the whole way while she and Jacinta went tearing off in a car to save a friend; \"Big Heart\"—given by the people of Artichoke Village in thanks for speaking up for Amelia, which was what finally got their communications tower repaired; \"Short-Ears Tani\"—the miners of Sun Valley Industries, grateful to her for rescuing their repairman, borrowed the prefix from her grandmother's nickname; \"Little Hero\"—what Thumpy's parents and her dozens of relatives call her now, because their brave little Thumpy did the thing she had said she wanted to do before setting out and fulfilled her dream; and \"Wayfinder\"—the Thumpy of today has left Rim Billiton behind and travels the vast land of Terra with our field squad, searching out places where more of the Infected can live.",
+  "ja": "「デカ声」――ジャシンタと一緒に車を飛ばして友人を助けに行く道中、大声で叫び続けたことからついたあだ名。「親切者」――アーティチョーク村の人々が、アメリアの代わりに声を上げてくれたおかげで通信塔を直してもらえたと感謝してつけたもの。「短耳のタニー」――サンバレー工業の鉱夫たちが自分たちの整備員を救い出してくれた礼に、おばあちゃんのあだ名の頭の部分をそのまま引き継いだもの。そして「ちびっこ勇者」――サンビの両親と数十人の親戚が今このように呼んでいる。彼らの勇敢なちびサンビが、出発前に「やりたい」と言っていたことをやり遂げ、夢を叶えたからだ。さらに「道を探す人」――今のサンビはすでにレム・ビリトンを出て、私たちの外勤小隊とともに広大なテラの大地を探索し、より多くの感染者が暮らせる場所を探している。"
+ },
+ "嘿嘿，忘说“珊比”这个名字的来源了！是因为我经常咚咚咚跺脚，所以奶奶给我起了这个意思是“咚咚跺脚”的小名，家里人想让我高兴的时候也这么叫我，所以就选它作为我的代号啦！": {
+  "ko": "헤헤, “썸피”라는 이름의 유래를 말 안 했네요! 제가 자꾸 쿵쿵쿵 발을 굴러서, 할머니가 “쿵쿵 발구르기”라는 뜻의 애칭을 지어 주신 거예요. 가족들도 저를 기쁘게 해 주고 싶을 때 이렇게 불러 주고요. 그래서 이걸 제 코드네임으로 고른 거랍니다!",
+  "en": "Hehe, I forgot to say where the name \"Thumpy\" comes from! It's because I'm always stomping around thump-thump-thump, so Grandma gave me this pet name that means \"thump-thump stomping.\" My family calls me that when they want to cheer me up, too, so I picked it for my codename!",
+  "ja": "へへっ、「サンビ」って名前の由来を言い忘れてました！わたしがしょっちゅうドンドンドンって足を踏み鳴らすから、おばあちゃんが「ドンドン足踏み」って意味のこの愛称をつけてくれたんです。家族もわたしを喜ばせたい時にそう呼んでくれるので、コードネームにこれを選んだんですよ！"
+ },
+ "最近有晚上出来找零食的干员惊恐汇报说自己发现了灵异事件，她看到空荡无人的走廊里有一个背包在凭空移动，随即又冒出来不少人说自己也有同样的经历——不过在查看监控录像之后，大家发现那其实是因为紧急出任务在走廊里跑动的珊比。": {
+  "ko": "최근 밤중에 간식을 찾으러 나온 한 오퍼레이터가 심령 현상을 목격했다며 겁에 질려 보고해 왔다. 텅 빈 복도에서 배낭 하나가 저절로 움직이고 있었다는 것이다. 뒤이어 같은 경험을 했다는 사람들이 여럿 나타났는데——CCTV 영상을 확인해 보니, 그것은 사실 긴급 임무 때문에 복도를 달려가던 썸피였다.",
+  "en": "Recently an Operator who had come out at night looking for snacks filed a terrified report claiming she had witnessed a paranormal incident: she had seen a backpack moving through an empty corridor all on its own. A number of others soon came forward saying they had had the same experience—but after checking the security footage, everyone realized it was simply Thumpy running down the corridor on an emergency deployment.",
+  "ja": "最近、夜中に軽食を探しに出たオペレーターが、心霊現象に遭遇したと怯えながら報告してきた。誰もいない廊下でリュックが宙を移動しているのを見た、というのだ。続けて同じ経験をしたという者が何人も現れた――だが監視カメラの映像を確認したところ、それは緊急任務のために廊下を走っていたサンビだったと判明した。"
+ },
+ "确实，那个巨大背包是很多干员对珊比的第一印象，不过只要看过训练室中无论摔倒了多少次，还是被自己背包砸到了多少次都要重来，一遍遍苦练如何与背包配合战斗的珊比，或者是和她一起出外勤任务，看过小小一个的她把背包甩在背上就开始工作的样子，比起巨大背包，大家的印象就会更偏向这个个子小小但总是充满冲劲和勇气的珊比本人。": {
+  "ko": "확실히 그 거대한 배낭은 많은 오퍼레이터가 썸피에게 받은 첫인상이다. 하지만 훈련실에서 몇 번을 넘어지든, 자기 배낭에 몇 번을 깔리든 다시 일어나 배낭과 호흡을 맞춰 싸우는 법을 몇 번이고 연습하는 썸피를 본 사람이라면, 혹은 그녀와 함께 외근 임무를 나가 자그마한 몸으로 배낭을 등에 척 둘러메고 일을 시작하는 모습을 본 사람이라면, 거대한 배낭보다는 키는 작아도 언제나 패기와 용기로 가득한 썸피라는 사람 자체를 먼저 떠올리게 된다.",
+  "en": "True enough, that enormous backpack is the first impression many Operators have of Thumpy. But anyone who has watched her in the training room—getting back up no matter how many times she falls or how many times her own backpack knocks her flat, drilling over and over how to fight in concert with it—or who has been on a field mission with her and seen that tiny figure sling the pack onto her back and get straight to work, comes away thinking less about the enormous backpack and more about Thumpy herself: small in stature, yet always brimming with drive and courage.",
+  "ja": "確かに、あの巨大なリュックは多くのオペレーターがサンビに抱く第一印象だ。しかし、訓練室で何度転んでも、自分のリュックに何度押し潰されても立ち上がり、リュックと連携して戦う方法を何度も何度も練習するサンビを見た者、あるいは彼女と一緒に外勤任務に出て、小さな体でリュックを背中に担ぎ上げて仕事を始める姿を見た者なら、巨大なリュックよりも、背は小さくても常に勢いと勇気に満ちたサンビ本人の印象の方が強く残るはずだ。"
+ },
+ "至于这份勇气的来源，珊比自己也说不清楚，甚至她一直都是家里胆子最小的那一个：比如当初被父母经常拿来说的，她三十多次刚出镇子就被吓回来的失败的离家出走。": {
+  "ko": "이 용기가 어디에서 비롯되었는지는 썸피 본인도 설명하지 못한다. 심지어 그녀는 집안에서 줄곧 겁이 가장 많은 아이였다. 이를테면 부모님이 두고두고 이야기하는, 마을을 나서자마자 겁을 먹고 되돌아온 서른 몇 번의 실패한 가출 같은 것 말이다.",
+  "en": "As for where that courage comes from, Thumpy herself cannot explain it. In fact she has always been the most timid one in her family—take the thirty-odd failed attempts at running away from home that her parents love to bring up, each of them ending with her frightened back the moment she stepped outside the town.",
+  "ja": "この勇気がどこから来るのか、サンビ自身にも説明できない。それどころか彼女はずっと家の中で一番臆病な子だった。たとえば両親が事あるごとに持ち出す、町を出た途端に怖くなって引き返した三十数回の失敗した家出のように。"
+ },
+ "也许是因为家中孩子众多，忙于无数个孩子每天制造出的无数个问题，大家都忽视了珊比那三十多次尝试的韧劲，也没有想过她会去尝试第四十次、五十次，直到她真的走出了镇子，来到了南境。甚至是在珊比回来之后，他们才知道原来珊比竟然会开车——她知道家里人并没有十分在意她出去探险的梦想，但她又怀揣着一定要出去的决心，所以她只是偷偷地学：第一天被发动机轰鸣的声音吓得大叫，第二天被没有控制好的速度吓得眼泪飞到窗户上，第三天因为没注意间歇泉喷发的时间车差点被水流冲翻吓得三天不敢上车......但珊比就在其实从没离开过镇子，也没有开过什么正经道路的情况下，将驾驶技术一点一点练习到了能够在零号公路上和安洁莉娜轮班，没有被看出其实是新手，也没有出过任何状况的水平。": {
+  "ko": "아마도 집에 아이가 워낙 많아, 수많은 아이들이 매일 만들어 내는 수많은 문제를 처리하느라 바빴던 탓일 것이다. 다들 서른 몇 번이나 시도한 썸피의 끈기를 눈여겨보지 않았고, 그녀가 마흔 번째, 쉰 번째 시도를 하리라고는 생각조차 하지 못했다. 그녀가 정말로 마을을 벗어나 남쪽 변경에 다다르기 전까지는 말이다. 심지어 썸피가 돌아온 뒤에야 가족들은 그녀가 운전을 할 줄 안다는 사실을 알게 되었다——가족들이 자신의 모험이라는 꿈에 그다지 관심이 없다는 것을 알면서도, 반드시 나가고야 말겠다는 결심을 품고 있었기에 그녀는 그저 몰래 배웠던 것이다. 첫날에는 엔진의 굉음에 놀라 비명을 질렀고, 둘째 날에는 제어하지 못한 속도에 놀라 눈물이 창문까지 튀었으며, 셋째 날에는 간헐천이 분출하는 시간을 신경 쓰지 못해 물살에 차가 뒤집힐 뻔한 바람에 사흘이나 차에 오르지 못했다...... 그러나 실은 마을을 떠나 본 적도, 제대로 된 도로를 달려 본 적도 없는 상태에서, 썸피는 운전 실력을 조금씩 갈고닦아 0호 고속도로에서 안젤리나와 교대로 운전을 하면서도 초보라는 것을 들키지 않고, 어떤 사고도 내지 않는 수준에까지 이르렀다.",
+  "en": "Perhaps it was because there were so many children in the house, and the endless problems they generated every day kept everyone too busy: nobody noticed the tenacity behind Thumpy's thirty-odd attempts, and nobody imagined she would try a fortieth time, or a fiftieth—until she really did walk out of the town and reach the Southern Reaches. It was only after Thumpy came back that they even learned she could drive. She knew her family never took her dream of going out to explore very seriously, but she carried a determination to leave all the same, so she simply learned in secret: on the first day the roar of the engine startled a scream out of her; on the second, a speed she failed to control frightened her so badly that her tears flew onto the window; on the third, she lost track of when the geysers would erupt and the water nearly flipped the car, leaving her too scared to get behind the wheel for three days... And yet, having never actually left her town or driven on anything like a proper road, Thumpy honed her driving bit by bit until she could take turns at the wheel with Angelina on Highway Zero without anyone spotting her as a novice and without a single incident.",
+  "ja": "おそらく家には子供が大勢いて、無数の子供たちが毎日引き起こす無数の問題への対応に追われていたせいだろう。誰もサンビの三十数回にわたる挑戦の粘り強さに目を留めず、彼女が四十回目、五十回目に挑むとも思っていなかった――彼女が本当に町を出て、南境までたどり着くその日まで。サンビが帰ってきて初めて、家族は彼女が車を運転できることを知ったほどだ。家族が自分の冒険の夢をさほど気に留めていないと分かっていながら、それでも必ず外へ出るという決意を抱いていた彼女は、ただこっそりと練習していたのだ。一日目はエンジンの轟音に驚いて叫び声を上げ、二日目は制御しきれない速度に怯えて涙が窓まで飛び、三日目は間欠泉の噴出時間に気を配れず、水流で車がひっくり返りかけて三日間も車に乗れなくなった……それでもサンビは、実際には町を出たこともなければまともな道路を走ったこともないまま、運転技術を少しずつ磨き上げ、0号ハイウェイでアンジェリーナと交代で運転しても初心者だと見抜かれず、何のトラブルも起こさない水準にまで達したのである。"
+ },
+ "所以这份勇气的来源，也许是珊比对自己想要完成的事有着无比的决心，也许是她已经在没人注意过的地方失败过无数次，所以她并不害怕自己会再次失败，因为她知道自己一定会再去尝试，直到成功的那一天。": {
+  "ko": "그러므로 이 용기의 근원은, 어쩌면 이루고자 하는 일에 대한 썸피의 더없이 굳은 결심일지도 모르고, 어쩌면 아무도 보지 못한 곳에서 이미 수없이 실패해 봤기 때문일지도 모른다. 그래서 그녀는 또다시 실패하는 것을 두려워하지 않는다. 성공하는 그날까지 자신이 반드시 다시 도전하리라는 것을 알고 있으니까.",
+  "en": "So the source of that courage may be the unshakable determination Thumpy brings to whatever she sets out to do, or it may be that she has already failed countless times where no one was watching—and so she is not afraid of failing again, because she knows she will always try once more, right up until the day she succeeds.",
+  "ja": "だからこの勇気の源は、成し遂げたいことに対するサンビの並外れた決意なのかもしれないし、誰にも気づかれない場所ですでに数え切れないほど失敗してきたからなのかもしれない。だから彼女は、また失敗することを恐れない。成功するその日まで、自分は必ずもう一度挑戦すると分かっているからだ。"
+ },
+ "说不定下一个传奇故事的主角就是她自己呢——": {
+  "ko": "어쩌면 다음 전설의 주인공은 그녀 자신일지도 모른다——",
+  "en": "Perhaps the protagonist of the next legend will be Thumpy herself—",
+  "ja": "もしかすると、次の伝説の物語の主人公は彼女自身なのかもしれない――"
+ },
+ "这是耳朵已经被“奶奶的故事”磨出茧子的笔者最迫切的期待之一。": {
+  "ko": "이것은 “할머니 이야기”를 하도 들어 귀에 못이 박힌 필자의 가장 간절한 기대 중 하나다.",
+  "en": "That is one of the most fervent hopes of this writer, whose ears have long since grown calluses from all the \"Grandma stories.\"",
+  "ja": "これは「おばあちゃんの話」を聞かされすぎて耳にタコができた筆者の、最も切実な期待の一つである。"
+ },
+ "珊比最近突然提出要去雷姆必拓的某处无人区一趟。": {
+  "ko": "썸피가 최근 갑자기 림 빌리턴의 어느 무인 지대에 다녀오겠다고 했다.",
+  "en": "Thumpy recently announced out of the blue that she wanted to make a trip to a certain uninhabited region of Rim Billiton.",
+  "ja": "サンビが最近、突然レム・ビリトンのある無人地帯へ行きたいと言い出した。"
+ },
+ "那里没有什么需要探索的宜居地，也没有什么绮丽的美景，唯一特殊的，可能就是因为那里方圆百里都没有任何人烟，所以那里的夜晚是一片极致的黑。": {
+  "ko": "그곳에는 탐사할 만한 거주 적합지도, 눈부시게 아름다운 절경도 없다. 유일하게 특별한 점이 있다면, 사방 백 리에 인적이 전혀 없어 그곳의 밤은 지극히 새까맣다는 것 정도일 것이다.",
+  "en": "There is no habitable land there worth surveying, nor any spectacular scenery. The only thing special about it may be that, with not a soul for a hundred miles in any direction, the nights there are utterly, absolutely dark.",
+  "ja": "そこには探索すべき居住適地もなければ、絢爛たる絶景もない。唯一特別なのは、方円百里に人の気配がまったくないため、そこの夜は極限まで真っ暗だということくらいだろう。"
+ },
+ "在收拾好行李之后，珊比出发了。经过了数天的跋涉，她终于来到了那个地方，在支好帐篷后，夜幕也终于降临。": {
+  "ko": "짐을 다 꾸린 뒤 썸피는 길을 나섰다. 며칠에 걸친 여정 끝에 그녀는 마침내 그곳에 도착했고, 텐트를 다 치고 나자 밤의 장막도 마침내 내려앉았다.",
+  "en": "Once her bags were packed, Thumpy set out. After several days of trekking she finally reached the place, and just as she finished pitching her tent, night fell at last.",
+  "ja": "荷造りを終えたサンビは出発した。数日にわたる長旅の末、彼女はついにその場所にたどり着き、テントを張り終えると、夜の帳もようやく下りた。"
+ },
+ "夜色像潮水一般淹没了整片空间，这里闪烁光芒的只有地面上珊比的头灯，和天空中的点点繁星。珊比拿出望远镜和相机，将镜头对准微亮的星空，开始寻找。": {
+  "ko": "밤빛이 밀물처럼 온 공간을 뒤덮었고, 이곳에서 빛나는 것이라고는 지면 위 썸피의 헤드램프와 하늘에 점점이 박힌 별들뿐이었다. 썸피는 망원경과 카메라를 꺼내 희미하게 빛나는 밤하늘로 렌즈를 향한 채 찾기 시작했다.",
+  "en": "The night swallowed the whole expanse like a rising tide; the only things glimmering there were Thumpy's headlamp on the ground and the scattered stars in the sky. Thumpy took out her telescope and camera, aimed the lenses at the faintly glowing starry sky, and began to search.",
+  "ja": "夜の闇が潮のように空間全体を飲み込み、そこで光を放つのは地上のサンビのヘッドライトと、空に散らばる無数の星だけだった。サンビは望遠鏡とカメラを取り出し、かすかに光る星空へレンズを向け、探し始めた。"
+ },
+ "她掠过银河，掠过启明星，掠过无数美丽的星海，直到找到了那片熟悉的星光：那两颗相伴对方左右的粉色星星和金色星星，终于无比清晰地出现在她的眼前。": {
+  "ko": "그녀는 은하수를 지나고, 샛별을 지나고, 무수히 아름다운 별바다를 지나, 마침내 그 익숙한 별빛을 찾아냈다. 서로의 곁을 나란히 지키는 분홍빛 별과 금빛 별, 그 두 개의 별이 마침내 더없이 또렷하게 그녀의 눈앞에 나타났다.",
+  "en": "She swept past the Milky Way, past the morning star, past countless beautiful seas of stars, until she found that familiar glow: the two stars, one pink and one gold, keeping each other company side by side, appeared before her at last with perfect clarity.",
+  "ja": "彼女は天の川を通り過ぎ、明けの明星を通り過ぎ、無数の美しい星の海を通り過ぎ、ついにあの見慣れた星の光を見つけた。互いに寄り添う一つのピンク色の星と金色の星が、ようやくこの上なくはっきりと彼女の目の前に現れた。"
+ },
+ "珊比按下快门，拍下了这美丽的夜空。": {
+  "ko": "썸피는 셔터를 눌러, 이 아름다운 밤하늘을 사진에 담았다.",
+  "en": "Thumpy pressed the shutter and captured this beautiful night sky.",
+  "ja": "サンビはシャッターを切り、この美しい夜空を写真に収めた。"
+ },
+ "通讯技术工程师，其研究成果已应用于雷姆必拓远程通讯系统。现加入罗德岛工程部，为罗德岛基地远程通讯提供技术支持。": {
+  "ko": "통신 기술 엔지니어. 그 연구 성과는 이미 림 빌리턴의 원격 통신 시스템에 적용되었다. 현재는 로도스 아일랜드 엔지니어링부에 합류해, 로도스 아일랜드 기지의 원격 통신에 기술 지원을 제공하고 있다.",
+  "en": "A communications technology engineer whose research has already been applied to Rim Billiton's long-range communication systems. She has now joined Rhodes Island's Engineering Department, providing technical support for long-range communications at the Rhodes Island base.",
+  "ja": "通信技術エンジニア。その研究成果はすでにレム・ビリトンの遠距離通信システムに応用されている。現在はロドスのエンジニアリング部に加わり、ロドス基地の遠距離通信に技術支援を提供している。"
+ },
+ "干员时隙没有被源石感染的迹象。": {
+  "ko": "오퍼레이터 타임슬롯에게서 오리지늄 감염 징후는 발견되지 않았습니다.",
+  "en": "Operator Timeslot shows no signs of Originium infection.",
+  "ja": "オペレーター・タイムスロットに源石感染の兆候は見られない。"
+ },
+ "在做体检时，医疗干员发现时隙身边一直跟着的那只羽兽并不是机械羽兽，而是一只活泼的、活生生的小羽兽，甚至还是会模仿人说话的那一种。": {
+  "ko": "신체검사 도중, 의료 오퍼레이터는 타임슬롯 곁에 늘 붙어 다니던 그 깃털수가 기계 깃털수가 아니라 활발하고 살아 있는 작은 깃털수이며, 심지어 사람 말을 흉내 낼 줄 아는 종류라는 사실을 발견했다.",
+  "en": "During her physical examination, the medical Operators discovered that the feathered beast constantly at Timeslot's side was not a mechanical feathered beast at all, but a lively, living little feathered beast — and one of the kind that can mimic human speech, no less.",
+  "ja": "健康診断の際、医療オペレーターは、タイムスロットのそばにいつも付き従っているあの羽獣が機械羽獣ではなく、活発で生きた小さな羽獣であり、しかも人の言葉を真似できる種類であることを発見した。"
+ },
+ "它在干员们的百般逗弄下一直矜持地不肯开口，直到它看到时隙因为一直眼泪汪汪而被医疗干员不断安慰不要紧张后，这只羽兽终于张了张嘴，说出了第一句话：“没出息。”": {
+  "ko": "오퍼레이터들이 온갖 방법으로 어르는데도 이 깃털수는 새침하게 입을 열지 않았다. 그러다 타임슬롯이 계속 눈물을 글썽여 의료 오퍼레이터에게 긴장하지 말라는 위로를 거듭 받는 모습을 보고서야, 마침내 부리를 뻥긋하며 첫마디를 내뱉었다. “한심해.”",
+  "en": "No matter how the Operators tried to coax it, the feathered beast kept its beak primly shut — until it saw Timeslot, eyes brimming with tears, being reassured over and over by the medical Operators not to be nervous. At that, the creature finally opened its beak and spoke its first words: \"Pathetic.\"",
+  "ja": "オペレーターたちがあの手この手であやしても、この羽獣はお高くとまって口を開こうとしなかった。だが、タイムスロットが涙目になり続け、医療オペレーターから緊張しなくていいと何度も慰められているのを見た途端、羽獣はついに口を開き、最初の一言を発した。「情けない」"
+ },
+ "时隙眼中的泪水一下子变得更多了！": {
+  "ko": "타임슬롯의 눈에 고인 눈물이 순식간에 더 불어났다!",
+  "en": "The tears in Timeslot's eyes promptly welled up even more!",
+  "ja": "タイムスロットの目に溜まった涙は、一気にさらに増えた！"
+ },
+ "时隙干员在刚加入工程部时拘谨了很久，经常询问自己是否要给组长或者是领导泡咖啡，要不要帮他们整理文件，在其他干员向她表示其实都不用之后仍旧心有不安。": {
+  "ko": "오퍼레이터 타임슬롯은 엔지니어링부에 막 합류했을 무렵 한참 동안 어색해했다. 팀장이나 상사에게 커피를 타 드려야 하는지, 서류 정리를 도와야 하는지 자주 물었고, 다른 오퍼레이터들이 그럴 필요 없다고 알려준 뒤에도 여전히 마음을 놓지 못했다.",
+  "en": "When Operator Timeslot first joined the Engineering Department, she remained stiff and overly formal for a long while. She would often ask whether she ought to make coffee for her team leader or her superiors, or help them sort their documents, and even after the other Operators told her none of that was necessary, she still could not set her mind at ease.",
+  "ja": "オペレーター・タイムスロットは、エンジニアリング部に加わったばかりの頃、長らく畏まった態度を崩さなかった。班長や上司にコーヒーを淹れるべきか、書類整理を手伝うべきかと頻繁に尋ね、他のオペレーターたちからその必要はないと言われた後も、なお落ち着かない様子だった。"
+ },
+ "可露希尔——这个时隙眼中的“直系大领导顶头上司”——于时隙刚完成新人培训并正式加入工程部的第二天，就带着她走进一间专门供她研究罗德岛远程通讯技术的实验室，其中各项器材一应俱全。可露希尔本人不仅认真听她磕磕绊绊讲完了自己所有的技术想法，甚至在她搭建实验环境不顺利时也跟着一起熬了一个通宵完成了工作。经历了这一切之后，时隙完全地放松下来了。": {
+  "ko": "클로저는 — 타임슬롯의 눈에는 “직속 최고 상관이자 바로 위 상사”인 인물이다 — 타임슬롯이 신입 교육을 마치고 정식으로 엔지니어링부에 합류한 바로 다음 날, 그녀를 로도스 아일랜드 원격 통신 기술 연구 전용 실험실로 데려갔다. 각종 장비가 빠짐없이 갖춰진 곳이었다. 클로저 본인은 그녀가 더듬더듬 늘어놓는 기술 구상을 끝까지 진지하게 들어주었을 뿐 아니라, 실험 환경 구축이 뜻대로 되지 않을 때는 함께 밤을 꼬박 새워 작업을 마무리해 주기까지 했다. 이 모든 일을 겪고 나서야 타임슬롯은 완전히 긴장을 풀었다.",
+  "en": "Closure — in Timeslot's eyes, \"the big boss right above me, my direct superior\" — took her, the very day after she finished her new-hire training and formally joined the Engineering Department, into a laboratory set aside solely for her research into Rhodes Island's long-range communication technology, equipped with every instrument she could need. Closure herself not only listened attentively as Timeslot stammered her way through every one of her technical ideas, but even pulled an all-nighter alongside her to finish the job when setting up the experimental environment did not go smoothly. After all of that, Timeslot finally relaxed completely.",
+  "ja": "クロージャ――タイムスロットの目には「直属の大上司にして直接の上役」である人物――は、タイムスロットが新人研修を終えて正式にエンジニアリング部に加わった翌日には、彼女をロドスの遠距離通信技術の研究のためだけに用意された、あらゆる機材が一通り揃った実験室へと連れて行った。クロージャ本人は、彼女がたどたどしく語り切った技術的な構想をすべて真剣に聞いただけでなく、実験環境の構築がうまくいかない時には一緒に徹夜して作業を仕上げさえした。これらすべてを経て、タイムスロットはすっかり肩の力を抜いたのだった。"
+ },
+ "她不仅在餐厅吃饭时会和安洁莉娜说“我真喜欢这里！”，在宿舍里会和嘉辛塔还有塔妮说“在这里真开心！我想做的事情都可以做！”，就连采购部的干员都反馈说时隙购买用来擦眼泪纸巾的数量都少了很多。一切都在朝着好的方向发展，看到时隙干员变成现在这副活泼开朗的样子，大家都很开心。": {
+  "ko": "그녀는 식당에서 밥을 먹을 때면 안젤리나에게 “저 여기가 정말 좋아요!”라고 말했고, 숙소에서는 자신타와 타니에게 “여기 있으면 정말 즐거워! 하고 싶은 일을 다 할 수 있어!”라고 말했다. 심지어 구매부 오퍼레이터들조차 타임슬롯이 눈물을 닦으려고 사 가는 휴지의 양이 크게 줄었다고 알려 왔다. 모든 것이 좋은 방향으로 흘러가고 있으며, 지금처럼 밝고 활발해진 오퍼레이터 타임슬롯의 모습을 보며 다들 기뻐하고 있다.",
+  "en": "At meals in the canteen she would tell Angelina, \"I really love it here!\"; back in the dorms she would tell Jacinta and Tani, \"I'm so happy here! I get to do everything I want to do!\" Even the Procurement Department Operators reported that the number of tissues Timeslot bought for wiping away tears had dropped considerably. Everything was moving in a good direction, and everyone was glad to see Operator Timeslot turn into the bright, lively person she is now.",
+  "ja": "彼女は食堂で食事をする時にはアンジェリーナに「私、ここが本当に好きです！」と言い、宿舎ではジャシンタやタニに「ここにいると本当に楽しい！やりたいことが全部できるの！」と話すようになった。購買部のオペレーターからも、タイムスロットが涙を拭くために購入するティッシュの量が大幅に減ったという報告が上がったほどだ。すべてが良い方向へ向かっており、今のように明るく快活になったオペレーター・タイムスロットの姿を見て、皆喜んでいる。"
+ },
+ "但在几周后，我们再次看到了时隙干员眼含泪水，委委屈屈黯然坐在餐厅的可怜模样。人事部干员大惊失色上前询问原因，时隙忍了又忍，终于还是一边抹着眼泪一边说出了原因：": {
+  "ko": "그러나 몇 주 뒤, 우리는 오퍼레이터 타임슬롯이 눈물을 머금은 채 서럽고 풀 죽은 얼굴로 식당에 앉아 있는 가여운 모습을 다시 보게 되었다. 인사부 오퍼레이터가 깜짝 놀라 다가가 이유를 묻자, 타임슬롯은 참고 또 참다가 결국 눈물을 훔치며 이유를 털어놓았다.",
+  "en": "A few weeks later, however, we once again found Operator Timeslot sitting in the canteen, eyes brimming with tears, the very picture of dejected misery. An HR Department Operator, alarmed, went over to ask what was wrong. Timeslot held it in as long as she could, then finally gave her reason while wiping her eyes:",
+  "ja": "だが数週間後、我々は再びオペレーター・タイムスロットが涙を浮かべ、しょんぼりと肩を落として食堂に座っている憐れな姿を目にすることとなった。人事部のオペレーターが顔色を変えて駆け寄り理由を尋ねると、タイムスロットは我慢に我慢を重ねた末、ついに涙を拭いながら理由を口にした。"
+ },
+ "“我的工作量还有加班时间......怎么反而比之前还多了好几倍不止啊！！呜！”": {
+  "ko": "“제 업무량이랑 야근 시간이…… 어째서 예전보다 몇 배는 더 늘어난 건가요!! 흐윽!”",
+  "en": "\"My workload, and my overtime hours... why have they gone up several times over instead?! Waaah!\"",
+  "ja": "「私の仕事量も残業時間も……どうして前より何倍も増えてるんですかぁ！！うぅっ！」"
+ },
+ "【实验室监控录像】": {
+  "ko": "【실험실 감시 카메라 영상】",
+  "en": "【Laboratory Surveillance Footage】",
+  "ja": "【実験室監視カメラ映像】"
+ },
+ "“时隙干员，我们预约了今天参观远程通讯实验室，想问问你现在忙吗？”": {
+  "ko": "“오퍼레이터 타임슬롯, 오늘 원격 통신 실험실 견학을 예약해 뒀는데요, 지금 바쁘신지 여쭤보려고요.”",
+  "en": "\"Operator Timeslot, we booked a tour of the long-range communications lab for today. Are you busy right now?\"",
+  "ja": "「タイムスロット、今日は遠距離通信実験室の見学を予約していたのですが、今お忙しいですか？」"
+ },
+ "“......时隙干员？”": {
+  "ko": "“……오퍼레이터 타임슬롯?”",
+  "en": "\"...Operator Timeslot?\"",
+  "ja": "「……タイムスロット？」"
+ },
+ "“......时隙干员，你在吗......？”": {
+  "ko": "“……오퍼레이터 타임슬롯, 안에 계세요……?”",
+  "en": "\"...Operator Timeslot, are you in there...?\"",
+  "ja": "「……タイムスロット、いますか……？」"
+ },
+ "（脚步声）": {
+  "ko": "(발소리)",
+  "en": "(Footsteps)",
+  "ja": "（足音）"
+ },
+ "“呜、呜呜呜！": {
+  "ko": "“흐, 흐윽 흐윽!",
+  "en": "\"S-sob, sob sob sob!",
+  "ja": "「うっ、うぅうぅ！"
+ },
+ "“求求你了小飞虫，求求你了法杖，求求你了通讯核心！": {
+  "ko": "“제발 부탁이야 꼬마 날벌레야, 제발 부탁이야 지팡이야, 제발 부탁이야 통신 코어야!",
+  "en": "\"Please, Little Flybug, please, staff, please, comms core!",
+  "ja": "「お願いだからちび羽虫、お願いだから杖、お願いだから通信コア！"
+ },
+ "“快点变好吧，快点变正常吧！”": {
+  "ko": "“빨리 좀 나아 줘, 빨리 정상으로 돌아와 줘!”",
+  "en": "\"Hurry up and get better, hurry up and work properly!\"",
+  "ja": "「早く直って、早く正常に動いて！」"
+ },
+ "“时隙干员你怎么跪在地上！快起来快起来地上多凉啊！”": {
+  "ko": "“오퍼레이터 타임슬롯, 왜 바닥에 무릎을 꿇고 계세요! 어서 일어나세요, 바닥이 얼마나 차가운데요!”",
+  "en": "\"Operator Timeslot, why are you kneeling on the floor?! Get up, get up, the floor's freezing!\"",
+  "ja": "「タイムスロット、どうして床に膝をついてるんですか！早く立って、床は冷たいですよ！」"
+ },
+ "“呜呜！求求你们了快点好吧！”": {
+  "ko": "“흐윽 흐윽! 제발 부탁이야, 빨리 좀 나아 줘!”",
+  "en": "\"Sob, sob! I'm begging you all, please just start working!\"",
+  "ja": "「うぅ、うぅ！お願いだから早く直ってよぉ！」"
+ },
+ "【罗德岛理发室监控录像】": {
+  "ko": "【로도스 아일랜드 미용실 감시 카메라 영상】",
+  "en": "【Rhodes Island Salon Surveillance Footage】",
+  "ja": "【ロドス理髪室監視カメラ映像】"
+ },
+ "“一泵护发素、两泵护发素、三泵护发素、四泵护发素......！": {
+  "ko": "“컨디셔너 한 펌프, 컨디셔너 두 펌프, 컨디셔너 세 펌프, 컨디셔너 네 펌프……!",
+  "en": "\"One pump of conditioner, two pumps of conditioner, three pumps of conditioner, four pumps of conditioner...!",
+  "ja": "「コンディショナー一プッシュ、コンディショナー二プッシュ、コンディショナー三プッシュ、コンディショナー四プッシュ……！"
+ },
+ "“怎、怎么头发还是这样干巴巴的......”": {
+  "ko": "“어, 어째서 머리카락이 아직도 이렇게 푸석푸석한 거죠……”",
+  "en": "\"W-why is my hair still this dry and brittle...\"",
+  "ja": "「な、なんで髪はまだこんなにパサパサなんでしょう……」"
+ },
+ "“呜，没事的澄闪小姐，我的头发一直都是这样......”": {
+  "ko": "“흐윽, 괜찮아요 골든글로우 씨, 제 머리카락은 원래부터 이랬는걸요……”",
+  "en": "\"Sniff... it's all right, Miss Goldenglow, my hair has always been like this...\"",
+  "ja": "「うぅ、大丈夫ですゴールデングローさん、私の髪はずっとこうなんです……」"
+ },
+ "“时隙小姐，请再等一等，我再去找找护发精油，我一定能让你的头发变顺滑的！": {
+  "ko": "“타임슬롯 씨, 조금만 더 기다려요. 헤어 에센스 오일을 다시 찾아볼게요. 반드시 머릿결을 매끄럽게 만들어 줄 테니까!",
+  "en": "\"Miss Timeslot, just wait a little longer, I'll go look for some hair oil. I'll definitely get your hair smooth!",
+  "ja": "「タイムスロットさん、もう少し待ってください。ヘアオイルをもう一度探してきます。絶対にあなたの髪をサラサラにしてみせますから！"
+ },
+ "“不过时隙小姐，你的发色很好看呢，其他地方都是棕色的，只有这两根辫子还有上面的刘海是纯白的！”": {
+  "ko": "“그런데 타임슬롯 씨, 머리 색이 참 예뻐요. 다른 곳은 전부 갈색인데 이 땋은 머리 두 갈래랑 위쪽 앞머리만 새하얗네요!”",
+  "en": "\"By the way, Miss Timeslot, your hair color is lovely. Everywhere else is brown, but just these two braids and the bangs above them are pure white!\"",
+  "ja": "「でもタイムスロットさん、髪の色はとても綺麗ですね。他は全部茶色なのに、この二本の三つ編みと上の前髪だけ真っ白なんて！」"
+ },
+ "“其实本来都是棕色的......可能是因为压力一大我就拽自己的辫子，所以它们就变白了......”": {
+  "ko": "“사실 원래는 전부 갈색이었어요…… 스트레스를 받으면 자꾸 제 땋은 머리를 잡아당기다 보니, 그래서 하얗게 변한 것 같아요……”",
+  "en": "\"Actually, it was all brown to begin with... I think it's because whenever the pressure gets to me I tug on my braids, so they turned white...\"",
+  "ja": "「実は元々は全部茶色だったんです……ストレスが溜まると自分の三つ編みを引っ張ってしまうので、それで白くなっちゃったんだと思います……」"
+ },
+ "“啊......”": {
+  "ko": "“아……”",
+  "en": "\"Ah...\"",
+  "ja": "「あ……」"
+ },
+ "【会议室工作录像】": {
+  "ko": "【회의실 업무 영상】",
+  "en": "【Meeting Room Work Footage】",
+  "ja": "【会議室業務映像】"
+ },
+ "“时隙干员，下一个宣讲的人就是你了，请做好准备哦！”": {
+  "ko": "“오퍼레이터 타임슬롯, 다음 발표자는 당신이에요. 준비해 두세요!”",
+  "en": "\"Operator Timeslot, you're up next to present. Please get ready!\"",
+  "ja": "「タイムスロット、次に発表するのはあなたですよ。準備をお願いしますね！」"
+ },
+ "“好、好的！": {
+  "ko": "“네, 넵!",
+  "en": "\"O-okay!",
+  "ja": "「は、はい！"
+ },
+ "“深、深呼吸，别紧张，最后一次排练：大家好我是今天来宣讲的时隙，我的主、主题是、是......": {
+  "ko": "“시, 심호흡. 긴장하지 말자, 마지막으로 한 번만 더 연습: 안녕하세요, 오늘 발표를 맡은 타임슬롯입니다. 제 주, 주제는, 는……",
+  "en": "\"D-deep breath. Don't be nervous, one last rehearsal: Hello everyone, I'm Timeslot and I'm presenting today, and my to-topic is, is...",
+  "ja": "「し、深呼吸。緊張しないで、最後にもう一度リハーサル。皆さんこんにちは、本日発表を担当するタイムスロットです。私のテ、テーマは、は……"
+ },
+ "“啊完蛋了完蛋了完蛋了！”": {
+  "ko": "“아 망했다 망했다 망했다!”",
+  "en": "\"Ah, I'm done for, done for, done for!\"",
+  "ja": "「ああダメだダメだダメだ！」"
+ },
+ "“医疗干员！医疗干员！时隙干员的脸好像完全僵住了！”": {
+  "ko": "“의료 오퍼레이터! 의료 오퍼레이터! 오퍼레이터 타임슬롯의 얼굴이 완전히 굳어 버린 것 같아요!”",
+  "en": "\"Medical Operator! Medical Operator! Operator Timeslot's face looks like it's frozen solid!\"",
+  "ja": "「医療オペレーター！医療オペレーター！タイムスロットの顔が完全に固まってしまったみたいです！」"
+ },
+ "在近期干员心理健康的关怀活动中，根据这几份录像，人事部干员对时隙展开了心理咨询。内容包括她是否在罗德岛的工作中感到压力过大，是否需要帮助等等。但时隙只是在害羞和抱歉中告诉人事部干员，她觉得自己现在的状态其实比之前已经好了很多，那些举动只是她遗留下来的一些习惯。": {
+  "ko": "최근 진행된 오퍼레이터 정신 건강 케어 활동에서, 인사부 오퍼레이터는 이 영상들을 근거로 타임슬롯에게 심리 상담을 진행했다. 로도스 아일랜드에서의 업무에 지나친 압박을 느끼는지, 도움이 필요하지는 않은지 등의 내용이었다. 그러나 타임슬롯은 부끄러워하면서도 미안해하며, 지금 자신의 상태는 사실 예전보다 훨씬 나아졌고 그런 행동들은 그저 예전부터 남아 있는 습관일 뿐이라고 인사부 오퍼레이터에게 말했을 뿐이다.",
+  "en": "As part of a recent Operator mental health care initiative, and on the basis of these recordings, an HR Department Operator arranged counseling for Timeslot, covering whether she felt under excessive pressure in her work at Rhodes Island, whether she needed help, and so on. Timeslot, however, only told the HR Operator — shyly and apologetically — that her current state was in fact far better than before, and that those behaviors were merely habits left over from earlier days.",
+  "ja": "最近行われたオペレーターのメンタルヘルスケア活動において、人事部のオペレーターはこれらの映像を踏まえ、タイムスロットへのカウンセリングを実施した。内容は、ロドスでの業務で過度なプレッシャーを感じていないか、助けが必要ではないかといったものだ。しかしタイムスロットは、恥ずかしそうに、そして申し訳なさそうに、自分の今の状態は以前よりずっと良くなっていて、あの振る舞いはただ昔から残っている癖にすぎないと人事部のオペレーターに告げるだけだった。"
+ },
+ "在咨询结束，时隙离开了咨询室之后，人事部干员发现几根纤细的替换通讯天线被时隙不小心遗留在了座位上。应该是在来咨询室之前，时隙仍旧在实验室里继续着她的研究。": {
+  "ko": "상담이 끝나고 타임슬롯이 상담실을 나선 뒤, 인사부 오퍼레이터는 그녀가 실수로 자리에 두고 간 가느다란 교체용 통신 안테나 몇 개를 발견했다. 상담실에 오기 직전까지도 실험실에서 연구를 계속하고 있었던 모양이다.",
+  "en": "After the session ended and Timeslot left the counseling room, the HR Operator found several slender replacement communication antennas she had absentmindedly left behind on her seat. Evidently, right up until she came to the counseling room, Timeslot had still been in her laboratory, carrying on with her research.",
+  "ja": "カウンセリングが終わり、タイムスロットが相談室を後にした後、人事部のオペレーターは、彼女がうっかり席に置き忘れていった数本の細い交換用通信アンテナを見つけた。相談室に来る直前まで、タイムスロットは実験室で研究を続けていたのだろう。"
+ },
+ "正如心理咨询的结果显示的那样，时隙远比她看起来要更加坚强和坚定，就像这几根小小的天线，虽然很细小，看上去总是下一秒就要折断了的样子，但它却能连通城市与城市，说不定未来也能连通国家与国家。": {
+  "ko": "심리 상담 결과가 보여주듯, 타임슬롯은 겉보기보다 훨씬 더 강인하고 굳건하다. 마치 이 작은 안테나들처럼 — 너무나 가늘어서 금방이라도 부러질 것만 같지만, 도시와 도시를 이어주고, 어쩌면 훗날에는 나라와 나라마저 이어줄 수 있는 것이다.",
+  "en": "As the counseling results showed, Timeslot is far stronger and far more resolute than she appears — much like those tiny antennas: so slender that they always look about to snap in the next second, yet able to link city to city, and perhaps one day country to country as well.",
+  "ja": "カウンセリングの結果が示す通り、タイムスロットは見た目よりもはるかに強く、そして揺るぎない。ちょうどこの小さなアンテナのように――とても細く、今にも折れてしまいそうに見えても、都市と都市を繋ぎ、いつかは国と国さえ繋げるのかもしれない。"
+ },
+ "人事部小道消息1：纵贯红土公司新上任了一位工程总监，还是一位据他们老总说要“一月内革新远程通讯技术”的工程总监。": {
+  "ko": "인사부 소문 1: 적토종단 사에 새 엔지니어링 총괄이 부임했다. 그것도 그 회사 대표의 말에 따르면 “한 달 안에 원격 통신 기술을 혁신하겠다”는 엔지니어링 총괄이란다.",
+  "en": "HR Department rumor 1: The Trans-Redsoil Company has appointed a new Director of Engineering — one who, according to their CEO, will \"revolutionize long-range communication technology within a month.\"",
+  "ja": "人事部の噂1：紅土縦貫社に新しいエンジニアリング総監が就任した。しかも同社の社長いわく「一ヶ月以内に遠距離通信技術を刷新する」というエンジニアリング総監だそうだ。"
+ },
+ "人事部小道消息2：现在距纵贯红土公司老总发出豪言壮语已经过去了三个月。": {
+  "ko": "인사부 소문 2: 적토종단 사 대표가 그 호언장담을 한 지 어느새 석 달이 지났다.",
+  "en": "HR Department rumor 2: It has now been three months since the Trans-Redsoil Company's CEO made that bold declaration.",
+  "ja": "人事部の噂2：紅土縦貫社の社長が大言壮語を放ってから、すでに三ヶ月が過ぎた。"
+ },
+ "人事部小道消息3：纵贯红土公司工程总监被目击半夜结束加班，在路边萧索枯坐（后被证实不是结束，只是加班途中下楼透气）。": {
+  "ko": "인사부 소문 3: 적토종단 사 엔지니어링 총괄이 한밤중에 야근을 마치고 길가에 쓸쓸히 앉아 있는 모습이 목격됐다 (나중에 야근을 마친 것이 아니라, 야근 도중 바람을 쐬러 내려온 것으로 밝혀졌다).",
+  "en": "HR Department rumor 3: The Trans-Redsoil Company's Director of Engineering was sighted finishing his overtime in the dead of night, sitting forlornly at the roadside (later confirmed not to be finishing at all — he had merely come downstairs for some air in the middle of his overtime).",
+  "ja": "人事部の噂3：紅土縦貫社のエンジニアリング総監が、深夜に残業を終えて路傍でうら寂しく座り込んでいるのが目撃された（後に、終えたのではなく残業の途中で外の空気を吸いに降りてきただけだと判明した）。"
+ },
+ "在时隙干员从纵贯红土公司辞职之后，不论是小道消息还是他们后续放出的招聘启事，都能看出他们正面临着无法实现技术迭代的困难。而本来或许可以帮上他们忙的时隙干员，现在正在我们工程部的办公室里坐着，翻看着雷姆必拓最新的报纸，上面的头条新闻是《一人修好所有通讯塔的阿梅利亚，她究竟是怎么做到的？》。": {
+  "ko": "오퍼레이터 타임슬롯이 적토종단 사를 그만둔 뒤로는, 떠도는 소문에서든 그 뒤에 낸 채용 공고에서든, 그 회사가 기술 개선을 이뤄내지 못해 곤경에 처했음이 훤히 드러난다. 그리고 원래라면 그들을 도울 수도 있었을 오퍼레이터 타임슬롯은, 지금 우리 엔지니어링부 사무실에 앉아 림 빌리턴의 최신 신문을 넘겨보고 있다. 1면 머리기사의 제목은 《혼자서 모든 통신탑을 고쳐낸 아멜리아, 대체 어떻게 해낸 걸까?》이다.",
+  "en": "Since Operator Timeslot resigned from the Trans-Redsoil Company, both the rumors and the job postings they have since put out make it plain that they are stuck, unable to achieve any real technological iteration. And the very Operator Timeslot who might have been able to help them is right now sitting in our Engineering Department office, leafing through the latest Rim Billiton newspaper, whose front-page headline reads: \"Amelia, Who Repaired Every Communication Tower Single-Handedly — Just How Did She Do It?\"",
+  "ja": "オペレーター・タイムスロットが紅土縦貫社を辞職して以降、噂話にせよ、その後に出された求人広告にせよ、あの会社が技術の刷新を実現できずに苦しんでいることが見て取れる。そして本来なら彼らを助けられたかもしれないオペレーター・タイムスロットは今、我々エンジニアリング部のオフィスに座り、レム・ビリトンの最新の新聞をめくっている。その一面の見出しは『一人ですべての通信塔を直したアメリア、彼女はいったいどうやってやり遂げたのか？』だ。"
+ },
+ "新闻内容列举了不少诸如时机实力运气等等原因，不过让时隙干员来说的话，她能做到这件事，只是因为一个孩子小小的稚嫩的愿望。": {
+  "ko": "기사에서는 타이밍이나 실력, 운 같은 여러 이유를 늘어놓고 있지만, 오퍼레이터 타임슬롯 본인에게 묻는다면, 그녀가 그 일을 해낼 수 있었던 것은 그저 한 아이의 작고 여린 소원 때문이었다.",
+  "en": "The article lists any number of reasons — timing, ability, luck and so on — but if you were to ask Operator Timeslot herself, she managed it for one reason alone: a child's small, tender wish.",
+  "ja": "記事にはタイミングや実力、運といった様々な理由が並べられているが、オペレーター・タイムスロット本人に言わせれば、彼女がそれを成し遂げられたのは、ただ一人の子供の小さく幼い願いのためだった。"
+ },
+ "小时候的时隙每天和去矿场上班的母亲告别以后，要等整整一个白天和大半个晚上，才能和终于下班回家的母亲说她一整天的经历。而有的时候她太累了睡了过去，再醒来时她总是会忘记一两件要说的事。": {
+  "ko": "어린 시절의 타임슬롯은 매일 광산으로 일하러 가는 어머니를 배웅한 뒤, 꼬박 한나절과 밤의 태반을 기다려야만 겨우 퇴근해 돌아온 어머니에게 하루 동안 있었던 일을 이야기할 수 있었다. 그러다 너무 피곤해 잠들어 버린 날이면, 다시 깨어났을 때 늘 하려던 이야기 한두 가지를 잊어버리곤 했다.",
+  "en": "As a child, Timeslot would see her mother off to work at the mine each day, then wait a whole daytime and most of the night before she could finally tell her mother — home at last from her shift — everything that had happened that day. Sometimes she was too tired and fell asleep, and when she woke again she would always have forgotten one or two of the things she had meant to say.",
+  "ja": "幼い頃のタイムスロットは、毎日鉱山へ働きに行く母を見送った後、丸一日と夜の大半を待ってようやく、仕事を終えて帰ってきた母にその日一日の出来事を話すことができた。時には疲れ果てて眠ってしまい、目を覚ました時にはいつも、話すつもりだったことを一つ二つ忘れてしまうのだった。"
+ },
+ "等她上了学、后来又考上了大学，她要等更久，信使才能把她写的信送到矿区的母亲手上，而节俭的母亲的回信则需要更久才能送到她的手上。她总是在母亲病好了以后才知道母亲生了病，母亲也总是在她偷偷哭过了很久以后才能安慰独自在外的她。": {
+  "ko": "학교에 다니게 되고, 나중에 대학에 붙은 뒤로는 더 오래 기다려야 했다. 우편배달부가 그녀가 쓴 편지를 광산 지대의 어머니에게 전하기까지 오래 걸렸고, 절약이 몸에 밴 어머니의 답장이 그녀 손에 닿기까지는 그보다도 더 오래 걸렸다. 그녀는 늘 어머니의 병이 다 나은 뒤에야 어머니가 아팠다는 사실을 알았고, 어머니도 늘 그녀가 혼자 몰래 한참을 운 뒤에야 타지에 홀로 있는 딸을 위로할 수 있었다.",
+  "en": "Once she started school, and later got into university, the wait grew longer still: it took time for a courier to carry the letters she wrote all the way to her mother in the mining district, and her thrifty mother's replies took longer yet to reach her. She always learned her mother had been ill only after she had already recovered, and her mother could only comfort her — alone and far from home — long after she had cried in secret.",
+  "ja": "学校に通うようになり、やがて大学に合格してからは、さらに長く待たねばならなかった。配達人が彼女の書いた手紙を鉱区の母のもとへ届けるまでには時間がかかり、倹約家の母からの返事が彼女の手に届くまでには、さらに長い時間がかかった。彼女はいつも母の病が治った後になってから母が病気だったと知り、母もまた、彼女が一人でこっそり長いこと泣いた後になってようやく、遠く離れて一人でいる娘を慰めることができた。"
+ },
+ "“要是能更快一点把想说的话传递给妈妈就好了”，时隙就是怀揣着这样的愿望，从矿场到小镇，从小镇到大城市，从大城市再到工作的企业......可时间没有等待她。“我一定会出人头地，一定会成为妈妈的骄傲的。”——在二代远程通讯成功通过审核时，时隙在测试阶段给母亲的终端发送的信息。母亲已经不能再收到她的消息了，但她知道测试消息会作为初始数据一直保留在系统之中，这代表着自己努力的成果，也代表着给母亲的承诺永远也不会变，不论是十年、二十年，她都会像承诺的那样继续努力，努力成为一个更厉害的人，成为可以让母亲放心的女儿，成为一个骄傲。": {
+  "ko": "“하고 싶은 말을 조금만 더 빨리 엄마에게 전할 수 있다면 좋을 텐데.” 타임슬롯은 그런 소원을 품은 채 광산에서 작은 마을로, 작은 마을에서 대도시로, 대도시에서 다시 일자리를 얻은 기업으로 나아갔다…… 그러나 시간은 그녀를 기다려주지 않았다. “저는 꼭 성공해서, 반드시 엄마의 자랑이 될게요.” — 2세대 원격 통신이 심사를 통과했을 때, 타임슬롯이 테스트 단계에서 어머니의 단말기로 보낸 메시지다. 어머니는 이제 그녀의 소식을 받을 수 없다. 하지만 그녀는 테스트 메시지가 초기 데이터로서 시스템에 계속 남는다는 것을 알고 있었다. 그것은 자신이 노력해 얻은 성과이자, 어머니에게 한 약속이 영원히 변하지 않으리라는 증표였다. 10년이든 20년이든, 그녀는 약속한 그대로 계속 노력할 것이다. 더 대단한 사람이 되기 위해, 어머니가 안심할 수 있는 딸이 되기 위해, 하나의 자랑이 되기 위해.",
+  "en": "\"If only I could get the things I want to say to Mom just a little faster\" — carrying that wish, Timeslot went from the mine to a small town, from the town to a big city, and from the city to the company that hired her... but time did not wait for her. \"I'll definitely make something of myself. I'll definitely become Mom's pride.\" — the message Timeslot sent to her mother's terminal during the testing phase, when the second-generation long-range communication system passed review. Her mother can no longer receive her messages, but she knows that test messages remain in the system forever as its initial data: proof of what her efforts achieved, and proof that her promise to her mother will never change. Ten years, twenty years — she will keep working just as she promised, working to become someone greater, a daughter her mother can rest easy about, a source of pride.",
+  "ja": "「言いたいことを、もう少しだけ早くお母さんに伝えられたらいいのに」――タイムスロットはそんな願いを抱いて、鉱山から小さな町へ、町から大都市へ、大都市から勤め先の企業へと進んでいった……だが時間は彼女を待ってはくれなかった。「私は必ず立派になって、きっとお母さんの誇りになるからね」――第二世代遠距離通信が審査を通過した際、タイムスロットがテスト段階で母の端末に送信したメッセージである。母はもう彼女の連絡を受け取ることはできない。それでも彼女は、テストメッセージが初期データとしてシステムの中にずっと残り続けることを知っていた。それは自分の努力の成果であり、母への約束が永遠に変わらないことの証でもある。十年でも、二十年でも、彼女は約束した通り努力を続ける。もっとすごい人になるために、母が安心できる娘になるために、一つの誇りになるために。"
+ },
+ "“妈妈，你看，我做到了......报纸上登我的名字了！”编辑好消息，犹豫了很久之后，时隙最终摁下了发送键，发出了这条消息。": {
+  "ko": "“엄마, 봐요, 저 해냈어요…… 신문에 제 이름이 실렸어요!” 메시지를 다 쓴 뒤 한참을 망설이다가, 타임슬롯은 결국 전송 버튼을 눌러 이 메시지를 보냈다.",
+  "en": "\"Mom, look, I did it... my name's in the newspaper!\" Having finished composing the message, and after hesitating for a long while, Timeslot finally pressed send.",
+  "ja": "「お母さん、見て、私やったよ……新聞に私の名前が載ったの！」メッセージを書き終え、長いこと迷った末に、タイムスロットはついに送信ボタンを押し、このメッセージを送った。"
+ },
+ "提到时隙干员在来到罗德岛以后的工作，除开她为罗德岛远程通讯做出的贡献，还有一件不得不提的事情就是她和嘉辛塔干员的创业。不过，时隙最近为此很是苦恼，她们两个人组成的“初创团队”遇到了源源不断的问题：": {
+  "ko": "오퍼레이터 타임슬롯이 로도스 아일랜드에 온 뒤의 활동을 이야기하자면, 로도스 아일랜드의 원격 통신에 기여한 부분 외에 빼놓을 수 없는 것이 바로 오퍼레이터 자신타와 함께한 창업이다. 다만 타임슬롯은 최근 그 일로 무척 골머리를 앓고 있다. 두 사람이 꾸린 “스타트업 팀”이 끊임없이 문제에 부딪히고 있기 때문이다.",
+  "en": "Speaking of Operator Timeslot's work since arriving at Rhodes Island, besides her contributions to Rhodes Island's long-range communications, there is one thing that simply must be mentioned: the business she has started with Operator Jacinta. Lately, though, it has been causing her no end of grief — the \"startup team\" the two of them formed keeps running into one problem after another:",
+  "ja": "オペレーター・タイムスロットがロドスに来てからの仕事について語るなら、ロドスの遠距離通信への貢献のほかに、どうしても触れておかねばならないことがある。オペレーター・ジャシンタとの起業だ。ただし、タイムスロットは最近これでひどく頭を悩ませている。二人で結成した「スタートアップチーム」は、次から次へと問題にぶつかっているのだ。"
+ },
+ "比如第一站拉特兰，虽然距离雷姆必拓很近，但这里的风土人情和雷姆必拓大不相同。为了让拉特兰人听一下她们的企划，两人先是不间断地品尝了八十多种甜点拉近关系，又绞尽脑汁回答了“远程通讯要是能和共感结合一下就更好了”的问题，最终得到了枢机的“会再联络”的答复。又比如为了和维多利亚的贵族接洽，两人苦学了好几天社交礼仪，更别提在萨尔贡她们还没有说两句就被拉去观摩新一轮的族长选拔、米诺斯人坚称远程通讯还不如他们长跑送信更快、哥伦比亚的企业言辞犀利地指出两人的团队“根本不具备合作的资质”......": {
+  "ko": "예를 들어 첫 행선지인 라테라노는 림 빌리턴과 거리는 가깝지만, 이곳의 풍토와 인심은 림 빌리턴과 사뭇 달랐다. 라테라노 사람들에게 기획안을 들려주기 위해 두 사람은 우선 여든 종이 넘는 디저트를 쉬지 않고 맛보며 관계를 다졌고, “원격 통신을 공감과 결합할 수 있다면 더 좋을 텐데”라는 질문에 머리를 쥐어짜 답한 끝에, 추기경에게서 “다시 연락드리겠습니다”라는 대답을 받아냈다. 또 빅토리아의 귀족과 접촉하기 위해 두 사람은 며칠 동안 사교 예절을 죽어라 공부해야 했다. 사르곤에서는 두어 마디 꺼내기도 전에 새로운 족장 선발전 참관에 끌려갔고, 미노스인들은 원격 통신보다 자기들이 달려서 편지를 전하는 편이 더 빠르다고 우겼으며, 컬럼비아의 기업은 두 사람의 팀이 “애초에 협력할 자격조차 갖추지 못했다”라고 날카롭게 지적했다는 이야기는 말할 것도 없다……",
+  "en": "Take their first stop, Laterano: close to Rim Billiton though it is, the local customs are nothing like Rim Billiton's. To get the Laterans to hear out their proposal, the pair first sampled more than eighty kinds of dessert without pause to warm up the relationship, then racked their brains to answer the question, \"Wouldn't long-range communication be even better if it could be combined with empathy?\" — only to receive a Cardinal's \"We'll be in touch.\" Or take their attempt to approach the Victorian nobility, for which the two spent several grueling days studying social etiquette. Never mind that in Sargon they had barely said two words before being hauled off to observe a new round of chieftain selection; that the Minoans insisted their own long-distance runners delivered letters faster than any long-range communication; or that a Columbian corporation pointed out in cutting terms that their team \"is simply not qualified to cooperate with us\"...",
+  "ja": "例えば最初の訪問先ラテラーノは、レム・ビリトンから近いとはいえ、風土も人情もレム・ビリトンとは大きく異なっていた。ラテラーノの人々に企画を聞いてもらうため、二人はまず八十種類以上のスイーツをひたすら味わって距離を縮め、さらに「遠距離通信が共感と結び付けられればもっといいのに」という問いに頭を絞って答え、最終的に枢機卿から「また連絡します」という返事を得た。またヴィクトリアの貴族と接触するために、二人は何日もかけて社交マナーを必死に学んだ。サルゴンでは二言三言も話さないうちに新たな族長選抜の見学に連れて行かれ、ミノスの人々は遠距離通信よりも自分たちが走って手紙を届ける方が速いと言い張り、クルビアの企業は二人のチームには「そもそも協力する資格がない」と辛辣に指摘した……などは言うまでもない。"
+ },
+ "在四处碰壁后，时隙在工程部偷偷抹眼泪苦恼应该怎样推进创业，被路过的可露希尔看到，塞给了她一本据说是呕心沥血亲自编写的大作《卖货方法论》。时隙从此开始不论吃饭还是休息都捧着这本册子不断翻阅，甚至开始拜托干员联络上拜松试图获取创业经验，诗怀雅据说也被她咨询过多次......": {
+  "ko": "가는 곳마다 벽에 부딪힌 뒤, 타임슬롯이 엔지니어링부에서 몰래 눈물을 훔치며 창업을 어떻게 밀고 나가야 할지 고민하고 있을 때, 지나가던 클로저가 그 모습을 보고는 심혈을 기울여 직접 집필했다는 대작 《물건 파는 방법론》 한 권을 손에 쥐여주었다. 그 뒤로 타임슬롯은 밥을 먹을 때도 쉴 때도 이 책자를 손에서 놓지 않고 계속 들여다봤고, 심지어 오퍼레이터들에게 부탁해 바이슨과 연락을 닿게 해 창업 경험을 얻으려 했으며, 스와이어도 여러 차례 상담 요청을 받았다는 소문이다……",
+  "en": "After running into walls everywhere they went, Timeslot was in the Engineering Department, secretly wiping away tears and agonizing over how to push the venture forward, when Closure happened to walk past. Closure saw her and pressed into her hands a copy of her own magnum opus — supposedly written personally, with much painstaking effort — A Methodology for Selling Things. From then on Timeslot kept the booklet with her at meals and at rest, poring over it endlessly; she even asked other Operators to put her in touch with Bison in hopes of gleaning some entrepreneurial experience, and rumor has it that Swire, too, has been consulted by her more than once...",
+  "ja": "行く先々で壁にぶつかった末、タイムスロットがエンジニアリング部でこっそり涙を拭いながら起業をどう進めるべきか悩んでいたところを、通りかかったクロージャに見つかり、心血を注いで自ら書き上げたという大作『物を売る方法論』を一冊押し付けられた。それ以来タイムスロットは、食事の時も休憩の時もこの冊子を手にして読みふけるようになり、さらにはオペレーターに頼んでバイソンと連絡を取り、起業の経験を得ようとまでした。スワイヤーも何度も相談を受けたという……"
+ },
+ "在不懈地努力之后，时隙干员颤颤巍巍地拿着自己和嘉辛塔准备了很多天的方案开始试讲，但比内容先出现的是她眼中的泪水。不过据路过试讲会的电弧干员说，时隙干员写的内容其实已经很不错了，听众们也在讨论过后，最终决定请诗怀雅在空闲的时间对时隙干员展开特训，力求让她拥有足以说服对方的气势。": {
+  "ko": "부단한 노력 끝에, 오퍼레이터 타임슬롯은 자신타와 며칠에 걸쳐 준비한 기획안을 덜덜 떨리는 손에 들고 시연 발표를 시작했지만, 내용보다 먼저 나온 것은 그녀의 눈에 맺힌 눈물이었다. 다만 시연 발표회 앞을 지나가던 오퍼레이터 라이디언의 말에 따르면, 타임슬롯이 쓴 내용 자체는 이미 상당히 훌륭했다고 한다. 청중들도 논의 끝에 결국 스와이어에게 부탁해 짬이 날 때 오퍼레이터 타임슬롯을 특훈시키기로 했다. 상대를 설득할 만한 기백을 갖추게 하기 위해서다.",
+  "en": "After tireless effort, Operator Timeslot took up the proposal she and Jacinta had spent many days preparing and, trembling all over, began her practice presentation — but what appeared before any of the content were the tears in her eyes. According to Operator Raidian, who happened to pass by the rehearsal, the material Timeslot had written was in fact already quite good. After some discussion, the audience finally decided to ask Swire to put Operator Timeslot through special training in her free time, in the hope of giving her enough presence to win the other side over.",
+  "ja": "たゆまぬ努力の末、オペレーター・タイムスロットは、ジャシンタと何日もかけて準備した企画書を震える手に持ってプレゼンの練習を始めたが、内容よりも先に現れたのは彼女の目に浮かんだ涙だった。ただし、練習会の前を通りかかったオペレーター・レイディアンによれば、タイムスロットが書いた内容自体はすでにかなり良いものだったという。聴衆たちも議論の末、最終的にスワイヤーに頼んで、空いた時間にオペレーター・タイムスロットを特訓してもらうことを決めた。相手を説得できるだけの気迫を身につけさせるためだ。"
+ },
+ "虽然现在看上去非常不顺利，但或许有一天，我们又会多出一位大名鼎鼎的企业家也说不定呢！": {
+  "ko": "지금은 무척 순탄치 않아 보이지만, 어쩌면 언젠가 우리 곁에 이름난 기업가가 한 명 더 늘어날지도 모른다!",
+  "en": "It may all look terribly rough going right now, but who knows — perhaps one day we will have yet another renowned entrepreneur among us!",
+  "ja": "今のところは非常に前途多難に見えるが、もしかしたらいつの日か、我々のもとにもう一人、名だたる起業家が誕生するかもしれない！"
+ },
+ "时隙仔细想了想，似乎身边这只小羽兽已经陪了自己很多年。": {
+  "ko": "타임슬롯이 곰곰이 되짚어 보니, 곁에 있는 이 작은 깃털수는 어느새 아주 오랜 세월을 함께해 온 듯했다.",
+  "en": "Thinking it over carefully, Timeslot realized that this little feathered beast at her side had apparently been keeping her company for a great many years.",
+  "ja": "タイムスロットがよくよく思い返してみると、そばにいるこの小さな羽獣は、いつの間にか何年も自分に寄り添ってくれていたようだった。"
+ },
+ "最开始是她小时候摔了一跤，正坐在地上哭，这只小羽兽也不太会飞，在空中被气流吹翻，正好掉到了她的头发上。也许是觉得头发的触感很不错，小羽兽就在这里安然地睡下了。当时时隙又哭了几个小时，最后天黑了才止住眼泪，一边安慰自己“阿梅利亚，你不能再没出息地哭了”一边回家。小羽兽也突然开了窍，在学会飞之前先学会了学人说话：“唧，唧唧！......没出息唧唧！”": {
+  "ko": "시작은 어린 시절, 넘어져서 바닥에 주저앉아 울고 있을 때였다. 아직 나는 것이 서툴던 이 작은 깃털수가 공중에서 기류에 뒤집혀 마침 그녀의 머리 위로 떨어진 것이다. 머리카락의 감촉이 마음에 들었는지, 작은 깃털수는 그대로 그 자리에서 편안히 잠들어 버렸다. 그날 타임슬롯은 몇 시간을 더 울다가 날이 저물어서야 겨우 눈물을 그쳤고, “아멜리아, 더 이상 한심하게 울면 안 돼” 하고 스스로를 다독이며 집으로 돌아갔다. 작은 깃털수도 그때 문득 깨우쳤는지, 나는 법을 익히기도 전에 사람 말 흉내부터 배웠다. “짹, 짹짹! ……한심해 짹짹!”",
+  "en": "It began when she fell over as a child and sat on the ground crying. The little feathered beast, not yet much of a flier, was tipped over by a gust of air and landed right on her hair. Perhaps because her hair felt rather nice, it simply settled in and fell peacefully asleep there. Timeslot cried for several more hours that day, stopping only after dark, and walked home consoling herself: \"Amelia, you can't go on crying so pathetically.\" Something clicked for the little feathered beast just then, too — before it learned to fly, it learned to imitate human speech: \"Cheep, cheep cheep! ...Pathetic, cheep cheep!\"",
+  "ja": "始まりは、彼女が幼い頃に転んで地面に座り込んで泣いていた時のことだ。まだ飛ぶのが上手ではなかったこの小さな羽獣は、空中で気流にあおられてひっくり返り、ちょうど彼女の髪の上に落ちてきた。髪の感触が心地よかったのか、小さな羽獣はそのままそこで安らかに眠ってしまった。その日タイムスロットはさらに何時間も泣き続け、日が暮れてようやく涙を止め、「アメリア、これ以上情けなく泣いちゃだめ」と自分を慰めながら家に帰った。小さな羽獣も突然何かに目覚めたのか、飛び方を覚えるより先に人の言葉を真似することを覚えた。「チチ、チチチ！……情けないチチ！」"
+ },
+ "时隙对此当然不太开心，但有这样一只小动物陪在自己身边总比一个人硬撑要强——前提是羽兽不要总在她流眼泪的时候冒出来一句“没出息”。": {
+  "ko": "타임슬롯은 당연히 그게 썩 유쾌하지 않았지만, 그래도 이런 작은 동물이 곁에 있어 주는 편이 혼자 이를 악물고 버티는 것보다는 나았다 — 깃털수가 그녀가 눈물을 흘릴 때마다 “한심해” 한마디를 툭 던지지만 않는다면 말이다.",
+  "en": "Timeslot was of course none too pleased about that, but having a little creature at her side still beat gritting her teeth alone — provided the feathered beast did not pipe up with \"Pathetic\" every single time she cried.",
+  "ja": "タイムスロットはもちろんそれが面白くなかったが、それでもこんな小さな動物がそばにいてくれる方が、一人で歯を食いしばって耐えるよりはずっとましだった――ただし、羽獣が彼女の涙のたびに「情けない」と口を挟まなければ、の話だが。"
+ },
+ "后来她去外面上学，本以为坐上运载车的时候这只小羽兽会被吓跑，但在学校宿舍打开包裹时，时隙看到它正翻着肚皮在呼呼大睡。在她大学毕业，校长颁发毕业证书时，小羽兽又不知从哪里冒了出来，炫耀了一下它最近刚学会的新词：“唧，真厉害唧唧！”": {
+  "ko": "훗날 그녀가 타지로 공부하러 갈 때, 수송차에 오르면 이 작은 깃털수도 놀라 달아날 줄 알았다. 그런데 학교 기숙사에서 짐을 풀어 보니, 녀석은 배를 뒤집은 채 쿨쿨 자고 있었다. 대학 졸업식에서 총장이 졸업장을 건넬 때도 작은 깃털수는 어디선가 불쑥 나타나, 최근에 막 배운 새 단어를 뽐냈다. “짹, 대단해 짹짹!”",
+  "en": "Later, when she left home to study, she assumed the little feathered beast would be frightened off the moment she boarded the transport. Yet when she opened her luggage in the school dormitory, Timeslot found it lying belly-up, fast asleep. And at her university graduation, as the chancellor handed over her diploma, the little feathered beast popped up out of nowhere again to show off the new phrase it had only just learned: \"Cheep, amazing, cheep cheep!\"",
+  "ja": "その後、彼女が外の学校へ進学した際、輸送車に乗ればこの小さな羽獣も驚いて逃げてしまうだろうと思っていた。ところが学校の寮で荷物を開けると、腹を上にしてぐうぐう眠っている姿があった。大学を卒業し、学長が卒業証書を手渡した時にも、小さな羽獣はどこからともなく現れ、最近覚えたばかりの新しい言葉を得意げに披露した。「チチ、すごいチチ！」"
+ },
+ "不过这句话小羽兽只说过这一次，时隙甚至怀疑那是不是其实是自己的一次幻听。": {
+  "ko": "다만 이 말을 작은 깃털수가 한 것은 그때 단 한 번뿐이라, 타임슬롯은 혹시 자기가 잘못 들은 것은 아닐까 의심하기까지 했다.",
+  "en": "It said that only that once, though — so much so that Timeslot half wondered whether she had simply imagined hearing it.",
+  "ja": "ただしこの言葉を小さな羽獣が口にしたのはその一度きりで、タイムスロットは自分の空耳だったのではないかと疑ったほどだった。"
+ },
+ "再到后来，不论是加班在公司过夜，还是回到最便宜的晾胡萝卜干的小出租屋里休息，这只小羽兽总是扑闪着翅膀，在她的头发里挑挑拣拣弄出一个窝，再舒舒服服地睡进去。哪怕她那天从公司偷跑出去奔波维修，哪怕她跟着安洁莉娜她们一起冲进沙暴，这只小羽兽也一直跟在她的身旁。只不过那段时间它不知是怕生还是更体贴了，很少在时隙哭的时候乱说话——也可能是那阵子让她哭的理由和平时不一样吧。": {
+  "ko": "그 뒤로도, 야근하느라 회사에서 밤을 새울 때든, 말린 당근을 널어놓은 제일 싼 셋방으로 돌아와 쉴 때든, 이 작은 깃털수는 늘 날개를 파닥이며 그녀의 머리카락을 이리저리 헤집어 둥지를 만들고는 편안하게 파고들어 잠들었다. 그날 회사에서 몰래 빠져나와 수리하러 뛰어다닐 때도, 안젤리나 일행과 함께 모래폭풍 속으로 뛰어들 때도, 이 작은 깃털수는 줄곧 그녀 곁을 지켰다. 다만 그 시기에는 낯을 가린 건지 더 배려심이 생긴 건지, 타임슬롯이 울 때 함부로 입을 여는 일이 드물었다 — 어쩌면 그 무렵 그녀를 울게 한 이유가 평소와는 달랐기 때문일지도 모른다.",
+  "en": "Later still — whether she was working overtime through the night at the office or resting back in the cheapest little rented room, the one with carrot strips hung up to dry — the little feathered beast would always come fluttering in, root through her hair to pick out a nest for itself, and burrow in for a comfortable sleep. Even on the day she slipped out of the office to run around making repairs, even when she charged into the sandstorm alongside Angelina and the others, the little feathered beast stayed right beside her. Only, during that stretch of time — whether out of shyness or newfound tact — it rarely spoke out of turn when Timeslot cried. Or perhaps it was simply that the reasons for her tears back then were not the usual ones.",
+  "ja": "さらに後になっても、残業で会社に泊まる時も、干し人参を吊るした一番安い狭い借家に帰って休む時も、この小さな羽獣はいつも羽をばたつかせ、彼女の髪の中をあれこれ選り分けて巣を作り、そこへ気持ちよさそうに潜り込んで眠った。会社をこっそり抜け出して修理に走り回った日も、アンジェリーナたちと一緒に砂嵐へ飛び込んだ時も、この小さな羽獣はずっと彼女のそばに付いていた。ただしその時期は、人見知りだったのか、それとも思いやりが増したのか、タイムスロットが泣いている時に余計な口を利くことはめったになかった――もしかすると、あの頃彼女を泣かせた理由が普段とは違っていたからかもしれない。"
+ },
+ "在来罗德岛时，小羽兽当然也跟了来。面对看着小羽兽吃饭喝水目瞪口呆的安洁莉娜几人，时隙终于有时间好好解释，这个之前被她们当成羽兽形态重装“小飞虫”的小东西竟然是一只活的羽兽。": {
+  "ko": "로도스 아일랜드에 올 때도 작은 깃털수는 당연히 따라왔다. 녀석이 밥을 먹고 물을 마시는 모습에 어안이 벙벙해진 안젤리나 일행 앞에서, 타임슬롯은 그제야 제대로 설명할 시간을 얻었다. 그동안 다들 깃털수 형태의 중장형 “꼬마 날벌레”라고만 여겼던 이 작은 녀석이, 알고 보니 살아 있는 깃털수였다는 것을.",
+  "en": "The little feathered beast naturally came along when she came to Rhodes Island. Faced with Angelina and the others staring wide-eyed as it ate and drank, Timeslot finally had a chance to explain properly: this little thing they had all taken for a heavy-duty, feathered-beast-shaped \"Little Flybug\" was in fact a living feathered beast.",
+  "ja": "ロドスへ来る時も、小さな羽獣はもちろん付いてきた。餌を食べ水を飲む姿に目を丸くするアンジェリーナたちを前に、タイムスロットはようやくきちんと説明する時間を得た。これまで羽獣型の重装型「ちび羽虫」だと思われていたこの小さな生き物が、なんと生きた羽獣だったのだ、と。"
+ },
+ "不过最近时隙觉得，小羽兽似乎很少说“没出息”了，可能是因为她最近已经很少流眼泪了，可能是因为她脸上笑容又多了些。那么，什么时候小羽兽会再对她说一句“真厉害”呢？": {
+  "ko": "다만 요즘 들어 타임슬롯은 작은 깃털수가 “한심해”라고 말하는 일이 부쩍 줄었다고 느낀다. 요즘 그녀가 눈물을 흘리는 일이 줄어서일 수도, 얼굴에 웃음이 조금 더 늘어서일 수도 있다. 그렇다면 작은 깃털수는 언제쯤 그녀에게 다시 “대단해”라고 말해 줄까?",
+  "en": "Lately, though, Timeslot feels that the little feathered beast hardly ever says \"Pathetic\" anymore — perhaps because she seldom cries these days, perhaps because there are a few more smiles on her face. So when will it say \"Amazing\" to her again?",
+  "ja": "ただ最近、タイムスロットは小さな羽獣が「情けない」と言うことがめっきり減ったように感じている。近頃はあまり涙を流さなくなったからかもしれないし、顔に笑顔が増えたからかもしれない。では、小さな羽獣がもう一度彼女に「すごい」と言ってくれるのは、いつになるだろうか？"
+ },
+ "会是明天吗？时隙有些期待。": {
+  "ko": "내일일까? 타임슬롯은 조금 기대하고 있다.",
+  "en": "Will it be tomorrow? Timeslot finds herself looking forward to it.",
+  "ja": "明日だろうか？タイムスロットは少しだけ期待している。"
+ },
+ "在嘉辛塔将她的小伞作为武器并在测试中获得了不错的成绩之后，闻讯而来的工程部干员对她的伞展开了一番研究。": {
+  "ko": "자신타가 자신의 작은 우산을 무기로 삼아 테스트에서 제법 좋은 성적을 거둔 뒤, 소식을 듣고 찾아온 엔지니어링부 오퍼레이터들이 그녀의 우산을 두고 한바탕 연구를 벌였다.",
+  "en": "After Jacinta used her little parasol as a weapon and posted respectable scores in testing, Engineering Department operators who caught wind of it came by to give the parasol a thorough study.",
+  "ja": "ジャシンタが自らの小さな傘を武器として用い、テストで悪くない成績を収めた後、その話を聞きつけたエンジニア部のオペレーターたちが、彼女の傘について一通りの研究を行った。"
+ },
+ "这柄由她父母专门找人定制的小伞远比它看起来更加实用：内含的组件能在伞柄上的按钮被按下以后自动发射并攻击敌人，伞骨和伞面也经过特殊工序打造从而相当强韧，甚至隐秘处还搭载了可以直接联络保镖团队的通讯器，足以保护嘉辛塔的安全......除此之外，这把伞的用料还考虑了嘉辛塔的体力，非常轻便。": {
+  "ko": "그녀의 부모가 특별히 사람을 구해 맞춤 제작한 이 우산은 겉보기보다 훨씬 실용적이다. 내장된 부품은 손잡이의 버튼을 누르면 자동으로 발사되어 적을 공격하고, 우산살과 우산 천 역시 특수 공정을 거쳐 상당히 튼튼하게 만들어졌으며, 심지어 눈에 띄지 않는 곳에는 경호팀과 곧바로 연락할 수 있는 통신기까지 탑재되어 자신타의 안전을 지키기에 충분하다…… 그뿐만 아니라 이 우산은 자신타의 체력까지 고려해 소재를 골라, 매우 가볍다.",
+  "en": "The parasol, custom-made for her by her parents, is far more practical than it looks: the components inside launch automatically to attack enemies when the button on the handle is pressed; the ribs and canopy were forged through a special process that makes them remarkably tough; there is even a communicator tucked away out of sight that connects directly to her bodyguard team, more than enough to keep Jacinta safe... On top of that, the materials were chosen with Jacinta's stamina in mind, making it extremely light.",
+  "ja": "彼女の両親がわざわざ職人に特注させたというこの傘は、見た目よりはるかに実用的だ。内蔵された部品は柄のボタンを押すと自動的に射出されて敵を攻撃し、傘の骨と生地も特殊な工程で作られており相当に頑丈。さらに目立たない場所には、ボディーガードチームと直接連絡が取れる通信機まで搭載されており、ジャシンタの安全を守るには十分だ……。それだけでなく、この傘は素材の選定にあたってジャシンタの体力まで考慮されており、非常に軽い。"
+ },
+ "在干员们对这把伞啧啧称奇时，嘉辛塔又不知从伞的哪里抽出了一把小折扇扇了扇凉——连这个需求也想到了吗？": {
+  "ko": "오퍼레이터들이 이 우산에 연신 감탄하고 있을 때, 자신타는 우산의 어디에선가 작은 접이부채를 꺼내 부채질을 했다——이런 수요까지 고려한 것인가?",
+  "en": "While the operators were still marveling at the parasol, Jacinta pulled a small folding fan out of somewhere inside it and fanned herself—so it accounts for that need too?",
+  "ja": "オペレーターたちがこの傘に感嘆の声を上げていると、ジャシンタは傘のどこからか小さな扇子を取り出して涼をとった——そんな需要まで想定していたのか？"
+ },
+ "雷姆必拓知名矿业大亨坎贝尔夫妇的千金，前来罗德岛接受矿石病治疗。根据本人意愿，现作为先锋干员为罗德岛提供帮助。": {
+  "ko": "림 빌리턴의 저명한 광업계 거물 캠벨 부부의 영애로, 광석병 치료를 받기 위해 로도스 아일랜드를 찾아왔다. 본인의 의사에 따라, 현재 뱅가드 오퍼레이터로서 로도스 아일랜드에 도움을 제공하고 있다.",
+  "en": "The daughter of the Campbells, renowned mining magnates of Rim Billiton, who came to Rhodes Island for Oripathy treatment. At her own request, she now assists Rhodes Island as a Vanguard Operator.",
+  "ja": "レム・ビリトンの著名な鉱業王キャンベル夫妻の令嬢。鉱石病の治療を受けるためロドスを訪れた。本人の希望により、現在は先鋒オペレーターとしてロドスに協力している。"
+ },
+ "干员嘉辛塔体表有少量源石结晶分布。": {
+  "ko": "오퍼레이터 자신타의 체표면에는 소량의 오리지늄 결정이 분포해 있다.",
+  "en": "Small amounts of Originium crystals can be observed on the surface of Operator Jacinta's body.",
+  "ja": "体表に少量の源石結晶の分布が見られる。"
+ },
+ "干员嘉辛塔的病情在近几年得到了良好的控制，但情况仍旧不容乐观。": {
+  "ko": "오퍼레이터 자신타의 병세는 최근 몇 년 사이 잘 억제되어 왔으나, 상황은 여전히 낙관하기 어렵다.",
+  "en": "Operator Jacinta's condition has been kept well under control these past few years, but her prognosis remains far from optimistic.",
+  "ja": "オペレーター・ジャシンタの病状はここ数年良好に抑えられているが、状況は依然として楽観できない。"
+ },
+ "经过一系列的体检和测试，医疗部干员发现嘉辛塔干员的病情和各项身体情况与她带来的厚厚一沓病例报告中的没有很大出入，但肌肉含量和心肺功能等几项指标不知为何有显著的提升。": {
+  "ko": "일련의 건강 검진과 테스트를 거친 결과, 의료부 오퍼레이터들은 자신타 오퍼레이터의 병세와 각종 신체 상태가 그녀가 가져온 두툼한 진료 기록 뭉치의 내용과 크게 다르지 않다는 사실을 확인했다. 다만 근육량과 심폐 기능 등 몇몇 지표는 어째서인지 눈에 띄게 향상되어 있었다.",
+  "en": "After a series of physicals and tests, Medical Department operators found that Operator Jacinta's condition and overall physical state differed little from the thick stack of medical reports she had brought with her—though a few indicators, such as muscle mass and cardiopulmonary function, had improved markedly for reasons unknown.",
+  "ja": "一連の健康診断とテストを経て、医療部のオペレーターたちは、ジャシンタの病状や各種身体状況が、彼女の持参した分厚いカルテの束の記載と大きな差はないことを確認した。ただし、筋肉量や心肺機能といったいくつかの指標が、なぜか著しく向上していた。"
+ },
+ "医疗部干员本想咨询她究竟是做了哪些训练才能在几个月之内有这样的效果，好将其推广给全体病人，但得到的答案是“两次穿越了雷姆必拓”。": {
+  "ko": "의료부 오퍼레이터는 도대체 어떤 훈련을 했기에 몇 달 만에 이런 효과를 봤는지 물어 전체 환자에게 보급하려 했으나, 돌아온 대답은 “림 빌리턴을 두 번 횡단했어요”였다.",
+  "en": "The Medical Department operators had meant to ask what training could produce such results in just a few months, hoping to recommend it to every patient—but the answer they received was, “I crossed Rim Billiton. Twice.”",
+  "ja": "医療部のオペレーターは、数ヶ月でこれほどの効果を出せた訓練内容を聞き出し、全患者に広めようと考えていたが、返ってきた答えは「レム・ビリトンを二度横断しました」だった。"
+ },
+ "高挑、文静、温柔，不论在什么时候，裙摆和衣角永远洁白、一丝不乱......这些通常都是嘉辛塔干员给大家留下的第一印象，大家也一直和嘉辛塔维持着礼貌友好的社交关系，担心过分外向热情可能会冒犯或者吓到她，直到那一天：": {
+  "ko": "훤칠하고, 조용하고, 상냥하며, 언제 어느 때든 치맛자락과 옷깃이 늘 새하얗고 흐트러짐 하나 없다…… 보통 자신타 오퍼레이터가 모두에게 남기는 첫인상은 이런 것들이다. 다들 지나치게 외향적이고 열정적으로 굴었다간 그녀에게 실례가 되거나 그녀를 놀라게 할까 걱정해, 자신타와 예의 바르고 우호적인 관계를 유지해 왔다. 그날이 오기 전까지는.",
+  "en": "Tall, quiet, gentle, her hem and collar spotlessly white and never out of place no matter the hour... Such is usually the first impression Operator Jacinta leaves on everyone, and everyone has kept things polite and friendly with her, worried that too much enthusiasm might offend or startle her. Until that day:",
+  "ja": "背が高く、物静かで、優しく、いついかなる時もスカートの裾も襟元も真っ白で、乱れ一つない……これらは普段、ジャシンタが皆に与える第一印象である。誰もが、あまり外向的で情熱的に接すると彼女を不快にさせたり驚かせたりするのではと心配し、彼女とは礼儀正しく友好的な距離を保ってきた——あの日までは。"
+ },
+ "为了丰富病人们的生活，医疗部决定在花园中举办一场歌会，不论是不是病人都可以报名登台演唱自己喜欢的歌曲，一时之间大家踊跃报名，嘉辛塔也邀请了珊比和自己一起演唱一首雷姆必拓歌谣《哦呜哦！》。轮到两人登台的时候已经快到傍晚了，众人有些意兴阑珊，不过她们二人还是兴致勃勃地自我介绍后立刻敞开歌喉——": {
+  "ko": "환자들의 생활을 풍요롭게 하고자, 의료부는 정원에서 노래 모임을 열기로 했다. 환자든 아니든 누구나 신청해 무대에 올라 좋아하는 노래를 부를 수 있었기에 순식간에 신청자가 몰렸고, 자신타도 썸피를 초대해 함께 림 빌리턴 민요 《오우오!》를 부르기로 했다. 두 사람의 차례가 되었을 때는 이미 저녁 무렵이라 사람들의 흥이 다소 식어 있었지만, 두 사람은 그래도 신이 나서 자기소개를 마치자마자 곧바로 목청을 열었다——",
+  "en": "To brighten up the patients' lives, the Medical Department decided to hold a singing event in the garden, where anyone—patient or not—could sign up to take the stage and sing a favorite song. Sign-ups poured in, and Jacinta invited Thumpy to join her for the Rim Billiton folk song “Oh Woo Oh!” By the time their turn came it was nearly evening and the crowd's spirits had flagged a little, but the two of them still introduced themselves in high spirits and immediately let their voices loose—",
+  "ja": "患者たちの生活を豊かにするため、医療部は庭園で歌会を開くことにした。患者かどうかを問わず誰でも申し込んで舞台に立ち、好きな歌を歌える——たちまち申し込みが殺到し、ジャシンタもサンビを誘って、二人でレム・ビリトンの歌謡「オーウーオー！」を歌うことにした。二人の出番が回ってきた頃にはもう夕方近くで、皆いささか興が冷めていたが、それでも二人は意気揚々と自己紹介を済ませるや否や、高らかに歌い始めた——"
+ },
+ "据那天远在另一个地块的工程部干员所说，那时她正想要赶快测试完器械的稳定性好去吃晚饭，却不知为何水平仪一直在颤动，在她百思不得其解最终决定打开窗户透透气的时候，一阵极具穿透性的歌声闯进了她的耳朵——“卡特斯的耳朵~不怕被风吹歪~哦呜哦——！♪”——她终于明白了为何自己的水平仪在颤动，也莫名地被歌声所感染，决定去现场看看。": {
+  "ko": "그날 한참 떨어진 다른 구역에 있던 엔지니어링부 오퍼레이터의 말에 따르면, 그때 그녀는 얼른 기계 안정성 테스트를 끝내고 저녁을 먹으러 갈 생각이었는데 어째서인지 수평계가 계속 떨렸다고 한다. 아무리 생각해도 영문을 알 수 없어 결국 창문을 열고 바람이나 쐬려던 순간, 관통력이 대단한 노랫소리가 그녀의 귀로 밀고 들어왔다——“카우투스의 귀는~ 바람에 휘어도 겁 안 나~ 오우오——! ♪”——그제야 그녀는 자신의 수평계가 왜 떨렸는지 깨달았고, 어쩐지 그 노래에 마음이 동해 현장을 보러 가기로 했다.",
+  "en": "According to an Engineering Department operator who was in another block entirely that day, she had been hurrying to finish a stability test on some equipment so she could go eat dinner, when for some reason her spirit level would not stop trembling. Utterly baffled, she finally decided to open a window for some air—and a piercing burst of song came barging into her ears: “A Cautus's ears~ Never fear the bending breeze~ Oh woo oh——! ♪”—at which point she understood exactly why her spirit level had been shaking, and, oddly taken with the singing, decided to go see for herself.",
+  "ja": "その日、遠く離れた別の区画にいたエンジニア部のオペレーターによると、彼女は機材の安定性テストを早く終わらせて夕食に行きたかったのに、なぜか水平器がずっと震えていたという。いくら考えても分からず、ついに窓を開けて風を通そうとしたその時、凄まじい貫通力の歌声が彼女の耳に飛び込んできた——「コータスの耳は~ 風に曲がっても怖くない~ オーウーオー——！♪」——彼女はようやく水平器が震えていた理由を理解し、なぜかその歌声に心を動かされて、現場を見に行くことにした。"
+ },
+ "于是她在花园里看到了大家手拉着手，乱七八糟地跳着有些滑稽的舞步，哈哈大笑着。舞台上的嘉辛塔兴致高昂——虽说音量显然比不过珊比——唱着快要跑调的歌曲，完全看不出平时文静的样子。": {
+  "ko": "그렇게 정원에 도착한 그녀가 본 것은, 다들 손에 손을 잡고 엉망진창으로 우스꽝스러운 춤을 추며 깔깔대는 광경이었다. 무대 위의 자신타는 잔뜩 신이 나서——물론 성량은 썸피에게 한참 못 미쳤지만——음정이 나갈락 말락 하는 노래를 부르고 있었고, 평소의 조용한 모습은 어디에서도 찾아볼 수 없었다.",
+  "en": "And so she found everyone in the garden holding hands, stomping through a ridiculous dance in complete disarray, howling with laughter. Up on stage Jacinta was in high spirits—though her volume was clearly no match for Thumpy's—belting out a song that kept teetering off-key, with not a trace of her usual composure.",
+  "ja": "そして庭園で彼女が目にしたのは、皆が手を取り合い、めちゃくちゃに滑稽なステップを踏みながら大笑いしている光景だった。舞台の上のジャシンタは大いに盛り上がり——もっとも声量は明らかにサンビに敵わなかったが——今にも音を外しそうな歌を歌っていて、普段の物静かな姿はどこにも見当たらなかった。"
+ },
+ "这次歌会最终以《哦呜哦！》的多次返场演唱结束，所有人都玩得很高兴，而且，在清楚了嘉辛塔的“真面目”之后，来找她一起玩的干员一下子多了好几倍。": {
+  "ko": "이번 노래 모임은 결국 《오우오!》의 거듭된 앙코르로 막을 내렸다. 모두가 즐거워했고, 게다가 자신타의 “진짜 모습”을 알게 된 뒤로 그녀에게 같이 놀자며 찾아오는 오퍼레이터가 단숨에 몇 배로 늘었다.",
+  "en": "The event ended with several encores of “Oh Woo Oh!” Everyone had a wonderful time—and once they knew Jacinta's “true face,” the number of operators dropping by to spend time with her multiplied several times over.",
+  "ja": "この歌会は結局、「オーウーオー！」の度重なるアンコールで幕を閉じた。誰もが心から楽しみ、さらにジャシンタの「素顔」を知って以降、彼女を遊びに誘いに来るオペレーターは一気に数倍に増えた。"
+ },
+ "罗德岛的医疗部近期获得了一大笔投资。有了这笔投资，医疗部可以更有余力地继续新药物的研发和药物产线的扩张，还有医疗器械的设计和升级等等。不过，任何一笔钱都不是平白无故出现的：": {
+  "ko": "로도스 아일랜드 의료부가 최근 거액의 투자를 유치했다. 이 투자 덕분에 의료부는 한층 여유롭게 신약 연구 개발과 약품 생산 라인 확충, 의료 기기 설계 및 개량 등을 이어갈 수 있게 되었다. 다만, 어떤 돈이든 아무 이유 없이 생겨나는 법은 없다.",
+  "en": "Rhodes Island's Medical Department recently received a sizable investment. With it, the department can more comfortably continue developing new drugs, expanding its production lines, and designing and upgrading medical equipment. That said, no sum of money ever appears out of nowhere:",
+  "ja": "ロドスの医療部は先日、多額の投資を受けた。この資金により、医療部は新薬の研究開発や生産ラインの拡張、医療機器の設計・改良などを、より余裕をもって進められるようになった。とはいえ、いかなる金も理由なく湧いて出るものではない。"
+ },
+ "在嘉辛塔干员加入罗德岛后没多久，一对中年夫妻带着一群看上去很不好惹的黑衣人和一群拿着各类医疗器械的医生拜访了罗德岛。他们自称是嘉辛塔干员的父母坎贝尔夫妇和嘉辛塔干员的保镖及医护团队，前来探望嘉辛塔，并打算负责她在罗德岛的生活安全和治疗。": {
+  "ko": "자신타 오퍼레이터가 로도스 아일랜드에 합류하고 얼마 지나지 않아, 한 중년 부부가 만만치 않아 보이는 검은 옷의 무리와 각종 의료 기기를 든 의사들을 데리고 로도스 아일랜드를 방문했다. 그들은 자신들을 자신타 오퍼레이터의 부모인 캠벨 부부, 그리고 자신타 오퍼레이터의 경호팀과 의료팀이라 소개하며, 자신타를 만나러 왔고 로도스 아일랜드에서의 그녀의 생활 안전과 치료를 책임지겠다고 밝혔다.",
+  "en": "Not long after Operator Jacinta joined Rhodes Island, a middle-aged couple arrived with a group of distinctly formidable-looking people in black and a group of doctors carrying every kind of medical instrument. They introduced themselves as the Campbells, Operator Jacinta's parents, along with her bodyguard and medical teams, come to visit Jacinta and to take charge of her safety and treatment aboard Rhodes Island.",
+  "ja": "ジャシンタがロドスに加入して間もなく、一組の中年夫婦が、いかにも手強そうな黒服の一団と、様々な医療機器を携えた医師の一団を引き連れてロドスを訪れた。彼らは自らをジャシンタの両親であるキャンベル夫妻、およびジャシンタのボディーガードと医療チームだと名乗り、ジャシンタの見舞いに来たこと、そしてロドスでの彼女の生活の安全と治療を引き受けるつもりであることを告げた。"
+ },
+ "于是那一天，嘉辛塔干员带着她的父母参观了宿舍、病房、餐厅等等她的生活区域，坎贝尔夫妇不仅一路千叮咛万嘱咐要注意哪些问题，还试图和人事部洽谈，要为嘉辛塔定制一套专门的衣食住行和治疗方案、准备改造她的宿舍、确认她将承担的任务与训练的强度等等等等......在随行的人事部干员思考是否要出言干预一下的时候，嘉辛塔干员反而先“暴喝一声”，制止了坎贝尔夫妇无休无止的叮嘱。": {
+  "ko": "그리하여 그날, 자신타 오퍼레이터는 부모를 데리고 숙소와 병실, 식당 등 자신의 생활 구역을 안내했다. 캠벨 부부는 가는 곳마다 이것저것 주의하라고 신신당부했을 뿐 아니라, 인사부와 협의해 자신타를 위한 전용 의식주 및 치료 계획을 맞추고, 그녀의 숙소를 개조하며, 그녀가 맡게 될 임무와 훈련 강도를 확인하려 드는 등등등등…… 동행하던 인사부 오퍼레이터가 한마디 끼어들어야 하나 고민하던 차에, 오히려 자신타 오퍼레이터가 먼저 “버럭 호통을 쳐” 캠벨 부부의 끝없는 잔소리를 멈춰 세웠다.",
+  "en": "And so, that day, Operator Jacinta showed her parents around her living areas—the dorms, the sickrooms, the cafeteria, and so on. The Campbells not only kept up a steady stream of reminders about what to watch out for, they also tried to negotiate with Human Resources: a bespoke plan for her food, clothing, lodging and travel as well as her treatment; a renovation of her dorm room; confirmation of the missions she would take on and the intensity of her training; and on, and on, and on... Just as the HR operator accompanying them was wondering whether to step in, Operator Jacinta beat her to it with a “mighty roar” that put a stop to the Campbells' endless fussing.",
+  "ja": "そしてその日、ジャシンタは両親を連れて、寮や病室、食堂といった自身の生活区域を案内して回った。キャンベル夫妻は道中ひたすらあれこれ注意事項を言い含めるばかりか、人事部と交渉して、ジャシンタ専用の衣食住および治療プランを仕立てさせ、彼女の寮の改装を用意し、彼女が担う任務や訓練の強度を確認しようとするなどなど……。同行していた人事部のオペレーターが口を挟むべきか迷っていたところ、先に「一喝」したのはむしろジャシンタの方で、キャンベル夫妻の終わりのない小言を制止したのだった。"
+ },
+ "和人事部干员所担心的不同，在嘉辛塔干员向坎贝尔夫妇展示了自己各项训练通过的证明和任务许可证明之后，他们听从嘉辛塔干员的话撤走了保镖和医护团队，选择相信并支持女儿如今做出的选择。不过在离开之前，他们还是想要用自己的方式关心女儿——于是在短暂的商量之后，罗德岛的医疗部突然获得了一大笔投资，可用于各项医疗研究，以便更好地照顾嘉辛塔干员。甚至，在得知罗德岛的运行需要大量的能源支持后，坎贝尔夫妇还与采购部商讨了一下未来的矿石采购合作。在确保了罗德岛有充足的资源照顾好他们的女儿，也确定了嘉辛塔可以照顾好她自己之后，坎贝尔夫妇终于满意地启程返回雷姆必拓。": {
+  "ko": "인사부 오퍼레이터의 걱정과 달리, 자신타 오퍼레이터가 각종 훈련 통과 증명과 임무 허가 증명을 내보이자 캠벨 부부는 딸의 말을 따라 경호팀과 의료팀을 철수시켰고, 딸이 지금 내린 선택을 믿고 지지하기로 했다. 다만 떠나기 전, 그들은 그래도 자기들 나름의 방식으로 딸을 챙기고 싶어 했다——그리하여 짧은 상의 끝에, 로도스 아일랜드 의료부는 돌연 거액의 투자를 받게 되었다. 각종 의료 연구에 쓰여 자신타 오퍼레이터를 더 잘 돌볼 수 있도록 하기 위해서였다. 심지어 로도스 아일랜드의 운영에 막대한 에너지 공급이 필요하다는 사실을 알게 된 뒤로는, 캠벨 부부는 구매부와 향후 광석 조달 협력까지 논의했다. 로도스 아일랜드에 딸을 잘 돌볼 만한 충분한 자원이 있음을 확인하고, 자신타가 스스로를 잘 돌볼 수 있다는 것도 확인한 뒤에야, 캠벨 부부는 마침내 흡족한 얼굴로 림 빌리턴으로 돌아가는 길에 올랐다.",
+  "en": "Contrary to the HR operator's fears, once Operator Jacinta showed the Campbells her certificates for every training program she had passed and her mission clearances, they did as she asked and withdrew the bodyguard and medical teams, choosing to trust and support the choice their daughter had made. Before leaving, though, they still wanted to look after her in their own way—and so, after a brief discussion, Rhodes Island's Medical Department suddenly received a sizable investment, to be used for medical research of every kind, all so that Operator Jacinta might be cared for that much better. On learning that running Rhodes Island requires an enormous amount of energy, the Campbells even sat down with Procurement to discuss future cooperation on ore purchases. Only after making certain that Rhodes Island had ample resources to take care of their daughter—and that Jacinta could take care of herself—did the Campbells finally set off back to Rim Billiton, satisfied at last.",
+  "ja": "人事部のオペレーターの心配とは裏腹に、ジャシンタが各種訓練の合格証明と任務許可証明を示すと、キャンベル夫妻は娘の言葉に従ってボディーガードと医療チームを引き上げさせ、娘が今下した選択を信じ、支えることを選んだ。とはいえ去り際、彼らはやはり自分たちなりのやり方で娘を気にかけたかった——そこで短い相談の後、ロドスの医療部は突如として多額の投資を受けることになった。各種医療研究に用い、ジャシンタをより手厚くケアできるようにするためである。それどころか、ロドスの運航には大量のエネルギー供給が必要だと知ると、キャンベル夫妻は購買部と今後の鉱石調達における協力についてまで話し合った。ロドスに娘を世話するだけの十分な資源があることを確かめ、そしてジャシンタが自分自身の面倒を見られることを見届けて、キャンベル夫妻はようやく満足してレム・ビリトンへの帰路についた。"
+ },
+ "嘉辛塔很高兴。这么多年以来，除了疗养中心和家中已经被改造成病房的房间之外，她终于拥有了一间自己的宿舍：它确实没有很大，设施也没有那么齐全，但这是第一间属于她，可以被她自由打扮的房间——这也代表着，她和父母现在已经找到了新的相处模式。": {
+  "ko": "자신타는 무척 기뻤다. 그 오랜 세월 동안 요양 센터와, 집에서 병실로 개조된 방 말고는 없었는데, 마침내 자기만의 숙소를 갖게 된 것이다. 넓지도 않고 설비가 잘 갖춰진 것도 아니지만, 이곳은 그녀에게 속한, 그녀가 마음대로 꾸밀 수 있는 첫 번째 방이었다——이는 곧 그녀와 부모가 이제 새로운 관계 방식을 찾아냈다는 뜻이기도 했다.",
+  "en": "Jacinta was overjoyed. After all these years of nothing but the sanatorium and the room at home that had been converted into a sickroom, she finally had a dorm of her own: not large, hardly well equipped, but the first room that belonged to her, the first she could decorate as she pleased—which also meant that she and her parents had found a new way of being with one another.",
+  "ja": "ジャシンタはとても嬉しかった。長年、療養センターと、自宅の病室に改装された部屋しか居場所がなかった彼女が、ついに自分だけの寮の一室を手に入れたのだ。決して広くはなく、設備も十分とは言えない。それでもそこは、彼女に属する、彼女が自由に飾ることのできる初めての部屋だった——それは同時に、彼女と両親が新しい付き合い方を見つけたということでもあった。"
+ },
+ "当然，华法琳和终于又拉到了生意的可露希尔也很高兴！": {
+  "ko": "물론 와파린과, 마침내 또 한 건 물어 온 클로저도 무척 기뻐했다!",
+  "en": "And of course, Warfarin and Closure—who had finally landed another deal—were delighted too!",
+  "ja": "もちろん、ワルファリンと、ついにまた商談をものにしたクロージャも大喜びだった！"
+ },
+ "嘉辛塔有一本日历。": {
+  "ko": "자신타에게는 달력이 한 권 있다.",
+  "en": "Jacinta has a calendar.",
+  "ja": "ジャシンタは一冊のカレンダーを持っている。"
+ },
+ "五岁的时候，嘉辛塔有了她的第一本日历。那本日历并不是嘉辛塔自己买的，是在医生说她活不过一个月时，她的父母买的。坎贝尔夫妇在上面密密麻麻地记录了嘉辛塔去治疗的时间、服药的时间、他们纪念旅行的时间......不过那本日历最后被坎贝尔夫妇扔掉了，因为那段辛苦的经历令他们相当疲惫，他们只需要看到嘉辛塔仍在他们的保护下活着就好。": {
+  "ko": "다섯 살 때, 자신타는 첫 번째 달력을 갖게 되었다. 그 달력은 자신타가 직접 산 것이 아니라, 의사가 그녀에게 한 달도 남지 않았다고 말했을 때 그녀의 부모가 산 것이었다. 캠벨 부부는 그 위에 자신타가 치료를 받으러 가는 날, 약을 먹는 시간, 두 사람이 기념 여행을 떠나는 날을 빼곡히 적어 넣었다…… 하지만 그 달력은 결국 캠벨 부부의 손에 버려졌다. 그 고된 시간이 그들을 몹시 지치게 했기에, 그들에게는 자신타가 여전히 자신들의 보호 아래 살아 있다는 것만 보이면 충분했으니까.",
+  "en": "At five, Jacinta got her first calendar. She did not buy it herself; her parents did, back when the doctors said she would not live another month. The Campbells filled it edge to edge with the times of Jacinta's treatments, her medications, their commemorative trips... In the end, though, the Campbells threw that calendar away. Those grueling years had left them exhausted; all they needed was to see that Jacinta was still alive, still under their protection.",
+  "ja": "五歳の時、ジャシンタは初めてのカレンダーを手にした。それはジャシンタ自身が買ったものではなく、医者から余命一ヶ月ももたないと言われた時に、両親が買ったものだった。キャンベル夫妻はそこに、ジャシンタの治療の日、服薬の時間、二人の記念旅行の日程をびっしりと書き込んでいった……。だが、そのカレンダーは最後にはキャンベル夫妻の手で捨てられた。あまりに辛い日々に二人はすっかり疲れ果てており、ジャシンタが自分たちの庇護の下で生きてさえいれば、それでよかったからだ。"
+ },
+ "十岁的时候，嘉辛塔自己买了一本日历。为了能够确保她的健康，坎贝尔夫妇将她送进了疗养中心，并聘请了各类人员来负责她的学业、起居、兴趣爱好。但与之相对的，业务繁忙的坎贝尔夫妇并不能时常去探望她，而身体不好的嘉辛塔也不能长时间地离开中心返回家中，所以她买了一本日历，在上面记录父母来探望她的日子。那本日历后来也被嘉辛塔扔掉了，父母来看望她的日子越来越少，嘉辛塔觉得自己并不需要专门来做那些记录。": {
+  "ko": "열 살 때, 자신타는 스스로 달력을 한 권 샀다. 그녀의 건강을 확실히 지키기 위해 캠벨 부부는 그녀를 요양 센터에 보냈고, 학업과 생활, 취미를 각각 맡아 줄 사람들을 고용했다. 그러나 그 대가로, 사업이 바쁜 캠벨 부부는 자주 그녀를 보러 올 수 없었고, 몸이 좋지 않은 자신타도 오래 센터를 떠나 집으로 돌아갈 수 없었다. 그래서 그녀는 달력을 사서, 그 위에 부모가 자신을 보러 오는 날을 적었다. 그 달력도 나중에는 자신타의 손에 버려졌다. 부모가 그녀를 보러 오는 날은 점점 줄어들었고, 자신타는 굳이 그런 기록을 남길 필요가 없다고 여겼다.",
+  "en": "At ten, Jacinta bought a calendar for herself. To safeguard her health, the Campbells had placed her in a sanatorium and hired all sorts of staff to handle her schooling, her daily life, her hobbies. In exchange, the ever-busy Campbells could not visit often, and Jacinta, whose health was poor, could not leave the center to go home for long. So she bought a calendar and marked down the days her parents came to see her. That calendar, too, she eventually threw away: their visits grew fewer and fewer, and Jacinta decided there was no need to keep such a record at all.",
+  "ja": "十歳の時、ジャシンタは自分でカレンダーを一冊買った。彼女の健康を確保するため、キャンベル夫妻は彼女を療養センターに入れ、学業や身の回りの世話、趣味をそれぞれ担当する人員を雇い入れた。だがその代わり、業務に忙しい夫妻は頻繁に面会に来ることができず、体の弱いジャシンタも長期間センターを離れて家に帰ることはできなかった。だから彼女はカレンダーを買い、両親が会いに来てくれた日をそこに記した。そのカレンダーも、後にジャシンタ自身の手で捨てられた。両親が訪ねてくる日はますます減っていき、わざわざそんな記録を残す必要はないと思うようになったからだ。"
+ },
+ "十九岁的时候，嘉辛塔在自己主治医生的诊室里发现了一本日历。那本日历和其他日历不一样，它是由未来几年的日历合订在一起的，每一页都密密麻麻写满了注意事项，最后数页被标注了灰色。嘉辛塔知道，那是医生推测的她大概余下的时间。那天她回到房间以后大哭了一场，随后自己又做了本一模一样的，一天过去就撕掉一张，看着它越来越薄，越来越薄，等待着撕掉最后一页的那一天到来。": {
+  "ko": "열아홉 살 때, 자신타는 주치의의 진료실에서 달력 한 권을 발견했다. 그 달력은 다른 달력과 달랐다. 앞으로 몇 년 치 달력을 한데 묶어 놓은 것이었고, 페이지마다 주의 사항이 빼곡히 적혀 있었으며, 마지막 몇 장은 회색으로 표시되어 있었다. 자신타는 알았다. 그것이 의사가 추정한, 자신에게 남은 대략의 시간이라는 것을. 그날 방으로 돌아온 그녀는 한바탕 크게 울었고, 그러고는 똑같은 것을 하나 직접 만들어 하루가 지날 때마다 한 장씩 뜯어냈다. 그것이 점점 얇아지고, 점점 더 얇아지는 것을 바라보며, 마지막 한 장을 뜯어내는 날이 오기를 기다렸다.",
+  "en": "At nineteen, Jacinta found a calendar in her attending physician's office. It was unlike any other: the calendars for the next several years bound together into one, every page crammed with precautions, the last few pages shaded grey. Jacinta understood. That grey was the doctor's estimate of roughly how much time she had left. She went back to her room that day and wept until she had no tears left, then made an identical one for herself, tearing off a page each time a day passed—watching it grow thinner, and thinner, waiting for the day she would tear off the last page.",
+  "ja": "十九歳の時、ジャシンタは主治医の診察室で一冊のカレンダーを見つけた。そのカレンダーは他のものとは違っていた。今後数年分のカレンダーが一つに綴じられ、どのページにも注意事項がびっしりと書き込まれ、最後の数ページは灰色で塗られていた。ジャシンタには分かった。それは医師が推測した、彼女に残されたおおよその時間なのだと。その日、部屋に戻った彼女は思い切り泣いた。それから自分でまったく同じものを作り、一日が過ぎるごとに一枚ずつ破り捨てた。それがどんどん薄く、薄くなっていくのを眺めながら、最後の一枚を破る日が来るのを待っていた。"
+ },
+ "她之前不是没有尝试过从疗养中心里跑出去，但没人愿意带着她这样一个重症患者上路，她的尝试和失败都只是日历上一个不起眼的小小标记。直到某一天，嘉辛塔照例撕去一张，随后发现日历不知何时已经变得只剩薄薄一点。": {
+  "ko": "그전에도 요양 센터에서 도망쳐 나오려 시도해 본 적이 없는 것은 아니었다. 다만 그녀 같은 중증 환자를 데리고 길을 나서려는 사람이 아무도 없었을 뿐이고, 그녀의 시도와 실패는 달력 위의 눈에 띄지 않는 작은 표시 하나에 지나지 않았다. 그러던 어느 날, 자신타는 여느 때처럼 한 장을 뜯어내고는, 달력이 어느새 얄팍하게 조금밖에 남지 않았다는 것을 깨달았다.",
+  "en": "It was not as though she had never tried to run from the sanatorium before, but no one was willing to take a critically ill patient like her on the road, and her attempts and failures amounted to nothing more than small, unremarkable marks on the calendar. Then one day, Jacinta tore off a page as usual and realized that at some point the calendar had dwindled to a paper-thin remnant.",
+  "ja": "それ以前にも療養センターから逃げ出そうとしたことがなかったわけではない。ただ、彼女のような重症患者を連れて旅に出ようとする者は誰もおらず、彼女の試みと失敗は、カレンダーの上の目立たない小さな印にすぎなかった。そんなある日、ジャシンタはいつも通り一枚を破り取り、そしてカレンダーがいつの間にか薄っぺらくなり、わずかしか残っていないことに気づいた。"
+ },
+ "既然之前已经失败过，再尝试一次也没有什么大不了的。那，为什么不是今天呢？嘉辛塔推开门跑了出去。": {
+  "ko": "어차피 전에도 실패했으니, 한 번 더 시도한다고 큰일이 나는 것도 아니다. 그렇다면, 왜 오늘이면 안 되지? 자신타는 문을 밀어젖히고 달려 나갔다.",
+  "en": "She had failed before, so trying once more was hardly a big deal. And if that was so—why not today? Jacinta pushed the door open and ran.",
+  "ja": "どうせ前にも失敗したのだ、もう一度試したところで大したことではない。なら、どうして今日ではいけない？ジャシンタは扉を押し開けて駆け出した。"
+ },
+ "从跑出来的那一天开始，嘉辛塔的日历越来越厚，每一次纪念的合照，每一张去过的地方的地图，甚至是路边吃饭时的小票、一撮毛掉落的绒毛，她都加了进来。当一天过去，她准备撕掉一张时，后面已经加了无数张她生活中的点点滴滴。": {
+  "ko": "달려 나온 그날부터, 자신타의 달력은 점점 두꺼워졌다. 기념으로 찍은 사진 한 장 한 장, 다녀온 곳의 지도 한 장 한 장, 심지어 길가에서 밥을 먹고 받은 영수증이나 떨어진 솜털 한 줌까지 그녀는 모두 끼워 넣었다. 하루가 지나 한 장을 뜯어내려 할 때면, 그 뒤에는 이미 그녀의 삶의 자잘한 순간들이 담긴 종이가 수도 없이 덧붙어 있었다.",
+  "en": "From the day she ran, Jacinta's calendar only grew thicker. Every commemorative photo, every map of a place she had been, even the receipt from a roadside meal or a pinch of shed fluff—she added them all in. When a day had passed and she went to tear off a page, countless little pieces of her life were already tucked in behind it.",
+  "ja": "飛び出したその日から、ジャシンタのカレンダーはどんどん厚くなっていった。記念に撮った一枚一枚の写真、訪れた場所の地図、道端で食事をした時のレシート、抜け落ちた綿毛のひとつまみまで、彼女は全部そこに挟み込んだ。一日が過ぎて一枚破ろうとする頃には、その後ろには彼女の生活の断片が数え切れないほど増えていた。"
+ },
+ "嘉辛塔有一本日历，这本日历在变得越来越厚。": {
+  "ko": "자신타에게는 달력이 한 권 있다. 그리고 그 달력은 점점 더 두꺼워지고 있다.",
+  "en": "Jacinta has a calendar, and that calendar is only getting thicker.",
+  "ja": "ジャシンタは一冊のカレンダーを持っている。そのカレンダーは、どんどん厚くなっている。"
+ },
+ "在罗德岛的治疗告一段落后，嘉辛塔开始了她的旅途。": {
+  "ko": "로도스 아일랜드에서의 치료가 일단락된 뒤, 자신타는 자신의 여정을 시작했다.",
+  "en": "Once her treatment at Rhodes Island reached a stopping point, Jacinta set out on her travels.",
+  "ja": "ロドスでの治療が一段落した後、ジャシンタは自らの旅を始めた。"
+ },
+ "或许是运气不错，也或许是因为嘉辛塔一直挂念着她和时隙的创业计划，她似乎总是会在令人意想不到的时候找到办法，将她们两人的产品推销出去。": {
+  "ko": "운이 좋았던 것인지, 아니면 자신타가 타임슬롯과 함께 세운 창업 계획을 늘 마음에 두고 있었던 덕분인지, 그녀는 언제나 뜻밖의 순간에 두 사람의 제품을 팔아 볼 방법을 찾아내는 듯했다.",
+  "en": "Perhaps it was good luck, or perhaps it was because Jacinta never stopped thinking about the business she and Timeslot were starting, but she always seemed to find a way to pitch their product at the most unexpected moments.",
+  "ja": "運がよかったのか、それともジャシンタが常にタイムスロットとの起業計画を気にかけていたからか、彼女はいつも思いもよらないタイミングで、二人の製品を売り込む方法を見つけてしまうようだった。"
+ },
+ "在萨米观光时，她把原本只是带来测试的移动信号基站借给救援队，成功救出了被困的人员；和卡达一起拍视频，点赞量和粉丝量暴增，吸引了不少传媒公司联系；甚至跟着极光准备攀登雪山——身体状况所限，她最终明智地选择放弃攀爬——嘉辛塔都能偶遇莱茵生命的工作人员，将阿梅利亚的名片送到她憧憬的哥伦比亚大公司手中，收到消息的阿梅利亚每天都高兴得掉眼泪。": {
+  "ko": "사미를 관광할 때는 원래 테스트용으로 가져갔던 이동식 통신 기지국을 구조대에 빌려주어 고립된 사람들을 무사히 구해냈고, 클릭과 함께 영상을 찍었을 때는 좋아요 수와 팔로워 수가 폭증해 적지 않은 미디어 회사들이 연락해 왔다. 심지어 오로라를 따라 설산 등반을 준비했을 때는——몸 상태의 한계로 결국 현명하게 등반을 포기했지만——라인 랩 직원과 우연히 마주쳐, 아멜리아의 명함을 그녀가 동경하던 컬럼비아 대기업의 손에 전달했다. 소식을 들은 아멜리아는 매일같이 기뻐서 눈물을 흘렸다고 한다.",
+  "en": "Sightseeing in Sami, she lent a mobile signal base station—brought along purely for testing—to a rescue team, and the trapped were pulled out safely. Filming videos with Click sent her likes and follower count through the roof and drew inquiries from more than a few media companies. She even set out with Aurora to climb a snowy mountain—wisely giving up the ascent in the end, given her physical condition—and still ran into Rhine Lab staff, placing Amelia's business card into the hands of the great Columbian company Amelia so admired. When the news reached her, Amelia was in happy tears every single day.",
+  "ja": "サーミを観光した際には、本来テスト用に持ってきただけの移動信号基地局を救助隊に貸し出し、閉じ込められていた人々の救出に成功した。カシャと一緒に動画を撮れば、いいね数とフォロワー数が急増し、少なからぬメディア企業から連絡が来た。さらにはオーロラに付いて雪山登山に挑もうとした時も——体調の都合で、最終的には賢明にも登頂を諦めたが——ジャシンタはライン生命の職員と偶然出会い、アメリアの名刺を、彼女が憧れるクルビアの大企業の手に届けた。知らせを受けたアメリアは、毎日嬉しさのあまり涙をこぼしていたという。"
+ },
+ "不过，嘉辛塔在旅途中遇到的事情也不只是和她与时隙的创业计划有关。": {
+  "ko": "다만 자신타가 여정 중에 마주친 일들이 전부 그녀와 타임슬롯의 창업 계획과 관련된 것만은 아니었다.",
+  "en": "That said, not everything Jacinta ran into on her travels had to do with the business she and Timeslot were starting.",
+  "ja": "とはいえ、旅の途中でジャシンタが出会った出来事は、タイムスロットとの起業計画に関わるものばかりではなかった。"
+ },
+ "身为一名矿石病患者，嘉辛塔知道有些事情其实很难处理和解决。那天在雪山脚下，嘉辛塔遇到了一个衣着单薄的人。源石结晶在那人的皮肤上蔓延开来，每一步都会牵扯皮肉渗出血痕，谁都能看出来她是一名重症患者。雪山只是雪原中的一座普通雪山，附近的居民靠着它生活，逐渐有了信仰，也许那人在这里是为了祈福，但嘉辛塔知道，这样除了会对那人的健康造成不可逆的伤害之外，不会有什么帮助。周围的村民告诉她，那人已经疯了，最好离远一些，他们从来都不和她说话的。": {
+  "ko": "광석병 환자로서, 자신타는 어떤 일들은 사실 다루기도, 해결하기도 몹시 어렵다는 것을 알고 있었다. 그날 설산 기슭에서 자신타는 옷을 얇게 걸친 한 사람을 만났다. 오리지늄 결정이 그 사람의 피부 위로 번져 있었고, 한 걸음 내디딜 때마다 살갗이 당겨져 핏자국이 배어 나왔다. 누가 보아도 중증 환자였다. 그 설산은 설원에 있는 평범한 산 하나에 지나지 않았지만, 인근 주민들은 그 산에 기대어 살아가며 차츰 신앙을 갖게 되었다. 어쩌면 그 사람도 복을 빌기 위해 그곳에 있는 것인지도 몰랐다. 하지만 자신타는 알고 있었다. 이렇게 해서는 그 사람의 건강에 돌이킬 수 없는 해를 입히는 것 말고는 아무 도움도 되지 않는다는 것을. 주변 마을 사람들은 그녀에게, 저 사람은 이미 미쳤으니 멀리 떨어져 있는 편이 좋다고, 자기들은 한 번도 그녀와 말을 섞은 적이 없다고 일러 주었다.",
+  "en": "As an Oripathy patient herself, Jacinta knew that some things are genuinely hard to handle, hard to resolve. That day, at the foot of the snowy mountain, Jacinta came across someone dressed far too thinly for the cold. Originium crystals had spread across her skin, and every step tore at flesh until blood seeped through; anyone could see she was critically ill. The mountain was only an ordinary peak among the snowfields, but the people nearby lived off it and had gradually come to revere it, and perhaps the woman was there to pray for blessings. Jacinta knew, however, that this would do her no good whatsoever beyond irreversible damage to her health. The villagers around her told Jacinta that the woman had gone mad and that she had best keep her distance—they had never once spoken to her.",
+  "ja": "鉱石病患者である身として、ジャシンタは、どうにも扱いようがなく、解決しようのないことがあると知っていた。その日、雪山の麓でジャシンタは薄着の人物と出会った。源石結晶がその人の皮膚の上に広がり、一歩踏み出すたびに皮肉が引きつれて血の跡が滲む。誰が見ても重症患者だった。その雪山は雪原にあるごく普通の山にすぎなかったが、近隣の住民はそれを頼りに暮らし、次第に信仰を抱くようになっていた。もしかするとその人も、祈願のためにそこにいたのかもしれない。だがジャシンタには分かっていた。こんなことをしても、その人の健康に不可逆的な傷を残す以外、何の助けにもならないと。周りの村人たちは、あの人はもう気が触れているから近づかない方がいい、自分たちは一度も口をきいたことがない、と彼女に告げた。"
+ },
+ "她陪着那个人在山脚下呆了三天，刚开始嘉辛塔还会不停地劝说，试图分享自己的药品和食物，也帮她支好了帐篷，联络罗德岛办事处的干员寻求援助，但那人始终一言不发。在发现那人的精神愈加萎靡之后，嘉辛塔也不再劝说了，她只是坐在那人身边不远处，静静地陪着，时不时为面前的火堆增加些燃料，好让她们都舒服一些。": {
+  "ko": "그녀는 그 사람 곁을 지키며 산기슭에서 사흘을 보냈다. 처음에 자신타는 끊임없이 설득하며 자기 약과 음식을 나누려 했고, 텐트도 대신 쳐 주었으며, 로도스 아일랜드 사무소의 오퍼레이터에게 연락해 지원을 요청하기도 했다. 하지만 그 사람은 끝내 한마디도 하지 않았다. 그 사람의 정신이 점점 더 쇠약해지는 것을 보고 나서는, 자신타도 더는 설득하지 않았다. 그저 그 사람에게서 멀지 않은 곳에 앉아 조용히 곁을 지키며, 이따금 앞의 모닥불에 땔감을 더해 두 사람 모두 조금이라도 편안하도록 했다.",
+  "en": "She stayed with that person at the foot of the mountain for three days. At first Jacinta kept trying to talk her round, offering to share her own medicine and food, pitching a tent for her, contacting operators at the Rhodes Island office for aid—but the woman never said a word. Once Jacinta saw that her spirit was flagging further still, she stopped trying to persuade her. She simply sat a little way off, keeping her company in silence, now and then feeding the fire in front of them so that they would both be a little more comfortable.",
+  "ja": "彼女はその人に付き添い、山の麓で三日間過ごした。初めのうち、ジャシンタは絶えず説得を試み、自分の薬や食料を分け与えようとし、テントも張ってやり、ロドス事務所のオペレーターに連絡して支援を求めたりもした。だが、その人は終始一言も発しなかった。その人の気力がいっそう衰えていくのを見て取ると、ジャシンタはもう説得をやめた。ただその人から少し離れた場所に座り、静かに寄り添い、時折目の前の焚き火に薪を足して、二人とも少しでも楽になるようにした。"
+ },
+ "在第四天太阳升起的时候，那人的帐篷空空如也，嘉辛塔只发现了帐篷里的一片树皮，上面用灰烬写着一行小字：“谢谢你陪着我。”在很远处的山洞中，她找到了那人崩解留下的痕迹。": {
+  "ko": "나흘째 해가 떠오를 무렵, 그 사람의 텐트는 텅 비어 있었다. 자신타가 발견한 것은 텐트 안에 남겨진 나무껍질 한 조각뿐이었고, 그 위에는 재로 쓴 작은 글씨 한 줄이 있었다. “곁에 있어 줘서 고마워요.” 한참 떨어진 동굴 속에서, 그녀는 그 사람이 붕괴하며 남긴 흔적을 찾아냈다.",
+  "en": "When the sun rose on the fourth day, the woman's tent was empty. All Jacinta found inside was a strip of bark, a single small line written on it in ash: “Thank you for staying with me.” Far off, in a cave, she found the traces left behind when the woman disintegrated.",
+  "ja": "四日目の朝日が昇る頃、その人のテントはもぬけの殻だった。ジャシンタが見つけたのは、テントの中に残された一枚の樹皮だけ。そこには灰で小さくこう書かれていた。「そばにいてくれてありがとう」。ずっと離れた洞窟の中で、彼女はその人が崩壊した跡を見つけた。"
+ },
+ "“至少她最后没有很孤单......”出乎医疗干员的意料，在说起这件事的时候，嘉辛塔显得很平静。": {
+  "ko": "“적어도 그 사람은 마지막에 그렇게 외롭지는 않았을 거예요……” 메딕 오퍼레이터의 예상과 달리, 이 이야기를 꺼낼 때의 자신타는 무척 담담했다.",
+  "en": "“At least she wasn't all alone at the end...” To the medic operator's surprise, Jacinta was perfectly calm as she spoke of it.",
+  "ja": "「少なくとも、あの人は最期にひとりぼっちではなかった……」医療オペレーターの予想に反して、この話をする時のジャシンタは、とても穏やかだった。"
+ },
+ "是我们狭隘了。我们从没有想过你会如此勇敢。我们本以为让你活下去就是最好的，却无视了你的痛苦，也......无视了我们自己的痛苦。": {
+  "ko": "우리가 편협했구나. 네가 그토록 용감할 거라고는 우리도 미처 생각하지 못했단다. 그저 너를 살아 있게 하는 것이 최선이라 여기면서, 정작 네 고통은 못 본 척했지. 그리고…… 우리 자신의 고통에서도 눈을 돌리고 있었단다.",
+  "en": "We were the narrow-minded ones. It never once occurred to us that you could be this brave. We believed that keeping you alive was the best thing for you, and in doing so we ignored your pain—and... ignored our own pain as well.",
+  "ja": "私たちの了見が狭かった。お前がこれほど勇敢だとは、考えたこともなかったんだ。生かしてやることが一番だと思い込んで、お前の苦しみから目を背け、そして……私たち自身の苦しみからも目を背けていた。"
+ },
+ "我不想在信里说太多，免得你误会，我只想告诉你，天知道收到你在南境的照片时我们有多惊喜——你真的做到了！": {
+  "ko": "편지에 너무 많은 말을 늘어놓고 싶지는 않구나, 괜한 오해를 살까 봐. 그저 이 말만은 전하고 싶다. 남부에서 찍은 네 사진을 받았을 때 우리가 얼마나 놀라고 기뻤는지, 하늘이나 알까——너는 정말로 해냈어!",
+  "en": "I don't want to say too much in a letter, in case you take it the wrong way. I only want to tell you that heaven knows how thrilled we were to receive the photograph of you down in the South—you really did it!",
+  "ja": "手紙であまり多くを語るつもりはない。誤解させても困るからな。ただこれだけは伝えたい。南境で撮ったお前の写真が届いた時、私たちがどれほど驚き、喜んだことか——お前は本当にやり遂げたんだ！"
+ },
+ "在大铁屯的时候，是你母亲告诉我，她从来没见你像那天晚上开车时那么高兴。我当时半信半疑，觉得你母亲只是太向着你......但你在南境时看起来真的很高兴，自从你生病之后，我很久很久都没有见过你笑得这么开心了。真的太久太久了。这是我的错。": {
+  "ko": "빅아이언에 있을 때, 네 어머니가 그러더구나. 그날 밤 네가 차를 몰 때만큼 즐거워하는 모습은 본 적이 없다고. 그때 나는 반신반의했다. 네 어머니가 너무 네 편만 드는 거라고 생각했지…… 하지만 남부에 있을 때의 너는 정말로 즐거워 보였다. 네가 병에 걸린 뒤로, 나는 아주 오랫동안 네가 그렇게 환하게 웃는 걸 보지 못했구나. 정말이지 너무나 오랜만이었다. 이건 내 잘못이다.",
+  "en": "Back in Big Iron, it was your mother who told me she had never seen you as happy as you were behind the wheel that night. I half believed her at the time—I thought your mother was simply taking your side... But in the South you truly did look happy. Since you fell ill, it had been such a long, long time since I last saw you smile like that. Far too long. And that is my fault.",
+  "ja": "ビッグアイアンにいた時、あの晩に車を運転していたお前ほど楽しそうな姿は見たことがない、とお前の母さんが言っていた。あの時の私は半信半疑で、母さんはお前に甘すぎるだけだと思っていた……。だが、南境にいるお前は本当に楽しそうだった。お前が病気になってから、あんなに嬉しそうに笑うお前を、私はずいぶん長いこと見ていなかった。本当に、あまりにも長すぎた。これは私の落ち度だ。"
+ },
+ "我们勇敢的小家伙，我们的女儿，谢谢你给了自己一个全新的人生，也谢谢你给了我一个重新审视自己的机会。": {
+  "ko": "우리의 용감한 아이, 우리의 딸아. 스스로에게 완전히 새로운 인생을 준 것에 고맙구나. 그리고 나에게 나 자신을 다시 돌아볼 기회를 준 것도 고맙다.",
+  "en": "Our brave little one, our daughter—thank you for giving yourself a whole new life, and thank you for giving me the chance to take a good, hard look at myself again.",
+  "ja": "私たちの勇敢な子、私たちの娘よ。自分自身に全く新しい人生を与えてくれてありがとう。そして、私に自分を見つめ直す機会を与えてくれて、ありがとう。"
+ },
+ "对不起。": {
+  "ko": "미안하다.",
+  "en": "I'm sorry.",
+  "ja": "すまなかった。"
+ },
+ "谢谢你。": {
+  "ko": "고맙다.",
+  "en": "Thank you.",
+  "ja": "ありがとう。"
+ },
+ "你永远是我们的骄傲。": {
+  "ko": "너는 언제나 우리의 자랑이다.",
+  "en": "You will always be our pride.",
+  "ja": "お前は永遠に私たちの誇りだ。"
+ },
+ "——你的父亲": {
+  "ko": "——너의 아버지가",
+  "en": "—Your father",
+  "ja": "――お前の父より"
+ },
+ "信息登记申请记录": {
+  "ko": "정보 등록 신청 기록",
+  "en": "Information Registration Request Record",
+  "ja": "情報登録申請記録"
  }
 }

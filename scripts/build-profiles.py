@@ -189,7 +189,8 @@ def localize_lines(text, table):
 
 
 def localize(text, loc, cid, what):
-    """CN 원문 한 덩어리 → 사전에 있으면 그 로케일 번역, 없으면 원문 그대로(+경고 집계)."""
+    """CN 원문 한 덩어리 → 사전에 있으면 그 로케일 번역, 없으면 원문 그대로(+경고 집계).
+    섹션 제목처럼 **한 덩어리가 곧 키**인 것에만 쓴다 (본문은 줄 단위 manual_lines를 쓸 것)."""
     if not text:
         return text
     hit = MANUAL.get(text)
@@ -201,6 +202,10 @@ def localize(text, loc, cid, what):
 
 
 CJK_RE = re.compile(r"[\u3400-\u9fff]")
+
+# 수동 사전을 로케일별 {CN 줄: 번역} 로 펴 둔다 — 본문은 줄 단위로 갈아 끼운다
+manual_lines = {loc: {k: v[loc] for k, v in MANUAL.items() if isinstance(v, dict) and v.get(loc)}
+                for loc in LOCALES}
 
 written = {}
 harvested = {}
@@ -238,12 +243,15 @@ for loc, (prefix, fallback) in LOCALES.items():
             new_secs = []
             for sec in secs:
                 # ① 수확 사전(공식 번역)으로 줄 단위 → ② 남은 덩어리는 수동 사전(비공식 AI 번역)
+                # ① 수확 사전(공식 번역) → ② 필드 규칙 → ③ 수동 사전(비공식 AI 번역)
+                # ⚠ 셋 다 **줄 단위**로 적용한다. 예전엔 ③이 섹션 텍스트를 통째로 키로 조회해서
+                #   줄 단위로 적어 넣은 번역이 하나도 안 붙었다 (2026-08-01).
                 text, left = localize_lines(sec.get("text"), harvested[loc])
                 if left:
                     text = localize_fields(text, harvested_fields[loc], loc, op_names[loc].get(cid))
-                    text, left = localize_lines(text, {})   # 남은 중국어 재집계
-                    if left:
-                        text = localize(text, loc, cid, "text")
+                    text, left = localize_lines(text, manual_lines[loc])
+                if left:
+                    untranslated.append((loc, cid, "text", left))
                 new_secs.append({**sec, "title": localize(sec.get("title"), loc, cid, "title"), "text": text})
             secs = new_secs
         payload = {"id": cid, "sections": secs}
