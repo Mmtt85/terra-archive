@@ -1843,5 +1843,60 @@
   "ko": "전직 금메달 교환원",
   "en": "Former Star Operator",
   "ja": "元ゴールド交換手"
+ },
+ "攻击范围扩大并向前方滑翔起飞，使掠过的攻击范围内的地面敌人浮空10秒、飞行敌人缚地20秒，随后攻击间隔缩短，攻击力+125%，攻击变为法术伤害且同时攻击4个目标": {
+  "ko": "공격 범위가 확대되고 앞쪽으로 활공하며 이륙. 스쳐 지나간 공격 범위 내 지상 적을 10초간 부양시키고 비행 적을 20초간 지상에 속박. 이후 공격 딜레이가 감소, 공격력 +125%, 공격이 마법 대미지로 변경되며 동시에 목표 4개 공격",
+  "en": "Expands her attack range and glides forward into Lift Off, Levitating ground enemies within the swept range for 10 seconds and binding flying enemies to the ground for 20 seconds. Afterwards, attack interval is reduced, ATK +125%, and attacks become Arts damage hitting 4 targets at once",
+  "ja": "攻撃範囲が拡大し前方へ滑空して離陸。通過した攻撃範囲内の地上の敵を10秒間浮遊させ、飛行の敵を20秒間地上に拘束する。その後、攻撃間隔が短縮、攻撃力+125%、攻撃が術ダメージに変化し同時に4体の目標を攻撃"
+ },
+ "基础档案": {
+  "ko": "기본정보",
+  "en": "Basic Info",
+  "ja": "基本情報"
+ },
+ "综合体检测试": {
+  "ko": "종합검진",
+  "en": "Physical Exam",
+  "ja": "健康診断"
+ },
+ "客观履历": {
+  "ko": "프로필",
+  "en": "Profile",
+  "ja": "プロフィール"
+ },
+ "临床诊断分析": {
+  "ko": "임상 진단 분석",
+  "en": "Clinical Analysis",
+  "ja": "臨床診断分析"
+ },
+ "档案资料一": {
+  "ko": "파일 자료 1",
+  "en": "Archive File 1",
+  "ja": "アーカイブ資料1"
+ },
+ "档案资料二": {
+  "ko": "파일 자료 2",
+  "en": "Archive File 2",
+  "ja": "アーカイブ資料2"
+ },
+ "档案资料三": {
+  "ko": "파일 자료 3",
+  "en": "Archive File 3",
+  "ja": "アーカイブ資料3"
+ },
+ "档案资料四": {
+  "ko": "파일 자료 4",
+  "en": "Archive File 4",
+  "ja": "アーカイブ資料4"
+ },
+ "晋升记录": {
+  "ko": "승진 기록",
+  "en": "Promotion Record",
+  "ja": "昇進記録"
+ },
+ "综合性能检测结果": {
+  "ko": "종합 성능 검사 결과",
+  "en": "Performance Test Results",
+  "ja": "総合性能検査結果"
  }
 }

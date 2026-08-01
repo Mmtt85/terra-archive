@@ -54,6 +54,7 @@ load = lambda p: json.load(open(p, encoding="utf-8"))
 # 로케일 → (테이블 접두사, 폴백). 미실장 오퍼는 로케일 테이블에 없어 CN 원문으로 폴백한다
 # (프로필·보이스와 같은 관례).
 LOCALES = {"ko": ("kr", "cn"), "en": ("en", "cn"), "ja": ("jp", "cn")}
+MANUAL = {}
 
 # regen-operators.py의 interpolate와 같은 토큰 문법 — 정본은 저기다.
 TOKEN = re.compile(r"\{(-?)([a-zA-Z0-9_.\[\]@]+)(?::([^}]*))?\}")
@@ -226,22 +227,73 @@ def build_skill(entry, ranges=None):
     return doc
 
 
-def localize_fallback(doc, description):
-    """CN 폴백 스킬 → 번역된 설명으로 템플릿을 되만들거나, 못 하면 텍스트를 뺀다."""
+def cn_interpolated(level):
+    """레벨 하나의 CN 설명을 값까지 채워 넣은 문장 — regen-operators가 만드는 것과 같은 형태라
+    scripts/cn-translations.json의 **키로 그대로 쓸 수 있다**."""
+    raw = level.get("description") or ""
+    bb = blackboard(level)
+    out, last = [], 0
+    for m in TOKEN.finditer(raw):
+        out.append(raw[last:m.start()])
+        out.append(value_at(m, bb))
+        last = m.end()
+    out.append(raw[last:])
+    return strip_tags("".join(out))
+
+
+def localize_fallback(doc, description, entry=None, locale="ko", manual=None):
+    """CN 폴백 스킬 → 번역된 문장으로 템플릿을 되만들거나, 못 하면 텍스트를 뺀다.
+
+    ⚠ 특화에서 **문장 자체가 바뀌는 스킬**(ti)은 최고레벨 번역 하나로는 나머지 변형을 만들
+    수 없어 예전엔 통째로 포기했다 — 이격 안젤리나 S2가 그 예 (사용자 요청 2026-08-01).
+    이제 변형별 대표 레벨의 CN 보간문을 **cn-translations.json에서 찾아** 각각 되만든다.
+    한 변형이라도 번역이 없으면 종전대로 전부 뺀다(원문 유출 방지).
+    """
     values = doc.get("v")
-    if doc.get("ti") or not values:
+    if not values:
         doc.pop("tpl", None); doc.pop("v", None); doc.pop("ti", None)
         return doc
-    tpl = retemplate(description or "", values[-1])
-    if tpl is None:
-        doc.pop("tpl", None); doc.pop("v", None)
+
+    ti = doc.get("ti")
+    if not ti:
+        tpl = retemplate(description or "", values[-1])
+        if tpl is None:
+            doc.pop("tpl", None); doc.pop("v", None)
+            return doc
+        doc["tpl"] = [tpl]
         return doc
-    doc["tpl"] = [tpl]
+
+    # ti 있음 — 변형마다 대표 레벨(그 변형의 최고 레벨)을 잡아 번역문을 구한다
+    levels = (entry or {}).get("levels") or []
+    tpls = []
+    for g in range(len(doc.get("tpl") or [])):
+        rows = [i for i, x in enumerate(ti) if x == g]
+        if not rows or not levels:
+            return _drop_text(doc)
+        top = max(rows)
+        text = description if top == len(ti) - 1 else None   # 최고 레벨은 operators.json 것
+        if text is None:
+            hit = (manual or {}).get(cn_interpolated(levels[top]))
+            text = (hit or {}).get(locale) or ""
+        tpl = retemplate(text, values[top]) if text else None
+        if tpl is None:
+            return _drop_text(doc)
+        tpls.append(tpl)
+    doc["tpl"] = tpls
+    return doc
+
+
+def _drop_text(doc):
+    doc.pop("tpl", None); doc.pop("v", None); doc.pop("ti", None)
     return doc
 
 
 def main():
     ops = load(f"{REPO}/app/data/operators.json")
+    # 미실장 오퍼 텍스트의 비공식 번역 사전 — ti 변형 문장을 여기서 찾는다 (regen-operators와 공용)
+    mpath = f"{REPO}/scripts/cn-translations.json"
+    global MANUAL
+    MANUAL = load(mpath) if os.path.exists(mpath) else {}
     # 로케일별 operators.json — 미실장 오퍼 폴백 시 번역된 설명을 여기서 가져온다
     op_text = {}
     for locale in LOCALES:
@@ -285,7 +337,8 @@ def main():
                     continue
                 built = build_skill(entry, ranges)
                 if built and from_cn:
-                    built = localize_fallback(built, (op_text[locale].get(op["id"]) or {}).get(sid, ""))
+                    built = localize_fallback(built, (op_text[locale].get(op["id"]) or {}).get(sid, ""),
+                                              entry, locale, MANUAL)
                     if not any(k in built for k in ("v", "sp", "d")):
                         built = None
                 if built:
