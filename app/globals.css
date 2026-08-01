@@ -9070,15 +9070,41 @@ html.dark .story-card:hover .story-thumb img {
 }
 /* 미실장 안내문 — 오퍼 모달 히어로(어두운 그라데이션) 위에 뜨므로 밝은 글자 사용.
    max-width로 제목 블록(flex:none, 내용폭 추종)이 넓어지는 걸 막아 별명 제보 폼이 밀리지 않게 한다 */
-.future-note {
-  margin: 10px 0 0;
-  padding: 8px 10px;
+/* 미실장 안내 — 닫기(×) 버튼 왼쪽에 **흐름 밖으로** 띄운다. 제목 블록 안에 두면 문장이
+   길어 히어로 높이를 밀어 올렸다 (사용자 요청 2026-08-01). 히어로 min-height(150px)
+   안에서 접히도록 폭을 잡아 뒀다. */
+/* ⚠ 직계 자식만 — .future-note는 프로필·보이스 섹션의 "중국 서버 원문입니다" 안내에도
+   쓰인다. 선택자를 넓게 잡으면 그것들까지 히어로 오른쪽으로 날아간다. */
+.detail-section .future-note {
+  color: #6b5b8a;
+  background: #b06dff14;
   border-left: 3px solid #b06dff;
-  background: #ffffff14;
-  font-size: 12.5px;
-  line-height: 1.6;
+  margin: 0 0 9px;
+  padding: 8px 10px;
+  font-size: 11.5px;
+  line-height: 1.55;
+}
+.operator-modal > .future-note {
+  z-index: 4;
   color: #e9e2f7;
-  max-width: 430px;
+  background: #ffffff14;
+  border-left: 3px solid #b06dff;
+  max-width: 300px;
+  margin: 0;
+  padding: 7px 9px;
+  font-size: 10.5px;
+  line-height: 1.5;
+  position: absolute;
+  top: 14px;
+  right: 60px;      /* 닫기 버튼(38px + 여백) 왼쪽 */
+}
+/* 좁은 화면에선 겹치므로 흐름 안으로 되돌린다 — 여기선 헤더가 어차피 세로로 쌓인다 */
+@media (width <= 760px) {
+  .operator-modal > .future-note {
+    max-width: none;
+    margin: 0 14px 12px;
+    position: static;
+  }
 }
 
 /* ── 육성 비용 계산기 (재료 파밍 탭) ──────────────────────────────────────── */

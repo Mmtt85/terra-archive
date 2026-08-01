@@ -1900,6 +1900,11 @@ function OperatorModal({ operator, onClose, onUpgrade }: { operator: Operator; o
     <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <section className="operator-modal" role="dialog" aria-modal="true" aria-labelledby="operator-modal-title" style={{ "--accent": operator.accent } as React.CSSProperties}>
         <button type="button" className="modal-close" onClick={onClose} aria-label={t("상세 정보 닫기")}>×</button>
+        {/* 미실장 안내는 헤더 흐름 밖(닫기 버튼 왼쪽)에 띄운다 — 제목 블록 안에 두면 문장이
+            길어 히어로 높이를 늘려버린다 (사용자 요청 2026-08-01). */}
+        {operator.unreleased && (
+          <p className="future-note">{t("미실장 오퍼레이터입니다 — 중국 서버 데이터 기준이며, 스킬·재능 등 텍스트는 비공식 AI 번역이라 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>
+        )}
         <header className="modal-hero">
           <img src={asset(operator.image)} alt={t("{name} 오퍼레이터", { name: operator.name })} width={180} height={180} />
           <div className="modal-title-block">
@@ -1912,7 +1917,6 @@ function OperatorModal({ operator, onClose, onUpgrade }: { operator: Operator; o
               <div className="class-line">
                 <div><b>{operator.job}</b><small>{operator.subProfession} · {operator.position}</small></div>
               </div>
-              {operator.unreleased && <p className="future-note">{t("미실장 오퍼레이터입니다 — 중국 서버 데이터 기준이며, 스킬·재능 등 텍스트는 비공식 AI 번역이라 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>}
             </div>
             {/* 이 오퍼를 담은 채로 육성 시뮬 열기 (사용자 요청 2026-08-01) */}
             {onUpgrade && (

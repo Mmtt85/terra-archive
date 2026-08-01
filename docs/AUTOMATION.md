@@ -20,6 +20,43 @@
 - 인프라 시너지/컨셉 태그 같은 **사람이 교정해온 도메인 규칙**은 자동 집필하지 않는다 —
   신규 오퍼가 잡히면 결정론 레인이 이메일 경고로 알려주고, 판단은 사람이 한다.
 
+## 결정론 레인은 2단계다 (2026-08-01)
+
+| 단계 | 스크립트 | 하는 일 | 시간 |
+|---|---|---|---|
+| **fast** | `ci-refresh.sh fast` | 클뜯 수신 → 오퍼 데이터 → EN/JA → 아바타·스킬레벨·프로필 | **~57초** |
+| **rest** | `ci-refresh.sh rest` | 인프라 → 회귀검증 → 공채·파밍·비용·스토리 → 보이스·스킨 | ~7분 |
+
+각 단계가 **끝나자마자 따로 커밋·배포**한다. 신규 오퍼가 인프라(234초)·회귀검증(108초)·
+파밍(78초) 뒤에 줄 서다 7분 늦게 올라가던 걸 고친 것이다(사용자 요청).
+로컬에서 통째로 돌릴 땐 인자 없이 `bash scripts/ci-refresh.sh`(=`all`).
+
+⚠ fast만 배포된 몇 분 동안은 `infra.json`이 신규 오퍼를 모른다 — 플래너가 그 오퍼를 편성
+후보에서 빼는 정도라 무해하다(미실장 오퍼는 원래 플래너에서 제외).
+
+## ⚠ 신규 오퍼가 들어올 때 빠지기 쉬운 함정 (2026-08-01 실측)
+
+중섭 신규 4명을 넣으며 실제로 밟은 것들이다. 같은 실수를 반복하지 말 것.
+
+1. **오퍼당 지연 로딩 파일 4종이 파이프라인에 없었다.**
+   `build-skill-levels` · `build-profiles` · `build-voicelines` · `build-skins`가 `ci-refresh.sh`에
+   아예 빠져 있어서, 신규 오퍼가 들어와도 상세 모달의 **레벨 탭·프로필·대사가 비어 있었다**
+   (skills 415/440 · profiles 426/440). 지금은 fast/rest에 나눠 들어가 있다.
+   `build-skins`는 반드시 `--meta-only` — 스킨 이미지 296MB는 git에 없고 R2가 서빙한다.
+2. **R2에 안 올라가면 사이트에선 404다.** `public/`의 에셋은 전부 R2(`files.terra-archive.net`)가
+   서빙한다. `R2_SYNC_KEY` 시크릿이 없으면 `deploy.sh`가 r2-sync를 조용히 건너뛰어
+   신규 오퍼 섬네일·스킬 레벨 파일이 안 보인다. **키는 필수다.**
+   `ci-report.mjs`의 `ASSET_DIRS`에 폴더가 빠져 있어도 배포 자체가 안 돈다.
+3. **UI 검증을 R2 가로채기로 하면 거짓 통과가 난다.** 로컬 `public/`을 고친 뒤
+   Playwright에서 `route()`로 로컬 파일을 물리면 통과하지만, 실제 사이트는 R2의 옛 파일을
+   쓴다. **`r2-sync`를 돌린 뒤 가로채기 없이** 확인할 것.
+4. **미실장 오퍼는 텍스트가 중국어로 남는다.** 스킬·재능·모듈·인프라·소환물은
+   `scripts/cn-translations.json`, 프로필 산문도 같은 사전에 채운다.
+   `regen-operators`와 `build-profiles`가 각각 미번역 분량을 경고로 낸다.
+5. **레벨별 스킬 문구는 번역문에서 수치 자리를 되찾아 만든다.** 번역이 CN 원문과 어순·수치
+   개수가 어긋나면 텍스트가 통째로 빠진다(원문 유출 방지). 번역할 때 **숫자는 빠짐없이,
+   CN과 같은 순서로** 옮길 것.
+
 ## 스케줄 (UTC)
 
 - `08:00`(17:00 KST) · `13:00`(22:00 KST) — KR 데이터 리프레시 2회
@@ -43,6 +80,7 @@ Claude 구독 쿼터를 소모한다 → **추가 요금 0**.
 |---|---|---|
 | `CLOUDFLARE_API_TOKEN` | Pages 배포 | My Profile → API Tokens → **Create Custom Token**(Pages 전용 템플릿은 없음) → Permissions에 `Account · Cloudflare Pages · Edit` 추가 → Account Resources는 본인 계정 Include → Create |
 | `CLOUDFLARE_ACCOUNT_ID` | Pages 배포 | Cloudflare 대시보드 우측 사이드바 Account ID |
+| `R2_SYNC_KEY` | **에셋 R2 동기화(필수)** | 레포 루트 `.r2-sync-key`의 값 — `gh secret set R2_SYNC_KEY < .r2-sync-key`. 없으면 신규 오퍼 섬네일·스킬 레벨 파일이 사이트에서 404 |
 | `CLAUDE_CODE_OAUTH_TOKEN` | 헤드리스 Claude(무과금) | 로컬에서 `claude setup-token` 실행 → 출력 토큰 |
 | `MAIL_USERNAME` | 이메일 발신 | Gmail 주소 |
 | `MAIL_PASSWORD` | 이메일 발신 | Gmail 2단계인증 후 [앱 비밀번호](https://myaccount.google.com/apppasswords) 발급 |

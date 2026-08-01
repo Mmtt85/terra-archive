@@ -67,20 +67,55 @@ jobs:
             echo "lane=kr" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: 데이터 재생성 (결정론 파이프라인)
+      # ── 1단계: 오퍼 도감 (빠른 레인, ~40초) ────────────────────────────────
+      # 신규 오퍼가 인프라·회귀검증·파밍(합 7분) 뒤에 줄서다 늦게 올라가던 문제 해소
+      # (사용자 요청 2026-08-01). 여기서 먼저 커밋·배포하고, 무거운 나머지는 뒤에 따로 간다.
+      - name: 1단계 — 오퍼 데이터 (fast)
         # 전체 출력을 .ci/refresh.log에 남긴다 — 실패 시 이메일에 로그 꼬리를 실어
         # 원인 파악 (첫 무인 실행 실패 때 메일에 링크만 있어 진단 불가였던 개선, 2026-07-21)
         run: |
           set -o pipefail
           mkdir -p .ci   # tee가 스크립트 내부 mkdir보다 먼저 파일을 열므로 필수 (없으면 tee exit 1 → 위양성 실패)
-          bash scripts/ci-refresh.sh 2>&1 | tee .ci/refresh.log
+          bash scripts/ci-refresh.sh fast 2>&1 | tee .ci/refresh.log
+
+      - name: 1단계 — 변경 감지
+        id: report_fast
+        run: node scripts/ci-report.mjs "${{ steps.lane.outputs.lane }}"
+
+      - name: 1단계 — 커밋 + 배포 (변동 있을 때만)
+        if: steps.report_fast.outputs.meaningful == 'true' && !inputs.dry_run
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          R2_SYNC_KEY: ${{ secrets.R2_SYNC_KEY }}
+        run: |
+          git config user.name  "terra-archive-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add -A app/data public
+          git commit -m "데이터 자동 갱신 (${{ steps.lane.outputs.lane }} · 오퍼 도감) — $(date -u +%Y-%m-%d)
+
+          $(cat .ci/subject.txt)
+
+          Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
+          bash scripts/ci-push.sh
+          bash scripts/deploy.sh
+
+      # ── 2단계: 인프라·파밍·스토리 등 나머지 (~7분) ─────────────────────────
+      - name: 2단계 — 나머지 데이터 (rest)
+        run: |
+          set -o pipefail
+          bash scripts/ci-refresh.sh rest 2>&1 | tee -a .ci/refresh.log
 
       - name: 변경 감지 + 리포트
         id: report
         run: node scripts/ci-report.mjs "${{ steps.lane.outputs.lane }}"
 
-      - name: 커밋 + 푸시 (변동 있을 때만)
+      - name: 2단계 — 커밋 + 배포 (변동 있을 때만)
         if: steps.report.outputs.meaningful == 'true' && !inputs.dry_run
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          R2_SYNC_KEY: ${{ secrets.R2_SYNC_KEY }} # 에셋 R2 동기화 — 미등록이면 deploy.sh가 경고 후 건너뜀
         run: |
           git config user.name  "terra-archive-bot"
           git config user.email "bot@users.noreply.github.com"
@@ -91,14 +126,7 @@ jobs:
 
           Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
           bash scripts/ci-push.sh
-
-      - name: Cloudflare Pages 배포 (변동 있을 때만)
-        if: steps.report.outputs.meaningful == 'true' && !inputs.dry_run
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          R2_SYNC_KEY: ${{ secrets.R2_SYNC_KEY }} # 에셋 R2 동기화 — 미등록이면 deploy.sh가 경고 후 건너뜀
-        run: bash scripts/deploy.sh
+          bash scripts/deploy.sh
 
       - name: 이메일 리포트 (변동 또는 경고 있을 때만)
         if: steps.report.outputs.notify == 'true'
