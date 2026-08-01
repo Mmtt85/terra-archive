@@ -1508,5 +1508,340 @@
   "ko": "제조소에 배치 시, 1회 근무 시간이 12시간에 도달하면 생산력 +10%",
   "en": "When assigned to a Factory, if a single work shift reaches 12 hours, productivity +10%",
   "ja": "製造所配置時、1回の勤務時間が12時間に達すると、生産力+10%"
+ },
+ "牙猎犬": {
+  "ko": "가루크",
+  "en": "Palamute",
+  "ja": "ガルク"
+ },
+ "能够阻挡一个敌人，只能部署在艾露猫的攻击范围内": {
+  "ko": "적 1명 저지 가능, 아이루의 공격 범위 내에만 배치 가능",
+  "en": "Can block 1 enemy; can only be deployed within the Palico's attack range",
+  "ja": "敵を1体までブロック、アイルーの攻撃範囲内にのみ配置可能"
+ },
+ "疾如闪电": {
+  "ko": "번개처럼 빠르게",
+  "en": "Swift as Lightning",
+  "ja": "疾きこと雷の如く"
+ },
+ "部署时对周围8格的最多3个敌人进行相当于200%攻击力的斩击，并将其小力地拉向自身方向；被击倒后回到艾露猫身边休息，60秒后重新在战术点的位置部署": {
+  "ko": "배치 시 주변 8칸의 적 최대 3명에게 공격력 200%에 해당하는 참격을 가하고 자신 쪽으로 약하게 끌어당김. 쓰러진 뒤에는 아이루 곁으로 돌아가 휴식하며, 60초 후 전술포인트 위치에 다시 배치됨",
+  "en": "On deployment, slashes up to 3 enemies within the surrounding 8 tiles for 200% of ATK as Physical damage and pulls them weakly toward itself. After being defeated, returns to the Palico to rest and redeploys at the Tactical Point after 60 seconds",
+  "ja": "配置時、周囲8マスの敵最大3体に攻撃力200%相当の斬撃を与え、自身の方向へ弱く引き寄せる。撃破された後はアイルーのそばで休息し、60秒後に戦術ポイントの位置へ再配置される"
+ },
+ "努力活得足够精彩的嘉辛塔，不会停下向前奔跑的脚步。": {
+  "ko": "충분히 멋지게 살고자 애쓰는 자신타는, 앞으로 달려가는 발걸음을 멈추지 않습니다.",
+  "en": "Jacinta, who strives to live a life vivid enough, will never stop running forward.",
+  "ja": "十分に鮮やかに生きようと努めるジャシンタは、前へ走る足を止めない。"
+ },
+ "淑女风范": {
+  "ko": "숙녀의 품격",
+  "en": "Ladylike Poise",
+  "ja": "淑女の風格"
+ },
+ "部署后，嘉辛塔自身与周围八格的友方单位获得15%（+2%）的对空庇护": {
+  "ko": "배치 후, 자신학 주변 8칸의 아군 유닛이 15%(+2%)의 대공 가호 획득",
+  "en": "After deployment, Jacinta and allied units in the surrounding 8 tiles gain 15% (+2%) Anti-Air Shelter",
+  "ja": "配置後、ジャシンタ自身と周囲8マスの味方ユニットが15%（+2%）の対空加護を獲得"
+ },
+ "伞下乘荫": {
+  "ko": "우산 아래 그늘",
+  "en": "Shade Beneath the Parasol",
+  "ja": "傘下の憩い"
+ },
+ "停止攻击，逐渐回复总共27点部署费用，技能持续期间使天赋效果的范围扩大且效果提升至2倍，并每秒治疗天赋范围内的1名友方干员相当于嘉辛塔25%攻击力的生命值": {
+  "ko": "공격 중지, 배치 코스트를 총 27 점차 회복. 스킬 지속 중 재능 효과의 범위가 확대되고 효과가 2배로 증가하며, 매초 재능 범위 내 아군 오퍼레이터 1명을 자신타 공격력 25%에 해당하는 HP만큼 치료",
+  "en": "Stops attacking and gradually recovers a total of 27 Deployment Points. While the skill is active, the Talent's range is expanded and its effect is doubled, and each second heals 1 allied Operator within the Talent's range for 25% of Jacinta's ATK",
+  "ja": "攻撃を停止し、合計27の配置コストを徐々に回復。スキル持続中は才能効果の範囲が拡大し効果が2倍になり、毎秒才能範囲内の味方オペレーター1名をジャシンタの攻撃力25%に相当する体力分回復する"
+ },
+ "弹射起步": {
+  "ko": "로켓 스타트",
+  "en": "Launch Start",
+  "ja": "ロケットスタート"
+ },
+ "部署后，嘉辛塔自身与周围八格的友方单位获得15%的对空庇护": {
+  "ko": "배치 후, 자신타와 주변 8칸의 아군 유닛이 15%의 대공 가호 획득",
+  "en": "After deployment, Jacinta and allied units in the surrounding 8 tiles gain 15% Anti-Air Shelter",
+  "ja": "配置後、ジャシンタ自身と周囲8マスの味方ユニットが15%の対空加護を獲得"
+ },
+ "部署后，嘉辛塔自身与周围八格的友方单位获得18%的对空庇护": {
+  "ko": "배치 후, 자신타와 주변 8칸의 아군 유닛이 18%의 대공 가호 획득",
+  "en": "After deployment, Jacinta and allied units in the surrounding 8 tiles gain 18% Anti-Air Shelter",
+  "ja": "配置後、ジャシンタ自身と周囲8マスの味方ユニットが18%の対空加護を獲得"
+ },
+ "千金的眼光": {
+  "ko": "아가씨의 안목",
+  "en": "An Heiress's Eye",
+  "ja": "令嬢の審美眼"
+ },
+ "坎贝尔之名": {
+  "ko": "캠벨의 이름",
+  "en": "In Campbell's Name",
+  "ja": "キャンベルの名"
+ },
+ "通讯技术工程师阿梅利亚，怀揣着能够用通讯将整片大地连接起来的梦想。": {
+  "ko": "통신 기술 엔지니어 아멜리아는, 통신으로 이 대지 전체를 이을 수 있다는 꿈을 품고 있습니다.",
+  "en": "Amelia, a communications engineer, carries the dream of connecting the whole land through communication.",
+  "ja": "通信技術エンジニアのアメリアは、通信で大地すべてを繋げるという夢を抱いている。"
+ },
+ "新产品测评": {
+  "ko": "신제품 리뷰",
+  "en": "New Product Review",
+  "ja": "新製品レビュー"
+ },
+ "攻击力+11%（+3%），浮游单元攻击时有15%概率使目标停顿1.5秒": {
+  "ko": "공격력 +11%(+3%), 공중 유닛 공격 시 15% 확률로 대상을 1.5초간 정지",
+  "en": "ATK +11% (+3%); the Drone's attacks have a 15% chance to halt the target for 1.5 seconds",
+  "ja": "攻撃力+11%（+3%）、空中ユニットの攻撃時15%の確率で対象を1.5秒間停止させる"
+ },
+ "科技与传统仪式": {
+  "ko": "기술과 전통 의식",
+  "en": "Technology and Tradition",
+  "ja": "技術と伝統儀式"
+ },
+ "浮游单元+1，释放浮游单元锁定敌人攻击 过载：自身停止攻击，攻击力+50%，攻击速度+65 浮游单元锁敌后直至敌人被击杀或技能结束后返回干员身边，浮游单元锁定的敌人离开自身攻击范围时，立刻过载": {
+  "ko": "공중 유닛 +1, 공중 유닛을 내보내 적을 고정해 공격 과부하: 자신은 공격 중지, 공격력 +50%, 공격 속도 +65 공중 유닛은 적을 고정한 뒤 그 적이 쓰러지거나 스킬이 끝날 때까지 유지되며 이후 오퍼레이터 곁으로 복귀. 고정한 적이 자신의 공격 범위를 벗어나면 즉시 과부하",
+  "en": "Drones +1; releases Drones to lock onto and attack enemies. Overload: stops attacking, ATK +50%, ASPD +65. Once a Drone locks onto an enemy it stays until that enemy is defeated or the skill ends, then returns to the Operator. If a locked enemy leaves her attack range, Overload triggers immediately",
+  "ja": "空中ユニット+1、空中ユニットを放って敵をロックし攻撃する。オーバーロード：自身は攻撃を停止、攻撃力+50%、攻撃速度+65。空中ユニットは敵をロックした後、その敵が撃破されるかスキルが終了するまで維持され、その後オペレーターの元へ戻る。ロックした敵が自身の攻撃範囲外に出た場合、即座にオーバーロードする"
+ },
+ "突发性创造思维": {
+  "ko": "돌발적 창조 사고",
+  "en": "Sudden Creative Thinking",
+  "ja": "突発的創造思考"
+ },
+ "攻击力+11%，浮游单元攻击时有15%概率使目标停顿1.5秒": {
+  "ko": "공격력 +11%, 공중 유닛 공격 시 15% 확률로 대상을 1.5초간 정지",
+  "en": "ATK +11%; the Drone's attacks have a 15% chance to halt the target for 1.5 seconds",
+  "ja": "攻撃力+11%、空中ユニットの攻撃時15%の確率で対象を1.5秒間停止させる"
+ },
+ "攻击力+13%，浮游单元攻击时有15%概率使目标停顿1.5秒": {
+  "ko": "공격력 +13%, 공중 유닛 공격 시 15% 확률로 대상을 1.5초간 정지",
+  "en": "ATK +13%; the Drone's attacks have a 15% chance to halt the target for 1.5 seconds",
+  "ja": "攻撃力+13%、空中ユニットの攻撃時15%の確率で対象を1.5秒間停止させる"
+ },
+ "被忽视的天赋": {
+  "ko": "묻혀 있던 재능",
+  "en": "Overlooked Talent",
+  "ja": "見過ごされた才能"
+ },
+ "迟到前六分钟": {
+  "ko": "지각 6분 전",
+  "en": "Six Minutes Before Late",
+  "ja": "遅刻6分前"
+ },
+ "指挥中心": {
+  "ko": "지휘 센터",
+  "en": "Command Center",
+  "ja": "指揮センター"
+ },
+ "不攻击，能够阻挡两个敌人，只能部署在召唤者攻击范围内": {
+  "ko": "공격하지 않으며 적 2명 저지 가능, 소환자의 공격 범위 내에만 배치 가능",
+  "en": "Does not attack, can block 2 enemies, and can only be deployed within the summoner's attack range",
+  "ja": "攻撃せず、敵を2体までブロック。召喚者の攻撃範囲内にのみ配置可能"
+ },
+ "广域覆盖": {
+  "ko": "광역 커버",
+  "en": "Wide-Area Coverage",
+  "ja": "広域カバー"
+ },
+ "效果范围随可露希尔携带技能变化，范围内的友方单位视为可露希尔的援军": {
+  "ko": "효과 범위가 클로저가 장착한 스킬에 따라 변하며, 범위 내 아군 유닛은 클로저의 지원군으로 간주",
+  "en": "The effect range changes with the skill Closure has equipped; allied units within the range are treated as Closure's reinforcements",
+  "ja": "効果範囲はクロージャが装備しているスキルによって変化し、範囲内の味方ユニットはクロージャの援軍とみなされる"
+ },
+ "支援范围": {
+  "ko": "지원 범위",
+  "en": "Support Range",
+  "ja": "支援範囲"
+ },
+ "中继器": {
+  "ko": "중계기",
+  "en": "Repeater",
+  "ja": "中継器"
+ },
+ "不会受到攻击，可部署在地面或高台位": {
+  "ko": "공격받지 않으며, 지상 또는 원거리 배치칸에 배치 가능",
+  "en": "Cannot be attacked; can be deployed on either Melee or Ranged tiles",
+  "ja": "攻撃を受けず、地上または高台のどちらにも配置可能"
+ },
+ "转向": {
+  "ko": "방향 전환",
+  "en": "Redirect",
+  "ja": "方向転換"
+ },
+ "能将谬因的攻击转向，且使该次攻击距离+2": {
+  "ko": "아프리사의 공격 방향을 바꿀 수 있으며, 해당 공격의 사거리 +2",
+  "en": "Can redirect Aphrissa's attack and grants that attack +2 range",
+  "ja": "アフリッサの攻撃の向きを変えることができ、その攻撃の射程+2"
+ },
+ "罗德岛术师干员、信使安洁莉娜，用精妙的源石技艺将你的心愿送达大地上的每个角落。": {
+  "ko": "로도스 아일랜드 캐스터 오퍼레이터이자 메신저인 안젤리나가, 정교한 오리지늄 아츠로 당신의 소원을 대지의 구석구석까지 전달합니다.",
+  "en": "Rhodes Island Caster Operator and courier Angelina delivers your wishes to every corner of the land with her exquisite Originium Arts.",
+  "ja": "ロドスのキャスターオペレーターにして配達人のアンジェリーナが、精緻なアーツであなたの願いを大地の隅々まで届けます。"
+ },
+ "飘浮大地之上": {
+  "ko": "대지 위를 떠돌며",
+  "en": "Adrift Above the Land",
+  "ja": "大地の上を漂って"
+ },
+ "予愿安洁莉娜攻击额外造成相当于攻击力30%（+5%）的法术伤害，攻击重量较轻（小于等于3）的敌人时则额外造成相当于攻击力45%（+10%）的法术伤害；处于起飞状态时使攻击范围内的敌人失重": {
+  "ko": "공격 시 공격력 30%(+5%)에 해당하는 마법 대미지를 추가로 입히며, 무게가 가벼운(3 이하) 적을 공격할 때는 공격력 45%(+10%)에 해당하는 마법 대미지를 추가로 입힘. 이륙 상태에서는 공격 범위 내 적을 무중력 상태로 만듦",
+  "en": "Angelina's attacks deal an additional 30% (+5%) of ATK as Arts damage; against lighter enemies (Weight 3 or below), the bonus is 45% (+10%) of ATK instead. While lifted off, enemies within her attack range become Weightless",
+  "ja": "攻撃時、攻撃力30%（+5%）に相当する術ダメージを追加で与える。重量が軽い（3以下）敵への攻撃時は攻撃力45%（+10%）相当の術ダメージを追加で与える。離陸状態では攻撃範囲内の敵を無重力状態にする"
+ },
+ "天穹间的舞步": {
+  "ko": "창공의 스텝",
+  "en": "Steps Among the Skies",
+  "ja": "天穹のステップ"
+ },
+ "在场时，所有处于起飞状态的友方干员攻击力+18%（+5%）且阻挡时每秒回复10%（+2%）的最大生命值": {
+  "ko": "전장에 있는 동안, 이륙 상태인 모든 아군 오퍼레이터의 공격력 +18%(+5%), 저지 중일 때 매초 최대 HP의 10%(+2%) 회복",
+  "en": "While she is on the field, all allied Operators in Lift Off state gain ATK +18% (+5%) and recover 10% (+2%) of Max HP per second while blocking",
+  "ja": "在場時、離陸状態の味方オペレーター全員の攻撃力+18%（+5%）、ブロック中は毎秒最大体力の10%（+2%）を回復"
+ },
+ "极速送达": {
+  "ko": "초고속 배달",
+  "en": "Express Delivery",
+  "ja": "超速配達"
+ },
+ "部署后立刻起飞，攻击范围扩大，攻击力+135%，同时攻击两个目标": {
+  "ko": "배치 후 즉시 이륙, 공격 범위 확대, 공격력 +135%, 동시에 목표 2개 공격",
+  "en": "Lifts off immediately upon deployment, attack range expanded, ATK +135%, and attacks 2 targets at once",
+  "ja": "配置後すぐに離陸、攻撃範囲拡大、攻撃力+135%、同時に2体の目標を攻撃"
+ },
+ "重力自定义": {
+  "ko": "중력 커스터마이즈",
+  "en": "Custom Gravity",
+  "ja": "重力カスタマイズ"
+ },
+ "攻击范围扩大并向前方滑翔起飞，使掠过的攻击范围内的地面敌人浮空12秒、飞行敌人缚地22秒，随后攻击间隔较大幅缩短，攻击力+165%，攻击变为法术伤害且同时攻击5个目标": {
+  "ko": "공격 범위가 확대되고 앞쪽으로 활공하며 이륙. 스쳐 지나간 공격 범위 내 지상 적을 12초간 부양시키고 비행 적을 22초간 지상에 속박. 이후 공격 딜레이가 큰 폭으로 감소, 공격력 +165%, 공격이 마법 대미지로 변경되며 동시에 목표 5개 공격",
+  "en": "Expands her attack range and glides forward into Lift Off, Levitating ground enemies within the swept range for 12 seconds and binding flying enemies to the ground for 22 seconds. Afterwards, attack interval is greatly reduced, ATK +165%, and attacks become Arts damage hitting 5 targets at once",
+  "ja": "攻撃範囲が拡大し前方へ滑空して離陸。通過した攻撃範囲内の地上の敵を12秒間浮遊させ、飛行の敵を22秒間地上に拘束する。その後、攻撃間隔が大幅に短縮、攻撃力+165%、攻撃が術ダメージに変化し同時に5体の目標を攻撃"
+ },
+ "酸橙的心事": {
+  "ko": "라임의 마음",
+  "en": "What the Lime Keeps",
+  "ja": "ライムの心"
+ },
+ "立刻起飞，攻击力+30%，获得65%的对空庇护，攻击范围扩大，且周围8格视作予愿安洁莉娜的额外攻击范围，攻击对3个敌人造成攻击力380%的物理伤害且额外攻击1个飞行敌人；范围内飞行敌人移动速度-60%，原技能范围内有未被阻挡的可阻挡飞行敌人，且自身未阻挡时，移动至该敌人所在格 攻击装有33发弹药，打完后技能结束（期间可随时停止技能）": {
+  "ko": "즉시 이륙, 공격력 +30%, 65%의 대공 가호 획득, 공격 범위 확대. 주변 8칸도 자신의 추가 공격 범위로 간주되며, 공격이 적 3명에게 공격력 380%의 물리 대미지를 입히고 비행 적 1명을 추가로 공격. 범위 내 비행 적 이동 속도 -60%. 원래 스킬 범위 안에 저지되지 않은 저지 가능한 비행 적이 있고 자신이 저지 중이 아니면 그 적이 있는 칸으로 이동. 공격은 탄약 33발을 가지며, 모두 소진하면 스킬 종료(도중에 언제든 스킬 중단 가능)",
+  "en": "Lifts off immediately, ATK +30%, gains 65% Anti-Air Shelter, attack range expanded, and the surrounding 8 tiles also count as her attack range. Attacks deal 380% of ATK as Physical damage to 3 enemies and additionally strike 1 flying enemy. Flying enemies in range have Movement Speed -60%. If an unblocked, blockable flying enemy is within the original skill range while she is not blocking, she moves to that enemy's tile. The attack carries 33 rounds of ammunition; the skill ends when they run out (it can be stopped manually at any time)",
+  "ja": "即座に離陸、攻撃力+30%、65%の対空加護を獲得、攻撃範囲拡大。周囲8マスも自身の追加攻撃範囲とみなされ、攻撃は敵3体に攻撃力380%の物理ダメージを与え、さらに飛行の敵1体を追加で攻撃する。範囲内の飛行の敵は移動速度-60%。元のスキル範囲内にブロックされていないブロック可能な飛行の敵がおり、自身がブロックしていない場合、その敵のいるマスへ移動する。攻撃は弾薬33発を持ち、撃ち尽くすとスキル終了（途中でいつでもスキルを停止可能）"
+ },
+ "资深信使": {
+  "ko": "베테랑 메신저",
+  "en": "Veteran Courier",
+  "ja": "ベテラン配達人"
+ },
+ "我自己的愿望": {
+  "ko": "나 자신의 소원",
+  "en": "A Wish of My Own",
+  "ja": "私自身の願い"
+ },
+ "战术锚点": {
+  "ko": "전술 앵커",
+  "en": "Tactical Anchor",
+  "ja": "戦術アンカー"
+ },
+ "不会受到攻击，仅可以部署在凯尔希·思衡托攻击范围外的远程位": {
+  "ko": "공격받지 않으며, 켈시·에스페란타의 공격 범위 밖 원거리 배치칸에만 배치 가능",
+  "en": "Cannot be attacked; can only be deployed on Ranged tiles outside Kal'tsit·Esperanta's attack range",
+  "ja": "攻撃を受けず、ケルシー・エスペランタの攻撃範囲外の遠距離マスにのみ配置可能"
+ },
+ "部署后持续30秒": {
+  "ko": "배치 후 30초간 지속",
+  "en": "Lasts 30 seconds after deployment",
+  "ja": "配置後30秒間持続"
+ },
+ "部署时获得最大生命40%（+10%）的屏障；来自自身的屏障可以抵挡超额的伤害": {
+  "ko": "배치 시 최대 HP 40%(+10%)의 보호막 획득. 자신이 부여한 보호막은 초과 대미지도 막아냄",
+  "en": "Gains a Barrier equal to 40% (+10%) of Max HP on deployment; Barriers from itself can absorb excess damage",
+  "ja": "配置時に最大体力40%（+10%）のバリアを獲得。自身によるバリアは超過ダメージも防ぐ"
+ },
+ "向前方冲锋，碰到敌人或高台时对范围内所有敌人造成机械师攻击力300%的物理伤害并停下，周围的敌人获得逐渐衰减的50%的虚弱效果": {
+  "ko": "앞쪽으로 돌진하여, 적이나 고지대에 부딪히면 범위 내 모든 적에게 메커니스트 공격력 300%의 물리 대미지를 입히고 멈춤. 주변 적은 점차 감소하는 50%의 쇠약 효과 획득",
+  "en": "Charges forward; upon hitting an enemy or high ground, deals 300% of Mechanist's ATK as Physical damage to all enemies in range and stops. Surrounding enemies gain a decaying 50% Weaken effect",
+  "ja": "前方へ突進し、敵または高台に接触すると範囲内の全ての敵にメカニストの攻撃力300%の物理ダメージを与えて停止する。周囲の敵は徐々に減衰する50%の衰弱効果を得る"
+ },
+ "梦想成为探路者的珊比，勇敢地迈出了她的第一步。": {
+  "ko": "개척자가 되기를 꿈꾸는 썸피가, 용감하게 첫걸음을 내디뎠습니다.",
+  "en": "Thumpy, who dreams of becoming a pathfinder, has bravely taken her first step.",
+  "ja": "先駆者になることを夢見るサンビが、勇敢に最初の一歩を踏み出した。"
+ },
+ "探险理论": {
+  "ko": "탐험 이론",
+  "en": "Expedition Theory",
+  "ja": "探検理論"
+ },
+ "珊比受到的元素损伤降低20%（+5%）；珊比造成物理伤害时，附带攻击力12%（+2%）的侵蚀损伤，并使目标的侵蚀损伤冷却减少1.2（+0.2）秒": {
+  "ko": "받는 원소 손상 20%(+5%) 감소. 물리 대미지를 입힐 때 공격력 12%(+2%)의 침식 손상을 함께 입히며, 대상의 침식 손상 쿨타임을 1.2(+0.2)초 감소",
+  "en": "Elemental Injury taken -20% (+5%). When dealing Physical damage, also inflicts Corrosion equal to 12% (+2%) of ATK and reduces the target's Corrosion cooldown by 1.2 (+0.2) seconds",
+  "ja": "受ける元素損傷が20%（+5%）減少。物理ダメージを与える際、攻撃力12%（+2%）の侵蝕損傷を付与し、対象の侵蝕損傷のクールダウンを1.2（+0.2）秒短縮する"
+ },
+ "坚硬脚板": {
+  "ko": "단단한 발바닥",
+  "en": "Tough Soles",
+  "ja": "硬い足裏"
+ },
+ "受到过来自珊比伤害的敌人侵蚀损伤爆发时，珊比获得11（+3）点防御力（最多叠加30层）和330（+80）点屏障（不超过最大生命值的300%）": {
+  "ko": "썸피에게 대미지를 받은 적의 침식 손상이 폭발할 때, 방어력 11(+3) 획득(최대 30중첩)과 보호막 330(+80) 획득(최대 HP의 300%를 넘지 않음)",
+  "en": "When Corrosion bursts on an enemy that has taken damage from Thumpy, Thumpy gains 11 (+3) DEF (stacking up to 30 times) and a 330 (+80) Barrier (not exceeding 300% of Max HP)",
+  "ja": "サンビからダメージを受けた敵の侵蝕損傷が爆発した時、防御力11（+3）を獲得（最大30層まで累積）し、330（+80）のバリアを獲得（最大体力の300%を超えない）"
+ },
+ "“还不走？”": {
+  "ko": "“아직도 안 가?”",
+  "en": "“Still Not Leaving?”",
+  "ja": "「まだ行かないの？」"
+ },
+ "攻击力+50%，防御力+50%，同时攻击并以小力度推动所有阻挡的敌人": {
+  "ko": "공격력 +50%, 방어력 +50%, 저지 중인 모든 적을 동시에 공격하며 약하게 밀어냄",
+  "en": "ATK +50%, DEF +50%, attacks all blocked enemies at once and pushes them weakly",
+  "ja": "攻撃力+50%、防御力+50%、ブロック中の全ての敵を同時に攻撃し、弱く押し出す"
+ },
+ "“慢慢走~”": {
+  "ko": "“천천히 가~”",
+  "en": "“Take It Slow~”",
+  "ja": "「ゆっくり行ってね〜」"
+ },
+ "攻击力和防御力+70%；向前方可通行地面喷洒占据4格的强力胶，每0.7秒造成相当于珊比攻击力50%的物理伤害和0.5秒停顿，其他干员对强力胶内的敌人造成物理伤害时附带相当于珊比攻击力15%的侵蚀损伤": {
+  "ko": "공격력·방어력 +70%. 앞쪽 통행 가능한 지면에 4칸을 차지하는 강력 접착제를 분사하여, 0.7초마다 썸피 공격력 50%에 해당하는 물리 대미지와 0.5초 정지를 부여. 다른 오퍼레이터가 접착제 위의 적에게 물리 대미지를 입힐 때 썸피 공격력 15%에 해당하는 침식 손상을 함께 입힘",
+  "en": "ATK and DEF +70%. Sprays a strong adhesive covering 4 tiles of passable ground ahead, dealing 50% of Thumpy's ATK as Physical damage and a 0.5s halt every 0.7 seconds. When other Operators deal Physical damage to enemies within the adhesive, they also inflict Corrosion equal to 15% of Thumpy's ATK",
+  "ja": "攻撃力と防御力+70%。前方の通行可能な地面に4マス分の強力接着剤を噴射し、0.7秒ごとにサンビの攻撃力50%相当の物理ダメージと0.5秒の停止を与える。他のオペレーターが接着剤内の敵に物理ダメージを与える際、サンビの攻撃力15%相当の侵蝕損傷を付与する"
+ },
+ "“不准走！”": {
+  "ko": "“못 가!”",
+  "en": "“You're Not Going Anywhere!”",
+  "ja": "「行かせないよ！」"
+ },
+ "阻挡数+2且同时攻击所有阻挡的敌人，攻击力+100%，防御力+135%；向前展开4格的便携传送带，使重量小于等于4且未被阻挡的敌人以每秒0.8格的速度移向珊比；传送带上的敌人每秒受到相当于珊比攻击力40%的物理伤害，且侵蚀损伤爆发时防御力额外-30": {
+  "ko": "저지 가능 수 +2, 저지 중인 모든 적을 동시에 공격, 공격력 +100%, 방어력 +135%. 앞쪽으로 4칸의 휴대용 컨베이어를 펼쳐, 무게 4 이하이면서 저지되지 않은 적을 초당 0.8칸의 속도로 썸피 쪽으로 끌어당김. 컨베이어 위의 적은 매초 썸피 공격력 40%에 해당하는 물리 대미지를 받고, 침식 손상이 폭발할 때 방어력이 추가로 -30",
+  "en": "Block +2 and attacks all blocked enemies at once, ATK +100%, DEF +135%. Unfolds a 4-tile portable conveyor ahead, drawing unblocked enemies of Weight 4 or below toward Thumpy at 0.8 tiles per second. Enemies on the conveyor take 40% of Thumpy's ATK as Physical damage each second, and suffer an additional -30 DEF when Corrosion bursts",
+  "ja": "ブロック数+2かつブロック中の全ての敵を同時に攻撃、攻撃力+100%、防御力+135%。前方に4マスの携帯コンベアを展開し、重量4以下でブロックされていない敵を毎秒0.8マスの速度でサンビの方へ移動させる。コンベア上の敵は毎秒サンビの攻撃力40%相当の物理ダメージを受け、侵蝕損傷の爆発時に防御力がさらに-30される"
+ },
+ "出发的勇气": {
+  "ko": "출발할 용기",
+  "en": "Courage to Set Out",
+  "ja": "出発する勇気"
+ },
+ "受到过来自珊比伤害的敌人侵蚀损伤爆发时，珊比获得10点防御力和3点攻击力（最多叠加30层），以及350点屏障（不超过最大生命值的300%）": {
+  "ko": "썸피에게 대미지를 받은 적의 침식 손상이 폭발할 때, 방어력 10과 공격력 3 획득(최대 30중첩), 그리고 보호막 350 획득(최대 HP의 300%를 넘지 않음)",
+  "en": "When Corrosion bursts on an enemy that has taken damage from Thumpy, Thumpy gains 10 DEF and 3 ATK (stacking up to 30 times), plus a 350 Barrier (not exceeding 300% of Max HP)",
+  "ja": "サンビからダメージを受けた敵の侵蝕損傷が爆発した時、防御力10と攻撃力3を獲得（最大30層まで累積）し、350のバリアを獲得（最大体力の300%を超えない）"
+ },
+ "受到过来自珊比伤害的敌人侵蚀损伤爆发时，珊比获得12点防御力和5点攻击力（最多叠加30层），以及400点屏障（不超过最大生命值的300%）": {
+  "ko": "썸피에게 대미지를 받은 적의 침식 손상이 폭발할 때, 방어력 12와 공격력 5 획득(최대 30중첩), 그리고 보호막 400 획득(최대 HP의 300%를 넘지 않음)",
+  "en": "When Corrosion bursts on an enemy that has taken damage from Thumpy, Thumpy gains 12 DEF and 5 ATK (stacking up to 30 times), plus a 400 Barrier (not exceeding 300% of Max HP)",
+  "ja": "サンビからダメージを受けた敵の侵蝕損傷が爆発した時、防御力12と攻撃力5を獲得（最大30層まで累積）し、400のバリアを獲得（最大体力の300%を超えない）"
+ },
+ "哪里都是兔子洞": {
+  "ko": "어디든 토끼굴",
+  "en": "Rabbit Holes Everywhere",
+  "ja": "どこでもウサギ穴"
+ },
+ "前任金牌接线员": {
+  "ko": "전직 금메달 교환원",
+  "en": "Former Star Operator",
+  "ja": "元ゴールド交換手"
  }
 }
