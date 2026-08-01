@@ -4558,5 +4558,325 @@
   "ko": "“마치 '구조적 원리'가 목을 빳빳이 세운 채 자기 자리를 지키는 것처럼.”",
   "en": "'Like how the Structural Principle stands with its neck stiffened, guarding its parking space.'",
   "ja": "「『構造的原理』が首をぐいと立てて自分の駐車位置を守っているように。」"
+ },
+ "菲亚梅塔特限证章": {
+  "ko": "피아메타의 특별 한정 배지",
+  "en": "Fiammetta's Specialized Badge",
+  "ja": "フィアメッタの特別限定記章"
+ },
+ "在集成战略中，首次部署时降低50%部署费用，且在倒下时仅一次立即重新部署": {
+  "ko": "통합 전략에서 최초 배치 시 배치 코스트 50% 감소, 쓰러졌을 때 단 1회에 한해 즉시 재배치",
+  "en": "In Integrated Strategies, DP Cost -50% on the first deployment, and immediately redeploys once upon being defeated",
+  "ja": "統合戦略において、初回配置時の配置コスト-50%、倒れた時に一度だけ即座に再配置される"
+ },
+ "自身生命会不断流失（该效果不会使生命降至0）；生命值高于50%时获得+25%攻击力的精力充沛；高于80%效果翻倍； 在集成战略中，菲亚梅塔精力充沛时，该天赋的攻击力加成提升100%，技能或技能期间的攻击，会以最近部署的另一名干员的攻击范围再度施放": {
+  "ko": "자신의 HP가 지속해서 감소(0까지 감소하지 않음), HP가 50%보다 높으면 공격력 +25%의 기운 충만 효과를 획득하고, 80%보다 높으면 2배 효과 적용. 통합 전략에서 피아메타가 기운 충만 상태일 때 이 재능의 공격력 증가량이 100% 상승하며, 스킬 또는 스킬 지속 시간 동안의 공격이 가장 최근에 배치된 다른 오퍼레이터 1명의 공격 범위로 다시 한번 발동",
+  "en": "Continually loses HP over time (HP cannot drop to 0 as a result of this effect); While HP is above 50%, this unit gains Vigor, increasing ATK by 25%; this effect is doubled above 80% HP. In Integrated Strategies, while Fiammetta has Vigor, this talent's ATK bonus is increased by 100%, and her skill, or her attacks while a skill is active, are cast a second time using the Attack Range of the most recently deployed other Operator",
+  "ja": "HPが徐々に減少（この効果でHPは0にならない）。HPが最大値の50%以上で攻撃力+25%の勇猛状態を付与する。HPが80%以上の場合、攻撃力上昇の効果値倍増。統合戦略において、フィアメッタが勇猛状態の時、この素質の攻撃力上昇効果+100%。スキル、またはスキル発動中の攻撃は、最後に配置した他のオペレーター1名の攻撃範囲で再度発動する"
+ },
+ "自身生命会不断流失（该效果不会使生命降至0）；生命值高于50%时获得+25%攻击力的精力充沛；高于80%效果翻倍； 在集成战略中，菲亚梅塔精力充沛时，该天赋的攻击力加成提升100%，技能或技能期间的攻击，会以最近部署的另一名干员的攻击范围再度施放，菲亚梅塔和该干员额外获得30攻速": {
+  "ko": "자신의 HP가 지속해서 감소(0까지 감소하지 않음), HP가 50%보다 높으면 공격력 +25%의 기운 충만 효과를 획득하고, 80%보다 높으면 2배 효과 적용. 통합 전략에서 피아메타가 기운 충만 상태일 때 이 재능의 공격력 증가량이 100% 상승하며, 스킬 또는 스킬 지속 시간 동안의 공격이 가장 최근에 배치된 다른 오퍼레이터 1명의 공격 범위로 다시 한번 발동, 피아메타와 해당 오퍼레이터는 추가로 공격 속도 +30",
+  "en": "Continually loses HP over time (HP cannot drop to 0 as a result of this effect); While HP is above 50%, this unit gains Vigor, increasing ATK by 25%; this effect is doubled above 80% HP. In Integrated Strategies, while Fiammetta has Vigor, this talent's ATK bonus is increased by 100%, and her skill, or her attacks while a skill is active, are cast a second time using the Attack Range of the most recently deployed other Operator, and Fiammetta and that Operator additionally gain +30 ASPD",
+  "ja": "HPが徐々に減少（この効果でHPは0にならない）。HPが最大値の50%以上で攻撃力+25%の勇猛状態を付与する。HPが80%以上の場合、攻撃力上昇の効果値倍増。統合戦略において、フィアメッタが勇猛状態の時、この素質の攻撃力上昇効果+100%。スキル、またはスキル発動中の攻撃は、最後に配置した他のオペレーター1名の攻撃範囲で再度発動する。フィアメッタと当該オペレーターは追加で攻撃速度+30"
+ },
+ "提丰特限证章": {
+  "ko": "티폰의 특별 한정 배지",
+  "en": "Typhon's Specialized Badge",
+  "ja": "ティフォンの特別限定記章"
+ },
+ "在集成战略中，攻击重量较重（重量等级大于等于3）的敌人时无视其物理闪避且造成的物理伤害提升40%": {
+  "ko": "통합 전략에서 무게 등급이 3 이상인 적 공격 시 상대의 물리 회피를 무시하고, 입히는 물리 대미지 +40%",
+  "en": "In Integrated Strategies, when attacking a heavy enemy (weight 3 or greater), ignores its Physical Dodge and deals 40% more Physical damage",
+  "ja": "統合戦略において、重量ランクが3以上の敵を攻撃時、対象の物理回避を無視し、与える物理ダメージ+40%"
+ },
+ "技能期间对每个敌人首次造成伤害时，攻击力提升至160%并使目标停顿3秒； 在集成战略中，在场时始终标记1名全场最重的敌人，被标记的敌人受到停顿或晕眩时向其发射箭雨（每8秒至多触发1次），箭雨随机攻击目标周围的敌人造成8次相当于攻击力90%的物理伤害和0.1秒晕眩": {
+  "ko": "스킬 지속 시간 동안 적에게 최초로 대미지를 입힐 시 공격력이 160%로 증가, 목표를 3초간 정지시킴. 통합 전략에서 배치되어 있을 때 항상 전장에서 가장 무거운 적 1명을 표기, 표기한 적이 정지 또는 기절 상태가 되면 해당 적에게 화살비 발사(8초당 최대 1회 발동), 화살비는 표기한 목표 주변의 적을 무작위로 공격해 공격력의 90%에 해당하는 물리 대미지를 8회 입히고 0.1초간 기절시킴",
+  "en": "When damaging an enemy for the first time while a skill is active, ATK increases to 160% and Slows the target for 3 seconds. In Integrated Strategies, while deployed, always marks the single heaviest enemy on the field; when the marked enemy is Slowed or Stunned, fires a hail of arrows at it (triggers at most once every 8 seconds); the hail of arrows randomly strikes enemies around the marked target, dealing 8 hits of 90% ATK as Physical damage and Stunning them for 0.1 seconds",
+  "ja": "スキル発動中、同じ敵に初めてダメージを与える際、攻撃力が160%まで上昇し、対象を3秒間足止め。統合戦略において、配置中は常に戦場で最も重い敵1体をマークし、マークした敵が足止めまたはスタン状態になった時、その敵へ矢の雨を放つ（8秒ごとに最大1回発動）。矢の雨はマークした対象の周囲にいる敵をランダムで攻撃し、攻撃力の90%の物理ダメージを8回与え、さらに0.1秒スタンさせる"
+ },
+ "技能期间对每个敌人首次造成伤害时，攻击力提升至160%并使目标停顿3秒； 在集成战略中，在场时始终标记1名全场最重的敌人，被标记的敌人受到停顿或晕眩时向其发射箭雨（每8秒至多触发1次），箭雨随机攻击目标周围的敌人造成8次相当于攻击力110%的物理伤害和0.1秒晕眩": {
+  "ko": "스킬 지속 시간 동안 적에게 최초로 대미지를 입힐 시 공격력이 160%로 증가, 목표를 3초간 정지시킴. 통합 전략에서 배치되어 있을 때 항상 전장에서 가장 무거운 적 1명을 표기, 표기한 적이 정지 또는 기절 상태가 되면 해당 적에게 화살비 발사(8초당 최대 1회 발동), 화살비는 표기한 목표 주변의 적을 무작위로 공격해 공격력의 110%에 해당하는 물리 대미지를 8회 입히고 0.1초간 기절시킴",
+  "en": "When damaging an enemy for the first time while a skill is active, ATK increases to 160% and Slows the target for 3 seconds. In Integrated Strategies, while deployed, always marks the single heaviest enemy on the field; when the marked enemy is Slowed or Stunned, fires a hail of arrows at it (triggers at most once every 8 seconds); the hail of arrows randomly strikes enemies around the marked target, dealing 8 hits of 110% ATK as Physical damage and Stunning them for 0.1 seconds",
+  "ja": "スキル発動中、同じ敵に初めてダメージを与える際、攻撃力が160%まで上昇し、対象を3秒間足止め。統合戦略において、配置中は常に戦場で最も重い敵1体をマークし、マークした敵が足止めまたはスタン状態になった時、その敵へ矢の雨を放つ（8秒ごとに最大1回発動）。矢の雨はマークした対象の周囲にいる敵をランダムで攻撃し、攻撃力の110%の物理ダメージを8回与え、さらに0.1秒スタンさせる"
+ },
+ "“致我们的老大”": {
+  "ko": "'우리 두목에게'",
+  "en": "'To Our Boss'",
+  "ja": "「あたしたちのボスへ」"
+ },
+ "每回收5次回旋投射物时获得1点技力": {
+  "ko": "부메랑 투사체를 5회 회수할 때마다 SP +1",
+  "en": "Gains 1 SP for every 5 boomerang projectiles retrieved",
+  "ja": "旋回投擲物を5回回収するたびにSPを1回復"
+ },
+ "获得35%的物理与法术闪避，周围8格内敌人的物理与法术命中率-25%；6秒内未受到伤害时，攻击力+10%": {
+  "ko": "물리 및 마법 회피 +35%, 주변 8칸 내 적의 물리 및 마법 명중률 -25%, 6초간 대미지를 받지 않으면 공격력 +10%",
+  "en": "Gains 35% Physical and Arts Dodge and reduces the hit rate of Physical and Arts attacks from enemies in the surrounding 8 tiles by 25%; ATK +10% when she has not taken damage for 6 seconds",
+  "ja": "35%の物理・術回避を獲得し、周囲8マス内にいる敵全員の物理・術攻撃の命中率-25%。6秒間ダメージを受けていない場合、攻撃力+10%"
+ },
+ "获得35%的物理与法术闪避，周围8格内敌人的物理与法术命中率-30%；6秒内未受到伤害时，攻击力+15%": {
+  "ko": "물리 및 마법 회피 +35%, 주변 8칸 내 적의 물리 및 마법 명중률 -30%, 6초간 대미지를 받지 않으면 공격력 +15%",
+  "en": "Gains 35% Physical and Arts Dodge and reduces the hit rate of Physical and Arts attacks from enemies in the surrounding 8 tiles by 30%; ATK +15% when she has not taken damage for 6 seconds",
+  "ja": "35%の物理・術回避を獲得し、周囲8マス内にいる敵全員の物理・術攻撃の命中率-30%。6秒間ダメージを受けていない場合、攻撃力+15%"
+ },
+ "剑舞": {
+  "ko": "검무",
+  "en": "Sword Dance",
+  "ja": "剣舞"
+ },
+ "在场时，部署费用的自然回复速度+13%，若4秒内自身未受到伤害，则每秒恢复4%的最大生命值，首次部署后获得迷彩直至开启技能": {
+  "ko": "배치되어 있을 때, 배치 코스트의 자연 회복 속도 +13%, 4초간 대미지를 받지 않으면 초당 최대 HP의 4% 회복, 최초 배치 후 스킬을 발동할 때까지 위장 효과 획득",
+  "en": "Natural DP regeneration rate +13% while on the field; if Vulpisfoglia does not take damage for 4s, recovers 4% of Max HP every second; after the first deployment, gains Camouflage until a skill is activated",
+  "ja": "配置中、コストの自然回復速度+13%、4秒間ダメージを受けていない場合、1秒ごとにHPが最大値の4%回復。初回配置後、スキルを発動するまで迷彩状態になる"
+ },
+ "在场时，部署费用的自然回复速度+15%，若4秒内自身未受到伤害，则每秒恢复4%的最大生命值，首次部署后获得迷彩直至开启技能": {
+  "ko": "배치되어 있을 때, 배치 코스트의 자연 회복 속도 +15%, 4초간 대미지를 받지 않으면 초당 최대 HP의 4% 회복, 최초 배치 후 스킬을 발동할 때까지 위장 효과 획득",
+  "en": "Natural DP regeneration rate +15% while on the field; if Vulpisfoglia does not take damage for 4s, recovers 4% of Max HP every second; after the first deployment, gains Camouflage until a skill is activated",
+  "ja": "配置中、コストの自然回復速度+15%、4秒間ダメージを受けていない場合、1秒ごとにHPが最大値の4%回復。初回配置後、スキルを発動するまで迷彩状態になる"
+ },
+ "烦恼问诊匣": {
+  "ko": "고민 문진함",
+  "en": "Troubles Consultation Box",
+  "ja": "悩み問診箱"
+ },
+ "攻击范围内存在元素损伤爆发的敌人时，技力自然恢复速度+0.2/秒": {
+  "ko": "공격 범위 내에 원소 손상이 폭발한 적이 존재할 시 SP 자연 회복 속도 +0.2/초",
+  "en": "Increases SP recovery rate by +0.2/s while an enemy under an Elemental Damage burst is within Attack Range",
+  "ja": "攻撃範囲内に元素損傷の爆発効果中の敵が存在する場合、SPの自然回復速度+0.2sp/秒"
+ },
+ "攻击处于凋亡损伤爆发期间的敌人时使其每0.8秒受到相当于攻击力40%的元素伤害，持续至凋亡损伤爆发结束": {
+  "ko": "쇠약 손상 폭발 상태인 적 공격 시 0.8초마다 공격력의 40%에 해당하는 원소 대미지를 입힘, 쇠약 손상 폭발이 끝날 때까지 지속",
+  "en": "When attacking enemies under the burst effect of Necrosis, deals 40% ATK as Elemental Damage to them every 0.8 seconds, lasting until the end of the Necrosis burst",
+  "ja": "壊死損傷の爆発効果中の敵を攻撃した場合、0.8秒ごとに攻撃力の40%の元素ダメージを与え続ける（壊死損傷の爆発効果が終了するまで継続）"
+ },
+ "攻击处于凋亡损伤爆发期间的敌人时使其每0.7秒受到相当于攻击力40%的元素伤害，持续至凋亡损伤爆发结束": {
+  "ko": "쇠약 손상 폭발 상태인 적 공격 시 0.7초마다 공격력의 40%에 해당하는 원소 대미지를 입힘, 쇠약 손상 폭발이 끝날 때까지 지속",
+  "en": "When attacking enemies under the burst effect of Necrosis, deals 40% ATK as Elemental Damage to them every 0.7 seconds, lasting until the end of the Necrosis burst",
+  "ja": "壊死損傷の爆発効果中の敵を攻撃した場合、0.7秒ごとに攻撃力の40%の元素ダメージを与え続ける（壊死損傷の爆発効果が終了するまで継続）"
+ },
+ "沟通小助手": {
+  "ko": "소통 도우미",
+  "en": "Little Communication Helper",
+  "ja": "コミュニケーションのお助けメモ"
+ },
+ "被击倒时倒地并获得6000点屏障，倒地期间不能攻击，无法被治疗，每秒回复4%生命，每次受到攻击时对目标造成烛煌攻击力100%的法术伤害和相当于法术伤害20%的灼燃损伤；生命回满后复活并使附近的敌人晕眩5秒，且自身回复4点技力": {
+  "ko": "쓰러지면 6000의 보호막 획득, 쓰러져 있는 동안 공격할 수 없고 치료받을 수 없으며, 초당 최대 HP의 4% 회복, 공격받을 때마다 목표에게 블레이즈 디 이그나이팅 스파크 공격력의 100%에 해당하는 마법 대미지와 해당 마법 대미지의 20%에 해당하는 소각 손상을 입힘, HP 전부 회복 후 부활하고 주변 적을 5초간 기절시키며 자신은 SP 4 회복",
+  "en": "When defeated, becomes downed instead and gains 6000 Barrier; cannot attack or be healed while downed, but recovers 4% HP per second; each time she is attacked, deals 100% of Blaze the Igniting Spark's ATK as Arts damage to the attacker along with Burn equal to 20% of that Arts damage; once HP is full, revives, Stuns nearby enemies for 5s, and restores 4 SP to herself",
+  "ja": "HPが0になっても退場せず、代わりにダウン状態（攻撃不可、味方の治療対象にならない）になり、6000までの被ダメージを吸収可能なバリアを獲得し、HPが毎秒最大値の4%回復する。攻撃を受けるたびに対象へ熾炎ブレイズの攻撃力の100%の術ダメージと、その術ダメージの20%の灼熱損傷を与える。HPが最大値まで回復するとダウン状態が解除され、周囲にいる敵全員を5秒間スタンさせ、自身のSPを4回復する"
+ },
+ "被击倒时倒地并获得6000点屏障，倒地期间不能攻击，无法被治疗，每秒回复4%生命，每次受到攻击时对目标造成烛煌攻击力120%的法术伤害和相当于法术伤害30%的灼燃损伤；生命回满后复活并使附近的敌人晕眩5秒，且自身回复8点技力": {
+  "ko": "쓰러지면 6000의 보호막 획득, 쓰러져 있는 동안 공격할 수 없고 치료받을 수 없으며, 초당 최대 HP의 4% 회복, 공격받을 때마다 목표에게 블레이즈 디 이그나이팅 스파크 공격력의 120%에 해당하는 마법 대미지와 해당 마법 대미지의 30%에 해당하는 소각 손상을 입힘, HP 전부 회복 후 부활하고 주변 적을 5초간 기절시키며 자신은 SP 8 회복",
+  "en": "When defeated, becomes downed instead and gains 6000 Barrier; cannot attack or be healed while downed, but recovers 4% HP per second; each time she is attacked, deals 120% of Blaze the Igniting Spark's ATK as Arts damage to the attacker along with Burn equal to 30% of that Arts damage; once HP is full, revives, Stuns nearby enemies for 5s, and restores 8 SP to herself",
+  "ja": "HPが0になっても退場せず、代わりにダウン状態（攻撃不可、味方の治療対象にならない）になり、6000までの被ダメージを吸収可能なバリアを獲得し、HPが毎秒最大値の4%回復する。攻撃を受けるたびに対象へ熾炎ブレイズの攻撃力の120%の術ダメージと、その術ダメージの30%の灼熱損傷を与える。HPが最大値まで回復するとダウン状態が解除され、周囲にいる敵全員を5秒間スタンさせ、自身のSPを8回復する"
+ },
+ "新生代": {
+  "ko": "신생대",
+  "en": "Cenozoic",
+  "ja": "新生代"
+ },
+ "自身技能期间，攻击范围内的友军获得30点物理与法术伤害减免": {
+  "ko": "스킬 지속 시간 동안 공격 범위 내 아군이 받는 물리 및 마법 대미지가 30 감소",
+  "en": "While this unit's skill is active, allies within Attack Range take 30 less Physical and Arts damage",
+  "ja": "スキル発動中、攻撃範囲内の味方の物理・術被ダメージ-30"
+ },
+ "自身或海嗣攻击范围内存在我方干员时，自身攻击力+8%，防御力+6%；存在【深海猎人】干员时攻击力改为+15%，防御力+6%；我方干员部署于自身或海嗣范围内后，自身立刻获得2点技力": {
+  "ko": "자신 또는 시본의 공격 범위에 아군 오퍼레이터가 존재할 경우 자신의 공격력 +8%, 방어력 +6%, [어비설 헌터스] 오퍼레이터가 존재할 경우 공격력 +15%, 방어력 +6%로 변경, 아군 오퍼레이터가 자신 또는 시본의 범위 내에 배치되면 자신은 즉시 SP 2 회복",
+  "en": "ATK +8% and DEF +6% when there is an allied Operator within range of self or the Seaborn; if an [Abyssal Hunter] Operator is present, ATK becomes +15% and DEF +6% instead; whenever an allied Operator is deployed within range of self or the Seaborn, immediately restores 2 SP",
+  "ja": "自身やシーボーンの攻撃範囲内に味方オペレーターがいる時、自身の攻撃力+8%、防御力+6%。味方【アビサルハンター】がいる時、攻撃力の上昇効果が+15%、防御力+6%になる。自身やシーボーンの範囲内に味方オペレーターが配置されると、自身のSPを即座に2回復"
+ },
+ "自身或海嗣攻击范围内存在我方干员时，自身攻击力+9%，防御力+8%；存在【深海猎人】干员时攻击力改为+20%，防御力+8%；我方干员部署于自身或海嗣范围内后，自身立刻获得3点技力": {
+  "ko": "자신 또는 시본의 공격 범위에 아군 오퍼레이터가 존재할 경우 자신의 공격력 +9%, 방어력 +8%, [어비설 헌터스] 오퍼레이터가 존재할 경우 공격력 +20%, 방어력 +8%로 변경, 아군 오퍼레이터가 자신 또는 시본의 범위 내에 배치되면 자신은 즉시 SP 3 회복",
+  "en": "ATK +9% and DEF +8% when there is an allied Operator within range of self or the Seaborn; if an [Abyssal Hunter] Operator is present, ATK becomes +20% and DEF +8% instead; whenever an allied Operator is deployed within range of self or the Seaborn, immediately restores 3 SP",
+  "ja": "自身やシーボーンの攻撃範囲内に味方オペレーターがいる時、自身の攻撃力+9%、防御力+8%。味方【アビサルハンター】がいる時、攻撃力の上昇効果が+20%、防御力+8%になる。自身やシーボーンの範囲内に味方オペレーターが配置されると、自身のSPを即座に3回復"
+ },
+ "“新车和新生活”": {
+  "ko": "'새 차와 새 삶'",
+  "en": "'New Car and New Life'",
+  "ja": "「新しい車と新しい生活」"
+ },
+ "每次部署后击倒一名敌人之前，攻击速度+12，受到的所有伤害降低30%，击倒一名敌人之后使当次再部署时间-10%": {
+  "ko": "배치 후 적을 쓰러뜨릴 때까지 공격 속도 +12, 모든 피격 대미지가 30% 감소, 적을 쓰러뜨린 후에는 해당 배치의 재배치 시간 -10%",
+  "en": "Before defeating an enemy for the first time after each deployment, gains +12 ASPD and reduces all damage taken by 30%; after defeating an enemy, that deployment's Redeployment Time -10%",
+  "ja": "配置後、敵を1体倒すまで攻撃速度+12、被ダメージ-30%。敵を1体倒した後、その配置の再配置時間-10%"
+ },
+ "每次部署后击倒一名敌人之前，攻击速度+15，受到的所有伤害降低30%，击倒一名敌人之后使当次再部署时间-20%": {
+  "ko": "배치 후 적을 쓰러뜨릴 때까지 공격 속도 +15, 모든 피격 대미지가 30% 감소, 적을 쓰러뜨린 후에는 해당 배치의 재배치 시간 -20%",
+  "en": "Before defeating an enemy for the first time after each deployment, gains +15 ASPD and reduces all damage taken by 30%; after defeating an enemy, that deployment's Redeployment Time -20%",
+  "ja": "配置後、敵を1体倒すまで攻撃速度+15、被ダメージ-30%。敵を1体倒した後、その配置の再配置時間-20%"
+ },
+ "罗德岛制式双刀": {
+  "ko": "로도스 아일랜드 제식 쌍도",
+  "en": "Rhodes Island Standard-Issue Dual Blades",
+  "ja": "ロドス制式二刀"
+ },
+ "攻击额外造成攻击力23%的法术伤害，根据造成的法术伤害次数获得不断提高的术法充盈（最高在造成7次法术伤害后获得35%的术法充盈），首次撤退再部署时间为0": {
+  "ko": "공격 시 추가로 공격력의 23%에 해당하는 마법 대미지를 입히며, 마법 대미지를 입힌 횟수에 따라 마법 충만 효과가 점점 상승(마법 대미지를 7회 입힌 후 최대 35%의 마법 충만 획득), 최초 퇴각 시 재배치 시간 0",
+  "en": "Attacks deal an additional 23% ATK as Arts damage, and gain increasing Arts Amplification based on the number of times Arts damage has been dealt (up to 35% Arts Amplification after dealing Arts damage 7 times); Redeployment Time is 0 after the first retreat",
+  "ja": "攻撃時、対象に追加で攻撃力の23%の術ダメージを与え、術ダメージを与えた回数に応じて術法充溢の効果が上昇していく（術ダメージを7回与えると最大35%の術法充溢を獲得）。初回撤退時の再配置時間が0になる"
+ },
+ "攻击额外造成攻击力25%的法术伤害，根据造成的法术伤害次数获得不断提高的术法充盈（最高在造成10次法术伤害后获得50%的术法充盈），首次撤退再部署时间为0": {
+  "ko": "공격 시 추가로 공격력의 25%에 해당하는 마법 대미지를 입히며, 마법 대미지를 입힌 횟수에 따라 마법 충만 효과가 점점 상승(마법 대미지를 10회 입힌 후 최대 50%의 마법 충만 획득), 최초 퇴각 시 재배치 시간 0",
+  "en": "Attacks deal an additional 25% ATK as Arts damage, and gain increasing Arts Amplification based on the number of times Arts damage has been dealt (up to 50% Arts Amplification after dealing Arts damage 10 times); Redeployment Time is 0 after the first retreat",
+  "ja": "攻撃時、対象に追加で攻撃力の25%の術ダメージを与え、術ダメージを与えた回数に応じて術法充溢の効果が上昇していく（術ダメージを10回与えると最大50%の術法充溢を獲得）。初回撤退時の再配置時間が0になる"
+ },
+ "毒医残章": {
+  "ko": "독의사의 잔장",
+  "en": "The Poison Doctor's Remnant Chapter",
+  "ja": "毒医の残章"
+ },
+ "自身受到的治疗量+20%，且部署后立即恢复攻击范围内一名友方干员（优先选取正前方）的生命值，恢复量为阿攻击力的100％": {
+  "ko": "자신이 받는 치유량 +20%, 배치 후 즉시 공격 범위 내 아군 오퍼레이터 1명(정면 우선 선택)의 HP를 아 공격력의 100%만큼 회복",
+  "en": "Increases healing effects on this unit by 20%, and immediately restores the HP of one allied Operator within Attack Range (prioritizing the one directly in front) by 100% of Aak's ATK upon deployment",
+  "ja": "自身が受ける治療量+20%。配置後、攻撃範囲内の味方オペレーター1名（正面を優先して選択）のHPをアの攻撃力の100%分即座に回復する"
+ },
+ "自身受到的治疗量+25%，且部署后立即恢复攻击范围内一名友方干员（优先选取正前方）的生命值，恢复量为阿攻击力的150％": {
+  "ko": "자신이 받는 치유량 +25%, 배치 후 즉시 공격 범위 내 아군 오퍼레이터 1명(정면 우선 선택)의 HP를 아 공격력의 150%만큼 회복",
+  "en": "Increases healing effects on this unit by 25%, and immediately restores the HP of one allied Operator within Attack Range (prioritizing the one directly in front) by 150% of Aak's ATK upon deployment",
+  "ja": "自身が受ける治療量+25%。配置後、攻撃範囲内の味方オペレーター1名（正面を優先して選択）のHPをアの攻撃力の150%分即座に回復する"
+ },
+ "归溟幽灵鲨特限证章": {
+  "ko": "스펙터 디 언체인드의 특별 한정 배지",
+  "en": "Specter the Unchained's Specialized Badge",
+  "ja": "帰溟スペクターの特別限定記章"
+ },
+ "在集成战略中，自身和<替身>造成的物理和法术伤害提升40%，受到的物理和法术伤害减少40%": {
+  "ko": "통합 전략에서 자신과 [대역]이 입히는 물리 및 마법 대미지 +40%, 받는 물리 및 마법 대미지 -40%",
+  "en": "In Integrated Strategies, Physical and Arts damage dealt by this unit and her <Substitute> +40%, and Physical and Arts damage taken -40%",
+  "ja": "統合戦略において、自身と<身替り>が与える物理・術ダメージ+40%、受ける物理・術ダメージ-40%"
+ },
+ "<替身>使周围敌人移动速度-40%且每秒造成相当于40%攻击力的法术伤害； 在集成战略中，<替身>每秒额外造成一次100%攻击力的法术伤害": {
+  "ko": "[대역] 주위의 적 이동 속도 -40%, 초당 공격력의 40%에 해당하는 마법 대미지 부여. 통합 전략에서 [대역]이 초당 공격력의 100%에 해당하는 마법 대미지를 추가로 1회 입힘",
+  "en": "<Substitute> reduces Movement Speed of nearby enemies by 40%, and deals 40% ATK as Arts damage to them per second. In Integrated Strategies, the <Substitute> deals 1 additional instance of 100% ATK as Arts damage per second",
+  "ja": "<身替り>状態時、周囲の敵の移動速度-40%、1秒ごとに攻撃力の40%の術ダメージを与える。統合戦略において、<身替り>は1秒ごとに追加で攻撃力の100%の術ダメージを1回与える"
+ },
+ "<替身>使周围敌人移动速度-40%且每秒造成相当于40%攻击力的法术伤害； 在集成战略中，<替身>每秒额外造成一次160%攻击力的法术伤害；周围8格地面上的其他干员被击倒时，若归溟幽灵鲨未处于<替身>状态则仅一次使该干员在8秒内生命值不会低于1，期间其周围敌人也受到与<替身>周围相同的效果，随后归溟幽灵鲨切换成<替身>作战，并在自身再次替换<替身>后刷新以上效果": {
+  "ko": "[대역] 주위의 적 이동 속도 -40%, 초당 공격력의 40%에 해당하는 마법 대미지 부여. 통합 전략에서 [대역]이 초당 공격력의 160%에 해당하는 마법 대미지를 추가로 1회 입히며, 주변 8칸의 지상에 있는 다른 오퍼레이터가 쓰러질 때 스펙터 디 언체인드가 [대역] 상태가 아니라면 단 1회에 한해 해당 오퍼레이터의 HP가 8초간 1 미만으로 떨어지지 않게 하고, 그동안 그 오퍼레이터 주위의 적도 [대역] 주위와 동일한 효과를 받음. 이후 스펙터 디 언체인드는 [대역]을 교체 투입해 전투하며, 다시 본체로 교체된 후 위 효과가 재충전됨",
+  "en": "<Substitute> reduces Movement Speed of nearby enemies by 40%, and deals 40% ATK as Arts damage to them per second. In Integrated Strategies, the <Substitute> deals 1 additional instance of 160% ATK as Arts damage per second; when another Operator on a ground tile within the surrounding 8 tiles is defeated, if Specter the Unchained is not in her <Substitute> state, that Operator's HP will not fall below 1 for 8 seconds (once only), and during that time the enemies around that Operator suffer the same effects as those around the <Substitute>; Specter the Unchained then swaps into her <Substitute> to fight, and the above effect is refreshed once she swaps back from the <Substitute>",
+  "ja": "<身替り>状態時、周囲の敵の移動速度-40%、1秒ごとに攻撃力の40%の術ダメージを与える。統合戦略において、<身替り>は1秒ごとに追加で攻撃力の160%の術ダメージを1回与える。周囲8マスの地面にいる他のオペレーターが倒された時、帰溟スペクターが<身替り>状態でなければ、一度だけ当該オペレーターのHPを8秒間1未満にならないようにし、その間そのオペレーターの周囲の敵も<身替り>の周囲と同じ効果を受ける。その後、帰溟スペクターは<身替り>と入れ替わって戦闘を続行し、再び自身に入れ替わると以上の効果が再度発動可能になる"
+ },
+ "想要留下的生命": {
+  "ko": "남기고 싶은 생명",
+  "en": "The Life She Wants to Keep",
+  "ja": "残したい命"
+ },
+ "攻击范围内存在受到元素损伤的友方单位时，攻击速度+8": {
+  "ko": "공격 범위 내에 원소 손상을 입은 아군 유닛이 존재할 시 공격 속도 +8",
+  "en": "ASPD +8 while an allied unit affected by Elemental Damage is within Attack Range",
+  "ja": "攻撃範囲内に元素損傷を受けた味方がいる場合、攻撃速度+8"
+ },
+ "普通治疗使目标每秒额外受到一次治疗量和元素损伤回复量为12%的增益治疗，持续7秒（最多叠加3层）": {
+  "ko": "치료 시 목표에 초당 치유량과 원소 손상 회복량이 공격력의 12%인 치료 버프 부여, 7초간 지속 (최대 3회 중첩)",
+  "en": "Normal heals additionally restore HP and Elemental Injury per second equal to 12% of the original amount, lasting for 7 seconds (stacks up to 3 times)",
+  "ja": "通常治療後、対象のHPと蓄積された元素損傷を7秒間、1秒ごとに12%治療（最大3回まで重複可能）"
+ },
+ "普通治疗使目标每秒额外受到一次治疗量和元素损伤回复量为13%的增益治疗，持续8秒（最多叠加3层）": {
+  "ko": "치료 시 목표에 초당 치유량과 원소 손상 회복량이 공격력의 13%인 치료 버프 부여, 8초간 지속 (최대 3회 중첩)",
+  "en": "Normal heals additionally restore HP and Elemental Injury per second equal to 13% of the original amount, lasting for 8 seconds (stacks up to 3 times)",
+  "ja": "通常治療後、対象のHPと蓄積された元素損傷を8秒間、1秒ごとに13%治療（最大3回まで重複可能）"
+ },
+ "“独属自己的一隅”": {
+  "ko": "'자신만의 한 구석'",
+  "en": "'A Corner of One's Own'",
+  "ja": "「自分だけの片隅」"
+ },
+ "攻击范围内存在已受伤的友方干员时，自身造成的伤害提升至110%": {
+  "ko": "공격 범위 내에 부상당한 아군 오퍼레이터가 존재할 시 자신이 입히는 대미지가 110%로 증가",
+  "en": "Damage dealt by this unit increases to 110% while an injured allied Operator is within Attack Range",
+  "ja": "攻撃範囲内に負傷した味方オペレーターがいる場合、自身の与ダメージが110%まで上昇"
+ },
+ "造成伤害时有30%概率对敌人施加灼痕效果：攻击力-20%、34%的【法术脆弱】，不可叠加持续7秒": {
+  "ko": "적에게 대미지를 입히면 30% 확률로 화흔 효과 부여: 공격력 -20%, [마법 취약] 34%, 7초간 지속, 중첩 불가",
+  "en": "When dealing damage, 30% chance to inflict Cinder: ATK -20%, 34% [Arts Fragility], does not stack, lasts 7s",
+  "ja": "敵にダメージを与えた際、30%の確率で対象に7秒間攻撃力-20%、34%の対術脆弱状態をもたらす灼痕を付与（重複不可）"
+ },
+ "造成伤害时有30%概率对敌人施加灼痕效果：攻击力-20%、38%的【法术脆弱】，不可叠加持续8秒": {
+  "ko": "적에게 대미지를 입히면 30% 확률로 화흔 효과 부여: 공격력 -20%, [마법 취약] 38%, 8초간 지속, 중첩 불가",
+  "en": "When dealing damage, 30% chance to inflict Cinder: ATK -20%, 38% [Arts Fragility], does not stack, lasts 8s",
+  "ja": "敵にダメージを与えた際、30%の確率で対象に8秒間攻撃力-20%、38%の対術脆弱状態をもたらす灼痕を付与（重複不可）"
+ },
+ "未曾风化": {
+  "ko": "풍화되지 않은 것",
+  "en": "Unweathered",
+  "ja": "風化せぬもの"
+ },
+ "攻击距离+1（不受技能攻击范围变化影响）": {
+  "ko": "공격 거리 +1 (스킬로 인한 공격 범위 변화의 영향을 받지 않음)",
+  "en": "Attack Range +1 tile (not affected by Attack Range changes from skills)",
+  "ja": "攻撃距離+1（スキルによる攻撃範囲の変化の影響を受けない）"
+ },
+ "机动盾牌受到伤害时，有55%的概率使涤火杰西卡获得1点技力并使机动盾牌自身再部署时间-1s（最多至-11s）": {
+  "ko": "기동 방패가 피격 시 55% 확률로 제시카 더 리버레이티드의 SP +1, 기동 방패 자신의 재배치 시간 -1초 (최대 -11초)",
+  "en": "When the Mobile Riot Shield receives damage, 55% chance to restore 1 SP to Jessica the Liberated and reduce the Mobile Riot Shield's own Redeployment Time by 1s (up to -11s)",
+  "ja": "機動防盾がダメージを受けると、55%の確率で滌火ジェシカのSPを1回復し、機動防盾自身の再配置時間-1秒（最大-11秒まで）"
+ },
+ "机动盾牌受到伤害时，有60%的概率使涤火杰西卡获得1点技力并使机动盾牌自身再部署时间-1s（最多至-14s）": {
+  "ko": "기동 방패가 피격 시 60% 확률로 제시카 더 리버레이티드의 SP +1, 기동 방패 자신의 재배치 시간 -1초 (최대 -14초)",
+  "en": "When the Mobile Riot Shield receives damage, 60% chance to restore 1 SP to Jessica the Liberated and reduce the Mobile Riot Shield's own Redeployment Time by 1s (up to -14s)",
+  "ja": "機動防盾がダメージを受けると、60%の確率で滌火ジェシカのSPを1回復し、機動防盾自身の再配置時間-1秒（最大-14秒まで）"
+ },
+ "“老朋友”": {
+  "ko": "'오랜 친구'",
+  "en": "'Old Friend'",
+  "ja": "「古い友人」"
+ },
+ "若5秒内未主动攻击，获得相当于生命上限15%的屏障，失去屏障后重新计时；拥有来自自身的屏障时攻击力+8%": {
+  "ko": "5초 동안 공격하지 않으면 최대 HP의 15%에 해당하는 보호막 획득, 보호막이 사라지면 카운트 재시작, 스스로 생성한 보호막을 보유한 동안 공격력 +8%",
+  "en": "When Sankta Miksaparato has not attacked for 5 seconds, he gains a Barrier equal to 15% Max HP; this timer restarts once the Barrier is lost; ATK +8% while he has a Barrier from himself",
+  "ja": "5秒間通常攻撃せずにいると、最大HPの15%までの被ダメージを吸収可能なバリアを獲得（バリア再獲得までの時間はバリアを失った時点から再度カウントされる）。自身により獲得したバリアの存続期間中、攻撃力+8%"
+ },
+ "若5秒内未主动攻击，获得相当于生命上限20%的屏障，失去屏障后重新计时；拥有来自自身的屏障时攻击力+15%": {
+  "ko": "5초 동안 공격하지 않으면 최대 HP의 20%에 해당하는 보호막 획득, 보호막이 사라지면 카운트 재시작, 스스로 생성한 보호막을 보유한 동안 공격력 +15%",
+  "en": "When Sankta Miksaparato has not attacked for 5 seconds, he gains a Barrier equal to 20% Max HP; this timer restarts once the Barrier is lost; ATK +15% while he has a Barrier from himself",
+  "ja": "5秒間通常攻撃せずにいると、最大HPの20%までの被ダメージを吸収可能なバリアを獲得（バリア再獲得までの時間はバリアを失った時点から再度カウントされる）。自身により獲得したバリアの存続期間中、攻撃力+15%"
+ },
+ "新合同": {
+  "ko": "새 계약",
+  "en": "New Contract",
+  "ja": "新しい契約"
+ },
+ "攻击力+5%，攻击被战栗的目标时，无视目标30%的防御力，地面敌人首次进入自身攻击范围时，使其战栗6秒": {
+  "ko": "공격력 +5%, 전율 상태의 목표 공격 시 목표의 방어력 30% 무시, 지상의 적이 자신의 공격 범위에 처음 들어올 때 6초간 전율 효과 부여",
+  "en": "ATK +5%, ignores 30% DEF when attacking Frightened targets, and Frightens ground enemies for 6s when they first enter this unit's Attack Range",
+  "ja": "攻撃力+5%、戦慄状態の敵を攻撃時、対象の防御力を30%無視。地上にいる敵が初めて自身の攻撃範囲に入った時、対象を6秒間戦慄状態にする"
+ },
+ "攻击力+8%，攻击被战栗的目标时，无视目标33%的防御力，地面敌人首次进入自身攻击范围时，使其战栗6秒": {
+  "ko": "공격력 +8%, 전율 상태의 목표 공격 시 목표의 방어력 33% 무시, 지상의 적이 자신의 공격 범위에 처음 들어올 때 6초간 전율 효과 부여",
+  "en": "ATK +8%, ignores 33% DEF when attacking Frightened targets, and Frightens ground enemies for 6s when they first enter this unit's Attack Range",
+  "ja": "攻撃力+8%、戦慄状態の敵を攻撃時、対象の防御力を33%無視。地上にいる敵が初めて自身の攻撃範囲に入った時、対象を6秒間戦慄状態にする"
+ },
+ "百炼嘉维尔特限证章": {
+  "ko": "가비알 디 인빈서블의 특별 한정 배지",
+  "en": "Gavial the Invincible's Specialized Badge",
+  "ja": "百錬ガヴィルの特別限定記章"
+ },
+ "在生息演算中，首次开启技能后，生命上限、攻击力、防御力提升至150%": {
+  "ko": "생존 연산에서 최초로 스킬 발동 후 최대 HP, 공격력, 방어력이 150%로 증가",
+  "en": "In Reclamation Algorithm, Max HP, ATK, and DEF increase to 150% after activating a skill for the first time",
+  "ja": "生息演算において、初めてスキルを発動した後、最大HP・攻撃力・防御力が150%まで上昇"
+ },
+ "攻击力和防御力提升10%，每再阻挡一个敌人提升4%； 在生息演算中，技能期间，每5秒以自身为中心造成一次相当于100%攻击力的群体物理伤害并中等力度拖拽未被阻挡的敌人，击倒敌人时回复5%生命值，并获取该敌人2%的攻击力与防御力（持续至百炼嘉维尔离场，最多不超过初始属性的300%），所有地面干员阻挡数+2": {
+  "ko": "공격력 및 방어력 +10%, 적을 1명 더 저지할 때마다 +4%. 생존 연산에서 스킬 지속 시간 동안 5초마다 자신을 중심으로 공격력의 100%에 해당하는 광역 물리 대미지를 입히고 저지하지 않은 적을 어느 정도 끌어당김, 적을 쓰러뜨릴 시 HP 5% 회복 및 해당 적의 공격력과 방어력을 2% 획득(가비알 디 인빈서블이 퇴각할 때까지 지속, 초기 스탯의 300%까지), 모든 지상 오퍼레이터의 저지 가능 수 +2",
+  "en": "Increases ATK and DEF by 10%, increased by a further 4% for each blocked enemy. In Reclamation Algorithm, while a skill is active, every 5 seconds deals 100% ATK as AOE Physical damage centered on herself and drags unblocked enemies moderately; upon defeating an enemy, recovers 5% HP and gains 2% of that enemy's ATK and DEF (lasts until Gavial the Invincible leaves the field, up to 300% of her initial stats); Block +2 for all ground Operators",
+  "ja": "攻撃力と防御力+10%、ブロックしている敵1体につき、追加で+4%。生息演算において、スキル発動中は5秒ごとに自身を中心に攻撃力の100%の範囲物理ダメージを与え、ブロックしていない敵を相当の力で引き寄せる。敵を倒した時、HPを5%回復し、その敵の攻撃力と防御力を2%獲得する（百錬ガヴィルが退場するまで持続、初期ステータスの300%まで）。味方の近距離オペレーター全員のブロック数+2"
+ },
+ "攻击力和防御力提升10%，每再阻挡一个敌人提升4%； 在生息演算中，技能期间，每5秒以自身为中心造成一次相当于100%攻击力的群体物理伤害并中等力度拖拽未被阻挡的敌人，击倒敌人时回复10%生命值，并获取该敌人3%的攻击力与防御力（持续至百炼嘉维尔离场，最多不超过初始属性的300%），所有地面干员阻挡数+3": {
+  "ko": "공격력 및 방어력 +10%, 적을 1명 더 저지할 때마다 +4%. 생존 연산에서 스킬 지속 시간 동안 5초마다 자신을 중심으로 공격력의 100%에 해당하는 광역 물리 대미지를 입히고 저지하지 않은 적을 어느 정도 끌어당김, 적을 쓰러뜨릴 시 HP 10% 회복 및 해당 적의 공격력과 방어력을 3% 획득(가비알 디 인빈서블이 퇴각할 때까지 지속, 초기 스탯의 300%까지), 모든 지상 오퍼레이터의 저지 가능 수 +3",
+  "en": "Increases ATK and DEF by 10%, increased by a further 4% for each blocked enemy. In Reclamation Algorithm, while a skill is active, every 5 seconds deals 100% ATK as AOE Physical damage centered on herself and drags unblocked enemies moderately; upon defeating an enemy, recovers 10% HP and gains 3% of that enemy's ATK and DEF (lasts until Gavial the Invincible leaves the field, up to 300% of her initial stats); Block +3 for all ground Operators",
+  "ja": "攻撃力と防御力+10%、ブロックしている敵1体につき、追加で+4%。生息演算において、スキル発動中は5秒ごとに自身を中心に攻撃力の100%の範囲物理ダメージを与え、ブロックしていない敵を相当の力で引き寄せる。敵を倒した時、HPを10%回復し、その敵の攻撃力と防御力を3%獲得する（百錬ガヴィルが退場するまで持続、初期ステータスの300%まで）。味方の近距離オペレーター全員のブロック数+3"
+ },
+ "旅游必需品": {
+  "ko": "여행 필수품",
+  "en": "Travel Essentials",
+  "ja": "旅の必需品"
+ },
+ "受到致命伤害时持续使生命值不低于1，期间攻击速度+20，8秒后强制退出战场": {
+  "ko": "치명상을 입을 경우 HP를 최소 1 유지하며, 그동안 공격 속도 +20, 8초 후 퇴각",
+  "en": "After receiving fatal damage, continuously prevent HP from falling below 1, gaining +20 ASPD during this time. Retreat from the battlefield 8 seconds later",
+  "ja": "致命的なダメージを受けてもHPが1残り、その間攻撃速度+20。効果発動から8秒後強制退場"
+ },
+ "受到致命伤害时持续使生命值不低于1，期间攻击速度+30，9秒后强制退出战场": {
+  "ko": "치명상을 입을 경우 HP를 최소 1 유지하며, 그동안 공격 속도 +30, 9초 후 퇴각",
+  "en": "After receiving fatal damage, continuously prevent HP from falling below 1, gaining +30 ASPD during this time. Retreat from the battlefield 9 seconds later",
+  "ja": "致命的なダメージを受けてもHPが1残り、その間攻撃速度+30。効果発動から9秒後強制退場"
  }
 }
