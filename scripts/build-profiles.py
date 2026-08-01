@@ -142,8 +142,38 @@ def harvest_fields(loc_table, cn_table):
     return {k: max(v.items(), key=lambda kv: kv[1])[0] for k, v in votes.items()}
 
 
-def localize_value(value, loc, op_name):
-    """필드 값 — 생일은 로케일 날짜 형식으로, 코드명은 그 오퍼의 로케일 이름으로."""
+def harvest_values(loc_table, cn_table):
+    """필드 **값**도 짝지어 둔다 — 【战斗经验】一年 ↔ [Combat Experience] 1 Year.
+    줄 통째로는 오퍼마다 달라 안 잡히고, 필드명만 옮기면 값이 중국어로 남는다
+    (EN 프로필에 '一年'이 그대로 뜨던 문제 — Укусик 담당이 잡아준 구조적 구멍)."""
+    votes = {}
+    for cid, cn_entry in cn_table.items():
+        loc_entry = loc_table.get(cid)
+        if not loc_entry:
+            continue
+        cn_secs, loc_secs = sections(cn_entry), sections(loc_entry)
+        if len(cn_secs) != len(loc_secs):
+            continue
+        for a, b in zip(cn_secs, loc_secs):
+            al, bl = (a.get("text") or "").split("\n"), (b.get("text") or "").split("\n")
+            if len(al) != len(bl):
+                continue
+            for x, y in zip(al, bl):
+                mx, my = FIELD_CN.match(x.strip()), FIELD_LOC.match(y.strip())
+                if not mx or not my:
+                    continue
+                vx, vy = mx.group(2).strip(), my.group(2).strip()
+                if not vx or not vy or vx == vy or not CJK_RE.search(vx):
+                    continue
+                votes.setdefault(vx, {}).setdefault(vy, 0)
+                votes[vx][vy] += 1
+    return {k: max(v.items(), key=lambda kv: kv[1])[0] for k, v in votes.items()}
+
+
+def localize_value(value, loc, op_name, values=None):
+    """필드 값 — 생일은 로케일 날짜 형식, 코드명은 그 오퍼의 이름, 나머지는 수확 사전."""
+    if values and value in values:
+        return values[value]
     m = DATE_CN.match(value)
     if m:
         mo, day = int(m.group(1)), int(m.group(2))
@@ -153,7 +183,7 @@ def localize_value(value, loc, op_name):
     return op_name or value
 
 
-def localize_fields(text, fields, loc, op_name):
+def localize_fields(text, fields, loc, op_name, values=None):
     """줄 사전에서 못 찾은 【필드】값 줄 — 필드명은 사전으로, 값은 규칙으로 옮긴다."""
     if not text:
         return text
@@ -168,7 +198,7 @@ def localize_fields(text, fields, loc, op_name):
             out.append(label)
             continue
         sep = "" if label.endswith("】") else " "              # JA 공식 표기는 붙여 쓴다
-        out.append(f"{label}{sep}{localize_value(value, loc, op_name if m.group(1) == '代号' else None)}")
+        out.append(f"{label}{sep}{localize_value(value, loc, op_name if m.group(1) == '代号' else None, values)}")
     return "\n".join(out)
 
 
@@ -210,6 +240,7 @@ manual_lines = {loc: {k: v[loc] for k, v in MANUAL.items() if isinstance(v, dict
 written = {}
 harvested = {}
 harvested_fields = {}
+harvested_values = {}
 # 로케일별 오퍼 이름 — 코드명 줄에 그 오퍼의 이름을 넣는다
 op_names = {}
 for _loc in LOCALES:
@@ -227,6 +258,7 @@ for loc, (prefix, fallback) in LOCALES.items():
 
     harvested.setdefault(loc, harvest_lines(table, fb))
     harvested_fields.setdefault(loc, harvest_fields(table, fb))
+    harvested_values.setdefault(loc, harvest_values(table, fb))
     n = fallbacks = 0
     for cid in ops:
         entry = table.get(cid)
@@ -248,7 +280,7 @@ for loc, (prefix, fallback) in LOCALES.items():
                 #   줄 단위로 적어 넣은 번역이 하나도 안 붙었다 (2026-08-01).
                 text, left = localize_lines(sec.get("text"), harvested[loc])
                 if left:
-                    text = localize_fields(text, harvested_fields[loc], loc, op_names[loc].get(cid))
+                    text = localize_fields(text, harvested_fields[loc], loc, op_names[loc].get(cid), harvested_values[loc])
                     text, left = localize_lines(text, manual_lines[loc])
                 if left:
                     untranslated.append((loc, cid, "text", left))
