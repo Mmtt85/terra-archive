@@ -97,6 +97,11 @@ run "broadcasts-cn"    python3 scripts/build-broadcasts-cn.py \
 #   CI가 매번 새로 받으면 러너 디스크·시간을 통째로 날린다. 이미지는 로컬에서 별도로 받는다.
 run "build-voicelines"   python3 scripts/build-voicelines.py "$G"
 run "build-skins-meta"   python3 scripts/build-skins.py "$G" --meta-only
+
+# 8) 오퍼 지연 에셋 전수 검사 (사용자 요청 2026-08-02) — 데이터가 번들(배포)과 R2(동기화)
+# 두 경로로 나가는데 한쪽만 돌면 반쪽이 된다. 2026-08-01에 R2 키가 없어 아바타가 안 올라갔고
+# 배포는 성공해서 신규 4명 섬네일만 404였다. 여기서 잡는다. 리포트 전용(종료 코드 0).
+run "audit-assets"       node scripts/audit-assets.mjs --r2
 fi   # ── rest 끝 ──
 
 echo "✔ 결정론 리프레시 완료 (phase=$PHASE)"

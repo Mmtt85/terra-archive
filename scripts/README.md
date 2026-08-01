@@ -268,9 +268,21 @@ uploads/(/admin 수동 업로드)로 나뉘며, --prune은 로컬에 없는 asse
 소개 스크린샷 등) R2에 밀어 올려야 사이트에 보인다:
 
 ```bash
-node scripts/r2-sync.mjs        # md5 증분 — 바뀐 것만 올린다
-node scripts/r2-sync.mjs --dry  # 올릴 목록 미리 보기
+node scripts/r2-sync.mjs           # md5 증분 — 바뀐 것만 올린다
+node scripts/r2-sync.mjs --dry     # 올릴 목록 미리 보기
+node scripts/r2-sync.mjs --recache # 내용이 같아도 데이터 파일을 다시 올려 캐시 헤더 갱신
+node scripts/audit-assets.mjs --r2 # 오퍼 에셋 전수 검사 (로컬 완결성 + R2 미동기)
 ```
+
+**`--recache`는 언제 쓰나** — 캐시 정책(`cacheFor()`)은 오브젝트 **메타데이터**라
+정책만 고치면 이미 올라간 파일엔 반영되지 않는다. 정책을 바꾼 뒤 한 번만 돌리면 된다
+(2026-08-02: json/txt/bin을 `max-age=86400` → `60 + must-revalidate`로 바꾸면서 5,350개 갱신).
+
+**`audit-assets.mjs`** — 데이터가 번들(배포)과 R2(동기화) 두 경로로 나가는데 한쪽만 돌면
+반쪽이 된다(PROJECT-GUIDE §7). 아바타 누락 · 스킬이 있는데 레벨 파일이 없는 오퍼 ·
+**로케일 일부에만 있는 파일** · `--r2`면 R2 미동기 건수까지 본다. 정상적인 공백(스킬 0개
+로봇, 핸드북 없는 예비 오퍼레이터)은 데이터에서 유도해 걸러내므로 기준선 파일이 없다.
+`ci-refresh.sh`의 rest 단계에 들어 있다.
 
 **`--prune` 안전장치 (2026-08-01)** — prune은 "로컬에 없다 = 지워도 된다"로 판단하는데,
 로컬이 빈 이유가 삭제 의도가 아닌 경우가 있다: `build-profiles/skins/voicelines.py`는

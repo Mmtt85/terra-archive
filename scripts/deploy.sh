@@ -8,18 +8,30 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+# 대용량 정적 에셋(story·rogue·아바타 등 767MB/15,300파일)은 Pages가 아니라 R2에서
+# 서빙한다 (2026-07-27, files.terra-archive.net). 배포 전에 증분 동기화로 R2를 맞춰둔다.
+# ci-refresh가 신규 오퍼의 아바타·스킬 레벨·프로필·보이스·스킨 메타를 public/에 만들기 때문에
+# 키가 없으면 그 에셋이 R2에 안 올라가 사이트에서 404가 난다.
+#
+# ⚠ 키가 없으면 **빌드도 하기 전에 멈춘다** (2026-08-02). 예전엔 경고만 찍고 넘어갔는데
+# 그 경고를 아무도 안 읽어서, 8/1에 중섭 신규 4명이 도감엔 뜨고 섬네일만 404인 채로
+# 배포됐다. 에셋 없는 배포는 "고쳐야 할 상태"를 만드는 것이라 성공보다 실패가 낫다.
+# 코드만 고쳤고 에셋은 확실히 그대로일 때만 --skip-r2 로 넘긴다.
+SKIP_R2=""
+for a in "$@"; do [ "$a" = "--skip-r2" ] && SKIP_R2=1; done
+if [ ! -f .r2-sync-key ] && [ -z "${R2_SYNC_KEY:-}" ] && [ -z "$SKIP_R2" ]; then
+  echo "R2 동기화 키가 없다 (.r2-sync-key 또는 R2_SYNC_KEY) — 배포를 중단한다." >&2
+  echo "에셋을 안 올리고 배포하면 신규 오퍼의 섬네일·스킬·프로필·보이스가 404가 된다." >&2
+  echo "정말 코드만 바뀌었다면: bash scripts/deploy.sh --skip-r2" >&2
+  exit 1
+fi
+
 npm run build
 
-# 대용량 정적 에셋(story·rogue·아바타 등 334MB/7,700파일)은 Pages가 아니라 R2에서
-# 서빙한다 (2026-07-27, files.terra-archive.net). 배포 전에 증분 동기화로 R2를 맞춰둔다.
-# ⚠ 키가 없으면 경고만 하고 건너뛴다. **무인 파이프라인에도 R2_SYNC_KEY가 반드시 필요하다** —
-# ci-refresh가 신규 오퍼의 아바타·스킬 레벨·프로필·보이스·스킨 메타를 public/에 만들기 때문에
-# 키가 없으면 그 에셋이 R2에 안 올라가 사이트에서 404가 난다 (2026-08-01 실제로 발생:
-# 중섭 신규 4명 섬네일 누락). "app/data만 바꾸므로 no-op"이라는 옛 가정은 더 이상 맞지 않는다.
 if [ -f .r2-sync-key ] || [ -n "${R2_SYNC_KEY:-}" ]; then
   node scripts/r2-sync.mjs
 else
-  echo "⚠⚠ R2 동기화 키 없음 — 에셋 동기화 건너뜀 (.r2-sync-key 또는 R2_SYNC_KEY)" >&2
+  echo "⚠ R2 동기화 건너뜀 (--skip-r2) — 에셋이 바뀌었다면 사이트에서 404가 난다" >&2
 fi
 
 # dist/client가 정적 사이트 전체 (HTML + assets). 워커(_worker.js)는 올리지 않는다.
