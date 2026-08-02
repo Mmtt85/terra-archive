@@ -14492,15 +14492,15 @@ main.site-main > .site-header {
 .header-chibi video.flip {
   transform: scaleX(-1);
 }
-/* 클립 전환 — 평소 Relax, 걷는 동안(.walking)만 Move */
-.header-chibi .chibi-move {
+/* 클립 전환 — clip-* 클래스와 일치하는 비디오만 표시 (relax/move/sleep/interact) */
+.header-chibi video {
   display: none;
 }
-.header-chibi.walking .chibi-move {
+.header-chibi.clip-relax .chibi-relax,
+.header-chibi.clip-move .chibi-move,
+.header-chibi.clip-sleep .chibi-sleep,
+.header-chibi.clip-interact .chibi-interact {
   display: block;
-}
-.header-chibi.walking .chibi-relax {
-  display: none;
 }
 @media (max-width: 1100px) {
   .header-chibi {

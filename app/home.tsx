@@ -1381,7 +1381,7 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
             (사용자 요청 2026-07-27: "헤더를 열어보지 않으면 알 수가 없으니") */}
         <ChangelogButton />
         {/* 헤더 치비 (베타) — 1줄 가운데 빈 공간의 산책 장식, 데스크탑 전용 (사용자 요청 2026-08-03) */}
-        <HeaderChibi operators={operators} onOpen={(op) => setSelected(op)} />
+        <HeaderChibi operators={operators} />
         {/* 만능검색 = 1줄 오른쪽(햄버거 왼쪽) — 헤더를 접어도 남는다 (사용자 요청 2026-07-25) */}
         <OmniSearch roster={roster} includeFuture={includeFuture} extra={extra} onGo={runOmni} />
         {/* 게임 연결 — 크롬 확장(extension/)이 깔린 사람에게만 나타난다. 누르면 게임 창
@@ -2372,11 +2372,18 @@ function SkinSection({ operator }: { operator: Operator }) {
 // - 알파 프로브: VP9 알파를 실제로 합성하는 브라우저인지 캔버스 픽셀로 1회 검사. 못 그리는
 //   브라우저(사파리 계열)는 검정 상자가 되므로 아예 표시하지 않는다 (같은 출처라 오염 없음).
 const CHIBI_STAR = "char_1012_skadi2"; // 이격 스카디
-const CHIBI_CLIPS = { relax: "/chibi/skadi2-relax.webm", move: "/chibi/skadi2-move.webm" }; // Pages 직접 서빙 (R2 아님 — 합계 0.5MB)
+// Pages 직접 서빙 (R2 아님 — 합계 ~0.9MB). relax=대기 · move=걷기 · sleep=드러누워 잠 · interact=터치 반응
+const CHIBI_CLIPS = {
+  relax: "/chibi/skadi2-relax.webm",
+  move: "/chibi/skadi2-move.webm",
+  sleep: "/chibi/skadi2-sleep.webm",
+  interact: "/chibi/skadi2-interact.webm",
+} as const;
+type ChibiClip = keyof typeof CHIBI_CLIPS;
 const CHIBI_WALK_SPEED = 34; // px/s — Move 모션(1.67s 사이클) 보폭에 눈대중으로 맞춘 값
 const subscribeNever = () => () => {};
 
-function HeaderChibi({ operators, onOpen }: { operators: Operator[]; onOpen: (op: Operator) => void }) {
+function HeaderChibi({ operators }: { operators: Operator[] }) {
   const { t } = useI18n();
   // 클라이언트 전용 — 프리렌더에 넣으면 하이드레이션 불일치(실측 2026-08-03: 서버 UTC 날짜
   // 선택이 HTML에 박혀 클릭까지 오염)가 나므로 서버 스냅샷 false로 서버 렌더에서 제외한다.
@@ -2386,39 +2393,56 @@ function HeaderChibi({ operators, onOpen }: { operators: Operator[]; onOpen: (op
   const [x, setX] = useState(0);
   const [flip, setFlip] = useState(false);
   const [moveSec, setMoveSec] = useState(1);
-  const [walking, setWalking] = useState(false);
+  const [clip, setClip] = useState<ChibiClip>("relax");
   const xRef = useRef(0);
-  const moveVideoRef = useRef<HTMLVideoElement | null>(null);
+  const clipRef = useRef<ChibiClip>("relax");
+  const videoRefs = useRef<Partial<Record<ChibiClip, HTMLVideoElement | null>>>({});
 
   const star = useMemo(() => operators.find((candidate) => candidate.id === CHIBI_STAR) ?? null, [operators]);
 
-  // 산책 드리프트 — 알파 프로브 통과 후에만
+  // 클립 전환 — 활성 클립만 처음부터 재생, 나머지는 정지 (숨겨둔 채 디코드하지 않게)
+  useEffect(() => {
+    clipRef.current = clip;
+    for (const name of Object.keys(CHIBI_CLIPS) as ChibiClip[]) {
+      const video = videoRefs.current[name];
+      if (!video) continue;
+      if (name === clip) { video.currentTime = 0; video.play().catch(() => {}); }
+      else video.pause();
+    }
+  }, [clip]);
+
+  // 생활 루프 — 알파 프로브 통과 후에만. 틱마다: 자고 있으면 깨고, 아니면
+  // 55% 산책 / 25% 드러누워 낮잠 / 20% 그대로 대기. 반응 모션 중엔 짧게 미룬다.
   useEffect(() => {
     if (alpha !== true) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     let timer = 0;
-    const wander = () => {
-      const next = Math.round(Math.random() * 260 - 130); // 헤더 중앙 ±130px
-      if (Math.abs(next - xRef.current) > 8) {
-        setFlip(next > xRef.current); // 원본 렌더 기본 방향이 왼쪽 — 오른쪽 이동 시 반전
-        setMoveSec(Math.abs(next - xRef.current) / CHIBI_WALK_SPEED);
-        setWalking(true);
-        xRef.current = next;
-        setX(next);
+    const tick = () => {
+      const current = clipRef.current;
+      if (current === "interact") { timer = window.setTimeout(tick, 1500); return; }
+      if (current === "sleep") {
+        setClip("relax"); // 기상 — 다음 틱에서 다시 행동 결정
+        timer = window.setTimeout(tick, 2500 + Math.random() * 2500);
+        return;
       }
-      timer = window.setTimeout(wander, 7000 + Math.random() * 6000);
+      const roll = Math.random();
+      if (roll < 0.25) {
+        setClip("sleep"); // 다음 틱(7~13초)까지 낮잠
+      } else if (roll < 0.8) {
+        const next = Math.round(Math.random() * 260 - 130); // 헤더 중앙 ±130px
+        if (Math.abs(next - xRef.current) > 8) {
+          setFlip(next < xRef.current); // 원본 기본 방향이 오른쪽(머리 크롭 실측) — 왼쪽 이동 시 반전
+          setMoveSec(Math.abs(next - xRef.current) / CHIBI_WALK_SPEED);
+          xRef.current = next;
+          setX(next);
+          setClip("move");
+        }
+      }
+      timer = window.setTimeout(tick, 7000 + Math.random() * 6000);
     };
-    timer = window.setTimeout(wander, 2500);
+    timer = window.setTimeout(tick, 2500);
     return () => window.clearTimeout(timer);
   }, [alpha]);
-
-  // 걷기 클립은 걷는 동안만 돌린다 (숨겨둔 채 계속 디코드하지 않게)
-  useEffect(() => {
-    const video = moveVideoRef.current;
-    if (!video) return;
-    if (walking) { video.currentTime = 0; video.play().catch(() => {}); }
-    else video.pause();
-  }, [walking]);
 
   if (!isClient || !star || alpha === false) return null;
   const probe = (video: HTMLVideoElement) => {
@@ -2434,24 +2458,36 @@ function HeaderChibi({ operators, onOpen }: { operators: Operator[]; onOpen: (op
       setAlpha(false); // 캔버스 이상 계열 — 표시하지 않는 쪽이 안전
     }
   };
+  // 클릭 = 반응 모션(Interact)만 재생 — 모달은 열지 않는다 (사용자 확정 2026-08-03,
+  // 클릭 동작은 추후 별도 기획 예정). 걷는 중엔 무시(이동 transform과 겹치면 미끄러진다).
+  const handleClick = () => {
+    const current = clipRef.current;
+    if (current === "interact" || current === "move") return;
+    setClip("interact");
+  };
   return (
-    <button type="button" className={`header-chibi${walking ? " walking" : ""}`}
+    <button type="button" className={`header-chibi clip-${clip}`}
       aria-hidden={alpha !== true} tabIndex={alpha === true ? 0 : -1}
       style={{ "--cx": `${x}px`, "--walk": `${moveSec}s` } as React.CSSProperties}
-      title={t("{name} 상세 정보 열기", { name: star.name })}
-      aria-label={t("{name} 상세 정보 열기", { name: star.name })}
-      onClick={() => onOpen(star)}
-      onTransitionEnd={(event) => { if (event.propertyName === "transform") setWalking(false); }}>
+      title={t("{name} 치비 쿡 찌르기", { name: star.name })}
+      aria-label={t("{name} 치비 쿡 찌르기", { name: star.name })}
+      onClick={handleClick}
+      onTransitionEnd={(event) => { if (event.propertyName === "transform" && clipRef.current === "move") setClip("relax"); }}>
       {/* React는 muted를 프로퍼티로만 세팅해 자동재생 정책 판정과 어긋날 수 있다 — ref에서 확정 후 play().
           프로브는 loadeddata 이벤트 + ref의 readyState 검사 양쪽에서 건다: 캐시 히트면 핸들러가
           붙기 전에 로드가 끝나 이벤트를 영영 놓친다 (실측 2026-08-03, 두 번째 방문부터 재현). */}
       <video className={`chibi-relax${flip ? " flip" : ""}`} src={CHIBI_CLIPS.relax}
         autoPlay loop muted playsInline preload="metadata"
         style={alpha ? undefined : { opacity: 0 }}
-        ref={(el) => { if (el) { el.muted = true; el.play().catch(() => {}); if (alpha === null && el.readyState >= 2) probe(el); } }}
+        ref={(el) => { videoRefs.current.relax = el; if (el) { el.muted = true; if (clipRef.current === "relax") el.play().catch(() => {}); if (alpha === null && el.readyState >= 2) probe(el); } }}
         onLoadedData={(event) => { if (alpha === null) probe(event.currentTarget); }} />
       <video className={`chibi-move${flip ? " flip" : ""}`} src={CHIBI_CLIPS.move}
-        loop muted playsInline preload="auto" ref={moveVideoRef} />
+        loop muted playsInline preload="auto" ref={(el) => { videoRefs.current.move = el; }} />
+      <video className={`chibi-sleep${flip ? " flip" : ""}`} src={CHIBI_CLIPS.sleep}
+        loop muted playsInline preload="metadata" ref={(el) => { videoRefs.current.sleep = el; }} />
+      <video className={`chibi-interact${flip ? " flip" : ""}`} src={CHIBI_CLIPS.interact}
+        muted playsInline preload="metadata" ref={(el) => { videoRefs.current.interact = el; }}
+        onEnded={() => setClip("relax")} />
     </button>
   );
 }

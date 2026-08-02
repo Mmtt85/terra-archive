@@ -261,9 +261,11 @@ python3 scripts/build-skill-levels.py .gamedata   # → public/skills/{ko,en,ja}
 
 ## 7.7 헤더 마스코트 치비 (베타, 2026-08-03~)
 
-**표시 클립**: `public/chibi/skadi2-{relax,move}.webm` (VP9+알파 · 1024×576 · 24fps, 합계 0.5MB).
-게임 원본 Spine 데이터(3.8.99)의 Relax(대기)·Move(걷기) 모션을 **직접 렌더**한 것 —
+**표시 클립**: `public/chibi/skadi2-{relax,move,sleep,interact}.webm` (VP9+알파 · 1024×576 · 24fps,
+합계 ~0.9MB). 게임 원본 Spine 데이터(3.8.99)의 모션을 **직접 렌더**한 것 —
 공식 렌더 레포(ArknightsSpines)는 Relax만 구워 두어서, 걷기·추가 포즈는 이 경로로만 나온다.
+생활 루프: 틱(7~13초)마다 55% 산책 / 25% 드러누워 낮잠(Sleep) / 20% 대기, 클릭하면
+반응 모션(Interact)만 재생 — **모달은 열지 않는다** (사용자 확정 2026-08-03, 클릭 동작 추후 별도 기획).
 Pages 같은 출처로 서빙(R2 아님 — 알파 프로브가 캔버스를 읽어야 해서 CORS 헤더 없는
 R2 워커로 옮기면 깨진다. 이관하려면 워커에 ACAO부터).
 
