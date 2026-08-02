@@ -14428,3 +14428,27 @@ main.site-main > .site-header {
   margin-left: 6px;
   vertical-align: middle;
 }
+
+/* MAA 기반시설 내보내기 모달 (베타, 2026-08-02) — 교대 시각 입력·주의 문구 */
+.maa-times label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: 18px;
+}
+.maa-times input[type="time"] {
+  font: inherit;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg-panel);
+  color: inherit;
+}
+.maa-note {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.maa-download {
+  margin-top: 14px;
+}

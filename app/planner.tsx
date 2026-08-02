@@ -27,6 +27,8 @@ import { optimizeOff, investOff } from "./planner-offload";
 const ScannerModal = lazy(() => import("./scan/scanner").then((m) => ({ default: m.ScannerModal })));
 // 보유 오퍼 가져오기(MAA 파일·스크린샷·게임 로그인) 패널 — 2026-07-26
 import { RosterImportPanel } from "./roster-import";
+// MAA 커스텀 기반시설 JSON 내보내기 (베타) — 2026-08-02
+import { buildMaaInfrast } from "./maa-export";
 import type { AccountRoster } from "./account";
 import costsData from "./data/costs.json";
 
@@ -139,6 +141,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     setMoreOpen((open) => !open);
   };
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [showMaa, setShowMaa] = useState(false); // MAA 기반시설 내보내기 모달 (베타)
   // 1~5성은 기본 보유, 6성은 미보유로 시작 — 가진 6성만 직접 체크한다
   const [ownedIds, setOwnedIds] = useState<Set<string>>(() => new Set(ops.filter((op) => op.rarity <= 5).map((op) => op.id)));
   // 미지정 = 2정(정예화 2, 최대) 가정 — 정예화 2 스킬이 있는 오퍼만 1정으로 낮출 수 있다
@@ -1049,6 +1052,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
                   <span className="btn-icon" aria-hidden>⤒</span>{t("저장된 상태 파일 가져오기")}
                   <input type="file" accept="application/json" onChange={(event) => { const file = event.target.files?.[0]; if (file) importState(file); event.target.value = ""; setMoreOpen(false); }} />
                 </label>
+                <button role="menuitem" onClick={() => { setMoreOpen(false); setShowMaa(true); }} title={t("현재 편성을 MAA 커스텀 기반시설 JSON으로 내보냅니다")}><span className="btn-icon" aria-hidden>⇥</span>{t("MAA 기반시설 내보내기")}<span className="new-badge">{t("베타")}</span></button>
                 <button role="menuitem" onClick={() => { setMoreOpen(false); setShowHelp(true); }}><span className="btn-icon" aria-hidden>?</span>{t("도움말")}</button>
               </div>
             )}
@@ -1340,6 +1344,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       )}
 
       {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
+      {showMaa && <MaaExportModal plan={plan} nameOf={(id) => effectiveOpById.get(id)?.name ?? opById.get(id)?.name} toast={showToast} onClose={() => setShowMaa(false)} />}
 
       {shiftNote && <ShiftNoteModal kind={shiftNote} onClose={() => setShiftNote(null)} />}
 
@@ -2758,6 +2763,75 @@ function HelpModal({ onClose }: { onClose: () => void }) {
               </ul>
             </section>
           ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+// MAA 커스텀 기반시설 내보내기 (베타) — 현재 편성(A/B 2교대)을 MAA JSON으로 저장 (2026-08-02).
+// 시각 입력만 받는 이유: MAA는 벽시계(period) 기준으로 plan을 전환하지, 사이트의
+// '지치면 교대' 모델을 모른다 — 그 차이는 모달 안내문으로 명시한다.
+function MaaExportModal({ plan, nameOf, toast, onClose }: { plan: Plan | null; nameOf: (id: string) => string | undefined; toast: (message: string) => void; onClose: () => void }) {
+  const { locale, t } = useI18n();
+  const [startA, setStartA] = useState("08:00");
+  const [startB, setStartB] = useState("20:00");
+  const langLabel = locale === "ja" ? "日本語" : locale === "en" ? "English" : "한국어";
+  const sameTime = startA === startB;
+  const download = () => {
+    if (!plan) return;
+    const payload = buildMaaInfrast({
+      assignments: plan.assignments,
+      cells: LAYOUT,
+      nameOf,
+      shiftStarts: [startA, startB],
+      title: t("테라 아카이브 인프라 자동편성"),
+      description: t("A = 풀파워 주간조 · B = 회복 교대조 · terra-archive infra planner"),
+      planNames: [t("A조"), t("B조")],
+    });
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "terra-archive-maa-infrast.json";
+    anchor.click();
+    URL.revokeObjectURL(url);
+    toast(t("MAA 기반시설 JSON을 저장했습니다"));
+    onClose();
+  };
+  return (
+    <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+      <section className="operator-modal room-modal" role="dialog" aria-modal="true" style={{ "--accent": "var(--lime)" } as React.CSSProperties}>
+        <button type="button" className="modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
+        <header className="room-modal-head">
+          <span className="modal-kicker">MAA CUSTOM INFRAST</span>
+          <h2>{t("MAA 기반시설 내보내기")} <span className="new-badge">{t("베타")}</span></h2>
+        </header>
+        <div className="modal-scroll">
+          <section className="detail-section">
+            <p>{t("현재 편성(A/B 2교대)을 MAA의 커스텀 기반시설 계획 JSON으로 저장합니다. MAA 설정 → 기반시설 → 커스텀 기반시설에서 이 파일을 선택하면 A/B조가 시각에 맞춰 자동 교대됩니다.")}</p>
+          </section>
+          <section className="detail-section">
+            <h3>{t("교대 시각")}</h3>
+            <p className="maa-times">
+              <label>{t("A조 시작")} <input type="time" value={startA} onChange={(event) => setStartA(event.target.value)} /></label>
+              {" "}
+              <label>{t("B조 시작")} <input type="time" value={startB} onChange={(event) => setStartB(event.target.value)} /></label>
+            </p>
+            <p className="maa-note">{t("사이트의 교대는 '지치면 교대'지만 MAA는 시각으로만 전환합니다 — 두 조의 근무 시간대를 정해 주세요.")}</p>
+          </section>
+          <section className="detail-section">
+            <h3>{t("내보내기 전 확인")}</h3>
+            <ul className="help-list">
+              <li>{t("오퍼 이름은 지금 보는 언어({lang}) 그대로 담깁니다 — MAA가 화면 글자를 읽어 대조하므로 게임 클라이언트 언어와 같아야 합니다.", { lang: langLabel })}</li>
+              <li>{t("게임 기지의 제조소·무역소 순서(품목 포함)가 이 편성표의 방 순서와 같아야 합니다. 품목을 함께 기록하므로 어긋나면 MAA가 감지합니다.")}</li>
+              <li>{t("숙소는 고정 배치 인원만 기록하고 빈 칸은 MAA가 지친 오퍼로 채웁니다. 훈련실은 MAA 스키마에 없어 제외되고, 빈 방은 '건드리지 않음'으로 저장됩니다.")}</li>
+              <li>{t("피아메타·드론 사용은 담지 않습니다 — 필요하면 MAA에서 직접 설정하세요.")}</li>
+            </ul>
+          </section>
+          {!plan && <p className="maa-note">{t("내보낼 편성이 없습니다 — 먼저 전체 자동편성을 실행하세요.")}</p>}
+          {sameTime && plan && <p className="maa-note">{t("A조와 B조 시작 시각이 같습니다 — 시간대(period) 없이 저장됩니다.")}</p>}
+          <p className="maa-download"><button className="primary" onClick={download} disabled={!plan}><span className="btn-icon" aria-hidden>⇥</span>{t("JSON 파일로 내려받기")}</button></p>
         </div>
       </section>
     </div>
