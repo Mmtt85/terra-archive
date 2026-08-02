@@ -16,7 +16,7 @@ import BridgeButton from "./lens/bridge-button";
 import { asset } from "./assets";
 import ChangelogButton from "./changelog";
 // 헤더 치비 대화 — 크롬 내장 Gemini Nano (베타, 2026-08-03)
-import { ChibiChatPanel, chibiChatAvailability } from "./chibi-chat";
+import { ChibiChatPanel, chibiChatStatus, type ChibiChatStatus } from "./chibi-chat";
 import TipBalloon from "./tip-balloon";
 import { useHashSync } from "./hash-modal";
 import type { OmniTarget } from "./omni";
@@ -2396,8 +2396,9 @@ function HeaderChibi({ operators }: { operators: Operator[] }) {
   const [flip, setFlip] = useState(false);
   const [moveSec, setMoveSec] = useState(1);
   const [clip, setClip] = useState<ChibiClip>("relax");
-  // 대화(크롬 내장 Gemini Nano) — 모델이 이미 설치된 환경에서만 켠다. 미지원이면 클릭은 반응 모션만.
-  const [chatReady, setChatReady] = useState(false);
+  // 대화(크롬 내장 Gemini Nano) — available=바로 대화 · downloadable/downloading=설치 안내 후
+  // 동의 시 다운로드 · none=클릭해도 반응 모션만 (요건 미달·타 브라우저)
+  const [chatStatus, setChatStatus] = useState<ChibiChatStatus>("none");
   const [chatOpen, setChatOpen] = useState(false);
   const chatOpenRef = useRef(false);
   const xRef = useRef(0);
@@ -2410,7 +2411,7 @@ function HeaderChibi({ operators }: { operators: Operator[] }) {
   useEffect(() => {
     if (!isClient) return;
     let alive = true;
-    void chibiChatAvailability().then((ok) => { if (alive && ok) setChatReady(true); });
+    void chibiChatStatus().then((status) => { if (alive && status !== "none") setChatStatus(status); });
     return () => { alive = false; };
   }, [isClient]);
 
@@ -2478,12 +2479,12 @@ function HeaderChibi({ operators }: { operators: Operator[] }) {
       setAlpha(false); // 캔버스 이상 계열 — 표시하지 않는 쪽이 안전
     }
   };
-  // 클릭 = 반응 모션(Interact) 재생 + LLM 가용 환경이면 대화 패널 (사용자 확정 2026-08-03).
-  // 미지원 환경은 모션만. 걷는 중 모션 전환은 무시(이동 transform과 겹치면 미끄러진다).
+  // 클릭 = 반응 모션(Interact) 재생 + LLM 상태에 따라 대화/설치 안내 패널 (사용자 확정 2026-08-03).
+  // none(요건 미달·타 브라우저)은 모션만. 걷는 중 모션 전환은 무시(이동 transform과 겹치면 미끄러진다).
   const handleClick = () => {
     const current = clipRef.current;
     if (current !== "interact" && current !== "move") setClip("interact");
-    if (chatReady) setChatOpen(true);
+    if (chatStatus !== "none") setChatOpen(true);
   };
   return (
     <>
@@ -2510,7 +2511,7 @@ function HeaderChibi({ operators }: { operators: Operator[] }) {
         muted playsInline preload="metadata" ref={(el) => { videoRefs.current.interact = el; }}
         onEnded={() => setClip("relax")} />
     </button>
-    {chatOpen && <ChibiChatPanel onClose={() => setChatOpen(false)} />}
+    {chatOpen && <ChibiChatPanel status={chatStatus} onReady={() => setChatStatus("available")} onClose={() => setChatOpen(false)} />}
     </>
   );
 }

@@ -14606,3 +14606,57 @@ main.site-main > .site-header {
   font-size: 11px;
   line-height: 1.5;
 }
+
+/* 치비 대화 — 설치 안내·다운로드 진행 단계 (2026-08-03) */
+.chibi-chat-offer {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.chibi-chat-offer p {
+  margin: 0;
+}
+.chibi-chat-hint {
+  color: var(--muted);
+  font-size: 12px;
+}
+.chibi-chat-error {
+  color: #d4544a;
+  font-size: 12px;
+}
+.chibi-chat-offer-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+.chibi-chat-offer-actions button {
+  font: inherit;
+  font-size: 13px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg-soft);
+  cursor: pointer;
+}
+.chibi-chat-offer-actions button.primary {
+  background: var(--ink);
+  color: var(--bg-panel);
+  border-color: transparent;
+  font-weight: 700;
+}
+.chibi-chat-progress {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--bg-soft2);
+  overflow: hidden;
+}
+.chibi-chat-progress i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #5c8b73, #7fb397);
+  transition: width 0.3s ease;
+}
