@@ -708,7 +708,7 @@ Pages가 아니라 **R2 버킷 커스텀 도메인 `files.terra-archive.net`**
 
 - 번들: `operators.json`(+`.en`/`.ja`), `costs`·`infra`·`farm`·`recruit`·`rogue1~6`·`stories`·
   `broadcasts`·`story-summaries` — 목록·검색·플래너 계산처럼 **화면을 그리는 순간 필요한 것**.
-- R2: `avatars`·`skills`·`profiles`·`voice`·`skins`·`skin` (오퍼당 파일 1개씩) +
+- R2: `avatars`·`skills`·`profiles`·`voice`·`skins`·`skin`·`modules` (오퍼당 파일 1개씩) +
   `story`·`rogue` 이미지/스크립트·`lens`/`tesseract` OCR·`items`·`scan`·`about`·`og` —
   전부 **상세 모달이나 스토리 화면을 열 때만** 받아온다.
 

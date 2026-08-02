@@ -45,8 +45,8 @@ if (noAvatar.length) {
 // ── 2. 스킬 파일 — 스킬이 있는 오퍼만 ────────────────────────────────────────
 // ── 3. 로케일 짝 — 일부 로케일에만 있으면 버그 ──────────────────────────────
 const partial = [];
-const emptyAll = { skills: 0, profiles: 0, voice: 0, skins: 0 };
-for (const kind of ["skills", "profiles", "voice", "skins"]) {
+const emptyAll = { skills: 0, profiles: 0, voice: 0, skins: 0, modules: 0 };
+for (const kind of ["skills", "profiles", "voice", "skins", "modules"]) {
   for (const o of ops) {
     const found = LOCALES.filter((lc) => has(`${kind}/${lc}/${o.id}.json`));
     if (found.length === 0) {
@@ -90,7 +90,7 @@ if (process.argv.includes("--r2")) {
       // 오퍼 지연 데이터만 본다 — 스토리·OCR까지 훑으면 느리고, 여기서 잡고 싶은 건
       // "신규 오퍼를 넣고 r2-sync를 안 돌렸다"이다.
       const pending = [];
-      for (const kind of ["avatars", "skills", "profiles", "voice", "skins"]) {
+      for (const kind of ["avatars", "skills", "profiles", "voice", "skins", "modules"]) {
         const abs = join(PUBLIC, kind);
         if (!existsSync(abs)) continue;
         for (const p of await walk(abs)) {

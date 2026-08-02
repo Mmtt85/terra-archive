@@ -63,6 +63,7 @@ run "download-avatars" python3 scripts/download-avatars.py || echo "[download-av
 #   레벨 탭·프로필·대사가 비어 있었다 (2026-08-01 사용자 지적).
 run "build-skill-levels" python3 scripts/build-skill-levels.py "$G"
 run "build-profiles"     python3 scripts/build-profiles.py "$G"
+run "build-module-stories" python3 scripts/build-module-stories.py "$G"
 
 # 6-1) 모듈 전수 검사 (사용자 요청 2026-08-01 — "업데이트 있을 때마다 모듈 현황 싹 다").
 # 기존 오퍼에 조용히 붙는 모듈(피아메타 통합전략 전용 등)은 신규 오퍼와 달리 눈에 안 띈다.

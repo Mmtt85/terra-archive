@@ -137,6 +137,8 @@ const D: Record<string, Pair> = {
   "획득처": ["Obtained from", "入手方法"],
   "오퍼레이터 파일": ["Operator file", "オペレーターファイル"],
   "불러오는 중…": ["Loading…", "読み込み中…"],
+  "모듈 이야기": ["Module story", "モジュールストーリー"],
+  "등록된 모듈 이야기가 없습니다.": ["No module story on record.", "登録されたモジュールストーリーがありません。"],
   "등록된 프로필 문서가 없습니다.": ["No archive documents on record.", "登録されたプロフィール文書がありません。"],
   "중국 서버 선행 데이터입니다 — 비공식 AI 번역이라 정식 출시 시 공식 번역과 다를 수 있습니다.": [
     "CN-server data, ahead of this server — an unofficial AI translation that may differ from the official one at launch.",

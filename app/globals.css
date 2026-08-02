@@ -2685,6 +2685,45 @@ legend {
   color: var(--ink);
   font-weight: 800;
 }
+
+/* 모듈 이야기 — 눌러야 펼쳐지는 산문 (사용자 요청 2026-08-02 "바로 보이게는 안 해도 되니까").
+   본문이 모듈당 평균 1,400자라 항상 펼쳐 두면 카드가 화면을 다 잡아먹는다. */
+.module-story-toggle {
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: 0 0;
+  color: var(--muted);
+  cursor: pointer;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+}
+.module-story-toggle:hover {
+  background: var(--bg-soft);
+  color: var(--ink);
+}
+.module-story-toggle .btn-icon {
+  color: var(--accent);
+}
+.module-story {
+  border-top: 1px solid var(--line);
+  background: var(--bg-faint);
+  padding: 14px 16px;
+}
+.module-story p {
+  color: var(--ink2);
+  margin: 0 0 9px;
+  font-size: 13.5px;
+  line-height: 1.75;
+  white-space: pre-wrap;
+}
+.module-story p:last-child {
+  margin-bottom: 0;
+}
 /* ── 복장(스킨) — 상세 모달 SKIN 섹션 (2026-07-28) ────────────────────────────
    이미지는 게임 내 스킨 선택 화면과 같은 반신 포트레이트(180×360 webp, R2). */
 .skin-block {

@@ -41,7 +41,7 @@ cp -r dist/client/. "$STAGE/"
 
 # R2로 옮긴 에셋 폴더는 Pages에 올리지 않는다 — 이게 배포가 빨라진 이유의 전부.
 # (public/에는 그대로 남아 있고 scripts/r2-sync.mjs가 R2와 동기화한다)
-for dir in story rogue lens tesseract avatars about og items scan profiles skins skin voice skills; do
+for dir in story rogue lens tesseract avatars about og items scan profiles skins skin voice skills modules; do
   rm -rf "${STAGE:?}/$dir"
 done
 
@@ -63,6 +63,7 @@ cat > "$STAGE/_redirects" <<'EOF'
 /scan/* https://files.terra-archive.net/assets/scan/:splat 301
 /profiles/* https://files.terra-archive.net/assets/profiles/:splat 301
 /skins/* https://files.terra-archive.net/assets/skins/:splat 301
+/modules/* https://files.terra-archive.net/assets/modules/:splat 301
 /skin/* https://files.terra-archive.net/assets/skin/:splat 301
 /rogue/map/* https://files.terra-archive.net/assets/rogue/map/:splat 301
 /rogue/relic/* https://files.terra-archive.net/assets/rogue/relic/:splat 301

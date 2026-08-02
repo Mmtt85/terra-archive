@@ -2009,36 +2009,7 @@ function OperatorModal({ operator, onClose, onUpgrade, includeFuture }: { operat
             <p>{operator.trait}</p>
           </section>
 
-          <section className="detail-section" id="op-module">
-            <span className="detail-no">MODULE / 06</span>
-            <h3>{t("모듈")}</h3>
-            {shownModules.length ? (
-              <div className="module-list">
-                {shownModules.map((module) => (
-                  <article key={module.id} className={`module-card${module.unreleased ? " future" : ""}`}>
-                    <header>
-                      <span>{module.type}</span>
-                      <div>
-                        <h4>{module.name}{module.unreleased && <em className="future-badge">{t("미실장")}</em>}</h4>
-                        <small>{module.unlock}</small>
-                      </div>
-                    </header>
-                    <div className="module-levels">
-                      {module.levels.map((level) => (
-                        <div key={level.level}>
-                          <b>STAGE {level.level}</b>
-                          {level.stats && <p className="module-stats">{level.stats}</p>}
-                          {level.effects.map((effect, index) => <p key={index}>{effect}</p>)}
-                        </div>
-                      ))}
-                    </div>
-                  </article>
-                ))}
-              </div>
-            ) : (
-              <p className="no-detail">{t("현재 적용 가능한 모듈이 없습니다.")}</p>
-            )}
-          </section>
+          <ModuleSection operator={operator} modules={shownModules} />
 
           <section className="detail-section" id="op-infra">
             <span className="detail-no">INFRA / 07</span>
@@ -2084,6 +2055,84 @@ type SkillLevelDoc = Record<string, SkillLevels>;
 const skillLevelCache = new Map<string, SkillLevelDoc | null>();
 // 8~10레벨은 게임 표기대로 특화 M1~M3 (특화가 없는 7레벨 스킬은 1~7만)
 const skillLevelLabel = (index: number, total: number) => (total > 7 && index >= 7 ? `M${index - 6}` : String(index + 1));
+
+// 모듈 이야기(uniEquipDesc) — 모듈을 열었을 때 붙는 짧은 산문(탐사 일지·정비 보고서·편지).
+// 로케일당 656KB(EN 1.2MB)라 operators.json에 넣으면 목록 첫 로딩이 그만큼 무거워진다.
+// **버튼을 눌러야 보이는 것**이라(사용자 요청 2026-08-02) 첫 화면에 있을 이유가 없어
+// 프로필·보이스와 같은 관례로 오퍼당 파일 하나를 R2에서 지연 로딩한다
+// (scripts/build-module-stories.py → public/modules/<locale>/<id>.json).
+type ModuleStoryDoc = Record<string, string>;
+const moduleStoryCache = new Map<string, ModuleStoryDoc | null>();
+
+function ModuleSection({ operator, modules }: { operator: Operator; modules: OperatorModule[] }) {
+  const { locale, t } = useI18n();
+  const key = `${locale}/${operator.id}`;
+  const [doc, setDoc] = useState<ModuleStoryDoc | null | undefined>(() => moduleStoryCache.get(key));
+  const [open, setOpen] = useState<string | null>(null);
+
+  // 이야기를 처음 펼칠 때만 받아온다 — 모듈만 보고 닫는 사람에겐 요청이 아예 안 나간다
+  useEffect(() => {
+    if (!open || moduleStoryCache.has(key)) { if (moduleStoryCache.has(key)) setDoc(moduleStoryCache.get(key)); return; }
+    let alive = true;
+    fetch(asset(`/modules/${locale}/${operator.id}.json`))
+      .then((res) => (res.ok ? res.json() : null))
+      .catch(() => null)
+      .then((data: ModuleStoryDoc | null) => {
+        moduleStoryCache.set(key, data);
+        if (alive) setDoc(data);
+      });
+    return () => { alive = false; };
+  }, [open, key, locale, operator.id]);
+
+  return (
+    <section className="detail-section" id="op-module">
+      <span className="detail-no">MODULE / 06</span>
+      <h3>{t("모듈")}</h3>
+      {modules.length ? (
+        <div className="module-list">
+          {modules.map((module) => {
+            const shown = open === module.id;
+            const story = doc?.[module.id];
+            return (
+              <article key={module.id} className={`module-card${module.unreleased ? " future" : ""}`}>
+                <header>
+                  <span>{module.type}</span>
+                  <div>
+                    <h4>{module.name}{module.unreleased && <em className="future-badge">{t("미실장")}</em>}</h4>
+                    <small>{module.unlock}</small>
+                  </div>
+                </header>
+                <div className="module-levels">
+                  {module.levels.map((level) => (
+                    <div key={level.level}>
+                      <b>STAGE {level.level}</b>
+                      {level.stats && <p className="module-stats">{level.stats}</p>}
+                      {level.effects.map((effect, index) => <p key={index}>{effect}</p>)}
+                    </div>
+                  ))}
+                </div>
+                <button type="button" className="module-story-toggle" aria-expanded={shown}
+                  onClick={() => setOpen((current) => (current === module.id ? null : module.id))}>
+                  <span className="btn-icon" aria-hidden>{shown ? "▴" : "▾"}</span>
+                  {t("모듈 이야기")}
+                </button>
+                {shown && (
+                  <div className="module-story">
+                    {doc === undefined ? <p className="no-detail">{t("불러오는 중…")}</p>
+                      : story ? story.split("\n").filter(Boolean).map((line, index) => <p key={index}>{line}</p>)
+                      : <p className="no-detail">{t("등록된 모듈 이야기가 없습니다.")}</p>}
+                  </div>
+                )}
+              </article>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="no-detail">{t("현재 적용 가능한 모듈이 없습니다.")}</p>
+      )}
+    </section>
+  );
+}
 
 function SkillSection({ operator }: { operator: Operator }) {
   const { locale, t } = useI18n();
