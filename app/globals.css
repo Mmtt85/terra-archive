@@ -10761,6 +10761,11 @@ html.dark.rg-theme.rg6 .site-header {
   transition: transform 0.18s ease;
 }
 .rg {
+  /* CLS 방지 (실측 2026-08-02): 프리렌더 HTML의 rogue 섹션은 178px짜리 토막이라 footer가
+     첫 화면(top 541)에 보였다가, 하이드레이션이 본문(1,265px+)을 채우는 순간 통째로 밀려났다
+     — 느린 폰에선 그 순간이 ~9초 뒤라 CLS 0.26(Poor)로 집계됐다. 섹션 최소 높이를 화면만큼
+     잡아 footer를 처음부터 접힘 아래로 내리면, 내용이 자라도 보이는 것은 아무것도 안 움직인다. */
+  min-height: 100vh;
   --rgbg: #150a0e;
   --rgcard: #211218;
   --rgline: #3c2129;
