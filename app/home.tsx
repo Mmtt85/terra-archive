@@ -15,6 +15,8 @@ import OmniSearch from "./omni-search";
 import BridgeButton from "./lens/bridge-button";
 import { asset } from "./assets";
 import ChangelogButton from "./changelog";
+// 헤더 치비 대화 — 크롬 내장 Gemini Nano (베타, 2026-08-03)
+import { ChibiChatPanel, chibiChatAvailability } from "./chibi-chat";
 import TipBalloon from "./tip-balloon";
 import { useHashSync } from "./hash-modal";
 import type { OmniTarget } from "./omni";
@@ -2394,11 +2396,23 @@ function HeaderChibi({ operators }: { operators: Operator[] }) {
   const [flip, setFlip] = useState(false);
   const [moveSec, setMoveSec] = useState(1);
   const [clip, setClip] = useState<ChibiClip>("relax");
+  // 대화(크롬 내장 Gemini Nano) — 모델이 이미 설치된 환경에서만 켠다. 미지원이면 클릭은 반응 모션만.
+  const [chatReady, setChatReady] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const chatOpenRef = useRef(false);
   const xRef = useRef(0);
   const clipRef = useRef<ChibiClip>("relax");
   const videoRefs = useRef<Partial<Record<ChibiClip, HTMLVideoElement | null>>>({});
 
   const star = useMemo(() => operators.find((candidate) => candidate.id === CHIBI_STAR) ?? null, [operators]);
+
+  useEffect(() => { chatOpenRef.current = chatOpen; }, [chatOpen]);
+  useEffect(() => {
+    if (!isClient) return;
+    let alive = true;
+    void chibiChatAvailability().then((ok) => { if (alive && ok) setChatReady(true); });
+    return () => { alive = false; };
+  }, [isClient]);
 
   // 클립 전환 — 활성 클립만 처음부터 재생, 나머지는 정지 (숨겨둔 채 디코드하지 않게)
   useEffect(() => {
@@ -2419,6 +2433,12 @@ function HeaderChibi({ operators }: { operators: Operator[] }) {
     let timer = 0;
     const tick = () => {
       const current = clipRef.current;
+      if (chatOpenRef.current) {
+        // 대화 중엔 얌전히 — 자던 중이면 깨어난 상태로 서 있는다
+        if (current === "sleep") setClip("relax");
+        timer = window.setTimeout(tick, 4000);
+        return;
+      }
       if (current === "interact") { timer = window.setTimeout(tick, 1500); return; }
       if (current === "sleep") {
         setClip("relax"); // 기상 — 다음 틱에서 다시 행동 결정
@@ -2458,14 +2478,15 @@ function HeaderChibi({ operators }: { operators: Operator[] }) {
       setAlpha(false); // 캔버스 이상 계열 — 표시하지 않는 쪽이 안전
     }
   };
-  // 클릭 = 반응 모션(Interact)만 재생 — 모달은 열지 않는다 (사용자 확정 2026-08-03,
-  // 클릭 동작은 추후 별도 기획 예정). 걷는 중엔 무시(이동 transform과 겹치면 미끄러진다).
+  // 클릭 = 반응 모션(Interact) 재생 + LLM 가용 환경이면 대화 패널 (사용자 확정 2026-08-03).
+  // 미지원 환경은 모션만. 걷는 중 모션 전환은 무시(이동 transform과 겹치면 미끄러진다).
   const handleClick = () => {
     const current = clipRef.current;
-    if (current === "interact" || current === "move") return;
-    setClip("interact");
+    if (current !== "interact" && current !== "move") setClip("interact");
+    if (chatReady) setChatOpen(true);
   };
   return (
+    <>
     <button type="button" className={`header-chibi clip-${clip}`}
       aria-hidden={alpha !== true} tabIndex={alpha === true ? 0 : -1}
       style={{ "--cx": `${x}px`, "--walk": `${moveSec}s` } as React.CSSProperties}
@@ -2489,6 +2510,8 @@ function HeaderChibi({ operators }: { operators: Operator[] }) {
         muted playsInline preload="metadata" ref={(el) => { videoRefs.current.interact = el; }}
         onEnded={() => setClip("relax")} />
     </button>
+    {chatOpen && <ChibiChatPanel onClose={() => setChatOpen(false)} />}
+    </>
   );
 }
 
