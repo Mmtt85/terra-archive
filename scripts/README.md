@@ -259,6 +259,20 @@ python3 scripts/build-skill-levels.py .gamedata   # → public/skills/{ko,en,ja}
 - 검증: 만든 최고레벨 문장이 operators.json의 `description`과 **948개 전부 일치**해야 한다
   (`python3 -c` 한 줄 대조 — 안 맞으면 interpolate 규칙이 어긋난 것).
 
+## 7.7 기지 치비 렌더 매니페스트 (베타, 2026-08-03~)
+
+```bash
+node scripts/build-chibi-manifest.mjs   # → app/data/chibi.json
+```
+
+- 오퍼 상세 모달 "기지 치비" 섹션(베타)의 목록 — ArknightsAssets/ArknightsSpines @cn 브랜치의
+  기지 대기 모션 렌더(WebM VP9+알파)를 **jsDelivr CDN에서 직접 스트리밍**한다.
+  베타 동안은 R2 이관 없음(§8 관할 밖) — 정착하면 r2-sync로 옮긴다.
+- 변형(스킨) 표시명은 `.gamedata/{kr,en,jp}_skin_table.json`과 파일명 suffix를 조인해
+  3개 언어로 박는다 — `fetch-gamedata.py`가 먼저 돌아 있어야 한다.
+- KR 실장 오퍼 커버리지는 소스 레포의 렌더 진도를 따른다(2026-08-03 기준 374/420) —
+  없는 오퍼는 UI가 안내문으로 폴백하므로 재생성만 하면 자동 편입된다.
+
 ## 8. 정적 에셋 R2 동기화 (2026-07-27~)
 
 public/의 story·rogue·lens·tesseract·avatars·about·og·items·scan·profiles·skins·voice·skills는 사이트 배포(Pages)가

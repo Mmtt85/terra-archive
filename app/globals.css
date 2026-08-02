@@ -4348,6 +4348,20 @@ footer p {
   right: 10px;
   transform: translateY(-50%);
 }
+/* '그 외' 드롭다운도 세로 메뉴 — 같은 규칙으로 줄 안 오른쪽에 둔다 (MAA 내보내기 베타 배지) */
+.more-menu button .new-badge {
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+}
+/* 섹션 제목(h3)·모달 제목 안 배지는 제자리 인라인 — 절대배치면 제목 폭이 넓어
+   섹션 오른쪽 끝으로 날아가 잘린다 (기지 치비 실측 2026-08-03) */
+.detail-section h3 .new-badge,
+.room-modal-head h2 .new-badge {
+  position: static;
+  margin-left: 8px;
+  vertical-align: 3px;
+}
 @keyframes new-badge-pulse {
   0%, 100% { box-shadow: 0 0 0 1px rgba(255, 45, 120, 0.35), 0 2px 8px rgba(255, 45, 120, 0.45); }
   50% { box-shadow: 0 0 0 1px rgba(255, 45, 120, 0.55), 0 2px 14px rgba(255, 45, 120, 0.85); }
@@ -14451,4 +14465,30 @@ main.site-main > .site-header {
 }
 .maa-download {
   margin-top: 14px;
+}
+
+/* 기지 치비 (베타, 2026-08-03) — 무대는 테마 무관 순검정: 알파 미지원 브라우저가
+   검정으로 합성해도 지원 브라우저와 똑같이 보인다. 렌더는 1024×576 균일 규격(CLS 0). */
+.chibi-block .skin-tabs {
+  margin-bottom: 10px;
+}
+.chibi-stage {
+  margin: 0;
+}
+.chibi-stage video {
+  display: block;
+  width: 100%;
+  max-width: 460px;
+  margin: 0 auto;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border-radius: 12px;
+  object-fit: contain;
+}
+.chibi-stage figcaption {
+  margin-top: 6px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
 }

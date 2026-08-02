@@ -7,6 +7,7 @@ import { startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useR
 import { createPortal } from "react-dom";
 import broadcastsData from "./data/broadcasts.json";
 import storyEventsData from "./data/stories.json";
+import chibiData from "./data/chibi.json";
 import InfraPlanner from "./planner";
 import RecruitHelper from "./recruit";
 import FarmGuide, { UpgradeSim } from "./farm";
@@ -1850,6 +1851,7 @@ const MODAL_SECTIONS = [
   { id: "op-module", label: "모듈" },
   { id: "op-infra", label: "인프라 스킬" },
   { id: "op-skin", label: "스킨" },
+  { id: "op-chibi", label: "기지 치비" },
   { id: "op-profile", label: "오퍼레이터 파일" },
   { id: "op-voice", label: "보이스 대사" },
 ];
@@ -2029,6 +2031,8 @@ function OperatorModal({ operator, onClose, onUpgrade, includeFuture }: { operat
           </section>
 
           <SkinSection operator={operator} />
+
+          <ChibiSection key={operator.id} operator={operator} />
 
           <ProfileSection operator={operator} />
 
@@ -2359,6 +2363,68 @@ function SkinSection({ operator }: { operator: Operator }) {
   );
 }
 
+// ── 기지 치비 (베타) ─────────────────────────────────────────────────────────
+// ArknightsSpines 렌더(기지 대기 모션, VP9+알파 WebM)를 jsDelivr에서 스트리밍 — Spine
+// 웹 런타임 없이 <video> 하나로 재생한다 (런타임 라이선스·버전 호환 문제 회피).
+// 무대 배경은 테마와 무관하게 순검정: 알파를 합성 못 하는 브라우저(사파리 계열)가 검정으로
+// 그려도 지원 브라우저와 똑같이 보이게 하는 장치다. 매니페스트·스킨명 조인은
+// scripts/build-chibi-manifest.mjs (KR 미실장 최신 오퍼는 렌더가 없을 수 있다 — 안내문 폴백).
+type ChibiEntry = { f: string; n?: (string | null)[] };
+const CHIBI = chibiData as { base: string; chars: Record<string, ChibiEntry[]> };
+const CHIBI_LOCALE: Record<string, number> = { ko: 0, en: 1, ja: 2 };
+
+function ChibiSection({ operator }: { operator: Operator }) {
+  const { locale, t } = useI18n();
+  const entries = CHIBI.chars[operator.id] ?? [];
+  // 오퍼가 바뀌면 부모가 key로 리마운트해 picked가 0으로 돌아간다 (effect 리셋 불필요)
+  const [picked, setPicked] = useState(0);
+  // VP9 재생 불가 브라우저(구형 iOS 등)는 빈 검정 상자 대신 안내문. 모달은 클라이언트에서만
+  // 마운트되므로 lazy 초기화로 충분 — document 가드는 만일의 프리렌더 대비 보험.
+  const [playable] = useState(() =>
+    typeof document === "undefined" || !!document.createElement("video").canPlayType('video/webm; codecs="vp9"'));
+  const current = entries[Math.min(picked, entries.length - 1)];
+  const label = (entry: ChibiEntry) => {
+    if (!entry.n) return t("기본 스킨");
+    return entry.n[CHIBI_LOCALE[locale] ?? 0] ?? entry.n[0]
+      ?? (/^build_char_\d+_[a-z0-9]+_(.+)\.webm$/i.exec(entry.f)?.[1] ?? entry.f);
+  };
+  return (
+    <section className="detail-section" id="op-chibi">
+      <span className="detail-no">CHIBI / 09</span>
+      <h3>{t("기지 치비")} <span className="new-badge">{t("베타")}</span>{entries.length > 1 && <em className="detail-count">{entries.length}</em>}</h3>
+      {!entries.length ? (
+        <p className="no-detail">{t("아직 준비된 치비 렌더가 없습니다 — 최신 오퍼레이터는 소스 레포에 렌더가 올라오면 추가됩니다.")}</p>
+      ) : !playable ? (
+        <p className="no-detail">{t("이 브라우저는 투명 WebM(VP9) 재생을 지원하지 않아 치비를 보여줄 수 없습니다.")}</p>
+      ) : (
+        <div className="chibi-block">
+          {entries.length > 1 && (
+            <div className="skin-tabs" role="tablist">
+              {entries.map((entry, index) => (
+                <button key={entry.f} type="button" role="tab" aria-selected={index === picked}
+                  className={index === picked ? "selected" : ""} onClick={() => setPicked(index)}>
+                  {label(entry)}
+                </button>
+              ))}
+            </div>
+          )}
+          {current && (
+            <figure className="chibi-stage">
+              {/* React는 muted를 프로퍼티로만 세팅해 자동재생 정책 판정과 어긋날 수 있다
+                  (마운트 시 paused로 남던 실측 2026-08-03) — ref에서 muted 확정 후 play() */}
+              <video key={current.f} src={`${CHIBI.base}${encodeURIComponent(current.f)}`}
+                autoPlay loop muted playsInline preload="metadata"
+                ref={(el) => { if (el) { el.muted = true; el.play().catch(() => {}); } }}
+                aria-label={t("{name} 기지 치비 애니메이션", { name: operator.name })} />
+              <figcaption>{t("기지 대기 모션 · 렌더 출처 ArknightsAssets/ArknightsSpines — 게임 내 연출과 다를 수 있습니다.")}</figcaption>
+            </figure>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
 // 전체 일러스트 확대 — 원본 2500px를 1200px로 줄여 받아 둔 것을 화면에 맞춰 띄운다.
 // 모달 위에 겹치므로 z-index는 .modal-backdrop(100)보다 위.
 function SkinLightbox({ skin, alt, onClose }: { skin: SkinEntry; alt: string; onClose: () => void }) {
@@ -2441,7 +2507,7 @@ function ProfileSection({ operator }: { operator: Operator }) {
 
   return (
     <section className="detail-section" id="op-profile">
-      <span className="detail-no">PROFILE / 09</span>
+      <span className="detail-no">PROFILE / 10</span>
       <h3>{t("오퍼레이터 파일")}</h3>
       {doc === undefined ? (
         <p className="no-detail">{t("불러오는 중…")}</p>
@@ -2544,7 +2610,7 @@ function VoiceSection({ operator }: { operator: Operator }) {
   const shown = all ? lines : lines.slice(0, VOICE_HEAD);
   return (
     <section className="detail-section" id="op-voice">
-      <span className="detail-no">VOICE / 10</span>
+      <span className="detail-no">VOICE / 11</span>
       <h3>{t("보이스 대사")}{lines.length > 0 && <em className="detail-count">{lines.length}</em>}</h3>
       {doc === undefined ? (
         <p className="no-detail">{t("불러오는 중…")}</p>
