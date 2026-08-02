@@ -16,7 +16,7 @@ import BridgeButton from "./lens/bridge-button";
 import { asset } from "./assets";
 import ChangelogButton from "./changelog";
 // 헤더 치비 대화 — 크롬 내장 Gemini Nano (베타, 2026-08-03)
-import { ChibiChatPanel, chibiChatStatus, type ChibiChatStatus } from "./chibi-chat";
+import { ChibiChatPanel, chibiChatStatus, type ChibiActionRequest, type ChibiChatStatus } from "./chibi-chat";
 import TipBalloon from "./tip-balloon";
 import { useHashSync } from "./hash-modal";
 import type { OmniTarget } from "./omni";
@@ -1383,7 +1383,7 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
             (사용자 요청 2026-07-27: "헤더를 열어보지 않으면 알 수가 없으니") */}
         <ChangelogButton />
         {/* 헤더 치비 (베타) — 1줄 가운데 빈 공간의 산책 장식, 데스크탑 전용 (사용자 요청 2026-08-03) */}
-        <HeaderChibi operators={operators} />
+        <HeaderChibi operators={operators} onNavigate={switchTab} onShowOperator={(op) => setSelected(op)} />
         {/* 만능검색 = 1줄 오른쪽(햄버거 왼쪽) — 헤더를 접어도 남는다 (사용자 요청 2026-07-25) */}
         <OmniSearch roster={roster} includeFuture={includeFuture} extra={extra} onGo={runOmni} />
         {/* 게임 연결 — 크롬 확장(extension/)이 깔린 사람에게만 나타난다. 누르면 게임 창
@@ -2385,7 +2385,13 @@ type ChibiClip = keyof typeof CHIBI_CLIPS;
 const CHIBI_WALK_SPEED = 34; // px/s — Move 모션(1.67s 사이클) 보폭에 눈대중으로 맞춘 값
 const subscribeNever = () => () => {};
 
-function HeaderChibi({ operators }: { operators: Operator[] }) {
+// 대화 액션 → 탭 라벨 (i18n 키 — 헤더 내비와 동일 사전)
+const CHAT_TAB_LABEL: Record<string, string> = {
+  portal: "홈", planner: "인프라 자동편성기", archive: "오퍼 백과사전", recruit: "공채 도우미",
+  farm: "파밍 도우미", upgrade: "오퍼 육성 시뮬", story: "스토리", rogue: "통합전략 가이드", about: "테라 아카이브 소개",
+};
+
+function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Operator[]; onNavigate: (tab: Tab) => void; onShowOperator: (op: Operator) => void }) {
   const { t } = useI18n();
   // 클라이언트 전용 — 프리렌더에 넣으면 하이드레이션 불일치(실측 2026-08-03: 서버 UTC 날짜
   // 선택이 HTML에 박혀 클릭까지 오염)가 나므로 서버 스냅샷 false로 서버 렌더에서 제외한다.
@@ -2479,6 +2485,24 @@ function HeaderChibi({ operators }: { operators: Operator[] }) {
       setAlpha(false); // 캔버스 이상 계열 — 표시하지 않는 쪽이 안전
     }
   };
+  // 대화 속 요청("인프라 열어줘")을 실제 기능으로 — 성공하면 연 것의 표시명을 돌려준다
+  const handleChatAction = (request: ChibiActionRequest): string | null => {
+    if (request.action === "operator" && request.operator) {
+      const query = request.operator.trim().toLowerCase();
+      if (!query) return null;
+      const found = operators.find((op) => op.name.toLowerCase() === query)
+        ?? operators.find((op) => op.aliases.some((alias) => alias.toLowerCase() === query))
+        ?? operators.find((op) => op.name.toLowerCase().includes(query));
+      if (!found) return null;
+      onShowOperator(found);
+      return found.name;
+    }
+    const label = CHAT_TAB_LABEL[request.action];
+    if (!label) return null;
+    onNavigate(request.action as Tab);
+    return t(label);
+  };
+
   // 클릭 = 반응 모션(Interact) 재생 + LLM 상태에 따라 대화/설치 안내 패널 (사용자 확정 2026-08-03).
   // none(요건 미달·타 브라우저)은 모션만. 걷는 중 모션 전환은 무시(이동 transform과 겹치면 미끄러진다).
   const handleClick = () => {
@@ -2511,7 +2535,7 @@ function HeaderChibi({ operators }: { operators: Operator[] }) {
         muted playsInline preload="metadata" ref={(el) => { videoRefs.current.interact = el; }}
         onEnded={() => setClip("relax")} />
     </button>
-    {chatOpen && <ChibiChatPanel status={chatStatus} onReady={() => setChatStatus("available")} onClose={() => setChatOpen(false)} />}
+    {chatOpen && <ChibiChatPanel status={chatStatus} onReady={() => setChatStatus("available")} onAction={handleChatAction} onClose={() => setChatOpen(false)} />}
     </>
   );
 }

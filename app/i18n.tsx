@@ -142,6 +142,8 @@ const D: Record<string, Pair> = {
   "이미 내려받기가 진행 중이에요 — 이어서 연결할게요.": ["A download is already in progress — we'll pick it up from there.", "すでにダウンロードが進行中です — 続きから接続します。"],
   "내려받기가 잘 안 됐어요 — 잠시 뒤 다시 시도해 주세요.": ["The download didn't go through — please try again in a bit.", "ダウンロードがうまくいきませんでした — しばらくしてからもう一度お試しください。"],
   "설치하고 대화하기": ["Install and chat", "インストールして会話する"],
+  "…이쪽이야. {name}, 열어둘게.": ["…This way. I'll open {name} for you.", "…こっち。{name}、開けておくね。"],
+  "대화 지우기": ["Clear conversation", "会話を消す"],
   "이어서 연결하기": ["Resume and connect", "続きから接続する"],
   "다음에 할게요": ["Maybe later", "また今度にする"],
   "모델을 내려받는 중이에요… 스카디가 목을 가다듬고 있어요.": ["Downloading the model… Skadi is clearing her throat.", "モデルをダウンロード中… スカジが喉の調子を整えています。"],

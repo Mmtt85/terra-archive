@@ -13,7 +13,7 @@ import { useI18n, type Locale } from "./i18n";
 
 type LMSession = {
   promptStreaming: (text: string, opts?: { signal?: AbortSignal }) => ReadableStream<string>;
-  prompt?: (text: string, opts?: { signal?: AbortSignal }) => Promise<string>;
+  prompt?: (text: string, opts?: { signal?: AbortSignal; responseConstraint?: unknown }) => Promise<string>;
   destroy?: () => void;
 };
 type LMMonitor = { addEventListener: (type: "downloadprogress", cb: (e: { loaded: number; total?: number }) => void) => void };
@@ -48,6 +48,7 @@ const PERSONA: Record<Locale, string> = {
 - 바다·심해·노래·오래된 선율의 심상을 즐겨 쓴다. 쓸쓸하지만 다정하고, 가끔 아득한 말을 한다.
 - 말수가 적다. 한 번에 한두 문장, 길어도 세 문장을 넘기지 않는다.
 - 노래를 아주 아끼지만, 자신의 노래가 남에게 위험할 수 있음을 알아 조심스러워한다.
+- 부탁을 받으면 사이트의 화면(인프라 자동편성기, 오퍼 백과사전, 공채·파밍·육성, 스토리, 통합전략 가이드, 소개)으로 안내해 줄 수 있다.
 
 지켜야 할 것:
 - 게임 스토리의 구체적 전개·결말·다른 인물의 비밀은 말하지 않는다. 물으면 "그건… 당신이 직접 보는 편이 좋겠어"처럼 부드럽게 넘긴다.
@@ -62,6 +63,7 @@ Voice and character:
 - You favor imagery of the sea, the deep, songs and old melodies. Melancholy but warm; occasionally distant.
 - You speak little: one or two sentences, never more than three.
 - You treasure singing, yet stay careful — you know your song can be dangerous to others.
+- When asked, you can guide the user to the site's screens (base auto-planner, operator archive, recruitment/farming/upgrade helpers, stories, Integrated Strategies guide, about).
 
 Rules:
 - Never reveal story developments, endings, or other characters' secrets. Deflect gently: "That… is something you should see for yourself."
@@ -76,6 +78,7 @@ Rules:
 - 海・深海・歌・古い旋律のイメージを好む。物寂しいが優しく、時折どこか遠い言葉を口にする。
 - 口数は少ない。一度に一、二文、長くても三文まで。
 - 歌をとても大切にしているが、自分の歌が他者に危険になり得ることを知っていて慎重。
+- 頼まれればサイトの画面（基地自動編成、オペレーター図鑑、公開求人・素材・育成、ストーリー、統合戦略ガイド、紹介）へ案内できる。
 
 守ること:
 - ストーリーの具体的な展開・結末・他キャラクターの秘密は語らない。「それは…あなた自身の目で確かめてほしい」のように柔らかくかわす。
@@ -109,17 +112,78 @@ const FEWSHOT: Record<Locale, { role: "user" | "assistant"; content: string }[]>
 
 const LANG: Record<Locale, string> = { ko: "ko", en: "en", ja: "ja" };
 
+// ── 사이트 액션 라우터 — 대화 중 "인프라 열어줘" 같은 요청을 감지해 실제 기능을 실행한다.
+// Nano는 작은 모델이라 자유 함수호출 대신 **고정 목록 분류**(responseConstraint JSON)로 묶는다.
+// 메시지마다 1회용 세션으로 분류 — 상태가 쌓이면 분류가 오염되고 쿼터만 먹는다.
+export type ChibiActionRequest = { action: string; operator?: string };
+const ACTION_SCHEMA = {
+  type: "object",
+  required: ["action"],
+  additionalProperties: false,
+  properties: {
+    action: { type: "string", enum: ["none", "portal", "planner", "archive", "recruit", "farm", "upgrade", "story", "rogue", "about", "operator"] },
+    operator: { type: "string" },
+  },
+} as const;
+const ROUTER_PROMPT = `You are an intent router for the Arknights fansite "Terra Archive". Given the user's latest chat message (Korean, English or Japanese), decide whether they ask to open a site feature or to show an operator's details.
+Actions:
+- "portal": home screen (홈, 대문, home)
+- "planner": base/RIIC auto planner (인프라, 기지, 자동편성, base)
+- "archive": operator encyclopedia (오퍼 백과사전, 도감, operators)
+- "recruit": recruitment tag calculator (공채, 공개모집, recruit)
+- "farm": material farming efficiency (파밍, 재료, farming)
+- "upgrade": upgrade cost simulator (육성, 정예화 비용, upgrade cost)
+- "story": story summaries & chronicle (스토리, 연대기)
+- "rogue": Integrated Strategies guide (통합전략, IS)
+- "about": site introduction (소개)
+- "operator": show one specific operator's details; put that operator name in "operator"
+- "none": ordinary conversation, questions, or anything else
+Choose a non-"none" action only when the user clearly asks to open/show/navigate. Respond with JSON only.`;
+
+async function routeAction(text: string): Promise<ChibiActionRequest | null> {
+  const lm = LM();
+  if (!lm?.create) return null;
+  let session: LMSession | null = null;
+  try {
+    session = await lm.create({ initialPrompts: [{ role: "system", content: ROUTER_PROMPT }] });
+    const raw = await session.prompt?.(text, { responseConstraint: ACTION_SCHEMA });
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as ChibiActionRequest;
+    return typeof parsed?.action === "string" ? parsed : null;
+  } catch {
+    return null; // 라우팅 실패는 조용히 일반 대화로
+  } finally {
+    session?.destroy?.();
+  }
+}
+
 type Message = { role: "user" | "assistant"; text: string };
 type Phase = "offer" | "downloading" | "chat";
 
-export function ChibiChatPanel({ status, onReady, onClose }: { status: ChibiChatStatus; onReady: () => void; onClose: () => void }) {
+// ── 대화 기록 — 브라우저(localStorage)에만 저장. 패널을 닫거나 사이트를 껐다 켜도 이어진다.
+// 모델 세션은 직렬화가 안 되므로, 세션을 새로 만들 때 최근 기록을 initialPrompts로 재주입해
+// "기억"을 복원한다 (Nano 컨텍스트가 작아 최근 10개·개당 400자로 자른 슬라이딩 윈도우).
+const historyKey = (locale: Locale) => `ta-chibi-chat:${locale}`;
+const loadHistory = (locale: Locale): Message[] => {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(historyKey(locale)) ?? "[]");
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter((m): m is Message => (m?.role === "user" || m?.role === "assistant") && typeof m?.text === "string")
+      .slice(-40);
+  } catch {
+    return [];
+  }
+};
+
+export function ChibiChatPanel({ status, onReady, onAction, onClose }: { status: ChibiChatStatus; onReady: () => void; onAction?: (request: ChibiActionRequest) => string | null; onClose: () => void }) {
   const { locale, t } = useI18n();
   // 설치 안내 단계 — 모델이 없으면 크기·용도를 설명하고 동의를 받은 뒤에만 내려받는다
   // (사용자 확정 2026-08-03: "뭘 받는지 안내하고 설치하겠냐고 물어봐줘")
   const [phase, setPhase] = useState<Phase>(status === "available" ? "chat" : "offer");
   const [progress, setProgress] = useState(0); // 0~1
   const [installError, setInstallError] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(() => loadHistory(locale));
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const sessionRef = useRef<LMSession | null>(null);
@@ -150,18 +214,21 @@ export function ChibiChatPanel({ status, onReady, onClose }: { status: ChibiChat
     return () => { window.removeEventListener("keydown", onEsc); window.removeEventListener("pointerdown", onDown); };
   }, [onClose]);
 
-  // 새 메시지마다 맨 아래로
+  // 새 메시지마다 맨 아래로 + 기록 저장 (이 브라우저에만 — 서버 전송 없음)
   useEffect(() => {
     const log = logRef.current;
     if (log) log.scrollTop = log.scrollHeight;
-  }, [messages]);
+    try { localStorage.setItem(historyKey(locale), JSON.stringify(messages.slice(-40))); } catch { /* 저장 실패는 무해 */ }
+  }, [messages, locale]);
 
-  const ensureSession = async (onProgress?: (ratio: number) => void): Promise<LMSession> => {
+  const ensureSession = async (onProgress?: (ratio: number) => void, history: Message[] = []): Promise<LMSession> => {
     if (sessionRef.current) return sessionRef.current;
     const lm = LM();
     if (!lm?.create) throw new Error("unavailable");
+    // 지난 대화 복원 — 최근 10개, 개당 400자 (Nano 컨텍스트 보호)
+    const recall = history.filter((m) => m.text).slice(-10).map((m) => ({ role: m.role, content: m.text.slice(0, 400) }));
     const base: Record<string, unknown> = {
-      initialPrompts: [{ role: "system", content: PERSONA[locale] }, ...FEWSHOT[locale]],
+      initialPrompts: [{ role: "system", content: PERSONA[locale] }, ...FEWSHOT[locale], ...recall],
     };
     if (onProgress) {
       base.monitor = (m: LMMonitor) =>
@@ -190,7 +257,7 @@ export function ChibiChatPanel({ status, onReady, onClose }: { status: ChibiChat
     setInstallError(false);
     setPhase("downloading");
     try {
-      await ensureSession(setProgress);
+      await ensureSession(setProgress, messages);
       setPhase("chat");
       onReady(); // 부모 상태를 available로 — 다음 클릭부터 바로 대화
     } catch {
@@ -199,14 +266,40 @@ export function ChibiChatPanel({ status, onReady, onClose }: { status: ChibiChat
     }
   };
 
+  // 대화 지우기 — 기록·세션을 함께 버린다 (기억도 리셋)
+  const clearHistory = () => {
+    abortRef.current?.abort();
+    sessionRef.current?.destroy?.();
+    sessionRef.current = null;
+    setMessages([]);
+    try { localStorage.removeItem(historyKey(locale)); } catch { /* 무해 */ }
+  };
+
   const send = async () => {
     const text = input.trim();
     if (!text || busy) return;
+    const history = messages; // 세션 재생성용 스냅샷 (지금 입력분 제외)
     setInput("");
     setMessages((prev) => [...prev, { role: "user", text }, { role: "assistant", text: "" }]);
     setBusy(true);
     try {
-      const session = await ensureSession();
+      // ① 액션 라우팅 — "인프라 열어줘" 같은 요청이면 실제 기능을 실행하고 짧게 안내
+      if (onAction) {
+        const routed = await routeAction(text);
+        const label = routed && routed.action !== "none" ? onAction(routed) : null;
+        if (label) {
+          const line = t("…이쪽이야. {name}, 열어둘게.", { name: label });
+          setMessages((prev) => {
+            const copy = prev.slice();
+            copy[copy.length - 1] = { role: "assistant", text: line };
+            return copy;
+          });
+          setBusy(false);
+          return;
+        }
+      }
+      // ② 일반 대화
+      const session = await ensureSession(undefined, history);
       const controller = new AbortController();
       abortRef.current = controller;
       const stream = session.promptStreaming(text, { signal: controller.signal });
@@ -245,6 +338,9 @@ export function ChibiChatPanel({ status, onReady, onClose }: { status: ChibiChat
       <header className="chibi-chat-head">
         <b>{t("스카디와 대화")}</b>
         <span className="new-badge">{t("베타")}</span>
+        {phase === "chat" && messages.length > 0 && (
+          <button type="button" className="chibi-chat-clear" onClick={clearHistory} title={t("대화 지우기")} aria-label={t("대화 지우기")}>🗑</button>
+        )}
         <button type="button" className="chibi-chat-close" onClick={onClose} aria-label={t("닫기")}>×</button>
       </header>
       {phase === "offer" && (

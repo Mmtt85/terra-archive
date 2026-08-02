@@ -14544,6 +14544,18 @@ main.site-main > .site-header {
   cursor: pointer;
   color: var(--muted);
 }
+.chibi-chat-clear {
+  margin-left: auto;
+  border: 0;
+  background: none;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--muted);
+}
+.chibi-chat-clear + .chibi-chat-close {
+  margin-left: 0; /* 🗑 버튼이 있으면 그쪽이 오른쪽 정렬을 담당 */
+}
 .chibi-chat-log {
   height: 240px;
   overflow-y: auto;
