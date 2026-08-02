@@ -8,7 +8,7 @@ description: 소개(/about) 페이지 스크린샷 전면 재촬영·교체 절�
 소개 페이지는 각 기능 화면의 실제 캡처(webp)를 보여준다. UI가 눈에 띄게 바뀌면
 (새 버튼·배지·레이아웃) 전면 재촬영해 교체한다. 절차는 전부 스크립트화돼 있다.
 
-## 표준 절차 (3단계)
+## 표준 절차 (4단계)
 
 ```bash
 # 0) 최신 코드가 반영된 프로덕션 빌드가 전제 — 안 돼 있으면 npm run build 먼저
@@ -19,7 +19,15 @@ node scripts/capture-about.mjs <임시출력폴더>
 
 # 2) webp 변환·배치 — ko는 public/about/ 루트(기존 URL 유지), en/ja는 public/about/{en,ja}/
 python3 scripts/convert-about.py <임시출력폴더>
+
+# 3) R2 동기화 — 소개 스샷은 Pages가 아니라 R2(files.terra-archive.net)에서 서빙된다 (2026-07-27 이관).
+#    이걸 안 돌리면 커밋·배포해도 라이브 /about은 옛 이미지를 계속 문다.
+node scripts/r2-sync.mjs
 ```
+
+**그리고 about.tsx의 `SHOT_VER`를 오늘 날짜로 올린다** — 파일명이 같아서 R2 엣지·브라우저의
+30일 이미지 캐시에 옛 캡처가 남는데, 쿼리 버전이 바뀌면 새 캐시 키라 전원이 즉시 새로 받는다.
+(SHOT_VER 반영은 Pages 배포를 타므로, 사용자가 deploy를 돌려야 라이브에 나간다.)
 
 끝나면 서버 종료(`pkill -f "vinext start"`) → `git status public/about`으로 108개 변경 확인 →
 몇 장 열어 품질 확인(아래 체크리스트) → 커밋·push. **deploy.sh는 돌리지 않는다** (CLAUDE.md 규칙).
@@ -36,7 +44,7 @@ python3 scripts/convert-about.py <임시출력폴더>
 
 portal(홈) · planner(/infra) · archive(/operators) · recruit · farm ·
 upgrade(예시 오퍼 2명 쿼리) · story · rogue · chronicle(스토리→연대기 탭).
-**새 기능 페이지가 생기면 SHOTS 배열에 추가**하고 about.tsx의 SHOT_MAP도 함께 갱신.
+**새 기능 페이지가 생기면 SHOTS 배열에 추가**하고 about.tsx의 SHOTS 맵도 함께 갱신.
 
 ## 품질 체크리스트 (몇 장만 샘플 확인)
 

@@ -21,6 +21,9 @@ type Feature = {
 // 기능별 스크린샷 (헤드리스 캡처본, 데스크톱+모바일 한 쌍). 경로는 ko 기준 — EN/JA는
 // ShotFrame이 /about/{en,ja}/로 바꿔 그 언어 UI 캡처를 보여준다 (언어별 세트 2026-07-22).
 type ShotPair = { d: string; m: string };
+// 재촬영하면 이 날짜를 올린다 — 파일명이 같아서 R2 엣지·브라우저의 30일 이미지 캐시에
+// 옛 캡처가 남는데, 쿼리가 바뀌면 새 캐시 키라 전부 즉시 새로 받는다 (2026-08-02).
+const SHOT_VER = "20260802";
 const SHOTS: Partial<Record<Tab, ShotPair>> = {
   archive: { d: "/about/archive.webp", m: "/about/archive-m.webp" },
   planner: { d: "/about/planner.webp", m: "/about/planner-m.webp" },
@@ -56,7 +59,7 @@ function ShotFrame({ shot, alt, cap }: { shot: ShotPair; alt: string; cap?: stri
   // EN/JA는 그 언어 UI 캡처본(/about/{en,ja}/)으로 스왑 — ko는 종전 루트 경로 유지
   const src = (p: string) => {
     const localized = locale === "ko" ? p : p.replace("/about/", `/about/${locale}/`);
-    return asset(theme === "dark" ? localized.replace(/\.webp$/, "-dark.webp") : localized);
+    return `${asset(theme === "dark" ? localized.replace(/\.webp$/, "-dark.webp") : localized)}?v=${SHOT_VER}`;
   };
   return (
     <figure className="about-shot-fig">
