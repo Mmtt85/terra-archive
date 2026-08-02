@@ -265,8 +265,9 @@ python3 scripts/build-skill-levels.py .gamedata   # → public/skills/{ko,en,ja}
 node scripts/build-chibi-manifest.mjs   # → app/data/chibi.json
 ```
 
-- 오퍼 상세 모달 "기지 치비" 섹션(베타)의 목록 — ArknightsAssets/ArknightsSpines @cn 브랜치의
-  기지 대기 모션 렌더(WebM VP9+알파)를 **jsDelivr CDN에서 직접 스트리밍**한다.
+- 헤더 가운데 "오늘의 치비" 산책 장식(베타)의 목록 — ArknightsAssets/ArknightsSpines @cn
+  브랜치의 기지 대기 모션 렌더(WebM VP9+알파)를 **jsDelivr CDN에서 직접 스트리밍**한다.
+  렌더는 소스 레포가 미리 구워 둔 완성 파일이라 우리 쪽 렌더 작업은 없다.
   베타 동안은 R2 이관 없음(§8 관할 밖) — 정착하면 r2-sync로 옮긴다.
 - 변형(스킨) 표시명은 `.gamedata/{kr,en,jp}_skin_table.json`과 파일명 suffix를 조인해
   3개 언어로 박는다 — `fetch-gamedata.py`가 먼저 돌아 있어야 한다.

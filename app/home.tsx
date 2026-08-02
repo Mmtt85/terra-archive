@@ -1381,6 +1381,8 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
         {/* 업데이트 내역 — 로고 바로 오른쪽 1줄 소속: 헤더를 접어도 보인다
             (사용자 요청 2026-07-27: "헤더를 열어보지 않으면 알 수가 없으니") */}
         <ChangelogButton />
+        {/* 헤더 치비 (베타) — 1줄 가운데 빈 공간의 산책 장식, 데스크탑 전용 (사용자 요청 2026-08-03) */}
+        <HeaderChibi operators={operators} onOpen={(op) => setSelected(op)} />
         {/* 만능검색 = 1줄 오른쪽(햄버거 왼쪽) — 헤더를 접어도 남는다 (사용자 요청 2026-07-25) */}
         <OmniSearch roster={roster} includeFuture={includeFuture} extra={extra} onGo={runOmni} />
         {/* 게임 연결 — 크롬 확장(extension/)이 깔린 사람에게만 나타난다. 누르면 게임 창
@@ -1851,7 +1853,6 @@ const MODAL_SECTIONS = [
   { id: "op-module", label: "모듈" },
   { id: "op-infra", label: "인프라 스킬" },
   { id: "op-skin", label: "스킨" },
-  { id: "op-chibi", label: "기지 치비" },
   { id: "op-profile", label: "오퍼레이터 파일" },
   { id: "op-voice", label: "보이스 대사" },
 ];
@@ -2031,8 +2032,6 @@ function OperatorModal({ operator, onClose, onUpgrade, includeFuture }: { operat
           </section>
 
           <SkinSection operator={operator} />
-
-          <ChibiSection key={operator.id} operator={operator} />
 
           <ProfileSection operator={operator} />
 
@@ -2363,65 +2362,91 @@ function SkinSection({ operator }: { operator: Operator }) {
   );
 }
 
-// ── 기지 치비 (베타) ─────────────────────────────────────────────────────────
-// ArknightsSpines 렌더(기지 대기 모션, VP9+알파 WebM)를 jsDelivr에서 스트리밍 — Spine
-// 웹 런타임 없이 <video> 하나로 재생한다 (런타임 라이선스·버전 호환 문제 회피).
-// 무대 배경은 테마와 무관하게 순검정: 알파를 합성 못 하는 브라우저(사파리 계열)가 검정으로
-// 그려도 지원 브라우저와 똑같이 보이게 하는 장치다. 매니페스트·스킨명 조인은
-// scripts/build-chibi-manifest.mjs (KR 미실장 최신 오퍼는 렌더가 없을 수 있다 — 안내문 폴백).
+// ── 헤더 치비 (베타) ─────────────────────────────────────────────────────────
+// 헤더 1줄 가운데 빈 공간에서 '오늘의 치비'(기지 대기 모션 렌더, VP9+알파 WebM)가
+// 꼬물거리며 이따금 자리를 옮긴다. 렌더는 소스 레포가 미리 구워 둔 완성 파일을 jsDelivr에서
+// 스트리밍할 뿐 — 우리 쪽 렌더 작업은 없다 (scripts/build-chibi-manifest.mjs 참조).
+// - 오늘의 치비: 날짜 시드로 결정론 선택 — 그날은 모두가 같은 치비를 본다. 누르면 상세 모달.
+// - 알파 프로브: VP9 알파를 실제로 합성하는 브라우저인지 캔버스 픽셀로 1회 검사. 못 그리는
+//   브라우저(사파리 계열)는 검정 상자가 되므로 아예 표시하지 않는다
+//   (jsDelivr가 ACAO:* 라 crossOrigin="anonymous"로 캔버스 오염 없이 읽힌다).
+// - 걷기 모션 렌더는 소스에 없어, 이동은 대기 모션 그대로 천천히 미끄러지는 산책 연출 —
+//   prefers-reduced-motion이면 드리프트 없이 제자리에서만 꼬물거린다.
 type ChibiEntry = { f: string; n?: (string | null)[] };
 const CHIBI = chibiData as { base: string; chars: Record<string, ChibiEntry[]> };
-const CHIBI_LOCALE: Record<string, number> = { ko: 0, en: 1, ja: 2 };
+const subscribeNever = () => () => {};
 
-function ChibiSection({ operator }: { operator: Operator }) {
-  const { locale, t } = useI18n();
-  const entries = CHIBI.chars[operator.id] ?? [];
-  // 오퍼가 바뀌면 부모가 key로 리마운트해 picked가 0으로 돌아간다 (effect 리셋 불필요)
-  const [picked, setPicked] = useState(0);
-  // VP9 재생 불가 브라우저(구형 iOS 등)는 빈 검정 상자 대신 안내문. 모달은 클라이언트에서만
-  // 마운트되므로 lazy 초기화로 충분 — document 가드는 만일의 프리렌더 대비 보험.
-  const [playable] = useState(() =>
-    typeof document === "undefined" || !!document.createElement("video").canPlayType('video/webm; codecs="vp9"'));
-  const current = entries[Math.min(picked, entries.length - 1)];
-  const label = (entry: ChibiEntry) => {
-    if (!entry.n) return t("기본 스킨");
-    return entry.n[CHIBI_LOCALE[locale] ?? 0] ?? entry.n[0]
-      ?? (/^build_char_\d+_[a-z0-9]+_(.+)\.webm$/i.exec(entry.f)?.[1] ?? entry.f);
+function HeaderChibi({ operators, onOpen }: { operators: Operator[]; onOpen: (op: Operator) => void }) {
+  const { t } = useI18n();
+  // 클라이언트 전용 — 프리렌더에 넣으면 빌드 서버의 날짜(UTC)로 고른 치비가 HTML에 박혀
+  // 브라우저(KST)의 선택과 어긋나는 하이드레이션 불일치가 난다 (실측 2026-08-03: 서버
+  // 호시구마 vs 클라 제시카, 클릭까지 오염). 서버 스냅샷 false → 서버·하이드레이션 렌더 제외.
+  const isClient = useSyncExternalStore(subscribeNever, () => true, () => false);
+  // null = 프로브 전(투명 마운트) · true = 표시 · false = 알파 미지원(제거)
+  const [alpha, setAlpha] = useState<boolean | null>(null);
+  const [x, setX] = useState(0);
+  const [flip, setFlip] = useState(false);
+  const [moveSec, setMoveSec] = useState(1);
+  const xRef = useRef(0);
+
+  const today = useMemo(() => {
+    const opById = new Map(operators.map((op) => [op.id, op]));
+    const ids = Object.keys(CHIBI.chars).filter((id) => opById.has(id));
+    if (!ids.length) return null;
+    const now = new Date();
+    const seed = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
+    const op = opById.get(ids[((seed * 2654435761) >>> 0) % ids.length])!;
+    return { op, file: CHIBI.chars[op.id][0].f }; // [0] = 기본 치비 (매니페스트가 기본을 앞에 정렬)
+  }, [operators]);
+
+  // 산책 드리프트 — 알파 프로브 통과 후에만
+  useEffect(() => {
+    if (alpha !== true) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let timer = 0;
+    const wander = () => {
+      const next = Math.round(Math.random() * 260 - 130); // 헤더 중앙 ±130px
+      if (next !== xRef.current) {
+        setFlip(next < xRef.current);
+        setMoveSec(Math.max(1.4, Math.abs(next - xRef.current) / 24)); // 산책 속도 ~24px/s
+        xRef.current = next;
+        setX(next);
+      }
+      timer = window.setTimeout(wander, 7000 + Math.random() * 6000);
+    };
+    timer = window.setTimeout(wander, 2500);
+    return () => window.clearTimeout(timer);
+  }, [alpha]);
+
+  if (!isClient || !today || alpha === false) return null;
+  const probe = (video: HTMLVideoElement) => {
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = canvas.height = 8;
+      const g = canvas.getContext("2d");
+      if (!g) return;
+      g.drawImage(video, 0, 0, 8, 8);
+      // 프레임 왼쪽 위는 렌더 여백 — 알파가 살아 있으면 투명(0), 무시됐으면 불투명(255)
+      setAlpha(g.getImageData(0, 0, 1, 1).data[3] < 250);
+    } catch {
+      setAlpha(false); // 캔버스 오염 등 — 표시하지 않는 쪽이 안전
+    }
   };
   return (
-    <section className="detail-section" id="op-chibi">
-      <span className="detail-no">CHIBI / 09</span>
-      <h3>{t("기지 치비")} <span className="new-badge">{t("베타")}</span>{entries.length > 1 && <em className="detail-count">{entries.length}</em>}</h3>
-      {!entries.length ? (
-        <p className="no-detail">{t("아직 준비된 치비 렌더가 없습니다 — 최신 오퍼레이터는 소스 레포에 렌더가 올라오면 추가됩니다.")}</p>
-      ) : !playable ? (
-        <p className="no-detail">{t("이 브라우저는 투명 WebM(VP9) 재생을 지원하지 않아 치비를 보여줄 수 없습니다.")}</p>
-      ) : (
-        <div className="chibi-block">
-          {entries.length > 1 && (
-            <div className="skin-tabs" role="tablist">
-              {entries.map((entry, index) => (
-                <button key={entry.f} type="button" role="tab" aria-selected={index === picked}
-                  className={index === picked ? "selected" : ""} onClick={() => setPicked(index)}>
-                  {label(entry)}
-                </button>
-              ))}
-            </div>
-          )}
-          {current && (
-            <figure className="chibi-stage">
-              {/* React는 muted를 프로퍼티로만 세팅해 자동재생 정책 판정과 어긋날 수 있다
-                  (마운트 시 paused로 남던 실측 2026-08-03) — ref에서 muted 확정 후 play() */}
-              <video key={current.f} src={`${CHIBI.base}${encodeURIComponent(current.f)}`}
-                autoPlay loop muted playsInline preload="metadata"
-                ref={(el) => { if (el) { el.muted = true; el.play().catch(() => {}); } }}
-                aria-label={t("{name} 기지 치비 애니메이션", { name: operator.name })} />
-              <figcaption>{t("기지 대기 모션 · 렌더 출처 ArknightsAssets/ArknightsSpines — 게임 내 연출과 다를 수 있습니다.")}</figcaption>
-            </figure>
-          )}
-        </div>
-      )}
-    </section>
+    <button type="button" className="header-chibi" aria-hidden={alpha !== true} tabIndex={alpha === true ? 0 : -1}
+      style={{ "--cx": `${x}px`, "--walk": `${moveSec}s` } as React.CSSProperties}
+      title={t("오늘의 치비: {name} — 눌러서 상세 열기", { name: today.op.name })}
+      aria-label={t("오늘의 치비: {name} — 눌러서 상세 열기", { name: today.op.name })}
+      onClick={() => onOpen(today.op)}>
+      {/* React는 muted를 프로퍼티로만 세팅해 자동재생 정책 판정과 어긋날 수 있다 — ref에서 확정 후 play().
+          프로브는 loadeddata 이벤트 + ref의 readyState 검사 양쪽에서 건다: 캐시 히트면 핸들러가
+          붙기 전에 로드가 끝나 이벤트를 영영 놓친다 (실측 2026-08-03, 두 번째 방문부터 재현). */}
+      <video src={`${CHIBI.base}${encodeURIComponent(today.file)}`} crossOrigin="anonymous"
+        autoPlay loop muted playsInline preload="metadata" className={flip ? "flip" : undefined}
+        style={alpha ? undefined : { opacity: 0 }}
+        ref={(el) => { if (el) { el.muted = true; el.play().catch(() => {}); if (alpha === null && el.readyState >= 2) probe(el); } }}
+        onLoadedData={(event) => { if (alpha === null) probe(event.currentTarget); }} />
+    </button>
   );
 }
 
@@ -2507,7 +2532,7 @@ function ProfileSection({ operator }: { operator: Operator }) {
 
   return (
     <section className="detail-section" id="op-profile">
-      <span className="detail-no">PROFILE / 10</span>
+      <span className="detail-no">PROFILE / 09</span>
       <h3>{t("오퍼레이터 파일")}</h3>
       {doc === undefined ? (
         <p className="no-detail">{t("불러오는 중…")}</p>
@@ -2610,7 +2635,7 @@ function VoiceSection({ operator }: { operator: Operator }) {
   const shown = all ? lines : lines.slice(0, VOICE_HEAD);
   return (
     <section className="detail-section" id="op-voice">
-      <span className="detail-no">VOICE / 11</span>
+      <span className="detail-no">VOICE / 10</span>
       <h3>{t("보이스 대사")}{lines.length > 0 && <em className="detail-count">{lines.length}</em>}</h3>
       {doc === undefined ? (
         <p className="no-detail">{t("불러오는 중…")}</p>
