@@ -14492,6 +14492,16 @@ main.site-main > .site-header {
 .header-chibi video.flip {
   transform: scaleX(-1);
 }
+/* 클립 전환 — 평소 Relax, 걷는 동안(.walking)만 Move */
+.header-chibi .chibi-move {
+  display: none;
+}
+.header-chibi.walking .chibi-move {
+  display: block;
+}
+.header-chibi.walking .chibi-relax {
+  display: none;
+}
 @media (max-width: 1100px) {
   .header-chibi {
     display: none; /* 좁은 화면은 가운데 빈 공간이 없다 */

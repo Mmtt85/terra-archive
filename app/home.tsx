@@ -7,7 +7,6 @@ import { startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useR
 import { createPortal } from "react-dom";
 import broadcastsData from "./data/broadcasts.json";
 import storyEventsData from "./data/stories.json";
-import chibiData from "./data/chibi.json";
 import InfraPlanner from "./planner";
 import RecruitHelper from "./recruit";
 import FarmGuide, { UpgradeSim } from "./farm";
@@ -2363,39 +2362,35 @@ function SkinSection({ operator }: { operator: Operator }) {
 }
 
 // ── 헤더 치비 (베타) ─────────────────────────────────────────────────────────
-// 헤더 1줄 가운데 빈 공간에서 마스코트 치비(기지 대기 모션 렌더, VP9+알파 WebM)가
-// 꼬물거리며 이따금 자리를 옮긴다. 렌더는 소스 레포가 미리 구워 둔 완성 파일을 jsDelivr에서
-// 스트리밍할 뿐 — 우리 쪽 렌더 작업은 없다 (scripts/build-chibi-manifest.mjs 참조).
-// - 마스코트는 이격 스카디 고정 (사용자 확정 2026-08-03 — 로고와 같은 오퍼, 전체 로테이션 안 함).
-//   누르면 상세 모달. 매니페스트에는 374명분이 있으니 훗날 로테이션 복귀도 데이터는 준비돼 있다.
+// 헤더 1줄 가운데 빈 공간에서 마스코트 치비가 꼬물거리다 이따금 걸어서 자리를 옮긴다.
+// 클립은 게임 원본 Spine 데이터(3.8.99)의 Relax(대기)·Move(걷기) 모션을 우리가 직접
+// 투명 WebM(VP9+알파)으로 렌더한 것 — public/chibi/에 셀프호스팅 (절차: scripts/README §7.7).
+// - 마스코트는 이격 스카디 고정 (사용자 확정 2026-08-03 — 로고와 같은 오퍼).
+//   누르면 상세 모달. 로테이션용 매니페스트(chibi.json)는 데이터로만 유지.
+// - 상태머신: 평소 Relax 루프 → 드리프트 시작하면 Move 루프 + 진행 방향 반전 →
+//   transition 이 끝나면(도착) 다시 Relax. prefers-reduced-motion이면 드리프트 없이 제자리.
 // - 알파 프로브: VP9 알파를 실제로 합성하는 브라우저인지 캔버스 픽셀로 1회 검사. 못 그리는
-//   브라우저(사파리 계열)는 검정 상자가 되므로 아예 표시하지 않는다
-//   (jsDelivr가 ACAO:* 라 crossOrigin="anonymous"로 캔버스 오염 없이 읽힌다).
-// - 걷기 모션 렌더는 소스에 없어, 이동은 대기 모션 그대로 천천히 미끄러지는 산책 연출 —
-//   prefers-reduced-motion이면 드리프트 없이 제자리에서만 꼬물거린다.
-type ChibiEntry = { f: string; n?: (string | null)[] };
-const CHIBI = chibiData as { base: string; chars: Record<string, ChibiEntry[]> };
+//   브라우저(사파리 계열)는 검정 상자가 되므로 아예 표시하지 않는다 (같은 출처라 오염 없음).
 const CHIBI_STAR = "char_1012_skadi2"; // 이격 스카디
+const CHIBI_CLIPS = { relax: "/chibi/skadi2-relax.webm", move: "/chibi/skadi2-move.webm" }; // Pages 직접 서빙 (R2 아님 — 합계 0.5MB)
+const CHIBI_WALK_SPEED = 34; // px/s — Move 모션(1.67s 사이클) 보폭에 눈대중으로 맞춘 값
 const subscribeNever = () => () => {};
 
 function HeaderChibi({ operators, onOpen }: { operators: Operator[]; onOpen: (op: Operator) => void }) {
   const { t } = useI18n();
-  // 클라이언트 전용 — 프리렌더에 넣으면 빌드 서버의 날짜(UTC)로 고른 치비가 HTML에 박혀
-  // 브라우저(KST)의 선택과 어긋나는 하이드레이션 불일치가 난다 (실측 2026-08-03: 서버
-  // 호시구마 vs 클라 제시카, 클릭까지 오염). 서버 스냅샷 false → 서버·하이드레이션 렌더 제외.
+  // 클라이언트 전용 — 프리렌더에 넣으면 하이드레이션 불일치(실측 2026-08-03: 서버 UTC 날짜
+  // 선택이 HTML에 박혀 클릭까지 오염)가 나므로 서버 스냅샷 false로 서버 렌더에서 제외한다.
   const isClient = useSyncExternalStore(subscribeNever, () => true, () => false);
   // null = 프로브 전(투명 마운트) · true = 표시 · false = 알파 미지원(제거)
   const [alpha, setAlpha] = useState<boolean | null>(null);
   const [x, setX] = useState(0);
   const [flip, setFlip] = useState(false);
   const [moveSec, setMoveSec] = useState(1);
+  const [walking, setWalking] = useState(false);
   const xRef = useRef(0);
+  const moveVideoRef = useRef<HTMLVideoElement | null>(null);
 
-  const star = useMemo(() => {
-    const op = operators.find((candidate) => candidate.id === CHIBI_STAR);
-    const entries = CHIBI.chars[CHIBI_STAR];
-    return op && entries?.length ? { op, file: entries[0].f } : null; // [0] = 기본 치비
-  }, [operators]);
+  const star = useMemo(() => operators.find((candidate) => candidate.id === CHIBI_STAR) ?? null, [operators]);
 
   // 산책 드리프트 — 알파 프로브 통과 후에만
   useEffect(() => {
@@ -2404,9 +2399,10 @@ function HeaderChibi({ operators, onOpen }: { operators: Operator[]; onOpen: (op
     let timer = 0;
     const wander = () => {
       const next = Math.round(Math.random() * 260 - 130); // 헤더 중앙 ±130px
-      if (next !== xRef.current) {
-        setFlip(next < xRef.current);
-        setMoveSec(Math.max(1.4, Math.abs(next - xRef.current) / 24)); // 산책 속도 ~24px/s
+      if (Math.abs(next - xRef.current) > 8) {
+        setFlip(next > xRef.current); // 원본 렌더 기본 방향이 왼쪽 — 오른쪽 이동 시 반전
+        setMoveSec(Math.abs(next - xRef.current) / CHIBI_WALK_SPEED);
+        setWalking(true);
         xRef.current = next;
         setX(next);
       }
@@ -2415,6 +2411,14 @@ function HeaderChibi({ operators, onOpen }: { operators: Operator[]; onOpen: (op
     timer = window.setTimeout(wander, 2500);
     return () => window.clearTimeout(timer);
   }, [alpha]);
+
+  // 걷기 클립은 걷는 동안만 돌린다 (숨겨둔 채 계속 디코드하지 않게)
+  useEffect(() => {
+    const video = moveVideoRef.current;
+    if (!video) return;
+    if (walking) { video.currentTime = 0; video.play().catch(() => {}); }
+    else video.pause();
+  }, [walking]);
 
   if (!isClient || !star || alpha === false) return null;
   const probe = (video: HTMLVideoElement) => {
@@ -2427,23 +2431,27 @@ function HeaderChibi({ operators, onOpen }: { operators: Operator[]; onOpen: (op
       // 프레임 왼쪽 위는 렌더 여백 — 알파가 살아 있으면 투명(0), 무시됐으면 불투명(255)
       setAlpha(g.getImageData(0, 0, 1, 1).data[3] < 250);
     } catch {
-      setAlpha(false); // 캔버스 오염 등 — 표시하지 않는 쪽이 안전
+      setAlpha(false); // 캔버스 이상 계열 — 표시하지 않는 쪽이 안전
     }
   };
   return (
-    <button type="button" className="header-chibi" aria-hidden={alpha !== true} tabIndex={alpha === true ? 0 : -1}
+    <button type="button" className={`header-chibi${walking ? " walking" : ""}`}
+      aria-hidden={alpha !== true} tabIndex={alpha === true ? 0 : -1}
       style={{ "--cx": `${x}px`, "--walk": `${moveSec}s` } as React.CSSProperties}
-      title={t("{name} 상세 정보 열기", { name: star.op.name })}
-      aria-label={t("{name} 상세 정보 열기", { name: star.op.name })}
-      onClick={() => onOpen(star.op)}>
+      title={t("{name} 상세 정보 열기", { name: star.name })}
+      aria-label={t("{name} 상세 정보 열기", { name: star.name })}
+      onClick={() => onOpen(star)}
+      onTransitionEnd={(event) => { if (event.propertyName === "transform") setWalking(false); }}>
       {/* React는 muted를 프로퍼티로만 세팅해 자동재생 정책 판정과 어긋날 수 있다 — ref에서 확정 후 play().
           프로브는 loadeddata 이벤트 + ref의 readyState 검사 양쪽에서 건다: 캐시 히트면 핸들러가
           붙기 전에 로드가 끝나 이벤트를 영영 놓친다 (실측 2026-08-03, 두 번째 방문부터 재현). */}
-      <video src={`${CHIBI.base}${encodeURIComponent(star.file)}`} crossOrigin="anonymous"
-        autoPlay loop muted playsInline preload="metadata" className={flip ? "flip" : undefined}
+      <video className={`chibi-relax${flip ? " flip" : ""}`} src={CHIBI_CLIPS.relax}
+        autoPlay loop muted playsInline preload="metadata"
         style={alpha ? undefined : { opacity: 0 }}
         ref={(el) => { if (el) { el.muted = true; el.play().catch(() => {}); if (alpha === null && el.readyState >= 2) probe(el); } }}
         onLoadedData={(event) => { if (alpha === null) probe(event.currentTarget); }} />
+      <video className={`chibi-move${flip ? " flip" : ""}`} src={CHIBI_CLIPS.move}
+        loop muted playsInline preload="auto" ref={moveVideoRef} />
     </button>
   );
 }

@@ -259,20 +259,39 @@ python3 scripts/build-skill-levels.py .gamedata   # → public/skills/{ko,en,ja}
 - 검증: 만든 최고레벨 문장이 operators.json의 `description`과 **948개 전부 일치**해야 한다
   (`python3 -c` 한 줄 대조 — 안 맞으면 interpolate 규칙이 어긋난 것).
 
-## 7.7 기지 치비 렌더 매니페스트 (베타, 2026-08-03~)
+## 7.7 헤더 마스코트 치비 (베타, 2026-08-03~)
+
+**표시 클립**: `public/chibi/skadi2-{relax,move}.webm` (VP9+알파 · 1024×576 · 24fps, 합계 0.5MB).
+게임 원본 Spine 데이터(3.8.99)의 Relax(대기)·Move(걷기) 모션을 **직접 렌더**한 것 —
+공식 렌더 레포(ArknightsSpines)는 Relax만 구워 두어서, 걷기·추가 포즈는 이 경로로만 나온다.
+Pages 같은 출처로 서빙(R2 아님 — 알파 프로브가 캔버스를 읽어야 해서 CORS 헤더 없는
+R2 워커로 옮기면 깨진다. 이관하려면 워커에 ACAO부터).
+
+재렌더 절차 (스킨 교체·포즈 추가 시 — 세션 스크립트라 레포엔 절차만 남긴다):
+
+1. **Spine 원본**: `isHarryh/Ark-Models` 레포 `models/1012_skadi2/`의 `.skel/.atlas/.png`
+   (다른 오퍼·스킨은 `models_data.json`에서 탐색). 스카디 보유 모션:
+   Default · Interact · Move(1.67s) · Relax(4.8s) · Sit(5.3s) · Sleep(2.7s) — 전부 뽑을 수 있다.
+2. **프레임 캡처**: spine-ts 3.8 런타임(`spine-webgl.js`, EsotericSoftware/spine-runtimes
+   @3.8 브랜치)을 로컬 HTML에 얹고 헤드리스 크로미움(playwright)으로 24fps PNG 캡처.
+   캔버스 1024×576 · 카메라 중심 (0, 288) — 공식 렌더(SpineExporter)와 같은 프레이밍이라
+   기존 클립과 위치가 안 튄다. Move는 루트 이동 없는 제자리걸음(실측 중심 x 오차 ±2px).
+3. **인코딩**: `ffmpeg -framerate 24 -i f%04d.png -c:v libvpx-vp9 -pix_fmt yuva420p
+   -auto-alt-ref 0 -crf 40 -b:v 0 out.webm` (ffmpeg 없으면 npm ffmpeg-static).
+   `-auto-alt-ref 0`이 없으면 알파가 안 실린다.
+
+Spine 런타임 사용은 팬 도구 관례상 회색지대(비영리 팬사이트 참조 관행) — 배포 에셋은
+렌더 산출물뿐이고 원본 skel·atlas·런타임은 레포에 넣지 않는다.
+
+### 7.7.1 기지 치비 렌더 매니페스트 (로테이션 대비 데이터)
 
 ```bash
 node scripts/build-chibi-manifest.mjs   # → app/data/chibi.json
 ```
 
-- 헤더 가운데 마스코트 치비 산책 장식(베타)의 목록 — ArknightsAssets/ArknightsSpines @cn
-  브랜치의 기지 대기 모션 렌더(WebM VP9+알파)를 **jsDelivr CDN에서 직접 스트리밍**한다.
-  렌더는 소스 레포가 미리 구워 둔 완성 파일이라 우리 쪽 렌더 작업은 없다.
-  현재 표시는 **이격 스카디 고정**(사용자 확정 2026-08-03)이지만 매니페스트는 374명분
-  전체를 유지한다 — 로테이션 복귀·다른 기능 재활용 대비.
-  베타 동안은 R2 이관 없음(§8 관할 밖) — 정착하면 r2-sync로 옮긴다. 이관 시 주의:
-  알파 프로브가 캔버스를 읽어야 해서 서빙 도메인에 CORS(ACAO) 헤더가 필요하다
-  (jsDelivr는 기본 제공 — R2 업로드 워커는 현재 미제공).
+ArknightsSpines @cn의 Relax 렌더 374명분 목록(+스킨명 3개 언어 조인). 현재 헤더는
+이격 스카디 고정이라 **UI에서 안 쓰지만**, 로테이션 복귀·다른 기능 재활용 대비로
+데이터·스크립트를 유지한다. 소스는 jsDelivr 스트리밍 전제(ACAO:* 제공).
 - 변형(스킨) 표시명은 `.gamedata/{kr,en,jp}_skin_table.json`과 파일명 suffix를 조인해
   3개 언어로 박는다 — `fetch-gamedata.py`가 먼저 돌아 있어야 한다.
 - KR 실장 오퍼 커버리지는 소스 레포의 렌더 진도를 따른다(2026-08-03 기준 374/420) —
