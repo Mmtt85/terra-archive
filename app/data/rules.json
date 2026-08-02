@@ -439,8 +439,8 @@
     "QUALITY_MINOR": 10,
     "RECRUIT_SLOTS": 4,
     "RECRUIT_SLOTS_EXCL_INITIAL": 2,
-    "VIOLATION_EQUIV_MULT": 10,
-    "_doc": "build-infra.py 파스 타임 상수 — 게임 텍스트의 '…당' 수치를 만렙 243 기지 기준 고정값으로 환산할 때 쓰는 추정치(INFRA-RULES §8). DROP_ASSUMED=자기 컨디션 낙차 스킬의 대표 운용 낙차(토터 §2), QUALITY_*=고품질 확률 등가 %, LMD_PER_PERCENT=용문폐 수익 N → N/20% 등가, VIOLATION_EQUIV_MULT=위약 배상 N → N×10% 등가"
+    "VIOLATION_EQUIV_MULT": 27.6,
+    "_doc": "build-infra.py 파스 타임 상수 — 게임 텍스트의 '…당' 수치를 만렙 243 기지 기준 고정값으로 환산할 때 쓰는 추정치(INFRA-RULES §8). DROP_ASSUMED=자기 컨디션 낙차 스킬의 대표 운용 낙차(토터 §2), QUALITY_*=고품질 확률 등가 %, LMD_PER_PERCENT=용문폐 수익 N → N/20% 등가, VIOLATION_EQUIV_MULT=위약 배상 N → N×27.6% 등가 (무역소 Lv3 오더 분포 30/50/20에서 0.8/2.9 유도, 2026-08-02)"
   },
   "skillOverrides": {
     "_doc": "buffId → { patch: {필드 덮어쓰기}, note } — 파서가 새 문구를 오분류했을 때 정규식 패치 대신 여기에 교정 행을 추가한다. build-infra.py가 파싱 직후 적용. 파서가 정식 지원하게 되면 행을 지운다 (재생성 diff가 없으면 안전)"
@@ -515,5 +515,5 @@
     "주술 결정",
     "마물 요리"
   ],
-  "version": 21
+  "version": 22
 }
