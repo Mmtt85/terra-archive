@@ -2490,9 +2490,14 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
     if (request.action === "operator" && request.operator) {
       const query = request.operator.trim().toLowerCase();
       if (!query) return null;
-      const found = operators.find((op) => op.name.toLowerCase() === query)
-        ?? operators.find((op) => op.aliases.some((alias) => alias.toLowerCase() === query))
-        ?? operators.find((op) => op.name.toLowerCase().includes(query));
+      // 자기 지칭("너 정보 보여줘") — 라우터가 self 토큰으로 주지만, 이름으로 새는 경우까지 방어.
+      // "스카디" 부분일치는 원본 스카디를 먼저 잡으므로 자기 지칭 판정을 반드시 먼저 한다.
+      const selfWords = ["self", "you", "your", "너", "네", "당신", "본인", "스카디 더 커럽팅 하트", "skadi the corrupting heart", "濁心スカジ"];
+      const found = selfWords.includes(query)
+        ? operators.find((op) => op.id === CHIBI_STAR)
+        : operators.find((op) => op.name.toLowerCase() === query)
+          ?? operators.find((op) => op.aliases.some((alias) => alias.toLowerCase() === query))
+          ?? operators.find((op) => op.name.toLowerCase().includes(query));
       if (!found) return null;
       onShowOperator(found);
       return found.name;

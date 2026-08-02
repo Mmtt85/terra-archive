@@ -138,6 +138,12 @@ Actions:
 - "about": site introduction (소개)
 - "operator": show one specific operator's details; put that operator name in "operator"
 - "none": ordinary conversation, questions, or anything else
+The character the user is chatting with IS the operator "스카디 더 커럽팅 하트" (Skadi the Corrupting Heart / 濁心スカジ). If the user asks to see YOUR info — using words like 너, 네, 당신, 본인, you, your, あなた — set action="operator" and operator="self".
+Examples:
+"인프라 열어줘" → {"action":"planner"}
+"아미야 정보 보여줘" → {"action":"operator","operator":"아미야"}
+"너 오퍼 정보 보여줘" → {"action":"operator","operator":"self"}
+"오늘 바다 어때?" → {"action":"none"}
 Choose a non-"none" action only when the user clearly asks to open/show/navigate. Respond with JSON only.`;
 
 async function routeAction(text: string): Promise<ChibiActionRequest | null> {
