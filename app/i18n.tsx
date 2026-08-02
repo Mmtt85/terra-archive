@@ -131,7 +131,6 @@ const D: Record<string, Pair> = {
   "클릭하면 전체 일러스트로 봅니다": ["Click to view the full illustration", "クリックで全身イラストを表示"],
   "전체 일러스트가 아직 없습니다.": ["The full illustration is not available yet.", "全身イラストはまだありません。"],
   "등록된 스킨이 없습니다.": ["No outfits on record.", "登録された衣装がありません。"],
-  "오늘의 치비: {name} — 눌러서 상세 열기": ["Today's chibi: {name} — click for details", "今日のちび：{name} — クリックで詳細"],
   "기본 스킨": ["Default Outfit", "デフォルト"],
   "시리즈": ["Series", "シリーズ"],
   "일러스트": ["Artist", "イラスト"],

@@ -2363,10 +2363,11 @@ function SkinSection({ operator }: { operator: Operator }) {
 }
 
 // ── 헤더 치비 (베타) ─────────────────────────────────────────────────────────
-// 헤더 1줄 가운데 빈 공간에서 '오늘의 치비'(기지 대기 모션 렌더, VP9+알파 WebM)가
+// 헤더 1줄 가운데 빈 공간에서 마스코트 치비(기지 대기 모션 렌더, VP9+알파 WebM)가
 // 꼬물거리며 이따금 자리를 옮긴다. 렌더는 소스 레포가 미리 구워 둔 완성 파일을 jsDelivr에서
 // 스트리밍할 뿐 — 우리 쪽 렌더 작업은 없다 (scripts/build-chibi-manifest.mjs 참조).
-// - 오늘의 치비: 날짜 시드로 결정론 선택 — 그날은 모두가 같은 치비를 본다. 누르면 상세 모달.
+// - 마스코트는 이격 스카디 고정 (사용자 확정 2026-08-03 — 로고와 같은 오퍼, 전체 로테이션 안 함).
+//   누르면 상세 모달. 매니페스트에는 374명분이 있으니 훗날 로테이션 복귀도 데이터는 준비돼 있다.
 // - 알파 프로브: VP9 알파를 실제로 합성하는 브라우저인지 캔버스 픽셀로 1회 검사. 못 그리는
 //   브라우저(사파리 계열)는 검정 상자가 되므로 아예 표시하지 않는다
 //   (jsDelivr가 ACAO:* 라 crossOrigin="anonymous"로 캔버스 오염 없이 읽힌다).
@@ -2374,6 +2375,7 @@ function SkinSection({ operator }: { operator: Operator }) {
 //   prefers-reduced-motion이면 드리프트 없이 제자리에서만 꼬물거린다.
 type ChibiEntry = { f: string; n?: (string | null)[] };
 const CHIBI = chibiData as { base: string; chars: Record<string, ChibiEntry[]> };
+const CHIBI_STAR = "char_1012_skadi2"; // 이격 스카디
 const subscribeNever = () => () => {};
 
 function HeaderChibi({ operators, onOpen }: { operators: Operator[]; onOpen: (op: Operator) => void }) {
@@ -2389,14 +2391,10 @@ function HeaderChibi({ operators, onOpen }: { operators: Operator[]; onOpen: (op
   const [moveSec, setMoveSec] = useState(1);
   const xRef = useRef(0);
 
-  const today = useMemo(() => {
-    const opById = new Map(operators.map((op) => [op.id, op]));
-    const ids = Object.keys(CHIBI.chars).filter((id) => opById.has(id));
-    if (!ids.length) return null;
-    const now = new Date();
-    const seed = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
-    const op = opById.get(ids[((seed * 2654435761) >>> 0) % ids.length])!;
-    return { op, file: CHIBI.chars[op.id][0].f }; // [0] = 기본 치비 (매니페스트가 기본을 앞에 정렬)
+  const star = useMemo(() => {
+    const op = operators.find((candidate) => candidate.id === CHIBI_STAR);
+    const entries = CHIBI.chars[CHIBI_STAR];
+    return op && entries?.length ? { op, file: entries[0].f } : null; // [0] = 기본 치비
   }, [operators]);
 
   // 산책 드리프트 — 알파 프로브 통과 후에만
@@ -2418,7 +2416,7 @@ function HeaderChibi({ operators, onOpen }: { operators: Operator[]; onOpen: (op
     return () => window.clearTimeout(timer);
   }, [alpha]);
 
-  if (!isClient || !today || alpha === false) return null;
+  if (!isClient || !star || alpha === false) return null;
   const probe = (video: HTMLVideoElement) => {
     try {
       const canvas = document.createElement("canvas");
@@ -2435,13 +2433,13 @@ function HeaderChibi({ operators, onOpen }: { operators: Operator[]; onOpen: (op
   return (
     <button type="button" className="header-chibi" aria-hidden={alpha !== true} tabIndex={alpha === true ? 0 : -1}
       style={{ "--cx": `${x}px`, "--walk": `${moveSec}s` } as React.CSSProperties}
-      title={t("오늘의 치비: {name} — 눌러서 상세 열기", { name: today.op.name })}
-      aria-label={t("오늘의 치비: {name} — 눌러서 상세 열기", { name: today.op.name })}
-      onClick={() => onOpen(today.op)}>
+      title={t("{name} 상세 정보 열기", { name: star.op.name })}
+      aria-label={t("{name} 상세 정보 열기", { name: star.op.name })}
+      onClick={() => onOpen(star.op)}>
       {/* React는 muted를 프로퍼티로만 세팅해 자동재생 정책 판정과 어긋날 수 있다 — ref에서 확정 후 play().
           프로브는 loadeddata 이벤트 + ref의 readyState 검사 양쪽에서 건다: 캐시 히트면 핸들러가
           붙기 전에 로드가 끝나 이벤트를 영영 놓친다 (실측 2026-08-03, 두 번째 방문부터 재현). */}
-      <video src={`${CHIBI.base}${encodeURIComponent(today.file)}`} crossOrigin="anonymous"
+      <video src={`${CHIBI.base}${encodeURIComponent(star.file)}`} crossOrigin="anonymous"
         autoPlay loop muted playsInline preload="metadata" className={flip ? "flip" : undefined}
         style={alpha ? undefined : { opacity: 0 }}
         ref={(el) => { if (el) { el.muted = true; el.play().catch(() => {}); if (alpha === null && el.readyState >= 2) probe(el); } }}

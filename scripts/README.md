@@ -265,10 +265,14 @@ python3 scripts/build-skill-levels.py .gamedata   # → public/skills/{ko,en,ja}
 node scripts/build-chibi-manifest.mjs   # → app/data/chibi.json
 ```
 
-- 헤더 가운데 "오늘의 치비" 산책 장식(베타)의 목록 — ArknightsAssets/ArknightsSpines @cn
+- 헤더 가운데 마스코트 치비 산책 장식(베타)의 목록 — ArknightsAssets/ArknightsSpines @cn
   브랜치의 기지 대기 모션 렌더(WebM VP9+알파)를 **jsDelivr CDN에서 직접 스트리밍**한다.
   렌더는 소스 레포가 미리 구워 둔 완성 파일이라 우리 쪽 렌더 작업은 없다.
-  베타 동안은 R2 이관 없음(§8 관할 밖) — 정착하면 r2-sync로 옮긴다.
+  현재 표시는 **이격 스카디 고정**(사용자 확정 2026-08-03)이지만 매니페스트는 374명분
+  전체를 유지한다 — 로테이션 복귀·다른 기능 재활용 대비.
+  베타 동안은 R2 이관 없음(§8 관할 밖) — 정착하면 r2-sync로 옮긴다. 이관 시 주의:
+  알파 프로브가 캔버스를 읽어야 해서 서빙 도메인에 CORS(ACAO) 헤더가 필요하다
+  (jsDelivr는 기본 제공 — R2 업로드 워커는 현재 미제공).
 - 변형(스킨) 표시명은 `.gamedata/{kr,en,jp}_skin_table.json`과 파일명 suffix를 조인해
   3개 언어로 박는다 — `fetch-gamedata.py`가 먼저 돌아 있어야 한다.
 - KR 실장 오퍼 커버리지는 소스 레포의 렌더 진도를 따른다(2026-08-03 기준 374/420) —
