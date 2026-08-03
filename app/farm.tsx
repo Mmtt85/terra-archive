@@ -10,6 +10,7 @@
 // 정예화 1·2, 스킬 2~7, 특화 1~3, 모듈 1~3단계의 용문폐·재료 소요량.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { asset } from "./assets";
+import { ModalWindow } from "./modal-window";
 import farmData from "./data/farm.json";
 import costsData from "./data/costs.json";
 import type { Operator } from "./home";
@@ -744,9 +745,7 @@ function ItemModal({ id, onClose, onShowItem, onSearchItem }: {
   const rarity = meta?.rarity ?? farmItem!.rarity;
   const image = meta?.image ?? farmItem!.image;
   return (
-    <div className="modal-backdrop item-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <section className="item-modal" role="dialog" aria-modal="true" aria-label={name}>
-        <button type="button" className="modal-close" onClick={onClose} aria-label={t("상세 정보 닫기")}>×</button>
+    <ModalWindow label={name} className="item-modal" onClose={onClose}>
         <header>
           <span className="item-modal-icon" data-tier={rarity}><img src={image} alt={name} width={183} height={183} /></span>
           <div>
@@ -812,7 +811,6 @@ function ItemModal({ id, onClose, onShowItem, onSearchItem }: {
         {!farmItem && !meta?.craft && !CHIP_STAGES[id] && (
           <p className="item-usage">{t("상시 파밍 스테이지가 없는 재료예요 — 이벤트 보상·상점 교환 등으로 획득합니다.")}</p>
         )}
-      </section>
-    </div>
+    </ModalWindow>
   );
 }

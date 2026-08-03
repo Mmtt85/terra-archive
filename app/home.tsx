@@ -17,6 +17,8 @@ import { asset } from "./assets";
 import ChangelogButton from "./changelog";
 // 헤더 치비 대화 — 크롬 내장 Gemini Nano (베타, 2026-08-03)
 import { ChibiChatPanel, chibiChatStatus, type ChibiActionRequest, type ChibiChatStatus } from "./chibi-chat";
+// 공용 창형 모달 — 이동·리사이즈·고정·z순서 (2026-08-03)
+import { ModalWindow } from "./modal-window";
 import TipBalloon from "./tip-balloon";
 import { useHashSync } from "./hash-modal";
 import type { OmniTarget } from "./omni";
@@ -558,11 +560,9 @@ function BroadcastBadges({ includeFuture, slot }: { includeFuture?: boolean; slo
       {/* 사이트 헤더의 backdrop-filter가 fixed 기준을 헤더로 만들어버리므로,
           모달은 portal로 body에 직접 렌더링해야 화면 전체를 덮는다 */}
       {open && slot !== "events" && createPortal(
-        <div className="modal-backdrop bcast-backdrop" onClick={() => setOpen(false)}>
-          <div className="bcast-modal" onClick={(event) => event.stopPropagation()} role="dialog" aria-label={t("명일방주 공식 방송 일정")}>
+        <ModalWindow label={t("명일방주 공식 방송")} className="bcast-modal" onClose={() => setOpen(false)}>
             <header>
               <h2><YtIcon /> {t("명일방주 공식 방송")}</h2>
-              <button type="button" className="modal-close" onClick={() => setOpen(false)} aria-label={t("닫기")}>×</button>
             </header>
             <div className="bcast-list">
               {sorted.map((b) => {
@@ -597,8 +597,7 @@ function BroadcastBadges({ includeFuture, slot }: { includeFuture?: boolean; slo
                 <p className="bcast-note">{t("중국 서버 방송은 비리비리 공식 라이브룸에서 가져옵니다 — 일정은 방송 소개문 기준이라 실제와 다를 수 있어요. 미래시 데이터 포함을 끄면 숨겨집니다.")}</p>
               )}
             </div>
-          </div>
-        </div>,
+        </ModalWindow>,
         document.body
       )}
     </>
@@ -879,6 +878,7 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
   const [selectedSubProfessions, setSelectedSubProfessions] = useState<string[]>([]);
   const [selectedRarities, setSelectedRarities] = useState<string[]>([]); // 성급 필터 (문자열 "6"~"1")
   const [selected, setSelected] = useState<Operator | null>(null);
+  const opPinnedRef = useRef(false); // 오퍼 창 📌 고정 여부 — 해시 청소가 고정 창을 닫지 않게
   // 경로 기반 라우팅: 서버가 라우트별로 올바른 탭을 렌더하므로 initialTab을 그대로
   // 초기값으로 쓴다 (SSR/클라이언트 첫 렌더 일치 → hydration mismatch 없음).
   const [tab, setTab] = useState<Tab>(initialTab);
@@ -995,8 +995,9 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
         if (operator) setSelected(operator);
         return;
       }
-      // op 해시가 아니면 열려 있던 모달을 닫는다 (URL 직접 편집·딥링크 이탈)
-      setSelected(null);
+      // op 해시가 아니면 열려 있던 모달을 닫는다 (URL 직접 편집·딥링크 이탈).
+      // 단 창이 📌 고정돼 있으면 내비게이션이 닫아버리지 않는다 (창형 모달 2026-08-03)
+      if (!opPinnedRef.current) setSelected(null);
     };
     window.addEventListener("hashchange", syncFromUrl);
     window.addEventListener("popstate", syncFromUrl);
@@ -1581,7 +1582,7 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
       </footer>
       </div>{/* /.site-scroll */}
 
-      {selected && <OperatorModal operator={selected} onClose={closeOperator} onUpgrade={openUpgradeFor} includeFuture={includeFuture} />}
+      {selected && <OperatorModal operator={selected} onClose={closeOperator} onUpgrade={openUpgradeFor} includeFuture={includeFuture} onPinChange={(pinned) => { opPinnedRef.current = pinned; }} />}
       <FeedbackWidget open={feedbackOpen} setOpen={setFeedbackOpen} />
       {/* 팁 풍선 — 화면 빈 곳을 찾아 떠다닌다 (본문을 가리면 스스로 자리를 옮긴다) */}
       <TipBalloon />
@@ -1901,15 +1902,14 @@ function ModalRail({ scrollRef }: { scrollRef: React.RefObject<HTMLDivElement | 
   );
 }
 
-function OperatorModal({ operator, onClose, onUpgrade, includeFuture }: { operator: Operator; onClose: () => void; onUpgrade?: (operatorId: string) => void; includeFuture?: boolean }) {
+function OperatorModal({ operator, onClose, onUpgrade, includeFuture, onPinChange }: { operator: Operator; onClose: () => void; onUpgrade?: (operatorId: string) => void; includeFuture?: boolean; onPinChange?: (pinned: boolean) => void }) {
   const { locale, t } = useI18n();
   const scrollRef = useRef<HTMLDivElement>(null);
   // 미래 모듈은 '미래시 포함'이 켜졌을 때만 (사용자 요청 2026-08-01)
   const shownModules = operator.modules.filter((m) => includeFuture || !m.unreleased);
   return (
-    <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <section className="operator-modal" role="dialog" aria-modal="true" aria-labelledby="operator-modal-title" style={{ "--accent": operator.accent } as React.CSSProperties}>
-        <button type="button" className="modal-close" onClick={onClose} aria-label={t("상세 정보 닫기")}>×</button>
+    <ModalWindow label={`${operator.name} · ${operator.code}`} className="operator-modal" onClose={onClose} onPinChange={onPinChange}
+      style={{ "--accent": operator.accent } as React.CSSProperties}>
         <header className="modal-hero">
           <img src={asset(operator.image)} alt={t("{name} 오퍼레이터", { name: operator.name })} width={180} height={180} />
           <div className="modal-title-block">
@@ -2040,8 +2040,7 @@ function OperatorModal({ operator, onClose, onUpgrade, includeFuture }: { operat
         </div>
         <ModalRail scrollRef={scrollRef} />
         </div>
-      </section>
-    </div>
+    </ModalWindow>
   );
 }
 

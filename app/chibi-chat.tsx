@@ -10,6 +10,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useI18n, type Locale } from "./i18n";
+import { asset } from "./assets";
+import { ModalWindow } from "./modal-window";
 
 type LMSession = {
   promptStreaming: (text: string, opts?: { signal?: AbortSignal }) => ReadableStream<string>;
@@ -209,17 +211,6 @@ export function ChibiChatPanel({ status, onReady, onAction, onClose }: { status:
     };
   }, []);
 
-  // Esc·바깥 클릭 닫기 (치비 버튼 클릭은 다시 열기이므로 제외)
-  useEffect(() => {
-    const onEsc = (event: KeyboardEvent) => { if (event.key === "Escape") onClose(); };
-    const onDown = (event: PointerEvent) => {
-      if (!(event.target as HTMLElement).closest(".chibi-chat, .header-chibi")) onClose();
-    };
-    window.addEventListener("keydown", onEsc);
-    window.addEventListener("pointerdown", onDown);
-    return () => { window.removeEventListener("keydown", onEsc); window.removeEventListener("pointerdown", onDown); };
-  }, [onClose]);
-
   // 새 메시지마다 맨 아래로 + 기록 저장 (이 브라우저에만 — 서버 전송 없음)
   useEffect(() => {
     const log = logRef.current;
@@ -339,16 +330,23 @@ export function ChibiChatPanel({ status, onReady, onAction, onClose }: { status:
     }
   };
 
+  const bubble = (message: Message, index: number, typing: boolean) => (
+    <div key={index} className={`chibi-chat-row ${message.role}`}>
+      {message.role === "assistant" && (
+        <img className="chibi-chat-avatar" src={asset("/avatars/char_1012_skadi2.webp")} alt="" width={180} height={180} />
+      )}
+      <p className={`chibi-chat-msg ${message.role}${typing ? " typing" : ""}`}
+        aria-label={typing ? t("스카디가 입력 중…") : undefined}>
+        {typing ? <span className="chibi-chat-dots" aria-hidden><i /><i /><i /></span> : message.text}
+      </p>
+    </div>
+  );
   return (
-    <div className="chibi-chat" role="dialog" aria-label={t("스카디와 대화")}>
-      <header className="chibi-chat-head">
-        <b>{t("스카디와 대화")}</b>
-        <span className="new-badge">{t("베타")}</span>
-        {phase === "chat" && messages.length > 0 && (
-          <button type="button" className="chibi-chat-clear" onClick={clearHistory} title={t("대화 지우기")} aria-label={t("대화 지우기")}>🗑</button>
-        )}
-        <button type="button" className="chibi-chat-close" onClick={onClose} aria-label={t("닫기")}>×</button>
-      </header>
+    <ModalWindow permanent label={t("스카디와 대화")} className="chibi-chat" onClose={onClose}
+      defaultPos={{ x: Math.max(8, window.innerWidth / 2 - 180), y: 84 }} initialSize={{ w: 360, h: 480 }}
+      chrome={phase === "chat" && messages.length > 0 ? (
+        <button type="button" className="chibi-chat-clear" onClick={clearHistory} title={t("대화 지우기")} aria-label={t("대화 지우기")}>🗑</button>
+      ) : undefined}>
       {phase === "offer" && (
         <div className="chibi-chat-offer">
           <p>{t("스카디와 대화하려면 이 기기에서 대사를 직접 만들어 주는 AI 모델(Gemini Nano)이 필요해요. 크롬이 약 2GB를 한 번만 내려받고, 이후 크롬 전체에서 재사용됩니다.")}</p>
@@ -375,10 +373,9 @@ export function ChibiChatPanel({ status, onReady, onAction, onClose }: { status:
       {phase === "chat" && (
         <>
           <div className="chibi-chat-log" ref={logRef}>
-            {messages.length === 0 && <p className="chibi-chat-msg assistant">{t("…무슨 이야기를 할까, 당신.")}</p>}
-            {messages.map((message, index) => (
-              <p key={index} className={`chibi-chat-msg ${message.role}`}>{message.text || "…"}</p>
-            ))}
+            {messages.length === 0 && bubble({ role: "assistant", text: t("…무슨 이야기를 할까, 당신.") }, -1, false)}
+            {messages.map((message, index) =>
+              bubble(message, index, message.role === "assistant" && !message.text && busy && index === messages.length - 1))}
           </div>
           <form className="chibi-chat-form" onSubmit={(event) => { event.preventDefault(); void send(); }}>
             <input ref={inputRef} value={input} maxLength={300} placeholder={t("스카디에게 말 걸기…")}
@@ -388,6 +385,6 @@ export function ChibiChatPanel({ status, onReady, onAction, onClose }: { status:
         </>
       )}
       <p className="chibi-chat-note">{t("비공식 팬 연출 — 대사는 이 기기의 AI(Gemini Nano)가 즉석에서 지어내며, 공식 설정이 아닙니다.")}</p>
-    </div>
+    </ModalWindow>
   );
 }

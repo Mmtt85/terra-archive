@@ -16,6 +16,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useI18n, DT_LOCALE } from "./i18n";
 import { useHashSync } from "./hash-modal";
+import { ModalWindow } from "./modal-window";
 import {
   fetchChangelogRange, fetchOldestReleaseDate, windowRange, changeText, splitChange, areaOf,
   CHANGE_KIND_LABEL, CHANGE_AREA_LABEL, RECENT_DAYS, daysAgoKst, type ChangeRow,
@@ -139,8 +140,7 @@ export default function ChangelogButton() {
       </button>
       {/* 헤더의 backdrop-filter가 fixed 기준을 헤더로 만들어버리므로 portal로 body에 렌더 */}
       {open && createPortal(
-        <div className="modal-backdrop chlog-backdrop" onClick={() => setOpen(false)}>
-          <div className="chlog-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-label={t("업데이트 내역")}>
+        <ModalWindow label={t("업데이트 내역")} className="chlog-modal" onClose={() => setOpen(false)}>
             <header>
               <h2>🛠 {t("업데이트 내역")}</h2>
               {/* 종류 필터는 제목 옆 (사용자 요청 2026-07-28) — 아래 줄은 기간 확장 전용 */}
@@ -151,7 +151,6 @@ export default function ChangelogButton() {
                   {detail ? t("신기능만") : t("상세보기")}
                 </button>
               )}
-              <button type="button" className="modal-close" onClick={() => setOpen(false)} aria-label={t("닫기")}>×</button>
             </header>
             <div className="chlog-list">
               {rows === null && !error && <p className="chlog-empty">{t("불러오는 중…")}</p>}
@@ -213,8 +212,7 @@ export default function ChangelogButton() {
                 <a href="https://buymeacoffee.com/terra_archive" target="_blank" rel="noopener noreferrer">{t("서버 운영 후원")}</a>
               </p>
             </div>
-          </div>
-        </div>,
+        </ModalWindow>,
         document.body
       )}
     </>

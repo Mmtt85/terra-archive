@@ -83,7 +83,7 @@ export default function RootLayout({
             esc-close.ts와 함께 고칠 것. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `if(!window.__taEsc){window.__taEsc=1;document.addEventListener('keydown',function(e){if((e.key!=='Escape'&&e.key!=='Esc'&&e.keyCode!==27)||e.isComposing)return;var els=document.querySelectorAll('.modal-backdrop');if(!els.length)return;var top=null,tz=-1;for(var i=0;i<els.length;i++){var z=parseInt(getComputedStyle(els[i]).zIndex,10)||0;if(z>=tz){tz=z;top=els[i];}}if(!top)return;var btn=top.querySelector('.modal-close');if(btn){btn.click();return;}top.dispatchEvent(new MouseEvent('mousedown',{bubbles:true}));});}`,
+            __html: `if(!window.__taEsc){window.__taEsc=1;document.addEventListener('keydown',function(e){if((e.key!=='Escape'&&e.key!=='Esc'&&e.keyCode!==27)||e.isComposing)return;var els=document.querySelectorAll('.modal-backdrop:not(.mw-pinned)');if(!els.length)return;var top=null,tz=-1;for(var i=0;i<els.length;i++){var z=parseInt(getComputedStyle(els[i]).zIndex,10)||0;if(z>=tz){tz=z;top=els[i];}}if(!top)return;var btn=top.querySelector('.modal-close');if(btn){btn.click();return;}top.dispatchEvent(new MouseEvent('mousedown',{bubbles:true}));});}`,
           }}
         />
         {children}

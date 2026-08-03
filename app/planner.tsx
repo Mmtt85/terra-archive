@@ -29,6 +29,8 @@ const ScannerModal = lazy(() => import("./scan/scanner").then((m) => ({ default:
 import { RosterImportPanel } from "./roster-import";
 // MAA 커스텀 기반시설 JSON 내보내기 (베타) — 2026-08-02
 import { buildMaaInfrast } from "./maa-export";
+// 공용 창형 모달 — 이동·리사이즈·고정·z순서 (2026-08-03)
+import { ModalWindow } from "./modal-window";
 import type { AccountRoster } from "./account";
 import costsData from "./data/costs.json";
 
@@ -1349,9 +1351,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       {shiftNote && <ShiftNoteModal kind={shiftNote} onClose={() => setShiftNote(null)} />}
 
       {imageUrl && (
-        <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) closeImage(); }}>
-          <section className="operator-modal room-modal image-preview" style={{ "--accent": "var(--lime)" } as React.CSSProperties}>
-            <button type="button" className="modal-close" onClick={closeImage} aria-label={t("닫기")}>×</button>
+        <ModalWindow label={t("편성표 이미지")} className="operator-modal room-modal image-preview" onClose={closeImage} style={{ "--accent": "var(--lime)" } as React.CSSProperties}>
             <header className="room-modal-head">
               <span className="modal-kicker">PLAN SHEET</span>
               <h2>{t("편성표 이미지")}</h2>
@@ -1360,8 +1360,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
               </div>
             </header>
             <div className="modal-scroll"><img src={imageUrl} alt={t("인프라 편성표")} /></div>
-          </section>
-        </div>
+        </ModalWindow>
       )}
 
       {showFlows && plan && <FlowModal plan={plan} opMap={effectiveOpById} onClose={() => setShowFlows(false)} onShowOperator={onShowOperator} />}
@@ -1418,8 +1417,7 @@ function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onTogg
     return () => window.removeEventListener("keydown", onEsc);
   }, [onClose]);
   return (
-    <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-    <section className="operator-modal invest-panel" role="dialog" aria-modal="true" aria-label={t("인프라 오퍼 육성 추천")}>
+    <ModalWindow label={t("인프라 오퍼 육성 추천")} className="operator-modal invest-panel" onClose={onClose}>
       <div className="invest-head">
         <div className="invest-head-title">
           <div>
@@ -1511,8 +1509,7 @@ function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onTogg
           );
         })}
       </ul>
-    </section>
-    </div>
+    </ModalWindow>
   );
 }
 
@@ -1547,9 +1544,7 @@ function TermPopup({ termKey, presentIds, onNavigate, onShowOperator, onClose }:
   const term = TERMS[termKey];
   if (!term) return null;
   return (
-    <div className="modal-backdrop term-backdrop" onMouseDown={(ev) => { if (ev.target === ev.currentTarget) onClose(); }}>
-      <section className="operator-modal term-modal" role="dialog" aria-modal="true" aria-label={term.name}>
-        <button type="button" className="modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
+    <ModalWindow label={term.name} className="operator-modal term-modal" onClose={onClose}>
         <header className="term-head">
           <span className="modal-kicker">RIIC TERM</span>
           <h2>{term.name}</h2>
@@ -1575,8 +1570,7 @@ function TermPopup({ termKey, presentIds, onNavigate, onShowOperator, onClose }:
             return <p key={i} className="term-line"><TermText text={line} refs={term.refs} onTerm={onNavigate} /></p>;
           })}
         </div>
-      </section>
-    </div>
+    </ModalWindow>
   );
 }
 
@@ -1944,9 +1938,7 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
   };
 
   return (
-    <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <section className="operator-modal room-modal" role="dialog" aria-modal="true" style={{ "--accent": ROOM_ACCENT[cell.room] } as React.CSSProperties}>
-        <button type="button" className="modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
+    <ModalWindow label={t(cell.label)} className="operator-modal room-modal" onClose={onClose} style={{ "--accent": ROOM_ACCENT[cell.room] } as React.CSSProperties}>
         <header className="room-modal-head">
           <span className="modal-kicker">FACILITY FILE · {cell.room}</span>
           {/* 레벨 조절 버튼은 시설 이름 오른쪽에 (사용자 요청 2026-07-24) */}
@@ -2207,14 +2199,13 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
           </section>
 
         </div>
-      </section>
-      {/* RIIC 용어 정의 팝업 — 스킬 설명의 용어(외세·실리·시라쿠사 등) 클릭 시. 중첩 백드롭이라
+      {/* RIIC 용어 정의 팝업 — 스킬 설명의 용어(외세·실리·시라쿠사 등) 클릭 시. 중첩 창이라
           ESC 전역 핸들러(z-index 최상단)와 자기-타깃 클릭 닫기가 이 팝업만 먼저 닫는다. */}
       {termOpen && (
         <TermPopup termKey={termOpen} presentIds={presentNow} onNavigate={setTermOpen}
           onShowOperator={onShowOperator} onClose={() => setTermOpen(null)} />
       )}
-    </div>
+    </ModalWindow>
   );
 }
 
@@ -2226,9 +2217,7 @@ function FlowModal({ plan, opMap, onClose, onShowOperator }: { plan: Plan; opMap
       title={onShowOperator ? t("{name} 상세 정보", { name: op.name }) : undefined} onClick={() => onShowOperator?.(op.id)} />
   ) : null;
   return (
-    <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <section className="operator-modal room-modal" role="dialog" aria-modal="true" style={{ "--accent": "var(--lime)" } as React.CSSProperties}>
-        <button type="button" className="modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
+    <ModalWindow label={t("시너지 트리")} className="operator-modal room-modal" onClose={onClose} style={{ "--accent": "var(--lime)" } as React.CSSProperties}>
         <header className="room-modal-head">
           <span className="modal-kicker">SYNERGY LEDGER · {t("A조 기준")}</span>
           <h2>{t("시너지 트리")}</h2>
@@ -2285,8 +2274,7 @@ function FlowModal({ plan, opMap, onClose, onShowOperator }: { plan: Plan; opMap
             </section>
           ))}
         </div>
-      </section>
-    </div>
+    </ModalWindow>
   );
 }
 
@@ -2507,10 +2495,8 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
     onClose();
   };
   return (
-    <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) void closeGuarded(); }}>
-      <section className="operator-modal room-modal" role="dialog" aria-modal="true" style={{ "--accent": "var(--lime)" } as React.CSSProperties}>
+    <ModalWindow label={t("보유 오퍼레이터 설정")} className="operator-modal room-modal" onClose={() => { void closeGuarded(); }} style={{ "--accent": "var(--lime)" } as React.CSSProperties}>
         {confirmDialog}
-        <button type="button" className="modal-close" onClick={() => { void closeGuarded(); }} aria-label={t("닫기")}>×</button>
         <header className="room-modal-head">
           <span className="modal-kicker">ROSTER · {t("{n}/{m} 보유", { n: draft.size, m: allOps.length })}</span>
           {/* 제목 오른쪽에 입력 방식 — 직접 입력(카드 격자) / 가져오기(MAA·스크린샷·게임 로그인) */}
@@ -2581,7 +2567,6 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
           </>
           )}
         </div>
-      </section>
       {/* 스크린샷 스캐너 — 모달 내부에서 열고, 인식 결과를 draft/eliteDraft에 병합(MAA 가져오기와 동일
           흐름: 검토 후 '적용 및 자동편성 실행'). 오퍼 스캐너 v6, 픽스처 178셀 100% (verify-scan.ts). */}
       {showScan && (
@@ -2609,7 +2594,7 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
           </Suspense>
         </div>
       )}
-    </div>
+    </ModalWindow>
   );
 }
 
@@ -2645,9 +2630,7 @@ function ShiftNoteModal({ kind, onClose }: { kind: ShiftNoteKind; onClose: () =>
     ? (HELP_SECTIONS.find((section) => section.title === "교대 정책")?.items ?? [])
     : spec.items;
   return (
-    <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <section className="operator-modal room-modal" role="dialog" aria-modal="true" style={{ "--accent": "var(--lime)" } as React.CSSProperties}>
-        <button type="button" className="modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
+    <ModalWindow label={t(spec.title)} className="operator-modal room-modal" onClose={onClose} style={{ "--accent": "var(--lime)" } as React.CSSProperties}>
         <header className="room-modal-head">
           <span className="modal-kicker">{spec.kicker}</span>
           <h2>{t(spec.title)}{spec.tldr && <em className="modal-head-tldr">{t(spec.tldr)}</em>}</h2>
@@ -2658,8 +2641,7 @@ function ShiftNoteModal({ kind, onClose }: { kind: ShiftNoteKind; onClose: () =>
             {items.map((item, index) => <li key={index}>{emphasize(t(item))}</li>)}
           </ol>
         </div>
-      </section>
-    </div>
+    </ModalWindow>
   );
 }
 
@@ -2747,9 +2729,7 @@ const HELP_SECTIONS: { title: string; items: string[] }[] = [
 function HelpModal({ onClose }: { onClose: () => void }) {
   const { t } = useI18n();
   return (
-    <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <section className="operator-modal room-modal" role="dialog" aria-modal="true" style={{ "--accent": "var(--lime)" } as React.CSSProperties}>
-        <button type="button" className="modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
+    <ModalWindow label={t("최적화 규칙 도움말")} className="operator-modal room-modal" onClose={onClose} style={{ "--accent": "var(--lime)" } as React.CSSProperties}>
         <header className="room-modal-head">
           <span className="modal-kicker">HOW IT WORKS</span>
           <h2>{t("최적화 규칙 도움말")}</h2>
@@ -2764,8 +2744,7 @@ function HelpModal({ onClose }: { onClose: () => void }) {
             </section>
           ))}
         </div>
-      </section>
-    </div>
+    </ModalWindow>
   );
 }
 
@@ -2800,9 +2779,7 @@ function MaaExportModal({ plan, nameOf, toast, onClose }: { plan: Plan | null; n
     onClose();
   };
   return (
-    <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <section className="operator-modal room-modal" role="dialog" aria-modal="true" style={{ "--accent": "var(--lime)" } as React.CSSProperties}>
-        <button type="button" className="modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
+    <ModalWindow label={t("MAA 기반시설 내보내기")} className="operator-modal room-modal" onClose={onClose} style={{ "--accent": "var(--lime)" } as React.CSSProperties}>
         <header className="room-modal-head">
           <span className="modal-kicker">MAA CUSTOM INFRAST</span>
           <h2>{t("MAA 기반시설 내보내기")} <span className="new-badge">{t("베타")}</span></h2>
@@ -2833,7 +2810,6 @@ function MaaExportModal({ plan, nameOf, toast, onClose }: { plan: Plan | null; n
           {sameTime && plan && <p className="maa-note">{t("A조와 B조 시작 시각이 같습니다 — 시간대(period) 없이 저장됩니다.")}</p>}
           <p className="maa-download"><button className="primary" onClick={download} disabled={!plan}><span className="btn-icon" aria-hidden>⇥</span>{t("JSON 파일로 내려받기")}</button></p>
         </div>
-      </section>
-    </div>
+    </ModalWindow>
   );
 }
