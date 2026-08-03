@@ -892,22 +892,6 @@ button {
   overflow: hidden;
   box-shadow: 0 30px 100px #0008;
 }
-.bcast-modal > header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--line);
-  flex: none;
-}
-.bcast-modal > header h2 {
-  font-size: 16px;
-  font-weight: 900;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
 .bcast-list {
   padding: 12px;
   display: flex;
@@ -14760,6 +14744,19 @@ main.site-main > .site-header {
   display: flex;
   flex-direction: column;
   overflow: auto;
+}
+/* 창 전환 호환 (2026-08-03, 사용자 제보: 오퍼 히어로 짤림·방송 모달 배치 붕괴) —
+   원래 각 모달 섹션(display:grid, auto+minmax(0,1fr))이 하던 내부 배치를 .mw-body(flex 컬럼)가
+   이어받는다. ① 자식은 절대 눌리지 않는다: 명시적 min-height(.modal-hero 150px 등)가 flex 기본
+   min-height:auto(내용 바닥)를 대체하면 flex-shrink가 그 값까지 박스를 붕괴시킨다 — .site-scroll
+   푸터 버그와 동일 계열. 넘치면 .mw-body가 overflow:auto로 받는다. ② 각 모달의 '채움' 컨테이너
+   (내부 스크롤 담당)만 남은 높이를 다 가져 종전 1fr 행을 재현한다. */
+.mw-body > * {
+  flex-shrink: 0;
+}
+.mw-body > :where(.modal-body, .modal-scroll, .term-body, .bcast-list, .chlog-list, .invest-list) {
+  flex: 1 1 auto;
+  min-height: 0;
 }
 .mw-chrome {
   flex: none;

@@ -561,9 +561,7 @@ function BroadcastBadges({ includeFuture, slot }: { includeFuture?: boolean; slo
           모달은 portal로 body에 직접 렌더링해야 화면 전체를 덮는다 */}
       {open && slot !== "events" && createPortal(
         <ModalWindow label={t("명일방주 공식 방송")} className="bcast-modal" onClose={() => setOpen(false)}>
-            <header>
-              <h2><YtIcon /> {t("명일방주 공식 방송")}</h2>
-            </header>
+            {/* 제목은 창 크롬 바(label)가 담당 — 종전 내부 header는 제목이 이중으로 떠서 제거 (2026-08-03) */}
             <div className="bcast-list">
               {sorted.map((b) => {
                 const st = bcastState(b, now);
