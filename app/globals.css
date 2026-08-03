@@ -14448,7 +14448,8 @@ main.site-main > .site-header {
   position: absolute;
   left: 50%;
   bottom: 2px;
-  height: 77px; /* 64px × 1.2 — 너무 작다는 사용자 피드백 (2026-08-03), 헤더 78px 안에 딱 */
+  height: 92px; /* 77px × 1.2 — 더 키워달라는 사용자 요청 (2026-08-03 2차). 헤더(78px)보다
+                   커서 머리가 위로 삐져나오는데, 마스코트라 오히려 자연스럽다 */
   border: 0;
   padding: 0;
   background: none;
@@ -14475,14 +14476,20 @@ main.site-main > .site-header {
 .header-chibi.chibi-held {
   cursor: grabbing;
 }
-/* 잡힌 동안 대롱대롱 — rotate 속성이라 flip(scaleX)과 겹쳐도 안전 */
+/* 잡힌 동안 — 커서가 쥔 허리(상자 49%·52%, Default bbox 실측)를 축으로 앞으로 기운 채
+   대롱대롱. rotate 속성이라 flip(scaleX)과 겹쳐도 안전 */
 .header-chibi.chibi-held video {
-  animation: chibi-dangle 1.4s ease-in-out infinite alternate;
-  transform-origin: 50% 15%;
+  animation: chibi-dangle 1.3s ease-in-out infinite alternate;
+  transform-origin: 49% 52%;
 }
 @keyframes chibi-dangle {
-  from { rotate: -5deg; }
-  to { rotate: 5deg; }
+  from { rotate: 4deg; }
+  to { rotate: 13deg; }
+}
+/* 낙하 중 — 살짝 기운 채 떨어진다 (착지하면 clip이 바뀌며 원복) */
+.header-chibi.chibi-free:not(.chibi-held).clip-grab video {
+  rotate: 6deg;
+  transform-origin: 49% 52%;
 }
 @media (prefers-reduced-motion: reduce) {
   .header-chibi.chibi-held video { animation: none; }
@@ -14497,7 +14504,7 @@ main.site-main > .site-header {
 .header-chibi video.flip {
   transform: scaleX(-1);
 }
-/* 클립 전환 — clip-* 클래스와 일치하는 비디오만 표시 (relax/move/sleep/interact/sit) */
+/* 클립 전환 — clip-* 클래스와 일치하는 비디오만 표시 (relax/move/sit/sleep/interact/grab) */
 .header-chibi video {
   display: none;
 }
@@ -14505,7 +14512,12 @@ main.site-main > .site-header {
 .header-chibi.clip-move .chibi-move,
 .header-chibi.clip-sleep .chibi-sleep,
 .header-chibi.clip-interact .chibi-interact,
-.header-chibi.clip-sit .chibi-sit {
+.header-chibi.clip-sit .chibi-sit,
+.header-chibi.clip-grab .chibi-grab,
+.header-chibi.clip-sitdown .chibi-sitdown,
+.header-chibi.clip-situp .chibi-situp,
+.header-chibi.clip-liedown .chibi-liedown,
+.header-chibi.clip-wakeup .chibi-wakeup {
   display: block;
 }
 @media (max-width: 1100px) {

@@ -261,14 +261,22 @@ python3 scripts/build-skill-levels.py .gamedata   # → public/skills/{ko,en,ja}
 
 ## 7.7 헤더 마스코트 치비 (베타, 2026-08-03~)
 
-**표시 클립**: `public/chibi/skadi2-{relax,move,sleep,interact,sit}.webm` (VP9+알파 · 1024×576 ·
-24fps, 합계 ~1.0MB). 게임 원본 Spine 데이터(3.8.99)의 모션을 **직접 렌더**한 것 —
-공식 렌더 레포(ArknightsSpines)는 Relax만 구워 두어서, 걷기·추가 포즈는 이 경로로만 나온다.
-생활 루프: 틱(3.5~7초)마다 70% 산책, 두 틱 연속 대기면 절반 확률로 낮잠(Sleep).
-**드래그 이사**(2026-08-03): 7px 넘게 끌면 잡힘(Sit 포즈+대롱대롱 rotate) → 놓으면 등가속
-낙하 → 발밑 x에서 `elementsFromPoint`로 아래를 훑어 **처음 만나는 요소의 윗변에 착지**,
-그 표면 폭 안에서 배회. 스크롤·리사이즈·창 닫힘으로 지면이 사라지면(발밑 ±10px 재검사)
-다시 떨어진다. 좌표는 home=헤더 슬롯(--cx) / free=뷰포트 고정(--fx/--fy) 이원화.
+**표시 클립**: `public/chibi/skadi2-{relax,move,sit,sleep,interact,grab,sitdown,situp,liedown,wakeup}.webm`
+(VP9+알파 · 1024×576 · 24fps, 합계 ~1.5MB, 표시 높이 92px). 게임 원본 Spine 데이터(3.8.99)의
+모션을 **직접 렌더**한 것 — 공식 렌더 레포(ArknightsSpines)는 Relax만 구워 두어서, 걷기·추가
+포즈는 이 경로로만 나온다. sitdown/situp/liedown/wakeup은 **Spine AnimationState 믹스로 구운
+포즈 전환**(render.html의 renderTransition — Relax↔Sit 0.55s·Sit↔Sleep 0.7s crossfade,
+"서 있다가 갑자기 앉는 게 아니라 서서히", 사용자 확정 2026-08-03): 한 번 재생 후 onEnded로
+정착 클립에 전이한다.
+생활 루프(틱 3.5~7초): 서기에서 65% 산책·15% 앉기(sitdown), **잠은 앉기를 거쳐서만**(두 틱
+이상 앉아 있으면 60%로 liedown→취침, 기상은 wakeup→앉기부터 — "서 있다가 갑자기 눕는 건
+이상하다", 사용자 확정 2026-08-03).
+**드래그 이사**(2026-08-03): 7px 넘게 끌면 잡힘 — grab 클립(Default 직립 정지 1프레임)을
+커서가 쥔 허리(상자 49%·52%, bbox 실측)를 축으로 기울여 대롱대롱. 잡기 지점은 허리로
+스냅한다(상자 위쪽은 투명 여백이라 그대로 쓰면 커서 아래에 매달림). 놓으면 등가속 낙하 →
+발밑 x에서 `elementsFromPoint`로 아래를 훑어 **처음 만나는 요소의 윗변에 착지**, 그 표면
+폭 안에서 배회. 스크롤·리사이즈·창 닫힘으로 지면이 사라지면(발밑 ±10px 재검사) 다시
+떨어진다. 좌표는 home=헤더 슬롯(--cx) / free=뷰포트 고정(--fx/--fy) 이원화.
 클릭 = 반응 모션(Interact) + **크롬 내장 Gemini Nano(Prompt API, Chrome 148+ 데스크탑)
 상태별 대화 패널**(app/chibi-chat.tsx — 페르소나(반말·"당신" 호칭)·few-shot·스트리밍, 기기 내
 생성이라 서버·비용 없음): 설치됨=바로 대화 · 다운로드 가능/진행 중=크기(약 2GB)·용도 안내 후

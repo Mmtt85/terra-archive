@@ -2371,15 +2371,27 @@ function SkinSection({ operator }: { operator: Operator }) {
 // - 알파 프로브: VP9 알파를 실제로 합성하는 브라우저인지 캔버스 픽셀로 1회 검사. 못 그리는
 //   브라우저(사파리 계열)는 검정 상자가 되므로 아예 표시하지 않는다 (같은 출처라 오염 없음).
 const CHIBI_STAR = "char_1012_skadi2"; // 이격 스카디
-// Pages 직접 서빙 (R2 아님 — 합계 ~1MB). relax=대기 · move=걷기 · sleep=드러누워 잠 ·
-// interact=터치 반응 · sit=앉기(드래그로 잡혔을 때·낙하 중 — 다리를 모으고 대롱대롱)
+// Pages 직접 서빙 (R2 아님 — 합계 ~1.5MB). relax=서기 · move=걷기 · sit=앉아 쉬기 ·
+// sleep=드러누워 잠 · interact=터치 반응 · grab=잡힘·낙하(Default 직립 정지 — CSS가
+// 허리축으로 기울여 대롱대롱) · sitdown/situp/liedown/wakeup=포즈 전환(Spine 믹스 렌더 —
+// "서 있다가 갑자기 앉는 게 아니라 서서히", 사용자 확정 2026-08-03)
 const CHIBI_CLIPS = {
   relax: "/chibi/skadi2-relax.webm",
   move: "/chibi/skadi2-move.webm",
+  sit: "/chibi/skadi2-sit.webm",
   sleep: "/chibi/skadi2-sleep.webm",
   interact: "/chibi/skadi2-interact.webm",
-  sit: "/chibi/skadi2-sit.webm",
+  grab: "/chibi/skadi2-grab.webm",
+  sitdown: "/chibi/skadi2-sitdown.webm",
+  situp: "/chibi/skadi2-situp.webm",
+  liedown: "/chibi/skadi2-liedown.webm",
+  wakeup: "/chibi/skadi2-wakeup.webm",
 } as const;
+// 전환 클립 → 끝나면 이어지는 정착 클립 (onEnded에서 전이)
+const CHIBI_FLOW = { sitdown: "sit", situp: "relax", liedown: "sleep", wakeup: "sit" } as const;
+// 잡기 지점 스냅 — 스프라이트가 상자 아래 절반에만 그려져 있어(위는 투명 여백) 잡은 자리를
+// 그대로 쓰면 커서보다 한참 아래에 매달린다. 실측 bbox(Default): 허리 = 상자의 (49%, 52%).
+const CHIBI_GRIP = { x: 0.49, y: 0.52 };
 type ChibiClip = keyof typeof CHIBI_CLIPS;
 const CHIBI_WALK_SPEED = 34; // px/s — Move 모션(1.67s 사이클) 보폭에 눈대중으로 맞춘 값
 const CHIBI_GRAVITY = 2600; // px/s² — 낙하 가속도 (뷰포트 절반을 ~0.6초에)
@@ -2480,7 +2492,7 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
     const surf = findLanding(from.x + el.offsetWidth / 2, from.y + h);
     surfRef.current = surf;
     setMode("fall");
-    setClip("sit");
+    setClip("grab");
     const dest = surf.top - h;
     const y0 = from.y;
     const t0 = performance.now();
@@ -2546,26 +2558,43 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
     if (alpha !== true) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     let timer = 0;
-    let idleStreak = 0; // 산책 없이 보낸 연속 틱 수 — 졸음 판정용
+    let sitTicks = 0; // 앉은 채 보낸 틱 수 — 오래 앉아 있으면 잠든다
     const tick = () => {
       const current = clipRef.current;
       const currentMode = modeRef.current;
       if (currentMode === "held" || currentMode === "fall") { timer = window.setTimeout(tick, 1500); return; }
       if (chatOpenRef.current) {
-        // 대화 중엔 얌전히 — 자던 중이면 깨어난 상태로 서 있는다
-        if (current === "sleep") setClip("relax");
+        // 대화 중엔 얌전히 — 자던 중이면 서서히 일어나 앉는다
+        if (current === "sleep") { setClip("wakeup"); sitTicks = 0; }
         timer = window.setTimeout(tick, 4000);
         return;
       }
-      if (current === "interact") { timer = window.setTimeout(tick, 1500); return; }
+      if (current === "interact" || current in CHIBI_FLOW) { timer = window.setTimeout(tick, 1200); return; } // 반응·포즈 전환 중
       if (current === "move") { timer = window.setTimeout(tick, 1200); return; } // 걷는 중 방향 홱 틀기 방지
       if (current === "sleep") {
-        setClip("relax"); // 기상 — 다음 틱에서 다시 행동 결정
+        setClip("wakeup"); // 기상 — 서서히 일어나 앉았다가 다음 틱에서 행동 결정
+        sitTicks = 0;
         timer = window.setTimeout(tick, 2500 + Math.random() * 2500);
         return;
       }
       if (currentMode === "free" && !groundedNow()) { startFall(); timer = window.setTimeout(tick, 1500); return; }
-      if (Math.random() < 0.7) {
+      // 앉아 있을 때 — 계속 앉거나, 오래 앉았으면 잠들거나, 일어난다.
+      // 서 있다가 갑자기 드러눕는 경로는 없다 (사용자 확정 2026-08-03: 걷기→앉기→잠).
+      if (current === "sit") {
+        sitTicks += 1;
+        if (sitTicks >= 2 && Math.random() < 0.6) setClip("liedown"); // 서서히 눕는다
+        else if (Math.random() < 0.4) setClip("situp"); // 서서히 일어선다
+        timer = window.setTimeout(tick, 3500 + Math.random() * 3500);
+        return;
+      }
+      const roll = Math.random();
+      if (roll < 0.15) {
+        setClip("sitdown"); // 걷다 지치면 한 번씩 서서히 앉아 쉰다
+        sitTicks = 0;
+        timer = window.setTimeout(tick, 3500 + Math.random() * 3500);
+        return;
+      }
+      if (roll < 0.8) {
         if (currentMode === "free") {
           // 착지면 위 산책 — 발 중심이 표면을 벗어나지 않는 범위, 한 번에 ±130px
           const el = btnRef.current;
@@ -2581,7 +2610,6 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
               setMoveSec(Math.abs(next - cur) / CHIBI_WALK_SPEED);
               setFreePos(next, freeRef.current.y);
               setClip("move");
-              idleStreak = 0;
             }
           }
         } else {
@@ -2592,13 +2620,10 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
             xRef.current = next;
             setX(next);
             setClip("move");
-            idleStreak = 0;
           }
         }
-      } else if (++idleStreak >= 2 && Math.random() < 0.5) {
-        setClip("sleep"); // 다음 틱까지 낮잠
-        idleStreak = 0;
       }
+      // 나머지 20%는 그대로 서서 쉰다 — 눕는 건 앉기를 거쳐서만
       timer = window.setTimeout(tick, 3500 + Math.random() * 3500);
     };
     timer = window.setTimeout(tick, 2000);
@@ -2647,7 +2672,7 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
   const handleClick = () => {
     if (suppressClickRef.current) { suppressClickRef.current = false; return; } // 방금 드래그였다
     const current = clipRef.current;
-    if (current !== "interact" && current !== "move") setClip("interact");
+    if (current !== "interact" && current !== "move" && !(current in CHIBI_FLOW)) setClip("interact");
     if (chatStatus !== "none") setChatOpen(true);
   };
   // 드래그로 잡아 옮기기 — 7px을 넘게 끌면 드래그로 판정(클릭과 구분), 잡힌 동안 Sit 포즈,
@@ -2665,8 +2690,13 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
       if (Math.hypot(event.clientX - grab.px, event.clientY - grab.py) < 7) return;
       grab.dragging = true;
       cancelAnimationFrame(fallRafRef.current);
+      // 잡기 지점을 허리로 스냅 — 상자 위쪽은 투명 여백이라 잡은 자리를 그대로 쓰면
+      // 커서보다 한참 아래에 매달린다 (사용자 제보 2026-08-03)
+      const el0 = btnRef.current;
+      grab.offX = (el0?.offsetWidth ?? 137) * CHIBI_GRIP.x;
+      grab.offY = (el0?.offsetHeight ?? 77) * CHIBI_GRIP.y;
       setMode("held");
-      setClip("sit");
+      setClip("grab");
     }
     const el = btnRef.current;
     const w = el?.offsetWidth ?? 137;
@@ -2719,6 +2749,14 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
         onEnded={() => setClip("relax")} />
       <video className={`chibi-sit${flip ? " flip" : ""}`} src={CHIBI_CLIPS.sit}
         loop muted playsInline preload="metadata" ref={(el) => { videoRefs.current.sit = el; }} />
+      <video className={`chibi-grab${flip ? " flip" : ""}`} src={CHIBI_CLIPS.grab}
+        loop muted playsInline preload="metadata" ref={(el) => { videoRefs.current.grab = el; }} />
+      {/* 포즈 전환 클립 — 한 번 재생하고 끝나면 정착 클립으로 */}
+      {(Object.keys(CHIBI_FLOW) as (keyof typeof CHIBI_FLOW)[]).map((name) => (
+        <video key={name} className={`chibi-${name}${flip ? " flip" : ""}`} src={CHIBI_CLIPS[name]}
+          muted playsInline preload="metadata" ref={(el) => { videoRefs.current[name] = el; }}
+          onEnded={() => setClip(CHIBI_FLOW[name])} />
+      ))}
     </button>
     {chatOpen && <ChibiChatPanel status={chatStatus} onReady={() => setChatStatus("available")} onAction={handleChatAction} onClose={() => setChatOpen(false)} />}
     </>
