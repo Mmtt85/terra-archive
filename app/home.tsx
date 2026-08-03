@@ -2435,10 +2435,12 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
   const [mode, setMode] = useState<ChibiMode>("home");
   const [grip, setGrip] = useState({ x: 0.49, y: 0.52 }); // 쥔 지점(상자 비율) — 대롱대롱 회전축
   const [angry, setAngry] = useState(false); // 높은 낙하 뒤 짜증(💢) — interact가 끝나면 풀린다
+  const angryRef = useRef(false);
+  useEffect(() => { angryRef.current = angry; }, [angry]);
   // 앞으로 철푸덕(사용자 확정 2026-08-03: 뒤로 눕는 Sleep이 아니라 보는 방향으로 자빠져야 한다)
   // — grab(직립 정지) 클립을 발끝 축으로 88° 회전시키는 CSS 체인: splat(1s) → getup(0.26s) → 짜증
-  const [tumble, setTumble] = useState<null | "splat" | "getup">(null);
-  const tumbleRef = useRef<null | "splat" | "getup">(null);
+  const [tumble, setTumble] = useState<null | "fall" | "sprawl" | "kneel">(null);
+  const tumbleRef = useRef<null | "fall" | "sprawl" | "kneel">(null);
   const tumbleTimers = useRef<number[]>([]);
   useEffect(() => { tumbleRef.current = tumble; }, [tumble]);
   useEffect(() => () => { for (const t of tumbleTimers.current) window.clearTimeout(t); }, []);
@@ -2615,13 +2617,17 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
         modeRef.current = "free";
         setMode("free");
         if (dest - y0 > CHIBI_HARD_FALL) {
-          setClip("grab"); // 직립 정지 그대로 앞으로 회전 (chibi-splat CSS)
+          // 앞으로 철퍼덕 — 자세가 단계마다 무너져야 "회전"이 아니라 "넘어짐"으로 읽힌다
+          // (사용자 지적 2026-08-03 ×2): 다리 허우적(move)이며 고꾸라짐 → 웅크린 sit을
+          // 눕혀 구겨진 더미 + 스쿼시·💫 → 회전 복귀로 무릎 자세 → situp으로 일어나 짜증.
+          setClip("move");
           setAngry(true);
-          tumbleRef.current = "splat";
-          setTumble("splat");
+          tumbleRef.current = "fall";
+          setTumble("fall");
           tumbleTimers.current = [
-            window.setTimeout(() => { tumbleRef.current = "getup"; setTumble("getup"); }, 1200),
-            window.setTimeout(() => { clearTumble(); setClip("interact"); }, 1480),
+            window.setTimeout(() => { setClip("sit"); tumbleRef.current = "sprawl"; setTumble("sprawl"); }, 350),
+            window.setTimeout(() => { tumbleRef.current = "kneel"; setTumble("kneel"); }, 1300),
+            window.setTimeout(() => { clearTumble(); setClip("situp"); }, 1560),
           ];
         } else {
           setClip("relax");
@@ -2918,13 +2924,13 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
       <video className={`chibi-special${flip ? " flip" : ""}`} src={CHIBI_CLIPS.special}
         muted playsInline preload="none" ref={(el) => { videoRefs.current.special = el; }}
         onEnded={() => setClip("relax")} />
-      {angry && (tumble === "getup" || clip === "interact") && <span className="chibi-anger" aria-hidden>💢</span>}
-      {tumble === "splat" && <span className={`chibi-impact${flip ? " flip" : ""}`} aria-hidden>💫</span>}
+      {angry && (tumble === "kneel" || clip === "situp" || clip === "interact") && <span className="chibi-anger" aria-hidden>💢</span>}
+      {tumble === "sprawl" && <span className={`chibi-impact${flip ? " flip" : ""}`} aria-hidden>💫</span>}
       {/* 포즈 전환 클립 — 한 번 재생하고 끝나면 정착 클립으로 */}
       {(Object.keys(CHIBI_FLOW) as (keyof typeof CHIBI_FLOW)[]).map((name) => (
         <video key={name} className={`chibi-${name}${flip ? " flip" : ""}`} src={CHIBI_CLIPS[name]}
           muted playsInline preload="metadata" ref={(el) => { videoRefs.current[name] = el; }}
-          onEnded={() => setClip(CHIBI_FLOW[name])} />
+          onEnded={() => setClip(name === "situp" && angryRef.current ? "interact" : CHIBI_FLOW[name])} />
       ))}
     </button>
     {chatOpen && <ChibiChatPanel status={chatStatus} onReady={() => setChatStatus("available")} onAction={handleChatAction} onClose={() => setChatOpen(false)} />}

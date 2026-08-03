@@ -14528,35 +14528,48 @@ main.site-main > .site-header {
 /* 앞으로 철푸덕 (사용자 확정 2026-08-03) — 직립(grab) 스프라이트를 발끝 축으로 보는 방향으로
    88° 회전. flip(scaleX)이면 자동으로 반대쪽으로 자빠진다. 넘어진 판자가 좌우로 길게 눕도록
    그 동안만 클립 영역을 가로 전체로 연다 */
-.header-chibi.chibi-splat video,
-.header-chibi.chibi-getup video {
+/* 앞으로 철퍼덕 3단계 (사용자 지적 ×2 — 자세가 무너져야 넘어짐으로 읽힌다):
+   fall = move 클립(다리 허우적)이 재생되는 채로 고꾸라짐 · sprawl = 웅크린 sit 클립을
+   눕혀 구겨진 더미(착지 스쿼시) · kneel = 회전 복귀(sit 그대로 = 무릎 꿇기) → situp.
+   개별 속성(rotate/translate/scale)이라 flip(transform: scaleX(-1))과 합성된다 */
+.header-chibi.chibi-fall video,
+.header-chibi.chibi-sprawl video,
+.header-chibi.chibi-kneel video {
   transform-origin: 49% 96%;
 }
-.header-chibi.chibi-splat video {
-  animation: chibi-splat-fall 1.2s ease-out forwards;
+.header-chibi.chibi-fall video {
+  animation: chibi-tip-over 0.35s ease-in forwards;
 }
-.header-chibi.chibi-getup video {
-  animation: chibi-getup-rise 0.26s ease-in both;
+.header-chibi.chibi-sprawl video {
+  rotate: 88deg;
+  translate: 12% 2%;
+  animation: chibi-sprawl-squash 0.32s ease-out;
 }
-.header-chibi.chibi-splat,
-.header-chibi.chibi-getup {
+.header-chibi.chibi-kneel video {
+  animation: chibi-kneel-up 0.26s ease-in both;
+}
+.header-chibi.chibi-fall,
+.header-chibi.chibi-sprawl,
+.header-chibi.chibi-kneel {
   clip-path: inset(20% 0 0 0);
 }
-/* 회전만으로는 "문짝 넘어가기"로 보인다 (사용자 지적) — 움찔 → 고꾸라지며 몸이 앞으로
-   쏠리고(translate) → 바닥에 철퍼덕 눌렸다가(scale 스쿼시) → 살짝 튕기고 → 뻗는다.
-   개별 속성(rotate/translate/scale)이라 flip(transform: scaleX(-1))과 합성되고,
-   flip이면 이동 방향도 자동으로 반대가 된다 */
-@keyframes chibi-splat-fall {
-  0% { rotate: 0deg; translate: 0 0; scale: 1; }
-  10% { rotate: -8deg; translate: -2% 0; scale: 1; }
-  26% { rotate: 90deg; translate: 12% 2%; scale: 1; }
-  33% { rotate: 94deg; translate: 13% 3%; scale: 1.1 0.82; }
-  42% { rotate: 84deg; translate: 12% 1%; scale: 0.97 1.03; }
-  52%, 100% { rotate: 88deg; translate: 12% 2%; scale: 1; }
+@keyframes chibi-tip-over {
+  0% { rotate: 0deg; translate: 0 0; }
+  18% { rotate: -7deg; translate: -2% 0; }
+  100% { rotate: 92deg; translate: 12% 2%; }
 }
-@keyframes chibi-getup-rise {
+@keyframes chibi-sprawl-squash {
+  0% { rotate: 92deg; translate: 13% 3%; scale: 1.12 0.8; }
+  55% { rotate: 84deg; translate: 12% 1%; scale: 0.96 1.04; }
+  100% { rotate: 88deg; translate: 12% 2%; scale: 1; }
+}
+@keyframes chibi-kneel-up {
   from { rotate: 88deg; translate: 12% 2%; }
   to { rotate: 0deg; translate: 0 0; }
+}
+/* 마우스 드래그 뒤 남는 포커스 사각 테두리 제거 — 키보드 포커스는 유지 */
+.header-chibi:focus:not(:focus-visible) {
+  outline: none;
 }
 /* 충격 이펙트 — 머리가 닿는 앞쪽 바닥에서 터진다 (flip이면 반대쪽) */
 .chibi-impact {
@@ -14565,7 +14578,7 @@ main.site-main > .site-header {
   left: 64%;
   font-size: 14px;
   opacity: 0;
-  animation: chibi-impact-pop 0.7s ease-out 0.3s forwards;
+  animation: chibi-impact-pop 0.7s ease-out forwards;
   pointer-events: none;
 }
 .chibi-impact.flip {
