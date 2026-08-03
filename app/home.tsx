@@ -2387,15 +2387,19 @@ const CHIBI_CLIPS = {
   liedown: "/chibi/skadi2-liedown.webm",
   wakeup: "/chibi/skadi2-wakeup.webm",
   special: "/chibi/skadi2-special.webm",
+  splat: "/chibi/skadi2-splat.webm",
+  getupmad: "/chibi/skadi2-getupmad.webm",
 } as const;
 // 레어 이벤트 — 命途迭代/II 스킨의 기지 Special(10.7s, 붉은 드레스로 갈아입고 카드 점술 +
 // 미니 치비 관객). 쿨다운 지나고 서 있는 틱의 3%로 발동, 끝나면 기본 복장으로 원복
 // (사용자 확정 2026-08-03: "가끔 옷 갈아입고 점을 봐준다" 콘셉트).
 const CHIBI_SPECIAL_COOLDOWN = 240_000;
 const CHIBI_SPECIAL_CHANCE = 0.03;
-// 전환 클립 → 끝나면 이어지는 정착 클립 (onEnded에서 전이)
-const CHIBI_FLOW = { sitdown: "sit", situp: "relax", liedown: "sleep", wakeup: "sit" } as const;
-const CHIBI_HARD_FALL = 320; // px — 이보다 높이 떨어지면 앞으로 철푸덕 (발끝 축 88° 회전, CSS)
+// 전환 클립 → 끝나면 이어지는 정착 클립 (onEnded에서 전이).
+// splat(철푸덕: Default→Sleep 급속 믹스)→getupmad(벌떡)→interact(짜증, 💢)는 높은 낙하 전용 체인
+// (사용자 확정 2026-08-03: CSS 회전 계열 전부 반려 — 렌더 클립 버전으로 롤백).
+const CHIBI_FLOW = { sitdown: "sit", situp: "relax", liedown: "sleep", wakeup: "sit", splat: "getupmad", getupmad: "interact" } as const;
+const CHIBI_HARD_FALL = 320; // px — 이보다 높이 떨어지면 철푸덕
 
 type ChibiClip = keyof typeof CHIBI_CLIPS;
 const CHIBI_WALK_SPEED = 34; // px/s — Move 모션(1.67s 사이클) 보폭에 눈대중으로 맞춘 값
@@ -2435,21 +2439,6 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
   const [mode, setMode] = useState<ChibiMode>("home");
   const [grip, setGrip] = useState({ x: 0.49, y: 0.52 }); // 쥔 지점(상자 비율) — 대롱대롱 회전축
   const [angry, setAngry] = useState(false); // 높은 낙하 뒤 짜증(💢) — interact가 끝나면 풀린다
-  const angryRef = useRef(false);
-  useEffect(() => { angryRef.current = angry; }, [angry]);
-  // 앞으로 철푸덕(사용자 확정 2026-08-03: 뒤로 눕는 Sleep이 아니라 보는 방향으로 자빠져야 한다)
-  // — grab(직립 정지) 클립을 발끝 축으로 88° 회전시키는 CSS 체인: splat(1s) → getup(0.26s) → 짜증
-  const [tumble, setTumble] = useState<null | "fall" | "plant" | "flop" | "kneel">(null);
-  const tumbleRef = useRef<null | "fall" | "plant" | "flop" | "kneel">(null);
-  const tumbleTimers = useRef<number[]>([]);
-  useEffect(() => { tumbleRef.current = tumble; }, [tumble]);
-  useEffect(() => () => { for (const t of tumbleTimers.current) window.clearTimeout(t); }, []);
-  const clearTumble = () => {
-    for (const t of tumbleTimers.current) window.clearTimeout(t);
-    tumbleTimers.current = [];
-    tumbleRef.current = null;
-    setTumble(null);
-  };
   const modeRef = useRef<ChibiMode>("home");
   const [free, setFree] = useState({ x: 0, y: 0 });
   const freeRef = useRef({ x: 0, y: 0 });
@@ -2617,21 +2606,8 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
         modeRef.current = "free";
         setMode("free");
         if (dest - y0 > CHIBI_HARD_FALL) {
-          // 앞으로 철퍼덕 (사용자 지적 ×3 최종형) — 결정적 그림은 "머리 박고 다리 하늘로":
-          // fall: move 클립(다리 허우적)인 채 116°까지 고꾸라져 머리가 땅에 닿고 발이 뜬다
-          // plant: 물구나무 처박힘 유지 — 다리는 계속 버둥(move 루프), 몸이 들썩, 💫
-          // flop: 힘 빠져 납작하게 무너짐(웅크린 sit을 눕힌 더미 + 스쿼시)
-          // kneel→situp→interact: 무릎 꿇고 일어나며 💢 짜증.
-          setClip("move");
+          setClip("splat"); // 철푸덕(뻗기) → 벌떡 → 짜증 체인 (CHIBI_FLOW)
           setAngry(true);
-          tumbleRef.current = "fall";
-          setTumble("fall");
-          tumbleTimers.current = [
-            window.setTimeout(() => { tumbleRef.current = "plant"; setTumble("plant"); }, 400),
-            window.setTimeout(() => { setClip("sit"); tumbleRef.current = "flop"; setTumble("flop"); }, 1250),
-            window.setTimeout(() => { tumbleRef.current = "kneel"; setTumble("kneel"); }, 1600),
-            window.setTimeout(() => { clearTumble(); setClip("situp"); }, 1880),
-          ];
         } else {
           setClip("relax");
         }
@@ -2694,7 +2670,7 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
     const tick = () => {
       const current = clipRef.current;
       const currentMode = modeRef.current;
-      if (currentMode === "held" || currentMode === "fall" || currentMode === "climb" || tumbleRef.current) { timer = window.setTimeout(tick, 1500); return; }
+      if (currentMode === "held" || currentMode === "fall" || currentMode === "climb") { timer = window.setTimeout(tick, 1500); return; }
       if (chatOpenRef.current) {
         // 대화 중엔 얌전히 — 자던 중이면 서서히 일어나 앉는다
         if (current === "sleep") { setClip("wakeup"); sitTicks = 0; }
@@ -2843,7 +2819,6 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
       const el0 = btnRef.current;
       if (el0) setGrip({ x: grab.offX / el0.offsetWidth, y: grab.offY / el0.offsetHeight });
       setAngry(false); // 다시 잡히면 짜증 표시는 접는다
-      clearTumble();
       modeRef.current = "held";
       setMode("held");
       setClip("grab");
@@ -2890,7 +2865,7 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
   return (
     <>
     <button ref={btnRef} type="button"
-      className={`header-chibi clip-${clip}${mode !== "home" ? " chibi-free" : ""}${mode === "held" ? " chibi-held" : ""}${mode === "climb" ? " chibi-climb" : ""}${tumble ? ` chibi-${tumble}` : ""}`}
+      className={`header-chibi clip-${clip}${mode !== "home" ? " chibi-free" : ""}${mode === "held" ? " chibi-held" : ""}${mode === "climb" ? " chibi-climb" : ""}`}
       aria-hidden={alpha !== true} tabIndex={alpha === true ? 0 : -1}
       style={{ "--cx": `${x}px`, "--walk": `${moveSec}s`, "--fx": `${free.x}px`, "--fy": `${free.y}px`,
         "--grip-x": `${Math.round(grip.x * 100)}%`, "--grip-y": `${Math.round(grip.y * 100)}%` } as React.CSSProperties}
@@ -2927,13 +2902,12 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
       <video className={`chibi-special${flip ? " flip" : ""}`} src={CHIBI_CLIPS.special}
         muted playsInline preload="none" ref={(el) => { videoRefs.current.special = el; }}
         onEnded={() => setClip("relax")} />
-      {angry && (tumble === "kneel" || clip === "situp" || clip === "interact") && <span className="chibi-anger" aria-hidden>💢</span>}
-      {(tumble === "plant" || tumble === "flop") && <span className={`chibi-impact${flip ? " flip" : ""}`} aria-hidden>💫</span>}
+      {angry && (clip === "getupmad" || clip === "interact") && <span className="chibi-anger" aria-hidden>💢</span>}
       {/* 포즈 전환 클립 — 한 번 재생하고 끝나면 정착 클립으로 */}
       {(Object.keys(CHIBI_FLOW) as (keyof typeof CHIBI_FLOW)[]).map((name) => (
         <video key={name} className={`chibi-${name}${flip ? " flip" : ""}`} src={CHIBI_CLIPS[name]}
           muted playsInline preload="metadata" ref={(el) => { videoRefs.current[name] = el; }}
-          onEnded={() => setClip(name === "situp" && angryRef.current ? "interact" : CHIBI_FLOW[name])} />
+          onEnded={() => setClip(CHIBI_FLOW[name])} />
       ))}
     </button>
     {chatOpen && <ChibiChatPanel status={chatStatus} onReady={() => setChatStatus("available")} onAction={handleChatAction} onClose={() => setChatOpen(false)} />}
