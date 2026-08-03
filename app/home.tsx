@@ -2429,12 +2429,14 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
     }
   }, [clip]);
 
-  // 생활 루프 — 알파 프로브 통과 후에만. 틱마다: 자고 있으면 깨고, 아니면
-  // 55% 산책 / 25% 드러누워 낮잠 / 20% 그대로 대기. 반응 모션 중엔 짧게 미룬다.
+  // 생활 루프 — 알파 프로브 통과 후에만. 틱(3.5~7초)마다 70% 산책, 아니면 대기 —
+  // 낮잠은 두 틱 연속 가만히 있었을 때만 절반 확률로("오래 가만히 있으면 졸기").
+  // 종전 7~13초 틱·55% 산책은 평균 18초 이상 한자리에 서 있었다 (사용자 제보 2026-08-03).
   useEffect(() => {
     if (alpha !== true) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     let timer = 0;
+    let idleStreak = 0; // 산책 없이 보낸 연속 틱 수 — 졸음 판정용
     const tick = () => {
       const current = clipRef.current;
       if (chatOpenRef.current) {
@@ -2444,15 +2446,13 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
         return;
       }
       if (current === "interact") { timer = window.setTimeout(tick, 1500); return; }
+      if (current === "move") { timer = window.setTimeout(tick, 1200); return; } // 걷는 중 방향 홱 틀기 방지
       if (current === "sleep") {
         setClip("relax"); // 기상 — 다음 틱에서 다시 행동 결정
         timer = window.setTimeout(tick, 2500 + Math.random() * 2500);
         return;
       }
-      const roll = Math.random();
-      if (roll < 0.25) {
-        setClip("sleep"); // 다음 틱(7~13초)까지 낮잠
-      } else if (roll < 0.8) {
+      if (Math.random() < 0.7) {
         const next = Math.round(Math.random() * 260 - 130); // 헤더 중앙 ±130px
         if (Math.abs(next - xRef.current) > 8) {
           setFlip(next < xRef.current); // 원본 기본 방향이 오른쪽(머리 크롭 실측) — 왼쪽 이동 시 반전
@@ -2460,11 +2460,15 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
           xRef.current = next;
           setX(next);
           setClip("move");
+          idleStreak = 0;
         }
+      } else if (++idleStreak >= 2 && Math.random() < 0.5) {
+        setClip("sleep"); // 다음 틱까지 낮잠
+        idleStreak = 0;
       }
-      timer = window.setTimeout(tick, 7000 + Math.random() * 6000);
+      timer = window.setTimeout(tick, 3500 + Math.random() * 3500);
     };
-    timer = window.setTimeout(tick, 2500);
+    timer = window.setTimeout(tick, 2000);
     return () => window.clearTimeout(timer);
   }, [alpha]);
 

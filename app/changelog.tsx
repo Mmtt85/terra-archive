@@ -138,20 +138,18 @@ export default function ChangelogButton() {
         {/* 모바일은 아이콘만 (1줄 로고 옆 — 폭이 좁다) */}
         <span className="chlog-label">{t("업데이트 내역")}</span>
       </button>
-      {/* 헤더의 backdrop-filter가 fixed 기준을 헤더로 만들어버리므로 portal로 body에 렌더 */}
+      {/* 헤더의 backdrop-filter가 fixed 기준을 헤더로 만들어버리므로 portal로 body에 렌더.
+          제목은 창 크롬 바(label)가 담당 — 종전 내부 header는 제목이 이중으로 떠서 제거하고,
+          상세보기 토글(사용자 요청 2026-07-28: 제목 옆)은 크롬 바에 얹는다 (2026-08-03) */}
       {open && createPortal(
-        <ModalWindow label={t("업데이트 내역")} className="chlog-modal" onClose={() => setOpen(false)}>
-            <header>
-              <h2>🛠 {t("업데이트 내역")}</h2>
-              {/* 종류 필터는 제목 옆 (사용자 요청 2026-07-28) — 아래 줄은 기간 확장 전용 */}
-              {rows !== null && !error && (
-                <button type="button" className="chlog-detail-toggle" aria-pressed={detail}
-                  onClick={() => setDetail((d) => !d)}
-                  title={detail ? t("신기능만 보기") : t("상세보기 — 개선·수정 내역까지")}>
-                  {detail ? t("신기능만") : t("상세보기")}
-                </button>
-              )}
-            </header>
+        <ModalWindow label={t("업데이트 내역")} className="chlog-modal" onClose={() => setOpen(false)}
+          chrome={rows !== null && !error ? (
+            <button type="button" className="chlog-detail-toggle" aria-pressed={detail}
+              onClick={() => setDetail((d) => !d)}
+              title={detail ? t("신기능만 보기") : t("상세보기 — 개선·수정 내역까지")}>
+              {detail ? t("신기능만") : t("상세보기")}
+            </button>
+          ) : undefined}>
             <div className="chlog-list">
               {rows === null && !error && <p className="chlog-empty">{t("불러오는 중…")}</p>}
               {error && <p className="chlog-empty">{error}</p>}

@@ -560,25 +560,8 @@ button {
   overflow: hidden;
   box-shadow: 0 30px 100px #0008;
 }
-.chlog-modal > header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 14px 62px 14px 16px;  /* 오른쪽은 절대배치 ×(38px + right 14px) 자리 확보 */
-  border-bottom: 1px solid var(--line);
-  flex: none;
-}
-.chlog-modal > header h2 {
-  font-size: 16px;
-  font-weight: 900;
-}
-/* 종류 필터 — 제목 바로 오른쪽 (2026-07-28).
-   ⚠ .modal-close는 position:absolute라 헤더의 flow 항목은 h2와 이 버튼 둘뿐이다.
-   space-between이면 이 버튼이 오른쪽 끝으로 밀려 ×와 겹쳐 클릭이 막힌다(실측) —
-   margin-right:auto로 남는 폭을 오른쪽에 몰아 제목 옆에 붙인다. */
+/* 종류 필터 — 창 크롬 바의 제목·× 사이에 얹는다 (2026-08-03, 종전 내부 header는 제거) */
 .chlog-detail-toggle {
-  margin-right: auto;
   padding: 3px 9px;
   border: 1px solid var(--line);
   border-radius: 6px;
