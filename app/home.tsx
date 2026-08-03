@@ -2431,7 +2431,9 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
   const modeRef = useRef<ChibiMode>("home");
   const [free, setFree] = useState({ x: 0, y: 0 });
   const freeRef = useRef({ x: 0, y: 0 });
-  const surfRef = useRef<{ top: number; left: number; right: number } | null>(null); // 착지면
+  // 착지면 — el을 붙들고 있다가 스크롤·리사이즈 때 rect를 따라 "탑승"한다 (el null = 뷰포트 바닥).
+  // relX = 표면 왼쪽 끝에서 치비까지의 가로 오프셋 (탑승 중 가로 위치 유지용)
+  const surfRef = useRef<{ top: number; left: number; right: number; el: Element | null; relX: number } | null>(null);
   const btnRef = useRef<HTMLButtonElement | null>(null);
   const grabRef = useRef<{ px: number; py: number; offX: number; offY: number; dragging: boolean } | null>(null);
   const suppressClickRef = useRef(false); // 드래그 후 이어지는 click을 무시
@@ -2459,27 +2461,39 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
         const r = el.getBoundingClientRect();
         if (r.width < 40 || r.height < 10) continue;
         if (r.top >= footY && r.top <= sy && sy - r.top <= 6) {
-          return { top: r.top, left: Math.max(0, r.left), right: Math.min(window.innerWidth, r.right) };
+          return { top: r.top, left: Math.max(0, r.left), right: Math.min(window.innerWidth, r.right), el };
         }
       }
     }
-    return { top: floorY, left: 0, right: window.innerWidth };
+    return { top: floorY, left: 0, right: window.innerWidth, el: null as Element | null };
   };
 
-  // 서 있던 지면이 아직 발밑에 있는가 — 스크롤·창 닫힘으로 사라졌으면 다시 떨어진다
-  const groundedNow = () => {
+  // 착지면 탑승 동기화 — 표면 요소의 rect를 따라 함께 움직인다 (스크롤 내렸다 올렸다 하면
+  // 아래로만 계속 떨어지던 문제의 수정, 사용자 제보 2026-08-03). 표면이 DOM에서 사라졌거나
+  // 화면 밖으로 나가면 그때 낙하한다.
+  const syncSurface = () => {
+    if (modeRef.current !== "free") return;
     const el0 = btnRef.current;
-    if (!el0) return true;
-    const { x: fx, y: fy } = freeRef.current;
-    const footY = fy + el0.offsetHeight;
-    if (footY >= window.innerHeight - 12) return true; // 뷰포트 바닥
-    const px = Math.max(2, Math.min(fx + el0.offsetWidth / 2, window.innerWidth - 2));
-    for (const el of document.elementsFromPoint(px, Math.min(footY + 5, window.innerHeight - 1))) {
-      if (el === el0 || el0.contains(el)) continue;
-      const r = el.getBoundingClientRect();
-      if (r.width >= 40 && Math.abs(r.top - footY) <= 10) return true;
+    const surf = surfRef.current;
+    if (!el0 || !surf) return;
+    const h = el0.offsetHeight;
+    if (!surf.el) {
+      // 뷰포트 바닥 탑승 — 리사이즈 시 바닥 높이만 따라간다
+      const floorY = window.innerHeight - 2 - h;
+      if (Math.abs(freeRef.current.y - floorY) > 2) setFreePos(freeRef.current.x, floorY);
+      return;
     }
-    return false;
+    if (!surf.el.isConnected) { startFall(); return; }
+    const r = surf.el.getBoundingClientRect();
+    if (r.width < 30 || r.height < 4 || r.top < 4 || r.top > window.innerHeight - 6) { startFall(); return; }
+    if (clipRef.current === "move") {
+      // 지면이 움직이면 걷기를 그 자리에서 중단 — 걷기 transition이 탑승 이동까지 끌어당긴다
+      const vr = el0.getBoundingClientRect();
+      freeRef.current = { ...freeRef.current, x: vr.left };
+      setClip("relax");
+    }
+    surf.top = r.top; surf.left = r.left; surf.right = r.right;
+    setFreePos(Math.max(-el0.offsetWidth * 0.4, Math.min(r.left + surf.relX, window.innerWidth - el0.offsetWidth * 0.6)), r.top - h);
   };
 
   // 낙하 — 등가속 rAF. 착지 지점은 놓는 순간 1회 계산 (떨어지는 동안 화면이 안 바뀐다는 전제)
@@ -2489,8 +2503,10 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
     cancelAnimationFrame(fallRafRef.current);
     const h = el.offsetHeight;
     const from = freeRef.current;
-    const surf = findLanding(from.x + el.offsetWidth / 2, from.y + h);
+    const landing = findLanding(from.x + el.offsetWidth / 2, from.y + h);
+    const surf = { ...landing, relX: from.x - landing.left };
     surfRef.current = surf;
+    modeRef.current = "fall"; // 같은 틱 안의 판정이 스테일 모드를 읽지 않게 즉시 반영
     setMode("fall");
     setClip("grab");
     const dest = surf.top - h;
@@ -2501,6 +2517,8 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
       const ny = y0 + 0.5 * CHIBI_GRAVITY * t * t;
       if (ny >= dest) {
         setFreePos(freeRef.current.x, dest);
+        surf.relX = freeRef.current.x - surf.left;
+        modeRef.current = "free";
         setMode("free");
         setClip("relax");
         return;
@@ -2511,24 +2529,24 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
     fallRafRef.current = requestAnimationFrame(step);
   };
 
-  // 스크롤·리사이즈로 지면이 움직이면 재낙하 — 함수는 ref로 넘겨 stale 캡처를 피한다
-  const fallCheckRef = useRef<() => void>(() => {});
+  // 스크롤·리사이즈 → 표면 탑승 동기화 (rAF 스로틀) — 함수는 ref로 넘겨 stale 캡처를 피한다
+  const syncRef = useRef<() => void>(() => {});
   useEffect(() => {
-    fallCheckRef.current = () => { if (modeRef.current === "free" && !groundedNow()) startFall(); };
+    syncRef.current = syncSurface;
   });
   useEffect(() => {
-    let debounce = 0;
+    let raf = 0;
     const onMove = () => {
       if (modeRef.current !== "free") return;
-      window.clearTimeout(debounce);
-      debounce = window.setTimeout(() => fallCheckRef.current(), 250);
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => syncRef.current());
     };
     window.addEventListener("scroll", onMove, true);
     window.addEventListener("resize", onMove);
     return () => {
       window.removeEventListener("scroll", onMove, true);
       window.removeEventListener("resize", onMove);
-      window.clearTimeout(debounce);
+      cancelAnimationFrame(raf);
     };
   }, []);
 
@@ -2577,7 +2595,10 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
         timer = window.setTimeout(tick, 2500 + Math.random() * 2500);
         return;
       }
-      if (currentMode === "free" && !groundedNow()) { startFall(); timer = window.setTimeout(tick, 1500); return; }
+      if (currentMode === "free") {
+        syncRef.current(); // 표면 재확인 — 사라졌으면 여기서 낙하가 시작된다
+        if (modeRef.current !== "free") { timer = window.setTimeout(tick, 1500); return; }
+      }
       // 앉아 있을 때 — 계속 앉거나, 오래 앉았으면 잠들거나, 일어난다.
       // 서 있다가 갑자기 드러눕는 경로는 없다 (사용자 확정 2026-08-03: 걷기→앉기→잠).
       if (current === "sit") {
@@ -2609,6 +2630,7 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
               setFlip(next < cur);
               setMoveSec(Math.abs(next - cur) / CHIBI_WALK_SPEED);
               setFreePos(next, freeRef.current.y);
+              surf.relX = next - surf.left; // 탑승 가로 오프셋도 목적지 기준으로
               setClip("move");
             }
           }
@@ -2695,6 +2717,7 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
       const el0 = btnRef.current;
       grab.offX = (el0?.offsetWidth ?? 137) * CHIBI_GRIP.x;
       grab.offY = (el0?.offsetHeight ?? 77) * CHIBI_GRIP.y;
+      modeRef.current = "held";
       setMode("held");
       setClip("grab");
     }
