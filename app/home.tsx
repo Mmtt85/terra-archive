@@ -2387,18 +2387,15 @@ const CHIBI_CLIPS = {
   liedown: "/chibi/skadi2-liedown.webm",
   wakeup: "/chibi/skadi2-wakeup.webm",
   special: "/chibi/skadi2-special.webm",
-  splat: "/chibi/skadi2-splat.webm",
-  getupmad: "/chibi/skadi2-getupmad.webm",
 } as const;
 // 레어 이벤트 — 命途迭代/II 스킨의 기지 Special(10.7s, 붉은 드레스로 갈아입고 카드 점술 +
 // 미니 치비 관객). 쿨다운 지나고 서 있는 틱의 3%로 발동, 끝나면 기본 복장으로 원복
 // (사용자 확정 2026-08-03: "가끔 옷 갈아입고 점을 봐준다" 콘셉트).
 const CHIBI_SPECIAL_COOLDOWN = 240_000;
 const CHIBI_SPECIAL_CHANCE = 0.03;
-// 전환 클립 → 끝나면 이어지는 정착 클립 (onEnded에서 전이).
-// splat(철푸덕)→getupmad(벌떡)→interact(짜증, 💢와 함께)는 높은 낙하 전용 체인 (사용자 요청 2026-08-03).
-const CHIBI_FLOW = { sitdown: "sit", situp: "relax", liedown: "sleep", wakeup: "sit", splat: "getupmad", getupmad: "interact" } as const;
-const CHIBI_HARD_FALL = 320; // px — 이보다 높이 떨어지면 철푸덕
+// 전환 클립 → 끝나면 이어지는 정착 클립 (onEnded에서 전이)
+const CHIBI_FLOW = { sitdown: "sit", situp: "relax", liedown: "sleep", wakeup: "sit" } as const;
+const CHIBI_HARD_FALL = 320; // px — 이보다 높이 떨어지면 앞으로 철푸덕 (발끝 축 88° 회전, CSS)
 
 type ChibiClip = keyof typeof CHIBI_CLIPS;
 const CHIBI_WALK_SPEED = 34; // px/s — Move 모션(1.67s 사이클) 보폭에 눈대중으로 맞춘 값
@@ -2406,7 +2403,7 @@ const CHIBI_GRAVITY = 2600; // px/s² — 낙하 가속도 (뷰포트 절반을 
 // 드래그·낙하·자유 배회 (사용자 요청 2026-08-03): home=헤더 슬롯 · held=잡힘(Sit) ·
 // fall=낙하 중 · free=떨어진 표면 위에서 배회. 착지면은 "발밑 x에서 아래로 훑어
 // 처음 만나는 요소의 윗변" — 요소가 사라지거나 스크롤로 움직이면 다시 떨어진다.
-type ChibiMode = "home" | "held" | "fall" | "free";
+type ChibiMode = "home" | "held" | "fall" | "free" | "climb";
 const subscribeNever = () => () => {};
 
 // 대화 액션 → 탭 라벨 (i18n 키 — 헤더 내비와 동일 사전)
@@ -2438,6 +2435,19 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
   const [mode, setMode] = useState<ChibiMode>("home");
   const [grip, setGrip] = useState({ x: 0.49, y: 0.52 }); // 쥔 지점(상자 비율) — 대롱대롱 회전축
   const [angry, setAngry] = useState(false); // 높은 낙하 뒤 짜증(💢) — interact가 끝나면 풀린다
+  // 앞으로 철푸덕(사용자 확정 2026-08-03: 뒤로 눕는 Sleep이 아니라 보는 방향으로 자빠져야 한다)
+  // — grab(직립 정지) 클립을 발끝 축으로 88° 회전시키는 CSS 체인: splat(1s) → getup(0.26s) → 짜증
+  const [tumble, setTumble] = useState<null | "splat" | "getup">(null);
+  const tumbleRef = useRef<null | "splat" | "getup">(null);
+  const tumbleTimers = useRef<number[]>([]);
+  useEffect(() => { tumbleRef.current = tumble; }, [tumble]);
+  useEffect(() => () => { for (const t of tumbleTimers.current) window.clearTimeout(t); }, []);
+  const clearTumble = () => {
+    for (const t of tumbleTimers.current) window.clearTimeout(t);
+    tumbleTimers.current = [];
+    tumbleRef.current = null;
+    setTumble(null);
+  };
   const modeRef = useRef<ChibiMode>("home");
   const [free, setFree] = useState({ x: 0, y: 0 });
   const freeRef = useRef({ x: 0, y: 0 });
@@ -2523,6 +2533,63 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
     setFreePos(Math.max(-el0.offsetWidth * 0.4, Math.min(r.left + surf.relX, window.innerWidth - el0.offsetWidth * 0.6)), r.top - h);
   };
 
+  // 등반 — 머리 위 30~190px에서 "실제로 그려진" 요소의 윗변(턱)을 찾는다 (없으면 null)
+  const findLedge = () => {
+    const el0 = btnRef.current;
+    if (!el0) return null;
+    const { x: fx, y: fy } = freeRef.current;
+    const footY = fy + el0.offsetHeight;
+    const px = Math.max(2, Math.min(fx + el0.offsetWidth / 2, window.innerWidth - 2));
+    for (let sy = footY - 30; sy > Math.max(24, footY - 190); sy -= 6) {
+      for (const el of document.elementsFromPoint(px, sy)) {
+        if (el === el0 || el0.contains(el)) continue;
+        if (surfRef.current?.el === el) continue; // 지금 밟은 표면은 제외
+        const r = el.getBoundingClientRect();
+        if (r.width < 40 || r.height < 10) continue;
+        if (r.top <= sy && sy - r.top <= 6 && r.top < footY - 30 && paintsSomething(el)) {
+          return { top: r.top, left: Math.max(0, r.left), right: Math.min(window.innerWidth, r.right), el };
+        }
+      }
+    }
+    return null;
+  };
+  // 점프해 턱에 매달렸다가 기어오른다 — 반복되면 한 칸씩 꼭대기까지 (사용자 요청 2026-08-03)
+  const startClimb = (ledge: { top: number; left: number; right: number; el: Element | null }) => {
+    const el0 = btnRef.current;
+    if (!el0) return;
+    cancelAnimationFrame(fallRafRef.current);
+    modeRef.current = "climb";
+    setMode("climb");
+    setClip("grab"); // 매달림 = 대롱대롱 포즈
+    const h = el0.offsetHeight;
+    const from = { ...freeRef.current };
+    const hangY = ledge.top - h * 0.34; // 손이 턱에 걸리는 높이
+    const standY = ledge.top - h;
+    const JUMP = 260, HANG = 640, TOP = 900; // ms 경계
+    const t0 = performance.now();
+    const step = (now: number) => {
+      const t = now - t0;
+      if (t < JUMP) {
+        const k = 1 - (1 - t / JUMP) ** 2; // ease-out 도약
+        setFreePos(from.x, from.y + (hangY - from.y) * k);
+      } else if (t < HANG) {
+        setFreePos(from.x, hangY); // 매달림
+      } else if (t < TOP) {
+        const k = (t - HANG) / (TOP - HANG);
+        setFreePos(from.x, hangY + (standY - hangY) * (k * k * (3 - 2 * k))); // 기어오름
+      } else {
+        setFreePos(from.x, standY);
+        surfRef.current = { ...ledge, relX: from.x - ledge.left };
+        modeRef.current = "free";
+        setMode("free");
+        setClip("relax");
+        return;
+      }
+      fallRafRef.current = requestAnimationFrame(step);
+    };
+    fallRafRef.current = requestAnimationFrame(step);
+  };
+
   // 낙하 — 등가속 rAF. 착지 지점은 놓는 순간 1회 계산 (떨어지는 동안 화면이 안 바뀐다는 전제)
   const startFall = () => {
     const el = btnRef.current;
@@ -2548,8 +2615,14 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
         modeRef.current = "free";
         setMode("free");
         if (dest - y0 > CHIBI_HARD_FALL) {
-          setClip("splat"); // 철푸덕 → 벌떡 → 짜증 체인 (CHIBI_FLOW)
+          setClip("grab"); // 직립 정지 그대로 앞으로 회전 (chibi-splat CSS)
           setAngry(true);
+          tumbleRef.current = "splat";
+          setTumble("splat");
+          tumbleTimers.current = [
+            window.setTimeout(() => { tumbleRef.current = "getup"; setTumble("getup"); }, 1000),
+            window.setTimeout(() => { clearTumble(); setClip("interact"); }, 1280),
+          ];
         } else {
           setClip("relax");
         }
@@ -2612,7 +2685,7 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
     const tick = () => {
       const current = clipRef.current;
       const currentMode = modeRef.current;
-      if (currentMode === "held" || currentMode === "fall") { timer = window.setTimeout(tick, 1500); return; }
+      if (currentMode === "held" || currentMode === "fall" || currentMode === "climb" || tumbleRef.current) { timer = window.setTimeout(tick, 1500); return; }
       if (chatOpenRef.current) {
         // 대화 중엔 얌전히 — 자던 중이면 서서히 일어나 앉는다
         if (current === "sleep") { setClip("wakeup"); sitTicks = 0; }
@@ -2630,6 +2703,10 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
       if (currentMode === "free") {
         syncRef.current(); // 표면 재확인 — 사라졌으면 여기서 낙하가 시작된다
         if (modeRef.current !== "free") { timer = window.setTimeout(tick, 1500); return; }
+        if (Math.random() < 0.3) {
+          const ledge = findLedge();
+          if (ledge) { startClimb(ledge); timer = window.setTimeout(tick, 1500); return; } // 위 칸으로
+        }
       }
       // 앉아 있을 때 — 계속 앉거나, 오래 앉았으면 잠들거나, 일어난다.
       // 서 있다가 갑자기 드러눕는 경로는 없다 (사용자 확정 2026-08-03: 걷기→앉기→잠).
@@ -2689,7 +2766,7 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
     };
     timer = window.setTimeout(tick, 2000);
     return () => window.clearTimeout(timer);
-  }, [alpha]);
+  }, [alpha]); // eslint-disable-line react-hooks/exhaustive-deps -- 틱은 ref로만 상태를 읽는다
 
   if (!isClient || !star || alpha === false) return null;
   const probe = (video: HTMLVideoElement) => {
@@ -2757,6 +2834,7 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
       const el0 = btnRef.current;
       if (el0) setGrip({ x: grab.offX / el0.offsetWidth, y: grab.offY / el0.offsetHeight });
       setAngry(false); // 다시 잡히면 짜증 표시는 접는다
+      clearTumble();
       modeRef.current = "held";
       setMode("held");
       setClip("grab");
@@ -2803,7 +2881,7 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
   return (
     <>
     <button ref={btnRef} type="button"
-      className={`header-chibi clip-${clip}${mode !== "home" ? " chibi-free" : ""}${mode === "held" ? " chibi-held" : ""}`}
+      className={`header-chibi clip-${clip}${mode !== "home" ? " chibi-free" : ""}${mode === "held" ? " chibi-held" : ""}${mode === "climb" ? " chibi-climb" : ""}${tumble ? ` chibi-${tumble}` : ""}`}
       aria-hidden={alpha !== true} tabIndex={alpha === true ? 0 : -1}
       style={{ "--cx": `${x}px`, "--walk": `${moveSec}s`, "--fx": `${free.x}px`, "--fy": `${free.y}px`,
         "--grip-x": `${Math.round(grip.x * 100)}%`, "--grip-y": `${Math.round(grip.y * 100)}%` } as React.CSSProperties}
@@ -2840,7 +2918,7 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
       <video className={`chibi-special${flip ? " flip" : ""}`} src={CHIBI_CLIPS.special}
         muted playsInline preload="none" ref={(el) => { videoRefs.current.special = el; }}
         onEnded={() => setClip("relax")} />
-      {angry && (clip === "getupmad" || clip === "interact") && <span className="chibi-anger" aria-hidden>💢</span>}
+      {angry && (tumble === "getup" || clip === "interact") && <span className="chibi-anger" aria-hidden>💢</span>}
       {/* 포즈 전환 클립 — 한 번 재생하고 끝나면 정착 클립으로 */}
       {(Object.keys(CHIBI_FLOW) as (keyof typeof CHIBI_FLOW)[]).map((name) => (
         <video key={name} className={`chibi-${name}${flip ? " flip" : ""}`} src={CHIBI_CLIPS[name]}

@@ -14522,10 +14522,40 @@ main.site-main > .site-header {
 .header-chibi.clip-situp .chibi-situp,
 .header-chibi.clip-liedown .chibi-liedown,
 .header-chibi.clip-wakeup .chibi-wakeup,
-.header-chibi.clip-special .chibi-special,
-.header-chibi.clip-splat .chibi-splat,
-.header-chibi.clip-getupmad .chibi-getupmad {
+.header-chibi.clip-special .chibi-special {
   display: block;
+}
+/* 앞으로 철푸덕 (사용자 확정 2026-08-03) — 직립(grab) 스프라이트를 발끝 축으로 보는 방향으로
+   88° 회전. flip(scaleX)이면 자동으로 반대쪽으로 자빠진다. 넘어진 판자가 좌우로 길게 눕도록
+   그 동안만 클립 영역을 가로 전체로 연다 */
+.header-chibi.chibi-splat video,
+.header-chibi.chibi-getup video {
+  transform-origin: 49% 96%;
+}
+.header-chibi.chibi-splat video {
+  animation: chibi-splat-fall 1s ease-out forwards;
+}
+.header-chibi.chibi-getup video {
+  animation: chibi-getup-rise 0.26s ease-in both;
+}
+.header-chibi.chibi-splat,
+.header-chibi.chibi-getup {
+  clip-path: inset(20% 0 0 0);
+}
+@keyframes chibi-splat-fall {
+  0% { rotate: 0deg; }
+  16% { rotate: 92deg; }
+  26% { rotate: 82deg; }
+  36%, 100% { rotate: 88deg; }
+}
+@keyframes chibi-getup-rise {
+  from { rotate: 88deg; }
+  to { rotate: 0deg; }
+}
+/* 등반 매달림 — 손(위쪽) 축으로 살짝 대롱거린다 */
+.header-chibi.chibi-climb video {
+  animation: chibi-dangle 1.1s ease-in-out infinite alternate;
+  transform-origin: 49% 30%;
 }
 /* 높은 낙하 뒤 짜증 — 머리 옆 💢 (clip-path 안쪽에 들어오는 좌표) */
 .chibi-anger {
