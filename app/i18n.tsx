@@ -136,7 +136,7 @@ const D: Record<string, Pair> = {
   "스카디와 대화": ["Chat with Skadi", "スカジと会話"],
   "스카디에게 말 걸기…": ["Say something to Skadi…", "スカジに話しかける…"],
   "메시지 전송": ["Send message", "メッセージを送信"],
-  "…무슨 이야기를 할까, 당신.": ["…What shall we talk about?", "…何の話をしようか、あなた。"],
+  "…무슨 이야기를 할까, 박사.": ["…What shall we talk about, Doctor?", "…何の話をしようか、ドクター。"],
   "…파도가 조금 시끄럽네. 조금 있다가 다시 말을 걸어줘.": ["…The waves are a little loud. Talk to me again in a moment.", "…波が少し騒がしいね。少ししたら、また話しかけて。"],
   "스카디와 대화하려면 이 기기에서 대사를 직접 만들어 주는 AI 모델(Gemini Nano)이 필요해요. 크롬이 약 2GB를 한 번만 내려받고, 이후 크롬 전체에서 재사용됩니다.": ["Chatting with Skadi needs an on-device AI model (Gemini Nano) that writes her lines right on this machine. Chrome downloads about 2 GB once, then reuses it across all of Chrome.", "スカジとの会話には、この端末上でセリフを生成するAIモデル（Gemini Nano）が必要です。Chromeが約2GBを一度だけダウンロードし、以後はChrome全体で再利用されます。"],
   "대화 내용은 어디로도 전송되지 않고 전부 이 기기 안에서 생성돼요. 내려받는 동안 다른 탭을 쓰셔도 됩니다.": ["Conversations are never sent anywhere — everything is generated on this device. Feel free to browse other tabs while it downloads.", "会話内容はどこにも送信されず、すべてこの端末内で生成されます。ダウンロード中は他のタブを使っていても大丈夫です。"],
