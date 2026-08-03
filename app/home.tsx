@@ -2620,8 +2620,8 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
           tumbleRef.current = "splat";
           setTumble("splat");
           tumbleTimers.current = [
-            window.setTimeout(() => { tumbleRef.current = "getup"; setTumble("getup"); }, 1000),
-            window.setTimeout(() => { clearTumble(); setClip("interact"); }, 1280),
+            window.setTimeout(() => { tumbleRef.current = "getup"; setTumble("getup"); }, 1200),
+            window.setTimeout(() => { clearTumble(); setClip("interact"); }, 1480),
           ];
         } else {
           setClip("relax");
@@ -2919,6 +2919,7 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
         muted playsInline preload="none" ref={(el) => { videoRefs.current.special = el; }}
         onEnded={() => setClip("relax")} />
       {angry && (tumble === "getup" || clip === "interact") && <span className="chibi-anger" aria-hidden>💢</span>}
+      {tumble === "splat" && <span className={`chibi-impact${flip ? " flip" : ""}`} aria-hidden>💫</span>}
       {/* 포즈 전환 클립 — 한 번 재생하고 끝나면 정착 클립으로 */}
       {(Object.keys(CHIBI_FLOW) as (keyof typeof CHIBI_FLOW)[]).map((name) => (
         <video key={name} className={`chibi-${name}${flip ? " flip" : ""}`} src={CHIBI_CLIPS[name]}
