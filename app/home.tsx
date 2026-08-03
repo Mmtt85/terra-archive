@@ -2395,9 +2395,7 @@ const CHIBI_SPECIAL_COOLDOWN = 240_000;
 const CHIBI_SPECIAL_CHANCE = 0.03;
 // 전환 클립 → 끝나면 이어지는 정착 클립 (onEnded에서 전이)
 const CHIBI_FLOW = { sitdown: "sit", situp: "relax", liedown: "sleep", wakeup: "sit" } as const;
-// 잡기 지점 스냅 — 스프라이트가 상자 아래 절반에만 그려져 있어(위는 투명 여백) 잡은 자리를
-// 그대로 쓰면 커서보다 한참 아래에 매달린다. 실측 bbox(Default): 허리 = 상자의 (49%, 52%).
-const CHIBI_GRIP = { x: 0.49, y: 0.52 };
+
 type ChibiClip = keyof typeof CHIBI_CLIPS;
 const CHIBI_WALK_SPEED = 34; // px/s — Move 모션(1.67s 사이클) 보폭에 눈대중으로 맞춘 값
 const CHIBI_GRAVITY = 2600; // px/s² — 낙하 가속도 (뷰포트 절반을 ~0.6초에)
@@ -2434,6 +2432,7 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
   const videoRefs = useRef<Partial<Record<ChibiClip, HTMLVideoElement | null>>>({});
   // 드래그·낙하·자유 배회 상태 — free 좌표는 뷰포트 기준 좌상단(px)
   const [mode, setMode] = useState<ChibiMode>("home");
+  const [grip, setGrip] = useState({ x: 0.49, y: 0.52 }); // 쥔 지점(상자 비율) — 대롱대롱 회전축
   const modeRef = useRef<ChibiMode>("home");
   const [free, setFree] = useState({ x: 0, y: 0 });
   const freeRef = useRef({ x: 0, y: 0 });
@@ -2742,11 +2741,11 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
       if (Math.hypot(event.clientX - grab.px, event.clientY - grab.py) < 7) return;
       grab.dragging = true;
       cancelAnimationFrame(fallRafRef.current);
-      // 잡기 지점을 허리로 스냅 — 상자 위쪽은 투명 여백이라 잡은 자리를 그대로 쓰면
-      // 커서보다 한참 아래에 매달린다 (사용자 제보 2026-08-03)
+      // 클릭한 지점을 그대로 쥔다 (사용자 확정 2026-08-03 — 예전 허리 스냅은 상자의 투명
+      // 여백을 잡던 시절의 해법. 지금은 clip-path 히트박스가 몸에 맞아 필요 없다.)
+      // 대롱대롱 회전축도 쥔 지점으로 — CSS 변수로 전달.
       const el0 = btnRef.current;
-      grab.offX = (el0?.offsetWidth ?? 137) * CHIBI_GRIP.x;
-      grab.offY = (el0?.offsetHeight ?? 77) * CHIBI_GRIP.y;
+      if (el0) setGrip({ x: grab.offX / el0.offsetWidth, y: grab.offY / el0.offsetHeight });
       modeRef.current = "held";
       setMode("held");
       setClip("grab");
@@ -2778,7 +2777,9 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
         const rel = Math.max(-130, Math.min(cx - (hr.left + hr.width / 2), 130));
         xRef.current = rel;
         setX(rel);
-        setMoveSec(0.4); // 슬롯까지 짧게 미끄러져 정착 (지난 산책의 긴 transition 방지)
+        // 즉시 스냅 — free(뷰포트 좌표)와 home(left:50% 기준)의 좌표계가 달라, transition을
+        // 걸면 화면 오른쪽 밖에서 날아드는 것처럼 보인다 (사용자 제보 2026-08-03)
+        setMoveSec(0);
         surfRef.current = null;
         modeRef.current = "home";
         setMode("home");
@@ -2793,7 +2794,8 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
     <button ref={btnRef} type="button"
       className={`header-chibi clip-${clip}${mode !== "home" ? " chibi-free" : ""}${mode === "held" ? " chibi-held" : ""}`}
       aria-hidden={alpha !== true} tabIndex={alpha === true ? 0 : -1}
-      style={{ "--cx": `${x}px`, "--walk": `${moveSec}s`, "--fx": `${free.x}px`, "--fy": `${free.y}px` } as React.CSSProperties}
+      style={{ "--cx": `${x}px`, "--walk": `${moveSec}s`, "--fx": `${free.x}px`, "--fy": `${free.y}px`,
+        "--grip-x": `${Math.round(grip.x * 100)}%`, "--grip-y": `${Math.round(grip.y * 100)}%` } as React.CSSProperties}
       title={t("{name} 치비 쿡 찌르기", { name: star.name })}
       aria-label={t("{name} 치비 쿡 찌르기", { name: star.name })}
       onClick={handleClick}

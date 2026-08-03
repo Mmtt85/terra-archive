@@ -14480,11 +14480,11 @@ main.site-main > .site-header {
 .header-chibi.chibi-held {
   cursor: grabbing;
 }
-/* 잡힌 동안 — 커서가 쥔 허리(상자 49%·52%, Default bbox 실측)를 축으로 앞으로 기운 채
-   대롱대롱. rotate 속성이라 flip(scaleX)과 겹쳐도 안전 */
+/* 잡힌 동안 — 커서가 실제로 쥔 지점(--grip-x/--grip-y, 잡는 순간 계산)을 축으로 앞으로
+   기운 채 대롱대롱. rotate 속성이라 flip(scaleX)과 겹쳐도 안전 */
 .header-chibi.chibi-held video {
   animation: chibi-dangle 1.3s ease-in-out infinite alternate;
-  transform-origin: 49% 52%;
+  transform-origin: var(--grip-x, 49%) var(--grip-y, 52%);
 }
 @keyframes chibi-dangle {
   from { rotate: 4deg; }
@@ -14493,7 +14493,7 @@ main.site-main > .site-header {
 /* 낙하 중 — 살짝 기운 채 떨어진다 (착지하면 clip이 바뀌며 원복) */
 .header-chibi.chibi-free:not(.chibi-held).clip-grab video {
   rotate: 6deg;
-  transform-origin: 49% 52%;
+  transform-origin: var(--grip-x, 49%) var(--grip-y, 52%);
 }
 @media (prefers-reduced-motion: reduce) {
   .header-chibi.chibi-held video { animation: none; }
