@@ -2386,7 +2386,13 @@ const CHIBI_CLIPS = {
   situp: "/chibi/skadi2-situp.webm",
   liedown: "/chibi/skadi2-liedown.webm",
   wakeup: "/chibi/skadi2-wakeup.webm",
+  special: "/chibi/skadi2-special.webm",
 } as const;
+// 레어 이벤트 — 命途迭代/II 스킨의 기지 Special(10.7s, 붉은 드레스로 갈아입고 카드 점술 +
+// 미니 치비 관객). 쿨다운 지나고 서 있는 틱의 3%로 발동, 끝나면 기본 복장으로 원복
+// (사용자 확정 2026-08-03: "가끔 옷 갈아입고 점을 봐준다" 콘셉트).
+const CHIBI_SPECIAL_COOLDOWN = 240_000;
+const CHIBI_SPECIAL_CHANCE = 0.03;
 // 전환 클립 → 끝나면 이어지는 정착 클립 (onEnded에서 전이)
 const CHIBI_FLOW = { sitdown: "sit", situp: "relax", liedown: "sleep", wakeup: "sit" } as const;
 // 잡기 지점 스냅 — 스프라이트가 상자 아래 절반에만 그려져 있어(위는 투명 여백) 잡은 자리를
@@ -2438,10 +2444,13 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
   const grabRef = useRef<{ px: number; py: number; offX: number; offY: number; dragging: boolean } | null>(null);
   const suppressClickRef = useRef(false); // 드래그 후 이어지는 click을 무시
   const fallRafRef = useRef(0);
+  const lastSpecialRef = useRef(0);
 
   const star = useMemo(() => operators.find((candidate) => candidate.id === CHIBI_STAR) ?? null, [operators]);
 
   useEffect(() => { modeRef.current = mode; }, [mode]);
+  // 마운트 직후 바로 레어 연출이 나오지 않게 — 지금부터 쿨다운 시작 (렌더 중 Date.now() 금지)
+  useEffect(() => { lastSpecialRef.current = Date.now(); }, []);
   useEffect(() => () => cancelAnimationFrame(fallRafRef.current), []);
   const setFreePos = (nx: number, ny: number) => {
     freeRef.current = { x: nx, y: ny };
@@ -2451,6 +2460,20 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
   // 착지면 찾기 — 발 중심 x에서 6px 간격으로 아래를 훑어, 윗변이 발보다 아래인 요소 중
   // 처음 만나는 것의 top을 돌려준다. 못 찾으면 뷰포트 바닥. (pointer-events:none인
   // 고정 창 통과 백드롭 등은 elementsFromPoint가 알아서 건너뛴다.)
+  // 실제로 뭔가를 "그리는" 요소만 착지 후보 — 투명 레이아웃 래퍼의 윗변에 서면 허공에 뜬
+  // 것처럼 보인다 (사용자 제보 2026-08-03). 배경·테두리·그림자·이미지류·직접 텍스트 보유만 통과.
+  const paintsSomething = (el: Element) => {
+    if (["IMG", "VIDEO", "CANVAS", "SVG", "BUTTON", "INPUT", "SELECT", "TEXTAREA"].includes(el.tagName)) return true;
+    const cs = getComputedStyle(el);
+    if (parseFloat(cs.opacity) < 0.1) return false;
+    if (cs.backgroundImage !== "none") return true;
+    const bg = cs.backgroundColor;
+    if (bg && bg !== "transparent" && !/rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*0\s*\)/.test(bg)) return true;
+    if (parseFloat(cs.borderTopWidth) > 0.5) return true;
+    if (cs.boxShadow && cs.boxShadow !== "none") return true;
+    for (const n of el.childNodes) if (n.nodeType === 3 && n.textContent && n.textContent.trim()) return true;
+    return false;
+  };
   const findLanding = (cx: number, footY: number) => {
     const self = btnRef.current;
     const floorY = window.innerHeight - 2;
@@ -2460,7 +2483,7 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
         if (self && (el === self || self.contains(el))) continue;
         const r = el.getBoundingClientRect();
         if (r.width < 40 || r.height < 10) continue;
-        if (r.top >= footY && r.top <= sy && sy - r.top <= 6) {
+        if (r.top >= footY && r.top <= sy && sy - r.top <= 6 && paintsSomething(el)) {
           return { top: r.top, left: Math.max(0, r.left), right: Math.min(window.innerWidth, r.right), el };
         }
       }
@@ -2587,7 +2610,7 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
         timer = window.setTimeout(tick, 4000);
         return;
       }
-      if (current === "interact" || current in CHIBI_FLOW) { timer = window.setTimeout(tick, 1200); return; } // 반응·포즈 전환 중
+      if (current === "interact" || current === "special" || current in CHIBI_FLOW) { timer = window.setTimeout(tick, 1200); return; } // 반응·연출·포즈 전환 중
       if (current === "move") { timer = window.setTimeout(tick, 1200); return; } // 걷는 중 방향 홱 틀기 방지
       if (current === "sleep") {
         setClip("wakeup"); // 기상 — 서서히 일어나 앉았다가 다음 틱에서 행동 결정
@@ -2606,6 +2629,13 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
         if (sitTicks >= 2 && Math.random() < 0.6) setClip("liedown"); // 서서히 눕는다
         else if (Math.random() < 0.4) setClip("situp"); // 서서히 일어선다
         timer = window.setTimeout(tick, 3500 + Math.random() * 3500);
+        return;
+      }
+      // 레어 이벤트 — 드레스로 갈아입고 카드 점술 (쿨다운 + 낮은 확률, 서 있을 때만)
+      if (Date.now() - lastSpecialRef.current > CHIBI_SPECIAL_COOLDOWN && Math.random() < CHIBI_SPECIAL_CHANCE) {
+        lastSpecialRef.current = Date.now();
+        setClip("special");
+        timer = window.setTimeout(tick, 2000);
         return;
       }
       const roll = Math.random();
@@ -2650,7 +2680,7 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
     };
     timer = window.setTimeout(tick, 2000);
     return () => window.clearTimeout(timer);
-  }, [alpha]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [alpha]);
 
   if (!isClient || !star || alpha === false) return null;
   const probe = (video: HTMLVideoElement) => {
@@ -2694,7 +2724,7 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
   const handleClick = () => {
     if (suppressClickRef.current) { suppressClickRef.current = false; return; } // 방금 드래그였다
     const current = clipRef.current;
-    if (current !== "interact" && current !== "move" && !(current in CHIBI_FLOW)) setClip("interact");
+    if (current !== "interact" && current !== "move" && current !== "special" && !(current in CHIBI_FLOW)) setClip("interact");
     if (chatStatus !== "none") setChatOpen(true);
   };
   // 드래그로 잡아 옮기기 — 7px을 넘게 끌면 드래그로 판정(클릭과 구분), 잡힌 동안 Sit 포즈,
@@ -2736,6 +2766,26 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
     if (!grab?.dragging) return; // 단순 클릭 — 이어지는 click 이벤트가 처리
     suppressClickRef.current = true;
+    // 헤더 위에 놓으면 홈 슬롯으로 복귀 — 한 번 떨어지면 헤더로 못 돌아가던 문제
+    // (사용자 제보 2026-08-03). 몸 중심이 헤더 영역 안이면 낙하 대신 제자리 걸음.
+    const header = document.querySelector(".site-header");
+    const el0 = btnRef.current;
+    if (header && el0) {
+      const hr = header.getBoundingClientRect();
+      const cx = freeRef.current.x + el0.offsetWidth / 2;
+      const cy = freeRef.current.y + el0.offsetHeight * 0.6;
+      if (cy <= hr.bottom + 6 && cx >= hr.left && cx <= hr.right) {
+        const rel = Math.max(-130, Math.min(cx - (hr.left + hr.width / 2), 130));
+        xRef.current = rel;
+        setX(rel);
+        setMoveSec(0.4); // 슬롯까지 짧게 미끄러져 정착 (지난 산책의 긴 transition 방지)
+        surfRef.current = null;
+        modeRef.current = "home";
+        setMode("home");
+        setClip("relax");
+        return;
+      }
+    }
     startFall();
   };
   return (
@@ -2774,6 +2824,9 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
         loop muted playsInline preload="metadata" ref={(el) => { videoRefs.current.sit = el; }} />
       <video className={`chibi-grab${flip ? " flip" : ""}`} src={CHIBI_CLIPS.grab}
         loop muted playsInline preload="metadata" ref={(el) => { videoRefs.current.grab = el; }} />
+      <video className={`chibi-special${flip ? " flip" : ""}`} src={CHIBI_CLIPS.special}
+        muted playsInline preload="none" ref={(el) => { videoRefs.current.special = el; }}
+        onEnded={() => setClip("relax")} />
       {/* 포즈 전환 클립 — 한 번 재생하고 끝나면 정착 클립으로 */}
       {(Object.keys(CHIBI_FLOW) as (keyof typeof CHIBI_FLOW)[]).map((name) => (
         <video key={name} className={`chibi-${name}${flip ? " flip" : ""}`} src={CHIBI_CLIPS[name]}

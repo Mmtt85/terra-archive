@@ -14521,8 +14521,20 @@ main.site-main > .site-header {
 .header-chibi.clip-sitdown .chibi-sitdown,
 .header-chibi.clip-situp .chibi-situp,
 .header-chibi.clip-liedown .chibi-liedown,
-.header-chibi.clip-wakeup .chibi-wakeup {
+.header-chibi.clip-wakeup .chibi-wakeup,
+.header-chibi.clip-special .chibi-special {
   display: block;
+}
+/* 레어 이벤트(카드 점술) — 복장이 바뀌므로 짧은 페이드로 등장을 부드럽게.
+   미니 치비 관객이 오른쪽 끝까지 나오므로 히트박스도 그 동안만 넓힌다 */
+.header-chibi.clip-special .chibi-special {
+  animation: chibi-fadein 0.35s ease;
+}
+.header-chibi.clip-special {
+  clip-path: inset(23% 0 0 23%);
+}
+@keyframes chibi-fadein {
+  from { opacity: 0; }
 }
 @media (max-width: 1100px) {
   .header-chibi {
