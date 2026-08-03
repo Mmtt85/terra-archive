@@ -132,6 +132,7 @@ const D: Record<string, Pair> = {
   "전체 일러스트가 아직 없습니다.": ["The full illustration is not available yet.", "全身イラストはまだありません。"],
   "등록된 스킨이 없습니다.": ["No outfits on record.", "登録された衣装がありません。"],
   "{name} 치비 쿡 찌르기": ["Poke {name}'s chibi", "{name}のちびをつつく"],
+  "스카디": ["Skadi", "スカジ"],
   "스카디와 대화": ["Chat with Skadi", "スカジと会話"],
   "스카디에게 말 걸기…": ["Say something to Skadi…", "スカジに話しかける…"],
   "전송": ["Send", "送信"],

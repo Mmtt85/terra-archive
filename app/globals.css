@@ -14517,18 +14517,42 @@ main.site-main > .site-header {
 }
 .chibi-chat-row {
   display: flex;
-  align-items: flex-end;
-  gap: 7px;
+  align-items: flex-start;
+  gap: 8px;
 }
 .chibi-chat-row.user {
   justify-content: flex-end;
 }
+/* 연속 발화 — 아바타·이름표 없이 첫 줄 아바타 폭(30)+간격(8)만큼 들여쓴다 */
+.chibi-chat-row.assistant.cont {
+  padding-left: 38px;
+}
+/* 화자가 바뀌는 경계는 간격을 조금 더 벌린다 (그룹 느낌) */
+.chibi-chat-row.assistant:not(.cont):not(:first-child),
+.chibi-chat-row.assistant + .chibi-chat-row.user {
+  margin-top: 7px;
+}
 .chibi-chat-avatar {
-  width: 26px;
-  height: 26px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   border: 1px solid var(--line);
+  background: var(--bg-panel);
   flex: none;
+}
+.chibi-chat-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  min-width: 0;
+  max-width: 86%;
+}
+.chibi-chat-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  padding-left: 2px;
 }
 .chibi-chat-dots {
   display: inline-flex;
@@ -14550,107 +14574,108 @@ main.site-main > .site-header {
 @media (prefers-reduced-motion: reduce) {
   .chibi-chat-dots i { animation: none; }
 }
-.chibi-chat-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 12px 8px;
-  border-bottom: 1px solid var(--line);
-}
-.chibi-chat-head .new-badge {
-  position: static;
-  margin-left: 2px;
-}
-.chibi-chat-close {
-  margin-left: auto;
-  border: 0;
-  background: none;
-  font-size: 18px;
-  line-height: 1;
-  cursor: pointer;
-  color: var(--muted);
-}
+/* 🗑 대화 지우기 — 창 크롬 바(제목·📌 사이 아님, 제목 뒤)에 들어간다 */
 .chibi-chat-clear {
-  margin-left: auto;
   border: 0;
   background: none;
   font-size: 13px;
   line-height: 1;
+  padding: 4px 6px;
+  border-radius: 8px;
   cursor: pointer;
   color: var(--muted);
 }
-.chibi-chat-clear + .chibi-chat-close {
-  margin-left: 0; /* 🗑 버튼이 있으면 그쪽이 오른쪽 정렬을 담당 */
+.chibi-chat-clear:hover {
+  background: var(--bg-soft);
 }
+/* 로그가 창 높이를 다 차지한다 — 240px 고정이던 시절엔 창(480px) 아래가 빈 바닥으로
+   늘어졌다 (사용자 제보 2026-08-03). flex:1이라 창을 리사이즈하면 로그가 함께 자란다. */
 .chibi-chat-log {
-  height: 240px;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
-  padding: 10px 12px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 5px;
+  background: color-mix(in srgb, #4a7f8c 5%, var(--bg-faint));
 }
 .chibi-chat-msg {
-  max-width: 86%;
-  padding: 7px 11px;
-  border-radius: 12px;
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 15px;
   font-size: 13px;
   line-height: 1.55;
   white-space: pre-wrap;
   word-break: break-word;
 }
 .chibi-chat-msg.assistant {
-  align-self: flex-start;
-  background: var(--bg-soft);
-  border-bottom-left-radius: 4px;
+  background: var(--bg-panel);
+  border: 1px solid var(--line);
+  border-top-left-radius: 5px; /* 이름표 밑에 붙는 꼬리 느낌 */
 }
 .chibi-chat-msg.user {
-  align-self: flex-end;
-  background: var(--bg-soft2);
-  border-bottom-right-radius: 4px;
+  max-width: 86%;
+  background: var(--ink);
+  color: var(--bg-panel);
+  border-bottom-right-radius: 5px;
 }
 .chibi-chat-form {
   display: flex;
-  gap: 6px;
-  padding: 8px 10px;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 10px;
   border-top: 1px solid var(--line);
 }
 .chibi-chat-form input {
   flex: 1;
+  min-width: 0;
   font: inherit;
   font-size: 13px;
-  padding: 7px 10px;
+  padding: 8px 14px;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 999px;
   background: var(--bg-faint);
   color: inherit;
 }
+.chibi-chat-form input:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--ink) 40%, var(--line));
+}
 .chibi-chat-form button {
-  font: inherit;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--bg-panel);
   font-size: 13px;
-  padding: 7px 12px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: var(--bg-soft);
   cursor: pointer;
 }
 .chibi-chat-form button:disabled {
-  opacity: 0.5;
+  opacity: 0.35;
   cursor: default;
 }
 .chibi-chat-note {
-  padding: 0 12px 9px;
+  padding: 6px 14px 8px;
   color: var(--muted);
-  font-size: 11px;
-  line-height: 1.5;
+  font-size: 10.5px;
+  line-height: 1.45;
+  text-align: center;
 }
 
 /* 치비 대화 — 설치 안내·다운로드 진행 단계 (2026-08-03) */
 .chibi-chat-offer {
-  padding: 12px;
+  flex: 1;
+  padding: 14px 16px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  justify-content: center; /* 창 높이가 남아도 빈 바닥 대신 세로 중앙 배치 */
+  gap: 9px;
   font-size: 13px;
   line-height: 1.6;
 }

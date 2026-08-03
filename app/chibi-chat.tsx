@@ -330,17 +330,24 @@ export function ChibiChatPanel({ status, onReady, onAction, onClose }: { status:
     }
   };
 
-  const bubble = (message: Message, index: number, typing: boolean) => (
-    <div key={index} className={`chibi-chat-row ${message.role}`}>
-      {message.role === "assistant" && (
-        <img className="chibi-chat-avatar" src={asset("/avatars/char_1012_skadi2.webp")} alt="" width={180} height={180} />
-      )}
-      <p className={`chibi-chat-msg ${message.role}${typing ? " typing" : ""}`}
-        aria-label={typing ? t("스카디가 입력 중…") : undefined}>
-        {typing ? <span className="chibi-chat-dots" aria-hidden><i /><i /><i /></span> : message.text}
-      </p>
-    </div>
-  );
+  // 말풍선 — 메신저 문법: 스카디 연속 발화는 첫 줄에만 아바타·이름표를 달고 나머지는 들여쓴다
+  const bubble = (message: Message, index: number, typing: boolean, first: boolean) =>
+    message.role === "user" ? (
+      <div key={index} className="chibi-chat-row user">
+        <p className="chibi-chat-msg user">{message.text}</p>
+      </div>
+    ) : (
+      <div key={index} className={`chibi-chat-row assistant${first ? "" : " cont"}`}>
+        {first && <img className="chibi-chat-avatar" src={asset("/avatars/char_1012_skadi2.webp")} alt="" width={180} height={180} />}
+        <div className="chibi-chat-stack">
+          {first && <span className="chibi-chat-name">{t("스카디")}</span>}
+          <p className={`chibi-chat-msg assistant${typing ? " typing" : ""}`}
+            aria-label={typing ? t("스카디가 입력 중…") : undefined}>
+            {typing ? <span className="chibi-chat-dots" aria-hidden><i /><i /><i /></span> : message.text}
+          </p>
+        </div>
+      </div>
+    );
   return (
     <ModalWindow permanent label={t("스카디와 대화")} className="chibi-chat" onClose={onClose}
       defaultPos={{ x: Math.max(8, window.innerWidth / 2 - 180), y: 84 }} initialSize={{ w: 360, h: 480 }}
@@ -373,14 +380,16 @@ export function ChibiChatPanel({ status, onReady, onAction, onClose }: { status:
       {phase === "chat" && (
         <>
           <div className="chibi-chat-log" ref={logRef}>
-            {messages.length === 0 && bubble({ role: "assistant", text: t("…무슨 이야기를 할까, 당신.") }, -1, false)}
+            {messages.length === 0 && bubble({ role: "assistant", text: t("…무슨 이야기를 할까, 당신.") }, -1, false, true)}
             {messages.map((message, index) =>
-              bubble(message, index, message.role === "assistant" && !message.text && busy && index === messages.length - 1))}
+              bubble(message, index,
+                message.role === "assistant" && !message.text && busy && index === messages.length - 1,
+                messages[index - 1]?.role !== "assistant"))}
           </div>
           <form className="chibi-chat-form" onSubmit={(event) => { event.preventDefault(); void send(); }}>
             <input ref={inputRef} value={input} maxLength={300} placeholder={t("스카디에게 말 걸기…")}
               onChange={(event) => setInput(event.target.value)} />
-            <button type="submit" disabled={busy || !input.trim()}>{busy ? "…" : t("전송")}</button>
+            <button type="submit" disabled={busy || !input.trim()} aria-label={t("전송")} title={t("전송")}>{busy ? "…" : "➤"}</button>
           </form>
         </>
       )}
