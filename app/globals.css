@@ -14453,9 +14453,39 @@ main.site-main > .site-header {
   padding: 0;
   background: none;
   cursor: pointer;
+  touch-action: none; /* 드래그로 잡기 — 터치 스크롤에 뺏기지 않게 */
   z-index: 0; /* 검색 결과·메뉴 드롭다운 아래 */
   transform: translateX(calc(-50% + var(--cx, 0px)));
   transition: transform var(--walk, 1s) linear;
+}
+/* 드래그로 헤더를 떠난 뒤 — 뷰포트 고정 좌표(--fx/--fy)로 산다. 이동(clip-move)일 때만
+   transform이 전환돼 걷고, 잡힘·낙하는 프레임 단위 직접 갱신이라 전환 없음 */
+.header-chibi.chibi-free {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: auto;
+  z-index: 999; /* 창(z 200대)·백드롭 위 — 데스크탑 펫은 어디서나 보인다 */
+  transform: translate(var(--fx, 0px), var(--fy, 0px));
+  transition: none;
+}
+.header-chibi.chibi-free.clip-move {
+  transition: transform var(--walk, 1s) linear;
+}
+.header-chibi.chibi-held {
+  cursor: grabbing;
+}
+/* 잡힌 동안 대롱대롱 — rotate 속성이라 flip(scaleX)과 겹쳐도 안전 */
+.header-chibi.chibi-held video {
+  animation: chibi-dangle 1.4s ease-in-out infinite alternate;
+  transform-origin: 50% 15%;
+}
+@keyframes chibi-dangle {
+  from { rotate: -5deg; }
+  to { rotate: 5deg; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .header-chibi.chibi-held video { animation: none; }
 }
 .header-chibi video {
   display: block;
@@ -14467,14 +14497,15 @@ main.site-main > .site-header {
 .header-chibi video.flip {
   transform: scaleX(-1);
 }
-/* 클립 전환 — clip-* 클래스와 일치하는 비디오만 표시 (relax/move/sleep/interact) */
+/* 클립 전환 — clip-* 클래스와 일치하는 비디오만 표시 (relax/move/sleep/interact/sit) */
 .header-chibi video {
   display: none;
 }
 .header-chibi.clip-relax .chibi-relax,
 .header-chibi.clip-move .chibi-move,
 .header-chibi.clip-sleep .chibi-sleep,
-.header-chibi.clip-interact .chibi-interact {
+.header-chibi.clip-interact .chibi-interact,
+.header-chibi.clip-sit .chibi-sit {
   display: block;
 }
 @media (max-width: 1100px) {

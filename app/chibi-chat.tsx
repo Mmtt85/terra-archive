@@ -389,7 +389,7 @@ export function ChibiChatPanel({ status, onReady, onAction, onClose }: { status:
           <form className="chibi-chat-form" onSubmit={(event) => { event.preventDefault(); void send(); }}>
             <input ref={inputRef} value={input} maxLength={300} placeholder={t("스카디에게 말 걸기…")}
               onChange={(event) => setInput(event.target.value)} />
-            <button type="submit" disabled={busy || !input.trim()} aria-label={t("전송")} title={t("전송")}>{busy ? "…" : "➤"}</button>
+            <button type="submit" disabled={busy || !input.trim()} aria-label={t("메시지 전송")} title={t("메시지 전송")}>{busy ? "…" : "➤"}</button>
           </form>
         </>
       )}

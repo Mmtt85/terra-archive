@@ -207,7 +207,8 @@ export function ModalWindow({ label, className, style, onClose, permanent, defau
           {!permanent && (
             <button type="button" className={`mw-pin${pinned ? " on" : ""}`} onClick={togglePin}
               title={pinned ? t("고정 해제 — 바깥 클릭·Esc로 닫히게") : t("고정 — 바깥을 클릭해도 닫히지 않게")}
-              aria-pressed={pinned} aria-label={pinned ? t("고정 해제") : t("고정")}>📌</button>
+              aria-pressed={pinned}
+              aria-label={pinned ? t("고정 해제 — 바깥 클릭·Esc로 닫히게") : t("고정 — 바깥을 클릭해도 닫히지 않게")}>📌</button>
           )}
           <button type="button" className="modal-close mw-close" onClick={onClose} aria-label={t("닫기")}>×</button>
         </div>

@@ -261,10 +261,14 @@ python3 scripts/build-skill-levels.py .gamedata   # → public/skills/{ko,en,ja}
 
 ## 7.7 헤더 마스코트 치비 (베타, 2026-08-03~)
 
-**표시 클립**: `public/chibi/skadi2-{relax,move,sleep,interact}.webm` (VP9+알파 · 1024×576 · 24fps,
-합계 ~0.9MB). 게임 원본 Spine 데이터(3.8.99)의 모션을 **직접 렌더**한 것 —
+**표시 클립**: `public/chibi/skadi2-{relax,move,sleep,interact,sit}.webm` (VP9+알파 · 1024×576 ·
+24fps, 합계 ~1.0MB). 게임 원본 Spine 데이터(3.8.99)의 모션을 **직접 렌더**한 것 —
 공식 렌더 레포(ArknightsSpines)는 Relax만 구워 두어서, 걷기·추가 포즈는 이 경로로만 나온다.
-생활 루프: 틱(7~13초)마다 55% 산책 / 25% 드러누워 낮잠(Sleep) / 20% 대기.
+생활 루프: 틱(3.5~7초)마다 70% 산책, 두 틱 연속 대기면 절반 확률로 낮잠(Sleep).
+**드래그 이사**(2026-08-03): 7px 넘게 끌면 잡힘(Sit 포즈+대롱대롱 rotate) → 놓으면 등가속
+낙하 → 발밑 x에서 `elementsFromPoint`로 아래를 훑어 **처음 만나는 요소의 윗변에 착지**,
+그 표면 폭 안에서 배회. 스크롤·리사이즈·창 닫힘으로 지면이 사라지면(발밑 ±10px 재검사)
+다시 떨어진다. 좌표는 home=헤더 슬롯(--cx) / free=뷰포트 고정(--fx/--fy) 이원화.
 클릭 = 반응 모션(Interact) + **크롬 내장 Gemini Nano(Prompt API, Chrome 148+ 데스크탑)
 상태별 대화 패널**(app/chibi-chat.tsx — 페르소나(반말·"당신" 호칭)·few-shot·스트리밍, 기기 내
 생성이라 서버·비용 없음): 설치됨=바로 대화 · 다운로드 가능/진행 중=크기(약 2GB)·용도 안내 후

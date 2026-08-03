@@ -2371,15 +2371,22 @@ function SkinSection({ operator }: { operator: Operator }) {
 // - 알파 프로브: VP9 알파를 실제로 합성하는 브라우저인지 캔버스 픽셀로 1회 검사. 못 그리는
 //   브라우저(사파리 계열)는 검정 상자가 되므로 아예 표시하지 않는다 (같은 출처라 오염 없음).
 const CHIBI_STAR = "char_1012_skadi2"; // 이격 스카디
-// Pages 직접 서빙 (R2 아님 — 합계 ~0.9MB). relax=대기 · move=걷기 · sleep=드러누워 잠 · interact=터치 반응
+// Pages 직접 서빙 (R2 아님 — 합계 ~1MB). relax=대기 · move=걷기 · sleep=드러누워 잠 ·
+// interact=터치 반응 · sit=앉기(드래그로 잡혔을 때·낙하 중 — 다리를 모으고 대롱대롱)
 const CHIBI_CLIPS = {
   relax: "/chibi/skadi2-relax.webm",
   move: "/chibi/skadi2-move.webm",
   sleep: "/chibi/skadi2-sleep.webm",
   interact: "/chibi/skadi2-interact.webm",
+  sit: "/chibi/skadi2-sit.webm",
 } as const;
 type ChibiClip = keyof typeof CHIBI_CLIPS;
 const CHIBI_WALK_SPEED = 34; // px/s — Move 모션(1.67s 사이클) 보폭에 눈대중으로 맞춘 값
+const CHIBI_GRAVITY = 2600; // px/s² — 낙하 가속도 (뷰포트 절반을 ~0.6초에)
+// 드래그·낙하·자유 배회 (사용자 요청 2026-08-03): home=헤더 슬롯 · held=잡힘(Sit) ·
+// fall=낙하 중 · free=떨어진 표면 위에서 배회. 착지면은 "발밑 x에서 아래로 훑어
+// 처음 만나는 요소의 윗변" — 요소가 사라지거나 스크롤로 움직이면 다시 떨어진다.
+type ChibiMode = "home" | "held" | "fall" | "free";
 const subscribeNever = () => () => {};
 
 // 대화 액션 → 탭 라벨 (i18n 키 — 헤더 내비와 동일 사전)
@@ -2407,8 +2414,111 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
   const xRef = useRef(0);
   const clipRef = useRef<ChibiClip>("relax");
   const videoRefs = useRef<Partial<Record<ChibiClip, HTMLVideoElement | null>>>({});
+  // 드래그·낙하·자유 배회 상태 — free 좌표는 뷰포트 기준 좌상단(px)
+  const [mode, setMode] = useState<ChibiMode>("home");
+  const modeRef = useRef<ChibiMode>("home");
+  const [free, setFree] = useState({ x: 0, y: 0 });
+  const freeRef = useRef({ x: 0, y: 0 });
+  const surfRef = useRef<{ top: number; left: number; right: number } | null>(null); // 착지면
+  const btnRef = useRef<HTMLButtonElement | null>(null);
+  const grabRef = useRef<{ px: number; py: number; offX: number; offY: number; dragging: boolean } | null>(null);
+  const suppressClickRef = useRef(false); // 드래그 후 이어지는 click을 무시
+  const fallRafRef = useRef(0);
 
   const star = useMemo(() => operators.find((candidate) => candidate.id === CHIBI_STAR) ?? null, [operators]);
+
+  useEffect(() => { modeRef.current = mode; }, [mode]);
+  useEffect(() => () => cancelAnimationFrame(fallRafRef.current), []);
+  const setFreePos = (nx: number, ny: number) => {
+    freeRef.current = { x: nx, y: ny };
+    setFree({ x: nx, y: ny });
+  };
+
+  // 착지면 찾기 — 발 중심 x에서 6px 간격으로 아래를 훑어, 윗변이 발보다 아래인 요소 중
+  // 처음 만나는 것의 top을 돌려준다. 못 찾으면 뷰포트 바닥. (pointer-events:none인
+  // 고정 창 통과 백드롭 등은 elementsFromPoint가 알아서 건너뛴다.)
+  const findLanding = (cx: number, footY: number) => {
+    const self = btnRef.current;
+    const floorY = window.innerHeight - 2;
+    const px = Math.max(2, Math.min(cx, window.innerWidth - 2));
+    for (let sy = Math.max(footY + 2, 2); sy < floorY; sy += 6) {
+      for (const el of document.elementsFromPoint(px, sy)) {
+        if (self && (el === self || self.contains(el))) continue;
+        const r = el.getBoundingClientRect();
+        if (r.width < 40 || r.height < 10) continue;
+        if (r.top >= footY && r.top <= sy && sy - r.top <= 6) {
+          return { top: r.top, left: Math.max(0, r.left), right: Math.min(window.innerWidth, r.right) };
+        }
+      }
+    }
+    return { top: floorY, left: 0, right: window.innerWidth };
+  };
+
+  // 서 있던 지면이 아직 발밑에 있는가 — 스크롤·창 닫힘으로 사라졌으면 다시 떨어진다
+  const groundedNow = () => {
+    const el0 = btnRef.current;
+    if (!el0) return true;
+    const { x: fx, y: fy } = freeRef.current;
+    const footY = fy + el0.offsetHeight;
+    if (footY >= window.innerHeight - 12) return true; // 뷰포트 바닥
+    const px = Math.max(2, Math.min(fx + el0.offsetWidth / 2, window.innerWidth - 2));
+    for (const el of document.elementsFromPoint(px, Math.min(footY + 5, window.innerHeight - 1))) {
+      if (el === el0 || el0.contains(el)) continue;
+      const r = el.getBoundingClientRect();
+      if (r.width >= 40 && Math.abs(r.top - footY) <= 10) return true;
+    }
+    return false;
+  };
+
+  // 낙하 — 등가속 rAF. 착지 지점은 놓는 순간 1회 계산 (떨어지는 동안 화면이 안 바뀐다는 전제)
+  const startFall = () => {
+    const el = btnRef.current;
+    if (!el) return;
+    cancelAnimationFrame(fallRafRef.current);
+    const h = el.offsetHeight;
+    const from = freeRef.current;
+    const surf = findLanding(from.x + el.offsetWidth / 2, from.y + h);
+    surfRef.current = surf;
+    setMode("fall");
+    setClip("sit");
+    const dest = surf.top - h;
+    const y0 = from.y;
+    const t0 = performance.now();
+    const step = (now: number) => {
+      const t = (now - t0) / 1000;
+      const ny = y0 + 0.5 * CHIBI_GRAVITY * t * t;
+      if (ny >= dest) {
+        setFreePos(freeRef.current.x, dest);
+        setMode("free");
+        setClip("relax");
+        return;
+      }
+      setFreePos(freeRef.current.x, ny);
+      fallRafRef.current = requestAnimationFrame(step);
+    };
+    fallRafRef.current = requestAnimationFrame(step);
+  };
+
+  // 스크롤·리사이즈로 지면이 움직이면 재낙하 — 함수는 ref로 넘겨 stale 캡처를 피한다
+  const fallCheckRef = useRef<() => void>(() => {});
+  useEffect(() => {
+    fallCheckRef.current = () => { if (modeRef.current === "free" && !groundedNow()) startFall(); };
+  });
+  useEffect(() => {
+    let debounce = 0;
+    const onMove = () => {
+      if (modeRef.current !== "free") return;
+      window.clearTimeout(debounce);
+      debounce = window.setTimeout(() => fallCheckRef.current(), 250);
+    };
+    window.addEventListener("scroll", onMove, true);
+    window.addEventListener("resize", onMove);
+    return () => {
+      window.removeEventListener("scroll", onMove, true);
+      window.removeEventListener("resize", onMove);
+      window.clearTimeout(debounce);
+    };
+  }, []);
 
   useEffect(() => { chatOpenRef.current = chatOpen; }, [chatOpen]);
   useEffect(() => {
@@ -2439,6 +2549,8 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
     let idleStreak = 0; // 산책 없이 보낸 연속 틱 수 — 졸음 판정용
     const tick = () => {
       const current = clipRef.current;
+      const currentMode = modeRef.current;
+      if (currentMode === "held" || currentMode === "fall") { timer = window.setTimeout(tick, 1500); return; }
       if (chatOpenRef.current) {
         // 대화 중엔 얌전히 — 자던 중이면 깨어난 상태로 서 있는다
         if (current === "sleep") setClip("relax");
@@ -2452,15 +2564,36 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
         timer = window.setTimeout(tick, 2500 + Math.random() * 2500);
         return;
       }
+      if (currentMode === "free" && !groundedNow()) { startFall(); timer = window.setTimeout(tick, 1500); return; }
       if (Math.random() < 0.7) {
-        const next = Math.round(Math.random() * 260 - 130); // 헤더 중앙 ±130px
-        if (Math.abs(next - xRef.current) > 8) {
-          setFlip(next < xRef.current); // 원본 기본 방향이 오른쪽(머리 크롭 실측) — 왼쪽 이동 시 반전
-          setMoveSec(Math.abs(next - xRef.current) / CHIBI_WALK_SPEED);
-          xRef.current = next;
-          setX(next);
-          setClip("move");
-          idleStreak = 0;
+        if (currentMode === "free") {
+          // 착지면 위 산책 — 발 중심이 표면을 벗어나지 않는 범위, 한 번에 ±130px
+          const el = btnRef.current;
+          const surf = surfRef.current;
+          if (el && surf) {
+            const w = el.offsetWidth;
+            const minX = Math.max(4, surf.left - w / 2 + 10);
+            const maxX = Math.min(window.innerWidth - w - 4, surf.right - w / 2 - 10);
+            const cur = freeRef.current.x;
+            const next = Math.max(minX, Math.min(cur + Math.round(Math.random() * 260 - 130), maxX));
+            if (maxX > minX && Math.abs(next - cur) > 8) {
+              setFlip(next < cur);
+              setMoveSec(Math.abs(next - cur) / CHIBI_WALK_SPEED);
+              setFreePos(next, freeRef.current.y);
+              setClip("move");
+              idleStreak = 0;
+            }
+          }
+        } else {
+          const next = Math.round(Math.random() * 260 - 130); // 헤더 중앙 ±130px
+          if (Math.abs(next - xRef.current) > 8) {
+            setFlip(next < xRef.current); // 원본 기본 방향이 오른쪽(머리 크롭 실측) — 왼쪽 이동 시 반전
+            setMoveSec(Math.abs(next - xRef.current) / CHIBI_WALK_SPEED);
+            xRef.current = next;
+            setX(next);
+            setClip("move");
+            idleStreak = 0;
+          }
         }
       } else if (++idleStreak >= 2 && Math.random() < 0.5) {
         setClip("sleep"); // 다음 틱까지 낮잠
@@ -2470,7 +2603,7 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
     };
     timer = window.setTimeout(tick, 2000);
     return () => window.clearTimeout(timer);
-  }, [alpha]);
+  }, [alpha]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!isClient || !star || alpha === false) return null;
   const probe = (video: HTMLVideoElement) => {
@@ -2512,19 +2645,63 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
   // 클릭 = 반응 모션(Interact) 재생 + LLM 상태에 따라 대화/설치 안내 패널 (사용자 확정 2026-08-03).
   // none(요건 미달·타 브라우저)은 모션만. 걷는 중 모션 전환은 무시(이동 transform과 겹치면 미끄러진다).
   const handleClick = () => {
+    if (suppressClickRef.current) { suppressClickRef.current = false; return; } // 방금 드래그였다
     const current = clipRef.current;
     if (current !== "interact" && current !== "move") setClip("interact");
     if (chatStatus !== "none") setChatOpen(true);
   };
+  // 드래그로 잡아 옮기기 — 7px을 넘게 끌면 드래그로 판정(클릭과 구분), 잡힌 동안 Sit 포즈,
+  // 놓으면 낙하해 처음 만나는 요소 윗변에 착지 (사용자 요청 2026-08-03)
+  const onChibiPointerDown = (event: React.PointerEvent<HTMLButtonElement>) => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    grabRef.current = { px: event.clientX, py: event.clientY, offX: event.clientX - rect.left, offY: event.clientY - rect.top, dragging: false };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+  const onChibiPointerMove = (event: React.PointerEvent<HTMLButtonElement>) => {
+    const grab = grabRef.current;
+    if (!grab) return;
+    if (!grab.dragging) {
+      if (Math.hypot(event.clientX - grab.px, event.clientY - grab.py) < 7) return;
+      grab.dragging = true;
+      cancelAnimationFrame(fallRafRef.current);
+      setMode("held");
+      setClip("sit");
+    }
+    const el = btnRef.current;
+    const w = el?.offsetWidth ?? 137;
+    const h = el?.offsetHeight ?? 77;
+    // 스프라이트가 상자 가운데 있으므로 좌우는 반 폭까지 삐져나가도 된다
+    const nx = Math.max(-w * 0.4, Math.min(event.clientX - grab.offX, window.innerWidth - w * 0.6));
+    const ny = Math.max(2, Math.min(event.clientY - grab.offY, window.innerHeight - h - 2));
+    setFreePos(nx, ny);
+    event.preventDefault();
+  };
+  const onChibiPointerUp = (event: React.PointerEvent<HTMLButtonElement>) => {
+    const grab = grabRef.current;
+    grabRef.current = null;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+    if (!grab?.dragging) return; // 단순 클릭 — 이어지는 click 이벤트가 처리
+    suppressClickRef.current = true;
+    startFall();
+  };
   return (
     <>
-    <button type="button" className={`header-chibi clip-${clip}`}
+    <button ref={btnRef} type="button"
+      className={`header-chibi clip-${clip}${mode !== "home" ? " chibi-free" : ""}${mode === "held" ? " chibi-held" : ""}`}
       aria-hidden={alpha !== true} tabIndex={alpha === true ? 0 : -1}
-      style={{ "--cx": `${x}px`, "--walk": `${moveSec}s` } as React.CSSProperties}
+      style={{ "--cx": `${x}px`, "--walk": `${moveSec}s`, "--fx": `${free.x}px`, "--fy": `${free.y}px` } as React.CSSProperties}
       title={t("{name} 치비 쿡 찌르기", { name: star.name })}
       aria-label={t("{name} 치비 쿡 찌르기", { name: star.name })}
       onClick={handleClick}
-      onTransitionEnd={(event) => { if (event.propertyName === "transform" && clipRef.current === "move") setClip("relax"); }}>
+      onPointerDown={onChibiPointerDown} onPointerMove={onChibiPointerMove}
+      onPointerUp={onChibiPointerUp} onPointerCancel={onChibiPointerUp}
+      onTransitionEnd={(event) => {
+        // ⚠ target 검사 필수 — 자식 video의 flip 전환(transform 0.25s)이 버블돼 걷기 시작
+        // 0.25초 만에 relax로 되돌리면, 다음 틱이 move 가드를 지나쳐 "자면서 미끄러지는"
+        // 상태가 됐다 (사용자 제보 2026-08-03).
+        if (event.target === event.currentTarget && event.propertyName === "transform" && clipRef.current === "move") setClip("relax");
+      }}>
       {/* React는 muted를 프로퍼티로만 세팅해 자동재생 정책 판정과 어긋날 수 있다 — ref에서 확정 후 play().
           프로브는 loadeddata 이벤트 + ref의 readyState 검사 양쪽에서 건다: 캐시 히트면 핸들러가
           붙기 전에 로드가 끝나 이벤트를 영영 놓친다 (실측 2026-08-03, 두 번째 방문부터 재현). */}
@@ -2540,6 +2717,8 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
       <video className={`chibi-interact${flip ? " flip" : ""}`} src={CHIBI_CLIPS.interact}
         muted playsInline preload="metadata" ref={(el) => { videoRefs.current.interact = el; }}
         onEnded={() => setClip("relax")} />
+      <video className={`chibi-sit${flip ? " flip" : ""}`} src={CHIBI_CLIPS.sit}
+        loop muted playsInline preload="metadata" ref={(el) => { videoRefs.current.sit = el; }} />
     </button>
     {chatOpen && <ChibiChatPanel status={chatStatus} onReady={() => setChatStatus("available")} onAction={handleChatAction} onClose={() => setChatOpen(false)} />}
     </>
