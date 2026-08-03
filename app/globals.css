@@ -12461,6 +12461,14 @@ main.site-main > .site-header {
   display: flex;
   flex-direction: column;
 }
+/* 스크롤 컨테이너의 자식은 절대 눌리지 않는다 — 스크롤은 컨테이너 몫이므로.
+   flex 자식의 기본 min-height:auto(내용 높이 밑으론 안 줄어듦)를 섹션의 명시적
+   min-height(.rg의 100vh CLS 가드 등)가 대체하면, flex-shrink가 섹션 박스를 내용과
+   무관하게 그 값으로 붕괴시킨다 — 록라 소장품에서 내용 10,424px이 950px 박스 밖으로
+   넘치고 푸터가 첫 화면 바로 아래(본문 한가운데)에 박혔다 (방문자 제보 2026-08-03). */
+.site-scroll > * {
+  flex-shrink: 0;
+}
 .site-scroll > footer {
   margin-top: auto;
 }
