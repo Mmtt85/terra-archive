@@ -14528,39 +14528,47 @@ main.site-main > .site-header {
 /* 앞으로 철푸덕 (사용자 확정 2026-08-03) — 직립(grab) 스프라이트를 발끝 축으로 보는 방향으로
    88° 회전. flip(scaleX)이면 자동으로 반대쪽으로 자빠진다. 넘어진 판자가 좌우로 길게 눕도록
    그 동안만 클립 영역을 가로 전체로 연다 */
-/* 앞으로 철퍼덕 3단계 (사용자 지적 ×2 — 자세가 무너져야 넘어짐으로 읽힌다):
-   fall = move 클립(다리 허우적)이 재생되는 채로 고꾸라짐 · sprawl = 웅크린 sit 클립을
-   눕혀 구겨진 더미(착지 스쿼시) · kneel = 회전 복귀(sit 그대로 = 무릎 꿇기) → situp.
+/* 앞으로 철퍼덕 4단계 (사용자 지적 ×3 — 결정적 그림은 "머리 박고 다리 하늘로"):
+   fall = move(다리 허우적)인 채 116°로 고꾸라져 머리가 땅에 닿음(발끝 축 회전 + 위로 당겨
+   머리를 지면에) · plant = 물구나무 처박힘 — 다리 버둥(move 루프) + 몸 들썩 + 💫 ·
+   flop = 힘 빠져 납작(웅크린 sit 눕힘 + 스쿼시) · kneel = 회전 복귀(무릎 꿇기) → situp.
    개별 속성(rotate/translate/scale)이라 flip(transform: scaleX(-1))과 합성된다 */
 .header-chibi.chibi-fall video,
-.header-chibi.chibi-sprawl video,
+.header-chibi.chibi-plant video,
+.header-chibi.chibi-flop video,
 .header-chibi.chibi-kneel video {
   transform-origin: 49% 96%;
 }
 .header-chibi.chibi-fall video {
-  animation: chibi-tip-over 0.35s ease-in forwards;
+  animation: chibi-tip-over 0.4s ease-in forwards;
 }
-.header-chibi.chibi-sprawl video {
-  rotate: 88deg;
-  translate: 12% 2%;
-  animation: chibi-sprawl-squash 0.32s ease-out;
+.header-chibi.chibi-plant video {
+  animation: chibi-plant-wobble 0.55s ease-in-out infinite alternate;
+}
+.header-chibi.chibi-flop video {
+  animation: chibi-flop-flat 0.32s ease-in forwards;
 }
 .header-chibi.chibi-kneel video {
   animation: chibi-kneel-up 0.26s ease-in both;
 }
 .header-chibi.chibi-fall,
-.header-chibi.chibi-sprawl,
+.header-chibi.chibi-plant,
+.header-chibi.chibi-flop,
 .header-chibi.chibi-kneel {
-  clip-path: inset(20% 0 0 0);
+  clip-path: inset(0 0 0 0); /* 물구나무 동안 발이 상자 위로 뜨므로 전부 연다 */
 }
 @keyframes chibi-tip-over {
   0% { rotate: 0deg; translate: 0 0; }
-  18% { rotate: -7deg; translate: -2% 0; }
-  100% { rotate: 92deg; translate: 12% 2%; }
+  15% { rotate: -7deg; translate: -2% 0; }
+  100% { rotate: 116deg; translate: 13% -22%; }
 }
-@keyframes chibi-sprawl-squash {
-  0% { rotate: 92deg; translate: 13% 3%; scale: 1.12 0.8; }
-  55% { rotate: 84deg; translate: 12% 1%; scale: 0.96 1.04; }
+@keyframes chibi-plant-wobble {
+  from { rotate: 118deg; translate: 13% -23%; }
+  to { rotate: 109deg; translate: 12% -18%; }
+}
+@keyframes chibi-flop-flat {
+  0% { rotate: 112deg; translate: 12% -20%; }
+  55% { rotate: 86deg; translate: 12% 3%; scale: 1.1 0.85; }
   100% { rotate: 88deg; translate: 12% 2%; scale: 1; }
 }
 @keyframes chibi-kneel-up {
