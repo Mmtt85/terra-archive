@@ -14522,8 +14522,23 @@ main.site-main > .site-header {
 .header-chibi.clip-situp .chibi-situp,
 .header-chibi.clip-liedown .chibi-liedown,
 .header-chibi.clip-wakeup .chibi-wakeup,
-.header-chibi.clip-special .chibi-special {
+.header-chibi.clip-special .chibi-special,
+.header-chibi.clip-splat .chibi-splat,
+.header-chibi.clip-getupmad .chibi-getupmad {
   display: block;
+}
+/* 높은 낙하 뒤 짜증 — 머리 옆 💢 (clip-path 안쪽에 들어오는 좌표) */
+.chibi-anger {
+  position: absolute;
+  top: 22%;
+  right: 26%;
+  font-size: 15px;
+  animation: chibi-anger-pop 0.8s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+@keyframes chibi-anger-pop {
+  from { transform: scale(0.85); opacity: 0.75; }
+  to { transform: scale(1.15); opacity: 1; }
 }
 /* 레어 이벤트(카드 점술) — 복장이 바뀌므로 짧은 페이드로 등장을 부드럽게.
    미니 치비 관객이 오른쪽 끝까지 나오므로 히트박스도 그 동안만 넓힌다 */

@@ -280,8 +280,9 @@ python3 scripts/build-skill-levels.py .gamedata   # → public/skills/{ko,en,ja}
 커서가 쥔 허리(상자 49%·52%, bbox 실측)를 축으로 기울여 대롱대롱. 잡기 지점은 허리로
 스냅한다(상자 위쪽은 투명 여백이라 그대로 쓰면 커서 아래에 매달림). 놓으면 등가속 낙하 →
 발밑 x에서 `elementsFromPoint`로 아래를 훑어 **처음 만나는 요소의 윗변에 착지**, 그 표면
-폭 안에서 배회. 스크롤·리사이즈·창 닫힘으로 지면이 사라지면(발밑 ±10px 재검사) 다시
-떨어진다. 좌표는 home=헤더 슬롯(--cx) / free=뷰포트 고정(--fx/--fy) 이원화.
+폭 안에서 배회. 스크롤·리사이즈 시엔 착지 요소의 rect를 따라 "탑승"하고, 요소가 사라지거나
+화면 밖으로 나가면 다시 떨어진다. **320px 넘게 떨어지면** 철푸덕 체인: splat(Default→Sleep
+0.18s 급속 믹스=엎어짐+뻗기) → getupmad(Sleep→Default 0.3s=벌떡) → Interact + 💢(짜증) → relax. 좌표는 home=헤더 슬롯(--cx) / free=뷰포트 고정(--fx/--fy) 이원화.
 클릭 = 반응 모션(Interact) + **크롬 내장 Gemini Nano(Prompt API, Chrome 148+ 데스크탑)
 상태별 대화 패널**(app/chibi-chat.tsx — 페르소나(반말·"당신" 호칭)·few-shot·스트리밍, 기기 내
 생성이라 서버·비용 없음): 설치됨=바로 대화 · 다운로드 가능/진행 중=크기(약 2GB)·용도 안내 후

@@ -2387,14 +2387,18 @@ const CHIBI_CLIPS = {
   liedown: "/chibi/skadi2-liedown.webm",
   wakeup: "/chibi/skadi2-wakeup.webm",
   special: "/chibi/skadi2-special.webm",
+  splat: "/chibi/skadi2-splat.webm",
+  getupmad: "/chibi/skadi2-getupmad.webm",
 } as const;
 // 레어 이벤트 — 命途迭代/II 스킨의 기지 Special(10.7s, 붉은 드레스로 갈아입고 카드 점술 +
 // 미니 치비 관객). 쿨다운 지나고 서 있는 틱의 3%로 발동, 끝나면 기본 복장으로 원복
 // (사용자 확정 2026-08-03: "가끔 옷 갈아입고 점을 봐준다" 콘셉트).
 const CHIBI_SPECIAL_COOLDOWN = 240_000;
 const CHIBI_SPECIAL_CHANCE = 0.03;
-// 전환 클립 → 끝나면 이어지는 정착 클립 (onEnded에서 전이)
-const CHIBI_FLOW = { sitdown: "sit", situp: "relax", liedown: "sleep", wakeup: "sit" } as const;
+// 전환 클립 → 끝나면 이어지는 정착 클립 (onEnded에서 전이).
+// splat(철푸덕)→getupmad(벌떡)→interact(짜증, 💢와 함께)는 높은 낙하 전용 체인 (사용자 요청 2026-08-03).
+const CHIBI_FLOW = { sitdown: "sit", situp: "relax", liedown: "sleep", wakeup: "sit", splat: "getupmad", getupmad: "interact" } as const;
+const CHIBI_HARD_FALL = 320; // px — 이보다 높이 떨어지면 철푸덕
 
 type ChibiClip = keyof typeof CHIBI_CLIPS;
 const CHIBI_WALK_SPEED = 34; // px/s — Move 모션(1.67s 사이클) 보폭에 눈대중으로 맞춘 값
@@ -2433,6 +2437,7 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
   // 드래그·낙하·자유 배회 상태 — free 좌표는 뷰포트 기준 좌상단(px)
   const [mode, setMode] = useState<ChibiMode>("home");
   const [grip, setGrip] = useState({ x: 0.49, y: 0.52 }); // 쥔 지점(상자 비율) — 대롱대롱 회전축
+  const [angry, setAngry] = useState(false); // 높은 낙하 뒤 짜증(💢) — interact가 끝나면 풀린다
   const modeRef = useRef<ChibiMode>("home");
   const [free, setFree] = useState({ x: 0, y: 0 });
   const freeRef = useRef({ x: 0, y: 0 });
@@ -2542,7 +2547,12 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
         surf.relX = freeRef.current.x - surf.left;
         modeRef.current = "free";
         setMode("free");
-        setClip("relax");
+        if (dest - y0 > CHIBI_HARD_FALL) {
+          setClip("splat"); // 철푸덕 → 벌떡 → 짜증 체인 (CHIBI_FLOW)
+          setAngry(true);
+        } else {
+          setClip("relax");
+        }
         return;
       }
       setFreePos(freeRef.current.x, ny);
@@ -2746,6 +2756,7 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
       // 대롱대롱 회전축도 쥔 지점으로 — CSS 변수로 전달.
       const el0 = btnRef.current;
       if (el0) setGrip({ x: grab.offX / el0.offsetWidth, y: grab.offY / el0.offsetHeight });
+      setAngry(false); // 다시 잡히면 짜증 표시는 접는다
       modeRef.current = "held";
       setMode("held");
       setClip("grab");
@@ -2821,7 +2832,7 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
         loop muted playsInline preload="metadata" ref={(el) => { videoRefs.current.sleep = el; }} />
       <video className={`chibi-interact${flip ? " flip" : ""}`} src={CHIBI_CLIPS.interact}
         muted playsInline preload="metadata" ref={(el) => { videoRefs.current.interact = el; }}
-        onEnded={() => setClip("relax")} />
+        onEnded={() => { setClip("relax"); setAngry(false); }} />
       <video className={`chibi-sit${flip ? " flip" : ""}`} src={CHIBI_CLIPS.sit}
         loop muted playsInline preload="metadata" ref={(el) => { videoRefs.current.sit = el; }} />
       <video className={`chibi-grab${flip ? " flip" : ""}`} src={CHIBI_CLIPS.grab}
@@ -2829,6 +2840,7 @@ function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Ope
       <video className={`chibi-special${flip ? " flip" : ""}`} src={CHIBI_CLIPS.special}
         muted playsInline preload="none" ref={(el) => { videoRefs.current.special = el; }}
         onEnded={() => setClip("relax")} />
+      {angry && (clip === "getupmad" || clip === "interact") && <span className="chibi-anger" aria-hidden>💢</span>}
       {/* 포즈 전환 클립 — 한 번 재생하고 끝나면 정착 클립으로 */}
       {(Object.keys(CHIBI_FLOW) as (keyof typeof CHIBI_FLOW)[]).map((name) => (
         <video key={name} className={`chibi-${name}${flip ? " flip" : ""}`} src={CHIBI_CLIPS[name]}
