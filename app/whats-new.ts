@@ -15,6 +15,7 @@ export const FEATURE_RELEASED: Record<string, string | { date: string; days: num
   bridge: "2026-07-26", // 게임 연결 — 게임 창 라이브 캡처를 렌즈에 태워 자동 인식 (/rogue 테마별)
   endless: "2026-07-28", // 인프라 플래너 운용 방식 '장기 지속' — 컨디션 순소모 최소 편성 (무한동력 자동 우선 포함)
   "rogue-eff": "2026-07-29", // 통합전략 보유 리스트의 「Σ 효과 총합」 — 담아둔 소장품 수치 합산
+  "rogue-cn": "2026-08-04", // 통합전략 서버 탭 — 중국 서버(전 테마 중국어 병기, CN 선행 콘텐츠)
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -46,7 +47,7 @@ export function anyNewFeature(...keys: string[]): boolean {
 const TAB_FEATURES: Record<string, string[]> = {
   planner: ["scanner", "invest", "layout-153", "account", "endless"],
   recruit: ["lens"],
-  rogue: ["lens", "rogue-inv", "bridge", "rogue-eff"],
+  rogue: ["lens", "rogue-inv", "bridge", "rogue-eff", "rogue-cn"],
   story: ["lens"], // 스샷 레이더 /stories 설치 (전문 대사 검색, 2026-07-24)
 };
 

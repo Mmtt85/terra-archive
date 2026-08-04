@@ -1714,7 +1714,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
             title={topic === "rogue_6" ? t("흑류수해는 한국 서버 미출시 — 중국 서버 데이터만 제공됩니다") : undefined}
             onClick={() => goServer("kr")}>{t("한국 서버")}</button>
           <button type="button" className={server === "cn" ? "on" : ""} aria-pressed={server === "cn"}
-            onClick={() => goServer("cn")}>{t("중국 서버")}</button>
+            onClick={() => goServer("cn")}>{t("중국 서버")}{isNewFeature("rogue-cn") && <span className="new-badge">{t("새기능")}</span>}</button>
         </div>
         {/* 스샷 레이더 — 버튼 자체가 자동인식 토글, ?는 도움말 모달. KR/EN/JA 화면 인식 (2026-07-25).
             흑류수해(rogue_6)·중국섭 데이터는 중국어 병기라 중국어 화면도 전 로케일에서 인식한다. */}
