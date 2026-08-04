@@ -10919,7 +10919,7 @@ html.dark.rg-theme.rg6 .site-header {
   right: 18px;
   top: 16px;
   z-index: 30;
-  width: min(280px, calc(100% - 36px));
+  width: min(340px, calc(100% - 36px));
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -10940,10 +10940,12 @@ html.dark.rg-theme.rg6 .site-header {
 /* 한섭/중섭 미니 토글 — 테마 변경 버튼 우상단에 겹치는 형제 요소 (사용자 요청 2026-08-04:
    독립 탭 줄 → "테마변경 버튼 안에 작게"). 버튼 안에 버튼은 못 넣으므로 absolute로 올린다.
    흑류수해(KR 미출시)에선 한국섭 버튼이 disabled */
+/* 화살표(우측 세로 중앙) 왼쪽에 나란히 — 위에 얹으면 화살표를 가린다 (사용자 지적) */
 .rg-serversel {
   position: absolute;
-  top: 5px;
-  right: 9px;
+  top: 50%;
+  right: 30px;
+  transform: translateY(-50%);
   z-index: 2;
   display: flex;
   gap: 2px;
@@ -10979,12 +10981,10 @@ html.dark.rg-theme.rg6 .site-header {
   outline: 2px solid var(--rggold);
   outline-offset: 1px;
 }
-/* 배지는 토글 왼쪽(테마 변경 라벨과 토글 사이 여백) — 위로 빼면 테마 변경 버튼 밖으로
-   튀고, 버튼 안에 두면 좁아서 글자가 세로로 깨진다 (실측 2026-08-04) */
+/* 배지는 토글 위 코너 — 버튼 안에 두면 좁아서 글자가 세로로 깨진다 (실측 2026-08-04) */
 .rg-serversel > .new-badge {
-  top: 50%;
-  right: calc(100% + 6px);
-  transform: translateY(-50%);
+  top: -10px;
+  right: -6px;
   padding: 1px 5px;
   font-size: 8.5px;
   white-space: nowrap;
@@ -11033,13 +11033,15 @@ html.dark.rg-theme.rg6 .site-header {
   display: flex;
   align-items: center;
   gap: 8px;
+  /* 오른쪽 한섭/중섭 미니 토글 자리 — 긴 테마명이 그 밑으로 파고들지 않게 (2026-08-04) */
+  padding-right: 88px;
   font-weight: 700;
   font-size: 12.5px;
   line-height: 1.25;
 }
 .rg-topicsel-arrow {
   grid-column: 2;
-  grid-row: 2; /* 우상단은 한섭/중섭 미니 토글 자리 — 화살표는 아랫줄로 (2026-08-04) */
+  grid-row: 1 / span 2;
   color: var(--rggold);
   font-size: 12px;
   transition: transform 0.15s;
