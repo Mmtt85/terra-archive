@@ -15174,7 +15174,7 @@ main.site-main > .site-header {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 8px 6px 12px;
+  padding: 2px 6px 2px 12px; /* 낮게 — 잡는 손잡이일 뿐 내용이 아니다 (사용자 요청 2026-08-05) */
   border-bottom: 1px solid var(--line);
   cursor: grab;
   touch-action: none;
@@ -15198,9 +15198,9 @@ main.site-main > .site-header {
   border: 0;
   background: none;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1;
-  padding: 4px 6px;
+  padding: 3px 6px;
   border-radius: 8px;
   opacity: 0.45;
   filter: grayscale(1);
@@ -15219,9 +15219,13 @@ main.site-main > .site-header {
   margin: 0;
   border: 0;
   background: none;
-  font-size: 17px;
+  font-size: 15px;
   line-height: 1;
   padding: 2px 6px;
+  /* .modal-close의 38px 원형 규격 무효화 — 이 버튼이 크롬 바 높이를 끌어올리고 있었다 */
+  width: auto;
+  height: auto;
+  border-radius: 6px;
   cursor: pointer;
   color: var(--muted);
 }
