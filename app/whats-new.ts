@@ -16,6 +16,8 @@ export const FEATURE_RELEASED: Record<string, string | { date: string; days: num
   endless: "2026-07-28", // 인프라 플래너 운용 방식 '장기 지속' — 컨디션 순소모 최소 편성 (무한동력 자동 우선 포함)
   "rogue-eff": "2026-07-29", // 통합전략 보유 리스트의 「Σ 효과 총합」 — 담아둔 소장품 수치 합산
   "rogue-cn": "2026-08-04", // 통합전략 서버 탭 — 중국 서버(전 테마 중국어 병기, CN 선행 콘텐츠)
+  "op-level": "2026-08-05", // 인프라 보유 오퍼 레벨 입력 — 노정예 Lv.30 해금 기지 스킬 반영
+  "invest-payback": "2026-08-05", // 육성 추천 예상 회수일 — 이성 환산 + 완성 비용 모달
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -45,7 +47,7 @@ export function anyNewFeature(...keys: string[]): boolean {
 // 탭 → 그 탭 안에 든 새 기능 키 — 햄버거 메뉴 배지용 (사용자 요청 2026-07-24:
 // 새 기능이 있는 메뉴 항목에도 '새기능'을 표시). 새 기능을 다른 탭에 넣으면 여기도 갱신.
 const TAB_FEATURES: Record<string, string[]> = {
-  planner: ["scanner", "invest", "layout-153", "account", "endless"],
+  planner: ["scanner", "invest", "layout-153", "account", "endless", "op-level", "invest-payback"],
   recruit: ["lens"],
   rogue: ["lens", "rogue-inv", "bridge", "rogue-eff", "rogue-cn"],
   story: ["lens"], // 스샷 레이더 /stories 설치 (전문 대사 검색, 2026-07-24)

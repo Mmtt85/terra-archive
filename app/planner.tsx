@@ -6,7 +6,7 @@ import { useI18n, tokenName, rich, type ExtraI18n, type Locale, type T } from ".
 import { RULES } from "./rules";
 import { useConfirm } from "./confirm";
 import { normSearch, useSearchInput } from "./search";
-import { isNewFeature } from "./whats-new";
+import { anyNewFeature, isNewFeature } from "./whats-new";
 import { useHashSync } from "./hash-modal";
 
 import {
@@ -1047,7 +1047,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           {/* startTransition: 로스터 모달(카드 수백 장)은 렌더가 무거워 클릭 페인트부터 내보낸다 (INP, 2026-07-21) */}
           {/* 보유 오퍼 설정·전체 자동편성 = 핵심 2버튼(.primary) — 나머지는 보조 톤으로 낮춰
               위계를 만든다 (사용자 요청 2026-07-27: "버튼이 너무 많아 헷갈림") */}
-          <button className="primary" onClick={() => startTransition(() => { setRosterMode("direct"); setShowRoster(true); })}><span className="btn-icon" aria-hidden>▦</span>{t("보유 오퍼 설정 ({a}/{b})", { a: visibleOps.filter((op) => ownedIds.has(op.id)).length, b: visibleOps.length })}{isNewFeature("scanner") && <span className="new-badge">{t("새기능")}</span>}</button>
+          <button className="primary" onClick={() => startTransition(() => { setRosterMode("direct"); setShowRoster(true); })}><span className="btn-icon" aria-hidden>▦</span>{t("보유 오퍼 설정 ({a}/{b})", { a: visibleOps.filter((op) => ownedIds.has(op.id)).length, b: visibleOps.length })}{anyNewFeature("scanner", "op-level") && <span className="new-badge">{t("새기능")}</span>}</button>
           {/* 라벨이 '계산 중…'으로 바뀌어도 버튼 폭이 줄지 않게 원 라벨로 폭을 잡아둔다 (사용자 요청 2026-07-21) */}
           <button className="primary" onClick={() => runOptimize()} disabled={!!optimizing}>
             <span className="btn-icon" aria-hidden>⟳</span>
@@ -1221,7 +1221,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
             </>
           ) : visibleRecs?.length && !investing ? (
             <>
-              <span className="srb-top">★ {t("인프라 오퍼 육성 추천")}{isNewFeature("invest") && <span className="new-badge">{t("새기능")}</span>}</span>
+              <span className="srb-top">★ {t("인프라 오퍼 육성 추천")}{anyNewFeature("invest", "invest-payback") && <span className="new-badge">{t("새기능")}</span>}</span>
               <span className="srb-btns">
                 <button className="run" onClick={() => setShowInvest(true)}>{t("추천 열기 ({n})", { n: visibleRecs?.length ?? 0 })}</button>
                 <button onClick={() => { void runInvest(); }}>{t("다시 분석")}</button>
@@ -1233,7 +1233,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
               title={t("보유했지만 아직 완성하지 않은(정예화를 낮춰 둔) 오퍼 중, 완성하면 인프라 효율이 오르는 오퍼를 실제 자동편성을 다시 돌려 찾아냅니다")}>
               {/* 전제조건을 눈에 보이게 — 정예화를 낮춰 둔 오퍼가 0명이면 분석해도 후보가 없다
                   (전원 만정예 가정이 기본값이라 "왜 아무것도 안 뜨지"의 최대 원인, 2026-07-25) */}
-              <span className={`srb-lbl${investing ? " hide" : ""}`}>★ {t("인프라 오퍼 육성 추천")}{isNewFeature("invest") && <span className="new-badge">{t("새기능")}</span>}<em className="srb-sub">{t("미완성 {n}명", { n: unfinishedCount })}</em></span>
+              <span className={`srb-lbl${investing ? " hide" : ""}`}>★ {t("인프라 오퍼 육성 추천")}{anyNewFeature("invest", "invest-payback") && <span className="new-badge">{t("새기능")}</span>}<em className="srb-sub">{t("미완성 {n}명", { n: unfinishedCount })}</em></span>
               {investing && <span className="srb-over">★ {investing.total ? t("분석 중 {i}/{n}", { i: investing.done, n: investing.total }) : t("분석 중…")}</span>}
             </button>
           )}
