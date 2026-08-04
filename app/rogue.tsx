@@ -840,9 +840,17 @@ const topicFromUrl = () => {
   const q = new URLSearchParams(window.location.search).get("topic");
   return TOPICS.find((tp) => tp.ready && slugOf(tp.id) === q)?.id ?? "rogue_1";
 };
-// 서버 탭 (한국섭/중국섭) — URL은 ?sv=cn 일 때만 표시. 흑류수해(rogue_6)는 KR 미출시라
-// 토픽만으로도 중국 서버가 강제된다 (KR 탭은 비활성).
+// 서버 탭 — URL은 ?sv=cn 일 때만 표시. 흑류수해(rogue_6)는 자국 서버 미출시라
+// 토픽만으로도 중국 서버가 강제된다 (자국 서버 탭은 비활성).
+// "kr"은 **화면 언어의 자국 서버**를 뜻하는 내부 코드값이다 — 로케일별 로더가
+// ko=한국(rogueN.json) · en=글로벌(.en) · ja=일본(.ja) 서버 공식 텍스트를 싣는다.
 type Server = "kr" | "cn";
+// 자국 서버 라벨 — short=미니 토글(좁음), label은 "{label} 서버" 조합용 (i18n 공용 키)
+const HOME_SERVER: Record<string, { short: string; label: string }> = {
+  ko: { short: "한국섭", label: "한국" },
+  en: { short: "글로벌섭", label: "글로벌" },
+  ja: { short: "일본섭", label: "일본" },
+};
 const serverFromUrl = (): Server =>
   new URLSearchParams(window.location.search).get("sv") === "cn" || topicFromUrl() === "rogue_6" ? "cn" : "kr";
 
@@ -1651,6 +1659,10 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
 
   // 보유 리스트 진입 버튼 — 각 뷰의 검색·필터 줄 **맨 오른쪽**에 붙인다 (사용자 지정 2026-07-26,
   // 종전 위치는 탭 줄). 뷰마다 필터 줄이 따로라 같은 엘리먼트를 재사용한다(동시에 그려지지 않음).
+  // 자국 서버 표기 — 화면 언어에 따라 한국/글로벌/일본 (사용자 지적 2026-08-04)
+  const homeServer = HOME_SERVER[locale] ?? HOME_SERVER.ko;
+  const homeServerFull = t("{label} 서버", { label: t(homeServer.label) });
+
   const invButton = (
     <button type="button" className="rg-inv-open" onClick={() => setInvOpen(true)}
       title={t("소장품·자원 카드의 「＋ 보유」 버튼으로 담아두고 여기서 한눈에 봅니다")}>
@@ -1736,9 +1748,9 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
               흑류수해는 KR 미출시라 한국 버튼 비활성 */}
           <div className="rg-serversel" role="group" aria-label={t("서버 선택")}>
             <button type="button" className={server === "kr" ? "on" : ""} aria-pressed={server === "kr"}
-              disabled={topic === "rogue_6"} aria-label={t("한국 서버")}
-              title={topic === "rogue_6" ? t("흑류수해는 한국 서버 미출시 — 중국 서버 데이터만 제공됩니다") : t("한국 서버")}
-              onClick={() => goServer("kr")}>{t("한국섭")}</button>
+              disabled={topic === "rogue_6"} aria-label={homeServerFull}
+              title={topic === "rogue_6" ? t("{sv} 미출시 테마 — 중국 서버 데이터만 제공됩니다", { sv: homeServerFull }) : homeServerFull}
+              onClick={() => goServer("kr")}>{t(homeServer.short)}</button>
             <button type="button" className={server === "cn" ? "on" : ""} aria-pressed={server === "cn"}
               aria-label={t("중국 서버")} title={t("중국 서버")}
               onClick={() => goServer("cn")}>{t("중국섭")}</button>
