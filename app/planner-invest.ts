@@ -7,8 +7,12 @@
 //  ① 이득은 증명한다 — 반사실(counterfactual) ΔS. 휴리스틱 점수 금지.
 //  ② 설명 못 하면 추천 안 한다 — 그 오퍼가 실제 근무 방에 배치돼 기여할 때만.
 //  ③ 비용은 정확히 — costs.json의 실제 재료·용문폐·경험치.
-// 표시는 **방 %효율 변화 + 완성 비용**뿐이다. 일일 용문폐/작전기록·회수일 같은 근사 환산은
-// 쓰지 않는다 (사용자 확정 2026-07-21: 기준 상수가 불확실한 근사치는 오히려 오해를 부른다).
+// 표시는 **방 %효율 변화 + 완성 비용 + 예상 회수일**이다.
+//   2026-07-21: 일일 용문폐·회수일 같은 근사 환산 금지 (기준 상수가 불확실해 오해를 부른다)
+//   2026-08-05: 상수를 전부 데이터에서 뽑고(scripts/build-sanity.py) **근거를 화면에 그대로
+//     밝히는 조건**으로 회수일을 되살렸다 — 사용자 지시 "N일 걸림이라고 적고, 무슨 근거로 그
+//     계산이 나왔는지 정확하게 적어주기만 하면 됨. 판단은 유저가 하겠지".
+//     추정이 남은 상수는 순금→용문폐 환산 하나뿐이고, 그것도 각주에 추정임을 명시한다.
 //
 // 성능 (사용자 확정 2026-07-21): 후보마다 전체 재탐색(optimize=buildPlan 최대 15회)을 반복하지
 // 않는다. 베이스라인이 고른 전략(토큰 패키지·시너지 세트)을 재사용해 **buildPlan을 1회만** 돌린다
@@ -18,6 +22,7 @@
 //
 // 도메인 규칙 정본은 docs/INFRA-RULES.md, 엔진은 app/planner-engine.ts.
 import costsData from "./data/costs.json";
+import sanityData from "./data/sanity.json";
 import {
   optimizeConfig, buildPlan, planScore, teamScore, opSolo, withElite, maxElite, eliteLocks, setCapCluster, setShiftTiebreak,
   availableSetKeys, synergySetMembers, cellByKey, LAYOUT, aurasOf, ctxFor, presentIdsFor, roomOfFor, cellOfFor, SHIFT_COUNT, AUTO_BENCH_IDS,
@@ -45,9 +50,14 @@ const SYNERGY_MIN = 25;   // 방이 하락해도 통과시키는 최소 ΔS — 
 // ── 정예화 비용 (costs.json) — 정확 ──────────────────────────────────────────
 export type RaiseCost = { lmd: number; exp: number; items: [string, number][] };
 
-// from → to 정예화에 드는 총비용. 각 단계 p(=from…to-1)마다 그 단계 만렙 레벨업(levels[p]) +
-// 승급(elite[p]). 현재 레벨을 모르므로 전 레벨업을 계상 — 비용을 과소평가하지 않는(안전한) 방향.
-export function raiseCost(opId: string, from: Elite, to: Elite): RaiseCost {
+// 정예화 단계별 레벨업 누적표 — levelUp.exp[phase][k] = 그 단계 Lv.1 → Lv.(k+2) 누적.
+// 현재 레벨이 주어지면 이미 지나온 몫을 빼서 **남은 비용만** 계상한다 (레벨 입력, 2026-08-04).
+const LEVEL_UP = (costsData as { levelUp?: { exp: number[][]; lmd: number[][] } }).levelUp;
+
+// from Lv.fromLevel → to 정예화에 드는 총비용. 각 단계 p(=from…to-1)마다 그 단계 만렙까지의
+// 레벨업(levels[p]) + 승급(elite[p]) — 게임 규칙상 승급은 그 단계 만렙에서만 가능하다.
+// fromLevel 미지정이면 전 레벨업을 계상한다(비용을 과소평가하지 않는 안전한 방향).
+export function raiseCost(opId: string, from: Elite, to: Elite, fromLevel?: number): RaiseCost {
   const entry = OPS_COST[opId];
   const items = new Map<string, number>();
   let lmd = 0;
@@ -55,7 +65,18 @@ export function raiseCost(opId: string, from: Elite, to: Elite): RaiseCost {
   if (entry) {
     for (let p = from; p < to; p += 1) {
       const lv = entry.levels?.[p];
-      if (lv) { lmd += lv.lmd || 0; exp += lv.exp || 0; }
+      if (lv) {
+        let addLmd = lv.lmd || 0;
+        let addExp = lv.exp || 0;
+        if (p === from && fromLevel && fromLevel > 1 && LEVEL_UP) {
+          const idx = Math.min(fromLevel, lv.maxLv) - 2; // Lv.L 도달 누적 = [L-2]
+          if (idx >= 0) {
+            addExp = Math.max(0, addExp - (LEVEL_UP.exp[p]?.[idx] ?? 0));
+            addLmd = Math.max(0, addLmd - (LEVEL_UP.lmd[p]?.[idx] ?? 0));
+          }
+        }
+        lmd += addLmd; exp += addExp;
+      }
       const el = entry.elite?.[p];
       if (el) {
         lmd += el.lmd || 0;
@@ -64,6 +85,72 @@ export function raiseCost(opId: string, from: Elite, to: Elite): RaiseCost {
     }
   }
   return { lmd, exp, items: [...items.entries()] };
+}
+
+// ── 이성(AP) 환산 회수일 ──────────────────────────────────────────────────────
+// 사용자 지시 2026-08-05: "N일 걸림이라고 적고, 무슨 근거로 그 계산이 나왔는지 정확하게
+// 적어주기만 하면 됨 — 판단은 유저가 한다". 종전(2026-07-21)엔 근사 환산을 아예 뺐으나,
+// 상수를 전부 데이터에서 뽑아 근거를 화면에 밝히는 조건으로 되살렸다.
+//   비용 = 용문폐/EXP/재료를 각각의 전용 파밍처 이성 단가로 환산 (scripts/build-sanity.py)
+//   이득 = 방 %효율 변화 × 그 방 1%p의 하루 산출 × (그 조 근무시간/24)
+const SANITY = sanityData as { lmdPerAp: number; expPerAp: number; goldLmd: number; items: Record<string, number>;
+  basis: { lmd: { stage: string; ap: number; drop: number }; exp: { stage: string; ap: number; drop: number } } };
+// 제조소 기본 생산 속도 1포인트/초 = 3600pt/h (building_data manufactFormulas의 costPoint 단위).
+// 1%p가 하루 내내 유지되면 3600×0.01×24 = 864pt.
+const PT_DAY_1PCT = 3600 * 0.01 * 24;
+const GOLD_COST_PT = 4320;   // 순금 1개 = 4320pt (manufactFormulas formula 4)
+const EXP_PT_PER_EXP = 10.8; // 중급작전기록 10800pt / 1000exp (formula 3)
+// ⚠ 유일하게 게임 데이터에 없는 상수 — 무역소 주문 보상이 테이블에 없어 통용값을 쓴다
+// (sanity.json goldLmd, 화면 각주에 그대로 밝힌다)
+const GOLD_LMD = SANITY.goldLmd;
+/** 그 칸(또는 방 종류) 효율 +1%p가 하루 만드는 이성. 환산 근거가 없는 방은 0. */
+function apPerPctDay(key: string): number {
+  const cell = cellByKey.get(key);
+  const room = cell?.room ?? key; // roomDeltas는 여러 칸을 방 종류로 묶기도 한다
+  const goldAp = (PT_DAY_1PCT / GOLD_COST_PT) * GOLD_LMD / SANITY.lmdPerAp;
+  const expAp = (PT_DAY_1PCT / EXP_PT_PER_EXP) / SANITY.expPerAp;
+  // 무역소는 순금을 주문으로 파는 같은 파이프라인이라 순금 1%p와 같은 가치로 본다
+  if (room === "TRADING") return goldAp;
+  if (room === "MANUFACTURE") {
+    if (cell?.product === "exp") return expAp;
+    if (cell?.product === "gold") return goldAp;
+    // 칸이 묶인 경우 — 활성 레이아웃의 순금/작전기록 칸 비율로 가중
+    const cells = LAYOUT.filter((c) => c.room === "MANUFACTURE");
+    const gold = cells.filter((c) => c.product === "gold").length;
+    const total = cells.length || 1;
+    return (goldAp * gold + expAp * (total - gold)) / total;
+  }
+  return 0; // 발전소·사무실·응접실은 이성으로 환산할 근거가 없어 제외한다
+}
+
+export type Payback = {
+  apLmd: number; apExp: number; apMat: number; apTotal: number; // 비용 (이성)
+  unconverted: number;   // 이성 단가를 못 구한 재료 종수 (교환 전용·미출시)
+  dailyAp: number;       // 하루 이득 (이성)
+  days: number | null;   // 회수일 — 환산 가능한 이득이 없으면 null
+};
+/** 완성 비용과 방 변화를 이성으로 환산해 회수일을 낸다. shiftHours=[A조, B조] 시간. */
+export function paybackOf(cost: RaiseCost, roomDeltas: RoomDelta[], shiftHours?: number[]): Payback {
+  const apLmd = cost.lmd / SANITY.lmdPerAp;
+  const apExp = cost.exp / SANITY.expPerAp;
+  let apMat = 0;
+  let unconverted = 0;
+  for (const [iid, ct] of cost.items) {
+    const unit = SANITY.items[iid];
+    if (unit == null) { unconverted += 1; continue; }
+    apMat += unit * ct;
+  }
+  const hours = [shiftHours?.[0] ?? 12, shiftHours?.[1] ?? 12];
+  const span = hours[0] + hours[1] || 24;
+  let dailyAp = 0;
+  for (const d of roomDeltas) {
+    const per = apPerPctDay(d.key);
+    if (!per) continue;
+    dailyAp += (d.after - d.before) * per * ((hours[d.shift] ?? 12) / span);
+  }
+  const apTotal = apLmd + apExp + apMat;
+  return { apLmd, apExp, apMat, apTotal, unconverted, dailyAp,
+           days: dailyAp > 0 ? apTotal / dailyAp : null };
 }
 
 // ── 정예화로 잠긴 인프라 스킬이 풀리는 목표 단계 ───────────────────────────────
@@ -123,6 +210,7 @@ export type RaiseRec = {
   roomDeltas: RoomDelta[];       // 바뀐 생산·무역·발전·사무실·응접실 방·조
   placement: { key: string; shift: number } | null; // raised 편성에서 이 오퍼 위치
   cost: RaiseCost;
+  payback?: Payback;             // 이성 환산 회수일 (근거는 UI가 그대로 밝힌다)
 };
 
 export type InvestProgress = { done: number; total: number; opId?: string };
@@ -307,7 +395,9 @@ export async function recommendRaises(
     // 조별 방 %효율 변화 합계 — 유저에게 보여줄 구체 지표(추상 planScore 대신). A조(주력) 우선.
     const aGain = roomDeltas.reduce((sum, d) => (d.shift === 0 ? sum + (d.after - d.before) : sum), 0);
     const bGain = roomDeltas.reduce((sum, d) => (d.shift === 1 ? sum + (d.after - d.before) : sum), 0);
-    recs.push({ opId: op.id, from, to, aGain, bGain, deltaScore, synergy, roomDeltas, placement, cost: raiseCost(op.id, from, to) });
+    const cost = raiseCost(op.id, from, to, levelById.get(op.id));
+    recs.push({ opId: op.id, from, to, aGain, bGain, deltaScore, synergy, roomDeltas, placement, cost,
+                payback: paybackOf(cost, roomDeltas, baseline.shiftHours) });
   }
   if (onProgress) await onProgress({ done: evalList.length, total: evalList.length });
   void capped; // 상한 초과 시 잘린 후보가 있으나(로그성) UI는 어차피 20개씩만 노출

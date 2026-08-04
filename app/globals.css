@@ -3353,6 +3353,60 @@ legend {
   color: var(--muted);
   background: var(--bg-soft);
 }
+/* 예상 회수일 — 이성 환산 (근거는 패널 하단 각주에 전부 밝힌다, 2026-08-05) */
+.invest-payback {
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 5px;
+  padding: 1px 7px;
+  color: #8a5a1e;
+  background: color-mix(in srgb, #c8912f 16%, transparent);
+  white-space: nowrap;
+  cursor: help;
+}
+.invest-payback.none {
+  color: var(--muted);
+  background: var(--bg-soft);
+  font-weight: 600;
+}
+:root[data-theme="dark"] .invest-payback {
+  color: #e0b13e;
+  background: color-mix(in srgb, #e0b13e 18%, transparent);
+}
+.inv-cost-ap {
+  font-weight: 800;
+  color: #8a5a1e;
+  cursor: help;
+}
+.inv-cost-ap em {
+  font-style: normal;
+  font-weight: 700;
+  opacity: 0.7;
+}
+:root[data-theme="dark"] .inv-cost-ap {
+  color: #e0b13e;
+}
+/* 회수일 계산 근거 — 접힌 각주 */
+.invest-basis {
+  margin: 0 0 10px;
+  padding: 0 2px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.invest-basis > summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--accent);
+  padding: 4px 0;
+}
+.invest-basis ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  line-height: 1.6;
+}
+.invest-basis li {
+  margin-bottom: 3px;
+}
 :root[data-theme="dark"] .inv-gain.a,
 .dark .inv-gain.a {
   color: #7fd18c;

@@ -134,7 +134,13 @@ python3 scripts/build-broadcasts-cn.py   # → app/data/broadcasts.json 의 serv
 ```bash
 # 추가 테이블: kr/gamedata/excel/gamedata_const.json → kr_gamedata_const.json (+ cn 세트, {en,jp}_item_table)
 python3 scripts/build-costs.py .gamedata   # → app/data/costs.json + public/items/ 아이콘
+python3 scripts/build-sanity.py            # → app/data/sanity.json (재료 이성 단가 · costs/farm 이후)
 ```
+
+`build-sanity.py`는 육성 추천의 **예상 회수일**이 쓰는 이성(AP) 환산 단가를 만든다 —
+파밍 가능 재료는 farm.json 실측 최저 이성, 칩은 주간 PR, 제작 전용 재료는 가공소·제조소
+레시피 재귀 분해, 용문폐·작전기록은 CE-6·LS-6 고정 드랍. **costs.json·farm.json이 갱신되면
+같이 돌린다.** 규칙 정본은 docs/INFRA-RULES.md "육성 추천의 이성 환산 회수일".
 
 레벨업(각 정예화 단계 1레벨→만렙의 용문폐 + 경험치), 정예화 1·2(재료 + gamedata_const의
 용문폐), 스킬 2~7(allSkillLvlup), 스킬별 특화 1~3(levelUpCostCond), 모듈 1~3단계
