@@ -10881,12 +10881,12 @@ html.dark.rg-theme.rg6 .site-header {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8px 10px;
+  gap: 6px 8px;
   border: 1px solid #6a3040;
   background: #150a0ecc;
   backdrop-filter: blur(6px);
-  padding: 10px 14px;
-  width: min(460px, calc(100% - 36px));
+  padding: 7px 12px; /* 컴팩트 — 도구 열 축소와 세트 (2026-08-04) */
+  width: min(430px, calc(100% - 36px));
   box-shadow: 0 4px 24px #000a;
 }
 /* 테마 변경 드롭다운 — 배너 오른쪽 위 (사용자 요청 2026-07-18) */
@@ -10907,10 +10907,19 @@ html.dark.rg-theme.rg6 .site-header {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 8px;
+  gap: 6px;
 }
 .rg-headtools .lens-open-wrap {
   margin-left: 0; /* 열 안에서는 오른쪽 정렬을 부모가 맡는다 */
+}
+/* 도구 열 컴팩트 — 서버 탭 추가로 열이 길어져 짧은 히어로(KR 팬텀)에서 난이도 바와
+   겹쳤다. PRTS 링크·리플레이·스샷 레이더를 한 단계 줄인다 (사용자 요청 2026-08-04). */
+.rg-headtools .lens-open-wrap button {
+  padding: 6px 10px;
+  font-size: 0.8rem;
+}
+.rg-headtools .lens-help-btn {
+  min-width: 28px;
 }
 /* 서버 탭 (한국섭/중국섭) — 도구 열 맨 위 세그먼트 (2026-08-04).
    흑류수해(KR 미출시)에선 한국 서버 버튼이 disabled */
@@ -10927,13 +10936,13 @@ html.dark.rg-theme.rg6 .site-header {
   box-shadow: 0 4px 24px #0008;
 }
 .rg-serversel button {
-  padding: 8px 10px;
+  padding: 6px 10px;
   background: none;
   border: 0;
   border-radius: 5px; /* 컨테이너 8px - 안쪽 여백 4px ≈ 5px */
   color: var(--rgtext2);
   font-weight: 700;
-  font-size: 12.5px;
+  font-size: 12px;
   line-height: 1;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
@@ -10968,7 +10977,7 @@ html.dark.rg-theme.rg6 .site-header {
   background: color-mix(in srgb, var(--rgcard) 82%, transparent);
   backdrop-filter: blur(6px);
   border: 1px solid var(--rgline);
-  padding: 9px 13px;
+  padding: 6px 11px; /* 컴팩트 — 도구 열 축소와 세트 (2026-08-04) */
   cursor: pointer;
   box-shadow: 0 4px 24px #0008;
   color: var(--rgink);
@@ -10998,7 +11007,7 @@ html.dark.rg-theme.rg6 .site-header {
   align-items: center;
   gap: 8px;
   font-weight: 700;
-  font-size: 13.5px;
+  font-size: 12.5px;
   line-height: 1.25;
 }
 .rg-topicsel-arrow {
@@ -11096,11 +11105,11 @@ html.dark.rg-theme.rg6 .site-header {
 .rg-diff-hex {
   display: inline-grid;
   place-items: center;
-  width: 30px;
-  height: 34px;
-  margin-right: 7px;
+  width: 26px;
+  height: 30px;
+  margin-right: 6px;
   flex: none;
-  font: 800 15px/1 monospace;
+  font: 800 13px/1 monospace;
   font-style: normal;
   color: var(--rggold);
   background: #0d0609;
@@ -11129,9 +11138,9 @@ html.dark.rg-theme.rg6 .site-header {
   border: 1px solid var(--rgline);
   background: 0 0;
   color: var(--rgink);
-  padding: 4px 10px;
+  padding: 3px 8px;
   font-weight: 700;
-  font-size: 12.5px;
+  font-size: 12px;
   line-height: 1;
   cursor: pointer;
   border-radius: 999px;
