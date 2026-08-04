@@ -10897,12 +10897,12 @@ html.dark.rg-theme.rg6 .site-header {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8px 10px;
+  gap: 6px 9px;
   border: 1px solid #6a3040;
   background: #150a0ecc;
   backdrop-filter: blur(6px);
-  padding: 10px 14px;
-  width: min(460px, calc(100% - 36px));
+  padding: 6px 12px;
+  width: min(420px, calc(100% - 36px));
   box-shadow: 0 4px 24px #000a;
 }
 /* 테마 변경 드롭다운 — 배너 오른쪽 위 (사용자 요청 2026-07-18) */
@@ -10919,22 +10919,31 @@ html.dark.rg-theme.rg6 .site-header {
   right: 18px;
   top: 16px;
   z-index: 30;
-  width: min(300px, calc(100% - 36px));
+  width: min(280px, calc(100% - 36px));
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 8px;
+  gap: 6px;
 }
 .rg-headtools .lens-open-wrap {
   margin-left: 0; /* 열 안에서는 오른쪽 정렬을 부모가 맡는다 */
+}
+/* 도구 버튼 컴팩트 — 히어로 위에 얹히는 열이라 작을수록 아트를 덜 가린다
+   (사용자 요청 2026-08-04) */
+.rg-headtools .lens-open-wrap button {
+  padding: 6px 10px;
+  font-size: 0.79rem;
+}
+.rg-headtools .lens-help-btn {
+  min-width: 27px;
 }
 /* 한섭/중섭 미니 토글 — 테마 변경 버튼 우상단에 겹치는 형제 요소 (사용자 요청 2026-08-04:
    독립 탭 줄 → "테마변경 버튼 안에 작게"). 버튼 안에 버튼은 못 넣으므로 absolute로 올린다.
    흑류수해(KR 미출시)에선 한국섭 버튼이 disabled */
 .rg-serversel {
   position: absolute;
-  top: 7px;
-  right: 11px;
+  top: 5px;
+  right: 9px;
   z-index: 2;
   display: flex;
   gap: 2px;
@@ -10995,7 +11004,7 @@ html.dark.rg-theme.rg6 .site-header {
   background: color-mix(in srgb, var(--rgcard) 82%, transparent);
   backdrop-filter: blur(6px);
   border: 1px solid var(--rgline);
-  padding: 9px 13px;
+  padding: 6px 11px;
   cursor: pointer;
   box-shadow: 0 4px 24px #0008;
   color: var(--rgink);
@@ -11025,7 +11034,7 @@ html.dark.rg-theme.rg6 .site-header {
   align-items: center;
   gap: 8px;
   font-weight: 700;
-  font-size: 13.5px;
+  font-size: 12.5px;
   line-height: 1.25;
 }
 .rg-topicsel-arrow {
@@ -11119,11 +11128,11 @@ html.dark.rg-theme.rg6 .site-header {
 .rg-diff-hex {
   display: inline-grid;
   place-items: center;
-  width: 30px;
-  height: 34px;
-  margin-right: 7px;
+  width: 25px;
+  height: 29px;
+  margin-right: 6px;
   flex: none;
-  font: 800 15px/1 monospace;
+  font: 800 13px/1 monospace;
   font-style: normal;
   color: var(--rggold);
   background: #0d0609;
@@ -11152,9 +11161,9 @@ html.dark.rg-theme.rg6 .site-header {
   border: 1px solid var(--rgline);
   background: 0 0;
   color: var(--rgink);
-  padding: 4px 10px;
+  padding: 3px 9px;
   font-weight: 700;
-  font-size: 12.5px;
+  font-size: 12px;
   line-height: 1;
   cursor: pointer;
   border-radius: 999px;
