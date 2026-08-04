@@ -1,8 +1,10 @@
 "use client";
 
-// 통합전략 탭 — 토픽: 팬텀 & 크림슨 솔리테어(rogue_1) + 침몰자의 흑류수해(rogue_6, CN 선행·미래시).
-// 데이터는 scripts/build-rogue.py가 생성하는 app/data/rogue1.json / rogue6.json (클뜯 레포 원본).
+// 통합전략 탭 — 토픽: 팬텀 & 크림슨 솔리테어(rogue_1) ~ 침몰자의 흑류수해(rogue_6, CN 선행·미래시).
+// 데이터는 scripts/build-rogue.py가 생성하는 app/data/rogueN[.loc].json (클뜯 레포 원본).
 // rogue_6은 CN 데이터를 한국어화(rogue6-ko.json)한 것으로, 이름류는 중국어 원문(cn)을 병기한다.
+// 서버 탭(한국섭/중국섭, 2026-08-04): 중국섭은 rogueN.cn.json — CN 서버 텍스트에 KR 공식
+// 번역을 오버레이한 것으로 rogue_6과 같은 병기 표기. 흑류수해는 KR 미출시라 KR 탭 비활성.
 // 조우의 층별 출현 규칙·엔딩 선제조건은 클라 데이터에 없어 PRTS 기반 큐레이션(rogueN-curated.json)을 병합한다.
 import { lazy, startTransition, Suspense, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import rogue1Data from "./data/rogue1.json";
@@ -64,7 +66,7 @@ type Ending = { id: string; name: string; desc: string | null; boss: string | nu
 type EncChoice = { title: string; desc: string | null; cn?: string; variants?: string[]; next?: { desc: string | null; choices: EncChoice[] } };
 type Encounter = { scene: string; title: string; desc: string | null; bg?: string | null; choices: EncChoice[]; floors?: number[]; note?: string; cn?: string };
 type RogueData = {
-  id: string; name: string; line: string | null; cnName?: string; future?: boolean;
+  id: string; name: string; line: string | null; cnName?: string; future?: boolean; server?: string;
   zones: Zone[]; nodeTypes: { id: string; name: string; desc: string | null; func?: string | null; cn?: string }[];
   difficulties: Difficulty[]; stages: Stage[]; enemies: Record<string, Enemy>;
   relics: Relic[]; capsules?: Capsule[]; tools: Simple[]; bands: Simple[]; exploreTools?: Simple[];
@@ -796,6 +798,17 @@ const TOPIC_LOADERS: Record<string, () => Promise<{ default: unknown }>> = {
   rogue_5: () => import("./data/rogue5.json"),
   rogue_6: () => import("./data/rogue6.json"),
 };
+// 중국섭 탭(서버 탭 '중국 서버') — CN 텍스트 테이블 + KR 공식 한국어 오버레이 빌드
+// (build-rogue.py cn — 흑류수해처럼 중국어 원문 병기). 공식 현지화가 없는 데이터라
+// EN/JA 로케일도 이 파일을 그대로 쓴다 (rogue_6과 같은 정책). rogue_6은 원래 CN 빌드.
+const TOPIC_LOADERS_CN: Record<string, () => Promise<{ default: unknown }>> = {
+  rogue_1: () => import("./data/rogue1.cn.json"),
+  rogue_2: () => import("./data/rogue2.cn.json"),
+  rogue_3: () => import("./data/rogue3.cn.json"),
+  rogue_4: () => import("./data/rogue4.cn.json"),
+  rogue_5: () => import("./data/rogue5.cn.json"),
+  rogue_6: () => import("./data/rogue6.json"),
+};
 const TOPIC_LOADERS_EN: Record<string, () => Promise<{ default: unknown }>> = {
   rogue_1: () => import("./data/rogue1.en.json"),
   rogue_2: () => import("./data/rogue2.en.json"),
@@ -827,6 +840,11 @@ const topicFromUrl = () => {
   const q = new URLSearchParams(window.location.search).get("topic");
   return TOPICS.find((tp) => tp.ready && slugOf(tp.id) === q)?.id ?? "rogue_1";
 };
+// 서버 탭 (한국섭/중국섭) — URL은 ?sv=cn 일 때만 표시. 흑류수해(rogue_6)는 KR 미출시라
+// 토픽만으로도 중국 서버가 강제된다 (KR 탭은 비활성).
+type Server = "kr" | "cn";
+const serverFromUrl = (): Server =>
+  new URLSearchParams(window.location.search).get("sv") === "cn" || topicFromUrl() === "rogue_6" ? "cn" : "kr";
 
 // ── 메인 ───────────────────────────────────────────────────────────────────
 export default function RogueGuide({ includeFuture }: { includeFuture?: boolean }) {
@@ -834,6 +852,8 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
 
   // 첫 렌더에서 URL의 ?topic= 을 읽어 시작 토픽 결정 (SSR에선 rogue_1)
   const [topic, setTopic] = useState(() => (typeof window === "undefined" ? "rogue_1" : topicFromUrl()));
+  // 서버 탭 — 한국섭(kr, 기본)/중국섭(cn). SSR에선 kr, 마운트 게이트가 미스매치를 막는다.
+  const [server, setServer] = useState<Server>(() => (typeof window === "undefined" ? "kr" : serverFromUrl()));
   const [loaded, setLoaded] = useState<Record<string, RogueData>>({});
   // 마운트 게이트 — 정적 프리렌더 HTML(항상 rogue_1)과 클라 첫 렌더가 어긋나면
   // 하이드레이션 미스매치가 난다. 마운트 전엔 토픽 무관 로딩 셸만 렌더해 양쪽을
@@ -841,18 +861,19 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   // useSyncExternalStore: 서버/하이드레이션 스냅샷=false, 마운트 후 클라 스냅샷=true
   // (effect 내 setState 없이 하이드레이션 안전하게 클라 마운트를 감지).
   const mounted = useSyncExternalStore(() => () => {}, () => true, () => false);
-  // KR rogue_1만 기본 번들 — 그 외(다른 토픽·EN/JA 로케일)는 선택 시 동적 로드.
-  // 캐시 키는 토픽:로케일 (언어 전환 시 같은 토픽의 현지어 데이터를 다시 불러온다)
-  const dataKey = `${topic}:${locale}`;
+  // KR rogue_1만 기본 번들 — 그 외(다른 토픽·EN/JA 로케일·중국섭)는 선택 시 동적 로드.
+  // 캐시 키는 토픽:서버:로케일 (언어·서버 전환 시 같은 토픽의 해당 데이터를 다시 불러온다)
+  const bundled = topic === "rogue_1" && locale === "ko" && server === "kr";
+  const dataKey = `${topic}:${server}:${locale}`;
   useEffect(() => {
-    const key = `${topic}:${locale}`;
-    const loader = loadersFor(locale)[topic];
-    if (!(topic === "rogue_1" && locale === "ko") && !loaded[key] && loader) {
+    const key = `${topic}:${server}:${locale}`;
+    const loader = server === "cn" ? TOPIC_LOADERS_CN[topic] : loadersFor(locale)[topic];
+    if (!(topic === "rogue_1" && locale === "ko" && server === "kr") && !loaded[key] && loader) {
       loader().then((m) =>
         setLoaded((cur) => ({ ...cur, [key]: m.default as RogueData })));
     }
-  }, [topic, locale, loaded]);
-  const active = topic === "rogue_1" && locale === "ko" ? rogue1 : loaded[dataKey] ?? null;
+  }, [topic, server, locale, loaded]);
+  const active = bundled ? rogue1 : loaded[dataKey] ?? null;
   setActiveData(active ?? rogue1);
   const loading = active == null;
 
@@ -918,6 +939,7 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   const [navTick, setNavTick] = useState(0);
   // 토픽 전환 + 뷰/난이도/검색/모달 리셋 (옛 switchTopic이 하던 일). 같은 토픽이면 무시.
   const applyTopic = (next: string) => {
+    if (next === "rogue_6") applyServer("cn"); // 흑류수해는 KR 미출시 — 중국섭 강제
     if (topicRef.current === next) return;
     topicRef.current = next;
     setTopic(next);
@@ -929,6 +951,17 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
     setInvOpen(false); setInvTab("relic"); // 보유 리스트 모달·탭 리셋 (목록 자체는 테마별 저장)
   };
   const applyTopicFromUrl = () => applyTopic(topicFromUrl());
+  // 서버 전환 — 같은 토픽의 다른 서버 데이터 인스턴스로 갈아끼운다. 열려 있던 상세 모달은
+  // 옛 데이터 객체를 물고 있으므로 닫는다 (뷰·난이도·검색은 유지 — 같은 토픽이라 유효).
+  const serverRef = useRef(server);
+  const applyServer = (next: Server) => {
+    if (serverRef.current === next) return;
+    serverRef.current = next;
+    setServer(next);
+    setZoneOpen(null); setStageOpen(null); setEnemyOpen(null); setEncOpen(null); setRelicOpen(null);
+    setLensHits(null); setLensMulti(null);
+  };
+  const applyServerFromUrl = () => applyServer(serverFromUrl());
   useEffect(() => {
     // popstate=브라우저 뒤로/앞으로, ta:rogue-topic=햄버거 부메뉴에서 온 커스텀 이벤트.
     // ⚠ 예전엔 부메뉴/드롭다운이 합성 popstate를 쐈는데, vinext 라우터가 그걸 내비게이션으로
@@ -936,19 +969,32 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
     // 핸드오프 재적용 신호도 함께 올린다 — 헤더 만능검색이 **같은 테마**의 항목을 지목하면
     // 토픽이 안 바뀌어 아래 데이터 로드 effect가 다시 안 돌기 때문. 테마가 바뀐 경우엔
     // 그 effect가 데이터 로드 후 처리한다(applyLensHandoff는 토픽이 맞을 때만 소비).
-    const onNav = () => { applyTopicFromUrl(); setNavTick((n) => n + 1); };
+    const onNav = () => { applyTopicFromUrl(); applyServerFromUrl(); setNavTick((n) => n + 1); };
     window.addEventListener("popstate", onNav);
     window.addEventListener("ta:rogue-topic", onNav);
     return () => { window.removeEventListener("popstate", onNav); window.removeEventListener("ta:rogue-topic", onNav); };
   }, []);
 
   // 헤더 테마 드롭다운 — URL(?topic=isN)만 바꾸고 직접 토픽 전환(합성 popstate 안 씀).
+  // sv 파라미터도 실효 서버(흑류수해=cn 강제)에 맞춰 함께 정리해 뒤로가기와 어긋나지 않게 한다.
   const goTopic = (id: string) => {
     if (id === topic) return;
     const url = new URL(window.location.href);
     url.searchParams.set("topic", slugOf(id));
+    if (id === "rogue_6" || serverRef.current === "cn") url.searchParams.set("sv", "cn");
+    else url.searchParams.delete("sv");
     history.pushState(null, "", url.pathname + url.search + url.hash);
     applyTopic(id);
+  };
+
+  // 서버 탭 클릭 — URL(?sv=cn)을 바꾸고 전환. 흑류수해에서 KR 탭은 비활성(미출시).
+  const goServer = (next: Server) => {
+    if (next === server || (next === "kr" && topic === "rogue_6")) return;
+    const url = new URL(window.location.href);
+    if (next === "cn") url.searchParams.set("sv", "cn");
+    else url.searchParams.delete("sv");
+    history.pushState(null, "", url.pathname + url.search + url.hash);
+    applyServer(next);
   };
 
   // 뷰 전환 — URL 해시 동기화는 아래 딥링크 effect가 담당 (뷰+열린 모달을 함께 표현)
@@ -1630,7 +1676,15 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
                 {t("CN 선행 데이터 기반 · 명칭은 비공식 번역이며 중국어 원문을 병기합니다.")}
               </p>
             )}
-            {locale !== "ko" && topic === "rogue_6" && <p className="rg-disclaimer">{t("이 테마는 CN 선행 데이터라 아직 한국어·중국어로만 제공됩니다.")}</p>}
+            {server === "cn" && topic !== "rogue_6" && (
+              <p className="rg-disclaimer">
+                {data.cnName && <span className="rg-cn" lang="zh">{data.cnName}</span>}{" "}
+                {t("중국 서버 데이터 기반 · 한국 서버 공식 번역으로 표기하고 중국어 원문을 병기합니다.")}
+              </p>
+            )}
+            {locale !== "ko" && (topic === "rogue_6"
+              ? <p className="rg-disclaimer">{t("이 테마는 CN 선행 데이터라 아직 한국어·중국어로만 제공됩니다.")}</p>
+              : server === "cn" && <p className="rg-disclaimer">{t("중국 서버 데이터는 아직 한국어·중국어로만 제공됩니다.")}</p>)}
             {data.line && <p className="rg-line">{data.line}</p>}
           </div>
 
@@ -1652,8 +1706,18 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
             (사용자 지정 2026-07-26). ⚠ .rg-hero 안에 두면 overflow:hidden에 펼친 메뉴가
             잘린다 — 반드시 .rg-head 직속(클리핑 밖)에 두고 absolute로 겹칠 것 */}
         <div className="rg-headtools">
+        {/* 서버 탭 — 한국섭/중국섭. 중국섭은 CN 서버 데이터(중국어 병기), 흑류수해는 KR 미출시라
+            KR 탭 비활성 (사용자 요청 2026-08-04) */}
+        <div className="rg-serversel" role="group" aria-label={t("서버 선택")}>
+          <button type="button" className={server === "kr" ? "on" : ""} aria-pressed={server === "kr"}
+            disabled={topic === "rogue_6"}
+            title={topic === "rogue_6" ? t("흑류수해는 한국 서버 미출시 — 중국 서버 데이터만 제공됩니다") : undefined}
+            onClick={() => goServer("kr")}>{t("한국 서버")}</button>
+          <button type="button" className={server === "cn" ? "on" : ""} aria-pressed={server === "cn"}
+            onClick={() => goServer("cn")}>{t("중국 서버")}</button>
+        </div>
         {/* 스샷 레이더 — 버튼 자체가 자동인식 토글, ?는 도움말 모달. KR/EN/JA 화면 인식 (2026-07-25).
-            흑류수해(rogue_6)는 CN 선행이라 중국어 화면도 전 로케일에서 인식한다. */}
+            흑류수해(rogue_6)·중국섭 데이터는 중국어 병기라 중국어 화면도 전 로케일에서 인식한다. */}
         <div className="lens-open-wrap">
           {/* 테마별 게임연결 + 리플레이 — 여기서 연결하면 이 테마로만 인식이 고정된다 (2026-07-26) */}
           {BRIDGE_LIVE && <BridgeTopicButton topic={topic} name={TOPICS.find((tp) => tp.id === topic)?.name ?? topic} t={t} />}
@@ -1678,7 +1742,8 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
           </button>
           {topicMenu && (
             <ul className="rg-topicsel-menu" role="listbox" aria-label={t("테마 변경")}>
-              {TOPICS.filter((tp) => tp.ready && (!tp.future || includeFuture)).map((tp) => (
+              {/* 중국섭 탭에선 전 토픽이 CN 서버 콘텐츠 — 미래시 토글과 무관하게 전부 노출 */}
+              {TOPICS.filter((tp) => tp.ready && (server === "cn" || !tp.future || includeFuture)).map((tp) => (
                 <li key={tp.id} role="option" aria-selected={tp.id === topic}>
                   <button type="button" className={tp.id === topic ? "on" : ""}
                     onClick={() => { setTopicMenu(false); goTopic(tp.id); }}>

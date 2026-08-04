@@ -2,6 +2,8 @@
 #
 # Usage:
 #   python3 scripts/build-rogue.py            # rogue_1 (팬텀 & 크림슨 솔리테어)
+#   python3 scripts/build-rogue.py rogueN     # KR / rogueN-en·-ja 로케일 / rogueN-cn 중국섭
+#   python3 scripts/build-rogue.py cn         # 중국섭 변형 일괄 (rogue1~5.cn.json)
 #
 # 소스 (ArknightsAssets/ArknightsGamedata kr — PROJECT-GUIDE §2 클뜯 레포):
 #   excel/roguelike_topic_table.json  — 존·스테이지·유물·레퍼토리(음반)·환각·난이도·엔딩·조우 씬
@@ -657,23 +659,29 @@ def build_topic(tid="rogue_1", loc=None):
     """KR 정식 출시 토픽(rogue_1~5) 공통 빌더 — 스테이지 id 접두 roN_ 공통,
     토픽 고유 시스템(음반/메아리/탐사 도구 등)은 데이터 존재 여부로 분기한다.
     loc="en"|"ja"면 텍스트 테이블만 글로벌/일본 서버 데이터로 바꿔 rogueN.<loc>.json 생성
-    — 수치(레벨 파일·enemy_database)는 서버 공통이라 KR 캐시를 그대로 쓴다."""
+    — 수치(레벨 파일·enemy_database)는 서버 공통이라 KR 캐시를 그대로 쓴다.
+    loc="cn"이면 /rogue 중국섭 탭용 rogueN.cn.json — CN 텍스트 테이블로 같은 구조를
+    만든 뒤 cn_koreanize()가 흑류수해처럼 한국어 표기 + 중국어 원문 병기로 바꾼다."""
     ronum = tid.split("_")[1]  # "1"~"5"
-    branch = {"en": "en", "ja": "jp"}.get(loc, "kr")
+    branch = {"en": "en", "ja": "jp", "cn": "cn"}.get(loc, "kr")
+    # 계산 라벨(공격방식·면역 등)의 표기 로케일 — cn 빌드는 한국어 라벨(None)로 두면
+    # 오버레이·최종 표기와 일치한다 (IMMUNE_LABELS/DAMAGE_LABELS에 "cn" 키는 없음)
+    tloc = loc if loc in ("en", "ja") else None
     table = fetch_json("excel/roguelike_topic_table.json", branch)
     topic = table["topics"][tid]
     r = table["details"][tid]
     handbook = fetch_json("excel/enemy_handbook_table.json", branch)["enemyData"]
     enemy_db = fetch_json("levels/enemydata/enemy_database.json")
-    # 큐레이션(한국어 집필) 문자열 번역 오버레이 — 없는 문장은 KR 폴백 + 리포트
+    # 큐레이션(한국어 집필) 문자열 번역 오버레이 — 없는 문장은 KR 폴백 + 리포트.
+    # cn 빌드는 큐레이션 한국어를 그대로 쓰므로 통째로 건너뛴다 (tr 통과).
     tr_map = {}
-    if loc:
+    if loc in ("en", "ja"):
         p = os.path.join(REPO, "scripts", "rogue-i18n.json")
         if os.path.exists(p):
             tr_map = (json.load(open(p, encoding="utf-8")) or {}).get(loc) or {}
     tr_missing = set()
     def tr(s):
-        if not loc or s is None:
+        if loc not in ("en", "ja") or s is None:
             return s
         if s in tr_map:
             return tr_map[s]
@@ -885,7 +893,7 @@ def build_topic(tid="rogue_1", loc=None):
             "name": name,
             "rank": hb.get("enemyLevel"),  # NORMAL/ELITE/BOSS
             "index": hb.get("enemyIndex"),
-            "attack": attack_of(hb, loc),
+            "attack": attack_of(hb, tloc),
             "desc": hb.get("description"),
             "ability": ability_of(hb),
             "hp": num(attr("maxHp", 0)), "atk": num(attr("atk", 0)),
@@ -893,7 +901,7 @@ def build_topic(tid="rogue_1", loc=None):
             "aspd": num(attr("attackSpeed", 100)), "ms": num(attr("moveSpeed", 1)),
             "weight": num(attr("massLevel", 1)),
             "lifePoint": mv(pick.get("lifePointReduce"), mv(base.get("lifePointReduce"), 1)),
-            "immune": [lb for k, lb in zip(IMMUNE_FIELDS, IMMUNE_LABELS[loc]) if attr(k, False)],
+            "immune": [lb for k, lb in zip(IMMUNE_FIELDS, IMMUNE_LABELS[tloc]) if attr(k, False)],
         }
 
     # 적 초상 — arts/enemies/<id>.png (변종 _N은 원본 id 초상으로 폴백)
@@ -1238,7 +1246,7 @@ def build_topic(tid="rogue_1", loc=None):
     # 문장 속 「이름」 인용은 KR→현지어 공식 명칭으로 치환한다 (renderCond 자동 링크가
     # 현지어 데이터의 이름과 글자 단위로 일치해야 하므로).
     loc_name = None
-    if loc:
+    if loc in ("en", "ja"):
         kr_table = fetch_json("excel/roguelike_topic_table.json")
         kr_r = kr_table["details"][tid]
         kr_hb = fetch_json("excel/enemy_handbook_table.json")["enemyData"]
@@ -1268,7 +1276,7 @@ def build_topic(tid="rogue_1", loc=None):
             if kv.get("name") and lv2 and lv2.get("name"):
                 loc_name[kv["name"].strip()] = lv2["name"].strip()
     def tr_quoted(s):
-        if not loc or not s:
+        if loc not in ("en", "ja") or not s:
             return s
         return re.sub(r"「([^」]+)」", lambda m: f"「{loc_name.get(m.group(1), m.group(1))}」", s)
     curated_path = os.path.join(REPO, "scripts", f"rogue{ronum}-curated.json")
@@ -1325,6 +1333,9 @@ def build_topic(tid="rogue_1", loc=None):
         return v
     out = sanitize(out)
 
+    if loc == "cn":  # 중국섭 변형 — 한국어 표기 + 중국어 원문 병기 (흑류수해와 같은 꼴)
+        out = cn_koreanize(ronum, out)
+
     fname = f"rogue{ronum}.{loc}.json" if loc else f"rogue{ronum}.json"
     dest = os.path.join(REPO, "app", "data", fname)
     json.dump(out, open(dest, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
@@ -1341,6 +1352,234 @@ def build_topic(tid="rogue_1", loc=None):
         print(f"  ⚠ {loc} 미번역 큐레이션 문장 {len(tr_missing)}건 → rogue-i18n-missing.json")
 
 
+# ── 중국섭 변형 (rogue_1~5 → rogueN.cn.json — /rogue 서버 탭 '중국 서버') ──────
+# CN 텍스트 테이블로 build_topic과 같은 구조를 만든 뒤 한국어화한다:
+#   ① 이름류 필드에 중국어 원문 cn 병기 (rogue6 keep_cn과 동일 규칙)
+#   ② 같은 id의 KR 최종 산출물(app/data/rogueN.json) 텍스트를 구조적으로 오버레이
+#      — KR/CN 테이블은 id가 사실상 동일해(2026-08 확인) 이 단계가 거의 전부를 덮는다.
+#      양쪽 다 같은 파이프라인 산출물이라 「이름」 감싸기·존 설명 분리 등 가공도 일치한다.
+#   ③ 잔여 CN 문자열(CN 선행 신규 콘텐츠 — 쉐이 zone_sky_3 등)은 KR 교차 자동 사전
+#      + scripts/rogue-cn-ko.json 수동 사전(AI 집필)으로 폴백
+#   ④ 그래도 남으면 scripts/rogue-cn-untranslated.json 리포트 (재실행 시 토픽별 갱신)
+
+def cn_koreanize(ronum, out):
+    kr_path = os.path.join(REPO, "app", "data", f"rogue{ronum}.json")
+    if not os.path.exists(kr_path):
+        raise SystemExit(f"app/data/rogue{ronum}.json이 없음 — 먼저 KR 빌드: "
+                         f"python3 scripts/build-rogue.py rogue{ronum}")
+    kr = json.load(open(kr_path, encoding="utf-8"))
+
+    # ① 이름류 원문 병기 (오버레이 전에 잡아 둔다)
+    def keep_cn(ent, field="name"):
+        if ent.get("cn"):
+            return
+        if isinstance(ent.get(field), str) and ent[field].strip():
+            ent["cn"] = ent[field]
+    def keep_cn_tree(chs):
+        for ch in chs:
+            keep_cn(ch, "title")
+            if ch.get("next"):
+                keep_cn_tree(ch["next"]["choices"])
+    for z in out["zones"]:
+        keep_cn(z)
+    for s in out["stages"]:
+        keep_cn(s)
+    for e in out["enemies"].values():
+        keep_cn(e)
+    for coll in ("relics", "capsules", "tools", "bands", "exploreTools", "variations",
+                 "endings", "nodeTypes"):
+        for x in out.get(coll) or []:
+            keep_cn(x)
+    for m in out.get("mechanics") or []:
+        for x in m["items"]:
+            keep_cn(x)
+    for enc in out["encounters"]:
+        keep_cn(enc, "title")
+        keep_cn_tree(enc["choices"])
+
+    # ② 같은 id의 KR 공식 텍스트 오버레이 (텍스트 필드만 — 수치·플래그는 CN 빌드 유지)
+    TEXT_FIELDS = {
+        "zones": ("id", ("name", "time", "desc", "buff")),
+        "nodeTypes": ("id", ("name", "desc", "func")),
+        "stages": ("id", ("name", "desc", "eliteDesc")),
+        "relics": ("id", ("name", "desc", "usage", "obtain")),
+        "capsules": ("id", ("name", "en", "desc", "usage")),
+        "tools": ("id", ("name", "desc", "usage")),
+        "bands": ("id", ("name", "desc", "usage")),
+        "exploreTools": ("id", ("name", "desc", "usage")),
+        "variations": ("id", ("name", "func", "desc")),
+        "endings": ("id", ("name", "desc", "change")),
+    }
+    def put_txt(dst, src, fields):
+        for f in fields:
+            v = src.get(f)
+            if isinstance(v, str) and v.strip():
+                dst[f] = v
+    for coll, (key, fields) in TEXT_FIELDS.items():
+        kr_by = {x[key]: x for x in kr.get(coll) or []}
+        for x in out.get(coll) or []:
+            k = kr_by.get(x[key])
+            if k:
+                put_txt(x, k, fields)
+    for key, e in out["enemies"].items():
+        k = (kr.get("enemies") or {}).get(key)
+        if k:
+            put_txt(e, k, ("name", "attack", "desc", "ability"))
+    kr_diff = {(d["mode"], d["grade"]): d for d in kr.get("difficulties") or []}
+    for d in out.get("difficulties") or []:
+        k = kr_diff.get((d["mode"], d["grade"]))
+        if k:
+            put_txt(d, k, ("name", "rule"))
+    # 고유 시스템 — 그룹 라벨은 코드 상수(한국어)라 그대로, 항목은 id 교차.
+    # 다단계 행(stages — 붕괴 패러다임 등)은 개수가 같을 때만 통째로 교체.
+    kr_mech = {x["id"]: x for m in kr.get("mechanics") or [] for x in m["items"]}
+    for m in out.get("mechanics") or []:
+        for x in m["items"]:
+            k = kr_mech.get(x["id"])
+            if not k:
+                continue
+            put_txt(x, k, ("name", "usage", "desc", "kind"))
+            if k.get("stages") and len(k["stages"]) == len(x.get("stages") or []):
+                x["stages"] = k["stages"]
+    # 조우 — scene id 교차. 선택지 트리는 서버 공통 구조라 같은 개수일 때 위치 교차
+    # (개수가 다르면 CN 신규 분기 — ③ 사전 폴백에 맡긴다)
+    def overlay_choices(cn_chs, kr_chs):
+        if len(cn_chs) != len(kr_chs):
+            return
+        for c, k in zip(cn_chs, kr_chs):
+            put_txt(c, k, ("title", "desc"))
+            if k.get("variants") and len(k["variants"]) == len(c.get("variants") or []):
+                c["variants"] = k["variants"]
+            if c.get("next") and k.get("next"):
+                if isinstance(k["next"].get("desc"), str) and k["next"]["desc"].strip():
+                    c["next"]["desc"] = k["next"]["desc"]
+                overlay_choices(c["next"]["choices"], k["next"]["choices"])
+    kr_enc = {e["scene"]: e for e in kr.get("encounters") or []}
+    for enc in out["encounters"]:
+        k = kr_enc.get(enc["scene"])
+        if k:
+            put_txt(enc, k, ("title", "desc"))
+            overlay_choices(enc["choices"], k["choices"])
+    # 토픽 이름·부제 — 한국어 공식 명칭으로, 중국어 원문은 cnName (흑류수해와 같은 꼴)
+    out["cnName"] = out["name"]
+    if isinstance(kr.get("name"), str) and kr["name"].strip():
+        out["name"] = kr["name"]
+    if isinstance(kr.get("line"), str) and kr["line"].strip():
+        out["line"] = kr["line"]
+    out["server"] = "cn"
+
+    # ③ 잔여 CN 문자열 — KR 교차 자동 사전(+상세 테이블 확장) → 수동 사전 폴백
+    tr = load_auto_tr()
+    tr.update(load_auto_tr_details())
+    ko_path = os.path.join(REPO, "scripts", "rogue-cn-ko.json")
+    if os.path.exists(ko_path):
+        tr.update(json.load(open(ko_path, encoding="utf-8")))
+    untranslated = {}
+    def has_cjk(s):
+        return any("一" <= ch <= "鿿" for ch in s)
+    def translate(v, path=""):
+        if isinstance(v, str):
+            s = v.strip()
+            if s in tr:
+                return v.replace(s, tr[s])
+            if has_cjk(v):
+                untranslated.setdefault(s, path)
+            return v
+        if isinstance(v, list):
+            return [translate(x, path) for x in v]
+        if isinstance(v, dict):
+            # cond·note는 큐레이션 한국어(중국어 용어 인용 포함 — 凛视 등)라 건드리지 않는다
+            return {k: (x if k in ("cn", "cnName", "cond", "note") else translate(x, f"{path}.{k}" if path else k))
+                    for k, x in v.items()}
+        return v
+    out = translate(out)
+
+    # 번역 후에도 이름이 원문과 같으면(=원래 비CJK·서버 공통 표기) cn 병기 제거
+    def drop_same_cn(ent, field="name"):
+        if ent.get("cn") is not None and ent["cn"] == ent.get(field):
+            del ent["cn"]
+    def drop_same_cn_tree(chs):
+        for ch in chs:
+            drop_same_cn(ch, "title")
+            if ch.get("next"):
+                drop_same_cn_tree(ch["next"]["choices"])
+    for z in out["zones"]:
+        drop_same_cn(z)
+    for s in out["stages"]:
+        drop_same_cn(s)
+    for e in out["enemies"].values():
+        drop_same_cn(e)
+    for coll in ("relics", "capsules", "tools", "bands", "exploreTools", "variations",
+                 "endings", "nodeTypes"):
+        for x in out.get(coll) or []:
+            drop_same_cn(x)
+    for m in out.get("mechanics") or []:
+        for x in m["items"]:
+            drop_same_cn(x)
+    for enc in out["encounters"]:
+        drop_same_cn(enc, "title")
+        drop_same_cn_tree(enc["choices"])
+
+    # ④ 미번역 리포트 — 토픽별 키로 병합 저장
+    rep_path = os.path.join(REPO, "scripts", "rogue-cn-untranslated.json")
+    rep = json.load(open(rep_path, encoding="utf-8")) if os.path.exists(rep_path) else {}
+    rep[f"rogue{ronum}"] = untranslated
+    json.dump(rep, open(rep_path, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    if untranslated:
+        print(f"  ⚠ 중국섭 미번역 {len(untranslated)}건 → rogue-cn-untranslated.json "
+              f"(rogue-cn-ko.json에 채우면 반영)")
+    return out
+
+
+def load_auto_tr_details():
+    """rogue_1~5 상세 테이블 id 교차 확장 사전 — 스테이지·존·엔딩·조우 씬·선택지·난이도.
+    cn_koreanize ②(구조 오버레이)가 놓친 잔여 문자열의 폴백. 존 설명은 첫 줄(탐사 시간)과
+    본문으로 쪼개 쓰므로 조각도 함께 넣는다. 게임 마크업은 sanitize와 같은 규칙으로 제거."""
+    def clean(s):
+        if not isinstance(s, str):
+            return s
+        return re.sub(r"</?[@$a-zA-Z][^>]*>|</>", "", s.replace("\r\n", "\n").replace("\\n", "\n"))
+    kr = fetch_json("excel/roguelike_topic_table.json")
+    cn = fetch_json("excel/roguelike_topic_table.json", "cn")
+    tr = {}
+    def put(c, k):
+        c, k = clean(c), clean(k)
+        if isinstance(c, str) and isinstance(k, str) and c.strip() and k.strip() and c != k:
+            tr.setdefault(c.strip(), k.strip())
+    CROSS = {
+        "stages": ("name", "description", "eliteDesc"),
+        "zones": ("name", "buffDescription"),
+        "endings": ("name", "desc", "changeEndingDesc"),
+        "choiceScenes": ("title", "description"),
+        "choices": ("title", "description"),
+        "variationData": ("outerName", "innerName", "functionDesc", "desc"),
+    }
+    for rid in ["rogue_1", "rogue_2", "rogue_3", "rogue_4", "rogue_5"]:
+        dk, dc = kr["details"].get(rid), cn["details"].get(rid)
+        if not dk or not dc:
+            continue
+        for f, fields in CROSS.items():
+            for iid, ic in (dc.get(f) or {}).items():
+                ik = (dk.get(f) or {}).get(iid)
+                if ik:
+                    for fld in fields:
+                        put(ic.get(fld), ik.get(fld))
+        for iid, ic in (dc.get("zones") or {}).items():
+            ik = (dk.get("zones") or {}).get(iid)
+            if not ik:
+                continue
+            pc = (ic.get("description") or "").split("\n", 1)
+            pk = (ik.get("description") or "").split("\n", 1)
+            if len(pc) == len(pk):
+                for a, b in zip(pc, pk):
+                    put(a, b)
+        for dcd, dkd in zip(dc.get("difficulties") or [], dk.get("difficulties") or []):
+            if dcd.get("grade") == dkd.get("grade") and dcd.get("modeDifficulty") == dkd.get("modeDifficulty"):
+                put(dcd.get("name"), dkd.get("name"))
+                put(dcd.get("ruleDesc"), dkd.get("ruleDesc"))
+    return tr
+
+
 # ── rogue_6 (침몰자의 흑류수해) — CN 선행 데이터 빌드 ─────────────────────────
 # KR 미출시(2026-07)라 cn 브랜치에서 빌드하고, 문자열은 3단 번역으로 한국어화한다:
 #   ① 같은 id가 KR 데이터에 있는 것(기존 적, 이전 테마 유물 등)은 KR 공식 번역 자동 매핑
@@ -1349,11 +1588,18 @@ def build_topic(tid="rogue_1", loc=None):
 # KR 정식 출시 후에는 branch="kr"로 바꾸고 오버레이를 제거하면 된다.
 
 def load_auto_tr():
-    """KR/CN 테이블 교차로 CN→KR 공식 번역 사전 자동 생성 (이전 테마 rogue_1~5 공통 항목)."""
+    """KR/CN 테이블 교차로 CN→KR 공식 번역 사전 자동 생성 (이전 테마 rogue_1~5 공통 항목).
+    번역 대상 문자열은 sanitize를 거친 뒤라 사전 키·값도 같은 규칙으로 마크업을 벗긴다
+    (안 벗기면 <@ba.vup> 등이 낀 원문이 매칭에서 빠진다 — 2026-08 중국섭 빌드에서 확인)."""
     kr = fetch_json("excel/roguelike_topic_table.json")
     cn = fetch_json("excel/roguelike_topic_table.json", "cn")
     tr = {}
+    def clean(s):
+        if not isinstance(s, str):
+            return s
+        return re.sub(r"</?[@$a-zA-Z][^>]*>|</>", "", s.replace("\r\n", "\n").replace("\\n", "\n"))
     def put(c, k):
+        c, k = clean(c), clean(k)
         if isinstance(c, str) and isinstance(k, str) and c.strip() and k.strip() and c != k:
             tr.setdefault(c.strip(), k.strip())
     for rid in ["rogue_1", "rogue_2", "rogue_3", "rogue_4", "rogue_5"]:
@@ -2063,19 +2309,23 @@ if __name__ == "__main__":
         build_rogue6()
     elif re.fullmatch(r"rogue[1-5]", arg):
         build_topic(f"rogue_{arg[-1]}")
-    elif re.fullmatch(r"rogue[1-5]-(en|ja)", arg):
+    elif re.fullmatch(r"rogue[1-5]-(en|ja|cn)", arg):
         build_topic(f"rogue_{arg[5]}", arg.rsplit("-", 1)[1])
     elif arg == "i18n":
         # EN/JA 데이터 — rogue_1~5 (rogue_6은 CN 선행이라 공식 현지화가 없음)
         for n in range(1, 6):
             for lc in ("en", "ja"):
                 build_topic(f"rogue_{n}", lc)
+    elif arg == "cn":
+        # 중국섭 변형 — rogue_1~5 (rogue_6은 원래 CN 빌드라 별도 변형 불필요)
+        for n in range(1, 6):
+            build_topic(f"rogue_{n}", "cn")
     elif arg == "all":
         for n in range(1, 6):
             build_topic(f"rogue_{n}")
         build_rogue6()
         for n in range(1, 6):
-            for lc in ("en", "ja"):
+            for lc in ("en", "ja", "cn"):
                 build_topic(f"rogue_{n}", lc)
     else:
         build_topic("rogue_1")

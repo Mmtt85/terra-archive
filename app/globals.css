@@ -10912,6 +10912,46 @@ html.dark.rg-theme.rg6 .site-header {
 .rg-headtools .lens-open-wrap {
   margin-left: 0; /* 열 안에서는 오른쪽 정렬을 부모가 맡는다 */
 }
+/* 서버 탭 (한국섭/중국섭) — 도구 열 맨 위 세그먼트 (2026-08-04).
+   흑류수해(KR 미출시)에선 한국 서버 버튼이 disabled */
+.rg-serversel {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  background: color-mix(in srgb, var(--rgcard) 82%, transparent);
+  backdrop-filter: blur(6px);
+  border: 1px solid var(--rgline);
+  box-shadow: 0 4px 24px #0008;
+}
+.rg-serversel button {
+  padding: 8px 10px;
+  background: none;
+  border: 0;
+  color: var(--rgtext2);
+  font-weight: 700;
+  font-size: 12.5px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.rg-serversel button:hover:not(:disabled) {
+  color: var(--rgink);
+}
+.rg-serversel button.on {
+  color: var(--rgink);
+  background: color-mix(in srgb, var(--rggold) 16%, transparent);
+  box-shadow: inset 0 -2px 0 var(--rggold);
+}
+.rg-serversel button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.rg-serversel button:focus-visible {
+  outline: 2px solid var(--rggold);
+  outline-offset: 1px;
+}
 .rg-topicsel {
   width: 100%;
 }
@@ -11043,6 +11083,10 @@ html.dark.rg-theme.rg6 .site-header {
     align-self: flex-end;
   }
   .rg-topicsel-btn {
+    backdrop-filter: none;
+    background: var(--rgcard);
+  }
+  .rg-serversel {
     backdrop-filter: none;
     background: var(--rgcard);
   }

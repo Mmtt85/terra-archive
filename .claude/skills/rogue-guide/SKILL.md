@@ -5,8 +5,8 @@ description: 통합전략(IS) 가이드 탭(/rogue)의 데이터 재생성·신�
 
 # 통합전략 가이드 탭 (/rogue)
 
-토픽 2종 가동: 팬텀 & 크림슨 솔리테어(rogue_1, KR 정식) + 침몰자의 흑류수해(rogue_6,
-CN 선행·미래시 전용). 2026-07-17 구축.
+토픽 6종 가동: rogue_1~5(KR 정식) + 침몰자의 흑류수해(rogue_6, CN 선행·미래시 전용).
+2026-07-17 구축, 서버 탭(한국섭/중국섭) 2026-08-04 추가.
 **명칭 규칙: 표시 문구는 반드시 '통합전략'(EN: Integrated Strategies / JA: 統合戦略).
 '로그라이크'는 화면에 절대 노출 금지** — 내부 코드 id(rogue_N)는 유지.
 
@@ -16,9 +16,23 @@ CN 선행·미래시 전용). 2026-07-17 구축.
 python3 scripts/build-rogue.py            # → app/data/rogue1.json (~300KB)
 python3 scripts/build-rogue.py rogue6     # → app/data/rogue6.json (~425KB, CN 소스)
 python3 scripts/build-rogue.py i18n       # → rogue1~5.{en,ja}.json (EN/JA 공식 텍스트)
-python3 scripts/build-rogue.py all        # KR 전 토픽 + rogue6 + EN/JA 전부
+python3 scripts/build-rogue.py cn         # → rogue1~5.cn.json (중국섭 서버 탭용)
+python3 scripts/build-rogue.py all        # KR 전 토픽 + rogue6 + EN/JA/CN 전부
 python3 scripts/build-rogue.py --icons rogue_6  # 아이콘 언팩 (UnityPy·lz4inv 필요)
 ```
+
+### 중국섭 서버 탭 (2026-08-04 구축) — KR 재생성 시 `cn`도 같이 돌릴 것
+- /rogue 우상단 서버 탭 **한국 서버/중국 서버**. 중국섭은 rogueN.cn.json — CN 텍스트
+  테이블로 같은 구조를 빌드한 뒤 `cn_koreanize()`가 흑류수해 꼴(중국어 원문 병기 +
+  한국어 표기)로 바꾼다. 수치(레벨·enemy_database)는 서버 공통이라 KR 캐시 공유.
+- 한국어화 4단: ① 이름류 cn 병기 → ② **같은 id의 KR 최종 산출물(rogueN.json) 구조
+  오버레이**(KR/CN 테이블은 id가 사실상 동일 — 거의 전부 커버) → ③ 잔여 CN 문자열은
+  KR 교차 자동 사전(sanitize 적용 필수!) + `scripts/rogue-cn-ko.json` 수동 사전(AI 집필)
+  → ④ 리포트 `scripts/rogue-cn-untranslated.json` — **0건 유지** (CN 신규 콘텐츠가
+  들어오면 여기 떨어진다 → rogue-cn-ko.json에 채우고 재빌드).
+- UI(rogue.tsx): 캐시 키 `토픽:서버:로케일`, URL `?sv=cn` (cn일 때만). **흑류수해는
+  KR 미출시라 KR 탭 disabled + 토픽 진입 시 중국섭 강제**. 중국섭에선 테마 드롭다운에
+  6종 전부(미래시 토글 무관). EN/JA 로케일도 .cn.json 공유(공식 현지화 없음 — 안내문).
 
 ### EN/JA 로케일 빌드 (2026-07-19 구축) — KR 재생성 시 `i18n`도 같이 돌릴 것
 - **텍스트 테이블만** en/jp 브랜치로 교체(topic_table·enemy_handbook), 수치(레벨 파일·
@@ -31,8 +45,8 @@ python3 scripts/build-rogue.py --icons rogue_6  # 아이콘 언팩 (UnityPy·lz4
   개단→발단, 해류의 숨결→파도의 기운, 깊은 심연→하트 오브 카이룰라, 고주일척→건곤일척,
   시간과 빛→빛과 시간, 결심→'결심'(따옴표 포함) 등 30여 건). 데이터에 없는 이름
   (황사 환경·파도를 사냥하는 기사·역사 재구축 등 6종)만 예외로 KR 유지.
-- UI는 로케일별 동적 로더(TOPIC_LOADERS_EN/JA, 캐시 키 `토픽:로케일`) — KR rogue_1만
-  정적 번들. rogue_6은 공식 현지화가 없어 전 로케일이 KR/CN 파일 공유(비ko엔 안내문).
+- UI는 로케일별 동적 로더(TOPIC_LOADERS_EN/JA/CN, 캐시 키 `토픽:서버:로케일`) — KR
+  rogue_1만 정적 번들. rogue_6은 공식 현지화가 없어 전 로케일이 KR/CN 파일 공유(비ko엔 안내문).
 - **노드 기능 설명**: nodeTypes에 `func`(NODE_FUNC 큐레이션, 빌더 내 표) — 플레이버 desc
   위에 표시. **분노(쉐이)는 items(WRATH)가 아니라 modules.wrath.wrathData**에서 단계별
   실효과(몽롱/명확/심각 + 각성·진정)를 병합한다 (items usage는 '기믹 아이템'뿐).
