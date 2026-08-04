@@ -1435,11 +1435,28 @@ function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onTogg
   const [openCost, setOpenCost] = useState<string | null>(null);
   // 회수일 기준 — 기본은 용문폐+경험치만, 버튼을 눌러야 재료까지 합친다 (사용자 지정 2026-08-05)
   const [withMat, setWithMat] = useState(false);
-  const paybackDays = (p: RaiseRec["payback"]) =>
-    (withMat ? p?.daysWithMat ?? p?.days : p?.days) ?? null;
-  // 구버전 저장분(apBase가 없던 시절)도 읽히므로 apTotal로 폴백한다 — 안 하면 합계가 0으로 뜬다
-  const paybackCost = (p: RaiseRec["payback"]) =>
-    (withMat ? p?.apTotal : p?.apBase ?? p?.apTotal) ?? 0;
+  // ⚠ 비용·회수일은 저장된 payback 필드를 쓰지 않고 **cost + 현재 단가로 매번 재계산**한다.
+  // 구버전 엔진이 저장한 추천(apBase·daysWithMat 없음)을 새 UI가 읽으면 합계가 재료 포함값으로
+  // 폴백되고(11,164 vs 3,537) 없는 필드를 나눠 'NaN일'이 떴다 (사용자 제보 2026-08-05).
+  // 저장분에서 신뢰하는 건 dailyAp(방 델타 × 편성 교대 시계 — UI가 재현 불가)뿐이다.
+  const apOf = (c: RaiseRec["cost"]) => {
+    const apLmd = c.lmd / sanityBasis.lmdPerAp;
+    const apExp = c.exp / sanityBasis.expPerAp;
+    let apMat = 0;
+    let unconverted = 0;
+    for (const [iid, ct] of c.items) {
+      const unit = SANITY_ITEMS[iid];
+      if (unit == null) unconverted += 1;
+      else apMat += unit * ct;
+    }
+    return { apLmd, apExp, apMat, apBase: apLmd + apExp, apTotal: apLmd + apExp + apMat, unconverted };
+  };
+  const daysOf = (r: RaiseRec, withM: boolean): number | null => {
+    const daily = r.payback?.dailyAp ?? 0;
+    if (!(daily > 0)) return null;
+    const ap = apOf(r.cost);
+    return (withM ? ap.apTotal : ap.apBase) / daily;
+  };
   const costRec = openCost ? recs.find((x) => x.opId === openCost) ?? null : null;
   useEffect(() => {
     const onEsc = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -1526,16 +1543,14 @@ function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onTogg
                   </span>
                   {/* 예상 회수일 — 누르면 완성 비용 내역이 펼쳐진다 (사용자 지정 2026-08-05).
                       계산 근거는 그 내역과 패널 상단 각주에 그대로 밝힌다 */}
-                  {r.payback && (
-                    <button type="button" className={`invest-payback${openCost === r.opId ? " on" : ""}`}
-                      aria-expanded={openCost === r.opId}
-                      onClick={() => setOpenCost(openCost === r.opId ? null : r.opId)}
-                      title={t("완성 비용 내역과 계산 과정을 봅니다")}>
-                      {paybackDays(r.payback) == null
-                        ? t("회수 계산 불가")
-                        : t("회수까지 {n}일", { n: num(Math.round(paybackDays(r.payback)!)) })}
-                    </button>
-                  )}
+                  <button type="button" className={`invest-payback${openCost === r.opId ? " on" : ""}`}
+                    aria-expanded={openCost === r.opId}
+                    onClick={() => setOpenCost(openCost === r.opId ? null : r.opId)}
+                    title={t("완성 비용 내역과 계산 과정을 봅니다")}>
+                    {daysOf(r, withMat) == null
+                      ? t("회수 계산 불가")
+                      : t("회수까지 {n}일", { n: num(Math.round(daysOf(r, withMat)!)) })}
+                  </button>
                 </div>
                 {r.placement && <div className="invest-place">{t("{room} · {shift}에 배치됩니다", { room: roomLabel(r.placement.key), shift: shiftTag(r.placement.shift) })}</div>}
                 {deltas.length > 0 && (
@@ -1562,8 +1577,12 @@ function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onTogg
           );
         })}
       </ul>
-      {/* 완성 비용 상세 — 카드 인라인이 아니라 별도 모달 (사용자 지정 2026-08-05) */}
-      {costRec?.payback && (
+      {/* 완성 비용 상세 — 카드 인라인이 아니라 별도 모달 (사용자 지정 2026-08-05).
+          표시 값은 전부 apOf/daysOf 재계산 — 저장분 형식과 무관하게 표와 합계가 항상 일치한다 */}
+      {costRec && (() => {
+        const ap = apOf(costRec.cost);
+        const days = daysOf(costRec, withMat);
+        return (
         <ModalWindow label={t("완성 비용")} className="operator-modal invest-costmodal" onClose={() => setOpenCost(null)}>
           <div className="invest-costdetail">
             <h3 className="invest-costmodal-title">
@@ -1571,14 +1590,12 @@ function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onTogg
               <em>{t("{e} Lv.{lv}", { e: t(ELITE_LABEL[costRec.from]), lv: costRec.fromLevel ?? 1 })} → {t(ELITE_LABEL[costRec.to])} {t("완성")}</em>
             </h3>
             <p className="invest-costmodal-days">
-              {paybackDays(costRec.payback) == null
-                ? t("회수 계산 불가")
-                : t("회수까지 {n}일", { n: num(Math.round(paybackDays(costRec.payback)!)) })}
+              {days == null ? t("회수 계산 불가") : t("회수까지 {n}일", { n: num(Math.round(days)) })}
             </p>
             <table>
               <tbody>
-                <tr><th>{t("용문폐")}</th><td>{num(costRec.cost.lmd)}</td><td>{t("{n} 이성", { n: num(costRec.payback.apLmd) })}</td></tr>
-                {costRec.cost.exp > 0 && <tr><th>{t("경험치")}</th><td>{num(costRec.cost.exp)}</td><td>{t("{n} 이성", { n: num(costRec.payback.apExp) })}</td></tr>}
+                <tr><th>{t("용문폐")}</th><td>{num(costRec.cost.lmd)}</td><td>{t("{n} 이성", { n: num(ap.apLmd) })}</td></tr>
+                {costRec.cost.exp > 0 && <tr><th>{t("경험치")}</th><td>{num(costRec.cost.exp)}</td><td>{t("{n} 이성", { n: num(ap.apExp) })}</td></tr>}
                 {costRec.cost.items.map(([id, ct]) => {
                   const unit = SANITY_ITEMS[id];
                   return (
@@ -1589,10 +1606,10 @@ function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onTogg
                     </tr>
                   );
                 })}
-                <tr className="sum"><th>{withMat ? t("합계 (재료 포함)") : t("합계 (용문폐·경험치)")}</th><td /><td>{t("{n} 이성", { n: num(paybackCost(costRec.payback)) })}</td></tr>
+                <tr className="sum"><th>{withMat ? t("합계 (재료 포함)") : t("합계 (용문폐·경험치)")}</th><td /><td>{t("{n} 이성", { n: num(withMat ? ap.apTotal : ap.apBase) })}</td></tr>
               </tbody>
             </table>
-            {costRec.payback.apMat > 0 && (
+            {ap.apMat > 0 && (
               <button type="button" className={`invest-mattoggle${withMat ? " on" : ""}`} aria-pressed={withMat}
                 onClick={() => setWithMat((v) => !v)}
                 title={t("회수일을 용문폐·경험치만으로 볼지, 듀얼칩 등 육성 재료까지 합쳐 볼지 전환합니다")}>
@@ -1601,24 +1618,25 @@ function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onTogg
               </button>
             )}
             <p className="invest-costcalc">
-              {paybackDays(costRec.payback) == null
+              {days == null
                 ? t("이 오퍼가 올리는 방은 산출을 이성으로 환산할 근거가 없어(발전소·사무실·응접실) 회수일을 내지 않습니다. 방 %효율 이득은 위 목록 그대로입니다.")
-                : rich(t("하루 이득 **{daily} 이성** (방 %효율 변화 × 그 방 1%p의 하루 산출 × 그 조 근무시간 비율) → **{cost} ÷ {daily} = 약 {days}일**", { daily: costRec.payback.dailyAp.toFixed(2), cost: num(paybackCost(costRec.payback)), days: num(Math.round(paybackDays(costRec.payback)!)) }))}
+                : rich(t("하루 이득 **{daily} 이성** (방 %효율 변화 × 그 방 1%p의 하루 산출 × 그 조 근무시간 비율) → **{cost} ÷ {daily} = 약 {days}일**", { daily: costRec.payback!.dailyAp.toFixed(2), cost: num(withMat ? ap.apTotal : ap.apBase), days: num(Math.round(days)) }))}
             </p>
-            {costRec.payback.days != null && costRec.payback.apMat > 0 && (
+            {days != null && ap.apMat > 0 && (
               <p className="invest-costcalc dim">{withMat
-                ? t("재료 {mat} 이성을 포함한 값입니다 — 빼면 {days}일.", { mat: num(costRec.payback.apMat), days: num(Math.round(costRec.payback.days)) })
-                : t("재료 {mat} 이성은 빠져 있습니다 — 포함하면 {days}일.", { mat: num(costRec.payback.apMat), days: num(Math.round(costRec.payback.daysWithMat!)) })}</p>
+                ? t("재료 {mat} 이성을 포함한 값입니다 — 빼면 {days}일.", { mat: num(ap.apMat), days: num(Math.round(daysOf(costRec, false)!)) })
+                : t("재료 {mat} 이성은 빠져 있습니다 — 포함하면 {days}일.", { mat: num(ap.apMat), days: num(Math.round(daysOf(costRec, true)!)) })}</p>
             )}
-            {costRec.payback.unconverted > 0 && (
-              <p className="invest-costcalc dim">{t("이성 단가를 구할 수 없는 재료 {n}종(교환 전용·미출시)은 비용에서 빠졌습니다 — 실제 비용은 조금 더 듭니다.", { n: costRec.payback.unconverted })}</p>
+            {ap.unconverted > 0 && (
+              <p className="invest-costcalc dim">{t("이성 단가를 구할 수 없는 재료 {n}종(교환 전용·미출시)은 비용에서 빠졌습니다 — 실제 비용은 조금 더 듭니다.", { n: ap.unconverted })}</p>
             )}
             {costRec.fromLevel != null && (
               <p className="invest-costcalc dim">{t("보유 설정의 현재 레벨 Lv.{lv}부터 남은 레벨업만 계산했습니다 (승급은 그 단계 만렙에서만 가능).", { lv: costRec.fromLevel })}</p>
             )}
           </div>
         </ModalWindow>
-      )}
+        );
+      })()}
     </ModalWindow>
   );
 }
