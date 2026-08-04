@@ -10923,12 +10923,14 @@ html.dark.rg-theme.rg6 .site-header {
   background: color-mix(in srgb, var(--rgcard) 82%, transparent);
   backdrop-filter: blur(6px);
   border: 1px solid var(--rgline);
+  border-radius: 8px; /* 도구 열 이웃(리플레이·스샷 레이더 8px)과 통일 */
   box-shadow: 0 4px 24px #0008;
 }
 .rg-serversel button {
   padding: 8px 10px;
   background: none;
   border: 0;
+  border-radius: 5px; /* 컨테이너 8px - 안쪽 여백 4px ≈ 5px */
   color: var(--rgtext2);
   font-weight: 700;
   font-size: 12.5px;
