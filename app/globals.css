@@ -3397,6 +3397,9 @@ legend {
   flex-wrap: wrap;
   margin: 0 0 8px;
 }
+.invest-costdetail .invest-mattoggle {
+  margin-top: 8px;
+}
 .invest-mattoggle {
   display: inline-flex;
   align-items: center;

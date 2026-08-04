@@ -1463,16 +1463,7 @@ function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onTogg
       <p className="invest-note invest-note-sub">{t("교대는 12시간 고정이 아닙니다 — A조를 풀파워로 돌리다 A조 오퍼 중 하나라도 피로도가 소진되면 B조로 전환하고, A조가 전부 회복되면 즉시 A조로 되돌립니다. 그래서 A조 이득을 우선합니다.")}</p>
       {/* 회수일 기준 전환 + 계산 근거 — 숫자만 던지지 않고 기준을 전부 밝힌다 (2026-08-05) */}
       {recs.length > 0 && (
-        <div className="invest-matbar">
-          <button type="button" className={`invest-mattoggle${withMat ? " on" : ""}`} aria-pressed={withMat}
-            onClick={() => setWithMat((v) => !v)}
-            title={t("회수일을 용문폐·경험치만으로 볼지, 듀얼칩 등 육성 재료까지 합쳐 볼지 전환합니다")}>
-            <span className="invest-mattoggle-knob" aria-hidden />{t("육성 재료 비용까지 포함")}
-          </button>
-          <span className="invest-matnote">{withMat
-            ? t("용문폐·경험치 + 재료 기준입니다.")
-            : t("용문폐·경험치만 계산합니다 — 재료는 주간 파밍으로 쌓이는 성격이라 기본에서 뺐습니다.")}</span>
-        </div>
+        <div />
       )}
       {recs.length > 0 && (
         <details className="invest-basis">
@@ -1550,22 +1541,9 @@ function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onTogg
                     ))}
                   </ul>
                 )}
+                {/* 비용 요약 줄은 뺐다 — 회수 버튼으로 펼치는 내역에 같은 내용이 표로 있다
+                    (사용자 지적 2026-08-05). 이 줄엔 선택·숨기기만 남긴다 */}
                 <div className="invest-cost">
-                  <span className="inv-cost-label">{t("완성 비용")}</span>
-                  {r.payback && (
-                    <span className="inv-cost-ap" title={t("용문폐 {lmd} 이성 + 경험치 {exp} 이성 + 재료 {mat} 이성", { lmd: Math.round(r.payback.apLmd), exp: Math.round(r.payback.apExp), mat: Math.round(r.payback.apMat) })}>
-                      ≈ {num(paybackCost(r.payback))} {t("이성")}
-                      {r.payback.unconverted > 0 && <em title={t("이성 단가를 구할 수 없는 재료(교환 전용·미출시) {n}종은 비용에서 빠졌습니다", { n: r.payback.unconverted })}> +{r.payback.unconverted}?</em>}
-                    </span>
-                  )}
-                  <span className="inv-cost-lmd">{t("용문폐")} {num(r.cost.lmd)}</span>
-                  {r.cost.exp > 0 && <span>{t("경험치")} {num(r.cost.exp)}</span>}
-                  {r.cost.items.map(([id, ct]) => (
-                    <span key={id} className="inv-mat" title={`${ITEM_CAT[id]?.name?.[locale] ?? id} ×${ct}`}>
-                      <img src={ITEM_CAT[id]?.image} alt="" width={22} height={22} loading="lazy" />{ct}
-                    </span>
-                  ))}
-                  {/* 선택·숨기기는 푸터 오른쪽 끝 — 타이틀 줄이 꽉 차면 버튼이 다음 줄로 밀리던 문제 (사용자 요청 2026-07-21) */}
                   <span className="invest-cost-actions">
                     {applied.has(r.opId)
                       ? <span className="invest-applied" title={t("임시 적용됨 — 헤더 '되돌리기'로 취소")}>✓ {t("적용됨")}</span>
@@ -1594,6 +1572,15 @@ function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onTogg
                         <tr className="sum"><th>{withMat ? t("합계 (재료 포함)") : t("합계 (용문폐·경험치)")}</th><td /><td>{t("{n} 이성", { n: num(paybackCost(r.payback)) })}</td></tr>
                       </tbody>
                     </table>
+                    {/* 재료 포함 전환 — 비용 내역 안에 둔다 (사용자 지정 2026-08-05).
+                        기본은 비포함(용문폐·경험치만) */}
+                    {r.payback.apMat > 0 && (
+                      <button type="button" className={`invest-mattoggle${withMat ? " on" : ""}`} aria-pressed={withMat}
+                        onClick={() => setWithMat((v) => !v)}
+                        title={t("회수일을 용문폐·경험치만으로 볼지, 듀얼칩 등 육성 재료까지 합쳐 볼지 전환합니다")}>
+                        <span className="invest-mattoggle-knob" aria-hidden />{t("육성 재료 비용까지 포함")}
+                      </button>
+                    )}
                     <p className="invest-costcalc">
                       {r.payback.days == null
                         ? t("이 오퍼가 올리는 방은 산출을 이성으로 환산할 근거가 없어(발전소·사무실·응접실) 회수일을 내지 않습니다. 방 %효율 이득은 위 목록 그대로입니다.")
