@@ -3353,25 +3353,148 @@ legend {
   color: var(--muted);
   background: var(--bg-soft);
 }
-/* 예상 회수일 — 이성 환산 (근거는 패널 하단 각주에 전부 밝힌다, 2026-08-05) */
+/* 예상 회수일 — 누르면 완성 비용 내역이 펼쳐지는 버튼 (사용자 지정 2026-08-05) */
 .invest-payback {
   font-size: 12px;
   font-weight: 700;
+  border: 1px solid color-mix(in srgb, #c8912f 45%, transparent);
   border-radius: 5px;
-  padding: 1px 7px;
+  padding: 1px 8px;
   color: #8a5a1e;
-  background: color-mix(in srgb, #c8912f 16%, transparent);
+  background: color-mix(in srgb, #c8912f 14%, transparent);
   white-space: nowrap;
-  cursor: help;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
 }
-.invest-payback.none {
-  color: var(--muted);
-  background: var(--bg-soft);
-  font-weight: 600;
+.invest-payback:hover,
+.invest-payback.on {
+  background: color-mix(in srgb, #c8912f 28%, transparent);
+  border-color: #c8912f;
+}
+.invest-payback::after {
+  content: " ⌄";
+  font-size: 10px;
+  opacity: 0.75;
+}
+.invest-payback.on::after {
+  content: " ⌃";
 }
 :root[data-theme="dark"] .invest-payback {
   color: #e0b13e;
-  background: color-mix(in srgb, #e0b13e 18%, transparent);
+  background: color-mix(in srgb, #e0b13e 16%, transparent);
+  border-color: color-mix(in srgb, #e0b13e 45%, transparent);
+}
+:root[data-theme="dark"] .invest-payback:hover,
+:root[data-theme="dark"] .invest-payback.on {
+  background: color-mix(in srgb, #e0b13e 28%, transparent);
+  border-color: #e0b13e;
+}
+/* 회수일 기준 전환 — 기본은 용문폐·경험치, 켜면 재료까지 (2026-08-05) */
+.invest-matbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 0 0 8px;
+}
+.invest-mattoggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--white);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.invest-mattoggle.on {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.invest-mattoggle-knob {
+  width: 24px;
+  height: 13px;
+  border-radius: 999px;
+  background: var(--line);
+  position: relative;
+  transition: background 0.15s;
+  flex: none;
+}
+.invest-mattoggle-knob::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--white);
+  transition: transform 0.15s;
+}
+.invest-mattoggle.on .invest-mattoggle-knob {
+  background: var(--accent);
+}
+.invest-mattoggle.on .invest-mattoggle-knob::after {
+  transform: translateX(11px);
+}
+.invest-matnote {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+/* 완성 비용 내역 — 회수 버튼으로 펼친다 */
+.invest-costdetail {
+  margin: 8px 0 0;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg-soft);
+  font-size: 12px;
+}
+.invest-costdetail table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.invest-costdetail th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 2px 0;
+}
+.invest-costdetail td {
+  text-align: right;
+  padding: 2px 0 2px 10px;
+  font-variant-numeric: tabular-nums;
+}
+.invest-costdetail td:last-child {
+  font-weight: 700;
+  color: #8a5a1e;
+  white-space: nowrap;
+}
+:root[data-theme="dark"] .invest-costdetail td:last-child {
+  color: #e0b13e;
+}
+.invest-costdetail tr.sum th,
+.invest-costdetail tr.sum td {
+  border-top: 1px solid var(--line);
+  padding-top: 5px;
+  font-weight: 800;
+  color: var(--ink);
+}
+:root[data-theme="dark"] .invest-costdetail tr.sum td:last-child {
+  color: #e0b13e;
+}
+.invest-costcalc {
+  margin: 7px 0 0;
+  line-height: 1.5;
+  color: var(--ink);
+}
+.invest-costcalc.dim {
+  color: var(--muted);
+  font-size: 11.5px;
 }
 .inv-cost-ap {
   font-weight: 800;

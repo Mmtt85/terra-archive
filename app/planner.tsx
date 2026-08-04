@@ -1430,6 +1430,13 @@ function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onTogg
   const num = (n: number) => Math.round(n).toLocaleString();
   const SANITY_BASIS = sanityBasis.basis;
   const GOLD_LMD = sanityBasis.goldLmd;
+  const SANITY_ITEMS = sanityBasis.items as Record<string, number>;
+  // 회수 버튼으로 펼치는 완성 비용 내역 — 한 번에 하나만 (사용자 지정 2026-08-05)
+  const [openCost, setOpenCost] = useState<string | null>(null);
+  // 회수일 기준 — 기본은 용문폐+경험치만, 버튼을 눌러야 재료까지 합친다 (사용자 지정 2026-08-05)
+  const [withMat, setWithMat] = useState(false);
+  const paybackDays = (p: RaiseRec["payback"]) => (withMat ? p?.daysWithMat : p?.days) ?? null;
+  const paybackCost = (p: RaiseRec["payback"]) => (withMat ? p?.apTotal : p?.apBase) ?? 0;
   useEffect(() => {
     const onEsc = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", onEsc);
@@ -1454,11 +1461,24 @@ function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onTogg
       </div>
       <p className="invest-note">{t("아직 완성 안 한(정예화를 낮춰 둔) 오퍼를 완성했다고 가정해 자동편성을 다시 돌리고, 방 %효율이 실제로 얼마나 오르는지로 이득을 증명합니다. 숫자는 그 방 %효율 변화의 합계(%p)이며, A조(주력)를 우선해 정렬합니다. '적용'은 완성했다 가정해 편성에 임시 반영합니다 — 되돌리기 가능하고, 전체 자동편성·다시 분석 전까지 추천은 그대로 유지됩니다.")}</p>
       <p className="invest-note invest-note-sub">{t("교대는 12시간 고정이 아닙니다 — A조를 풀파워로 돌리다 A조 오퍼 중 하나라도 피로도가 소진되면 B조로 전환하고, A조가 전부 회복되면 즉시 A조로 되돌립니다. 그래서 A조 이득을 우선합니다.")}</p>
-      {/* 회수일 계산 근거 — 숫자만 던지지 않고 기준을 전부 밝힌다 (사용자 지시 2026-08-05) */}
+      {/* 회수일 기준 전환 + 계산 근거 — 숫자만 던지지 않고 기준을 전부 밝힌다 (2026-08-05) */}
+      {recs.length > 0 && (
+        <div className="invest-matbar">
+          <button type="button" className={`invest-mattoggle${withMat ? " on" : ""}`} aria-pressed={withMat}
+            onClick={() => setWithMat((v) => !v)}
+            title={t("회수일을 용문폐·경험치만으로 볼지, 듀얼칩 등 육성 재료까지 합쳐 볼지 전환합니다")}>
+            <span className="invest-mattoggle-knob" aria-hidden />{t("육성 재료 비용까지 포함")}
+          </button>
+          <span className="invest-matnote">{withMat
+            ? t("용문폐·경험치 + 재료 기준입니다.")
+            : t("용문폐·경험치만 계산합니다 — 재료는 주간 파밍으로 쌓이는 성격이라 기본에서 뺐습니다.")}</span>
+        </div>
+      )}
       {recs.length > 0 && (
         <details className="invest-basis">
           <summary>{t("‘회수 N일’은 이렇게 계산했습니다 — 환산 기준 보기")}</summary>
           <ul>
+            <li>{rich(t("**기본은 용문폐·경험치만** 계산합니다. 위 버튼으로 켜면 듀얼칩 등 육성 재료의 이성까지 합칩니다."))}</li>
             <li>{rich(t("**비용**: 완성에 드는 용문폐·경험치·재료를 각각의 전용 파밍처 이성 단가로 환산해 더합니다. 승급은 그 단계 만렙에서만 가능하므로 **남은 레벨업 비용까지 포함**합니다(보유 설정에 적어 둔 레벨부터 계산)."))}</li>
             <li>{t("용문폐 1이성 = {lmd} (전용 스테이지 {ls} · {lap}이성에 {ld}) · 경험치 1이성 = {exp} (전용 스테이지 {es} · {eap}이성에 {ed})", { lmd: Math.round(SANITY_BASIS.lmd.drop / SANITY_BASIS.lmd.ap), ls: SANITY_BASIS.lmd.stage, lap: SANITY_BASIS.lmd.ap, ld: num(SANITY_BASIS.lmd.drop), exp: Math.round(SANITY_BASIS.exp.drop / SANITY_BASIS.exp.ap), es: SANITY_BASIS.exp.stage, eap: SANITY_BASIS.exp.ap, ed: num(SANITY_BASIS.exp.drop) })}</li>
             <li>{t("재료 이성 단가: 파밍 가능한 재료는 파밍 도우미의 실측 드랍률 기준 최저 이성 스테이지, 칩·칩셋은 주간 PR 스테이지, 제작 전용 재료(듀얼칩·D32강 등)는 가공소 레시피를 재료까지 재귀 분해해 계산합니다.")}</li>
@@ -1503,19 +1523,24 @@ function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onTogg
                 <div className="invest-title">
                   <b className={onShowOperator ? "op-link" : undefined} onClick={() => onShowOperator?.(r.opId)}>{op.name}</b>
                   <i className="invest-stars" aria-hidden>{"★".repeat(op.rarity)}</i>
-                  <span className="invest-raise">{t(ELITE_LABEL[r.from])} → {t(ELITE_LABEL[r.to])} {t("완성")}</span>
+                  <span className="invest-raise">{r.fromLevel ? t("{e} Lv.{lv}", { e: t(ELITE_LABEL[r.from]), lv: r.fromLevel }) : t(ELITE_LABEL[r.from])} → {t(ELITE_LABEL[r.to])} {t("완성")}</span>
                   {r.synergy && <span className="invest-syn" title={t("팀 시너지를 여는 오퍼 — 완성 시 열리는 세트의 총 시너지 효율까지 반영해 평가했습니다")}>{t("시너지")}</span>}
                   <span className="invest-gains" title={t("완성 시 오르는 방 %효율의 조별 합계 — 아래 방 변화의 합입니다")}>
                     {Math.round(r.aGain) >= 1 && <span className="inv-gain a">{t("A조 +{n}%p", { n: Math.round(r.aGain) })}</span>}
                     {Math.round(r.bGain) >= 1 && <span className="inv-gain b">{t("B조 +{n}%p", { n: Math.round(r.bGain) })}</span>}
                   </span>
-                  {/* 예상 회수일 — 계산 근거는 아래 비용 줄과 패널 하단 각주에 그대로 밝힌다
-                      (사용자 지시 2026-08-05: 숫자만 적고 판단은 유저가 한다) */}
-                  {r.payback && (r.payback.days == null
-                    ? <span className="invest-payback none" title={t("이 오퍼가 올리는 방(발전소·사무실·응접실)은 산출을 이성으로 환산할 근거가 없어 회수일을 내지 않습니다")}>{t("회수 환산 제외")}</span>
-                    : <span className="invest-payback" title={t("완성 비용 {cost} 이성 ÷ 하루 이득 {daily} 이성 = {days}일. 환산 기준은 목록 아래 각주 참고", { cost: num(Math.round(r.payback.apTotal)), daily: r.payback.dailyAp.toFixed(2), days: num(Math.round(r.payback.days)) })}>
-                        {t("회수 {n}일", { n: num(Math.round(r.payback.days)) })}
-                      </span>)}
+                  {/* 예상 회수일 — 누르면 완성 비용 내역이 펼쳐진다 (사용자 지정 2026-08-05).
+                      계산 근거는 그 내역과 패널 상단 각주에 그대로 밝힌다 */}
+                  {r.payback && (
+                    <button type="button" className={`invest-payback${openCost === r.opId ? " on" : ""}`}
+                      aria-expanded={openCost === r.opId}
+                      onClick={() => setOpenCost(openCost === r.opId ? null : r.opId)}
+                      title={t("완성 비용 내역과 계산 과정을 봅니다")}>
+                      {paybackDays(r.payback) == null
+                        ? t("완성 비용 보기")
+                        : t("회수까지 {n}일", { n: num(Math.round(paybackDays(r.payback)!)) })}
+                    </button>
+                  )}
                 </div>
                 {r.placement && <div className="invest-place">{t("{room} · {shift}에 배치됩니다", { room: roomLabel(r.placement.key), shift: shiftTag(r.placement.shift) })}</div>}
                 {deltas.length > 0 && (
@@ -1529,7 +1554,7 @@ function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onTogg
                   <span className="inv-cost-label">{t("완성 비용")}</span>
                   {r.payback && (
                     <span className="inv-cost-ap" title={t("용문폐 {lmd} 이성 + 경험치 {exp} 이성 + 재료 {mat} 이성", { lmd: Math.round(r.payback.apLmd), exp: Math.round(r.payback.apExp), mat: Math.round(r.payback.apMat) })}>
-                      ≈ {num(Math.round(r.payback.apTotal))} {t("이성")}
+                      ≈ {num(paybackCost(r.payback))} {t("이성")}
                       {r.payback.unconverted > 0 && <em title={t("이성 단가를 구할 수 없는 재료(교환 전용·미출시) {n}종은 비용에서 빠졌습니다", { n: r.payback.unconverted })}> +{r.payback.unconverted}?</em>}
                     </span>
                   )}
@@ -1550,6 +1575,43 @@ function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onTogg
                         </>}
                   </span>
                 </div>
+                {openCost === r.opId && r.payback && (
+                  <div className="invest-costdetail">
+                    <table>
+                      <tbody>
+                        <tr><th>{t("용문폐")}</th><td>{num(r.cost.lmd)}</td><td>{t("{n} 이성", { n: num(r.payback.apLmd) })}</td></tr>
+                        {r.cost.exp > 0 && <tr><th>{t("경험치")}</th><td>{num(r.cost.exp)}</td><td>{t("{n} 이성", { n: num(r.payback.apExp) })}</td></tr>}
+                        {r.cost.items.map(([id, ct]) => {
+                          const unit = SANITY_ITEMS[id];
+                          return (
+                            <tr key={id}>
+                              <th>{ITEM_CAT[id]?.name?.[locale] ?? id}</th>
+                              <td>×{ct}</td>
+                              <td>{unit == null ? t("환산 불가") : t("{n} 이성", { n: num(unit * ct) })}</td>
+                            </tr>
+                          );
+                        })}
+                        <tr className="sum"><th>{withMat ? t("합계 (재료 포함)") : t("합계 (용문폐·경험치)")}</th><td /><td>{t("{n} 이성", { n: num(paybackCost(r.payback)) })}</td></tr>
+                      </tbody>
+                    </table>
+                    <p className="invest-costcalc">
+                      {r.payback.days == null
+                        ? t("이 오퍼가 올리는 방은 산출을 이성으로 환산할 근거가 없어(발전소·사무실·응접실) 회수일을 내지 않습니다. 방 %효율 이득은 위 목록 그대로입니다.")
+                        : rich(t("하루 이득 **{daily} 이성** (방 %효율 변화 × 그 방 1%p의 하루 산출 × 그 조 근무시간 비율) → **{cost} ÷ {daily} = 약 {days}일**", { daily: r.payback.dailyAp.toFixed(2), cost: num(paybackCost(r.payback)), days: num(Math.round(paybackDays(r.payback)!)) }))}
+                    </p>
+                    {r.payback.days != null && r.payback.apMat > 0 && (
+                      <p className="invest-costcalc dim">{withMat
+                        ? t("재료 {mat} 이성을 포함한 값입니다 — 빼면 {days}일.", { mat: num(r.payback.apMat), days: num(Math.round(r.payback.days)) })
+                        : t("재료 {mat} 이성은 빠져 있습니다 — 포함하면 {days}일.", { mat: num(r.payback.apMat), days: num(Math.round(r.payback.daysWithMat!)) })}</p>
+                    )}
+                    {r.payback.unconverted > 0 && (
+                      <p className="invest-costcalc dim">{t("이성 단가를 구할 수 없는 재료 {n}종(교환 전용·미출시)은 비용에서 빠졌습니다 — 실제 비용은 조금 더 듭니다.", { n: r.payback.unconverted })}</p>
+                    )}
+                    {r.fromLevel != null && (
+                      <p className="invest-costcalc dim">{t("보유 설정의 현재 레벨 Lv.{lv}부터 남은 레벨업만 계산했습니다 (승급은 그 단계 만렙에서만 가능).", { lv: r.fromLevel })}</p>
+                    )}
+                  </div>
+                )}
               </div>
             </li>
           );

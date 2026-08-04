@@ -124,10 +124,13 @@ function apPerPctDay(key: string): number {
 }
 
 export type Payback = {
-  apLmd: number; apExp: number; apMat: number; apTotal: number; // 비용 (이성)
+  apLmd: number; apExp: number; apMat: number;  // 비용 (이성) — 용문폐 / 경험치 / 재료
+  apBase: number;        // 용문폐+경험치 (기본 기준 — 사용자 지정 2026-08-05)
+  apTotal: number;       // apBase + 재료
   unconverted: number;   // 이성 단가를 못 구한 재료 종수 (교환 전용·미출시)
   dailyAp: number;       // 하루 이득 (이성)
-  days: number | null;   // 회수일 — 환산 가능한 이득이 없으면 null
+  days: number | null;        // 회수일 (용문폐+경험치 기준) — 환산 가능한 이득이 없으면 null
+  daysWithMat: number | null; // 재료까지 포함한 회수일 — UI 토글로 전환
 };
 /** 완성 비용과 방 변화를 이성으로 환산해 회수일을 낸다. shiftHours=[A조, B조] 시간. */
 export function paybackOf(cost: RaiseCost, roomDeltas: RoomDelta[], shiftHours?: number[]): Payback {
@@ -148,9 +151,13 @@ export function paybackOf(cost: RaiseCost, roomDeltas: RoomDelta[], shiftHours?:
     if (!per) continue;
     dailyAp += (d.after - d.before) * per * ((hours[d.shift] ?? 12) / span);
   }
-  const apTotal = apLmd + apExp + apMat;
-  return { apLmd, apExp, apMat, apTotal, unconverted, dailyAp,
-           days: dailyAp > 0 ? apTotal / dailyAp : null };
+  // 기본 회수일은 **용문폐+경험치만** 본다 — 재료는 주간 파밍으로 자연히 쌓이는 성격이라
+  // 이성 환산 논쟁이 크고, 유저가 버튼으로 켤 때만 합산한다 (사용자 지정 2026-08-05)
+  const apBase = apLmd + apExp;
+  const apTotal = apBase + apMat;
+  return { apLmd, apExp, apMat, apBase, apTotal, unconverted, dailyAp,
+           days: dailyAp > 0 ? apBase / dailyAp : null,
+           daysWithMat: dailyAp > 0 ? apTotal / dailyAp : null };
 }
 
 // ── 정예화로 잠긴 인프라 스킬이 풀리는 목표 단계 ───────────────────────────────
@@ -203,6 +210,7 @@ export type RaiseRec = {
   opId: string;
   from: Elite;
   to: Elite;
+  fromLevel?: number;            // 비용 계산에 쓴 현재 레벨 (보유 설정 입력값 · 미지정이면 없음)
   aGain: number;                 // A조 방 %효율 변화 합계(%p) — 표시·랭킹 기준(주력 조 우선)
   bGain: number;                 // B조(회복 교대) 방 %효율 변화 합계(%p)
   deltaScore: number;            // 내부 ΔplanScore (재배치 잡음 가드용 — 표시 안 함)
@@ -395,8 +403,9 @@ export async function recommendRaises(
     // 조별 방 %효율 변화 합계 — 유저에게 보여줄 구체 지표(추상 planScore 대신). A조(주력) 우선.
     const aGain = roomDeltas.reduce((sum, d) => (d.shift === 0 ? sum + (d.after - d.before) : sum), 0);
     const bGain = roomDeltas.reduce((sum, d) => (d.shift === 1 ? sum + (d.after - d.before) : sum), 0);
-    const cost = raiseCost(op.id, from, to, levelById.get(op.id));
-    recs.push({ opId: op.id, from, to, aGain, bGain, deltaScore, synergy, roomDeltas, placement, cost,
+    const fromLevel = levelById.get(op.id);
+    const cost = raiseCost(op.id, from, to, fromLevel);
+    recs.push({ opId: op.id, from, to, fromLevel, aGain, bGain, deltaScore, synergy, roomDeltas, placement, cost,
                 payback: paybackOf(cost, roomDeltas, baseline.shiftHours) });
   }
   if (onProgress) await onProgress({ done: evalList.length, total: evalList.length });
