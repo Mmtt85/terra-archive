@@ -10790,8 +10790,33 @@ html.dark.rg-theme.rg6 .site-header {
   max-width: 620px;
 }
 .rg-eyebrow {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  min-width: 0;
+  white-space: nowrap; /* 본문 텍스트가 flex 축소로 두 줄로 꺾이면 높이가 변한다 */
+  min-height: 14px; /* 인라인 노트 유무와 무관하게 높이 고정 (서버 전환 1px 출렁임 방지) */
   font: 800 11.5px/1 monospace;
   letter-spacing: 3px;
+  color: var(--rggold);
+}
+/* 중국섭 안내 인라인 노트 — 블록 문단이면 서버 전환 때 히어로 높이가 출렁여서
+   눈썹 줄 오른쪽에 작게 붙인다 (사용자 요청 2026-08-04). 넘치면 말줄임 + title 툴팁 */
+.rg-eyebrow-note {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  font-style: normal;
+  font-weight: 600;
+  font-size: 10.5px;
+  line-height: 1.2;
+  letter-spacing: normal;
+  color: var(--rgtext2);
+}
+.rg-eyebrow-note [lang="zh"] {
   color: var(--rggold);
 }
 .rg-head h2 {
@@ -10872,6 +10897,17 @@ html.dark.rg-theme.rg6 .site-header {
   font-size: 12.5px;
   color: var(--rggold);
 }
+/* 중국섭에서 록라 제목 오른쪽에 붙는 CN 원제 (사용자 요청 2026-08-04) */
+.rg-title-cn {
+  margin-left: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--rggold);
+  opacity: 0.9;
+  text-shadow: none;
+  white-space: nowrap;
+}
 
 /* 난이도 바 */
 .rg-diffbar {
@@ -10885,7 +10921,7 @@ html.dark.rg-theme.rg6 .site-header {
   border: 1px solid #6a3040;
   background: #150a0ecc;
   backdrop-filter: blur(6px);
-  padding: 7px 12px; /* 컴팩트 — 도구 열 축소와 세트 (2026-08-04) */
+  padding: 5px 12px; /* 컴팩트 — 도구 열 축소와 세트 (2026-08-04) */
   width: min(430px, calc(100% - 36px));
   box-shadow: 0 4px 24px #000a;
 }
@@ -10921,28 +10957,29 @@ html.dark.rg-theme.rg6 .site-header {
 .rg-headtools .lens-help-btn {
   min-width: 28px;
 }
-/* 서버 탭 (한국섭/중국섭) — 도구 열 맨 위 세그먼트 (2026-08-04).
-   흑류수해(KR 미출시)에선 한국 서버 버튼이 disabled */
+/* 한섭/중섭 미니 토글 — 테마 변경 버튼 우상단에 겹치는 형제 요소 (사용자 요청 2026-08-04:
+   독립 탭 줄 → "테마변경 버튼 안에 작게"). 버튼 안에 버튼은 못 넣으므로 absolute로 올린다.
+   흑류수해(KR 미출시)에선 한국섭 버튼이 disabled */
 .rg-serversel {
-  width: 100%;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4px;
-  padding: 4px;
-  background: color-mix(in srgb, var(--rgcard) 82%, transparent);
-  backdrop-filter: blur(6px);
+  position: absolute;
+  top: 5px;
+  right: 10px;
+  z-index: 2;
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  background: color-mix(in srgb, #0d0609 65%, transparent);
   border: 1px solid var(--rgline);
-  border-radius: 8px; /* 도구 열 이웃(리플레이·스샷 레이더 8px)과 통일 */
-  box-shadow: 0 4px 24px #0008;
+  border-radius: 7px;
 }
 .rg-serversel button {
-  padding: 6px 10px;
+  padding: 2.5px 7px;
   background: none;
   border: 0;
-  border-radius: 5px; /* 컨테이너 8px - 안쪽 여백 4px ≈ 5px */
+  border-radius: 5px;
   color: var(--rgtext2);
   font-weight: 700;
-  font-size: 12px;
+  font-size: 10px;
   line-height: 1;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
@@ -10952,8 +10989,7 @@ html.dark.rg-theme.rg6 .site-header {
 }
 .rg-serversel button.on {
   color: var(--rgink);
-  background: color-mix(in srgb, var(--rggold) 16%, transparent);
-  box-shadow: inset 0 -2px 0 var(--rggold);
+  background: color-mix(in srgb, var(--rggold) 22%, transparent);
 }
 .rg-serversel button:disabled {
   opacity: 0.4;
@@ -10963,7 +10999,12 @@ html.dark.rg-theme.rg6 .site-header {
   outline: 2px solid var(--rggold);
   outline-offset: 1px;
 }
+.rg-serversel .new-badge {
+  top: -14px;
+  right: -12px;
+}
 .rg-topicsel {
+  position: relative; /* 한섭/중섭 미니 토글(absolute)의 기준 — 없으면 headtools에 붙는다 */
   width: 100%;
 }
 .rg-topicsel-btn {
@@ -11012,7 +11053,7 @@ html.dark.rg-theme.rg6 .site-header {
 }
 .rg-topicsel-arrow {
   grid-column: 2;
-  grid-row: 1 / span 2;
+  grid-row: 2; /* 우상단은 한섭/중섭 미니 토글 자리 — 화살표는 아랫줄로 (2026-08-04) */
   color: var(--rggold);
   font-size: 12px;
   transition: transform 0.15s;
@@ -11094,10 +11135,6 @@ html.dark.rg-theme.rg6 .site-header {
     align-self: flex-end;
   }
   .rg-topicsel-btn {
-    backdrop-filter: none;
-    background: var(--rgcard);
-  }
-  .rg-serversel {
     backdrop-filter: none;
     background: var(--rgcard);
   }

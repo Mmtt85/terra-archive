@@ -1644,6 +1644,8 @@ const D: Record<string, Pair> = {
   "서버 선택": ["Server", "サーバー選択"],
   "한국 서버": ["KR server", "韓国サーバー"],
   "중국 서버": ["CN server", "中国サーバー"],
+  "한국섭": ["KR", "韓国"],
+  "중국섭": ["CN", "中国"],
   "흑류수해는 한국 서버 미출시 — 중국 서버 데이터만 제공됩니다": ["Not released on the KR server yet — only CN-server data is available", "韓国サーバー未実装 — 中国サーバーのデータのみ提供しています"],
   "중국 서버 데이터 기반 · 한국 서버 공식 번역으로 표기하고 중국어 원문을 병기합니다.": ["Based on CN-server data — shown with official KR-server translations and the Chinese originals alongside.", "中国サーバーのデータ基準 — 韓国サーバーの公式訳で表記し、中国語原文を併記しています。"],
   "중국 서버 데이터는 아직 한국어·중국어로만 제공됩니다.": ["CN-server data is only available in Korean/Chinese for now.", "中国サーバーのデータは現在、韓国語・中国語のみの提供です。"],
