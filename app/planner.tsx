@@ -1433,8 +1433,15 @@ function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onTogg
   const SANITY_ITEMS = sanityBasis.items as Record<string, number>;
   // 회수 버튼으로 펼치는 완성 비용 내역 — 한 번에 하나만 (사용자 지정 2026-08-05)
   const [openCost, setOpenCost] = useState<string | null>(null);
-  // 회수일 기준 — 기본은 용문폐+경험치만, 버튼을 눌러야 재료까지 합친다 (사용자 지정 2026-08-05)
-  const [withMat, setWithMat] = useState(false);
+  // 회수일 기준 — 기본은 용문폐+경험치만, 버튼을 눌러야 재료까지 합친다 (사용자 지정 2026-08-05).
+  // 오퍼별로 따로 켠다 — 전역이면 하나 켤 때 다른 카드까지 전부 바뀐다 (사용자 지적)
+  const [withMatIds, setWithMatIds] = useState<Set<string>>(new Set());
+  const matOn = (opId: string) => withMatIds.has(opId);
+  const toggleMat = (opId: string) => setWithMatIds((cur) => {
+    const next = new Set(cur);
+    if (next.has(opId)) next.delete(opId); else next.add(opId);
+    return next;
+  });
   // ⚠ 비용·회수일은 저장된 payback 필드를 쓰지 않고 **cost + 현재 단가로 매번 재계산**한다.
   // 구버전 엔진이 저장한 추천(apBase·daysWithMat 없음)을 새 UI가 읽으면 합계가 재료 포함값으로
   // 폴백되고(11,164 vs 3,537) 없는 필드를 나눠 'NaN일'이 떴다 (사용자 제보 2026-08-05).
@@ -1547,9 +1554,9 @@ function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onTogg
                     aria-expanded={openCost === r.opId}
                     onClick={() => setOpenCost(openCost === r.opId ? null : r.opId)}
                     title={t("완성 비용 내역과 계산 과정을 봅니다")}>
-                    {daysOf(r, withMat) == null
+                    {daysOf(r, matOn(r.opId)) == null
                       ? t("회수 계산 불가")
-                      : t("회수까지 {n}일", { n: num(Math.round(daysOf(r, withMat)!)) })}
+                      : t("회수까지 {n}일", { n: num(Math.round(daysOf(r, matOn(r.opId))!)) })}
                   </button>
                 </div>
                 {r.placement && <div className="invest-place">{t("{room} · {shift}에 배치됩니다", { room: roomLabel(r.placement.key), shift: shiftTag(r.placement.shift) })}</div>}
@@ -1581,7 +1588,8 @@ function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onTogg
           표시 값은 전부 apOf/daysOf 재계산 — 저장분 형식과 무관하게 표와 합계가 항상 일치한다 */}
       {costRec && (() => {
         const ap = apOf(costRec.cost);
-        const days = daysOf(costRec, withMat);
+        const on = matOn(costRec.opId);
+        const days = daysOf(costRec, on);
         return (
         <ModalWindow label={t("완성 비용")} className="operator-modal invest-costmodal" onClose={() => setOpenCost(null)}>
           <div className="invest-costdetail">
@@ -1599,31 +1607,30 @@ function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onTogg
                 {costRec.cost.items.map(([id, ct]) => {
                   const unit = SANITY_ITEMS[id];
                   return (
-                    <tr key={id} className={withMat ? undefined : "off"}>
+                    <tr key={id} className={on ? undefined : "off"}>
                       <th>{ITEM_CAT[id]?.name?.[locale] ?? id}</th>
                       <td>×{ct}</td>
                       <td>{unit == null ? t("환산 불가") : t("{n} 이성", { n: num(unit * ct) })}</td>
                     </tr>
                   );
                 })}
-                <tr className="sum"><th>{withMat ? t("합계 (재료 포함)") : t("합계 (용문폐·경험치)")}</th><td /><td>{t("{n} 이성", { n: num(withMat ? ap.apTotal : ap.apBase) })}</td></tr>
+                <tr className="sum"><th>{on ? t("합계 (재료 포함)") : t("합계 (용문폐·경험치)")}</th><td /><td>{t("{n} 이성", { n: num(on ? ap.apTotal : ap.apBase) })}</td></tr>
               </tbody>
             </table>
             {ap.apMat > 0 && (
-              <button type="button" className={`invest-mattoggle${withMat ? " on" : ""}`} aria-pressed={withMat}
-                onClick={() => setWithMat((v) => !v)}
-                title={t("회수일을 용문폐·경험치만으로 볼지, 듀얼칩 등 육성 재료까지 합쳐 볼지 전환합니다")}>
-                <span className="invest-mattoggle-knob" aria-hidden />{t("육성 재료 비용까지 포함")}
-                <b>{withMat ? "ON" : "OFF"}</b>
+              <button type="button" className={`invest-mattoggle${on ? " on" : ""}`} aria-pressed={on}
+                onClick={() => toggleMat(costRec.opId)}
+                title={t("이 오퍼의 회수일을 용문폐·경험치만으로 볼지, 듀얼칩 등 육성 재료까지 합쳐 볼지 전환합니다")}>
+                <span className="invest-mattoggle-box" aria-hidden />{t("육성 재료 비용까지 포함")}
               </button>
             )}
             <p className="invest-costcalc">
               {days == null
                 ? t("이 오퍼가 올리는 방은 산출을 이성으로 환산할 근거가 없어(발전소·사무실·응접실) 회수일을 내지 않습니다. 방 %효율 이득은 위 목록 그대로입니다.")
-                : rich(t("하루 이득 **{daily} 이성** (방 %효율 변화 × 그 방 1%p의 하루 산출 × 그 조 근무시간 비율) → **{cost} ÷ {daily} = 약 {days}일**", { daily: costRec.payback!.dailyAp.toFixed(2), cost: num(withMat ? ap.apTotal : ap.apBase), days: num(Math.round(days)) }))}
+                : rich(t("하루 이득 **{daily} 이성** (방 %효율 변화 × 그 방 1%p의 하루 산출 × 그 조 근무시간 비율) → **{cost} ÷ {daily} = 약 {days}일**", { daily: costRec.payback!.dailyAp.toFixed(2), cost: num(on ? ap.apTotal : ap.apBase), days: num(Math.round(days)) }))}
             </p>
             {days != null && ap.apMat > 0 && (
-              <p className="invest-costcalc dim">{withMat
+              <p className="invest-costcalc dim">{on
                 ? t("재료 {mat} 이성을 포함한 값입니다 — 빼면 {days}일.", { mat: num(ap.apMat), days: num(Math.round(daysOf(costRec, false)!)) })
                 : t("재료 {mat} 이성은 빠져 있습니다 — 포함하면 {days}일.", { mat: num(ap.apMat), days: num(Math.round(daysOf(costRec, true)!)) })}</p>
             )}

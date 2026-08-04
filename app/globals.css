@@ -3397,58 +3397,62 @@ legend {
   flex-wrap: wrap;
   margin: 0 0 8px;
 }
-.invest-costdetail .invest-mattoggle {
-  margin-top: 8px;
-}
+.invest-costdetail /* 육성 재료 포함 토글 — 체크박스형 (2026-08-05 재설계: 이전 스위치형은 켜짐 배경이
+   --accent 채움이라 라이트 모드에서 글자가 안 보였다). 색은 회수 배지와 같은 골드 계열
+   고정값 — 테마 변수에 안 기대므로 라이트/다크 모두 대비가 보장된다 */
 .invest-mattoggle {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 5px 11px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--white);
-  color: var(--muted);
-  font-size: 12px;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 6px 12px;
+  border: 1.5px solid color-mix(in srgb, #c8912f 50%, transparent);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 12.5px;
   font-weight: 700;
   cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.invest-mattoggle:hover {
+  border-color: #c8912f;
 }
 .invest-mattoggle.on {
-  border-color: var(--accent);
-  color: var(--on-accent, #fff);
-  background: var(--accent);
+  border-color: #c8912f;
+  background: color-mix(in srgb, #c8912f 13%, transparent);
 }
-.invest-mattoggle-knob {
-  width: 24px;
-  height: 13px;
-  border-radius: 999px;
-  background: var(--line);
-  position: relative;
-  transition: background 0.15s;
+.invest-mattoggle-box {
+  width: 16px;
+  height: 16px;
   flex: none;
-}
-.invest-mattoggle-knob::after {
-  content: "";
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: var(--white);
-  transition: transform 0.15s;
-}
-.invest-mattoggle.on .invest-mattoggle-knob {
-  background: color-mix(in srgb, #fff 35%, var(--accent));
-}
-.invest-mattoggle.on .invest-mattoggle-knob::after {
-  transform: translateX(11px);
-}
-.invest-mattoggle b {
-  font: 800 10px monospace;
+  border: 1.5px solid #c8912f;
   border-radius: 4px;
-  padding: 1.5px 5px;
-  background: color-mix(in srgb, currentcolor 14%, transparent);
+  background: var(--white);
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  line-height: 1;
+  color: transparent;
+}
+.invest-mattoggle-box::after {
+  content: "✓";
+  font-weight: 900;
+}
+.invest-mattoggle.on .invest-mattoggle-box {
+  background: #c8912f;
+  color: #fff;
+}
+:root[data-theme="dark"] .invest-mattoggle,
+:root[data-theme="dark"] .invest-mattoggle-box {
+  border-color: #e0b13e;
+}
+:root[data-theme="dark"] .invest-mattoggle.on {
+  background: color-mix(in srgb, #e0b13e 16%, transparent);
+}
+:root[data-theme="dark"] .invest-mattoggle.on .invest-mattoggle-box {
+  background: #e0b13e;
+  color: #1a1206;
 }
 .invest-matnote {
   font-size: 11.5px;
