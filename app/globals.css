@@ -3415,8 +3415,8 @@ legend {
 }
 .invest-mattoggle.on {
   border-color: var(--accent);
-  color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--on-accent, #fff);
+  background: var(--accent);
 }
 .invest-mattoggle-knob {
   width: 24px;
@@ -3439,23 +3439,71 @@ legend {
   transition: transform 0.15s;
 }
 .invest-mattoggle.on .invest-mattoggle-knob {
-  background: var(--accent);
+  background: color-mix(in srgb, #fff 35%, var(--accent));
 }
 .invest-mattoggle.on .invest-mattoggle-knob::after {
   transform: translateX(11px);
+}
+.invest-mattoggle b {
+  font: 800 10px monospace;
+  border-radius: 4px;
+  padding: 1.5px 5px;
+  background: color-mix(in srgb, currentcolor 14%, transparent);
 }
 .invest-matnote {
   font-size: 11.5px;
   color: var(--muted);
 }
-/* 완성 비용 내역 — 회수 버튼으로 펼친다 */
-.invest-costdetail {
-  margin: 8px 0 0;
-  padding: 9px 11px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
+/* 완성 비용 내역 — 회수 버튼이 여는 별도 모달 (2026-08-05) */
+.invest-costmodal .mw-body {
+  padding: 14px 16px 16px;
+}
+.invest-costmodal {
+  width: min(400px, 100%); /* 표 하나짜리 모달 — operator-modal 기본 960px을 덮는다 */
+}
+.invest-costmodal-title {
+  margin: 0 0 10px;
+  font-size: 15px;
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+.invest-costmodal-title em {
+  font-style: normal;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--muted);
   background: var(--bg-soft);
-  font-size: 12px;
+  border-radius: 5px;
+  padding: 2px 7px;
+}
+.invest-costdetail {
+  font-size: 12.5px;
+}
+.invest-costmodal-days {
+  margin: 0 0 10px;
+  padding: 7px 11px;
+  border-radius: 8px;
+  background: color-mix(in srgb, #c8912f 14%, transparent);
+  border: 1px solid color-mix(in srgb, #c8912f 40%, transparent);
+  color: #8a5a1e;
+  font-size: 15px;
+  font-weight: 800;
+  text-align: center;
+}
+:root[data-theme="dark"] .invest-costmodal-days {
+  color: #e0b13e;
+  background: color-mix(in srgb, #e0b13e 15%, transparent);
+  border-color: color-mix(in srgb, #e0b13e 40%, transparent);
+}
+.invest-costdetail tr.off th,
+.invest-costdetail tr.off td {
+  opacity: 0.45; /* 재료 미포함 기준일 때 재료 행을 흐리게 */
+}
+.invest-costdetail tr.off td:last-child {
+  text-decoration: line-through; /* 합계에서 빠졌음을 분명히 (사용자 지적 2026-08-05) */
+  font-weight: 600;
 }
 .invest-costdetail table {
   width: 100%;

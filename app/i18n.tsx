@@ -627,7 +627,7 @@ const D: Record<string, Pair> = {
   // 육성 추천 회수일 (2026-08-05) — 근거를 화면에 밝히는 조건으로 도입
   "이성": ["sanity", "理性"],
   "회수까지 {n}일": ["{n}d to break even", "回収まで{n}日"],
-  "완성 비용 보기": ["Show cost", "完成コストを見る"],
+  "회수 계산 불가": ["Payback n/a", "回収計算不可"],
   "육성 재료 비용까지 포함": ["Include material costs", "育成素材のコストも含める"],
   "회수일을 용문폐·경험치만으로 볼지, 듀얼칩 등 육성 재료까지 합쳐 볼지 전환합니다": ["Switch between counting only LMD and EXP, or also including materials such as dual chips", "回収日数を龍門幣・経験値のみで見るか、デュアルチップなどの育成素材も含めて見るかを切り替えます"],
   "용문폐·경험치 + 재료 기준입니다.": ["Based on LMD + EXP + materials.", "龍門幣・経験値＋素材が基準です。"],
