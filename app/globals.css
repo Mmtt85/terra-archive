@@ -5578,6 +5578,36 @@ footer p {
   background: var(--lime);
   color: var(--on-lime);
 }
+/* 보유 오퍼 카드의 레벨 입력 — 정예화 줄 아래 (사용자 요청 2026-08-04).
+   노정예 Lv.30 해금 스킬 판정에만 쓰이므로 1정 이상이면 흐리게(.dim) 표시한다 */
+.roster-level {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 6px;
+  border-top: 1px solid var(--line);
+  font: 800 10px monospace;
+  color: var(--muted);
+}
+.roster-level.dim {
+  opacity: 0.45;
+}
+.roster-level input {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  padding: 2px 4px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--white);
+  color: var(--ink);
+  font: 800 10px monospace;
+  text-align: center;
+}
+.roster-level input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
 .elite-pill {
   display: inline-flex;
   vertical-align: middle;

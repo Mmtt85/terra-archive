@@ -12,6 +12,7 @@ export type PlannerJobMsg = {
   cmd: "optimize" | "invest";
   owned: string[];
   elite: [string, Elite][];
+  opLevels?: [string, number][]; // 오퍼 레벨 (미지정 = 제한 없음) — 노정예 'Lv.30' 스킬 판정
   includeFuture: boolean;
   priority: ProdPriority;
   layout?: LayoutPreset; // 기지 배치 프리셋 — 워커는 엔진 모듈 인스턴스가 따로라 매 잡마다 동기화 (2026-07-24)
@@ -35,13 +36,14 @@ self.addEventListener("message", (event) => {
       // 표시 문자열만 바꾸므로(구조 필드 KR 원본 유지) 엔진 결과(id 기반)에 영향 없다.
       const visible = msg.includeFuture ? ops : ops.filter((op) => !op.unreleased);
       const eliteById = new Map(msg.elite);
+      const levelById = new Map(msg.opLevels ?? []);
       const ownedIds = new Set(msg.owned);
       if (msg.cmd === "optimize") {
-        const roster = visible.map((op) => withElite(op, eliteById.get(op.id))).filter((op) => ownedIds.has(op.id));
+        const roster = visible.map((op) => withElite(op, eliteById.get(op.id), levelById.get(op.id))).filter((op) => ownedIds.has(op.id));
         const plan = await optimize(roster, msg.priority, (step) => { post({ seq: msg.seq, type: "step", step }); }, msg.dormPins ?? {});
         post({ seq: msg.seq, type: "done", result: plan });
       } else {
-        const recs = await recommendRaises(visible, ownedIds, eliteById, msg.priority, (p) => { post({ seq: msg.seq, type: "progress", progress: p }); }, msg.dormPins ?? {});
+        const recs = await recommendRaises(visible, ownedIds, eliteById, msg.priority, (p) => { post({ seq: msg.seq, type: "progress", progress: p }); }, msg.dormPins ?? {}, levelById);
         post({ seq: msg.seq, type: "done", result: recs });
       }
     } catch (error) {

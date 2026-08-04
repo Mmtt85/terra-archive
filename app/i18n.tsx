@@ -875,6 +875,9 @@ const D: Record<string, Pair> = {
   "1정": ["E1", "昇進1"],
   "2정": ["E2", "昇進2"],
   "{name} 정예화 단계": ["{name} promotion stage", "{name}の昇進段階"],
+  "{name} 레벨": ["{name} level", "{name}のレベル"],
+  "노정예 Lv.30부터 열리는 기지 스킬이 있어 레벨이 계산에 반영됩니다": ["Some RIIC skills unlock at Lv.30 without promotion, so the level is used in the calculation", "昇進なしのLv.30で解放される基地スキルがあるため、レベルが計算に反映されます"],
+  "1정 이상은 레벨 조건을 이미 넘겨 계산에 영향이 없습니다": ["At E1 or above the level requirement is already met, so it does not affect the calculation", "昇進1以上はレベル条件を満たしているため、計算に影響しません"],
   // 방 상세 모달
   "종합 효율": ["Total efficiency", "総合効率"],
   "스킬 효율": ["Skill efficiency", "スキル効率"],
@@ -1075,9 +1078,9 @@ const D: Record<string, Pair> = {
     "Could not read the MAA file — make sure it is an operator-box recognition JSON (e.g. Arknights_OperBox_Export.json).",
     "MAAファイルを認識できませんでした — オペレーターBOX認識結果のJSON（Arknights_OperBox_Export.json など）か確認してください。",
   ],
-  "3성 이상 오퍼는 카드 아래에서 **노정예/1정/2정**(3성은 1정까지)을 선택할 수 있습니다 — 새로 체크하면 **노정예로 시작**하니 키운 만큼 올려 주세요. 얼굴을 클릭하면 상세 정보가 열립니다.": [
-    "Operators of 3★ and above can be set to **E0/E1/E2** under their card (3★ up to E1) — a newly ticked operator **starts at E0**, so raise it to match what you actually own. Click a portrait to open details.",
-    "星3以上のオペレーターは、カード下で**未昇進/昇進1/昇進2**（星3は昇進1まで）を選択できます — 新しくチェックしたオペレーターは**未昇進から始まる**ので、育てた分だけ上げてください。顔をクリックすると詳細が開きます。",
+  "3성 이상 오퍼는 카드 아래에서 **노정예/1정/2정**(3성은 1정까지)을 선택할 수 있고, 그 아래 **Lv.** 칸에 레벨을 적어 둘 수 있습니다 — 새로 체크하면 **노정예 Lv.1로 시작**하니 키운 만큼 올려 주세요. 레벨은 **노정예 Lv.30**부터 열리는 기지 스킬 판정에 쓰입니다(1정 이상은 영향 없음). 얼굴을 클릭하면 상세 정보가 열립니다.": [
+    "Operators of 3★ and above can be set to **E0/E1/E2** under their card (3★ up to E1), and you can note the level in the **Lv.** box below it — a newly ticked operator **starts at E0, Lv.1**, so raise it to match what you actually own. The level is used for RIIC skills that unlock at **E0 Lv.30** (no effect at E1 or above). Click a portrait to open details.",
+    "星3以上のオペレーターは、カード下で**未昇進/昇進1/昇進2**（星3は昇進1まで）を選択でき、その下の**Lv.**欄にレベルを記録できます — 新しくチェックしたオペレーターは**未昇進・Lv.1から始まる**ので、育てた分だけ上げてください。レベルは**未昇進Lv.30**で解放される基地スキルの判定に使われます（昇進1以上は影響なし）。顔をクリックすると詳細が開きます。",
   ],
   "6성": ["6★", "星6"],
   "5성": ["5★", "星5"],

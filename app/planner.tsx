@@ -11,7 +11,7 @@ import { useHashSync } from "./hash-modal";
 
 import {
   infra, ops, opById, factionsOf, withElite, clueBase, maxElite, eliteOptions,
-  ELITE_LABEL, LAYOUT, cellByKey, ROOM_ACCENT, UNIT, PARK_KEYS, SHIFT_COUNT,
+  ELITE_LABEL, MAX_OP_LEVEL, LAYOUT, cellByKey, ROOM_ACCENT, UNIT, PARK_KEYS, SHIFT_COUNT,
   JOB_ORDER, ROSTER_SORT_KEYS, PRODUCTION_KEYS, SUPPORT_KEYS,
   AURA_WEIGHT, AURA_LABEL, skillApplies, breakdown, teamScore, aurasOf, ambientFor, capConvFor, roomMaxNetDrain,
   ctxFor, sanitizePlan, presentIdsFor, roomOfFor, cellOfFor, slotSubstitutes, setLayoutPreset, setPriorityMode, memberOf, growAvg, DEFAULT_CUSTOM_ROOMS, DEFAULT_CUSTOM_PRODUCTS,
@@ -148,6 +148,9 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   const [ownedIds, setOwnedIds] = useState<Set<string>>(() => new Set(ops.filter((op) => op.rarity <= 5).map((op) => op.id)));
   // 미지정 = 2정(정예화 2, 최대) 가정 — 정예화 2 스킬이 있는 오퍼만 1정으로 낮출 수 있다
   const [eliteById, setEliteById] = useState<Map<string, Elite>>(new Map());
+  // 오퍼 레벨 (미지정 = 제한 없음). 노정예 Lv.30 해금 스킬 판정에만 쓰인다 —
+  // 보유 설정에서 새로 체크하면 Lv.1로 시작한다 (사용자 확정 2026-08-04)
+  const [levelById, setLevelById] = useState<Map<string, number>>(new Map());
   // 보유 오퍼·정예화 구성이나 방별 수동 편성을 바꾼 뒤 파일로 저장하지 않았으면 true
   const [dirty, setDirty] = useState(false);
   // 육성(정예화 완성) 추천 — 반사실 재최적화 결과(null=미실행)와 진행률, 모달 표시 여부.
@@ -178,7 +181,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     for (const [id, e] of tempApplied) { const op = opById.get(id); if (op && e >= maxElite(op.rarity)) m.delete(id); else m.set(id, e); }
     return m;
   }, [eliteById, tempApplied]);
-  const effectiveOps = useMemo(() => visibleOps.map((op) => withElite(op, viewElite.get(op.id))), [visibleOps, viewElite]);
+  const effectiveOps = useMemo(() => visibleOps.map((op) => withElite(op, viewElite.get(op.id), levelById.get(op.id))), [visibleOps, viewElite, levelById]);
   const effectiveOpById = useMemo(() => new Map(effectiveOps.map((op) => [op.id, op])), [effectiveOps]);
   const roster = useMemo(() => effectiveOps.filter((op) => ownedIds.has(op.id)), [effectiveOps, ownedIds]);
   // 보유 중 아직 정예화를 완성 안 한(= 육성 추천 후보가 될 수 있는) 오퍼 수
@@ -195,18 +198,25 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     ? investRecs.filter((r) => !investHidden.has(r.opId) && effectiveOpById.has(r.opId)).slice(0, INVEST_SHOW)
     : null), [investRecs, investHidden, effectiveOpById]);
 
-  const persist = (ids: Set<string>, nextPlan: Plan | null, elite: Map<string, Elite> = eliteById, prio: ProdPriority = priority, invest: RaiseRec[] | null = investRecs, hidden: Set<string> = investHidden, lay: LayoutPreset = layout, lvls: Levels = levels, rooms: CustomRoom[] = customRooms, products: (CustomProduct | null)[] = customProducts, pins: Record<string, string[]> = dormPins) => {
+  const persist = (ids: Set<string>, nextPlan: Plan | null, elite: Map<string, Elite> = eliteById, lvById: Map<string, number> = levelById, prio: ProdPriority = priority, invest: RaiseRec[] | null = investRecs, hidden: Set<string> = investHidden, lay: LayoutPreset = layout, lvls: Levels = levels, rooms: CustomRoom[] = customRooms, products: (CustomProduct | null)[] = customProducts, pins: Record<string, string[]> = dormPins) => {
     // 현재 프리셋 버킷을 최신 상태로 갱신한 뒤 전체 버킷을 저장 — 다른 프리셋의 편성은 보존된다
     syncBucket(lay, { plan: nextPlan, levels: lvls, invest, investHidden: Array.from(hidden), dormPins: pins });
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        owned: Array.from(ids), elite: Array.from(elite.entries()), priority: prio,
+        owned: Array.from(ids), elite: Array.from(elite.entries()), opLevels: Array.from(lvById.entries()), priority: prio,
         layout: lay, buckets: bucketsRef.current, customRooms: rooms, customProducts: products,
         // 구버전 호환 필드 (이 버전 이전 코드가 읽어도 현 프리셋 편성은 복원되게)
         plan: nextPlan, invest, investHidden: Array.from(hidden),
       }));
     } catch { /* ignore */ }
   };
+
+  // 저장된 오퍼 레벨 복원 — [id, 1~90] 쌍만 인정 (손상 항목 무시)
+  const restoreOpLevels = (raw: unknown): Map<string, number> => new Map(
+    (Array.isArray(raw) ? raw : []).filter((e: unknown): e is [string, number] =>
+      Array.isArray(e) && typeof e[0] === "string" && typeof e[1] === "number"
+      && Number.isFinite(e[1]) && e[1] >= 1 && e[1] <= MAX_OP_LEVEL),
+  );
 
   // 저장된 그외(커스텀) 9칸 구성 복원 — 유효한 3종 시설명 9개일 때만
   const restoreCustomRooms = (raw: unknown): CustomRoom[] | null =>
@@ -335,7 +345,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   };
 
   const exportState = () => {
-    const payload = JSON.stringify({ version: 1, exported: new Date().toISOString(), owned: Array.from(ownedIds), elite: Array.from(eliteById.entries()), plan, invest: investRecs, layout, levels, customRooms, customProducts, dormPins, buckets: { ...bucketsRef.current, [layout]: { plan, levels, invest: investRecs, investHidden: Array.from(investHidden), dormPins } } }, null, 1);
+    const payload = JSON.stringify({ version: 1, exported: new Date().toISOString(), owned: Array.from(ownedIds), elite: Array.from(eliteById.entries()), opLevels: Array.from(levelById.entries()), plan, invest: investRecs, layout, levels, customRooms, customProducts, dormPins, buckets: { ...bucketsRef.current, [layout]: { plan, levels, invest: investRecs, investHidden: Array.from(investHidden), dormPins } } }, null, 1);
     const blob = new Blob([payload], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
@@ -376,13 +386,15 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         const hidden = restoreHidden(data.investHidden);
         const pins = restoreDormPins(fileBuckets[lay]?.dormPins ?? data.dormPins);
         setDormPinsState(pins);
+        const lvById = restoreOpLevels(data.opLevels);
         setOwnedIds(ids);
         setEliteById(elite);
+        setLevelById(lvById);
         if (plan) { setPlan(plan); setActiveShift(0); }
         setInvestRecs(invest);
         setInvestHidden(hidden);
         setShowInvest(false);
-        persist(ids, plan, elite, priority, invest, hidden, lay, lvls, fileCustom ?? customRooms, fileProducts ?? customProducts, pins);
+        persist(ids, plan, elite, lvById, priority, invest, hidden, lay, lvls, fileCustom ?? customRooms, fileProducts ?? customProducts, pins);
         setDirty(false);
         showToast(t("저장된 상태를 불러왔습니다 · 보유 {n}명 복원", { n: ids.size }));
       } catch { alert(t("가져오기 실패: 파일 형식을 확인해 주세요.")); }
@@ -418,7 +430,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     setPlan(next);
     const cleaned = pins && Object.fromEntries(Object.entries(pins).filter(([, list]) => list.length));
     if (cleaned) setDormPinsState(cleaned);
-    persist(ownedIds, next, eliteById, priority, investRecs, investHidden, layout, levels, customRooms, customProducts, cleaned ?? dormPins);
+    persist(ownedIds, next, eliteById, levelById, priority, investRecs, investHidden, layout, levels, customRooms, customProducts, cleaned ?? dormPins);
     setDirty(true);
   };
 
@@ -439,7 +451,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     const next = cur.includes(opId) ? cur.filter((id) => id !== opId) : [...cur, opId];
     const pins = Object.fromEntries(Object.entries({ ...dormPins, [cellKey]: next }).filter(([, list]) => list.length));
     setDormPinsState(pins);
-    persist(ownedIds, plan, eliteById, priority, investRecs, investHidden, layout, levels, customRooms, customProducts, pins);
+    persist(ownedIds, plan, eliteById, levelById, priority, investRecs, investHidden, layout, levels, customRooms, customProducts, pins);
     setDirty(true);
   };
 
@@ -471,14 +483,14 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     return t("자동편성 엔진 계산 중 — 최적안 비교·마무리 검증…");
   };
 
-  const runOptimize = async (ids: Set<string> = ownedIds, elite: Map<string, Elite> = eliteById, prio: ProdPriority = priority) => {
+  const runOptimize = async (ids: Set<string> = ownedIds, elite: Map<string, Elite> = eliteById, prio: ProdPriority = priority, lvById: Map<string, number> = levelById) => {
     if (optimizing) return; // 중복 실행 방지
     // 페이싱 없음 (사용자 확정 2026-07-21: 최대한 빠르게) — 진행 문구만 갱신하고 지연은 두지
     // 않는다. 엔진 tick의 매크로태스크 양보(setTimeout 0)만으로 리페인트는 충분하다.
     setOptimizing(t("자동편성 엔진 계산 중 — 편성 공간 구성…"));
     try {
       const paced = (step: OptimizeStep) => { setOptimizing(stepMessage(step)); };
-      const next = await optimizeOff({ owned: ids, elite, includeFuture: !!includeFuture, priority: prio, layout, levels, customRooms, customProducts, dormPins }, paced);
+      const next = await optimizeOff({ owned: ids, elite, opLevels: lvById, includeFuture: !!includeFuture, priority: prio, layout, levels, customRooms, customProducts, dormPins }, paced);
       setPlan(next);
       setActiveShift(0);
       // 새 자동편성 → 기존 육성 추천·숨김 무효화 + 임시 적용 세션 종료(새 편성이 기준). 2026-07-21
@@ -487,7 +499,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       setInvestDiag(null);   // 진단값도 옛 편성 기준이라 함께 버린다
       setShowInvest(false);
       endTemp(false);
-      persist(ids, next, elite, prio, null, new Set());
+      persist(ids, next, elite, lvById, prio, null, new Set());
       // 실제 계산에 쓰인 인원 = 보유 ∩ 현재 표시 대상(미래시 토글 반영) — 미래시 OFF면 미실장 제외
       const usedCount = visibleOps.filter((op) => ids.has(op.id)).length;
       showToast(t("전체 자동편성을 실행했습니다 · 보유 {n}명 기준", { n: usedCount }));
@@ -516,12 +528,12 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     setInvesting({ done: 0, total: 0 });
     try {
       let candidates = 0; // 엔진이 정밀 평가한 후보 수 — 0건 안내를 후보 유무로 갈라 쓴다
-      const recs = await investOff({ owned: ownedIds, elite: eliteById, includeFuture: !!includeFuture, priority, layout, levels, customRooms, customProducts, dormPins },
+      const recs = await investOff({ owned: ownedIds, elite: eliteById, opLevels: levelById, includeFuture: !!includeFuture, priority, layout, levels, customRooms, customProducts, dormPins },
         (p) => { if (p.total) candidates = p.total; setInvesting(p); });
       setInvestDiag({ unfinished: unfinishedCount, candidates });
       setInvestRecs(recs);
       setInvestHidden(new Set()); // 새 분석 → 숨김 초기화
-      persist(ownedIds, plan, eliteById, priority, recs, new Set());
+      persist(ownedIds, plan, eliteById, levelById, priority, recs, new Set());
       setShowInvest(true);
       if (!recs.length) {
         // 후보 자체가 없는 경우(전원 만정예 간주)와 후보는 있는데 이득이 없는 경우를 구분해 안내
@@ -551,7 +563,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     setOptimizing(t("자동편성 엔진 계산 중 — 편성 공간 구성…"));
     try {
       const paced = (step: OptimizeStep) => { setOptimizing(stepMessage(step)); };
-      const next = await optimizeOff({ owned: ownedIds, elite: effElite, includeFuture: !!includeFuture, priority, layout, levels, customRooms, customProducts, dormPins }, paced);
+      const next = await optimizeOff({ owned: ownedIds, elite: effElite, opLevels: levelById, includeFuture: !!includeFuture, priority, layout, levels, customRooms, customProducts, dormPins }, paced);
       setPlan(next);
       setActiveShift(0);
     } finally { setOptimizing(null); }
@@ -566,7 +578,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     next.add(opId);
     setInvestHidden(next);
     setSelectedRaise((prev) => { if (!prev.has(opId)) return prev; const s = new Set(prev); s.delete(opId); return s; });
-    persist(ownedIds, plan, eliteById, priority, investRecs, next);
+    persist(ownedIds, plan, eliteById, levelById, priority, investRecs, next);
   };
   // 정예화 오버레이 묶음(adds)을 기존 임시 적용에 더해 한 번에 미리보기 재편성
   const applyTempSet = async (adds: Map<string, Elite>, label: string) => {
@@ -629,7 +641,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   const setPriority = (prio: ProdPriority) => {
     if (prio === priority) return;
     setPriorityState(prio);
-    persist(ownedIds, plan, eliteById, prio);
+    persist(ownedIds, plan, eliteById, levelById, prio);
     showToast(t("편성 설정을 저장했습니다 — 다음 자동편성부터 적용됩니다"));
   };
   // 2축 구조 (사용자 확정 2026-07-28): 생산 축(무엇을 많이) × 운용 축(얼마나 오래) —
@@ -660,7 +672,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     setOpenRoom(null);
     setActiveShift(0);
     endTemp(false); // 임시 적용 세션은 프리셋 간 이월하지 않는다
-    persist(ownedIds, restored, eliteById, priority, b.invest, new Set(b.investHidden), next, b.levels, customRooms, customProducts, restoreDormPins(b.dormPins));
+    persist(ownedIds, restored, eliteById, levelById, priority, b.invest, new Set(b.investHidden), next, b.levels, customRooms, customProducts, restoreDormPins(b.dormPins));
     showToast(restored
       ? t("기지 배치 {p} — 저장된 편성을 복원했습니다", { p: next })
       : t("기지 배치 {p} — 처음이라 편성이 비어 있습니다. 전체 자동편성을 눌러 만들어 두면 유지됩니다", { p: next }));
@@ -702,7 +714,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         showToast(t("레벨을 낮춰 슬롯이 줄었습니다 — 초과 인원 {n}명을 뺐습니다", { n: trimmedCount }));
       }
     }
-    persist(ownedIds, nextPlan, eliteById, priority, investRecs, investHidden, layout, next);
+    persist(ownedIds, nextPlan, eliteById, levelById, priority, investRecs, investHidden, layout, next);
   };
 
   // 사용자 지정(커스텀) 배치: 카드의 제조/무역/발전 전환 (사용자 요청 2026-07-24). 종류를 바꾸면
@@ -716,7 +728,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     const sanitized = plan ? sanitizePlan(plan) : null;
     setPlan(sanitized);
     setOpenRoom(null);
-    persist(ownedIds, sanitized, eliteById, priority, investRecs, investHidden, "custom", levels, next, customProducts);
+    persist(ownedIds, sanitized, eliteById, levelById, priority, investRecs, investHidden, "custom", levels, next, customProducts);
     setDirty(true);
     showToast(t("칸 구성을 바꿨습니다 — 전체 자동편성으로 새 구성에 맞게 재편성하세요"));
   };
@@ -728,7 +740,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     next[slot] = product;
     setCustomProducts(next);
     setLayoutPreset("custom", customRooms, next);
-    persist(ownedIds, plan, eliteById, priority, investRecs, investHidden, "custom", levels, customRooms, next);
+    persist(ownedIds, plan, eliteById, levelById, priority, investRecs, investHidden, "custom", levels, customRooms, next);
     setDirty(true);
     showToast(t("제조 품목을 바꿨습니다 — 자동편성으로 재편성하면 편성에 반영됩니다"));
   };
@@ -831,7 +843,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     const next = { ...plan, assignments, tokenPoints: {}, factionCounts: plan.factionCounts.map(() => ({})) };
     setPlan(next);
     setActiveShift(0);
-    persist(ownedIds, next, eliteById, priority, investRecs, investHidden, layout, lvls);
+    persist(ownedIds, next, eliteById, levelById, priority, investRecs, investHidden, layout, lvls);
     setDirty(true);
     showToast(t("편성을 전부 비웠습니다 — 방을 눌러 수동 배치하거나 자동편성하세요"));
   };
@@ -860,6 +872,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         const elite = new Map<string, Elite>((data.elite as [string, Elite][] | undefined) ?? []);
         setOwnedIds(ids);
         setEliteById(elite);
+        setLevelById(restoreOpLevels(data.opLevels));
         setInvestRecs(restoreInvest(data.invest)); // 저장된 육성 추천 복원 (모달은 버튼으로 연다)
         setInvestHidden(restoreHidden(data.investHidden));
         if (data.priority) setPriorityState(data.priority as ProdPriority);
@@ -899,7 +912,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         }
         // 마운트 시점엔 미래시 토글이 아직 복원 전(false)일 수 있으므로 미실장은 제외하고
         // 기본 편성을 만든다 — 미래시 포함 편성은 토글 후 자동편성 버튼으로 실행
-        void optimizeOff({ owned: ids, elite, includeFuture: false, priority: "gold", layout: savedLayout, levels: savedLevels, customRooms: savedCustom, customProducts: savedProducts }).then(setPlan);
+        void optimizeOff({ owned: ids, elite, opLevels: restoreOpLevels(data.opLevels), includeFuture: false, priority: "gold", layout: savedLayout, levels: savedLevels, customRooms: savedCustom, customProducts: savedProducts }).then(setPlan);
         return;
       }
     } catch { /* fall through to defaults */ }
@@ -977,7 +990,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   }, [plan, activeShift, allAssigned, presentIds, ambient, eliteById]);
 
   // 커밋 정예화 기준 op 맵 — 임시 적용 '이전' 편성 점수 계산용(현재 effectiveOpById는 임시 반영본)
-  const committedOpById = useMemo(() => new Map(visibleOps.map((op) => [op.id, withElite(op, eliteById.get(op.id))])), [visibleOps, eliteById]);
+  const committedOpById = useMemo(() => new Map(visibleOps.map((op) => [op.id, withElite(op, eliteById.get(op.id), levelById.get(op.id))])), [visibleOps, eliteById, levelById]);
 
   // 임의 plan+조의 방 %효율 — teamScore + 제어센터 오라. before(스냅샷)/after(현재)를 같은 식으로.
   const scoreRoomIn = (p: Plan, opMap: Map<string, InfraOp>, key: string, shift: number): number => {
@@ -1083,7 +1096,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           onToggleSelect={toggleSelectRaise} onApplySelected={applySelected} onApplyAll={applyAllRaises} onHide={hideRaise}
           selected={selectedRaise} applied={new Set(tempApplied.keys())} onRevert={revertTemp}
           diag={investDiag} hiddenCount={investRecs?.filter((r) => investHidden.has(r.opId)).length ?? 0}
-          onUnhideAll={() => { setInvestHidden(new Set()); persist(ownedIds, plan, eliteById, priority, investRecs, new Set()); }}
+          onUnhideAll={() => { setInvestHidden(new Set()); persist(ownedIds, plan, eliteById, levelById, priority, investRecs, new Set()); }}
           onOpenRoster={() => { setShowInvest(false); startTransition(() => { setRosterMode("direct"); setShowRoster(true); }); }}
           t={t} locale={locale} />
       )}
@@ -1334,10 +1347,11 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
 
       {showRoster && (
         <RosterModal
+          levelById={levelById}
           allOps={visibleOps}
           ownedIds={ownedIds}
           eliteById={eliteById}
-          onApply={(ids, elite) => { setOwnedIds(ids); setEliteById(elite); setShowRoster(false); runOptimize(ids, elite); setDirty(true); }}
+          onApply={(ids, elite, lv) => { setOwnedIds(ids); setEliteById(elite); setLevelById(lv); setShowRoster(false); runOptimize(ids, elite, priority, lv); setDirty(true); }}
           onClose={() => setShowRoster(false)}
           onShowOperator={onShowOperator}
           mode={rosterMode}
@@ -2282,12 +2296,16 @@ function FlowModal({ plan, opMap, onClose, onShowOperator }: { plan: Plan; opMap
 // 다시 렌더돼 클릭 응답이 CPU 4배 느린 환경에서 ~49ms까지 늘었다 (INP 악화, 2026-07-26 실측).
 // props를 전부 원시값·안정 참조로 유지해야 memo가 듣는다 — options는 op에서 파생되므로
 // 배열을 넘기지 않고 안에서 계산한다.
-const RosterCard = memo(function RosterCard({ op, owned, elite, onToggle, onElite, onShowOperator, t }: {
-  op: InfraOp; owned: boolean; elite: Elite;
+const RosterCard = memo(function RosterCard({ op, owned, elite, level, onToggle, onElite, onLevel, onShowOperator, t }: {
+  op: InfraOp; owned: boolean; elite: Elite; level: number | undefined;
   onToggle: (id: string) => void; onElite: (id: string, elite: Elite) => void;
+  onLevel: (id: string, level: number | undefined) => void;
   onShowOperator?: (id: string) => void; t: T;
 }) {
   const options = eliteOptions(op);
+  // 레벨은 노정예에서만 인프라 계산에 영향을 준다('Lv.30' 해금 스킬) — 1정 이상은
+  // 그 조건을 이미 넘겼으므로 입력칸을 흐리게 두되 기록은 그대로 남긴다
+  const levelMatters = elite === 0;
   return (
     <div className={`roster-card${owned ? " owned" : ""}${op.unreleased ? " future" : ""}`}>
       <button type="button" onClick={() => onToggle(op.id)} title={op.name}>
@@ -2302,15 +2320,33 @@ const RosterCard = memo(function RosterCard({ op, owned, elite, onToggle, onElit
           ))}
         </div>
       )}
+      {owned && (
+        <label className={`roster-level${levelMatters ? "" : " dim"}`}
+          title={levelMatters
+            ? t("노정예 Lv.30부터 열리는 기지 스킬이 있어 레벨이 계산에 반영됩니다")
+            : t("1정 이상은 레벨 조건을 이미 넘겨 계산에 영향이 없습니다")}>
+          <span>Lv.</span>
+          <input type="number" min={1} max={MAX_OP_LEVEL} inputMode="numeric"
+            value={level ?? ""} placeholder="—"
+            aria-label={t("{name} 레벨", { name: op.name })}
+            onChange={(event) => {
+              const raw = event.target.value.trim();
+              if (!raw) { onLevel(op.id, undefined); return; }
+              const n = Math.round(Number(raw));
+              if (Number.isFinite(n)) onLevel(op.id, Math.max(1, Math.min(MAX_OP_LEVEL, n)));
+            }} />
+        </label>
+      )}
     </div>
   );
 });
 
-function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOperator, mode, onMode }:{ allOps: InfraOp[]; ownedIds: Set<string>; eliteById: Map<string, Elite>; onApply: (ids: Set<string>, elite: Map<string, Elite>) => void; onClose: () => void; onShowOperator?: (id: string) => void; mode: "direct" | "import"; onMode: (m: "direct" | "import") => void }) {
+function RosterModal({ allOps, ownedIds, eliteById, levelById, onApply, onClose, onShowOperator, mode, onMode }:{ allOps: InfraOp[]; ownedIds: Set<string>; eliteById: Map<string, Elite>; levelById: Map<string, number>; onApply: (ids: Set<string>, elite: Map<string, Elite>, level: Map<string, number>) => void; onClose: () => void; onShowOperator?: (id: string) => void; mode: "direct" | "import"; onMode: (m: "direct" | "import") => void }) {
   const { t } = useI18n();
   const { confirm, dialog: confirmDialog } = useConfirm();
   const [draft, setDraft] = useState<Set<string>>(new Set(ownedIds));
   const [eliteDraft, setEliteDraft] = useState<Map<string, Elite>>(new Map(eliteById));
+  const [levelDraft, setLevelDraft] = useState<Map<string, number>>(new Map(levelById));
   const [showScan, setShowScan] = useState(false); // 스크린샷 스캐너(모달 내부에서 draft에 병합)
   // 입력 방식 두 종류 (사용자 확정 2026-07-26): 직접 입력 = 카드 격자에서 손으로 체크,
   // 가져오기 = MAA 파일·스크린샷·게임 로그인. 가져온 결과는 직접 입력 화면에서 검토한 뒤 적용한다.
@@ -2367,6 +2403,17 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
     }
     return next ?? map;
   };
+  // 새로 체크한 오퍼는 **Lv.1로 시작**한다 (사용자 확정 2026-08-04) — 노정예 시작과 같은
+  // 규약이며, 이미 값이 있는 오퍼(가져오기로 실제 레벨이 들어온 것 포함)는 건드리지 않는다
+  const startAtLv1 = (map: Map<string, number>, ids: string[]) => {
+    let next: Map<string, number> | null = null;
+    for (const id of ids) {
+      if (map.has(id)) continue;
+      next ??= new Map(map);
+      next.set(id, 1);
+    }
+    return next ?? map;
+  };
   const toggle = useCallback((id: string) => {
     const adding = !draftRef.current.has(id);
     setDraft((current) => {
@@ -2374,8 +2421,16 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
       if (adding) next.add(id); else next.delete(id);
       return next;
     });
-    if (adding) setEliteDraft((current) => startAtE0(current, [id]));
+    if (adding) {
+      setEliteDraft((current) => startAtE0(current, [id]));
+      setLevelDraft((current) => startAtLv1(current, [id]));
+    }
   }, []);
+  const setLevel = useCallback((id: string, level: number | undefined) => setLevelDraft((current) => {
+    const next = new Map(current);
+    if (level == null) next.delete(id); else next.set(id, level); // 빈칸 = 미지정(제한 없음)
+    return next;
+  }), []);
   const setElite = useCallback((id: string, elite: Elite) => setEliteDraft((current) => {
     const next = new Map(current);
     if (elite === 2) next.delete(id); else next.set(id, elite); // 2정 = 맵에 없음 (저장 규약)
@@ -2385,8 +2440,8 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
     const options = eliteOptions(op);
     const elite = Math.min(eliteDraft.get(op.id) ?? 2, options.length ? options[options.length - 1] : 2) as Elite;
     return (
-      <RosterCard key={op.id} op={op} owned={draft.has(op.id)} elite={elite}
-        onToggle={toggle} onElite={setElite} onShowOperator={onShowOperator} t={t} />
+      <RosterCard key={op.id} op={op} owned={draft.has(op.id)} elite={elite} level={levelDraft.get(op.id)}
+        onToggle={toggle} onElite={setElite} onLevel={setLevel} onShowOperator={onShowOperator} t={t} />
     );
   };
   // 성급 단위 일괄 조작 — 보유 체크/해제, 정예화 노정예/1정/2정
@@ -2401,7 +2456,10 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
       }
       return next;
     });
-    if (own) setEliteDraft((current) => startAtE0(current, added)); // 일괄 체크도 노정예로 시작
+    if (own) { // 일괄 체크도 노정예·Lv.1로 시작
+      setEliteDraft((current) => startAtE0(current, added));
+      setLevelDraft((current) => startAtLv1(current, added));
+    }
   };
   const bulkElite = (test: (rarity: number) => boolean, elite: Elite) => setEliteDraft((current) => {
     const next = new Map(current);
@@ -2424,13 +2482,14 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
         // MAA 내보내기 파일은 UTF-8 BOM이 붙어 있어 그대로 JSON.parse하면 실패한다
         const text = String(reader.result).replace(/^\uFEFF/, "");
         const parsed = JSON.parse(text);
-        type MaaOper = { id?: string; own?: boolean; elite?: number };
+        type MaaOper = { id?: string; own?: boolean; elite?: number; level?: number };
         const entries: MaaOper[] = Array.isArray(parsed)
           ? parsed
           : [...((parsed?.all_opers as MaaOper[]) ?? []), ...((parsed?.own_opers as MaaOper[]) ?? [])];
         const byId = new Map(allOps.map((op) => [op.id, op]));
         const nextDraft = new Set(draft);
         const nextElite = new Map(eliteDraft);
+        const nextLevel = new Map(levelDraft);
         const seen = new Set<string>();
         let owned = 0, eliteSet = 0, unmatched = 0;
         for (const entry of entries) {
@@ -2443,10 +2502,14 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
           const elite = (typeof entry.elite === "number" ? Math.max(0, Math.min(2, entry.elite)) : 2) as Elite;
           if (isOwned && elite < 2 && eliteOptions(op).length > 0) { nextElite.set(op.id, elite); eliteSet += 1; }
           else nextElite.delete(op.id);
+          // MAA 오퍼 박스에도 레벨이 들어 있다 — 있으면 실제 값, 없으면 미지정(제한 없음)
+          if (isOwned && typeof entry.level === "number" && entry.level >= 1) nextLevel.set(op.id, Math.min(MAX_OP_LEVEL, Math.round(entry.level)));
+          else if (!isOwned) nextLevel.delete(op.id);
         }
         if (seen.size === 0) { fail(); return; }
         setDraft(nextDraft);
         setEliteDraft(nextElite);
+        setLevelDraft(nextLevel);
         setImportMsg(t("MAA 보유 데이터를 반영했습니다 — 보유 {own}명 · 정예화 반영 {elite}건 · 미수록 오퍼 {skip}건. 확인 후 '적용 및 자동편성 실행'을 누르세요.", { own: owned, elite: eliteSet, skip: unmatched }));
       } catch { fail(); }
     };
@@ -2459,6 +2522,7 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
     const byId = new Map(allOps.map((op) => [op.id, op]));
     const nextDraft = new Set<string>();
     const nextElite = new Map<string, Elite>();
+    const nextLevel = new Map<string, number>();
     let unmatched = 0;
     for (const char of roster.chars) {
       const op = byId.get(char.id);
@@ -2466,9 +2530,12 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
       nextDraft.add(op.id);
       const elite = Math.max(0, Math.min(2, char.elite)) as Elite;
       if (elite < 2 && eliteOptions(op).length > 0) nextElite.set(op.id, elite);
+      // 계정 연동은 진짜 레벨을 실어 온다 — 직접 입력의 Lv.1 기본값을 타지 않는다
+      if (Number.isFinite(char.level) && char.level >= 1) nextLevel.set(op.id, Math.min(MAX_OP_LEVEL, Math.round(char.level)));
     }
     setDraft(nextDraft);
     setEliteDraft(nextElite);
+    setLevelDraft(nextLevel);
     setMode("direct");
     setImportMsg(unmatched > 0
       ? t("{name} 박사의 계정에서 보유 {own}명을 가져왔습니다 (사이트 미수록 {skip}명 제외) — 확인 후 '적용 및 자동편성 실행'을 누르세요.", { name: roster.player.nickName, own: nextDraft.size, skip: unmatched })
@@ -2514,7 +2581,7 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
             <input {...searchProps} placeholder={t("이름·소속 검색")} />
             <button type="button" onClick={() => setDraft(new Set(allOps.map((op) => op.id)))}><span className="btn-icon" aria-hidden>✓</span>{t("전체 선택")}</button>
             <button type="button" onClick={() => setDraft(new Set())}><span className="btn-icon" aria-hidden>✕</span>{t("전체 해제")}</button>
-            <button type="button" className="apply" onClick={() => onApply(draft, eliteDraft)}><span className="btn-icon" aria-hidden>⟳</span>{t("적용 및 자동편성 실행")}</button>
+            <button type="button" className="apply" onClick={() => onApply(draft, eliteDraft, levelDraft)}><span className="btn-icon" aria-hidden>⟳</span>{t("적용 및 자동편성 실행")}</button>
           </div>
           )}
         </header>
@@ -2530,7 +2597,7 @@ function RosterModal({ allOps, ownedIds, eliteById, onApply, onClose, onShowOper
             />
           ) : (
           <>
-          <p className="dorm-note">{rich(t("3성 이상 오퍼는 카드 아래에서 **노정예/1정/2정**(3성은 1정까지)을 선택할 수 있습니다 — 새로 체크하면 **노정예로 시작**하니 키운 만큼 올려 주세요. 얼굴을 클릭하면 상세 정보가 열립니다."))}</p>
+          <p className="dorm-note">{rich(t("3성 이상 오퍼는 카드 아래에서 **노정예/1정/2정**(3성은 1정까지)을 선택할 수 있고, 그 아래 **Lv.** 칸에 레벨을 적어 둘 수 있습니다 — 새로 체크하면 **노정예 Lv.1로 시작**하니 키운 만큼 올려 주세요. 레벨은 **노정예 Lv.30**부터 열리는 기지 스킬 판정에 쓰입니다(1정 이상은 영향 없음). 얼굴을 클릭하면 상세 정보가 열립니다."))}</p>
           {allOps.some((op) => op.unreleased) && (
             <p className="dorm-note">{rich(t("**미실장** 배지가 붙은 오퍼는 미출시(중국 서버 선행) 오퍼입니다 — 미래시 데이터 포함이 켜져 있을 때만 표시되며, 스킬 텍스트는 비공식 AI 번역입니다."))}</p>
           )}

@@ -128,13 +128,13 @@ export type RaiseRec = {
 export type InvestProgress = { done: number; total: number; opId?: string };
 
 // 로스터를 정예화 반영해 스탬프 + id 맵. current = eliteById에 없으면 성급 최대 가정.
-function stampRoster(visibleOps: InfraOp[], ownedIds: Set<string>, eliteById: Map<string, Elite>, override?: { id: string; elite: Elite }) {
+function stampRoster(visibleOps: InfraOp[], ownedIds: Set<string>, eliteById: Map<string, Elite>, override?: { id: string; elite: Elite }, levelById?: Map<string, number>) {
   const roster: InfraOp[] = [];
   const byId = new Map<string, InfraOp>();
   for (const op of visibleOps) {
     if (!ownedIds.has(op.id)) continue;
     const elite = override && override.id === op.id ? override.elite : eliteById.get(op.id) ?? maxElite(op.rarity);
-    const stamped = withElite(op, elite);
+    const stamped = withElite(op, elite, levelById?.get(op.id));
     roster.push(stamped);
     byId.set(op.id, stamped);
   }
@@ -147,9 +147,11 @@ const TEAM_KINDS = new Set(["override", "payout", "quality", "percoworker", "amp
 // 후보 판정(admissible 사전 필터) + 시너지 조각 여부. pass=false면 그 오퍼는 완성해도 편성이
 // 절대 안 바뀐다(스킵). synergy=true면 팀 의존이라 전체 재탐색으로 총 시너지 효율까지 본다.
 // ⚠ pass 판정은 보수적(과포함) — 애매하면 통과, 실제 이득은 반사실 재편성이 최종 판정한다.
-function candidateInfo(rawOp: InfraOp, target: Elite, current: Elite, baseline: Plan, byId0: Map<string, InfraOp>): { pass: boolean; synergy: boolean } {
+function candidateInfo(rawOp: InfraOp, target: Elite, current: Elite, baseline: Plan, byId0: Map<string, InfraOp>, level?: number): { pass: boolean; synergy: boolean } {
+  // 목표는 정예화 1 이상이라 레벨 잠금이 없다 — 현재 상태에만 레벨을 먹여, 노정예 Lv.30
+  // 미만이라 잠겨 있던 스킬도 '정예화하면 새로 열리는 것'으로 정확히 잡힌다
   const raised = withElite(rawOp, target);
-  const base = withElite(rawOp, current);
+  const base = withElite(rawOp, current, level);
   const baseSkills = new Set(base.skills.map((s) => s.buffId ?? s.name));
   const gained = raised.skills.filter((s) => !baseSkills.has(s.buffId ?? s.name));
   if (!gained.length) return { pass: false, synergy: false };
@@ -188,6 +190,7 @@ export async function recommendRaises(
   priority: ProdPriority = "gold",
   onProgress?: (p: InvestProgress) => void | Promise<void>,
   pinnedDorms: Record<string, string[]> = {},  // 사용자가 숙소에 고정한 인원 — 반사실도 같은 기지 조건에서
+  levelById: Map<string, number> = new Map(),  // 오퍼 레벨 — 노정예 'Lv.30' 스킬이 잠긴 상태를 베이스라인에 반영
 ): Promise<RaiseRec[]> {
   const cur = (op: InfraOp): Elite => eliteById.get(op.id) ?? maxElite(op.rarity);
   // 정예화는 **지정이 없으면 만정예로 간주**하므로(성급 상한), 보유 설정에서 아무도 낮춰 두지
@@ -195,7 +198,7 @@ export async function recommendRaises(
   // 끝까지 돌린 뒤 빈 결과를 보여줬다 — 보유 405명이면 16초(모바일은 3~10배)를 통째로 버린다.
   // 후보 유무는 optimize 없이 판정되므로 먼저 끊는다 (2026-07-25).
   if (!visibleOps.some((op) => ownedIds.has(op.id) && raiseTarget(op, cur(op)) != null)) return [];
-  const { roster: baseRoster, byId: byId0 } = stampRoster(visibleOps, ownedIds, eliteById);
+  const { roster: baseRoster, byId: byId0 } = stampRoster(visibleOps, ownedIds, eliteById, undefined, levelById);
   // 베이스라인 편성 + 그 편성이 고른 전략(토큰·시너지 세트) — 순수 가산 후보 평가에 재사용
   // park = 베이스라인이 채택한 숙소 파킹 여부 — 반사실도 같은 전략으로 지어야 ΔplanScore가 공정하다
   // 반사실은 베이스라인이 **실제로 쓴 전략 그대로** 지어야 한다 — 토큰·세트·파킹만 맞추고
@@ -215,7 +218,7 @@ export async function recommendRaises(
     const from = cur(op);
     const to = raiseTarget(op, from);
     if (to == null) continue;
-    const info = candidateInfo(op, to, from, baseline, byId0);
+    const info = candidateInfo(op, to, from, baseline, byId0, levelById.get(op.id));
     if (!info.pass) continue;
     candidates.push({ op, from, to, synergy: info.synergy });
   }
@@ -258,7 +261,7 @@ export async function recommendRaises(
   for (let i = 0; i < evalList.length; i += 1) {
     const { op, from, to, synergy } = evalList[i];
     if (onProgress) await onProgress({ done: i, total: evalList.length, opId: op.id });
-    const { byId: byId1 } = stampRoster(visibleOps, ownedIds, eliteById, { id: op.id, elite: to });
+    const { byId: byId1 } = stampRoster(visibleOps, ownedIds, eliteById, { id: op.id, elite: to }, levelById);
     const upRoster = [...byId1.values()];
     const { plan, score: S1 } = evalCandidate(upRoster, byId1, op.id);
     const deltaScore = S1 - S0;

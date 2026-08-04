@@ -128,6 +128,7 @@ export type InfraOp = {
   skills: InfraSkill[];
   unreleased?: boolean; // KR 미실장(중국 선행) — '미래시 데이터 포함' 토글이 켜져야 로스터에 노출
   elite?: Elite; // withElite가 스탬프하는 정예화 단계 (미지정=2정). 응접실 레어도 기본 단서속도 계산용
+  level?: number; // withElite가 스탬프하는 레벨 (미지정=제한 없음). 'Lv.30' 해금 스킬 판정용
 };
 
 // 직군 정렬 순서·정렬 키 — 백과사전(home.tsx)과 동일 (보유 오퍼 설정 정렬용)
@@ -162,18 +163,30 @@ export type Elite = 0 | 1 | 2;
 // 미지정 = 2정(최대) 가정. 1정은 '정예화 2' 해금 스킬을, 0정(노정예)은
 // '정예화 1'·'정예화 2' 해금 스킬을 아직 못 쓴다 (Lv.1/Lv.30 스킬은 유지)
 export const eliteLocks = (unlock: string, elite: Elite) => unlock === "정예화 2" || (elite === 0 && unlock === "정예화 1");
-export function withElite(op: InfraOp, elite: Elite | undefined): InfraOp {
-  // 미지정·2정은 스킬 필터링이 필요 없지만, 응접실 기본 단서속도용으로 정예화만 스탬프한다
-  if (elite == null || elite === 2) return op;
+// 레벨 해금 — 기지 스킬 해금 조건은 (정예화, 레벨) 쌍이고 데이터의 unlock은 그중 하나다.
+// 'Lv.30'(16종)은 **노정예 Lv.30**이 조건이라, 정예화 1 이상이면 E0 만렙(≥30)을 거쳤으므로
+// 자동 충족이다. 레벨 미지정(undefined)은 제한 없음 — 옛 저장분·가져오기 미지정분 보존.
+export const LEVEL_UNLOCK = 30;
+export const levelLocks = (unlock: string, elite: Elite, level: number | undefined) =>
+  unlock === "Lv.30" && elite === 0 && level != null && level < LEVEL_UNLOCK;
+export function withElite(op: InfraOp, elite: Elite | undefined, level?: number): InfraOp {
+  // 정예화 미지정은 **그 레어도의 최대 승급**으로 해석한다 — 'Lv.30' 해금 스킬은 전부
+  // 1~2성(승급이 없어 항상 노정예)이라, 미지정을 그냥 통과시키면 레벨이 무시된다.
+  // 저레어도엔 정예화 해금 스킬이 없어(1~2성 0건·3성은 '정예화 1'까지) 이 폴백이
+  // 기존 판정을 바꾸지 않는다 (2026-08-04 데이터 실측).
+  const eff = elite ?? maxElite(op.rarity);
+  // 2정은 스킬 필터링이 필요 없다 (레벨 조건도 이미 넘긴 상태)
+  if (eff === 2) return op;
+  const locked = (unlock: string) => eliteLocks(unlock, eff) || levelLocks(unlock, eff, level);
   const skills: InfraSkill[] = [];
   for (const skill of op.skills) {
-    if (!eliteLocks(skill.unlock, elite)) { skills.push(skill); continue; }
-    // 정예화로 잠긴 스킬 — 같은 슬롯의 하위 단계(기술 교류 α 등)가 있으면 그걸로 대체.
+    if (!locked(skill.unlock)) { skills.push(skill); continue; }
+    // 정예화·레벨로 잠긴 스킬 — 같은 슬롯의 하위 단계(기술 교류 α 등)가 있으면 그걸로 대체.
     // 없으면(순수 정예화 해금 스킬) 통째로 빠진다.
-    const lower = (skill.tiers ?? []).filter((t) => !eliteLocks(t.unlock, elite));
+    const lower = (skill.tiers ?? []).filter((t) => !locked(t.unlock));
     if (lower.length) skills.push(lower[lower.length - 1]);
   }
-  return { ...op, elite, skills };
+  return { ...op, elite: eff, level, skills };
 }
 
 // 응접실 단서 수집 속도는 RIIC 스킬과 별개로 레어도·정예화 기본치가 가산된다
@@ -189,6 +202,9 @@ export const clueBase = (op: InfraOp): number => (CLUE_RARITY_BASE[op.rarity] ??
 // 스킬이 전부 노정예 Lv.1부터 있는 오퍼(니엔 등)도 선택은 가능해야 한다
 // (계산엔 영향 없어도 실제 보유 상태 기록·응접실 레어도 기본치에 쓰임, 2026-07-21).
 export const ELITE_LABEL: Record<Elite, string> = { 0: "노정예", 1: "1정", 2: "2정" };
+// 오퍼 레벨 입력 상한 — 6성 2정 만렙. 정예화 단계별 실제 상한은 성급마다 다르지만,
+// 인프라 계산에 쓰이는 건 'Lv.30 미만이냐'뿐이라 입력은 단순 범위 검증만 한다.
+export const MAX_OP_LEVEL = 90;
 export function eliteOptions(op: InfraOp): Elite[] {
   if (op.rarity <= 2) return [];
   return op.rarity === 3 ? [0, 1] : [0, 1, 2];

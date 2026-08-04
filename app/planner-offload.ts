@@ -8,6 +8,8 @@ import { recommendRaises, type RaiseRec, type InvestProgress } from "./planner-i
 export type PlannerJob = {
   owned: Set<string>;
   elite: Map<string, Elite>;
+  /** 오퍼 레벨 (미지정 = 제한 없음) — 노정예의 'Lv.30' 해금 스킬 판정용 */
+  opLevels?: Map<string, number>;
   includeFuture: boolean;
   priority: ProdPriority;
   layout?: LayoutPreset; // 기지 배치 프리셋 (기본 243) — 워커·폴백 양쪽에 동기화
@@ -69,14 +71,14 @@ function postJob(cmd: "optimize" | "invest", job: PlannerJob, hooks: Pick<Pendin
   const promise = new Promise<unknown>((resolve, reject) => {
     pending.set(mySeq, { resolve, reject, ...hooks });
   });
-  w.postMessage({ seq: mySeq, cmd, owned: [...job.owned], elite: [...job.elite.entries()], includeFuture: job.includeFuture, priority: job.priority, layout: job.layout ?? "243", levels: job.levels ?? null, customRooms: job.customRooms ?? null, customProducts: job.customProducts ?? null, dormPins: job.dormPins ?? {} });
+  w.postMessage({ seq: mySeq, cmd, owned: [...job.owned], elite: [...job.elite.entries()], opLevels: [...(job.opLevels ?? new Map()).entries()], includeFuture: job.includeFuture, priority: job.priority, layout: job.layout ?? "243", levels: job.levels ?? null, customRooms: job.customRooms ?? null, customProducts: job.customProducts ?? null, dormPins: job.dormPins ?? {} });
   return promise;
 }
 
 // 폴백용 로스터 조립 — 워커와 동일 규칙 (미래시 OFF면 미실장 제외, 미지정 정예화 = 성급 최대)
 function rosterOf(job: PlannerJob) {
   const visible = job.includeFuture ? ops : ops.filter((op) => !op.unreleased);
-  return visible.map((op) => withElite(op, job.elite.get(op.id))).filter((op) => job.owned.has(op.id));
+  return visible.map((op) => withElite(op, job.elite.get(op.id), job.opLevels?.get(op.id))).filter((op) => job.owned.has(op.id));
 }
 
 // 자동편성 — 워커에서. onStep은 진행 문구 갱신용 (메인 스레드는 setState만)
