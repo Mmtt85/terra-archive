@@ -1667,25 +1667,25 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
         <div className="rg-hero">
           <img className="rg-hero-kv" src={asset(`/rogue/kv${topic.split("_")[1]}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />
           <div className="rg-hero-text">
-            {/* 중국섭 안내는 블록 문단이 아니라 눈썹 줄 오른쪽 인라인 — 문단이면 서버 전환 때
-                히어로 높이가 출렁인다 (사용자 요청 2026-08-04). CN 원제는 제목(h2) 오른쪽에. */}
-            <span className="rg-eyebrow">INTEGRATED STRATEGIES
-              {server === "cn" && topic !== "rogue_6" && (() => {
-                const note = locale === "ko"
-                  ? t("중국 서버 데이터 기반 · 한국 서버 공식 번역으로 표기하고 중국어 원문을 병기합니다.")
-                  : t("중국 서버 데이터는 아직 한국어·중국어로만 제공됩니다.");
-                return <em className="rg-eyebrow-note" title={note}>{note}</em>;
-              })()}
-            </span>
+            <span className="rg-eyebrow">INTEGRATED STRATEGIES</span>
             {/* 제목은 현재 테마 이름 — 테마 전환은 햄버거 '통합전략 가이드' 부메뉴/드롭다운 (사용자 확정 2026-07-18) */}
-            <h2 id="rg-title">{t(TOPICS.find((tp) => tp.id === topic)?.name ?? "통합전략 가이드")}{TOPICS.find((tp) => tp.id === topic)?.future && <em className="rg-title-future">{t("미래시")}</em>}{server === "cn" && topic !== "rogue_6" && data.cnName && <span className="rg-title-cn" lang="zh">{data.cnName}</span>}</h2>
-            {topic === "rogue_6" && (
-              <p className="rg-disclaimer">
-                {data.cnName && <span className="rg-cn" lang="zh">{data.cnName}</span>}{" "}
-                {t("CN 선행 데이터 기반 · 명칭은 비공식 번역이며 중국어 원문을 병기합니다.")}
-              </p>
-            )}
-            {locale !== "ko" && topic === "rogue_6" && <p className="rg-disclaimer">{t("이 테마는 CN 선행 데이터라 아직 한국어·중국어로만 제공됩니다.")}</p>}
+            <h2 id="rg-title">{t(TOPICS.find((tp) => tp.id === topic)?.name ?? "통합전략 가이드")}{TOPICS.find((tp) => tp.id === topic)?.future && <em className="rg-title-future">{t("미래시")}</em>}{server === "cn" && data.cnName && <span className="rg-title-cn" lang="zh">{data.cnName}</span>}</h2>
+            {/* 중국섭 안내 한 줄 — 한국섭일 때도 같은 자리를 투명하게 예약해 서버 전환 시
+                히어로 높이가 변하지 않게 한다 (사용자 요청 2026-08-04). 눈썹 줄에 넣는 안은
+                도구 버튼 때문에 가용 폭이 160px뿐이라 문구가 잘려 폐기. CN 원제는 제목 오른쪽.
+                흑류수해도 같은 자리·같은 꼴 — 다만 KR 미출시라 문구가 '비공식 번역'이다. */}
+            <p className="rg-disclaimer" aria-hidden={server !== "cn"}>
+              {/* 한국섭에선 문구 자체를 렌더하지 않고 빈 줄(nbsp)만 남긴다 — CSS로 숨기면
+                  스타일이 늦게 붙는 순간 중국섭 문구가 그대로 노출된다 (실측 2026-08-04) */}
+              {server !== "cn" ? " "
+                : topic === "rogue_6"
+                  ? (locale === "ko"
+                    ? t("CN 선행 데이터 기반 · 명칭은 비공식 번역이며 중국어 원문을 병기합니다.")
+                    : t("이 테마는 CN 선행 데이터라 아직 한국어·중국어로만 제공됩니다."))
+                  : (locale === "ko"
+                    ? t("중국 서버 데이터 기반 · 한국 서버 공식 번역으로 표기하고 중국어 원문을 병기합니다.")
+                    : t("중국 서버 데이터는 아직 한국어·중국어로만 제공됩니다."))}
+            </p>
             {data.line && <p className="rg-line">{data.line}</p>}
           </div>
 
@@ -1741,7 +1741,10 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
               onClick={() => goServer("kr")}>{t("한국섭")}</button>
             <button type="button" className={server === "cn" ? "on" : ""} aria-pressed={server === "cn"}
               aria-label={t("중국 서버")} title={t("중국 서버")}
-              onClick={() => goServer("cn")}>{t("중국섭")}{isNewFeature("rogue-cn") && <span className="new-badge">{t("새기능")}</span>}</button>
+              onClick={() => goServer("cn")}>{t("중국섭")}</button>
+            {/* 배지는 버튼 안이 아니라 토글 컨테이너 직속 — 버튼 안에 두면 그 좁은 버튼이
+                기준이 돼 글자가 세로로 깨진다 (실측 2026-08-04) */}
+            {isNewFeature("rogue-cn") && <span className="new-badge">{t("새기능")}</span>}
           </div>
           {topicMenu && (
             <ul className="rg-topicsel-menu" role="listbox" aria-label={t("테마 변경")}>

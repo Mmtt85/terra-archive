@@ -10794,29 +10794,9 @@ html.dark.rg-theme.rg6 .site-header {
   align-items: baseline;
   gap: 12px;
   min-width: 0;
-  white-space: nowrap; /* 본문 텍스트가 flex 축소로 두 줄로 꺾이면 높이가 변한다 */
-  min-height: 14px; /* 인라인 노트 유무와 무관하게 높이 고정 (서버 전환 1px 출렁임 방지) */
+  white-space: nowrap;
   font: 800 11.5px/1 monospace;
   letter-spacing: 3px;
-  color: var(--rggold);
-}
-/* 중국섭 안내 인라인 노트 — 블록 문단이면 서버 전환 때 히어로 높이가 출렁여서
-   눈썹 줄 오른쪽에 작게 붙인다 (사용자 요청 2026-08-04). 넘치면 말줄임 + title 툴팁 */
-.rg-eyebrow-note {
-  flex: 0 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-family: Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
-  font-style: normal;
-  font-weight: 600;
-  font-size: 10.5px;
-  line-height: 1.2;
-  letter-spacing: normal;
-  color: var(--rgtext2);
-}
-.rg-eyebrow-note [lang="zh"] {
   color: var(--rggold);
 }
 .rg-head h2 {
@@ -10917,12 +10897,12 @@ html.dark.rg-theme.rg6 .site-header {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 6px 8px;
+  gap: 8px 10px;
   border: 1px solid #6a3040;
   background: #150a0ecc;
   backdrop-filter: blur(6px);
-  padding: 5px 12px; /* 컴팩트 — 도구 열 축소와 세트 (2026-08-04) */
-  width: min(430px, calc(100% - 36px));
+  padding: 10px 14px;
+  width: min(460px, calc(100% - 36px));
   box-shadow: 0 4px 24px #000a;
 }
 /* 테마 변경 드롭다운 — 배너 오른쪽 위 (사용자 요청 2026-07-18) */
@@ -10943,44 +10923,35 @@ html.dark.rg-theme.rg6 .site-header {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 6px;
+  gap: 8px;
 }
 .rg-headtools .lens-open-wrap {
   margin-left: 0; /* 열 안에서는 오른쪽 정렬을 부모가 맡는다 */
-}
-/* 도구 열 컴팩트 — 서버 탭 추가로 열이 길어져 짧은 히어로(KR 팬텀)에서 난이도 바와
-   겹쳤다. PRTS 링크·리플레이·스샷 레이더를 한 단계 줄인다 (사용자 요청 2026-08-04). */
-.rg-headtools .lens-open-wrap button {
-  padding: 6px 10px;
-  font-size: 0.8rem;
-}
-.rg-headtools .lens-help-btn {
-  min-width: 28px;
 }
 /* 한섭/중섭 미니 토글 — 테마 변경 버튼 우상단에 겹치는 형제 요소 (사용자 요청 2026-08-04:
    독립 탭 줄 → "테마변경 버튼 안에 작게"). 버튼 안에 버튼은 못 넣으므로 absolute로 올린다.
    흑류수해(KR 미출시)에선 한국섭 버튼이 disabled */
 .rg-serversel {
   position: absolute;
-  top: 5px;
-  right: 10px;
+  top: 7px;
+  right: 11px;
   z-index: 2;
   display: flex;
   gap: 2px;
   padding: 2px;
-  background: color-mix(in srgb, #0d0609 65%, transparent);
+  background: color-mix(in srgb, #0d0609 55%, transparent);
   border: 1px solid var(--rgline);
-  border-radius: 7px;
+  border-radius: 6px;
 }
 .rg-serversel button {
-  padding: 2.5px 7px;
+  padding: 2px 6px;
   background: none;
   border: 0;
-  border-radius: 5px;
+  border-radius: 4px;
   color: var(--rgtext2);
   font-weight: 700;
-  font-size: 10px;
-  line-height: 1;
+  font-size: 9.5px;
+  line-height: 1.3;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
 }
@@ -10999,9 +10970,15 @@ html.dark.rg-theme.rg6 .site-header {
   outline: 2px solid var(--rggold);
   outline-offset: 1px;
 }
-.rg-serversel .new-badge {
-  top: -14px;
-  right: -12px;
+/* 배지는 토글 왼쪽(테마 변경 라벨과 토글 사이 여백) — 위로 빼면 테마 변경 버튼 밖으로
+   튀고, 버튼 안에 두면 좁아서 글자가 세로로 깨진다 (실측 2026-08-04) */
+.rg-serversel > .new-badge {
+  top: 50%;
+  right: calc(100% + 6px);
+  transform: translateY(-50%);
+  padding: 1px 5px;
+  font-size: 8.5px;
+  white-space: nowrap;
 }
 .rg-topicsel {
   position: relative; /* 한섭/중섭 미니 토글(absolute)의 기준 — 없으면 headtools에 붙는다 */
@@ -11018,7 +10995,7 @@ html.dark.rg-theme.rg6 .site-header {
   background: color-mix(in srgb, var(--rgcard) 82%, transparent);
   backdrop-filter: blur(6px);
   border: 1px solid var(--rgline);
-  padding: 6px 11px; /* 컴팩트 — 도구 열 축소와 세트 (2026-08-04) */
+  padding: 9px 13px;
   cursor: pointer;
   box-shadow: 0 4px 24px #0008;
   color: var(--rgink);
@@ -11048,7 +11025,7 @@ html.dark.rg-theme.rg6 .site-header {
   align-items: center;
   gap: 8px;
   font-weight: 700;
-  font-size: 12.5px;
+  font-size: 13.5px;
   line-height: 1.25;
 }
 .rg-topicsel-arrow {
@@ -11142,11 +11119,11 @@ html.dark.rg-theme.rg6 .site-header {
 .rg-diff-hex {
   display: inline-grid;
   place-items: center;
-  width: 26px;
-  height: 30px;
-  margin-right: 6px;
+  width: 30px;
+  height: 34px;
+  margin-right: 7px;
   flex: none;
-  font: 800 13px/1 monospace;
+  font: 800 15px/1 monospace;
   font-style: normal;
   color: var(--rggold);
   background: #0d0609;
@@ -11175,9 +11152,9 @@ html.dark.rg-theme.rg6 .site-header {
   border: 1px solid var(--rgline);
   background: 0 0;
   color: var(--rgink);
-  padding: 3px 8px;
+  padding: 4px 10px;
   font-weight: 700;
-  font-size: 12px;
+  font-size: 12.5px;
   line-height: 1;
   cursor: pointer;
   border-radius: 999px;
