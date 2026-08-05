@@ -154,6 +154,20 @@ const TAB_SEG: Record<Tab, string> = { portal: "", archive: "operators", planner
 const SEG_TAB: Record<string, Tab> = { "": "portal", operators: "archive", infra: "planner", recruit: "recruit", farm: "farm", upgrade: "upgrade", stories: "story", rogue: "rogue", about: "about" };
 const LOCALE_BASE: Record<Locale, string> = { ko: "", en: "/en", ja: "/ja" };
 
+// 빌드(=배포) 시각 — vite define으로 박히는 ISO 문자열을 KST 분 단위로 찍는다.
+// 데이터 JSON·엔진은 빌드 시점에 번들로 들어가므로(런타임 fetch는 공지·팁뿐), 화면 계산이
+// 최신인지 여부는 이 시각이 답이다. 표준시를 서울로 고정해 SSR/CSR 결과가 안 갈리게 한다.
+const BUILD_STAMP = (() => {
+  const iso = typeof __BUILD_TIME__ === "string" ? __BUILD_TIME__ : "";
+  const d = iso ? new Date(iso) : null;
+  if (!d || Number.isNaN(d.getTime())) return "";
+  const p = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", hour12: false,
+  }).formatToParts(d).reduce<Record<string, string>>((a, x) => (a[x.type] = x.value, a), {});
+  return `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute} KST`;
+})();
+
 // 현재 pathname → 탭 (로케일 프리픽스 제거 후 세그먼트 매핑)
 function tabFromPath(pathname: string): Tab {
   let p = pathname;
@@ -1583,6 +1597,9 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
               : <a key={entry.code} href={href} hrefLang={entry.code} lang={entry.code}>{entry.label}</a>;
           })}
         </nav>
+        {/* 배포 시각 — 화면 계산(인프라 엔진·데이터 JSON)은 빌드 시점에 번들로 굳으므로,
+            "지금 보는 사이트가 언제 것인지"를 이 한 줄로 확인한다 (사용자 요청 2026-08-05). */}
+        {BUILD_STAMP && <p className="footer-build">{t("배포 {t}", { t: BUILD_STAMP })}</p>}
       </footer>
       </div>{/* /.site-scroll */}
 

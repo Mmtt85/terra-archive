@@ -3959,6 +3959,15 @@ footer p {
   color: #f5c877;
   border-color: #6b5324;
 }
+/* 배포 시각 — 푸터 맨 아래 한 줄, 찾으면 보이는 정도로만 (사용자 요청: "아주 작게") */
+.footer-build {
+  order: 99;
+  width: 100%;
+  margin-top: 6px;
+  color: #767b7d;
+  font: 400 10px/1.4 monospace;
+  letter-spacing: 0.4px;
+}
 @keyframes rise {
   0% {
     opacity: 0;

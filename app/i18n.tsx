@@ -120,6 +120,7 @@ const D: Record<string, Pair> = {
   "공채 도우미": ["Recruit Helper", "公開求人ヘルパー"],
   "언어 선택": ["Language", "言語選択"],
   "사이트 메뉴": ["Site menu", "サイトメニュー"],
+  "배포 {t}": ["Deployed {t}", "デプロイ {t}"],
   "다크 모드 전환": ["Toggle dark mode", "ダークモード切替"],
   "닫기": ["Close", "閉じる"],
   "스킨": ["Outfits", "衣装"],
