@@ -3,7 +3,17 @@
 -- 사용자 요청 2026-08-05: "제안 받은 피드백에 대한 피드백을 보여주고 싶음. 어떤 제안이 있는데
 -- 뭐때문에 되고 뭐때문에 안되는지 이미지·코멘트를 관리자 페이지에서 입력".
 -- 쓰기는 기존 admin 패턴(docs/supabase-admin.sql)과 같이 x-admin-key 헤더로만 허용.
--- ⚠ 관리자 비밀번호를 바꿨다면 아래 'admin' 문자열을 실제 비밀번호로 바꿔서 실행할 것.
+--
+-- ⚠⚠ 실행 전에 아래 'REPLACE-WITH-ADMIN-KEY'를 **실제 관리자 키**(레포 루트
+--    .supabase-admin-key 파일의 내용)로 바꿀 것. 안 바꾸면 정책이 아무 키와도 안 맞아
+--    쓰기가 전부 막힌다(=닫힌 채 실패). 종전 파일들처럼 'admin' 같은 짐작 가능한 문자열을
+--    두면 anon 키가 공개 번들에 들어 있으므로 **누구나 쓰기·삭제가 된다** — 실제로
+--    dev_notes가 그 상태로 만들어져 있었다(2026-08-05 발견, 아래 '정책 교체'로 수정).
+--
+-- 이미 만든 뒤 정책만 고칠 때 (드롭 후 재생성 — 위 do 블록은 '있으면 건드리지 않기'라
+-- 두 번 돌려도 갱신되지 않는다):
+--   drop policy "admin write dev_notes" on public.dev_notes;
+--   그 다음 아래 do 블록을 실제 키로 바꿔 실행.
 
 create table if not exists public.dev_notes (
   id uuid primary key default gen_random_uuid(),
@@ -47,7 +57,7 @@ begin
     execute $p$create policy "admin write dev_notes"
   on public.dev_notes for all
   to anon
-  using ((current_setting('request.headers', true)::json ->> 'x-admin-key') = 'admin')
-  with check ((current_setting('request.headers', true)::json ->> 'x-admin-key') = 'admin')$p$;
+  using ((current_setting('request.headers', true)::json ->> 'x-admin-key') = 'REPLACE-WITH-ADMIN-KEY')
+  with check ((current_setting('request.headers', true)::json ->> 'x-admin-key') = 'REPLACE-WITH-ADMIN-KEY')$p$;
   end if;
 end $$;
