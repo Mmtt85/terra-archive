@@ -13,7 +13,7 @@ import {
   infra, ops, opById, factionsOf, withElite, clueBase, maxElite, eliteOptions,
   ELITE_LABEL, MAX_OP_LEVEL, LAYOUT, cellByKey, ROOM_ACCENT, UNIT, PARK_KEYS, SHIFT_COUNT,
   JOB_ORDER, ROSTER_SORT_KEYS, PRODUCTION_KEYS, SUPPORT_KEYS,
-  AURA_WEIGHT, AURA_LABEL, skillApplies, breakdown, teamScore, aurasOf, ambientFor, capConvFor, roomMaxNetDrain,
+  AURA_WEIGHT, AURA_LABEL, skillApplies, breakdown, teamScore, aurasOf, ambientFor, capConvFor, orderFixFor, roomMaxNetDrain,
   ctxFor, sanitizePlan, presentIdsFor, roomOfFor, cellOfFor, slotSubstitutes, setLayoutPreset, setPriorityMode, memberOf, growAvg, DEFAULT_CUSTOM_ROOMS, DEFAULT_CUSTOM_PRODUCTS,
   setLevels as setEngineLevels, slotsFor, maxLevelOf, levelOf, powerBudget, suggestedLevels, TERMS,
   splitPriority, joinPriority, AUTO_BENCH_IDS,
@@ -1779,6 +1779,9 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
   agg["제어센터 오라 수신"] = ambientFor(cell.room, team, ambient, agg["스킬 효율"], ctx.product);
   // 용량 변환 — 팀이 쌓은 오더 상한/창고 용량을 변환기가 되돌린 효율/생산력 (베나벌컨버블·데겐블레허·제이)
   agg["용량 변환"] = capConvFor(team, cell.room, ctx);
+  // 특별 오더(클로저·U-Official) — 스킬에 적힌 +10%가 아니라 **이 방에서 실제로 오르는 %p**를
+  // 보여준다 (사용자 지적 2026-08-05). 배수가 방 처리량에 곱으로 걸려 방마다 값이 다르다.
+  agg["특별 오더"] = orderFixFor(team, cell.room, ctx);
   // 증폭 — 팀이 제공한 효율(=스킬 효율 합)을 배수로 되돌림 (와이후 협동의식·스노우상트 근면성실)
   const ampSpecs = team.flatMap((op) => breakdown(op, cell.room, team, ctx).amplify);
   agg["증폭"] = ampSpecs.reduce((sum, spec) => sum + Math.min(spec.cap, Math.floor(agg["스킬 효율"] / spec.per) * spec.add), 0);
@@ -1902,6 +1905,17 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
           : t("발전소 1개당 {per}% — 현재 {n}개 기준 {total}%", { per: skill.value, n: plants, total: Math.round(skill.value * plants) }),
         chips: booster ? [{ op: booster, on: boosterOn }] : [],
       });
+    }
+    // 특별 오더(클로저·U-Official): 스킬 문구엔 "효율 +10%"만 적혀 있어 실제 기여가 안 보인다.
+    // 오더 풀을 통째로 바꾸는 효과라 값이 방 처리량에 곱으로 걸린다 — 근거와 실효치를 함께 적는다.
+    if (skill.orderFix != null) {
+      const eff = Math.round(orderFixFor(team, skill.room, ctx) * 10) / 10;
+      rels.push({
+        note: t("이 무역소가 받는 순금 오더를 전부 특별 오더로 바꿉니다 — 일반 오더 풀(시간당 427.7 용문폐) 대비 시간당 수익 {pct}%. 방 처리량에 곱으로 걸려 지금 이 방에선 +{eff}%p 상당입니다.", {
+          pct: (skill.orderFix > 0 ? "+" : "") + skill.orderFix, eff }),
+        chips: [],
+      });
+      rels.push({ note: t("오더 풀이 바뀌므로 같은 방의 고품질 확률·품질 수익(테킬라)·위약 수익(프로바이조)은 계산에서 빠집니다."), chips: [] });
     }
     if (skill.perFaction && !skill.perSkillTag) {
       const scope = skill.kind === "ctrl_trade" ? "TRADING" : skill.perScope === "mfg" ? "MANUFACTURE" : skill.perScope === "room" ? "room" : "base";
@@ -2201,6 +2215,12 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                 }
                 if (Math.round(b.quality) !== 0) parts.push(t("고품질 확률 +{n}%p 상당", { n: Math.round(b.quality) }));
                 if (Math.round(b.payout + b.payoutViolation) !== 0) parts.push(t("오더 수익 +{n}% 상당", { n: Math.round(b.payout + b.payoutViolation) }));
+                // 특별 오더는 방 처리량에 곱으로 걸리므로 스킬 문구의 +10%와 실제 기여가 다르다 —
+                // 이 방 기준 실제 %p를 적고, 배수 자체(+16.9%)도 괄호로 밝힌다
+                if (b.orderFixed) parts.push(t("특별 오더 +{n}%p 상당 (오더 수익 {m}배)", {
+                  n: Math.round(orderFixFor(team, cell.room, ctx) * 10) / 10,
+                  m: Math.round((1 + b.orderFix / 100) * 1000) / 1000,
+                }));
                 if (b.override > 0) parts.push(t("효율 대체 인당 +{n}%", { n: Math.round(b.override) }));
                 if (Math.round(b.perCoworker * (team.length - 1)) !== 0) parts.push(t("동료 보너스 +{n}%", { n: Math.round(b.perCoworker * (team.length - 1)) }));
                 if (Math.round(b.clueBase) !== 0) parts.push(t("레어도 기본 {r}성·{e} +{n}%", { r: op.rarity, e: t(ELITE_LABEL[op.elite ?? maxElite(op.rarity)]), n: Math.round(b.clueBase) }));

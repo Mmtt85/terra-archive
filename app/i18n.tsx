@@ -934,6 +934,7 @@ const D: Record<string, Pair> = {
   "자동화": ["Automation", "自動化"],
   "품질 기대치": ["Quality expectation", "品質期待値"],
   "오더 수익": ["Order payout", "受注収益"],
+  "특별 오더": ["Special order", "特別オーダー"],
   "효율 오버라이드": ["Efficiency override", "効率オーバーライド"],
   "동료 보너스": ["Coworker bonus", "同僚ボーナス"],
   "레어도 기본": ["Rarity base", "レア度基本"],
@@ -1784,6 +1785,14 @@ const D: Record<string, Pair> = {
   "이미지는 최대 {n}장까지 첨부할 수 있습니다": ["You can attach up to {n} images", "画像は最大{n}枚まで添付できます"],
   "이미지를 끌어다 놓거나 붙여넣기(Ctrl+V)도 됩니다": ["You can also drag & drop images or paste them (Ctrl+V)", "画像はドラッグ＆ドロップや貼り付け（Ctrl+V）でも添付できます"],
   "여기에 놓으면 첨부됩니다": ["Drop here to attach", "ここにドロップで添付"],
+  // 무역소 특별 오더 (클로저·U-Official, 2026-08-05) — 스킬 문구의 +10%와 실제 기여가 다르다
+  "특별 오더 +{n}%p 상당 (오더 수익 {m}배)": ["Special order ≈ +{n}%p (order income ×{m})", "特別オーダー ≈ +{n}%p（オーダー収益 ×{m}倍）"],
+  "이 무역소가 받는 순금 오더를 전부 특별 오더로 바꿉니다 — 일반 오더 풀(시간당 427.7 용문폐) 대비 시간당 수익 {pct}%. 방 처리량에 곱으로 걸려 지금 이 방에선 +{eff}%p 상당입니다.":
+    ["Turns every gold order this trading post takes into the special order — {pct}% hourly income versus the normal order pool (427.7 LMD/h). It multiplies the post's throughput, so in this room it works out to about +{eff}%p.",
+     "この貿易所が受ける赤金オーダーをすべて特別オーダーに置き換えます — 通常オーダープール（毎時427.7龍門幣）比で時間あたり収益{pct}%。部屋の処理量に乗算で掛かるため、この部屋では約+{eff}%p相当です。"],
+  "오더 풀이 바뀌므로 같은 방의 고품질 확률·품질 수익(테킬라)·위약 수익(프로바이조)은 계산에서 빠집니다.":
+    ["Because the order pool itself changes, high-quality chance, quality payouts (Tequila) and violation payouts (Provisio) in the same room are excluded from the calculation.",
+     "オーダープール自体が変わるため、同室の高品質確率・品質収益（テキーラ）・違約収益（プロヴィザ）は計算から外れます。"],
   // 육성 추천 완료 상태 — 분석 전과 같은 버튼 크기를 유지하며 인원수만 배지로 (2026-08-05)
   "추천 {n}명": ["{n} recommended", "推薦{n}人"],
   // 편성이 비어 있으면 추천을 낼 수 없다 (기준 편성이 전제 — 2026-08-05)

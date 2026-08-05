@@ -906,6 +906,17 @@ export function capConvFor(team: InfraOp[], room: string, ctx: Ctx): number {
   return capConvOf(team.map((op) => breakdown(op, room, team, ctx)), room, ctx.ambient, team);
 }
 
+/**
+ * 특별 오더가 이 방에 실제로 더하는 %p — 화면 표시용 (teamScore와 **같은 식**).
+ * 배수는 방 처리량에 곱으로 걸리므로 "스킬에 적힌 +10%"만 봐선 기여를 알 수 없다
+ * (사용자 지적 2026-08-05: "정확하게 몇 % 올려주는지 보여줘야지").
+ */
+export function orderFixFor(team: InfraOp[], room: string, ctx: Ctx): number {
+  const parts = team.map((op) => breakdown(op, room, team, ctx));
+  if (!parts.some((p) => p.orderFixed)) return 0;
+  return parts.reduce((sum, p) => sum + p.orderFix, 0) * Math.min(1 + roomEfficiency(parts, team) / 100, C.PAYOUT_VIOLATION_CAP);
+}
+
 export function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx): OpBreakdown {
   const teamIds = new Set(team.map((member) => member.id));
   const teamSize = Math.max(team.length, 1);
@@ -1097,8 +1108,12 @@ export function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx):
   return out;
 }
 
-export function teamScore(team: InfraOp[], room: string, ctx: Ctx): number {
-  const parts = team.map((op) => breakdown(op, room, team, ctx));
+/**
+ * 방의 유효 효율(%) — teamScore와 orderFixFor가 **같은 값**을 쓰도록 뽑아 둔 공용 계산.
+ * 샤마르 override는 전원 효율을 대체하고, 위디·유넥티스 automation은 오퍼 제공분만 0으로
+ * 만들되 시설 기반 생산력은 살린다.
+ */
+function roomEfficiency(parts: OpBreakdown[], team: InfraOp[]): number {
   const override = Math.max(...parts.map((p) => p.override), 0);
   const automation = parts.reduce((sum, p) => sum + p.automation, 0);
   const facilityEff = parts.reduce((sum, p) => sum + p.facilityEff, 0);
@@ -1109,11 +1124,14 @@ export function teamScore(team: InfraOp[], room: string, ctx: Ctx): number {
   const opProvided = parts.reduce((sum, p) => sum + p.efficiency, 0);
   const amplify = parts.reduce((sum, p) => sum + p.amplify.reduce(
     (a, spec) => a + Math.min(spec.cap, Math.floor(opProvided / spec.per) * spec.add), 0), 0);
-  // 샤마르 override zeroes everyone's efficiency; 위디·유넥티스 automation
-  // zeroes operator-provided efficiency but facility-based production survives
-  const efficiency = override > 0 ? override * team.length
+  return override > 0 ? override * team.length
     : automation > 0 ? automation + facilityEff
     : additive + facilityEff + amplify;
+}
+
+export function teamScore(team: InfraOp[], room: string, ctx: Ctx): number {
+  const parts = team.map((op) => breakdown(op, room, team, ctx));
+  const efficiency = roomEfficiency(parts, team);
   const probCount = parts.filter((p) => p.quality > 0).length;
   const quality = parts.reduce((sum, p) => sum + p.quality, 0);
   // quality payouts (테킬라) profit from quality orders; violation payouts
