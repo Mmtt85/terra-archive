@@ -779,15 +779,41 @@ button {
   color: var(--tint-warm-ink);
   border-color: transparent;
 }
-/* 받은 제안 = 인용문. 줄바꿈은 /admin에 쓴 그대로 보존한다 */
-.devnote-suggestion {
+/* 받은 제안 = 제목 겸 펼침 버튼 (사용자 요청 2026-08-05: 답변은 눌러야 나오게).
+   인용문 모양(왼쪽 세로선)은 그대로 두고 클릭 대상임을 화살표로 알린다. */
+.devnote-q {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
   margin: 0;
   padding: 2px 0 2px 10px;
+  border: 0;
   border-left: 3px solid var(--line);
+  background: none;
+  font: inherit;
   font-size: 12.5px;
   line-height: 1.55;
-  color: var(--muted);
+  color: var(--ink2);
+  text-align: left;
   white-space: pre-wrap;
+  cursor: pointer;
+  transition: 0.15s;
+}
+.devnote-q:hover {
+  border-left-color: var(--border-strong);
+  color: var(--ink);
+}
+.devnote-q > i {
+  flex: none;
+  margin-left: auto;
+  font-style: normal;
+  font-size: 10px;
+  color: var(--muted);
+}
+.devnote-q[aria-expanded="true"] {
+  color: var(--ink);
+  font-weight: 700;
 }
 .devnote-reply {
   margin: 6px 0 0;

@@ -30,7 +30,7 @@ import About from "./about";
 import FeedbackWidget from "./feedback-widget";
 import { bindEscClose } from "./esc-close";
 import { feedbackReady } from "./feedback";
-import { tabHasNewFeature } from "./whats-new";
+import { isNewFeature, tabHasNewFeature } from "./whats-new";
 import { scrollMainTop } from "./scroll";
 import { PORTAL_TILES, PORTAL_ART, type PortalTile } from "./portal-themes";
 import { useLazyVisible } from "./lazy-img";
@@ -812,6 +812,11 @@ function Portal({ onOpenTab, onFeedback, stats }: {
                   <span className="pt-head">
                     <span className="pt-ic" aria-hidden>{tile.icon}</span>
                     <span className="pt-ko">{t(tile.label)}</span>
+                    {/* 포탈 타일의 새 기능 표시 — 제안(이미지 첨부)·업데이트 내역(개발자 코멘트) */}
+                    {((tile.action === "feedback" && isNewFeature("feedback-image"))
+                      || (tile.action === "changelog" && isNewFeature("dev-notes"))) && (
+                      <span className="new-badge">{t("새기능")}</span>
+                    )}
                   </span>
                   {tile.desc && <span className="pt-desc">{t(tile.desc)}</span>}
                 </>
@@ -1429,6 +1434,7 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
           {feedbackReady && (
             <button type="button" className="feedback-header-btn" onClick={() => setFeedbackOpen(true)} aria-label={t("제안 보내기")}>
               <span aria-hidden>💬</span> {t("제안")}
+              {isNewFeature("feedback-image") && <span className="new-badge">{t("새기능")}</span>}
             </button>
           )}
           <div className="header-sub-right">

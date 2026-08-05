@@ -19,6 +19,7 @@ export const FEATURE_RELEASED: Record<string, string | { date: string; days: num
   "op-level": "2026-08-05", // 인프라 보유 오퍼 레벨 입력 — 노정예 Lv.30 해금 기지 스킬 반영
   "invest-payback": "2026-08-05", // 육성 추천 예상 회수일 — 이성 환산 + 완성 비용 모달
   "dev-notes": "2026-08-05", // 개발자 코멘트 — 받은 제안에 대한 답변 (업데이트 내역 모달 안)
+  "feedback-image": "2026-08-05", // 제안에 이미지 첨부 (최대 3장 · 드래그·붙여넣기)
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;

@@ -212,21 +212,30 @@ export default function ChangelogButton() {
                 <section key={day.date}>
                   <h3>{dateLabel(day.date, locale)}</h3>
                   <ul>
-                    {day.rows.map((row) => (
-                      <li key={row.id} className="devnote">
-                        <span className={`chlog-kind devnote-status ${row.status}`}>{t(DEVNOTE_STATUS_LABEL[row.status])}</span>
-                        <div className="devnote-body">
-                          {/* 받은 제안은 인용문으로, 답변은 그 아래 본문으로 — 줄바꿈 보존 */}
-                          <blockquote className="devnote-suggestion">{noteSuggestion(row, locale)}</blockquote>
-                          <p className="devnote-reply">{noteReply(row, locale)}</p>
-                          {row.image && (
-                            <a href={row.image} target="_blank" rel="noreferrer" title={t("이미지 크게 보기")}>
-                              <img className="devnote-img" src={row.image} alt="" loading="lazy" />
-                            </a>
-                          )}
-                        </div>
-                      </li>
-                    ))}
+                    {day.rows.map((row) => {
+                      // 기본은 제안(제목)만 — 눌러야 답변이 열린다 (사용자 요청 2026-08-05).
+                      // 목록이 길어져도 무엇에 대한 답인지 한눈에 훑을 수 있게.
+                      const shown = opened.has(row.id);
+                      return (
+                        <li key={row.id} className="devnote">
+                          <span className={`chlog-kind devnote-status ${row.status}`}>{t(DEVNOTE_STATUS_LABEL[row.status])}</span>
+                          <div className="devnote-body">
+                            <button type="button" className="devnote-q" aria-expanded={shown} onClick={() => toggleRow(row.id)}>
+                              <span>{noteSuggestion(row, locale)}</span>
+                              <i aria-hidden>{shown ? "▴" : "▾"}</i>
+                            </button>
+                            {shown && (<>
+                              <p className="devnote-reply">{noteReply(row, locale)}</p>
+                              {row.image && (
+                                <a href={row.image} target="_blank" rel="noreferrer" title={t("이미지 크게 보기")}>
+                                  <img className="devnote-img" src={row.image} alt="" loading="lazy" />
+                                </a>
+                              )}
+                            </>)}
+                          </div>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </section>
               ))}

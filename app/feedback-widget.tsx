@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { feedbackReady, sendFeedback, uploadFeedbackImage, FEEDBACK_IMG_MAX, FEEDBACK_IMG_MB, type FeedbackKind } from "./feedback";
 import { ModalWindow } from "./modal-window";
+import { isNewFeature } from "./whats-new";
 import { useI18n } from "./i18n";
 
 // open/setOpen은 부모(home)가 쥔다 — 모바일에선 헤더의 '제안' 버튼(공식 방송 옆)이,
@@ -133,6 +134,7 @@ export default function FeedbackWidget({ open, setOpen }: { open: boolean; setOp
       )}
       <button type="button" className="feedback-fab" onClick={() => setOpen(!open)} aria-label={t("제안 보내기")}>
         {open ? t("닫기") : t("💬 제안")}
+        {!open && isNewFeature("feedback-image") && <span className="new-badge">{t("새기능")}</span>}
       </button>
     </div>
   );
