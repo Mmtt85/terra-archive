@@ -7,6 +7,31 @@ export const feedbackReady = !SUPABASE_ANON_KEY.startsWith("PASTE");
 
 export type FeedbackKind = "feature" | "data_error" | "plan";
 
+// ── 제안 첨부 이미지 (사용자 요청 2026-08-05: 최대 3장, 바로 R2로) ──
+// 업로드 워커(workers/upload)의 익명 공개 엔드포인트 — 키는 서버가 만든다(feedback/…).
+// URL은 payload.images 배열로 제안과 함께 저장돼 /admin에서 보인다.
+const FB_UPLOAD = "https://terra-archive-upload.nzkonaru.workers.dev/fb";
+export const FEEDBACK_IMG_MAX = 3;
+export const FEEDBACK_IMG_MB = 8;
+
+export async function uploadFeedbackImage(file: File): Promise<string> {
+  if (file.size > FEEDBACK_IMG_MB * 1024 * 1024) throw new Error(`이미지가 너무 큽니다 (${FEEDBACK_IMG_MB}MB 이하)`);
+  const res = await fetch(FB_UPLOAD, {
+    method: "POST",
+    headers: { "Content-Type": file.type || "application/octet-stream" },
+    body: file,
+  });
+  if (!res.ok) throw new Error(`이미지 업로드 실패 (${res.status})`);
+  const data = (await res.json()) as { url: string };
+  return data.url;
+}
+
+/** payload.images — 제안에 첨부된 이미지 URL 목록 (없으면 빈 배열) */
+export function imagesOf(payload: unknown): string[] {
+  const value = payload && typeof payload === "object" ? (payload as { images?: unknown }).images : null;
+  return Array.isArray(value) ? value.filter((u): u is string => typeof u === "string" && !!u) : [];
+}
+
 export async function sendFeedback(kind: FeedbackKind, message: string, payload?: unknown) {
   if (!feedbackReady) throw new Error("Supabase 키가 아직 설정되지 않았습니다");
   // 어떤 화면에서 보낸 제안인지 payload에 자동 첨부 (예: "/#infra", "/#op-char_2014_nian")

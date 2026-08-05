@@ -20,7 +20,7 @@ const ORIGIN_OK = (origin) =>
 function corsHeaders(origin) {
   return {
     "Access-Control-Allow-Origin": ORIGIN_OK(origin) ? origin : "https://terra-archive.net",
-    "Access-Control-Allow-Methods": "GET, PUT, DELETE, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, x-admin-key, x-cache-control",
     "Access-Control-Max-Age": "86400",
     Vary: "Origin",
@@ -54,6 +54,7 @@ function authKind(request, env) {
 }
 
 const UPLOADS = "uploads/"; // /admin 수동 업로드 전용 폴더
+const FEEDBACK = "feedback/"; // 방문자 제안 첨부 이미지 (공개 POST /fb가 넣는다)
 
 // URL 경로에서 키 추출 — 퍼센트 디코딩 + 경로 탈출 차단
 function keyFrom(pathname, prefix) {
@@ -102,6 +103,27 @@ export default {
       return new Response(request.method === "HEAD" ? null : object.body, { headers });
     }
 
+    // ── 제안 이미지 업로드 — 익명 공개 (사용자 요청 2026-08-05: 제안에 이미지 최대 3장).
+    // 키는 서버가 만든다(feedback/YYYY-MM/<uuid>.<ext>) — 덮어쓰기·경로 장난이 원천 불가.
+    // 남용 방어: 사이트 오리진만 + 이미지 MIME만 + 8MB 한도. 장수 제한(3장)은 클라이언트
+    // 몫이고 여기선 강제할 수 없다 — 용량이 차면 /admin 파일 탭의 '제안 이미지'에서 정리한다.
+    if (url.pathname === "/fb" && request.method === "POST") {
+      if (!ORIGIN_OK(origin)) return json({ ok: false, error: "forbidden" }, origin, 403);
+      const EXT = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "image/gif": "gif", "image/avif": "avif" };
+      const type = (request.headers.get("Content-Type") ?? "").split(";")[0].trim();
+      const ext = EXT[type];
+      if (!ext) return json({ ok: false, error: "not-image" }, origin, 415);
+      const size = Number(request.headers.get("Content-Length") ?? 0);
+      if (!size || size > 8 * 1024 * 1024) return json({ ok: false, error: "too-large" }, origin, 413);
+      const now = new Date();
+      const month = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
+      const key = `feedback/${month}/${crypto.randomUUID()}.${ext}`;
+      const object = await env.FILES.put(key, request.body, {
+        httpMetadata: { contentType: type, cacheControl: "public, max-age=2592000" }, // 키가 불변이라 길게
+      });
+      return json({ ok: true, key, size: object.size, url: fileUrl(env, url, key) }, origin);
+    }
+
     // ── 이하 관리자 전용 ──
     if (url.pathname === "/files" || url.pathname.startsWith("/files/")) {
       const kind = authKind(request, env);
@@ -127,7 +149,9 @@ export default {
       if (!key) return json({ ok: false, error: "bad-key" }, origin, 400);
       // admin의 수동 업로드는 전부 uploads/ 폴더로 (에셋 트리와 격리, 삭제도 그 안에서만)
       if (kind === "admin" && request.method === "PUT" && !key.startsWith(UPLOADS)) key = UPLOADS + key;
-      if (kind === "admin" && !key.startsWith(UPLOADS)) return json({ ok: false, error: "outside-uploads" }, origin, 403);
+      // admin의 삭제는 uploads/ + feedback/(제안 이미지 정리 — 용량 관리)까지, 에셋 트리는 보호
+      if (kind === "admin" && !key.startsWith(UPLOADS) && !(request.method === "DELETE" && key.startsWith(FEEDBACK)))
+        return json({ ok: false, error: "outside-uploads" }, origin, 403);
 
       if (request.method === "PUT") {
         // 워커 요청 본문 한도(100MB)를 넘기 전에 거절
