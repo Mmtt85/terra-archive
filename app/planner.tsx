@@ -1206,7 +1206,9 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
               </span>
             </div>
           )}
-          <div className={`ship-raisebar${(investing || (tempApplied.size === 0 && !investRecs)) ? " idle" : " boxed"}`} role="group" aria-label={t("인프라 오퍼 육성 추천")}>
+          {/* boxed(라임 상자)는 임시 적용 상태 전용 — 추천 완료 상태는 이제 .srb-run 버튼을
+              그대로 쓰므로 상자를 두르면 박스 안 박스가 된다 (버튼 크기 통일 2026-08-05) */}
+          <div className={`ship-raisebar${tempApplied.size > 0 && !investing ? " boxed" : " idle"}`} role="group" aria-label={t("인프라 오퍼 육성 추천")}>
           {tempApplied.size > 0 && !investing ? (
             <>
               <span className="srb-top">★ {t("임시 적용 중 · {n}명", { n: tempApplied.size })}</span>
@@ -1220,10 +1222,13 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
               </span>
             </>
           ) : visibleRecs?.length && !investing ? (
+            // 분석 전과 **같은 .srb-run 버튼**을 유지한다 (사용자 지적 2026-08-05: 전/후 버튼
+            // 크기가 달라 새기능 배지가 이상하게 붙음). 버튼 클릭 = 추천 열기, 재분석만 옆에 작게.
             <>
-              <span className="srb-top">★ {t("인프라 오퍼 육성 추천")}{anyNewFeature("invest", "invest-payback") && <span className="new-badge">{t("새기능")}</span>}</span>
+              <button className="srb-run" onClick={() => setShowInvest(true)} title={t("추천 열기 ({n})", { n: visibleRecs?.length ?? 0 })}>
+                <span className="srb-lbl">★ {t("인프라 오퍼 육성 추천")}{anyNewFeature("invest", "invest-payback") && <span className="new-badge">{t("새기능")}</span>}<em className="srb-sub">{t("추천 {n}명", { n: visibleRecs?.length ?? 0 })}</em></span>
+              </button>
               <span className="srb-btns">
-                <button className="run" onClick={() => setShowInvest(true)}>{t("추천 열기 ({n})", { n: visibleRecs?.length ?? 0 })}</button>
                 <button onClick={() => { void runInvest(); }}>{t("다시 분석")}</button>
               </span>
             </>
