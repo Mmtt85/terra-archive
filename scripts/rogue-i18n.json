@@ -141,7 +141,9 @@
   "내용 확장·Ⅱ 이후 아무 엔딩이나 달성한다.": "After Expansion II, achieve any ending.",
   "내용 확장·Ⅱ 이후, 아무 엔딩이나 하나 달성해 관련 이벤트·소장품을 해금한다.": "After Expansion II, achieve any one ending to unlock the related events and collectibles.",
   "노드를 한 번 새로고침하면 「선지자의 뿔」 영향으로 운명의 암시(전할 진실)가 나타난다 — 구상 2개를 소모하는 '구상으로 결함을 메운다'를 골라 기이한 단장(诡谲断章)에 진입.": "Refresh the nodes once and, under the effect of 「선지자의 뿔」, a Prophecy ('A Truth to Deliver') appears — spend 2 Concepts on 'Fill the flaw with a Concept' to enter the strange chapter.",
-  "술집 조우 — 쉐이 대리인 여섯(위·링·시·슈·총웨·니엔)에게 각자의 방식으로 마지막 획을 부탁하거나, 쉐이 모습을 그린 뒤 미건척 보유 시 대리인별 1회 한정 강화를 받는다. '먹을 찍는다'의 「추억기」는 엔딩 5(기물) 경로의 시작": "Tavern encounter — ask each of the six Sui siblings (Yu, Ling, Dusk, Shu, Chongyue, Nian) for their own finishing touch, or paint Sui's form to receive each sibling's one-time boon while holding the Wei-Chien Rule. 'Dot with ink' grants the 「Memory Scope」 that starts the Ending 5 (artifact) route"
+  "술집 조우 — 쉐이 대리인 여섯(위·링·시·슈·총웨·니엔)에게 각자의 방식으로 마지막 획을 부탁하거나, 쉐이 모습을 그린 뒤 미건척 보유 시 대리인별 1회 한정 강화를 받는다. '먹을 찍는다'의 「추억기」는 엔딩 5(기물) 경로의 시작": "Tavern encounter — ask each of the six Sui siblings (Yu, Ling, Dusk, Shu, Chongyue, Nian) for their own finishing touch, or paint Sui's form to receive each sibling's one-time boon while holding the Wei-Chien Rule. 'Dot with ink' grants the 「Memory Scope」 that starts the Ending 5 (artifact) route",
+  "주화": "Coins",
+  "부여": "Enchants"
  },
  "ja": {
   "일반 전투 노드입니다. 승리하면 소장품·오리지늄각뿔 등 보상을 얻습니다.": "通常の戦闘ノード。勝利すると秘宝や源石錐などの報酬を獲得できます。",
@@ -284,6 +286,8 @@
   "내용 확장·Ⅱ 이후 아무 엔딩이나 달성한다.": "コンテンツ拡張Ⅱ以降に任意のエンディングを達成する。",
   "내용 확장·Ⅱ 이후, 아무 엔딩이나 하나 달성해 관련 이벤트·소장품을 해금한다.": "コンテンツ拡張Ⅱ以降に任意のエンディングを1つ達成し、関連イベント・秘宝を解禁する。",
   "노드를 한 번 새로고침하면 「선지자의 뿔」 영향으로 운명의 암시(전할 진실)가 나타난다 — 구상 2개를 소모하는 '구상으로 결함을 메운다'를 골라 기이한 단장(诡谲断章)에 진입.": "ノードを1回リフレッシュすると「선지자의 뿔」の効果で運命の導き(「伝えるべき真実」)が出現 — 構想2つを消費する選択肢を選び、奇妙な断章に進入する。",
-  "술집 조우 — 쉐이 대리인 여섯(위·링·시·슈·총웨·니엔)에게 각자의 방식으로 마지막 획을 부탁하거나, 쉐이 모습을 그린 뒤 미건척 보유 시 대리인별 1회 한정 강화를 받는다. '먹을 찍는다'의 「추억기」는 엔딩 5(기물) 경로의 시작": "酒場の遭遇 — 歳の代行者六名（ユー・リィン・シー・シュウ・チョンユエ・ニェン）にそれぞれの流儀で最後の一筆を頼むか、歳の姿を描いたうえで未建の尺を所持していれば代行者ごとに1回限りの強化を受けられる。「墨を点す」で得る「追憶儀」はエンディング5（器物）ルートの起点"
+  "술집 조우 — 쉐이 대리인 여섯(위·링·시·슈·총웨·니엔)에게 각자의 방식으로 마지막 획을 부탁하거나, 쉐이 모습을 그린 뒤 미건척 보유 시 대리인별 1회 한정 강화를 받는다. '먹을 찍는다'의 「추억기」는 엔딩 5(기물) 경로의 시작": "酒場の遭遇 — 歳の代行者六名（ユー・リィン・シー・シュウ・チョンユエ・ニェン）にそれぞれの流儀で最後の一筆を頼むか、歳の姿を描いたうえで未建の尺を所持していれば代行者ごとに1回限りの強化を受けられる。「墨を点す」で得る「追憶儀」はエンディング5（器物）ルートの起点",
+  "주화": "貨幣",
+  "부여": "付与"
  }
 }

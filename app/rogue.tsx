@@ -1163,10 +1163,17 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   const resLabel = topic === "rogue_6" ? ((data.scraps?.length ?? 0) > 0 ? "부품 (零件)" : null) : resMech?.label ?? null;
   const resIds = useMemo(() => new Set(resItems.map((i) => i.id)), [resItems]);
   const [inv, setInvState] = useState<Set<string>>(new Set());
+  // IS5 주화 id 이관 — 예전 데이터는 주화마다 '부여'가 붙은 변종(_i 등)을 대표로 골랐어서
+  // 보유 목록에 그 id가 저장돼 있다. 지금은 본체(_a)가 대표라 그대로면 체크가 사라진다.
+  // 변종 계열(copper_buff_·change_copper_)과 부여 접미를 본체 id로 되돌려 읽는다.
+  const migrateInvId = (id: string) =>
+    id.replace(/^rogue_5_(?:copper_buff|change_copper)_/, "rogue_5_copper_")
+      .replace(/^(rogue_5_copper_[A-Z]+_\d+)_[a-z]$/, "$1_a");
   useEffect(() => {
     try {
       const raw = localStorage.getItem(`ta:rogue-inv:${topic}`);
-      setInvState(new Set(raw ? (JSON.parse(raw) as string[]) : []));
+      const ids = raw ? (JSON.parse(raw) as string[]) : [];
+      setInvState(new Set(topic === "rogue_5" ? ids.map(migrateInvId) : ids));
     } catch { setInvState(new Set()); }
   }, [topic]);
   const saveInv = (next: Set<string>) => {

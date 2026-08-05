@@ -449,6 +449,24 @@ MECH_GROUPS = {
                 ("분노", "module_wrath", None)],
 }
 
+# IS5 주화 '부여' — 주화에 랜덤으로 붙는 추가 효과(녹빛·수호·이화 …). 게임 데이터에는
+# 주화 × 부여 조합이 통째로 별도 아이템으로 들어 있고(rogue_5_copper_<존>_<번호>_a~_k,
+# _a=부여 없음), 부여 문구만 usage 뒤에 이 색 태그로 덧붙는다. 태그는 rogue_5 주화에만
+# 쓰인다(전 토픽 실측 2,800건 전부 주화). 이름 기준 중복 제거가 '가장 긴 usage'를 고르는
+# 바람에 로케일마다 다른 부여가 임의로 딸려와 모든 주화 카드에 같은 줄이 찍혔다
+# (KR=이화 · 중국섭=녹빛 · JA=녹빛, 사용자 제보 2026-08-05). 카드에는 주화 본체 효과만
+# 남긴다 — 부여 10종은 게임 데이터에 자기 아이템(gild_bat_1~10)으로 이미 따로 있어서,
+# 같은 탭 안에서 kind로 갈라 보여준다.
+COPPER_ENCHANT_MARK = "<color=#2fac78>"
+_COIN_ID = re.compile(r"_(change_copper|copper_buff|copper)_[A-Z]+_\d+_([a-z])$")
+
+def coin_rank(iid):
+    """같은 이름의 주화 후보 중 대표 선정 우선순위 — 본체(copper_) · 부여 없음(_a)."""
+    m = _COIN_ID.search(iid)
+    if not m:
+        return 0                                   # 주화가 아니면 순위 영향 없음
+    return (0 if m.group(1) == "copper" else -1) + (0 if m.group(2) == "a" else -2)
+
 # 노드 타입별 기능 설명 (수작업 큐레이션, 2026-07-19). 게임 데이터의 description은
 # 플레이버 텍스트뿐이라, 실제로 뭘 하는 노드인지를 UI에 병기한다. 근거: 게임 상식 +
 # 데이터 교차 확인(거짓과 진실=battleLoadingTips 사고 레어도, 길라잡이=모집권 저장 팁,
@@ -1035,27 +1053,39 @@ def build_topic(tid="rogue_1", loc=None):
                 elif it.get("type") not in mfilter:
                     continue
                 nm = it.get("name")
-                usage = (it.get("usage") or "").strip()
+                usage = (it.get("usage") or "").split(COPPER_ENCHANT_MARK)[0].strip()
                 desc = (it.get("description") or "").strip()
                 if not nm or not (usage or desc):
                     continue
-                if nm not in best or len(usage) + len(desc) > best[nm]["_len"]:
+                # 길이 우선(정보량 많은 표기 채택), 동점이면 주화 본체 우선 (COPPER_ENCHANT_MARK 주석 참조)
+                key = (len(usage) + len(desc), coin_rank(iid))
+                if nm not in best or key > best[nm]["_len"]:
                     cands = item_icon_cands(iid)
                     for c in cands:
                         if re.fullmatch(r"rogue_\d+_gild_\d+", c):
                             mech_jobs.add((f"{ASSETS}/ui/rogueliketopic/topics/{tid}/copper/gildicon/{c}.png", c))
                     e = {"id": iid, "name": nm, "usage": usage or None, "desc": desc or None,
-                         "_cands": cands, "_len": len(usage) + len(desc)}
+                         "_cands": cands, "_len": key}
                     if source == "fragment":
                         # 사고 3분류 — id 접두 D/F/I = 염원/영감/구상 (사용자 확인 2026-07-18:
                         # usage에 '사용 시'가 있으면 영감(F), 없으면 염원(D), '구상'(I)은 단일 항목)
                         code = iid.replace(f"{tid}_fragment_", "").split("_")[0]
                         e["kind"] = tr({"D": "염원", "F": "영감", "I": "구상"}.get(code, "기타"))
+                    if tid == "rogue_5":
+                        # 주화 탭에는 주화 본체와 '부여'(도금 gild_bat — 주화에 덧씌우는 추가
+                        # 효과 10종)가 섞여 들어온다. 부여는 주화가 아니므로 갈라서 보여준다.
+                        gild = "_gild_" in iid
+                        e["kind"] = tr("부여" if gild else "주화")
+                        if gild and usage:
+                            # 부여 usage는 '이름: 효과' 꼴 — 카드 머리말이 이미 이름이라 중복 제거
+                            e["usage"] = re.sub(rf"^{re.escape(nm)}\s*[:：]\s*", "", usage) or None
                     best[nm] = e
             entries = [{k: v for k, v in e.items() if k != "_len"} for e in best.values()]
             if source == "fragment":
                 korder = {"염원": 0, "영감": 1, "구상": 2}
                 entries.sort(key=lambda e: korder.get(e.get("kind"), 9))
+            if tid == "rogue_5":
+                entries.sort(key=lambda e: 1 if "_gild_" in e["id"] else 0)  # 주화 → 부여 순
         elif source == "charbuff":
             best = {}  # 이름 기준 중복 제거 (같은 변이가 난이도 티어별로 중복 — 사용자 요청)
             for bid, bv in (r.get("charBuffData") or {}).items():
