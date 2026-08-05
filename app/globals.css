@@ -4791,6 +4791,12 @@ footer p {
 .srb-run:disabled {
   cursor: default;
 }
+/* 편성이 비어 분석 자체가 불가능한 상태 — 눌리지 않는다는 걸 눈으로도 알게
+   (분석 중일 때는 이 클래스를 안 붙인다: 그때는 진행 라벨이 이미 상태를 말한다) */
+.srb-run.empty {
+  opacity: 0.55;
+  border-style: dashed;
+}
 /* 육성 추천 전제조건 배지 — 정예화를 낮춰 둔(=완성 안 한) 보유 오퍼 수 */
 .srb-run .srb-sub {
   margin-left: 8px;

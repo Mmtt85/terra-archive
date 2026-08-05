@@ -201,6 +201,10 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     ? investRecs.filter((r) => !investHidden.has(r.opId) && effectiveOpById.has(r.opId)).slice(0, INVEST_SHOW)
     : null), [investRecs, investHidden, effectiveOpById]);
 
+  // 편성이 비어 있는가 — 첫 진입(plan 없음)과 '편성 전체 비우기' 직후(빈 슬롯만 남음) 둘 다.
+  // 육성 추천은 이 편성을 기준으로 계산되므로 비어 있으면 실행 자체를 막는다.
+  const planEmpty = !plan || Object.values(plan.assignments).every((shifts) => shifts.every((ids) => ids.length === 0));
+
   const persist = (ids: Set<string>, nextPlan: Plan | null, elite: Map<string, Elite> = eliteById, lvById: Map<string, number> = levelById, prio: ProdPriority = priority, invest: RaiseRec[] | null = investRecs, hidden: Set<string> = investHidden, lay: LayoutPreset = layout, lvls: Levels = levels, rooms: CustomRoom[] = customRooms, products: (CustomProduct | null)[] = customProducts, pins: Record<string, string[]> = dormPins) => {
     // 현재 프리셋 버킷을 최신 상태로 갱신한 뒤 전체 버킷을 저장 — 다른 프리셋의 편성은 보존된다
     syncBucket(lay, { plan: nextPlan, levels: lvls, invest, investHidden: Array.from(hidden), dormPins: pins });
@@ -519,6 +523,13 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   // 자동편성 전까지 같은 결과 유지). 없으면 분석을 돌린다.
   const openInvest = () => {
     if (investing) return;
+    // 편성이 비어 있으면 분석하지 않는다 (사용자 지적 2026-08-05: "편성이 안됐는데") —
+    // 추천은 "지금 이 편성에서 이 오퍼를 완성하면 몇 점 오르나"라서 기준 편성이 없으면
+    // 화면에 없는 가상의 편성을 근거로 숫자를 대는 셈이 된다.
+    if (planEmpty) {
+      showToast(t("편성이 비어 있어 육성 추천을 낼 수 없습니다 — 전체 자동편성을 먼저 실행하세요"));
+      return;
+    }
     // 캐시가 **비어 있으면** 그대로 열지 않고 다시 계산한다 — 0건 결과도 localStorage에
     // 저장되므로, 예전에 한 번 0건이 나왔으면(정예화를 아직 안 채웠을 때 등) 이후 아무리
     // 눌러도 빈 모달만 뜨고 재계산이 안 되던 문제 (사용자 제보 2026-07-25 "아무것도 안 뜬다")
@@ -1244,11 +1255,14 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
             </>
           ) : (
             // 대기·분석중 공용 — 두 라벨을 겹쳐(overlay) 폭을 idle 라벨에 고정, 분석 중에도 버튼 길이 불변
-            <button className="srb-run" onClick={openInvest} disabled={!!investing}
-              title={t("보유했지만 아직 완성하지 않은(정예화를 낮춰 둔) 오퍼 중, 완성하면 인프라 효율이 오르는 오퍼를 실제 자동편성을 다시 돌려 찾아냅니다")}>
+            // 편성이 없으면 아예 못 누른다 (사용자 지적 2026-08-05) — 기준 편성이 추천의 전제다
+            <button className={`srb-run${planEmpty && !investing ? " empty" : ""}`} onClick={openInvest} disabled={!!investing || planEmpty}
+              title={planEmpty
+                ? t("편성이 비어 있어 육성 추천을 낼 수 없습니다 — 전체 자동편성을 먼저 실행하세요")
+                : t("보유했지만 아직 완성하지 않은(정예화를 낮춰 둔) 오퍼 중, 완성하면 인프라 효율이 오르는 오퍼를 실제 자동편성을 다시 돌려 찾아냅니다")}>
               {/* 전제조건을 눈에 보이게 — 정예화를 낮춰 둔 오퍼가 0명이면 분석해도 후보가 없다
                   (전원 만정예 가정이 기본값이라 "왜 아무것도 안 뜨지"의 최대 원인, 2026-07-25) */}
-              <span className={`srb-lbl${investing ? " hide" : ""}`}>★ {t("인프라 오퍼 육성 추천")}<em className="srb-sub">{t("미완성 {n}명", { n: unfinishedCount })}</em></span>
+              <span className={`srb-lbl${investing ? " hide" : ""}`}>★ {t("인프라 오퍼 육성 추천")}<em className="srb-sub">{planEmpty ? t("자동편성 먼저") : t("미완성 {n}명", { n: unfinishedCount })}</em></span>
               {investing && <span className="srb-over">★ {investing.total ? t("분석 중 {i}/{n}", { i: investing.done, n: investing.total }) : t("분석 중…")}</span>}
               {/* 분석 전/후 두 상태에서 배지가 **같은 자리**(버튼 오른쪽 위 모서리)에 오도록 */}
               {anyNewFeature("invest", "invest-payback") && <span className="new-badge">{t("새기능")}</span>}

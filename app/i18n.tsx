@@ -1786,6 +1786,11 @@ const D: Record<string, Pair> = {
   "여기에 놓으면 첨부됩니다": ["Drop here to attach", "ここにドロップで添付"],
   // 육성 추천 완료 상태 — 분석 전과 같은 버튼 크기를 유지하며 인원수만 배지로 (2026-08-05)
   "추천 {n}명": ["{n} recommended", "推薦{n}人"],
+  // 편성이 비어 있으면 추천을 낼 수 없다 (기준 편성이 전제 — 2026-08-05)
+  "자동편성 먼저": ["Assign first", "先に自動編成"],
+  "편성이 비어 있어 육성 추천을 낼 수 없습니다 — 전체 자동편성을 먼저 실행하세요":
+    ["Your base is empty, so there's nothing to base recommendations on — run Auto-assign all first.",
+     "編成が空のため育成推薦を出せません — まず全体自動編成を実行してください。"],
   "보내기": ["Send", "送信"],
   "💬 제안": ["💬 Feedback", "💬 提案"],
   // ── 스샷 인식 (구 스샷 워프) — 페이지별 설치: /rogue 스샷으로 찾기 · 공채 스샷으로 태그 입력
