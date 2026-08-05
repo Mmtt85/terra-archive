@@ -4836,6 +4836,11 @@ footer p {
 .ship-raisebar .srb-btns {
   display: flex;
   gap: 5px;
+}
+/* 오른쪽 끝으로 미는 건 **상자 상태(임시 적용)에서만** — 그때만 왼쪽에 라벨·증감이 깔린
+   가로 바다. 추천 완료 상태는 .srb-run 버튼 하나뿐이라 auto를 남겨두면 '다시 분석'이
+   화면 끝까지 튕겨 나간다 (사용자 지적 2026-08-05). */
+.ship-raisebar.boxed .srb-btns {
   margin-left: auto;
 }
 .ship-raisebar .srb-btns button {
@@ -4848,6 +4853,13 @@ footer p {
   font-size: 11.5px;
   font-weight: 700;
   white-space: nowrap;
+}
+/* 추천 완료 상태에선 메인 버튼(.srb-run 37.5px)과 나란히 서므로 같은 높이·모서리로 */
+.ship-raisebar.idle .srb-btns button {
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 800;
 }
 .ship-raisebar .srb-btns button.run {
   border-color: var(--lime);
@@ -6590,29 +6602,26 @@ footer p {
   background: var(--lime);
   color: var(--on-lime);
 }
-.feedback-panel {
-  width: min(320px, calc(100vw - 44px));
+/* 창 모달로 전환 (사용자 지적 2026-08-05: "제안 보내기 모달은 왜 윈도우방식이 아니고
+   radius도 없냐") — 제목·닫기·📌는 크롬 바가 담당하므로 패널 자체 header는 없앴다. */
+.feedback-modal {
+  position: relative;
+  width: min(360px, 100%);
+  /* 백드롭이 grid라 기본 stretch — 내용만큼만 높게 잡고 화면 중앙에 둔다
+     (안 그러면 짧은 폼이 화면 높이만큼 늘어난다: 실측 812px) */
+  place-self: center;
+  height: fit-content;
+  max-height: calc(100dvh - 48px);
   border: 1px solid var(--border-strong);
+  border-radius: 12px;
   background: var(--white);
-  box-shadow: 0 16px 44px #0004;
+  box-shadow: 0 30px 100px #0008;
+  overflow: hidden;
   animation: 0.18s both fadeIn;
 }
-.feedback-panel > header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: var(--chip);
-  color: #fff;
-  padding: 11px 14px;
-  font-size: 13.5px;
-}
-.feedback-panel > header button {
-  background: 0 0;
-  border: 0;
-  color: #fff;
-  font-size: 19px;
-  cursor: pointer;
-  line-height: 1;
+.feedback-panel {
+  position: relative;
+  padding-bottom: 2px;
 }
 .feedback-kind {
   display: flex;
@@ -6652,10 +6661,19 @@ footer p {
   align-items: center;
   flex-wrap: wrap;
   gap: 6px;
-  padding: 8px 14px 0;
+  padding: 10px 14px 0;
+}
+/* 끌어다 놓기·붙여넣기 안내 — 첨부 버튼 바로 아래 (사용자 지적: 버튼이 아래에 딱 붙어 있다) */
+.fb-attach-hint {
+  margin: 6px 0 0;
+  padding: 0 14px;
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: var(--muted);
 }
 .fb-attach-btn {
   border: 1px dashed var(--line);
+  border-radius: 6px;
   background: transparent;
   padding: 6px 10px;
   font-size: 11.5px;
@@ -6696,6 +6714,21 @@ footer p {
   line-height: 1;
   padding: 0;
   cursor: pointer;
+}
+/* 드래그로 이미지를 끌고 들어온 동안 — 패널 위에 안내 막을 덮는다 */
+.fb-drop-veil {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed var(--lime);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--lime) 16%, var(--bg-panel));
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 800;
+  pointer-events: none;   /* drop 이벤트는 아래 패널이 받아야 한다 */
 }
 /* /admin 피드백 행의 첨부 이미지 — 클릭하면 원본 새 탭 */
 .fb-images {
@@ -15308,7 +15341,9 @@ main.site-main > .site-header {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 2px 6px 2px 12px; /* 낮게 — 잡는 손잡이일 뿐 내용이 아니다 (사용자 요청 2026-08-05) */
+  /* 잡는 손잡이일 뿐 내용이 아니라 낮게 두되, 너무 얇으면 잡기 어렵다 —
+     43px → 24px로 줄였다가 되돌려 30px (사용자 요청 2026-08-05, 두 차례 조정) */
+  padding: 5px 6px 5px 12px;
   border-bottom: 1px solid var(--line);
   cursor: grab;
   touch-action: none;

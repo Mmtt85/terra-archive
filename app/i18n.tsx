@@ -1781,6 +1781,9 @@ const D: Record<string, Pair> = {
   "첨부 삭제": ["Remove attachment", "添付を削除"],
   "스크린샷 등 이미지 최대 {n}장 (장당 {m}MB 이하)": ["Up to {n} images, e.g. screenshots ({m}MB each max)", "スクリーンショットなど画像を最大{n}枚（1枚{m}MBまで）"],
   "이미지는 장당 {n}MB 이하만 첨부할 수 있습니다": ["Each image must be {n}MB or smaller", "画像は1枚{n}MB以下のみ添付できます"],
+  "이미지는 최대 {n}장까지 첨부할 수 있습니다": ["You can attach up to {n} images", "画像は最大{n}枚まで添付できます"],
+  "이미지를 끌어다 놓거나 붙여넣기(Ctrl+V)도 됩니다": ["You can also drag & drop images or paste them (Ctrl+V)", "画像はドラッグ＆ドロップや貼り付け（Ctrl+V）でも添付できます"],
+  "여기에 놓으면 첨부됩니다": ["Drop here to attach", "ここにドロップで添付"],
   // 육성 추천 완료 상태 — 분석 전과 같은 버튼 크기를 유지하며 인원수만 배지로 (2026-08-05)
   "추천 {n}명": ["{n} recommended", "推薦{n}人"],
   "보내기": ["Send", "送信"],

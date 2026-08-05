@@ -846,7 +846,14 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     const next = { ...plan, assignments, tokenPoints: {}, factionCounts: plan.factionCounts.map(() => ({})) };
     setPlan(next);
     setActiveShift(0);
-    persist(ownedIds, next, eliteById, levelById, priority, investRecs, investHidden, layout, lvls);
+    // 육성 추천도 함께 비운다 (사용자 요청 2026-08-05) — 추천은 "지금 이 편성에서 이 오퍼를
+    // 완성하면 얼마나 오르는가"의 결과라, 편성을 비우면 근거가 사라져 숫자가 거짓이 된다.
+    endTemp(false);
+    setInvestRecs(null);
+    setInvestHidden(new Set());
+    setInvestDiag(null);
+    setShowInvest(false);
+    persist(ownedIds, next, eliteById, levelById, priority, null, new Set(), layout, lvls);
     setDirty(true);
     showToast(t("편성을 전부 비웠습니다 — 방을 눌러 수동 배치하거나 자동편성하세요"));
   };
@@ -1225,8 +1232,11 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
             // 분석 전과 **같은 .srb-run 버튼**을 유지한다 (사용자 지적 2026-08-05: 전/후 버튼
             // 크기가 달라 새기능 배지가 이상하게 붙음). 버튼 클릭 = 추천 열기, 재분석만 옆에 작게.
             <>
+              {/* 배지는 라벨 span이 아니라 **버튼 직속** — span 안에 두면 끝 글자('추천 N명')
+                  위에 걸치고 인원수 자릿수에 따라 위치가 흔들린다 (사용자 지적 2026-08-05) */}
               <button className="srb-run" onClick={() => setShowInvest(true)} title={t("추천 열기 ({n})", { n: visibleRecs?.length ?? 0 })}>
-                <span className="srb-lbl">★ {t("인프라 오퍼 육성 추천")}{anyNewFeature("invest", "invest-payback") && <span className="new-badge">{t("새기능")}</span>}<em className="srb-sub">{t("추천 {n}명", { n: visibleRecs?.length ?? 0 })}</em></span>
+                <span className="srb-lbl">★ {t("인프라 오퍼 육성 추천")}<em className="srb-sub">{t("추천 {n}명", { n: visibleRecs?.length ?? 0 })}</em></span>
+                {anyNewFeature("invest", "invest-payback") && <span className="new-badge">{t("새기능")}</span>}
               </button>
               <span className="srb-btns">
                 <button onClick={() => { void runInvest(); }}>{t("다시 분석")}</button>
@@ -1238,8 +1248,10 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
               title={t("보유했지만 아직 완성하지 않은(정예화를 낮춰 둔) 오퍼 중, 완성하면 인프라 효율이 오르는 오퍼를 실제 자동편성을 다시 돌려 찾아냅니다")}>
               {/* 전제조건을 눈에 보이게 — 정예화를 낮춰 둔 오퍼가 0명이면 분석해도 후보가 없다
                   (전원 만정예 가정이 기본값이라 "왜 아무것도 안 뜨지"의 최대 원인, 2026-07-25) */}
-              <span className={`srb-lbl${investing ? " hide" : ""}`}>★ {t("인프라 오퍼 육성 추천")}{anyNewFeature("invest", "invest-payback") && <span className="new-badge">{t("새기능")}</span>}<em className="srb-sub">{t("미완성 {n}명", { n: unfinishedCount })}</em></span>
+              <span className={`srb-lbl${investing ? " hide" : ""}`}>★ {t("인프라 오퍼 육성 추천")}<em className="srb-sub">{t("미완성 {n}명", { n: unfinishedCount })}</em></span>
               {investing && <span className="srb-over">★ {investing.total ? t("분석 중 {i}/{n}", { i: investing.done, n: investing.total }) : t("분석 중…")}</span>}
+              {/* 분석 전/후 두 상태에서 배지가 **같은 자리**(버튼 오른쪽 위 모서리)에 오도록 */}
+              {anyNewFeature("invest", "invest-payback") && <span className="new-badge">{t("새기능")}</span>}
             </button>
           )}
           </div>
