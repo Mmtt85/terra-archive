@@ -198,6 +198,25 @@ const D: Record<string, Pair> = {
   "데이터 갱신": ["Data", "データ更新"],
   "상세보기 — 개선·수정 내역까지": ["Show details — improvements & fixes", "詳細を見る — 改善・修正まで"],
   "신기능만 보기": ["Show new features only", "新機能のみ表示"],
+  // ── 개발자 코멘트 (업데이트 내역 모달 안 — 받은 제안에 대한 답변, 2026-08-05) ──
+  // 코멘트 본문은 Supabase dev_notes 테이블에 ko/en/ja로 들어 있다 (docs/supabase-devnotes.sql).
+  "개발자 코멘트": ["Dev comments", "開発者コメント"],
+  "받은 제안에 대한 개발자의 답변 — 무엇이 반영되고 무엇이 왜 어려운지":
+    ["Developer replies to your suggestions — what's being adopted, and what's hard and why",
+     "いただいた提案への開発者の返信 — 何が反映され、何がなぜ難しいのか"],
+  "여러분이 보내 주신 제안·피드백에 대한 답변입니다 — 무엇이 반영되고, 무엇이 왜 어려운지 남깁니다.":
+    ["Replies to the suggestions and feedback you've sent in — noting what's being adopted, and what's difficult and why.",
+     "皆さんからいただいた提案・フィードバックへの返信です — 何が反映され、何がなぜ難しいのかを残します。"],
+  "업데이트 내역으로 돌아가기": ["Back to What's New", "更新履歴に戻る"],
+  "아직 등록된 개발자 코멘트가 없습니다.": ["No developer comments yet.", "まだ開発者コメントはありません。"],
+  "개발자 코멘트를 불러오지 못했습니다 — 잠시 뒤 다시 시도해 주세요.":
+    ["Couldn't load developer comments — please try again shortly.",
+     "開発者コメントを読み込めませんでした — しばらくしてからもう一度お試しください。"],
+  "반영 완료": ["Done", "対応済み"],
+  "반영 예정": ["Planned", "対応予定"],
+  "검토중": ["Under review", "検討中"],
+  "반려": ["Declined", "見送り"],
+  "이미지 크게 보기": ["View image full size", "画像を拡大表示"],
   // ── 통합전략 보유 리스트: 소장품 효과 총합 (사용자 요청 2026-07-29) ──
   // 직업명은 오퍼레이터 데이터의 공식 현지어 표기를 그대로 옮겼다 (operators.{en,ja}.json).
   "효과 총합": ["Total effects", "効果の合計"],
@@ -1757,6 +1776,13 @@ const D: Record<string, Pair> = {
   "어떤 오퍼의 어떤 데이터가 잘못됐는지 알려주세요": ["Tell us which operator's data is wrong", "どのオペレーターのどのデータが誤っているか教えてください"],
   "보냈습니다, 감사합니다!": ["Sent — thank you!", "送信しました、ありがとうございます！"],
   "익명으로 전송됩니다": ["Sent anonymously", "匿名で送信されます"],
+  // 첨부 이미지 (사용자 요청 2026-08-05: 최대 3장, R2로 바로 올라간다)
+  "이미지 첨부": ["Attach images", "画像を添付"],
+  "첨부 삭제": ["Remove attachment", "添付を削除"],
+  "스크린샷 등 이미지 최대 {n}장 (장당 {m}MB 이하)": ["Up to {n} images, e.g. screenshots ({m}MB each max)", "スクリーンショットなど画像を最大{n}枚（1枚{m}MBまで）"],
+  "이미지는 장당 {n}MB 이하만 첨부할 수 있습니다": ["Each image must be {n}MB or smaller", "画像は1枚{n}MB以下のみ添付できます"],
+  // 육성 추천 완료 상태 — 분석 전과 같은 버튼 크기를 유지하며 인원수만 배지로 (2026-08-05)
+  "추천 {n}명": ["{n} recommended", "推薦{n}人"],
   "보내기": ["Send", "送信"],
   "💬 제안": ["💬 Feedback", "💬 提案"],
   // ── 스샷 인식 (구 스샷 워프) — 페이지별 설치: /rogue 스샷으로 찾기 · 공채 스샷으로 태그 입력

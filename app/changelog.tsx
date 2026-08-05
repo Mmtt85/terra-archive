@@ -21,6 +21,8 @@ import {
   fetchChangelogRange, fetchOldestReleaseDate, windowRange, changeText, splitChange, areaOf,
   CHANGE_KIND_LABEL, CHANGE_AREA_LABEL, RECENT_DAYS, daysAgoKst, type ChangeRow,
 } from "./changelog-api";
+import { fetchDevNotes, noteSuggestion, noteReply, DEVNOTE_STATUS_LABEL, type DevNoteRow } from "./devnotes-api";
+import { isNewFeature } from "./whats-new";
 
 const dateLabel = (iso: string, locale: string): string => {
   const d = new Date(`${iso}T00:00:00+09:00`);
@@ -44,6 +46,17 @@ function groupByDate(rows: ChangeRow[]): { date: string; rows: ChangeRow[] }[] {
 // 1년 반 넘게 빈 구간이면 멈춘다 (런어웨이 방지).
 const MAX_SKIP = 80;
 
+// 코멘트도 날짜별로 묶는다 (업데이트 내역과 같은 시각 언어)
+function groupNotesByDate(rows: DevNoteRow[]): { date: string; rows: DevNoteRow[] }[] {
+  const out: { date: string; rows: DevNoteRow[] }[] = [];
+  for (const row of rows) {
+    const last = out[out.length - 1];
+    if (last && last.date === row.released_at) last.rows.push(row);
+    else out.push({ date: row.released_at, rows: [row] });
+  }
+  return out;
+}
+
 export default function ChangelogButton() {
   const { locale, t } = useI18n();
   const localeBase = locale === "ko" ? "" : `/${locale}`;
@@ -51,6 +64,12 @@ export default function ChangelogButton() {
   // 열면 **상세보기가 기본** (사용자 지시 2026-07-29) — 신기능만 보는 건 헤더 토글로.
   // 개선·수정이 실제 변경의 대부분이라, 신기능만 띄우면 "바뀐 게 없네"로 읽혔다.
   const [detail, setDetail] = useState(true);
+  // 개발자 코멘트 뷰 (사용자 요청 2026-08-05: 받은 제안에 대한 답변 — 뭐가 되고 뭐가 왜 안 되는지).
+  // 내역과 같은 모달을 나눠 쓰고, 크롬 바의 💬 버튼(신기능만 토글 왼쪽)으로 오간다.
+  const [view, setView] = useState<"log" | "notes">("log");
+  const [notes, setNotes] = useState<DevNoteRow[] | null>(null);
+  const [notesError, setNotesError] = useState("");
+  const notesLoaded = useRef(false);
   const [rows, setRows] = useState<ChangeRow[] | null>(null);
   const [weeks, setWeeks] = useState(1);              // 지금까지 불러온 7일 창 수
   const [oldest, setOldest] = useState<string | null>(null); // 전체에서 가장 오래된 항목 날짜
@@ -68,9 +87,11 @@ export default function ChangelogButton() {
   }, []);
   const loaded = useRef(false);                       // 첫 로드 1회 가드
 
-  // 딥링크: #changelog(신기능만) · #changelog-all(상세, 버튼으로 여는 기본) — 기간 확장 상태는 URL에 담지 않는다
-  useHashSync(open ? (detail ? "#changelog-all" : "#changelog") : null, (h) => {
-    if (h === "#changelog" || h === "#changelog-all") { setOpen(true); setDetail(h === "#changelog-all"); }
+  // 딥링크: #changelog(신기능만) · #changelog-all(상세, 버튼으로 여는 기본) · #devnotes(개발자 코멘트)
+  // — 기간 확장 상태는 URL에 담지 않는다
+  useHashSync(open ? (view === "notes" ? "#devnotes" : detail ? "#changelog-all" : "#changelog") : null, (h) => {
+    if (h === "#devnotes") { setOpen(true); setView("notes"); }
+    else if (h === "#changelog" || h === "#changelog-all") { setOpen(true); setView("log"); setDetail(h === "#changelog-all"); }
     else setOpen(false);
   });
 
@@ -89,6 +110,21 @@ export default function ChangelogButton() {
       });
     return () => { alive = false; };
   }, [open, t]);
+
+  // 개발자 코멘트 — 뷰를 처음 열 때 1회 로드 (모달만 열고 안 보면 안 부른다)
+  useEffect(() => {
+    if (!open || view !== "notes" || notesLoaded.current) return;
+    notesLoaded.current = true;
+    let alive = true;
+    fetchDevNotes()
+      .then((data) => { if (alive) setNotes(data); })
+      .catch(() => {
+        if (!alive) return;
+        notesLoaded.current = false;   // 실패는 재시도 가능하게
+        setNotesError(t("개발자 코멘트를 불러오지 못했습니다 — 잠시 뒤 다시 시도해 주세요."));
+      });
+    return () => { alive = false; };
+  }, [open, view, t]);
 
   useEffect(() => {
     if (!open) return;
@@ -133,23 +169,69 @@ export default function ChangelogButton() {
     <>
       {/* 버튼으로 열면 **상세보기**가 기본 (사용자 지시 2026-07-29) — 신기능만 보려면
           헤더 토글을 누르거나 #changelog 딥링크로 들어온다 */}
-      <button type="button" className="chlog-trigger" onClick={() => { setDetail(true); setOpen(true); }} title={t("최근 업데이트 내역 보기")}>
+      <button type="button" className="chlog-trigger" onClick={() => { setDetail(true); setView("log"); setOpen(true); }} title={t("최근 업데이트 내역 보기")}>
         <span aria-hidden>🛠</span>
         {/* 모바일은 아이콘만 (1줄 로고 옆 — 폭이 좁다) */}
         <span className="chlog-label">{t("업데이트 내역")}</span>
+        {/* 개발자 코멘트는 열어 봐야 보이므로 진입점에도 배지 (whats-new.ts 정책) */}
+        {isNewFeature("dev-notes") && <span className="new-badge">{t("새기능")}</span>}
       </button>
       {/* 헤더의 backdrop-filter가 fixed 기준을 헤더로 만들어버리므로 portal로 body에 렌더.
           제목은 창 크롬 바(label)가 담당 — 종전 내부 header는 제목이 이중으로 떠서 제거하고,
           상세보기 토글(사용자 요청 2026-07-28: 제목 옆)은 크롬 바에 얹는다 (2026-08-03) */}
       {open && createPortal(
-        <ModalWindow label={t("업데이트 내역")} className="chlog-modal" onClose={() => setOpen(false)}
-          chrome={rows !== null && !error ? (
-            <button type="button" className="chlog-detail-toggle" aria-pressed={detail}
-              onClick={() => setDetail((d) => !d)}
-              title={detail ? t("신기능만 보기") : t("상세보기 — 개선·수정 내역까지")}>
-              {detail ? t("신기능만") : t("상세보기")}
+        // 제목은 지금 보이는 뷰를 말한다 — 코멘트 뷰에선 '개발자 코멘트' (사용자 요청 2026-08-05).
+        // 배치도 같은 날 요청: 신기능만 토글은 제목 바로 오른쪽, 뷰 전환 버튼은 오른쪽 끝.
+        <ModalWindow label={view === "notes" ? t("개발자 코멘트") : t("업데이트 내역")} className="chlog-modal" onClose={() => setOpen(false)}
+          chrome={<>
+            {view === "log" && rows !== null && !error && (
+              <button type="button" className="chlog-detail-toggle" aria-pressed={detail}
+                onClick={() => setDetail((d) => !d)}
+                title={detail ? t("신기능만 보기") : t("상세보기 — 개선·수정 내역까지")}>
+                {detail ? t("신기능만") : t("상세보기")}
+              </button>
+            )}
+            {/* 뷰 전환 — 코멘트 뷰에선 라벨이 '업데이트 내역'으로 바뀌어 토글임이 드러난다 */}
+            <button type="button" className="chlog-detail-toggle chlog-devnotes-btn" aria-pressed={view === "notes"}
+              onClick={() => setView((v) => (v === "notes" ? "log" : "notes"))}
+              title={view === "notes" ? t("업데이트 내역으로 돌아가기") : t("받은 제안에 대한 개발자의 답변 — 무엇이 반영되고 무엇이 왜 어려운지")}>
+              {view === "notes" ? <>🛠 {t("업데이트 내역")}</> : <>💬 {t("개발자 코멘트")}</>}
             </button>
-          ) : undefined}>
+          </>}>
+            {view === "notes" ? (
+            <div className="chlog-list chlog-notes">
+              {notes === null && !notesError && <p className="chlog-empty">{t("불러오는 중…")}</p>}
+              {notesError && <p className="chlog-empty">{notesError}</p>}
+              {notes !== null && !notesError && notes.length > 0 && (
+                <p className="devnote-intro">{t("여러분이 보내 주신 제안·피드백에 대한 답변입니다 — 무엇이 반영되고, 무엇이 왜 어려운지 남깁니다.")}</p>
+              )}
+              {notes !== null && !notesError && notes.length === 0 && (
+                <p className="chlog-empty">{t("아직 등록된 개발자 코멘트가 없습니다.")}</p>
+              )}
+              {groupNotesByDate(notes ?? []).map((day) => (
+                <section key={day.date}>
+                  <h3>{dateLabel(day.date, locale)}</h3>
+                  <ul>
+                    {day.rows.map((row) => (
+                      <li key={row.id} className="devnote">
+                        <span className={`chlog-kind devnote-status ${row.status}`}>{t(DEVNOTE_STATUS_LABEL[row.status])}</span>
+                        <div className="devnote-body">
+                          {/* 받은 제안은 인용문으로, 답변은 그 아래 본문으로 — 줄바꿈 보존 */}
+                          <blockquote className="devnote-suggestion">{noteSuggestion(row, locale)}</blockquote>
+                          <p className="devnote-reply">{noteReply(row, locale)}</p>
+                          {row.image && (
+                            <a href={row.image} target="_blank" rel="noreferrer" title={t("이미지 크게 보기")}>
+                              <img className="devnote-img" src={row.image} alt="" loading="lazy" />
+                            </a>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ))}
+            </div>
+            ) : (
             <div className="chlog-list">
               {rows === null && !error && <p className="chlog-empty">{t("불러오는 중…")}</p>}
               {error && <p className="chlog-empty">{error}</p>}
@@ -210,6 +292,7 @@ export default function ChangelogButton() {
                 <a href="https://buymeacoffee.com/terra_archive" target="_blank" rel="noopener noreferrer">{t("서버 운영 후원")}</a>
               </p>
             </div>
+            )}
         </ModalWindow>,
         document.body
       )}

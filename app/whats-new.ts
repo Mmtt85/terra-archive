@@ -18,6 +18,7 @@ export const FEATURE_RELEASED: Record<string, string | { date: string; days: num
   "rogue-cn": "2026-08-04", // 통합전략 서버 탭 — 중국 서버(전 테마 중국어 병기, CN 선행 콘텐츠)
   "op-level": "2026-08-05", // 인프라 보유 오퍼 레벨 입력 — 노정예 Lv.30 해금 기지 스킬 반영
   "invest-payback": "2026-08-05", // 육성 추천 예상 회수일 — 이성 환산 + 완성 비용 모달
+  "dev-notes": "2026-08-05", // 개발자 코멘트 — 받은 제안에 대한 답변 (업데이트 내역 모달 안)
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;

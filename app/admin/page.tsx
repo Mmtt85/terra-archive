@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { adminDeleteFeedback, adminListFeedback, adminMe, adminSetHandling, adminSetReviewed, handlingAt, withHandling, type FeedbackRow } from "../feedback";
+import { adminDeleteFeedback, adminListFeedback, adminMe, adminSetHandling, adminSetReviewed, handlingAt, imagesOf, withHandling, type FeedbackRow } from "../feedback";
 import { adminDeleteRelease, adminDeleteRule, adminListRules, adminPublishRelease, adminUpsertRule, fetchLatestRelease, type ReleaseRow } from "../rules-api";
 import { adminDeleteChange, adminUpsertChange, fetchAllChanges, areaOf, CHANGE_KINDS, CHANGE_KIND_LABEL, CHANGE_AREAS, CHANGE_AREA_LABEL, daysAgoKst, type ChangeArea, type ChangeDraft, type ChangeRow } from "../changelog-api";
 import { adminDeleteTip, adminUpsertTip, fetchAllTips, type TipDraft, type TipRow } from "../tips-api";
+import { adminDeleteDevNote, adminUpsertDevNote, fetchAllDevNotes, DEVNOTE_STATUSES, DEVNOTE_STATUS_LABEL, type DevNoteDraft, type DevNoteRow } from "../devnotes-api";
 import { adminDeleteFile, adminListFiles, adminUploadFile, formatSize, isImageKey, type StoredFile } from "../files-api";
 import { useConfirm } from "../confirm";
 import { compileSnapshot, validateRules, RULE_KINDS, type RuleRow } from "../rules-compile";
@@ -194,6 +195,59 @@ function TipEditor({ row, onSave, onCancel, upload }: { row: TipDraft; onSave: (
   );
 }
 
+// ── 개발자 코멘트 편집기 (docs/supabase-devnotes.sql) ──────────────────────────
+// 업데이트 내역 모달의 💬 개발자 코멘트 뷰에 뜬다. 받은 제안(인용)과 답변, 선택 이미지.
+// ko는 필수, en/ja는 비우면 ko로 폴백. 저장 즉시 반영 (빌드·배포 불필요).
+function DevNoteEditor({ row, onSave, onCancel, upload }: { row: DevNoteDraft; onSave: (next: DevNoteDraft) => Promise<void>; onCancel: () => void; upload?: (file: File) => Promise<string> }) {
+  const [v, setV] = useState<DevNoteDraft>(row);
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const set = (patch: Partial<DevNoteDraft>) => setV((cur) => ({ ...cur, ...patch }));
+  const pickImage = async (file: File) => {
+    if (!upload) return;
+    setError("");
+    try { set({ image: await upload(file) }); }
+    catch (err) { setError(String((err as Error).message ?? err)); }
+  };
+  const save = async () => {
+    if (!v.suggestion_ko.trim() || !v.reply_ko.trim()) { setError("한국어 제안·답변은 필수입니다"); return; }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(v.released_at)) { setError("날짜는 YYYY-MM-DD 형식이어야 합니다"); return; }
+    setSaving(true);
+    try { await onSave(v); } catch (err) { setError(String((err as Error).message ?? err)); }
+    setSaving(false);
+  };
+  return (
+    <div className="rule-editor chlog-editor">
+      <header>
+        <b>{row.id ? "코멘트 편집" : "새 코멘트"}</b>
+        <input type="date" value={v.released_at} onChange={(e) => set({ released_at: e.target.value })} title="표시·정렬 기준일" />
+        <select value={v.status} onChange={(e) => set({ status: e.target.value as DevNoteRow["status"] })} title="제안 처리 상태 — 배지로 보인다">
+          {DEVNOTE_STATUSES.map((s) => <option key={s} value={s}>{DEVNOTE_STATUS_LABEL[s]}</option>)}
+        </select>
+        <label className="tip-active-lbl">
+          <input type="checkbox" checked={v.active} onChange={(e) => set({ active: e.target.checked })} /> 표시
+        </label>
+        <input className="rule-seq" value={String(v.seq)} onChange={(e) => set({ seq: Number(e.target.value) || 0 })} title="같은 날짜 안 정렬 (작을수록 위)" />
+      </header>
+      <textarea value={v.suggestion_ko} onChange={(e) => set({ suggestion_ko: e.target.value })} rows={2} placeholder="받은 제안 · 한국어 (필수) — 인용문으로 보입니다" />
+      <textarea value={v.suggestion_en ?? ""} onChange={(e) => set({ suggestion_en: e.target.value })} rows={2} placeholder="Suggestion · English (비우면 한국어로 표시됩니다)" />
+      <textarea value={v.suggestion_ja ?? ""} onChange={(e) => set({ suggestion_ja: e.target.value })} rows={2} placeholder="提案 · 日本語" />
+      <textarea value={v.reply_ko} onChange={(e) => set({ reply_ko: e.target.value })} rows={3} placeholder="개발자 답변 · 한국어 (필수) — 뭐가 되고 뭐가 왜 어려운지" />
+      <textarea value={v.reply_en ?? ""} onChange={(e) => set({ reply_en: e.target.value })} rows={3} placeholder="Reply · English" />
+      <textarea value={v.reply_ja ?? ""} onChange={(e) => set({ reply_ja: e.target.value })} rows={3} placeholder="返信 · 日本語" />
+      <div className="file-inline">
+        <input value={v.image ?? ""} onChange={(e) => set({ image: e.target.value })} placeholder="이미지 URL (선택) — R2 파일 저장소 URL 또는 사이트 내부 경로" />
+        {upload && <UploadButton onPick={pickImage} />}
+      </div>
+      {error && <p className="admin-status">{error}</p>}
+      <div className="admin-tools">
+        <button onClick={save} disabled={saving}>{saving ? "저장 중…" : "저장"}</button>
+        <button onClick={onCancel}>취소</button>
+      </div>
+    </div>
+  );
+}
+
 // ── 파일 저장소 표시 (R2) — 공용 행 + assets/ 폴더 트리 ─────────────────────────
 function FileRow({ row, label, showDate, onStatus, onDelete }: {
   row: StoredFile; label: string; showDate?: boolean;
@@ -287,17 +341,21 @@ export default function AdminPage() {
   const [status, setStatus] = useState("");
   const [filter, setFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("open"); // open(대응미완료) | reviewed(대응완료)
-  const [tab, setTab] = useState<"feedback" | "rules" | "changelog" | "tips" | "files">("feedback"); // 상단 탭
+  const [tab, setTab] = useState<"feedback" | "rules" | "changelog" | "devnotes" | "tips" | "files">("feedback"); // 상단 탭
   // 팁 풍선 원장 (null = 조회 실패 → 미설치 안내)
   const [tips, setTips] = useState<TipRow[] | null>(null);
   const [tipStatus, setTipStatus] = useState("");
   const [editingTip, setEditingTip] = useState<TipDraft | null>(null);
+  // 개발자 코멘트 원장 (null = 조회 실패 → 미설치 안내)
+  const [devNotes, setDevNotes] = useState<DevNoteRow[] | null>(null);
+  const [devNoteStatus, setDevNoteStatus] = useState("");
+  const [editingDevNote, setEditingDevNote] = useState<DevNoteDraft | null>(null);
   // 파일 저장소(R2) — 워커 미배포·비밀번호 불일치면 null + 안내
   const [files, setFiles] = useState<StoredFile[] | null>(null);
   const [fileStatus, setFileStatus] = useState("");
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
-  const [fileSub, setFileSub] = useState<"uploads" | "assets">("uploads"); // 내 업로드 | 사이트 에셋
+  const [fileSub, setFileSub] = useState<"uploads" | "feedback" | "assets">("uploads"); // 내 업로드 | 제안 이미지 | 사이트 에셋
   const [fileQuery, setFileQuery] = useState("");
   // 업데이트 내역 원장 (null = 조회 실패 → 미설치 안내)
   const [changes, setChanges] = useState<ChangeRow[] | null>(null);
@@ -328,6 +386,7 @@ export default function AdminPage() {
       loadRules();
       loadChanges();
       loadTips();
+      loadDevNotes();
     } catch {
       setStatus("조회 실패 — 잠시 후 다시 시도해주세요");
     }
@@ -380,6 +439,28 @@ export default function AdminPage() {
     if (!(await confirm({ message: `'${row.title_ko}' 팁을 삭제할까요?`, danger: true }))) return;
     try { await adminDeleteTip(row.id); setTipStatus("삭제됨"); loadTips(); }
     catch { setTipStatus("삭제 실패"); }
+  };
+
+  // ── 개발자 코멘트 (docs/supabase-devnotes.sql) — 저장하면 사이트에 바로 반영 ──
+  const loadDevNotes = async () => {
+    try { setDevNotes(await fetchAllDevNotes()); setDevNoteStatus(""); }
+    catch {
+      setDevNotes(null);
+      setDevNoteStatus("개발자 코멘트 테이블 조회 실패 — docs/supabase-devnotes.sql을 Supabase SQL Editor에서 실행했는지 확인");
+    }
+  };
+
+  const saveDevNote = async (next: DevNoteDraft) => {
+    await adminUpsertDevNote(next);
+    setEditingDevNote(null);
+    setDevNoteStatus("저장됨 — 업데이트 내역 모달의 💬 개발자 코멘트에 즉시 반영됩니다");
+    loadDevNotes();
+  };
+
+  const removeDevNote = async (row: DevNoteRow) => {
+    if (!(await confirm({ message: `'${row.suggestion_ko.slice(0, 40)}…' 코멘트를 삭제할까요?`, danger: true }))) return;
+    try { await adminDeleteDevNote(row.id); setDevNoteStatus("삭제됨"); loadDevNotes(); }
+    catch { setDevNoteStatus("삭제 실패"); }
   };
 
   // ── 파일 저장소 (workers/upload → R2) ────────────────────────────────────────
@@ -527,21 +608,40 @@ export default function AdminPage() {
     setStatus(`${done}건 대응중 표시 완료`);
   };
 
-  const remove = async (id: string) => {
-    if (!(await confirm({ message: "이 항목을 삭제할까요?", danger: true }))) return;
+  // 첨부 이미지 URL → R2 키 (files.terra-archive.net/<key> 또는 워커 /f/<key> 폴백 둘 다)
+  const keyOfImageUrl = (u: string): string | null => {
     try {
-      await adminDeleteFeedback(id);
-      setRows((current) => current.filter((row) => row.id !== id));
+      const path = new URL(u).pathname.replace(/^\/f\//, "/").slice(1);
+      return path.split("/").map(decodeURIComponent).join("/");
+    } catch { return null; }
+  };
+
+  const remove = async (row: FeedbackRow) => {
+    const imgs = imagesOf(row.payload);
+    const msg = imgs.length ? `이 항목과 첨부 이미지 ${imgs.length}장을 삭제할까요?` : "이 항목을 삭제할까요?";
+    if (!(await confirm({ message: msg, danger: true }))) return;
+    try {
+      // 첨부 이미지도 R2에서 정리 (용량 관리 — 사용자 방침 2026-08-05). 개별 실패는 무시:
+      // 행 삭제가 우선이고, 남은 파일은 파일 탭 '제안 이미지'에서 지울 수 있다.
+      for (const u of imgs) {
+        const key = keyOfImageUrl(u);
+        if (key?.startsWith("feedback/")) await adminDeleteFile(key).catch(() => {});
+      }
+      await adminDeleteFeedback(row.id);
+      setRows((current) => current.filter((item) => item.id !== row.id));
     } catch {
       setStatus("삭제 실패");
     }
   };
 
-  // 파일 탭 파생 상태 — uploads/(수동)와 assets/(r2-sync 관할) 분리, 검색은 부분 문자열 매치
+  // 파일 탭 파생 상태 — uploads/(수동)·feedback/(제안 첨부)·assets/(r2-sync 관할) 분리,
+  // 검색은 부분 문자열 매치
   const fileFilter = fileQuery.trim().toLowerCase();
   const uploadRows = (files ?? []).filter((row) => row.key.startsWith("uploads/"));
-  const assetRows = (files ?? []).filter((row) => !row.key.startsWith("uploads/"));
+  const feedbackRows = (files ?? []).filter((row) => row.key.startsWith("feedback/"));
+  const assetRows = (files ?? []).filter((row) => !row.key.startsWith("uploads/") && !row.key.startsWith("feedback/"));
   const shownUploads = fileFilter ? uploadRows.filter((row) => row.key.toLowerCase().includes(fileFilter)) : uploadRows;
+  const shownFeedback = fileFilter ? feedbackRows.filter((row) => row.key.toLowerCase().includes(fileFilter)) : feedbackRows;
   const shownAssets = fileFilter ? assetRows.filter((row) => row.key.toLowerCase().includes(fileFilter)) : assetRows;
   const assetTree = buildFileTree(assetRows, 1); // 7.7천 건 순회 — 렌더당 수 ms라 메모 불필요
 
@@ -617,6 +717,9 @@ export default function AdminPage() {
           </button>
           <button className={tab === "changelog" ? "selected" : ""} onClick={() => setTab("changelog")}>
             업데이트 내역{changes ? ` (${changes.length})` : ""}
+          </button>
+          <button className={tab === "devnotes" ? "selected" : ""} onClick={() => setTab("devnotes")}>
+            개발자 코멘트{devNotes ? ` (${devNotes.filter((row) => row.active).length}/${devNotes.length})` : ""}
           </button>
           <button className={tab === "tips" ? "selected" : ""} onClick={() => setTab("tips")}>
             팁 풍선{tips ? ` (${tips.filter((row) => row.active).length}/${tips.length})` : ""}
@@ -704,9 +807,18 @@ export default function AdminPage() {
               <time>{new Date(row.created_at).toLocaleString("ko-KR")}</time>
               <button className="handling-btn" onClick={() => toggleHandling(row)}>{handlingAt(row.payload) ? "대응 해제" : "대응중"}</button>
               <button className="review-btn" onClick={() => toggleReviewed(row)}>{row.reviewed_at ? "대응 취소" : "대응완료"}</button>
-              <button onClick={() => remove(row.id)}>삭제</button>
+              <button onClick={() => remove(row)}>삭제</button>
             </header>
             {row.message && <p>{row.message}</p>}
+            {imagesOf(row.payload).length > 0 && (
+              <div className="fb-images">
+                {imagesOf(row.payload).map((u) => (
+                  <a key={u} href={u} target="_blank" rel="noreferrer" title={u}>
+                    <img src={u} alt="" loading="lazy" />
+                  </a>
+                ))}
+              </div>
+            )}
             {row.payload != null && (
               <details>
                 <summary>payload 보기</summary>
@@ -748,6 +860,43 @@ export default function AdminPage() {
                   {row.href && <span className="rule-note" title={row.href}>{row.href}</span>}
                   <button onClick={() => setEditingChange(row)}>편집</button>
                   <button onClick={() => removeChange(row)}>삭제</button>
+                </div>
+              )
+          ))}
+        </div>
+      )}
+      </>)}
+
+      {tab === "devnotes" && (<>
+      <p className="admin-status">
+        받은 제안에 대한 개발자의 답변입니다 — 사이트 헤더 🛠 업데이트 내역 모달의
+        <b> 💬 개발자 코멘트</b> 버튼에 뜹니다. 저장하면 <b>배포 없이</b> 바로 반영됩니다.
+        제안은 인용문으로, 답변은 그 아래로 보이고 이미지는 선택입니다 (파일 탭에서 올린 URL 사용 가능).
+      </p>
+      {devNoteStatus && <p className="admin-status">{devNoteStatus}</p>}
+      {devNotes === null ? (
+        <p className="admin-status">개발자 코멘트 테이블이 아직 없습니다 — <code>docs/supabase-devnotes.sql</code>을 Supabase SQL Editor에서 실행하세요.</p>
+      ) : (
+        <div className="admin-rules">
+          <div className="admin-tools">
+            <button onClick={() => setEditingDevNote({ released_at: daysAgoKst(0), status: "considering", suggestion_ko: "", suggestion_en: "", suggestion_ja: "", reply_ko: "", reply_en: "", reply_ja: "", image: "", active: true, seq: 0 })}>+ 새 코멘트</button>
+            <button onClick={loadDevNotes}>새로고침</button>
+          </div>
+          {editingDevNote && !editingDevNote.id && <DevNoteEditor row={editingDevNote} onSave={saveDevNote} onCancel={() => setEditingDevNote(null)} upload={uploadForTip} />}
+          {devNotes.length === 0 && <p className="admin-status">아직 등록된 코멘트가 없습니다.</p>}
+          {devNotes.map((row) => (
+            editingDevNote && editingDevNote.id === row.id
+              ? <DevNoteEditor key={row.id} row={editingDevNote} onSave={saveDevNote} onCancel={() => setEditingDevNote(null)} upload={uploadForTip} />
+              : (
+                <div key={row.id} className={`rule-row${row.active ? "" : " status-draft"}`}>
+                  <code>{row.released_at}</code>
+                  <i className="rule-status-chip">{DEVNOTE_STATUS_LABEL[row.status]}</i>
+                  {!row.active && <i className="rule-status-chip">숨김</i>}
+                  <span className="rule-preview">💬 {row.suggestion_ko.slice(0, 60)}</span>
+                  {!row.suggestion_en || !row.suggestion_ja || !row.reply_en || !row.reply_ja ? <span className="rule-note" title="번역이 비면 한국어로 표시됩니다">번역 미완</span> : null}
+                  {row.image && <span className="rule-note" title={row.image}>이미지</span>}
+                  <button onClick={() => setEditingDevNote(row)}>편집</button>
+                  <button onClick={() => removeDevNote(row)}>삭제</button>
                 </div>
               )
           ))}
@@ -801,6 +950,7 @@ export default function AdminPage() {
       <div className="admin-rules">
         <div className="admin-tools">
           <button className={fileSub === "uploads" ? "selected" : ""} onClick={() => setFileSub("uploads")}>내 업로드 ({uploadRows.length})</button>
+          <button className={fileSub === "feedback" ? "selected" : ""} onClick={() => setFileSub("feedback")}>제안 이미지 ({feedbackRows.length})</button>
           <button className={fileSub === "assets" ? "selected" : ""} onClick={() => setFileSub("assets")}>사이트 에셋 ({assetRows.length.toLocaleString()})</button>
           <input className="file-search" value={fileQuery} onChange={(e) => setFileQuery(e.target.value)} placeholder="파일 이름 검색…" />
           <button onClick={() => loadFiles()}>새로고침</button>
@@ -824,6 +974,19 @@ export default function AdminPage() {
           ) : (
             shownUploads.map((row) => (
               <FileRow key={row.key} row={row} label={row.key.slice("uploads/".length)} showDate
+                onStatus={setFileStatus} onDelete={() => removeFile(row)} />
+            ))
+          )}
+        </>) : fileSub === "feedback" ? (<>
+          <p className="admin-status">
+            방문자가 제안에 첨부한 이미지입니다 (제안 삭제 시 함께 지워집니다). 용량이 차면 여기서 정리하세요 —
+            지우면 피드백 탭의 해당 제안에선 이미지가 깨집니다.
+          </p>
+          {shownFeedback.length === 0 ? (
+            <p className="admin-status">{fileFilter ? "검색 결과가 없습니다." : "아직 제안에 첨부된 이미지가 없습니다."}</p>
+          ) : (
+            shownFeedback.map((row) => (
+              <FileRow key={row.key} row={row} label={row.key.slice("feedback/".length)} showDate
                 onStatus={setFileStatus} onDelete={() => removeFile(row)} />
             ))
           )}

@@ -12,7 +12,7 @@ import { useEffect, useRef } from "react";
 
 // 페이지 소유 해시 머신(rogue.tsx의 #rg-…)이 전역 모달 해시를 자기 상태로 덮어쓰지 않게
 // 하는 가드 목록. 전역(모든 탭에서 열리는) 모달의 해시만 등록한다.
-export const GLOBAL_MODAL_HASH = /^#(changelog|broadcast|replay|prts-help)/;
+export const GLOBAL_MODAL_HASH = /^#(changelog|devnotes|broadcast|replay|prts-help)/;
 
 /**
  * value: 지금 상태가 원하는 해시(모달 열림, 예 "#roster") — 닫혀 있으면 null.
