@@ -55,6 +55,11 @@ export type InfraSkill = {
   // min(first + rate×(k−1), cap). 교대마다 리셋되므로 구운 value = 24h 기준 교대 평균이고,
   // 엔진이 실제 편성의 교대 시계(ctx.shiftHours)로 재계산한다
   growHourly?: { first: number; rate: number; cap: number };
+  // 특별 오더 (클로저·U-Official, 2026-08-05): 그 무역소가 받는 순금 오더를 **전부** 자기
+  // 고정 오더로 대체한다. 값은 일반 오더 풀 대비 **시간당 용문폐 배수**(%)이며 방 처리량에
+  // 곱으로 걸린다(프로바이조 payout_v와 같은 구조). 오더 풀 자체가 갈리므로 같은 방의
+  // 품질 확률·품질 수익(테킬라)·위약 수익(프로바이조)은 전부 죽는다 — 유도는 INFRA-RULES.
+  orderFix?: number;
   drainRoom?: number;             // "방 내 (모든) 오퍼레이터의 시간당 컨디션 소모 ±X" (슈 -0.1·'아' +1.5·파이어휘슬 -0.1·샤마르 속삭임 +0.25)
   // 근무 중 컨디션 회복 구조 필드 (무한동력 모드, 2026-07-27 — build-infra.py parse_recover):
   recoverRoom?: number;           // "제어 센터 내 모든 오퍼레이터의 시간당 컨디션 회복 +X" 고정형 (도베르만류)
@@ -734,6 +739,8 @@ export type OpBreakdown = {
   quality: number;      // quality-order probability (equiv %)
   payout: number;       // quality-order payout (테킬라 — scales with quality crew)
   payoutViolation: number; // violation-order payout (프로바이조 — anti-synergy with quality crew)
+  orderFix: number;     // 특별 오더 배수(%) — 오더 풀을 통째로 대체 (클로저·U-Official)
+  orderFixed: boolean;  // 특별 오더 보유 여부 (배수가 0·음수여도 풀 대체는 일어난다)
   override: number;     // 샤마르: flat rate replacing everyone's efficiency
   perCoworker: number;  // +x% per other member
   clueBase: number;     // 응접실: 레어도·정예화 기본 단서속도 (RIIC 스킬과 별개, 항상 가산)
@@ -902,7 +909,7 @@ export function capConvFor(team: InfraOp[], room: string, ctx: Ctx): number {
 export function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx): OpBreakdown {
   const teamIds = new Set(team.map((member) => member.id));
   const teamSize = Math.max(team.length, 1);
-  const out: OpBreakdown = { efficiency: 0, facilityEff: 0, automation: 0, quality: 0, payout: 0, payoutViolation: 0, override: 0, perCoworker: 0, clueBase: 0, auras: {}, aurasAdd: {}, cap: 0, capConv: [], amplify: [], skills: [] };
+  const out: OpBreakdown = { efficiency: 0, facilityEff: 0, automation: 0, quality: 0, payout: 0, payoutViolation: 0, orderFix: 0, orderFixed: false, override: 0, perCoworker: 0, clueBase: 0, auras: {}, aurasAdd: {}, cap: 0, capConv: [], amplify: [], skills: [] };
   const tokenRates = new Map<string, number>();
   for (const skill of activeSkills(op, room, ctx.product)) {
     if (skill.partners.length > 0 && !skill.partners.every((p) => teamIds.has(p))) continue;
@@ -1050,6 +1057,9 @@ export function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx):
     if (skill.kind === "automation_crew") { out.automation += skill.value * teamSize; continue; }
     // 와이후·스노우상트 증폭: 팀 제공 효율에 스케일 — teamScore에서 opProvided 합산 후 계상
     if (skill.kind === "amplify") { if (skill.amp) out.amplify.push(skill.amp); continue; }
+    // 특별 오더 — kind와 별개 필드다 (클로저는 "효율 +10% **그리고** 특별 오더"라 한 스킬이
+    // 두 채널을 동시에 갖는다). 배수는 teamScore에서 방 처리량에 곱으로 건다.
+    if (typeof skill.orderFix === "number") { out.orderFix += skill.orderFix; out.orderFixed = true; }
     if (skill.kind === "quality") { out.quality += skill.value; continue; }
     if (skill.kind === "payout") { out.payout += skill.value; continue; }
     if (skill.kind === "payout_v") { out.payoutViolation += skill.value; continue; }
@@ -1114,7 +1124,15 @@ export function teamScore(team: InfraOp[], room: string, ctx: Ctx): number {
   // 배상이 0이 되어 같은 방에 안 앉는다. 테킬라 쪽 QUALITY_STEP을 같이 올리면 부스트가 1명
   // 만에 캡에 닿아 품질 결집 유인이 죽으므로(바이비크가 제이에 밀림) 반드시 분리 유지.
   const violationStep = (C as unknown as Record<string, number | undefined>).PAYOUT_VIOLATION_STEP ?? C.PAYOUT_QUALITY_STEP;
-  const payout = parts.reduce((sum, p) => sum + p.payout, 0) * Math.min(1 + C.PAYOUT_QUALITY_STEP * probCount, C.PAYOUT_QUALITY_CAP)
+  // 특별 오더(클로저·U-Official)는 그 방의 순금 오더를 전부 자기 고정 오더로 바꾼다 —
+  // 고품질 확률·품질 수익(테킬라 4금 필요)·위약 수익(프로바이조 위약 오더 필요)의 **전제가
+  // 사라지므로 전부 0**이다. 대신 자기 배수를 방 처리량에 곱으로 건다 (payout_v와 같은 구조).
+  const orderFixed = parts.some((p) => p.orderFixed);
+  const orderFix = orderFixed
+    ? parts.reduce((sum, p) => sum + p.orderFix, 0) * Math.min(1 + efficiency / 100, C.PAYOUT_VIOLATION_CAP)
+    : 0;
+  const payout = orderFixed ? orderFix
+    : parts.reduce((sum, p) => sum + p.payout, 0) * Math.min(1 + C.PAYOUT_QUALITY_STEP * probCount, C.PAYOUT_QUALITY_CAP)
     + parts.reduce((sum, p) => sum + p.payoutViolation, 0) * Math.max(1 - violationStep * probCount, 0) * Math.min(1 + efficiency / 100, C.PAYOUT_VIOLATION_CAP);
   let auras = 0;
   for (const kind of Object.keys(AURA_WEIGHT)) {
@@ -1130,7 +1148,7 @@ export function teamScore(team: InfraOp[], room: string, ctx: Ctx): number {
   const capConvEff = capConvOf(parts, room, ctx.ambient, team);
   // 제어센터 오라를 대상 방 점수에 실제 합산 — "무역소 오더 효율 +10%"면 무역소가 +10%.
   // 조건부 오라(쉐라그 3명 배치)는 조건을 채운 그 방 하나에만 붙는다
-  return efficiency + clueBaseSum + quality + payout + auras + capConvEff + ambientFor(room, team, ctx.ambient, efficiency, ctx.product);
+  return efficiency + clueBaseSum + (orderFixed ? 0 : quality) + payout + auras + capConvEff + ambientFor(room, team, ctx.ambient, efficiency, ctx.product);
 }
 
 // 비교용 팀 가치 = 생산 점수 + endless 컨디션 보너스 (생산 모드에선 teamScore와 동일).
@@ -1145,7 +1163,9 @@ export function opSolo(op: InfraOp, room: string, slots: number, ctx: Ctx): numb
   let auras = 0;
   for (const kind of Object.keys(AURA_WEIGHT)) auras += ((b.auras[kind] ?? 0) + (b.aurasAdd[kind] ?? 0)) * AURA_WEIGHT[kind];
   // endless 모드: 단독 순소모 보너스(쇼트리스트 순위) — 회복·저소모 오퍼가 top-40에서 잘리지 않게
-  return b.efficiency + b.clueBase + b.facilityEff + b.automation + b.quality + b.payout + b.payoutViolation + b.override * slots + b.perCoworker * (slots - 1) + auras + endlessBonus([op], room, ctx);
+  // 특별 오더는 단독 기준으로도 자기 효율만큼 증폭된다 (팀 효율 반영은 teamScore가 한다)
+  const soloOrderFix = b.orderFixed ? b.orderFix * (1 + b.efficiency / 100) : 0;
+  return b.efficiency + b.clueBase + b.facilityEff + b.automation + b.quality + b.payout + b.payoutViolation + soloOrderFix + b.override * slots + b.perCoworker * (slots - 1) + auras + endlessBonus([op], room, ctx);
 }
 
 export function bestTeam(room: string, slots: number, pool: Map<string, InfraOp>, ctx: Ctx, seedOps: InfraOp[] = []): InfraOp[] {

@@ -409,6 +409,40 @@
       "type": "planContains"
     },
     {
+      "better": [
+        "char_4228_closur",
+        "char_103_angel",
+        "char_201_moeshd"
+      ],
+      "name": "특별 오더 방: 효율 요원 > 페이아웃 요원(테킬라·프로바이조)",
+      "note": "INFRA-RULES §무역소 특별 오더 — 오더 풀 대체로 품질·위약 전제가 사라진다",
+      "product": "gold",
+      "room": "TRADING",
+      "type": "teamCompare",
+      "worse": [
+        "char_4228_closur",
+        "char_486_takila",
+        "char_4032_provs"
+      ]
+    },
+    {
+      "better": [
+        "char_4228_closur",
+        "char_103_angel",
+        "char_201_moeshd"
+      ],
+      "name": "고효율 무역소: 클로저(특별 오더) > +35% 효율 오퍼",
+      "note": "INFRA-RULES §무역소 특별 오더 — 65% 방 기준 +39.6%p 상당",
+      "product": "gold",
+      "room": "TRADING",
+      "type": "teamCompare",
+      "worse": [
+        "char_4045_heidi",
+        "char_103_angel",
+        "char_201_moeshd"
+      ]
+    },
+    {
       "allOf": [
         "char_381_bubble",
         "char_163_hpsts"
@@ -443,7 +477,19 @@
     "_doc": "build-infra.py 파스 타임 상수 — 게임 텍스트의 '…당' 수치를 만렙 243 기지 기준 고정값으로 환산할 때 쓰는 추정치(INFRA-RULES §8). DROP_ASSUMED=자기 컨디션 낙차 스킬의 대표 운용 낙차(토터 §2), QUALITY_*=고품질 확률 등가 %, LMD_PER_PERCENT=용문폐 수익 N → N/20% 등가, VIOLATION_EQUIV_MULT=위약 배상 N → N×27.6% 등가 (무역소 Lv3 오더 분포 30/50/20에서 0.8/2.9 유도, 2026-08-02)"
   },
   "skillOverrides": {
-    "_doc": "buffId → { patch: {필드 덮어쓰기}, note } — 파서가 새 문구를 오분류했을 때 정규식 패치 대신 여기에 교정 행을 추가한다. build-infra.py가 파싱 직후 적용. 파서가 정식 지원하게 되면 행을 지운다 (재생성 diff가 없으면 안전)"
+    "_doc": "buffId → { patch: {필드 덮어쓰기}, note } — 파서가 새 문구를 오분류했을 때 정규식 패치 대신 여기에 교정 행을 추가한다. build-infra.py가 파싱 직후 적용. 파서가 정식 지원하게 되면 행을 지운다 (재생성 diff가 없으면 안전)",
+    "trade_ord_closure[000]": {
+      "patch": {
+        "orderFix": 16.9
+      },
+      "reason": "특별 오더 = 순금 2 · 1200 용문폐 · 획득 2:24 → 500 용문폐/h. 일반 풀 427.73 대비 +16.9% 배수. kind/value(output 10 = 오더 수주 효율)는 그대로 두고 배수만 얹는다. 오더 풀을 통째로 대체하므로 엔진이 같은 방의 품질·테킬라·프로바이조를 0으로 만든다."
+    },
+    "trade_ord_spd&wt[000]": {
+      "patch": {
+        "orderFix": -2.6
+      },
+      "reason": "2금 오더 고정 = 1000 용문폐 / 2:24 = 416.7 용문폐/h → 일반 풀 427.73 대비 -2.6%. 종전엔 오더 수주 효율 +10%만 계상해 과대평가였다."
+    }
   },
   "synergySets": [
     {
@@ -515,5 +561,5 @@
     "주술 결정",
     "마물 요리"
   ],
-  "version": 22
+  "version": 23
 }
