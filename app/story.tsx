@@ -131,7 +131,9 @@ function eventFromHash(): StoryEvent | null {
 // 종전에는 상세가 #story-<id> 해시뿐이라 검색엔진에는 존재하지 않는 페이지였다(구글은
 // 프래그먼트를 별도 URL로 안 본다). 요약 91편 × 3언어를 실제 라우트로 뽑아 색인시키고,
 // 앱 안에서 상세를 열 때도 같은 주소를 쓴다 — 공유한 링크가 곧 정본이 된다.
-// 보기 방식은 그 위의 해시로: 접미 없음=AI 요약(정본·색인 대상) · #script/#ep<N>=전문.
+// 보기 방식은 그 위의 해시로 **전부 명시**한다: #summary=AI 요약 · #ep<N>=전문 N화
+// (사용자 확정 2026-08-06 — 한쪽만 해시 없이 비워두면 규칙이 반쪽이 된다).
+// 접미 없는 맨 주소도 요약을 연다 — 검색으로 들어오는 정본 주소가 그것이라서.
 // 옛 해시(#story-<id>, …/summary, …/ep<N>)는 그대로 동작한다 (공유된 링크 보호).
 const STORY_BASE: Record<Locale, string> = { ko: "/stories", en: "/en/stories", ja: "/ja/stories" };
 export const storyPath = (locale: Locale, id: string) => `${STORY_BASE[locale]}/${id}`;
@@ -464,7 +466,7 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
     setEpIdx(i);
     if (eventId) {
       history.replaceState(null, "", onStoryPath()
-        ? (i > 0 ? `#ep${i + 1}` : "#script")           // 상세 라우트 — 경로는 그대로, 해시만
+        ? `#ep${i + 1}`                                  // 상세 라우트 — 경로는 그대로, 해시만
         : `#story-${eventId}${i > 0 ? `/ep${i + 1}` : ""}`);
     }
     if (scrollTop) topRef.current?.scrollIntoView({ block: "start" });
@@ -657,6 +659,7 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex, 
     if (typeof window === "undefined") return null;
     const h = decodeURIComponent(window.location.hash);
     if ((/\/summary$/.test(h) || h === "#summary") && hasSummary) return false;   // 요약 딥링크
+    // #script는 2026-08-06 이전에 공유된 링크 — 더 만들지는 않지만 계속 받아준다
     if ((/(?:^#|\/)ep\d+$/.test(h) || h === "#script") && hasScript) return true; // 에피소드·전문 딥링크
     return null;
   };
@@ -669,7 +672,7 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex, 
     if (defaultView) return defaultView === "script" ? hasScript : !hasSummary;
     return viewFromHash() ?? (hasScript || !hasSummary);
   });
-  // 상세 라우트에 #script·#ep<N>로 들어온 경우만 — 하이드레이션이 끝난 뒤 전문으로 바꾼다.
+  // 상세 라우트에 #ep<N>로 들어온 경우만 — 하이드레이션이 끝난 뒤 전문으로 바꾼다.
   // (effect 안 setState는 렌더를 한 번 더 돌리지만, 하이드레이션 일치가 우선이다)
   // 같은 페이지에서 해시만 바뀌는 경우(주소창 편집·해시 딥링크 공유)도 따라간다 —
   // 상세는 remount되지 않으므로 hashchange를 직접 듣는다. 토글 버튼은 replaceState라
@@ -702,12 +705,11 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex, 
   //  · AI 요약 = #story-<id>/summary
   const openScript = () => {
     setScriptView(true);
-    history.replaceState(null, "", onStoryPath() ? "#script" : `#story-${event.id}`);
+    history.replaceState(null, "", onStoryPath() ? "#ep1" : `#story-${event.id}`);
   };
   const openSummary = () => {
     setScriptView(false);
-    // 상세 라우트에서는 해시를 **비운다** — 그 맨 주소가 요약의 정본이다
-    history.replaceState(null, "", onStoryPath() ? window.location.pathname : `#story-${event.id}/summary`);
+    history.replaceState(null, "", onStoryPath() ? "#summary" : `#story-${event.id}/summary`);
   };
   const [readerPrefs, setReaderPrefs] = useReaderPrefs();
 
@@ -1435,14 +1437,14 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
   }, []);
 
   // 목록에서 상세를 열 때도 정본 주소(/stories/<id>)를 쓴다 — 공유한 링크가 곧 색인된 주소.
-  // 다만 목록 클릭의 기본 보기는 종전대로 **전문**이므로(사용자 확정 2026-07-18) #script를
+  // 다만 목록 클릭의 기본 보기는 종전대로 **전문**이므로(사용자 확정 2026-07-18) #ep1을
   // 달아 둔다. 접미 없는 맨 주소는 요약(= 그 URL로 색인된 본문)이라는 뜻을 지킨다.
   // pushState로 진입 → 홈의 스크롤 매니저가 상세는 top으로, 뒤로가기 시 목록 스크롤을 복구한다
   const open = (event: StoryEvent, view?: "summary") => {
     // view="summary" — 요약을 읽던 흐름에서 넘어온 경우(같은 테마 링크). 그 외에는 종전 규칙대로
     // 전문이 있으면 전문부터 (사용자 확정 2026-07-18).
     const script = !(view === "summary" && summaries[event.id]) && (scriptIds.has(event.id) || !summaries[event.id]);
-    history.pushState(null, "", storyPath(locale, event.id) + (script ? "#script" : "#summary"));
+    history.pushState(null, "", storyPath(locale, event.id) + (script ? "#ep1" : "#summary"));
     pushedDetail.current = true;
     setSelected(event);
   };
