@@ -173,7 +173,8 @@ function tabFromPath(pathname: string): Tab {
   let p = pathname;
   if (p === "/en" || p.startsWith("/en/")) p = p.slice(3);
   else if (p === "/ja" || p.startsWith("/ja/")) p = p.slice(3);
-  return SEG_TAB[p.replace(/^\/+/, "").replace(/\/+$/, "")] ?? "portal";
+  // 첫 세그먼트만 본다 — 상세 라우트(/stories/<id>)도 그 탭에 속한다 (2026-08-06)
+  return SEG_TAB[p.replace(/^\/+/, "").replace(/\/+$/, "").split("/")[0]] ?? "portal";
 }
 // 구 해시(#infra 등) → 탭 (하위호환 리다이렉트용). op 해시나 일반 해시는 null.
 function tabFromLegacyHash(hash: string): Tab | null {
@@ -844,10 +845,10 @@ function Portal({ onOpenTab, onFeedback, stats }: {
   );
 }
 
-export default function Home({ locale, operators, extra, summaries, initialTab = "portal" }: { locale: Locale; operators: Operator[]; extra: ExtraI18n | null; summaries: StorySummaries; initialTab?: Tab }) {
+export default function Home({ locale, operators, extra, summaries, initialTab = "portal", initialStory }: { locale: Locale; operators: Operator[]; extra: ExtraI18n | null; summaries: StorySummaries; initialTab?: Tab; initialStory?: string }) {
   return (
     <I18nProvider locale={locale}>
-      <HomeInner operators={operators} extra={extra} summaries={summaries} initialTab={initialTab} />
+      <HomeInner operators={operators} extra={extra} summaries={summaries} initialTab={initialTab} initialStory={initialStory} />
     </I18nProvider>
   );
 }
@@ -855,7 +856,7 @@ export default function Home({ locale, operators, extra, summaries, initialTab =
 // '미래시 포함' 토글 localStorage 키 — 켜면 한국 서버 미실장(CN 선행) 오퍼도 목록에 표시
 const FUTURE_KEY = "ta-include-future";
 
-function HomeInner({ operators, extra, summaries, initialTab }: { operators: Operator[]; extra: ExtraI18n | null; summaries: StorySummaries; initialTab: Tab }) {
+function HomeInner({ operators, extra, summaries, initialTab, initialStory }: { operators: Operator[]; extra: ExtraI18n | null; summaries: StorySummaries; initialTab: Tab; initialStory?: string }) {
   const { locale, t } = useI18n();
   // SSR엔 localStorage가 없으므로 false로 하이드레이션 후 이펙트에서 복원한다.
   // 우선순위: URL 쿼리(?future=1|0) > localStorage. URL 파라미터는 공유 링크용.
@@ -903,6 +904,8 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
   const [feedbackOpen, setFeedbackOpen] = useState(false); // 제안 패널 — 모바일 헤더 버튼·데스크탑 FAB 공용
   const [headerCollapsed, setHeaderCollapsed] = useState(true); // 모바일 헤더 접기 — 접힘이 기본(사용자 확정 2026-07-22). PC는 무관(관련 CSS가 모바일 블록에만 있음)
   // 햄버거 '통합전략 가이드' 부메뉴 활성 표시용 — 현재 URL의 ?topic= 슬러그 (기본 is1)
+  // 열려 있는 스토리 상세의 이름 — 문서 제목에 반영 (StoryGuide가 알려준다)
+  const [storyTitle, setStoryTitle] = useState<string | null>(null);
   const [rogueSlug, setRogueSlug] = useState<string>(() =>
     typeof window === "undefined" ? "is1" : new URLSearchParams(window.location.search).get("topic") || "is1");
   const localeBase = LOCALE_BASE[locale];
@@ -1150,13 +1153,16 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
             : tab === "upgrade"
             ? t("오퍼 육성 시뮬 - 명일방주 육성 비용 계산기 | 테라 아카이브")
             : tab === "story"
-              ? t("스토리 - 명일방주 스토리 요약·전문 | 테라 아카이브")
+              // 상세가 열려 있으면 스토리별 제목 — 상세 라우트의 <title>(app/seo-story.ts)과 같은 문구
+              ? (storyTitle
+                ? t("{name} 스토리 요약 - 명일방주 | 테라 아카이브", { name: storyTitle })
+                : t("스토리 - 명일방주 스토리 요약·전문 | 테라 아카이브"))
               : tab === "rogue"
                 ? t("통합전략 가이드 - 명일방주 통합전략 공략 | 테라 아카이브")
                 : tab === "archive"
                 ? t("오퍼레이터 백과사전 - 명일방주 오퍼 도감 | 테라 아카이브")
                 : t("테라 아카이브 | 명일방주(Arknights) 팬사이트");
-  }, [tab, selected, t]);
+  }, [tab, selected, storyTitle, t]);
 
   // 오퍼 모달은 히스토리 엔트리를 쌓지 않고 해시만 교체한다(공유용 딥링크).
   // 예전엔 열 때 pushState, 닫을 때 history.back()으로 URL을 복원했는데, 인앱 브라우저
@@ -1567,7 +1573,7 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
       {tab === "recruit" && <RecruitHelper onShowOperator={showOperatorById} extra={extra} />}
       {tab === "farm" && <FarmGuide includeFuture={includeFuture} />}
       {tab === "upgrade" && <UpgradeSim operators={operators} includeFuture={includeFuture} onShowOperator={showOperatorById} />}
-      {tab === "story" && <StoryGuide summaries={summaries} onShowOperator={showOperatorById} includeFuture={includeFuture} opIndex={storyOpIndex} />}
+      {tab === "story" && <StoryGuide summaries={summaries} onShowOperator={showOperatorById} includeFuture={includeFuture} opIndex={storyOpIndex} initialStory={initialStory} onStoryTitle={setStoryTitle} />}
       {tab === "rogue" && <RogueGuide includeFuture={includeFuture} />}
       {tab === "about" && <About onOpenTab={switchTab} />}
 

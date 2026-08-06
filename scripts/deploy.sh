@@ -78,11 +78,15 @@ EOF
 # CF 기본값(application/octet-stream)이면 vinext 클라 라우터가 RSC 응답으로 인정하지 않고
 # location.href 하드 내비게이션을 시도하는데, 대상이 현재 URL(+해시)과 같아 same-document
 # 내비게이션 → popstate → 재fetch 무한 루프가 된다 (뒤로가기 시 stories.rsc?_rsc 폭주 버그).
-# _headers 확장자 글롭 지원이 불확실해 파일별로 명시 (페이지 수 × 로케일 ≈ 수십 건, 100룰 한도 내).
-while IFS= read -r rsc; do
-  printf '\n%s\n  Content-Type: text/x-component\n' "${rsc#"$STAGE"}" >> "$STAGE/_headers"
-done < <(find "$STAGE" -name "*.rsc" -type f | sort)
-echo ".rsc content-type 규칙 $(find "$STAGE" -name "*.rsc" -type f | wc -l | tr -d ' ')건 추가"
+#
+# 종전엔 파일별로 한 줄씩 적었는데, 스토리 상세 라우트(/stories/<id> × 3언어 = 273개)가
+# 생기면서 301줄이 되어 **_headers의 100룰 한도**를 넘겼다 (초과분은 조용히 무시된다 —
+# 위 무한 루프가 그대로 재발한다). 확장자 글롭으로 한 줄로 줄인다: wrangler가 쓰는
+# 매처(workers-shared asset-worker rules-engine)는 규칙의 `*`를 위치 상관없이
+# `(?<splat>.*)`로 바꾸고 앞뒤를 앵커링하므로, `/*.rsc` → `^/(?<splat>.*)\.rsc$` 가 되어
+# 하위 폴더까지 전부 걸린다. (`*`는 규칙당 하나만 — 둘이면 같은 이름의 캡처 그룹이 겹친다.)
+printf '\n/*.rsc\n  Content-Type: text/x-component\n' >> "$STAGE/_headers"
+echo ".rsc content-type 규칙 1건(글롭) — 대상 $(find "$STAGE" -name "*.rsc" -type f | wc -l | tr -d ' ')개"
 
 npx wrangler pages deploy "$STAGE" --project-name terra-archive --branch main --commit-dirty=true
 

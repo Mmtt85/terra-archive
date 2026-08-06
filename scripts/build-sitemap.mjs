@@ -3,7 +3,7 @@
 // 규칙: /admin 제외 · 같은 탭의 ko/en/ja를 xhtml:link hreflang으로 상호 참조 ·
 //       x-default=한국어 (사용자 확정 2026-07-18) · 정본 도메인 terra-archive.net (app/seo.ts와 동일).
 import { execFileSync } from "node:child_process";
-import { readdirSync, statSync, writeFileSync } from "node:fs";
+import { readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { join, dirname, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -47,7 +47,9 @@ const SEG_SOURCES = {
 };
 function lastmodFor(seg) {
   let latest = null;
-  for (const file of SEG_SOURCES[seg] ?? []) {
+  // 스토리 상세(stories/<id>)는 목록과 같은 데이터에서 나오므로 같은 소스를 본다
+  const key = seg.startsWith("stories/") ? "stories" : seg;
+  for (const file of SEG_SOURCES[key] ?? []) {
     try {
       const iso = execFileSync("git", ["log", "-1", "--format=%cI", "--", file], { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
       if (iso && (!latest || iso > latest)) latest = iso;
@@ -55,6 +57,22 @@ function lastmodFor(seg) {
   }
   return latest;
 }
+
+// ── 동적 라우트 확장 (2026-08-06) ───────────────────────────────────────────
+// /stories/[id]는 요약이 있는 스토리마다 실제 정적 페이지가 나온다 (app/seo-story.ts).
+// 사이트맵에도 그 목록을 그대로 펼친다 — 색인시키려고 만든 페이지인데 사이트맵에
+// 없으면 발견이 늦다. ⚠ 목록 산출 방식은 seo-story.ts의 storyIds와 같아야 한다:
+// 요약 id 중 stories.json 이벤트이거나 chronology.json 항목(메인스토리·통합전략)인 것.
+function storyIds() {
+  const read = (p) => JSON.parse(readFileSync(join(ROOT, p), "utf8"));
+  const ids = read("app/data/story-summary-ids.json");
+  const known = new Set([
+    ...read("app/data/stories.json").events.map((e) => e.id),
+    ...read("app/data/chronology.json").entries.filter((e) => e.id).map((e) => e.id),
+  ]);
+  return ids.filter((id) => known.has(id));
+}
+const DYNAMIC = { "stories/[id]": storyIds };
 
 // 라우트 → { locale, seg } (seg="" = 포탈 루트)
 function parseRoute(route) {
@@ -67,8 +85,12 @@ const routes = collectRoutes(APP);
 const bySeg = new Map(); // seg → { ko?: path, en?: path, ja?: path }
 for (const route of routes) {
   const { locale, seg } = parseRoute(route);
-  if (!bySeg.has(seg)) bySeg.set(seg, {});
-  bySeg.get(seg)[locale] = route;
+  // [id] 자리를 실제 값으로 펼친다 (없는 패턴이면 그 라우트는 사이트맵에서 빠진다)
+  const expanded = DYNAMIC[seg] ? DYNAMIC[seg]().map((v) => seg.replace(/\[\w+\]/, v)) : [seg];
+  for (const one of expanded) {
+    if (!bySeg.has(one)) bySeg.set(one, {});
+    bySeg.get(one)[locale] = route.replace(/\[\w+\]/, one.split("/").pop());
+  }
 }
 
 // 포탈 루트 먼저, 나머지는 세그먼트 알파벳순 (기존 sitemap과 유사한 순서)
@@ -89,7 +111,7 @@ for (const seg of segs) {
   for (const l of LOCALES) {
     if (!variants[l]) continue;
     const loc = variants[l] === "/" ? "/" : variants[l];
-    const priority = seg === "" ? (l === "ko" ? "1.0" : "0.9") : "0.8";
+    const priority = seg === "" ? (l === "ko" ? "1.0" : "0.9") : seg.includes("/") ? "0.7" : "0.8";
     urls.push(`  <url>
     <loc>${SITE_URL}${loc}</loc>
 ${lastmod ? `    <lastmod>${lastmod}</lastmod>\n` : ""}    <changefreq>weekly</changefreq>

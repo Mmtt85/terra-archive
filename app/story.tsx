@@ -127,6 +127,27 @@ function eventFromHash(): StoryEvent | null {
   return ev && canOpenStory(id) ? ev : null;
 }
 
+// ── 상세의 정본 주소 = /stories/<id> (2026-08-06, SEO) ──────────────────────
+// 종전에는 상세가 #story-<id> 해시뿐이라 검색엔진에는 존재하지 않는 페이지였다(구글은
+// 프래그먼트를 별도 URL로 안 본다). 요약 91편 × 3언어를 실제 라우트로 뽑아 색인시키고,
+// 앱 안에서 상세를 열 때도 같은 주소를 쓴다 — 공유한 링크가 곧 정본이 된다.
+// 보기 방식은 그 위의 해시로: 접미 없음=AI 요약(정본·색인 대상) · #script/#ep<N>=전문.
+// 옛 해시(#story-<id>, …/summary, …/ep<N>)는 그대로 동작한다 (공유된 링크 보호).
+const STORY_BASE: Record<Locale, string> = { ko: "/stories", en: "/en/stories", ja: "/ja/stories" };
+export const storyPath = (locale: Locale, id: string) => `${STORY_BASE[locale]}/${id}`;
+const STORY_PATH_RE = /^\/(?:en\/|ja\/)?stories\/([^/]+)\/?$/;
+
+function eventFromPath(): StoryEvent | null {
+  const m = STORY_PATH_RE.exec(window.location.pathname);
+  if (!m) return null;
+  const id = decodeURIComponent(m[1]);
+  const ev = eventById.get(id);
+  return ev && canOpenStory(id) ? ev : null;
+}
+
+/** 지금 주소가 상세 라우트인가 — 보기 방식 해시를 어느 형식으로 쓸지 가른다 */
+const onStoryPath = () => typeof window !== "undefined" && STORY_PATH_RE.test(window.location.pathname);
+
 // 엔티티 이름들 → 매칭 정규식. 이름 앞에 한글이 오면 제외(negative lookbehind — '-이신' 오탐 방지).
 // 한 글자 이름(위·시·첸 등)은 '위해·시간' 같은 일반 단어 첫 글자에 오탐되므로
 // 단독으로 서 있거나 바로 뒤가 조사일 때만 매칭 (사용자 리포트 2026-07-18).
@@ -433,7 +454,7 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
   // (사용자 요청 2026-07-22). replaceState라 뒤로가기 히스토리는 안 쌓인다.
   const [epIdx, setEpIdx] = useState(() => {
     if (typeof window === "undefined") return 0;
-    const m = decodeURIComponent(window.location.hash).match(/\/ep(\d+)$/);
+    const m = decodeURIComponent(window.location.hash).match(/(?:^#|\/)ep(\d+)$/);
     return m ? Math.max(0, parseInt(m[1], 10) - 1) : 0;
   });
   const topRef = useRef<HTMLDivElement>(null);
@@ -441,7 +462,11 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
   // 에피소드 버튼은 새 화가 처음부터 보이도록 리더 맨 위로 올려준다(사용자 요청 2026-07-22).
   const goEp = (i: number, scrollTop = false) => {
     setEpIdx(i);
-    if (eventId) history.replaceState(null, "", `#story-${eventId}${i > 0 ? `/ep${i + 1}` : ""}`);
+    if (eventId) {
+      history.replaceState(null, "", onStoryPath()
+        ? (i > 0 ? `#ep${i + 1}` : "#script")           // 상세 라우트 — 경로는 그대로, 해시만
+        : `#story-${eventId}${i > 0 ? `/ep${i + 1}` : ""}`);
+    }
     if (scrollTop) topRef.current?.scrollIntoView({ block: "start" });
   };
   const ep = script ? script.eps[Math.min(epIdx, script.eps.length - 1)] : null;
@@ -609,8 +634,10 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
 
 // 요약 상세 — 본문 + 스크롤 추적 참조 레일
 // export는 scripts/verify-stories.mjs 전수 렌더 하네스용 (앱 내 사용처는 이 파일뿐)
-export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }: {
+export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex, defaultView }: {
   event: StoryEvent; summary?: Summary; onClose: () => void; onShowOperator?: (id: string) => void; opIndex?: OpIndex;
+  /** 해시로 지정된 게 없을 때의 기본 보기 — 상세 라우트(/stories/<id>)는 "summary"를 준다 */
+  defaultView?: "summary" | "script";
 }) {
   const { locale, t } = useI18n();
 
@@ -623,14 +650,36 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }
   // 보기 방식(전문/요약)도 URL 해시에 남긴다 (사용자 요청 2026-07-22):
   //  · #story-<id>/summary = AI 요약  · #story-<id>/ep<N> = 전문(에피소드)  · 접미 없음 = 전문 기본
   // 복붙·공유·새로고침 시 보던 모드 그대로 열린다. 요약이 없으면 전문만 볼 수 있으니 전문으로 시작.
+  const viewFromHash = (): boolean | null => {
+    if (typeof window === "undefined") return null;
+    const h = decodeURIComponent(window.location.hash);
+    if ((/\/summary$/.test(h) || h === "#summary") && hasSummary) return false;   // 요약 딥링크
+    if ((/(?:^#|\/)ep\d+$/.test(h) || h === "#script") && hasScript) return true; // 에피소드·전문 딥링크
+    return null;
+  };
   const [scriptView, setScriptView] = useState(() => {
-    if (typeof window !== "undefined") {
-      const h = decodeURIComponent(window.location.hash);
-      if (/\/summary$/.test(h) && hasSummary) return false;   // 요약 딥링크
-      if (/\/ep\d+$/.test(h) && hasScript) return true;       // 에피소드 딥링크 = 전문
-    }
-    return hasScript || !hasSummary;
+    // 상세 라우트(/stories/<id>)의 기본은 요약 — 그 주소로 색인된 본문이 요약이라,
+    // 검색으로 들어온 사람이 보는 화면과 검색 결과의 발췌가 어긋나면 안 된다.
+    // ⚠ 이때는 해시를 **보지 않는다**: 프리렌더 HTML은 해시를 모른 채 요약으로 찍혀 있어서,
+    //    첫 렌더가 전문이 되면 하이드레이션 불일치(React #418)로 SSR 결과가 통째로 버려진다.
+    //    해시 지정은 마운트 직후 아래 effect가 반영한다.
+    if (defaultView) return defaultView === "script" ? hasScript : !hasSummary;
+    return viewFromHash() ?? (hasScript || !hasSummary);
   });
+  // 상세 라우트에 #script·#ep<N>로 들어온 경우만 — 하이드레이션이 끝난 뒤 전문으로 바꾼다.
+  // (effect 안 setState는 렌더를 한 번 더 돌리지만, 하이드레이션 일치가 우선이다)
+  // 같은 페이지에서 해시만 바뀌는 경우(주소창 편집·해시 딥링크 공유)도 따라간다 —
+  // 상세는 remount되지 않으므로 hashchange를 직접 듣는다. 토글 버튼은 replaceState라
+  // hashchange를 일으키지 않아 서로 간섭하지 않는다.
+  useEffect(() => {
+    if (!defaultView) return;
+    const apply = () => { const view = viewFromHash(); if (view !== null) setScriptView(view); };
+    apply();
+    window.addEventListener("hashchange", apply);
+    return () => window.removeEventListener("hashchange", apply);
+    // 마운트 1회 — 이후 전환은 아래 버튼(openScript/openSummary)이 담당한다
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [script, setScript] = useState<ScriptData | null>(null);
   const [scriptErr, setScriptErr] = useState(false);
   // 전문 언어: 현재 로케일 버전이 있으면 그 언어, 없으면 KR로 폴백 (EN/JA는 /story/script/<loc>/)
@@ -650,11 +699,12 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex }
   //  · AI 요약 = #story-<id>/summary
   const openScript = () => {
     setScriptView(true);
-    history.replaceState(null, "", `#story-${event.id}`);
+    history.replaceState(null, "", onStoryPath() ? "#script" : `#story-${event.id}`);
   };
   const openSummary = () => {
     setScriptView(false);
-    history.replaceState(null, "", `#story-${event.id}/summary`);
+    // 상세 라우트에서는 해시를 **비운다** — 그 맨 주소가 요약의 정본이다
+    history.replaceState(null, "", onStoryPath() ? window.location.pathname : `#story-${event.id}/summary`);
   };
   const [readerPrefs, setReaderPrefs] = useReaderPrefs();
 
@@ -1242,12 +1292,17 @@ function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEve
     return (
       <article key={it.key} id={group === "theme" ? `sl-${it.key}` : undefined}
         className={`story-card${ready ? "" : " pending"}`}>
-        {/* 열 수 있는 카드는 실제 앵커 — 하이드레이션 전 클릭도 네이티브 해시 이동으로 동작하고,
-            마운트 시 apply()가 해시를 읽어 상세를 연다 (로드 직후 클릭 무반응 수정, 2026-07-21).
+        {/* 열 수 있는 카드는 실제 앵커 — 하이드레이션 전 클릭도 네이티브 이동으로 동작하고,
+            마운트 시 apply()가 주소를 읽어 상세를 연다 (로드 직후 클릭 무반응 수정, 2026-07-21).
+            href는 상세의 정본 경로 /stories/<id> — 크롤러가 따라갈 수 있는 내부 링크가 된다
+            (종전 #story-<id> 해시는 검색엔진에 링크가 아니었다, 2026-08-06).
             핸들러가 붙은 뒤에는 preventDefault + onOpen으로 기존 pushState 경로를 그대로 탄다. */}
         {ready && ev ? (
-          <a href={`#story-${it.eventId}`} aria-label={locText(locale, it.name)}
-            onClick={(e) => { e.preventDefault(); onOpen(ev); }}>
+          <a href={storyPath(locale, ev.id)} aria-label={locText(locale, it.name)}
+            onClick={(e) => {
+              if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return; // 새 탭은 브라우저에
+              e.preventDefault(); onOpen(ev);
+            }}>
             {body}
           </a>
         ) : (
@@ -1322,12 +1377,19 @@ function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEve
   );
 }
 
-export default function StoryGuide({ summaries, onShowOperator, includeFuture, opIndex }: { summaries: StorySummaries; onShowOperator?: (id: string) => void; includeFuture?: boolean; opIndex?: OpIndex }) {
+export default function StoryGuide({ summaries, onShowOperator, includeFuture, opIndex, initialStory, onStoryTitle }: {
+  summaries: StorySummaries; onShowOperator?: (id: string) => void; includeFuture?: boolean; opIndex?: OpIndex;
+  /** 상세 라우트(/stories/<id>)가 넘겨주는 이벤트 id — 프리렌더 HTML에 요약 본문이 담긴다 */
+  initialStory?: string;
+  /** 열린 스토리 이름(없으면 null) — 홈이 문서 제목에 반영한다 */
+  onStoryTitle?: (name: string | null) => void;
+}) {
   const { locale, t } = useI18n();
   const [view, setView] = useState<"digest" | "chronicle">("digest");
   // 기본 뷰는 테마별 (사용자 확정 2026-07-21)
   const [group, setGroup] = useState<GroupMode>("theme");
-  const [selected, setSelected] = useState<StoryEvent | null>(null);
+  const [selected, setSelected] = useState<StoryEvent | null>(
+    () => (initialStory ? eventById.get(initialStory) ?? null : null));
 
   const pushedDetail = useRef(false);
   // 해시 동기화(복붙·공유·뒤로가기): 상세 #story-<id> · 연대기 #chronicle · 테마별 #theme · 종류별 #kind
@@ -1336,7 +1398,8 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
   useLayoutEffect(() => {
     const apply = () => {
       const h = decodeURIComponent(window.location.hash);
-      const detail = eventFromHash();
+      // 경로 우선(/stories/<id> = 정본), 없으면 옛 해시 딥링크
+      const detail = eventFromPath() ?? eventFromHash();
       setSelected(detail);
       if (detail) return;                              // 상세 진입 시 뷰/그룹 상태는 유지
       if (h === "#chronicle") setView("chronicle");
@@ -1352,15 +1415,20 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
     return () => { window.removeEventListener("hashchange", apply); window.removeEventListener("popstate", apply); };
   }, []);
 
+  // 목록에서 상세를 열 때도 정본 주소(/stories/<id>)를 쓴다 — 공유한 링크가 곧 색인된 주소.
+  // 다만 목록 클릭의 기본 보기는 종전대로 **전문**이므로(사용자 확정 2026-07-18) #script를
+  // 달아 둔다. 접미 없는 맨 주소는 요약(= 그 URL로 색인된 본문)이라는 뜻을 지킨다.
   // pushState로 진입 → 홈의 스크롤 매니저가 상세는 top으로, 뒤로가기 시 목록 스크롤을 복구한다
   const open = (event: StoryEvent) => {
-    history.pushState(null, "", `#story-${event.id}`);
+    const script = scriptIds.has(event.id) || !summaries[event.id];
+    history.pushState(null, "", storyPath(locale, event.id) + (script ? "#script" : ""));
     pushedDetail.current = true;
     setSelected(event);
   };
+  const listPath = `${STORY_BASE[locale]}#theme`;
   const close = () => {
     if (pushedDetail.current) { pushedDetail.current = false; history.back(); }
-    else { window.location.assign("#story"); }  // 딥링크 첫 진입이면 목록으로
+    else { window.location.assign(listPath); }  // 딥링크 첫 진입이면 목록으로
   };
   // 연대기에서 이벤트 클릭 → 요약이 있으면 상세로, 없으면 무시
   const openEvent = (eventId: string) => {
@@ -1381,6 +1449,14 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
   useEffect(() => {
     if (selected) scrollMainTop();
   }, [selected]);
+
+  // 열려 있는 스토리 이름을 홈에 알린다 — 홈의 document.title 갱신 effect가 탭 제목으로
+  // 덮어써서, 상세 라우트가 내보낸 <title>(스토리별 제목)이 하이드레이션 직후 사라지고
+  // 있었다. 구글은 렌더 후 제목을 쓰므로 색인 제목까지 목록 제목으로 뭉개진다 (2026-08-06).
+  useEffect(() => {
+    onStoryTitle?.(selected ? locText(locale, selected.name) : null);
+    return () => onStoryTitle?.(null);
+  }, [selected, locale, onStoryTitle]);
 
   // ─── 스샷 레이더 — 전문 대사 화면 인식 → 해당 이벤트·에피소드 전문 뷰어로 (2026-07-24) ───
   // 기본 꺼짐·비영속 (리프레시하면 꺼짐). 인덱스는 public/story/search.bin (앵커 3점 역색인).
@@ -1459,7 +1535,8 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
       <>
         {lensPill}
         {lensHelpModal}
-        <StoryDetail key={`${selected.id}:${lensNav}`} event={selected} summary={summaries[selected.id]} onClose={close} onShowOperator={onShowOperator} opIndex={opIndex} />
+        <StoryDetail key={`${selected.id}:${lensNav}`} event={selected} summary={summaries[selected.id]} onClose={close} onShowOperator={onShowOperator} opIndex={opIndex}
+          defaultView={initialStory ? "summary" : undefined} />
       </>
     );
   }
