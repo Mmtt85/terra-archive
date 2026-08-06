@@ -72,3 +72,6 @@ scripts/story-cn/
 # R2에 올려줘"). 서빙은 R2(files.terra-archive.net/assets/rogue/node/…), 재생성은
 # python3 scripts/build-rogue.py --node-icons (멱등).
 /public/rogue/node/
+
+# 직전 배포 청크 캐시 (scripts/keep-assets.mjs) — 배포마다 갱신되는 로컬 산출물
+.deploy-assets/

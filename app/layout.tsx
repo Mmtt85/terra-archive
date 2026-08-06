@@ -54,11 +54,17 @@ export default function RootLayout({
             /assets/index-<해시>.js 는 재빌드·재배포가 일어나면 사라져서, 지연 로딩(lazy import)이
             "Failed to fetch dynamically imported module"로 터진다. 개발 중 npm run build를 돌릴
             때마다, 그리고 실사용자가 배포 직후 오래된 탭에서 이동할 때 똑같이 발생한다.
-            Vite의 vite:preloadError + 청크 로드 실패를 잡아 **한 번만** 새로고침한다
-            (새 HTML을 받으면 해시가 갱신돼 그대로 복구). 10초 가드로 새로고침 루프 방지. */}
+            Vite의 vite:preloadError + 청크 로드 실패를 잡아 새로고침한다(새 HTML을 받으면 해시가
+            갱신돼 복구).
+
+            ⚠ 2026-08-06 개선 — 종전엔 가드가 **10초 고정**이라, 배포 직후 404가 30~60초
+            이어지면 그동안 10초마다 새로고침을 반복했다. 사용자에겐 그게 곧 "배포하면
+            30초~1분 접속이 안 된다"였다 (제보). 이제 **0 → 3초 → 10초 → 30초로 물러서고
+            5회에서 멈춘다** — 엣지가 회복되는 즉시 복구되면서 화면이 덜 깜빡인다.
+            성공적으로 뜬 뒤 5초가 지나면 카운터를 지워 다음 배포 때 다시 0부터 센다. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){var K='ta-chunk-reload';function bust(){try{var l=+(sessionStorage.getItem(K)||0);if(Date.now()-l<10000)return;sessionStorage.setItem(K,Date.now());}catch(e){}location.reload();}window.addEventListener('vite:preloadError',function(e){e.preventDefault();bust();});window.addEventListener('unhandledrejection',function(e){var m=''+((e&&e.reason&&(e.reason.message||e.reason))||'');if(/dynamically imported module|Importing a module script failed|error loading dynamically imported/i.test(m))bust();});window.addEventListener('error',function(e){var t=e&&e.target;if(t&&t.tagName==='SCRIPT'&&t.src&&t.src.indexOf('/assets/')>-1)bust();},true);})();`,
+            __html: `(function(){var K='ta-chunk-reload',W=[0,3000,10000,30000,30000];function bust(){var n=0;try{var v=JSON.parse(sessionStorage.getItem(K)||'{}');n=v.n||0;if(n>=W.length)return;if(Date.now()-(v.at||0)<W[n])return;sessionStorage.setItem(K,JSON.stringify({n:n+1,at:Date.now()}));}catch(e){}location.reload();}window.addEventListener('vite:preloadError',function(e){e.preventDefault();bust();});window.addEventListener('unhandledrejection',function(e){var m=''+((e&&e.reason&&(e.reason.message||e.reason))||'');if(/dynamically imported module|Importing a module script failed|error loading dynamically imported/i.test(m))bust();});window.addEventListener('error',function(e){var t=e&&e.target;if(t&&t.tagName==='SCRIPT'&&t.src&&t.src.indexOf('/assets/')>-1)bust();},true);window.addEventListener('load',function(){setTimeout(function(){try{sessionStorage.removeItem(K);}catch(e){}},5000);});})();`,
           }}
         />
         {/* 첫 페인트 전에 해시를 읽어 초기 탭을 표시 — 서버 HTML은 항상 백과사전이라

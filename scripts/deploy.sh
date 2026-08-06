@@ -96,6 +96,11 @@ for keyfile in "$STAGE"/[0-9a-f]*.txt; do
 done
 echo ".rsc content-type 규칙 1건(글롭) — 대상 $(find "$STAGE" -name "*.rsc" -type f | wc -l | tr -d ' ')개"
 
+# 직전 배포들의 청크를 함께 올린다 (2026-08-06, 사용자 제보: 배포 직후 콘솔에 "청크를 못
+# 불러온다"). 파일명이 내용 해시라 재배포하면 옛 이름이 사라지고, 그 순간 열려 있던 탭의
+# 지연 로딩이 404를 맞는다. 최근 3회분을 남겨 두면 그 창 자체가 없어진다.
+node scripts/keep-assets.mjs "$STAGE" || true
+
 # 2단계 배포(선택) — bash scripts/deploy.sh --two-phase
 # Pages는 **파일 내용 해시로 프로젝트 전체에서 업로드를 중복 제거**한다("N files already
 # uploaded"). 그래서 같은 폴더를 프리뷰 브랜치에 먼저 올려 두면, 이어지는 프로덕션 배포는

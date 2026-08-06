@@ -59,16 +59,44 @@ async function hit(target, n) {
   }
 }
 
+// 핵심 판정: **방금 받은 HTML이 가리키는 청크**가 그 자리에서 200인가.
+// 사용자 브라우저가 겪는 것과 정확히 같은 순서(HTML → 그 HTML의 /assets/*.js)라,
+// 여기서 404가 나면 "청크를 못 불러온다"의 재현이다. 어느 쪽이 옛것인지도 해시로 갈린다.
+let lastChunk = "";
+async function chunkOfHtml(n) {
+  const t0 = Date.now();
+  try {
+    const res = await fetch(`https://terra-archive.net/?_probe=c${n}`, { cache: "no-store", signal: AbortSignal.timeout(TIMEOUT_MS) });
+    const html = await res.text();
+    const src = html.match(/\/assets\/[A-Za-z0-9._-]+\.js/)?.[0];
+    if (!src) return { ok: false, status: res.status, ms: Date.now() - t0, colo: "", bytes: 0, err: "청크참조없음" };
+    const asset = await fetch(`https://terra-archive.net${src}`, { cache: "no-store", signal: AbortSignal.timeout(TIMEOUT_MS) });
+    const body = await asset.text();
+    const changed = lastChunk && lastChunk !== src;
+    lastChunk = src;
+    return {
+      ok: asset.status === 200 && !body.startsWith("<"),
+      status: asset.status, ms: Date.now() - t0,
+      colo: (asset.headers.get("cf-ray") ?? "").split("-")[1] ?? "", bytes: body.length,
+      note: changed ? `청크 교체됨 ${src}` : undefined,
+      err: asset.status !== 200 ? `청크404(${src})` : undefined,
+    };
+  } catch (err) {
+    return { ok: false, status: 0, ms: Date.now() - t0, colo: "", bytes: 0, err: err?.name || String(err) };
+  }
+}
+
 const samples = [];
 let last = new Map();   // 대상별 직전 상태 — 바뀔 때만 한 줄 찍는다(로그 홍수 방지)
-console.log(`배포 프로브 시작 (${SECONDS}초, 1초 간격) — ${TARGETS.map((t) => t.name).join(" · ")}`);
+console.log(`배포 프로브 시작 (${SECONDS}초, 1초 간격) — ${TARGETS.map((t) => t.name).join(" · ")} · chunk`);
 
 for (let n = 0; n * EVERY_MS < SECONDS * 1000; n += 1) {
   const tick = Date.now();
-  const results = await Promise.all(TARGETS.map((t) => hit(t, n)));
+  const results = [...await Promise.all(TARGETS.map((t) => hit(t, n))), await chunkOfHtml(n)];
   results.forEach((r, i) => {
-    const target = TARGETS[i];
+    const target = TARGETS[i] ?? { name: "chunk" };
     samples.push({ at: tick, name: target.name, ...r });
+    if (r.note) console.log(`  ${hhmmss(tick)} chunk ${r.note}`);
     const state = r.ok ? `OK ${r.status}` : `실패 ${r.err ?? r.status}`;
     if (last.get(target.name) !== state) {
       console.log(`  ${hhmmss(tick)} ${target.name.padEnd(5)} ${state}${r.colo ? ` (${r.colo})` : ""} ${r.ms}ms`);
@@ -82,7 +110,7 @@ for (let n = 0; n * EVERY_MS < SECONDS * 1000; n += 1) {
 // ── 요약: 대상별 연속 실패 구간 ──────────────────────────────────────────────
 console.log("\n── 요약 ──────────────────────────────────────────");
 let worst = 0;
-for (const target of TARGETS) {
+for (const target of [...TARGETS, { name: "chunk" }]) {
   const mine = samples.filter((s) => s.name === target.name);
   const gaps = [];
   let run = null;
@@ -100,10 +128,17 @@ for (const target of TARGETS) {
     console.log(`      ${hhmmss(g.from)} ~ ${hhmmss(g.to)} (${((g.to - g.from) / 1000).toFixed(0)}초) — ${[...g.codes].map(([k, v]) => `${k}×${v}`).join(", ")}`);
   }
 }
+// chunk 줄이 핵심이다 — HTML을 받자마자 그 HTML이 가리키는 청크를 물었을 때의 결과라,
+// 여기서 404가 났다면 사용자가 콘솔에서 보는 "청크를 못 불러온다"와 같은 사건이다.
+const chunkGap = samples.filter((s) => s.name === "chunk" && !s.ok).length;
 console.log(worst > 0
-  ? `\n⚠ 최대 ${worst.toFixed(0)}초 끊김 — 위 구간의 상태 코드로 원인을 가른다:\n`
-    + "   404/522 = 전환 후 엣지 전파 · 타임아웃(TimeoutError) = 업로드 창 · 200인데 사이트만 하얗다 = 브라우저에 남은 옛 청크"
-  : "\n✓ 끊김 없음 (프로브 기준). 브라우저에서만 안 열렸다면 옛 청크(assets/*.js 404) 쪽이다 — 강력 새로고침으로 재현되는지 확인.");
+  ? `\n⚠ 최대 ${worst.toFixed(0)}초 끊김 — 원인 판정:\n`
+    + (chunkGap > 0
+      ? `   chunk가 ${chunkGap}회 실패 → **HTML과 청크의 배포 세대가 어긋난다**(엣지 전파).\n`
+        + "   keep-assets(직전 3회분 청크 동봉)로 옛 HTML→새 배포 방향은 막혀 있으니,\n"
+        + "   남는다면 새 HTML→옛 배포 방향이다. 그건 layout.tsx의 지수 백오프 새로고침이 받아낸다."
+      : "   html/infra만 실패 → 업로드 창(TimeoutError) 또는 전환 자체. --two-phase를 켜고 다시 재 본다.")
+  : "\n✓ 끊김 없음 (프로브 기준). 브라우저에서만 안 열렸다면 그 탭이 물고 있던 옛 청크 쪽이다 — keep-assets가 이제 그걸 남긴다.");
 
 try {
   mkdirSync(join(ROOT, ".ci"), { recursive: true });
