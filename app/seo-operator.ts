@@ -68,6 +68,15 @@ function descOf(locale: SeoLocale, id: string): string {
 
 const urlOf = (locale: SeoLocale, id: string) => `${SITE_URL}${LOCALE_BASE[locale]}/operators/${id}`;
 
+// AI 스토리 요약 발행 피드(public/feed.xml)는 한국어 본문이라 **한국어 페이지에만** 건다.
+// ⚠ alternates는 페이지 값이 레이아웃 값을 통째로 덮으므로 레이아웃이 아니라 여기서 붙인다.
+const RSS_ALT = (locale: SeoLocale) =>
+  locale === "ko"
+    // ⚠ 문자열 형태로 준다 — vinext 메타데이터 렌더러가 {url,title} 객체 형태를 못 풀어
+    //    href="[object Object]"가 나간다 (2026-08-06 실측).
+    ? { types: { "application/rss+xml": `${SITE_URL}/feed.xml` } }
+    : {};
+
 export function operatorMetadata(locale: SeoLocale, id: string): Metadata {
   const op = opOf(locale, id);
   const name = op?.name ?? id;
@@ -82,14 +91,15 @@ export function operatorMetadata(locale: SeoLocale, id: string): Metadata {
   return {
     title,
     description,
-    alternates: { canonical: urlOf(locale, id), languages },
+    alternates: { canonical: urlOf(locale, id), languages, ...RSS_ALT(locale) },
     robots: { index: true, follow: true },
     openGraph: {
       title, description, type: "profile", url: urlOf(locale, id), siteName,
       locale: locale === "ko" ? "ko_KR" : locale === "ja" ? "ja_JP" : "en_US",
       images: [{ url: ogImage, width: 1200, height: 630, alt: title }],
     },
-    twitter: { card: "summary_large_image", title, description, images: [ogImage] },
+    // site/creator = 운영 계정 — 공유 카드에 계정이 표시되고 X 애널리틱스에 잡힌다
+    twitter: { card: "summary_large_image", site: "@naru35405955", creator: "@naru35405955", title, description, images: [ogImage] },
   };
 }
 

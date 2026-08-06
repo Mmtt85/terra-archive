@@ -3,3 +3,6 @@ Allow: /
 Disallow: /admin
 
 Sitemap: https://terra-archive.net/sitemap.xml
+
+# AI 스토리 요약 발행 피드 (네이버 서치어드바이저 RSS 제출용 — scripts/build-rss.mjs 생성)
+# Feed: https://terra-archive.net/feed.xml

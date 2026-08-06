@@ -375,3 +375,24 @@ node scripts/audit-assets.mjs --r2 # 오퍼 에셋 전수 검사 (로컬 완결�
 `bash scripts/deploy.sh`가 배포 전에 자동으로 돌리므로 보통은 신경 쓸 일 없다.
 인증은 레포 루트 `.r2-sync-key`(gitignore) — 잃어버리면
 `openssl rand -hex 32 > .r2-sync-key && (cd workers/upload && npx wrangler secret put SYNC_KEY < ../../.r2-sync-key)`.
+
+## 검색 노출 (SEO) — 빌드 산출물과 통보
+
+**`build-sitemap.mjs`** — `public/sitemap.xml`. `app/`의 `page.tsx`를 훑어 라우트를 모으고,
+`[id]` 동적 라우트는 데이터로 펼친다(스토리 요약 91편 · 정식 출시 오퍼 420명 × 3언어 =
+1,560 URL). `lastmod`는 **그 페이지 내용을 좌우하는 데이터 파일의 마지막 커밋 시각**이라
+진짜 바뀐 날만 갱신된다. `npm run build`가 자동 실행 — 직접 고치지 말 것.
+
+**`build-rss.mjs`** — `public/feed.xml`. AI 스토리 요약 최신 60편 발행 피드(한국어).
+사이트맵과 별개로 **네이버 서치어드바이저에 RSS로 제출**하면 신규 수집이 빨라진다.
+같이 빌드된다. 오퍼 데이터는 발행물이 아니라 참조 자료라 피드에 넣지 않는다.
+
+**`indexnow.mjs`** — 배포 후 Bing·네이버에 바뀐 페이지를 즉시 통보한다.
+`deploy.sh`가 wrangler 배포 성공 뒤에 부른다(실패해도 배포는 성공).
+직전 커밋 대비 **실제로 바뀐 `app/data` 파일**에서 URL을 뽑고, 신규 스토리 요약·신규 오퍼는
+상세 URL까지 넣는다. 바뀐 게 없으면 아무것도 안 보낸다 — 전체 목록을 매번 밀어넣으면
+통보 자체가 신뢰를 잃는다. 확인만 하려면 `node scripts/indexnow.mjs --dry --base <ref>`.
+키 파일은 `public/<32자리 hex>.txt`이며 사이트 루트에 그대로 서빙돼야 검증을 통과한다.
+
+**사람이 해야 하는 등록** — 구글 서치콘솔 · 네이버 서치어드바이저(사이트맵 + RSS 각각) ·
+Bing 웹마스터도구(GSC에서 임포트) · 다음 검색등록. 배포로 자동화되지 않는다.

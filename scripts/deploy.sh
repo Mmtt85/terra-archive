@@ -86,9 +86,21 @@ EOF
 # `(?<splat>.*)`로 바꾸고 앞뒤를 앵커링하므로, `/*.rsc` → `^/(?<splat>.*)\.rsc$` 가 되어
 # 하위 폴더까지 전부 걸린다. (`*`는 규칙당 하나만 — 둘이면 같은 이름의 캡처 그룹이 겹친다.)
 printf '\n/*.rsc\n  Content-Type: text/x-component\n' >> "$STAGE/_headers"
+
+# 피드·IndexNow 키 파일의 Content-Type을 명시한다 (2026-08-06).
+# 피드 리더는 application/rss+xml을 기대하고, IndexNow는 키 파일이 text/plain이어야 검증한다.
+printf '\n/feed.xml\n  Content-Type: application/rss+xml; charset=utf-8\n' >> "$STAGE/_headers"
+for keyfile in "$STAGE"/[0-9a-f]*.txt; do
+  [ -e "$keyfile" ] || continue
+  printf '\n%s\n  Content-Type: text/plain; charset=utf-8\n' "${keyfile#"$STAGE"}" >> "$STAGE/_headers"
+done
 echo ".rsc content-type 규칙 1건(글롭) — 대상 $(find "$STAGE" -name "*.rsc" -type f | wc -l | tr -d ' ')개"
 
 npx wrangler pages deploy "$STAGE" --project-name terra-archive --branch main --commit-dirty=true
+
+# 색인 통보(IndexNow) — 직전 커밋 대비 **실제로 바뀐** 페이지만 Bing·네이버에 알린다.
+# 바뀐 게 없으면 아무것도 안 쏜다. 실패해도 배포는 성공이다(부가 작업이라 || true).
+node scripts/indexnow.mjs || true
 
 # 관리자 사이트(admin.terra-archive.net)는 **별도 배포**다 (2026-07-28 재분리 — 한때 여기서
 # deploy-admin.sh를 이어 불렀지만, 본사이트 배포마다 관리자까지 딸려 나갈 이유가 없다).

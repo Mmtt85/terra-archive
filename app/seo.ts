@@ -115,6 +115,15 @@ const META: Record<SeoLocale, {
   },
 };
 
+// AI 스토리 요약 발행 피드(public/feed.xml)는 한국어 본문이라 **한국어 페이지에만** 건다.
+// ⚠ alternates는 페이지 값이 레이아웃 값을 통째로 덮으므로 레이아웃이 아니라 여기서 붙인다.
+const RSS_ALT = (locale: SeoLocale) =>
+  locale === "ko"
+    // ⚠ 문자열 형태로 준다 — vinext 메타데이터 렌더러가 {url,title} 객체 형태를 못 풀어
+    //    href="[object Object]"가 나간다 (2026-08-06 실측).
+    ? { types: { "application/rss+xml": `${SITE_URL}/feed.xml` } }
+    : {};
+
 export function pageMetadata(locale: SeoLocale, tab: SeoTab = "portal"): Metadata {
   const meta = META[locale];
   const tabMeta = tab === "portal" ? null : TAB_META[tab][locale];
@@ -127,7 +136,7 @@ export function pageMetadata(locale: SeoLocale, tab: SeoTab = "portal"): Metadat
     title,
     description,
     keywords: meta.keywords,
-    alternates: { canonical: url, languages: languagesFor(tab) },
+    alternates: { canonical: url, languages: languagesFor(tab), ...RSS_ALT(locale) },
     robots: { index: true, follow: true },
     openGraph: {
       title,
@@ -139,20 +148,76 @@ export function pageMetadata(locale: SeoLocale, tab: SeoTab = "portal"): Metadat
       alternateLocale: Object.values(META).filter((m) => m !== meta).map((m) => m.ogLocale),
       images: [{ url: ogImage, width: 1200, height: 630, alt: title }],
     },
-    twitter: { card: "summary_large_image", title, description, images: [ogImage] },
+    // site/creator = 운영 계정 — 공유 카드에 계정이 표시되고 X 애널리틱스에 잡힌다
+    twitter: { card: "summary_large_image", site: "@naru35405955", creator: "@naru35405955", title, description, images: [ogImage] },
   };
 }
 
+// 탭 표시명 — 제목("오퍼레이터 백과사전 - 명일방주 오퍼 도감 | 테라 아카이브")의 앞부분.
+// 탐색 경로(BreadcrumbList)와 도구 이름에 쓴다. 제목 문구가 정본이라 따로 관리하지 않는다.
+function tabName(locale: SeoLocale, tab: Exclude<SeoTab, "portal">): string {
+  return TAB_META[tab][locale].title.split(" - ")[0].split(" | ")[0].trim();
+}
+
+// 계산기·시뮬레이터 성격의 탭 — 브라우저에서 바로 돌아가는 무료 웹 도구임을 밝힌다.
+// (평점·설치수 같은 건 없으므로 지어내지 않는다 — aggregateRating 없이 엔티티만 준다.)
+const TOOL_TABS: SeoTab[] = ["planner", "recruit", "upgrade", "farm"];
+const APP_CATEGORY: Record<SeoLocale, string> = {
+  ko: "게임 유틸리티", en: "GameApplication", ja: "ゲームユーティリティ",
+};
+const BROWSER_REQ: Record<SeoLocale, string> = {
+  ko: "자바스크립트를 지원하는 최신 브라우저",
+  en: "Requires a modern browser with JavaScript",
+  ja: "JavaScript対応の最新ブラウザが必要",
+};
+
+/**
+ * 페이지의 구조화 데이터. WebSite 하나만 내보내다가 @graph로 넓혔다 (2026-08-06):
+ *  · BreadcrumbList — 검색 결과에 "테라 아카이브 › 인프라 자동편성기" 경로가 뜬다
+ *  · WebApplication — 편성기·공채·육성·파밍은 읽을거리가 아니라 도구라는 신호
+ * (사이트링크 검색창 SearchAction은 구글이 2024년에 폐지해 넣지 않는다.)
+ */
 export function jsonLdFor(locale: SeoLocale, tab: SeoTab = "portal") {
   const meta = META[locale];
   const tabMeta = tab === "portal" ? null : TAB_META[tab][locale];
-  return {
-    "@context": "https://schema.org",
+  const url = `${SITE_URL}${pathFor(locale, tab)}`;
+  const home = `${SITE_URL}${pathFor(locale, "portal")}`;
+  const description = tabMeta?.description ?? meta.description;
+
+  const graph: Record<string, unknown>[] = [{
     "@type": "WebSite",
+    "@id": `${home}#website`,
     name: meta.siteName,
     alternateName: ["Terra Archive", "테라 아카이브", "テラアーカイブ", "명일방주 팬사이트"],
-    url: `${SITE_URL}${pathFor(locale, tab)}`,
-    description: tabMeta?.description ?? meta.description,
+    url: home,
+    description: meta.description,
     inLanguage: locale,
-  };
+    publisher: { "@type": "Organization", name: meta.siteName, url: home },
+  }];
+
+  if (tab !== "portal") {
+    const name = tabName(locale, tab);
+    graph.push({
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: meta.siteName, item: home },
+        { "@type": "ListItem", position: 2, name },
+      ],
+    });
+    if (TOOL_TABS.includes(tab)) {
+      graph.push({
+        "@type": "WebApplication",
+        name,
+        url,
+        description,
+        inLanguage: locale,
+        applicationCategory: APP_CATEGORY[locale],
+        operatingSystem: "Any",
+        browserRequirements: BROWSER_REQ[locale],
+        isAccessibleForFree: true,
+        publisher: { "@type": "Organization", name: meta.siteName, url: home },
+      });
+    }
+  }
+  return { "@context": "https://schema.org", "@graph": graph };
 }

@@ -1,0 +1,431 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 자동 생성 파일 — 직접 수정 금지. scripts/build-rss.mjs가 만든다 (npm run build). -->
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<channel>
+  <title>테라 아카이브 — AI 스토리 요약</title>
+  <link>https://terra-archive.net/stories</link>
+  <atom:link href="https://terra-archive.net/feed.xml" rel="self" type="application/rss+xml"/>
+  <description>명일방주(Arknights) 이벤트 스토리를 AI가 정독해 컷씬과 함께 10분 분량으로 요약합니다.</description>
+  <language>ko</language>
+  <item>
+    <title>사세행</title>
+    <link>https://terra-archive.net/stories/act49side</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act49side</guid>
+    <pubDate>Wed, 01 Jul 2026 09:00:00 +0900</pubDate>
+    <description>죽은 여동생을 되살리려 천 년째 바둑을 두는 어떤 바보의 이야기. 온 대지를 판으로 삼아, 자신을 제외한 모두를 구하는 단 하나의 수를 찾는.</description>
+  </item>
+  <item>
+    <title>아테누스 복수록</title>
+    <link>https://terra-archive.net/stories/act48side</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act48side</guid>
+    <pubDate>Mon, 01 Jun 2026 09:00:00 +0900</pubDate>
+    <description>뱃멀미하는 사르곤 대사가 팔씨름으로 국제 분쟁을 중재하다가, 훔쳐온 나라에서 '명예 미노스인'이 되어버리는 이야기. 그리고 100년의 침묵을 깨는 리라 한 대.</description>
+  </item>
+  <item>
+    <title>허락받지 못한 땅</title>
+    <link>https://terra-archive.net/stories/act47side</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act47side</guid>
+    <pubDate>Fri, 01 May 2026 09:00:00 +0900</pubDate>
+    <description>'불가능'만 골라 다니는 여행 가이드가 죽어가는 밴시 손님의 마지막 소원을 들어주려다, 하늘에 미친 나라 전체의 음모를 통째로 짊어지는 이야기. 그리고 협곡이 아니라 하늘에, 울음이 아니라 웃음으로 남는 어머니 한 그루.</description>
+  </item>
+  <item>
+    <title>설산 강림 1101</title>
+    <link>https://terra-archive.net/stories/act46side</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act46side</guid>
+    <pubDate>Wed, 01 Apr 2026 09:00:00 +0900</pubDate>
+    <description>성녀가 신의 흔적을 찾아 눈보라 산을 오르는 사이, 오빠는 전함 한 척으로 대공작을 물러서게 만드는 이야기. 그리고 신은, 그저 마지막 인사를 하러 온 것이었다.</description>
+  </item>
+  <item>
+    <title>사람들, 우리</title>
+    <link>https://terra-archive.net/stories/act51side</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act51side</guid>
+    <pubDate>Wed, 01 Apr 2026 09:00:00 +0900</pubDate>
+    <description>무릎 꿇으라는 세상에서, 쓰레기장에 버려진 아이들이 서로의 성벽이 되어 벽을 부수는 이야기. '그들'과 '우리'를 가르던 선을 지우고 나면, 남는 말은 하나예요—우리.</description>
+  </item>
+  <item>
+    <title>편안한 잠꼬대</title>
+    <link>https://terra-archive.net/stories/act45side</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act45side</guid>
+    <pubDate>Sun, 01 Feb 2026 09:00:00 +0900</pubDate>
+    <description>신입 오퍼레이터로 위장 취업한 밴드 리더가 낮잠 한 번 잘못 잤다가, 동료 전원이 갇힌 완벽한 꿈속으로 떨어져버리는 이야기. 가장 행복해 보이는 꿈일수록, 아무도 채워주지 못한 외로움이 숨어 있었어요.</description>
+  </item>
+  <item>
+    <title>폐허</title>
+    <link>https://terra-archive.net/stories/act44side</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act44side</guid>
+    <pubDate>Thu, 01 Jan 2026 09:00:00 +0900</pubDate>
+    <description>이십 년 만에 고향에 돌아온 오니가 유령 취급을 받다가, 알고 보니 자기 집 흉가 괴담부터 도시 전체 여론까지 전부 부동산 때문에 조작된 연극이었던 이야기. 그리고 폐허 위에서 다시 켜는 불꽃 하나.</description>
+  </item>
+  <item>
+    <title>경중집</title>
+    <link>https://terra-archive.net/stories/act19mini</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act19mini</guid>
+    <pubDate>Mon, 01 Dec 2025 09:00:00 +0900</pubDate>
+    <description>떠나고 싶어 비급을 훔쳤다가, 자기가 사람이 아니라 누군가의 그리움이 빚은 물건임을 알아버리는 이야기. 놓아야 비로소 얻는다는, 어느 조용한 정원의 기록이에요.</description>
+  </item>
+  <item>
+    <title>붉게 물든 벨벳</title>
+    <link>https://terra-archive.net/stories/act43side</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act43side</guid>
+    <pubDate>Sat, 01 Nov 2025 09:00:00 +0900</pubDate>
+    <description>촬영장 연쇄살인의 진범이 사실은 죽은 언니를 기억하려던 막내 소품 스태프였던 이야기. 그리고 그 뒤에서 대본을 고쳐 쓰던 진짜 범인은, 단 한 번도 죽어본 적 없는 어떤 신이었습니다.</description>
+  </item>
+  <item>
+    <title>중생의 여정</title>
+    <link>https://terra-archive.net/stories/act42side</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act42side</guid>
+    <pubDate>Wed, 01 Oct 2025 09:00:00 +0900</pubDate>
+    <description>신임 추기경 첫 출근길에 도시가 통째로 사라지더니, 알고 보니 '완벽한 산크타'가 되는 게 정답이었다는 이야기. 그 정답을 거절하기 위해 라테라노 전역이 총을 드는 이야기.</description>
+  </item>
+  <item>
+    <title>다시 만나자</title>
+    <link>https://terra-archive.net/stories/act18mini</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act18mini</guid>
+    <pubDate>Fri, 01 Aug 2025 09:00:00 +0900</pubDate>
+    <description>전쟁을 끝내러 모두가 집으로 향하는데, 그 귀갓길이 하필 또 다른 전쟁의 시작이 되어버리는 이야기 — 승리는 시체의 산 위로 피처럼 쏟아지는 차가운 일출이었어요.</description>
+  </item>
+  <item>
+    <title>불타버린 엘레지여</title>
+    <link>https://terra-archive.net/stories/act41side</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act41side</guid>
+    <pubDate>Fri, 01 Aug 2025 09:00:00 +0900</pubDate>
+    <description>해방된 나라에서 다들 감자만 먹다가, 몸속에 죽음이 옮아붙은 줄도 모르고 있는 걸 알아채는 이야기. 그리고 그 불을 끄기 위해 스스로 언니를 찌르는, 씁쓸하고 다정한 붉은 용 한 마리.</description>
+  </item>
+  <item>
+    <title>상견환</title>
+    <link>https://terra-archive.net/stories/act40side</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act40side</guid>
+    <pubDate>Tue, 01 Jul 2025 09:00:00 +0900</pubDate>
+    <description>두부 요리 다섯 그릇을 시킨 빅토리아 관광객이, 사실은 40년 전 지워진 이름을 찾아 백조에 온 오퍼레이터였다는 이야기. 그리고 역사가 기억하지 못한 두 딸이, 마침내 서로를 알아보는 밤.</description>
+  </item>
+  <item>
+    <title>창백한 바다로부터의 탈출</title>
+    <link>https://terra-archive.net/stories/act39side</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act39side</guid>
+    <pubDate>Sun, 01 Jun 2025 09:00:00 +0900</pubDate>
+    <description>소금 사막에서 해적한테 붙잡힌 떠돌이 검사가, 얼떨결에 연금술사로 취직했다가 결국 그 해적선의 선장이 되어버리는 이야기. 태어나 한 번도 뭔가를 갈망해본 적 없던 사람이, 처음으로 무언가를 간절히 원하게 되기까지.</description>
+  </item>
+  <item>
+    <title>위대한 서곡의 끝</title>
+    <link>https://terra-archive.net/stories/act37side</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act37side</guid>
+    <pubDate>Tue, 01 Apr 2025 09:00:00 +0900</pubDate>
+    <description>거리의 주먹이 알고 보니 폐위된 국왕의 딸이었다가, 의장이 되어서도 여전히 주먹부터 나가는 이야기. 그리고 아무도 원치 않는 낡은 왕관 하나.</description>
+  </item>
+  <item>
+    <title>막을 여는 자들</title>
+    <link>https://terra-archive.net/stories/act38side</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act38side</guid>
+    <pubDate>Tue, 01 Apr 2025 09:00:00 +0900</pubDate>
+    <description>패밀리도 복수도 없는 신도시를 세운 이상주의자들과, 그 이상을 옛 방식으로 되돌리려는 마피아의 하룻밤. 모두가 가면을 쓴 카르네발레, 단 한 발의 총성이 진흙탕과 새 질서를 가른다.</description>
+  </item>
+  <item>
+    <title>테라밥</title>
+    <link>https://terra-archive.net/stories/act36side</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act36side</guid>
+    <pubDate>Sat, 01 Mar 2025 09:00:00 +0900</pubDate>
+    <description>던전에서 테라로 떨어진 네 모험가가, 집으로 돌아갈 길을 찾아 로도스 아일랜드를 향하는 미식 여행기. 낯선 마물을 요리해 사람들과 나누며, '음식은 곧 기억'이라는 걸 증명해 나가요. (던전밥 콜라보)</description>
+  </item>
+  <item>
+    <title>카즈델리안 레스큐</title>
+    <link>https://terra-archive.net/stories/act17mini</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act17mini</guid>
+    <pubDate>Sat, 01 Feb 2025 09:00:00 +0900</pubDate>
+    <description>떨어진 불꽃 조각을 주우러 다니다가, 도시의 온갖 사람들과 200년을 불탄 조상들을 만나버리는 이야기. 가장 착한 디얄이 묻는다—더 나은 카즈델로 가는 길은, 정말 없는 걸까?</description>
+  </item>
+  <item>
+    <title>태양을 뿌리쳐라</title>
+    <link>https://terra-archive.net/stories/act35side</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act35side</guid>
+    <pubDate>Wed, 01 Jan 2025 09:00:00 +0900</pubDate>
+    <description>동생을 이기려고 미라를 훔쳐 깨웠더니 도시 전체가 모래에 잠길 뻔하는 이야기. 그리고 천 년 동안 기다리기만 하던 어느 수호자가, 마지막 순간에야 인간으로 눈감는 이야기.</description>
+  </item>
+  <item>
+    <title>삶의 길</title>
+    <link>https://terra-archive.net/stories/act34side</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act34side</guid>
+    <pubDate>Sun, 01 Dec 2024 09:00:00 +0900</pubDate>
+    <description>시본을 몰아내겠다고 뚫은 항로가, 정작 시본과 손잡아야만 완성되는 아이러니. 그 길 위에서 누군가는 고향에 남고, 누군가는 끝내 돌아오지 않기로 합니다.</description>
+  </item>
+  <item>
+    <title>바벨</title>
+    <link>https://terra-archive.net/stories/act33side</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act33side</guid>
+    <pubDate>Tue, 01 Oct 2024 09:00:00 +0900</pubDate>
+    <description>만 년을 잠들었던 은인을 깨워 살카즈의 미래를 맡겼는데, 알고 보니 그가 이 별의 결말을 이미 한 번 겪어본 자였다는 이야기. 그리고 그 사실을 알고도 그의 이름을 불러주며 죽어간 어느 마왕의 마지막 인사.</description>
+  </item>
+  <item>
+    <title>루센트 애로우헤드</title>
+    <link>https://terra-archive.net/stories/act32side</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act32side</guid>
+    <pubDate>Sun, 01 Sep 2024 09:00:00 +0900</pubDate>
+    <description>실종된 동료를 찾던 지구의 특수부대가 테라의 휴양도시 천장을 뚫고 추락해, 괴짜 부호의 33번째 경호원으로 취직해버리는 이야기. 그리고 불탄 무도회장에서 다시 춤추는 목각 인형 두 대.</description>
+  </item>
+  <item>
+    <title>그리닝 밸리를 향해</title>
+    <link>https://terra-archive.net/stories/act16mini</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act16mini</guid>
+    <pubDate>Mon, 01 Jul 2024 09:00:00 +0900</pubDate>
+    <description>폐차 직전 수송차의 마지막 운행이 차량 강탈로 뒤집히는데, 정작 강도가 찾는 건 보물이 아니라 어릴 적 자길 구해 준 빛이었고 — 결국 다들 돌아갈 집을 찾고 있었던 이야기.</description>
+  </item>
+  <item>
+    <title>회서리</title>
+    <link>https://terra-archive.net/stories/act31side</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act31side</guid>
+    <pubDate>Mon, 01 Jul 2024 09:00:00 +0900</pubDate>
+    <description>감시하러 왔다가 '촛대 군'이라는 별명부터 얻어버리는 좌천 도련님 이야기. 그리고 천 년 동안 신 노릇을 하던 여자가, 벼 한 포기를 살려낸 뒤에야 조용히 사람으로 돌아가는 이야기.</description>
+  </item>
+  <item>
+    <title>은심호 열차</title>
+    <link>https://terra-archive.net/stories/act30side</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act30side</guid>
+    <pubDate>Sat, 01 Jun 2024 09:00:00 +0900</pubDate>
+    <description>엄마의 유물을 들고 아빠를 찾아온 딸이, 재회하자마자 다짜고짜 벼랑 밑으로 걷어차 버리는 이야기. 그 뒤에서는 나라 하나가 몰래 전함을 숨기고, 어둠의 기사 혼자 2천 명을 막아섭니다.</description>
+  </item>
+  <item>
+    <title>츠빌링슈튀르메의 가을</title>
+    <link>https://terra-archive.net/stories/act29side</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act29side</guid>
+    <pubDate>Mon, 01 Apr 2024 09:00:00 +0900</pubDate>
+    <description>아버지의 죽음을 좇아 고향에 돌아온 '양초의 기사'가, 자신을 키워준 사람을 제 손으로 배웅하고서야 자유를 얻는 이야기. 그리고 죽은 폭군의 마지막 질문 앞에서, 다들 자기만의 답을 들고 일어선다.</description>
+  </item>
+  <item>
+    <title>부정축재</title>
+    <link>https://terra-archive.net/stories/act28side</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act28side</guid>
+    <pubDate>Fri, 01 Mar 2024 09:00:00 +0900</pubDate>
+    <description>동력로 하나 고치러 온 용병들이, 마을을 구하려면 은행부터 털어야 한다는 걸 깨달아버리는 이야기. 그리고 총이 아니라 눈물 때문에 그녀를 선택했다는, 이 시즌 가장 다정한 고백.</description>
+  </item>
+  <item>
+    <title>나무 그늘 속에 잠들다</title>
+    <link>https://terra-archive.net/stories/act15mini</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act15mini</guid>
+    <pubDate>Thu, 01 Feb 2024 09:00:00 +0900</pubDate>
+    <description>실종된 스승을 찾아 빙원으로 가려다, 우르수스가 두려워한 '마녀'와 함께 사미를 가로지르게 되는 이야기. 말이 통하지 않는 땅에서도, 누군가는 기어이 손을 내밀어요.</description>
+  </item>
+  <item>
+    <title>화산의 꿈 여행</title>
+    <link>https://terra-archive.net/stories/act27side</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act27side</guid>
+    <pubDate>Mon, 01 Jan 2024 09:00:00 +0900</pubDate>
+    <description>쪼꼬미양 세 마리를 찾아주면 소원을 들어주겠다던 정체불명의 생물이, 정작 딸에게 되찾아준 건 부모님의 마지막 진심이었던 이야기. 화산이 하얗게 타오르는 밤, 다들 조금씩 다시 웃는 법을 배운다.</description>
+  </item>
+  <item>
+    <title>공상의 정원</title>
+    <link>https://terra-archive.net/stories/act26side</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act26side</guid>
+    <pubDate>Fri, 01 Dec 2023 09:00:00 +0900</pubDate>
+    <description>모든 사고를 합리로만 재단하던 집행자가, 낙원이라 불리는 황야의 수도원에서 법으로는 구할 수 없는 절망과 마주치는 이야기. 그리고 그는 태어나 처음으로, 스스로에게 질문을 던집니다.</description>
+  </item>
+  <item>
+    <title>론 트레일</title>
+    <link>https://terra-archive.net/stories/act25side</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act25side</guid>
+    <pubDate>Wed, 01 Nov 2023 09:00:00 +0900</pubDate>
+    <description>군부가 슈퍼 무기로 착각한 라인 랩의 비밀 병기는, 사실 하늘을 뚫고 별로 향하는 로켓이었어요. 부모의 꿈을 물려받은 한 천재가 자기 목숨을 태워, 모두를 대신해 우주를 바라보는 '눈'이 되기로 한 이야기.</description>
+  </item>
+  <item>
+    <title>불을 쫓는 낙엽</title>
+    <link>https://terra-archive.net/stories/act24side</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act24side</guid>
+    <pubDate>Fri, 01 Sep 2023 09:00:00 +0900</pubDate>
+    <description>불을 뿜는 '하늘의 왕자'를 쫓아 동국 산골에 온 두 오퍼레이터가, 7년째 죽은 아들만 사냥하는 노인과 얽히는 이야기. 그리고 낙엽처럼 쌓인 과거를 태워 보내고 살아남는 법에 관하여.</description>
+  </item>
+  <item>
+    <title>숙명</title>
+    <link>https://terra-archive.net/stories/act14mini</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act14mini</guid>
+    <pubDate>Tue, 01 Aug 2023 09:00:00 +0900</pubDate>
+    <description>이름을 날리겠다며 집을 떠난 소년이, 정작 고향에 돌아오자 '죽은 사람'이 될 뻔하는 이야기. 이름 없는 이들이 이름의 무게를 두고 벌이는, 조용한 항쟁.</description>
+  </item>
+  <item>
+    <title>불로 비춰주소서</title>
+    <link>https://terra-archive.net/stories/act22side</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act22side</guid>
+    <pubDate>Sat, 01 Jul 2023 09:00:00 +0900</pubDate>
+    <description>화상을 치료해주던 다정한 감염자 여행자가, 알고 보니 반군 더블린의 '리더'였던 이야기. 언니의 그림자로만 살아온 여자가, 처음으로 자기 몫의 불꽃을 인정하는 밤입니다.</description>
+  </item>
+  <item>
+    <title>등림의</title>
+    <link>https://terra-archive.net/stories/act23side</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act23side</guid>
+    <pubDate>Sat, 01 Jul 2023 09:00:00 +0900</pubDate>
+    <description>백 년째 옥문을 지킨 전설의 '종사'가 사실은 재앙급 괴수의 파편이었던 이야기. 복수하러 온 제자, 딸을 버린 아버지, 원한 때문에 도시를 재앙에 던진 노인까지, 다들 검 한 자루 앞에서 원한을 내려놓는다.</description>
+  </item>
+  <item>
+    <title>시라쿠사인</title>
+    <link>https://terra-archive.net/stories/act21side</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act21side</guid>
+    <pubDate>Mon, 01 May 2023 09:00:00 +0900</pubDate>
+    <description>도망친 늑대가 옛 빚 하나 갚으러 돌아왔다가, 도망치지 않는 법을 다시 배워버리는 이야기. '시라쿠사인'이라는 환상 대신, 텍사스는 그냥 텍사스로 남기로 합니다.</description>
+  </item>
+  <item>
+    <title>무명의 방랑자</title>
+    <link>https://terra-archive.net/stories/act12mini</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act12mini</guid>
+    <pubDate>Wed, 01 Mar 2023 09:00:00 +0900</pubDate>
+    <description>검을 내려놓고 사라진 가족을 찾아 헤매던 기사가, 전쟁을 일으키려는 옛 친구를 막으러 마지막으로 검을 뽑아버리는 이야기. 이기고도 이긴 게 아닌, 스무 해 만에 건네받은 대답 한 줄.</description>
+  </item>
+  <item>
+    <title>도로시의 비전</title>
+    <link>https://terra-archive.net/stories/act19side</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act19side</guid>
+    <pubDate>Wed, 01 Mar 2023 09:00:00 +0900</pubDate>
+    <description>실종된 동료를 찾으러 갔다가, 실종자 전원이 자원해서 걸어 들어간 낙원을 발견하는 이야기. 그리고 세상에서 제일 다정한 상사가, 가장 사랑하는 이들을 풀어주려고 제 손으로 자신의 꿈을 무너뜨립니다.</description>
+  </item>
+  <item>
+    <title>투 비 컨티뉴</title>
+    <link>https://terra-archive.net/stories/act11mini</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act11mini</guid>
+    <pubDate>Wed, 01 Feb 2023 09:00:00 +0900</pubDate>
+    <description>설산에서 감옥까지, 촌뜨기 취급받고 얼굴을 바꾸고 옥중에서 편지를 쓰다가 — 사는 곳도 방식도 다 다른데 조금 더 나은 삶 하나만은 똑같이 바랐던, 대륙 곳곳 여섯 가지 이야기.</description>
+  </item>
+  <item>
+    <title>이상적인 도시: 엔드리스 카니발</title>
+    <link>https://terra-archive.net/stories/act20side</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act20side</guid>
+    <pubDate>Sun, 01 Jan 2023 09:00:00 +0900</pubDate>
+    <description>휴가 온 지상인들이 지하 도시 구조 요청을 받고 내려갔더니, 위기는 뒷전이고 워터파크부터 다 즐겨버리는 이야기. 그리고 숨어 지내던 건축가가 부서진 문틈으로 세상에 나오기까지.</description>
+  </item>
+  <item>
+    <title>링거링 에코스</title>
+    <link>https://terra-archive.net/stories/act18side</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act18side</guid>
+    <pubDate>Thu, 01 Dec 2022 09:00:00 +0900</pubDate>
+    <description>보수 한 푼 없는 오디션에 진짜 백작이 끼어드는 이야기. 죽은 폭군의 선율을 나눠 가진 두 사람이 서로를 살리려다, 결국 한 사람만 살아남는 이야기.</description>
+  </item>
+  <item>
+    <title>스툴티페라 나비스</title>
+    <link>https://terra-archive.net/stories/act17side</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act17side</guid>
+    <pubDate>Tue, 01 Nov 2022 09:00:00 +0900</pubDate>
+    <description>에기르인이라는 이유로 부모를 처형한 재판소의 등대를, 정작 그 아들이 혼자 되살리는 이야기. 그리고 바다가 자꾸만 부르는 이름 앞에서, 아무도 선뜻 대답하지 못하는 밤.</description>
+  </item>
+  <item>
+    <title>가이딩 어헤드</title>
+    <link>https://terra-archive.net/stories/act16side</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act16side</guid>
+    <pubDate>Thu, 01 Sep 2022 09:00:00 +0900</pubDate>
+    <description>미아 소녀 하나 주웠다가 인생 최대 사고를 쳐버린 신입 집행자, 그리고 천 년 만에 처음 울려버린 종 이야기. 구원이 없어도 걷기로 하는 사람들의 집념에 관한 이야기예요.</description>
+  </item>
+  <item>
+    <title>어 라이트 스파크 인 다크니스</title>
+    <link>https://terra-archive.net/stories/act10mini</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act10mini</guid>
+    <pubDate>Mon, 01 Aug 2022 09:00:00 +0900</pubDate>
+    <description>평생 모은 돈으로 드디어 제 가게를 사기로 한 그날, 바로 그 가게가 남의 음모에 휩쓸려 잿더미가 되어버리는 이야기. 그래도 초록빛 불꽃은, 쉽게 꺼지지 않아요.</description>
+  </item>
+  <item>
+    <title>장진주</title>
+    <link>https://terra-archive.net/stories/act15side</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act15side</guid>
+    <pubDate>Fri, 01 Jul 2022 09:00:00 +0900</pubDate>
+    <description>옛 친구 부탁으로 술잔 하나 배달하러 왔다가, 국가 기밀 공작에 신화 속 존재 셋까지 딸려오는 이야기. 그리고 10년 묵은 원한 두 개, 100년 묵은 외로움 하나가 같은 산꼭대기에서 마주칩니다.</description>
+  </item>
+  <item>
+    <title>브레이크 디 아이스</title>
+    <link>https://terra-archive.net/stories/act14side</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act14side</guid>
+    <pubDate>Wed, 01 Jun 2022 09:00:00 +0900</pubDate>
+    <description>동생 병을 고쳐줘서 고맙다고 초대해 놓고, 정작 자기 나라 정변에 손님을 끌어들이는 오빠의 이야기. 체스판 위에서 아무도 예상 못한 수를 둔 건, 산을 오른 동생과 혼자 걸어 나온 언니였다.</description>
+  </item>
+  <item>
+    <title>니어 라이트</title>
+    <link>https://terra-archive.net/stories/act13side</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act13side</guid>
+    <pubDate>Fri, 01 Apr 2022 09:00:00 +0900</pubDate>
+    <description>감염자로 몰려 추방당했던 빛의 기사, 알고 보니 애초에 감염된 적이 없었던 이야기. 그런데도 그녀는 진짜 감염자들 곁에 남아, 촛불과 태양이 함께 걷는 법을 배웁니다.</description>
+  </item>
+  <item>
+    <title>피누스 실베스트리스</title>
+    <link>https://terra-archive.net/stories/act9mini</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act9mini</guid>
+    <pubDate>Fri, 01 Apr 2022 09:00:00 +0900</pubDate>
+    <description>카시미어의 눈부신 아레나를 동경하다 도리어 도시의 그림자에 삼켜지는 사람들의 이야기. 그래도 저마다, 나는 대체 무엇을 위해 싸우는가 묻기를 끝내 멈추지 않는다.</description>
+  </item>
+  <item>
+    <title>비질로</title>
+    <link>https://terra-archive.net/stories/act8mini</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act8mini</guid>
+    <pubDate>Tue, 01 Feb 2022 09:00:00 +0900</pubDate>
+    <description>기억을 잃은 박사가 '예전의 나는 누구였나' 물으며 로도스 곳곳을 떠돌다가, 정작 자기 자신이 가장 큰 수수께끼라는 걸 마주하는 이야기. 희망은 잔인하다는데, 그래도 우린 걸어가거든요.</description>
+  </item>
+  <item>
+    <title>도솔레스 홀리데이</title>
+    <link>https://terra-archive.net/stories/act12side</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act12side</guid>
+    <pubDate>Sat, 01 Jan 2022 09:00:00 +0900</pubDate>
+    <description>정의감 넘치는 前 경찰과 실리주의 조폭 딸이 억지로 재회해 한 팀이 되었다가, 얼떨결에 유흥도시의 쿠데타까지 막아버리는 이야기. 그리고 끝까지 화해했다고는 말하지 않는 두 사람.</description>
+  </item>
+  <item>
+    <title>프렐류딩 라이츠</title>
+    <link>https://terra-archive.net/stories/act7mini</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act7mini</guid>
+    <pubDate>Wed, 01 Dec 2021 09:00:00 +0900</pubDate>
+    <description>도망치거나 숨거나 그냥 지나가려던 사람들이, 자꾸 남의 손을 붙잡아버리는 여섯 편의 짧은 기록. 우리가 정말 찾던 건 '있을 곳'이 아니라 '곁에 있어 줄 사람'이었다는 이야기예요.</description>
+  </item>
+  <item>
+    <title>언더 타이즈</title>
+    <link>https://terra-archive.net/stories/act18d3</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act18d3</guid>
+    <pubDate>Fri, 01 Oct 2021 09:00:00 +0900</pubDate>
+    <description>보고서에 '완료' 두 글자만 적던 무뚝뚝한 에기르인이, 아무도 못 듣는 노랫소리 하나에 함선을 뛰쳐나가 버리는 이야기. 그리고 그 노래의 끝에서, 자신이 무엇을 사냥해 왔는지 되묻게 되는 가장 무거운 리프레인.</description>
+  </item>
+  <item>
+    <title>워크 인 더 더스트</title>
+    <link>https://terra-archive.net/stories/act18d0</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act18d0</guid>
+    <pubDate>Wed, 01 Sep 2021 09:00:00 +0900</pubDate>
+    <description>리프스팁 암시장의 정보상 '샌드솔저'에게 옛 은인의 행방을 캐물었더니, 22년 전 사막에서 구해낸 소년의 목소리가 돌아오는 이야기. 대신 선택해 주지 않는 여자와, 스스로 감염자가 되어 복수를 완성한 소년에 대하여.</description>
+  </item>
+  <item>
+    <title>오퍼레이션 오리지늄 더스트</title>
+    <link>https://terra-archive.net/stories/act17d0</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act17d0</guid>
+    <pubDate>Sun, 01 Aug 2021 09:00:00 +0900</pubDate>
+    <description>방사능 폐기물을 찾으러 실험실에 뛰어들었다가, 통째로 낯선 사막별에 떨어져버린 용병 넷. 지도에도 없는 전염병 앞에서 총을 들고, 한 소녀 의사는 마지막으로 빛나는 먼지 한 줌을 남긴다.</description>
+  </item>
+  <item>
+    <title>비욘드 히어</title>
+    <link>https://terra-archive.net/stories/act15d5</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act15d5</guid>
+    <pubDate>Thu, 01 Jul 2021 09:00:00 +0900</pubDate>
+    <description>저마다의 이유로 길에 오른 사람들이, 서로 다른 사연을 안고 결국 같은 배 한 척으로 흘러드는 이야기. 갈라진 대지에서도 길은 끊이지 않고, 그 끝엔 늘 누군가 손을 내밀고 있거든요.</description>
+  </item>
+  <item>
+    <title>화중인</title>
+    <link>https://terra-archive.net/stories/act16d5</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act16d5</guid>
+    <pubDate>Thu, 01 Jul 2021 09:00:00 +0900</pubDate>
+    <description>니엔의 여동생을 찾아오라던 심부름이 그림 한 폭에 통째로 갇히는 소동이 되어버리는 이야기. 그리고 그림 속 사람이든 아니든, 함께 울고 웃은 시간만은 거짓이 아니었다는 것.</description>
+  </item>
+  <item>
+    <title>맨스필드 브레이크</title>
+    <link>https://terra-archive.net/stories/act15d0</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act15d0</guid>
+    <pubDate>Tue, 01 Jun 2021 09:00:00 +0900</pubDate>
+    <description>취조하러 온 생태과 주임이 술 한 잔 값에 넉 달치 탈옥극을 다 캐내고도, 정작 가장 중요한 카드 한 장은 손에 넣지 못하는 이야기. '사람은 단서가 아니다'라는 말 한마디에 무릎을 꿇는다.</description>
+  </item>
+  <item>
+    <title>마리아 니어</title>
+    <link>https://terra-archive.net/stories/act13d5</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act13d5</guid>
+    <pubDate>Thu, 01 Apr 2021 09:00:00 +0900</pubDate>
+    <description>니어 가문 막내딸이 오토바이 고치던 손으로 검을 잡고 기업들의 도박판에 뛰어들다가, 결국 6년 만에 언니마저 하늘 저편에서 불러들이는 이야기. 빛은 물려받는 게 아니라, 스스로 켜는 거였어요.</description>
+  </item>
+  <item>
+    <title>리와인딩 브리즈</title>
+    <link>https://terra-archive.net/stories/act13d0</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act13d0</guid>
+    <pubDate>Mon, 01 Mar 2021 09:00:00 +0900</pubDate>
+    <description>떠나온 곳은 잊고 새 삶을 살려다가, 결국 저마다 돌아갈 곳을 이야기해 버리는 사람들. 기억을 잃어도 지워지지 않는, 그 냄새와 골목과 노래에 관하여.</description>
+  </item>
+  <item>
+    <title>위대한 족장 가비알 리턴즈</title>
+    <link>https://terra-archive.net/stories/act12d0</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act12d0</guid>
+    <pubDate>Mon, 01 Feb 2021 09:00:00 +0900</pubDate>
+    <description>엔진 도둑맞은 김에 고향 들렀다가, 대족장 제전에 휘말리고 옛 친구의 거대 로봇까지 때려 부수는 이야기. 그리고 자길 붙잡으려 쿠데타를 꾸민 소녀 앞에서도, 가비알은 여전히 주먹으로 답한다.</description>
+  </item>
+</channel>
+</rss>
