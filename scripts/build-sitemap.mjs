@@ -48,7 +48,7 @@ const SEG_SOURCES = {
 function lastmodFor(seg) {
   let latest = null;
   // 스토리 상세(stories/<id>)는 목록과 같은 데이터에서 나오므로 같은 소스를 본다
-  const key = seg.startsWith("stories/") ? "stories" : seg;
+  const key = seg.startsWith("stories/") ? "stories" : seg.startsWith("operators/") ? "operators" : seg;
   for (const file of SEG_SOURCES[key] ?? []) {
     try {
       const iso = execFileSync("git", ["log", "-1", "--format=%cI", "--", file], { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
@@ -72,7 +72,13 @@ function storyIds() {
   ]);
   return ids.filter((id) => known.has(id));
 }
-const DYNAMIC = { "stories/[id]": storyIds };
+// /operators/[id]도 같은 방식 — 정식 출시 오퍼만 (미실장은 라우트를 안 만든다,
+// app/seo-operator.ts 참조: 비공식 AI 번역이라 정식 출시 때 내용이 통째로 바뀐다).
+function operatorIds() {
+  const ops = JSON.parse(readFileSync(join(ROOT, "app/data/operators.json"), "utf8"));
+  return ops.filter((o) => !o.unreleased).map((o) => o.id);
+}
+const DYNAMIC = { "stories/[id]": storyIds, "operators/[id]": operatorIds };
 
 // 라우트 → { locale, seg } (seg="" = 포탈 루트)
 function parseRoute(route) {

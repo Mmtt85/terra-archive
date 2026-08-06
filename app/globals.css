@@ -1821,6 +1821,9 @@ legend {
   background: var(--white);
   text-align: left;
   cursor: pointer;
+  /* 카드는 실제 <a>다 (크롤러용 내부 링크, 2026-08-06) — 링크 기본 스타일만 지운다 */
+  color: inherit;
+  text-decoration: none;
   width: 100%;
   min-width: 0;
   /* 카드 등장 stagger(rise) 제거 — 스크롤로 그리드가 나타날 때 카드가 밀려 올라오는
@@ -2074,6 +2077,28 @@ legend {
   position: relative;
   overflow: hidden;
   box-shadow: 0 30px 100px #0008;
+}
+/* 오퍼 상세 **페이지**(/operators/<id>) — 창 모달과 같은 규격을 본문에 그대로 놓는다.
+   창은 body 포털이라 프리렌더가 안 돼(document 없음) 색인용으로 못 쓴다 (2026-08-06).
+   백드롭이 없으니 여백은 여기서 직접 잡고, 창 크롬(제목·📌·×)은 처음부터 없다. */
+.operator-page-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 20px 24px 40px;
+}
+.operator-page {
+  --modal-pad: 0px;
+  margin: 0 auto;
+  align-self: stretch;
+  border-color: var(--line);
+  box-shadow: 0 12px 40px #1f24250f;
+}
+@media (max-width: 720px) {
+  .operator-page-wrap {
+    padding: 12px 10px 28px;
+  }
 }
 .modal-close {
   z-index: 5;

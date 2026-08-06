@@ -173,9 +173,21 @@ function tabFromPath(pathname: string): Tab {
   let p = pathname;
   if (p === "/en" || p.startsWith("/en/")) p = p.slice(3);
   else if (p === "/ja" || p.startsWith("/ja/")) p = p.slice(3);
-  // 첫 세그먼트만 본다 — 상세 라우트(/stories/<id>)도 그 탭에 속한다 (2026-08-06)
+  // 첫 세그먼트만 본다 — 상세 라우트(/stories/<id>, /operators/<id>)도 그 탭에 속한다 (2026-08-06)
   return SEG_TAB[p.replace(/^\/+/, "").replace(/\/+$/, "").split("/")[0]] ?? "portal";
 }
+
+// ── 오퍼 상세의 정본 주소 = /operators/<id> (2026-08-06, SEO) ────────────────
+// 종전에는 #op-<id> 해시 모달뿐이라 검색엔진에 없는 화면이었다. 앱 안에서 모달을 열 때도
+// 이 주소로 replaceState한다 — 공유·새로고침이 곧 정본이 되고, 히스토리 엔트리를 쌓지
+// 않으므로 인앱 브라우저 리로드 버그(2026-07-18)와도 무관하다.
+const OPERATOR_PATH_RE = /^\/(?:en\/|ja\/)?operators\/([^/]+)\/?$/;
+const operatorPath = (locale: Locale, id: string) => `${LOCALE_BASE[locale]}/operators/${id}`;
+const archivePath = (locale: Locale) => `${LOCALE_BASE[locale]}/operators`;
+const operatorIdFromPath = (pathname: string) => {
+  const m = OPERATOR_PATH_RE.exec(pathname);
+  return m ? decodeURIComponent(m[1]) : null;
+};
 // 구 해시(#infra 등) → 탭 (하위호환 리다이렉트용). op 해시나 일반 해시는 null.
 function tabFromLegacyHash(hash: string): Tab | null {
   return hash === "#infra" ? "planner" : hash === "#recruit" ? "recruit" : hash === "#farm" ? "farm" : hash === "#upgrade" ? "upgrade" : hash.startsWith("#story") ? "story" : null;
@@ -845,10 +857,10 @@ function Portal({ onOpenTab, onFeedback, stats }: {
   );
 }
 
-export default function Home({ locale, operators, extra, summaries, initialTab = "portal", initialStory }: { locale: Locale; operators: Operator[]; extra: ExtraI18n | null; summaries: StorySummaries; initialTab?: Tab; initialStory?: string }) {
+export default function Home({ locale, operators, extra, summaries, initialTab = "portal", initialStory, initialOperator }: { locale: Locale; operators: Operator[]; extra: ExtraI18n | null; summaries: StorySummaries; initialTab?: Tab; initialStory?: string; initialOperator?: string }) {
   return (
     <I18nProvider locale={locale}>
-      <HomeInner operators={operators} extra={extra} summaries={summaries} initialTab={initialTab} initialStory={initialStory} />
+      <HomeInner operators={operators} extra={extra} summaries={summaries} initialTab={initialTab} initialStory={initialStory} initialOperator={initialOperator} />
     </I18nProvider>
   );
 }
@@ -856,7 +868,7 @@ export default function Home({ locale, operators, extra, summaries, initialTab =
 // '미래시 포함' 토글 localStorage 키 — 켜면 한국 서버 미실장(CN 선행) 오퍼도 목록에 표시
 const FUTURE_KEY = "ta-include-future";
 
-function HomeInner({ operators, extra, summaries, initialTab, initialStory }: { operators: Operator[]; extra: ExtraI18n | null; summaries: StorySummaries; initialTab: Tab; initialStory?: string }) {
+function HomeInner({ operators, extra, summaries, initialTab, initialStory, initialOperator }: { operators: Operator[]; extra: ExtraI18n | null; summaries: StorySummaries; initialTab: Tab; initialStory?: string; initialOperator?: string }) {
   const { locale, t } = useI18n();
   // SSR엔 localStorage가 없으므로 false로 하이드레이션 후 이펙트에서 복원한다.
   // 우선순위: URL 쿼리(?future=1|0) > localStorage. URL 파라미터는 공유 링크용.
@@ -906,6 +918,10 @@ function HomeInner({ operators, extra, summaries, initialTab, initialStory }: { 
   // 햄버거 '통합전략 가이드' 부메뉴 활성 표시용 — 현재 URL의 ?topic= 슬러그 (기본 is1)
   // 열려 있는 스토리 상세의 이름 — 문서 제목에 반영 (StoryGuide가 알려준다)
   const [storyTitle, setStoryTitle] = useState<string | null>(null);
+  // 오퍼 상세 **페이지**(/operators/<id>로 직접 진입). 모달(selected)과 별개다 —
+  // 모달은 body 포털이라 프리렌더가 안 되고, 목록 위에 겹치므로 색인용으로 못 쓴다.
+  const [pageOperator, setPageOperator] = useState<Operator | null>(
+    () => (initialOperator ? operators.find((o) => o.id === initialOperator) ?? null : null));
   const [rogueSlug, setRogueSlug] = useState<string>(() =>
     typeof window === "undefined" ? "is1" : new URLSearchParams(window.location.search).get("topic") || "is1");
   const localeBase = LOCALE_BASE[locale];
@@ -1017,6 +1033,11 @@ function HomeInner({ operators, extra, summaries, initialTab, initialStory }: { 
       const hash = decodeURIComponent(window.location.hash);
       setTab(tabFromPath(window.location.pathname));
       setRogueSlug(new URLSearchParams(window.location.search).get("topic") || "is1");
+      // 오퍼 상세 페이지 주소면 페이지 뷰로 (모달은 닫는다) — 뒤로/앞으로 대응
+      const pathOp = operatorIdFromPath(window.location.pathname);
+      const pageOp = pathOp ? operators.find((candidate) => candidate.id === pathOp) ?? null : null;
+      setPageOperator(pageOp);
+      if (pageOp) { if (!opPinnedRef.current) setSelected(null); return; }
       if (hash.startsWith("#op-")) {
         const operator = operators.find((candidate) => candidate.id === hash.slice(4));
         if (operator) setSelected(operator);
@@ -1142,8 +1163,11 @@ function HomeInner({ operators, extra, summaries, initialTab, initialStory }: { 
 
   // 탭·오퍼 모달에 맞춰 문서 제목 갱신 — 검색엔진 렌더링·북마크·공유 미리보기에 반영
   useEffect(() => {
-    document.title = selected
-      ? t("{name} - 명일방주 오퍼레이터 | 테라 아카이브", { name: selected.name })
+    // 상세 **페이지**(pageOperator)도 같은 제목 — 라우트가 내보낸 <title>과 문구를 맞춰야
+    // 하이드레이션 직후 목록 제목으로 뭉개지지 않는다 (app/seo-operator.ts TITLE과 같은 키)
+    const op = selected ?? pageOperator;
+    document.title = op
+      ? t("{name} - 명일방주 오퍼레이터 | 테라 아카이브", { name: op.name })
       : tab === "planner"
         ? t("인프라 자동편성기 - 명일방주 기반시설 편성 | 테라 아카이브")
         : tab === "recruit"
@@ -1162,20 +1186,27 @@ function HomeInner({ operators, extra, summaries, initialTab, initialStory }: { 
                 : tab === "archive"
                 ? t("오퍼레이터 백과사전 - 명일방주 오퍼 도감 | 테라 아카이브")
                 : t("테라 아카이브 | 명일방주(Arknights) 팬사이트");
-  }, [tab, selected, storyTitle, t]);
+  }, [tab, selected, pageOperator, storyTitle, t]);
 
   // 오퍼 모달은 히스토리 엔트리를 쌓지 않고 해시만 교체한다(공유용 딥링크).
   // 예전엔 열 때 pushState, 닫을 때 history.back()으로 URL을 복원했는데, 인앱 브라우저
   // (카톡·네이버 카페 웹뷰 — bfcache 미지원)에서 back()이 문서를 통째로 리로드시켜
   // 목록·필터·스크롤이 전부 초기화되는 버그가 있었다 (사용자 리포트 2026-07-18).
   // replaceState는 네비게이션이 아니라 리로드가 원천적으로 발생하지 않는다.
+  // 주소는 상세의 정본 경로(/operators/<id>)로 바꾼다 — 공유·새로고침이 색인된 주소가 된다
+  // (2026-08-06). replaceState라 히스토리 엔트리는 여전히 안 쌓인다.
   const openOperator = useCallback((operator: Operator) => {
     setSelected(operator);
-    history.replaceState(null, "", `${tabPath(tab)}#op-${operator.id}`);
-  }, [tab, tabPath]);
+    const fut = new URLSearchParams(window.location.search).get("future") === "1";
+    history.replaceState(null, "", operatorPath(locale, operator.id) + (fut ? "?future=1" : ""));
+  }, [locale]);
   const closeOperator = () => {
     setSelected(null);
-    if (decodeURIComponent(window.location.hash).startsWith("#op-")) {
+    // 주소를 되돌리는 건 **주소가 오퍼를 가리키고 있을 때만**. 플래너 등 다른 탭에서
+    // 띄운 모달(showOperatorById)은 URL을 안 건드리므로 여기서도 그대로 둔다.
+    if (operatorIdFromPath(window.location.pathname) !== null) {
+      history.replaceState(null, "", tabPath("archive"));
+    } else if (decodeURIComponent(window.location.hash).startsWith("#op-")) {
       history.replaceState(null, "", tabPath(tab));
     }
   };
@@ -1503,7 +1534,15 @@ function HomeInner({ operators, extra, summaries, initialTab, initialStory }: { 
       {tab === "portal" && <Portal onOpenTab={switchTab} onFeedback={() => setFeedbackOpen(true)}
         stats={{ operators: operators.length, summaries: Object.keys(summaries).length }} />}
 
-      {tab === "archive" && <section className="explorer" aria-labelledby="explorer-title">
+      {/* 오퍼 상세 페이지(/operators/<id>)로 들어오면 목록 대신 상세만 — 420장의 목록이
+          모든 상세 페이지에 통째로 딸려 들어가면 페이지마다 고유 본문보다 공통 뼈대가
+          많아진다 (2026-08-06). 목록으로 돌아가는 링크는 상세 위에 있다. */}
+      {tab === "archive" && pageOperator && (
+        <OperatorPage operator={pageOperator} onUpgrade={openUpgradeFor} includeFuture={includeFuture}
+          listHref={tabPath("archive")}
+          onBack={() => { setPageOperator(null); history.pushState(null, "", tabPath("archive")); }} />
+      )}
+      {tab === "archive" && !pageOperator && <section className="explorer" aria-labelledby="explorer-title">
         <div className="filter-panel">
           <div className="panel-heading">
             <div><span className="section-no">FILTER / 01</span><h2 id="explorer-title">{t("탐색 조건")}</h2></div>
@@ -1868,8 +1907,15 @@ function OperatorCard({ operator, index, onSelect }: { operator: Operator; index
   // 카드가 화면 근처에 실제로 들어오기 전엔 이미지 자체를 마운트하지 않는다 — 진입 즉시
   // 420장이 전부 요청되던 문제 대응 (스크롤·필터링 시에만 그때그때 받아옴, 2026-07-22)
   const [portraitRef, visible] = useLazyVisible<HTMLDivElement>();
+  // 실제 앵커 — 크롤러가 따라갈 내부 링크이자 새 탭/북마크가 되는 정본 주소.
+  // 클릭은 종전대로 가로채 모달을 연다 (미실장 오퍼는 상세 라우트가 없어 목록 주소로).
   return (
-    <button type="button" className="operator-card" onClick={() => onSelect(operator)} aria-label={t("{name} 상세 정보 열기", { name: operator.name })} style={{ "--accent": operator.accent, "--delay": `${(index % 12) * 25}ms` } as React.CSSProperties}>
+    <a className="operator-card" href={operator.unreleased ? archivePath(locale) : operatorPath(locale, operator.id)}
+      onClick={(event) => {
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+        event.preventDefault(); onSelect(operator);
+      }}
+      aria-label={t("{name} 상세 정보 열기", { name: operator.name })} style={{ "--accent": operator.accent, "--delay": `${(index % 12) * 25}ms` } as React.CSSProperties}>
       <div className="portrait" ref={portraitRef}>
         <span className="portrait-grid" />
         <div className="portrait-info">
@@ -1886,7 +1932,7 @@ function OperatorCard({ operator, index, onSelect }: { operator: Operator; index
       <div className="card-body">
         <div className="tags">{operator.concepts.map((tag) => <span key={tag}>{conceptName(locale, tag)}</span>)}</div>
       </div>
-    </button>
+    </a>
   );
 }
 
@@ -1948,14 +1994,17 @@ function ModalRail({ scrollRef }: { scrollRef: React.RefObject<HTMLDivElement | 
   );
 }
 
-function OperatorModal({ operator, onClose, onUpgrade, includeFuture, onPinChange }: { operator: Operator; onClose: () => void; onUpgrade?: (operatorId: string) => void; includeFuture?: boolean; onPinChange?: (pinned: boolean) => void }) {
+// 오퍼 상세 본문 — 창 모달(OperatorModal)과 상세 페이지(OperatorPage)가 공유한다.
+// 페이지가 따로 필요한 이유: ModalWindow는 body 포털이라 프리렌더(document 없음)에서
+// 아무것도 못 그린다. /operators/<id>를 색인시키려면 본문이 정적 HTML에 있어야 한다
+// (2026-08-06). 두 곳이 같은 컴포넌트를 쓰므로 내용이 갈라질 일은 없다.
+function OperatorFile({ operator, onUpgrade, includeFuture }: { operator: Operator; onUpgrade?: (operatorId: string) => void; includeFuture?: boolean }) {
   const { locale, t } = useI18n();
   const scrollRef = useRef<HTMLDivElement>(null);
   // 미래 모듈은 '미래시 포함'이 켜졌을 때만 (사용자 요청 2026-08-01)
   const shownModules = operator.modules.filter((m) => includeFuture || !m.unreleased);
   return (
-    <ModalWindow label={`${operator.name} · ${operator.code}`} className="operator-modal" onClose={onClose} onPinChange={onPinChange}
-      style={{ "--accent": operator.accent } as React.CSSProperties}>
+    <>
         <header className="modal-hero">
           <img src={asset(operator.image)} alt={t("{name} 오퍼레이터", { name: operator.name })} width={180} height={180} />
           <div className="modal-title-block">
@@ -2086,7 +2135,39 @@ function OperatorModal({ operator, onClose, onUpgrade, includeFuture, onPinChang
         </div>
         <ModalRail scrollRef={scrollRef} />
         </div>
+    </>
+  );
+}
+
+function OperatorModal({ operator, onClose, onUpgrade, includeFuture, onPinChange }: { operator: Operator; onClose: () => void; onUpgrade?: (operatorId: string) => void; includeFuture?: boolean; onPinChange?: (pinned: boolean) => void }) {
+  return (
+    <ModalWindow label={`${operator.name} · ${operator.code}`} className="operator-modal" onClose={onClose} onPinChange={onPinChange}
+      style={{ "--accent": operator.accent } as React.CSSProperties}>
+      <OperatorFile operator={operator} onUpgrade={onUpgrade} includeFuture={includeFuture} />
     </ModalWindow>
+  );
+}
+
+// 오퍼 상세 페이지 — /operators/<id>로 직접 들어왔을 때. 창 모양은 그대로 쓰되(같은
+// .operator-modal 규격) 백드롭·크롬 없이 본문에 놓인다. 목록으로 돌아가는 링크는 실제
+// 앵커라 크롤러도 목록으로 되돌아갈 수 있다.
+function OperatorPage({ operator, onUpgrade, includeFuture, listHref, onBack }: {
+  operator: Operator; onUpgrade?: (operatorId: string) => void; includeFuture?: boolean;
+  listHref: string; onBack: () => void;
+}) {
+  const { t } = useI18n();
+  return (
+    <div className="operator-page-wrap">
+      <a className="story-back" href={listHref}
+        onClick={(e) => {
+          if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+          e.preventDefault(); onBack();
+        }}>← {t("오퍼 목록으로")}</a>
+      <section className="operator-modal operator-page" aria-label={`${operator.name} · ${operator.code}`}
+        style={{ "--accent": operator.accent } as React.CSSProperties}>
+        <OperatorFile operator={operator} onUpgrade={onUpgrade} includeFuture={includeFuture} />
+      </section>
+    </div>
   );
 }
 

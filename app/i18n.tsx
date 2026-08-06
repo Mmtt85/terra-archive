@@ -1378,6 +1378,7 @@ const D: Record<string, Pair> = {
   ],
   "미실장": ["Unreleased", "未実装"],
   "{ym} 예정": ["{ym} (est.)", "{ym} 予定"],
+  "오퍼 목록으로": ["Back to operators", "オペレーター一覧へ"],
   // 상세 라우트가 내보내는 <title>과 같은 문구 (app/seo-story.ts TITLE)
   "{name} 스토리 요약 - 명일방주 | 테라 아카이브": ["{name} Story Summary - Arknights | Terra Archive", "{name} ストーリー要約 - アークナイツ | テラアーカイブ"],
   "미실장 오퍼레이터입니다 — 중국 서버 데이터 기준이며, 스킬·재능 등 텍스트는 비공식 AI 번역이라 정식 출시 시 공식 번역과 다를 수 있습니다.": [
