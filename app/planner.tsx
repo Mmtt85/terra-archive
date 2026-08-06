@@ -910,16 +910,25 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
 
   const summary = useMemo(() => {
     if (!plan) return null;
-    const avg = (prefix: string) => {
-      const keys = LAYOUT.filter((cell) => cell.key.startsWith(prefix)).map((cell) => cell.key);
-      const totals = keys.map((key) => teamScore(teamFor(key, activeShift), cellByKey.get(key)!.room, { ...ctxFor(key, pointsFor(activeShift), plan.factionCounts[activeShift], plan.plants, presentIds, ambient, roomOf, cellOf), shiftHours: plan.shiftHours?.[activeShift] }));
-      return totals.length ? Math.round(totals.reduce((a, b) => a + b, 0) / totals.length) : 0;
+    const scores = (pick: (cell: (typeof LAYOUT)[number]) => boolean) => LAYOUT.filter(pick)
+      .map((cell) => teamScore(teamFor(cell.key, activeShift), cellByKey.get(cell.key)!.room, { ...ctxFor(cell.key, pointsFor(activeShift), plan.factionCounts[activeShift], plan.plants, presentIds, ambient, roomOf, cellOf), shiftHours: plan.shiftHours?.[activeShift] }));
+    // 제조소는 순금/작전기록을 **따로** 낸다 (사용자 요청 2026-08-06) — 두 품목은 우선 생산에
+    // 따라 크게 갈리는데 하나로 평균 내면 그 차이가 통째로 묻힌다. 그 품목 방이 없으면 null.
+    const avg = (pick: (cell: (typeof LAYOUT)[number]) => boolean) => {
+      const totals = scores(pick);
+      return totals.length ? Math.round(totals.reduce((a, b) => a + b, 0) / totals.length) : null;
     };
+    // 발전소만 **합**이다 (사용자 확정 2026-08-06: "드론 회복 관련해서는 평균이 아니라 합산").
+    // 제조소·무역소는 방마다 제 산출에 곱해지니 평균이 뜻을 갖지만, 발전소 3기의 "드론 회복
+    // +N%"는 **하나의 전역 회복 속도**에 더해지므로 평균은 물리적 의미가 없다 — 평균 22%를
+    // 보고 하루 드론을 240×1.22로 세면 실제(240×1.66)와 어긋난다.
+    const sum = (pick: (cell: (typeof LAYOUT)[number]) => boolean) => Math.round(scores(pick).reduce((a, b) => a + b, 0));
     return {
       strategy: plan.strategy,
-      manufacture: avg("MANUFACTURE"),
-      trading: avg("TRADING"),
-      power: avg("POWER"),
+      gold: avg((cell) => cell.room === "MANUFACTURE" && cell.product === "gold"),
+      exp: avg((cell) => cell.room === "MANUFACTURE" && cell.product === "exp"),
+      trading: avg((cell) => cell.room === "TRADING"),
+      power: sum((cell) => cell.room === "POWER"),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plan, activeShift, presentIds, ambient, eliteById]);
@@ -955,6 +964,15 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       { h: ORDER_LMD_HOUR.toFixed(1), g: num(YIELD_GOLD_LMD) }),
     goldBalance,
     shiftMix, stockNote,
+  ] : [];
+  const yieldDroneLines = yieldDay ? [
+    t("발전소는 기본 360초에 드론 1개를 만듭니다(하루 240개). 발전소 3기의 '드론 회복' 효율은 한 개의 전역 회복 속도에 **합산**되므로 지금은 +{p}%, 하루 {n}개입니다.",
+      { p: Math.round(yieldDay.dronePct), n: num(yieldDay.drones) }),
+    t("드론 1개는 제조소·무역소의 남은 시간을 180초 줄입니다 — 그 방이 180초 동안 만들 양이 그대로 이득이라, **방 효율이 높을수록 드론 1개의 값도 커집니다**."),
+    t("지금 편성이면 전부 작전기록 제조소에 부었을 때 하루 {r}개, 전부 순금 제조소에 부었을 때 순금 {g}개(용문폐 {l}) 상당입니다.",
+      { r: num(yieldDay.droneRecords), g: num(yieldDay.droneGold), l: num(yieldDay.droneGold * YIELD_GOLD_LMD) }),
+    t("어디에 쓰는지는 사람마다 달라서 **위 용문폐·작전기록 숫자에는 더하지 않았습니다** — 이 칸만 따로 보세요. 드론 상한(발전소 1기당 100, 시설 인원이 차감)에 걸리기 전에 쓴다고 봅니다."),
+    shiftMix,
   ] : [];
   const yieldExpLines = yieldDay ? [
     t("제조소 기본 생산 속도 1포인트/초 기준입니다 — 중급작전기록 10,800pt = 1,000exp(Lv3), 초급 4,800pt = 400exp(Lv2), 기초 2,700pt = 200exp(Lv1). 방 %효율을 곱해 더한 하루 경험치를 중급작전기록 개수로 환산했습니다."),
@@ -1013,7 +1031,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     e: infra.rooms[cell.room]?.phases?.[levelOf(cell.key) - 1]?.electricity ?? 0,
   }));
   const noteLines: Record<ShiftNoteKind, string[]> = {
-    drain: [], policy: [], power: powerLines, gold: yieldGoldLines, lmd: yieldLmdLines, exp: yieldExpLines,
+    drain: [], policy: [], power: powerLines, gold: yieldGoldLines, lmd: yieldLmdLines, exp: yieldExpLines, drone: yieldDroneLines,
   };
 
   const exportImage = async () => {
@@ -1053,15 +1071,20 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     // 요약 지표도 이미지에 담는다 (사용자 요청 2026-08-06) — 편성만 캡처하면 "그래서 이
     // 편성이 하루에 뭘 얼마나 뽑는지"가 빠져서, 공유받은 쪽이 화면과 대조를 못 한다.
     const stats: { k: string; v: string }[] = [
-      { k: t("제조소 평균"), v: summary ? `+${summary.manufacture}%` : "—" },
-      { k: t("무역소 평균"), v: summary ? `+${summary.trading}%` : "—" },
-      { k: t("드론 회복 평균 효율"), v: summary ? `+${summary.power}%` : "—" },
+      { k: t("순금 평균"), v: summary?.gold != null ? `+${summary.gold}%` : "—" },
+      { k: t("작전기록 평균"), v: summary?.exp != null ? `+${summary.exp}%` : "—" },
+      { k: t("무역소 평균"), v: summary?.trading != null ? `+${summary.trading}%` : "—" },
+      { k: t("드론 회복 효율"), v: summary ? `+${summary.power}%` : "—" },
       { k: t("전력"), v: `${power.net >= 0 ? "+" : ""}${power.net} (${power.consume}/${power.provide})` },
       { k: t("순금 생산 / 소모"), v: yieldDay && yieldRooms.gold > 0
         ? `${num(yieldDay.gold)} / ${num(yieldDay.goldNeed)}${yieldDay.goldShort > 0.5 ? ` (−${num(yieldDay.goldShort)})` : ""}` : "—" },
       { k: t("하루 평균 용문폐"), v: yieldDay && yieldRooms.trade > 0 ? `≈${num(yieldDay.lmd)}` : "—" },
       { k: t("하루 평균 작전기록"), v: yieldDay && yieldRooms.exp > 0
         ? `${t("≈{n}개", { n: num(yieldDay.records) })} (${num(yieldDay.exp)} exp)` : "—" },
+      { k: t("하루 드론 회복"), v: yieldDay
+        ? `${t("≈{n}개", { n: num(yieldDay.drones) })} (${t("작전기록 +{r} or 순금 +{g}", {
+            r: yieldRooms.exp > 0 ? num(yieldDay.droneRecords) : "0",
+            g: yieldRooms.gold > 0 ? num(yieldDay.droneGold) : "0" })})` : "—" },
     ];
     const W = 1240; const lineH = 46;
     const STAT_TOP = 146; const STAT_COLS = 4; const STAT_ROW_H = 46;
@@ -1249,9 +1272,10 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           <span>{t("전략")}</span>
           <b className="strategy">{plan ? t("시너지 트리 보기 ▸") : "—"}</b>
         </button>
-        <div><span>{t("제조소 평균")}</span><b>{summary ? `+${summary.manufacture}%` : "—"}</b></div>
-        <div><span>{t("무역소 평균")}</span><b>{summary ? `+${summary.trading}%` : "—"}</b></div>
-        <div><span>{t("드론 회복 평균 효율")}</span><b>{summary ? `+${summary.power}%` : "—"}</b></div>
+        <div><span>{t("순금 평균")}</span><b>{summary?.gold != null ? `+${summary.gold}%` : "—"}</b></div>
+        <div><span>{t("작전기록 평균")}</span><b>{summary?.exp != null ? `+${summary.exp}%` : "—"}</b></div>
+        <div><span>{t("무역소 평균")}</span><b>{summary?.trading != null ? `+${summary.trading}%` : "—"}</b></div>
+        <div><span>{t("드론 회복 효율")}</span><b>{summary ? `+${summary.power}%` : "—"}</b></div>
         {/* 전력 수지 — 발전소 phases 공급(만렙 270×기수) vs 시설 소비. 음수면 게임에서 성립 불가.
             소비/공급 슬래시 표기 + 시설별 내역 (사용자 요청 2026-07-24) */}
         <div className={power.net < 0 ? "power-cell over" : "power-cell"} title={powerLines[0]}>
@@ -1283,6 +1307,17 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           <b>{yieldDay && yieldRooms.exp > 0 ? t("≈{n}개", { n: num(yieldDay.records) }) : "—"}
             {yieldDay && yieldRooms.exp > 0 && <i className="yield-detail">({num(yieldDay.exp)} exp)</i>}</b>
           {yieldDay && <InfoDot onClick={() => setShiftNote("exp")} t={t} />}
+        </div>
+        {/* 드론은 위 세 숫자에 **더하지 않는다** — 어디에 쓰는지가 사람마다 달라서
+            (사용자 확정 2026-08-06: 별도 칸). 환산은 작전기록 기준으로 적고, 순금 환산은
+            ⓘ 모달에 같이 넣는다. */}
+        <div className="yield-cell" title={yieldDroneLines[0]}>
+          <span>🛠 {t("하루 드론 회복")}</span>
+          <b>{yieldDay ? t("≈{n}개", { n: num(yieldDay.drones) }) : "—"}
+            {yieldDay && <i className="yield-detail">{t("작전기록 +{r} or 순금 +{g}", {
+              r: yieldRooms.exp > 0 ? num(yieldDay.droneRecords) : "0",
+              g: yieldRooms.gold > 0 ? num(yieldDay.droneGold) : "0" })}</i>}</b>
+          {yieldDay && <InfoDot onClick={() => setShiftNote("drone")} t={t} />}
         </div>
       </div>
 
@@ -2255,7 +2290,7 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                 switch (cell.room) {
                   case "TRADING": return t("오더 대기 상한 {n} · 오더 등급 {r}", { n: p.orderLimit ?? 0, r: p.orderRarity ?? 0 });
                   case "MANUFACTURE": return t("제품 보관함 {n}칸", { n: p.capacity ?? 0 });
-                  case "POWER": return t("무인기 회복 가속");
+                  case "POWER": return t("드론 회복 가속");
                   case "DORMITORY": return t("기본 회복 계수 {n} · 인테리어 분위기 상한 {m}", { n: p.recover ?? 0, m: p.ambience ?? 0 });
                   case "MEETING": return t("친구 상한 +{n} · 단서 수집", { n: p.friendSlots ?? 0 });
                   // 공개모집 슬롯 해금은 building_data 밖 게임 내 기준 (INFRA-RULES §1) — Lv1/2/3 = 2/3/4 슬롯
@@ -2959,7 +2994,7 @@ function InfoDot({ onClick, t }: { onClick: () => void; t: T }) {
 // ── 교대 탭의 짧은 링크·요약 카드 ⓘ가 여는 상세 모달 (사용자 요청 2026-07-28 / 08-06) ──
 // 왼쪽 칸에 줄글을 깔면 그리드 첫 행(제어센터·응접실) 높이가 밀린다 — 화면엔 한 줄짜리
 // 링크만 두고 설명은 전부 여기로 내린다.
-export type ShiftNoteKind = "drain" | "policy" | "power" | "gold" | "lmd" | "exp";
+export type ShiftNoteKind = "drain" | "policy" | "power" | "gold" | "lmd" | "exp" | "drone";
 
 // "왜 표시된 시간이 그대로 안 가는가" — 사용자가 짚은 제어센터 연쇄가 핵심이다.
 // 수치는 INFRA-RULES §1 컨디션 모델 v18(실측 9건 재현) 기준.
@@ -2984,6 +3019,7 @@ const SHIFT_NOTE_SPEC: Record<ShiftNoteKind, { kicker: string; title: string; tl
   gold: { kicker: "DAILY GOLD", title: "순금 수지는 이렇게 계산했습니다", items: [] },
   lmd: { kicker: "DAILY LMD", title: "하루 평균 용문폐는 이렇게 계산했습니다", items: [] },
   exp: { kicker: "DAILY RECORDS", title: "하루 평균 작전기록은 이렇게 계산했습니다", items: [] },
+  drone: { kicker: "DRONES", title: "드론은 이렇게 계산했습니다", tldr: "위 세 숫자에는 안 더했습니다 — 쓰는 곳이 사람마다 달라서", items: [] },
 };
 
 // lines = 호출부가 실제 수치를 넣어 만든(이미 번역된) 본문, body = 표 같은 추가 블록
@@ -3090,6 +3126,7 @@ const HELP_SECTIONS: { title: string; items: string[] }[] = [
     "순금은 밖에서 채워 온다고 보고 무역소 처리량 그대로 계산합니다 — 순금이 부족해도 용문폐를 깎지 않고, 옆의 '순금 생산 / 소모' 칸에 하루 몇 개가 모자라는지만 적습니다. 그 순금을 실제로 채우지 않으면 표시된 만큼 받지 못합니다.",
     "'하루 평균 작전기록'은 제조소 기본 생산 속도 1포인트/초 기준입니다 — 중급작전기록 10,800pt = 1,000exp(Lv3), 초급 4,800pt = 400exp(Lv2), 기초 2,700pt = 200exp(Lv1). 제조소 레벨이 낮으면 만들 수 있는 등급도 낮아지므로(252 배치의 Lv2 제조소) 그 레벨의 레시피로 계산합니다.",
     "두 값 모두 A조·B조를 각 조의 교대 시계 비율로 섞은 하루치라, 조 탭을 바꿔도 변하지 않습니다. 또 창고·오더 슬롯이 차기 전에 수거한다고 보므로, 하루에 한 번도 안 들어오는 계정이면 실제 산출은 이보다 적습니다.",
+    "'하루 드론 회복'은 발전소가 만드는 드론입니다 — 기본 360초에 1개(하루 240개)이고, 발전소 3기의 '드론 회복' 효율이 하나의 전역 속도에 **합산**됩니다(그래서 요약의 드론 칸만 평균이 아니라 합입니다). 드론 1개는 제조소·무역소의 남은 시간을 180초 줄이므로 방 효율이 높을수록 값이 큽니다. 어디에 쓸지는 사람마다 달라 위 용문폐·작전기록에는 더하지 않고 '작전기록 +N or 순금 +N'으로 환산만 적습니다.",
   ]},
   { title: "수치는 근사치", items: [
     "숙소는 풀 인원(20명), 모집 4칸, 발전소 3(그레이 알터 시 4) 기준의 추정 상한으로 계산합니다. 실제 게임 수치와 약간 다를 수 있습니다.",

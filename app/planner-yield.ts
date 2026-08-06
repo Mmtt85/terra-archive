@@ -43,6 +43,14 @@ const ORDER_GOLD_HOUR = ORDER_GOLD / ORDER_HOURS;
 // 그 확률 테이블은 클뜯 데이터에 없다. Lv1은 2금 오더뿐이라 416.7/h로 Lv3 풀(427.7/h)보다
 // 2.6% 낮은 정도라, 레벨과 무관하게 Lv3 풀로 근사한다 (프리셋은 전부 무역소 만렙).
 
+// ── 드론(드론) ─────────────────────────────────────────────────────────────
+// 사용자 제보 2026-08-06: 인게임 리포트가 시뮬보다 작전기록만 많았던 이유 — "내가 드론을
+// 써서 전부 다 작전기록을 부스트시켰거든". 순금·용문폐는 맞았고 이 몫이 통째로 빠져 있었다.
+const DRONE_SEC = 360;      // laborRecoverTime — 기본 360초에 1개 (= 하루 240개)
+const DRONE_REDUCE = 180;   // manufact/tradingReduceTimeUnit — 1개당 남은 시간 180초 단축
+// 발전소 스킬은 "발전소에 배치 시, 드론 회복 +10%"처럼 **전역 회복 속도**를 올린다 —
+// 3기의 값이 합산된다 — 그래서 요약 카드도 평균이 아니라 **합**을 보여 준다(2026-08-06).
+
 export type DailyYield = {
   /** 하루 용문폐 — 무역소 처리량 그대로 (순금은 밖에서 수급한다고 본다, 아래 주석) */
   lmd: number;
@@ -56,6 +64,14 @@ export type DailyYield = {
   goldNeed: number;
   /** 기지 안에서 모자라는 순금 (하루, 0 이상) — 밖에서 채워 와야 하는 양 */
   goldShort: number;
+  /** 하루에 회복되는 드론 개수 */
+  drones: number;
+  /** 발전소 3기 드론 회복 효율의 **합**(%) — 카드의 '평균'과 다른 값이다 */
+  dronePct: number;
+  /** 그 드론을 전부 작전기록 제조소에 부었을 때의 추가 작전기록(중급 환산) */
+  droneRecords: number;
+  /** 전부 순금 제조소에 부었을 때의 추가 순금(개) */
+  droneGold: number;
   /** [A조, B조] 교대 시계(시간)와 그 비율 — 하루를 두 조로 섞은 근거 */
   hours: number[];
   weights: number[];
@@ -73,7 +89,8 @@ export function dailyYield(plan: Plan, byId: Map<string, InfraOp>): DailyYield {
   const span = hours[0] + hours[1] || 24;
   const weights = hours.map((h) => h / span);
 
-  let gold = 0, exp = 0, lmd = 0, goldNeed = 0;
+  let gold = 0, exp = 0, lmd = 0, goldNeed = 0, dronePct = 0;
+  let goldCells = 0, expCells = 0;
   for (let shift = 0; shift < SHIFT_COUNT; shift += 1) {
     const teamAt = (key: string): InfraOp[] => {
       const shifts = plan.assignments[key] ?? [];
@@ -87,7 +104,14 @@ export function dailyYield(plan: Plan, byId: Map<string, InfraOp>): DailyYield {
     const ambient = aurasOf(teamAt("CONTROL"), ctxFor("CONTROL", points, counts, plan.plants, present, undefined, rooms, cells));
     const w = weights[shift] ?? 0;
     for (const cell of LAYOUT) {
+      // 발전소는 산출이 아니라 **드론 회복 속도**다 — 3기의 %가 전역 회복률에 합산된다.
+      if (cell.room === "POWER") {
+        dronePct += teamScore(teamAt(cell.key), cell.room,
+          { ...ctxFor(cell.key, points, counts, plan.plants, present, ambient, rooms, cells), shiftHours: plan.shiftHours?.[shift], shift }) * w;
+        continue;
+      }
       if (cell.room !== "MANUFACTURE" && cell.room !== "TRADING") continue;
+      if (shift === 0) { if (cell.room === "MANUFACTURE") { if (cell.product === "gold") goldCells += 1; else expCells += 1; } }
       const ctx = { ...ctxFor(cell.key, points, counts, plan.plants, present, ambient, rooms, cells), shiftHours: plan.shiftHours?.[shift], shift };
       // 방 %효율. 무인 시설도 기본 속도 100%로 돌아가므로 배수는 (1 + %/100)이다.
       const rate = 1 + teamScore(teamAt(cell.key), cell.room, ctx) / 100;
@@ -111,12 +135,22 @@ export function dailyYield(plan: Plan, byId: Map<string, InfraOp>): DailyYield {
   // 순금은 부족하지 않다는 전제 하에서 시뮬레이션해 달라"). 종전엔 순금 생산÷소화량 비율을
   // 곱했는데, 실계정 인게임 리포트(용문폐 51,000/일)와 대조하니 그 비율만큼 낮게 나왔다.
   // 모자라는 양은 goldShort로 내보내 화면에 "순금 N개 부족"으로 적고, 판단은 유저가 한다.
+  // 드론: 하루 회복량 × 1개당 180초. 180초 동안 그 방이 만들 양이 그대로 이득이라
+  // **방 효율이 높을수록 드론 1개의 값도 커진다**. 방 하나의 초당 산출 = 하루 산출 ÷
+  // (86,400 × 그 종류 방 수)이므로, 전부 몰아 부었을 때의 값은 아래처럼 떨어진다.
+  // 어디에 쓸지는 사람마다 달라서 위 용문폐·작전기록에는 **더하지 않고** 따로 보여 준다.
+  const drones = (DAY_SEC / DRONE_SEC) * (1 + dronePct / 100);
+  const perDrone = (dayTotal: number, cellCount: number) =>
+    (cellCount > 0 ? (drones * DRONE_REDUCE * dayTotal) / (DAY_SEC * cellCount) : 0);
   return {
     lmd,
     exp,
     records: exp / EXP_PER_RECORD,
     gold, goldNeed,
     goldShort: Math.max(0, goldNeed - gold),
+    drones, dronePct,
+    droneRecords: perDrone(exp, expCells) / EXP_PER_RECORD,
+    droneGold: perDrone(gold, goldCells),
     hours, weights,
   };
 }

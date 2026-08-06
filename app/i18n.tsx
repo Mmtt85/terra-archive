@@ -492,7 +492,7 @@ const D: Record<string, Pair> = {
   "{n}인": ["{n} seats", "{n}人"],
   "오더 대기 상한 {n} · 오더 등급 {r}": ["Order queue limit {n} · order tier {r}", "受注上限{n}・注文ランク{r}"],
   "제품 보관함 {n}칸": ["Output storage {n}", "製品保管{n}枠"],
-  "무인기 회복 가속": ["Drone recovery boost", "ドローン回復加速"],
+  "드론 회복 가속": ["Drone recovery boost", "ドローン回復加速"],
   "기본 회복 계수 {n} · 인테리어 분위기 상한 {m}": ["Base morale recovery {n} · ambience cap {m}", "基本回復係数{n}・雰囲気上限{m}"],
   "친구 상한 +{n} · 단서 수집": ["Friend limit +{n} · clue search", "フレンド上限+{n}・手がかり捜索"],
   "연락 속도 가속 · 공개모집 슬롯 {n}개 (제어센터 만렙 기준)": ["Contact speed boost · {n} recruitment slots (with max control center)", "コンタクト速度上昇・公開求人スロット{n}（制御センター最大時）"],
@@ -714,9 +714,10 @@ const D: Record<string, Pair> = {
   "그 외": ["More", "その他"],
   "전략": ["Strategy", "戦略"],
   "시너지 트리 보기 ▸": ["View synergy tree ▸", "シナジーツリーを見る ▸"],
-  "제조소 평균": ["Factory avg", "製造所平均"],
+  "순금 평균": ["Gold avg", "純金平均"],
+  "작전기록 평균": ["Records avg", "作戦記録平均"],
   "무역소 평균": ["Trading avg", "貿易所平均"],
-  "드론 회복 평균 효율": ["Avg drone recovery", "ドローン回復平均効率"],
+  "드론 회복 효율": ["Drone recovery", "ドローン回復効率"],
   // 요약 카드 ⓘ 모달 (2026-08-06)
   "계산 근거 보기": ["Show how this is calculated", "計算根拠を見る"],
   "전력 수지": ["Power balance", "電力収支"],
@@ -732,6 +733,26 @@ const D: Record<string, Pair> = {
   "하루 평균 용문폐": ["Avg LMD / day", "1日平均の龍門幣"],
   "하루 평균 작전기록": ["Avg records / day", "1日平均の作戦記録"],
   "≈{n}개": ["≈{n}", "≈{n}個"],
+  // 드론(드론) 칸 — 위 세 숫자에 더하지 않는 별도 산출 (2026-08-06)
+  "하루 드론 회복": ["Drones / day", "1日のドローン回復"],
+  // 둘 다 받는 게 아니라 **택일**이라 or로 적는다 (사용자 지적 2026-08-06)
+  "작전기록 +{r} or 순금 +{g}": ["+{r} records or +{g} gold", "作戦記録 +{r} または 純金 +{g}"],
+  "드론은 이렇게 계산했습니다": ["How drones are calculated", "ドローンの計算方法"],
+  "위 세 숫자에는 안 더했습니다 — 쓰는 곳이 사람마다 달라서": [
+    "Not added to the three figures above — where you spend them differs per player",
+    "上の3つの数字には加えていません — 使い道が人によって違うためです"],
+  "발전소는 기본 360초에 드론 1개를 만듭니다(하루 240개). 발전소 3기의 '드론 회복' 효율은 한 개의 전역 회복 속도에 **합산**되므로 지금은 +{p}%, 하루 {n}개입니다.": [
+    "A power plant makes one drone every 360 seconds by default (240 a day). The 'drone recovery' bonuses of all plants **add up** into one global rate, which is +{p}% here — {n} drones a day.",
+    "発電所は既定で360秒に1機のドローンを回復します（1日240機）。発電所3基の「ドローン回復」効率は1つの全体回復速度に**合算**されるため、現在は+{p}%で1日{n}機です。"],
+  "드론 1개는 제조소·무역소의 남은 시간을 180초 줄입니다 — 그 방이 180초 동안 만들 양이 그대로 이득이라, **방 효율이 높을수록 드론 1개의 값도 커집니다**.": [
+    "One drone cuts 180 seconds off a factory's or trading post's remaining time — the gain is whatever that room makes in 180 seconds, so **the higher the room's efficiency, the more each drone is worth**.",
+    "ドローン1機は製造所・貿易所の残り時間を180秒短縮します — その部屋が180秒で作る分がそのまま利益なので、**部屋の効率が高いほどドローン1機の価値も大きくなります**。"],
+  "지금 편성이면 전부 작전기록 제조소에 부었을 때 하루 {r}개, 전부 순금 제조소에 부었을 때 순금 {g}개(용문폐 {l}) 상당입니다.": [
+    "With this plan, pouring them all into the record factories is worth {r} records a day; all into the gold factories, {g} Pure Gold ({l} LMD).",
+    "現在の編成なら、すべて作戦記録の製造所に使えば1日{r}個、すべて純金の製造所に使えば純金{g}個（龍門幣{l}）に相当します。"],
+  "어디에 쓰는지는 사람마다 달라서 **위 용문폐·작전기록 숫자에는 더하지 않았습니다** — 이 칸만 따로 보세요. 드론 상한(발전소 1기당 100, 시설 인원이 차감)에 걸리기 전에 쓴다고 봅니다.": [
+    "Since where you spend them differs per player, **this is not added to the LMD and record figures above** — read this card on its own. It assumes you spend them before hitting the drone cap (100 per power plant, reduced by staffed facilities).",
+    "使い道は人によって違うため、**上の龍門幣・作戦記録の数字には加えていません** — この欄だけ別に見てください。ドローン上限（発電所1基あたり100、施設の配置人数で減算）に達する前に使う前提です。"],
   "순금 생산 / 소모": ["Gold made / used", "純金 生産 / 消費"],
   "{n}개 부족": ["{n} short", "{n}個不足"],
   "순금 수지는 이렇게 계산했습니다": ["How the gold balance is calculated", "純金収支の計算方法"],
@@ -1349,6 +1370,10 @@ const D: Record<string, Pair> = {
   "두 값 모두 A조·B조를 각 조의 교대 시계 비율로 섞은 하루치라, 조 탭을 바꿔도 변하지 않습니다. 또 창고·오더 슬롯이 차기 전에 수거한다고 보므로, 하루에 한 번도 안 들어오는 계정이면 실제 산출은 이보다 적습니다.": [
     "Both figures blend crew A and crew B by each crew's shift clock, so switching the crew tab does not change them. They also assume you collect before the factory stock and order slots fill up — if you never log in for a day, the real output is lower.",
     "どちらの値もA班・B班を各班の交代時計の比率で混ぜた1日分なので、班タブを切り替えても変わりません。また倉庫・注文枠が埋まる前に回収する前提のため、1日一度もログインしない場合は実際の産出がこれより少なくなります。",
+  ],
+  "'하루 드론 회복'은 발전소가 만드는 드론입니다 — 기본 360초에 1개(하루 240개)이고, 발전소 3기의 '드론 회복' 효율이 하나의 전역 속도에 **합산**됩니다(그래서 요약의 드론 칸만 평균이 아니라 합입니다). 드론 1개는 제조소·무역소의 남은 시간을 180초 줄이므로 방 효율이 높을수록 값이 큽니다. 어디에 쓸지는 사람마다 달라 위 용문폐·작전기록에는 더하지 않고 '작전기록 +N or 순금 +N'으로 환산만 적습니다.": [
+    "'Drones / day' are the drones the power plants make — one every 360 seconds by default (240 a day), and the 'drone recovery' bonuses of all three plants **add up** into one global rate (which is why that card alone shows a sum, not an average). One drone cuts 180 seconds off a factory or trading post, so the higher the room's efficiency the more it is worth. Since where you spend them differs per player, they are not added to the LMD and record figures above — only noted as '+N records or +N gold'.",
+    "「1日のドローン回復」は発電所が生み出すドローンです — 既定で360秒に1機（1日240機）で、発電所3基の「ドローン回復」効率は1つの全体速度に**合算**されます（サマリーでこの欄だけ平均ではなく合計なのはそのためです）。ドローン1機は製造所・貿易所の残り時間を180秒短縮するので、部屋の効率が高いほど価値が上がります。使い道は人によって違うため、上の龍門幣・作戦記録には加えず「作戦記録 +N または 純金 +N」の換算だけを表示します。",
   ],
   "수치는 근사치": ["Numbers are approximations", "数値は近似値"],
   "숙소는 풀 인원(20명), 모집 4칸, 발전소 3(그레이 알터 시 4) 기준의 추정 상한으로 계산합니다. 실제 게임 수치와 약간 다를 수 있습니다.": [
