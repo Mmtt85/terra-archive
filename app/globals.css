@@ -4363,9 +4363,59 @@ footer p {
 .yield-cell b {
   white-space: nowrap;
 }
-/* 순금 공급이 무역소 처리량에 못 미치는 상태 — 고치면 그대로 용문폐가 되는 자리라 눈에 띄게 */
+/* 순금 공급이 무역소 처리량에 못 미치는 상태 — 밖에서 채워 와야 하는 양이라 눈에 띄게 */
 .yield-short {
   color: #c43c3c;
+}
+/* 요약 카드의 ⓘ — title 툴팁은 아무도 안 본다(사용자 지적 2026-08-06). 보이는 클릭
+   지점을 카드 오른쪽 위에 두고, 설명은 모달로 연다. */
+.planner-summary > div {
+  position: relative;
+}
+.cell-info {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  padding: 2px 4px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--muted);
+  font: 700 13px/1 monospace;
+  cursor: pointer;
+}
+.cell-info:hover,
+.cell-info:focus-visible {
+  background: color-mix(in srgb, var(--lime) 25%, transparent);
+  color: var(--ink);
+}
+/* 전력 모달의 시설별 내역 */
+.power-rows {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 5px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.power-rows li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 9px;
+  border: 1px solid var(--line);
+  background: var(--white);
+  font: 700 12px monospace;
+}
+.power-rows li.give b {
+  color: var(--lime-ink, #4a7c17);
+}
+.power-rows em {
+  margin-left: 6px;
+  color: var(--muted);
+  font: 700 10px/1 monospace;
+  font-style: normal;
 }
 .room-lv {
   font: 800 10px/1 monospace;
@@ -4542,8 +4592,9 @@ footer p {
 .planner-summary {
   display: grid;
   /* 전력 셀 추가로 6열 (2026-07-24) → 하루 산출 2칸으로 7열 (2026-08-06).
-     마지막 두 칸(하루 용문폐·하루 작전기록)은 숫자가 길어 조금 넓게 준다. */
-  grid-template-columns: repeat(5, minmax(0, 1fr)) repeat(2, minmax(0, 1.3fr));
+     마지막 두 칸(하루 평균 용문폐·작전기록)은 라벨과 숫자가 길어 1.7배 폭을 준다 —
+     좁으면 '하루 평균 용문 / 폐'로 라벨이 갈라진다. */
+  grid-template-columns: repeat(5, minmax(0, 1fr)) repeat(2, minmax(0, 1.7fr));
   gap: 10px;
   margin-top: 18px;
 }

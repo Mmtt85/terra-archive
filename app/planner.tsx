@@ -1015,27 +1015,30 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   // 조 탭과 무관하다 — A·B 두 조를 각자의 교대 시계 비율로 섞은 **하루치**이기 때문.
   const yieldDay = useMemo(() => (plan ? dailyYield(plan, effectiveOpById) : null), [plan, effectiveOpById]);
   const yieldRooms = useMemo(() => yieldCells(), [layout, customRooms, customProducts]); // eslint-disable-line react-hooks/exhaustive-deps
-  // 근사치인 만큼 근거를 툴팁에 전부 적는다 — 상수 출처·순금 수지·교대 비율·수거 가정
+  // 근사치인 만큼 근거를 전부 적는다 — 상수 출처·순금 수지·교대 비율·수거 가정.
+  // ⚠ title 툴팁만으로는 아무도 안 읽는다 (사용자 지적 2026-08-06: "마우스 오버하고 오래
+  // 기다려야 뜨니까 사람들 아무도 안 볼 거임") — 카드의 ⓘ 버튼이 여는 모달이 정본이고,
+  // title은 마우스로 스치는 사람을 위한 보조로만 남긴다.
   const num = (n: number) => Math.round(n).toLocaleString();
   const shiftMix = yieldDay
     ? t("A조 {a}시간 · B조 {b}시간 비율로 두 조를 섞은 하루 값이라, 위의 조 탭을 바꿔도 변하지 않습니다.",
         { a: Math.round(yieldDay.hours[0]), b: Math.round(yieldDay.hours[1]) })
     : "";
   const stockNote = t("창고·오더 슬롯이 차기 전에 수거한다고 봅니다 — 하루에 한 번도 안 들어오는 계정이면 실제 산출은 이보다 적습니다.");
-  const yieldLmdTip = yieldDay ? [
+  const yieldLmdLines = yieldDay ? [
     t("무역소 순금 오더 기준입니다 — 효율 0%p 무역소 1개가 시간당 용문폐 {h}(2·3·4금 오더가 30/50/20%로 나오고 순금 1개 = 용문폐 {g}), 여기에 각 무역소의 %효율을 곱했습니다.",
       { h: ORDER_LMD_HOUR.toFixed(1), g: num(YIELD_GOLD_LMD) }),
-    yieldDay.goldShort
-      ? t("순금 수지: 제조소가 하루 {g}개를 만드는데 무역소는 {n}개를 소화합니다 — 순금이 모자라 무역소가 놉니다. 순금 제조소를 늘리거나 순금방 효율을 올리면 그대로 용문폐가 됩니다.",
-          { g: num(yieldDay.gold), n: num(yieldDay.goldNeed) })
-      : t("순금 수지: 제조소가 하루 {g}개를 만들고 무역소는 {n}개를 소화합니다 — 무역소 처리량이 천장이라 남는 순금은 쌓입니다.",
+    yieldDay.goldShort > 0.5
+      ? t("순금 수지: 무역소가 하루 {n}개를 쓰는데 제조소는 {g}개만 만듭니다 — 하루 {s}개가 모자랍니다. 순금은 밖에서 채워 온다고 보고 무역소 처리량 그대로 잡은 값이라, 실제로 안 채우면 이만큼 못 받습니다.",
+          { g: num(yieldDay.gold), n: num(yieldDay.goldNeed), s: num(yieldDay.goldShort) })
+      : t("순금 수지: 무역소가 하루 {n}개를 쓰고 제조소가 {g}개를 만듭니다 — 기지 안에서 자급됩니다.",
           { g: num(yieldDay.gold), n: num(yieldDay.goldNeed) }),
     shiftMix, stockNote,
-  ].join("\n") : "";
-  const yieldExpTip = yieldDay ? [
+  ] : [];
+  const yieldExpLines = yieldDay ? [
     t("제조소 기본 생산 속도 1포인트/초 기준입니다 — 중급작전기록 10,800pt = 1,000exp(Lv3), 초급 4,800pt = 400exp(Lv2), 기초 2,700pt = 200exp(Lv1). 방 %효율을 곱해 더한 하루 경험치를 중급작전기록 개수로 환산했습니다."),
     shiftMix, stockNote,
-  ].join("\n") : "";
+  ] : [];
 
   // 커밋 정예화 기준 op 맵 — 임시 적용 '이전' 편성 점수 계산용(현재 effectiveOpById는 임시 반영본)
   const committedOpById = useMemo(() => new Map(visibleOps.map((op) => [op.id, withElite(op, eliteById.get(op.id), levelById.get(op.id))])), [visibleOps, eliteById, levelById]);
@@ -1078,6 +1081,19 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
 
   // 전력 수지 (전력·레벨 시스템 2026-07-24) — 발전소 공급 vs 나머지 시설 소비
   const power = useMemo(() => powerBudget(levels), [levels, layout, customRooms]); // eslint-disable-line react-hooks/exhaustive-deps
+  const powerLines = [
+    t("발전소 공급 {p} − 시설 소비 {c} = 여유 {n}. 음수면 게임에서 지을 수 없는 구성이니 방을 눌러 시설 레벨을 낮추세요.",
+      { p: power.provide, c: power.consume, n: power.net >= 0 ? `+${power.net}` : power.net }),
+    t("전력·시설 레벨: 발전소가 전력을 공급하고(레벨 3 기준 1기 270, 3기 810) 나머지 시설이 소비합니다. 방을 눌러 시설 레벨을 바꾸면 전력 소비·근무 슬롯(제조소·무역소 Lv1/2/3 = 1/2/3인)·레벨 연동 스킬(숙소 레벨 합·응접실·훈련실 레벨 등)이 함께 재계산됩니다. 243·153은 전부 만렙일 때 소비가 정확히 810이라 여유가 0이고, 252는 발전소가 2기(540)뿐이라 시설 레벨을 낮춰야 성립합니다 — 기본값은 순금 제조소·응접실·훈련실 만렙 유지, 작전기록 제조소 Lv2, 사무실 Lv2, 숙소 Lv1(첫 숙소만 Lv2)로 소비가 정확히 540입니다. 상단 ⚡ 전력이 음수면 게임에서 지을 수 없는 구성입니다."),
+  ];
+  // 시설별 전력 내역 — 종전엔 툴팁 줄바꿈이었다. 모달에선 칩 목록으로 한눈에 본다.
+  const powerRows = LAYOUT.map((cell) => ({
+    label: t(cell.label), lv: levelOf(cell.key),
+    e: infra.rooms[cell.room]?.phases?.[levelOf(cell.key) - 1]?.electricity ?? 0,
+  }));
+  const noteLines: Record<ShiftNoteKind, string[]> = {
+    drain: [], policy: [], power: powerLines, lmd: yieldLmdLines, exp: yieldExpLines,
+  };
 
   const openCell = LAYOUT.find((cell) => cell.key === openRoom);
 
@@ -1203,26 +1219,26 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         <div><span>{t("무역소 평균")}</span><b>{summary ? `+${summary.trading}%` : "—"}</b></div>
         <div><span>{t("드론 회복 평균 효율")}</span><b>{summary ? `+${summary.power}%` : "—"}</b></div>
         {/* 전력 수지 — 발전소 phases 공급(만렙 270×기수) vs 시설 소비. 음수면 게임에서 성립 불가.
-            소비/공급 슬래시 표기 + 시설별 내역 툴팁 (사용자 요청 2026-07-24) */}
-        <div className={power.net < 0 ? "power-cell over" : "power-cell"}
-          title={`${t("발전소 공급 {p} − 시설 소비 {c}. 음수면 시설 레벨을 낮춰야 합니다 (방을 눌러 레벨 조절)", { p: power.provide, c: power.consume })}\n${LAYOUT.map((cell) => {
-            const e = infra.rooms[cell.room]?.phases?.[levelOf(cell.key) - 1]?.electricity ?? 0;
-            return `${t(cell.label)} Lv${levelOf(cell.key)}: ${e > 0 ? "+" : ""}${e}`;
-          }).join("\n")}`}>
+            소비/공급 슬래시 표기 + 시설별 내역 (사용자 요청 2026-07-24) */}
+        <div className={power.net < 0 ? "power-cell over" : "power-cell"} title={powerLines[0]}>
           <span>⚡ {t("전력")}</span><b>{power.net >= 0 ? `+${power.net}` : power.net} <i className="power-detail">({power.consume}/{power.provide})</i></b>
+          <InfoDot onClick={() => setShiftNote("power")} t={t} />
         </div>
         {/* 하루 산출 — 종전 '기용 인원' 자리 (사용자 요청 2026-08-06: 인원수는 배치도를 세면
             나오지만, 하루에 용문폐·작전기록을 얼마나 받는지는 %효율만 봐선 알 수 없다).
-            근거는 툴팁에 전부 밝힌다 — 근사치라 값 앞에 ≈를 붙인다. */}
-        <div className="yield-cell" title={yieldDay ? yieldLmdTip : undefined}>
-          <span>💰 {t("하루 용문폐")}</span>
+            근사치라 값 앞에 ≈를 붙이고, 근거는 ⓘ 모달에 전부 밝힌다. */}
+        <div className="yield-cell" title={yieldLmdLines[0]}>
+          <span>💰 {t("하루 평균 용문폐")}</span>
           <b>{yieldDay && yieldRooms.trade > 0 ? `≈${num(yieldDay.lmd)}` : "—"}
-            {yieldDay && yieldRooms.trade > 0 && yieldDay.goldShort && <i className="yield-detail yield-short">{t("순금 부족")}</i>}</b>
+            {yieldDay && yieldRooms.trade > 0 && yieldDay.goldShort > 0.5
+              && <i className="yield-detail yield-short">{t("순금 {n}개 부족", { n: num(yieldDay.goldShort) })}</i>}</b>
+          {yieldDay && <InfoDot onClick={() => setShiftNote("lmd")} t={t} />}
         </div>
-        <div className="yield-cell" title={yieldDay ? yieldExpTip : undefined}>
-          <span>📘 {t("하루 작전기록")}</span>
+        <div className="yield-cell" title={yieldExpLines[0]}>
+          <span>📘 {t("하루 평균 작전기록")}</span>
           <b>{yieldDay && yieldRooms.exp > 0 ? t("≈{n}개", { n: num(yieldDay.records) }) : "—"}
             {yieldDay && yieldRooms.exp > 0 && <i className="yield-detail">({num(yieldDay.exp)} exp)</i>}</b>
+          {yieldDay && <InfoDot onClick={() => setShiftNote("exp")} t={t} />}
         </div>
       </div>
 
@@ -1435,7 +1451,18 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
       {showMaa && <MaaExportModal plan={plan} nameOf={(id) => effectiveOpById.get(id)?.name ?? opById.get(id)?.name} toast={showToast} onClose={() => setShowMaa(false)} />}
 
-      {shiftNote && <ShiftNoteModal kind={shiftNote} onClose={() => setShiftNote(null)} />}
+      {shiftNote && (
+        <ShiftNoteModal kind={shiftNote} lines={noteLines[shiftNote]} onClose={() => setShiftNote(null)}
+          body={shiftNote === "power" ? (
+            <ul className="power-rows">
+              {powerRows.map((row) => (
+                <li key={row.label} className={row.e > 0 ? "give" : ""}>
+                  <span>{row.label}<em>Lv{row.lv}</em></span><b>{row.e > 0 ? `+${row.e}` : row.e}</b>
+                </li>
+              ))}
+            </ul>
+          ) : undefined} />
+      )}
 
       {imageUrl && (
         <ModalWindow label={t("편성표 이미지")} className="operator-modal room-modal image-preview" onClose={closeImage} style={{ "--accent": "var(--lime)" } as React.CSSProperties}>
@@ -2876,10 +2903,19 @@ function RosterModal({ allOps, ownedIds, eliteById, levelById, onApply, onClose,
   );
 }
 
-// ── 교대 탭의 짧은 링크가 여는 상세 모달 (사용자 요청 2026-07-28) ────────────────
+// 요약 카드의 ⓘ — title 툴팁은 "마우스 올리고 오래 기다려야 뜨니 아무도 안 본다"는
+// 사용자 지적(2026-08-06)에 따라, 눈에 보이는 클릭 지점을 두고 설명은 모달로 보낸다.
+function InfoDot({ onClick, t }: { onClick: () => void; t: T }) {
+  return (
+    <button type="button" className="cell-info" aria-label={t("계산 근거 보기")} title={t("계산 근거 보기")}
+      onClick={(event) => { event.stopPropagation(); onClick(); }}>ⓘ</button>
+  );
+}
+
+// ── 교대 탭의 짧은 링크·요약 카드 ⓘ가 여는 상세 모달 (사용자 요청 2026-07-28 / 08-06) ──
 // 왼쪽 칸에 줄글을 깔면 그리드 첫 행(제어센터·응접실) 높이가 밀린다 — 화면엔 한 줄짜리
 // 링크만 두고 설명은 전부 여기로 내린다.
-export type ShiftNoteKind = "drain" | "policy";
+export type ShiftNoteKind = "drain" | "policy" | "power" | "lmd" | "exp";
 
 // "왜 표시된 시간이 그대로 안 가는가" — 사용자가 짚은 제어센터 연쇄가 핵심이다.
 // 수치는 INFRA-RULES §1 컨디션 모델 v18(실측 9건 재현) 기준.
@@ -2899,14 +2935,19 @@ const SHIFT_NOTE_SPEC: Record<ShiftNoteKind, { kicker: string; title: string; tl
     tldr: "A조로 계속 돌리다 컨디션이 바닥나면 B조로 통째 교대, 회복되면 다시 A조로",
     items: [],
   },
+  // 아래 셋은 본문이 **현재 편성의 실제 수치**라 호출부가 lines로 넘긴다 (items는 비움)
+  power: { kicker: "POWER", title: "전력 수지", tldr: "발전소 공급 − 시설 소비. 음수면 게임에서 못 짓는 구성", items: [] },
+  lmd: { kicker: "DAILY LMD", title: "하루 평균 용문폐는 이렇게 계산했습니다", items: [] },
+  exp: { kicker: "DAILY RECORDS", title: "하루 평균 작전기록은 이렇게 계산했습니다", items: [] },
 };
 
-function ShiftNoteModal({ kind, onClose }: { kind: ShiftNoteKind; onClose: () => void }) {
+// lines = 호출부가 실제 수치를 넣어 만든(이미 번역된) 본문, body = 표 같은 추가 블록
+function ShiftNoteModal({ kind, lines, body, onClose }: { kind: ShiftNoteKind; lines?: string[]; body?: React.ReactNode; onClose: () => void }) {
   const { t } = useI18n();
   const spec = SHIFT_NOTE_SPEC[kind];
-  const items = kind === "policy"
-    ? (HELP_SECTIONS.find((section) => section.title === "교대 정책")?.items ?? [])
-    : spec.items;
+  const items = lines?.length ? lines
+    : kind === "policy" ? (HELP_SECTIONS.find((section) => section.title === "교대 정책")?.items ?? []).map((item) => t(item))
+    : spec.items.map((item) => t(item));
   return (
     <ModalWindow label={t(spec.title)} className="operator-modal room-modal" onClose={onClose} style={{ "--accent": "var(--lime)" } as React.CSSProperties}>
         <header className="room-modal-head">
@@ -2916,8 +2957,9 @@ function ShiftNoteModal({ kind, onClose }: { kind: ShiftNoteKind; onClose: () =>
         <div className="modal-scroll">
           {/* 번호를 매겨 항목을 구분하기 쉽게 (사용자 요청 2026-07-28) */}
           <ol className="help-list help-list-numbered">
-            {items.map((item, index) => <li key={index}>{emphasize(t(item))}</li>)}
+            {items.map((item, index) => <li key={index}>{emphasize(item)}</li>)}
           </ol>
+          {body}
         </div>
     </ModalWindow>
   );
@@ -2999,9 +3041,9 @@ const HELP_SECTIONS: { title: string; items: string[] }[] = [
     "토글을 바꿔도 현재 편성은 유지됩니다 — 자동편성을 다시 실행해야 반영됩니다.",
   ]},
   { title: "하루 산출 (용문폐·작전기록)", items: [
-    "요약의 '하루 용문폐'는 무역소 순금 오더 기준입니다 — 효율 0%p 무역소 1개가 시간당 용문폐 427.7(2·3·4금 오더가 30/50/20%로 나오고, 순금 1개 = 용문폐 500)이고 여기에 각 무역소의 %효율을 곱합니다.",
-    "무역소는 순금이 있어야 오더를 납품하므로, 순금 제조소의 하루 생산이 무역소 소화량에 못 미치면 그 비율만큼만 계산하고 '순금 부족'을 띄웁니다 — 이 상태에서는 순금방을 키우는 것이 곧 용문폐입니다.",
-    "'하루 작전기록'은 제조소 기본 생산 속도 1포인트/초 기준입니다 — 중급작전기록 10,800pt = 1,000exp(Lv3), 초급 4,800pt = 400exp(Lv2), 기초 2,700pt = 200exp(Lv1). 제조소 레벨이 낮으면 만들 수 있는 등급도 낮아지므로(252 배치의 Lv2 제조소) 그 레벨의 레시피로 계산합니다.",
+    "요약의 '하루 평균 용문폐'는 무역소 순금 오더 기준입니다 — 효율 0%p 무역소 1개가 시간당 용문폐 427.7(2·3·4금 오더가 30/50/20%로 나오고, 순금 1개 = 용문폐 500)이고 여기에 각 무역소의 %효율을 곱합니다.",
+    "순금은 밖에서 채워 온다고 보고 무역소 처리량 그대로 계산합니다 — 순금이 부족해도 용문폐를 깎지 않고, 대신 '순금 N개 부족'으로 하루에 몇 개가 모자라는지만 적습니다. 그 순금을 실제로 채우지 않으면 표시된 만큼 받지 못합니다.",
+    "'하루 평균 작전기록'은 제조소 기본 생산 속도 1포인트/초 기준입니다 — 중급작전기록 10,800pt = 1,000exp(Lv3), 초급 4,800pt = 400exp(Lv2), 기초 2,700pt = 200exp(Lv1). 제조소 레벨이 낮으면 만들 수 있는 등급도 낮아지므로(252 배치의 Lv2 제조소) 그 레벨의 레시피로 계산합니다.",
     "두 값 모두 A조·B조를 각 조의 교대 시계 비율로 섞은 하루치라, 조 탭을 바꿔도 변하지 않습니다. 또 창고·오더 슬롯이 차기 전에 수거한다고 보므로, 하루에 한 번도 안 들어오는 계정이면 실제 산출은 이보다 적습니다.",
   ]},
   { title: "수치는 근사치", items: [

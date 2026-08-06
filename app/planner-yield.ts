@@ -44,7 +44,7 @@ const ORDER_GOLD_HOUR = ORDER_GOLD / ORDER_HOURS;
 // 2.6% 낮은 정도라, 레벨과 무관하게 Lv3 풀로 근사한다 (프리셋은 전부 무역소 만렙).
 
 export type DailyYield = {
-  /** 하루 용문폐 — 무역소 처리량과 순금 공급 중 **작은 쪽**에 맞춘 값 */
+  /** 하루 용문폐 — 무역소 처리량 그대로 (순금은 밖에서 수급한다고 본다, 아래 주석) */
   lmd: number;
   /** 하루 경험치 */
   exp: number;
@@ -52,12 +52,10 @@ export type DailyYield = {
   records: number;
   /** 순금 제조소가 하루에 만드는 개수 */
   gold: number;
-  /** 무역소가 하루에 오더로 소화할 수 있는 순금 개수 */
+  /** 무역소가 하루에 오더로 쓰는 순금 개수 */
   goldNeed: number;
-  /** 무역소 처리량 상한(순금이 충분할 때의 하루 용문폐) */
-  lmdCap: number;
-  /** 순금이 모자라 무역소가 노는가 (= 순금 제조소를 늘릴 여지) */
-  goldShort: boolean;
+  /** 기지 안에서 모자라는 순금 (하루, 0 이상) — 밖에서 채워 와야 하는 양 */
+  goldShort: number;
   /** [A조, B조] 교대 시계(시간)와 그 비율 — 하루를 두 조로 섞은 근거 */
   hours: number[];
   weights: number[];
@@ -75,7 +73,7 @@ export function dailyYield(plan: Plan, byId: Map<string, InfraOp>): DailyYield {
   const span = hours[0] + hours[1] || 24;
   const weights = hours.map((h) => h / span);
 
-  let gold = 0, exp = 0, lmdCap = 0, goldNeed = 0;
+  let gold = 0, exp = 0, lmd = 0, goldNeed = 0;
   for (let shift = 0; shift < SHIFT_COUNT; shift += 1) {
     const teamAt = (key: string): InfraOp[] => {
       const shifts = plan.assignments[key] ?? [];
@@ -94,7 +92,11 @@ export function dailyYield(plan: Plan, byId: Map<string, InfraOp>): DailyYield {
       // 방 %효율. 무인 시설도 기본 속도 100%로 돌아가므로 배수는 (1 + %/100)이다.
       const rate = 1 + teamScore(teamAt(cell.key), cell.room, ctx) / 100;
       if (cell.room === "TRADING") {
-        lmdCap += ORDER_LMD_HOUR * 24 * rate * w;
+        lmd += ORDER_LMD_HOUR * 24 * rate * w;
+        // 순금 소비는 방 %를 그대로 쓴다 — 프로바이조(위약 배상)는 오더당 납품 순금이 실제로
+        // 함께 늘어나 정확하지만, 테킬라·클로저처럼 **건당 용문폐만** 올리는 항까지 소비로
+        // 세므로 '부족한 순금'은 조금 크게 잡힌다(클로저 방 기준 최대 +20%). 방 %를 처리량과
+        // 가치로 쪼개려면 teamScore와 어긋날 수 있는 두 번째 채점 경로가 생겨서 안 쪼갠다.
         goldNeed += ORDER_GOLD_HOUR * 24 * rate * w;
       } else if (cell.product === "gold") {
         gold += ((DAY_SEC * rate) / GOLD_PT) * w;
@@ -104,21 +106,17 @@ export function dailyYield(plan: Plan, byId: Map<string, InfraOp>): DailyYield {
       }
     }
   }
-  // 무역소는 순금이 있어야 오더를 납품한다 — 하루 생산이 소화량에 못 미치면 그 비율만큼만.
-  // (반대로 순금이 남으면 무역소 처리량이 천장이다. 남는 순금은 그냥 쌓인다.)
-  //
-  // ⚠ 이 비율은 무역소 %를 **용문폐와 순금 소비 양쪽에 똑같이** 건다. 프로바이조(위약 배상)는
-  // 실제로 오더당 납품 순금이 함께 늘어나므로 이 근사가 정확하고, 테킬라(고품질 수익)·클로저
-  // (특별 오더 1200)는 순금은 그대로인데 건당 용문폐만 오르는 항이라 **순금 병목일 때만**
-  // 낮게 잡힌다(클로저 기준 최대 −17%). 방 %를 처리량/가치로 쪼개려면 엔진에 두 번째 채점
-  // 경로가 생기고 그게 teamScore와 어긋나기 시작하므로, 보수적으로 낮게 잡는 쪽을 택했다.
-  const ratio = goldNeed > 0 ? Math.min(1, gold / goldNeed) : 0;
+  // ⚠ **순금 병목은 용문폐에서 빼지 않는다** (사용자 확정 2026-08-06: "순금은 다른 데서
+  // 어떻게든 수급해 오니까, 인프라 상에서만 보면 순금 부족이면 순금 부족이라고 써놓기만 하되
+  // 순금은 부족하지 않다는 전제 하에서 시뮬레이션해 달라"). 종전엔 순금 생산÷소화량 비율을
+  // 곱했는데, 실계정 인게임 리포트(용문폐 51,000/일)와 대조하니 그 비율만큼 낮게 나왔다.
+  // 모자라는 양은 goldShort로 내보내 화면에 "순금 N개 부족"으로 적고, 판단은 유저가 한다.
   return {
-    lmd: lmdCap * ratio,
+    lmd,
     exp,
     records: exp / EXP_PER_RECORD,
-    gold, goldNeed, lmdCap,
-    goldShort: goldNeed > 0 && gold < goldNeed - 1e-9,
+    gold, goldNeed,
+    goldShort: Math.max(0, goldNeed - gold),
     hours, weights,
   };
 }
