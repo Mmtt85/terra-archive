@@ -260,93 +260,6 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     });
   };
 
-  const exportImage = async () => {
-    if (!plan) return;
-    type Row = { cell: (typeof LAYOUT)[number]; crews: { label: string; team: InfraOp[]; score: number | null }[] };
-    const controlTeamAt = (shift: number) => {
-      const shifts = plan.assignments["CONTROL"] ?? [];
-      return (shifts[Math.min(shift, shifts.length - 1)] ?? []).map((id) => effectiveOpById.get(id)).filter(Boolean) as InfraOp[];
-    };
-    const roomOfAt = [0, 1].map((shift) => roomOfFor(plan, shift));
-    const cellOfAt = [0, 1].map((shift) => cellOfFor(plan, shift));
-    const ambientAt = [0, 1].map((shift) => aurasOf(controlTeamAt(shift), ctxFor("CONTROL", shift === 0 ? plan.tokenPoints : {}, plan.factionCounts[shift] ?? {}, plan.plants, presentIdsFor(plan, shift), undefined, roomOfAt[shift], cellOfAt[shift])));
-    const rows: Row[] = LAYOUT.map((cell) => {
-      const shifts = plan.assignments[cell.key] ?? [];
-      const scoreFor = (team: InfraOp[], shift: number) =>
-        cell.room === "DORMITORY" || PARK_KEYS.includes(cell.key) ? null
-          : Math.round(teamScore(team, cell.room, { ...ctxFor(cell.key, shift === 0 ? plan.tokenPoints : {}, plan.factionCounts[shift] ?? {}, plan.plants, presentIdsFor(plan, shift), ambientAt[shift], roomOfAt[shift], cellOfAt[shift]), shiftHours: plan.shiftHours?.[shift] }));
-      const teamAt = (shift: number) => (shifts[Math.min(shift, shifts.length - 1)] ?? []).map((id) => effectiveOpById.get(id)).filter(Boolean) as InfraOp[];
-      const single = cell.room === "DORMITORY" || cell.key === "TRAINING";
-      if (single) {
-        const team = teamAt(0);
-        return { cell, crews: [{ label: cell.room === "DORMITORY" ? t("고정") : "-", team, score: scoreFor(team, 0) }] };
-      }
-      return { cell, crews: [0, 1].map((shift) => ({ label: ["A", "B"][shift], team: teamAt(shift), score: scoreFor(teamAt(shift), shift) })) };
-    });
-    const uniqueOps = Array.from(new Set(rows.flatMap((row) => row.crews.flatMap((crew) => crew.team))));
-    const avatars = new Map<string, HTMLImageElement>();
-    await Promise.all(uniqueOps.map((op) => new Promise<void>((resolve) => {
-      const img = new Image();
-      img.crossOrigin = "anonymous"; // R2(files.terra-archive.net) 아바타 — CORS 없이는 캔버스가 오염된다
-      img.onload = () => { avatars.set(op.id, img); resolve(); };
-      img.onerror = () => resolve();
-      // ?cors: 그리드 <img>가 Origin 없이 받아 브라우저 캐시에 남긴 무-ACAO 응답을
-      // crossOrigin 요청이 재사용하며 터지는 것을 캐시 키 분리로 차단 (실측 2026-07-27)
-      img.src = `${asset(op.image)}?cors`;
-    })));
-    const W = 1240; const lineH = 46; const top = 150;
-    const rowHeights = rows.map((row) => row.crews.length * lineH + 12);
-    const canvas = document.createElement("canvas");
-    canvas.width = W; canvas.height = top + rowHeights.reduce((a, b) => a + b, 0) + 70;
-    const g = canvas.getContext("2d")!;
-    g.fillStyle = "#f1f0eb"; g.fillRect(0, 0, W, canvas.height);
-    g.fillStyle = "#131719"; g.fillRect(0, 0, W, 96);
-    g.fillStyle = "#c3d24b"; g.font = "900 30px monospace"; g.fillText("TERRA ARCHIVE // RIIC PLAN", 32, 58);
-    g.fillStyle = "#131719"; g.font = "700 15px sans-serif";
-    g.fillText(`${strategyLabel(plan, locale, t)} · ${Object.entries(plan.tokenPoints).map(([token, points]) => t("{token} {n}점", { token: tokenName(locale, token), n: Math.round(points) })).join(" · ")}`, 32, 126);
-    let y = top;
-    rows.forEach((row, index) => {
-      const h = rowHeights[index];
-      g.fillStyle = index % 2 ? "#eceae3" : "#fbfbf8"; g.fillRect(24, y, W - 48, h - 8);
-      g.fillStyle = ROOM_ACCENT[row.cell.room] ?? "#888"; g.fillRect(24, y, 5, h - 8);
-      g.fillStyle = "#131719"; g.font = "800 15px sans-serif";
-      g.fillText(t(row.cell.label), 44, y + 26);
-      row.crews.forEach((crew, crewIndex) => {
-        const cy = y + crewIndex * lineH;
-        g.font = "900 13px monospace";
-        const labelWidth = g.measureText(crew.label).width;
-        const badgeWidth = Math.max(26, labelWidth + 14);
-        g.fillStyle = "#131719";
-        g.fillRect(210, cy + 10, badgeWidth, 26);
-        g.fillStyle = "#c3d24b";
-        g.fillText(crew.label, 210 + (badgeWidth - labelWidth) / 2, cy + 28);
-        let x = 210 + badgeWidth + 12;
-        for (const op of crew.team) {
-          const img = avatars.get(op.id);
-          if (img) g.drawImage(img, x, cy + 6, 34, 34);
-          g.fillStyle = "#131719"; g.font = "700 12px sans-serif";
-          g.fillText(op.name, x + 40, cy + 28);
-          x += 40 + Math.max(g.measureText(op.name).width + 20, 76);
-        }
-        if (!crew.team.length) {
-          g.fillStyle = "#9aa0a3"; g.font = "700 12px sans-serif";
-          g.fillText(row.cell.key === "TRAINING" ? t("비워둠 (특화 훈련용)") : t("휴식 공간"), 248, cy + 28);
-        }
-        if (crew.score != null) {
-          g.fillStyle = "#687176"; g.font = "800 13px monospace";
-          const label = `+${crew.score}${row.cell.room === "CONTROL" ? "" : "%"}`;
-          g.fillText(label, W - 48 - g.measureText(label).width, cy + 28);
-        }
-      });
-      y += h;
-    });
-    g.fillStyle = "#687176"; g.font = "700 11px monospace";
-    g.fillText(t("A = 풀파워 주간조 · B = 회복 교대조 · terra-archive infra planner"), 32, canvas.height - 28);
-    canvas.toBlob((blob) => {
-      if (!blob) return;
-      setImageUrl(URL.createObjectURL(blob)); // 미리보기 모달로 바로 표시
-    });
-  };
 
   const closeImage = () => {
     if (imageUrl) URL.revokeObjectURL(imageUrl);
@@ -1025,14 +938,22 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         { a: Math.round(yieldDay.hours[0]), b: Math.round(yieldDay.hours[1]) })
     : "";
   const stockNote = t("창고·오더 슬롯이 차기 전에 수거한다고 봅니다 — 하루에 한 번도 안 들어오는 계정이면 실제 산출은 이보다 적습니다.");
+  const goldBalance = yieldDay && yieldDay.goldShort > 0.5
+    ? t("무역소가 하루 {n}개를 쓰는데 제조소는 {g}개만 만듭니다 — 하루 {s}개가 모자랍니다. 순금은 밖에서 채워 온다고 보고 무역소 처리량 그대로 잡은 값이라, 실제로 안 채우면 이만큼 못 받습니다.",
+        { g: num(yieldDay.gold), n: num(yieldDay.goldNeed), s: num(yieldDay.goldShort) })
+    : yieldDay
+      ? t("무역소가 하루 {n}개를 쓰고 제조소가 {g}개를 만듭니다 — 기지 안에서 자급됩니다.",
+          { g: num(yieldDay.gold), n: num(yieldDay.goldNeed) })
+      : "";
+  const yieldGoldLines = yieldDay ? [
+    t("순금 제조소는 1개당 하루 20개(순금 1개 = 4,320pt, 기본 속도 1포인트/초)를 만들고 여기에 방 %효율을 곱합니다 — 지금 하루 {g}개입니다.", { g: num(yieldDay.gold) }),
+    goldBalance,
+    shiftMix, stockNote,
+  ] : [];
   const yieldLmdLines = yieldDay ? [
     t("무역소 순금 오더 기준입니다 — 효율 0%p 무역소 1개가 시간당 용문폐 {h}(2·3·4금 오더가 30/50/20%로 나오고 순금 1개 = 용문폐 {g}), 여기에 각 무역소의 %효율을 곱했습니다.",
       { h: ORDER_LMD_HOUR.toFixed(1), g: num(YIELD_GOLD_LMD) }),
-    yieldDay.goldShort > 0.5
-      ? t("순금 수지: 무역소가 하루 {n}개를 쓰는데 제조소는 {g}개만 만듭니다 — 하루 {s}개가 모자랍니다. 순금은 밖에서 채워 온다고 보고 무역소 처리량 그대로 잡은 값이라, 실제로 안 채우면 이만큼 못 받습니다.",
-          { g: num(yieldDay.gold), n: num(yieldDay.goldNeed), s: num(yieldDay.goldShort) })
-      : t("순금 수지: 무역소가 하루 {n}개를 쓰고 제조소가 {g}개를 만듭니다 — 기지 안에서 자급됩니다.",
-          { g: num(yieldDay.gold), n: num(yieldDay.goldNeed) }),
+    goldBalance,
     shiftMix, stockNote,
   ] : [];
   const yieldExpLines = yieldDay ? [
@@ -1092,7 +1013,120 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     e: infra.rooms[cell.room]?.phases?.[levelOf(cell.key) - 1]?.electricity ?? 0,
   }));
   const noteLines: Record<ShiftNoteKind, string[]> = {
-    drain: [], policy: [], power: powerLines, lmd: yieldLmdLines, exp: yieldExpLines,
+    drain: [], policy: [], power: powerLines, gold: yieldGoldLines, lmd: yieldLmdLines, exp: yieldExpLines,
+  };
+
+  const exportImage = async () => {
+    if (!plan) return;
+    type Row = { cell: (typeof LAYOUT)[number]; crews: { label: string; team: InfraOp[]; score: number | null }[] };
+    const controlTeamAt = (shift: number) => {
+      const shifts = plan.assignments["CONTROL"] ?? [];
+      return (shifts[Math.min(shift, shifts.length - 1)] ?? []).map((id) => effectiveOpById.get(id)).filter(Boolean) as InfraOp[];
+    };
+    const roomOfAt = [0, 1].map((shift) => roomOfFor(plan, shift));
+    const cellOfAt = [0, 1].map((shift) => cellOfFor(plan, shift));
+    const ambientAt = [0, 1].map((shift) => aurasOf(controlTeamAt(shift), ctxFor("CONTROL", shift === 0 ? plan.tokenPoints : {}, plan.factionCounts[shift] ?? {}, plan.plants, presentIdsFor(plan, shift), undefined, roomOfAt[shift], cellOfAt[shift])));
+    const rows: Row[] = LAYOUT.map((cell) => {
+      const shifts = plan.assignments[cell.key] ?? [];
+      const scoreFor = (team: InfraOp[], shift: number) =>
+        cell.room === "DORMITORY" || PARK_KEYS.includes(cell.key) ? null
+          : Math.round(teamScore(team, cell.room, { ...ctxFor(cell.key, shift === 0 ? plan.tokenPoints : {}, plan.factionCounts[shift] ?? {}, plan.plants, presentIdsFor(plan, shift), ambientAt[shift], roomOfAt[shift], cellOfAt[shift]), shiftHours: plan.shiftHours?.[shift] }));
+      const teamAt = (shift: number) => (shifts[Math.min(shift, shifts.length - 1)] ?? []).map((id) => effectiveOpById.get(id)).filter(Boolean) as InfraOp[];
+      const single = cell.room === "DORMITORY" || cell.key === "TRAINING";
+      if (single) {
+        const team = teamAt(0);
+        return { cell, crews: [{ label: cell.room === "DORMITORY" ? t("고정") : "-", team, score: scoreFor(team, 0) }] };
+      }
+      return { cell, crews: [0, 1].map((shift) => ({ label: ["A", "B"][shift], team: teamAt(shift), score: scoreFor(teamAt(shift), shift) })) };
+    });
+    const uniqueOps = Array.from(new Set(rows.flatMap((row) => row.crews.flatMap((crew) => crew.team))));
+    const avatars = new Map<string, HTMLImageElement>();
+    await Promise.all(uniqueOps.map((op) => new Promise<void>((resolve) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous"; // R2(files.terra-archive.net) 아바타 — CORS 없이는 캔버스가 오염된다
+      img.onload = () => { avatars.set(op.id, img); resolve(); };
+      img.onerror = () => resolve();
+      // ?cors: 그리드 <img>가 Origin 없이 받아 브라우저 캐시에 남긴 무-ACAO 응답을
+      // crossOrigin 요청이 재사용하며 터지는 것을 캐시 키 분리로 차단 (실측 2026-07-27)
+      img.src = `${asset(op.image)}?cors`;
+    })));
+    // 요약 지표도 이미지에 담는다 (사용자 요청 2026-08-06) — 편성만 캡처하면 "그래서 이
+    // 편성이 하루에 뭘 얼마나 뽑는지"가 빠져서, 공유받은 쪽이 화면과 대조를 못 한다.
+    const stats: { k: string; v: string }[] = [
+      { k: t("제조소 평균"), v: summary ? `+${summary.manufacture}%` : "—" },
+      { k: t("무역소 평균"), v: summary ? `+${summary.trading}%` : "—" },
+      { k: t("드론 회복 평균 효율"), v: summary ? `+${summary.power}%` : "—" },
+      { k: t("전력"), v: `${power.net >= 0 ? "+" : ""}${power.net} (${power.consume}/${power.provide})` },
+      { k: t("순금 생산 / 소모"), v: yieldDay && yieldRooms.gold > 0
+        ? `${num(yieldDay.gold)} / ${num(yieldDay.goldNeed)}${yieldDay.goldShort > 0.5 ? ` (−${num(yieldDay.goldShort)})` : ""}` : "—" },
+      { k: t("하루 평균 용문폐"), v: yieldDay && yieldRooms.trade > 0 ? `≈${num(yieldDay.lmd)}` : "—" },
+      { k: t("하루 평균 작전기록"), v: yieldDay && yieldRooms.exp > 0
+        ? `${t("≈{n}개", { n: num(yieldDay.records) })} (${num(yieldDay.exp)} exp)` : "—" },
+    ];
+    const W = 1240; const lineH = 46;
+    const STAT_TOP = 146; const STAT_COLS = 4; const STAT_ROW_H = 46;
+    const statW = (W - 64) / STAT_COLS;
+    const statRows = Math.ceil(stats.length / STAT_COLS);
+    const top = STAT_TOP + statRows * STAT_ROW_H + 12;
+    const rowHeights = rows.map((row) => row.crews.length * lineH + 12);
+    const canvas = document.createElement("canvas");
+    canvas.width = W; canvas.height = top + rowHeights.reduce((a, b) => a + b, 0) + 70;
+    const g = canvas.getContext("2d")!;
+    g.fillStyle = "#f1f0eb"; g.fillRect(0, 0, W, canvas.height);
+    g.fillStyle = "#131719"; g.fillRect(0, 0, W, 96);
+    g.fillStyle = "#c3d24b"; g.font = "900 30px monospace"; g.fillText("TERRA ARCHIVE // RIIC PLAN", 32, 58);
+    g.fillStyle = "#131719"; g.font = "700 15px sans-serif";
+    g.fillText(`${strategyLabel(plan, locale, t)} · ${Object.entries(plan.tokenPoints).map(([token, points]) => t("{token} {n}점", { token: tokenName(locale, token), n: Math.round(points) })).join(" · ")}`, 32, 126);
+    stats.forEach((stat, index) => {
+      const sx = 32 + (index % STAT_COLS) * statW;
+      const sy = STAT_TOP + Math.floor(index / STAT_COLS) * STAT_ROW_H;
+      g.fillStyle = "#687176"; g.font = "700 11px monospace";
+      g.fillText(stat.k, sx, sy + 13);
+      g.fillStyle = "#131719"; g.font = "800 17px monospace";
+      g.fillText(stat.v, sx, sy + 35);
+    });
+    let y = top;
+    rows.forEach((row, index) => {
+      const h = rowHeights[index];
+      g.fillStyle = index % 2 ? "#eceae3" : "#fbfbf8"; g.fillRect(24, y, W - 48, h - 8);
+      g.fillStyle = ROOM_ACCENT[row.cell.room] ?? "#888"; g.fillRect(24, y, 5, h - 8);
+      g.fillStyle = "#131719"; g.font = "800 15px sans-serif";
+      g.fillText(t(row.cell.label), 44, y + 26);
+      row.crews.forEach((crew, crewIndex) => {
+        const cy = y + crewIndex * lineH;
+        g.font = "900 13px monospace";
+        const labelWidth = g.measureText(crew.label).width;
+        const badgeWidth = Math.max(26, labelWidth + 14);
+        g.fillStyle = "#131719";
+        g.fillRect(210, cy + 10, badgeWidth, 26);
+        g.fillStyle = "#c3d24b";
+        g.fillText(crew.label, 210 + (badgeWidth - labelWidth) / 2, cy + 28);
+        let x = 210 + badgeWidth + 12;
+        for (const op of crew.team) {
+          const img = avatars.get(op.id);
+          if (img) g.drawImage(img, x, cy + 6, 34, 34);
+          g.fillStyle = "#131719"; g.font = "700 12px sans-serif";
+          g.fillText(op.name, x + 40, cy + 28);
+          x += 40 + Math.max(g.measureText(op.name).width + 20, 76);
+        }
+        if (!crew.team.length) {
+          g.fillStyle = "#9aa0a3"; g.font = "700 12px sans-serif";
+          g.fillText(row.cell.key === "TRAINING" ? t("비워둠 (특화 훈련용)") : t("휴식 공간"), 248, cy + 28);
+        }
+        if (crew.score != null) {
+          g.fillStyle = "#687176"; g.font = "800 13px monospace";
+          const label = `+${crew.score}${row.cell.room === "CONTROL" ? "" : "%"}`;
+          g.fillText(label, W - 48 - g.measureText(label).width, cy + 28);
+        }
+      });
+      y += h;
+    });
+    g.fillStyle = "#687176"; g.font = "700 11px monospace";
+    g.fillText(t("A = 풀파워 주간조 · B = 회복 교대조 · terra-archive infra planner"), 32, canvas.height - 28);
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      setImageUrl(URL.createObjectURL(blob)); // 미리보기 모달로 바로 표시
+    });
   };
 
   const openCell = LAYOUT.find((cell) => cell.key === openRoom);
@@ -1224,14 +1258,24 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           <span>⚡ {t("전력")}</span><b>{power.net >= 0 ? `+${power.net}` : power.net} <i className="power-detail">({power.consume}/{power.provide})</i></b>
           <InfoDot onClick={() => setShiftNote("power")} t={t} />
         </div>
-        {/* 하루 산출 — 종전 '기용 인원' 자리 (사용자 요청 2026-08-06: 인원수는 배치도를 세면
-            나오지만, 하루에 용문폐·작전기록을 얼마나 받는지는 %효율만 봐선 알 수 없다).
-            근사치라 값 앞에 ≈를 붙이고, 근거는 ⓘ 모달에 전부 밝힌다. */}
+      </div>
+
+      {/* 하루 산출 — 종전 '기용 인원' 자리에서 시작해 **별도 줄 3칸**이 됐다 (사용자 요청
+          2026-08-06: "순금 생산/소모 · 벌어들이는 용문폐 · 만들어지는 작전기록 셋이 필요").
+          위 줄에 끼워 넣으면 8칸이라 라벨이 다 갈라져서 줄을 나눴다. 근사치라 ≈를 붙이고,
+          근거는 ⓘ 모달에 전부 밝힌다 — 툴팁은 스쳐 지나가는 사람용 보조. */}
+      <div className="planner-summary planner-summary-yield">
+        <div className="yield-cell" title={yieldGoldLines[0]}>
+          <span>🪙 {t("순금 생산 / 소모")}</span>
+          <b>{yieldDay && yieldRooms.gold > 0
+            ? <>{num(yieldDay.gold)} <em>/</em> {num(yieldDay.goldNeed)}</> : "—"}
+            {yieldDay && yieldDay.goldShort > 0.5
+              && <i className="yield-detail yield-short">{t("{n}개 부족", { n: num(yieldDay.goldShort) })}</i>}</b>
+          {yieldDay && <InfoDot onClick={() => setShiftNote("gold")} t={t} />}
+        </div>
         <div className="yield-cell" title={yieldLmdLines[0]}>
           <span>💰 {t("하루 평균 용문폐")}</span>
-          <b>{yieldDay && yieldRooms.trade > 0 ? `≈${num(yieldDay.lmd)}` : "—"}
-            {yieldDay && yieldRooms.trade > 0 && yieldDay.goldShort > 0.5
-              && <i className="yield-detail yield-short">{t("순금 {n}개 부족", { n: num(yieldDay.goldShort) })}</i>}</b>
+          <b>{yieldDay && yieldRooms.trade > 0 ? `≈${num(yieldDay.lmd)}` : "—"}</b>
           {yieldDay && <InfoDot onClick={() => setShiftNote("lmd")} t={t} />}
         </div>
         <div className="yield-cell" title={yieldExpLines[0]}>
@@ -2915,7 +2959,7 @@ function InfoDot({ onClick, t }: { onClick: () => void; t: T }) {
 // ── 교대 탭의 짧은 링크·요약 카드 ⓘ가 여는 상세 모달 (사용자 요청 2026-07-28 / 08-06) ──
 // 왼쪽 칸에 줄글을 깔면 그리드 첫 행(제어센터·응접실) 높이가 밀린다 — 화면엔 한 줄짜리
 // 링크만 두고 설명은 전부 여기로 내린다.
-export type ShiftNoteKind = "drain" | "policy" | "power" | "lmd" | "exp";
+export type ShiftNoteKind = "drain" | "policy" | "power" | "gold" | "lmd" | "exp";
 
 // "왜 표시된 시간이 그대로 안 가는가" — 사용자가 짚은 제어센터 연쇄가 핵심이다.
 // 수치는 INFRA-RULES §1 컨디션 모델 v18(실측 9건 재현) 기준.
@@ -2937,6 +2981,7 @@ const SHIFT_NOTE_SPEC: Record<ShiftNoteKind, { kicker: string; title: string; tl
   },
   // 아래 셋은 본문이 **현재 편성의 실제 수치**라 호출부가 lines로 넘긴다 (items는 비움)
   power: { kicker: "POWER", title: "전력 수지", tldr: "발전소 공급 − 시설 소비. 음수면 게임에서 못 짓는 구성", items: [] },
+  gold: { kicker: "DAILY GOLD", title: "순금 수지는 이렇게 계산했습니다", items: [] },
   lmd: { kicker: "DAILY LMD", title: "하루 평균 용문폐는 이렇게 계산했습니다", items: [] },
   exp: { kicker: "DAILY RECORDS", title: "하루 평균 작전기록은 이렇게 계산했습니다", items: [] },
 };
@@ -3042,7 +3087,7 @@ const HELP_SECTIONS: { title: string; items: string[] }[] = [
   ]},
   { title: "하루 산출 (용문폐·작전기록)", items: [
     "요약의 '하루 평균 용문폐'는 무역소 순금 오더 기준입니다 — 효율 0%p 무역소 1개가 시간당 용문폐 427.7(2·3·4금 오더가 30/50/20%로 나오고, 순금 1개 = 용문폐 500)이고 여기에 각 무역소의 %효율을 곱합니다.",
-    "순금은 밖에서 채워 온다고 보고 무역소 처리량 그대로 계산합니다 — 순금이 부족해도 용문폐를 깎지 않고, 대신 '순금 N개 부족'으로 하루에 몇 개가 모자라는지만 적습니다. 그 순금을 실제로 채우지 않으면 표시된 만큼 받지 못합니다.",
+    "순금은 밖에서 채워 온다고 보고 무역소 처리량 그대로 계산합니다 — 순금이 부족해도 용문폐를 깎지 않고, 옆의 '순금 생산 / 소모' 칸에 하루 몇 개가 모자라는지만 적습니다. 그 순금을 실제로 채우지 않으면 표시된 만큼 받지 못합니다.",
     "'하루 평균 작전기록'은 제조소 기본 생산 속도 1포인트/초 기준입니다 — 중급작전기록 10,800pt = 1,000exp(Lv3), 초급 4,800pt = 400exp(Lv2), 기초 2,700pt = 200exp(Lv1). 제조소 레벨이 낮으면 만들 수 있는 등급도 낮아지므로(252 배치의 Lv2 제조소) 그 레벨의 레시피로 계산합니다.",
     "두 값 모두 A조·B조를 각 조의 교대 시계 비율로 섞은 하루치라, 조 탭을 바꿔도 변하지 않습니다. 또 창고·오더 슬롯이 차기 전에 수거한다고 보므로, 하루에 한 번도 안 들어오는 계정이면 실제 산출은 이보다 적습니다.",
   ]},

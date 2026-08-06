@@ -732,16 +732,21 @@ const D: Record<string, Pair> = {
   "하루 평균 용문폐": ["Avg LMD / day", "1日平均の龍門幣"],
   "하루 평균 작전기록": ["Avg records / day", "1日平均の作戦記録"],
   "≈{n}개": ["≈{n}", "≈{n}個"],
-  "순금 {n}개 부족": ["{n} gold short", "純金{n}個不足"],
+  "순금 생산 / 소모": ["Gold made / used", "純金 生産 / 消費"],
+  "{n}개 부족": ["{n} short", "{n}個不足"],
+  "순금 수지는 이렇게 계산했습니다": ["How the gold balance is calculated", "純金収支の計算方法"],
+  "순금 제조소는 1개당 하루 20개(순금 1개 = 4,320pt, 기본 속도 1포인트/초)를 만들고 여기에 방 %효율을 곱합니다 — 지금 하루 {g}개입니다.": [
+    "Each gold factory makes 20 bars a day (one Pure Gold = 4,320pt at the base speed of 1 point per second), multiplied by the room's efficiency — currently {g} a day.",
+    "純金製造所は1つあたり1日20個（純金1個 = 4,320pt、基本速度1ポイント/秒）を作り、そこに部屋の効率%を掛けます — 現在は1日{g}個です。"],
+  "무역소가 하루 {n}개를 쓰는데 제조소는 {g}개만 만듭니다 — 하루 {s}개가 모자랍니다. 순금은 밖에서 채워 온다고 보고 무역소 처리량 그대로 잡은 값이라, 실제로 안 채우면 이만큼 못 받습니다.": [
+    "The posts consume {n} bars a day but the factories only make {g} — {s} short per day. The LMD figure assumes you top the gold up from elsewhere and runs the posts at full throughput, so if you do not, you will not actually get that much.",
+    "貿易所が1日{n}個使うのに対し、製造所は{g}個しか作りません — 1日{s}個不足します。龍門幣は外から純金を補充する前提で貿易所の処理量そのままを計算しているので、実際に補充しなければその数字は出ません。"],
+  "무역소가 하루 {n}개를 쓰고 제조소가 {g}개를 만듭니다 — 기지 안에서 자급됩니다.": [
+    "The posts consume {n} bars a day and the factories make {g} — the base is self-sufficient.",
+    "貿易所が1日{n}個使い、製造所が{g}個作ります — 基地内で自給できています。"],
   "무역소 순금 오더 기준입니다 — 효율 0%p 무역소 1개가 시간당 용문폐 {h}(2·3·4금 오더가 30/50/20%로 나오고 순금 1개 = 용문폐 {g}), 여기에 각 무역소의 %효율을 곱했습니다.": [
     "Based on the trading posts' Pure Gold orders — one post at +0% yields {h} LMD per hour (orders of 2/3/4 gold appear 30/50/20% of the time, one Pure Gold = {g} LMD), multiplied by each post's room efficiency.",
     "貿易所の純金注文が基準です — 効率0%pの貿易所1つで1時間あたり龍門幣{h}（2・3・4金の注文が30/50/20%で出現し、純金1個 = 龍門幣{g}）。ここに各貿易所の効率%を掛けています。"],
-  "순금 수지: 무역소가 하루 {n}개를 쓰는데 제조소는 {g}개만 만듭니다 — 하루 {s}개가 모자랍니다. 순금은 밖에서 채워 온다고 보고 무역소 처리량 그대로 잡은 값이라, 실제로 안 채우면 이만큼 못 받습니다.": [
-    "Gold balance: the posts consume {n} bars a day but the factories only make {g} — {s} short per day. The figure assumes you top the gold up from elsewhere and runs the posts at full throughput, so if you do not, you will not actually get this much.",
-    "純金収支: 貿易所が1日{n}個使うのに対し、製造所は{g}個しか作りません — 1日{s}個不足します。純金は外から補充する前提で貿易所の処理量そのままを計算しているので、実際に補充しなければこの数字は出ません。"],
-  "순금 수지: 무역소가 하루 {n}개를 쓰고 제조소가 {g}개를 만듭니다 — 기지 안에서 자급됩니다.": [
-    "Gold balance: the posts consume {n} bars a day and the factories make {g} — the base is self-sufficient.",
-    "純金収支: 貿易所が1日{n}個使い、製造所が{g}個作ります — 基地内で自給できています。"],
   "제조소 기본 생산 속도 1포인트/초 기준입니다 — 중급작전기록 10,800pt = 1,000exp(Lv3), 초급 4,800pt = 400exp(Lv2), 기초 2,700pt = 200exp(Lv1). 방 %효율을 곱해 더한 하루 경험치를 중급작전기록 개수로 환산했습니다.": [
     "Based on the factory base speed of 1 point per second — Tactical Battle Record 10,800pt = 1,000 EXP (Lv3), Frontline 4,800pt = 400 EXP (Lv2), Drill 2,700pt = 200 EXP (Lv1). Daily EXP with each room's efficiency applied, shown as a count of Tactical Battle Records.",
     "製造所の基本生産速度1ポイント/秒が基準です — 中級作戦記録10,800pt = 1,000exp（Lv3）、初級4,800pt = 400exp（Lv2）、入門2,700pt = 200exp（Lv1）。部屋の効率%を掛けて合計した1日の経験値を、中級作戦記録の個数に換算しています。"],
@@ -1333,9 +1338,9 @@ const D: Record<string, Pair> = {
     "'Avg LMD / day' in the summary is based on the trading posts' Pure Gold orders — one post at +0% yields 427.7 LMD per hour (orders of 2/3/4 gold appear 30/50/20% of the time, one Pure Gold = 500 LMD), multiplied by each post's room efficiency.",
     "サマリーの「1日平均の龍門幣」は貿易所の純金注文が基準です — 効率0%pの貿易所1つで1時間あたり龍門幣427.7（2・3・4金の注文が30/50/20%で出現し、純金1個 = 龍門幣500）。ここに各貿易所の効率%を掛けます。",
   ],
-  "순금은 밖에서 채워 온다고 보고 무역소 처리량 그대로 계산합니다 — 순금이 부족해도 용문폐를 깎지 않고, 대신 '순금 N개 부족'으로 하루에 몇 개가 모자라는지만 적습니다. 그 순금을 실제로 채우지 않으면 표시된 만큼 받지 못합니다.": [
-    "Gold is assumed to be topped up from elsewhere, so the posts run at full throughput — a gold shortage does not cut the LMD figure; it is only noted as 'N gold short' per day. If you do not actually top that gold up, you will not get the amount shown.",
-    "純金は外から補充する前提で、貿易所の処理量そのままを計算します — 純金が足りなくても龍門幣は減らさず、代わりに「純金N個不足」として1日あたり何個足りないかだけを表示します。その純金を実際に補充しなければ、表示された分は得られません。",
+  "순금은 밖에서 채워 온다고 보고 무역소 처리량 그대로 계산합니다 — 순금이 부족해도 용문폐를 깎지 않고, 옆의 '순금 생산 / 소모' 칸에 하루 몇 개가 모자라는지만 적습니다. 그 순금을 실제로 채우지 않으면 표시된 만큼 받지 못합니다.": [
+    "Gold is assumed to be topped up from elsewhere, so the posts run at full throughput — a gold shortage does not cut the LMD figure; the shortfall per day is only noted in the 'Gold made / used' card next to it. If you do not actually top that gold up, you will not get the amount shown.",
+    "純金は外から補充する前提で、貿易所の処理量そのままを計算します — 純金が足りなくても龍門幣は減らさず、代わりに隣の「純金 生産 / 消費」欄に1日あたり何個足りないかだけを表示します。その純金を実際に補充しなければ、表示された分は得られません。",
   ],
   "'하루 평균 작전기록'은 제조소 기본 생산 속도 1포인트/초 기준입니다 — 중급작전기록 10,800pt = 1,000exp(Lv3), 초급 4,800pt = 400exp(Lv2), 기초 2,700pt = 200exp(Lv1). 제조소 레벨이 낮으면 만들 수 있는 등급도 낮아지므로(252 배치의 Lv2 제조소) 그 레벨의 레시피로 계산합니다.": [
     "'Avg records / day' is based on the factory base speed of 1 point per second — Tactical Battle Record 10,800pt = 1,000 EXP (Lv3), Frontline 4,800pt = 400 EXP (Lv2), Drill 2,700pt = 200 EXP (Lv1). A lower factory level unlocks only a lower grade (the Lv2 factories in the 252 layout), so that level's recipe is used.",

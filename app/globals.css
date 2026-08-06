@@ -4349,12 +4349,11 @@ footer p {
   font-style: normal;
   color: var(--muted);
 }
-/* 하루 산출 카드의 보조 표기 — 경험치 환산·'순금 부족' 꼬리표 (2026-08-06).
-   숫자 옆이 아니라 **아랫줄**에 둔다 — 같은 줄에 붙이면 '≈32개 (31,618 exp)'가 칸을
-   넘친다. 요약행 높이는 이미 '드론 회복 평균 효율' 라벨이 두 줄이라 그대로다. */
+/* 하루 산출 카드의 보조 표기 — 경험치 환산·'N개 부족' 꼬리표 (2026-08-06).
+   ⚠ 반드시 숫자 **오른쪽**에 붙인다. 아랫줄로 내리면 계산 전('—')보다 카드가 높아져
+   아래 배치도가 밀린다 (사용자 지적). 3칸으로 나눈 뒤로는 폭이 남아 한 줄에 들어간다. */
 .yield-detail {
-  display: block;
-  margin-top: 2px;
+  margin-left: 5px;
   font: 700 11px/1 monospace;
   font-style: normal;
   color: var(--muted);
@@ -4591,12 +4590,23 @@ footer p {
 }
 .planner-summary {
   display: grid;
-  /* 전력 셀 추가로 6열 (2026-07-24) → 하루 산출 2칸으로 7열 (2026-08-06).
-     마지막 두 칸(하루 평균 용문폐·작전기록)은 라벨과 숫자가 길어 1.7배 폭을 준다 —
-     좁으면 '하루 평균 용문 / 폐'로 라벨이 갈라진다. */
-  grid-template-columns: repeat(5, minmax(0, 1fr)) repeat(2, minmax(0, 1.7fr));
+  /* 전력 셀 추가로 6열 (2026-07-24) → '기용 인원'을 빼고 5열, 하루 산출 3칸은 아랫줄로
+     분리(2026-08-06). 한 줄에 8칸을 욱여넣으면 라벨이 전부 두 줄로 갈라진다. */
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 10px;
   margin-top: 18px;
+}
+/* 하루 산출 줄 — 위 요약행과 같은 카드 모양, 3칸 (2026-08-06) */
+.planner-summary-yield {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 10px;
+}
+/* '89 / 106'의 슬래시만 흐리게 — 생산과 소모를 눈으로 가르는 구분자 */
+.yield-cell b em {
+  margin: 0 1px;
+  color: var(--muted);
+  font-style: normal;
+  font-weight: 400;
 }
 /* 요약 카드(전략·평균·전력·하루 산출) — 낮게 (사용자 요청 2026-07-27).
    min-height는 자동편성 전후로 값이 —에서 숫자로 바뀔 때 줄 수가 달라져도
