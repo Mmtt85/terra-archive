@@ -13,6 +13,7 @@ import rogue1Data from "./data/rogue1.json";
 // 생성: python3 scripts/build-rogue.py --node-icons
 import nodeIconData from "./data/rogue-node-icons.json";
 import { useConfirm } from "./confirm";
+import rogueIndexData from "./data/rogue-index.json";
 import { useI18n } from "./i18n";
 import { normSearch, useSearchInput } from "./search";
 import { anyNewFeature, isNewFeature } from "./whats-new";
@@ -836,10 +837,21 @@ const TOPIC_HUE: Record<string, string> = {
 };
 
 export const slugOf = (id: string) => "is" + id.split("_")[1];
-const topicFromUrl = () => {
-  const q = new URLSearchParams(window.location.search).get("topic");
-  return TOPICS.find((tp) => tp.ready && slugOf(tp.id) === q)?.id ?? "rogue_1";
-};
+// 테마의 정본 주소 = /rogue/<slug> (2026-08-06, SEO). 종전에는 6개 테마가 ?topic=isN
+// 쿼리 파라미터 하나를 나눠 써서 사이트맵에도 없고 테마별 제목·설명도 없었다.
+// 옛 ?topic= 링크는 그대로 동작한다 (경로가 우선, 없으면 파라미터).
+const ROGUE_PATH_RE = /^\/(?:en\/|ja\/)?rogue\/([^/]+)\/?$/;
+const LOCALE_BASE: Record<string, string> = { ko: "", en: "/en", ja: "/ja" };
+// 테마 이름·도입문만 담은 경량 색인(3.6KB, scripts/build-rogue-index.mjs) — 본문 데이터를
+// 불러오기 전에도 히어로를 그릴 수 있다. 무거운 rogueN.json은 종전대로 동적 로드.
+const ROGUE_INDEX = rogueIndexData as Record<string, Partial<Record<string, { name: string; line: string }>>>;
+export const roguePath = (localeBase: string, id: string) => `${localeBase}/rogue/${slugOf(id)}`;
+const topicOfSlug = (slug: string | null) =>
+  TOPICS.find((tp) => tp.ready && slugOf(tp.id) === slug)?.id ?? null;
+const topicFromUrl = () =>
+  topicOfSlug(ROGUE_PATH_RE.exec(window.location.pathname)?.[1] ?? null)
+  ?? topicOfSlug(new URLSearchParams(window.location.search).get("topic"))
+  ?? "rogue_1";
 // 서버 탭 — URL은 ?sv=cn 일 때만 표시. 흑류수해(rogue_6)는 자국 서버 미출시라
 // 토픽만으로도 중국 서버가 강제된다 (자국 서버 탭은 비활성).
 // "kr"은 **화면 언어의 자국 서버**를 뜻하는 내부 코드값이다 — 로케일별 로더가
@@ -855,11 +867,17 @@ const serverFromUrl = (): Server =>
   new URLSearchParams(window.location.search).get("sv") === "cn" || topicFromUrl() === "rogue_6" ? "cn" : "kr";
 
 // ── 메인 ───────────────────────────────────────────────────────────────────
-export default function RogueGuide({ includeFuture }: { includeFuture?: boolean }) {
+export default function RogueGuide({ includeFuture, initialTopic }: {
+  includeFuture?: boolean;
+  /** 테마 라우트(/rogue/<slug>)가 넘겨주는 토픽 id — 프리렌더 HTML의 히어로가 이걸 쓴다 */
+  initialTopic?: string;
+}) {
   const { t, locale } = useI18n();
 
-  // 첫 렌더에서 URL의 ?topic= 을 읽어 시작 토픽 결정 (SSR에선 rogue_1)
-  const [topic, setTopic] = useState(() => (typeof window === "undefined" ? "rogue_1" : topicFromUrl()));
+  // 첫 렌더의 시작 토픽 — 라우트가 알려준 게 있으면 그것(프리렌더와 하이드레이션이 일치),
+  // 없으면 URL에서 읽는다 (SSR에선 rogue_1)
+  const [topic, setTopic] = useState(() =>
+    initialTopic ?? (typeof window === "undefined" ? "rogue_1" : topicFromUrl()));
   // 서버 탭 — 한국섭(kr, 기본)/중국섭(cn). SSR에선 kr, 마운트 게이트가 미스매치를 막는다.
   const [server, setServer] = useState<Server>(() => (typeof window === "undefined" ? "kr" : serverFromUrl()));
   const [loaded, setLoaded] = useState<Record<string, RogueData>>({});
@@ -988,7 +1006,10 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   const goTopic = (id: string) => {
     if (id === topic) return;
     const url = new URL(window.location.href);
-    url.searchParams.set("topic", slugOf(id));
+    // 주소는 테마의 정본 경로로 — 공유·새로고침이 색인된 주소가 된다 (2026-08-06).
+    // 옛 ?topic= 파라미터는 경로로 대체되므로 지운다(둘이 어긋나면 경로가 이긴다).
+    url.pathname = roguePath(LOCALE_BASE[locale] ?? "", id);
+    url.searchParams.delete("topic");
     if (id === "rogue_6" || serverRef.current === "cn") url.searchParams.set("sv", "cn");
     else url.searchParams.delete("sv");
     history.pushState(null, "", url.pathname + url.search + url.hash);
@@ -1655,10 +1676,27 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
   // switchTopic이 토픽 전환 시 grade를 0으로 리셋하므로 별도 클램프는 불필요.
   const maxGrade = useMemo(() => Math.max(15, ...data.difficulties.filter((d) => d.mode === "NORMAL").map((d) => d.grade)), [active]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // 마운트 전(=SSR 프리렌더 + 클라 첫 렌더)엔 토픽 무관 로딩 셸만 — 하이드레이션 일치용
+  // 마운트 전(=SSR 프리렌더 + 클라 첫 렌더)엔 무거운 본문 없이 **히어로만** 그린다.
+  // 본문(존·적·소장품)은 300~800KB라 동적 로드이고, 여기서 토픽별로 다른 걸 그리면
+  // 하이드레이션이 어긋난다 — 그래서 라우트가 알려준 토픽(initialTopic)일 때만 그 테마의
+  // 이름·도입문을 쓴다. 서버와 클라가 같은 값을 보므로 미스매치가 없고, /rogue/<slug>의
+  // 정적 HTML에 제목과 소개가 담긴다 (종전엔 "불러오는 중" 한 줄뿐이었다, 2026-08-06).
   if (!mounted) {
+    const seed = initialTopic ? ROGUE_INDEX[initialTopic]?.[locale] ?? ROGUE_INDEX[initialTopic]?.ko : null;
     return (
-      <section className="rg" aria-labelledby="rg-title">
+      <section className={`rg${!initialTopic || initialTopic === "rogue_1" ? "" : " rg" + initialTopic.split("_")[1]}`} aria-labelledby="rg-title">
+        {seed && (
+          <header className="rg-head">
+            <div className="rg-hero">
+              <img className="rg-hero-kv" src={asset(`/rogue/kv${initialTopic!.split("_")[1]}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />
+              <div className="rg-hero-text">
+                <span className="rg-eyebrow">INTEGRATED STRATEGIES</span>
+                <h2 id="rg-title">{seed.name}</h2>
+                <p className="rg-line">{seed.line}</p>
+              </div>
+            </div>
+          </header>
+        )}
         <p className="rg-loading">{t("데이터를 불러오는 중...")}</p>
       </section>
     );
@@ -1770,12 +1808,17 @@ export default function RogueGuide({ includeFuture }: { includeFuture?: boolean 
               {/* 중국섭 탭에선 전 토픽이 CN 서버 콘텐츠 — 미래시 토글과 무관하게 전부 노출 */}
               {TOPICS.filter((tp) => tp.ready && (server === "cn" || !tp.future || includeFuture)).map((tp) => (
                 <li key={tp.id} role="option" aria-selected={tp.id === topic}>
-                  <button type="button" className={tp.id === topic ? "on" : ""}
-                    onClick={() => { setTopicMenu(false); goTopic(tp.id); }}>
+                  {/* 실제 앵커 — 크롤러가 테마 페이지로 따라갈 내부 링크이자 새 탭 대상 (2026-08-06).
+                      클릭은 종전대로 가로채 그 자리에서 전환한다. */}
+                  <a href={roguePath(LOCALE_BASE[locale] ?? "", tp.id)} className={tp.id === topic ? "on" : ""}
+                    onClick={(e) => {
+                      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+                      e.preventDefault(); setTopicMenu(false); goTopic(tp.id);
+                    }}>
                     <i className="rg-topicsel-dot" style={{ background: TOPIC_HUE[tp.id], boxShadow: `0 0 8px ${TOPIC_HUE[tp.id]}` }} aria-hidden />
                     <span className="rg-topicsel-name">{t(tp.name)}</span>
                     {tp.future && <em className="rg-topicsel-future">{t("미래시")}</em>}
-                  </button>
+                  </a>
                 </li>
               ))}
             </ul>

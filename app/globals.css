@@ -5423,8 +5423,11 @@ footer p {
 .main-tabs.open {
   display: flex;
 }
-.main-tabs button {
+/* 통합전략 부메뉴 항목은 실제 <a>다 (크롤러용 내부 링크, 2026-08-06) — 같은 규격을 공유 */
+.main-tabs :where(button, a.tab-sub) {
   border: 1px solid transparent;
+  color: inherit;
+  text-decoration: none;
   background: transparent;
   padding: 11px 13px;
   font-size: 13.5px;
@@ -5436,10 +5439,10 @@ footer p {
   gap: 10px;
   transition: 0.12s;
 }
-.main-tabs button:hover {
+.main-tabs :where(button, a.tab-sub):hover {
   background: var(--paper);
 }
-.main-tabs button.selected {
+.main-tabs :where(button, a.tab-sub).selected {
   background: var(--chip);
   color: var(--lime);
 }
@@ -11587,7 +11590,10 @@ html.dark.rg-theme.rg6 .site-header {
   border: 1px solid var(--rggold);
   box-shadow: 0 14px 36px #000c;
 }
-.rg-topicsel-menu li button {
+/* 항목은 실제 <a> — 버튼 시절 규격을 그대로 쓴다 (2026-08-06) */
+.rg-topicsel-menu li :where(button, a) {
+  color: var(--rgtext2);
+  text-decoration: none;
   width: 100%;
   display: flex;
   align-items: center;
@@ -11602,11 +11608,11 @@ html.dark.rg-theme.rg6 .site-header {
   line-height: 1.3;
   cursor: pointer;
 }
-.rg-topicsel-menu li button:hover {
+.rg-topicsel-menu li :where(button, a):hover {
   background: color-mix(in srgb, var(--rggold) 13%, transparent);
   color: var(--rgink);
 }
-.rg-topicsel-menu li button.on {
+.rg-topicsel-menu li :where(button, a).on {
   color: var(--rgink);
   background: var(--rgsel, #ffffff12);
   box-shadow: inset 2px 0 0 var(--rggold);
@@ -15503,3 +15509,108 @@ main.site-main > .site-header {
 .mw-rs-ne { top: 0; right: 0; cursor: nesw-resize; }
 .mw-rs-sw { bottom: 0; left: 0; cursor: nesw-resize; }
 .mw-rs-se { bottom: 0; right: 0; cursor: nwse-resize; }
+
+/* 관련 오퍼레이터 — 상세끼리 잇는 링크 줄 (2026-08-06). 크롤 깊이를 줄이는 게 1차 목적이라
+   눈에 띄게 크지 않게, 본문 끝에 조용히 붙는다. */
+.op-related {
+  border-top: 1px solid var(--line);
+  margin-top: 26px;
+  padding-top: 18px;
+}
+.op-related h3 {
+  margin: 0 0 12px;
+  font-size: 13px;
+  letter-spacing: -0.2px;
+  color: var(--ink2);
+}
+.op-related-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.op-related-label {
+  flex: 0 0 auto;
+  min-width: 68px;
+  padding-top: 6px;
+  font: 700 11px/1.3 monospace;
+  color: var(--muted);
+}
+.op-related-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+.op-related-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 3px 9px 3px 3px;
+  color: var(--ink2);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 700;
+  transition: border-color 0.15s, color 0.15s;
+}
+.op-related-chip:hover {
+  border-color: var(--border-strong);
+  color: var(--ink);
+}
+.op-related-chip img {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--paper);
+}
+@media (max-width: 720px) {
+  .op-related-row {
+    flex-direction: column;
+    gap: 4px;
+  }
+  .op-related-label {
+    padding-top: 0;
+  }
+}
+
+/* 같은 테마의 다른 이야기 — 스토리 상세끼리 잇는 링크 (2026-08-06) */
+.story-related {
+  border-top: 1px solid var(--line);
+  margin-top: 28px;
+  padding-top: 18px;
+}
+.story-related h3 {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--ink2);
+}
+.story-related h3 em {
+  font: 700 11px monospace;
+  font-style: normal;
+  color: var(--muted);
+}
+.story-related-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.story-related-list a {
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 5px 10px;
+  color: var(--ink2);
+  text-decoration: none;
+  font-size: 12.5px;
+  font-weight: 700;
+  transition: border-color 0.15s, color 0.15s;
+}
+.story-related-list a:hover {
+  border-color: var(--border-strong);
+  color: var(--ink);
+}

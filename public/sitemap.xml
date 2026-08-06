@@ -12813,6 +12813,186 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/rogue"/>
   </url>
   <url>
+    <loc>https://terra-archive.net/rogue/is1</loc>
+    <lastmod>2026-08-05T23:21:29+09:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/rogue/is1"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/rogue/is1"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/rogue/is1"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/rogue/is1"/>
+  </url>
+  <url>
+    <loc>https://terra-archive.net/en/rogue/is1</loc>
+    <lastmod>2026-08-05T23:21:29+09:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/rogue/is1"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/rogue/is1"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/rogue/is1"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/rogue/is1"/>
+  </url>
+  <url>
+    <loc>https://terra-archive.net/ja/rogue/is1</loc>
+    <lastmod>2026-08-05T23:21:29+09:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/rogue/is1"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/rogue/is1"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/rogue/is1"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/rogue/is1"/>
+  </url>
+  <url>
+    <loc>https://terra-archive.net/rogue/is2</loc>
+    <lastmod>2026-08-05T23:21:29+09:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/rogue/is2"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/rogue/is2"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/rogue/is2"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/rogue/is2"/>
+  </url>
+  <url>
+    <loc>https://terra-archive.net/en/rogue/is2</loc>
+    <lastmod>2026-08-05T23:21:29+09:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/rogue/is2"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/rogue/is2"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/rogue/is2"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/rogue/is2"/>
+  </url>
+  <url>
+    <loc>https://terra-archive.net/ja/rogue/is2</loc>
+    <lastmod>2026-08-05T23:21:29+09:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/rogue/is2"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/rogue/is2"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/rogue/is2"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/rogue/is2"/>
+  </url>
+  <url>
+    <loc>https://terra-archive.net/rogue/is3</loc>
+    <lastmod>2026-08-05T23:21:29+09:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/rogue/is3"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/rogue/is3"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/rogue/is3"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/rogue/is3"/>
+  </url>
+  <url>
+    <loc>https://terra-archive.net/en/rogue/is3</loc>
+    <lastmod>2026-08-05T23:21:29+09:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/rogue/is3"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/rogue/is3"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/rogue/is3"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/rogue/is3"/>
+  </url>
+  <url>
+    <loc>https://terra-archive.net/ja/rogue/is3</loc>
+    <lastmod>2026-08-05T23:21:29+09:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/rogue/is3"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/rogue/is3"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/rogue/is3"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/rogue/is3"/>
+  </url>
+  <url>
+    <loc>https://terra-archive.net/rogue/is4</loc>
+    <lastmod>2026-08-05T23:21:29+09:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/rogue/is4"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/rogue/is4"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/rogue/is4"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/rogue/is4"/>
+  </url>
+  <url>
+    <loc>https://terra-archive.net/en/rogue/is4</loc>
+    <lastmod>2026-08-05T23:21:29+09:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/rogue/is4"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/rogue/is4"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/rogue/is4"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/rogue/is4"/>
+  </url>
+  <url>
+    <loc>https://terra-archive.net/ja/rogue/is4</loc>
+    <lastmod>2026-08-05T23:21:29+09:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/rogue/is4"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/rogue/is4"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/rogue/is4"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/rogue/is4"/>
+  </url>
+  <url>
+    <loc>https://terra-archive.net/rogue/is5</loc>
+    <lastmod>2026-08-05T23:21:29+09:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/rogue/is5"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/rogue/is5"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/rogue/is5"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/rogue/is5"/>
+  </url>
+  <url>
+    <loc>https://terra-archive.net/en/rogue/is5</loc>
+    <lastmod>2026-08-05T23:21:29+09:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/rogue/is5"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/rogue/is5"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/rogue/is5"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/rogue/is5"/>
+  </url>
+  <url>
+    <loc>https://terra-archive.net/ja/rogue/is5</loc>
+    <lastmod>2026-08-05T23:21:29+09:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/rogue/is5"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/rogue/is5"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/rogue/is5"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/rogue/is5"/>
+  </url>
+  <url>
+    <loc>https://terra-archive.net/rogue/is6</loc>
+    <lastmod>2026-08-05T23:21:29+09:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/rogue/is6"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/rogue/is6"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/rogue/is6"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/rogue/is6"/>
+  </url>
+  <url>
+    <loc>https://terra-archive.net/en/rogue/is6</loc>
+    <lastmod>2026-08-05T23:21:29+09:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/rogue/is6"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/rogue/is6"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/rogue/is6"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/rogue/is6"/>
+  </url>
+  <url>
+    <loc>https://terra-archive.net/ja/rogue/is6</loc>
+    <lastmod>2026-08-05T23:21:29+09:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/rogue/is6"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/rogue/is6"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/rogue/is6"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/rogue/is6"/>
+  </url>
+  <url>
     <loc>https://terra-archive.net/stories</loc>
     <lastmod>2026-08-03T07:06:27Z</lastmod>
     <changefreq>weekly</changefreq>

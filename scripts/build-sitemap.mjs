@@ -48,7 +48,7 @@ const SEG_SOURCES = {
 function lastmodFor(seg) {
   let latest = null;
   // 스토리 상세(stories/<id>)는 목록과 같은 데이터에서 나오므로 같은 소스를 본다
-  const key = seg.startsWith("stories/") ? "stories" : seg.startsWith("operators/") ? "operators" : seg;
+  const key = seg.startsWith("stories/") ? "stories" : seg.startsWith("operators/") ? "operators" : seg.startsWith("rogue/") ? "rogue" : seg;
   for (const file of SEG_SOURCES[key] ?? []) {
     try {
       const iso = execFileSync("git", ["log", "-1", "--format=%cI", "--", file], { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
@@ -78,7 +78,12 @@ function operatorIds() {
   const ops = JSON.parse(readFileSync(join(ROOT, "app/data/operators.json"), "utf8"));
   return ops.filter((o) => !o.unreleased).map((o) => o.id);
 }
-const DYNAMIC = { "stories/[id]": storyIds, "operators/[id]": operatorIds };
+// 통합전략 테마 6종 — /rogue/<slug> (app/seo-rogue.ts rogueSlugs와 같은 목록)
+function rogueSlugs() {
+  const idx = JSON.parse(readFileSync(join(ROOT, "app/data/rogue-index.json"), "utf8"));
+  return Object.keys(idx).map((id) => `is${id.split("_")[1]}`);
+}
+const DYNAMIC = { "stories/[id]": storyIds, "operators/[id]": operatorIds, "rogue/[slug]": rogueSlugs };
 
 // 라우트 → { locale, seg } (seg="" = 포탈 루트)
 function parseRoute(route) {

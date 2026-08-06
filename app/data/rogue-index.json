@@ -1,0 +1,140 @@
+{
+ "rogue_1": {
+  "ko": {
+   "name": "팬텀 & 크림슨 솔리테어",
+   "line": "날은 저물어가고 당신은 짙은 안개의 숲속에서 길을 잃었다. 안전하게 밤을 보내기 위한 피난처가 필요한 지금, 눈앞의 이 불길한 고성만이 유일한 선택지인 것 같다.",
+   "zones": 6,
+   "enemies": 177,
+   "relics": 245
+  },
+  "en": {
+   "name": "Phantom & Crimson Solitaire",
+   "line": "Beneath the darkening sky, you find yourself lost in a fog-shrouded forest. You are in desperate need of safe shelter to pass the night, and it appears that the ominous castle ahead is your only choice.",
+   "zones": 6,
+   "enemies": 177,
+   "relics": 245
+  },
+  "ja": {
+   "name": "ファントムと緋き貴石",
+   "line": "空が翳り始め、あなたたちは霧深く立ち込める森に迷い込んだ。 この夜を無事にやり過ごすためにも、避難場所を急いで探さなければ。 どうやら目の前に現れた謎の古城だけが、唯一の選択肢のようだ。",
+   "zones": 6,
+   "enemies": 177,
+   "relics": 245
+  }
+ },
+ "rogue_2": {
+  "ko": {
+   "name": "미즈키 & 카이룰라 아버",
+   "line": "바람이 어깨너머로 불어와 바다 건너편으로 향한다. 당신의 종착점은 그곳에 있지만, 아직 출발하지 않았다. 짐을 싸고 채비를 마쳐라. 드넓은 바다가 당신을 기다리고 있으니.",
+   "zones": 7,
+   "enemies": 205,
+   "relics": 256
+  },
+  "en": {
+   "name": "Mizuki & Caerula Arbor",
+   "line": "The sea breeze blows past your shoulders to the other end of the ocean. There lies your destination, but you are yet to begin your journey. Pack your belongings and get ready, for the sea awaits your arrival.",
+   "zones": 7,
+   "enemies": 205,
+   "relics": 256
+  },
+  "ja": {
+   "name": "ミヅキと紺碧の樹",
+   "line": "潮風が肩を通り過ぎ、海の向こう側まで吹き抜ける。 終着点はそこにあり、今のあなたはまだ足を踏み出していない。 荷物をまとめ、準備をしよう。海はあなたが訪れるのを待っている。",
+   "zones": 7,
+   "enemies": 205,
+   "relics": 256
+  }
+ },
+ "rogue_3": {
+  "ko": {
+   "name": "탐험가의 은빛 서리 끝자락",
+   "line": "물자도 인원도, 준비는 완벽하다. 당신은 탐사대와 함께 사미 최남단 도시에서 출발해 북쪽으로 향했다. 사미를 지나 빙원을 넘어 그 베일에 싸인 미지는 곧 밝혀질 것이다.",
+   "zones": 7,
+   "enemies": 246,
+   "relics": 305
+  },
+  "en": {
+   "name": "Expeditioner's Jǫklumarkar",
+   "line": "All the provisions and preparations are in place, and the team has gathered. You and the explorers depart the southernmost city of Sami for the north. Make your way through Sami and past the icefield, and the veil that shrouds the unknown will be lifted.",
+   "zones": 7,
+   "enemies": 246,
+   "relics": 305
+  },
+  "ja": {
+   "name": "探索者と銀氷の果て",
+   "line": "物資の準備が整い、人員も集結した。 探索者たちはサーミ最南端の都市から出発し、北へと進路を取る。 サーミを横断し、氷原を越えるその旅路によって、 ヴェールに包まれた未知の領域がついに明かされる。",
+   "zones": 7,
+   "enemies": 246,
+   "relics": 305
+  }
+ },
+ "rogue_4": {
+  "ko": {
+   "name": "살카즈의 영겁 기담",
+   "line": "레버넌트의 목소리가 당신을 현실에서 끌어낸다. 한 차례의 의식, 한 차례의 소통. 대지를 초월한 상상이 곧 시작된다.",
+   "zones": 8,
+   "enemies": 316,
+   "relics": 350
+  },
+  "en": {
+   "name": "Sarkaz's Furnaceside Fables",
+   "line": "The voices of the revenants draw you away from reality. A ritual, a communion. An otherworldly experience is about to begin.",
+   "zones": 8,
+   "enemies": 316,
+   "relics": 350
+  },
+  "ja": {
+   "name": "サルカズの炉辺奇談",
+   "line": "レヴァナントの声があなたを現実から引き離す。 それは儀式であり、交流でもある。 大地を超越した自由な想像が、ここから始まる。",
+   "zones": 8,
+   "enemies": 316,
+   "relics": 350
+  }
+ },
+ "rogue_5": {
+  "ko": {
+   "name": "쉐이의 기이한 계원",
+   "line": "백조 근처, 산 좋고 물 좋은 곳에 여행객들의 발길이 끊이질 않는다. 그러나 이제는 사람들을 물리고, 삼엄한 경비 태세를 갖췄다. 드디어, 진무식이 본격적으로 시작된다.",
+   "zones": 10,
+   "enemies": 401,
+   "relics": 333
+  },
+  "en": {
+   "name": "Sui's Garden of Grotesqueries",
+   "line": "Near Baizao, nestled between mounts and stream, tourists enjoy themselves. With the garden cleared of bystanders, prepare for battle. Throw wide the gates, and look down from the peaks. The Placation begins.",
+   "zones": 10,
+   "enemies": 401,
+   "relics": 333
+  },
+  "ja": {
+   "name": "歳の界園志異",
+   "line": "百灶城辺、山に依り水に傍するの処、遊人流連として返るを忘る。 今已に傍人を清退せしめ、陣を厳にして以て待つ。 爾大門を打ち開き、山巓を眺望し、鎮撫の儀式此に由りて始む。",
+   "zones": 10,
+   "enemies": 401,
+   "relics": 333
+  }
+ },
+ "rogue_6": {
+  "ko": {
+   "name": "침몰자의 흑류수해",
+   "line": "흑류 아래, 수해 한가운데에는 하나가 아닌 비밀들이 묻혀 있다. 음모가와 탐험가가 제멋대로 드나들며 이 땅을 어지럽히고, 그 속으로 가라앉는다. 정신을 똑바로 차려라. 그러지 않으면 너 역시 영원히 그중 하나가 될 테니.",
+   "zones": 6,
+   "enemies": 307,
+   "relics": 272
+  },
+  "en": {
+   "name": "침몰자의 흑류수해",
+   "line": "흑류 아래, 수해 한가운데에는 하나가 아닌 비밀들이 묻혀 있다. 음모가와 탐험가가 제멋대로 드나들며 이 땅을 어지럽히고, 그 속으로 가라앉는다. 정신을 똑바로 차려라. 그러지 않으면 너 역시 영원히 그중 하나가 될 테니.",
+   "zones": 6,
+   "enemies": 307,
+   "relics": 272
+  },
+  "ja": {
+   "name": "침몰자의 흑류수해",
+   "line": "흑류 아래, 수해 한가운데에는 하나가 아닌 비밀들이 묻혀 있다. 음모가와 탐험가가 제멋대로 드나들며 이 땅을 어지럽히고, 그 속으로 가라앉는다. 정신을 똑바로 차려라. 그러지 않으면 너 역시 영원히 그중 하나가 될 테니.",
+   "zones": 6,
+   "enemies": 307,
+   "relics": 272
+  }
+ }
+}

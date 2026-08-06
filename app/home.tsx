@@ -857,10 +857,10 @@ function Portal({ onOpenTab, onFeedback, stats }: {
   );
 }
 
-export default function Home({ locale, operators, extra, summaries, initialTab = "portal", initialStory, initialOperator }: { locale: Locale; operators: Operator[]; extra: ExtraI18n | null; summaries: StorySummaries; initialTab?: Tab; initialStory?: string; initialOperator?: string }) {
+export default function Home({ locale, operators, extra, summaries, initialTab = "portal", initialStory, initialOperator, initialRogue }: { locale: Locale; operators: Operator[]; extra: ExtraI18n | null; summaries: StorySummaries; initialTab?: Tab; initialStory?: string; initialOperator?: string; initialRogue?: string }) {
   return (
     <I18nProvider locale={locale}>
-      <HomeInner operators={operators} extra={extra} summaries={summaries} initialTab={initialTab} initialStory={initialStory} initialOperator={initialOperator} />
+      <HomeInner operators={operators} extra={extra} summaries={summaries} initialTab={initialTab} initialStory={initialStory} initialOperator={initialOperator} initialRogue={initialRogue} />
     </I18nProvider>
   );
 }
@@ -868,7 +868,7 @@ export default function Home({ locale, operators, extra, summaries, initialTab =
 // '미래시 포함' 토글 localStorage 키 — 켜면 한국 서버 미실장(CN 선행) 오퍼도 목록에 표시
 const FUTURE_KEY = "ta-include-future";
 
-function HomeInner({ operators, extra, summaries, initialTab, initialStory, initialOperator }: { operators: Operator[]; extra: ExtraI18n | null; summaries: StorySummaries; initialTab: Tab; initialStory?: string; initialOperator?: string }) {
+function HomeInner({ operators, extra, summaries, initialTab, initialStory, initialOperator, initialRogue }: { operators: Operator[]; extra: ExtraI18n | null; summaries: StorySummaries; initialTab: Tab; initialStory?: string; initialOperator?: string; initialRogue?: string }) {
   const { locale, t } = useI18n();
   // SSR엔 localStorage가 없으므로 false로 하이드레이션 후 이펙트에서 복원한다.
   // 우선순위: URL 쿼리(?future=1|0) > localStorage. URL 파라미터는 공유 링크용.
@@ -1264,10 +1264,12 @@ function HomeInner({ operators, extra, summaries, initialTab, initialStory, init
     });
     // tabPath가 이미 ?future=1을 달고 올 수 있으므로 문자열 이어붙이기 금지 —
     // ?future=1?topic=isN 처럼 깨져 topic 파싱에 실패하면 팬텀(rogue_1)으로 떨어진다
-    const [path, query] = tabPath("rogue").split("?");
+    // 주소는 테마의 정본 경로 — 종전 ?topic= 파라미터는 색인되지 않는 주소였다 (2026-08-06)
+    const [, query] = tabPath("rogue").split("?");
     const params = new URLSearchParams(query);
-    params.set("topic", slug);
-    history.pushState(null, "", `${path}?${params}`);
+    params.delete("topic");
+    const qs = params.toString();
+    history.pushState(null, "", `${localeBase}/rogue/${slug}${qs ? `?${qs}` : ""}`);
     window.dispatchEvent(new CustomEvent("ta:rogue-topic"));
   };
   // 헤더 만능검색의 이동 — 종류별로 **기존** 딥링크·핸드오프 경로를 그대로 탄다
@@ -1481,12 +1483,17 @@ function HomeInner({ operators, extra, summaries, initialTab, initialStory, init
             <div className="tab-rogue-wrap">
               <button className={`tab-rogue${tab === "rogue" ? " selected" : ""}`} onClick={() => switchTab("rogue")}><span className="tab-icon" aria-hidden>❖</span>{t("통합전략 가이드")}{tabHasNewFeature("rogue") && <span className="new-badge">{t("새기능")}</span>}</button>
               <div className="tab-submenu" role="group" aria-label={t("통합전략 가이드")}>
+                {/* 실제 앵커 — 헤더 메뉴가 전부 버튼이라 크롤러에는 테마 링크가 하나도 없었다
+                    (2026-08-06). 클릭은 종전대로 가로채 SPA 전환. */}
                 {ROGUE_TOPICS.filter((tp) => tp.ready && (!tp.future || includeFuture)).map((tp) => (
-                  <button key={tp.id} type="button"
+                  <a key={tp.id} href={`${localeBase}/rogue/${rogueSlugOf(tp.id)}`}
                     className={`tab-sub${tab === "rogue" && rogueSlug === rogueSlugOf(tp.id) ? " selected" : ""}`}
-                    onClick={() => switchRogueTopic(tp.id)}>
+                    onClick={(event) => {
+                      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+                      event.preventDefault(); switchRogueTopic(tp.id);
+                    }}>
                     <span className="tab-sub-mark" aria-hidden>›</span>{t(tp.name)}{tp.future && <em className="tab-sub-future">{t("미래시")}</em>}
-                  </button>
+                  </a>
                 ))}
               </div>
             </div>
@@ -1539,7 +1546,8 @@ function HomeInner({ operators, extra, summaries, initialTab, initialStory, init
           많아진다 (2026-08-06). 목록으로 돌아가는 링크는 상세 위에 있다. */}
       {tab === "archive" && pageOperator && (
         <OperatorPage operator={pageOperator} onUpgrade={openUpgradeFor} includeFuture={includeFuture}
-          listHref={tabPath("archive")}
+          listHref={tabPath("archive")} operators={operators}
+          onRelated={(op) => { setPageOperator(op); history.pushState(null, "", operatorPath(locale, op.id)); scrollMainTop(); }}
           onBack={() => { setPageOperator(null); history.pushState(null, "", tabPath("archive")); }} />
       )}
       {tab === "archive" && !pageOperator && <section className="explorer" aria-labelledby="explorer-title">
@@ -1613,7 +1621,7 @@ function HomeInner({ operators, extra, summaries, initialTab, initialStory, init
       {tab === "farm" && <FarmGuide includeFuture={includeFuture} />}
       {tab === "upgrade" && <UpgradeSim operators={operators} includeFuture={includeFuture} onShowOperator={showOperatorById} />}
       {tab === "story" && <StoryGuide summaries={summaries} onShowOperator={showOperatorById} includeFuture={includeFuture} opIndex={storyOpIndex} initialStory={initialStory} onStoryTitle={setStoryTitle} />}
-      {tab === "rogue" && <RogueGuide includeFuture={includeFuture} />}
+      {tab === "rogue" && <RogueGuide includeFuture={includeFuture} initialTopic={initialRogue ? `rogue_${initialRogue.replace(/^is/, "")}` : undefined} />}
       {tab === "about" && <About onOpenTab={switchTab} />}
 
       <footer>
@@ -1664,7 +1672,7 @@ function HomeInner({ operators, extra, summaries, initialTab, initialStory, init
       </footer>
       </div>{/* /.site-scroll */}
 
-      {selected && <OperatorModal operator={selected} onClose={closeOperator} onUpgrade={openUpgradeFor} includeFuture={includeFuture} onPinChange={(pinned) => { opPinnedRef.current = pinned; }} />}
+      {selected && <OperatorModal operator={selected} onClose={closeOperator} onUpgrade={openUpgradeFor} includeFuture={includeFuture} onPinChange={(pinned) => { opPinnedRef.current = pinned; }} operators={operators} onRelated={openOperator} />}
       <FeedbackWidget open={feedbackOpen} setOpen={setFeedbackOpen} />
       {/* 팁 풍선 — 화면 빈 곳을 찾아 떠다닌다 (본문을 가리면 스스로 자리를 옮긴다) */}
       <TipBalloon />
@@ -1994,11 +2002,55 @@ function ModalRail({ scrollRef }: { scrollRef: React.RefObject<HTMLDivElement | 
   );
 }
 
+// 관련 오퍼 — 상세끼리 서로 링크한다 (2026-08-06). 종전엔 상세가 목록에서만 링크돼
+// 크롤 깊이가 목록→상세 한 단계뿐이었고, 페이지끼리의 관련성 신호도 없었다.
+// 같은 진영·같은 세부 직군 두 갈래로만 — 임의로 늘리면 페이지마다 링크 뭉치가 커진다.
+const RELATED_MAX = 10;
+function RelatedOperators({ operator, operators, onSelect }: {
+  operator: Operator; operators: Operator[]; onSelect?: (op: Operator) => void;
+}) {
+  const { locale, t } = useI18n();
+  const groups = useMemo(() => {
+    const rank = (list: Operator[]) => list
+      .filter((o) => o.id !== operator.id && !o.unreleased)
+      .sort((a, b) => b.rarity - a.rarity || a.name.localeCompare(b.name, locale))
+      .slice(0, RELATED_MAX);
+    const faction = operator.factions[0];
+    return [
+      { key: faction ?? "", label: faction, items: faction ? rank(operators.filter((o) => o.factions.includes(faction))) : [] },
+      { key: operator.subProfession, label: operator.subProfession, items: rank(operators.filter((o) => o.subProfession === operator.subProfession)) },
+    ].filter((g) => g.items.length > 0);
+  }, [operator, operators, locale]);
+  if (groups.length === 0) return null;
+  return (
+    <section className="op-related" aria-label={t("관련 오퍼레이터")}>
+      <h3>{t("관련 오퍼레이터")}</h3>
+      {groups.map((g) => (
+        <div key={g.key} className="op-related-row">
+          <span className="op-related-label">{g.label}</span>
+          <div className="op-related-list">
+            {g.items.map((o) => (
+              <a key={o.id} href={operatorPath(locale, o.id)} className="op-related-chip"
+                onClick={(event) => {
+                  if (!onSelect || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+                  event.preventDefault(); onSelect(o);
+                }}>
+                <img src={asset(o.image)} alt="" aria-hidden width={180} height={180} loading="lazy" decoding="async" />
+                <span>{o.name}</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      ))}
+    </section>
+  );
+}
+
 // 오퍼 상세 본문 — 창 모달(OperatorModal)과 상세 페이지(OperatorPage)가 공유한다.
 // 페이지가 따로 필요한 이유: ModalWindow는 body 포털이라 프리렌더(document 없음)에서
 // 아무것도 못 그린다. /operators/<id>를 색인시키려면 본문이 정적 HTML에 있어야 한다
 // (2026-08-06). 두 곳이 같은 컴포넌트를 쓰므로 내용이 갈라질 일은 없다.
-function OperatorFile({ operator, onUpgrade, includeFuture }: { operator: Operator; onUpgrade?: (operatorId: string) => void; includeFuture?: boolean }) {
+function OperatorFile({ operator, onUpgrade, includeFuture, operators, onRelated }: { operator: Operator; onUpgrade?: (operatorId: string) => void; includeFuture?: boolean; operators?: Operator[]; onRelated?: (op: Operator) => void }) {
   const { locale, t } = useI18n();
   const scrollRef = useRef<HTMLDivElement>(null);
   // 미래 모듈은 '미래시 포함'이 켜졌을 때만 (사용자 요청 2026-08-01)
@@ -2132,6 +2184,8 @@ function OperatorFile({ operator, onUpgrade, includeFuture }: { operator: Operat
           <ProfileSection operator={operator} />
 
           <VoiceSection operator={operator} />
+
+          {operators && <RelatedOperators operator={operator} operators={operators} onSelect={onRelated} />}
         </div>
         <ModalRail scrollRef={scrollRef} />
         </div>
@@ -2139,11 +2193,11 @@ function OperatorFile({ operator, onUpgrade, includeFuture }: { operator: Operat
   );
 }
 
-function OperatorModal({ operator, onClose, onUpgrade, includeFuture, onPinChange }: { operator: Operator; onClose: () => void; onUpgrade?: (operatorId: string) => void; includeFuture?: boolean; onPinChange?: (pinned: boolean) => void }) {
+function OperatorModal({ operator, onClose, onUpgrade, includeFuture, onPinChange, operators, onRelated }: { operator: Operator; onClose: () => void; onUpgrade?: (operatorId: string) => void; includeFuture?: boolean; onPinChange?: (pinned: boolean) => void; operators?: Operator[]; onRelated?: (op: Operator) => void }) {
   return (
     <ModalWindow label={`${operator.name} · ${operator.code}`} className="operator-modal" onClose={onClose} onPinChange={onPinChange}
       style={{ "--accent": operator.accent } as React.CSSProperties}>
-      <OperatorFile operator={operator} onUpgrade={onUpgrade} includeFuture={includeFuture} />
+      <OperatorFile operator={operator} onUpgrade={onUpgrade} includeFuture={includeFuture} operators={operators} onRelated={onRelated} />
     </ModalWindow>
   );
 }
@@ -2151,9 +2205,9 @@ function OperatorModal({ operator, onClose, onUpgrade, includeFuture, onPinChang
 // 오퍼 상세 페이지 — /operators/<id>로 직접 들어왔을 때. 창 모양은 그대로 쓰되(같은
 // .operator-modal 규격) 백드롭·크롬 없이 본문에 놓인다. 목록으로 돌아가는 링크는 실제
 // 앵커라 크롤러도 목록으로 되돌아갈 수 있다.
-function OperatorPage({ operator, onUpgrade, includeFuture, listHref, onBack }: {
+function OperatorPage({ operator, onUpgrade, includeFuture, listHref, onBack, operators, onRelated }: {
   operator: Operator; onUpgrade?: (operatorId: string) => void; includeFuture?: boolean;
-  listHref: string; onBack: () => void;
+  listHref: string; onBack: () => void; operators?: Operator[]; onRelated?: (op: Operator) => void;
 }) {
   const { t } = useI18n();
   return (
@@ -2165,7 +2219,7 @@ function OperatorPage({ operator, onUpgrade, includeFuture, listHref, onBack }: 
         }}>← {t("오퍼 목록으로")}</a>
       <section className="operator-modal operator-page" aria-label={`${operator.name} · ${operator.code}`}
         style={{ "--accent": operator.accent } as React.CSSProperties}>
-        <OperatorFile operator={operator} onUpgrade={onUpgrade} includeFuture={includeFuture} />
+        <OperatorFile operator={operator} onUpgrade={onUpgrade} includeFuture={includeFuture} operators={operators} onRelated={onRelated} />
       </section>
     </div>
   );

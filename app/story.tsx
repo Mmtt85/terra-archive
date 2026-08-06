@@ -634,10 +634,13 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
 
 // 요약 상세 — 본문 + 스크롤 추적 참조 레일
 // export는 scripts/verify-stories.mjs 전수 렌더 하네스용 (앱 내 사용처는 이 파일뿐)
-export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex, defaultView }: {
+export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex, defaultView, related, onOpenStory }: {
   event: StoryEvent; summary?: Summary; onClose: () => void; onShowOperator?: (id: string) => void; opIndex?: OpIndex;
   /** 해시로 지정된 게 없을 때의 기본 보기 — 상세 라우트(/stories/<id>)는 "summary"를 준다 */
   defaultView?: "summary" | "script";
+  /** 같은 테마의 다른 이야기 — 상세끼리 잇는 내부 링크 (2026-08-06) */
+  related?: { label: string; items: { id: string; name: string }[] } | null;
+  onOpenStory?: (id: string) => void;
 }) {
   const { locale, t } = useI18n();
 
@@ -807,6 +810,22 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex, 
             })}
           </div>
         </div>
+        {related && related.items.length > 0 && (
+          /* 같은 테마의 다른 이야기 — 상세가 목록에서만 링크되던 걸 서로 잇는다 (2026-08-06).
+             크롤 깊이를 줄이는 게 1차 목적이고, 읽던 흐름을 이어가는 데도 쓸모가 있다. */
+          <section className="story-related" aria-label={t("같은 테마의 다른 이야기")}>
+            <h3>{t("같은 테마의 다른 이야기")}<em>{related.label}</em></h3>
+            <div className="story-related-list">
+              {related.items.map((r) => (
+                <a key={r.id} href={storyPath(locale, r.id)}
+                  onClick={(e) => {
+                    if (!onOpenStory || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+                    e.preventDefault(); onOpenStory(r.id);
+                  }}>{r.name}</a>
+              ))}
+            </div>
+          </section>
+        )}
         <footer className="story-detail-foot">
           <button type="button" className="story-back" onClick={onClose}>← {t("스토리 목록으로")}</button>
         </footer>
@@ -1419,12 +1438,37 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
   // 다만 목록 클릭의 기본 보기는 종전대로 **전문**이므로(사용자 확정 2026-07-18) #script를
   // 달아 둔다. 접미 없는 맨 주소는 요약(= 그 URL로 색인된 본문)이라는 뜻을 지킨다.
   // pushState로 진입 → 홈의 스크롤 매니저가 상세는 top으로, 뒤로가기 시 목록 스크롤을 복구한다
-  const open = (event: StoryEvent) => {
-    const script = scriptIds.has(event.id) || !summaries[event.id];
-    history.pushState(null, "", storyPath(locale, event.id) + (script ? "#script" : ""));
+  const open = (event: StoryEvent, view?: "summary") => {
+    // view="summary" — 요약을 읽던 흐름에서 넘어온 경우(같은 테마 링크). 그 외에는 종전 규칙대로
+    // 전문이 있으면 전문부터 (사용자 확정 2026-07-18).
+    const script = !(view === "summary" && summaries[event.id]) && (scriptIds.has(event.id) || !summaries[event.id]);
+    history.pushState(null, "", storyPath(locale, event.id) + (script ? "#script" : "#summary"));
     pushedDetail.current = true;
     setSelected(event);
   };
+  // 같은 테마(스토리라인)의 다른 이야기 — 열 수 있는 것만, 최대 8편.
+  // 스토리라인에 없는 항목(콜라보·통합전략 등)은 같은 종류에서 출시순 이웃으로 채운다.
+  const relatedFor = (id: string) => {
+    const line = HOME_LINE_BY_ID.get(id);
+    const pick = (ids: string[], label: string) => {
+      const items = ids
+        .filter((k) => k !== id && canOpenStory(k) && eventById.has(k))
+        .slice(0, 8)
+        .map((k) => ({ id: k, name: locText(locale, eventById.get(k)!.name) }));
+      return items.length ? { label, items } : null;
+    };
+    if (line) {
+      const found = pick(line.items.filter((i) => !i.guest).map((i) => i.id), locText(locale, line.name));
+      if (found) return found;
+    }
+    const self = CHRON_BY_KEY.get(id);
+    if (!self) return null;
+    const same = CHRON_ITEMS.filter((it) => it.kind === self.kind).map((it) => it.key);
+    const at = same.indexOf(id);
+    const near = at < 0 ? same : same.slice(Math.max(0, at - 4), at + 5);
+    return pick(near, t(KIND_KO[self.kind]));
+  };
+
   const listPath = `${STORY_BASE[locale]}#theme`;
   const close = () => {
     if (pushedDetail.current) { pushedDetail.current = false; history.back(); }
@@ -1536,7 +1580,8 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
         {lensPill}
         {lensHelpModal}
         <StoryDetail key={`${selected.id}:${lensNav}`} event={selected} summary={summaries[selected.id]} onClose={close} onShowOperator={onShowOperator} opIndex={opIndex}
-          defaultView={initialStory ? "summary" : undefined} />
+          defaultView={initialStory ? "summary" : undefined}
+          related={relatedFor(selected.id)} onOpenStory={(id) => { const ev = eventById.get(id); if (ev) open(ev, "summary"); }} />
       </>
     );
   }
