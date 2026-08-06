@@ -96,7 +96,37 @@ for keyfile in "$STAGE"/[0-9a-f]*.txt; do
 done
 echo ".rsc content-type 규칙 1건(글롭) — 대상 $(find "$STAGE" -name "*.rsc" -type f | wc -l | tr -d ' ')개"
 
+# 2단계 배포(선택) — bash scripts/deploy.sh --two-phase
+# Pages는 **파일 내용 해시로 프로젝트 전체에서 업로드를 중복 제거**한다("N files already
+# uploaded"). 그래서 같은 폴더를 프리뷰 브랜치에 먼저 올려 두면, 이어지는 프로덕션 배포는
+# 업로드가 거의 0이 되고 "전환"만 남는다. 접속 불가 구간이 **업로드 창**에 있다면 이걸로
+# 사라지고, **전환 후 전파**에 있다면 안 바뀐다 — 그래서 프로브와 짝으로 쓴다.
+# ⚠ Pages에는 프리뷰를 프로덕션으로 승격하는 CLI가 없다. 이건 승격이 아니라 '업로드 선행'이다.
+case " $* " in *" --two-phase "*)
+  echo "1단계: 프리뷰 브랜치(deploy-stage)에 먼저 업로드 — 블롭을 미리 올려 둔다"
+  npx wrangler pages deploy "$STAGE" --project-name terra-archive --branch deploy-stage --commit-dirty=true
+esac
+
+# 무중단 실측 (2026-08-06 사용자 제보: "배포 끝나고 30~60초 접속이 안 되는 시간이 늘어난다").
+# 전환 전후를 1초 간격으로 찔러 **언제 몇 초 동안 무엇이** 안 됐는지 남긴다 — 원인이
+# 업로드 창인지·엣지 전파인지·브라우저에 남은 옛 청크인지에 따라 처방이 다르기 때문.
+# 끄려면: bash scripts/deploy.sh --no-probe
+PROBE_PID=""
+case " $* " in *" --no-probe "*) ;; *)
+  mkdir -p .ci
+  node scripts/deploy-probe.mjs --seconds 240 > .ci/deploy-probe.log 2>&1 &
+  PROBE_PID=$!
+  echo "무중단 프로브 시작 (배포 후 요약 출력 — .ci/deploy-probe.log)"
+esac
+
 npx wrangler pages deploy "$STAGE" --project-name terra-archive --branch main --commit-dirty=true
+
+# 프로브는 전환 뒤 구간이 핵심이라 끝까지 기다렸다가 요약만 보여 준다
+if [ -n "$PROBE_PID" ]; then
+  echo "전환 완료 — 프로브가 끝날 때까지 대기 중(최대 4분, Ctrl+C로 건너뛰어도 배포엔 영향 없음)"
+  wait "$PROBE_PID" || true
+  sed -n '/── 요약/,$p' .ci/deploy-probe.log
+fi
 
 # 색인 통보(IndexNow) — 직전 커밋 대비 **실제로 바뀐** 페이지만 Bing·네이버에 알린다.
 # 바뀐 게 없으면 아무것도 안 쏜다. 실패해도 배포는 성공이다(부가 작업이라 || true).

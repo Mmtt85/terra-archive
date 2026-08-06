@@ -376,6 +376,37 @@ node scripts/audit-assets.mjs --r2 # 오퍼 에셋 전수 검사 (로컬 완결�
 인증은 레포 루트 `.r2-sync-key`(gitignore) — 잃어버리면
 `openssl rand -hex 32 > .r2-sync-key && (cd workers/upload && npx wrangler secret put SYNC_KEY < ../../.r2-sync-key)`.
 
+## 배포 무중단 확인 (`deploy-probe.mjs`, 2026-08-06)
+
+사용자 제보: *"배포 끝나고 30초~1분간 사이트 접속이 안 되는 시간이 늘어난다."* 원인이
+① 업로드 창 ② 전환 후 엣지 전파 ③ 브라우저에 남은 옛 청크 중 어느 것이냐에 따라 처방이
+완전히 다른데, 지금까지 상태 코드도 지속 시간도 잰 적이 없었다. 그래서 **먼저 잰다.**
+
+`deploy.sh`가 wrangler 전환 직전에 자동으로 띄우고(끄려면 `--no-probe`), 4분간
+`/`·`/infra`·`/infra.rsc` 셋을 1초 간격으로 찔러 상태 코드·응답 시간·처리 콜로를 기록한 뒤
+**끊긴 구간을 요약**한다 (`.ci/deploy-probe.log`, 원본 표본은 `.ci/deploy-probe.json`).
+단독 실행: `node scripts/deploy-probe.mjs --seconds 240`.
+
+읽는 법 — 요약에 찍힌 실패 코드로 원인이 갈린다:
+
+| 증상 | 원인 | 처방 |
+|---|---|---|
+| `TimeoutError` (전환 **전**) | 업로드 창 | `--two-phase` (아래) |
+| 404·522 (전환 **직후**) | 엣지 전파 | 배포당 바뀌는 파일 수를 줄인다 |
+| 프로브는 200인데 브라우저만 흼 | 옛 청크 404 | 클라 쪽 문제 — 강력 새로고침으로 재현 확인 |
+
+**`--two-phase`** — Pages는 **파일 내용 해시로 프로젝트 전체에서 업로드를 중복 제거**한다
+("N files already uploaded"). 같은 폴더를 프리뷰 브랜치(`deploy-stage`)에 먼저 올려 두면
+이어지는 프로덕션 배포는 업로드가 거의 0이 되고 전환만 남는다. ⚠ Pages에는 **프리뷰를
+프로덕션으로 승격하는 CLI가 없다** — 이건 승격이 아니라 '업로드 선행'이라, 끊김이 업로드
+창에 있을 때만 듣는다. 프리뷰 URL(`deploy-stage.terra-archive.pages.dev`)이 공개되지만
+모든 페이지의 canonical이 terra-archive.net을 가리켜 색인은 정본으로 합쳐진다.
+
+**바뀌는 파일 수** — 지금은 HTML 1,582 + `.rsc` 1,579개가 **매 배포마다 전부** 바뀐다.
+푸터 배포 시각(`__BUILD_TIME__`)이 번들에 박혀 home 청크 해시가 매번 달라지고, 그 청크를
+모든 페이지가 물고 있기 때문이다. 전파가 범인으로 밝혀지면 여기가 첫 손댈 곳이다
+(배포 시각을 번들에서 빼 작은 정적 파일로 런타임에 읽기).
+
 ## 검색 노출 (SEO) — 빌드 산출물과 통보
 
 **`build-sitemap.mjs`** — `public/sitemap.xml`. `app/`의 `page.tsx`를 훑어 라우트를 모으고,
