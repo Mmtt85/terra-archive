@@ -1659,8 +1659,20 @@ legend {
   cursor: pointer;
   transition: all 0.15s;
 }
-.attr-cat:hover {
+.attr-cat:hover:not(:disabled) {
   border-color: #777;
+}
+/* 상위 조건이 먼저 정해져야 열리는 카테고리 (세부 직군 ← 직군) — 왜 못 누르는지
+   칩 안에 한 마디로 적어 둔다 (사용자 요청 2026-08-06) */
+.attr-cat:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  border-style: dashed;
+}
+.attr-cat-hint {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted);
 }
 .attr-cat.open {
   border-color: var(--border-strong);
@@ -8501,6 +8513,17 @@ html.dark .story-card:hover .story-thumb img {
   font: 700 12px monospace;
   color: var(--muted);
 }
+/* 출시순 보기에서만 붙는 실제 출시월 — 종류보다 이게 그 보기의 주제라 강조 (2026-08-06) */
+.story-when {
+  color: var(--ink);
+  margin-right: 6px;
+}
+.story-when::after {
+  content: "·";
+  color: var(--muted);
+  margin-left: 6px;
+  font-weight: 400;
+}
 /* 상세 */
 .story-back {
   border: 1px solid var(--line);
@@ -10020,27 +10043,24 @@ html.dark .story-card:hover .story-thumb img {
 .farm-item-btn img {
   transition: transform 0.15s;
 }
-.item-modal-backdrop {
-  place-items: center;
-}
 .item-modal {
   position: relative;
-  width: 100%;
-  max-width: 460px;
+  width: min(460px, 100%);
+  /* 백드롭이 grid라 기본이 stretch — 자리·크기를 안 정해 주면 창이 좌상단에 붙고
+     내용과 무관하게 max-height까지 늘어난다 (사용자 제보 2026-08-06: "왼쪽 위에 뜨고
+     높이가 이상하게 길어졌다가 움직이면 제대로 돌아옴" — 드래그하면 fixed 좌표로
+     떨어져 나가서 정상으로 보였던 것). 내용만큼만 높게, 화면 가운데. */
+  place-self: center;
+  height: fit-content;
   max-height: min(84dvh, 640px);
-  overflow: auto;
   border: 1px solid var(--border-strong);
   background: var(--white);
   box-shadow: 6px 6px 0 #13171933;
-  padding: 20px 22px;
   animation: 0.18s both fadeIn;
 }
-.item-modal .modal-close {
-  top: 10px;
-  right: 10px;
-  width: 32px;
-  height: 32px;
-  font-size: 20px;
+/* 여백은 창 본문에만 — 패널에 주면 크롬 바(제목·📌·×)까지 안쪽으로 밀려 다른 창과 어긋난다 */
+.item-modal .mw-body {
+  padding: 6px 22px 20px;
 }
 .item-modal > header {
   display: flex;

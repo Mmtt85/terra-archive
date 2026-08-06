@@ -358,6 +358,7 @@ const D: Record<string, Pair> = {
   "컨셉덱": ["Concepts", "コンセプト"],
   "직군": ["Class", "職分"],
   "세부 직군": ["Archetype", "職分細分"],
+  "직군 먼저": ["Pick a class first", "職分を先に"],
   "전투 태그": ["Combat Tags", "戦闘タグ"],
   "공식 소속": ["Affiliation", "所属"],
   "복수 선택 가능 · 전부 해제 시 전체": ["Multi-select · none selected = all", "複数選択可 · 全解除で全表示"],
@@ -1376,6 +1377,7 @@ const D: Record<string, Pair> = {
     "未実装のオペレーター・素材（中国サーバーのデータ）も一覧・計算機に表示します。未実装テキストは非公式のAI翻訳です。",
   ],
   "미실장": ["Unreleased", "未実装"],
+  "{ym} 예정": ["{ym} (est.)", "{ym} 予定"],
   "미실장 오퍼레이터입니다 — 중국 서버 데이터 기준이며, 스킬·재능 등 텍스트는 비공식 AI 번역이라 정식 출시 시 공식 번역과 다를 수 있습니다.": [
     "This operator is not yet released — data comes from the CN server, and skill/talent text is an unofficial AI translation that may differ from the official localization.",
     "未実装のオペレーターです — 中国サーバーのデータ基準であり、スキル・素質などのテキストは非公式のAI翻訳のため、正式実装時の公式翻訳と異なる場合があります。",

@@ -939,9 +939,16 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
     roster.forEach((operator) => { if (!byCode.has(operator.jobCode)) byCode.set(operator.jobCode, operator.job); });
     return JOB_ORDER.map((code) => byCode.get(code)).filter((job): job is string => Boolean(job));
   }, [roster]);
+  // 세부 직군은 직군의 하위 개념 — 직군을 안 고르면 8개 직군의 세부 직군이 한 목록에
+  // 통째로 쏟아진다. 직군을 먼저 골라야 열리고, 고른 직군의 것만 보인다
+  // (사용자 요청 2026-08-06: "직군이 골라져 있지 않으면 세부직군도 disabled로").
   const subProfessions = useMemo(() =>
-    Array.from(new Set(roster.map((operator) => operator.subProfession))).sort((a, b) => a.localeCompare(b, locale)),
-    [roster, locale]);
+    (selectedJobs.length === 0
+      ? []
+      : Array.from(new Set(roster.filter((operator) => selectedJobs.includes(operator.job))
+          .map((operator) => operator.subProfession)))
+    ).sort((a, b) => a.localeCompare(b, locale)),
+    [roster, locale, selectedJobs]);
   // 성급 필터 목록 — 로스터에 실제 있는 성급을 높은 순으로 (보통 6~1성)
   const rarities = useMemo(() =>
     Array.from(new Set(roster.map((operator) => operator.rarity))).sort((a, b) => b - a).map(String),
@@ -1351,6 +1358,14 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
   const toggleIn = (setter: React.Dispatch<React.SetStateAction<string[]>>) => (value: string) =>
     setter((current) => (current.includes(value) ? current.filter((item) => item !== value) : [...current, value]));
   const toggleTag = toggleIn(setTags);
+  // 직군을 바꾸면 그 직군에 없는 세부 직군 선택은 같이 떨어뜨린다 — 안 그러면 결과가
+  // 0건인 채로 이유가 안 보인다 (세부 직군 목록은 고른 직군의 것만 나오므로).
+  const toggleJob = (job: string) => {
+    const next = selectedJobs.includes(job) ? selectedJobs.filter((item) => item !== job) : [...selectedJobs, job];
+    const allowed = new Set(roster.filter((operator) => next.includes(operator.job)).map((operator) => operator.subProfession));
+    setSelectedJobs(next);
+    setSelectedSubProfessions((subs) => (subs.every((sub) => allowed.has(sub)) ? subs : subs.filter((sub) => allowed.has(sub))));
+  };
 
   const hasActiveFilter = selectedFactions.length > 0 || selectedConcepts.length > 0 || selectedMethods.length > 0 || tags.length > 0 || selectedJobs.length > 0 || selectedSubProfessions.length > 0 || selectedRarities.length > 0 || searchTerm.trim().length > 0;
 
@@ -1495,8 +1510,9 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
           {/* 성급·직군·세부직군·전투태그·공격방식·소속은 한 컨트롤로 합쳐 카테고리→값 방식으로. */}
           <AttributeFilter groups={[
             { title: t("성급"), items: rarities, selected: selectedRarities, onToggle: toggleIn(setSelectedRarities), labelFor: (item) => `${item}★`, countForItem: (item) => chipCount.rarity.get(item) ?? 0 },
-            { title: t("직군"), items: jobs, selected: selectedJobs, onToggle: toggleIn(setSelectedJobs), countForItem: (item) => chipCount.job.get(item) ?? 0 },
-            { title: t("세부 직군"), items: subProfessions, selected: selectedSubProfessions, onToggle: toggleIn(setSelectedSubProfessions), countForItem: (item) => chipCount.sub.get(item) ?? 0 },
+            { title: t("직군"), items: jobs, selected: selectedJobs, onToggle: toggleJob, countForItem: (item) => chipCount.job.get(item) ?? 0 },
+            { title: t("세부 직군"), items: subProfessions, selected: selectedSubProfessions, onToggle: toggleIn(setSelectedSubProfessions), countForItem: (item) => chipCount.sub.get(item) ?? 0,
+              disabled: selectedJobs.length === 0, hint: t("직군 먼저") },
             { title: t("전투 태그"), items: combatTags, selected: tags, onToggle: toggleTag, countForItem: (item) => chipCount.tag.get(item) ?? 0 },
             { title: t("공격 방식"), items: attackMethods, selected: selectedMethods, onToggle: toggleIn(setSelectedMethods), countForItem: (item) => chipCount.method.get(item) ?? 0 },
             { title: t("공식 소속"), items: factions, selected: selectedFactions, onToggle: toggleIn(setSelectedFactions), countForItem: (item) => chipCount.faction.get(item) ?? 0 },
@@ -1530,7 +1546,7 @@ function HomeInner({ operators, extra, summaries, initialTab }: { operators: Ope
             {selectedConcepts.map((item) => <button key={`c-${item}`} onClick={() => toggleIn(setSelectedConcepts)(item)}>{conceptTitle(locale, item)} ×</button>)}
             {selectedMethods.map((item) => <button key={`p-${item}`} onClick={() => toggleIn(setSelectedMethods)(item)}>{item} ×</button>)}
             {tags.map((tag) => <button key={`t-${tag}`} onClick={() => toggleTag(tag)}>{tag} ×</button>)}
-            {selectedJobs.map((item) => <button key={`j-${item}`} onClick={() => toggleIn(setSelectedJobs)(item)}>{item} ×</button>)}
+            {selectedJobs.map((item) => <button key={`j-${item}`} onClick={() => toggleJob(item)}>{item} ×</button>)}
             {selectedSubProfessions.map((item) => <button key={`s-${item}`} onClick={() => toggleIn(setSelectedSubProfessions)(item)}>{item} ×</button>)}
             {searchTerm && <button onClick={() => clearSearch()}>“{searchTerm}” ×</button>}
           </div>
@@ -1781,11 +1797,13 @@ function FilterGroup({ title, items, selected, onToggle, rows = 1, countForItem,
 // 카테고리를 다시 누르면 되고, 이미 고른 값은 ✓로 표시돼 있어 다시 열어도 바로 보인다.
 // (컨셉덱은 하나만 고르는 기능이라 고른 걸 아예 목록에서 뺀다 — 그 차이만 다르다.)
 // 컨셉덱은 시그니처 기능이라 별도 유지.
-type AttrGroup = { title: string; items: string[]; selected: string[]; onToggle: (value: string) => void; labelFor?: (value: string) => string; countForItem: (value: string) => number };
+// disabled/hint — 상위 조건이 정해져야 열리는 카테고리(세부 직군 ← 직군)용
+type AttrGroup = { title: string; items: string[]; selected: string[]; onToggle: (value: string) => void; labelFor?: (value: string) => string; countForItem: (value: string) => number; disabled?: boolean; hint?: string };
 function AttributeFilter({ groups }: { groups: AttrGroup[] }) {
   const { t } = useI18n();
   const [open, setOpen] = useState<string | null>(null);
-  const active = groups.find((g) => g.title === open);
+  // 열려 있는 동안 상위 조건이 풀리면(직군 해제) 목록도 같이 닫힌다
+  const active = groups.find((g) => g.title === open && !g.disabled);
   const wrapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -1807,11 +1825,12 @@ function AttributeFilter({ groups }: { groups: AttrGroup[] }) {
       <legend>{t("세부 조건")}<small className="multi-hint">{t("항목을 눌러 값을 고르세요 · 복수 선택 가능")}</small></legend>
       <div className="attr-cats" ref={wrapRef}>
         {groups.map((g) => (
-          <button key={g.title} type="button"
+          <button key={g.title} type="button" disabled={g.disabled}
             className={`attr-cat${open === g.title ? " open" : ""}${g.selected.length ? " has-sel" : ""}`}
-            aria-expanded={open === g.title}
+            aria-expanded={open === g.title} title={g.disabled ? g.hint : undefined}
             onClick={() => setOpen((current) => (current === g.title ? null : g.title))}>
             {g.title}{g.selected.length > 0 && <em>{g.selected.length}</em>}
+            {g.disabled && g.hint && <small className="attr-cat-hint">{g.hint}</small>}
             <span className="attr-caret" aria-hidden>{open === g.title ? "▴" : "▾"}</span>
           </button>
         ))}

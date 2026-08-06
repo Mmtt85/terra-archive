@@ -1202,6 +1202,13 @@ function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEve
     // 메타는 종류(사이드/미니 이벤트, 에피소드 N, 통합 전략)만 — 발행연월·에피소드 개수는
     // 표시하지 않는다 (사용자 요청 2026-07-21 — 출시월은 정렬용으로만 쓴다)
     const meta = it.ep ? locText(locale, it.ep) : t(KIND_KO[it.kind]);
+    // 다만 **출시순 보기에서는** 실제로 언제 나온 이야기인지가 그 보기의 주제다 — 연도로만
+    // 묶여 있어 같은 해 안에서는 순서를 알 수 없었다 (사용자 요청 2026-08-06). 미실장은
+    // 아직 KR에 없으니 eta(추정 출시월)를 '예정'으로 적는다. 다른 보기에서는 종전대로 없음.
+    const when = group !== "release" ? null
+      : ev?.unreleased
+        ? (ev.eta ? t("{ym} 예정", { ym: ev.eta.replace("-", ".") }) : null)
+        : (ev?.start ? ev.start.replace("-", ".") : null);
     const body = (
       <>
         <div className={`story-thumb${thumb ? "" : " story-thumb-none"}`}>
@@ -1216,7 +1223,7 @@ function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEve
         </div>
         <div className="story-card-info">
           <h3>{guest ? <>({locText(locale, it.name)})</> : locText(locale, it.name)}{ev?.unreleased && <em className="future-badge">{t("미실장")}</em>}</h3>
-          <span>{meta}</span>
+          <span>{when && <b className="story-when">{when}</b>}{meta}</span>
         </div>
       </>
     );
