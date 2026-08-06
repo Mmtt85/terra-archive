@@ -717,8 +717,29 @@ const D: Record<string, Pair> = {
   "제조소 평균": ["Factory avg", "製造所平均"],
   "무역소 평균": ["Trading avg", "貿易所平均"],
   "드론 회복 평균 효율": ["Avg drone recovery", "ドローン回復平均効率"],
-  "기용 인원": ["Operators used", "起用人数"],
-  "{n}명": ["{n}", "{n}名"],
+  // 하루 산출 요약 카드 (2026-08-06) — 종전 '기용 인원' 자리
+  "하루 용문폐": ["LMD / day", "1日の龍門幣"],
+  "하루 작전기록": ["Records / day", "1日の作戦記録"],
+  "≈{n}개": ["≈{n}", "≈{n}個"],
+  "순금 부족": ["Gold short", "純金不足"],
+  "무역소 순금 오더 기준입니다 — 효율 0%p 무역소 1개가 시간당 용문폐 {h}(2·3·4금 오더가 30/50/20%로 나오고 순금 1개 = 용문폐 {g}), 여기에 각 무역소의 %효율을 곱했습니다.": [
+    "Based on the trading posts' Pure Gold orders — one post at +0% yields {h} LMD per hour (orders of 2/3/4 gold appear 30/50/20% of the time, one Pure Gold = {g} LMD), multiplied by each post's room efficiency.",
+    "貿易所の純金注文が基準です — 効率0%pの貿易所1つで1時間あたり龍門幣{h}（2・3・4金の注文が30/50/20%で出現し、純金1個 = 龍門幣{g}）。ここに各貿易所の効率%を掛けています。"],
+  "순금 수지: 제조소가 하루 {g}개를 만드는데 무역소는 {n}개를 소화합니다 — 순금이 모자라 무역소가 놉니다. 순금 제조소를 늘리거나 순금방 효율을 올리면 그대로 용문폐가 됩니다.": [
+    "Gold balance: the factories make {g} bars a day while the posts can process {n} — gold runs out and the posts idle. Adding a gold factory, or raising its efficiency, converts straight into LMD.",
+    "純金収支: 製造所が1日{g}個作るのに対し、貿易所は{n}個を捌けます — 純金が足りず貿易所が遊びます。純金製造所を増やすか効率を上げれば、そのまま龍門幣になります。"],
+  "순금 수지: 제조소가 하루 {g}개를 만들고 무역소는 {n}개를 소화합니다 — 무역소 처리량이 천장이라 남는 순금은 쌓입니다.": [
+    "Gold balance: the factories make {g} bars a day and the posts process {n} — the posts are the ceiling, so surplus gold just piles up.",
+    "純金収支: 製造所が1日{g}個作り、貿易所は{n}個を捌きます — 貿易所の処理量が天井なので、余った純金は貯まるだけです。"],
+  "제조소 기본 생산 속도 1포인트/초 기준입니다 — 중급작전기록 10,800pt = 1,000exp(Lv3), 초급 4,800pt = 400exp(Lv2), 기초 2,700pt = 200exp(Lv1). 방 %효율을 곱해 더한 하루 경험치를 중급작전기록 개수로 환산했습니다.": [
+    "Based on the factory base speed of 1 point per second — Tactical Battle Record 10,800pt = 1,000 EXP (Lv3), Frontline 4,800pt = 400 EXP (Lv2), Drill 2,700pt = 200 EXP (Lv1). Daily EXP with each room's efficiency applied, shown as a count of Tactical Battle Records.",
+    "製造所の基本生産速度1ポイント/秒が基準です — 中級作戦記録10,800pt = 1,000exp（Lv3）、初級4,800pt = 400exp（Lv2）、入門2,700pt = 200exp（Lv1）。部屋の効率%を掛けて合計した1日の経験値を、中級作戦記録の個数に換算しています。"],
+  "A조 {a}시간 · B조 {b}시간 비율로 두 조를 섞은 하루 값이라, 위의 조 탭을 바꿔도 변하지 않습니다.": [
+    "A full day blended from crew A ({a}h) and crew B ({b}h), so switching the crew tab above does not change it.",
+    "A班{a}時間・B班{b}時間の比率で両班を混ぜた1日分なので、上の班タブを切り替えても変わりません。"],
+  "창고·오더 슬롯이 차기 전에 수거한다고 봅니다 — 하루에 한 번도 안 들어오는 계정이면 실제 산출은 이보다 적습니다.": [
+    "Assumes you collect before the factory stock and order slots fill up — if you do not log in at all for a day, the real output is lower.",
+    "倉庫・注文枠が埋まる前に回収する前提です — 1日一度もログインしない場合、実際の産出はこれより少なくなります。"],
   "우선 생산": ["Production priority", "優先生産"],
   "순금 우선": ["Gold first", "純金優先"],
   "작전기록 우선": ["Records first", "作戦記録優先"],
@@ -1294,6 +1315,24 @@ const D: Record<string, Pair> = {
   "방 상세의 스킬 설명에서 점선 밑줄 용어(외세·실리·시라쿠사 등)를 클릭하면 게임 용어 사전의 정의가 뜹니다 — 오퍼 명단이 있는 용어(진영·그룹)는 연결된 오퍼 전원이 아바타로 표시됩니다 (배치 중 = 컬러, 미배치 = 흑백).": [
     "In room details, click dotted-underlined terms in skill descriptions (Foreign Influence, Practical Gain, Siracusa, etc.) to see the in-game glossary definition — terms with an operator roster (factions/groups) show every linked operator as avatars (deployed = color, not deployed = grayscale).",
     "施設詳細のスキル説明で点線下線の用語（外勢・実利・シラクーザなど）をクリックすると、ゲーム内用語辞典の定義が表示されます — オペレーター名簿を持つ用語（陣営・グループ）は、関連オペレーター全員がアバターで表示されます（配置中＝カラー、未配置＝グレー）。",
+  ],
+  // 도움말 — 하루 산출 (2026-08-06)
+  "하루 산출 (용문폐·작전기록)": ["Daily output (LMD & battle records)", "1日の産出（龍門幣・作戦記録）"],
+  "요약의 '하루 용문폐'는 무역소 순금 오더 기준입니다 — 효율 0%p 무역소 1개가 시간당 용문폐 427.7(2·3·4금 오더가 30/50/20%로 나오고, 순금 1개 = 용문폐 500)이고 여기에 각 무역소의 %효율을 곱합니다.": [
+    "'LMD / day' in the summary is based on the trading posts' Pure Gold orders — one post at +0% yields 427.7 LMD per hour (orders of 2/3/4 gold appear 30/50/20% of the time, one Pure Gold = 500 LMD), multiplied by each post's room efficiency.",
+    "サマリーの「1日の龍門幣」は貿易所の純金注文が基準です — 効率0%pの貿易所1つで1時間あたり龍門幣427.7（2・3・4金の注文が30/50/20%で出現し、純金1個 = 龍門幣500）。ここに各貿易所の効率%を掛けます。",
+  ],
+  "무역소는 순금이 있어야 오더를 납품하므로, 순금 제조소의 하루 생산이 무역소 소화량에 못 미치면 그 비율만큼만 계산하고 '순금 부족'을 띄웁니다 — 이 상태에서는 순금방을 키우는 것이 곧 용문폐입니다.": [
+    "A post can only fill an order if you have the gold, so when the gold factories' daily output falls short of what the posts can process, only that fraction is counted and 'Gold short' is shown — in that state, improving the gold rooms converts straight into LMD.",
+    "貿易所は純金がなければ注文を納品できないため、純金製造所の1日の生産が貿易所の処理量に届かない場合はその比率だけを計算し、「純金不足」と表示します — この状態では純金部屋を強化することがそのまま龍門幣になります。",
+  ],
+  "'하루 작전기록'은 제조소 기본 생산 속도 1포인트/초 기준입니다 — 중급작전기록 10,800pt = 1,000exp(Lv3), 초급 4,800pt = 400exp(Lv2), 기초 2,700pt = 200exp(Lv1). 제조소 레벨이 낮으면 만들 수 있는 등급도 낮아지므로(252 배치의 Lv2 제조소) 그 레벨의 레시피로 계산합니다.": [
+    "'Records / day' is based on the factory base speed of 1 point per second — Tactical Battle Record 10,800pt = 1,000 EXP (Lv3), Frontline 4,800pt = 400 EXP (Lv2), Drill 2,700pt = 200 EXP (Lv1). A lower factory level unlocks only a lower grade (the Lv2 factories in the 252 layout), so that level's recipe is used.",
+    "「1日の作戦記録」は製造所の基本生産速度1ポイント/秒が基準です — 中級作戦記録10,800pt = 1,000exp（Lv3）、初級4,800pt = 400exp（Lv2）、入門2,700pt = 200exp（Lv1）。製造所のレベルが低いと作れる等級も下がるため（252配置のLv2製造所）、そのレベルのレシピで計算します。",
+  ],
+  "두 값 모두 A조·B조를 각 조의 교대 시계 비율로 섞은 하루치라, 조 탭을 바꿔도 변하지 않습니다. 또 창고·오더 슬롯이 차기 전에 수거한다고 보므로, 하루에 한 번도 안 들어오는 계정이면 실제 산출은 이보다 적습니다.": [
+    "Both figures blend crew A and crew B by each crew's shift clock, so switching the crew tab does not change them. They also assume you collect before the factory stock and order slots fill up — if you never log in for a day, the real output is lower.",
+    "どちらの値もA班・B班を各班の交代時計の比率で混ぜた1日分なので、班タブを切り替えても変わりません。また倉庫・注文枠が埋まる前に回収する前提のため、1日一度もログインしない場合は実際の産出がこれより少なくなります。",
   ],
   "수치는 근사치": ["Numbers are approximations", "数値は近似値"],
   "숙소는 풀 인원(20명), 모집 4칸, 발전소 3(그레이 알터 시 4) 기준의 추정 상한으로 계산합니다. 실제 게임 수치와 약간 다를 수 있습니다.": [

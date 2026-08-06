@@ -20,6 +20,8 @@ import {
   type InfraOp, type InfraSkill, type Elite, type Plan, type ProdPriority, type ProdAxis, type DrainMode, type TokenFlow, type OptimizeStep, type LayoutPreset, type Levels, type CustomRoom, type CustomProduct,
 } from "./planner-engine";
 import type { RaiseRec, InvestProgress } from "./planner-invest";
+// 요약 카드의 하루 산출(용문폐·작전기록) 근사 — 상수 출처는 그 파일 머리말
+import { dailyYield, yieldCells, EXP_PER_RECORD, GOLD_LMD as YIELD_GOLD_LMD, ORDER_LMD_HOUR } from "./planner-yield";
 // 회수일 각주가 쓰는 환산 기준 — 엔진(planner-invest)은 워커 전용 무거운 모듈이라
 // 값으로 가져오지 않고 생성 데이터만 직접 읽는다 (scripts/build-sanity.py)
 import sanityBasis from "./data/sanity.json";
@@ -1005,10 +1007,35 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       manufacture: avg("MANUFACTURE"),
       trading: avg("TRADING"),
       power: avg("POWER"),
-      staffed: allAssigned.size,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [plan, activeShift, allAssigned, presentIds, ambient, eliteById]);
+  }, [plan, activeShift, presentIds, ambient, eliteById]);
+
+  // 하루 산출 근사 (사용자 요청 2026-08-06: "효율 말고 하루에 용문폐·작전기록 얼마인지").
+  // 조 탭과 무관하다 — A·B 두 조를 각자의 교대 시계 비율로 섞은 **하루치**이기 때문.
+  const yieldDay = useMemo(() => (plan ? dailyYield(plan, effectiveOpById) : null), [plan, effectiveOpById]);
+  const yieldRooms = useMemo(() => yieldCells(), [layout, customRooms, customProducts]); // eslint-disable-line react-hooks/exhaustive-deps
+  // 근사치인 만큼 근거를 툴팁에 전부 적는다 — 상수 출처·순금 수지·교대 비율·수거 가정
+  const num = (n: number) => Math.round(n).toLocaleString();
+  const shiftMix = yieldDay
+    ? t("A조 {a}시간 · B조 {b}시간 비율로 두 조를 섞은 하루 값이라, 위의 조 탭을 바꿔도 변하지 않습니다.",
+        { a: Math.round(yieldDay.hours[0]), b: Math.round(yieldDay.hours[1]) })
+    : "";
+  const stockNote = t("창고·오더 슬롯이 차기 전에 수거한다고 봅니다 — 하루에 한 번도 안 들어오는 계정이면 실제 산출은 이보다 적습니다.");
+  const yieldLmdTip = yieldDay ? [
+    t("무역소 순금 오더 기준입니다 — 효율 0%p 무역소 1개가 시간당 용문폐 {h}(2·3·4금 오더가 30/50/20%로 나오고 순금 1개 = 용문폐 {g}), 여기에 각 무역소의 %효율을 곱했습니다.",
+      { h: ORDER_LMD_HOUR.toFixed(1), g: num(YIELD_GOLD_LMD) }),
+    yieldDay.goldShort
+      ? t("순금 수지: 제조소가 하루 {g}개를 만드는데 무역소는 {n}개를 소화합니다 — 순금이 모자라 무역소가 놉니다. 순금 제조소를 늘리거나 순금방 효율을 올리면 그대로 용문폐가 됩니다.",
+          { g: num(yieldDay.gold), n: num(yieldDay.goldNeed) })
+      : t("순금 수지: 제조소가 하루 {g}개를 만들고 무역소는 {n}개를 소화합니다 — 무역소 처리량이 천장이라 남는 순금은 쌓입니다.",
+          { g: num(yieldDay.gold), n: num(yieldDay.goldNeed) }),
+    shiftMix, stockNote,
+  ].join("\n") : "";
+  const yieldExpTip = yieldDay ? [
+    t("제조소 기본 생산 속도 1포인트/초 기준입니다 — 중급작전기록 10,800pt = 1,000exp(Lv3), 초급 4,800pt = 400exp(Lv2), 기초 2,700pt = 200exp(Lv1). 방 %효율을 곱해 더한 하루 경험치를 중급작전기록 개수로 환산했습니다."),
+    shiftMix, stockNote,
+  ].join("\n") : "";
 
   // 커밋 정예화 기준 op 맵 — 임시 적용 '이전' 편성 점수 계산용(현재 effectiveOpById는 임시 반영본)
   const committedOpById = useMemo(() => new Map(visibleOps.map((op) => [op.id, withElite(op, eliteById.get(op.id), levelById.get(op.id))])), [visibleOps, eliteById, levelById]);
@@ -1184,7 +1211,19 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           }).join("\n")}`}>
           <span>⚡ {t("전력")}</span><b>{power.net >= 0 ? `+${power.net}` : power.net} <i className="power-detail">({power.consume}/{power.provide})</i></b>
         </div>
-        <div><span>{t("기용 인원")}</span><b>{summary ? t("{n}명", { n: summary.staffed }) : "—"}</b></div>
+        {/* 하루 산출 — 종전 '기용 인원' 자리 (사용자 요청 2026-08-06: 인원수는 배치도를 세면
+            나오지만, 하루에 용문폐·작전기록을 얼마나 받는지는 %효율만 봐선 알 수 없다).
+            근거는 툴팁에 전부 밝힌다 — 근사치라 값 앞에 ≈를 붙인다. */}
+        <div className="yield-cell" title={yieldDay ? yieldLmdTip : undefined}>
+          <span>💰 {t("하루 용문폐")}</span>
+          <b>{yieldDay && yieldRooms.trade > 0 ? `≈${num(yieldDay.lmd)}` : "—"}
+            {yieldDay && yieldRooms.trade > 0 && yieldDay.goldShort && <i className="yield-detail yield-short">{t("순금 부족")}</i>}</b>
+        </div>
+        <div className="yield-cell" title={yieldDay ? yieldExpTip : undefined}>
+          <span>📘 {t("하루 작전기록")}</span>
+          <b>{yieldDay && yieldRooms.exp > 0 ? t("≈{n}개", { n: num(yieldDay.records) }) : "—"}
+            {yieldDay && yieldRooms.exp > 0 && <i className="yield-detail">({num(yieldDay.exp)} exp)</i>}</b>
+        </div>
       </div>
 
       <div className={`ship${layout !== "243" ? ` ship-${layout}` : ""}`}>
@@ -2958,6 +2997,12 @@ const HELP_SECTIONS: { title: string; items: string[] }[] = [
   { title: "미래시(미실장) 오퍼", items: [
     "헤더의 '미래시 데이터 포함'을 켜면 미출시(중국 서버 선행) 오퍼도 보유 오퍼 설정과 자동편성 계산에 포함됩니다. 스킬 텍스트는 비공식 AI 번역이며, 정식 출시 시 공식 데이터로 대체됩니다.",
     "토글을 바꿔도 현재 편성은 유지됩니다 — 자동편성을 다시 실행해야 반영됩니다.",
+  ]},
+  { title: "하루 산출 (용문폐·작전기록)", items: [
+    "요약의 '하루 용문폐'는 무역소 순금 오더 기준입니다 — 효율 0%p 무역소 1개가 시간당 용문폐 427.7(2·3·4금 오더가 30/50/20%로 나오고, 순금 1개 = 용문폐 500)이고 여기에 각 무역소의 %효율을 곱합니다.",
+    "무역소는 순금이 있어야 오더를 납품하므로, 순금 제조소의 하루 생산이 무역소 소화량에 못 미치면 그 비율만큼만 계산하고 '순금 부족'을 띄웁니다 — 이 상태에서는 순금방을 키우는 것이 곧 용문폐입니다.",
+    "'하루 작전기록'은 제조소 기본 생산 속도 1포인트/초 기준입니다 — 중급작전기록 10,800pt = 1,000exp(Lv3), 초급 4,800pt = 400exp(Lv2), 기초 2,700pt = 200exp(Lv1). 제조소 레벨이 낮으면 만들 수 있는 등급도 낮아지므로(252 배치의 Lv2 제조소) 그 레벨의 레시피로 계산합니다.",
+    "두 값 모두 A조·B조를 각 조의 교대 시계 비율로 섞은 하루치라, 조 탭을 바꿔도 변하지 않습니다. 또 창고·오더 슬롯이 차기 전에 수거한다고 보므로, 하루에 한 번도 안 들어오는 계정이면 실제 산출은 이보다 적습니다.",
   ]},
   { title: "수치는 근사치", items: [
     "숙소는 풀 인원(20명), 모집 4칸, 발전소 3(그레이 알터 시 4) 기준의 추정 상한으로 계산합니다. 실제 게임 수치와 약간 다를 수 있습니다.",

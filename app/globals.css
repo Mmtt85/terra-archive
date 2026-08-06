@@ -4349,6 +4349,24 @@ footer p {
   font-style: normal;
   color: var(--muted);
 }
+/* 하루 산출 카드의 보조 표기 — 경험치 환산·'순금 부족' 꼬리표 (2026-08-06).
+   숫자 옆이 아니라 **아랫줄**에 둔다 — 같은 줄에 붙이면 '≈32개 (31,618 exp)'가 칸을
+   넘친다. 요약행 높이는 이미 '드론 회복 평균 효율' 라벨이 두 줄이라 그대로다. */
+.yield-detail {
+  display: block;
+  margin-top: 2px;
+  font: 700 11px/1 monospace;
+  font-style: normal;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.yield-cell b {
+  white-space: nowrap;
+}
+/* 순금 공급이 무역소 처리량에 못 미치는 상태 — 고치면 그대로 용문폐가 되는 자리라 눈에 띄게 */
+.yield-short {
+  color: #c43c3c;
+}
 .room-lv {
   font: 800 10px/1 monospace;
   font-style: normal;
@@ -4523,12 +4541,13 @@ footer p {
 }
 .planner-summary {
   display: grid;
-  /* 전력 셀 추가로 6열 (2026-07-24) — 마지막(기용 인원)만 살짝 넓게 */
-  grid-template-columns: repeat(5, minmax(0, 1fr)) minmax(0, 1.4fr);
+  /* 전력 셀 추가로 6열 (2026-07-24) → 하루 산출 2칸으로 7열 (2026-08-06).
+     마지막 두 칸(하루 용문폐·하루 작전기록)은 숫자가 길어 조금 넓게 준다. */
+  grid-template-columns: repeat(5, minmax(0, 1fr)) repeat(2, minmax(0, 1.3fr));
   gap: 10px;
   margin-top: 18px;
 }
-/* 요약 카드(전략·평균·전력·기용 인원) — 낮게 (사용자 요청 2026-07-27).
+/* 요약 카드(전략·평균·전력·하루 산출) — 낮게 (사용자 요청 2026-07-27).
    min-height는 자동편성 전후로 값이 —에서 숫자로 바뀔 때 줄 수가 달라져도
    칸 높이가 흔들리지 않게 잡아 둔 것 (사용자 지정 55px, 2026-07-29) */
 .planner-summary > div,
