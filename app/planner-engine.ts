@@ -86,6 +86,11 @@ export type InfraSkill = {
   gateCount?: number | null;
   gatePlatforms?: number | null; // "작업 플랫폼 2대+ 발전소 배치 시" (푸딩) — 자동편성 미충족 조건
   roomPartner?: { id: string; room: string } | null; // "만약 굼이 무역소에 배치되어 있다면" (레토) — 교차방 파트너
+  // 내보내는 교차방 오라 (저스티스 나이트 '띠띠~, 가동!', 사용자 제보 2026-08-07):
+  // "발전소에 배치 시, **와일드메인이 배치된 제조소**의 생산력 +5%". roomPartner와 방향이
+  // 반대다 — roomPartner는 남의 방을 보고 내 방에 적용, 이건 내가 앉으면 남의 방에 적용.
+  // 데이터 전체에서 이 형태는 이 스킬 하나뿐. 짝이 앉은 **그 방 한 곳**에만 붙는다.
+  crossBuff?: { partner: string; room: string; value: number } | null;
   belowThreshold?: number | null; // "누적 속도 30% 미만인 경우" 류 — 대상 방 수치가 임계값 미만일 때만 (사일라흐)
   reqFaction: string | null;
   // 명단형 그룹 동석 게이트 (레우스S·키린R '아이루와 유쾌한 친구들' — 진영 데이터에 없는
@@ -162,6 +167,33 @@ export const TERMS: Record<string, InfraTerm> =
   (infraData as unknown as { terms?: Record<string, InfraTerm> }).terms ?? {};
 export const ops = infra.ops;
 export const opById = new Map(ops.map((op) => [op.id, op]));
+
+/**
+ * 내보내는 교차방 오라 색인 — **짝 id** → 그 짝을 지목한 제공자들 (2026-08-07 사용자 제보).
+ *
+ * 저스티스 나이트 '띠띠~, 가동!'("발전소에 배치 시, 와일드메인이 배치된 제조소의 생산력
+ * +5%")이 유일한 사례다. 제공자는 대상 방에 없으므로 breakdown이 제공자를 훑을 기회가
+ * 없다 — 그래서 **짝 쪽에서** 역참조한다. 짝은 그 방 팀에 정확히 한 번 나오므로 중복
+ * 가산이 없고, "짝이 앉은 그 방 한 곳에만"이라는 방 단위 의미도 자연히 지켜진다.
+ *
+ * 색인은 전역 ops 기준이다 — 정예화 하향(withElite)으로 제공자 스킬이 잠기는 경우를
+ * 반영하지 못하지만, 현 유일 사례가 1성 로봇의 Lv.30 스킬이라 잠길 일이 없다.
+ * 정예화 게이트가 걸린 crossBuff가 새로 생기면 그때 로스터 기준으로 옮길 것.
+ */
+export const crossBuffByPartner = (() => {
+  const map = new Map<string, { providerId: string; fromRoom: string; room: string; value: number }[]>();
+  for (const op of ops) {
+    for (const skill of op.skills) {
+      for (const sk of [skill, ...(skill.tiers ?? [])]) {
+        if (!sk.crossBuff) continue;
+        const list = map.get(sk.crossBuff.partner) ?? [];
+        list.push({ providerId: op.id, fromRoom: sk.room, room: sk.crossBuff.room, value: sk.crossBuff.value });
+        map.set(sk.crossBuff.partner, list);
+      }
+    }
+  }
+  return map;
+})();
 
 export type Elite = 0 | 1 | 2;
 
@@ -1102,6 +1134,24 @@ export function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx):
     }
   }
   for (const [token, rate] of tokenRates) out.efficiency += (ctx.tokenPoints[token] ?? 0) * rate;
+  // 내보내는 교차방 오라 수신 (저스티스 나이트 → 와일드메인이 앉은 제조소, 사용자 제보
+  // 2026-08-07). 제공자가 이 방에 없으므로 **짝인 내가** 역참조해 받는다.
+  // roomOf는 조(shift)별 지도라 같은 교대 판정이 공짜로 따라온다.
+  //
+  // ⚠ roomPartner·condBonus의 "지도 없으면 낙관 통과" 관례를 **따르지 않는다**. 저 관례는
+  // 짝이 다른 방 그리디에서 배치될 여지를 주려는 것인데, 여기 제공자는 자동편성이 세울
+  // 수단이 없다(교차방 시드가 없다). 낙관 통과시키면 짝이 영구히 +5 뻥튀기돼 실제로는
+  // 오지 않는 보너스로 편성이 뒤틀린다 — 실측으로 42개 편성 중 9개가 흔들렸다.
+  // 지도가 있을 때만 엄격 판정하면 자동편성은 종전과 동일하고, 수동 배치(항상 지도가 있다)만
+  // 정확해진다.
+  for (const cb of crossBuffByPartner.get(op.id) ?? []) {
+    if (cb.room !== room) continue;
+    if (!ctx.roomOf || ctx.roomOf.get(cb.providerId) !== cb.fromRoom) continue;
+    // 짝 본인의 생산력과 같은 채널(가산 효율)로 넣는다 — 위디·유넥티스 automation이 켜진
+    // 방이면 함께 0이 되고, 와이후 증폭도 함께 받는다. 방에 붙는 생산력 보너스라는 점에서
+    // 같은 취급이 맞다.
+    out.efficiency += cb.value;
+  }
   // 응접실: RIIC 스킬과 별개로 레어도·정예화 기본 단서속도를 모든 배치 오퍼가 가산.
   // efficiency에 묻지 않고 별도 필드로 둬서 화면에 "레어도 기본"으로 따로 표시한다
   if (room === "MEETING") out.clueBase = clueBase(op);

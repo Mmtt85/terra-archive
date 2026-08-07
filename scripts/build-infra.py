@@ -851,6 +851,33 @@ def parse_skill(entry, oname, oid=None):
         rp_ids = [h[1] for h in _rp_hits]
         if _rp_hits:
             room_partner = {"id": _rp_hits[0][1], "room": _rp_hits[0][2]}
+        # ── 역방향(내보내는) 교차방 오라 (사용자 제보 2026-08-07) ──────────────────
+        # 저스티스 나이트 '띠띠~, 가동!': "발전소에 배치 시, 와일드메인이 배치된 제조소의
+        # 생산력 +5%". 위 roomPartner와 방향이 **반대**다 — roomPartner는 "남의 방 상태를
+        # 보고 **내 방**에 적용"(레토)이고, 이건 "내가 여기 앉으면 **남의 방**에 적용"이다.
+        # 전수조사 결과 데이터 전체에서 이 형태는 이 스킬 하나뿐(다른 33건은 전부 들어오는
+        # 방향이라 roomPartner·facilityBased가 이미 처리한다).
+        #
+        # 종전엔 generic 퍼센트 폴백으로 kind=misc/value=5 + partners=[와일드메인]이 되어
+        # ① 같은 방 동반 게이트로 오분류돼 영구 미발동 ② 발동해도 제조소가 아니라 발전소
+        # 효율에 붙는 이중 오류였다. 화면에도 "전원이 같은 방에 있을 때 발동"이라는 **틀린
+        # 안내**가 떴다(와일드메인을 발전소에 넣으라는 뜻이 되어버림).
+        cross_buff = None
+        _CB_TAIL = (r"(?:이|가) 배치된 (제조소|무역소|발전소|응접실|사무실|가공소|훈련실|숙소)의 "
+                    r"(?:생산력|오더 수주 효율|효율)\s*\+\s*(\d+(?:\.\d+)?)\s*%")
+        for n in names:
+            if not n or n not in text or name_to_id[n] == oid: continue
+            m = re.search(r"(?<![가-힣])" + re.escape(n) + _CB_TAIL, text)
+            if m:
+                cross_buff = {"partner": name_to_id[n], "room": KO_ROOM[m.group(1)],
+                              "value": float(m.group(2))}
+                break
+        if cross_buff:
+            # 효과가 통째로 남의 방으로 나가므로 **자기 방 기여는 0**이다. value를 남겨 두면
+            # 폴백 else 절이 발전소(드론 회복) 효율에 +5를 얹는다.
+            kind, value = "misc", 0.0
+            # 짝은 같은 방 동반 게이트에서 뺀다 (아래 dict의 "partners") — 이 스킬의 조건은
+            # "같은 방"이 아니다. partners_list는 아직 정의 전이라 조립 지점에서 거른다.
         # ── 용량 차원 (오더 상한 / 창고 용량) ─────────────────────────────────
         # 다수 무역·제조 오퍼가 효율/생산력과 **함께** 상한/용량을 ±N 부여하고(실버애쉬 효율+20 &
         # 상한+4, 벌컨 생산력-5 & 용량+19, 데겐블레허 효율+25 & 상한-6), 일부 오퍼는 팀이 쌓은
@@ -1040,7 +1067,8 @@ def parse_skill(entry, oname, oid=None):
             **({"growHourly": grow_hourly} if grow_hourly else {}),
             # 교차방 파트너(roomPartner)·기지 존재 파트너(basePartners)는 같은 방 동반 조건이
             # 아니므로 partners에서 제외 — 이중 게이트 방지 (레토는 '굼'이 1글자라 우연히 회피)
-            "partners": [p for p in partners_list if p not in base_partner_ids],
+            "partners": [p for p in partners_list if p not in base_partner_ids
+                         and p != (cross_buff or {}).get("partner")],
             "basePartners": base_partner_ids, "basePartnerBonus": base_partner_bonus,
             # 작업 시설 동반(외드레르): 파트너가 workRooms 중 한 곳에 배치돼 있으면 **1명당** 가산
             **({"workPartners": work_partners, "workPartnerBonus": work_partner_bonus,
@@ -1049,6 +1077,8 @@ def parse_skill(entry, oname, oid=None):
             **({"perBase": per_base} if per_base else {}),
             "gateFaction": gate_faction, "gateCount": gate_count,
             "gatePlatforms": gate_platforms, "roomPartner": room_partner,
+            # 내보내는 교차방 오라(저스티스 나이트) — 짝이 앉은 **그 방 한 곳**에만 적용
+            **({"crossBuff": cross_buff} if cross_buff else {}),
             "belowThreshold": below_threshold,
             **({"cap": cap} if cap else {}),
             **({"capConv": cap_conv} if cap_conv else {}),

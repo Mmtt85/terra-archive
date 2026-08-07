@@ -2081,6 +2081,19 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
         chips: [{ op: partner, on: typeTeamIds(skill.roomPartner.room).has(partner.id) }],
       });
     }
+    // 내보내는 교차방 오라 (저스티스 나이트 '띠띠~, 가동!', 사용자 제보 2026-08-07):
+    // 효과가 **짝이 앉은 다른 방**에 붙는다. 종전엔 파서가 같은 방 동반으로 오분류해
+    // 아래 "전원이 같은 방에 있을 때 발동"이 떴는데, 그러면 와일드메인을 발전소에 넣으라는
+    // 뜻이 되어 영영 발동 안 되는 배치를 안내하고 있었다.
+    if (skill.crossBuff) {
+      const partner = opById.get(skill.crossBuff.partner) ?? opMap.get(skill.crossBuff.partner);
+      const room = t(infra.rooms[skill.crossBuff.room]?.name ?? skill.crossBuff.room);
+      if (partner) rels.push({
+        note: t("{name}이(가) 배치된 {room}에 +{value}% — 이 방이 아니라 그 방에 붙습니다",
+          { name: partner.name, room, value: skill.crossBuff.value }),
+        chips: [{ op: partner, on: typeTeamIds(skill.crossBuff.room).has(partner.id) }],
+      });
+    }
     if (skill.partners.length) {
       const chips = skill.partners
         .map((id) => opById.get(id) ?? opMap.get(id))
@@ -2241,7 +2254,7 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
     // 위에서 **지목 id로 이미 관계를 편 스킬은 건너뛴다** — 같은 명단이 두 줄로 중복된다
     // (르무엔 '동반자'의 엑시아 2명은 condBonus 줄이 이미 보여 준다).
     const named = Boolean(skill.condBonus?.ids?.length || skill.partners.length || skill.basePartners?.length
-      || skill.workPartners?.length || skill.roomPartner || skill.perFacility || skill.reqGroup);
+      || skill.workPartners?.length || skill.roomPartner || skill.crossBuff || skill.perFacility || skill.reqGroup);
     if (!named) {
       const seen = new Set(rels.flatMap((rel) => rel.chips.map((chip) => chip.op.id)));
       for (const [key] of skill.termRefs ?? []) {

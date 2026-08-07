@@ -506,6 +506,10 @@ const D: Record<string, Pair> = {
   "기지 전체": ["the whole base", "基地全体"],
   "{faction} 1명당 {per}% — 현재 {where} {n}명 · {total}% 적용": ["Per {faction} member: {per}% — {n} in {where} now · {total}% applied", "{faction}1名につき{per}% — 現在{where}に{n}名・{total}%適用"],
   "{name}이(가) {room}에 배치되어 있을 때 발동": ["Activates while {name} is stationed in {room}", "{name}が{room}に配置されている間のみ発動"],
+  // 내보내는 교차방 오라 — 효과가 이 방이 아니라 짝이 앉은 방에 붙는다는 걸 분명히 한다
+  "{name}이(가) 배치된 {room}에 +{value}% — 이 방이 아니라 그 방에 붙습니다": [
+    "+{value}% to the {room} where {name} is stationed — applies there, not to this room",
+    "{name}が配置されている{room}に+{value}% — この部屋ではなくその部屋に付く"],
   "파트너 스킬 — 전원이 같은 방에 있을 때 발동": ["Partner skill — activates only when every partner shares this room", "パートナースキル — 全員が同室のときのみ発動"],
   "{name}과(와) 같은 방이면 추가 +{v}%": ["+{v}% extra while sharing this room with {name}", "{name}と同室なら追加+{v}%"],
   "{name}이(가) {room}에 있으면 추가 +{v}%": ["+{v}% extra while {name} is in {room}", "{name}が{room}にいると追加+{v}%"],

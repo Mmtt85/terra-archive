@@ -356,5 +356,38 @@ console.log("");
   }
 }
 
+// ── 내보내는 교차방 오라 (저스티스 나이트 '띠띠~, 가동!', 사용자 제보 2026-08-07) ─────────
+// "발전소에 배치 시, 와일드메인이 배치된 제조소의 생산력 +5%" — 효과가 **남의 방**으로 나가는
+// 유일한 스킬. 종전엔 같은 방 동반으로 오분류돼 영구 미발동이었다(INFRA-RULES 미모델 항목).
+// 낙관 통과를 하지 않는 게 핵심이라, "지도 없으면 안 붙는다"까지 못박아 둔다 — 낙관으로
+// 되돌리면 짝이 영구 +5 뻥튀기돼 자동편성 42개 중 9개가 흔들렸다.
+console.log("");
+{
+  const { breakdown, opById, crossBuffByPartner } = engine;
+  const JN = "char_4000_jnight", WM = "char_496_wildmn";
+  const wm = opById.get(WM);
+  const mk = (jnRoom) => {
+    const roomOf = new Map([[WM, "MANUFACTURE"]]);
+    if (jnRoom) roomOf.set(JN, jnRoom);
+    return { tokenPoints: {}, roomOf };
+  };
+  const eff = (ctx, room = "MANUFACTURE") => breakdown(wm, room, [wm], ctx).efficiency;
+  const solo = eff(mk(null));
+  const checks = [
+    ["crossBuff 색인에 저스티스→와일드메인 1건", (crossBuffByPartner.get(WM) ?? []).length === 1],
+    ["저스티스가 발전소면 와일드메인 제조소에 +5", Math.abs(eff(mk("POWER")) - (solo + 5)) < 1e-6],
+    ["저스티스 미배치면 가산 없음", Math.abs(solo - 25) < 1e-6],
+    ["저스티스가 엉뚱한 방이면 가산 없음", Math.abs(eff(mk("MANUFACTURE")) - solo) < 1e-6],
+    ["배치 지도 없으면 낙관 통과 안 함", Math.abs(eff({ tokenPoints: {} }) - solo) < 1e-6],
+    ["제조소가 아닌 방엔 안 붙음", Math.abs(eff(mk("POWER"), "TRADING")) < 1e-6],
+    ["저스티스 자신의 발전소 기여엔 안 샘 (드론 회복 10만)",
+      Math.abs(breakdown(opById.get(JN), "POWER", [opById.get(JN)], mk("POWER")).efficiency - 10) < 1e-6],
+  ];
+  for (const [name, ok] of checks) {
+    console.log(`${ok ? "✓" : "✗"} ${name}`);
+    if (!ok) failed += 1;
+  }
+}
+
 if (failed) { console.error(`\n✗ 검사 ${failed}건 실패`); process.exit(1); }
-console.log(`\n✓ 픽스처 ${rules.fixtures.length}건 + 육성추천 불변식 4건 + 반사실 전략 재현 3건 + 노시스 오라 2건 + 용량 변환 비중첩·자동화 7건 + 여러 홉 사슬 3건 + 자동편성 제외 2건 전부 통과`);
+console.log(`\n✓ 픽스처 ${rules.fixtures.length}건 + 육성추천 불변식 4건 + 반사실 전략 재현 3건 + 노시스 오라 2건 + 용량 변환 비중첩·자동화 7건 + 여러 홉 사슬 3건 + 자동편성 제외 2건 + 교차방 오라 7건 전부 통과`);
