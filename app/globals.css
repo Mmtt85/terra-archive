@@ -7913,6 +7913,11 @@ legend {
   display: flex;
   gap: 8px;
   margin: 22px 0 6px;
+  /* 줄을 넘긴다 — 종전엔 nowrap이라 모바일에서 5개가 한 줄에 욱여넣어지며 버튼이
+     49×118로 찌그러졌고, 글자가 "테/마/별"처럼 한 자씩 세로로 쪼개졌다
+     (사용자 지적 2026-08-08). 넓은 화면은 어차피 한 줄에 들어가 변화 없다. */
+  flex-wrap: wrap;
+  align-items: center;
 }
 .story-viewtabs button {
   border: 1px solid var(--line);
@@ -7922,6 +7927,28 @@ legend {
   font-weight: 800;
   cursor: pointer;
   letter-spacing: -0.2px;
+  /* 내용보다 좁아지지 않는다 — 위 세로 쪼개짐의 직접 원인 */
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+/* 좁은 화면: 글자를 조금 줄여 네 탭이 한 줄에 들어가게 하고, 스샷 레이더는
+   자기 줄을 통째로 쓰게 한다 (오른쪽 끝에 매달려 어정쩡하게 남지 않도록) */
+@media (max-width: 620px) {
+  .story-viewtabs {
+    gap: 6px;
+  }
+  .story-viewtabs > button {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  .story-viewtabs .lens-open-wrap {
+    margin-left: 0;
+    width: 100%;
+  }
+  .story-viewtabs .lens-open-btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
 }
 .story-viewtabs button.on {
   background: var(--chip);
@@ -8675,10 +8702,13 @@ html.dark .story-card:hover .story-thumb img {
    기존엔 반대 순서(레일이 위)라 버튼이 헤더에서 78px 떨어져 떠 있었다. */
 @media (max-width: 1180px) {
   .story-back-top {
-    /* 스크롤러(.site-scroll)가 헤더 아래에서 시작하므로 sticky 기준도 0 (2026-07-22) */
-    top: 0;
+    /* 스크롤러(.site-scroll)가 헤더 아래에서 시작하므로 sticky 기준은 0이 밑바닥이다
+       (2026-07-22). 다만 0이면 버튼이 헤더에 그대로 맞붙어 답답하다는 지적(2026-08-08)이
+       있어 위아래로 조금 띄운다 — 떠 있는 칩처럼 보이게. */
+    top: 8px;
     z-index: 9; /* 레일(z-index:8)보다 위 — 버튼이 위, 레일이 그 아래 */
-    margin-bottom: 10px;
+    margin-top: 8px;
+    margin-bottom: 12px;
     transition: opacity 0.18s ease;
   }
   /* 아래로 읽어 내려갈 때만 숨긴다 (사용자 확인 2026-08-08) — 이 버튼이 읽기 칼럼
