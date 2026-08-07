@@ -785,6 +785,10 @@ export type OpBreakdown = {
                                     // 이름을 함께 들고 다니는 건 비중첩 판정(버블이 재활용을
                                     // 죽인다)이 **스킬 이름**으로 지목되기 때문이다.
   amplify: AmpSpec[];   // 이 오퍼가 가진 증폭기 (와이후·스노우상트, 보통 0~1개)
+  // 다른 방 오퍼에게서 **받은** 교차방 오라 (저스티스 나이트 → 와일드메인, 사용자 요청
+  // 2026-08-08: "누구에 의해서 받는 효과도 다 설명이 나왔으면"). efficiency에 이미 포함돼
+  // 있고, 이 목록은 그 몫이 누구에게서 왔는지 화면에 풀어 쓰기 위한 내역이다.
+  crossIn: { from: string; fromRoom: string; value: number }[];
   skills: InfraSkill[];
 };
 
@@ -952,7 +956,7 @@ export function orderFixFor(team: InfraOp[], room: string, ctx: Ctx): number {
 export function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx): OpBreakdown {
   const teamIds = new Set(team.map((member) => member.id));
   const teamSize = Math.max(team.length, 1);
-  const out: OpBreakdown = { efficiency: 0, facilityEff: 0, automation: 0, quality: 0, payout: 0, payoutViolation: 0, orderFix: 0, orderFixed: false, override: 0, perCoworker: 0, clueBase: 0, auras: {}, aurasAdd: {}, cap: 0, capConv: [], amplify: [], skills: [] };
+  const out: OpBreakdown = { efficiency: 0, facilityEff: 0, automation: 0, quality: 0, payout: 0, payoutViolation: 0, orderFix: 0, orderFixed: false, override: 0, perCoworker: 0, clueBase: 0, auras: {}, aurasAdd: {}, cap: 0, capConv: [], amplify: [], crossIn: [], skills: [] };
   const tokenRates = new Map<string, number>();
   for (const skill of activeSkills(op, room, ctx.product)) {
     if (skill.partners.length > 0 && !skill.partners.every((p) => teamIds.has(p))) continue;
@@ -1151,6 +1155,9 @@ export function breakdown(op: InfraOp, room: string, team: InfraOp[], ctx: Ctx):
     // 방이면 함께 0이 되고, 와이후 증폭도 함께 받는다. 방에 붙는 생산력 보너스라는 점에서
     // 같은 취급이 맞다.
     out.efficiency += cb.value;
+    // 화면이 "이 5%는 누구에게서 왔는지"를 풀어 쓸 수 있게 출처를 남긴다 (사용자 요청
+    // 2026-08-08). 계산엔 쓰지 않는다 — efficiency에 이미 들어갔다.
+    out.crossIn.push({ from: cb.providerId, fromRoom: cb.fromRoom, value: cb.value });
   }
   // 응접실: RIIC 스킬과 별개로 레어도·정예화 기본 단서속도를 모든 배치 오퍼가 가산.
   // efficiency에 묻지 않고 별도 필드로 둬서 화면에 "레어도 기본"으로 따로 표시한다

@@ -1004,6 +1004,9 @@ const D: Record<string, Pair> = {
   "레어도 기본": ["Rarity base", "レア度基本"],
   "제어 오라(가중)": ["Control auras (weighted)", "管制オーラ（加重）"],
   "제어센터 오라 수신": ["Aura received from Control", "制御中枢オーラ受信"],
+  // 다른 방 오퍼가 이 방에 넣어 준 몫 (저스티스 나이트 → 와일드메인이 앉은 제조소)
+  "타 시설에서 받음": ["Received from another facility", "他施設から受領"],
+  "{name}({room})에게 받음 +{n}%": ["+{n}% from {name} ({room})", "{name}（{room}）から+{n}%"],
   "용량 변환": ["Capacity → output", "容量→出力変換"],
   "증폭": ["Amplify", "増幅"],
   "편성 없음": ["No assignment", "編成なし"],

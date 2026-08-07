@@ -1930,6 +1930,14 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
   // 증폭 — 팀이 제공한 효율(=스킬 효율 합)을 배수로 되돌림 (와이후 협동의식·스노우상트 근면성실)
   const ampSpecs = team.flatMap((op) => breakdown(op, cell.room, team, ctx).amplify);
   agg["증폭"] = ampSpecs.reduce((sum, spec) => sum + Math.min(spec.cap, Math.floor(agg["스킬 효율"] / spec.per) * spec.add), 0);
+  // 다른 방 오퍼가 이 방에 넣어 준 몫(저스티스 나이트 → 와일드메인 제조소)을 따로 세운다
+  // — breakdown이 efficiency에 섞어 두므로 '스킬 효율'에서 빼야 배치된 스킬 합과 눈으로
+  // 맞는다 (사용자 요청 2026-08-08: 받는 쪽에도 출처 설명이 있어야 한다).
+  // ⚠ 차감은 **증폭·오라 계산이 끝난 뒤**에 한다 — 저 둘은 crossIn을 포함한 방 효율을
+  // 입력으로 쓰는 엔진과 같은 값을 봐야 하므로, 먼저 빼면 화면이 엔진과 어긋난다.
+  agg["타 시설에서 받음"] = team.reduce((sum, op) =>
+    sum + breakdown(op, cell.room, team, ctx).crossIn.reduce((s, x) => s + x.value, 0), 0);
+  agg["스킬 효율"] -= agg["타 시설에서 받음"];
   // 추가 후보: 어디에도 배치 안 된 보유 오퍼를 한계 기여 순으로
   const [benchAll, setBenchAll] = useState(false);
   // 비제어 입력 — 타이핑 중 렌더 0회, 멈춘 뒤 0.5초에만 후보 목록 갱신 (search.ts)
@@ -2364,7 +2372,19 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                 // 아니라 실제 효과("무역소 오더 효율 오라 +10%")로 보여준다
                 const pct = cell.room === "CONTROL" ? "" : "%";
                 const parts: string[] = [];
-                if (Math.round(b.efficiency) !== 0) parts.push(`${t(UNIT[cell.room] ?? "효율")} +${Math.round(b.efficiency)}${pct}`);
+                // 다른 방에서 받은 몫은 efficiency에 이미 섞여 있다 — 떼어내 따로 적는다.
+                // 안 그러면 "스킬 +25%"인데 기여가 "+30%"로 찍혀, 나머지 5가 어디서 왔는지
+                // 화면에 아무 설명이 없다 (사용자 요청 2026-08-08).
+                const crossInSum = b.crossIn.reduce((sum, x) => sum + x.value, 0);
+                if (Math.round(b.efficiency - crossInSum) !== 0) parts.push(`${t(UNIT[cell.room] ?? "효율")} +${Math.round(b.efficiency - crossInSum)}${pct}`);
+                for (const got of b.crossIn) {
+                  const giver = opById.get(got.from) ?? opMap.get(got.from);
+                  parts.push(t("{name}({room})에게 받음 +{n}%", {
+                    name: giver?.name ?? got.from,
+                    room: t(infra.rooms[got.fromRoom]?.name ?? got.fromRoom),
+                    n: Math.round(got.value),
+                  }));
+                }
                 if (Math.round(b.facilityEff) !== 0) parts.push(t("시설 기반 +{n}%", { n: Math.round(b.facilityEff) }));
                 if (Math.round(b.automation) !== 0) parts.push(t("자동화 +{n}%", { n: Math.round(b.automation) }));
                 if (b.amplify.length) {
