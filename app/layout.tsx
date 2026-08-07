@@ -59,12 +59,36 @@ export default function RootLayout({
 
             ⚠ 2026-08-06 개선 — 종전엔 가드가 **10초 고정**이라, 배포 직후 404가 30~60초
             이어지면 그동안 10초마다 새로고침을 반복했다. 사용자에겐 그게 곧 "배포하면
-            30초~1분 접속이 안 된다"였다 (제보). 이제 **0 → 3초 → 10초 → 30초로 물러서고
-            5회에서 멈춘다** — 엣지가 회복되는 즉시 복구되면서 화면이 덜 깜빡인다.
+            30초~1분 접속이 안 된다"였다 (제보). 이제 **0 → 3초 → 10초 → 30초 → 1분으로
+            물러서며 8회(약 4분 반)까지** 버틴다 — 실제 사고가 3~4분이었기 때문.
+
+            ⚠ 2026-08-06 밤 재수정 (제보 스크린샷 2장) — 두 구멍이 드러났다.
+            ① 청크가 404나면 React.lazy가 undefined를 받아 "Cannot read properties of
+               undefined (reading 'default')"로 **동기 예외**를 던지며 흰 화면이 된다.
+               이건 unhandledrejection도 SCRIPT 로드 실패도 아니라 종전 핸들러가 다 놓쳤다.
+               → /assets/ 요청이 한 번이라도 실패했으면(hit 플래그) 뒤이은 렌더 예외도
+                 청크 사고로 간주한다. 무관한 앱 버그로 새로고침 루프를 돌지 않도록
+                 **플래그가 섰을 때만** 그렇게 본다.
+            ② modulepreload는 LINK 태그라 tagName==='SCRIPT' 검사에 안 걸렸다. → LINK 추가.
+            재시도를 다 쓰면 흰 화면 대신 안내와 '다시 시도' 버튼을 띄운다.
             성공적으로 뜬 뒤 5초가 지나면 카운터를 지워 다음 배포 때 다시 0부터 센다. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){var K='ta-chunk-reload',W=[0,3000,10000,30000,30000];function bust(){var n=0;try{var v=JSON.parse(sessionStorage.getItem(K)||'{}');n=v.n||0;if(n>=W.length)return;if(Date.now()-(v.at||0)<W[n])return;sessionStorage.setItem(K,JSON.stringify({n:n+1,at:Date.now()}));}catch(e){}location.reload();}window.addEventListener('vite:preloadError',function(e){e.preventDefault();bust();});window.addEventListener('unhandledrejection',function(e){var m=''+((e&&e.reason&&(e.reason.message||e.reason))||'');if(/dynamically imported module|Importing a module script failed|error loading dynamically imported/i.test(m))bust();});window.addEventListener('error',function(e){var t=e&&e.target;if(t&&t.tagName==='SCRIPT'&&t.src&&t.src.indexOf('/assets/')>-1)bust();},true);window.addEventListener('load',function(){setTimeout(function(){try{sessionStorage.removeItem(K);}catch(e){}},5000);});})();`,
+            __html: `(function(){var K='ta-chunk-reload',W=[0,3000,10000,30000,30000,60000,60000,60000],hit=0,shown=0,timer=0;
+function isChunk(m){return /dynamically imported module|Importing a module script failed|error loading dynamically imported|Failed to fetch dynamically/i.test(m);}
+function panel(){if(shown)return;shown=1;var d=document.createElement('div');d.setAttribute('style','position:fixed;inset:auto 0 0 0;margin:0 auto 18px;width:max-content;max-width:92vw;z-index:2147483647;padding:12px 16px;border-radius:12px;background:#171b1d;color:#e7eaeb;font:600 13px/1.5 system-ui,-apple-system,sans-serif;box-shadow:0 8px 32px rgba(0,0,0,.45)');d.textContent='새 버전을 배포하는 중이라 일부 파일을 불러오지 못했습니다. 곧 자동으로 다시 불러옵니다. ';var b=document.createElement('button');b.textContent='지금 다시 시도';b.setAttribute('style','margin-left:8px;padding:5px 12px;border:0;border-radius:8px;background:#4a9eff;color:#fff;font:600 13px system-ui;cursor:pointer');b.onclick=function(){try{sessionStorage.removeItem(K);}catch(e){}location.reload();};d.appendChild(b);(document.body||document.documentElement).appendChild(d);}
+function bust(){var n=0,v={};try{v=JSON.parse(sessionStorage.getItem(K)||'{}');n=v.n||0;}catch(e){}
+if(n>=W.length){panel();return;}
+var wait=W[n]-(Date.now()-(v.at||0));
+if(wait>0){if(n>=2)panel();if(!timer)timer=setTimeout(function(){timer=0;bust();},wait+50);return;}
+try{sessionStorage.setItem(K,JSON.stringify({n:n+1,at:Date.now()}));}catch(e){}
+location.reload();}
+window.addEventListener('vite:preloadError',function(e){e.preventDefault();hit=1;bust();});
+window.addEventListener('unhandledrejection',function(e){var m=''+((e&&e.reason&&(e.reason.message||e.reason))||'');if(isChunk(m)){hit=1;bust();}});
+window.addEventListener('error',function(e){var t=e&&e.target;
+if(t&&t!==window&&(t.tagName==='SCRIPT'||t.tagName==='LINK')){var u=t.src||t.href||'';if(u.indexOf('/assets/')>-1){hit=1;bust();}return;}
+var m=''+((e&&e.message)||'');if(isChunk(m)||(hit&&/reading '?default'?|of undefined|of null/i.test(m)))bust();},true);
+window.addEventListener('load',function(){setTimeout(function(){if(!hit){try{sessionStorage.removeItem(K);}catch(e){}}},5000);});})();`,
           }}
         />
         {/* 첫 페인트 전에 해시를 읽어 초기 탭을 표시 — 서버 HTML은 항상 백과사전이라

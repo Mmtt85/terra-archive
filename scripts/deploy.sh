@@ -101,13 +101,16 @@ echo ".rsc content-type 규칙 1건(글롭) — 대상 $(find "$STAGE" -name "*.
 # 지연 로딩이 404를 맞는다. 최근 3회분을 남겨 두면 그 창 자체가 없어진다.
 node scripts/keep-assets.mjs "$STAGE" || true
 
-# 2단계 배포(선택) — bash scripts/deploy.sh --two-phase
+# 2단계 배포 — **기본값** (끄려면 --one-phase)
 # Pages는 **파일 내용 해시로 프로젝트 전체에서 업로드를 중복 제거**한다("N files already
 # uploaded"). 그래서 같은 폴더를 프리뷰 브랜치에 먼저 올려 두면, 이어지는 프로덕션 배포는
-# 업로드가 거의 0이 되고 "전환"만 남는다. 접속 불가 구간이 **업로드 창**에 있다면 이걸로
-# 사라지고, **전환 후 전파**에 있다면 안 바뀐다 — 그래서 프로브와 짝으로 쓴다.
+# 업로드가 거의 0이 되고 "전환"만 남는다.
+#
+# 2026-08-06 밤 기본값으로 승격 — 그날 사고에서 404가 난 건 **이번 배포에 들어 있는**
+# 2.3MB 청크였다(옛 청크가 아니라). 전환은 끝났는데 블롭을 엣지가 아직 못 읽는 상태였다는
+# 뜻이라, 블롭을 먼저 올려 두고 나중에 전환하는 이 순서가 그 창을 줄인다.
 # ⚠ Pages에는 프리뷰를 프로덕션으로 승격하는 CLI가 없다. 이건 승격이 아니라 '업로드 선행'이다.
-case " $* " in *" --two-phase "*)
+case " $* " in *" --one-phase "*) echo "2단계 배포 건너뜀 (--one-phase)" ;; *)
   echo "1단계: 프리뷰 브랜치(deploy-stage)에 먼저 업로드 — 블롭을 미리 올려 둔다"
   npx wrangler pages deploy "$STAGE" --project-name terra-archive --branch deploy-stage --commit-dirty=true
 esac
@@ -124,7 +127,13 @@ case " $* " in *" --no-probe "*) ;; *)
   echo "무중단 프로브 시작 (배포 후 요약 출력 — .ci/deploy-probe.log)"
 esac
 
+echo "2단계: 프로덕션 전환"
 npx wrangler pages deploy "$STAGE" --project-name terra-archive --branch main --commit-dirty=true
+
+# 전환 직후 이번 빌드의 청크를 우리가 먼저 한 번 당겨 엣지에 올린다 (2026-08-06 밤).
+# 사용자보다 먼저 당겨 두면 첫 방문자가 404를 맞지 않는다. 안 뜨는 파일이 있으면 여기서
+# 이름이 찍힌다 — 그게 곧 사용자가 콘솔에서 볼 파일이다.
+node scripts/warm-assets.mjs --seconds 180 || true
 
 # 프로브는 전환 뒤 구간이 핵심이라 끝까지 기다렸다가 요약만 보여 준다
 if [ -n "$PROBE_PID" ]; then

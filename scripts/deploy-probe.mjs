@@ -59,27 +59,49 @@ async function hit(target, n) {
   }
 }
 
-// 핵심 판정: **방금 받은 HTML이 가리키는 청크**가 그 자리에서 200인가.
-// 사용자 브라우저가 겪는 것과 정확히 같은 순서(HTML → 그 HTML의 /assets/*.js)라,
-// 여기서 404가 나면 "청크를 못 불러온다"의 재현이다. 어느 쪽이 옛것인지도 해시로 갈린다.
-let lastChunk = "";
+// 핵심 판정: **방금 받은 HTML이 가리키는 청크 전부**가 그 자리에서 200인가.
+// 사용자 브라우저가 겪는 것과 정확히 같은 순서(HTML → 그 HTML의 /assets/*)라,
+// 여기서 404가 나면 "청크를 못 불러온다"의 재현이다.
+//
+// ⚠ 2026-08-06 밤 수정 — 종전엔 **첫 번째 매치 하나만** 확인했다. 그날 실제 사고에서 첫
+// 매치는 작은 layout-segment-context 였고, 정작 3~4분간 404였던 건 2.3MB짜리
+// home-<해시>.js 였다. 프로브는 "끊김 없음"을 찍었는데 브라우저는 흰 화면이었다.
+// 큰 청크일수록 배포 직후 엣지에서 늦게 뜨므로, **전부** 그리고 **큰 것부터** 본다.
+let lastSet = "";
 async function chunkOfHtml(n) {
   const t0 = Date.now();
   try {
-    const res = await fetch(`https://terra-archive.net/?_probe=c${n}`, { cache: "no-store", signal: AbortSignal.timeout(TIMEOUT_MS) });
+    const res = await fetch(`https://terra-archive.net/infra?_probe=c${n}`, { cache: "no-store", signal: AbortSignal.timeout(TIMEOUT_MS) });
     const html = await res.text();
-    const src = html.match(/\/assets\/[A-Za-z0-9._-]+\.js/)?.[0];
-    if (!src) return { ok: false, status: res.status, ms: Date.now() - t0, colo: "", bytes: 0, err: "청크참조없음" };
-    const asset = await fetch(`https://terra-archive.net${src}`, { cache: "no-store", signal: AbortSignal.timeout(TIMEOUT_MS) });
-    const body = await asset.text();
-    const changed = lastChunk && lastChunk !== src;
-    lastChunk = src;
+    const srcs = [...new Set(html.match(/\/assets\/[A-Za-z0-9._-]+\.(?:js|css)/g) ?? [])];
+    if (!srcs.length) return { ok: false, status: res.status, ms: Date.now() - t0, colo: "", bytes: 0, err: "청크참조없음" };
+    // Range로 앞 2KB만 받는다 — 1초마다 2.3MB 청크를 통째로 끌면 4분에 550MB다.
+    // HEAD가 아니라 Range인 이유: HEAD는 메타데이터만 보고 답할 수 있어 "블롭이 아직
+    // 없다"를 놓칠 수 있다. 실제 본문 읽기를 강제해야 그 실패가 그대로 나온다.
+    const checked = await Promise.all(srcs.map(async (src) => {
+      try {
+        const asset = await fetch(`https://terra-archive.net${src}`, {
+          cache: "no-store", headers: { Range: "bytes=0-2047" }, signal: AbortSignal.timeout(TIMEOUT_MS),
+        });
+        const body = await asset.text();
+        const ok = (asset.status === 206 || asset.status === 200) && body.length > 0 && !body.startsWith("<");
+        return { src, ok, status: asset.status, bytes: body.length, colo: (asset.headers.get("cf-ray") ?? "").split("-")[1] ?? "" };
+      } catch (err) {
+        return { src, ok: false, status: 0, bytes: 0, colo: "", err: err?.name || String(err) };
+      }
+    }));
+    const bad = checked.filter((c) => !c.ok);
+    const key = srcs.slice().sort().join(",");
+    const changed = lastSet && lastSet !== key;
+    lastSet = key;
     return {
-      ok: asset.status === 200 && !body.startsWith("<"),
-      status: asset.status, ms: Date.now() - t0,
-      colo: (asset.headers.get("cf-ray") ?? "").split("-")[1] ?? "", bytes: body.length,
-      note: changed ? `청크 교체됨 ${src}` : undefined,
-      err: asset.status !== 200 ? `청크404(${src})` : undefined,
+      ok: bad.length === 0,
+      status: bad[0]?.status ?? 200, ms: Date.now() - t0,
+      colo: checked.find((c) => c.colo)?.colo ?? "",
+      bytes: checked.reduce((a, c) => a + c.bytes, 0),
+      note: changed ? `청크 세대 교체 (${srcs.length}개)` : undefined,
+      // 어느 파일이 몇 번 죽었는지가 처방을 가른다 — 파일명을 그대로 남긴다
+      err: bad.length ? `청크${bad[0].status || "실패"}(${bad.map((b) => b.src.replace("/assets/", "")).join(" ")})` : undefined,
     };
   } catch (err) {
     return { ok: false, status: 0, ms: Date.now() - t0, colo: "", bytes: 0, err: err?.name || String(err) };
@@ -130,15 +152,23 @@ for (const target of [...TARGETS, { name: "chunk" }]) {
 }
 // chunk 줄이 핵심이다 — HTML을 받자마자 그 HTML이 가리키는 청크를 물었을 때의 결과라,
 // 여기서 404가 났다면 사용자가 콘솔에서 보는 "청크를 못 불러온다"와 같은 사건이다.
-const chunkGap = samples.filter((s) => s.name === "chunk" && !s.ok).length;
+const chunkFails = samples.filter((s) => s.name === "chunk" && !s.ok);
+// 어느 파일이 죽었는지가 처방을 가른다 — 이번 빌드에 있는 파일이 404면 블롭 전파,
+// 없는 파일이 404면 옛 탭이 물고 있던 청크(keep-assets 소관)다.
+if (chunkFails.length) {
+  const byFile = new Map();
+  for (const s of chunkFails) for (const f of (s.err ?? "").replace(/^청크[^(]*\(|\)$/g, "").split(" ").filter(Boolean)) byFile.set(f, (byFile.get(f) ?? 0) + 1);
+  console.log("\n죽은 청크 (파일별 실패 횟수):");
+  for (const [f, c] of [...byFile].sort((a, b) => b[1] - a[1])) console.log(`      ${f} ×${c}`);
+}
 console.log(worst > 0
   ? `\n⚠ 최대 ${worst.toFixed(0)}초 끊김 — 원인 판정:\n`
-    + (chunkGap > 0
-      ? `   chunk가 ${chunkGap}회 실패 → **HTML과 청크의 배포 세대가 어긋난다**(엣지 전파).\n`
-        + "   keep-assets(직전 3회분 청크 동봉)로 옛 HTML→새 배포 방향은 막혀 있으니,\n"
-        + "   남는다면 새 HTML→옛 배포 방향이다. 그건 layout.tsx의 지수 백오프 새로고침이 받아낸다."
-      : "   html/infra만 실패 → 업로드 창(TimeoutError) 또는 전환 자체. --two-phase를 켜고 다시 재 본다.")
-  : "\n✓ 끊김 없음 (프로브 기준). 브라우저에서만 안 열렸다면 그 탭이 물고 있던 옛 청크 쪽이다 — keep-assets가 이제 그걸 남긴다.");
+    + (chunkFails.length > 0
+      ? "   위 청크가 **이번 빌드에 있는 파일**이면 → 전환은 됐는데 블롭이 엣지에 아직 없다.\n"
+        + "     처방: 2단계 배포(기본값, 블롭 선업로드) + 전환 직후 warm-assets. 둘 다 이미 돈다.\n"
+        + "   **없는 파일**이면 → 옛 탭이 물고 있던 청크다. keep-assets(직전 3회분 동봉) 소관."
+      : "   html/infra만 실패 → 업로드 창(TimeoutError) 또는 전환 자체.")
+  : "\n✓ 끊김 없음 (프로브 기준, HTML이 참조하는 모든 청크 확인).");
 
 try {
   mkdirSync(join(ROOT, ".ci"), { recursive: true });
