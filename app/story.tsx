@@ -729,11 +729,41 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex, 
   const em = useMemo(() => entMatchOf(matchers), [matchers]);
   const { ent, peekNode } = useEntityPeek(entities, onShowOperator);
 
+  // 뒤로가기 버튼이 본문을 가리는 문제 (사용자 확인 2026-08-08) — 좁은 화면에서 이 버튼은
+  // 읽기 칼럼 좌상단에 129×38로 **상시** 떠 있어서, 그 자리를 지나가는 본문 용어 표시
+  // (i.ent-mark)가 통째로 안 눌린다. 전수 스윕에서 '진룡'·'좌락'이 걸렸는데 특정 오퍼가
+  // 아니라 구조적인 사각지대다. 아래로 읽어 내려갈 땐 숨기고 위로 올리면 즉시 돌려준다 —
+  // "헤더 바로 아래 sticky"(2026-07-20 요청)는 그대로 지키면서 데드존만 없앤다.
+  //
+  // ⚠ transform으로 치우면 안 된다 — 모바일 용어 팝업(ent-peek)이 이 버튼의
+  // getBoundingClientRect().bottom을 기준으로 자리를 잡으므로(위 useLayoutEffect) 레이아웃
+  // 박스는 건드리지 않고 opacity + pointer-events로만 숨긴다.
+  const [backHidden, setBackHidden] = useState(false);
+  useEffect(() => {
+    const sc = document.querySelector<HTMLElement>(".site-scroll");
+    if (!sc) return;
+    let last = sc.scrollTop;
+    let raf = 0;
+    const onScroll = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        const y = sc.scrollTop;
+        const dy = y - last;
+        if (Math.abs(dy) < 6) return;   // 손가락 미세 흔들림엔 반응하지 않는다
+        last = y;
+        setBackHidden(dy > 0 && y > 140);
+      });
+    };
+    sc.addEventListener("scroll", onScroll, { passive: true });
+    return () => { sc.removeEventListener("scroll", onScroll); if (raf) cancelAnimationFrame(raf); };
+  }, []);
+
   return (
     <section className="story story-detail" aria-label={locText(locale, event.name)}>
       {/* 뒤로가기: 넓은 화면에선 왼쪽 여백에 sticky(본문은 위로 올라옴), 좁으면 본문 위 일반 배치 */}
       <div className="story-back-wrap">
-        <button type="button" className="story-back story-back-top" onClick={onClose}>← {t("스토리 목록으로")}</button>
+        <button type="button" className={`story-back story-back-top${backHidden ? " hid" : ""}`} onClick={onClose}>← {t("스토리 목록으로")}</button>
       </div>
       <div className={`story-detail-inner reader-font-${readerPrefs.font} reader-img-${readerPrefs.img}`}>
         <header className="story-detail-head">

@@ -8679,6 +8679,21 @@ html.dark .story-card:hover .story-thumb img {
     top: 0;
     z-index: 9; /* 레일(z-index:8)보다 위 — 버튼이 위, 레일이 그 아래 */
     margin-bottom: 10px;
+    transition: opacity 0.18s ease;
+  }
+  /* 아래로 읽어 내려갈 때만 숨긴다 (사용자 확인 2026-08-08) — 이 버튼이 읽기 칼럼
+     좌상단을 상시 덮어, 그 자리를 지나가는 본문 용어 표시(i.ent-mark)가 안 눌렸다.
+     ⚠ transform이 아니라 opacity만 쓴다: 모바일 용어 팝업(ent-peek)이 이 버튼의
+     getBoundingClientRect().bottom으로 자리를 잡으므로 레이아웃 박스는 그대로 둬야 한다.
+     pointer-events:none이 실제로 클릭을 본문에 통과시키는 부분이다. */
+  .story-back-top.hid {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .story-back-top {
+    transition: none;
   }
 }
 /* 넓은 화면: 버튼을 왼쪽 여백에 sticky로 띄우고(스크롤 따라옴), 래퍼는 높이 0이라
