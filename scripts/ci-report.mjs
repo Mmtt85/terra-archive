@@ -183,11 +183,27 @@ if (newAvatars.length) lines.push(`### 신규 아바타 ${newAvatars.length}개`
 if (newStory.length) lines.push(`### 신규 스토리 이미지 ${newStory.length}개`);
 
 // ── 파이프라인 경고 (미번역 CN·미매칭 이름 등) ────────────────────────
+// CN 이벤트 썸네일 누락은 **처음 본 이벤트일 때만** 알린다 (사용자 확정 2026-08-08).
+// 클뜯 레포에 배너가 없는 이벤트(콜라보 등 라이선스 제외)는 영영 안 올라올 수 있어서,
+// 매 실행 경고하면 **고칠 수도 없는 메일이 하루 한 통씩 영원히** 온다. 이미 HEAD의
+// stories.json에 있는 이벤트라면 지난번에 이미 알린 것이므로 침묵한다 — 별도 상태 파일
+// 없이 "직전 커밋에 있었나"로 판정한다(플레이스홀더는 그대로 쓰이므로 화면은 멀쩡하다).
+const knownEventIds = (() => {
+  const head = parse(gitShowHead("app/data/stories.json") ?? "");
+  const evs = Array.isArray(head) ? head : head?.events;
+  return new Set((evs ?? []).map((e) => e?.id).filter(Boolean));
+})();
+const isSeenThumbWarning = (line) => {
+  const m = /썸네일 없음[^:]*:\s*(\S+)/.exec(line);
+  return Boolean(m && knownEventIds.has(m[1]));
+};
+
 let warnBlock = "";
 let warnLines = [];
 if (existsSync(".ci/warnings.log")) {
   warnLines = readFileSync(".ci/warnings.log", "utf-8").split("\n")
     .filter((l) => /WARN|경고|미번역|not matched|미매칭|未|译|fail|실패|Traceback|Error/i.test(l))
+    .filter((l) => !isSeenThumbWarning(l))
     .filter(Boolean);
   if (warnLines.length) {
     const shown = warnLines.slice(0, 40);
