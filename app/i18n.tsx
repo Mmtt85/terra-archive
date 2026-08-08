@@ -97,6 +97,8 @@ const CONCEPT_I18N: Record<string, Pair> = {
   "함정": ["Trap", "トラップ"],
   "포트리스": ["Fortress", "フォートレス"],
   "공포": ["Fear", "恐怖"],
+  // 게임 문구는 "특수 능력 무효화"지만 통용어를 태그명으로 쓴다 (retag-concepts.py 참조)
+  "침묵": ["Silence", "沈黙"],
   "체력 소모": ["HP Drain", "HP消耗"],
   // 태그가 아닌 특수 컨셉(app/concepts.ts SPECIAL_CONCEPTS) — 표시명은 여기서 옮긴다
   "통합전략 전용 모듈": ["IS-Exclusive Module", "統合戦略専用モジュール"],
