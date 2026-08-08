@@ -184,8 +184,9 @@ if (newStory.length) lines.push(`### 신규 스토리 이미지 ${newStory.lengt
 
 // ── 파이프라인 경고 (미번역 CN·미매칭 이름 등) ────────────────────────
 let warnBlock = "";
+let warnLines = [];
 if (existsSync(".ci/warnings.log")) {
-  const warnLines = readFileSync(".ci/warnings.log", "utf-8").split("\n")
+  warnLines = readFileSync(".ci/warnings.log", "utf-8").split("\n")
     .filter((l) => /WARN|경고|미번역|not matched|미매칭|未|译|fail|실패|Traceback|Error/i.test(l))
     .filter(Boolean);
   if (warnLines.length) {
@@ -217,7 +218,18 @@ if (newReleasedOpNames.length) {
     `  (스탯·스킬은 자동 파싱됨. 새 시너지 팟/토큰/특이 문구가 있을 때만 rules.json 규칙 추가가 필요)`);
 }
 // 3) 미실장(CN) 신규 오퍼·재료 번역 — 파이프라인 경고(未/译/미번역)가 잡히면 cn-translation-fill 스킬
-if (/미번역|未|译/.test(warnBlock)) {
+//
+// ⚠ 낱말만 보고 띄우면 안 된다 (2026-08-08 사용자 지적: "이거 결국 뭐해라는 말임?").
+// build-profiles가 할 일이 없을 때도 "미번역 CN 프로필 본문: 0명 · 0자"를 찍고 있었고,
+// 여기서 '미번역'이라는 글자만 보고 스킬 실행을 시켜서 **할 일이 0인데 사람을 부르는**
+// 메일이 나갔다. 경고를 내는 쪽도 고쳤지만(0명이면 안 찍음), 여기서도 **숫자가 전부 0인
+// 줄은 할 일 없음으로 본다** — 다른 스크립트가 같은 실수를 해도 늑대소년이 되지 않게.
+const hasRealCount = (line) => {
+  const nums = line.match(/\d[\d,]*/g);
+  return !nums || nums.some((n) => Number(n.replace(/,/g, "")) > 0);
+};
+const cnPending = warnLines.filter((l) => /미번역|未|译/.test(l) && hasRealCount(l));
+if (cnPending.length) {
   manual.push(`### CN 신규 텍스트 번역 → \`cn-translation-fill\` 스킬\n` +
     `- 위 파이프라인 경고의 중국어 원문을 cn-translations.json에 채운 뒤 재생성`);
 }

@@ -330,5 +330,9 @@ if untranslated:
             continue
         by_op[cid] = by_op.get(cid, 0) + n
     total_chars = sum(by_op.values())
-    print(f"  ⚠ 미번역 CN 프로필 본문: {len(by_op)}명 · {total_chars:,}자 "
-          f"— scripts/cn-translations.json에 채울 것", file=sys.stderr)
+    # 0명일 때는 찍지 않는다 (2026-08-08) — 종전엔 무조건 찍어서 "미번역 … 0명 · 0자"가
+    # 나갔고, ci-report가 그 **낱말만** 보고 "사람 손 필요 → cn-translation-fill 스킬"을
+    # 띄웠다. 할 일이 없는데 매번 스킬 실행을 시키는 메일이 오니 경고가 늑대소년이 된다.
+    if by_op:
+        print(f"  ⚠ 미번역 CN 프로필 본문: {len(by_op)}명 · {total_chars:,}자 "
+              f"— scripts/cn-translations.json에 채울 것", file=sys.stderr)
