@@ -41,9 +41,27 @@ cp -r dist/client/. "$STAGE/"
 
 # R2로 옮긴 에셋 폴더는 Pages에 올리지 않는다 — 이게 배포가 빨라진 이유의 전부.
 # (public/에는 그대로 남아 있고 scripts/r2-sync.mjs가 R2와 동기화한다)
-for dir in story rogue lens tesseract avatars about og items scan profiles skins skin voice skills modules; do
+for dir in story lens tesseract avatars about og items scan profiles skins skin voice skills modules; do
   rm -rf "${STAGE:?}/$dir"
 done
+
+# ⚠ rogue만은 통째로 지우면 안 된다 (2026-08-08, GSC 색인 리포트로 발각).
+# 2026-08-06에 통합전략 테마 정본 주소를 ?topic=isN → /rogue/<슬러그>로 옮기면서
+# **에셋 폴더(map·relic·enemy·scene·zone·capsule·misc·node·kv*.webp)와 테마 페이지
+# (is1~is6.html/.rsc)가 같은 폴더에 섞였다**. 여기서 rogue를 통째로 rm 하는 바람에
+# 한국어 테마 페이지 6개가 매 배포마다 사라져 라이브에서 404였다 — 사이트맵에는
+# 올라가 있으니 구글에는 "사이트맵이 가리키는데 없는 주소"로 보였다.
+# (/en·/ja는 $STAGE/en/rogue/ 아래라 이 삭제를 안 타서 멀쩡했다 — 그래서 더 안 보였다.)
+# 에셋은 asset()이 R2(files.terra-archive.net)로 보내므로 지우는 게 맞고, 페이지만 남긴다.
+if [ -d "${STAGE:?}/rogue" ]; then
+  find "${STAGE:?}/rogue" -mindepth 1 -maxdepth 1 \
+    ! -name 'is*.html' ! -name 'is*.rsc' -exec rm -rf {} +
+fi
+
+# 사이트맵이 가리키는 주소가 실제로 스테이지에 있는지 검사한다 — 위 같은 사고를 조용히
+# 넘기지 않기 위한 안전망. 하나라도 없으면 **배포를 중단**한다 (에셋 없는 배포를 막는
+# --skip-r2 가드와 같은 원칙: 고쳐야 할 상태를 만드느니 실패가 낫다).
+node scripts/check-staged.mjs "$STAGE"
 
 # 관리자 페이지는 본사이트에서 제거 — admin.terra-archive.net(Cloudflare Access 뒤)으로
 # 분리됐다 (2026-07-27, scripts/deploy-admin.sh). 옛 주소는 아래 _redirects가 넘겨준다.

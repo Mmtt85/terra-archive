@@ -376,6 +376,37 @@ node scripts/audit-assets.mjs --r2 # 오퍼 에셋 전수 검사 (로컬 완결�
 인증은 레포 루트 `.r2-sync-key`(gitignore) — 잃어버리면
 `openssl rand -hex 32 > .r2-sync-key && (cd workers/upload && npx wrangler secret put SYNC_KEY < ../../.r2-sync-key)`.
 
+### ⚠ 에셋 폴더와 **페이지가 같은 이름**일 때 (`rogue`, 2026-08-08 사고)
+
+deploy.sh는 위 폴더들을 `rm -rf`로 스테이지에서 걷어낸다(R2가 서빙하므로). 그런데
+2026-08-06에 통합전략 테마 정본 주소를 `?topic=isN` → **`/rogue/<슬러그>`** 로 옮기면서
+`dist/client/rogue/` 안에 **에셋 폴더와 페이지 파일이 섞였다**:
+
+```
+rogue/  map relic enemy scene zone capsule misc node kv1~6.webp   ← R2 (지워야 함)
+        is1~is6.html · is1~is6.rsc                                ← 페이지 (남겨야 함)
+```
+
+통짜 `rm -rf rogue`가 테마 페이지까지 지워, **한국어 6개 페이지가 매 배포마다 사라져
+라이브에서 404**였다. 사이트맵에는 실려 있으니 구글에는 "사이트맵이 가리키는데 없는
+주소"로 보였고, `/en`·`/ja`는 `$STAGE/en/rogue/` 아래라 이 삭제를 안 타서 멀쩡했다 —
+그래서 눈으로는 더 안 보였다. **GSC 색인 리포트로야 드러났다.**
+
+이제 rogue만 `find … ! -name 'is*.html' ! -name 'is*.rsc' -exec rm -rf {} +` 로 페이지를
+남기고 지운다. 앞으로 **에셋 폴더 이름과 페이지 경로가 겹치면 같은 사고가 난다** — 새
+라우트를 만들 때 `dist/client/<이름>/`이 삭제 목록에 있는지 먼저 볼 것.
+
+**`check-staged.mjs` — 사이트맵 대조 안전망** — 위 사고를 조용히 넘기지 않도록,
+스테이지 가공 직후 **사이트맵의 모든 주소가 실제 파일로 있는지** 대조하고 하나라도
+없으면 배포를 중단한다(`--skip-r2` 가드와 같은 원칙: 고쳐야 할 상태를 만드느니 실패가 낫다).
+
+```bash
+node scripts/check-staged.mjs <스테이지경로>   # deploy.sh가 자동 실행
+```
+
+회귀 확인(2026-08-08): 옛 삭제 방식을 재현하면 종료코드 1과 함께 `/rogue/is1`~`is6`을
+정확히 지목하고, 고친 방식에서는 사이트맵 1,578개 주소가 전부 통과한다.
+
 ## 배포 무중단 확인 (`deploy-probe.mjs`, 2026-08-06)
 
 사용자 제보: *"배포 끝나고 30초~1분간 사이트 접속이 안 되는 시간이 늘어난다."* 원인이
