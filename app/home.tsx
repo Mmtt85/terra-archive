@@ -951,6 +951,10 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   // 초기값으로 쓴다 (SSR/클라이언트 첫 렌더 일치 → hydration mismatch 없음).
   const [tab, setTab] = useState<Tab>(initialTab);
   const [navOpen, setNavOpen] = useState(false); // 모바일 탭 메뉴(햄버거) 열림 상태
+  // 메뉴 안 묶음(도감·시뮬레이터) 펼침 — 데스크탑은 호버로도 열리지만, iOS는 탭해도 버튼에
+  // 포커스가 안 가 focus-within이 무력하므로 클릭 토글 상태가 따로 필요하다 (2026-08-09).
+  // 초기화는 effect가 아니라 햄버거 토글 클릭에서 한다 (set-state-in-effect 린트 관례).
+  const [openGroup, setOpenGroup] = useState<"" | "dex" | "sim">("");
   const [feedbackOpen, setFeedbackOpen] = useState(false); // 제안 패널 — 모바일 헤더 버튼·데스크탑 FAB 공용
   const [headerCollapsed, setHeaderCollapsed] = useState(true); // 모바일 헤더 접기 — 접힘이 기본(사용자 확정 2026-07-22). PC는 무관(관련 CSS가 모바일 블록에만 있음)
   // 햄버거 '통합전략 가이드' 부메뉴 활성 표시용 — 현재 URL의 ?topic= 슬러그 (기본 is1)
@@ -1288,6 +1292,17 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     rogue: t("통합전략 가이드"),
     about: t("테라 아카이브 소개"),
   };
+  // 햄버거 메뉴 묶음 (사용자 확정 2026-08-09 '메뉴 마토메') — 도감(오퍼·적·작전)과
+  // 시뮬레이터(공개채용·재료파밍·오퍼 육성)로 묶고, 하위 라벨은 짧게 쓴다.
+  // **URL·페이지 제목·SEO는 그대로** — 헤더/푸터 내비 표시만 바꾸는 것이다.
+  const TAB_GROUPS: { id: "dex" | "sim"; name: string; icon: string; items: { tab: Tab; short: string }[] }[] = [
+    { id: "dex", name: t("도감"), icon: "▤", items: [
+      { tab: "archive", short: t("오퍼") }, { tab: "enemy", short: t("적") }, { tab: "stage", short: t("작전") },
+    ] },
+    { id: "sim", name: t("시뮬레이터"), icon: "◈", items: [
+      { tab: "recruit", short: t("공개채용") }, { tab: "farm", short: t("재료파밍") }, { tab: "upgrade", short: t("오퍼 육성") },
+    ] },
+  ];
   // 탭 청크 미리 받기 — 지연 로드(위 lazy)로 초기 파싱은 줄이되, **탭 전환 체감은 종전과
   // 같게** 유지하기 위한 짝이다. 탭 줄에 포인터가 닿거나(=누르기 직전) 포커스가 오면 그때
   // 나머지 탭을 조용히 당겨 둔다. 로드 직후 무조건 당기지 않는 이유: 그러면 파싱 비용이
@@ -1603,26 +1618,48 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
         {/* 햄버거(메뉴) = 1줄 오른쪽 끝 — 데스크탑·모바일 공통 (사용자 확정 2026-07-22).
             모바일은 order로, 데스크탑은 margin-left:auto로 배치되므로 JSX 위치는 자유. */}
         <div className="nav-group">
-          <button type="button" className="nav-toggle" aria-expanded={navOpen} aria-label={t("메뉴 열기")} onClick={() => setNavOpen((open) => !open)}>
+          <button type="button" className="nav-toggle" aria-expanded={navOpen} aria-label={t("메뉴 열기")} onClick={() => { setOpenGroup(""); setNavOpen((open) => !open); }}>
             {/* 라벨은 "메뉴"로 **고정** — 현재 탭 이름을 넣으면 페이지를 옮길 때마다 버튼 폭이
                 늘었다 줄었다 해서 헤더가 흔들린다 (사용자 요청 2026-07-29) */}
             <span aria-hidden>☰</span>{t("메뉴")}
           </button>
           {/* 드롭다운은 햄버거 버튼 바로 밑에 딱 붙여 연다 (사용자 요청 2026-07) */}
-          {/* 순서는 포탈 카드와 동일 (사용자 확정 2026-07-17): 홈 · 인프라 · 백과사전 · 공채 · 파밍 · 스토리 · 소개 */}
+          {/* 순서 (사용자 확정 2026-08-09 '메뉴 마토메'): 홈 · 인프라 · 도감▸ · 시뮬레이터▸ ·
+              스토리 · 통합전략▸ · 소개. 인프라는 대표 기능이라 묶지 않고 톱레벨 유지(사용자 확정). */}
           <nav className={`main-tabs${navOpen ? " open" : ""}`} aria-label={t("주요 탭")}
             onPointerOver={prefetchTabs} onTouchStart={prefetchTabs} onFocus={prefetchTabs}>
             <button className={`tab-portal${tab === "portal" ? " selected" : ""}`} onClick={() => switchTab("portal")}><span className="tab-icon" aria-hidden>◇</span>{t("홈")}</button>
             <button className={`tab-planner${tab === "planner" ? " selected" : ""}`} onClick={() => switchTab("planner")}><span className="tab-icon" aria-hidden>⌂</span>{t("인프라 자동편성기")}{tabHasNewFeature("planner") && <span className="new-badge">{t("새기능")}</span>}</button>
-            <button className={`tab-archive${tab === "archive" ? " selected" : ""}`} onClick={() => switchTab("archive")}><span className="tab-icon" aria-hidden>▤</span>{t("오퍼 백과사전")}</button>
-            <button className={`tab-enemy${tab === "enemy" ? " selected" : ""}`} onClick={() => switchTab("enemy")}><span className="tab-icon" aria-hidden>⊗</span>{t("적 도감")}{tabHasNewFeature("enemy") && <span className="new-badge">{t("새기능")}</span>}</button>
-            <button className={`tab-stage${tab === "stage" ? " selected" : ""}`} onClick={() => switchTab("stage")}><span className="tab-icon" aria-hidden>▨</span>{t("작전 도감")}{tabHasNewFeature("stage") && <span className="new-badge">{t("새기능")}</span>}</button>
-            <button className={`tab-recruit${tab === "recruit" ? " selected" : ""}`} onClick={() => switchTab("recruit")}><span className="tab-icon" aria-hidden>◎</span>{t("공개채용 도우미")}{tabHasNewFeature("recruit") && <span className="new-badge">{t("새기능")}</span>}</button>
-            <button className={`tab-farm${tab === "farm" ? " selected" : ""}`} onClick={() => switchTab("farm")}><span className="tab-icon" aria-hidden>◈</span>{t("재료파밍 도우미")}</button>
-            <button className={`tab-upgrade${tab === "upgrade" ? " selected" : ""}`} onClick={() => switchTab("upgrade")}><span className="tab-icon" aria-hidden>▦</span>{t("오퍼 육성 시뮬")}</button>
+            {/* 도감·시뮬레이터 묶음 — 통합전략과 같은 플라이아웃 규격. 하위 항목은 실제 <a>
+                (크롤러용 내부 링크 — 통전 부메뉴와 같은 이유, 2026-08-06). 클릭은 SPA 전환. */}
+            {TAB_GROUPS.map((g) => (
+              <div key={g.id} className={`tab-flyout${openGroup === g.id ? " open" : ""}`}>
+                <button type="button"
+                  className={`tab-group${g.items.some((it) => it.tab === tab) ? " selected" : ""}`}
+                  aria-expanded={openGroup === g.id}
+                  onClick={() => setOpenGroup((cur) => (cur === g.id ? "" : g.id))}>
+                  <span className="tab-icon" aria-hidden>{g.icon}</span>{g.name}
+                  {g.items.some((it) => tabHasNewFeature(it.tab)) && <span className="new-badge">{t("새기능")}</span>}
+                  <span className="tab-group-arrow" aria-hidden>◂</span>
+                </button>
+                <div className="tab-submenu" role="group" aria-label={g.name}>
+                  {g.items.map((it) => (
+                    <a key={it.tab} href={`${localeBase}/${TAB_SEG[it.tab]}`}
+                      className={`tab-sub tab-${it.tab}${tab === it.tab ? " selected" : ""}`}
+                      onClick={(event) => {
+                        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+                        event.preventDefault(); switchTab(it.tab);
+                      }}>
+                      <span className="tab-sub-mark" aria-hidden>›</span>{it.short}
+                      {tabHasNewFeature(it.tab) && <span className="new-badge">{t("새기능")}</span>}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ))}
             <button className={`tab-story${tab === "story" ? " selected" : ""}`} onClick={() => switchTab("story")}><span className="tab-icon" aria-hidden>✦</span>{t("스토리")}{tabHasNewFeature("story") && <span className="new-badge">{t("새기능")}</span>}</button>
             {/* 통합전략 가이드 — 마우스오버 시 테마별 부메뉴가 펼쳐진다 (플라이아웃) */}
-            <div className="tab-rogue-wrap">
+            <div className="tab-flyout">
               <button className={`tab-rogue${tab === "rogue" ? " selected" : ""}`} onClick={() => switchTab("rogue")}><span className="tab-icon" aria-hidden>❖</span>{t("통합전략 가이드")}{tabHasNewFeature("rogue") && <span className="new-badge">{t("새기능")}</span>}</button>
               <div className="tab-submenu" role="group" aria-label={t("통합전략 가이드")}>
                 {/* 실제 앵커 — 헤더 메뉴가 전부 버튼이라 크롤러에는 테마 링크가 하나도 없었다

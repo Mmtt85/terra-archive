@@ -120,6 +120,15 @@ const D: Record<string, Pair> = {
   "오퍼 백과사전": ["Operator Archive", "オペレーター図鑑"],
   "인프라 자동편성기": ["Base Auto-Planner", "基地自動編成"],
   "공개채용 도우미": ["Public Recruitment Helper", "公開求人ヘルパー"],
+  // 햄버거 메뉴 묶음 (사용자 확정 2026-08-09 '메뉴 마토메') — 그룹명 + 짧은 하위 라벨.
+  // 페이지 자체 제목·SEO 문구는 위의 정식명을 그대로 쓴다.
+  "도감": ["Handbook", "図鑑"],
+  "시뮬레이터": ["Simulators", "シミュレーター"],
+  "오퍼": ["Operators", "オペレーター"],
+  "적": ["Enemies", "敵"],
+  "공개채용": ["Recruitment", "公開求人"],
+  "재료파밍": ["Material Farming", "素材周回"],
+  "오퍼 육성": ["Upgrade", "育成"],
   "언어 선택": ["Language", "言語選択"],
   "사이트 메뉴": ["Site menu", "サイトメニュー"],
   "배포 {t}": ["Deployed {t}", "デプロイ {t}"],
@@ -1814,7 +1823,8 @@ const D: Record<string, Pair> = {
   "{n}층": ["Floor {n}", "{n}階"],
   "층": ["F", "階"],
   "히든 층": ["Hidden floor", "隠し階層"],
-  "작전": ["Operation", "作戦"],
+  // '작전'은 통전 가이드의 작전 섹션 제목과 도감 묶음의 하위 메뉴 라벨이 공유한다
+  "작전": ["Stages", "作戦"],
   "긴급 작전": ["Emergency Operation", "緊急作戦"],
   "험난한 길 (보스)": ["Dreadful Foe (Boss)", "悪路凶敵（ボス）"],
   "조우 전투": ["Encounter battle", "遭遇戦"],

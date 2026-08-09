@@ -4775,10 +4775,14 @@ legend {
 }
 /* 세로 메뉴는 줄이 높고(44px) 글자가 왼쪽에 몰려 있다 — 위로 뺄 필요 없이 줄 안 오른쪽에
    둔다. 밖으로 내밀면 메뉴 패널에 잘리고 윗줄에 붙은 것처럼 보인다(실측 2026-07-29). */
-.main-tabs button .new-badge {
+.main-tabs :where(button, a.tab-sub) .new-badge {
   top: 50%;
   right: 10px;
   transform: translateY(-50%);
+}
+/* 묶음 헤더(도감·시뮬레이터)는 오른쪽 끝에 ◂ 화살표가 있어 배지를 그 왼쪽으로 비킨다 */
+.main-tabs .tab-group .new-badge {
+  right: 28px;
 }
 /* '그 외' 드롭다운도 세로 메뉴 — 같은 규칙으로 줄 안 오른쪽에 둔다 (MAA 내보내기 베타 배지) */
 .more-menu button .new-badge {
@@ -5538,8 +5542,11 @@ legend {
   background: var(--chip);
   color: var(--lime);
 }
-/* 통합전략 가이드 부메뉴 — 마우스오버 시 오른쪽에 플라이아웃으로 뜬다 (사용자 요청 2026-07-18) */
-.tab-rogue-wrap {
+/* 플라이아웃 묶음 — 통합전략 부메뉴(사용자 요청 2026-07-18)에 이어 도감·시뮬레이터
+   (사용자 확정 2026-08-09 '메뉴 마토메')도 같은 규격을 쓴다. 호버·키보드 포커스로 열리고,
+   묶음 헤더(도감·시뮬레이터)는 페이지가 아니라서 클릭 토글(.open)로도 연다 —
+   iOS는 탭해도 버튼에 포커스가 안 가 focus-within만으로는 터치에서 못 연다. */
+.tab-flyout {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -5559,8 +5566,9 @@ legend {
   border: 1px solid var(--border-strong);
   box-shadow: 0 12px 34px #00000022;
 }
-.tab-rogue-wrap:hover .tab-submenu,
-.tab-rogue-wrap:focus-within .tab-submenu {
+.tab-flyout:hover .tab-submenu,
+.tab-flyout:focus-within .tab-submenu,
+.tab-flyout.open .tab-submenu {
   display: flex;
 }
 /* 모바일: 햄버거 패널이 헤더 전체 폭(left/right 16px)이라 왼쪽 플라이아웃(right:100%)이
@@ -5588,6 +5596,12 @@ legend {
 .tab-sub-mark {
   opacity: 0.5;
   font-weight: 800;
+}
+/* 묶음 헤더 오른쪽 화살표 — 플라이아웃이 왼쪽(right:100%)으로 열리므로 ◂ 방향 */
+.tab-group-arrow {
+  margin-left: auto;
+  opacity: 0.45;
+  font-size: 11px;
 }
 .tab-sub-future {
   font-style: normal;
@@ -6394,6 +6408,20 @@ legend {
 .clear-btn:hover {
   background: var(--lime);
   color: var(--on-lime);
+}
+/* 모바일: 빠른 입력 줄이 좁아 '클리어'가 글자 하나씩 세로로 짜부라지고 스샷 버튼이 화면
+   밖으로 밀렸다 (사용자 제보 2026-08-09) — 입력칸을 한 줄 통째로 쓰고 버튼들은 다음 줄로. */
+@media (max-width: 760px) {
+  .quick-wrap {
+    flex-wrap: wrap;
+  }
+  .quick-wrap input {
+    flex: 1 1 100%;
+  }
+  .clear-btn {
+    padding: 9px 16px;
+    white-space: nowrap;
+  }
 }
 .recruit-time-note {
   border-left: 3px solid var(--lime);
