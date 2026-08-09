@@ -21,7 +21,7 @@
   .gamedata/{kr,en,jp}_stage_table.json / _zone_table.json / _item_table.json
   app/data/enemy-stages.json (+ .en/.ja)       등장 적 역색인 (build-enemies.py 산출물)
 """
-import json, os, re, sys, time, urllib.error, urllib.parse, urllib.request
+import json, os, re, shutil, sys, time, urllib.error, urllib.parse, urllib.request
 from concurrent.futures import ThreadPoolExecutor
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -361,9 +361,27 @@ else:
     have = {f[:-5] for f in os.listdir(dest_dir) if f.endswith(".webp")}
     print(f"도면: 인게임 이미지 신규 {len(todo) - len(fails)} · 없음 {len(fails)}")
 
+    # ── 폴백 0: 어려움(tough_*)은 일반판(main_*)과 지형이 같다 — 짝의 도면을 복사 ──
+    # 어려움 판은 대부분 자체 미리보기가 없어 격자로 렌더되던 것 (사용자 지적 2026-08-10:
+    # "11-15 어려움만 맵이 있고 11-14·11-16은 격자"). 격자보다 일반판 실사가 정답이므로
+    # 격자 렌더 **앞에서** 복사한다. 자체 미리보기가 있는 소수(예: tough_11-13)는 위
+    # 다운로드가 이미 채웠으니 여기 걸리지 않는다.
+    copied = 0
+    for kv in stages:
+        sid = kv["stageId"]
+        if sid in have or not sid.startswith("tough_"):
+            continue
+        src = os.path.join(dest_dir, sid.replace("tough_", "main_", 1) + ".webp")
+        if os.path.exists(src):
+            shutil.copyfile(src, os.path.join(dest_dir, sid + ".webp"))
+            copied += 1
+    if copied:
+        have = {f[:-5] for f in os.listdir(dest_dir) if f.endswith(".webp")}
+        print(f"도면: 어려움 판 ← 일반판 복사 {copied}장")
+
     # ── 폴백: 레벨 파일의 타일 격자를 직접 그린다 ─────────────────────────────
-    # 어려움 판(tough_*)·보안 파견(lt_*)·옛 다인 이벤트는 인게임 미리보기 이미지가 아예
-    # 없다. 지형이 이 도감의 본체이므로 빈 칸으로 두지 않고 격자로 렌더한다
+    # 보안 파견(lt_*)·다인 모드(멀티·보스러시·아케이드 등)는 인게임 미리보기 이미지가
+    # 아예 없다. 지형이 이 도감의 본체이므로 빈 칸으로 두지 않고 격자로 렌더한다
     # (통합전략이 같은 이유로 쓰던 render_minimap 재사용).
     LEVEL_CACHE = os.path.join(REPO, ".gamedata", "levels")
     pend = [kv for kv in stages if kv["stageId"] not in have]

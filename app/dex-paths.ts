@@ -16,5 +16,8 @@ export const stageListPath = (locale: string) => `${base(locale)}/stages`;
 /** 적 초상. 변종(_2 등)은 원본 id 이미지로 폴백한다 (build-enemies.py와 같은 규약) */
 export const enemyImg = (id: string) => asset(`/enemy/${id}.webp`);
 export const enemyImgBase = (id: string) => asset(`/enemy/${id.replace(/_\d+$/, "")}.webp`);
-/** 작전 지형 도면. 없는 작전이 있으므로 stage.map으로 먼저 거른다. */
-export const stageMap = (id: string) => asset(`/stage/${id}.webp`);
+/** 작전 지형 도면. 없는 작전이 있으므로 stage.map으로 먼저 거른다.
+    MAP_VER: 파일명이 같은 채 내용이 바뀔 때 올린다 — R2 엣지·브라우저의 30일 이미지
+    캐시를 새 키로 우회 (about.tsx SHOT_VER와 같은 이유. v2: 어려움 판 도면 교체 2026-08-10). */
+const MAP_VER = "2";
+export const stageMap = (id: string) => asset(`/stage/${id}.webp?v=${MAP_VER}`);
