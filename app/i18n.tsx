@@ -1437,6 +1437,8 @@ const D: Record<string, Pair> = {
   "조건에 맞는 작전이 없어요.": ["No stage matches these filters.", "条件に合う作戦がありません。"],
   "작전 코드, 이름, 구역 검색": ["Search code, name, zone", "コード・名前・エリアで検索"],
   "작전 계열": ["Category", "系統"],
+  "항목을 눌러 값을 고르세요 · 고를수록 아래에 하위 조건이 생깁니다": ["Tap a field to choose a value — each choice reveals the next one below", "項目を押して値を選択 · 選ぶほど下に絞り込み条件が現れます"],
+  // "이벤트"는 이미 사전에 같은 뜻으로 있다 — 다시 넣지 않는다(마지막 정의가 이긴다)
   "소모 이성": ["Sanity cost", "理性消費"],
   "작전 경험치": ["EXP", "作戦経験値"],
   "권장 편성": ["Recommended", "推奨編成"],

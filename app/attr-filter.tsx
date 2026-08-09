@@ -17,7 +17,9 @@ import { useI18n } from "./i18n";
 // (컨셉덱은 하나만 고르는 기능이라 고른 걸 아예 목록에서 뺀다 — 그 차이만 다르다.)
 // 컨셉덱은 시그니처 기능이라 별도 유지.
 // disabled/hint — 상위 조건이 정해져야 열리는 카테고리(세부 직군 ← 직군)용
-export type AttrGroup = { title: string; items: string[]; selected: string[]; onToggle: (value: string) => void; labelFor?: (value: string) => string; countForItem: (value: string) => number; disabled?: boolean; hint?: string };
+// single — 그 칸에서 하나만 고르게 한다 (작전 도감의 계열 → 이벤트 → 구역처럼 **한 갈래씩
+// 좁혀 가는** 필터용, 사용자 요청 2026-08-09). 오퍼 백과사전은 종전대로 복수 선택이다.
+export type AttrGroup = { title: string; items: string[]; selected: string[]; onToggle: (value: string) => void; labelFor?: (value: string) => string; countForItem: (value: string) => number; disabled?: boolean; hint?: string; single?: boolean };
 export function AttributeFilter({ groups }: { groups: AttrGroup[] }) {
   const { t } = useI18n();
   const [open, setOpen] = useState<string | null>(null);
@@ -41,7 +43,13 @@ export function AttributeFilter({ groups }: { groups: AttrGroup[] }) {
 
   return (
     <fieldset className="attr-filter">
-      <legend>{t("세부 조건")}<small className="multi-hint">{t("항목을 눌러 값을 고르세요 · 복수 선택 가능")}</small></legend>
+      {/* 안내는 실제 동작에 맞춘다 — 작전 도감은 단계마다 하나씩 고르는 단일 선택이라
+          "복수 선택 가능"이 거짓말이 된다 (2026-08-09) */}
+      <legend>{t("세부 조건")}<small className="multi-hint">
+        {groups.every((g) => g.single)
+          ? t("항목을 눌러 값을 고르세요 · 고를수록 아래에 하위 조건이 생깁니다")
+          : t("항목을 눌러 값을 고르세요 · 복수 선택 가능")}
+      </small></legend>
       <div className="attr-cats" ref={wrapRef}>
         {groups.map((g) => (
           <button key={g.title} type="button" disabled={g.disabled}
@@ -54,7 +62,7 @@ export function AttributeFilter({ groups }: { groups: AttrGroup[] }) {
           </button>
         ))}
         {active && (
-          <ul className="attr-drop" role="listbox" aria-multiselectable aria-label={active.title}>
+          <ul className="attr-drop" role="listbox" aria-multiselectable={!active.single} aria-label={active.title}>
             {active.items.map((item) => {
               const isSelected = active.selected.includes(item);
               return (

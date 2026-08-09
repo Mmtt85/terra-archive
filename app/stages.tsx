@@ -10,7 +10,7 @@
 //   일부러 갈랐다 — deploy.sh가 `rm -rf $STAGE/stage`로 자산만 떼어낸다.
 //   (그리고 스토리 탭의 URL 세그먼트도 "stories"라 서로 부딪히지 않는다.)
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useI18n } from "./i18n";
 import { normSearch, useSearchInput } from "./search";
 import { useLazyVisible } from "./lazy-img";
@@ -54,6 +54,7 @@ export default function StageDex({ doc, onOpenEnemy }: { doc: StageDoc; onOpenEn
   const { locale, t } = useI18n();
   const { term, clear, inputProps } = useSearchInput();
   const [types, setTypes] = useState<string[]>([]);
+  const [evSel, setEvSel] = useState<string[]>([]);
   const [zonesSel, setZonesSel] = useState<string[]>([]);
   const [open, setOpen] = useState<Stage | null>(null);
 
@@ -65,38 +66,96 @@ export default function StageDex({ doc, onOpenEnemy }: { doc: StageDoc; onOpenEn
     setOpen(m ? byId.get(m[1]) ?? null : null);
   });
 
-  // 필터 값 — 데이터에 실제로 있는 것만
+  // ── 필터는 **누를수록 하위가 생긴다** (사용자 요청 2026-08-09) ──────────────
+  // 계열 → (이벤트) → 구역. 처음엔 계열 하나만 보이고, 고른 계열에 하위 갈래가 실제로
+  // 있을 때만 다음 칸이 나타난다. 오퍼 백과사전의 직군 → 세부 직군과 같은 결이다.
+  // 계열을 안 고르면 이벤트 84개·구역 178개가 통째로 펼쳐져 목록이 쓸모없이 길다.
+  const byName = (a: string, b: string) => a.localeCompare(b, locale);
+
   const typeItems = useMemo(
-    () => [...new Set(doc.stages.map((s) => s.t))].sort((a, b) => (doc.types[a] ?? a).localeCompare(doc.types[b] ?? b, locale)),
-    [doc, locale]);
-  const zoneItems = useMemo(
-    () => [...new Set(doc.stages.map((s) => doc.zones[s.z]))].filter(Boolean).sort((a, b) => a.localeCompare(b, locale)),
-    [doc, locale]);
+    () => [...new Set(doc.stages.map((s) => s.t))].sort((a, b) => byName(doc.types[a] ?? a, doc.types[b] ?? b)),
+    [doc, locale]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 고른 계열의 작전들 — 아래 두 필터의 모집단이다
+  const pool = useMemo(
+    () => (types.length ? doc.stages.filter((s) => types.includes(s.t)) : []),
+    [doc, types]);
+
+  // 이벤트: 이름 오름차순 (사용자 요청 — "이름으로 위에서부터 정렬")
+  const eventItems = useMemo(() => {
+    const set = new Set<string>();
+    for (const s of pool) if (s.ev !== undefined) set.add(doc.events[s.ev]);
+    return [...set].filter(Boolean).sort(byName);
+  }, [doc, pool, locale]); // eslint-disable-line react-hooks/exhaustive-deps
+  const events = useMemo(() => evSel.filter((e) => eventItems.includes(e)), [evSel, eventItems]);
+
+  // 구역: 이벤트를 골랐으면 그 이벤트 안에서만.
+  // ⚠ 여기만 **이름순이 아니라 진행 순서**다. 이름순이면 "에피소드 1 · 10 · 11 · 12 · 2"로
+  //   섞이고 프롤로그가 맨 뒤로 밀린다. 데이터는 이미 계열·코드 자연순으로 정렬돼 있어
+  //   (build-stages.py) 처음 나온 순서를 그대로 쓰면 프롤로그 → 에피소드 1 → 2 → …가 된다.
+  const zoneItems = useMemo(() => {
+    const src = events.length ? pool.filter((s) => s.ev !== undefined && events.includes(doc.events[s.ev])) : pool;
+    const out: string[] = [];
+    for (const s of src) {
+      const z = doc.zones[s.z];
+      if (z && !out.includes(z)) out.push(z);
+    }
+    return out;
+  }, [doc, pool, events]);
+  // 상위 선택이 바뀌면 이전 하위 선택은 **렌더에서 걸러 쓴다** — 이펙트로 상태를 털면
+  // 연쇄 렌더가 나고(react-hooks/set-state-in-effect) 한 프레임 동안 "결과 0건인데 이유가
+  // 화면에 없는" 상태가 스친다.
+  const zones = useMemo(() => zonesSel.filter((z) => zoneItems.includes(z)), [zonesSel, zoneItems]);
 
   const countBy = useMemo(() => {
-    const type = new Map<string, number>(), zone = new Map<string, number>();
-    for (const s of doc.stages) {
-      type.set(s.t, (type.get(s.t) ?? 0) + 1);
+    const type = new Map<string, number>(), ev = new Map<string, number>(), zone = new Map<string, number>();
+    for (const s of doc.stages) type.set(s.t, (type.get(s.t) ?? 0) + 1);
+    // 하위 개수는 **상위 선택 안에서** 센다 — 잠금과 같은 기준이어야 숫자가 말이 된다
+    for (const s of pool) if (s.ev !== undefined) ev.set(doc.events[s.ev], (ev.get(doc.events[s.ev]) ?? 0) + 1);
+    const src = events.length ? pool.filter((s) => s.ev !== undefined && events.includes(doc.events[s.ev])) : pool;
+    for (const s of src) {
       const z = doc.zones[s.z];
       if (z) zone.set(z, (zone.get(z) ?? 0) + 1);
     }
-    return { type, zone };
-  }, [doc]);
+    return { type, ev, zone };
+  }, [doc, pool, events]);
+
+  // 같은 단계에서는 **하나만** 고른다 (사용자 요청 2026-08-09). 계열 → 이벤트 → 구역이
+  // 한 갈래씩 좁혀 가는 구조라, 여러 개를 겹쳐 고르면 하위 목록이 무엇의 하위인지 흐려진다.
+  // 다시 누르면 해제 = 그 단계로 되돌아간다.
+  const pickOne = (set: (fn: (cur: string[]) => string[]) => void) => (v: string) =>
+    set((cur) => (cur.includes(v) ? [] : [v]));
+
+  // 갈래가 하나뿐이면 그 칸은 아예 만들지 않는다 — 보안 파견·섬멸 작전은 구역이 1개라
+  // 계열만 골라도 이미 전부 나온다 (사용자 지적: "카테고리 2 필요없을테고").
+  const filterGroups = [
+    { title: t("작전 계열"), items: typeItems, selected: types, onToggle: pickOne(setTypes), single: true,
+      labelFor: (v: string) => doc.types[v] ?? v, countForItem: (v: string) => countBy.type.get(v) ?? 0 },
+    ...(eventItems.length > 1 ? [{
+      title: t("이벤트"), items: eventItems, selected: events, onToggle: pickOne(setEvSel), single: true,
+      countForItem: (v: string) => countBy.ev.get(v) ?? 0,
+    }] : []),
+    // 이벤트가 있는 계열은 **이벤트를 고른 뒤에야** 구역이 나온다 — 안 그러면 이벤트
+    // 84개와 구역 156개가 동시에 펼쳐져 "점점 좁혀 간다"는 흐름이 깨진다.
+    ...(zoneItems.length > 1 && (eventItems.length <= 1 || events.length > 0) ? [{
+      title: t("구역"), items: zoneItems, selected: zones, onToggle: pickOne(setZonesSel), single: true,
+      countForItem: (v: string) => countBy.zone.get(v) ?? 0,
+    }] : []),
+  ];
 
   const shown = useMemo(() => {
     const q = normSearch(term);
     return doc.stages.filter((s) => {
       if (types.length && !types.includes(s.t)) return false;
-      if (zonesSel.length && !zonesSel.includes(doc.zones[s.z])) return false;
+      if (events.length && (s.ev === undefined || !events.includes(doc.events[s.ev]))) return false;
+      if (zones.length && !zones.includes(doc.zones[s.z])) return false;
       if (!q) return true;
       return normSearch(`${s.code} ${s.name} ${doc.zones[s.z] ?? ""} ${s.desc ?? ""}`).includes(q);
     });
-  }, [doc, term, types, zonesSel]);
+  }, [doc, term, types, events, zones]);
 
-  const toggle = (set: (fn: (cur: string[]) => string[]) => void) => (v: string) =>
-    set((cur) => (cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v]));
-  const reset = () => { setTypes([]); setZonesSel([]); clear(false); };
-  const active = types.length + zonesSel.length > 0 || !!term;
+  const reset = () => { setTypes([]); setEvSel([]); setZonesSel([]); clear(false); };
+  const active = types.length + events.length + zones.length > 0 || !!term;
 
   const view = open ? viewOf(doc, open) : null;
 
@@ -107,12 +166,7 @@ export default function StageDex({ doc, onOpenEnemy }: { doc: StageDoc; onOpenEn
           <div><span className="section-no">FILTER / 01</span><h2 id="stage-title">{t("탐색 조건")}</h2></div>
           <button className="reset" onClick={reset}>↻ {t("초기화")}</button>
         </div>
-        <AttributeFilter groups={[
-          { title: t("작전 계열"), items: typeItems, selected: types, onToggle: toggle(setTypes),
-            labelFor: (v) => doc.types[v] ?? v, countForItem: (v) => countBy.type.get(v) ?? 0 },
-          { title: t("구역"), items: zoneItems, selected: zonesSel, onToggle: toggle(setZonesSel),
-            countForItem: (v) => countBy.zone.get(v) ?? 0 },
-        ]} />
+        <AttributeFilter groups={filterGroups} />
       </div>
 
       <div className="results">
@@ -126,8 +180,9 @@ export default function StageDex({ doc, onOpenEnemy }: { doc: StageDoc; onOpenEn
           <div className="results-tools"><span className="count"><b>{shown.length}</b> STAGES</span></div>
         </div>
         <div className="active-filters">
-          {types.map((v) => <button key={`t-${v}`} onClick={() => toggle(setTypes)(v)}>{doc.types[v] ?? v} ×</button>)}
-          {zonesSel.map((v) => <button key={`z-${v}`} onClick={() => toggle(setZonesSel)(v)}>{v} ×</button>)}
+          {types.map((v) => <button key={`t-${v}`} onClick={() => pickOne(setTypes)(v)}>{doc.types[v] ?? v} ×</button>)}
+          {events.map((v) => <button key={`e-${v}`} onClick={() => pickOne(setEvSel)(v)}>{v} ×</button>)}
+          {zones.map((v) => <button key={`z-${v}`} onClick={() => pickOne(setZonesSel)(v)}>{v} ×</button>)}
           {term && <button onClick={() => clear()}>“{term}” ×</button>}
         </div>
 

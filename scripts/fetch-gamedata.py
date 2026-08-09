@@ -26,7 +26,7 @@ TABLES = {
     "kr": ["character_table", "skill_table", "uniequip_table", "battle_equip_table",
            "building_data", "range_table", "handbook_team_table", "handbook_info_table",
            "gamedata_const", "item_table", "gacha_table", "stage_table", "skin_table",
-           "charword_table", "enemy_handbook_table", "zone_table"],
+           "charword_table", "enemy_handbook_table", "zone_table", "activity_table"],
     "cn": ["character_table", "skill_table", "uniequip_table", "battle_equip_table",
            "building_data", "range_table", "handbook_team_table", "handbook_info_table",
            "gamedata_const", "item_table", "charword_table", "skin_table",
@@ -34,11 +34,11 @@ TABLES = {
     "en": ["character_table", "skill_table", "uniequip_table", "battle_equip_table",
            "building_data", "handbook_team_table", "handbook_info_table",
            "item_table", "gacha_table", "stage_table", "skin_table", "charword_table",
-           "enemy_handbook_table", "zone_table"],
+           "enemy_handbook_table", "zone_table", "activity_table"],
     "jp": ["character_table", "skill_table", "uniequip_table", "battle_equip_table",
            "building_data", "handbook_team_table", "handbook_info_table",
            "item_table", "gacha_table", "stage_table", "skin_table", "charword_table",
-           "enemy_handbook_table", "zone_table"],
+           "enemy_handbook_table", "zone_table", "activity_table"],
 }
 
 target = sys.argv[1] if len(sys.argv) > 1 else ".gamedata"

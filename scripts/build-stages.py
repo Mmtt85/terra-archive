@@ -94,6 +94,20 @@ def clean(s):
 tables = {loc: load(f"{S}/{pre}_stage_table.json")["stages"] for loc, pre, _ in LOCALES}
 zones = {loc: load(f"{S}/{pre}_zone_table.json")["zones"] for loc, pre, _ in LOCALES}
 items = {loc: load(f"{S}/{pre}_item_table.json")["items"] for loc, pre, _ in LOCALES}
+# 이벤트 이름 — 구역 위의 한 단계다 (사용자 요청 2026-08-09: "무슨 이벤트인지 필터링 한번 더").
+# 한 이벤트가 구역을 여러 개 갖는다: '사세행' = 상추실록·망춘유사·대필신편.
+# zoneToActivity(구역 → 이벤트 id) + basicInfo(이벤트 id → 이름)로 되짚는다.
+acts = {loc: load(f"{S}/{pre}_activity_table.json") for loc, pre, _ in LOCALES}
+ZONE_TO_ACT = acts["ko"]["zoneToActivity"]
+
+
+def event_name(loc, zid):
+    """그 구역이 속한 이벤트 이름. 이벤트가 아니거나 매핑이 없으면 None."""
+    aid = ZONE_TO_ACT.get(zid)
+    if not aid:
+        return None
+    info = (acts[loc].get("basicInfo") or {}).get(aid) or (acts["ko"].get("basicInfo") or {}).get(aid)
+    return clean((info or {}).get("name"))
 
 # ⚠ 긴급 작전(stageId 접미 `#f#`)은 일반판과 code·levelId가 완전히 같다 — 접지 않으면
 #   "4-6"이 두 줄로 나온다 (build-enemies.py에서 실측 822행 중복). 일반판을 남긴다.
@@ -145,7 +159,14 @@ for loc, _, suf in LOCALES:
 
 def zone_name(loc, zid, stype):
     z = zones[loc].get(zid) or {}
-    n = clean(z.get("zoneNameSecond")) or clean(z.get("zoneNameFirst")) or clean(z.get("zoneNameThird"))
+    first = clean(z.get("zoneNameFirst"))
+    second = clean(z.get("zoneNameSecond"))
+    # 메인 스토리는 **챕터 번호를 앞에 붙인다** (사용자 요청 2026-08-09). zoneNameFirst가
+    # 로케일별 챕터 표기라 그대로 쓴다 — ko "에피소드 3" · en "Episode 3" · ja "第三章".
+    # (막간·이벤트 구역은 first가 비어 있어 자연히 이름만 남는다.)
+    if first and second and first != second:
+        return f"{first} · {second}"
+    n = second or first or clean(z.get("zoneNameThird"))
     return n or TYPE_LABELS[loc].get(z.get("type") or stype) or TYPE_LABELS[loc].get(stype) or ""
 
 
@@ -174,6 +195,7 @@ def build(loc):
     반복되는 값은 전부 위쪽 사전에 한 번만 두고 본문은 번호로 가리킨다."""
     table = tables[loc]
     zone_list, zone_ix = [], {}
+    ev_list, ev_ix = [], {}
     item_map = {}
     enemy_list, enemy_ix = [], {}
     occ_list, occ_ix = [], {}
@@ -207,6 +229,11 @@ def build(loc):
             "z": intern(zone, zone_list, zone_ix),
             "t": kv.get("stageType"),
         }
+        # ⚠ 이벤트 계열에만 붙인다. zoneToActivity에는 메인·막간의 연동 이벤트 구역도
+        #   섞여 있어(실측 3개), 그대로 두면 메인 스토리를 골랐을 때 '이벤트' 칸이 뜬다.
+        ev = event_name(loc, kv.get("zoneId")) if kv.get("stageType") == "ACTIVITY" else None
+        if ev:
+            e["ev"] = intern(ev, ev_list, ev_ix)
         # 0·null인 칸은 아예 넣지 않는다 (2,327개 × 빈 칸이 그대로 용량이다)
         desc = clean(v.get("description"))
         if desc: e["desc"] = desc
@@ -221,7 +248,7 @@ def build(loc):
             e["e"] = [[intern(x[0], enemy_list, enemy_ix), x[1], x[2]] for x in ents]
         out.append(e)
     return {
-        "zones": zone_list, "items": item_map, "occ": occ_list, "kinds": kind_list,
+        "zones": zone_list, "events": ev_list, "items": item_map, "occ": occ_list, "kinds": kind_list,
         "enemyIds": enemy_list,
         "types": {k: TYPE_LABELS[loc].get(k, k) for k in {s.get("stageType") for s in stages}},
         "enemyNames": {eid: enemy_names[loc].get(eid, eid) for eid in enemy_list},

@@ -13,10 +13,11 @@ export type Stage = {
   desc?: string; ap?: number; exp?: number; gold?: number; danger?: string;
   /** 드랍 [아이템id, occ번호, kinds번호] */ d?: [string, number, number][];
   /** 등장 적 [enemyIds번호, 스폰수, 스탯레벨] */ e?: [number, number, number][];
+  /** events 배열 번호 — 이벤트 작전만 있다 */ ev?: number;
   /** 도면 보유 (없으면 키 자체가 없다) */ map?: number;
 };
 export type StageDoc = {
-  zones: string[]; items: Record<string, string>; occ: string[]; kinds: string[];
+  zones: string[]; events: string[]; items: Record<string, string>; occ: string[]; kinds: string[];
   enemyIds: string[]; types: Record<string, string>; enemyNames: Record<string, string>;
   stages: Stage[];
 };

@@ -325,8 +325,17 @@ else:
         print(f"  레벨 파일 없음 {len(missing)}개 (삭제된 스테이지 — 정상) 예: {missing[:3]}")
 
     def zone_name(loc, zid, stype):
+        # ⚠ scripts/build-stages.py의 zone_name과 **글자 하나까지 같아야 한다** — 작전 도감이
+        #   이 색인을 (코드, 이름, 구역)으로 되짚어 등장 적을 붙인다. 2026-08-09에 한쪽만
+        #   고쳤다가 조인이 2,038 → 1,538로 깨졌다.
         z = zone_tables[loc].get(zid) or {}
-        n = clean(z.get("zoneNameSecond")) or clean(z.get("zoneNameFirst")) or clean(z.get("zoneNameThird"))
+        first = clean(z.get("zoneNameFirst"))
+        second = clean(z.get("zoneNameSecond"))
+        # 메인 스토리는 챕터 번호를 앞에 붙인다 (사용자 요청) — zoneNameFirst가 로케일별
+        # 챕터 표기다: ko "에피소드 3" · en "Episode 3" · ja "第三章".
+        if first and second and first != second:
+            return f"{first} · {second}"
+        n = second or first or clean(z.get("zoneNameThird"))
         return n or ZONE_TYPE_LABELS[loc].get(z.get("type") or stype) or ZONE_TYPE_LABELS[loc].get(stype) or ""
 
     visible = set(VISIBLE)
