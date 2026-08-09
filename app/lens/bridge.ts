@@ -75,6 +75,20 @@ export type BridgeLogEvent = {
   cached?: boolean;                 // 화면 판정 캐시 재적용 (OCR 없이 지난 판정 — HUD 수치 없음)
 };
 
+// 모바일 기기 판정 — **화면 크기로 판단하지 않는다** (사용자 확정 2026-08-09: PC에서 창을
+// 좁게 줄여 쓰는 경우와 구분돼야 한다). 근거 두 가지만 쓴다:
+// ① navigator.userAgentData.mobile — 크로뮴이 직접 알려주는 기기 분류 (창 크기 무관).
+// ② (hover: none) and (pointer: coarse) — 주 입력이 호버 없는 터치인 환경 = 폰·태블릿.
+//    좁힌 데스크탑 창은 hover+fine이라 안 걸리고, 터치스크린 노트북도 주 포인터는 fine이다.
+const isMobileDevice = (): boolean =>
+  (navigator as Navigator & { userAgentData?: { mobile?: boolean } }).userAgentData?.mobile === true
+  || window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+
+// 모바일이면 캡처가 성립하지 않는다 (게임이 딴 앱) — 안드로이드 크롬은 getDisplayMedia가
+// 정의돼 있어 기능 감지만으로는 못 거른다. 다만 버튼을 숨기지 않고 **비활성 + 'PC 전용'
+// 표기**로 남기므로 (사용자 확정 2026-08-09) 이 판정은 bridgeSupported에 섞지 않는다.
+export const bridgeOnMobile = (): boolean => typeof navigator !== "undefined" && isMobileDevice();
+
 export const bridgeSupported = (): boolean =>
   typeof navigator !== "undefined"
   && !!navigator.mediaDevices?.getDisplayMedia

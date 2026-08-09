@@ -13266,6 +13266,12 @@ main.site-main > .site-header {
   border-color: var(--lime);
   background: color-mix(in srgb, var(--lime) 22%, var(--white));
 }
+/* 모바일 PRTS 링크 — 버튼을 남기되 비활성 + 'PC 전용' 표기 (사용자 확정 2026-08-09) */
+.lens-open-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+  pointer-events: none;
+}
 /* 버튼 자체가 자동인식 토글 — 켜짐이면 라임으로 채우고 상태 점을 켠다 (2026-07-23) */
 .lens-open-btn.on {
   background: color-mix(in srgb, var(--lime) 38%, var(--white));

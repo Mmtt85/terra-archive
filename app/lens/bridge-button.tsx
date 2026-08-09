@@ -7,7 +7,7 @@
 
 import { lazy, Suspense, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
-import { useBridgeStatus, connectBridge, disconnectBridge, bridgeSupported, bridgeLogCount } from "./bridge";
+import { useBridgeStatus, connectBridge, disconnectBridge, bridgeSupported, bridgeOnMobile, bridgeLogCount } from "./bridge";
 import BridgeReplayModal from "./bridge-replay";
 import { isNewFeature } from "../whats-new";
 import { useHashSync } from "../hash-modal";
@@ -56,6 +56,10 @@ const BridgeHelpModal = lazy(() => import("./bridge-help"));
 export function BridgeTopicButton({ topic, name, t }: { topic: string; name: string; t: T }) {
   const { settings, lock } = useBridgeStatus();
   const supported = useSyncExternalStore(noSubscribe, bridgeSupported, () => false);
+  // 모바일 판정은 화면 크기가 아니라 기기 특성(UA-CH·hover/pointer)이다 — bridge.ts 주석 참조.
+  // SSR 스냅샷은 true(비활성) — 프리렌더 HTML엔 'PC 전용'으로 실리고 데스크탑이 하이드레이션
+  // 때 활성으로 바뀐다 (종전엔 SSR에서 아예 안 그렸으니 어느 쪽이든 깜빡임은 새로 안 생긴다).
+  const mobile = useSyncExternalStore(noSubscribe, bridgeOnMobile, () => true);
   const [replayOpen, setReplayOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   // 딥링크: #replay(리플레이 프리뷰)·#prts-help(도움말) — /rogue 툴바엔 활성 테마의
@@ -64,12 +68,21 @@ export function BridgeTopicButton({ topic, name, t }: { topic: string; name: str
     setReplayOpen(h === "#replay");
     setHelpOpen(h === "#prts-help");
   });
-  if (!supported) return null;
+  // API 없는 **데스크탑**(파이어폭스 등 비크로뮴)만 통째로 숨긴다 — 모바일은 숨기지 않고
+  // 아래에서 비활성 + 'PC 전용' 표기로 남긴다 (사용자 확정 2026-08-09: "버튼은 있어야").
+  if (!supported && !mobile) return null;
 
   const mine = !!settings && lock?.topic === topic;   // 이 테마로 고정 연결됨
   const other = !!settings && !mine;                  // 다른 테마에서 연결됨
   return (
     <>
+      {mobile ? (
+        <button type="button" className="lens-open-btn bridge-topic-btn" disabled
+          title={t("PRTS 링크는 PC 브라우저에서만 사용할 수 있습니다")}>
+          <span aria-hidden>○</span> {t("PRTS 링크")}
+          <span className="beta-badge">{t("PC 전용")}</span>
+        </button>
+      ) : (
       <button
         type="button"
         className={`lens-open-btn bridge-topic-btn${mine ? " on" : ""}`}
@@ -85,6 +98,7 @@ export function BridgeTopicButton({ topic, name, t }: { topic: string; name: str
         <span className="beta-badge">BETA</span>
         {!settings && isNewFeature("bridge") && <span className="new-badge">{t("새기능")}</span>}
       </button>
+      )}
       {/* ?는 **PRTS 링크 버튼 바로 오른쪽**에 붙는 세그먼트다 — 리플레이 뒤에 두면 리플레이
           도움말처럼 보인다 (사용자 지적 2026-07-26) */}
       <button type="button" className="lens-help-btn bridge-help-btn" aria-label={t("PRTS 링크 도움말")}

@@ -2099,6 +2099,12 @@ const D: Record<string, Pair> = {
   // PRTS 링크 — 에뮬레이터·PC 클라이언트 창을 실시간으로 읽어 사이트가 따라가는 기능
   // (이름 확정 2026-07-26: 종전 '게임 연결'. PRTS는 로도스 아일랜드의 시스템 이름)
   "PRTS 링크": ["PRTS Link", "PRTSリンク"],
+  // 모바일에선 버튼을 남기되 비활성 + PC 전용 표기 (사용자 확정 2026-08-09)
+  "PC 전용": ["PC only", "PC専用"],
+  "PRTS 링크는 PC 브라우저에서만 사용할 수 있습니다": [
+    "PRTS Link is available only on PC browsers",
+    "PRTSリンクはPCブラウザでのみ利用できます",
+  ],
   "PRTS 링크 연결됨": ["PRTS Link on", "PRTSリンク接続中"],
   "PRTS 링크 끊기": ["Disconnect PRTS Link", "PRTSリンクを解除"],
   "PRTS 링크 도움말": ["PRTS Link help", "PRTSリンクのヘルプ"],
