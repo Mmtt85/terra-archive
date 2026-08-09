@@ -27,7 +27,14 @@ alter table public.changelog add constraint changelog_kind_check
 -- 모르면 'site'. **href가 없는 옛 행은 전부 site가 되므로 /admin에서 채워 주는 게 정확하다.**
 -- 사이트 조회는 select=* 라서 이 컬럼이 없어도 깨지지 않는다 — 다만 /admin 저장은 필요하다.
 alter table public.changelog add column if not exists area text
-  check (area is null or area in ('infra', 'archive', 'recruit', 'farm', 'upgrade', 'story', 'rogue', 'site'));
+  check (area is null or area in ('infra', 'archive', 'enemy', 'recruit', 'farm', 'upgrade', 'story', 'rogue', 'site'));
+
+-- ⚠ 영역을 새로 추가할 때는 **이미 만들어진 제약을 다시 걸어야** 한다 — 위 add column은
+-- 컬럼이 이미 있으면 통째로 건너뛰므로 check가 옛 목록 그대로 남는다 (2026-08-09 실측:
+-- '적 도감' 행 insert가 changelog_area_check 위반으로 거부됐다). 아래를 함께 돌릴 것.
+alter table public.changelog drop constraint if exists changelog_area_check;
+alter table public.changelog add constraint changelog_area_check
+  check (area is null or area in ('infra', 'archive', 'enemy', 'recruit', 'farm', 'upgrade', 'story', 'rogue', 'site'));
 
 create index if not exists changelog_released_idx on public.changelog (released_at desc, seq);
 

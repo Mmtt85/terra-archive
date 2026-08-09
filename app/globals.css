@@ -10618,13 +10618,14 @@ html.dark .pt-stage {
   /* 사용자 지정 배치 (2026-07-30): 1줄 인프라 통째, 2줄 통합전략 2칸 + 이벤트 1칸,
      나머지는 PORTAL_TILES 순서대로. 6열이라야 "2칸 : 1칸"이 정확히 떨어진다. */
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  grid-template-rows: 1.25fr 1.1fr 1fr 1fr 1fr;
+  grid-template-rows: 1.2fr 1.05fr 1fr 1fr 1fr 1fr;
   grid-template-areas:
     "terminal terminal terminal terminal terminal terminal"
     "squads   squads   squads   squads   banner   banner  "
     "base     base     operator operator enemy    enemy   "
-    "story    story    recruit  recruit  depot    depot   "
-    "mission  mission  archives archives friends  friends ";
+    "stage    stage    story    story    recruit  recruit "
+    "depot    depot    mission  mission  archives archives"
+    "friends  friends  friends  friends  friends  friends ";
 }
 .pt-tile {
   position: relative;
@@ -10898,10 +10899,10 @@ html.dark .pt-stage {
       "terminal terminal"
       "squads   banner  "
       "base     operator"
-      "enemy    story   "
-      "recruit  depot   "
-      "mission  archives"
-      "friends  friends ";
+      "enemy    stage   "
+      "story    recruit "
+      "depot    mission "
+      "archives friends ";
   }
   .pt-t-terminal .pt-ko { font-size: 19px; }
 }
@@ -16082,4 +16083,316 @@ main.site-main > .site-header {
   .en-file {
     padding: 14px 14px 20px;
   }
+}
+/* 적 도감 — 짧은 안내문(강화 스탯이 뭔지) */
+.en-note {
+  margin: 0 0 8px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+/* 강화된 스탯으로 나오는 작전 표시 */
+.en-stagegroup li.reinforced {
+  border-color: #b9862f;
+}
+.en-lv {
+  font-style: normal;
+  font-size: 10px;
+  color: #b9862f;
+}
+
+/* ── 작전 도감 (/stages) ────────────────────────────────────────────────────
+   지형 도면이 주인공이라 카드가 세로형이다 (적 도감의 가로형 카드와 다른 이유).
+   레이아웃 뼈대(.explorer/.filter-panel/.results)는 다른 도감과 공유한다. */
+.st-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
+  gap: 14px;
+}
+.st-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  background: var(--white);
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.16s, box-shadow 0.16s, border-color 0.16s;
+  /* 2,224장 그리드 — 화면 밖은 레이아웃·페인트를 건너뛴다 (오퍼·적 카드와 같은 처방).
+     실측 카드 높이 190~200px이라 자리높이를 196px로 잡는다. */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 232px auto 196px;
+}
+.st-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px #1f242518;
+  border-color: var(--border-strong);
+}
+.st-card:focus-visible {
+  outline: 3px solid var(--lime);
+  outline-offset: 2px;
+}
+.st-card-map {
+  aspect-ratio: 16 / 10;
+  background: #11161a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.st-card-map img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.st-card-nomap {
+  color: #47525a;
+  font-size: 20px;
+}
+.st-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px 10px;
+  min-width: 0;
+}
+.st-card-code {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.st-card-name {
+  font-size: 14px;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.st-card-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--muted);
+  min-width: 0;
+}
+.st-card-meta span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.st-card-meta em {
+  font-style: normal;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  white-space: nowrap;
+}
+
+/* ── 작전 상세 (모달 · 상세 페이지 공용) ───────────────────────────────────── */
+.st-file {
+  padding: 18px 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.st-head-main {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.st-code {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+.st-head-main h2 {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.2;
+}
+.st-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.st-tag {
+  font-size: 11px;
+  padding: 2px 8px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+/* 지형 도면 — 이 도감의 본체. 인게임 이미지와 격자 렌더가 섞여 있어 비율이 제각각이라
+   높이만 제한하고 원비율을 지킨다(늘리면 타일이 찌그러져 읽을 수가 없다). */
+.st-mapfig {
+  margin: 0;
+  background: #11161a;
+  border: 1px solid var(--line);
+  display: flex;
+  justify-content: center;
+}
+.st-mapfig img {
+  max-width: 100%;
+  max-height: 420px;
+  height: auto;
+  object-fit: contain;
+}
+.st-desc {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.7;
+  white-space: pre-line;
+}
+.st-note {
+  margin: 0 0 8px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.st-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+}
+.st-facts > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.st-facts dt {
+  font-size: 11px;
+  color: var(--muted);
+}
+.st-facts dd {
+  margin: 0;
+  font-size: 14px;
+}
+.st-block > h3 {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+.st-block > h3 em {
+  font-style: normal;
+  font-size: 12px;
+  color: var(--muted);
+}
+/* 등장 적 — 누르면 적 도감으로 넘어간다 */
+.st-enemies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.st-enemy {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px 4px 4px;
+  border: 1px solid var(--line);
+  color: inherit;
+  text-decoration: none;
+  font-size: 12px;
+  max-width: 100%;
+}
+.st-enemy:hover {
+  border-color: var(--border-strong);
+}
+.st-enemy.reinforced {
+  border-color: #b9862f;
+}
+.st-enemy img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  background: linear-gradient(150deg, #2a3236, #171c1f);
+}
+.st-enemy-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.st-enemy-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  color: var(--muted);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 11px;
+}
+.st-enemy-meta i {
+  font-style: normal;
+  color: #b9862f;
+}
+.st-drops {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.st-dropgroup h4 {
+  margin: 0 0 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.st-dropgroup ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.st-dropgroup li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px 3px 4px;
+  border: 1px solid var(--line);
+  font-size: 12px;
+}
+.st-dropgroup li img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+.st-dropgroup li em {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--muted);
+}
+.st-modal .st-file {
+  max-height: min(78vh, 780px);
+  overflow-y: auto;
+}
+@media (max-width: 620px) {
+  .st-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+  .st-file {
+    padding: 14px 14px 20px;
+  }
+  .st-mapfig img {
+    max-height: 260px;
+  }
+}
+/* 등장 작전 칸이 작전 도감으로 가는 링크가 됐다 (2026-08-09) */
+.en-stagegroup li > a {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  color: inherit;
+  text-decoration: none;
+  min-width: 0;
+}
+.en-stagegroup li:hover {
+  border-color: var(--border-strong);
 }

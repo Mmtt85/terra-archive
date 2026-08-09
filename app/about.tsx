@@ -28,6 +28,7 @@ const SHOTS: Partial<Record<Tab, ShotPair>> = {
   archive: { d: "/about/archive.webp", m: "/about/archive-m.webp" },
   planner: { d: "/about/planner.webp", m: "/about/planner-m.webp" },
   enemy: { d: "/about/enemy.webp", m: "/about/enemy-m.webp" },
+  stage: { d: "/about/stage.webp", m: "/about/stage-m.webp" },
   recruit: { d: "/about/recruit.webp", m: "/about/recruit-m.webp" },
   farm: { d: "/about/farm.webp", m: "/about/farm-m.webp" },
   upgrade: { d: "/about/upgrade.webp", m: "/about/upgrade-m.webp" },
@@ -131,6 +132,16 @@ const CONTENT: Record<Locale, Content> = {
           "레벨 강화 단계별 스탯을 나란히 비교 — 같은 적도 작전 난이도에 따라 수치가 다릅니다",
           "기절·침묵·빙결 등 상태이상 면역을 표시해 어떤 오퍼로 막을지 판단할 수 있습니다",
           "「이 적이 어디 나오더라」 — 등장 작전을 구역별로 묶어 스폰 수까지 보여줍니다",
+        ],
+      },
+      {
+        tab: "stage", icon: "▨", name: "작전 도감",
+        summary: "작전 2,200여 개의 지형 도면을 보고, 소모 이성·등장 적·드랍을 한 화면에서 확인합니다.",
+        bullets: [
+          "메인·막간·이벤트·섬멸·자원 확보·보안 파견을 계열과 구역으로 걸러 봅니다",
+          "인게임 지형 도면을 그대로 싣고, 없는 작전은 레벨 데이터의 타일 격자로 그려 채웁니다",
+          "등장 적을 눌러 바로 적 도감으로 — 강화 스탯으로 나오는 적은 ★로 구분합니다",
+          "게임에 표기된 드랍 빈도까지. 실측 드랍률·이성 효율은 재료파밍 도우미가 맡습니다",
         ],
       },
       {
@@ -241,6 +252,16 @@ const CONTENT: Record<Locale, Content> = {
         ],
       },
       {
+        tab: "stage", icon: "▨", name: "Stage Handbook",
+        summary: "Terrain layouts for 2,200+ operations, with sanity cost, enemies and drops on one screen.",
+        bullets: [
+          "Filter Main Theme, Intermezzi, events, Annihilation, supply and SSS by category and zone",
+          "In-game terrain images where they exist; where they don't, the tile grid is rendered from level data",
+          "Tap an enemy to jump straight to the Enemy Handbook — reinforced variants are marked with ★",
+          "In-game drop frequencies included. Measured rates and sanity efficiency live in the Material Farming Helper",
+        ],
+      },
+      {
         tab: "recruit", icon: "◎", name: "Public Recruitment Helper",
         summary: "Calculates which guaranteed or high-rarity operators a recruitment tag combination can yield.",
         bullets: [
@@ -345,6 +366,16 @@ const CONTENT: Record<Locale, Content> = {
           "強化段階ごとのステータスを並べて比較 — 同じ敵でも作戦の難易度で数値が変わります",
           "スタン・沈黙・凍結などの状態異常耐性を表示 — どの手段が通るか判断できます",
           "「この敵どこで見たっけ」— 出現作戦をエリア別にまとめ、湧き数まで表示します",
+        ],
+      },
+      {
+        tab: "stage", icon: "▨", name: "作戦図鑑",
+        summary: "2,200以上の作戦の地形図と、理性消費・出現する敵・ドロップを一画面で確認できます。",
+        bullets: [
+          "メインテーマ・幕間・イベント・殲滅作戦・資源調達・保全駐在を系統とエリアで絞り込み",
+          "ゲーム内の地形図をそのまま掲載し、無い作戦はレベルデータのタイル格子で描画します",
+          "敵を押せばそのまま敵図鑑へ — 強化ステータスで出現する敵は★で区別します",
+          "ゲーム内表記のドロップ頻度も掲載。実測ドロップ率・理性効率は素材周回ヘルパーが担当します",
         ],
       },
       {

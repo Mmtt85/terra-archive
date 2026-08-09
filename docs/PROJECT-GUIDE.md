@@ -29,6 +29,7 @@
 |---|---|---|
 | 오퍼 백과사전 | (기본) · 오퍼 모달 열면 `#op-<char_id>` | `app/home.tsx` (공용 루트) |
 | 적 도감 | `/enemies` · 적 모달 열면 `#en-<enemy_id>` | `app/enemies.tsx` + `app/enemy-detail.tsx` |
+| 작전 도감 | `/stages` · 작전 모달 열면 `#st-<stage_id>` | `app/stages.tsx` + `app/stage-detail.tsx` |
 | 인프라 플래너 | `#infra` | `app/planner.tsx` |
 | 공개채용 도우미 | `#recruit` | `app/recruit.tsx` |
 | 재료 파밍 효율표 | `#farm` | `app/farm.tsx` |
@@ -232,6 +233,12 @@ const { term, set, clear, inputRef, inputProps } = useSearchInput();
 - `app/data/enemy-stages.json` / `.en` / `.ja` — 등장 작전 역색인 (`stages` 배열의 위치가 곧 id).
   `--meta-only` 실행은 이 파일을 **건드리지 않는다** (무인 CI가 179MB 레벨 파일을 못 받으므로)
 - `app/data/enemy-names.json` — 만능검색용 경량 이름 색인 (1MB 본문을 안 끌어오게)
+- `app/data/stages.json` / `.en` / `.ja` — 작전 도감 (작전 **2,224개**의 지형 도면 보유 여부·
+  이성·보상·권장 편성·기믹 설명·드랍·등장 적). **사전 인코딩**이다 — 구역·아이템·적 id 같은
+  반복 값은 문서 위쪽 사전에 한 번만 두고 본문은 번호로 가리킨다 (그냥 늘어놓으면 3MB)
+- ⚠ **자산 폴더와 라우트 이름이 일부러 다르다**: `public/enemy/`·`public/stage/`(단수) ↔
+  `/enemies`·`/stages`(복수). `deploy.sh`가 자산만 떼어내 R2로 넘기기 때문 —
+  2026-08-08에 통합전략이 에셋과 페이지를 같은 폴더에 둬서 테마 6장을 매 배포마다 잃었다
 - `app/data/farm.json` — 재료 파밍 효율표 (재료 50종, 이름 3개 언어 인라인, 스테이지별 실측 드랍률·기대 이성) + `public/items/` 재료 아이콘
 
 ---

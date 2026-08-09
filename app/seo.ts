@@ -10,14 +10,14 @@ import { asset } from "./assets";
 export const SITE_URL = "https://terra-archive.net";
 
 type SeoLocale = "ko" | "en" | "ja";
-export type SeoTab = "portal" | "archive" | "enemy" | "planner" | "recruit" | "farm" | "upgrade" | "story" | "rogue" | "about";
+export type SeoTab = "portal" | "archive" | "enemy" | "stage" | "planner" | "recruit" | "farm" | "upgrade" | "story" | "rogue" | "about";
 
 // 탭 → URL 세그먼트 (portal이 로케일 루트, 오퍼 백과사전은 /operators로 분리 — 사용자 확정
 // 2026-07-17: 루트 진입 시 오퍼 이미지 강제 로딩을 없애기 위해 포탈 첫화면 도입). 라우트 폴더명과 반드시 일치.
 // ⚠ 적 도감 세그먼트는 "enemies"(복수) — 초상 자산 폴더 public/enemy/(단수)와 일부러 다르다.
 //    deploy.sh가 스테이징에서 `rm -rf $STAGE/enemy`로 자산만 떼어내기 때문(서빙은 R2).
 export const TAB_SEG: Record<SeoTab, string> = {
-  portal: "", archive: "operators", enemy: "enemies", planner: "infra", recruit: "recruit", farm: "farm", upgrade: "upgrade", story: "stories", rogue: "rogue", about: "about",
+  portal: "", archive: "operators", enemy: "enemies", stage: "stages", planner: "infra", recruit: "recruit", farm: "farm", upgrade: "upgrade", story: "stories", rogue: "rogue", about: "about",
 };
 
 // 로케일 베이스 경로
@@ -50,6 +50,11 @@ const TAB_META: Record<Exclude<SeoTab, "portal">, Record<SeoLocale, { title: str
     ko: { title: "적 도감 - 명일방주 적 정보 | 테라 아카이브", description: "명일방주(아크나이츠) 적 도감 — 적 1,500여 종의 스탯·능력·상태이상 면역·종족을 등급별로 찾고, 그 적이 등장하는 작전까지 역으로 확인합니다." },
     en: { title: "Enemy Handbook - Arknights Enemy Database | Terra Archive", description: "Arknights enemy handbook — stats, abilities, status immunities and races for 1,500+ enemies, plus the operations each one appears in." },
     ja: { title: "敵図鑑 - アークナイツ敵情報 | テラアーカイブ", description: "アークナイツの敵図鑑 — 1,500種以上の敵のステータス・能力・状態異常耐性・種族を等級別に検索し、その敵が出現する作戦も逆引きできます。" },
+  },
+  stage: {
+    ko: { title: "작전 도감 - 명일방주 스테이지 지형·드랍 | 테라 아카이브", description: "명일방주(아크나이츠) 작전 도감 — 스테이지 2,200여 개의 지형 도면과 소모 이성·권장 편성·등장 적·드랍을 계열과 구역으로 찾습니다." },
+    en: { title: "Stage Handbook - Arknights Stage Maps & Drops | Terra Archive", description: "Arknights stage handbook — terrain layouts for 2,200+ operations with sanity cost, recommended level, enemies and drops, searchable by category and zone." },
+    ja: { title: "作戦図鑑 - アークナイツ ステージ地形・ドロップ | テラアーカイブ", description: "アークナイツの作戦図鑑 — 2,200以上のステージの地形図と理性消費・推奨編成・出現する敵・ドロップを系統とエリアで検索できます。" },
   },
   planner: {
     ko: { title: "인프라 자동편성기 - 명일방주 기반시설 편성 | 테라 아카이브", description: "명일방주 기반시설(RIIC) 자동 편성 플래너 — 보유 오퍼레이터만 입력하면 제조소·무역소·발전소 편성을 자동으로 짜줍니다." },

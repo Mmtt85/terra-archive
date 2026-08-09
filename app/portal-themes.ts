@@ -44,6 +44,8 @@ export const PORTAL_TILES: PortalTile[] = [
     desc: "소속·직군·태그·시너지로 필터·검색하는 오퍼레이터 도감", icon: "▤" },
   { id: "enemy", label: "적 도감", tab: "enemy", area: "enemy", kind: "plate",
     desc: "적 1,500여 종의 스탯·능력·면역과 등장 작전", icon: "⊗" },
+  { id: "stage", label: "작전 도감", tab: "stage", area: "stage", kind: "plate",
+    desc: "작전 2,200여 개의 지형 도면과 등장 적·드랍", icon: "▨" },
   { id: "story", label: "스토리", tab: "story", area: "story", kind: "plate",
     desc: "이벤트 스토리를 AI 요약과 전문(풀 스크립트)으로", icon: "✦" },
   { id: "squads", label: "통합전략 가이드", tab: "rogue", area: "squads", kind: "plate",

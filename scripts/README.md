@@ -61,6 +61,10 @@ node scripts/verify-stories.mjs               # 스토리 전수 렌더 검증 �
 python3 scripts/build-storylines.py .gamedata # → app/data/storylines.json (테마별 뷰 시계열 — stage_table storylines가 정본, 괄호=guest 참조)
 python3 scripts/build-recruit.py .gamedata    # → app/data/recruit.json (공채 태그 31종 + 모집 풀)
 python3 scripts/build-enemies.py .gamedata     # → app/data/enemies{,.en,.ja}.json + enemy-stages* + public/enemy/ (3개 언어 동시)
+python3 scripts/build-stages.py .gamedata      # → app/data/stages{,.en,.ja}.json + public/stage/ (3개 언어 동시)
+#   ⚠ **build-enemies.py를 먼저** 돌려야 한다 — 등장 적은 그 산출물(enemy-stages.json)을
+#     뒤집어 쓴다(같은 levels/ 파일을 두 번 훑지 않으려고). 인자 없이 돌리면 지형 도면
+#     2,224장을 받고(약 5~10분), 인게임 도면이 없는 작전은 레벨 타일 격자로 렌더한다.
 #   ⚠ 인자 없이 돌리면 levels/ 2,283개(179MB)를 받아 '등장 작전'을 역색인한다 (약 1분).
 #     CI는 --meta-only --no-images로 돌아 그 둘을 건너뛰므로, 새 이벤트의 등장 적과
 #     신규 적 초상은 **로컬 전체 실행**으로만 갱신된다 (docs/AUTOMATION.md 1-B).

@@ -25,6 +25,7 @@ const SHOTS = [
   { name: "planner", path: "/infra" },
   { name: "archive", path: "/operators" },
   { name: "enemy", path: "/enemies" },
+  { name: "stage", path: "/stages" },
   { name: "recruit", path: "/recruit" },
   { name: "farm", path: "/farm" },
   { name: "upgrade", path: "/upgrade?ops=char_113_cqbw,char_456_ash" },

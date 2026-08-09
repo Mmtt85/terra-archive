@@ -103,6 +103,10 @@ run "build-skins-meta"   python3 scripts/build-skins.py "$G" --meta-only
 #   그래서 CI는 도감 본문만 갱신하고, **새 이벤트 스테이지의 등장 적과 신규 적 초상은
 #   로컬에서 `python3 scripts/build-enemies.py`(전체)를 한 번 돌려야 반영된다.**
 run "build-enemies"      python3 scripts/build-enemies.py "$G" --meta-only --no-images
+# ⚠ build-stages도 **--no-images** — 지형 도면 2,224장(약 90MB)은 git에 없고 R2가 서빙한다.
+#   등장 적은 build-enemies가 만든 enemy-stages.json을 뒤집어 쓰므로 **반드시 그 뒤에** 온다.
+#   새 이벤트의 도면은 로컬에서 `python3 scripts/build-stages.py`(전체)를 돌려야 받는다.
+run "build-stages"       python3 scripts/build-stages.py "$G" --no-images
 
 # 8) 오퍼 지연 에셋 전수 검사 (사용자 요청 2026-08-02) — 데이터가 번들(배포)과 R2(동기화)
 # 두 경로로 나가는데 한쪽만 돌면 반쪽이 된다. 2026-08-01에 R2 키가 없어 아바타가 안 올라갔고

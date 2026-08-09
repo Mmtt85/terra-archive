@@ -11,7 +11,10 @@
 //   여기에 데이터 임포트를 추가하면 그 순간 모든 페이지의 첫 번들이 1MB 늘어난다.
 
 import { useI18n } from "./i18n";
-import { asset } from "./assets";
+import { enemyImg, enemyImgBase, enemyPath, enemyListPath, stageListPath } from "./dex-paths";
+
+// 다른 모듈이 종전처럼 여기서 가져다 쓰던 것들 — 정본은 app/dex-paths.ts다
+export { enemyImg, enemyImgBase, enemyPath, enemyListPath };
 
 /** scripts/build-enemies.py 산출물 한 마리. 필드 설명은 그 스크립트 헤더 참조. */
 export type EnemyLevel = {
@@ -24,20 +27,13 @@ export type Enemy = {
   way: string | null; motion: string | null; rng?: number; link?: string[];
   lv: EnemyLevel[];
 };
-/** 등장 작전 역색인 — stages[i] = [코드, 이름, 구역, 스테이지종류] */
-export type EnemyStages = { stages: [string, string, string, string][]; byEnemy: Record<string, number[][]> };
+/** 등장 작전 역색인 — stages[i] = [코드, 이름, 구역, 스테이지종류, stageId] */
+// byEnemy[id] = [작전번호, 스폰수?, 스탯레벨?] — 뒤 칸은 0이면 생략된다
+export type EnemyStages = { stages: [string, string, string, string, string][]; byEnemy: Record<string, number[][]> };
 
 /** 등급 표시 — i18n 사전 키(한국어)로 준다 */
 export const RANK_KEY: Record<string, string> = { NORMAL: "일반", ELITE: "정예", BOSS: "보스" };
-/** 초상 경로. 변종(_2 등)은 원본 id 이미지로 폴백한다 (build-enemies.py와 같은 규약) */
-export const enemyImg = (id: string) => asset(`/enemy/${id}.webp`);
-export const enemyImgBase = (id: string) => asset(`/enemy/${id.replace(/_\d+$/, "")}.webp`);
 
-/** 적 상세 URL — 로케일별 접두. app/seo-enemy.ts의 urlOf와 같은 규칙이어야 한다. */
-export function enemyPath(locale: string, id: string) {
-  return `${locale === "ko" ? "" : `/${locale}`}/enemies/${id}`;
-}
-export const enemyListPath = (locale: string) => `${locale === "ko" ? "" : `/${locale}`}/enemies`;
 
 const fmt = (n: number) => (Number.isInteger(n) ? String(n) : String(Math.round(n * 100) / 100));
 
@@ -90,32 +86,38 @@ function StatTable({ levels }: { levels: EnemyLevel[] }) {
 
 /** 등장 작전 — 구역별로 묶어서. stagesDoc이 아직 안 왔으면 아무것도 그리지 않는다. */
 function Appearances({ enemy, doc }: { enemy: Enemy; doc: EnemyStages | null }) {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const refs = doc?.byEnemy[enemy.id];
   if (!doc || !refs || !refs.length) return null;
   // 역색인은 이미 메인→막간→섬멸→자원→보안파견→이벤트 순으로 쌓여 있다
   // (build-enemies.py의 TYPE_ORDER) — 여기서 다시 정렬하지 않고 구역 경계만 나눈다.
-  const groups: { zone: string; items: { code: string; name: string; cnt: number }[] }[] = [];
-  for (const [i, cnt] of refs.map((r) => [r[0], r[1] ?? 0] as const)) {
-    const s = doc.stages[i];
+  const groups: { zone: string; items: { code: string; name: string; cnt: number; lv: number; sid: string }[] }[] = [];
+  for (const r of refs) {
+    const s = doc.stages[r[0]];
     if (!s) continue;
     const last = groups[groups.length - 1];
-    const item = { code: s[0], name: s[1], cnt };
+    const item = { code: s[0], name: s[1], cnt: r[1] ?? 0, lv: r[2] ?? 0, sid: s[4] };
     if (last && last.zone === s[2]) last.items.push(item);
     else groups.push({ zone: s[2], items: [item] });
   }
+  const reinforced = groups.some((g) => g.items.some((it) => it.lv > 0));
   return (
     <section className="en-block">
       <h3><span className="section-no">STAGES</span>{t("등장 작전")} <em>{refs.length}</em></h3>
+      {reinforced && <p className="en-note">{t("★ 표시는 강화된 스탯으로 나오는 작전입니다.")}</p>}
       <div className="en-stagelist">
         {groups.map((g, gi) => (
           <div className="en-stagegroup" key={`${g.zone}-${gi}`}>
             <h4>{g.zone}</h4>
             <ul>
               {g.items.map((it, ii) => (
-                <li key={`${it.code}-${ii}`}>
-                  <b>{it.code}</b><span>{it.name}</span>
-                  {it.cnt > 0 && <em>×{it.cnt}</em>}
+                <li key={`${it.code}-${ii}`} className={it.lv > 0 ? "reinforced" : undefined}>
+                  {/* 작전 도감으로 — 상세 라우트가 없는 이벤트 작전도 있어 **목록 + 해시**로 연다 */}
+                  <a href={`${stageListPath(locale)}#st-${it.sid}`}>
+                    {it.lv > 0 && <i className="en-lv" aria-hidden title={t("강화 {n}단계", { n: String(it.lv) })}>★</i>}
+                    <b>{it.code}</b><span>{it.name}</span>
+                    {it.cnt > 0 && <em>×{it.cnt}</em>}
+                  </a>
                 </li>
               ))}
             </ul>
@@ -179,6 +181,9 @@ export function EnemyFile({ enemy, stagesDoc, nameOf, onOpenEnemy }: {
 
       <section className="en-block">
         <h3><span className="section-no">STAT</span>{t("스탯")}</h3>
+        {enemy.lv.length > 1 && (
+          <p className="en-note">{t("같은 적이라도 작전에 따라 더 강한 스탯으로 나옵니다 — 아래는 그 단계별 수치입니다.")}</p>
+        )}
         <StatTable levels={enemy.lv} />
       </section>
 

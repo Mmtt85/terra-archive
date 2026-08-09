@@ -34,6 +34,7 @@ TAB_META = {
     "portal":  ("DATA PORTAL",           "aperture"),
     "archive": ("OPERATOR DATABASE",     "cards"),
     "enemy":   ("ENEMY HANDBOOK",        "target"),
+    "stage":   ("STAGE HANDBOOK",        "tiles"),
     "planner": ("INFRA AUTO-PLANNER",    "grid"),
     "recruit": ("RECRUIT CALCULATOR",    "tags"),
     "farm":    ("FARMING EFFICIENCY",    "hex"),
@@ -54,6 +55,9 @@ SUBLINE = {
     "enemy":   {"ko": "적 1,500여 종의 스탯·능력·면역과 등장 작전.",
                 "en": "Stats, abilities & appearances for 1,500+ enemies.",
                 "ja": "1,500種以上の敵のステータス・能力・出現作戦。"},
+    "stage":   {"ko": "작전 2,200여 개의 지형 도면과 등장 적·드랍.",
+                "en": "Terrain layouts, enemies & drops for 2,200+ stages.",
+                "ja": "2,200以上の作戦の地形図と出現する敵・ドロップ。"},
     "planner": {"ko": "보유 오퍼만 입력하면 최적 인프라 편성 자동 완성.",
                 "en": "Enter your roster — get the optimal base layout.",
                 "ja": "手持ちを入力するだけで最適な基地編成。"},
@@ -195,6 +199,21 @@ def icon(d, kind, cx, cy, s):
         d.line([(ox + 20, base - heights[0] - 20), (ax, ay)], fill=col, width=3)
         d.line([(ax, ay), (ax - 22, ay + 6)], fill=col, width=3)
         d.line([(ax, ay), (ax - 4, ay + 24)], fill=col, width=3)
+    elif kind == "tiles":
+        # 전장 타일 격자 — 진입로(빨강 자리)와 목표를 흉내 낸 3×5 판
+        cw, ch, gap = 44, 34, 8
+        cols, rows = 5, 3
+        ox = cx - (cols * cw + (cols - 1) * gap) // 2
+        oy = cy - (rows * ch + (rows - 1) * gap) // 2
+        for r in range(rows):
+            for c in range(cols):
+                x0 = ox + c * (cw + gap)
+                y0 = oy + r * (ch + gap)
+                edge = col if (c == 0 and r == 1) or (c == cols - 1 and r == 1) else sub
+                d.rectangle([x0, y0, x0 + cw, y0 + ch], outline=edge, width=3 if edge is col else 2)
+        # 진입 → 목표 경로
+        d.line([(ox - 16, oy + ch + gap + ch // 2), (ox + cols * (cw + gap) - gap + 16, oy + ch + gap + ch // 2)],
+               fill=col, width=2)
     elif kind == "target":
         # 조준환 + 십자선 + 가운데 마름모 (탭 아이콘 ⊗와 같은 계열)
         d.ellipse([cx - s, cy - s, cx + s, cy + s], outline=col, width=3)

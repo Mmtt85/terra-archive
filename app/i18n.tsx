@@ -1416,12 +1416,39 @@ const D: Record<string, Pair> = {
   "등장 작전": ["Appears in", "出現作戦"],
   "기본형": ["Base", "基本"],
   "강화 {n}단계": ["Tier {n}", "強化{n}段階"],
+  "★ 표시는 강화된 스탯으로 나오는 작전입니다.": ["★ marks operations where it appears with reinforced stats.", "★ は強化されたステータスで出現する作戦です。"],
+  "같은 적이라도 작전에 따라 더 강한 스탯으로 나옵니다 — 아래는 그 단계별 수치입니다.": ["The same enemy appears with stronger stats in some operations — the tiers below are those variants.", "同じ敵でも作戦によって強いステータスで出現します — 以下はその段階ごとの数値です。"],
   "이동 속도": ["Move speed", "移動速度"],
   "중량": ["Weight", "重量"],
   "라이프 감소": ["Life cost", "ライフ減少"],
   "적 도감 - 명일방주 적 정보 | 테라 아카이브": ["Enemy Handbook - Arknights Enemy Database | Terra Archive", "敵図鑑 - アークナイツ敵情報 | テラアーカイブ"],
   "{name} - 명일방주 적 도감 | 테라 아카이브": ["{name} - Arknights Enemy | Terra Archive", "{name} - アークナイツ 敵図鑑 | テラアーカイブ"],
   "적 1,500여 종의 스탯·능력·면역과 등장 작전을 한 곳에": ["Stats, abilities, immunities and appearances for 1,500+ enemies", "1,500種以上の敵のステータス・能力・耐性と出現作戦を一箇所に"],
+
+
+  // ── 작전 도감 (/stages) ────────────────────────────────────────────────────
+  // 구역명·드랍 빈도·계열명 같은 **데이터 값**은 여기서 번역하지 않는다 —
+  // scripts/build-stages.py가 로케일 테이블로 이미 현지어를 넣어 준다.
+  // ⚠ "구역"·"이성 {n}"·"용문폐"는 이미 사전에 같은 뜻으로 있다 — 다시 넣으면 마지막
+  //   정의가 이겨 다른 화면 문구까지 바뀐다 (적 도감 때 실제로 밟았다). 기존 항목을 쓴다.
+  "작전 도감": ["Stage Handbook", "作戦図鑑"],
+  "작전 목록으로": ["Back to stages", "作戦一覧へ"],
+  "전체 작전": ["All stages", "作戦一覧"],
+  "조건에 맞는 작전이 없어요.": ["No stage matches these filters.", "条件に合う作戦がありません。"],
+  "작전 코드, 이름, 구역 검색": ["Search code, name, zone", "コード・名前・エリアで検索"],
+  "작전 계열": ["Category", "系統"],
+  "소모 이성": ["Sanity cost", "理性消費"],
+  "작전 경험치": ["EXP", "作戦経験値"],
+  "권장 편성": ["Recommended", "推奨編成"],
+  "등장 적": ["Enemies", "出現する敵"],
+  "드랍": ["Drops", "ドロップ"],
+  "{code} 지형 도면": ["{code} terrain layout", "{code} 地形図"],
+  "이 작전은 지형 도면이 제공되지 않습니다.": ["No terrain layout is available for this operation.", "この作戦の地形図は提供されていません。"],
+  "★ 표시는 강화된 스탯으로 나오는 적입니다.": ["★ marks enemies that appear with reinforced stats.", "★ は強化されたステータスで出現する敵です。"],
+  "게임에 표기된 빈도입니다. 실측 드랍률과 이성 효율은 재료파밍 도우미에서 봅니다.": ["These are the in-game frequency labels. For measured drop rates and sanity efficiency, see the Material Farming Helper.", "ゲーム内表記の頻度です。実測ドロップ率と理性効率は素材周回ヘルパーで確認できます。"],
+  "작전 도감 - 명일방주 스테이지 지형·드랍 | 테라 아카이브": ["Stage Handbook - Arknights Stage Maps & Drops | Terra Archive", "作戦図鑑 - アークナイツ ステージ地形・ドロップ | テラアーカイブ"],
+  "{code} {name} - 명일방주 작전 | 테라 아카이브": ["{code} {name} - Arknights Stage | Terra Archive", "{code} {name} - アークナイツ 作戦 | テラアーカイブ"],
+  "작전 2,200여 개의 지형 도면과 등장 적·드랍": ["Terrain layouts, enemies and drops for 2,200+ stages", "2,200以上の作戦の地形図と出現する敵・ドロップ"],
 
   // ── 공개채용 도우미 ────────────────────────────────────────────────────────────
   "공개모집 도우미": ["Recruitment helper", "公開求人ヘルパー"],

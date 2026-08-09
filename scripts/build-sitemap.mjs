@@ -38,6 +38,7 @@ const SEG_SOURCES = {
   "": ["app/data/operators.json", "app/data/broadcasts.json"], // 포탈 = 허브(진행 이벤트·오퍼)
   operators: ["app/data/operators.json"],
   enemies: ["app/data/enemies.json", "app/data/enemy-stages.json"],
+  stages: ["app/data/stages.json"],
   infra: ["app/data/infra.json", "app/data/rules.json"],
   recruit: ["app/data/recruit.json"],
   farm: ["app/data/farm.json"],
@@ -49,7 +50,7 @@ const SEG_SOURCES = {
 function lastmodFor(seg) {
   let latest = null;
   // 스토리 상세(stories/<id>)는 목록과 같은 데이터에서 나오므로 같은 소스를 본다
-  const key = seg.startsWith("stories/") ? "stories" : seg.startsWith("operators/") ? "operators" : seg.startsWith("enemies/") ? "enemies" : seg.startsWith("rogue/") ? "rogue" : seg;
+  const key = seg.startsWith("stories/") ? "stories" : seg.startsWith("operators/") ? "operators" : seg.startsWith("enemies/") ? "enemies" : seg.startsWith("stages/") ? "stages" : seg.startsWith("rogue/") ? "rogue" : seg;
   for (const file of SEG_SOURCES[key] ?? []) {
     try {
       const iso = execFileSync("git", ["log", "-1", "--format=%cI", "--", file], { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
@@ -85,12 +86,19 @@ function operatorIds() {
 function enemyIds() {
   return JSON.parse(readFileSync(join(ROOT, "app/data/enemies.json"), "utf8")).map((e) => e.id);
 }
+// /stages/[id] — **상시 콘텐츠만** (app/seo-stage.ts stageIds와 같은 목록).
+// 종료된 이벤트까지 펼치면 3개 언어로 13,000파일이라 Cloudflare Pages 20,000 한도를 넘는다.
+function stageIds() {
+  const PAGE_TYPES = new Set(["MAIN", "SUB", "SPECIAL_STORY", "CAMPAIGN", "DAILY", "CLIMB_TOWER"]);
+  const doc = JSON.parse(readFileSync(join(ROOT, "app/data/stages.json"), "utf8"));
+  return doc.stages.filter((s) => PAGE_TYPES.has(s.t)).map((s) => s.id);
+}
 // 통합전략 테마 6종 — /rogue/<slug> (app/seo-rogue.ts rogueSlugs와 같은 목록)
 function rogueSlugs() {
   const idx = JSON.parse(readFileSync(join(ROOT, "app/data/rogue-index.json"), "utf8"));
   return Object.keys(idx).map((id) => `is${id.split("_")[1]}`);
 }
-const DYNAMIC = { "stories/[id]": storyIds, "operators/[id]": operatorIds, "enemies/[id]": enemyIds, "rogue/[slug]": rogueSlugs };
+const DYNAMIC = { "stories/[id]": storyIds, "operators/[id]": operatorIds, "enemies/[id]": enemyIds, "stages/[id]": stageIds, "rogue/[slug]": rogueSlugs };
 
 // 라우트 → { locale, seg } (seg="" = 포탈 루트)
 function parseRoute(route) {

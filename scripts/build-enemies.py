@@ -291,10 +291,12 @@ else:
             return None
         counts = {}
         order = []
+        level_of = {}   # 그 스테이지가 쓰는 스탯 변형 (0=기본형, 1~=강화판)
         for ref in lv.get("enemyDbRefs") or []:
             key = ref.get("id")
             if key and key not in counts:
                 counts[key] = 0
+                level_of[key] = ref.get("level", 0) or 0
                 order.append(key)
 
         def tally(actions):
@@ -307,7 +309,7 @@ else:
         for b in (lv.get("branches") or {}).values():
             for ph in b.get("phases") or []:
                 tally(ph.get("actions"))
-        return [(k, counts.get(k, 0)) for k in order]
+        return [(k, counts.get(k, 0), level_of.get(k, 0)) for k in order]
 
     done = [0]
     def work(lid):
@@ -335,27 +337,34 @@ else:
             ents = level_enemies.get(lid)
             if not ents:
                 continue
-            ents = [(k, c) for k, c in ents if k in visible]
+            ents = [e for e in ents if e[0] in visible]
             if not ents:
                 continue
             st = table.get(sid) or kst
             row = [clean(st.get("code")) or sid, clean(st.get("name")) or "",
                    zone_name(loc, st.get("zoneId") or kst.get("zoneId"), kst.get("stageType")),
-                   kst.get("stageType")]
+                   kst.get("stageType"),
+                   # 작전 도감으로 넘어가는 열쇠. 상세 라우트가 없는 이벤트 작전도 있으므로
+                   # 화면에서는 목록 + 해시(#st-<id>)로 연다 (app/stage-detail.tsx 참조).
+                   sid]
             # 화면에 똑같이 보이는 작전은 한 줄로 접는다 — 복각 상설판처럼 levelId만 다르고
             # 코드·이름·구역이 같은 스테이지가 196쌍 있다 (실측). 스폰 수는 큰 쪽을 남긴다.
-            key = tuple(row)
+            # ⚠ 접는 기준에 stageId를 넣으면 안 된다 — 넣는 순간 안 접혀 중복이 되살아난다
+            #   (2026-08-09 실측 1,800 → 1,996행). id는 링크용으로 싣기만 한다(첫 것 채택).
+            key = tuple(row[:4])
             idx = row_of.get(key)
             if idx is None:
                 idx = row_of[key] = len(rows)
                 rows.append(row)
-            for k, c in ents:
+            for k, c, el in ents:
                 lst = by_enemy.setdefault(k, [])
+                # [작전번호, 스폰수, 스탯레벨] — 뒤 칸은 0이면 통째로 생략해 파일을 줄인다
+                row_e = [idx, c, el] if el else ([idx, c] if c else [idx])
                 prev = next((x for x in lst if x[0] == idx), None)
                 if prev is None:
-                    lst.append([idx, c] if c else [idx])
+                    lst.append(row_e)
                 elif c > (prev[1] if len(prev) > 1 else 0):
-                    prev[:] = [idx, c]
+                    prev[:] = row_e
         p = os.path.join(DATA, f"enemy-stages{suf}.json")
         json.dump({"stages": rows, "byEnemy": by_enemy}, open(p, "w", encoding="utf-8"),
                   ensure_ascii=False, separators=(",", ":"))
