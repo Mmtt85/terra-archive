@@ -19,7 +19,7 @@
   .gamedata/{kr,en,jp}_stage_table.json / _zone_table.json / _item_table.json
   app/data/enemy-stages.json (+ .en/.ja)       등장 적 역색인 (build-enemies.py 산출물)
 """
-import json, os, re, sys, urllib.error, urllib.request
+import json, os, re, sys, time, urllib.error, urllib.parse, urllib.request
 from concurrent.futures import ThreadPoolExecutor
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -127,6 +127,20 @@ def event_name(loc, zid):
 CHAPTER_RE = re.compile(r"EPISODE\s*(\d+)", re.I)
 
 
+def _chapter_label(loc, n):
+    """15·16장은 세 로케일 모두 first가 미번역이라 'EPISODE 15'가 그대로 노출됐다
+    (사용자 지적 2026-08-10) — 기존 챕터들과 같은 표기로 합성한다.
+    ⚠ build-enemies.py에도 같은 함수가 있다 — zone_name처럼 글자까지 같아야 한다."""
+    if loc == "ko":
+        return f"에피소드 {n}"
+    if loc == "ja":                      # ja는 한자 수사다: 第十五章 (第15章이 아니다)
+        d = "一二三四五六七八九"
+        tens, ones = divmod(n, 10)
+        num = ("" if tens < 2 else d[tens - 1]) + ("十" if tens else "") + (d[ones - 1] if ones else "")
+        return f"第{num}章"
+    return f"Episode {n}"
+
+
 def _localized_first(zid):
     """zoneNameFirst가 로케일마다 다르면(=진짜 챕터 라벨) True."""
     vals = {clean((zones[loc].get(zid) or {}).get("zoneNameFirst")) for loc in ("ko", "en", "ja")}
@@ -211,8 +225,10 @@ def zone_name(loc, zid, stype):
     # 메인 스토리는 챕터 표기를 앞에 붙인다 (사용자 요청). 로케일마다 다른 first가
     # 진짜 챕터 라벨이고(에피소드 3 / Episode 3 / 第三章), 아니면 third('EPISODE 15')를 쓴다.
     head = clean(z.get("zoneNameFirst")) if _localized_first(zid) else None
-    if not head and third and CHAPTER_RE.search(third):
-        head = third
+    if not head and third:
+        m = CHAPTER_RE.search(third)
+        if m:
+            head = _chapter_label(loc, int(m.group(1)))
     if head and second and head != second:
         return f"{head} · {second}"
     n = second or head or third
@@ -362,9 +378,91 @@ else:
             continue
     have = {f[:-5] for f in os.listdir(dest_dir) if f.endswith(".webp")}
     print(f"도면: 격자 렌더 {drawn}장 → 보유 {len(have)}/{len(stages)}")
+
+    # ── 폴백 2: 팬위키 도면 (사용자 요청 2026-08-10 "안 나오는 것 전부 찾아라") ──────
+    # 옛 이벤트(스토리 콜렉션·보스러시·연합작전 등)는 인게임 미리보기도 레벨 파일도
+    # 현행 kr/cn 레포에서 지워져 위 두 경로가 다 막힌다(181개 실측). 위키에서 받는다 —
+    # 받은 파일은 로컬 public/stage/에 남으므로 재실행 때 위키를 다시 두드리지 않는다.
+    #   ① arknights.wiki.gg — images/<코드>_map.png (2단계 보스전은 _map_1.png)
+    #   ② prts.wiki — 코드가 시즌마다 재사용되는 것(보스러시 TN-* 등)은 CN 스테이지명
+    #      으로만 구분된다: api.php에서 '<코드>_<CN이름>' 접두로 찾아 地图(WAVE1 우선)를
+    #      고른다. ⚠ prts.wiki는 **api.php·media만 빠르다** — /w/ 페이지 렌더는 이
+    #      환경에서 60초+ 걸리므로 절대 페이지를 긁지 말 것 (2026-08-10 실측).
+    pend = [kv for kv in stages if kv["stageId"] not in have]
+    wiki_n = prts_n = 0
+    if pend:
+        cn_names = {}
+        try:
+            cn_path = os.path.join(S, "cn_stage_table.json")
+            if not os.path.exists(cn_path):
+                req = urllib.request.Request(
+                    "https://raw.githubusercontent.com/ArknightsAssets/ArknightsGamedata/master/cn/gamedata/excel/stage_table.json",
+                    headers={"User-Agent": "Mozilla/5.0"})
+                with open(cn_path, "wb") as f:
+                    f.write(urllib.request.urlopen(req, timeout=180).read())
+            cn_names = {k: clean(v.get("name")) for k, v in load(cn_path)["stages"].items()}
+        except Exception as err:
+            print(f"  ⚠ CN 스테이지명 로드 실패 — prts 폴백 생략: {err}")
+
+        def wfetch(url):
+            # ⚠ media.prts.wiki는 IP 라운드로빈 중 일부가 이 망에서 SYN조차 안 잡힌다
+            #   (2026-08-10 실측: SYN_SENT로 60초씩 매달려 전체가 40분+ 늘어짐).
+            #   짧은 타임아웃 + 재시도로 다른 IP를 다시 뽑는 쪽이 훨씬 빠르다.
+            last = None
+            for _ in range(2):
+                try:
+                    req = urllib.request.Request(url, headers={"User-Agent": "terra-archive-fetch (fansite; contact nzkonaru@gmail.com)"})
+                    return urllib.request.urlopen(req, timeout=15).read()
+                except Exception as err:
+                    last = err
+            raise last
+
+        def one_wiki(kv):
+            sid, code = kv["stageId"], clean(kv.get("code") or "")
+            if not code:
+                return (0, 0)
+            got, src = None, 0
+            for cand in (f"{code}_map.png", f"{code}_map_1.png"):
+                try:
+                    got = wfetch("https://arknights.wiki.gg/images/" + urllib.parse.quote(cand))
+                    src = 1
+                    break
+                except Exception:
+                    continue
+            if got is None and cn_names.get(sid):
+                try:
+                    pre = urllib.parse.quote(f"{code}_{cn_names[sid]}")
+                    api = wfetch("https://prts.wiki/api.php?action=query&list=allimages"
+                                 f"&aiprefix={pre}&ailimit=50&format=json")
+                    imgs = json.loads(api).get("query", {}).get("allimages", [])
+                    best = (next((i for i in imgs if "地图" in i["name"] and "WAVE1" in i["name"]), None)
+                            or next((i for i in imgs if "地图" in i["name"]), None))
+                    if best:
+                        got = wfetch(best["url"])
+                        src = 2
+                except Exception:
+                    pass
+            if not got:
+                return (0, 0)
+            try:
+                save_webp(got, os.path.join(dest_dir, sid + ".webp"), photo=True, max_px=640, method=4)
+            except Exception:
+                return (0, 0)
+            time.sleep(0.1)   # 팬위키에 예의 — 4갈래면 이 정도가 적정 부하다
+            return (1, 0) if src == 1 else (0, 1)
+
+        # 4갈래 병렬 — prts 미디어가 장당 15~30초라 순차로는 181장에 수십 분이 걸렸다
+        print(f"도면: 위키 폴백 {len(pend)}장 시도 중…")
+        with ThreadPoolExecutor(4) as ex:
+            results = list(ex.map(one_wiki, pend))
+        wiki_n = sum(a for a, _ in results)
+        prts_n = sum(b for _, b in results)
+        print(f"도면: 위키 폴백 wiki.gg {wiki_n} · prts {prts_n}")
+
+    have = {f[:-5] for f in os.listdir(dest_dir) if f.endswith(".webp")}
     still = [kv["stageId"] for kv in stages if kv["stageId"] not in have]
     if still:
-        print(f"  ⚠ 끝내 도면 없음 {len(still)}개 (레벨 파일도 없는 삭제 작전): {still[:6]}")
+        print(f"  ⚠ 끝내 도면 없음 {len(still)}개: {still[:8]}")
 
 for doc in by_loc.values():
     for e in doc["stages"]:

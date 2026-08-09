@@ -331,8 +331,22 @@ else:
     #   그래서 "로케일마다 다른가"로 판정한다 — 진짜 챕터 라벨은 ko '에피소드 3' ·
     #   en 'Episode 3' · ja '第三章'로 갈리지만, 영어 제목은 어느 로케일에서든 같다.
     CHAPTER_RE = re.compile(r"EPISODE\s*(\d+)", re.I)
-    
-    
+
+
+    def _chapter_label(loc, n):
+        """15·16장은 세 로케일 모두 first가 미번역이라 'EPISODE 15'가 그대로 노출됐다
+        (사용자 지적 2026-08-10) — 기존 챕터들과 같은 표기로 합성한다.
+        ⚠ build-stages.py에도 같은 함수가 있다 — zone_name처럼 글자까지 같아야 한다."""
+        if loc == "ko":
+            return f"에피소드 {n}"
+        if loc == "ja":                  # ja는 한자 수사다: 第十五章 (第15章이 아니다)
+            d = "一二三四五六七八九"
+            tens, ones = divmod(n, 10)
+            num = ("" if tens < 2 else d[tens - 1]) + ("十" if tens else "") + (d[ones - 1] if ones else "")
+            return f"第{num}章"
+        return f"Episode {n}"
+
+
     def _localized_first(zid):
         """zoneNameFirst가 로케일마다 다르면(=진짜 챕터 라벨) True."""
         vals = {clean((zone_tables[loc].get(zid) or {}).get("zoneNameFirst")) for loc in ("ko", "en", "ja")}
@@ -361,8 +375,10 @@ else:
         # 메인 스토리는 챕터 표기를 앞에 붙인다 (사용자 요청). 로케일마다 다른 first가
         # 진짜 챕터 라벨이고(에피소드 3 / Episode 3 / 第三章), 아니면 third('EPISODE 15')를 쓴다.
         head = clean(z.get("zoneNameFirst")) if _localized_first(zid) else None
-        if not head and third and CHAPTER_RE.search(third):
-            head = third
+        if not head and third:
+            m = CHAPTER_RE.search(third)
+            if m:
+                head = _chapter_label(loc, int(m.group(1)))
         if head and second and head != second:
             return f"{head} · {second}"
         n = second or head or third
