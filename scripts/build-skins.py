@@ -22,6 +22,7 @@ Usage: python3 scripts/build-skins.py [gamedata-dir]   # default: .gamedata
 """
 import concurrent.futures as cf
 import json
+from collections import Counter
 import os
 import shutil
 import sys
@@ -85,11 +86,75 @@ def clean(s):
 ILLUST_STAGE = {"ILLUST_0": "기본 일러", "ILLUST_1": "1정 일러", "ILLUST_2": "2정 일러", "ILLUST_3": "3정 일러"}
 
 
-def entry(skin_id, base, localized):
+# 기본 복장의 이름·설명문은 **모든 오퍼가 똑같이 쓰는 정형문**이다 (ILLUST_0 = "평소에
+# 가장 자주 입는 복장", ILLUST_2 = "정예화 후 조정된 복장"). CN 폴백으로 채운 미실장 오퍼는
+# 로케일 테이블에 그 스킨 id가 없어 중국어 원문("默认服装", "干员平时最常穿着的服装。")이
+# 그대로 나오는데, 같은 정형문을 **로케일 테이블의 아무 기본 복장 항목에서 빌려오면**
+# 번역 없이 정확한 문구가 된다 (2026-08-09). 오퍼별로 다른 값(일러스트레이터·초상 id)은
+# 당연히 CN 원본 것을 그대로 쓴다.
+def default_skin_texts(table):
+    """로케일 테이블 → {skinGroupId: {"group": 시리즈명, "content": 정형 설명문}}.
+
+    ⚠ 설명문은 **오퍼별로 다를 수 있다** — 실측(KR): ILLUST_0은 공란 718 · 정형문 343 ·
+    기타 46종, ILLUST_2는 정형문 336 · 기타 40여 종. 그래서 '아무거나 하나'를 빌리면
+    엉뚱한 오퍼의 설명(예: 로봇의 '합금 재질 프레임…')이 붙는다. **최빈값**만 정형문으로
+    본다. 시리즈명(기본 복장/Default Outfit/デフォルト)은 전원 동일해 그대로 쓴다.
+    """
+    groups, contents = {}, {}
+    for v in table.values():
+        ds = v.get("displaySkin") or {}
+        gid = ds.get("skinGroupId") or ""
+        if ds.get("skinName") or not gid.startswith("ILLUST_"):
+            continue
+        groups.setdefault(gid, Counter())[ds.get("skinGroupName") or ""] += 1
+        contents.setdefault(gid, Counter())[ds.get("content") or ""] += 1
+    out = {}
+    for gid in groups:
+        top_group = groups[gid].most_common(1)[0][0]
+        # 공란이 최빈일 수 있다(ILLUST_0) — 공란은 정형문으로 치지 않고 실제 문구 중 최빈을 쓴다
+        top_content = next((t for t, _ in contents[gid].most_common() if t), "")
+        out[gid] = {"group": top_group, "content": top_content}
+    return out
+
+
+DEFAULT_TEXTS = {loc: default_skin_texts(t) for loc, t in loc_tables.items()}
+# CN 쪽 정형문 — 미실장 오퍼의 설명이 **이것과 같을 때만** 로케일 정형문으로 갈아끼운다.
+# 오퍼 고유 설명(중국어)은 함부로 바꾸지 않고 그대로 둔다(번역 대상이지 치환 대상이 아니다).
+CN_DEFAULT_TEXTS = None   # cn 테이블을 읽은 뒤 아래에서 채운다
+
+
+def entry(skin_id, base, localized, loc=None):
     """표시 문자열은 로케일 테이블 우선, 없으면 KR 폴백. 구조 필드는 KR 정본."""
     d = (localized or base).get("displaySkin") or {}
     kd = base.get("displaySkin") or {}
     pick = lambda k: d.get(k) or kd.get(k)
+    # CN 폴백으로 들어온 미실장 오퍼의 기본 복장 — 시리즈명은 전원 공통이라 로케일 값으로
+    # 바꾸고, 설명문은 **CN 정형문과 일치할 때만** 로케일 정형문으로 바꾼다.
+    # 오퍼 고유 설명은 중국어 그대로 남긴다(번역 파이프라인 소관이지 여기서 지어낼 것이 아니다).
+    ko_default = None
+    if localized is None and loc and not kd.get("skinName"):
+        gid = kd.get("skinGroupId") or ""
+        ko_default = DEFAULT_TEXTS.get(loc, {}).get(gid)
+        cn_default = (CN_DEFAULT_TEXTS or {}).get(gid) or {}
+        if ko_default:
+            group_txt = ko_default["group"]
+            content_txt = (ko_default["content"]
+                           if (kd.get("content") or "") == cn_default.get("content", "\x00")
+                           else pick("content"))
+            return {
+                "id": skin_id,
+                "name": clean(group_txt) or "",
+                "stage": ILLUST_STAGE.get(gid, ""),
+                "group": clean(group_txt),
+                "artists": kd.get("drawerList") or [],
+                "content": clean(content_txt),
+                "usage": clean(pick("usage")),
+                "quote": clean(pick("description")),
+                "obtain": clean(pick("obtainApproach")),
+                "portrait": base.get("portraitId") or "",
+                "sort": kd.get("sortId") or 0,
+                "default": True,
+            }
     return {
         "id": skin_id,
         # 기본 복장·정예화2 일러는 skinName이 없다 — 시리즈명(기본 복장 등)으로 대신 표시
@@ -116,6 +181,29 @@ for skin_id, base in kr.items():
         continue
     by_char.setdefault(cid, []).append((skin_id, base))
 
+# 미실장(CN 선행) 오퍼는 **KR 스킨 테이블에 아예 없다** — 그래서 종전엔 스킨 파일이
+# 만들어지지 않았고, 도감에서 기본 일러조차 볼 수 없었다 (사용자 지적 2026-08-09:
+# "중국서버에만 실장된 오퍼레이터... 1정 2정 기본일러는 있어야 하지 않음?").
+# CN 테이블에는 20명 전원의 기본 복장 일러가 있고(대부분 ILLUST_0 + ILLUST_2),
+# 포트레이트·전체 일러 미러에도 파일이 실재한다(실측 200). CN으로 메운다.
+#
+# ⚠ **KR에 있는 오퍼는 절대 건드리지 않는다** — CN이 정본을 덮어쓰면 KR 기준 표기·정렬이
+# 흔들린다. KR 커버리지가 0인 오퍼만 대상으로 한다.
+# 표시 문자열은 로케일 테이블에 그 스킨 id가 없어 CN 원문(중국어)으로 폴백되는데,
+# 정예화 꼬리표(기본 일러/2정 일러)는 skinGroupId로 계산하므로 언어와 무관하게 맞는다.
+cn = skins_of(f"{S}/cn_skin_table.json")
+CN_DEFAULT_TEXTS = default_skin_texts(cn)
+kr_chars = set(by_char)
+cn_filled = set()
+for skin_id, base in cn.items():
+    cid = base.get("charId")
+    if cid not in ops or cid in kr_chars:
+        continue
+    by_char.setdefault(cid, []).append((skin_id, base))
+    cn_filled.add(cid)
+if cn_filled:
+    print(f"  CN 폴백: 미실장 {len(cn_filled)}명의 스킨을 cn_skin_table에서 채움")
+
 written = 0
 for loc in LOCALES:
     out_dir = f"{META_ROOT}/{loc}"
@@ -123,7 +211,7 @@ for loc in LOCALES:
     os.makedirs(out_dir, exist_ok=True)
     table = loc_tables[loc]
     for cid, entries in by_char.items():
-        items = [entry(sid, base, table.get(sid)) for sid, base in entries]
+        items = [entry(sid, base, table.get(sid), loc) for sid, base in entries]
         items.sort(key=lambda x: x["sort"])
         with open(f"{out_dir}/{cid}.json", "w", encoding="utf-8") as f:
             json.dump({"id": cid, "skins": items}, f, ensure_ascii=False, separators=(",", ":"))
