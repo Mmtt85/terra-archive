@@ -44,6 +44,9 @@ const TAB_OF = {
   "infra.json": ["infra"], "rules.json": ["infra"],
   "recruit.json": ["recruit"],
   "farm.json": ["farm"],
+  // 적·작전 도감 (2026-08-09 신설). 상세 수천 장은 사이트맵에 맡기고 목록만 알린다.
+  "enemies.json": ["enemies"], "enemy-stages.json": ["enemies"],
+  "stages.json": ["stages"],
   "costs.json": ["upgrade"],
   "stories.json": ["stories"], "chronology.json": ["stories"], "story-summaries.json": ["stories"],
   "broadcasts.json": [""],
