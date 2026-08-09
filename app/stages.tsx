@@ -10,13 +10,18 @@
 //   일부러 갈랐다 — deploy.sh가 `rm -rf $STAGE/stage`로 자산만 떼어낸다.
 //   (그리고 스토리 탭의 URL 세그먼트도 "stories"라 서로 부딪히지 않는다.)
 
-import { useMemo, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 import { useI18n } from "./i18n";
 import { normSearch, useSearchInput } from "./search";
 import { useLazyVisible } from "./lazy-img";
 import { ModalWindow } from "./modal-window";
 import { useHashSync } from "./hash-modal";
 import { AttributeFilter } from "./attr-filter";
+import { loadEnemies } from "./dex-cross";
+import { EnemyFile, type Enemy } from "./enemy-detail";
+// 재료 상세는 재료파밍 도우미의 것을 그대로 쓴다 — 설명·용도·조합식·효율 상위 스테이지까지
+// 이미 다 들어 있다. 드랍을 누를 때만 그 청크를 받는다.
+const ItemModal = lazy(() => import("./farm").then((m) => ({ default: m.ItemModal })));
 import {
   StageFile, stageMap, stagePath, viewOf, type Stage, type StageDoc,
 } from "./stage-detail";
@@ -50,13 +55,19 @@ function StageCard({ stage, zone, typeName, onSelect }: {
   );
 }
 
-export default function StageDex({ doc, onOpenEnemy }: { doc: StageDoc; onOpenEnemy?: (id: string) => void }) {
+// ⚠ onOpenEnemy(탭 이동)는 더 이상 쓰지 않는다 — 적은 **모달로 겹쳐** 띄운다
+//   (사용자 요청 2026-08-09). prop을 지우면 로케일 래퍼 3개가 같이 바뀌어야 해서 남겨 뒀다.
+export default function StageDex({ doc }: { doc: StageDoc; onOpenEnemy?: (id: string) => void }) {
   const { locale, t } = useI18n();
   const { term, clear, inputProps } = useSearchInput();
   const [types, setTypes] = useState<string[]>([]);
   const [evSel, setEvSel] = useState<string[]>([]);
   const [zonesSel, setZonesSel] = useState<string[]>([]);
   const [open, setOpen] = useState<Stage | null>(null);
+  // 겹쳐 뜨는 부가 모달 — 목록·작전 모달을 그대로 둔 채 위에 하나 더 띄운다.
+  // ⚠ 해시 동기화는 하지 않는다 (주 모달 #st-<id>와 서로 덮어써 창이 닫힌다).
+  const [subEnemy, setSubEnemy] = useState<Enemy | null>(null);
+  const [subItem, setSubItem] = useState<string | null>(null);
 
   const byId = useMemo(() => new Map(doc.stages.map((s) => [s.id, s])), [doc]);
 
@@ -158,6 +169,7 @@ export default function StageDex({ doc, onOpenEnemy }: { doc: StageDoc; onOpenEn
   const active = types.length + events.length + zones.length > 0 || !!term;
 
   const view = open ? viewOf(doc, open) : null;
+  const openEnemy = (id: string) => { void loadEnemies(locale).then((m) => setSubEnemy(m.get(id) ?? null)); };
 
   return (
     <section className="explorer st-explorer" aria-labelledby="stage-title">
@@ -203,8 +215,20 @@ export default function StageDex({ doc, onOpenEnemy }: { doc: StageDoc; onOpenEn
       {view && (
         <ModalWindow label={`${view.stage.code} ${view.stage.name}`} className="operator-modal st-modal"
           onClose={() => setOpen(null)}>
-          <StageFile view={view} onOpenEnemy={onOpenEnemy} />
+          <StageFile view={view} onOpenEnemy={openEnemy} onOpenItem={setSubItem} />
         </ModalWindow>
+      )}
+
+      {/* 적 상세 — 작전 모달 위에 겹친다 (ModalWindow가 zTop으로 앞뒤를 정한다) */}
+      {subEnemy && (
+        <ModalWindow label={subEnemy.name} className="operator-modal en-modal" onClose={() => setSubEnemy(null)}>
+          <EnemyFile enemy={subEnemy} stagesDoc={null} onOpenEnemy={openEnemy} />
+        </ModalWindow>
+      )}
+      {subItem && (
+        <Suspense fallback={null}>
+          <ItemModal id={subItem} onClose={() => setSubItem(null)} onShowItem={setSubItem} />
+        </Suspense>
       )}
     </section>
   );

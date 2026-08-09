@@ -51,10 +51,11 @@ function Portrait({ enemy, size }: { enemy: Enemy; size: number }) {
   );
 }
 
-/** 스탯표 — 레벨 변형이 여러 개면 열을 나란히 둔다 (게임의 스테이지 난이도별 강화판) */
+/** 스탯표 — **스탯이 열, 강화 단계가 행**이다 (사용자 요청 2026-08-09).
+ *  단계가 대부분 1~2개뿐이라, 단계를 열로 두면 표가 세로로 길쭉해지고 값 비교가 어렵다. */
 function StatTable({ levels }: { levels: EnemyLevel[] }) {
   const { t } = useI18n();
-  const rows: [string, (l: EnemyLevel) => string][] = [
+  const cols: [string, (l: EnemyLevel) => string][] = [
     ["최대 HP", (l) => fmt(l.hp)],
     ["공격력", (l) => fmt(l.atk)],
     ["방어력", (l) => fmt(l.def)],
@@ -65,27 +66,30 @@ function StatTable({ levels }: { levels: EnemyLevel[] }) {
     ["라이프 감소", (l) => fmt(l.lp)],
   ];
   return (
-    <table className="en-stats">
-      <thead>
-        <tr>
-          <th scope="col">{t("스탯")}</th>
+    <div className="en-stats-wrap">
+      <table className="en-stats">
+        <thead>
+          <tr>
+            <th scope="col">{t("단계")}</th>
+            {cols.map(([label]) => <th key={label} scope="col">{t(label)}</th>)}
+          </tr>
+        </thead>
+        <tbody>
           {/* 레벨 0은 강화 이전 = 기본형이다. "강화 0단계"로 쓰면 말이 안 된다. */}
           {levels.map((l) => (
-            <th key={l.l} scope="col">{l.l === 0 ? t("기본형") : t("강화 {n}단계", { n: String(l.l) })}</th>
+            <tr key={l.l}>
+              <th scope="row">{l.l === 0 ? t("기본형") : t("강화 {n}단계", { n: String(l.l) })}</th>
+              {cols.map(([label, get]) => <td key={label}>{get(l)}</td>)}
+            </tr>
           ))}
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map(([label, get]) => (
-          <tr key={label}><th scope="row">{t(label)}</th>{levels.map((l) => <td key={l.l}>{get(l)}</td>)}</tr>
-        ))}
-      </tbody>
-    </table>
+        </tbody>
+      </table>
+    </div>
   );
 }
 
 /** 등장 작전 — 구역별로 묶어서. stagesDoc이 아직 안 왔으면 아무것도 그리지 않는다. */
-function Appearances({ enemy, doc }: { enemy: Enemy; doc: EnemyStages | null }) {
+function Appearances({ enemy, doc, onOpenStage }: { enemy: Enemy; doc: EnemyStages | null; onOpenStage?: (sid: string) => void }) {
   const { locale, t } = useI18n();
   const refs = doc?.byEnemy[enemy.id];
   if (!doc || !refs || !refs.length) return null;
@@ -113,7 +117,13 @@ function Appearances({ enemy, doc }: { enemy: Enemy; doc: EnemyStages | null }) 
               {g.items.map((it, ii) => (
                 <li key={`${it.code}-${ii}`} className={it.lv > 0 ? "reinforced" : undefined}>
                   {/* 작전 도감으로 — 상세 라우트가 없는 이벤트 작전도 있어 **목록 + 해시**로 연다 */}
-                  <a href={`${stageListPath(locale)}#st-${it.sid}`}>
+                  {/* 작전 도감으로 **넘어가지 않고** 상세를 겹쳐 띄운다 (사용자 요청
+                      2026-08-09). 콜백이 없는 자리(상세 페이지)에선 링크로 폴백한다. */}
+                  <a href={`${stageListPath(locale)}#st-${it.sid}`}
+                    onClick={(e) => {
+                      if (!onOpenStage || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+                      e.preventDefault(); onOpenStage(it.sid);
+                    }}>
                     {it.lv > 0 && <i className="en-lv" aria-hidden title={t("강화 {n}단계", { n: String(it.lv) })}>★</i>}
                     <b>{it.code}</b><span>{it.name}</span>
                     {it.cnt > 0 && <em>×{it.cnt}</em>}
@@ -134,10 +144,11 @@ function Appearances({ enemy, doc }: { enemy: Enemy; doc: EnemyStages | null }) 
  *    목록 모달은 열릴 때 지연 로드한다. null이면 그 절만 빠진다.
  *  · onOpenEnemy — 연계 소환 적으로 이동 (목록 안에서만 동작, 페이지에선 링크로 폴백)
  */
-export function EnemyFile({ enemy, stagesDoc, nameOf, onOpenEnemy }: {
+export function EnemyFile({ enemy, stagesDoc, nameOf, onOpenEnemy, onOpenStage }: {
   enemy: Enemy; stagesDoc: EnemyStages | null;
   nameOf?: (id: string) => string | undefined;
   onOpenEnemy?: (id: string) => void;
+  onOpenStage?: (sid: string) => void;
 }) {
   const { locale, t } = useI18n();
   const imm = enemy.lv.find((l) => l.imm.length)?.imm ?? [];
@@ -209,7 +220,7 @@ export function EnemyFile({ enemy, stagesDoc, nameOf, onOpenEnemy }: {
         </section>
       )}
 
-      <Appearances enemy={enemy} doc={stagesDoc} />
+      <Appearances enemy={enemy} doc={stagesDoc} onOpenStage={onOpenStage} />
     </div>
   );
 }

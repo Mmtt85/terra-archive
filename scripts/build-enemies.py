@@ -324,18 +324,48 @@ else:
     if missing:
         print(f"  레벨 파일 없음 {len(missing)}개 (삭제된 스테이지 — 정상) 예: {missing[:3]}")
 
+
+    # ── 메인 스토리 챕터 (2026-08-09 사용자 리포트로 발각) ──────────────────────
+    # ⚠ zoneNameFirst를 무조건 챕터 라벨로 쓰면 안 된다. 15·16장(act2mainss/act3mainss)은
+    #   first가 **영어 제목**이고 3개 언어에서 값이 똑같다("Dissociative Recombination").
+    #   그래서 "로케일마다 다른가"로 판정한다 — 진짜 챕터 라벨은 ko '에피소드 3' ·
+    #   en 'Episode 3' · ja '第三章'로 갈리지만, 영어 제목은 어느 로케일에서든 같다.
+    CHAPTER_RE = re.compile(r"EPISODE\s*(\d+)", re.I)
+    
+    
+    def _localized_first(zid):
+        """zoneNameFirst가 로케일마다 다르면(=진짜 챕터 라벨) True."""
+        vals = {clean((zone_tables[loc].get(zid) or {}).get("zoneNameFirst")) for loc in ("ko", "en", "ja")}
+        vals.discard(None)
+        return len(vals) > 1
+    
+    
+    def chapter_of(zid):
+        """메인 스토리 챕터 번호. 정렬용 — 코드가 'R8-1'·'JT8-1'이라 코드순으로는
+        8장이 통째로 맨 뒤로 밀린다 (사용자 리포트). 15·16장은 zoneId가 act2mainss_zone1이라
+        zoneId 파싱만으로도 안 된다 — zoneNameThird의 'EPISODE 15'가 유일하게 믿을 값이다."""
+        z = zone_tables["ko"].get(zid) or {}
+        m = CHAPTER_RE.search(z.get("zoneNameThird") or "")
+        if m:
+            return int(m.group(1))
+        m = re.fullmatch(r"main_(\d+)", zid or "")
+        return int(m.group(1)) if m else None
+
     def zone_name(loc, zid, stype):
-        # ⚠ scripts/build-stages.py의 zone_name과 **글자 하나까지 같아야 한다** — 작전 도감이
-        #   이 색인을 (코드, 이름, 구역)으로 되짚어 등장 적을 붙인다. 2026-08-09에 한쪽만
-        #   고쳤다가 조인이 2,038 → 1,538로 깨졌다.
+        """⚠ build-stages.py의 zone_name과 **글자 하나까지 같아야 한다** — 두 도감이
+        (코드, 이름, 구역)으로 서로의 색인을 되짚는다. 한쪽만 고쳤다가 조인이
+        2,038 → 1,538로 깨진 적이 있다 (2026-08-09)."""
         z = zone_tables[loc].get(zid) or {}
-        first = clean(z.get("zoneNameFirst"))
         second = clean(z.get("zoneNameSecond"))
-        # 메인 스토리는 챕터 번호를 앞에 붙인다 (사용자 요청) — zoneNameFirst가 로케일별
-        # 챕터 표기다: ko "에피소드 3" · en "Episode 3" · ja "第三章".
-        if first and second and first != second:
-            return f"{first} · {second}"
-        n = second or first or clean(z.get("zoneNameThird"))
+        third = clean(z.get("zoneNameThird"))
+        # 메인 스토리는 챕터 표기를 앞에 붙인다 (사용자 요청). 로케일마다 다른 first가
+        # 진짜 챕터 라벨이고(에피소드 3 / Episode 3 / 第三章), 아니면 third('EPISODE 15')를 쓴다.
+        head = clean(z.get("zoneNameFirst")) if _localized_first(zid) else None
+        if not head and third and CHAPTER_RE.search(third):
+            head = third
+        if head and second and head != second:
+            return f"{head} · {second}"
+        n = second or head or third
         return n or ZONE_TYPE_LABELS[loc].get(z.get("type") or stype) or ZONE_TYPE_LABELS[loc].get(stype) or ""
 
     visible = set(VISIBLE)
@@ -424,9 +454,22 @@ else:
     if jobs:
         with ThreadPoolExecutor(12) as ex:
             fails = [f for f in ex.map(one, jobs) if f]
-    have = sum(1 for eid in VISIBLE
-               if any(os.path.exists(os.path.join(dest_dir, c + ".webp")) for c in candidates(eid)))
-    print(f"초상: 복사 {copied} · 신규 {len(jobs) - len(fails)} · 실패 {len(fails)} → 보유 {have}/{len(VISIBLE)}")
+    # ⚠ 변종(_2 등)은 원본 초상을 **변종 이름으로도 복사**해 둔다 (실측 439종).
+    #   런타임 onError 폴백은 프리렌더된 <img>에서 무력하다 — 하이드레이션 전에 에러가
+    #   나면 핸들러가 아직 없어서, 상세 페이지의 적 초상이 깨져 보였다 (2026-08-09).
+    #   빌드에서 파일을 만들어 두면 폴백 자체가 필요 없어진다 (+수 MB, R2 서빙).
+    aliased = 0
+    for eid in VISIBLE:
+        own = os.path.join(dest_dir, eid + ".webp")
+        if os.path.exists(own):
+            continue
+        base = re.sub(r"_\d+$", "", eid)
+        bp = os.path.join(dest_dir, base + ".webp")
+        if base != eid and os.path.exists(bp):
+            shutil.copyfile(bp, own)
+            aliased += 1
+    have = sum(1 for eid in VISIBLE if os.path.exists(os.path.join(dest_dir, eid + ".webp")))
+    print(f"초상: 복사 {copied} · 신규 {len(jobs) - len(fails)} · 실패 {len(fails)} · 변종 별칭 {aliased} → 보유 {have}/{len(VISIBLE)}")
     if fails:
         print(f"  ⚠ 초상 없음 (원본 에셋 부재): {fails[:8]}")
 

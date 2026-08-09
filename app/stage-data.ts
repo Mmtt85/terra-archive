@@ -11,7 +11,7 @@ export type Stage = {
   /** zones 배열 번호 */ z: number;
   /** stageType (MAIN·ACTIVITY…) */ t: string;
   desc?: string; ap?: number; exp?: number; gold?: number; danger?: string;
-  /** 드랍 [아이템id, occ번호, kinds번호] */ d?: [string, number, number][];
+  /** 드랍 [아이템id, occ번호, kinds번호, 실측%?, 효율순위?, 순위모수?] */ d?: (string | number)[][];
   /** 등장 적 [enemyIds번호, 스폰수, 스탯레벨] */ e?: [number, number, number][];
   /** events 배열 번호 — 이벤트 작전만 있다 */ ev?: number;
   /** 도면 보유 (없으면 키 자체가 없다) */ map?: number;
@@ -30,7 +30,7 @@ export type StageView = {
   stage: Stage;
   zone: string;
   typeName: string;
-  drops: { id: string; name: string; occ: string; kind: string }[];
+  drops: { id: string; name: string; occ: string; kind: string; rate?: number; rank?: number; rankOf?: number }[];
   enemies: { id: string; name: string; cnt: number; lv: number }[];
 };
 
@@ -39,9 +39,14 @@ export function viewOf(doc: StageDoc, stage: Stage): StageView {
     stage,
     zone: doc.zones[stage.z] ?? "",
     typeName: doc.types[stage.t] ?? stage.t,
-    drops: (stage.d ?? []).map(([id, o, k]) => ({
-      id, name: doc.items[id] ?? id, occ: doc.occ[o] ?? "", kind: doc.kinds[k] ?? "",
-    })),
+    drops: (stage.d ?? []).map((row) => {
+      const [id, o, k, rate, rank, rankOf] = row as [string, number, number, number?, number?, number?];
+      return {
+        id, name: doc.items[id] ?? id, occ: doc.occ[o] ?? "", kind: doc.kinds[k] ?? "",
+        // 펭귄 물류 실측 — 주요 드랍 재료 316쌍에만 있다 (build-stages.py MEASURED)
+        ...(rate !== undefined ? { rate, rank, rankOf } : {}),
+      };
+    }),
     enemies: (stage.e ?? []).map(([i, cnt, lv]) => {
       const id = doc.enemyIds[i];
       return { id, name: doc.enemyNames[id] ?? id, cnt, lv };

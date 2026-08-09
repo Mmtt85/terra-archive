@@ -19,6 +19,10 @@ import { normSearch, useSearchInput } from "./search";
 import { useHashSync } from "./hash-modal";
 import { HANDOFF_EVENT, takeHandoff } from "./handoff";
 import { noteArrival, noteMiss } from "./trail";
+import { loadEnemies, loadStages } from "./dex-cross";
+import { StageFile } from "./stage-detail";
+import { viewOf, type StageView } from "./stage-data";
+import { EnemyFile, type Enemy } from "./enemy-detail";
 
 type LocText = { ko: string; en?: string; ja?: string };
 type FarmStage = {
@@ -123,6 +127,40 @@ function locText(locale: Locale, text: LocText): string {
 }
 
 // ── 재료파밍 도우미 (재료 파밍 효율표) — 탭 '재료파밍 도우미' (2026-07-22 분리) ──
+// 파밍표·재료 상세에서 스테이지를 누르면 **작전 도감 상세를 모달로 겹쳐** 띄운다
+// (사용자 요청 2026-08-09). 데이터(로케일당 ~1.2MB)는 누르는 순간에만 받는다(dex-cross).
+// 작전 모달 안의 적·드랍 클릭도 여기서 받아 한 단계 더 겹친다.
+function useStageSubModal(onShowItem: (id: string) => void) {
+  const { locale } = useI18n();
+  const [stage, setStage] = useState<StageView | null>(null);
+  const [enemy, setEnemy] = useState<Enemy | null>(null);
+  const openStage = (sid: string) => {
+    void loadStages(locale).then((doc) => {
+      const st = doc.stages.find((x) => x.id === sid);
+      setStage(st ? viewOf(doc, st) : null);
+    });
+  };
+  const openEnemy = (eid: string) => {
+    void loadEnemies(locale).then((m) => setEnemy(m.get(eid) ?? null));
+  };
+  const node = (
+    <>
+      {stage && (
+        <ModalWindow label={`${stage.stage.code} ${stage.stage.name}`} className="operator-modal st-modal"
+          onClose={() => setStage(null)}>
+          <StageFile view={stage} onOpenEnemy={openEnemy} onOpenItem={onShowItem} />
+        </ModalWindow>
+      )}
+      {enemy && (
+        <ModalWindow label={enemy.name} className="operator-modal en-modal" onClose={() => setEnemy(null)}>
+          <EnemyFile enemy={enemy} stagesDoc={null} onOpenStage={openStage} />
+        </ModalWindow>
+      )}
+    </>
+  );
+  return { openStage, node };
+}
+
 export default function FarmGuide({ includeFuture }: { includeFuture: boolean }) {
   const { locale, t } = useI18n();
   const [tiers, setTiers] = useState<number[]>([]);
@@ -131,6 +169,7 @@ export default function FarmGuide({ includeFuture }: { includeFuture: boolean })
   const [permOnly, setPermOnly] = useState(false);
   // 재료 상세 모달 — 효율표·계산기의 모든 재료 아이콘에서 연다 (id = item id)
   const [shownItem, setShownItem] = useState<string | null>(null);
+  const sub = useStageSubModal(setShownItem);
   // 딥링크: #item-<재료id> — /farm 경로에서 재료 상세를 URL로 공유 (2026-07-27)
   useHashSync(shownItem ? `#item-${shownItem}` : null, (h) => {
     const id = h.startsWith("#item-") ? h.slice(6) : null;
@@ -237,14 +276,17 @@ export default function FarmGuide({ includeFuture }: { includeFuture: boolean })
                 </header>
                 {item.farmable ? (
                   <>
+                    {/* ⚠ 행은 4열(코드·배지·드랍률·기대이성)이다 — 배지 자리에 빈 칸을
+                        두지 않으면 헤더가 한 칸씩 밀려 보인다 (사용자 지적 2026-08-09) */}
                     <div className="farm-cols" aria-hidden>
-                      <i>{t("스테이지")}</i><i>{t("드랍률")}</i><i>{t("기대 이성")}</i>
+                      <i>{t("스테이지")}</i><i /><i>{t("드랍률")}</i><i>{t("기대 이성")}</i>
                     </div>
                     <ul>
                       {item.stages.slice(0, expandedStages.has(item.id) ? item.stages.length : 1).map((stage, index) => (
                         <li key={stage.id} className={index === 0 ? "best" : undefined}
                           title={`${locText(locale, stage.name) ?? stage.code} · ${t("이성 {n} 소모", { n: stage.ap })} · ${t("표본 {n}회", { n: stage.times.toLocaleString() })}`}>
-                          <b className="farm-code">{stage.code}</b>
+                          {/* 스테이지를 누르면 작전 도감 상세가 모달로 뜬다 (사용자 요청 2026-08-09) */}
+                          <button type="button" className="farm-code as-btn" onClick={() => sub.openStage(stage.id)}>{stage.code}</button>
                           <span className="farm-badges">
                             {index === 0 && <em className="best-badge">{t("최고 효율")}</em>}
                             {KIND_LABEL[stage.kind] && <em className={`kind-badge ${stage.kind}`}>{t(KIND_LABEL[stage.kind])}</em>}
@@ -301,8 +343,10 @@ export default function FarmGuide({ includeFuture }: { includeFuture: boolean })
           onClose={() => setShownItem(null)}
           onShowItem={openItem}
           onSearchItem={(name) => { setSearchTerm(name); setTiers([]); setShownItem(null); }}
+          onShowStage={sub.openStage}
         />
       )}
+      {sub.node}
     </section>
   );
 }
@@ -313,6 +357,7 @@ export default function FarmGuide({ includeFuture }: { includeFuture: boolean })
 export function UpgradeSim({ operators, includeFuture, onShowOperator }: { operators: Operator[]; includeFuture: boolean; onShowOperator: (id: string) => void }) {
   const { t } = useI18n();
   const [shownItem, setShownItem] = useState<string | null>(null);
+  const sub = useStageSubModal(setShownItem);
   // 딥링크: #item-<재료id> — /upgrade 경로에서도 재료 상세를 URL로 공유 (2026-07-27)
   useHashSync(shownItem ? `#item-${shownItem}` : null, (h) => {
     const id = h.startsWith("#item-") ? h.slice(6) : null;
@@ -325,8 +370,9 @@ export function UpgradeSim({ operators, includeFuture, onShowOperator }: { opera
       )}
       <CostCalculator operators={operators} includeFuture={includeFuture} onShowOperator={onShowOperator} onShowItem={setShownItem} />
       {shownItem && (
-        <ItemModal id={shownItem} onClose={() => setShownItem(null)} onShowItem={setShownItem} />
+        <ItemModal id={shownItem} onClose={() => setShownItem(null)} onShowItem={setShownItem} onShowStage={sub.openStage} />
       )}
+      {sub.node}
     </section>
   );
 }
@@ -731,11 +777,14 @@ function ItemChip({ id, count, onShowItem, locale }: {
 // ── 재료 상세 모달 ────────────────────────────────────────────────────────────
 // 모든 재료 아이콘(효율표·계산기)에서 열린다. 설명·용도·가공소 조합식과, 파밍 가능한
 // 재료라면 효율 상위 스테이지 + 효율표 검색 버튼을 함께 보여준다.
-function ItemModal({ id, onClose, onShowItem, onSearchItem }: {
+// ⚠ export — 작전 도감(app/stages.tsx)의 드랍 목록이 이 상세를 그대로 띄운다
+//   (2026-08-09). 그쪽에서는 lazy import라 재료를 누를 때만 이 청크를 받는다.
+export function ItemModal({ id, onClose, onShowItem, onSearchItem, onShowStage }: {
   id: string;
   onClose: () => void;
   onShowItem: (id: string) => void;
   onSearchItem?: (name: string) => void; // 효율표 탭에서만 — 육성 시뮬 탭엔 효율표가 없어 생략
+  onShowStage?: (stageId: string) => void; // 스테이지 클릭 → 작전 도감 상세 모달 (2026-08-09)
 }) {
   const { locale, t } = useI18n();
   const meta = costs.items[id];
@@ -784,13 +833,20 @@ function ItemModal({ id, onClose, onShowItem, onSearchItem }: {
         {farmItem && (
           <div className="item-stages">
             <b>{t("효율 스테이지")}</b>
+            {/* ⚠ 행은 4열 격자다 — 배지 <em>이 조건부라 첫 행이 아니면 값이 왼쪽으로
+                밀렸다 (사용자 지적 2026-08-09). 배지 자리를 항상 렌더하고 헤더도 단다. */}
+            <div className="farm-cols item-stages-cols" aria-hidden>
+              <i>{t("스테이지")}</i><i /><i>{t("드랍률")}</i><i>{t("기대 이성")}</i>
+            </div>
             <ul>
               {farmItem.stages.map((stage, index) => (
                 <li key={stage.id}>
-                  <b className="farm-code">{stage.code}</b>
-                  {index === 0 && <em className="best-badge">{t("최고 효율")}</em>}
-                  <span>{stage.rate}%</span>
-                  <span>{stage.sanity}</span>
+                  {onShowStage
+                    ? <button type="button" className="farm-code as-btn" onClick={() => onShowStage(stage.id)}>{stage.code}</button>
+                    : <b className="farm-code">{stage.code}</b>}
+                  <span className="farm-badges">{index === 0 && <em className="best-badge">{t("최고 효율")}</em>}</span>
+                  <span className="farm-rate">{stage.rate}%</span>
+                  <span className="farm-sanity">{stage.sanity}</span>
                 </li>
               ))}
             </ul>

@@ -9,13 +9,18 @@
 // 로케일 데이터는 app/enemies-{ko,en,ja}.tsx 래퍼가 각자 자기 것만 정적 임포트해 넘긴다
 // (app/home-{ko,en,ja}.tsx와 같은 관례) — 세 로케일 JSON이 한 청크에 묶이지 않게.
 
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { useI18n } from "./i18n";
 import { normSearch, useSearchInput } from "./search";
 import { useLazyVisible } from "./lazy-img";
 import { ModalWindow } from "./modal-window";
 import { useHashSync } from "./hash-modal";
 import { AttributeFilter } from "./attr-filter";
+import { loadStages } from "./dex-cross";
+import { StageFile } from "./stage-detail";
+import { viewOf, type StageView } from "./stage-data";
+// 재료 상세는 재료파밍 도우미의 것을 그대로 쓴다 (작전 모달의 드랍에서 열린다)
+const ItemModal = lazy(() => import("./farm").then((m) => ({ default: m.ItemModal })));
 import {
   EnemyFile, RANK_KEY, enemyImg, enemyImgBase, enemyPath,
   type Enemy, type EnemyStages,
@@ -100,8 +105,18 @@ export default function EnemyDex({ enemies }: { enemies: Enemy[] }) {
   const [dmgs, setDmgs] = useState<string[]>([]);
   const [imms, setImms] = useState<string[]>([]);
   const [open, setOpen] = useState<Enemy | null>(null);
+  // 겹쳐 뜨는 부가 모달 — 적 모달을 그대로 둔 채 위에 하나 더 띄운다 (페이지 이동 X).
+  // ⚠ 해시 동기화는 하지 않는다 (주 모달 #en-<id>와 서로 덮어써 창이 닫힌다).
+  const [subStage, setSubStage] = useState<StageView | null>(null);
+  const [subItem, setSubItem] = useState<string | null>(null);
 
   const byId = useMemo(() => new Map(enemies.map((e) => [e.id, e])), [enemies]);
+  const openStage = (sid: string) => {
+    void loadStages(locale).then((doc) => {
+      const st = doc.stages.find((x) => x.id === sid);
+      setSubStage(st ? viewOf(doc, st) : null);
+    });
+  };
   const stagesDoc = useStagesDoc(locale, open !== null);
 
   // 딥링크 #en-<id> — 오퍼 모달(#op-<id>)과 같은 관례
@@ -224,8 +239,24 @@ export default function EnemyDex({ enemies }: { enemies: Enemy[] }) {
         <ModalWindow label={open.name} className="operator-modal en-modal" onClose={() => setOpen(null)}>
           <EnemyFile enemy={open} stagesDoc={stagesDoc}
             nameOf={(id) => byId.get(id)?.name}
-            onOpenEnemy={(id) => { const e = byId.get(id); if (e) setOpen(e); }} />
+            onOpenEnemy={(id) => { const e = byId.get(id); if (e) setOpen(e); }}
+            onOpenStage={openStage} />
         </ModalWindow>
+      )}
+
+      {/* 작전 상세 — 적 모달 위에 겹친다 (ModalWindow가 zTop으로 앞뒤를 정한다) */}
+      {subStage && (
+        <ModalWindow label={`${subStage.stage.code} ${subStage.stage.name}`} className="operator-modal st-modal"
+          onClose={() => setSubStage(null)}>
+          <StageFile view={subStage}
+            onOpenEnemy={(id) => { const e = byId.get(id); if (e) { setSubStage(null); setOpen(e); } }}
+            onOpenItem={setSubItem} />
+        </ModalWindow>
+      )}
+      {subItem && (
+        <Suspense fallback={null}>
+          <ItemModal id={subItem} onClose={() => setSubItem(null)} onShowItem={setSubItem} />
+        </Suspense>
       )}
     </section>
   );

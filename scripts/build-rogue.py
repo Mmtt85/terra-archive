@@ -78,6 +78,13 @@ def render_minimap(level, dest):
     md = level.get("mapData") or {}
     grid = md.get("map") or []
     tiles = md.get("tiles") or []
+    # ⚠ 신형 레벨 파일은 map이 2차원 배열이 아니라 {row_size, column_size, matrix_data}
+    #   딕셔너리다 (2026-08-09 실측: act32side 등 이벤트 126개가 이것 때문에 통째로
+    #   렌더에 실패해 "도면 없음"으로 나갔다). 두 형식을 다 받는다.
+    if isinstance(grid, dict):
+        flat = grid.get("matrix_data") or []
+        cols_n = grid.get("column_size") or 0
+        grid = [flat[i:i + cols_n] for i in range(0, len(flat), cols_n)] if cols_n else []
     if not grid or not tiles:
         return False
     cell, gap = 14, 2

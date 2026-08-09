@@ -1416,6 +1416,7 @@ const D: Record<string, Pair> = {
   "등장 작전": ["Appears in", "出現作戦"],
   "기본형": ["Base", "基本"],
   "강화 {n}단계": ["Tier {n}", "強化{n}段階"],
+  "단계": ["Tier", "段階"],
   "★ 표시는 강화된 스탯으로 나오는 작전입니다.": ["★ marks operations where it appears with reinforced stats.", "★ は強化されたステータスで出現する作戦です。"],
   "같은 적이라도 작전에 따라 더 강한 스탯으로 나옵니다 — 아래는 그 단계별 수치입니다.": ["The same enemy appears with stronger stats in some operations — the tiers below are those variants.", "同じ敵でも作戦によって強いステータスで出現します — 以下はその段階ごとの数値です。"],
   "이동 속도": ["Move speed", "移動速度"],
@@ -1437,6 +1438,8 @@ const D: Record<string, Pair> = {
   "조건에 맞는 작전이 없어요.": ["No stage matches these filters.", "条件に合う作戦がありません。"],
   "작전 코드, 이름, 구역 검색": ["Search code, name, zone", "コード・名前・エリアで検索"],
   "작전 계열": ["Category", "系統"],
+  "효율 {n}위": ["#{n} efficiency", "効率{n}位"],
+  "순위밖": ["Outside top 10", "圏外"],
   "항목을 눌러 값을 고르세요 · 고를수록 아래에 하위 조건이 생깁니다": ["Tap a field to choose a value — each choice reveals the next one below", "項目を押して値を選択 · 選ぶほど下に絞り込み条件が現れます"],
   // "이벤트"는 이미 사전에 같은 뜻으로 있다 — 다시 넣지 않는다(마지막 정의가 이긴다)
   "소모 이성": ["Sanity cost", "理性消費"],

@@ -98,6 +98,16 @@ items = {loc: load(f"{S}/{pre}_item_table.json")["items"] for loc, pre, _ in LOC
 # 한 이벤트가 구역을 여러 개 갖는다: '사세행' = 상추실록·망춘유사·대필신편.
 # zoneToActivity(구역 → 이벤트 id) + basicInfo(이벤트 id → 이름)로 되짚는다.
 acts = {loc: load(f"{S}/{pre}_activity_table.json") for loc, pre, _ in LOCALES}
+# 펭귄 물류 실측 드랍률 (재료파밍 도우미의 farm.json 재사용) — 게임 표기는 '가끔' 같은
+# 빈도뿐이라, 실측 %와 **그 재료의 효율 순위**(기대 이성 오름차순)를 함께 싣는다
+# (사용자 요청 2026-08-09). 수치는 로케일 무관이라 한 번만 만든다.
+_farm_path = os.path.join(DATA, "farm.json")
+MEASURED = {}          # stageId → {itemId: (rate%, rank, total)}
+if os.path.exists(_farm_path):
+    for _it in load(_farm_path)["items"]:
+        _sts = sorted(_it["stages"], key=lambda x: x["sanity"])
+        for _rank, _st in enumerate(_sts, 1):
+            MEASURED.setdefault(_st["id"], {})[_it["id"]] = (_st["rate"], _rank, len(_sts))
 ZONE_TO_ACT = acts["ko"]["zoneToActivity"]
 
 
@@ -108,6 +118,33 @@ def event_name(loc, zid):
         return None
     info = (acts[loc].get("basicInfo") or {}).get(aid) or (acts["ko"].get("basicInfo") or {}).get(aid)
     return clean((info or {}).get("name"))
+
+# ── 메인 스토리 챕터 (2026-08-09 사용자 리포트로 발각) ──────────────────────
+# ⚠ zoneNameFirst를 무조건 챕터 라벨로 쓰면 안 된다. 15·16장(act2mainss/act3mainss)은
+#   first가 **영어 제목**이고 3개 언어에서 값이 똑같다("Dissociative Recombination").
+#   그래서 "로케일마다 다른가"로 판정한다 — 진짜 챕터 라벨은 ko '에피소드 3' ·
+#   en 'Episode 3' · ja '第三章'로 갈리지만, 영어 제목은 어느 로케일에서든 같다.
+CHAPTER_RE = re.compile(r"EPISODE\s*(\d+)", re.I)
+
+
+def _localized_first(zid):
+    """zoneNameFirst가 로케일마다 다르면(=진짜 챕터 라벨) True."""
+    vals = {clean((zones[loc].get(zid) or {}).get("zoneNameFirst")) for loc in ("ko", "en", "ja")}
+    vals.discard(None)
+    return len(vals) > 1
+
+
+def chapter_of(zid):
+    """메인 스토리 챕터 번호. 정렬용 — 코드가 'R8-1'·'JT8-1'이라 코드순으로는
+    8장이 통째로 맨 뒤로 밀린다 (사용자 리포트). 15·16장은 zoneId가 act2mainss_zone1이라
+    zoneId 파싱만으로도 안 된다 — zoneNameThird의 'EPISODE 15'가 유일하게 믿을 값이다."""
+    z = zones["ko"].get(zid) or {}
+    m = CHAPTER_RE.search(z.get("zoneNameThird") or "")
+    if m:
+        return int(m.group(1))
+    m = re.fullmatch(r"main_(\d+)", zid or "")
+    return int(m.group(1)) if m else None
+
 
 # ⚠ 긴급 작전(stageId 접미 `#f#`)은 일반판과 code·levelId가 완전히 같다 — 접지 않으면
 #   "4-6"이 두 줄로 나온다 (build-enemies.py에서 실측 822행 중복). 일반판을 남긴다.
@@ -125,8 +162,14 @@ for sid, v in tables["ko"].items():
 TYPE_ORDER = {"MAIN": 0, "SUB": 1, "SPECIAL_STORY": 2, "CAMPAIGN": 3, "DAILY": 4, "CLIMB_TOWER": 5}
 def natural(code):
     return [int(p) if p.isdigit() else p for p in re.split(r"(\d+)", code or "")]
-stages = sorted(seen.values(),
-                key=lambda v: (TYPE_ORDER.get(v.get("stageType"), 9), natural(v.get("code") or v["stageId"])))
+# ⚠ 메인 스토리는 **챕터 번호로** 먼저 묶는다. 코드로만 정렬하면 8장(코드가 'R8-1'·
+#   'JT8-1')이 통째로 맨 뒤로 밀린다 (2026-08-09 사용자 리포트). 구역 필터 목록도
+#   여기 순서를 그대로 물려받으므로 이 정렬 하나가 화면 순서를 결정한다.
+def sort_key(v):
+    ch = chapter_of(v.get("zoneId")) if v.get("stageType") in ("MAIN", "SUB") else None
+    return (TYPE_ORDER.get(v.get("stageType"), 9), ch if ch is not None else 999,
+            natural(v.get("code") or v["stageId"]))
+stages = sorted(seen.values(), key=sort_key)
 print(f"작전: {len(stages)}개")
 
 # ── 2. 등장 적 — build-enemies.py 산출물을 뒤집는다 ─────────────────────────
@@ -157,16 +200,22 @@ for loc, _, suf in LOCALES:
     enemy_names[loc] = {e["id"]: e["name"] for e in load(p)} if os.path.exists(p) else {}
 
 
+
 def zone_name(loc, zid, stype):
+    """⚠ build-enemies.py의 zone_name과 **글자 하나까지 같아야 한다** — 두 도감이
+    (코드, 이름, 구역)으로 서로의 색인을 되짚는다. 한쪽만 고쳤다가 조인이
+    2,038 → 1,538로 깨진 적이 있다 (2026-08-09)."""
     z = zones[loc].get(zid) or {}
-    first = clean(z.get("zoneNameFirst"))
     second = clean(z.get("zoneNameSecond"))
-    # 메인 스토리는 **챕터 번호를 앞에 붙인다** (사용자 요청 2026-08-09). zoneNameFirst가
-    # 로케일별 챕터 표기라 그대로 쓴다 — ko "에피소드 3" · en "Episode 3" · ja "第三章".
-    # (막간·이벤트 구역은 first가 비어 있어 자연히 이름만 남는다.)
-    if first and second and first != second:
-        return f"{first} · {second}"
-    n = second or first or clean(z.get("zoneNameThird"))
+    third = clean(z.get("zoneNameThird"))
+    # 메인 스토리는 챕터 표기를 앞에 붙인다 (사용자 요청). 로케일마다 다른 first가
+    # 진짜 챕터 라벨이고(에피소드 3 / Episode 3 / 第三章), 아니면 third('EPISODE 15')를 쓴다.
+    head = clean(z.get("zoneNameFirst")) if _localized_first(zid) else None
+    if not head and third and CHAPTER_RE.search(third):
+        head = third
+    if head and second and head != second:
+        return f"{head} · {second}"
+    n = second or head or third
     return n or TYPE_LABELS[loc].get(z.get("type") or stype) or TYPE_LABELS[loc].get(stype) or ""
 
 
@@ -221,7 +270,11 @@ def build(loc):
         drops = []
         for d in drops_of(loc, v):
             item_map[d["id"]] = d["name"]
-            drops.append([d["id"], intern(d["occ"], occ_list, occ_ix), intern(d["kind"], kind_list, kind_ix)])
+            row_d = [d["id"], intern(d["occ"], occ_list, occ_ix), intern(d["kind"], kind_list, kind_ix)]
+            m = MEASURED.get(sid, {}).get(d["id"])
+            if m:   # 실측치가 있는 (작전, 재료)만 — 316쌍 (2026-08-09 실측)
+                row_d += [m[0], m[1], m[2]]
+            drops.append(row_d)
         e = {
             "id": sid,
             "code": code,
