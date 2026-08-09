@@ -17,7 +17,7 @@ import recruitData from "./data/recruit.json";
 import { asset } from "./assets";
 import { ALL_MATERIALS, MATERIAL_ALIASES } from "./farm";
 import { canOpenStory, eventById } from "./story";
-import { TOPICS } from "./rogue";
+import { TOPICS } from "./rogue-topics";
 import { normSearch } from "./search";
 import { gotoForEntity, type LensGoto, type LensIndex } from "./lens/match";
 import { PICK_BONUS_MAX, type PickMap } from "./omni-picks";

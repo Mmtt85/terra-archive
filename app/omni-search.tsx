@@ -26,14 +26,18 @@ import type { Operator } from "./home";
 const KIND_GLYPH: Record<string, string> = { story: "✦", tag: "◎", rogue: "❖", topic: "❖", tab: "◇" };
 const LEARNED_MIN = 3;   // 이 표수 이상이면 '자주 선택' 표시 (내 선택 1회 = 3표)
 
-export default function OmniSearch({ roster, includeFuture, extra, onGo }: {
+export default function OmniSearch({ roster, includeFuture, extra, onGo, autoOpen }: {
   roster: Operator[];
   includeFuture: boolean;
   extra?: ExtraI18n | null;
   onGo: (target: OmniTarget) => void;
+  /** 셸이 "열어 달라"는 뜻으로 마운트했을 때 true — 이 모듈은 첫 열기 전까지 아예 로드되지
+   *  않으므로(2026-08-09 INP 작업), 마운트 즉시 패널이 떠야 클릭 한 번으로 열린 것처럼 된다.
+   *  이 모듈이 omni.ts → farm.tsx → costs.json(573KB)까지 끌고 오기 때문에 지연이 필요했다. */
+  autoOpen?: boolean;
 }) {
   const { locale, t } = useI18n();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(Boolean(autoOpen));
   // ⚠ 입력란은 **비제어(uncontrolled)** — 타이핑 한 글자마다 React 렌더를 돌리면 그 렌더가
   // 끝난 뒤에야 글자가 보인다(특히 한글 IME 조합 중). 입력값은 ref에만 담고, 화면 갱신은
   // 0.5초 디바운스가 끝난 뒤 term 한 번으로 처리한다 (사용자 리포트 2026-07-25).

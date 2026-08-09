@@ -3,15 +3,23 @@
 // 3개 탭(백과사전·플래너·공채)의 공용 루트. 로케일별 라우트(/ /en /ja)가
 // home-ko/en/ja.tsx 래퍼로 해당 언어의 operators 데이터를 정적 import해 넘긴다 —
 // 런타임 언어 전환은 전체 내비게이션이라 이 컴포넌트 안에서 로케일은 불변이다.
-import { startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { lazy, startTransition, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import broadcastsData from "./data/broadcasts.json";
 import storyEventsData from "./data/stories.json";
-import InfraPlanner from "./planner";
-import RecruitHelper from "./recruit";
-import FarmGuide, { UpgradeSim } from "./farm";
+// 탭 본문은 전부 지연 로드한다 (INP 조사 2026-08-09). 종전엔 정적 import라 **어느 탭을
+// 열든 모든 탭의 코드와 데이터를 받아서 파싱**했다 — /stories가 오퍼 DB 1.8MB를, /infra가
+// 스토리 요약 1.8MB를 받는 식이라 페이지당 초기 JS가 6.4MB였고, 그 파싱이 하이드레이션
+// 중 300~400ms짜리 롱태스크를 만들어 그 창에 들어온 클릭의 INP를 700ms까지 밀어 올렸다.
+// 탭은 이미 `tab === "x" && <X/>` 조건부 렌더라 경계가 그대로 맞는다.
+const InfraPlanner = lazy(() => import("./planner"));
+const RecruitHelper = lazy(() => import("./recruit"));
+const FarmGuide = lazy(() => import("./farm"));
+const UpgradeSim = lazy(() => import("./farm").then((m) => ({ default: m.UpgradeSim })));
 import { normSearch, useSearchInput } from "./search";
-import OmniSearch from "./omni-search";
+// 만능검색(⌘K)은 첫 화면에 필요 없다 — 정적 import면 omni.ts가 끌고 오는
+// farm·story·rogue·recruit 색인까지 하이드레이션 경로에서 함께 파싱된다 (INP 조사 2026-08-09).
+const OmniSearch = lazy(() => import("./omni-search"));
 import BridgeButton from "./lens/bridge-button";
 import { asset } from "./assets";
 import ChangelogButton from "./changelog";
@@ -24,9 +32,16 @@ import { useHashSync } from "./hash-modal";
 import type { OmniTarget } from "./omni";
 import { notifyHandoff, stashHandoff } from "./handoff";
 import { noteAction, noteArrival, noteMiss } from "./trail";
-import StoryGuide, { type StorySummaries, type OpIndex } from "./story";
-import RogueGuide, { TOPICS as ROGUE_TOPICS, slugOf as rogueSlugOf } from "./rogue";
-import About from "./about";
+import type { StorySummaries, OpIndex } from "./story";
+/** 스토리 요약(로케일별 1.8MB)은 **스토리 탭에 들어갈 때만** 받는다 (2026-08-09 INP 작업).
+ *  종전엔 로케일 래퍼가 정적 import해 모든 페이지가 파싱했다. 셸에서 쓰던 곳은
+ *  Portal의 죽은 stats prop 하나뿐이라 데이터 자체가 필요 없었다. */
+export type SummariesLoader = () => Promise<{ default: unknown }>;
+// TOPICS·slugOf는 라우팅(해시·경로 파싱)에 쓰여 셸에 남는다 — 작은 상수 테이블이라 무해하다.
+import { TOPICS as ROGUE_TOPICS, slugOf as rogueSlugOf } from "./rogue-topics";
+const StoryGuide = lazy(() => import("./story"));
+const RogueGuide = lazy(() => import("./rogue"));
+const About = lazy(() => import("./about"));
 import FeedbackWidget from "./feedback-widget";
 import { bindEscClose } from "./esc-close";
 import { feedbackReady } from "./feedback";
@@ -704,10 +719,9 @@ function ThemeToggle() {
 //    fetchpriority=low·decoding=async로 내려, 종전 카드 그리드보다 요청 수는 오히려 적다.
 const SITE_OPENED = Date.parse("2026-07-11T00:00:00+09:00"); // 첫 커밋일 — LV 자리의 '운영 일수'
 
-function Portal({ onOpenTab, onFeedback, stats }: {
+function Portal({ onOpenTab, onFeedback }: {
   onOpenTab: (tab: Tab) => void;
   onFeedback: () => void;
-  stats: { operators: number; summaries: number };
 }) {
   const { locale, t } = useI18n();
 
@@ -857,10 +871,10 @@ function Portal({ onOpenTab, onFeedback, stats }: {
   );
 }
 
-export default function Home({ locale, operators, extra, summaries, initialTab = "portal", initialStory, initialOperator, initialRogue }: { locale: Locale; operators: Operator[]; extra: ExtraI18n | null; summaries: StorySummaries; initialTab?: Tab; initialStory?: string; initialOperator?: string; initialRogue?: string }) {
+export default function Home({ locale, operators, extra, summariesLoader, initialTab = "portal", initialStory, initialOperator, initialRogue }: { locale: Locale; operators: Operator[]; extra: ExtraI18n | null; summariesLoader: SummariesLoader; initialTab?: Tab; initialStory?: string; initialOperator?: string; initialRogue?: string }) {
   return (
     <I18nProvider locale={locale}>
-      <HomeInner operators={operators} extra={extra} summaries={summaries} initialTab={initialTab} initialStory={initialStory} initialOperator={initialOperator} initialRogue={initialRogue} />
+      <HomeInner operators={operators} extra={extra} summariesLoader={summariesLoader} initialTab={initialTab} initialStory={initialStory} initialOperator={initialOperator} initialRogue={initialRogue} />
     </I18nProvider>
   );
 }
@@ -868,7 +882,7 @@ export default function Home({ locale, operators, extra, summaries, initialTab =
 // '미래시 포함' 토글 localStorage 키 — 켜면 한국 서버 미실장(CN 선행) 오퍼도 목록에 표시
 const FUTURE_KEY = "ta-include-future";
 
-function HomeInner({ operators, extra, summaries, initialTab, initialStory, initialOperator, initialRogue }: { operators: Operator[]; extra: ExtraI18n | null; summaries: StorySummaries; initialTab: Tab; initialStory?: string; initialOperator?: string; initialRogue?: string }) {
+function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory, initialOperator, initialRogue }: { operators: Operator[]; extra: ExtraI18n | null; summariesLoader: SummariesLoader; initialTab: Tab; initialStory?: string; initialOperator?: string; initialRogue?: string }) {
   const { locale, t } = useI18n();
   // SSR엔 localStorage가 없으므로 false로 하이드레이션 후 이펙트에서 복원한다.
   // 우선순위: URL 쿼리(?future=1|0) > localStorage. URL 파라미터는 공유 링크용.
@@ -1229,6 +1243,53 @@ function HomeInner({ operators, extra, summaries, initialTab, initialStory, init
     rogue: t("통합전략 가이드"),
     about: t("테라 아카이브 소개"),
   };
+  // 탭 청크 미리 받기 — 지연 로드(위 lazy)로 초기 파싱은 줄이되, **탭 전환 체감은 종전과
+  // 같게** 유지하기 위한 짝이다. 탭 줄에 포인터가 닿거나(=누르기 직전) 포커스가 오면 그때
+  // 나머지 탭을 조용히 당겨 둔다. 로드 직후 무조건 당기지 않는 이유: 그러면 파싱 비용이
+  // 하이드레이션 직후로 옮겨올 뿐이라, 탭을 안 쓰는 방문자에게까지 롱태스크를 다시 안긴다.
+  // 스토리 요약 본문 — 스토리 탭에 들어갈 때만 받는다 (SummariesLoader 주석 참조).
+  // 셸의 하이드레이션 경로에서 1.8MB 파싱이 빠지고, 실제로 읽는 사람만 비용을 낸다.
+  const [summaries, setSummaries] = useState<StorySummaries | null>(null);
+  useEffect(() => {
+    if (tab !== "story" || summaries) return;
+    let alive = true;
+    void summariesLoader().then((m) => { if (alive) setSummaries(m.default as StorySummaries); });
+    return () => { alive = false; };
+  }, [tab, summaries, summariesLoader]);
+
+  // 만능검색 — 첫 열기 전까지 모듈을 받지 않는다 (위 OmniSearch 주석 참조).
+  const [omniOpen, setOmniOpen] = useState(false);
+  useEffect(() => {
+    if (omniOpen) return;   // 로드된 뒤엔 omni-search가 자기 ⌘K 바인딩을 갖는다
+    const onKey = (e: KeyboardEvent) => {
+      const el = document.activeElement as HTMLElement | null;
+      const typing = !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable);
+      if ((e.key === "k" || e.key === "K") && (e.metaKey || e.ctrlKey)) { e.preventDefault(); setOmniOpen(true); }
+      else if (e.key === "/" && !typing && !e.metaKey && !e.ctrlKey && !e.altKey) { e.preventDefault(); setOmniOpen(true); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [omniOpen]);
+  const omniTrigger = (
+    <div className="omni">
+      <button type="button" className="omni-trigger" onClick={() => setOmniOpen(true)}
+        aria-label={t("유니버셜 서치 — 사이트 전체 검색")}
+        title={t("유니버셜 서치 — 오퍼·재료·스토리·통합전략·기능을 한 번에 찾아 이동합니다 (⌘K)")}>
+        <span aria-hidden>⌕</span>
+        <span className="omni-trigger-label">{t("유니버셜 서치")}{isNewFeature("omni") && <span className="new-badge">{t("새기능")}</span>}</span>
+        <kbd className="omni-trigger-kbd" aria-hidden>⌘K</kbd>
+      </button>
+    </div>
+  );
+
+  const prefetched = useRef(false);
+  const prefetchTabs = useCallback(() => {
+    if (prefetched.current) return;
+    prefetched.current = true;
+    void import("./planner"); void import("./recruit"); void import("./farm");
+    void import("./story"); void import("./rogue"); void import("./about");
+  }, []);
+
   const switchTab = (next: Tab) => {
     setNavOpen(false);
     noteAction();                       // 실패 추적 창 카운트 (app/trail.ts)
@@ -1457,7 +1518,16 @@ function HomeInner({ operators, extra, summaries, initialTab, initialStory, init
         {/* 헤더 치비 (베타) — 1줄 가운데 빈 공간의 산책 장식, 데스크탑 전용 (사용자 요청 2026-08-03) */}
         <HeaderChibi operators={operators} onNavigate={switchTab} onShowOperator={(op) => setSelected(op)} />
         {/* 만능검색 = 1줄 오른쪽(햄버거 왼쪽) — 헤더를 접어도 남는다 (사용자 요청 2026-07-25) */}
-        <OmniSearch roster={roster} includeFuture={includeFuture} extra={extra} onGo={runOmni} />
+        {/* 만능검색은 **처음 열 때까지 로드하지 않는다** (2026-08-09 INP 작업).
+            omni-search → omni.ts → farm.tsx → costs.json(573KB) 사슬이라 그냥 마운트만 해도
+            초기 파싱에 그대로 얹혔다. 트리거는 셸이 직접 그리고(가볍다), 누르거나 ⌘K를
+            치면 그때 모듈을 받아 패널을 연다. 로드된 뒤에는 omni-search가 트리거까지
+            자기 것으로 다시 그리므로 화면은 종전과 같다. */}
+        {omniOpen ? (
+          <Suspense fallback={omniTrigger}>
+            <OmniSearch roster={roster} includeFuture={includeFuture} extra={extra} onGo={runOmni} autoOpen />
+          </Suspense>
+        ) : omniTrigger}
         {/* 게임 연결 — 크롬 확장(extension/)이 깔린 사람에게만 나타난다. 누르면 게임 창
             프레임이 흐르고, 인식·이동은 각 탭의 스샷 레이더 경로가 그대로 처리한다. */}
         <BridgeButton t={t} />
@@ -1471,7 +1541,8 @@ function HomeInner({ operators, extra, summaries, initialTab, initialStory, init
           </button>
           {/* 드롭다운은 햄버거 버튼 바로 밑에 딱 붙여 연다 (사용자 요청 2026-07) */}
           {/* 순서는 포탈 카드와 동일 (사용자 확정 2026-07-17): 홈 · 인프라 · 백과사전 · 공채 · 파밍 · 스토리 · 소개 */}
-          <nav className={`main-tabs${navOpen ? " open" : ""}`} aria-label={t("주요 탭")}>
+          <nav className={`main-tabs${navOpen ? " open" : ""}`} aria-label={t("주요 탭")}
+            onPointerOver={prefetchTabs} onTouchStart={prefetchTabs} onFocus={prefetchTabs}>
             <button className={`tab-portal${tab === "portal" ? " selected" : ""}`} onClick={() => switchTab("portal")}><span className="tab-icon" aria-hidden>◇</span>{t("홈")}</button>
             <button className={`tab-planner${tab === "planner" ? " selected" : ""}`} onClick={() => switchTab("planner")}><span className="tab-icon" aria-hidden>⌂</span>{t("인프라 자동편성기")}{tabHasNewFeature("planner") && <span className="new-badge">{t("새기능")}</span>}</button>
             <button className={`tab-archive${tab === "archive" ? " selected" : ""}`} onClick={() => switchTab("archive")}><span className="tab-icon" aria-hidden>▤</span>{t("오퍼 백과사전")}</button>
@@ -1538,8 +1609,7 @@ function HomeInner({ operators, extra, summaries, initialTab, initialStory, init
           올라오지 않도록 — 사용자 요청 2026-07-22, 모바일·PC 공통). 모달·제안 위젯은 fixed라 밖에 둔다. */}
       <div className="site-scroll">
 
-      {tab === "portal" && <Portal onOpenTab={switchTab} onFeedback={() => setFeedbackOpen(true)}
-        stats={{ operators: operators.length, summaries: Object.keys(summaries).length }} />}
+      {tab === "portal" && <Portal onOpenTab={switchTab} onFeedback={() => setFeedbackOpen(true)} />}
 
       {/* 오퍼 상세 페이지(/operators/<id>)로 들어오면 목록 대신 상세만 — 420장의 목록이
           모든 상세 페이지에 통째로 딸려 들어가면 페이지마다 고유 본문보다 공통 뼈대가
@@ -1616,13 +1686,18 @@ function HomeInner({ operators, extra, summaries, initialTab, initialStory, init
         </div>
       </section>}
 
-      {tab === "planner" && <InfraPlanner onShowOperator={showOperatorById} extra={extra} includeFuture={includeFuture} />}
-      {tab === "recruit" && <RecruitHelper onShowOperator={showOperatorById} extra={extra} />}
-      {tab === "farm" && <FarmGuide includeFuture={includeFuture} />}
-      {tab === "upgrade" && <UpgradeSim operators={operators} includeFuture={includeFuture} onShowOperator={showOperatorById} />}
-      {tab === "story" && <StoryGuide summaries={summaries} onShowOperator={showOperatorById} includeFuture={includeFuture} opIndex={storyOpIndex} initialStory={initialStory} onStoryTitle={setStoryTitle} />}
-      {tab === "rogue" && <RogueGuide includeFuture={includeFuture} initialTopic={initialRogue ? `rogue_${initialRogue.replace(/^is/, "")}` : undefined} />}
-      {tab === "about" && <About onOpenTab={switchTab} />}
+      {/* 지연 로드된 탭 본문. fallback은 **높이를 가진 빈 칸**이다 — null이면 푸터가 위로
+          솟았다 내려오며 레이아웃이 튄다. 탭 전환은 아래 prefetch가 미리 받아 두므로
+          이 자리표시가 실제로 보이는 건 첫 진입의 아주 짧은 순간뿐이다. */}
+      <Suspense fallback={<div className="tab-loading" aria-hidden />}>
+        {tab === "planner" && <InfraPlanner onShowOperator={showOperatorById} extra={extra} includeFuture={includeFuture} />}
+        {tab === "recruit" && <RecruitHelper onShowOperator={showOperatorById} extra={extra} />}
+        {tab === "farm" && <FarmGuide includeFuture={includeFuture} />}
+        {tab === "upgrade" && <UpgradeSim operators={operators} includeFuture={includeFuture} onShowOperator={showOperatorById} />}
+        {tab === "story" && summaries && <StoryGuide summaries={summaries} onShowOperator={showOperatorById} includeFuture={includeFuture} opIndex={storyOpIndex} initialStory={initialStory} onStoryTitle={setStoryTitle} />}
+        {tab === "rogue" && <RogueGuide includeFuture={includeFuture} initialTopic={initialRogue ? `rogue_${initialRogue.replace(/^is/, "")}` : undefined} />}
+        {tab === "about" && <About onOpenTab={switchTab} />}
+      </Suspense>
 
       <footer>
         <span>RHODES ISLAND // TERRA ARCHIVE</span>

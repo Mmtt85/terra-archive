@@ -7,6 +7,7 @@
 // 번역을 오버레이한 것으로 rogue_6과 같은 병기 표기. 흑류수해는 KR 미출시라 KR 탭 비활성.
 // 조우의 층별 출현 규칙·엔딩 선제조건은 클라 데이터에 없어 PRTS 기반 큐레이션(rogueN-curated.json)을 병합한다.
 import { lazy, startTransition, Suspense, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { TOPICS, slugOf, roguePath } from "./rogue-topics";
 import rogue1Data from "./data/rogue1.json";
 // 노드 종류 아이콘 보유 목록 — 이미지 자체는 R2에만 있고 커밋되지 않는다(.gitignore
 // /public/rogue/node/). 어느 (테마,타입) 조합에 아이콘이 있는지는 이 목록으로만 안다.
@@ -780,14 +781,8 @@ function ZoneModal({ zone, badge, pairs, bosses, onOpenStage, onClose }: {
 
 // 토픽 목록 — ready=데이터 있음, future=미래시 토글 필요 (CN 선행, 비공식 번역명)
 // 햄버거 메뉴가 '통합전략 가이드' 부메뉴로도 쓰므로 export (home.tsx)
-export const TOPICS: { id: string; name: string; ready?: boolean; future?: boolean }[] = [
-  { id: "rogue_1", name: "팬텀 & 크림슨 솔리테어", ready: true },
-  { id: "rogue_2", name: "미즈키 & 카이룰라 아버", ready: true },
-  { id: "rogue_3", name: "탐험가의 은빛 서리 끝자락", ready: true },
-  { id: "rogue_4", name: "살카즈의 영겁 기담", ready: true },
-  { id: "rogue_5", name: "쉐이의 기이한 계원", ready: true },
-  { id: "rogue_6", name: "침몰자의 흑류수해", ready: true, future: true },
-];
+// TOPICS는 rogue-topics.ts로 이동 (셸이 데이터 없이 쓰기 위해) — 여기선 재export만 한다.
+export { TOPICS, slugOf, roguePath } from "./rogue-topics";
 
 // 토픽 데이터 동적 로더 — KR은 rogue_1만 기본 번들, 나머지는 선택 시 로드 (각 300~600KB).
 // EN/JA는 글로벌/일본 서버 공식 텍스트로 빌드한 rogueN.<loc>.json (build-rogue.py i18n).
@@ -836,7 +831,6 @@ const TOPIC_HUE: Record<string, string> = {
   rogue_4: "#8e222f", rogue_5: "#efa5c1", rogue_6: "#2fbfa5",
 };
 
-export const slugOf = (id: string) => "is" + id.split("_")[1];
 // 테마의 정본 주소 = /rogue/<slug> (2026-08-06, SEO). 종전에는 6개 테마가 ?topic=isN
 // 쿼리 파라미터 하나를 나눠 써서 사이트맵에도 없고 테마별 제목·설명도 없었다.
 // 옛 ?topic= 링크는 그대로 동작한다 (경로가 우선, 없으면 파라미터).
@@ -845,7 +839,6 @@ const LOCALE_BASE: Record<string, string> = { ko: "", en: "/en", ja: "/ja" };
 // 테마 이름·도입문만 담은 경량 색인(3.6KB, scripts/build-rogue-index.mjs) — 본문 데이터를
 // 불러오기 전에도 히어로를 그릴 수 있다. 무거운 rogueN.json은 종전대로 동적 로드.
 const ROGUE_INDEX = rogueIndexData as Record<string, Partial<Record<string, { name: string; line: string }>>>;
-export const roguePath = (localeBase: string, id: string) => `${localeBase}/rogue/${slugOf(id)}`;
 const topicOfSlug = (slug: string | null) =>
   TOPICS.find((tp) => tp.ready && slugOf(tp.id) === slug)?.id ?? null;
 const topicFromUrl = () =>
