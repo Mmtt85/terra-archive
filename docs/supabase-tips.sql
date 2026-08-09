@@ -80,7 +80,7 @@ from (values
    '이 재료, 어디서 캐야 하죠?',
    'Where do I farm this?',
    'この素材、どこで掘る？',
-   '파밍 도우미는 재료마다 개당 기대 이성(이성 소모 ÷ 드랍률)을 계산해 가장 효율 좋은 스테이지에 배지를 붙여 줍니다. 펭귄 물류 실측 드랍률 기준입니다.',
+   '재료파밍 도우미는 재료마다 개당 기대 이성(이성 소모 ÷ 드랍률)을 계산해 가장 효율 좋은 스테이지에 배지를 붙여 줍니다. 펭귄 물류 실측 드랍률 기준입니다.',
    'The farming helper computes expected sanity per item (sanity ÷ drop rate) for every material and badges the most efficient stage — based on Penguin Statistics'' measured drop rates.',
    '周回ヘルパーは素材ごとの1個あたり期待理性（理性消費÷ドロップ率）を計算し、最も効率の良いステージにバッジを付けます。ペンギン急便の実測ドロップ率が基準です。',
    '/about/farm.webp', '/about/farm-dark.webp', '/farm'),
@@ -96,7 +96,7 @@ from (values
    '공채 태그, 확정만 골라서',
    'Recruitment, guarantees first',
    '公開求人、確定だけを',
-   '공채 도우미에 태그를 넣으면 나올 수 있는 오퍼와 최소 보장 성급을 계산해, 고성급 확정 조합을 위로 올려 줍니다. 놓치기 쉬운 조합을 대신 찾아 줍니다.',
+   '공개채용 도우미에 태그를 넣으면 나올 수 있는 오퍼와 최소 보장 성급을 계산해, 고성급 확정 조합을 위로 올려 줍니다. 놓치기 쉬운 조합을 대신 찾아 줍니다.',
    'Feed tags into the recruitment helper and it works out which operators can appear and the minimum guaranteed rarity, floating guaranteed high-rarity combos to the top so you don''t miss them.',
    '公開求人ヘルパーにタグを入れると、出現しうるオペレーターと最低保証レアリティを計算し、高レア確定の組み合わせを上に並べます。見逃しやすい組み合わせを代わりに探します。',
    '/about/recruit.webp', '/about/recruit-dark.webp', '/recruit')

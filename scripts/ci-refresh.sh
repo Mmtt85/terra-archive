@@ -98,6 +98,11 @@ run "broadcasts-cn"    python3 scripts/build-broadcasts-cn.py \
 #   CI가 매번 새로 받으면 러너 디스크·시간을 통째로 날린다. 이미지는 로컬에서 별도로 받는다.
 run "build-voicelines"   python3 scripts/build-voicelines.py "$G"
 run "build-skins-meta"   python3 scripts/build-skins.py "$G" --meta-only
+# ⚠ build-enemies도 같은 이유로 **--meta-only --no-images**다.
+#   --meta-only가 없으면 등장 작전 역색인을 만들려고 levels/ 2,283개(179MB)를 매번 받는다.
+#   그래서 CI는 도감 본문만 갱신하고, **새 이벤트 스테이지의 등장 적과 신규 적 초상은
+#   로컬에서 `python3 scripts/build-enemies.py`(전체)를 한 번 돌려야 반영된다.**
+run "build-enemies"      python3 scripts/build-enemies.py "$G" --meta-only --no-images
 
 # 8) 오퍼 지연 에셋 전수 검사 (사용자 요청 2026-08-02) — 데이터가 번들(배포)과 R2(동기화)
 # 두 경로로 나가는데 한쪽만 돌면 반쪽이 된다. 2026-08-01에 R2 키가 없어 아바타가 안 올라갔고

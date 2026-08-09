@@ -27,6 +27,7 @@ const SHOT_VER = "20260802";
 const SHOTS: Partial<Record<Tab, ShotPair>> = {
   archive: { d: "/about/archive.webp", m: "/about/archive-m.webp" },
   planner: { d: "/about/planner.webp", m: "/about/planner-m.webp" },
+  enemy: { d: "/about/enemy.webp", m: "/about/enemy-m.webp" },
   recruit: { d: "/about/recruit.webp", m: "/about/recruit-m.webp" },
   farm: { d: "/about/farm.webp", m: "/about/farm-m.webp" },
   upgrade: { d: "/about/upgrade.webp", m: "/about/upgrade-m.webp" },
@@ -123,7 +124,17 @@ const CONTENT: Record<Locale, Content> = {
         ],
       },
       {
-        tab: "recruit", icon: "◎", name: "공채 도우미",
+        tab: "enemy", icon: "⊗", name: "적 도감",
+        summary: "게임에 나오는 적 1,500여 종의 스탯·능력·면역을 보고, 어느 작전에 나오는지 역으로 찾습니다.",
+        bullets: [
+          "등급(일반·정예·보스)·종족·근접/원거리·지상/비행·피해 유형으로 필터링",
+          "레벨 강화 단계별 스탯을 나란히 비교 — 같은 적도 작전 난이도에 따라 수치가 다릅니다",
+          "기절·침묵·빙결 등 상태이상 면역을 표시해 어떤 오퍼로 막을지 판단할 수 있습니다",
+          "「이 적이 어디 나오더라」 — 등장 작전을 구역별로 묶어 스폰 수까지 보여줍니다",
+        ],
+      },
+      {
+        tab: "recruit", icon: "◎", name: "공개채용 도우미",
         summary: "공개모집(공채) 태그 조합으로 확정·고성급 오퍼레이터가 나오는 경우를 계산합니다.",
         bullets: [
           "선택한 태그 조합마다 등장 가능한 오퍼레이터와 최소 보장 성급을 표시",
@@ -131,7 +142,7 @@ const CONTENT: Record<Locale, Content> = {
         ],
       },
       {
-        tab: "farm", icon: "◈", name: "파밍 도우미",
+        tab: "farm", icon: "◈", name: "재료파밍 도우미",
         summary: "정예화 재료마다 어느 스테이지가 가장 효율적인지 실측 드랍 통계로 확인합니다.",
         bullets: [
           "재료마다 개당 기대 이성(이성 소모 ÷ 드랍률)을 계산해 이성 효율이 가장 좋은 스테이지에 최고 효율 배지",
@@ -220,7 +231,17 @@ const CONTENT: Record<Locale, Content> = {
         ],
       },
       {
-        tab: "recruit", icon: "◎", name: "Recruitment Helper",
+        tab: "enemy", icon: "⊗", name: "Enemy Handbook",
+        summary: "Stats, abilities and immunities for 1,500+ enemies — and a reverse lookup of the operations each one shows up in.",
+        bullets: [
+          "Filter by class (Normal/Elite/Boss), race, melee/ranged, ground/flying, and damage type",
+          "Compare stats across reinforcement tiers side by side — the same enemy scales with stage difficulty",
+          "Status immunities (stun, silence, freeze…) are listed so you know what actually lands on it",
+          "\u201cWhere have I seen this one?\u201d — appearances grouped by zone, with spawn counts",
+        ],
+      },
+      {
+        tab: "recruit", icon: "◎", name: "Public Recruitment Helper",
         summary: "Calculates which guaranteed or high-rarity operators a recruitment tag combination can yield.",
         bullets: [
           "For each selected tag combo, shows the possible operators and the minimum guaranteed rarity",
@@ -228,7 +249,7 @@ const CONTENT: Record<Locale, Content> = {
         ],
       },
       {
-        tab: "farm", icon: "◈", name: "Farming Helper",
+        tab: "farm", icon: "◈", name: "Material Farming Helper",
         summary: "Shows which stage is most efficient for each Elite material, from measured drop statistics.",
         bullets: [
           "Expected sanity-per-item (sanity ÷ drop rate) per material, with a best-efficiency badge on the top stage",
@@ -317,6 +338,16 @@ const CONTENT: Record<Locale, Content> = {
         ],
       },
       {
+        tab: "enemy", icon: "⊗", name: "敵図鑑",
+        summary: "1,500種以上の敵のステータス・能力・耐性を確認し、その敵が出現する作戦を逆引きできます。",
+        bullets: [
+          "等級（通常・エリート・ボス）・種族・近接/遠距離・地上/飛行・ダメージ種別で絞り込み",
+          "強化段階ごとのステータスを並べて比較 — 同じ敵でも作戦の難易度で数値が変わります",
+          "スタン・沈黙・凍結などの状態異常耐性を表示 — どの手段が通るか判断できます",
+          "「この敵どこで見たっけ」— 出現作戦をエリア別にまとめ、湧き数まで表示します",
+        ],
+      },
+      {
         tab: "recruit", icon: "◎", name: "公開求人ヘルパー",
         summary: "公開求人タグの組み合わせから、確定・高レアオペレーターが出る場合を計算します。",
         bullets: [
@@ -325,7 +356,7 @@ const CONTENT: Record<Locale, Content> = {
         ],
       },
       {
-        tab: "farm", icon: "◈", name: "周回ヘルパー",
+        tab: "farm", icon: "◈", name: "素材周回ヘルパー",
         summary: "昇進素材ごとにどのステージが最も効率的かを、実測ドロップ統計で確認します。",
         bullets: [
           "素材ごとの1個あたり期待理性（理性消費 ÷ ドロップ率）を計算し、最も効率の良いステージに最効率バッジ",

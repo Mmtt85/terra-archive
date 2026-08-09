@@ -16,6 +16,13 @@ const InfraPlanner = lazy(() => import("./planner"));
 const RecruitHelper = lazy(() => import("./recruit"));
 const FarmGuide = lazy(() => import("./farm"));
 const UpgradeSim = lazy(() => import("./farm").then((m) => ({ default: m.UpgradeSim })));
+// 적 도감 목록 — 로케일마다 자기 데이터(~1MB)만 든 청크를 받는다 (app/enemies-{ko,en,ja}.tsx).
+// 셋을 한 모듈에서 동적 선택하면 번들러가 세 JSON을 같은 청크에 묶어 3MB가 된다.
+const ENEMY_DEX = {
+  ko: lazy(() => import("./enemies-ko")),
+  en: lazy(() => import("./enemies-en")),
+  ja: lazy(() => import("./enemies-ja")),
+} as const;
 import { normSearch, useSearchInput } from "./search";
 // 만능검색(⌘K)은 첫 화면에 필요 없다 — 정적 import면 omni.ts가 끌고 오는
 // farm·story·rogue·recruit 색인까지 하이드레이션 경로에서 함께 파싱된다 (INP 조사 2026-08-09).
@@ -49,6 +56,11 @@ import { isNewFeature, tabHasNewFeature } from "./whats-new";
 import { scrollMainTop } from "./scroll";
 import { PORTAL_TILES, PORTAL_ART, type PortalTile } from "./portal-themes";
 import { useLazyVisible } from "./lazy-img";
+// 속성 필터는 적 도감(app/enemies.tsx)과 공유하는 부품이라 별도 모듈에 있다 (2026-08-09)
+import { AttributeFilter } from "./attr-filter";
+// ⚠ 적 상세는 **lazy가 아니다.** /enemies/<id> HTML에 본문이 박히려면 인라인 렌더여야 한다
+//    (app/enemy-detail.tsx 머리주석의 실측 근거 참조). 데이터는 안 딸려 온다 — props로만 받는다.
+import { EnemyPage, type Enemy as EnemyEntry, type EnemyStages } from "./enemy-detail";
 import { I18nProvider, useI18n, conceptName, DT_LOCALE, MAGIC_TRAIT_RE, LOCALES, type Locale, type ExtraI18n } from "./i18n";
 import { SPECIAL_CONCEPTS, conceptTitle, conceptMatches, resolveConcepts, suggestConcepts } from "./concepts";
 
@@ -161,11 +173,14 @@ const JOB_ORDER = ["PIONEER", "WARRIOR", "TANK", "SNIPER", "CASTER", "MEDIC", "S
 
 const SORT_KEYS = ["기본", "이름", "성급", "발매순", "소속", "출신지", "종족", "직군", "세부 직군"];
 
-export type Tab = "portal" | "archive" | "planner" | "recruit" | "farm" | "upgrade" | "story" | "rogue" | "about";
+export type Tab = "portal" | "archive" | "enemy" | "planner" | "recruit" | "farm" | "upgrade" | "story" | "rogue" | "about";
 // 탭 ↔ URL 세그먼트 (portal이 로케일 루트, 오퍼 백과사전은 /operators — 사용자 확정 2026-07-17:
 // 루트 진입 시 오퍼 이미지 강제 로딩을 없애려 포탈 첫화면 도입). seo.ts의 TAB_SEG·라우트 폴더명과 일치.
 // URL 세그먼트 "stories"(← 정적 자산 디렉터리 public/story/ 와의 경로 충돌 회피). 내부 탭명은 story.
-const TAB_SEG: Record<Tab, string> = { portal: "", archive: "operators", planner: "infra", recruit: "recruit", farm: "farm", upgrade: "upgrade", story: "stories", rogue: "rogue", about: "about" };
+// ⚠ 적 도감의 URL 세그먼트는 "enemies"(복수)인데 초상 자산 폴더는 public/enemy/(단수)다.
+//    일부러 다르게 뒀다 — scripts/deploy.sh가 스테이징에서 `rm -rf $STAGE/enemy`로 자산만
+//    떼어내는데(서빙은 R2), 이름이 같으면 라우트 HTML까지 통째로 지워진다.
+const TAB_SEG: Record<Tab, string> = { portal: "", archive: "operators", enemy: "enemies", planner: "infra", recruit: "recruit", farm: "farm", upgrade: "upgrade", story: "stories", rogue: "rogue", about: "about" };
 const SEG_TAB: Record<string, Tab> = { "": "portal", operators: "archive", infra: "planner", recruit: "recruit", farm: "farm", upgrade: "upgrade", stories: "story", rogue: "rogue", about: "about" };
 const LOCALE_BASE: Record<Locale, string> = { ko: "", en: "/en", ja: "/ja" };
 
@@ -871,10 +886,10 @@ function Portal({ onOpenTab, onFeedback }: {
   );
 }
 
-export default function Home({ locale, operators, extra, summariesLoader, initialTab = "portal", initialStory, initialOperator, initialRogue }: { locale: Locale; operators: Operator[]; extra: ExtraI18n | null; summariesLoader: SummariesLoader; initialTab?: Tab; initialStory?: string; initialOperator?: string; initialRogue?: string }) {
+export default function Home({ locale, operators, extra, summariesLoader, initialTab = "portal", initialStory, initialOperator, initialRogue, initialEnemy, pageEnemy, pageEnemyStages }: { locale: Locale; operators: Operator[]; extra: ExtraI18n | null; summariesLoader: SummariesLoader; initialTab?: Tab; initialStory?: string; initialOperator?: string; initialRogue?: string; initialEnemy?: string; pageEnemy?: EnemyEntry | null; pageEnemyStages?: EnemyStages | null }) {
   return (
     <I18nProvider locale={locale}>
-      <HomeInner operators={operators} extra={extra} summariesLoader={summariesLoader} initialTab={initialTab} initialStory={initialStory} initialOperator={initialOperator} initialRogue={initialRogue} />
+      <HomeInner operators={operators} extra={extra} summariesLoader={summariesLoader} initialTab={initialTab} initialStory={initialStory} initialOperator={initialOperator} initialRogue={initialRogue} initialEnemy={initialEnemy} pageEnemy={pageEnemy} pageEnemyStages={pageEnemyStages} />
     </I18nProvider>
   );
 }
@@ -882,7 +897,7 @@ export default function Home({ locale, operators, extra, summariesLoader, initia
 // '미래시 포함' 토글 localStorage 키 — 켜면 한국 서버 미실장(CN 선행) 오퍼도 목록에 표시
 const FUTURE_KEY = "ta-include-future";
 
-function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory, initialOperator, initialRogue }: { operators: Operator[]; extra: ExtraI18n | null; summariesLoader: SummariesLoader; initialTab: Tab; initialStory?: string; initialOperator?: string; initialRogue?: string }) {
+function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory, initialOperator, initialRogue, initialEnemy, pageEnemy, pageEnemyStages }: { operators: Operator[]; extra: ExtraI18n | null; summariesLoader: SummariesLoader; initialTab: Tab; initialStory?: string; initialOperator?: string; initialRogue?: string; initialEnemy?: string; pageEnemy?: EnemyEntry | null; pageEnemyStages?: EnemyStages | null }) {
   const { locale, t } = useI18n();
   // SSR엔 localStorage가 없으므로 false로 하이드레이션 후 이펙트에서 복원한다.
   // 우선순위: URL 쿼리(?future=1|0) > localStorage. URL 파라미터는 공유 링크용.
@@ -936,6 +951,10 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   // 모달은 body 포털이라 프리렌더가 안 되고, 목록 위에 겹치므로 색인용으로 못 쓴다.
   const [pageOperator, setPageOperator] = useState<Operator | null>(
     () => (initialOperator ? operators.find((o) => o.id === initialOperator) ?? null : null));
+  // 적 상세 **페이지**(/enemies/<id>). 오퍼와 달리 목록 데이터가 이 모듈에 없으므로,
+  // 서버 라우트가 그 적 하나(+등장 작전 발췌)만 골라 props로 내려준다.
+  const [enemyPageOpen, setEnemyPageOpen] = useState<boolean>(() => !!pageEnemy);
+  const EnemyDexForLocale = ENEMY_DEX[locale as keyof typeof ENEMY_DEX] ?? ENEMY_DEX.ko;
   const [rogueSlug, setRogueSlug] = useState<string>(() =>
     typeof window === "undefined" ? "is1" : new URLSearchParams(window.location.search).get("topic") || "is1");
   const localeBase = LOCALE_BASE[locale];
@@ -1185,9 +1204,13 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
       : tab === "planner"
         ? t("인프라 자동편성기 - 명일방주 기반시설 편성 | 테라 아카이브")
         : tab === "recruit"
-          ? t("공채 도우미 - 명일방주 공개모집 계산기 | 테라 아카이브")
+          ? t("공개채용 도우미 - 명일방주 공개모집 계산기 | 테라 아카이브")
+          : tab === "enemy"
+            ? (pageEnemy && enemyPageOpen
+              ? t("{name} - 명일방주 적 도감 | 테라 아카이브", { name: pageEnemy.name })
+              : t("적 도감 - 명일방주 적 정보 | 테라 아카이브"))
           : tab === "farm"
-            ? t("파밍 도우미 - 명일방주 재료 파밍 효율표 | 테라 아카이브")
+            ? t("재료파밍 도우미 - 명일방주 재료 파밍 효율표 | 테라 아카이브")
             : tab === "upgrade"
             ? t("오퍼 육성 시뮬 - 명일방주 육성 비용 계산기 | 테라 아카이브")
             : tab === "story"
@@ -1235,9 +1258,10 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   const TAB_LABEL: Record<Tab, string> = {
     portal: t("홈"),
     archive: t("오퍼 백과사전"),
+    enemy: t("적 도감"),
     planner: t("인프라 자동편성기"),
-    recruit: t("공채 도우미"),
-    farm: t("파밍 도우미"),
+    recruit: t("공개채용 도우미"),
+    farm: t("재료파밍 도우미"),
     upgrade: t("오퍼 육성 시뮬"),
     story: t("스토리"),
     rogue: t("통합전략 가이드"),
@@ -1288,7 +1312,9 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     prefetched.current = true;
     void import("./planner"); void import("./recruit"); void import("./farm");
     void import("./story"); void import("./rogue"); void import("./about");
-  }, []);
+    // 적 도감은 로케일 청크가 갈라져 있다 — 지금 언어 것만 미리 받는다
+    void (locale === "ja" ? import("./enemies-ja") : locale === "en" ? import("./enemies-en") : import("./enemies-ko"));
+  }, [locale]);
 
   const switchTab = (next: Tab) => {
     setNavOpen(false);
@@ -1546,8 +1572,9 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
             <button className={`tab-portal${tab === "portal" ? " selected" : ""}`} onClick={() => switchTab("portal")}><span className="tab-icon" aria-hidden>◇</span>{t("홈")}</button>
             <button className={`tab-planner${tab === "planner" ? " selected" : ""}`} onClick={() => switchTab("planner")}><span className="tab-icon" aria-hidden>⌂</span>{t("인프라 자동편성기")}{tabHasNewFeature("planner") && <span className="new-badge">{t("새기능")}</span>}</button>
             <button className={`tab-archive${tab === "archive" ? " selected" : ""}`} onClick={() => switchTab("archive")}><span className="tab-icon" aria-hidden>▤</span>{t("오퍼 백과사전")}</button>
-            <button className={`tab-recruit${tab === "recruit" ? " selected" : ""}`} onClick={() => switchTab("recruit")}><span className="tab-icon" aria-hidden>◎</span>{t("공채 도우미")}{tabHasNewFeature("recruit") && <span className="new-badge">{t("새기능")}</span>}</button>
-            <button className={`tab-farm${tab === "farm" ? " selected" : ""}`} onClick={() => switchTab("farm")}><span className="tab-icon" aria-hidden>◈</span>{t("파밍 도우미")}</button>
+            <button className={`tab-enemy${tab === "enemy" ? " selected" : ""}`} onClick={() => switchTab("enemy")}><span className="tab-icon" aria-hidden>⊗</span>{t("적 도감")}{tabHasNewFeature("enemy") && <span className="new-badge">{t("새기능")}</span>}</button>
+            <button className={`tab-recruit${tab === "recruit" ? " selected" : ""}`} onClick={() => switchTab("recruit")}><span className="tab-icon" aria-hidden>◎</span>{t("공개채용 도우미")}{tabHasNewFeature("recruit") && <span className="new-badge">{t("새기능")}</span>}</button>
+            <button className={`tab-farm${tab === "farm" ? " selected" : ""}`} onClick={() => switchTab("farm")}><span className="tab-icon" aria-hidden>◈</span>{t("재료파밍 도우미")}</button>
             <button className={`tab-upgrade${tab === "upgrade" ? " selected" : ""}`} onClick={() => switchTab("upgrade")}><span className="tab-icon" aria-hidden>▦</span>{t("오퍼 육성 시뮬")}</button>
             <button className={`tab-story${tab === "story" ? " selected" : ""}`} onClick={() => switchTab("story")}><span className="tab-icon" aria-hidden>✦</span>{t("스토리")}{tabHasNewFeature("story") && <span className="new-badge">{t("새기능")}</span>}</button>
             {/* 통합전략 가이드 — 마우스오버 시 테마별 부메뉴가 펼쳐진다 (플라이아웃) */}
@@ -1686,6 +1713,14 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
         </div>
       </section>}
 
+      {/* 적 상세 페이지(/enemies/<id>) — **lazy가 아니다**. 이 한 줄이 4,542장의 SEO를
+          가른다: lazy로 감싸면 HTML에 "데이터를 불러오는 중…"만 남는다(/rogue/is1이 그 상태).
+          목록 1,514장을 상세마다 딸려 보내지 않으려고, 서버가 그 적 하나만 props로 준다. */}
+      {tab === "enemy" && pageEnemy && enemyPageOpen && (
+        <EnemyPage enemy={pageEnemy} stagesDoc={pageEnemyStages ?? null}
+          onBack={() => { setEnemyPageOpen(false); history.pushState(null, "", tabPath("enemy")); }} />
+      )}
+
       {/* 지연 로드된 탭 본문. fallback은 **높이를 가진 빈 칸**이다 — null이면 푸터가 위로
           솟았다 내려오며 레이아웃이 튄다. 탭 전환은 아래 prefetch가 미리 받아 두므로
           이 자리표시가 실제로 보이는 건 첫 진입의 아주 짧은 순간뿐이다. */}
@@ -1696,6 +1731,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
         {tab === "upgrade" && <UpgradeSim operators={operators} includeFuture={includeFuture} onShowOperator={showOperatorById} />}
         {tab === "story" && summaries && <StoryGuide summaries={summaries} onShowOperator={showOperatorById} includeFuture={includeFuture} opIndex={storyOpIndex} initialStory={initialStory} onStoryTitle={setStoryTitle} />}
         {tab === "rogue" && <RogueGuide includeFuture={includeFuture} initialTopic={initialRogue ? `rogue_${initialRogue.replace(/^is/, "")}` : undefined} />}
+        {tab === "enemy" && !(pageEnemy && enemyPageOpen) && <EnemyDexForLocale />}
         {tab === "about" && <About onOpenTab={switchTab} />}
       </Suspense>
 
@@ -1912,75 +1948,6 @@ function FilterGroup({ title, items, selected, onToggle, rows = 1, countForItem,
       {(hiddenCount > 0 || expanded) && (
         <button className="more-filter" type="button" onClick={() => setExpanded((current) => !current)} aria-expanded={expanded}><span className="btn-icon" aria-hidden>{expanded ? "▴" : "▾"}</span>{expanded ? t("접기") : t("더보기 +{n}", { n: hiddenCount })}</button>
       )}
-    </fieldset>
-  );
-}
-
-// 여러 속성 필터(성급·직군·세부직군·전투태그·공격방식·소속)를 한 컨트롤로 — 카테고리를 누르면
-// 그 값 태그가 나온다. 필터 패널이 세로로 끝없이 늘어나던 문제 해소 (사용자 요청 2026-07-22).
-// 값 목록은 아래로 밀어내지 않고 **떠 있는 드롭다운**으로 (사용자 요청 2026-08-01) —
-// 태그를 흩뿌리지 않고 컨셉덱 검색(.concept-drop)과 같은 **한 줄에 하나씩 세로 리스트**다
-// (사용자 요청 2026-08-01). ⚠ 하나 고르면 **바로 닫는다** (사용자 요청 2026-08-01) — 값이
-// 복수 선택이긴 하지만 고른 뒤에도 목록이 화면을 덮고 있으면 결과를 볼 수 없다. 더 고를 땐
-// 카테고리를 다시 누르면 되고, 이미 고른 값은 ✓로 표시돼 있어 다시 열어도 바로 보인다.
-// (컨셉덱은 하나만 고르는 기능이라 고른 걸 아예 목록에서 뺀다 — 그 차이만 다르다.)
-// 컨셉덱은 시그니처 기능이라 별도 유지.
-// disabled/hint — 상위 조건이 정해져야 열리는 카테고리(세부 직군 ← 직군)용
-type AttrGroup = { title: string; items: string[]; selected: string[]; onToggle: (value: string) => void; labelFor?: (value: string) => string; countForItem: (value: string) => number; disabled?: boolean; hint?: string };
-function AttributeFilter({ groups }: { groups: AttrGroup[] }) {
-  const { t } = useI18n();
-  const [open, setOpen] = useState<string | null>(null);
-  // 열려 있는 동안 상위 조건이 풀리면(직군 해제) 목록도 같이 닫힌다
-  const active = groups.find((g) => g.title === open && !g.disabled);
-  const wrapRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (event: PointerEvent) => {
-      if (!wrapRef.current?.contains(event.target as Node)) setOpen(null);
-    };
-    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") setOpen(null); };
-    document.addEventListener("pointerdown", onDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("pointerdown", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
-
-  return (
-    <fieldset className="attr-filter">
-      <legend>{t("세부 조건")}<small className="multi-hint">{t("항목을 눌러 값을 고르세요 · 복수 선택 가능")}</small></legend>
-      <div className="attr-cats" ref={wrapRef}>
-        {groups.map((g) => (
-          <button key={g.title} type="button" disabled={g.disabled}
-            className={`attr-cat${open === g.title ? " open" : ""}${g.selected.length ? " has-sel" : ""}`}
-            aria-expanded={open === g.title} title={g.disabled ? g.hint : undefined}
-            onClick={() => setOpen((current) => (current === g.title ? null : g.title))}>
-            {g.title}{g.selected.length > 0 && <em>{g.selected.length}</em>}
-            {g.disabled && g.hint && <small className="attr-cat-hint">{g.hint}</small>}
-            <span className="attr-caret" aria-hidden>{open === g.title ? "▴" : "▾"}</span>
-          </button>
-        ))}
-        {active && (
-          <ul className="attr-drop" role="listbox" aria-multiselectable aria-label={active.title}>
-            {active.items.map((item) => {
-              const isSelected = active.selected.includes(item);
-              return (
-                <li key={item}>
-                  <button type="button" role="option" aria-selected={isSelected}
-                    className={isSelected ? "selected" : ""}
-                    onClick={() => { active.onToggle(item); setOpen(null); }}>
-                    <i aria-hidden>{isSelected ? "✓" : ""}</i>
-                    {active.labelFor ? active.labelFor(item) : item}
-                    <span>{active.countForItem(item)}</span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
     </fieldset>
   );
 }
@@ -2670,8 +2637,8 @@ const subscribeNever = () => () => {};
 
 // 대화 액션 → 탭 라벨 (i18n 키 — 헤더 내비와 동일 사전)
 const CHAT_TAB_LABEL: Record<string, string> = {
-  portal: "홈", planner: "인프라 자동편성기", archive: "오퍼 백과사전", recruit: "공채 도우미",
-  farm: "파밍 도우미", upgrade: "오퍼 육성 시뮬", story: "스토리", rogue: "통합전략 가이드", about: "테라 아카이브 소개",
+  portal: "홈", planner: "인프라 자동편성기", archive: "오퍼 백과사전", enemy: "적 도감", recruit: "공개채용 도우미",
+  farm: "재료파밍 도우미", upgrade: "오퍼 육성 시뮬", story: "스토리", rogue: "통합전략 가이드", about: "테라 아카이브 소개",
 };
 
 function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Operator[]; onNavigate: (tab: Tab) => void; onShowOperator: (op: Operator) => void }) {

@@ -21,19 +21,24 @@ BASE = "https://raw.githubusercontent.com/ArknightsAssets/ArknightsGamedata/mast
 TABLES = {
     # ⚠ charword_table은 build-voicelines.py의 유일한 입력이다. 2026-08-01에 이게 빠져 있어
     #   CI가 보이스 파일 1,280개를 통째로 지우고 커밋했다 — 빼먹지 말 것.
+    # ⚠ enemy_handbook_table·zone_table은 build-enemies.py(적 도감)의 입력이다. 셋 다
+    #   같은 세트로 있어야 EN/JA 적 도감이 한국어로 폴백하지 않는다.
     "kr": ["character_table", "skill_table", "uniequip_table", "battle_equip_table",
            "building_data", "range_table", "handbook_team_table", "handbook_info_table",
            "gamedata_const", "item_table", "gacha_table", "stage_table", "skin_table",
-           "charword_table"],
+           "charword_table", "enemy_handbook_table", "zone_table"],
     "cn": ["character_table", "skill_table", "uniequip_table", "battle_equip_table",
            "building_data", "range_table", "handbook_team_table", "handbook_info_table",
-           "gamedata_const", "item_table", "charword_table", "skin_table"],
+           "gamedata_const", "item_table", "charword_table", "skin_table",
+           "enemy_handbook_table"],
     "en": ["character_table", "skill_table", "uniequip_table", "battle_equip_table",
            "building_data", "handbook_team_table", "handbook_info_table",
-           "item_table", "gacha_table", "stage_table", "skin_table", "charword_table"],
+           "item_table", "gacha_table", "stage_table", "skin_table", "charword_table",
+           "enemy_handbook_table", "zone_table"],
     "jp": ["character_table", "skill_table", "uniequip_table", "battle_equip_table",
            "building_data", "handbook_team_table", "handbook_info_table",
-           "item_table", "gacha_table", "stage_table", "skin_table", "charword_table"],
+           "item_table", "gacha_table", "stage_table", "skin_table", "charword_table",
+           "enemy_handbook_table", "zone_table"],
 }
 
 target = sys.argv[1] if len(sys.argv) > 1 else ".gamedata"

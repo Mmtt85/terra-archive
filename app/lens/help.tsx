@@ -23,7 +23,7 @@ export default function LensHelpModal({ mode, onClose }: { mode: LensMode; onClo
       </header>
       <div className="lens-body lens-help">
         <p className="lens-help-intro">{mode === "recruit"
-          ? t("게임 공개모집 화면의 스크린샷을 인식해, 제시된 태그를 공채 도우미에 자동으로 선택해 주는 기능입니다.")
+          ? t("게임 공개모집 화면의 스크린샷을 인식해, 제시된 태그를 공개채용 도우미에 자동으로 선택해 주는 기능입니다.")
           : mode === "story"
             ? t("게임 스토리 대화 화면의 스크린샷을 인식해, 그 대사가 나오는 이벤트 전문의 해당 에피소드로 바로 이동시켜 주는 기능입니다.")
             : t("게임 통합전략(로그라이크) 화면의 스크린샷을 인식해, 이 가이드의 해당 정보로 바로 이동시켜 주는 기능입니다.")}</p>

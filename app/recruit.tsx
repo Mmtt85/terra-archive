@@ -257,7 +257,7 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
     <section className="recruit" aria-label={t("공개모집 도우미")}>
       <div className="recruit-head">
         <span className="section-no">RECRUITMENT ASSIST</span>
-        <h2>{t("공채 도우미")}</h2>
+        <h2>{t("공개채용 도우미")}</h2>
         <p>{rich(t("게임 공개모집에 **제시된 태그 5개**를 아래에서 그대로 입력하세요. 실제 게임에서 체크할 수 있는 **최대 3개**짜리 조합 전부를 계산해, 높은 성급이 확정되는 조합부터 순서대로 보여줍니다. 성급 배지는 모집 시간 **9시간** 기준 — 6★는 고급 특별 채용이 있어야 나옵니다. 모집 시간을 낮추면 나오는 **1·2★**도 함께 표시되며, 각 결과에 필요한 시간 조건이 붙어 있습니다."))}</p>
         <p className="recruit-time-note">{rich(t("**모집 시간별 출현 성급** — 1시간~3시간 50분: **1·2·3·4★** · 4시간~7시간 30분: **2·3·4·5★** · 7시간 40분 이상: **3·4·5★**만 출현. 저격 조합은 반드시 **7시간 40분 이상(보통 9시간)**으로 돌려야 3★ 미만이 섞이지 않습니다."))}</p>
       </div>

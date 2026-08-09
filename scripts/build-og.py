@@ -33,6 +33,7 @@ LOCALES = {
 TAB_META = {
     "portal":  ("DATA PORTAL",           "aperture"),
     "archive": ("OPERATOR DATABASE",     "cards"),
+    "enemy":   ("ENEMY HANDBOOK",        "target"),
     "planner": ("INFRA AUTO-PLANNER",    "grid"),
     "recruit": ("RECRUIT CALCULATOR",    "tags"),
     "farm":    ("FARMING EFFICIENCY",    "hex"),
@@ -50,6 +51,9 @@ SUBLINE = {
     "archive": {"ko": "모든 오퍼레이터를 소속·직군·시너지로 검색.",
                 "en": "Search every operator by faction, class & synergy.",
                 "ja": "全オペレーターを所属・クラス・シナジーで検索。"},
+    "enemy":   {"ko": "적 1,500여 종의 스탯·능력·면역과 등장 작전.",
+                "en": "Stats, abilities & appearances for 1,500+ enemies.",
+                "ja": "1,500種以上の敵のステータス・能力・出現作戦。"},
     "planner": {"ko": "보유 오퍼만 입력하면 최적 인프라 편성 자동 완성.",
                 "en": "Enter your roster — get the optimal base layout.",
                 "ja": "手持ちを入力するだけで最適な基地編成。"},
@@ -191,6 +195,15 @@ def icon(d, kind, cx, cy, s):
         d.line([(ox + 20, base - heights[0] - 20), (ax, ay)], fill=col, width=3)
         d.line([(ax, ay), (ax - 22, ay + 6)], fill=col, width=3)
         d.line([(ax, ay), (ax - 4, ay + 24)], fill=col, width=3)
+    elif kind == "target":
+        # 조준환 + 십자선 + 가운데 마름모 (탭 아이콘 ⊗와 같은 계열)
+        d.ellipse([cx - s, cy - s, cx + s, cy + s], outline=col, width=3)
+        r2 = int(s * 0.58)
+        d.ellipse([cx - r2, cy - r2, cx + r2, cy + r2], outline=sub, width=2)
+        for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+            d.line([(cx + dx * r2, cy + dy * r2), (cx + dx * (s + 18), cy + dy * (s + 18))], fill=col, width=3)
+        m = int(s * 0.22)
+        d.polygon([(cx, cy - m), (cx + m, cy), (cx, cy + m), (cx - m, cy)], fill=col)
     elif kind == "info":
         d.ellipse([cx - s, cy - s, cx + s, cy + s], outline=col, width=3)
         d.ellipse([cx - 6, cy - 46, cx + 6, cy - 34], fill=col)

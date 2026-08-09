@@ -164,7 +164,7 @@ function detectRecruitTags(linesN: string[], recruitTags: string[]): string[] {
   return found.slice(0, 5);
 }
 
-/** 공채 도우미 전용 판정 — 페이지별 설치라 화면 분류가 불필요, 태그만 추출한다. */
+/** 공개채용 도우미 전용 판정 — 페이지별 설치라 화면 분류가 불필요, 태그만 추출한다. */
 export function analyzeRecruit(rawLines: string[], recruitTags: string[]): LensOutcome {
   const linesN = rawLines.map((l) => normText(l)).filter((l) => l.length >= 2);
   const allN = linesN.join("");

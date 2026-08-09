@@ -28,8 +28,9 @@
 | 탭 | 해시 딥링크 | 소스 |
 |---|---|---|
 | 오퍼 백과사전 | (기본) · 오퍼 모달 열면 `#op-<char_id>` | `app/home.tsx` (공용 루트) |
+| 적 도감 | `/enemies` · 적 모달 열면 `#en-<enemy_id>` | `app/enemies.tsx` + `app/enemy-detail.tsx` |
 | 인프라 플래너 | `#infra` | `app/planner.tsx` |
-| 공채 도우미 | `#recruit` | `app/recruit.tsx` |
+| 공개채용 도우미 | `#recruit` | `app/recruit.tsx` |
 | 재료 파밍 효율표 | `#farm` | `app/farm.tsx` |
 
 URL 복붙으로 해당 탭/오퍼 모달이 바로 열려야 한다 (hashchange + 초기 로드 처리).
@@ -223,9 +224,14 @@ const { term, set, clear, inputRef, inputProps } = useSearchInput();
   교정(skillOverrides)·검증된 정배 픽스처. **정본은 Supabase** — /admin '플래너 규칙' 탭에서
   편집·발행하고 `python3 scripts/build-rules.py`로 베이크한다 (손편집 금지, 수정 후
   `node scripts/verify-plan.mjs` 필수 — [PLANNER-RULES-DB.md](PLANNER-RULES-DB.md))
-- `app/data/recruit.json` — 공채 도우미용 (태그 29종 + 모집 풀 153명)
+- `app/data/recruit.json` — 공개채용 도우미용 (태그 29종 + 모집 풀 153명)
 - `app/data/operators.en.json` / `operators.ja.json` — 백과사전 EN/JA 로컬라이즈본 (같은 스키마, 컨셉 태그는 KR 키 유지)
 - `app/data/extra-i18n.en.json` / `.ja.json` — 플래너·공채 표시 오버레이 (이름·buffId→스킬 텍스트·공채 tagId→태그명·방 이름)
+- `app/data/enemies.json` / `.en.json` / `.ja.json` — 적 도감 (도감 노출 **1,514종**의 등급·종족·
+  능력·피해 유형·상태이상 면역 + 레벨 강화 단계별 스탯). 로케일당 ~1MB라 **지연 로드 청크**에만 둔다
+- `app/data/enemy-stages.json` / `.en` / `.ja` — 등장 작전 역색인 (`stages` 배열의 위치가 곧 id).
+  `--meta-only` 실행은 이 파일을 **건드리지 않는다** (무인 CI가 179MB 레벨 파일을 못 받으므로)
+- `app/data/enemy-names.json` — 만능검색용 경량 이름 색인 (1MB 본문을 안 끌어오게)
 - `app/data/farm.json` — 재료 파밍 효율표 (재료 50종, 이름 3개 언어 인라인, 스테이지별 실측 드랍률·기대 이성) + `public/items/` 재료 아이콘
 
 ---
@@ -417,7 +423,7 @@ npm run build                             # 9. 빌드 확인 → 커밋 → 푸�
 
 ---
 
-## 6. 공채 도우미 탭 (app/recruit.tsx)
+## 6. 공개채용 도우미 탭 (app/recruit.tsx)
 
 - 데이터: `build-recruit.py`가 gacha_table의 `recruitDetail` 텍스트에서 모집 풀을 파싱
   (★ 섹션별, `<@rc.eml>` 마크 제거). 오퍼 태그 = 직군 + 위치 + tagList(로봇/신입 포함) +

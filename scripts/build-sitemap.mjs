@@ -37,6 +37,7 @@ function collectRoutes(dir, base = "") {
 const SEG_SOURCES = {
   "": ["app/data/operators.json", "app/data/broadcasts.json"], // 포탈 = 허브(진행 이벤트·오퍼)
   operators: ["app/data/operators.json"],
+  enemies: ["app/data/enemies.json", "app/data/enemy-stages.json"],
   infra: ["app/data/infra.json", "app/data/rules.json"],
   recruit: ["app/data/recruit.json"],
   farm: ["app/data/farm.json"],
@@ -48,7 +49,7 @@ const SEG_SOURCES = {
 function lastmodFor(seg) {
   let latest = null;
   // 스토리 상세(stories/<id>)는 목록과 같은 데이터에서 나오므로 같은 소스를 본다
-  const key = seg.startsWith("stories/") ? "stories" : seg.startsWith("operators/") ? "operators" : seg.startsWith("rogue/") ? "rogue" : seg;
+  const key = seg.startsWith("stories/") ? "stories" : seg.startsWith("operators/") ? "operators" : seg.startsWith("enemies/") ? "enemies" : seg.startsWith("rogue/") ? "rogue" : seg;
   for (const file of SEG_SOURCES[key] ?? []) {
     try {
       const iso = execFileSync("git", ["log", "-1", "--format=%cI", "--", file], { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
@@ -78,12 +79,18 @@ function operatorIds() {
   const ops = JSON.parse(readFileSync(join(ROOT, "app/data/operators.json"), "utf8"));
   return ops.filter((o) => !o.unreleased).map((o) => o.id);
 }
+// /enemies/[id] — 도감에 노출되는 적 전부 (app/seo-enemy.ts enemyIds와 같은 목록).
+// 오퍼와 달리 '미실장 제외' 같은 조건이 없다: enemies.json 자체가 이미
+// hideInHandbook을 걸러낸 결과다 (scripts/build-enemies.py).
+function enemyIds() {
+  return JSON.parse(readFileSync(join(ROOT, "app/data/enemies.json"), "utf8")).map((e) => e.id);
+}
 // 통합전략 테마 6종 — /rogue/<slug> (app/seo-rogue.ts rogueSlugs와 같은 목록)
 function rogueSlugs() {
   const idx = JSON.parse(readFileSync(join(ROOT, "app/data/rogue-index.json"), "utf8"));
   return Object.keys(idx).map((id) => `is${id.split("_")[1]}`);
 }
-const DYNAMIC = { "stories/[id]": storyIds, "operators/[id]": operatorIds, "rogue/[slug]": rogueSlugs };
+const DYNAMIC = { "stories/[id]": storyIds, "operators/[id]": operatorIds, "enemies/[id]": enemyIds, "rogue/[slug]": rogueSlugs };
 
 // 라우트 → { locale, seg } (seg="" = 포탈 루트)
 function parseRoute(route) {

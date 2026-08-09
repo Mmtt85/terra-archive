@@ -6,7 +6,7 @@
 //   오퍼레이터   → #op-<id> 모달 (다국어 이름·별칭·이격 별명·코드)
 //   스토리       → 스토리 탭 #story-<id>
 //   재료         → 파밍 탭 재료 상세 모달 (커뮤니티 은어 별칭 포함)
-//   공채 태그    → 공채 도우미 탭 태그 선택
+//   공채 태그    → 공개채용 도우미 탭 태그 선택
 //   통합전략 테마 → /rogue?topic=isN
 //   통합전략 항목 → 유물·조우·작전·분대… (스샷 레이더 인덱스 재사용, **지연 로드 2.9MB**)
 //   기능 탭      → 인프라 자동편성기·파밍·육성 시뮬 등 (동의어: riic, base, is3 …)
@@ -86,9 +86,10 @@ const TAB_ENTRIES: { tab: Tab; label: string; alt: string[] }[] = [
   { tab: "portal", label: "홈", alt: ["home", "portal", "메인", "첫화면"] },
   { tab: "archive", label: "오퍼 백과사전", alt: ["operator archive", "도감", "오퍼레이터", "백과", "캐릭터"] },
   // "인프라 딸깍" — 커뮤니티에서 기지 편성을 그렇게 부른다 (사용자 지정 2026-07-26)
+  { tab: "enemy", label: "적 도감", alt: ["enemy", "적", "몹", "도감", "적도감", "enemies"] },
   { tab: "planner", label: "인프라 자동편성기", alt: ["riic", "base", "기지", "기반시설", "인프라", "편성", "자동편성", "딸깍", "인프라딸깍", "시뮬레이터"] },
-  { tab: "recruit", label: "공채 도우미", alt: ["recruit", "공개모집", "공채", "태그계산"] },
-  { tab: "farm", label: "파밍 도우미", alt: ["farm", "재료", "파밍", "효율표", "드랍"] },
+  { tab: "recruit", label: "공개채용 도우미", alt: ["recruit", "공개모집", "공채", "태그계산"] },
+  { tab: "farm", label: "재료파밍 도우미", alt: ["farm", "재료", "파밍", "효율표", "드랍"] },
   { tab: "upgrade", label: "오퍼 육성 시뮬", alt: ["upgrade", "육성", "비용", "계산기", "스킬특화", "모듈"] },
   { tab: "story", label: "스토리", alt: ["story", "요약", "전문", "연대기"] },
   { tab: "rogue", label: "통합전략 가이드", alt: ["rogue", "integrated strategies", "로그라이크", "통합전략", "is"] },

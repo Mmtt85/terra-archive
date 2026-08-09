@@ -1676,7 +1676,7 @@ function InvestPanel({ recs, opMap, onShowOperator, onClose, onReanalyze, onTogg
             <li>{rich(t("**기본은 용문폐·경험치만** 계산합니다. 위 버튼으로 켜면 듀얼칩 등 육성 재료의 이성까지 합칩니다."))}</li>
             <li>{rich(t("**비용**: 완성에 드는 용문폐·경험치·재료를 각각의 전용 파밍처 이성 단가로 환산해 더합니다. 승급은 그 단계 만렙에서만 가능하므로 **남은 레벨업 비용까지 포함**합니다(보유 설정에 적어 둔 레벨부터 계산)."))}</li>
             <li>{t("용문폐 1이성 = {lmd} (전용 스테이지 {ls} · {lap}이성에 {ld}) · 경험치 1이성 = {exp} (전용 스테이지 {es} · {eap}이성에 {ed})", { lmd: Math.round(SANITY_BASIS.lmd.drop / SANITY_BASIS.lmd.ap), ls: SANITY_BASIS.lmd.stage, lap: SANITY_BASIS.lmd.ap, ld: num(SANITY_BASIS.lmd.drop), exp: Math.round(SANITY_BASIS.exp.drop / SANITY_BASIS.exp.ap), es: SANITY_BASIS.exp.stage, eap: SANITY_BASIS.exp.ap, ed: num(SANITY_BASIS.exp.drop) })}</li>
-            <li>{t("재료 이성 단가: 파밍 가능한 재료는 파밍 도우미의 실측 드랍률 기준 최저 이성 스테이지, 칩·칩셋은 주간 PR 스테이지, 제작 전용 재료(듀얼칩·D32강 등)는 가공소 레시피를 재료까지 재귀 분해해 계산합니다.")}</li>
+            <li>{t("재료 이성 단가: 파밍 가능한 재료는 재료파밍 도우미의 실측 드랍률 기준 최저 이성 스테이지, 칩·칩셋은 주간 PR 스테이지, 제작 전용 재료(듀얼칩·D32강 등)는 가공소 레시피를 재료까지 재귀 분해해 계산합니다.")}</li>
             <li>{rich(t("**하루 이득**: 방 %효율 변화 × 그 방 1%p의 하루 산출 × 그 조가 실제로 근무하는 시간 비율. 제조소는 기본 생산 속도 1포인트/초(순금 4,320pt·중급작전기록 10,800pt=1,000exp) 기준입니다."))}</li>
             <li>{t("순금 1개는 무역소 주문에서 용문폐 {n}으로 봅니다 — 주문 보상만은 게임 데이터에 없어 통용값을 쓴 유일한 추정치입니다.", { n: num(GOLD_LMD) })}</li>
             <li>{t("발전소·사무실·응접실 변화는 산출을 이성으로 환산할 근거가 없어 이득에서 빼고 '회수 환산 제외'로 표시합니다 — 실제 회수는 표시된 것보다 빠를 수 있습니다.")}</li>

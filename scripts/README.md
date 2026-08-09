@@ -60,6 +60,10 @@ node scripts/verify-plan.mjs                  # 플래너 회귀 검증 — 정�
 node scripts/verify-stories.mjs               # 스토리 전수 렌더 검증 — 요약·전문을 실제 렌더해 진입 크래시 탐지 (요약/전문 데이터 수정 시)
 python3 scripts/build-storylines.py .gamedata # → app/data/storylines.json (테마별 뷰 시계열 — stage_table storylines가 정본, 괄호=guest 참조)
 python3 scripts/build-recruit.py .gamedata    # → app/data/recruit.json (공채 태그 31종 + 모집 풀)
+python3 scripts/build-enemies.py .gamedata     # → app/data/enemies{,.en,.ja}.json + enemy-stages* + public/enemy/ (3개 언어 동시)
+#   ⚠ 인자 없이 돌리면 levels/ 2,283개(179MB)를 받아 '등장 작전'을 역색인한다 (약 1분).
+#     CI는 --meta-only --no-images로 돌아 그 둘을 건너뛰므로, 새 이벤트의 등장 적과
+#     신규 적 초상은 **로컬 전체 실행**으로만 갱신된다 (docs/AUTOMATION.md 1-B).
 python3 scripts/build-i18n.py .gamedata       # → app/data/operators.{en,ja}.json + extra-i18n.{en,ja}.json
 python3 scripts/download-avatars.py           # 신규 오퍼 아바타를 public/avatars/에 다운로드
 ```
@@ -87,7 +91,7 @@ python3 scripts/build-rules.py                # 최신 발행 스냅샷 → app/
   전체 로컬라이즈본. id·성급·컨셉 태그(KR 키)·seq·accent·스탯 수치는 KR 정본을 복사하고
   텍스트(이름·스킬·재능·모듈·인프라·핸드북)만 해당 언어로 채운다. 로케일 테이블에 없는
   항목은 KR 텍스트로 폴백.
-- `app/data/extra-i18n.en.json` / `.ja.json` — 인프라 플래너·공채 도우미 표시용 오버레이
+- `app/data/extra-i18n.en.json` / `.ja.json` — 인프라 플래너·공개채용 도우미 표시용 오버레이
   (오퍼 이름, infra.json의 buffId → 스킬명/설명, gacha tagId → 공채 태그명, 방 이름).
   플래너·공채의 **계산 엔진은 KR 데이터로만 돌고** 표시만 이 오버레이로 바꾼다.
 - UI 문자열(버튼·안내문 등) 번역은 데이터가 아니라 `app/i18n.tsx`의 사전(D)에 있다 —

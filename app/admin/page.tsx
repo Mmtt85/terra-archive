@@ -325,7 +325,7 @@ function pageOf(payload: unknown): string | undefined {
 }
 function pageLabel(page: string): string {
   if (page.includes("#infra")) return "인프라 자동편성기";
-  if (page.includes("#recruit")) return "공채 도우미";
+  if (page.includes("#recruit")) return "공개채용 도우미";
   const op = page.match(/#op-(char_[A-Za-z0-9_]+)/);
   if (op) return `오퍼 상세 · ${OP_NAME.get(op[1]) ?? op[1]}`;
   return "오퍼 백과사전";

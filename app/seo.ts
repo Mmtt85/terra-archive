@@ -10,12 +10,14 @@ import { asset } from "./assets";
 export const SITE_URL = "https://terra-archive.net";
 
 type SeoLocale = "ko" | "en" | "ja";
-export type SeoTab = "portal" | "archive" | "planner" | "recruit" | "farm" | "upgrade" | "story" | "rogue" | "about";
+export type SeoTab = "portal" | "archive" | "enemy" | "planner" | "recruit" | "farm" | "upgrade" | "story" | "rogue" | "about";
 
 // 탭 → URL 세그먼트 (portal이 로케일 루트, 오퍼 백과사전은 /operators로 분리 — 사용자 확정
 // 2026-07-17: 루트 진입 시 오퍼 이미지 강제 로딩을 없애기 위해 포탈 첫화면 도입). 라우트 폴더명과 반드시 일치.
+// ⚠ 적 도감 세그먼트는 "enemies"(복수) — 초상 자산 폴더 public/enemy/(단수)와 일부러 다르다.
+//    deploy.sh가 스테이징에서 `rm -rf $STAGE/enemy`로 자산만 떼어내기 때문(서빙은 R2).
 export const TAB_SEG: Record<SeoTab, string> = {
-  portal: "", archive: "operators", planner: "infra", recruit: "recruit", farm: "farm", upgrade: "upgrade", story: "stories", rogue: "rogue", about: "about",
+  portal: "", archive: "operators", enemy: "enemies", planner: "infra", recruit: "recruit", farm: "farm", upgrade: "upgrade", story: "stories", rogue: "rogue", about: "about",
 };
 
 // 로케일 베이스 경로
@@ -44,20 +46,25 @@ const TAB_META: Record<Exclude<SeoTab, "portal">, Record<SeoLocale, { title: str
     en: { title: "Operator Archive - Arknights Operator Database | Terra Archive", description: "Arknights operator encyclopedia — filter and search by faction, class, tags, and synergy, and browse full operator details." },
     ja: { title: "オペレーター図鑑 - アークナイツ オペレーター一覧 | テラアーカイブ", description: "アークナイツのオペレーター図鑑 — 所属・クラス・タグ・シナジーで絞り込み検索し、オペレーターの詳細情報を確認できます。" },
   },
+  enemy: {
+    ko: { title: "적 도감 - 명일방주 적 정보 | 테라 아카이브", description: "명일방주(아크나이츠) 적 도감 — 적 1,500여 종의 스탯·능력·상태이상 면역·종족을 등급별로 찾고, 그 적이 등장하는 작전까지 역으로 확인합니다." },
+    en: { title: "Enemy Handbook - Arknights Enemy Database | Terra Archive", description: "Arknights enemy handbook — stats, abilities, status immunities and races for 1,500+ enemies, plus the operations each one appears in." },
+    ja: { title: "敵図鑑 - アークナイツ敵情報 | テラアーカイブ", description: "アークナイツの敵図鑑 — 1,500種以上の敵のステータス・能力・状態異常耐性・種族を等級別に検索し、その敵が出現する作戦も逆引きできます。" },
+  },
   planner: {
     ko: { title: "인프라 자동편성기 - 명일방주 기반시설 편성 | 테라 아카이브", description: "명일방주 기반시설(RIIC) 자동 편성 플래너 — 보유 오퍼레이터만 입력하면 제조소·무역소·발전소 편성을 자동으로 짜줍니다." },
     en: { title: "Base Auto-Planner - Arknights RIIC Base | Terra Archive", description: "Arknights RIIC base auto-assignment planner — just enter your roster and it builds the optimal factory, trading post, and power plant layout for you." },
     ja: { title: "基地自動編成 - アークナイツ基地編成 | テラアーカイブ", description: "アークナイツ基地（インフラ）自動編成プランナー — 手持ちオペレーターを入力するだけで製造所・貿易所・発電所の編成を自動で組んでくれます。" },
   },
   recruit: {
-    ko: { title: "공채 도우미 - 명일방주 공개모집 계산기 | 테라 아카이브", description: "명일방주 공개모집(공채) 태그 계산기 — 태그 조합으로 확정·고성급 오퍼레이터를 찾아줍니다." },
-    en: { title: "Recruit Helper - Arknights Recruitment Calculator | Terra Archive", description: "Arknights recruitment tag calculator — finds guaranteed and high-rarity operators from your tag combinations." },
+    ko: { title: "공개채용 도우미 - 명일방주 공개모집 계산기 | 테라 아카이브", description: "명일방주 공개모집(공채) 태그 계산기 — 태그 조합으로 확정·고성급 오퍼레이터를 찾아줍니다." },
+    en: { title: "Public Recruitment Helper - Arknights Recruitment Calculator | Terra Archive", description: "Arknights recruitment tag calculator — finds guaranteed and high-rarity operators from your tag combinations." },
     ja: { title: "公開求人ヘルパー - アークナイツ公開求人計算機 | テラアーカイブ", description: "アークナイツ公開求人タグ計算機 — タグの組み合わせから確定・高レアオペレーターを見つけます。" },
   },
   farm: {
-    ko: { title: "파밍 도우미 - 명일방주 재료 파밍 효율표 | 테라 아카이브", description: "명일방주 재료 파밍 효율표 — 정예화 재료별 최적 파밍 스테이지와 개당 기대 이성을 펭귄 물류 실측 드랍 통계로 확인합니다." },
-    en: { title: "Farming Helper - Arknights Material Farming Efficiency | Terra Archive", description: "Arknights material farming efficiency table — the best farming stage and sanity-per-item for every Elite material, from Penguin Logistics real drop statistics." },
-    ja: { title: "周回ヘルパー - アークナイツ素材周回効率表 | テラアーカイブ", description: "アークナイツ素材周回効率表 — 昇進素材ごとの最適ステージと1個あたりの期待理性を、ペンギン急便の実測ドロップ統計で確認します。" },
+    ko: { title: "재료파밍 도우미 - 명일방주 재료 파밍 효율표 | 테라 아카이브", description: "명일방주 재료 파밍 효율표 — 정예화 재료별 최적 파밍 스테이지와 개당 기대 이성을 펭귄 물류 실측 드랍 통계로 확인합니다." },
+    en: { title: "Material Farming Helper - Arknights Material Farming Efficiency | Terra Archive", description: "Arknights material farming efficiency table — the best farming stage and sanity-per-item for every Elite material, from Penguin Logistics real drop statistics." },
+    ja: { title: "素材周回ヘルパー - アークナイツ素材周回効率表 | テラアーカイブ", description: "アークナイツ素材周回効率表 — 昇進素材ごとの最適ステージと1個あたりの期待理性を、ペンギン急便の実測ドロップ統計で確認します。" },
   },
   upgrade: {
     ko: { title: "오퍼 육성 시뮬 - 명일방주 육성 비용 계산기 | 테라 아카이브", description: "명일방주 오퍼레이터 육성 비용 계산기 — 레벨·정예화·스킬·특화·모듈 목표 단계까지 필요한 용문폐·경험치·재료 총량을 합산합니다." },
@@ -75,9 +82,9 @@ const TAB_META: Record<Exclude<SeoTab, "portal">, Record<SeoLocale, { title: str
     ja: { title: "統合戦略ガイド - アークナイツ統合戦略攻略 | テラアーカイブ", description: "アークナイツ統合戦略ガイド — ファントムと緋き貴石の各階層ノード、難易度0～15対応の敵図鑑、収蔵品・レパートリー、幻覚、エンディング条件を整理します。" },
   },
   about: {
-    ko: { title: "소개 - 기능 안내 | 테라 아카이브", description: "테라 아카이브의 기능 소개 — 오퍼 백과사전, 인프라 자동편성기, 공채 도우미, 파밍·육성 시뮬, AI 스토리 요약이 각각 무엇이고 어떤 상황에 쓰는지 안내합니다." },
-    en: { title: "About - Feature Guide | Terra Archive", description: "About Terra Archive — what the operator encyclopedia, base auto-planner, recruitment helper, farming/upgrade simulator, and AI story digest do, and when to use each." },
-    ja: { title: "紹介 - 機能ガイド | テラアーカイブ", description: "テラアーカイブの機能紹介 — オペレーター図鑑、基地自動編成、公開求人ヘルパー、周回・育成シミュ、AIストーリー要約が何で、どんな時に使うのかを案内します。" },
+    ko: { title: "소개 - 기능 안내 | 테라 아카이브", description: "테라 아카이브의 기능 소개 — 오퍼 백과사전, 인프라 자동편성기, 공개채용 도우미, 파밍·육성 시뮬, AI 스토리 요약이 각각 무엇이고 어떤 상황에 쓰는지 안내합니다." },
+    en: { title: "About - Feature Guide | Terra Archive", description: "About Terra Archive — what the operator encyclopedia, base auto-planner, public recruitment helper, material farming/upgrade simulator, and AI story digest do, and when to use each." },
+    ja: { title: "紹介 - 機能ガイド | テラアーカイブ", description: "テラアーカイブの機能紹介 — オペレーター図鑑、基地自動編成、公開求人ヘルパー、素材周回・育成シミュ、AIストーリー要約が何で、どんな時に使うのかを案内します。" },
   },
 };
 

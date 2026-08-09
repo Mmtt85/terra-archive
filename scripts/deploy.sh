@@ -41,7 +41,10 @@ cp -r dist/client/. "$STAGE/"
 
 # R2로 옮긴 에셋 폴더는 Pages에 올리지 않는다 — 이게 배포가 빨라진 이유의 전부.
 # (public/에는 그대로 남아 있고 scripts/r2-sync.mjs가 R2와 동기화한다)
-for dir in story lens tesseract avatars about og items scan profiles skins skin voice skills modules; do
+# ⚠ enemy(단수)는 적 초상 폴더고, 라우트는 /enemies(복수)다 — 이름이 달라야 여기서
+#   자산만 떼어낼 수 있다. rogue가 2026-08-08에 정확히 이 함정(에셋과 페이지가 같은 폴더)에
+#   빠져 테마 페이지 6개가 매 배포마다 사라졌다. 적 도감은 처음부터 폴더를 갈라 뒀다.
+for dir in story lens tesseract avatars about og items scan profiles skins skin voice skills modules enemy; do
   rm -rf "${STAGE:?}/$dir"
 done
 
@@ -83,6 +86,7 @@ cat > "$STAGE/_redirects" <<'EOF'
 /skins/* https://files.terra-archive.net/assets/skins/:splat 301
 /modules/* https://files.terra-archive.net/assets/modules/:splat 301
 /skin/* https://files.terra-archive.net/assets/skin/:splat 301
+/enemy/* https://files.terra-archive.net/assets/enemy/:splat 301
 /rogue/map/* https://files.terra-archive.net/assets/rogue/map/:splat 301
 /rogue/relic/* https://files.terra-archive.net/assets/rogue/relic/:splat 301
 /rogue/enemy/* https://files.terra-archive.net/assets/rogue/enemy/:splat 301

@@ -119,7 +119,7 @@ const D: Record<string, Pair> = {
   "주요 탭": ["Main tabs", "メインタブ"],
   "오퍼 백과사전": ["Operator Archive", "オペレーター図鑑"],
   "인프라 자동편성기": ["Base Auto-Planner", "基地自動編成"],
-  "공채 도우미": ["Recruit Helper", "公開求人ヘルパー"],
+  "공개채용 도우미": ["Public Recruitment Helper", "公開求人ヘルパー"],
   "언어 선택": ["Language", "言語選択"],
   "사이트 메뉴": ["Site menu", "サイトメニュー"],
   "배포 {t}": ["Deployed {t}", "デプロイ {t}"],
@@ -469,7 +469,7 @@ const D: Record<string, Pair> = {
   "테라 아카이브 | 명일방주(Arknights) 팬사이트": ["Terra Archive | Arknights Fansite", "テラアーカイブ | アークナイツのファンサイト"],
   "{name} - 명일방주 오퍼레이터 | 테라 아카이브": ["{name} - Arknights Operator | Terra Archive", "{name} - アークナイツ オペレーター | テラアーカイブ"],
   "인프라 자동편성기 - 명일방주 기반시설 편성 | 테라 아카이브": ["Base Auto-Planner - Arknights RIIC Base | Terra Archive", "基地自動編成 - アークナイツ基地編成 | テラアーカイブ"],
-  "공채 도우미 - 명일방주 공개모집 계산기 | 테라 아카이브": ["Recruit Helper - Arknights Recruitment Calculator | Terra Archive", "公開求人ヘルパー - アークナイツ公開求人計算機 | テラアーカイブ"],
+  "공개채용 도우미 - 명일방주 공개모집 계산기 | 테라 아카이브": ["Public Recruitment Helper - Arknights Recruitment Calculator | Terra Archive", "公開求人ヘルパー - アークナイツ公開求人計算機 | テラアーカイブ"],
 
   // ── 인프라 플래너 ──────────────────────────────────────────────────────────
   // 기지 배치 프리셋 153 (사용자 요청 2026-07-24)
@@ -677,7 +677,7 @@ const D: Record<string, Pair> = {
   "‘회수 N일’은 이렇게 계산했습니다 — 환산 기준 보기": ["How the \u201c{n}d payback\u201d is calculated \u2014 show conversion basis", "「回収N日」の計算方法 — 換算基準を見る"],
   "**비용**: 완성에 드는 용문폐·경험치·재료를 각각의 전용 파밍처 이성 단가로 환산해 더합니다. 승급은 그 단계 만렙에서만 가능하므로 **남은 레벨업 비용까지 포함**합니다(보유 설정에 적어 둔 레벨부터 계산).": ["**Cost**: the LMD, EXP and materials needed are each converted at the sanity rate of their dedicated farming stage and summed. Promotion is only possible at that stage's max level, so **the remaining level-up cost is included** (counted from the level you noted in the roster settings).", "**コスト**: 完成に必要な龍門幣・経験値・素材を、それぞれ専用の周回ステージの理性単価で換算して合計します。昇進はその段階の最大レベルでのみ可能なため、**残りのレベルアップ費用も含みます**（所持設定に記録したレベルから計算）。"],
   "용문폐 1이성 = {lmd} (전용 스테이지 {ls} · {lap}이성에 {ld}) · 경험치 1이성 = {exp} (전용 스테이지 {es} · {eap}이성에 {ed})": ["1 sanity = {lmd} LMD (stage {ls}: {ld} for {lap} sanity) · 1 sanity = {exp} EXP (stage {es}: {ed} for {eap} sanity)", "1理性 = {lmd} 龍門幣（専用ステージ{ls}・{lap}理性で{ld}）・1理性 = {exp} 経験値（専用ステージ{es}・{eap}理性で{ed}）"],
-  "재료 이성 단가: 파밍 가능한 재료는 파밍 도우미의 실측 드랍률 기준 최저 이성 스테이지, 칩·칩셋은 주간 PR 스테이지, 제작 전용 재료(듀얼칩·D32강 등)는 가공소 레시피를 재료까지 재귀 분해해 계산합니다.": ["Material sanity rates: farmable materials use the lowest-sanity stage from the Farming Helper's measured drop rates, chips and chip packs use the weekly PR stages, and craft-only materials (dual chips, D32 Steel, etc.) are computed by recursively decomposing their workshop recipes down to base materials.", "素材の理性単価: 周回可能な素材は周回ヘルパーの実測ドロップ率に基づく最低理性ステージ、チップ・チップ塊は週替わりPRステージ、加工専用素材（デュアルチップ・D32鋼など）は加工所レシピを素材まで再帰的に分解して算出します。"],
+  "재료 이성 단가: 파밍 가능한 재료는 재료파밍 도우미의 실측 드랍률 기준 최저 이성 스테이지, 칩·칩셋은 주간 PR 스테이지, 제작 전용 재료(듀얼칩·D32강 등)는 가공소 레시피를 재료까지 재귀 분해해 계산합니다.": ["Material sanity rates: farmable materials use the lowest-sanity stage from the Material Farming Helper's measured drop rates, chips and chip packs use the weekly PR stages, and craft-only materials (dual chips, D32 Steel, etc.) are computed by recursively decomposing their workshop recipes down to base materials.", "素材の理性単価: 周回可能な素材は素材周回ヘルパーの実測ドロップ率に基づく最低理性ステージ、チップ・チップ塊は週替わりPRステージ、加工専用素材（デュアルチップ・D32鋼など）は加工所レシピを素材まで再帰的に分解して算出します。"],
   "**하루 이득**: 방 %효율 변화 × 그 방 1%p의 하루 산출 × 그 조가 실제로 근무하는 시간 비율. 제조소는 기본 생산 속도 1포인트/초(순금 4,320pt·중급작전기록 10,800pt=1,000exp) 기준입니다.": ["**Daily gain**: room %-efficiency change × that room's daily output per 1%p × the share of the day that shift actually works. Factories are based on the standard rate of 1 point/second (Pure Gold 4,320 pt; Skill Summary \u2014 mid-tier battle record 10,800 pt = 1,000 EXP).", "**1日あたりの利益**: 部屋の%効率変化 × その部屋の1%pあたりの日産 × その班が実際に稼働する時間の割合。製造所は基本生産速度1ポイント/秒（純金4,320pt・初級作戦記録10,800pt=1,000exp）を基準にしています。"],
   "순금 1개는 무역소 주문에서 용문폐 {n}으로 봅니다 — 주문 보상만은 게임 데이터에 없어 통용값을 쓴 유일한 추정치입니다.": ["One Pure Gold is treated as {n} LMD through trading post orders \u2014 order rewards are the only figure absent from the game data, so this is the single estimated constant here.", "純金1個は貿易所の注文で龍門幣{n}として扱います — 注文報酬のみゲームデータに存在しないため、ここで唯一の推定値です。"],
   "발전소·사무실·응접실 변화는 산출을 이성으로 환산할 근거가 없어 이득에서 빼고 '회수 환산 제외'로 표시합니다 — 실제 회수는 표시된 것보다 빠를 수 있습니다.": ["Changes to the power plant, HR office and reception room are excluded from the gain (no basis for converting their output into sanity) and shown as \u201cPayback n/a\u201d \u2014 actual payback may be faster than displayed.", "発電所・人事室・応接室の変化は産出を理性に換算する根拠がないため利益から除外し、「回収換算対象外」と表示します — 実際の回収は表示より早い場合があります。"],
@@ -1394,7 +1394,36 @@ const D: Record<string, Pair> = {
     "詳細なルール全文はリポジトリの docs/INFRA-RULES.md を参照してください。",
   ],
 
-  // ── 공채 도우미 ────────────────────────────────────────────────────────────
+
+  // ── 적 도감 (/enemies) ─────────────────────────────────────────────────────
+  // ⚠ 기존 키와 겹치면 **마지막 정의가 이겨** 다른 화면 문구가 조용히 바뀐다 (2026-08-09에
+  //   실제로 밟았다). 그래서 "일반·정예·종족·스탯·공격력·마법 저항·상태이상 면역·적 도감"은
+  //   여기 다시 넣지 않고 기존 항목을 그대로 쓴다. 뜻이 다른 셋은 한국어 키를 달리했다:
+  //   "적 등급"(← 통합전략의 "등급"=난이도 Grade) · "이동 방식"(← 스샷연동의 "이동"=Jumped)
+  //   · "기본형"(← "기본"=Default).
+  // 종족·면역·피해 유형 같은 **데이터 값**은 여기서 번역하지 않는다 —
+  // scripts/build-enemies.py가 로케일 테이블로 이미 현지어를 넣어 준다.
+  "적 목록으로": ["Back to enemies", "敵一覧へ"],
+  "전체 적": ["All enemies", "敵一覧"],
+  "조건에 맞는 적이 없어요.": ["No enemy matches these filters.", "条件に合う敵がいません。"],
+  "이름, 도감번호, 능력 검색": ["Search name, index, ability", "名前・図鑑番号・能力で検索"],
+  "적 등급": ["Class", "等級"],
+  "보스": ["Boss", "ボス"],
+  "이동 방식": ["Movement", "移動"],
+  "피해 유형": ["Damage type", "ダメージ種別"],
+  "능력": ["Ability", "能力"],
+  "연계 소환": ["Summons", "連携召喚"],
+  "등장 작전": ["Appears in", "出現作戦"],
+  "기본형": ["Base", "基本"],
+  "강화 {n}단계": ["Tier {n}", "強化{n}段階"],
+  "이동 속도": ["Move speed", "移動速度"],
+  "중량": ["Weight", "重量"],
+  "라이프 감소": ["Life cost", "ライフ減少"],
+  "적 도감 - 명일방주 적 정보 | 테라 아카이브": ["Enemy Handbook - Arknights Enemy Database | Terra Archive", "敵図鑑 - アークナイツ敵情報 | テラアーカイブ"],
+  "{name} - 명일방주 적 도감 | 테라 아카이브": ["{name} - Arknights Enemy | Terra Archive", "{name} - アークナイツ 敵図鑑 | テラアーカイブ"],
+  "적 1,500여 종의 스탯·능력·면역과 등장 작전을 한 곳에": ["Stats, abilities, immunities and appearances for 1,500+ enemies", "1,500種以上の敵のステータス・能力・耐性と出現作戦を一箇所に"],
+
+  // ── 공개채용 도우미 ────────────────────────────────────────────────────────────
   "공개모집 도우미": ["Recruitment helper", "公開求人ヘルパー"],
   "게임 공개모집에 **제시된 태그 5개**를 아래에서 그대로 입력하세요. 실제 게임에서 체크할 수 있는 **최대 3개**짜리 조합 전부를 계산해, 높은 성급이 확정되는 조합부터 순서대로 보여줍니다. 성급 배지는 모집 시간 **9시간** 기준 — 6★는 고급 특별 채용이 있어야 나옵니다. 모집 시간을 낮추면 나오는 **1·2★**도 함께 표시되며, 각 결과에 필요한 시간 조건이 붙어 있습니다.": [
     "Enter the **5 tags offered** in your in-game recruitment below. Every checkable combination of **up to 3 tags** is computed and sorted so guaranteed high-rarity combos come first. Rarity badges assume a **9-hour** recruitment — 6★ only appears with Top Operator. **1★/2★** results that require lowering the timer are also shown, each with its time condition.",
@@ -1432,12 +1461,12 @@ const D: Record<string, Pair> = {
   // ── 재료 파밍 효율표 ───────────────────────────────────────────────────────
   "재료 파밍": ["Farming", "素材周回"],
   "파밍·육성 시뮬": ["Farm & Sim", "周回・育成"],
-  "파밍 도우미": ["Farming Helper", "周回ヘルパー"],
+  "재료파밍 도우미": ["Material Farming Helper", "素材周回ヘルパー"],
   "오퍼 육성 시뮬": ["Upgrade Sim", "育成シミュ"],
   "육성 비용 계산": ["Upgrade cost", "育成コスト"],
   "정예화 재료의 최적 파밍 스테이지와 이성 효율표": ["Best farming stages and sanity efficiency for Elite materials", "昇進素材の最適ステージと理性効率表"],
   "오퍼 육성에 필요한 용문폐·재료 총량을 단계별로 계산": ["Calculate the LMD and materials needed to upgrade operators, step by step", "オペレーター育成に必要な龍門幣・素材の合計を段階ごとに計算"],
-  "파밍 도우미 - 명일방주 재료 파밍 효율표 | 테라 아카이브": ["Farming Helper - Arknights Material Farming Efficiency | Terra Archive", "周回ヘルパー - アークナイツ素材周回効率表 | テラアーカイブ"],
+  "재료파밍 도우미 - 명일방주 재료 파밍 효율표 | 테라 아카이브": ["Material Farming Helper - Arknights Material Farming Efficiency | Terra Archive", "素材周回ヘルパー - アークナイツ素材周回効率表 | テラアーカイブ"],
   "오퍼 육성 시뮬 - 명일방주 육성 비용 계산기 | 테라 아카이브": ["Operator Upgrade Sim - Arknights Upgrade Cost Calculator | Terra Archive", "オペレーター育成シミュ - アークナイツ育成コスト計算機 | テラアーカイブ"],
   "재료 파밍 & 오퍼 육성 시뮬레이션": ["Material Farming & Operator Upgrade Simulator", "素材周回＆オペレーター育成シミュレーター"],
   "오퍼레이터 육성에 필요한 용문폐·재료 총량을 단계별로 계산하고, 각 재료를 어느 스테이지에서 파밍하는 게 가장 효율적인지 실측 드랍 통계로 확인합니다.": [
@@ -1916,7 +1945,7 @@ const D: Record<string, Pair> = {
   "획득 방법": ["How to obtain", "入手方法"],
   // ── 스샷 레이더 도움말 (순수 설명 전용 모달, 2026-07-23) ─────────────────────
   "게임 통합전략(로그라이크) 화면의 스크린샷을 인식해, 이 가이드의 해당 정보로 바로 이동시켜 주는 기능입니다.": ["Recognizes screenshots of in-game Integrated Strategies (roguelike) screens and jumps you straight to the matching info in this guide.", "ゲームの統合戦略（ローグライク）画面のスクリーンショットを認識し、このガイドの該当情報へ直接移動させる機能です。"],
-  "게임 공개모집 화면의 스크린샷을 인식해, 제시된 태그를 공채 도우미에 자동으로 선택해 주는 기능입니다.": ["Recognizes screenshots of the in-game recruitment screen and automatically selects the offered tags in the Recruitment Helper.", "ゲームの公開求人画面のスクリーンショットを認識し、提示されたタグを求人ヘルパーに自動選択する機能です。"],
+  "게임 공개모집 화면의 스크린샷을 인식해, 제시된 태그를 공개채용 도우미에 자동으로 선택해 주는 기능입니다.": ["Recognizes screenshots of the in-game recruitment screen and automatically selects the offered tags in the Recruitment Helper.", "ゲームの公開求人画面のスクリーンショットを認識し、提示されたタグを求人ヘルパーに自動選択する機能です。"],
   "사용법": ["How to use", "使い方"],
   "📷 버튼으로 자동인식 켜기": ["Turn on auto-recognition with the 📷 button", "📷ボタンで自動認識をオン"],
   "버튼이 켜져 있는 동안만 클립보드를 감시합니다. 기본은 꺼짐이며, 페이지를 새로 고치면 다시 꺼집니다.": ["The clipboard is only watched while the button is on. It's off by default, and turns off again when you refresh the page.", "ボタンがオンの間だけクリップボードを監視します。デフォルトはオフで、ページを更新すると再びオフになります。"],

@@ -20,6 +20,7 @@ export const FEATURE_RELEASED: Record<string, string | { date: string; days: num
   "invest-payback": "2026-08-05", // 육성 추천 예상 회수일 — 이성 환산 + 완성 비용 모달
   "dev-notes": "2026-08-05", // 개발자 코멘트 — 받은 제안에 대한 답변 (업데이트 내역 모달 안)
   "feedback-image": "2026-08-05", // 제안에 이미지 첨부 (최대 3장 · 드래그·붙여넣기)
+  "enemy-dex": "2026-08-09", // 적 도감 — 적 1,514종의 스탯·능력·면역·등장 작전
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -53,6 +54,7 @@ const TAB_FEATURES: Record<string, string[]> = {
   recruit: ["lens"],
   rogue: ["lens", "rogue-inv", "bridge", "rogue-eff", "rogue-cn"],
   story: ["lens"], // 스샷 레이더 /stories 설치 (전문 대사 검색, 2026-07-24)
+  enemy: ["enemy-dex"],
 };
 
 /** 해당 탭 안에 아직 '새기능' 기간인 기능이 하나라도 있으면 true. */

@@ -122,7 +122,7 @@ function locText(locale: Locale, text: LocText): string {
   return (locale === "ko" ? text.ko : text[locale]) ?? text.ko;
 }
 
-// ── 파밍 도우미 (재료 파밍 효율표) — 탭 '파밍 도우미' (2026-07-22 분리) ──
+// ── 재료파밍 도우미 (재료 파밍 효율표) — 탭 '재료파밍 도우미' (2026-07-22 분리) ──
 export default function FarmGuide({ includeFuture }: { includeFuture: boolean }) {
   const { locale, t } = useI18n();
   const [tiers, setTiers] = useState<number[]>([]);

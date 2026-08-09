@@ -66,7 +66,8 @@ const meaningfulData = dataFiles.filter(meaningfulChange);
 // skills·profiles·voice·skins는 오퍼당 지연 로딩 파일로, 신규 오퍼가 들어오면 함께 생긴다
 // (2026-08-01: 이 넷이 빠져 있어 신규 오퍼 섬네일·레벨 탭이 R2에 안 올라갔다).
 const ASSET_DIRS = ["public/avatars/", "public/story/", "public/items/",
-                    "public/skills/", "public/profiles/", "public/voice/", "public/skins/"];
+                    "public/skills/", "public/profiles/", "public/voice/", "public/skins/",
+                    "public/enemy/"];
 const newAssets = [...changed].filter((f) => ASSET_DIRS.some((d) => f.startsWith(d)));
 const newAvatars = newAssets.filter((f) => f.startsWith("public/avatars/"));
 const newStory = newAssets.filter((f) => f.startsWith("public/story/"));
