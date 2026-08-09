@@ -18,6 +18,8 @@ export const enemyImg = (id: string) => asset(`/enemy/${id}.webp`);
 export const enemyImgBase = (id: string) => asset(`/enemy/${id.replace(/_\d+$/, "")}.webp`);
 /** 작전 지형 도면. 없는 작전이 있으므로 stage.map으로 먼저 거른다.
     MAP_VER: 파일명이 같은 채 내용이 바뀔 때 올린다 — R2 엣지·브라우저의 30일 이미지
-    캐시를 새 키로 우회 (about.tsx SHOT_VER와 같은 이유. v2: 어려움 판 도면 교체 2026-08-10). */
-const MAP_VER = "2";
+    캐시를 새 키로 우회 (about.tsx SHOT_VER와 같은 이유. v2: 어려움 판 도면 교체 2026-08-10.
+    v3: R2 동기화 직후 확인 요청이 전파 경합으로 v2 키에 옛 파일을 박아버려 한 번 더 올림 —
+    동기화 후 검증 curl은 반드시 일회용 쿼리로 할 것). */
+const MAP_VER = "3";
 export const stageMap = (id: string) => asset(`/stage/${id}.webp?v=${MAP_VER}`);
