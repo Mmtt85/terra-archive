@@ -1457,15 +1457,15 @@ button {
 .suggest-drop button {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
   border: 0;
   border-radius: 4px;
   background: 0 0;
   color: var(--ink);
   cursor: pointer;
-  padding: 7px 9px;
-  font-size: 13px;
+  padding: 5px 8px;
+  font-size: 12.5px;   /* 사이트 목록 톤(.attr-drop)과 동일 — 13px는 "이상하게 크다" (사용자 지적) */
   text-align: left;
 }
 .suggest-drop button:hover {
@@ -1473,8 +1473,8 @@ button {
 }
 .suggest-drop button img {
   flex: none;
-  width: 32px;
-  height: 32px;
+  width: 26px;
+  height: 26px;
   border-radius: 4px;
   object-fit: cover;
   background: var(--bg-soft);

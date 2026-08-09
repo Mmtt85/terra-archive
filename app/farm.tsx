@@ -272,7 +272,7 @@ export default function FarmGuide({ includeFuture }: { includeFuture: boolean })
         <div className="search-wrap farm-search"><span>⌕</span><input {...searchProps} placeholder={t("재료 이름·별명 검색")} aria-label={t("재료 이름·별명 검색")} />
           {/* 검색란 제안 — 고르면 그 재료 상세가 바로 열린다 (사용자 확정 2026-08-10) */}
           <SearchSuggest query={searchTerm}
-            items={searchTerm.trim() ? visible.map((m) => ({ key: m.id, label: locText(locale, m.name), sub: `T${m.rarity}`, img: asset(`/items/${m.id}.webp`) })) : []}
+            items={visible.map((m) => ({ key: m.id, label: locText(locale, m.name), sub: `T${m.rarity}`, img: asset(`/items/${m.id}.webp`) }))}
             onPick={openItem} />
         </div>
         <label className="farm-perm-toggle">

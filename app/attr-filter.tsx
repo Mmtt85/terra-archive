@@ -19,9 +19,9 @@ import { useI18n } from "./i18n";
 // disabled/hint — 상위 조건이 정해져야 열리는 카테고리(세부 직군 ← 직군)용
 // single — 그 칸에서 하나만 고르게 한다 (작전 도감의 계열 → 이벤트 → 구역처럼 **한 갈래씩
 // 좁혀 가는** 필터용, 사용자 요청 2026-08-09). 오퍼 백과사전은 종전대로 복수 선택이다.
-// searchable — 드롭다운 맨 위에 검색줄을 얹는다 (사용자 요청 2026-08-10: 작전 도감의
-// 계열 다음 칸들처럼 **항목이 수십~수백 개**인 칸용. 짧은 칸엔 굳이 얹지 않는다.)
-export type AttrGroup = { title: string; items: string[]; selected: string[]; onToggle: (value: string) => void; labelFor?: (value: string) => string; countForItem: (value: string) => number; disabled?: boolean; hint?: string; single?: boolean; searchable?: boolean };
+// 검색줄은 **모든 칸에 항상** 붙는다 (사용자 재확정 2026-08-10 — 처음엔 긴 칸에만 얹었더니
+// "뭐가 바뀐지 모르겠다"는 지적. 짧은 칸에도 있는 게 일관돼서 낫다).
+export type AttrGroup = { title: string; items: string[]; selected: string[]; onToggle: (value: string) => void; labelFor?: (value: string) => string; countForItem: (value: string) => number; disabled?: boolean; hint?: string; single?: boolean };
 export function AttributeFilter({ groups }: { groups: AttrGroup[] }) {
   const { t } = useI18n();
   const [open, setOpen] = useState<string | null>(null);
@@ -68,20 +68,18 @@ export function AttributeFilter({ groups }: { groups: AttrGroup[] }) {
         ))}
         {active && (() => {
           const q = query.trim().toLowerCase();
-          const shown = active.searchable && q
+          const shown = q
             ? active.items.filter((item) => (active.labelFor ? active.labelFor(item) : item).toLowerCase().includes(q))
             : active.items;
           return (
             <ul className="attr-drop" role="listbox" aria-multiselectable={!active.single} aria-label={active.title}>
-              {active.searchable && (
-                <li className="attr-search">
-                  {/* 모바일은 자동 포커스하지 않는다 — 키보드가 바로 솟아 목록을 가린다 */}
-                  <input type="search" value={query} placeholder={t("입력해서 찾기")}
-                    aria-label={`${active.title} — ${t("입력해서 찾기")}`}
-                    autoFocus={typeof window !== "undefined" && window.matchMedia("(hover: hover)").matches}
-                    onChange={(event) => setQuery(event.target.value)} />
-                </li>
-              )}
+              <li className="attr-search">
+                {/* 모바일은 자동 포커스하지 않는다 — 키보드가 바로 솟아 목록을 가린다 */}
+                <input type="search" value={query} placeholder={t("입력해서 찾기")}
+                  aria-label={`${active.title} — ${t("입력해서 찾기")}`}
+                  autoFocus={typeof window !== "undefined" && window.matchMedia("(hover: hover)").matches}
+                  onChange={(event) => setQuery(event.target.value)} />
+              </li>
               {shown.map((item) => {
                 const isSelected = active.selected.includes(item);
                 return (
@@ -96,7 +94,7 @@ export function AttributeFilter({ groups }: { groups: AttrGroup[] }) {
                   </li>
                 );
               })}
-              {active.searchable && shown.length === 0 && <li className="attr-none">{t("검색 결과가 없습니다")}</li>}
+              {shown.length === 0 && <li className="attr-none">{t("검색 결과가 없습니다")}</li>}
             </ul>
           );
         })()}

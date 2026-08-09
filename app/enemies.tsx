@@ -218,7 +218,7 @@ export default function EnemyDex({ enemies }: { enemies: Enemy[] }) {
             <button type="button" className="search-clear" onClick={() => clear()} aria-label={t("검색어 지우기")}>×</button>
             {/* 검색란 제안 — 고르면 그 적 상세가 바로 열린다 (사용자 확정 2026-08-10) */}
             <SearchSuggest query={term}
-              items={term.trim() ? shown.map((e) => ({ key: e.id, label: e.name, sub: e.idx ?? undefined, img: enemyImg(e.id) })) : []}
+              items={shown.map((e) => ({ key: e.id, label: e.name, sub: e.idx ?? undefined, img: enemyImg(e.id) }))}
               onPick={(id) => { const e = byId.get(id); if (e) setOpen(e); }} />
           </div>
           <div className="results-tools"><span className="count"><b>{shown.length}</b> ENEMIES</span></div>

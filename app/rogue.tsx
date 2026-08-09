@@ -2076,7 +2076,7 @@ export default function RogueGuide({ includeFuture, initialTopic }: {
               placeholder={t("적 이름 검색")} aria-label={t("적 이름 검색")} />
             {/* 검색란 제안 — 고르면 그 적 상세가 바로 열린다 (사용자 확정 2026-08-10) */}
             <SearchSuggest query={enemyTerm}
-              items={enemyTerm.trim() ? enemies.map(([key, e]) => ({ key, label: e.name || e.cn || key, sub: e.index ?? undefined, img: e.img ? asset(`/rogue/enemy/${e.img}.webp`) : undefined })) : []}
+              items={enemies.map(([key, e]) => ({ key, label: e.name || e.cn || key, sub: e.index ?? undefined, img: e.img ? asset(`/rogue/enemy/${e.img}.webp`) : undefined }))}
               onPick={(key) => setEnemyOpen({ key, ctx: dexCtx(key) })} />
             {["", "NORMAL", "ELITE", "BOSS"].map((rk) => (
               <button key={rk || "all"} type="button" className={enemyRank === rk ? "on" : ""}
@@ -2114,7 +2114,7 @@ export default function RogueGuide({ includeFuture, initialTopic }: {
               placeholder={t("유물 검색 (이름·번호)")} aria-label={t("유물 검색 (이름·번호)")} />
             {/* 검색란 제안 — 고르면 그 유물 상세가 바로 열린다 (사용자 확정 2026-08-10) */}
             <SearchSuggest query={relicTerm}
-              items={relicTerm.trim() ? relics.map((r) => ({ key: r.id, label: r.name || r.cn || r.id, img: asset(`/rogue/relic/${r.iconId ?? r.id}.webp`) })) : []}
+              items={relics.map((r) => ({ key: r.id, label: r.name || r.cn || r.id, img: asset(`/rogue/relic/${r.iconId ?? r.id}.webp`) }))}
               onPick={(id) => { const r = relics.find((x) => x.id === id); if (r) setRelicOpen(r); }} />
             <span className="rg-count">{relics.length}</span>
             {invButton}

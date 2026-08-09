@@ -2933,7 +2933,7 @@ function RosterModal({ allOps, ownedIds, eliteById, levelById, onApply, onClose,
             {/* 검색란 제안 (사용자 확정 2026-08-10) — 설정 모달 맥락이라 상세가 아니라
                 **보유 토글**이 pick 동작이다. ✓가 곧바로 바뀌어 토글됐음이 보인다. */}
             <SearchSuggest query={searchTerm}
-              items={searchTerm.trim() ? visible.map((op) => ({ key: op.id, label: op.name, sub: draft.has(op.id) ? "✓" : undefined, img: asset(`/avatars/${op.id}.webp`) })) : []}
+              items={visible.map((op) => ({ key: op.id, label: op.name, sub: draft.has(op.id) ? "✓" : undefined, img: asset(`/avatars/${op.id}.webp`) }))}
               onPick={toggle} />
             <button type="button" onClick={() => setDraft(new Set(allOps.map((op) => op.id)))}><span className="btn-icon" aria-hidden>✓</span>{t("전체 선택")}</button>
             <button type="button" onClick={() => setDraft(new Set())}><span className="btn-icon" aria-hidden>✕</span>{t("전체 해제")}</button>

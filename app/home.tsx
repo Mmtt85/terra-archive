@@ -1762,7 +1762,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
               <button type="button" className="search-clear" onClick={() => clearSearch()} aria-label={t("검색어 지우기")}>×</button>
               {/* 검색란 제안 — 고르면 그 오퍼 상세가 바로 열린다 (사용자 확정 2026-08-10) */}
               <SearchSuggest query={searchTerm}
-                items={searchTerm.trim() ? filtered.map((o) => ({ key: o.id, label: o.name, sub: `★${o.rarity} · ${o.job}`, img: asset(`/avatars/${o.id}.webp`) })) : []}
+                items={filtered.map((o) => ({ key: o.id, label: o.name, sub: `★${o.rarity} · ${o.job}`, img: asset(`/avatars/${o.id}.webp`) }))}
                 onPick={(id) => { const op = filtered.find((o) => o.id === id); if (op) openOperator(op); }} />
             </div>
             <div className="results-tools">
