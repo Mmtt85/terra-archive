@@ -1479,17 +1479,22 @@ button {
   object-fit: cover;
   background: var(--bg-soft);
 }
+/* ⚠ 크기를 **명시**해야 한다 — .search-wrap span(돋보기 ⌕ 아이콘용 22px·padding-left)이
+   제안 행 안의 span까지 물들여 라벨이 17px로 부풀었다 (사용자 지적 2026-08-10 실측) */
 .suggest-drop .sg-label {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 12.5px;
+  padding-left: 0;
 }
 .suggest-drop .sg-sub {
   color: #8b9294;
   margin-left: auto;
   flex: none;
   font-size: 11px;
+  padding-left: 0;
 }
 .suggest-drop .sg-more {
   color: #8b9294;
