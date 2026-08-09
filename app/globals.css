@@ -4877,8 +4877,9 @@ legend {
   right: 10px;
   transform: translateY(-50%);
 }
-/* 묶음 헤더(도감·시뮬레이터)는 오른쪽 끝에 ◂ 화살표가 있어 배지를 그 왼쪽으로 비킨다 */
-.main-tabs .tab-group .new-badge {
+/* 묶음 헤더(도감·시뮬레이터)와 통합전략은 오른쪽 끝에 ◂ 화살표가 있어 배지를 그 왼쪽으로 비킨다 */
+.main-tabs .tab-group .new-badge,
+.main-tabs .tab-rogue .new-badge {
   right: 28px;
 }
 /* '그 외' 드롭다운도 세로 메뉴 — 같은 규칙으로 줄 안 오른쪽에 둔다 (MAA 내보내기 베타 배지) */

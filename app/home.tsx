@@ -1625,8 +1625,8 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
             <span aria-hidden>☰</span>{t("메뉴")}
           </button>
           {/* 드롭다운은 햄버거 버튼 바로 밑에 딱 붙여 연다 (사용자 요청 2026-07) */}
-          {/* 순서 (사용자 확정 2026-08-09 '메뉴 마토메'): 홈 · 인프라 · 도감▸ · 시뮬레이터▸ ·
-              스토리 · 통합전략▸ · 소개. 인프라는 대표 기능이라 묶지 않고 톱레벨 유지(사용자 확정). */}
+          {/* 순서 (사용자 확정 2026-08-10): 홈 · 인프라 · 도감▸ · 시뮬레이터▸ ·
+              통합전략▸ · 스토리 · 소개. 인프라는 대표 기능이라 묶지 않고 톱레벨 유지(사용자 확정). */}
           <nav className={`main-tabs${navOpen ? " open" : ""}`} aria-label={t("주요 탭")}
             onPointerOver={prefetchTabs} onTouchStart={prefetchTabs} onFocus={prefetchTabs}>
             <button className={`tab-portal${tab === "portal" ? " selected" : ""}`} onClick={() => switchTab("portal")}><span className="tab-icon" aria-hidden>◇</span>{t("홈")}</button>
@@ -1658,10 +1658,11 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                 </div>
               </div>
             ))}
-            <button className={`tab-story${tab === "story" ? " selected" : ""}`} onClick={() => switchTab("story")}><span className="tab-icon" aria-hidden>✦</span>{t("스토리")}{tabHasNewFeature("story") && <span className="new-badge">{t("새기능")}</span>}</button>
-            {/* 통합전략 가이드 — 마우스오버 시 테마별 부메뉴가 펼쳐진다 (플라이아웃) */}
+            {/* 통합전략 가이드 — 마우스오버 시 테마별 부메뉴가 펼쳐진다 (플라이아웃).
+                버튼 자체는 페이지라 클릭=이동이지만, 하위가 있음을 알리는 ◂ 화살표는
+                도감·시뮬레이터와 똑같이 붙인다 (사용자 지적 2026-08-10). */}
             <div className="tab-flyout">
-              <button className={`tab-rogue${tab === "rogue" ? " selected" : ""}`} onClick={() => switchTab("rogue")}><span className="tab-icon" aria-hidden>❖</span>{t("통합전략 가이드")}{tabHasNewFeature("rogue") && <span className="new-badge">{t("새기능")}</span>}</button>
+              <button className={`tab-rogue${tab === "rogue" ? " selected" : ""}`} onClick={() => switchTab("rogue")}><span className="tab-icon" aria-hidden>❖</span>{t("통합전략 가이드")}{tabHasNewFeature("rogue") && <span className="new-badge">{t("새기능")}</span>}<span className="tab-group-arrow" aria-hidden>◂</span></button>
               <div className="tab-submenu" role="group" aria-label={t("통합전략 가이드")}>
                 {/* 실제 앵커 — 헤더 메뉴가 전부 버튼이라 크롤러에는 테마 링크가 하나도 없었다
                     (2026-08-06). 클릭은 종전대로 가로채 SPA 전환. */}
@@ -1677,6 +1678,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                 ))}
               </div>
             </div>
+            <button className={`tab-story${tab === "story" ? " selected" : ""}`} onClick={() => switchTab("story")}><span className="tab-icon" aria-hidden>✦</span>{t("스토리")}{tabHasNewFeature("story") && <span className="new-badge">{t("새기능")}</span>}</button>
             <button className={`tab-about${tab === "about" ? " selected" : ""}`} onClick={() => switchTab("about")}><span className="tab-icon" aria-hidden>ⓘ</span>{t("테라 아카이브 소개")}</button>
           </nav>
         </div>
