@@ -50,6 +50,7 @@ type CostItemMeta = {
   name: LocText; rarity: number; sortId: number; image: string;
   desc?: LocText; usage?: LocText; craft?: CostList; craftGold?: number;
   unreleased?: boolean;   // KR 미출시(중국 선행) 재료 — 미래시 데이터 포함 시에만 노출
+  gainExp?: number;       // 작전기록 — 사용 시 오르는 경험치 (build-costs.py, 2026-08-09)
 };
 type CostsData = {
   updated: string;
@@ -100,7 +101,7 @@ const KIND_LABEL: Record<string, string> = { perm: "상설", event: "이벤트 �
 
 // 칩·칩셋의 주간 물자(PR) 스테이지 — 요일 로테이션 고정 드랍이라 펭귄 효율표엔 없다.
 // 구역명은 zone_table 주간 구역(난공불락 등) 기준, 드랍 페어는 stage_table 확인 (2026-07).
-const CHIP_STAGES: Record<string, { code: string; zone: LocText; ap: number }> = (() => {
+const CHIP_STAGES: Record<string, { code: string; zone: LocText; ap: number; badge?: string }> = (() => {
   const zones: [LocText, string, string][] = [
     [{ ko: "난공불락", en: "Solid Defense", ja: "重装/医療" }, "3231", "3261"],   // PR-A: 디펜더·메딕
     [{ ko: "추풍낙엽", en: "Fierce Attack", ja: "狙撃/術師" }, "3241", "3251"],   // PR-B: 스나이퍼·캐스터
@@ -108,7 +109,7 @@ const CHIP_STAGES: Record<string, { code: string; zone: LocText; ap: number }> =
     [{ ko: "솔선수범", en: "Fearless Protection", ja: "前衛/特殊" }, "3221", "3281" ], // PR-D: 가드·스페셜리스트
   ];
   const letters = ["A", "B", "C", "D"];
-  const out: Record<string, { code: string; zone: LocText; ap: number }> = {};
+  const out: Record<string, { code: string; zone: LocText; ap: number; badge?: string }> = {};
   zones.forEach(([zone, ...chips], index) => {
     for (const chip of chips) {
       out[chip] = { code: `PR-${letters[index]}-1`, zone, ap: 18 };                    // 32X1 칩
@@ -120,6 +121,15 @@ const CHIP_STAGES: Record<string, { code: string; zone: LocText; ap: number }> =
   out["3301"] = { code: "CA-5", zone: ca, ap: 30 };
   out["3302"] = { code: "CA-5", zone: ca, ap: 30 };
   out["3303"] = { code: "CA-5", zone: ca, ap: 30 };
+  // 작전기록(EXP 카드) 4종 — LS(전술 연습) 고정 드랍. 펭귄 효율표엔 없어(고정 수량)
+  // 칩과 같은 방식으로 대표 스테이지를 보여준다. 기초는 LS-4까지만 나온다 (stage_table 실측:
+  // LS-4 = 2001·2002·2003·2004 / LS-5 = 2002·2003·2004 / LS-6 = 2003·2004).
+  const ls: LocText = { ko: "전술 연습", en: "Tactical Drill", ja: "戦術演習" };
+  const rec = (code: string, ap: number) => ({ code, zone: ls, ap, badge: "물자" });
+  out["2001"] = rec("LS-4", 25);
+  out["2002"] = rec("LS-5", 30);
+  out["2003"] = rec("LS-6", 36);
+  out["2004"] = rec("LS-6", 36);
   return out;
 })();
 
@@ -319,7 +329,7 @@ export default function FarmGuide({ includeFuture }: { includeFuture: boolean })
                       <p className="chip-stage" title={t("요일별 주간 물자 스테이지 — 이성 {n} 소모", { n: CHIP_STAGES[item.id].ap })}>
                         <b className="farm-code">{CHIP_STAGES[item.id].code}</b>
                         <span className="chip-zone">「{locText(locale, CHIP_STAGES[item.id].zone)}」</span>
-                        <em className="kind-badge daily">{t("주간 물자")}</em>
+                        <em className="kind-badge daily">{t(CHIP_STAGES[item.id].badge ?? "주간 물자")}</em>
                         <span className="farm-sanity">{t("이성 {n}", { n: CHIP_STAGES[item.id].ap })}</span>
                       </p>
                     )}
@@ -813,6 +823,8 @@ export function ItemModal({ id, onClose, onShowItem, onSearchItem, onShowStage }
           <div>
             <h3>{name}</h3>
             <span className={`farm-tier tier-${rarity}`}>T{rarity}</span>
+            {/* 작전기록 — 사용 시 오르는 경험치 (사용자 요청 2026-08-09) */}
+            {meta?.gainExp && <em className="exp-badge">{t("경험치 +{n}", { n: meta.gainExp.toLocaleString() })}</em>}
             {farmItem && <em className="item-farmable-badge">{t("파밍 가능")}</em>}
             {meta?.unreleased && <em className="future-badge">{t("미실장")}</em>}
           </div>
@@ -871,11 +883,11 @@ export function ItemModal({ id, onClose, onShowItem, onSearchItem, onShowStage }
         )}
         {!farmItem && CHIP_STAGES[id] && (
           <div className="item-stages">
-            <b>{t("주간 물자 스테이지")}</b>
+            <b>{t(CHIP_STAGES[id].badge ? "물자 스테이지" : "주간 물자 스테이지")}</b>
             <p className="chip-stage">
               <b className="farm-code">{CHIP_STAGES[id].code}</b>
               <span className="chip-zone">「{locText(locale, CHIP_STAGES[id].zone)}」</span>
-              <em className="kind-badge daily">{t("주간 물자")}</em>
+              <em className="kind-badge daily">{t(CHIP_STAGES[id].badge ?? "주간 물자")}</em>
               <span className="farm-sanity">{t("이성 {n}", { n: CHIP_STAGES[id].ap })}</span>
             </p>
           </div>

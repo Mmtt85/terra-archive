@@ -188,6 +188,10 @@ def is_unreleased_item(iid):
     return bool(CJK.search(krn))
 
 os.makedirs(f"{REPO}/public/items", exist_ok=True)
+# 작전기록(EXP 카드) 4종은 비용에 직접 등장하지 않아도 전부 사전에 싣는다 — 종전엔
+# 환산 단위인 고급(2004)만 있어서 기초·초급·중급이 재료 목록에서 빠져 있었다
+# (사용자 지적 2026-08-09). gainExp도 함께 실어 상세 모달이 경험치를 표시한다.
+used_items.update(EXP_ITEMS.keys())
 items_out = {}
 missing_icons = []
 for iid in sorted(used_items):
@@ -202,6 +206,8 @@ for iid in sorted(used_items):
     if desc: entry["desc"] = desc
     if usage: entry["usage"] = usage
     if is_unreleased_item(iid): entry["unreleased"] = True
+    ge = (EXP_ITEMS.get(iid) or {}).get("gainExp")
+    if ge: entry["gainExp"] = ge   # 작전기록 — 사용 시 오르는 경험치
     f = formulas.get(iid)
     if f:
         gold = f.get("goldCost") or 0

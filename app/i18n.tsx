@@ -1437,6 +1437,8 @@ const D: Record<string, Pair> = {
   "조건에 맞는 작전이 없어요.": ["No stage matches these filters.", "条件に合う作戦がありません。"],
   "작전 코드, 이름, 구역 검색": ["Search code, name, zone", "コード・名前・エリアで検索"],
   "작전 계열": ["Category", "系統"],
+  "물자 스테이지": ["Supply stage", "物資ステージ"],
+  "경험치 +{n}": ["+{n} EXP", "経験値 +{n}"],
   "어려움": ["Tough", "高難度"],
   "효율 {n}위": ["#{n} efficiency", "効率{n}位"],
   "순위밖": ["Outside top 10", "圏外"],
