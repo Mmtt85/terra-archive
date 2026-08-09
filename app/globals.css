@@ -1821,6 +1821,13 @@ legend {
   background: var(--white);
   text-align: left;
   cursor: pointer;
+  /* 화면 밖 카드(420장)의 레이아웃·페인트를 건너뛴다 — 모달 열기 INP 개선 (2026-08-09).
+     플래너의 .roster-card가 2026-07-21에 같은 이유로 먼저 받은 처방인데, 정작 더 큰
+     백과사전 그리드에는 빠져 있었다. 실측 카드 높이는 189~225px(폭 122px 4열)이라
+     자리높이를 205px로 잡는다 — 과대치를 넣으면 스크롤 중 접히며 재레이아웃이 폭주한다
+     (roster-card가 210px→49px로 겪은 그 문제). */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 122px auto 205px;
   /* 카드는 실제 <a>다 (크롤러용 내부 링크, 2026-08-06) — 링크 기본 스타일만 지운다 */
   color: inherit;
   text-decoration: none;
