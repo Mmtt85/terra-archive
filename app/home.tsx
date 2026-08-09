@@ -1297,7 +1297,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   // **URL·페이지 제목·SEO는 그대로** — 헤더/푸터 내비 표시만 바꾸는 것이다.
   const TAB_GROUPS: { id: "dex" | "sim"; name: string; icon: string; items: { tab: Tab; short: string }[] }[] = [
     { id: "dex", name: t("도감"), icon: "▤", items: [
-      { tab: "archive", short: t("오퍼") }, { tab: "enemy", short: t("적") }, { tab: "stage", short: t("작전") },
+      { tab: "archive", short: t("오퍼레이터") }, { tab: "enemy", short: t("적") }, { tab: "stage", short: t("작전") },
     ] },
     { id: "sim", name: t("시뮬레이터"), icon: "◈", items: [
       { tab: "recruit", short: t("공개채용") }, { tab: "farm", short: t("재료파밍") }, { tab: "upgrade", short: t("오퍼 육성") },

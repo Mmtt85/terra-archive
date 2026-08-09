@@ -124,7 +124,7 @@ const D: Record<string, Pair> = {
   // 페이지 자체 제목·SEO 문구는 위의 정식명을 그대로 쓴다.
   "도감": ["Handbook", "図鑑"],
   "시뮬레이터": ["Simulators", "シミュレーター"],
-  "오퍼": ["Operators", "オペレーター"],
+  "오퍼레이터": ["Operators", "オペレーター"],
   "적": ["Enemies", "敵"],
   "공개채용": ["Recruitment", "公開求人"],
   "재료파밍": ["Material Farming", "素材周回"],
