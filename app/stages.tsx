@@ -17,6 +17,7 @@ import { useLazyVisible } from "./lazy-img";
 import { ModalWindow } from "./modal-window";
 import { useHashSync } from "./hash-modal";
 import { AttributeFilter } from "./attr-filter";
+import { SearchSuggest } from "./search-suggest";
 import { loadEnemies } from "./dex-cross";
 import { EnemyFile, type Enemy } from "./enemy-detail";
 // 재료 상세는 재료파밍 도우미의 것을 그대로 쓴다 — 설명·용도·조합식·효율 상위 스테이지까지
@@ -147,15 +148,17 @@ export default function StageDex({ doc }: { doc: StageDoc; onOpenEnemy?: (id: st
   const filterGroups = [
     { title: t("작전 계열"), items: typeItems, selected: types, onToggle: pickOne(setTypes), single: true,
       labelFor: (v: string) => doc.types[v] ?? v, countForItem: (v: string) => countBy.type.get(v) ?? 0 },
+    // 계열 다음 칸들(이벤트·구역)은 항목이 수십~수백 개라 드롭다운에 검색줄을 얹는다
+    // (사용자 요청 2026-08-10)
     ...(eventItems.length > 1 ? [{
       title: t("이벤트"), items: eventItems, selected: events, onToggle: pickOne(setEvSel), single: true,
-      countForItem: (v: string) => countBy.ev.get(v) ?? 0,
+      searchable: true, countForItem: (v: string) => countBy.ev.get(v) ?? 0,
     }] : []),
     // 이벤트가 있는 계열은 **이벤트를 고른 뒤에야** 구역이 나온다 — 안 그러면 이벤트
     // 84개와 구역 156개가 동시에 펼쳐져 "점점 좁혀 간다"는 흐름이 깨진다.
     ...(zoneItems.length > 1 && (eventItems.length <= 1 || events.length > 0) ? [{
       title: t("구역"), items: zoneItems, selected: zones, onToggle: pickOne(setZonesSel), single: true,
-      countForItem: (v: string) => countBy.zone.get(v) ?? 0,
+      searchable: true, countForItem: (v: string) => countBy.zone.get(v) ?? 0,
     }] : []),
   ];
 
@@ -197,6 +200,10 @@ export default function StageDex({ doc }: { doc: StageDoc; onOpenEnemy?: (id: st
             <span>⌕</span>
             <input id="stage-search" {...inputProps} placeholder={t("작전 코드, 이름, 구역 검색")} />
             <button type="button" className="search-clear" onClick={() => clear()} aria-label={t("검색어 지우기")}>×</button>
+            {/* 검색란 제안 — 고르면 그 작전 상세가 바로 열린다 (사용자 확정 2026-08-10) */}
+            <SearchSuggest query={term}
+              items={term.trim() ? shown.map((s) => ({ key: s.id, label: `${s.code} ${s.name}`.trim(), sub: doc.zones[s.z] ?? undefined, img: s.map ? stageMap(s.id) : undefined })) : []}
+              onPick={(id) => { const st = byId.get(id); if (st) setOpen(st); }} />
           </div>
           <div className="results-tools"><span className="count"><b>{shown.length}</b> STAGES</span></div>
         </div>

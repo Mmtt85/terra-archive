@@ -19,10 +19,15 @@ import { useI18n } from "./i18n";
 // disabled/hint — 상위 조건이 정해져야 열리는 카테고리(세부 직군 ← 직군)용
 // single — 그 칸에서 하나만 고르게 한다 (작전 도감의 계열 → 이벤트 → 구역처럼 **한 갈래씩
 // 좁혀 가는** 필터용, 사용자 요청 2026-08-09). 오퍼 백과사전은 종전대로 복수 선택이다.
-export type AttrGroup = { title: string; items: string[]; selected: string[]; onToggle: (value: string) => void; labelFor?: (value: string) => string; countForItem: (value: string) => number; disabled?: boolean; hint?: string; single?: boolean };
+// searchable — 드롭다운 맨 위에 검색줄을 얹는다 (사용자 요청 2026-08-10: 작전 도감의
+// 계열 다음 칸들처럼 **항목이 수십~수백 개**인 칸용. 짧은 칸엔 굳이 얹지 않는다.)
+export type AttrGroup = { title: string; items: string[]; selected: string[]; onToggle: (value: string) => void; labelFor?: (value: string) => string; countForItem: (value: string) => number; disabled?: boolean; hint?: string; single?: boolean; searchable?: boolean };
 export function AttributeFilter({ groups }: { groups: AttrGroup[] }) {
   const { t } = useI18n();
   const [open, setOpen] = useState<string | null>(null);
+  // 드롭다운 안 검색어 — 칸을 바꿔 열 때 초기화한다 (effect가 아니라 클릭 핸들러에서:
+  // set-state-in-effect 린트 관례)
+  const [query, setQuery] = useState("");
   // 열려 있는 동안 상위 조건이 풀리면(직군 해제) 목록도 같이 닫힌다
   const active = groups.find((g) => g.title === open && !g.disabled);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -55,30 +60,46 @@ export function AttributeFilter({ groups }: { groups: AttrGroup[] }) {
           <button key={g.title} type="button" disabled={g.disabled}
             className={`attr-cat${open === g.title ? " open" : ""}${g.selected.length ? " has-sel" : ""}`}
             aria-expanded={open === g.title} title={g.disabled ? g.hint : undefined}
-            onClick={() => setOpen((current) => (current === g.title ? null : g.title))}>
+            onClick={() => { setQuery(""); setOpen((current) => (current === g.title ? null : g.title)); }}>
             {g.title}{g.selected.length > 0 && <em>{g.selected.length}</em>}
             {g.disabled && g.hint && <small className="attr-cat-hint">{g.hint}</small>}
             <span className="attr-caret" aria-hidden>{open === g.title ? "▴" : "▾"}</span>
           </button>
         ))}
-        {active && (
-          <ul className="attr-drop" role="listbox" aria-multiselectable={!active.single} aria-label={active.title}>
-            {active.items.map((item) => {
-              const isSelected = active.selected.includes(item);
-              return (
-                <li key={item}>
-                  <button type="button" role="option" aria-selected={isSelected}
-                    className={isSelected ? "selected" : ""}
-                    onClick={() => { active.onToggle(item); setOpen(null); }}>
-                    <i aria-hidden>{isSelected ? "✓" : ""}</i>
-                    {active.labelFor ? active.labelFor(item) : item}
-                    <span>{active.countForItem(item)}</span>
-                  </button>
+        {active && (() => {
+          const q = query.trim().toLowerCase();
+          const shown = active.searchable && q
+            ? active.items.filter((item) => (active.labelFor ? active.labelFor(item) : item).toLowerCase().includes(q))
+            : active.items;
+          return (
+            <ul className="attr-drop" role="listbox" aria-multiselectable={!active.single} aria-label={active.title}>
+              {active.searchable && (
+                <li className="attr-search">
+                  {/* 모바일은 자동 포커스하지 않는다 — 키보드가 바로 솟아 목록을 가린다 */}
+                  <input type="search" value={query} placeholder={t("입력해서 찾기")}
+                    aria-label={`${active.title} — ${t("입력해서 찾기")}`}
+                    autoFocus={typeof window !== "undefined" && window.matchMedia("(hover: hover)").matches}
+                    onChange={(event) => setQuery(event.target.value)} />
                 </li>
-              );
-            })}
-          </ul>
-        )}
+              )}
+              {shown.map((item) => {
+                const isSelected = active.selected.includes(item);
+                return (
+                  <li key={item}>
+                    <button type="button" role="option" aria-selected={isSelected}
+                      className={isSelected ? "selected" : ""}
+                      onClick={() => { active.onToggle(item); setOpen(null); }}>
+                      <i aria-hidden>{isSelected ? "✓" : ""}</i>
+                      {active.labelFor ? active.labelFor(item) : item}
+                      <span>{active.countForItem(item)}</span>
+                    </button>
+                  </li>
+                );
+              })}
+              {active.searchable && shown.length === 0 && <li className="attr-none">{t("검색 결과가 없습니다")}</li>}
+            </ul>
+          );
+        })()}
       </div>
     </fieldset>
   );

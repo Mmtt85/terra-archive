@@ -1437,6 +1437,64 @@ button {
   border: 1px solid #bbbcb7;
   align-items: center;
   display: flex;
+  position: relative;   /* 제안 드롭다운(.suggest-drop) 앵커 (2026-08-10) */
+}
+/* 검색란 제안 드롭다운 (app/search-suggest.tsx) — 사이트 모든 검색란 공용.
+   생김새는 속성 필터의 .attr-drop과 같은 결로 맞춘다. */
+.suggest-drop {
+  position: absolute;
+  inset: calc(100% + 6px) 0 auto 0;
+  z-index: 30;
+  background: var(--white);
+  border: 1px solid var(--border-strong);
+  border-left: 3px solid var(--lime);
+  border-radius: 6px;
+  box-shadow: 0 8px 22px #0000001f;
+  padding: 4px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.suggest-drop button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: 0;
+  border-radius: 4px;
+  background: 0 0;
+  color: var(--ink);
+  cursor: pointer;
+  padding: 7px 9px;
+  font-size: 13px;
+  text-align: left;
+}
+.suggest-drop button:hover {
+  background: var(--bg-soft);
+}
+.suggest-drop button img {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  object-fit: cover;
+  background: var(--bg-soft);
+}
+.suggest-drop .sg-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.suggest-drop .sg-sub {
+  color: #8b9294;
+  margin-left: auto;
+  flex: none;
+  font-size: 11px;
+}
+.suggest-drop .sg-more {
+  color: #8b9294;
+  padding: 6px 9px;
+  font-size: 11.5px;
 }
 .search-wrap span {
   padding-left: 12px;
@@ -1719,6 +1777,33 @@ legend {
 }
 .attr-drop li {
   margin: 0;
+}
+/* 드롭다운 안 검색줄 (2026-08-10) — 항목이 긴 칸(작전 도감 이벤트 100+)용.
+   스크롤해도 위에 붙어 있게 sticky (top은 .attr-drop padding 4px 상쇄) */
+.attr-drop .attr-search {
+  position: sticky;
+  top: -4px;
+  z-index: 1;
+  background: var(--white);
+  padding: 2px 2px 6px;
+}
+.attr-drop .attr-search input {
+  width: 100%;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  background: var(--white);
+  color: var(--ink);
+  padding: 7px 9px;
+  font-size: 12.5px;
+  outline: 0;
+}
+.attr-drop .attr-search input:focus {
+  border-color: var(--lime);
+}
+.attr-drop .attr-none {
+  color: #8b9294;
+  padding: 8px;
+  font-size: 12px;
 }
 .attr-drop button {
   color: var(--ink);
@@ -5750,6 +5835,7 @@ legend {
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 14px;
+  position: relative;   /* 검색 제안 드롭다운(.suggest-drop) 앵커 (2026-08-10) */
 }
 .roster-tools input {
   border: 1px solid #ffffff55;
@@ -12435,6 +12521,7 @@ html.dark.rg-theme.rg6 .site-header {
   gap: 6px;
   flex-wrap: wrap;
   margin-bottom: 14px;
+  position: relative;   /* 검색 제안 드롭다운(.suggest-drop) 앵커 (2026-08-10) */
 }
 .rg-filterbar input[type="search"] {
   border: 1px solid var(--rgline);

@@ -64,6 +64,7 @@ import { PORTAL_TILES, PORTAL_ART, type PortalTile } from "./portal-themes";
 import { useLazyVisible } from "./lazy-img";
 // 속성 필터는 적 도감(app/enemies.tsx)과 공유하는 부품이라 별도 모듈에 있다 (2026-08-09)
 import { AttributeFilter } from "./attr-filter";
+import { SearchSuggest } from "./search-suggest";
 // ⚠ 적 상세는 **lazy가 아니다.** /enemies/<id> HTML에 본문이 박히려면 인라인 렌더여야 한다
 //    (app/enemy-detail.tsx 머리주석의 실측 근거 참조). 데이터는 안 딸려 온다 — props로만 받는다.
 import { EnemyPage, type Enemy as EnemyEntry, type EnemyStages } from "./enemy-detail";
@@ -1759,6 +1760,10 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
               {/* 비제어 입력 — 지우기(×) 표시는 CSS(:placeholder-shown)가 담당한다 */}
               <input id="operator-search" {...searchProps} placeholder={t("이름, 별명, 직군, 효과 검색")} />
               <button type="button" className="search-clear" onClick={() => clearSearch()} aria-label={t("검색어 지우기")}>×</button>
+              {/* 검색란 제안 — 고르면 그 오퍼 상세가 바로 열린다 (사용자 확정 2026-08-10) */}
+              <SearchSuggest query={searchTerm}
+                items={searchTerm.trim() ? filtered.map((o) => ({ key: o.id, label: o.name, sub: `★${o.rarity} · ${o.job}`, img: asset(`/avatars/${o.id}.webp`) })) : []}
+                onPick={(id) => { const op = filtered.find((o) => o.id === id); if (op) openOperator(op); }} />
             </div>
             <div className="results-tools">
               <label className="sort-wrap">

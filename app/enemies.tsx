@@ -16,6 +16,7 @@ import { useLazyVisible } from "./lazy-img";
 import { ModalWindow } from "./modal-window";
 import { useHashSync } from "./hash-modal";
 import { AttributeFilter } from "./attr-filter";
+import { SearchSuggest } from "./search-suggest";
 import { loadStages } from "./dex-cross";
 import { StageFile } from "./stage-detail";
 import { viewOf, type StageView } from "./stage-data";
@@ -215,6 +216,10 @@ export default function EnemyDex({ enemies }: { enemies: Enemy[] }) {
             <span>⌕</span>
             <input id="enemy-search" {...inputProps} placeholder={t("이름, 도감번호, 능력 검색")} />
             <button type="button" className="search-clear" onClick={() => clear()} aria-label={t("검색어 지우기")}>×</button>
+            {/* 검색란 제안 — 고르면 그 적 상세가 바로 열린다 (사용자 확정 2026-08-10) */}
+            <SearchSuggest query={term}
+              items={term.trim() ? shown.map((e) => ({ key: e.id, label: e.name, sub: e.idx ?? undefined, img: enemyImg(e.id) })) : []}
+              onPick={(id) => { const e = byId.get(id); if (e) setOpen(e); }} />
           </div>
           <div className="results-tools"><span className="count"><b>{shown.length}</b> ENEMIES</span></div>
         </div>

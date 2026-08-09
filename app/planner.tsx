@@ -6,6 +6,7 @@ import { useI18n, tokenName, rich, type ExtraI18n, type Locale, type T } from ".
 import { RULES } from "./rules";
 import { useConfirm } from "./confirm";
 import { normSearch, useSearchInput } from "./search";
+import { SearchSuggest } from "./search-suggest";
 import { anyNewFeature, isNewFeature } from "./whats-new";
 import { useHashSync } from "./hash-modal";
 
@@ -2929,6 +2930,11 @@ function RosterModal({ allOps, ownedIds, eliteById, levelById, onApply, onClose,
           {mode === "direct" && (
           <div className="roster-tools">
             <input {...searchProps} placeholder={t("이름·소속 검색")} />
+            {/* 검색란 제안 (사용자 확정 2026-08-10) — 설정 모달 맥락이라 상세가 아니라
+                **보유 토글**이 pick 동작이다. ✓가 곧바로 바뀌어 토글됐음이 보인다. */}
+            <SearchSuggest query={searchTerm}
+              items={searchTerm.trim() ? visible.map((op) => ({ key: op.id, label: op.name, sub: draft.has(op.id) ? "✓" : undefined, img: asset(`/avatars/${op.id}.webp`) })) : []}
+              onPick={toggle} />
             <button type="button" onClick={() => setDraft(new Set(allOps.map((op) => op.id)))}><span className="btn-icon" aria-hidden>✓</span>{t("전체 선택")}</button>
             <button type="button" onClick={() => setDraft(new Set())}><span className="btn-icon" aria-hidden>✕</span>{t("전체 해제")}</button>
             <button type="button" className="apply" onClick={() => onApply(draft, eliteDraft, levelDraft)}><span className="btn-icon" aria-hidden>⟳</span>{t("적용 및 자동편성 실행")}</button>

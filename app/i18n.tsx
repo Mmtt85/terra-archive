@@ -125,6 +125,12 @@ const D: Record<string, Pair> = {
   "도감": ["Handbook", "図鑑"],
   "시뮬레이터": ["Simulators", "シミュレーター"],
   "오퍼레이터": ["Operators", "オペレーター"],
+  // 속성 필터 드롭다운 안 검색줄 (2026-08-10)
+  "입력해서 찾기": ["Type to filter", "入力して絞り込み"],
+  "검색 결과가 없습니다": ["No results", "検索結果がありません"],
+  // 검색란 제안 드롭다운 (app/search-suggest.tsx, 2026-08-10)
+  "검색 제안": ["Search suggestions", "検索候補"],
+  "외 {n}개 — 더 입력해 좁혀 보세요": ["+{n} more — keep typing to narrow down", "他{n}件 — さらに入力して絞り込んでください"],
   "적": ["Enemies", "敵"],
   "공개채용": ["Recruitment", "公開求人"],
   "재료파밍": ["Material Farming", "素材周回"],
