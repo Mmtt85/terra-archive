@@ -13,7 +13,9 @@
 
 출력:
   app/data/stages.json / .en.json / .ja.json   작전 2,327개 (이성·보상·드랍·기믹·등장 적)
-  public/stage/<stageId>.webp                  인게임 지형 도면 (gitignore·R2 서빙)
+  public/stage/<stageId>.webp                  인게임 지형 도면 (⚠ git에 커밋한다 — CI가
+                                               --no-images로 돌 때 로컬 파일 유무로 map
+                                               플래그를 세우므로. 서빙은 R2가 한다)
 
 입력:
   .gamedata/{kr,en,jp}_stage_table.json / _zone_table.json / _item_table.json
