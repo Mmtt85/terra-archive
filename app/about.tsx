@@ -23,7 +23,7 @@ type Feature = {
 type ShotPair = { d: string; m: string };
 // 재촬영하면 이 날짜를 올린다 — 파일명이 같아서 R2 엣지·브라우저의 30일 이미지 캐시에
 // 옛 캡처가 남는데, 쿼리가 바뀌면 새 캐시 키라 전부 즉시 새로 받는다 (2026-08-02).
-const SHOT_VER = "20260802";
+const SHOT_VER = "20260809";
 const SHOTS: Partial<Record<Tab, ShotPair>> = {
   archive: { d: "/about/archive.webp", m: "/about/archive-m.webp" },
   planner: { d: "/about/planner.webp", m: "/about/planner-m.webp" },
