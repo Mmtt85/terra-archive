@@ -1315,6 +1315,27 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [omniOpen]);
+
+  // ⌘F/Ctrl+F — 브라우저 찾기 대신 **그 화면의 검색란**으로 (사용자 요청 2026-08-09).
+  // 검색란이 없는 화면(홈·소개 등)에서는 유니버셜 서치를 연다 (사용자 확정).
+  // 모달이 떠 있으면 최상단 모달 안의 검색란만 후보다 — 모달에 검색란이 없으면
+  // 뒤 화면 검색란에 초점을 주는 게 더 이상하므로 이때도 유니버셜 서치.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.key !== "f" && e.key !== "F") || !(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey) return;
+      const SEL = '.search-wrap input, input[type="search"]';
+      // ModalWindow는 포털이라 나중에 뜬(=재지목돼 앞으로 온) 창이 body 뒤쪽에 붙는다
+      const modals = document.querySelectorAll<HTMLElement>(".mw-backdrop");
+      const scope = modals.length ? modals[modals.length - 1] : document;
+      const input = [...scope.querySelectorAll<HTMLInputElement>(SEL)]
+        .find((x) => x.offsetParent !== null && !x.disabled);
+      e.preventDefault();
+      if (input) { input.focus(); input.select(); }
+      else setOmniOpen(true);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
   const omniTrigger = (
     <div className="omni">
       <button type="button" className="omni-trigger" onClick={() => setOmniOpen(true)}
