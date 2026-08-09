@@ -92,6 +92,9 @@ for entry in matrix:
         },
         "ap": ap,
         "kind": stage_kind(stage),
+        # 어려움(高難) 판 — 정규판과 코드가 같아 "10-12"가 두 줄로 보였다 (사용자 지적
+        # 2026-08-09). 데이터는 남기고(드랍률이 실제로 다르다) 표시로 구분한다.
+        **({"tough": 1} if stage["stageId"].startswith("tough_") else {}),
         "rate": round(rate * 100, 2),        # %
         "sanity": round(ap / rate, 1),        # 개당 기대 이성
         "times": times,

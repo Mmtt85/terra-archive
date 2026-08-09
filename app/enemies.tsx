@@ -109,14 +109,19 @@ export default function EnemyDex({ enemies }: { enemies: Enemy[] }) {
   // ⚠ 해시 동기화는 하지 않는다 (주 모달 #en-<id>와 서로 덮어써 창이 닫힌다).
   const [subStage, setSubStage] = useState<StageView | null>(null);
   const [subItem, setSubItem] = useState<string | null>(null);
+  // 다시 지목한 창은 앞으로 (사용자 요청 2026-08-09) — key 재마운트로 z를 새로 받는다
+  const [stageRaise, setStageRaise] = useState(0);
+  const [itemRaise, setItemRaise] = useState(0);
 
   const byId = useMemo(() => new Map(enemies.map((e) => [e.id, e])), [enemies]);
   const openStage = (sid: string) => {
+    setStageRaise((k) => k + 1);
     void loadStages(locale).then((doc) => {
       const st = doc.stages.find((x) => x.id === sid);
       setSubStage(st ? viewOf(doc, st) : null);
     });
   };
+  const openItem = (id: string) => { setSubItem(id); setItemRaise((k) => k + 1); };
   const stagesDoc = useStagesDoc(locale, open !== null);
 
   // 딥링크 #en-<id> — 오퍼 모달(#op-<id>)과 같은 관례
@@ -246,16 +251,17 @@ export default function EnemyDex({ enemies }: { enemies: Enemy[] }) {
 
       {/* 작전 상세 — 적 모달 위에 겹친다 (ModalWindow가 zTop으로 앞뒤를 정한다) */}
       {subStage && (
-        <ModalWindow label={`${subStage.stage.code} ${subStage.stage.name}`} className="operator-modal st-modal"
+        <ModalWindow key={stageRaise} label={`${subStage.stage.code} ${subStage.stage.name}`} className="operator-modal st-modal"
           onClose={() => setSubStage(null)}>
           <StageFile view={subStage}
             onOpenEnemy={(id) => { const e = byId.get(id); if (e) { setSubStage(null); setOpen(e); } }}
-            onOpenItem={setSubItem} />
+            onOpenItem={openItem} />
         </ModalWindow>
       )}
       {subItem && (
         <Suspense fallback={null}>
-          <ItemModal id={subItem} onClose={() => setSubItem(null)} onShowItem={setSubItem} />
+          <ItemModal key={itemRaise} id={subItem} onClose={() => setSubItem(null)} onShowItem={openItem}
+            onShowStage={openStage} />
         </Suspense>
       )}
     </section>

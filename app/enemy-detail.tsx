@@ -62,7 +62,7 @@ function StatTable({ levels }: { levels: EnemyLevel[] }) {
     ["마법 저항", (l) => `${fmt(l.res)}%`],
     ["공격 속도", (l) => fmt(l.aspd)],
     ["이동 속도", (l) => fmt(l.ms)],
-    ["중량", (l) => fmt(l.w)],
+    ["무게", (l) => fmt(l.w)],
     ["라이프 감소", (l) => fmt(l.lp)],
   ];
   return (

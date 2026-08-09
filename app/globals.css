@@ -16487,3 +16487,8 @@ main.site-main > .site-header {
   padding: 0 0 5px;
   margin-bottom: 6px;
 }
+/* 어려움(高難) 판 배지 — 강화 스탯 표시(★)와 같은 주황 계열 */
+.kind-badge.tough {
+  border-color: #b9862f;
+  color: #b9862f;
+}

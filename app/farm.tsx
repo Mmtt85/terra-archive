@@ -33,6 +33,7 @@ type FarmStage = {
   kind: "main" | "perm" | "event" | "daily";
   rate: number;    // 드랍률 %
   sanity: number;  // 개당 기대 이성
+  tough?: number;  // 1 = 어려움(高難) 판 — 정규판과 코드가 같아 배지로 구분 (2026-08-09)
   times: number;   // 펭귄 물류 표본 수
 };
 type FarmItem = { id: string; name: LocText; rarity: number; sortId: number; image: string; stages: FarmStage[] };
@@ -134,25 +135,32 @@ function useStageSubModal(onShowItem: (id: string) => void) {
   const { locale } = useI18n();
   const [stage, setStage] = useState<StageView | null>(null);
   const [enemy, setEnemy] = useState<Enemy | null>(null);
+  // 이미 열려 있는 창을 다시 지목하면 **앞으로 끌어올린다** (사용자 요청 2026-08-09:
+  // 재료 → 맵 → 그 맵에서 같은 재료를 다시 누르면 뒤에 있던 재료 모달이 앞으로).
+  // ModalWindow는 마운트 때 z(++zTop)를 받으므로, 지목될 때마다 key를 갈아 재마운트한다.
+  const [stageRaise, setStageRaise] = useState(0);
+  const [enemyRaise, setEnemyRaise] = useState(0);
   const openStage = (sid: string) => {
+    setStageRaise((k) => k + 1);
     void loadStages(locale).then((doc) => {
       const st = doc.stages.find((x) => x.id === sid);
       setStage(st ? viewOf(doc, st) : null);
     });
   };
   const openEnemy = (eid: string) => {
+    setEnemyRaise((k) => k + 1);
     void loadEnemies(locale).then((m) => setEnemy(m.get(eid) ?? null));
   };
   const node = (
     <>
       {stage && (
-        <ModalWindow label={`${stage.stage.code} ${stage.stage.name}`} className="operator-modal st-modal"
+        <ModalWindow key={stageRaise} label={`${stage.stage.code} ${stage.stage.name}`} className="operator-modal st-modal"
           onClose={() => setStage(null)}>
           <StageFile view={stage} onOpenEnemy={openEnemy} onOpenItem={onShowItem} />
         </ModalWindow>
       )}
       {enemy && (
-        <ModalWindow label={enemy.name} className="operator-modal en-modal" onClose={() => setEnemy(null)}>
+        <ModalWindow key={enemyRaise} label={enemy.name} className="operator-modal en-modal" onClose={() => setEnemy(null)}>
           <EnemyFile enemy={enemy} stagesDoc={null} onOpenStage={openStage} />
         </ModalWindow>
       )}
@@ -169,7 +177,9 @@ export default function FarmGuide({ includeFuture }: { includeFuture: boolean })
   const [permOnly, setPermOnly] = useState(false);
   // 재료 상세 모달 — 효율표·계산기의 모든 재료 아이콘에서 연다 (id = item id)
   const [shownItem, setShownItem] = useState<string | null>(null);
-  const sub = useStageSubModal(setShownItem);
+  const [itemRaise, setItemRaise] = useState(0);
+  // 작전 모달의 드랍에서 재료를 지목하면, 이미 열려 있던 재료 모달을 앞으로 끌어올린다
+  const sub = useStageSubModal((id) => { setShownItem(id); setItemRaise((k) => k + 1); });
   // 딥링크: #item-<재료id> — /farm 경로에서 재료 상세를 URL로 공유 (2026-07-27)
   useHashSync(shownItem ? `#item-${shownItem}` : null, (h) => {
     const id = h.startsWith("#item-") ? h.slice(6) : null;
@@ -289,6 +299,7 @@ export default function FarmGuide({ includeFuture }: { includeFuture: boolean })
                           <button type="button" className="farm-code as-btn" onClick={() => sub.openStage(stage.id)}>{stage.code}</button>
                           <span className="farm-badges">
                             {index === 0 && <em className="best-badge">{t("최고 효율")}</em>}
+                            {stage.tough ? <em className="kind-badge tough">{t("어려움")}</em> : null}
                             {KIND_LABEL[stage.kind] && <em className={`kind-badge ${stage.kind}`}>{t(KIND_LABEL[stage.kind])}</em>}
                           </span>
                           <span className="farm-rate">{stage.rate}%</span>
@@ -339,6 +350,7 @@ export default function FarmGuide({ includeFuture }: { includeFuture: boolean })
 
       {shownItem && (
         <ItemModal
+          key={itemRaise}
           id={shownItem}
           onClose={() => setShownItem(null)}
           onShowItem={openItem}
@@ -357,7 +369,8 @@ export default function FarmGuide({ includeFuture }: { includeFuture: boolean })
 export function UpgradeSim({ operators, includeFuture, onShowOperator }: { operators: Operator[]; includeFuture: boolean; onShowOperator: (id: string) => void }) {
   const { t } = useI18n();
   const [shownItem, setShownItem] = useState<string | null>(null);
-  const sub = useStageSubModal(setShownItem);
+  const [itemRaise, setItemRaise] = useState(0);
+  const sub = useStageSubModal((id) => { setShownItem(id); setItemRaise((k) => k + 1); });
   // 딥링크: #item-<재료id> — /upgrade 경로에서도 재료 상세를 URL로 공유 (2026-07-27)
   useHashSync(shownItem ? `#item-${shownItem}` : null, (h) => {
     const id = h.startsWith("#item-") ? h.slice(6) : null;
@@ -370,7 +383,7 @@ export function UpgradeSim({ operators, includeFuture, onShowOperator }: { opera
       )}
       <CostCalculator operators={operators} includeFuture={includeFuture} onShowOperator={onShowOperator} onShowItem={setShownItem} />
       {shownItem && (
-        <ItemModal id={shownItem} onClose={() => setShownItem(null)} onShowItem={setShownItem} onShowStage={sub.openStage} />
+        <ItemModal key={itemRaise} id={shownItem} onClose={() => setShownItem(null)} onShowItem={setShownItem} onShowStage={sub.openStage} />
       )}
       {sub.node}
     </section>
@@ -844,7 +857,10 @@ export function ItemModal({ id, onClose, onShowItem, onSearchItem, onShowStage }
                   {onShowStage
                     ? <button type="button" className="farm-code as-btn" onClick={() => onShowStage(stage.id)}>{stage.code}</button>
                     : <b className="farm-code">{stage.code}</b>}
-                  <span className="farm-badges">{index === 0 && <em className="best-badge">{t("최고 효율")}</em>}</span>
+                  <span className="farm-badges">
+                    {index === 0 && <em className="best-badge">{t("최고 효율")}</em>}
+                    {stage.tough ? <em className="kind-badge tough">{t("어려움")}</em> : null}
+                  </span>
                   <span className="farm-rate">{stage.rate}%</span>
                   <span className="farm-sanity">{stage.sanity}</span>
                 </li>

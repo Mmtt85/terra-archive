@@ -68,6 +68,11 @@ export default function StageDex({ doc }: { doc: StageDoc; onOpenEnemy?: (id: st
   // ⚠ 해시 동기화는 하지 않는다 (주 모달 #st-<id>와 서로 덮어써 창이 닫힌다).
   const [subEnemy, setSubEnemy] = useState<Enemy | null>(null);
   const [subItem, setSubItem] = useState<string | null>(null);
+  // 이미 열려 있는 창을 다시 지목하면 앞으로 끌어올린다 (사용자 요청 2026-08-09) —
+  // ModalWindow는 마운트 때 z를 받으므로 key를 갈아 재마운트한다.
+  const [enemyRaise, setEnemyRaise] = useState(0);
+  const [itemRaise, setItemRaise] = useState(0);
+  const [mainRaise, setMainRaise] = useState(0);
 
   const byId = useMemo(() => new Map(doc.stages.map((s) => [s.id, s])), [doc]);
 
@@ -169,7 +174,11 @@ export default function StageDex({ doc }: { doc: StageDoc; onOpenEnemy?: (id: st
   const active = types.length + events.length + zones.length > 0 || !!term;
 
   const view = open ? viewOf(doc, open) : null;
-  const openEnemy = (id: string) => { void loadEnemies(locale).then((m) => setSubEnemy(m.get(id) ?? null)); };
+  const openEnemy = (id: string) => {
+    setEnemyRaise((k) => k + 1);
+    void loadEnemies(locale).then((m) => setSubEnemy(m.get(id) ?? null));
+  };
+  const openItem = (id: string) => { setSubItem(id); setItemRaise((k) => k + 1); };
 
   return (
     <section className="explorer st-explorer" aria-labelledby="stage-title">
@@ -213,21 +222,26 @@ export default function StageDex({ doc }: { doc: StageDoc; onOpenEnemy?: (id: st
       </div>
 
       {view && (
-        <ModalWindow label={`${view.stage.code} ${view.stage.name}`} className="operator-modal st-modal"
+        <ModalWindow key={mainRaise} label={`${view.stage.code} ${view.stage.name}`} className="operator-modal st-modal"
           onClose={() => setOpen(null)}>
-          <StageFile view={view} onOpenEnemy={openEnemy} onOpenItem={setSubItem} />
+          <StageFile view={view} onOpenEnemy={openEnemy} onOpenItem={openItem} />
         </ModalWindow>
       )}
 
       {/* 적 상세 — 작전 모달 위에 겹친다 (ModalWindow가 zTop으로 앞뒤를 정한다) */}
       {subEnemy && (
-        <ModalWindow label={subEnemy.name} className="operator-modal en-modal" onClose={() => setSubEnemy(null)}>
+        <ModalWindow key={enemyRaise} label={subEnemy.name} className="operator-modal en-modal" onClose={() => setSubEnemy(null)}>
           <EnemyFile enemy={subEnemy} stagesDoc={null} onOpenEnemy={openEnemy} />
         </ModalWindow>
       )}
       {subItem && (
         <Suspense fallback={null}>
-          <ItemModal id={subItem} onClose={() => setSubItem(null)} onShowItem={setSubItem} />
+          {/* 재료 모달의 '효율 스테이지'를 누르면 그 작전을 주 모달에 띄우고 앞으로 끌어올린다 */}
+          <ItemModal key={itemRaise} id={subItem} onClose={() => setSubItem(null)} onShowItem={openItem}
+            onShowStage={(sid) => {
+              const st = doc.stages.find((x) => x.id === sid);
+              if (st) { setOpen(st); setMainRaise((k) => k + 1); }
+            }} />
         </Suspense>
       )}
     </section>
