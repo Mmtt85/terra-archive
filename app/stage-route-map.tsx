@@ -264,7 +264,15 @@ export function StageRouteMap({ data, order, highlights }: {
         const ord = (id: string) => { const k = order.indexOf(id); return k < 0 ? 999 : k; };
         const uset = new Set<string>();
         for (const m of members) for (const u of users.get(m) ?? []) uset.add(u);
-        const owner = [...uset].sort((a, b) => ord(a) - ord(b))[0];
+        let owner = [...uset].sort((a, b) => ord(a) - ord(b))[0];
+        // 강조 중엔 **강조한 적의 색**으로 — 여러 적이 공유하는 경로가 다른 적의 색을
+        // 물고 있어 같은 적을 강조해도 색이 갈렸다 (사용자 지적 2026-08-10, 16-2 실측)
+        if (em && highlights?.length) {
+          const active = highlights
+            .filter((id) => members.some((m) => (data.e[id] ?? []).includes(m)))
+            .sort((a, b) => ord(a) - ord(b))[0];
+          if (active) owner = active;
+        }
         const color = owner ? enemyRouteColor(order, owner) : "#9aa0a6";
         const first = mapPt(P.segs[0].pts[0]);
         const lastPts = P.segs[P.segs.length - 1].pts;
