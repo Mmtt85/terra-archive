@@ -393,16 +393,23 @@ else:
     # 같은 row 0 = 위 — 실사 미리보기와 육안 대조로 확인된 규약이다.
     # 로케일 무관 1벌. 클라이언트는 상세에서 '이동 경로' 탭을 눌렀을 때만 지연 로드한다.
     # 추출 로직 정본은 scripts/routeutil.py — 통합전략(build-rogue-routes.py)과 공유한다.
+    # enemy_db를 넘기면 시뮬레이션용 스폰 타임라인·이동속도까지 실린다.
     def routes_of(level_id):
-        return routes_of_level(fetch_level(f"levels/{level_id}.json"))
+        return routes_of_level(fetch_level(f"levels/{level_id}.json"), enemy_db)
 
-    rcache = {}
+    rcache, first_sid = {}, {}
     routes_doc = {}
     for sid, lid, kst in stages:
         if lid not in rcache:
             rcache[lid] = routes_of(lid)
         if rcache[lid]:
-            routes_doc[sid] = rcache[lid]
+            # 같은 레벨(#f# 긴급·복각 등)을 공유하는 두 번째부터는 **별칭 문자열** —
+            # rogue-routes.json과 같은 규약, 클라이언트가 한 단계 풀어 읽는다 (용량 절감)
+            if lid in first_sid:
+                routes_doc[sid] = first_sid[lid]
+            else:
+                first_sid[lid] = sid
+                routes_doc[sid] = rcache[lid]
     p = os.path.join(DATA, "stage-routes.json")
     json.dump(routes_doc, open(p, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
     print(f"  stage-routes.json: 경로 보유 작전 {len(routes_doc)} — {os.path.getsize(p)//1024}KB")

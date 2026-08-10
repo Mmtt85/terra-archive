@@ -18,16 +18,21 @@ import { viewOf, type EnvMul, type Stage, type StageDoc, type StageView } from "
 import { StageRouteMap, enemyRouteColor, type StageRoutes } from "./stage-route-map";
 import { isNewFeature } from "./whats-new";
 
-// 이동 경로 데이터(3.3MB) — '이동 경로' 탭을 처음 눌렀을 때 한 번만 지연 로드해 공유
-let ROUTES_CACHE: Record<string, StageRoutes> | null = null;
-let ROUTES_LOADING: Promise<Record<string, StageRoutes>> | null = null;
-function loadRoutes(): Promise<Record<string, StageRoutes>> {
+// 이동 경로 데이터(수 MB) — '이동 경로' 탭을 처음 눌렀을 때 한 번만 지연 로드해 공유.
+// 같은 레벨을 공유하는 작전(#f# 등)의 값은 **별칭 문자열**이다 (rogue-routes와 같은 규약).
+let ROUTES_CACHE: Record<string, StageRoutes | string> | null = null;
+let ROUTES_LOADING: Promise<unknown> | null = null;
+function loadRoutes(): Promise<unknown> {
   if (ROUTES_CACHE) return Promise.resolve(ROUTES_CACHE);
   ROUTES_LOADING ??= import("./data/stage-routes.json").then((m) => {
-    ROUTES_CACHE = (m.default ?? m) as unknown as Record<string, StageRoutes>;
-    return ROUTES_CACHE;
+    ROUTES_CACHE = (m.default ?? m) as unknown as Record<string, StageRoutes | string>;
   });
   return ROUTES_LOADING;
+}
+function routeDocFor(id: string): StageRoutes | undefined {
+  let d = ROUTES_CACHE?.[id];
+  if (typeof d === "string") d = ROUTES_CACHE?.[d];   // 별칭 한 단계 해석
+  return d && typeof d === "object" ? d : undefined;
 }
 
 // 다른 모듈이 종전처럼 여기서 가져다 쓰던 것들 — 정본은 app/dex-paths.ts · app/stage-data.ts다
@@ -166,7 +171,7 @@ export function StageFile({ view, onOpenEnemy, onOpenItem }: {
   // 일반판이 없는 고난 전용 작전(H10-1 등)은 em이 상시 걸린다 (게임도 항상 고난이다).
   const envMul = cur.stage.em ?? (env === 1 && !view.alt ? view.stage.chgEm : undefined);
   // 경로 모드 공용 — 적 카드(고정 토글·선 색)와 지도 양쪽이 쓴다
-  const rd = mapView === "route" ? ROUTES_CACHE?.[s.id] : undefined;
+  const rd = mapView === "route" ? routeDocFor(s.id) : undefined;
   const routeOrder = rd ? cur.enemies.filter((en) => rd.e[en.id]?.length).map((en) => en.id) : [];
   const togglePin = (id: string) => setPinned((curSet) => {
     const next = new Set(curSet);

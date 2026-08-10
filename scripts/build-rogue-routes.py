@@ -45,6 +45,18 @@ def fetch_json(path, branch="kr"):
 def main():
     kr = fetch_json("excel/roguelike_topic_table.json")["details"]
     cn = fetch_json("excel/roguelike_topic_table.json", "cn")["details"]
+    # 적 이동속도 출처 — 시뮬레이션용 (routeutil docstring 참조). KR 캐시가 정본이고,
+    # CN 선행 토픽(rogue_6)의 CN 전용 적은 CN 사본이 있으면 겹쳐 보충한다.
+    def flat_db(doc):
+        """원본은 {"enemies":[{Key,Value}]}, build-rogue.py 캐시본은 이미 평탄 — 둘 다 받는다."""
+        if isinstance(doc, dict) and isinstance(doc.get("enemies"), list):
+            return {e.get("Key"): e.get("Value") or [] for e in doc["enemies"] if e.get("Key")}
+        return doc or {}
+    enemy_db = flat_db(fetch_json("levels/enemydata/enemy_database.json"))
+    cn_db_path = os.path.join(CACHE, "cn__levels__enemydata__enemy_database.json")
+    if os.path.exists(cn_db_path):
+        cn_db = flat_db(json.load(open(cn_db_path, encoding="utf-8")))
+        enemy_db = {**cn_db, **enemy_db}
 
     out = {}                 # stageId → 경로 문서 | 별칭 stageId
     owner = {}               # (branch, levelId) → 문서를 가진 stageId
@@ -63,7 +75,7 @@ def main():
                 st[1] += 1
                 continue
             try:
-                doc = routes_of_level(fetch_json(f"levels/{lid}.json", branch))
+                doc = routes_of_level(fetch_json(f"levels/{lid}.json", branch), enemy_db)
             except Exception:              # 레벨 파일 없음(삭제·미배포) — 건너뜀
                 doc = None
             if doc:

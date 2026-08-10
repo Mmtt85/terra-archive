@@ -1476,6 +1476,18 @@ const D: Record<string, Pair> = {
   "실사 도면": ["Map", "実写マップ"],
   "이동 경로": ["Enemy routes", "移動ルート"],
   "적 이동 경로 지도": ["Enemy route map", "敵移動ルートマップ"],
+  "시뮬레이트": ["Simulate", "シミュレート"],
+  "재생": ["Play", "再生"],
+  "일시정지": ["Pause", "一時停止"],
+  "배속": ["Playback speed", "再生速度"],
+  "재생 위치": ["Playback position", "再生位置"],
+  "웨이브 {n}": ["Wave {n}", "ウェーブ{n}"],
+  "저지 없이 두었을 때의 기준 타임라인입니다.": [
+    "Baseline timeline assuming no blocking.",
+    "ブロックしない場合の基準タイムラインです。"],
+  "처치 수 등 조건 분기 증원은 재생에 포함되지 않습니다.": [
+    "Conditional reinforcements (kill-count branches, etc.) are not played.",
+    "撃破数など条件分岐の増援は再生に含まれません。"],
   "지상": ["Ground", "地上"],
   "비행": ["Flying", "飛行"],
   // 이동 경로 지도의 타일 범례 (라벨 자체가 설명이 되게 — 사용자 지적 2026-08-10)

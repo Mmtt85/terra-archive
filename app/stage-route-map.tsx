@@ -10,15 +10,26 @@
 //
 // 상호작용: 적 칩/범례에 호버(데스크탑)·탭(모바일)하면 그 적의 경로만 강조.
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "./i18n";
 
-/** scripts/build-enemies.py routes_of 산출 — g는 행 문자열(row 0 = 위), r은 [col,row] 꼭짓점 */
+/** scripts/routeutil.py 산출 — g는 행 문자열(row 0 = 위), r은 [col,row] 꼭짓점.
+ *  sp 이하는 시뮬레이션 확장 (필드 의미는 routeutil.py docstring이 정본). */
 export type StageRoutes = {
   h: number; w: number; g: string[];
   r: ([number, number][] | null)[];
   f: number[];
   e: Record<string, number[]>;
+  /** 스폰 [웨이브, 웨이브 내 시각, 경로, 마릿수, 간격초, 적번호(e 키 순서), 조각 preDelay] */
+  sp?: [number, number, number, number, number, number, number][];
+  /** 웨이브별 [preDelay, postDelay, maxTimeWaitingForNextWave] */
+  wv?: [number, number, number][];
+  /** e 키 순서별 이동속도(타일/초) */
+  ems?: number[];
+  /** 경로번호 → [원본 꼭짓점 번호, 초, 모드(0 고정 · 1 조각시계 · 2 웨이브시계)] */
+  cw?: Record<string, [number, number, number][]>;
+  /** 레벨 전역 이동속도 배율 */
+  mm?: number;
 };
 
 // 타일 팔레트 — 통행·배치 속성 분류 (사용자 요청 2026-08-10 "다 구분 가능하게").
@@ -121,6 +132,13 @@ export function StageRouteMap({ data, order, highlights }: {
 }) {
   const { t } = useI18n();
   const { w, h, g, r, f } = data;
+  // ── 시뮬레이션 상태 (사용자 요청 2026-08-10 "시뮬레이트 버튼 하나 만들어보자") ──
+  // 시각(simT)은 초 단위 스테이지 시계. rAF 루프가 tRef를 굴리고 상태로 비춘다.
+  const [simOn, setSimOn] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  const [speed, setSpeed] = useState(1);
+  const [simT, setSimT] = useState(0);
+  const tRef = useRef(0);
   // 강조 대상 적 — 호버는 한 적, 클릭 고정은 여러 적의 합집합이 온다.
   // 이 지도에 없는 적뿐이면(환경 전환 등) 강조 없음으로 본다.
   let hl: Set<string> | null = null;
@@ -135,12 +153,16 @@ export function StageRouteMap({ data, order, highlights }: {
     r.map((poly, i) => {
       if (!poly) return null;
       const wp = poly.map(([c, rr]) => [c, h - 1 - rr] as [number, number]);
-      if (f[i]) return { segs: [{ pts: wp, hop: false }], dense: wp };
+      // marks: 원본 꼭짓점 k가 dense의 몇 번째 칸인지 — 시뮬레이션의 경유 대기(cw)가
+      // 원본 번호로 오므로 이 매핑으로 대기 지점을 찾는다.
+      if (f[i]) return { segs: [{ pts: wp, hop: false }], dense: wp, marks: wp.map((_, k) => k) };
       const out: [number, number][] = [wp[0]];
+      const marks: number[] = [0];
       for (let k = 1; k < wp.length; k++) {
         const seg = walkPath(g, w, h, out[out.length - 1], wp[k]);
         if (seg) out.push(...seg.slice(1));
         else out.push(wp[k]);   // 경로 탐색 실패(특수 좌표 등)면 직선 폴백
+        marks.push(out.length - 1);
       }
       // 순간이동(통로) 지점 = 인접하지 않은 연속 칸 — 구간을 끊고 hop으로 표시해
       // 가는 선 점선으로만 잇는다. dense = 밟는 타일 전부 (경로 동일성 비교용).
@@ -155,8 +177,10 @@ export function StageRouteMap({ data, order, highlights }: {
         } else cur.push(out[k]);
       }
       if (cur.length > 1 || segs.length === 0) segs.push({ pts: simplify(cur), hop: false });
-      return { segs, dense: out };
+      return { segs, dense: out, marks };
     }), [r, f, g, w, h]);
+  // 접기·선 목록은 시뮬레이션 재생(초당 수십 렌더) 중에도 다시 계산하지 않는다
+  const { drawPolys, group, lines } = useMemo(() => {
   const drawPolys = polys.map((p) => (p ? p.segs.flatMap((s) => s.pts) : null));
   // 같은 경로(기하) 판정 — 게임 데이터는 같은 길을 스폰마다 복제하며 경유점만 덜/더
   // 명시하는 지터가 섞여 있어, 먼저 경로 번호들을 **기하 단위 묶음**으로 접는다
@@ -230,9 +254,138 @@ export function StageRouteMap({ data, order, highlights }: {
   }
   // 등장 적 목록 밖(숨은 증원 등)만 쓰는 경로 — 회색 한 벌로 남긴다
   for (const rep of group.keys()) if (!usedClasses.has(rep)) lines.push({ rep, owner: null });
+  return { drawPolys, group, lines };
+  }, [polys, r, f, data, order]);
+
+  // ── 시뮬레이션 계획 — 스폰 하나하나를 (등장 시각, 칸별 도착/출발 시각표)로 편다.
+  // "저지 없이 흘려보냈을 때"의 기준선이다: 웨이브는 마지막 적이 도착 지점에 닿는
+  // 순간 끝난다고 보고 잇는다 (게임은 처치·저지에 따라 달라진다 — st-simnote로 고지).
+  const plan = useMemo(() => {
+    if (!simOn || !data.sp?.length || !data.wv) return null;
+    const keys = Object.keys(data.e);
+    const mmul = data.mm || 1;
+    type Runner = { key: string; color: string; t0: number; end: number; arr: number[]; dep: number[]; pts: [number, number][] };
+    const runners: Runner[] = [];
+    const waveSpans: number[] = [];   // 웨이브 n의 시작 시각
+    const byWave = new Map<number, NonNullable<typeof data.sp>>();
+    for (const s of data.sp) {
+      if (!byWave.has(s[0])) byWave.set(s[0], []);
+      byWave.get(s[0])?.push(s);
+    }
+    let waveStart = 0;
+    for (let wi = 0; wi < data.wv.length; wi++) {
+      const [pre, post, mtw] = data.wv[wi];
+      waveStart += pre;
+      waveSpans.push(waveStart);
+      let waveEnd = waveStart, lastSpawn = waveStart;
+      for (const [, tw, ri, count, itv, ki, fpre] of byWave.get(wi) ?? []) {
+        const P = polys[ri];
+        if (!P) continue;
+        const ms = Math.max(0.05, (data.ems?.[ki] ?? 1) * mmul);
+        const waits = data.cw?.[String(ri)] ?? [];
+        for (let c = 0; c < count; c++) {
+          const t0 = waveStart + tw + c * itv;
+          // arr[i] = i번째 칸 도착 시각(스폰 기준 상대), dep[i] = 대기를 마친 출발 시각.
+          // 대기를 이동 시간에 뭉개면 점이 느리게 '기어가는' 것처럼 보인다 — 분리한다.
+          const arr: number[] = [0], dep: number[] = [0];
+          for (let i = 0; i < P.dense.length; i++) {
+            if (i > 0) {
+              const [ax, ay] = P.dense[i - 1], [bx, by] = P.dense[i];
+              const dx = Math.abs(ax - bx), dy = Math.abs(ay - by);
+              // 순간이동(hop)은 0초
+              arr[i] = dep[i - 1] + (Math.max(dx, dy) > 1 ? 0 : Math.hypot(dx, dy) / ms);
+            }
+            let d = arr[i];
+            for (const [k, sec, mode] of waits) {
+              if (P.marks[k] !== i) continue;
+              if (mode === 0) d += sec;
+              // 조각/웨이브 시계 T까지 대기 — 이미 지났으면 대기 없음
+              else d = Math.max(d, (mode === 1 ? waveStart + fpre + sec : waveStart + sec) - t0);
+            }
+            dep[i] = d;
+          }
+          const end = t0 + arr[arr.length - 1];
+          const key = keys[ki] ?? "";
+          runners.push({
+            key, t0, end, arr, dep, pts: P.dense,
+            color: key && order.includes(key) ? enemyRouteColor(order, key) : "#c8cdd4",
+          });
+          lastSpawn = Math.max(lastSpawn, t0);
+          waveEnd = Math.max(waveEnd, end);
+        }
+      }
+      // 다음 웨이브 시작 — 기준선으론 전원 도착 시점, maxTimeWaiting이 있으면 그로 상한
+      let endAt = waveEnd;
+      if (mtw >= 0) endAt = Math.min(endAt, lastSpawn + mtw);
+      waveStart = endAt + post;
+    }
+    const duration = runners.reduce((m, rn) => Math.max(m, rn.end), 0);
+    // 조건 분기(branches)만으로 등장하는 적 — 재생에서 빠진다는 고지용
+    const spRoutes = new Set(data.sp.map((s) => s[2]));
+    const conditional = Object.values(data.e).some((ris) => ris.every((ri) => !spRoutes.has(ri)));
+    return { runners, duration, waveSpans, conditional };
+  }, [simOn, data, polys, order]);
+
+  // 재생 루프 — rAF. 시간은 tRef가 정본, simT는 화면 반영용.
+  useEffect(() => {
+    if (!playing || !plan) return;
+    let last = performance.now();
+    let id = requestAnimationFrame(function step(now: number) {
+      const dt = (now - last) / 1000;
+      last = now;
+      let t2 = tRef.current + dt * speed;
+      if (t2 >= plan.duration) {
+        tRef.current = plan.duration;
+        setSimT(plan.duration);
+        setPlaying(false);
+        return;
+      }
+      tRef.current = t2;
+      setSimT(t2);
+      id = requestAnimationFrame(step);
+    });
+    return () => cancelAnimationFrame(id);
+  }, [playing, speed, plan]);
+
+  const fmtT = (v: number) => `${Math.floor(v / 60)}:${String(Math.floor(v % 60)).padStart(2, "0")}`;
+  const curWave = plan ? plan.waveSpans.reduce((n, from, i) => (simT >= from ? i + 1 : n), 1) : 1;
+  const hasSim = !!(data.sp?.length && data.wv);
   const cell = 1;
   return (
     <div className="st-routewrap">
+    {/* 시뮬레이트 — 스폰 타임라인 재생 (사용자 요청 2026-08-10). 데이터가 있는 작전만. */}
+    {hasSim && (
+      <div className="st-simbar">
+        {!simOn ? (
+          <button type="button" className="st-simstart"
+            onClick={() => { tRef.current = 0; setSimT(0); setSimOn(true); setPlaying(true); }}>
+            ▶ {t("시뮬레이트")}
+          </button>
+        ) : (
+          <>
+            <button type="button" onClick={() => setPlaying((p) => !p)}
+              aria-label={playing ? t("일시정지") : t("재생")}>{playing ? "⏸" : "▶"}</button>
+            <button type="button" onClick={() => setSpeed((s) => (s === 1 ? 2 : s === 2 ? 4 : 1))}
+              title={t("배속")}>×{speed}</button>
+            <input type="range" min={0} max={plan ? Math.ceil(plan.duration * 10) / 10 : 0} step={0.1}
+              value={Math.min(simT, plan?.duration ?? 0)}
+              onChange={(ev) => { const v = Number(ev.target.value); tRef.current = v; setSimT(v); }}
+              aria-label={t("재생 위치")} />
+            <span className="st-simtime">
+              {t("웨이브 {n}", { n: String(curWave) })} · {fmtT(simT)} / {fmtT(plan?.duration ?? 0)}
+            </span>
+            <button type="button" onClick={() => { setPlaying(false); setSimOn(false); }}
+              aria-label={t("닫기")}>✕</button>
+          </>
+        )}
+      </div>
+    )}
+    {simOn && (
+      <p className="st-simnote">
+        {t("저지 없이 두었을 때의 기준 타임라인입니다.")}
+        {plan?.conditional && <> {t("처치 수 등 조건 분기 증원은 재생에 포함되지 않습니다.")}</>}
+      </p>
+    )}
     {/* 지상/비행 선 스타일 범례 — 지도 **바깥** 오른쪽 위 (사용자 정정 2026-08-10) */}
     <div className="st-routekey" aria-hidden>
       <span><svg width="24" height="6"><line x1="0" y1="3" x2="24" y2="3" stroke="currentColor" strokeWidth="2.4" strokeDasharray="9 3.5" /></svg>{t("지상")}</span>
@@ -292,6 +445,38 @@ export function StageRouteMap({ data, order, highlights }: {
           </g>
         );
       })}
+      {/* 시뮬레이션 적 점 — 스폰~도착 사이에만 있고, 경유 대기 중엔 제자리에 선다 */}
+      {simOn && plan && (
+        <g className="st-simdots">
+          {plan.runners.map((rn, i) => {
+            if (simT < rn.t0 || simT > rn.end) return null;
+            const rel = simT - rn.t0;
+            let k = 1;
+            while (k < rn.arr.length && rn.arr[k] < rel) k++;
+            if (k >= rn.arr.length) k = rn.arr.length - 1;
+            let x: number, y: number;
+            if (rel <= rn.dep[k - 1]) {
+              [x, y] = rn.pts[k - 1];             // 대기 중 — 직전 칸에 정지
+            } else {
+              const [ax, ay] = rn.pts[k - 1], [bx, by] = rn.pts[k];
+              if (Math.max(Math.abs(ax - bx), Math.abs(ay - by)) > 1) {
+                [x, y] = rn.pts[k];               // 순간이동(hop)은 즉시 도착점
+              } else {
+                const span = rn.arr[k] - rn.dep[k - 1];
+                const f01 = span > 0 ? Math.min(1, (rel - rn.dep[k - 1]) / span) : 1;
+                x = ax + (bx - ax) * f01;
+                y = ay + (by - ay) * f01;
+              }
+            }
+            return (
+              <circle key={i} className="st-simdot" cx={x * cell + cell / 2} cy={y * cell + cell / 2}
+                r={0.21} fill={rn.color} stroke="#10141c" strokeWidth={0.05}>
+                <title>{rn.key}</title>
+              </circle>
+            );
+          })}
+        </g>
+      )}
     </svg>
     {/* 타일 범례 — 이 지도에 있는 타일 종류만 (사용자 요청 2026-08-10 "다 구분 가능하게") */}
     <div className="st-tilekey">
