@@ -333,7 +333,7 @@ export function StageRouteMap({ data, order, highlights }: {
     let id = requestAnimationFrame(function step(now: number) {
       const dt = (now - last) / 1000;
       last = now;
-      let t2 = tRef.current + dt * speed;
+      const t2 = tRef.current + dt * speed;
       if (t2 >= plan.duration) {
         tRef.current = plan.duration;
         setSimT(plan.duration);
