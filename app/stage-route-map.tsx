@@ -10,6 +10,7 @@
 //
 // 상호작용: 적 칩/범례에 호버(데스크탑)·탭(모바일)하면 그 적의 경로만 강조.
 
+import { useMemo } from "react";
 import { useI18n } from "./i18n";
 
 /** scripts/build-enemies.py routes_of 산출 — g는 행 문자열(row 0 = 위), r은 [col,row] 꼭짓점 */
@@ -36,6 +37,53 @@ const ROUTE_COLORS = ["#ffd166", "#6ee7b7", "#7ab8ff", "#ff8fab", "#c9a0ff", "#5
 export function enemyRouteColor(order: string[], id: string): string {
   const k = order.indexOf(id);
   return k >= 0 ? ROUTE_COLORS[k % ROUTE_COLORS.length] : "#9aa0a6";
+}
+
+// 지상 이동 가능 타일 — 고지대(w)·금지(f)·구멍(h)은 걷지 못한다
+const WALKABLE = new Set(["r", "s", "e"]);
+
+/** 격자 BFS (8방향, 모서리 끊어가기 금지) — 지상 경로가 이동불가 타일을 "뚫고" 직선으로
+ *  가로지르지 않게 실제 보행 가능 경로를 찾는다 (사용자 지적 2026-08-10). 게임의 자체
+ *  길찾기와 완전히 같지는 않지만 통행 규칙은 지킨다. 못 찾으면 null → 직선 폴백. */
+function walkPath(g: string[], w: number, h: number, from: [number, number], to: [number, number]): [number, number][] | null {
+  const pass = (x: number, y: number) => x >= 0 && y >= 0 && x < w && y < h && WALKABLE.has(g[y][x]);
+  if (!pass(from[0], from[1]) || !pass(to[0], to[1])) return null;
+  const key = (x: number, y: number) => y * w + x;
+  const prev = new Map<number, number>([[key(from[0], from[1]), -1]]);
+  let ring: [number, number][] = [from];
+  while (ring.length) {
+    const next: [number, number][] = [];
+    for (const [x, y] of ring) {
+      if (x === to[0] && y === to[1]) {
+        const path: [number, number][] = [];
+        let k = key(x, y);
+        while (k !== -1) { path.push([k % w, Math.floor(k / w)]); k = prev.get(k) ?? -1; }
+        return path.reverse();
+      }
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]] as const) {
+        const nx = x + dx, ny = y + dy;
+        if (!pass(nx, ny) || prev.has(key(nx, ny))) continue;
+        if (dx && dy && (!pass(x + dx, y) || !pass(x, y + dy))) continue;   // 모서리 뚫기 금지
+        prev.set(key(nx, ny), key(x, y));
+        next.push([nx, ny]);
+      }
+    }
+    ring = next;
+  }
+  return null;
+}
+
+/** 방향이 안 바뀌는 중간 점 제거 — BFS가 뱉는 촘촘한 계단을 짧은 폴리라인으로 */
+function simplify(pts: [number, number][]): [number, number][] {
+  const out: [number, number][] = [];
+  for (let i = 0; i < pts.length; i++) {
+    if (i > 0 && i < pts.length - 1) {
+      const [ax, ay] = out[out.length - 1], [bx, by] = pts[i], [cx, cy] = pts[i + 1];
+      if ((bx - ax) * (cy - by) === (by - ay) * (cx - bx)) continue;   // 일직선이면 건너뜀
+    }
+    out.push(pts[i]);
+  }
+  return out;
 }
 
 export function StageRouteMap({ data, order, highlights }: {
@@ -76,6 +124,23 @@ export function StageRouteMap({ data, order, highlights }: {
   // 대표 경로의 순번 (겹침 방지 오프셋 배분용 — 접힌 뒤 기준이라 부채꼴이 덜 벌어진다)
   const drawIdx = new Map<number, number>();
   for (const i of group.keys()) drawIdx.set(i, drawIdx.size);
+  // 그리기용 폴리라인(격자 좌표계) — 지상(WALK)은 BFS 보행 경로로 확장해 이동불가
+  // 타일을 가로지르지 않게 한다. 비행(FLY)은 실제로 지형을 무시하므로 직선 그대로.
+  // ⚠ 좌표계 반전이 여기서 일어난다: 타일 행렬은 row 0=위, 경로 좌표는 row 0=아래
+  //   (게임 월드 원점이 좌하단 — 2026-08-10 실측, 사용자 제보 "뭔가 뒤집힌 거 같은데").
+  const drawPolys = useMemo(() =>
+    r.map((poly, i) => {
+      if (!poly) return null;
+      const wp = poly.map(([c, rr]) => [c, h - 1 - rr] as [number, number]);
+      if (f[i]) return wp;
+      const out: [number, number][] = [wp[0]];
+      for (let k = 1; k < wp.length; k++) {
+        const seg = walkPath(g, w, h, out[out.length - 1], wp[k]);
+        if (seg) out.push(...seg.slice(1));
+        else out.push(wp[k]);   // 경로 탐색 실패(특수 좌표 등)면 직선 폴백
+      }
+      return simplify(out);
+    }), [r, f, g, w, h]);
   const cell = 1;
   return (
     <svg className="st-routemap" viewBox={`0 0 ${w * cell} ${h * cell}`} role="img"
@@ -86,19 +151,16 @@ export function StageRouteMap({ data, order, highlights }: {
             width={cell - 0.04} height={cell - 0.04} fill={TILE_FILL[ch] ?? TILE_FILL.r} />
         )))}
       {r.map((poly, i) => {
-        if (!poly || !group.has(i)) return null;   // 중복 경로는 대표만 그린다
+        const dp = drawPolys[i];
+        if (!poly || !dp || !group.has(i)) return null;   // 중복 경로는 대표만 그린다
         // 같은 길을 지나는 경로들이 한 줄로 딱 겹치면 구간마다 색이 바뀌는 것처럼 보인다
         // (사용자 지적 2026-08-10) — 경로 번호마다 대각 미세 오프셋을 줘 나란히 그린다.
-        // 간격은 **최소 0.085타일** 보장 (사용자 지적 "너무 딱딱 달라붙어" — 경로가 많으면
-        // 균등 분배 간격이 선 굵기 밑으로 줄어 붙어 보였다).
+        // 간격 0.085타일을 지향하되 **타일 폭(±0.2)은 절대 안 벗어난다** (사용자 지적
+        // "다른 타일로 벗어나버리면 안되지" — 경로가 많으면 간격을 줄여서라도 안에 담는다).
         const n = drawIdx.size;
-        const step = n > 1 ? Math.max(0.085, 0.3 / (n - 1)) : 0;
+        const step = n > 1 ? Math.min(0.4 / (n - 1), 0.085) : 0;
         const off = ((drawIdx.get(i) ?? 0) - (n - 1) / 2) * step;
-        // ⚠ 좌표계가 서로 다르다 (2026-08-10 실측, 사용자 제보 "뭔가 뒤집힌 거 같은데"):
-        //   타일 행렬은 row 0 = **위**(render_minimap·실사 도면과 일치)인데, 경로 좌표는
-        //   row 0 = **아래**(게임 월드 원점이 좌하단)다. main_11-12에서 출현 타일은 g[0],
-        //   경로 시작은 row 7(=h-1) — 경로만 상하를 뒤집어야 도착점이 파란 박스에 앉는다.
-        const pts = poly.map(([c, rr]) => [c * cell + cell / 2 + off, (h - 1 - rr) * cell + cell / 2 + off] as const);
+        const pts = dp.map(([x, y]) => [x * cell + cell / 2 + off, y * cell + cell / 2 + off] as const);
         // 강조 시: 고른 경로는 굵게, 나머지는 **아주 흐리게** (사용자 확정 2026-08-10 —
         // '굵기만' 안을 써 보고 겹침이 심해 흐림 방식으로 되돌림). 평소엔 전부 보통.
         const em = hlRoutes ? (group.get(i) ?? []).some((j) => hlRoutes.has(j)) : false;
