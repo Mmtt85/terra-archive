@@ -143,6 +143,12 @@ export function StageRouteMap({ data, order, highlights }: {
     }), [r, f, g, w, h]);
   const cell = 1;
   return (
+    <div className="st-routewrap">
+    {/* 지상/비행 선 스타일 범례 — 맵 우상단 (사용자 요청 2026-08-10) */}
+    <div className="st-routekey" aria-hidden>
+      <span><svg width="24" height="6"><line x1="0" y1="3" x2="24" y2="3" stroke="#e8e6df" strokeWidth="2.4" strokeDasharray="9 3.5" /></svg>{t("지상")}</span>
+      <span><svg width="24" height="6"><line x1="0" y1="3" x2="24" y2="3" stroke="#e8e6df" strokeWidth="2.4" strokeDasharray="2.5 4" /></svg>{t("비행")}</span>
+    </div>
     <svg className="st-routemap" viewBox={`0 0 ${w * cell} ${h * cell}`} role="img"
       aria-label={t("적 이동 경로 지도")}>
       {g.map((row, ri) =>
@@ -191,5 +197,6 @@ export function StageRouteMap({ data, order, highlights }: {
         );
       })}
     </svg>
+    </div>
   );
 }

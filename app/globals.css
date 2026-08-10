@@ -16420,6 +16420,30 @@ main.site-main > .site-header {
   color: var(--white);
 }
 /* 이동 경로 격자 지도 (app/stage-route-map.tsx) */
+.st-routewrap {
+  position: relative;
+}
+/* 지상/비행 선 스타일 범례 — 맵 우상단 (사용자 요청 2026-08-10) */
+.st-routekey {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 1;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 3px 8px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #e8e6df;
+  background: #11161acc;
+  border: 1px solid #ffffff22;
+}
+.st-routekey span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
 .st-routemap {
   display: block;
   width: 100%;

@@ -1476,6 +1476,8 @@ const D: Record<string, Pair> = {
   "실사 도면": ["Map", "実写マップ"],
   "이동 경로": ["Enemy routes", "移動ルート"],
   "적 이동 경로 지도": ["Enemy route map", "敵移動ルートマップ"],
+  "지상": ["Ground", "地上"],
+  "비행": ["Flying", "飛行"],
   "이 작전은 경로 데이터가 없습니다.": ["No route data for this operation.", "この作戦のルートデータはありません。"],
   "경로 데이터를 불러오는 중…": ["Loading route data…", "ルートデータを読み込み中…"],
   "일반 환경": ["Standard", "通常"],
