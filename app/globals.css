@@ -13244,6 +13244,11 @@ html.dark.rg-theme.rg6 .site-header {
 .rg-modal .st-simnote {
   color: var(--rgink);
 }
+.rg-modal .st-maptip {
+  color: var(--rgink);
+  background: var(--rgdeep);
+  border-color: var(--rgline);
+}
 /* 경로 고정된 적 셀 — 그 적의 선 색(--rc) 테두리 + ✓ 배지. 작전 도감과 동일 조작
    (셀 클릭 = 고정 토글 · 셀 속 섬네일 클릭 = 적 상세 모달 · 호버 = 색 보더 미리보기) */
 .rg-enemy-cell.has-route:hover,
@@ -16615,6 +16620,21 @@ main.site-main > .site-header {
   width: 11px;
   height: 11px;
   border: 1px solid #0006;
+}
+/* 선·시뮬 말 호버 이름표 — 커서 좌표를 따라다니는 즉시 툴팁 (사용자 요청 2026-08-10) */
+.st-maptip {
+  position: absolute;
+  z-index: 7;
+  transform: translate(-50%, calc(-100% - 10px));
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+  color: var(--white);
+  background: var(--ink);
+  border: 1px solid var(--border-strong);
+  pointer-events: none;
 }
 /* 경로 고정된 적 카드 — 그 적의 선 색(--rc) 테두리 + ✓ 배지 (사용자 확정: 카드
    클릭 = 고정, 카드 속 섬네일 클릭 = 상세 모달). 고정 전에도 호버만 하면 같은

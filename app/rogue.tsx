@@ -336,7 +336,9 @@ function StageModal({ pair, grade, onClose, onOpenEnemy }: {
               // 호버 중이면 그 적만, 아니면 고정된 적들의 합집합 — 고정 조작은 오른쪽
               // 적 셀이 맡는다 (셀 클릭 = 고정, 셀 속 섬네일 클릭 = 적 상세 모달)
               <StageRouteMap data={rd} order={routeOrder}
-                highlights={hover ? [hover] : pinned.size ? [...pinned] : null} />
+                highlights={hover ? [hover] : pinned.size ? [...pinned] : null}
+                imgOf={(k2) => { const e2 = data.enemies[k2]; return e2?.img ? asset(`/rogue/enemy/${e2.img}.webp`) : undefined; }}
+                nameOf={(k2) => data.enemies[k2]?.name} />
             ) : (
               <p className="rg-modal-desc">{ROUTES_CACHE ? t("이 작전은 경로 데이터가 없습니다.") : t("경로 데이터를 불러오는 중…")}</p>
             )) : stage.map && (

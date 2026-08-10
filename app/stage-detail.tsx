@@ -237,7 +237,9 @@ export function StageFile({ view, onOpenEnemy, onOpenItem }: {
             // 고정 조작은 오른쪽 등장 적 **카드**가 맡는다 — 지도 밑 섬네일은 없앴다
             // (사용자 확정: 카드 클릭 = 고정, 카드 속 섬네일 클릭 = 적 상세 모달).
             <StageRouteMap data={rd} order={routeOrder}
-              highlights={hover ? [hover] : pinned.size ? [...pinned] : null} />
+              highlights={hover ? [hover] : pinned.size ? [...pinned] : null}
+              imgOf={(id) => enemyImg(id)}
+              nameOf={(id) => cur.enemies.find((en) => en.id === id)?.name} />
           ) : (
             <p className="st-note">{ROUTES_CACHE ? t("이 작전은 경로 데이터가 없습니다.") : t("경로 데이터를 불러오는 중…")}</p>
           )}

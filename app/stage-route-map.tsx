@@ -10,7 +10,7 @@
 //
 // 상호작용: 적 칩/범례에 호버(데스크탑)·탭(모바일)하면 그 적의 경로만 강조.
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useI18n } from "./i18n";
 
 /** scripts/routeutil.py 산출 — g는 행 문자열(row 0 = 위), r은 [col,row] 꼭짓점.
@@ -124,11 +124,15 @@ function simplify(pts: [number, number][]): [number, number][] {
   return out;
 }
 
-export function StageRouteMap({ data, order, highlights }: {
+export function StageRouteMap({ data, order, highlights, imgOf, nameOf }: {
   data: StageRoutes;
   /** 범례에 보이는 적 id 순서 — 선 색 배정 기준 (stage-detail이 넘겨준다) */
   order: string[];
   highlights?: string[] | null;
+  /** 적 섬네일 URL — 시뮬레이션 말을 초상으로 그린다 (없으면 색 원, 사용자 요청 2026-08-10) */
+  imgOf?: (id: string) => string | undefined;
+  /** 적 표시 이름 — 선·말 호버 즉시 툴팁 (사용자 요청 2026-08-10 "어떤 적의 경로인지") */
+  nameOf?: (id: string) => string | undefined;
 }) {
   const { t } = useI18n();
   const { w, h, g, r, f } = data;
@@ -139,6 +143,14 @@ export function StageRouteMap({ data, order, highlights }: {
   const [speed, setSpeed] = useState(1);
   const [simT, setSimT] = useState(0);
   const tRef = useRef(0);
+  const clipId = useId();
+  // 선·말 호버 즉시 툴팁 — 브라우저 기본 title은 1초쯤 지연된다 (사용자 정책)
+  const wrapRef = useRef<HTMLDivElement | null>(null);
+  const [tip, setTip] = useState<{ x: number; y: number; text: string } | null>(null);
+  const showTip = (ev: { clientX: number; clientY: number }, text: string) => {
+    const rect = wrapRef.current?.getBoundingClientRect();
+    if (rect) setTip({ x: ev.clientX - rect.left, y: ev.clientY - rect.top, text });
+  };
   // 강조 대상 적 — 호버는 한 적, 클릭 고정은 여러 적의 합집합이 온다.
   // 이 지도에 없는 적뿐이면(환경 전환 등) 강조 없음으로 본다.
   let hl: Set<string> | null = null;
@@ -180,7 +192,7 @@ export function StageRouteMap({ data, order, highlights }: {
       return { segs, dense: out, marks };
     }), [r, f, g, w, h]);
   // 접기·선 목록은 시뮬레이션 재생(초당 수십 렌더) 중에도 다시 계산하지 않는다
-  const { drawPolys, group, lines } = useMemo(() => {
+  const { lines, classOf } = useMemo(() => {
   const drawPolys = polys.map((p) => (p ? p.segs.flatMap((s) => s.pts) : null));
   // 같은 경로(기하) 판정 — 게임 데이터는 같은 길을 스폰마다 복제하며 경유점만 덜/더
   // 명시하는 지터가 섞여 있어, 먼저 경로 번호들을 **기하 단위 묶음**으로 접는다
@@ -242,7 +254,7 @@ export function StageRouteMap({ data, order, highlights }: {
   // 다른 적 = 기하가 같아도 **항상 별도 줄**. 강조 색 문제(16-2)도 이 구조에선 안 생긴다.
   const classOf = new Map<number, number>();   // 경로 번호 → 소속 묶음 대표
   for (const [rep, members] of group) for (const m of members) classOf.set(m, rep);
-  const lines: { rep: number; owner: string | null }[] = [];
+  const lines: { rep: number; owner: string | null; best: number; off: number }[] = [];
   const usedClasses = new Set<number>();
   for (const id of order) {                    // 범례 순 — 색·겹침 순서가 안정된다
     const reps = new Set<number>();
@@ -250,11 +262,20 @@ export function StageRouteMap({ data, order, highlights }: {
       const rep = classOf.get(ri);
       if (rep !== undefined) reps.add(rep);
     }
-    for (const rep of reps) { lines.push({ rep, owner: id }); usedClasses.add(rep); }
+    for (const rep of reps) { lines.push({ rep, owner: id, best: rep, off: 0 }); usedClasses.add(rep); }
   }
   // 등장 적 목록 밖(숨은 증원 등)만 쓰는 경로 — 회색 한 벌로 남긴다
-  for (const rep of group.keys()) if (!usedClasses.has(rep)) lines.push({ rep, owner: null });
-  return { drawPolys, group, lines };
+  for (const rep of group.keys()) if (!usedClasses.has(rep)) lines.push({ rep, owner: null, best: rep, off: 0 });
+  // 묶음 중 **경유점이 가장 많은** 변형을 그 선의 모양으로 (게임이 의도한 궤적에 가장
+  // 가깝다). 오프셋도 여기서 확정 — 시뮬레이션 말이 **자기 선 위**를 정확히 타야 하므로
+  // (사용자 지적 2026-08-10 "경로를 벗어나버리는 경우가 있음") 렌더와 시뮬이 공유한다.
+  const step = lines.length > 1 ? Math.min(0.4 / (lines.length - 1), 0.07) : 0;
+  lines.forEach((ln, li) => {
+    const members = group.get(ln.rep) ?? [ln.rep];
+    ln.best = members.reduce((a, b) => ((drawPolys[b]?.length ?? 0) > (drawPolys[a]?.length ?? 0) ? b : a), ln.rep);
+    ln.off = (li - (lines.length - 1) / 2) * step;
+  });
+  return { lines, classOf };
   }, [polys, r, f, data, order]);
 
   // ── 시뮬레이션 계획 — 스폰 하나하나를 (등장 시각, 칸별 도착/출발 시각표)로 편다.
@@ -264,9 +285,14 @@ export function StageRouteMap({ data, order, highlights }: {
     if (!simOn || !data.sp?.length || !data.wv) return null;
     const keys = Object.keys(data.e);
     const mmul = data.mm || 1;
-    type Runner = { key: string; color: string; t0: number; end: number; arr: number[]; dep: number[]; pts: [number, number][] };
+    type Runner = { key: string; color: string; t0: number; end: number; arr: number[]; dep: number[]; pts: [number, number][]; off: number };
     const runners: Runner[] = [];
     const waveSpans: number[] = [];   // 웨이브 n의 시작 시각
+    // 말은 **화면에 그려진 그 선**(묶음 대표 best + 오프셋)을 타야 한다 (사용자 지적
+    // 2026-08-10 "경로를 벗어나버리는 경우가 있음" — 자기 변형 경로를 타면 대표 선과
+    // 지터만큼 어긋난다). (주인, 묶음) → 선 찾기.
+    const lineBy = new Map<string, (typeof lines)[number]>();
+    for (const ln of lines) lineBy.set(`${ln.owner ?? ""}#${ln.rep}`, ln);
     const byWave = new Map<number, NonNullable<typeof data.sp>>();
     for (const s of data.sp) {
       if (!byWave.has(s[0])) byWave.set(s[0], []);
@@ -279,14 +305,30 @@ export function StageRouteMap({ data, order, highlights }: {
       waveSpans.push(waveStart);
       let waveEnd = waveStart, lastSpawn = waveStart;
       for (const [, tw, ri, count, itv, ki, fpre] of byWave.get(wi) ?? []) {
-        const P = polys[ri];
-        if (!P) continue;
+        const key = keys[ki] ?? "";
+        const rep = classOf.get(ri);
+        if (rep === undefined) continue;
+        const line = lineBy.get(`${order.includes(key) ? key : ""}#${rep}`)
+          ?? lines.find((ln) => ln.rep === rep);
+        const P = polys[line?.best ?? ri] ?? polys[ri];
+        const own = polys[ri];
+        if (!P || !own || !line) continue;
         const ms = Math.max(0.05, (data.ems?.[ki] ?? 1) * mmul);
-        const waits = data.cw?.[String(ri)] ?? [];
+        // 경유 대기(cw)는 원래 경로(ri)의 꼭짓점 번호 기준 — 그리는 변형(best)이 다르면
+        // 좌표가 가장 가까운 칸으로 옮겨 단다 (묶음 판정상 차이 ≤ 2칸이라 안전).
+        const waits = (data.cw?.[String(ri)] ?? []).map(([k, sec, mode]) => {
+          const pt = own.dense[own.marks[k]] ?? own.dense[own.dense.length - 1];
+          let bi = 0, bd = Infinity;
+          for (let i = 0; i < P.dense.length; i++) {
+            const d = Math.abs(P.dense[i][0] - pt[0]) + Math.abs(P.dense[i][1] - pt[1]);
+            if (d < bd) { bd = d; bi = i; }
+          }
+          return [bi, sec, mode] as const;
+        });
         for (let c = 0; c < count; c++) {
           const t0 = waveStart + tw + c * itv;
           // arr[i] = i번째 칸 도착 시각(스폰 기준 상대), dep[i] = 대기를 마친 출발 시각.
-          // 대기를 이동 시간에 뭉개면 점이 느리게 '기어가는' 것처럼 보인다 — 분리한다.
+          // 대기를 이동 시간에 뭉개면 말이 느리게 '기어가는' 것처럼 보인다 — 분리한다.
           const arr: number[] = [0], dep: number[] = [0];
           for (let i = 0; i < P.dense.length; i++) {
             if (i > 0) {
@@ -297,7 +339,7 @@ export function StageRouteMap({ data, order, highlights }: {
             }
             let d = arr[i];
             for (const [k, sec, mode] of waits) {
-              if (P.marks[k] !== i) continue;
+              if (k !== i) continue;
               if (mode === 0) d += sec;
               // 조각/웨이브 시계 T까지 대기 — 이미 지났으면 대기 없음
               else d = Math.max(d, (mode === 1 ? waveStart + fpre + sec : waveStart + sec) - t0);
@@ -305,9 +347,8 @@ export function StageRouteMap({ data, order, highlights }: {
             dep[i] = d;
           }
           const end = t0 + arr[arr.length - 1];
-          const key = keys[ki] ?? "";
           runners.push({
-            key, t0, end, arr, dep, pts: P.dense,
+            key, t0, end, arr, dep, pts: P.dense, off: line.off,
             color: key && order.includes(key) ? enemyRouteColor(order, key) : "#c8cdd4",
           });
           lastSpawn = Math.max(lastSpawn, t0);
@@ -324,7 +365,7 @@ export function StageRouteMap({ data, order, highlights }: {
     const spRoutes = new Set(data.sp.map((s) => s[2]));
     const conditional = Object.values(data.e).some((ris) => ris.every((ri) => !spRoutes.has(ri)));
     return { runners, duration, waveSpans, conditional };
-  }, [simOn, data, polys, order]);
+  }, [simOn, data, polys, order, lines, classOf]);
 
   // 재생 루프 — rAF. 시간은 tRef가 정본, simT는 화면 반영용.
   useEffect(() => {
@@ -352,7 +393,7 @@ export function StageRouteMap({ data, order, highlights }: {
   const hasSim = !!(data.sp?.length && data.wv);
   const cell = 1;
   return (
-    <div className="st-routewrap">
+    <div className="st-routewrap" ref={wrapRef}>
     {/* 시뮬레이트 — 스폰 타임라인 재생 (사용자 요청 2026-08-10). 데이터가 있는 작전만. */}
     {hasSim && (
       <div className="st-simbar">
@@ -398,19 +439,11 @@ export function StageRouteMap({ data, order, highlights }: {
           <rect key={`${ri}-${ci}`} x={ci * cell + 0.02} y={ri * cell + 0.02}
             width={cell - 0.04} height={cell - 0.04} fill={TILE_FILL[ch] ?? TILE_FILL.r} />
         )))}
-      {lines.map(({ rep, owner }, li) => {
-        // 묶음 중 **경유점이 가장 많은** 변형의 모양을 그린다 — 체크포인트가 명시된
-        // 쪽이 게임이 의도한 궤적에 가장 가깝다
-        const members = group.get(rep) ?? [rep];
-        const best = members.reduce((a, b) => ((drawPolys[b]?.length ?? 0) > (drawPolys[a]?.length ?? 0) ? b : a), rep);
+      {lines.map((ln) => {
+        // 선의 모양(best)·오프셋(off)은 접기 메모에서 확정 — 시뮬레이션 말과 공유한다
+        const { rep, owner, best, off } = ln;
         const P = polys[best];
         if (!P) return null;
-        // 선마다 대각 미세 오프셋 — 같은 길을 걷는 다른 적들이 나란히 보이게.
-        // 간격 0.07타일(약간)을 지향하되 **타일 폭(±0.2)은 절대 안 벗어난다** (사용자 지적
-        // "다른 타일로 벗어나버리면 안되지" — 선이 많으면 간격을 줄여서라도 안에 담는다).
-        const n = lines.length;
-        const step = n > 1 ? Math.min(0.4 / (n - 1), 0.07) : 0;
-        const off = (li - (n - 1) / 2) * step;
         const mapPt = ([x, y]: [number, number]) => [x * cell + cell / 2 + off, y * cell + cell / 2 + off] as const;
         // 강조 시: 고른 적의 선은 굵게, 나머지는 **아주 흐리게** (사용자 확정 2026-08-10 —
         // '굵기만' 안을 써 보고 겹침이 심해 흐림 방식으로 되돌림). 평소엔 전부 보통.
@@ -423,7 +456,7 @@ export function StageRouteMap({ data, order, highlights }: {
         const prev = mapPt(lastPts[lastPts.length - 2] ?? lastPts[0]);
         const ang = Math.atan2(last[1] - prev[1], last[0] - prev[0]);
         const a = 0.28; // 화살촉 크기 (타일 단위)
-        const tip: [number, number][] = [
+        const tipPts: [number, number][] = [
           [last[0] + Math.cos(ang) * a, last[1] + Math.sin(ang) * a],
           [last[0] + Math.cos(ang + 2.5) * a, last[1] + Math.sin(ang + 2.5) * a],
           [last[0] + Math.cos(ang - 2.5) * a, last[1] + Math.sin(ang - 2.5) * a],
@@ -440,39 +473,68 @@ export function StageRouteMap({ data, order, highlights }: {
                 strokeLinejoin="round" strokeLinecap="round" opacity={sgm.hop ? 0.55 : 1}
                 strokeDasharray={sgm.hop ? "0.04 0.12" : f[best] ? "0.12 0.2" : "0.5 0.14"} />
             ))}
+            {/* 호버용 투명 굵은 선 — 어떤 적의 경로인지 즉시 툴팁 (사용자 요청 2026-08-10).
+                본선(0.042)은 얇아 마우스로 짚기 어려워 폭 0.3의 히트 영역을 겹친다. */}
+            {owner && P.segs.map((sgm, si) => (
+              <polyline key={`h${si}`} points={sgm.pts.map(mapPt).map((p) => p.join(",")).join(" ")}
+                fill="none" stroke="#000" strokeOpacity={0} strokeWidth={0.3}
+                style={{ pointerEvents: "stroke", animation: "none" }}
+                onMouseMove={(ev) => showTip(ev, nameOf?.(owner) ?? owner)}
+                onMouseLeave={() => setTip(null)} />
+            ))}
             <circle cx={first[0]} cy={first[1]} r={0.16} fill={color} />
-            <polygon points={tip.map((p) => p.join(",")).join(" ")} fill={color} />
+            <polygon points={tipPts.map((p) => p.join(",")).join(" ")} fill={color} />
           </g>
         );
       })}
-      {/* 시뮬레이션 적 점 — 스폰~도착 사이에만 있고, 경유 대기 중엔 제자리에 선다 */}
+      {/* 시뮬레이션 말 — 스폰~도착 사이에만 있고, 경유 대기 중엔 제자리에 선다.
+          적 섬네일 + 진행 방향 화살촉 (사용자 요청 2026-08-10 "원 말고 진행방향을 알 수
+          있는 무언가로"). 강조 중엔 선과 똑같이 흐려진다 — 안 흐리면 숨은 경로 위를
+          달리는 것처럼 보였다 (사용자 제보 "경로를 벗어나버리는 경우"). */}
       {simOn && plan && (
         <g className="st-simdots">
+          <defs>
+            <clipPath id={`${clipId}c`}><circle cx={0} cy={0} r={0.27} /></clipPath>
+          </defs>
           {plan.runners.map((rn, i) => {
             if (simT < rn.t0 || simT > rn.end) return null;
             const rel = simT - rn.t0;
             let k = 1;
             while (k < rn.arr.length && rn.arr[k] < rel) k++;
             if (k >= rn.arr.length) k = rn.arr.length - 1;
-            let x: number, y: number;
+            const [ax, ay] = rn.pts[k - 1], [bx, by] = rn.pts[k];
+            let x: number, y: number, vx = bx - ax, vy = by - ay;
             if (rel <= rn.dep[k - 1]) {
-              [x, y] = rn.pts[k - 1];             // 대기 중 — 직전 칸에 정지
+              [x, y] = rn.pts[k - 1];             // 대기 중 — 다음 구간 방향을 미리 가리킨다
+            } else if (Math.max(Math.abs(ax - bx), Math.abs(ay - by)) > 1) {
+              [x, y] = rn.pts[k];                 // 순간이동(hop)은 즉시 도착점
+              const [nx2, ny2] = rn.pts[Math.min(k + 1, rn.pts.length - 1)];
+              vx = nx2 - bx; vy = ny2 - by;
             } else {
-              const [ax, ay] = rn.pts[k - 1], [bx, by] = rn.pts[k];
-              if (Math.max(Math.abs(ax - bx), Math.abs(ay - by)) > 1) {
-                [x, y] = rn.pts[k];               // 순간이동(hop)은 즉시 도착점
-              } else {
-                const span = rn.arr[k] - rn.dep[k - 1];
-                const f01 = span > 0 ? Math.min(1, (rel - rn.dep[k - 1]) / span) : 1;
-                x = ax + (bx - ax) * f01;
-                y = ay + (by - ay) * f01;
-              }
+              const span = rn.arr[k] - rn.dep[k - 1];
+              const f01 = span > 0 ? Math.min(1, (rel - rn.dep[k - 1]) / span) : 1;
+              x = ax + (bx - ax) * f01;
+              y = ay + (by - ay) * f01;
             }
+            const deg = vx || vy ? (Math.atan2(vy, vx) * 180) / Math.PI : 0;
+            const dim = hl ? !(rn.key && hl.has(rn.key)) : false;
+            const img = imgOf?.(rn.key);
             return (
-              <circle key={i} className="st-simdot" cx={x * cell + cell / 2} cy={y * cell + cell / 2}
-                r={0.21} fill={rn.color} stroke="#10141c" strokeWidth={0.05}>
-                <title>{rn.key}</title>
-              </circle>
+              <g key={i} className="st-simunit"
+                transform={`translate(${x * cell + cell / 2 + rn.off},${y * cell + cell / 2 + rn.off})`}
+                opacity={dim ? 0.12 : 1}
+                onMouseMove={(ev) => showTip(ev, nameOf?.(rn.key) ?? rn.key)}
+                onMouseLeave={() => setTip(null)}>
+                {/* 진행 방향 화살촉 — 정지 상태에서도 어디로 가는지 보인다 */}
+                <g transform={`rotate(${deg})`}>
+                  <polygon points="0.53,0 0.27,0.16 0.27,-0.16" fill={rn.color} stroke="#10141c" strokeWidth={0.03} />
+                </g>
+                <circle r={0.3} fill="#10141c" stroke={rn.color} strokeWidth={0.055} />
+                {img && (
+                  <image href={img} x={-0.27} y={-0.27} width={0.54} height={0.54}
+                    clipPath={`url(#${clipId}c)`} preserveAspectRatio="xMidYMid slice" />
+                )}
+              </g>
             );
           })}
         </g>
@@ -489,6 +551,8 @@ export function StageRouteMap({ data, order, highlights }: {
         ));
       })()}
     </div>
+    {/* 선·말 호버 즉시 툴팁 — 커서를 따라다니는 이름표 */}
+    {tip && <div className="st-maptip" style={{ left: tip.x, top: tip.y }}>{tip.text}</div>}
     </div>
   );
 }
