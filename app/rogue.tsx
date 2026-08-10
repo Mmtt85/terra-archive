@@ -338,7 +338,8 @@ function StageModal({ pair, grade, onClose, onOpenEnemy }: {
               <StageRouteMap data={rd} order={routeOrder}
                 highlights={hover ? [hover] : pinned.size ? [...pinned] : null}
                 imgOf={(k2) => { const e2 = data.enemies[k2]; return e2?.img ? asset(`/rogue/enemy/${e2.img}.webp`) : undefined; }}
-                nameOf={(k2) => data.enemies[k2]?.name} />
+                nameOf={(k2) => data.enemies[k2]?.name}
+                onPick={togglePin} />
             ) : (
               <p className="rg-modal-desc">{ROUTES_CACHE ? t("이 작전은 경로 데이터가 없습니다.") : t("경로 데이터를 불러오는 중…")}</p>
             )) : stage.map && (

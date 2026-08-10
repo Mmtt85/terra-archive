@@ -42,9 +42,9 @@ const TILE_FILL: Record<string, string> = {
   p: "#3d5a63",   // 이동 가능·배치 불가 (청록끼)
   b: "#71603f",   // 지상 배치 가능·이동 불가 (황토끼 — 펜스류)
   w: "#8a8892",   // 고지대 — 원거리 배치 (밝은 회색, 실사 도면과 같은 감각)
-  x: "#4d4160",   // 고지형 이동·배치 불가 (보라끼)
+  x: "#0b0a12",   // 고지형 이동·배치 불가 — 아주 새까만 배경 + ⊘ 표식 (사용자 지시 2026-08-10)
   f: "#3b322c",   // 장애물 — 이동·배치 불가 (갈색끼 어두움)
-  h: "#10141c",   // 구멍 — 비행만 통과 (가장 어두움)
+  h: "#10141c",   // 구멍 — 비행만 통과 (어두운 남색끼 — x보단 밝고 ⊘도 없어 구분된다)
   i: "#b06a2a",   // 통로 입구 — 게임의 주황 화살표 (사용자 제보 2026-08-10)
   o: "#d18f3f",   // 통로 출구
 };
@@ -130,7 +130,7 @@ function simplify(pts: [number, number][]): [number, number][] {
   return out;
 }
 
-export function StageRouteMap({ data, order, highlights, imgOf, nameOf }: {
+export function StageRouteMap({ data, order, highlights, imgOf, nameOf, onPick }: {
   data: StageRoutes;
   /** 범례에 보이는 적 id 순서 — 선 색 배정 기준 (stage-detail이 넘겨준다) */
   order: string[];
@@ -139,6 +139,8 @@ export function StageRouteMap({ data, order, highlights, imgOf, nameOf }: {
   imgOf?: (id: string) => string | undefined;
   /** 적 표시 이름 — 선·말 호버 즉시 툴팁 (사용자 요청 2026-08-10 "어떤 적의 경로인지") */
   nameOf?: (id: string) => string | undefined;
+  /** 선 클릭 = 그 적 고정 토글 — 적 카드 클릭과 같은 동작 (사용자 요청 2026-08-10) */
+  onPick?: (id: string) => void;
 }) {
   const { t } = useI18n();
   const { w, h, g, r, f } = data;
@@ -150,12 +152,13 @@ export function StageRouteMap({ data, order, highlights, imgOf, nameOf }: {
   const [simT, setSimT] = useState(0);
   const tRef = useRef(0);
   const clipId = useId();
-  // 선·말 호버 즉시 툴팁 — 브라우저 기본 title은 1초쯤 지연된다 (사용자 정책)
+  // 선·말 호버 즉시 툴팁 — 브라우저 기본 title은 1초쯤 지연된다 (사용자 정책).
+  // 이름 옆에 작은 섬네일도 함께 (사용자 요청 2026-08-10 "섬네일 이미지도 작게 같이").
   const wrapRef = useRef<HTMLDivElement | null>(null);
-  const [tip, setTip] = useState<{ x: number; y: number; text: string } | null>(null);
-  const showTip = (ev: { clientX: number; clientY: number }, text: string) => {
+  const [tip, setTip] = useState<{ x: number; y: number; text: string; img?: string } | null>(null);
+  const showTip = (ev: { clientX: number; clientY: number }, text: string, img?: string) => {
     const rect = wrapRef.current?.getBoundingClientRect();
-    if (rect) setTip({ x: ev.clientX - rect.left, y: ev.clientY - rect.top, text });
+    if (rect) setTip({ x: ev.clientX - rect.left, y: ev.clientY - rect.top, text, img });
   };
   // 강조 대상 적 — 호버는 한 적, 클릭 고정은 여러 적의 합집합이 온다.
   // 이 지도에 없는 적뿐이면(환경 전환 등) 강조 없음으로 본다.
@@ -440,10 +443,25 @@ export function StageRouteMap({ data, order, highlights, imgOf, nameOf }: {
     </div>
     <svg className="st-routemap" viewBox={`0 0 ${w * cell} ${h * cell}`} role="img"
       aria-label={t("적 이동 경로 지도")}>
+      {/* 고지형(x) 금지 표식 — 각 타일 중앙의 은은한 ⊘(원+사선) (사용자 요청 2026-08-10
+          "금지당한듯한 표시, 너무 심하게 눈에 안 띄게" — 단순 세로줄은 무성의하다고 반려).
+          색이 아니라 표식이라 색약에도 구분된다. */}
+      <defs>
+        {/* 새까만 배경 위라 표식은 은은한 밝은 잉크 (배경이 새까만색 — 사용자 지시 2026-08-10) */}
+        <g id={`${clipId}x`}>
+          <circle r={0.19} fill="none" stroke="#4f4964" strokeWidth={0.055} />
+          <line x1={-0.134} y1={-0.134} x2={0.134} y2={0.134} stroke="#4f4964" strokeWidth={0.055} />
+        </g>
+      </defs>
       {g.map((row, ri) =>
         Array.from(row).map((ch, ci) => (
           <rect key={`${ri}-${ci}`} x={ci * cell + 0.02} y={ri * cell + 0.02}
             width={cell - 0.04} height={cell - 0.04} fill={TILE_FILL[ch] ?? TILE_FILL.r} />
+        )))}
+      {g.map((row, ri) =>
+        Array.from(row).map((ch, ci) => ch === "x" && (
+          <use key={`x${ri}-${ci}`} href={`#${clipId}x`}
+            x={ci * cell + cell / 2} y={ri * cell + cell / 2} />
         )))}
       {lines.map((ln) => {
         // 선의 모양(best)·오프셋(off)은 접기 메모에서 확정 — 시뮬레이션 말과 공유한다
@@ -480,12 +498,14 @@ export function StageRouteMap({ data, order, highlights, imgOf, nameOf }: {
                 strokeDasharray={sgm.hop ? "0.04 0.12" : f[best] ? "0.12 0.2" : "0.5 0.14"} />
             ))}
             {/* 호버용 투명 굵은 선 — 어떤 적의 경로인지 즉시 툴팁 (사용자 요청 2026-08-10).
-                본선(0.042)은 얇아 마우스로 짚기 어려워 폭 0.3의 히트 영역을 겹친다. */}
+                본선(0.042)은 얇아 마우스로 짚기 어려워 폭 0.3의 히트 영역을 겹친다.
+                클릭 = 그 적 고정 토글 — 적 카드 클릭과 같은 동작 (사용자 요청 2026-08-10). */}
             {owner && P.segs.map((sgm, si) => (
               <polyline key={`h${si}`} points={sgm.pts.map(mapPt).map((p) => p.join(",")).join(" ")}
                 fill="none" stroke="#000" strokeOpacity={0} strokeWidth={0.3}
-                style={{ pointerEvents: "stroke", animation: "none" }}
-                onMouseMove={(ev) => showTip(ev, nameOf?.(owner) ?? owner)}
+                style={{ pointerEvents: "stroke", animation: "none", cursor: onPick ? "pointer" : undefined }}
+                onClick={onPick ? () => onPick(owner) : undefined}
+                onMouseMove={(ev) => showTip(ev, nameOf?.(owner) ?? owner, imgOf?.(owner))}
                 onMouseLeave={() => setTip(null)} />
             ))}
             <circle cx={first[0]} cy={first[1]} r={0.16} fill={color} />
@@ -529,7 +549,7 @@ export function StageRouteMap({ data, order, highlights, imgOf, nameOf }: {
               <g key={i} className="st-simunit"
                 transform={`translate(${x * cell + cell / 2 + rn.off},${y * cell + cell / 2 + rn.off})`}
                 opacity={dim ? 0.12 : 1}
-                onMouseMove={(ev) => showTip(ev, nameOf?.(rn.key) ?? rn.key)}
+                onMouseMove={(ev) => showTip(ev, nameOf?.(rn.key) ?? rn.key, imgOf?.(rn.key))}
                 onMouseLeave={() => setTip(null)}>
                 {/* 진행 방향 화살촉 — 정지 상태에서도 어디로 가는지 보인다 */}
                 <g transform={`rotate(${deg})`}>
@@ -553,12 +573,28 @@ export function StageRouteMap({ data, order, highlights, imgOf, nameOf }: {
         for (const row of g) for (const ch of row) present.add(ch);
         {/* data-tip = 즉시 뜨는 커스텀 툴팁 — 브라우저 기본 title은 1초쯤 지연된다 (사용자 요청) */}
         return TILE_LABELS.filter(([c]) => present.has(c)).map(([c, label, desc]) => (
-          <span key={c} data-tip={t(desc)}><i style={{ background: TILE_FILL[c] }} />{t(label)}</span>
+          <span key={c} data-tip={t(desc)}>
+            <i style={{ backgroundColor: TILE_FILL[c] }}>
+              {/* x 스와치도 지도와 같은 ⊘ 표식 */}
+              {c === "x" && (
+                <svg viewBox="0 0 12 12" aria-hidden>
+                  <circle cx="6" cy="6" r="3.6" fill="none" stroke="#4f4964" strokeWidth="1.2" />
+                  <line x1="3.45" y1="3.45" x2="8.55" y2="8.55" stroke="#4f4964" strokeWidth="1.2" />
+                </svg>
+              )}
+            </i>
+            {t(label)}
+          </span>
         ));
       })()}
     </div>
-    {/* 선·말 호버 즉시 툴팁 — 커서를 따라다니는 이름표 */}
-    {tip && <div className="st-maptip" style={{ left: tip.x, top: tip.y }}>{tip.text}</div>}
+    {/* 선·말 호버 즉시 툴팁 — 커서를 따라다니는 이름표 (+작은 섬네일) */}
+    {tip && (
+      <div className="st-maptip" style={{ left: tip.x, top: tip.y }}>
+        {tip.img && <img src={tip.img} alt="" aria-hidden />}
+        {tip.text}
+      </div>
+    )}
     </div>
   );
 }

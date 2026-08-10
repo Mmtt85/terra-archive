@@ -239,7 +239,8 @@ export function StageFile({ view, onOpenEnemy, onOpenItem }: {
             <StageRouteMap data={rd} order={routeOrder}
               highlights={hover ? [hover] : pinned.size ? [...pinned] : null}
               imgOf={(id) => enemyImg(id)}
-              nameOf={(id) => cur.enemies.find((en) => en.id === id)?.name} />
+              nameOf={(id) => cur.enemies.find((en) => en.id === id)?.name}
+              onPick={togglePin} />
           ) : (
             <p className="st-note">{ROUTES_CACHE ? t("이 작전은 경로 데이터가 없습니다.") : t("경로 데이터를 불러오는 중…")}</p>
           )}
