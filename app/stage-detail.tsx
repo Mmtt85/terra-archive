@@ -51,23 +51,21 @@ function EnemyChip({ e, mul, onOpenEnemy }: {
         if (!onOpenEnemy || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
         ev.preventDefault(); onOpenEnemy(e.id);
       }}>
-      {/* 가로형 배치 (사용자 확정 2026-08-10): 이름 위 · 썸네일 왼쪽 · 스탯 2×2 오른쪽 ·
-          ×수는 썸네일 밑 — 세로도 줄어든다. */}
+      {/* 가로형 배치 (사용자 확정 2026-08-10): "적이름 ×N" 한 줄 · 그 밑에 썸네일 왼쪽 ·
+          스탯 2×2 오른쪽 — 세로도 줄어든다. */}
       <span className="st-enemy-name">
-        {e.name}
+        <span className="nm">{e.name}</span>
         {/* 별만 찍지 않고 몇 단계 강화인지 숫자로 (사용자 지적 2026-08-10) */}
         {e.lv > 0 && <i title={t("강화 {n}단계", { n: String(e.lv) })}>★{e.lv}</i>}
+        {e.cnt > 0 && <em className="st-enemy-cnt">×{e.cnt}</em>}
       </span>
       <span className="st-enemy-body">
-        <span className="st-enemy-thumb">
-          <img src={enemyImg(e.id)} alt="" aria-hidden width={96} height={96} loading="lazy" decoding="async"
-            onError={(ev) => {
-              const el = ev.currentTarget;
-              if (base !== e.id && !el.dataset.fb) { el.dataset.fb = "1"; el.src = enemyImgBase(e.id); }
-              else el.style.visibility = "hidden";
-            }} />
-          {e.cnt > 0 && <em className="st-enemy-cnt">×{e.cnt}</em>}
-        </span>
+        <img src={enemyImg(e.id)} alt="" aria-hidden width={96} height={96} loading="lazy" decoding="async"
+          onError={(ev) => {
+            const el = ev.currentTarget;
+            if (base !== e.id && !el.dataset.fb) { el.dataset.fb = "1"; el.src = enemyImgBase(e.id); }
+            else el.style.visibility = "hidden";
+          }} />
         {/* 코어 스탯 — 통전 전투노드 규격 (사용자 요청 2026-08-10 "적 얼굴만 덜렁 나오지 말고").
             환경 배수가 곱해진 값은 빨간 톤으로 표시한다. */}
         {st && (
@@ -163,10 +161,9 @@ export function StageFile({ view, onOpenEnemy, onOpenItem }: {
           ) : (
             <p className="st-note">{t("이 작전은 지형 도면이 제공되지 않습니다.")}</p>
           )}
-          {/* 긴급 환경은 지형·적이 같고 제한 조건만 다르다 — 설명 자리에 조건을 보여준다 */}
-          {env === 1 && !view.alt && view.stage.chg
-            ? <p className="st-desc st-chg">{view.stage.chg}</p>
-            : s.desc && <p className="st-desc">{s.desc}</p>}
+          {s.desc && <p className="st-desc">{s.desc}</p>}
+          {/* 긴급 환경 제한 조건 — 설명을 지우지 않고 이어서 덧붙인다 (사용자 요청 2026-08-10) */}
+          {env === 1 && !view.alt && view.stage.chg && <p className="st-desc st-chg">{view.stage.chg}</p>}
           {facts.length > 0 && (
             <dl className="st-facts">
               {facts.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}

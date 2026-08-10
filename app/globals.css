@@ -16535,16 +16535,9 @@ main.site-main > .site-header {
   gap: 8px;
   min-width: 0;
 }
-.st-enemy-thumb {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  flex: none;
-  width: 46px;
-}
 .st-enemy img {
   width: 46px;
+  flex: none;
   aspect-ratio: 1 / 1;
   object-fit: contain;
   background: linear-gradient(150deg, #2a3236, #171c1f);
@@ -16553,6 +16546,7 @@ main.site-main > .site-header {
   font: 700 11px/1 var(--font-geist-mono), ui-monospace, monospace;
   font-style: normal;
   color: var(--muted);
+  margin-left: auto;
 }
 /* 칩 코어 스탯 2×2 — 통전 전투노드의 rg-stat 규격을 칩에 맞춘 것 */
 .st-enemy-stats {
@@ -16577,8 +16571,13 @@ main.site-main > .site-header {
   font-weight: 800;
 }
 .st-enemy-name {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
   width: 100%;
   line-height: 1.25;
+}
+.st-enemy-name .nm {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
