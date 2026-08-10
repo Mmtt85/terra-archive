@@ -88,6 +88,8 @@ const TAB_ENTRIES: { tab: Tab; label: string; alt: string[] }[] = [
   // "인프라 딸깍" — 커뮤니티에서 기지 편성을 그렇게 부른다 (사용자 지정 2026-07-26)
   { tab: "enemy", label: "적 도감", alt: ["enemy", "적", "몹", "도감", "적도감", "enemies"] },
   { tab: "stage", label: "작전 도감", alt: ["stage", "작전", "스테이지", "맵", "지형", "stages"] },
+  // "시뮬레이터"는 인프라 편성기 별칭에도 있다 — 둘 다 결과에 뜨는 게 맞다 (호칭이 겹침)
+  { tab: "sim", label: "작전 시뮬레이터", alt: ["sim", "simulator", "시뮬", "시뮬레이트", "시뮬레이터", "작전 시뮬", "스폰", "타임라인", "シミュレーター"] },
   { tab: "planner", label: "인프라 자동편성기", alt: ["riic", "base", "기지", "기반시설", "인프라", "편성", "자동편성", "딸깍", "인프라딸깍", "시뮬레이터"] },
   { tab: "recruit", label: "공개채용 도우미", alt: ["recruit", "공개모집", "공채", "태그계산"] },
   { tab: "farm", label: "재료파밍 도우미", alt: ["farm", "재료", "파밍", "효율표", "드랍"] },

@@ -18,7 +18,7 @@ export type PortalTile = {
   /** 이 칸이 실제로 여는 곳. tab이 없으면 장식 칸(게임엔 있으나 사이트엔 없는 기능) */
   tab?: string;
   /** 탭 대신 동작을 여는 칸 (헤더 버튼과 같은 것을 부른다) */
-  action?: "changelog" | "feedback" | "donate";
+  action?: "changelog" | "donate";
   href?: string;
   area: string;
   /** 칸 모양 — 판(plate) / 이벤트 배너 */
@@ -26,6 +26,10 @@ export type PortalTile = {
   /** 큰 칸의 가운데를 채우는 한 줄 설명 — 작은 칸은 비워 둔다 (i18n 사전 키) */
   desc?: string;
   icon: string;
+  /** 묶음 칸 — 헤더 메뉴의 도감·시뮬레이터 묶음을 홈 화면에서도 그대로 보여준다
+   *  (사용자 지시 2026-08-10 "도감이랑 시뮬레이션은 한그룹으로 묶어서").
+   *  묶인 타일은 area 대신 묶음 컨테이너(gridArea=dex·sim) 안에 순서대로 들어간다. */
+  group?: "dex" | "sim";
 };
 
 /**
@@ -38,28 +42,31 @@ export const PORTAL_TILES: PortalTile[] = [
   { id: "terminal", label: "인프라 자동편성기", tab: "planner", area: "terminal", kind: "plate",
     desc: "보유 오퍼만 입력하면 기반시설 편성을 자동으로 계산", icon: "⌂" },
   { id: "banner", label: "진행중 이벤트", area: "banner", kind: "banner", icon: "✦" },
-  { id: "base", label: "재료파밍 도우미", tab: "farm", area: "base", kind: "plate",
-    desc: "정예화 재료의 최적 파밍 스테이지와 이성 효율표", icon: "◈" },
-  { id: "operator", label: "오퍼 백과사전", tab: "archive", area: "operator", kind: "plate",
+  // ── 도감 묶음 (헤더 메뉴와 같은 구성) ──
+  { id: "operator", label: "오퍼 백과사전", tab: "archive", area: "dex", kind: "plate", group: "dex",
     desc: "소속·직군·태그·시너지로 필터·검색하는 오퍼레이터 도감", icon: "▤" },
-  { id: "enemy", label: "적 도감", tab: "enemy", area: "enemy", kind: "plate",
+  { id: "enemy", label: "적 도감", tab: "enemy", area: "dex", kind: "plate", group: "dex",
     desc: "적 1,500여 종의 스탯·능력·면역과 등장 작전", icon: "⊗" },
-  { id: "stage", label: "작전 도감", tab: "stage", area: "stage", kind: "plate",
+  { id: "stage", label: "작전 도감", tab: "stage", area: "dex", kind: "plate", group: "dex",
     desc: "작전 2,200여 개의 지형 도면과 등장 적·드랍", icon: "▨" },
+  // ── 시뮬레이터 묶음 (헤더 메뉴와 같은 구성 + 작전 시뮬레이터) ──
+  { id: "recruit", label: "공개채용 도우미", tab: "recruit", area: "sim", kind: "plate", group: "sim",
+    desc: "공개모집 태그 조합으로 확정·고성급 오퍼를 탐색", icon: "◎" },
+  { id: "base", label: "재료파밍 도우미", tab: "farm", area: "sim", kind: "plate", group: "sim",
+    desc: "정예화 재료의 최적 파밍 스테이지와 이성 효율표", icon: "◈" },
+  { id: "depot", label: "오퍼 육성 시뮬", tab: "upgrade", area: "sim", kind: "plate", group: "sim",
+    desc: "오퍼 육성에 필요한 용문폐·재료 총량을 단계별로 계산", icon: "▦" },
+  { id: "simulate", label: "작전 시뮬레이터", tab: "sim", area: "sim", kind: "plate", group: "sim",
+    desc: "적이 언제 어디서 나와 어디로 가는지 작전 흐름을 재생", icon: "▶" },
   { id: "story", label: "스토리", tab: "story", area: "story", kind: "plate",
     desc: "이벤트 스토리를 AI 요약과 전문(풀 스크립트)으로", icon: "✦" },
   { id: "squads", label: "통합전략 가이드", tab: "rogue", area: "squads", kind: "plate",
     desc: "층별 노드·적 도감·유물·엔딩 조건을 난이도별로 정리", icon: "❖" },
-  { id: "recruit", label: "공개채용 도우미", tab: "recruit", area: "recruit", kind: "plate",
-    desc: "공개모집 태그 조합으로 확정·고성급 오퍼를 탐색", icon: "◎" },
-  { id: "depot", label: "오퍼 육성 시뮬", tab: "upgrade", area: "depot", kind: "plate",
-    desc: "오퍼 육성에 필요한 용문폐·재료 총량을 단계별로 계산", icon: "▦" },
   { id: "mission", label: "업데이트 내역", action: "changelog", area: "mission", kind: "plate",
     desc: "최근 무엇이 바뀌었는지, 지난 기록까지 한 곳에", icon: "🛠" },
   { id: "archives", label: "테라 아카이브 소개", tab: "about", area: "archives", kind: "plate",
     desc: "각 기능이 무엇이고 언제 쓰는지 안내", icon: "ⓘ" },
-  { id: "friends", label: "제안 보내기", action: "feedback", area: "friends", kind: "plate",
-    desc: "잘못된 정보나 아쉬운 점을 알려주세요", icon: "💬" },
+  // 제안 보내기 타일은 뺐다 (사용자 지시 2026-08-10) — 떠 있는 💬 제안 버튼과 중복.
 ];
 
 /**

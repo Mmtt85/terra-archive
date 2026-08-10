@@ -23,6 +23,7 @@ export const FEATURE_RELEASED: Record<string, string | { date: string; days: num
   "enemy-dex": "2026-08-09", // 적 도감
   "stage-dex": "2026-08-09", // 작전 도감 — 작전 2,224개의 지형 도면·등장 적·드랍
   "route-map": "2026-08-10", // 적 이동 경로 지도 — 작전 상세·통전 전투 노드의 '이동 경로' 탭
+  "sim-page": "2026-08-10", // 작전 시뮬레이터 런처(/sim) — 스폰 타임라인 재생 딥링크 (B안)
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -58,6 +59,7 @@ const TAB_FEATURES: Record<string, string[]> = {
   story: ["lens"], // 스샷 레이더 /stories 설치 (전문 대사 검색, 2026-07-24)
   enemy: ["enemy-dex"],
   stage: ["stage-dex", "route-map"],
+  sim: ["sim-page"],
 };
 
 /** 해당 탭 안에 아직 '새기능' 기간인 기능이 하나라도 있으면 true. */

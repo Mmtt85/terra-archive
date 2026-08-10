@@ -124,14 +124,16 @@ function EnemyChip({ e, mul, onOpenEnemy, onHover, pinColor, pinned, onTogglePin
   );
 }
 
-export function StageFile({ view, onOpenEnemy, onOpenItem }: {
+export function StageFile({ view, onOpenEnemy, onOpenItem, autoSim }: {
   view: StageView; onOpenEnemy?: (id: string) => void; onOpenItem?: (id: string) => void;
+  /** 이동 경로 탭 + 시뮬 자동 재생으로 연다 — 작전 시뮬레이터 런처의 모달 (2026-08-10) */
+  autoSim?: boolean;
 }) {
   const { t } = useI18n();
   const [zoom, setZoom] = useState(false);
   const zoomRef = useRef<HTMLButtonElement | null>(null);
   // 실사 도면 / 이동 경로 탭 (사용자 확정 2026-08-10 "탭 두개로 구분")
-  const [mapView, setMapView] = useState<"map" | "route">("map");
+  const [mapView, setMapView] = useState<"map" | "route">(autoSim ? "route" : "map");
   // 경로 강조 (사용자 확정): 호버 = 그 적만 잠깐 표시 · 클릭 = 고정(여러 적 중첩 가능)
   const [hover, setHover] = useState<string | null>(null);
   const [pinned, setPinned] = useState<Set<string>>(() => new Set());
@@ -178,6 +180,19 @@ export function StageFile({ view, onOpenEnemy, onOpenItem }: {
     if (next.has(id)) next.delete(id); else next.add(id);
     return next;
   });
+  // 시뮬 자동 재생 진입 두 갈래 (사용자 확정 2026-08-10 B안):
+  // ① autoSim prop — 작전 시뮬레이터 런처가 모달로 열 때 (페이지 이동 없이 — 사용자 지시)
+  // ② /stages/<id>?sim=1 딥링크 — 런처 카드의 새 탭/보조클릭·공유 링크용.
+  //    쿼리는 프리렌더가 모르는 값이라 마운트 후에만 읽는다 (하이드레이션 불일치 방지).
+  const [autoSimOn, setAutoSimOn] = useState(!!autoSim);
+  useEffect(() => {
+    const want = autoSim || new URLSearchParams(window.location.search).get("sim") === "1";
+    if (!want) return;
+    setAutoSimOn(true);
+    setMapView("route");
+    if (!ROUTES_CACHE) loadRoutes().then(() => bumpRoutes((k) => k + 1)).catch(() => { ROUTES_LOADING = null; bumpRoutes((k) => k + 1); });
+    // autoSim prop은 모달 마운트 시점(key=stage.id 재마운트)에 확정돼 있어 마운트 1회면 된다
+  }, []);  // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <div className="st-file">
       {/* 헤더 한 줄 배치 — 계열·구역 배지는 이름 오른쪽으로, 환경 탭은 오른쪽 끝
@@ -240,7 +255,7 @@ export function StageFile({ view, onOpenEnemy, onOpenItem }: {
               highlights={hover ? [hover] : pinned.size ? [...pinned] : null}
               imgOf={(id) => enemyImg(id)}
               nameOf={(id) => cur.enemies.find((en) => en.id === id)?.name}
-              onPick={togglePin} />
+              onPick={togglePin} autoSim={autoSimOn} />
           ) : (
             <p className="st-note">{ROUTES_CACHE ? t("이 작전은 경로 데이터가 없습니다.") : t("경로 데이터를 불러오는 중…")}</p>
           )}

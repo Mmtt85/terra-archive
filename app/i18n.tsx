@@ -325,6 +325,7 @@ const D: Record<string, Pair> = {
   "공채": ["Recruit", "公開求人"],
   "파밍": ["Farming", "周回"],
   "육성": ["Upgrade", "育成"],
+  "작전 시뮬": ["Stage sim", "作戦シミュ"],
   "통합전략": ["Integrated Strategies", "統合戦略"],
   "사이트": ["Site", "サイト"],
   "예전 기록 가져오기": ["Load older entries", "過去の履歴を読み込む"],
@@ -1488,6 +1489,23 @@ const D: Record<string, Pair> = {
   "처치 수 등 조건 분기 증원은 재생에 포함되지 않습니다.": [
     "Conditional reinforcements (kill-count branches, etc.) are not played.",
     "撃破数など条件分岐の増援は再生に含まれません。"],
+  // 작전 시뮬레이터 런처 /sim (사용자 확정 2026-08-10 B안)
+  "작전 시뮬레이터": ["Stage Simulator", "作戦シミュレーター"],
+  "작전 시뮬레이터 - 명일방주 적 스폰 타임라인 | 테라 아카이브": [
+    "Stage Simulator - Arknights Enemy Spawn Timeline | Terra Archive",
+    "作戦シミュレーター - アークナイツ敵出現タイムライン | テラアーカイブ"],
+  "작전을 고르면 적이 몇 초에 어디서 나와 어떤 경로로 어디에 들어가는지, 스폰 타임라인을 재생해 보여줍니다. 배속·구간 이동으로 흐름을 훑고, 선이나 말을 누르면 적별 경로를 확인할 수 있습니다.": [
+    "Pick an operation to replay its spawn timeline — when each enemy appears, which route it takes, and where it goes. Skim with playback speed and seeking, and click a line or unit to inspect that enemy's route.",
+    "作戦を選ぶと、敵が何秒にどこから現れどの経路でどこへ向かうか、出現タイムラインを再生します。倍速・シークで流れを掴み、線や駒をクリックすると敵ごとの経路を確認できます。"],
+  "통합전략 가이드의 전투 노드에서도 '이동 경로' 탭으로 같은 시뮬레이션을 재생할 수 있습니다.": [
+    "The same simulation is also available on combat nodes in the Integrated Strategies guide, via the Enemy routes tab.",
+    "統合戦略ガイドの戦闘ノードでも「移動ルート」タブから同じシミュレーションを再生できます。"],
+  "최신 이벤트": ["Latest event", "最新イベント"],
+  "섬멸작전": ["Annihilation", "殲滅作戦"],
+  "경로 데이터 없음": ["No route data", "経路データなし"],
+  "적이 언제 어디서 나와 어디로 가는지 작전 흐름을 재생": [
+    "Replay when, where and how every enemy moves",
+    "敵がいつどこから現れどこへ向かうか、作戦の流れを再生"],
   "지상": ["Ground", "地上"],
   "비행": ["Flying", "飛行"],
   // 이동 경로 지도의 타일 범례 (라벨 자체가 설명이 되게 — 사용자 지적 2026-08-10)

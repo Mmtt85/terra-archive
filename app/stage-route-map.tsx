@@ -130,7 +130,7 @@ function simplify(pts: [number, number][]): [number, number][] {
   return out;
 }
 
-export function StageRouteMap({ data, order, highlights, imgOf, nameOf, onPick }: {
+export function StageRouteMap({ data, order, highlights, imgOf, nameOf, onPick, autoSim }: {
   data: StageRoutes;
   /** 범례에 보이는 적 id 순서 — 선 색 배정 기준 (stage-detail이 넘겨준다) */
   order: string[];
@@ -141,13 +141,17 @@ export function StageRouteMap({ data, order, highlights, imgOf, nameOf, onPick }
   nameOf?: (id: string) => string | undefined;
   /** 선 클릭 = 그 적 고정 토글 — 적 카드 클릭과 같은 동작 (사용자 요청 2026-08-10) */
   onPick?: (id: string) => void;
+  /** 마운트하자마자 시뮬 자동 재생 — /stages/<id>?sim=1 딥링크 (작전 시뮬레이터 런처) */
+  autoSim?: boolean;
 }) {
   const { t } = useI18n();
   const { w, h, g, r, f } = data;
   // ── 시뮬레이션 상태 (사용자 요청 2026-08-10 "시뮬레이트 버튼 하나 만들어보자") ──
   // 시각(simT)은 초 단위 스테이지 시계. rAF 루프가 tRef를 굴리고 상태로 비춘다.
-  const [simOn, setSimOn] = useState(false);
-  const [playing, setPlaying] = useState(false);
+  // 이 컴포넌트는 경로 데이터가 준비된 뒤에만 마운트되므로 autoSim은 초기값으로 소화한다.
+  const initSim = !!autoSim && !!(data.sp?.length && data.wv);
+  const [simOn, setSimOn] = useState(initSim);
+  const [playing, setPlaying] = useState(initSim);
   const [speed, setSpeed] = useState(1);
   const [simT, setSimT] = useState(0);
   const tRef = useRef(0);

@@ -414,6 +414,13 @@ else:
     json.dump(routes_doc, open(p, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
     print(f"  stage-routes.json: 경로 보유 작전 {len(routes_doc)} — {os.path.getsize(p)//1024}KB")
 
+    # 작전 시뮬레이터 런처(/sim)의 검색 색인 — 경로 데이터가 있는 작전 id 목록(별칭 포함).
+    # 런처가 5.4MB 본문 없이 "이 작전은 시뮬 가능"을 판정하기 위한 작은 파일 (2026-08-10).
+    # 경로가 있으면 스폰 타임라인(sp/wv)도 항상 있다 — 2026-08-10 전수 확인 (2017/2017).
+    p = os.path.join(DATA, "sim-stages.json")
+    json.dump(sorted(routes_doc), open(p, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
+    print(f"  sim-stages.json: {len(routes_doc)}건 — {os.path.getsize(p)//1024}KB")
+
 
     # ── 메인 스토리 챕터 (2026-08-09 사용자 리포트로 발각) ──────────────────────
     # ⚠ zoneNameFirst를 무조건 챕터 라벨로 쓰면 안 된다. 15·16장(act2mainss/act3mainss)은

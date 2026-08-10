@@ -10745,14 +10745,52 @@ html.dark .pt-stage {
   /* 사용자 지정 배치 (2026-07-30): 1줄 인프라 통째, 2줄 통합전략 2칸 + 이벤트 1칸,
      나머지는 PORTAL_TILES 순서대로. 6열이라야 "2칸 : 1칸"이 정확히 떨어진다. */
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  grid-template-rows: 1.2fr 1.05fr 1fr 1fr 1fr 1fr;
+  grid-template-rows: 1.1fr 1fr 1fr 1fr 1fr 0.95fr;
+  /* 도감·시뮬레이터는 묶음 상자(dex·sim)로 — 헤더 메뉴 묶음과 같은 구성 (사용자 지시
+     2026-08-10). 제안 보내기 타일은 뺐다(떠 있는 💬 버튼과 중복 — 같은 날 지시). */
   grid-template-areas:
     "terminal terminal terminal terminal terminal terminal"
     "squads   squads   squads   squads   banner   banner  "
-    "base     base     operator operator enemy    enemy   "
-    "stage    stage    story    story    recruit  recruit "
-    "depot    depot    mission  mission  archives archives"
-    "friends  friends  friends  friends  friends  friends ";
+    "dex      dex      dex      sim      sim      sim     "
+    "dex      dex      dex      sim      sim      sim     "
+    "dex      dex      dex      sim      sim      sim     "
+    "story    story    mission  mission  archives archives";
+}
+/* 묶음 상자 — 캡션 + 세로로 쌓인 작은 타일들 */
+.pt-group {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-height: 0;
+  padding: 8px 10px 10px;
+  border: 1px solid var(--pt-line);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--pt-plate) 45%, transparent);
+}
+.pt-group-cap {
+  flex: none;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: var(--pt-ink);
+  opacity: 0.62;
+}
+.pt-group-tiles {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  gap: 7px;
+  grid-auto-rows: minmax(0, 1fr);
+}
+/* 묶음 속 타일은 한 단계 촘촘하게 — 시뮬레이터 상자엔 4칸이 들어간다 */
+.pt-group .pt-tile { padding: 5px 10px; }
+.pt-group .pt-desc { -webkit-line-clamp: 1; }
+/* 납작한 묶음 타일에선 위로 뺀 배지(top:-13px)가 overflow에 잘린다 (사용자 제보
+   2026-08-10 "새기능 뱃지가 짤려서 보임") — 세로 메뉴 행과 같은 줄 안 오른쪽 배치로 */
+.pt-group .pt-tile .new-badge {
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
 }
 .pt-tile {
   position: relative;
@@ -11025,11 +11063,15 @@ html.dark .pt-stage {
     grid-template-areas:
       "terminal terminal"
       "squads   banner  "
-      "base     operator"
-      "enemy    stage   "
-      "story    recruit "
-      "depot    mission "
-      "archives friends ";
+      "dex      dex     "
+      "sim      sim     "
+      "story    story   "
+      "mission  archives";
+  }
+  /* 묶음 속은 2열로 접는다 — 세로 한 줄이면 홈이 너무 길어진다 */
+  .pt-group-tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: minmax(56px, auto);
   }
   .pt-t-terminal .pt-ko { font-size: 19px; }
 }
@@ -17027,4 +17069,103 @@ main.site-main > .site-header {
   color: color-mix(in srgb, var(--lime) 60%, var(--ink));
   margin-left: 6px;
   white-space: nowrap;
+}
+
+/* ── 작전 시뮬레이터 런처 (/sim) — 사용자 확정 2026-08-10 B안 ─────────────────
+   작전 리스트를 복제하지 않는 얇은 화면: 검색창 + 추천 몇 개 →
+   /stages/<id>?sim=1 딥링크로 보낸다. 카드 겉모습은 작전 도감(.st-card)을 빌린다. */
+.sim-launch {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 26px 20px 60px;
+}
+.sim-head h2 {
+  margin: 2px 0 0;
+  font-size: 24px;
+}
+.sim-intro {
+  margin: 12px 0 4px;
+  max-width: 760px;
+  font-size: 13.5px;
+  line-height: 1.75;
+  color: var(--ink2);
+}
+.sim-note {
+  margin: 6px 0 0;
+  max-width: 760px;
+  font-size: 12px;
+  line-height: 1.65;
+  color: var(--muted);
+}
+.sim-search-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 18px 0 4px;
+  max-width: 540px;
+}
+.sim-search {
+  flex: 1;
+  min-width: 0;
+}
+/* 검색 확정 버튼 — 입력 즉시 검색하지 않는다 (사용자 지시 2026-08-10) */
+.sim-search-btn {
+  flex: none;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--white);
+  background: var(--ink);
+  border: 1px solid var(--ink);
+  cursor: pointer;
+}
+.sim-search-btn:hover {
+  background: var(--crimson, #b3372e);
+  border-color: var(--crimson, #b3372e);
+}
+.sim-sec {
+  margin-top: 24px;
+}
+.sim-sec h3 {
+  margin: 0;
+  font-size: 15px;
+}
+.sim-sec h3 em {
+  margin-left: 8px;
+  font-style: normal;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.sim-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+/* 도면 위 ▶ — 이 카드가 시뮬 재생으로 이어짐을 알리는 표식 */
+.sim-card .st-card-map { position: relative; }
+.sim-card-play {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding-left: 2px;
+  font-size: 11px;
+  color: #fff;
+  background: rgba(10, 12, 18, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 50%;
+}
+.sim-card:hover .sim-card-play {
+  background: var(--crimson, #b3372e);
+  border-color: transparent;
+}
+/* 경로 데이터가 없는 작전 — 시뮬 없이 상세로만 간다는 표시(카드 메타의 em 문구) */
+.sim-card.nosim .st-card-meta em {
+  font-style: normal;
+  color: var(--muted);
 }

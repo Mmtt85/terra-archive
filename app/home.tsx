@@ -30,6 +30,8 @@ const STAGE_DEX = {
   ja: lazy(() => import("./stages-ja")),
 } as const;
 import { normSearch, useSearchInput } from "./search";
+// 작전 시뮬레이터 런처 — SEO 본문이 프리렌더돼야 해서 정적 임포트 (데이터는 자체 지연 로드)
+import SimLauncher from "./sim-launcher";
 // 만능검색(⌘K)은 첫 화면에 필요 없다 — 정적 import면 omni.ts가 끌고 오는
 // farm·story·rogue·recruit 색인까지 하이드레이션 경로에서 함께 파싱된다 (INP 조사 2026-08-09).
 const OmniSearch = lazy(() => import("./omni-search"));
@@ -183,15 +185,17 @@ const JOB_ORDER = ["PIONEER", "WARRIOR", "TANK", "SNIPER", "CASTER", "MEDIC", "S
 
 const SORT_KEYS = ["기본", "이름", "성급", "발매순", "소속", "출신지", "종족", "직군", "세부 직군"];
 
-export type Tab = "portal" | "archive" | "enemy" | "stage" | "planner" | "recruit" | "farm" | "upgrade" | "story" | "rogue" | "about";
+export type Tab = "portal" | "archive" | "enemy" | "stage" | "sim" | "planner" | "recruit" | "farm" | "upgrade" | "story" | "rogue" | "about";
 // 탭 ↔ URL 세그먼트 (portal이 로케일 루트, 오퍼 백과사전은 /operators — 사용자 확정 2026-07-17:
 // 루트 진입 시 오퍼 이미지 강제 로딩을 없애려 포탈 첫화면 도입). seo.ts의 TAB_SEG·라우트 폴더명과 일치.
 // URL 세그먼트 "stories"(← 정적 자산 디렉터리 public/story/ 와의 경로 충돌 회피). 내부 탭명은 story.
 // ⚠ 적 도감의 URL 세그먼트는 "enemies"(복수)인데 초상 자산 폴더는 public/enemy/(단수)다.
 //    일부러 다르게 뒀다 — scripts/deploy.sh가 스테이징에서 `rm -rf $STAGE/enemy`로 자산만
 //    떼어내는데(서빙은 R2), 이름이 같으면 라우트 HTML까지 통째로 지워진다.
-const TAB_SEG: Record<Tab, string> = { portal: "", archive: "operators", enemy: "enemies", stage: "stages", planner: "infra", recruit: "recruit", farm: "farm", upgrade: "upgrade", story: "stories", rogue: "rogue", about: "about" };
-const SEG_TAB: Record<string, Tab> = { "": "portal", operators: "archive", infra: "planner", recruit: "recruit", farm: "farm", upgrade: "upgrade", stories: "story", rogue: "rogue", about: "about" };
+const TAB_SEG: Record<Tab, string> = { portal: "", archive: "operators", enemy: "enemies", stage: "stages", sim: "sim", planner: "infra", recruit: "recruit", farm: "farm", upgrade: "upgrade", story: "stories", rogue: "rogue", about: "about" };
+// ⚠ TAB_SEG와 짝 — 세그먼트를 더하면 여기도 같이 (enemies·stages가 빠져 /stages가
+//   portal로 판정되던 기존 누락도 2026-08-10에 함께 채움)
+const SEG_TAB: Record<string, Tab> = { "": "portal", operators: "archive", enemies: "enemy", stages: "stage", sim: "sim", infra: "planner", recruit: "recruit", farm: "farm", upgrade: "upgrade", stories: "story", rogue: "rogue", about: "about" };
 const LOCALE_BASE: Record<Locale, string> = { ko: "", en: "/en", ja: "/ja" };
 
 // 빌드(=배포) 시각 — vite define으로 박히는 ISO 문자열을 KST 분 단위로 찍는다.
@@ -744,9 +748,8 @@ function ThemeToggle() {
 //    fetchpriority=low·decoding=async로 내려, 종전 카드 그리드보다 요청 수는 오히려 적다.
 const SITE_OPENED = Date.parse("2026-07-11T00:00:00+09:00"); // 첫 커밋일 — LV 자리의 '운영 일수'
 
-function Portal({ onOpenTab, onFeedback }: {
+function Portal({ onOpenTab }: {
   onOpenTab: (tab: Tab) => void;
-  onFeedback: () => void;
 }) {
   const { locale, t } = useI18n();
 
@@ -805,7 +808,6 @@ function Portal({ onOpenTab, onFeedback }: {
       }
       onOpenTab("story"); scrollMainTop(); return;
     }
-    if (tile.action === "feedback") return onFeedback();
     if (tile.action === "changelog") { window.location.hash = "#changelog-all"; return; }
     if (tile.action === "donate") { window.open("https://buymeacoffee.com/terra_archive", "_blank", "noopener"); return; }
     if (tile.href) { window.open(tile.href, "_blank", "noopener"); return; }
@@ -830,9 +832,11 @@ function Portal({ onOpenTab, onFeedback }: {
         </div>
       </div>
 
-      {/* 우측 타일 — 배치는 CSS grid-template-areas(=tile.area)가 잡는다 */}
+      {/* 우측 타일 — 배치는 CSS grid-template-areas(=tile.area)가 잡는다.
+          도감·시뮬레이터는 헤더 메뉴와 같은 묶음 상자로 (사용자 지시 2026-08-10). */}
       <div className="pt-tiles">
-        {PORTAL_TILES.map((tile) => {
+        {(() => {
+        const renderTile = (tile: PortalTile) => {
           // 배너는 tab/action이 없어도 이벤트 공지를 여는 칸이다 — 장식 판정에서 제외
           const dead = tile.kind !== "banner" && !tile.tab && !tile.action && !tile.href;
           const isBanner = tile.kind === "banner";
@@ -840,7 +844,7 @@ function Portal({ onOpenTab, onFeedback }: {
           return (
             <button key={tile.id} type="button" disabled={dead}
               className={`pt-tile pt-${tile.kind} pt-t-${tile.id}${dead ? " dead" : ""}${isBanner && !thumb ? " nothumb" : ""}`}
-              style={{ gridArea: tile.area }}
+              style={tile.group ? undefined : { gridArea: tile.area }}
               onMouseEnter={isBanner ? () => setHold(true) : undefined}
               onMouseLeave={isBanner ? () => setHold(false) : undefined}
               onClick={() => openTile(tile)}
@@ -878,9 +882,9 @@ function Portal({ onOpenTab, onFeedback }: {
                   <span className="pt-head">
                     <span className="pt-ic" aria-hidden>{tile.icon}</span>
                     <span className="pt-ko">{t(tile.label)}</span>
-                    {/* 포탈 타일의 새 기능 표시 — 제안(이미지 첨부)·업데이트 내역(개발자 코멘트) */}
-                    {((tile.action === "feedback" && isNewFeature("feedback-image"))
-                      || (tile.action === "changelog" && isNewFeature("dev-notes"))) && (
+                    {/* 포탈 타일의 새 기능 표시 — 탭 배지는 헤더 메뉴와 같은 판정을 쓴다 */}
+                    {((tile.action === "changelog" && isNewFeature("dev-notes"))
+                      || (!!tile.tab && tabHasNewFeature(tile.tab))) && (
                       <span className="new-badge">{t("새기능")}</span>
                     )}
                   </span>
@@ -889,7 +893,26 @@ function Portal({ onOpenTab, onFeedback }: {
               )}
             </button>
           );
-        })}
+        };
+        const groups: { id: "dex" | "sim"; name: string }[] = [
+          { id: "dex", name: t("도감") },
+          { id: "sim", name: t("시뮬레이터") },
+        ];
+        return (
+          <>
+            {PORTAL_TILES.filter((tile) => !tile.group).map(renderTile)}
+            {groups.map((g) => (
+              <div key={g.id} className={`pt-group pt-g-${g.id}`} style={{ gridArea: g.id }}
+                role="group" aria-label={g.name}>
+                <span className="pt-group-cap">{g.name}</span>
+                <div className="pt-group-tiles">
+                  {PORTAL_TILES.filter((tile) => tile.group === g.id).map(renderTile)}
+                </div>
+              </div>
+            ))}
+          </>
+        );
+        })()}
       </div>
 
     </section>
@@ -1236,6 +1259,8 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
               : t("작전 도감 - 명일방주 스테이지 지형·드랍 | 테라 아카이브"))
           : tab === "farm"
             ? t("재료파밍 도우미 - 명일방주 재료 파밍 효율표 | 테라 아카이브")
+            : tab === "sim"
+            ? t("작전 시뮬레이터 - 명일방주 적 스폰 타임라인 | 테라 아카이브")
             : tab === "upgrade"
             ? t("오퍼 육성 시뮬 - 명일방주 육성 비용 계산기 | 테라 아카이브")
             : tab === "story"
@@ -1289,6 +1314,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     recruit: t("공개채용 도우미"),
     farm: t("재료파밍 도우미"),
     upgrade: t("오퍼 육성 시뮬"),
+    sim: t("작전 시뮬레이터"),
     story: t("스토리"),
     rogue: t("통합전략 가이드"),
     about: t("테라 아카이브 소개"),
@@ -1302,6 +1328,8 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     ] },
     { id: "sim", name: t("시뮬레이터"), icon: "◈", items: [
       { tab: "recruit", short: t("공개채용") }, { tab: "farm", short: t("재료파밍") }, { tab: "upgrade", short: t("오퍼 육성") },
+      // 작전 시뮬레이터(/sim) — "시뮬레이터 → 작전" (사용자 확정 2026-08-10 B안)
+      { tab: "sim", short: t("작전") },
     ] },
   ];
   // 탭 청크 미리 받기 — 지연 로드(위 lazy)로 초기 파싱은 줄이되, **탭 전환 체감은 종전과
@@ -1720,7 +1748,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
           올라오지 않도록 — 사용자 요청 2026-07-22, 모바일·PC 공통). 모달·제안 위젯은 fixed라 밖에 둔다. */}
       <div className="site-scroll">
 
-      {tab === "portal" && <Portal onOpenTab={switchTab} onFeedback={() => setFeedbackOpen(true)} />}
+      {tab === "portal" && <Portal onOpenTab={switchTab} />}
 
       {/* 오퍼 상세 페이지(/operators/<id>)로 들어오면 목록 대신 상세만 — 420장의 목록이
           모든 상세 페이지에 통째로 딸려 들어가면 페이지마다 고유 본문보다 공통 뼈대가
@@ -1829,6 +1857,9 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
         {tab === "stage" && !(pageStage && stagePageOpen) && <StageDexForLocale onOpenEnemy={openEnemyFromStage} />}
         {tab === "about" && <About onOpenTab={switchTab} />}
       </Suspense>
+      {/* 작전 시뮬레이터 런처 — SEO 표적 페이지라 **정적 임포트로 프리렌더**한다
+          (lazy면 /sim의 HTML이 빈 껍데기가 된다). 무거운 데이터는 컴포넌트가 지연 로드. */}
+      {tab === "sim" && <SimLauncher />}
 
       <footer>
         <span>RHODES ISLAND // TERRA ARCHIVE</span>
@@ -2732,7 +2763,7 @@ const subscribeNever = () => () => {};
 
 // 대화 액션 → 탭 라벨 (i18n 키 — 헤더 내비와 동일 사전)
 const CHAT_TAB_LABEL: Record<string, string> = {
-  portal: "홈", planner: "인프라 자동편성기", archive: "오퍼 백과사전", enemy: "적 도감", stage: "작전 도감", recruit: "공개채용 도우미",
+  portal: "홈", planner: "인프라 자동편성기", archive: "오퍼 백과사전", enemy: "적 도감", stage: "작전 도감", sim: "작전 시뮬레이터", recruit: "공개채용 도우미",
   farm: "재료파밍 도우미", upgrade: "오퍼 육성 시뮬", story: "스토리", rogue: "통합전략 가이드", about: "테라 아카이브 소개",
 };
 

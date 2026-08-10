@@ -60,7 +60,7 @@ node scripts/verify-plan.mjs                  # 플래너 회귀 검증 — 정�
 node scripts/verify-stories.mjs               # 스토리 전수 렌더 검증 — 요약·전문을 실제 렌더해 진입 크래시 탐지 (요약/전문 데이터 수정 시)
 python3 scripts/build-storylines.py .gamedata # → app/data/storylines.json (테마별 뷰 시계열 — stage_table storylines가 정본, 괄호=guest 참조)
 python3 scripts/build-recruit.py .gamedata    # → app/data/recruit.json (공채 태그 31종 + 모집 풀)
-python3 scripts/build-enemies.py .gamedata     # → app/data/enemies{,.en,.ja}.json + enemy-stages* + public/enemy/ (3개 언어 동시)
+python3 scripts/build-enemies.py .gamedata     # → app/data/enemies{,.en,.ja}.json + enemy-stages* + stage-routes.json + sim-stages.json + public/enemy/ (3개 언어 동시)
 python3 scripts/build-stages.py .gamedata      # → app/data/stages{,.en,.ja}.json + public/stage/ (3개 언어 동시)
 #   ⚠ **build-enemies.py를 먼저** 돌려야 한다 — 등장 적은 그 산출물(enemy-stages.json)을
 #     뒤집어 쓴다(같은 levels/ 파일을 두 번 훑지 않으려고). 인자 없이 돌리면 지형 도면

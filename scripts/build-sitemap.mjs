@@ -39,6 +39,7 @@ const SEG_SOURCES = {
   operators: ["app/data/operators.json"],
   enemies: ["app/data/enemies.json", "app/data/enemy-stages.json"],
   stages: ["app/data/stages.json"],
+  sim: ["app/sim-launcher.tsx", "app/data/stages.json"], // 작전 시뮬레이터 런처 — 추천이 데이터를 따른다
   infra: ["app/data/infra.json", "app/data/rules.json"],
   recruit: ["app/data/recruit.json"],
   farm: ["app/data/farm.json"],
