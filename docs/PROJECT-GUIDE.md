@@ -234,8 +234,12 @@ const { term, set, clear, inputRef, inputProps } = useSearchInput();
   `--meta-only` 실행은 이 파일을 **건드리지 않는다** (무인 CI가 179MB 레벨 파일을 못 받으므로)
 - `app/data/enemy-names.json` — 만능검색용 경량 이름 색인 (1MB 본문을 안 끌어오게)
 - `app/data/enemy-stats.json` — 작전 상세 적 칩용 코어 스탯(HP·공방·마저, 단계별). 로케일 무관 1벌
-- `app/data/stage-env.json` — 고난·긴급의 적 스탯 배수 (레벨 파일 **룬** enemy_attribute_mul에서 추출.
-  ⚠ CI는 레벨 캐시가 없어 이 커밋본이 유일한 출처 — build-stages가 em/chgEm으로 복사한다)
+- `app/data/stage-env.json` — 고난·긴급의 적 스탯 배수 (레벨 파일 **룬**에서 추출 — 신형
+  enemy_attribute_mul + 구형 ebuff_attribute 두 세대. ⚠ CI는 레벨 캐시가 없어 이 커밋본이
+  유일한 출처 — build-stages가 em/chgEm으로 복사한다)
+- `app/data/stage-routes.json` — 적 이동 경로 (레벨 파일 routes+waves. 타일 격자 SVG 위에
+  그린다 — app/stage-route-map.tsx. ⚠ 타일 행렬은 row 0=위, 경로 좌표는 row 0=아래라
+  경로만 상하 반전해 그린다. 3.3MB — '이동 경로' 탭 클릭 시에만 지연 로드)
 - `app/data/stages.json` / `.en` / `.ja` — 작전 도감 (작전 **2,224개**의 지형 도면 보유 여부·
   이성·보상·권장 편성·기믹 설명·드랍·등장 적). **사전 인코딩**이다 — 구역·아이템·적 id 같은
   반복 값은 문서 위쪽 사전에 한 번만 두고 본문은 번호로 가리킨다 (그냥 늘어놓으면 3MB)

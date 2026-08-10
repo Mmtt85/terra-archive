@@ -12,7 +12,7 @@ import { asset } from "./assets";
 import { enemyPath, enemyImg, enemyImgBase, stageMap, stagePath, stageListPath } from "./dex-paths";
 
 import { viewOf, type EnvMul, type Stage, type StageDoc, type StageView } from "./stage-data";
-import { StageRouteMap, type StageRoutes } from "./stage-route-map";
+import { StageRouteMap, enemyRouteColor, type StageRoutes } from "./stage-route-map";
 
 // 이동 경로 데이터(3.3MB) — '이동 경로' 탭을 처음 눌렀을 때 한 번만 지연 로드해 공유
 let ROUTES_CACHE: Record<string, StageRoutes> | null = null;
@@ -201,13 +201,17 @@ export function StageFile({ view, onOpenEnemy, onOpenItem }: {
             }
             // 호버 중이면 그 적만, 아니면 고정된 적들의 합집합 (사용자 확정 2026-08-10)
             const active = hover ? [hover] : pinned.size ? [...pinned] : null;
+            const legend = cur.enemies.filter((e) => rd.e[e.id]?.length);
+            const order = legend.map((e) => e.id);   // 선 색 배정 기준 — 지도와 공유
             return (
               <>
-                <StageRouteMap data={rd} highlights={active} />
-                {/* 이미지 바로 밑 적 얼굴 일렬 — 호버 = 잠깐, 클릭 = 고정(중첩 가능) */}
+                <StageRouteMap data={rd} order={order} highlights={active} />
+                {/* 이미지 바로 밑 적 얼굴 일렬 — 호버 = 잠깐, 클릭 = 고정(중첩 가능).
+                    테두리는 그 적의 선 색 — 고정되면 색이 채워지고 ✓가 붙는다. */}
                 <div className="st-routelegend">
-                  {cur.enemies.filter((e) => rd.e[e.id]?.length).map((e) => (
+                  {legend.map((e) => (
                     <button key={e.id} type="button" className={pinned.has(e.id) ? "on" : ""} title={e.name}
+                      style={{ "--rc": enemyRouteColor(order, e.id) } as React.CSSProperties}
                       onMouseEnter={() => setHover(e.id)} onMouseLeave={() => setHover(null)}
                       onClick={() => setPinned((curSet) => {
                         const next = new Set(curSet);

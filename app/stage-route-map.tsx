@@ -29,10 +29,21 @@ const TILE_FILL: Record<string, string> = {
   f: "#2c2a32",   // 배치·통행 불가
   h: "#1c1a22",   // 구멍
 };
-// 경로 색 — 서로 겹쳐도 갈리도록 명도·색상 분산
+// 적별 색 — **같은 적은 같은 색, 다른 적은 다른 색** (사용자 확정 2026-08-10).
+// 색은 범례(적 얼굴) 순번으로 배정하고 초상 테두리에도 같은 색을 쓴다.
 const ROUTE_COLORS = ["#ffd166", "#6ee7b7", "#7ab8ff", "#ff8fab", "#c9a0ff", "#5eead4", "#ffa94d", "#b8e986"];
+/** 범례 순번(order) 기준 적 색 — 지도 선과 초상 테두리가 같은 색을 공유한다 */
+export function enemyRouteColor(order: string[], id: string): string {
+  const k = order.indexOf(id);
+  return k >= 0 ? ROUTE_COLORS[k % ROUTE_COLORS.length] : "#9aa0a6";
+}
 
-export function StageRouteMap({ data, highlights }: { data: StageRoutes; highlights?: string[] | null }) {
+export function StageRouteMap({ data, order, highlights }: {
+  data: StageRoutes;
+  /** 범례에 보이는 적 id 순서 — 선 색 배정 기준 (stage-detail이 넘겨준다) */
+  order: string[];
+  highlights?: string[] | null;
+}) {
   const { t } = useI18n();
   const { w, h, g, r, f } = data;
   // 강조 대상 경로 번호 — 호버는 한 적, 클릭 고정은 여러 적의 합집합이 온다.
@@ -41,18 +52,18 @@ export function StageRouteMap({ data, highlights }: { data: StageRoutes; highlig
   for (const id of highlights ?? []) {
     for (const ri of data.e[id] ?? []) (hlRoutes ??= new Set()).add(ri);
   }
+  const users = new Map<number, string[]>(); // 경로 번호 → 그 경로를 쓰는 적들
+  for (const [eid, ris] of Object.entries(data.e)) {
+    for (const ri of ris) {
+      if (!users.has(ri)) users.set(ri, []);
+      users.get(ri)?.push(eid);
+    }
+  }
   // 완전히 동일한 폴리라인은 하나로 접는다 (사용자 지적 2026-08-10) — 게임 데이터는
   // 스폰마다 같은 경로를 별개 항목으로 두는 일이 많다. 단 **쓰는 적의 조합이 다르면
   // 다른 선**으로 남긴다 (사용자 정정: "서로 다른 적일 경우는 다른 선으로").
   const group = new Map<number, number[]>();   // 대표 경로 번호 → 묶인 번호들
   {
-    const users = new Map<number, string[]>(); // 경로 번호 → 그 경로를 쓰는 적들
-    for (const [eid, ris] of Object.entries(data.e)) {
-      for (const ri of ris) {
-        if (!users.has(ri)) users.set(ri, []);
-        users.get(ri)?.push(eid);
-      }
-    }
     const canon = new Map<string, number>();
     r.forEach((poly, i) => {
       if (!poly) return;
@@ -78,7 +89,11 @@ export function StageRouteMap({ data, highlights }: { data: StageRoutes; highlig
         if (!poly || !group.has(i)) return null;   // 중복 경로는 대표만 그린다
         // 같은 길을 지나는 경로들이 한 줄로 딱 겹치면 구간마다 색이 바뀌는 것처럼 보인다
         // (사용자 지적 2026-08-10) — 경로 번호마다 대각 미세 오프셋을 줘 나란히 그린다.
-        const off = drawIdx.size > 1 ? ((drawIdx.get(i) ?? 0) / (drawIdx.size - 1) - 0.5) * 0.3 : 0;
+        // 간격은 **최소 0.085타일** 보장 (사용자 지적 "너무 딱딱 달라붙어" — 경로가 많으면
+        // 균등 분배 간격이 선 굵기 밑으로 줄어 붙어 보였다).
+        const n = drawIdx.size;
+        const step = n > 1 ? Math.max(0.085, 0.3 / (n - 1)) : 0;
+        const off = ((drawIdx.get(i) ?? 0) - (n - 1) / 2) * step;
         // ⚠ 좌표계가 서로 다르다 (2026-08-10 실측, 사용자 제보 "뭔가 뒤집힌 거 같은데"):
         //   타일 행렬은 row 0 = **위**(render_minimap·실사 도면과 일치)인데, 경로 좌표는
         //   row 0 = **아래**(게임 월드 원점이 좌하단)다. main_11-12에서 출현 타일은 g[0],
@@ -87,7 +102,10 @@ export function StageRouteMap({ data, highlights }: { data: StageRoutes; highlig
         // 강조 시: 고른 경로는 굵게, 나머지는 **아주 흐리게** (사용자 확정 2026-08-10 —
         // '굵기만' 안을 써 보고 겹침이 심해 흐림 방식으로 되돌림). 평소엔 전부 보통.
         const em = hlRoutes ? (group.get(i) ?? []).some((j) => hlRoutes.has(j)) : false;
-        const color = ROUTE_COLORS[i % ROUTE_COLORS.length];
+        // 색은 이 경로를 쓰는 첫 적(범례 순)의 색 — 여러 적이 공유하는 경로는 앞선 적을 따른다
+        const ord = (id: string) => { const k = order.indexOf(id); return k < 0 ? 999 : k; };
+        const owner = (users.get(i) ?? []).slice().sort((a, b) => ord(a) - ord(b))[0];
+        const color = owner ? enemyRouteColor(order, owner) : "#9aa0a6";
         const last = pts[pts.length - 1];
         const prev = pts[pts.length - 2] ?? pts[0];
         const ang = Math.atan2(last[1] - prev[1], last[0] - prev[0]);
