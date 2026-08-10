@@ -10,6 +10,9 @@ import { useEffect, useRef, useState } from "react";
 import { useI18n } from "./i18n";
 import { asset } from "./assets";
 import { enemyPath, enemyImg, enemyImgBase, stageMap, stagePath, stageListPath } from "./dex-paths";
+import { ModalWindow } from "./modal-window";
+import { loadEnemies } from "./dex-cross";
+import { EnemyFile, type Enemy } from "./enemy-detail";
 
 import { viewOf, type EnvMul, type Stage, type StageDoc, type StageView } from "./stage-data";
 import { StageRouteMap, enemyRouteColor, type StageRoutes } from "./stage-route-map";
@@ -44,12 +47,17 @@ function mulFor(id: string, rows?: EnvMul[]): [number, number, number, number] {
 
 /** 등장 적 한 칸 — 통합전략 작전 노드의 적 셀과 같은 짜임(초상 위·이름 아래·코어 스탯).
  *  누르면 **모달로 겹쳐** 적 상세가 뜬다 (페이지 이동 없음). */
-function EnemyChip({ e, mul, onOpenEnemy, onHover }: {
+function EnemyChip({ e, mul, onOpenEnemy, onHover, pinColor, pinned, onTogglePin }: {
   e: { id: string; name: string; cnt: number; lv: number; st?: [number, number, number, number] };
   mul?: EnvMul[];
   onOpenEnemy?: (id: string) => void;
   /** 이동 경로 탭이 열려 있을 때 — 호버로 그 적의 경로 강조 */
   onHover?: (id: string | null) => void;
+  /** 경로 모드: 카드 클릭 = 경로 고정 토글, 섬네일 클릭 = 상세 모달 (사용자 확정 2026-08-10).
+      pinColor는 이 적의 경로 선 색 — 고정 시 카드 테두리·✓ 배지에 쓴다. */
+  pinColor?: string;
+  pinned?: boolean;
+  onTogglePin?: (id: string) => void;
 }) {
   const { locale, t } = useI18n();
   const base = e.id.replace(/_\d+$/, "");
@@ -60,12 +68,17 @@ function EnemyChip({ e, mul, onOpenEnemy, onHover }: {
     Math.round(e.st[0] * m[0]), Math.round(e.st[1] * m[1]),
     Math.round(e.st[2] * m[2]), Math.round(e.st[3] * m[3]),
   ] as const);
+  const routeMode = !!onTogglePin && !!pinColor;
   return (
-    <a className={`st-enemy${e.lv > 0 ? " reinforced" : ""}`} href={enemyPath(locale, e.id)}
+    <a className={`st-enemy${e.lv > 0 ? " reinforced" : ""}${pinned ? " pinned" : ""}${routeMode ? " has-route" : ""}`}
+      href={enemyPath(locale, e.id)}
+      style={pinColor ? ({ "--rc": pinColor } as React.CSSProperties) : undefined}
       onMouseEnter={onHover ? () => onHover(e.id) : undefined}
       onMouseLeave={onHover ? () => onHover(null) : undefined}
       onClick={(ev) => {
-        if (!onOpenEnemy || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
+        if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
+        if (routeMode) { ev.preventDefault(); onTogglePin?.(e.id); return; }
+        if (!onOpenEnemy) return;
         ev.preventDefault(); onOpenEnemy(e.id);
       }}>
       {/* 가로형 배치 (사용자 확정 2026-08-10): "적이름 ×N" 한 줄 · 그 밑에 썸네일 왼쪽 ·
@@ -77,7 +90,14 @@ function EnemyChip({ e, mul, onOpenEnemy, onHover }: {
         {e.cnt > 0 && <em className="st-enemy-cnt">×{e.cnt}</em>}
       </span>
       <span className="st-enemy-body">
+        {/* 섬네일 클릭 = **항상** 적 상세 모달 (사용자 확정 2026-08-10). 경로 모드의
+            카드 클릭(고정)과 분리하려고 stopPropagation으로 끊는다. */}
         <img src={enemyImg(e.id)} alt="" aria-hidden width={96} height={96} loading="lazy" decoding="async"
+          className={onOpenEnemy ? "st-enemy-face-btn" : undefined}
+          onClick={onOpenEnemy ? (ev) => {
+            if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
+            ev.stopPropagation(); ev.preventDefault(); onOpenEnemy(e.id);
+          } : undefined}
           onError={(ev) => {
             const el = ev.currentTarget;
             if (base !== e.id && !el.dataset.fb) { el.dataset.fb = "1"; el.src = enemyImgBase(e.id); }
@@ -144,6 +164,14 @@ export function StageFile({ view, onOpenEnemy, onOpenItem }: {
   // 활성 환경의 적 스탯 배수 — 고난(alt) 뷰는 자기 em, 긴급은 일반판의 chgEm.
   // 일반판이 없는 고난 전용 작전(H10-1 등)은 em이 상시 걸린다 (게임도 항상 고난이다).
   const envMul = cur.stage.em ?? (env === 1 && !view.alt ? view.stage.chgEm : undefined);
+  // 경로 모드 공용 — 적 카드(고정 토글·선 색)와 지도 양쪽이 쓴다
+  const rd = mapView === "route" ? ROUTES_CACHE?.[s.id] : undefined;
+  const routeOrder = rd ? cur.enemies.filter((en) => rd.e[en.id]?.length).map((en) => en.id) : [];
+  const togglePin = (id: string) => setPinned((curSet) => {
+    const next = new Set(curSet);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
   return (
     <div className="st-file">
       {/* 헤더 한 줄 배치 — 계열·구역 배지는 이름 오른쪽으로, 환경 탭은 오른쪽 끝
@@ -194,38 +222,15 @@ export function StageFile({ view, onOpenEnemy, onOpenItem }: {
             </button>
           ) : (
             <p className="st-note">{t("이 작전은 지형 도면이 제공되지 않습니다.")}</p>
-          )) : (() => {
-            const rd = ROUTES_CACHE?.[s.id];
-            if (!rd) {
-              return <p className="st-note">{ROUTES_CACHE ? t("이 작전은 경로 데이터가 없습니다.") : t("경로 데이터를 불러오는 중…")}</p>;
-            }
-            // 호버 중이면 그 적만, 아니면 고정된 적들의 합집합 (사용자 확정 2026-08-10)
-            const active = hover ? [hover] : pinned.size ? [...pinned] : null;
-            const legend = cur.enemies.filter((e) => rd.e[e.id]?.length);
-            const order = legend.map((e) => e.id);   // 선 색 배정 기준 — 지도와 공유
-            return (
-              <>
-                <StageRouteMap data={rd} order={order} highlights={active} />
-                {/* 이미지 바로 밑 적 얼굴 일렬 — 호버 = 잠깐, 클릭 = 고정(중첩 가능).
-                    테두리는 그 적의 선 색 — 고정되면 색이 채워지고 ✓가 붙는다. */}
-                <div className="st-routelegend">
-                  {legend.map((e) => (
-                    <button key={e.id} type="button" className={pinned.has(e.id) ? "on" : ""} title={e.name}
-                      style={{ "--rc": enemyRouteColor(order, e.id) } as React.CSSProperties}
-                      onMouseEnter={() => setHover(e.id)} onMouseLeave={() => setHover(null)}
-                      onClick={() => setPinned((curSet) => {
-                        const next = new Set(curSet);
-                        if (next.has(e.id)) next.delete(e.id); else next.add(e.id);
-                        return next;
-                      })}>
-                      <img src={enemyImg(e.id)} alt={e.name} width={32} height={32} loading="lazy" decoding="async"
-                        onError={(ev) => { ev.currentTarget.style.visibility = "hidden"; }} />
-                    </button>
-                  ))}
-                </div>
-              </>
-            );
-          })()}
+          )) : rd ? (
+            // 호버 중이면 그 적만, 아니면 고정된 적들의 합집합 (사용자 확정 2026-08-10).
+            // 고정 조작은 오른쪽 등장 적 **카드**가 맡는다 — 지도 밑 섬네일은 없앴다
+            // (사용자 확정: 카드 클릭 = 고정, 카드 속 섬네일 클릭 = 적 상세 모달).
+            <StageRouteMap data={rd} order={routeOrder}
+              highlights={hover ? [hover] : pinned.size ? [...pinned] : null} />
+          ) : (
+            <p className="st-note">{ROUTES_CACHE ? t("이 작전은 경로 데이터가 없습니다.") : t("경로 데이터를 불러오는 중…")}</p>
+          )}
           {s.desc && <p className="st-desc">{s.desc}</p>}
           {/* 긴급 환경 제한 조건 — 설명을 지우지 않고 이어서 덧붙인다 (사용자 요청 2026-08-10) */}
           {env === 1 && !view.alt && view.stage.chg && <p className="st-desc st-chg">{view.stage.chg}</p>}
@@ -248,7 +253,10 @@ export function StageFile({ view, onOpenEnemy, onOpenItem }: {
               <div className="st-enemies">
                 {cur.enemies.map((e, i) => (
                   <EnemyChip key={`${e.id}-${i}`} e={e} mul={envMul} onOpenEnemy={onOpenEnemy}
-                    onHover={mapView === "route" ? setHover : undefined} />
+                    onHover={mapView === "route" ? setHover : undefined}
+                    pinColor={rd && rd.e[e.id]?.length ? enemyRouteColor(routeOrder, e.id) : undefined}
+                    pinned={pinned.has(e.id)}
+                    onTogglePin={rd ? togglePin : undefined} />
                 ))}
               </div>
             </section>
@@ -298,6 +306,10 @@ export function StageFile({ view, onOpenEnemy, onOpenItem }: {
 /** 상세 페이지(/stages/<id>) — 목록 대신 이 작전 하나만 그린다 */
 export function StagePage({ view, onBack }: { view: StageView; onBack?: () => void }) {
   const { locale, t } = useI18n();
+  // 섬네일 클릭 = 적 상세 모달 — 목록 모달과 같은 동작을 정적 페이지에도 (사용자 확정
+  // 2026-08-10). 적 데이터(1MB)는 dex-cross가 지연 로드한다.
+  const [subEnemy, setSubEnemy] = useState<Enemy | null>(null);
+  const openEnemy = (id: string) => { void loadEnemies(locale).then((m) => setSubEnemy(m.get(id) ?? null)); };
   return (
     <div className="operator-page-wrap">
       <a className="story-back" href={stageListPath(locale)}
@@ -306,8 +318,13 @@ export function StagePage({ view, onBack }: { view: StageView; onBack?: () => vo
           e.preventDefault(); onBack();
         }}>← {t("작전 목록으로")}</a>
       <section className="operator-modal operator-page st-page" aria-label={`${view.stage.code} ${view.stage.name}`}>
-        <StageFile view={view} />
+        <StageFile view={view} onOpenEnemy={openEnemy} />
       </section>
+      {subEnemy && (
+        <ModalWindow label={subEnemy.name} className="operator-modal en-modal" onClose={() => setSubEnemy(null)}>
+          <EnemyFile enemy={subEnemy} stagesDoc={null} onOpenEnemy={openEnemy} />
+        </ModalWindow>
+      )}
     </div>
   );
 }

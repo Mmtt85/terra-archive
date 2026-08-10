@@ -402,18 +402,29 @@ else:
             return None
 
         def tchar(t):
+            # 통행(passableMask)·배치(buildableType)·높이(heightType)로 분류한다
+            # (사용자 요청 2026-08-10 "이동불가·배치불가 … 다 구분 가능하게").
+            # tileKey 이름 추측보다 속성이 정확하다 — 예: tile_fence는 '배치만 되는' 타일.
             key = t.get("tileKey") or ""
             if key in ("tile_start", "tile_flystart"):
                 return "s"           # 적 출현 (게임 표기 빨강)
             if key == "tile_end":
                 return "e"           # 방어 목표 (게임 표기 파랑)
             if key == "tile_hole":
-                return "h"
-            if key == "tile_forbidden":
-                return "f"
+                return "h"           # 구멍 — 비행만 통과
+            if key == "tile_telin":
+                return "i"           # 통로 입구 — 적이 들어가 출구로 순간이동 (2026-08-10)
+            if key == "tile_telout":
+                return "o"           # 통로 출구
+            walk = t.get("passableMask") in ("ALL", "WALK_ONLY")
+            build = t.get("buildableType") or "NONE"
+            if walk:
+                return "r" if build in ("MELEE", "ALL") else "p"   # 도로 / 이동만(배치 불가)
+            if build in ("MELEE", "ALL"):
+                return "b"           # 배치만 — 이동 불가지만 지상 배치 가능 (펜스류)
             if t.get("heightType") in (1, "HIGHLAND"):
-                return "w"           # 고지대
-            return "r"               # 지상
+                return "w" if build == "RANGED" else "x"           # 고지대(원거리 배치) / 높은 장식
+            return "f"               # 평지 장애물 — 이동·배치 불가
         g = ["".join(tchar(tdefs[c]) if 0 <= c < len(tdefs) else "f" for c in row) for row in grid]
 
         rts, fly = [], []
