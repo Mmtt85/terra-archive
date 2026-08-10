@@ -23,12 +23,13 @@ type Feature = {
 type ShotPair = { d: string; m: string };
 // 재촬영하면 이 날짜를 올린다 — 파일명이 같아서 R2 엣지·브라우저의 30일 이미지 캐시에
 // 옛 캡처가 남는데, 쿼리가 바뀌면 새 캐시 키라 전부 즉시 새로 받는다 (2026-08-02).
-const SHOT_VER = "20260809";
+const SHOT_VER = "20260810";
 const SHOTS: Partial<Record<Tab, ShotPair>> = {
   archive: { d: "/about/archive.webp", m: "/about/archive-m.webp" },
   planner: { d: "/about/planner.webp", m: "/about/planner-m.webp" },
   enemy: { d: "/about/enemy.webp", m: "/about/enemy-m.webp" },
   stage: { d: "/about/stage.webp", m: "/about/stage-m.webp" },
+  sim: { d: "/about/sim.webp", m: "/about/sim-m.webp" },
   recruit: { d: "/about/recruit.webp", m: "/about/recruit-m.webp" },
   farm: { d: "/about/farm.webp", m: "/about/farm-m.webp" },
   upgrade: { d: "/about/upgrade.webp", m: "/about/upgrade-m.webp" },
@@ -142,6 +143,16 @@ const CONTENT: Record<Locale, Content> = {
           "인게임 지형 도면을 그대로 싣고, 없는 작전은 레벨 데이터의 타일 격자로 그려 채웁니다",
           "등장 적을 눌러 바로 적 도감으로 — 강화 스탯으로 나오는 적은 ★로 구분합니다",
           "게임에 표기된 드랍 빈도까지. 실측 드랍률·이성 효율은 재료파밍 도우미가 맡습니다",
+        ],
+      },
+      {
+        tab: "sim", icon: "\u25b6", name: "작전 시뮬레이터",
+        summary: "작전을 고르면 적이 몇 초에 어디서 나와 어떤 경로로 움직이는지 스폰 타임라인을 재생합니다.",
+        bullets: [
+          "검색이나 추천(최신 이벤트·메인 스토리·섬멸작전)에서 작전을 고르면 바로 재생됩니다",
+          "적 섬네일 말이 실제 경로를 따라 움직이고, 배속·구간 이동으로 흐름을 훑을 수 있습니다",
+          "저지 없이 두었을 때의 기준 타임라인 — 처치 수 등 조건 분기 증원은 재생에서 제외합니다",
+          "작전 도감 상세와 통합전략 전투 노드의 '이동 경로' 탭에서도 같은 시뮬레이션을 쓸 수 있습니다",
         ],
       },
       {
@@ -262,6 +273,16 @@ const CONTENT: Record<Locale, Content> = {
         ],
       },
       {
+        tab: "sim", icon: "\u25b6", name: "Stage Simulator",
+        summary: "Pick an operation and replay its enemy spawn timeline — when each enemy appears, which route it takes, and where it goes.",
+        bullets: [
+          "Jump in from search or the picks (latest event, Main Theme, Annihilation) and it starts playing right away",
+          "Enemy-portrait tokens run along their actual routes, with playback speed and seeking",
+          "A baseline timeline with no blocking — conditional reinforcements (kill-count branches, etc.) are excluded",
+          "The same simulation is available from the Enemy routes tab on stage pages and Integrated Strategies combat nodes",
+        ],
+      },
+      {
         tab: "recruit", icon: "◎", name: "Public Recruitment Helper",
         summary: "Calculates which guaranteed or high-rarity operators a recruitment tag combination can yield.",
         bullets: [
@@ -376,6 +397,16 @@ const CONTENT: Record<Locale, Content> = {
           "ゲーム内の地形図をそのまま掲載し、無い作戦はレベルデータのタイル格子で描画します",
           "敵を押せばそのまま敵図鑑へ — 強化ステータスで出現する敵は★で区別します",
           "ゲーム内表記のドロップ頻度も掲載。実測ドロップ率・理性効率は素材周回ヘルパーが担当します",
+        ],
+      },
+      {
+        tab: "sim", icon: "\u25b6", name: "作戦シミュレーター",
+        summary: "作戦を選ぶと、敵が何秒にどこから現れどの経路で移動するか、出現タイムラインを再生します。",
+        bullets: [
+          "検索やおすすめ（最新イベント・メインストーリー・殲滅作戦）から選ぶとすぐ再生されます",
+          "敵サムネイルの駒が実際の経路に沿って動き、倍速・シークで流れを掴めます",
+          "ブロックしない場合の基準タイムライン — 撃破数など条件分岐の増援は再生から除外します",
+          "作戦図鑑の詳細や統合戦略の戦闘ノードの「移動ルート」タブでも同じシミュレーションが使えます",
         ],
       },
       {
