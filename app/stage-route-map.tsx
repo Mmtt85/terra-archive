@@ -59,28 +59,28 @@ export function StageRouteMap({ data, highlight }: { data: StageRoutes; highligh
         //   row 0 = **아래**(게임 월드 원점이 좌하단)다. main_11-12에서 출현 타일은 g[0],
         //   경로 시작은 row 7(=h-1) — 경로만 상하를 뒤집어야 도착점이 파란 박스에 앉는다.
         const pts = poly.map(([c, rr]) => [c * cell + cell / 2 + off, (h - 1 - rr) * cell + cell / 2 + off] as const);
-        // 강조는 **굵기만** 키운다 — 나머지 선을 흐리게 만들면 색이 바뀐 것처럼 보여
-        // 헷갈린다 (사용자 지적 2026-08-10). 색·불투명도는 평소 그대로 둔다.
+        // 강조 시: 고른 경로는 굵게, 나머지는 **아주 흐리게** (사용자 확정 2026-08-10 —
+        // '굵기만' 안을 써 보고 겹침이 심해 흐림 방식으로 되돌림). 평소엔 전부 보통.
         const em = hlRoutes?.has(i) ?? false;
         const color = ROUTE_COLORS[i % ROUTE_COLORS.length];
         const last = pts[pts.length - 1];
         const prev = pts[pts.length - 2] ?? pts[0];
         const ang = Math.atan2(last[1] - prev[1], last[0] - prev[0]);
-        const a = 0.34; // 화살촉 크기 (타일 단위)
+        const a = 0.28; // 화살촉 크기 (타일 단위)
         const tip: [number, number][] = [
           [last[0] + Math.cos(ang) * a, last[1] + Math.sin(ang) * a],
           [last[0] + Math.cos(ang + 2.5) * a, last[1] + Math.sin(ang + 2.5) * a],
           [last[0] + Math.cos(ang - 2.5) * a, last[1] + Math.sin(ang - 2.5) * a],
         ];
         return (
-          <g key={i} opacity={0.92}>
+          <g key={i} opacity={hlRoutes && !em ? 0.07 : 0.92}>
             {/* 대시가 진행 방향으로 흐른다(CSS 애니메이션) — 방향 표시 겸 움직임 (사용자 요청).
                 지상은 긴 대시, 비행은 점선으로 구분. 패턴 길이(0.64·0.32)는 keyframe
                 오프셋(-0.64)의 약수라 둘 다 끊김 없이 순환한다. */}
             <polyline points={pts.map((p) => p.join(",")).join(" ")} fill="none" stroke={color}
-              strokeWidth={em ? 0.14 : 0.06} strokeLinejoin="round" strokeLinecap="round"
+              strokeWidth={em ? 0.12 : 0.042} strokeLinejoin="round" strokeLinecap="round"
               strokeDasharray={f[i] ? "0.12 0.2" : "0.5 0.14"} />
-            <circle cx={pts[0][0]} cy={pts[0][1]} r={0.2} fill={color} />
+            <circle cx={pts[0][0]} cy={pts[0][1]} r={0.16} fill={color} />
             <polygon points={tip.map((p) => p.join(",")).join(" ")} fill={color} />
           </g>
         );
