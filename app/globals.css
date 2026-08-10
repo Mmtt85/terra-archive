@@ -16398,14 +16398,22 @@ main.site-main > .site-header {
   background: 0 0;
   cursor: zoom-in;
 }
+/* 확대는 제자리 scale(2)이 아니라 **화면 중앙 라이트박스** — scale 방식은 모달
+   경계(.mw-body overflow)에서 잘렸다 (사용자 제보 2026-08-10). position:fixed는
+   조상에 transform·backdrop-filter가 없어야 모달을 벗어난다 — 이 체인엔 없다
+   (backdrop-filter는 사이트 전역 금지, L2142). */
 .st-map-zoom.zoom {
   cursor: zoom-out;
-  position: relative;
-  z-index: 6;
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  z-index: 60;
+  width: min(94vw, 1100px);
 }
+/* ⚠ 비율·맞춤 규칙은 건드리지 않는다 — 평소 .st-map 표시와 **똑같은 모습**을 크게만
+   보여준다 (2026-08-10 라이트박스 전환 때 원본 비율로 풀었다가 사용자 지적으로 원복). */
 .st-map-zoom.zoom .st-map {
-  transform: scale(2);
-  transform-origin: top left;
   box-shadow: 0 18px 60px #000c;
 }
 .st-map {
@@ -16499,6 +16507,14 @@ main.site-main > .site-header {
   font-style: normal;
   font-size: 12px;
   color: var(--muted);
+}
+/* 배수 안내 — 등장 적 제목 줄 오른쪽 끝 (사용자 요청 2026-08-10) */
+.st-envnote {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  text-align: right;
 }
 /* 등장 적 — 누르면 적 도감으로 넘어간다 */
 /* 등장 적 — 통합전략 작전 노드의 적 셀(.rg-enemy-cell)과 같은 짜임: 초상 위·이름 아래 */

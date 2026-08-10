@@ -154,7 +154,7 @@ export function StageFile({ view, onOpenEnemy, onOpenItem }: {
           {s.map ? (
             <button type="button" ref={zoomRef} className={`st-map-zoom${zoom ? " zoom" : ""}`}
               onClick={() => setZoom((z) => !z)}
-              title={zoom ? t("아무 곳이나 클릭하면 원래 크기로 돌아갑니다") : t("클릭하면 2배로 확대됩니다")}>
+              title={zoom ? t("아무 곳이나 클릭하면 원래 크기로 돌아갑니다") : t("클릭하면 화면 크기로 확대됩니다")}>
               <img className="st-map" src={stageMap(s.id)} alt={t("{code} 지형 도면", { code: s.code })}
                 loading="lazy" decoding="async" />
             </button>
@@ -174,9 +174,12 @@ export function StageFile({ view, onOpenEnemy, onOpenItem }: {
         <div className="st-right">
           {cur.enemies.length > 0 && (
             <section className="st-block">
-              <h3><span className="section-no">ENEMY</span>{t("등장 적")} <em>{cur.enemies.length}</em></h3>
+              <h3>
+                <span className="section-no">ENEMY</span>{t("등장 적")} <em>{cur.enemies.length}</em>
+                {/* 배수 안내는 제목 줄 오른쪽 끝 — 밑으로 줄을 안 늘린다 (사용자 요청 2026-08-10) */}
+                {envMul && <span className="st-envnote">{t("빨간 수치는 이 환경의 스탯 배수가 반영된 값입니다.")}</span>}
+              </h3>
               {reinforced && <p className="st-note">{t("★ 뒤의 숫자는 강화 단계입니다 — 적을 누르면 단계별 스탯이 나옵니다.")}</p>}
-              {envMul && <p className="st-note">{t("빨간 수치는 이 환경의 스탯 배수가 반영된 값입니다.")}</p>}
               <div className="st-enemies">
                 {cur.enemies.map((e, i) => <EnemyChip key={`${e.id}-${i}`} e={e} mul={envMul} onOpenEnemy={onOpenEnemy} />)}
               </div>

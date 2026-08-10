@@ -342,9 +342,11 @@ else:
         print(f"  레벨 파일 없음 {len(missing)}개 (삭제된 스테이지 — 정상) 예: {missing[:3]}")
 
     # ── 환경 배수 (app/data/stage-env.json) ─────────────────────────────────
-    # 고난·긴급의 적 스탯 강화는 적 레벨 변형(★)이 아니라 레벨 파일의 **룬**(enemy_attribute_mul)
-    # 이다 (2026-08-10 실측: 고난 85/85 전부, 긴급 513/598 — 최빈값 ×1.2). 사용자 지적
-    # "고난·긴급에서는 스탯이 다 강화돼서 나온다"가 이것. 여기(레벨 파일을 이미 읽는 곳)서
+    # 고난·긴급의 적 스탯 강화는 적 레벨 변형(★)이 아니라 레벨 파일의 **룬**이다
+    # (2026-08-10 실측: 고난 85/85 전부, 긴급도 최빈값 ×1.2). 키가 두 세대다 —
+    # 신형 enemy_attribute_mul(6장 이후·고난) + 구형 ebuff_attribute(0~5장 긴급 등,
+    # 값 의미는 같은 배수. 한쪽만 뽑으면 옛 챕터 긴급이 통째로 빠진다 — 실측으로 발각).
+    # 사용자 지적 "고난·긴급에서는 스탯이 다 강화돼서 나온다"가 이것. 여기(레벨 파일을 이미 읽는 곳)서
     # 뽑아 별도 파일로 내고 build-stages.py가 레코드에 복사한다 — CI(--no-images)는 레벨
     # 캐시가 없으므로 이 파일이 커밋돼 있어야 한다 (--meta-only는 건드리지 않음, 아래 주의).
     # 형식: {"adverse"|"challenge": { 스테이지id: [[hp,atk,def,res 배수, 대상적id들|0] …] }}
@@ -353,7 +355,7 @@ else:
         lv = fetch_level(f"levels/{level_id}.json")
         out = []
         for r in (lv or {}).get("runes") or []:
-            if not isinstance(r, dict) or r.get("key") != "enemy_attribute_mul":
+            if not isinstance(r, dict) or r.get("key") not in ("enemy_attribute_mul", "ebuff_attribute"):
                 continue
             if r.get("difficultyMask") not in masks:
                 continue
