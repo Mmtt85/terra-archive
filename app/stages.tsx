@@ -26,6 +26,9 @@ const ItemModal = lazy(() => import("./farm").then((m) => ({ default: m.ItemModa
 import {
   StageFile, stageMap, stagePath, viewOf, type Stage, type StageDoc,
 } from "./stage-detail";
+// 적 칩 코어 스탯 (~67KB) — 이 파일은 lazy 청크라 메인 번들엔 안 실린다
+import enemyStats from "./data/enemy-stats.json";
+import type { EnemyStatsIndex } from "./stage-data";
 
 function StageCard({ stage, zone, typeName, onSelect }: {
   stage: Stage; zone: string; typeName: string; onSelect: (s: Stage) => void;
@@ -177,7 +180,7 @@ export default function StageDex({ doc }: { doc: StageDoc; onOpenEnemy?: (id: st
   const reset = () => { setTypes([]); setEvSel([]); setZonesSel([]); clear(false); };
   const active = types.length + events.length + zones.length > 0 || !!term;
 
-  const view = open ? viewOf(doc, open) : null;
+  const view = open ? viewOf(doc, open, enemyStats as EnemyStatsIndex) : null;
   const openEnemy = (id: string) => {
     setEnemyRaise((k) => k + 1);
     void loadEnemies(locale).then((m) => setSubEnemy(m.get(id) ?? null));

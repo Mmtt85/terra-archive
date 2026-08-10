@@ -16332,11 +16332,18 @@ main.site-main > .site-header {
   flex-direction: column;
   gap: 16px;
 }
+/* 헤더 한 줄 — 코드·이름·배지를 가로로, 환경 탭은 오른쪽 끝 (사용자 요청 2026-08-10
+   "밑으로 길어지지 않도록"). 좁으면 flex-wrap으로 자연 줄바꿈된다. */
 .st-head-main {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
   min-width: 0;
+}
+.st-head-main .st-envs {
+  margin: 0 0 0 auto;
 }
 .st-code {
   font-family: var(--font-geist-mono), ui-monospace, monospace;
@@ -16431,6 +16438,11 @@ main.site-main > .site-header {
   border-color: var(--ink);
   color: var(--white);
 }
+/* 고난·긴급은 안 골라도 빨간 계열로 — 한눈에 알아보게 (사용자 요청 2026-08-10) */
+.st-envs button.hard {
+  border-color: #b3372e88;
+  color: #b3372e;
+}
 .st-envs button.hard.on {
   background: #b3372e;
   border-color: #b3372e;
@@ -16490,9 +16502,11 @@ main.site-main > .site-header {
 }
 /* 등장 적 — 누르면 적 도감으로 넘어간다 */
 /* 등장 적 — 통합전략 작전 노드의 적 셀(.rg-enemy-cell)과 같은 짜임: 초상 위·이름 아래 */
+/* 셀을 가로로 넓히고 초상을 줄여 수치가 안 잘리게 — 통전 전투노드 비율
+   (46px 얼굴 + 넓은 셀)을 따른다 (사용자 요청 2026-08-10). */
 .st-enemies {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 8px;
 }
 .st-enemy {
@@ -16517,7 +16531,7 @@ main.site-main > .site-header {
 }
 .st-enemy img {
   width: 100%;
-  max-width: 88px;
+  max-width: 52px;
   aspect-ratio: 1 / 1;
   object-fit: contain;
   background: linear-gradient(150deg, #2a3236, #171c1f);
@@ -16533,6 +16547,27 @@ main.site-main > .site-header {
 .st-enemy-head i {
   font-style: normal;
   color: #b9862f;
+}
+/* 칩 코어 스탯 2×2 — 통전 전투노드의 rg-stat 규격을 좁은 칩에 맞춘 것 */
+.st-enemy-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px 8px;
+  width: 100%;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 10.5px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.st-enemy-stats b {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.st-enemy-stats b.up {
+  color: #b3372e;
+  font-weight: 800;
 }
 .st-enemy-name {
   width: 100%;

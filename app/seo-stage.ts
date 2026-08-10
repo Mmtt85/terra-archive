@@ -14,10 +14,13 @@ import { asset } from "./assets";
 import { SITE_URL } from "./seo";
 // ⚠ "use client" 없는 순수 데이터 모듈에서 가져온다 — stage-detail.tsx에서 가져오면
 //   빌드가 "client reference export is called on server"로 죽는다 (2026-08-09 실측).
-import { viewOf, type StageDoc, type StageView } from "./stage-data";
+import { viewOf, type EnemyStatsIndex, type StageDoc, type StageView } from "./stage-data";
 import stagesKo from "./data/stages.json";
 import stagesEn from "./data/stages.en.json";
 import stagesJa from "./data/stages.ja.json";
+// 적 칩의 HP·공격·방어·마저 — 서버 전용 임포트라 클라이언트 번들에는 실리지 않고,
+// 페이지 직렬화에는 그 작전의 적 몇 마리 것만 담긴다
+import enemyStats from "./data/enemy-stats.json";
 
 type SeoLocale = "ko" | "en" | "ja";
 
@@ -31,7 +34,7 @@ const BY_ID: Record<SeoLocale, Map<string, StageView>> = {
   ko: new Map(), en: new Map(), ja: new Map(),
 };
 for (const loc of ["ko", "en", "ja"] as SeoLocale[]) {
-  for (const s of DOC[loc].stages) BY_ID[loc].set(s.id, viewOf(DOC[loc], s));
+  for (const s of DOC[loc].stages) BY_ID[loc].set(s.id, viewOf(DOC[loc], s, enemyStats as EnemyStatsIndex));
 }
 
 /** 개별 페이지를 갖는 작전 계열 — 위 주석의 파일 수 제약 때문에 이벤트는 뺀다 */

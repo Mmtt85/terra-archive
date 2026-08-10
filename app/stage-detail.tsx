@@ -11,21 +11,40 @@ import { useI18n } from "./i18n";
 import { asset } from "./assets";
 import { enemyPath, enemyImg, enemyImgBase, stageMap, stagePath, stageListPath } from "./dex-paths";
 
-import { viewOf, type Stage, type StageDoc, type StageView } from "./stage-data";
+import { viewOf, type EnvMul, type Stage, type StageDoc, type StageView } from "./stage-data";
 
 // 다른 모듈이 종전처럼 여기서 가져다 쓰던 것들 — 정본은 app/dex-paths.ts · app/stage-data.ts다
 export { stageMap, stagePath, stageListPath, viewOf };
 export type { Stage, StageDoc, StageView };
 
+const nf = (n: number) => n.toLocaleString("en-US");
 
-/** 등장 적 한 칸 — 통합전략 작전 노드의 적 셀과 같은 짜임(초상 위·이름 아래).
+/** 환경 배수(룬)에서 이 적에게 걸리는 최종 배수 — 전체 대상(0)과 지목 대상을 곱으로 합친다 */
+function mulFor(id: string, rows?: EnvMul[]): [number, number, number, number] {
+  const m: [number, number, number, number] = [1, 1, 1, 1];
+  for (const r of rows ?? []) {
+    if (r[4] !== 0 && !String(r[4]).split("|").includes(id)) continue;
+    m[0] *= r[0]; m[1] *= r[1]; m[2] *= r[2]; m[3] *= r[3];
+  }
+  return m;
+}
+
+/** 등장 적 한 칸 — 통합전략 작전 노드의 적 셀과 같은 짜임(초상 위·이름 아래·코어 스탯).
  *  누르면 **모달로 겹쳐** 적 상세가 뜬다 (페이지 이동 없음). */
-function EnemyChip({ e, onOpenEnemy }: {
-  e: { id: string; name: string; cnt: number; lv: number };
+function EnemyChip({ e, mul, onOpenEnemy }: {
+  e: { id: string; name: string; cnt: number; lv: number; st?: [number, number, number, number] };
+  mul?: EnvMul[];
   onOpenEnemy?: (id: string) => void;
 }) {
   const { locale, t } = useI18n();
   const base = e.id.replace(/_\d+$/, "");
+  // 환경 배수(고난·긴급 룬)를 곱해 실제 등장 수치로 보여준다 (사용자 요청 2026-08-10).
+  // 마저는 배수가 아니라 그대로인 경우가 대부분 — 곱해지면 함께 반영된다.
+  const m = mulFor(e.id, mul);
+  const st = e.st && ([
+    Math.round(e.st[0] * m[0]), Math.round(e.st[1] * m[1]),
+    Math.round(e.st[2] * m[2]), Math.round(e.st[3] * m[3]),
+  ] as const);
   return (
     <a className={`st-enemy${e.lv > 0 ? " reinforced" : ""}`} href={enemyPath(locale, e.id)}
       onClick={(ev) => {
@@ -44,6 +63,16 @@ function EnemyChip({ e, onOpenEnemy }: {
         {e.lv > 0 && <i title={t("강화 {n}단계", { n: String(e.lv) })}>★{e.lv}</i>}
       </span>
       <span className="st-enemy-name">{e.name}</span>
+      {/* 코어 스탯 — 통전 전투노드 규격 (사용자 요청 2026-08-10 "적 얼굴만 덜렁 나오지 말고").
+          환경 배수가 곱해진 값은 빨간 톤으로 표시한다. */}
+      {st && (
+        <span className="st-enemy-stats">
+          <b className={m[0] !== 1 ? "up" : undefined} title={t("최대 HP")}>HP {nf(st[0])}</b>
+          <b className={m[1] !== 1 ? "up" : undefined} title={t("공격력")}>{t("공격")} {nf(st[1])}</b>
+          <b className={m[2] !== 1 ? "up" : undefined} title={t("방어력")}>{t("방어")} {nf(st[2])}</b>
+          <b className={m[3] !== 1 ? "up" : undefined} title={t("마법 저항")}>{t("마저")} {nf(st[3])}</b>
+        </span>
+      )}
     </a>
   );
 }
@@ -85,8 +114,13 @@ export function StageFile({ view, onOpenEnemy, onOpenItem }: {
     ...(s.gold ? [[t("용문폐"), String(s.gold)] as [string, string]] : []),
     ...(s.danger ? [[t("권장 편성"), s.danger] as [string, string]] : []),
   ];
+  // 활성 환경의 적 스탯 배수 — 고난(alt) 뷰는 자기 em, 긴급은 일반판의 chgEm.
+  // 일반판이 없는 고난 전용 작전(H10-1 등)은 em이 상시 걸린다 (게임도 항상 고난이다).
+  const envMul = cur.stage.em ?? (env === 1 && !view.alt ? view.stage.chgEm : undefined);
   return (
     <div className="st-file">
+      {/* 헤더 한 줄 배치 — 계열·구역 배지는 이름 오른쪽으로, 환경 탭은 오른쪽 끝
+          (사용자 요청 2026-08-10 "밑으로 길어지지 않도록"). 좁은 화면에선 줄바꿈된다. */}
       <header className="st-head">
         <div className="st-head-main">
           <span className="st-code">{s.code}</span>
@@ -95,18 +129,17 @@ export function StageFile({ view, onOpenEnemy, onOpenItem }: {
             <span className="st-tag">{view.typeName}</span>
             {view.zone && view.zone !== view.typeName && <span className="st-tag">{view.zone}</span>}
           </div>
+          {/* 작전 환경 선택 — 통합전략 일반/긴급 탭(.rg-modal-modes)과 같은 짜임 */}
+          {hasEnv && (
+            <div className="st-envs" role="tablist" aria-label={t("작전 환경")}>
+              <button type="button" role="tab" aria-selected={env === 0} className={env === 0 ? "on" : ""}
+                onClick={() => setEnv(0)}>{t("일반 환경")}</button>
+              <button type="button" role="tab" aria-selected={env === 1} className={`hard${env === 1 ? " on" : ""}`}
+                onClick={() => setEnv(1)}>{view.alt ? t("고난 환경") : t("긴급 환경")}</button>
+            </div>
+          )}
         </div>
       </header>
-
-      {/* 작전 환경 선택 — 통합전략 일반/긴급 탭(.rg-modal-modes)과 같은 짜임 */}
-      {hasEnv && (
-        <div className="st-envs" role="tablist" aria-label={t("작전 환경")}>
-          <button type="button" role="tab" aria-selected={env === 0} className={env === 0 ? "on" : ""}
-            onClick={() => setEnv(0)}>{t("일반 환경")}</button>
-          <button type="button" role="tab" aria-selected={env === 1} className={`hard${env === 1 ? " on" : ""}`}
-            onClick={() => setEnv(1)}>{view.alt ? t("고난 환경") : t("긴급 환경")}</button>
-        </div>
-      )}
 
       {/* 통합전략 작전 노드 상세와 같은 2단 구성 (사용자 요청 2026-08-09):
           왼쪽에 지형 도면·설명·수치, 오른쪽에 등장 적·드랍. */}
@@ -140,8 +173,9 @@ export function StageFile({ view, onOpenEnemy, onOpenItem }: {
             <section className="st-block">
               <h3><span className="section-no">ENEMY</span>{t("등장 적")} <em>{cur.enemies.length}</em></h3>
               {reinforced && <p className="st-note">{t("★ 뒤의 숫자는 강화 단계입니다 — 적을 누르면 단계별 스탯이 나옵니다.")}</p>}
+              {envMul && <p className="st-note">{t("빨간 수치는 이 환경의 스탯 배수가 반영된 값입니다.")}</p>}
               <div className="st-enemies">
-                {cur.enemies.map((e, i) => <EnemyChip key={`${e.id}-${i}`} e={e} onOpenEnemy={onOpenEnemy} />)}
+                {cur.enemies.map((e, i) => <EnemyChip key={`${e.id}-${i}`} e={e} mul={envMul} onOpenEnemy={onOpenEnemy} />)}
               </div>
             </section>
           )}

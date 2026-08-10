@@ -1471,6 +1471,7 @@ const D: Record<string, Pair> = {
   // Environment' · JP 공식 보도 '通常実戦環境/厄難奮戦環境'(4Gamer). 긴급은 KR '긴급 작전' ·
   // EN 'Challenge Mode' · JP '強襲作戦'. 통전의 "일반 작전"/"긴급 작전" 키와는 번역이 달라 별도 키.
   "작전 환경": ["Environment", "作戦環境"],
+  "빨간 수치는 이 환경의 스탯 배수가 반영된 값입니다.": ["Red numbers include this environment's stat multipliers.", "赤い数値はこの環境のステータス倍率を反映した値です。"],
   "일반 환경": ["Standard", "通常"],
   "고난 환경": ["Adverse", "厄難"],
   "긴급 환경": ["Challenge", "強襲"],

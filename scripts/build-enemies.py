@@ -245,6 +245,15 @@ p = os.path.join(DATA, "enemy-names.json")
 json.dump(names, open(p, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
 print(f"  enemy-names.json: {os.path.getsize(p)//1024}KB")
 
+# 작전 상세의 적 칩용 경량 스탯 색인 — 통전 전투노드처럼 HP·공격·방어·마저를 보여준다
+# (사용자 요청 2026-08-10 "적 얼굴만 덜렁 나오지 말고 스탯 이정도는"). 수치는 로케일
+# 무관이라 한 파일. 1MB enemies.json을 작전 도감 청크에 끌어오지 않기 위한 별도 산출.
+# 형식: { 적id: [[단계, hp, atk, def, res] …] } — 단계 값이 희소할 수 있어 명시한다.
+stats = {e["id"]: [[l["l"], l["hp"], l["atk"], l["def"], l["res"]] for l in e["lv"]] for e in by_loc["ko"]}
+p = os.path.join(DATA, "enemy-stats.json")
+json.dump(stats, open(p, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
+print(f"  enemy-stats.json: {os.path.getsize(p)//1024}KB")
+
 # 미번역 감시 — EN/JA에 한글이 남아 있으면 그 적은 KR 폴백이다 (CN 선행 적 등)
 HANGUL = re.compile(r"[가-힣]")
 for loc in ("en", "ja"):
@@ -331,6 +340,44 @@ else:
     missing = [k for k, v in level_enemies.items() if v is None]
     if missing:
         print(f"  레벨 파일 없음 {len(missing)}개 (삭제된 스테이지 — 정상) 예: {missing[:3]}")
+
+    # ── 환경 배수 (app/data/stage-env.json) ─────────────────────────────────
+    # 고난·긴급의 적 스탯 강화는 적 레벨 변형(★)이 아니라 레벨 파일의 **룬**(enemy_attribute_mul)
+    # 이다 (2026-08-10 실측: 고난 85/85 전부, 긴급 513/598 — 최빈값 ×1.2). 사용자 지적
+    # "고난·긴급에서는 스탯이 다 강화돼서 나온다"가 이것. 여기(레벨 파일을 이미 읽는 곳)서
+    # 뽑아 별도 파일로 내고 build-stages.py가 레코드에 복사한다 — CI(--no-images)는 레벨
+    # 캐시가 없으므로 이 파일이 커밋돼 있어야 한다 (--meta-only는 건드리지 않음, 아래 주의).
+    # 형식: {"adverse"|"challenge": { 스테이지id: [[hp,atk,def,res 배수, 대상적id들|0] …] }}
+    #   adverse = 고난 판 자체(FOUR_STAR·ALL 마스크) · challenge = 일반판의 긴급 모드(FOUR_STAR).
+    def rune_muls(level_id, masks):
+        lv = fetch_level(f"levels/{level_id}.json")
+        out = []
+        for r in (lv or {}).get("runes") or []:
+            if not isinstance(r, dict) or r.get("key") != "enemy_attribute_mul":
+                continue
+            if r.get("difficultyMask") not in masks:
+                continue
+            bb = {b.get("key"): b.get("value") if b.get("valueStr") is None else b.get("valueStr")
+                  for b in r.get("blackboard") or [] if isinstance(b, dict)}
+            row = [bb.get("max_hp", 1), bb.get("atk", 1), bb.get("def", 1), bb.get("magic_resistance", 1),
+                   bb.get("enemy") or 0]
+            if any(isinstance(x, (int, float)) and x != 1 for x in row[:4]):
+                out.append(row)
+        return out
+
+    env = {"adverse": {}, "challenge": {}}
+    for sid, lid, kst in stages:
+        if kst.get("diffGroup") == "TOUGH":
+            m = rune_muls(lid, ("FOUR_STAR", "ALL"))
+            if m:
+                env["adverse"][sid] = m
+        if f"{sid}#f#" in stage_tables["ko"]:
+            m = rune_muls(lid, ("FOUR_STAR",))
+            if m:
+                env["challenge"][sid] = m
+    p = os.path.join(DATA, "stage-env.json")
+    json.dump(env, open(p, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
+    print(f"  stage-env.json: 고난 {len(env['adverse'])} · 긴급 {len(env['challenge'])} — {os.path.getsize(p)//1024}KB")
 
 
     # ── 메인 스토리 챕터 (2026-08-09 사용자 리포트로 발각) ──────────────────────

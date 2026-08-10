@@ -233,6 +233,13 @@ else:
     print("  ⚠ app/data/enemy-stages.json 없음 — 등장 적 없이 빌드한다 "
           "(scripts/build-enemies.py를 먼저 돌릴 것)")
 
+# 환경 배수 — build-enemies.py가 레벨 파일 룬에서 뽑아 둔 것 (stage-env.json 머리주석 참조).
+# CI(--no-images)는 레벨 캐시가 없어 이 커밋된 파일이 유일한 출처다.
+ENV_MUL = {"adverse": {}, "challenge": {}}
+_env_path = os.path.join(DATA, "stage-env.json")
+if os.path.exists(_env_path):
+    ENV_MUL = load(_env_path)
+
 # 적 이름 — 도감과 같은 표기를 쓴다 (지어내지 않는다)
 enemy_names = {}
 for loc, _, suf in LOCALES:
@@ -351,11 +358,15 @@ def build(loc):
         if sid in base_of:
             e["base"] = base_of[sid]
             e["sub"] = 1          # 목록·사이트맵에서 숨김 — 일반판 상세가 대신 보여준다
+        if sid in ENV_MUL["adverse"]:
+            e["em"] = ENV_MUL["adverse"][sid]     # 고난 판의 적 스탯 배수 (룬)
         cs = chg_of.get(sid)
         if cs:
             cdesc = clean((table.get(cs) or tables["ko"].get(cs) or {}).get("description"))
             if cdesc:
                 e["chg"] = cdesc  # 긴급 작전 제한 조건 텍스트 (지형·등장 적은 일반판과 동일)
+            if sid in ENV_MUL["challenge"]:
+                e["chgEm"] = ENV_MUL["challenge"][sid]  # 긴급 모드의 적 스탯 배수 (룬)
         out.append(e)
     return {
         "zones": zone_list, "events": ev_list, "items": item_map, "occ": occ_list, "kinds": kind_list,
