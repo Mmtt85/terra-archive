@@ -16502,20 +16502,20 @@ main.site-main > .site-header {
 }
 /* 등장 적 — 누르면 적 도감으로 넘어간다 */
 /* 등장 적 — 통합전략 작전 노드의 적 셀(.rg-enemy-cell)과 같은 짜임: 초상 위·이름 아래 */
-/* 셀을 가로로 넓히고 초상을 줄여 수치가 안 잘리게 — 통전 전투노드 비율
-   (46px 얼굴 + 넓은 셀)을 따른다 (사용자 요청 2026-08-10). */
+/* 가로형 칩 (사용자 확정 2026-08-10): 이름 위 · 썸네일 왼쪽 · 스탯 2×2 오른쪽.
+   세로가 절반쯤 줄어 등장 적 섹션이 밑으로 길어지지 않는다. */
 .st-enemies {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
   gap: 8px;
 }
 .st-enemy {
   position: relative;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   gap: 4px;
-  padding: 6px 6px 8px;
+  padding: 6px 8px 7px;
   border: 1px solid var(--line);
   background: var(--white);
   color: inherit;
@@ -16529,31 +16529,38 @@ main.site-main > .site-header {
 .st-enemy.reinforced {
   border-color: #b9862f;
 }
+.st-enemy-body {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.st-enemy-thumb {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+  width: 46px;
+}
 .st-enemy img {
-  width: 100%;
-  max-width: 52px;
+  width: 46px;
   aspect-ratio: 1 / 1;
   object-fit: contain;
   background: linear-gradient(150deg, #2a3236, #171c1f);
 }
-.st-enemy-head {
-  display: flex;
-  align-items: baseline;
-  gap: 4px;
-  font-family: var(--font-geist-mono), ui-monospace, monospace;
-  font-size: 11px;
+.st-enemy-cnt {
+  font: 700 11px/1 var(--font-geist-mono), ui-monospace, monospace;
+  font-style: normal;
   color: var(--muted);
 }
-.st-enemy-head i {
-  font-style: normal;
-  color: #b9862f;
-}
-/* 칩 코어 스탯 2×2 — 통전 전투노드의 rg-stat 규격을 좁은 칩에 맞춘 것 */
+/* 칩 코어 스탯 2×2 — 통전 전투노드의 rg-stat 규격을 칩에 맞춘 것 */
 .st-enemy-stats {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1px 8px;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   font-family: var(--font-geist-mono), ui-monospace, monospace;
   font-size: 10.5px;
   line-height: 1.6;
@@ -16571,11 +16578,17 @@ main.site-main > .site-header {
 }
 .st-enemy-name {
   width: 100%;
-  text-align: center;
   line-height: 1.25;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.st-enemy-name i {
+  font-style: normal;
+  color: #b9862f;
+  margin-left: 4px;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 11px;
 }
 .st-drops {
   display: flex;

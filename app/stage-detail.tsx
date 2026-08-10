@@ -51,28 +51,34 @@ function EnemyChip({ e, mul, onOpenEnemy }: {
         if (!onOpenEnemy || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
         ev.preventDefault(); onOpenEnemy(e.id);
       }}>
-      <img src={enemyImg(e.id)} alt="" aria-hidden width={96} height={96} loading="lazy" decoding="async"
-        onError={(ev) => {
-          const el = ev.currentTarget;
-          if (base !== e.id && !el.dataset.fb) { el.dataset.fb = "1"; el.src = enemyImgBase(e.id); }
-          else el.style.visibility = "hidden";
-        }} />
-      <span className="st-enemy-head">
-        {e.cnt > 0 && <em>×{e.cnt}</em>}
+      {/* 가로형 배치 (사용자 확정 2026-08-10): 이름 위 · 썸네일 왼쪽 · 스탯 2×2 오른쪽 ·
+          ×수는 썸네일 밑 — 세로도 줄어든다. */}
+      <span className="st-enemy-name">
+        {e.name}
         {/* 별만 찍지 않고 몇 단계 강화인지 숫자로 (사용자 지적 2026-08-10) */}
         {e.lv > 0 && <i title={t("강화 {n}단계", { n: String(e.lv) })}>★{e.lv}</i>}
       </span>
-      <span className="st-enemy-name">{e.name}</span>
-      {/* 코어 스탯 — 통전 전투노드 규격 (사용자 요청 2026-08-10 "적 얼굴만 덜렁 나오지 말고").
-          환경 배수가 곱해진 값은 빨간 톤으로 표시한다. */}
-      {st && (
-        <span className="st-enemy-stats">
-          <b className={m[0] !== 1 ? "up" : undefined} title={t("최대 HP")}>HP {nf(st[0])}</b>
-          <b className={m[1] !== 1 ? "up" : undefined} title={t("공격력")}>{t("공격")} {nf(st[1])}</b>
-          <b className={m[2] !== 1 ? "up" : undefined} title={t("방어력")}>{t("방어")} {nf(st[2])}</b>
-          <b className={m[3] !== 1 ? "up" : undefined} title={t("마법 저항")}>{t("마저")} {nf(st[3])}</b>
+      <span className="st-enemy-body">
+        <span className="st-enemy-thumb">
+          <img src={enemyImg(e.id)} alt="" aria-hidden width={96} height={96} loading="lazy" decoding="async"
+            onError={(ev) => {
+              const el = ev.currentTarget;
+              if (base !== e.id && !el.dataset.fb) { el.dataset.fb = "1"; el.src = enemyImgBase(e.id); }
+              else el.style.visibility = "hidden";
+            }} />
+          {e.cnt > 0 && <em className="st-enemy-cnt">×{e.cnt}</em>}
         </span>
-      )}
+        {/* 코어 스탯 — 통전 전투노드 규격 (사용자 요청 2026-08-10 "적 얼굴만 덜렁 나오지 말고").
+            환경 배수가 곱해진 값은 빨간 톤으로 표시한다. */}
+        {st && (
+          <span className="st-enemy-stats">
+            <b className={m[0] !== 1 ? "up" : undefined} title={t("최대 HP")}>HP {nf(st[0])}</b>
+            <b className={m[1] !== 1 ? "up" : undefined} title={t("공격력")}>{t("공격")} {nf(st[1])}</b>
+            <b className={m[2] !== 1 ? "up" : undefined} title={t("방어력")}>{t("방어")} {nf(st[2])}</b>
+            <b className={m[3] !== 1 ? "up" : undefined} title={t("마법 저항")}>{t("마저")} {nf(st[3])}</b>
+          </span>
+        )}
+      </span>
     </a>
   );
 }
