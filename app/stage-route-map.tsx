@@ -111,13 +111,19 @@ function walkPath(g: string[], w: number, h: number, from: [number, number], to:
   return null;
 }
 
-/** 방향이 안 바뀌는 중간 점 제거 — BFS가 뱉는 촘촘한 계단을 짧은 폴리라인으로 */
+/** 방향이 안 바뀌는 중간 점 제거 — BFS가 뱉는 촘촘한 계단을 짧은 폴리라인으로.
+ *  ⚠ 외적 0만 보면 **왕복 반환점**(같은 줄에서 갔다가 되돌아오는 V)까지 일직선으로 접혀
+ *  선에서 왕복 구간이 통째로 사라진다 — 13-6 폭격자가 방어 지점을 지나쳐 내려갔다
+ *  돌아오는 경로에서 실측 (사용자 지적 2026-08-10 "경로 벗어났잖아"). 진행 방향이
+ *  같을 때(내적 > 0)만 접는다. */
 function simplify(pts: [number, number][]): [number, number][] {
   const out: [number, number][] = [];
   for (let i = 0; i < pts.length; i++) {
     if (i > 0 && i < pts.length - 1) {
       const [ax, ay] = out[out.length - 1], [bx, by] = pts[i], [cx, cy] = pts[i + 1];
-      if ((bx - ax) * (cy - by) === (by - ay) * (cx - bx)) continue;   // 일직선이면 건너뜀
+      const cross = (bx - ax) * (cy - by) - (by - ay) * (cx - bx);
+      const dot = (bx - ax) * (cx - bx) + (by - ay) * (cy - by);
+      if (cross === 0 && dot > 0) continue;
     }
     out.push(pts[i]);
   }
