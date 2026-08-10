@@ -20,7 +20,7 @@ import { SearchSuggest } from "./search-suggest";
 import { useHashSync } from "./hash-modal";
 import { HANDOFF_EVENT, takeHandoff } from "./handoff";
 import { noteArrival, noteMiss } from "./trail";
-import { loadEnemies, loadStages } from "./dex-cross";
+import { loadEnemies, loadEnemyStats, loadStages } from "./dex-cross";
 import { StageFile } from "./stage-detail";
 import { viewOf, type StageView } from "./stage-data";
 import { EnemyFile, type Enemy } from "./enemy-detail";
@@ -153,9 +153,11 @@ function useStageSubModal(onShowItem: (id: string) => void) {
   const [enemyRaise, setEnemyRaise] = useState(0);
   const openStage = (sid: string) => {
     setStageRaise((k) => k + 1);
-    void loadStages(locale).then((doc) => {
+    // 스탯 색인을 같이 받아야 등장 적 카드에 HP·공격 수치가 실린다 (적 도감 쪽과 같은
+    // 누락이 여기도 있었다 — 사용자 제보 2026-08-11)
+    void Promise.all([loadStages(locale), loadEnemyStats()]).then(([doc, stats]) => {
       const st = doc.stages.find((x) => x.id === sid);
-      setStage(st ? viewOf(doc, st) : null);
+      setStage(st ? viewOf(doc, st, stats) : null);
     });
   };
   const openEnemy = (eid: string) => {

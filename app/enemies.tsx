@@ -17,7 +17,7 @@ import { ModalWindow } from "./modal-window";
 import { useHashSync } from "./hash-modal";
 import { AttributeFilter } from "./attr-filter";
 import { SearchSuggest } from "./search-suggest";
-import { loadStages } from "./dex-cross";
+import { loadEnemyStats, loadStages } from "./dex-cross";
 import { StageFile } from "./stage-detail";
 import { viewOf, type StageView } from "./stage-data";
 // 재료 상세는 재료파밍 도우미의 것을 그대로 쓴다 (작전 모달의 드랍에서 열린다)
@@ -117,9 +117,10 @@ export default function EnemyDex({ enemies }: { enemies: Enemy[] }) {
   const byId = useMemo(() => new Map(enemies.map((e) => [e.id, e])), [enemies]);
   const openStage = (sid: string) => {
     setStageRaise((k) => k + 1);
-    void loadStages(locale).then((doc) => {
+    // 스탯 색인을 같이 받아야 등장 적 카드에 HP·공격 수치가 실린다 (사용자 제보 2026-08-11)
+    void Promise.all([loadStages(locale), loadEnemyStats()]).then(([doc, stats]) => {
       const st = doc.stages.find((x) => x.id === sid);
-      setSubStage(st ? viewOf(doc, st) : null);
+      setSubStage(st ? viewOf(doc, st, stats) : null);
     });
   };
   const openItem = (id: string) => { setSubItem(id); setItemRaise((k) => k + 1); };

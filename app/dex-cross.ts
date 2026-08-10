@@ -6,7 +6,7 @@
 // 로케일당 1MB가 넘으므로 **누르는 순간에만** 받는다. ModalWindow는 zTop 카운터로
 // 창끼리 앞뒤를 정하므로 겹쳐 떠도 그대로 동작한다.
 import type { Enemy } from "./enemy-detail";
-import type { StageDoc } from "./stage-data";
+import type { EnemyStatsIndex, StageDoc } from "./stage-data";
 
 const ENEMY_LOADERS: Record<string, () => Promise<unknown>> = {
   ko: () => import("./data/enemies.json"),
@@ -40,4 +40,11 @@ export async function loadStages(locale: string): Promise<StageDoc> {
   const doc = unwrap<StageDoc>(await (STAGE_LOADERS[locale] ?? STAGE_LOADERS.ko)());
   stageCache.set(locale, doc);
   return doc;
+}
+
+/** 적 코어 스탯 색인 (70KB, 로케일 무관) — 작전 모달의 등장 적 수치에 필요하다.
+ *  ⚠ viewOf에 이걸 안 넘기면 등장 적 카드에 HP·공격 수치가 통째로 빠진다
+ *  (2026-08-11 사용자 제보: 적 도감→작전 모달 경로에서 실제로 빠져 있었다). */
+export async function loadEnemyStats(): Promise<EnemyStatsIndex> {
+  return unwrap<EnemyStatsIndex>(await import("./data/enemy-stats.json"));
 }
