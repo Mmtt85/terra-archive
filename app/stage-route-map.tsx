@@ -37,9 +37,22 @@ export function StageRouteMap({ data, highlight }: { data: StageRoutes; highligh
   const { w, h, g, r, f } = data;
   // 강조 대상 경로 번호 — 강조가 없거나(환경 전환 등으로) 이 지도에 없는 적이면 전부 보통 세기
   const hlRoutes = highlight && data.e[highlight]?.length ? new Set(data.e[highlight]) : null;
-  // 그릴 수 있는 경로의 순번 (겹침 방지 오프셋 배분용)
+  // 완전히 동일한 폴리라인은 하나로 접는다 (사용자 지적 2026-08-10) — 게임 데이터는
+  // 스폰마다 같은 경로를 별개 항목으로 두는 일이 많다. 강조 판정은 묶음 전체로 본다.
+  const group = new Map<number, number[]>();   // 대표 경로 번호 → 묶인 번호들
+  {
+    const canon = new Map<string, number>();
+    r.forEach((poly, i) => {
+      if (!poly) return;
+      const sig = (f[i] ? "F" : "W") + JSON.stringify(poly);
+      const c = canon.get(sig);
+      if (c === undefined) { canon.set(sig, i); group.set(i, [i]); }
+      else group.get(c)?.push(i);
+    });
+  }
+  // 대표 경로의 순번 (겹침 방지 오프셋 배분용 — 접힌 뒤 기준이라 부채꼴이 덜 벌어진다)
   const drawIdx = new Map<number, number>();
-  r.forEach((poly, i) => { if (poly) drawIdx.set(i, drawIdx.size); });
+  for (const i of group.keys()) drawIdx.set(i, drawIdx.size);
   const cell = 1;
   return (
     <svg className="st-routemap" viewBox={`0 0 ${w * cell} ${h * cell}`} role="img"
@@ -50,7 +63,7 @@ export function StageRouteMap({ data, highlight }: { data: StageRoutes; highligh
             width={cell - 0.04} height={cell - 0.04} fill={TILE_FILL[ch] ?? TILE_FILL.r} />
         )))}
       {r.map((poly, i) => {
-        if (!poly) return null;
+        if (!poly || !group.has(i)) return null;   // 중복 경로는 대표만 그린다
         // 같은 길을 지나는 경로들이 한 줄로 딱 겹치면 구간마다 색이 바뀌는 것처럼 보인다
         // (사용자 지적 2026-08-10) — 경로 번호마다 대각 미세 오프셋을 줘 나란히 그린다.
         const off = drawIdx.size > 1 ? ((drawIdx.get(i) ?? 0) / (drawIdx.size - 1) - 0.5) * 0.3 : 0;
@@ -61,7 +74,7 @@ export function StageRouteMap({ data, highlight }: { data: StageRoutes; highligh
         const pts = poly.map(([c, rr]) => [c * cell + cell / 2 + off, (h - 1 - rr) * cell + cell / 2 + off] as const);
         // 강조 시: 고른 경로는 굵게, 나머지는 **아주 흐리게** (사용자 확정 2026-08-10 —
         // '굵기만' 안을 써 보고 겹침이 심해 흐림 방식으로 되돌림). 평소엔 전부 보통.
-        const em = hlRoutes?.has(i) ?? false;
+        const em = hlRoutes ? (group.get(i) ?? []).some((j) => hlRoutes.has(j)) : false;
         const color = ROUTE_COLORS[i % ROUTE_COLORS.length];
         const last = pts[pts.length - 1];
         const prev = pts[pts.length - 2] ?? pts[0];
