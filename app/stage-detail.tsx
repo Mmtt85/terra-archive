@@ -190,7 +190,7 @@ export function StageFile({ view, onOpenEnemy, onOpenItem }: {
               <button type="button" role="tab" aria-selected={env === 0} className={env === 0 ? "on" : ""}
                 onClick={() => setEnv(0)}>{t("일반 환경")}</button>
               <button type="button" role="tab" aria-selected={env === 1} className={`hard${env === 1 ? " on" : ""}`}
-                onClick={() => setEnv(1)}>{view.alt ? t("고난 환경") : t("긴급 환경")}</button>
+                onClick={() => setEnv(1)}>{view.alt && !view.stage.ae ? t("고난 환경") : t("긴급 환경")}</button>
             </div>
           )}
         </div>

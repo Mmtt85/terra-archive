@@ -121,18 +121,11 @@ export function StageRouteMap({ data, order, highlights }: {
 }) {
   const { t } = useI18n();
   const { w, h, g, r, f } = data;
-  // 강조 대상 경로 번호 — 호버는 한 적, 클릭 고정은 여러 적의 합집합이 온다.
+  // 강조 대상 적 — 호버는 한 적, 클릭 고정은 여러 적의 합집합이 온다.
   // 이 지도에 없는 적뿐이면(환경 전환 등) 강조 없음으로 본다.
-  let hlRoutes: Set<number> | null = null;
+  let hl: Set<string> | null = null;
   for (const id of highlights ?? []) {
-    for (const ri of data.e[id] ?? []) (hlRoutes ??= new Set()).add(ri);
-  }
-  const users = new Map<number, string[]>(); // 경로 번호 → 그 경로를 쓰는 적들
-  for (const [eid, ris] of Object.entries(data.e)) {
-    for (const ri of ris) {
-      if (!users.has(ri)) users.set(ri, []);
-      users.get(ri)?.push(eid);
-    }
+    if (data.e[id]?.length) (hl ??= new Set()).add(id);
   }
   // 그리기용 폴리라인(격자 좌표계) — 지상(WALK)은 BFS 보행 경로로 확장해 이동불가
   // 타일을 가로지르지 않게 한다. 비행(FLY)은 실제로 지형을 무시하므로 직선 그대로.
@@ -165,17 +158,13 @@ export function StageRouteMap({ data, order, highlights }: {
       return { segs, dense: out };
     }), [r, f, g, w, h]);
   const drawPolys = polys.map((p) => (p ? p.segs.flatMap((s) => s.pts) : null));
-  // 같은 경로 판정 (사용자 규칙 확정 2026-08-10: "같은 적 + 같은 경로 = 같은 색 같은 선,
-  // 같은 적 + 다른 경로 = 같은 색 다른 선"). 게임 데이터는 같은 길을 스폰마다 복제하며
-  // 경유점만 덜/더 명시하는 지터가 섞여 있다 — 3단으로 접는다 (11-19 실측으로 확정):
-  //   ① 원본 경유점열이 완전히 같다 → 같은 경로
-  //   ② 출발·도착이 같고 한쪽 경유점열이 다른쪽의 **순서 있는 부분열** → 같은 경로
-  //      (덜 명시된 복제 — 상세한 쪽을 대표로 그린다)
-  //   ③ 최종 그려지는 타일 경로가 같다 → 같은 경로 (안전망)
-  // 진짜 다른 궤적(예: 11-19 전사의 윗길/아랫길)은 어느 조건에도 안 걸려 남는다.
-  // ⚠ 접기에 적 조합을 넣지 않는다 — 같은 기하의 경로가 "함께 쓰는 적"만 달라도 두 줄로
-  //   갈라져 보였다 (11-12 실측: 왕정군 전사 단독 경로 vs 전사+부패의 전사 공용 경로가
-  //   완전히 같은 길인데 두 줄). 강조 판정은 묶인 원본 경로 번호 전체로 하므로 안전하다.
+  // 같은 경로(기하) 판정 — 게임 데이터는 같은 길을 스폰마다 복제하며 경유점만 덜/더
+  // 명시하는 지터가 섞여 있어, 먼저 경로 번호들을 **기하 단위 묶음**으로 접는다
+  // (11-19 실측으로 확정): ① 원본 경유점열이 완전히 같다, 또는 ② 출발·도착·비행이
+  // 같고 밟는 타일 차이가 2칸 이하(지터). 진짜 다른 궤적(11-19 전사의 윗길/오른길)은
+  // 안 걸려 남는다. 이 묶음은 **한 적 안에서** 중복 인덱스·지터 복제를 한 줄로 만드는
+  // 용도다 (11-12 실측: 왕정군 전사 단독 등록 + 전사·부패의 전사 공용 등록이 같은 길).
+  // 서로 다른 적끼리 합치는 게 아니다 — 선 자체는 아래에서 **적 단위**로 그린다.
   const group = new Map<number, number[]>();   // 대표 경로 번호 → 묶인 번호들
   {
     const byRaw = new Map<string, number>();
@@ -222,11 +211,25 @@ export function StageRouteMap({ data, order, highlights }: {
       }
     }
   }
-  // 오프셋은 **그려지는 선 단위** — 완전 동일 경로는 위에서 이미 한 줄로 접혔고,
-  // 남은 선들(같은 적의 다른 경로 포함)은 약간씩 어긋나게 나란히 그린다
-  // (사용자 확정 2026-08-10: "같은 적이고 경로가 다르면 색깔만 같게, 선은 약간 어긋나게").
-  const drawIdx = new Map<number, number>();
-  for (const i of group.keys()) drawIdx.set(i, drawIdx.size);
+  // 그리는 선은 **적 단위다** (사용자 확정 2026-08-10, 7번째 지적: "서로 다른 적이 같은
+  // 경로라고 해서 한 선으로 합쳐지면 안된다"): 적마다 자기가 쓰는 기하 묶음을 자기 색으로
+  // 한 줄씩 그린다 — 0-2처럼 원석충·병사가 같은 복도를 걸으면 노랑·초록 두 줄이 나란히
+  // 간다. 같은 적 + 같은 기하 = 한 줄, 같은 적 + 다른 기하 = 같은 색 다른 줄(어긋나게),
+  // 다른 적 = 기하가 같아도 **항상 별도 줄**. 강조 색 문제(16-2)도 이 구조에선 안 생긴다.
+  const classOf = new Map<number, number>();   // 경로 번호 → 소속 묶음 대표
+  for (const [rep, members] of group) for (const m of members) classOf.set(m, rep);
+  const lines: { rep: number; owner: string | null }[] = [];
+  const usedClasses = new Set<number>();
+  for (const id of order) {                    // 범례 순 — 색·겹침 순서가 안정된다
+    const reps = new Set<number>();
+    for (const ri of data.e[id] ?? []) {
+      const rep = classOf.get(ri);
+      if (rep !== undefined) reps.add(rep);
+    }
+    for (const rep of reps) { lines.push({ rep, owner: id }); usedClasses.add(rep); }
+  }
+  // 등장 적 목록 밖(숨은 증원 등)만 쓰는 경로 — 회색 한 벌로 남긴다
+  for (const rep of group.keys()) if (!usedClasses.has(rep)) lines.push({ rep, owner: null });
   const cell = 1;
   return (
     <div className="st-routewrap">
@@ -242,37 +245,24 @@ export function StageRouteMap({ data, order, highlights }: {
           <rect key={`${ri}-${ci}`} x={ci * cell + 0.02} y={ri * cell + 0.02}
             width={cell - 0.04} height={cell - 0.04} fill={TILE_FILL[ch] ?? TILE_FILL.r} />
         )))}
-      {r.map((poly, i) => {
-        if (!poly || !group.has(i)) return null;   // 중복 경로는 대표만 그린다
+      {lines.map(({ rep, owner }, li) => {
         // 묶음 중 **경유점이 가장 많은** 변형의 모양을 그린다 — 체크포인트가 명시된
         // 쪽이 게임이 의도한 궤적에 가장 가깝다
-        const members = group.get(i) ?? [i];
-        const best = members.reduce((a, b) => ((drawPolys[b]?.length ?? 0) > (drawPolys[a]?.length ?? 0) ? b : a), i);
+        const members = group.get(rep) ?? [rep];
+        const best = members.reduce((a, b) => ((drawPolys[b]?.length ?? 0) > (drawPolys[a]?.length ?? 0) ? b : a), rep);
         const P = polys[best];
         if (!P) return null;
-        // 선마다 대각 미세 오프셋 — 겹치는 구간에서 색이 바뀌어 보이지 않게 나란히.
+        // 선마다 대각 미세 오프셋 — 같은 길을 걷는 다른 적들이 나란히 보이게.
         // 간격 0.07타일(약간)을 지향하되 **타일 폭(±0.2)은 절대 안 벗어난다** (사용자 지적
-        // "다른 타일로 벗어나버리면 안되지" — 경로가 많으면 간격을 줄여서라도 안에 담는다).
-        const n = drawIdx.size;
+        // "다른 타일로 벗어나버리면 안되지" — 선이 많으면 간격을 줄여서라도 안에 담는다).
+        const n = lines.length;
         const step = n > 1 ? Math.min(0.4 / (n - 1), 0.07) : 0;
-        const off = ((drawIdx.get(i) ?? 0) - (n - 1) / 2) * step;
+        const off = (li - (n - 1) / 2) * step;
         const mapPt = ([x, y]: [number, number]) => [x * cell + cell / 2 + off, y * cell + cell / 2 + off] as const;
-        // 강조 시: 고른 경로는 굵게, 나머지는 **아주 흐리게** (사용자 확정 2026-08-10 —
+        // 강조 시: 고른 적의 선은 굵게, 나머지는 **아주 흐리게** (사용자 확정 2026-08-10 —
         // '굵기만' 안을 써 보고 겹침이 심해 흐림 방식으로 되돌림). 평소엔 전부 보통.
-        const em = hlRoutes ? (group.get(i) ?? []).some((j) => hlRoutes.has(j)) : false;
-        // 색은 이 묶음을 쓰는 첫 적(범례 순)의 색 — 여러 적이 공유하면 앞선 적을 따른다
-        const ord = (id: string) => { const k = order.indexOf(id); return k < 0 ? 999 : k; };
-        const uset = new Set<string>();
-        for (const m of members) for (const u of users.get(m) ?? []) uset.add(u);
-        let owner = [...uset].sort((a, b) => ord(a) - ord(b))[0];
-        // 강조 중엔 **강조한 적의 색**으로 — 여러 적이 공유하는 경로가 다른 적의 색을
-        // 물고 있어 같은 적을 강조해도 색이 갈렸다 (사용자 지적 2026-08-10, 16-2 실측)
-        if (em && highlights?.length) {
-          const active = highlights
-            .filter((id) => members.some((m) => (data.e[id] ?? []).includes(m)))
-            .sort((a, b) => ord(a) - ord(b))[0];
-          if (active) owner = active;
-        }
+        // 선이 적 단위라 색은 언제나 그 선 주인의 색이다.
+        const em = hl ? owner !== null && hl.has(owner) : false;
         const color = owner ? enemyRouteColor(order, owner) : "#9aa0a6";
         const first = mapPt(P.segs[0].pts[0]);
         const lastPts = P.segs[P.segs.length - 1].pts;
@@ -286,7 +276,7 @@ export function StageRouteMap({ data, order, highlights }: {
           [last[0] + Math.cos(ang - 2.5) * a, last[1] + Math.sin(ang - 2.5) * a],
         ];
         return (
-          <g key={i} opacity={hlRoutes && !em ? 0.07 : 0.92}>
+          <g key={`${rep}-${owner ?? "•"}`} opacity={hl && !em ? 0.07 : 0.92}>
             {/* 대시가 진행 방향으로 흐른다(CSS 애니메이션) — 방향 표시 겸 움직임 (사용자 요청).
                 지상은 긴 대시, 비행은 점선, **통로 순간이동(hop)은 가늘고 성긴 점선**.
                 패턴 길이는 keyframe 오프셋(-0.64)의 약수라 끊김 없이 순환한다. */}
@@ -295,7 +285,7 @@ export function StageRouteMap({ data, order, highlights }: {
                 fill="none" stroke={color}
                 strokeWidth={sgm.hop ? (em ? 0.07 : 0.03) : em ? 0.12 : 0.042}
                 strokeLinejoin="round" strokeLinecap="round" opacity={sgm.hop ? 0.55 : 1}
-                strokeDasharray={sgm.hop ? "0.04 0.12" : f[i] ? "0.12 0.2" : "0.5 0.14"} />
+                strokeDasharray={sgm.hop ? "0.04 0.12" : f[best] ? "0.12 0.2" : "0.5 0.14"} />
             ))}
             <circle cx={first[0]} cy={first[1]} r={0.16} fill={color} />
             <polygon points={tip.map((p) => p.join(",")).join(" ")} fill={color} />

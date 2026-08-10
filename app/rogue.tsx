@@ -28,6 +28,25 @@ import { useBridgeWatch, noteBridge, bridgeLock, logBridgeEvent, memoBridgeScene
 import { BridgeTopicButton } from "./lens/bridge-button";
 import { useDropWatch } from "./lens/dropwatch";
 import { asset } from "./assets";
+import { StageRouteMap, enemyRouteColor, type StageRoutes } from "./stage-route-map";
+
+// 전투 노드 적 이동 경로 (scripts/build-rogue-routes.py) — 작전 도감과 같은 렌더러를
+// 쓴다 (규칙: .claude/skills/route-map-rules). '이동 경로' 탭을 처음 눌렀을 때만
+// 지연 로드하고, 긴급 노드 값은 같은 레벨을 쓰는 일반 노드 id 별칭 문자열이다.
+let ROUTES_CACHE: Record<string, StageRoutes | string> | null = null;
+let ROUTES_LOADING: Promise<void> | null = null;
+function loadRogueRoutes(): Promise<void> {
+  if (ROUTES_CACHE) return Promise.resolve();
+  ROUTES_LOADING ??= import("./data/rogue-routes.json").then((m) => {
+    ROUTES_CACHE = (m.default ?? m) as unknown as Record<string, StageRoutes | string>;
+  });
+  return ROUTES_LOADING;
+}
+function routesFor(id: string): StageRoutes | undefined {
+  let d = ROUTES_CACHE?.[id];
+  if (typeof d === "string") d = ROUTES_CACHE?.[d];   // 별칭 한 단계 해석
+  return d && typeof d === "object" ? d : undefined;
+}
 
 // 게임연결·리플레이 배포 스위치 — 2026-07-26 켜짐(사용자 지시). 끄면 진입 버튼
 // (BridgeTopicButton)만 사라지고 인식 파이프라인은 죽은 경로로 남는다.
@@ -243,6 +262,12 @@ function StageModal({ pair, grade, onClose, onOpenEnemy }: {
   const { t } = useI18n();
   const [mode, setMode] = useState<"n" | "e">(pair.init === "e" && pair.e ? "e" : "n");
   const [mapZoom, setMapZoom] = useState(false); // 미리보기 클릭 → 2배 확대, 축소는 아무 곳이나 클릭
+  // 실사 도면 / 이동 경로 탭 — 작전 도감 상세와 같은 짜임 (사용자 지시 2026-08-10
+  // "모든 로그라이크 작전 노드에도 다 동일하게 적용"). 규칙: .claude/skills/route-map-rules.
+  const [mapView, setMapView] = useState<"map" | "route">("map");
+  const [hover, setHover] = useState<string | null>(null);
+  const [pinned, setPinned] = useState<Set<string>>(() => new Set());
+  const [, bumpRoutes] = useState(0);   // 지연 로드 완료 시 리렌더용
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", onKey);
@@ -260,6 +285,21 @@ function StageModal({ pair, grade, onClose, onOpenEnemy }: {
   const isBoss = stage.kind === "boss";
   const ctx: StatCtx = { emergencyOrBoss: isEmg || isBoss, emg: isEmg ? stage.emg : null };
   const mul = stage.emg?.mul ?? {};
+  // 경로 모드 공용 — 적 셀(고정 토글·선 색)과 지도 양쪽이 쓴다. 일반/긴급은 같은 레벨을
+  // 공유하므로(별칭) 모드를 바꿔도 경로는 같다. 적↔경로 연결 키는 **교체 전 원본**
+  // se.key다 (긴급 교체 룬은 표시만 변종으로 바꾸고 스폰 경로는 그대로).
+  const rd = mapView === "route" ? routesFor(stage.id) : undefined;
+  const sorted = [...stage.enemies].sort((a, b) => {
+    const rankOrder = (k: string) => isSpecialLast(k)
+      ? 3 : ({ BOSS: 0, ELITE: 1 }[data.enemies[k]?.rank ?? ""] ?? 2);
+    return rankOrder(a.key) - rankOrder(b.key);
+  });
+  const routeOrder = rd ? sorted.filter((se) => rd.e[se.key]?.length).map((se) => se.key) : [];
+  const togglePin = (id: string) => setPinned((curSet) => {
+    const next = new Set(curSet);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
   return (
     <div className="rg-modal-back" onClick={onClose} role="presentation">
       <div className="rg-modal" role="dialog" aria-modal onClick={(e) => e.stopPropagation()}>
@@ -269,17 +309,37 @@ function StageModal({ pair, grade, onClose, onOpenEnemy }: {
             <h3><NodeIco id={KIND_NODE[stage.kind]} cls="rg-modal-ico" /><span className="rg-modal-title"><Nm name={stage.name} cn={stage.cn} /></span></h3>
             {stage.zone != null && <span className="rg-modal-zone">{t("{n}층", { n: stage.zone })}</span>}
           </div>
+          {/* 일반/긴급 탭은 모달 오른쪽 위 — 작전 도감의 환경 탭과 같은 자리 (사용자 지시 2026-08-10) */}
+          {pair.e && (
+            <div className="rg-modal-modes in-head" role="tablist" aria-label={t("작전 모드")}>
+              <button type="button" role="tab" aria-selected={mode === "n"} className={mode === "n" ? "on" : ""} onClick={() => setMode("n")}>{t("일반 작전")}</button>
+              <button type="button" role="tab" aria-selected={mode === "e"} className={`emg${mode === "e" ? " on" : ""}`} onClick={() => setMode("e")}>{t("긴급 작전")}</button>
+            </div>
+          )}
           <button type="button" className="rg-modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
         </header>
-        {pair.e && (
-          <div className="rg-modal-modes" role="tablist" aria-label={t("작전 모드")}>
-            <button type="button" role="tab" aria-selected={mode === "n"} className={mode === "n" ? "on" : ""} onClick={() => setMode("n")}>{t("일반 작전")}</button>
-            <button type="button" role="tab" aria-selected={mode === "e"} className={`emg${mode === "e" ? " on" : ""}`} onClick={() => setMode("e")}>{t("긴급 작전")}</button>
-          </div>
-        )}
         <div className="rg-modal-cols">
           <div className="rg-modal-left">
             {stage.map && (
+              <div className="rg-modal-modes rg-maptabs" role="tablist" aria-label={t("도면 보기")}>
+                <button type="button" role="tab" aria-selected={mapView === "map"}
+                  className={mapView === "map" ? "on" : ""} onClick={() => setMapView("map")}>{t("실사 도면")}</button>
+                <button type="button" role="tab" aria-selected={mapView === "route"}
+                  className={mapView === "route" ? "on" : ""}
+                  onClick={() => {
+                    setMapView("route");
+                    if (!ROUTES_CACHE) loadRogueRoutes().then(() => bumpRoutes((k) => k + 1)).catch(() => { ROUTES_LOADING = null; bumpRoutes((k) => k + 1); });
+                  }}>{t("이동 경로")}</button>
+              </div>
+            )}
+            {mapView === "route" ? (rd ? (
+              // 호버 중이면 그 적만, 아니면 고정된 적들의 합집합 — 고정 조작은 오른쪽
+              // 적 셀이 맡는다 (셀 클릭 = 고정, 셀 속 섬네일 클릭 = 적 상세 모달)
+              <StageRouteMap data={rd} order={routeOrder}
+                highlights={hover ? [hover] : pinned.size ? [...pinned] : null} />
+            ) : (
+              <p className="rg-modal-desc">{ROUTES_CACHE ? t("이 작전은 경로 데이터가 없습니다.") : t("경로 데이터를 불러오는 중…")}</p>
+            )) : stage.map && (
               <button type="button" className={`rg-map-zoom${mapZoom ? " zoom" : ""}`}
                 onClick={() => setMapZoom((z) => !z)}
                 title={mapZoom ? t("아무 곳이나 클릭하면 원래 크기로 돌아갑니다") : t("클릭하면 2배로 확대됩니다")}>
@@ -309,18 +369,27 @@ function StageModal({ pair, grade, onClose, onOpenEnemy }: {
           <div className="rg-modal-enemies">
           {/* 리더 → 정예 → 일반 → 공통 특수몹 순으로 정렬 (사용자 확정 2026-07-18).
               전 테마 공통 특수몹은 데이터에 판별 플래그가 없어 이름 하드코딩 */}
-          {[...stage.enemies].sort((a, b) => {
-            const rankOrder = (k: string) => isSpecialLast(k)
-              ? 3 : ({ BOSS: 0, ELITE: 1 }[data.enemies[k]?.rank ?? ""] ?? 2);
-            return rankOrder(a.key) - rankOrder(b.key);
-          }).map((se) => {
+          {sorted.map((se) => {
             // 긴급 모드에선 교체 룬(level_enemy_replace)이 적용된 변종으로 표시
             const key = isEmg ? (stage.emg?.replace?.[se.key] ?? se.key) : se.key;
             const e = data.enemies[key];
             if (!e) return null;
+            // 경로 모드 (작전 도감과 동일 조작): 셀 클릭 = 경로 고정 토글, 호버 = 그 적만
+            // 강조, **섬네일 클릭 = 항상 적 상세 모달** (stopPropagation으로 고정과 분리)
+            const pinColor = rd && rd.e[se.key]?.length ? enemyRouteColor(routeOrder, se.key) : undefined;
+            const routeMode = !!rd && !!pinColor;
             return (
-              <button type="button" key={se.key} className="rg-enemy-cell" onClick={() => onOpenEnemy(key, { ...ctx, enemyKey: key })}>
-                {e.img ? <img className="rg-enemy-face" src={asset(`/rogue/enemy/${e.img}.webp`)} alt="" aria-hidden width={158} height={158} loading="lazy" decoding="async" />
+              <button type="button" key={se.key}
+                className={`rg-enemy-cell${pinned.has(se.key) ? " pinned" : ""}${routeMode ? " has-route" : ""}`}
+                style={pinColor ? ({ "--rc": pinColor } as React.CSSProperties) : undefined}
+                onMouseEnter={rd ? () => setHover(se.key) : undefined}
+                onMouseLeave={rd ? () => setHover(null) : undefined}
+                onClick={() => { if (routeMode) togglePin(se.key); else onOpenEnemy(key, { ...ctx, enemyKey: key }); }}>
+                {e.img ? <img className="rg-enemy-face" src={asset(`/rogue/enemy/${e.img}.webp`)} alt="" aria-hidden width={158} height={158} loading="lazy" decoding="async"
+                  onClick={(ev) => {
+                    if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
+                    ev.stopPropagation(); onOpenEnemy(key, { ...ctx, enemyKey: key });
+                  }} />
                   : <span className="rg-enemy-face none" aria-hidden>?</span>}
                 <span className="rg-enemy-cell-head">
                   <span className={`rg-rank r-${e.rank ?? "NORMAL"}`}>{t(RANK_KO[e.rank ?? ""] ?? "일반")}</span>

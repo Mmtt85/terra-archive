@@ -39,6 +39,7 @@ CACHE = os.path.join(REPO, ".gamedata", "levels")
 ROGUE_CACHE = os.path.join(REPO, ".gamedata", "rogue")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from imgutil import save_webp  # noqa: E402
+from routeutil import routes_of_level  # noqa: E402
 
 META_ONLY = "--meta-only" in sys.argv
 NO_IMAGES = "--no-images" in sys.argv
@@ -273,6 +274,10 @@ SKIP_TYPES = {"GUIDE"}
 # 명칭 근거: KR '고난'(사용자 확정) · EN 'Adverse Environment'(wiki.gg) ·
 # JP '厄難奮戦環境'(4Gamer·AppBank 공식 보도, 2022-10 10장 공개).
 TOUGH_SUFFIX = {"ko": "고난", "en": "Adverse", "ja": "厄難"}
+# 보안 파견(lt_*)의 긴급판(`_ex`) 구분자 — 역시 build-stages.py와 글자까지 동일해야 한다.
+# base와 _ex는 code·이름·구역이 완전히 같아 접미 없이는 한 행으로 접혀 등장 적이 섞인다
+# (2026-08-10 실측: lt_05_01/lt_05_01_ex가 같은 적 목록을 공유하고 있었다 — 사용자 제보).
+CHALLENGE_SUFFIX = {"ko": "긴급", "en": "Challenge", "ja": "強襲"}
 
 if META_ONLY:
     print("등장 작전 역색인: --meta-only — 기존 enemy-stages*.json 유지")
@@ -387,76 +392,9 @@ else:
     # SVG로 그려 그 위에 표시한다 (app/stage-route-map.tsx). 격자 방향은 render_minimap과
     # 같은 row 0 = 위 — 실사 미리보기와 육안 대조로 확인된 규약이다.
     # 로케일 무관 1벌. 클라이언트는 상세에서 '이동 경로' 탭을 눌렀을 때만 지연 로드한다.
+    # 추출 로직 정본은 scripts/routeutil.py — 통합전략(build-rogue-routes.py)과 공유한다.
     def routes_of(level_id):
-        lv = fetch_level(f"levels/{level_id}.json")
-        if not lv:
-            return None
-        md = lv.get("mapData") or {}
-        grid = md.get("map") or []
-        tdefs = md.get("tiles") or []
-        if isinstance(grid, dict):   # 신형 {row_size, column_size, matrix_data} (render_minimap과 동일 처리)
-            flat = grid.get("matrix_data") or []
-            cn = grid.get("column_size") or 0
-            grid = [flat[i:i + cn] for i in range(0, len(flat), cn)] if cn else []
-        if not grid or not tdefs:
-            return None
-
-        def tchar(t):
-            # 통행(passableMask)·배치(buildableType)·높이(heightType)로 분류한다
-            # (사용자 요청 2026-08-10 "이동불가·배치불가 … 다 구분 가능하게").
-            # tileKey 이름 추측보다 속성이 정확하다 — 예: tile_fence는 '배치만 되는' 타일.
-            key = t.get("tileKey") or ""
-            if key in ("tile_start", "tile_flystart"):
-                return "s"           # 적 출현 (게임 표기 빨강)
-            if key == "tile_end":
-                return "e"           # 방어 목표 (게임 표기 파랑)
-            if key == "tile_hole":
-                return "h"           # 구멍 — 비행만 통과
-            if key == "tile_telin":
-                return "i"           # 통로 입구 — 적이 들어가 출구로 순간이동 (2026-08-10)
-            if key == "tile_telout":
-                return "o"           # 통로 출구
-            walk = t.get("passableMask") in ("ALL", "WALK_ONLY")
-            build = t.get("buildableType") or "NONE"
-            if walk:
-                return "r" if build in ("MELEE", "ALL") else "p"   # 도로 / 이동만(배치 불가)
-            if build in ("MELEE", "ALL"):
-                return "b"           # 배치만 — 이동 불가지만 지상 배치 가능 (펜스류)
-            if t.get("heightType") in (1, "HIGHLAND"):
-                return "w" if build == "RANGED" else "x"           # 고지대(원거리 배치) / 높은 장식
-            return "f"               # 평지 장애물 — 이동·배치 불가
-        g = ["".join(tchar(tdefs[c]) if 0 <= c < len(tdefs) else "f" for c in row) for row in grid]
-
-        rts, fly = [], []
-        for rt in lv.get("routes") or []:
-            # ⚠ 자리를 지워선 안 된다 — waves가 routeIndex 번호로 가리킨다. 못 그리면 null.
-            if not isinstance(rt, dict) or rt.get("motionMode") not in ("WALK", "FLY"):
-                rts.append(None); fly.append(0)
-                continue
-            pts = ([rt.get("startPosition")]
-                   + [cp.get("position") for cp in rt.get("checkpoints") or []
-                      if isinstance(cp, dict) and cp.get("type") == "MOVE"]
-                   + [rt.get("endPosition")])
-            poly = [[p["col"], p["row"]] for p in pts if isinstance(p, dict)]
-            rts.append(poly if len(poly) >= 2 else None)
-            fly.append(1 if rt.get("motionMode") == "FLY" else 0)
-
-        eroutes = {}
-        def walk(actions):
-            for a in actions or []:
-                if a.get("actionType") in (0, "SPAWN") and a.get("key") and a.get("routeIndex") is not None:
-                    eroutes.setdefault(a["key"], set()).add(a["routeIndex"])
-        for w in lv.get("waves") or []:
-            for fg in w.get("fragments") or []:
-                walk(fg.get("actions"))
-        for b in (lv.get("branches") or {}).values():
-            for ph in b.get("phases") or []:
-                walk(ph.get("actions"))
-        er = {k: sorted(i for i in v if 0 <= i < len(rts) and rts[i]) for k, v in eroutes.items()}
-        er = {k: v for k, v in er.items() if v}
-        if not any(rts):
-            return None
-        return {"h": len(g), "w": len(g[0]), "g": g, "r": rts, "f": fly, "e": er}
+        return routes_of_level(fetch_level(f"levels/{level_id}.json"))
 
     rcache = {}
     routes_doc = {}
@@ -544,6 +482,8 @@ else:
             code = clean(st.get("code")) or sid
             if kst.get("diffGroup") == "TOUGH":
                 code = f"{code} ({TOUGH_SUFFIX[loc]})"
+            elif sid.startswith("lt_") and sid.endswith("_ex"):
+                code = f"{code} ({CHALLENGE_SUFFIX[loc]})"   # 보안 파견 긴급판 — 위 상수 주석 참조
             row = [code, clean(st.get("name")) or "",
                    zone_name(loc, st.get("zoneId") or kst.get("zoneId"), kst.get("stageType")),
                    kst.get("stageType"),

@@ -68,6 +68,9 @@ python3 scripts/build-stages.py .gamedata      # → app/data/stages{,.en,.ja}.j
 #   ⚠ 인자 없이 돌리면 levels/ 2,283개(179MB)를 받아 '등장 작전'을 역색인한다 (약 1분).
 #     CI는 --meta-only --no-images로 돌아 그 둘을 건너뛰므로, 새 이벤트의 등장 적과
 #     신규 적 초상은 **로컬 전체 실행**으로만 갱신된다 (docs/AUTOMATION.md 1-B).
+python3 scripts/build-rogue-routes.py          # → app/data/rogue-routes.json (통전 전투 노드 적 이동 경로,
+#     로케일 무관 1벌 · .gamedata/rogue 레벨 캐시 재사용. 추출 정본은 routeutil.py —
+#     stage-routes.json과 공유하므로 경로 규칙 수정 시 이 파일도 재생성한다)
 python3 scripts/build-i18n.py .gamedata       # → app/data/operators.{en,ja}.json + extra-i18n.{en,ja}.json
 python3 scripts/download-avatars.py           # 신규 오퍼 아바타를 public/avatars/에 다운로드
 ```

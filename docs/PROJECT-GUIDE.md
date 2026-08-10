@@ -239,7 +239,11 @@ const { term, set, clear, inputRef, inputProps } = useSearchInput();
   유일한 출처 — build-stages가 em/chgEm으로 복사한다)
 - `app/data/stage-routes.json` — 적 이동 경로 (레벨 파일 routes+waves. 타일 격자 SVG 위에
   그린다 — app/stage-route-map.tsx. ⚠ 타일 행렬은 row 0=위, 경로 좌표는 row 0=아래라
-  경로만 상하 반전해 그린다. 3.3MB — '이동 경로' 탭 클릭 시에만 지연 로드)
+  경로만 상하 반전해 그린다. 3.3MB — '이동 경로' 탭 클릭 시에만 지연 로드.
+  추출 로직 정본은 `scripts/routeutil.py` — 통합전략과 공유, 규칙은 `.claude/skills/route-map-rules`)
+- `app/data/rogue-routes.json` — 통합전략 전투 노드의 적 이동 경로 (`scripts/build-rogue-routes.py`,
+  전 토픽 한 벌 ~770KB. 긴급 노드 값은 같은 레벨을 쓰는 일반 노드 id **별칭 문자열** —
+  app/rogue.tsx가 한 단계 풀어 읽는다. 역시 '이동 경로' 탭 클릭 시에만 지연 로드)
 - `app/data/stages.json` / `.en` / `.ja` — 작전 도감 (작전 **2,224개**의 지형 도면 보유 여부·
   이성·보상·권장 편성·기믹 설명·드랍·등장 적). **사전 인코딩**이다 — 구역·아이템·적 id 같은
   반복 값은 문서 위쪽 사전에 한 번만 두고 본문은 번호로 가리킨다 (그냥 늘어놓으면 3MB)

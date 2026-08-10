@@ -59,6 +59,8 @@ SKIP_DIFF = {"EASY"}
 # ⚠ scripts/build-enemies.py의 TOUGH_SUFFIX와 **글자 하나까지 같아야 한다** — 등장 적
 #   조인 키의 일부다 (고난 판은 코드·이름이 일반판과 같아 접미로만 갈린다).
 TOUGH_SUFFIX = {"ko": "고난", "en": "Adverse", "ja": "厄難"}
+# 보안 파견(lt_*) 긴급판(`_ex`) 구분자 — build-enemies.py CHALLENGE_SUFFIX와 글자까지 동일 필수 (조인 키)
+CHALLENGE_SUFFIX = {"ko": "긴급", "en": "Challenge", "ja": "強襲"}
 
 # 작전 계열 표시명 — 구역 이름이 비어 있을 때의 폴백이자 필터 라벨.
 # ⚠ build-enemies.py의 ZONE_TYPE_LABELS와 **같은 문구**여야 한다 (두 도감이 서로를 링크한다).
@@ -210,7 +212,20 @@ for i, kv in enumerate(stages):
 # **제한 조건 텍스트만** 고유하므로, 일반판 레코드에 "chg"로 싣는다 (사용자 요청 2026-08-10
 # "9-2 클릭하면 일반이랑 긴급 환경 선택할 수 있게").
 chg_of = {sid[:-3]: sid for sid in tables["ko"] if sid.endswith("#f#") and sid[:-3] in idx_of}
-print(f"환경 연결: 고난 {len(base_of)}쌍 · 긴급 {len(chg_of)}건")
+# 보안 파견(lt_*)의 긴급판(`_ex`) — 한 맵의 일반/긴급이 목록에 두 행으로 나뉘어 있었다
+# (사용자 지시 2026-08-10 "보안파견도 한맵에 일반이랑 긴급이야. 바꿔줘"). #f#와 달리
+# **levelId가 달라** 적 구성·경로까지 다르므로 고난처럼 판 통째 교체(alt)로 잇고,
+# 상세 탭 라벨만 '긴급 환경'이 되게 base 레코드에 ae 플래그를 남긴다.
+ex_base = {}                     # base sid → 1 (alt가 긴급판이라는 표시)
+for i, kv in enumerate(stages):
+    sid = kv["stageId"]
+    if sid.startswith("lt_") and sid.endswith("_ex"):
+        j = idx_of.get(sid[: -len("_ex")])
+        if j is not None:
+            alt_of[stages[j]["stageId"]] = i
+            base_of[sid] = j
+            ex_base[stages[j]["stageId"]] = 1
+print(f"환경 연결: 고난 {len(base_of) - len(ex_base)}쌍 · 긴급 {len(chg_of)}건 · 보안 파견 긴급 {len(ex_base)}쌍")
 
 # ── 2. 등장 적 — build-enemies.py 산출물을 뒤집는다 ─────────────────────────
 # 같은 levels/ 파일을 두 번 훑지 않는다. 그쪽 색인은 (코드, 이름, 구역, 종류) 행 기준이라
@@ -313,10 +328,12 @@ def build(loc):
         if kv.get("diffGroup") == "TOUGH":
             code = f"{code} ({TOUGH_SUFFIX[loc]})"
         zone = zone_name(loc, v.get("zoneId") or kv.get("zoneId"), kv.get("stageType"))
-        # 조인 키의 코드도 고난 접미를 붙인다 — enemy-stages.json(ko) 행이 그렇게 갈라져 있다
+        # 조인 키의 코드도 고난·긴급 접미를 붙인다 — enemy-stages.json(ko) 행이 그렇게 갈라져 있다
         jcode = clean(kv.get("code")) or sid
         if kv.get("diffGroup") == "TOUGH":
             jcode = f"{jcode} ({TOUGH_SUFFIX['ko']})"
+        elif sid.startswith("lt_") and sid.endswith("_ex"):
+            jcode = f"{jcode} ({CHALLENGE_SUFFIX['ko']})"
         ents = enemy_by_stage.get((jcode,
                                    clean(kv.get("name")) or "",
                                    zone_name("ko", kv.get("zoneId"), kv.get("stageType"))), [])
@@ -358,6 +375,8 @@ def build(loc):
         if sid in base_of:
             e["base"] = base_of[sid]
             e["sub"] = 1          # 목록·사이트맵에서 숨김 — 일반판 상세가 대신 보여준다
+        if sid in ex_base:
+            e["ae"] = 1           # alt가 고난이 아니라 **긴급** 판 — 상세 탭 라벨용 (보안 파견)
         if sid in ENV_MUL["adverse"]:
             e["em"] = ENV_MUL["adverse"][sid]     # 고난 판의 적 스탯 배수 (룬)
         cs = chg_of.get(sid)
