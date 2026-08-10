@@ -16398,6 +16398,58 @@ main.site-main > .site-header {
   background: 0 0;
   cursor: zoom-in;
 }
+/* 실사 도면 / 이동 경로 탭 — st-envs보다 옅은 톤 (도면 영역 로컬 전환이라) */
+.st-maptabs {
+  display: flex;
+  gap: 6px;
+  margin: 0 0 8px;
+}
+.st-maptabs button {
+  border: 1px solid var(--border-strong);
+  background: var(--white);
+  color: var(--ink2);
+  padding: 5px 12px;
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+}
+.st-maptabs button.on {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--white);
+}
+/* 이동 경로 격자 지도 (app/stage-route-map.tsx) */
+.st-routemap {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--line);
+  background: #11161a;
+}
+.st-routelegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+.st-routelegend button {
+  padding: 2px;
+  border: 1px solid var(--border-strong);
+  background: var(--white);
+  cursor: pointer;
+  line-height: 0;
+}
+.st-routelegend button.on {
+  border-color: #b3372e;
+  background: #b3372e22;
+}
+.st-routelegend img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  background: linear-gradient(150deg, #2a3236, #171c1f);
+}
 /* 확대는 제자리 scale(2)이 아니라 **화면 중앙 라이트박스** — scale 방식은 모달
    경계(.mw-body overflow)에서 잘렸다 (사용자 제보 2026-08-10). position:fixed는
    조상에 transform·backdrop-filter가 없어야 모달을 벗어난다 — 이 체인엔 없다

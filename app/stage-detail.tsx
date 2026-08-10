@@ -12,6 +12,19 @@ import { asset } from "./assets";
 import { enemyPath, enemyImg, enemyImgBase, stageMap, stagePath, stageListPath } from "./dex-paths";
 
 import { viewOf, type EnvMul, type Stage, type StageDoc, type StageView } from "./stage-data";
+import { StageRouteMap, type StageRoutes } from "./stage-route-map";
+
+// 이동 경로 데이터(3.3MB) — '이동 경로' 탭을 처음 눌렀을 때 한 번만 지연 로드해 공유
+let ROUTES_CACHE: Record<string, StageRoutes> | null = null;
+let ROUTES_LOADING: Promise<Record<string, StageRoutes>> | null = null;
+function loadRoutes(): Promise<Record<string, StageRoutes>> {
+  if (ROUTES_CACHE) return Promise.resolve(ROUTES_CACHE);
+  ROUTES_LOADING ??= import("./data/stage-routes.json").then((m) => {
+    ROUTES_CACHE = (m.default ?? m) as unknown as Record<string, StageRoutes>;
+    return ROUTES_CACHE;
+  });
+  return ROUTES_LOADING;
+}
 
 // 다른 모듈이 종전처럼 여기서 가져다 쓰던 것들 — 정본은 app/dex-paths.ts · app/stage-data.ts다
 export { stageMap, stagePath, stageListPath, viewOf };
@@ -31,10 +44,12 @@ function mulFor(id: string, rows?: EnvMul[]): [number, number, number, number] {
 
 /** 등장 적 한 칸 — 통합전략 작전 노드의 적 셀과 같은 짜임(초상 위·이름 아래·코어 스탯).
  *  누르면 **모달로 겹쳐** 적 상세가 뜬다 (페이지 이동 없음). */
-function EnemyChip({ e, mul, onOpenEnemy }: {
+function EnemyChip({ e, mul, onOpenEnemy, onHover }: {
   e: { id: string; name: string; cnt: number; lv: number; st?: [number, number, number, number] };
   mul?: EnvMul[];
   onOpenEnemy?: (id: string) => void;
+  /** 이동 경로 탭이 열려 있을 때 — 호버로 그 적의 경로 강조 */
+  onHover?: (id: string | null) => void;
 }) {
   const { locale, t } = useI18n();
   const base = e.id.replace(/_\d+$/, "");
@@ -47,6 +62,8 @@ function EnemyChip({ e, mul, onOpenEnemy }: {
   ] as const);
   return (
     <a className={`st-enemy${e.lv > 0 ? " reinforced" : ""}`} href={enemyPath(locale, e.id)}
+      onMouseEnter={onHover ? () => onHover(e.id) : undefined}
+      onMouseLeave={onHover ? () => onHover(null) : undefined}
       onClick={(ev) => {
         if (!onOpenEnemy || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
         ev.preventDefault(); onOpenEnemy(e.id);
@@ -87,6 +104,10 @@ export function StageFile({ view, onOpenEnemy, onOpenItem }: {
   const { t } = useI18n();
   const [zoom, setZoom] = useState(false);
   const zoomRef = useRef<HTMLButtonElement | null>(null);
+  // 실사 도면 / 이동 경로 탭 (사용자 확정 2026-08-10 "탭 두개로 구분")
+  const [mapView, setMapView] = useState<"map" | "route">("map");
+  const [hl, setHl] = useState<string | null>(null);
+  const [, bumpRoutes] = useState(0);   // 지연 로드 완료 시 리렌더용
   // 확대 해제는 **페이지 아무 곳이나** 눌러도 된다 (사용자 요청 2026-08-09).
   // 버튼 자체 클릭은 onClick 토글이 맡으므로 여기선 버튼 밖만 잡는다.
   useEffect(() => {
@@ -149,9 +170,20 @@ export function StageFile({ view, onOpenEnemy, onOpenItem }: {
           왼쪽에 지형 도면·설명·수치, 오른쪽에 등장 적·드랍. */}
       <div className="st-cols">
         <div className="st-left">
+          {/* 실사 도면 ↔ 격자+이동 경로 탭 (사용자 확정 2026-08-10) */}
+          <div className="st-maptabs" role="tablist" aria-label={t("도면 보기")}>
+            <button type="button" role="tab" aria-selected={mapView === "map"}
+              className={mapView === "map" ? "on" : ""} onClick={() => setMapView("map")}>{t("실사 도면")}</button>
+            <button type="button" role="tab" aria-selected={mapView === "route"}
+              className={mapView === "route" ? "on" : ""}
+              onClick={() => {
+                setMapView("route");
+                if (!ROUTES_CACHE) loadRoutes().then(() => bumpRoutes((k) => k + 1)).catch(() => { ROUTES_LOADING = null; bumpRoutes((k) => k + 1); });
+              }}>{t("이동 경로")}</button>
+          </div>
           {/* ⚠ 도면은 **원본 비율 그대로** 둔다. 인게임 도면은 거의 다 정사각이라
               통합전략처럼 16:9로 늘리면 찌그러진다 (사용자 지적). 클릭 확대는 통전과 같다. */}
-          {s.map ? (
+          {mapView === "map" ? (s.map ? (
             <button type="button" ref={zoomRef} className={`st-map-zoom${zoom ? " zoom" : ""}`}
               onClick={() => setZoom((z) => !z)}
               title={zoom ? t("아무 곳이나 클릭하면 원래 크기로 돌아갑니다") : t("클릭하면 화면 크기로 확대됩니다")}>
@@ -160,7 +192,27 @@ export function StageFile({ view, onOpenEnemy, onOpenItem }: {
             </button>
           ) : (
             <p className="st-note">{t("이 작전은 지형 도면이 제공되지 않습니다.")}</p>
-          )}
+          )) : (() => {
+            const rd = ROUTES_CACHE?.[s.id];
+            if (!rd) {
+              return <p className="st-note">{ROUTES_CACHE ? t("이 작전은 경로 데이터가 없습니다.") : t("경로 데이터를 불러오는 중…")}</p>;
+            }
+            return (
+              <>
+                <StageRouteMap data={rd} highlight={hl} />
+                <p className="st-note">{t("적에 마우스를 올리거나 아래에서 골라 그 적의 경로만 강조할 수 있습니다.")}</p>
+                <div className="st-routelegend">
+                  {cur.enemies.filter((e) => rd.e[e.id]?.length).map((e) => (
+                    <button key={e.id} type="button" className={hl === e.id ? "on" : ""} title={e.name}
+                      onClick={() => setHl((c) => (c === e.id ? null : e.id))}>
+                      <img src={enemyImg(e.id)} alt={e.name} width={32} height={32} loading="lazy" decoding="async"
+                        onError={(ev) => { ev.currentTarget.style.visibility = "hidden"; }} />
+                    </button>
+                  ))}
+                </div>
+              </>
+            );
+          })()}
           {s.desc && <p className="st-desc">{s.desc}</p>}
           {/* 긴급 환경 제한 조건 — 설명을 지우지 않고 이어서 덧붙인다 (사용자 요청 2026-08-10) */}
           {env === 1 && !view.alt && view.stage.chg && <p className="st-desc st-chg">{view.stage.chg}</p>}
@@ -181,7 +233,10 @@ export function StageFile({ view, onOpenEnemy, onOpenItem }: {
               </h3>
               {reinforced && <p className="st-note">{t("★ 뒤의 숫자는 강화 단계입니다 — 적을 누르면 단계별 스탯이 나옵니다.")}</p>}
               <div className="st-enemies">
-                {cur.enemies.map((e, i) => <EnemyChip key={`${e.id}-${i}`} e={e} mul={envMul} onOpenEnemy={onOpenEnemy} />)}
+                {cur.enemies.map((e, i) => (
+                  <EnemyChip key={`${e.id}-${i}`} e={e} mul={envMul} onOpenEnemy={onOpenEnemy}
+                    onHover={mapView === "route" ? setHl : undefined} />
+                ))}
               </div>
             </section>
           )}

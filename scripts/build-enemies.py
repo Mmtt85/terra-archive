@@ -381,6 +381,83 @@ else:
     json.dump(env, open(p, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
     print(f"  stage-env.json: 고난 {len(env['adverse'])} · 긴급 {len(env['challenge'])} — {os.path.getsize(p)//1024}KB")
 
+    # ── 적 이동 경로 (app/data/stage-routes.json) — 사용자 요청 2026-08-10 ──────
+    # 레벨 파일의 routes(시작→MOVE 체크포인트→끝, 타일 좌표) + waves의 SPAWN이 적↔경로를
+    # 잇는다. 3D 실사 도면엔 좌표를 못 얹으므로(원근 렌더·카메라값 없음) 격자 도면을
+    # SVG로 그려 그 위에 표시한다 (app/stage-route-map.tsx). 격자 방향은 render_minimap과
+    # 같은 row 0 = 위 — 실사 미리보기와 육안 대조로 확인된 규약이다.
+    # 로케일 무관 1벌. 클라이언트는 상세에서 '이동 경로' 탭을 눌렀을 때만 지연 로드한다.
+    def routes_of(level_id):
+        lv = fetch_level(f"levels/{level_id}.json")
+        if not lv:
+            return None
+        md = lv.get("mapData") or {}
+        grid = md.get("map") or []
+        tdefs = md.get("tiles") or []
+        if isinstance(grid, dict):   # 신형 {row_size, column_size, matrix_data} (render_minimap과 동일 처리)
+            flat = grid.get("matrix_data") or []
+            cn = grid.get("column_size") or 0
+            grid = [flat[i:i + cn] for i in range(0, len(flat), cn)] if cn else []
+        if not grid or not tdefs:
+            return None
+
+        def tchar(t):
+            key = t.get("tileKey") or ""
+            if key in ("tile_start", "tile_flystart"):
+                return "s"           # 적 출현 (게임 표기 빨강)
+            if key == "tile_end":
+                return "e"           # 방어 목표 (게임 표기 파랑)
+            if key == "tile_hole":
+                return "h"
+            if key == "tile_forbidden":
+                return "f"
+            if t.get("heightType") in (1, "HIGHLAND"):
+                return "w"           # 고지대
+            return "r"               # 지상
+        g = ["".join(tchar(tdefs[c]) if 0 <= c < len(tdefs) else "f" for c in row) for row in grid]
+
+        rts, fly = [], []
+        for rt in lv.get("routes") or []:
+            # ⚠ 자리를 지워선 안 된다 — waves가 routeIndex 번호로 가리킨다. 못 그리면 null.
+            if not isinstance(rt, dict) or rt.get("motionMode") not in ("WALK", "FLY"):
+                rts.append(None); fly.append(0)
+                continue
+            pts = ([rt.get("startPosition")]
+                   + [cp.get("position") for cp in rt.get("checkpoints") or []
+                      if isinstance(cp, dict) and cp.get("type") == "MOVE"]
+                   + [rt.get("endPosition")])
+            poly = [[p["col"], p["row"]] for p in pts if isinstance(p, dict)]
+            rts.append(poly if len(poly) >= 2 else None)
+            fly.append(1 if rt.get("motionMode") == "FLY" else 0)
+
+        eroutes = {}
+        def walk(actions):
+            for a in actions or []:
+                if a.get("actionType") in (0, "SPAWN") and a.get("key") and a.get("routeIndex") is not None:
+                    eroutes.setdefault(a["key"], set()).add(a["routeIndex"])
+        for w in lv.get("waves") or []:
+            for fg in w.get("fragments") or []:
+                walk(fg.get("actions"))
+        for b in (lv.get("branches") or {}).values():
+            for ph in b.get("phases") or []:
+                walk(ph.get("actions"))
+        er = {k: sorted(i for i in v if 0 <= i < len(rts) and rts[i]) for k, v in eroutes.items()}
+        er = {k: v for k, v in er.items() if v}
+        if not any(rts):
+            return None
+        return {"h": len(g), "w": len(g[0]), "g": g, "r": rts, "f": fly, "e": er}
+
+    rcache = {}
+    routes_doc = {}
+    for sid, lid, kst in stages:
+        if lid not in rcache:
+            rcache[lid] = routes_of(lid)
+        if rcache[lid]:
+            routes_doc[sid] = rcache[lid]
+    p = os.path.join(DATA, "stage-routes.json")
+    json.dump(routes_doc, open(p, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
+    print(f"  stage-routes.json: 경로 보유 작전 {len(routes_doc)} — {os.path.getsize(p)//1024}KB")
+
 
     # ── 메인 스토리 챕터 (2026-08-09 사용자 리포트로 발각) ──────────────────────
     # ⚠ zoneNameFirst를 무조건 챕터 라벨로 쓰면 안 된다. 15·16장(act2mainss/act3mainss)은
