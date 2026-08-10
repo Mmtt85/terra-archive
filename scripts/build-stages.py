@@ -106,6 +106,21 @@ items = {loc: load(f"{S}/{pre}_item_table.json")["items"] for loc, pre, _ in LOC
 # 한 이벤트가 구역을 여러 개 갖는다: '사세행' = 상추실록·망춘유사·대필신편.
 # zoneToActivity(구역 → 이벤트 id) + basicInfo(이벤트 id → 이름)로 되짚는다.
 acts = {loc: load(f"{S}/{pre}_activity_table.json") for loc, pre, _ in LOCALES}
+# 보안 파견 타워 테이블 — 긴급판(_ex)의 공식 문구를 상세에 싣는다 (사용자 질문 2026-08-10
+# "긴급환경이 더 쎌텐데 데이터 없어?"). ⚠ 스탯 배수 **수치**는 게임데이터에 없다 — 강화는
+# legion_mode_enemy_boost 스택(초기 위험 등급)으로 걸리고 스택당 배율은 클라 내장이라,
+# 지어내지 않고 공식 효과 문구(긴급 보급 조건 + 위험 등급 효과)만 보여준다.
+TOWER_DESC = {}          # (loc, ex sid) → "긴급 보급 조건…\n위험 등급 효과…"
+for loc, pre, _ in LOCALES:
+    tp = f"{S}/{pre}_climb_tower_table.json"
+    if not os.path.exists(tp):
+        print(f"  ⚠ {pre}_climb_tower_table.json 없음 — 보안 파견 긴급 문구 생략 ({loc})")
+        continue
+    for t in load(tp)["towers"].values():
+        text = "\n".join(x for x in (clean(t.get("hardModeDesc")), clean(t.get("dangerDesc"))) if x)
+        for ex_sid in t.get("hardLevels") or []:
+            if text:
+                TOWER_DESC[(loc, ex_sid)] = text
 # 펭귄 물류 실측 드랍률 (재료파밍 도우미의 farm.json 재사용) — 게임 표기는 '가끔' 같은
 # 빈도뿐이라, 실측 %와 **그 재료의 효율 순위**(기대 이성 오름차순)를 함께 싣는다
 # (사용자 요청 2026-08-09). 수치는 로케일 무관이라 한 번만 만든다.
@@ -377,6 +392,9 @@ def build(loc):
             e["sub"] = 1          # 목록·사이트맵에서 숨김 — 일반판 상세가 대신 보여준다
         if sid in ex_base:
             e["ae"] = 1           # alt가 고난이 아니라 **긴급** 판 — 상세 탭 라벨용 (보안 파견)
+        td = TOWER_DESC.get((loc, sid))
+        if td:
+            e["chg"] = td         # 보안 파견 긴급판(_ex 행) 공식 문구 — 긴급 환경에서 빨간 박스
         if sid in ENV_MUL["adverse"]:
             e["em"] = ENV_MUL["adverse"][sid]     # 고난 판의 적 스탯 배수 (룬)
         cs = chg_of.get(sid)

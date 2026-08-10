@@ -217,7 +217,11 @@ export function StageFile({ view, onOpenEnemy, onOpenItem }: {
             <button type="button" ref={zoomRef} className={`st-map-zoom${zoom ? " zoom" : ""}`}
               onClick={() => setZoom((z) => !z)}
               title={zoom ? t("아무 곳이나 클릭하면 원래 크기로 돌아갑니다") : t("클릭하면 화면 크기로 확대됩니다")}>
-              <img className="st-map" src={stageMap(s.id)} alt={t("{code} 지형 도면", { code: s.code })}
+              {/* 보안 파견 긴급 판(ae)은 일반판과 **같은 실사 도면**을 쓴다 — _ex 자체엔
+                  인게임 도면이 없어 격자 렌더가 잡혀 있었다 (사용자 지적 2026-08-10).
+                  이동 경로 탭은 _ex 레벨 것 그대로다 (경로·배치는 판마다 다를 수 있다). */}
+              <img className="st-map" src={stageMap(env === 1 && view.alt && view.stage.ae ? view.stage.id : s.id)}
+                alt={t("{code} 지형 도면", { code: s.code })}
                 loading="lazy" decoding="async" />
             </button>
           ) : (
@@ -232,8 +236,10 @@ export function StageFile({ view, onOpenEnemy, onOpenItem }: {
             <p className="st-note">{ROUTES_CACHE ? t("이 작전은 경로 데이터가 없습니다.") : t("경로 데이터를 불러오는 중…")}</p>
           )}
           {s.desc && <p className="st-desc">{s.desc}</p>}
-          {/* 긴급 환경 제한 조건 — 설명을 지우지 않고 이어서 덧붙인다 (사용자 요청 2026-08-10) */}
-          {env === 1 && !view.alt && view.stage.chg && <p className="st-desc st-chg">{view.stage.chg}</p>}
+          {/* 긴급 환경 제한 조건 — 설명을 지우지 않고 이어서 덧붙인다 (사용자 요청 2026-08-10).
+              #f#는 일반판 행(chg), 보안 파견은 긴급 판 행 자체의 chg(긴급 보급 조건·위험 등급
+              효과) — cur가 두 경우 모두 맞는 행을 가리킨다. */}
+          {env === 1 && cur.stage.chg && <p className="st-desc st-chg">{cur.stage.chg}</p>}
           {facts.length > 0 && (
             <dl className="st-facts">
               {facts.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}
