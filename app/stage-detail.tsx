@@ -106,7 +106,9 @@ export function StageFile({ view, onOpenEnemy, onOpenItem }: {
   const zoomRef = useRef<HTMLButtonElement | null>(null);
   // 실사 도면 / 이동 경로 탭 (사용자 확정 2026-08-10 "탭 두개로 구분")
   const [mapView, setMapView] = useState<"map" | "route">("map");
-  const [hl, setHl] = useState<string | null>(null);
+  // 경로 강조 (사용자 확정): 호버 = 그 적만 잠깐 표시 · 클릭 = 고정(여러 적 중첩 가능)
+  const [hover, setHover] = useState<string | null>(null);
+  const [pinned, setPinned] = useState<Set<string>>(() => new Set());
   const [, bumpRoutes] = useState(0);   // 지연 로드 완료 시 리렌더용
   // 확대 해제는 **페이지 아무 곳이나** 눌러도 된다 (사용자 요청 2026-08-09).
   // 버튼 자체 클릭은 onClick 토글이 맡으므로 여기선 버튼 밖만 잡는다.
@@ -197,14 +199,21 @@ export function StageFile({ view, onOpenEnemy, onOpenItem }: {
             if (!rd) {
               return <p className="st-note">{ROUTES_CACHE ? t("이 작전은 경로 데이터가 없습니다.") : t("경로 데이터를 불러오는 중…")}</p>;
             }
+            // 호버 중이면 그 적만, 아니면 고정된 적들의 합집합 (사용자 확정 2026-08-10)
+            const active = hover ? [hover] : pinned.size ? [...pinned] : null;
             return (
               <>
-                <StageRouteMap data={rd} highlight={hl} />
-                <p className="st-note">{t("적에 마우스를 올리거나 아래에서 골라 그 적의 경로만 강조할 수 있습니다.")}</p>
+                <StageRouteMap data={rd} highlights={active} />
+                {/* 이미지 바로 밑 적 얼굴 일렬 — 호버 = 잠깐, 클릭 = 고정(중첩 가능) */}
                 <div className="st-routelegend">
                   {cur.enemies.filter((e) => rd.e[e.id]?.length).map((e) => (
-                    <button key={e.id} type="button" className={hl === e.id ? "on" : ""} title={e.name}
-                      onClick={() => setHl((c) => (c === e.id ? null : e.id))}>
+                    <button key={e.id} type="button" className={pinned.has(e.id) ? "on" : ""} title={e.name}
+                      onMouseEnter={() => setHover(e.id)} onMouseLeave={() => setHover(null)}
+                      onClick={() => setPinned((curSet) => {
+                        const next = new Set(curSet);
+                        if (next.has(e.id)) next.delete(e.id); else next.add(e.id);
+                        return next;
+                      })}>
                       <img src={enemyImg(e.id)} alt={e.name} width={32} height={32} loading="lazy" decoding="async"
                         onError={(ev) => { ev.currentTarget.style.visibility = "hidden"; }} />
                     </button>
@@ -235,7 +244,7 @@ export function StageFile({ view, onOpenEnemy, onOpenItem }: {
               <div className="st-enemies">
                 {cur.enemies.map((e, i) => (
                   <EnemyChip key={`${e.id}-${i}`} e={e} mul={envMul} onOpenEnemy={onOpenEnemy}
-                    onHover={mapView === "route" ? setHl : undefined} />
+                    onHover={mapView === "route" ? setHover : undefined} />
                 ))}
               </div>
             </section>

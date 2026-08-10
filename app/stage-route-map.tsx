@@ -32,19 +32,31 @@ const TILE_FILL: Record<string, string> = {
 // 경로 색 — 서로 겹쳐도 갈리도록 명도·색상 분산
 const ROUTE_COLORS = ["#ffd166", "#6ee7b7", "#7ab8ff", "#ff8fab", "#c9a0ff", "#5eead4", "#ffa94d", "#b8e986"];
 
-export function StageRouteMap({ data, highlight }: { data: StageRoutes; highlight?: string | null }) {
+export function StageRouteMap({ data, highlights }: { data: StageRoutes; highlights?: string[] | null }) {
   const { t } = useI18n();
   const { w, h, g, r, f } = data;
-  // 강조 대상 경로 번호 — 강조가 없거나(환경 전환 등으로) 이 지도에 없는 적이면 전부 보통 세기
-  const hlRoutes = highlight && data.e[highlight]?.length ? new Set(data.e[highlight]) : null;
+  // 강조 대상 경로 번호 — 호버는 한 적, 클릭 고정은 여러 적의 합집합이 온다.
+  // 이 지도에 없는 적뿐이면(환경 전환 등) 강조 없음으로 본다.
+  let hlRoutes: Set<number> | null = null;
+  for (const id of highlights ?? []) {
+    for (const ri of data.e[id] ?? []) (hlRoutes ??= new Set()).add(ri);
+  }
   // 완전히 동일한 폴리라인은 하나로 접는다 (사용자 지적 2026-08-10) — 게임 데이터는
-  // 스폰마다 같은 경로를 별개 항목으로 두는 일이 많다. 강조 판정은 묶음 전체로 본다.
+  // 스폰마다 같은 경로를 별개 항목으로 두는 일이 많다. 단 **쓰는 적의 조합이 다르면
+  // 다른 선**으로 남긴다 (사용자 정정: "서로 다른 적일 경우는 다른 선으로").
   const group = new Map<number, number[]>();   // 대표 경로 번호 → 묶인 번호들
   {
+    const users = new Map<number, string[]>(); // 경로 번호 → 그 경로를 쓰는 적들
+    for (const [eid, ris] of Object.entries(data.e)) {
+      for (const ri of ris) {
+        if (!users.has(ri)) users.set(ri, []);
+        users.get(ri)?.push(eid);
+      }
+    }
     const canon = new Map<string, number>();
     r.forEach((poly, i) => {
       if (!poly) return;
-      const sig = (f[i] ? "F" : "W") + JSON.stringify(poly);
+      const sig = (f[i] ? "F" : "W") + JSON.stringify(poly) + "|" + (users.get(i) ?? []).sort().join(",");
       const c = canon.get(sig);
       if (c === undefined) { canon.set(sig, i); group.set(i, [i]); }
       else group.get(c)?.push(i);

@@ -1478,7 +1478,6 @@ const D: Record<string, Pair> = {
   "적 이동 경로 지도": ["Enemy route map", "敵移動ルートマップ"],
   "이 작전은 경로 데이터가 없습니다.": ["No route data for this operation.", "この作戦のルートデータはありません。"],
   "경로 데이터를 불러오는 중…": ["Loading route data…", "ルートデータを読み込み中…"],
-  "적에 마우스를 올리거나 아래에서 골라 그 적의 경로만 강조할 수 있습니다.": ["Hover an enemy, or pick one below, to highlight only its routes.", "敵にカーソルを合わせるか、下から選ぶとその敵のルートだけ強調されます。"],
   "일반 환경": ["Standard", "通常"],
   "고난 환경": ["Adverse", "厄難"],
   "긴급 환경": ["Challenge", "強襲"],
