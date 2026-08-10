@@ -88,12 +88,15 @@ const RSS_ALT = (locale: SeoLocale) =>
 
 export function stageMetadata(locale: SeoLocale, id: string): Metadata {
   const v = stagePageData(locale, id);
+  // 고난 판 id로 들어오면 viewOf가 일반판 뷰를 돌려준다 — 캐노니컬·hreflang도 일반판
+  // URL로 통일해 중복 색인을 막는다 (/stages/tough_*는 딥링크용으로만 남는 200 페이지).
+  const cid = v?.stage.id ?? id;
   const code = v?.stage.code ?? id;
   const name = v?.stage.name ?? "";
   const title = TITLE[locale](code, name);
   const description = descOf(locale, id);
   const languages = {
-    ko: urlOf("ko", id), en: urlOf("en", id), ja: urlOf("ja", id), "x-default": urlOf("ko", id),
+    ko: urlOf("ko", cid), en: urlOf("en", cid), ja: urlOf("ja", cid), "x-default": urlOf("ko", cid),
   };
   // OG는 작전 도감 탭 공용 이미지 — 지형 도면은 가로세로비가 제각각이라 1200×630에 안 맞는다
   const ogImage = asset(`/og/${locale}/stage.jpg`);
@@ -101,10 +104,10 @@ export function stageMetadata(locale: SeoLocale, id: string): Metadata {
   return {
     title,
     description,
-    alternates: { canonical: urlOf(locale, id), languages, ...RSS_ALT(locale) },
+    alternates: { canonical: urlOf(locale, cid), languages, ...RSS_ALT(locale) },
     robots: { index: true, follow: true },
     openGraph: {
-      title, description, type: "article", url: urlOf(locale, id), siteName,
+      title, description, type: "article", url: urlOf(locale, cid), siteName,
       locale: locale === "ko" ? "ko_KR" : locale === "ja" ? "ja_JP" : "en_US",
       images: [{ url: ogImage, width: 1200, height: 630, alt: title }],
     },
@@ -115,6 +118,7 @@ export function stageMetadata(locale: SeoLocale, id: string): Metadata {
 
 export function stageJsonLd(locale: SeoLocale, id: string) {
   const v = stagePageData(locale, id);
+  const cid = v?.stage.id ?? id;   // 고난 판이면 일반판 URL (stageMetadata와 같은 이유)
   const code = v?.stage.code ?? id;
   const name = v?.stage.name ?? "";
   const siteName = locale === "ko" ? "테라 아카이브" : locale === "ja" ? "テラアーカイブ" : "Terra Archive";
@@ -127,8 +131,8 @@ export function stageJsonLd(locale: SeoLocale, id: string) {
         headline: TITLE[locale](code, name).split(" | ")[0],
         description: descOf(locale, id),
         inLanguage: locale,
-        url: urlOf(locale, id),
-        mainEntityOfPage: urlOf(locale, id),
+        url: urlOf(locale, cid),
+        mainEntityOfPage: urlOf(locale, cid),
         isAccessibleForFree: true,
         ...(v?.stage.map ? { image: asset(`/stage/${v.stage.id}.webp`) } : {}),
         publisher: { "@type": "Organization", name: siteName, url: SITE_URL },

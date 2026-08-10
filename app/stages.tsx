@@ -163,6 +163,9 @@ export default function StageDex({ doc }: { doc: StageDoc; onOpenEnemy?: (id: st
   const shown = useMemo(() => {
     const q = normSearch(term);
     return doc.stages.filter((s) => {
+      // 고난 판은 별도 행을 만들지 않는다 — 일반판 상세의 환경 탭이 대신 보여준다
+      // (사용자 확정 2026-08-10). 딥링크(#st-tough_*)는 byId로 여전히 열린다.
+      if (s.sub) return false;
       if (types.length && !types.includes(s.t)) return false;
       if (events.length && (s.ev === undefined || !events.includes(doc.events[s.ev]))) return false;
       if (zones.length && !zones.includes(doc.zones[s.z])) return false;
@@ -229,7 +232,8 @@ export default function StageDex({ doc }: { doc: StageDoc; onOpenEnemy?: (id: st
       {view && (
         <ModalWindow key={mainRaise} label={`${view.stage.code} ${view.stage.name}`} className="operator-modal st-modal"
           onClose={() => setOpen(null)}>
-          <StageFile view={view} onOpenEnemy={openEnemy} onOpenItem={openItem} />
+          {/* key: 다른 작전으로 갈아탈 때 환경 탭 상태를 초기화한다 */}
+          <StageFile key={view.stage.id} view={view} onOpenEnemy={openEnemy} onOpenItem={openItem} />
         </ModalWindow>
       )}
 

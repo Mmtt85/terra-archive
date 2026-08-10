@@ -108,7 +108,7 @@ function Appearances({ enemy, doc, onOpenStage }: { enemy: Enemy; doc: EnemyStag
   return (
     <section className="en-block">
       <h3><span className="section-no">STAGES</span>{t("등장 작전")} <em>{refs.length}</em></h3>
-      {reinforced && <p className="en-note">{t("★ 표시는 강화된 스탯으로 나오는 작전입니다.")}</p>}
+      {reinforced && <p className="en-note">{t("★ 뒤의 숫자는 그 작전에서의 강화 단계입니다 — 위 스탯표의 단계와 같습니다.")}</p>}
       <div className="en-stagelist">
         {groups.map((g, gi) => (
           <div className="en-stagegroup" key={`${g.zone}-${gi}`}>
@@ -124,7 +124,8 @@ function Appearances({ enemy, doc, onOpenStage }: { enemy: Enemy; doc: EnemyStag
                       if (!onOpenStage || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
                       e.preventDefault(); onOpenStage(it.sid);
                     }}>
-                    {it.lv > 0 && <i className="en-lv" aria-hidden title={t("강화 {n}단계", { n: String(it.lv) })}>★</i>}
+                    {/* 별만 찍지 않고 몇 단계 강화인지 숫자로 (사용자 지적 2026-08-10) */}
+                    {it.lv > 0 && <i className="en-lv" aria-hidden title={t("강화 {n}단계", { n: String(it.lv) })}>★{it.lv}</i>}
                     <b>{it.code}</b><span>{it.name}</span>
                     {it.cnt > 0 && <em>×{it.cnt}</em>}
                   </a>

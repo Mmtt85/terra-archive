@@ -40,7 +40,8 @@ function EnemyChip({ e, onOpenEnemy }: {
         }} />
       <span className="st-enemy-head">
         {e.cnt > 0 && <em>×{e.cnt}</em>}
-        {e.lv > 0 && <i title={t("강화 {n}단계", { n: String(e.lv) })}>★</i>}
+        {/* 별만 찍지 않고 몇 단계 강화인지 숫자로 (사용자 지적 2026-08-10) */}
+        {e.lv > 0 && <i title={t("강화 {n}단계", { n: String(e.lv) })}>★{e.lv}</i>}
       </span>
       <span className="st-enemy-name">{e.name}</span>
     </a>
@@ -63,15 +64,21 @@ export function StageFile({ view, onOpenEnemy, onOpenItem }: {
     document.addEventListener("pointerdown", off, true);
     return () => document.removeEventListener("pointerdown", off, true);
   }, [zoom]);
-  const s = view.stage;
+  // 작전 환경 — 고난 판(alt)이 있으면 [일반/고난], 긴급 제한 조건(chg)만 있으면 [일반/긴급].
+  // 고난은 도면·적·드랍이 통째로 다른 판이라 뷰를 갈아끼우고, 긴급은 지형·적이 같아
+  // 제한 조건 텍스트만 바꿔 보여준다 (사용자 확정 2026-08-10 "하나만 만들고 환경 선택").
+  const [env, setEnv] = useState<0 | 1>(view.initEnv === 1 ? 1 : 0);
+  const hasEnv = !!(view.alt || view.stage.chg);
+  const cur = env === 1 && view.alt ? view.alt : view;
+  const s = cur.stage;
   // 드랍은 구분(주요·특별·추가·완벽 작전…)별로 묶는다 — 게임 '작전 정보' 화면과 같은 짜임
   const byKind: { kind: string; items: StageView["drops"] }[] = [];
-  for (const d of view.drops) {
+  for (const d of cur.drops) {
     const last = byKind.find((x) => x.kind === d.kind);
     if (last) last.items.push(d);
     else byKind.push({ kind: d.kind, items: [d] });
   }
-  const reinforced = view.enemies.some((e) => e.lv > 0);
+  const reinforced = cur.enemies.some((e) => e.lv > 0);
   const facts: [string, string][] = [
     ...(s.ap ? [[t("소모 이성"), String(s.ap)] as [string, string]] : []),
     ...(s.exp ? [[t("작전 경험치"), String(s.exp)] as [string, string]] : []),
@@ -91,6 +98,16 @@ export function StageFile({ view, onOpenEnemy, onOpenItem }: {
         </div>
       </header>
 
+      {/* 작전 환경 선택 — 통합전략 일반/긴급 탭(.rg-modal-modes)과 같은 짜임 */}
+      {hasEnv && (
+        <div className="st-envs" role="tablist" aria-label={t("작전 환경")}>
+          <button type="button" role="tab" aria-selected={env === 0} className={env === 0 ? "on" : ""}
+            onClick={() => setEnv(0)}>{t("일반 환경")}</button>
+          <button type="button" role="tab" aria-selected={env === 1} className={`hard${env === 1 ? " on" : ""}`}
+            onClick={() => setEnv(1)}>{view.alt ? t("고난 환경") : t("긴급 환경")}</button>
+        </div>
+      )}
+
       {/* 통합전략 작전 노드 상세와 같은 2단 구성 (사용자 요청 2026-08-09):
           왼쪽에 지형 도면·설명·수치, 오른쪽에 등장 적·드랍. */}
       <div className="st-cols">
@@ -107,7 +124,10 @@ export function StageFile({ view, onOpenEnemy, onOpenItem }: {
           ) : (
             <p className="st-note">{t("이 작전은 지형 도면이 제공되지 않습니다.")}</p>
           )}
-          {s.desc && <p className="st-desc">{s.desc}</p>}
+          {/* 긴급 환경은 지형·적이 같고 제한 조건만 다르다 — 설명 자리에 조건을 보여준다 */}
+          {env === 1 && !view.alt && view.stage.chg
+            ? <p className="st-desc st-chg">{view.stage.chg}</p>
+            : s.desc && <p className="st-desc">{s.desc}</p>}
           {facts.length > 0 && (
             <dl className="st-facts">
               {facts.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}
@@ -116,12 +136,12 @@ export function StageFile({ view, onOpenEnemy, onOpenItem }: {
         </div>
 
         <div className="st-right">
-          {view.enemies.length > 0 && (
+          {cur.enemies.length > 0 && (
             <section className="st-block">
-              <h3><span className="section-no">ENEMY</span>{t("등장 적")} <em>{view.enemies.length}</em></h3>
-              {reinforced && <p className="st-note">{t("★ 표시는 강화된 스탯으로 나오는 적입니다.")}</p>}
+              <h3><span className="section-no">ENEMY</span>{t("등장 적")} <em>{cur.enemies.length}</em></h3>
+              {reinforced && <p className="st-note">{t("★ 뒤의 숫자는 강화 단계입니다 — 적을 누르면 단계별 스탯이 나옵니다.")}</p>}
               <div className="st-enemies">
-                {view.enemies.map((e, i) => <EnemyChip key={`${e.id}-${i}`} e={e} onOpenEnemy={onOpenEnemy} />)}
+                {cur.enemies.map((e, i) => <EnemyChip key={`${e.id}-${i}`} e={e} onOpenEnemy={onOpenEnemy} />)}
               </div>
             </section>
           )}

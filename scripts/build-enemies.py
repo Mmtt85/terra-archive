@@ -257,6 +257,14 @@ for loc in ("en", "ja"):
 # "이 적을 어디서 봤더라"의 답이 되는 건 대개 옛 이벤트다.
 SKIP_TYPES = {"GUIDE"}
 
+# 고난(diffGroup TOUGH) 작전의 코드 접미 — 일반판과 코드·이름이 같아 이걸 붙여야 행이
+# 갈라진다 (안 붙이면 (코드,이름,구역) 접기에서 일반판과 합쳐져 고난 적 구성이 뭉개진다 —
+# 2026-08-10 사용자 지적 "고난 환경에서는 적 스탯도 다 달라질텐데").
+# ⚠ scripts/build-stages.py의 TOUGH_SUFFIX와 **글자 하나까지 같아야 한다** — 조인 키다.
+# 명칭 근거: KR '고난'(사용자 확정) · EN 'Adverse Environment'(wiki.gg) ·
+# JP '厄難奮戦環境'(4Gamer·AppBank 공식 보도, 2022-10 10장 공개).
+TOUGH_SUFFIX = {"ko": "고난", "en": "Adverse", "ja": "厄難"}
+
 if META_ONLY:
     print("등장 작전 역색인: --meta-only — 기존 enemy-stages*.json 유지")
 else:
@@ -396,7 +404,10 @@ else:
             if not ents:
                 continue
             st = table.get(sid) or kst
-            row = [clean(st.get("code")) or sid, clean(st.get("name")) or "",
+            code = clean(st.get("code")) or sid
+            if kst.get("diffGroup") == "TOUGH":
+                code = f"{code} ({TOUGH_SUFFIX[loc]})"
+            row = [code, clean(st.get("name")) or "",
                    zone_name(loc, st.get("zoneId") or kst.get("zoneId"), kst.get("stageType")),
                    kst.get("stageType"),
                    # 작전 도감으로 넘어가는 열쇠. 상세 라우트가 없는 이벤트 작전도 있으므로

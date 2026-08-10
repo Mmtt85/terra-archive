@@ -1432,7 +1432,7 @@ const D: Record<string, Pair> = {
   "기본형": ["Base", "基本"],
   "강화 {n}단계": ["Tier {n}", "強化{n}段階"],
   "단계": ["Tier", "段階"],
-  "★ 표시는 강화된 스탯으로 나오는 작전입니다.": ["★ marks operations where it appears with reinforced stats.", "★ は強化されたステータスで出現する作戦です。"],
+  "★ 뒤의 숫자는 그 작전에서의 강화 단계입니다 — 위 스탯표의 단계와 같습니다.": ["The number after ★ is the reinforcement tier in that operation — same tiers as the stat table above.", "★の後の数字はその作戦での強化段階です — 上のステータス表の段階と同じです。"],
   "같은 적이라도 작전에 따라 더 강한 스탯으로 나옵니다 — 아래는 그 단계별 수치입니다.": ["The same enemy appears with stronger stats in some operations — the tiers below are those variants.", "同じ敵でも作戦によって強いステータスで出現します — 以下はその段階ごとの数値です。"],
   "이동 속도": ["Move speed", "移動速度"],
   "라이프 감소": ["Life cost", "ライフ減少"],
@@ -1466,7 +1466,14 @@ const D: Record<string, Pair> = {
   "드랍": ["Drops", "ドロップ"],
   "{code} 지형 도면": ["{code} terrain layout", "{code} 地形図"],
   "이 작전은 지형 도면이 제공되지 않습니다.": ["No terrain layout is available for this operation.", "この作戦の地形図は提供されていません。"],
-  "★ 표시는 강화된 스탯으로 나오는 적입니다.": ["★ marks enemies that appear with reinforced stats.", "★ は強化されたステータスで出現する敵です。"],
+  "★ 뒤의 숫자는 강화 단계입니다 — 적을 누르면 단계별 스탯이 나옵니다.": ["The number after ★ is the reinforcement tier — tap an enemy for per-tier stats.", "★の後の数字は強化段階です — 敵をタップすると段階別ステータスが見られます。"],
+  // 작전 환경 — 명칭 근거: KR '고난'(사용자 확정 2026-08-10) · EN wiki.gg 'Adverse/Standard
+  // Environment' · JP 공식 보도 '通常実戦環境/厄難奮戦環境'(4Gamer). 긴급은 KR '긴급 작전' ·
+  // EN 'Challenge Mode' · JP '強襲作戦'. 통전의 "일반 작전"/"긴급 작전" 키와는 번역이 달라 별도 키.
+  "작전 환경": ["Environment", "作戦環境"],
+  "일반 환경": ["Standard", "通常"],
+  "고난 환경": ["Adverse", "厄難"],
+  "긴급 환경": ["Challenge", "強襲"],
   "게임에 표기된 빈도입니다. 실측 드랍률과 이성 효율은 재료파밍 도우미에서 봅니다.": ["These are the in-game frequency labels. For measured drop rates and sanity efficiency, see the Material Farming Helper.", "ゲーム内表記の頻度です。実測ドロップ率と理性効率は素材周回ヘルパーで確認できます。"],
   "작전 도감 - 명일방주 스테이지 지형·드랍 | 테라 아카이브": ["Stage Handbook - Arknights Stage Maps & Drops | Terra Archive", "作戦図鑑 - アークナイツ ステージ地形・ドロップ | テラアーカイブ"],
   "{code} {name} - 명일방주 작전 | 테라 아카이브": ["{code} {name} - Arknights Stage | Terra Archive", "{code} {name} - アークナイツ 作戦 | テラアーカイブ"],

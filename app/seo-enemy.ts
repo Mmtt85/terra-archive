@@ -60,7 +60,9 @@ export function enemyPageData(locale: SeoLocale, id: string): { enemy: Enemy | n
     if (!src) continue;
     let at = remap.get(ref[0]);
     if (at === undefined) { at = rows.length; remap.set(ref[0], at); rows.push(src); }
-    picked.push(ref.length > 1 ? [at, ref[1]] : [at]);
+    // ⚠ 스탯레벨(3번째 칸)까지 옮긴다 — 번호만 다시 매기다 이 칸을 떨궈서 정적 적
+    //   페이지에만 ★강화 표시가 안 나오던 버그가 있었다 (2026-08-10).
+    picked.push(ref.length > 2 ? [at, ref[1], ref[2]] : ref.length > 1 ? [at, ref[1]] : [at]);
   }
   return { enemy, stages: { stages: rows, byEnemy: { [enemy.id]: picked } } };
 }

@@ -91,7 +91,8 @@ function enemyIds() {
 function stageIds() {
   const PAGE_TYPES = new Set(["MAIN", "SUB", "SPECIAL_STORY", "CAMPAIGN", "DAILY", "CLIMB_TOWER"]);
   const doc = JSON.parse(readFileSync(join(ROOT, "app/data/stages.json"), "utf8"));
-  return doc.stages.filter((s) => PAGE_TYPES.has(s.t)).map((s) => s.id);
+  // 고난 판(sub)은 뺀다 — 페이지는 남지만 캐노니컬이 일반판이라 사이트맵에 실을 이유가 없다
+  return doc.stages.filter((s) => PAGE_TYPES.has(s.t) && !s.sub).map((s) => s.id);
 }
 // 통합전략 테마 6종 — /rogue/<slug> (app/seo-rogue.ts rogueSlugs와 같은 목록)
 function rogueSlugs() {

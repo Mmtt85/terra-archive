@@ -15,6 +15,10 @@ export type Stage = {
   /** 등장 적 [enemyIds번호, 스폰수, 스탯레벨] */ e?: [number, number, number][];
   /** events 배열 번호 — 이벤트 작전만 있다 */ ev?: number;
   /** 도면 보유 (없으면 키 자체가 없다) */ map?: number;
+  /** 고난 판 배열 번호 — 상세의 환경 탭이 이 레코드로 통째로 갈아끼운다 */ alt?: number;
+  /** (고난 판만) 일반판 배열 번호 — 딥링크가 오면 일반판 상세를 고난 탭으로 연다 */ base?: number;
+  /** (고난 판만) 목록·사이트맵에서 숨김 */ sub?: number;
+  /** 긴급 작전 제한 조건 — 지형·등장 적은 일반판과 같아 텍스트만 있다 */ chg?: string;
 };
 export type StageDoc = {
   zones: string[]; events: string[]; items: Record<string, string>; occ: string[]; kinds: string[];
@@ -32,9 +36,22 @@ export type StageView = {
   typeName: string;
   drops: { id: string; name: string; occ: string; kind: string; rate?: number; rank?: number; rankOf?: number }[];
   enemies: { id: string; name: string; cnt: number; lv: number }[];
+  /** 고난 판 전체 뷰 — 환경 탭이 도면·적·드랍을 통째로 이걸로 바꾼다 */ alt?: StageView;
+  /** 1이면 고난 탭을 켠 채로 연다 (고난 id 딥링크로 들어온 경우) */ initEnv?: 1;
 };
 
+/** 고난 id로 들어와도 **일반판 상세**를 돌려준다 — 목록·페이지가 한 벌로 두 환경을 그린다 */
 export function viewOf(doc: StageDoc, stage: Stage): StageView {
+  if (stage.base !== undefined) {
+    const b = doc.stages[stage.base];
+    return { ...coreView(doc, b), alt: coreView(doc, stage), initEnv: 1 };
+  }
+  const v = coreView(doc, stage);
+  if (stage.alt !== undefined) v.alt = coreView(doc, doc.stages[stage.alt]);
+  return v;
+}
+
+function coreView(doc: StageDoc, stage: Stage): StageView {
   return {
     stage,
     zone: doc.zones[stage.z] ?? "",

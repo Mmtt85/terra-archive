@@ -51,10 +51,14 @@ SKIP_TYPES = {"GUIDE"}
 # ⚠ 난이도 판(diffGroup)이 진짜 구분자다. difficulty가 아니라 이쪽을 봐야 한다 (2026-08-09 실측).
 #   EASY(103개) = 스토리 모드 간이판. 코드·이름이 정규판과 **103/103 완전히 겹쳐** 목록에
 #     "9-2"가 두 줄로 나온다. 고유 콘텐츠가 없으므로 통째로 뺀다.
-#   TOUGH(104개) = 어려움 판. 85개가 정규판과 코드가 겹치지만 등장 적·배치가 달라 **남긴다** —
+#   TOUGH(104개) = 고난 판. 85개가 정규판과 코드가 겹치지만 등장 적·배치가 달라 **남긴다** —
 #     대신 코드에 난이도를 붙여 구분한다.
 SKIP_DIFF = {"EASY"}
-TOUGH_SUFFIX = {"ko": "어려움", "en": "Tough", "ja": "高難度"}
+# 고난 판 접미 — 게임 공식 명칭 (사용자 교정 2026-08-10: '어려움'이 아니라 '고난').
+# KR '고난 분전 환경' · EN 'Adverse Environment'(wiki.gg) · JP '厄難奮戦環境'(4Gamer 보도).
+# ⚠ scripts/build-enemies.py의 TOUGH_SUFFIX와 **글자 하나까지 같아야 한다** — 등장 적
+#   조인 키의 일부다 (고난 판은 코드·이름이 일반판과 같아 접미로만 갈린다).
+TOUGH_SUFFIX = {"ko": "고난", "en": "Adverse", "ja": "厄難"}
 
 # 작전 계열 표시명 — 구역 이름이 비어 있을 때의 폴백이자 필터 라벨.
 # ⚠ build-enemies.py의 ZONE_TYPE_LABELS와 **같은 문구**여야 한다 (두 도감이 서로를 링크한다).
@@ -188,6 +192,26 @@ def sort_key(v):
 stages = sorted(seen.values(), key=sort_key)
 print(f"작전: {len(stages)}개")
 
+# ── 1b. 환경(고난·긴급) 연결 — 목록엔 일반판 한 줄만, 상세에서 환경을 고른다 ─────
+# (사용자 확정 2026-08-10: "10-11 하나만 만들고 고난 환경 선택할 수 있도록").
+#   alt_of: main sid → 고난 판 배열 번호 (main 레코드에 "alt"로 실림)
+#   base_of: tough sid → 일반판 배열 번호 ("base"+"sub" — sub는 목록·사이트맵에서 숨김)
+#   main 짝이 없는 TOUGH(고난 전용 추가 작전 등 19개)는 그대로 독립 행으로 남는다.
+idx_of = {kv["stageId"]: i for i, kv in enumerate(stages)}
+alt_of, base_of = {}, {}
+for i, kv in enumerate(stages):
+    sid = kv["stageId"]
+    if kv.get("diffGroup") == "TOUGH" and sid.startswith("tough_"):
+        j = idx_of.get("main_" + sid[len("tough_"):])
+        if j is not None:
+            alt_of[stages[j]["stageId"]] = i
+            base_of[sid] = j
+# 긴급 작전(#f#) — code·levelId가 일반판과 같아 위에서 접혔다. 지형·등장 적은 동일하고
+# **제한 조건 텍스트만** 고유하므로, 일반판 레코드에 "chg"로 싣는다 (사용자 요청 2026-08-10
+# "9-2 클릭하면 일반이랑 긴급 환경 선택할 수 있게").
+chg_of = {sid[:-3]: sid for sid in tables["ko"] if sid.endswith("#f#") and sid[:-3] in idx_of}
+print(f"환경 연결: 고난 {len(base_of)}쌍 · 긴급 {len(chg_of)}건")
+
 # ── 2. 등장 적 — build-enemies.py 산출물을 뒤집는다 ─────────────────────────
 # 같은 levels/ 파일을 두 번 훑지 않는다. 그쪽 색인은 (코드, 이름, 구역, 종류) 행 기준이라
 # 여기서도 같은 키로 맞춰 되짚는다.
@@ -282,7 +306,11 @@ def build(loc):
         if kv.get("diffGroup") == "TOUGH":
             code = f"{code} ({TOUGH_SUFFIX[loc]})"
         zone = zone_name(loc, v.get("zoneId") or kv.get("zoneId"), kv.get("stageType"))
-        ents = enemy_by_stage.get((clean(kv.get("code")) or sid,
+        # 조인 키의 코드도 고난 접미를 붙인다 — enemy-stages.json(ko) 행이 그렇게 갈라져 있다
+        jcode = clean(kv.get("code")) or sid
+        if kv.get("diffGroup") == "TOUGH":
+            jcode = f"{jcode} ({TOUGH_SUFFIX['ko']})"
+        ents = enemy_by_stage.get((jcode,
                                    clean(kv.get("name")) or "",
                                    zone_name("ko", kv.get("zoneId"), kv.get("stageType"))), [])
         drops = []
@@ -317,6 +345,17 @@ def build(loc):
         # 등장 적: [적번호, 스폰수, 스탯레벨] — 적 도감(/enemies/<id>)으로 이어진다
         if ents:
             e["e"] = [[intern(x[0], enemy_list, enemy_ix), x[1], x[2]] for x in ents]
+        # 환경 연결 (위 1b): 상세에서 일반/고난·긴급을 갈아끼우는 열쇠
+        if sid in alt_of:
+            e["alt"] = alt_of[sid]
+        if sid in base_of:
+            e["base"] = base_of[sid]
+            e["sub"] = 1          # 목록·사이트맵에서 숨김 — 일반판 상세가 대신 보여준다
+        cs = chg_of.get(sid)
+        if cs:
+            cdesc = clean((table.get(cs) or tables["ko"].get(cs) or {}).get("description"))
+            if cdesc:
+                e["chg"] = cdesc  # 긴급 작전 제한 조건 텍스트 (지형·등장 적은 일반판과 동일)
         out.append(e)
     return {
         "zones": zone_list, "events": ev_list, "items": item_map, "occ": occ_list, "kinds": kind_list,

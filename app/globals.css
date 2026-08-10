@@ -16410,11 +16410,43 @@ main.site-main > .site-header {
   background: #11161a;
   transition: transform 0.18s ease;
 }
+/* 작전 환경 탭(일반/고난·긴급) — 통전 .rg-modal-modes와 같은 짜임, 사이트 밝은 팔레트 */
+.st-envs {
+  display: flex;
+  gap: 6px;
+  margin: 0 0 12px;
+}
+.st-envs button {
+  border: 1px solid var(--border-strong);
+  background: var(--white);
+  color: var(--ink2);
+  padding: 7px 16px;
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+.st-envs button.on {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--white);
+}
+.st-envs button.hard.on {
+  background: #b3372e;
+  border-color: #b3372e;
+  color: #fff;
+}
 .st-desc {
   margin: 0;
   font-size: 14px;
   line-height: 1.7;
   white-space: pre-line;
+}
+/* 긴급 작전 제한 조건 — 일반 설명 자리에 경고 톤으로 */
+.st-desc.st-chg {
+  border: 1px solid #b3372e55;
+  background: #b3372e14;
+  padding: 10px 12px;
 }
 .st-note {
   margin: 0 0 8px;
