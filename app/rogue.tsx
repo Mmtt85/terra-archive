@@ -329,7 +329,7 @@ function StageModal({ pair, grade, onClose, onOpenEnemy }: {
                   onClick={() => {
                     setMapView("route");
                     if (!ROUTES_CACHE) loadRogueRoutes().then(() => bumpRoutes((k) => k + 1)).catch(() => { ROUTES_LOADING = null; bumpRoutes((k) => k + 1); });
-                  }}>{t("이동 경로")}</button>
+                  }}>{t("이동 경로")}{isNewFeature("route-map") && <span className="new-badge">{t("새기능")}</span>}</button>
               </div>
             )}
             {mapView === "route" ? (rd ? (

@@ -22,6 +22,7 @@ export const FEATURE_RELEASED: Record<string, string | { date: string; days: num
   "feedback-image": "2026-08-05", // 제안에 이미지 첨부 (최대 3장 · 드래그·붙여넣기)
   "enemy-dex": "2026-08-09", // 적 도감
   "stage-dex": "2026-08-09", // 작전 도감 — 작전 2,224개의 지형 도면·등장 적·드랍
+  "route-map": "2026-08-10", // 적 이동 경로 지도 — 작전 상세·통전 전투 노드의 '이동 경로' 탭
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -53,10 +54,10 @@ export function anyNewFeature(...keys: string[]): boolean {
 const TAB_FEATURES: Record<string, string[]> = {
   planner: ["scanner", "invest", "layout-153", "account", "endless", "op-level", "invest-payback"],
   recruit: ["lens"],
-  rogue: ["lens", "rogue-inv", "bridge", "rogue-eff", "rogue-cn"],
+  rogue: ["lens", "rogue-inv", "bridge", "rogue-eff", "rogue-cn", "route-map"],
   story: ["lens"], // 스샷 레이더 /stories 설치 (전문 대사 검색, 2026-07-24)
   enemy: ["enemy-dex"],
-  stage: ["stage-dex"],
+  stage: ["stage-dex", "route-map"],
 };
 
 /** 해당 탭 안에 아직 '새기능' 기간인 기능이 하나라도 있으면 true. */

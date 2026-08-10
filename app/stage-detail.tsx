@@ -16,6 +16,7 @@ import { EnemyFile, type Enemy } from "./enemy-detail";
 
 import { viewOf, type EnvMul, type Stage, type StageDoc, type StageView } from "./stage-data";
 import { StageRouteMap, enemyRouteColor, type StageRoutes } from "./stage-route-map";
+import { isNewFeature } from "./whats-new";
 
 // 이동 경로 데이터(3.3MB) — '이동 경로' 탭을 처음 눌렀을 때 한 번만 지연 로드해 공유
 let ROUTES_CACHE: Record<string, StageRoutes> | null = null;
@@ -209,7 +210,7 @@ export function StageFile({ view, onOpenEnemy, onOpenItem }: {
               onClick={() => {
                 setMapView("route");
                 if (!ROUTES_CACHE) loadRoutes().then(() => bumpRoutes((k) => k + 1)).catch(() => { ROUTES_LOADING = null; bumpRoutes((k) => k + 1); });
-              }}>{t("이동 경로")}</button>
+              }}>{t("이동 경로")}{isNewFeature("route-map") && <span className="new-badge">{t("새기능")}</span>}</button>
           </div>
           {/* ⚠ 도면은 **원본 비율 그대로** 둔다. 인게임 도면은 거의 다 정사각이라
               통합전략처럼 16:9로 늘리면 찌그러진다 (사용자 지적). 클릭 확대는 통전과 같다. */}
