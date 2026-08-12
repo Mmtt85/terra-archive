@@ -22,6 +22,12 @@ import { asset } from "./assets";
 // 일부 재화(2종)는 원본에 아이콘이 없다 — onError로 조용히 숨긴다.
 const itemIcon = (id: string) => asset(`/sandbox/item/${id}.webp`);
 const stageMapImg = (id: string) => asset(`/sandbox/map/${id}.webp`);
+const miscIcon = (k: string) => asset(`/sandbox/misc/${k}.webp`);
+// 요리 속성 → 속성 아이콘 파일 (foodattributeicons — 실파일 6종)
+const FOOD_ATTR_ICON: Record<string, string> = {
+  SURVIVE: "survive_main", ATTACK: "attack_main", COOLDOWN: "cooldown_main",
+  COST: "cost_main", SKILL_POINT: "skill_point_main", SPECIAL: "special_main",
+};
 const hideErr = (ev: React.SyntheticEvent<HTMLImageElement>) => { ev.currentTarget.style.display = "none"; };
 
 type Item = [string, string, number, string];            // [이름, 용도, 희귀도, 타입]
@@ -35,15 +41,15 @@ export type SandboxDoc = {
     drinkMats: [string, number][];
     crafts: { id: string; type: string; unlock: string; mats: Record<string, number>; rarity: number }[];
     traps: Record<string, { name: string; tag: string; type: string; lv: number }>;
-    trapTags: Record<string, string>;
+    trapTags: Record<string, [string, string]>;
     stages: [string, string, string, string, number, number][];
     zones: Record<string, string>;
-    nodeTypes: Record<string, string>;
-    weather: [string, string, number, string, string, string][];
-    scenes: { id: string; title: string; desc: string; choices: [string, string, number][] }[];
+    nodeTypes: Record<string, [string, string]>;
+    weather: [string, string, number, string, string, string, string][];
+    scenes: { id: string; icon: string; title: string; desc: string; choices: [string, string, number][] }[];
     rift: { mains: [string, string, number, string][]; subs: [string, string][]; diffs: [number, string][] };
     expeditions: [string, string, number, number, number, number][];
-    techs: [string, string, number, string][];
+    techs: [string, string, number, string, string][];
   };
   v3: {
     name: string; cnName: string; start: number;
@@ -143,7 +149,12 @@ export default function SandboxGuide({ doc, includeFuture }: { doc: SandboxDoc; 
                 <h4>
                   <img className="sb-ico" src={itemIcon(f.id)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
                   {f.variants[0]?.[1] ?? f.id}
-                  {f.attrs.map((a) => <i key={a} className={`sb-chip a-${a}`}>{t(FOOD_ATTR[a] ?? a)}</i>)}
+                  {f.attrs.map((a) => (
+                    <i key={a} className={`sb-chip a-${a}`}>
+                      {FOOD_ATTR_ICON[a] && <img src={miscIcon(FOOD_ATTR_ICON[a])} alt="" aria-hidden onError={hideErr} />}
+                      {t(FOOD_ATTR[a] ?? a)}
+                    </i>
+                  ))}
                 </h4>
                 {f.recipes.length > 0 ? (
                   <ul className="sb-recipes">
@@ -196,7 +207,10 @@ export default function SandboxGuide({ doc, includeFuture }: { doc: SandboxDoc; 
                     <td className="sb-cell-ico"><img className="sb-ico" src={itemIcon(c.id)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />{nameOf(c.id)}{trap && trap.lv > 1 && <i className="sb-lv">Lv.{trap.lv}</i>}</td>
                     <td>{Object.entries(c.mats).map(([id, n]) => `${nameOf(id)} ×${n}`).join(" + ") || "—"}</td>
                     <td>{c.unlock || "—"}</td>
-                    <td>{trap ? (v2.trapTags[trap.tag] ?? trap.tag) : "—"}</td>
+                    <td className="sb-cell-ico">{trap ? (<>
+                      {v2.trapTags[trap.tag]?.[1] && <img className="sb-ico sb-ico-dim" src={miscIcon(v2.trapTags[trap.tag][1])} alt="" aria-hidden loading="lazy" onError={hideErr} />}
+                      {v2.trapTags[trap.tag]?.[0] ?? trap.tag}
+                    </>) : "—"}</td>
                   </tr>
                 );
               })}
@@ -211,10 +225,22 @@ export default function SandboxGuide({ doc, includeFuture }: { doc: SandboxDoc; 
           <div className="sb-grid sb-grid-s">
             {v2.weather.map((w) => (
               <article key={w[0]} className="sb-card">
-                <h4>{w[1]} <i className="sb-chip">{w[3]}</i>{w[2] > 0 && <i className="sb-chip warn">{t("위험 {n}", { n: String(w[2]) })}</i>}</h4>
+                <h4>
+                  {w[6] && <img className="sb-ico-big sb-ico-dim" src={miscIcon(w[6])} alt="" aria-hidden loading="lazy" onError={hideErr} />}
+                  {w[1]} <i className="sb-chip">{w[3]}</i>{w[2] > 0 && <i className="sb-chip warn">{t("위험 {n}", { n: String(w[2]) })}</i>}
+                </h4>
                 <p>{w[4]}</p>
                 <p className="sb-dim">{w[5]}</p>
               </article>
+            ))}
+          </div>
+          <h3 className="sb-h3">{t("노드 종류")}</h3>
+          <div className="sb-nodekey">
+            {Object.entries(v2.nodeTypes).map(([k, nt]) => (
+              <span key={k}>
+                {nt[1] && <img src={miscIcon(nt[1])} alt="" aria-hidden loading="lazy" onError={hideErr} />}
+                {nt[0]}
+              </span>
             ))}
           </div>
           <h3 className="sb-h3">{t("지역")} <em className="sb-count">{v2.stages.length}</em></h3>
@@ -236,7 +262,10 @@ export default function SandboxGuide({ doc, includeFuture }: { doc: SandboxDoc; 
         <div className="sb-grid">
           {v2.scenes.map((sc) => (
             <article key={sc.id} className="sb-card">
-              <h4>{sc.title}</h4>
+              <h4>
+                {sc.icon && <img className="sb-ico-big sb-ico-dim" src={miscIcon(sc.icon)} alt="" aria-hidden loading="lazy" onError={hideErr} />}
+                {sc.title}
+              </h4>
               <p className="sb-dim">{sc.desc}</p>
               <ul className="sb-choices">
                 {sc.choices.map((c, i) => (
@@ -285,7 +314,7 @@ export default function SandboxGuide({ doc, includeFuture }: { doc: SandboxDoc; 
             <thead><tr><th>{t("기술")}</th><th>{t("계열")}</th><th>{t("토큰")}</th><th>{t("효과")}</th></tr></thead>
             <tbody>
               {v2.techs.map((tc, i) => (
-                <tr key={i}><td>{tc[0]}</td><td>{t(TECH_TYPE[tc[1]] ?? tc[1])}</td><td>{tc[2]}</td><td>{tc[3]}</td></tr>
+                <tr key={i}><td className="sb-cell-ico">{tc[4] && <img className="sb-ico sb-ico-dim" src={miscIcon(tc[4])} alt="" aria-hidden loading="lazy" onError={hideErr} />}{tc[0]}</td><td>{t(TECH_TYPE[tc[1]] ?? tc[1])}</td><td>{tc[2]}</td><td>{tc[3]}</td></tr>
               ))}
             </tbody>
           </table></div>

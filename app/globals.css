@@ -17293,19 +17293,64 @@ main.site-main > .site-header {
   color: var(--muted);
 }
 td.sb-cn-td { display: table-cell; margin: 0; }
-/* 아이템 아이콘 — 표 셀·카드 제목 앞의 작은 섬네일 (배경 어두운 원판이라 양 테마 가독) */
+/* 아이템 아이콘 — 표 셀·카드 제목 앞의 섬네일 (배경 어두운 판이라 양 테마 가독).
+   22px는 안 보인다는 제보(2026-08-12)로 한 단계 키웠다 — 표 32px, 카드 제목 46px. */
 .sb-ico {
-  width: 22px;
-  height: 22px;
+  width: 32px;
+  height: 32px;
   flex: none;
-  vertical-align: -6px;
-  margin-right: 6px;
+  vertical-align: -10px;
+  margin-right: 7px;
   object-fit: contain;
   background: #10141c;
-  border-radius: 4px;
+  border-radius: 5px;
+  padding: 2px;
 }
 .sb-cell-ico { white-space: nowrap; }
-.sb-card h4 .sb-ico { width: 26px; height: 26px; vertical-align: middle; }
+.sb-card h4 .sb-ico { width: 46px; height: 46px; vertical-align: middle; }
+/* 흰 선화 아이콘(날씨·노드·테크·태그·조우 종류) — 라이트 테마에서도 보이게 어두운 받침 */
+.sb-ico-dim { background: #1d2330; }
+.sb-ico-big {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  object-fit: contain;
+  background: #1d2330;
+  border-radius: 8px;
+  padding: 4px;
+}
+/* 요리 속성 칩 속 미니 아이콘 */
+.sb-chip img {
+  width: 15px;
+  height: 15px;
+  vertical-align: -3px;
+  margin-right: 3px;
+  background: #1d2330;
+  border-radius: 50%;
+  padding: 1.5px;
+}
+/* 지도 노드 종류 범례 */
+.sb-nodekey {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin-top: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.sb-nodekey span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.sb-nodekey img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+  background: #1d2330;
+  border-radius: 6px;
+  padding: 3px;
+}
 /* 지역 카드 — 맵 프리뷰가 주인공 */
 .sb-map-card { padding: 0 0 10px; overflow: hidden; }
 .sb-map-card img {

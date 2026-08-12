@@ -40,6 +40,18 @@ NO_IMAGES = "--no-images" in sys.argv
 ASSETS = "https://raw.githubusercontent.com/ArknightsAssets/ArknightsAssets2/cn/assets/dyn"
 ICON_URL = ASSETS + "/ui/sandboxperm/%5Buc%5Dcommon/itemicon/{iid}.png"
 MAP_URL = ASSETS + "/ui/sandboxv2/mappreview/sandbox_1/{sid}.png"
+# 보조 아이콘 (사용자 요청 2026-08-12 "각종 노드들도 이미지가 전부 다 있을텐데"):
+# 날씨·지도 노드·조우 종류·테크·설치물 태그·요리 속성 → public/sandbox/misc/<파일>.webp
+T1 = ASSETS + "/ui/sandboxv2/topics/%5Buc%5Dsandbox_1"
+MISC_URLS = {
+    "weather": T1 + "/dungeon/weathertypeicons/{k}.png",
+    "node": T1 + "/dungeon/nodetypeicons/{k}.png",
+    "event": T1 + "/dungeon/event/{k}.png",
+    "tech": T1 + "/sciencenodeicons/{k}.png",
+    "tag": ASSETS + "/ui/sandboxv2/%5Buc%5Dcommon/arts/itemtraptag/{k}.png",
+    "foodattr": ASSETS + "/ui/sandboxv2/%5Buc%5Dcommon/arts/foodattributeicons/{k}.png",
+}
+FOOD_ATTR_ICONS = ["attack_main", "cooldown_main", "cost_main", "skill_point_main", "special_main", "survive_main"]
 
 
 def download_webp(jobs, max_px=None, photo=True):
@@ -113,7 +125,7 @@ def build_v2(tbl):
     drink_mats = [[m["id"], m.get("count", 0)] for m in d["drinkMatData"].values()]
 
     # 설치물·건물 — itemTrapData가 레벨 행 단위라 baseName으로 묶는다
-    trap_tags = {k: v["tagName"] for k, v in d["itemTrapTagData"].items()}
+    trap_tags = {k: [v["tagName"], v.get("tagPic") or ""] for k, v in d["itemTrapTagData"].items()}
     building_rarity = {k: v.get("itemRarity", 0) for k, v in d["buildingItemData"].items()}
     traps = {}
     for row in d["itemTrapData"].values():
@@ -136,17 +148,26 @@ def build_v2(tbl):
                s.get("actionCost", 0), s.get("actionCostEnemyRush", 0)]
               for s in d["stageData"].values()]
     zones = {z["zoneId"]: z.get("zoneName") or "" for z in d["zoneData"].values()}
-    node_types = {k: v.get("name") or "" for k, v in d["nodeTypeData"].items()}
+    node_types = {k: [v.get("name") or "", v.get("iconId") or ""] for k, v in d["nodeTypeData"].items()}
     weather = [[w["weatherId"], w.get("name") or "", w.get("weatherLevel", 0), w.get("weatherTypeName") or "",
-                clean(w.get("functionDesc") or ""), clean(w.get("description") or "")]
+                clean(w.get("functionDesc") or ""), clean(w.get("description") or ""), w.get("weatherIconId") or ""]
                for w in d["weatherData"].values()]
 
-    # 조우 — 장면(scene)과 선택지(choice)를 장면 안에 풀어 넣는다
+    # 조우 — 장면(scene)과 선택지(choice)를 장면 안에 풀어 넣는다.
+    # 장면 계열(scene_<계열>_<단계>)을 eventData의 진입 장면과 맞춰 종류 아이콘을 단다.
+    def fam(scene_id):
+        core = scene_id[len("scene_"):] if scene_id.startswith("scene_") else scene_id
+        return core.rsplit("_", 1)[0]
+    fam_icon = {}
+    for ev in d["eventData"].values():
+        if ev.get("enterSceneId"):
+            fam_icon[fam(ev["enterSceneId"])] = ev.get("iconId") or ""
     choices = d["eventChoiceData"]
     scenes = []
     for sc in d["eventSceneData"].values():
         scenes.append({
             "id": sc["eventSceneId"],
+            "icon": fam_icon.get(fam(sc["eventSceneId"]), ""),
             "title": sc.get("title") or "",
             "desc": clean(sc.get("desc") or ""),
             "choices": [[choices[c].get("title") or "", clean(choices[c].get("desc") or ""), choices[c].get("costAction", 0)]
@@ -162,7 +183,8 @@ def build_v2(tbl):
     expeditions = [[clean(e.get("desc") or ""), clean(e.get("effectDesc") or ""), e.get("costDrink", 0),
                     e.get("charCnt", 0), e.get("minEliteRank", 0), e.get("duration", 0)]
                    for e in d["expeditionData"].values()]
-    techs = [[t.get("techName") or "", t.get("techType") or "", t.get("tokenCost", 0), clean(t.get("rawDesc") or "")]
+    techs = [[t.get("techName") or "", t.get("techType") or "", t.get("tokenCost", 0), clean(t.get("rawDesc") or ""),
+              t.get("techIconId") or ""]
              for t in d["developmentData"].values()]
 
     return {
@@ -238,7 +260,21 @@ def main():
     jobs = [(MAP_URL.format(sid=s[0]), os.path.join(ROOT, "public", "sandbox", "map", f"{s[0]}.webp")) for s in ko["v2"]["stages"]]
     fails2 = download_webp(jobs, max_px=640, photo=True)
     print(f"  지역 맵 프리뷰: {len(jobs) - len(fails2)}/{len(jobs)}")
-    for u, e in (fails + fails2)[:8]:
+
+    # 보조 아이콘 — 데이터에 실제로 등장하는 id만 받는다
+    v2 = ko["v2"]
+    misc = set()
+    misc |= {("weather", w[6]) for w in v2["weather"] if w[6]}
+    misc |= {("node", nt[1]) for nt in v2["nodeTypes"].values() if nt[1]}
+    misc |= {("event", sc["icon"]) for sc in v2["scenes"] if sc.get("icon")}
+    misc |= {("tech", t[4]) for t in v2["techs"] if t[4]}
+    misc |= {("tag", tg[1]) for tg in v2["trapTags"].values() if tg[1]}
+    misc |= {("foodattr", f) for f in FOOD_ATTR_ICONS}
+    jobs = [(MISC_URLS[kind].format(k=k), os.path.join(ROOT, "public", "sandbox", "misc", f"{k}.webp"))
+            for kind, k in sorted(misc)]
+    fails3 = download_webp(jobs, max_px=96, photo=False)
+    print(f"  보조 아이콘(날씨·노드·조우·테크·태그·속성): {len(jobs) - len(fails3)}/{len(jobs)}")
+    for u, e in (fails + fails2 + fails3)[:10]:
         print(f"   실패: {u.rsplit('/', 1)[-1]} — {e}")
 
 
