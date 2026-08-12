@@ -374,6 +374,9 @@ export function StageRouteMap({ data, order, highlights, imgOf, nameOf, onPick, 
       waveStart = endAt + post;
     }
     const duration = runners.reduce((m, rn) => Math.max(m, rn.end), 0);
+    // 제자리 개체(한 칸 경로)는 도착 시각이 스폰과 같아 한 프레임만 보인다 —
+    // 스테이지가 끝날 때까지 서 있는 게 실제에 가깝다 (생존연산 채집물·장치)
+    for (const rn of runners) if (rn.pts.length < 2) rn.end = duration;
     // 조건 분기(branches)만으로 등장하는 적 — 재생에서 빠진다는 고지용
     const spRoutes = new Set(data.sp.map((s) => s[2]));
     const conditional = Object.values(data.e).some((ris) => ris.every((ri) => !spRoutes.has(ri)));
@@ -527,13 +530,19 @@ export function StageRouteMap({ data, order, highlights, imgOf, nameOf, onPick, 
             <clipPath id={`${clipId}c`}><circle cx={0} cy={0} r={0.27} /></clipPath>
           </defs>
           {plan.runners.map((rn, i) => {
-            if (simT < rn.t0 || simT > rn.end) return null;
+            if (!rn.pts.length || simT < rn.t0 || simT > rn.end) return null;
             const rel = simT - rn.t0;
+            let x: number, y: number, vx = 0, vy = 0;
+            if (rn.pts.length < 2) {
+              // 한 칸짜리 경로 — 제자리 개체(생존연산 채집물·장치 등). k-1이 음수가 되어
+              // 터지던 케이스 (사용자 제보 2026-08-12 그물망 갱도). 방향 없이 그 자리에 선다.
+              [x, y] = rn.pts[0];
+            } else {
             let k = 1;
             while (k < rn.arr.length && rn.arr[k] < rel) k++;
             if (k >= rn.arr.length) k = rn.arr.length - 1;
             const [ax, ay] = rn.pts[k - 1], [bx, by] = rn.pts[k];
-            let x: number, y: number, vx = bx - ax, vy = by - ay;
+            vx = bx - ax; vy = by - ay;
             if (rel <= rn.dep[k - 1]) {
               [x, y] = rn.pts[k - 1];             // 대기 중 — 다음 구간 방향을 미리 가리킨다
             } else if (Math.max(Math.abs(ax - bx), Math.abs(ay - by)) > 1) {
@@ -546,6 +555,7 @@ export function StageRouteMap({ data, order, highlights, imgOf, nameOf, onPick, 
               x = ax + (bx - ax) * f01;
               y = ay + (by - ay) * f01;
             }
+            }
             const deg = vx || vy ? (Math.atan2(vy, vx) * 180) / Math.PI : 0;
             const dim = hl ? !(rn.key && hl.has(rn.key)) : false;
             const img = imgOf?.(rn.key);
@@ -555,10 +565,13 @@ export function StageRouteMap({ data, order, highlights, imgOf, nameOf, onPick, 
                 opacity={dim ? 0.12 : 1}
                 onMouseMove={(ev) => showTip(ev, nameOf?.(rn.key) ?? rn.key, imgOf?.(rn.key))}
                 onMouseLeave={() => setTip(null)}>
-                {/* 진행 방향 화살촉 — 정지 상태에서도 어디로 가는지 보인다 */}
-                <g transform={`rotate(${deg})`}>
-                  <polygon points="0.53,0 0.27,0.16 0.27,-0.16" fill={rn.color} stroke="#10141c" strokeWidth={0.03} />
-                </g>
+                {/* 진행 방향 화살촉 — 정지 상태에서도 어디로 가는지 보인다.
+                    제자리 개체(이동 없음)는 방향이 없으니 그리지 않는다. */}
+                {(vx !== 0 || vy !== 0) && (
+                  <g transform={`rotate(${deg})`}>
+                    <polygon points="0.53,0 0.27,0.16 0.27,-0.16" fill={rn.color} stroke="#10141c" strokeWidth={0.03} />
+                  </g>
+                )}
                 <circle r={0.3} fill="#10141c" stroke={rn.color} strokeWidth={0.055} />
                 {img && (
                   <image href={img} x={-0.27} y={-0.27} width={0.54} height={0.54}
