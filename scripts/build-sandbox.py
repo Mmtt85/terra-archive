@@ -128,14 +128,26 @@ _missing: set[str] = set()
 
 
 def t_ko(s):
-    """CN 문자열 → 비공식 한국어. 미등록이면 원문 그대로 두고 경고 수집."""
+    """CN 문자열 → 비공식 한국어. 미등록이면 원문 그대로 두고 경고 수집.
+
+    여러 문단이 줄바꿈으로 이어진 텍스트(조우 설명·지역 설명)는 **줄 단위로** 찾아
+    합친다 — 같은 문단이 난이도별로 재사용돼 통짜로 등록하면 사전이 폭발한다."""
     if not s:
         return s
     hit = CN_KO.get(s)
-    if hit is None:
-        _missing.add(s)
-        return s
-    return hit
+    if hit is not None:
+        return hit
+    if "\n" in s:
+        lines = s.split("\n")
+        tr = [CN_KO.get(x.strip()) for x in lines]
+        if all(t is not None or not x.strip() for t, x in zip(tr, lines)):
+            return "\n".join(t if t is not None else x for t, x in zip(tr, lines))
+        for x, t in zip(lines, tr):
+            if t is None and x.strip():
+                _missing.add(x.strip())
+        return "\n".join(t if t is not None else x for t, x in zip(tr, lines))
+    _missing.add(s)
+    return s
 
 
 def clean(s):
@@ -446,7 +458,10 @@ def build_v3(cn, ko_mode):
     items = {}
     for k, v in items_src.items():
         cn_name = v.get("itemName") or ""
-        items[k] = [tr(cn_name), cn_name, clean(v.get("itemUsage") or ""), v.get("itemRarity", 0), v.get("itemType", "")]
+        usage, desc = clean(v.get("itemUsage") or ""), clean(v.get("itemDesc") or "")
+        # [번역명, CN명, 용도(CN), 희귀도, 타입, 용도(번역), 설명(CN), 설명(번역)]
+        items[k] = [tr(cn_name), cn_name, usage, v.get("itemRarity", 0), v.get("itemType", ""),
+                    tr(usage), desc, tr(desc)]
 
     process = [[r.get("outputItemId") or "", r.get("outputCnt", 1), r.get("materials") or {}, r.get("recipeLevel", 1)]
                for r in d["processRecipeData"].values()]
@@ -454,7 +469,8 @@ def build_v3(cn, ko_mode):
               for b in d["buildRecipeData"].values()]
     stages = [[s.get("code") or "", tr(s.get("name") or ""), s.get("name") or "", clean(s.get("description") or "")]
               for s in d["stageData"].values()]
-    weather = [[tr(w.get("name") or ""), w.get("name") or "", clean(w.get("funcDesc") or ""), clean(w.get("desc") or "")]
+    weather = [[tr(w.get("name") or ""), w.get("name") or "", clean(w.get("funcDesc") or ""), clean(w.get("desc") or ""),
+                tr(clean(w.get("funcDesc") or "")), tr(clean(w.get("desc") or ""))]
                for w in d["weatherData"].values()]
     choices = d["eventChoiceData"]
     scenes = []
@@ -463,8 +479,10 @@ def build_v3(cn, ko_mode):
             "title": tr(sc.get("title") or ""),
             "cn": sc.get("title") or "",
             "desc": clean(sc.get("desc") or ""),
-            # [CN 원문, 번역, 설명] — CN이 메인, 번역은 서브 병기 (사용자 확정 2026-08-12)
-            "choices": [[choices[c].get("title") or "", tr(choices[c].get("title") or ""), clean(choices[c].get("desc") or "")]
+            "descKo": tr(clean(sc.get("desc") or "")),
+            # [CN 원문, 번역, 설명(CN), 설명(번역)] — CN이 메인, 번역은 서브 병기
+            "choices": [[choices[c].get("title") or "", tr(choices[c].get("title") or ""),
+                         clean(choices[c].get("desc") or ""), tr(clean(choices[c].get("desc") or ""))]
                         for c in (sc.get("choiceIdList") or []) if c in choices],
         })
     # 전투 지형 — V3는 시나리오(stageData)와 전투 맵(subStageData)이 갈려 있다.

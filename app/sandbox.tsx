@@ -33,6 +33,8 @@ const stageMapImg = (id: string) => asset(`/sandbox/map/${id}.webp`);
 const miscIcon = (k: string) => asset(`/sandbox/misc/${k}.webp`);
 // 시즌 전체 맵 — 게임 지도 화면의 원본 배경 (사용자 요청 2026-08-12)
 const worldMap = asset("/sandbox/world/sandbox_1.webp");
+// 신시즌 전투 지형 프리뷰 (사용자 요청 2026-08-12 "맵 이미지같은것도 보여줘야 해")
+const v3MapImg = (id: string) => asset(`/sandbox/map2/${id}.webp`);
 const FOOD_ATTR_ICON: Record<string, string> = {
   SURVIVE: "survive_main", ATTACK: "attack_main", COOLDOWN: "cooldown_main",
   COST: "cost_main", SKILL_POINT: "skill_point_main", SPECIAL: "special_main",
@@ -56,7 +58,8 @@ function sbRoutesFor(id: string): StageRoutes | undefined {
 }
 
 type Item = [string, string, number, string, string];    // [이름, 용도, 희귀도, 타입, 설명]
-type V3Item = [string, string, string, number, string];  // [번역명, CN, 용도, 희귀도, 타입]
+// [번역명, CN명, 용도(CN), 희귀도, 타입, 용도(번역), 설명(CN), 설명(번역)]
+type V3Item = [string, string, string, number, string, string, string, string];
 type EnemyRow = [string, string, number, number, number, number, number, number, number];
 export type SandboxDoc = {
   v2: {
@@ -102,9 +105,13 @@ export type SandboxDoc = {
     items: Record<string, V3Item>;
     process: [string, number, Record<string, number>, number][];
     builds: [string, Record<string, number>, string][];
-    stages: [string, string, string, string][];
-    weather: [string, string, string, string][];
-    scenes: { title: string; cn: string; desc: string; choices: [string, string, string][] }[];
+    /** [코드, 이름(번역), 이름(CN), 설명(CN), 설명(번역)] */
+    stages: [string, string, string, string, string][];
+    /** [이름(번역), 이름(CN), 효과(CN), 설명(CN), 효과(번역), 설명(번역)] */
+    weather: [string, string, string, string, string, string][];
+    scenes: { title: string; cn: string; desc: string; descKo: string; choices: [string, string, string, string][] }[];
+    /** 전투 지형 [subStageId, mapPreviewId, levelId] */
+    subs: [string, string, string][];
   };
 };
 
@@ -116,10 +123,11 @@ const VIEW_LABEL: Record<View, string> = {
   food: "요리·음료", craft: "제작·설치물", stage: "지역", enemy: "적 도감", weather: "날씨",
   event: "조우", rift: "균열·원정", tech: "테크트리",
 };
-const V3_VIEWS = ["v3item", "v3craft", "v3stage", "v3event"] as const;
+const V3_VIEWS = ["v3item", "v3craft", "v3map", "v3stage", "v3weather", "v3event"] as const;
 type V3View = (typeof V3_VIEWS)[number];
 const V3_LABEL: Record<V3View, string> = {
-  v3item: "아이템", v3craft: "가공·건설", v3stage: "지역·날씨", v3event: "조우",
+  v3item: "아이템", v3craft: "가공·건설", v3map: "전투 지형", v3stage: "시나리오",
+  v3weather: "날씨", v3event: "조우",
 };
 const FOOD_ATTR: Record<string, string> = {
   SURVIVE: "생존", ATTACK: "공격", COOLDOWN: "재배치", COST: "코스트", SKILL_POINT: "스킬", SPECIAL: "특수",
@@ -746,7 +754,7 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
                     <img className="sb-thumb" src={itemIcon(id)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
                     <b className="sb-cname">{it[1]}{locale === "ko" && it[0] !== it[1] && <span className="sb-cn">{it[0]}</span>}</b>
                     <span className="sb-cmeta">{it[4] && <i className="sb-chip">{it[4]}</i>}</span>
-                    <span className="sb-cdesc">{it[2]}</span>
+                    <span className="sb-cdesc">{locale === "ko" && it[5] ? it[5] : it[2]}</span>
                   </>
                 )))}
             </div>
@@ -777,28 +785,39 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
               </div>
             </>
           )}
-          {v3view === "v3stage" && (
+          {v3view === "v3map" && (
             <>
-              <h3 className="sb-h3">{t("지역")} <em className="sb-count">{v3.stages.length}</em></h3>
-              <div className="sb-cards">
-                {v3.stages.map((s2, i) => card(`v3s${i}`, () => openDetail({ k: "v3stage", i }), (
-                  <>
-                    <b className="sb-cname">{s2[2]}{locale === "ko" && s2[1] !== s2[2] && <span className="sb-cn">{s2[1]}</span>}</b>
-                    <span className="sb-cmeta"><i className="sb-chip">{s2[0]}</i></span>
-                    <span className="sb-cdesc">{s2[3]}</span>
-                  </>
-                ), "sb-card-noimg"))}
-              </div>
-              <h3 className="sb-h3">{t("날씨")} <em className="sb-count">{v3.weather.length}</em></h3>
-              <div className="sb-cards">
-                {v3.weather.map((w, i) => card(`v3w${i}`, () => openDetail({ k: "v3weather", i }), (
-                  <>
-                    <b className="sb-cname">{w[1]}{locale === "ko" && w[0] !== w[1] && <span className="sb-cn">{w[0]}</span>}</b>
-                    <span className="sb-cdesc">{w[2]}</span>
-                  </>
-                ), "sb-card-noimg"))}
+              <p className="sim-note">{t("전투 지형 프리뷰입니다. 시나리오마다 이 지형들이 조합되어 나옵니다.")}</p>
+              <div className="sb-grid">
+                {v3.subs.filter((sv) => sv[1]).map((sv) => (
+                  <article key={sv[0]} className="sb-card sb-map-card">
+                    <img src={v3MapImg(sv[1])} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
+                    <h4><i className="sb-chip">{sv[0]}</i></h4>
+                  </article>
+                ))}
               </div>
             </>
+          )}
+          {v3view === "v3stage" && (
+            <div className="sb-cards">
+              {v3.stages.map((s2, i) => card(`v3s${i}`, () => openDetail({ k: "v3stage", i }), (
+                <>
+                  <b className="sb-cname">{s2[2]}{locale === "ko" && s2[1] !== s2[2] && <span className="sb-cn">{s2[1]}</span>}</b>
+                  <span className="sb-cmeta"><i className="sb-chip">{s2[0]}</i></span>
+                  <span className="sb-cdesc">{locale === "ko" && s2[4] ? s2[4] : s2[3]}</span>
+                </>
+              ), "sb-card-noimg"))}
+            </div>
+          )}
+          {v3view === "v3weather" && (
+            <div className="sb-cards">
+              {v3.weather.map((w, i) => card(`v3w${i}`, () => openDetail({ k: "v3weather", i }), (
+                <>
+                  <b className="sb-cname">{w[1]}{locale === "ko" && w[0] !== w[1] && <span className="sb-cn">{w[0]}</span>}</b>
+                  <span className="sb-cdesc">{locale === "ko" && w[4] ? w[4] : w[2]}</span>
+                </>
+              ), "sb-card-noimg"))}
+            </div>
           )}
           {v3view === "v3event" && (
             <div className="sb-cards">
@@ -806,7 +825,7 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
                 <>
                   <b className="sb-cname">{sc.cn}{locale === "ko" && sc.title !== sc.cn && <span className="sb-cn">{sc.title}</span>}</b>
                   <span className="sb-cmeta"><i className="sb-chip">{t("선택지")} {sc.choices.length}</i></span>
-                  <span className="sb-cdesc">{sc.desc}</span>
+                  <span className="sb-cdesc">{locale === "ko" && sc.descKo ? sc.descKo : sc.desc}</span>
                 </>
               ), "sb-card-noimg"))}
             </div>
@@ -831,7 +850,8 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
                     {locale === "ko" && it[0] !== it[1] && <p className="sb-dim">{it[0]}</p>}
                   </div>
                 </header>
-                {it[2] && <p>{it[2]}</p>}
+                {it[2] && <p>{it[2]}{locale === "ko" && it[5] && it[5] !== it[2] && <span className="sb-trline">{it[5]}</span>}</p>}
+                {it[6] && <p className="sb-dim">{it[6]}{locale === "ko" && it[7] && it[7] !== it[6] && <span className="sb-trline">{it[7]}</span>}</p>}
                 {usedProc.length > 0 && (
                   <>
                     <h4>{t("가공 레시피")}</h4>
@@ -886,6 +906,7 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
                 <h2>{s2[2]}{locale === "ko" && s2[1] !== s2[2] && <span className="sb-cn">{s2[1]}</span>}</h2>
                 <p className="sb-dim">{s2[0]}</p>
                 <p>{s2[3]}</p>
+                {locale === "ko" && s2[4] && s2[4] !== s2[3] && <p className="sb-trline">{s2[4]}</p>}
               </div>
             </ModalWindow>
           );
@@ -897,7 +918,9 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
               <div className="sb-dt">
                 <h2>{w[1]}{locale === "ko" && w[0] !== w[1] && <span className="sb-cn">{w[0]}</span>}</h2>
                 <p>{w[2]}</p>
+                {locale === "ko" && w[4] && w[4] !== w[2] && <p className="sb-trline">{w[4]}</p>}
                 <p className="sb-dim">{w[3]}</p>
+                {locale === "ko" && w[5] && w[5] !== w[3] && <p className="sb-trline">{w[5]}</p>}
               </div>
             </ModalWindow>
           );
@@ -909,10 +932,12 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
               <div className="sb-dt">
                 <h2>{sc.cn}{locale === "ko" && sc.title !== sc.cn && <span className="sb-cn">{sc.title}</span>}</h2>
                 <p>{sc.desc}</p>
+                {locale === "ko" && sc.descKo && sc.descKo !== sc.desc && <p className="sb-trline">{sc.descKo}</p>}
                 <h4>{t("선택지")}</h4>
                 <ul className="sb-choices">
                   {sc.choices.map((c, i) => (
-                    <li key={i}><b>{c[0]}</b>{locale === "ko" && c[0] !== c[1] && <span className="sb-cn">{c[1]}</span>}{c[2] && <span>{c[2]}</span>}</li>
+                    <li key={i}><b>{c[0]}</b>{locale === "ko" && c[0] !== c[1] && <span className="sb-cn">{c[1]}</span>}
+                      {c[2] && <span>{c[2]}{locale === "ko" && c[3] && c[3] !== c[2] && ` (${c[3]})`}</span>}</li>
                   ))}
                 </ul>
               </div>

@@ -1590,6 +1590,11 @@ const D: Record<string, Pair> = {
   "이 신시즌의 공식 번역은 아직 없어 원문(중국어)으로 표시됩니다.": [
     "No official translation exists yet, so original Chinese text is shown.",
     "公式翻訳がまだないため、原文（中国語）で表示されます。"],
+  "전투 지형": ["Battle maps", "戦闘地形"],
+  "시나리오": ["Scenarios", "シナリオ"],
+  "전투 지형 프리뷰입니다. 시나리오마다 이 지형들이 조합되어 나옵니다.": [
+    "Battle map previews — each scenario draws from these layouts.",
+    "戦闘地形のプレビューです。シナリオごとにこれらが組み合わされて出ます。"],
   "전체 지도": ["World map", "全体マップ"],
   "구역 경계를 지도 위에 표시했습니다. 노드 {n}개는 매 판 이 구역들 안에 새로 배치되어 고정 좌표가 없습니다.": [
     "Zone boundaries are drawn over the map. The {n} nodes are re-placed inside these zones every run, so they have no fixed coordinates.",

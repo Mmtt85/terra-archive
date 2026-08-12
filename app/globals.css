@@ -17728,3 +17728,13 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   border-radius: 3px;
 }
 @media (max-width: 720px) { .sb-worldwrap { width: 100%; } }
+
+/* CN 원문 아래 한국어 비공식 번역 줄 (사용자 요청 2026-08-12 — 원문이 메인, 번역이 서브) */
+.sb-trline {
+  display: block;
+  margin-top: 3px;
+  font-size: 12px;
+  line-height: 1.65;
+  color: var(--muted);
+}
+p.sb-trline { margin-top: 2px; }
