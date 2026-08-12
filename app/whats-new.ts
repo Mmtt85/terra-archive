@@ -30,6 +30,18 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 /** 배지 기본 노출 기간(일). 정책 값이므로 개별 기능에서 늘리지 말 것. */
 const DEFAULT_DAYS = 3;
 
+// ⚠ 판정 시계는 **빌드(=배포) 시각**으로 고정한다 — Date.now()를 쓰면 프리렌더된
+// HTML(빌드 시각 기준)과 클라이언트(접속 시각 기준)의 배지 유무가 갈라져, 배지 만료일을
+// 걸치는 순간부터 **모든 페이지가 하이드레이션 불일치(React #418)**로 루트를 통째로 다시
+// 그리고, 그 과정에서 첫 페인트 전 스크립트가 넣은 html.dark까지 날아갔다 (2026-08-12
+// 사용자 제보 "다크모드 켠 후 새로고침하면 라이트로 돌아감" — 전 페이지). 빌드 시각으로
+// 고정하면 서버·클라가 언제나 같은 답을 내고, 배지는 '출시 3일 이후의 첫 배포'에 내려간다
+// — 무인 파이프라인이 사실상 매일 배포하므로 실제 노출 기간은 3일과 거의 같다.
+const CLOCK = (() => {
+  const t = typeof __BUILD_TIME__ === "string" ? Date.parse(__BUILD_TIME__) : NaN;
+  return Number.isNaN(t) ? Date.now() : t;
+})();
+
 /** 출시일로부터 표시 기간(기본 3일) 이내이면 true. 미등록 키·기간 경과·잘못된 날짜는 false. */
 export function isNewFeature(key: string): boolean {
   const entry = FEATURE_RELEASED[key];
@@ -38,7 +50,7 @@ export function isNewFeature(key: string): boolean {
   const days = typeof entry === "string" ? DEFAULT_DAYS : entry.days;
   const released = Date.parse(`${date}T00:00:00+09:00`);
   if (Number.isNaN(released)) return false;
-  return Date.now() < released + days * DAY_MS;
+  return CLOCK < released + days * DAY_MS;
 }
 
 /**
