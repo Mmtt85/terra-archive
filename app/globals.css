@@ -16590,6 +16590,34 @@ main.site-main > .site-header {
   color: var(--muted);
 }
 /* 지상/비행 선 스타일 범례 — 지도 **바깥** 오른쪽 위 (사용자 정정 2026-08-10) */
+/* 지도 확대 토글 — 경로 지도(시뮬 포함)를 모달의 절반 폭까지 (사용자 요청 2026-08-12).
+   .big을 칼럼 그리드가 :has()로 받아 360px → 절반으로 넓힌다 (작전 도감·생존연산·통전 공통). */
+.st-cols:has(.st-routewrap.big) {
+  grid-template-columns: minmax(0, 52%) minmax(0, 1fr);
+}
+.rg-modal-cols:has(.st-routewrap.big) {
+  grid-template-columns: minmax(0, 52%) 1fr;
+}
+.st-mapscale {
+  margin-left: 4px;
+  padding: 2.5px 9px;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--ink2);
+  background: var(--white);
+  border: 1px solid var(--line);
+  cursor: pointer;
+}
+.st-mapscale:hover {
+  color: var(--white);
+  background: var(--ink);
+  border-color: var(--ink);
+}
+.rg-modal .st-mapscale {
+  border-color: var(--rgline);
+  background: var(--rgdeep);
+  color: var(--rgink);
+}
 .st-routekey {
   display: flex;
   justify-content: flex-end;

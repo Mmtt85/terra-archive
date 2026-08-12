@@ -407,9 +407,11 @@ export function StageRouteMap({ data, order, highlights, imgOf, nameOf, onPick, 
   const fmtT = (v: number) => `${Math.floor(v / 60)}:${String(Math.floor(v % 60)).padStart(2, "0")}`;
   const curWave = plan ? plan.waveSpans.reduce((n, from, i) => (simT >= from ? i + 1 : n), 1) : 1;
   const hasSim = !!(data.sp?.length && data.wv);
+  // 지도 확대 — 모달 왼쪽 칼럼을 절반 폭까지 (사용자 요청 2026-08-12)
+  const [big, setBig] = useState(false);
   const cell = 1;
   return (
-    <div className="st-routewrap" ref={wrapRef}>
+    <div className={`st-routewrap${big ? " big" : ""}`} ref={wrapRef}>
     {/* 시뮬레이트 — 스폰 타임라인 재생 (사용자 요청 2026-08-10). 데이터가 있는 작전만. */}
     {hasSim && (
       <div className="st-simbar">
@@ -443,10 +445,16 @@ export function StageRouteMap({ data, order, highlights, imgOf, nameOf, onPick, 
         {plan?.conditional && <> {t("처치 수 등 조건 분기 증원은 재생에 포함되지 않습니다.")}</>}
       </p>
     )}
-    {/* 지상/비행 선 스타일 범례 — 지도 **바깥** 오른쪽 위 (사용자 정정 2026-08-10) */}
-    <div className="st-routekey" aria-hidden>
-      <span><svg width="24" height="6"><line x1="0" y1="3" x2="24" y2="3" stroke="currentColor" strokeWidth="2.4" strokeDasharray="9 3.5" /></svg>{t("지상")}</span>
-      <span><svg width="24" height="6"><line x1="0" y1="3" x2="24" y2="3" stroke="currentColor" strokeWidth="2.4" strokeDasharray="2.5 4" /></svg>{t("비행")}</span>
+    {/* 지상/비행 선 스타일 범례 — 지도 **바깥** 오른쪽 위 (사용자 정정 2026-08-10).
+        ⤢ 확대 = 지도 칼럼을 모달의 절반 폭까지 (사용자 요청 2026-08-12 "시뮬레이터도
+        확대 가능하게, 상세모달의 절반정도 크기까지") — .big을 :has()로 칼럼이 받는다. */}
+    <div className="st-routekey">
+      <span aria-hidden><svg width="24" height="6"><line x1="0" y1="3" x2="24" y2="3" stroke="currentColor" strokeWidth="2.4" strokeDasharray="9 3.5" /></svg>{t("지상")}</span>
+      <span aria-hidden><svg width="24" height="6"><line x1="0" y1="3" x2="24" y2="3" stroke="currentColor" strokeWidth="2.4" strokeDasharray="2.5 4" /></svg>{t("비행")}</span>
+      <button type="button" className="st-mapscale" aria-pressed={big}
+        onClick={() => setBig((v) => !v)}>
+        {big ? "⤡ " + t("원래 크기") : "⤢ " + t("지도 확대")}
+      </button>
     </div>
     <svg className="st-routemap" viewBox={`0 0 ${w * cell} ${h * cell}`} role="img"
       aria-label={t("적 이동 경로 지도")}>
