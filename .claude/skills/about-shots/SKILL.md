@@ -29,6 +29,14 @@ node scripts/r2-sync.mjs
 30일 이미지 캐시에 옛 캡처가 남는데, 쿼리 버전이 바뀌면 새 캐시 키라 전원이 즉시 새로 받는다.
 (SHOT_VER 반영은 Pages 배포를 타므로, 사용자가 deploy를 돌려야 라이브에 나간다.)
 
+> ⚠ **SHOT_VER 는 r2-sync 뒤에 올린다 — 반드시 이 순서.** 쿼리는 엣지 캐시 키에 포함되므로,
+> 올린 값으로 **로컬에서 /about을 한 번 열기만 해도** 그 키에 아직 안 올라간 옛 이미지가
+> `max-age=14400`(4시간)으로 엣지에 박힌다. 그러면 배포해도 라이브는 옛 캡처를 계속 문다.
+> 2026-08-13에 이걸로 ko 다크 24장이 죽었다(라이트·EN/JA는 열지 않아 무사). 이미 태웠으면
+> **SHOT_VER를 하루 더 올려** 새 키를 만드는 게 유일한 즉시 해법(4시간 기다리기 말고).
+> 확인법: `md5 -q public/about/portal-dark.webp` 와
+> `curl -s "https://files.terra-archive.net/assets/about/portal-dark.webp?v=<SHOT_VER>" | md5 -q` 비교.
+
 끝나면 서버 종료(`pkill -f "vinext start"`) → `git status public/about`으로 108개 변경 확인 →
 몇 장 열어 품질 확인(아래 체크리스트) → 커밋·push. **deploy.sh는 돌리지 않는다** (CLAUDE.md 규칙).
 
