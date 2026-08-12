@@ -51,6 +51,9 @@ MISC_URLS = {
     "tech": T1 + "/sciencenodeicons/{k}.png",
     "tag": ASSETS + "/ui/sandboxv2/%5Buc%5Dcommon/arts/itemtraptag/{k}.png",
     "foodattr": ASSETS + "/ui/sandboxv2/%5Buc%5Dcommon/arts/foodattributeicons/{k}.png",
+    "quest": T1 + "/dungeon/floathub/icons/{k}.png",                                  # 균열 주 목표
+    "riftenv": ASSETS + "/ui/sandboxv2/%5Buc%5Dcommon/arts/riftparamicon/{k}.png",     # 균열 환경·적 파벌
+    "riftteam": ASSETS + "/ui/sandboxv2/%5Buc%5Dcommon/arts/riftteamicon/{k}.png",     # 균열 팀 버프
 }
 FOOD_ATTR_ICONS = ["attack_main", "cooldown_main", "cost_main", "skill_point_main", "special_main", "survive_main"]
 GAMEDATA = "https://raw.githubusercontent.com/ArknightsAssets/ArknightsGamedata/master"
@@ -142,10 +145,16 @@ def load(prefix):
 
 
 def build_v2(tbl):
-    """sandbox_1 「사막 이야기」 — 해당 로케일 공식 텍스트."""
+    """sandbox_1 「사막 이야기」 — 해당 로케일 공식 텍스트.
+
+    화면이 카드+상세 모달 구조라(사용자 확정 2026-08-12 "록라 소장품 도감처럼")
+    목록에 필요한 요약과 모달에 필요한 상세를 **한 레코드**에 담는다.
+    """
     d = tbl["detail"]["SANDBOX_V2"]["sandbox_1"]
     items_src = {k: v for k, v in tbl["itemData"].items() if k.startswith("sandbox_1")}
-    items = {k: [v["itemName"], clean(v.get("itemUsage") or ""), v.get("itemRarity", 0), v.get("itemType", "")]
+    # [이름, 용도, 희귀도, 타입, 설명]
+    items = {k: [v["itemName"], clean(v.get("itemUsage") or ""), v.get("itemRarity", 0), v.get("itemType", ""),
+                 clean(v.get("itemDesc") or "")]
              for k, v in items_src.items()}
 
     foods = []
@@ -153,46 +162,68 @@ def build_v2(tbl):
         foods.append({
             "id": f["id"],
             "attrs": f.get("attributes") or [],
-            # 조합: 재료 id 배열 목록 (없으면 실패작·특수)
             "recipes": [r["mats"] for r in (f.get("recipes") or [])],
-            # [변형타입, 이름, 효과]
             "variants": [[v.get("type"), v.get("name"), clean(v.get("usage") or "")] for v in (f.get("variants") or [])],
         })
     food_mats = [[m["id"], m.get("type"), m.get("attribute"), m.get("variantType"), clean(m.get("buffDesc") or "")]
                  for m in d["foodMatData"].values()]
     drink_mats = [[m["id"], m.get("count", 0)] for m in d["drinkMatData"].values()]
 
-    # 설치물·건물 — itemTrapData가 레벨 행 단위라 baseName으로 묶는다
+    # ── 제작·설치물 — 종류(type)·태그별 분류 + 레벨별 상세 (사용자 요청 2026-08-12) ──
     trap_tags = {k: [v["tagName"], v.get("tagPic") or ""] for k, v in d["itemTrapTagData"].items()}
     building_rarity = {k: v.get("itemRarity", 0) for k, v in d["buildingItemData"].items()}
-    traps = {}
+    # itemTrapData는 레벨 행 단위 — 밑동(minLevelItemId)으로 묶어 레벨 목록을 만든다
+    trap_by_base = {}
     for row in d["itemTrapData"].values():
         base = row.get("minLevelItemId") or row["itemId"]
-        g = traps.setdefault(base, {"name": row.get("baseItemName") or "", "tag": row.get("itemTag") or "",
-                                    "type": row.get("itemType") or "", "lv": 0})
-        g["lv"] = max(g["lv"], row.get("trapLevel", 1))
+        g = trap_by_base.setdefault(base, {"name": row.get("baseItemName") or "", "tag": row.get("itemTag") or "",
+                                           "type": row.get("itemType") or "", "levels": []})
+        g["levels"].append([row.get("trapLevel", 1), row["itemId"], row.get("buildingLevel", -1)])
+    for g in trap_by_base.values():
+        g["levels"].sort()
 
     crafts = []
     for c in d["craftItemData"].values():
+        iid = c["itemId"]
+        tr = trap_by_base.get(iid) or {}
         crafts.append({
-            "id": c["itemId"],
-            "type": c.get("type") or "",
+            "id": iid,
+            "type": c.get("type") or "",            # BASE_BUILDING · COMBAT_BUILDING · TACTICAL
+            "tag": tr.get("tag") or "",             # OUTPUT · DEFEND · ENHANCE …
+            "kind": tr.get("type") or "",           # FUNCTION · BATTLE · TACTICAL · ANIMAL
             "unlock": clean(c.get("buildingUnlockDesc") or ""),
             "mats": c.get("materialItems") or {},
-            "rarity": building_rarity.get(c["itemId"], 0),
+            "up": c.get("upgradeItems") or None,
+            "rarity": building_rarity.get(iid, 0),
+            "out": c.get("outputRatio", 0),
+            "wd": c.get("withdrawRatio", 0),
+            "repair": c.get("repairCost", 0),
+            "lvs": [lv[0] for lv in tr.get("levels", [])],
         })
 
     stages = [[s["stageId"], s.get("code") or "", s.get("name") or "", clean(s.get("description") or ""),
                s.get("actionCost", 0), s.get("actionCostEnemyRush", 0)]
               for s in d["stageData"].values()]
+    # 지역별 획득 자원 (rewardConfigData) — 지역 필터·상세에 쓴다.
+    # ⚠ 게임 데이터에 '지역 ↔ 노드 종류' 고정 매핑은 없다 (노드는 런타임 배치) —
+    #   그래서 사용자 요청의 '노드 종류별'은 **획득 자원별**로 갈음한다 (2026-08-12).
+    smp = (d.get("rewardConfigData") or {}).get("stageMapPreviewRewardDict") or {}
+    stage_rewards = {k: [r["rewardItem"] for r in (v.get("rewardList") or [])] for k, v in smp.items()}
+
     zones = {z["zoneId"]: z.get("zoneName") or "" for z in d["zoneData"].values()}
     node_types = {k: [v.get("name") or "", v.get("iconId") or ""] for k, v in d["nodeTypeData"].items()}
-    weather = [[w["weatherId"], w.get("name") or "", w.get("weatherLevel", 0), w.get("weatherTypeName") or "",
-                clean(w.get("functionDesc") or ""), clean(w.get("description") or ""), w.get("weatherIconId") or ""]
-               for w in d["weatherData"].values()]
+    # 날씨 — 기후 종류(weatherType)별로 묶고 위험도(level)로 정렬 (사용자 요청:
+    # "쾌청·위험도1·2·3 다 나뉘어 있으니 한 종류로 그룹바이, 상세에서 위험도 지정")
+    wgroups = {}
+    for w in d["weatherData"].values():
+        g = wgroups.setdefault(w.get("weatherType") or "NORMAL",
+                               {"type": w.get("weatherType") or "NORMAL", "name": w.get("weatherTypeName") or "", "lv": []})
+        g["lv"].append([w.get("weatherLevel", 0), w.get("name") or "", clean(w.get("functionDesc") or ""),
+                        clean(w.get("description") or ""), w.get("weatherIconId") or ""])
+    for g in wgroups.values():
+        g["lv"].sort(key=lambda x: x[0])
+    weather = list(wgroups.values())
 
-    # 조우 — 장면(scene)과 선택지(choice)를 장면 안에 풀어 넣는다.
-    # 장면 계열(scene_<계열>_<단계>)을 eventData의 진입 장면과 맞춰 종류 아이콘을 단다.
     def fam(scene_id):
         core = scene_id[len("scene_"):] if scene_id.startswith("scene_") else scene_id
         return core.rsplit("_", 1)[0]
@@ -200,48 +231,90 @@ def build_v2(tbl):
     for ev in d["eventData"].values():
         if ev.get("enterSceneId"):
             fam_icon[fam(ev["enterSceneId"])] = ev.get("iconId") or ""
+    ev_name = {}
+    for ev in d["eventData"].values():
+        if ev.get("enterSceneId"):
+            ev_name[fam(ev["enterSceneId"])] = ev.get("iconName") or ""
     choices = d["eventChoiceData"]
     scenes = []
     for sc in d["eventSceneData"].values():
+        f = fam(sc["eventSceneId"])
         scenes.append({
             "id": sc["eventSceneId"],
-            "icon": fam_icon.get(fam(sc["eventSceneId"]), ""),
+            "icon": fam_icon.get(f, ""),
+            "kind": ev_name.get(f, ""),
             "title": sc.get("title") or "",
             "desc": clean(sc.get("desc") or ""),
             "choices": [[choices[c].get("title") or "", clean(choices[c].get("desc") or ""), choices[c].get("costAction", 0)]
                         for c in (sc.get("choiceIds") or []) if c in choices],
         })
 
+    # ── 균열 — riftId별로 난이도(환경압력)를 한 카드에 묶는다 (사용자 요청 2026-08-12
+    # "환경 압력도 00 11 22 33 중복이니 하나로 합쳐줘, 카드 형식으로") ──
+    rewards = d.get("riftRewardDisplayData") or {}
+    rifts = {}
+    for r in d["riftDifficultyData"].values():
+        g = rifts.setdefault(r["riftId"], {"id": r["riftId"], "diffs": []})
+        g["diffs"].append([r.get("difficultyLevel", 0), clean(r.get("desc") or ""),
+                           rewards.get(r.get("rewardGroupId") or "", [])])
+    for g in rifts.values():
+        g["diffs"].sort(key=lambda x: x[0])
+    fixed = [[f.get("riftName") or "", rewards.get(f.get("rewardGroupId") or "", [])]
+             for f in (d.get("fixedRiftData") or {}).values()]
     rift = {
-        "mains": [[m.get("title") or "", clean(m.get("desc") or ""), m.get("targetDayCount", 0), m.get("questIconName") or ""]
+        "sets": list(rifts.values()),
+        "fixed": fixed,
+        # 주 목표 — 종류(targetType)별로 묶는다
+        "mains": [[m.get("targetType") or "", m.get("title") or "", clean(m.get("desc") or ""),
+                   m.get("targetDayCount", 0), m.get("questIconName") or "", m.get("questIconId") or "",
+                   clean(m.get("storyDesc") or "")]
                   for m in d["riftMainTargetData"].values()],
-        "subs": [[m.get("title") or m.get("desc") or "", clean(m.get("desc") or "")] for m in d["riftSubTargetData"].values()],
-        "diffs": [[m.get("difficultyLevel", 0), clean(m.get("desc") or "")] for m in d["riftDifficultyData"].values()],
+        "subs": [[m.get("name") or "", clean(m.get("desc") or "")] for m in d["riftSubTargetData"].values()],
+        "teams": [[tv[0].get("teamName") or "", clean(tv[0].get("teamDesc") or ""), tv[0].get("teamSmallIconId") or "",
+                   [[b.get("buffLevel", 0), clean(b.get("buffDesc") or "")] for b in tv]]
+                  for tv in (d.get("riftTeamBuffData") or {}).values()],
+        "globals": [clean(g.get("desc") or "") for g in (d.get("riftGlobalEffectData") or {}).values()],
+        "envs": [[e.get("desc") or "", e.get("iconId") or ""] for e in (d.get("riftEnemyParamData") or {}).values()],
     }
-    expeditions = [[clean(e.get("desc") or ""), clean(e.get("effectDesc") or ""), e.get("costDrink", 0),
-                    e.get("charCnt", 0), e.get("minEliteRank", 0), e.get("duration", 0)]
-                   for e in d["expeditionData"].values()]
+
+    # ── 원정 — 같은 효과(effectDesc)끼리 묶어 한 카드, 안에서 편성 변형을 고른다 ──
+    exp_groups = {}
+    for e in d["expeditionData"].values():
+        g = exp_groups.setdefault(clean(e.get("effectDesc") or ""), {"eff": clean(e.get("effectDesc") or ""), "rows": []})
+        g["rows"].append([clean(e.get("desc") or ""), e.get("costDrink", 0), e.get("charCnt", 0),
+                          e.get("minEliteRank", 0), e.get("duration", 0), e.get("professions") or []])
+    for g in exp_groups.values():
+        g["rows"].sort(key=lambda x: (x[4], x[2]))
+    expeditions = list(exp_groups.values())
+
     techs = [[t.get("techName") or "", t.get("techType") or "", t.get("tokenCost", 0), clean(t.get("rawDesc") or ""),
               t.get("techIconId") or ""]
              for t in d["developmentData"].values()]
 
+    # 오브젝트·적 처치 보상 (파괴하면 뭐가 나오는지)
+    rcd = d.get("rewardConfigData") or {}
+    trap_rewards = {k: [v.get("rewardItemId") or "", v.get("count", 0)] for k, v in (rcd.get("trapRewardDict") or {}).items()}
+    enemy_rewards = {k: [v.get("rewardItemId") or "", v.get("count", 0)] for k, v in (rcd.get("enemyRewardDict") or {}).items()}
+
     return {
         "name": tbl["basicInfo"]["sandbox_1"].get("topicName") or "",
         "items": items, "foods": foods, "foodMats": food_mats, "drinkMats": drink_mats,
-        "crafts": crafts, "traps": traps, "trapTags": trap_tags,
-        "stages": stages, "zones": zones, "nodeTypes": node_types, "weather": weather,
-        "scenes": scenes, "rift": rift, "expeditions": expeditions, "techs": techs,
+        "crafts": crafts, "trapTags": trap_tags,
+        "stages": stages, "stageRewards": stage_rewards, "zones": zones, "nodeTypes": node_types,
+        "weather": weather, "scenes": scenes, "rift": rift, "expeditions": expeditions, "techs": techs,
+        "trapRewards": trap_rewards, "enemyRewards": enemy_rewards,
     }
 
 
 # 지도 오브젝트 — 레벨 predefines.tokenInsts의 설치물 중 표시할 종류 (사용자 요청
-# 2026-08-12 "깰 수 있는 돌로 된 타일도 표시"). 전부 부수거나 채집하는 대상이다.
+# 2026-08-12). 지도에는 파괴 가능 바위(rock)만 그리고 나머지는 모달의 자원 목록으로.
 OBJ_KINDS = {
     "trap_413_hiddenstone": "rock",      # 길을 막는 파괴 가능 바위
     "trap_410_xbstone": "stone",         # 석재 바위
     "trap_411_xbiron": "iron",           # 철광석 바위
     "trap_460_xbdiam": "diam",           # 명징석 바위
-    "trap_414_vegetation": "veg",        # 식생(벌목)
+    "trap_409_xbwood": "wood",           # 벌목 (사용자 지시 2026-08-12: '식생'이 아니라 '목재')
+    "trap_414_vegetation": "wood",
     "trap_416_gtreasure": "treasure",    # 보물
     "trap_422_streasure": "treasure",
 }
@@ -385,6 +458,16 @@ def main():
         doc = {"v2": build_v2(tbl), "v3": build_v3(cn, ko_mode=(suffix == ""))}
         doc["v2"]["stageEnemies"] = stage_enemies
         doc["v2"]["enemyNames"] = enemy_names_for(prefix, all_ids)
+        # 적 도감 — 적별 대표 스탯(최고 레벨)·초상·등장 지역 역색인 (사용자 요청 2026-08-12)
+        dex = {}
+        for sid, rows in stage_enemies.items():
+            for r in rows:
+                e = dex.setdefault(r[0], {"id": r[0], "img": r[1], "src": r[2], "lv": r[4],
+                                          "st": r[5:9], "at": []})
+                e["at"].append([sid, r[3]])
+                if r[4] > e["lv"]:  # 더 높은 강화 단계의 스탯을 대표로
+                    e["lv"], e["st"] = r[4], r[5:9]
+        doc["v2"]["dex"] = list(dex.values())
         docs[suffix] = doc
         p = os.path.join(DATA, f"sandbox{suffix}.json")
         json.dump(doc, open(p, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
@@ -408,12 +491,15 @@ def main():
     # 보조 아이콘 — 데이터에 실제로 등장하는 id만 받는다
     v2 = ko["v2"]
     misc = set()
-    misc |= {("weather", w[6]) for w in v2["weather"] if w[6]}
+    misc |= {("weather", lv[4]) for w in v2["weather"] for lv in w["lv"] if lv[4]}
     misc |= {("node", nt[1]) for nt in v2["nodeTypes"].values() if nt[1]}
     misc |= {("event", sc["icon"]) for sc in v2["scenes"] if sc.get("icon")}
     misc |= {("tech", t[4]) for t in v2["techs"] if t[4]}
     misc |= {("tag", tg[1]) for tg in v2["trapTags"].values() if tg[1]}
     misc |= {("foodattr", f) for f in FOOD_ATTR_ICONS}
+    misc |= {("quest", m[5]) for m in v2["rift"]["mains"] if m[5]}
+    misc |= {("riftenv", e[1]) for e in v2["rift"]["envs"] if e[1]}
+    misc |= {("riftteam", tm[2]) for tm in v2["rift"]["teams"] if tm[2]}
     jobs = [(MISC_URLS[kind].format(k=k), os.path.join(ROOT, "public", "sandbox", "misc", f"{k}.webp"))
             for kind, k in sorted(misc)]
     fails3 = download_webp(jobs, max_px=96, photo=False)

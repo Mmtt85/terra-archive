@@ -925,10 +925,10 @@ function Portal({ onOpenTab }: {
   );
 }
 
-export default function Home({ locale, operators, extra, summariesLoader, initialTab = "portal", initialStory, initialOperator, initialRogue, initialEnemy, pageEnemy, pageEnemyStages, pageStage }: { locale: Locale; operators: Operator[]; extra: ExtraI18n | null; summariesLoader: SummariesLoader; initialTab?: Tab; initialStory?: string; initialOperator?: string; initialRogue?: string; initialEnemy?: string; pageEnemy?: EnemyEntry | null; pageEnemyStages?: EnemyStages | null; pageStage?: StageView | null }) {
+export default function Home({ locale, operators, extra, summariesLoader, initialTab = "portal", initialStory, initialOperator, initialRogue, initialSandbox, initialEnemy, pageEnemy, pageEnemyStages, pageStage }: { locale: Locale; operators: Operator[]; extra: ExtraI18n | null; summariesLoader: SummariesLoader; initialTab?: Tab; initialStory?: string; initialOperator?: string; initialRogue?: string; initialSandbox?: string; initialEnemy?: string; pageEnemy?: EnemyEntry | null; pageEnemyStages?: EnemyStages | null; pageStage?: StageView | null }) {
   return (
     <I18nProvider locale={locale}>
-      <HomeInner operators={operators} extra={extra} summariesLoader={summariesLoader} initialTab={initialTab} initialStory={initialStory} initialOperator={initialOperator} initialRogue={initialRogue} initialEnemy={initialEnemy} pageEnemy={pageEnemy} pageEnemyStages={pageEnemyStages} pageStage={pageStage} />
+      <HomeInner operators={operators} extra={extra} summariesLoader={summariesLoader} initialTab={initialTab} initialStory={initialStory} initialOperator={initialOperator} initialRogue={initialRogue} initialSandbox={initialSandbox} initialEnemy={initialEnemy} pageEnemy={pageEnemy} pageEnemyStages={pageEnemyStages} pageStage={pageStage} />
     </I18nProvider>
   );
 }
@@ -936,7 +936,7 @@ export default function Home({ locale, operators, extra, summariesLoader, initia
 // '미래시 포함' 토글 localStorage 키 — 켜면 한국 서버 미실장(CN 선행) 오퍼도 목록에 표시
 const FUTURE_KEY = "ta-include-future";
 
-function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory, initialOperator, initialRogue, initialEnemy, pageEnemy, pageEnemyStages, pageStage }: { operators: Operator[]; extra: ExtraI18n | null; summariesLoader: SummariesLoader; initialTab: Tab; initialStory?: string; initialOperator?: string; initialRogue?: string; initialEnemy?: string; pageEnemy?: EnemyEntry | null; pageEnemyStages?: EnemyStages | null; pageStage?: StageView | null }) {
+function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory, initialOperator, initialRogue, initialSandbox, initialEnemy, pageEnemy, pageEnemyStages, pageStage }: { operators: Operator[]; extra: ExtraI18n | null; summariesLoader: SummariesLoader; initialTab: Tab; initialStory?: string; initialOperator?: string; initialRogue?: string; initialSandbox?: string; initialEnemy?: string; pageEnemy?: EnemyEntry | null; pageEnemyStages?: EnemyStages | null; pageStage?: StageView | null }) {
   const { locale, t } = useI18n();
   // SSR엔 localStorage가 없으므로 false로 하이드레이션 후 이펙트에서 복원한다.
   // 우선순위: URL 쿼리(?future=1|0) > localStorage. URL 파라미터는 공유 링크용.
@@ -1415,6 +1415,17 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     void (locale === "ja" ? import("./stages-ja") : locale === "en" ? import("./stages-en") : import("./stages-ko"));
   }, [locale]);
 
+  // 생존연산 시즌 전환 — /ra/<slug>로 주소를 바꾸고 탭을 연다 (통전 테마 전환과 같은 짜임).
+  // ⚠ tabPath가 ?future=1을 달고 올 수 있어 문자열 이어붙이기 금지 (switchRogueTopic과 같은 함정).
+  const [sandboxSlug, setSandboxSlug] = useState(initialSandbox ?? "sand");
+  const switchSandbox = (slug: string) => {
+    setNavOpen(false); setOpenGroup("");
+    const [, query] = tabPath("ra").split("?");
+    history.pushState(null, "", `${localeBase}/ra/${slug}${query ? `?${query}` : ""}`);
+    setSandboxSlug(slug);
+    startTransition(() => { setTab("ra"); setSelected(null); });
+  };
+
   const switchTab = (next: Tab) => {
     setNavOpen(false);
     noteAction();                       // 실패 추적 창 카운트 (app/trail.ts)
@@ -1718,7 +1729,24 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                 ))}
               </div>
             </div>
-            <button className={`tab-ra${tab === "ra" ? " selected" : ""}`} onClick={() => switchTab("ra")}><span className="tab-icon" aria-hidden>❂</span>{t("생존연산 가이드")}{tabHasNewFeature("ra") && <span className="new-badge">{t("새기능")}</span>}</button>
+            {/* 생존연산 가이드 — 시즌별 하위 메뉴 (사용자 확정 2026-08-12 "록라처럼 메뉴를 아예 나눠줘") */}
+            <div className="tab-flyout">
+              <button className={`tab-ra${tab === "ra" ? " selected" : ""}`} onClick={() => switchTab("ra")}><span className="tab-icon" aria-hidden>❂</span>{t("생존연산 가이드")}{tabHasNewFeature("ra") && <span className="new-badge">{t("새기능")}</span>}<span className="tab-group-arrow" aria-hidden>◂</span></button>
+              <div className="tab-submenu" role="group" aria-label={t("생존연산 가이드")}>
+                <a href={`${localeBase}/ra/sand`} className="tab-sub"
+                  onClick={(event) => {
+                    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+                    event.preventDefault(); switchSandbox("sand");
+                  }}><span className="tab-sub-mark" aria-hidden>›</span>{t("사막 이야기")}</a>
+                {includeFuture && (
+                  <a href={`${localeBase}/ra/anchor`} className="tab-sub"
+                    onClick={(event) => {
+                      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+                      event.preventDefault(); switchSandbox("anchor");
+                    }}><span className="tab-sub-mark" aria-hidden>›</span>{t("재기동 앵커")}<em className="tab-sub-future">{t("미래시")}</em></a>
+                )}
+              </div>
+            </div>
             <button className={`tab-story${tab === "story" ? " selected" : ""}`} onClick={() => switchTab("story")}><span className="tab-icon" aria-hidden>✦</span>{t("스토리")}{tabHasNewFeature("story") && <span className="new-badge">{t("새기능")}</span>}</button>
             <button className={`tab-about${tab === "about" ? " selected" : ""}`} onClick={() => switchTab("about")}><span className="tab-icon" aria-hidden>ⓘ</span>{t("테라 아카이브 소개")}</button>
           </nav>
@@ -1868,7 +1896,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
         {tab === "rogue" && <RogueGuide includeFuture={includeFuture} initialTopic={initialRogue ? `rogue_${initialRogue.replace(/^is/, "")}` : undefined} />}
         {tab === "enemy" && !(pageEnemy && enemyPageOpen) && <EnemyDexForLocale />}
         {tab === "stage" && !(pageStage && stagePageOpen) && <StageDexForLocale onOpenEnemy={openEnemyFromStage} />}
-        {tab === "ra" && <SandboxForLocale includeFuture={includeFuture} />}
+        {tab === "ra" && <SandboxForLocale includeFuture={includeFuture} season={sandboxSlug === "anchor" ? "v3" : "v2"} />}
         {tab === "about" && <About onOpenTab={switchTab} />}
       </Suspense>
       {/* 작전 시뮬레이터 런처 — SEO 표적 페이지라 **정적 임포트로 프리렌더**한다

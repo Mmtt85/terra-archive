@@ -42,6 +42,8 @@ export type StageRoutes = {
 const OB_STYLE: Record<string, { fill: string; label: string; shape: "diamond" | "dot" | "star" }> = {
   rock: { fill: "#e07a3f", label: "파괴 가능 바위", shape: "diamond" },
 };
+/** 자원 목록에서 고른 종류를 지도에 임시로 찍을 때의 표기 (기본 목록엔 없는 종류) */
+const OB_PICK_STYLE = { fill: "#6fe3d4", label: "", shape: "dot" as const };
 function obShape(shape: "diamond" | "dot" | "star", x: number, y: number, fill: string, key: number) {
   if (shape === "diamond") {
     return <rect key={key} x={x - 0.17} y={y - 0.17} width={0.34} height={0.34} fill={fill}
@@ -73,6 +75,8 @@ const TILE_FILL: Record<string, string> = {
   h: "#10141c",   // 구멍 — 비행만 통과 (어두운 남색끼 — x보단 밝고 ⊘도 없어 구분된다)
   i: "#b06a2a",   // 통로 입구 — 게임의 주황 화살표 (사용자 제보 2026-08-10)
   o: "#d18f3f",   // 통로 출구
+  u: "#2d6b86",   // 물 — 생존연산은 수상 플랫폼을 놓아야 배치 가능 (사용자 제보 2026-08-12)
+  d: "#16394f",   // 깊은 물 — 비행만 통과
 };
 // 타일 범례 — 라벨 자체가 설명이 되게 (사용자 지적 2026-08-10 "'배치만'은 또 뭔데")
 const TILE_LABELS: [string, string, string][] = [
@@ -87,6 +91,8 @@ const TILE_LABELS: [string, string, string][] = [
   ["h", "구멍(비행만 통과)", "비행 적만 지나갈 수 있습니다"],
   ["i", "통로 입구", "적이 여기로 들어가 통로 출구로 순간이동합니다"],
   ["o", "통로 출구", "통로 입구로 들어간 적이 여기서 나옵니다"],
+  ["u", "물", "적은 지나갑니다 — 생존연산에서는 수상 플랫폼을 설치해야 오퍼레이터를 배치할 수 있습니다"],
+  ["d", "깊은 물", "비행 적만 지나갈 수 있습니다"],
 ];
 // 적별 색 — **같은 적은 같은 색, 다른 적은 다른 색** (사용자 확정 2026-08-10).
 // 색은 범례(적 얼굴) 순번으로 배정하고 초상 테두리에도 같은 색을 쓴다.
@@ -156,7 +162,7 @@ function simplify(pts: [number, number][]): [number, number][] {
   return out;
 }
 
-export function StageRouteMap({ data, order, highlights, imgOf, nameOf, onPick, autoSim }: {
+export function StageRouteMap({ data, order, highlights, imgOf, nameOf, onPick, autoSim, obPick }: {
   data: StageRoutes;
   /** 범례에 보이는 적 id 순서 — 선 색 배정 기준 (stage-detail이 넘겨준다) */
   order: string[];
@@ -169,6 +175,8 @@ export function StageRouteMap({ data, order, highlights, imgOf, nameOf, onPick, 
   onPick?: (id: string) => void;
   /** 마운트하자마자 시뮬 자동 재생 — /stages/<id>?sim=1 딥링크 (작전 시뮬레이터 런처) */
   autoSim?: boolean;
+  /** 오브젝트 강조 — 고른 종류만 선명하게, 나머지는 흐리게 (생존연산 자원 목록 클릭) */
+  obPick?: string | null;
 }) {
   const { t } = useI18n();
   const { w, h, g, r, f } = data;
@@ -433,12 +441,12 @@ export function StageRouteMap({ data, order, highlights, imgOf, nameOf, onPick, 
   const fmtT = (v: number) => `${Math.floor(v / 60)}:${String(Math.floor(v % 60)).padStart(2, "0")}`;
   const curWave = plan ? plan.waveSpans.reduce((n, from, i) => (simT >= from ? i + 1 : n), 1) : 1;
   const hasSim = !!(data.sp?.length && data.wv);
-  // 지도 확대 3단 — 기본(360px) → 절반(52%) → 전폭(1칼럼, 적 목록이 아래로)
-  // (사용자 요청 2026-08-12 "절반정도까지" → "더 크게 확대가능하게")
-  const [big, setBig] = useState(0);
+  // 지도 크기 2단 — **기본이 이미 넓은 칼럼(52%)**이고 토글은 전폭 하나뿐
+  // (사용자 확정 2026-08-12 "한번 확대한 크기를 기본으로, 지도 크기는 두 가지만")
+  const [big, setBig] = useState(false);
   const cell = 1;
   return (
-    <div className={`st-routewrap${big === 1 ? " big" : big === 2 ? " full" : ""}`} ref={wrapRef}>
+    <div className={`st-routewrap big${big ? " full" : ""}`} ref={wrapRef}>
     {/* 시뮬레이트 — 스폰 타임라인 재생 (사용자 요청 2026-08-10). 데이터가 있는 작전만. */}
     {hasSim && (
       <div className="st-simbar">
@@ -478,9 +486,9 @@ export function StageRouteMap({ data, order, highlights, imgOf, nameOf, onPick, 
     <div className="st-routekey">
       <span aria-hidden><svg width="24" height="6"><line x1="0" y1="3" x2="24" y2="3" stroke="currentColor" strokeWidth="2.4" strokeDasharray="9 3.5" /></svg>{t("지상")}</span>
       <span aria-hidden><svg width="24" height="6"><line x1="0" y1="3" x2="24" y2="3" stroke="currentColor" strokeWidth="2.4" strokeDasharray="2.5 4" /></svg>{t("비행")}</span>
-      <button type="button" className="st-mapscale" aria-pressed={big > 0}
-        onClick={() => setBig((v) => (v + 1) % 3)}>
-        {big === 0 ? "⤢ " + t("지도 확대") : big === 1 ? "⤢ " + t("더 크게") : "⤡ " + t("원래 크기")}
+      <button type="button" className="st-mapscale" aria-pressed={big}
+        onClick={() => setBig((v) => !v)}>
+        {big ? "⤡ " + t("원래 크기") : "⤢ " + t("지도 확대")}
       </button>
     </div>
     <svg className="st-routemap" viewBox={`0 0 ${w * cell} ${h * cell}`} role="img"
@@ -505,11 +513,11 @@ export function StageRouteMap({ data, order, highlights, imgOf, nameOf, onPick, 
           <use key={`x${ri}-${ci}`} href={`#${clipId}x`}
             x={ci * cell + cell / 2} y={ri * cell + cell / 2} />
         )))}
-      {/* 지도 오브젝트 — 파괴 가능 바위·채집 자원·보물 (생존연산, 사용자 요청 2026-08-12).
-          경로 좌표와 같은 규약이라 세로만 뒤집는다. 선 아래 깔린다. */}
+      {/* 지도 오브젝트 — 기본은 **파괴 가능 바위만** 그린다 (사용자 확정: 채집 자원은
+          목록으로). 자원 목록에서 한 종류를 고르면(obPick) 그 종류만 그려 강조한다. */}
       {data.ob?.map(([kind, c, r], i) => {
-        const st = OB_STYLE[kind];
-        if (!st) return null;
+        const st = OB_STYLE[kind] ?? (obPick === kind ? OB_PICK_STYLE : null);
+        if (!st || (obPick && obPick !== kind)) return null;
         return obShape(st.shape, c * cell + cell / 2, (h - 1 - r) * cell + cell / 2, st.fill, i);
       })}
       {lines.map((ln) => {
@@ -535,7 +543,7 @@ export function StageRouteMap({ data, order, highlights, imgOf, nameOf, onPick, 
           [last[0] + Math.cos(ang - 2.5) * a, last[1] + Math.sin(ang - 2.5) * a],
         ];
         return (
-          <g key={`${rep}-${owner ?? "•"}`} opacity={hl && !em ? 0.07 : 0.92}>
+          <g key={`${rep}-${owner ?? "•"}`} opacity={obPick ? 0.12 : hl && !em ? 0.07 : 0.92}>
             {/* 대시가 진행 방향으로 흐른다(CSS 애니메이션) — 방향 표시 겸 움직임 (사용자 요청).
                 지상은 긴 대시, 비행은 점선, **통로 순간이동(hop)은 가늘고 성긴 점선**.
                 패턴 길이는 keyframe 오프셋(-0.64)의 약수라 끊김 없이 순환한다. */}

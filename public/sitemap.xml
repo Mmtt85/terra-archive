@@ -59043,6 +59043,66 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/ra"/>
   </url>
   <url>
+    <loc>https://terra-archive.net/ra/anchor</loc>
+    <lastmod>2026-08-12T14:38:57+09:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/ra/anchor"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/ra/anchor"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/ra/anchor"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/ra/anchor"/>
+  </url>
+  <url>
+    <loc>https://terra-archive.net/en/ra/anchor</loc>
+    <lastmod>2026-08-12T14:38:57+09:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/ra/anchor"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/ra/anchor"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/ra/anchor"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/ra/anchor"/>
+  </url>
+  <url>
+    <loc>https://terra-archive.net/ja/ra/anchor</loc>
+    <lastmod>2026-08-12T14:38:57+09:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/ra/anchor"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/ra/anchor"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/ra/anchor"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/ra/anchor"/>
+  </url>
+  <url>
+    <loc>https://terra-archive.net/ra/sand</loc>
+    <lastmod>2026-08-12T14:38:57+09:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/ra/sand"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/ra/sand"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/ra/sand"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/ra/sand"/>
+  </url>
+  <url>
+    <loc>https://terra-archive.net/en/ra/sand</loc>
+    <lastmod>2026-08-12T14:38:57+09:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/ra/sand"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/ra/sand"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/ra/sand"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/ra/sand"/>
+  </url>
+  <url>
+    <loc>https://terra-archive.net/ja/ra/sand</loc>
+    <lastmod>2026-08-12T14:38:57+09:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/ra/sand"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/ra/sand"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/ra/sand"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/ra/sand"/>
+  </url>
+  <url>
     <loc>https://terra-archive.net/recruit</loc>
     <lastmod>2026-07-18T00:41:22+09:00</lastmod>
     <changefreq>weekly</changefreq>

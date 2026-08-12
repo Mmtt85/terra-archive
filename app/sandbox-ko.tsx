@@ -4,6 +4,6 @@
 import SandboxGuide, { type SandboxDoc } from "./sandbox";
 import doc from "./data/sandbox.json";
 
-export default function SandboxKo({ includeFuture }: { includeFuture?: boolean }) {
-  return <SandboxGuide doc={doc as unknown as SandboxDoc} includeFuture={includeFuture} />;
+export default function SandboxKo({ includeFuture, season }: { includeFuture?: boolean; season?: "v2" | "v3" }) {
+  return <SandboxGuide doc={doc as unknown as SandboxDoc} includeFuture={includeFuture} season={season} />;
 }

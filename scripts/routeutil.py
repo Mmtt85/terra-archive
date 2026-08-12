@@ -61,6 +61,12 @@ def routes_of_level(lv, enemy_db=None):
             return "i"           # 통로 입구 — 적이 들어가 출구로 순간이동 (2026-08-10)
         if key == "tile_telout":
             return "o"           # 통로 출구
+        # 물 — 생존연산은 여기에 '수상 플랫폼'을 놓아야 오퍼레이터를 배치할 수 있다
+        # (사용자 제보 2026-08-12). 일반 작전의 얕은 물도 같은 문자로 구분해 보여준다.
+        if key in ("tile_xbdpsea", "tile_puddle", "tile_water"):
+            return "u"
+        if key == "tile_deepwater":
+            return "d"           # 깊은 물 — 비행만 통과
         walk = t.get("passableMask") in ("ALL", "WALK_ONLY")
         build = t.get("buildableType") or "NONE"
         if walk:
