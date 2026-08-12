@@ -36,14 +36,18 @@ export type StageRoutes = {
   ob?: [string, number, number][];
 };
 
-// 지도 오브젝트 표기 — **길을 막는 파괴 가능 바위만** 지도에 그린다. 석재·명징석·보물
-// 같은 채집 자원은 "맵 타일이라기보단 도감 목록"이라는 사용자 확정(2026-08-12)에 따라
-// 지역 상세 모달의 자원·오브젝트 목록이 맡는다 (ob 데이터 자체는 종류 전부 실려 온다).
+// 지도 오브젝트 표기 — **전 종류를 기본으로 그린다** (사용자 지시 2026-08-12
+// "자원 오브젝트들도 기본적으로 보이게, 눌러야만 나오면 어떡해"). 자원 목록에서 한
+// 종류를 고르면 그 종류만 선명해지고 나머지는 흐려진다.
+// ⚠ 종류 이름표는 **타일 범례에 섞지 않는다** — 타일이 아니라 오브젝트다 (같은 날 지적).
 const OB_STYLE: Record<string, { fill: string; label: string; shape: "diamond" | "dot" | "star" }> = {
   rock: { fill: "#e07a3f", label: "파괴 가능 바위", shape: "diamond" },
+  stone: { fill: "#cfc8bd", label: "석재", shape: "dot" },
+  iron: { fill: "#8fb3d9", label: "철광석", shape: "dot" },
+  diam: { fill: "#6fe3d4", label: "명징석", shape: "dot" },
+  wood: { fill: "#7fc46a", label: "목재", shape: "dot" },
+  treasure: { fill: "#ffd166", label: "보물", shape: "star" },
 };
-/** 자원 목록에서 고른 종류를 지도에 임시로 찍을 때의 표기 (기본 목록엔 없는 종류) */
-const OB_PICK_STYLE = { fill: "#6fe3d4", label: "", shape: "dot" as const };
 function obShape(shape: "diamond" | "dot" | "star", x: number, y: number, fill: string, key: number) {
   if (shape === "diamond") {
     return <rect key={key} x={x - 0.17} y={y - 0.17} width={0.34} height={0.34} fill={fill}
@@ -515,12 +519,16 @@ export function StageRouteMap({ data, order, highlights, imgOf, nameOf, onPick, 
           <use key={`x${ri}-${ci}`} href={`#${clipId}x`}
             x={ci * cell + cell / 2} y={ri * cell + cell / 2} />
         )))}
-      {/* 지도 오브젝트 — 기본은 **파괴 가능 바위만** 그린다 (사용자 확정: 채집 자원은
-          목록으로). 자원 목록에서 한 종류를 고르면(obPick) 그 종류만 그려 강조한다. */}
+      {/* 지도 오브젝트 — 전 종류를 그리고, 고른 종류(obPick)만 선명하게 남긴다 */}
       {data.ob?.map(([kind, c, r], i) => {
-        const st = OB_STYLE[kind] ?? (obPick === kind ? OB_PICK_STYLE : null);
-        if (!st || (obPick && obPick !== kind)) return null;
-        return obShape(st.shape, c * cell + cell / 2, (h - 1 - r) * cell + cell / 2, st.fill, i);
+        const st = OB_STYLE[kind];
+        if (!st) return null;
+        const dim = obPick ? obPick !== kind : false;
+        return (
+          <g key={i} opacity={dim ? 0.14 : 1}>
+            {obShape(st.shape, c * cell + cell / 2, (h - 1 - r) * cell + cell / 2, st.fill, i)}
+          </g>
+        );
       })}
       {lines.map((ln) => {
         // 선의 모양(best)·오프셋(off)은 접기 메모에서 확정 — 시뮬레이션 말과 공유한다

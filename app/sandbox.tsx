@@ -131,13 +131,14 @@ const RIFT_SET: Record<string, string> = {
   random_dungeon_1: "일반 균열", hunt_dungeon_1: "사냥 균열",
 };
 // 지역 오브젝트 종류 → 대표 아이템 아이콘·이름 (지도 마커·자원 목록·지역 카드 공용)
-const OB_KINDS: [string, string, string][] = [
-  ["rock", "sandbox_1_stone", "파괴 가능 바위"],
-  ["stone", "sandbox_1_stone", "석재"],
-  ["iron", "sandbox_1_iron", "철광석"],
-  ["diam", "sandbox_1_diamond", "명징석"],
-  ["wood", "sandbox_1_wood", "목재"],
-  ["treasure", "sandbox_1_gold", "보물"],
+// [종류, 대표 아이템 아이콘, 이름, 지도 마커 색(stage-route-map OB_STYLE과 같은 값)]
+const OB_KINDS: [string, string, string, string][] = [
+  ["rock", "sandbox_1_stone", "파괴 가능 바위", "#e07a3f"],
+  ["stone", "sandbox_1_stone", "석재", "#cfc8bd"],
+  ["iron", "sandbox_1_iron", "철광석", "#8fb3d9"],
+  ["diam", "sandbox_1_diamond", "명징석", "#6fe3d4"],
+  ["wood", "sandbox_1_wood", "목재", "#7fc46a"],
+  ["treasure", "sandbox_1_gold", "보물", "#ffd166"],
 ];
 const PROF_LABEL: Record<string, string> = {
   WARRIOR: "근위", SNIPER: "저격", TANK: "중장", MEDIC: "의료",
@@ -247,9 +248,15 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
     const get = (id: string) => m.get(id) ?? m.set(id, { id, role: "", variant: "", buff: "", water: 0, usedIn: [], from: [] }).get(id)!;
     for (const fm of v2.foodMats) { const e = get(fm[0]); e.role = fm[1]; e.variant = fm[3]; e.buff = fm[4]; }
     for (const dm of v2.drinkMats) get(dm[0]).water = dm[1];
+    // ⚠ 한 요리에 조합이 여러 개면 같은 이름이 여러 번 들어간다 — 요리 단위로 한 번만
+    //   (사용자 지적 2026-08-12 "쓰이는 요리에 중복이 엄청나게 많음")
     for (const f of v2.foods) {
       const nm = f.variants[0]?.[1] ?? f.id;
-      for (const r of f.recipes) for (const id of new Set(r)) get(id).usedIn.push(nm);
+      const ids = new Set(f.recipes.flat());
+      for (const id of ids) {
+        const e = get(id);
+        if (!e.usedIn.includes(nm)) e.usedIn.push(nm);
+      }
     }
     // 어디서 얻나 — 오브젝트 파괴·적 처치 보상 역색인
     for (const [trapId, rw] of Object.entries(v2.trapRewards)) {
@@ -1185,11 +1192,13 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
                     <h3><span className="section-no">RESOURCE</span>{t("자원·오브젝트")}</h3>
                     {/* 클릭 = 지도에서 그것만 남기고 흐리게 (사용자 요청 2026-08-12) */}
                     <div className="sb-obs">
-                      {OB_LIST.filter(([k]) => obCounts[k]).map(([k, iid, label]) => (
+                      {OB_LIST.filter(([k]) => obCounts[k]).map(([k, iid, label, color]) => (
                         <button key={k} type="button"
                           className={`sb-ob${obPick === k ? " on" : ""}`}
+                          title={t("누르면 지도에서 이 자원만 남깁니다")}
                           onClick={() => { setObPick((cur) => (cur === k ? null : k)); setMapView("route"); }}>
                           <img className="sb-ico" src={itemIcon(iid)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
+                          <i className="dot" style={{ background: color }} aria-hidden />
                           {t(label)} <em>×{obCounts[k]}</em>
                         </button>
                       ))}
