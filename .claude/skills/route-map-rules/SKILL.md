@@ -15,6 +15,7 @@ description: 적 이동 경로 격자 지도의 확정 규칙 (경로 접기·�
 |---|---|---|
 | 작전 도감 상세 (`app/stage-detail.tsx`) | `app/data/stage-routes.json` | 탭 클릭 시 지연 로드 (모듈 캐시) |
 | 통합전략 전투 노드 모달 (`app/rogue.tsx`) | `app/data/rogue-routes.json` | 〃 (긴급 노드는 일반 노드 별칭 문자열) |
+| 생존연산 지역 상세 모달 (`app/sandbox.tsx`) | `app/data/sandbox-routes.json` | 〃 (build-sandbox.py — routeutil 공유, 시뮬 확장 포함) |
 
 렌더러는 `app/stage-route-map.tsx`의 `StageRouteMap` 하나 — 새 화면에 붙일 때도
 이 컴포넌트를 재사용하고 복제하지 않는다.

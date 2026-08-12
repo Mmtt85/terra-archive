@@ -15,6 +15,12 @@ import { useMemo, useState } from "react";
 import { useI18n } from "./i18n";
 import { normSearch, useSearchInput } from "./search";
 import { asset } from "./assets";
+import { ModalWindow } from "./modal-window";
+import { useHashSync } from "./hash-modal";
+import { loadEnemies } from "./dex-cross";
+import { enemyImg } from "./dex-paths";
+import { EnemyFile, type Enemy } from "./enemy-detail";
+import { StageRouteMap, enemyRouteColor, type StageRoutes } from "./stage-route-map";
 
 // 아이템 아이콘·지역 맵 프리뷰 — build-sandbox.py가 public/sandbox/{item,map}/에 받아
 // R2로 서빙한다 (사용자 요청 2026-08-12 "맵이라든지 각종 섬네일이라든지 전부").
@@ -29,6 +35,22 @@ const FOOD_ATTR_ICON: Record<string, string> = {
   COST: "cost_main", SKILL_POINT: "skill_point_main", SPECIAL: "special_main",
 };
 const hideErr = (ev: React.SyntheticEvent<HTMLImageElement>) => { ev.currentTarget.style.display = "none"; };
+
+// 지역 상세의 타일 격자·경로·시뮬 데이터 — 모달을 열 때만 지연 로드 (stage-routes와 같은 규칙)
+let SB_ROUTES: Record<string, StageRoutes | string> | null = null;
+let SB_ROUTES_LOADING: Promise<unknown> | null = null;
+function loadSandboxRoutes(): Promise<unknown> {
+  if (SB_ROUTES) return Promise.resolve(SB_ROUTES);
+  SB_ROUTES_LOADING ??= import("./data/sandbox-routes.json").then((m) => {
+    SB_ROUTES = ((m as { default?: unknown }).default ?? m) as Record<string, StageRoutes | string>;
+  });
+  return SB_ROUTES_LOADING;
+}
+function sbRoutesFor(id: string): StageRoutes | undefined {
+  let d = SB_ROUTES?.[id];
+  if (typeof d === "string") d = SB_ROUTES?.[d];
+  return typeof d === "object" ? d : undefined;
+}
 
 type Item = [string, string, number, string];            // [이름, 용도, 희귀도, 타입]
 type V3Item = [string, string, string, number, string];  // [번역명, CN, 용도, 희귀도, 타입]
@@ -50,6 +72,9 @@ export type SandboxDoc = {
     rift: { mains: [string, string, number, string][]; subs: [string, string][]; diffs: [number, string][] };
     expeditions: [string, string, number, number, number, number][];
     techs: [string, string, number, string, string][];
+    /** 지역별 등장 적 [id, 초상id, 출처(0=적도감/1=sandbox), 마릿수, 레벨, hp, atk, def, res] */
+    stageEnemies: Record<string, [string, string, number, number, number, number, number, number, number][]>;
+    enemyNames: Record<string, string>;
   };
   v3: {
     name: string; cnName: string; start: number;
@@ -62,10 +87,10 @@ export type SandboxDoc = {
   };
 };
 
-const VIEWS = ["food", "craft", "stage", "event", "rift", "tech", "next"] as const;
+const VIEWS = ["food", "craft", "stage", "weather", "event", "rift", "tech", "next"] as const;
 type View = (typeof VIEWS)[number];
 const VIEW_LABEL: Record<View, string> = {
-  food: "요리·음료", craft: "제작·설치물", stage: "지역·날씨", event: "조우",
+  food: "요리·음료", craft: "제작·설치물", stage: "지역", weather: "날씨", event: "조우",
   rift: "균열·원정", tech: "테크트리", next: "신시즌",
 };
 // 요리 효과 분류 (foodData.attributes — 2026-08-12 실데이터 전수: ATTACK·COOLDOWN·
@@ -100,6 +125,41 @@ export default function SandboxGuide({ doc, includeFuture }: { doc: SandboxDoc; 
     const it = v3.items[id];
     if (!it) return id;
     return it[0] !== it[1] ? `${it[1]}(${it[0]})` : it[1];
+  };
+
+  // ── 지역 상세 모달 — 작전 도감 상세와 같은 구성 (사용자 요청 2026-08-12):
+  // 실사 도면/이동 경로 탭(공유 렌더러 StageRouteMap — 시뮬레이트 포함) + 등장 적 스탯.
+  type V2Stage = SandboxDoc["v2"]["stages"][number];
+  const [openSt, setOpenSt] = useState<V2Stage | null>(null);
+  const [mapView, setMapView] = useState<"map" | "route">("map");
+  const [hover, setHover] = useState<string | null>(null);
+  const [pinned, setPinned] = useState<Set<string>>(() => new Set());
+  const [, bumpRoutes] = useState(0);
+  const [subEnemy, setSubEnemy] = useState<Enemy | null>(null);
+  const byStId = useMemo(() => new Map(v2.stages.map((st) => [st[0], st])), [v2]);
+  useHashSync(openSt ? `#ra-${openSt[0]}` : null, (hash) => {
+    const m = /^#ra-(.+)$/.exec(hash);
+    const st = m ? byStId.get(m[1]) ?? null : null;
+    setOpenSt(st);
+    if (st) { setMapView("map"); setPinned(new Set()); setHover(null); }
+  });
+  const openStage = (st: V2Stage) => {
+    setOpenSt(st); setMapView("map"); setPinned(new Set()); setHover(null);
+    void loadSandboxRoutes().then(() => bumpRoutes((k) => k + 1)).catch(() => { SB_ROUTES_LOADING = null; });
+  };
+  const togglePin = (id: string) => setPinned((cur) => {
+    const next = new Set(cur);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
+  const enemyRows = openSt ? v2.stageEnemies[openSt[0]] ?? [] : [];
+  const rd = openSt && mapView === "route" ? sbRoutesFor(openSt[0]) : undefined;
+  const routeOrder = rd ? enemyRows.filter((r) => rd.e[r[0]]?.length).map((r) => r[0]) : [];
+  const enName = (id: string) => v2.enemyNames[id] ?? id;
+  const enImg = (row: [string, string, number, number, number, number, number, number, number]) =>
+    row[2] === 1 ? asset(`/sandbox/enemy/${row[0]}.webp`) : enemyImg(row[1]);
+  const openDexEnemy = (row: [string, string, number, number, number, number, number, number, number]) => {
+    void loadEnemies(locale).then((m) => setSubEnemy(m.get(row[0]) ?? m.get(row[1]) ?? null));
   };
 
   // 뷰별 검색 필터 — 검색어가 있으면 각 뷰의 목록을 이름 기준으로 거른다
@@ -219,21 +279,23 @@ export default function SandboxGuide({ doc, includeFuture }: { doc: SandboxDoc; 
         </>
       )}
 
+      {view === "weather" && (
+        <div className="sb-grid sb-grid-s">
+          {v2.weather.map((w) => (
+            <article key={w[0]} className="sb-card">
+              <h4>
+                {w[6] && <img className="sb-ico-big sb-ico-dim" src={miscIcon(w[6])} alt="" aria-hidden loading="lazy" onError={hideErr} />}
+                {w[1]} <i className="sb-chip">{w[3]}</i>{w[2] > 0 && <i className="sb-chip warn">{t("위험 {n}", { n: String(w[2]) })}</i>}
+              </h4>
+              <p>{w[4]}</p>
+              <p className="sb-dim">{w[5]}</p>
+            </article>
+          ))}
+        </div>
+      )}
+
       {view === "stage" && (
         <>
-          <h3 className="sb-h3">{t("날씨")}</h3>
-          <div className="sb-grid sb-grid-s">
-            {v2.weather.map((w) => (
-              <article key={w[0]} className="sb-card">
-                <h4>
-                  {w[6] && <img className="sb-ico-big sb-ico-dim" src={miscIcon(w[6])} alt="" aria-hidden loading="lazy" onError={hideErr} />}
-                  {w[1]} <i className="sb-chip">{w[3]}</i>{w[2] > 0 && <i className="sb-chip warn">{t("위험 {n}", { n: String(w[2]) })}</i>}
-                </h4>
-                <p>{w[4]}</p>
-                <p className="sb-dim">{w[5]}</p>
-              </article>
-            ))}
-          </div>
           <h3 className="sb-h3">{t("노드 종류")}</h3>
           <div className="sb-nodekey">
             {Object.entries(v2.nodeTypes).map(([k, nt]) => (
@@ -244,15 +306,16 @@ export default function SandboxGuide({ doc, includeFuture }: { doc: SandboxDoc; 
             ))}
           </div>
           <h3 className="sb-h3">{t("지역")} <em className="sb-count">{v2.stages.length}</em></h3>
-          <p className="sim-note">{t("행동력은 이동 1회 소모량, ⚔는 적습 조우 시의 소모량입니다.")}</p>
+          <p className="sim-note">{t("지역을 누르면 등장 적과 타일 도면·이동 경로 상세가 열립니다. 행동력은 이동 1회 소모량, ⚔는 적습 조우 시의 소모량입니다.")}</p>
           <div className="sb-grid">
             {v2.stages.map((s) => (
-              <article key={s[0]} className="sb-card sb-map-card">
+              <button key={s[0]} type="button" className="sb-card sb-map-card sb-stage-btn"
+                onClick={() => openStage(s)}>
                 <img src={stageMapImg(s[0])} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
                 <h4><i className="sb-chip">{s[1]}</i>{s[2]}
                   <i className="sb-lv">{t("행동력")} {s[4]}{s[5] !== s[4] ? ` · ⚔${s[5]}` : ""}</i></h4>
                 <p className="sb-dim">{s[3]}</p>
-              </article>
+              </button>
             ))}
           </div>
         </>
@@ -394,6 +457,79 @@ export default function SandboxGuide({ doc, includeFuture }: { doc: SandboxDoc; 
             </tbody>
           </table></div>
         </>
+      )}
+
+      {/* 지역 상세 모달 — 작전 도감 상세와 같은 짜임: 도면/이동 경로 탭(시뮬 포함) + 등장 적
+          (사용자 요청 2026-08-12 "도감-작전 상세모달처럼, 등장 적 및 타일 에뮬레이터 등등").
+          경로 지도 상호작용 규칙은 route-map-rules 스킬 그대로 — 카드 클릭=고정,
+          호버=강조, 섬네일 클릭=적 상세 모달. */}
+      {openSt && (
+        <ModalWindow label={`${openSt[1]} ${openSt[2]}`} className="operator-modal st-modal"
+          onClose={() => setOpenSt(null)}>
+          <div className="sb-stfile">
+            <div className="st-maptabs" role="tablist" aria-label={t("도면 보기")}>
+              <button type="button" role="tab" aria-selected={mapView === "map"}
+                className={mapView === "map" ? "on" : ""} onClick={() => setMapView("map")}>{t("실사 도면")}</button>
+              <button type="button" role="tab" aria-selected={mapView === "route"}
+                className={mapView === "route" ? "on" : ""}
+                onClick={() => {
+                  setMapView("route");
+                  if (!SB_ROUTES) loadSandboxRoutes().then(() => bumpRoutes((k) => k + 1)).catch(() => { SB_ROUTES_LOADING = null; bumpRoutes((k) => k + 1); });
+                }}>{t("이동 경로")}</button>
+            </div>
+            {mapView === "map" ? (
+              <img className="sb-modal-map" src={stageMapImg(openSt[0])} alt="" aria-hidden
+                loading="lazy" decoding="async" onError={hideErr} />
+            ) : rd ? (
+              <StageRouteMap data={rd} order={routeOrder}
+                highlights={hover ? [hover] : pinned.size ? [...pinned] : null}
+                imgOf={(id) => { const row = enemyRows.find((r) => r[0] === id); return row ? enImg(row) : undefined; }}
+                nameOf={enName} onPick={togglePin} />
+            ) : (
+              <p className="sim-note">{SB_ROUTES ? t("이 작전은 경로 데이터가 없습니다.") : t("경로 데이터를 불러오는 중…")}</p>
+            )}
+            <p className="sb-dim sb-modal-desc">{openSt[3]}</p>
+            <p className="sim-note">{t("행동력")} {openSt[4]}{openSt[5] !== openSt[4] ? ` · ⚔ ${openSt[5]}` : ""}</p>
+            {enemyRows.length > 0 && (
+              <>
+                <h3 className="sb-h3">{t("등장 적")} <em className="sb-count">{enemyRows.length}</em></h3>
+                <div className="sb-enemies">
+                  {enemyRows.map((r) => {
+                    const hasRoute = !!rd?.e[r[0]]?.length;
+                    return (
+                      <button key={r[0]} type="button"
+                        className={`sb-enemy${hasRoute ? " has-route" : ""}${pinned.has(r[0]) ? " pinned" : ""}`}
+                        style={hasRoute ? ({ "--rc": enemyRouteColor(routeOrder, r[0]) } as React.CSSProperties) : undefined}
+                        onClick={() => { if (hasRoute) togglePin(r[0]); }}
+                        onMouseEnter={mapView === "route" ? () => setHover(r[0]) : undefined}
+                        onMouseLeave={mapView === "route" ? () => setHover(null) : undefined}>
+                        <i className="sb-enemy-face" role="button" tabIndex={0}
+                          onClick={(ev) => { ev.stopPropagation(); openDexEnemy(r); }}
+                          onKeyDown={(ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); ev.stopPropagation(); openDexEnemy(r); } }}>
+                          <img src={enImg(r)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
+                        </i>
+                        <span className="sb-enemy-main">
+                          <b>{enName(r[0])}{r[4] > 0 && <em className="sb-lv">★{r[4]}</em>}</b>
+                          <i className="sb-enemy-cnt">{r[3] > 0 ? `×${r[3]}` : t("습격")}</i>
+                          <span className="sb-enemy-stats">
+                            <span>HP {r[5].toLocaleString()}</span><span>{t("공격")} {r[6].toLocaleString()}</span>
+                            <span>{t("방어")} {r[7].toLocaleString()}</span><span>{t("마저")} {r[8]}</span>
+                          </span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+        </ModalWindow>
+      )}
+      {subEnemy && (
+        <ModalWindow label={subEnemy.name} className="operator-modal en-modal" onClose={() => setSubEnemy(null)}>
+          <EnemyFile enemy={subEnemy} stagesDoc={null}
+            onOpenEnemy={(id) => { void loadEnemies(locale).then((m) => setSubEnemy(m.get(id) ?? null)); }} />
+        </ModalWindow>
       )}
     </section>
   );

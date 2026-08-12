@@ -24,6 +24,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from imgutil import save_webp  # noqa: E402 — 공용 webp 저장 (scripts/imgutil.py)
+import routeutil  # noqa: E402 — 타일 격자·경로·스폰 추출 정본 (작전 도감·통전과 공유)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(ROOT, "app", "data")
@@ -52,6 +53,43 @@ MISC_URLS = {
     "foodattr": ASSETS + "/ui/sandboxv2/%5Buc%5Dcommon/arts/foodattributeicons/{k}.png",
 }
 FOOD_ATTR_ICONS = ["attack_main", "cooldown_main", "cost_main", "skill_point_main", "special_main", "survive_main"]
+GAMEDATA = "https://raw.githubusercontent.com/ArknightsAssets/ArknightsGamedata/master"
+ENEMY_PORTRAIT_URL = ASSETS + "/arts/enemies/{k}.png"
+
+
+def fetch_level(path):
+    """gamedata levels/ 파일 — 로컬 캐시 (build-enemies.py와 같은 이름 규약이라 캐시 공유)."""
+    dest = os.path.join(GD, path.replace("/", "__"))
+    if os.path.exists(dest):
+        try:
+            return json.load(open(dest, encoding="utf-8"))
+        except json.JSONDecodeError:
+            os.remove(dest)
+    req = urllib.request.Request(f"{GAMEDATA}/kr/gamedata/{path}", headers={"User-Agent": "Mozilla/5.0"})
+    try:
+        raw = urllib.request.urlopen(req, timeout=60).read()
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            return None
+        raise
+    os.makedirs(os.path.dirname(dest) or GD, exist_ok=True)
+    open(dest, "wb").write(raw)
+    return json.loads(raw)
+
+
+def stats_for(enemy_db, key, ref):
+    """이 지역에서 그 적의 코어 스탯 — enemyDbRefs의 레벨·오버라이드 반영 (routeutil.ms_for와 같은 언랩)."""
+    lvl = (ref or {}).get("level") or 0
+    ov = ((ref or {}).get("overwrittenData") or {}).get("attributes") or {}
+    recs = (enemy_db or {}).get(key) or []
+    rec = next((r for r in recs if r.get("level", 0) == lvl), recs[0] if recs else None)
+    base = ((rec or {}).get("enemyData") or {}).get("attributes") or {}
+    def g(name):
+        v = routeutil._mv(ov.get(name))
+        if v is None:
+            v = routeutil._mv(base.get(name))
+        return int(v) if isinstance(v, (int, float)) else 0
+    return [g("maxHp"), g("atk"), g("def"), g("magicResistance")], lvl
 
 
 def download_webp(jobs, max_px=None, photo=True):
@@ -196,6 +234,81 @@ def build_v2(tbl):
     }
 
 
+def build_stage_details(kr_tbl):
+    """v2 지역별 타일 격자·경로·스폰(시뮬)·등장 적 — 작전 도감 상세와 같은 재료.
+
+    반환: (routes_doc {stageId: StageRoutes|별칭}, stage_enemies {stageId: rows}, ra_only_ids)
+    rows = [적id, 초상id, 출처(0=적도감 초상/1=sandbox 초상), 마릿수, 레벨, hp, atk, def, res]
+    마릿수는 웨이브 스폰 합 — 습격(러시) 풀에만 있는 적은 0으로 싣고 UI가 표기를 달리한다."""
+    d = kr_tbl["detail"]["SANDBOX_V2"]["sandbox_1"]
+    handbook = json.load(open(os.path.join(GD, "kr_enemy_handbook_table.json"), encoding="utf-8"))
+    hb = handbook.get("enemyData", handbook)
+    enemy_db = fetch_level("levels/enemydata/enemy_database.json") or {}
+
+    routes_doc, first_by_level = {}, {}
+    stage_enemies, ra_only = {}, set()
+    for st in d["stageData"].values():
+        sid = st["stageId"]
+        lid = (st.get("levelId") or "").lower()
+        if not lid:
+            continue
+        lv = fetch_level(f"levels/{lid}.json")
+        if not lv:
+            continue
+        rt = routeutil.routes_of_level(lv, enemy_db)
+        if rt:
+            if lid in first_by_level:
+                routes_doc[sid] = first_by_level[lid]
+            else:
+                first_by_level[lid] = sid
+                routes_doc[sid] = rt
+        refs = {x.get("id"): x for x in lv.get("enemyDbRefs") or []}
+        keys = list(rt["e"]) if rt else []
+        order = keys + [k for k in refs if k not in keys]
+        counts = {}
+        for sp in (rt or {}).get("sp") or []:
+            counts[sp[5]] = counts.get(sp[5], 0) + sp[3]
+        rows = []
+        for key in order:
+            stats, lvl = stats_for(enemy_db, key, refs.get(key))
+            # 초상: 도감(핸드북)에 있으면 그 초상, 변형(_b·_1 등)은 접미를 벗겨 밑동으로,
+            # 그것도 없으면 sandbox 폴더에서 자체 초상 (arts/enemies 직다운)
+            img, src = key, 0
+            if key not in hb:
+                base = key
+                while base not in hb:
+                    stripped = re.sub(r"_(\d+|[a-z]+)$", "", base)
+                    if stripped == base:
+                        base = None
+                        break
+                    base = stripped
+                if base:
+                    img = base
+                else:
+                    src = 1
+                    ra_only.add(key)
+            cnt = counts.get(keys.index(key), 0) if key in keys else 0
+            rows.append([key, img, src, cnt, lvl, *stats])
+        stage_enemies[sid] = rows
+    return routes_doc, stage_enemies, ra_only
+
+
+def enemy_names_for(prefix, ids):
+    """로케일 핸드북에서 적 이름 — 변형은 밑동 이름으로 폴백."""
+    handbook = json.load(open(os.path.join(GD, f"{prefix}_enemy_handbook_table.json"), encoding="utf-8"))
+    hb = handbook.get("enemyData", handbook)
+    out = {}
+    for i in ids:
+        cand = i
+        while cand and cand not in hb:
+            stripped = re.sub(r"_(\d+|[a-z]+)$", "", cand)
+            cand = stripped if stripped != cand else None
+        e = hb.get(cand) if cand else None
+        if e and e.get("name"):
+            out[i] = e["name"]
+    return out
+
+
 def build_v3(cn, ko_mode):
     """sandbox_2 「重启锚点」 — CN 선행. ko_mode면 비공식 번역을 씌우고 CN 원문을 병기한다."""
     d = cn["detail"]["SANDBOX_V3"]["sandbox_2"]
@@ -237,10 +350,19 @@ def build_v3(cn, ko_mode):
 
 def main():
     cn = load("cn")
+    kr_tbl = load("kr")
+    routes_doc, stage_enemies, ra_only = build_stage_details(kr_tbl)
+    p = os.path.join(DATA, "sandbox-routes.json")
+    json.dump(routes_doc, open(p, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
+    print(f"  sandbox-routes.json: 지역 {len(routes_doc)} — {os.path.getsize(p) // 1024}KB")
+    all_ids = sorted({r[0] for rows in stage_enemies.values() for r in rows})
+
     docs = {}
     for suffix, prefix in LOCALES:
         tbl = load(prefix)
         doc = {"v2": build_v2(tbl), "v3": build_v3(cn, ko_mode=(suffix == ""))}
+        doc["v2"]["stageEnemies"] = stage_enemies
+        doc["v2"]["enemyNames"] = enemy_names_for(prefix, all_ids)
         docs[suffix] = doc
         p = os.path.join(DATA, f"sandbox{suffix}.json")
         json.dump(doc, open(p, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
@@ -274,7 +396,14 @@ def main():
             for kind, k in sorted(misc)]
     fails3 = download_webp(jobs, max_px=96, photo=False)
     print(f"  보조 아이콘(날씨·노드·조우·테크·태그·속성): {len(jobs) - len(fails3)}/{len(jobs)}")
-    for u, e in (fails + fails2 + fails3)[:10]:
+
+    # 적 도감에 없는 생존연산 전용 적 초상 (rows의 출처=1)
+    jobs = [(ENEMY_PORTRAIT_URL.format(k=k), os.path.join(ROOT, "public", "sandbox", "enemy", f"{k}.webp"))
+            for k in sorted(ra_only)]
+    fails4 = download_webp(jobs, max_px=128, photo=False)
+    if jobs:
+        print(f"  생존연산 전용 적 초상: {len(jobs) - len(fails4)}/{len(jobs)}")
+    for u, e in (fails + fails2 + fails3 + fails4)[:10]:
         print(f"   실패: {u.rsplit('/', 1)[-1]} — {e}")
 
 

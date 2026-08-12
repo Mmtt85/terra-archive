@@ -17329,6 +17329,108 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   border-radius: 50%;
   padding: 1.5px;
 }
+/* 지역 카드 = 버튼 (모달 열림) */
+.sb-stage-btn {
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  transition: transform 0.14s, box-shadow 0.14s;
+}
+.sb-stage-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px #0003;
+}
+/* 지역 상세 모달 */
+.sb-stfile { min-width: 0; }
+.sb-modal-map {
+  display: block;
+  width: 100%;
+  max-width: 640px;
+  background: #10141c;
+  border: 1px solid var(--line);
+}
+.sb-modal-desc { margin-top: 10px; white-space: pre-line; }
+.sb-enemies {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 9px;
+  margin-top: 10px;
+  max-height: min(46vh, 480px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.sb-enemy {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  background: var(--white);
+  border: 1px solid var(--line);
+  cursor: default;
+}
+.sb-enemy.has-route { cursor: pointer; }
+.sb-enemy.has-route:hover,
+.sb-enemy.pinned {
+  border-color: var(--rc, #b3372e);
+  box-shadow: 0 0 0 1px var(--rc, #b3372e);
+}
+.sb-enemy.pinned::after {
+  content: "✓";
+  position: absolute;
+  right: -6px;
+  top: -7px;
+  width: 15px;
+  height: 15px;
+  line-height: 15px;
+  font-size: 11px;
+  font-weight: 900;
+  text-align: center;
+  color: #16130d;
+  background: var(--rc, #b3372e);
+  border-radius: 50%;
+}
+.sb-enemy-face {
+  flex: none;
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  background: #10141c;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.sb-enemy-face img {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+}
+.sb-enemy-face:hover { box-shadow: 0 0 0 2px var(--rc, #888); }
+.sb-enemy-main { min-width: 0; flex: 1; }
+.sb-enemy-main b { display: block; font-size: 13px; }
+.sb-enemy-main b .sb-lv { color: #b9862f; margin-left: 4px; font-style: normal; }
+.sb-enemy-cnt {
+  position: absolute;
+  right: 10px;
+  top: 8px;
+  font-style: normal;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--muted);
+}
+.sb-enemy-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px 10px;
+  margin-top: 3px;
+  font-size: 11.5px;
+  color: var(--ink2);
+}
+
 /* 지도 노드 종류 범례 */
 .sb-nodekey {
   display: flex;

@@ -1590,6 +1590,11 @@ const D: Record<string, Pair> = {
   "이 신시즌의 공식 번역은 아직 없어 원문(중국어)으로 표시됩니다.": [
     "No official translation exists yet, so original Chinese text is shown.",
     "公式翻訳がまだないため、原文（中国語）で表示されます。"],
+  "노드 종류": ["Node types", "ノード種類"],
+  "지역을 누르면 등장 적과 타일 도면·이동 경로 상세가 열립니다. 행동력은 이동 1회 소모량, ⚔는 적습 조우 시의 소모량입니다.": [
+    "Click an area to open its detail — enemies, tile layout and routes. AP is the cost per move; ⚔ is the cost when an enemy raid triggers.",
+    "エリアをクリックすると出現する敵・タイル図・移動ルートの詳細が開きます。行動力は移動1回の消費量、⚔は敵襲遭遇時の消費量です。"],
+  "습격": ["Raid", "襲撃"],
   "가공 레시피": ["Processing recipes", "加工レシピ"],
   "산출": ["Output", "産出"],
   "건설 레시피": ["Building recipes", "建設レシピ"],
