@@ -31,6 +31,8 @@ import { StageRouteMap, enemyRouteColor, type StageRoutes } from "./stage-route-
 const itemIcon = (id: string) => asset(`/sandbox/item/${id}.webp`);
 const stageMapImg = (id: string) => asset(`/sandbox/map/${id}.webp`);
 const miscIcon = (k: string) => asset(`/sandbox/misc/${k}.webp`);
+// 시즌 전체 맵 — 게임 지도 화면의 원본 배경 (사용자 요청 2026-08-12)
+const worldMap = asset("/sandbox/world/sandbox_1.webp");
 const FOOD_ATTR_ICON: Record<string, string> = {
   SURVIVE: "survive_main", ATTACK: "attack_main", COOLDOWN: "cooldown_main",
   COST: "cost_main", SKILL_POINT: "skill_point_main", SPECIAL: "special_main",
@@ -244,7 +246,7 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
   // 다 카드형식 + 상세모달"). 재료 이름은 어디에 나오든 눌러서 상세를 열 수 있다. ──
   const matMeta = useMemo(() => {
     const m = new Map<string, { id: string; role: string; variant: string; buff: string; water: number;
-      usedIn: string[]; from: string[] }>();
+      usedIn: [string, string][]; from: string[] }>();
     const get = (id: string) => m.get(id) ?? m.set(id, { id, role: "", variant: "", buff: "", water: 0, usedIn: [], from: [] }).get(id)!;
     for (const fm of v2.foodMats) { const e = get(fm[0]); e.role = fm[1]; e.variant = fm[3]; e.buff = fm[4]; }
     for (const dm of v2.drinkMats) get(dm[0]).water = dm[1];
@@ -255,7 +257,7 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
       const ids = new Set(f.recipes.flat());
       for (const id of ids) {
         const e = get(id);
-        if (!e.usedIn.includes(nm)) e.usedIn.push(nm);
+        if (!e.usedIn.some(([fid]) => fid === f.id)) e.usedIn.push([f.id, nm]);
       }
     }
     // 어디서 얻나 — 오브젝트 파괴·적 처치 보상 역색인
@@ -345,12 +347,18 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
           {mm?.usedIn.length ? (
             <>
               <h4>{t("쓰이는 요리")} <em className="sb-count">{mm.usedIn.length}</em></h4>
-              <div className="sb-atlist">
-                {mm.usedIn.map((nm) => {
-                  const fi = v2.foods.findIndex((f) => (f.variants[0]?.[1] ?? f.id) === nm);
-                  return <button key={nm} type="button" onClick={() => { if (fi >= 0) { setDetail({ k: "food", i: fi }); setPick(0); } }}>{nm}</button>;
+              <span className="sb-matline">
+                {mm.usedIn.map(([fid, nm]) => {
+                  const fi = v2.foods.findIndex((f) => f.id === fid);
+                  return (
+                    <button key={fid} type="button" className="sb-matchip"
+                      onClick={() => { if (fi >= 0) { setDetail({ k: "food", i: fi }); setPick(0); } }}>
+                      <img src={itemIcon(fid)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
+                      {nm}
+                    </button>
+                  );
                 })}
-              </div>
+              </span>
             </>
           ) : null}
           {/* 같은 요리에 들어가는 다른 재료로 이어 보기 — 누르면 창이 하나 더 열린다 */}
@@ -490,6 +498,9 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
       {/* ── 지역 (획득 자원 필터 + 카드) ── */}
       {season === "v2" && view === "stage" && (
         <>
+          <h3 className="sb-h3">{t("전체 지도")}</h3>
+          <p className="sim-note">{t("사막 이야기의 전체 지도입니다. 지역은 매 판 이 지도 위 노드에 새로 배치됩니다.")}</p>
+          <img className="sb-worldmap" src={worldMap} alt={t("전체 지도")} loading="lazy" decoding="async" onError={hideErr} />
           <h3 className="sb-h3">{t("노드 종류")}</h3>
           <p className="sim-note">{t("지도에 배치되는 노드 종류입니다 — 어느 지역이 어느 노드에 놓이는지는 게임이 매번 새로 뽑기 때문에 데이터에 고정 매핑이 없습니다. 대신 아래에서 자원으로 지역을 걸러 보세요.")}</p>
           <div className="sb-nodekey">

@@ -41,6 +41,12 @@ NO_IMAGES = "--no-images" in sys.argv
 ASSETS = "https://raw.githubusercontent.com/ArknightsAssets/ArknightsAssets2/cn/assets/dyn"
 ICON_URL = ASSETS + "/ui/sandboxperm/%5Buc%5Dcommon/itemicon/{iid}.png"
 MAP_URL = ASSETS + "/ui/sandboxv2/mappreview/sandbox_1/{sid}.png"
+# 시즌 전체 맵 (사용자 요청 2026-08-12 "사막 이야기 전체 맵은 받을 수 있나") —
+# 게임의 지도 화면 배경 원본 (6.6MB PNG → webp 리사이즈)
+WORLD_URL = ASSETS + "/ui/sandboxv2/topics/%5Buc%5Dsandbox_1/dungeon/mapbkg/sandbox_1_main_0.png"
+# 신시즌(V3) 전투 지형 프리뷰 — subStageData.mapPreviewId (사용자 요청 2026-08-12
+# "재기동 앵커도 맵 이미지 보여줘")
+V3_MAP_URL = ASSETS + "/ui/sandboxv3/topics/%5Buc%5Dsandbox_2/mappreview/{sid}.png"
 # 보조 아이콘 (사용자 요청 2026-08-12 "각종 노드들도 이미지가 전부 다 있을텐데"):
 # 날씨·지도 노드·조우 종류·테크·설치물 태그·요리 속성 → public/sandbox/misc/<파일>.webp
 T1 = ASSETS + "/ui/sandboxv2/topics/%5Buc%5Dsandbox_1"
@@ -60,15 +66,16 @@ GAMEDATA = "https://raw.githubusercontent.com/ArknightsAssets/ArknightsGamedata/
 ENEMY_PORTRAIT_URL = ASSETS + "/arts/enemies/{k}.png"
 
 
-def fetch_level(path):
-    """gamedata levels/ 파일 — 로컬 캐시 (build-enemies.py와 같은 이름 규약이라 캐시 공유)."""
-    dest = os.path.join(GD, path.replace("/", "__"))
+def fetch_level(path, server="kr"):
+    """gamedata levels/ 파일 — 로컬 캐시 (build-enemies.py와 같은 이름 규약이라 캐시 공유).
+    server="cn"이면 중국 서버 파일 (신시즌 sandbox_2는 CN에만 있다)."""
+    dest = os.path.join(GD, ("cn__" if server == "cn" else "") + path.replace("/", "__"))
     if os.path.exists(dest):
         try:
             return json.load(open(dest, encoding="utf-8"))
         except json.JSONDecodeError:
             os.remove(dest)
-    req = urllib.request.Request(f"{GAMEDATA}/kr/gamedata/{path}", headers={"User-Agent": "Mozilla/5.0"})
+    req = urllib.request.Request(f"{GAMEDATA}/{server}/gamedata/{path}", headers={"User-Agent": "Mozilla/5.0"})
     try:
         raw = urllib.request.urlopen(req, timeout=60).read()
     except urllib.error.HTTPError as e:
@@ -438,8 +445,13 @@ def build_v3(cn, ko_mode):
             "choices": [[choices[c].get("title") or "", tr(choices[c].get("title") or ""), clean(choices[c].get("desc") or "")]
                         for c in (sc.get("choiceIdList") or []) if c in choices],
         })
+    # 전투 지형 — V3는 시나리오(stageData)와 전투 맵(subStageData)이 갈려 있다.
+    # 맵 프리뷰가 있는 건 subStage 쪽이라 지역 탭은 이걸 보여준다.
+    subs = [[sv.get("subStageId") or "", sv.get("mapPreviewId") or "", sv.get("levelId") or ""]
+            for sv in (d.get("subStageData") or {}).values()]
     info = cn["basicInfo"]["sandbox_2"]
     return {
+        "subs": subs,
         "name": tr(info.get("topicName") or ""), "cnName": info.get("topicName") or "",
         "start": info.get("topicStartTime", 0),
         "items": items, "process": process, "builds": builds,
@@ -454,6 +466,18 @@ def main():
     p = os.path.join(DATA, "sandbox-routes.json")
     json.dump(routes_doc, open(p, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
     print(f"  sandbox-routes.json: 지역 {len(routes_doc)} — {os.path.getsize(p) // 1024}KB")
+    # 핸드북에 이름이 없는 개체는 표시할 정보가 없다 — 도감·등장 적에서 뺀다
+    # (2026-08-12 사용자 제보: 적 도감에 id만 뜨는 항목. kr/cn 핸드북 어디에도 없고
+    #  대부분 스탯도 0인 내부용 더미·소환체다).
+    named = enemy_names_for("kr", sorted({r[0] for rows in stage_enemies.values() for r in rows}))
+    dropped = set()
+    for sid, rows in list(stage_enemies.items()):
+        keep = [r for r in rows if r[0] in named]
+        dropped |= {r[0] for r in rows if r[0] not in named}
+        stage_enemies[sid] = keep
+    if dropped:
+        print(f"  이름 없는 개체 {len(dropped)}종 제외 (핸드북 미등록): {', '.join(sorted(dropped)[:6])}…")
+    ra_only &= named.keys()
     all_ids = sorted({r[0] for rows in stage_enemies.values() for r in rows})
 
     docs = {}
@@ -509,6 +533,17 @@ def main():
             for kind, k in sorted(misc)]
     fails3 = download_webp(jobs, max_px=96, photo=False)
     print(f"  보조 아이콘(날씨·노드·조우·테크·태그·속성): {len(jobs) - len(fails3)}/{len(jobs)}")
+
+    # 시즌 전체 맵 — 폭 1600px webp로 (원본 6.6MB)
+    fails0 = download_webp([(WORLD_URL, os.path.join(ROOT, "public", "sandbox", "world", "sandbox_1.webp"))],
+                           max_px=1600, photo=True)
+    print(f"  전체 맵: {'실패' if fails0 else 'OK'}")
+
+    # 신시즌 전투 지형 프리뷰
+    v3subs = sorted({sv[1] for sv in ko["v3"]["subs"] if sv[1]})
+    jobs = [(V3_MAP_URL.format(sid=m), os.path.join(ROOT, "public", "sandbox", "map2", f"{m}.webp")) for m in v3subs]
+    failsv3 = download_webp(jobs, max_px=640, photo=True)
+    print(f"  신시즌 지형 프리뷰: {len(jobs) - len(failsv3)}/{len(jobs)}")
 
     # 적 도감에 없는 생존연산 전용 적 초상 (rows의 출처=1)
     jobs = [(ENEMY_PORTRAIT_URL.format(k=k), os.path.join(ROOT, "public", "sandbox", "enemy", f"{k}.webp"))

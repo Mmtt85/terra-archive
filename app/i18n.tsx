@@ -1590,6 +1590,10 @@ const D: Record<string, Pair> = {
   "이 신시즌의 공식 번역은 아직 없어 원문(중국어)으로 표시됩니다.": [
     "No official translation exists yet, so original Chinese text is shown.",
     "公式翻訳がまだないため、原文（中国語）で表示されます。"],
+  "전체 지도": ["World map", "全体マップ"],
+  "사막 이야기의 전체 지도입니다. 지역은 매 판 이 지도 위 노드에 새로 배치됩니다.": [
+    "The full map of the season. Areas are placed onto its nodes anew each run.",
+    "シーズン全体のマップです。エリアは毎回このマップ上のノードに新しく配置されます。"],
   "노드 종류": ["Node types", "ノード種類"],
   "지역을 누르면 등장 적과 타일 도면·이동 경로 상세가 열립니다. 행동력은 이동 1회 소모량, ⚔는 적습 조우 시의 소모량입니다.": [
     "Click an area to open its detail — enemies, tile layout and routes. AP is the cost per move; ⚔ is the cost when an enemy raid triggers.",
