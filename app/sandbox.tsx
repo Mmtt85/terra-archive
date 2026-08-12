@@ -259,7 +259,7 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
     | { k: "dex"; i: number } | { k: "food"; i: number } | { k: "mat"; id: string }
     | { k: "v3item"; id: string } | { k: "v3proc"; i: number } | { k: "v3build"; i: number }
     | { k: "v3stage"; i: number } | { k: "v3weather"; i: number } | { k: "v3event"; i: number }
-    | { k: "v3sub"; id: string } | { k: "zone"; i: number } | { k: "v3dex"; i: number };
+    | { k: "zone"; i: number };
   const [detail, setDetail] = useState<Detail | null>(null);
   const [pick, setPick] = useState(0);              // 상세 안의 변형 선택 (위험도·난이도·편성)
   // 재료 창은 **두 개까지** 겹쳐 띄운다 (사용자 확정 2026-08-12): 상세에서 다른 재료를
@@ -282,6 +282,14 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
   const [v3Item, setV3Item] = useState<string | null>(null);
   const [v3Raise, setV3Raise] = useState(0);
   const openV3Item = (id: string) => { if (v3.items[id]) { setV3Item(id); setV3Raise((k) => k + 1); } };
+
+  // 전투 지형·적 상세는 **각자 창**이다 (사용자 제보 2026-08-13: 시나리오에서 지형을 열면
+  // 시나리오 모달이 꺼지고, 지형에서 적을 열면 지형 모달이 사라졌다). 상세 모달 상태가
+  // 하나뿐이라 새로 열 때 갈아치우던 구조 — 창을 나눠 겹쳐 뜨게 한다.
+  const [openSub, setOpenSub] = useState<string | null>(null);
+  const [subRaise, setSubRaise] = useState(0);
+  const [openV3En, setOpenV3En] = useState<string | null>(null);
+  const [enRaise, setEnRaise] = useState(0);
 
   // ── 지역 상세 모달 ───────────────────────────────────────────────────────
   type V2Stage = SandboxDoc["v2"]["stages"][number];
@@ -353,15 +361,20 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
   const rd = openSt ? sbRoutesFor(openSt[0]) : undefined;
   const routeOrder = rd ? enemyRows.filter((r) => rd.e[r[0]]?.length).map((r) => r[0]) : [];
   const openDexEnemy = (id: string, img: string) => {
-    void loadEnemies(locale).then((m) => setSubEnemy(m.get(id) ?? m.get(img) ?? null));
+    void loadEnemies(locale).then((m) => { setEnMap(m); setSubEnemy(m.get(id) ?? m.get(img) ?? null); });
   };
   // 적 도감 상세는 **모달을 열 때 바로 싣는다** — 링크를 한 번 더 누르게 하지 않는다
   // (사용자 지시 2026-08-13 "적도감에 있으면 바로 보여줘").
   const [dexFull, setDexFull] = useState<Enemy | null>(null);
+  // 연계 소환 적의 **이름**을 찍으려면 도감 전체 맵이 필요하다 (없으면 id가 그대로 보였다 —
+  // 사용자 제보 2026-08-13 "연계 소환이 제대로 안 나옴"). 한 번 받아 두고 재사용한다.
+  const [enMap, setEnMap] = useState<Map<string, Enemy> | null>(null);
   const loadDexFull = (id: string, img: string) => {
     setDexFull(null);
-    void loadEnemies(locale).then((m) => setDexFull(m.get(id) ?? m.get(img) ?? null));
+    void loadEnemies(locale).then((m) => { setEnMap(m); setDexFull(m.get(id) ?? m.get(img) ?? null); });
   };
+  /** 적 이름 — 도감 맵 → 생존연산 이름표 → id */
+  const anyEnName = (id: string) => enMap?.get(id)?.name ?? v2.enemyNames[id] ?? v3.enemyNames[id] ?? id;
 
   // 자원·오브젝트 — 지도엔 파괴 가능 바위만, 목록엔 전부 (클릭 = 그것만 강조)
   const OB_LIST = OB_KINDS;
@@ -477,16 +490,19 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
       const e = v2.dex[d.i];
       if (e && e.src === 0) loadDexFull(e.id, e.img); else setDexFull(null);
     }
-    if (d.k === "v3dex") {
-      const e = v3.dex[d.i];
-      if (e && v3.enemySrc[e.id] === 0) loadDexFull(e.id, e.id); else setDexFull(null);
-    }
-    if (d.k === "v3sub") {
-      // 전투 지형 상세도 지역 상세와 같은 재료(도면·경로·적)를 쓴다 — 파일만 다르다
-      resetStage();
-      void loadSandbox2Routes().then(() => bumpRoutes((k) => k + 1)).catch(() => { SB2_LOADING = null; });
-    }
     setDetail(d); setPick(0);
+  };
+  /** 전투 지형 상세 — 지역 상세와 같은 재료(도면·경로·적), 파일만 다르다 */
+  const openTerrain = (id: string) => {
+    resetStage();
+    setOpenSub(id); setSubRaise((k) => k + 1);
+    void loadSandbox2Routes().then(() => bumpRoutes((k) => k + 1)).catch(() => { SB2_LOADING = null; });
+  };
+  /** 신시즌 적 상세 — 적 도감에 있으면 도감 본문까지 같이 싣는다 */
+  const openV3Enemy = (id: string) => {
+    if (!v3.dex.some((e) => e.id === id)) return;
+    setOpenV3En(id); setEnRaise((k) => k + 1);
+    if (v3.enemySrc[id] === 0) loadDexFull(id, id); else setDexFull(null);
   };
 
   /** 재료 상세 모달 한 장 — A·B 두 슬롯이 같은 본문을 쓴다 */
@@ -1060,7 +1076,7 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
               <div className="sb-grid">
                 {v3.subs.filter((sv) => !v3pool || sv.pool === v3pool).map((sv) => (
                   <button key={sv.id} type="button" className="sb-card sb-map-card sb-clickable sb-map2"
-                    onClick={() => openDetail({ k: "v3sub", id: sv.id })}>
+                    onClick={() => openTerrain(sv.id)}>
                     {sv.prev
                       ? <img src={v3MapImg(sv.prev)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
                       : <span className="sb-noprev">{t("프리뷰 없음")}</span>}
@@ -1086,7 +1102,7 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
             <>
               <p className="sim-note">{t("신시즌 전투 지형에 나오는 적입니다. 스탯은 가장 강화된 등장 기준이며, 누르면 등장 지형과 스탯이 나옵니다.")}</p>
               <div className="sb-cards">
-                {v3dex.map((e) => card(`v3d-${e.id}`, () => openDetail({ k: "v3dex", i: v3.dex.indexOf(e) }), (
+                {v3dex.map((e) => card(`v3d-${e.id}`, () => openV3Enemy(e.id), (
                   <>
                     <img className="sb-thumb sb-thumb-en" src={v3EnImg(e.id)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
                     <b className="sb-cname">{v3EnName(e.id)}
@@ -1289,7 +1305,7 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
                       {cells.map((sid, gi) => (
                         <div key={gi} className={`cell${sid ? "" : " empty"}${s2.init.includes(gi) ? " start" : ""}`}>
                           {sid ? (
-                            <button type="button" onClick={() => openDetail({ k: "v3sub", id: sid })}>
+                            <button type="button" onClick={() => openTerrain(sid)}>
                               {subPrev(sid) && <img src={v3MapImg(subPrev(sid))} alt="" aria-hidden loading="lazy" onError={hideErr} />}
                               <em>{sid}</em>
                             </button>
@@ -1326,164 +1342,6 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
                       ))}
                     </div>
                   </>
-                )}
-              </div>
-            </ModalWindow>
-          );
-        }
-        if (detail.k === "v3sub") {
-          // 전투 지형 상세 — 사막 이야기 지역 상세와 **같은 규격** (사용자 요청 2026-08-12)
-          const sv = subOf(detail.id);
-          const rd3 = SB2_ROUTES?.[detail.id];
-          const foes = sv?.foes ?? [];
-          const order3 = rd3 ? foes.filter((r) => rd3.e[r[0]]?.length).map((r) => r[0]) : [];
-          const obCnt: Record<string, number> = {};
-          for (const [k] of rd3?.ob ?? []) obCnt[k] = (obCnt[k] ?? 0) + 1;
-          return (
-            <ModalWindow label={detail.id} className="operator-modal st-modal" onClose={close}>
-              <div className="st-file">
-                <header className="st-head">
-                  <div className="st-head-main">
-                    <span className="st-code">{sv?.use.length ? sv.use.map((u) => u[0]).join(" · ") : detail.id}</span>
-                    <h2>{sv?.pool && v3.pools[sv.pool] ? v3.pools[sv.pool][0] : t("전투 지형")}
-                      {locale === "ko" && sv?.pool && v3.pools[sv.pool] && <span className="sb-cn">{v3.pools[sv.pool][1]}</span>}</h2>
-                    <div className="st-badges">
-                      <span className="st-tag">{t("생존연산")}</span>
-                      <span className="st-tag">{v3.cnName}</span>
-                      <span className="st-tag sb-rawid">{detail.id}</span>
-                    </div>
-                  </div>
-                </header>
-                <div className="st-cols">
-                  <div className="st-left">
-                    <div className="st-maptabs" role="tablist" aria-label={t("도면 보기")}>
-                      <button type="button" role="tab" aria-selected={mapView === "map"}
-                        className={mapView === "map" ? "on" : ""} onClick={() => setMapView("map")}>{t("실사 도면")}</button>
-                      <button type="button" role="tab" aria-selected={mapView === "route"}
-                        className={mapView === "route" ? "on" : ""} onClick={() => setMapView("route")}>{t("이동 경로")}</button>
-                    </div>
-                    {mapView === "map" ? (
-                      sv?.prev ? (
-                        <button type="button" className={`st-map-zoom${zoom ? " zoom" : ""}`} onClick={() => setZoom((z) => !z)}
-                          title={zoom ? t("아무 곳이나 클릭하면 원래 크기로 돌아갑니다") : t("클릭하면 화면 크기로 확대됩니다")}>
-                          <img className="st-map sb-origmap" src={v3MapImg(sv.prev)} alt={t("{code} 지형 도면", { code: detail.id })}
-                            loading="lazy" decoding="async" onError={hideErr} />
-                        </button>
-                      ) : <p className="st-note">{t("이 지형은 프리뷰 이미지가 없습니다.")}</p>
-                    ) : rd3 ? (
-                      <StageRouteMap data={rd3} order={order3}
-                        highlights={hover ? [hover] : pinned.size ? [...pinned] : null}
-                        imgOf={(id) => v3EnImg(id)} nameOf={v3EnName} onPick={togglePin}
-                        obPick={obPick} obStyleOf={obStyle3}
-                        obIconOf={(k) => { const iid = v3.objKinds[k]?.[3]; return iid ? itemIcon(iid) : undefined; }} />
-                    ) : <p className="st-note">{SB2_ROUTES ? t("이 지형은 경로 데이터가 없습니다.") : t("경로 데이터를 불러오는 중…")}</p>}
-                  </div>
-                  <div className="st-right">
-                    {rd3?.ob && rd3.ob.length > 0 && (
-                      <section className="st-block">
-                        <h3><span className="section-no">RESOURCE</span>{t("자원·오브젝트")}</h3>
-                        <div className="sb-obs">
-                          {Object.entries(obCnt).sort((a, b) => b[1] - a[1]).map(([k, n]) => {
-                            const ok = v3.objKinds[k];
-                            const style = ok?.[2] ?? "obj";
-                            const color = { wood: "#7fc46a", stone: "#cfc8bd", iron: "#8fb3d9", diam: "#6fe3d4",
-                              treasure: "#ffd166", water: "#4fb3d9", bldg: "#c9a0ff", obj: "#9aa0a6" }[style] ?? "#9aa0a6";
-                            return (
-                              <button key={k} type="button" className={`sb-ob${obPick === k ? " on" : ""}`}
-                                title={locale === "ko" && ok?.[5] ? ok[5] : ok?.[1]}
-                                onClick={() => { setObPick((cur) => (cur === k ? null : k)); setMapView("route"); }}>
-                                {ok?.[3] && <img className="sb-ico" src={itemIcon(ok[3])} alt="" aria-hidden loading="lazy" onError={hideErr} />}
-                                <i className="dot" style={{ background: color }} aria-hidden />
-                                {ok?.[0] ?? k}{locale === "ko" && ok?.[4] && ok[4] !== ok[0] ? `(${ok[4]})` : ""} <em>×{n}</em>
-                              </button>
-                            );
-                          })}
-                        </div>
-                        {obPick && v3.objKinds[obPick]?.[1] && (
-                          <p className="st-note">{v3.objKinds[obPick][1]}
-                            {locale === "ko" && v3.objKinds[obPick][5] && v3.objKinds[obPick][5] !== v3.objKinds[obPick][1]
-                              && <span className="sb-trline">{v3.objKinds[obPick][5]}</span>}</p>
-                        )}
-                      </section>
-                    )}
-                    {foes.length > 0 && (
-                      <section className="st-block">
-                        <h3><span className="section-no">ENEMY</span>{t("등장 적")} <em>{foes.length}</em></h3>
-                        <div className="st-enemies">
-                          {foes.map((r) => {
-                            const hasRoute = !!rd3?.e[r[0]]?.length;
-                            const pinColor = hasRoute ? enemyRouteColor(order3, r[0]) : undefined;
-                            return (
-                              <button key={r[0]} type="button"
-                                className={`st-enemy${r[2] > 0 ? " reinforced" : ""}${pinned.has(r[0]) ? " pinned" : ""}${routeMode ? " has-route" : ""}`}
-                                style={routeMode && pinColor ? ({ "--rc": pinColor } as React.CSSProperties) : undefined}
-                                onMouseEnter={mapView === "route" ? () => setHover(r[0]) : undefined}
-                                onMouseLeave={mapView === "route" ? () => setHover(null) : undefined}
-                                onClick={() => {
-                                  if (routeMode && hasRoute) { togglePin(r[0]); return; }
-                                  if (v3.enemySrc[r[0]] === 0) openDexEnemy(r[0], r[0]);
-                                }}>
-                                <span className="st-enemy-name">
-                                  <span className="nm">{v3EnName(r[0])}</span>
-                                  {r[2] > 0 && <i title={t("강화 {n}단계", { n: String(r[2]) })}>★{r[2]}</i>}
-                                  <em className="st-enemy-cnt">{r[1] > 0 ? `×${r[1]}` : t("습격")}</em>
-                                </span>
-                                <span className="st-enemy-body">
-                                  {/* 섬네일 클릭은 **항상** 적 상세 — 경로 고정과 분리한다 (사용자 지시 2026-08-13) */}
-                                  <img src={v3EnImg(r[0])} alt="" aria-hidden width={96} height={96} loading="lazy" decoding="async"
-                                    className="st-enemy-face-btn"
-                                    onClick={(ev) => {
-                                      ev.stopPropagation(); ev.preventDefault();
-                                      const di = v3.dex.findIndex((x) => x.id === r[0]);
-                                      if (di >= 0) openDetail({ k: "v3dex", i: di });
-                                    }}
-                                    onError={(ev) => { ev.currentTarget.style.visibility = "hidden"; }} />
-                                  <span className="st-enemy-stats">
-                                    <b title={t("최대 HP")}>HP {r[3].toLocaleString()}</b>
-                                    <b title={t("공격력")}>{t("공격")} {r[4].toLocaleString()}</b>
-                                    <b title={t("방어력")}>{t("방어")} {r[5].toLocaleString()}</b>
-                                    <b title={t("마법 저항")}>{t("마저")} {r[6]}</b>
-                                  </span>
-                                </span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </section>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </ModalWindow>
-          );
-        }
-        if (detail.k === "v3dex") {
-          const e = v3.dex[detail.i];
-          return (
-            <ModalWindow label={v3EnName(e.id)} className="operator-modal sb-modal" onClose={close}>
-              <div className="sb-dt">
-                <header className="sb-dt-head">
-                  <img src={v3EnImg(e.id)} alt="" aria-hidden onError={hideErr} />
-                  <div>
-                    <h2>{v3EnName(e.id)}{e.lv > 0 && <em className="sb-lv">★{e.lv}</em>}
-                      {locale === "ko" && v3.enemyCn[e.id] && v3.enemyCn[e.id] !== v3EnName(e.id) && <span className="sb-cn">{v3.enemyCn[e.id]}</span>}</h2>
-                    <p className="sb-dim">HP {e.st[0].toLocaleString()} · {t("공격")} {e.st[1].toLocaleString()} · {t("방어")} {e.st[2].toLocaleString()} · {t("마저")} {e.st[3]}</p>
-                  </div>
-                </header>
-                <h4>{t("등장 지형")} <em className="sb-count">{e.at.length}</em></h4>
-                <div className="sb-atlist">
-                  {e.at.map(([sid, cnt]) => {
-                    const sv = subOf(sid);
-                    return (
-                      <button key={sid} type="button" onClick={() => openDetail({ k: "v3sub", id: sid })}>
-                        {sv?.use.length ? sv.use.map((u) => u[0]).join(" · ") : sid} <em>{cnt > 0 ? `×${cnt}` : t("습격")}</em>
-                      </button>
-                    );
-                  })}
-                </div>
-                {v3.enemySrc[e.id] === 0 && (
-                  dexFull ? <div className="sb-dexfull"><EnemyFile enemy={dexFull} stagesDoc={null} /></div>
-                    : <p className="sim-note">{t("적 도감 정보를 불러오는 중…")}</p>
                 )}
               </div>
             </ModalWindow>
@@ -1811,7 +1669,10 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
                 })}
               </div>
               {e.src === 0 && (
-                dexFull ? <div className="sb-dexfull"><EnemyFile enemy={dexFull} stagesDoc={null} /></div>
+                dexFull ? <div className="sb-dexfull">
+                    <EnemyFile enemy={dexFull} stagesDoc={null} nameOf={anyEnName}
+                      onOpenEnemy={(id) => openDexEnemy(id, id)} />
+                  </div>
                   : <p className="sim-note">{t("적 도감 정보를 불러오는 중…")}</p>
               )}
             </div>
@@ -1941,6 +1802,168 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
           </div>
         </ModalWindow>
       )}
+      {openSub && (() => {
+        const close = () => setOpenSub(null);
+          // 전투 지형 상세 — 사막 이야기 지역 상세와 **같은 규격** (사용자 요청 2026-08-12)
+          const sv = subOf(openSub);
+          const rd3 = SB2_ROUTES?.[openSub];
+          const foes = sv?.foes ?? [];
+          const order3 = rd3 ? foes.filter((r) => rd3.e[r[0]]?.length).map((r) => r[0]) : [];
+          const obCnt: Record<string, number> = {};
+          for (const [k] of rd3?.ob ?? []) obCnt[k] = (obCnt[k] ?? 0) + 1;
+          return (
+            <ModalWindow key={`sub-${subRaise}`} label={openSub} className="operator-modal st-modal" onClose={close}>
+              <div className="st-file">
+                <header className="st-head">
+                  <div className="st-head-main">
+                    <span className="st-code">{sv?.use.length ? sv.use.map((u) => u[0]).join(" · ") : openSub}</span>
+                    <h2>{sv?.pool && v3.pools[sv.pool] ? v3.pools[sv.pool][0] : t("전투 지형")}
+                      {locale === "ko" && sv?.pool && v3.pools[sv.pool] && <span className="sb-cn">{v3.pools[sv.pool][1]}</span>}</h2>
+                    <div className="st-badges">
+                      <span className="st-tag">{t("생존연산")}</span>
+                      <span className="st-tag">{v3.cnName}</span>
+                      <span className="st-tag sb-rawid">{openSub}</span>
+                    </div>
+                  </div>
+                </header>
+                <div className="st-cols">
+                  <div className="st-left">
+                    <div className="st-maptabs" role="tablist" aria-label={t("도면 보기")}>
+                      <button type="button" role="tab" aria-selected={mapView === "map"}
+                        className={mapView === "map" ? "on" : ""} onClick={() => setMapView("map")}>{t("실사 도면")}</button>
+                      <button type="button" role="tab" aria-selected={mapView === "route"}
+                        className={mapView === "route" ? "on" : ""} onClick={() => setMapView("route")}>{t("이동 경로")}</button>
+                    </div>
+                    {mapView === "map" ? (
+                      sv?.prev ? (
+                        <button type="button" className={`st-map-zoom${zoom ? " zoom" : ""}`} onClick={() => setZoom((z) => !z)}
+                          title={zoom ? t("아무 곳이나 클릭하면 원래 크기로 돌아갑니다") : t("클릭하면 화면 크기로 확대됩니다")}>
+                          <img className="st-map sb-origmap" src={v3MapImg(sv.prev)} alt={t("{code} 지형 도면", { code: openSub })}
+                            loading="lazy" decoding="async" onError={hideErr} />
+                        </button>
+                      ) : <p className="st-note">{t("이 지형은 프리뷰 이미지가 없습니다.")}</p>
+                    ) : rd3 ? (
+                      <StageRouteMap data={rd3} order={order3}
+                        highlights={hover ? [hover] : pinned.size ? [...pinned] : null}
+                        imgOf={(id) => v3EnImg(id)} nameOf={v3EnName} onPick={togglePin}
+                        obPick={obPick} obStyleOf={obStyle3}
+                        obIconOf={(k) => { const iid = v3.objKinds[k]?.[3]; return iid ? itemIcon(iid) : undefined; }} />
+                    ) : <p className="st-note">{SB2_ROUTES ? t("이 지형은 경로 데이터가 없습니다.") : t("경로 데이터를 불러오는 중…")}</p>}
+                  </div>
+                  <div className="st-right">
+                    {rd3?.ob && rd3.ob.length > 0 && (
+                      <section className="st-block">
+                        <h3><span className="section-no">RESOURCE</span>{t("자원·오브젝트")}</h3>
+                        <div className="sb-obs">
+                          {Object.entries(obCnt).sort((a, b) => b[1] - a[1]).map(([k, n]) => {
+                            const ok = v3.objKinds[k];
+                            const style = ok?.[2] ?? "obj";
+                            const color = { wood: "#7fc46a", stone: "#cfc8bd", iron: "#8fb3d9", diam: "#6fe3d4",
+                              treasure: "#ffd166", water: "#4fb3d9", bldg: "#c9a0ff", obj: "#9aa0a6" }[style] ?? "#9aa0a6";
+                            return (
+                              <button key={k} type="button" className={`sb-ob${obPick === k ? " on" : ""}`}
+                                title={locale === "ko" && ok?.[5] ? ok[5] : ok?.[1]}
+                                onClick={() => { setObPick((cur) => (cur === k ? null : k)); setMapView("route"); }}>
+                                {ok?.[3] && <img className="sb-ico" src={itemIcon(ok[3])} alt="" aria-hidden loading="lazy" onError={hideErr} />}
+                                <i className="dot" style={{ background: color }} aria-hidden />
+                                {ok?.[0] ?? k}{locale === "ko" && ok?.[4] && ok[4] !== ok[0] ? `(${ok[4]})` : ""} <em>×{n}</em>
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {obPick && v3.objKinds[obPick]?.[1] && (
+                          <p className="st-note">{v3.objKinds[obPick][1]}
+                            {locale === "ko" && v3.objKinds[obPick][5] && v3.objKinds[obPick][5] !== v3.objKinds[obPick][1]
+                              && <span className="sb-trline">{v3.objKinds[obPick][5]}</span>}</p>
+                        )}
+                      </section>
+                    )}
+                    {foes.length > 0 && (
+                      <section className="st-block">
+                        <h3><span className="section-no">ENEMY</span>{t("등장 적")} <em>{foes.length}</em></h3>
+                        <div className="st-enemies">
+                          {foes.map((r) => {
+                            const hasRoute = !!rd3?.e[r[0]]?.length;
+                            const pinColor = hasRoute ? enemyRouteColor(order3, r[0]) : undefined;
+                            return (
+                              <button key={r[0]} type="button"
+                                className={`st-enemy${r[2] > 0 ? " reinforced" : ""}${pinned.has(r[0]) ? " pinned" : ""}${routeMode ? " has-route" : ""}`}
+                                style={routeMode && pinColor ? ({ "--rc": pinColor } as React.CSSProperties) : undefined}
+                                onMouseEnter={mapView === "route" ? () => setHover(r[0]) : undefined}
+                                onMouseLeave={mapView === "route" ? () => setHover(null) : undefined}
+                                onClick={() => {
+                                  if (routeMode && hasRoute) { togglePin(r[0]); return; }
+                                  openV3Enemy(r[0]);   // CN 전용 적도 우리 도감 상세로 (사용자 제보 2026-08-13)
+                                }}>
+                                <span className="st-enemy-name">
+                                  <span className="nm">{v3EnName(r[0])}</span>
+                                  {r[2] > 0 && <i title={t("강화 {n}단계", { n: String(r[2]) })}>★{r[2]}</i>}
+                                  <em className="st-enemy-cnt">{r[1] > 0 ? `×${r[1]}` : t("습격")}</em>
+                                </span>
+                                <span className="st-enemy-body">
+                                  {/* 섬네일 클릭은 **항상** 적 상세 — 경로 고정과 분리한다 (사용자 지시 2026-08-13) */}
+                                  <img src={v3EnImg(r[0])} alt="" aria-hidden width={96} height={96} loading="lazy" decoding="async"
+                                    className="st-enemy-face-btn"
+                                    onClick={(ev) => {
+                                      ev.stopPropagation(); ev.preventDefault();
+                                      openV3Enemy(r[0]);
+                                    }}
+                                    onError={(ev) => { ev.currentTarget.style.visibility = "hidden"; }} />
+                                  <span className="st-enemy-stats">
+                                    <b title={t("최대 HP")}>HP {r[3].toLocaleString()}</b>
+                                    <b title={t("공격력")}>{t("공격")} {r[4].toLocaleString()}</b>
+                                    <b title={t("방어력")}>{t("방어")} {r[5].toLocaleString()}</b>
+                                    <b title={t("마법 저항")}>{t("마저")} {r[6]}</b>
+                                  </span>
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </section>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </ModalWindow>
+          );
+              })()}
+      {openV3En && (() => {
+        const close = () => setOpenV3En(null);
+          const e = v3.dex.find((x) => x.id === openV3En)!;
+          return (
+            <ModalWindow key={`v3en-${enRaise}`} label={v3EnName(e.id)} className="operator-modal sb-modal" onClose={close}>
+              <div className="sb-dt">
+                <header className="sb-dt-head">
+                  <img src={v3EnImg(e.id)} alt="" aria-hidden onError={hideErr} />
+                  <div>
+                    <h2>{v3EnName(e.id)}{e.lv > 0 && <em className="sb-lv">★{e.lv}</em>}
+                      {locale === "ko" && v3.enemyCn[e.id] && v3.enemyCn[e.id] !== v3EnName(e.id) && <span className="sb-cn">{v3.enemyCn[e.id]}</span>}</h2>
+                    <p className="sb-dim">HP {e.st[0].toLocaleString()} · {t("공격")} {e.st[1].toLocaleString()} · {t("방어")} {e.st[2].toLocaleString()} · {t("마저")} {e.st[3]}</p>
+                  </div>
+                </header>
+                <h4>{t("등장 지형")} <em className="sb-count">{e.at.length}</em></h4>
+                <div className="sb-atlist">
+                  {e.at.map(([sid, cnt]) => {
+                    const sv = subOf(sid);
+                    return (
+                      <button key={sid} type="button" onClick={() => openTerrain(sid)}>
+                        {sv?.use.length ? sv.use.map((u) => u[0]).join(" · ") : sid} <em>{cnt > 0 ? `×${cnt}` : t("습격")}</em>
+                      </button>
+                    );
+                  })}
+                </div>
+                {v3.enemySrc[e.id] === 0 && (
+                  dexFull ? <div className="sb-dexfull">
+                    <EnemyFile enemy={dexFull} stagesDoc={null} nameOf={anyEnName}
+                      onOpenEnemy={(id) => openDexEnemy(id, id)} />
+                  </div>
+                    : <p className="sim-note">{t("적 도감 정보를 불러오는 중…")}</p>
+                )}
+              </div>
+            </ModalWindow>
+          );
+              })()}
       {/* 신시즌 아이템 창 — 부모 모달 위에 겹친다 */}
       {v3Item && (
         <ModalWindow key={`v3i-${v3Raise}`} label={v3.items[v3Item]?.[1] ?? v3Item}
@@ -1954,8 +1977,8 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
       {matTop === "a" && matA && matModal(matA, "a")}
       {subEnemy && (
         <ModalWindow label={subEnemy.name} className="operator-modal en-modal" onClose={() => setSubEnemy(null)}>
-          <EnemyFile enemy={subEnemy} stagesDoc={null}
-            onOpenEnemy={(id) => { void loadEnemies(locale).then((m) => setSubEnemy(m.get(id) ?? null)); }} />
+          <EnemyFile enemy={subEnemy} stagesDoc={null} nameOf={anyEnName}
+            onOpenEnemy={(id) => { void loadEnemies(locale).then((m) => { setEnMap(m); setSubEnemy(m.get(id) ?? null); }); }} />
         </ModalWindow>
       )}
     </section>
