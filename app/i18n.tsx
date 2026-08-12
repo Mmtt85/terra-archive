@@ -1560,6 +1560,7 @@ const D: Record<string, Pair> = {
     "新シーズンの戦闘地形に出現する敵です。ステータスは最も強化された出現を基準に、押すと出現地形が開きます。"],
   "{n}개 지형": ["{n} terrains", "地形{n}か所"],
   "등장 지형": ["Appears in", "出現地形"],
+  "적 도감 정보를 불러오는 중…": ["Loading enemy details…", "敵図鑑の情報を読み込み中…"],
 
   "전투 지형입니다 — 누르면 사막 이야기 지역과 같은 도면·이동 경로·등장 적 상세가 열립니다. 시나리오는 이 지형들을 이어 붙여 만들어집니다.": [
     "Battle terrain tiles — open one for the same blueprint, routes and enemy details as the Tales Within the Sand areas. Scenarios are built by joining these tiles.",

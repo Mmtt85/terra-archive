@@ -16923,6 +16923,11 @@ main.site-main > .site-header {
 .st-enemy:hover {
   border-color: var(--border-strong);
 }
+/* 생존연산 전투 지형 상세의 적은 <a>가 아니라 <button>이라 커서가 기본값이 된다 —
+   누를 수 있다는 걸 커서로도 알려준다 (사용자 지시 2026-08-13). */
+button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
+/* 적 도감 상세를 모달 안에 그대로 싣는다 — 위 요약과 겹치지 않게 선으로 끊는다 */
+.sb-dexfull { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
 .st-enemy.reinforced {
   border-color: #b9862f;
 }

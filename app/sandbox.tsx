@@ -355,6 +355,13 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
   const openDexEnemy = (id: string, img: string) => {
     void loadEnemies(locale).then((m) => setSubEnemy(m.get(id) ?? m.get(img) ?? null));
   };
+  // 적 도감 상세는 **모달을 열 때 바로 싣는다** — 링크를 한 번 더 누르게 하지 않는다
+  // (사용자 지시 2026-08-13 "적도감에 있으면 바로 보여줘").
+  const [dexFull, setDexFull] = useState<Enemy | null>(null);
+  const loadDexFull = (id: string, img: string) => {
+    setDexFull(null);
+    void loadEnemies(locale).then((m) => setDexFull(m.get(id) ?? m.get(img) ?? null));
+  };
 
   // 자원·오브젝트 — 지도엔 파괴 가능 바위만, 목록엔 전부 (클릭 = 그것만 강조)
   const OB_LIST = OB_KINDS;
@@ -466,6 +473,14 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
   const views = VIEWS;
   const openDetail = (d: Detail) => {
     if (d.k === "mat") { openMat(d.id); return; }
+    if (d.k === "dex") {
+      const e = v2.dex[d.i];
+      if (e && e.src === 0) loadDexFull(e.id, e.img); else setDexFull(null);
+    }
+    if (d.k === "v3dex") {
+      const e = v3.dex[d.i];
+      if (e && v3.enemySrc[e.id] === 0) loadDexFull(e.id, e.id); else setDexFull(null);
+    }
     if (d.k === "v3sub") {
       // 전투 지형 상세도 지역 상세와 같은 재료(도면·경로·적)를 쓴다 — 파일만 다르다
       resetStage();
@@ -1414,7 +1429,14 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
                                   <em className="st-enemy-cnt">{r[1] > 0 ? `×${r[1]}` : t("습격")}</em>
                                 </span>
                                 <span className="st-enemy-body">
+                                  {/* 섬네일 클릭은 **항상** 적 상세 — 경로 고정과 분리한다 (사용자 지시 2026-08-13) */}
                                   <img src={v3EnImg(r[0])} alt="" aria-hidden width={96} height={96} loading="lazy" decoding="async"
+                                    className="st-enemy-face-btn"
+                                    onClick={(ev) => {
+                                      ev.stopPropagation(); ev.preventDefault();
+                                      const di = v3.dex.findIndex((x) => x.id === r[0]);
+                                      if (di >= 0) openDetail({ k: "v3dex", i: di });
+                                    }}
                                     onError={(ev) => { ev.currentTarget.style.visibility = "hidden"; }} />
                                   <span className="st-enemy-stats">
                                     <b title={t("최대 HP")}>HP {r[3].toLocaleString()}</b>
@@ -1460,12 +1482,8 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
                   })}
                 </div>
                 {v3.enemySrc[e.id] === 0 && (
-                  <p className="sim-note">
-                    <a href={enemyPath(locale, e.id)} onClick={(ev) => {
-                      if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
-                      ev.preventDefault(); openDexEnemy(e.id, e.id);
-                    }}>{t("적 도감에서 자세히 보기")} ›</a>
-                  </p>
+                  dexFull ? <div className="sb-dexfull"><EnemyFile enemy={dexFull} stagesDoc={null} /></div>
+                    : <p className="sim-note">{t("적 도감 정보를 불러오는 중…")}</p>
                 )}
               </div>
             </ModalWindow>
@@ -1793,12 +1811,8 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
                 })}
               </div>
               {e.src === 0 && (
-                <p className="sim-note">
-                  <a href={enemyPath(locale, e.img)} onClick={(ev) => {
-                    if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
-                    ev.preventDefault(); openDexEnemy(e.id, e.img);
-                  }}>{t("적 도감에서 자세히 보기")} ›</a>
-                </p>
+                dexFull ? <div className="sb-dexfull"><EnemyFile enemy={dexFull} stagesDoc={null} /></div>
+                  : <p className="sim-note">{t("적 도감 정보를 불러오는 중…")}</p>
               )}
             </div>
           </ModalWindow>
