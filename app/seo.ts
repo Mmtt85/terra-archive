@@ -10,14 +10,14 @@ import { asset } from "./assets";
 export const SITE_URL = "https://terra-archive.net";
 
 type SeoLocale = "ko" | "en" | "ja";
-export type SeoTab = "portal" | "archive" | "enemy" | "stage" | "sim" | "planner" | "recruit" | "farm" | "upgrade" | "story" | "rogue" | "about";
+export type SeoTab = "portal" | "archive" | "enemy" | "stage" | "sim" | "planner" | "recruit" | "farm" | "upgrade" | "story" | "rogue" | "ra" | "about";
 
 // 탭 → URL 세그먼트 (portal이 로케일 루트, 오퍼 백과사전은 /operators로 분리 — 사용자 확정
 // 2026-07-17: 루트 진입 시 오퍼 이미지 강제 로딩을 없애기 위해 포탈 첫화면 도입). 라우트 폴더명과 반드시 일치.
 // ⚠ 적 도감 세그먼트는 "enemies"(복수) — 초상 자산 폴더 public/enemy/(단수)와 일부러 다르다.
 //    deploy.sh가 스테이징에서 `rm -rf $STAGE/enemy`로 자산만 떼어내기 때문(서빙은 R2).
 export const TAB_SEG: Record<SeoTab, string> = {
-  portal: "", archive: "operators", enemy: "enemies", stage: "stages", sim: "sim", planner: "infra", recruit: "recruit", farm: "farm", upgrade: "upgrade", story: "stories", rogue: "rogue", about: "about",
+  portal: "", archive: "operators", enemy: "enemies", stage: "stages", sim: "sim", planner: "infra", recruit: "recruit", farm: "farm", upgrade: "upgrade", story: "stories", rogue: "rogue", ra: "ra", about: "about",
 };
 
 // 로케일 베이스 경로
@@ -90,6 +90,11 @@ const TAB_META: Record<Exclude<SeoTab, "portal">, Record<SeoLocale, { title: str
     ko: { title: "통합전략 가이드 - 명일방주 통합전략 공략 | 테라 아카이브", description: "명일방주 통합전략(IS) 가이드 — 팬텀 & 크림슨 솔리테어의 층별 노드, 적 도감(난이도 0~15 스탯 적용), 소장품·레퍼토리 전시관, 환각, 엔딩 조건을 정리합니다." },
     en: { title: "Integrated Strategies Guide - Arknights IS Guide | Terra Archive", description: "Arknights Integrated Strategies guide — Phantom & Crimson Solitaire floor nodes, enemy handbook with difficulty 0-15 stats, relic/repertoire archive, hallucinations, and ending requirements." },
     ja: { title: "統合戦略ガイド - アークナイツ統合戦略攻略 | テラアーカイブ", description: "アークナイツ統合戦略ガイド — ファントムと緋き貴石の各階層ノード、難易度0～15対応の敵図鑑、収蔵品・レパートリー、幻覚、エンディング条件を整理します。" },
+  },
+  ra: {
+    ko: { title: "생존연산 가이드 - 명일방주 생존연산 공략 | 테라 아카이브", description: "명일방주(아크나이츠) 생존연산 가이드 — 요리·음료 조합, 제작·설치물 재료, 지역·날씨, 조우 선택지, 균열 목표를 게임 데이터에서 정리했습니다. 중국 서버 선행 신시즌도 비공식 번역으로 미리 봅니다." },
+    en: { title: "Reclamation Algorithm Guide - Arknights RA Guide | Terra Archive", description: "Arknights Reclamation Algorithm guide — food recipes, crafting materials, areas & weather, encounter choices and rift objectives, plus a preview of the CN-first new season." },
+    ja: { title: "生息演算ガイド - アークナイツ生息演算攻略 | テラアーカイブ", description: "アークナイツ生息演算ガイド — 料理レシピ、製作・設置物の素材、エリアと天候、遭遇の選択肢、裂け目の目標を整理。中国サーバー先行の新シーズンもプレビューできます。" },
   },
   about: {
     ko: { title: "소개 - 기능 안내 | 테라 아카이브", description: "테라 아카이브의 기능 소개 — 오퍼 백과사전, 인프라 자동편성기, 공개채용 도우미, 파밍·육성 시뮬, AI 스토리 요약이 각각 무엇이고 어떤 상황에 쓰는지 안내합니다." },

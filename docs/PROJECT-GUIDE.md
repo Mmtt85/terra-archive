@@ -31,6 +31,7 @@
 | 적 도감 | `/enemies` · 적 모달 열면 `#en-<enemy_id>` | `app/enemies.tsx` + `app/enemy-detail.tsx` |
 | 작전 도감 | `/stages` · 작전 모달 열면 `#st-<stage_id>` | `app/stages.tsx` + `app/stage-detail.tsx` |
 | 작전 시뮬레이터 | `/sim` — 리스트 없는 런처(검색+추천), `/stages/<id>?sim=1` 딥링크로 상세의 이동 경로 탭+시뮬 자동 재생 (2026-08-10 B안) | `app/sim-launcher.tsx` (home 정적 임포트 — SEO 본문 프리렌더) |
+| 생존연산 가이드 | `/ra` — 요리·제작·지역·조우·균열 + CN 선행 신시즌(미래시 토글, 비공식 번역은 `scripts/sandbox-cn-ko.json`) (2026-08-12) | `app/sandbox.tsx` + 로케일 래퍼 (lazy) |
 | 인프라 플래너 | `#infra` | `app/planner.tsx` |
 | 공개채용 도우미 | `#recruit` | `app/recruit.tsx` |
 | 재료 파밍 효율표 | `#farm` | `app/farm.tsx` |
@@ -231,6 +232,9 @@ const { term, set, clear, inputRef, inputProps } = useSearchInput();
 - `app/data/extra-i18n.en.json` / `.ja.json` — 플래너·공채 표시 오버레이 (이름·buffId→스킬 텍스트·공채 tagId→태그명·방 이름)
 - `app/data/enemies.json` / `.en.json` / `.ja.json` — 적 도감 (도감 노출 **1,514종**의 등급·종족·
   능력·피해 유형·상태이상 면역 + 레벨 강화 단계별 스탯). 로케일당 ~1MB라 **지연 로드 청크**에만 둔다
+- `app/data/sandbox.json` / `.en` / `.ja` — 생존연산 가이드 (build-sandbox.py, 로케일당 ~330KB).
+  v2=사막 이야기(공식 3로케일) + v3=CN 선행 신시즌(비공식 번역 `scripts/sandbox-cn-ko.json`,
+  미번역 문자열은 빌드 로그에 未 경고 — cn-translation-fill 흐름으로 보완).
 - `app/data/sim-stages.json` — 경로(=시뮬) 데이터가 있는 작전 id 목록 (별칭 포함, 28KB).
   작전 시뮬레이터 런처가 stage-routes 5.4MB 없이 시뮬 가능 여부를 판정한다 (build-enemies.py 산출).
 - `app/data/enemy-stages.json` / `.en` / `.ja` — 등장 작전 역색인 (`stages` 배열의 위치가 곧 id).

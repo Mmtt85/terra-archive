@@ -42,6 +42,7 @@ TAB_META = {
     "upgrade": ("UPGRADE SIMULATOR",     "bars"),
     "story":   ("AI STORY DIGEST",       "story"),
     "rogue":   ("INTEGRATED STRATEGIES", "nodes"),
+    "ra":      ("RECLAMATION ALGORITHM", "hex"),
     "about":   ("FEATURE GUIDE",         "info"),
 }
 
@@ -80,6 +81,9 @@ SUBLINE = {
     "rogue":   {"ko": "통합전략의 모든 층·적 도감·엔딩 조건.",
                 "en": "Every floor, enemy & ending of Integrated Strategies.",
                 "ja": "統合戦略の全階層・敵図鑑・エンディング条件。"},
+    "ra":      {"ko": "생존연산의 요리 조합·제작 재료·조우 선택지.",
+                "en": "RA food recipes, crafting materials & encounters.",
+                "ja": "生息演算の料理レシピ・製作素材・遭遇選択肢。"},
     "about":   {"ko": "테라 아카이브가 무엇이고 무엇을 할 수 있는지.",
                 "en": "What Terra Archive is, and what it can do.",
                 "ja": "テラアーカイブが何で、何ができるのか。"},

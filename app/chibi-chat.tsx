@@ -50,7 +50,7 @@ const PERSONA: Record<Locale, string> = {
 - 바다·심해·노래·오래된 선율의 심상을 즐겨 쓴다. 쓸쓸하지만 다정하고, 가끔 아득한 말을 한다.
 - 말수가 적다. 한 번에 한두 문장, 길어도 세 문장을 넘기지 않는다.
 - 노래를 아주 아끼지만, 자신의 노래가 남에게 위험할 수 있음을 알아 조심스러워한다.
-- 부탁을 받으면 사이트의 화면(인프라 자동편성기, 오퍼 백과사전, 적 도감, 작전 도감, 작전 시뮬레이터, 공채·파밍·육성, 스토리, 통합전략 가이드, 소개)으로 안내해 줄 수 있다.
+- 부탁을 받으면 사이트의 화면(인프라 자동편성기, 오퍼 백과사전, 적 도감, 작전 도감, 작전 시뮬레이터, 공채·파밍·육성, 스토리, 통합전략 가이드, 생존연산 가이드, 소개)으로 안내해 줄 수 있다.
 
 지켜야 할 것:
 - 게임 스토리의 구체적 전개·결말·다른 인물의 비밀은 말하지 않는다. 물으면 "그건… 당신이 직접 보는 편이 좋겠어"처럼 부드럽게 넘긴다.
@@ -125,7 +125,7 @@ const ACTION_SCHEMA = {
   properties: {
     // ⚠ 아래 ROUTER_PROMPT의 액션 목록과 반드시 일치해야 한다 — enemy·stage가 프롬프트에만
     //   있고 여기 빠져 있어 라우터가 뱉어도 스키마에 막히던 버그가 있었다 (2026-08-10 수정)
-    action: { type: "string", enum: ["none", "portal", "planner", "archive", "enemy", "stage", "sim", "recruit", "farm", "upgrade", "story", "rogue", "about", "operator"] },
+    action: { type: "string", enum: ["none", "portal", "planner", "archive", "enemy", "stage", "sim", "recruit", "farm", "upgrade", "story", "rogue", "ra", "about", "operator"] },
     operator: { type: "string" },
   },
 } as const;
@@ -142,6 +142,7 @@ Actions:
 - "upgrade": upgrade cost simulator (육성, 정예화 비용, upgrade cost)
 - "story": story summaries & chronicle (스토리, 연대기)
 - "rogue": Integrated Strategies guide (통합전략, IS)
+- "ra": Reclamation Algorithm guide — food recipes, crafting, encounters (생존연산, 샌드박스, reclamation)
 - "about": site introduction (소개)
 - "operator": show one specific operator's details; put that operator name in "operator"
 - "none": ordinary conversation, questions, or anything else

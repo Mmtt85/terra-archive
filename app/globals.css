@@ -10750,7 +10750,7 @@ html.dark .pt-stage {
      2026-08-10). 제안 보내기 타일은 뺐다(떠 있는 💬 버튼과 중복 — 같은 날 지시). */
   grid-template-areas:
     "terminal terminal terminal terminal terminal terminal"
-    "squads   squads   squads   squads   banner   banner  "
+    "squads   squads   ra       ra       banner   banner  "
     "dex      dex      dex      sim      sim      sim     "
     "dex      dex      dex      sim      sim      sim     "
     "dex      dex      dex      sim      sim      sim     "
@@ -11065,7 +11065,7 @@ html.dark .pt-stage {
       "squads   banner  "
       "dex      dex     "
       "sim      sim     "
-      "story    story   "
+      "ra       story   "
       "mission  archives";
   }
   /* 묶음 속은 2열로 접는다 — 세로 한 줄이면 홈이 너무 길어진다 */
@@ -17169,3 +17169,127 @@ main.site-main > .site-header {
   font-style: normal;
   color: var(--muted);
 }
+
+/* ── 생존연산 가이드 (/ra) — 사용자 확정 2026-08-12 ──────────────────────────
+   런처(.sim-launch)의 머리 스타일(sim-head/sim-intro/sim-note)을 빌려 쓰고,
+   본문은 뷰 칩 + 카드 그리드 + 표 세 가지 골격으로 짠다. */
+.sb-guide {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 26px 20px 60px;
+}
+.sb-views {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 16px 0 4px;
+}
+.sb-views button {
+  padding: 7px 13px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink2);
+  background: var(--white);
+  border: 1px solid var(--line);
+  cursor: pointer;
+}
+.sb-views button.on {
+  color: var(--white);
+  background: var(--ink);
+  border-color: var(--ink);
+}
+.sb-views .tab-sub-future { margin-left: 5px; }
+.sb-search { margin-top: 10px; }
+.sb-h3 {
+  margin: 26px 0 6px;
+  font-size: 15.5px;
+}
+.sb-h3 .sb-count {
+  font-style: normal;
+  font-size: 12px;
+  color: var(--muted);
+  margin-left: 6px;
+}
+.sb-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+.sb-grid-s { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+.sb-card {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  background: var(--white);
+}
+.sb-card h4 {
+  margin: 0 0 6px;
+  font-size: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.sb-card p { margin: 4px 0 0; font-size: 12.5px; line-height: 1.6; }
+.sb-dim { color: var(--muted); }
+.sb-chip {
+  font-style: normal;
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 1.5px 7px;
+  border: 1px solid var(--line);
+  color: var(--ink2);
+  border-radius: 999px;
+}
+.sb-chip.warn { border-color: #b3372e; color: #b3372e; }
+.sb-chip.a-SURVIVE { border-color: #2e7d4f; color: #2e7d4f; }
+.sb-chip.a-BATTLE { border-color: #b3372e; color: #b3372e; }
+.sb-chip.a-GATHER { border-color: #8a6d1f; color: #8a6d1f; }
+.sb-recipes { margin: 6px 0 0; padding-left: 16px; font-size: 12.5px; line-height: 1.7; }
+.sb-variants {
+  margin: 8px 0 0;
+  padding: 8px 0 0;
+  border-top: 1px dashed var(--line);
+  list-style: none;
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+.sb-variants b { display: inline-block; min-width: 18px; }
+.sb-variants .v-ALPHA { color: #b3372e; }
+.sb-variants .v-BETA { color: #2f5f9e; }
+.sb-choices { margin: 8px 0 0; padding-left: 0; list-style: none; font-size: 12.5px; line-height: 1.65; }
+.sb-choices li { padding: 5px 0; border-top: 1px dashed var(--line); }
+.sb-choices li span { display: block; color: var(--muted); }
+.sb-lv {
+  font-style: normal;
+  font-size: 10.5px;
+  color: var(--muted);
+  margin-left: 6px;
+}
+.sb-table-wrap { overflow-x: auto; margin-top: 10px; }
+.sb-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+.sb-table th, .sb-table td {
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+.sb-table th {
+  background: color-mix(in srgb, var(--ink) 5%, var(--white));
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+.sb-table td.sb-desc { min-width: 260px; color: var(--ink2); }
+.sb-cn, .sb-cn-td {
+  display: inline-block;
+  margin-left: 7px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+}
+td.sb-cn-td { display: table-cell; margin: 0; }

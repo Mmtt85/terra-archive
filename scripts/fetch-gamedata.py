@@ -26,19 +26,20 @@ TABLES = {
     "kr": ["character_table", "skill_table", "uniequip_table", "battle_equip_table",
            "building_data", "range_table", "handbook_team_table", "handbook_info_table",
            "gamedata_const", "item_table", "gacha_table", "stage_table", "skin_table",
-           "charword_table", "enemy_handbook_table", "zone_table", "activity_table", "climb_tower_table"],
+           "charword_table", "enemy_handbook_table", "zone_table", "activity_table", "climb_tower_table",
+           "sandbox_perm_table"],  # 생존연산 가이드 (build-sandbox.py)
     "cn": ["character_table", "skill_table", "uniequip_table", "battle_equip_table",
            "building_data", "range_table", "handbook_team_table", "handbook_info_table",
            "gamedata_const", "item_table", "charword_table", "skin_table",
-           "enemy_handbook_table"],
+           "enemy_handbook_table", "sandbox_perm_table"],  # sandbox_2(신시즌)는 CN 선행
     "en": ["character_table", "skill_table", "uniequip_table", "battle_equip_table",
            "building_data", "handbook_team_table", "handbook_info_table",
            "item_table", "gacha_table", "stage_table", "skin_table", "charword_table",
-           "enemy_handbook_table", "zone_table", "activity_table", "climb_tower_table"],
+           "enemy_handbook_table", "zone_table", "activity_table", "climb_tower_table", "sandbox_perm_table"],
     "jp": ["character_table", "skill_table", "uniequip_table", "battle_equip_table",
            "building_data", "handbook_team_table", "handbook_info_table",
            "item_table", "gacha_table", "stage_table", "skin_table", "charword_table",
-           "enemy_handbook_table", "zone_table", "activity_table", "climb_tower_table"],
+           "enemy_handbook_table", "zone_table", "activity_table", "climb_tower_table", "sandbox_perm_table"],
 }
 
 target = sys.argv[1] if len(sys.argv) > 1 else ".gamedata"

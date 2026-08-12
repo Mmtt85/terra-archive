@@ -32,6 +32,7 @@ const SHOTS = [
   { name: "upgrade", path: "/upgrade?ops=char_113_cqbw,char_456_ash" },
   { name: "story", path: "/stories" },
   { name: "rogue", path: "/rogue" },
+  { name: "ra", path: "/ra" },
   { name: "chronicle", path: "/stories", prep: async (page, loc) => {
     const btn = page.locator(".story-viewtabs button, .digest-viewtabs button", { hasText: loc.chron });
     if (await btn.count()) { await btn.first().click(); await page.waitForTimeout(600); }

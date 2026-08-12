@@ -46,6 +46,7 @@ const SEG_SOURCES = {
   upgrade: ["app/data/costs.json", "app/data/operators.json"],
   stories: ["app/data/story-summaries.json", "app/data/stories.json", "app/data/chronology.json"],
   rogue: ["app/data/rogue1.json", "app/data/rogue2.json", "app/data/rogue3.json", "app/data/rogue4.json", "app/data/rogue5.json", "app/data/rogue6.json"],
+  ra: ["app/data/sandbox.json"], // 생존연산 가이드
   about: ["app/about/page.tsx"],
 };
 function lastmodFor(seg) {

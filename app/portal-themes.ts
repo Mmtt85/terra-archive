@@ -62,6 +62,8 @@ export const PORTAL_TILES: PortalTile[] = [
     desc: "이벤트 스토리를 AI 요약과 전문(풀 스크립트)으로", icon: "✦" },
   { id: "squads", label: "통합전략 가이드", tab: "rogue", area: "squads", kind: "plate",
     desc: "층별 노드·적 도감·유물·엔딩 조건을 난이도별로 정리", icon: "❖" },
+  { id: "ra", label: "생존연산 가이드", tab: "ra", area: "ra", kind: "plate",
+    desc: "요리 조합·제작 재료·지역과 조우 선택지를 정리", icon: "❂" },
   { id: "mission", label: "업데이트 내역", action: "changelog", area: "mission", kind: "plate",
     desc: "최근 무엇이 바뀌었는지, 지난 기록까지 한 곳에", icon: "🛠" },
   { id: "archives", label: "테라 아카이브 소개", tab: "about", area: "archives", kind: "plate",

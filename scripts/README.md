@@ -68,6 +68,9 @@ python3 scripts/build-stages.py .gamedata      # → app/data/stages{,.en,.ja}.j
 #   ⚠ 인자 없이 돌리면 levels/ 2,283개(179MB)를 받아 '등장 작전'을 역색인한다 (약 1분).
 #     CI는 --meta-only --no-images로 돌아 그 둘을 건너뛰므로, 새 이벤트의 등장 적과
 #     신규 적 초상은 **로컬 전체 실행**으로만 갱신된다 (docs/AUTOMATION.md 1-B).
+python3 scripts/build-sandbox.py               # → app/data/sandbox{,.en,.ja}.json (생존연산 가이드 —
+#     V2 사막 이야기는 kr/en/jp 공식 텍스트, V3 신시즌은 CN 선행 + scripts/sandbox-cn-ko.json
+#     비공식 번역. 미번역 문자열이 생기면 未 경고를 낸다 — cn-translation-fill 흐름으로 보완)
 python3 scripts/build-rogue-routes.py          # → app/data/rogue-routes.json (통전 전투 노드 적 이동 경로,
 #     로케일 무관 1벌 · .gamedata/rogue 레벨 캐시 재사용. 추출 정본은 routeutil.py —
 #     stage-routes.json과 공유하므로 경로 규칙 수정 시 이 파일도 재생성한다)

@@ -29,6 +29,12 @@ const STAGE_DEX = {
   en: lazy(() => import("./stages-en")),
   ja: lazy(() => import("./stages-ja")),
 } as const;
+// 생존연산 가이드 — 로케일별 청크 (데이터 ~330KB, 2026-08-12)
+const SANDBOX_GUIDE = {
+  ko: lazy(() => import("./sandbox-ko")),
+  en: lazy(() => import("./sandbox-en")),
+  ja: lazy(() => import("./sandbox-ja")),
+} as const;
 import { normSearch, useSearchInput } from "./search";
 // 작전 시뮬레이터 런처 — SEO 본문이 프리렌더돼야 해서 정적 임포트 (데이터는 자체 지연 로드)
 import SimLauncher from "./sim-launcher";
@@ -185,17 +191,17 @@ const JOB_ORDER = ["PIONEER", "WARRIOR", "TANK", "SNIPER", "CASTER", "MEDIC", "S
 
 const SORT_KEYS = ["기본", "이름", "성급", "발매순", "소속", "출신지", "종족", "직군", "세부 직군"];
 
-export type Tab = "portal" | "archive" | "enemy" | "stage" | "sim" | "planner" | "recruit" | "farm" | "upgrade" | "story" | "rogue" | "about";
+export type Tab = "portal" | "archive" | "enemy" | "stage" | "sim" | "planner" | "recruit" | "farm" | "upgrade" | "story" | "rogue" | "ra" | "about";
 // 탭 ↔ URL 세그먼트 (portal이 로케일 루트, 오퍼 백과사전은 /operators — 사용자 확정 2026-07-17:
 // 루트 진입 시 오퍼 이미지 강제 로딩을 없애려 포탈 첫화면 도입). seo.ts의 TAB_SEG·라우트 폴더명과 일치.
 // URL 세그먼트 "stories"(← 정적 자산 디렉터리 public/story/ 와의 경로 충돌 회피). 내부 탭명은 story.
 // ⚠ 적 도감의 URL 세그먼트는 "enemies"(복수)인데 초상 자산 폴더는 public/enemy/(단수)다.
 //    일부러 다르게 뒀다 — scripts/deploy.sh가 스테이징에서 `rm -rf $STAGE/enemy`로 자산만
 //    떼어내는데(서빙은 R2), 이름이 같으면 라우트 HTML까지 통째로 지워진다.
-const TAB_SEG: Record<Tab, string> = { portal: "", archive: "operators", enemy: "enemies", stage: "stages", sim: "sim", planner: "infra", recruit: "recruit", farm: "farm", upgrade: "upgrade", story: "stories", rogue: "rogue", about: "about" };
+const TAB_SEG: Record<Tab, string> = { portal: "", archive: "operators", enemy: "enemies", stage: "stages", sim: "sim", planner: "infra", recruit: "recruit", farm: "farm", upgrade: "upgrade", story: "stories", rogue: "rogue", ra: "ra", about: "about" };
 // ⚠ TAB_SEG와 짝 — 세그먼트를 더하면 여기도 같이 (enemies·stages가 빠져 /stages가
 //   portal로 판정되던 기존 누락도 2026-08-10에 함께 채움)
-const SEG_TAB: Record<string, Tab> = { "": "portal", operators: "archive", enemies: "enemy", stages: "stage", sim: "sim", infra: "planner", recruit: "recruit", farm: "farm", upgrade: "upgrade", stories: "story", rogue: "rogue", about: "about" };
+const SEG_TAB: Record<string, Tab> = { "": "portal", operators: "archive", enemies: "enemy", stages: "stage", sim: "sim", infra: "planner", recruit: "recruit", farm: "farm", upgrade: "upgrade", stories: "story", rogue: "rogue", ra: "ra", about: "about" };
 const LOCALE_BASE: Record<Locale, string> = { ko: "", en: "/en", ja: "/ja" };
 
 // 빌드(=배포) 시각 — vite define으로 박히는 ISO 문자열을 KST 분 단위로 찍는다.
@@ -992,6 +998,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   // 서버 라우트가 그 적 하나(+등장 작전 발췌)만 골라 props로 내려준다.
   const [enemyPageOpen, setEnemyPageOpen] = useState<boolean>(() => !!pageEnemy);
   const EnemyDexForLocale = ENEMY_DEX[locale as keyof typeof ENEMY_DEX] ?? ENEMY_DEX.ko;
+  const SandboxForLocale = SANDBOX_GUIDE[locale as keyof typeof SANDBOX_GUIDE] ?? SANDBOX_GUIDE.ko;
   const [stagePageOpen, setStagePageOpen] = useState<boolean>(() => !!pageStage);
   const StageDexForLocale = STAGE_DEX[locale as keyof typeof STAGE_DEX] ?? STAGE_DEX.ko;
   // 작전 도감 → 적 도감: 적 칩을 누르면 적 상세로 넘어간다 (두 도감이 서로를 가리킨다)
@@ -1270,6 +1277,8 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                 : t("스토리 - 명일방주 스토리 요약·전문 | 테라 아카이브"))
               : tab === "rogue"
                 ? t("통합전략 가이드 - 명일방주 통합전략 공략 | 테라 아카이브")
+                : tab === "ra"
+                ? t("생존연산 가이드 - 명일방주 생존연산 공략 | 테라 아카이브")
                 : tab === "archive"
                 ? t("오퍼레이터 백과사전 - 명일방주 오퍼 도감 | 테라 아카이브")
                 : t("테라 아카이브 | 명일방주(Arknights) 팬사이트");
@@ -1317,6 +1326,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     sim: t("작전 시뮬레이터"),
     story: t("스토리"),
     rogue: t("통합전략 가이드"),
+    ra: t("생존연산 가이드"),
     about: t("테라 아카이브 소개"),
   };
   // 햄버거 메뉴 묶음 (사용자 확정 2026-08-09 '메뉴 마토메') — 도감(오퍼·적·작전)과
@@ -1400,6 +1410,8 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     void import("./story"); void import("./rogue"); void import("./about");
     // 적 도감은 로케일 청크가 갈라져 있다 — 지금 언어 것만 미리 받는다
     void (locale === "ja" ? import("./enemies-ja") : locale === "en" ? import("./enemies-en") : import("./enemies-ko"));
+    // 생존연산 가이드도 로케일 청크 (2026-08-12)
+    void (locale === "ja" ? import("./sandbox-ja") : locale === "en" ? import("./sandbox-en") : import("./sandbox-ko"));
     void (locale === "ja" ? import("./stages-ja") : locale === "en" ? import("./stages-en") : import("./stages-ko"));
   }, [locale]);
 
@@ -1706,6 +1718,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                 ))}
               </div>
             </div>
+            <button className={`tab-ra${tab === "ra" ? " selected" : ""}`} onClick={() => switchTab("ra")}><span className="tab-icon" aria-hidden>❂</span>{t("생존연산 가이드")}{tabHasNewFeature("ra") && <span className="new-badge">{t("새기능")}</span>}</button>
             <button className={`tab-story${tab === "story" ? " selected" : ""}`} onClick={() => switchTab("story")}><span className="tab-icon" aria-hidden>✦</span>{t("스토리")}{tabHasNewFeature("story") && <span className="new-badge">{t("새기능")}</span>}</button>
             <button className={`tab-about${tab === "about" ? " selected" : ""}`} onClick={() => switchTab("about")}><span className="tab-icon" aria-hidden>ⓘ</span>{t("테라 아카이브 소개")}</button>
           </nav>
@@ -1855,6 +1868,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
         {tab === "rogue" && <RogueGuide includeFuture={includeFuture} initialTopic={initialRogue ? `rogue_${initialRogue.replace(/^is/, "")}` : undefined} />}
         {tab === "enemy" && !(pageEnemy && enemyPageOpen) && <EnemyDexForLocale />}
         {tab === "stage" && !(pageStage && stagePageOpen) && <StageDexForLocale onOpenEnemy={openEnemyFromStage} />}
+        {tab === "ra" && <SandboxForLocale includeFuture={includeFuture} />}
         {tab === "about" && <About onOpenTab={switchTab} />}
       </Suspense>
       {/* 작전 시뮬레이터 런처 — SEO 표적 페이지라 **정적 임포트로 프리렌더**한다
@@ -2764,7 +2778,7 @@ const subscribeNever = () => () => {};
 // 대화 액션 → 탭 라벨 (i18n 키 — 헤더 내비와 동일 사전)
 const CHAT_TAB_LABEL: Record<string, string> = {
   portal: "홈", planner: "인프라 자동편성기", archive: "오퍼 백과사전", enemy: "적 도감", stage: "작전 도감", sim: "작전 시뮬레이터", recruit: "공개채용 도우미",
-  farm: "재료파밍 도우미", upgrade: "오퍼 육성 시뮬", story: "스토리", rogue: "통합전략 가이드", about: "테라 아카이브 소개",
+  farm: "재료파밍 도우미", upgrade: "오퍼 육성 시뮬", story: "스토리", rogue: "통합전략 가이드", ra: "생존연산 가이드", about: "테라 아카이브 소개",
 };
 
 function HeaderChibi({ operators, onNavigate, onShowOperator }: { operators: Operator[]; onNavigate: (tab: Tab) => void; onShowOperator: (op: Operator) => void }) {

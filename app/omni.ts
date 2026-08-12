@@ -96,6 +96,7 @@ const TAB_ENTRIES: { tab: Tab; label: string; alt: string[] }[] = [
   { tab: "upgrade", label: "오퍼 육성 시뮬", alt: ["upgrade", "육성", "비용", "계산기", "스킬특화", "모듈"] },
   { tab: "story", label: "스토리", alt: ["story", "요약", "전문", "연대기"] },
   { tab: "rogue", label: "통합전략 가이드", alt: ["rogue", "integrated strategies", "로그라이크", "통합전략", "is"] },
+  { tab: "ra", label: "생존연산 가이드", alt: ["ra", "reclamation", "reclamation algorithm", "생존연산", "생존 연산", "샌드박스", "sandbox", "요리", "레시피", "生息演算"] },
   { tab: "about", label: "테라 아카이브 소개", alt: ["about", "소개", "문의", "제작", "어바웃"] },
 ];
 
