@@ -332,7 +332,7 @@ def build_stage_details(kr_tbl):
     enemy_db = fetch_level("levels/enemydata/enemy_database.json") or {}
 
     routes_doc, first_by_level = {}, {}
-    stage_enemies, ra_only = {}, set()
+    stage_enemies, ra_only, stage_objs = {}, set(), {}
     for st in d["stageData"].values():
         sid = st["stageId"]
         lid = (st.get("levelId") or "").lower()
@@ -352,6 +352,10 @@ def build_stage_details(kr_tbl):
                     ob.append([kind, pos.get("col", 0), pos.get("row", 0)])
             if ob:
                 rt["ob"] = ob
+                cnt = {}
+                for o in ob:
+                    cnt[o[0]] = cnt.get(o[0], 0) + 1
+                stage_objs[sid] = cnt
             if lid in first_by_level:
                 routes_doc[sid] = first_by_level[lid]
             else:
@@ -385,7 +389,7 @@ def build_stage_details(kr_tbl):
             cnt = counts.get(keys.index(key), 0) if key in keys else 0
             rows.append([key, img, src, cnt, lvl, *stats])
         stage_enemies[sid] = rows
-    return routes_doc, stage_enemies, ra_only
+    return routes_doc, stage_enemies, ra_only, stage_objs
 
 
 def enemy_names_for(prefix, ids):
@@ -446,7 +450,7 @@ def build_v3(cn, ko_mode):
 def main():
     cn = load("cn")
     kr_tbl = load("kr")
-    routes_doc, stage_enemies, ra_only = build_stage_details(kr_tbl)
+    routes_doc, stage_enemies, ra_only, stage_objs = build_stage_details(kr_tbl)
     p = os.path.join(DATA, "sandbox-routes.json")
     json.dump(routes_doc, open(p, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
     print(f"  sandbox-routes.json: 지역 {len(routes_doc)} — {os.path.getsize(p) // 1024}KB")
@@ -458,6 +462,7 @@ def main():
         doc = {"v2": build_v2(tbl), "v3": build_v3(cn, ko_mode=(suffix == ""))}
         doc["v2"]["stageEnemies"] = stage_enemies
         doc["v2"]["enemyNames"] = enemy_names_for(prefix, all_ids)
+        doc["v2"]["stageObjs"] = stage_objs
         # 적 도감 — 적별 대표 스탯(최고 레벨)·초상·등장 지역 역색인 (사용자 요청 2026-08-12)
         dex = {}
         for sid, rows in stage_enemies.items():
