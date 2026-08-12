@@ -494,7 +494,8 @@ export default function SandboxGuide({ doc, includeFuture }: { doc: SandboxDoc; 
                   <button type="button" className={`st-map-zoom${zoom ? " zoom" : ""}`}
                     onClick={() => setZoom((z) => !z)}
                     title={zoom ? t("아무 곳이나 클릭하면 원래 크기로 돌아갑니다") : t("클릭하면 화면 크기로 확대됩니다")}>
-                    <img className="st-map" src={stageMapImg(openSt[0])} alt={t("{code} 지형 도면", { code: openSt[1] })}
+                    {/* 생존연산 도면은 원본 비율 그대로 — st-map의 16:9 강제를 풀어낸다 (사용자 확정 2026-08-12) */}
+                    <img className="st-map sb-origmap" src={stageMapImg(openSt[0])} alt={t("{code} 지형 도면", { code: openSt[1] })}
                       loading="lazy" decoding="async" onError={hideErr} />
                   </button>
                 ) : rd ? (
