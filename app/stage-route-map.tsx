@@ -30,7 +30,33 @@ export type StageRoutes = {
   cw?: Record<string, [number, number, number][]>;
   /** 레벨 전역 이동속도 배율 */
   mm?: number;
+  /** 지도 오브젝트 [종류, col, row] — 생존연산의 파괴 가능 바위·채집 자원·보물
+   *  (build-sandbox.py predefines 추출, 사용자 요청 2026-08-12). 좌표는 경로와 같은
+   *  규약(row 0 = 아래)이라 렌더러가 뒤집는다. */
+  ob?: [string, number, number][];
 };
+
+// 지도 오브젝트 표기 — **길을 막는 파괴 가능 바위만** 지도에 그린다. 석재·명징석·보물
+// 같은 채집 자원은 "맵 타일이라기보단 도감 목록"이라는 사용자 확정(2026-08-12)에 따라
+// 지역 상세 모달의 자원·오브젝트 목록이 맡는다 (ob 데이터 자체는 종류 전부 실려 온다).
+const OB_STYLE: Record<string, { fill: string; label: string; shape: "diamond" | "dot" | "star" }> = {
+  rock: { fill: "#e07a3f", label: "파괴 가능 바위", shape: "diamond" },
+};
+function obShape(shape: "diamond" | "dot" | "star", x: number, y: number, fill: string, key: number) {
+  if (shape === "diamond") {
+    return <rect key={key} x={x - 0.17} y={y - 0.17} width={0.34} height={0.34} fill={fill}
+      stroke="#10141c" strokeWidth={0.045} transform={`rotate(45 ${x} ${y})`} />;
+  }
+  if (shape === "star") {
+    const pts = Array.from({ length: 10 }, (_, i) => {
+      const rr = i % 2 ? 0.1 : 0.22;
+      const a = -Math.PI / 2 + (i * Math.PI) / 5;
+      return `${x + Math.cos(a) * rr},${y + Math.sin(a) * rr}`;
+    }).join(" ");
+    return <polygon key={key} points={pts} fill={fill} stroke="#10141c" strokeWidth={0.04} />;
+  }
+  return <circle key={key} cx={x} cy={y} r={0.16} fill={fill} stroke="#10141c" strokeWidth={0.045} />;
+}
 
 // 타일 팔레트 — 통행·배치 속성 분류 (사용자 요청 2026-08-10 "다 구분 가능하게").
 // 분류 기준은 scripts/build-enemies.py routes_of의 tchar 주석 참조.
@@ -407,11 +433,12 @@ export function StageRouteMap({ data, order, highlights, imgOf, nameOf, onPick, 
   const fmtT = (v: number) => `${Math.floor(v / 60)}:${String(Math.floor(v % 60)).padStart(2, "0")}`;
   const curWave = plan ? plan.waveSpans.reduce((n, from, i) => (simT >= from ? i + 1 : n), 1) : 1;
   const hasSim = !!(data.sp?.length && data.wv);
-  // 지도 확대 — 모달 왼쪽 칼럼을 절반 폭까지 (사용자 요청 2026-08-12)
-  const [big, setBig] = useState(false);
+  // 지도 확대 3단 — 기본(360px) → 절반(52%) → 전폭(1칼럼, 적 목록이 아래로)
+  // (사용자 요청 2026-08-12 "절반정도까지" → "더 크게 확대가능하게")
+  const [big, setBig] = useState(0);
   const cell = 1;
   return (
-    <div className={`st-routewrap${big ? " big" : ""}`} ref={wrapRef}>
+    <div className={`st-routewrap${big === 1 ? " big" : big === 2 ? " full" : ""}`} ref={wrapRef}>
     {/* 시뮬레이트 — 스폰 타임라인 재생 (사용자 요청 2026-08-10). 데이터가 있는 작전만. */}
     {hasSim && (
       <div className="st-simbar">
@@ -451,9 +478,9 @@ export function StageRouteMap({ data, order, highlights, imgOf, nameOf, onPick, 
     <div className="st-routekey">
       <span aria-hidden><svg width="24" height="6"><line x1="0" y1="3" x2="24" y2="3" stroke="currentColor" strokeWidth="2.4" strokeDasharray="9 3.5" /></svg>{t("지상")}</span>
       <span aria-hidden><svg width="24" height="6"><line x1="0" y1="3" x2="24" y2="3" stroke="currentColor" strokeWidth="2.4" strokeDasharray="2.5 4" /></svg>{t("비행")}</span>
-      <button type="button" className="st-mapscale" aria-pressed={big}
-        onClick={() => setBig((v) => !v)}>
-        {big ? "⤡ " + t("원래 크기") : "⤢ " + t("지도 확대")}
+      <button type="button" className="st-mapscale" aria-pressed={big > 0}
+        onClick={() => setBig((v) => (v + 1) % 3)}>
+        {big === 0 ? "⤢ " + t("지도 확대") : big === 1 ? "⤢ " + t("더 크게") : "⤡ " + t("원래 크기")}
       </button>
     </div>
     <svg className="st-routemap" viewBox={`0 0 ${w * cell} ${h * cell}`} role="img"
@@ -478,6 +505,13 @@ export function StageRouteMap({ data, order, highlights, imgOf, nameOf, onPick, 
           <use key={`x${ri}-${ci}`} href={`#${clipId}x`}
             x={ci * cell + cell / 2} y={ri * cell + cell / 2} />
         )))}
+      {/* 지도 오브젝트 — 파괴 가능 바위·채집 자원·보물 (생존연산, 사용자 요청 2026-08-12).
+          경로 좌표와 같은 규약이라 세로만 뒤집는다. 선 아래 깔린다. */}
+      {data.ob?.map(([kind, c, r], i) => {
+        const st = OB_STYLE[kind];
+        if (!st) return null;
+        return obShape(st.shape, c * cell + cell / 2, (h - 1 - r) * cell + cell / 2, st.fill, i);
+      })}
       {lines.map((ln) => {
         // 선의 모양(best)·오프셋(off)은 접기 메모에서 확정 — 시뮬레이션 말과 공유한다
         const { rep, owner, best, off } = ln;
@@ -523,8 +557,19 @@ export function StageRouteMap({ data, order, highlights, imgOf, nameOf, onPick, 
                 onMouseMove={(ev) => showTip(ev, nameOf?.(owner) ?? owner, imgOf?.(owner))}
                 onMouseLeave={() => setTip(null)} />
             ))}
-            <circle cx={first[0]} cy={first[1]} r={0.16} fill={color} />
-            <polygon points={tipPts.map((p) => p.join(",")).join(" ")} fill={color} />
+            {/* 시작점 ●·도착 화살촉 — 제자리 적(한 칸 경로)은 선이 없어 이 표식이 전부라,
+                여기에도 선과 같은 호버 툴팁·클릭 고정을 단다 (사용자 요청 2026-08-12). */}
+            <g style={owner && onPick ? { cursor: "pointer" } : undefined}
+              onMouseMove={owner ? (ev) => showTip(ev, nameOf?.(owner) ?? owner, imgOf?.(owner)) : undefined}
+              onMouseLeave={owner ? () => setTip(null) : undefined}
+              onClick={owner && onPick ? () => onPick(owner) : undefined}>
+              {P.dense.length < 2 && (
+                <circle cx={first[0]} cy={first[1]} r={0.34} fill="#000" fillOpacity={0}
+                  style={{ pointerEvents: "all" }} />
+              )}
+              <circle cx={first[0]} cy={first[1]} r={0.16} fill={color} />
+              <polygon points={tipPts.map((p) => p.join(",")).join(" ")} fill={color} />
+            </g>
           </g>
         );
       })}
@@ -597,20 +642,34 @@ export function StageRouteMap({ data, order, highlights, imgOf, nameOf, onPick, 
         const present = new Set<string>();
         for (const row of g) for (const ch of row) present.add(ch);
         {/* data-tip = 즉시 뜨는 커스텀 툴팁 — 브라우저 기본 title은 1초쯤 지연된다 (사용자 요청) */}
-        return TILE_LABELS.filter(([c]) => present.has(c)).map(([c, label, desc]) => (
-          <span key={c} data-tip={t(desc)}>
-            <i style={{ backgroundColor: TILE_FILL[c] }}>
-              {/* x 스와치도 지도와 같은 ⊘ 표식 */}
-              {c === "x" && (
-                <svg viewBox="0 0 12 12" aria-hidden>
-                  <circle cx="6" cy="6" r="3.6" fill="none" stroke="#4f4964" strokeWidth="1.2" />
-                  <line x1="3.45" y1="3.45" x2="8.55" y2="8.55" stroke="#4f4964" strokeWidth="1.2" />
+        const obKinds = [...new Set((data.ob ?? []).map(([k]) => k))].filter((k) => OB_STYLE[k]);
+        return (
+          <>
+            {TILE_LABELS.filter(([c]) => present.has(c)).map(([c, label, desc]) => (
+              <span key={c} data-tip={t(desc)}>
+                <i style={{ backgroundColor: TILE_FILL[c] }}>
+                  {/* x 스와치도 지도와 같은 ⊘ 표식 */}
+                  {c === "x" && (
+                    <svg viewBox="0 0 12 12" aria-hidden>
+                      <circle cx="6" cy="6" r="3.6" fill="none" stroke="#4f4964" strokeWidth="1.2" />
+                      <line x1="3.45" y1="3.45" x2="8.55" y2="8.55" stroke="#4f4964" strokeWidth="1.2" />
+                    </svg>
+                  )}
+                </i>
+                {t(label)}
+              </span>
+            ))}
+            {/* 지도 오브젝트 범례 — 이 지도에 있는 종류만 (생존연산) */}
+            {obKinds.map((k) => (
+              <span key={`ob-${k}`}>
+                <svg viewBox="0 0 1 1" width="11" height="11" aria-hidden style={{ background: "#10141c" }}>
+                  {obShape(OB_STYLE[k].shape, 0.5, 0.5, OB_STYLE[k].fill, 0)}
                 </svg>
-              )}
-            </i>
-            {t(label)}
-          </span>
-        ));
+                {t(OB_STYLE[k].label)}
+              </span>
+            ))}
+          </>
+        );
       })()}
     </div>
     {/* 선·말 호버 즉시 툴팁 — 커서를 따라다니는 이름표 (+작은 섬네일) */}

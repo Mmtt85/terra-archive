@@ -234,6 +234,19 @@ def build_v2(tbl):
     }
 
 
+# 지도 오브젝트 — 레벨 predefines.tokenInsts의 설치물 중 표시할 종류 (사용자 요청
+# 2026-08-12 "깰 수 있는 돌로 된 타일도 표시"). 전부 부수거나 채집하는 대상이다.
+OBJ_KINDS = {
+    "trap_413_hiddenstone": "rock",      # 길을 막는 파괴 가능 바위
+    "trap_410_xbstone": "stone",         # 석재 바위
+    "trap_411_xbiron": "iron",           # 철광석 바위
+    "trap_460_xbdiam": "diam",           # 명징석 바위
+    "trap_414_vegetation": "veg",        # 식생(벌목)
+    "trap_416_gtreasure": "treasure",    # 보물
+    "trap_422_streasure": "treasure",
+}
+
+
 def build_stage_details(kr_tbl):
     """v2 지역별 타일 격자·경로·스폰(시뮬)·등장 적 — 작전 도감 상세와 같은 재료.
 
@@ -257,6 +270,15 @@ def build_stage_details(kr_tbl):
             continue
         rt = routeutil.routes_of_level(lv, enemy_db)
         if rt:
+            # 지도 오브젝트 오버레이 — 좌표는 경로와 같은 규약(row 0 = 아래), 렌더러가 뒤집는다
+            ob = []
+            for tk in ((lv.get("predefines") or {}).get("tokenInsts") or []):
+                kind = OBJ_KINDS.get(((tk.get("inst") or {}).get("characterKey")) or "")
+                pos = tk.get("position") or {}
+                if kind and isinstance(pos.get("row"), int):
+                    ob.append([kind, pos.get("col", 0), pos.get("row", 0)])
+            if ob:
+                rt["ob"] = ob
             if lid in first_by_level:
                 routes_doc[sid] = first_by_level[lid]
             else:

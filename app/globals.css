@@ -16598,6 +16598,11 @@ main.site-main > .site-header {
 .rg-modal-cols:has(.st-routewrap.big) {
   grid-template-columns: minmax(0, 52%) 1fr;
 }
+/* 전폭(3단째) — 1칼럼으로 접어 지도가 모달 전체 폭, 오른쪽 내용은 아래로 */
+.st-cols:has(.st-routewrap.full),
+.rg-modal-cols:has(.st-routewrap.full) {
+  grid-template-columns: minmax(0, 1fr);
+}
 .st-mapscale {
   margin-left: 4px;
   padding: 2.5px 9px;
@@ -17369,6 +17374,29 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   transform: translateY(-2px);
   box-shadow: 0 6px 16px #0003;
 }
+/* 지역 모달의 자원·오브젝트 목록 — 채집물은 지도 마커 대신 여기 (사용자 확정 2026-08-12) */
+.sb-obs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.sb-ob {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px 5px 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  border: 1px solid var(--line);
+  background: var(--white);
+}
+.sb-ob .sb-ico { vertical-align: middle; margin-right: 6px; }
+.sb-ob em {
+  font-style: normal;
+  margin-left: 5px;
+  color: var(--muted);
+  font-weight: 800;
+}
+
 /* 지도 노드 종류 범례 */
 .sb-nodekey {
   display: flex;

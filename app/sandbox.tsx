@@ -142,7 +142,12 @@ export default function SandboxGuide({ doc, includeFuture }: { doc: SandboxDoc; 
     const m = /^#ra-(.+)$/.exec(hash);
     const st = m ? byStId.get(m[1]) ?? null : null;
     setOpenSt(st);
-    if (st) { setMapView("map"); setPinned(new Set()); setHover(null); }
+    // 딥링크(#ra-…)로 바로 열 때도 경로 문서를 받아야 자원 목록·이동 경로가 나온다
+    // (카드 클릭 경로에서만 받고 있었다 — 2026-08-12 실측으로 발견)
+    if (st) {
+      setMapView("map"); setPinned(new Set()); setHover(null);
+      void loadSandboxRoutes().then(() => bumpRoutes((k) => k + 1)).catch(() => { SB_ROUTES_LOADING = null; });
+    }
   });
   const openStage = (st: V2Stage) => {
     setOpenSt(st); setMapView("map"); setPinned(new Set()); setHover(null); setZoom(false);
@@ -154,7 +159,20 @@ export default function SandboxGuide({ doc, includeFuture }: { doc: SandboxDoc; 
     return next;
   });
   const enemyRows = openSt ? v2.stageEnemies[openSt[0]] ?? [] : [];
-  const rd = openSt && mapView === "route" ? sbRoutesFor(openSt[0]) : undefined;
+  // 모달을 열 때 경로 문서를 미리 당기므로(openStage) 자원 목록도 탭과 무관하게 나온다
+  const rd = openSt ? sbRoutesFor(openSt[0]) : undefined;
+  // 자원·오브젝트 — 지도에는 파괴 가능 바위만 그리고, 채집물은 여기 목록으로
+  // (사용자 확정 2026-08-12 "석재 명징석 보물 이런 애들은 도감에 올라가는 게 맞음")
+  const OB_LIST: [string, string | null, string][] = [
+    ["rock", null, "파괴 가능 바위"],
+    ["stone", "sandbox_1_stone", "석재"],
+    ["iron", "sandbox_1_iron", "철광석"],
+    ["diam", "sandbox_1_diamond", "명징석"],
+    ["veg", "sandbox_1_wood", "식생"],
+    ["treasure", "sandbox_1_gold", "보물"],
+  ];
+  const obCounts: Record<string, number> = {};
+  for (const [k] of rd?.ob ?? []) obCounts[k] = (obCounts[k] ?? 0) + 1;
   const routeOrder = rd ? enemyRows.filter((r) => rd.e[r[0]]?.length).map((r) => r[0]) : [];
   const enName = (id: string) => v2.enemyNames[id] ?? id;
   const enImg = (row: [string, string, number, number, number, number, number, number, number]) =>
@@ -513,6 +531,25 @@ export default function SandboxGuide({ doc, includeFuture }: { doc: SandboxDoc; 
                 </dl>
               </div>
               <div className="st-right">
+                {rd?.ob && rd.ob.length > 0 && (
+                  <section className="st-block">
+                    <h3><span className="section-no">RESOURCE</span>{t("자원·오브젝트")}</h3>
+                    <div className="sb-obs">
+                      {OB_LIST.filter(([k]) => obCounts[k]).map(([k, iid, label]) => (
+                        <span key={k} className="sb-ob">
+                          {iid ? (
+                            <img className="sb-ico" src={itemIcon(iid)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
+                          ) : (
+                            <svg className="sb-ico" viewBox="0 0 24 24" aria-hidden>
+                              <rect x="6.5" y="6.5" width="11" height="11" fill="#e07a3f" stroke="#10141c" strokeWidth="1.4" transform="rotate(45 12 12)" />
+                            </svg>
+                          )}
+                          {t(label)} <em>×{obCounts[k]}</em>
+                        </span>
+                      ))}
+                    </div>
+                  </section>
+                )}
                 {enemyRows.length > 0 && (
                   <section className="st-block">
                     <h3><span className="section-no">ENEMY</span>{t("등장 적")} <em>{enemyRows.length}</em></h3>
