@@ -20,7 +20,7 @@ import { useI18n } from "./i18n";
 import { normSearch, useSearchInput } from "./search";
 import { asset } from "./assets";
 import { ModalWindow } from "./modal-window";
-import { GLOBAL_MODAL_HASH, useHashSync } from "./hash-modal";
+import { GLOBAL_MODAL_HASH } from "./hash-modal";
 import { loadEnemies } from "./dex-cross";
 import { enemyImg, enemyPath } from "./dex-paths";
 import { EnemyFile, type Enemy } from "./enemy-detail";
@@ -153,6 +153,8 @@ export type SandboxDoc = {
     enemyNames: Record<string, string>;
     enemyCn: Record<string, string>;
     enemySrc: Record<string, number>;
+    /** 적 도감 — 전투 지형 전수에서 모은 대표 스탯·등장 지형 (사용자 요청 2026-08-13) */
+    dex: { id: string; lv: number; st: number[]; at: [string, number][] }[];
   };
 };
 
@@ -164,11 +166,11 @@ const VIEW_LABEL: Record<View, string> = {
   food: "요리·음료", craft: "제작·설치물", stage: "지역", enemy: "적 도감", weather: "날씨",
   event: "조우", rift: "균열·원정", tech: "테크트리",
 };
-const V3_VIEWS = ["v3item", "v3craft", "v3map", "v3stage", "v3weather", "v3event"] as const;
+const V3_VIEWS = ["v3item", "v3craft", "v3map", "v3enemy", "v3stage", "v3weather", "v3event"] as const;
 type V3View = (typeof V3_VIEWS)[number];
 const V3_LABEL: Record<V3View, string> = {
-  v3item: "아이템", v3craft: "가공·건설", v3map: "전투 지형", v3stage: "시나리오",
-  v3weather: "날씨", v3event: "조우",
+  v3item: "아이템", v3craft: "가공·건설", v3map: "전투 지형", v3enemy: "적 도감",
+  v3stage: "시나리오", v3weather: "날씨", v3event: "조우",
 };
 const FOOD_ATTR: Record<string, string> = {
   SURVIVE: "생존", ATTACK: "공격", COOLDOWN: "재배치", COST: "코스트", SKILL_POINT: "스킬", SPECIAL: "특수",
@@ -257,7 +259,7 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
     | { k: "dex"; i: number } | { k: "food"; i: number } | { k: "mat"; id: string }
     | { k: "v3item"; id: string } | { k: "v3proc"; i: number } | { k: "v3build"; i: number }
     | { k: "v3stage"; i: number } | { k: "v3weather"; i: number } | { k: "v3event"; i: number }
-    | { k: "v3sub"; id: string } | { k: "zone"; i: number };
+    | { k: "v3sub"; id: string } | { k: "zone"; i: number } | { k: "v3dex"; i: number };
   const [detail, setDetail] = useState<Detail | null>(null);
   const [pick, setPick] = useState(0);              // 상세 안의 변형 선택 (위험도·난이도·편성)
   // 재료 창은 **두 개까지** 겹쳐 띄운다 (사용자 확정 2026-08-12): 상세에서 다른 재료를
@@ -405,7 +407,8 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
     return [...ids].filter((id) => match(nameOf(id)));
   }, [v2, q]);  // eslint-disable-line react-hooks/exhaustive-deps
 
-  const searchable = season === "v3" ? v3view === "v3item" : (view === "food" || view === "craft" || view === "enemy" || view === "stage");
+  const searchable = season === "v3" ? (v3view === "v3item" || v3view === "v3enemy")
+    : (view === "food" || view === "craft" || view === "enemy" || view === "stage");
 
   // ── 목록들 ──────────────────────────────────────────────────────────────
   const foods = useMemo(() => v2.foods.filter((f) => !q || f.variants.some((v) => normSearch(v[1]).includes(q))
@@ -442,6 +445,8 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
     for (const it of Object.values(v3.items)) if (it[4]) c.set(it[4], (c.get(it[4]) ?? 0) + 1);
     return [...c].sort((a, b) => b[1] - a[1]);
   }, [v3]);
+  const v3dex = useMemo(() => v3.dex.filter((e) => match(v3.enemyNames[e.id] ?? "")
+    || match(v3.enemyCn[e.id] ?? "")), [v3, q]);  // eslint-disable-line react-hooks/exhaustive-deps
   const zoneIdx = (zid: string) => v3.world.zones.findIndex((z) => z.id === zid);
   const zoneName = (zid: string) => {
     const z = v3.world.zones.find((x) => x.id === zid);
@@ -1062,6 +1067,23 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
               </div>
             </>
           )}
+          {v3view === "v3enemy" && (
+            <>
+              <p className="sim-note">{t("신시즌 전투 지형에 나오는 적입니다. 스탯은 가장 강화된 등장 기준이며, 누르면 등장 지형과 스탯이 나옵니다.")}</p>
+              <div className="sb-cards">
+                {v3dex.map((e) => card(`v3d-${e.id}`, () => openDetail({ k: "v3dex", i: v3.dex.indexOf(e) }), (
+                  <>
+                    <img className="sb-thumb sb-thumb-en" src={v3EnImg(e.id)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
+                    <b className="sb-cname">{v3EnName(e.id)}
+                      {locale === "ko" && v3.enemyCn[e.id] && v3.enemyCn[e.id] !== v3EnName(e.id) && <span className="sb-cn">{v3.enemyCn[e.id]}</span>}
+                      {e.lv > 0 && <em className="sb-lv">★{e.lv}</em>}</b>
+                    <span className="sb-cdesc">HP {e.st[0].toLocaleString()} · {t("공격")} {e.st[1].toLocaleString()}</span>
+                    <span className="sb-cmeta"><i className="sb-chip">{t("{n}개 지형", { n: String(e.at.length) })}</i></span>
+                  </>
+                )))}
+              </div>
+            </>
+          )}
           {v3view === "v3stage" && (
             <>
               <h3 className="sb-h3">{t("전체 지도")}</h3>
@@ -1409,6 +1431,42 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
                     )}
                   </div>
                 </div>
+              </div>
+            </ModalWindow>
+          );
+        }
+        if (detail.k === "v3dex") {
+          const e = v3.dex[detail.i];
+          return (
+            <ModalWindow label={v3EnName(e.id)} className="operator-modal sb-modal" onClose={close}>
+              <div className="sb-dt">
+                <header className="sb-dt-head">
+                  <img src={v3EnImg(e.id)} alt="" aria-hidden onError={hideErr} />
+                  <div>
+                    <h2>{v3EnName(e.id)}{e.lv > 0 && <em className="sb-lv">★{e.lv}</em>}
+                      {locale === "ko" && v3.enemyCn[e.id] && v3.enemyCn[e.id] !== v3EnName(e.id) && <span className="sb-cn">{v3.enemyCn[e.id]}</span>}</h2>
+                    <p className="sb-dim">HP {e.st[0].toLocaleString()} · {t("공격")} {e.st[1].toLocaleString()} · {t("방어")} {e.st[2].toLocaleString()} · {t("마저")} {e.st[3]}</p>
+                  </div>
+                </header>
+                <h4>{t("등장 지형")} <em className="sb-count">{e.at.length}</em></h4>
+                <div className="sb-atlist">
+                  {e.at.map(([sid, cnt]) => {
+                    const sv = subOf(sid);
+                    return (
+                      <button key={sid} type="button" onClick={() => openDetail({ k: "v3sub", id: sid })}>
+                        {sv?.use.length ? sv.use.map((u) => u[0]).join(" · ") : sid} <em>{cnt > 0 ? `×${cnt}` : t("습격")}</em>
+                      </button>
+                    );
+                  })}
+                </div>
+                {v3.enemySrc[e.id] === 0 && (
+                  <p className="sim-note">
+                    <a href={enemyPath(locale, e.id)} onClick={(ev) => {
+                      if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
+                      ev.preventDefault(); openDexEnemy(e.id, e.id);
+                    }}>{t("적 도감에서 자세히 보기")} ›</a>
+                  </p>
+                )}
               </div>
             </ModalWindow>
           );

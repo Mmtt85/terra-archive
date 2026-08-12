@@ -1555,6 +1555,12 @@ const D: Record<string, Pair> = {
     "産出物のないレシピは、素材を消費して繁栄度を上げるレシピです。"],
   "번영도": ["Prosperity", "繁栄度"],
   "가공 숙련도": ["Processing level", "加工熟練度"],
+  "신시즌 전투 지형에 나오는 적입니다. 스탯은 가장 강화된 등장 기준이며, 누르면 등장 지형과 스탯이 나옵니다.": [
+    "Enemies that appear in the new season’s battle terrain. Stats are from their most reinforced appearance; open one for its terrain list.",
+    "新シーズンの戦闘地形に出現する敵です。ステータスは最も強化された出現を基準に、押すと出現地形が開きます。"],
+  "{n}개 지형": ["{n} terrains", "地形{n}か所"],
+  "등장 지형": ["Appears in", "出現地形"],
+
   "전투 지형입니다 — 누르면 사막 이야기 지역과 같은 도면·이동 경로·등장 적 상세가 열립니다. 시나리오는 이 지형들을 이어 붙여 만들어집니다.": [
     "Battle terrain tiles — open one for the same blueprint, routes and enemy details as the Tales Within the Sand areas. Scenarios are built by joining these tiles.",
     "戦闘地形です — 押すと「砂中の遺聞」のエリアと同じ図面・移動ルート・出現敵の詳細が開きます。シナリオはこの地形をつなげて作られます。"],

@@ -789,6 +789,16 @@ def main():
         doc["v3"]["enemyNames"] = names
         doc["v3"]["enemyCn"] = {i: (cn_hb.get(i) or {}).get("name") or "" for i in v3ids}
         doc["v3"]["enemySrc"] = srcs
+        # 신시즌 적 도감 — 전투 지형 전수에서 모은 대표 스탯(최고 강화)·등장 지형 역색인
+        # (사용자 요청 2026-08-13 "재기동 앵커에 적 도감이 없다"). 사막 이야기 dex와 같은 꼴.
+        v3dex = {}
+        for sv in doc["v3"]["subs"]:
+            for r in sv["foes"]:
+                e = v3dex.setdefault(r[0], {"id": r[0], "lv": r[2], "st": r[3:7], "at": []})
+                e["at"].append([sv["id"], r[1]])
+                if r[2] > e["lv"]:
+                    e["lv"], e["st"] = r[2], r[3:7]
+        doc["v3"]["dex"] = sorted(v3dex.values(), key=lambda e: -e["st"][0])
         doc["v2"]["stageEnemies"] = stage_enemies
         doc["v2"]["enemyNames"] = enemy_names_for(prefix, all_ids)
         doc["v2"]["stageObjs"] = stage_objs
