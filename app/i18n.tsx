@@ -1583,9 +1583,10 @@ const D: Record<string, Pair> = {
   "기술": ["Tech", "技術"],
   "계열": ["Branch", "系統"],
   "토큰": ["Tokens", "トークン"],
-  "중국 서버 선행 신시즌입니다 — 명칭은 비공식 번역이며, 한국 서버 출시 때 공식 명칭으로 바뀝니다.": [
-    "A CN-first new season — names are unofficial translations and will change to official ones at release.",
-    "中国サーバー先行の新シーズンです — 名称は非公式訳で、正式実装時に公式名称へ置き換わります。"],
+  "중국 서버 선행 신시즌입니다 — 원문(중국어)이 기준이고, 괄호·옆의 한국어는 비공식 번역입니다.": [
+    "A CN-first new season — original Chinese text is authoritative; Korean in parentheses is an unofficial translation.",
+    "中国サーバー先行の新シーズンです — 原文（中国語）が基準で、括弧内の韓国語は非公式訳です。"],
+  "번역": ["Translation", "翻訳"],
   "이 신시즌의 공식 번역은 아직 없어 원문(중국어)으로 표시됩니다.": [
     "No official translation exists yet, so original Chinese text is shown.",
     "公式翻訳がまだないため、原文（中国語）で表示されます。"],

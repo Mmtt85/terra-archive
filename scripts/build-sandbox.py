@@ -19,10 +19,45 @@ import json
 import os
 import re
 import sys
+import urllib.request
+from concurrent.futures import ThreadPoolExecutor
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from imgutil import save_webp  # noqa: E402 — 공용 webp 저장 (scripts/imgutil.py)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(ROOT, "app", "data")
-GD = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, ".gamedata")
+GD = next((a for a in sys.argv[1:] if not a.startswith("--")), os.path.join(ROOT, ".gamedata"))
+NO_IMAGES = "--no-images" in sys.argv
+
+# 이미지 에셋 (ArknightsAssets2 cn 브랜치 — 2026-08-12 탐사 결과):
+# - 아이템 아이콘 640장: ui/sandboxperm/[uc]common/itemicon/<itemId>.png (두 시즌 전부)
+# - 지역 맵 프리뷰 106장: ui/sandboxv2/mappreview/sandbox_1/<stageId>.png (사막 이야기)
+#   신시즌(v3) 프리뷰(s2_XX 78장)는 이름 없는 구획 이미지라 아직 안 쓴다.
+# → public/sandbox/{item,map}/<id>.webp — R2 서빙 (r2-sync DIRS·deploy.sh 제거 목록 "sandbox").
+#   ⚠ 폴더는 sandbox, 라우트는 /ra — 같으면 deploy.sh가 자산을 떼어낼 때 라우트까지
+#     지울 수 있다 (rogue가 2026-08-08에 빠졌던 함정, enemy/stage 단·복수 관례와 동일).
+ASSETS = "https://raw.githubusercontent.com/ArknightsAssets/ArknightsAssets2/cn/assets/dyn"
+ICON_URL = ASSETS + "/ui/sandboxperm/%5Buc%5Dcommon/itemicon/{iid}.png"
+MAP_URL = ASSETS + "/ui/sandboxv2/mappreview/sandbox_1/{sid}.png"
+
+
+def download_webp(jobs, max_px=None, photo=True):
+    """(url, dest) 목록 병렬 다운로드 → webp. 이미 있으면 스킵 (build-rogue.py와 같은 조리법)."""
+    def one(job):
+        url, dest = job
+        if os.path.exists(dest):
+            return None
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            png = urllib.request.urlopen(req, timeout=30).read()
+            os.makedirs(os.path.dirname(dest), exist_ok=True)
+            save_webp(png, dest, photo=photo, max_px=max_px)
+            return None
+        except Exception as e:  # noqa: BLE001
+            return (url, str(e))
+    with ThreadPoolExecutor(12) as ex:
+        return [f for f in ex.map(one, jobs) if f]
 
 LOCALES = [("", "kr"), (".en", "en"), (".ja", "jp")]
 
@@ -165,7 +200,8 @@ def build_v3(cn, ko_mode):
             "title": tr(sc.get("title") or ""),
             "cn": sc.get("title") or "",
             "desc": clean(sc.get("desc") or ""),
-            "choices": [[tr(choices[c].get("title") or ""), clean(choices[c].get("desc") or "")]
+            # [CN 원문, 번역, 설명] — CN이 메인, 번역은 서브 병기 (사용자 확정 2026-08-12)
+            "choices": [[choices[c].get("title") or "", tr(choices[c].get("title") or ""), clean(choices[c].get("desc") or "")]
                         for c in (sc.get("choiceIdList") or []) if c in choices],
         })
     info = cn["basicInfo"]["sandbox_2"]
@@ -179,9 +215,11 @@ def build_v3(cn, ko_mode):
 
 def main():
     cn = load("cn")
+    docs = {}
     for suffix, prefix in LOCALES:
         tbl = load(prefix)
         doc = {"v2": build_v2(tbl), "v3": build_v3(cn, ko_mode=(suffix == ""))}
+        docs[suffix] = doc
         p = os.path.join(DATA, f"sandbox{suffix}.json")
         json.dump(doc, open(p, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
         print(f"  sandbox{suffix}.json: {os.path.getsize(p) // 1024}KB")
@@ -189,6 +227,19 @@ def main():
         print(f"⚠ CN 선행분 미번역 {len(_missing)}건 — scripts/sandbox-cn-ko.json에 보완 (cn-translation-fill 흐름)")
         for s in sorted(_missing)[:20]:
             print(f"   未: {s[:60]}")
+
+    if NO_IMAGES:
+        return
+    ko = docs[""]
+    icon_ids = sorted(set(ko["v2"]["items"]) | set(ko["v3"]["items"]))
+    jobs = [(ICON_URL.format(iid=i), os.path.join(ROOT, "public", "sandbox", "item", f"{i}.webp")) for i in icon_ids]
+    fails = download_webp(jobs, max_px=128, photo=False)
+    print(f"  아이템 아이콘: {len(jobs) - len(fails)}/{len(jobs)}")
+    jobs = [(MAP_URL.format(sid=s[0]), os.path.join(ROOT, "public", "sandbox", "map", f"{s[0]}.webp")) for s in ko["v2"]["stages"]]
+    fails2 = download_webp(jobs, max_px=640, photo=True)
+    print(f"  지역 맵 프리뷰: {len(jobs) - len(fails2)}/{len(jobs)}")
+    for u, e in (fails + fails2)[:8]:
+        print(f"   실패: {u.rsplit('/', 1)[-1]} — {e}")
 
 
 if __name__ == "__main__":

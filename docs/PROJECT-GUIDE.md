@@ -31,7 +31,7 @@
 | 적 도감 | `/enemies` · 적 모달 열면 `#en-<enemy_id>` | `app/enemies.tsx` + `app/enemy-detail.tsx` |
 | 작전 도감 | `/stages` · 작전 모달 열면 `#st-<stage_id>` | `app/stages.tsx` + `app/stage-detail.tsx` |
 | 작전 시뮬레이터 | `/sim` — 리스트 없는 런처(검색+추천), `/stages/<id>?sim=1` 딥링크로 상세의 이동 경로 탭+시뮬 자동 재생 (2026-08-10 B안) | `app/sim-launcher.tsx` (home 정적 임포트 — SEO 본문 프리렌더) |
-| 생존연산 가이드 | `/ra` — 요리·제작·지역·조우·균열 + CN 선행 신시즌(미래시 토글, 비공식 번역은 `scripts/sandbox-cn-ko.json`) (2026-08-12) | `app/sandbox.tsx` + 로케일 래퍼 (lazy) |
+| 생존연산 가이드 | `/ra` — 요리·제작·지역·조우·균열 + CN 선행 신시즌(미래시 토글). **CN 선행분은 중국어 원문이 메인, 한국어 비공식 번역(`scripts/sandbox-cn-ko.json`)이 서브 병기** (사용자 확정 2026-08-12 — 뒤집지 말 것). 이미지는 `public/sandbox/`(폴더명은 라우트와 다르게 — deploy.sh 함정) (2026-08-12) | `app/sandbox.tsx` + 로케일 래퍼 (lazy) |
 | 인프라 플래너 | `#infra` | `app/planner.tsx` |
 | 공개채용 도우미 | `#recruit` | `app/recruit.tsx` |
 | 재료 파밍 효율표 | `#farm` | `app/farm.tsx` |

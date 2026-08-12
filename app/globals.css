@@ -17293,3 +17293,27 @@ main.site-main > .site-header {
   color: var(--muted);
 }
 td.sb-cn-td { display: table-cell; margin: 0; }
+/* 아이템 아이콘 — 표 셀·카드 제목 앞의 작은 섬네일 (배경 어두운 원판이라 양 테마 가독) */
+.sb-ico {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  vertical-align: -6px;
+  margin-right: 6px;
+  object-fit: contain;
+  background: #10141c;
+  border-radius: 4px;
+}
+.sb-cell-ico { white-space: nowrap; }
+.sb-card h4 .sb-ico { width: 26px; height: 26px; vertical-align: middle; }
+/* 지역 카드 — 맵 프리뷰가 주인공 */
+.sb-map-card { padding: 0 0 10px; overflow: hidden; }
+.sb-map-card img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  background: #10141c;
+  margin-bottom: 8px;
+}
+.sb-map-card h4, .sb-map-card p { padding: 0 12px; }

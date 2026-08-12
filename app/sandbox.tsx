@@ -14,6 +14,15 @@
 import { useMemo, useState } from "react";
 import { useI18n } from "./i18n";
 import { normSearch, useSearchInput } from "./search";
+import { asset } from "./assets";
+
+// 아이템 아이콘·지역 맵 프리뷰 — build-sandbox.py가 public/sandbox/{item,map}/에 받아
+// R2로 서빙한다 (사용자 요청 2026-08-12 "맵이라든지 각종 섬네일이라든지 전부").
+// ⚠ 폴더는 sandbox, 라우트는 /ra — 이름이 달라야 deploy.sh가 자산만 떼어낸다.
+// 일부 재화(2종)는 원본에 아이콘이 없다 — onError로 조용히 숨긴다.
+const itemIcon = (id: string) => asset(`/sandbox/item/${id}.webp`);
+const stageMapImg = (id: string) => asset(`/sandbox/map/${id}.webp`);
+const hideErr = (ev: React.SyntheticEvent<HTMLImageElement>) => { ev.currentTarget.style.display = "none"; };
 
 type Item = [string, string, number, string];            // [이름, 용도, 희귀도, 타입]
 type V3Item = [string, string, string, number, string];  // [번역명, CN, 용도, 희귀도, 타입]
@@ -43,7 +52,7 @@ export type SandboxDoc = {
     builds: [string, Record<string, number>, string][];
     stages: [string, string, string, string][];
     weather: [string, string, string, string][];
-    scenes: { title: string; cn: string; desc: string; choices: [string, string][] }[];
+    scenes: { title: string; cn: string; desc: string; choices: [string, string, string][] }[];
   };
 };
 
@@ -79,8 +88,13 @@ export default function SandboxGuide({ doc, includeFuture }: { doc: SandboxDoc; 
   const { v2, v3 } = doc;
 
   const nameOf = (id: string) => v2.items[id]?.[0] ?? id;
-  const n3 = (id: string) => v3.items[id]?.[0] ?? id;
-  const cn3 = (id: string) => v3.items[id]?.[1] ?? "";
+  // 신시즌(CN 선행)은 **중국어가 메인, 한국어 번역이 서브 병기** (사용자 확정 2026-08-12
+  // "반드시 중국어를 메인으로, 한국어를 서브로 병기") — 재료 줄은 "原文(번역)" 꼴로 잇는다.
+  const p3 = (id: string) => {
+    const it = v3.items[id];
+    if (!it) return id;
+    return it[0] !== it[1] ? `${it[1]}(${it[0]})` : it[1];
+  };
 
   // 뷰별 검색 필터 — 검색어가 있으면 각 뷰의 목록을 이름 기준으로 거른다
   const match = (s: string) => !q || normSearch(s).includes(q);
@@ -127,6 +141,7 @@ export default function SandboxGuide({ doc, includeFuture }: { doc: SandboxDoc; 
             {foods.map((f) => (
               <article key={f.id} className="sb-card">
                 <h4>
+                  <img className="sb-ico" src={itemIcon(f.id)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
                   {f.variants[0]?.[1] ?? f.id}
                   {f.attrs.map((a) => <i key={a} className={`sb-chip a-${a}`}>{t(FOOD_ATTR[a] ?? a)}</i>)}
                 </h4>
@@ -151,7 +166,7 @@ export default function SandboxGuide({ doc, includeFuture }: { doc: SandboxDoc; 
             <thead><tr><th>{t("재료")}</th><th>{t("구분")}</th><th>{t("변형")}</th><th>{t("효과")}</th></tr></thead>
             <tbody>
               {v2.foodMats.filter((m) => match(nameOf(m[0]))).map((m, i) => (
-                <tr key={i}><td>{nameOf(m[0])}</td><td>{m[1] === "SUB" ? t("보조") : t("주재료")}</td>
+                <tr key={i}><td className="sb-cell-ico"><img className="sb-ico" src={itemIcon(m[0])} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />{nameOf(m[0])}</td><td>{m[1] === "SUB" ? t("보조") : t("주재료")}</td>
                   <td>{m[3] === "ALPHA" ? "α" : m[3] === "BETA" ? "β" : "—"}</td><td>{m[4]}</td></tr>
               ))}
             </tbody>
@@ -162,7 +177,7 @@ export default function SandboxGuide({ doc, includeFuture }: { doc: SandboxDoc; 
             <thead><tr><th>{t("재료")}</th><th>{t("수분")}</th></tr></thead>
             <tbody>
               {v2.drinkMats.filter((m) => match(nameOf(m[0]))).map((m, i) => (
-                <tr key={i}><td>{nameOf(m[0])}</td><td>{m[1]}</td></tr>
+                <tr key={i}><td className="sb-cell-ico"><img className="sb-ico" src={itemIcon(m[0])} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />{nameOf(m[0])}</td><td>{m[1]}</td></tr>
               ))}
             </tbody>
           </table></div>
@@ -178,7 +193,7 @@ export default function SandboxGuide({ doc, includeFuture }: { doc: SandboxDoc; 
                 const trap = v2.traps[c.id];
                 return (
                   <tr key={c.id}>
-                    <td>{nameOf(c.id)}{trap && trap.lv > 1 && <i className="sb-lv">Lv.{trap.lv}</i>}</td>
+                    <td className="sb-cell-ico"><img className="sb-ico" src={itemIcon(c.id)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />{nameOf(c.id)}{trap && trap.lv > 1 && <i className="sb-lv">Lv.{trap.lv}</i>}</td>
                     <td>{Object.entries(c.mats).map(([id, n]) => `${nameOf(id)} ×${n}`).join(" + ") || "—"}</td>
                     <td>{c.unlock || "—"}</td>
                     <td>{trap ? (v2.trapTags[trap.tag] ?? trap.tag) : "—"}</td>
@@ -202,16 +217,18 @@ export default function SandboxGuide({ doc, includeFuture }: { doc: SandboxDoc; 
               </article>
             ))}
           </div>
-          <h3 className="sb-h3">{t("지역")}</h3>
+          <h3 className="sb-h3">{t("지역")} <em className="sb-count">{v2.stages.length}</em></h3>
           <p className="sim-note">{t("행동력은 이동 1회 소모량, ⚔는 적습 조우 시의 소모량입니다.")}</p>
-          <div className="sb-table-wrap"><table className="sb-table">
-            <thead><tr><th>{t("코드")}</th><th>{t("이름")}</th><th>{t("행동력")}</th><th>{t("설명")}</th></tr></thead>
-            <tbody>
-              {v2.stages.map((s) => (
-                <tr key={s[0]}><td>{s[1]}</td><td>{s[2]}</td><td>{s[4]}{s[5] !== s[4] ? ` · ⚔${s[5]}` : ""}</td><td className="sb-desc">{s[3]}</td></tr>
-              ))}
-            </tbody>
-          </table></div>
+          <div className="sb-grid">
+            {v2.stages.map((s) => (
+              <article key={s[0]} className="sb-card sb-map-card">
+                <img src={stageMapImg(s[0])} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
+                <h4><i className="sb-chip">{s[1]}</i>{s[2]}
+                  <i className="sb-lv">{t("행동력")} {s[4]}{s[5] !== s[4] ? ` · ⚔${s[5]}` : ""}</i></h4>
+                <p className="sb-dim">{s[3]}</p>
+              </article>
+            ))}
+          </div>
         </>
       )}
 
@@ -275,11 +292,13 @@ export default function SandboxGuide({ doc, includeFuture }: { doc: SandboxDoc; 
         </>
       )}
 
+      {/* 신시즌(CN 선행) — **중국어 원문이 메인, 한국어 번역이 서브** (사용자 확정
+          2026-08-12 "반드시 중국어를 메인으로, 한국어를 서브로 병기"). 표기 뒤집지 말 것. */}
       {view === "next" && includeFuture && (
         <>
-          <h3 className="sb-h3">{v3.name}{v3.name !== v3.cnName && <span className="sb-cn">{v3.cnName}</span>}</h3>
+          <h3 className="sb-h3">{v3.cnName}{v3.name !== v3.cnName && <span className="sb-cn">{v3.name}</span>}</h3>
           <p className="sim-note">
-            {t("중국 서버 선행 신시즌입니다 — 명칭은 비공식 번역이며, 한국 서버 출시 때 공식 명칭으로 바뀝니다.")}
+            {t("중국 서버 선행 신시즌입니다 — 원문(중국어)이 기준이고, 괄호·옆의 한국어는 비공식 번역입니다.")}
             {locale !== "ko" && <> {t("이 신시즌의 공식 번역은 아직 없어 원문(중국어)으로 표시됩니다.")}</>}
           </p>
           <h3 className="sb-h3">{t("가공 레시피")}</h3>
@@ -287,8 +306,8 @@ export default function SandboxGuide({ doc, includeFuture }: { doc: SandboxDoc; 
             <thead><tr><th>{t("산출")}</th><th>{t("재료")}</th><th>Lv</th></tr></thead>
             <tbody>
               {v3.process.map((r, i) => (
-                <tr key={i}><td>{n3(r[0])}{r[1] > 1 ? ` ×${r[1]}` : ""}</td>
-                  <td>{Object.entries(r[2]).map(([id, n]) => `${n3(id)} ×${n}`).join(" + ")}</td><td>{r[3]}</td></tr>
+                <tr key={i}><td className="sb-cell-ico"><img className="sb-ico" src={itemIcon(r[0])} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />{p3(r[0])}{r[1] > 1 ? ` ×${r[1]}` : ""}</td>
+                  <td>{Object.entries(r[2]).map(([id, n]) => `${p3(id)} ×${n}`).join(" + ")}</td><td>{r[3]}</td></tr>
               ))}
             </tbody>
           </table></div>
@@ -297,8 +316,8 @@ export default function SandboxGuide({ doc, includeFuture }: { doc: SandboxDoc; 
             <thead><tr><th>{t("건물")}</th><th>{t("재료")}</th></tr></thead>
             <tbody>
               {v3.builds.map((b, i) => (
-                <tr key={i}><td>{n3(b[0])}</td>
-                  <td>{Object.entries(b[1]).map(([id, n]) => `${n3(id)} ×${n}`).join(" + ") || "—"}</td></tr>
+                <tr key={i}><td className="sb-cell-ico"><img className="sb-ico" src={itemIcon(b[0])} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />{p3(b[0])}</td>
+                  <td>{Object.entries(b[1]).map(([id, n]) => `${p3(id)} ×${n}`).join(" + ") || "—"}</td></tr>
               ))}
             </tbody>
           </table></div>
@@ -307,7 +326,7 @@ export default function SandboxGuide({ doc, includeFuture }: { doc: SandboxDoc; 
             <thead><tr><th>{t("코드")}</th><th>{t("이름")}</th><th>{t("설명")}</th></tr></thead>
             <tbody>
               {v3.stages.map((s, i) => (
-                <tr key={i}><td>{s[0]}</td><td>{s[1]}{locale === "ko" && s[1] !== s[2] && <span className="sb-cn">{s[2]}</span>}</td>
+                <tr key={i}><td>{s[0]}</td><td>{s[2]}{locale === "ko" && s[1] !== s[2] && <span className="sb-cn">{s[1]}</span>}</td>
                   <td className="sb-desc">{s[3]}</td></tr>
               ))}
             </tbody>
@@ -316,7 +335,7 @@ export default function SandboxGuide({ doc, includeFuture }: { doc: SandboxDoc; 
           <div className="sb-grid sb-grid-s">
             {v3.weather.map((w, i) => (
               <article key={i} className="sb-card">
-                <h4>{w[0]}{locale === "ko" && w[0] !== w[1] && <span className="sb-cn">{w[1]}</span>}</h4>
+                <h4>{w[1]}{locale === "ko" && w[0] !== w[1] && <span className="sb-cn">{w[0]}</span>}</h4>
                 <p>{w[2]}</p><p className="sb-dim">{w[3]}</p>
               </article>
             ))}
@@ -325,18 +344,23 @@ export default function SandboxGuide({ doc, includeFuture }: { doc: SandboxDoc; 
           <div className="sb-grid">
             {v3.scenes.map((sc, i) => (
               <article key={i} className="sb-card">
-                <h4>{sc.title}{locale === "ko" && sc.title !== sc.cn && <span className="sb-cn">{sc.cn}</span>}</h4>
+                <h4>{sc.cn}{locale === "ko" && sc.title !== sc.cn && <span className="sb-cn">{sc.title}</span>}</h4>
                 <p className="sb-dim">{sc.desc}</p>
-                <ul className="sb-choices">{sc.choices.map((c, j) => <li key={j}><b>{c[0]}</b></li>)}</ul>
+                <ul className="sb-choices">
+                  {sc.choices.map((c, j) => (
+                    <li key={j}><b>{c[0]}</b>{locale === "ko" && c[0] !== c[1] && <span className="sb-cn">{c[1]}</span>}{c[2] && <span>{c[2]}</span>}</li>
+                  ))}
+                </ul>
               </article>
             ))}
           </div>
           <h3 className="sb-h3">{t("아이템")} <em className="sb-count">{Object.keys(v3.items).length}</em></h3>
           <div className="sb-table-wrap"><table className="sb-table">
-            <thead><tr><th>{t("이름")}</th>{locale === "ko" && <th>{t("원문")}</th>}<th>{t("용도")}</th></tr></thead>
+            <thead><tr><th>{t("원문")}</th>{locale === "ko" && <th>{t("번역")}</th>}<th>{t("용도")}</th></tr></thead>
             <tbody>
               {Object.entries(v3.items).map(([id, it]) => (
-                <tr key={id}><td>{it[0]}</td>{locale === "ko" && <td className="sb-cn-td">{it[1]}</td>}<td className="sb-desc">{it[2]}</td></tr>
+                <tr key={id}><td className="sb-cell-ico"><img className="sb-ico" src={itemIcon(id)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />{it[1]}</td>
+                  {locale === "ko" && <td>{it[0] !== it[1] ? it[0] : "—"}</td>}<td className="sb-desc">{it[2]}</td></tr>
               ))}
             </tbody>
           </table></div>

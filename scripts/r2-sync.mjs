@@ -39,7 +39,10 @@ const DIRS = ["story", "rogue", "lens", "tesseract", "avatars", "about", "og", "
   "enemy",
   // 작전 지형 도면 — scripts/build-stages.py (2026-08-09). 폴더는 stage(단수),
   // 라우트는 /stages(복수) — 적 도감과 같은 이유로 갈라 뒀다.
-  "stage"];
+  "stage",
+  // 생존연산 아이템 아이콘·맵 프리뷰 — scripts/build-sandbox.py (2026-08-12).
+  // 폴더는 sandbox, 라우트는 /ra — 위와 같은 이유로 갈라 뒀다.
+  "sandbox"];
 // (2026-08-01 제거) "portal" — 대문 배경 전용 폴더였는데 포탈이 이격 스카디 일러 한 장
 // (PORTAL_ART = /skin/full/…)으로 굳으면서 로컬·R2 양쪽에서 비었다. 남겨 두면 아래
 // prune 안전장치가 매번 "빈 폴더"로 걸린다.
