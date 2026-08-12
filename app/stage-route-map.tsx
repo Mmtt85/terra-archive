@@ -91,8 +91,8 @@ const TILE_LABELS: [string, string, string][] = [
   ["h", "구멍(비행만 통과)", "비행 적만 지나갈 수 있습니다"],
   ["i", "통로 입구", "적이 여기로 들어가 통로 출구로 순간이동합니다"],
   ["o", "통로 출구", "통로 입구로 들어간 적이 여기서 나옵니다"],
-  ["u", "물", "적은 지나갑니다 — 생존연산에서는 수상 플랫폼을 설치해야 오퍼레이터를 배치할 수 있습니다"],
-  ["d", "깊은 물", "비행 적만 지나갈 수 있습니다"],
+  ["u", "물(지상·비행 통과)", "지상 적도 걸어서 건넙니다 — 생존연산에서는 수상 플랫폼을 설치해야 오퍼레이터를 배치할 수 있습니다"],
+  ["d", "깊은 물(비행만)", "비행 적만 지나갈 수 있습니다"],
 ];
 // 적별 색 — **같은 적은 같은 색, 다른 적은 다른 색** (사용자 확정 2026-08-10).
 // 색은 범례(적 얼굴) 순번으로 배정하고 초상 테두리에도 같은 색을 쓴다.
@@ -103,8 +103,10 @@ export function enemyRouteColor(order: string[], id: string): string {
   return k >= 0 ? ROUTE_COLORS[k % ROUTE_COLORS.length] : "#9aa0a6";
 }
 
-// 지상 이동 가능 타일 — 도로(r)·통행(p)·출현(s)·방어(e)·통로(i/o). 나머지는 걷지 못한다
-const WALKABLE = new Set(["r", "p", "s", "e", "i", "o"]);
+// 지상 이동 가능 타일 — 도로(r)·통행(p)·출현(s)·방어(e)·통로(i/o)·물(u).
+// ⚠ 물(u)은 passableMask=ALL이라 **지상 적도 걸어서 건넌다** — 비행 전용이 아니다
+//   (사용자 지적 2026-08-12). 비행만 지나는 건 깊은 물(d)·구멍(h)뿐이라 여기서 뺀다.
+const WALKABLE = new Set(["r", "p", "s", "e", "i", "o", "u"]);
 
 /** 격자 BFS (8방향, 모서리 끊어가기 금지) — 지상 경로가 이동불가 타일을 "뚫고" 직선으로
  *  가로지르지 않게 실제 보행 가능 경로를 찾는다 (사용자 지적 2026-08-10). **통로 입구(i)
@@ -650,7 +652,8 @@ export function StageRouteMap({ data, order, highlights, imgOf, nameOf, onPick, 
         const present = new Set<string>();
         for (const row of g) for (const ch of row) present.add(ch);
         {/* data-tip = 즉시 뜨는 커스텀 툴팁 — 브라우저 기본 title은 1초쯤 지연된다 (사용자 요청) */}
-        const obKinds = [...new Set((data.ob ?? []).map(([k]) => k))].filter((k) => OB_STYLE[k]);
+        // ⚠ 지도 오브젝트(파괴 가능 바위)는 **타일이 아니다** — 타일 범례에 섞지 않는다
+        //   (사용자 지적 2026-08-12). 자원·오브젝트 목록이 그 역할을 맡는다.
         return (
           <>
             {TILE_LABELS.filter(([c]) => present.has(c)).map(([c, label, desc]) => (
@@ -665,15 +668,6 @@ export function StageRouteMap({ data, order, highlights, imgOf, nameOf, onPick, 
                   )}
                 </i>
                 {t(label)}
-              </span>
-            ))}
-            {/* 지도 오브젝트 범례 — 이 지도에 있는 종류만 (생존연산) */}
-            {obKinds.map((k) => (
-              <span key={`ob-${k}`}>
-                <svg viewBox="0 0 1 1" width="11" height="11" aria-hidden style={{ background: "#10141c" }}>
-                  {obShape(OB_STYLE[k].shape, 0.5, 0.5, OB_STYLE[k].fill, 0)}
-                </svg>
-                {t(OB_STYLE[k].label)}
               </span>
             ))}
           </>

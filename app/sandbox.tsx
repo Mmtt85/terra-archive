@@ -515,18 +515,27 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
                 <img src={stageMapImg(s[0])} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
                 <h4><i className="sb-chip">{s[1]}</i>{s[2]}
                   <i className="sb-lv">{t("행동력")} {s[4]}{s[5] !== s[4] ? ` · ⚔${s[5]}` : ""}</i></h4>
-                {/* 획득 자원 + 지도에 놓인 자원 오브젝트 개수 (사용자 요청 2026-08-12) */}
-                <span className="sb-stres">
-                  {(v2.stageRewards[s[0]] ?? []).map((id) => (
-                    <i key={id}><img src={itemIcon(id)} alt="" aria-hidden loading="lazy" onError={hideErr} />{nameOf(id)}</i>
-                  ))}
-                  {OB_KINDS.filter(([k]) => v2.stageObjs[s[0]]?.[k]).map(([k, iid, label]) => (
-                    <i key={`ob-${k}`} className="ob">
-                      <img src={itemIcon(iid)} alt="" aria-hidden loading="lazy" onError={hideErr} />
-                      {t(label)} <b>×{v2.stageObjs[s[0]][k]}</b>
-                    </i>
-                  ))}
-                </span>
+                {/* 획득 자원 + 지도에 놓인 오브젝트 개수. 같은 자원이 양쪽에 있으면
+                    **개수 있는 쪽만** 남긴다 (사용자 지적 2026-08-12 "두 개 중첩"). */}
+                {(() => {
+                  const objs = OB_KINDS.filter(([k]) => v2.stageObjs[s[0]]?.[k]);
+                  const covered = new Set(objs.map(([, iid]) => iid));
+                  const plain = (v2.stageRewards[s[0]] ?? []).filter((id) => !covered.has(id));
+                  if (!objs.length && !plain.length) return null;
+                  return (
+                    <span className="sb-stres">
+                      {objs.map(([k, iid, label]) => (
+                        <i key={`ob-${k}`} className="ob">
+                          <img src={itemIcon(iid)} alt="" aria-hidden loading="lazy" onError={hideErr} />
+                          {t(label)} <b>×{v2.stageObjs[s[0]][k]}</b>
+                        </i>
+                      ))}
+                      {plain.map((id) => (
+                        <i key={id}><img src={itemIcon(id)} alt="" aria-hidden loading="lazy" onError={hideErr} />{nameOf(id)}</i>
+                      ))}
+                    </span>
+                  );
+                })()}
                 <p className="sb-dim">{s[3]}</p>
               </button>
             ))}

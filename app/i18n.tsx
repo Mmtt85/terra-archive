@@ -1684,6 +1684,11 @@ const D: Record<string, Pair> = {
     "The secondary ingredient decides the variant — α ingredients (egg, mushroom, pepper, sugar, horn…) add one more stat, β (seasoning) extends duration, and γ ingredients (brew, fowl powder, ice puree, flower sugar) add a large attack-side bonus.",
     "副材料が変種を決めます — α素材（卵・キノコ・胡椒・砂糖・角など）は能力値を1つ追加し、β素材（調味料）は持続時間を延ばし、γ素材（醸造酒・羽獣パウダー・アイスピューレ・フラワーシュガー）は攻撃系の効果を大きく付けます。"],
   "자원·오브젝트": ["Resources & Objects", "資源・オブジェクト"],
+  "물(지상·비행 통과)": ["Water (all units)", "水場（地上・飛行）"],
+  "지상 적도 걸어서 건넙니다 — 생존연산에서는 수상 플랫폼을 설치해야 오퍼레이터를 배치할 수 있습니다": [
+    "Ground enemies wade across too — in Reclamation Algorithm you must place a water platform to deploy here.",
+    "地上の敵も歩いて渡ります — 生息演算では水上プラットフォームを設置しないと配置できません。"],
+  "깊은 물(비행만)": ["Deep water (flying only)", "深い水場（飛行のみ）"],
   "파괴 가능 바위": ["Breakable rock", "破壊できる岩"],
   "석재": ["Stone", "石材"],
   "철광석": ["Iron ore", "鉄鉱石"],
