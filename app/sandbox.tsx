@@ -18,7 +18,7 @@ import { asset } from "./assets";
 import { ModalWindow } from "./modal-window";
 import { useHashSync } from "./hash-modal";
 import { loadEnemies } from "./dex-cross";
-import { enemyImg } from "./dex-paths";
+import { enemyImg, enemyPath } from "./dex-paths";
 import { EnemyFile, type Enemy } from "./enemy-detail";
 import { StageRouteMap, enemyRouteColor, type StageRoutes } from "./stage-route-map";
 
@@ -136,6 +136,7 @@ export default function SandboxGuide({ doc, includeFuture }: { doc: SandboxDoc; 
   const [pinned, setPinned] = useState<Set<string>>(() => new Set());
   const [, bumpRoutes] = useState(0);
   const [subEnemy, setSubEnemy] = useState<Enemy | null>(null);
+  const [zoom, setZoom] = useState(false);
   const byStId = useMemo(() => new Map(v2.stages.map((st) => [st[0], st])), [v2]);
   useHashSync(openSt ? `#ra-${openSt[0]}` : null, (hash) => {
     const m = /^#ra-(.+)$/.exec(hash);
@@ -144,7 +145,7 @@ export default function SandboxGuide({ doc, includeFuture }: { doc: SandboxDoc; 
     if (st) { setMapView("map"); setPinned(new Set()); setHover(null); }
   });
   const openStage = (st: V2Stage) => {
-    setOpenSt(st); setMapView("map"); setPinned(new Set()); setHover(null);
+    setOpenSt(st); setMapView("map"); setPinned(new Set()); setHover(null); setZoom(false);
     void loadSandboxRoutes().then(() => bumpRoutes((k) => k + 1)).catch(() => { SB_ROUTES_LOADING = null; });
   };
   const togglePin = (id: string) => setPinned((cur) => {
@@ -459,69 +460,106 @@ export default function SandboxGuide({ doc, includeFuture }: { doc: SandboxDoc; 
         </>
       )}
 
-      {/* 지역 상세 모달 — 작전 도감 상세와 같은 짜임: 도면/이동 경로 탭(시뮬 포함) + 등장 적
-          (사용자 요청 2026-08-12 "도감-작전 상세모달처럼, 등장 적 및 타일 에뮬레이터 등등").
-          경로 지도 상호작용 규칙은 route-map-rules 스킬 그대로 — 카드 클릭=고정,
-          호버=강조, 섬네일 클릭=적 상세 모달. */}
+      {/* 지역 상세 모달 — 작전 도감 상세(StageFile)와 **같은 클래스·같은 배치**로
+          (사용자 지적 2026-08-12 "레이아웃도 최대한 기존처럼"): st-head 헤더, st-cols
+          2단(왼쪽 도면·설명·행동력 / 오른쪽 등장 적), 적 카드는 st-enemy 규격 그대로.
+          경로 상호작용 규칙은 route-map-rules 스킬과 동일. */}
       {openSt && (
         <ModalWindow label={`${openSt[1]} ${openSt[2]}`} className="operator-modal st-modal"
           onClose={() => setOpenSt(null)}>
-          <div className="sb-stfile">
-            <div className="st-maptabs" role="tablist" aria-label={t("도면 보기")}>
-              <button type="button" role="tab" aria-selected={mapView === "map"}
-                className={mapView === "map" ? "on" : ""} onClick={() => setMapView("map")}>{t("실사 도면")}</button>
-              <button type="button" role="tab" aria-selected={mapView === "route"}
-                className={mapView === "route" ? "on" : ""}
-                onClick={() => {
-                  setMapView("route");
-                  if (!SB_ROUTES) loadSandboxRoutes().then(() => bumpRoutes((k) => k + 1)).catch(() => { SB_ROUTES_LOADING = null; bumpRoutes((k) => k + 1); });
-                }}>{t("이동 경로")}</button>
-            </div>
-            {mapView === "map" ? (
-              <img className="sb-modal-map" src={stageMapImg(openSt[0])} alt="" aria-hidden
-                loading="lazy" decoding="async" onError={hideErr} />
-            ) : rd ? (
-              <StageRouteMap data={rd} order={routeOrder}
-                highlights={hover ? [hover] : pinned.size ? [...pinned] : null}
-                imgOf={(id) => { const row = enemyRows.find((r) => r[0] === id); return row ? enImg(row) : undefined; }}
-                nameOf={enName} onPick={togglePin} />
-            ) : (
-              <p className="sim-note">{SB_ROUTES ? t("이 작전은 경로 데이터가 없습니다.") : t("경로 데이터를 불러오는 중…")}</p>
-            )}
-            <p className="sb-dim sb-modal-desc">{openSt[3]}</p>
-            <p className="sim-note">{t("행동력")} {openSt[4]}{openSt[5] !== openSt[4] ? ` · ⚔ ${openSt[5]}` : ""}</p>
-            {enemyRows.length > 0 && (
-              <>
-                <h3 className="sb-h3">{t("등장 적")} <em className="sb-count">{enemyRows.length}</em></h3>
-                <div className="sb-enemies">
-                  {enemyRows.map((r) => {
-                    const hasRoute = !!rd?.e[r[0]]?.length;
-                    return (
-                      <button key={r[0]} type="button"
-                        className={`sb-enemy${hasRoute ? " has-route" : ""}${pinned.has(r[0]) ? " pinned" : ""}`}
-                        style={hasRoute ? ({ "--rc": enemyRouteColor(routeOrder, r[0]) } as React.CSSProperties) : undefined}
-                        onClick={() => { if (hasRoute) togglePin(r[0]); }}
-                        onMouseEnter={mapView === "route" ? () => setHover(r[0]) : undefined}
-                        onMouseLeave={mapView === "route" ? () => setHover(null) : undefined}>
-                        <i className="sb-enemy-face" role="button" tabIndex={0}
-                          onClick={(ev) => { ev.stopPropagation(); openDexEnemy(r); }}
-                          onKeyDown={(ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); ev.stopPropagation(); openDexEnemy(r); } }}>
-                          <img src={enImg(r)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
-                        </i>
-                        <span className="sb-enemy-main">
-                          <b>{enName(r[0])}{r[4] > 0 && <em className="sb-lv">★{r[4]}</em>}</b>
-                          <i className="sb-enemy-cnt">{r[3] > 0 ? `×${r[3]}` : t("습격")}</i>
-                          <span className="sb-enemy-stats">
-                            <span>HP {r[5].toLocaleString()}</span><span>{t("공격")} {r[6].toLocaleString()}</span>
-                            <span>{t("방어")} {r[7].toLocaleString()}</span><span>{t("마저")} {r[8]}</span>
-                          </span>
-                        </span>
-                      </button>
-                    );
-                  })}
+          <div className="st-file">
+            <header className="st-head">
+              <div className="st-head-main">
+                <span className="st-code">{openSt[1]}</span>
+                <h2>{openSt[2]}</h2>
+                <div className="st-badges">
+                  <span className="st-tag">{t("생존연산")}</span>
+                  <span className="st-tag">{v2.name}</span>
                 </div>
-              </>
-            )}
+              </div>
+            </header>
+            <div className="st-cols">
+              <div className="st-left">
+                <div className="st-maptabs" role="tablist" aria-label={t("도면 보기")}>
+                  <button type="button" role="tab" aria-selected={mapView === "map"}
+                    className={mapView === "map" ? "on" : ""} onClick={() => setMapView("map")}>{t("실사 도면")}</button>
+                  <button type="button" role="tab" aria-selected={mapView === "route"}
+                    className={mapView === "route" ? "on" : ""}
+                    onClick={() => {
+                      setMapView("route");
+                      if (!SB_ROUTES) loadSandboxRoutes().then(() => bumpRoutes((k) => k + 1)).catch(() => { SB_ROUTES_LOADING = null; bumpRoutes((k) => k + 1); });
+                    }}>{t("이동 경로")}</button>
+                </div>
+                {mapView === "map" ? (
+                  <button type="button" className={`st-map-zoom${zoom ? " zoom" : ""}`}
+                    onClick={() => setZoom((z) => !z)}
+                    title={zoom ? t("아무 곳이나 클릭하면 원래 크기로 돌아갑니다") : t("클릭하면 화면 크기로 확대됩니다")}>
+                    <img className="st-map" src={stageMapImg(openSt[0])} alt={t("{code} 지형 도면", { code: openSt[1] })}
+                      loading="lazy" decoding="async" onError={hideErr} />
+                  </button>
+                ) : rd ? (
+                  <StageRouteMap data={rd} order={routeOrder}
+                    highlights={hover ? [hover] : pinned.size ? [...pinned] : null}
+                    imgOf={(id) => { const row = enemyRows.find((r) => r[0] === id); return row ? enImg(row) : undefined; }}
+                    nameOf={enName} onPick={togglePin} />
+                ) : (
+                  <p className="st-note">{SB_ROUTES ? t("이 작전은 경로 데이터가 없습니다.") : t("경로 데이터를 불러오는 중…")}</p>
+                )}
+                {openSt[3] && <p className="st-desc">{openSt[3]}</p>}
+                <dl className="st-facts">
+                  <div><dt>{t("행동력")}</dt><dd>{openSt[4]}</dd></div>
+                  {openSt[5] !== openSt[4] && <div><dt>{t("적습 시 행동력")}</dt><dd>{openSt[5]}</dd></div>}
+                </dl>
+              </div>
+              <div className="st-right">
+                {enemyRows.length > 0 && (
+                  <section className="st-block">
+                    <h3><span className="section-no">ENEMY</span>{t("등장 적")} <em>{enemyRows.length}</em></h3>
+                    <div className="st-enemies">
+                      {enemyRows.map((r) => {
+                        const hasRoute = !!rd?.e[r[0]]?.length;
+                        const pinColor = hasRoute ? enemyRouteColor(routeOrder, r[0]) : undefined;
+                        return (
+                          <a key={r[0]}
+                            className={`st-enemy${r[4] > 0 ? " reinforced" : ""}${pinned.has(r[0]) ? " pinned" : ""}${hasRoute ? " has-route" : ""}`}
+                            href={enemyPath(locale, r[1])}
+                            style={pinColor ? ({ "--rc": pinColor } as React.CSSProperties) : undefined}
+                            onMouseEnter={mapView === "route" ? () => setHover(r[0]) : undefined}
+                            onMouseLeave={mapView === "route" ? () => setHover(null) : undefined}
+                            onClick={(ev) => {
+                              if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
+                              ev.preventDefault();
+                              if (hasRoute) togglePin(r[0]);
+                              else openDexEnemy(r);
+                            }}>
+                            <span className="st-enemy-name">
+                              <span className="nm">{enName(r[0])}</span>
+                              {r[4] > 0 && <i title={t("강화 {n}단계", { n: String(r[4]) })}>★{r[4]}</i>}
+                              <em className="st-enemy-cnt">{r[3] > 0 ? `×${r[3]}` : t("습격")}</em>
+                            </span>
+                            <span className="st-enemy-body">
+                              <img src={enImg(r)} alt="" aria-hidden width={96} height={96} loading="lazy" decoding="async"
+                                className="st-enemy-face-btn"
+                                onClick={(ev) => {
+                                  if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
+                                  ev.stopPropagation(); ev.preventDefault(); openDexEnemy(r);
+                                }}
+                                onError={(ev) => { ev.currentTarget.style.visibility = "hidden"; }} />
+                              <span className="st-enemy-stats">
+                                <b title={t("최대 HP")}>HP {r[5].toLocaleString()}</b>
+                                <b title={t("공격력")}>{t("공격")} {r[6].toLocaleString()}</b>
+                                <b title={t("방어력")}>{t("방어")} {r[7].toLocaleString()}</b>
+                                <b title={t("마법 저항")}>{t("마저")} {r[8]}</b>
+                              </span>
+                            </span>
+                          </a>
+                        );
+                      })}
+                    </div>
+                  </section>
+                )}
+              </div>
+            </div>
           </div>
         </ModalWindow>
       )}

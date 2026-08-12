@@ -1595,6 +1595,7 @@ const D: Record<string, Pair> = {
     "Click an area to open its detail — enemies, tile layout and routes. AP is the cost per move; ⚔ is the cost when an enemy raid triggers.",
     "エリアをクリックすると出現する敵・タイル図・移動ルートの詳細が開きます。行動力は移動1回の消費量、⚔は敵襲遭遇時の消費量です。"],
   "습격": ["Raid", "襲撃"],
+  "적습 시 행동력": ["AP on raid", "敵襲時の行動力"],
   "가공 레시피": ["Processing recipes", "加工レシピ"],
   "산출": ["Output", "産出"],
   "건설 레시피": ["Building recipes", "建設レシピ"],
