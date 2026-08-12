@@ -17363,13 +17363,14 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   border-radius: 6px;
   padding: 3px;
 }
-/* 지역 카드 — 맵 프리뷰가 주인공 */
+/* 지역 카드 — 맵 프리뷰가 주인공. 생존연산 도면은 **원본 비율 그대로** 둔다
+   (사용자 확정 2026-08-12 "얘는 원본비율이 잘 맞네" — 16:9 크롭을 걷어냄.
+   원본이 640×179부터 세로형까지 제각각이라 카드 높이가 서로 다른 게 정상). */
 .sb-map-card { padding: 0 0 10px; overflow: hidden; }
 .sb-map-card img {
   display: block;
   width: 100%;
-  aspect-ratio: 16 / 9;
-  object-fit: cover;
+  height: auto;
   background: #10141c;
   margin-bottom: 8px;
 }
