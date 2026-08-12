@@ -47,6 +47,10 @@ const OB_STYLE: Record<string, { fill: string; label: string; shape: "diamond" |
   diam: { fill: "#6fe3d4", label: "명징석", shape: "dot" },
   wood: { fill: "#7fc46a", label: "목재", shape: "dot" },
   treasure: { fill: "#ffd166", label: "보물", shape: "star" },
+  // 신시즌(재기동 앵커) 추가분 — 종류가 45가지라 개별 색 대신 성격별로 묶는다
+  water: { fill: "#4fb3d9", label: "물", shape: "dot" },
+  bldg: { fill: "#c9a0ff", label: "설치물", shape: "diamond" },
+  obj: { fill: "#9aa0a6", label: "오브젝트", shape: "dot" },
 };
 function obShape(shape: "diamond" | "dot" | "star", x: number, y: number, fill: string, key: number) {
   if (shape === "diamond") {
@@ -168,7 +172,7 @@ function simplify(pts: [number, number][]): [number, number][] {
   return out;
 }
 
-export function StageRouteMap({ data, order, highlights, imgOf, nameOf, onPick, autoSim, obPick }: {
+export function StageRouteMap({ data, order, highlights, imgOf, nameOf, onPick, autoSim, obPick, obStyleOf, obIconOf }: {
   data: StageRoutes;
   /** 범례에 보이는 적 id 순서 — 선 색 배정 기준 (stage-detail이 넘겨준다) */
   order: string[];
@@ -183,6 +187,10 @@ export function StageRouteMap({ data, order, highlights, imgOf, nameOf, onPick, 
   autoSim?: boolean;
   /** 오브젝트 강조 — 고른 종류만 선명하게, 나머지는 흐리게 (생존연산 자원 목록 클릭) */
   obPick?: string | null;
+  /** ob의 종류 문자열 → 마커 스타일 키. 신시즌은 종류가 45가지(트랩 id)라 성격별로 접어 준다 */
+  obStyleOf?: (kind: string) => string;
+  /** ob의 종류 → 아이템 아이콘 URL. 주면 마커 자리에 **섬네일**을 그린다 (사용자 요청 2026-08-12) */
+  obIconOf?: (kind: string) => string | undefined;
 }) {
   const { t } = useI18n();
   const { w, h, g, r, f } = data;
@@ -521,12 +529,21 @@ export function StageRouteMap({ data, order, highlights, imgOf, nameOf, onPick, 
         )))}
       {/* 지도 오브젝트 — 전 종류를 그리고, 고른 종류(obPick)만 선명하게 남긴다 */}
       {data.ob?.map(([kind, c, r], i) => {
-        const st = OB_STYLE[kind];
+        const st = OB_STYLE[obStyleOf ? obStyleOf(kind) : kind];
         if (!st) return null;
         const dim = obPick ? obPick !== kind : false;
+        const x = c * cell + cell / 2, y = (h - 1 - r) * cell + cell / 2;
+        const icon = obIconOf?.(kind);
         return (
           <g key={i} opacity={dim ? 0.14 : 1}>
-            {obShape(st.shape, c * cell + cell / 2, (h - 1 - r) * cell + cell / 2, st.fill, i)}
+            {icon ? (
+              // 섬네일 마커 — 종류 색 테두리 원 위에 아이템 아이콘 (사용자 요청 2026-08-12)
+              <>
+                <circle cx={x} cy={y} r={0.3} fill="#10141c" fillOpacity={0.82} stroke={st.fill} strokeWidth={0.06} />
+                <image href={icon} x={x - 0.24} y={y - 0.24} width={0.48} height={0.48}
+                  preserveAspectRatio="xMidYMid meet" />
+              </>
+            ) : obShape(st.shape, x, y, st.fill, i)}
           </g>
         );
       })}

@@ -15,6 +15,55 @@ def _mv(field, default=None):
     return field if field is not None else default
 
 
+def tile_char(t):
+    # 통행(passableMask)·배치(buildableType)·높이(heightType)로 분류한다
+    # (사용자 요청 2026-08-10 "이동불가·배치불가 … 다 구분 가능하게").
+    # tileKey 이름 추측보다 속성이 정확하다 — 예: tile_fence는 '배치만 되는' 타일.
+    key = t.get("tileKey") or ""
+    if key in ("tile_start", "tile_flystart"):
+        return "s"           # 적 출현 (게임 표기 빨강)
+    if key == "tile_end":
+        return "e"           # 방어 목표 (게임 표기 파랑)
+    if key == "tile_hole":
+        return "h"           # 구멍 — 비행만 통과
+    if key == "tile_telin":
+        return "i"           # 통로 입구 — 적이 들어가 출구로 순간이동 (2026-08-10)
+    if key == "tile_telout":
+        return "o"           # 통로 출구
+    # 물 — 생존연산은 여기에 '수상 플랫폼'을 놓아야 오퍼레이터를 배치할 수 있다
+    # (사용자 제보 2026-08-12). 일반 작전의 얕은 물도 같은 문자로 구분해 보여준다.
+    if key in ("tile_xbdpsea", "tile_puddle", "tile_water"):
+        return "u"
+    if key == "tile_deepwater":
+        return "d"           # 깊은 물 — 비행만 통과
+    walk = t.get("passableMask") in ("ALL", "WALK_ONLY")
+    build = t.get("buildableType") or "NONE"
+    if walk:
+        return "r" if build in ("MELEE", "ALL") else "p"   # 도로 / 이동만(배치 불가)
+    if build in ("MELEE", "ALL"):
+        return "b"           # 배치만 — 이동 불가지만 지상 배치 가능 (펜스류)
+    if t.get("heightType") in (1, "HIGHLAND"):
+        return "w" if build == "RANGED" else "x"           # 고지대(원거리 배치) / 높은 장식
+    return "f"               # 평지 장애물 — 이동·배치 불가
+
+
+def grid_of_level(lv):
+    """레벨 JSON → {h, w, g} (타일 격자만). 적 경로가 하나도 없는 지형에도 도면은 그린다
+    — 생존연산 신시즌의 자원 전용 지형이 그 경우다 (2026-08-12).
+"""
+    md = (lv or {}).get("mapData") or {}
+    grid = md.get("map") or []
+    tdefs = md.get("tiles") or []
+    if isinstance(grid, dict):
+        flat = grid.get("matrix_data") or []
+        cn = grid.get("column_size") or 0
+        grid = [flat[i:i + cn] for i in range(0, len(flat), cn)] if cn else []
+    if not grid or not tdefs:
+        return None
+    g = ["".join(tile_char(tdefs[c]) if 0 <= c < len(tdefs) else "f" for c in row) for row in grid]
+    return {"h": len(g), "w": len(g[0]), "g": g, "r": [], "f": [], "e": {}}
+
+
 def routes_of_level(lv, enemy_db=None):
     """레벨 JSON → {h, w, g, r, f, e[, sp, wv, cw, mm]} 또는 None (격자·경로가 없으면).
 
@@ -46,37 +95,7 @@ def routes_of_level(lv, enemy_db=None):
     if not grid or not tdefs:
         return None
 
-    def tchar(t):
-        # 통행(passableMask)·배치(buildableType)·높이(heightType)로 분류한다
-        # (사용자 요청 2026-08-10 "이동불가·배치불가 … 다 구분 가능하게").
-        # tileKey 이름 추측보다 속성이 정확하다 — 예: tile_fence는 '배치만 되는' 타일.
-        key = t.get("tileKey") or ""
-        if key in ("tile_start", "tile_flystart"):
-            return "s"           # 적 출현 (게임 표기 빨강)
-        if key == "tile_end":
-            return "e"           # 방어 목표 (게임 표기 파랑)
-        if key == "tile_hole":
-            return "h"           # 구멍 — 비행만 통과
-        if key == "tile_telin":
-            return "i"           # 통로 입구 — 적이 들어가 출구로 순간이동 (2026-08-10)
-        if key == "tile_telout":
-            return "o"           # 통로 출구
-        # 물 — 생존연산은 여기에 '수상 플랫폼'을 놓아야 오퍼레이터를 배치할 수 있다
-        # (사용자 제보 2026-08-12). 일반 작전의 얕은 물도 같은 문자로 구분해 보여준다.
-        if key in ("tile_xbdpsea", "tile_puddle", "tile_water"):
-            return "u"
-        if key == "tile_deepwater":
-            return "d"           # 깊은 물 — 비행만 통과
-        walk = t.get("passableMask") in ("ALL", "WALK_ONLY")
-        build = t.get("buildableType") or "NONE"
-        if walk:
-            return "r" if build in ("MELEE", "ALL") else "p"   # 도로 / 이동만(배치 불가)
-        if build in ("MELEE", "ALL"):
-            return "b"           # 배치만 — 이동 불가지만 지상 배치 가능 (펜스류)
-        if t.get("heightType") in (1, "HIGHLAND"):
-            return "w" if build == "RANGED" else "x"           # 고지대(원거리 배치) / 높은 장식
-        return "f"               # 평지 장애물 — 이동·배치 불가
-    g = ["".join(tchar(tdefs[c]) if 0 <= c < len(tdefs) else "f" for c in row) for row in grid]
+    g = ["".join(tile_char(tdefs[c]) if 0 <= c < len(tdefs) else "f" for c in row) for row in grid]
 
     rts, fly, waits = [], [], []
     for rt in lv.get("routes") or []:

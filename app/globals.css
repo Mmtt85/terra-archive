@@ -17489,7 +17489,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   background: var(--ink);
   border-color: var(--ink);
 }
-.sb-seasons button.on span { color: #ffffffb0; }
+.sb-seasons button.on span { color: currentColor; opacity: .62; }
 /* 분류 필터 칩 */
 .sb-filters {
   display: flex;
@@ -17512,7 +17512,9 @@ td.sb-cn-td { display: table-cell; margin: 0; }
 .sb-filters button img { width: 20px; height: 20px; object-fit: contain; }
 .sb-filters button em { font-style: normal; color: var(--muted); font-size: 11px; }
 .sb-filters button.on { color: var(--white); background: var(--ink); border-color: var(--ink); }
-.sb-filters button.on em { color: #ffffffb0; }
+/* ⚠ 다크 모드에선 .on의 배경(--ink)이 밝은 색이라 흰 글씨는 안 보인다 — 글자색을
+   상속받아 투명도만 낮춘다 (사용자 제보 2026-08-12 "숫자가 하얗게 돼서 안 보임"). */
+.sb-filters button.on em { color: currentColor; opacity: .62; }
 /* 카드 그리드 — 큰 섬네일 + 요약 (사용자 지적 "섬네일이 너무 작음") */
 /* 카드 그리드 — **가로형**(섬네일 왼쪽·정보 오른쪽)에 auto-fit이라 오른쪽에 빈 공간을
    남기지 않고 트랙이 늘어난다 (사용자 지적 2026-08-12 "쓸데없이 가로로 남는 공간"). */
@@ -17633,7 +17635,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
 }
 .sb-atlist button:hover { color: var(--white); background: var(--ink); border-color: var(--ink); }
 .sb-atlist em { font-style: normal; margin-left: 5px; color: var(--muted); }
-.sb-atlist button:hover em { color: #ffffffb0; }
+.sb-atlist button:hover em { color: currentColor; opacity: .62; }
 /* 자원 목록 버튼 — 클릭 = 지도에서 그것만 강조.
    ⚠ `font: inherit`을 쓰면 위에서 잡은 font-size(11px)까지 부모 16px로 되돌아간다
    (2026-08-12 실측 — 폰트가 계속 커 보이던 원인). 글꼴만 물려받는다. */
@@ -17643,7 +17645,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   color: inherit;
 }
 .sb-ob.on { color: var(--white); background: var(--ink); border-color: var(--ink); }
-.sb-ob.on em { color: #ffffffb0; }
+.sb-ob.on em { color: currentColor; opacity: .62; }
 
 /* 재료 칩 — 어디에 나오든 눌러서 재료 상세를 연다 (사용자 확정 2026-08-12) */
 .sb-matline { display: inline-flex; flex-wrap: wrap; gap: 4px; align-items: center; }
@@ -17670,7 +17672,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
 .sb-matchip:hover { color: var(--white); background: var(--ink); border-color: var(--ink); }
 .sb-matchip img { width: 22px; height: 22px; object-fit: contain; background: #10141c; border-radius: 50%; }
 .sb-matchip em { font-style: normal; color: var(--muted); }
-.sb-matchip:hover em { color: #ffffffb0; }
+.sb-matchip:hover em { color: currentColor; opacity: .62; }
 .sb-recipes-chip { list-style: none; padding-left: 0; }
 .sb-recipes-chip li { margin-bottom: 5px; }
 /* 시즌 부제 */
@@ -17715,19 +17717,110 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   height: 100%;
   pointer-events: none;
 }
+.sb-worldsvg .sb-zonepoly { pointer-events: auto; cursor: pointer; transition: fill-opacity .12s; }
+.sb-worldsvg .sb-zonepoly:hover { fill-opacity: .34; }
 .sb-worldlabels { position: absolute; inset: 0; pointer-events: none; }
-.sb-worldlabels span {
+.sb-worldlabels button {
   position: absolute;
   transform: translate(-50%, -50%);
   padding: 1px 6px;
+  font: inherit;
   font-size: 10.5px;
   font-weight: 800;
   white-space: nowrap;
   color: #fff;
   background: #10141cd0;
+  border: 0;
   border-radius: 3px;
+  pointer-events: auto;
+  cursor: pointer;
 }
+.sb-worldlabels button:hover { background: #b3372ee0; }
+.sb-worldlabels button em { font-style: normal; color: #ffd166; margin-left: 3px; }
 @media (max-width: 720px) { .sb-worldwrap { width: 100%; } }
+
+/* ── 추천 지역 리본 (사용자 확정 2026-08-12 "카드 오른쪽 위에 사선 리본 + 따봉") ── */
+.sb-map-card { position: relative; }
+.sb-pick {
+  position: absolute;
+  top: 14px;
+  right: -32px;
+  z-index: 2;
+  width: 122px;
+  padding: 4px 0;
+  font-style: normal;
+  font-size: 15px;
+  line-height: 1.2;
+  text-align: center;
+  color: #2a1a06;
+  background: linear-gradient(180deg, #ffd166, #f0a92c);
+  box-shadow: 0 1px 4px #0006;
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+
+/* ── 신시즌 전체 지도 — 격자 노드 배치 (V3는 노드 좌표가 데이터에 있다) ── */
+.sb-nodemap {
+  width: min(62%, 620px);
+  margin-top: 10px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  background: #10141c;
+}
+.sb-nodemap svg { display: block; width: 100%; height: 100%; }
+.sb-nodemap .sb-nodedot { cursor: pointer; }
+.sb-nodemap .sb-nodedot:hover circle { stroke: #fff; stroke-width: .12; }
+.sb-nodekey .dot { width: 10px; height: 10px; border-radius: 50%; }
+@media (max-width: 720px) { .sb-nodemap { width: 100%; } }
+
+/* 시나리오 상세의 3×3 지형 배치 */
+.sb-subgrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  width: min(360px, 100%);
+  margin-top: 6px;
+}
+.sb-subgrid .cell { aspect-ratio: 1; border: 1px solid var(--line); background: #10141c; }
+.sb-subgrid .cell.empty { border-style: dashed; background: none; opacity: .3; }
+.sb-subgrid .cell.start { border-color: #ffd166; }
+.sb-subgrid button {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.sb-subgrid img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.sb-subgrid em {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  padding: 1px 4px;
+  font-style: normal;
+  font-size: 9.5px;
+  font-weight: 800;
+  color: #fff;
+  background: #10141cc0;
+}
+/* 게임이 이름을 안 주는 내부 id — 이름 자리를 뺏지 않게 작고 흐리게 (2026-08-12) */
+.sb-rawid { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; opacity: .6; }
+/* 신시즌 전투 지형 카드 — 프리뷰가 300px 정사각이라 확대하지 않고 가운데 둔다 */
+.sb-map2 img { max-height: 240px; object-fit: contain; }
+.sb-noprev {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 120px;
+  font-size: 12px;
+  color: var(--muted);
+  background: #10141c;
+}
+/* 조우 상세의 장면 묶음 */
+.sb-step + .sb-step { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--line); }
 
 /* CN 원문 아래 한국어 비공식 번역 줄 (사용자 요청 2026-08-12 — 원문이 메인, 번역이 서브) */
 .sb-trline {

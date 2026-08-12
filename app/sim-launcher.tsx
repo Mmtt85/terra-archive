@@ -12,7 +12,7 @@
 // 페이지가 넘어가면 안 된다 (사용자 지시 2026-08-10). href(/stages/<id>?sim=1)는
 // 크롤러·새 탭·보조클릭용 딥링크로 남긴다.
 
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "./i18n";
 import { normSearch, useSearchInput } from "./search";
 import { SearchSuggest } from "./search-suggest";
@@ -113,6 +113,17 @@ export default function SimLauncher() {
     const m = /^#st-(.+)$/.exec(hash);
     setOpen(m ? byId.get(m[1]) ?? null : null);
   });
+  // ⚠ 딥링크로 들어오면 useHashSync의 첫 적용이 **데이터 로드 전**에 돈다 — byId가 비어 있어
+  //   모달이 안 열린다 (사용자 제보 2026-08-12 "#st-camp_r_14가 새로고침 때 안 뜸").
+  //   stages.json이 도착한 뒤 한 번 더 해시를 읽는다.
+  const deepDone = useRef(false);
+  useEffect(() => {
+    if (deepDone.current || !doc) return;
+    deepDone.current = true;
+    const m = /^#st-(.+)$/.exec(decodeURIComponent(window.location.hash));
+    const s = m ? byId.get(m[1]) : null;
+    if (s) queueMicrotask(() => setOpen(s));   // 이펙트 안 동기 setState 금지 (lint 규칙)
+  }, [doc, byId]);
   const view = open && doc ? viewOf(doc, open, STATS ?? undefined) : null;
   const openEnemy = (id: string) => {
     setEnemyRaise((k) => k + 1);
