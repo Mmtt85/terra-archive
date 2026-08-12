@@ -218,6 +218,27 @@ def build_v2(tbl):
     stage_rewards = {k: [r["rewardItem"] for r in (v.get("rewardList") or [])] for k, v in smp.items()}
 
     zones = {z["zoneId"]: z.get("zoneName") or "" for z in d["zoneData"].values()}
+    # 전체 지도 위 구역 표시 (사용자 요청 2026-08-12 "전체 지도 위에 노드들도 표시").
+    # ⚠ 노드 개별 좌표는 데이터에 없다 (nodes에 minDistance뿐 — 노드는 판마다 새로 배치).
+    #   대신 mapData의 **구역 폴리곤·중심**이 있어 그걸 지도에 얹는다. 좌표는 카메라 범위
+    #   (mapConfig.cameraBoundMin/Max)로 정규화해 0~1 비율로 저장 — 이미지 크기와 무관해진다.
+    main = (d.get("mapData") or {}).get("sandbox_1_main_0") or {}
+    cfg = main.get("mapConfig") or {}
+    lo, hi = cfg.get("cameraBoundMin") or {}, cfg.get("cameraBoundMax") or {}
+    span_x = (hi.get("x", 1) - lo.get("x", 0)) or 1
+    span_y = (hi.get("y", 1) - lo.get("y", 0)) or 1
+    def nx(v):  # 0(왼쪽)~1(오른쪽)
+        return round((v - lo.get("x", 0)) / span_x, 4)
+    def ny(v):  # 0(위)~1(아래) — 게임 y축은 위가 +
+        return round((hi.get("y", 0) - v) / span_y, 4)
+    zone_areas = []
+    for zid, zv in (main.get("zones") or {}).items():
+        c = zv.get("center") or {}
+        verts = [[nx(p2.get("x", 0)), ny(p2.get("y", 0))] for p2 in (zv.get("vertices") or [])]
+        if verts:
+            zone_areas.append({"id": zid, "name": zones.get(zid, ""),
+                               "c": [nx(c.get("x", 0)), ny(c.get("y", 0))], "v": verts})
+    nodes_total = len(main.get("nodes") or {})
     node_types = {k: [v.get("name") or "", v.get("iconId") or ""] for k, v in d["nodeTypeData"].items()}
     # 날씨 — 기후 종류(weatherType)별로 묶고 위험도(level)로 정렬 (사용자 요청:
     # "쾌청·위험도1·2·3 다 나뉘어 있으니 한 종류로 그룹바이, 상세에서 위험도 지정")
@@ -308,6 +329,7 @@ def build_v2(tbl):
         "items": items, "foods": foods, "foodMats": food_mats, "drinkMats": drink_mats,
         "crafts": crafts, "trapTags": trap_tags,
         "stages": stages, "stageRewards": stage_rewards, "zones": zones, "nodeTypes": node_types,
+        "zoneAreas": zone_areas, "nodeCount": nodes_total,
         "weather": weather, "scenes": scenes, "rift": rift, "expeditions": expeditions, "techs": techs,
         "trapRewards": trap_rewards, "enemyRewards": enemy_rewards,
     }

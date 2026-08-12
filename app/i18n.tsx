@@ -1591,9 +1591,9 @@ const D: Record<string, Pair> = {
     "No official translation exists yet, so original Chinese text is shown.",
     "公式翻訳がまだないため、原文（中国語）で表示されます。"],
   "전체 지도": ["World map", "全体マップ"],
-  "사막 이야기의 전체 지도입니다. 지역은 매 판 이 지도 위 노드에 새로 배치됩니다.": [
-    "The full map of the season. Areas are placed onto its nodes anew each run.",
-    "シーズン全体のマップです。エリアは毎回このマップ上のノードに新しく配置されます。"],
+  "구역 경계를 지도 위에 표시했습니다. 노드 {n}개는 매 판 이 구역들 안에 새로 배치되어 고정 좌표가 없습니다.": [
+    "Zone boundaries are drawn over the map. The {n} nodes are re-placed inside these zones every run, so they have no fixed coordinates.",
+    "エリア境界をマップ上に表示しました。ノード{n}個は毎回この区域内に新しく配置されるため固定座標がありません。"],
   "노드 종류": ["Node types", "ノード種類"],
   "지역을 누르면 등장 적과 타일 도면·이동 경로 상세가 열립니다. 행동력은 이동 1회 소모량, ⚔는 적습 조우 시의 소모량입니다.": [
     "Click an area to open its detail — enemies, tile layout and routes. AP is the cost per move; ⚔ is the cost when an enemy raid triggers.",

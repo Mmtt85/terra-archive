@@ -71,6 +71,9 @@ export type SandboxDoc = {
     stages: [string, string, string, string, number, number][];
     stageRewards: Record<string, string[]>;
     zones: Record<string, string>;
+    /** 전체 지도 위 구역 폴리곤 — 좌표는 이미지 대비 0~1 비율 */
+    zoneAreas: { id: string; name: string; c: [number, number]; v: [number, number][] }[];
+    nodeCount: number;
     nodeTypes: Record<string, [string, string]>;
     /** 기후 종류별 묶음 — lv = [위험도, 이름, 효과, 설명, 아이콘] */
     weather: { type: string; name: string; lv: [number, string, string, string, string][] }[];
@@ -142,6 +145,8 @@ const OB_KINDS: [string, string, string, string][] = [
   ["wood", "sandbox_1_wood", "목재", "#7fc46a"],
   ["treasure", "sandbox_1_gold", "보물", "#ffd166"],
 ];
+// 구역 오버레이 색 (경로 색과 같은 팔레트 계열)
+const ROUTE_TINT = ["#ffd166", "#6ee7b7", "#7ab8ff", "#ff8fab", "#c9a0ff", "#ffa94d"];
 const PROF_LABEL: Record<string, string> = {
   WARRIOR: "근위", SNIPER: "저격", TANK: "중장", MEDIC: "의료",
   SUPPORT: "보조", CASTER: "술사", SPECIAL: "특수", PIONEER: "선봉",
@@ -499,8 +504,23 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
       {season === "v2" && view === "stage" && (
         <>
           <h3 className="sb-h3">{t("전체 지도")}</h3>
-          <p className="sim-note">{t("사막 이야기의 전체 지도입니다. 지역은 매 판 이 지도 위 노드에 새로 배치됩니다.")}</p>
-          <img className="sb-worldmap" src={worldMap} alt={t("전체 지도")} loading="lazy" decoding="async" onError={hideErr} />
+          <p className="sim-note">{t("구역 경계를 지도 위에 표시했습니다. 노드 {n}개는 매 판 이 구역들 안에 새로 배치되어 고정 좌표가 없습니다.", { n: String(v2.nodeCount) })}</p>
+          <div className="sb-worldwrap">
+            <img className="sb-worldmap" src={worldMap} alt={t("전체 지도")} loading="lazy" decoding="async" onError={hideErr} />
+            {/* 구역 폴리곤 오버레이 — 좌표가 0~1 비율이라 이미지 크기와 무관하다 */}
+            <svg className="sb-worldsvg" viewBox="0 0 1 1" preserveAspectRatio="none" aria-hidden>
+              {v2.zoneAreas.map((z, i) => (
+                <polygon key={z.id} points={z.v.map((pt) => pt.join(",")).join(" ")}
+                  fill={ROUTE_TINT[i % ROUTE_TINT.length]} fillOpacity={0.16}
+                  stroke={ROUTE_TINT[i % ROUTE_TINT.length]} strokeWidth={0.003} />
+              ))}
+            </svg>
+            <div className="sb-worldlabels">
+              {v2.zoneAreas.map((z) => (
+                <span key={z.id} style={{ left: `${z.c[0] * 100}%`, top: `${z.c[1] * 100}%` }}>{z.name}</span>
+              ))}
+            </div>
+          </div>
           <h3 className="sb-h3">{t("노드 종류")}</h3>
           <p className="sim-note">{t("지도에 배치되는 노드 종류입니다 — 어느 지역이 어느 노드에 놓이는지는 게임이 매번 새로 뽑기 때문에 데이터에 고정 매핑이 없습니다. 대신 아래에서 자원으로 지역을 걸러 보세요.")}</p>
           <div className="sb-nodekey">
