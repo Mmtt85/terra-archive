@@ -23,7 +23,7 @@ type Feature = {
 type ShotPair = { d: string; m: string };
 // 재촬영하면 이 날짜를 올린다 — 파일명이 같아서 R2 엣지·브라우저의 30일 이미지 캐시에
 // 옛 캡처가 남는데, 쿼리가 바뀌면 새 캐시 키라 전부 즉시 새로 받는다 (2026-08-02).
-const SHOT_VER = "20260810";
+const SHOT_VER = "20260812";
 const SHOTS: Partial<Record<Tab, ShotPair>> = {
   archive: { d: "/about/archive.webp", m: "/about/archive-m.webp" },
   planner: { d: "/about/planner.webp", m: "/about/planner-m.webp" },
@@ -35,6 +35,7 @@ const SHOTS: Partial<Record<Tab, ShotPair>> = {
   upgrade: { d: "/about/upgrade.webp", m: "/about/upgrade-m.webp" },
   story: { d: "/about/story.webp", m: "/about/story-m.webp" },
   rogue: { d: "/about/rogue.webp", m: "/about/rogue-m.webp" },
+  ra: { d: "/about/ra.webp", m: "/about/ra-m.webp" },
 };
 
 // 다크모드 구독 — html.dark 클래스를 관찰해 테마 토글 시 실시간 리렌더.
@@ -202,6 +203,16 @@ const CONTENT: Record<Locale, Content> = {
           "보유 리스트(소장품·테마 자원 체크)와 게임 화면 인식 — 스샷 레이더는 스크린샷으로, PRTS 링크(BETA)는 게임 창을 실시간으로 물려 자동 인식·이동하고 플레이 여정을 리플레이로 남깁니다",
         ],
       },
+      {
+        tab: "ra", icon: "❂", name: "생존연산 가이드",
+        summary: "생존연산(RA) 상설 「사막 이야기」와 중국 서버 선행 신시즌 「재기동 앵커」를 게임 데이터 그대로 정리합니다.",
+        bullets: [
+          "요리·음료 — 재료 조합과 α·β·γ 변형 효과, 재료마다 얻는 곳과 쓰이는 요리를 서로 링크",
+          "지역 106곳 — 실사 도면과 이동 경로 시뮬레이션, 등장 적 스탯, 지도 위 자원 오브젝트 위치까지",
+          "제작·설치물·조우·균열·원정·테크트리를 카드+상세 모달로, 생존연산 전용 적 도감까지",
+          "중국 선행 신시즌은 원문(중국어)이 기준이고 한국어 비공식 번역을 병기 — 전투 지형 171개의 도면·경로와 격자 노드 지도 포함",
+        ],
+      },
     ],
     chronicleCap: "테라 연대기 — 이벤트·메인스토리·통합 전략을 테라력 연표로",
     future: {
@@ -329,6 +340,16 @@ const CONTENT: Record<Locale, Content> = {
           "An inventory for collectibles & theme resources, plus game-screen recognition — Screenshot Radar reads screenshots, and PRTS Link (BETA) attaches to your game window live, auto-navigating as you play and recording the run as a replay",
         ],
       },
+      {
+        tab: "ra", icon: "❂", name: "Reclamation Algorithm Guide",
+        summary: "The permanent RA season “Tales Within the Sand” and the CN-first new season “Reboot Anchor”, straight from game data.",
+        bullets: [
+          "Food & drink — recipes with their α/β/γ variant effects, every ingredient cross-linked to where it drops and what it cooks into",
+          "All 106 areas — in-game blueprints, movement-route simulation, enemy stats, and resource objects plotted on the tile map",
+          "Crafting, structures, encounters, rifts, expeditions and the tech tree as cards with full detail modals, plus an RA-only enemy dex",
+          "The CN-first season keeps Chinese as the source text with an unofficial translation alongside — including 171 battle-terrain blueprints and the grid node map",
+        ],
+      },
     ],
     chronicleCap: "Terra Chronicle — events, main story, and Integrated Strategies on a Terra-calendar timeline",
     future: {
@@ -454,6 +475,16 @@ const CONTENT: Record<Locale, Content> = {
           "敵図鑑は難易度等級を変えるとステータスをリアルタイムに再計算",
           "秘宝・遭遇イベント・エンディング解放条件をクリック可能な相互リンクで接続 — 各ノードが実際に何をするのかの機能説明つき",
           "所持リスト（秘宝・テーマ資源のチェック）とゲーム画面認識 — スクショレーダーはスクリーンショットで、PRTSリンク（BETA）はゲームウィンドウをライブ接続して自動認識・移動し、プレイの行程をリプレイとして記録",
+        ],
+      },
+      {
+        tab: "ra", icon: "❂", name: "生息演算ガイド",
+        summary: "生息演算（RA）常設「砂中の遺聞」と中国サーバー先行の新シーズン「重启锚点」をゲームデータそのままに整理。",
+        bullets: [
+          "料理・飲料 — 素材の組み合わせとα・β・γ変種の効果、素材ごとに入手先と使う料理を相互リンク",
+          "エリア106か所 — 実写図面と移動ルートのシミュレーション、出現敵のステータス、地図上の資源オブジェクトの位置まで",
+          "製作・設置物・遭遇・裂け目・派遣・テックツリーをカード+詳細モーダルで、生息演算専用の敵図鑑も",
+          "中国先行シーズンは原文（中国語）を基準に韓国語の非公式訳を併記 — 戦闘地形171か所の図面・ルートとグリッドノードマップを含む",
         ],
       },
     ],
