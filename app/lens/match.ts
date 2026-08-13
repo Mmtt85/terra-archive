@@ -61,7 +61,12 @@ type Entry = {
   id: string; name: string; nameN: string; bodyN: string; bodyTG: Set<string>;
   shortLatin: boolean; // 짧은 순라틴 이름(2~5자) — 부분문자열 오탐이 심해 정확 일치만 허용
   arc?: string;
-  cnN?: string; // 중국어 원문 이름 정규화 — CN 선행 토픽(흑류수해)만 존재
+  cnN?: string; // 중국어 원문 이름 정규화 — CN 선행 토픽(흑류수해) + 중섭 탭을 켠 토픽
+  // 그 항목을 가리키는 **다른** 중국어 문자열 — 지금은 조우 선택지 제목이다.
+  // 조우 화면은 제목이 좌하단 작은 장식 서체고 화면을 채우는 큰 글씨는 선택지 버튼이라,
+  // 이름만 보면 아무것도 못 잡는다 (2026-08-13 사용자 제보 스샷: 深渊入口 조우).
+  // 데이터에는 원래부터 들어 있었는데(choices[].cn) 인덱스가 안 쓰고 있었다.
+  cnAltN?: string[];
 };
 export type LensIndex = { entries: Entry[] };
 
@@ -199,19 +204,22 @@ export function buildIndex(topics: any[], norm: Normalizer = normText, cnOnlyTop
   const ingest = (d: any, forceCnOnly: boolean) => {
     if (!d?.id) return;
     const topic: string = d.id, topicName: string = d.name;
-    const add = (section: string, id: string, name: string, body: string, arc?: string, cn?: string) => {
+    const add = (section: string, id: string, name: string, body: string, arc?: string, cn?: string,
+                 cnAlt?: (string | undefined)[]) => {
       const cnN = normTextCn(cn);
-      if (forceCnOnly && !cnN) return;
+      const alts = [...new Set((cnAlt ?? []).map((s) => normTextCn(s)).filter((s) => s && s !== cnN))];
+      if (forceCnOnly && !cnN && !alts.length) return;
       // EN/JA 인덱스(norm!==normText)에선 CN 선행 항목(cn 필드 보유 = rogue_6)의 ko 이름/본문을
       // 비운다 — normTextEn/Ja가 한글을 버려도 라틴·숫자 조각("투기장 VIP 티켓"→vip, "IoT"→iot)이
       // 남아 "Patriot"⊃iot 같은 오탐 goto를 내기 때문. cnN(중국어 패스)만 남겨 rogue_6은 CN으로만.
       const cnOnly = forceCnOnly || (!!cnN && norm !== normText);
       const nameN = cnOnly ? "" : norm(name);
       const bodyN = cnOnly ? "" : norm(body);
-      if (!nameN && !bodyN && !cnN) return;
+      if (!nameN && !bodyN && !cnN && !alts.length) return;
       // 짧은 순라틴 이름(2~5자)은 흔한 영단어의 부분문자열로 가짜 매칭돼(moment⊃omen) 정확 일치만
       const shortLatin = nameN.length >= 2 && nameN.length <= 5 && /^[0-9a-z]+$/.test(nameN);
-      entries.push({ topic, topicName, section, id, name, nameN, bodyN, bodyTG: trigrams(bodyN), shortLatin, arc, ...(cnN ? { cnN } : {}) });
+      entries.push({ topic, topicName, section, id, name, nameN, bodyN, bodyTG: trigrams(bodyN), shortLatin, arc,
+        ...(cnN ? { cnN } : {}), ...(alts.length ? { cnAltN: alts } : {}) });
     };
     for (const b of d.bands ?? []) add("band", b.id, b.name, `${b.usage || ""} ${b.desc || ""}`, undefined, b.cn);
     for (const r of d.relics ?? []) add("relic", r.id, r.name, `${r.usage || ""} ${r.desc || ""}`, undefined, r.cn);
@@ -225,7 +233,12 @@ export function buildIndex(topics: any[], norm: Normalizer = normText, cnOnlyTop
     for (const s of d.scraps ?? []) add("scrap", s.id, s.name, `${s.usage || ""} ${s.desc || ""}`, undefined, s.cn);
     for (const e of d.encounters ?? []) {
       const choices = (e.choices ?? []).map((c: { title?: string; desc?: string }) => `${c.title || ""} ${c.desc || ""}`).join(" ");
-      add("enc", e.scene, e.title, `${e.desc || ""} ${choices}`, undefined, e.cn);
+      // 선택지의 중국어 제목 — next로 중첩되므로 훑어 내려간다 (데이터에 원래 있던 값이다)
+      const cnAlt: (string | undefined)[] = [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const walkCh = (chs: any[]) => { for (const c of chs ?? []) { cnAlt.push(c?.cn); if (c?.next?.choices) walkCh(c.next.choices); } };
+      walkCh(e.choices ?? []);
+      add("enc", e.scene, e.title, `${e.desc || ""} ${choices}`, undefined, e.cn, cnAlt);
     }
     for (const e of d.endings ?? []) add("ending", e.id, e.name, e.desc || "", undefined, e.cn);
     // 토픽 고유 시스템 (사고=염원/영감/구상, 암호판, 붕괴 패러다임, 시대 등) — 전시관 탭 라벨을 arc로
@@ -485,29 +498,36 @@ function within(topic: string, linesN: string[], index: LensIndex):
 //   아래 토픽 투표(topicScore → topics[0])가 원래 있었으므로 판정 자체는 그대로 동작한다 —
 //   "무조건 흑류수해"를 코드로 굳히지 말 것.
 // cn은 이름뿐(본문 번역 없음)이라 이름 매칭 전용 + 1자 오독 퍼지(바이그램)를 쓴다.
+// ⚠ 조우 화면만은 이름으로 안 잡힌다 — 제목이 좌하단 작은 장식 서체라 OCR이 못 읽고,
+//   화면을 채우는 큰 글씨는 선택지 버튼이다(2026-08-13 제보 스샷 深渊入口). 그래서
+//   cnAltN(선택지 중국어 제목)도 같은 규칙으로 본다. 한국어 패스가 조우 본문 트라이그램으로
+//   푸는 문제인데, cn엔 본문 번역이 없어 대신 선택지를 쓴다.
 export function analyzeChinese(rawLines: string[], index: LensIndex,
   ctx?: { topic?: string; lock?: boolean }): LensOutcome {
   const linesN = rawLines.map((l) => normTextCn(l)).filter((l) => l.length >= 2);
   // 테마 하드 고정은 한국어 패스(analyzeLines)와 같은 규약 — 그 테마 밖은 아예 안 본다.
   // ⚠ 이게 없으면 중섭 IS5가 흑류수해로 샌다: **시리즈 공통 유물의 중국어 이름이 154개
   //   겹친다**(2026-08-13 실측, IS5 339종 중). 겹치는 이름만 읽힌 프레임에서 표가 갈린다.
-  const entries = index.entries.filter((e) => e.cnN
+  const entries = index.entries.filter((e) => (e.cnN || e.cnAltN)
     && !(ctx?.lock && ctx.topic && e.topic !== ctx.topic));
   const hits = new Map<Entry, Hit>();
   for (const line of linesN) {
     const lineBG = bigrams(line);
     const lineHits: { e: Entry; w: number }[] = [];
     for (const e of entries) {
-      const n = e.cnN!;
+      // 이름과 별칭(조우 선택지) 중 **가장 센** 매칭을 그 항목의 가중치로 쓴다
       let w = 0;
-      if (n.length >= 3 && (line.includes(n) || (line.length >= 4 && n.includes(line)))) w = 3;
-      else if (n.length === 2 && line === n) w = 3; // 2자 이름은 정확일치만 (KR과 동일 규칙)
-      else if (n.length >= 4 && Math.abs(line.length - n.length) <= 1) {
-        // 카드 제목 라인의 1자 오독 허용 ("多生苔藓"→"多生苔苏" 실측) — 길이가 비슷할 때만
-        const nb = bigrams(n);
-        let hit = 0;
-        for (const b of nb) if (lineBG.has(b)) hit++;
-        if (hit / nb.size >= 0.6) w = 2;
+      for (const n of [...(e.cnN ? [e.cnN] : []), ...(e.cnAltN ?? [])]) {
+        if (n.length >= 3 && (line.includes(n) || (line.length >= 4 && n.includes(line)))) w = Math.max(w, 3);
+        else if (n.length === 2 && line === n) w = Math.max(w, 3); // 2자 이름은 정확일치만 (KR과 동일 규칙)
+        else if (n.length >= 4 && Math.abs(line.length - n.length) <= 1) {
+          // 카드 제목 라인의 1자 오독 허용 ("多生苔藓"→"多生苔苏" 실측) — 길이가 비슷할 때만
+          const nb = bigrams(n);
+          let hit = 0;
+          for (const b of nb) if (lineBG.has(b)) hit++;
+          if (hit / nb.size >= 0.6) w = Math.max(w, 2);
+        }
+        if (w === 3) break;   // 최고 가중치면 더 볼 필요 없다
       }
       if (w) lineHits.push({ e, w });
     }
