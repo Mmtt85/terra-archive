@@ -128,7 +128,8 @@ _farm_path = os.path.join(DATA, "farm.json")
 MEASURED = {}          # stageId → {itemId: (rate%, rank, total)}
 if os.path.exists(_farm_path):
     for _it in load(_farm_path)["items"]:
-        _sts = sorted(_it["stages"], key=lambda x: x["sanity"])
+        # ⚠ tie-breaker(id) 필수 — build-farm.py의 같은 정렬과 규약을 맞춘다. 이유는 그쪽 주석 참조.
+        _sts = sorted(_it["stages"], key=lambda x: (x["sanity"], x["id"]))
         for _rank, _st in enumerate(_sts, 1):
             MEASURED.setdefault(_st["id"], {})[_it["id"]] = (_st["rate"], _rank, len(_sts))
 ZONE_TO_ACT = acts["ko"]["zoneToActivity"]

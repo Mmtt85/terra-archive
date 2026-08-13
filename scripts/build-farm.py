@@ -120,7 +120,13 @@ for iid in rows_by_item:
 out_items = []
 for iid, rows in rows_by_item.items():
     info = kr_items[iid]
-    rows.sort(key=lambda r: r["sanity"])
+    # ⚠ 동률 tie-breaker(id)를 빼지 말 것 — sanity는 소수 1자리로 반올림돼 **완전 동률이
+    # 흔하다**(10.80 vs 10.80). 키가 sanity뿐이면 파이썬 안정정렬이 입력 순서를 그대로
+    # 따르는데, 그 입력 순서는 펭귄 통계 응답 순서라 실행마다 뒤바뀐다. 그래서 값이 하나도
+    # 안 변한 날에도 farm.json이 매번 달라졌고(자동 갱신 13/14회), build-stages가 이 순서로
+    # 매기는 효율 순위까지 흔들려 stages.{json,en,ja} 3개가 같이 커밋됐다 (2026-08-13 실측:
+    # 순위 뒤집힘 29건 중 25건이 완전 동률, 진짜 값 변화는 4건).
+    rows.sort(key=lambda r: (r["sanity"], r["id"]))
     out_items.append({
         "id": iid,
         "name": {

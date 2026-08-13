@@ -199,11 +199,24 @@ const isSeenThumbWarning = (line) => {
   return Boolean(m && knownEventIds.has(m[1]));
 };
 
+// ── 메일을 띄우는 경고 = **사람이 명령을 하나 돌려야** 풀리는 것만 ──────────
+// (사용자 요청 2026-08-13) — 판정은 표시 필터가 아니라 **원시 로그**에서 한다.
+// ⚠ 표시 필터로 판정하면 안 된다: audit-assets의 "R2에 안 올라간 오퍼 에셋 N건 —
+//   r2-sync를 돌릴 것"은 WARN·경고·실패 어느 낱말도 안 써서 필터를 통과하지 못했고,
+//   그래서 **가장 액션이 분명한 경고가 메일에 실린 적이 한 번도 없었다** (2026-08-13 발견).
+// ⚠ 스스로 낫는 경고는 넣지 말 것 — 펭귄 통계 fetch 실패는 기존 farm.json을 유지하고
+//   다음 실행에 재시도하므로 사람이 할 일이 없다.
+const ACTIONABLE_WARN = /r2-sync|Traceback|Error:/i;
+const SELF_HEALING = /기존 .*유지|다음 실행 때 재시도|플레이스홀더 사용/;
 let warnBlock = "";
 let warnLines = [];
+let actionableWarn = [];
 if (existsSync(".ci/warnings.log")) {
-  warnLines = readFileSync(".ci/warnings.log", "utf-8").split("\n")
-    .filter((l) => /WARN|경고|미번역|not matched|미매칭|未|译|fail|실패|Traceback|Error/i.test(l))
+  const rawWarn = readFileSync(".ci/warnings.log", "utf-8").split("\n").filter(Boolean);
+  actionableWarn = rawWarn.filter((l) => ACTIONABLE_WARN.test(l) && !SELF_HEALING.test(l));
+  warnLines = rawWarn
+    .filter((l) => /WARN|경고|미번역|not matched|미매칭|未|译|fail|실패|Traceback|Error/i.test(l)
+      || actionableWarn.includes(l))          // 액션 필요한 줄은 표시 필터와 무관하게 본문에 싣는다
     .filter((l) => !isSeenThumbWarning(l))
     .filter(Boolean);
   if (warnLines.length) {
@@ -265,8 +278,15 @@ const heartbeat = todayUTC <= HEARTBEAT_UNTIL;
 
 // ── 리포트 조립 ──────────────────────────────────────────────────────
 const laneLabel = LANE === "cn" ? "CN(미래시)" : "KR";
+
 let subject;
-if (!meaningful) {
+const todo = manual.length + (actionableWarn.length ? 1 : 0);
+if (todo) {
+  // 제목만 보고 "세션 열어야 하는구나"를 알 수 있게 — 무엇을 해야 하는지 앞에 적는다
+  const bits = manual.map((m) => (m.match(/### ([^\n]+?)(?: \d+건)? →/) || [, m.split("\n")[0]])[1]);
+  if (actionableWarn.length) bits.push("에셋 동기화 등 경고");
+  subject = `[테라아카이브 ${laneLabel}] 🖐 손볼 것 ${todo}건 — ${bits.join(" · ").slice(0, 60)}`;
+} else if (!meaningful) {
   subject = `[테라아카이브 ${laneLabel}] 변경 없음${heartbeat ? " · 정상 가동 확인" : ""}`;
 } else {
   const bits = [];
@@ -288,10 +308,13 @@ const report = `# 테라 아카이브 데이터 리프레시 — ${laneLabel}\n\
 writeFileSync(".ci/report.md", report);
 writeFileSync(".ci/subject.txt", subject);
 
-// 경고가 있으면 데이터 변경이 없어도 알림은 보낸다 (미번역 CN·미매칭 이름 등을 놓치지 않기 위해).
-// 하트비트 창(2026-07-31까지)에는 무변경이어도 "정상 가동" 확인 메일을 보낸다.
-const hasWarnings = warnBlock.length > 0;
-const notify = meaningful || hasWarnings || heartbeat;
+// ── 메일 발송 조건 (2026-08-13 사용자 확정) ──────────────────────────
+// **사람이 손으로 뭔가 돌려야 할 때만** 보낸다. 데이터가 바뀌어도 파이프라인이 알아서
+// 커밋·배포까지 끝냈으면 알릴 이유가 없다 — 예전엔 `meaningful`만으로 보내서, 펭귄 통계
+// 순위가 뒤집힌 것만으로도(사람이 할 일 0) 하루 세 번 메일이 갔다.
+// 파이프라인 **실패**는 여기가 아니라 워크플로의 `if: failure()` 스텝이 따로 알린다.
+// 하트비트 창(HEARTBEAT_UNTIL)에는 무변경이어도 "정상 가동" 확인 메일을 보낸다 — 만료됨.
+const notify = manual.length > 0 || actionableWarn.length > 0 || heartbeat;
 
 if (process.env.GITHUB_OUTPUT) {
   appendFileSync(process.env.GITHUB_OUTPUT, `meaningful=${meaningful}\n`);
