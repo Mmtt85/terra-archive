@@ -1,6 +1,6 @@
 {
  "note": "테라 연대기 (손큐레이트). terraYear = 이벤트 '당대' 연도(스크립트의 '올해/지금 = N년'만 채택; 'N년 전'·역사 참조 연도는 제외). 예) 아테누스=1100. 채운 건 dateNote에 출처 명시. entries 순서는 출시순(임시). arc(테마)=로어 기반 수작업, 확실한 것 우선. kind: event(ref→stories.json)/main/roguelike. ※ 이 파일은 이제 손으로 편집한다 — 스캐폴드 생성 스크립트로 재생성 금지(연도·테마 날아감).",
- "updated": "2026-07-14",
+ "updated": "2026-08-13",
  "arcs": [
   {
    "id": "rl",
@@ -678,6 +678,13 @@
    },
    "terraYear": null,
    "arc": "rogue"
+  },
+  {
+   "ref": "act20mini",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "si",
+   "dateNote": "당대 연도 스탬프 없음 — 간접 근거만: 베티나 '다음 주면 10살' + 시라쿠사 전통 '아이와 같은 나이의 술' + 선물 라벨 '베르디 1092' → 1101~1102 추정"
   },
   {
    "ref": "act19mini",
