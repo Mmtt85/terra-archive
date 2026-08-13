@@ -1,0 +1,141 @@
+---
+name: kr-big-patch
+description: 한국서버 큰 점검(오전 10시~오후 4시, 몇 달치 데이터가 한 번에 들어옴) 뒤 사이트를 통째로 따라잡히는 종합 절차. "큰 점검 끝났어", "한섭 패치됐어", "클뜯 새로 올라왔나 봐줘", "패치 데이터 갱신해줘" 같은 요청에 사용.
+---
+
+# 한국서버 큰 점검 대응 — 한 번에 다 따라잡기
+
+## 점검 두 종류 (사용자 확정 2026-08-13)
+
+| | **큰 점검** | 작은 점검 |
+|---|---|---|
+| 시간 | 오전 10시 ~ 오후 4시 (약 6시간) | 오후 4시 ~ 4시 10분 (약 10분) |
+| 성격 | **몇 달치 데이터가 통째로 클라에 들어온다** | 큰 점검 때 들어온 걸 **하나씩 해금**만 한다 |
+| 대응 | **이 스킬** — 전체 파이프라인 + 콘텐츠 집필 | [`kr-small-patch`](../kr-small-patch/SKILL.md) — 개방 확인 위주 |
+
+아래 0→6을 순서대로. **각 단계는 앞 단계의 산출물을 쓴다** — 건너뛰면 반쪽이 된다.
+전 과정에서 `bash scripts/deploy.sh`는 실행 금지 (CLAUDE.md) — 빌드·커밋·푸시까지만.
+
+---
+
+## 0. 대기 — 클뜯은 점검 종료보다 늦다
+
+**점검이 끝났다고 바로 받으면 빈손이거나 반쪽이다.** 실측:
+
+| 이벤트 | 게임 내 시작 | activity_table 커밋 | 지연 |
+|---|---|---|---|
+| 사세행 (2026-07-16) | 16:00 | 18:09 | 2시간 |
+| 교차지점 (2026-08-13) | 11:00 | 13:34 | 2시간 34분 |
+
+그래서 **백그라운드 감시를 먼저 띄운다** (Bash `run_in_background: true`):
+
+```bash
+bash scripts/watch-gamedata.sh activity_table zone_table character_table
+```
+5분 간격·최대 7시간. 새 커밋이 잡히면 종료 코드 0으로 끝나며 무엇이 바뀌었는지 출력한다.
+감시가 도는 동안 사용자에게 "감시 걸어뒀다"고 알리고 다른 일을 해도 된다 —
+**끝났다고 지어내지 말고** 알림이 올 때까지 기다린다.
+
+> 급히 이벤트 배너부터 띄워야 하면 §3-1의 `MANUAL_EVENTS` 스톱갭을 먼저 쓴다.
+
+## 1. 뭐가 들어왔나 — 추측하지 말고 표를 비교한다
+
+```bash
+python3 scripts/whatsnew-gamedata.py            # 직전 KR 커밋 대비 (~2분, 60MB)
+python3 scripts/whatsnew-gamedata.py --no-rogue # 급할 때 (통합전략 21MB 생략)
+```
+
+출력 3부: ① 신규·변경(이벤트/오퍼/스킨/구역/통합전략) ② **미래 일정 전수** ③ 돌려야 할 파이프라인.
+
+> ⚠ **"몇 달치 미래시가 들어왔다"는 대개 소문이다.** 2026-08-13 큰 점검을 전수 조사한 결과
+> `activity_table`·`zone_table`·`stage_table`·`climb_tower_table`·`sandbox_perm_table`·
+> `character_table` 어디에도 미래 일정이 **0건**이었고, 실제로 들어온 건 이벤트 1개·
+> 통합전략 확장팩 1개·스킨 4종뿐이었다. ②를 근거로 **없으면 없다고 보고**할 것.
+> (미래 타임스탬프가 잡혀도 명함·아바타 판매 기간이면 콘텐츠 일정이 아니다.)
+
+## 2. 결정론 레인 — 여기까지는 스크립트가 다 한다
+
+```bash
+bash scripts/ci-refresh.sh          # 오퍼·다국어·인프라·공채·파밍·비용·스토리목록·보이스 (~8분)
+```
+KR을 재생성하면 EN/JA도 같이 나온다(`build-i18n.py`가 레인 안에 있다 — CLAUDE.md 규칙 충족).
+
+## 3. CI가 건너뛰는 로컬 전용 풀런 — **가장 자주 빠뜨리는 곳**
+
+무인 CI는 러너 디스크·시간 때문에 무거운 단계를 축약해서 돈다. 큰 점검 뒤에는 **여기를
+로컬에서 전체로 한 번** 돌려야 신규 콘텐츠의 이미지·역색인이 채워진다.
+
+```bash
+python3 scripts/build-enemies.py            # CI는 --meta-only --no-images (levels 179MB·신규 적 초상)
+python3 scripts/build-stages.py             # CI는 --no-images (신규 도면). ⚠ 반드시 build-enemies 뒤
+python3 scripts/build-skins.py              # CI는 --meta-only (신규 스킨 아트)
+python3 scripts/build-story.py --kr-thumbs  # 기본 모드는 글로벌판 썸네일을 임시로 넣는다
+node scripts/r2-sync.mjs                    # ⚠ 이걸 안 돌리면 커밋·배포해도 이미지가 404
+```
+
+**통합전략(록라)은 `ci-refresh.sh`에 아예 없다** (2026-08-13 발견 — 캐시가 7/17자로 멈춰
+IS5 3차 확장팩이 통째로 누락돼 있었다). 캐시를 지워야 새 표를 받는다:
+
+```bash
+rm -f .gamedata/rogue/*roguelike_topic_table.json
+python3 scripts/build-rogue.py rogue5        # 최신 토픽 번호로. 1~4도 한 번씩 돌려 무변화 확인
+python3 scripts/build-rogue.py rogue5-en
+python3 scripts/build-rogue.py rogue5-ja
+python3 scripts/build-rogue.py cn            # 중섭 변형 일괄 (미래시)
+```
+신규 유물이 잡히면 아이콘도 없다 → `python3 scripts/build-rogue.py --icons` (UnityPy 필요) 후 재실행.
+
+생존연산 신시즌이 왔으면 `python3 scripts/build-sandbox.py`도 같은 취급.
+
+## 4. 신규 이벤트
+
+### 4-1. 배너부터 (activity_table이 아직 안 올라왔을 때만)
+`workers/broadcast/src/index.js`의 `MANUAL_EVENTS`에 실제 행과 **똑같은 모양**으로 넣는다.
+같은 id의 실데이터가 오면 자동으로 버려지고, `until`이 지나면 무시된다.
+
+> ⚠ **시작 시각은 `zone_table`(zoneValidInfo.startTs) → 공식 카페 공지 순으로 믿는다.**
+> 2026-08-13 교차지점: 공지는 "16:00 개방"이었는데 실제는 11:00이었고, 같은 날 올라온
+> zone_table이 그 11:00을 이미 갖고 있었다. 공지를 믿고 썼다가 정정한 전례다.
+
+### 4-2. 스토리 수록 → 요약 → 연대기
+```bash
+python3 scripts/build-story.py               # 목록·썸네일 (ci-refresh에 포함돼 있음)
+python3 scripts/build-story-scripts.py       # ⚠ 전체 실행할 것
+```
+> ⚠ `build-story-scripts.py <id>`처럼 **단일 id로 돌리면 `story-script-ids.json`을 갱신하지
+> 않는다**(목록이 잘리는 걸 막으려는 의도적 동작). 새 이벤트가 목록에 안 뜨면 이게 원인이다.
+
+그다음 `story-summary` 스킬 → 집필 → 번역 파이프라인 → `chronicle-register` 스킬(연대기 등록).
+**요약 집필과 번역은 하위 에이전트에 위임하지 않는다** (`scripts/story-i18n/TRANSLATE.md`).
+
+## 5. 신규 오퍼
+
+```bash
+node scripts/ci-report.mjs kr        # "신규 오퍼 인프라 시너지 검토" 항목이 뜨는지
+```
+- **EN/JA 이름 확인**: KR 선출시 오퍼는 로케일 표에 아직 없어 이름이 한글로 폴백된다.
+  `build-i18n.py`가 KR `appellation`으로 메우게 돼 있으니(2026-08-13 수정),
+  `operators.en.json`에 한글 이름이 남지 않았는지 한 번 본다.
+- 인프라 시너지는 `planner-synergy-review` 스킬. 파트너 팟(`partners`)은 자동 파싱되므로
+  **특이 문구가 없으면 손댈 것이 없다**.
+- ⚠ ci-report의 시너지 감지는 **직전 커밋 대비 diff**라, 같은 날 이미 커밋했으면 안 뜬다.
+  큰 점검 날은 `app/data/infra.json`에서 신규 오퍼를 직접 확인할 것.
+
+## 6. 마무리
+
+```bash
+Skill: terra-maintain      # 밀린 수작업(연대기·시너지·CN 번역·록라) 재감지
+npm run build
+```
+빌드 통과 → 커밋 → `git push`. **배포는 사용자가 직접** (`bash scripts/deploy.sh` 금지).
+
+푸시 전 확인:
+- 무인 파이프라인이 그새 커밋했을 수 있다 → `git pull --rebase` 후 사이트맵 재생성
+  (`node scripts/build-sitemap.mjs`, lastmod가 커밋 시각에서 나오므로 커밋 **뒤에** 돌린다)
+- `/about` 스샷을 다시 찍었다면 **`r2-sync` 다음에** `SHOT_VER`를 올린다 (`about-shots` 스킬)
+- 이미 발행된 요약을 고쳤다면 `story-i18n-backport.py`를 먼저 (안 그러면 옛 번역이 덮는다)
+
+## 보고
+
+한 번에 이만큼 움직이므로, 끝나면 **무엇이 실제로 들어왔고 / 무엇을 반영했고 /
+사람 손이 더 필요한 게 뭔지** 세 줄로 나눠 보고한다. 배포 대기 커밋 수도 같이.
