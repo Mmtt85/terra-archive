@@ -367,6 +367,7 @@ const D: Record<string, Pair> = {
   "현재 진행중 이벤트": ["Now running · KR", "現在開催中 · 韓国"],
   "{date} 시작": ["Starts {date}", "{date}開始"],
   "시작 D-{n}": ["Starts D-{n}", "開始 D-{n}"],
+  "오늘 시작": ["Starts today", "本日開始"],
   "공식 카페 공지 보기": ["Open the official notice (Naver Cafe)", "公式カフェのお知らせを開く"],
 
   // 백과사전 — 필터

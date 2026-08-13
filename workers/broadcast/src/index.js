@@ -171,6 +171,21 @@ function noticeUrlFor(name, articles) {
 //     바뀌는 순간 화면이 달라지지 않는다.
 const MANUAL_EVENTS = [
   {
+    // 스토리 모음집 '교차지점' — KR 2026-08-13 16:00 시작. 공식 카페 공지 1245977이 정본
+    // ("8월 13일(목) 16:00부터 개방될 예정인 스토리 모음집 '교차지점'").
+    // ⚠ 같은 날 올라온 zone_table의 act20mini_zone1 startTs는 02:00Z(11:00 KST)인데, 이건
+    //   패치 전 값이라 공지와 어긋난다 — 공지를 따른다. endTs는 실값(08-20 03:59:59 KST)이고
+    //   역대 MINISTORY 16건이 전부 '시작 +7일 18:59:59Z'라 그 규칙과도 맞는다.
+    // type/displayType은 역대 MINISTORY 행과 동일한 값 — 실데이터로 바뀌어도 화면이 안 변한다.
+    id: "act20mini",
+    name: "교차지점",
+    type: "MINISTORY",
+    displayType: "MINISTORY",
+    start: "2026-08-13T07:00:00.000Z", // KST 08-13 16:00
+    end: "2026-08-19T18:59:59.000Z",   // KST 08-20 03:59:59
+    until: "2026-08-21",
+  },
+  {
     // 벡터 돌파#2 — KR 2026-07-30 16:00 시작(공식 카페 공지). 종료는 중섭 act2break와 같은
     // 길이(20.5일)로 잡은 **추정치**다. 실데이터가 오면 바로 대체된다.
     id: "act2break",

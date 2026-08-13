@@ -512,7 +512,14 @@ function BroadcastBadges({ includeFuture, slot }: { includeFuture?: boolean; slo
   const headlineUpcoming = running.length === 0 && upcoming.length > 0;
   const evName = (event: GameEvent): string => eventName(locale, event);
   const dday = (event: GameEvent): number => eventDday(event, now);
-  const startDday = (event: GameEvent): number => Math.max(0, Math.ceil((Date.parse(event.start) - now) / DAY));
+  // 시작까지 남은 날짜는 **KST 달력 날짜 차이**로 센다. 시분 차를 올림하면 오늘 16시
+  // 시작인 이벤트가 'D-1'(=내일)로 나온다 (2026-08-13 '교차지점'에서 확인).
+  const kstDay = (ms: number): number => Math.floor((ms + 9 * 3_600_000) / DAY);
+  const startDday = (event: GameEvent): number => Math.max(0, kstDay(Date.parse(event.start)) - kstDay(now));
+  const startLabel = (event: GameEvent): string => {
+    const d = startDday(event);
+    return d === 0 ? t("오늘 시작") : t("시작 D-{n}", { n: d });
+  };
   // 드롭다운: "2026년 7월 16일" 연·월·일 / 배지: "7월 16일" 월·일 (사용자 요청 2026-07)
   const md = (iso: string): string =>
     new Intl.DateTimeFormat(DT_LOCALE[locale], { timeZone: "Asia/Seoul", year: "numeric", month: "long", day: "numeric" }).format(new Date(iso));
@@ -531,7 +538,7 @@ function BroadcastBadges({ includeFuture, slot }: { includeFuture?: boolean; slo
         <span className="event-mark" aria-hidden>✦</span>
         <span>{t("이벤트")}</span>
         <span className={`event-hint${headlineUpcoming ? " upcoming" : ""}`}>
-          · {headlineUpcoming ? t("시작 D-{n}", { n: startDday(headline) }) : `D-${dday(headline)}`}
+          · {headlineUpcoming ? startLabel(headline) : `D-${dday(headline)}`}
         </span>
         <span className="event-caret" aria-hidden>▾</span>
       </button>
@@ -570,7 +577,7 @@ function BroadcastBadges({ includeFuture, slot }: { includeFuture?: boolean; slo
                   <>
                     {thumb && <span className="event-banner"><img src={thumb} alt="" loading="lazy" /></span>}
                     <span className="event-row-name">{evName(event)}</span>
-                    <small>{md(event.start)} ~ {md(event.end)} · {t("시작 D-{n}", { n: startDday(event) })}</small>
+                    <small>{md(event.start)} ~ {md(event.end)} · {startLabel(event)}</small>
                   </>
                 );
                 return (
