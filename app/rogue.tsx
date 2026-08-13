@@ -1054,6 +1054,11 @@ export default function RogueGuide({ includeFuture, initialTopic }: {
     setLensHits(null); setLensMulti(null);
   };
   const applyServerFromUrl = () => applyServer(serverFromUrl());
+  // 중섭 탭을 켜 놓고 보는 테마 = 화면이 중국어인 테마. 스샷 레이더·PRTS 링크가 이 값을
+  // lens에 넘겨 그 테마의 CN 이름을 인식 인덱스에 얹는다 (2026-08-13 사용자 지적:
+  // "흑류수해 말고 다른 록라 중섭으로 바꾸면 중국어 인식 못하지?" — 맞았다).
+  // rogue_6은 rogue6.json 자체가 KR/CN 병기라 여기서 걸려도 run.ts가 알아서 무시한다.
+  const cnTopicNow = () => (serverRef.current === "cn" ? topicRef.current : undefined);
   useEffect(() => {
     // popstate=브라우저 뒤로/앞으로, ta:rogue-topic=햄버거 부메뉴에서 온 커스텀 이벤트.
     // ⚠ 예전엔 부메뉴/드롭다운이 합성 popstate를 쐈는데, vinext 라우터가 그걸 내비게이션으로
@@ -1537,7 +1542,7 @@ export default function RogueGuide({ includeFuture, initialTopic }: {
   const [lensAuto, setLensAuto] = useState(false);
   const toggleLensAuto = () => setLensAuto((v) => {
     const next = !v;
-    if (next) { void warmOcr(ocrLangFor(locale)); warmData("rogue", locale); } // 켜는 순간 화면 언어의 OCR·데이터 예열
+    if (next) { void warmOcr(ocrLangFor(locale)); warmData("rogue", locale, cnTopicNow()); } // 켜는 순간 화면 언어의 OCR·데이터 예열
     return next;
   });
   const [lensMsg, setLensMsg] = useState<string | null>(null);
@@ -1611,8 +1616,10 @@ export default function RogueGuide({ includeFuture, initialTopic }: {
     try {
       // 테마별 게임연결로 고정돼 있으면 그 테마가 절대 기준 — 앵커·사이트 토픽보다 우선
       const lock = bridgeLock();
+      // cnTopicNow() — 스샷 레이더·PRTS 링크 공용 경로다(이 함수 하나를 클립보드·드롭·
+      // 브리지가 같이 쓴다). 중섭이면 그 테마의 CN 이름으로도 매칭한다.
       const oc = await recognizeShot("rogue", file, lock?.topic ?? lensAnchor.current ?? topicRef.current,
-        locale, { lock: !!lock, live });
+        locale, { lock: !!lock, live, cnTopic: cnTopicNow() });
       if (oc.anchor) lensAnchor.current = oc.anchor;
       // 플레이 로그 — 라이브(게임 연결) 인식은 전부 기록한다. '리플레이 다운받기'로 내려간다.
       if (live) {
@@ -1658,7 +1665,9 @@ export default function RogueGuide({ includeFuture, initialTopic }: {
     resetGradeCache();
     warmOcr(ocrLangFor(locale));
     void warmDigitOcr();
-    warmData("rogue", locale);
+    // 중섭 인덱스는 로케일+테마 조합으로 캐시된다 — 지금 켜져 있는 조합을 예열해야
+    // 첫 인식에서 다시 받지 않는다. (서버를 나중에 바꾸면 그때 온디맨드로 받는다)
+    warmData("rogue", locale, cnTopicNow());
   }, [bridgeOn, locale]);
   // 자동인식 동안 창 전체가 드롭존 — 드래그 중이면 필을 드롭 가능 상태로 강조
   const lensDragging = useDropWatch(lensAuto && !lensOpen, handleLensShot);

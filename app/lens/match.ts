@@ -186,18 +186,26 @@ export function analyzeRecruit(rawLines: string[], recruitTags: string[]): LensO
 // norm = 이름/본문 정규화기(로케일별). cnN(흑류수해 CN 원문)은 로케일 무관하게 항상 normTextCn.
 // EN/JA 인덱스라도 rogue_6은 KR/CN 병기 파일이라, ko 이름은 norm에서 비게 되지만 cnN이 남아
 // 중국어 패스(analyzeChinese)가 rogue_6을 잡는다 — 그래서 cnN만 있어도 엔트리를 버리지 않는다.
+// cnOnlyTopics — **중국어 이름만** 색인할 문서(rogueN.cn.json). 중섭 탭을 켠 테마에 대해
+// run.ts가 넘긴다 (2026-08-13). 이름·본문은 버리고 cn만 남기는 이유:
+//   · 같은 테마가 topics에도 있어 이름을 또 넣으면 항목이 두 벌이 돼 KR/EN 패스의 표가 겹친다
+//   · .cn.json의 name은 **한국어**(KR 공식 번역 오버레이)라, EN/JA 인덱스에 넣으면 화면 언어와
+//     어긋난 이름이 섞인다
+// 이렇게 하면 한섭·흑류수해 경로의 색인 결과는 한 글자도 안 바뀐다.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function buildIndex(topics: any[], norm: Normalizer = normText): LensIndex {
+export function buildIndex(topics: any[], norm: Normalizer = normText, cnOnlyTopics: any[] = []): LensIndex {
   const entries: Entry[] = [];
-  for (const d of topics) {
-    if (!d?.id) continue;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const ingest = (d: any, forceCnOnly: boolean) => {
+    if (!d?.id) return;
     const topic: string = d.id, topicName: string = d.name;
     const add = (section: string, id: string, name: string, body: string, arc?: string, cn?: string) => {
       const cnN = normTextCn(cn);
+      if (forceCnOnly && !cnN) return;
       // EN/JA 인덱스(norm!==normText)에선 CN 선행 항목(cn 필드 보유 = rogue_6)의 ko 이름/본문을
       // 비운다 — normTextEn/Ja가 한글을 버려도 라틴·숫자 조각("투기장 VIP 티켓"→vip, "IoT"→iot)이
       // 남아 "Patriot"⊃iot 같은 오탐 goto를 내기 때문. cnN(중국어 패스)만 남겨 rogue_6은 CN으로만.
-      const cnOnly = !!cnN && norm !== normText;
+      const cnOnly = forceCnOnly || (!!cnN && norm !== normText);
       const nameN = cnOnly ? "" : norm(name);
       const bodyN = cnOnly ? "" : norm(body);
       if (!nameN && !bodyN && !cnN) return;
@@ -224,7 +232,9 @@ export function buildIndex(topics: any[], norm: Normalizer = normText): LensInde
     for (const m of d.mechanics ?? []) {
       for (const it of m.items ?? []) add("mech", it.id, it.name, `${it.usage || ""} ${it.desc || ""}`, m.label);
     }
-  }
+  };
+  for (const d of topics) ingest(d, false);
+  for (const d of cnOnlyTopics) ingest(d, true);
   return { entries };
 }
 
@@ -468,12 +478,21 @@ function within(topic: string, linesN: string[], index: LensIndex):
 }
 
 // ── 중국어(CN 클라) 매칭 — 흑류수해는 CN 선행이라 스크린샷이 중국어다 ─────────
-// 사용자 확정 2026-07-24: "중국어가 나오는 경우는 무조건 흑류수해 록라" — cn 이름은
-// 구조적으로도 rogue_6에만 있으므로 토픽 투표 없이 cn 보유 엔트리만 상대로 매칭한다.
+// 사용자 확정 2026-07-24: "중국어가 나오는 경우는 무조건 흑류수해 록라" — 그때는 cn 이름이
+// 구조적으로 rogue_6에만 있어 후보가 하나였다.
+// ⚠ 2026-08-13 그 전제가 깨졌다. 중섭 탭(2026-08-04 신설)을 켜면 run.ts가 그 테마의
+//   rogueN.cn.json을 cnOnly로 얹으므로 후보 테마가 **둘(그 테마 + rogue_6)** 이 된다.
+//   아래 토픽 투표(topicScore → topics[0])가 원래 있었으므로 판정 자체는 그대로 동작한다 —
+//   "무조건 흑류수해"를 코드로 굳히지 말 것.
 // cn은 이름뿐(본문 번역 없음)이라 이름 매칭 전용 + 1자 오독 퍼지(바이그램)를 쓴다.
-export function analyzeChinese(rawLines: string[], index: LensIndex): LensOutcome {
+export function analyzeChinese(rawLines: string[], index: LensIndex,
+  ctx?: { topic?: string; lock?: boolean }): LensOutcome {
   const linesN = rawLines.map((l) => normTextCn(l)).filter((l) => l.length >= 2);
-  const entries = index.entries.filter((e) => e.cnN);
+  // 테마 하드 고정은 한국어 패스(analyzeLines)와 같은 규약 — 그 테마 밖은 아예 안 본다.
+  // ⚠ 이게 없으면 중섭 IS5가 흑류수해로 샌다: **시리즈 공통 유물의 중국어 이름이 154개
+  //   겹친다**(2026-08-13 실측, IS5 339종 중). 겹치는 이름만 읽힌 프레임에서 표가 갈린다.
+  const entries = index.entries.filter((e) => e.cnN
+    && !(ctx?.lock && ctx.topic && e.topic !== ctx.topic));
   const hits = new Map<Entry, Hit>();
   for (const line of linesN) {
     const lineBG = bigrams(line);
@@ -515,6 +534,13 @@ export function analyzeChinese(rawLines: string[], index: LensIndex): LensOutcom
   const topics = [...topicScore.entries()]
     .map(([topic, score]) => ({ topic, topicName: topicNames.get(topic) ?? topic, score }))
     .sort((a, b) => b.score - a.score);
+  // 잠금이 없는 경로(스샷 레이더)에서도 문맥 테마를 우대한다 — 한국어 패스와 같은 철학:
+  // "한 판 도는 중에 테마가 바뀌는 일은 없으므로, 애매하면 지금 테마가 맞다". 위의 154개
+  // 겹침 때문에 겹치는 유물만 읽힌 스샷은 표가 반반이 되는데, 그때 흑류수해로 튀지 않게 한다.
+  if (ctx?.topic && topics.length > 1) {
+    const i = topics.findIndex((t) => t.topic === ctx.topic);
+    if (i > 0 && topics[0].score < topics[i].score * SWITCH_MARGIN) topics.unshift(...topics.splice(i, 1));
+  }
   const entities = dedupEntities(solids);
   const section = topSection(hits);
   const g = section ? gotoFor(topics[0].topic, section, entities) : null;

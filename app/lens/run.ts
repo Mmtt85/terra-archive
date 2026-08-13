@@ -68,14 +68,33 @@ function rogueModules(locale: string): Promise<{ default: unknown }>[] {
   ];
 }
 
-// 매칭 데이터 지연 로드 — 로케일별로 캐시 (recruit는 rogue*.json 2.9MB를 안 내려받는다).
+// 중섭 탭(rogue.tsx의 서버 토글)을 켠 테마의 CN 원문 — **중국어 이름만** 얹으려고 따로 받는다.
+// rogue_6은 rogue6.json 자체가 KR/CN 병기라 여기 없다(있으면 두 벌이 된다).
+const CN_MODULES: Record<string, () => Promise<{ default: unknown }>> = {
+  rogue_1: () => import("../data/rogue1.cn.json"),
+  rogue_2: () => import("../data/rogue2.cn.json"),
+  rogue_3: () => import("../data/rogue3.cn.json"),
+  rogue_4: () => import("../data/rogue4.cn.json"),
+  rogue_5: () => import("../data/rogue5.cn.json"),
+};
+
+// 매칭 데이터 지연 로드 — 로케일 + 중섭 테마별로 캐시 (recruit는 rogue*.json 2.9MB를 안 내려받는다).
+// cnTopic이 있으면 그 테마의 CN 이름을 얹어 중국어 패스가 흑류수해 말고도 잡을 수 있게 한다
+// (2026-08-13 사용자 지적: "흑류수해 말고 다른 록라 중섭으로 바꾸면 중국어 인식 못하지?" — 맞았다).
+// 캐시 키가 로케일 → 로케일×중섭테마로 늘었다(최대 3×6). 인덱스 구축은 트라이그램 계산이라
+// 공짜가 아니지만, 스샷 레이더·PRTS 링크를 켠 동안에만 불리고 테마를 바꿔가며 인식하는
+// 사용은 드물어 그대로 둔다 — 문제가 되면 LRU로 줄일 것.
 const rogueIndexByLoc = new Map<string, Promise<LensIndex>>();
-export function getRogueIndex(locale = "ko"): Promise<LensIndex> {
-  let p = rogueIndexByLoc.get(locale);
+export function getRogueIndex(locale = "ko", cnTopic?: string): Promise<LensIndex> {
+  const cnLoad = cnTopic ? CN_MODULES[cnTopic] : undefined;   // rogue_6 등 변형이 없으면 무시
+  const key = `${locale}|${cnLoad ? cnTopic : ""}`;
+  let p = rogueIndexByLoc.get(key);
   if (!p) {
-    p = Promise.all(rogueModules(locale)).then((mods) => buildIndex(mods.map((m) => m.default), normFor(locale)));
-    p.catch(() => { rogueIndexByLoc.delete(locale); });
-    rogueIndexByLoc.set(locale, p);
+    p = Promise.all([Promise.all(rogueModules(locale)), cnLoad ? cnLoad() : null])
+      .then(([mods, cn]) => buildIndex(mods.map((m) => m.default), normFor(locale),
+        cn ? [cn.default] : []));
+    p.catch(() => { rogueIndexByLoc.delete(key); });
+    rogueIndexByLoc.set(key, p);
   }
   return p;
 }
@@ -100,21 +119,25 @@ export function getStoryIndex(): Promise<StoryIndex> {
   return storyIndexP;
 }
 
-/** 데이터 예열 (모달 열림/토글 켜짐 시 호출). locale은 rogue 인덱스를 로케일별로 예열. */
-export function warmData(mode: LensMode, locale = "ko"): void {
+/** 데이터 예열 (모달 열림/토글 켜짐 시 호출). locale은 rogue 인덱스를 로케일별로 예열.
+ *  cnTopic — 중섭 탭을 켠 테마. 인덱스가 로케일+중섭 조합으로 캐시되므로 같이 넘겨야
+ *  실제로 쓸 인덱스가 예열된다 (안 넘기면 한섭 인덱스만 데워 놓고 다시 받는다). */
+export function warmData(mode: LensMode, locale = "ko", cnTopic?: string): void {
   if (mode === "recruit") void getRecruitTags();
   else if (mode === "story") void getStoryIndex();
-  else void getRogueIndex(locale);
+  else void getRogueIndex(locale, cnTopic);
 }
 
 /** 스크린샷 1장 인식 — 모드별 단계형 파이프라인. topic은 rogue 모드의 현재 토픽(사전확률).
  *  locale(ko|en|ja)은 rogue 모드에서 OCR 모델·인덱스·정규화를 화면 언어에 맞춘다.
  *  opts.lock — 테마 하드 고정(테마별 게임연결): topic 밖은 아예 보지 않는다.
+ *  opts.cnTopic — 중섭 탭을 켠 테마(rogue.tsx의 서버 토글). 그 테마의 CN 이름을 인덱스에
+ *    얹고 중국어 패스 게이트도 열어 준다.
  *  opts.live — 라이브 스트림용 빠른 경로: 비싼 폴백 패스(PSM3·칩 재시도)를 생략한다.
  *    스샷은 한 장이 전부라 폴백까지 짜내야 하지만, 스트림은 다음 프레임이 오므로
  *    못 읽으면 그냥 넘기는 게 총 지연이 짧다 (사용자 체감 "너무 느림" 대응 2026-07-26). */
 export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, locale = "ko",
-  opts?: { lock?: boolean; live?: boolean }): Promise<LensOutcome> {
+  opts?: { lock?: boolean; live?: boolean; cnTopic?: string }): Promise<LensOutcome> {
   let lines: string[];
   let oc: LensOutcome;
   if (mode === "recruit") {
@@ -140,7 +163,7 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
   } else {
     // 화면 언어(로케일)로 OCR 모델·인덱스·정규화를 맞춘다 — KR=kor, EN=eng, JA=jpn.
     const norm = normFor(locale);
-    const [index, session] = await Promise.all([getRogueIndex(locale), createOcrSession(file, OCR_LANG[locale] ?? "kor")]);
+    const [index, session] = await Promise.all([getRogueIndex(locale, opts?.cnTopic), createOcrSession(file, OCR_LANG[locale] ?? "kor")]);
     // 난이도 배지 — 전용 eng 워커라 본 패스와 **병렬**로 미리 돌린다 (직렬 ~0.3초 제거).
     // 라이브(게임 연결)는 세션 캐시가 유효하거나 미검출 쿨다운 중이면 아예 생략한다.
     const gradeFresh = !!gradeCache && Date.now() - gradeCache.at < 10 * 60_000;
@@ -161,21 +184,27 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
     if (wantsChipPass(lines)) { chipsRan = true; lines = lines.concat(await session.chips()); }
     const ctx = { context: { topic, lock: opts?.lock }, norm };
     oc = analyzeLines(lines, index, ctx);
-    // 중국어(흑류수해 CN 클라) 분기 — cn 화면은 무조건 흑류수해(사용자 확정). chi_sim으로 cn
-    // 이름을 매칭한다. 이미지가 고정이라 zh 패스는 결정적 → 한 번만 돌리고 캐시(zhRan).
+    // 중국어(CN 클라) 분기 — chi_sim으로 cn 이름을 매칭한다. 이미지가 고정이라 zh 패스는
+    // 결정적 → 한 번만 돌리고 캐시(zhRan). 예전엔 "cn 화면은 무조건 흑류수해"였지만,
+    // 중섭 탭을 켠 테마도 이제 여기서 잡힌다 (2026-08-13 — 아래 zhPossible 참조).
     let zhRan = false, zhHit = false;
     const tryZh = async () => {
       if (zhRan) return;
       zhRan = true;
       const zlines = await session.zh();
-      const zoc = analyzeChinese(zlines, index);
+      // 문맥(테마·잠금)을 한국어 패스와 똑같이 넘긴다 — 시리즈 공통 유물의 중국어 이름이
+      // IS5·IS6에 154개 겹쳐서, 문맥 없이는 중섭 IS5 화면이 흑류수해로 샌다 (2026-08-13).
+      const zoc = analyzeChinese(zlines, index, { topic, lock: opts?.lock });
       console.debug(`[lens] 중국어 패스: OCR ${zlines.length}줄 → ${zoc.target.kind}/${zoc.section ?? "-"}`);
       if (zoc.target.kind !== "none") { oc = zoc; zhHit = true; lines = zlines; }
     };
     // 1차 게이트 — KR(kor)은 중국어에서 무신호라 완전 무신호일 때만. EN/JA는 프라이머리(특히
     // jpn)가 한자를 kanji로 읽어 약한 표·tie를 낼 수 있어(cn 화면), 확신 goto가 아니면 시도한다.
-    // 테마 고정 시 흑류수해(CN 화면)가 아니면 중국어 패스 자체가 무의미하다 — 생략.
-    const zhPossible = !opts?.lock || topic === "rogue_6";
+    // 테마 고정 시에는 그 테마가 중국어일 수 있을 때만 zh 패스를 돈다 — 흑류수해(CN 선행)
+    // 이거나, **중섭 탭을 켠 그 테마**일 때. 2026-08-13 이전엔 rogue_6만 통과시켜서,
+    // IS1~5를 중섭으로 놓고 PRTS 링크를 걸면 chi_sim 패스가 아예 안 돌았다(사용자 지적).
+    const zhPossible = !opts?.lock || topic === "rogue_6"
+      || (!!opts?.cnTopic && topic === opts.cnTopic);
     if (zhPossible && ((oc.target.kind === "none" && !oc.topics.length && !oc.screens.length)
         || (locale !== "ko" && oc.target.kind !== "goto"))) {
       await tryZh();
