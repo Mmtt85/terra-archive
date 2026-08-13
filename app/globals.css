@@ -15928,16 +15928,11 @@ main.site-main > .site-header {
 
 /* 관련 오퍼레이터 — 상세끼리 잇는 링크 줄 (2026-08-06). 크롤 깊이를 줄이는 게 1차 목적이라
    눈에 띄게 크지 않게, 본문 끝에 조용히 붙는다. */
+/* 상세 목차 11번으로 편입(2026-08-13) — 테두리·여백·h3 규격은 .detail-section이 준다.
+   예전엔 본문 끝에 덧붙는 작은 블록이라 자체 border-top·작은 h3를 갖고 있었는데,
+   그대로 두면 번호 붙은 다른 10개 섹션과 제목 크기가 어긋나고 여백이 두 번 붙는다. */
 .op-related {
-  border-top: 1px solid var(--line);
-  margin-top: 26px;
-  padding-top: 18px;
-}
-.op-related h3 {
-  margin: 0 0 12px;
-  font-size: 13px;
-  letter-spacing: -0.2px;
-  color: var(--ink2);
+  margin-top: 0;
 }
 .op-related-row {
   display: flex;

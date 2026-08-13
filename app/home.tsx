@@ -2183,6 +2183,9 @@ const MODAL_SECTIONS = [
   { id: "op-skin", label: "스킨" },
   { id: "op-profile", label: "오퍼레이터 파일" },
   { id: "op-voice", label: "보이스 대사" },
+  // 관련 오퍼레이터는 2026-08-06(상세끼리 내부 링크, SEO)에 들어왔는데 목차에서 빠져 있었다
+  // — 본문 맨 끝 섹션이라 11번 (사용자 지적 2026-08-13).
+  { id: "op-related", label: "관련 오퍼레이터" },
 ];
 
 function ModalRail({ scrollRef }: { scrollRef: React.RefObject<HTMLDivElement | null> }) {
@@ -2194,6 +2197,13 @@ function ModalRail({ scrollRef }: { scrollRef: React.RefObject<HTMLDivElement | 
     if (!scroller) return;
     // 지금 읽고 있는 섹션 = 스크롤러 위쪽 28% 선을 마지막으로 지나간 섹션
     const sync = () => {
+      // 바닥까지 내려갔으면 마지막으로 렌더된 섹션을 활성으로. 끝 섹션이 짧으면 더 스크롤할
+      // 여지가 없어 28% 선을 영영 못 넘고, 목차 마지막 항목을 눌러도 앞 항목이 켜져 있었다
+      // (관련 오퍼레이터를 11번으로 넣으며 드러남 — 2026-08-13).
+      if (scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight <= 2) {
+        const tail = [...MODAL_SECTIONS].reverse().find((s) => document.getElementById(s.id));
+        if (tail) { setActive(tail.id); return; }
+      }
       const line = scroller.scrollTop + scroller.clientHeight * 0.28;
       let current = MODAL_SECTIONS[0].id;
       for (const section of MODAL_SECTIONS) {
@@ -2249,7 +2259,8 @@ function RelatedOperators({ operator, operators, onSelect }: {
   }, [operator, operators, locale]);
   if (groups.length === 0) return null;
   return (
-    <section className="op-related" aria-label={t("관련 오퍼레이터")}>
+    <section className="detail-section op-related" id="op-related" aria-label={t("관련 오퍼레이터")}>
+      <span className="detail-no">RELATED / 11</span>
       <h3>{t("관련 오퍼레이터")}</h3>
       {groups.map((g) => (
         <div key={g.key} className="op-related-row">

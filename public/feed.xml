@@ -8,6 +8,13 @@
   <description>명일방주(Arknights) 이벤트 스토리를 AI가 정독해 컷씬과 함께 10분 분량으로 요약합니다.</description>
   <language>ko</language>
   <item>
+    <title>교차지점</title>
+    <link>https://terra-archive.net/stories/act20mini</link>
+    <guid isPermaLink="true">https://terra-archive.net/stories/act20mini</guid>
+    <pubDate>Sat, 01 Aug 2026 09:00:00 +0900</pubDate>
+    <description>패밀리를 지우려고 세운 도시가, 바다 건너온 자본에 먹히지 않으려 결국 그 손을 다시 잡는 이야기. 그리고 라벨을 가린 와인 한 잔에 목숨을 잃은 지휘자와, 뿔을 본 딸.</description>
+  </item>
+  <item>
     <title>사세행</title>
     <link>https://terra-archive.net/stories/act49side</link>
     <guid isPermaLink="true">https://terra-archive.net/stories/act49side</guid>
@@ -419,13 +426,6 @@
     <guid isPermaLink="true">https://terra-archive.net/stories/act13d0</guid>
     <pubDate>Mon, 01 Mar 2021 09:00:00 +0900</pubDate>
     <description>떠나온 곳은 잊고 새 삶을 살려다가, 결국 저마다 돌아갈 곳을 이야기해 버리는 사람들. 기억을 잃어도 지워지지 않는, 그 냄새와 골목과 노래에 관하여.</description>
-  </item>
-  <item>
-    <title>위대한 족장 가비알 리턴즈</title>
-    <link>https://terra-archive.net/stories/act12d0</link>
-    <guid isPermaLink="true">https://terra-archive.net/stories/act12d0</guid>
-    <pubDate>Mon, 01 Feb 2021 09:00:00 +0900</pubDate>
-    <description>엔진 도둑맞은 김에 고향 들렀다가, 대족장 제전에 휘말리고 옛 친구의 거대 로봇까지 때려 부수는 이야기. 그리고 자길 붙잡으려 쿠데타를 꾸민 소녀 앞에서도, 가비알은 여전히 주먹으로 답한다.</description>
   </item>
 </channel>
 </rss>
