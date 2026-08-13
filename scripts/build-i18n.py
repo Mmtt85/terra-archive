@@ -30,6 +30,11 @@ load = lambda p: json.load(open(p, encoding="utf-8"))
 kr_ops = load(f"{REPO}/app/data/operators.json")
 infra = load(f"{REPO}/app/data/infra.json")
 
+# KR 표의 appellation(공식 로마자명). 로케일 테이블이 아직 모르는 오퍼의 **이름**만
+# 이걸로 채운다 — 아래 build_locale의 폴백 참조.
+_kr_chars = load(f"{S}/kr_character_table.json")
+_kr_chars = _kr_chars.get("chars", _kr_chars)
+
 # 미실장(unreleased) 오퍼의 EN/JA: 로케일 테이블에 아직 없으므로 ① 방금 로컬라이즈한
 # 출시 오퍼들의 (KR문자열 → 로케일문자열) 쌍을 다수결 수확해 정형 문구를 공식 번역으로
 # 채우고, ② cn-translations.json(AI 비공식 번역)의 ko→en/ja 대응으로 고유 텍스트를
@@ -313,8 +318,26 @@ def build_locale(prefix):
         cid = op["id"]
         c = chars.get(cid)
         if not c:
-            ops_out.append(op)  # locale table lags — keep KR entry wholesale
-            names[cid] = op["name"]
+            # 로케일 테이블이 아직 이 오퍼를 모른다(KR 선출시). 본문은 KR 폴백이 맞지만
+            # **이름까지 한글로 내보내면** EN 방문자에겐 아예 안 읽힌다. KR 표의
+            # appellation(공식 로마자명 — 예: 벨로네 → "Bellone")이 있으면 EN은 그걸 쓴다.
+            # ⚠ 2026-08-13 회귀: 미래시일 땐 CN 파이프라인이 영문 코드네임을 이름으로 써서
+            #   EN이 "Bellone"이었는데, KR 출시로 넘어오는 순간 "벨로네"로 **퇴화**했다.
+            #   JA는 jp 표가 먼저 갖고 있어 영향이 없다 — 그래서 en만 손본다.
+            fb = dict(op)
+            appel = (_kr_chars.get(cid) or {}).get("appellation")
+            if C["out"] == "en" and appel and appel != op["name"]:
+                al = [a for a in [op["name"], *op.get("aliases", [])] if a and a != appel]
+                seen_al = set(); al = [a for a in al if not (a in seen_al or seen_al.add(a))]
+                fb["name"] = appel
+                fb["aliases"] = al
+            # 직업·배치는 KR 레코드가 코드값(jobCode "WARRIOR" · position "근거리")을 들고 있어
+            # 로케일 표 없이도 정확히 번역된다. 소속·종족·전투 태그는 로케일 핸드북/가챠 표에서
+            # 오는 값이라 그 표에 없으면 방법이 없다 — KR 폴백을 그대로 둔다.
+            fb["job"] = C["job"].get(op.get("jobCode"), op["job"])
+            fb["position"] = C["position"].get(op["position"], op["position"])
+            ops_out.append(fb)
+            names[cid] = fb["name"]
             continue
         name = c.get("name") or op["name"]
         names[cid] = name
