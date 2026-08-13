@@ -7,6 +7,11 @@
 //  - 딥링크 진입·뒤로/앞으로: hashchange/popstate에서 apply()로 상태를 복원한다.
 // ⚠ vinext가 history.pushState를 인스턴스 패치해 내비게이션으로 취급, .site-scroll을 맨 위로
 // 리셋한다 — 해시만 바꿀 땐 네이티브 프로토타입을 직접 불러 우회한다 (rogue.tsx와 동일 실측).
+// ⚠⚠ 밖에서 이 모달을 열 때 `location.hash = "#…"` 대입은 절대 금지. vinext의 RSC 내비게이션을
+// 타는데 Pages(정적 배포)에선 페이로드를 못 받아 무한 재시도에 빠진다 — 그 popstate 폭풍이
+// 아래 apply()를 계속 불러 닫은 모달이 즉시 다시 열린다 (2026-08-13 라이브 실측: 클릭 1회에
+// RSC 내비 75회·popstate 45회/2초. 로컬 서버는 1회로 끝나 재현되지 않으니 주의).
+// 여는 쪽은 History.prototype.pushState + dispatchEvent(new Event("hashchange"))를 쓸 것.
 
 import { useEffect, useRef } from "react";
 

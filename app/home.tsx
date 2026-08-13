@@ -814,7 +814,16 @@ function Portal({ onOpenTab }: {
       }
       onOpenTab("story"); scrollMainTop(); return;
     }
-    if (tile.action === "changelog") { window.location.hash = "#changelog-all"; return; }
+    // ⚠ `location.hash = …` 대입은 vinext의 RSC 내비게이션을 태운다. 로컬 서버에선 1회로
+    // 끝나지만 Pages(정적 배포)에선 그 페이로드를 못 받아 무한 재시도에 빠지고, 거기서 쏟아지는
+    // popstate가 useHashSync를 계속 깨워 닫은 모달이 즉시 다시 열린다 (사용자 제보 2026-08-13
+    // "닫기 버튼을 눌러도 다시 새로 뜬다" — 라이브 실측 클릭 1회에 RSC 내비 75회·popstate 45회/2초).
+    // 네이티브 pushState로 해시만 바꾸고 합성 hashchange로 깨운다 (hash-modal.ts와 같은 규약).
+    if (tile.action === "changelog") {
+      History.prototype.pushState.call(history, null, "", "#changelog-all");
+      window.dispatchEvent(new Event("hashchange"));
+      return;
+    }
     if (tile.action === "donate") { window.open("https://buymeacoffee.com/terra_archive", "_blank", "noopener"); return; }
     if (tile.href) { window.open(tile.href, "_blank", "noopener"); return; }
     if (tile.tab) { onOpenTab(tile.tab as Tab); scrollMainTop(); }

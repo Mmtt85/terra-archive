@@ -44,6 +44,14 @@ URL 복붙으로 해당 탭/오퍼 모달이 바로 열려야 한다 (hashchange
 (열림 pushState → 뒤로가기로 닫힘 · 모달 내 전환 replaceState · UI 닫기는 해시 제거).
 vinext의 pushState 패치(스크롤 리셋)를 피하려 네이티브 `History.prototype.pushState`를 부른다.
 
+> ⚠ **`location.hash = "#…"` 대입 금지 (2026-08-13 실측).** 해시 대입은 vinext의 RSC
+> 내비게이션(`__VINEXT_RSC_NAVIGATE__`)을 타는데, Pages 정적 배포에선 그 페이로드를 못 받아
+> **무한 재시도**에 빠진다. 거기서 쏟아지는 popstate가 `useHashSync`의 `apply()`를 계속 불러
+> **닫은 모달이 즉시 다시 열린다** (홈 포탈의 '업데이트 내역' 타일에서 발생 — 클릭 1회에
+> RSC 내비 75회·popstate 45회/2초). **로컬 서버(`vinext start`)에선 1회로 끝나 재현되지 않는다**
+> — 이런 증상은 라이브에서 확인할 것. 밖에서 모달을 열 땐
+> `History.prototype.pushState.call(history, null, "", "#…")` + `dispatchEvent(new Event("hashchange"))`.
+
 | 해시 | 어디서나/경로 | 여는 것 |
 |---|---|---|
 | `#changelog` / `#changelog-all` | 어디서나 | 업데이트 내역 (신기능만 / 상세) |
