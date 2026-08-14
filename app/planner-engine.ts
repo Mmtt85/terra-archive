@@ -65,7 +65,9 @@ export type InfraSkill = {
   recoverRoom?: number;           // "제어 센터 내 모든 오퍼레이터의 시간당 컨디션 회복 +X" 고정형 (도베르만류)
   recoverRoomPer?: { faction: string; value: number }; // "<그룹> 1명 증가할 때마다 방 전체 회복 +X" (레인보우 팀 — 4보유×5명×0.05 = 소모 1.0 정확 상쇄)
   recoverAura?: { scope: string; value: number; perToken?: { token: string; per: number; add: number } }; // 제어센터→기타/일부 시설 횡단 회복 (위셔델·총웨·무에나)
-  selfDrainNegate?: string | null; // "<진영> 오퍼레이터 본인의 컨디션 소모 영향 제거" (링: 쉐이)
+  // "… 오퍼레이터 본인의 컨디션 소모로 인해 받는 영향 제거" — 스코프 3종 (drainNegated):
+  // 진영명(링 '멈추지 않는 술잔' = 쉐이) · "*" 방 전원(와이후 '팀워크') · "@self" 본인만(무츠미)
+  selfDrainNegate?: string | null;
   goldLine?: { per: number; add: number; base: number } | null; // 순금 라인 N개당 +add% (투예·파죰카) — 활성 레이아웃 순금방 수로 재계산
   // 시설 레벨 연동 단위값 (전력·레벨 시스템 2026-07-24) — baked value는 만렙 기준,
   // 엔진이 실제 레벨과의 차이만큼 보정한다: value + per×(현재 − 만렙), 하한 0
@@ -632,17 +634,28 @@ function recoverAuraValue(skill: InfraSkill, tokenPoints: Record<string, number>
 // 오퍼별 하한 0(과회복은 낭비) 후 최댓값 — 방을 제일 먼저 지치는 오퍼가 교대를 부른다.
 // 소모 없는 방(숙소·가공소)·빈 팀은 null. 동반 게이트 회복(리 '한가하고 덧없는 인생': 아와
 // 함께)은 partners 전원이 같은 방일 때만 계상한다.
+// 자기 소모 무효화 판정 (selfDrainNegate 스코프 3종) — 링은 같은 방 쉐이 진영원, 와이후
+// '팀워크'는 그 제조소 **전원**(아로마·아몬드 등 +0.25가 0이 된다), 무츠미는 자기 자신만.
+// 진영 판정은 부분 일치 — 스킬 원문의 "쉐이"가 데이터의 "염-쉐이"를 가리킨다 (토큰 카운터와 동일 관례)
+type Negate = { scope: string; owner: string };
+function drainNegated(member: InfraOp, negates: Negate[]): boolean {
+  return negates.some((neg) => neg.scope === "*" ? true
+    : neg.scope === "@self" ? neg.owner === member.id
+      : factionsOf(member).some((fac) => fac.includes(neg.scope)));
+}
 export function roomMaxNetDrain(team: InfraOp[], room: string, ctx: Ctx): number | null {
   const base = infra.rooms[room]?.drain ?? 1;
   if (base <= 0 || !team.length) return null;
   const teamIds = new Set(team.map((member) => member.id));
   let roomAdd = 0;
   let recover = 0;
-  const negates: string[] = [];
+  const negates: Negate[] = [];
   for (const member of team) for (const sk of activeSkills(member, room, ctx.product)) {
-    roomAdd += sk.drainRoom ?? 0;
-    if (sk.selfDrainNegate) negates.push(sk.selfDrainNegate);
+    // 동반 게이트를 먼저 — 무츠미 '서로의 반쪽'(사키코 동반)·냐무 '성과주의'(사키코 지목 소모)는
+    // 짝이 같은 방에 없으면 발동하지 않는다. 게이트 없는 스킬(슈·샤마르·'아')은 종전 그대로다.
     if (sk.partners.length && !sk.partners.every((pid) => teamIds.has(pid))) continue;
+    roomAdd += sk.drainRoom ?? 0;
+    if (sk.selfDrainNegate) negates.push({ scope: sk.selfDrainNegate, owner: member.id });
     if (sk.recoverRoom) recover += sk.recoverRoom;
     if (sk.recoverRoomPer) recover += sk.recoverRoomPer.value * team.filter((member2) => memberOf(member2, sk.recoverRoomPer!.faction)).length;
   }
@@ -660,7 +673,7 @@ export function roomMaxNetDrain(team: InfraOp[], room: string, ctx: Ctx): number
   for (const member of team) {
     let self = 0;
     for (const sk of activeSkills(member, room, ctx.product)) self += sk.moraleDrain;
-    if (self > 0 && negates.some((f) => factionsOf(member).some((fac) => fac.includes(f)))) self = 0;
+    if (self > 0 && drainNegated(member, negates)) self = 0;
     // 동종 최고 규칙 — 본인 소모 감소(self<0)와 횡단 오라 중 큰 쪽 하나만
     const personal = Math.max(Math.max(0, -self), auraMax);
     const selfPos = Math.max(0, self);
@@ -720,17 +733,18 @@ export function shiftHoursFor(teams: { room: string; ops: InfraOp[] }[]): number
     if (!CLOCK_ROOMS.has(room)) continue;
     const base = infra.rooms[room]?.drain ?? 1;
     if (base <= 0) continue;
+    const teamIds = new Set(team.map((member) => member.id));
     let roomAdd = 0;
-    const negates: string[] = [];
+    const negates: Negate[] = [];
     for (const member of team) for (const sk of activeSkills(member, room)) {
+      if (sk.partners.length && !sk.partners.every((pid) => teamIds.has(pid))) continue;
       roomAdd += Math.max(0, sk.drainRoom ?? 0);
-      if (sk.selfDrainNegate) negates.push(sk.selfDrainNegate);
+      if (sk.selfDrainNegate) negates.push({ scope: sk.selfDrainNegate, owner: member.id });
     }
     for (const member of team) {
       let self = 0;
       for (const sk of activeSkills(member, room)) self += sk.moraleDrain;
-      // 진영 판정은 부분 일치 — 스킬 원문의 "쉐이"가 데이터의 "염-쉐이"를 가리킨다 (토큰 카운터와 동일 관례)
-      if (self > 0 && negates.some((f) => factionsOf(member).some((fac) => fac.includes(f)))) self = 0;
+      if (self > 0 && drainNegated(member, negates)) self = 0;
       maxDrain = Math.max(maxDrain, base + Math.max(0, self) + roomAdd);
     }
   }

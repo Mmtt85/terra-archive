@@ -382,17 +382,29 @@ def parse_tokens(text, room):
     conv = re.search(r"([가-힣]+) (\d+)스택당 (" + "|".join(map(re.escape, TOKENS)) + r") (\d+)점으로 전환", text)
     return gen, use, stack, conv
 
-def parse_morale_drain(text):
+def parse_morale_drain(text, other_names=()):
     """시간당 컨디션 소모 보정 — (자신, 방 전체) 분리 (교대 시계용, 2026-07-25).
     방 전체 수식(무한동력 모드 2026-07-27 확장): '…내 모든 오퍼레이터의'(슈 -0.1·'아' +1.5)
     외에 '<방> 내 오퍼레이터의'(파이어휘슬·윈드차임스 -0.1 — 종전엔 본인으로 오파싱)와
     '모든 인원의'(샤마르 속삭임 +0.25)도 방 전체다. Ela '자신을 제외한 기타 오퍼레이터의'는
-    본인 유지(방 최대 소모 기준이라 어느 쪽이든 최댓값 동일 — 근사 허용)."""
+    본인 유지(방 최대 소모 기준이라 어느 쪽이든 최댓값 동일 — 근사 허용).
+
+    **다른 오퍼 지목형도 방 전체로 근사** (전수 검사 2026-08-14 — 유텐지 냐무 '성과주의':
+    "토가와 사키코와 같이 제어 센터에 배치 시 **토가와 사키코의** 시간당 컨디션 소모량 +0.05").
+    모델에 '특정 1인 지목' 축이 없는데 본인 소모로 잡으면 **최댓값까지 틀린다** — 지목 대상인
+    사키코가 이미 자기 소모 +0.05를 갖고 있어 실제 1.10인데 모델은 냐무 1.05·사키코 1.05가
+    되어 교대 시계가 22.9h(실제 21.8h)로 나왔다. 방 전체로 돌리면 비지목자는 과대 계상되지만
+    **최댓값은 정확**해진다(Ela 근사와 같은 관례). 동반 조건은 partners가 걸고, 엔진이
+    drainRoom에도 동반 게이트를 적용한다 — 냐무 혼자면 가산이 붙지 않는다.
+    판정은 `other_names`(= 이 스킬의 partners 표시명)로만 — 일반 '…의' 꼬리를 이름으로 오인해
+    클릭 'Vlog'("작전기록 생산**의** 시간당 컨디션 소모 -0.25") 같은 걸 방 전체로 돌리면 안 된다."""
     self_d = room_d = 0.0
     for m in re.finditer(r"시간당 컨디션 소모[^+\-]{0,8}([+\-])\s*(\d+(?:\.\d+)?)", text):
         delta = float(m.group(2)) * (1 if m.group(1) == "+" else -1)
         before = text[max(0, m.start() - 24):m.start()]
         if "모든 오퍼레이터의" in before or "내 오퍼레이터의" in before or "모든 인원의" in before:
+            room_d += delta
+        elif any(n and before.rstrip().endswith(n + "의") for n in other_names):
             room_d += delta
         else:
             self_d += delta
@@ -769,8 +781,21 @@ def parse_skill(entry, oname, oid=None):
         # 본인 컨디션 소모 무효화 (링 '멈추지 않는 술잔': "제어 센터 내 모든 쉐이 오퍼레이터
         # 본인의 컨디션 소모로 인해 받는 영향 제거") — 같은 방 해당 진영원의 자기 소모 가산
         # (총웨·시 +0.5)을 0으로 만든다. 교대 시계 계산에 쓰이는 구조 필드.
-        neg = re.search(r"모든 ([가-힣A-Za-z]{2,12}) 오퍼레이터 본인의 컨디션 소모로 인해 받는 영향(?:을)? 제거", text)
-        self_drain_negate = neg.group(1) if neg else None
+        # ⚠ 세 가지 스코프가 있고 KR 번역이 '본인의/본인이/자신의'로 흔들린다 (사용자 제보
+        # 2026-08-14: 와이후+아로마 지속시간). 진영 캡처를 필수로 두면 진영 제한이 없는
+        # 와이후 '팀워크'가 통째로 누락되므로 캡처는 선택이다:
+        #   "모든 <진영> 오퍼레이터 …" → 진영명 (링)
+        #   "모든 오퍼레이터 …"        → "*" 방 전원 (와이후 팀워크 — 아로마·아몬드 등 +0.25 상쇄)
+        #   "자신의 …"                 → "@self" 본인만 (와카바 무츠미 '서로의 반쪽',
+        #                                파트너 게이트는 partners 필드가 따로 건다)
+        neg = re.search(r"모든 (?:([가-힣A-Za-z]{2,12}) )?오퍼레이터 (?:본인의|본인이|자신의)"
+                        r" 컨디션 소모로 인해 받는 영향(?:을)? 제거", text)
+        if neg:
+            self_drain_negate = neg.group(1) or "*"
+        elif re.search(r"자신의 컨디션 소모로 인해 받는 영향(?:을)? 제거", text):
+            self_drain_negate = "@self"
+        else:
+            self_drain_negate = None
         # facility-count multipliers (쏜즈: 각각의 무역소가 ... +3% → ×2);
         # these survive automation's zeroing ("시설 수량에 따라 제공" 예외).
         # 기지 배치 프리셋(243/153) 지원: 구운 value(243 기준)와 별개로 단위값(facPer)·
@@ -1053,7 +1078,8 @@ def parse_skill(entry, oname, oid=None):
         # buffChar slots already resolved upgrades — every line here stacks
         tier = 1
         group = entry["name"]
-        drain_self, drain_room = parse_morale_drain(text)
+        drain_self, drain_room = parse_morale_drain(
+            text, [id_to_name.get(p) for p in partners_list])
         return {
             "buffId": entry["buffId"],  # 다국어 오버레이(build-i18n.py) 매핑 키
             "name": entry["name"], "room": room, "unlock": entry["unlock"],
