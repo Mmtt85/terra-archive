@@ -262,6 +262,22 @@ const { term, set, clear, inputRef, inputProps } = useSearchInput();
 - `app/data/stages.json` / `.en` / `.ja` — 작전 도감 (작전 **2,224개**의 지형 도면 보유 여부·
   이성·보상·권장 편성·기믹 설명·드랍·등장 적). **사전 인코딩**이다 — 구역·아이템·적 id 같은
   반복 값은 문서 위쪽 사전에 한 번만 두고 본문은 번호로 가리킨다 (그냥 늘어놓으면 3MB)
+- `app/data/stages-rogue.json` / `.en` / `.ja` — **작전 도감에 얹는 통합전략 작전 693개**
+  (사용자 요청 2026-08-16 "맵 도감에서 각 로그라이크 맵도 찾을 수 있도록"). `scripts/build-stages-rogue.py`가
+  `rogue{1..6}.json`에서 뽑아 같은 `StageDoc` 모양으로 낸다(로케일당 ~390KB). 화면에서
+  `mergeRogueDoc`(app/stage-data.ts)이 목록 탭에서만 본 문서 뒤에 이어 붙인다 —
+  계열 **통합전략** → 이벤트 **IS1~IS6** → 구역의 기존 3단 필터를 그대로 탄다.
+  - ⚠ **stages.json에 섞지 않는다.** 그 파일은 `app/seo-stage.ts`(상세 페이지)와
+    `build-sitemap.mjs`가 읽는데, 693개를 섞으면 상세 페이지가 **693 × 6 = 4,158파일**
+    늘어 Cloudflare Pages 배포당 20,000 한도를 넘긴다 (2026-08-15 실측: 스테이징 약 17,100,
+    여유 약 2,900). 그래서 통합전략은 **종료된 이벤트와 같은 취급** — 목록·모달(`#st-<id>`)로만 본다.
+    `PAGE_TYPES`에 `ROGUE`를 넣는 순간 이 한도가 깨지니 넣지 말 것.
+  - ⚠ 도면·이동 경로의 **출처가 다르다** — `public/rogue/map/<id>.webp`와 `rogue-routes.json`.
+    `Stage.rg` 플래그로 `stageMap()`·경로 로더가 갈린다. 두 경로 파일은 레코드 구조가 같아
+    `StageRouteMap`은 공용이고, 캐시만 갈라 각자 쓰는 쪽만 내려받는다.
+    **이미지를 `public/stage/`로 복사·이동하지 않는다** (2026-08-08 록라 폴더 사고).
+  - 이름 없는 스폰 변종(`enemy_*_c`·`#1` 등 102종)은 등장 적에서 뺀다 — `/rogue`도 같은 것을
+    거르므로(app/rogue.tsx `if (!e) return null`) 두 화면이 일치한다.
 - **작전 환경 규칙 (사용자 확정 2026-08-10)**: 고난 판(`tough_*`)·긴급 작전(`#f#`)은 목록에
   별도 행을 만들지 않는다 — 일반판 상세의 환경 탭(일반/고난·일반/긴급)이 도면·적·설명을
   갈아끼운다 (`alt`/`base`/`sub`/`chg` 필드, `viewOf`가 고난 id도 일반판 뷰로 돌려준다).

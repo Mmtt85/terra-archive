@@ -20,18 +20,26 @@ import { isNewFeature } from "./whats-new";
 
 // 이동 경로 데이터(수 MB) — '이동 경로' 탭을 처음 눌렀을 때 한 번만 지연 로드해 공유.
 // 같은 레벨을 공유하는 작전(#f# 등)의 값은 **별칭 문자열**이다 (rogue-routes와 같은 규약).
-let ROUTES_CACHE: Record<string, StageRoutes | string> | null = null;
-let ROUTES_LOADING: Promise<unknown> | null = null;
-function loadRoutes(): Promise<unknown> {
-  if (ROUTES_CACHE) return Promise.resolve(ROUTES_CACHE);
-  ROUTES_LOADING ??= import("./data/stage-routes.json").then((m) => {
-    ROUTES_CACHE = (m.default ?? m) as unknown as Record<string, StageRoutes | string>;
-  });
-  return ROUTES_LOADING;
+//
+// 출처가 둘이다 — 본 도감은 stage-routes.json(5.3MB), 통합전략 작전(Stage.rg)은
+// rogue-routes.json(1.3MB). **두 파일의 레코드 구조는 완전히 같아**(h·w·g·r·f·e·sp·wv·
+// ems·cw·mm — 2026-08-16 키 비교) StageRouteMap은 그대로 쓴다. 캐시만 갈라 두면
+// 록라 작전만 보는 사람이 5.3MB를, 본 도감만 보는 사람이 1.3MB를 안 받는다.
+type RouteDoc = Record<string, StageRoutes | string>;
+const ROUTES_CACHE: Record<"base" | "rogue", RouteDoc | null> = { base: null, rogue: null };
+const ROUTES_LOADING: Record<"base" | "rogue", Promise<unknown> | null> = { base: null, rogue: null };
+const routeSrc = (rogue?: boolean) => (rogue ? "rogue" : "base") as "base" | "rogue";
+function loadRoutes(rogue?: boolean): Promise<unknown> {
+  const k = routeSrc(rogue);
+  if (ROUTES_CACHE[k]) return Promise.resolve(ROUTES_CACHE[k]);
+  ROUTES_LOADING[k] ??= (rogue ? import("./data/rogue-routes.json") : import("./data/stage-routes.json"))
+    .then((m) => { ROUTES_CACHE[k] = (m.default ?? m) as unknown as RouteDoc; });
+  return ROUTES_LOADING[k]!;
 }
-function routeDocFor(id: string): StageRoutes | undefined {
-  let d = ROUTES_CACHE?.[id];
-  if (typeof d === "string") d = ROUTES_CACHE?.[d];   // 별칭 한 단계 해석
+function routeDocFor(id: string, rogue?: boolean): StageRoutes | undefined {
+  const src = ROUTES_CACHE[routeSrc(rogue)];
+  let d = src?.[id];
+  if (typeof d === "string") d = src?.[d];   // 별칭 한 단계 해석
   return d && typeof d === "object" ? d : undefined;
 }
 
@@ -168,12 +176,22 @@ export function StageFile({ view, onOpenEnemy, onOpenItem, autoSim }: {
     ...(s.exp ? [[t("작전 경험치"), String(s.exp)] as [string, string]] : []),
     ...(s.gold ? [[t("용문폐"), String(s.gold)] as [string, string]] : []),
     ...(s.danger ? [[t("권장 편성"), s.danger] as [string, string]] : []),
+    // 통합전략 작전은 이성·보상·권장 편성이 없다 — 그 자리를 작전 종류가 대신한다
+    // (작전/긴급 작전/험난한 길/시련…, /rogue의 KIND_LABEL과 같은 문구·이미 로케일별로 구워져 있다)
+    ...(s.kind ? [[t("작전 종류"), s.kind] as [string, string]] : []),
   ];
   // 활성 환경의 적 스탯 배수 — 고난(alt) 뷰는 자기 em, 긴급은 일반판의 chgEm.
   // 일반판이 없는 고난 전용 작전(H10-1 등)은 em이 상시 걸린다 (게임도 항상 고난이다).
   const envMul = cur.stage.em ?? (env === 1 && !view.alt ? view.stage.chgEm : undefined);
   // 경로 모드 공용 — 적 카드(고정 토글·선 색)와 지도 양쪽이 쓴다
-  const rd = mapView === "route" ? routeDocFor(s.id) : undefined;
+  const rd = mapView === "route" ? routeDocFor(s.id, !!s.rg) : undefined;
+  // 이 작전이 쓰는 경로 파일(본 도감/통합전략)만 받아 온다 — 실패하면 다시 시도할 수 있게 비운다
+  const routesReady = !!ROUTES_CACHE[routeSrc(!!s.rg)];
+  const ensureRoutes = () => {
+    if (routesReady) return;
+    loadRoutes(!!s.rg).then(() => bumpRoutes((k) => k + 1))
+      .catch(() => { ROUTES_LOADING[routeSrc(!!s.rg)] = null; bumpRoutes((k) => k + 1); });
+  };
   const routeOrder = rd ? cur.enemies.filter((en) => rd.e[en.id]?.length).map((en) => en.id) : [];
   const togglePin = (id: string) => setPinned((curSet) => {
     const next = new Set(curSet);
@@ -190,7 +208,7 @@ export function StageFile({ view, onOpenEnemy, onOpenItem, autoSim }: {
     if (!want) return;
     setAutoSimOn(true);
     setMapView("route");
-    if (!ROUTES_CACHE) loadRoutes().then(() => bumpRoutes((k) => k + 1)).catch(() => { ROUTES_LOADING = null; bumpRoutes((k) => k + 1); });
+    ensureRoutes();
     // autoSim prop은 모달 마운트 시점(key=stage.id 재마운트)에 확정돼 있어 마운트 1회면 된다
   }, []);  // eslint-disable-line react-hooks/exhaustive-deps
   return (
@@ -227,10 +245,8 @@ export function StageFile({ view, onOpenEnemy, onOpenItem, autoSim }: {
               className={mapView === "map" ? "on" : ""} onClick={() => setMapView("map")}>{t("실사 도면")}</button>
             <button type="button" role="tab" aria-selected={mapView === "route"}
               className={mapView === "route" ? "on" : ""}
-              onClick={() => {
-                setMapView("route");
-                if (!ROUTES_CACHE) loadRoutes().then(() => bumpRoutes((k) => k + 1)).catch(() => { ROUTES_LOADING = null; bumpRoutes((k) => k + 1); });
-              }}>{t("이동 경로")}{isNewFeature("route-map") && <span className="new-badge">{t("새기능")}</span>}</button>
+              onClick={() => { setMapView("route"); ensureRoutes(); }}
+              >{t("이동 경로")}{isNewFeature("route-map") && <span className="new-badge">{t("새기능")}</span>}</button>
           </div>
           {/* ⚠ 도면은 **원본 비율 그대로** 둔다. 인게임 도면은 거의 다 정사각이라
               통합전략처럼 16:9로 늘리면 찌그러진다 (사용자 지적). 클릭 확대는 통전과 같다. */}
@@ -241,7 +257,7 @@ export function StageFile({ view, onOpenEnemy, onOpenItem, autoSim }: {
               {/* 보안 파견 긴급 판(ae)은 일반판과 **같은 실사 도면**을 쓴다 — _ex 자체엔
                   인게임 도면이 없어 격자 렌더가 잡혀 있었다 (사용자 지적 2026-08-10).
                   이동 경로 탭은 _ex 레벨 것 그대로다 (경로·배치는 판마다 다를 수 있다). */}
-              <img className="st-map" src={stageMap(env === 1 && view.alt && view.stage.ae ? view.stage.id : s.id)}
+              <img className="st-map" src={stageMap(env === 1 && view.alt && view.stage.ae ? view.stage.id : s.id, !!s.rg)}
                 alt={t("{code} 지형 도면", { code: s.code })}
                 loading="lazy" decoding="async" />
             </button>
@@ -257,7 +273,7 @@ export function StageFile({ view, onOpenEnemy, onOpenItem, autoSim }: {
               nameOf={(id) => cur.enemies.find((en) => en.id === id)?.name}
               onPick={togglePin} autoSim={autoSimOn} />
           ) : (
-            <p className="st-note">{ROUTES_CACHE ? t("이 작전은 경로 데이터가 없습니다.") : t("경로 데이터를 불러오는 중…")}</p>
+            <p className="st-note">{routesReady ? t("이 작전은 경로 데이터가 없습니다.") : t("경로 데이터를 불러오는 중…")}</p>
           )}
           {s.desc && <p className="st-desc">{s.desc}</p>}
           {/* 긴급 환경 제한 조건 — 설명을 지우지 않고 이어서 덧붙인다 (사용자 요청 2026-08-10).

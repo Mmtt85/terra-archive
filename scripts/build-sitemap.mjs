@@ -38,7 +38,8 @@ const SEG_SOURCES = {
   "": ["app/data/operators.json", "app/data/broadcasts.json"], // 포탈 = 허브(진행 이벤트·오퍼)
   operators: ["app/data/operators.json"],
   enemies: ["app/data/enemies.json", "app/data/enemy-stages.json"],
-  stages: ["app/data/stages.json"],
+  // 목록 페이지는 통합전략 색인도 함께 그린다 (상세 페이지는 여전히 stages.json만 — 파일 수 한도)
+  stages: ["app/data/stages.json", "app/data/stages-rogue.json"],
   sim: ["app/sim-launcher.tsx", "app/data/stages.json"], // 작전 시뮬레이터 런처 — 추천이 데이터를 따른다
   infra: ["app/data/infra.json", "app/data/rules.json"],
   recruit: ["app/data/recruit.json"],

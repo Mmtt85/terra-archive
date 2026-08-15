@@ -23,6 +23,9 @@ export type Stage = {
    *  긴급 보급 조건·위험 등급 효과 (둘 다 긴급 환경 탭에서 빨간 박스로 나온다) */ chg?: string;
   /** 적 스탯 배수 [hp,atk,def,res, 대상적id들|0][] — 룬 유래 (stage-env.json 머리주석) */ em?: EnvMul[];
   /** 긴급 모드의 적 스탯 배수 — chg와 함께 다닌다 */ chgEm?: EnvMul[];
+  /** 통합전략 작전 — 도면·이동 경로의 **출처가 다르다** (public/rogue/map · rogue-routes.json).
+   *  scripts/build-stages-rogue.py 산출물에만 붙는다 */ rg?: 1;
+  /** (통합전략만) 작전 종류 라벨 — 이성·보상이 없는 자리를 대신한다 (작전/긴급 작전/시련…) */ kind?: string;
 };
 export type EnvMul = [number, number, number, number, string | 0];
 export type StageDoc = {
@@ -47,6 +50,35 @@ export type StageView = {
 
 /** enemy-stats.json — { 적id: [[강화단계, hp, atk, def, res] …] } (build-enemies.py 산출) */
 export type EnemyStatsIndex = Record<string, number[][]>;
+
+/**
+ * 통합전략 색인(stages-rogue*.json)을 본 문서 뒤에 이어 붙인다 — 목록 탭 전용.
+ *
+ * 두 문서는 각자 자기 사전(zones·events·enemyIds…)으로 번호를 매기고 있어, 그냥 stages만
+ * 합치면 번호가 엉뚱한 값을 가리킨다. 그래서 사전을 이어 붙이고 록라 쪽 번호를 **오프셋만큼
+ * 밀어** 재매핑한다 (693건 · 1회 — 비용 무시 가능).
+ *
+ * ⚠ 서버(app/seo-stage.ts)·사이트맵은 이 함수를 쓰지 않는다 — 통합전략은 파일 수 한도 때문에
+ *   개별 상세 페이지를 갖지 않는다 (근거: scripts/build-stages-rogue.py 머리주석).
+ */
+export function mergeRogueDoc(base: StageDoc, rogue: StageDoc): StageDoc {
+  const zOff = base.zones.length, evOff = base.events.length, enOff = base.enemyIds.length;
+  return {
+    ...base,
+    zones: [...base.zones, ...rogue.zones],
+    events: [...base.events, ...rogue.events],
+    enemyIds: [...base.enemyIds, ...rogue.enemyIds],
+    types: { ...base.types, ...rogue.types },
+    // 같은 적이 양쪽에 있으면 **본 도감 이름을 정본으로** 둔다 (록라 데이터는 뒤에 깔린다)
+    enemyNames: { ...rogue.enemyNames, ...base.enemyNames },
+    stages: [...base.stages, ...rogue.stages.map((s) => ({
+      ...s,
+      z: s.z + zOff,
+      ...(s.ev !== undefined ? { ev: s.ev + evOff } : {}),
+      ...(s.e ? { e: s.e.map(([i, cnt, lv]) => [i + enOff, cnt, lv] as [number, number, number]) } : {}),
+    }))],
+  };
+}
 
 /** 고난 id로 들어와도 **일반판 상세**를 돌려준다 — 목록·페이지가 한 벌로 두 환경을 그린다 */
 export function viewOf(doc: StageDoc, stage: Stage, stats?: EnemyStatsIndex): StageView {

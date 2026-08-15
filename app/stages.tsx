@@ -26,6 +26,7 @@ const ItemModal = lazy(() => import("./farm").then((m) => ({ default: m.ItemModa
 import {
   StageFile, stageMap, stagePath, viewOf, type Stage, type StageDoc,
 } from "./stage-detail";
+import { rogueHrefOf } from "./dex-paths";
 // 적 칩 코어 스탯 (~67KB) — 이 파일은 lazy 청크라 메인 번들엔 안 실린다
 import enemyStats from "./data/enemy-stats.json";
 import type { EnemyStatsIndex } from "./stage-data";
@@ -36,15 +37,19 @@ function StageCard({ stage, zone, typeName, onSelect }: {
   const { locale, t } = useI18n();
   // 2,327장짜리 그리드 — 화면 근처에 올 때만 도면을 붙인다 (오퍼·적 카드와 같은 방식)
   const [ref, visible] = useLazyVisible<HTMLDivElement>();
+  // 통합전략 작전은 파일 수 한도 때문에 /stages/<id> 개별 페이지가 없다
+  // (scripts/build-stages-rogue.py 머리주석). 보조 클릭이 404로 가지 않도록 그 테마의
+  // 정본 주소로 보낸다 — 왼쪽 클릭은 아래 preventDefault로 도감 모달을 연다.
+  const href = stage.rg ? rogueHrefOf(locale, stage.id) : stagePath(locale, stage.id);
   return (
-    <a className="st-card" href={stagePath(locale, stage.id)}
+    <a className="st-card" href={href}
       onClick={(event) => {
         if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
         event.preventDefault(); onSelect(stage);
       }}>
       <div className="st-card-map" ref={ref}>
         {visible && stage.map ? (
-          <img src={stageMap(stage.id)} alt="" aria-hidden loading="lazy" decoding="async" />
+          <img src={stageMap(stage.id, !!stage.rg)} alt="" aria-hidden loading="lazy" decoding="async" />
         ) : visible ? <span className="st-card-nomap" aria-hidden>—</span> : null}
       </div>
       <div className="st-card-body">
@@ -173,7 +178,9 @@ export default function StageDex({ doc }: { doc: StageDoc; onOpenEnemy?: (id: st
       if (events.length && (s.ev === undefined || !events.includes(doc.events[s.ev]))) return false;
       if (zones.length && !zones.includes(doc.zones[s.z])) return false;
       if (!q) return true;
-      return normSearch(`${s.code} ${s.name} ${doc.zones[s.z] ?? ""} ${s.desc ?? ""}`).includes(q);
+      // 이벤트·테마 이름도 검색어에 넣는다 — 통합전략은 코드가 ISW-NO처럼 짧고 반복돼
+      // 테마명("미즈키")으로 찾는 게 자연스럽다. 기존 이벤트 작전도 같은 이득을 본다.
+      return normSearch(`${s.code} ${s.name} ${s.ev !== undefined ? doc.events[s.ev] ?? "" : ""} ${doc.zones[s.z] ?? ""} ${s.desc ?? ""}`).includes(q);
     });
   }, [doc, term, types, events, zones]);
 
@@ -206,7 +213,7 @@ export default function StageDex({ doc }: { doc: StageDoc; onOpenEnemy?: (id: st
             <button type="button" className="search-clear" onClick={() => clear()} aria-label={t("검색어 지우기")}>×</button>
             {/* 검색란 제안 — 고르면 그 작전 상세가 바로 열린다 (사용자 확정 2026-08-10) */}
             <SearchSuggest query={term}
-              items={shown.map((s) => ({ key: s.id, label: `${s.code} ${s.name}`.trim(), sub: doc.zones[s.z] ?? undefined, img: s.map ? stageMap(s.id) : undefined }))}
+              items={shown.map((s) => ({ key: s.id, label: `${s.code} ${s.name}`.trim(), sub: doc.zones[s.z] ?? undefined, img: s.map ? stageMap(s.id, !!s.rg) : undefined }))}
               onPick={(id) => { const st = byId.get(id); if (st) setOpen(st); }} />
           </div>
           <div className="results-tools"><span className="count"><b>{shown.length}</b> STAGES</span></div>

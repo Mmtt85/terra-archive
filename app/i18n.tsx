@@ -1465,6 +1465,8 @@ const D: Record<string, Pair> = {
   "소모 이성": ["Sanity cost", "理性消費"],
   "작전 경험치": ["EXP", "作戦経験値"],
   "권장 편성": ["Recommended", "推奨編成"],
+  // 통합전략 작전의 팩트 행 — 이성·보상이 없는 자리를 대신한다 (값 자체는 데이터에 로케일별로 구워져 있다)
+  "작전 종류": ["Stage type", "作戦タイプ"],
   "등장 적": ["Enemies", "出現する敵"],
   "드랍": ["Drops", "ドロップ"],
   "{code} 지형 도면": ["{code} terrain layout", "{code} 地形図"],

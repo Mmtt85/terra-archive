@@ -85,6 +85,13 @@ python3 scripts/build-rogue.py cn            # 중섭 변형 일괄 (미래시)
 ```
 신규 유물이 잡히면 아이콘도 없다 → `python3 scripts/build-rogue.py --icons` (UnityPy 필요) 후 재실행.
 
+**그리고 작전 도감의 통합전략 색인을 반드시 뒤이어 돌린다** — 록라 데이터만 갱신하고 이걸
+빠뜨리면 `/stages`의 통합전략 693건만 옛 데이터로 남는다 (입력이 rogue*.json이라 네트워크 불필요):
+
+```bash
+python3 scripts/build-stages-rogue.py        # → app/data/stages-rogue{,.en,.ja}.json
+```
+
 생존연산 신시즌이 왔으면 `python3 scripts/build-sandbox.py`도 같은 취급.
 
 ## 4. 신규 이벤트

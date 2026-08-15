@@ -88,6 +88,9 @@ python3 scripts/build-stages.py .gamedata      # → app/data/stages{,.en,.ja}.j
 #     뒤집어 쓴다(같은 levels/ 파일을 두 번 훑지 않으려고). 인자 없이 돌리면 지형 도면
 #     2,224장을 받고(약 5~10분), 인게임 도면이 없는 작전은 레벨 타일 격자로 렌더한다.
 #   ⚠ 인자 없이 돌리면 levels/ 2,283개(179MB)를 받아 '등장 작전'을 역색인한다 (약 1분).
+python3 scripts/build-stages-rogue.py          # → app/data/stages-rogue{,.en,.ja}.json (작전 도감의 통합전략 693건)
+#   ⚠ 입력이 app/data/rogue{1..6}.json 뿐이라 **build-rogue.py 뒤에** 돌린다 (네트워크 불필요).
+#     stages.json에 섞지 않는 이유 = 상세 페이지 파일 수 한도. 스크립트 머리주석 참조.
 #     CI는 --meta-only --no-images로 돌아 그 둘을 건너뛰므로, 새 이벤트의 등장 적과
 #     신규 적 초상은 **로컬 전체 실행**으로만 갱신된다 (docs/AUTOMATION.md 1-B).
 python3 scripts/build-sandbox.py               # → app/data/sandbox{,.en,.ja}.json (생존연산 가이드 —
