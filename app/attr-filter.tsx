@@ -62,9 +62,13 @@ type Level = {
 const levelOfGroup = (g: AttrGroup): Level => ({ ...g, pick: g.onToggle });
 const levelOfSub = (s: AttrSub): Level => ({ ...s, pick: s.onPick });
 
-/** 서브메뉴 크기 — 화면 밖으로 나갈지 미리 재려면 렌더 전에 알아야 해서 CSS와 같은 값을 둔다 */
-const FLY_W = 250;
+/** 서브메뉴 세로 크기 — 아래로 넘칠지 미리 재려면 렌더 전에 알아야 해서 CSS와 같은 값을 둔다.
+ *  ⚠ 가로는 **내용 폭(width:max-content)** 이라 미리 알 수 없다 — 그래서 left/right 중 한쪽만
+ *  걸고 maxWidth로 남은 공간을 알려 준다 (아래 flip). 고정 폭이면 이름이 길 때 두 줄로 접힌다
+ *  (사용자 지적 2026-08-16). */
 const FLY_MAX_H = 340;
+/** 오른쪽에 이만큼도 없으면 왼쪽으로 뒤집는다 */
+const FLY_MIN_SPACE = 240;
 
 /** openPath가 이 줄(prefix)을 지나가는가 — 지나가면 그 줄의 하위가 열려 있다 */
 const startsWith = (path: string[], prefix: string[]) =>
@@ -245,13 +249,19 @@ export function AttributeFilter({ groups }: { groups: AttrGroup[] }) {
               </ul>
               {flyouts.map(({ sub, parentLevel, parent, anchor }, depth) => {
                 const parentLabel = parentLevel.labelFor ? parentLevel.labelFor(parent) : parent;
-                // 오른쪽이 모자라면 왼쪽으로 뒤집고, 아래가 모자라면 위로 끌어올린다
-                const flip = anchor.right + FLY_W + 8 > window.innerWidth;
-                const left = flip ? Math.max(4, anchor.left - FLY_W - 2) : anchor.right + 2;
+                // 오른쪽이 좁으면 왼쪽으로 뒤집고, 아래가 모자라면 위로 끌어올린다.
+                // 폭은 내용에 맡기되 **남은 공간을 maxWidth로 알려** 화면 밖으로 못 나가게 한다.
+                // 뒤집을 때는 left가 아니라 right를 걸어야 폭이 내용만큼 왼쪽으로 자란다.
+                const spaceRight = window.innerWidth - anchor.right - 8;
+                const spaceLeft = anchor.left - 8;
+                const flip = spaceRight < FLY_MIN_SPACE && spaceLeft > spaceRight;
                 const top = Math.max(4, Math.min(anchor.top - 6, window.innerHeight - FLY_MAX_H - 8));
+                const place = flip
+                  ? { right: window.innerWidth - anchor.left + 2, top, maxWidth: spaceLeft }
+                  : { left: anchor.right + 2, top, maxWidth: spaceRight };
                 return createPortal(
                   <ul key={openPath.slice(0, depth + 1).join(" ")} className="attr-drop attr-fly"
-                    style={{ left, top }}
+                    style={place}
                     role="listbox" aria-multiselectable={!sub.single} aria-label={sub.title}>
                     <li className="attr-sub-head" aria-hidden>{sub.title}</li>
                     {/* 하위로 좁히지 않고 부모 값만 고른다 */}
