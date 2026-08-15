@@ -51,6 +51,74 @@ export type StageView = {
 /** enemy-stats.json — { 적id: [[강화단계, hp, atk, def, res] …] } (build-enemies.py 산출) */
 export type EnemyStatsIndex = Record<string, number[][]>;
 
+/** 작전 계열 → 이벤트 → 구역 계층 필터의 목록·개수 (작전 도감과 작전 시뮬레이터 공용).
+ *
+ * 두 화면이 같은 계층을 그리므로 여기 한 벌만 둔다 — 표현부(app/stages.tsx)는 lazy 청크이고
+ * 런처(app/sim-launcher.tsx)는 home.tsx가 정적으로 무는 SEO 페이지라, 서로에게서 가져오면
+ * 도감 청크가 첫 화면 번들에 딸려 온다. 이 파일은 "use client"가 없는 순수 데이터 모듈이다.
+ *
+ * ⚠ 하위 목록은 **고른 값이 아니라 마우스가 지나가는 값** 기준이라 선택 상태에 매이면 안 된다.
+ *   그래서 문서 전체를 계열별로 한 번만 갈라 두고 경로별로 캐시한다.
+ * ⚠ 숨은 판(sub — 고난·긴급)은 목록에도 개수에도 넣지 않는다. 목록이 그것들을 안 그리므로
+ *   개수만 세면 "23건이라는데 20장만 보이는" 상태가 된다.
+ */
+export type StageTree = {
+  typeItems: string[];
+  countType: (type: string) => number;
+  evOf: (type: string) => string[];
+  zOf: (type: string, ev?: string) => string[];
+  countEv: (type: string, ev: string) => number;
+  countZ: (type: string, ev: string | undefined, zone: string) => number;
+};
+export function stageFilterTree(doc: StageDoc, locale: string): StageTree {
+  const byName = (a: string, b: string) => a.localeCompare(b, locale);
+  const byType = new Map<string, Stage[]>();
+  for (const s of doc.stages) {
+    if (s.sub !== undefined) continue;
+    const list = byType.get(s.t);
+    if (list) list.push(s); else byType.set(s.t, [s]);
+  }
+  const evCache = new Map<string, string[]>(), zCache = new Map<string, string[]>();
+  const evOf = (type: string) => {
+    let v = evCache.get(type);
+    if (!v) {
+      const set = new Set<string>();
+      for (const s of byType.get(type) ?? []) if (s.ev !== undefined) set.add(doc.events[s.ev]);
+      v = [...set].filter(Boolean).sort(byName);
+      evCache.set(type, v);
+    }
+    return v;
+  };
+  // 구역은 **이름순이 아니라 진행 순서** — 이름순이면 "에피소드 1 · 10 · 11 · 2"로 섞이고
+  // 프롤로그가 맨 뒤로 밀린다. 데이터가 이미 계열·코드 자연순이라 처음 나온 순서를 쓴다.
+  const zOf = (type: string, ev?: string) => {
+    const key = `${type}\u0000${ev ?? ""}`;
+    let v = zCache.get(key);
+    if (!v) {
+      const out: string[] = [];
+      for (const s of byType.get(type) ?? []) {
+        if (ev !== undefined && (s.ev === undefined || doc.events[s.ev] !== ev)) continue;
+        const z = doc.zones[s.z];
+        if (z && !out.includes(z)) out.push(z);
+      }
+      v = out;
+      zCache.set(key, v);
+    }
+    return v;
+  };
+  return {
+    typeItems: [...byType.keys()].sort((a, b) => byName(doc.types[a] ?? a, doc.types[b] ?? b)),
+    countType: (type) => (byType.get(type) ?? []).length,
+    evOf,
+    zOf,
+    countEv: (type, ev) => (byType.get(type) ?? [])
+      .filter((s) => s.ev !== undefined && doc.events[s.ev] === ev).length,
+    countZ: (type, ev, zone) => (byType.get(type) ?? [])
+      .filter((s) => doc.zones[s.z] === zone
+        && (ev === undefined || (s.ev !== undefined && doc.events[s.ev] === ev))).length,
+  };
+}
+
 /**
  * 통합전략 색인(stages-rogue*.json)을 본 문서 뒤에 이어 붙인다 — 목록 탭 전용.
  *

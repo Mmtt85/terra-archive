@@ -17199,6 +17199,14 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
   line-height: 1.65;
   color: var(--muted);
 }
+/* 시뮬레이터의 계층 필터 — 도감과 같은 부품이지만 여기선 사이드 패널이 아니라 본문 폭이라
+   위아래 여백만 준다 (사용자 요청 2026-08-16) */
+.sim-filter {
+  margin: 18px 0 4px;
+}
+.sim-filter .attr-filter {
+  margin: 0;
+}
 .sim-search-row {
   display: flex;
   align-items: center;

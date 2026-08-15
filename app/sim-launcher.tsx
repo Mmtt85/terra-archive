@@ -16,9 +16,10 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "./i18n";
 import { normSearch, useSearchInput } from "./search";
 import { SearchSuggest } from "./search-suggest";
+import { AttributeFilter } from "./attr-filter";
 import { stageMap, stagePath } from "./dex-paths";
 import { StageFile } from "./stage-detail";
-import { viewOf, type EnemyStatsIndex, type Stage, type StageDoc } from "./stage-data";
+import { stageFilterTree, viewOf, type EnemyStatsIndex, type Stage, type StageDoc } from "./stage-data";
 import { ModalWindow } from "./modal-window";
 import { useHashSync } from "./hash-modal";
 import { loadEnemies } from "./dex-cross";
@@ -97,6 +98,11 @@ export default function SimLauncher() {
   // 같은 날 요청대로 입력을 따라 라이브로 남긴다 (한 작전으로 바로 점프하는 용도).
   const { term, clear, inputRef, inputProps } = useSearchInput();
   const [committed, setCommitted] = useState("");
+  // 계층 필터 — 작전 도감과 **같은 부품·같은 조작** (사용자 요청 2026-08-16 "검색방식 똑같이").
+  // 검색어는 종전대로 버튼·Enter로 확정하고(2026-08-10 확정 유지), 필터는 고르는 즉시 반영한다.
+  const [types, setTypes] = useState<string[]>([]);
+  const [evSel, setEvSel] = useState<string[]>([]);
+  const [zonesSel, setZonesSel] = useState<string[]>([]);
   const doSearch = () => setCommitted(inputRef.current?.value ?? "");
   const q = normSearch(committed);
 
@@ -130,6 +136,56 @@ export default function SimLauncher() {
     void loadEnemies(locale).then((m) => setSubEnemy(m.get(id) ?? null));
   };
   const openItem = (id: string) => { setSubItem(id); setItemRaise((k) => k + 1); };
+
+  // ── 계층 필터 (작전 도감과 공용 트리 — app/stage-data.ts stageFilterTree) ──────
+  // 계열 → 이벤트 → 구역. 값에 마우스를 올리면 하위가 오른쪽에 뜬다(터치는 눌러서 펼침).
+  const tree = useMemo(() => (doc ? stageFilterTree(doc, locale) : null), [doc, locale]);
+  const pickOne = (set: (fn: (cur: string[]) => string[]) => void) => (v: string) =>
+    set((cur) => (cur.includes(v) ? [] : [v]));
+  const zoneSub = (type: string, ev?: string) => {
+    const items = tree?.zOf(type, ev) ?? [];
+    if (items.length <= 1) return null;
+    return {
+      title: t("구역"), items, selected: zonesSel, single: true,
+      countForItem: (z: string) => tree!.countZ(type, ev, z),
+      onPick: (z: string) => { setTypes([type]); setEvSel(ev ? [ev] : []); setZonesSel([z]); },
+    };
+  };
+  const filterGroups = tree ? [{
+    title: t("작전 계열"), items: tree.typeItems, selected: types, single: true,
+    labelFor: (v: string) => doc?.types[v] ?? v,
+    countForItem: (v: string) => tree.countType(v),
+    onToggle: (v: string) => { pickOne(setTypes)(v); setEvSel([]); setZonesSel([]); },
+    subFor: (path: string[]) => {
+      const [type, second] = path;
+      if (path.length === 1) {
+        const evs = tree.evOf(type);
+        if (evs.length > 1) {
+          return {
+            title: t("이벤트"), items: evs, selected: evSel, single: true,
+            countForItem: (ev: string) => tree.countEv(type, ev),
+            onPick: (ev: string) => { setTypes([type]); setEvSel([ev]); setZonesSel([]); },
+          };
+        }
+        return zoneSub(type);
+      }
+      if (path.length === 2 && tree.evOf(type).includes(second)) return zoneSub(type, second);
+      return null;
+    },
+  }] : [];
+
+  // 필터로 추린 목록 — 검색어보다 뒤, 추천보다 앞이다 (아래 렌더 우선순위 참조).
+  // 한 계열만 골라도 1,400건이 넘을 수 있어 카드는 앞에서 끊고 전체 건수를 함께 알린다.
+  const FILTER_MAX = 60;
+  const filtered = useMemo(() => {
+    if (!doc || types.length === 0) return null;
+    const list = doc.stages.filter((s) => s.sub === undefined && types.includes(s.t)
+      && (evSel.length === 0 || (s.ev !== undefined && evSel.includes(doc.events[s.ev])))
+      && (zonesSel.length === 0 || zonesSel.includes(doc.zones[s.z])));
+    return { total: list.length, list: list.slice(0, FILTER_MAX) };
+  }, [doc, types, evSel, zonesSel]);
+  const filterLabel = [types.length ? doc?.types[types[0]] ?? types[0] : "", ...evSel, ...zonesSel]
+    .filter(Boolean).join(" · ");
 
   // 검색 — 코드·이름·구역. 숨은 판(sub)은 목록·검색 어디에도 안 낸다 (도감과 동일)
   const searchStages = (d: StageDoc | undefined, query: string) => {
@@ -189,6 +245,20 @@ export default function SimLauncher() {
       <p className="sim-intro">{t("작전을 고르면 적이 몇 초에 어디서 나와 어떤 경로로 어디에 들어가는지, 스폰 타임라인을 재생해 보여줍니다. 배속·구간 이동으로 흐름을 훑고, 선이나 말을 누르면 적별 경로를 확인할 수 있습니다.")}</p>
       <p className="sim-note">{t("저지 없이 두었을 때의 기준 타임라인입니다.")} {t("처치 수 등 조건 분기 증원은 재생에 포함되지 않습니다.")} {t("통합전략 가이드의 전투 노드에서도 '이동 경로' 탭으로 같은 시뮬레이션을 재생할 수 있습니다.")}</p>
 
+      {/* 계층 필터 — 작전 도감과 같은 부품·같은 조작 (사용자 요청 2026-08-16) */}
+      {filterGroups.length > 0 && (
+        <div className="sim-filter">
+          <AttributeFilter groups={filterGroups} />
+          {types.length > 0 && (
+            <div className="active-filters">
+              <button type="button" onClick={() => { setTypes([]); setEvSel([]); setZonesSel([]); }}>
+                {filterLabel} ×
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="sim-search-row">
         <div className="search-wrap heading-search sim-search">
           <span>⌕</span>
@@ -213,6 +283,16 @@ export default function SimLauncher() {
         <p className="sim-note">{t("불러오는 중…")}</p>
       ) : q ? (
         results.length ? grid(results) : <p className="sim-note">{t("검색 결과가 없습니다.")}</p>
+      ) : filtered ? (
+        filtered.total ? (
+          <section className="sim-sec">
+            <h3>{filterLabel} <em>{filtered.total}</em></h3>
+            {grid(filtered.list)}
+            {filtered.total > filtered.list.length && (
+              <p className="sim-note">{t("{shown}건만 표시했습니다 · 전체 {total}건 — 조건을 더 좁히거나 검색해 보세요", { shown: String(filtered.list.length), total: String(filtered.total) })}</p>
+            )}
+          </section>
+        ) : <p className="sim-note">{t("검색 결과가 없습니다.")}</p>
       ) : recs && (
         <>
           {recs.event && recs.event.list.length > 0 && (

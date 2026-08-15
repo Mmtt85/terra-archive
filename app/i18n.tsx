@@ -1472,6 +1472,8 @@ const D: Record<string, Pair> = {
   "권장 편성": ["Recommended", "推奨編成"],
   // 통합전략 작전의 팩트 행 — 이성·보상이 없는 자리를 대신한다 (값 자체는 데이터에 로케일별로 구워져 있다)
   "작전 종류": ["Stage type", "作戦タイプ"],
+  // 작전 시뮬레이터 필터 결과 — 한 계열만 골라도 1,400건이 넘어 앞에서 끊는다
+  "{shown}건만 표시했습니다 · 전체 {total}건 — 조건을 더 좁히거나 검색해 보세요": ["Showing {shown} of {total} — narrow the filter further or search", "{total}件中{shown}件を表示 — 条件をさらに絞るか検索してください"],
   "등장 적": ["Enemies", "出現する敵"],
   "드랍": ["Drops", "ドロップ"],
   "{code} 지형 도면": ["{code} terrain layout", "{code} 地形図"],
