@@ -96,8 +96,12 @@ function AttrRow({ item, path, level, subFor, hoverMode, openPath, openAt, pick 
       // 마우스: 줄에 올리기만 해도 그 줄의 하위가 오른쪽에 뜬다. 하위가 없는 줄로 옮기면
       // 그 깊이까지만 남기고 닫힌다 (형제 줄 사이를 지나가도 체인이 어긋나지 않게).
       onPointerEnter={hoverMode ? (event) => {
+        // ⚠ 하위가 **없는** 줄에서는 앵커를 건드리지 않는다. 넘기면 그 좌표가 이 줄이 속한
+        // 목록의 앵커(anchors[path.length-1])를 덮어써서, 그 목록이 자기 안의 줄 오른쪽으로
+        // 다시 그려진다 = 마우스만 올려도 서브메뉴가 오른쪽으로 튄다 (사용자 지적 2026-08-16).
+        if (!hasSub) { openAt(path.slice(0, -1)); return; }
         const r = event.currentTarget.getBoundingClientRect();
-        openAt(hasSub ? path : path.slice(0, -1), { top: r.top, left: r.left, right: r.right });
+        openAt(path, { top: r.top, left: r.left, right: r.right });
       } : undefined}>
       {/* ⚠ role="option"에는 aria-expanded를 달 수 없다 (jsx-a11y) — 펼침 상태는 목록
           자체(aria-label 있는 중첩 listbox)와 › / ˅ 표식으로 전달된다 */}
