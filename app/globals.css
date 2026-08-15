@@ -17207,6 +17207,14 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
 .sim-filter .attr-filter {
   margin: 0;
 }
+/* ⚠ 목록 폭을 묶는다 — .attr-drop은 `inset: … 0 auto 0`(좌우 0)이라 **부모 폭을 꽉 채운다**.
+   도감에선 부모가 286px 사이드 패널이라 알맞지만, 시뮬레이터는 본문 폭이라 목록이 화면
+   절반을 덮는다 (사용자 지적 2026-08-16). 서브메뉴(.attr-fly 250px)와 결이 맞는 폭으로. */
+.sim-filter .attr-drop {
+  right: auto;
+  width: 320px;
+  max-width: 100%;
+}
 .sim-search-row {
   display: flex;
   align-items: center;
