@@ -1856,9 +1856,15 @@ legend {
      .attr-drop의 overflow-y:auto에 잘려 부모 목록을 덮었고, 목록 밖(.attr-cats 직속)으로
      빼면 필터 패널을 넘어가 결과 영역에 가려지면서 가로 스크롤까지 생겼다.
      들여쓰기는 위치 계산·겹침 순서·클리핑이 전부 없어 두 기기에서 똑같이 동작한다. */
-/* 계층형 칸은 하위를 펼치면 300px를 금세 넘는다 — 화면 높이에 맞춰 더 준다 */
-.attr-deep {
-  max-height: min(62vh, 560px);
+/* 마우스 기기의 서브메뉴 — body로 portal된 fixed 목록. 좌표는 컴포넌트가 계산해 인라인으로
+   준다(FLY_W/FLY_MAX_H와 아래 값이 같아야 화면 밖 판정이 맞다). 어떤 조상의 overflow에도
+   안 걸리므로 부모 메뉴를 벌리지 않고 그 줄 오른쪽에 그대로 뜬다. */
+.attr-fly {
+  position: fixed;
+  z-index: 60;
+  inset: auto;
+  width: 250px;
+  max-height: 340px;
 }
 .attr-sub-caret {
   color: #8b9294;

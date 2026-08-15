@@ -4,6 +4,7 @@
 // 적 도감(app/enemies.tsx)·작전 도감(app/stages.tsx)이 함께 쓴다. 데이터 의존이 없어 별도
 // 모듈로 뺐다 (2026-08-09): home.tsx에 두면 적 도감 청크가 home.tsx를 통째로 끌어온다.
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useI18n } from "./i18n";
 
 
@@ -28,13 +29,13 @@ import { useI18n } from "./i18n";
 // 계열 → 이벤트 → 구역, 직군 → 세부 직군이 한 칸 안에서 끝난다.
 //   - subFor(path)는 루트부터 그 값까지의 경로를 받아 **다음 계층**을 돌려준다. 경로마다 축이
 //     달라도 된다 (작전 도감: 이벤트가 없는 계열은 곧바로 구역이 온다).
-//   - 여는 방법만 기기에 따라 다르고 **그리는 방법은 하나** — 그 줄 아래에 들여써서 펼친다.
-//     마우스 기기는 줄에 **올리면** 열리고, 터치 기기는 **누르면** 열린다(사용자 확정 2026-08-16:
-//     "부모 항목 탭 = 하위 펼침"). 부모 자체를 고르려면 펼쳐진 목록 맨 위의 '전체'를 쓴다.
-//     ⚠ 하위를 **옆 열로 띄우는 안은 접었다** (2026-08-16 실측): `<li>` 안에 absolute로 두면
-//     `.attr-drop`의 `overflow-y:auto`에 잘려 부모 목록을 덮고, 목록 밖(.attr-cats 직속)으로
-//     빼면 필터 패널 밖으로 나가 결과 영역에 가려지면서 가로 스크롤까지 생겼다. 들여쓰기
-//     방식은 위치 계산·겹침 순서·클리핑이 전부 없어 두 기기에서 똑같이 동작한다.
+//   - 마우스 기기: 줄에 **올리면 그 줄 오른쪽에** 하위 목록이 뜬다(진짜 서브메뉴).
+//     ⚠ 이 목록은 **body로 portal + position:fixed** 다. 같은 DOM 안에 absolute로 두면
+//     `.attr-drop`의 `overflow-y:auto`에 잘리고, 목록 밖(.attr-cats 직속)으로 빼면 필터
+//     패널을 넘어가 결과 영역에 가려진다 (둘 다 2026-08-16 실측). portal이면 어떤 조상의
+//     overflow·겹침에도 안 걸려서 **메뉴 사이를 벌리지 않고** 옆에 그대로 띄울 수 있다.
+//   - 터치 기기: 옆에 띄울 자리가 없으므로 **누르면 그 줄 아래로** 들여써서 펼친다
+//     (사용자 확정 2026-08-16). 부모 자체를 고르려면 펼쳐진 목록 맨 위의 '전체'를 쓴다.
 export type AttrSub = {
   title: string;
   items: string[];
@@ -61,19 +62,27 @@ type Level = {
 const levelOfGroup = (g: AttrGroup): Level => ({ ...g, pick: g.onToggle });
 const levelOfSub = (s: AttrSub): Level => ({ ...s, pick: s.onPick });
 
+/** 서브메뉴 크기 — 화면 밖으로 나갈지 미리 재려면 렌더 전에 알아야 해서 CSS와 같은 값을 둔다 */
+const FLY_W = 250;
+const FLY_MAX_H = 340;
+
 /** openPath가 이 줄(prefix)을 지나가는가 — 지나가면 그 줄의 하위가 열려 있다 */
 const startsWith = (path: string[], prefix: string[]) =>
   prefix.length <= path.length && prefix.every((v, i) => v === path[i]);
 
-/** 값 한 줄. 터치 모드에서는 자기 하위를 **자기 안에** 펼친다 */
-function AttrRow({ item, path, level, subFor, hoverMode, openPath, setOpenPath, pick }: {
+/** 하위 목록을 띄울 기준 좌표 — 그 줄의 화면 좌표 (position:fixed 기준이라 스크롤 보정 불필요) */
+export type Anchor = { top: number; left: number; right: number };
+
+/** 값 한 줄. 터치 모드에서만 자기 하위를 자기 안에 펼치고, 마우스 모드에서는 앵커만 올려 준다 */
+function AttrRow({ item, path, level, subFor, hoverMode, openPath, openAt, pick }: {
   item: string;
   /** 루트부터 이 값까지 */ path: string[];
   level: Level;
   subFor?: (path: string[]) => AttrSub | null;
   hoverMode: boolean;
   openPath: string[];
-  setOpenPath: (p: string[]) => void;
+  /** 이 줄의 하위를 연다 (마우스: 앵커 포함 / 터치: 앵커 없이 토글) */
+  openAt: (path: string[], anchor?: Anchor) => void;
   /** 값 하나를 고르고 목록을 닫는다 */ pick: (level: Level, value: string) => void;
 }) {
   const { t } = useI18n();
@@ -84,8 +93,12 @@ function AttrRow({ item, path, level, subFor, hoverMode, openPath, setOpenPath, 
   const label = level.labelFor ? level.labelFor(item) : item;
   return (
     <li className={`${hasSub ? "attr-has-sub" : ""}${openHere ? " open" : ""}`}
-      // 마우스 기기: 줄에 올리기만 해도 하위 열이 열린다. 형제 줄로 옮기면 그 줄의 하위로 갈린다.
-      onPointerEnter={hoverMode ? () => setOpenPath(hasSub ? path : path.slice(0, -1)) : undefined}>
+      // 마우스: 줄에 올리기만 해도 그 줄의 하위가 오른쪽에 뜬다. 하위가 없는 줄로 옮기면
+      // 그 깊이까지만 남기고 닫힌다 (형제 줄 사이를 지나가도 체인이 어긋나지 않게).
+      onPointerEnter={hoverMode ? (event) => {
+        const r = event.currentTarget.getBoundingClientRect();
+        openAt(hasSub ? path : path.slice(0, -1), { top: r.top, left: r.left, right: r.right });
+      } : undefined}>
       {/* ⚠ role="option"에는 aria-expanded를 달 수 없다 (jsx-a11y) — 펼침 상태는 목록
           자체(aria-label 있는 중첩 listbox)와 › / ˅ 표식으로 전달된다 */}
       <button type="button" role="option" aria-selected={isSelected}
@@ -93,15 +106,16 @@ function AttrRow({ item, path, level, subFor, hoverMode, openPath, setOpenPath, 
         onClick={() => {
           // 터치: 하위가 있으면 **펼치기**가 우선 (부모만 고르려면 펼쳐진 '전체'를 쓴다).
           // 마우스: 줄을 누르면 종전처럼 그 값으로 확정하고 닫는다.
-          if (!hoverMode && hasSub) { setOpenPath(openHere ? path.slice(0, -1) : path); return; }
+          if (!hoverMode && hasSub) { openAt(openHere ? path.slice(0, -1) : path); return; }
           pick(level, item);
         }}>
         <i aria-hidden>{isSelected ? "✓" : ""}</i>
         {label}
         <span>{level.countForItem(item)}</span>
-        {hasSub && <b className="attr-sub-caret" aria-hidden>{openHere ? "˅" : "›"}</b>}
+        {hasSub && <b className="attr-sub-caret" aria-hidden>{!hoverMode && openHere ? "˅" : "›"}</b>}
       </button>
-      {openHere && sub && (
+      {/* 터치 전용 — 마우스 모드의 하위는 AttributeFilter가 portal로 옆에 띄운다 */}
+      {!hoverMode && openHere && sub && (
         <ul className="attr-sub" role="listbox" aria-multiselectable={!sub.single} aria-label={sub.title}>
           <li className="attr-sub-head" aria-hidden>{sub.title}</li>
           <li>
@@ -113,8 +127,7 @@ function AttrRow({ item, path, level, subFor, hoverMode, openPath, setOpenPath, 
           </li>
           {sub.items.map((child) => (
             <AttrRow key={child} item={child} path={[...path, child]} level={levelOfSub(sub)}
-              subFor={subFor} hoverMode={hoverMode} openPath={openPath} setOpenPath={setOpenPath}
-              pick={pick} />
+              subFor={subFor} hoverMode={hoverMode} openPath={openPath} openAt={openAt} pick={pick} />
           ))}
         </ul>
       )}
@@ -125,8 +138,9 @@ function AttrRow({ item, path, level, subFor, hoverMode, openPath, setOpenPath, 
 export function AttributeFilter({ groups }: { groups: AttrGroup[] }) {
   const { t } = useI18n();
   const [open, setOpen] = useState<string | null>(null);
-  // 지금 펼쳐진 하위 경로 (루트 값부터). 카테고리를 바꿔 열면 비운다.
+  // 지금 펼쳐진 하위 경로 + 각 깊이를 띄울 기준 줄의 화면 좌표. 카테고리를 바꿔 열면 비운다.
   const [openPath, setOpenPath] = useState<string[]>([]);
+  const [anchors, setAnchors] = useState<Anchor[]>([]);
   // 드롭다운 안 검색어 — 칸을 바꿔 열 때 초기화한다 (effect가 아니라 클릭 핸들러에서:
   // set-state-in-effect 린트 관례)
   const [query, setQuery] = useState("");
@@ -141,12 +155,24 @@ export function AttributeFilter({ groups }: { groups: AttrGroup[] }) {
   const hoverMode = useMemo(
     () => typeof window !== "undefined" && window.matchMedia("(hover: hover)").matches, []);
 
+  const close = () => { setOpen(null); setOpenPath([]); setAnchors([]); };
+  /** 그 줄의 하위를 연다 — 앵커는 그 깊이 자리에 넣고 더 깊은 것은 버린다 */
+  const openAt = (path: string[], anchor?: Anchor) => {
+    setOpenPath(path);
+    if (anchor && path.length > 0) {
+      setAnchors((cur) => { const next = cur.slice(0, path.length - 1); next[path.length - 1] = anchor; return next; });
+    }
+  };
+  const pick = (level: Level, value: string) => { level.pick(value); close(); };
+
   useEffect(() => {
     if (!open) return;
     const onDown = (event: PointerEvent) => {
-      if (!wrapRef.current?.contains(event.target as Node)) { setOpen(null); setOpenPath([]); }
+      const target = event.target as Node;
+      // 서브메뉴는 body로 portal돼 wrapRef 바깥이다 — 그것도 '안'으로 쳐야 클릭이 안 끊긴다
+      if (!wrapRef.current?.contains(target) && !(target as Element)?.closest?.(".attr-fly")) close();
     };
-    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") { setOpen(null); setOpenPath([]); } };
+    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") close(); };
     document.addEventListener("pointerdown", onDown);
     document.addEventListener("keydown", onKey);
     return () => {
@@ -155,8 +181,6 @@ export function AttributeFilter({ groups }: { groups: AttrGroup[] }) {
     };
   }, [open]);
 
-  const close = () => { setOpen(null); setOpenPath([]); };
-  const pick = (level: Level, value: string) => { level.pick(value); close(); };
 
   return (
     <fieldset className="attr-filter">
@@ -171,7 +195,7 @@ export function AttributeFilter({ groups }: { groups: AttrGroup[] }) {
             className={`attr-cat${open === g.title ? " open" : ""}${g.selected.length ? " has-sel" : ""}`}
             aria-expanded={open === g.title} title={g.disabled ? g.hint : undefined}
             onClick={() => {
-              setQuery(""); setOpenPath([]);
+              setQuery(""); setOpenPath([]); setAnchors([]);
               setOpen((current) => (current === g.title ? null : g.title));
             }}>
             {g.title}{g.selected.length > 0 && <em>{g.selected.length}</em>}
@@ -184,24 +208,64 @@ export function AttributeFilter({ groups }: { groups: AttrGroup[] }) {
           const shown = q
             ? active.items.filter((item) => (active.labelFor ? active.labelFor(item) : item).toLowerCase().includes(q))
             : active.items;
-          // 계층형은 하위를 펼치면 금세 300px를 넘는다 — 그 칸만 더 높게 (attr-deep)
+          // 마우스 모드의 서브메뉴 — openPath의 깊이마다 하나. body로 portal해 fixed로 띄우므로
+          // .attr-drop의 overflow에도, 결과 영역의 겹침에도 걸리지 않는다.
+          const flyouts: { sub: AttrSub; parentLevel: Level; parent: string; anchor: Anchor }[] = [];
+          if (hoverMode && active.subFor) {
+            let parentLevel = levelOfGroup(active);
+            for (let depth = 1; depth <= openPath.length; depth += 1) {
+              const sub = active.subFor(openPath.slice(0, depth));
+              const anchor = anchors[depth - 1];
+              if (!sub || sub.items.length === 0 || !anchor) break;
+              flyouts.push({ sub, parentLevel, parent: openPath[depth - 1], anchor });
+              parentLevel = levelOfSub(sub);
+            }
+          }
           return (
-            <ul className={`attr-drop${active.subFor ? " attr-deep" : ""}`}
-              role="listbox" aria-multiselectable={!active.single} aria-label={active.title}>
-              <li className="attr-search">
-                {/* 모바일은 자동 포커스하지 않는다 — 키보드가 바로 솟아 목록을 가린다 */}
-                <input type="search" value={query} placeholder={t("입력해서 찾기")}
-                  aria-label={`${active.title} — ${t("입력해서 찾기")}`}
-                  autoFocus={typeof window !== "undefined" && window.matchMedia("(hover: hover)").matches}
-                  onChange={(event) => setQuery(event.target.value)} />
-              </li>
-              {shown.map((item) => (
-                <AttrRow key={item} item={item} path={[item]} level={levelOfGroup(active)}
-                  subFor={active.subFor} hoverMode={hoverMode}
-                  openPath={openPath} setOpenPath={setOpenPath} pick={pick} />
-              ))}
-              {shown.length === 0 && <li className="attr-none">{t("검색 결과가 없습니다")}</li>}
-            </ul>
+            <>
+              <ul className="attr-drop"
+                role="listbox" aria-multiselectable={!active.single} aria-label={active.title}>
+                <li className="attr-search">
+                  {/* 모바일은 자동 포커스하지 않는다 — 키보드가 바로 솟아 목록을 가린다 */}
+                  <input type="search" value={query} placeholder={t("입력해서 찾기")}
+                    aria-label={`${active.title} — ${t("입력해서 찾기")}`}
+                    autoFocus={typeof window !== "undefined" && window.matchMedia("(hover: hover)").matches}
+                    onChange={(event) => setQuery(event.target.value)} />
+                </li>
+                {shown.map((item) => (
+                  <AttrRow key={item} item={item} path={[item]} level={levelOfGroup(active)}
+                    subFor={active.subFor} hoverMode={hoverMode}
+                    openPath={openPath} openAt={openAt} pick={pick} />
+                ))}
+                {shown.length === 0 && <li className="attr-none">{t("검색 결과가 없습니다")}</li>}
+              </ul>
+              {flyouts.map(({ sub, parentLevel, parent, anchor }, depth) => {
+                const parentLabel = parentLevel.labelFor ? parentLevel.labelFor(parent) : parent;
+                // 오른쪽이 모자라면 왼쪽으로 뒤집고, 아래가 모자라면 위로 끌어올린다
+                const flip = anchor.right + FLY_W + 8 > window.innerWidth;
+                const left = flip ? Math.max(4, anchor.left - FLY_W - 2) : anchor.right + 2;
+                const top = Math.max(4, Math.min(anchor.top - 6, window.innerHeight - FLY_MAX_H - 8));
+                return createPortal(
+                  <ul key={openPath.slice(0, depth + 1).join(" ")} className="attr-drop attr-fly"
+                    style={{ left, top }}
+                    role="listbox" aria-multiselectable={!sub.single} aria-label={sub.title}>
+                    <li className="attr-sub-head" aria-hidden>{sub.title}</li>
+                    {/* 하위로 좁히지 않고 부모 값만 고른다 */}
+                    <li>
+                      <button type="button" role="option" aria-selected={false} className="attr-sub-all"
+                        onClick={() => pick(parentLevel, parent)}>
+                        <i aria-hidden />{t("{name} 전체", { name: parentLabel })}
+                        <span>{parentLevel.countForItem(parent)}</span>
+                      </button>
+                    </li>
+                    {sub.items.map((item) => (
+                      <AttrRow key={item} item={item} path={[...openPath.slice(0, depth + 1), item]}
+                        level={levelOfSub(sub)} subFor={active.subFor} hoverMode={hoverMode}
+                        openPath={openPath} openAt={openAt} pick={pick} />
+                    ))}
+                  </ul>, document.body);
+              })}
+            </>
           );
         })()}
       </div>
