@@ -45,6 +45,20 @@ KIND_LABEL = {
 # 구역이 없는 노드(시련·외나무다리·돌발 등 — IS5만 86개) — 구역 필터에서 한 칸으로 모은다
 NO_ZONE = {"ko": "구역 무관", "en": "Any zone", "ja": "ゾーン無関係"}
 
+# 테마 통칭 — 사용자 지시 2026-08-16 "팬텀·미즈키·사미·살카즈·쉐이라고 하는 별칭도 괄호로".
+# 정식 이름이 길어 목록에서 알아보기 어렵고("탐험가의 은빛 서리 끝자락"), 다들 통칭으로 부른다.
+# 이름에 붙여 두면 필터 라벨·카드·**검색어**가 한꺼번에 통칭을 먹는다 (도감 검색이 이벤트
+# 이름을 포함하므로 "사미"로 검색하면 IS3 작전이 잡힌다).
+# ⚠ **KR에만 붙인다** — 이건 한국 커뮤니티 통칭이고, EN/JA의 통칭은 확인된 바가 없다.
+# ⚠ 통칭이 이미 정식 이름 안에 있으면 괄호를 붙이지 않는다 — IS6 "침몰자의 흑류수해 (흑류수해)"는
+#   군더더기다. 목록 순서는 아래 stageFilterTree가 출시순(IS1→IS6)으로 잡는다.
+ALIAS_KO = {1: "팬텀", 2: "미즈키", 3: "사미", 4: "살카즈", 5: "쉐이", 6: "흑류수해"}
+
+# 구역 = 그 테마의 층. /rogue의 zoneBadge와 **같은 표기**를 쓴다 (app/rogue.tsx `{n}층`).
+# IS5의 시비경·금석경처럼 num이 90/91인 특수 구역은 층이 아니므로 이름만 둔다.
+FLOOR_MAX = 20
+FLOOR_FMT = {"ko": "{n}층 {name}", "en": "F{n} {name}", "ja": "{n}層 {name}"}
+
 
 def load_topic(n, suffix):
     """로케일 파일이 없으면 KR로 폴백 — IS6(흑류수해)는 CN 선행이라 공식 EN/JA 텍스트가
@@ -75,8 +89,17 @@ def build(loc, suffix):
 
     for n in TOPICS:
         d = load_topic(n, suffix)
-        ev = intern(d["name"], ev_list, ev_ix)
-        zone_of = {z["num"]: z["name"] for z in d.get("zones") or [] if z.get("num") is not None}
+        alias = ALIAS_KO.get(n) if loc == "ko" else None
+        if alias and alias in d["name"]:
+            alias = None       # 이름에 이미 들어 있으면 괄호는 군더더기 (IS6 흑류수해)
+        ev = intern(f'{d["name"]} ({alias})' if alias else d["name"], ev_list, ev_ix)
+        zone_of = {}
+        for z in d.get("zones") or []:
+            num = z.get("num")
+            if num is None:
+                continue
+            zone_of[num] = (FLOOR_FMT[loc].format(n=num, name=z["name"])
+                            if num <= FLOOR_MAX else z["name"])
         enemy_db = d.get("enemies") or {}
         for s in d.get("stages") or []:
             zname = zone_of.get(s.get("zone")) or NO_ZONE[loc]

@@ -84,7 +84,11 @@ export function stageFilterTree(doc: StageDoc, locale: string): StageTree {
     if (!v) {
       const set = new Set<string>();
       for (const s of byType.get(type) ?? []) if (s.ev !== undefined) set.add(doc.events[s.ev]);
-      v = [...set].filter(Boolean).sort(byName);
+      // 이벤트는 이름 오름차순 (사용자 요청 "이름으로 위에서부터 정렬"). 다만 **통합전략은
+      // 출시순**이다 (사용자 지시 2026-08-16: "팬텀 미즈키 사미 살카즈 쉐이 흑류수해 순서") —
+      // 이름순이면 미즈키·살카즈·쉐이·침몰자·탐험가·팬텀으로 섞여 진행 순서를 잃는다.
+      // 색인이 이미 IS1→IS6 순으로 실려 있어 처음 나온 순서를 그대로 쓰면 된다.
+      v = type === "ROGUE" ? [...set].filter(Boolean) : [...set].filter(Boolean).sort(byName);
       evCache.set(type, v);
     }
     return v;
