@@ -1850,6 +1850,47 @@ legend {
   margin-left: auto;
   font: 10px monospace;
 }
+/* ── 계층 목록 (사용자 요청 2026-08-16) ──────────────────────────────────────
+   하위 계층은 그 줄 **바로 아래에 들여써서** 펼친다 — 마우스는 올리면, 터치는 누르면 열린다.
+   ⚠ 옆 열(플라이아웃)로 띄우는 안은 접었다 (2026-08-16 실측): <li> 안에 absolute로 두면
+     .attr-drop의 overflow-y:auto에 잘려 부모 목록을 덮었고, 목록 밖(.attr-cats 직속)으로
+     빼면 필터 패널을 넘어가 결과 영역에 가려지면서 가로 스크롤까지 생겼다.
+     들여쓰기는 위치 계산·겹침 순서·클리핑이 전부 없어 두 기기에서 똑같이 동작한다. */
+/* 계층형 칸은 하위를 펼치면 300px를 금세 넘는다 — 화면 높이에 맞춰 더 준다 */
+.attr-deep {
+  max-height: min(62vh, 560px);
+}
+.attr-sub-caret {
+  color: #8b9294;
+  flex: none;
+  margin-left: 4px;
+  font-size: 11px;
+  font-weight: 400;
+}
+.attr-has-sub.open > button {
+  background: var(--bg-soft);
+}
+.attr-sub-head {
+  color: #8b9294;
+  letter-spacing: .5px;
+  padding: 4px 8px 5px;
+  font-size: 10px;
+  font-weight: 800;
+}
+.attr-drop button.attr-sub-all {
+  border-bottom: 1px dashed var(--border-strong);
+  border-radius: 0;
+  margin-bottom: 3px;
+  padding-bottom: 8px;
+  font-weight: 700;
+}
+/* 그 자리에서 아래로 (터치) — 들여쓰기와 좌측선으로 계층을 보인다 */
+.attr-sub {
+  border-left: 2px solid var(--lime);
+  margin: 2px 0 4px 12px;
+  padding: 4px 0 4px 4px;
+  list-style: none;
+}
 .more-filter {
   width: 100%;
   color: var(--muted);

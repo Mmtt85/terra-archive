@@ -151,21 +151,91 @@ export default function StageDex({ doc }: { doc: StageDoc; onOpenEnemy?: (id: st
   const pickOne = (set: (fn: (cur: string[]) => string[]) => void) => (v: string) =>
     set((cur) => (cur.includes(v) ? [] : [v]));
 
-  // 갈래가 하나뿐이면 그 칸은 아예 만들지 않는다 — 보안 파견·섬멸 작전은 구역이 1개라
-  // 계열만 골라도 이미 전부 나온다 (사용자 지적: "카테고리 2 필요없을테고").
+  // ── 계층 목록 (사용자 요청 2026-08-16) ─────────────────────────────────────
+  // 종전에는 계열을 고르면 **옆에 이벤트 칸이 새로 생기고** 또 고르면 구역 칸이 생겼다.
+  // 이제 계열 목록에서 값에 **마우스를 올리면** 그 계열의 이벤트가, 거기서 또 올리면 구역이
+  // 옆으로 펼쳐진다 (터치는 탭으로 펼침 — attr-filter.tsx 머리주석).
+  // ⚠ 하위 목록은 **지금 고른 값이 아니라 마우스가 지나가는 값** 기준이라, 선택 상태에 매인
+  // pool/eventItems가 아니라 문서 전체에서 그때그때 뽑는다. 매 hover마다 2,928건을 훑지
+  // 않도록 계열별로 한 번만 갈라 두고 캐시한다.
+  const tree = useMemo(() => {
+    const byType = new Map<string, Stage[]>();
+    for (const s of doc.stages) {
+      if (s.sub) continue;                       // 고난 판은 목록에 없다 (아래 shown과 같은 기준)
+      const list = byType.get(s.t);
+      if (list) list.push(s); else byType.set(s.t, [s]);
+    }
+    const evCache = new Map<string, string[]>(), zCache = new Map<string, string[]>();
+    const evOf = (type: string) => {
+      let v = evCache.get(type);
+      if (!v) {
+        const set = new Set<string>();
+        for (const s of byType.get(type) ?? []) if (s.ev !== undefined) set.add(doc.events[s.ev]);
+        v = [...set].filter(Boolean).sort(byName);
+        evCache.set(type, v);
+      }
+      return v;
+    };
+    // 구역은 **이름순이 아니라 진행 순서** — 데이터가 이미 코드 자연순이라 처음 나온 순서를 쓴다
+    const zOf = (type: string, ev?: string) => {
+      const key = `${type} ${ev ?? ""}`;
+      let v = zCache.get(key);
+      if (!v) {
+        const out: string[] = [];
+        for (const s of byType.get(type) ?? []) {
+          if (ev !== undefined && (s.ev === undefined || doc.events[s.ev] !== ev)) continue;
+          const z = doc.zones[s.z];
+          if (z && !out.includes(z)) out.push(z);
+        }
+        v = out;
+        zCache.set(key, v);
+      }
+      return v;
+    };
+    const countEv = (type: string, ev: string) =>
+      (byType.get(type) ?? []).filter((s) => s.ev !== undefined && doc.events[s.ev] === ev).length;
+    const countZ = (type: string, ev: string | undefined, z: string) =>
+      (byType.get(type) ?? []).filter((s) => doc.zones[s.z] === z
+        && (ev === undefined || (s.ev !== undefined && doc.events[s.ev] === ev))).length;
+    return { evOf, zOf, countEv, countZ };
+  }, [doc, locale]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 갈래가 하나뿐인 계층은 만들지 않는다 — 보안 파견·섬멸 작전은 구역이 1개라 계열만 골라도
+  // 이미 전부 나온다 (사용자 지적 2026-08-09: "카테고리 2 필요없을테고").
+  const zoneSub = (type: string, ev?: string) => {
+    const items = tree.zOf(type, ev);
+    if (items.length <= 1) return null;
+    return {
+      title: t("구역"), items, selected: zones, single: true,
+      countForItem: (z: string) => tree.countZ(type, ev, z),
+      onPick: (z: string) => { setTypes([type]); setEvSel(ev ? [ev] : []); setZonesSel([z]); },
+    };
+  };
   const filterGroups = [
-    { title: t("작전 계열"), items: typeItems, selected: types, onToggle: pickOne(setTypes), single: true,
-      labelFor: (v: string) => doc.types[v] ?? v, countForItem: (v: string) => countBy.type.get(v) ?? 0 },
-    ...(eventItems.length > 1 ? [{
-      title: t("이벤트"), items: eventItems, selected: events, onToggle: pickOne(setEvSel), single: true,
-      countForItem: (v: string) => countBy.ev.get(v) ?? 0,
-    }] : []),
-    // 이벤트가 있는 계열은 **이벤트를 고른 뒤에야** 구역이 나온다 — 안 그러면 이벤트
-    // 84개와 구역 156개가 동시에 펼쳐져 "점점 좁혀 간다"는 흐름이 깨진다.
-    ...(zoneItems.length > 1 && (eventItems.length <= 1 || events.length > 0) ? [{
-      title: t("구역"), items: zoneItems, selected: zones, onToggle: pickOne(setZonesSel), single: true,
-      countForItem: (v: string) => countBy.zone.get(v) ?? 0,
-    }] : []),
+    {
+      title: t("작전 계열"), items: typeItems, selected: types, single: true,
+      labelFor: (v: string) => doc.types[v] ?? v,
+      countForItem: (v: string) => countBy.type.get(v) ?? 0,
+      onToggle: (v: string) => { pickOne(setTypes)(v); setEvSel([]); setZonesSel([]); },
+      subFor: (path: string[]) => {
+        const [type, second] = path;
+        if (path.length === 1) {
+          const evs = tree.evOf(type);
+          // 이벤트가 있는 계열은 이벤트가 다음 계층, 없으면(메인·섬멸 등) 곧바로 구역
+          if (evs.length > 1) {
+            return {
+              title: t("이벤트"), items: evs, selected: events, single: true,
+              countForItem: (ev: string) => tree.countEv(type, ev),
+              onPick: (ev: string) => { setTypes([type]); setEvSel([ev]); setZonesSel([]); },
+            };
+          }
+          return zoneSub(type);
+        }
+        // 2단째가 이벤트였으면 그 아래가 구역이다 (구역이었으면 더 깊은 계층은 없다)
+        if (path.length === 2 && tree.evOf(type).includes(second)) return zoneSub(type, second);
+        return null;
+      },
+    },
   ];
 
   const shown = useMemo(() => {

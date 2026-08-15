@@ -1059,15 +1059,21 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     return JOB_ORDER.map((code) => byCode.get(code)).filter((job): job is string => Boolean(job));
   }, [roster]);
   // 세부 직군은 직군의 하위 개념 — 직군을 안 고르면 8개 직군의 세부 직군이 한 목록에
-  // 통째로 쏟아진다. 직군을 먼저 골라야 열리고, 고른 직군의 것만 보인다
-  // (사용자 요청 2026-08-06: "직군이 골라져 있지 않으면 세부직군도 disabled로").
-  const subProfessions = useMemo(() =>
-    (selectedJobs.length === 0
-      ? []
-      : Array.from(new Set(roster.filter((operator) => selectedJobs.includes(operator.job))
-          .map((operator) => operator.subProfession)))
-    ).sort((a, b) => a.localeCompare(b, locale)),
-    [roster, locale, selectedJobs]);
+  // 통째로 쏟아진다 (사용자 요청 2026-08-06). 종전엔 **별도 칸을 잠가** 그걸 막았는데,
+  // 2026-08-16부터는 직군 목록 안에서 그 직군의 것만 펼치는 계층 목록이 대신한다 —
+  // 잠금·"직군 먼저" 안내가 없어도 섞일 일이 없다.
+  // 계층 목록은 **고른 직군이 아니라 마우스가 지나가는 직군**의 것을 보여줘야 하므로
+  // 로스터 전체를 직군별로 한 번만 갈라 둔다.
+  const subsByJob = useMemo(() => {
+    const map = new Map<string, string[]>();
+    for (const operator of roster) {
+      const list = map.get(operator.job);
+      if (!list) map.set(operator.job, [operator.subProfession]);
+      else if (!list.includes(operator.subProfession)) list.push(operator.subProfession);
+    }
+    for (const list of map.values()) list.sort((a, b) => a.localeCompare(b, locale));
+    return map;
+  }, [roster, locale]);
   // 성급 필터 목록 — 로스터에 실제 있는 성급을 높은 순으로 (보통 6~1성)
   const rarities = useMemo(() =>
     Array.from(new Set(roster.map((operator) => operator.rarity))).sort((a, b) => b - a).map(String),
@@ -1829,9 +1835,27 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
           {/* 성급·직군·세부직군·전투태그·공격방식·소속은 한 컨트롤로 합쳐 카테고리→값 방식으로. */}
           <AttributeFilter groups={[
             { title: t("성급"), items: rarities, selected: selectedRarities, onToggle: toggleIn(setSelectedRarities), labelFor: (item) => `${item}★`, countForItem: (item) => chipCount.rarity.get(item) ?? 0 },
-            { title: t("직군"), items: jobs, selected: selectedJobs, onToggle: toggleJob, countForItem: (item) => chipCount.job.get(item) ?? 0 },
-            { title: t("세부 직군"), items: subProfessions, selected: selectedSubProfessions, onToggle: toggleIn(setSelectedSubProfessions), countForItem: (item) => chipCount.sub.get(item) ?? 0,
-              disabled: selectedJobs.length === 0, hint: t("직군 먼저") },
+            // 세부 직군은 **직군 목록 안에서** 펼쳐진다 (사용자 요청 2026-08-16) — 종전엔
+            // 직군을 골라야 옆 칸이 열리는 방식이었다("직군 먼저" 잠금). 이제 직군에 마우스를
+            // 올리면(터치는 탭) 그 직군의 세부 직군이 옆으로 나온다. 직군은 복수 선택이라
+            // 가드 세부 하나 + 캐스터 세부 하나처럼 갈래를 섞어 고르는 것도 그대로 된다.
+            { title: t("직군"), items: jobs, selected: selectedJobs, onToggle: toggleJob,
+              countForItem: (item) => chipCount.job.get(item) ?? 0,
+              subFor: (path: string[]) => {
+                if (path.length !== 1) return null;
+                const job = path[0];
+                const items = subsByJob.get(job) ?? [];
+                if (items.length <= 1) return null;
+                return {
+                  title: t("세부 직군"), items, selected: selectedSubProfessions,
+                  countForItem: (item: string) => chipCount.sub.get(item) ?? 0,
+                  // 세부 직군을 고르면 그 직군도 함께 켠다 — 직군이 꺼져 있으면 결과가 0건이 된다
+                  onPick: (item: string) => {
+                    setSelectedJobs((cur) => (cur.includes(job) ? cur : [...cur, job]));
+                    toggleIn(setSelectedSubProfessions)(item);
+                  },
+                };
+              } },
             { title: t("전투 태그"), items: combatTags, selected: tags, onToggle: toggleTag, countForItem: (item) => chipCount.tag.get(item) ?? 0 },
             { title: t("공격 방식"), items: attackMethods, selected: selectedMethods, onToggle: toggleIn(setSelectedMethods), countForItem: (item) => chipCount.method.get(item) ?? 0 },
             { title: t("공식 소속"), items: factions, selected: selectedFactions, onToggle: toggleIn(setSelectedFactions), countForItem: (item) => chipCount.faction.get(item) ?? 0 },
