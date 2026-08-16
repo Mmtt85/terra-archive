@@ -99,6 +99,10 @@ python3 scripts/build-sandbox.py               # → app/data/sandbox{,.en,.ja}.
 python3 scripts/build-rogue-routes.py          # → app/data/rogue-routes.json (통전 전투 노드 적 이동 경로,
 #     로케일 무관 1벌 · .gamedata/rogue 레벨 캐시 재사용. 추출 정본은 routeutil.py —
 #     stage-routes.json과 공유하므로 경로 규칙 수정 시 이 파일도 재생성한다)
+python3 scripts/build-rogue-enc-scenes.py      # → scripts/rogue-enc-scenes.json (조우 씬 트리 —
+#     게임 excel엔 씬↔선택지 소속·랜덤 롤 테이블이 없어(클라 프리팹 소관) PRTS 위키
+#     事件一览의 ISEvent 구조를 CN excel 텍스트로 id 매칭한다. --refresh = PRTS 재다운로드.
+#     산출물은 커밋 대상이고 build-rogue.py가 encounters[].scenes로 병합 — 즉 이걸 먼저 돌린다)
 python3 scripts/build-i18n.py .gamedata       # → app/data/operators.{en,ja}.json + extra-i18n.{en,ja}.json
 python3 scripts/download-avatars.py           # 신규 오퍼 아바타를 public/avatars/에 다운로드
 ```

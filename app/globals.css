@@ -12593,6 +12593,56 @@ html.dark.rg-theme.rg6 .site-header {
 .rg-enc-choices strong {
   color: var(--rgink);
 }
+/* 씬 트리(클릭 펼침) — 우연한 만남을 게임처럼 단계별로 탐색 (사용자 지시 2026-08-16) */
+.rg-choice-btn {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: 0 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.rg-choice-btn:hover strong {
+  color: var(--rggold);
+}
+.rg-choice-caret {
+  margin-left: 6px;
+  color: var(--rgmut);
+  font-size: 11px;
+}
+.rg-choice-btn:hover .rg-choice-caret {
+  color: var(--rggold);
+}
+/* 랜덤 결과 분기 — 게임 선택지가 아니라 굴림 결과라 막대·확률 배지로 구분 */
+.rg-choice-prob {
+  color: var(--rggold);
+  font-size: 10px;
+  margin-right: 5px;
+}
+.rg-choice-branch {
+  font-weight: 600;
+}
+.rg-choice-prob-pct {
+  margin-left: 6px;
+  padding: 0 5px;
+  border: 1px solid var(--rgline);
+  border-radius: 8px;
+  font-size: 10.5px;
+  color: var(--rgmut);
+  white-space: nowrap;
+}
+.rg-choice-loop {
+  margin-left: 8px;
+  font-size: 11px;
+  color: var(--rgmut);
+}
+.rg-choice-result.zh {
+  opacity: 0.85;
+}
+
 /* 조우에서 이어지는 전투 맵 — 선택지 목록 아래에 카드로 (사용자 요청 2026-08-16).
    조우 본문이 좁아 한 줄 2장, 좁은 화면에선 1장. */
 .rg-enc-battles {

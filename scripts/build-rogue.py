@@ -152,6 +152,108 @@ def ability_of(hb):
     return "\n".join(lines) or hb.get("ability") or None
 
 
+# ── 조우 씬 트리 (PRTS 매칭 — build-rogue-enc-scenes.py 산출물) ──────────────
+# 게임 excel엔 씬↔선택지 소속·랜덤 롤 테이블이 없어(클라 프리팹 소관) PRTS 위키의
+# ISEvent 구조를 id 매칭한 scripts/rogue-enc-scenes.json 을 로케일 텍스트로 해석해
+# encounters[].scenes 로 병합한다 (사용자 지시 2026-08-16 "데이터 연결이 돼야해").
+ENC_SCENES_PATH = os.path.join(REPO, "scripts", "rogue-enc-scenes.json")
+_enc_scenes_cache = None
+
+
+def load_enc_scenes():
+    global _enc_scenes_cache
+    if _enc_scenes_cache is None:
+        if os.path.exists(ENC_SCENES_PATH):
+            d = json.load(open(ENC_SCENES_PATH, encoding="utf-8"))
+            _enc_scenes_cache = {k: v for k, v in d.items() if not k.startswith("_")}
+        else:
+            _enc_scenes_cache = {}
+    return _enc_scenes_cache
+
+
+# PRTS 편집자 분기 라벨(랜덤 결과) 번역 — 게임 텍스트가 아니라서 excel에 없다.
+# 상용구만 내장하고, 아이템명(源石锭 등)은 로케일 items 테이블 교차로, 잔여는 CN 유지.
+BRANCH_TR = {
+    "检定成功": {"ko": "판정 성공", "en": "Check passed", "ja": "判定成功"},
+    "检定失败": {"ko": "판정 실패", "en": "Check failed", "ja": "判定失敗"},
+    "无事发生": {"ko": "아무 일도 없음", "en": "Nothing happens", "ja": "何も起こらない"},
+    "离开": {"ko": "떠난다", "en": "Leave", "ja": "立ち去る"},
+    "战斗": {"ko": "전투", "en": "Battle", "ja": "戦闘"},
+    "强制结束": {"ko": "강제 종료", "en": "Forced end", "ja": "強制終了"},
+    "无报酬，点击确认": {"ko": "보상 없음", "en": "No reward", "ja": "報酬なし"},
+    "收藏品": {"ko": "소장품", "en": "Collectible", "ja": "コレクション"},
+    "高稀有度": {"ko": "높은 희귀도", "en": "High rarity", "ja": "高レアリティ"},
+    "低/中稀有度": {"ko": "낮은·중간 희귀도", "en": "Low/Mid rarity", "ja": "低・中レアリティ"},
+    "选择一个低稀有度收藏品": {"ko": "낮은 희귀도 소장품 선택", "en": "Pick a low-rarity collectible", "ja": "低レアのコレクションを選択"},
+    "选择一个中稀有度收藏品": {"ko": "중간 희귀도 소장품 선택", "en": "Pick a mid-rarity collectible", "ja": "中レアのコレクションを選択"},
+    "选择一个高稀有度收藏品": {"ko": "높은 희귀도 소장품 선택", "en": "Pick a high-rarity collectible", "ja": "高レアのコレクションを選択"},
+    "护盾值": {"ko": "실드", "en": "Shield", "ja": "シールド"},
+    "护盾": {"ko": "실드", "en": "Shield", "ja": "シールド"},
+    "希望": {"ko": "희망", "en": "Hope", "ja": "希望"},
+    "目标生命": {"ko": "목표 HP", "en": "Objective HP", "ja": "目標HP"},
+    "可惜！": {"ko": "아깝다!", "en": "Too bad!", "ja": "残念！"},
+    "一无所获": {"ko": "빈손", "en": "Nothing gained", "ja": "収穫なし"},
+    # 랜덤 롤 씬의 PRTS 안내문 (씬 지문 폴백에도 이 사전을 적용한다)
+    "以下选项随机出现": {"ko": "아래 결과 중 하나가 랜덤으로 발생합니다", "en": "One of the outcomes below occurs at random", "ja": "以下の結果からランダムに1つ発生します"},
+}
+
+
+def attach_enc_scenes(encounters, trees, r_scenes, r_choices, branch_tr, cn_primary=False):
+    """씬 트리를 로케일 텍스트로 해석해 encounters[].scenes 에 단다.
+    scenes[i] = {desc?|cn?, choices:[{title,desc?|cnTitle|branch,prob?,dest?}]} — dest는 씬 인덱스.
+    cn_primary(rogue6): CN 폴백을 cn이 아니라 desc에 둔다 — 뒤의 translate() 일괄 오버레이가
+    desc 키만 처리하기 때문 (cn 키는 원문 보존용으로 건너뛴다)."""
+    by_scene = {e["scene"]: e for e in encounters}
+    for sid, tree in trees.items():
+        enc = by_scene.get(sid)
+        if enc is None:
+            continue
+        n = len(tree["scenes"])
+        scenes = []
+        for node in tree["scenes"]:
+            sc = {}
+            rs = r_scenes.get(node.get("sid") or "")
+            if rs and (rs.get("description") or "").strip():
+                sc["desc"] = rs["description"]
+            elif node.get("descCn"):
+                # id 미해결 — 분기 사전으로 번역 시도(랜덤 롤 안내문 등), 안 되면 CN 원문 폴백
+                t = branch_tr(node["descCn"])
+                if t != node["descCn"] or cn_primary:
+                    sc["desc"] = t
+                else:
+                    sc["cn"] = node["descCn"]
+            chs = []
+            for c in node["choices"]:
+                dest = c.get("dest")
+                if dest is not None and not (0 <= dest < n):
+                    dest = None
+                o = {}
+                if "cid" in c:
+                    rc = r_choices.get(c["cid"])
+                    if rc is None:
+                        continue                    # 이 로케일 테이블에 없는 선택지 (신규 분기 등)
+                    o["title"] = rc["title"]
+                    if (rc.get("description") or "").strip():
+                        o["desc"] = rc["description"]
+                elif "branch" in c:
+                    o["branch"] = branch_tr(c["branch"])
+                    if c.get("prob") is not None:
+                        o["prob"] = c["prob"]
+                else:
+                    if not c.get("titleCn"):
+                        continue
+                    o["cnTitle"] = c["titleCn"]     # 매칭 실패 — CN 원문 폴백
+                    if c.get("descCn"):
+                        o["cnDesc"] = c["descCn"]
+                if dest is not None:
+                    o["dest"] = dest
+                chs.append(o)
+            sc["choices"] = chs
+            scenes.append(sc)
+        if len(scenes) > 1:
+            enc["scenes"] = scenes
+
+
 # 아군측 도구 유닛 — 레벨 enemyDbRefs에 실려 있지만 적이 아니다 (사용자 제보 2026-08-16).
 # IS3 '탐사용 자율차'는 탐사 도구(trap_133_toolgarage)가 발사하는 조사용 아군 유닛으로,
 # 전 99개 레벨에 스폰 0으로 참조만 된다. 게임 도감도 hideInHandbook·hideInStage로 숨긴다
@@ -1352,6 +1454,26 @@ def build_topic(tid="rogue_1", loc=None):
         for e in endings:
             if e["id"] in conds:
                 e["cond"] = [tr_quoted(tr(x)) for x in conds[e["id"]]]
+
+    # ── 조우 씬 트리 — PRTS 매칭 결과를 이 로케일 텍스트로 해석해 병합 ────────
+    enc_trees = load_enc_scenes().get(tid) or {}
+    if enc_trees:
+        # 분기 라벨의 아이템명(源石锭 등)은 CN items 이름 → 이 로케일 items 이름 교차
+        cn_items = fetch_json("excel/roguelike_topic_table.json", "cn")["details"].get(tid, {}).get("items", {})
+        item_tr = {}
+        for iid, it in cn_items.items():
+            ik = r.get("items", {}).get(iid)
+            if it.get("name") and ik and (ik.get("name") or "").strip():
+                item_tr.setdefault(it["name"].strip(), ik["name"].strip())
+        lang = {"en": "en", "ja": "ja"}.get(loc, "ko")
+        def branch_tr(label):
+            if loc == "cn":
+                return label            # CN 변형 빌드는 원문 유지 (cn_koreanize가 오버레이)
+            b = BRANCH_TR.get(label)
+            if b and b.get(lang):
+                return b[lang]
+            return item_tr.get(label, label)
+        attach_enc_scenes(encounters, enc_trees, r["choiceScenes"], r["choices"], branch_tr)
         # 보스(험난한 길) 출현 층 — 사용자 확인: b_1~5=3층, b_6~7=5층, b_8~9=히든 6층
         boss_floors = curated.get("bossFloors", {})
         for s in stages:
@@ -1519,6 +1641,13 @@ def cn_koreanize(ronum, out):
         if k:
             put_txt(enc, k, ("title", "desc"))
             overlay_choices(enc["choices"], k["choices"])
+            # 씬 트리 — 같은 rogue-enc-scenes 트리에서 나왔으므로 구조 동일, 위치 교차
+            if len(enc.get("scenes") or []) == len(k.get("scenes") or []):
+                for sc, ks in zip(enc.get("scenes") or [], k.get("scenes") or []):
+                    put_txt(sc, ks, ("desc",))
+                    if len(sc["choices"]) == len(ks["choices"]):
+                        for c, kc in zip(sc["choices"], ks["choices"]):
+                            put_txt(c, kc, ("title", "desc", "branch"))
     # 토픽 이름·부제 — 한국어 공식 명칭으로, 중국어 원문은 cnName (흑류수해와 같은 꼴)
     out["cnName"] = out["name"]
     if isinstance(kr.get("name"), str) and kr["name"].strip():
@@ -2069,6 +2198,12 @@ def build_rogue6():
             if s["id"] in boss_floors:
                 s["zone"] = boss_floors[s["id"]]
 
+    # 조우 씬 트리 — CN 텍스트로 부착하면 아래 keep_cn·translate()가 KR 오버레이를
+    # 일괄 처리한다 (분기 라벨 포함 — 미번역은 rogue6-untranslated.json 리포트로)
+    enc_trees6 = load_enc_scenes().get("rogue_6") or {}
+    if enc_trees6:
+        attach_enc_scenes(encounters, enc_trees6, r["choiceScenes"], r["choices"], lambda x: x, cn_primary=True)
+
     out = {
         "id": "rogue_6",
         "name": "침몰자의 흑류수해",  # 비공식 번역명 (KR 미출시)
@@ -2130,6 +2265,10 @@ def build_rogue6():
     for enc in out["encounters"]:
         keep_cn(enc, "title")
         keep_cn_tree(enc["choices"])
+        for sc in enc.get("scenes") or []:
+            for ch in sc["choices"]:
+                if ch.get("title"):
+                    keep_cn(ch, "title")
 
     # ── 번역 오버레이: ① KR 교차 자동 사전 → ② rogue6-ko.json 수동 사전 ──────
     tr = load_auto_tr()
@@ -2177,6 +2316,9 @@ def build_rogue6():
     for enc in out["encounters"]:
         drop_same_cn(enc, "title")
         drop_same_cn_tree(enc["choices"])
+        for sc in enc.get("scenes") or []:
+            for ch in sc["choices"]:
+                drop_same_cn(ch, "title")
 
     report = os.path.join(REPO, "scripts", "rogue6-untranslated.json")
     json.dump(untranslated, open(report, "w", encoding="utf-8"), ensure_ascii=False, indent=1)

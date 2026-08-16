@@ -50,21 +50,21 @@
    "name": "탐험가의 은빛 서리 끝자락",
    "line": "물자도 인원도, 준비는 완벽하다. 당신은 탐사대와 함께 사미 최남단 도시에서 출발해 북쪽으로 향했다. 사미를 지나 빙원을 넘어 그 베일에 싸인 미지는 곧 밝혀질 것이다.",
    "zones": 7,
-   "enemies": 246,
+   "enemies": 245,
    "relics": 305
   },
   "en": {
    "name": "Expeditioner's Jǫklumarkar",
    "line": "All the provisions and preparations are in place, and the team has gathered. You and the explorers depart the southernmost city of Sami for the north. Make your way through Sami and past the icefield, and the veil that shrouds the unknown will be lifted.",
    "zones": 7,
-   "enemies": 246,
+   "enemies": 245,
    "relics": 305
   },
   "ja": {
    "name": "探索者と銀氷の果て",
    "line": "物資の準備が整い、人員も集結した。 探索者たちはサーミ最南端の都市から出発し、北へと進路を取る。 サーミを横断し、氷原を越えるその旅路によって、 ヴェールに包まれた未知の領域がついに明かされる。",
    "zones": 7,
-   "enemies": 246,
+   "enemies": 245,
    "relics": 305
   }
  },

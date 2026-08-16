@@ -78,11 +78,14 @@ IS5 3차 확장팩이 통째로 누락돼 있었다). 캐시를 지워야 새 �
 
 ```bash
 rm -f .gamedata/rogue/*roguelike_topic_table.json
+python3 scripts/build-rogue-enc-scenes.py --refresh   # 조우 씬 트리 (PRTS 매칭) — build-rogue보다 먼저
 python3 scripts/build-rogue.py rogue5        # 최신 토픽 번호로. 1~4도 한 번씩 돌려 무변화 확인
 python3 scripts/build-rogue.py rogue5-en
 python3 scripts/build-rogue.py rogue5-ja
 python3 scripts/build-rogue.py cn            # 중섭 변형 일괄 (미래시)
 ```
+새 조우가 들어왔는데 PRTS가 아직 그 이벤트를 채우지 않았으면 씬 트리 없이 평탄 목록으로
+나온다 (정상 — PRTS가 채워진 뒤 `--refresh`로 다시 돌리면 트리가 붙는다).
 신규 유물이 잡히면 아이콘도 없다 → `python3 scripts/build-rogue.py --icons` (UnityPy 필요) 후 재실행.
 
 **그리고 작전 도감의 통합전략 색인을 반드시 뒤이어 돌린다** — 록라 데이터만 갱신하고 이걸

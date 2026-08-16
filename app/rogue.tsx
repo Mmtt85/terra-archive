@@ -87,7 +87,11 @@ type Ending = { id: string; name: string; desc: string | null; boss: string | nu
 // (현재 데이터는 대부분 결과 서사까지 깊이 2. 하위 선택지가 생기면 재귀로 중첩 렌더).
 type EncChoice = { title: string; desc: string | null; cn?: string; variants?: string[]; next?: { desc: string | null; choices: EncChoice[] } };
 // battles: 이 조우에서 이어지는 전투 스테이지 id (수작업 대응표 — build-rogue.py 주석 참조)
-type Encounter = { scene: string; title: string; desc: string | null; bg?: string | null; choices: EncChoice[]; floors?: number[]; note?: string; cn?: string; battles?: string[] };
+// scenes: PRTS 매칭 씬 트리 (build-rogue-enc-scenes.py) — dest는 scenes 배열 인덱스.
+// branch = 랜덤 결과 분기 라벨(게임 선택지 아님), prob = %확률, cnTitle/cn = 매칭 실패 CN 폴백.
+type EncSceneChoice = { title?: string; desc?: string | null; cn?: string; cnTitle?: string; cnDesc?: string; branch?: string; prob?: number; dest?: number };
+type EncScene = { desc?: string | null; cn?: string; choices: EncSceneChoice[] };
+type Encounter = { scene: string; title: string; desc: string | null; bg?: string | null; choices: EncChoice[]; floors?: number[]; note?: string; cn?: string; battles?: string[]; scenes?: EncScene[] };
 type RogueData = {
   id: string; name: string; line: string | null; cnName?: string; future?: boolean; server?: string;
   zones: Zone[]; nodeTypes: { id: string; name: string; desc: string | null; func?: string | null; cn?: string }[];
@@ -144,6 +148,70 @@ function ChoiceNode({ c, link }: { c: EncChoice; link?: (t: string | null) => Re
         </div>
       )}
     </li>
+  );
+}
+
+// 우연한 만남 씬 트리 — 게임처럼 선택지를 클릭하면 다음 씬(결과 서사·후속 선택지)이
+// 그 자리에서 펼쳐진다 (사용자 지시 2026-08-16). 데이터는 PRTS ISEvent 구조를 게임 id에
+// 매칭한 것 (scripts/build-rogue-enc-scenes.py). path로 순환(재도전 루프)을 끊는다.
+function SceneChoices({ scenes, idx, path, link }: {
+  scenes: EncScene[]; idx: number; path: number[]; link?: (t: string | null) => React.ReactNode;
+}) {
+  const { t } = useI18n();
+  const L = link ?? ((x: string | null) => x);
+  const [open, setOpen] = useState<Set<number>>(() => new Set());
+  const sc = scenes[idx];
+  if (!sc) return null;
+  return (
+    <ul className={`rg-enc-choices${idx > 0 || path.length > 1 ? " nested" : ""}`}>
+      {sc.choices.map((c, i) => {
+        const dest = c.dest;
+        const cyclic = dest !== undefined && path.includes(dest);
+        const expandable = dest !== undefined && !cyclic;
+        const expanded = expandable && open.has(i);
+        const head = c.branch !== undefined
+          ? <>
+              <span className="rg-choice-prob" aria-hidden>▮</span>
+              <strong className="rg-choice-branch">{c.branch}</strong>
+              {c.prob !== undefined && <span className="rg-choice-prob-pct">{c.prob}%</span>}
+            </>
+          : c.cn
+            ? <><strong lang="zh">{c.cn}</strong><span className="rg-choice-kr">{c.title ?? c.cnTitle}</span></>
+            : c.cnTitle
+              ? <strong lang="zh">{c.cnTitle}</strong>
+              : <strong>{c.title}</strong>;
+        const descTxt = c.desc ?? c.cnDesc ?? null;
+        return (
+          <li key={i} className="rg-choice">
+            {expandable ? (
+              <button type="button" className="rg-choice-head rg-choice-btn" aria-expanded={expanded}
+                onClick={() => setOpen((cur) => { const nx = new Set(cur); if (nx.has(i)) nx.delete(i); else nx.add(i); return nx; })}>
+                {head}
+                {descTxt && <span className="rg-choice-desc">{L(descTxt)}</span>}
+                <span className="rg-choice-caret" aria-hidden>{expanded ? "▾" : "▸"}</span>
+              </button>
+            ) : (
+              <div className="rg-choice-head">
+                {head}
+                {descTxt && <span className="rg-choice-desc">{L(descTxt)}</span>}
+                {cyclic && <span className="rg-choice-loop">{t("↻ 앞의 단계로 돌아갑니다")}</span>}
+              </div>
+            )}
+            {expanded && dest !== undefined && (
+              <div className="rg-choice-next">
+                {(scenes[dest]?.desc || scenes[dest]?.cn) && (
+                  <p className={`rg-choice-result${scenes[dest]?.cn ? " zh" : ""}`}
+                    lang={scenes[dest]?.cn ? "zh" : undefined}>
+                    {L(scenes[dest]?.desc ?? scenes[dest]?.cn ?? null)}
+                  </p>
+                )}
+                <SceneChoices scenes={scenes} idx={dest} path={[...path, dest]} link={link} />
+              </div>
+            )}
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
@@ -564,11 +632,15 @@ function EncounterModal({ enc, onClose, link, battles, onOpenStage }: {
           <div className="rg-enc-body">
             {enc.desc && <p className="rg-modal-desc">{enc.desc}</p>}
             {enc.note && <p className="rg-enc-note">{enc.note}</p>}
-            {/* 계단식 선택지 트리 — 선택 아래에 결과 서사·하위 선택지를 중첩.
-                rogue_6은 게임 버튼이 중국어라 원문을 대표로 병기 (사용자 확정 2026-07-19). */}
-            <ul className="rg-enc-choices">
-              {enc.choices.map((c, i) => <ChoiceNode key={i} c={c} link={link} />)}
-            </ul>
+            {/* 씬 트리(PRTS 매칭)가 있으면 게임처럼 클릭해 다음 씬을 펼치는 렌더,
+                없으면 기존 평탄 트리. rogue_6은 게임 버튼이 중국어라 원문을 대표로 병기. */}
+            {enc.scenes ? (
+              <SceneChoices scenes={enc.scenes} idx={0} path={[0]} link={link} />
+            ) : (
+              <ul className="rg-enc-choices">
+                {enc.choices.map((c, i) => <ChoiceNode key={i} c={c} link={link} />)}
+              </ul>
+            )}
             {/* 이 조우에서 전투가 벌어지면 그 맵을 바로 열 수 있게 (사용자 요청 2026-08-16).
                 게임 데이터에 조우↔전투 링크가 없어 수작업 대응표로만 붙는다 — 없으면 안 그린다. */}
             {battles && battles.length > 0 && onOpenStage && (
