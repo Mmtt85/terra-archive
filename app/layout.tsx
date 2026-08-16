@@ -91,6 +91,17 @@ var m=''+((e&&e.message)||'');if(isChunk(m)||(hit&&/reading '?default'?|of undef
 window.addEventListener('load',function(){setTimeout(function(){if(!hit){try{sessionStorage.removeItem(K);}catch(e){}}},5000);});})();`,
           }}
         />
+        {/* 언어 자동 전환 (사용자 요청 2026-08-16 — 트위터로 유입된 일본 방문자가 한국어
+            페이지에 떨어져 바로 이탈): 저장된 언어(ta-locale, 헤더 스위처가 기록)가 있으면
+            그 언어로, 없으면 브라우저 언어(ja→/ja, ko→/, 그 외→/en)로 경로를 맞춘다.
+            첫 페인트 전 location.replace라 플래시·히스토리 오염 없음. 크롤러(UA)와
+            자동화 브라우저(navigator.webdriver — 우리 Playwright 검증·about 캡처 포함)는
+            제외해 SEO·스크립트에 영향을 주지 않는다. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{if(!navigator.webdriver&&!/bot|crawl|spider|slurp|lighthouse|headless|preview/i.test(navigator.userAgent)){var lm=location.pathname.match(/^\\/(en|ja)(?=\\/|$)/);var cur=lm?lm[1]:'ko';var lp=null;try{lp=localStorage.getItem('ta-locale')}catch(e){}if(lp!=='ko'&&lp!=='en'&&lp!=='ja'){var nl=(navigator.language||'').slice(0,2).toLowerCase();lp=nl==='ko'?'ko':nl==='ja'?'ja':'en';}if(lp!==cur){var rest=location.pathname.replace(/^\\/(en|ja)(?=\\/|$)/,'');if(rest==='/')rest='';var tg=(lp==='ko'?'':'/'+lp)+rest;location.replace((tg||'/')+location.search+location.hash);}}}catch(e){}`,
+          }}
+        />
         {/* 첫 페인트 전에 해시를 읽어 초기 탭을 표시 — 서버 HTML은 항상 백과사전이라
             #infra·#recruit로 새로고침 시 백과사전이 잠깐 보이는 플래시를 막는다.
             React 하이드레이션 후 home.tsx의 useLayoutEffect가 data-route를 지운다. */}

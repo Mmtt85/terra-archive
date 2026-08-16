@@ -1202,9 +1202,7 @@ button {
   .site-header .theme-toggle {
     order: 9;
   }
-  .site-header .lang-wrap {
-    order: 10;
-  }
+  /* 언어 칩은 2026-08-17부터 1줄(만능검색 왼쪽) — 위 .omni 배치 블록에서 order 1 */
   .site-header .about-icon {
     order: 11;
   }
@@ -1219,12 +1217,13 @@ button {
   }
   /* 접힘: 로고·햄버거 한 줄만 남긴다. 공식방송은 2줄 오른쪽 고정이므로 접으면 같이
      사라진다 (사용자 확정 2026-07-22 — 접힘 상태에 공식방송을 남기지 않는다) */
+  /* 언어 칩(.lang-wrap)은 접힘에도 남긴다 — 1줄 소속 (사용자 요청 2026-08-17:
+     외국어 방문자가 헤더를 펼치지 않아도 언어를 바꿀 수 있어야 한다) */
   .site-header.collapsed .feedback-header-btn,
   .site-header.collapsed .event-group,
   .site-header.collapsed .bcast-trigger,
   .site-header.collapsed .future-toggle,
   .site-header.collapsed .theme-toggle,
-  .site-header.collapsed .lang-wrap,
   .site-header.collapsed .about-icon,
   .site-header.collapsed::before,
   .site-header.collapsed::after {
@@ -15372,19 +15371,27 @@ main.site-main > .site-header {
 
 /* 만능검색 트리거 위치 — 헤더 1줄 오른쪽, 햄버거 바로 왼쪽 (데스크탑·모바일 공통).
    nav-group의 margin-left:auto(위 배치 블록)를 고정 간격으로 바꿔 두 auto가 남는
-   공간을 반씩 나눠 갖는 상황을 막는다 — 밀어내기는 .omni 하나만 담당. */
+   공간을 반씩 나눠 갖는 상황을 막는다 — 밀어내기는 언어 칩 하나만 담당
+   (2026-08-17: 언어 전환이 만능검색 왼쪽으로 올라오면서 auto를 넘겨받았다). */
 @media (min-width: 761px) {
-  .omni {
+  .site-header > .lang-wrap {
     margin-left: auto;
+  }
+  .omni {
+    margin-left: 10px;
   }
   .site-header .nav-group {
     margin-left: 10px;
   }
 }
 @media (max-width: 760px) {
-  .omni {
+  .site-header > .lang-wrap {
     order: 1;
     margin-left: auto;
+  }
+  .omni {
+    order: 1;
+    margin-left: 8px;
   }
   .site-header .nav-group {
     margin-left: 8px;

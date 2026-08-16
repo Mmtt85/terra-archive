@@ -1675,6 +1675,10 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
         <ChangelogButton />
         {/* 헤더 치비 (베타) — 1줄 가운데 빈 공간의 산책 장식, 데스크탑 전용 (사용자 요청 2026-08-03) */}
         <HeaderChibi operators={operators} onNavigate={switchTab} onShowOperator={(op) => setSelected(op)} />
+        {/* 언어 전환 = 1줄 만능검색 왼쪽 — 헤더를 접어도 남는다 (사용자 요청 2026-08-17:
+            확장부에 있으면 외국어 방문자가 못 찾고 이탈한다). 첫 방문 자동 언어 맞춤은
+            layout.tsx 인라인 스크립트(ta-locale)가 담당. */}
+        <LanguageSwitcher />
         {/* 만능검색 = 1줄 오른쪽(햄버거 왼쪽) — 헤더를 접어도 남는다 (사용자 요청 2026-07-25) */}
         {/* 만능검색은 **처음 열 때까지 로드하지 않는다** (2026-08-09 INP 작업).
             omni-search → omni.ts → farm.tsx → costs.json(573KB) 사슬이라 그냥 마운트만 해도
@@ -1773,8 +1777,9 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
             <button className={`tab-about${tab === "about" ? " selected" : ""}`} onClick={() => switchTab("about")}><span className="tab-icon" aria-hidden>ⓘ</span>{t("테라 아카이브 소개")}</button>
           </nav>
         </div>
-        {/* 2줄(확장부) — 데스크탑: 미래시·다크모드·언어(오른쪽 끝). 모바일: display:contents로
-            래퍼를 풀어 기존 order 배치(3줄 제안·미래시·다크·언어)가 그대로 동작한다. */}
+        {/* 2줄(확장부) — 데스크탑: 미래시·다크모드(오른쪽 끝). 모바일: display:contents로
+            래퍼를 풀어 기존 order 배치(3줄 제안·미래시·다크)가 그대로 동작한다.
+            언어 전환은 2026-08-17에 1줄(만능검색 왼쪽)로 올라갔다. */}
         <div className="header-sub">
           {/* 제안 버튼 — 모바일 전용(3줄). 데스크탑에선 숨기고 우하단 FAB을 쓴다. */}
           {feedbackReady && (
@@ -1795,7 +1800,6 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
               <span className="ft-short">{t("미래시")}</span>
             </label>
             <ThemeToggle />
-            <LanguageSwitcher />
           </div>
         </div>
         {/* 헤더 접기 핸들 — 헤더 맨 아래 중앙, 데스크탑·모바일 공통 (접힘이 기본).

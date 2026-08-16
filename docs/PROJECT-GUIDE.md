@@ -66,7 +66,13 @@ vinext의 pushState 패치(스크롤 리셋)를 피하려 네이티브 `History.
 검색·필터 조합(백과 필터, 공채 태그 선택 등) 폼 상태는 딥링크 범위 밖.
 
 **언어 경로 (2026-07 도입)**: `/` = 한국어, `/en` = 영어, `/ja` = 일본어.
-헤더 우측 "KR SERVER" 칩이 언어 드롭다운(전체 내비게이션, 해시 유지)이다.
+헤더 1줄(만능검색 왼쪽)의 언어 칩이 드롭다운(전체 내비게이션, 해시 유지)이다 —
+접힌 헤더에서도 보인다 (2026-08-17에 확장부에서 1줄로 승격, 외국어 방문자 이탈 대책).
+- **언어 자동 전환 (2026-08-17)**: `app/layout.tsx` 인라인 스크립트가 첫 페인트 전에
+  저장된 언어(`localStorage.ta-locale` — 스위처가 기록) 우선, 없으면 브라우저 언어
+  (ja→/ja, ko→/, 그 외→/en)로 경로를 `location.replace` 한다. 크롤러(UA 패턴)와
+  자동화 브라우저(`navigator.webdriver` — 우리 Playwright 검증·about 캡처 포함)는
+  제외 — SEO와 검증 스크립트에 영향 없음.
 - 라우트별 페이지(`app/page.tsx`·`app/en/page.tsx`·`app/ja/page.tsx`)는 서버 컴포넌트로
   로케일 메타데이터(`app/seo.ts`) + JSON-LD만 얹고, 클라이언트 래퍼
   (`app/home-{ko,en,ja}.tsx`)가 해당 언어의 `operators*.json`/`extra-i18n*.json`을
