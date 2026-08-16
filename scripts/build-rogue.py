@@ -198,6 +198,24 @@ BRANCH_TR = {
 }
 
 
+# PRTS 편집자 텍스트 번역 사전 (전수조사 2026-08-16 — CN 누출 116건 직접 집필).
+# BRANCH_TR(상용구)이 먼저, 이 파일이 다음, 아이템명 교차가 마지막. 남으면 리포트.
+ENC_I18N_PATH = os.path.join(REPO, "scripts", "rogue-enc-i18n.json")
+_enc_i18n_cache = None
+enc_untranslated = {}     # 빌드 전체에서 수집 → rogue-enc-untranslated.json
+
+
+def load_enc_i18n():
+    global _enc_i18n_cache
+    if _enc_i18n_cache is None:
+        if os.path.exists(ENC_I18N_PATH):
+            d = json.load(open(ENC_I18N_PATH, encoding="utf-8"))
+            _enc_i18n_cache = {k: v for k, v in d.items() if not k.startswith("_")}
+        else:
+            _enc_i18n_cache = {}
+    return _enc_i18n_cache
+
+
 def attach_enc_scenes(encounters, trees, r_scenes, r_choices, branch_tr, cn_primary=False):
     """씬 트리를 로케일 텍스트로 해석해 encounters[].scenes 에 단다.
     scenes[i] = {desc?|cn?, choices:[{title,desc?|cnTitle|branch,prob?,dest?}]} — dest는 씬 인덱스.
@@ -206,7 +224,7 @@ def attach_enc_scenes(encounters, trees, r_scenes, r_choices, branch_tr, cn_prim
     by_scene = {e["scene"]: e for e in encounters}
     for sid, tree in trees.items():
         enc = by_scene.get(sid)
-        if enc is None:
+        if enc is None or "scenes" not in tree:
             continue
         n = len(tree["scenes"])
         scenes = []
@@ -1466,14 +1484,28 @@ def build_topic(tid="rogue_1", loc=None):
             if it.get("name") and ik and (ik.get("name") or "").strip():
                 item_tr.setdefault(it["name"].strip(), ik["name"].strip())
         lang = {"en": "en", "ja": "ja"}.get(loc, "ko")
+        enc_i18n = load_enc_i18n()
         def branch_tr(label):
             if loc == "cn":
                 return label            # CN 변형 빌드는 원문 유지 (cn_koreanize가 오버레이)
-            b = BRANCH_TR.get(label)
+            b = BRANCH_TR.get(label) or enc_i18n.get(label)
             if b and b.get(lang):
                 return b[lang]
-            return item_tr.get(label, label)
+            if label in item_tr:
+                return item_tr[label]
+            if any("一" <= ch <= "鿿" for ch in label):
+                enc_untranslated.setdefault(label, tid)   # 새 PRTS 텍스트 감지용
+            return label
         attach_enc_scenes(encounters, enc_trees, r["choiceScenes"], r["choices"], branch_tr)
+        # 전투 링크 보강 — 수작업(encounterBattles)이 우선, 없는 조우만 PRTS 링크로.
+        # 이 로케일에 없는 스테이지(CN 선행분)는 걸러낸다.
+        stage_ids_all = {s2["id"] for s2 in stages}
+        for enc in encounters:
+            t2 = enc_trees.get(enc["scene"])
+            if t2 and not enc.get("battles"):
+                bs = [b for b in t2.get("battles") or [] if b in stage_ids_all]
+                if bs:
+                    enc["battles"] = bs
         # 보스(험난한 길) 출현 층 — 사용자 확인: b_1~5=3층, b_6~7=5층, b_8~9=히든 6층
         boss_floors = curated.get("bossFloors", {})
         for s in stages:
@@ -2203,6 +2235,13 @@ def build_rogue6():
     enc_trees6 = load_enc_scenes().get("rogue_6") or {}
     if enc_trees6:
         attach_enc_scenes(encounters, enc_trees6, r["choiceScenes"], r["choices"], lambda x: x, cn_primary=True)
+        stage_ids_all6 = {s2["id"] for s2 in stages}
+        for enc in encounters:
+            t2 = enc_trees6.get(enc["scene"])
+            if t2 and not enc.get("battles"):
+                bs = [b for b in t2.get("battles") or [] if b in stage_ids_all6]
+                if bs:
+                    enc["battles"] = bs
 
     out = {
         "id": "rogue_6",
@@ -2511,6 +2550,14 @@ def unpack_node_icons(topics=("rogue_1", "rogue_2", "rogue_3", "rogue_4", "rogue
     print(f"\n합계 {total}장 → public/rogue/node/  ·  R2 반영: node scripts/r2-sync.mjs")
 
 
+def dump_enc_untranslated():
+    # 조우 씬 트리의 미번역 PRTS 텍스트 리포트 — 비면 파일도 비운다 (rogue6 리포트와 같은 규약)
+    path = os.path.join(REPO, "scripts", "rogue-enc-untranslated.json")
+    json.dump(enc_untranslated, open(path, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    if enc_untranslated:
+        print(f"⚠ 조우 씬 미번역 {len(enc_untranslated)}건 → rogue-enc-untranslated.json (rogue-enc-i18n.json에 채우면 반영)")
+
+
 if __name__ == "__main__":
     arg = sys.argv[1] if len(sys.argv) > 1 else ""
     if arg == "--node-icons":
@@ -2540,5 +2587,6 @@ if __name__ == "__main__":
         for n in range(1, 6):
             for lc in ("en", "ja", "cn"):
                 build_topic(f"rogue_{n}", lc)
+        dump_enc_untranslated()
     else:
         build_topic("rogue_1")

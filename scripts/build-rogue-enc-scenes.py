@@ -124,8 +124,25 @@ def clean(s):
     s = re.sub(r"\{\{color\|[^|]*\|([^}]*)\}\}", r"\1", s)
     s = re.sub(r"\{\{mdi\|[^}]*\}\}", "", s)
     s = re.sub(r"\{\{[^}]*\}\}", "", s)          # 남은 템플릿 제거
-    s = s.replace("<br/>", "\n").replace("<br>", "\n")
+    s = re.sub(r"\[\[[^\]|]*\|([^\]]*)\]\]", r"\1", s)   # [[페이지|라벨]] → 라벨
+    s = re.sub(r"\[\[([^\]]*)\]\]", r"\1", s)            # [[페이지]] → 페이지
+    s = s.replace("<br/>", "\n").replace("<br>", "\n").replace("<hr>", "")
     return s.strip()
+
+
+# 전투 스테이지 링크 — PRTS choose 텍스트의 [[<코드> <CN 작전명>|…]] 위키링크.
+# 조우→전투 대응이 게임 데이터에 없는데 PRTS가 여기 박아 뒀다 (2026-08-16 발견).
+LINK_RE = re.compile(r"\[\[([^\]|#]+?)(?:#[^\]|]*)?(?:\|[^\]]*)?\]\]")
+
+
+def extract_links(*raws):
+    out = []
+    for raw in raws:
+        for m in LINK_RE.findall(raw or ""):
+            t = m.strip()
+            if t and t not in out:
+                out.append(t)
+    return out
 
 
 def is_named(p):
@@ -158,6 +175,7 @@ def parse_topic(data):
                     "title": clean(cpos[1]) if len(cpos) > 1 else "",
                     "desc": clean(cnamed.get("desc1", "")),
                     "dest": int(cnamed["dest"]) if cnamed.get("dest", "").strip().isdigit() else None,
+                    "links": extract_links(cpos[1] if len(cpos) > 1 else "", cnamed.get("desc1", "")),
                 })
             scenes.append(sc)
         if scenes:
@@ -189,7 +207,12 @@ def match_topic(tid, events, det):
     all_choices = det["choices"]
 
     stats = {"events": len(events), "matched": 0, "ch_ok": 0, "ch_fuzzy": 0,
-             "ch_branch": 0, "ch_fail": 0, "sc_ok": 0, "sc_fail": 0}
+             "ch_branch": 0, "ch_fail": 0, "sc_ok": 0, "sc_fail": 0, "battles": 0}
+    # CN 작전명 → 스테이지 id (동명 변형 _b/_c 전부 — 결투 원거리/근거리판 등)
+    stage_by_name = {}
+    for sid, st in det["stages"].items():
+        if st.get("name"):
+            stage_by_name.setdefault(norm(st["name"]), []).append(sid)
     out = {}
     for ev in events:
         title = next((s["title"] for s in ev["scenes"] if s["title"]), "")
@@ -210,6 +233,25 @@ def match_topic(tid, events, det):
         ch_by_title = {}
         for cid, c in grp_choice.items():
             ch_by_title.setdefault(norm(c["title"]), []).append(cid)
+
+        # 이 조우에서 링크된 전투 스테이지 — [[<코드> <CN명>|…]] 의 CN명을 스테이지에 매칭.
+        # 페이지명 앞의 코드 토큰(ISW-NO 등)은 떼고 대조한다.
+        ev_battles = []
+        for s in ev["scenes"]:
+            for c in s["choices"]:
+                for ln in c.get("links") or []:
+                    name = re.sub(r"^[A-Za-z0-9-]+\s+", "", ln)
+                    for sid2 in stage_by_name.get(norm(name), []):
+                        # 층 일반/긴급(roN_n_F·roN_e_F) 링크는 '그 층의 랜덤 전투'라는 뜻
+                        # (힘든 전투 직면 등) — 고정 맵이 아니므로 제외한다.
+                        if re.match(r"ro\d+_[ne]_\d", sid2):
+                            continue
+                        # 특수전 긴급판(roN_e_t_*)은 본판 모달의 일반/긴급 탭으로 접근 — 중복 제외
+                        if re.match(r"ro\d+_e_t_", sid2):
+                            continue
+                        if sid2 not in ev_battles:
+                            ev_battles.append(sid2)
+        stats["battles"] += len(ev_battles)
 
         scenes_out = []
         for idx, s in enumerate(ev["scenes"]):
@@ -259,9 +301,15 @@ def match_topic(tid, events, det):
                 elif not explicit_branch and c["title"]:
                     stats["ch_fail"] += 1
             scenes_out.append(node)
-        # 씬이 1개뿐이고 링크가 없으면 트리로서 무의미 — 평탄 렌더 유지
+        # 씬이 1개뿐이고 링크가 없으면 트리로서 무의미 — 평탄 렌더 유지.
+        # 전투 링크는 트리 유무와 무관하게 남긴다 (encounterBattles 자동 보강용).
+        entry = {}
         if len(scenes_out) > 1:
-            out[enter] = {"scenes": scenes_out}
+            entry["scenes"] = scenes_out
+        if ev_battles:
+            entry["battles"] = ev_battles
+        if entry:
+            out[enter] = entry
     return out, stats
 
 
@@ -283,7 +331,9 @@ def main():
               f"씬 해결 {st['sc_ok']} 실패 {st['sc_fail']}")
     meta = {"_comment": "조우 씬 트리 — PRTS 事件一览을 게임 id에 매칭 (build-rogue-enc-scenes.py 재생성, 손대지 말 것). "
                         "sid/cid = 게임 데이터 id (로케일 텍스트는 build-rogue.py가 해석), dest = 이 조우 씬 배열 인덱스, "
-                        "branch = PRTS 편집자 분기 라벨(랜덤 결과), prob = %확률. descCn/titleCn = id 미해결 CN 폴백."}
+                        "branch = PRTS 편집자 분기 라벨(랜덤 결과), prob = %확률. descCn/titleCn = id 미해결 CN 폴백. "
+                        "battles = PRTS 위키링크([[코드 작전명|…]])에서 추출한 이 조우의 전투 스테이지 — "
+                        "rogueN-curated.json encounterBattles(수작업)가 우선하고 없는 조우만 이걸로 보강한다."}
     json.dump({**meta, **result}, open(OUT, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     total = sum(len(v) for v in result.values())
     print(f"→ scripts/rogue-enc-scenes.json (트리 {total}건, {os.path.getsize(OUT)//1024}KB)")

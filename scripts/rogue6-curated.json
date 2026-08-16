@@ -42,8 +42,6 @@
     "scene_ro6_bat3_enter": ["ro6_t_3"],
     "scene_ro6_bat4_enter": ["ro6_t_4"],
     "scene_ro6_bat5_enter": ["ro6_t_5"],
-    "scene_ro6_bat6_enter": ["ro6_t_7"],
-    "scene_ro6_sala1_enter": ["ro6_duel_2"],
-    "scene_ro6_sala2_enter": ["ro6_duel_1"]
+    "scene_ro6_bat6_enter": ["ro6_t_7"]
   }
 }

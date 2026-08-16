@@ -1,5 +1,5 @@
 {
- "_comment": "조우 씬 트리 — PRTS 事件一览을 게임 id에 매칭 (build-rogue-enc-scenes.py 재생성, 손대지 말 것). sid/cid = 게임 데이터 id (로케일 텍스트는 build-rogue.py가 해석), dest = 이 조우 씬 배열 인덱스, branch = PRTS 편집자 분기 라벨(랜덤 결과), prob = %확률. descCn/titleCn = id 미해결 CN 폴백.",
+ "_comment": "조우 씬 트리 — PRTS 事件一览을 게임 id에 매칭 (build-rogue-enc-scenes.py 재생성, 손대지 말 것). sid/cid = 게임 데이터 id (로케일 텍스트는 build-rogue.py가 해석), dest = 이 조우 씬 배열 인덱스, branch = PRTS 편집자 분기 라벨(랜덤 결과), prob = %확률. descCn/titleCn = id 미해결 CN 폴백. battles = PRTS 위키링크([[코드 작전명|…]])에서 추출한 이 조우의 전투 스테이지 — rogueN-curated.json encounterBattles(수작업)가 우선하고 없는 조우만 이걸로 보강한다.",
  "rogue_1": {
   "scene_hp_enter": {
    "scenes": [
@@ -610,6 +610,9 @@
      "sid": "scene_bat2_2",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro1_ev_2"
    ]
   },
   "scene_bat3_enter": {
@@ -639,6 +642,9 @@
      "sid": "scene_bat3_2",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro1_ev_1"
    ]
   },
   "scene_bat4_enter": {
@@ -668,6 +674,9 @@
      "sid": "scene_bat4_2",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro1_ev_3"
    ]
   },
   "scene_t1_enter": {
@@ -697,6 +706,9 @@
      "sid": "scene_t1_2",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro1_t_1"
    ]
   },
   "scene_t2_enter": {
@@ -726,6 +738,9 @@
      "sid": "scene_t2_2",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro1_t_2"
    ]
   },
   "scene_t3_enter": {
@@ -755,6 +770,9 @@
      "sid": "scene_t3_2",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro1_t_3"
    ]
   },
   "scene_t4_enter": {
@@ -784,6 +802,9 @@
      "sid": "scene_t4_2",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro1_t_4"
    ]
   },
   "scene_blood1_enter": {
@@ -1123,6 +1144,9 @@
      "sid": "scene_writer1_2",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro1_ev_4"
    ]
   },
   "scene_writer2_enter": {
@@ -1152,6 +1176,9 @@
      "sid": "scene_writer2_2",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro1_ev_5"
    ]
   },
   "scene_rest_enter": {
@@ -2605,7 +2632,7 @@
        "dest": 4
       }
      ],
-     "descCn": "''进行一次掷骰判定（不消耗投掷次数）：\n检定结果>5，一帆风顺：你从物资堆里找到了保存完好的物件\n检定结果≤5，风平浪静：这批物资里没有什么能用的东西（继续事件并显示选项，其中随机选项出现0~2个+必定出现【为财富付出】选项）。''<hr>受损物资中寻找可用物件时，你无意间瞥见了被抢救出来的新物资和圣人塑像，审判官们无疑正循着自己的信念行事，那你呢，你又为了什么？"
+     "descCn": "''进行一次掷骰判定（不消耗投掷次数）：\n检定结果>5，一帆风顺：你从物资堆里找到了保存完好的物件\n检定结果≤5，风平浪静：这批物资里没有什么能用的东西（继续事件并显示选项，其中随机选项出现0~2个+必定出现【为财富付出】选项）。''受损物资中寻找可用物件时，你无意间瞥见了被抢救出来的新物资和圣人塑像，审判官们无疑正循着自己的信念行事，那你呢，你又为了什么？"
     },
     {
      "sid": null,
@@ -2786,7 +2813,7 @@
        "dest": 2
       }
      ],
-     "descCn": "''进行一次掷骰判定（不消耗投掷次数）：\n检定结果>5，一帆风顺：诸王的宝藏现在是你的了\n检定结果≤5，一波三折：你没有找到诸王的珍宝（继续事件并显示选项）''<hr>你并没有看到特别值得获取的财宝，或许有价值的东西早就被王室仆从或审判庭拿走了吧......而且这里根本就没有国王们的塑像，甚至连姓名或称号都没有。你不禁开始怀疑这个所谓的博物馆中各种信息的真实性。"
+     "descCn": "''进行一次掷骰判定（不消耗投掷次数）：\n检定结果>5，一帆风顺：诸王的宝藏现在是你的了\n检定结果≤5，一波三折：你没有找到诸王的珍宝（继续事件并显示选项）''你并没有看到特别值得获取的财宝，或许有价值的东西早就被王室仆从或审判庭拿走了吧......而且这里根本就没有国王们的塑像，甚至连姓名或称号都没有。你不禁开始怀疑这个所谓的博物馆中各种信息的真实性。"
     },
     {
      "sid": "scene_ro2_king_3",
@@ -2861,6 +2888,9 @@
       }
      ]
     }
+   ],
+   "battles": [
+    "ro2_ev_1"
    ]
   },
   "scene_ro2_san1_enter": {
@@ -2898,6 +2928,9 @@
      "sid": "scene_ro2_san1_3",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro2_ev_2"
    ]
   },
   "scene_ro2_bat1_enter": {
@@ -2956,6 +2989,9 @@
      "sid": "scene_ro2_bat2_2",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro2_ev_3"
    ]
   },
   "scene_ro2_t1_enter": {
@@ -2985,6 +3021,9 @@
      "sid": "scene_ro2_t1_2",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro2_t_1"
    ]
   },
   "scene_ro2_t2_enter": {
@@ -3014,6 +3053,9 @@
      "sid": "scene_ro2_t2_2",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro2_t_2"
    ]
   },
   "scene_ro2_t3_enter": {
@@ -3043,6 +3085,9 @@
      "sid": "scene_ro2_t3_2",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro2_t_3"
    ]
   },
   "scene_ro2_t4_enter": {
@@ -3072,6 +3117,9 @@
      "sid": "scene_ro2_t4_2",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro2_t_4"
    ]
   },
   "scene_ro2_t5_enter": {
@@ -3101,6 +3149,9 @@
      "sid": "scene_ro2_t5_2",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro2_t_5"
    ]
   },
   "scene_ro2_bossa1_enter": {
@@ -4440,6 +4491,9 @@
      "sid": "scene_ro3_bat1_3",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro3_t_1"
    ]
   },
   "scene_ro3_bat2_enter": {
@@ -4477,6 +4531,9 @@
      "sid": "scene_ro3_bat2_3",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro3_t_2"
    ]
   },
   "scene_ro3_bat3_enter": {
@@ -4514,6 +4571,9 @@
      "sid": "scene_ro3_bat3_3",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro3_t_3"
    ]
   },
   "scene_ro3_bat4_enter": {
@@ -4551,6 +4611,9 @@
      "sid": "scene_ro3_bat4_3",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro3_t_4"
    ]
   },
   "scene_ro3_bat5_enter": {
@@ -4588,6 +4651,9 @@
      "sid": "scene_ro3_bat5_2",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro3_ev_1"
    ]
   },
   "scene_ro3_bat6_enter": {
@@ -4625,6 +4691,9 @@
      "sid": "scene_ro3_bat6_3",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro3_ev_2"
    ]
   },
   "scene_ro3_bat7_enter": {
@@ -4662,6 +4731,9 @@
      "sid": "scene_ro3_bat7_3",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro3_ev_3"
    ]
   },
   "scene_ro3_bat8_enter": {
@@ -4691,6 +4763,9 @@
      "sid": "scene_ro3_bat8_2",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro3_ev_4"
    ]
   },
   "scene_ro3_bat9_enter": {
@@ -4732,6 +4807,9 @@
      "sid": "scene_ro3_bat9_2",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro3_ev_5"
    ]
   },
   "scene_ro3_ex1_enter": {
@@ -4761,6 +4839,9 @@
      "sid": "scene_ro3_ex1_2",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro3_ev_8"
    ]
   },
   "scene_ro3_story1_enter": {
@@ -5824,7 +5905,7 @@
     {
      "sid": null,
      "choices": [],
-     "descCn": "''进入【[[探索者的银凇止境#区域|深埋迷境]]】''"
+     "descCn": "''进入【深埋迷境】''"
     },
     {
      "sid": null,
@@ -6779,6 +6860,9 @@
      "sid": "scene_ro4_normal10_3",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro4_t_6"
    ]
   },
   "scene_ro4_normal11_enter": {
@@ -6874,6 +6958,9 @@
      "sid": "scene_ro4_bat1_2",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro4_t_1"
    ]
   },
   "scene_ro4_bat2_enter": {
@@ -6903,6 +6990,9 @@
      "sid": "scene_ro4_bat2_2",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro4_t_2"
    ]
   },
   "scene_ro4_bat3_enter": {
@@ -6944,6 +7034,9 @@
       }
      ]
     }
+   ],
+   "battles": [
+    "ro4_t_3"
    ]
   },
   "scene_ro4_bat4_enter": {
@@ -6985,6 +7078,9 @@
       }
      ]
     }
+   ],
+   "battles": [
+    "ro4_t_4"
    ]
   },
   "scene_ro4_bat5_enter": {
@@ -7026,6 +7122,9 @@
       }
      ]
     }
+   ],
+   "battles": [
+    "ro4_t_5"
    ]
   },
   "scene_ro4_ent1_enter": {
@@ -7255,6 +7354,9 @@
      "sid": "scene_ro4_ent2_8",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro4_t_8"
    ]
   },
   "scene_ro4_ent3_enter": {
@@ -7367,6 +7469,9 @@
       }
      ]
     }
+   ],
+   "battles": [
+    "ro4_t_2"
    ]
   },
   "scene_ro4_scout_enter": {
@@ -7617,6 +7722,10 @@
       }
      ]
     }
+   ],
+   "battles": [
+    "ro4_duel_1",
+    "ro4_duel_b"
    ]
   },
   "scene_ro4_sala2_enter": {
@@ -7658,6 +7767,10 @@
       }
      ]
     }
+   ],
+   "battles": [
+    "ro4_duel_2",
+    "ro4_duel_b"
    ]
   },
   "scene_ro4_sala3_enter": {
@@ -7699,6 +7812,10 @@
       }
      ]
     }
+   ],
+   "battles": [
+    "ro4_duel_3",
+    "ro4_duel_b"
    ]
   },
   "scene_ro4_fin1_enter": {
@@ -8619,6 +8736,9 @@
      "sid": "scene_ro5_bat1_3",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro5_t_1"
    ]
   },
   "scene_ro5_bat2_enter": {
@@ -8660,6 +8780,9 @@
      "sid": "scene_ro5_bat2_3",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro5_t_2"
    ]
   },
   "scene_ro5_bat3_enter": {
@@ -8709,6 +8832,9 @@
      "sid": "scene_ro5_bat3_3",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro5_t_3"
    ]
   },
   "scene_ro5_bat4_enter": {
@@ -8758,6 +8884,9 @@
      "sid": "scene_ro5_bat4_3",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro5_t_4"
    ]
   },
   "scene_ro5_bat5_enter": {
@@ -8799,6 +8928,9 @@
      "sid": "scene_ro5_bat5_3",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro5_t_5"
    ]
   },
   "scene_ro5_pick1_enter": {
@@ -8874,6 +9006,9 @@
       }
      ]
     }
+   ],
+   "battles": [
+    "ro5_t_6"
    ]
   },
   "scene_ro5_bat7_enter": {
@@ -8915,6 +9050,9 @@
      "sid": "scene_ro5_bat7_3",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro5_t_7"
    ]
   },
   "scene_ro5_bat10_enter": {
@@ -8964,6 +9102,9 @@
      "sid": "scene_ro5_bat10_3",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro5_t_10"
    ]
   },
   "scene_ro5_res1_enter": {
@@ -9536,6 +9677,11 @@
       }
      ]
     }
+   ],
+   "battles": [
+    "ro5_t_9_a",
+    "ro5_t_9_b",
+    "ro5_t_9_c"
    ]
   },
   "scene_ro5_res6_enter": {
@@ -11695,6 +11841,9 @@
      "sid": "scene_ro5_camp1_3",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro5_dv_5"
    ]
   },
   "scene_ro5_portal1_enter": {
@@ -11919,6 +12068,11 @@
       }
      ]
     }
+   ],
+   "battles": [
+    "ro5_duel_1",
+    "ro5_duel_1_b",
+    "ro5_duel_3"
    ]
   },
   "scene_ro5_sala2_enter": {
@@ -11960,6 +12114,12 @@
       }
      ]
     }
+   ],
+   "battles": [
+    "ro5_duel_2",
+    "ro5_duel_2_b",
+    "ro5_duel_2_c",
+    "ro5_duel_4"
    ]
   },
   "scene_ro5_end1_enter": {
@@ -12448,6 +12608,9 @@
      "sid": "scene_ro6_bat1_2",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro6_t_1"
    ]
   },
   "scene_ro6_bat2_enter": {
@@ -12477,6 +12640,9 @@
      "sid": "scene_ro6_bat2_2",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro6_t_2"
    ]
   },
   "scene_ro6_bat3_enter": {
@@ -12518,6 +12684,9 @@
      "sid": "scene_ro6_bat3_3",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro6_t_3"
    ]
   },
   "scene_ro6_bat4_enter": {
@@ -12559,6 +12728,9 @@
      "sid": "scene_ro6_bat4_3",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro6_t_4"
    ]
   },
   "scene_ro6_bat5_enter": {
@@ -12663,6 +12835,9 @@
      "sid": "scene_ro6_bat5_9",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro6_t_5"
    ]
   },
   "scene_ro6_bat6_enter": {
@@ -14060,6 +14235,9 @@
      "sid": "scene_ro6_sala1_2",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro6_duel_1"
    ]
   },
   "scene_ro6_sala2_enter": {
@@ -14089,6 +14267,9 @@
      "sid": "scene_ro6_sala2_2",
      "choices": []
     }
+   ],
+   "battles": [
+    "ro6_duel_2"
    ]
   },
   "scene_ro6_end1_enter": {
@@ -14143,6 +14324,9 @@
       }
      ]
     }
+   ],
+   "battles": [
+    "ro6_b_5"
    ]
   },
   "scene_ro6_end3_enter": {

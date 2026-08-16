@@ -1,0 +1,593 @@
+{
+ "_comment": "조우 씬 트리의 PRTS 편집자 텍스트(랜덤 안내·판정 룰·분기 라벨) CN→ko/en/ja 번역. 게임 텍스트가 아니라 excel에 없어 직접 집필한다 (2026-08-16, 전수조사). build-rogue.py가 분기 라벨·씬 지문 폴백에 적용하고, 새 미번역분은 rogue-enc-untranslated.json으로 리포트한다. IS5 주화 면(花·厉)은 KR 공식 표기가 없어 한자를 기호로 유지.",
+ "以下选项随机出现一项": {
+  "ko": "아래 선택지 중 하나가 랜덤으로 나타납니다",
+  "en": "One of the options below appears at random",
+  "ja": "以下の選択肢からランダムに1つ出現します"
+ },
+ "以下结果和选项随机出现": {
+  "ko": "아래 결과와 선택지가 랜덤으로 나타납니다",
+  "en": "The outcomes and options below appear at random",
+  "ja": "以下の結果と選択肢がランダムに出現します"
+ },
+ "以下结果随机出现。": {
+  "ko": "아래 결과 중 하나가 랜덤으로 발생합니다.",
+  "en": "One of the outcomes below occurs at random.",
+  "ja": "以下の結果からランダムに1つ発生します。"
+ },
+ "以下分支随机出现1支": {
+  "ko": "아래 분기 중 하나가 랜덤으로 나타납니다",
+  "en": "One of the branches below appears at random",
+  "ja": "以下の分岐からランダムに1つ出現します"
+ },
+ "根据掷出通宝的结果出现下列选项之一": {
+  "ko": "던진 통보의 결과에 따라 아래 선택지 중 하나가 나타납니다",
+  "en": "One of the options below appears depending on the coin toss result",
+  "ja": "投げた通宝の結果に応じて以下の選択肢が1つ出現します"
+ },
+ "''根据选择的收藏品的稀有度进入不同的事件''": {
+  "ko": "선택한 소장품의 희귀도에 따라 다른 결과로 이어집니다",
+  "en": "Leads to a different outcome depending on the chosen collectible's rarity",
+  "ja": "選んだコレクションのレアリティによって異なる結果に進みます"
+ },
+ "''根据选择的密文板的稀有度进入不同的事件''": {
+  "ko": "선택한 암호판의 희귀도에 따라 다른 결과로 이어집니다",
+  "en": "Leads to a different outcome depending on the chosen cipher board's rarity",
+  "ja": "選んだ暗号板のレアリティによって異なる結果に進みます"
+ },
+ "''根据当前状态值和编队状态优先提供下列选项，否则随机提供：''": {
+  "ko": "현재 상태·편성에 따라 아래 선택지가 우선 제공되며, 해당하지 않으면 랜덤으로 제공됩니다:",
+  "en": "The options below are offered based on your current status and squad; otherwise at random:",
+  "ja": "現在の状態と編成に応じて以下の選択肢が優先的に提示され、該当しない場合はランダムに提示されます:"
+ },
+ "1源石锭": {
+  "ko": "오리지늄각뿔 1",
+  "en": "1 Originium Ingot",
+  "ja": "源石錐1"
+ },
+ "3源石锭": {
+  "ko": "오리지늄각뿔 3",
+  "en": "3 Originium Ingots",
+  "ja": "源石錐3"
+ },
+ "更多源石锭": {
+  "ko": "더 많은 오리지늄각뿔",
+  "en": "More Originium Ingots",
+  "ja": "より多くの源石錐"
+ },
+ "询问对方姓名": {
+  "ko": "상대의 이름을 묻는다",
+  "en": "Ask their name",
+  "ja": "相手の名を尋ねる"
+ },
+ "对方并未回答你，而是朝后退了一步，带着笑容从窗口跳了下去。": {
+  "ko": "상대는 대답하지 않았다. 대신 한 걸음 물러서더니, 미소를 지은 채 창밖으로 뛰어내렸다.",
+  "en": "They don't answer. Instead they take a step back and, still smiling, leap out of the window.",
+  "ja": "相手は答えなかった。代わりに一歩下がると、笑みを浮かべたまま窓から飛び降りた。"
+ },
+ "好好劝劝他": {
+  "ko": "그를 잘 타이른다",
+  "en": "Try to talk him around",
+  "ja": "彼をよく諭す"
+ },
+ "听起来很危险，还是快离开吧": {
+  "ko": "위험하게 들린다, 얼른 떠나자",
+  "en": "Sounds dangerous — better leave quickly",
+  "ja": "危険そうだ、早く立ち去ろう"
+ },
+ "这地方太危险了": {
+  "ko": "이곳은 너무 위험하다",
+  "en": "This place is too dangerous",
+  "ja": "ここは危険すぎる"
+ },
+ "再喂失败": {
+  "ko": "다시 먹이기 실패",
+  "en": "Feeding again fails",
+  "ja": "再び餌やりに失敗"
+ },
+ "骰子": {
+  "ko": "주사위",
+  "en": "Dice",
+  "ja": "ダイス"
+ },
+ "钥匙": {
+  "ko": "열쇠",
+  "en": "Key",
+  "ja": "鍵"
+ },
+ "''进行一次掷骰判定（不消耗投掷次数）：\n检定结果>5，一帆风顺：你从物资堆里找到了保存完好的物件\n检定结果≤5，风平浪静：这批物资里没有什么能用的东西（继续事件并显示选项，其中随机选项出现0~2个+必定出现【为财富付出】选项）。''受损物资中寻找可用物件时，你无意间瞥见了被抢救出来的新物资和圣人塑像，审判官们无疑正循着自己的信念行事，那你呢，你又为了什么？": {
+  "ko": "주사위 판정 1회 (던지기 횟수 소모 없음):\n판정 결과 >5 (순항): 물자 더미에서 온전하게 보존된 물건을 찾아낸다\n판정 결과 ≤5 (잔잔함): 이 물자에는 쓸 만한 것이 없다 (이벤트가 이어지며 랜덤 선택지 0~2개 + 【재물을 위해 바친다】 선택지가 반드시 나타남).\n파손된 물자에서 쓸 만한 것을 찾던 당신은 구조된 새 물자와 성인 조각상을 얼핏 보았다. 심판관들은 분명 자신의 신념을 따라 움직이고 있다. 그렇다면 당신은, 무엇을 위해서인가?",
+  "en": "Make one dice check (no toss consumed):\nResult >5 (smooth sailing): you find a well-preserved item in the supply pile\nResult ≤5 (calm waters): nothing usable here (the event continues with 0–2 random options plus the guaranteed \"Pay for wealth\" option).\nWhile searching the damaged supplies you glimpse the salvaged goods and a saint's statue. The Inquisitors are clearly acting on their faith — and you? What are you doing this for?",
+  "ja": "ダイス判定を1回行う (投擲回数を消費しない):\n判定結果 >5 (順風満帆): 物資の山から保存状態の良い品を見つける\n判定結果 ≤5 (凪): 使える物はない (イベントは継続し、ランダム選択肢0～2個+確定で【財のために払う】が出現)。\n破損した物資を漁るうち、あなたは救い出された新しい物資と聖人像を目にした。審問官たちは紛れもなく信念に従って動いている。では、あなたは何のために?"
+ },
+ "''进行一次掷骰判定（不消耗投掷次数）：\n检定结果>1，一帆风顺：你从物资堆里找到了保存完好的物件\n检定结果1，一波三折：看来这里没有什么能用的东西（继续事件）''": {
+  "ko": "주사위 판정 1회 (던지기 횟수 소모 없음):\n판정 결과 >1 (순항): 물자 더미에서 온전하게 보존된 물건을 찾아낸다\n판정 결과 1 (우여곡절): 여기엔 쓸 만한 것이 없는 듯하다 (이벤트 계속)",
+  "en": "Make one dice check (no toss consumed):\nResult >1 (smooth sailing): you find a well-preserved item in the supply pile\nResult 1 (rough going): nothing usable here, it seems (event continues)",
+  "ja": "ダイス判定を1回行う (投擲回数を消費しない):\n判定結果 >1 (順風満帆): 物資の山から保存状態の良い品を見つける\n判定結果 1 (一波乱): ここに使える物はなさそうだ (イベント継続)"
+ },
+ "''进行一次掷骰判定（根据选择情况消耗投掷次数）：\n检定结果>3，一帆风顺：你从物资堆里找到了保存完好的物件\n检定结果≤3，一波三折：看来这里没有什么能用的东西（继续事件）''": {
+  "ko": "주사위 판정 1회 (선택에 따라 던지기 횟수 소모):\n판정 결과 >3 (순항): 물자 더미에서 온전하게 보존된 물건을 찾아낸다\n판정 결과 ≤3 (우여곡절): 여기엔 쓸 만한 것이 없는 듯하다 (이벤트 계속)",
+  "en": "Make one dice check (tosses consumed depending on your choice):\nResult >3 (smooth sailing): you find a well-preserved item in the supply pile\nResult ≤3 (rough going): nothing usable here, it seems (event continues)",
+  "ja": "ダイス判定を1回行う (選択によって投擲回数を消費):\n判定結果 >3 (順風満帆): 物資の山から保存状態の良い品を見つける\n判定結果 ≤3 (一波乱): ここに使える物はなさそうだ (イベント継続)"
+ },
+ "''进行一次掷骰判定（不消耗投掷次数）：\n检定结果>5，一帆风顺：你从物资堆里找到了保存完好的物件\n检定结果≤5，一波三折：看来这里没有什么能用的东西（继续事件）''": {
+  "ko": "주사위 판정 1회 (던지기 횟수 소모 없음):\n판정 결과 >5 (순항): 물자 더미에서 온전하게 보존된 물건을 찾아낸다\n판정 결과 ≤5 (우여곡절): 여기엔 쓸 만한 것이 없는 듯하다 (이벤트 계속)",
+  "en": "Make one dice check (no toss consumed):\nResult >5 (smooth sailing): you find a well-preserved item in the supply pile\nResult ≤5 (rough going): nothing usable here, it seems (event continues)",
+  "ja": "ダイス判定を1回行う (投擲回数を消費しない):\n判定結果 >5 (順風満帆): 物資の山から保存状態の良い品を見つける\n判定結果 ≤5 (一波乱): ここに使える物はなさそうだ (イベント継続)"
+ },
+ "''进行一次掷骰判定：\n检定结果>1，一帆风顺：骑士此刻与你并肩作战\n检定结果1，风平浪静：骑士不再理会你的呼号''": {
+  "ko": "주사위 판정 1회:\n판정 결과 >1 (순항): 기사가 지금 당신과 어깨를 나란히 하고 싸운다\n판정 결과 1 (잔잔함): 기사는 더 이상 당신의 부름에 응하지 않는다",
+  "en": "Make one dice check:\nResult >1 (smooth sailing): the knight fights at your side\nResult 1 (calm waters): the knight no longer heeds your call",
+  "ja": "ダイス判定を1回行う:\n判定結果 >1 (順風満帆): 騎士が今、あなたと肩を並べて戦う\n判定結果 1 (凪): 騎士はもうあなたの呼び声に応えない"
+ },
+ "''进行一次掷骰判定（不消耗投掷次数）：\n检定结果>5，一帆风顺：诸王的宝藏现在是你的了\n检定结果≤5，一波三折：你没有找到诸王的珍宝（继续事件并显示选项）''你并没有看到特别值得获取的财宝，或许有价值的东西早就被王室仆从或审判庭拿走了吧......而且这里根本就没有国王们的塑像，甚至连姓名或称号都没有。你不禁开始怀疑这个所谓的博物馆中各种信息的真实性。": {
+  "ko": "주사위 판정 1회 (던지기 횟수 소모 없음):\n판정 결과 >5 (순항): 왕들의 보물은 이제 당신 것이다\n판정 결과 ≤5 (우여곡절): 왕들의 보물을 찾지 못했다 (이벤트가 이어지며 선택지 표시).\n딱히 가져갈 만한 재보는 보이지 않았다. 값어치 있는 것들은 진작에 왕실 시종이나 심판정이 가져갔으리라…… 게다가 이곳엔 왕들의 조각상은커녕 이름도 칭호도 없다. 당신은 이 '박물관'의 정보들이 과연 진짜인지 의심하기 시작했다.",
+  "en": "Make one dice check (no toss consumed):\nResult >5 (smooth sailing): the kings' treasure is now yours\nResult ≤5 (rough going): you fail to find the kings' treasure (the event continues with options).\nYou see nothing especially worth taking — anything of value was likely carried off long ago by royal servants or the Inquisition... And there are no statues of the kings here, not even names or titles. You begin to doubt everything this so-called museum claims.",
+  "ja": "ダイス判定を1回行う (投擲回数を消費しない):\n判定結果 >5 (順風満帆): 諸王の宝はあなたのものだ\n判定結果 ≤5 (一波乱): 諸王の宝は見つからなかった (イベントは継続し選択肢を表示)。\n特に手に入れる価値のある財宝は見当たらない。価値ある物はとうに王室の従者か審問庭が持ち去ったのだろう……そもそもここには王たちの像も、名前も称号すらもない。あなたはこの「博物館」の情報の真偽を疑い始めた。"
+ },
+ "抛下寻路种": {
+  "ko": "길잡이 씨앗을 던져 넣는다",
+  "en": "Drop a pathfinder seed",
+  "ja": "道しるべの種を投げ入れる"
+ },
+ "从莱茵生命生态实验室送来的特殊种子被抛入空洞，队员们急切地等待着种子标示出空洞的深度。然而，种子很快就停止了下落。一位队员穿戴好装备下去回收种子。当她回来时，手上只捧回了一件物品。根据她的陈述与拍摄的照片，洞内似乎形成了独特的生态系统，而他们投下的种子，刚刚被一只羽兽吃了。": {
+  "ko": "라인 랩 생태실험실에서 보내온 특수 씨앗이 공동으로 던져졌고, 대원들은 씨앗이 공동의 깊이를 알려주기를 초조하게 기다렸다. 그러나 씨앗은 금방 낙하를 멈췄다. 한 대원이 장비를 갖추고 씨앗을 회수하러 내려갔다. 돌아온 그녀의 손에는 물건 하나만 들려 있었다. 그녀의 진술과 촬영한 사진에 따르면, 공동 안에는 독특한 생태계가 형성돼 있었고 — 그들이 던진 씨앗은 방금 날짐승 한 마리가 먹어 치웠다.",
+  "en": "A special seed from Rhine Lab's ecology laboratory is dropped into the hollow, and the team waits anxiously for it to reveal the depth. But the seed stops falling almost immediately. One operator gears up and descends to retrieve it. She returns holding only a single item. From her account and the photos she took, a unique ecosystem seems to have formed inside — and the seed they dropped was just eaten by a fowlbeast.",
+  "ja": "ライン生命の生態実験室から届いた特殊な種が空洞に投げ込まれ、隊員たちは種が空洞の深さを示すのを待ちわびた。しかし種はすぐに落下を止めた。ある隊員が装備を整え、回収のために降りていく。戻ってきた彼女の手には品物が一つだけ。彼女の証言と撮影した写真によれば、洞内には独特の生態系が形成されており——投げ込んだ種は、たった今一羽の羽獣に食べられたという。"
+ },
+ "进阶2名干员": {
+  "ko": "오퍼레이터 2명 랭크 상승",
+  "en": "Promote 2 Operators",
+  "ja": "オペレーター2名を昇進"
+ },
+ "招募1名任意干员": {
+  "ko": "임의 오퍼레이터 1명 모집",
+  "en": "Recruit 1 Operator of any kind",
+  "ja": "任意のオペレーター1名を採用"
+ },
+ "这地方太奇怪了，你赶紧催促随行的科考队员离开。": {
+  "ko": "이곳은 너무나도 이상하다. 당신은 서둘러 동행한 조사대원들에게 떠나자고 재촉했다.",
+  "en": "This place is far too strange. You hurriedly urge the accompanying researchers to leave.",
+  "ja": "ここはあまりに奇妙だ。あなたは同行の調査隊員たちを急かしてその場を離れた。"
+ },
+ "选择一个低稀有度密文板": {
+  "ko": "낮은 희귀도 암호판 선택",
+  "en": "Pick a low-rarity cipher board",
+  "ja": "低レアの暗号板を選択"
+ },
+ "选择一个中稀有度密文板": {
+  "ko": "중간 희귀도 암호판 선택",
+  "en": "Pick a mid-rarity cipher board",
+  "ja": "中レアの暗号板を選択"
+ },
+ "选择一个高稀有度密文板": {
+  "ko": "높은 희귀도 암호판 선택",
+  "en": "Pick a high-rarity cipher board",
+  "ja": "高レアの暗号板を選択"
+ },
+ "虬结的树木与藤蔓彻底拦住了你的去路，萨米人口中无数生灵的命运顺枝叶延伸，在你眼前交错相连。你反复确认过，当地人给你的路线图确实指向这个方向。": {
+  "ko": "뒤엉킨 나무와 덩굴이 길을 완전히 막아섰다. 사미인들이 말하던 무수한 생령의 운명이 가지와 잎을 타고 뻗어 나가, 당신 눈앞에서 얽히고설켜 이어져 있었다. 몇 번을 확인해도, 현지인이 준 경로도는 분명 이 방향을 가리키고 있다.",
+  "en": "Gnarled trees and vines completely block your way. The fates of countless lives the Sami speak of stretch along branch and leaf, interlinked before your eyes. You've checked again and again — the route the locals gave you definitely points this way.",
+  "ja": "絡み合った木々と蔓が完全に行く手を塞いだ。サーミの民が語る無数の命の運命が枝葉を伝って延び、目の前で交錯しながら繋がっている。何度確かめても、現地人がくれた経路図は確かにこの方向を指している。"
+ },
+ "树上就不能走吗？": {
+  "ko": "나무 위로는 못 가나?",
+  "en": "Can't we go over the trees?",
+  "ja": "木の上を行けないのか?"
+ },
+ "取出伐木斧": {
+  "ko": "벌목 도끼를 꺼낸다",
+  "en": "Take out the logging axe",
+  "ja": "伐採斧を取り出す"
+ },
+ "你终于砍开了杂乱的林木和藤条，阳光照入林间，什么东西掉在了地上。你产生了一种奇怪的直觉——或许你刚刚破坏了什么精妙的人造物。但造成的损坏已经无法复原，你只好捡起掉落的物件离开。": {
+  "ko": "당신은 마침내 어지러운 숲과 덩굴을 베어 냈다. 햇빛이 숲 사이로 스며들고, 무언가가 땅에 떨어졌다. 이상한 직감이 들었다 — 방금 정교한 인공물을 부숴 버린 건 아닐까. 하지만 이미 되돌릴 수 없는 일. 당신은 떨어진 물건을 주워 들고 자리를 떠났다.",
+  "en": "You finally hack through the tangled trees and vines. Sunlight spills into the forest, and something drops to the ground. A strange intuition strikes you — perhaps you just destroyed some exquisite man-made work. But the damage is done. You pick up the fallen item and leave.",
+  "ja": "あなたはついに乱雑な木々と蔓を切り開いた。陽光が森に差し込み、何かが地面に落ちた。奇妙な直感がよぎる——今、精巧な人工物を壊してしまったのではないか。だが損壊はもう元に戻らない。あなたは落ちた品を拾い上げ、その場を後にした。"
+ },
+ "故事崩塌。": {
+  "ko": "이야기가 무너져 내린다.",
+  "en": "The story collapses.",
+  "ja": "物語が崩れ落ちる。"
+ },
+ "前路？": {
+  "ko": "앞길?",
+  "en": "The road ahead?",
+  "ja": "行く先?"
+ },
+ "思维": {
+  "ko": "사유",
+  "en": "Thought",
+  "ja": "思考"
+ },
+ "我？": {
+  "ko": "나?",
+  "en": "Me?",
+  "ja": "私?"
+ },
+ "普通": {
+  "ko": "보통",
+  "en": "Normal",
+  "ja": "普通"
+ },
+ "先祖": {
+  "ko": "선조",
+  "en": "Ancestor",
+  "ja": "先祖"
+ },
+ "羯磨": {
+  "ko": "갈마",
+  "en": "Karma",
+  "ja": "羯磨"
+ },
+ "先祖+羯磨": {
+  "ko": "선조+갈마",
+  "en": "Ancestor + Karma",
+  "ja": "先祖+羯磨"
+ },
+ "一缕思绪": {
+  "ko": "한 가닥 생각",
+  "en": "A wisp of thought",
+  "ja": "一筋の思考"
+ },
+ "稀有的思绪": {
+  "ko": "희귀한 생각",
+  "en": "A rare thought",
+  "ja": "希少な思考"
+ },
+ "思绪": {
+  "ko": "생각",
+  "en": "Thought",
+  "ja": "思考"
+ },
+ "（看向扎拉克）": {
+  "ko": "(자라크를 바라본다)",
+  "en": "(Look at the Zalak)",
+  "ja": "(ザラックを見る)"
+ },
+ "以下结果随机出现": {
+  "ko": "아래 결과 중 하나가 랜덤으로 발생합니다",
+  "en": "One of the outcomes below occurs at random",
+  "ja": "以下の結果からランダムに1つ発生します"
+ },
+ "愿望与力量构成了“阿米娅”的转变，妮芙以此结合想象中的魔王权能，打造出了一把钥匙。将它没入终结的咽喉，同“阿米娅”一起正视愿望的荒谬，或许就能结束这场闹剧。": {
+  "ko": "소원과 힘이 '아미야'의 변화를 이루었다. 니브는 그것을 상상 속 마왕의 권능과 엮어 열쇠 하나를 만들어 냈다. 그것을 종결의 목구멍에 밀어 넣고, '아미야'와 함께 소원의 부조리를 직시한다면, 이 소극을 끝낼 수 있을지도 모른다.",
+  "en": "Wish and power shaped 'Amiya's' transformation. Niffe wove them together with the imagined authority of the Demon King to forge a key. Sink it into the throat of the Ending and face, together with 'Amiya', the absurdity of wishes — perhaps that will end this farce.",
+  "ja": "願いと力が「アーミヤ」の変化を形作った。ニーフはそれを想像上の魔王の権能と結び、一本の鍵を打ち上げた。それを終焉の喉に沈め、「アーミヤ」とともに願いの不条理を直視すれば、この茶番を終わらせられるかもしれない。"
+ },
+ "孤独与无畏构成了“阿米娅”的终点，妮芙以此结合想象中的魔王权能，打造出了一把钥匙。将它没入终结的额头，或许就能结束这场闹剧。“可是......好像少了些什么？”妮芙有些担心。或许，这把钥匙并没有触及终结的本质，而她也害怕自己并没有想象中那么了解“阿米娅”。": {
+  "ko": "고독과 용기가 '아미야'의 종착점을 이루었다. 니브는 그것을 상상 속 마왕의 권능과 엮어 열쇠 하나를 만들어 냈다. 그것을 종결의 이마에 밀어 넣으면 이 소극을 끝낼 수 있을지도 모른다. \"그런데…… 뭔가 부족한 것 같지 않아?\" 니브는 조금 걱정스러웠다. 어쩌면 이 열쇠는 종결의 본질에 닿지 못했고, 자신이 생각만큼 '아미야'를 알지 못하는 게 아닐까 두려웠다.",
+  "en": "Solitude and fearlessness shaped 'Amiya's' end. Niffe wove them together with the imagined authority of the Demon King to forge a key. Sink it into the forehead of the Ending, and perhaps this farce will end. \"But... isn't something missing?\" Niffe worries — perhaps the key never touched the Ending's essence, and perhaps she doesn't know 'Amiya' as well as she imagined.",
+  "ja": "孤独と恐れ知らずが「アーミヤ」の終点を形作った。ニーフはそれを想像上の魔王の権能と結び、一本の鍵を打ち上げた。それを終焉の額に沈めれば、この茶番を終わらせられるかもしれない。「でも……何かが足りない気がする?」ニーフは少し不安だった。この鍵は終焉の本質に触れておらず、自分は思っていたほど「アーミヤ」を知らないのではないかと。"
+ },
+ "予人安息": {
+  "ko": "안식을 준다",
+  "en": "Grant them rest",
+  "ja": "安息を与える"
+ },
+ "寻找帮手": {
+  "ko": "조력자를 찾는다",
+  "en": "Look for a helper",
+  "ja": "助っ人を探す"
+ },
+ "炉火旁总有在寻找新机会的人，你很快就找到了自己理想的帮手。": {
+  "ko": "화롯가에는 늘 새 기회를 찾는 이들이 있다. 당신은 금방 마음에 드는 조력자를 찾아냈다.",
+  "en": "There are always people by the furnace looking for a new chance. You quickly find the helper you had in mind.",
+  "ja": "炉のそばには常に新たな機会を探す者がいる。あなたはすぐに理想の助っ人を見つけた。"
+ },
+ "这段思绪落入了它的归处，而你在一个角落里发现了它留给好心人的报酬。": {
+  "ko": "그 생각은 제자리로 돌아갔고, 당신은 한구석에서 그것이 친절한 이에게 남긴 보답을 발견했다.",
+  "en": "The thought settles where it belongs, and in a corner you find the reward it left for a kind soul.",
+  "ja": "その思考はあるべき場所へ収まり、あなたは片隅で、それが善意の人に残した報酬を見つけた。"
+ },
+ "猎手背起宝宝，继续向山脉深处进发......": {
+  "ko": "사냥꾼은 아기를 들쳐업고 산맥 깊은 곳으로 계속 나아갔다……",
+  "en": "The hunter shoulders the baby and presses on into the depths of the mountains...",
+  "ja": "狩人は赤子を背負い、山脈の奥へと歩みを進めた……"
+ },
+ "⚔️无花无厉": {
+  "ko": "花 없음·厉 없음",
+  "en": "No 花, no 厉",
+  "ja": "花なし・厉なし"
+ },
+ "🌸有花无厉": {
+  "ko": "花 있음·厉 없음",
+  "en": "花, no 厉",
+  "ja": "花あり・厉なし"
+ },
+ "😨有花１厉": {
+  "ko": "花 있음·厉 1개",
+  "en": "花 with 1 厉",
+  "ja": "花あり・厉1枚"
+ },
+ "😭无花１厉": {
+  "ko": "花 없음·厉 1개",
+  "en": "No 花, 1 厉",
+  "ja": "花なし・厉1枚"
+ },
+ "😨有花２厉": {
+  "ko": "花 있음·厉 2개",
+  "en": "花 with 2 厉",
+  "ja": "花あり・厉2枚"
+ },
+ "😭无花２厉": {
+  "ko": "花 없음·厉 2개",
+  "en": "No 花, 2 厉",
+  "ja": "花なし・厉2枚"
+ },
+ "🧧无花无厉": {
+  "ko": "花 없음·厉 없음",
+  "en": "No 花, no 厉",
+  "ja": "花なし・厉なし"
+ },
+ "🌅有花无厉": {
+  "ko": "花 있음·厉 없음",
+  "en": "花, no 厉",
+  "ja": "花あり・厉なし"
+ },
+ "🎁厉钱": {
+  "ko": "여전(厉钱)",
+  "en": "厉 coin",
+  "ja": "厉銭"
+ },
+ "花钱": {
+  "ko": "화전(花钱)",
+  "en": "花 coin",
+  "ja": "花銭"
+ },
+ "厉钱": {
+  "ko": "여전(厉钱)",
+  "en": "厉 coin",
+  "ja": "厉銭"
+ },
+ "衡钱": {
+  "ko": "형전(衡钱)",
+  "en": "衡 coin",
+  "ja": "衡銭"
+ },
+ "护盾或希望或目标生命值上限": {
+  "ko": "실드 또는 희망 또는 최대 목표 HP",
+  "en": "Shield, Hope, or Max Objective HP",
+  "ja": "シールドまたは希望または目標HP上限"
+ },
+ "四方绘料或收藏品": {
+  "ko": "사방회료 또는 소장품",
+  "en": "Paint materials or a collectible",
+  "ja": "四方絵料またはコレクション"
+ },
+ "开始": {
+  "ko": "시작",
+  "en": "Start",
+  "ja": "開始"
+ },
+ "失去生命或护盾": {
+  "ko": "목표 HP 또는 실드 손실",
+  "en": "Lose Objective HP or Shield",
+  "ja": "目標HPまたはシールドを失う"
+ },
+ "年急了": {
+  "ko": "니엔이 발끈했다",
+  "en": "Nian gets worked up",
+  "ja": "ニェンがムキになった"
+ },
+ "丰收": {
+  "ko": "풍작",
+  "en": "Bounty",
+  "ja": "豊作"
+ },
+ "以经验做备注": {
+  "ko": "경험으로 주석을 단다",
+  "en": "Annotate with experience",
+  "ja": "経験で注釈をつける"
+ },
+ "以本能拼符号": {
+  "ko": "본능으로 부호를 맞춘다",
+  "en": "Piece symbols together by instinct",
+  "ja": "本能で記号を組み合わせる"
+ },
+ "以众志思结构": {
+  "ko": "중지를 모아 구조를 생각한다",
+  "en": "Ponder the structure with collective will",
+  "ja": "衆知を集めて構造を考える"
+ },
+ "以代价寻天启": {
+  "ko": "대가를 치르고 계시를 구한다",
+  "en": "Seek revelation at a price",
+  "ja": "代償をもって天啓を求める"
+ },
+ "以素朴悟真谛": {
+  "ko": "소박함으로 진의를 깨닫는다",
+  "en": "Grasp the truth through simplicity",
+  "ja": "素朴さで真髄を悟る"
+ },
+ "以紧迫求灵思": {
+  "ko": "절박함으로 영감을 구한다",
+  "en": "Seek inspiration under pressure",
+  "ja": "切迫の中でひらめきを求める"
+ },
+ "字符纠缠许久，最终排出了个炎字。字符自燃，引得整块字盘都燃烧了起来，最终，烧尽的字盘中现出了一块珍宝，还有一捧烧不尽的余火。": {
+  "ko": "글자들이 한참을 뒤엉키더니 마침내 '炎' 자를 이루었다. 글자는 스스로 타올라 글자판 전체가 불타올랐고, 다 타 버린 글자판 속에서 진귀한 보물과 꺼지지 않는 불씨 한 줌이 나타났다.",
+  "en": "The characters tangle for a long while before forming the character for 'flame'. It ignites itself, setting the whole board ablaze — and in the burnt-out board appear a treasure and a handful of embers that will not die.",
+  "ja": "文字は長らく絡み合い、ついに「炎」の字を成した。文字は自ら燃え上がり、字盤全体が炎に包まれ——燃え尽きた字盤の中から珍宝と、消えない残り火が現れた。"
+ },
+ "收下": {
+  "ko": "받는다",
+  "en": "Accept",
+  "ja": "受け取る"
+ },
+ "字是生于此处众物的载体，人是如此，岁也是如此。": {
+  "ko": "글자는 이곳에서 태어난 만물의 그릇이다. 사람이 그렇고, 세(歲) 또한 그렇다.",
+  "en": "Characters are vessels for all that is born here — people, and Sui alike.",
+  "ja": "文字はこの地に生まれた万物の器である。人もそうであり、歳もまたそうである。"
+ },
+ "掷下财钱，许个愿望，将那些字符混在一起胡乱编排，接下来就只能听凭天命了。": {
+  "ko": "재전을 던지고 소원을 빌며 글자들을 마구 뒤섞어 배열한다. 이제 남은 건 하늘의 뜻에 맡기는 것뿐.",
+  "en": "Toss a coin, make a wish, jumble the characters together at random — the rest is up to fate.",
+  "ja": "財銭を投げ、願をかけ、文字を適当に混ぜて並べる。あとは天命に任せるのみ。"
+ },
+ "通过排列，你拼出了一个字，似是上古下舟左宝右才，应当是与财富有关。过了一会儿，这个字变作了实质的财富。": {
+  "ko": "배열 끝에 글자 하나를 맞춰 냈다. 위는 古, 아래는 舟, 왼쪽은 宝, 오른쪽은 才 — 필시 재물과 관련된 글자이리라. 잠시 후, 그 글자는 실체 있는 재물로 변했다.",
+  "en": "Through arrangement you piece together a character — 'old' above, 'boat' below, 'treasure' left, 'talent' right. Surely something to do with wealth. A moment later, the character becomes wealth in substance.",
+  "ja": "並べ替えの末、一つの字を組み上げた。上に古、下に舟、左に宝、右に才——きっと財に関わる字だろう。しばらくすると、その字は実体ある財へと変わった。"
+ },
+ "字是传承的载体，与钱财确是息息相关。": {
+  "ko": "글자는 전승의 그릇이니, 과연 재물과 깊이 얽혀 있다.",
+  "en": "Characters are vessels of heritage — indeed bound tightly to wealth.",
+  "ja": "文字は伝承の器であり、なるほど財と深く結びついている。"
+ },
+ "通过排列，你拼出了一个字，似是上火下刀左人右血，应当是与杀伐有关。过了一会儿，这个字长满了尖刺。": {
+  "ko": "배열 끝에 글자 하나를 맞춰 냈다. 위는 火, 아래는 刀, 왼쪽은 人, 오른쪽은 血 — 필시 살벌함과 관련된 글자이리라. 잠시 후, 그 글자에 온통 가시가 돋아났다.",
+  "en": "Through arrangement you piece together a character — 'fire' above, 'blade' below, 'person' left, 'blood' right. Surely something to do with slaughter. A moment later, the character bristles with spikes.",
+  "ja": "並べ替えの末、一つの字を組み上げた。上に火、下に刀、左に人、右に血——きっと殺伐に関わる字だろう。しばらくすると、その字は棘だらけになった。"
+ },
+ "又有何难？": {
+  "ko": "그게 뭐 어렵다고?",
+  "en": "How hard can it be?",
+  "ja": "何ほどのことがある?"
+ },
+ "字是思想的载体，这字似乎由战乱而生，因此尖锐无比。它划伤了你，但随后凝结的痂又成为新的护盾。尝过苦，便有经验，世代流传，后人便不必因此烦恼。": {
+  "ko": "글자는 사상의 그릇이다. 이 글자는 전란에서 태어난 듯 더없이 날카로워 당신을 베었지만, 이내 굳은 딱지가 새 방패가 되었다. 쓴맛을 보면 경험이 되고, 대대로 전해지면 후인은 같은 일로 괴로워하지 않아도 된다.",
+  "en": "Characters are vessels of thought. This one seems born of war — sharp beyond measure. It cuts you, but the scab that forms becomes a new shield. Taste hardship and you gain experience; pass it down, and those after you need not suffer the same.",
+  "ja": "文字は思想の器である。この字は戦乱から生まれたのか、この上なく鋭い。あなたを切りつけたが、やがて固まった瘡蓋は新たな盾となった。苦を味わえば経験となり、代々伝われば後人は同じことで悩まずに済む。"
+ },
+ "天命不与，即使攀附岁识，你也仍不能从这团符号中发现什么。": {
+  "ko": "천명이 함께하지 않으니, 세식(歲識)에 기대어도 이 부호 뭉치에서 아무것도 찾아낼 수 없었다.",
+  "en": "Fate is not with you — even leaning on the Sui's knowledge, you find nothing in this tangle of symbols.",
+  "ja": "天命が味方せず、歳識に頼っても、この記号の塊からは何も見出せなかった。"
+ },
+ "收录这些字符的人可能为它们的消亡做了些准备，但那结局来得凌厉而迅猛，将一切想法与后手绞得粉碎，成为一团无法辨识的泥泞。或许，你应当多做准备，而后再来解开此处的缠结。": {
+  "ko": "이 글자들을 수록한 이는 그것들의 소멸에 대비해 뭔가 준비를 해 뒀을지도 모른다. 그러나 그 결말은 맹렬하고도 빨라, 모든 생각과 대비책을 갈가리 찢어 알아볼 수 없는 진창으로 만들어 버렸다. 준비를 더 갖춘 뒤에 다시 와서 이 엉킴을 풀어야 할 것 같다.",
+  "en": "Whoever compiled these characters may have prepared for their demise, but the end came swift and fierce, grinding every idea and contingency into unrecognizable mire. Perhaps you should prepare further before returning to untangle this knot.",
+  "ja": "これらの文字を収めた者は、その消滅に備えて何か準備をしていたのかもしれない。だがその結末は苛烈かつ迅速で、あらゆる考えと備えを粉々に砕き、判別不能な泥濘と化した。もっと備えてから、再びこの縺れを解きに来るべきだろう。"
+ },
+ "决定靠自己臆想": {
+  "ko": "스스로의 상상에 맡기기로 한다",
+  "en": "Decide to rely on your own imagination",
+  "ja": "自らの想像に頼ることにする"
+ },
+ "决定靠自己模拟": {
+  "ko": "스스로의 시뮬레이션에 맡기기로 한다",
+  "en": "Decide to rely on your own simulation",
+  "ja": "自らのシミュレーションに頼ることにする"
+ },
+ "决定靠自己修饰": {
+  "ko": "스스로 다듬기로 한다",
+  "en": "Decide to refine it yourself",
+  "ja": "自ら手直しすることにする"
+ },
+ "决定靠自己堆砌": {
+  "ko": "스스로 쌓아 올리기로 한다",
+  "en": "Decide to build it up yourself",
+  "ja": "自ら積み上げることにする"
+ },
+ "第一层": {
+  "ko": "1층",
+  "en": "Floor 1",
+  "ja": "1層"
+ },
+ "第二、四层": {
+  "ko": "2·4층",
+  "en": "Floors 2 & 4",
+  "ja": "2・4層"
+ },
+ "第三层、通宝刷新": {
+  "ko": "3층·통보 갱신 시",
+  "en": "Floor 3 / coin refresh",
+  "ja": "3層・通宝更新時"
+ },
+ "第五层": {
+  "ko": "5층",
+  "en": "Floor 5",
+  "ja": "5層"
+ },
+ "焚香点烛": {
+  "ko": "향을 피우고 초를 밝힌다",
+  "en": "Burn incense and light candles",
+  "ja": "香を焚き蝋燭を灯す"
+ },
+ "烛火燃起，一位随员已备伺烛。": {
+  "ko": "촛불이 타오르고, 수행원 하나가 이미 초를 모실 채비를 마쳤다.",
+  "en": "The candle flares to life — an attendant stands ready to tend it.",
+  "ja": "蝋燭に火が灯り、随員の一人がすでに蝋燭の世話の支度を整えていた。"
+ },
+ "该考量行动了": {
+  "ko": "행동을 따져 볼 때다",
+  "en": "Time to weigh your next move",
+  "ja": "行動を考える時だ"
+ },
+ "目标生命上限": {
+  "ko": "최대 목표 HP",
+  "en": "Max Objective HP",
+  "ja": "目標HP上限"
+ },
+ "目标生命值": {
+  "ko": "목표 HP",
+  "en": "Objective HP",
+  "ja": "目標HP"
+ },
+ "招募券": {
+  "ko": "모집권",
+  "en": "Recruitment Permit",
+  "ja": "採用証明書"
+ },
+ "通宝": {
+  "ko": "통보",
+  "en": "Coin",
+  "ja": "通宝"
+ },
+ "黑石吞天戮地": {
+  "ko": "흑석이 하늘을 삼키고 땅을 도륙한다",
+  "en": "Black stone devours heaven and ravages earth",
+  "ja": "黒石が天を呑み地を戮す"
+ },
+ "战火铺天盖地": {
+  "ko": "전화가 하늘과 땅을 뒤덮는다",
+  "en": "War engulfs heaven and earth",
+  "ja": "戦火が天地を覆い尽くす"
+ },
+ "蝼蚁钻木取火": {
+  "ko": "미물이 나무를 비벼 불을 얻는다",
+  "en": "Ants drill wood to make fire",
+  "ja": "蟻が木を鑽って火を得る"
+ },
+ "士兵摩肩接踵": {
+  "ko": "병사들이 어깨를 맞대고 줄을 잇는다",
+  "en": "Soldiers press shoulder to shoulder",
+  "ja": "兵士がひしめき合う"
+ },
+ "伤痕痊愈如初": {
+  "ko": "상처가 아물어 처음 같아진다",
+  "en": "Wounds heal as if they never were",
+  "ja": "傷痕が元通りに癒える"
+ },
+ "后勤源源不断": {
+  "ko": "보급이 끊임없이 이어진다",
+  "en": "Supplies flow without end",
+  "ja": "後方支援が絶え間なく続く"
+ },
+ "千里空无一兽": {
+  "ko": "천 리에 짐승 한 마리 없다",
+  "en": "Not a beast for a thousand li",
+  "ja": "千里に獣一匹いない"
+ },
+ "巨兽殊死一搏": {
+  "ko": "거수가 죽음을 무릅쓰고 몸부림친다",
+  "en": "The great beast fights to the death",
+  "ja": "巨獣が死力を尽くして足掻く"
+ },
+ "鳞壳坠入湖水": {
+  "ko": "비늘 껍질이 호수에 가라앉는다",
+  "en": "Scaled shells sink into the lake",
+  "ja": "鱗殻が湖水に沈む"
+ },
+ "兵甲堆满仓库": {
+  "ko": "병장기가 창고에 가득 쌓인다",
+  "en": "Arms and armor fill the storehouse",
+  "ja": "武具が倉庫に山と積まれる"
+ },
+ "''进入【深埋迷境】''": {
+  "ko": "【심매미경】으로 진입합니다",
+  "en": "Enter the Buried Labyrinth zone",
+  "ja": "【深埋迷境】へ進入します"
+ }
+}

@@ -235,6 +235,8 @@
     "scene_ro5_bat7_enter": ["ro5_t_7"],
     "scene_ro5_bat9_enter": ["ro5_t_9_a", "ro5_t_9_b", "ro5_t_9_c"],
     "scene_ro5_bat10_enter": ["ro5_t_10"],
-    "scene_ro5_double5_enter": ["ro5_t_8"]
+    "scene_ro5_double5_enter": ["ro5_t_8"],
+  "scene_ro5_portal1_enter": ["ro5_b_10"],
+  "scene_ro5_portalboss_enter": ["ro5_b_10"]
   }
 }

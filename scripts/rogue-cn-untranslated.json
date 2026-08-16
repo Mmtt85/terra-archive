@@ -1,56 +1,22 @@
 {
- "rogue1": {
-  "1源石锭": "encounters.scenes.choices.branch",
-  "3源石锭": "encounters.scenes.choices.branch",
-  "好好劝劝他": "encounters.scenes.choices.branch"
- },
- "rogue2": {
-  "再喂失败": "encounters.scenes.choices.branch",
-  "骰子": "encounters.scenes.choices.branch"
- },
- "rogue3": {
-  "进阶2名干员": "encounters.scenes.choices.branch",
-  "招募1名任意干员": "encounters.scenes.choices.branch",
-  "选择一个低稀有度密文板": "encounters.scenes.choices.branch",
-  "选择一个中稀有度密文板": "encounters.scenes.choices.branch",
-  "选择一个高稀有度密文板": "encounters.scenes.choices.branch"
- },
- "rogue4": {
-  "普通": "encounters.scenes.choices.branch",
-  "先祖": "encounters.scenes.choices.branch",
-  "羯磨": "encounters.scenes.choices.branch",
-  "先祖+羯磨": "encounters.scenes.choices.branch",
-  "一缕思绪": "encounters.scenes.choices.branch",
-  "稀有的思绪": "encounters.scenes.choices.branch",
-  "思绪": "encounters.scenes.choices.branch",
-  "更多源石锭": "encounters.scenes.choices.branch",
-  "（看向扎拉克）": "encounters.scenes.choices.branch",
-  "予人安息": "encounters.scenes.choices.branch"
- },
+ "rogue1": {},
+ "rogue2": {},
+ "rogue3": {},
+ "rogue4": {},
  "rogue5": {
-  "⚔️无花无厉": "encounters.scenes.choices.branch",
-  "🌸有花无厉": "encounters.scenes.choices.branch",
-  "😨有花１厉": "encounters.scenes.choices.branch",
-  "😭无花１厉": "encounters.scenes.choices.branch",
-  "😨有花２厉": "encounters.scenes.choices.branch",
-  "😭无花２厉": "encounters.scenes.choices.branch",
-  "护盾或希望或目标生命值上限": "encounters.scenes.choices.branch",
-  "四方绘料或收藏品": "encounters.scenes.choices.branch",
-  "失去生命或护盾": "encounters.scenes.choices.branch",
-  "年急了": "encounters.scenes.choices.branch",
-  "丰收": "encounters.scenes.choices.branch",
-  "🧧无花无厉": "encounters.scenes.choices.branch",
-  "🎁厉钱": "encounters.scenes.choices.branch",
-  "🌅有花无厉": "encounters.scenes.choices.branch",
-  "第一层": "encounters.scenes.choices.branch",
-  "第二、四层": "encounters.scenes.choices.branch",
-  "第三层、通宝刷新": "encounters.scenes.choices.branch",
-  "第五层": "encounters.scenes.choices.branch",
-  "花钱": "encounters.scenes.choices.branch",
-  "厉钱": "encounters.scenes.choices.branch",
-  "衡钱": "encounters.scenes.choices.branch",
-  "目标生命上限": "encounters.scenes.choices.branch",
-  "目标生命值": "encounters.scenes.choices.branch",
-  "招募券": "encounters.scenes.choices.branch"
+  "花 없음·厉 없음": "encounters.scenes.choices.branch",
+  "花 있음·厉 없음": "encounters.scenes.choices.branch",
+  "花 있음·厉 1개": "encounters.scenes.choices.branch",
+  "花 없음·厉 1개": "encounters.scenes.choices.branch",
+  "花 있음·厉 2개": "encounters.scenes.choices.branch",
+  "花 없음·厉 2개": "encounters.scenes.choices.branch",
+  "여전(厉钱)": "encounters.scenes.choices.branch",
+  "글자들이 한참을 뒤엉키더니 마침내 '炎' 자를 이루었다. 글자는 스스로 타올라 글자판 전체가 불타올랐고, 다 타 버린 글자판 속에서 진귀한 보물과 꺼지지 않는 불씨 한 줌이 나타났다.": "encounters.scenes.desc",
+  "글자는 이곳에서 태어난 만물의 그릇이다. 사람이 그렇고, 세(歲) 또한 그렇다.": "encounters.scenes.desc",
+  "배열 끝에 글자 하나를 맞춰 냈다. 위는 古, 아래는 舟, 왼쪽은 宝, 오른쪽은 才 — 필시 재물과 관련된 글자이리라. 잠시 후, 그 글자는 실체 있는 재물로 변했다.": "encounters.scenes.desc",
+  "배열 끝에 글자 하나를 맞춰 냈다. 위는 火, 아래는 刀, 왼쪽은 人, 오른쪽은 血 — 필시 살벌함과 관련된 글자이리라. 잠시 후, 그 글자에 온통 가시가 돋아났다.": "encounters.scenes.desc",
+  "천명이 함께하지 않으니, 세식(歲識)에 기대어도 이 부호 뭉치에서 아무것도 찾아낼 수 없었다.": "encounters.scenes.desc",
+  "화전(花钱)": "encounters.scenes.choices.branch",
+  "형전(衡钱)": "encounters.scenes.choices.branch"
  }
 }
