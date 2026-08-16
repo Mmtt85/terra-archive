@@ -260,12 +260,21 @@ def attach_enc_scenes(encounters, trees, r_scenes, r_choices, branch_tr, cn_prim
                         nm2 = relic_tr(c["relicCn"])
                         if nm2 and nm2 not in (d2 or ""):
                             d2 = f"{d2} 「{nm2}」" if (d2 or "").strip() else f"「{nm2}」"
+                    if c.get("noteCn"):
+                        # desc2 보충 설명 — 동명 병렬 선택지의 구분 정보 (예: 반드시 희귀
+                        # 소장품 — 사라진 풍습 린수 제보, 2026-08-16)
+                        nt = branch_tr(c["noteCn"])
+                        d2 = f"{d2} ※ {nt}" if (d2 or "").strip() else f"※ {nt}"
                     if (d2 or "").strip():
                         o["desc"] = d2
                 elif "branch" in c:
                     o["branch"] = branch_tr(c["branch"])
                     if c.get("prob") is not None:
                         o["prob"] = c["prob"]
+                elif "noteCn" in c:
+                    # 안내 블록 (랜덤 출현 규칙·주사위 판정·조건 안내 — PRTS desc-kind,
+                    # dest 없음) — 선택지가 아닌 정보 행으로 표시한다
+                    o["note"] = branch_tr(c["noteCn"])
                 else:
                     if not c.get("titleCn"):
                         continue
@@ -1708,7 +1717,7 @@ def cn_koreanize(ronum, out):
                     put_txt(sc, ks, ("desc",))
                     if len(sc["choices"]) == len(ks["choices"]):
                         for c, kc in zip(sc["choices"], ks["choices"]):
-                            put_txt(c, kc, ("title", "desc", "branch"))
+                            put_txt(c, kc, ("title", "desc", "branch", "note"))
     # 토픽 이름·부제 — 한국어 공식 명칭으로, 중국어 원문은 cnName (흑류수해와 같은 꼴)
     out["cnName"] = out["name"]
     if isinstance(kr.get("name"), str) and kr["name"].strip():

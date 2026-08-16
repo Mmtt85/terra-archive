@@ -12710,6 +12710,19 @@ html.dark.rg-theme.rg6 .site-header {
   font-size: 11px;
   color: var(--rgmut);
 }
+/* 안내 블록 — 랜덤 출현 규칙·주사위 판정·조건 안내. 선택지가 아니라 클릭 불가 정보 행 */
+.rg-choice-note-row {
+  list-style: none;
+}
+.rg-choice-note {
+  display: block;
+  padding: 6px 10px;
+  border-left: 2px solid var(--rgline);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--rgmut);
+  white-space: pre-line;
+}
 .rg-choice-result.zh {
   opacity: 0.85;
 }

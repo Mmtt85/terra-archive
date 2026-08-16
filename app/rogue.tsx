@@ -89,7 +89,8 @@ type EncChoice = { title: string; desc: string | null; cn?: string; variants?: s
 // battles: 이 조우에서 이어지는 전투 스테이지 id (수작업 대응표 — build-rogue.py 주석 참조)
 // scenes: PRTS 매칭 씬 트리 (build-rogue-enc-scenes.py) — dest는 scenes 배열 인덱스.
 // branch = 랜덤 결과 분기 라벨(게임 선택지 아님), prob = %확률, cnTitle/cn = 매칭 실패 CN 폴백.
-type EncSceneChoice = { title?: string; desc?: string | null; cn?: string; cnTitle?: string; cnDesc?: string; branch?: string; prob?: number; dest?: number };
+// note = 안내 블록(랜덤 출현 규칙·주사위 판정·조건 — 선택지가 아닌 정보 행).
+type EncSceneChoice = { title?: string; desc?: string | null; cn?: string; cnTitle?: string; cnDesc?: string; branch?: string; prob?: number; dest?: number; note?: string };
 type EncScene = { desc?: string | null; cn?: string; choices: EncSceneChoice[] };
 type Encounter = { scene: string; title: string; desc: string | null; bg?: string | null; choices: EncChoice[]; floors?: number[]; note?: string; cn?: string; battles?: string[]; battlesRandom?: 1; scenes?: EncScene[] };
 type RogueData = {
@@ -165,6 +166,14 @@ function SceneChoices({ scenes, idx, path, link }: {
   return (
     <ul className={`rg-enc-choices${idx > 0 || path.length > 1 ? " nested" : ""}`}>
       {sc.choices.map((c, i) => {
+        // 안내 블록 — 클릭 불가 정보 행 (랜덤 출현 규칙·주사위 판정·조건 안내)
+        if (c.note !== undefined) {
+          return (
+            <li key={i} className="rg-choice rg-choice-note-row">
+              <span className="rg-choice-note">{L(c.note)}</span>
+            </li>
+          );
+        }
         const dest = c.dest;
         const cyclic = dest !== undefined && path.includes(dest);
         const expandable = dest !== undefined && !cyclic;

@@ -25,17 +25,17 @@
   "en": "One of the options below appears depending on the coin toss result",
   "ja": "投げた通宝の結果に応じて以下の選択肢が1つ出現します"
  },
- "''根据选择的收藏品的稀有度进入不同的事件''": {
+ "根据选择的收藏品的稀有度进入不同的事件": {
   "ko": "선택한 소장품의 희귀도에 따라 다른 결과로 이어집니다",
   "en": "Leads to a different outcome depending on the chosen collectible's rarity",
   "ja": "選んだコレクションのレアリティによって異なる結果に進みます"
  },
- "''根据选择的密文板的稀有度进入不同的事件''": {
+ "根据选择的密文板的稀有度进入不同的事件": {
   "ko": "선택한 암호판의 희귀도에 따라 다른 결과로 이어집니다",
   "en": "Leads to a different outcome depending on the chosen cipher board's rarity",
   "ja": "選んだ暗号板のレアリティによって異なる結果に進みます"
  },
- "''根据当前状态值和编队状态优先提供下列选项，否则随机提供：''": {
+ "根据当前状态值和编队状态优先提供下列选项，否则随机提供：": {
   "ko": "현재 상태·편성에 따라 아래 선택지가 우선 제공되며, 해당하지 않으면 랜덤으로 제공됩니다:",
   "en": "The options below are offered based on your current status and squad; otherwise at random:",
   "ja": "現在の状態と編成に応じて以下の選択肢が優先的に提示され、該当しない場合はランダムに提示されます:"
@@ -95,32 +95,32 @@
   "en": "Key",
   "ja": "鍵"
  },
- "''进行一次掷骰判定（不消耗投掷次数）：\n检定结果>5，一帆风顺：你从物资堆里找到了保存完好的物件\n检定结果≤5，风平浪静：这批物资里没有什么能用的东西（继续事件并显示选项，其中随机选项出现0~2个+必定出现【为财富付出】选项）。''受损物资中寻找可用物件时，你无意间瞥见了被抢救出来的新物资和圣人塑像，审判官们无疑正循着自己的信念行事，那你呢，你又为了什么？": {
+ "进行一次掷骰判定（不消耗投掷次数）：\n检定结果>5，一帆风顺：你从物资堆里找到了保存完好的物件\n检定结果≤5，风平浪静：这批物资里没有什么能用的东西（继续事件并显示选项，其中随机选项出现0~2个+必定出现【为财富付出】选项）。受损物资中寻找可用物件时，你无意间瞥见了被抢救出来的新物资和圣人塑像，审判官们无疑正循着自己的信念行事，那你呢，你又为了什么？": {
   "ko": "주사위 판정 1회 (던지기 횟수 소모 없음):\n판정 결과 >5 (순항): 물자 더미에서 온전하게 보존된 물건을 찾아낸다\n판정 결과 ≤5 (잔잔함): 이 물자에는 쓸 만한 것이 없다 (이벤트가 이어지며 랜덤 선택지 0~2개 + 【재물을 위해 바친다】 선택지가 반드시 나타남).\n파손된 물자에서 쓸 만한 것을 찾던 당신은 구조된 새 물자와 성인 조각상을 얼핏 보았다. 심판관들은 분명 자신의 신념을 따라 움직이고 있다. 그렇다면 당신은, 무엇을 위해서인가?",
   "en": "Make one dice check (no toss consumed):\nResult >5 (smooth sailing): you find a well-preserved item in the supply pile\nResult ≤5 (calm waters): nothing usable here (the event continues with 0–2 random options plus the guaranteed \"Pay for wealth\" option).\nWhile searching the damaged supplies you glimpse the salvaged goods and a saint's statue. The Inquisitors are clearly acting on their faith — and you? What are you doing this for?",
   "ja": "ダイス判定を1回行う (投擲回数を消費しない):\n判定結果 >5 (順風満帆): 物資の山から保存状態の良い品を見つける\n判定結果 ≤5 (凪): 使える物はない (イベントは継続し、ランダム選択肢0～2個+確定で【財のために払う】が出現)。\n破損した物資を漁るうち、あなたは救い出された新しい物資と聖人像を目にした。審問官たちは紛れもなく信念に従って動いている。では、あなたは何のために?"
  },
- "''进行一次掷骰判定（不消耗投掷次数）：\n检定结果>1，一帆风顺：你从物资堆里找到了保存完好的物件\n检定结果1，一波三折：看来这里没有什么能用的东西（继续事件）''": {
+ "进行一次掷骰判定（不消耗投掷次数）：\n检定结果>1，一帆风顺：你从物资堆里找到了保存完好的物件\n检定结果1，一波三折：看来这里没有什么能用的东西（继续事件）": {
   "ko": "주사위 판정 1회 (던지기 횟수 소모 없음):\n판정 결과 >1 (순항): 물자 더미에서 온전하게 보존된 물건을 찾아낸다\n판정 결과 1 (우여곡절): 여기엔 쓸 만한 것이 없는 듯하다 (이벤트 계속)",
   "en": "Make one dice check (no toss consumed):\nResult >1 (smooth sailing): you find a well-preserved item in the supply pile\nResult 1 (rough going): nothing usable here, it seems (event continues)",
   "ja": "ダイス判定を1回行う (投擲回数を消費しない):\n判定結果 >1 (順風満帆): 物資の山から保存状態の良い品を見つける\n判定結果 1 (一波乱): ここに使える物はなさそうだ (イベント継続)"
  },
- "''进行一次掷骰判定（根据选择情况消耗投掷次数）：\n检定结果>3，一帆风顺：你从物资堆里找到了保存完好的物件\n检定结果≤3，一波三折：看来这里没有什么能用的东西（继续事件）''": {
+ "进行一次掷骰判定（根据选择情况消耗投掷次数）：\n检定结果>3，一帆风顺：你从物资堆里找到了保存完好的物件\n检定结果≤3，一波三折：看来这里没有什么能用的东西（继续事件）": {
   "ko": "주사위 판정 1회 (선택에 따라 던지기 횟수 소모):\n판정 결과 >3 (순항): 물자 더미에서 온전하게 보존된 물건을 찾아낸다\n판정 결과 ≤3 (우여곡절): 여기엔 쓸 만한 것이 없는 듯하다 (이벤트 계속)",
   "en": "Make one dice check (tosses consumed depending on your choice):\nResult >3 (smooth sailing): you find a well-preserved item in the supply pile\nResult ≤3 (rough going): nothing usable here, it seems (event continues)",
   "ja": "ダイス判定を1回行う (選択によって投擲回数を消費):\n判定結果 >3 (順風満帆): 物資の山から保存状態の良い品を見つける\n判定結果 ≤3 (一波乱): ここに使える物はなさそうだ (イベント継続)"
  },
- "''进行一次掷骰判定（不消耗投掷次数）：\n检定结果>5，一帆风顺：你从物资堆里找到了保存完好的物件\n检定结果≤5，一波三折：看来这里没有什么能用的东西（继续事件）''": {
+ "进行一次掷骰判定（不消耗投掷次数）：\n检定结果>5，一帆风顺：你从物资堆里找到了保存完好的物件\n检定结果≤5，一波三折：看来这里没有什么能用的东西（继续事件）": {
   "ko": "주사위 판정 1회 (던지기 횟수 소모 없음):\n판정 결과 >5 (순항): 물자 더미에서 온전하게 보존된 물건을 찾아낸다\n판정 결과 ≤5 (우여곡절): 여기엔 쓸 만한 것이 없는 듯하다 (이벤트 계속)",
   "en": "Make one dice check (no toss consumed):\nResult >5 (smooth sailing): you find a well-preserved item in the supply pile\nResult ≤5 (rough going): nothing usable here, it seems (event continues)",
   "ja": "ダイス判定を1回行う (投擲回数を消費しない):\n判定結果 >5 (順風満帆): 物資の山から保存状態の良い品を見つける\n判定結果 ≤5 (一波乱): ここに使える物はなさそうだ (イベント継続)"
  },
- "''进行一次掷骰判定：\n检定结果>1，一帆风顺：骑士此刻与你并肩作战\n检定结果1，风平浪静：骑士不再理会你的呼号''": {
+ "进行一次掷骰判定：\n检定结果>1，一帆风顺：骑士此刻与你并肩作战\n检定结果1，风平浪静：骑士不再理会你的呼号": {
   "ko": "주사위 판정 1회:\n판정 결과 >1 (순항): 기사가 지금 당신과 어깨를 나란히 하고 싸운다\n판정 결과 1 (잔잔함): 기사는 더 이상 당신의 부름에 응하지 않는다",
   "en": "Make one dice check:\nResult >1 (smooth sailing): the knight fights at your side\nResult 1 (calm waters): the knight no longer heeds your call",
   "ja": "ダイス判定を1回行う:\n判定結果 >1 (順風満帆): 騎士が今、あなたと肩を並べて戦う\n判定結果 1 (凪): 騎士はもうあなたの呼び声に応えない"
  },
- "''进行一次掷骰判定（不消耗投掷次数）：\n检定结果>5，一帆风顺：诸王的宝藏现在是你的了\n检定结果≤5，一波三折：你没有找到诸王的珍宝（继续事件并显示选项）''你并没有看到特别值得获取的财宝，或许有价值的东西早就被王室仆从或审判庭拿走了吧......而且这里根本就没有国王们的塑像，甚至连姓名或称号都没有。你不禁开始怀疑这个所谓的博物馆中各种信息的真实性。": {
+ "进行一次掷骰判定（不消耗投掷次数）：\n检定结果>5，一帆风顺：诸王的宝藏现在是你的了\n检定结果≤5，一波三折：你没有找到诸王的珍宝（继续事件并显示选项）你并没有看到特别值得获取的财宝，或许有价值的东西早就被王室仆从或审判庭拿走了吧......而且这里根本就没有国王们的塑像，甚至连姓名或称号都没有。你不禁开始怀疑这个所谓的博物馆中各种信息的真实性。": {
   "ko": "주사위 판정 1회 (던지기 횟수 소모 없음):\n판정 결과 >5 (순항): 왕들의 보물은 이제 당신 것이다\n판정 결과 ≤5 (우여곡절): 왕들의 보물을 찾지 못했다 (이벤트가 이어지며 선택지 표시).\n딱히 가져갈 만한 재보는 보이지 않았다. 값어치 있는 것들은 진작에 왕실 시종이나 심판정이 가져갔으리라…… 게다가 이곳엔 왕들의 조각상은커녕 이름도 칭호도 없다. 당신은 이 '박물관'의 정보들이 과연 진짜인지 의심하기 시작했다.",
   "en": "Make one dice check (no toss consumed):\nResult >5 (smooth sailing): the kings' treasure is now yours\nResult ≤5 (rough going): you fail to find the kings' treasure (the event continues with options).\nYou see nothing especially worth taking — anything of value was likely carried off long ago by royal servants or the Inquisition... And there are no statues of the kings here, not even names or titles. You begin to doubt everything this so-called museum claims.",
   "ja": "ダイス判定を1回行う (投擲回数を消費しない):\n判定結果 >5 (順風満帆): 諸王の宝はあなたのものだ\n判定結果 ≤5 (一波乱): 諸王の宝は見つからなかった (イベントは継続し選択肢を表示)。\n特に手に入れる価値のある財宝は見当たらない。価値ある物はとうに王室の従者か審問庭が持ち去ったのだろう……そもそもここには王たちの像も、名前も称号すらもない。あなたはこの「博物館」の情報の真偽を疑い始めた。"
@@ -585,7 +585,7 @@
   "en": "Arms and armor fill the storehouse",
   "ja": "武具が倉庫に山と積まれる"
  },
- "''进入【深埋迷境】''": {
+ "进入【深埋迷境】": {
   "ko": "【심매미경】으로 진입합니다",
   "en": "Enter the Buried Labyrinth zone",
   "ja": "【深埋迷境】へ進入します"
@@ -629,5 +629,865 @@
   "ko": "부지런히 몸을 단련하다",
   "en": "Diligently train the body",
   "ja": "勤めて体を鍛える"
+ },
+ "以下选项随机出现4个，必定会出现【偷偷逃走】：": {
+  "ko": "아래 선택지 중 4개가 랜덤으로 등장하며, 【몰래 빠져나온다】는 반드시 등장합니다.",
+  "en": "4 of the options below appear at random; [Sneak away] always appears.",
+  "ja": "以下の選択肢からランダムに4つ出現し、【こっそり逃げる】は必ず出現します。"
+ },
+ "随机获得以下两个收藏品中的一个：\n No.193 “游禽的右眼”（所有近卫和狙击干员的攻击力+15%，所有辅助和术师干员的攻击力-5%）\n No.194 “游禽的左眼”（所有辅助和术师干员的攻击力+15%，所有近卫和狙击干员的攻击力-5%）": {
+  "ko": "아래 두 소장품 중 하나를 랜덤으로 획득합니다:\nNo.193 '프릴리베의 오른 눈' (가드·스나이퍼 공격력 +15%, 서포터·캐스터 공격력 -5%)\nNo.194 '프릴리베의 왼 눈' (서포터·캐스터 공격력 +15%, 가드·스나이퍼 공격력 -5%)",
+  "en": "Randomly gain one of these two collectibles:\nNo.193 \"Right Eye of the Natator\" (Guards/Snipers ATK +15%, Supporters/Casters ATK -5%)\nNo.194 \"Left Eye of the Natator\" (Supporters/Casters ATK +15%, Guards/Snipers ATK -5%)",
+  "ja": "以下2つのコレクションからランダムに1つ獲得:\nNo.193 「フレリーベの右目」(前衛・狙撃の攻撃力+15%、補助・術師の攻撃力-5%)\nNo.194 「フレリーベの左目」(補助・術師の攻撃力+15%、前衛・狙撃の攻撃力-5%)"
+ },
+ "随机获得以下两个收藏品中的一个：\n No.200 漆黑的舞鞋（可以在高台部署近战位干员）\n No.201 洁白的舞鞋（可以在低地部署远程位干员）": {
+  "ko": "아래 두 소장품 중 하나를 랜덤으로 획득합니다:\nNo.200 검은색 댄스화 (고지대에 근거리 오퍼레이터 배치 가능)\nNo.201 하얀색 댄스화 (저지대에 원거리 오퍼레이터 배치 가능)",
+  "en": "Randomly gain one of these two collectibles:\nNo.200 Jet-Black Dance Shoes (melee Operators can deploy on high ground)\nNo.201 Pure White Dance Shoes (ranged Operators can deploy on low ground)",
+  "ja": "以下2つのコレクションからランダムに1つ獲得:\nNo.200 漆黒のダンスシューズ (高台に近接オペレーターを配置可能)\nNo.201 純白のトウシューズ (低地に遠距離オペレーターを配置可能)"
+ },
+ "【80%概率】\n对方努力憋出了几个词汇，看来现在还没到灵感爆发的时候。": {
+  "ko": "【80% 확률】\n상대는 몇 마디 쥐어짜 보지만, 아직 영감이 터질 때가 아닌 모양이다.",
+  "en": "[80% chance]\nThey strain to squeeze out a few words — inspiration clearly isn't striking yet.",
+  "ja": "【80%の確率】\n相手は必死に言葉を絞り出すが、まだインスピレーションが湧く時ではないようだ。"
+ },
+ "【80%概率】\n沉吟了一阵，对方拨动手中的乐器，不得不承认他在你身上尝到了败北的滋味，无法兑现作曲的承诺。为此，他决定送你一件礼品作为补偿。": {
+  "ko": "【80% 확률】\n잠시 생각에 잠겼던 상대는 악기를 튕기더니, 당신에게서 패배의 쓴맛을 봤음을 인정한다. 작곡 약속을 지키지 못하게 된 대신, 보상으로 선물을 하나 주기로 한다.",
+  "en": "[80% chance]\nAfter a pause they strum their instrument and admit you've handed them a taste of defeat. Unable to keep the promised composition, they decide to give you a gift in compensation.",
+  "ja": "【80%の確率】\nしばし黙考した後、相手は楽器をつま弾き、あなたに敗北の味を味わわされたと認めた。作曲の約束を果たせない代わりに、贈り物で埋め合わせることにしたようだ。"
+ },
+ "【60%概率】\n对方努力憋出了几个词汇，看来现在还没到灵感爆发的时候。": {
+  "ko": "【60% 확률】\n상대는 몇 마디 쥐어짜 보지만, 아직 영감이 터질 때가 아닌 모양이다.",
+  "en": "[60% chance]\nThey strain to squeeze out a few words — inspiration clearly isn't striking yet.",
+  "ja": "【60%の確率】\n相手は必死に言葉を絞り出すが、まだインスピレーションが湧く時ではないようだ。"
+ },
+ "【60%概率】\n沉吟了一阵，对方拨动手中的乐器，不得不承认他在你身上尝到了败北的滋味，无法兑现作曲的承诺。为此，他决定送你一件礼品作为补偿。": {
+  "ko": "【60% 확률】\n잠시 생각에 잠겼던 상대는 악기를 튕기더니, 당신에게서 패배의 쓴맛을 봤음을 인정한다. 작곡 약속을 지키지 못하게 된 대신, 보상으로 선물을 하나 주기로 한다.",
+  "en": "[60% chance]\nAfter a pause they strum their instrument and admit you've handed them a taste of defeat. Unable to keep the promised composition, they decide to give you a gift in compensation.",
+  "ja": "【60%の確率】\nしばし黙考した後、相手は楽器をつま弾き、あなたに敗北の味を味わわされたと認めた。作曲の約束を果たせない代わりに、贈り物で埋め合わせることにしたようだ。"
+ },
+ "【40%概率】\n对方努力憋出了几个词汇，看来现在还没到灵感爆发的时候。": {
+  "ko": "【40% 확률】\n상대는 몇 마디 쥐어짜 보지만, 아직 영감이 터질 때가 아닌 모양이다.",
+  "en": "[40% chance]\nThey strain to squeeze out a few words — inspiration clearly isn't striking yet.",
+  "ja": "【40%の確率】\n相手は必死に言葉を絞り出すが、まだインスピレーションが湧く時ではないようだ。"
+ },
+ "【40%概率】\n沉吟了一阵，对方拨动手中的乐器，不得不承认他在你身上尝到了败北的滋味，无法兑现作曲的承诺。为此，他决定送你一件礼品作为补偿。": {
+  "ko": "【40% 확률】\n잠시 생각에 잠겼던 상대는 악기를 튕기더니, 당신에게서 패배의 쓴맛을 봤음을 인정한다. 작곡 약속을 지키지 못하게 된 대신, 보상으로 선물을 하나 주기로 한다.",
+  "en": "[40% chance]\nAfter a pause they strum their instrument and admit you've handed them a taste of defeat. Unable to keep the promised composition, they decide to give you a gift in compensation.",
+  "ja": "【40%の確率】\nしばし黙考した後、相手は楽器をつま弾き、あなたに敗北の味を味わわされたと認めた。作曲の約束を果たせない代わりに、贈り物で埋め合わせることにしたようだ。"
+ },
+ "【20%概率】\n对方努力憋出了几个词汇，看来现在还没到灵感爆发的时候。": {
+  "ko": "【20% 확률】\n상대는 몇 마디 쥐어짜 보지만, 아직 영감이 터질 때가 아닌 모양이다.",
+  "en": "[20% chance]\nThey strain to squeeze out a few words — inspiration clearly isn't striking yet.",
+  "ja": "【20%の確率】\n相手は必死に言葉を絞り出すが、まだインスピレーションが湧く時ではないようだ。"
+ },
+ "【20%概率】\n沉吟了一阵，对方拨动手中的乐器，不得不承认他在你身上尝到了败北的滋味，无法兑现作曲的承诺。为此，他决定送你一件礼品作为补偿。": {
+  "ko": "【20% 확률】\n잠시 생각에 잠겼던 상대는 악기를 튕기더니, 당신에게서 패배의 쓴맛을 봤음을 인정한다. 작곡 약속을 지키지 못하게 된 대신, 보상으로 선물을 하나 주기로 한다.",
+  "en": "[20% chance]\nAfter a pause they strum their instrument and admit you've handed them a taste of defeat. Unable to keep the promised composition, they decide to give you a gift in compensation.",
+  "ja": "【20%の確率】\nしばし黙考した後、相手は楽器をつま弾き、あなたに敗北の味を味わわされたと認めた。作曲の約束を果たせない代わりに、贈り物で埋め合わせることにしたようだ。"
+ },
+ "以下选项随机出现3个：": {
+  "ko": "아래 선택지 중 3개가 랜덤으로 등장합니다.",
+  "en": "3 of the options below appear at random.",
+  "ja": "以下の選択肢からランダムに3つ出現します。"
+ },
+ "以下选项随机出现3个，必定出现【稍事休息】：": {
+  "ko": "아래 선택지 중 3개가 랜덤으로 등장하며, 【잠깐 휴식】은 반드시 등장합니다.",
+  "en": "3 of the options below appear at random; [Take a break] always appears.",
+  "ja": "以下の選択肢からランダムに3つ出現し、【少し休む】は必ず出現します。"
+ },
+ "【获得收藏品】\n老妇人讲述了一个光怪陆离的童话冒险故事，可惜，故事的主人公最终踏上了一条有去无回的道路。你打开盒子，发现里面装着一些有用的道具。": {
+  "ko": "【소장품 획득】\n노부인은 기괴하고 환상적인 동화 같은 모험담을 들려주었다. 안타깝게도 이야기의 주인공은 끝내 돌아올 수 없는 길을 떠났다. 상자를 열어 보니 쓸 만한 도구들이 들어 있었다.",
+  "en": "[Collectible gained]\nThe old woman tells a fantastical fairy-tale adventure — sadly, its hero ends up on a road of no return. You open the box and find some useful items inside.",
+  "ja": "【コレクション獲得】\n老婦人は奇妙奇天烈なおとぎ話の冒険譚を語った。惜しくも、物語の主人公は最後に帰らざる道を歩んだ。箱を開けると、役に立つ道具がいくつか入っていた。"
+ },
+ "【未获得收藏品】\n老妇人讲述了一个贫苦家庭的孩子渴望成为演员却在加入剧团后消失不见的故事。你打开盒子，发现里面放了块面包干。": {
+  "ko": "【소장품 미획득】\n노부인은 배우를 꿈꾸던 가난한 집 아이가 극단에 들어간 뒤 자취를 감춘 이야기를 들려주었다. 상자를 열어 보니 마른 빵 한 조각이 들어 있었다.",
+  "en": "[No collectible]\nThe old woman tells of a poor child who longed to be an actor, only to vanish after joining the troupe. You open the box and find a piece of dry bread.",
+  "ja": "【コレクション未獲得】\n老婦人は、役者を夢見た貧しい家の子が劇団に入った後に姿を消した話を語った。箱を開けると、乾いたパンが一切れ入っていた。"
+ },
+ "【RESULT 1】\n你挖到了一大筐食物，三个札拉克人流下了口水。": {
+  "ko": "【RESULT 1】\n커다란 광주리 가득한 음식을 캐냈다. 자라크 셋이 침을 흘린다.",
+  "en": "[RESULT 1]\nYou dig up a big basket of food. The three Zalaks drool.",
+  "ja": "【RESULT 1】\n食べ物がぎっしり詰まった大きなカゴを掘り当てた。3人のザラックがよだれを垂らしている。"
+ },
+ "【RESULT 2】\n你翻到了一件稀罕的古物，三个札拉克瞪大了眼睛。": {
+  "ko": "【RESULT 2】\n희귀한 골동품을 찾아냈다. 자라크 셋이 눈을 동그랗게 뜬다.",
+  "en": "[RESULT 2]\nYou uncover a rare antique. The three Zalaks' eyes go wide.",
+  "ja": "【RESULT 2】\n珍しい骨董品を掘り出した。3人のザラックが目を丸くしている。"
+ },
+ "【RESULT 3】\n你挖到了一箱源石锭，三个札拉克人用羡慕的眼神看着你。": {
+  "ko": "【RESULT 3】\n오리지늄각뿔 한 상자를 캐냈다. 자라크 셋이 부러운 눈으로 당신을 바라본다.",
+  "en": "[RESULT 3]\nYou dig up a crate of Originium Ingots. The three Zalaks watch you with envy.",
+  "ja": "【RESULT 3】\n源石錠の箱を掘り当てた。3人のザラックが羨ましそうにあなたを見ている。"
+ },
+ "【RESULT 4】\n你挖到了几块源石锭，三个札拉克人眼睛闪闪发亮。": {
+  "ko": "【RESULT 4】\n오리지늄각뿔 몇 개를 캐냈다. 자라크 셋의 눈이 반짝인다.",
+  "en": "[RESULT 4]\nYou dig up a few Originium Ingots. The three Zalaks' eyes sparkle.",
+  "ja": "【RESULT 4】\n源石錠をいくつか掘り出した。3人のザラックの目がきらきら輝いている。"
+ },
+ "【RESULT 5】\n你挖到了一包食物，三个札拉克人咽了口口水。": {
+  "ko": "【RESULT 5】\n음식 한 꾸러미를 캐냈다. 자라크 셋이 침을 삼킨다.",
+  "en": "[RESULT 5]\nYou dig up a bundle of food. The three Zalaks gulp.",
+  "ja": "【RESULT 5】\n食べ物の包みを掘り当てた。3人のザラックが生唾を飲み込んだ。"
+ },
+ "【RESULT 6】\n你把自己弄得灰头土脸，但是什么都没有找到。": {
+  "ko": "【RESULT 6】\n흙먼지만 뒤집어썼을 뿐, 아무것도 찾지 못했다.",
+  "en": "[RESULT 6]\nYou get covered in dirt, but find nothing at all.",
+  "ja": "【RESULT 6】\n土埃まみれになっただけで、何も見つからなかった。"
+ },
+ "必定为一件稀有收藏品": {
+  "ko": "반드시 희귀 소장품 1개",
+  "en": "Always a rare collectible",
+  "ja": "必ずレアなコレクション1つ"
+ },
+ "进行一次掷骰判定（不消耗投掷次数）：\n检定结果≤5，风平浪静：看来你的信仰没有获得教士的认可\n检定结果>5，一帆风顺：你虔诚的信仰打动了教士，他愿意提供帮助\n无论结果如何，必定来到此场景。": {
+  "ko": "주사위 판정 1회 (던지기 횟수 소모 없음):\n판정 결과 ≤5 (잔잔함): 당신의 신앙은 사제의 인정을 받지 못한 모양이다\n판정 결과 >5 (순항): 당신의 경건한 신앙이 사제의 마음을 움직여, 그가 도움을 주기로 한다\n결과와 무관하게 반드시 이 장면으로 이어집니다.",
+  "en": "Make one dice check (no toss consumed):\nResult ≤5 (calm waters): your faith doesn't seem to earn the priest's approval\nResult >5 (smooth sailing): your devotion moves the priest, and he offers his help\nEither way, this scene always follows.",
+  "ja": "ダイス判定を1回行う (投擲回数を消費しない):\n判定結果 ≤5 (凪): あなたの信仰は司祭に認められなかったようだ\n判定結果 >5 (順風満帆): 敬虔な信仰が司祭の心を動かし、彼は助けを申し出た\n結果に関わらず、必ずこの場面に至ります。"
+ },
+ "可能会获得诅咒收藏品。": {
+  "ko": "저주받은 소장품을 얻게 될 수 있습니다.",
+  "en": "May give you a cursed collectible.",
+  "ja": "呪われたコレクションを獲得する可能性があります。"
+ },
+ "随机获得以下两个收藏品中的一个：\n No.081 漆黑的舞鞋（可以在高台部署近战位干员）\n No.082 洁白的舞鞋（可以在低地部署远程位干员）": {
+  "ko": "아래 두 소장품 중 하나를 랜덤으로 획득합니다:\nNo.081 검은색 댄스화 (고지대에 근거리 오퍼레이터 배치 가능)\nNo.082 하얀색 댄스화 (저지대에 원거리 오퍼레이터 배치 가능)",
+  "en": "Randomly gain one of these two collectibles:\nNo.081 Jet-Black Dance Shoes (melee Operators can deploy on high ground)\nNo.082 Pure White Dance Shoes (ranged Operators can deploy on low ground)",
+  "ja": "以下2つのコレクションからランダムに1つ獲得:\nNo.081 漆黒のダンスシューズ (高台に近接オペレーターを配置可能)\nNo.082 純白のトウシューズ (低地に遠距離オペレーターを配置可能)"
+ },
+ "仅灯火值≥50时出现": {
+  "ko": "등불 50 이상일 때만 등장",
+  "en": "Only appears at Light 50 or above",
+  "ja": "灯火50以上の時のみ出現"
+ },
+ "仅灯火值<50时出现": {
+  "ko": "등불 50 미만일 때만 등장",
+  "en": "Only appears at Light below 50",
+  "ja": "灯火50未満の時のみ出現"
+ },
+ "随机获得以下两个收藏品中的一个：\n No.079 涡旋座（所有【特种】干员的攻击力+30%，所有【术师】干员的攻击力+3%）\n No.080 海程（所有【术师】干员的攻击力+30%，所有【特种】干员的攻击力+3%）": {
+  "ko": "아래 두 소장품 중 하나를 랜덤으로 획득합니다:\nNo.079 소용돌이함 (스페셜리스트 공격력 +30%, 캐스터 공격력 +3%)\nNo.080 바다 이정표 (캐스터 공격력 +30%, 스페셜리스트 공격력 +3%)",
+  "en": "Randomly gain one of these two collectibles:\nNo.079 Vortex Confluence (Specialists ATK +30%, Casters ATK +3%)\nNo.080 Ocean Voyage (Casters ATK +30%, Specialists ATK +3%)",
+  "ja": "以下2つのコレクションからランダムに1つ獲得:\nNo.079 ヴォルテクス・スクリュー (特殊の攻撃力+30%、術師の攻撃力+3%)\nNo.080 海程 (術師の攻撃力+30%、特殊の攻撃力+3%)"
+ },
+ "以下选项随机出现2~3个：": {
+  "ko": "아래 선택지 중 2~3개가 랜덤으로 등장합니다.",
+  "en": "2–3 of the options below appear at random.",
+  "ja": "以下の選択肢からランダムに2～3つ出現します。"
+ },
+ "以下选项随机且必定会出现【直接醒来】：": {
+  "ko": "아래 선택지는 랜덤으로 등장하며, 【바로 깨어난다】는 반드시 등장합니다.",
+  "en": "The options below appear at random; [Wake up right away] always appears.",
+  "ja": "以下の選択肢はランダムに出現し、【そのまま目覚める】は必ず出現します。"
+ },
+ "灯火值较低时优先出现": {
+  "ko": "등불이 낮을 때 우선 등장",
+  "en": "Appears preferentially when Light is low",
+  "ja": "灯火が低い時に優先して出現"
+ },
+ "灯火值较高时优先出现": {
+  "ko": "등불이 높을 때 우선 등장",
+  "en": "Appears preferentially when Light is high",
+  "ja": "灯火が高い時に優先して出現"
+ },
+ "必定出现": {
+  "ko": "반드시 등장",
+  "en": "Always appears",
+  "ja": "必ず出現"
+ },
+ "当前探索队伍中未进阶干员较多时优先出现\n老者向你提供了一份当地的地图，在上面标注了何处可以获得补给，并嘱咐异乡人不要在此过多逗留。": {
+  "ko": "탐색 중인 팀에 정예화하지 않은 오퍼레이터가 많을 때 우선 등장\n노인은 보급을 얻을 수 있는 곳이 표시된 이 지역의 지도를 건네주며, 이방인은 이곳에 오래 머물지 말라고 당부했다.",
+  "en": "Appears preferentially when your squad has many unpromoted Operators\nThe elder hands you a local map marked with supply spots, and urges an outsider like you not to linger here.",
+  "ja": "編成に昇進していないオペレーターが多い時に優先して出現\n老人は補給が得られる場所を記した地元の地図を渡し、よそ者はここに長居しないようにと念を押した。"
+ },
+ "当前探索队伍没有未进阶干员时出现\n老者看见你的衣物有些破损，便让随从取了一件干净的便服和一些物资塞到你的手里。": {
+  "ko": "탐색 중인 팀에 정예화하지 않은 오퍼레이터가 없을 때 등장\n노인은 당신의 옷이 해진 것을 보고, 시종을 시켜 깨끗한 평상복과 약간의 물자를 당신의 손에 쥐여 주었다.",
+  "en": "Appears when your squad has no unpromoted Operators\nSeeing your worn clothes, the elder has an attendant press a clean outfit and some supplies into your hands.",
+  "ja": "編成に昇進していないオペレーターがいない時に出現\n老人はあなたの服が傷んでいるのを見て、従者に清潔な普段着と物資を持たせ、あなたの手に握らせた。"
+ },
+ "随机出现": {
+  "ko": "랜덤 등장",
+  "en": "Appears at random",
+  "ja": "ランダムに出現"
+ },
+ "根据灯火值出现不同的选项：": {
+  "ko": "등불 수치에 따라 다른 선택지가 등장합니다:",
+  "en": "Different options appear depending on your Light value:",
+  "ja": "灯火の値によって異なる選択肢が出現します:"
+ },
+ "灯火值高的场合的选项": {
+  "ko": "등불이 높을 때의 선택지",
+  "en": "Option when Light is high",
+  "ja": "灯火が高い場合の選択肢"
+ },
+ "灯火值低的场合的选项": {
+  "ko": "등불이 낮을 때의 선택지",
+  "en": "Option when Light is low",
+  "ja": "灯火が低い場合の選択肢"
+ },
+ "循环此场景，直到检定成功结束事件": {
+  "ko": "판정에 성공해 이벤트가 끝날 때까지 이 장면을 반복합니다",
+  "en": "This scene loops until a successful check ends the event",
+  "ja": "判定に成功してイベントが終わるまで、この場面を繰り返します"
+ },
+ "进行一次掷骰判定（不消耗投掷次数）：\n检定结果≤5，风平浪静：行医从包里取出些物品交给你（获得一个较低稀有度的收藏品）\n检定结果>5，一帆风顺：行医郑重地从包里取出些“圣徒的遗物”交给你（获得一个较高稀有度的收藏品）\n无论结果如何，必定获得收藏品： No.195 便携经书（掷骰次数+2），但后续事件中会惹来麻烦": {
+  "ko": "주사위 판정 1회 (던지기 횟수 소모 없음):\n판정 결과 ≤5 (잔잔함): 의원이 가방에서 물건 몇 가지를 꺼내 건네준다 (낮은 희귀도 소장품 1개 획득)\n판정 결과 >5 (순항): 의원이 가방에서 '성도의 유물'을 정중히 꺼내 건네준다 (높은 희귀도 소장품 1개 획득)\n결과와 무관하게 소장품 No.195 휴대용 경전(주사위 +2)을 반드시 획득하지만, 이후 이벤트에서 골칫거리가 됩니다",
+  "en": "Make one dice check (no toss consumed):\nResult ≤5 (calm waters): the healer hands you a few items from their bag (gain a lower-rarity collectible)\nResult >5 (smooth sailing): the healer solemnly hands you \"saint's relics\" (gain a higher-rarity collectible)\nEither way, you always gain No.195 Portable Scriptures (Die Rolls +2) — but it will bring trouble in later events",
+  "ja": "ダイス判定を1回行う (投擲回数を消費しない):\n判定結果 ≤5 (凪): 医者は鞄から品物をいくつか取り出して渡してくれる (低レアのコレクション1つ獲得)\n判定結果 >5 (順風満帆): 医者は鞄から「聖徒の遺物」を恭しく取り出して渡してくれる (高レアのコレクション1つ獲得)\n結果に関わらず、必ずコレクション No.195 携帯経典 (ダイスロール回数+2) を獲得するが、後のイベントで厄介事を招く"
+ },
+ "以下选项根据持有的收藏品自动选择，不会出现在画面上：": {
+  "ko": "아래 선택지는 보유한 소장품에 따라 자동으로 선택되며, 화면에는 나타나지 않습니다:",
+  "en": "The options below are chosen automatically based on your collectibles, and never appear on screen:",
+  "ja": "以下の選択肢は所持コレクションに応じて自動的に選択され、画面には表示されません:"
+ },
+ "持有 No.195 便携经书时自动选择": {
+  "ko": "No.195 휴대용 경전 보유 시 자동 선택",
+  "en": "Chosen automatically while holding No.195 Portable Scriptures",
+  "ja": "No.195 携帯経典の所持時に自動選択"
+ },
+ "持有 No.205 “夜阳草”时自动选择": {
+  "ko": "No.205 나이트선 리프 보유 시 자동 선택",
+  "en": "Chosen automatically while holding No.205 Nightsun Grass",
+  "ja": "No.205 夜陽草の所持時に自動選択"
+ },
+ "以下选项随机出现4个，必定出现【搜寻园林】：": {
+  "ko": "아래 선택지 중 4개가 랜덤으로 등장하며, 【정원 탐색】은 반드시 등장합니다.",
+  "en": "4 of the options below appear at random; [Search the garden] always appears.",
+  "ja": "以下の選択肢からランダムに4つ出現し、【庭園を探す】は必ず出現します。"
+ },
+ "立即获得收藏品：\n No.221 深蓝之心（灯火-50，获得时立即使随机一名干员产生排异反应，让探索走向不同的结局）": {
+  "ko": "즉시 소장품 획득:\nNo.221 하트 오브 카이룰라 (등불 -50, 획득 즉시 랜덤 오퍼레이터 1명에게 거부반응 발생, 탐색이 다른 결말로 향하게 됨)",
+  "en": "Immediately gain a collectible:\nNo.221 Caerula Animus (Light -50; on pickup a random Operator immediately suffers Rejection, steering the exploration toward a different ending)",
+  "ja": "即座にコレクション獲得:\nNo.221 紺碧の心 (灯火-50、獲得時にランダムなオペレーター1名が即座に拒絶反応を起こし、探索が異なる結末へ向かう)"
+ },
+ "以下选项根据当前的灯火值进行显示：": {
+  "ko": "아래 선택지는 현재 등불 수치에 따라 표시됩니다:",
+  "en": "The options below are shown based on your current Light value:",
+  "ja": "以下の選択肢は現在の灯火の値に応じて表示されます:"
+ },
+ "当灯火值不低于90时显示": {
+  "ko": "등불 90 이상일 때 표시",
+  "en": "Shown at Light 90 or above",
+  "ja": "灯火90以上の時に表示"
+ },
+ "当灯火值不低于50时显示": {
+  "ko": "등불 50 이상일 때 표시",
+  "en": "Shown at Light 50 or above",
+  "ja": "灯火50以上の時に表示"
+ },
+ "以下选项随机出现4个，必定会出现【稍事休息】：": {
+  "ko": "아래 선택지 중 4개가 랜덤으로 등장하며, 【잠깐 휴식】은 반드시 등장합니다.",
+  "en": "4 of the options below appear at random; [Take a break] always appears.",
+  "ja": "以下の選択肢からランダムに4つ出現し、【少し休む】は必ず出現します。"
+ },
+ "Exclusive\n仅在以以人为本分队探索且在【认知塑造】中点亮“习惯”节点后，第一次决定后出现下列选项": {
+  "ko": "전용 — 인적자원 분대로 탐색 중이고 【인지 형성】에서 '습관' 노드를 밝힌 뒤, 첫 결정 이후에 아래 선택지가 등장합니다",
+  "en": "Exclusive — the options below appear after your first decision, only when exploring with the People-Oriented Squad and with the 'Habit' node lit in Cognitive Shaping",
+  "ja": "専用 — 人文主義分隊で探索中、かつ【認知形成】で「習慣」ノードを解放した後、最初の決定の後に以下の選択肢が出現します"
+ },
+ "游戏中会根据掷骰结果产生相应变化\n【掷骰判定结果≥6】好运相随：虔诚让命运愿意多给一份馈赠（额外获得一件随机收藏品）\n【6＞掷骰判定结果>1】一帆风顺：虔诚的人总能获得想要的（获得原定收藏品）\n【掷骰判定结果=1】一波三折：那件收藏品不在你的命运之中（原定收藏品替换为随机收藏品）": {
+  "ko": "게임에서는 주사위 결과에 따라 결과가 달라집니다\n【판정 결과 ≥6】 행운 동행: 경건함에 운명이 선물을 하나 더 얹어 준다 (랜덤 소장품 1개 추가 획득)\n【6 > 판정 결과 > 1】 순항: 경건한 자는 언제나 원하는 것을 얻는다 (원래 정해진 소장품 획득)\n【판정 결과 = 1】 우여곡절: 그 소장품은 당신의 운명에 없다 (원래 소장품이 랜덤 소장품으로 대체)",
+  "en": "In game, the outcome changes with your dice roll\n[Roll ≥6] Luck on your side: fate rewards devotion with one extra gift (gain an additional random collectible)\n[6 > roll > 1] Smooth sailing: the devout always get what they wish for (gain the designated collectible)\n[Roll = 1] Twists and turns: that collectible was never in your fate (the designated collectible is replaced with a random one)",
+  "ja": "ゲームではダイスの結果に応じて結果が変わります\n【判定結果 ≥6】幸運の同伴: 敬虔さに運命がもう一つ贈り物を添えてくれる (ランダムなコレクションを追加で1つ獲得)\n【6 > 判定結果 > 1】順風満帆: 敬虔な者は常に望むものを得る (本来のコレクションを獲得)\n【判定結果 = 1】一波乱: そのコレクションはあなたの運命になかった (本来のコレクションがランダムなものに置き換わる)"
+ },
+ "仅持有安玛的爱时出现": {
+  "ko": "암마의 사랑 보유 시에만 등장",
+  "en": "Only appears while holding Amma's Affection",
+  "ja": "アンマーの愛の所持時のみ出現"
+ },
+ "仅持有安玛的爱时出现，选择后会失去安玛的爱": {
+  "ko": "암마의 사랑 보유 시에만 등장하며, 선택하면 암마의 사랑을 잃습니다",
+  "en": "Only appears while holding Amma's Affection; choosing it removes Amma's Affection",
+  "ja": "アンマーの愛の所持時のみ出現し、選択するとアンマーの愛を失います"
+ },
+ "若是在探索者档案【直视】中通过【命运所指】遭遇此事件，则【原地张望】替换为：": {
+  "ko": "탐험가 파일 【직시】의 【운명의 암시】로 이 이벤트를 만난 경우, 【제자리에서 두리번거린다】가 다음으로 대체됩니다:",
+  "en": "If you reach this event via [Prophecy] in the Expeditioner Record [Fix On It], [Look around the area] is replaced with:",
+  "ja": "探索者記録【直視】の【運命の導き】でこのイベントに遭遇した場合、【辺りを見回す】が以下に置き換わります:"
+ },
+ "仅抗干扰指数为0时出现": {
+  "ko": "간섭 방지 지수가 0일 때만 등장",
+  "en": "Only appears at Anti-Interference Index 0",
+  "ja": "耐干渉指数が0の時のみ出現"
+ },
+ "仅遭遇过事件【负伤的主树】时出现": {
+  "ko": "이벤트 【상처 입은 나무】를 겪었을 때만 등장",
+  "en": "Only appears after encountering the event [Wounded Prime Tree]",
+  "ja": "イベント【傷だらけの主樹】に遭遇済みの時のみ出現"
+ },
+ "若是在探索者档案【告别】中通过【命运所指】遭遇此事件，则除以上选项外必定出现：": {
+  "ko": "탐험가 파일 【작별】의 【운명의 암시】로 이 이벤트를 만난 경우, 위 선택지 외에 다음이 반드시 등장합니다:",
+  "en": "If you reach this event via [Prophecy] in the Expeditioner Record [Parting], the following always appears in addition to the options above:",
+  "ja": "探索者記録【別れ】の【運命の導き】でこのイベントに遭遇した場合、上記に加えて以下が必ず出現します:"
+ },
+ "若是在探索者档案【使命】中通过【命运所指】遭遇此事件，则除以上选项外必定出现：": {
+  "ko": "탐험가 파일 【사명】의 【운명의 암시】로 이 이벤트를 만난 경우, 위 선택지 외에 다음이 반드시 등장합니다:",
+  "en": "If you reach this event via [Prophecy] in the Expeditioner Record [Mission], the following always appears in addition to the options above:",
+  "ja": "探索者記録【使命】の【運命の導き】でこのイベントに遭遇した場合、上記に加えて以下が必ず出現します:"
+ },
+ "若是在探索者档案【恒在】中通过【命运所指】遭遇此事件，则除以上选项外必定出现：": {
+  "ko": "탐험가 파일 【영원】의 【운명의 암시】로 이 이벤트를 만난 경우, 위 선택지 외에 다음이 반드시 등장합니다:",
+  "en": "If you reach this event via [Prophecy] in the Expeditioner Record [Symmetria], the following always appears in addition to the options above:",
+  "ja": "探索者記録【常在】の【運命の導き】でこのイベントに遭遇した場合、上記に加えて以下が必ず出現します:"
+ },
+ "若是在探索者档案【没有终点的小径】中通过【命运所指】遭遇此事件，则除以上选项外必定出现：": {
+  "ko": "탐험가 파일 【종점이 없는 샛길】의 【운명의 암시】로 이 이벤트를 만난 경우, 위 선택지 외에 다음이 반드시 등장합니다:",
+  "en": "If you reach this event via [Prophecy] in the Expeditioner Record [The Pathway With No End], the following always appears in addition to the options above:",
+  "ja": "探索者記録【終わりなき小道】の【運命の導き】でこのイベントに遭遇した場合、上記に加えて以下が必ず出現します:"
+ },
+ "若是在探索者档案【探足】中通过【命运所指】遭遇此事件，则除以上选项外必定出现：": {
+  "ko": "탐험가 파일 【탐색】의 【운명의 암시】로 이 이벤트를 만난 경우, 위 선택지 외에 다음이 반드시 등장합니다:",
+  "en": "If you reach this event via [Prophecy] in the Expeditioner Record [Feel By Your Feet], the following always appears in addition to the options above:",
+  "ja": "探索者記録【探り足】の【運命の導き】でこのイベントに遭遇した場合、上記に加えて以下が必ず出現します:"
+ },
+ "若是在探索者档案【血脉】中通过【命运所指】遭遇此事件，则除以上选项外必定出现：": {
+  "ko": "탐험가 파일 【혈맥】의 【운명의 암시】로 이 이벤트를 만난 경우, 위 선택지 외에 다음이 반드시 등장합니다:",
+  "en": "If you reach this event via [Prophecy] in the Expeditioner Record [Bloodline], the following always appears in addition to the options above:",
+  "ja": "探索者記録【血脈】の【運命の導き】でこのイベントに遭遇した場合、上記に加えて以下が必ず出現します:"
+ },
+ "若是在探索者档案【未见终局】中通过【命运所指】遭遇此事件，则【我们或许能协作互助】替换为：": {
+  "ko": "탐험가 파일 【보이지 않는 결말】의 【운명의 암시】로 이 이벤트를 만난 경우, 【협력하는 게 어떨지】가 다음으로 대체됩니다:",
+  "en": "If you reach this event via [Prophecy] in the Expeditioner Record [Past the Eye Could See], [Perhaps we can help each other out] is replaced with:",
+  "ja": "探索者記録【まだ見ぬ結末】の【運命の導き】でこのイベントに遭遇した場合、【互いに助け合えるかもしれない】が以下に置き換わります:"
+ },
+ "仅选择过事件【特里蒙旅行社特派团】的【拿走广告】选项时出现": {
+  "ko": "이벤트 【트리마운츠 여행사 특별파견단】에서 【광고를 가져간다】를 선택했을 때만 등장",
+  "en": "Only appears if you chose [Take away the flyers] in the event [Trimounts Travel Agency Dispatch]",
+  "ja": "イベント【トリマウンツ旅行社特派団】で【パンフレットを手に取る】を選択済みの時のみ出現"
+ },
+ "仅在坍缩等级3或以上时出现": {
+  "ko": "붕괴 레벨 3 이상일 때만 등장",
+  "en": "Only appears at Collapse Level 3 or above",
+  "ja": "崩壊レベル3以上の時のみ出現"
+ },
+ "仅在坍缩等级5或6时出现": {
+  "ko": "붕괴 레벨 5 또는 6일 때만 등장",
+  "en": "Only appears at Collapse Level 5 or 6",
+  "ja": "崩壊レベル5または6の時のみ出現"
+ },
+ "仅在坍缩等级7或以上时出现": {
+  "ko": "붕괴 레벨 7 이상일 때만 등장",
+  "en": "Only appears at Collapse Level 7 or above",
+  "ja": "崩壊レベル7以上の時のみ出現"
+ },
+ "仅持有四叶草化石时出现": {
+  "ko": "네잎클로버 화석 보유 시에만 등장",
+  "en": "Only appears while holding the Four-Leaf Clover Fossil",
+  "ja": "四つ葉の化石の所持時のみ出現"
+ },
+ "以下选项随机出现3个": {
+  "ko": "아래 선택지 중 3개가 랜덤으로 등장합니다",
+  "en": "3 of the options below appear at random",
+  "ja": "以下の選択肢からランダムに3つ出現します"
+ },
+ "如果连续触发5次【可惜！】选项，则在第五次触发【可惜！】时替换为：": {
+  "ko": "【아깝다!】가 5회 연속으로 나오면, 다섯 번째 【아깝다!】가 다음으로 대체됩니다:",
+  "en": "If [Too bad!] triggers 5 times in a row, the fifth [Too bad!] is replaced with:",
+  "ja": "【残念！】が5回連続で出た場合、5回目の【残念！】が以下に置き換わります:"
+ },
+ "【RESULT 1】\n他讲了部族里一名战士牺牲的故事，但你听到一半时意识到，他所说的这个人正“生活”在部族之中。不知是酒精还是故事的作用，你感到自己开始冒汗。": {
+  "ko": "【RESULT 1】\n그는 부족 전사 한 명이 희생된 이야기를 들려주었다. 그런데 절반쯤 듣다 보니, 그가 말하는 그 사람이 지금도 부족 안에서 '살아가고' 있다는 걸 깨달았다. 술기운 때문인지 이야기 때문인지, 당신은 땀이 나기 시작했다.",
+  "en": "[RESULT 1]\nHe tells of a tribal warrior's sacrifice — but halfway through you realize the person he speaks of is still 'living' among the tribe. Whether it's the drink or the story, you start to sweat.",
+  "ja": "【RESULT 1】\n彼は部族の戦士が犠牲になった話を語った。だが半ばまで聞いて、その人物が今も部族の中で「生きている」ことに気づく。酒のせいか話のせいか、あなたは汗をかき始めた。"
+ },
+ "【RESULT 2】\n当舌头尝出那种奇妙的滋味时，你有点后悔自己这杯酒喝得太快了......你想抱怨一下这种酒有多难喝，但对方根本没有抬头看你的表情，只是笨拙地又给你倒了一杯酒。": {
+  "ko": "【RESULT 2】\n혀끝에 그 기묘한 맛이 느껴지는 순간, 이 잔을 너무 빨리 비웠다는 게 조금 후회됐다…… 술이 얼마나 맛없는지 불평하고 싶었지만, 상대는 당신의 표정을 볼 생각도 없이 서툰 손길로 한 잔을 더 따라 줄 뿐이었다.",
+  "en": "[RESULT 2]\nAs that strange taste hits your tongue, you slightly regret downing the cup so fast... You want to complain about how awful it is, but they never look up at your face — they just clumsily pour you another.",
+  "ja": "【RESULT 2】\n舌にあの奇妙な味を感じた瞬間、この一杯を早く飲みすぎたと少し後悔した……。この酒がどれほど不味いか文句を言いたかったが、相手はあなたの表情を見ようともせず、不器用にもう一杯注いでくれるだけだった。"
+ },
+ "【RESULT 3】\n他讲了部族里一个卧病在床的老人被角兽接走，在林地最高处度过生命最后时刻的故事。讲完之后，他拍拍身旁的树，请求树也在他临死前将他接走，举到很高的地方看看太阳。": {
+  "ko": "【RESULT 3】\n그는 병상에 누워 있던 부족의 노인이 뿔짐승에게 실려 가, 숲의 가장 높은 곳에서 생의 마지막 순간을 보냈다는 이야기를 들려주었다. 이야기를 마친 그는 곁의 나무를 토닥이며, 자신도 죽기 전에 데려가 높은 곳에서 태양을 보게 해 달라고 나무에게 부탁했다.",
+  "en": "[RESULT 3]\nHe tells of a bedridden elder carried off by a horned beast to spend his final moments at the forest's highest point. When he finishes, he pats the tree beside him and asks it to carry him too before he dies, to lift him up high to see the sun.",
+  "ja": "【RESULT 3】\n彼は、病床にあった部族の老人が角獣に連れられ、林地の最も高い場所で生涯の最期を過ごした話を語った。話し終えると、彼は傍らの木を叩き、自分も死ぬ前に連れて行き、高い場所で太陽を見せてほしいと木に頼んだ。"
+ },
+ "【RESULT 4】\n他讲了一个路过部族的哥伦比亚商人不幸遇到牙兽的故事。你循着他说的方向找过去，在积雪底下发现了一件商人遗留的货品。令人疑虑的是，周围明显留下了萨米人的法术痕迹。": {
+  "ko": "【RESULT 4】\n그는 부족을 지나던 컬럼비아 상인이 불행히도 이빨짐승과 마주친 이야기를 들려주었다. 그가 말한 방향을 따라가 보니, 쌓인 눈 밑에서 상인이 남긴 상품 하나를 발견했다. 미심쩍게도, 주변에는 사미인의 술법 흔적이 뚜렷하게 남아 있었다.",
+  "en": "[RESULT 4]\nHe tells of a Columbian merchant passing the tribe who had the misfortune of meeting a fanged beast. Following his directions, you find a piece of the merchant's goods beneath the snow. Suspiciously, clear traces of Sami arts linger all around.",
+  "ja": "【RESULT 4】\n彼は、部族を通りかかったクルビア商人が不運にも牙獣に遭遇した話を語った。彼の言う方向を辿ると、積もった雪の下から商人の残した品を見つけた。不審なことに、周囲にはサーミ人の術の痕跡がはっきりと残っていた。"
+ },
+ "【RESULT END】\n你恢复意识时，发现自己正蜷缩成一团趴在地上，唯一能想起来的事情是自己似乎一口气喝得太多。那个萨米人很快地瞟了你一眼，扔给你什么东西，又转头继续和树聊起天来。": {
+  "ko": "【RESULT END】\n의식이 돌아왔을 때, 당신은 몸을 웅크린 채 바닥에 엎드려 있었다. 기억나는 것이라곤 한 번에 너무 많이 마신 것 같다는 사실뿐. 그 사미인은 힐끗 당신을 보더니 무언가를 던져 주고는, 다시 고개를 돌려 나무와 이야기를 이어 갔다.",
+  "en": "[RESULT END]\nYou come to curled up on the ground, remembering only that you drank far too much in one go. The Sami glances at you, tosses you something, then turns back to chatting with the tree.",
+  "ja": "【RESULT END】\n意識が戻った時、あなたは体を丸めて地面に伏せていた。思い出せるのは、一気に飲みすぎたらしいことだけ。あのサーミ人はあなたをちらりと見て何かを投げてよこすと、また木との会話に戻っていった。"
+ },
+ "根据抗干扰指数出现【那就试试看】或【设备坏了，就地点样】选项": {
+  "ko": "간섭 방지 지수에 따라 【탐사한다】 또는 【장비가 망가져 샘플만 채취한다】 선택지가 등장합니다",
+  "en": "Depending on your Anti-Interference Index, either [Let's give it a try] or [Try using your broken equipment on the spot] appears",
+  "ja": "耐干渉指数に応じて【それなら中を確かめてみよう】または【装置が壊れた。この場所でサンプリングするしかない】が出現します"
+ },
+ "以下选项随机出现": {
+  "ko": "아래 선택지는 랜덤으로 등장합니다",
+  "en": "The options below appear at random",
+  "ja": "以下の選択肢はランダムに出現します"
+ },
+ "【RESULT 1】\n显示屏中什么都没有出现，只有平整而光滑的岩壁。对于它的成因，科考队员们毫无头绪。": {
+  "ko": "【RESULT 1】\n화면에는 아무것도 나타나지 않았다. 평평하고 매끈한 암벽뿐. 그 성인(成因)에 대해 과학 조사 대원들은 아무런 단서도 잡지 못했다.",
+  "en": "[RESULT 1]\nNothing appears on the display — only a flat, smooth rock wall. The survey team has no clue how it formed.",
+  "ja": "【RESULT 1】\nディスプレイには何も映らなかった。平らで滑らかな岩壁だけ。その成因について、科学調査隊は全く見当がつかなかった。"
+ },
+ "【RESULT 2】\n显示屏中出现了一些从未见过的植物。它们攀附在岩壁上，如网格般相互连接，似乎是在填补这个空洞。一些队员已经想到了它所能产生的经济价值。": {
+  "ko": "【RESULT 2】\n화면에 한 번도 본 적 없는 식물들이 나타났다. 암벽에 달라붙어 그물망처럼 서로 이어진 모습이, 이 공동(空洞)을 메우고 있는 것처럼 보였다. 몇몇 대원은 벌써 그것이 낳을 경제적 가치를 떠올리고 있었다.",
+  "en": "[RESULT 2]\nUnknown plants appear on the display, clinging to the rock wall and interlinking like a lattice, as if filling the cavity. Some team members are already thinking about their economic value.",
+  "ja": "【RESULT 2】\nディスプレイに見たこともない植物が映った。岩壁に張り付き、網の目のように繋がり合って、この空洞を埋めているかのようだ。何人かの隊員は早くもその経済的価値に思いを巡らせていた。"
+ },
+ "【RESULT 3】\n显示屏中出现了一些不规则的岩壁隆起。在这些位置上，粘液状分泌物在不断涌出，顺着岩壁缓缓流淌。一些队员记录了勘察设备所在的相对位置，并对这些分泌物进行了取样。": {
+  "ko": "【RESULT 3】\n화면에 불규칙하게 솟아오른 암벽 돌기들이 나타났다. 그 자리마다 점액질 분비물이 끊임없이 흘러나와 암벽을 타고 천천히 흘러내렸다. 몇몇 대원은 탐사 장비의 상대 위치를 기록하고 분비물 샘플을 채취했다.",
+  "en": "[RESULT 3]\nIrregular bulges appear on the rock wall, each oozing a mucus-like secretion that slowly runs down the surface. Some team members log the survey equipment's relative position and sample the secretions.",
+  "ja": "【RESULT 3】\nディスプレイに不規則な岩壁の隆起が映った。その箇所からは粘液状の分泌物が絶えず湧き出し、岩壁を伝ってゆっくり流れている。何人かの隊員は探査装置の相対位置を記録し、分泌物のサンプルを採取した。"
+ },
+ "【RESULT 4】\n显示屏中出现了多个从未见过的符号样式。这些符号忽明忽暗，保持着呼吸般的平稳节奏。一些队员取出笔记本开始临摹，随后开始思考符号背后的含义。": {
+  "ko": "【RESULT 4】\n화면에 처음 보는 기호 무늬 여러 개가 나타났다. 기호들은 숨을 쉬듯 일정한 리듬으로 밝아졌다 어두워졌다를 반복했다. 몇몇 대원은 수첩을 꺼내 따라 그리기 시작했고, 이내 기호 뒤에 숨은 의미를 고민하기 시작했다.",
+  "en": "[RESULT 4]\nSeveral never-before-seen symbols appear on the display, dimming and brightening in a steady, breath-like rhythm. Some team members pull out notebooks to copy them, then start pondering what the symbols mean.",
+  "ja": "【RESULT 4】\nディスプレイに見たことのない記号がいくつも映った。記号は呼吸のような安定したリズムで明滅している。何人かの隊員は手帳を取り出して書き写し、やがて記号の意味について考え始めた。"
+ },
+ "仅未持有伤痕与空无密文板时出现": {
+  "ko": "'상흔'·'공허' 암호판을 보유하지 않았을 때만 등장",
+  "en": "Only appears while holding neither the Scar nor the Void Foldartal",
+  "ja": "「傷跡」「空無」の啓示板を所持していない時のみ出現"
+ },
+ "随机低稀有度收藏品": {
+  "ko": "낮은 희귀도 소장품 랜덤 1개",
+  "en": "Random low-rarity collectible",
+  "ja": "ランダムな低レアのコレクション"
+ },
+ "随机中稀有度收藏品": {
+  "ko": "중간 희귀도 소장품 랜덤 1개",
+  "en": "Random mid-rarity collectible",
+  "ja": "ランダムな中レアのコレクション"
+ },
+ "随机高稀有度收藏品": {
+  "ko": "높은 희귀도 소장품 랜덤 1개",
+  "en": "Random high-rarity collectible",
+  "ja": "ランダムな高レアのコレクション"
+ },
+ "随机低稀有度密文板": {
+  "ko": "낮은 희귀도 암호판 랜덤 1개",
+  "en": "Random low-rarity Foldartal",
+  "ja": "ランダムな低レアの啓示板"
+ },
+ "随机中稀有度密文板": {
+  "ko": "중간 희귀도 암호판 랜덤 1개",
+  "en": "Random mid-rarity Foldartal",
+  "ja": "ランダムな中レアの啓示板"
+ },
+ "随机高稀有度密文板": {
+  "ko": "높은 희귀도 암호판 랜덤 1개",
+  "en": "Random high-rarity Foldartal",
+  "ja": "ランダムな高レアの啓示板"
+ },
+ "仅在持有“希望时代的涂鸦”时出现": {
+  "ko": "'희망 시대의 낙서' 보유 시에만 등장",
+  "en": "Only appears while holding Doodle of Hope",
+  "ja": "「希望の時代の落書き」の所持時のみ出現"
+ },
+ "仅在持有“绝望”时出现": {
+  "ko": "'절망' 보유 시에만 등장",
+  "en": "Only appears while holding Despair",
+  "ja": "「絶望」の所持時のみ出現"
+ },
+ "仅在持有“拯救”时出现": {
+  "ko": "'구원' 보유 시에만 등장",
+  "en": "Only appears while holding Salvation",
+  "ja": "「救済」の所持時のみ出現"
+ },
+ "仅在持有“停止”时出现": {
+  "ko": "'정지' 보유 시에만 등장",
+  "en": "Only appears while holding Stasis",
+  "ja": "「停止」の所持時のみ出現"
+ },
+ "仅在持有“牧驮人的摇铃”时出现": {
+  "ko": "'목자의 핸드벨' 보유 시에만 등장",
+  "en": "Only appears while holding the Burdenherd Bell",
+  "ja": "「駄獣飼いのベル」の所持時のみ出現"
+ },
+ "仅在持有“无话可说”时出现": {
+  "ko": "'할 말이 없다' 보유 시에만 등장",
+  "en": "Only appears while holding Speechless",
+  "ja": "「薄い関心」の所持時のみ出現"
+ },
+ "仅在持有“死仇时代的恨意”时出现": {
+  "ko": "'원한 시대의 증오' 보유 시에만 등장",
+  "en": "Only appears while holding Talons of Hatred",
+  "ja": "「憎悪の時代での恨み」の所持時のみ出現"
+ },
+ "仅在持有“美愿时代的留恋”时出现": {
+  "ko": "'소원 시대의 미련' 보유 시에만 등장",
+  "en": "Only appears while holding Lamp of Wishes",
+  "ja": "「理想の時代への未練」の所持時のみ出現"
+ },
+ "仅在持有“四叶草化石”时出现": {
+  "ko": "'네잎클로버 화석' 보유 시에만 등장",
+  "en": "Only appears while holding the Four-Leaf Clover Fossil",
+  "ja": "「四つ葉の化石」の所持時のみ出現"
+ },
+ "仅在持有“片瓣”时出现": {
+  "ko": "'꽃잎 조각' 보유 시에만 등장",
+  "en": "Only appears while holding Petal",
+  "ja": "「花びら」の所持時のみ出現"
+ },
+ "仅在持有“灌铅胸牌”时出现": {
+  "ko": "'납덩이 명찰' 보유 시에만 등장",
+  "en": "Only appears while holding the Lead Tag",
+  "ja": "「重たい認識票」の所持時のみ出現"
+ },
+ "获得以下收藏品：\n No.254 无终之钥：让探索开启不同的方向\n No.255 终结的骨架：所有干员的部署费用+2，所有敌人受到的物理与法术伤害降低20%": {
+  "ko": "다음 소장품을 획득합니다:\nNo.254 영겁의 열쇠: 탐색이 다른 방향으로 열립니다\nNo.255 종결의 뼈대: 모든 오퍼레이터 배치 코스트 +2, 모든 적이 받는 물리·아츠 대미지 20% 감소",
+  "en": "Gain the following collectibles:\nNo.254 Endless Key: opens the exploration in a different direction\nNo.255 Framework of The End: all Operators' DP cost +2, all enemies take 20% less Physical and Arts damage",
+  "ja": "以下のコレクションを獲得:\nNo.254 エンドレスキー: 探索が異なる方向へ開かれる\nNo.255 終結の骨組み: 全オペレーターの配置コスト+2、全ての敵が受ける物理・術ダメージ20%減少"
+ },
+ "获得以下收藏品：\n No.254 无终之钥：让探索开启不同的方向\n No.256 终结的躯体：所有干员的部署费用+2，所有敌人受到的物理与法术伤害降低20%，所有敌人攻击力+20%": {
+  "ko": "다음 소장품을 획득합니다:\nNo.254 영겁의 열쇠: 탐색이 다른 방향으로 열립니다\nNo.256 종결의 몸통: 모든 오퍼레이터 배치 코스트 +2, 모든 적이 받는 물리·아츠 대미지 20% 감소, 모든 적 공격력 +20%",
+  "en": "Gain the following collectibles:\nNo.254 Endless Key: opens the exploration in a different direction\nNo.256 Body of The End: all Operators' DP cost +2, all enemies take 20% less Physical and Arts damage, all enemies ATK +20%",
+  "ja": "以下のコレクションを獲得:\nNo.254 エンドレスキー: 探索が異なる方向へ開かれる\nNo.256 終結の肉体: 全オペレーターの配置コスト+2、全ての敵が受ける物理・術ダメージ20%減少、全ての敵の攻撃力+20%"
+ },
+ "获得以下收藏品：\n No.254 无终之钥：让探索开启不同的方向\n No.257 终结的实相：所有干员的部署费用+2，所有敌人受到的物理与法术伤害降低20%，所有敌人攻击力+20%，最终战场上出现额外敌人": {
+  "ko": "다음 소장품을 획득합니다:\nNo.254 영겁의 열쇠: 탐색이 다른 방향으로 열립니다\nNo.257 종결의 실상: 모든 오퍼레이터 배치 코스트 +2, 모든 적이 받는 물리·아츠 대미지 20% 감소, 모든 적 공격력 +20%, 최종 전장에 추가 적 등장",
+  "en": "Gain the following collectibles:\nNo.254 Endless Key: opens the exploration in a different direction\nNo.257 Reality of The End: all Operators' DP cost +2, all enemies take 20% less Physical and Arts damage, all enemies ATK +20%, extra enemies appear in the final battle",
+  "ja": "以下のコレクションを獲得:\nNo.254 エンドレスキー: 探索が異なる方向へ開かれる\nNo.257 終結の実相: 全オペレーターの配置コスト+2、全ての敵が受ける物理・術ダメージ20%減少、全ての敵の攻撃力+20%、最終戦場に追加の敵が出現"
+ },
+ "始终可选择，目标生命值最低降至1": {
+  "ko": "항상 선택 가능 — 목표 HP는 최저 1까지만 내려갑니다",
+  "en": "Always selectable; Objective HP drops to a minimum of 1",
+  "ja": "常に選択可能 — 目標HPは最低1まで低下"
+ },
+ "仅在目标生命为1时出现": {
+  "ko": "목표 HP가 1일 때만 등장",
+  "en": "Only appears at Objective HP 1",
+  "ja": "目標HPが1の時のみ出現"
+ },
+ "仅在持有“死仇时代的恨意”时出现，出现时始终可选择": {
+  "ko": "'원한 시대의 증오' 보유 시에만 등장하며, 등장 시 항상 선택 가능",
+  "en": "Only appears while holding Talons of Hatred; when present it is always selectable",
+  "ja": "「憎悪の時代での恨み」の所持時のみ出現し、出現時は常に選択可能"
+ },
+ "随机出现以下普通作战中的一个：ISW-NO 大棋一盘 / ISW-NO 血脉之辩 / ISW-NO 遮天蔽日 / ISW-NO 劳作的清晨 / ISW-NO 溃乱魔典 / ISW-NO 盲盒商场": {
+  "ko": "다음 일반 작전 중 하나가 랜덤으로 등장: ISW-NO 대결 훈련 / ISW-NO 혈통 논쟁 / ISW-NO 햇빛 가리개 / ISW-NO 아침 노동 / ISW-NO 혼돈의 살카즈 경전 / ISW-NO 랜덤 박스 상점",
+  "en": "One of these normal operations appears at random: ISW-NO Simulated Skirmish / Bloodline Debates / Blotted Sky / Morning Labor / Careless Magic / Lottery Fight",
+  "ja": "以下の通常作戦からランダムに1つ出現: ISW-NO 大規模演習 / 血脈に関する議論 / 大きな日陰 / 労働の朝 / 混乱の魔典 / ブラインドボックス市場"
+ },
+ "随机出现以下紧急作战中的一个：ISW-NO 寄人城池下 / ISW-NO 计划耕种 / ISW-NO 巫咒同盟 / ISW-NO 通道封锁 / ISW-NO 无罪净土 / ISW-NO 浮空城接舷战 / ISW-NO 残损学院": {
+  "ko": "다음 긴급 작전 중 하나가 랜덤으로 등장: ISW-NO 더부살이 / ISW-NO 개간 계획 / ISW-NO 주술 동맹 / ISW-NO 통로 봉쇄 / ISW-NO 무죄의 정토 / ISW-NO 부유 도시 백병전 / ISW-NO 파손된 학원",
+  "en": "One of these emergency operations appears at random: ISW-NO Rogue Mercenary / Land Reclamation / Witch-Curse Alliance / Passage Blockade / Guiltless Paradise / Aerial Assault / Wrecked Academy",
+  "ja": "以下の緊急作戦からランダムに1つ出現: ISW-NO 都市に身を寄せて / 計画的な開墾 / 巫術とアーツの同盟 / 道路封鎖 / 無辜なる浄土 / 天空都市移乗戦 / 欠け落ちた学院"
+ },
+ "进入Ⅳ 诡谲断章": {
+  "ko": "Ⅳ 괴이한 단장으로 진입합니다",
+  "en": "Enters IV: Bizarre Fragment",
+  "ja": "Ⅳ 奇妙な断章へ進入"
+ },
+ "进入诡谲断章，固定进入结构②": {
+  "ko": "괴이한 단장으로 진입합니다 — 항상 구조②로 진입",
+  "en": "Enters Bizarre Fragment — always structure ②",
+  "ja": "奇妙な断章へ進入 — 必ず構造②に入る"
+ },
+ "升级为紧急作战": {
+  "ko": "긴급 작전으로 승급됩니다",
+  "en": "Upgrades into an emergency operation",
+  "ja": "緊急作戦にアップグレードされる"
+ },
+ "【RESULT 1】\n你刚举起牌子，就有一盏聚光灯投向了你。鸭爵似乎对你的加价有些意外，他远远地瞥了你一眼，又将高普尼克叫到跟前，一番耳语后便不再有其他动作，任由倒数归零，木槌落下，咚——宝贝归你了！": {
+  "ko": "【RESULT 1】\n당신이 팻말을 들자마자 스포트라이트가 당신을 비췄다. 덕로드는 당신의 호가가 뜻밖이었는지 멀리서 힐끗 쳐다보더니, 고프닉을 불러 귓속말을 나눈 뒤 더는 움직이지 않았다. 카운트다운이 0이 되고 나무망치가 떨어졌다. 쿵 — 보물은 당신의 것이다!",
+  "en": "[RESULT 1]\nThe moment you raise your paddle, a spotlight swings to you. The Duck Lord seems surprised by your bid — he glances at you from afar, whispers with Gopnik, then makes no further move. The countdown hits zero, the gavel falls — thud! The treasure is yours!",
+  "ja": "【RESULT 1】\nあなたが札を上げた途端、スポットライトがあなたを照らした。ダック卿はあなたの入札が意外だったのか、遠くから一瞥し、ゴプニクを呼び寄せて耳打ちした後は動かなかった。カウントダウンがゼロになり、木槌が落ちる。ドン——お宝はあなたのものだ！"
+ },
+ "【RESULT 2】\n你刚举起牌子，就有一盏聚光灯投向了你。只是还没等你适应这光亮，灯光又从你身上溜走了。你追着聚光灯的落点看去，原来鸭爵又一次举牌，将价格抬到了二十源石锭！聚光灯下的鸭爵脸上看不出什么表情，好像完全没把你当回事。": {
+  "ko": "【RESULT 2】\n당신이 팻말을 들자마자 스포트라이트가 당신을 비췄다. 하지만 그 빛에 익숙해지기도 전에 조명은 당신에게서 빠져나갔다. 조명이 떨어진 곳을 쫓아가 보니, 덕로드가 다시 팻말을 들어 가격을 오리지늄각뿔 20개까지 끌어올린 것이었다! 스포트라이트 아래 덕로드의 얼굴에는 아무 표정도 없었다. 당신 따위는 안중에도 없는 듯했다.",
+  "en": "[RESULT 2]\nThe moment you raise your paddle, a spotlight swings to you — but before your eyes adjust, it slips away again. Following it, you see the Duck Lord has raised his paddle once more, pushing the price to twenty Originium Ingots! His face under the spotlight shows nothing, as if you're beneath his notice.",
+  "ja": "【RESULT 2】\nあなたが札を上げた途端、スポットライトがあなたを照らした。だがその光に慣れる前に、光はあなたから離れていった。光の先を追うと、ダック卿がまた札を上げ、価格を源石錠20個まで吊り上げていた！スポットライトの下のダック卿は無表情で、あなたをまるで相手にしていないようだった。"
+ },
+ "【RESULT 2】\n你举牌加价，抢回了那道灯光！鸭爵似乎对你的又一次加价有些意外，他远远地瞥了你一眼。那眼神中充满了警告意味，但这并不妨碍你享受聚光灯照在身上的热烈暖意。暖意总共持续了不到十秒，鸭爵再次举牌，将价格抬到了三十个源石锭。": {
+  "ko": "【RESULT 2】\n당신은 팻말을 들어 호가를 올리고 그 빛을 되찾아 왔다! 덕로드는 당신의 재차 호가가 뜻밖이었는지 멀리서 힐끗 쳐다보았다. 그 눈빛에는 경고의 기색이 가득했지만, 스포트라이트가 몸을 비추는 뜨거운 온기를 즐기는 데는 아무 지장이 없었다. 온기는 채 10초도 가지 못했다. 덕로드가 다시 팻말을 들어 가격을 오리지늄각뿔 30개까지 끌어올렸다.",
+  "en": "[RESULT 2]\nYou raise your paddle and steal the light back! The Duck Lord glances at you from afar, seemingly surprised you bid again — a look full of warning, though it doesn't stop you from basking in the spotlight's warmth. It lasts less than ten seconds before he raises his paddle again, pushing the price to thirty Originium Ingots.",
+  "ja": "【RESULT 2】\nあなたは札を上げて値を吊り上げ、あの光を取り戻した！ダック卿は再びの入札が意外だったのか、遠くから一瞥した。その眼差しは警告に満ちていたが、スポットライトの熱い温もりを楽しむ妨げにはならなかった。温もりは10秒と続かず、ダック卿はまた札を上げ、価格を源石錠30個まで吊り上げた。"
+ },
+ "选择一个收藏品": {
+  "ko": "소장품 1개 선택",
+  "en": "Choose one collectible",
+  "ja": "コレクションを1つ選択"
+ },
+ "选择一般收藏品交换时出现": {
+  "ko": "일반 소장품을 교환으로 골랐을 때 등장",
+  "en": "Appears when you trade an ordinary collectible",
+  "ja": "一般のコレクションを交換に選んだ時に出現"
+ },
+ "选择“沉眠同胞”交换时出现": {
+  "ko": "'잠든 동포'를 교환으로 골랐을 때 등장",
+  "en": "Appears when you trade Hibernating Kin",
+  "ja": "「眠れる同胞」を交換に選んだ時に出現"
+ },
+ "选择“希望时代的涂鸦”或“美愿时代的留恋”交换时出现": {
+  "ko": "'희망 시대의 낙서' 또는 '소원 시대의 미련'을 교환으로 골랐을 때 등장",
+  "en": "Appears when you trade Doodle of Hope or Lamp of Wishes",
+  "ja": "「希望の時代の落書き」または「理想の時代への未練」を交換に選んだ時に出現"
+ },
+ "选择“死仇时代的恨意”或“美愿时代的留恋”交换时出现": {
+  "ko": "'원한 시대의 증오' 또는 '소원 시대의 미련'을 교환으로 골랐을 때 등장",
+  "en": "Appears when you trade Talons of Hatred or Lamp of Wishes",
+  "ja": "「憎悪の時代での恨み」または「理想の時代への未練」を交換に選んだ時に出現"
+ },
+ "仅在持有“美愿时代的留恋”时出现，出现时会提供适配当前状况的收藏品": {
+  "ko": "'소원 시대의 미련' 보유 시에만 등장하며, 등장 시 현재 상황에 맞는 소장품을 제공합니다",
+  "en": "Only appears while holding Lamp of Wishes; when present it offers a collectible suited to your current situation",
+  "ja": "「理想の時代への未練」の所持時のみ出現し、出現時は現在の状況に適したコレクションを提供します"
+ },
+ "以上选项只同时出现一项，优先出现第一项": {
+  "ko": "위 선택지는 동시에 하나만 등장하며, 첫 번째 항목이 우선입니다",
+  "en": "Only one of the options above appears at a time, with the first taking priority",
+  "ja": "上記の選択肢は同時に1つのみ出現し、最初の項目が優先されます"
+ },
+ "需要巴别塔誓言": {
+  "ko": "바벨의 서약 필요",
+  "en": "Requires the Pledge of Babel",
+  "ja": "バベルの誓いが必要"
+ },
+ "随机出现以下3个选项，出现的选项受【印象重建】影响。": {
+  "ko": "아래 3개 선택지가 랜덤으로 등장하며, 등장 선택지는 【인상 복원】의 영향을 받습니다.",
+  "en": "3 of the options below appear at random; which ones appear is affected by [Impression Restoration].",
+  "ja": "以下の3つの選択肢がランダムに出現し、出現する選択肢は【印象再構築】の影響を受けます。"
+ },
+ "以下选项需要点亮对应的【印象重建】才会出现。": {
+  "ko": "아래 선택지는 대응하는 【인상 복원】을 밝혀야 등장합니다.",
+  "en": "The options below only appear once the matching [Impression Restoration] is lit.",
+  "ja": "以下の選択肢は対応する【印象再構築】を解放しないと出現しません。"
+ },
+ "以下选项在点亮【印象重建】【安全的角落将提供新选项】后固定出现。": {
+  "ko": "아래 선택지는 【인상 복원】의 【안전한 구석이 새 선택지를 제공】을 밝힌 뒤 고정 등장합니다.",
+  "en": "The options below always appear after lighting [Impression Restoration] — [The Safe Corner offers new options].",
+  "ja": "以下の選択肢は【印象再構築】の【安全な片隅が新たな選択肢を提供】を解放した後、固定で出現します。"
+ },
+ "仅在持有“无终之钥”时出现": {
+  "ko": "'영겁의 열쇠' 보유 시에만 등장",
+  "en": "Only appears while holding the Endless Key",
+  "ja": "「エンドレスキー」の所持時のみ出現"
+ },
+ "队伍中招募了电弧且自身的电弧达到精英2阶段时出现": {
+  "ko": "라이디언을 영입했고 그 라이디언이 정예화 2단계일 때 등장",
+  "en": "Appears when Raidian is recruited and at Elite 2",
+  "ja": "レイディアンを採用しており、そのレイディアンが昇進2段階の時に出現"
+ },
+ "队伍中招募了至少4名干员时出现": {
+  "ko": "오퍼레이터를 4명 이상 영입했을 때 등장",
+  "en": "Appears with at least 4 Operators recruited",
+  "ja": "オペレーターを4名以上採用している時に出現"
+ },
+ "队伍中招募了电弧时出现": {
+  "ko": "라이디언을 영입했을 때 등장",
+  "en": "Appears when Raidian is recruited",
+  "ja": "レイディアンを採用している時に出現"
+ },
+ "以上选项根据击倒过鸭爵及其手下的次数只出现1个": {
+  "ko": "위 선택지는 덕로드와 그 부하를 쓰러뜨린 횟수에 따라 하나만 등장합니다",
+  "en": "Only one of the options above appears, based on how many times you've defeated the Duck Lord and his minions",
+  "ja": "上記の選択肢はダック卿とその手下を倒した回数に応じて1つのみ出現します"
+ },
+ "仅有1目标生命值时出现": {
+  "ko": "목표 HP가 1일 때만 등장",
+  "en": "Only appears at Objective HP 1",
+  "ja": "目標HPが1の時のみ出現"
+ },
+ "需要鲍老板的凭证与至少20源石锭": {
+  "ko": "밥 사장의 증표와 오리지늄각뿔 20개 이상 필요",
+  "en": "Requires Big Bob's Certificate and at least 20 Originium Ingots",
+  "ja": "ボブの旦那の証文と源石錠20個以上が必要"
+ },
+ "持有至少1枚花钱时可选": {
+  "ko": "꽃잎 주화 1개 이상 보유 시 선택 가능",
+  "en": "Selectable with at least 1 Flower Coin",
+  "ja": "花銭を1枚以上所持している時に選択可能"
+ },
+ "持有至少1枚厉钱时可选": {
+  "ko": "모험 주화 1개 이상 보유 시 선택 가능",
+  "en": "Selectable with at least 1 Risk Coin",
+  "ja": "厲銭を1枚以上所持している時に選択可能"
+ },
+ "随机出现以下普通作战中的一个：ISW-NO 识文 / ISW-NO 贪饵 / ISW-NO 暗箭难防 / ISW-NO 山海必争 / ISW-NO 赶场戏班 / ISW-NO 峥嵘战功": {
+  "ko": "다음 일반 작전 중 하나가 랜덤으로 등장: ISW-NO 식자 / ISW-NO 매혹적인 미끼 / ISW-NO 암전난방 / ISW-NO 산해중 쟁탈전 / ISW-NO 순회 극단 / ISW-NO 탁월한 전공",
+  "en": "One of these normal operations appears at random: ISW-NO Cultured / Sugared Bait / Beware the Shadows / Shanhaizhong Scramble / Take the Stage / Exemplary Service",
+  "ja": "以下の通常作戦からランダムに1つ出現: ISW-NO 文字を知る / 食い意地 / 闇討ちは防ぎ難し / 山海の争い / 舞台への出演 / 輝かしい戦功"
+ },
+ "仅在经过至少5个岁兽残识中的节点时出现": {
+  "ko": "쉐이의 잔식 안의 노드를 5개 이상 지났을 때만 등장",
+  "en": "Only appears after passing at least 5 nodes inside Sui's Remnant Consciousness",
+  "ja": "歳獣の残識内のノードを5つ以上通過した時のみ出現"
+ },
+ "仅在经过至少10个岁兽残识中的节点时出现": {
+  "ko": "쉐이의 잔식 안의 노드를 10개 이상 지났을 때만 등장",
+  "en": "Only appears after passing at least 10 nodes inside Sui's Remnant Consciousness",
+  "ja": "歳獣の残識内のノードを10個以上通過した時のみ出現"
+ },
+ "仅在持有寅诗壶时出现": {
+  "ko": "인시호 보유 시에만 등장",
+  "en": "Only appears while holding the Yin-Shih Flask",
+  "ja": "寅詩の壺の所持時のみ出現"
+ },
+ "仅在持有申铸轮时出现": {
+  "ko": "신주륜 보유 시에만 등장",
+  "en": "Only appears while holding the Shen-Chu Wheel",
+  "ja": "申鋳の輪の所持時のみ出現"
+ },
+ "队伍中至少有6名伺烛客时出现": {
+  "ko": "팀에 사촉인이 6명 이상일 때 등장",
+  "en": "Appears with at least 6 Candleguests in your squad",
+  "ja": "編成に伺燭客が6名以上いる時に出現"
+ },
+ "（持有至少2枚花钱时可选）\n 仅在持有寅诗壶时出现": {
+  "ko": "(꽃잎 주화 2개 이상 보유 시 선택 가능)\n인시호 보유 시에만 등장",
+  "en": "(Selectable with at least 2 Flower Coins)\nOnly appears while holding the Yin-Shih Flask",
+  "ja": "(花銭を2枚以上所持している時に選択可能)\n寅詩の壺の所持時のみ出現"
+ },
+ "（持有至少1枚花钱时可选）\n 仅在持有亥食灶时出现": {
+  "ko": "(꽃잎 주화 1개 이상 보유 시 선택 가능)\n해식조 보유 시에만 등장",
+  "en": "(Selectable with at least 1 Flower Coin)\nOnly appears while holding the Hai-Shih Stove",
+  "ja": "(花銭を1枚以上所持している時に選択可能)\n亥食の竈の所持時のみ出現"
+ },
+ "（持有至少1枚厉钱时可选）\n 仅在持有亥食灶时出现": {
+  "ko": "(모험 주화 1개 이상 보유 시 선택 가능)\n해식조 보유 시에만 등장",
+  "en": "(Selectable with at least 1 Risk Coin)\nOnly appears while holding the Hai-Shih Stove",
+  "ja": "(厲銭を1枚以上所持している時に選択可能)\n亥食の竈の所持時のみ出現"
+ },
+ "种下如岁的愿望时上限为2": {
+  "ko": "如岁의 소원을 심었을 때는 상한 2",
+  "en": "Capped at 2 when planting Rusui's wish",
+  "ja": "如歳の願いを植えた時は上限2"
+ },
+ "选择后随机再来一次或直接离开": {
+  "ko": "선택 후 랜덤으로 한 번 더 진행하거나 바로 떠납니다",
+  "en": "After choosing, either randomly go again or leave directly",
+  "ja": "選択後、ランダムでもう一度行うか、そのまま立ち去ります"
+ },
+ "以下仅一次节点将在下次访问故肆时不再出现": {
+  "ko": "아래 '1회 한정' 노드는 다음 방문 시 더는 등장하지 않습니다",
+  "en": "The one-time nodes below will not appear on your next visit",
+  "ja": "以下の一度限りのノードは、次回訪問時には出現しません"
+ },
+ "仅在使用30源石锭交换过3烛火后可出现": {
+  "ko": "오리지늄각뿔 30개로 촛불 3개를 교환한 뒤에만 등장",
+  "en": "Only appears after trading 30 Originium Ingots for 3 Candles",
+  "ja": "源石錠30個で燭火3つを交換した後のみ出現"
+ },
+ "以下选项仅持有未建尺时出现，进度继承": {
+  "ko": "아래 선택지는 미건척 보유 시에만 등장하며, 진행도는 이어집니다",
+  "en": "The options below only appear while holding the Wei-Chien Rule; progress carries over",
+  "ja": "以下の選択肢は未建の尺の所持時のみ出現し、進行度は引き継がれます"
+ },
+ "（当前烛火大于等于2时可选）": {
+  "ko": "(현재 촛불 2개 이상일 때 선택 가능)",
+  "en": "(Selectable with 2 or more Candles)",
+  "ja": "(現在の燭火が2以上の時に選択可能)"
+ },
+ "仅在持有无封长盒且尚未入卷过干员时出现": {
+  "ko": "무봉장함을 보유하고 아직 오퍼레이터를 입권시킨 적이 없을 때 등장",
+  "en": "Appears while holding the Unsealed Case and no Operator has entered the scroll yet",
+  "ja": "封のない長箱を所持し、まだオペレーターを巻物に入れていない時に出現"
+ },
+ "仅在持有无封长盒且入卷过干员时出现": {
+  "ko": "무봉장함을 보유하고 오퍼레이터를 입권시킨 적이 있을 때 등장",
+  "en": "Appears while holding the Unsealed Case and an Operator has entered the scroll",
+  "ja": "封のない長箱を所持し、オペレーターを巻物に入れたことがある時に出現"
+ },
+ "【入卷】的干员将无法参与任何后续战斗，直至回归。\n回归时，仅获得进阶嘉奖，无法获得常规先行一步中的希望、票券等奖励。\n仅在首次成功入卷干员后，方可进入此场景。": {
+  "ko": "【입권】한 오퍼레이터는 복귀할 때까지 이후의 어떤 전투에도 참여할 수 없습니다.\n복귀 시에는 진급 포상만 받으며, 일반 '앞서 출발'의 희망·티켓 등 보상은 받을 수 없습니다.\n오퍼레이터를 처음 입권시킨 뒤에야 이 장면에 들어올 수 있습니다.",
+  "en": "An Operator inside the scroll cannot join any further battles until they return.\nOn return they receive only the advancement reward — none of the usual Scout rewards like Hope or Coupons.\nThis scene only becomes accessible after your first Operator enters the scroll.",
+  "ja": "【巻物入り】したオペレーターは、帰還するまで以後のいかなる戦闘にも参加できません。\n帰還時は昇進報酬のみを獲得し、通常の「先ゆく者」の希望・遊覧券などの報酬は獲得できません。\n初めてオペレーターを巻物に入れた後にのみ、この場面に入れます。"
+ },
+ "随机1个低稀有度收藏品": {
+  "ko": "낮은 희귀도 소장품 랜덤 1개",
+  "en": "1 random low-rarity collectible",
+  "ja": "ランダムな低レアのコレクション1つ"
+ },
+ "随机1个中稀有度收藏品": {
+  "ko": "중간 희귀도 소장품 랜덤 1개",
+  "en": "1 random mid-rarity collectible",
+  "ja": "ランダムな中レアのコレクション1つ"
+ },
+ "随机1个高稀有度收藏品": {
+  "ko": "높은 희귀도 소장품 랜덤 1개",
+  "en": "1 random high-rarity collectible",
+  "ja": "ランダムな高レアのコレクション1つ"
+ },
+ "仅在持有四叶草化石时出现": {
+  "ko": "네잎클로버 화석 보유 시에만 등장",
+  "en": "Only appears while holding the Four-Leaf Clover Fossil",
+  "ja": "四つ葉の化石の所持時のみ出現"
+ },
+ "留存了至少1张招募券时可选": {
+  "ko": "모집권을 1장 이상 남겨 두었을 때 선택 가능",
+  "en": "Selectable with at least 1 recruitment permit remaining",
+  "ja": "採用券を1枚以上残している時に選択可能"
+ },
+ "随机出现以下明烛试炼的一个：ISW-NO 谤天(单座) / ISW-NO 迎雷(单座) / ISW-NO 蔑震(单座) / ISW-NO 赴陨(单座) / ISW-NO 斥洪(单座)": {
+  "ko": "다음 시련 작전 중 하나가 랜덤으로 등장: ISW-NO 방천 / ISW-NO 영뢰 / ISW-NO 멸진 / ISW-NO 부운 / ISW-NO 척홍",
+  "en": "One of these trial operations appears at random: ISW-NO Slandering Heaven / Amidst Thunder / Defying Quakes / To the Fall / Against the Flood",
+  "ja": "以下の試練作戦からランダムに1つ出現: ISW-NO 謗天 / 迎雷 / 蔑震 / 赴隕 / 斥洪"
+ },
+ "仅在持有忘生珍珑时出现": {
+  "ko": "망생진롱 보유 시에만 등장",
+  "en": "Only appears while holding the Unflinching Masterplan",
+  "ja": "忘生の珍瓏の所持時のみ出現"
+ },
+ "本事件没有退出选项": {
+  "ko": "이 이벤트에는 나가기 선택지가 없습니다",
+  "en": "This event has no exit option",
+  "ja": "このイベントには退出の選択肢がありません"
+ },
+ "需要墨化残碑": {
+  "ko": "묵화잔비 필요",
+  "en": "Requires the Carved Inkstick Remnant",
+  "ja": "墨化の残碑が必要"
+ },
+ "所有非伺烛客干员在本操作后立即进入先行一步状态": {
+  "ko": "사촉인이 아닌 모든 오퍼레이터는 이 조작 후 즉시 '앞서 출발' 상태가 됩니다",
+  "en": "All non-Candleguest Operators immediately enter the Scout state after this action",
+  "ja": "伺燭客でない全てのオペレーターは、この操作後すぐに「先ゆく者」状態になります"
+ },
+ "所有未入卷干员在本操作后立即被禁用": {
+  "ko": "입권하지 않은 모든 오퍼레이터는 이 조작 후 즉시 사용 불가가 됩니다",
+  "en": "All Operators not inside the scroll are immediately disabled after this action",
+  "ja": "巻物に入っていない全てのオペレーターは、この操作後すぐに使用不可になります"
+ },
+ "事件结束后，所有入卷干员全部归队。\n遁入长卷的干员在卷轴尽头等待着你": {
+  "ko": "이벤트 종료 후 입권한 오퍼레이터 전원이 복귀합니다.\n두루마리 속으로 들어간 오퍼레이터는 두루마리의 끝에서 당신을 기다립니다",
+  "en": "After the event, every Operator inside the scroll returns to your squad.\nThose who slipped into the long scroll await you at its end",
+  "ja": "イベント終了後、巻物に入った全オペレーターが帰隊します。\n長巻に入ったオペレーターは、巻物の果てであなたを待っています"
+ },
+ "随机出现以下3个选项": {
+  "ko": "아래 3개 선택지가 랜덤으로 등장합니다",
+  "en": "3 of the options below appear at random",
+  "ja": "以下の3つの選択肢がランダムに出現します"
+ },
+ "仅在投出通宝“庆丰收”时出现": {
+  "ko": "통보 '균형-풍작'이 나왔을 때만 등장",
+  "en": "Only appears after tossing the Bal-Good Harvest coin",
+  "ja": "通宝「衡-豊収を慶ぶ」が出た時のみ出現"
+ },
+ "仅在使用天师府分队时出现": {
+  "ko": "천사부 분대 사용 시에만 등장",
+  "en": "Only appears when using the Tianshi Bureau Squad",
+  "ja": "天師府分隊の使用時のみ出現"
+ },
+ "以下带有“获得更多奖励”的通过节点选项随机出现1个": {
+  "ko": "'더 많은 보상 획득'이 붙은 통과 노드 선택지 중 1개가 랜덤으로 등장합니다",
+  "en": "1 of the pass-node options marked 'gain more rewards' appears at random",
+  "ja": "「より多くの報酬を獲得」付きの通過ノード選択肢からランダムに1つ出現します"
+ },
+ "以下没有“获得更多奖励”的通过节点选项随机出现1个，不会与带有“获得更多奖励”的选项冲突": {
+  "ko": "'더 많은 보상 획득'이 없는 통과 노드 선택지 중 1개가 랜덤으로 등장하며, '더 많은 보상 획득' 선택지와 겹치지 않습니다",
+  "en": "1 of the pass-node options without 'gain more rewards' appears at random, never clashing with the marked ones",
+  "ja": "「より多くの報酬を獲得」の付かない通過ノード選択肢からランダムに1つ出現し、付きの選択肢とは重複しません"
+ },
+ "以下判断票券、源石锭、烛火的通过节点选项随机出现1个": {
+  "ko": "티켓·오리지늄각뿔·촛불을 판정하는 통과 노드 선택지 중 1개가 랜덤으로 등장합니다",
+  "en": "1 of the pass-node options checking Coupons, Originium Ingots, or Candles appears at random",
+  "ja": "遊覧券・源石錠・燭火を判定する通過ノード選択肢からランダムに1つ出現します"
+ },
+ "仅有1目标生命时仍可选择": {
+  "ko": "목표 HP가 1이어도 선택 가능",
+  "en": "Still selectable at Objective HP 1",
+  "ja": "目標HPが1でも選択可能"
+ },
+ "同时获得收藏品牧驮人的摇铃": {
+  "ko": "소장품 '목자의 핸드벨'도 함께 획득",
+  "en": "Also gain the collectible Burdenherd Bell",
+  "ja": "コレクション「駄獣飼いのベル」も同時に獲得"
  }
 }

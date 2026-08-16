@@ -124,9 +124,13 @@ def clean(s):
     s = re.sub(r"\{\{color\|[^|]*\|([^}]*)\}\}", r"\1", s)
     s = re.sub(r"\{\{mdi\|[^}]*\}\}", "", s)
     s = re.sub(r"\{\{[^}]*\}\}", "", s)          # 남은 템플릿 제거
+    # 이미지 링크는 통째로 제거 — 안 하면 [[文件:…|x40px|link=]]의 잔해("x40px|link=")가 샌다
+    s = re.sub(r"\[\[(?:文件|档案|[Ff]ile|[Ii]mage)[^\]]*\]\]", "", s)
     s = re.sub(r"\[\[[^\]|]*\|([^\]]*)\]\]", r"\1", s)   # [[페이지|라벨]] → 라벨
     s = re.sub(r"\[\[([^\]]*)\]\]", r"\1", s)            # [[페이지]] → 페이지
+    s = re.sub(r"'{2,}", "", s)                  # 위키 볼드·이탤릭('' ''') 제거
     s = s.replace("<br/>", "\n").replace("<br>", "\n").replace("<hr>", "")
+    s = re.sub(r"</?(?:small|big|span|div|b|i|u|s)(?:\s[^>]*)?>", "", s)   # 장식 태그 잔해
     return s.strip()
 
 
@@ -178,6 +182,10 @@ def parse_topic(data):
                     nm2 = m.group(1).strip().strip("“”\"'‘’")
                     if nm2 and not re.match(r"^(一件|随机|\d|１|获得|奖励)", nm2):
                         relic_cn = nm2
+                # desc2 = 보충 설명 (선택지 등장 조건·必定为一件稀有收藏品류 — 같은 제목의
+                # 병렬 선택지를 구분해 주는 정보. 사라진 풍습 린수 제보, 2026-08-16).
+                # 원문 선두의 ※는 떼어 둔다 — 표시할 때 ※를 붙이므로 중복되지 않게.
+                cnote = clean(cnamed.get("desc2", "")).lstrip("※").strip()
                 sc["choices"].append({
                     "kind": cpos[0].strip() if cpos else "",
                     "title": clean(cpos[1]) if len(cpos) > 1 else "",
@@ -185,6 +193,7 @@ def parse_topic(data):
                     "dest": int(cnamed["dest"]) if cnamed.get("dest", "").strip().isdigit() else None,
                     "links": extract_links(cpos[1] if len(cpos) > 1 else "", cnamed.get("desc1", "")),
                     **({"relicCn": relic_cn} if relic_cn else {}),
+                    **({"note": cnote} if cnote else {}),
                 })
             scenes.append(sc)
         if scenes:
@@ -216,7 +225,7 @@ def match_topic(tid, events, det):
     all_choices = det["choices"]
 
     stats = {"events": len(events), "matched": 0, "ch_ok": 0, "ch_fuzzy": 0,
-             "ch_branch": 0, "ch_fail": 0, "sc_ok": 0, "sc_fail": 0, "battles": 0}
+             "ch_branch": 0, "ch_note": 0, "ch_fail": 0, "sc_ok": 0, "sc_fail": 0, "battles": 0}
     # CN 작전명 → 스테이지 id (동명 변형 _b/_c 전부 — 결투 원거리/근거리판 등)
     stage_by_name = {}
     for sid, st in det["stages"].items():
@@ -244,6 +253,13 @@ def match_topic(tid, events, det):
         ch_by_title = {}
         for cid, c in grp_choice.items():
             ch_by_title.setdefault(norm(c["title"]), []).append(cid)
+        # 동명 선택지 구분 신호 — 게임 desc(리치태그 제거)와 보상 소장품명(displayData.itemId)
+        items_cn = det.get("items") or {}
+        ch_sig = {}
+        for cid, c in grp_choice.items():
+            iid = (c.get("displayData") or {}).get("itemId")
+            ch_sig[cid] = (norm(re.sub(r"<[^>]*>", "", c.get("description") or "")),
+                           norm((items_cn.get(iid) or {}).get("name") or "") if iid else "")
 
         # 이 조우에서 링크된 전투 스테이지 — [[<코드> <CN명>|…]] 의 CN명을 스테이지에 매칭.
         # 페이지명 앞의 코드 토큰(ISW-NO 등)은 떼고 대조한다.
@@ -265,6 +281,7 @@ def match_topic(tid, events, det):
         stats["battles"] += len(ev_battles)
 
         scenes_out = []
+        used = set()   # 이 조우에서 이미 배선한 cid — 동명 병렬 선택지의 중복 배선 방지
         for idx, s in enumerate(ev["scenes"]):
             # 씬 id: 첫 씬은 enter 확정, 나머지는 지문 텍스트로
             sid = None
@@ -299,18 +316,46 @@ def match_topic(tid, events, det):
                             cids = ch_by_title[close[0]]
                             stats["ch_fuzzy"] += 1
                 if cids:
-                    node["choices"].append({"cid": cids[0],
+                    cid = cids[0]
+                    if len(cids) > 1:
+                        # 동명 선택지 여럿 — 무조건 첫 후보로 붙이면 오배선된다 (곱사등이 괴인
+                        # 4갈래가 전부 '그림자' 소장품으로 나오던 회귀, 사용자 제보 2026-08-16).
+                        # PRTS의 소장품명(relicCn)·설명(desc1)을 게임 쪽 보상 아이템명·desc와
+                        # 대조해 최적 후보를 고르고, 동점(게임 텍스트까지 동일한 병렬 선택지 —
+                        # 사라진 풍습 린수)은 아직 안 쓴 후보를 순서대로 소비해 중복을 막는다.
+                        want_r = norm(c.get("relicCn") or "")
+                        want_d = norm(c.get("desc") or "")
+                        def amb_score(k):
+                            d_n, r_n = ch_sig[k]
+                            sc2 = 0.0
+                            if want_r and r_n:
+                                sc2 += 2 * difflib.SequenceMatcher(None, want_r, r_n).ratio()
+                            if want_d and d_n:
+                                sc2 += difflib.SequenceMatcher(None, want_d, d_n).ratio()
+                            return sc2
+                        cid = max(cids, key=lambda k: (amb_score(k), k not in used, -cids.index(k)))
+                    used.add(cid)
+                    node["choices"].append({"cid": cid,
                                             **({"relicCn": c["relicCn"]} if c.get("relicCn") else {}),
+                                            **({"noteCn": c["note"]} if c.get("note") else {}),
                                             **({"dest": c["dest"]} if c["dest"] is not None else {})})
                     continue
                 # 게임 선택지에 없음 — dest가 있으면 랜덤 결과 분기 라벨(【검정 성공】·주화명·보상명),
-                # PRTS 편집자가 롤 테이블을 선택지 모양으로 적은 것이다. dest 없으면 순수 주석 → 버림.
+                # PRTS 편집자가 롤 테이블을 선택지 모양으로 적은 것이다.
                 if c["dest"] is not None:
                     label = prob.group(1) if prob else re.sub(r"[【】]", "", c["title"] or c["desc"] or "")
                     node["choices"].append({"branch": clean(label), "dest": c["dest"],
                                             **({"prob": float(prob.group(2))} if prob else {})})
                     stats["ch_branch"] += 1
-                elif not explicit_branch and c["title"]:
+                elif explicit_branch and (c["desc"] or c["title"]):
+                    # dest 없는 안내 블록 — 예전엔 버렸지만 랜덤 출현 규칙(以下选项随机出现N个)·
+                    # 주사위 판정 룰·조건 안내·확률별 결과 서사가 여기 실려 있다 (사라진 풍습
+                    # "소장품은 뭔데" 제보의 답이 이 블록에 있었음, 2026-08-16). 노트로 보존.
+                    txt = c["title"] or c["desc"]
+                    if txt:
+                        node["choices"].append({"noteCn": txt})
+                        stats["ch_note"] += 1
+                elif c["title"]:
                     stats["ch_fail"] += 1
             scenes_out.append(node)
         # 씬이 1개뿐이고 링크가 없으면 트리로서 무의미 — 평탄 렌더 유지.
@@ -347,11 +392,12 @@ def main():
         trees, st = match_topic(tid, events, det)
         result[tid] = trees
         print(f"{tid}: PRTS {st['events']}건 → 매칭 {st['matched']} · 트리 {len(trees)} · "
-              f"선택지 정확 {st['ch_ok']} 퍼지 {st['ch_fuzzy']} 분기 {st['ch_branch']} 실패 {st['ch_fail']} · "
-              f"씬 해결 {st['sc_ok']} 실패 {st['sc_fail']}")
+              f"선택지 정확 {st['ch_ok']} 퍼지 {st['ch_fuzzy']} 분기 {st['ch_branch']} 노트 {st['ch_note']} "
+              f"실패 {st['ch_fail']} · 씬 해결 {st['sc_ok']} 실패 {st['sc_fail']}")
     meta = {"_comment": "조우 씬 트리 — PRTS 事件一览을 게임 id에 매칭 (build-rogue-enc-scenes.py 재생성, 손대지 말 것). "
                         "sid/cid = 게임 데이터 id (로케일 텍스트는 build-rogue.py가 해석), dest = 이 조우 씬 배열 인덱스, "
-                        "branch = PRTS 편집자 분기 라벨(랜덤 결과), prob = %확률. descCn/titleCn = id 미해결 CN 폴백. "
+                        "branch = PRTS 편집자 분기 라벨(랜덤 결과), prob = %확률, noteCn = 안내 블록(랜덤 출현 규칙·"
+                        "주사위 판정·조건, 선택지에 붙으면 desc2 보충 설명). descCn/titleCn = id 미해결 CN 폴백. "
                         "battles = PRTS 위키링크([[코드 작전명|…]])에서 추출한 이 조우의 전투 스테이지 — "
                         "rogueN-curated.json encounterBattles(수작업)가 우선하고 없는 조우만 이걸로 보강한다."}
     json.dump({**meta, **result}, open(OUT, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
