@@ -152,6 +152,13 @@ def ability_of(hb):
     return "\n".join(lines) or hb.get("ability") or None
 
 
+# 아군측 도구 유닛 — 레벨 enemyDbRefs에 실려 있지만 적이 아니다 (사용자 제보 2026-08-16).
+# IS3 '탐사용 자율차'는 탐사 도구(trap_133_toolgarage)가 발사하는 조사용 아군 유닛으로,
+# 전 99개 레벨에 스폰 0으로 참조만 된다. 게임 도감도 hideInHandbook·hideInStage로 숨긴다
+# (그 플래그를 일괄 적용하면 테레시스·'쉐이의 몸' 같은 보스까지 지워져서 키로 지목한다).
+PLAYER_SIDE_UNITS = {"enemy_2062_smcar"}
+
+
 def dedupe_choices(chs):
     # 다단계 조우 씬은 후속 단계 선택지가 접두 매칭으로 전부 쓸려 들어와
     # 같은 선택지가 반복된다 — 제목+설명이 같으면 하나만 남긴다 (사용자 리포트 2026-07-18)
@@ -861,6 +868,8 @@ def build_topic(tid="rogue_1", loc=None):
         lv = load_level(st["levelId"])
         enemies = []
         for ref in lv["refs"]:
+            if ref["key"] in PLAYER_SIDE_UNITS:
+                continue
             cnt = lv["counts"].get(ref["key"], 0)
             enemies.append({"key": ref["key"], "cnt": cnt})
             cur = used_enemies.get(ref["key"])
@@ -1780,6 +1789,8 @@ def build_rogue6():
         lv = load_level(st["levelId"])
         enemies = []
         for ref in lv["refs"]:
+            if ref["key"] in PLAYER_SIDE_UNITS:
+                continue
             cnt = lv["counts"].get(ref["key"], 0)
             enemies.append({"key": ref["key"], "cnt": cnt})
             cur = used_enemies.get(ref["key"])

@@ -13177,6 +13177,10 @@ html.dark.rg-theme.rg6 .site-header {
   width: 100%;
   max-height: 84vh;
   overflow-y: auto;
+  /* 클래식 스크롤바(마우스 연결) 환경에서 내용 높이가 모달 높이 임계 부근이면
+     스크롤바 등장→폭 축소→카드 축소→스크롤바 소멸→폭 복귀가 무한 진동한다
+     (사용자 제보 2026-08-16: 3층 모달 맵 호버 시 떨림). 거터를 상시 확보해 폭을 고정. */
+  scrollbar-gutter: stable;
   padding: 20px 22px;
   box-shadow: 0 8px 48px #000c;
 }

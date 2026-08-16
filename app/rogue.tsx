@@ -257,8 +257,9 @@ function StatRow({ e, grade, ctx }: { e: Enemy; grade: number; ctx: StatCtx }) {
 
 // ── 스테이지 상세 모달 — 일반/긴급이 같은 맵을 공유하므로 페어로 받아 탭 전환 ──
 export type StagePair = { n: Stage; e?: Stage; init?: "n" | "e" };   // init — 렌즈가 긴급 화면을 인식하면 "e"
-function StageModal({ pair, grade, onClose, onOpenEnemy }: {
+function StageModal({ pair, grade, onClose, onOpenEnemy, stack }: {
   pair: StagePair; grade: number; onClose: () => void; onOpenEnemy: (key: string, ctx: StatCtx) => void;
+  stack?: boolean;   // 조우 모달 위에 겹쳐 뜰 때 — z-index를 stack층(90)으로 올린다
 }) {
   const { t } = useI18n();
   const [mode, setMode] = useState<"n" | "e">(pair.init === "e" && pair.e ? "e" : "n");
@@ -302,7 +303,7 @@ function StageModal({ pair, grade, onClose, onOpenEnemy }: {
     return next;
   });
   return (
-    <div className="rg-modal-back" onClick={onClose} role="presentation">
+    <div className={`rg-modal-back${stack ? " stack" : ""}`} onClick={onClose} role="presentation">
       <div className="rg-modal" role="dialog" aria-modal onClick={(e) => e.stopPropagation()}>
         <header className="rg-modal-head">
           <div>
@@ -2521,21 +2522,22 @@ export default function RogueGuide({ includeFuture, initialTopic }: {
           bosses={zoneOpen.variant ? [] : bossStages.filter((s) => s.zone === zoneOpen.num)}
           onOpenStage={setStageOpen} onClose={() => setZoneOpen(null)} />
       )}
+      {/* 조우에서 이어지는 전투 맵 — 조우를 닫지 않고 스테이지 모달을 위에 겹쳐 띄운다
+          (사용자 지시 2026-08-16). 조우를 스테이지보다 먼저 그려서, 같은 stack층(z 90)에서
+          DOM 순서로 스테이지→적 상세가 차례로 위에 온다. */}
+      {encOpen && (
+        <EncounterModal enc={encOpen} onClose={() => setEncOpen(null)} link={linkRelic}
+          battles={(encOpen.battles ?? []).map((id) => stageById.get(id)).filter(Boolean).map((s) => pairOf(s!))}
+          onOpenStage={setStageOpen} />
+      )}
       {stageOpen && (
         <StageModal key={stageOpen.n.id} pair={stageOpen} grade={grade} onClose={() => setStageOpen(null)}
-          onOpenEnemy={(key, ctx) => setEnemyOpen({ key, ctx })} />
+          onOpenEnemy={(key, ctx) => setEnemyOpen({ key, ctx })} stack={!!encOpen} />
       )}
       {enemyOpen && (
         <EnemyModal ekey={enemyOpen.key} grade={grade} ctx={enemyOpen.ctx} onClose={() => setEnemyOpen(null)}
           appear={enemyStages.get(enemyOpen.key) ?? []}
           onOpenStage={(s) => { setEnemyOpen(null); setStageOpen(pairOf(s)); }} />
-      )}
-      {/* 조우에서 이어지는 전투 맵 — 적 모달과 같은 규약으로 조우를 닫고 스테이지 모달을 연다
-          (모달 스택 순서상 조우가 스테이지 위에 그려지므로 겹쳐 띄우지 않는다) */}
-      {encOpen && (
-        <EncounterModal enc={encOpen} onClose={() => setEncOpen(null)} link={linkRelic}
-          battles={(encOpen.battles ?? []).map((id) => stageById.get(id)).filter(Boolean).map((s) => pairOf(s!))}
-          onOpenStage={(p) => { setEncOpen(null); setStageOpen(p); }} />
       )}
       {relicOpen && (
         <RelicModal relic={relicOpen} onClose={() => setRelicOpen(null)}
