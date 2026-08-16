@@ -91,7 +91,7 @@ type EncChoice = { title: string; desc: string | null; cn?: string; variants?: s
 // branch = 랜덤 결과 분기 라벨(게임 선택지 아님), prob = %확률, cnTitle/cn = 매칭 실패 CN 폴백.
 type EncSceneChoice = { title?: string; desc?: string | null; cn?: string; cnTitle?: string; cnDesc?: string; branch?: string; prob?: number; dest?: number };
 type EncScene = { desc?: string | null; cn?: string; choices: EncSceneChoice[] };
-type Encounter = { scene: string; title: string; desc: string | null; bg?: string | null; choices: EncChoice[]; floors?: number[]; note?: string; cn?: string; battles?: string[]; scenes?: EncScene[] };
+type Encounter = { scene: string; title: string; desc: string | null; bg?: string | null; choices: EncChoice[]; floors?: number[]; note?: string; cn?: string; battles?: string[]; battlesRandom?: 1; scenes?: EncScene[] };
 type RogueData = {
   id: string; name: string; line: string | null; cnName?: string; future?: boolean; server?: string;
   zones: Zone[]; nodeTypes: { id: string; name: string; desc: string | null; func?: string | null; cn?: string }[];
@@ -608,6 +608,8 @@ function EncounterModal({ enc, onClose, link, battles, onOpenStage }: {
   enc: Encounter; onClose: () => void; link?: (t: string | null) => React.ReactNode;
   battles?: StagePair[]; onOpenStage?: (p: StagePair) => void;
 }) {
+  // battlesRandom: 전투 선택지는 있지만 고정 맵이 없는 조우 — '힘든 전투 직면' 류는
+  // 그 층의 일반 전투 맵에서 무작위로 벌어진다 (사용자 지시 2026-08-16 "랜덤전투라고 적어줘")
   const { t } = useI18n();
   useEffect(() => {
     const onKey = (ev: KeyboardEvent) => { if (ev.key === "Escape") onClose(); };
@@ -643,14 +645,19 @@ function EncounterModal({ enc, onClose, link, battles, onOpenStage }: {
             )}
             {/* 이 조우에서 전투가 벌어지면 그 맵을 바로 열 수 있게 (사용자 요청 2026-08-16).
                 게임 데이터에 조우↔전투 링크가 없어 수작업 대응표로만 붙는다 — 없으면 안 그린다. */}
-            {battles && battles.length > 0 && onOpenStage && (
+            {battles && battles.length > 0 && onOpenStage ? (
               <div className="rg-enc-battles">
                 <strong>{t("이 만남의 전투")}</strong>
                 <div className="rg-stage-cards">
                   {battles.map((p) => <StageCard key={p.n.id} pair={p} onOpen={onOpenStage} />)}
                 </div>
               </div>
-            )}
+            ) : enc.battlesRandom ? (
+              <div className="rg-enc-battles">
+                <strong>{t("이 만남의 전투")}</strong>
+                <p className="rg-enc-battles-random">{t("랜덤 전투 — 고정된 전투 맵 없이, 현재 층의 일반 전투 맵 중 하나에서 벌어집니다.")}</p>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>

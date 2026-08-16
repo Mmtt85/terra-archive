@@ -216,7 +216,7 @@ def load_enc_i18n():
     return _enc_i18n_cache
 
 
-def attach_enc_scenes(encounters, trees, r_scenes, r_choices, branch_tr, cn_primary=False):
+def attach_enc_scenes(encounters, trees, r_scenes, r_choices, branch_tr, cn_primary=False, items=None, relic_tr=None):
     """씬 트리를 로케일 텍스트로 해석해 encounters[].scenes 에 단다.
     scenes[i] = {desc?|cn?, choices:[{title,desc?|cnTitle|branch,prob?,dest?}]} — dest는 씬 인덱스.
     cn_primary(rogue6): CN 폴백을 cn이 아니라 desc에 둔다 — 뒤의 translate() 일괄 오버레이가
@@ -251,8 +251,17 @@ def attach_enc_scenes(encounters, trees, r_scenes, r_choices, branch_tr, cn_prim
                     if rc is None:
                         continue                    # 이 로케일 테이블에 없는 선택지 (신규 분기 등)
                     o["title"] = rc["title"]
-                    if (rc.get("description") or "").strip():
-                        o["desc"] = rc["description"]
+                    # '소장품 획득'류 확정 보상은 이름을 「」로 병기 — 평탄 목록과 같은 규약
+                    # (name_relic_reward, 사용자 지시 2026-08-16 "무슨 소장품인지 매핑까지").
+                    # 게임 데이터(displayData.itemId)가 1순위, 그게 없으면 PRTS가 명기한
+                    # CN 소장품명(relicCn)을 로케일 이름으로 교차해 병기한다.
+                    d2 = name_relic_reward(rc, rc.get("description"), items or {})
+                    if c.get("relicCn") and relic_tr and "「" not in (d2 or ""):
+                        nm2 = relic_tr(c["relicCn"])
+                        if nm2 and nm2 not in (d2 or ""):
+                            d2 = f"{d2} 「{nm2}」" if (d2 or "").strip() else f"「{nm2}」"
+                    if (d2 or "").strip():
+                        o["desc"] = d2
                 elif "branch" in c:
                     o["branch"] = branch_tr(c["branch"])
                     if c.get("prob") is not None:
@@ -292,6 +301,45 @@ def dedupe_choices(chs):
     return out
 
 
+def name_relic_reward(c, desc, relic_items):
+    # 선택지가 특정 소장품을 주면(displayData.itemId=RELIC) 이름을 병기한다.
+    # 게임 텍스트가 "소장품 획득"으로 뭉뚱그린 확정 보상을 구체화 (사용자 요청 2026-07-20).
+    # itemId=null(랜덤 소장품)·비(非)소장품(각뿔·희망 등)은 건드리지 않는다. 이미 설명에
+    # 이름이 박힌 경우(예: 소장품 <전기주전자> 획득)도 그대로 둔다. 동명 선택지 3벌이
+    # 서로 다른 소장품을 주면(곱사등이의 그림자/칼춤/배풍등) variants가 자동 분리된다.
+    dd = c.get("displayData") or {}
+    iid = dd.get("itemId")
+    if not iid:
+        return desc
+    it = relic_items.get(iid)
+    if not it or it.get("type") != "RELIC":
+        return desc
+    nm = (it.get("name") or "").strip()
+    if not nm:
+        return desc
+    # 「소장품명」으로 감싸 프론트가 소장품 상세 모달로 링크(사용자 요청 2026-07-20).
+    # 설명에 이름이 이미 평문으로 박혀 있으면 displayData.type과 무관하게 그 자리만
+    # 감싼다 — 예전엔 건너뛰어서 "추억기 획득"류가 링크가 안 됐고(화룡점정, 2026-07-24),
+    # '연구한다→불사'처럼 type=NORMAL인 확정 보상도 놓쳤다.
+    bare = lambda s: re.sub(r"""[\s'"‘’“”「」『』()（）《》]""", "", s or "")
+    if f"「{nm}」" in (desc or ""):
+        return desc
+    if desc and nm in desc:
+        # 이미 따옴표류로 장식된 표기(“翱翼”·'꾸물이' 등)는 건드리지 않는다 —
+        # 안에 「」를 겹치면 이중 장식이 되고, rogue6은 CN 원문이 번역 사전 키라
+        # 문자열이 바뀌면 한국어 번역이 통째로 떨어져 나간다.
+        i = desc.index(nm)
+        deco = set("'\"‘’“”「」『』《》")
+        if (i > 0 and desc[i - 1] in deco) or (i + len(nm) < len(desc) and desc[i + len(nm)] in deco):
+            return desc
+        return desc.replace(nm, f"「{nm}」", 1)
+    # 이름이 설명에 없을 때의 끝 병기는 확정 보상 표기(type=ITEM)에만 — NORMAL 등에
+    # 무턱대고 붙이면 보상이 아닌 항목까지 보상처럼 읽힌다.
+    if dd.get("type") != "ITEM" or bare(nm) in bare(desc):
+        return desc
+    return f"{desc} 「{nm}」" if desc and desc.strip() else f"「{nm}」"
+
+
 def extract_encounters(choice_scenes, choices, tree_overrides=None, items=None):
     """조우 씬을 계단식 트리로 추출 (사용자 요청 2026-07-19).
 
@@ -314,42 +362,8 @@ def extract_encounters(choice_scenes, choices, tree_overrides=None, items=None):
     relic_items = items or {}
 
     def name_reward(c, desc):
-        # 선택지가 특정 소장품을 주면(displayData.itemId=RELIC) 이름을 병기한다.
-        # 게임 텍스트가 "소장품 획득"으로 뭉뚱그린 확정 보상을 구체화 (사용자 요청 2026-07-20).
-        # itemId=null(랜덤 소장품)·비(非)소장품(각뿔·희망 등)은 건드리지 않는다. 이미 설명에
-        # 이름이 박힌 경우(예: 소장품 <전기주전자> 획득)도 그대로 둔다. 동명 선택지 3벌이
-        # 서로 다른 소장품을 주면(곱사등이의 그림자/칼춤/배풍등) variants가 자동 분리된다.
-        dd = c.get("displayData") or {}
-        iid = dd.get("itemId")
-        if not iid:
-            return desc
-        it = relic_items.get(iid)
-        if not it or it.get("type") != "RELIC":
-            return desc
-        nm = (it.get("name") or "").strip()
-        if not nm:
-            return desc
-        # 「소장품명」으로 감싸 프론트가 소장품 상세 모달로 링크(사용자 요청 2026-07-20).
-        # 설명에 이름이 이미 평문으로 박혀 있으면 displayData.type과 무관하게 그 자리만
-        # 감싼다 — 예전엔 건너뛰어서 "추억기 획득"류가 링크가 안 됐고(화룡점정, 2026-07-24),
-        # '연구한다→불사'처럼 type=NORMAL인 확정 보상도 놓쳤다.
-        bare = lambda s: re.sub(r"""[\s'"‘’“”「」『』()（）《》]""", "", s or "")
-        if f"「{nm}」" in (desc or ""):
-            return desc
-        if desc and nm in desc:
-            # 이미 따옴표류로 장식된 표기(“翱翼”·'꾸물이' 등)는 건드리지 않는다 —
-            # 안에 「」를 겹치면 이중 장식이 되고, rogue6은 CN 원문이 번역 사전 키라
-            # 문자열이 바뀌면 한국어 번역이 통째로 떨어져 나간다.
-            i = desc.index(nm)
-            deco = set("'\"‘’“”「」『』《》")
-            if (i > 0 and desc[i - 1] in deco) or (i + len(nm) < len(desc) and desc[i + len(nm)] in deco):
-                return desc
-            return desc.replace(nm, f"「{nm}」", 1)
-        # 이름이 설명에 없을 때의 끝 병기는 확정 보상 표기(type=ITEM)에만 — NORMAL 등에
-        # 무턱대고 붙이면 보상이 아닌 항목까지 보상처럼 읽힌다.
-        if dd.get("type") != "ITEM" or bare(nm) in bare(desc):
-            return desc
-        return f"{desc} 「{nm}」" if desc and desc.strip() else f"「{nm}」"
+        return name_relic_reward(c, desc, relic_items)
+
 
     from collections import defaultdict
     scene_ch = defaultdict(list)
@@ -1496,7 +1510,19 @@ def build_topic(tid="rogue_1", loc=None):
             if any("一" <= ch <= "鿿" for ch in label):
                 enc_untranslated.setdefault(label, tid)   # 새 PRTS 텍스트 감지용
             return label
-        attach_enc_scenes(encounters, enc_trees, r["choiceScenes"], r["choices"], branch_tr)
+        # 소장품 CN명 → 로케일명 — 정확 일치 → 문장부호 무시 → 퍼지(PRTS 오탈자 흡수: 四时丹青亳↔毫)
+        import difflib as _dl
+        _norm_it = {re.sub(r"[\s“”\"'‘’·.,]", "", k): v for k, v in item_tr.items()}
+        def relic_lookup(nm):
+            if nm in item_tr:
+                return item_tr[nm]
+            key = re.sub(r"[\s“”\"'‘’·.,]", "", nm)
+            if key in _norm_it:
+                return _norm_it[key]
+            close = _dl.get_close_matches(key, list(_norm_it), n=1, cutoff=0.8)
+            return _norm_it[close[0]] if close else None
+        attach_enc_scenes(encounters, enc_trees, r["choiceScenes"], r["choices"], branch_tr, items=r.get("items"),
+                          relic_tr=relic_lookup)
         # 전투 링크 보강 — 수작업(encounterBattles)이 우선, 없는 조우만 PRTS 링크로.
         # 이 로케일에 없는 스테이지(CN 선행분)는 걸러낸다.
         stage_ids_all = {s2["id"] for s2 in stages}
@@ -1506,6 +1532,9 @@ def build_topic(tid="rogue_1", loc=None):
                 bs = [b for b in t2.get("battles") or [] if b in stage_ids_all]
                 if bs:
                     enc["battles"] = bs
+                elif t2.get("randomBattle"):
+                    # 전투 선택지는 있지만 고정 맵이 없다 — 층 랜덤 전투 (사용자 지시 2026-08-16)
+                    enc["battlesRandom"] = 1
         # 보스(험난한 길) 출현 층 — 사용자 확인: b_1~5=3층, b_6~7=5층, b_8~9=히든 6층
         boss_floors = curated.get("bossFloors", {})
         for s in stages:
@@ -2234,7 +2263,7 @@ def build_rogue6():
     # 일괄 처리한다 (분기 라벨 포함 — 미번역은 rogue6-untranslated.json 리포트로)
     enc_trees6 = load_enc_scenes().get("rogue_6") or {}
     if enc_trees6:
-        attach_enc_scenes(encounters, enc_trees6, r["choiceScenes"], r["choices"], lambda x: x, cn_primary=True)
+        attach_enc_scenes(encounters, enc_trees6, r["choiceScenes"], r["choices"], lambda x: x, cn_primary=True, items=items)
         stage_ids_all6 = {s2["id"] for s2 in stages}
         for enc in encounters:
             t2 = enc_trees6.get(enc["scene"])
@@ -2242,6 +2271,8 @@ def build_rogue6():
                 bs = [b for b in t2.get("battles") or [] if b in stage_ids_all6]
                 if bs:
                     enc["battles"] = bs
+                elif t2.get("randomBattle"):
+                    enc["battlesRandom"] = 1
 
     out = {
         "id": "rogue_6",

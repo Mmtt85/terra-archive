@@ -589,5 +589,45 @@
   "ko": "【심매미경】으로 진입합니다",
   "en": "Enter the Buried Labyrinth zone",
   "ja": "【深埋迷境】へ進入します"
+ },
+ "根据被交换的收藏品出现下列选项之一": {
+  "ko": "교환한 소장품에 따라 아래 선택지 중 하나가 나타납니다",
+  "en": "One of the options below appears depending on the collectible exchanged",
+  "ja": "交換したコレクションに応じて以下の選択肢が1つ出現します"
+ },
+ "根据被交换的通宝出现下列选项之一": {
+  "ko": "교환한 통보에 따라 아래 선택지 중 하나가 나타납니다",
+  "en": "One of the options below appears depending on the coin exchanged",
+  "ja": "交換した通宝に応じて以下の選択肢が1つ出現します"
+ },
+ "低稀有度": {
+  "ko": "낮은 희귀도",
+  "en": "Low rarity",
+  "ja": "低レアリティ"
+ },
+ "中稀有度": {
+  "ko": "중간 희귀도",
+  "en": "Mid rarity",
+  "ja": "中レアリティ"
+ },
+ "移山难": {
+  "ko": "산을 옮기기는 어렵다",
+  "en": "Moving mountains is hard",
+  "ja": "山を移すは難し"
+ },
+ "朝闻道": {
+  "ko": "아침에 도를 듣다",
+  "en": "Hear the Way at dawn",
+  "ja": "朝に道を聞く"
+ },
+ "初有文": {
+  "ko": "처음 글이 생겨나다",
+  "en": "The first writing appears",
+  "ja": "初めて文字が生まれる"
+ },
+ "勤运体": {
+  "ko": "부지런히 몸을 단련하다",
+  "en": "Diligently train the body",
+  "ja": "勤めて体を鍛える"
  }
 }

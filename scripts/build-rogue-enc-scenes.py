@@ -170,12 +170,21 @@ def parse_topic(data):
                 cb = top_split(ch[2:-2])[1:]
                 cnamed = {p.split("=", 1)[0].strip(): p.split("=", 1)[1] for p in cb if is_named(p)}
                 cpos = [p for p in cb if not is_named(p)]
+                cdesc = clean(cnamed.get("desc1", ""))
+                # 확정 소장품 보상의 CN 이름 — 获得收藏品「이름」 패턴. 랜덤(一件随机/1个)은 제외.
+                relic_cn = None
+                m = re.search(r"收藏品[『「\"“]?([^”」』\"，,。;；()（）%]{1,24})", cdesc)
+                if m:
+                    nm2 = m.group(1).strip().strip("“”\"'‘’")
+                    if nm2 and not re.match(r"^(一件|随机|\d|１|获得|奖励)", nm2):
+                        relic_cn = nm2
                 sc["choices"].append({
                     "kind": cpos[0].strip() if cpos else "",
                     "title": clean(cpos[1]) if len(cpos) > 1 else "",
-                    "desc": clean(cnamed.get("desc1", "")),
+                    "desc": cdesc,
                     "dest": int(cnamed["dest"]) if cnamed.get("dest", "").strip().isdigit() else None,
                     "links": extract_links(cpos[1] if len(cpos) > 1 else "", cnamed.get("desc1", "")),
+                    **({"relicCn": relic_cn} if relic_cn else {}),
                 })
             scenes.append(sc)
         if scenes:
@@ -220,13 +229,15 @@ def match_topic(tid, events, det):
         if not sids:
             continue
         stats["matched"] += 1
+        # 동명 enter가 여럿이면(변형 씬 res3a 등 — 사이트는 동명을 하나로 병합해 대표 씬 id가
+        # 어느 쪽이 될지 모른다) 그룹·출력을 전부에 걸친다 (검은 발자국 회귀, 2026-08-16)
         enter = sids[0]
-        # 그룹: scene_ro3_ent1_enter → 접두 ro3_ent1 (+변형 a/b) 의 씬·선택지 전부
-        base = enter.replace("scene_", "").replace("_enter", "")
+        bases = [x.replace("scene_", "").replace("_enter", "") for x in sids]
+        base_re = "|".join(re.escape(b) for b in bases)
         grp_scene = {sid: sc for sid, sc in all_scenes.items()
-                     if re.match(rf"scene_{re.escape(base)}[a-z]?(_|$)", sid)}
+                     if re.match(rf"scene_(?:{base_re})[a-z]?(_|$)", sid)}
         grp_choice = {cid: c for cid, c in all_choices.items()
-                      if re.match(rf"choice_{re.escape(base)}[a-z]?_\d+$", cid)}
+                      if re.match(rf"choice_(?:{base_re})[a-z]?_\d+$", cid)}
         sc_by_desc = {}
         for sid, sc in grp_scene.items():
             sc_by_desc.setdefault(norm(sc.get("description") or ""), []).append(sid)
@@ -240,7 +251,7 @@ def match_topic(tid, events, det):
         for s in ev["scenes"]:
             for c in s["choices"]:
                 for ln in c.get("links") or []:
-                    name = re.sub(r"^[A-Za-z0-9-]+\s+", "", ln)
+                    name = re.sub(r"^[A-Za-z0-9-]+[\s_]+", "", ln)
                     for sid2 in stage_by_name.get(norm(name), []):
                         # 층 일반/긴급(roN_n_F·roN_e_F) 링크는 '그 층의 랜덤 전투'라는 뜻
                         # (힘든 전투 직면 등) — 고정 맵이 아니므로 제외한다.
@@ -289,6 +300,7 @@ def match_topic(tid, events, det):
                             stats["ch_fuzzy"] += 1
                 if cids:
                     node["choices"].append({"cid": cids[0],
+                                            **({"relicCn": c["relicCn"]} if c.get("relicCn") else {}),
                                             **({"dest": c["dest"]} if c["dest"] is not None else {})})
                     continue
                 # 게임 선택지에 없음 — dest가 있으면 랜덤 결과 분기 라벨(【검정 성공】·주화명·보상명),
@@ -308,8 +320,16 @@ def match_topic(tid, events, det):
             entry["scenes"] = scenes_out
         if ev_battles:
             entry["battles"] = ev_battles
+        elif any(c.get("icon") == "battle" or (c.get("displayData") or {}).get("funcIconId") == "battle"
+                 for c in grp_choice.values()):
+            # 전투 선택지(icon=battle)가 있는데 고정 맵 링크가 없다 = 그 층의 랜덤 일반
+            # 전투 ('힘든 전투 직면' 류 — PRTS도 층 일반 맵 전체를 가리킴). UI가 '랜덤
+            # 전투' 안내를 달 근거 (사용자 지시 2026-08-16). 수작업 링크가 있으면
+            # build-rogue가 이 플래그를 무시한다.
+            entry["randomBattle"] = True
         if entry:
-            out[enter] = entry
+            for sid_k in sids:
+                out[sid_k] = entry
     return out, stats
 
 
