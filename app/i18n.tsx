@@ -1841,6 +1841,12 @@ const D: Record<string, Pair> = {
     "1★/2★ only appear when the timer is lowered — **1★ at 3:50 or less**, **2★ at 7:30 or less**. They never show up at 9 hours.",
     "星1・2は募集時間を下げないと出ません — **星1は3時間50分以下**、**星2は7時間30分以下**。9時間設定では出現しません。",
   ],
+  "4★ 이상 확정 조합만 보기": ["Show guaranteed 4★+ combos only", "★4以上確定の組み合わせのみ表示"],
+  "높은 성급이 확정되는 조합만 남기고 나머지를 숨깁니다": ["Keep only combos that guarantee a high rarity and hide the rest", "高レアリティが確定する組み合わせだけを残し、他を隠します"],
+  "이 태그로는 4★ 이상이 확정되는 조합이 없습니다 — 토글을 끄면 전체 조합이 표시됩니다.": [
+    "No combo guarantees 4★ or higher with these tags — turn the toggle off to see all combos.",
+    "このタグでは星4以上が確定する組み合わせはありません — トグルをオフにすると全ての組み合わせが表示されます。",
+  ],
   "4·5성 저격 조합 사전": ["4★/5★ snipe combo dictionary", "星4・5狙い撃ち組み合わせ辞典"],
   "접기 ▲": ["Collapse ▲", "閉じる ▲"],
   "펼치기 ({n}개 조합) ▼": ["Expand ({n} combos) ▼", "開く（{n}組）▼"],

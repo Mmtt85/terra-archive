@@ -133,6 +133,10 @@ function ComboCard({ result, onShowOperator, tagLabel, opLabel }: { result: Comb
 
 const ALL_TAG_NAMES = data.tags.map((tag) => tag.name);
 
+// '4★ 이상 확정 조합만' 토글 localStorage 키 — 스샷을 연달아 찍으며 저격 조합만 보는
+// 사용 흐름이라(사용자 제보 2026-08-16) 표시 필터는 세션을 넘어 기억한다
+const PRIZED_KEY = "ta-recruit-prized";
+
 export default function RecruitHelper({ onShowOperator, extra }: { onShowOperator?: (id: string) => void; extra?: ExtraI18n | null } = {}) {
   const { t, locale } = useI18n();
   const [showDict, setShowDict] = useState(false);
@@ -253,6 +257,19 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
 
   const results = useMemo(() => comboResults(picked), [picked]);
 
+  // 4★ 이상 확정(floor ≥ 4) 조합만 남기는 표시 필터 — SSR엔 localStorage가 없으므로
+  // false로 하이드레이션 후 이펙트에서 복원 (home.tsx 미래시 토글과 같은 패턴)
+  const [prizedOnly, setPrizedOnly] = useState(false);
+  useEffect(() => {
+    try { if (localStorage.getItem(PRIZED_KEY) === "1") setPrizedOnly(true); } catch { /* ignore */ }
+  }, []);
+  const togglePrizedOnly = () => {
+    const next = !prizedOnly;
+    setPrizedOnly(next);
+    try { localStorage.setItem(PRIZED_KEY, next ? "1" : "0"); } catch { /* ignore */ }
+  };
+  const shownResults = prizedOnly ? results.filter((result) => result.floor >= 4) : results;
+
   return (
     <section className="recruit" aria-label={t("공개모집 도우미")}>
       <div className="recruit-head">
@@ -310,11 +327,21 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
         </div>
       </div>
 
+      {/* 4·5성 저격만 남기는 결과 필터 (사용자 제보) — 스샷 인식 결과에도 그대로 적용되고,
+          태그를 고르기 전에도 미리 켜둘 수 있다 (사용자 확정 2026-08-16) */}
+      <div className="recruit-results-bar">
+        <button type="button" className={`recruit-prized-toggle${prizedOnly ? " on" : ""}`} aria-pressed={prizedOnly}
+          title={t("높은 성급이 확정되는 조합만 남기고 나머지를 숨깁니다")} onClick={togglePrizedOnly}>
+          <span className="recruit-prized-box" aria-hidden />{t("4★ 이상 확정 조합만 보기")}
+        </button>
+      </div>
       {picked.length === 0 ? (
         <p className="recruit-empty">{t("태그를 선택하면 조합 결과가 여기에 표시됩니다.")}</p>
+      ) : shownResults.length === 0 ? (
+        <p className="recruit-empty">{t("이 태그로는 4★ 이상이 확정되는 조합이 없습니다 — 토글을 끄면 전체 조합이 표시됩니다.")}</p>
       ) : (
         <div className="recruit-results">
-          {results.map((result) => <ComboCard key={result.combo.join("+")} result={result} onShowOperator={onShowOperator} tagLabel={tagLabel} opLabel={opLabel} />)}
+          {shownResults.map((result) => <ComboCard key={result.combo.join("+")} result={result} onShowOperator={onShowOperator} tagLabel={tagLabel} opLabel={opLabel} />)}
         </div>
       )}
 
