@@ -34,5 +34,16 @@
       "「두근거림 신호기」를 소지한 채 5층 전투를 통과하면 6층 '원류가 만나는 곳'에 진입한다. 험난한 길 「기형증」에서 「볼리바르, 응어리의 핵」과 결전 — 진입 전 「조율 의식」에서 위 소장품들을 제출해 적을 약화시킬 수 있다.",
       "「기형증」을 통과하면 엔딩 달성 (난이도 무관)."
     ]
+  },
+  "_encounterBattles_comment": "조우 → 그 조우에서 이어지는 전투 스테이지. 게임 데이터에 링크가 없어(전투 선택지는 type=TRADE_PROB·nextSceneId=null) 조우의 결과 서사와 스테이지 설명·적 편성을 대조해 손으로 확정했다 (2026-08-16). 확신이 없는 조우는 넣지 않는다 — 틀린 맵을 링크하느니 링크가 없는 게 낫다. build-rogue.py가 encounters[].battles로 병합한다.",
+  "encounterBattles": {
+    "scene_ro6_bat1_enter": ["ro6_t_1"],
+    "scene_ro6_bat2_enter": ["ro6_t_2"],
+    "scene_ro6_bat3_enter": ["ro6_t_3"],
+    "scene_ro6_bat4_enter": ["ro6_t_4"],
+    "scene_ro6_bat5_enter": ["ro6_t_5"],
+    "scene_ro6_bat6_enter": ["ro6_t_7"],
+    "scene_ro6_sala1_enter": ["ro6_duel_2"],
+    "scene_ro6_sala2_enter": ["ro6_duel_1"]
   }
 }

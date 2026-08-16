@@ -1326,6 +1326,19 @@ def build_topic(tid="rogue_1", loc=None):
                 enc["floors"] = floors[enc["scene"]]
             if enc["scene"] in notes:
                 enc["note"] = tr_quoted(tr(notes[enc["scene"]]))
+        # 조우 → 그 조우에서 이어지는 전투 스테이지 (사용자 요청 2026-08-16). 게임 데이터엔
+        # 링크가 없다 — 전투 선택지는 type=TRADE_PROB·nextSceneId=null·icon=battle뿐이고
+        # 스테이지 쪽 specialNodeId는 보스 전용이라, 조우 서사와 스테이지 설명·적 편성을
+        # 대조해 손으로 확정했다(rogueN-curated.json의 encounterBattles).
+        battles = curated.get("encounterBattles", {})
+        stage_ids = {s["id"] for s in stages}
+        bad = {sid: [b for b in bs if b not in stage_ids] for sid, bs in battles.items()}
+        bad = {k: v for k, v in bad.items() if v}
+        if bad:
+            raise SystemExit(f"encounterBattles에 없는 스테이지 id: {bad}")
+        for enc in encounters:
+            if enc["scene"] in battles:
+                enc["battles"] = battles[enc["scene"]]
         conds = curated.get("endingConds", {})
         for e in endings:
             if e["id"] in conds:
@@ -2026,6 +2039,16 @@ def build_rogue6():
                 enc["floors"] = floors[enc["scene"]]
             if enc["scene"] in notes:
                 enc["note"] = notes[enc["scene"]]
+        # 조우 → 이어지는 전투 스테이지 (build_topic과 같은 규약, 사용자 요청 2026-08-16)
+        battles = curated.get("encounterBattles", {})
+        stage_ids = {s["id"] for s in stages}
+        bad = {sid: [b for b in bs if b not in stage_ids] for sid, bs in battles.items()}
+        bad = {k: v for k, v in bad.items() if v}
+        if bad:
+            raise SystemExit(f"encounterBattles에 없는 스테이지 id: {bad}")
+        for enc in encounters:
+            if enc["scene"] in battles:
+                enc["battles"] = battles[enc["scene"]]
         conds = curated.get("endingConds", {})
         for e in endings:
             if e["id"] in conds:

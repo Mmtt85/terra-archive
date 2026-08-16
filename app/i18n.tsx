@@ -2209,6 +2209,7 @@ const D: Record<string, Pair> = {
   "등급": ["Grade", "グレード"],
   "전장 미니맵": ["Battlefield minimap", "戦場ミニマップ"],
   "우연한 만남": ["Encounter", "思わぬ遭遇"],
+  "이 만남의 전투": ["Battles from this encounter", "この遭遇で起きる戦闘"],
   "특정 적 강화": ["Specific enemy buff", "特定の敵強化"],
   "긴급 시 적 교체": ["Emergency enemy swap", "緊急時の敵入れ替え"],
   "CN 선행 데이터 기반 · 명칭은 비공식 번역이며 중국어 원문을 병기합니다.": ["Based on CN-first data. Names are unofficial translations with the Chinese originals shown alongside.", "CN先行データ基準。名称は非公式訳で、中国語原文を併記しています。"],

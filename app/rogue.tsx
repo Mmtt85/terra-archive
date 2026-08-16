@@ -86,7 +86,8 @@ type Ending = { id: string; name: string; desc: string | null; boss: string | nu
 // 선택지는 계단식 트리 — next.desc는 그 선택의 결과 서사, next.choices는 이어지는 하위 선택지
 // (현재 데이터는 대부분 결과 서사까지 깊이 2. 하위 선택지가 생기면 재귀로 중첩 렌더).
 type EncChoice = { title: string; desc: string | null; cn?: string; variants?: string[]; next?: { desc: string | null; choices: EncChoice[] } };
-type Encounter = { scene: string; title: string; desc: string | null; bg?: string | null; choices: EncChoice[]; floors?: number[]; note?: string; cn?: string };
+// battles: 이 조우에서 이어지는 전투 스테이지 id (수작업 대응표 — build-rogue.py 주석 참조)
+type Encounter = { scene: string; title: string; desc: string | null; bg?: string | null; choices: EncChoice[]; floors?: number[]; note?: string; cn?: string; battles?: string[] };
 type RogueData = {
   id: string; name: string; line: string | null; cnName?: string; future?: boolean; server?: string;
   zones: Zone[]; nodeTypes: { id: string; name: string; desc: string | null; func?: string | null; cn?: string }[];
@@ -534,7 +535,10 @@ function EnemyModal({ ekey, grade, ctx, onClose, onOpenStage, appear }: {
 }
 
 // ── 조우 상세 모달 — 엔딩 조건 등에서 조우를 참조할 때 연다 ──────────────────
-function EncounterModal({ enc, onClose, link }: { enc: Encounter; onClose: () => void; link?: (t: string | null) => React.ReactNode }) {
+function EncounterModal({ enc, onClose, link, battles, onOpenStage }: {
+  enc: Encounter; onClose: () => void; link?: (t: string | null) => React.ReactNode;
+  battles?: StagePair[]; onOpenStage?: (p: StagePair) => void;
+}) {
   const { t } = useI18n();
   useEffect(() => {
     const onKey = (ev: KeyboardEvent) => { if (ev.key === "Escape") onClose(); };
@@ -564,6 +568,16 @@ function EncounterModal({ enc, onClose, link }: { enc: Encounter; onClose: () =>
             <ul className="rg-enc-choices">
               {enc.choices.map((c, i) => <ChoiceNode key={i} c={c} link={link} />)}
             </ul>
+            {/* 이 조우에서 전투가 벌어지면 그 맵을 바로 열 수 있게 (사용자 요청 2026-08-16).
+                게임 데이터에 조우↔전투 링크가 없어 수작업 대응표로만 붙는다 — 없으면 안 그린다. */}
+            {battles && battles.length > 0 && onOpenStage && (
+              <div className="rg-enc-battles">
+                <strong>{t("이 만남의 전투")}</strong>
+                <div className="rg-stage-cards">
+                  {battles.map((p) => <StageCard key={p.n.id} pair={p} onOpen={onOpenStage} />)}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -2516,7 +2530,13 @@ export default function RogueGuide({ includeFuture, initialTopic }: {
           appear={enemyStages.get(enemyOpen.key) ?? []}
           onOpenStage={(s) => { setEnemyOpen(null); setStageOpen(pairOf(s)); }} />
       )}
-      {encOpen && <EncounterModal enc={encOpen} onClose={() => setEncOpen(null)} link={linkRelic} />}
+      {/* 조우에서 이어지는 전투 맵 — 적 모달과 같은 규약으로 조우를 닫고 스테이지 모달을 연다
+          (모달 스택 순서상 조우가 스테이지 위에 그려지므로 겹쳐 띄우지 않는다) */}
+      {encOpen && (
+        <EncounterModal enc={encOpen} onClose={() => setEncOpen(null)} link={linkRelic}
+          battles={(encOpen.battles ?? []).map((id) => stageById.get(id)).filter(Boolean).map((s) => pairOf(s!))}
+          onOpenStage={(p) => { setEncOpen(null); setStageOpen(p); }} />
+      )}
       {relicOpen && (
         <RelicModal relic={relicOpen} onClose={() => setRelicOpen(null)}
           owned={inv.has(relicOpen.id)}

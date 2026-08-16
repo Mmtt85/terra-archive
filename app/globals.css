@@ -12593,6 +12593,28 @@ html.dark.rg-theme.rg6 .site-header {
 .rg-enc-choices strong {
   color: var(--rgink);
 }
+/* 조우에서 이어지는 전투 맵 — 선택지 목록 아래에 카드로 (사용자 요청 2026-08-16).
+   조우 본문이 좁아 한 줄 2장, 좁은 화면에선 1장. */
+.rg-enc-battles {
+  margin: 4px 12px 12px 28px;
+  padding-top: 10px;
+  border-top: 1px solid var(--rgline);
+}
+.rg-enc-battles > strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 12px;
+  letter-spacing: .04em;
+  color: var(--rgtext2);
+}
+.rg-enc-battles .rg-stage-cards {
+  grid-template-columns: repeat(2, 1fr);
+}
+@media (max-width: 720px) {
+  .rg-enc-battles .rg-stage-cards {
+    grid-template-columns: 1fr;
+  }
+}
 /* 계단식 선택지 트리 — 선택 아래에 결과 서사(▸)와 하위 선택지를 들여쓰기+연결선으로 */
 .rg-choice {
   margin-bottom: 4px;

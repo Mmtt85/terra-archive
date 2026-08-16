@@ -217,5 +217,18 @@
       4,
       5
     ]
+  },
+  "_encounterBattles_comment": "조우 → 그 조우에서 이어지는 전투 스테이지. 게임 데이터에 링크가 없어(전투 선택지는 type=TRADE_PROB·nextSceneId=null) 조우의 결과 서사와 스테이지 설명·적 편성을 대조해 손으로 확정했다 (2026-08-16). 확신이 없는 조우는 넣지 않는다 — 틀린 맵을 링크하느니 링크가 없는 게 낫다. build-rogue.py가 encounters[].battles로 병합한다.",
+  "encounterBattles": {
+    "scene_ro4_bat1_enter": ["ro4_t_1"],
+    "scene_ro4_bat2_enter": ["ro4_t_2"],
+    "scene_ro4_bat3_enter": ["ro4_t_3"],
+    "scene_ro4_bat4_enter": ["ro4_t_4"],
+    "scene_ro4_ent2_enter": ["ro4_t_8"],
+    "scene_ro4_normal9_enter": ["ro4_t_7"],
+    "scene_ro4_normal10_enter": ["ro4_t_6"],
+    "scene_ro4_sala1_enter": ["ro4_duel_1", "ro4_duel_b"],
+    "scene_ro4_sala2_enter": ["ro4_duel_2", "ro4_duel_b"],
+    "scene_ro4_sala3_enter": ["ro4_duel_3", "ro4_duel_b"]
   }
 }
