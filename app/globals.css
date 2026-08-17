@@ -13178,6 +13178,125 @@ html.dark.rg-theme.rg6 .site-header {
   font-style: italic;
   color: var(--rgmut);
 }
+/* 엔딩 기록(엔딩북) — 조각별 해금 조건 (사용자 소원 2026-08-17) */
+.rg-ending-book {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--rgline);
+}
+.rg-ending-book h4 {
+  margin: 0 0 6px;
+  font-size: 12px;
+  color: var(--rggold);
+}
+.rg-ending-book h4 em {
+  margin-left: 6px;
+  font-style: normal;
+  color: var(--rgmut);
+}
+.rg-ending-book ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 4px;
+}
+.rg-ending-book li {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+.rg-ending-book li strong {
+  flex: none;
+  min-width: 110px;
+  font-weight: 700;
+}
+.rg-ending-book li span {
+  color: var(--rgmut);
+}
+
+/* 월간 방문객 — 전시관 서브탭 (사용자 소원 2026-08-17) */
+.rg-visitor-note {
+  margin: 0 0 14px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--rgmut);
+}
+.rg-visitor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 12px;
+}
+.rg-visitor {
+  border: 1px solid var(--rgline);
+  border-radius: var(--r-md);
+  padding: 13px 15px;
+}
+.rg-visitor > header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.rg-visitor-face {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  border: 1px solid var(--rgline);
+  object-fit: cover;
+}
+.rg-visitor-who h4 {
+  margin: 0;
+  font-size: 14.5px;
+}
+.rg-visitor-team {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--rggold);
+}
+.rg-visitor-team em {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--rgmut);
+}
+.rg-visitor-desc {
+  margin: 0 0 8px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--rgmut);
+}
+.rg-visitor-scenes {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+.rg-visitor-scenes li {
+  display: grid;
+  gap: 2px;
+  padding: 7px 10px;
+  border-left: 2px solid var(--rgline);
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+.rg-visitor-where {
+  font-weight: 700;
+  font-size: 11.5px;
+  color: var(--rggold);
+}
+.rg-visitor-quote {
+  color: var(--rgmut);
+}
+@media (max-width: 720px) {
+  .rg-visitor-grid {
+    grid-template-columns: 1fr;
+  }
+}
 
 /* 스테이지 모달 */
 .rg-modal-back {

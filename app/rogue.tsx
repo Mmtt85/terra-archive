@@ -82,7 +82,10 @@ type Difficulty = { mode: string; grade: number; name: string; rule: string | nu
 type InvStage = { label: string; name: string; usage?: string | null; desc?: string | null };
 // stages: 붕괴 패러다임 등 다단계 시스템 — 카드 1장 안에 단계별 [섬네일+이름+효과] 행 (사용자 확정 2026-07-24)
 type InvItem = { id: string; name: string; usage?: string | null; desc?: string | null; obtain?: string | null; order?: string | null; kind?: string | null; typeName?: string | null; img?: boolean; iconId?: string; cn?: string; stages?: InvStage[] };
-type Ending = { id: string; name: string; desc: string | null; boss: string | null; priority: number; change: string | null; cond?: string[]; cn?: string };
+// book = 엔딩 기록(엔딩북) 조각 — 게임 공식 해금 조건 텍스트 (사용자 소원 2026-08-17)
+type Ending = { id: string; name: string; desc: string | null; boss: string | null; priority: number; change: string | null; cond?: string[]; cn?: string; book?: { name?: string; cond?: string }[] };
+// 월간 방문객 — 매달 로테이션되는 방문객 오퍼(chars)와 층·구역별 특별 조우 장면(scenes)
+type Visitor = { id: string; name?: string; cn?: string; desc?: string; ym?: string; chars: { id: string; name: string }[]; scenes?: { floor?: number; zone?: string; desc?: string }[] };
 // 선택지는 계단식 트리 — next.desc는 그 선택의 결과 서사, next.choices는 이어지는 하위 선택지
 // (현재 데이터는 대부분 결과 서사까지 깊이 2. 하위 선택지가 생기면 재귀로 중첩 렌더).
 type EncChoice = { title: string; desc: string | null; cn?: string; variants?: string[]; next?: { desc: string | null; choices: EncChoice[] } };
@@ -100,7 +103,7 @@ type RogueData = {
   relics: Relic[]; capsules?: Capsule[]; tools: Simple[]; bands: Simple[]; exploreTools?: Simple[];
   scraps?: Scrap[]; legacies?: Simple[]; buoys?: Simple[];
   weathers?: Weather[]; subweathers?: SubWeather[];
-  variations: Variation[]; endings: Ending[]; encounters: Encounter[];
+  variations: Variation[]; endings: Ending[]; encounters: Encounter[]; visitors?: Visitor[];
   // 토픽 고유 시스템 갤러리 (거부반응·암호판·붕괴 패러다임·사고·시대·주화·분노 등) — 전시관 서브탭.
   // kind=하위 분류(사고: 염원/영감/구상), usage의 개행은 단계 효과(심화·형성기 등) 줄바꿈.
   mechanics?: { label: string; items: { id: string; name: string; kind?: string; usage?: string | null; desc?: string | null; img?: boolean; iconId?: string; stages?: InvStage[] }[] }[];
@@ -1114,16 +1117,19 @@ export default function RogueGuide({ includeFuture, initialTopic }: {
   // 전시관 서브탭 [id, 라벨] 목록 — 환각계열 + 토픽 고유 시스템 전부 + 표준(도구·분대 등).
   // 소장품(유물)은 최상위 탭으로 승격돼 여기서 제외. arcTab이 무효면 첫 탭으로 폴백.
   const hasVariations = (data.variations?.length ?? 0) > 0 || (data.weathers?.length ?? 0) > 0;
+  // 월간 방문객 탭 — 데이터 있는 테마에만 (사용자 소원 2026-08-17)
+  const visitorTab: [string, string][] = (data.visitors?.length ?? 0) > 0 ? [["visitor", "방문객"]] : [];
   const archiveTabs: [string, string][] = topic === "rogue_6"
     ? [...(hasVariations ? [["hallu", HALLU_LABEL[topic]] as [string, string]] : []),
        ["scrap", "부품 (零件)"], ["band", "분대"], ["legacy", "유산"],
        // 부표는 노드가 아니라 격자 지도 위 이벤트 마커 — 전시관으로 이동 (사용자 확정 2026-07-18)
-       ...((data.buoys?.length ?? 0) > 0 ? [["buoy", "지도 마커 (부표)"] as [string, string]] : [])]
+       ...((data.buoys?.length ?? 0) > 0 ? [["buoy", "지도 마커 (부표)"] as [string, string]] : []),
+       ...visitorTab]
     : [...(hasVariations && HALLU_LABEL[topic] ? [["hallu", HALLU_LABEL[topic]] as [string, string]] : []),
        ...((data.capsules?.length ?? 0) > 0 ? [["capsule", "레퍼토리 (음반)"] as [string, string]] : []),
        ...(data.mechanics ?? []).map((m) => [m.label, m.label] as [string, string]),
        ...((data.exploreTools?.length ?? 0) > 0 ? [["explore", "탐사 도구"] as [string, string]] : []),
-       ["band", "분대"]];
+       ["band", "분대"], ...visitorTab];
   const activeArc = archiveTabs.some(([id]) => id === arcTab) ? arcTab : (archiveTabs[0]?.[0] ?? "tool");
 
   // 뒤로/앞으로·햄버거 부메뉴(popstate) → 토픽 동기화. 토픽 전환은 이제 헤더 버튼이 아니라
@@ -2335,6 +2341,7 @@ export default function RogueGuide({ includeFuture, initialTopic }: {
                 : activeArc === "legacy" ? data.legacies?.length ?? 0
                 : activeArc === "buoy" ? data.buoys?.length ?? 0
                 : activeArc === "explore" ? data.exploreTools?.length ?? 0
+                : activeArc === "visitor" ? data.visitors?.length ?? 0
                 : activeArc === "band" ? data.bands.length
                 : (data.mechanics ?? []).find((m) => m.label === activeArc)?.items.length ?? 0}
             </span>
@@ -2410,6 +2417,40 @@ export default function RogueGuide({ includeFuture, initialTopic }: {
                   {c.desc && <p className="rg-relic-desc">{c.desc}</p>}
                 </article>
               ))}
+            </div>
+          )}
+          {/* 월간 방문객 — 매달 로테이션되는 방문객 오퍼가 특정 층·구역의 특별 조우로
+              등장하고, 만나면 기록이 해금된다 (사용자 소원 2026-08-17 "방문객 해금 스토리 정리") */}
+          {activeArc === "visitor" && (
+            <div className="rg-visitor-view">
+              <p className="rg-visitor-note">{t("매달 다른 방문객이 찾아옵니다. 그달의 방문객은 아래 표시된 층·구역의 특별 조우에서 만날 수 있고, 만나면 그 장면의 기록이 해금됩니다. 로테이션이 한 바퀴 돌면 처음부터 반복됩니다.")}</p>
+              <div className="rg-visitor-grid">
+                {(data.visitors ?? []).map((v) => (
+                  <article key={v.id} className="rg-visitor">
+                    <header>
+                      {v.chars.map((c) => (
+                        <img key={c.id} className="rg-visitor-face" src={asset(`/avatars/${c.id}.webp`)}
+                          alt="" width={180} height={180} loading="lazy" decoding="async" />
+                      ))}
+                      <div className="rg-visitor-who">
+                        <h4>{v.chars.map((c) => c.name).join(" · ")}</h4>
+                        <span className="rg-visitor-team"><Nm name={v.name ?? ""} cn={v.cn} />{v.ym && <em>{v.ym}</em>}</span>
+                      </div>
+                    </header>
+                    {v.desc && <p className="rg-visitor-desc">{v.desc}</p>}
+                    {v.scenes && v.scenes.length > 0 && (
+                      <ul className="rg-visitor-scenes">
+                        {v.scenes.map((s, i) => (
+                          <li key={i}>
+                            <span className="rg-visitor-where">{s.floor !== undefined ? t("{n}층", { n: s.floor }) : ""}{s.zone ? ` · ${s.zone}` : ""}</span>
+                            {s.desc && <span className="rg-visitor-quote">{s.desc}</span>}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </article>
+                ))}
+              </div>
             </div>
           )}
           {/* 무대 도구는 소장품 뷰에 통합됨 (사용자 확정 2026-07-24) — 전용 탭 제거 */}
@@ -2599,6 +2640,17 @@ export default function RogueGuide({ includeFuture, initialTopic }: {
                 </ol>
               )}
               {e.change && <p className="rg-ending-change">“{e.change}”</p>}
+              {/* 엔딩 기록(엔딩북) — 조각별 게임 공식 해금 조건 (사용자 소원 2026-08-17) */}
+              {e.book && e.book.length > 0 && (
+                <div className="rg-ending-book">
+                  <h4>{t("엔딩 기록")}<em>{e.book.length}</em></h4>
+                  <ul>
+                    {e.book.map((b, i) => (
+                      <li key={i}><strong>{b.name}</strong><span>{b.cond}</span></li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </article>
           ))}
         </div>

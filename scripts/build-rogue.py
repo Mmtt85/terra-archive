@@ -1414,6 +1414,48 @@ def build_topic(tid="rogue_1", loc=None):
     } for e in r["endings"].values()]
     endings.sort(key=lambda x: x["priority"])
 
+    # 엔딩 기록(엔딩북) — 엔딩별 스토리 조각과 게임 공식 해금 조건 (사용자 소원 2026-08-17
+    # "엔딩이랑 해금해야 하는 스토리들 정리"). archiveComp.endbook에 로케일별 공식 텍스트가
+    # 전부 있어 번역 불필요. IS1은 엔딩북 시스템 자체가 없음(빈 dict) — book 없이 통과.
+    endbooks = ((r.get("archiveComp") or {}).get("endbook") or {}).get("endbook") or {}
+    book_by_ending = {}
+    for b in sorted(endbooks.values(), key=lambda x: x.get("sortId") or 0):
+        bitems = [{"name": it.get("endbookName"), "cond": it.get("unlockDesc")}
+                  for it in b.get("clientEndbookItemDatas") or []]
+        if b.get("endingId") and bitems:
+            book_by_ending[b["endingId"]] = bitems
+    for e in endings:
+        if e["id"] in book_by_ending:
+            e["book"] = book_by_ending[e["id"]]
+
+    # 월간 방문객 — monthSquad(방문객 오퍼·팀명·로테이션 연월·서사) + archiveComp.chat
+    # (층·구역별 특별 조우 장면). 방문객 이름은 teamChars의 char id를 사이트 오퍼 데이터로
+    # 해석한다 (58명 전원 플레이어블 실측 — 수작업 매핑 불필요). cn 변형은 KR 표기가
+    # 정본이라 KR 이름을 쓴다(cn_koreanize가 팀명에 원문 병기).
+    ops_file = {"en": "operators.en.json", "ja": "operators.ja.json"}.get(loc, "operators.json")
+    try:
+        op_name = {o["id"]: o["name"] for o in
+                   json.load(open(os.path.join(REPO, "app", "data", ops_file), encoding="utf-8"))}
+    except Exception:
+        op_name = {}
+    zone_names = {z["id"]: z["name"] for z in zones}
+    month_chats = ((r.get("archiveComp") or {}).get("chat") or {}).get("chat") or {}
+    visitors = []
+    for sq in sorted((r.get("monthSquad") or {}).values(),
+                     key=lambda x: (x.get("teamYear") or "9999", x.get("teamMonth") or "99", x.get("id") or "")):
+        chat = month_chats.get(sq.get("chatId") or "")
+        scenes = [{"floor": it.get("floor"),
+                   **({"zone": zone_names[it["chatZoneId"]]} if it.get("chatZoneId") in zone_names else {}),
+                   "desc": it.get("chatDesc")}
+                  for it in ((chat or {}).get("chatItemList") or [])]
+        visitors.append({
+            "id": sq.get("id"), "name": sq.get("teamName"), "desc": sq.get("teamDes"),
+            **({"ym": f"{sq['teamYear']}-{sq['teamMonth']}"} if sq.get("teamYear") and sq.get("teamMonth") else {}),
+            "chars": [{"id": c["teamCharId"], "name": op_name.get(c["teamCharId"], c["teamCharId"])}
+                      for c in sq.get("teamChars") or [] if c.get("teamCharId")],
+            **({"scenes": scenes} if scenes else {}),
+        })
+
     # ── 조우 씬 (enter 씬을 뿌리로 한 계단식 선택지 트리) ──────────────────────
     # nextSceneId를 따라 후속 씬(부모와 제목 공유)을 next로 중첩한다. 예전 접두 매칭+제목
     # union은 부모/자식 선택지를 뭉쳐 중복이 났다 (사용자 리포트 2026-07-19).
@@ -1573,6 +1615,8 @@ def build_topic(tid="rogue_1", loc=None):
         out["exploreTools"] = explore_tools
     if mechanics:
         out["mechanics"] = mechanics
+    if visitors:
+        out["visitors"] = visitors
     # 게임 마크업 태그(<@ro.lose>1</>, <color=#...> 등)를 모든 문자열에서 일괄 제거
     def sanitize(v):
         if isinstance(v, str):
@@ -1644,6 +1688,8 @@ def cn_koreanize(ronum, out):
     for m in out.get("mechanics") or []:
         for x in m["items"]:
             keep_cn(x)
+    for v in out.get("visitors") or []:
+        keep_cn(v)   # 방문객 팀명 원문 병기
     for enc in out["encounters"]:
         keep_cn(enc, "title")
         keep_cn_tree(enc["choices"])
@@ -1672,6 +1718,25 @@ def cn_koreanize(ronum, out):
             k = kr_by.get(x[key])
             if k:
                 put_txt(x, k, fields)
+    # 엔딩 기록(book)·월간 방문객 — 같은 excel 구조라 id 교차 + 조각/장면 위치 교차
+    kr_end2 = {x["id"]: x for x in kr.get("endings") or []}
+    for x in out.get("endings") or []:
+        k = kr_end2.get(x["id"])
+        if k and len(x.get("book") or []) == len(k.get("book") or []):
+            for bi, kb in zip(x.get("book") or [], k.get("book") or []):
+                put_txt(bi, kb, ("name", "cond"))
+    kr_vis = {v["id"]: v for v in kr.get("visitors") or []}
+    for v in out.get("visitors") or []:
+        k = kr_vis.get(v["id"])
+        if not k:
+            continue
+        put_txt(v, k, ("name", "desc"))
+        if len(v.get("chars") or []) == len(k.get("chars") or []):
+            for c, kc in zip(v["chars"], k["chars"]):
+                put_txt(c, kc, ("name",))
+        if len(v.get("scenes") or []) == len(k.get("scenes") or []):
+            for s, ks in zip(v["scenes"], k["scenes"]):
+                put_txt(s, ks, ("zone", "desc"))
     for key, e in out["enemies"].items():
         k = (kr.get("enemies") or {}).get(key)
         if k:
@@ -2227,6 +2292,41 @@ def build_rogue6():
     } for e in r["endings"].values()]
     endings.sort(key=lambda x: x["priority"])
 
+    # 엔딩 기록(엔딩북)·월간 방문객 — build_topic과 같은 추출 (CN 텍스트는 아래
+    # translate()가 KR 오버레이·미번역 수집을 일괄 처리). 방문객 이름은 KR 오퍼 데이터.
+    endbooks6 = ((r.get("archiveComp") or {}).get("endbook") or {}).get("endbook") or {}
+    book_by_ending6 = {}
+    for b in sorted(endbooks6.values(), key=lambda x: x.get("sortId") or 0):
+        bitems = [{"name": it.get("endbookName"), "cond": it.get("unlockDesc")}
+                  for it in b.get("clientEndbookItemDatas") or []]
+        if b.get("endingId") and bitems:
+            book_by_ending6[b["endingId"]] = bitems
+    for e in endings:
+        if e["id"] in book_by_ending6:
+            e["book"] = book_by_ending6[e["id"]]
+    try:
+        op_name6 = {o["id"]: o["name"] for o in
+                    json.load(open(os.path.join(REPO, "app", "data", "operators.json"), encoding="utf-8"))}
+    except Exception:
+        op_name6 = {}
+    zone_names6 = {z["id"]: z["name"] for z in zones}
+    month_chats6 = ((r.get("archiveComp") or {}).get("chat") or {}).get("chat") or {}
+    visitors = []
+    for sq in sorted((r.get("monthSquad") or {}).values(),
+                     key=lambda x: (x.get("teamYear") or "9999", x.get("teamMonth") or "99", x.get("id") or "")):
+        chat = month_chats6.get(sq.get("chatId") or "")
+        scenes = [{"floor": it.get("floor"),
+                   **({"zone": zone_names6[it["chatZoneId"]]} if it.get("chatZoneId") in zone_names6 else {}),
+                   "desc": it.get("chatDesc")}
+                  for it in ((chat or {}).get("chatItemList") or [])]
+        visitors.append({
+            "id": sq.get("id"), "name": sq.get("teamName"), "desc": sq.get("teamDes"),
+            **({"ym": f"{sq['teamYear']}-{sq['teamMonth']}"} if sq.get("teamYear") and sq.get("teamMonth") else {}),
+            "chars": [{"id": c["teamCharId"], "name": op_name6.get(c["teamCharId"], c["teamCharId"])}
+                      for c in sq.get("teamChars") or [] if c.get("teamCharId")],
+            **({"scenes": scenes} if scenes else {}),
+        })
+
     # 계단식 선택지 트리 (溯源 19변형 등 동명 enter는 대표 1개로 — extract_encounters 참조)
     encounters = extract_encounters(r["choiceScenes"], r["choices"],
                                     load_encounter_tree("rogue6"), items)
@@ -2307,6 +2407,7 @@ def build_rogue6():
         "variations": variations,
         "endings": endings,
         "encounters": encounters,
+        **({"visitors": visitors} if visitors else {}),
     }
     def sanitize(v):
         if isinstance(v, str):
@@ -2341,6 +2442,8 @@ def build_rogue6():
             keep_cn(ch, "title")
             if ch.get("next"):
                 keep_cn_tree(ch["next"]["choices"])
+    for v in out.get("visitors") or []:
+        keep_cn(v)   # 방문객 팀명 원문 병기
     for enc in out["encounters"]:
         keep_cn(enc, "title")
         keep_cn_tree(enc["choices"])
@@ -2392,6 +2495,8 @@ def build_rogue6():
             drop_same_cn(ch, "title")
             if ch.get("next"):
                 drop_same_cn_tree(ch["next"]["choices"])
+    for v in out.get("visitors") or []:
+        drop_same_cn(v)
     for enc in out["encounters"]:
         drop_same_cn(enc, "title")
         drop_same_cn_tree(enc["choices"])
