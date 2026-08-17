@@ -2054,9 +2054,22 @@ def build_rogue6():
 
     kind_map = {"n": "normal", "e": "emergency", "b": "boss",
                 "t": "incident", "duel": "duel", "c": "chase"}
-    # 거점전(BATTLE_SAVAGE “居民”据点) 정본 id — PRTS는 t_13~15만 문서화하며,
-    # c_5~7은 같은 levelId를 공유하는 미사용 중복 등록이라 제외한다 (피드백 2026-07-18).
-    SAVAGE_IDS = {"ro6_t_13", "ro6_t_14", "ro6_t_15"}
+    # 거점전(BATTLE_SAVAGE “居民”据点)·추격전(追猎) 정본 집합은 **게임 유물 데이터가 직접
+    # 열거한다** — 손 목록 금지. (사용자 제보 2026-08-17로 판명된 회귀: 2026-07-18에
+    # t_13~15를 거점전으로 하드코딩했지만 실제로는 追猎 목록의 c_5~7과 같은 levelId를
+    # 공유하는 추격전 표시용 중복이었고, 진짜 거점전 t_8~t_11(강매·진퇴의 수렴·마른
+    # 가지·썩은 잎)은 조우(incident)로 잘못 떨어져 있었다.)
+    #   · 거점전 = rogue_6_relic_cargo_11 buffs[0] valueStr — 버프 키 rogue_6_enemy_hp_savage,
+    #     문구 "与“居民”作战时，敌人生命-40%…"
+    #   · 추격전 = rogue_6_relic_artifact_3 buffs[0] valueStr — 문구 "完成1场【追猎】作战后…".
+    #     ro6_b_*_b(보스 특수판)가 섞여 있으므로 보스 id는 boss를 유지한다.
+    savage_ids = set(r["relics"]["rogue_6_relic_cargo_11"]["buffs"][0]["blackboard"][0]["valueStr"].split(","))
+    chase_ids = {s for s in r["relics"]["rogue_6_relic_artifact_3"]["buffs"][0]["blackboard"][0]["valueStr"].split(",")
+                 if not s.startswith("ro6_b_")}
+    # 같은 levelId를 공유하는 표시용 별칭(t_13↔c_5 등)에도 종류를 전파한다 —
+    # 맵 프리뷰 에셋이 t_13~15로 있으므로 표시 id는 유지하고 kind만 정본을 따른다.
+    savage_levels = {r["stages"][s]["levelId"] for s in savage_ids if s in r["stages"]}
+    chase_levels = {r["stages"][s]["levelId"] for s in chase_ids if s in r["stages"]}
     DUP_SKIP = {"ro6_c_5", "ro6_c_6", "ro6_c_7"}
     used_enemies = {}
     stages = []
@@ -2065,7 +2078,9 @@ def build_rogue6():
         if sid in DUP_SKIP:
             continue
         parts = sid.split("_")  # ro6_n_1_1 / ro6_e_1_1 / ro6_b_1 / ro6_t_1 / ro6_duel_1 / ro6_c_1
-        kind = "savage" if sid in SAVAGE_IDS else kind_map.get(parts[1], parts[1])
+        kind = ("savage" if sid in savage_ids or st["levelId"] in savage_levels
+                else "chase" if (sid in chase_ids or st["levelId"] in chase_levels) and parts[1] != "b"
+                else kind_map.get(parts[1], parts[1]))
         zone = int(parts[2]) if parts[1] in ("n", "e") and parts[2].isdigit() else None
         lv = load_level(st["levelId"])
         enemies = []
