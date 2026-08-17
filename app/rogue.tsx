@@ -1872,34 +1872,60 @@ export default function RogueGuide({ includeFuture, initialTopic }: {
     prevHash.current = want;
   }, [view, zoneOpen, stageOpen, enemyOpen, encOpen, relicOpen, activeArc, mounted]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // 「이름」·'이름' 참조 하나를 해석 — 스테이지/소장품/조우/적/테마 항목(암호판 등) 순.
+  // 동명 조우·소장품(IS2 하트 오브 카이룰라)은 문맥 판별: 바로 뒤 콜론이면 단계 라벨=조우,
+  // 그 외(획득·소지·나열)는 아이템 (사용자 확인 2026-08-17). 아무것도 아니면 원문 그대로
+  // — '캠프 수색' 같은 선택지 텍스트는 링크 대상이 없어 평문으로 남는다.
+  const condRef = (name: string, disp: string, after: string, key: string): React.ReactNode => {
+    const s = stageByName.get(name);
+    if (s) return <button key={key} type="button" className="rg-cond-node" onClick={() => setStageOpen(pairOf(s))}>{disp}</button>;
+    const rl = relicByName.get(name);
+    const enc = encByTitle.get(name);
+    if (rl && enc) {
+      const labelish = /^\s*[:：]/.test(after);
+      return labelish
+        ? <button key={key} type="button" className="rg-cond-node" onClick={() => setEncOpen(enc)}>{disp}</button>
+        : <button key={key} type="button" className="rg-cond-node relic" onClick={() => setRelicOpen(rl)}>{disp}</button>;
+    }
+    if (rl) return <button key={key} type="button" className="rg-cond-node relic" onClick={() => setRelicOpen(rl)}>{disp}</button>;
+    if (enc) return <button key={key} type="button" className="rg-cond-node" onClick={() => setEncOpen(enc)}>{disp}</button>;
+    const en = enemyByName.get(name);
+    if (en) return <button key={key} type="button" className="rg-cond-node" onClick={() => setEnemyOpen({ key: en, ctx: dexCtx(en) })}>{disp}</button>;
+    // 암호판·사고·주화 등 테마 고유 항목 (「공허」·「상흔」 — 사용자 지시 2026-08-17)
+    const mech = mechByName.get(name);
+    if (mech) return <button key={key} type="button" className="rg-cond-node relic" onClick={() => setRelicOpen(mech)}>{disp}</button>;
+    return disp;
+  };
+  // 조건 문장 — 「」에 더해 '이름'(홑따옴표)도 참조로 해석한다 (사용자 지적 2026-08-17:
+  // '변화' 같은 조우 참조가 홑따옴표라 매핑이 안 됐다)
   const renderCond = (text: string) => {
-    const parts = text.split(/「([^」]+)」/g);
-    return parts.map((part, i) => {
-      if (i % 2 === 0) return part;
-      const s = stageByName.get(part);
-      if (s) return <button key={i} type="button" className="rg-cond-node" onClick={() => setStageOpen(pairOf(s))}>「{part}」</button>;
-      // 동명 조우·소장품 (IS2 하트 오브 카이룰라 — 소장품 이름을 딴 조우) 문맥 판별
-      // (사용자 확인 2026-08-17): 바로 뒤에 콜론이 오면 단계 라벨 = 조우(노드),
-      // 그 외(획득·소지·나열)는 아이템. 동명이 아니면 각자 그대로.
-      const rl = relicByName.get(part);
-      const enc = encByTitle.get(part);
-      if (rl && enc) {
-        const labelish = /^\s*[:：]/.test(String(parts[i + 1] ?? ""));
-        return labelish
-          ? <button key={i} type="button" className="rg-cond-node" onClick={() => setEncOpen(enc)}>「{part}」</button>
-          : <button key={i} type="button" className="rg-cond-node relic" onClick={() => setRelicOpen(rl)}>「{part}」</button>;
-      }
-      if (rl) return <button key={i} type="button" className="rg-cond-node relic" onClick={() => setRelicOpen(rl)}>「{part}」</button>;
-      if (enc) return <button key={i} type="button" className="rg-cond-node" onClick={() => setEncOpen(enc)}>「{part}」</button>;
-      const en = enemyByName.get(part);
-      if (en) return <button key={i} type="button" className="rg-cond-node" onClick={() => setEnemyOpen({ key: en, ctx: dexCtx(en) })}>「{part}」</button>;
-      return `「${part}」`;
-    });
+    const out: React.ReactNode[] = [];
+    const re = /「([^」]+)」|'([^']+)'/g;
+    let last = 0;
+    let m: RegExpExecArray | null;
+    let k = 0;
+    while ((m = re.exec(text))) {
+      if (m.index > last) out.push(text.slice(last, m.index));
+      const name = m[1] ?? m[2]!;
+      const disp = m[1] !== undefined ? `「${name}」` : `'${name}'`;
+      out.push(condRef(name, disp, text.slice(re.lastIndex, re.lastIndex + 4), `c${k++}`));
+      last = re.lastIndex;
+    }
+    if (last < text.length) out.push(text.slice(last));
+    return out;
   };
   // 조우 선택지 보상의 「소장품명」을 소장품 상세 모달로 여는 링크로 (사용자 요청 2026-07-20).
   // 소장품이 아닌 「」 텍스트는 그대로 둔다.
   // 「」 없는 평문 속 소장품명도 링크 — PRTS 안내 노트의 "No.221 하트 오브 카이룰라 (…)"류
   // (사용자 지시 2026-08-17). 오탐 방지: 4자 이상 이름만, 긴 이름 우선 매칭.
+  // 테마 고유 시스템(암호판·사고·주화·부품 등) 이름 → 항목 — 「공허」·「상흔」 같은
+  // 암호판 참조도 상세로 연결 (사용자 지시 2026-08-17). 소장품과 동명이면 소장품 우선.
+  const mechByName = useMemo(() => {
+    const m = new Map<string, InvItem>();
+    for (const mech of data.mechanics ?? []) for (const it of mech.items) if (!m.has(it.name)) m.set(it.name, it);
+    for (const s of data.scraps ?? []) if (!m.has(s.name)) m.set(s.name, s);
+    return m;
+  }, [active]); // eslint-disable-line react-hooks/exhaustive-deps
   const relicNamesByLen = useMemo(
     () => [...relicByName.keys()].filter((n) => n.length >= 4).sort((a, b) => b.length - a.length),
     [relicByName]);
