@@ -2115,7 +2115,7 @@ const D: Record<string, Pair> = {
   // ── 통합전략 가이드 탭 ──────────────────────────────────────────────────────
   "통합전략 가이드": ["Integrated Strategies Guide", "統合戦略ガイド"],
   // 테마(토픽) 이름 — 공식 EN/JP 게임 데이터(roguelike_topic_table) 기준. rogue_6(침몰자의
-  // 흑류수해)은 아직 EN/JP 미출시(CN 선행)라 사전 미등록 → 한국어 폴백.
+  // 블랙플로우)은 아직 EN/JP 미출시(CN 선행)라 사전 미등록 → 한국어 폴백.
   "팬텀 & 크림슨 솔리테어": ["Phantom & Crimson Solitaire", "ファントムと緋き貴石"],
   "미즈키 & 카이룰라 아버": ["Mizuki & Caerula Arbor", "ミヅキと紺碧の樹"],
   "탐험가의 은빛 서리 끝자락": ["Expeditioner's Jǫklumarkar", "探索者と銀氷の果て"],
@@ -2161,7 +2161,7 @@ const D: Record<string, Pair> = {
   "인식된 항목을 모두 보유 리스트에서 뺍니다": ["Remove every recognized item from your inventory", "認識されたアイテムをすべて所持リストから外します"],
   "이 탭의 보유 항목을 전부 비웁니다 — 계속할까요?": ["This clears every saved item in this tab — continue?", "このタブの所持アイテムをすべて削除します — 続行しますか？"],
   "테마 변경": ["Change theme", "テーマ変更"],
-  "침몰자의 흑류수해": ["Blackflow Forest of the Sunken", "沈淪者の黒流樹海"],
+  "침몰자의 블랙플로우": ["Blackflow Forest of the Sunken", "沈淪者の黒流樹海"],
   "험난한 길": ["Dreadful Foe", "悪路凶敵"],
   "시련": ["Trial", "試練"],
   "메아리": ["Echoes", "残響"],
@@ -2436,7 +2436,7 @@ const D: Record<string, Pair> = {
   "지금 보고 있는 테마를 우선합니다 — 사미 가이드를 보며 찍으면 사미로 판정됩니다.": ["The theme you're currently viewing takes priority — capture while on the Sami guide and it's judged as Sami.", "今見ているテーマが優先されます — サーミのガイドを見ながら撮ればサーミと判定されます。"],
   "다른 테마의 확실한 증거(고유 작전명·유물명 등)가 있으면 그 테마로 이동합니다.": ["Clear evidence of another theme (unique operation or relic names) moves you to that theme instead.", "他テーマの確実な証拠（固有の作戦名・秘宝名など）があればそのテーマへ移動します。"],
   "화면만으로 테마를 알 수 없으면(분대 이름은 테마 공통) 선택지가 뜹니다.": ["If the theme can't be told from the screen alone (squad names are shared across themes), you'll get a choice.", "画面だけでテーマが判別できない場合（分隊名はテーマ共通）は選択肢が表示されます。"],
-  "중국어 화면은 자동으로 침몰자의 흑류수해(CN 선행)로 판정됩니다.": ["Chinese-language screens are automatically judged as Blackflow Forest of the Sunken (the CN-first theme).", "中国語の画面は自動的に「沈淪者の黒流樹海」（CN先行テーマ）と判定されます。"],
+  "중국어 화면은 자동으로 침몰자의 블랙플로우(CN 선행)로 판정됩니다.": ["Chinese-language screens are automatically judged as Blackflow Forest of the Sunken (the CN-first theme).", "中国語の画面は自動的に「沈淪者の黒流樹海」（CN先行テーマ）と判定されます。"],
   "한국어 클라이언트 화면 전용입니다. 캡처가 선명할수록 정확합니다.": ["Korean game client screens only. The sharper the capture, the more accurate.", "韓国語クライアントの画面専用です。キャプチャが鮮明なほど正確です。"],
   // ── 스샷 레이더 /stories 설치 (전문 대사 검색, 2026-07-24) ───────────────────
   "게임 스토리 대화 화면의 스크린샷을 인식해, 그 대사가 나오는 이벤트 전문의 해당 에피소드로 바로 이동시켜 주는 기능입니다.": ["Recognizes screenshots of in-game story dialogue and jumps straight to the episode of the full script where that line appears.", "ゲームのストーリー会話画面のスクリーンショットを認識し、そのセリフが登場するイベント全文の該当エピソードへ直接移動させる機能です。"],
@@ -2451,7 +2451,7 @@ const D: Record<string, Pair> = {
   "버튼이 켜져 있는 동안만 클립보드를 감시합니다. 스토리로 이동하면 자동으로 꺼지는 일회성 스캔입니다.": ["The clipboard is only watched while the button is on. It's a one-shot scan that turns itself off once you've moved to the story.", "ボタンがオンの間だけクリップボードを監視します。ストーリーへ移動すると自動でオフになる、一回限りのスキャンです。"],
   "참고": ["Notes", "備考"],
   "첫 인식은 인식 엔진을 내려받느라 몇 초 더 걸립니다. 이후에는 빨라집니다.": ["The first recognition takes a few extra seconds to download the engine; it's faster afterwards.", "初回の認識はエンジンのダウンロードで数秒余分にかかります。以降は速くなります。"],
-  "지금 보고 있는 언어(한국어·영어·일본어)의 게임 화면을 인식하며, CN 선행 테마(흑류수해)는 중국어 화면도 인식합니다. 캡처가 선명할수록 정확합니다.": ["It reads game screens in the language you're viewing (Korean, English, or Japanese); the CN-first theme (Blackflow Forest of the Sunken) also reads Chinese screens. The sharper the capture, the more accurate.", "表示中の言語（韓国語・英語・日本語）のゲーム画面を認識し、CN先行テーマ（黒流樹海）は中国語画面も認識します。キャプチャが鮮明なほど正確です。"],
+  "지금 보고 있는 언어(한국어·영어·일본어)의 게임 화면을 인식하며, CN 선행 테마(블랙플로우)는 중국어 화면도 인식합니다. 캡처가 선명할수록 정확합니다.": ["It reads game screens in the language you're viewing (Korean, English, or Japanese); the CN-first theme (Blackflow Forest of the Sunken) also reads Chinese screens. The sharper the capture, the more accurate.", "表示中の言語（韓国語・英語・日本語）のゲーム画面を認識し、CN先行テーマ（黒流樹海）は中国語画面も認識します。キャプチャが鮮明なほど正確です。"],
   "게임 스크린샷을 인식해 이 가이드의 해당 정보로 바로 이동합니다 — 분대·유물·작전·조우 등": ["Recognizes a game screenshot and jumps straight to that info in this guide — squads, relics, operations, encounters, and more", "ゲームのスクリーンショットを認識してこのガイドの該当情報へ直行します — 分隊・秘宝・作戦・遭遇など"],
   "공개모집 화면 스크린샷을 인식해 태그를 자동으로 선택합니다": ["Recognizes a recruitment-screen screenshot and selects the tags automatically", "公開求人画面のスクリーンショットを認識してタグを自動選択します"],
   "태그를 인식해 선택했습니다.": ["Tags recognized and selected.", "タグを認識して選択しました。"],
@@ -2627,7 +2627,7 @@ const D: Record<string, Pair> = {
     "The button only appears in desktop browsers that support screen sharing (Chrome, Edge and friends). On mobile, use the screenshot radar.",
     "画面共有に対応したデスクトップブラウザ（Chrome・Edgeなど）でのみボタンが表示されます。モバイルではスクショレーダーをお使いください。",
   ],
-  "한국어·영어·일본어 게임 화면을 인식하며, 중국 서버 선행 테마(흑류수해)는 중국어 화면도 인식합니다.": [
+  "한국어·영어·일본어 게임 화면을 인식하며, 중국 서버 선행 테마(블랙플로우)는 중국어 화면도 인식합니다.": [
     "It reads Korean, English and Japanese game screens, and Chinese ones too for the CN-first theme (Sarkaz-flooded waters).",
     "韓国語・英語・日本語のゲーム画面を認識し、中国サーバー先行テーマ（黒流樹海）は中国語画面も認識します。",
   ],

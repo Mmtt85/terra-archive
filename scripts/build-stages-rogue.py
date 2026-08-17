@@ -50,9 +50,9 @@ NO_ZONE = {"ko": "구역 무관", "en": "Any zone", "ja": "ゾーン無関係"}
 # 이름에 붙여 두면 필터 라벨·카드·**검색어**가 한꺼번에 통칭을 먹는다 (도감 검색이 이벤트
 # 이름을 포함하므로 "사미"로 검색하면 IS3 작전이 잡힌다).
 # ⚠ **KR에만 붙인다** — 이건 한국 커뮤니티 통칭이고, EN/JA의 통칭은 확인된 바가 없다.
-# ⚠ 통칭이 이미 정식 이름 안에 있으면 괄호를 붙이지 않는다 — IS6 "침몰자의 흑류수해 (흑류수해)"는
+# ⚠ 통칭이 이미 정식 이름 안에 있으면 괄호를 붙이지 않는다 — IS6 "침몰자의 블랙플로우 (블랙플로우)"는
 #   군더더기다. 목록 순서는 아래 stageFilterTree가 출시순(IS1→IS6)으로 잡는다.
-ALIAS_KO = {1: "팬텀", 2: "미즈키", 3: "사미", 4: "살카즈", 5: "쉐이", 6: "흑류수해"}
+ALIAS_KO = {1: "팬텀", 2: "미즈키", 3: "사미", 4: "살카즈", 5: "쉐이", 6: "블랙플로우"}
 
 # 구역 = 그 테마의 층. /rogue의 zoneBadge와 **같은 표기**를 쓴다 (app/rogue.tsx `{n}층`).
 # IS5의 시비경·금석경처럼 num이 90/91인 특수 구역은 층이 아니므로 이름만 둔다.
@@ -61,7 +61,7 @@ FLOOR_FMT = {"ko": "{n}층 {name}", "en": "F{n} {name}", "ja": "{n}層 {name}"}
 
 
 def load_topic(n, suffix):
-    """로케일 파일이 없으면 KR로 폴백 — IS6(흑류수해)는 CN 선행이라 공식 EN/JA 텍스트가
+    """로케일 파일이 없으면 KR로 폴백 — IS6(블랙플로우)는 CN 선행이라 공식 EN/JA 텍스트가
     아예 없다. /rogue도 전 로케일이 rogue6.json을 공유하므로 같은 규칙을 쓴다."""
     path = os.path.join(DATA, f"rogue{n}{suffix}.json")
     if not os.path.exists(path):
@@ -91,7 +91,7 @@ def build(loc, suffix):
         d = load_topic(n, suffix)
         alias = ALIAS_KO.get(n) if loc == "ko" else None
         if alias and alias in d["name"]:
-            alias = None       # 이름에 이미 들어 있으면 괄호는 군더더기 (IS6 흑류수해)
+            alias = None       # 이름에 이미 들어 있으면 괄호는 군더더기 (IS6 블랙플로우)
         ev = intern(f'{d["name"]} ({alias})' if alias else d["name"], ev_list, ev_ix)
         zone_of = {}
         for z in d.get("zones") or []:
@@ -177,7 +177,7 @@ if mismatched:
           f"stageMap()에 파일명을 실어야 한다: {sorted(set(mismatched))[:5]}", file=sys.stderr)
 
 # 미번역 감시 — EN/JA에 한글이 남아 있으면 KR 폴백이다.
-# **IS6(흑류수해)는 예외** — CN 선행이라 공식 EN/JA 텍스트가 없다 (위 load_topic 주석).
+# **IS6(블랙플로우)는 예외** — CN 선행이라 공식 EN/JA 텍스트가 없다 (위 load_topic 주석).
 HANGUL = re.compile(r"[가-힣]")
 for loc in ("en", "ja"):
     left = [s["code"] for s in by_loc[loc]["stages"]

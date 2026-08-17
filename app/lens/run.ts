@@ -51,7 +51,7 @@ const OCR_LANG: Record<string, string> = { ko: "kor", en: "eng", ja: "jpn" };
 export const ocrLangFor = (locale: string): string => OCR_LANG[locale] ?? "kor";
 
 // 로케일별 통합전략 데이터 모듈 — 사이트의 loadersFor(locale)와 같은 파일 세트.
-// rogue_6(흑류수해)은 CN 선행이라 공식 EN/JA가 없어 전 로케일이 rogue6.json(KR/CN 병기)을 공유 —
+// rogue_6(블랙플로우)은 CN 선행이라 공식 EN/JA가 없어 전 로케일이 rogue6.json(KR/CN 병기)을 공유 —
 // buildIndex가 EN/JA 인덱스에선 rogue_6의 ko 이름/본문을 비우고 cnN(중국어 패스)만 남긴다.
 function rogueModules(locale: string): Promise<{ default: unknown }>[] {
   if (locale === "en") return [
@@ -79,7 +79,7 @@ const CN_MODULES: Record<string, () => Promise<{ default: unknown }>> = {
 };
 
 // 매칭 데이터 지연 로드 — 로케일 + 중섭 테마별로 캐시 (recruit는 rogue*.json 2.9MB를 안 내려받는다).
-// cnTopic이 있으면 그 테마의 CN 이름을 얹어 중국어 패스가 흑류수해 말고도 잡을 수 있게 한다
+// cnTopic이 있으면 그 테마의 CN 이름을 얹어 중국어 패스가 블랙플로우 말고도 잡을 수 있게 한다
 // (2026-08-13 사용자 지적: "흑류수해 말고 다른 록라 중섭으로 바꾸면 중국어 인식 못하지?" — 맞았다).
 // 캐시 키가 로케일 → 로케일×중섭테마로 늘었다(최대 3×6). 인덱스 구축은 트라이그램 계산이라
 // 공짜가 아니지만, 스샷 레이더·PRTS 링크를 켠 동안에만 불리고 테마를 바꿔가며 인식하는
@@ -185,7 +185,7 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
     const ctx = { context: { topic, lock: opts?.lock }, norm };
     oc = analyzeLines(lines, index, ctx);
     // 중국어(CN 클라) 분기 — chi_sim으로 cn 이름을 매칭한다. 이미지가 고정이라 zh 패스는
-    // 결정적 → 한 번만 돌리고 캐시(zhRan). 예전엔 "cn 화면은 무조건 흑류수해"였지만,
+    // 결정적 → 한 번만 돌리고 캐시(zhRan). 예전엔 "cn 화면은 무조건 블랙플로우"였지만,
     // 중섭 탭을 켠 테마도 이제 여기서 잡힌다 (2026-08-13 — 아래 zhPossible 참조).
     let zhRan = false, zhHit = false;
     const tryZh = async () => {
@@ -193,14 +193,14 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
       zhRan = true;
       const zlines = await session.zh();
       // 문맥(테마·잠금)을 한국어 패스와 똑같이 넘긴다 — 시리즈 공통 유물의 중국어 이름이
-      // IS5·IS6에 154개 겹쳐서, 문맥 없이는 중섭 IS5 화면이 흑류수해로 샌다 (2026-08-13).
+      // IS5·IS6에 154개 겹쳐서, 문맥 없이는 중섭 IS5 화면이 블랙플로우로 샌다 (2026-08-13).
       const zoc = analyzeChinese(zlines, index, { topic, lock: opts?.lock });
       console.debug(`[lens] 중국어 패스: OCR ${zlines.length}줄 → ${zoc.target.kind}/${zoc.section ?? "-"}`);
       if (zoc.target.kind !== "none") { oc = zoc; zhHit = true; lines = zlines; }
     };
     // 1차 게이트 — KR(kor)은 중국어에서 무신호라 완전 무신호일 때만. EN/JA는 프라이머리(특히
     // jpn)가 한자를 kanji로 읽어 약한 표·tie를 낼 수 있어(cn 화면), 확신 goto가 아니면 시도한다.
-    // 테마 고정 시에는 그 테마가 중국어일 수 있을 때만 zh 패스를 돈다 — 흑류수해(CN 선행)
+    // 테마 고정 시에는 그 테마가 중국어일 수 있을 때만 zh 패스를 돈다 — 블랙플로우(CN 선행)
     // 이거나, **중섭 탭을 켠 그 테마**일 때. 2026-08-13 이전엔 rogue_6만 통과시켜서,
     // IS1~5를 중섭으로 놓고 PRTS 링크를 걸면 chi_sim 패스가 아예 안 돌았다(사용자 지적).
     const zhPossible = !opts?.lock || topic === "rogue_6"

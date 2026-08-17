@@ -1480,12 +1480,12 @@
   "ja": "メカニスト特務記章"
  },
  "在【沉沦者的黑流树海】中，攻击被自身或召唤物阻挡的敌人时攻击力提升至150%": {
-  "ko": "[침몰자의 흑류수해]에서, 자신 또는 소환물이 저지 중인 적을 공격할 때 공격력이 150%까지 상승",
+  "ko": "[침몰자의 블랙플로우]에서, 자신 또는 소환물이 저지 중인 적을 공격할 때 공격력이 150%까지 상승",
   "en": "In [Integrated Strategies: 沉沦者的黑流树海], ATK increases to 150% when attacking enemies blocked by this unit or its summons",
   "ja": "【沉沦者的黑流树海】では、自身または召喚ユニットがブロック中の敵を攻撃する際、攻撃力が150%まで上昇"
  },
  "可以使用一个持续30秒的结构性原理，拥有独立的再部署时间；在【沉沦者的黑流树海】中，结构性原理的持续时间无限": {
-  "ko": "30초 동안 지속되는 '구조적 원리' 1기를 사용할 수 있으며, 독립적인 재배치 시간을 가짐. [침몰자의 흑류수해]에서는 '구조적 원리'의 지속 시간이 무제한",
+  "ko": "30초 동안 지속되는 '구조적 원리' 1기를 사용할 수 있으며, 독립적인 재배치 시간을 가짐. [침몰자의 블랙플로우]에서는 '구조적 원리'의 지속 시간이 무제한",
   "en": "Can use 1 Structural Principle that lasts 30 seconds, with an independent redeployment time; in [Integrated Strategies: 沉沦者的黑流树海], the Structural Principle's duration becomes unlimited",
   "ja": "30秒間持続する「構造的原理」を1体使用可能。独立した再配置時間を持つ。【沉沦者的黑流树海】では「構造的原理」の持続時間が無制限"
  },
@@ -1495,7 +1495,7 @@
   "ja": "持続時間無制限"
  },
  "可以使用一个持续30秒的结构性原理，拥有独立的再部署时间；在【沉沦者的黑流树海】中，结构性原理的持续时间无限，5秒内未受到伤害后每秒获得4%最大生命的屏障（上限为最大生命的20%）": {
-  "ko": "30초 동안 지속되는 '구조적 원리' 1기를 사용할 수 있으며, 독립적인 재배치 시간을 가짐. [침몰자의 흑류수해]에서는 '구조적 원리'의 지속 시간이 무제한이 되며, 5초 동안 대미지를 받지 않으면 초당 최대 HP 4%의 보호막 획득(최대 HP의 20%까지)",
+  "ko": "30초 동안 지속되는 '구조적 원리' 1기를 사용할 수 있으며, 독립적인 재배치 시간을 가짐. [침몰자의 블랙플로우]에서는 '구조적 원리'의 지속 시간이 무제한이 되며, 5초 동안 대미지를 받지 않으면 초당 최대 HP 4%의 보호막 획득(최대 HP의 20%까지)",
   "en": "Can use 1 Structural Principle that lasts 30 seconds, with an independent redeployment time; in [Integrated Strategies: 沉沦者的黑流树海], its duration becomes unlimited, and after taking no damage for 5 seconds it gains a barrier equal to 4% of Max HP per second (up to 20% of Max HP)",
   "ja": "30秒間持続する「構造的原理」を1体使用可能。独立した再配置時間を持つ。【沉沦者的黑流树海】では持続時間が無制限となり、5秒間ダメージを受けなかった場合、毎秒最大HPの4%のバリアを獲得（上限は最大HPの20%）"
  },
@@ -5575,7 +5575,7 @@
   "ja": "川沿いの谷の近くで、私は負傷したアフリッサさんに出会った。幸い、彼女はその時点で黒流に侵されてはいなかった。傷の応急処置を終えると、私たちは別れた。"
  },
  "当时，我接受了一支哥伦比亚探险队的邀请，作为小队的信息联络员，随他们前往黑流树海附近进行调查。谁知道这一去，就遇上了波及整个玻利瓦尔的多索雷斯动乱和大行军......小队也因此被冲散。": {
-  "ko": "당시 저는 컬럼비아 탐험대의 초청을 받아, 대원들의 정보 연락 담당으로서 그들을 따라 흑류수해 인근으로 조사를 나갔습니다. 그런데 그 길에 볼리바르 전역을 뒤흔든 도솔레스 동란과 대행군을 만나게 될 줄이야…… 탐험대도 그 바람에 뿔뿔이 흩어지고 말았죠.",
+  "ko": "당시 저는 컬럼비아 탐험대의 초청을 받아, 대원들의 정보 연락 담당으로서 그들을 따라 블랙플로우 인근으로 조사를 나갔습니다. 그런데 그 길에 볼리바르 전역을 뒤흔든 도솔레스 동란과 대행군을 만나게 될 줄이야…… 탐험대도 그 바람에 뿔뿔이 흩어지고 말았죠.",
   "en": "At the time, I had accepted an invitation from a Columbian expedition, joining them as the team's information liaison to survey the area near the Blackflow Forest. Who could have known that the trip would run headlong into the Dossoles unrest and the Great March that swept all of Bolívar... The team was scattered as a result.",
   "ja": "当時、私はクルビアの探検隊から誘いを受け、隊の情報連絡係として彼らに同行し、黒流樹海の付近へ調査に赴きました。まさかその道中で、ボリバル全土を巻き込んだドッソレス動乱と大行軍に出くわすとは……隊もそのせいで散り散りになってしまいました。"
  },
@@ -8175,7 +8175,7 @@
   "ja": "あたし口下手だからうまく言えないんだけど……ジンオウガとの戦いは、心の中の何かが初めて満たされた感じがしたんだ。だから戻ってからも、ああいう刺激を探したくなっちゃって――わかったよ、あたしが悪かった、ポプカル。こんなことで怒らせちゃいけなかったよね。"
  },
  "黑流树海、焚风热土、萨米冰原——听说这些地方有不少厉害的怪物值得挑战。不过一个人去好无聊，得想个办法拉上大伙一起。偷偷改一下梓兰姐的团建申请表好了！": {
-  "ko": "흑류수해, 푄 고온지대, 사미 빙원—— 이런 데엔 도전할 만한 굉장한 괴물이 잔뜩 있다더라고. 그치만 혼자 가면 심심하니까, 다들 끌고 갈 방법을 궁리해야지. 오키드 언니의 단합 행사 신청서를 몰래 좀 고쳐 놓을까!",
+  "ko": "블랙플로우, 푄 고온지대, 사미 빙원—— 이런 데엔 도전할 만한 굉장한 괴물이 잔뜩 있다더라고. 그치만 혼자 가면 심심하니까, 다들 끌고 갈 방법을 궁리해야지. 오키드 언니의 단합 행사 신청서를 몰래 좀 고쳐 놓을까!",
   "en": "The Blackflow Forest, the Foehn Hotlands, the Sami snowfields—I hear all those places have plenty of monsters worth taking on. But going alone is boring, so I've gotta figure out how to drag everyone along. Maybe I'll quietly rewrite Ms. Orchid's team-outing application form!",
   "ja": "黒流樹海、フェーンホットランド、サーミの氷原――こういう場所には挑みがいのあるモンスターがたくさんいるらしいんだ。でも一人で行くのは退屈だし、みんなを巻き込む方法を考えなきゃ。オーキッドの姉さんの親睦会申請書、こっそり書き換えちゃおうかな！"
  },

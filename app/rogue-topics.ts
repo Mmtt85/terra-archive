@@ -14,7 +14,7 @@ export const TOPICS: { id: string; name: string; ready?: boolean; future?: boole
   { id: "rogue_3", name: "탐험가의 은빛 서리 끝자락", ready: true },
   { id: "rogue_4", name: "살카즈의 영겁 기담", ready: true },
   { id: "rogue_5", name: "쉐이의 기이한 계원", ready: true },
-  { id: "rogue_6", name: "침몰자의 흑류수해", ready: true, future: true },
+  { id: "rogue_6", name: "침몰자의 블랙플로우", ready: true, future: true },
 ];
 
 // 토픽 URL 슬러그 — /rogue/is6 (rogue_1도 경로를 갖는다)

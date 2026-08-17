@@ -11817,7 +11817,7 @@ html.rg-theme body,
 html.rg-theme main.site-main {
   background: linear-gradient(180deg, #120810, #150a0e 220px, #170b0f);
 }
-/* rogue_6 침몰자의 흑류수해 — 심해 수림 스킨 (인게임 테마: 짙은 청록 + 시안 발광 + 금빛 스크립트) */
+/* rogue_6 침몰자의 블랙플로우 — 심해 수림 스킨 (인게임 테마: 짙은 청록 + 시안 발광 + 금빛 스크립트) */
 html.rg-theme.rg6 body,
 html.rg-theme.rg6 main.site-main {
   background: linear-gradient(180deg, #060d0e, #0a1413 220px, #0b1512);
@@ -12457,7 +12457,7 @@ html.dark.rg-theme.rg6 .site-header {
 }
 /* 한섭/중섭 미니 토글 — 테마 변경 버튼 우상단에 겹치는 형제 요소 (사용자 요청 2026-08-04:
    독립 탭 줄 → "테마변경 버튼 안에 작게"). 버튼 안에 버튼은 못 넣으므로 absolute로 올린다.
-   흑류수해(KR 미출시)에선 한국섭 버튼이 disabled */
+   블랙플로우(KR 미출시)에선 한국섭 버튼이 disabled */
 /* 화살표(우측 세로 중앙) 왼쪽에 나란히 — 위에 얹으면 화살표를 가린다 (사용자 지적) */
 .rg-serversel {
   position: absolute;

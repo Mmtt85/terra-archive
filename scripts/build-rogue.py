@@ -368,7 +368,7 @@ def extract_encounters(choice_scenes, choices, tree_overrides=None, items=None):
     """조우 씬을 계단식 트리로 추출 (사용자 요청 2026-07-19).
 
     선택지(choice)의 `nextSceneId`가 후속 씬을 가리키고, 후속 씬은 부모와 같은 제목에
-    새 지문·새 선택지를 갖는 다단계 구조다(흑류수해 최대 3단). choice id에서 끝 `_N`을
+    새 지문·새 선택지를 갖는 다단계 구조다(블랙플로우 최대 3단). choice id에서 끝 `_N`을
     떼면 그 선택지가 속한 씬 id가 나온다(choice_ro6_bat1_1 → scene_ro6_bat1(_enter),
     choice_ro6_bat1_1_2 → scene_ro6_bat1_1) — 이 정확 바인딩으로 트리를 복원한다.
 
@@ -851,7 +851,7 @@ def build_topic(tid="rogue_1", loc=None):
     loc="en"|"ja"면 텍스트 테이블만 글로벌/일본 서버 데이터로 바꿔 rogueN.<loc>.json 생성
     — 수치(레벨 파일·enemy_database)는 서버 공통이라 KR 캐시를 그대로 쓴다.
     loc="cn"이면 /rogue 중국섭 탭용 rogueN.cn.json — CN 텍스트 테이블로 같은 구조를
-    만든 뒤 cn_koreanize()가 흑류수해처럼 한국어 표기 + 중국어 원문 병기로 바꾼다."""
+    만든 뒤 cn_koreanize()가 블랙플로우처럼 한국어 표기 + 중국어 원문 병기로 바꾼다."""
     ronum = tid.split("_")[1]  # "1"~"5"
     branch = {"en": "en", "ja": "jp", "cn": "cn"}.get(loc, "kr")
     # 계산 라벨(공격방식·면역 등)의 표기 로케일 — cn 빌드는 한국어 라벨(None)로 두면
@@ -1645,7 +1645,7 @@ def build_topic(tid="rogue_1", loc=None):
         return v
     out = sanitize(out)
 
-    if loc == "cn":  # 중국섭 변형 — 한국어 표기 + 중국어 원문 병기 (흑류수해와 같은 꼴)
+    if loc == "cn":  # 중국섭 변형 — 한국어 표기 + 중국어 원문 병기 (블랙플로우와 같은 꼴)
         out = cn_koreanize(ronum, out)
 
     fname = f"rogue{ronum}.{loc}.json" if loc else f"rogue{ronum}.json"
@@ -1800,7 +1800,7 @@ def cn_koreanize(ronum, out):
                     if len(sc["choices"]) == len(ks["choices"]):
                         for c, kc in zip(sc["choices"], ks["choices"]):
                             put_txt(c, kc, ("title", "desc", "branch", "note"))
-    # 토픽 이름·부제 — 한국어 공식 명칭으로, 중국어 원문은 cnName (흑류수해와 같은 꼴)
+    # 토픽 이름·부제 — 한국어 공식 명칭으로, 중국어 원문은 cnName (블랙플로우와 같은 꼴)
     out["cnName"] = out["name"]
     if isinstance(kr.get("name"), str) and kr["name"].strip():
         out["name"] = kr["name"]
@@ -1920,7 +1920,7 @@ def load_auto_tr_details():
     return tr
 
 
-# ── rogue_6 (침몰자의 흑류수해) — CN 선행 데이터 빌드 ─────────────────────────
+# ── rogue_6 (침몰자의 블랙플로우) — CN 선행 데이터 빌드 ─────────────────────────
 # KR 미출시(2026-07)라 cn 브랜치에서 빌드하고, 문자열은 3단 번역으로 한국어화한다:
 #   ① 같은 id가 KR 데이터에 있는 것(기존 적, 이전 테마 유물 등)은 KR 공식 번역 자동 매핑
 #   ② 나머지는 scripts/rogue6-ko.json (CN 원문 → 한국어, AI 집필) 오버레이
@@ -2419,7 +2419,7 @@ def build_rogue6():
 
     out = {
         "id": "rogue_6",
-        "name": "침몰자의 흑류수해",  # 비공식 번역명 (KR 미출시)
+        "name": "침몰자의 블랙플로우",  # 비공식 번역명 (KR 미출시)
         "cnName": topic["name"],
         "future": True,
         "line": topic.get("lineText"),

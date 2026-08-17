@@ -13,7 +13,7 @@ import type { Worker } from "tesseract.js";
 // 로케일별로 필요한 것만 지연 로드하고 lang별로 캐시한다 (JA 사이트는 jpn만 내려받음).
 const primaryWorkers = new Map<string, Promise<Worker>>();
 let digitWorkerP: Promise<Worker> | null = null; // 난이도 배지 숫자 전용 (eng — kor은 숫자를 한글로 읽음)
-let chiWorkerP: Promise<Worker> | null = null;   // 중국어(흑류수해 CN 클라) 전용 — 필요할 때만 지연 로드
+let chiWorkerP: Promise<Worker> | null = null;   // 중국어(블랙플로우 CN 클라) 전용 — 필요할 때만 지연 로드
 
 /** lang(kor|eng|jpn) 프라이머리 워커 — 화면 언어에 맞춰 run.ts가 고른다. */
 function getWorker(lang = "kor"): Promise<Worker> {
@@ -61,7 +61,7 @@ function getDigitWorker(): Promise<Worker> {
 }
 
 // 중국어 전용 워커 — kor 모델은 중국어 화면에서 한자를 한 글자도 못 읽으므로(실측: 전부
-// 한글 쓰레기, 한자 0자) 흑류수해 CN 스크린샷은 chi_sim으로 별도 패스를 돌린다 (2026-07-24)
+// 한글 쓰레기, 한자 0자) 블랙플로우 CN 스크린샷은 chi_sim으로 별도 패스를 돌린다 (2026-07-24)
 function getChiWorker(): Promise<Worker> {
   if (!chiWorkerP) {
     chiWorkerP = (async () => {
@@ -99,7 +99,7 @@ export type OcrSession = {
   chips(): Promise<string[]>;
   /** PSM3(auto) 전체 프레임 — 1차로 판정 안 될 때만 폴백 */
   auto(): Promise<string[]>;
-  /** 중국어(chi_sim) PSM11 전체 프레임 — kor 매칭이 무신호일 때만 (흑류수해 CN 스크린샷) */
+  /** 중국어(chi_sim) PSM11 전체 프레임 — kor 매칭이 무신호일 때만 (블랙플로우 CN 스크린샷) */
   zh(): Promise<string[]>;
   /** 좌하단 난이도 배지(육각형 숫자) — 있으면 0~18 반환, 없으면 null */
   difficulty(): Promise<number | null>;

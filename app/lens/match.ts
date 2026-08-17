@@ -61,7 +61,7 @@ type Entry = {
   id: string; name: string; nameN: string; bodyN: string; bodyTG: Set<string>;
   shortLatin: boolean; // 짧은 순라틴 이름(2~5자) — 부분문자열 오탐이 심해 정확 일치만 허용
   arc?: string;
-  cnN?: string; // 중국어 원문 이름 정규화 — CN 선행 토픽(흑류수해) + 중섭 탭을 켠 토픽
+  cnN?: string; // 중국어 원문 이름 정규화 — CN 선행 토픽(블랙플로우) + 중섭 탭을 켠 토픽
   // 그 항목을 가리키는 **다른** 중국어 문자열 — 지금은 조우 선택지 제목이다.
   // 조우 화면은 제목이 좌하단 작은 장식 서체고 화면을 채우는 큰 글씨는 선택지 버튼이라,
   // 이름만 보면 아무것도 못 잡는다 (2026-08-13 사용자 제보 스샷: 深渊入口 조우).
@@ -188,7 +188,7 @@ export function analyzeRecruit(rawLines: string[], recruitTags: string[]): LensO
 }
 
 // ── 인덱스 구축 — rogue*.json 형태의 토픽 데이터에서 ────────────────────────
-// norm = 이름/본문 정규화기(로케일별). cnN(흑류수해 CN 원문)은 로케일 무관하게 항상 normTextCn.
+// norm = 이름/본문 정규화기(로케일별). cnN(블랙플로우 CN 원문)은 로케일 무관하게 항상 normTextCn.
 // EN/JA 인덱스라도 rogue_6은 KR/CN 병기 파일이라, ko 이름은 norm에서 비게 되지만 cnN이 남아
 // 중국어 패스(analyzeChinese)가 rogue_6을 잡는다 — 그래서 cnN만 있어도 엔트리를 버리지 않는다.
 // cnOnlyTopics — **중국어 이름만** 색인할 문서(rogueN.cn.json). 중섭 탭을 켠 테마에 대해
@@ -196,7 +196,7 @@ export function analyzeRecruit(rawLines: string[], recruitTags: string[]): LensO
 //   · 같은 테마가 topics에도 있어 이름을 또 넣으면 항목이 두 벌이 돼 KR/EN 패스의 표가 겹친다
 //   · .cn.json의 name은 **한국어**(KR 공식 번역 오버레이)라, EN/JA 인덱스에 넣으면 화면 언어와
 //     어긋난 이름이 섞인다
-// 이렇게 하면 한섭·흑류수해 경로의 색인 결과는 한 글자도 안 바뀐다.
+// 이렇게 하면 한섭·블랙플로우 경로의 색인 결과는 한 글자도 안 바뀐다.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function buildIndex(topics: any[], norm: Normalizer = normText, cnOnlyTopics: any[] = []): LensIndex {
   const entries: Entry[] = [];
@@ -229,7 +229,7 @@ export function buildIndex(topics: any[], norm: Normalizer = normText, cnOnlyTop
     // 단일=유물 모달, 다중=모아보기가 동일하게 동작한다
     for (const t of d.tools ?? []) add("relic", t.id, t.name, `${t.usage || ""} ${t.desc || ""}`, undefined, t.cn);
     for (const c of d.capsules ?? []) add("capsule", c.id, c.name, `${c.usage || ""} ${c.desc || ""}`, undefined, c.cn);
-    // 부품(零件) — 흑류수해 고유, 전시관 scrap 탭. 상인 판매 화면에 여럿 나온다 (2026-07-24)
+    // 부품(零件) — 블랙플로우 고유, 전시관 scrap 탭. 상인 판매 화면에 여럿 나온다 (2026-07-24)
     for (const s of d.scraps ?? []) add("scrap", s.id, s.name, `${s.usage || ""} ${s.desc || ""}`, undefined, s.cn);
     for (const e of d.encounters ?? []) {
       const choices = (e.choices ?? []).map((c: { title?: string; desc?: string }) => `${c.title || ""} ${c.desc || ""}`).join(" ");
@@ -265,7 +265,7 @@ const SECTION_NAV: Record<string, { view: string; arcTab?: string; modalType?: s
   band: { view: "archive", arcTab: "band" },
   tool: { view: "archive", arcTab: "tool" },
   capsule: { view: "archive", arcTab: "capsule" },
-  scrap: { view: "archive", arcTab: "scrap" }, // 부품(零件) — 흑류수해 전시관 탭
+  scrap: { view: "archive", arcTab: "scrap" }, // 부품(零件) — 블랙플로우 전시관 탭
   mech: { view: "archive" }, // arcTab은 엔티티의 arc(시스템 라벨: 영감·암호판 등)에서
   ending: { view: "ending" },
 };
@@ -490,13 +490,13 @@ function within(topic: string, linesN: string[], index: LensIndex):
   return goto ? { goto, entities, section } : null;
 }
 
-// ── 중국어(CN 클라) 매칭 — 흑류수해는 CN 선행이라 스크린샷이 중국어다 ─────────
-// 사용자 확정 2026-07-24: "중국어가 나오는 경우는 무조건 흑류수해 록라" — 그때는 cn 이름이
+// ── 중국어(CN 클라) 매칭 — 블랙플로우는 CN 선행이라 스크린샷이 중국어다 ─────────
+// 사용자 확정 2026-07-24: "중국어가 나오는 경우는 무조건 블랙플로우 록라" — 그때는 cn 이름이
 // 구조적으로 rogue_6에만 있어 후보가 하나였다.
 // ⚠ 2026-08-13 그 전제가 깨졌다. 중섭 탭(2026-08-04 신설)을 켜면 run.ts가 그 테마의
 //   rogueN.cn.json을 cnOnly로 얹으므로 후보 테마가 **둘(그 테마 + rogue_6)** 이 된다.
 //   아래 토픽 투표(topicScore → topics[0])가 원래 있었으므로 판정 자체는 그대로 동작한다 —
-//   "무조건 흑류수해"를 코드로 굳히지 말 것.
+//   "무조건 블랙플로우"를 코드로 굳히지 말 것.
 // cn은 이름뿐(본문 번역 없음)이라 이름 매칭 전용 + 1자 오독 퍼지(바이그램)를 쓴다.
 // ⚠ 조우 화면만은 이름으로 안 잡힌다 — 제목이 좌하단 작은 장식 서체라 OCR이 못 읽고,
 //   화면을 채우는 큰 글씨는 선택지 버튼이다(2026-08-13 제보 스샷 深渊入口). 그래서
@@ -506,7 +506,7 @@ export function analyzeChinese(rawLines: string[], index: LensIndex,
   ctx?: { topic?: string; lock?: boolean }): LensOutcome {
   const linesN = rawLines.map((l) => normTextCn(l)).filter((l) => l.length >= 2);
   // 테마 하드 고정은 한국어 패스(analyzeLines)와 같은 규약 — 그 테마 밖은 아예 안 본다.
-  // ⚠ 이게 없으면 중섭 IS5가 흑류수해로 샌다: **시리즈 공통 유물의 중국어 이름이 154개
+  // ⚠ 이게 없으면 중섭 IS5가 블랙플로우로 샌다: **시리즈 공통 유물의 중국어 이름이 154개
   //   겹친다**(2026-08-13 실측, IS5 339종 중). 겹치는 이름만 읽힌 프레임에서 표가 갈린다.
   const entries = index.entries.filter((e) => (e.cnN || e.cnAltN)
     && !(ctx?.lock && ctx.topic && e.topic !== ctx.topic));
@@ -556,7 +556,7 @@ export function analyzeChinese(rawLines: string[], index: LensIndex,
     .sort((a, b) => b.score - a.score);
   // 잠금이 없는 경로(스샷 레이더)에서도 문맥 테마를 우대한다 — 한국어 패스와 같은 철학:
   // "한 판 도는 중에 테마가 바뀌는 일은 없으므로, 애매하면 지금 테마가 맞다". 위의 154개
-  // 겹침 때문에 겹치는 유물만 읽힌 스샷은 표가 반반이 되는데, 그때 흑류수해로 튀지 않게 한다.
+  // 겹침 때문에 겹치는 유물만 읽힌 스샷은 표가 반반이 되는데, 그때 블랙플로우로 튀지 않게 한다.
   if (ctx?.topic && topics.length > 1) {
     const i = topics.findIndex((t) => t.topic === ctx.topic);
     if (i > 0 && topics[0].score < topics[i].score * SWITCH_MARGIN) topics.unshift(...topics.splice(i, 1));

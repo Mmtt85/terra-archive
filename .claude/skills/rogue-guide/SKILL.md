@@ -5,7 +5,7 @@ description: 통합전략(IS) 가이드 탭(/rogue)의 데이터 재생성·신�
 
 # 통합전략 가이드 탭 (/rogue)
 
-토픽 6종 가동: rogue_1~5(KR 정식) + 침몰자의 흑류수해(rogue_6, CN 선행·미래시 전용).
+토픽 6종 가동: rogue_1~5(KR 정식) + 침몰자의 블랙플로우(rogue_6, CN 선행·미래시 전용).
 2026-07-17 구축, 서버 탭(한국섭/중국섭) 2026-08-04 추가.
 **명칭 규칙: 표시 문구는 반드시 '통합전략'(EN: Integrated Strategies / JA: 統合戦略).
 '로그라이크'는 화면에 절대 노출 금지** — 내부 코드 id(rogue_N)는 유지.
@@ -23,14 +23,14 @@ python3 scripts/build-rogue.py --icons rogue_6  # 아이콘 언팩 (UnityPy·lz4
 
 ### 중국섭 서버 탭 (2026-08-04 구축) — KR 재생성 시 `cn`도 같이 돌릴 것
 - /rogue 우상단 서버 탭 **한국 서버/중국 서버**. 중국섭은 rogueN.cn.json — CN 텍스트
-  테이블로 같은 구조를 빌드한 뒤 `cn_koreanize()`가 흑류수해 꼴(중국어 원문 병기 +
+  테이블로 같은 구조를 빌드한 뒤 `cn_koreanize()`가 블랙플로우 꼴(중국어 원문 병기 +
   한국어 표기)로 바꾼다. 수치(레벨·enemy_database)는 서버 공통이라 KR 캐시 공유.
 - 한국어화 4단: ① 이름류 cn 병기 → ② **같은 id의 KR 최종 산출물(rogueN.json) 구조
   오버레이**(KR/CN 테이블은 id가 사실상 동일 — 거의 전부 커버) → ③ 잔여 CN 문자열은
   KR 교차 자동 사전(sanitize 적용 필수!) + `scripts/rogue-cn-ko.json` 수동 사전(AI 집필)
   → ④ 리포트 `scripts/rogue-cn-untranslated.json` — **0건 유지** (CN 신규 콘텐츠가
   들어오면 여기 떨어진다 → rogue-cn-ko.json에 채우고 재빌드).
-- UI(rogue.tsx): 캐시 키 `토픽:서버:로케일`, URL `?sv=cn` (cn일 때만). **흑류수해는
+- UI(rogue.tsx): 캐시 키 `토픽:서버:로케일`, URL `?sv=cn` (cn일 때만). **블랙플로우는
   KR 미출시라 KR 탭 disabled + 토픽 진입 시 중국섭 강제**. 중국섭에선 테마 드롭다운에
   6종 전부(미래시 토글 무관). EN/JA 로케일도 .cn.json 공유(공식 현지화 없음 — 안내문).
 
@@ -269,7 +269,7 @@ KR 매핑 attack_of)과 `abilityList[].text`(개행 join, ability_of)에서 뽑�
 - 긴급 작전 자체는 스테이지별 레벨 룬 배율(emg) 추가 적용.
 - 검증 예: 덕로드 45,000 ×1.9(룬) ×1.2 ×1.15 = 117,990.
 
-## rogue_6 침몰자의 흑류수해 — CN 선행 토픽 (2026-07-17 구축)
+## rogue_6 침몰자의 블랙플로우 — CN 선행 토픽 (2026-07-17 구축)
 
 - **소스는 cn 브랜치** (`fetch_json(path, "cn")`, 캐시 접두 `cn__`). KR 출시 후 branch="kr"로
   바꾸고 번역 오버레이 제거.

@@ -9,7 +9,7 @@
 그대로 쓴다. 추출 로직 정본은 scripts/routeutil.py — 규칙은 .claude/skills/route-map-rules.
 
 - 소스: roguelike_topic_table의 스테이지 → levelId → levels/<id>.json.
-  KR에 있는 토픽(rogue_1~5)은 KR 데이터, KR 미출시 토픽(rogue_6 침몰자의 흑류수해)은
+  KR에 있는 토픽(rogue_1~5)은 KR 데이터, KR 미출시 토픽(rogue_6 침몰자의 블랙플로우)은
   CN 선행 데이터를 쓴다. KR 토픽이라도 CN에만 추가된 스테이지가 있으면 CN에서 보충한다
   (rogueN.cn.json 중국섭 탭이 같은 스테이지 id를 쓰므로 한 벌로 양쪽을 다 감당한다).
 - 레벨 캐시는 build-rogue.py와 같은 .gamedata/rogue/ 를 공유한다 — build-rogue.py를

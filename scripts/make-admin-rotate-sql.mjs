@@ -31,8 +31,12 @@ const key = existsSync(KEY_FILE)
   : randomBytes(32).toString("hex");
 if (!existsSync(KEY_FILE)) writeFileSync(KEY_FILE, `${key}\n`, { mode: 0o600 });
 
-if (key.length < 16) {
-  console.error(`거부: 키가 ${key.length}자 — 16자 이상으로. (anon 키가 공개라 짧은 키는 대입당한다)`);
+// --allow-short: 소유자가 위험을 알고도 짧은 키를 고른 경우의 오버라이드
+// (2026-08-17 사용자 확정 — 9자 개인 키. 온라인 대입은 요청당 1회라 현실적으론 어렵지만,
+//  짐작 가능한 값·다른 서비스 재사용 비밀번호는 절대 금지라고 고지했다.)
+const allowShort = process.argv.includes("--allow-short");
+if (key.length < (allowShort ? 8 : 16)) {
+  console.error(`거부: 키가 ${key.length}자 — ${allowShort ? 8 : 16}자 이상으로. (anon 키가 공개라 짧은 키는 대입당한다)`);
   process.exit(1);
 }
 if (key.includes("'")) {

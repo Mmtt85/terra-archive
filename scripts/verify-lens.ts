@@ -68,7 +68,7 @@ async function main() {
     gzip: false,
   });
   await digitWorker.setParameters({ tessedit_pageseg_mode: "7" as never });
-  // 중국어(흑류수해 CN 클라) 전용 워커 — kor은 중국어 화면에서 한자를 한 글자도 못 읽는다
+  // 중국어(블랙플로우 CN 클라) 전용 워커 — kor은 중국어 화면에서 한자를 한 글자도 못 읽는다
   const chiWorker = await createWorker("chi_sim", 1, {
     langPath: resolve(ROOT, "public/lens"),
     cachePath: resolve(ROOT, "public/lens"),
@@ -146,7 +146,7 @@ async function main() {
       let chipsRan = false;
       if (wantsChipPass(lines)) { chipsRan = true; lines = lines.concat(await chipPass()); }
       oc = analyzeLines(lines, index, ctx);
-      // run.ts와 동일: kor 1차 패스가 완전 무신호면 중국어(chi_sim) 패스 — 흑류수해 CN 스크린샷
+      // run.ts와 동일: kor 1차 패스가 완전 무신호면 중국어(chi_sim) 패스 — 블랙플로우 CN 스크린샷
       let zhHit = false;
       if (oc.target.kind === "none" && !oc.topics.length && !oc.screens.length) {
         const zoc = analyzeChinese(await zhPass(), index);

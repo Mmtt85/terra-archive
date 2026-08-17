@@ -15,7 +15,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const LOCALES = ["ko", "en", "ja"];
 const TOPICS = [1, 2, 3, 4, 5, 6];
 
-// rogue_6(흑류수해)은 CN 선행이라 공식 현지화가 없다 — 전 로케일이 KR/CN 병기 파일을 공유
+// rogue_6(블랙플로우)은 CN 선행이라 공식 현지화가 없다 — 전 로케일이 KR/CN 병기 파일을 공유
 const fileFor = (n, locale) =>
   join(ROOT, "app/data", locale === "ko" || n === 6 ? `rogue${n}.json` : `rogue${n}.${locale}.json`);
 

@@ -1,10 +1,10 @@
 "use client";
 
-// 통합전략 탭 — 토픽: 팬텀 & 크림슨 솔리테어(rogue_1) ~ 침몰자의 흑류수해(rogue_6, CN 선행·미래시).
+// 통합전략 탭 — 토픽: 팬텀 & 크림슨 솔리테어(rogue_1) ~ 침몰자의 블랙플로우(rogue_6, CN 선행·미래시).
 // 데이터는 scripts/build-rogue.py가 생성하는 app/data/rogueN[.loc].json (클뜯 레포 원본).
 // rogue_6은 CN 데이터를 한국어화(rogue6-ko.json)한 것으로, 이름류는 중국어 원문(cn)을 병기한다.
 // 서버 탭(한국섭/중국섭, 2026-08-04): 중국섭은 rogueN.cn.json — CN 서버 텍스트에 KR 공식
-// 번역을 오버레이한 것으로 rogue_6과 같은 병기 표기. 흑류수해는 KR 미출시라 KR 탭 비활성.
+// 번역을 오버레이한 것으로 rogue_6과 같은 병기 표기. 블랙플로우는 KR 미출시라 KR 탭 비활성.
 // 조우의 층별 출현 규칙·엔딩 선제조건은 클라 데이터에 없어 PRTS 기반 큐레이션(rogueN-curated.json)을 병합한다.
 import { Fragment, lazy, startTransition, Suspense, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { TOPICS, slugOf, roguePath } from "./rogue-topics";
@@ -250,7 +250,7 @@ const RANK_KO: Record<string, string> = { NORMAL: "일반", ELITE: "정예", BOS
 //   g5+  : 모든 정예·리더 적 HP ×1.2
 //   g10+ : 긴급 작전·험난한 길에서 적 공격력·HP ×1.15
 //   g14+ : 정예·리더 등장 후 20초 공격력 ×1.3 / 받는 대미지 -50% (한시 효과 — 별도 표기)
-// rogue_6 (침몰자의 흑류수해):
+// rogue_6 (침몰자의 블랙플로우):
 //   g5+  : 모든 적 최대 HP ×1.3
 //   g8+  : 정예·리더 공격력 ×1.15
 //   g11+ : 리더가 받는 대미지 -20% (수치 미반영 — 별도 표기)
@@ -1021,7 +1021,7 @@ const TOPIC_LOADERS: Record<string, () => Promise<{ default: unknown }>> = {
   rogue_6: () => import("./data/rogue6.json"),
 };
 // 중국섭 탭(서버 탭 '중국 서버') — CN 텍스트 테이블 + KR 공식 한국어 오버레이 빌드
-// (build-rogue.py cn — 흑류수해처럼 중국어 원문 병기). 공식 현지화가 없는 데이터라
+// (build-rogue.py cn — 블랙플로우처럼 중국어 원문 병기). 공식 현지화가 없는 데이터라
 // EN/JA 로케일도 이 파일을 그대로 쓴다 (rogue_6과 같은 정책). rogue_6은 원래 CN 빌드.
 const TOPIC_LOADERS_CN: Record<string, () => Promise<{ default: unknown }>> = {
   rogue_1: () => import("./data/rogue1.cn.json"),
@@ -1071,7 +1071,7 @@ const topicFromUrl = () =>
   topicOfSlug(ROGUE_PATH_RE.exec(window.location.pathname)?.[1] ?? null)
   ?? topicOfSlug(new URLSearchParams(window.location.search).get("topic"))
   ?? "rogue_1";
-// 서버 탭 — URL은 ?sv=cn 일 때만 표시. 흑류수해(rogue_6)는 자국 서버 미출시라
+// 서버 탭 — URL은 ?sv=cn 일 때만 표시. 블랙플로우(rogue_6)는 자국 서버 미출시라
 // 토픽만으로도 중국 서버가 강제된다 (자국 서버 탭은 비활성).
 // "kr"은 **화면 언어의 자국 서버**를 뜻하는 내부 코드값이다 — 로케일별 로더가
 // ko=한국(rogueN.json) · en=글로벌(.en) · ja=일본(.ja) 서버 공식 텍스트를 싣는다.
@@ -1189,7 +1189,7 @@ export default function RogueGuide({ includeFuture, initialTopic }: {
   const [navTick, setNavTick] = useState(0);
   // 토픽 전환 + 뷰/난이도/검색/모달 리셋 (옛 switchTopic이 하던 일). 같은 토픽이면 무시.
   const applyTopic = (next: string) => {
-    if (next === "rogue_6") applyServer("cn"); // 흑류수해는 KR 미출시 — 중국섭 강제
+    if (next === "rogue_6") applyServer("cn"); // 블랙플로우는 KR 미출시 — 중국섭 강제
     if (topicRef.current === next) return;
     topicRef.current = next;
     setTopic(next);
@@ -1231,7 +1231,7 @@ export default function RogueGuide({ includeFuture, initialTopic }: {
   }, []);
 
   // 헤더 테마 드롭다운 — URL(?topic=isN)만 바꾸고 직접 토픽 전환(합성 popstate 안 씀).
-  // sv 파라미터도 실효 서버(흑류수해=cn 강제)에 맞춰 함께 정리해 뒤로가기와 어긋나지 않게 한다.
+  // sv 파라미터도 실효 서버(블랙플로우=cn 강제)에 맞춰 함께 정리해 뒤로가기와 어긋나지 않게 한다.
   const goTopic = (id: string) => {
     if (id === topic) return;
     const url = new URL(window.location.href);
@@ -1245,7 +1245,7 @@ export default function RogueGuide({ includeFuture, initialTopic }: {
     applyTopic(id);
   };
 
-  // 서버 탭 클릭 — URL(?sv=cn)을 바꾸고 전환. 흑류수해에서 KR 탭은 비활성(미출시).
+  // 서버 탭 클릭 — URL(?sv=cn)을 바꾸고 전환. 블랙플로우에서 KR 탭은 비활성(미출시).
   const goServer = (next: Server) => {
     if (next === server || (next === "kr" && topic === "rogue_6")) return;
     const url = new URL(window.location.href);
@@ -1395,14 +1395,14 @@ export default function RogueGuide({ includeFuture, initialTopic }: {
     for (const c of data.tools) m.set(c.id, c);
     for (const c of data.capsules ?? []) m.set(c.id, c);
     for (const c of data.exploreTools ?? []) m.set(c.id, c);
-    for (const s of data.scraps ?? []) m.set(s.id, s); // 흑류수해 부품 — CN 상인 판매 화면 모아보기
+    for (const s of data.scraps ?? []) m.set(s.id, s); // 블랙플로우 부품 — CN 상인 판매 화면 모아보기
     for (const mech of data.mechanics ?? []) for (const it of mech.items) m.set(it.id, it);
     return m;
   }, [active]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── 보유 리스트 (인벤토리) — 게임에서 얻은 소장품·테마 자원을 담아두는 개인 목록 ───
   // (피드백 반영 2026-07-24) 테마별 localStorage(ta:rogue-inv:<topic>)에 영속.
-  // 자원 탭은 테마 고유 '수집 자원'만: 사미=암호판, 살카즈=사고, 쉐이=주화, 흑류수해=부품
+  // 자원 탭은 테마 고유 '수집 자원'만: 사미=암호판, 살카즈=사고, 쉐이=주화, 블랙플로우=부품
   // (거부반응·시대·분노 등 판 규칙류는 수집물이 아니라 제외). EN/JA 데이터는 mechanics
   // 라벨이 현지어라 라벨 매칭이 깨진다 — 아이템 id 접두사로 자원 시스템을 찾는다.
   const RES_MECH_PREFIX: Record<string, string> = { rogue_3: "rogue_3_totem", rogue_4: "rogue_4_fragment", rogue_5: "rogue_5_copper" };
@@ -2016,7 +2016,7 @@ export default function RogueGuide({ includeFuture, initialTopic }: {
             {/* 중국섭 안내 한 줄 — 한국섭일 때도 같은 자리를 투명하게 예약해 서버 전환 시
                 히어로 높이가 변하지 않게 한다 (사용자 요청 2026-08-04). 눈썹 줄에 넣는 안은
                 도구 버튼 때문에 가용 폭이 160px뿐이라 문구가 잘려 폐기. CN 원제는 제목 오른쪽.
-                흑류수해도 같은 자리·같은 꼴 — 다만 KR 미출시라 문구가 '비공식 번역'이다. */}
+                블랙플로우도 같은 자리·같은 꼴 — 다만 KR 미출시라 문구가 '비공식 번역'이다. */}
             <p className="rg-disclaimer" aria-hidden={server !== "cn"}>
               {/* 한국섭에선 문구 자체를 렌더하지 않고 빈 줄(nbsp)만 남긴다 — CSS로 숨기면
                   스타일이 늦게 붙는 순간 중국섭 문구가 그대로 노출된다 (실측 2026-08-04) */}
@@ -2051,7 +2051,7 @@ export default function RogueGuide({ includeFuture, initialTopic }: {
             잘린다 — 반드시 .rg-head 직속(클리핑 밖)에 두고 absolute로 겹칠 것 */}
         <div className="rg-headtools">
         {/* 스샷 레이더 — 버튼 자체가 자동인식 토글, ?는 도움말 모달. KR/EN/JA 화면 인식 (2026-07-25).
-            흑류수해(rogue_6)·중국섭 데이터는 중국어 병기라 중국어 화면도 전 로케일에서 인식한다. */}
+            블랙플로우(rogue_6)·중국섭 데이터는 중국어 병기라 중국어 화면도 전 로케일에서 인식한다. */}
         <div className="lens-open-wrap">
           {/* 테마별 게임연결 + 리플레이 — 여기서 연결하면 이 테마로만 인식이 고정된다 (2026-07-26) */}
           {BRIDGE_LIVE && <BridgeTopicButton topic={topic} name={TOPICS.find((tp) => tp.id === topic)?.name ?? topic} t={t} />}
@@ -2076,7 +2076,7 @@ export default function RogueGuide({ includeFuture, initialTopic }: {
           </button>
           {/* 한섭/중섭 미니 토글 — 테마 변경 버튼 우상단에 겹쳐 얹는다 (사용자 요청 2026-08-04:
               "테마변경 버튼 안에 작게"). 버튼 안에 버튼은 못 넣으므로 형제를 absolute로 올린다.
-              흑류수해는 KR 미출시라 한국 버튼 비활성 */}
+              블랙플로우는 KR 미출시라 한국 버튼 비활성 */}
           <div className="rg-serversel" role="group" aria-label={t("서버 선택")}>
             <button type="button" className={server === "kr" ? "on" : ""} aria-pressed={server === "kr"}
               disabled={topic === "rogue_6"} aria-label={homeServerFull}

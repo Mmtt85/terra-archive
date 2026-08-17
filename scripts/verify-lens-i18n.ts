@@ -6,7 +6,7 @@
 // OCR 라인이라 가정해 analyzeLines에 넣어, 그 엔티티가 올바른 토픽으로 인식되는지 본다.
 // 스크린샷·OCR 품질은 검증하지 않는다(그건 verify-lens.ts + 실기기) — 이 테스트는
 // ① 로케일 정규화(JA 가나·한자 보존, EN 소문자) ② 인덱스 구축 ③ 이름 매칭·토픽 투표
-// ④ rogue_6(흑류수해) CN 원문이 EN/JA 인덱스에서도 살아 중국어 패스로 잡히는지를 지킨다.
+// ④ rogue_6(블랙플로우) CN 원문이 EN/JA 인덱스에서도 살아 중국어 패스로 잡히는지를 지킨다.
 
 import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
@@ -79,7 +79,7 @@ function main() {
     console.log(`${loc}: ${locPass}/${cases.length} 케이스 통과 (인덱스 ${index.entries.length} 엔티티)`);
   }
 
-  // rogue_6(흑류수해) CN 원문 — EN/JA 인덱스에서도 cnN이 살아 중국어 패스가 잡아야 한다.
+  // rogue_6(블랙플로우) CN 원문 — EN/JA 인덱스에서도 cnN이 살아 중국어 패스가 잡아야 한다.
   const r6 = load("rogue6.json");
   const cnNames: string[] = [
     ...(r6.stages ?? []), ...(r6.relics ?? []), ...(r6.encounters ?? []),
