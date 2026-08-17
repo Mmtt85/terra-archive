@@ -9,8 +9,13 @@
 //     → .admin-rotate.generated.sql Supabase SQL Editor에 붙여넣을 회전 SQL (gitignore됨)
 //   이후: cd workers/admin-api && npx wrangler secret put SUPABASE_ADMIN_KEY < ../../.supabase-admin-key
 //
+// 원하는 키(패스프레이즈)로 바꾸려면: .supabase-admin-key에 그 값을 먼저 써넣고 실행
+// (사용자 요청 2026-08-17 — 제안 게시판 관리자 모드에서 폰으로도 칠 수 있는 키).
+// ⚠ anon 키가 공개 번들에 있어 아무나 키 대입을 시도할 수 있다 — 'admin' 같은 짐작 가능한
+//   값이 실제로 뚫려 있던 전례(dev_notes 2026-08-05) 때문에 16자 미만은 거부한다.
+//
 // ⚠ 실행 순서: Access 로그인·프록시가 동작하는 걸 확인한 다음에 SQL을 돌릴 것 —
-//   돌리는 순간 옛 비밀번호('admin')는 어디서도 통하지 않는다.
+//   돌리는 순간 옛 키는 어디서도 통하지 않는다 (워커 시크릿·게시판 localStorage 재입력 필요).
 
 import { randomBytes } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
@@ -26,13 +31,25 @@ const key = existsSync(KEY_FILE)
   : randomBytes(32).toString("hex");
 if (!existsSync(KEY_FILE)) writeFileSync(KEY_FILE, `${key}\n`, { mode: 0o600 });
 
+if (key.length < 16) {
+  console.error(`거부: 키가 ${key.length}자 — 16자 이상으로. (anon 키가 공개라 짧은 키는 대입당한다)`);
+  process.exit(1);
+}
+if (key.includes("'")) {
+  console.error("거부: 키에 작은따옴표(')는 쓸 수 없다 (SQL 리터럴에 박힌다).");
+  process.exit(1);
+}
+
 const CHECK = `(current_setting('request.headers', true)::json ->> 'x-admin-key') = '${key}'`;
 
-// (테이블, 정책명, 종류) — docs/supabase-*.sql의 admin 정책 전수 (2026-07-27 기준)
+// (테이블, 정책명, 종류) — docs/supabase-*.sql의 admin 정책 전수
+// (2026-08-17 갱신: dev_notes·feedback_replies 추가 — 새 admin 정책이 생기면 여기도 등록)
 const POLICIES = [
   ["feedback", "admin read feedback", "select"],
   ["feedback", "admin update feedback", "update"],
   ["feedback", "admin delete feedback", "delete"],
+  ["feedback_replies", "admin all feedback_replies", "all"],
+  ["dev_notes", "admin write dev_notes", "all"],
   ["planner_rules", "admin all planner_rules", "all"],
   ["rule_releases", "admin insert releases", "insert"],
   ["rule_releases", "admin delete releases", "delete"],

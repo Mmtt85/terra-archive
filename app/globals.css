@@ -7377,6 +7377,23 @@ legend {
   font-size: 10.5px;
   line-height: 1.4;
 }
+/* 새로고침 ↻ — 도구 행 오른쪽 끝 */
+.fb-refresh-btn {
+  margin-left: auto;
+  font-size: 13px;
+  line-height: 1;
+  padding: 4px 8px;
+}
+/* 관리자 모드 — 대응완료 행은 흐리게 + ✓ 칩 (기본은 아예 가려진다) */
+.fb-board-item.reviewed {
+  opacity: 0.55;
+}
+.fb-reviewed-chip {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--lime);
+  white-space: nowrap;
+}
 .fb-board {
   list-style: none;
   margin: 0;

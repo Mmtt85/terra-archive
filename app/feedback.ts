@@ -176,15 +176,39 @@ export async function probeBoardAdminKey(key: string): Promise<boolean> {
   } catch { return false; }
 }
 
-export type BoardRow = MyFeedbackRow & { author_token?: string | null };
+export type BoardRow = MyFeedbackRow & { author_token?: string | null; reviewed_at?: string | null };
 
-/** 전체 제안 (관리자 모드) — 답변·작성자 토큰 유무 포함 최신순 */
+/** 전체 제안 (관리자 모드) — 답변·작성자 토큰 유무·대응 상태 포함 최신순 */
 export async function fetchAllFeedbackBoard(key: string): Promise<BoardRow[]> {
-  const embed = "select=id,created_at,kind,message,payload,author_token,feedback_replies(id,body,created_at)" +
+  const embed = "select=id,created_at,kind,message,payload,author_token,reviewed_at,feedback_replies(id,body,created_at)" +
     "&order=created_at.desc&feedback_replies.order=created_at.asc&limit=200";
   const res = await fetch(`${SUPABASE_URL}/rest/v1/feedback?${embed}`, { headers: adminKeyHeaders(key) });
   if (!res.ok) throw new Error(`조회 실패 (${res.status})`);
   return res.json();
+}
+
+/** 게시판에서 관리자 제안 삭제 — 답변은 cascade. ⚠ 첨부 이미지 R2 정리는 못 한다
+ * (파일 API는 /admin 프록시 전용) — 남은 이미지는 /admin 파일 탭 '제안 이미지'에서. */
+export async function boardAdminDeleteFeedback(key: string, id: string) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/feedback?id=eq.${id}`, {
+    method: "DELETE",
+    headers: { ...adminKeyHeaders(key), Prefer: "return=representation" },
+  });
+  if (!res.ok) throw new Error(`삭제 실패 (${res.status})`);
+  const rows = await res.json().catch(() => null);
+  if (!Array.isArray(rows) || rows.length === 0) throw new Error("삭제 실패 — 0행 처리");
+}
+
+/** 게시판에서 대응완료 토글 (/admin의 reviewed_at과 같은 칼럼) */
+export async function boardAdminSetReviewed(key: string, id: string, reviewed: boolean) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/feedback?id=eq.${id}`, {
+    method: "PATCH",
+    headers: { ...adminKeyHeaders(key), "Content-Type": "application/json", Prefer: "return=representation" },
+    body: JSON.stringify({ reviewed_at: reviewed ? new Date().toISOString() : null }),
+  });
+  if (!res.ok) throw new Error(`갱신 실패 (${res.status})`);
+  const rows = await res.json().catch(() => null);
+  if (!Array.isArray(rows) || rows.length === 0) throw new Error("갱신 실패 — 0행 처리");
 }
 
 /** 게시판에서 관리자 답변 등록 — 0행 처리는 실패 (키가 정책과 안 맞는 상태) */

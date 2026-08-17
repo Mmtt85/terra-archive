@@ -2384,6 +2384,12 @@ const D: Record<string, Pair> = {
   "등록 중…": ["Posting…", "登録中…"],
   "익명 제안 — 답변해도 작성자가 볼 수 없습니다": ["Anonymous suggestion — the author can't see replies", "匿名の提案 — 返信しても投稿者には見えません"],
   "이 답변을 삭제할까요?": ["Delete this reply?", "この返信を削除しますか？"],
+  "대응완료": ["Resolved", "対応済み"],
+  "대응 취소": ["Unresolve", "対応済み解除"],
+  "대응완료 보기": ["Show resolved", "対応済みを表示"],
+  "대응완료 가리기": ["Hide resolved", "対応済みを隠す"],
+  "대응미완료 제안이 없습니다": ["No open suggestions", "未対応の提案はありません"],
+  "새로고침": ["Refresh", "更新"],
   // ── 스샷 인식 (구 스샷 워프) — 페이지별 설치: /rogue 스샷으로 찾기 · 공채 스샷으로 태그 입력
   // (사용자 확정 2026-07-23). Phase 1은 KR 클라 전용(kor.traineddata만 호스팅)이라 진입 버튼이
   // ko에서만 보이지만, 키는 미리 등록해 둔다 (EN/JA 클라 지원 시 버튼 게이트만 풀면 됨).

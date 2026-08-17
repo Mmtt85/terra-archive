@@ -6,7 +6,7 @@ import {
   getFeedbackToken, setFeedbackToken, getFeedbackSeen, markFeedbackSeen,
   fetchMyFeedback, countNewReplies, updateMyFeedback, deleteMyFeedback,
   getBoardAdminKey, setBoardAdminKey, probeBoardAdminKey, fetchAllFeedbackBoard,
-  boardAdminAddReply, boardAdminDeleteReply,
+  boardAdminAddReply, boardAdminDeleteReply, boardAdminDeleteFeedback, boardAdminSetReviewed,
   type FeedbackKind, type BoardRow,
 } from "./feedback";
 import { ModalWindow } from "./modal-window";
@@ -45,6 +45,8 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
   const [adminKey, setAdminKey] = useState<string | null>(null);
   const [replyVal, setReplyVal] = useState("");
   const [replyBusy, setReplyBusy] = useState(false);
+  // 대응완료(reviewed_at) 가리기 — /admin의 '대응미완료' 기본 보기와 같은 감각 (기본: 가림)
+  const [showReviewed, setShowReviewed] = useState(false);
   const [badge, setBadge] = useState(0);
   // 이번에 열기 직전의 '마지막 확인 시각' — 그 이후 답변에만 '새 답변' 점을 찍는다.
   // 기준점 읽기는 refresh() **시작 시점**(동기, seen을 갱신하기 전), 반영은 await 뒤 —
@@ -187,6 +189,33 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
     try {
       await boardAdminDeleteReply(adminKey, replyId);
       setRows((cur) => (cur ?? []).map((r) => (r.id === row.id ? { ...r, feedback_replies: r.feedback_replies.filter((rep) => rep.id !== replyId) } : r)));
+    } catch {
+      setActErr(true);
+    }
+  };
+
+  // 관리자 제안 삭제 (사용자 요청 2026-08-17: "관리자도 제안 삭제 할 수 있도록")
+  const removeFeedbackAdmin = async (row: BoardRow) => {
+    if (!adminKey) return;
+    if (!(await confirm({ message: t("이 제안을 삭제할까요? 달린 답변도 함께 삭제됩니다."), confirmLabel: t("삭제"), danger: true }))) return;
+    setActErr(false);
+    try {
+      await boardAdminDeleteFeedback(adminKey, row.id);
+      setRows((cur) => (cur ?? []).filter((r) => r.id !== row.id));
+      setThreadId(null);
+    } catch {
+      setActErr(true);
+    }
+  };
+
+  // 대응완료 토글 — 켜면 기본 보기(대응완료 가림)에서 목록을 빠져나간다
+  const toggleReviewedAdmin = async (row: BoardRow) => {
+    if (!adminKey) return;
+    const next = !row.reviewed_at;
+    setActErr(false);
+    try {
+      await boardAdminSetReviewed(adminKey, row.id, next);
+      setRows((cur) => (cur ?? []).map((r) => (r.id === row.id ? { ...r, reviewed_at: next ? new Date().toISOString() : null } : r)));
     } catch {
       setActErr(true);
     }
@@ -375,14 +404,24 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
     </div>
   );
 
+  // 관리자 기본 보기는 대응완료 가림 (/admin '대응미완료'와 같은 감각)
+  const reviewedCount = adminKey ? (rows ?? []).filter((r) => r.reviewed_at).length : 0;
+  const shownRows = adminKey && !showReviewed ? (rows ?? []).filter((r) => !r.reviewed_at) : rows ?? [];
+
   const mineView = (<>
       <div className="fb-list-tools">
-        {adminKey ? (
+        {adminKey ? (<>
           <small className="fb-privacy">🛠 {t("관리자 모드 — 모든 제안이 보입니다")}</small>
-        ) : (<>
+          {reviewedCount > 0 && (
+            <button type="button" className="fb-tool-btn" aria-pressed={showReviewed} onClick={() => setShowReviewed((s) => !s)}>
+              {showReviewed ? t("대응완료 가리기") : `${t("대응완료 보기")} (${reviewedCount})`}
+            </button>
+          )}
+        </>) : (<>
           <button type="button" className="fb-new-btn" onClick={() => setView("compose")}>+ {t("제안하기")}</button>
           <small className="fb-privacy">{t("제안은 작성자 본인과 개발자만 볼 수 있습니다")}</small>
         </>)}
+        <button type="button" className="fb-tool-btn fb-refresh-btn" title={t("새로고침")} onClick={() => void refresh(true)}>↻</button>
       </div>
       {loadError ? (
         <p className="fb-board-empty">
@@ -396,12 +435,14 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
           {t("아직 보낸 제안이 없습니다")}<br />
           <small>{t("답변이 달리면 여기와 제안 버튼 뱃지로 알려드립니다")}</small>
         </p>
+      ) : shownRows.length === 0 ? (
+        <p className="fb-board-empty">{t("대응미완료 제안이 없습니다")}</p>
       ) : (
         <ul className="fb-board">
-          {rows.map((row) => {
+          {shownRows.map((row) => {
             const hasNew = row.feedback_replies.some((rep) => isNewReply(rep.created_at));
             return (
-              <li key={row.id} className="fb-board-item">
+              <li key={row.id} className={`fb-board-item${adminKey && row.reviewed_at ? " reviewed" : ""}`}>
                 <button type="button" className="fb-board-head" onClick={() => openThread(row.id)}>
                   <span className={`fb-kind-chip k-${row.kind}`}>{t(KIND_KEY[row.kind] ?? row.kind)}</span>
                   <time>{fmtDate(row.created_at)}</time>
@@ -410,6 +451,7 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
                       💬 {t("답변 {n}개", { n: row.feedback_replies.length })}
                     </span>
                   )}
+                  {!!adminKey && !!row.reviewed_at && <span className="fb-reviewed-chip">✓ {t("대응완료")}</span>}
                   <span className="fb-board-preview">{row.message}</span>
                 </button>
               </li>
@@ -562,8 +604,8 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
                 <p>{rep.body}</p>
               </div>
             ))}
-            {adminKey ? (
-              threadRow.author_token ? (
+            {adminKey ? (<>
+              {threadRow.author_token ? (
                 <div className="fb-admin-reply-form">
                   <textarea value={replyVal} onChange={(e) => setReplyVal(e.target.value)} rows={2} maxLength={4000}
                     placeholder={t("작성자에게만 보이는 답변 달기…")} />
@@ -573,8 +615,14 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
                 </div>
               ) : (
                 <small className="fb-admin-reply-hint">{t("익명 제안 — 답변해도 작성자가 볼 수 없습니다")}</small>
-              )
-            ) : editingId !== threadRow.id && (
+              )}
+              <div className="fb-thread-tools">
+                <button type="button" className="fb-tool-btn" aria-pressed={!!threadRow.reviewed_at} onClick={() => void toggleReviewedAdmin(threadRow)}>
+                  {threadRow.reviewed_at ? t("대응 취소") : `✓ ${t("대응완료")}`}
+                </button>
+                <button type="button" className="fb-tool-btn danger" onClick={() => void removeFeedbackAdmin(threadRow)}>{t("삭제")}</button>
+              </div>
+            </>) : editingId !== threadRow.id && (
               <div className="fb-thread-tools">
                 <button type="button" className="fb-tool-btn" onClick={() => startEdit(threadRow)}>{t("수정하기")}</button>
                 <button type="button" className="fb-tool-btn danger" onClick={() => void removeMine(threadRow)}>{t("삭제")}</button>
