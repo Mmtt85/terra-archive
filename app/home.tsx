@@ -1002,6 +1002,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   // 초기화는 effect가 아니라 햄버거 토글 클릭에서 한다 (set-state-in-effect 린트 관례).
   const [openGroup, setOpenGroup] = useState<"" | "dex" | "sim">("");
   const [feedbackOpen, setFeedbackOpen] = useState(false); // 제안 패널 — 모바일 헤더 버튼·데스크탑 FAB 공용
+  const [feedbackNew, setFeedbackNew] = useState(0); // 제안 게시판 새 답변 수 — 위젯이 올려주고 헤더 버튼 뱃지에 쓴다
   const [headerCollapsed, setHeaderCollapsed] = useState(true); // 모바일 헤더 접기 — 접힘이 기본(사용자 확정 2026-07-22). PC는 무관(관련 CSS가 모바일 블록에만 있음)
   // 햄버거 '통합전략 가이드' 부메뉴 활성 표시용 — 현재 URL의 ?topic= 슬러그 (기본 is1)
   // 열려 있는 스토리 상세의 이름 — 문서 제목에 반영 (StoryGuide가 알려준다)
@@ -1783,9 +1784,10 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
         <div className="header-sub">
           {/* 제안 버튼 — 모바일 전용(3줄). 데스크탑에선 숨기고 우하단 FAB을 쓴다. */}
           {feedbackReady && (
-            <button type="button" className="feedback-header-btn" onClick={() => setFeedbackOpen(true)} aria-label={t("제안 보내기")}>
+            <button type="button" className="feedback-header-btn" onClick={() => setFeedbackOpen(true)} aria-label={t("제안 게시판")}>
               <span aria-hidden>💬</span> {t("제안")}
-              {isNewFeature("feedback-image") && <span className="new-badge">{t("새기능")}</span>}
+              {feedbackNew > 0 && <span className="fb-reply-badge" title={t("새 답변 {n}개", { n: feedbackNew })}>{feedbackNew}</span>}
+              {feedbackNew === 0 && isNewFeature("feedback-board") && <span className="new-badge">{t("새기능")}</span>}
             </button>
           )}
           <div className="header-sub-right">
@@ -2001,7 +2003,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
       </div>{/* /.site-scroll */}
 
       {selected && <OperatorModal operator={selected} onClose={closeOperator} onUpgrade={openUpgradeFor} includeFuture={includeFuture} onPinChange={(pinned) => { opPinnedRef.current = pinned; }} operators={operators} onRelated={openOperator} />}
-      <FeedbackWidget open={feedbackOpen} setOpen={setFeedbackOpen} />
+      <FeedbackWidget open={feedbackOpen} setOpen={setFeedbackOpen} onNewCount={setFeedbackNew} />
       {/* 팁 풍선 — 화면 빈 곳을 찾아 떠다닌다 (본문을 가리면 스스로 자리를 옮긴다) */}
       <TipBalloon />
     </main>

@@ -3,7 +3,8 @@
 // 개발자 코멘트 API — 받은 제안·피드백에 대한 개발자의 답변. 내용은 코드가 아니라
 // Supabase `dev_notes` 테이블에 있다 (사용자 요청 2026-08-05: "제안 받은 피드백에 대한
 // 피드백 — 뭐때문에 되고 뭐때문에 안되는지 관리자 페이지에서 입력").
-// 업데이트 내역 모달(app/changelog.tsx) 안의 '개발자 코멘트' 뷰가 읽는다.
+// 제안 게시판(app/feedback-widget.tsx)의 '개발자 코멘트' 탭이 읽는다 — 전체 공개.
+// (2026-08-17 이사. 종전엔 업데이트 내역 모달(app/changelog.tsx) 안의 뷰였다.)
 // 스키마·RLS: docs/supabase-devnotes.sql
 
 import { SUPABASE_URL, SUPABASE_ANON_KEY, adminWrite } from "./feedback";

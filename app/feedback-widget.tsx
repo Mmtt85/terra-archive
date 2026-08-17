@@ -1,17 +1,178 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { feedbackReady, sendFeedback, uploadFeedbackImage, FEEDBACK_IMG_MAX, FEEDBACK_IMG_MB, type FeedbackKind } from "./feedback";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  feedbackReady, sendFeedback, uploadFeedbackImage, imagesOf, FEEDBACK_IMG_MAX, FEEDBACK_IMG_MB,
+  getFeedbackToken, setFeedbackToken, getFeedbackSeen, markFeedbackSeen,
+  fetchMyFeedback, countNewReplies, updateMyFeedback, deleteMyFeedback,
+  type FeedbackKind, type MyFeedbackRow,
+} from "./feedback";
 import { ModalWindow } from "./modal-window";
+import { useConfirm } from "./confirm";
+import { fetchDevNotes, noteSuggestion, noteReply, DEVNOTE_STATUS_LABEL, type DevNoteRow } from "./devnotes-api";
+import { useHashSync } from "./hash-modal";
 import { isNewFeature } from "./whats-new";
 import { useI18n } from "./i18n";
 
 // open/setOpen은 부모(home)가 쥔다 — 모바일에선 헤더의 '제안' 버튼(공식 방송 옆)이,
 // 데스크탑에선 우하단 FAB이 같은 패널을 연다 (사용자 요청 2026-07-22).
-// 패널 자체는 사이트 공용 창 모달(ModalWindow) — 다른 모달과 같이 잡아 옮기고 고정할 수 있다
-// (사용자 지적 2026-08-05: "제안 보내기 모달은 왜 윈도우방식이 아니고 radius도 없냐").
-export default function FeedbackWidget({ open, setOpen }: { open: boolean; setOpen: (value: boolean) => void }) {
-  const { t } = useI18n();
+// 2026-08-17 게시판 개편 (사용자 확정): 모달이 스레드 목록이 됐다 — 이 브라우저(localStorage
+// 토큰)로 보낸 제안과 개발자 답변을 작성자 본인만 본다. 새 답변 수는 onNewCount로 부모에
+// 올려 헤더 버튼 뱃지에도 쓴다. 데이터 규칙: app/feedback.ts · docs/supabase-feedback-board.sql.
+export default function FeedbackWidget({ open, setOpen, onNewCount }: {
+  open: boolean; setOpen: (value: boolean) => void; onNewCount?: (n: number) => void;
+}) {
+  const { t, locale } = useI18n();
+  const [view, setView] = useState<"list" | "compose">("list");
+  // 게시판 탭 — 내 제안(비공개 스레드) | 개발자 코멘트(전체 공개, 2026-08-17 업데이트 내역
+  // 모달에서 이사. 사용자 지시: "개발자코멘트를 없애고 여기다가, 모두가 볼 수 있도록")
+  const [tab, setTab] = useState<"mine" | "notes">("mine");
+  const [notes, setNotes] = useState<DevNoteRow[] | null>(null);
+  const [notesError, setNotesError] = useState(false);
+  const notesLoaded = useRef(false);
+  const [openedNotes, setOpenedNotes] = useState<Set<string>>(new Set());
+  const toggleNote = (id: string) => {
+    setOpenedNotes((prev) => {
+      const next = new Set(prev);
+      if (!next.delete(id)) next.add(id);
+      return next;
+    });
+  };
+
+  // ── 게시판 상태 ──
+  const [rows, setRows] = useState<MyFeedbackRow[] | null>(null);
+  const [loadError, setLoadError] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
+  const [badge, setBadge] = useState(0);
+  // 이번에 열기 직전의 '마지막 확인 시각' — 그 이후 답변에만 '새 답변' 점을 찍는다
+  const [newSince, setNewSince] = useState<string | null | undefined>(undefined);
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [codeOpen, setCodeOpen] = useState(false);
+  const [codeVal, setCodeVal] = useState("");
+  const [codeErr, setCodeErr] = useState(false);
+  const [copied, setCopied] = useState(false);
+  // 본인 수정·삭제 (사용자 요청 2026-08-17)
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editVal, setEditVal] = useState("");
+  const [editBusy, setEditBusy] = useState(false);
+  const [actErr, setActErr] = useState(false);
+  const { confirm, dialog: confirmDialog } = useConfirm();
+
+  // 첫 setState 전에 반드시 await를 지나므로 이펙트에서 불러도 동기 캐스케이드가 없다
+  // (react-hooks/set-state-in-effect — 신규 코드는 하우스 위반을 늘리지 않는다)
+  const refresh = useCallback(async (markSeen: boolean) => {
+    const tok = getFeedbackToken();
+    const data = await (tok ? fetchMyFeedback().catch(() => null) : Promise.resolve<MyFeedbackRow[]>([]));
+    setToken(tok);
+    if (data === null) { setLoadError(true); return; }
+    setLoadError(false);
+    if (markSeen) {
+      setNewSince(getFeedbackSeen());
+      markFeedbackSeen();
+      setBadge(0);
+      onNewCount?.(0);
+    } else {
+      const n = countNewReplies(data);
+      setBadge(n);
+      onNewCount?.(n);
+    }
+    setRows(data);
+  }, [onNewCount]);
+
+  // 마운트: 토큰 보유자(제안 이력 있는 방문자)만 뱃지 계산 — 일반 방문자는 네트워크 0.
+  // refresh의 setState는 전부 await 뒤(비동기 콜백)라 동기 캐스케이드가 없다 — 린터가
+  // 호출 그래프를 보수적으로 추적해 오탐하므로 규칙만 지정 억제한다.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (getFeedbackToken()) void refresh(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 열 때마다: 목록 갱신 + 읽음 처리 (뱃지는 지우되, 이번에 확인하는 새 답변엔 점 표시).
+  // 뷰·펼침 리셋은 close()가 한다 — 이펙트에서 동기 setState를 피하는 하우스 규칙.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (open) void refresh(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  // #devnotes 딥링크 — 종전 업데이트 내역 모달의 코멘트 뷰가 쓰던 해시를 이어받는다
+  // (이미 배포된 업데이트 내역 행의 href "/#devnotes"가 살아 있어야 한다)
+  useHashSync(open && view === "list" && tab === "notes" ? "#devnotes" : null, (h) => {
+    if (h.startsWith("#devnotes")) { setOpen(true); setView("list"); setTab("notes"); }
+    else if (tab === "notes" && open) setOpen(false); // 뒤로가기로 해시가 걷히면 닫는다
+  });
+
+  // 개발자 코멘트 — 탭을 처음 열 때 1회 로드 (게시판만 열고 안 보면 안 부른다)
+  useEffect(() => {
+    if (!open || tab !== "notes" || notesLoaded.current) return;
+    notesLoaded.current = true;
+    let alive = true;
+    fetchDevNotes()
+      .then((data) => { if (alive) setNotes(data); })
+      .catch(() => {
+        if (!alive) return;
+        notesLoaded.current = false; // 실패는 재시도 가능하게
+        setNotesError(true);
+      });
+    return () => { alive = false; };
+  }, [open, tab]);
+
+  const close = () => {
+    setOpen(false);
+    setView("list");
+    setTab("mine");
+    setExpanded(null);
+    setCodeOpen(false);
+    setCodeErr(false);
+    setEditingId(null);
+    setActErr(false);
+  };
+
+  const toggleItem = (id: string) => {
+    setExpanded((cur) => (cur === id ? null : id));
+    setEditingId(null);
+    setActErr(false);
+  };
+
+  const startEdit = (row: MyFeedbackRow) => {
+    setEditingId(row.id);
+    setEditVal(row.message);
+    setActErr(false);
+  };
+
+  const saveEdit = async (row: MyFeedbackRow) => {
+    const msg = editVal.trim();
+    if (!msg || editBusy) return;
+    setEditBusy(true);
+    setActErr(false);
+    try {
+      await updateMyFeedback(row.id, msg);
+      setRows((cur) => (cur ?? []).map((r) => (r.id === row.id ? { ...r, message: msg } : r)));
+      setEditingId(null);
+    } catch {
+      setActErr(true);
+    } finally {
+      setEditBusy(false);
+    }
+  };
+
+  const removeMine = async (row: MyFeedbackRow) => {
+    if (!(await confirm({
+      message: t("이 제안을 삭제할까요? 달린 답변도 함께 삭제됩니다."),
+      confirmLabel: t("삭제"), danger: true,
+    }))) return;
+    setActErr(false);
+    try {
+      await deleteMyFeedback(row.id);
+      setRows((cur) => (cur ?? []).filter((r) => r.id !== row.id));
+      setExpanded(null);
+    } catch {
+      setActErr(true);
+    }
+  };
+
+  // ── 작성 폼 상태 (종전 그대로) ──
   const [kind, setKind] = useState<FeedbackKind>("feature");
   const [message, setMessage] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "done" | "error">("idle");
@@ -52,10 +213,10 @@ export default function FeedbackWidget({ open, setOpen }: { open: boolean; setOp
     });
   };
 
-  // 클립보드 붙여넣기 — 패널이 열려 있는 동안 어디에 포커스가 있든 받는다
+  // 클립보드 붙여넣기 — 작성 화면이 열려 있는 동안 어디에 포커스가 있든 받는다
   // (스크린샷을 캡처해 바로 Ctrl+V 하는 흐름이 가장 흔하다, 사용자 요청 2026-08-05)
   useEffect(() => {
-    if (!open) return;
+    if (!open || view !== "compose") return;
     const onPaste = (e: ClipboardEvent) => {
       const files = Array.from(e.clipboardData?.items ?? [])
         .filter((item) => item.kind === "file" && item.type.startsWith("image/"))
@@ -66,7 +227,7 @@ export default function FeedbackWidget({ open, setOpen }: { open: boolean; setOp
     window.addEventListener("paste", onPaste);
     return () => window.removeEventListener("paste", onPaste);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [open, view]);
 
   const submit = async () => {
     if (!message.trim() || status === "sending") return;
@@ -81,61 +242,257 @@ export default function FeedbackWidget({ open, setOpen }: { open: boolean; setOp
       setMessage("");
       setImages((cur) => { cur.forEach((img) => URL.revokeObjectURL(img.preview)); return []; });
       setTimeout(() => setStatus("idle"), 2600);
+      await refresh(true); // 방금 보낸 제안이 목록 맨 위에 뜨도록
+      setView("list");
     } catch {
       setStatus("error");
       setTimeout(() => setStatus("idle"), 2600);
     }
   };
 
+  const copyCode = () => {
+    if (!token) return;
+    navigator.clipboard?.writeText(token).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }).catch(() => {});
+  };
+
+  const applyCode = () => {
+    if (!setFeedbackToken(codeVal)) { setCodeErr(true); return; }
+    setCodeErr(false);
+    setCodeOpen(false);
+    setCodeVal("");
+    void refresh(true);
+  };
+
+  const fmtDate = (iso: string) =>
+    new Date(iso).toLocaleDateString(locale === "ja" ? "ja-JP" : locale === "en" ? "en-US" : "ko-KR", { year: "numeric", month: "short", day: "numeric" });
+
+  const KIND_KEY: Record<FeedbackKind, string> = { feature: "기능 제안", data_error: "데이터 오류 리포트", plan: "편성 제안" };
+  const isNewReply = (iso: string) => newSince !== undefined && (!newSince || iso > newSince);
+
   if (!feedbackReady) return null;
+
+  // 개발자 코멘트 탭 — 모두에게 공개 (devnote-* 스타일은 종전 업데이트 내역 뷰의 것을 재사용)
+  const notesView = (
+    <div className="fb-notes">
+      <p className="devnote-intro">{t("여러분이 보내 주신 제안·피드백에 대한 답변입니다 — 무엇이 반영되고, 무엇이 왜 어려운지 남깁니다.")}</p>
+      {notes === null && !notesError && <p className="fb-board-empty">{t("불러오는 중…")}</p>}
+      {notesError && <p className="fb-board-empty">{t("개발자 코멘트를 불러오지 못했습니다 — 잠시 뒤 다시 시도해 주세요.")}</p>}
+      {notes !== null && !notesError && notes.length === 0 && (
+        <p className="fb-board-empty">{t("아직 등록된 개발자 코멘트가 없습니다.")}</p>
+      )}
+      <ul>
+        {(notes ?? []).map((row) => {
+          const shownNote = openedNotes.has(row.id);
+          return (
+            <li key={row.id} className="devnote">
+              <span className={`chlog-kind devnote-status ${row.status}`}>{t(DEVNOTE_STATUS_LABEL[row.status])}</span>
+              <div className="devnote-body">
+                <button type="button" className="devnote-q" aria-expanded={shownNote} onClick={() => toggleNote(row.id)}>
+                  <span>{noteSuggestion(row, locale)}</span>
+                  <i aria-hidden>{shownNote ? "▴" : "▾"}</i>
+                </button>
+                {shownNote && (<>
+                  <p className="devnote-reply">{noteReply(row, locale)}</p>
+                  {row.image && (
+                    <a href={row.image} target="_blank" rel="noreferrer" title={t("이미지 크게 보기")}>
+                      <img className="devnote-img" src={row.image} alt="" loading="lazy" />
+                    </a>
+                  )}
+                  <time className="fb-note-date">{fmtDate(`${row.released_at}T00:00:00+09:00`)}</time>
+                </>)}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+
+  const mineView = (<>
+      <div className="fb-list-tools">
+        <button type="button" className="fb-new-btn" onClick={() => setView("compose")}>+ {t("제안하기")}</button>
+        <small className="fb-privacy">{t("제안은 작성자 본인과 개발자만 볼 수 있습니다")}</small>
+      </div>
+      {loadError ? (
+        <p className="fb-board-empty">
+          {t("제안 목록을 불러오지 못했습니다")}{" "}
+          <button type="button" className="fb-retry-btn" onClick={() => void refresh(true)}>{t("다시 시도")}</button>
+        </p>
+      ) : rows === null ? (
+        <p className="fb-board-empty">{t("불러오는 중…")}</p>
+      ) : rows.length === 0 ? (
+        <p className="fb-board-empty">
+          {t("아직 보낸 제안이 없습니다")}<br />
+          <small>{t("답변이 달리면 여기와 제안 버튼 뱃지로 알려드립니다")}</small>
+        </p>
+      ) : (
+        <ul className="fb-board">
+          {rows.map((row) => {
+            const isOpen = expanded === row.id;
+            const imgs = imagesOf(row.payload);
+            const hasNew = row.feedback_replies.some((rep) => isNewReply(rep.created_at));
+            return (
+              <li key={row.id} className={`fb-board-item${isOpen ? " open" : ""}`}>
+                <button type="button" className="fb-board-head" onClick={() => toggleItem(row.id)}>
+                  <span className={`fb-kind-chip k-${row.kind}`}>{t(KIND_KEY[row.kind] ?? row.kind)}</span>
+                  <time>{fmtDate(row.created_at)}</time>
+                  {row.feedback_replies.length > 0 && (
+                    <span className={`fb-reply-chip${hasNew ? " has-new" : ""}`} title={hasNew ? t("새 답변") : undefined}>
+                      💬 {t("답변 {n}개", { n: row.feedback_replies.length })}
+                    </span>
+                  )}
+                  {!isOpen && <span className="fb-board-preview">{row.message}</span>}
+                </button>
+                {isOpen && (
+                  <div className="fb-thread">
+                    {editingId === row.id ? (
+                      <div className="fb-edit-area">
+                        <textarea value={editVal} onChange={(e) => setEditVal(e.target.value)} rows={4} maxLength={4000} />
+                        <div className="fb-thread-tools">
+                          <button type="button" className="fb-tool-btn" disabled={!editVal.trim() || editBusy} onClick={() => void saveEdit(row)}>
+                            {editBusy ? t("전송 중…") : t("저장")}
+                          </button>
+                          <button type="button" className="fb-tool-btn" onClick={() => setEditingId(null)}>{t("취소")}</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="fb-thread-msg">{row.message}</p>
+                    )}
+                    {imgs.length > 0 && (
+                      <div className="fb-images">
+                        {imgs.map((u) => (
+                          <a key={u} href={u} target="_blank" rel="noreferrer"><img src={u} alt="" loading="lazy" /></a>
+                        ))}
+                      </div>
+                    )}
+                    {row.feedback_replies.length === 0 ? (
+                      <p className="fb-noreply">{t("아직 답변이 없습니다")}</p>
+                    ) : row.feedback_replies.map((rep) => (
+                      <div key={rep.id} className={`fb-reply${isNewReply(rep.created_at) ? " unread" : ""}`}>
+                        <header>
+                          <b>🛠 {t("개발자")}</b>
+                          {isNewReply(rep.created_at) && <i className="fb-new-tag">{t("새 답변")}</i>}
+                          <time>{fmtDate(rep.created_at)}</time>
+                        </header>
+                        <p>{rep.body}</p>
+                      </div>
+                    ))}
+                    {editingId !== row.id && (
+                      <div className="fb-thread-tools">
+                        <button type="button" className="fb-tool-btn" onClick={() => startEdit(row)}>{t("수정하기")}</button>
+                        <button type="button" className="fb-tool-btn danger" onClick={() => void removeMine(row)}>{t("삭제")}</button>
+                      </div>
+                    )}
+                    {actErr && <small className="fb-act-err">{t("실패했습니다 — 잠시 후 다시 시도해주세요")}</small>}
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      <footer className="fb-code-foot">
+        <div className="fb-code-row">
+          {token && (
+            <>
+              <small>{t("내 열람 코드")}</small>
+              <code title={token}>{token.slice(0, 8)}…</code>
+              <button type="button" onClick={copyCode}>{copied ? t("복사됨") : t("복사")}</button>
+            </>
+          )}
+          <button type="button" className="fb-code-toggle" onClick={() => setCodeOpen((o) => !o)}>
+            {t("다른 기기에서 이어보기")}
+          </button>
+        </div>
+        {codeOpen && (
+          <div className="fb-code-entry">
+            <input
+              value={codeVal}
+              onChange={(e) => { setCodeVal(e.target.value); setCodeErr(false); }}
+              onKeyDown={(e) => { if (e.key === "Enter") applyCode(); }}
+              placeholder={t("열람 코드 붙여넣기")}
+              spellCheck={false}
+            />
+            <button type="button" onClick={applyCode}>{t("적용")}</button>
+            {codeErr && <small className="fb-code-err">{t("코드 형식이 올바르지 않습니다")}</small>}
+            {!codeErr && !!rows?.length && (
+              <small className="fb-code-warn">{t("코드를 적용하면 이 브라우저의 기존 제안 {n}건은 목록에서 사라집니다 — 필요하면 현재 열람 코드를 먼저 복사해 두세요", { n: rows.length })}</small>
+            )}
+          </div>
+        )}
+        {token && !codeOpen && <small className="fb-code-hint">{t("이 코드를 다른 기기에서 입력하면 같은 목록을 볼 수 있습니다")}</small>}
+      </footer>
+  </>);
+
+  const board = (
+    <div className="feedback-panel fb-board-panel">
+      <div className="fb-tabs">
+        <button type="button" className={tab === "mine" ? "selected" : ""} onClick={() => setTab("mine")}>{t("내 제안")}</button>
+        <button type="button" className={tab === "notes" ? "selected" : ""} onClick={() => setTab("notes")}>💬 {t("개발자 코멘트")}</button>
+      </div>
+      {tab === "notes" ? notesView : mineView}
+    </div>
+  );
+
+  const compose = (
+    /* 패널 전체가 이미지 드롭 대상 — 끌어다 놓아도, 붙여넣어도, 눌러 골라도 된다 */
+    <div className={`feedback-panel${dragOver ? " dragover" : ""}`}
+      onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+      onDragLeave={(e) => { if (e.currentTarget === e.target) setDragOver(false); }}
+      onDrop={(e) => { e.preventDefault(); setDragOver(false); addImages(Array.from(e.dataTransfer.files ?? [])); }}>
+      <div className="fb-compose-top">
+        <button type="button" className="fb-back-btn" onClick={() => setView("list")}>‹ {t("뒤로")}</button>
+      </div>
+      <div className="feedback-kind">
+        <button type="button" className={kind === "feature" ? "selected" : ""} onClick={() => setKind("feature")}>{t("기능 제안")}</button>
+        <button type="button" className={kind === "data_error" ? "selected" : ""} onClick={() => setKind("data_error")}>{t("데이터 오류 리포트")}</button>
+      </div>
+      <textarea value={message} onChange={(event) => setMessage(event.target.value)} rows={4} maxLength={4000}
+        placeholder={kind === "feature" ? t("이런 기능이 있으면 좋겠어요…") : t("어떤 오퍼의 어떤 데이터가 잘못됐는지 알려주세요")} />
+      {/* 첨부 줄 — 섬네일 + 추가 버튼. 3장이 차면 추가 버튼이 사라진다 */}
+      <div className="fb-attach">
+        {images.map((img, i) => (
+          <span key={img.preview} className="fb-thumb">
+            <img src={img.preview} alt="" />
+            <button type="button" aria-label={t("첨부 삭제")} onClick={() => removeImage(i)}>×</button>
+          </span>
+        ))}
+        {images.length < FEEDBACK_IMG_MAX && (
+          <button type="button" className="fb-attach-btn" onClick={() => fileRef.current?.click()}
+            title={t("스크린샷 등 이미지 최대 {n}장 (장당 {m}MB 이하)", { n: FEEDBACK_IMG_MAX, m: FEEDBACK_IMG_MB })}>
+            📎 {t("이미지 첨부")} {images.length > 0 ? `${images.length}/${FEEDBACK_IMG_MAX}` : ""}
+          </button>
+        )}
+        <input ref={fileRef} type="file" accept="image/*" multiple hidden
+          onChange={(e) => { addImages(Array.from(e.target.files ?? [])); e.target.value = ""; }} />
+      </div>
+      <p className="fb-attach-hint">{t("이미지를 끌어다 놓거나 붙여넣기(Ctrl+V)도 됩니다")}</p>
+      <footer>
+        <small>{status === "done" ? t("보냈습니다, 감사합니다!") : status === "error" ? t("전송 실패 — 잠시 후 다시 시도해주세요") : statusText || t("익명으로 전송됩니다")}</small>
+        <button type="button" className="feedback-send" disabled={!message.trim() || status === "sending"} onClick={submit}>
+          {status === "sending" ? t("전송 중…") : t("보내기")}
+        </button>
+      </footer>
+      {dragOver && <div className="fb-drop-veil">{t("여기에 놓으면 첨부됩니다")}</div>}
+    </div>
+  );
 
   return (
     <div className="feedback-widget">
       {open && (
-        <ModalWindow label={t("제안 보내기")} className="feedback-modal" onClose={() => setOpen(false)}>
-          {/* 패널 전체가 이미지 드롭 대상 — 끌어다 놓아도, 붙여넣어도, 눌러 골라도 된다 */}
-          <div className={`feedback-panel${dragOver ? " dragover" : ""}`}
-            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-            onDragLeave={(e) => { if (e.currentTarget === e.target) setDragOver(false); }}
-            onDrop={(e) => { e.preventDefault(); setDragOver(false); addImages(Array.from(e.dataTransfer.files ?? [])); }}>
-            <div className="feedback-kind">
-              <button type="button" className={kind === "feature" ? "selected" : ""} onClick={() => setKind("feature")}>{t("기능 제안")}</button>
-              <button type="button" className={kind === "data_error" ? "selected" : ""} onClick={() => setKind("data_error")}>{t("데이터 오류 리포트")}</button>
-            </div>
-            <textarea value={message} onChange={(event) => setMessage(event.target.value)} rows={4} maxLength={4000}
-              placeholder={kind === "feature" ? t("이런 기능이 있으면 좋겠어요…") : t("어떤 오퍼의 어떤 데이터가 잘못됐는지 알려주세요")} />
-            {/* 첨부 줄 — 섬네일 + 추가 버튼. 3장이 차면 추가 버튼이 사라진다 */}
-            <div className="fb-attach">
-              {images.map((img, i) => (
-                <span key={img.preview} className="fb-thumb">
-                  <img src={img.preview} alt="" />
-                  <button type="button" aria-label={t("첨부 삭제")} onClick={() => removeImage(i)}>×</button>
-                </span>
-              ))}
-              {images.length < FEEDBACK_IMG_MAX && (
-                <button type="button" className="fb-attach-btn" onClick={() => fileRef.current?.click()}
-                  title={t("스크린샷 등 이미지 최대 {n}장 (장당 {m}MB 이하)", { n: FEEDBACK_IMG_MAX, m: FEEDBACK_IMG_MB })}>
-                  📎 {t("이미지 첨부")} {images.length > 0 ? `${images.length}/${FEEDBACK_IMG_MAX}` : ""}
-                </button>
-              )}
-              <input ref={fileRef} type="file" accept="image/*" multiple hidden
-                onChange={(e) => { addImages(Array.from(e.target.files ?? [])); e.target.value = ""; }} />
-            </div>
-            <p className="fb-attach-hint">{t("이미지를 끌어다 놓거나 붙여넣기(Ctrl+V)도 됩니다")}</p>
-            <footer>
-              <small>{status === "done" ? t("보냈습니다, 감사합니다!") : status === "error" ? t("전송 실패 — 잠시 후 다시 시도해주세요") : statusText || t("익명으로 전송됩니다")}</small>
-              <button type="button" className="feedback-send" disabled={!message.trim() || status === "sending"} onClick={submit}>
-                {status === "sending" ? t("전송 중…") : t("보내기")}
-              </button>
-            </footer>
-            {dragOver && <div className="fb-drop-veil">{t("여기에 놓으면 첨부됩니다")}</div>}
-          </div>
+        <ModalWindow label={t("제안 게시판")} className="feedback-modal" onClose={close}>
+          {view === "list" ? board : compose}
         </ModalWindow>
       )}
-      <button type="button" className="feedback-fab" onClick={() => setOpen(!open)} aria-label={t("제안 보내기")}>
+      <button type="button" className="feedback-fab" onClick={() => (open ? close() : setOpen(true))} aria-label={t("제안 게시판")}>
         {open ? t("닫기") : t("💬 제안")}
-        {!open && isNewFeature("feedback-image") && <span className="new-badge">{t("새기능")}</span>}
+        {!open && badge > 0 && <span className="fb-reply-badge" title={t("새 답변 {n}개", { n: badge })}>{badge}</span>}
+        {!open && badge === 0 && isNewFeature("feedback-board") && <span className="new-badge">{t("새기능")}</span>}
       </button>
+      {confirmDialog}
     </div>
   );
 }

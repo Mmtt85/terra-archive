@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useI18n } from "./i18n";
 
 // window.confirm 대체 — 사이트 톤에 맞춘 확인 모달. 어디서든 재사용한다.
@@ -69,8 +70,12 @@ export function useConfirm() {
     setOptions(null);
   }, []);
 
-  const dialog = options ? (
-    <ConfirmDialog {...options} onConfirm={() => settle(true)} onCancel={() => settle(false)} />
+  // body 포털 — 부모가 만든 stacking context(z-index 낮은 위젯·창모달)에 갇히지 않게.
+  // 제안 게시판(창모달 z 200대 위에서 confirm)에서 실측된 문제 (2026-08-17): 위젯 루트가
+  // z 150 컨텍스트라 그 안에 그리면 백드롭이 창모달 아래 깔려 클릭이 막혔다.
+  const dialog = options ? createPortal(
+    <ConfirmDialog {...options} onConfirm={() => settle(true)} onCancel={() => settle(false)} />,
+    document.body
   ) : null;
 
   return { confirm, dialog };

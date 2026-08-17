@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { adminDeleteFeedback, adminListFeedback, adminMe, adminSetHandling, adminSetReviewed, handlingAt, imagesOf, withHandling, type FeedbackRow } from "../feedback";
+import { adminAddReply, adminDeleteFeedback, adminDeleteReply, adminListFeedback, adminMe, adminSetHandling, adminSetReviewed, handlingAt, imagesOf, withHandling, type FeedbackRow } from "../feedback";
 import { adminDeleteRelease, adminDeleteRule, adminListRules, adminPublishRelease, adminUpsertRule, fetchLatestRelease, type ReleaseRow } from "../rules-api";
 import { adminDeleteChange, adminUpsertChange, fetchAllChanges, areaOf, CHANGE_KINDS, CHANGE_KIND_LABEL, CHANGE_AREAS, CHANGE_AREA_LABEL, daysAgoKst, type ChangeArea, type ChangeDraft, type ChangeRow } from "../changelog-api";
 import { adminDeleteTip, adminUpsertTip, fetchAllTips, type TipDraft, type TipRow } from "../tips-api";
@@ -27,6 +27,26 @@ type DataCheck = {
 
 const KIND_LABEL: Record<string, string> = { feature: "기능 제안", data_error: "데이터 오류", plan: "편성 제안" };
 const OP_NAME = new Map((operatorsData as { id: string; name: string }[]).map((op) => [op.id, op.name]));
+
+// 제안 게시판 답변 폼 — 그 제안의 작성자(열람 토큰 보유 브라우저)만 볼 수 있는 답변을 단다
+// (docs/supabase-feedback-board.sql). 실패 시 텍스트를 지우지 않는다 — 상태줄이 알린다.
+function AdminReplyForm({ onSubmit }: { onSubmit: (body: string) => Promise<void> }) {
+  const [val, setVal] = useState("");
+  const [busy, setBusy] = useState(false);
+  const send = async () => {
+    const body = val.trim();
+    if (!body || busy) return;
+    setBusy(true);
+    try { await onSubmit(body); setVal(""); } catch { /* 상태줄에 표시됨 */ } finally { setBusy(false); }
+  };
+  return (
+    <div className="fb-admin-reply-form">
+      <textarea value={val} onChange={(e) => setVal(e.target.value)} rows={2} maxLength={4000}
+        placeholder="작성자에게만 보이는 답변 달기…" />
+      <button onClick={send} disabled={!val.trim() || busy}>{busy ? "등록 중…" : "답변 등록"}</button>
+    </div>
+  );
+}
 
 // 플래너 지식 베이스(docs/PLANNER-RULES-DB.md) — 규칙 종류 표시명
 const RULE_KIND_LABEL: Record<RuleRow["kind"], string> = {
@@ -591,6 +611,29 @@ export default function AdminPage() {
     }
   };
 
+  // 제안 게시판 답변 — 등록·삭제 후 행의 feedback_replies를 로컬 갱신 (재조회 없이)
+  const addReply = async (row: FeedbackRow, body: string) => {
+    try {
+      const rep = await adminAddReply(row.id, body);
+      setRows((current) => current.map((item) => item.id === row.id
+        ? { ...item, feedback_replies: [...(item.feedback_replies ?? []), rep] } : item));
+    } catch (err) {
+      setStatus(`답변 등록 실패 — ${String((err as Error).message ?? err)}`);
+      throw err;
+    }
+  };
+
+  const removeReply = async (row: FeedbackRow, replyId: string) => {
+    if (!(await confirm({ message: "이 답변을 삭제할까요?", danger: true }))) return;
+    try {
+      await adminDeleteReply(replyId);
+      setRows((current) => current.map((item) => item.id === row.id
+        ? { ...item, feedback_replies: (item.feedback_replies ?? []).filter((r) => r.id !== replyId) } : item));
+    } catch {
+      setStatus("답변 삭제 실패");
+    }
+  };
+
   // "한꺼번에 대응중" — 지금 보이는 목록 중 아직 대응중이 아닌 항목을 일괄 표시
   const markShownHandling = async () => {
     const targets = shown.filter((row) => !handlingAt(row.payload));
@@ -819,6 +862,20 @@ export default function AdminPage() {
                 ))}
               </div>
             )}
+            {/* 게시판 답변 스레드 — 작성자(열람 토큰)와 나만 본다. 토큰 없는 구형 익명
+                제안은 작성자가 볼 방법이 없으므로 답변 폼 대신 안내만 띄운다. */}
+            <div className="fb-admin-replies">
+              {(row.feedback_replies ?? []).map((rep) => (
+                <div key={rep.id} className="fb-admin-reply">
+                  <span className="fb-admin-reply-body">{rep.body}</span>
+                  <time>{new Date(rep.created_at).toLocaleString("ko-KR")}</time>
+                  <button onClick={() => removeReply(row, rep.id)}>삭제</button>
+                </div>
+              ))}
+              {row.author_token
+                ? <AdminReplyForm onSubmit={(body) => addReply(row, body)} />
+                : <small className="fb-admin-reply-hint">게시판 개편(2026-08-17) 전 익명 제안 — 답변해도 작성자가 볼 수 없습니다</small>}
+            </div>
             {row.payload != null && (
               <details>
                 <summary>payload 보기</summary>

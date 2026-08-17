@@ -2342,6 +2342,40 @@ const D: Record<string, Pair> = {
      "編成が空のため育成推薦を出せません — まず全体自動編成を実行してください。"],
   "보내기": ["Send", "送信"],
   "💬 제안": ["💬 Feedback", "💬 提案"],
+  // ── 제안 게시판 (스레드형 개편 2026-08-17 — 작성자 토큰과 개발자만 보는 1:1 스레드.
+  //    개발자 코멘트 탭은 전체 공개 — 업데이트 내역 모달에서 이사) ──
+  "제안 게시판": ["Suggestion board", "提案ボード"],
+  "내 제안": ["My suggestions", "自分の提案"],
+  "제안하기": ["New suggestion", "提案する"],
+  "편성 제안": ["Team suggestion", "編成提案"],
+  "제안은 작성자 본인과 개발자만 볼 수 있습니다": ["Only you and the developer can see your suggestions", "提案は投稿者本人と開発者のみ閲覧できます"],
+  "아직 보낸 제안이 없습니다": ["No suggestions yet", "まだ送った提案はありません"],
+  "답변이 달리면 여기와 제안 버튼 뱃지로 알려드립니다": ["Replies show up here, with a badge on the suggest button", "返信が届くとここに表示され、提案ボタンにバッジが付きます"],
+  "답변 {n}개": ["{n} replies", "返信{n}件"],
+  "새 답변": ["New reply", "新着返信"],
+  "새 답변 {n}개": ["{n} new replies", "新着返信{n}件"],
+  "아직 답변이 없습니다": ["No reply yet", "まだ返信はありません"],
+  "개발자": ["Developer", "開発者"],
+  "불러오는 중…": ["Loading…", "読み込み中…"],
+  "제안 목록을 불러오지 못했습니다": ["Couldn't load your suggestions", "提案一覧を読み込めませんでした"],
+  "다시 시도": ["Retry", "再試行"],
+  "내 열람 코드": ["My access code", "閲覧コード"],
+  "복사": ["Copy", "コピー"],
+  "복사됨": ["Copied", "コピーしました"],
+  "다른 기기에서 이어보기": ["Continue from another device", "他の端末から引き継ぐ"],
+  "열람 코드 붙여넣기": ["Paste your access code", "閲覧コードを貼り付け"],
+  "코드 형식이 올바르지 않습니다": ["That code doesn't look right", "コードの形式が正しくありません"],
+  "코드를 적용하면 이 브라우저의 기존 제안 {n}건은 목록에서 사라집니다 — 필요하면 현재 열람 코드를 먼저 복사해 두세요":
+    ["Applying a code hides this browser's current {n} suggestions — copy your current code first if you need it",
+     "コードを適用するとこのブラウザの既存の提案{n}件は一覧から見えなくなります — 必要なら現在の閲覧コードを先にコピーしてください"],
+  "이 코드를 다른 기기에서 입력하면 같은 목록을 볼 수 있습니다": ["Enter this code on another device to see the same list", "このコードを他の端末で入力すると同じ一覧を見られます"],
+  "뒤로": ["Back", "戻る"],
+  // 본인 수정·삭제 ("수정" 키는 업데이트 내역 종류 라벨(Changed)이라 동사용 키를 따로 둔다)
+  "수정하기": ["Edit", "編集"],
+  "삭제": ["Delete", "削除"],
+  "저장": ["Save", "保存"],
+  "이 제안을 삭제할까요? 달린 답변도 함께 삭제됩니다.": ["Delete this suggestion? Its replies will be deleted too.", "この提案を削除しますか？付いた返信も一緒に削除されます。"],
+  "실패했습니다 — 잠시 후 다시 시도해주세요": ["Something went wrong — please try again later", "失敗しました — しばらくしてからもう一度お試しください"],
   // ── 스샷 인식 (구 스샷 워프) — 페이지별 설치: /rogue 스샷으로 찾기 · 공채 스샷으로 태그 입력
   // (사용자 확정 2026-07-23). Phase 1은 KR 클라 전용(kor.traineddata만 호스팅)이라 진입 버튼이
   // ko에서만 보이지만, 키는 미리 등록해 둔다 (EN/JA 클라 지원 시 버튼 게이트만 풀면 됨).

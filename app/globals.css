@@ -2291,7 +2291,9 @@ legend {
 }
 /* 재사용 확인 모달 (app/confirm.tsx의 useConfirm) — window.confirm 대체 */
 .confirm-backdrop {
-  z-index: 200;
+  /* 200 → 1200: 창형 모달(z 200대, 클릭 순서로 증가)·데스크탑 펫(999) 위, 토스트(10000) 아래.
+     confirm은 항상 최상위 상호작용이어야 한다 — 제안 게시판 창모달 위 confirm에서 실측 (2026-08-17) */
+  z-index: 1200;
   place-items: center;
 }
 .confirm-modal {
@@ -7041,7 +7043,7 @@ legend {
    radius도 없냐") — 제목·닫기·📌는 크롬 바가 담당하므로 패널 자체 header는 없앴다. */
 .feedback-modal {
   position: relative;
-  width: min(360px, 100%);
+  width: min(430px, 100%); /* 360 → 430px — 게시판(스레드 목록) 개편으로 폭 확대 (2026-08-17) */
   /* 백드롭이 grid라 기본 stretch — 내용만큼만 높게 잡고 화면 중앙에 둔다
      (안 그러면 짧은 폼이 화면 높이만큼 늘어난다: 실측 812px) */
   place-self: center;
@@ -7179,6 +7181,71 @@ legend {
   border: 1px solid var(--line);
   border-radius: 6px;
 }
+/* /admin 게시판 답변 — 그 제안의 작성자만 보는 스레드 (docs/supabase-feedback-board.sql) */
+.fb-admin-replies {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+.fb-admin-reply {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  border-left: 3px solid var(--lime);
+  background: color-mix(in srgb, var(--lime) 7%, transparent);
+  padding: 6px 8px;
+  font-size: 12px;
+}
+.fb-admin-reply-body {
+  flex: 1;
+  white-space: pre-wrap;
+}
+.fb-admin-reply time {
+  color: var(--muted);
+  font-size: 10.5px;
+  white-space: nowrap;
+}
+.fb-admin-reply button {
+  border: 1px solid var(--line);
+  background: 0 0;
+  color: inherit;
+  font-size: 10.5px;
+  padding: 1px 6px;
+  cursor: pointer;
+}
+.fb-admin-reply-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+}
+.fb-admin-reply-form textarea {
+  flex: 1;
+  border: 1px solid var(--line);
+  background: var(--white);
+  color: inherit;
+  padding: 6px 8px;
+  font-size: 12px;
+  resize: vertical;
+}
+.fb-admin-reply-form button {
+  border: 1px solid var(--border-strong);
+  background: var(--chip);
+  color: var(--lime);
+  padding: 6px 10px;
+  font-size: 11.5px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.fb-admin-reply-form button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.fb-admin-reply-hint {
+  color: var(--muted);
+  font-size: 11px;
+}
 /* ⚠ 전역 `footer {}`(사이트 푸터: 검은 배경·회색 글자)가 모달 안 <footer>까지 먹는다 —
    다크에선 안 보이다가 **라이트모드에서 아래쪽만 검은 띠**가 됐다 (사용자 제보 2026-08-06).
    모달 푸터는 배경을 지우고 얇은 구분선만 남긴다. */
@@ -7214,6 +7281,389 @@ legend {
 .feedback-send:not(:disabled):hover {
   background: var(--lime);
   color: var(--on-lime);
+}
+/* ── 제안 게시판 (2026-08-17 스레드 개편) — 목록·스레드·열람 코드. 색은 전부 토큰이라
+   다크 짝 불필요, 빨강 계열(gradient·err)은 .new-badge와 같은 고정색 관례를 따른다. */
+.fb-reply-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  margin-left: 2px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #ff5a3c, #ff2d78);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+}
+.fb-board-panel {
+  display: flex;
+  flex-direction: column;
+}
+/* 게시판 탭 — 내 제안(비공개) | 개발자 코멘트(공개, 2026-08-17 업데이트 내역 모달에서 이사) */
+.fb-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 12px 14px 0;
+}
+.fb-tabs button {
+  flex: 1;
+  border: 1px solid var(--line);
+  background: 0 0;
+  color: inherit;
+  padding: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.fb-tabs button.selected {
+  background: var(--chip);
+  color: var(--lime);
+  border-color: var(--border-strong);
+}
+/* 개발자 코멘트 목록 — devnote-* 본체 스타일은 종전 업데이트 내역 뷰의 것을 그대로 쓴다 */
+.fb-notes {
+  padding: 12px 14px;
+  overflow-y: auto;
+  max-height: min(58dvh, 520px);
+}
+.fb-notes > ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.fb-notes li.devnote {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.fb-notes .devnote-intro {
+  margin: 0 0 12px;
+}
+.fb-note-date {
+  display: block;
+  margin-top: 6px;
+  font-size: 10px;
+  color: var(--muted);
+}
+.fb-list-tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px 8px;
+}
+.fb-new-btn {
+  border: 1px solid var(--border-strong);
+  background: var(--chip);
+  color: var(--lime);
+  cursor: pointer;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.fb-new-btn:hover {
+  background: var(--lime);
+  color: var(--on-lime);
+}
+.fb-privacy {
+  color: var(--muted);
+  font-size: 10.5px;
+  line-height: 1.4;
+}
+.fb-board {
+  list-style: none;
+  margin: 0;
+  padding: 0 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+  max-height: min(52dvh, 470px);
+}
+.fb-board-item {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.fb-board-item.open {
+  border-color: var(--border-strong);
+}
+.fb-board-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  width: 100%;
+  border: 0;
+  background: 0 0;
+  color: inherit;
+  padding: 9px 10px;
+  cursor: pointer;
+  text-align: left;
+}
+.fb-kind-chip {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+  background: var(--chip);
+  color: var(--lime);
+  white-space: nowrap;
+}
+.fb-board-head time {
+  color: var(--muted);
+  font-size: 10.5px;
+}
+.fb-reply-chip {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--lime);
+  white-space: nowrap;
+}
+.fb-reply-chip.has-new::after {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-left: 4px;
+  border-radius: 50%;
+  background: #ff2d78;
+  vertical-align: 1px;
+}
+.fb-board-preview {
+  flex-basis: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  opacity: 0.85;
+}
+.fb-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 10px 10px;
+}
+.fb-thread-msg {
+  margin: 0;
+  white-space: pre-wrap;
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+.fb-thread .fb-images {
+  margin-top: 0;
+}
+.fb-thread .fb-images img {
+  max-height: 90px;
+  max-width: 140px;
+}
+.fb-noreply {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11.5px;
+}
+.fb-reply {
+  border-left: 3px solid var(--lime);
+  border-radius: 0 8px 8px 0;
+  background: color-mix(in srgb, var(--lime) 7%, transparent);
+  padding: 8px 10px;
+}
+.fb-reply header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.fb-reply header b {
+  font-size: 11px;
+  color: var(--lime);
+}
+.fb-reply header time {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--muted);
+}
+.fb-reply p {
+  margin: 0;
+  white-space: pre-wrap;
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+.fb-new-tag {
+  font-style: normal;
+  font-size: 9.5px;
+  font-weight: 900;
+  color: #fff;
+  background: linear-gradient(135deg, #ff5a3c, #ff2d78);
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+.fb-thread-tools {
+  display: flex;
+  gap: 6px;
+}
+.fb-tool-btn {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: 0 0;
+  color: var(--muted);
+  padding: 3px 9px;
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.fb-tool-btn:hover:not(:disabled) {
+  border-color: var(--border-strong);
+  color: var(--ink);
+}
+.fb-tool-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.fb-tool-btn.danger:hover {
+  border-color: #e0483c;
+  color: #e0483c;
+}
+.fb-edit-area {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.fb-edit-area textarea {
+  width: 100%;
+  margin: 0;
+  border: 1px solid var(--line);
+  background: var(--white);
+  color: inherit;
+  padding: 8px;
+  font-size: 12.5px;
+  resize: vertical;
+  outline: 0;
+}
+.fb-edit-area textarea:focus {
+  border-color: var(--border-strong);
+}
+.fb-act-err {
+  color: #e0483c;
+  font-size: 10.5px;
+}
+.fb-board-empty {
+  margin: 0;
+  padding: 26px 14px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+.fb-retry-btn {
+  border: 1px solid var(--line);
+  background: 0 0;
+  color: inherit;
+  padding: 2px 8px;
+  font-size: 11px;
+  cursor: pointer;
+}
+/* ⚠ 전역 footer 리셋(.feedback-panel > footer)이 row 배치를 걸어두므로 지정도를 맞춰 되엎는다 */
+.feedback-panel > footer.fb-code-foot {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  padding: 10px 14px 12px;
+}
+.fb-code-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.fb-code-row > small {
+  color: var(--muted);
+  font-size: 10.5px;
+}
+.fb-code-row code {
+  font-size: 11px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--chip);
+  color: var(--lime); /* --chip은 라이트 테마에서도 어두운 칩면이라 잉크색이 묻힌다 */
+  padding: 2px 6px;
+}
+.fb-code-row button,
+.fb-code-entry button {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: 0 0;
+  color: inherit;
+  padding: 3px 8px;
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.fb-code-row button:hover,
+.fb-code-entry button:hover {
+  border-color: var(--border-strong);
+}
+.fb-code-toggle {
+  margin-left: auto;
+  color: var(--muted);
+}
+.fb-code-entry {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.fb-code-entry input {
+  flex: 1;
+  min-width: 200px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--white);
+  color: inherit;
+  padding: 5px 8px;
+  font-size: 11.5px;
+  outline: 0;
+}
+.fb-code-entry input:focus {
+  border-color: var(--border-strong);
+}
+.fb-code-err {
+  flex-basis: 100%;
+  color: #e0483c;
+  font-size: 10.5px;
+}
+.fb-code-warn {
+  flex-basis: 100%;
+  color: var(--muted);
+  font-size: 10.5px;
+  line-height: 1.5;
+}
+.fb-code-hint {
+  color: var(--muted);
+  font-size: 10px;
+}
+.fb-compose-top {
+  padding: 10px 14px 0;
+}
+.fb-back-btn {
+  border: 0;
+  background: 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  padding: 0;
+}
+.fb-back-btn:hover {
+  color: var(--ink);
 }
 .propose-btn {
   border: 1px solid var(--lime) !important;

@@ -32,28 +32,160 @@ export function imagesOf(payload: unknown): string[] {
   return Array.isArray(value) ? value.filter((u): u is string => typeof u === "string" && !!u) : [];
 }
 
+// ── 제안 게시판 — 로그인 없는 작성자 식별 (사용자 확정 2026-08-17) ──
+// 첫 제안 때 uuid 토큰을 만들어 localStorage에 두고, 이후 그 토큰이 '내 제안'의 열람
+// 자격이 된다: RLS가 요청 헤더 x-feedback-token과 일치하는 행만 돌려준다
+// (docs/supabase-feedback-board.sql). 토큰 = 열람 코드 — 다른 기기에서 입력하면 이어본다.
+
+const FEEDBACK_TOKEN_KEY = "ta-feedback-token";
+const FEEDBACK_SEEN_KEY = "ta-feedback-seen"; // 게시판을 마지막으로 연 시각 — 새 답변 뱃지 기준
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+export function getFeedbackToken(): string | null {
+  try {
+    const v = localStorage.getItem(FEEDBACK_TOKEN_KEY);
+    return v && UUID_RE.test(v) ? v : null;
+  } catch { return null; }
+}
+
+/** 없으면 만들어 저장하고 돌려준다 — 첫 제안 전송 시점에만 호출 (일반 방문자에겐 안 만든다) */
+export function ensureFeedbackToken(): string {
+  const cur = getFeedbackToken();
+  if (cur) return cur;
+  const token = typeof crypto !== "undefined" && crypto.randomUUID
+    ? crypto.randomUUID()
+    : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+        const r = (Math.random() * 16) | 0;
+        return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
+      });
+  try { localStorage.setItem(FEEDBACK_TOKEN_KEY, token); } catch { /* 시크릿 모드 등 — 전송은 되고 열람만 안 됨 */ }
+  return token;
+}
+
+/** 열람 코드 입력 — uuid 형식이면 토큰을 교체하고 true (다른 기기에서 이어보기) */
+export function setFeedbackToken(code: string): boolean {
+  const v = code.trim().toLowerCase();
+  if (!UUID_RE.test(v)) return false;
+  try { localStorage.setItem(FEEDBACK_TOKEN_KEY, v); } catch { return false; }
+  return true;
+}
+
+export function getFeedbackSeen(): string | null {
+  try { return localStorage.getItem(FEEDBACK_SEEN_KEY); } catch { return null; }
+}
+export function markFeedbackSeen() {
+  try { localStorage.setItem(FEEDBACK_SEEN_KEY, new Date().toISOString()); } catch { /* noop */ }
+}
+
+export type FeedbackReply = { id: string; body: string; created_at: string };
+export type MyFeedbackRow = {
+  id: string; created_at: string; kind: FeedbackKind; message: string; payload: unknown;
+  feedback_replies: FeedbackReply[];
+};
+
+/** 내 제안 목록 (답변 포함, 최신순) — 토큰이 없으면 네트워크 없이 [] */
+export async function fetchMyFeedback(): Promise<MyFeedbackRow[]> {
+  const token = getFeedbackToken();
+  if (!token) return [];
+  const headers = { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, "x-feedback-token": token };
+  const embed = "select=id,created_at,kind,message,payload,feedback_replies(id,body,created_at)" +
+    "&order=created_at.desc&feedback_replies.order=created_at.asc&limit=100";
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/feedback?${embed}`, { headers });
+  if (res.ok) return res.json();
+  // 과도기 — supabase-feedback-board.sql이 아직 적용 전이면 feedback_replies 임베드가 400.
+  // 답변 없이 목록만이라도 돌려준다 (정책도 없으면 어차피 빈 배열).
+  if (res.status === 400) {
+    const plain = await fetch(`${SUPABASE_URL}/rest/v1/feedback?select=id,created_at,kind,message,payload&order=created_at.desc&limit=100`, { headers });
+    if (plain.ok) return (await plain.json() as Omit<MyFeedbackRow, "feedback_replies">[]).map((r) => ({ ...r, feedback_replies: [] }));
+  }
+  throw new Error(`조회 실패 (${res.status})`);
+}
+
+// 본인 수정·삭제 (사용자 요청 2026-08-17) — RLS가 토큰 일치 행만 허용한다.
+// ⚠ RLS에 걸리면 에러가 아니라 "0행 처리"에 200이 온다 (adminWrite와 같은 함정) —
+// return=representation으로 실제 행 수를 세서 0행이면 실패로 던진다.
+
+function authorHeaders(token: string) {
+  return {
+    apikey: SUPABASE_ANON_KEY,
+    Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+    "x-feedback-token": token,
+    "Content-Type": "application/json",
+    Prefer: "return=representation",
+  };
+}
+
+/** 본인 제안 수정 — 내용(message)만 바꾼다 */
+export async function updateMyFeedback(id: string, message: string) {
+  const token = getFeedbackToken();
+  if (!token) throw new Error("열람 토큰이 없습니다");
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/feedback?id=eq.${id}`, {
+    method: "PATCH",
+    headers: authorHeaders(token),
+    body: JSON.stringify({ message: message.slice(0, 4000) }),
+  });
+  if (!res.ok) throw new Error(`수정 실패 (${res.status})`);
+  const changed = await res.json().catch(() => null);
+  if (!Array.isArray(changed) || changed.length === 0) throw new Error("수정 실패 — 0행 처리");
+}
+
+/** 본인 제안 삭제 — 달린 답변도 FK cascade로 함께 지워진다 */
+export async function deleteMyFeedback(id: string) {
+  const token = getFeedbackToken();
+  if (!token) throw new Error("열람 토큰이 없습니다");
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/feedback?id=eq.${id}`, {
+    method: "DELETE",
+    headers: authorHeaders(token),
+  });
+  if (!res.ok) throw new Error(`삭제 실패 (${res.status})`);
+  const removed = await res.json().catch(() => null);
+  if (!Array.isArray(removed) || removed.length === 0) throw new Error("삭제 실패 — 0행 처리");
+}
+
+/** 마지막으로 게시판을 연 뒤 달린 답변 수 — 헤더·FAB 뱃지용 */
+export function countNewReplies(rows: MyFeedbackRow[]): number {
+  const seen = getFeedbackSeen();
+  let n = 0;
+  for (const row of rows) for (const rep of row.feedback_replies) if (!seen || rep.created_at > seen) n += 1;
+  return n;
+}
+
 export async function sendFeedback(kind: FeedbackKind, message: string, payload?: unknown) {
   if (!feedbackReady) throw new Error("Supabase 키가 아직 설정되지 않았습니다");
   // 어떤 화면에서 보낸 제안인지 payload에 자동 첨부 (예: "/#infra", "/#op-char_2014_nian")
   const page = typeof window === "undefined" ? null : `${window.location.pathname}${window.location.hash}`;
+  const headers = {
+    apikey: SUPABASE_ANON_KEY,
+    Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+    "Content-Type": "application/json",
+    Prefer: "return=minimal",
+  };
+  const body = { kind, message: message.slice(0, 4000), payload: { ...(payload && typeof payload === "object" ? payload : {}), page } };
   const res = await fetch(`${SUPABASE_URL}/rest/v1/feedback`, {
-    method: "POST",
-    headers: {
-      apikey: SUPABASE_ANON_KEY,
-      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-      "Content-Type": "application/json",
-      Prefer: "return=minimal",
-    },
-    body: JSON.stringify({ kind, message: message.slice(0, 4000), payload: { ...(payload && typeof payload === "object" ? payload : {}), page } }),
+    method: "POST", headers,
+    body: JSON.stringify({ ...body, author_token: ensureFeedbackToken() }),
   });
-  if (!res.ok) throw new Error(`전송 실패 (${res.status})`);
+  if (res.ok) return;
+  // 과도기 — author_token 컬럼(supabase-feedback-board.sql)이 아직 없으면 PGRST204(400).
+  // 제안을 버리는 것보단 종전 모양(익명·열람 불가)으로라도 접수한다.
+  if (res.status === 400) {
+    const legacy = await fetch(`${SUPABASE_URL}/rest/v1/feedback`, { method: "POST", headers, body: JSON.stringify(body) });
+    if (legacy.ok) return;
+  }
+  throw new Error(`전송 실패 (${res.status})`);
 }
 
 // ─ 관리자 (/admin) — 인증은 Cloudflare Access(구글 SSO)가 담당한다 (2026-07-27).
 // 브라우저는 관리자 키를 모른다: 모든 관리자 호출은 같은 오리진 /api(admin-api 프록시
 // 워커)로 나가고, 워커가 Access JWT를 검증한 뒤 x-admin-key를 붙여 Supabase에 중계한다.
 export const ADMIN_REST = "/api/supabase"; // + /<table>?<PostgREST query>
-export type FeedbackRow = { id: string; created_at: string; kind: FeedbackKind; message: string; payload: unknown; reviewed_at: string | null };
+export type FeedbackRow = {
+  id: string; created_at: string; kind: FeedbackKind; message: string; payload: unknown; reviewed_at: string | null;
+  // 게시판 개편(2026-08-17) 이후 — SQL 적용 전이나 구형 익명 제안에는 없다
+  author_token?: string | null;
+  feedback_replies?: FeedbackReply[];
+};
 
 /**
  * 관리자 쓰기 — **0행이 바뀌면 실패로 본다**.
@@ -90,9 +222,30 @@ export async function adminMe(): Promise<string | null> {
 }
 
 export async function adminListFeedback(): Promise<FeedbackRow[]> {
-  const res = await fetch(`${ADMIN_REST}/feedback?select=*&order=created_at.desc&limit=500`);
-  if (!res.ok) throw new Error(`조회 실패 (${res.status})`);
-  return res.json();
+  const embed = "select=*,feedback_replies(id,body,created_at)&order=created_at.desc&feedback_replies.order=created_at.asc&limit=500";
+  const res = await fetch(`${ADMIN_REST}/feedback?${embed}`);
+  if (res.ok) return res.json();
+  // 과도기 — feedback_replies 테이블(supabase-feedback-board.sql)이 아직 없으면 임베드가 400
+  if (res.status === 400) {
+    const plain = await fetch(`${ADMIN_REST}/feedback?select=*&order=created_at.desc&limit=500`);
+    if (plain.ok) return plain.json();
+  }
+  throw new Error(`조회 실패 (${res.status})`);
+}
+
+// ── 관리자 답변 (제안 게시판 스레드 — 그 제안의 작성자만 읽을 수 있다) ──
+
+export async function adminAddReply(feedbackId: string, body: string): Promise<FeedbackReply> {
+  const rows = await adminWrite("/feedback_replies", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ feedback_id: feedbackId, body: body.slice(0, 4000) }),
+  }, "답변 등록");
+  return rows[0];
+}
+
+export async function adminDeleteReply(id: string) {
+  await adminWrite(`/feedback_replies?id=eq.${id}`, { method: "DELETE" }, "답변 삭제");
 }
 
 export async function adminSetReviewed(id: string, reviewed: boolean) {
