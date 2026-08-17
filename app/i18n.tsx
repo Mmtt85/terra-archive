@@ -2251,7 +2251,7 @@ const D: Record<string, Pair> = {
   "추격전": ["Chase", "追撃戦"],
   "거점전": ["Stronghold", "拠点戦"],
   "거점전 ('주민' 거점)": ["Stronghold battles ('Resident' strongholds)", "拠点戦（「住民」拠点）"],
-  "난이도(보밀등급) 4 이상에서만 나타나는 '주민' 거점 노드의 전투입니다. 격파하면 후한 보상과 함께 구역 내 떠돌이 '주민'이 모두 사라집니다.": ["Battles at 'Resident' stronghold nodes, which appear only at difficulty (Secrecy Level) 4+. Clearing one grants rich rewards and drives away all roaming 'Residents' in the area.", "難易度（保密等級）4以上でのみ出現する「住民」拠点ノードの戦闘です。撃破すると豊富な報酬とともに、区域内を徘徊する「住民」がすべて消えます。"],
+  "난이도(보밀등급) 4 이상에서만 나타나는 '주민' 거점 노드의 전투입니다. 거점을 격파해 '주민'을 옮겨내면 '주민'의 악의를 완전히 없앨 수 있습니다.": ["Battles at 'Resident' stronghold nodes, which appear only at difficulty (Secrecy Level) 4+. Clearing the stronghold to relocate the 'Residents' completely removes their malice.", "難易度（保密等級）4以上でのみ出現する「住民」拠点ノードの戦闘です。拠点を撃破して「住民」を移し出せば、「住民」の悪意を完全に取り除けます。"],
   "행동력이 다 떨어지면 강제로 발생하는 전투입니다. 보스 층에서는 보스 특수판으로 대체됩니다.": ["Forced battles that trigger when you run out of action points. On boss floors they are replaced by special boss versions.", "行動力が尽きると強制的に発生する戦闘です。ボス階ではボス特殊版に置き換わります。"],
   "각 구역 끝에서 마주치는 강력한 적입니다.": ["Powerful foes encountered at the end of each zone.", "各エリアの終わりで対峙する強敵です。"],
   "노드 이름 검색 (작전·조우·우연한 만남)": ["Search nodes by name (operations, encounters, events)", "ノード名検索（作戦・遭遇・思わぬ出会い）"],

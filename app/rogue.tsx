@@ -2288,7 +2288,7 @@ export default function RogueGuide({ includeFuture, initialTopic }: {
               <span className="rg-zone-arrow" aria-hidden>▾</span>
             </summary>
             <div className="rg-zone-body">
-              <p className="rg-zone-desc">{t("난이도(보밀등급) 4 이상에서만 나타나는 '주민' 거점 노드의 전투입니다. 격파하면 후한 보상과 함께 구역 내 떠돌이 '주민'이 모두 사라집니다.")}</p>
+              <p className="rg-zone-desc">{t("난이도(보밀등급) 4 이상에서만 나타나는 '주민' 거점 노드의 전투입니다. 거점을 격파해 '주민'을 옮겨내면 '주민'의 악의를 완전히 없앨 수 있습니다.")}</p>
               <div className="rg-stage-cards">
                 {savageStages.map((s) => <StageCard key={s.id} pair={{ n: s }} onOpen={setStageOpen} />)}
               </div>
