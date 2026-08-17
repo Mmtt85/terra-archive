@@ -96,10 +96,11 @@ window.addEventListener('load',function(){setTimeout(function(){if(!hit){try{ses
             그 언어로, 없으면 브라우저 언어(ja→/ja, ko→/, 그 외→/en)로 경로를 맞춘다.
             첫 페인트 전 location.replace라 플래시·히스토리 오염 없음. 크롤러(UA)와
             자동화 브라우저(navigator.webdriver — 우리 Playwright 검증·about 캡처 포함)는
-            제외해 SEO·스크립트에 영향을 주지 않는다. */}
+            제외해 SEO·스크립트에 영향을 주지 않는다. /admin(dev 전용, ko만 존재)도
+            제외 — 언어 경로가 없어서 리다이렉트하면 404로 떨어진다 (사용자 지시 2026-08-17). */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{if(!navigator.webdriver&&!/bot|crawl|spider|slurp|lighthouse|headless|preview/i.test(navigator.userAgent)){var lm=location.pathname.match(/^\\/(en|ja)(?=\\/|$)/);var cur=lm?lm[1]:'ko';var lp=null;try{lp=localStorage.getItem('ta-locale')}catch(e){}if(lp!=='ko'&&lp!=='en'&&lp!=='ja'){var nl=(navigator.language||'').slice(0,2).toLowerCase();lp=nl==='ko'?'ko':nl==='ja'?'ja':'en';}if(lp!==cur){var rest=location.pathname.replace(/^\\/(en|ja)(?=\\/|$)/,'');if(rest==='/')rest='';var tg=(lp==='ko'?'':'/'+lp)+rest;location.replace((tg||'/')+location.search+location.hash);}}}catch(e){}`,
+            __html: `try{if(!navigator.webdriver&&!/^\\/admin(\\/|$)/.test(location.pathname)&&!/bot|crawl|spider|slurp|lighthouse|headless|preview/i.test(navigator.userAgent)){var lm=location.pathname.match(/^\\/(en|ja)(?=\\/|$)/);var cur=lm?lm[1]:'ko';var lp=null;try{lp=localStorage.getItem('ta-locale')}catch(e){}if(lp!=='ko'&&lp!=='en'&&lp!=='ja'){var nl=(navigator.language||'').slice(0,2).toLowerCase();lp=nl==='ko'?'ko':nl==='ja'?'ja':'en';}if(lp!==cur){var rest=location.pathname.replace(/^\\/(en|ja)(?=\\/|$)/,'');if(rest==='/')rest='';var tg=(lp==='ko'?'':'/'+lp)+rest;location.replace((tg||'/')+location.search+location.hash);}}}catch(e){}`,
           }}
         />
         {/* 첫 페인트 전에 해시를 읽어 초기 탭을 표시 — 서버 HTML은 항상 백과사전이라
