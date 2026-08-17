@@ -354,8 +354,10 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
       void refresh(true);
       return;
     }
-    // uuid가 아니면 관리자 키로 시도 — 틀리면 겉으론 형식 오류와 동일하게 보인다
-    if (v.length >= 20 && (await probeBoardAdminKey(v))) {
+    // uuid가 아니면 관리자 키로 시도 — 틀리면 겉으론 형식 오류와 동일하게 보인다.
+    // 하한 8자 = make-admin-rotate-sql.mjs --allow-short 하한과 동일 (2026-08-17 사용자
+    // 키 9자로 교체하며 20자 → 8자. 확인은 요청 1회짜리 probe라 오타에 낭비될 것도 없다)
+    if (v.length >= 8 && (await probeBoardAdminKey(v))) {
       setBoardAdminKey(v);
       setCodeErr(false);
       setCodeOpen(false);
