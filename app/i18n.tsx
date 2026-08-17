@@ -2376,6 +2376,14 @@ const D: Record<string, Pair> = {
   "저장": ["Save", "保存"],
   "이 제안을 삭제할까요? 달린 답변도 함께 삭제됩니다.": ["Delete this suggestion? Its replies will be deleted too.", "この提案を削除しますか？付いた返信も一緒に削除されます。"],
   "실패했습니다 — 잠시 후 다시 시도해주세요": ["Something went wrong — please try again later", "失敗しました — しばらくしてからもう一度お試しください"],
+  // 게시판 관리자 모드 (열람 코드 입력칸에 관리자 키 — 사이트에서 직접 답변)
+  "관리자 모드 — 모든 제안이 보입니다": ["Admin mode — all suggestions are visible", "管理者モード — すべての提案が表示されます"],
+  "관리자 해제": ["Exit admin mode", "管理者モード解除"],
+  "작성자에게만 보이는 답변 달기…": ["Write a reply only the author can see…", "投稿者にだけ見える返信を書く…"],
+  "답변 등록": ["Post reply", "返信を登録"],
+  "등록 중…": ["Posting…", "登録中…"],
+  "익명 제안 — 답변해도 작성자가 볼 수 없습니다": ["Anonymous suggestion — the author can't see replies", "匿名の提案 — 返信しても投稿者には見えません"],
+  "이 답변을 삭제할까요?": ["Delete this reply?", "この返信を削除しますか？"],
   // ── 스샷 인식 (구 스샷 워프) — 페이지별 설치: /rogue 스샷으로 찾기 · 공채 스샷으로 태그 입력
   // (사용자 확정 2026-07-23). Phase 1은 KR 클라 전용(kor.traineddata만 호스팅)이라 진입 버튼이
   // ko에서만 보이지만, 키는 미리 등록해 둔다 (EN/JA 클라 지원 시 버튼 게이트만 풀면 됨).

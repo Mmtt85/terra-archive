@@ -7496,6 +7496,60 @@ legend {
   font-size: 12.5px;
   line-height: 1.55;
 }
+/* 관리자 모드 — 답변 말풍선의 삭제 × (시간 오른쪽) */
+.fb-reply-del {
+  border: 0;
+  background: 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1;
+  padding: 0 2px;
+  cursor: pointer;
+}
+.fb-reply-del:hover {
+  color: #e0483c;
+}
+/* 게시판 안 관리자 답변 폼은 admin 페이지의 .fb-admin-reply-form 스타일을 그대로 쓴다 */
+.fb-thread .fb-admin-reply-form textarea {
+  margin: 0;
+  width: auto;
+}
+/* 스레드·개발자 코멘트 창모달 — 목록 클릭 시 인라인 확장 대신 이 창이 뜬다
+   (사용자 지시 2026-08-17: "높이가 휙 늘어나지 말고 모달창 하나 더") */
+.fb-thread-modal {
+  position: relative;
+  width: min(480px, 100%);
+  place-self: center;
+  height: fit-content;
+  max-height: calc(100dvh - 48px);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  background: var(--white);
+  box-shadow: 0 30px 100px #0008;
+  overflow: hidden;
+  animation: 0.18s both fadeIn;
+}
+.fb-modal-thread {
+  padding: 14px 16px 16px;
+}
+.fb-thread-date {
+  font-size: 10.5px;
+  color: var(--muted);
+}
+.fb-note-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.fb-note-q {
+  margin: 0;
+  border-left: 3px solid var(--line);
+  padding: 2px 0 2px 10px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--ink2);
+  white-space: pre-wrap;
+}
 .fb-new-tag {
   font-style: normal;
   font-size: 9.5px;

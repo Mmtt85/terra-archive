@@ -143,6 +143,73 @@ export async function deleteMyFeedback(id: string) {
   if (!Array.isArray(removed) || removed.length === 0) throw new Error("삭제 실패 — 0행 처리");
 }
 
+// ── 게시판 관리자 모드 (사용자 요청 2026-08-17: "admin페이지 말고 제안 모달에서 답변") ──
+// 열람 코드 입력칸에 관리자 키(.supabase-admin-key 내용)를 넣으면 잠금 해제된다.
+// 키는 이 브라우저 localStorage에 남아 Supabase REST에 x-admin-key로 직접 실린다
+// (RLS admin 정책이 대조 — /admin 프록시와 같은 헤더, 경로만 다름).
+// ⚠ 공개 사이트 localStorage에 키가 놓이는 트레이드오프가 있다 — 관리자 본인 브라우저에서만
+// 쓸 것. '관리자 해제'가 키를 지운다.
+
+const FEEDBACK_ADMIN_KEY = "ta-feedback-admin";
+
+export function getBoardAdminKey(): string | null {
+  try { return localStorage.getItem(FEEDBACK_ADMIN_KEY) || null; } catch { return null; }
+}
+export function setBoardAdminKey(key: string | null) {
+  try {
+    if (key) localStorage.setItem(FEEDBACK_ADMIN_KEY, key);
+    else localStorage.removeItem(FEEDBACK_ADMIN_KEY);
+  } catch { /* noop */ }
+}
+
+function adminKeyHeaders(key: string) {
+  return { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, "x-admin-key": key };
+}
+
+/** 키가 진짜인지 확인 — admin read 정책이 행을 돌려주면 참 (틀린 키는 RLS가 빈 배열을 준다) */
+export async function probeBoardAdminKey(key: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/feedback?select=id&limit=1`, { headers: adminKeyHeaders(key) });
+    if (!res.ok) return false;
+    const rows = await res.json();
+    return Array.isArray(rows) && rows.length > 0;
+  } catch { return false; }
+}
+
+export type BoardRow = MyFeedbackRow & { author_token?: string | null };
+
+/** 전체 제안 (관리자 모드) — 답변·작성자 토큰 유무 포함 최신순 */
+export async function fetchAllFeedbackBoard(key: string): Promise<BoardRow[]> {
+  const embed = "select=id,created_at,kind,message,payload,author_token,feedback_replies(id,body,created_at)" +
+    "&order=created_at.desc&feedback_replies.order=created_at.asc&limit=200";
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/feedback?${embed}`, { headers: adminKeyHeaders(key) });
+  if (!res.ok) throw new Error(`조회 실패 (${res.status})`);
+  return res.json();
+}
+
+/** 게시판에서 관리자 답변 등록 — 0행 처리는 실패 (키가 정책과 안 맞는 상태) */
+export async function boardAdminAddReply(key: string, feedbackId: string, body: string): Promise<FeedbackReply> {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/feedback_replies`, {
+    method: "POST",
+    headers: { ...adminKeyHeaders(key), "Content-Type": "application/json", Prefer: "return=representation" },
+    body: JSON.stringify({ feedback_id: feedbackId, body: body.slice(0, 4000) }),
+  });
+  if (!res.ok) throw new Error(`답변 등록 실패 (${res.status})`);
+  const rows = await res.json().catch(() => null);
+  if (!Array.isArray(rows) || rows.length === 0) throw new Error("답변 등록 실패 — 0행 처리");
+  return rows[0];
+}
+
+export async function boardAdminDeleteReply(key: string, replyId: string) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/feedback_replies?id=eq.${replyId}`, {
+    method: "DELETE",
+    headers: { ...adminKeyHeaders(key), Prefer: "return=representation" },
+  });
+  if (!res.ok) throw new Error(`답변 삭제 실패 (${res.status})`);
+  const rows = await res.json().catch(() => null);
+  if (!Array.isArray(rows) || rows.length === 0) throw new Error("답변 삭제 실패 — 0행 처리");
+}
+
 /** 마지막으로 게시판을 연 뒤 달린 답변 수 — 헤더·FAB 뱃지용 */
 export function countNewReplies(rows: MyFeedbackRow[]): number {
   const seen = getFeedbackSeen();

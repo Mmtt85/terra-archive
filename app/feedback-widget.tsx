@@ -5,7 +5,9 @@ import {
   feedbackReady, sendFeedback, uploadFeedbackImage, imagesOf, FEEDBACK_IMG_MAX, FEEDBACK_IMG_MB,
   getFeedbackToken, setFeedbackToken, getFeedbackSeen, markFeedbackSeen,
   fetchMyFeedback, countNewReplies, updateMyFeedback, deleteMyFeedback,
-  type FeedbackKind, type MyFeedbackRow,
+  getBoardAdminKey, setBoardAdminKey, probeBoardAdminKey, fetchAllFeedbackBoard,
+  boardAdminAddReply, boardAdminDeleteReply,
+  type FeedbackKind, type BoardRow,
 } from "./feedback";
 import { ModalWindow } from "./modal-window";
 import { useConfirm } from "./confirm";
@@ -30,23 +32,25 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
   const [notes, setNotes] = useState<DevNoteRow[] | null>(null);
   const [notesError, setNotesError] = useState(false);
   const notesLoaded = useRef(false);
-  const [openedNotes, setOpenedNotes] = useState<Set<string>>(new Set());
-  const toggleNote = (id: string) => {
-    setOpenedNotes((prev) => {
-      const next = new Set(prev);
-      if (!next.delete(id)) next.add(id);
-      return next;
-    });
-  };
+  // 목록 클릭은 인라인 확장이 아니라 **별도 창모달**을 띄운다 (사용자 지시 2026-08-17:
+  // "높이가 휙 늘어나지 말고 모달창 하나 더" — 개발자 코멘트도 마찬가지)
+  const [noteId, setNoteId] = useState<string | null>(null);
 
   // ── 게시판 상태 ──
-  const [rows, setRows] = useState<MyFeedbackRow[] | null>(null);
+  const [rows, setRows] = useState<BoardRow[] | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [token, setToken] = useState<string | null>(null);
+  // 관리자 모드 (사용자 확정 2026-08-17: "제안 모달에서 답변 + 어차피 싹 다 볼 수 있어야") —
+  // 열람 코드 입력칸에 관리자 키를 넣으면 전체 제안 + 답변 폼이 열린다
+  const [adminKey, setAdminKey] = useState<string | null>(null);
+  const [replyVal, setReplyVal] = useState("");
+  const [replyBusy, setReplyBusy] = useState(false);
   const [badge, setBadge] = useState(0);
-  // 이번에 열기 직전의 '마지막 확인 시각' — 그 이후 답변에만 '새 답변' 점을 찍는다
+  // 이번에 열기 직전의 '마지막 확인 시각' — 그 이후 답변에만 '새 답변' 점을 찍는다.
+  // 기준점 읽기는 refresh() **시작 시점**(동기, seen을 갱신하기 전), 반영은 await 뒤 —
+  // 늦게 도착한 응답이 그새 갱신된 seen을 기준으로 삼아 점을 놓치는 레이스를 막는다.
   const [newSince, setNewSince] = useState<string | null | undefined>(undefined);
-  const [expanded, setExpanded] = useState<string | null>(null);
+  const [threadId, setThreadId] = useState<string | null>(null);
   const [codeOpen, setCodeOpen] = useState(false);
   const [codeVal, setCodeVal] = useState("");
   const [codeErr, setCodeErr] = useState(false);
@@ -61,13 +65,26 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
   // 첫 setState 전에 반드시 await를 지나므로 이펙트에서 불러도 동기 캐스케이드가 없다
   // (react-hooks/set-state-in-effect — 신규 코드는 하우스 위반을 늘리지 않는다)
   const refresh = useCallback(async (markSeen: boolean) => {
+    const ak = getBoardAdminKey();
     const tok = getFeedbackToken();
-    const data = await (tok ? fetchMyFeedback().catch(() => null) : Promise.resolve<MyFeedbackRow[]>([]));
+    const baselineSeen = getFeedbackSeen();
+    // 관리자 모드는 전체 제안, 아니면 내 토큰 행만. 어느 쪽도 아니면 네트워크 없이 빈 목록.
+    const data = await (
+      ak ? fetchAllFeedbackBoard(ak).catch(() => null)
+        : tok ? fetchMyFeedback().catch(() => null)
+          : Promise.resolve<BoardRow[]>([])
+    );
+    setAdminKey(ak);
     setToken(tok);
     if (data === null) { setLoadError(true); return; }
     setLoadError(false);
-    if (markSeen) {
-      setNewSince(getFeedbackSeen());
+    if (ak) {
+      // 관리자에게 '새 답변' 뱃지는 무의미 (답변을 쓰는 쪽이므로)
+      setBadge(0);
+      onNewCount?.(0);
+      if (markSeen) { setNewSince(baselineSeen); markFeedbackSeen(); }
+    } else if (markSeen) {
+      setNewSince(baselineSeen);
       markFeedbackSeen();
       setBadge(0);
       onNewCount?.(0);
@@ -79,12 +96,12 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
     setRows(data);
   }, [onNewCount]);
 
-  // 마운트: 토큰 보유자(제안 이력 있는 방문자)만 뱃지 계산 — 일반 방문자는 네트워크 0.
+  // 마운트: 토큰 보유자(제안 이력 있는 방문자)·관리자만 조회 — 일반 방문자는 네트워크 0.
   // refresh의 setState는 전부 await 뒤(비동기 콜백)라 동기 캐스케이드가 없다 — 린터가
   // 호출 그래프를 보수적으로 추적해 오탐하므로 규칙만 지정 억제한다.
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (getFeedbackToken()) void refresh(false);
+    if (getFeedbackToken() || getBoardAdminKey()) void refresh(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -122,26 +139,66 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
     setOpen(false);
     setView("list");
     setTab("mine");
-    setExpanded(null);
+    setThreadId(null);
+    setNoteId(null);
     setCodeOpen(false);
     setCodeErr(false);
     setEditingId(null);
     setActErr(false);
+    setReplyVal("");
   };
 
-  const toggleItem = (id: string) => {
-    setExpanded((cur) => (cur === id ? null : id));
+  const openThread = (id: string) => {
+    setThreadId(id);
     setEditingId(null);
     setActErr(false);
+    setReplyVal("");
   };
 
-  const startEdit = (row: MyFeedbackRow) => {
+  // ── 관리자 모드 동작 (게시판에서 직접 답변 — 그 제안의 작성자에게만 보인다) ──
+
+  const exitAdmin = () => {
+    setBoardAdminKey(null);
+    setAdminKey(null);
+    setThreadId(null);
+    void refresh(true);
+  };
+
+  const sendReply = async (row: BoardRow) => {
+    const body = replyVal.trim();
+    if (!body || replyBusy || !adminKey) return;
+    setReplyBusy(true);
+    setActErr(false);
+    try {
+      const rep = await boardAdminAddReply(adminKey, row.id, body);
+      setRows((cur) => (cur ?? []).map((r) => (r.id === row.id ? { ...r, feedback_replies: [...r.feedback_replies, rep] } : r)));
+      setReplyVal("");
+    } catch {
+      setActErr(true);
+    } finally {
+      setReplyBusy(false);
+    }
+  };
+
+  const removeReplyAdmin = async (row: BoardRow, replyId: string) => {
+    if (!adminKey) return;
+    if (!(await confirm({ message: t("이 답변을 삭제할까요?"), confirmLabel: t("삭제"), danger: true }))) return;
+    setActErr(false);
+    try {
+      await boardAdminDeleteReply(adminKey, replyId);
+      setRows((cur) => (cur ?? []).map((r) => (r.id === row.id ? { ...r, feedback_replies: r.feedback_replies.filter((rep) => rep.id !== replyId) } : r)));
+    } catch {
+      setActErr(true);
+    }
+  };
+
+  const startEdit = (row: BoardRow) => {
     setEditingId(row.id);
     setEditVal(row.message);
     setActErr(false);
   };
 
-  const saveEdit = async (row: MyFeedbackRow) => {
+  const saveEdit = async (row: BoardRow) => {
     const msg = editVal.trim();
     if (!msg || editBusy) return;
     setEditBusy(true);
@@ -157,7 +214,7 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
     }
   };
 
-  const removeMine = async (row: MyFeedbackRow) => {
+  const removeMine = async (row: BoardRow) => {
     if (!(await confirm({
       message: t("이 제안을 삭제할까요? 달린 답변도 함께 삭제됩니다."),
       confirmLabel: t("삭제"), danger: true,
@@ -166,7 +223,7 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
     try {
       await deleteMyFeedback(row.id);
       setRows((cur) => (cur ?? []).filter((r) => r.id !== row.id));
-      setExpanded(null);
+      setThreadId(null);
     } catch {
       setActErr(true);
     }
@@ -258,16 +315,35 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
     }).catch(() => {});
   };
 
-  const applyCode = () => {
-    if (!setFeedbackToken(codeVal)) { setCodeErr(true); return; }
-    setCodeErr(false);
-    setCodeOpen(false);
-    setCodeVal("");
-    void refresh(true);
+  const applyCode = async () => {
+    const v = codeVal.trim();
+    if (setFeedbackToken(v)) {
+      // uuid 형식 → 열람 코드 (다른 기기 이어보기)
+      setCodeErr(false);
+      setCodeOpen(false);
+      setCodeVal("");
+      void refresh(true);
+      return;
+    }
+    // uuid가 아니면 관리자 키로 시도 — 틀리면 겉으론 형식 오류와 동일하게 보인다
+    if (v.length >= 20 && (await probeBoardAdminKey(v))) {
+      setBoardAdminKey(v);
+      setCodeErr(false);
+      setCodeOpen(false);
+      setCodeVal("");
+      void refresh(true);
+      return;
+    }
+    setCodeErr(true);
   };
 
+  const DT_LOC = locale === "ja" ? "ja-JP" : locale === "en" ? "en-US" : "ko-KR";
+  // 제안·답변 시각은 초까지 (사용자 지시 2026-08-17: "시간 분 초까지 다 나오게")
   const fmtDate = (iso: string) =>
-    new Date(iso).toLocaleDateString(locale === "ja" ? "ja-JP" : locale === "en" ? "en-US" : "ko-KR", { year: "numeric", month: "short", day: "numeric" });
+    new Date(iso).toLocaleString(DT_LOC, { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+  // 개발자 코멘트는 DB에 날짜만 있다(released_at date) — 시각 없이 날짜만
+  const fmtDay = (iso: string) =>
+    new Date(iso).toLocaleDateString(DT_LOC, { year: "numeric", month: "short", day: "numeric" });
 
   const KIND_KEY: Record<FeedbackKind, string> = { feature: "기능 제안", data_error: "데이터 오류 리포트", plan: "편성 제안" };
   const isNewReply = (iso: string) => newSince !== undefined && (!newSince || iso > newSince);
@@ -284,37 +360,29 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
         <p className="fb-board-empty">{t("아직 등록된 개발자 코멘트가 없습니다.")}</p>
       )}
       <ul>
-        {(notes ?? []).map((row) => {
-          const shownNote = openedNotes.has(row.id);
-          return (
-            <li key={row.id} className="devnote">
-              <span className={`chlog-kind devnote-status ${row.status}`}>{t(DEVNOTE_STATUS_LABEL[row.status])}</span>
-              <div className="devnote-body">
-                <button type="button" className="devnote-q" aria-expanded={shownNote} onClick={() => toggleNote(row.id)}>
-                  <span>{noteSuggestion(row, locale)}</span>
-                  <i aria-hidden>{shownNote ? "▴" : "▾"}</i>
-                </button>
-                {shownNote && (<>
-                  <p className="devnote-reply">{noteReply(row, locale)}</p>
-                  {row.image && (
-                    <a href={row.image} target="_blank" rel="noreferrer" title={t("이미지 크게 보기")}>
-                      <img className="devnote-img" src={row.image} alt="" loading="lazy" />
-                    </a>
-                  )}
-                  <time className="fb-note-date">{fmtDate(`${row.released_at}T00:00:00+09:00`)}</time>
-                </>)}
-              </div>
-            </li>
-          );
-        })}
+        {(notes ?? []).map((row) => (
+          <li key={row.id} className="devnote">
+            <span className={`chlog-kind devnote-status ${row.status}`}>{t(DEVNOTE_STATUS_LABEL[row.status])}</span>
+            <div className="devnote-body">
+              <button type="button" className="devnote-q" onClick={() => setNoteId(row.id)}>
+                <span>{noteSuggestion(row, locale)}</span>
+                <i aria-hidden>›</i>
+              </button>
+            </div>
+          </li>
+        ))}
       </ul>
     </div>
   );
 
   const mineView = (<>
       <div className="fb-list-tools">
-        <button type="button" className="fb-new-btn" onClick={() => setView("compose")}>+ {t("제안하기")}</button>
-        <small className="fb-privacy">{t("제안은 작성자 본인과 개발자만 볼 수 있습니다")}</small>
+        {adminKey ? (
+          <small className="fb-privacy">🛠 {t("관리자 모드 — 모든 제안이 보입니다")}</small>
+        ) : (<>
+          <button type="button" className="fb-new-btn" onClick={() => setView("compose")}>+ {t("제안하기")}</button>
+          <small className="fb-privacy">{t("제안은 작성자 본인과 개발자만 볼 수 있습니다")}</small>
+        </>)}
       </div>
       {loadError ? (
         <p className="fb-board-empty">
@@ -331,12 +399,10 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
       ) : (
         <ul className="fb-board">
           {rows.map((row) => {
-            const isOpen = expanded === row.id;
-            const imgs = imagesOf(row.payload);
             const hasNew = row.feedback_replies.some((rep) => isNewReply(rep.created_at));
             return (
-              <li key={row.id} className={`fb-board-item${isOpen ? " open" : ""}`}>
-                <button type="button" className="fb-board-head" onClick={() => toggleItem(row.id)}>
+              <li key={row.id} className="fb-board-item">
+                <button type="button" className="fb-board-head" onClick={() => openThread(row.id)}>
                   <span className={`fb-kind-chip k-${row.kind}`}>{t(KIND_KEY[row.kind] ?? row.kind)}</span>
                   <time>{fmtDate(row.created_at)}</time>
                   {row.feedback_replies.length > 0 && (
@@ -344,57 +410,20 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
                       💬 {t("답변 {n}개", { n: row.feedback_replies.length })}
                     </span>
                   )}
-                  {!isOpen && <span className="fb-board-preview">{row.message}</span>}
+                  <span className="fb-board-preview">{row.message}</span>
                 </button>
-                {isOpen && (
-                  <div className="fb-thread">
-                    {editingId === row.id ? (
-                      <div className="fb-edit-area">
-                        <textarea value={editVal} onChange={(e) => setEditVal(e.target.value)} rows={4} maxLength={4000} />
-                        <div className="fb-thread-tools">
-                          <button type="button" className="fb-tool-btn" disabled={!editVal.trim() || editBusy} onClick={() => void saveEdit(row)}>
-                            {editBusy ? t("전송 중…") : t("저장")}
-                          </button>
-                          <button type="button" className="fb-tool-btn" onClick={() => setEditingId(null)}>{t("취소")}</button>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="fb-thread-msg">{row.message}</p>
-                    )}
-                    {imgs.length > 0 && (
-                      <div className="fb-images">
-                        {imgs.map((u) => (
-                          <a key={u} href={u} target="_blank" rel="noreferrer"><img src={u} alt="" loading="lazy" /></a>
-                        ))}
-                      </div>
-                    )}
-                    {row.feedback_replies.length === 0 ? (
-                      <p className="fb-noreply">{t("아직 답변이 없습니다")}</p>
-                    ) : row.feedback_replies.map((rep) => (
-                      <div key={rep.id} className={`fb-reply${isNewReply(rep.created_at) ? " unread" : ""}`}>
-                        <header>
-                          <b>🛠 {t("개발자")}</b>
-                          {isNewReply(rep.created_at) && <i className="fb-new-tag">{t("새 답변")}</i>}
-                          <time>{fmtDate(rep.created_at)}</time>
-                        </header>
-                        <p>{rep.body}</p>
-                      </div>
-                    ))}
-                    {editingId !== row.id && (
-                      <div className="fb-thread-tools">
-                        <button type="button" className="fb-tool-btn" onClick={() => startEdit(row)}>{t("수정하기")}</button>
-                        <button type="button" className="fb-tool-btn danger" onClick={() => void removeMine(row)}>{t("삭제")}</button>
-                      </div>
-                    )}
-                    {actErr && <small className="fb-act-err">{t("실패했습니다 — 잠시 후 다시 시도해주세요")}</small>}
-                  </div>
-                )}
               </li>
             );
           })}
         </ul>
       )}
       <footer className="fb-code-foot">
+        {adminKey ? (
+          <div className="fb-code-row">
+            <small>🛠 {t("관리자 모드 — 모든 제안이 보입니다")}</small>
+            <button type="button" className="fb-code-toggle" onClick={exitAdmin}>{t("관리자 해제")}</button>
+          </div>
+        ) : (<>
         <div className="fb-code-row">
           {token && (
             <>
@@ -412,11 +441,11 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
             <input
               value={codeVal}
               onChange={(e) => { setCodeVal(e.target.value); setCodeErr(false); }}
-              onKeyDown={(e) => { if (e.key === "Enter") applyCode(); }}
+              onKeyDown={(e) => { if (e.key === "Enter") void applyCode(); }}
               placeholder={t("열람 코드 붙여넣기")}
               spellCheck={false}
             />
-            <button type="button" onClick={applyCode}>{t("적용")}</button>
+            <button type="button" onClick={() => void applyCode()}>{t("적용")}</button>
             {codeErr && <small className="fb-code-err">{t("코드 형식이 올바르지 않습니다")}</small>}
             {!codeErr && !!rows?.length && (
               <small className="fb-code-warn">{t("코드를 적용하면 이 브라우저의 기존 제안 {n}건은 목록에서 사라집니다 — 필요하면 현재 열람 코드를 먼저 복사해 두세요", { n: rows.length })}</small>
@@ -424,6 +453,7 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
           </div>
         )}
         {token && !codeOpen && <small className="fb-code-hint">{t("이 코드를 다른 기기에서 입력하면 같은 목록을 볼 수 있습니다")}</small>}
+        </>)}
       </footer>
   </>);
 
@@ -480,11 +510,95 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
     </div>
   );
 
+  // 목록 클릭으로 여는 두 번째 창 — 목록 높이는 그대로, 스레드/코멘트는 창모달에서
+  const threadRow = threadId ? (rows ?? []).find((r) => r.id === threadId) ?? null : null;
+  const threadImgs = threadRow ? imagesOf(threadRow.payload) : [];
+  const noteRow = noteId ? (notes ?? []).find((n) => n.id === noteId) ?? null : null;
+
   return (
     <div className="feedback-widget">
       {open && (
         <ModalWindow label={t("제안 게시판")} className="feedback-modal" onClose={close}>
           {view === "list" ? board : compose}
+        </ModalWindow>
+      )}
+      {open && threadRow && (
+        <ModalWindow label={t(KIND_KEY[threadRow.kind] ?? threadRow.kind)} className="fb-thread-modal" onClose={() => setThreadId(null)}>
+          <div className="fb-thread fb-modal-thread">
+            <time className="fb-thread-date">{fmtDate(threadRow.created_at)}</time>
+            {editingId === threadRow.id ? (
+              <div className="fb-edit-area">
+                <textarea value={editVal} onChange={(e) => setEditVal(e.target.value)} rows={4} maxLength={4000} />
+                <div className="fb-thread-tools">
+                  <button type="button" className="fb-tool-btn" disabled={!editVal.trim() || editBusy} onClick={() => void saveEdit(threadRow)}>
+                    {editBusy ? t("전송 중…") : t("저장")}
+                  </button>
+                  <button type="button" className="fb-tool-btn" onClick={() => setEditingId(null)}>{t("취소")}</button>
+                </div>
+              </div>
+            ) : (
+              <p className="fb-thread-msg">{threadRow.message}</p>
+            )}
+            {threadImgs.length > 0 && (
+              <div className="fb-images">
+                {threadImgs.map((u) => (
+                  <a key={u} href={u} target="_blank" rel="noreferrer"><img src={u} alt="" loading="lazy" /></a>
+                ))}
+              </div>
+            )}
+            {threadRow.feedback_replies.length === 0 ? (
+              !adminKey && <p className="fb-noreply">{t("아직 답변이 없습니다")}</p>
+            ) : threadRow.feedback_replies.map((rep) => (
+              <div key={rep.id} className={`fb-reply${isNewReply(rep.created_at) ? " unread" : ""}`}>
+                <header>
+                  <b>🛠 {t("개발자")}</b>
+                  {isNewReply(rep.created_at) && <i className="fb-new-tag">{t("새 답변")}</i>}
+                  <time>{fmtDate(rep.created_at)}</time>
+                  {adminKey && (
+                    <button type="button" className="fb-reply-del" title={t("삭제")}
+                      onClick={() => void removeReplyAdmin(threadRow, rep.id)}>×</button>
+                  )}
+                </header>
+                <p>{rep.body}</p>
+              </div>
+            ))}
+            {adminKey ? (
+              threadRow.author_token ? (
+                <div className="fb-admin-reply-form">
+                  <textarea value={replyVal} onChange={(e) => setReplyVal(e.target.value)} rows={2} maxLength={4000}
+                    placeholder={t("작성자에게만 보이는 답변 달기…")} />
+                  <button type="button" disabled={!replyVal.trim() || replyBusy} onClick={() => void sendReply(threadRow)}>
+                    {replyBusy ? t("등록 중…") : t("답변 등록")}
+                  </button>
+                </div>
+              ) : (
+                <small className="fb-admin-reply-hint">{t("익명 제안 — 답변해도 작성자가 볼 수 없습니다")}</small>
+              )
+            ) : editingId !== threadRow.id && (
+              <div className="fb-thread-tools">
+                <button type="button" className="fb-tool-btn" onClick={() => startEdit(threadRow)}>{t("수정하기")}</button>
+                <button type="button" className="fb-tool-btn danger" onClick={() => void removeMine(threadRow)}>{t("삭제")}</button>
+              </div>
+            )}
+            {actErr && <small className="fb-act-err">{t("실패했습니다 — 잠시 후 다시 시도해주세요")}</small>}
+          </div>
+        </ModalWindow>
+      )}
+      {open && noteRow && (
+        <ModalWindow label={t("개발자 코멘트")} className="fb-thread-modal" onClose={() => setNoteId(null)}>
+          <div className="fb-thread fb-modal-thread">
+            <div className="fb-note-head">
+              <span className={`chlog-kind devnote-status ${noteRow.status}`}>{t(DEVNOTE_STATUS_LABEL[noteRow.status])}</span>
+              <time className="fb-thread-date">{fmtDay(`${noteRow.released_at}T00:00:00+09:00`)}</time>
+            </div>
+            <p className="fb-note-q">{noteSuggestion(noteRow, locale)}</p>
+            <p className="devnote-reply">{noteReply(noteRow, locale)}</p>
+            {noteRow.image && (
+              <a href={noteRow.image} target="_blank" rel="noreferrer" title={t("이미지 크게 보기")}>
+                <img className="devnote-img" src={noteRow.image} alt="" loading="lazy" />
+              </a>
+            )}
+          </div>
         </ModalWindow>
       )}
       <button type="button" className="feedback-fab" onClick={() => (open ? close() : setOpen(true))} aria-label={t("제안 게시판")}>
