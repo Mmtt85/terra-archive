@@ -7567,6 +7567,34 @@ legend {
   color: var(--ink2);
   white-space: pre-wrap;
 }
+/* 첨부 이미지 확대 — 새 탭 대신 오버레이 (사용자 지시 2026-08-17). body 포털이라
+   창모달(z 200대) 위·confirm(1200) 아래에 둔다 */
+.fb-img-zoom-btn {
+  border: 0;
+  background: 0 0;
+  padding: 0;
+  cursor: zoom-in;
+  display: block;
+}
+.fb-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 1150;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #000d;
+  cursor: zoom-out;
+  animation: 0.15s both fadeIn;
+}
+.fb-lightbox img {
+  max-width: min(1400px, 96vw);
+  max-height: 92dvh;
+  object-fit: contain;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  box-shadow: 0 30px 100px #000;
+}
 .fb-new-tag {
   font-style: normal;
   font-size: 9.5px;

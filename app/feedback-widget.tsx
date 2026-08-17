@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   feedbackReady, sendFeedback, uploadFeedbackImage, imagesOf, FEEDBACK_IMG_MAX, FEEDBACK_IMG_MB,
   getFeedbackToken, setFeedbackToken, getFeedbackSeen, markFeedbackSeen,
@@ -62,6 +63,9 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
   const [editVal, setEditVal] = useState("");
   const [editBusy, setEditBusy] = useState(false);
   const [actErr, setActErr] = useState(false);
+  // 첨부 이미지 확대 (사용자 지시 2026-08-17: "새 탭이 아니라 확대") — 창모달(z 200대) 위에
+  // 떠야 하므로 confirm처럼 body 포털 (위젯 루트가 z 150 스태킹 컨텍스트라 안에선 못 넘는다)
+  const [zoomSrc, setZoomSrc] = useState<string | null>(null);
   const { confirm, dialog: confirmDialog } = useConfirm();
 
   // 첫 setState 전에 반드시 await를 지나므로 이펙트에서 불러도 동기 캐스케이드가 없다
@@ -148,6 +152,7 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
     setEditingId(null);
     setActErr(false);
     setReplyVal("");
+    setZoomSrc(null);
   };
 
   const openThread = (id: string) => {
@@ -586,7 +591,9 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
             {threadImgs.length > 0 && (
               <div className="fb-images">
                 {threadImgs.map((u) => (
-                  <a key={u} href={u} target="_blank" rel="noreferrer"><img src={u} alt="" loading="lazy" /></a>
+                  <button key={u} type="button" className="fb-img-zoom-btn" title={t("이미지 크게 보기")} onClick={() => setZoomSrc(u)}>
+                    <img src={u} alt="" loading="lazy" />
+                  </button>
                 ))}
               </div>
             )}
@@ -644,9 +651,9 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
             <p className="fb-note-q">{noteSuggestion(noteRow, locale)}</p>
             <p className="devnote-reply">{noteReply(noteRow, locale)}</p>
             {noteRow.image && (
-              <a href={noteRow.image} target="_blank" rel="noreferrer" title={t("이미지 크게 보기")}>
+              <button type="button" className="fb-img-zoom-btn" title={t("이미지 크게 보기")} onClick={() => setZoomSrc(noteRow.image)}>
                 <img className="devnote-img" src={noteRow.image} alt="" loading="lazy" />
-              </a>
+              </button>
             )}
           </div>
         </ModalWindow>
@@ -656,6 +663,15 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
         {!open && badge > 0 && <span className="fb-reply-badge" title={t("새 답변 {n}개", { n: badge })}>{badge}</span>}
         {!open && badge === 0 && isNewFeature("feedback-board") && <span className="new-badge">{t("새기능")}</span>}
       </button>
+      {/* modal-backdrop 클래스 = 전역 esc-close 편입 — z 최상단이라 ESC가 이것만 닫고,
+          아래 창모달은 유지된다 (esc-close.ts는 백드롭 mousedown을 디스패치한다) */}
+      {zoomSrc && createPortal(
+        <div className="modal-backdrop fb-lightbox" role="button" aria-label={t("닫기")}
+          onMouseDown={() => setZoomSrc(null)}>
+          <img src={zoomSrc} alt="" />
+        </div>,
+        document.body
+      )}
       {confirmDialog}
     </div>
   );
