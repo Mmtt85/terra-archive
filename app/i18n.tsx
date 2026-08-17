@@ -2179,6 +2179,12 @@ const D: Record<string, Pair> = {
   "히든 층": ["Hidden floor", "隠し階層"],
   "방문객": ["Visitors", "訪問者"],
   "엔딩 기록": ["Ending records", "エンディング記録"],
+  "진입 조건": ["How to reach", "進入条件"],
+  "엔딩 후 해금 스토리": ["Stories unlocked after the ending", "エンディング後に解禁されるストーリー"],
+  "읽기": ["Read", "読む"],
+  "기록": ["Record", "記録"],
+  "기록 불러오는 중…": ["Loading record…", "記録を読み込み中…"],
+  "기록을 불러오지 못했습니다.": ["Failed to load the record.", "記録を読み込めませんでした。"],
   "매달 다른 방문객이 찾아옵니다. 그달의 방문객은 아래 표시된 층·구역의 특별 조우에서 만날 수 있고, 만나면 그 장면의 기록이 해금됩니다. 로테이션이 한 바퀴 돌면 처음부터 반복됩니다.": [
     "A different visitor arrives each month. You can meet that month's visitor in special encounters on the floors and zones listed below, and meeting them unlocks that scene's record. Once the rotation completes, it repeats from the start.",
     "毎月異なる訪問者がやってきます。その月の訪問者は下記の階層・エリアの特別な遭遇で出会うことができ、出会うとその場面の記録が解禁されます。ローテーションが一巡すると最初から繰り返されます。",

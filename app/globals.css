@@ -13178,42 +13178,106 @@ html.dark.rg-theme.rg6 .site-header {
   font-style: italic;
   color: var(--rgmut);
 }
-/* 엔딩 기록(엔딩북) — 조각별 해금 조건 (사용자 소원 2026-08-17) */
-.rg-ending-book {
-  margin-top: 10px;
-  padding-top: 8px;
-  border-top: 1px dashed var(--rgline);
+/* 엔딩 카드 섹션 — 진입 조건 / 엔딩 후 해금 스토리(엔딩북)를 나눠 정리
+   (사용자 지시 2026-08-17 "중구난방이니 나눠서 하나씩 볼 수 있게") */
+.rg-ending-sec {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--rgline);
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--rgline) 12%, transparent);
 }
-.rg-ending-book h4 {
-  margin: 0 0 6px;
-  font-size: 12px;
+.rg-ending-sec > h4 {
+  margin: 0 0 7px;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--rggold);
 }
-.rg-ending-book h4 em {
+.rg-ending-sec > h4 em {
   margin-left: 6px;
   font-style: normal;
+  font-weight: 600;
   color: var(--rgmut);
+}
+.rg-ending-sec .rg-ending-cond {
+  margin: 0;
 }
 .rg-ending-book ul {
   margin: 0;
   padding: 0;
   list-style: none;
   display: grid;
-  gap: 4px;
+  gap: 5px;
 }
-.rg-ending-book li {
+/* 조각 행 — 원문이 있으면 통째로 버튼(읽기), 없으면 정적 행. 이름/조건 2단 */
+.rg-rec-btn,
+.rg-rec-row {
   display: flex;
   gap: 10px;
   align-items: baseline;
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--rgline);
+  border-radius: var(--r-sm);
+  background: transparent;
+  font: inherit;
   font-size: 12.5px;
   line-height: 1.55;
+  text-align: left;
+  color: inherit;
 }
-.rg-ending-book li strong {
+.rg-rec-btn {
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.rg-rec-btn:hover {
+  border-color: var(--rggold);
+  background: color-mix(in srgb, var(--rggold) 8%, transparent);
+}
+.rg-rec-btn strong,
+.rg-rec-row strong {
   flex: none;
   min-width: 110px;
   font-weight: 700;
 }
-.rg-ending-book li span {
+.rg-rec-btn span,
+.rg-rec-row span {
+  color: var(--rgmut);
+}
+.rg-rec-read {
+  margin-left: auto;
+  flex: none;
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--rggold);
+  white-space: nowrap;
+}
+.rg-visitor-where .rg-rec-read {
+  margin-left: 8px;
+}
+@media (max-width: 640px) {
+  .rg-rec-btn,
+  .rg-rec-row {
+    flex-wrap: wrap;
+  }
+}
+/* 기록 원문 모달 — 읽기 전용 좁은 판 */
+.rg-recmodal {
+  max-width: 640px;
+}
+.rg-rec-body {
+  padding: 4px 18px 18px;
+  overflow-y: auto;
+}
+.rg-rec-body p {
+  margin: 0 0 0.9em;
+  font-size: 13.5px;
+  line-height: 1.85;
+}
+.rg-rec-status {
   color: var(--rgmut);
 }
 
@@ -13277,12 +13341,30 @@ html.dark.rg-theme.rg6 .site-header {
   gap: 6px;
 }
 .rg-visitor-scenes li {
-  display: grid;
-  gap: 2px;
-  padding: 7px 10px;
-  border-left: 2px solid var(--rgline);
+  display: block;
   font-size: 12.5px;
   line-height: 1.55;
+}
+/* 장면 행 — 원문이 있으면 통째로 버튼(읽기). 정적/버튼 공용 골격 */
+.rg-visitor-scene-row {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  padding: 7px 10px;
+  border: 0;
+  border-left: 2px solid var(--rgline);
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+}
+button.rg-visitor-scene-row {
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+button.rg-visitor-scene-row:hover {
+  border-left-color: var(--rggold);
+  background: color-mix(in srgb, var(--rggold) 7%, transparent);
 }
 .rg-visitor-where {
   font-weight: 700;

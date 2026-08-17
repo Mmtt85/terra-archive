@@ -79,6 +79,7 @@ IS5 3차 확장팩이 통째로 누락돼 있었다). 캐시를 지워야 새 �
 ```bash
 rm -f .gamedata/rogue/*roguelike_topic_table.json
 python3 scripts/build-rogue-enc-scenes.py --refresh   # 조우 씬 트리 (PRTS 매칭) — build-rogue보다 먼저
+python3 scripts/build-rogue-records.py --refresh      # 기록 원문(엔딩북·방문객) — build-rogue보다 먼저, r2-sync 대상
 python3 scripts/build-rogue.py rogue5        # 최신 토픽 번호로. 1~4도 한 번씩 돌려 무변화 확인
 python3 scripts/build-rogue.py rogue5-en
 python3 scripts/build-rogue.py rogue5-ja

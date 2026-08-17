@@ -290,6 +290,21 @@ def attach_enc_scenes(encounters, trees, r_scenes, r_choices, branch_tr, cn_prim
             enc["scenes"] = scenes
 
 
+# 기록 원문 (엔딩북 조각·방문객 장면 — build-rogue-records.py 산출물, 사용자 요청 2026-08-17
+# "스토리 전문 읽기"). 파일이 있으면 txt 플래그 — UI가 클릭 시 /rogue/record/<id>.json 지연 로드.
+RECORD_DIR = os.path.join(REPO, "public", "rogue", "record")
+
+
+def record_ref(text_id):
+    if not text_id:
+        return {}
+    base = text_id.rsplit("/", 1)[-1]
+    ref = {"rid": base}
+    if os.path.exists(os.path.join(RECORD_DIR, f"{base}.json")):
+        ref["txt"] = 1
+    return ref
+
+
 # 아군측 도구 유닛 — 레벨 enemyDbRefs에 실려 있지만 적이 아니다 (사용자 제보 2026-08-16).
 # IS3 '탐사용 자율차'는 탐사 도구(trap_133_toolgarage)가 발사하는 조사용 아군 유닛으로,
 # 전 99개 레벨에 스폰 0으로 참조만 된다. 게임 도감도 hideInHandbook·hideInStage로 숨긴다
@@ -1420,7 +1435,8 @@ def build_topic(tid="rogue_1", loc=None):
     endbooks = ((r.get("archiveComp") or {}).get("endbook") or {}).get("endbook") or {}
     book_by_ending = {}
     for b in sorted(endbooks.values(), key=lambda x: x.get("sortId") or 0):
-        bitems = [{"name": it.get("endbookName"), "cond": it.get("unlockDesc")}
+        bitems = [{"name": it.get("endbookName"), "cond": it.get("unlockDesc"),
+                   **record_ref(it.get("textId"))}
                   for it in b.get("clientEndbookItemDatas") or []]
         if b.get("endingId") and bitems:
             book_by_ending[b["endingId"]] = bitems
@@ -1446,7 +1462,8 @@ def build_topic(tid="rogue_1", loc=None):
         chat = month_chats.get(sq.get("chatId") or "")
         scenes = [{"floor": it.get("floor"),
                    **({"zone": zone_names[it["chatZoneId"]]} if it.get("chatZoneId") in zone_names else {}),
-                   "desc": it.get("chatDesc")}
+                   "desc": it.get("chatDesc"),
+                   **record_ref(it.get("chatStoryId"))}
                   for it in ((chat or {}).get("chatItemList") or [])]
         visitors.append({
             "id": sq.get("id"), "name": sq.get("teamName"), "desc": sq.get("teamDes"),
@@ -2297,7 +2314,8 @@ def build_rogue6():
     endbooks6 = ((r.get("archiveComp") or {}).get("endbook") or {}).get("endbook") or {}
     book_by_ending6 = {}
     for b in sorted(endbooks6.values(), key=lambda x: x.get("sortId") or 0):
-        bitems = [{"name": it.get("endbookName"), "cond": it.get("unlockDesc")}
+        bitems = [{"name": it.get("endbookName"), "cond": it.get("unlockDesc"),
+                   **record_ref(it.get("textId"))}
                   for it in b.get("clientEndbookItemDatas") or []]
         if b.get("endingId") and bitems:
             book_by_ending6[b["endingId"]] = bitems
@@ -2317,7 +2335,8 @@ def build_rogue6():
         chat = month_chats6.get(sq.get("chatId") or "")
         scenes = [{"floor": it.get("floor"),
                    **({"zone": zone_names6[it["chatZoneId"]]} if it.get("chatZoneId") in zone_names6 else {}),
-                   "desc": it.get("chatDesc")}
+                   "desc": it.get("chatDesc"),
+                   **record_ref(it.get("chatStoryId"))}
                   for it in ((chat or {}).get("chatItemList") or [])]
         visitors.append({
             "id": sq.get("id"), "name": sq.get("teamName"), "desc": sq.get("teamDes"),
