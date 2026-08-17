@@ -6,7 +6,7 @@
 // 서버 탭(한국섭/중국섭, 2026-08-04): 중국섭은 rogueN.cn.json — CN 서버 텍스트에 KR 공식
 // 번역을 오버레이한 것으로 rogue_6과 같은 병기 표기. 흑류수해는 KR 미출시라 KR 탭 비활성.
 // 조우의 층별 출현 규칙·엔딩 선제조건은 클라 데이터에 없어 PRTS 기반 큐레이션(rogueN-curated.json)을 병합한다.
-import { lazy, startTransition, Suspense, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { Fragment, lazy, startTransition, Suspense, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { TOPICS, slugOf, roguePath } from "./rogue-topics";
 import rogue1Data from "./data/rogue1.json";
 // 노드 종류 아이콘 보유 목록 — 이미지 자체는 R2에만 있고 커밋되지 않는다(.gitignore
@@ -1878,10 +1878,19 @@ export default function RogueGuide({ includeFuture, initialTopic }: {
       if (i % 2 === 0) return part;
       const s = stageByName.get(part);
       if (s) return <button key={i} type="button" className="rg-cond-node" onClick={() => setStageOpen(pairOf(s))}>「{part}」</button>;
-      const enc = encByTitle.get(part);
-      if (enc) return <button key={i} type="button" className="rg-cond-node" onClick={() => setEncOpen(enc)}>「{part}」</button>;
+      // 동명 조우·소장품 (IS2 하트 오브 카이룰라 — 소장품 이름을 딴 조우) 문맥 판별
+      // (사용자 확인 2026-08-17): 바로 뒤에 콜론이 오면 단계 라벨 = 조우(노드),
+      // 그 외(획득·소지·나열)는 아이템. 동명이 아니면 각자 그대로.
       const rl = relicByName.get(part);
+      const enc = encByTitle.get(part);
+      if (rl && enc) {
+        const labelish = /^\s*[:：]/.test(String(parts[i + 1] ?? ""));
+        return labelish
+          ? <button key={i} type="button" className="rg-cond-node" onClick={() => setEncOpen(enc)}>「{part}」</button>
+          : <button key={i} type="button" className="rg-cond-node relic" onClick={() => setRelicOpen(rl)}>「{part}」</button>;
+      }
       if (rl) return <button key={i} type="button" className="rg-cond-node relic" onClick={() => setRelicOpen(rl)}>「{part}」</button>;
+      if (enc) return <button key={i} type="button" className="rg-cond-node" onClick={() => setEncOpen(enc)}>「{part}」</button>;
       const en = enemyByName.get(part);
       if (en) return <button key={i} type="button" className="rg-cond-node" onClick={() => setEnemyOpen({ key: en, ctx: dexCtx(en) })}>「{part}」</button>;
       return `「${part}」`;
@@ -1889,12 +1898,30 @@ export default function RogueGuide({ includeFuture, initialTopic }: {
   };
   // 조우 선택지 보상의 「소장품명」을 소장품 상세 모달로 여는 링크로 (사용자 요청 2026-07-20).
   // 소장품이 아닌 「」 텍스트는 그대로 둔다.
+  // 「」 없는 평문 속 소장품명도 링크 — PRTS 안내 노트의 "No.221 하트 오브 카이룰라 (…)"류
+  // (사용자 지시 2026-08-17). 오탐 방지: 4자 이상 이름만, 긴 이름 우선 매칭.
+  const relicNamesByLen = useMemo(
+    () => [...relicByName.keys()].filter((n) => n.length >= 4).sort((a, b) => b.length - a.length),
+    [relicByName]);
+  const linkFreeRelics = (seg: string, keyBase: string): React.ReactNode[] => {
+    for (const nm of relicNamesByLen) {
+      const idx = seg.indexOf(nm);
+      if (idx >= 0) {
+        const rl = relicByName.get(nm)!;
+        return [
+          ...linkFreeRelics(seg.slice(0, idx), `${keyBase}a`),
+          <button key={`${keyBase}b`} type="button" className="rg-choice-relic" onClick={() => setRelicOpen(rl)}>{nm}</button>,
+          ...linkFreeRelics(seg.slice(idx + nm.length), `${keyBase}c`),
+        ];
+      }
+    }
+    return seg ? [seg] : [];
+  };
   const linkRelic = (text: string | null): React.ReactNode => {
     if (!text) return text;
     const parts = text.split(/「([^」]+)」/g);
-    if (parts.length === 1) return text;
     return parts.map((part, i) => {
-      if (i % 2 === 0) return part;
+      if (i % 2 === 0) return part ? <Fragment key={i}>{linkFreeRelics(part, `s${i}`)}</Fragment> : part;
       const rl = relicByName.get(part);
       return rl
         ? <button key={i} type="button" className="rg-choice-relic" onClick={() => setRelicOpen(rl)}>{part}</button>
@@ -2699,6 +2726,8 @@ export default function RogueGuide({ includeFuture, initialTopic }: {
             <article key={e.id} className="rg-ending">
               <header><h3><Nm name={e.name} cn={e.cn} /></h3></header>
               {e.desc && <p className="rg-ending-desc">{e.desc}</p>}
+              {/* 엔딩 달성 시의 인용구 — 스토리 설명 바로 밑 (사용자 지시 2026-08-17, 예전엔 카드 맨 아래) */}
+              {e.change && <p className="rg-ending-change">“{e.change}”</p>}
               {e.cond && e.cond.length > 0 && (
                 <div className="rg-ending-sec">
                   <h4>{t("진입 조건")}</h4>
@@ -2726,7 +2755,6 @@ export default function RogueGuide({ includeFuture, initialTopic }: {
                   </ul>
                 </div>
               )}
-              {e.change && <p className="rg-ending-change">“{e.change}”</p>}
             </article>
           ))}
         </div>
