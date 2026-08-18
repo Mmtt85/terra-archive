@@ -8,6 +8,11 @@ Usage: python3 scripts/build-profiles.py [gamedata-dir]   # default: .gamedata
 파일 자료 N / 승진 기록' 문서 전문이다. KR·EN·JP 테이블이 각각 공식 번역이라
 AI 번역을 거치지 않는다 (미실장 오퍼만 CN을 폴백으로 쓴다).
 
+여기에 두 플레이버 문서를 맨 앞에 끼워 넣는다 (제안 게시판 요청 2026-08-18):
+  · 고용 계약 — character_table의 itemUsage(소개문) + itemDesc(플레이버 한 줄).
+    획득 화면의 고용 계약서 텍스트로, operators.json에는 reason(검색용)으로만 있었다.
+  · 증표 — item_table `p_char_*`(잠재능력 증표)의 description. 둘 다 공식 번역이 있다.
+
 ⚠ 왜 operators.json에 안 넣는가: 전문을 합치면 4.5MB로 operators.json(1.7MB)의
 약 3배다. operators.json은 목록 화면에 통째로 실리므로 넣으면 첫 로딩이 무거워진다.
 그래서 **오퍼당 파일 1개**(평균 ~11KB)로 쪼개 public/profiles/<locale>/<id>.json에
@@ -37,6 +42,10 @@ ops = [o["id"] for o in load(f"{REPO}/app/data/operators.json")]
 # 없으므로 CN 원문으로 폴백한다 (사이트가 빈 화면이 되는 것보다 낫다 — 모달이 원문
 # 표기임을 안내한다).
 LOCALES = {"ko": ("kr", "cn"), "en": ("en", "cn"), "ja": ("jp", "cn")}
+
+# 플레이버 문서 제목 — 게임 표기를 따른다 (JP 증표 아이템은 'X의 印', EN은 'X's Token')
+FLAVOR_TITLES = {"ko": ("고용 계약", "증표"), "en": ("Employment Contract", "Token"),
+                 "ja": ("雇用契約", "印")}
 
 
 def clean(s):
@@ -268,6 +277,11 @@ for loc, (prefix, fallback) in LOCALES.items():
     table = table.get("handbookDict", table)
     fb = load(f"{S}/{fallback}_handbook_info_table.json")
     fb = fb.get("handbookDict", fb)
+    # 고용 계약(itemUsage/itemDesc)·증표 플레이버(p_char description) 원천
+    char_tbl = load(f"{S}/{prefix}_character_table.json")
+    char_fb = load(f"{S}/{fallback}_character_table.json")
+    item_tbl = load(f"{S}/{prefix}_item_table.json")["items"]
+    item_fb = load(f"{S}/{fallback}_item_table.json")["items"]
 
     out_dir = f"{OUT_ROOT}/{loc}"
     shutil.rmtree(out_dir, ignore_errors=True)  # 삭제된 오퍼의 잔재 정리
@@ -303,6 +317,33 @@ for loc, (prefix, fallback) in LOCALES.items():
                     untranslated.append((loc, cid, "text", left))
                 new_secs.append({**sec, "title": localize(sec.get("title"), loc, cid, "title"), "text": text})
             secs = new_secs
+
+        # 고용 계약·증표 문서를 맨 앞에 — 획득 시점 텍스트라 기록실 문서보다 앞이 자연스럽다.
+        # 미실장 오퍼는 CN 원문 폴백 + 수동 사전(줄 단위) 번역, 남으면 미번역 집계로.
+        c = char_tbl.get(cid)
+        char_cn = c is None
+        if c is None:
+            c = char_fb.get(cid) or {}
+        contract = "\n\n".join(t for t in (clean(c.get("itemUsage")), clean(c.get("itemDesc"))) if t)
+        pid = c.get("potentialItemId")
+        tok = item_tbl.get(pid) if pid else None
+        tok_cn = bool(pid) and tok is None
+        if tok is None and pid:
+            tok = item_fb.get(pid)
+        token = clean((tok or {}).get("description"))
+        extra = []
+        for title, text, from_cn in ((FLAVOR_TITLES[loc][0], contract, char_cn),
+                                     (FLAVOR_TITLES[loc][1], token, tok_cn)):
+            if not text:
+                continue
+            if from_cn:
+                text, left = localize_lines(text, manual_lines[loc])
+                if left:
+                    untranslated.append((loc, cid, "text", left))
+                used_fallback = True  # 모달의 '중국 서버 원문' 안내를 띄운다
+            extra.append({"title": title, "text": text, "unlock": None})
+        secs = extra + secs
+
         payload = {"id": cid, "sections": secs}
         if used_fallback:
             payload["source"] = "cn"  # 미실장 — 모달이 '중국 서버 원문' 안내를 띄운다

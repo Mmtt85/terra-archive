@@ -11588,5 +11588,185 @@
   "ko": "오퍼레이터 피아메타는 특별 인증 허가를 획득,\n외근부의 결정에 따라\n통합 전략 작전에서 개선된 전략으로 적에 대응하는 것을 승인한다.\n이에 따라 특별히 본 배지를 수여하여\n이를 증명한다.\n“최종적인 정당함에는 증명이 필요 없어.”",
   "en": "Operator Fiammetta has been granted special certification.\nPursuant to the resolution of the Field Operations Department,\nwhere the entailing mission would fall under Integrated Strategies scope, this operator shall be pursuant to tactics of a reinforced nature in meeting the enemy.\nThis badge is hereby conferred upon the above named,\nin witness whereof.\n'Ultimate righteousness needs no proof.'",
   "ja": "フィアメッタは特別な認証許可を得ている。\n外勤部門の決定に基づき、\n統合戦略行動において改良型戦略を駆使して敵に対処する。\n特別に本記章を授与し、\nその証明とする。\n「最終的な正当性に証明は要らない。」"
+ },
+ "凯尔希为之苦行万余年的那个使命，它并不在乎，但它想看看。": {
+  "ko": "켈시가 만여 년을 고행하며 짊어져 온 그 사명 따위, 이 녀석은 관심 없다. 다만 지켜보고 싶을 뿐이다.",
+  "en": "The mission Kal'tsit has borne through over ten thousand years of asceticism means nothing to it. It just wants to watch.",
+  "ja": "ケルシーが一万年余りの苦行を捧げてきたあの使命など、こいつにはどうでもいい。ただ、見てみたいだけだ。"
+ },
+ "留在你手臂上的一道抓痕。凯尔希曾与它同行，却不曾将它驯化。它是在荒野中挣扎过的生命，不是温顺的宠物。": {
+  "ko": "당신의 팔에 남은 할퀸 자국 하나. 켈시는 이 녀석과 동행했지만, 길들인 적은 없다. 이 녀석은 황야에서 발버둥치며 살아남은 생명이지, 온순한 애완동물이 아니다.",
+  "en": "A scratch left on your arm. Kal'tsit once traveled with it, but never tamed it. It is a life that struggled through the wilderness, not a docile pet.",
+  "ja": "あなたの腕に残された一筋の引っかき傷。ケルシーはこいつと共に歩んだが、飼い慣らしたことはない。荒野でもがき抜いた命であって、従順なペットではないのだ。"
+ },
+ "和他们一起出去走一走，他们会很开心的。": {
+  "ko": "함께 산책이라도 나가 주면, 무척 기뻐할 것이다.",
+  "en": "Take them out for a walk with you, and they'll be overjoyed.",
+  "ja": "一緒に散歩に出かければ、彼らはとても喜ぶだろう。"
+ },
+ "一张按有肉球印章的不可思议票券，以及一个带有涂鸦的木桶盖。是友情的标志喵！": {
+  "ko": "육구 도장이 찍힌 불가사의한 티켓 한 장, 그리고 낙서가 그려진 나무 통 뚜껑 하나. 우정의 증표다냥!",
+  "en": "A mysterious ticket stamped with a paw print, and a wooden barrel lid covered in doodles. A token of friendship, meow!",
+  "ja": "肉球のスタンプが押された不思議なチケットと、落書き付きの木樽のフタ。友情の証だニャ！"
+ },
+ "她有死战到底的血性，也有活下去、守护自己生活所需的勇气。": {
+  "ko": "그녀에게는 끝까지 싸워내는 결기도, 살아남아 자신의 삶을 지켜내는 데 필요한 용기도 있다.",
+  "en": "She has the mettle to fight to the bitter end, and the courage it takes to live on and protect the life she has built.",
+  "ja": "彼女には最後まで戦い抜く気概もあれば、生き抜き、自らの生活を守るための勇気もある。"
+ },
+ "一截刀片，裂响曾用它割开救济食品袋和缠绕的高空救生绳，后来她将它装在鞭绳上用来战斗，直至它被磨钝。裂响将它交给你，以纪念一段人生的结束。": {
+  "ko": "칼날 한 토막. 크랙본은 이것으로 구호 식량 포대를 뜯고 엉킨 고공 구명줄을 잘라 냈으며, 나중에는 채찍 줄에 달아 무뎌질 때까지 전투에 썼다. 크랙본은 한 시절의 끝을 기념하며 이것을 당신에게 건넸다.",
+  "en": "A blade fragment. Crackborne once used it to cut open relief food sacks and tangled high-altitude lifelines; later she mounted it on her whip and fought with it until it dulled. She gives it to you in memory of the end of a chapter of her life.",
+  "ja": "刃の欠片。クラックボーンはかつてこれで救援物資の袋や絡まった高所用命綱を切り、のちに鞭に取り付けて刃こぼれするまで戦い続けた。人生のひと区切りの記念にと、彼女はこれをあなたに託した。"
+ },
+ "她想要快一点，再快一点，最好能够超过时间。": {
+  "ko": "그녀는 더 빨리, 조금 더 빨리 달리고 싶다. 시간마저 앞지를 수 있다면 더할 나위 없겠지.",
+  "en": "She wants to go faster, and faster still — ideally, fast enough to outrun time itself.",
+  "ja": "彼女はもっと速く、さらに速くと願っている。できることなら、時間さえも追い越したいのだ。"
+ },
+ "一本日历。每去过一个地方，每做到一件事情，她都会增加一页进去，这本曾经很薄的日历会变得越来越厚，一如她的生命会越来越精彩。": {
+  "ko": "달력 한 권. 어딘가에 다녀올 때마다, 무언가를 해낼 때마다 그녀는 한 장씩 페이지를 더한다. 한때 얇았던 이 달력은 점점 두꺼워질 것이다. 그녀의 삶이 점점 눈부셔지는 것처럼.",
+  "en": "A calendar. For every place she visits and every goal she achieves, she adds another page. Once thin, this calendar grows ever thicker — just as her life grows ever more brilliant.",
+  "ja": "一冊のカレンダー。どこかへ行くたび、何かを成し遂げるたび、彼女は一枚ずつページを増やしていく。かつて薄かったこのカレンダーはどんどん厚くなっていく――彼女の人生がどんどん輝いていくように。"
+ },
+ "他努力地想要理解赴死的人们，却不曾期待过有人能理解自己。": {
+  "ko": "그는 죽음을 향해 나아가는 이들을 이해하려 애쓰면서도, 누군가 자신을 이해해 주리라고는 기대해 본 적이 없다.",
+  "en": "He strives to understand those who walk toward death, yet has never expected anyone to understand him.",
+  "ja": "彼は死地へ赴く人々を理解しようと努めながらも、誰かに自分を理解してもらえるとは期待したことがない。"
+ },
+ "一个款式看似基础的通讯器，他对其做了一些抗干扰的调试和改装。带上这个，或许你就不用担心找不到他，或者忘记他。": {
+  "ko": "겉보기엔 평범한 기본형 통신기. 그가 직접 손봐 간섭 방지 조정과 개조를 해 두었다. 이것만 지니고 있으면, 그를 찾지 못하거나 잊어버릴 걱정은 없을지도 모른다.",
+  "en": "A communicator of seemingly basic design, which he has tuned and modified for interference resistance. Carry it, and perhaps you'll never have to worry about losing track of him — or forgetting him.",
+  "ja": "一見ベーシックなデザインの通信機。彼の手で耐干渉の調整と改造が施されている。これを持っていれば、彼を見つけられなくなる心配も、忘れてしまう心配もいらないかもしれない。"
+ },
+ "她鼓起自己全部的勇气，确认了自己的理想，并努力去实现它。": {
+  "ko": "그녀는 온 용기를 그러모아 자신의 이상을 확인했고, 그것을 이루기 위해 노력하고 있다.",
+  "en": "She mustered all her courage, affirmed her ideal, and now works hard to make it real.",
+  "ja": "彼女はありったけの勇気を振り絞って自らの理想を確かめ、その実現のために努力している。"
+ },
+ "几根替换用的天线。虽然很纤细，虽然很易折，但你知道这种小小的东西能够连接人与人，连接整片大地。": {
+  "ko": "교체용 안테나 몇 개. 가늘고 꺾이기 쉽지만, 이 작은 물건이 사람과 사람을, 나아가 대지 전체를 이어 준다는 걸 당신은 알고 있다.",
+  "en": "A few spare antennas. Slender and easily bent, yet you know these little things can connect person to person — and the whole land.",
+  "ja": "数本の交換用アンテナ。細くて折れやすいが、この小さなものが人と人を、そして大地全体をつなげられることをあなたは知っている。"
+ },
+ "但是，一个人的旅途也太无聊了，她正在想办法让这趟旅程热闹一点！": {
+  "ko": "하지만 혼자 하는 여행은 너무 심심하다. 그래서 그녀는 이 여정을 좀 더 왁자지껄하게 만들 방법을 궁리하는 중이다!",
+  "en": "But traveling alone is just too boring — so she's figuring out how to liven up this journey!",
+  "ja": "でも、一人旅はあまりにも退屈。だから彼女は、この旅をもっと賑やかにする方法を考えているところだ！"
+ },
+ "一本和你共享的标本集。她告诉你，每到一个地方完成狩猎回来后，她就会往里面填充战利品。随着时间的推移，你发现这本册子已经成了她的旅游纪念册。": {
+  "ko": "당신과 함께 보는 표본집. 어딘가에서 사냥을 마치고 돌아올 때마다 전리품을 채워 넣는다고 그녀는 말했다. 시간이 흐르고 보니, 이 책자는 어느새 그녀의 여행 기념 앨범이 되어 있었다.",
+  "en": "A specimen album she shares with you. She tells you she fills it with trophies every time she returns from a hunt somewhere. As time passes, you realize the album has become her travel scrapbook.",
+  "ja": "あなたと共有する標本集。狩りを終えて帰ってくるたびに戦利品を綴じ込んでいくのだと彼女は言う。時が経つにつれ、この冊子はいつしか彼女の旅の記念アルバムになっていた。"
+ },
+ "沉默如同平庸有它自己的罪恶。": {
+  "ko": "침묵에는 평범함이 그러하듯, 그 나름의 죄가 있다.",
+  "en": "Silence, like mediocrity, carries a sin of its own.",
+  "ja": "沈黙には、凡庸と同じように、それ自身の罪がある。"
+ },
+ "一种可折叠的微型天线，又似乎是一个发夹？伯塔尼将它交给你时没做任何解释，只是偷偷笑了一下。": {
+  "ko": "접을 수 있는 초소형 안테나…… 아니, 머리핀인가? 보타니는 아무 설명 없이 이것을 건네며, 그저 몰래 웃어 보였다.",
+  "en": "A foldable miniature antenna — or is it a hairpin? Botany handed it to you without a word of explanation, just a sly little smile.",
+  "ja": "折りたたみ式の超小型アンテナ……いや、ヘアピンだろうか？ボタニーは何の説明もなくこれを手渡し、ただこっそり笑ってみせた。"
+ },
+ "想被“叮咬”一下的话，也可以叫她乌克西克。": {
+  "ko": "한번 '깨물리고' 싶다면, 우쿠시크라고 불러도 좋다.",
+  "en": "If you'd like a little \"bite,\" you can also call her Ukusik.",
+  "ja": "ちょっと「噛まれて」みたいなら、ウクーシクと呼んでもいい。"
+ },
+ "一颗乌黑发亮的玻璃球，不知道是怎么烧成的，沉甸甸，圆滚滚。乌啾说，这是她的珍藏，不准输给别人。": {
+  "ko": "새까맣게 반들거리는 유리구슬 한 알. 어떻게 구워 낸 건지는 몰라도 묵직하고 동글동글하다. 우쿠시크 말로는 자신의 애장품이니, 구슬치기에서 남에게 잃으면 안 된단다.",
+  "en": "A jet-black, glossy glass marble — who knows how it was fired. Heavy and perfectly round. Ukusik says it's her treasure, and you're not allowed to lose it to anyone.",
+  "ja": "漆黒につやめくガラス玉。どうやって焼き上げたのかは分からないが、ずっしりと重く、まんまるだ。ウクーシク曰く、これは彼女の宝物なので、誰かに取られてはいけないらしい。"
+ },
+ "当你需要时，她一定会乘着风回到你的身边。": {
+  "ko": "당신이 필요로 할 때면, 그녀는 반드시 바람을 타고 당신 곁으로 돌아올 것이다.",
+  "en": "Whenever you need her, she will surely ride the wind back to your side.",
+  "ja": "あなたが必要とする時、彼女はきっと風に乗ってあなたのもとへ帰ってくる。"
+ },
+ "一只纸折的沃尔珀兽亲。她想了很久，最终决定用自己最初学会的样式制作赠予你的信物。": {
+  "ko": "종이로 접은 볼포 짐승 친구. 그녀는 오래 고민한 끝에, 자신이 맨 처음 배운 접기 방식으로 당신에게 줄 증표를 만들기로 했다.",
+  "en": "A paper-folded Vulpo animal friend. After much thought, she decided to make your keepsake in the very first folding pattern she ever learned.",
+  "ja": "紙で折ったヴァルポの動物。長く悩んだ末、彼女は自分が最初に覚えた折り方であなたへの贈り物を作ることに決めた。"
+ },
+ "你大可试着相信她，但不必相信她的档案。": {
+  "ko": "그녀를 믿어 보는 건 좋다. 다만 그녀의 파일까지 믿을 필요는 없다.",
+  "en": "Feel free to trust her — just don't trust her file.",
+  "ja": "彼女を信じてみるのはいい。ただし、彼女のファイルまで信じる必要はない。"
+ },
+ "一块小巧圆润的琥珀，内嵌有一朵完整的愈创木花。虽非天然形成，但由她亲手制作。": {
+  "ko": "작고 매끈한 호박 한 조각. 안에는 온전한 유창목 꽃 한 송이가 박혀 있다. 자연적으로 만들어진 것은 아니지만, 그녀가 직접 손수 만든 것이다.",
+  "en": "A small, smooth piece of amber with a whole guaiacum blossom set inside. Not naturally formed, but crafted by her own hands.",
+  "ja": "小さく丸みを帯びた琥珀。中には一輪のユソウボクの花がまるごと収められている。天然のものではないが、彼女が自らの手で作ったものだ。"
+ },
+ "和她一起亲临前线的还有工具组、无人机、零食，以及她脑子里那些亟待解决的工程问题。": {
+  "ko": "그녀와 함께 전선에 온 것은 공구 세트와 드론, 간식거리, 그리고 그녀의 머릿속에서 해결을 기다리는 엔지니어링 문제들이다.",
+  "en": "Arriving at the front lines alongside her: a toolkit, drones, snacks, and all the engineering problems in her head still waiting to be solved.",
+  "ja": "彼女とともに前線へやって来たのは、工具セット、ドローン、お菓子、そして彼女の頭の中で解決を待っているエンジニアリング問題の数々だ。"
+ },
+ "一张什么都没写的纸。你辨认出那是她印刷优惠券用的纸张，不禁跃跃欲试起来。": {
+  "ko": "아무것도 적혀 있지 않은 종이 한 장. 그녀가 할인 쿠폰을 인쇄할 때 쓰는 종이임을 알아본 당신은, 저도 모르게 손이 근질근질해지기 시작했다.",
+  "en": "A blank sheet of paper. You recognize it as the stock she prints her coupons on, and can't help itching to give it a try.",
+  "ja": "何も書かれていない一枚の紙。彼女がクーポン印刷に使う用紙だと見抜いたあなたは、思わずうずうずし始めた。"
+ },
+ "她失去了永恒的生命，得到了属于普通人的一切痛苦、残缺，还有希望。": {
+  "ko": "그녀는 영원한 생명을 잃은 대신, 평범한 사람의 몫인 모든 고통과 결핍, 그리고 희망을 얻었다.",
+  "en": "She lost her eternal life, and gained everything that belongs to ordinary people — all the pain, the imperfection, and the hope.",
+  "ja": "彼女は永遠の命を失い、その代わりに普通の人間に属するあらゆる痛みと欠落、そして希望を手に入れた。"
+ },
+ "一支矿石病抑制剂，是罗德岛医疗部最新的成果。这暂时还不是能除去一切痛苦的解药，却是她对自己承诺的回答。": {
+  "ko": "광석병 억제제 한 병. 로도스 아일랜드 의료부의 최신 성과다. 아직 모든 고통을 없애 주는 해약은 아니지만, 그녀가 스스로에게 한 약속에 대한 대답이다.",
+  "en": "A dose of Oripathy suppressant, the latest achievement of Rhodes Island's Medical Department. Not yet a cure that removes all suffering — but it is her answer to the promise she made to herself.",
+  "ja": "鉱石病抑制剤が一本。ロドス医療部門の最新の成果だ。まだあらゆる苦しみを取り除ける解薬ではないが、彼女が自分自身に立てた誓いへの答えである。"
+ },
+ "但其实，你早就已经被列入了他的指挥序列。毕竟，你用过的许许多多设备，都由他创造，也由他掌控。": {
+  "ko": "하지만 사실, 당신은 이미 오래전부터 그의 지휘 서열에 편입되어 있었다. 당신이 써 온 수많은 장비들이 전부 그의 손에서 만들어졌고, 또 그의 통제 아래에 있으니까.",
+  "en": "In truth, though, you were placed in his chain of command long ago. After all, so many of the devices you've used were created by him — and are controlled by him.",
+  "ja": "だが実のところ、あなたはとっくに彼の指揮系統に組み込まれている。何しろ、あなたが使ってきた数多くの機器は、みな彼が作り出し、彼が掌握しているのだから。"
+ },
+ "一瓶酒。当然，酒不重要，重要的是他醉酒后要向你展示的技术奇观——那是他所有思考和感受的具象表现，用逻各斯的话说，“他的灵魂”。现在？先喝吧。": {
+  "ko": "술 한 병. 물론 술이 중요한 게 아니다. 중요한 건 그가 취한 뒤 당신에게 보여 줄 기술의 경이 — 그의 모든 사유와 감정이 형상화된 것, 로고스의 말을 빌리자면 '그의 영혼'이다. 지금은? 일단 마시자.",
+  "en": "A bottle of liquor. The drink itself hardly matters, of course — what matters is the technological marvel he'll show you once he's drunk: the embodiment of all his thoughts and feelings, or in Logos's words, \"his soul.\" For now? Just drink.",
+  "ja": "一本の酒。もちろん酒自体は重要ではない。重要なのは、彼が酔った後にあなたへ披露する技術の驚異――彼のあらゆる思考と感情が形になったもの、ロゴスの言葉を借りれば「彼の魂」だ。今は？まず飲もう。"
+ },
+ "她会一步接着一步，去见识更灿烂的大地，去做原本以为做不到的事。": {
+  "ko": "그녀는 한 걸음 한 걸음, 더 눈부신 대지를 만나러 갈 것이다. 할 수 없으리라 여겼던 일들을 해내러 갈 것이다.",
+  "en": "Step by step, she will go see ever more brilliant lands, and do the things she once thought impossible.",
+  "ja": "彼女は一歩また一歩と、より輝かしい大地を見に行き、できないと思っていたことを成し遂げに行くのだ。"
+ },
+ "一个装满了各项物品的背包。如果勇气涌上了心头，就立刻背上它出发吧！": {
+  "ko": "온갖 물건이 가득 든 배낭. 가슴에 용기가 차오르면, 곧장 둘러메고 출발하자!",
+  "en": "A backpack stuffed with all sorts of things. When courage wells up in your heart, sling it on and set out at once!",
+  "ja": "様々な品物がぎっしり詰まったリュック。勇気が湧き上がってきたら、すぐに背負って出発しよう！"
+ },
+ "她很认真地解释，她只是换了身衣服，并没有什么其他的变化，你相信吗？": {
+  "ko": "그녀는 그저 옷을 갈아입었을 뿐 달라진 건 없다고 진지하게 해명했다. 당신은 믿어지는가?",
+  "en": "She earnestly explains that she has merely changed her outfit and nothing else about her is different. Do you believe her?",
+  "ja": "彼女は、ただ服を着替えただけで他には何も変わっていないと、真剣に説明している。あなたは信じられるだろうか？"
+ },
+ "一本素材本，上面贴满了梓兰平时从各种杂志上剪下来的时尚设计。她表示，你可以从中挑选喜欢的款式，她会免费帮你设计一套类似风格的衣服。": {
+  "ko": "스크랩북 한 권. 오키드가 평소 온갖 잡지에서 오려 낸 패션 디자인이 가득 붙어 있다. 마음에 드는 스타일을 고르면, 비슷한 느낌의 옷 한 벌을 무료로 디자인해 주겠다고 한다.",
+  "en": "A scrapbook plastered with fashion designs Orchid has clipped from all sorts of magazines. Pick a style you like, she says, and she'll design you an outfit in a similar vein — free of charge.",
+  "ja": "スクラップブックが一冊。オーキッドが普段いろいろな雑誌から切り抜いたファッションデザインがびっしり貼られている。気に入ったスタイルを選べば、似た雰囲気の服を一着無料でデザインしてくれるそうだ。"
+ },
+ "战斗，战斗，战斗！": {
+  "ko": "싸우고, 싸우고, 또 싸운다!",
+  "en": "Fight, fight, fight!",
+  "ja": "戦い、戦い、戦いだ！"
+ },
+ "一块碎石，似乎曾是某座雕像的一部分。凛冬说，她在这块石头上押注了许多，她相信这会是一个时代的开端。": {
+  "ko": "돌 부스러기 하나. 어느 조각상의 일부였던 듯하다. 지마는 이 돌에 많은 것을 걸었다며, 이것이 한 시대의 시작이 되리라 믿는다고 말했다.",
+  "en": "A stone fragment that seems to have once been part of a statue. Zima says she has staked a great deal on this stone — she believes it will be the beginning of an era.",
+  "ja": "石のかけら。どうやらある彫像の一部だったようだ。ズィマーはこの石に多くを賭けたと言い、これが一つの時代の幕開けになると信じている。"
+ },
+ "合作，而不是附属。现在他分得很清楚。": {
+  "ko": "종속이 아닌 협력. 이제 그는 그 둘을 분명하게 구분한다.",
+  "en": "Cooperation, not subordination. He draws that line clearly now.",
+  "ja": "従属ではなく、協力。今の彼はその区別をはっきりつけている。"
+ },
+ "一枚金色的勋章，中间蓝色的珐琅质内圈上，用乌萨斯语刻印着“信念与忠诚”。他从不相信这些。": {
+  "ko": "금빛 훈장 하나. 가운데 파란 법랑 내륜에는 우르수스어로 '신념과 충성'이라 새겨져 있다. 그는 이런 것들을 믿어 본 적이 없다.",
+  "en": "A golden medal. On the blue enamel ring at its center, the words \"Faith and Loyalty\" are engraved in Ursus script. He has never believed in any of it.",
+  "ja": "金色の勲章。中央の青いエナメルの内輪には、ウルサス語で「信念と忠誠」と刻まれている。彼はそんなものを信じたことなど一度もない。"
  }
 }

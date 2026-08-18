@@ -3416,7 +3416,8 @@ function SkinPortrait({ skin, fallbackAlt, onZoom }: { skin: SkinEntry; fallback
 }
 
 // ── 오퍼레이터 파일(프로필 텍스트) ───────────────────────────────────────────
-// 게임 내 기록실 문서 전문(기본정보·종합검진·프로필·임상 진단·파일 자료·승진 기록).
+// 게임 내 기록실 문서 전문(기본정보·종합검진·프로필·임상 진단·파일 자료·승진 기록)
+// + 맨 앞의 고용 계약·증표 플레이버 (제안 게시판 요청 2026-08-18, build-profiles.py가 합성).
 // 전문 합계가 4.5MB라 operators.json에 못 싣고 **오퍼당 파일 1개**(~11KB)로 쪼개
 // R2에서 서빙한다 (scripts/build-profiles.py) — 모달을 열 때만 그 한 장을 받는다.
 type ProfileSectionData = { title: string; text: string; unlock: { type: string; param: string | null } | null };
