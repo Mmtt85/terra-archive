@@ -77,10 +77,10 @@ const scriptIdsByLocale: Record<string, Set<string>> = {
 export const canOpenStory = (id: string) => summaryIds.has(id) || scriptIds.has(id);
 
 // 전문(풀 스크립트) 스키마 — build-story-scripts.py 라인 스키마와 1:1
-type ScriptLine = { n?: string; x?: string; st?: string; img?: string; loc?: string; opts?: string[]; vals?: string[]; br?: string };
-type ScriptEp = { code: string; name: string; tag: string; lines: ScriptLine[] };
+export type ScriptLine = { n?: string; x?: string; st?: string; img?: string; loc?: string; opts?: string[]; vals?: string[]; br?: string };
+export type ScriptEp = { code: string; name: string; tag: string; lines: ScriptLine[] };
 // tr: "cn" = 미출시 이벤트 — CN 원문 AI 번역본 (비공식 번역 안내 표시)
-type ScriptData = { id: string; eps: ScriptEp[]; tr?: string; faces?: Record<string, string> };
+export type ScriptData = { id: string; eps: ScriptEp[]; tr?: string; faces?: Record<string, string> };
 const translatedByLocale: Record<string, Set<string>> = {
   en: new Set(translatedEnData as string[]),
   ja: new Set(translatedJaData as string[]),

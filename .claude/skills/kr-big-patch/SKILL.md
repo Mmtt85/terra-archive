@@ -112,6 +112,7 @@ python3 scripts/build-stages-rogue.py        # → app/data/stages-rogue{,.en,.j
 ```bash
 python3 scripts/build-story.py               # 목록·썸네일 (ci-refresh에 포함돼 있음)
 python3 scripts/build-story-scripts.py       # ⚠ 전체 실행할 것
+python3 scripts/build-records.py             # 오퍼레이터 기록(밀록) — ci 미포함, 여기서만 돈다
 ```
 > ⚠ `build-story-scripts.py <id>`처럼 **단일 id로 돌리면 `story-script-ids.json`을 갱신하지
 > 않는다**(목록이 잘리는 걸 막으려는 의도적 동작). 새 이벤트가 목록에 안 뜨면 이게 원인이다.

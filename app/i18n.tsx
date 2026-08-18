@@ -186,6 +186,15 @@ const D: Record<string, Pair> = {
   "신뢰도 {n}": ["Trust {n}", "信頼度 {n}"],
   "승진 {n}": ["Promotion {n}", "昇進 {n}"],
   "추가 해금": ["Extra unlock", "追加解放"],
+  // 오퍼레이터 기록(밀록) 섹션 (2026-08-18)
+  "오퍼레이터 기록": ["Operator Records", "オペレーター記録"],
+  "정예화 {p} Lv.{n}": ["Elite {p} Lv.{n}", "昇進{p} Lv.{n}"],
+  "정예화 {n}": ["Elite {n}", "昇進{n}"],
+  "등록된 기록이 없습니다.": ["No records available.", "登録された記録はありません。"],
+  "중국 서버 선행 기록입니다 — 아직 한국어 번역 전이라 중국어 원문으로 표시됩니다.": [
+    "This record is ahead of this server's release — shown in the original Chinese until an official translation arrives.",
+    "中国サーバー先行の記録です — 公式翻訳前のため中国語原文で表示されます。",
+  ],
   "메뉴 열기": ["Open menu", "メニューを開く"],
   "메뉴": ["Menu", "メニュー"],   // 햄버거 버튼 고정 라벨 (현재 탭 이름을 넣으면 폭이 흔들린다)
   "검색어 지우기": ["Clear search", "検索語をクリア"],

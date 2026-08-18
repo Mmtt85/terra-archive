@@ -34,6 +34,8 @@ const DIRS = ["story", "rogue", "lens", "tesseract", "avatars", "about", "og", "
   "skills",
   // 모듈 이야기(uniEquipDesc) — scripts/build-module-stories.py (2026-08-02)
   "modules",
+  // 오퍼레이터 기록(밀록) 전문 — scripts/build-records.py (2026-08-18)
+  "records",
   // 적 도감 초상 — scripts/build-enemies.py (2026-08-09). ⚠ 폴더는 enemy(단수),
   // 라우트는 /enemies(복수) — deploy.sh가 자산만 떼어낼 수 있게 일부러 다르다.
   "enemy",

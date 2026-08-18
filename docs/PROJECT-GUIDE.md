@@ -425,9 +425,14 @@ npm run build                             # 9. 빌드 확인 → 커밋 → 푸�
   각 `<section className="detail-section" id="op-…">`와 `MODAL_SECTIONS` 배열이 1:1이니
   섹션을 더하거나 지우면 **둘 다** 고쳐야 한다. 760px 이하에선 본문 폭을 먹어 숨긴다.
   섹션 offsetTop이 스크롤러 기준이어야 해서 `.modal-scroll`은 `position: relative`다.
-  복장·프로필·보이스·**스킬 레벨 수치**는 **모달을 열 때만 오퍼당 파일 1개를 받아오는 지연 로딩**이다
-  (`public/{skins,profiles,voice,skills}/<locale>/<id>.json`, R2 서빙). 목록 화면에 통째로 실리는
-  operators.json에 넣으면 첫 로딩이 무거워지기 때문 — 새로 큰 텍스트를 붙일 땐 이 관례를 따른다.
+  복장·프로필·보이스·**스킬 레벨 수치**·모듈 이야기·**오퍼레이터 기록(밀록)**은 **모달을 열 때만
+  오퍼당 파일 1개를 받아오는 지연 로딩**이다
+  (`public/{skins,profiles,voice,skills,modules,records}/<locale>/<id>.json`, R2 서빙). 목록 화면에
+  통째로 실리는 operators.json에 넣으면 첫 로딩이 무거워지기 때문 — 새로 큰 텍스트를 붙일 땐 이 관례를 따른다.
+  기록(`RecordSection`, 2026-08-18)은 `scripts/build-records.py`가 AVG 스크립트를
+  build-story-scripts.py 파서로 파싱한 것 — 열람 창은 스토리 탭 `ScriptReader`를 lazy 재사용한다.
+  CN 선행 기록(`f:1`)은 미래시 토글이 켜졌을 때만 보이고 중국어 원문 안내가 붙는다.
+  build-records는 **ci-refresh 미포함**(원문 fetch 1,100건) — kr-big-patch 로컬 단계에서 돌린다.
   스킬은 **레벨 탭 한 줄**(1~7 · M1~M3)로 Lv별 수치를 보여 준다 (사용자 요청 2026-08-01
   "밑으로 쭉 늘어지지 않게") — 문장 속 숫자를 그 자리에서 갈아 끼우고 바뀌는 값만 강조한다.
   데이터가 오기 전에는 operators.json의 최고레벨 `description`을 그대로 쓴다(빌드에서 일치 검증).
@@ -842,7 +847,7 @@ Pages가 아니라 **R2 버킷 커스텀 도메인 `files.terra-archive.net`**
 
 - 번들: `operators.json`(+`.en`/`.ja`), `costs`·`infra`·`farm`·`recruit`·`rogue1~6`·`stories`·
   `broadcasts`·`story-summaries` — 목록·검색·플래너 계산처럼 **화면을 그리는 순간 필요한 것**.
-- R2: `avatars`·`skills`·`profiles`·`voice`·`skins`·`skin`·`modules` (오퍼당 파일 1개씩) +
+- R2: `avatars`·`skills`·`profiles`·`voice`·`skins`·`skin`·`modules`·`records` (오퍼당 파일 1개씩) +
   `story`·`rogue` 이미지/스크립트·`lens`/`tesseract` OCR·`items`·`scan`·`about`·`og` —
   전부 **상세 모달이나 스토리 화면을 열 때만** 받아온다.
 

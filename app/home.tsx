@@ -53,7 +53,10 @@ import { useHashSync } from "./hash-modal";
 import type { OmniTarget } from "./omni";
 import { notifyHandoff, stashHandoff } from "./handoff";
 import { noteAction, noteArrival, noteMiss } from "./trail";
-import type { StorySummaries, OpIndex } from "./story";
+import type { StorySummaries, OpIndex, ScriptData } from "./story";
+// 오퍼레이터 기록(밀록)이 있는 오퍼 id — scripts/build-records.py 생성. 본문은
+// public/records/<locale>/<id>.json 을 모달에서 지연 fetch (R2 서빙, 번들 import 금지).
+import recordIdsData from "./data/record-ids.json";
 /** 스토리 요약(로케일별 1.8MB)은 **스토리 탭에 들어갈 때만** 받는다 (2026-08-09 INP 작업).
  *  종전엔 로케일 래퍼가 정적 import해 모든 페이지가 파싱했다. 셸에서 쓰던 곳은
  *  Portal의 죽은 stats prop 하나뿐이라 데이터 자체가 필요 없었다. */
@@ -2217,9 +2220,10 @@ const MODAL_SECTIONS = [
   { id: "op-infra", label: "인프라 스킬" },
   { id: "op-skin", label: "스킨" },
   { id: "op-profile", label: "오퍼레이터 파일" },
+  { id: "op-record", label: "오퍼레이터 기록" },
   { id: "op-voice", label: "보이스 대사" },
   // 관련 오퍼레이터는 2026-08-06(상세끼리 내부 링크, SEO)에 들어왔는데 목차에서 빠져 있었다
-  // — 본문 맨 끝 섹션이라 11번 (사용자 지적 2026-08-13).
+  // — 본문 맨 끝 섹션이라 마지막 번호 (사용자 지적 2026-08-13).
   { id: "op-related", label: "관련 오퍼레이터" },
 ];
 
@@ -2295,7 +2299,7 @@ function RelatedOperators({ operator, operators, onSelect }: {
   if (groups.length === 0) return null;
   return (
     <section className="detail-section op-related" id="op-related" aria-label={t("관련 오퍼레이터")}>
-      <span className="detail-no">RELATED / 11</span>
+      <span className="detail-no">RELATED / 12</span>
       <h3>{t("관련 오퍼레이터")}</h3>
       {groups.map((g) => (
         <div key={g.key} className="op-related-row">
@@ -2454,6 +2458,8 @@ function OperatorFile({ operator, onUpgrade, includeFuture, operators, onRelated
           <SkinSection operator={operator} />
 
           <ProfileSection operator={operator} />
+
+          <RecordSection operator={operator} includeFuture={includeFuture} operators={operators} onRelated={onRelated} />
 
           <VoiceSection operator={operator} />
 
@@ -3475,6 +3481,95 @@ function ProfileSection({ operator }: { operator: Operator }) {
   );
 }
 
+// ── 오퍼레이터 기록(밀록) ────────────────────────────────────────────────────
+// 게임 아카이브 '기록 복원' 미니 스토리 전문 (scripts/build-records.py — AVG 스크립트를
+// build-story-scripts.py 파서로 파싱). 목록만 이 섹션에 그리고, 열람은 스토리 탭의
+// ScriptReader 를 창모달로 재사용한다 — story 청크는 lazy 라 기록을 열 때만 받는다.
+// CN 선행 기록(f:1)은 '미래시 포함'일 때만 노출하고 중국어 원문 안내를 띄운다.
+type RecordEntry = { name: string; tag: string; unlock: { t: string; p: string[] }[]; f?: 1; lines: ScriptData["eps"][number]["lines"] };
+type RecordDoc = { id: string; recs: RecordEntry[]; faces?: Record<string, string> };
+const recordIds = new Set(recordIdsData as string[]);
+const recordCache = new Map<string, RecordDoc | null>();
+const StoryScriptReader = lazy(() => import("./story").then((m) => ({ default: m.ScriptReader })));
+
+function RecordSection({ operator, includeFuture, operators, onRelated }: {
+  operator: Operator; includeFuture?: boolean; operators?: Operator[]; onRelated?: (op: Operator) => void;
+}) {
+  const { locale, t } = useI18n();
+  const key = `${locale}/${operator.id}`;
+  const known = recordIds.has(operator.id);
+  const [doc, setDoc] = useState<RecordDoc | null | undefined>(() => (known ? recordCache.get(key) : null));
+  const [openIdx, setOpenIdx] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!known || recordCache.has(key)) { if (recordCache.has(key)) setDoc(recordCache.get(key)); return; }
+    let alive = true;
+    fetch(asset(`/records/${locale}/${operator.id}.json`))
+      .then((res) => (res.ok ? res.json() : null))
+      .catch(() => null)
+      .then((data: RecordDoc | null) => {
+        recordCache.set(key, data);
+        if (alive) setDoc(data);
+      });
+    return () => { alive = false; };
+  }, [known, key, locale, operator.id]);
+
+  // 화자 이름 → 오퍼 아바타·상세 연결 (스토리 탭의 storyOpIndex 와 같은 규칙)
+  const opIndex = useMemo<OpIndex>(() => {
+    const m: OpIndex = {};
+    for (const o of operators ?? []) m[o.name] = { op: o.id, desc: `${o.rarity}성 ${o.job} 오퍼레이터` };
+    return m;
+  }, [operators]);
+
+  const shown = useMemo(() => (doc?.recs ?? []).filter((r) => includeFuture || !r.f), [doc, includeFuture]);
+  const open = openIdx != null ? shown[openIdx] : null;
+  // ScriptReader 는 eps 배열을 받는다 — 기록 하나를 단일 에피소드로 감싼다 (탭 없이 본문만)
+  const script = useMemo<ScriptData | null>(() => (open && doc
+    ? { id: `${operator.id}-rec`, eps: [{ code: "", name: open.name, tag: open.tag, lines: open.lines }], faces: doc.faces }
+    : null), [open, doc, operator.id]);
+  const showOp = onRelated && operators
+    ? (id: string) => { const target = operators.find((o) => o.id === id); if (target) { setOpenIdx(null); onRelated(target); } }
+    : undefined;
+
+  const unlockChips = (rec: RecordEntry) => rec.unlock.map((u) => (
+    u.t === "FAVOR" ? t("신뢰도 {n}", { n: u.p[0] ?? "?" })
+      // AWAKE p = [정예화 단계, 레벨]. 레벨 1은 "정예화 N 도달"과 같은 말이라 생략
+      : u.t === "AWAKE" ? (u.p[1] && u.p[1] !== "1"
+        ? t("정예화 {p} Lv.{n}", { p: u.p[0] ?? "?", n: u.p[1] })
+        : t("정예화 {n}", { n: u.p[0] ?? "?" }))
+      : t("추가 해금")));
+
+  return (
+    <section className="detail-section" id="op-record">
+      <span className="detail-no">RECORD / 10</span>
+      <h3>{t("오퍼레이터 기록")}</h3>
+      {known && doc === undefined ? (
+        <p className="no-detail">{t("불러오는 중…")}</p>
+      ) : shown.length === 0 ? (
+        <p className="no-detail">{t("등록된 기록이 없습니다.")}</p>
+      ) : (
+        <div className="rec-list">
+          {shown.map((rec, index) => (
+            <button key={index} type="button" className="rec-item" onClick={() => setOpenIdx(index)}>
+              <b>{rec.name}{rec.f ? <em className="future-badge">{t("미실장")}</em> : null}</b>
+              {rec.tag && <span className="rec-tag">{rec.tag}</span>}
+              <span className="rec-chips">{unlockChips(rec).map((chip, i) => <i key={i}>{chip}</i>)}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      {open && script && (
+        <ModalWindow label={open.name} className="op-record-modal" onClose={() => setOpenIdx(null)}>
+          {open.f ? <p className="future-note">{t("중국 서버 선행 기록입니다 — 아직 한국어 번역 전이라 중국어 원문으로 표시됩니다.")}</p> : null}
+          <Suspense fallback={<p className="no-detail">{t("불러오는 중…")}</p>}>
+            <StoryScriptReader script={script} error={false} entities={[]} opIndex={opIndex} onShowOperator={showOp} />
+          </Suspense>
+        </ModalWindow>
+      )}
+    </section>
+  );
+}
+
 // 문서는 전부 접었다 폈다 할 수 있다 (사용자 요청 2026-08-01). 해금이 걸린 문서
 // (신뢰도·승진)만 접힌 채로 시작한다 — 스포일러이자, 안 접으면 모달이 배로 길어진다.
 function ProfileDoc({ section, badge }: { section: ProfileSectionData; badge: string | null }) {
@@ -3556,7 +3651,7 @@ function VoiceSection({ operator }: { operator: Operator }) {
   const shown = all ? lines : lines.slice(0, VOICE_HEAD);
   return (
     <section className="detail-section" id="op-voice">
-      <span className="detail-no">VOICE / 10</span>
+      <span className="detail-no">VOICE / 11</span>
       <h3>{t("보이스 대사")}{lines.length > 0 && <em className="detail-count">{lines.length}</em>}</h3>
       {doc === undefined ? (
         <p className="no-detail">{t("불러오는 중…")}</p>
