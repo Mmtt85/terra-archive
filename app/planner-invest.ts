@@ -287,6 +287,7 @@ export async function recommendRaises(
   onProgress?: (p: InvestProgress) => void | Promise<void>,
   pinnedDorms: Record<string, string[]> = {},  // 사용자가 숙소에 고정한 인원 — 반사실도 같은 기지 조건에서
   levelById: Map<string, number> = new Map(),  // 오퍼 레벨 — 노정예 'Lv.30' 스킬이 잠긴 상태를 베이스라인에 반영
+  roomPins: Record<string, string[]> = {},     // 생산방 고정 인원 (2026-08-19) — 숙소 고정과 같은 이유로 관통
 ): Promise<RaiseRec[]> {
   const cur = (op: InfraOp): Elite => eliteById.get(op.id) ?? maxElite(op.rarity);
   // 정예화는 **지정이 없으면 만정예로 간주**하므로(성급 상한), 보유 설정에서 아무도 낮춰 두지
@@ -302,7 +303,7 @@ export async function recommendRaises(
   // 통째로 상수만큼 낮게 지어져 그 상수가 모든 후보의 ΔS에서 똑같이 깎인다. 실계정 404명
   // 박스에서 −1.521이 걸려 후보 66건이 전부 음수 → **추천 0건**이었다 (2026-07-30).
   const { plan: baseline, tokenChoice, factionSets, park, seeds, excluded, capCluster, shiftTiebreak } =
-    await optimizeConfig(baseRoster, priority, undefined, pinnedDorms);
+    await optimizeConfig(baseRoster, priority, undefined, pinnedDorms, roomPins);
   const S0 = planScore(baseline, byId0);
   const droppedIds = new Set(excluded);
 
@@ -344,7 +345,7 @@ export async function recommendRaises(
     for (const cfg of configs) {
       // ⑤(우선 생산 집중)는 planScore 중립(gold↔exp 등량 재배치)이라 육성 이득 델타를 안 바꾸고
       // config 비교만 교란하므로 끈다 — 반사실 평가는 ⑤-무관 원가치로 본다 (planner-engine 참고).
-      const plan = buildPlan(tokenChoice, roster1, cfg, priority, seeds, false, park, pinnedDorms);
+      const plan = buildPlan(tokenChoice, roster1, cfg, priority, seeds, false, park, pinnedDorms, roomPins);
       const score = planScore(plan, byId1);
       if (score > bestS) { bestS = score; best = plan; }
     }

@@ -6846,6 +6846,17 @@ legend {
   outline: 2px solid var(--lime);
   outline-offset: -2px;
 }
+/* 기지 그리드의 생산방 고정 인원 📌 — 임시 배지(오른쪽 위)와 겹치지 않게 왼쪽 위 (2026-08-19) */
+.op-pin-badge {
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  z-index: 1;
+  font-style: normal;
+  font-size: 10px;
+  line-height: 1;
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.7));
+}
 /* 숙소 후보 중 '다른 방의 조건을 켜 주는' 오퍼 */
 .sub-chip.enabler {
   border-style: solid;

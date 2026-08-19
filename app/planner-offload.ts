@@ -17,6 +17,7 @@ export type PlannerJob = {
   customRooms?: CustomRoom[] | null; // 그외(커스텀) 배치 9칸 구성 — layout === "custom"일 때 필수
   customProducts?: (CustomProduct | null)[] | null; // 커스텀 제조소 품목(순금/작전기록)
   dormPins?: Record<string, string[]>; // 사용자가 숙소 칸에 고정한 오퍼 (자동편성이 건드리지 않는다)
+  roomPins?: Record<string, string[]>; // 생산방(비숙소 칸) 고정 오퍼 — A·B 양조에 그대로 유지 (2026-08-19)
 };
 
 type Pending = {
@@ -71,7 +72,7 @@ function postJob(cmd: "optimize" | "invest", job: PlannerJob, hooks: Pick<Pendin
   const promise = new Promise<unknown>((resolve, reject) => {
     pending.set(mySeq, { resolve, reject, ...hooks });
   });
-  w.postMessage({ seq: mySeq, cmd, owned: [...job.owned], elite: [...job.elite.entries()], opLevels: [...(job.opLevels ?? new Map()).entries()], includeFuture: job.includeFuture, priority: job.priority, layout: job.layout ?? "243", levels: job.levels ?? null, customRooms: job.customRooms ?? null, customProducts: job.customProducts ?? null, dormPins: job.dormPins ?? {} });
+  w.postMessage({ seq: mySeq, cmd, owned: [...job.owned], elite: [...job.elite.entries()], opLevels: [...(job.opLevels ?? new Map()).entries()], includeFuture: job.includeFuture, priority: job.priority, layout: job.layout ?? "243", levels: job.levels ?? null, customRooms: job.customRooms ?? null, customProducts: job.customProducts ?? null, dormPins: job.dormPins ?? {}, roomPins: job.roomPins ?? {} });
   return promise;
 }
 
@@ -89,7 +90,7 @@ export async function optimizeOff(job: PlannerJob, onStep?: (step: OptimizeStep)
   }
   setLayoutPreset(job.layout ?? "243", job.customRooms ?? null, job.customProducts ?? null); // 폴백(메인 스레드)도 워커와 동일하게 프리셋 동기화
   setLevels(job.levels ?? null);
-  return optimize(rosterOf(job), job.priority, onStep && (async (step) => { onStep(step); }), job.dormPins ?? {});
+  return optimize(rosterOf(job), job.priority, onStep && (async (step) => { onStep(step); }), job.dormPins ?? {}, job.roomPins ?? {});
 }
 
 // 육성 추천 — 워커에서. onProgress는 후보 진행 바 갱신용
@@ -104,5 +105,5 @@ export async function investOff(job: PlannerJob, onProgress?: (p: InvestProgress
   return recommendRaises(visible, job.owned, job.elite, job.priority, onProgress && (async (p) => {
     onProgress(p);
     await new Promise((resolve) => setTimeout(resolve, 0)); // 폴백은 종전처럼 진행 바 리페인트 양보
-  }), job.dormPins ?? {});
+  }), job.dormPins ?? {}, job.opLevels ?? new Map(), job.roomPins ?? {});
 }

@@ -262,10 +262,11 @@ const AUTO_BENCH_DEFAULT = ["char_4100_caper", "char_4036_forcer"]; // 케이퍼
 export const AUTO_BENCH_IDS = new Set<string>(
   (C as unknown as { AUTO_BENCH?: string[] }).AUTO_BENCH ?? AUTO_BENCH_DEFAULT
 );
-// 자동편성용 로스터 — 벤치 명단 제거. 단, 사용자가 숙소에 직접 고정한 인원은 남긴다.
-export function autoRoster(roster: InfraOp[], pinnedDorms: Record<string, string[]> = {}): InfraOp[] {
+// 자동편성용 로스터 — 벤치 명단 제거. 단, 사용자가 숙소·생산방에 직접 고정한 인원은 남긴다
+// (사용자 의도 우선 — 고정 유지 원칙은 숙소·생산방 공통, 2026-08-19).
+export function autoRoster(roster: InfraOp[], pinnedDorms: Record<string, string[]> = {}, roomPins: Record<string, string[]> = {}): InfraOp[] {
   if (!AUTO_BENCH_IDS.size) return roster;
-  const pinned = new Set(Object.values(pinnedDorms).flat());
+  const pinned = new Set([...Object.values(pinnedDorms).flat(), ...Object.values(roomPins).flat()]);
   return roster.filter((op) => !AUTO_BENCH_IDS.has(op.id) || pinned.has(op.id));
 }
 
@@ -1687,10 +1688,10 @@ export function detectPerpetualControl(roster: InfraOp[]): boolean {
   return value;
 }
 
-export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factionSets: FactionSets = {}, priority: ProdPriority = "gold", extraSeeds: { opId: string; room: string }[] = [], concentrate = true, park = false, pinnedDorms: Record<string, string[]> = {}): Plan {
+export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factionSets: FactionSets = {}, priority: ProdPriority = "gold", extraSeeds: { opId: string; room: string }[] = [], concentrate = true, park = false, pinnedDorms: Record<string, string[]> = {}, roomPins: Record<string, string[]> = {}): Plan {
   // 자동편성 제외 명단(케이퍼·인포서)은 여기서 한 번에 걷어낸다 — buildPlan이 모든 편성
   // 생성의 유일한 관문이라 optimize·육성 추천·감사 재편성이 전부 같은 로스터를 본다.
-  const roster = autoRoster(fullRoster, pinnedDorms);
+  const roster = autoRoster(fullRoster, pinnedDorms, roomPins);
   setPriorityMode(priority); // 장기 지속이면 teamValue·시계가 순소모 모델로 전환 (모듈 플래그)
   detectPerpetualControl(roster); // 무한동력 제어센터 성립 여부 — place 가드·CC 락을 함께 켠다
   const prodKeys = PRIORITY_KEYS[splitPriority(priority).prod];
@@ -1716,8 +1717,7 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
   const packageReserved = new Set<string>();  // 토큰 패키지發 예약(세트 시딩과 구분) — 감사 해제 판정용
   // 그레이 더 라이트닝베어러: 다른 발전소에 1성 로봇(작업 플랫폼)만 없으면
   // 발전소 +1개로 간주 — 발전소에 고정 배치하고 4기로 계산
-  const plantBooster = roster.find((op) => op.skills.some((skill) => skill.kind === "plantbonus"));
-  const plants = PLANTS_BASE_RT + (plantBooster ? 1 : 0); // 243/153=3(그레이 4), 252=2(그레이 3)
+  const plantBooster0 = roster.find((op) => op.skills.some((skill) => skill.kind === "plantbonus"));
 
   const dormPins: InfraOp[][] = [[], [], [], []];
   // ── 숙소 수동 고정 (사용자 요청 2026-07-25: "숙소도 배치 변경·고정") ──────────────
@@ -1738,12 +1738,37 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
     }
     dormPins[d] = [...(dormLockOps[key] ?? [])];
   }
+  // ── 생산방 수동 고정 (제안 게시판 요청 2026-08-19: "피아메타로 컨디션을 유지하며 프로비소를
+  // 무역소에, 미즈키를 제조소에 상주") ── 숙소 고정과 같은 사용자 의도 우선 규칙을 비숙소 방
+  // 전체로 확장한다. 근무 방이라 교대가 있는데, 사용자가 컨디션을 직접 관리(피아메타 등)한다는
+  // 계약이므로 **A·B 양조에 같은 자리로** 들어간다 — 동시 배치 금지의 예외(무한동력 permaBoth와
+  // 같은 경로). reserved에 올려 다른 방 후보·숙소 주차·백필에서 빠지고, 슬롯 초과분은 슬롯
+  // 수만큼만, 로스터에 없는 id는 조용히 무시한다. roomPins가 비면 종전 편성과 완전히 동일.
+  const roomLockOps: Record<string, InfraOp[]> = {};
+  const roomLocked = new Set<string>();
+  for (const cell of LAYOUT) {
+    if (cell.room === "DORMITORY") continue;
+    for (const id of roomPins[cell.key] ?? []) {
+      if ((roomLockOps[cell.key]?.length ?? 0) >= slotsFor(cell.key)) break;
+      const op = roster.find((member) => member.id === id);
+      if (!op || roomLocked.has(id) || dormLocked.has(id)) continue;
+      (roomLockOps[cell.key] = roomLockOps[cell.key] ?? []).push(op);
+      roomLocked.add(id);
+      reserved.set(id, cell.key);
+    }
+  }
+  // 그레이가 발전소 밖에 고정되면 '발전소 +1개 간주' 조건 자체가 성립하지 않는다 — 부스트 무효
+  const plantBooster = plantBooster0 && roomLocked.has(plantBooster0.id)
+    && cellByKey.get(reserved.get(plantBooster0.id) ?? "")?.room !== "POWER" ? undefined : plantBooster0;
+  const plants = PLANTS_BASE_RT + (plantBooster ? 1 : 0); // 243/153=3(그레이 4), 252=2(그레이 3)
   for (let shift = 0; shift < SHIFT_COUNT; shift += 1) {
     const seeds: Record<string, InfraOp[]> = {};
     // 고정 인원을 시드로 먼저 깔아 둔다 — 토큰 패키지의 숙소 배치가 남은 슬롯만 쓰게
     for (const [key, list] of Object.entries(dormLockOps)) seeds[key] = [...list];
-    if (shift === 0 && plantBooster) {
-      seeds["POWER-0"] = [plantBooster];
+    // 생산방 고정 인원은 **매 조** 시드 — 숙소와 달리 근무 방이라 A·B 모두 같은 자리 (양조 근무)
+    for (const [key, list] of Object.entries(roomLockOps)) seeds[key] = [...(seeds[key] ?? []), ...list];
+    if (shift === 0 && plantBooster && !roomLocked.has(plantBooster.id) && (seeds["POWER-0"]?.length ?? 0) < slotsFor("POWER-0")) {
+      seeds["POWER-0"] = [...(seeds["POWER-0"] ?? []), plantBooster];
       reserved.set(plantBooster.id, "POWER-0");
     }
     // ── 시너지 세트 시딩 — 카탈로그(rules.json synergySets)의 이 조(shift) 팟 중,
@@ -1768,6 +1793,11 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
       reserved.set(op.id, cell.key);
       preSeeded.add(op.id);
       preSeededAt.set(op.id, cell.label);
+    }
+    // 생산방 고정 인원은 패키지 눈에도 **이미 앉은 것**으로 실린다(preSeeded 관례) — 소비자·
+    // 생성원 시딩이 다른 방으로 끌어가지 못하고, 고정석에서 나오는 토큰 생성분은 원장에 계상된다
+    if (shift === 0) for (const [key, list] of Object.entries(roomLockOps)) {
+      for (const op of list) { preSeeded.add(op.id); preSeededAt.set(op.id, cellByKey.get(key)?.label ?? key); }
     }
     if (shift === 0 && packageTokens.length) {
       const parked = new Set<string>(preSeeded);
@@ -1915,7 +1945,9 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
       const seed = (seeds[key] ?? []).filter((op) => pool.has(op.id));
       const team = bestTeam(room, slots, pool, ctx, seed);
       team.forEach((op) => {
-        used.add(op.id);
+        // 생산방 고정 인원은 조 간 잠금(used)에서 뺀다 — B조에도 같은 자리에 앉아야 하므로.
+        // 다른 방 침범은 reserved(자기 칸 전용)가 막는다
+        if (!roomLocked.has(op.id)) used.add(op.id);
         placedIds.add(op.id);
         for (const faction of factionsOf(op)) shiftFactionCounts[faction] = (shiftFactionCounts[faction] ?? 0) + 1;
       });
@@ -2093,8 +2125,11 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
     // 완성하고(전체 로스터에서 선발), 그 뒤 B조를 "남은 오퍼만으로" 수렴까지 전수검사한다.
     // A·B를 한 번에 섞어 보면 서로 자리를 뺏고 되돌리는 진동이 생긴다.
     const orderKeys = [...prodKeys, ...SUPPORT_KEYS].filter((k) => workKeys.includes(k));
-    // 무한동력 방의 양조 고정 인원 (opId → 방 키) — 동시 배치 금지의 유일한 근무 방 예외
+    // 무한동력 방의 양조 고정 인원 (opId → 방 키) — 동시 배치 금지의 근무 방 예외
     const permaBoth = new Map<string, string>();
+    // 생산방 수동 고정도 처음부터 양조 고정이다 (2026-08-19) — 동시 배치 제거·B조 감사가
+    // 고정석을 쓸어내지 않도록 같은 예외 경로(permaBoth)에 태운다
+    for (const [key, list] of Object.entries(roomLockOps)) for (const op of list) permaBoth.set(op.id, key);
     for (let auditShift = 0; auditShift < SHIFT_COUNT; auditShift += 1) {
       // ── 무한동력 방 양조 고정 (사용자 확정 2026-07-27: "무한동력이면 절대룰(A·B 동시 배치
       // 금지)을 깨고 같이 넣어도 됨") ── A조 감사 수렴 직후: 제어센터의 A조 순소모가 0이면
@@ -2513,6 +2548,7 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
             for (const a of team5(nKey)) {
               if (reserved.has(a.id) || !producesInPref(a)) continue; // 예약 안 됐고 우선방서 생산 가능한 요원만
               for (const b of team5(pKey)) {
+                if (roomLocked.has(b.id)) continue; // 생산방 고정 인원은 ⑤ 스왑으로도 옮기지 않는다 (2026-08-19)
                 // 스왑을 임시 적용해 우선 제품 합·전체 plan 총점(planScore)을 재평가한다
                 assignments[pKey][shift] = [...pIds0.filter((id) => id !== b.id), a.id];
                 assignments[nKey][shift] = [...nIds0.filter((id) => id !== a.id), b.id];
@@ -2724,10 +2760,10 @@ export type OptimizeResult = {
   /** 채택안이 지속시간 타이브레이크를 켠 안인지 (동점 시 저소모 우선) */
   shiftTiebreak: boolean;
 };
-export async function optimizeConfig(fullRoster: InfraOp[], priority: ProdPriority = "gold", onStep?: (step: OptimizeStep) => void | Promise<void>, pinnedDorms: Record<string, string[]> = {}): Promise<OptimizeResult> {
+export async function optimizeConfig(fullRoster: InfraOp[], priority: ProdPriority = "gold", onStep?: (step: OptimizeStep) => void | Promise<void>, pinnedDorms: Record<string, string[]> = {}, roomPins: Record<string, string[]> = {}): Promise<OptimizeResult> {
   // 자동편성 제외 명단은 탐색 시작부터 뺀다 — 토큰 패키지·세트 성립 판정도 벤치 없는
   // 로스터 기준이어야 buildPlan(내부에서 같은 필터)과 결과가 어긋나지 않는다.
-  const roster = autoRoster(fullRoster, pinnedDorms);
+  const roster = autoRoster(fullRoster, pinnedDorms, roomPins);
   setPriorityMode(priority); // config 탐색 전 구간(buildPlan 사이 planScore 비교 포함) 모드 고정
   setCapCluster(true);       // 앞 실행이 A/B 도중 끊겨 꺼진 채 남아 있을 수 있다 — 탐색은 항상 켠 상태로
   setShiftTiebreak(true);    // 위와 같은 이유 (지속시간 타이브레이크 A/B)
@@ -2769,13 +2805,13 @@ export async function optimizeConfig(fullRoster: InfraOp[], priority: ProdPriori
   const minis = open.filter(isMini).slice(0, 3);
   const coreTokens = open.filter((token) => !minis.includes(token));
   let tokenChoice = open;
-  let base = buildPlan(open, roster, {}, priority, [], false, false, pinnedDorms);
+  let base = buildPlan(open, roster, {}, priority, [], false, false, pinnedDorms, roomPins);
   if (minis.length) {
     let bestTokScore = planScore(base, byId);
     for (let mask = 0; mask < (1 << minis.length) - 1; mask += 1) { // 마지막 mask(전부 포함) = base
       await breathe();
       const subset = coreTokens.concat(minis.filter((_, index) => mask & (1 << index)));
-      const candidate = buildPlan(subset, roster, {}, priority, [], false, false, pinnedDorms);
+      const candidate = buildPlan(subset, roster, {}, priority, [], false, false, pinnedDorms, roomPins);
       const score = planScore(candidate, byId);
       if (score > bestTokScore) { base = candidate; bestTokScore = score; tokenChoice = subset; }
     }
@@ -2794,7 +2830,7 @@ export async function optimizeConfig(fullRoster: InfraOp[], priority: ProdPriori
     for (const cid of converterIds) {
       await breathe();
       const sub = effRoster.filter((op) => op.id !== cid);
-      const candidate = buildPlan(tokenChoice, sub, {}, priority, [], false, false, pinnedDorms);
+      const candidate = buildPlan(tokenChoice, sub, {}, priority, [], false, false, pinnedDorms, roomPins);
       const score = planScore(candidate, byId);
       if (score > curScore) { base = candidate; curScore = score; effRoster = sub; }
     }
@@ -2820,7 +2856,7 @@ export async function optimizeConfig(fullRoster: InfraOp[], priority: ProdPriori
   // 여기서만 planScore 단조 개선(무승부 이상)을 얹는다. 밸런스는 ⑤가 no-op이라 그대로.
   const concentrates = splitPriority(priority).prod !== "balance"; // 생산 축 기준 — 장기 지속과 직교
   const withConcentration = (tokens: string[], sets: FactionSets, seeds: { opId: string; room: string }[], park = false) =>
-    buildPlan(tokens, effRoster, sets, priority, seeds, concentrates, park, pinnedDorms);
+    buildPlan(tokens, effRoster, sets, priority, seeds, concentrates, park, pinnedDorms, roomPins);
   // 숙소 파킹 A/B — '짝이 기지 어디든 있으면 +N%'(언더플로우←울피아누스 등)를 켜려고 노는 짝을
   // 빈 숙소에 주차한 안을 따로 만들고, **planScore가 실제로 오를 때만** 채택한다. 로스터가 두꺼우면
   // 대체 후보가 많아 파킹이 부른 재편성이 르무엔+엑시아 같은 기존 조합을 깨 손해일 수도 있다
@@ -2883,7 +2919,7 @@ export async function optimizeConfig(fullRoster: InfraOp[], priority: ProdPriori
   let bestSeeds: { opId: string; room: string }[] = [];
   for (let i = 0; i < variants.length; i += 1) {
     await tick({ phase: "variant", index: i + 1, total: variants.length, sets: Object.keys(variants[i]) });
-    const plan = buildPlan(tokenChoice, effRoster, variants[i], priority, [], false, false, pinnedDorms);
+    const plan = buildPlan(tokenChoice, effRoster, variants[i], priority, [], false, false, pinnedDorms, roomPins);
     const score = planScore(plan, byId);
     if (score > bestScore) { best = plan; bestScore = score; bestSets = variants[i]; bestSeeds = []; }
   }
@@ -2912,7 +2948,7 @@ export async function optimizeConfig(fullRoster: InfraOp[], priority: ProdPriori
     }
     for (const ex of [...expansions.values()].slice(0, 2)) {
       await breathe();
-      const plan = buildPlan(tokenChoice, effRoster, bestSets, priority, [ex], false, false, pinnedDorms);
+      const plan = buildPlan(tokenChoice, effRoster, bestSets, priority, [ex], false, false, pinnedDorms, roomPins);
       const score = planScore(plan, byId);
       if (score > bestScore) { best = plan; bestScore = score; bestSeeds = [ex]; }
     }
@@ -2929,7 +2965,7 @@ export async function optimizeConfig(fullRoster: InfraOp[], priority: ProdPriori
     const tried = new Set<string>(bestSeeds.map((s) => s.opId));
     for (const ex of (best.crowdedOut ?? []).filter((c) => !tried.has(c.opId)).slice(0, 2)) {
       await breathe();
-      const plan = buildPlan(tokenChoice, effRoster, bestSets, priority, [...bestSeeds, ex], false, false, pinnedDorms);
+      const plan = buildPlan(tokenChoice, effRoster, bestSets, priority, [...bestSeeds, ex], false, false, pinnedDorms, roomPins);
       const score = planScore(plan, byId);
       if (score > bestScore) { best = plan; bestScore = score; bestSeeds = [...bestSeeds, ex]; }
     }
@@ -2958,7 +2994,7 @@ export async function optimizeConfig(fullRoster: InfraOp[], priority: ProdPriori
     for (const cid of selfChain.slice(0, 3)) {
       await breathe();
       const sub = effRoster.filter((op) => op.id !== cid);
-      const plan = buildPlan(tokenChoice, sub, bestSets, priority, bestSeeds, false, false, pinnedDorms);
+      const plan = buildPlan(tokenChoice, sub, bestSets, priority, bestSeeds, false, false, pinnedDorms, roomPins);
       const score = planScore(plan, byId);
       if (score > bestScore) { best = plan; bestScore = score; effRoster = sub; }
     }
@@ -2983,8 +3019,8 @@ export async function optimizeConfig(fullRoster: InfraOp[], priority: ProdPriori
 }
 
 // 얇은 래퍼 — 편성만 필요한 호출부(planner.tsx·verify-plan)는 종전대로 Plan을 받는다.
-export async function optimize(roster: InfraOp[], priority: ProdPriority = "gold", onStep?: (step: OptimizeStep) => void | Promise<void>, pinnedDorms: Record<string, string[]> = {}): Promise<Plan> {
-  return (await optimizeConfig(roster, priority, onStep, pinnedDorms)).plan;
+export async function optimize(roster: InfraOp[], priority: ProdPriority = "gold", onStep?: (step: OptimizeStep) => void | Promise<void>, pinnedDorms: Record<string, string[]> = {}, roomPins: Record<string, string[]> = {}): Promise<Plan> {
+  return (await optimizeConfig(roster, priority, onStep, pinnedDorms, roomPins)).plan;
 }
 
 export function slotSubstitutes(team: InfraOp[], index: number, key: string, ctx: Ctx, excluded: Set<string>, roster: InfraOp[], count = 3): { op: InfraOp; score: number }[] {

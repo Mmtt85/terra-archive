@@ -98,11 +98,11 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   const [switchFlash, setSwitchFlash] = useState(false);
   // 프리셋별 저장 버킷 — 243/153/252 각각의 편성·레벨·육성추천을 따로 보관해 전환 시
   // 재편성 없이 그대로 복원한다 (사용자 확정 2026-07-24: "각각 따로 한번 자동편성하면 유지")
-  type LayoutBucket = { plan: Plan | null; levels: Levels; invest: RaiseRec[] | null; investHidden: string[]; dormPins?: Record<string, string[]> };
+  type LayoutBucket = { plan: Plan | null; levels: Levels; invest: RaiseRec[] | null; investHidden: string[]; dormPins?: Record<string, string[]>; roomPins?: Record<string, string[]> };
   const bucketsRef = useRef<Partial<Record<LayoutPreset, LayoutBucket>>>({});
   const syncBucket = (lay: LayoutPreset, patch: Partial<LayoutBucket>) => {
     bucketsRef.current[lay] = {
-      plan: null, levels: suggestedLevels(lay), invest: null, investHidden: [], dormPins: {},
+      plan: null, levels: suggestedLevels(lay), invest: null, investHidden: [], dormPins: {}, roomPins: {},
       ...(bucketsRef.current[lay] ?? {}), ...patch,
     };
   };
@@ -110,6 +110,11 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   // 그대로 두고 남은 자리만 짠다 (사용자 요청 2026-07-25: "숙소도 배치 변경·고정").
   // 프리셋(243/153/252/그외)마다 기지 모양이 달라 편성·레벨과 같은 버킷에 함께 저장한다.
   const [dormPins, setDormPinsState] = useState<Record<string, string[]>>({});
+  // 생산방 고정 — 숙소 고정의 비숙소 방 확장 (제안 게시판 요청 2026-08-19: "피아메타로 컨디션을
+  // 유지하며 프로비소를 무역소에, 미즈키를 제조소에 상주"). 고정 오퍼는 자동편성이 그 방 A·B
+  // 양조에 그대로 앉힌다 — 교대 휴식이 없어지므로 컨디션 관리는 사용자 몫. 저장은 dormPins와
+  // 동일하게 프리셋 버킷.
+  const [roomPins, setRoomPinsState] = useState<Record<string, string[]>>({});
   const [activeShift, setActiveShift] = useState(0);
   const [openRoom, setOpenRoom] = useState<string | null>(null);
   const [showFlows, setShowFlows] = useState(false);
@@ -208,9 +213,9 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   // 육성 추천은 이 편성을 기준으로 계산되므로 비어 있으면 실행 자체를 막는다.
   const planEmpty = !plan || Object.values(plan.assignments).every((shifts) => shifts.every((ids) => ids.length === 0));
 
-  const persist = (ids: Set<string>, nextPlan: Plan | null, elite: Map<string, Elite> = eliteById, lvById: Map<string, number> = levelById, prio: ProdPriority = priority, invest: RaiseRec[] | null = investRecs, hidden: Set<string> = investHidden, lay: LayoutPreset = layout, lvls: Levels = levels, rooms: CustomRoom[] = customRooms, products: (CustomProduct | null)[] = customProducts, pins: Record<string, string[]> = dormPins) => {
+  const persist = (ids: Set<string>, nextPlan: Plan | null, elite: Map<string, Elite> = eliteById, lvById: Map<string, number> = levelById, prio: ProdPriority = priority, invest: RaiseRec[] | null = investRecs, hidden: Set<string> = investHidden, lay: LayoutPreset = layout, lvls: Levels = levels, rooms: CustomRoom[] = customRooms, products: (CustomProduct | null)[] = customProducts, pins: Record<string, string[]> = dormPins, rpins: Record<string, string[]> = roomPins) => {
     // 현재 프리셋 버킷을 최신 상태로 갱신한 뒤 전체 버킷을 저장 — 다른 프리셋의 편성은 보존된다
-    syncBucket(lay, { plan: nextPlan, levels: lvls, invest, investHidden: Array.from(hidden), dormPins: pins });
+    syncBucket(lay, { plan: nextPlan, levels: lvls, invest, investHidden: Array.from(hidden), dormPins: pins, roomPins: rpins });
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
         owned: Array.from(ids), elite: Array.from(elite.entries()), opLevels: Array.from(lvById.entries()), priority: prio,
@@ -248,6 +253,19 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     return out;
   };
 
+  // 저장된 생산방 고정 복원 — 활성 레이아웃의 실존 비숙소 칸 · 실존 오퍼 id만 (dormPins와 같은
+  // 손상·구버전 방어. 구버전 저장분엔 필드 자체가 없어 빈 맵 = 종전 동작)
+  const restoreRoomPins = (raw: unknown): Record<string, string[]> => {
+    const out: Record<string, string[]> = {};
+    if (!raw || typeof raw !== "object") return out;
+    for (const [key, list] of Object.entries(raw as Record<string, unknown>)) {
+      if (!LAYOUT.some((cell) => cell.key === key && cell.room !== "DORMITORY") || !Array.isArray(list)) continue;
+      const ids = list.filter((id): id is string => typeof id === "string" && opById.has(id));
+      if (ids.length) out[key] = ids;
+    }
+    return out;
+  };
+
   // 저장된 숨김 목록 복원 — 실존 오퍼 id만
   const restoreHidden = (raw: unknown): Set<string> =>
     new Set(Array.isArray(raw) ? raw.filter((id): id is string => typeof id === "string" && opById.has(id)) : []);
@@ -268,7 +286,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   };
 
   const exportState = () => {
-    const payload = JSON.stringify({ version: 1, exported: new Date().toISOString(), owned: Array.from(ownedIds), elite: Array.from(eliteById.entries()), opLevels: Array.from(levelById.entries()), plan, invest: investRecs, layout, levels, customRooms, customProducts, dormPins, buckets: { ...bucketsRef.current, [layout]: { plan, levels, invest: investRecs, investHidden: Array.from(investHidden), dormPins } } }, null, 1);
+    const payload = JSON.stringify({ version: 1, exported: new Date().toISOString(), owned: Array.from(ownedIds), elite: Array.from(eliteById.entries()), opLevels: Array.from(levelById.entries()), plan, invest: investRecs, layout, levels, customRooms, customProducts, dormPins, roomPins, buckets: { ...bucketsRef.current, [layout]: { plan, levels, invest: investRecs, investHidden: Array.from(investHidden), dormPins, roomPins } } }, null, 1);
     const blob = new Blob([payload], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
@@ -309,6 +327,8 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         const hidden = restoreHidden(data.investHidden);
         const pins = restoreDormPins(fileBuckets[lay]?.dormPins ?? data.dormPins);
         setDormPinsState(pins);
+        const rpins = restoreRoomPins(fileBuckets[lay]?.roomPins ?? data.roomPins);
+        setRoomPinsState(rpins);
         const lvById = restoreOpLevels(data.opLevels);
         setOwnedIds(ids);
         setEliteById(elite);
@@ -317,7 +337,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         setInvestRecs(invest);
         setInvestHidden(hidden);
         setShowInvest(false);
-        persist(ids, plan, elite, lvById, priority, invest, hidden, lay, lvls, fileCustom ?? customRooms, fileProducts ?? customProducts, pins);
+        persist(ids, plan, elite, lvById, priority, invest, hidden, lay, lvls, fileCustom ?? customRooms, fileProducts ?? customProducts, pins, rpins);
         setDirty(false);
         showToast(t("저장된 상태를 불러왔습니다 · 보유 {n}명 복원", { n: ids.size }));
       } catch { alert(t("가져오기 실패: 파일 형식을 확인해 주세요.")); }
@@ -333,7 +353,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
 
   // 방 모달에서 직접 편집: 해당 조의 팀을 교체하고 진영 카운트를 다시 센다.
   // 토큰 포인트·패키지 구성은 마지막 자동편성 기준으로 유지된다 (근사).
-  const updateTeam = (cellKey: string, shiftIdx: number, ids: string[], pins?: Record<string, string[]>) => {
+  const updateTeam = (cellKey: string, shiftIdx: number, ids: string[], pins?: Record<string, string[]>, rpins?: Record<string, string[]>) => {
     if (!plan) return;
     const shifts = (plan.assignments[cellKey] ?? []).map((team, index) => (index === shiftIdx ? ids : team));
     const assignments = { ...plan.assignments, [cellKey]: shifts };
@@ -353,7 +373,9 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     setPlan(next);
     const cleaned = pins && Object.fromEntries(Object.entries(pins).filter(([, list]) => list.length));
     if (cleaned) setDormPinsState(cleaned);
-    persist(ownedIds, next, eliteById, levelById, priority, investRecs, investHidden, layout, levels, customRooms, customProducts, cleaned ?? dormPins);
+    const cleanedR = rpins && Object.fromEntries(Object.entries(rpins).filter(([, list]) => list.length));
+    if (cleanedR) setRoomPinsState(cleanedR);
+    persist(ownedIds, next, eliteById, levelById, priority, investRecs, investHidden, layout, levels, customRooms, customProducts, cleaned ?? dormPins, cleanedR ?? roomPins);
     setDirty(true);
   };
 
@@ -376,6 +398,44 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     setDormPinsState(pins);
     persist(ownedIds, plan, eliteById, levelById, priority, investRecs, investHidden, layout, levels, customRooms, customProducts, pins);
     setDirty(true);
+  };
+
+  // 고정 직후 재편성 안내 — 사용자 요청 2026-08-19 ("고정되었으니 전체 자동편성을 다시
+  // 시행해달라고 문구를 띄워줘" → "문구를 위에 띄우는 게 아니라 모달창같은 걸로").
+  // 토스트·배너가 아니라 **모달 대화상자**(기존 confirm 패턴 — body 포털이라 방 편집
+  // 창모달 위에 뜬다). [지금 재편성]은 방금 갱신된 고정 목록(rpins)을 직접 넘겨 실행하고,
+  // '나중에'는 닫기만 한다 — 더 고정할 오퍼가 남았을 수 있어서다. 해제(📌 OFF)에는 안 띄운다.
+  const askRepinOptimize = (rpins: Record<string, string[]>) => {
+    void confirm({
+      title: t("오퍼를 방에 고정했습니다"),
+      message: t("고정은 다음 전체 자동편성부터 편성 전체에 반영됩니다 — 지금 재편성할까요? 더 고정할 오퍼가 있으면 '나중에'를 누르고 이어서 고정하세요."),
+      confirmLabel: t("지금 재편성"),
+      cancelLabel: t("나중에"),
+    }).then((go) => { if (go) void runOptimize(ownedIds, eliteById, priority, levelById, rpins); });
+  };
+  // 생산방 편성 변경 — 숙소와 같은 상호작용 (제안 게시판 요청 2026-08-19): 직접 넣은 오퍼는
+  // 📌 자동 고정, ✕로 빼면 해제. 고정 오퍼는 다음 자동편성에서 이 방 A·B 양조에 그대로 남는다
+  // (교대 휴식 없음 — 컨디션 관리는 피아메타 등으로 사용자가 직접 한다는 계약).
+  const updateWorkTeam = (cellKey: string, shiftIdx: number, ids: string[]) => {
+    if (!plan) return;
+    const shifts = plan.assignments[cellKey] ?? [];
+    const before = shifts[Math.min(shiftIdx, Math.max(0, shifts.length - 1))] ?? [];
+    const added = ids.filter((id) => !before.includes(id));
+    const removed = before.filter((id) => !ids.includes(id));
+    const kept = (roomPins[cellKey] ?? []).filter((id) => !removed.includes(id));
+    const nextPins = { ...roomPins, [cellKey]: [...kept, ...added.filter((id) => !kept.includes(id))] };
+    updateTeam(cellKey, shiftIdx, ids, undefined, nextPins);
+    if (added.length) askRepinOptimize(nextPins); // 직접 추가 = 자동 고정 — 빼기만 한 편집엔 안 띄운다
+  };
+  const toggleRoomPin = (cellKey: string, opId: string) => {
+    const cur = roomPins[cellKey] ?? [];
+    const pinning = !cur.includes(opId);
+    const next = pinning ? [...cur, opId] : cur.filter((id) => id !== opId);
+    const pins = Object.fromEntries(Object.entries({ ...roomPins, [cellKey]: next }).filter(([, list]) => list.length));
+    setRoomPinsState(pins);
+    persist(ownedIds, plan, eliteById, levelById, priority, investRecs, investHidden, layout, levels, customRooms, customProducts, dormPins, pins);
+    setDirty(true);
+    if (pinning) askRepinOptimize(pins);
   };
 
   // 이미 배치된 오퍼의 정예화 단계를 방 상세에서 바로 바꾼다 — 편성 자체는 그대로 두고
@@ -406,14 +466,16 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     return t("자동편성 엔진 계산 중 — 최적안 비교·마무리 검증…");
   };
 
-  const runOptimize = async (ids: Set<string> = ownedIds, elite: Map<string, Elite> = eliteById, prio: ProdPriority = priority, lvById: Map<string, number> = levelById) => {
+  // rpins = 방금 갱신된 생산방 고정 목록 — 고정 직후 안내 모달의 [지금 재편성]이 넘긴다.
+  // 상태 반영 전 클로저가 옛 roomPins를 잡아 방금 건 고정이 빠진 채 재편성·저장되는 것을 막는다
+  const runOptimize = async (ids: Set<string> = ownedIds, elite: Map<string, Elite> = eliteById, prio: ProdPriority = priority, lvById: Map<string, number> = levelById, rpins: Record<string, string[]> = roomPins) => {
     if (optimizing) return; // 중복 실행 방지
     // 페이싱 없음 (사용자 확정 2026-07-21: 최대한 빠르게) — 진행 문구만 갱신하고 지연은 두지
     // 않는다. 엔진 tick의 매크로태스크 양보(setTimeout 0)만으로 리페인트는 충분하다.
     setOptimizing(t("자동편성 엔진 계산 중 — 편성 공간 구성…"));
     try {
       const paced = (step: OptimizeStep) => { setOptimizing(stepMessage(step)); };
-      const next = await optimizeOff({ owned: ids, elite, opLevels: lvById, includeFuture: !!includeFuture, priority: prio, layout, levels, customRooms, customProducts, dormPins }, paced);
+      const next = await optimizeOff({ owned: ids, elite, opLevels: lvById, includeFuture: !!includeFuture, priority: prio, layout, levels, customRooms, customProducts, dormPins, roomPins: rpins }, paced);
       setPlan(next);
       setActiveShift(0);
       // 새 자동편성 → 기존 육성 추천·숨김 무효화 + 임시 적용 세션 종료(새 편성이 기준). 2026-07-21
@@ -422,7 +484,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       setInvestDiag(null);   // 진단값도 옛 편성 기준이라 함께 버린다
       setShowInvest(false);
       endTemp(false);
-      persist(ids, next, elite, lvById, prio, null, new Set());
+      persist(ids, next, elite, lvById, prio, null, new Set(), layout, levels, customRooms, customProducts, dormPins, rpins);
       // 실제 계산에 쓰인 인원 = 보유 ∩ 현재 표시 대상(미래시 토글 반영) — 미래시 OFF면 미실장 제외
       const usedCount = visibleOps.filter((op) => ids.has(op.id)).length;
       showToast(t("전체 자동편성을 실행했습니다 · 보유 {n}명 기준", { n: usedCount }));
@@ -458,7 +520,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     setInvesting({ done: 0, total: 0 });
     try {
       let candidates = 0; // 엔진이 정밀 평가한 후보 수 — 0건 안내를 후보 유무로 갈라 쓴다
-      const recs = await investOff({ owned: ownedIds, elite: eliteById, opLevels: levelById, includeFuture: !!includeFuture, priority, layout, levels, customRooms, customProducts, dormPins },
+      const recs = await investOff({ owned: ownedIds, elite: eliteById, opLevels: levelById, includeFuture: !!includeFuture, priority, layout, levels, customRooms, customProducts, dormPins, roomPins },
         (p) => { if (p.total) candidates = p.total; setInvesting(p); });
       setInvestDiag({ unfinished: unfinishedCount, candidates });
       setInvestRecs(recs);
@@ -493,7 +555,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     setOptimizing(t("자동편성 엔진 계산 중 — 편성 공간 구성…"));
     try {
       const paced = (step: OptimizeStep) => { setOptimizing(stepMessage(step)); };
-      const next = await optimizeOff({ owned: ownedIds, elite: effElite, opLevels: levelById, includeFuture: !!includeFuture, priority, layout, levels, customRooms, customProducts, dormPins }, paced);
+      const next = await optimizeOff({ owned: ownedIds, elite: effElite, opLevels: levelById, includeFuture: !!includeFuture, priority, layout, levels, customRooms, customProducts, dormPins, roomPins }, paced);
       setPlan(next);
       setActiveShift(0);
     } finally { setOptimizing(null); }
@@ -586,10 +648,10 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   const setLayoutChoice = (next: LayoutPreset) => {
     if (next === layout) return;
     // 1) 현재 프리셋 상태 저장
-    syncBucket(layout, { plan, levels, invest: investRecs, investHidden: Array.from(investHidden), dormPins });
+    syncBucket(layout, { plan, levels, invest: investRecs, investHidden: Array.from(investHidden), dormPins, roomPins });
     // 2) 엔진 전환 후 대상 버킷 복원 (sanitize는 새 LAYOUT 기준이라 반드시 전환 뒤에)
     setLayoutPreset(next, customRooms, customProducts);
-    const b = bucketsRef.current[next] ?? { plan: null, levels: suggestedLevels(next), invest: null, investHidden: [], dormPins: {} };
+    const b = bucketsRef.current[next] ?? { plan: null, levels: suggestedLevels(next), invest: null, investHidden: [], dormPins: {}, roomPins: {} };
     const restored = b.plan ? sanitizePlan(b.plan) : null;
     setEngineLevels(b.levels);
     setLayoutState(next);
@@ -598,11 +660,12 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     setInvestRecs(b.invest);
     setInvestHidden(new Set(b.investHidden));
     setDormPinsState(restoreDormPins(b.dormPins));
+    setRoomPinsState(restoreRoomPins(b.roomPins));
     setShowInvest(false);
     setOpenRoom(null);
     setActiveShift(0);
     endTemp(false); // 임시 적용 세션은 프리셋 간 이월하지 않는다
-    persist(ownedIds, restored, eliteById, levelById, priority, b.invest, new Set(b.investHidden), next, b.levels, customRooms, customProducts, restoreDormPins(b.dormPins));
+    persist(ownedIds, restored, eliteById, levelById, priority, b.invest, new Set(b.investHidden), next, b.levels, customRooms, customProducts, restoreDormPins(b.dormPins), restoreRoomPins(b.roomPins));
     showToast(restored
       ? t("기지 배치 {p} — 저장된 편성을 복원했습니다", { p: next })
       : t("기지 배치 {p} — 처음이라 편성이 비어 있습니다. 전체 자동편성을 눌러 만들어 두면 유지됩니다", { p: next }));
@@ -658,7 +721,10 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     const sanitized = plan ? sanitizePlan(plan) : null;
     setPlan(sanitized);
     setOpenRoom(null);
-    persist(ownedIds, sanitized, eliteById, levelById, priority, investRecs, investHidden, "custom", levels, next, customProducts);
+    // 칸 종류를 바꾸면 셀 키가 재번호된다 — 사라진 칸의 생산방 고정은 편성 드랍과 함께 정리
+    const validPins = restoreRoomPins(roomPins);
+    setRoomPinsState(validPins);
+    persist(ownedIds, sanitized, eliteById, levelById, priority, investRecs, investHidden, "custom", levels, next, customProducts, dormPins, validPins);
     setDirty(true);
     showToast(t("칸 구성을 바꿨습니다 — 전체 자동편성으로 새 구성에 맞게 재편성하세요"));
   };
@@ -832,6 +898,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
             invest: Array.isArray(rb.invest) ? rb.invest : null,
             investHidden: Array.isArray(rb.investHidden) ? rb.investHidden : [],
             dormPins: restoreDormPins(rb.dormPins),
+            roomPins: restoreRoomPins(rb.roomPins),
           };
         }
         if (savedLayout !== "243") { setLayoutPreset(savedLayout, savedCustom, savedProducts); setLayoutState(savedLayout); }
@@ -839,7 +906,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         const savedLevels = bucket?.levels ?? suggestedLevels(savedLayout);
         setEngineLevels(savedLevels);
         setLevelsState(savedLevels);
-        if (bucket) { setInvestRecs(restoreInvest(bucket.invest)); setInvestHidden(restoreHidden(bucket.investHidden)); setDormPinsState(restoreDormPins(bucket.dormPins)); }
+        if (bucket) { setInvestRecs(restoreInvest(bucket.invest)); setInvestHidden(restoreHidden(bucket.investHidden)); setDormPinsState(restoreDormPins(bucket.dormPins)); setRoomPinsState(restoreRoomPins(bucket.roomPins)); }
         // 손상·구버전 저장분 방어 — raw 복원은 assignments 등 누락 시 렌더 크래시
         // (개발 중간 상태가 저장된 localStorage에서 실제 발병, 2026-07-19). 정규화 실패면
         // 아래로 떨어져 새 편성을 만든다.
@@ -1490,10 +1557,12 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
                   // 오퍼의 정예화 단계 (E0/E1/E2) — 임시 적용 반영(viewElite), 미지정이면 그 오퍼 최대 정예화.
                   const elite = viewElite.get(op.id) ?? maxElite(op.rarity);
                   const isTemp = tempApplied.has(op.id); // 육성 추천 임시 적용 오퍼 — 미리보기임을 썸네일에 표시
+                  const isPinned = (roomPins[cell.key] ?? []).includes(op.id); // 생산방 고정 (A·B 양조 근무)
                   return (
                     <span key={op.id} className={`op-av${isTemp ? " temp" : ""}`} title={isTemp ? t("{name} — 임시 적용 중 (완성 가정 미리보기)", { name: op.name }) : undefined}>
-                      <img src={asset(op.image)} alt={op.name} width={180} height={180} title={isTemp ? undefined : op.name} loading="lazy" />
+                      <img src={asset(op.image)} alt={op.name} width={180} height={180} title={isTemp ? undefined : isPinned ? t("{name} — 방 고정 (A·B 양조 근무, 자동편성이 유지)", { name: op.name }) : op.name} loading="lazy" />
                       <em className={`op-elite e${elite}`} title={t("정예화 {n}", { n: elite })}>E{elite}</em>
+                      {isPinned && <i className="op-pin-badge" aria-hidden>📌</i>}
                       {isTemp && <i className="op-temp-badge" aria-hidden>{t("임시")}</i>}
                     </span>
                   );
@@ -1574,9 +1643,11 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           onOpenRoom={(key, shift) => { setActiveShift(shift); setOpenRoom(key); }}
           onShowOperator={onShowOperator}
           onSetLevel={setRoomLevel}
-          onUpdateTeam={openCell.room === "DORMITORY" ? (key, _shift, ids) => updateDorm(key, ids) : updateTeam}
-          dormPins={openCell.room === "DORMITORY" ? (dormPins[openCell.key] ?? []) : undefined}
-          onToggleDormPin={openCell.room === "DORMITORY" ? (opId: string) => toggleDormPin(openCell.key, opId) : undefined}
+          onUpdateTeam={openCell.room === "DORMITORY" ? (key, _shift, ids) => updateDorm(key, ids) : updateWorkTeam}
+          pins={openCell.room === "DORMITORY" ? (dormPins[openCell.key] ?? []) : (roomPins[openCell.key] ?? [])}
+          onTogglePin={openCell.room === "DORMITORY"
+            ? (opId: string) => toggleDormPin(openCell.key, opId)
+            : (opId: string) => toggleRoomPin(openCell.key, opId)}
           eliteById={viewElite}
           onSetElite={setOperatorElite}
           tempIds={new Set(tempApplied.keys())}
@@ -1886,7 +1957,7 @@ function TermPopup({ termKey, presentIds, onNavigate, onShowOperator, onClose }:
   );
 }
 
-function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClose, onOpenRoom, onShowOperator, onUpdateTeam, eliteById, onSetElite, tempIds, onRevertTempOne, onSetLevel, dormPins, onToggleDormPin }: { cell: { key: string; room: string; label: string; product?: string }; plan: Plan; allAssigned: Set<string>; roster: InfraOp[]; opMap: Map<string, InfraOp>; initialShift: number; onClose: () => void; onOpenRoom?: (key: string, shift: number) => void; onShowOperator?: (id: string) => void; onUpdateTeam?: (cellKey: string, shiftIdx: number, ids: string[]) => void; eliteById: Map<string, Elite>; onSetElite: (id: string, elite: Elite) => void; tempIds: Set<string>; onRevertTempOne: (opId: string) => void; onSetLevel?: (key: string, lv: number) => void; dormPins?: string[]; onToggleDormPin?: (opId: string) => void }) {
+function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClose, onOpenRoom, onShowOperator, onUpdateTeam, eliteById, onSetElite, tempIds, onRevertTempOne, onSetLevel, pins, onTogglePin }: { cell: { key: string; room: string; label: string; product?: string }; plan: Plan; allAssigned: Set<string>; roster: InfraOp[]; opMap: Map<string, InfraOp>; initialShift: number; onClose: () => void; onOpenRoom?: (key: string, shift: number) => void; onShowOperator?: (id: string) => void; onUpdateTeam?: (cellKey: string, shiftIdx: number, ids: string[]) => void; eliteById: Map<string, Elite>; onSetElite: (id: string, elite: Elite) => void; tempIds: Set<string>; onRevertTempOne: (opId: string) => void; onSetLevel?: (key: string, lv: number) => void; pins?: string[]; onTogglePin?: (opId: string) => void }) {
   const { locale, t } = useI18n();
   const [shift, setShift] = useState(initialShift);
   const [termOpen, setTermOpen] = useState<string | null>(null); // RIIC 용어 팝업 (외세·실리 등)
@@ -2363,8 +2434,13 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
             )}
             {/* 배치 방법 안내는 방 카드가 아니라 여기(숙소 상세) 몫이다 — 카드는 다른 시설과
                 똑같이 표시 전용 (사용자 요청 2026-07-28) */}
-            {cell.room === "DORMITORY" && onToggleDormPin && (
+            {cell.room === "DORMITORY" && onTogglePin && (
               <p className="dorm-note">{rich(t("**숙소 인원은 여기서 직접 넣고 뺍니다** — 아래 후보를 누르면 즉시 배치되고, 이렇게 직접 넣은 오퍼는 **📌 고정**되어 자동편성이 그대로 둡니다 (울피아누스를 숙소에 고정해 언더플로우 +10%를 켜는 식). 카드의 📌를 눌러 고정을 걸거나 풀 수 있고, ✕로 빼면 고정도 함께 풀립니다."))}</p>
+            )}
+            {/* 생산방 고정 안내 — 숙소와 상호작용은 같지만 계약이 다르다: 고정 = A·B 양조 근무
+                (교대 휴식 없음). 고정된 오퍼가 실제로 있을 때만 띄워 평소 모달을 어지럽히지 않는다 */}
+            {cell.room !== "DORMITORY" && onTogglePin && (pins?.length ?? 0) > 0 && (
+              <p className="dorm-note">{rich(t("**📌 고정된 오퍼는 자동편성이 이 방 A조·B조 모두에 그대로 앉힙니다** — 교대 휴식이 없어지므로 컨디션(지속시간) 관리는 피아메타 등으로 직접 해 주세요. 카드의 📌로 잠그거나 풀고, ✕로 빼면 고정도 풀립니다."))}</p>
             )}
             <div className="crew-list">
               {team.map((op) => {
@@ -2421,10 +2497,12 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                 return (
                   <article key={op.id} className="crew-card">
                     {tempIds.has(op.id) && <button type="button" className="crew-revert" title={t("이 오퍼만 임시 적용을 되돌립니다")} onClick={() => onRevertTempOne(op.id)}>↩</button>}
-                    {onToggleDormPin && (
-                      <button type="button" className={`crew-pin${dormPins?.includes(op.id) ? " on" : ""}`}
-                        title={dormPins?.includes(op.id) ? t("숙소 고정 해제 — 다음 자동편성이 이 자리를 다시 짤 수 있습니다") : t("숙소에 고정 — 자동편성이 이 인원을 그대로 둡니다")}
-                        onClick={() => onToggleDormPin(op.id)}>📌</button>
+                    {onTogglePin && (
+                      <button type="button" className={`crew-pin${pins?.includes(op.id) ? " on" : ""}`}
+                        title={cell.room === "DORMITORY"
+                          ? (pins?.includes(op.id) ? t("숙소 고정 해제 — 다음 자동편성이 이 자리를 다시 짤 수 있습니다") : t("숙소에 고정 — 자동편성이 이 인원을 그대로 둡니다"))
+                          : (pins?.includes(op.id) ? t("방 고정 해제 — 다음 자동편성이 이 자리를 다시 짤 수 있습니다") : t("이 방에 고정 — 자동편성이 A조·B조 모두 이 자리에 유지합니다 (교대 휴식 없음, 컨디션 관리는 직접)"))}
+                        onClick={() => onTogglePin(op.id)}>📌</button>
                     )}
                     {onUpdateTeam && <button type="button" className="crew-remove" title={t("이 자리에서 빼기")} onClick={() => setIds(rawIds.filter((id) => id !== op.id))}>✕</button>}
                     <span className={`crew-face${tempIds.has(op.id) ? " temp" : ""}`}>
@@ -2508,7 +2586,7 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
               <div className="bench">
                 <span>{cell.room === "DORMITORY"
                   ? t("빈 자리에 추가 — 클릭 시 즉시 배치·고정 (다른 방의 조건을 켜 주는 오퍼가 맨 앞):")
-                  : t("빈 자리에 추가 — 클릭 시 즉시 배치 (기여 예상):")}</span>
+                  : t("빈 자리에 추가 — 클릭 시 즉시 배치·📌 고정 (기여 예상):")}</span>
                 <input className="bench-search" {...benchProps} placeholder={t("이름·소속으로 후보 검색")} />
                 {bench.length > 0 ? (
                   <div className="bench-chips">
@@ -3100,6 +3178,7 @@ const HELP_SECTIONS: { title: string; items: string[] }[] = [
     "가공소는 상시 슬롯이라 A조 한 팀(니엔 고정)만 편성하고 B조 칸은 비워 둡니다 — 회복 교대에 가공 요원을 따로 두지 않습니다.",
     "훈련실 정원 2는 트레이너석 1 + 훈련대상석 1이라, 플래너가 쓰는 근무석은 1석입니다. 그 1석도 실제 스킬 특화 훈련에 쓰도록 비워 둡니다 — 훈련 속도는 자원 생산과 단위가 달라 총점에 넣지 않으니 남는 인원으로 채우면 공짜처럼 보이지만, 훈련실도 시설로 세는 방이라 잉여 오퍼를 앉히면 총웨의 '쉐이 1명당 화식 +5(최대 5명)' 같은 카운터가 엉뚱하게 차 버립니다. 비움이 절대 규칙은 아닙니다 — 다른 오퍼의 조건이 훈련실 배치로만 충족될 때(외드레르의 W가 앉을 작업 시설이 훈련실밖에 안 남은 경우)는 그쪽 이득이 실제로 더 클 때만 배치합니다.",
     "숙소도 방을 눌러 직접 편성할 수 있습니다 — 직접 넣은 오퍼는 📌로 고정되어 전체 자동편성이 그대로 둡니다(카드의 📌로 잠그거나 풀고, ✕로 빼면 고정도 풀립니다). 울피아누스를 숙소에 고정해 두면 다음 자동편성이 언더플로우(+10%)를 자연히 뽑아 갑니다. 고정 인원은 근무 방 후보에서 빠지므로 이중 배치되지 않습니다.",
+    "생산방(무역소·제조소·발전소 등)도 같은 방식으로 오퍼를 📌 고정할 수 있습니다 — 다만 근무 방 고정은 A조·B조 양쪽에 같은 자리로 들어가 교대 휴식이 없어지므로, 컨디션(지속시간) 관리는 피아메타 등으로 직접 해야 합니다 (프로바이조를 무역소에, 미즈키를 제조소에 상주시키는 운용). 고정 오퍼는 다른 방·숙소 후보에서 빠져 이중 배치되지 않습니다.",
     "'짝이 기반시설(숙소 포함) 어디에든 있으면 +N%'인 조건(언더플로우←울피아누스, Bellone←비질, 산크타 믹사파라토←피아메타)은 짝이 일하지 않아도 성립합니다. 그래서 자동편성은 노는 짝을 빈 숙소에 '주차'해 조건을 켜는 안을 따로 만들어 보고, 기지 총점이 실제로 오를 때만 채택합니다 — 보유 오퍼가 두터워 대체 후보가 많으면 주차가 부른 재편성이 오히려 손해라 채택하지 않습니다.",
     "자동편성은 제조소·무역소·응접실·사무실을 반드시 정원까지 채웁니다 — 인프라 스킬이 없는 오퍼라도 배치 인원 자체가 기본 생산분을 내므로, 슬롯을 비우는 것이 항상 손해이기 때문입니다. 보유 오퍼 총원이 모자랄 때만 빈 자리가 남습니다. 제어센터·발전소는 스킬 없는 배치가 사기만 소모해 예외입니다.",
     "'전체 자동편성'은 처음부터 다시 계산하고, '빈 자리만 자동편성'은 현재 편성(수동 수정 포함)을 유지한 채 남은 빈 자리만 한계 기여 순으로 채웁니다.",

@@ -20,6 +20,7 @@ export type PlannerJobMsg = {
   customRooms?: CustomRoom[] | null; // 그외(커스텀) 배치의 9칸 구성 — layout === "custom"일 때 필수
   customProducts?: (CustomProduct | null)[] | null; // 커스텀 제조소 품목(순금/작전기록) 명시 선택
   dormPins?: Record<string, string[]>; // 사용자가 숙소에 고정한 인원 — 자동편성·육성추천 양쪽에 반영
+  roomPins?: Record<string, string[]>; // 생산방(비숙소 칸) 고정 인원 — A·B 양조 고정 (2026-08-19)
 };
 
 // DOM lib의 Window 타입과 겹치지 않게 postMessage(1인자)만 뽑아 쓴다
@@ -40,10 +41,10 @@ self.addEventListener("message", (event) => {
       const ownedIds = new Set(msg.owned);
       if (msg.cmd === "optimize") {
         const roster = visible.map((op) => withElite(op, eliteById.get(op.id), levelById.get(op.id))).filter((op) => ownedIds.has(op.id));
-        const plan = await optimize(roster, msg.priority, (step) => { post({ seq: msg.seq, type: "step", step }); }, msg.dormPins ?? {});
+        const plan = await optimize(roster, msg.priority, (step) => { post({ seq: msg.seq, type: "step", step }); }, msg.dormPins ?? {}, msg.roomPins ?? {});
         post({ seq: msg.seq, type: "done", result: plan });
       } else {
-        const recs = await recommendRaises(visible, ownedIds, eliteById, msg.priority, (p) => { post({ seq: msg.seq, type: "progress", progress: p }); }, msg.dormPins ?? {}, levelById);
+        const recs = await recommendRaises(visible, ownedIds, eliteById, msg.priority, (p) => { post({ seq: msg.seq, type: "progress", progress: p }); }, msg.dormPins ?? {}, levelById, msg.roomPins ?? {});
         post({ seq: msg.seq, type: "done", result: recs });
       }
     } catch (error) {
