@@ -48,9 +48,8 @@ export default function ChangelogButton() {
   const { locale, t } = useI18n();
   const localeBase = locale === "ko" ? "" : `/${locale}`;
   const [open, setOpen] = useState(false);
-  // 열면 **상세보기가 기본** (사용자 지시 2026-07-29) — 신기능만 보는 건 헤더 토글로.
-  // 개선·수정이 실제 변경의 대부분이라, 신기능만 띄우면 "바뀐 게 없네"로 읽혔다.
-  const [detail, setDetail] = useState(true);
+  // '신기능만' 헤더 토글은 2026-08-19에 제거 (사용자 지시: "신기능만 보는 사람은 없어보이니")
+  // — 항상 전 종류를 보여 준다. 종전 detail 상태·필터·#changelog(신기능만) 딥링크도 함께 정리.
   // 개발자 코멘트 뷰는 2026-08-17에 제안 게시판(feedback-widget)으로 이사했다
   // (사용자 지시: "업데이트 내역의 개발자코멘트 기능을 없애버리고 게시판에, 모두 볼 수 있게").
   // #devnotes 딥링크도 게시판이 이어받는다.
@@ -71,10 +70,10 @@ export default function ChangelogButton() {
   }, []);
   const loaded = useRef(false);                       // 첫 로드 1회 가드
 
-  // 딥링크: #changelog(신기능만) · #changelog-all(상세, 버튼으로 여는 기본)
-  // — 기간 확장 상태는 URL에 담지 않는다. #devnotes는 제안 게시판이 처리한다.
-  useHashSync(open ? (detail ? "#changelog-all" : "#changelog") : null, (h) => {
-    if (h === "#changelog" || h === "#changelog-all") { setOpen(true); setDetail(h === "#changelog-all"); }
+  // 딥링크: #changelog — 기간 확장 상태는 URL에 담지 않는다. #devnotes는 제안 게시판이,
+  // 옛 #changelog-all(상세보기 시절 링크)도 계속 받아 준다.
+  useHashSync(open ? "#changelog" : null, (h) => {
+    if (h === "#changelog" || h === "#changelog-all") setOpen(true);
     else setOpen(false);
   });
 
@@ -128,10 +127,8 @@ export default function ChangelogButton() {
     setLoadingMore(false);
   }, [weeks, oldest, loadingMore, t]);
 
-  // 표시 대상 — 기본은 신기능만, 상세보기면 전부
-  const shown = (rows ?? []).filter((row) => detail || row.kind === "new");
+  const shown = rows ?? [];
   const groups = groupByDate(shown);
-  const hiddenCount = (rows?.length ?? 0) - shown.length;
 
   return (
     <>
@@ -146,23 +143,12 @@ export default function ChangelogButton() {
           제목은 창 크롬 바(label)가 담당 — 종전 내부 header는 제목이 이중으로 떠서 제거하고,
           상세보기 토글(사용자 요청 2026-07-28: 제목 옆)은 크롬 바에 얹는다 (2026-08-03) */}
       {open && createPortal(
-        <ModalWindow label={t("업데이트 내역")} className="chlog-modal" onClose={() => setOpen(false)}
-          chrome={rows !== null && !error && (
-              <button type="button" className="chlog-detail-toggle" aria-pressed={detail}
-                onClick={() => setDetail((d) => !d)}
-                title={detail ? t("신기능만 보기") : t("상세보기 — 개선·수정 내역까지")}>
-                {detail ? t("신기능만") : t("상세보기")}
-              </button>
-          )}>
+        <ModalWindow label={t("업데이트 내역")} className="chlog-modal" onClose={() => setOpen(false)}>
             <div className="chlog-list">
               {rows === null && !error && <p className="chlog-empty">{t("불러오는 중…")}</p>}
               {error && <p className="chlog-empty">{error}</p>}
               {rows !== null && !error && shown.length === 0 && (
-                <p className="chlog-empty">
-                  {hiddenCount > 0
-                    ? t("이 기간에 새로 나온 기능은 없습니다 — 상세보기로 개선·수정 내역을 확인하세요.")
-                    : t("아직 등록된 업데이트 내역이 없습니다.")}
-                </p>
+                <p className="chlog-empty">{t("아직 등록된 업데이트 내역이 없습니다.")}</p>
               )}
               {groups.map((day) => (
                 <section key={day.date}>

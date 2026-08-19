@@ -560,36 +560,9 @@ button {
   overflow: hidden;
   box-shadow: 0 30px 100px #0008;
 }
-/* 이 모달만 제목이 늘어나지 않는다 — 신기능만 토글이 제목 바로 오른쪽에 붙고(사용자 요청
-   2026-08-05), 뷰 전환 버튼(개발자 코멘트↔업데이트 내역)이 남은 공간을 건너 오른쪽 끝으로 */
-.chlog-modal .mw-title {
-  flex: none;
-}
-.chlog-modal .chlog-devnotes-btn {
-  margin-left: auto;
-}
-/* 종류 필터 — 창 크롬 바의 제목·× 사이에 얹는다 (2026-08-03, 종전 내부 header는 제거) */
-.chlog-detail-toggle {
-  padding: 3px 9px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: transparent;
-  font-size: 11.5px;
-  font-weight: 800;
-  color: var(--muted);
-  white-space: nowrap;
-  cursor: pointer;
-  transition: 0.15s;
-}
-.chlog-detail-toggle:hover {
-  border-color: var(--border-strong);
-  color: var(--ink);
-}
-.chlog-detail-toggle[aria-pressed="true"] {
-  background: var(--bg-soft);
-  border-color: var(--border-strong);
-  color: var(--ink);
-}
+/* 신기능만 토글·개발자 코멘트 버튼용 크롬 예외(.mw-title flex:none 등)는 2026-08-19 제거 —
+   둘 다 사라진 뒤 margin-left:auto 담당자가 없어 ×가 제목 옆에 달라붙었다 (사용자 제보).
+   기본 .mw-title(flex:1)이 ×를 오른쪽 끝으로 되돌린다. */
 .chlog-list {
   padding: 14px 16px 18px;
   overflow-y: auto;
