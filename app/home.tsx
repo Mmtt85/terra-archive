@@ -1996,7 +1996,11 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
             const href = (LOCALE_BASE[entry.code] + (seg ? `/${seg}` : "")) || "/";
             return entry.code === locale
               ? <strong key={entry.code} lang={entry.code}>{entry.label}</strong>
-              : <a key={entry.code} href={href} hrefLang={entry.code} lang={entry.code}>{entry.label}</a>;
+              // 선호 언어(ta-locale)를 먼저 기록해야 한다 — 안 그러면 layout.tsx의 자동
+              // 리다이렉트가 저장된 언어로 곧장 되돌려 "푸터에서 언어를 바꿔도 안 바뀐다"
+              // (사용자 제보 2026-08-19). 기록만 하고 이동은 <a> 기본 동작에 맡긴다.
+              : <a key={entry.code} href={href} hrefLang={entry.code} lang={entry.code}
+                  onClick={() => { try { localStorage.setItem("ta-locale", entry.code); } catch { /* ignore */ } }}>{entry.label}</a>;
           })}
         </nav>
         {/* 배포 시각 — 화면 계산(인프라 엔진·데이터 JSON)은 빌드 시점에 번들로 굳으므로,
