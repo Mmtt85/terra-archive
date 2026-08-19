@@ -411,7 +411,11 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       message: t("고정은 다음 전체 자동편성부터 편성 전체에 반영됩니다 — 지금 재편성할까요? 더 고정할 오퍼가 있으면 '나중에'를 누르고 이어서 고정하세요."),
       confirmLabel: t("지금 재편성"),
       cancelLabel: t("나중에"),
-    }).then((go) => { if (go) void runOptimize(ownedIds, eliteById, priority, levelById, rpins); });
+    }).then((go) => {
+      if (!go) return;
+      setOpenRoom(null); // 재편성하면 방 내용이 통째로 바뀐다 — 보던 모달을 닫는다 (사용자 요청 2026-08-19)
+      void runOptimize(ownedIds, eliteById, priority, levelById, rpins);
+    });
   };
   // 생산방 편성 변경 — 숙소와 같은 상호작용 (제안 게시판 요청 2026-08-19): 직접 넣은 오퍼는
   // 📌 자동 고정, ✕로 빼면 해제. 고정 오퍼는 다음 자동편성에서 이 방 A·B 양조에 그대로 남는다
@@ -2440,7 +2444,7 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
             {/* 생산방 고정 안내 — 숙소와 상호작용은 같지만 계약이 다르다: 고정 = A·B 양조 근무
                 (교대 휴식 없음). 고정된 오퍼가 실제로 있을 때만 띄워 평소 모달을 어지럽히지 않는다 */}
             {cell.room !== "DORMITORY" && onTogglePin && (pins?.length ?? 0) > 0 && (
-              <p className="dorm-note">{rich(t("**📌 고정된 오퍼는 자동편성이 이 방 A조·B조 모두에 그대로 앉힙니다** — 교대 휴식이 없어지므로 컨디션(지속시간) 관리는 피아메타 등으로 직접 해 주세요. 카드의 📌로 잠그거나 풀고, ✕로 빼면 고정도 풀립니다."))}</p>
+              <p className="dorm-note pin-note">{rich(t("**📌 고정된 오퍼는 자동편성이 이 방 A조·B조 모두에 그대로 앉힙니다** — 교대 휴식이 없어지므로 컨디션(지속시간) 관리는 피아메타 등으로 직접 해 주세요. 카드의 📌로 잠그거나 풀고, ✕로 빼면 고정도 풀립니다."))}</p>
             )}
             <div className="crew-list">
               {team.map((op) => {
