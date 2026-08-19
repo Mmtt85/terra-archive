@@ -8,6 +8,7 @@ import {
   fetchMyFeedback, countNewReplies, updateMyFeedback, deleteMyFeedback,
   getBoardAdminKey, setBoardAdminKey, probeBoardAdminKey, fetchAllFeedbackBoard,
   boardAdminAddReply, boardAdminDeleteReply, boardAdminDeleteFeedback, boardAdminSetReviewed,
+  countryOf, flagOf,
   type FeedbackKind, type BoardRow,
 } from "./feedback";
 import { ModalWindow } from "./modal-window";
@@ -459,6 +460,10 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
                     </span>
                   )}
                   {!!adminKey && !!row.reviewed_at && <span className="fb-reviewed-chip">✓ {t("대응완료")}</span>}
+                  {/* 발신 국가 — 관리자에게만 (사용자 요청 2026-08-19). payload.country는 전송 시 /cdn-cgi/trace에서 채워진다 */}
+                  {!!adminKey && countryOf(row.payload) && (
+                    <span className="fb-geo-chip" title={countryOf(row.payload)!}>{flagOf(countryOf(row.payload)!)} {countryOf(row.payload)}</span>
+                  )}
                   <span className="fb-board-preview">{row.message}</span>
                 </button>
               </li>
@@ -574,7 +579,12 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
       {open && threadRow && (
         <ModalWindow label={t(KIND_KEY[threadRow.kind] ?? threadRow.kind)} className="fb-thread-modal" onClose={() => setThreadId(null)}>
           <div className="fb-thread fb-modal-thread">
-            <time className="fb-thread-date">{fmtDate(threadRow.created_at)}</time>
+            <time className="fb-thread-date">
+              {fmtDate(threadRow.created_at)}
+              {!!adminKey && countryOf(threadRow.payload) && (
+                <span className="fb-geo-chip">{flagOf(countryOf(threadRow.payload)!)} {countryOf(threadRow.payload)}</span>
+              )}
+            </time>
             {editingId === threadRow.id ? (
               <div className="fb-edit-area">
                 <textarea value={editVal} onChange={(e) => setEditVal(e.target.value)} rows={4} maxLength={4000} />

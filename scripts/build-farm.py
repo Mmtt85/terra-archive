@@ -19,7 +19,7 @@ Needs: {kr,en,jp}_item_table.json, {kr,en,jp}_stage_table.json (클뜯 레포)
 아이콘은 yuanyan3060/ArknightsGameResource의 item/<iconId>.png 를
 public/items/<itemId>.png 로 내려받는다 (있으면 스킵).
 """
-import json, os, sys, time, urllib.request
+import json, os, re, sys, time, urllib.request
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from imgutil import save_webp
 
@@ -54,6 +54,47 @@ kr_stage_names = stage_names_of("kr")
 en_stage_names = stage_names_of("en")
 jp_stage_names = stage_names_of("jp")
 
+# ── 이벤트명 병기 (제안 게시판 요청 2026-08-19: "SN-9"만이 아니라 "스툴티페라 나비스 - SN-9") ──
+# · 복각 상설(*_perm/*_rep)은 stage_table에 없다 — retro_table의 stageList(무접미 키)→
+#   zoneToRetro→retroActList.name 체인으로 이벤트명·작전명을 얻는다 (작전명 None도 이걸로 메꾼다).
+# · 기간 한정(event)은 stage_table의 zoneId 접두("act49side_zone1"→"act49side")로
+#   activity_table basicInfo.name. 메인/물자는 이벤트명이 없다.
+def retro_of(prefix):
+    rt = load(f"{S}/{prefix}_retro_table.json")
+    stages, z2r, acts = rt.get("stageList") or {}, rt.get("zoneToRetro") or {}, rt.get("retroActList") or {}
+    out = {}
+    for sid, st in stages.items():
+        act = acts.get(z2r.get(st.get("zoneId")))
+        out[sid] = {"event": (act or {}).get("name"), "name": st.get("name")}
+    return out
+
+def acts_of(prefix):
+    table = load(f"{S}/{prefix}_activity_table.json")
+    return {aid: a.get("name") for aid, a in (table.get("basicInfo") or {}).items()}
+
+def zones_of(prefix):
+    table = load(f"{S}/{prefix}_stage_table.json")
+    return {sid: st.get("zoneId") for sid, st in (table.get("stages") or {}).items()}
+
+retro = {loc: retro_of(loc) for loc in ("kr", "en", "jp")}
+acts = {loc: acts_of(loc) for loc in ("kr", "en", "jp")}
+kr_zones = zones_of("kr")
+
+def stage_extra(sid, kind):
+    """스테이지의 {event?, name 보강} — 로케일 3종 dict 또는 None."""
+    if kind == "perm":
+        base = re.sub(r"_(perm|rep)$", "", sid)
+        ev = {L: (retro[loc].get(base) or {}).get("event") for L, loc in (("ko", "kr"), ("en", "en"), ("ja", "jp"))}
+        nm = {L: (retro[loc].get(base) or {}).get("name") for L, loc in (("ko", "kr"), ("en", "en"), ("ja", "jp"))}
+        return (ev if ev["ko"] else None), (nm if nm["ko"] else None)
+    if kind == "event":
+        zone = kr_zones.get(sid) or ""
+        aid = zone.split("_zone")[0] if "_zone" in zone else None
+        if aid:
+            ev = {L: acts[loc].get(aid) for L, loc in (("ko", "kr"), ("en", "en"), ("ja", "jp"))}
+            return (ev if ev["ko"] else None), None
+    return None, None
+
 print("fetching penguin-stats …", file=sys.stderr)
 pg_stages = {s["stageId"]: s for s in fetch(f"{PENGUIN}/stages?server=KR")}
 matrix = fetch(f"{PENGUIN}/result/matrix?server=KR&show_closed_zones=false")["matrix"]
@@ -82,16 +123,20 @@ for entry in matrix:
     ap = stage.get("apCost") or 0
     if times < MIN_TIMES or quantity <= 0 or ap <= 0: continue
     rate = quantity / times
+    kind = stage_kind(stage)
+    event, name_fill = stage_extra(stage["stageId"], kind)
     rows_by_item.setdefault(iid, []).append({
         "id": stage["stageId"],
         "code": (stage.get("code_i18n") or {}).get("ko") or stage.get("code"),
         "name": {
-            "ko": kr_stage_names.get(stage["stageId"]),
-            "en": en_stage_names.get(stage["stageId"]),
-            "ja": jp_stage_names.get(stage["stageId"]),
+            "ko": kr_stage_names.get(stage["stageId"]) or (name_fill or {}).get("ko"),
+            "en": en_stage_names.get(stage["stageId"]) or (name_fill or {}).get("en") or (name_fill or {}).get("ko"),
+            "ja": jp_stage_names.get(stage["stageId"]) or (name_fill or {}).get("ja") or (name_fill or {}).get("ko"),
         },
+        # 이벤트명(사이드 스토리·한정 이벤트만) — EN/JA 미출시분은 ko 폴백
+        **({"event": {"ko": event["ko"], "en": event.get("en") or event["ko"], "ja": event.get("ja") or event["ko"]}} if event else {}),
         "ap": ap,
-        "kind": stage_kind(stage),
+        "kind": kind,
         # 어려움(高難) 판 — 정규판과 코드가 같아 "10-12"가 두 줄로 보였다 (사용자 지적
         # 2026-08-09). 데이터는 남기고(드랍률이 실제로 다르다) 표시로 구분한다.
         **({"tough": 1} if stage["stageId"].startswith("tough_") else {}),

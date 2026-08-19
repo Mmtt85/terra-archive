@@ -242,17 +242,41 @@ export function countNewReplies(rows: MyFeedbackRow[]): number {
   return n;
 }
 
+/** 방문자 국가 코드 — Cloudflare 엣지가 같은 오리진 /cdn-cgi/trace에 붙여 주는 loc= 값.
+ *  외부 지오IP 서비스 없이 공짜로 얻는다. 로컬 dev(:3000)나 실패 시엔 조용히 생략.
+ *  관리자 화면(게시판 관리자 모드·/admin)에서만 표시한다 (사용자 요청 2026-08-19). */
+async function visitorCountry(): Promise<string | null> {
+  try {
+    const res = await fetch("/cdn-cgi/trace", { signal: AbortSignal.timeout(1500) });
+    if (!res.ok) return null;
+    const m = (await res.text()).match(/^loc=([A-Z]{2})$/m);
+    return m ? m[1] : null;
+  } catch { return null; }
+}
+
+/** payload.country — 관리자 표시용 ISO 국가 코드 (없으면 null) */
+export function countryOf(payload: unknown): string | null {
+  const v = payload && typeof payload === "object" ? (payload as { country?: unknown }).country : null;
+  return typeof v === "string" && /^[A-Z]{2}$/.test(v) ? v : null;
+}
+
+/** "KR" → 🇰🇷 (지역 지시 문자 합성) */
+export function flagOf(cc: string): string {
+  return String.fromCodePoint(...[...cc].map((c) => 0x1f1a5 + c.charCodeAt(0)));
+}
+
 export async function sendFeedback(kind: FeedbackKind, message: string, payload?: unknown) {
   if (!feedbackReady) throw new Error("Supabase 키가 아직 설정되지 않았습니다");
   // 어떤 화면에서 보낸 제안인지 payload에 자동 첨부 (예: "/#infra", "/#op-char_2014_nian")
   const page = typeof window === "undefined" ? null : `${window.location.pathname}${window.location.hash}`;
+  const country = await visitorCountry();
   const headers = {
     apikey: SUPABASE_ANON_KEY,
     Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
     "Content-Type": "application/json",
     Prefer: "return=minimal",
   };
-  const body = { kind, message: message.slice(0, 4000), payload: { ...(payload && typeof payload === "object" ? payload : {}), page } };
+  const body = { kind, message: message.slice(0, 4000), payload: { ...(payload && typeof payload === "object" ? payload : {}), page, ...(country ? { country } : {}) } };
   const res = await fetch(`${SUPABASE_URL}/rest/v1/feedback`, {
     method: "POST", headers,
     body: JSON.stringify({ ...body, author_token: ensureFeedbackToken() }),

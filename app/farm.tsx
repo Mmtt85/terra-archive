@@ -32,6 +32,7 @@ type FarmStage = {
   name: LocText;
   ap: number;
   kind: "main" | "perm" | "event" | "daily";
+  event?: LocText; // 소속 이벤트명(사이드 스토리·한정 이벤트만) — 배지에 병기 (제안 2026-08-19)
   rate: number;    // 드랍률 %
   sanity: number;  // 개당 기대 이성
   tough?: number;  // 1 = 어려움(高難) 판 — 정규판과 코드가 같아 배지로 구분 (2026-08-09)
@@ -156,7 +157,10 @@ function useStageSubModal(onShowItem: (id: string) => void) {
     // 스탯 색인을 같이 받아야 등장 적 카드에 HP·공격 수치가 실린다 (적 도감 쪽과 같은
     // 누락이 여기도 있었다 — 사용자 제보 2026-08-11)
     void Promise.all([loadStages(locale), loadEnemyStats()]).then(([doc, stats]) => {
-      const st = doc.stages.find((x) => x.id === sid);
+      // 복각 상설 id(act18d0_07_perm)는 도감엔 원본 id(act18d0_07)로만 있다 — 접미를
+      // 벗겨 재시도 (사용자 제보 2026-08-19: "WD-7을 눌러도 맵 모달이 안 뜸")
+      const base = sid.replace(/_(perm|rep)$/, "");
+      const st = doc.stages.find((x) => x.id === sid) ?? doc.stages.find((x) => x.id === base);
       setStage(st ? viewOf(doc, st, stats) : null);
     });
   };
@@ -312,13 +316,16 @@ export default function FarmGuide({ includeFuture }: { includeFuture: boolean })
                     <ul>
                       {item.stages.slice(0, expandedStages.has(item.id) ? item.stages.length : 1).map((stage, index) => (
                         <li key={stage.id} className={index === 0 ? "best" : undefined}
-                          title={`${locText(locale, stage.name) ?? stage.code} · ${t("이성 {n} 소모", { n: stage.ap })} · ${t("표본 {n}회", { n: stage.times.toLocaleString() })}`}>
+                          title={`${stage.event ? `${locText(locale, stage.event)} · ` : ""}${locText(locale, stage.name) ?? stage.code} · ${t("이성 {n} 소모", { n: stage.ap })} · ${t("표본 {n}회", { n: stage.times.toLocaleString() })}`}>
                           {/* 스테이지를 누르면 작전 도감 상세가 모달로 뜬다 (사용자 요청 2026-08-09) */}
                           <button type="button" className="farm-code as-btn" onClick={() => sub.openStage(stage.id)}>{stage.code}</button>
                           <span className="farm-badges">
                             {index === 0 && <em className="best-badge">{t("최고 효율")}</em>}
                             {stage.tough ? <em className="kind-badge tough">{t("어려움")}</em> : null}
-                            {KIND_LABEL[stage.kind] && <em className={`kind-badge ${stage.kind}`}>{t(KIND_LABEL[stage.kind])}</em>}
+                            {/* 이벤트 소속 맵은 배지에 이벤트명을 병기 — "SN-9만으로는 어느 이벤트인지 모른다" (제안 2026-08-19) */}
+                            {stage.event
+                              ? <em className={`kind-badge ${stage.kind} has-event`} title={KIND_LABEL[stage.kind] ? t(KIND_LABEL[stage.kind]) : undefined}>{locText(locale, stage.event)}</em>
+                              : KIND_LABEL[stage.kind] && <em className={`kind-badge ${stage.kind}`}>{t(KIND_LABEL[stage.kind])}</em>}
                           </span>
                           <span className="farm-rate">{stage.rate}%</span>
                           <span className="farm-sanity">{stage.sanity}</span>
@@ -880,6 +887,7 @@ export function ItemModal({ id, onClose, onShowItem, onSearchItem, onShowStage }
                   <span className="farm-badges">
                     {index === 0 && <em className="best-badge">{t("최고 효율")}</em>}
                     {stage.tough ? <em className="kind-badge tough">{t("어려움")}</em> : null}
+                    {stage.event && <em className={`kind-badge ${stage.kind} has-event`}>{locText(locale, stage.event)}</em>}
                   </span>
                   <span className="farm-rate">{stage.rate}%</span>
                   <span className="farm-sanity">{stage.sanity}</span>
