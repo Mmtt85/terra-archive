@@ -134,7 +134,7 @@ export default function ChangelogButton() {
     <>
       {/* 버튼으로 열면 **상세보기**가 기본 (사용자 지시 2026-07-29) — 신기능만 보려면
           헤더 토글을 누르거나 #changelog 딥링크로 들어온다 */}
-      <button type="button" className="chlog-trigger" onClick={() => { setDetail(true); setOpen(true); }} title={t("최근 업데이트 내역 보기")}>
+      <button type="button" className="chlog-trigger" onClick={() => setOpen(true)} title={t("최근 업데이트 내역 보기")}>
         <span aria-hidden>🛠</span>
         {/* 모바일은 아이콘만 (1줄 로고 옆 — 폭이 좁다) */}
         <span className="chlog-label">{t("업데이트 내역")}</span>
