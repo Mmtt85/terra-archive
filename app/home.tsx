@@ -358,6 +358,7 @@ const MODE_GLYPH: [RegExp, string][] = [
   [/VEC_BREAK/, "⇉"],      // 벡터 돌파
   [/SANDBOX/, "▣"],        // 생존 연산
   [/ROGUELIKE/, "❖"],      // 통합전략
+  [/AUTOCHESS/, "♟"],      // 위수 협의(오토체스) — 2026-08-20 시즌2 개방 때 추가
   [/BOSS|CHALLENGE/, "⚔"],
   [/COLLECTION|SWITCH/, "◇"],
 ];

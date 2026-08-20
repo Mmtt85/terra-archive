@@ -131,6 +131,10 @@ function eventMatchKeys(name) {
   const keys = [name];
   const stripped = name.replace(/(콜라보 이벤트|로그인 이벤트|한정 임무|이벤트)$/, "").trim();
   if (stripped && stripped !== name) keys.push(stripped);
+  // "위수 협의: 맹약"처럼 부제 달린 이름 — 공지 제목은 대개 본제("위수 협의")만 쓴다
+  // (2026-08-20 위수 협의 시즌2 개방 때 링크가 안 붙던 원인). 너무 짧은 본제는 오매칭 방지로 제외.
+  const colon = name.split(/[:：]/)[0].trim();
+  if (colon && colon !== name && normTitle(colon).length >= 4) keys.push(colon);
   return keys;
 }
 
@@ -176,17 +180,7 @@ const MANUAL_EVENTS = [
   // "8월 13일(목) 16:00부터 개방"이라 했는데 실데이터는 11:00(02:00Z)이었고, 같은 날 올라온
   // zone_table의 zoneValidInfo.startTs가 그 11:00을 이미 갖고 있었다. 다음에 급히 채울 땐
   // **zone_table(zoneValidInfo) → 공지 순**으로 믿을 것.
-  {
-    // 벡터 돌파#2 — KR 2026-07-30 16:00 시작(공식 카페 공지). 종료는 중섭 act2break와 같은
-    // 길이(20.5일)로 잡은 **추정치**다. 실데이터가 오면 바로 대체된다.
-    id: "act2break",
-    name: "벡터 돌파#2: 주술의 밤",
-    type: "VEC_BREAK_V2",
-    displayType: "NONE",
-    start: "2026-07-30T07:00:00.000Z", // KST 07-30 16:00
-    end: "2026-08-19T18:59:59.000Z",   // KST 08-20 03:59:59 (추정)
-    until: "2026-08-21",
-  },
+  // 2026-08-20 비움 — act2break(벡터 돌파#2)는 실데이터가 들어온 지 오래고 이벤트도 끝났다.
 ];
 
 async function fetchEvents() {
