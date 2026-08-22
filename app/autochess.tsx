@@ -304,7 +304,10 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
    *  가진 맹약 둘(진영·특성)을 같이 싣는다 — 시너지를 짜려면 나머지 한쪽이 중요하다. */
   const opRow = (c: AcChess) => (
     <button key={c.id} type="button" className="ac-oprow"
-      onClick={() => { setBond(null); setChess(c); }}>
+      // 맹약 모달은 **닫지 않는다** — 소속 오퍼를 하나씩 눌러 보는 자리라, 볼 때마다 맹약
+      // 목록이 사라지면 매번 되돌아가야 한다 (사용자 지적 2026-08-22). ModalWindow가 창을
+      // 겹쳐 띄우므로 오퍼 창을 닫으면 맹약 창이 그대로 남는다.
+      onClick={() => setChess(c)}>
       {c.op
         ? <img src={opFace(c.op)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
         : <span className="ac-face-diy" aria-hidden>?</span>}
