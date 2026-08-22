@@ -96,6 +96,16 @@ python3 scripts/build-stages-rogue.py          # → app/data/stages-rogue{,.en,
 python3 scripts/build-sandbox.py               # → app/data/sandbox{,.en,.ja}.json (생존연산 가이드 —
 #     V2 사막 이야기는 kr/en/jp 공식 텍스트, V3 신시즌은 CN 선행 + scripts/sandbox-cn-ko.json
 #     비공식 번역. 미번역 문자열이 생기면 未 경고를 낸다 — cn-translation-fill 흐름으로 보완)
+python3 scripts/build-autochess.py             # → app/data/autochess{,.en,.ja}.json
+#     + public/ac/ 아이콘 134장 (맹약·밴드·장비·능력 분류·모드·특훈 적 유형). --no-icons로 아이콘 생략
+#     (위수 협의=오토체스 가이드. 입력은 .gamedata/{kr,jp,en}_activity_table.json 하나 —
+#      activity.AUTOCHESS_SEASON.act2autochess 에 774KB가 통째로 박혀 있다.
+#      ⚠ EN에는 시즌2가 없다(act1autochess만) — 이름류만 시즌1 EN에서 빌리고 **설명문은
+#        한국어 원문**을 내보낸다. 시즌1↔2 사이에 수치가 바뀐 사례가 있어 설명을 빌리면
+#        틀린 숫자가 나간다. 화면은 doc.krOnly로 안내문을 띄운다.
+#      ⚠ 시즌 블록(activity.AUTOCHESS_SEASON) 말고 **최상위 autoChessData** 도 같이 읽는다 —
+#        특훈 적 유형의 공식 이름·설명, 리더 적(boss)→적 id 매핑이 거기에만 있다.
+#      --no-icons 로 아이콘 다운로드를 건너뛸 수 있다)
 python3 scripts/build-rogue-routes.py          # → app/data/rogue-routes.json (통전 전투 노드 적 이동 경로,
 #     로케일 무관 1벌 · .gamedata/rogue 레벨 캐시 재사용. 추출 정본은 routeutil.py —
 #     stage-routes.json과 공유하므로 경로 규칙 수정 시 이 파일도 재생성한다)

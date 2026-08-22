@@ -25,6 +25,7 @@ export const FEATURE_RELEASED: Record<string, string | { date: string; days: num
   "route-map": "2026-08-10", // 적 이동 경로 지도 — 작전 상세·통전 전투 노드의 '이동 경로' 탭
   "sim-page": "2026-08-10", // 작전 시뮬레이터 런처(/sim) — 스폰 타임라인 재생 딥링크 (B안)
   "ra-guide": "2026-08-12", // 생존연산 가이드(/ra) — 요리·제작·지역·조우·균열 + CN 신시즌
+  "autochess-guide": "2026-08-22", // 위수 협의 가이드(/autochess) — 맹약·기물 능력·물자관리소
   "feedback-board": "2026-08-17", // 제안 게시판 — 내 제안·개발자 답변 스레드 (작성자와 개발자만 열람)
 };
 
@@ -43,6 +44,19 @@ const CLOCK = (() => {
   const t = typeof __BUILD_TIME__ === "string" ? Date.parse(__BUILD_TIME__) : NaN;
   return Number.isNaN(t) ? Date.now() : t;
 })();
+
+/**
+ * 기간 한정 요소(게임 이벤트가 도는 동안만 뜨는 헤더 바로가기 등)의 노출 판정.
+ * 시계는 위 CLOCK과 같은 **빌드 시각**이라 서버·클라가 언제나 같은 답을 낸다 —
+ * 마운트 후 Date.now()로 갈아 끼우면 레이아웃이 밀리고, 렌더 중에 쓰면 React #418이다.
+ * 경계는 [from, to) 이며 ISO 문자열(타임존 포함)을 그대로 받는다.
+ */
+export function inTimeWindow(fromISO: string, toISO: string): boolean {
+  const a = Date.parse(fromISO);
+  const b = Date.parse(toISO);
+  if (Number.isNaN(a) || Number.isNaN(b)) return false;
+  return CLOCK >= a && CLOCK < b;
+}
 
 /** 출시일로부터 표시 기간(기본 3일) 이내이면 true. 미등록 키·기간 경과·잘못된 날짜는 false. */
 export function isNewFeature(key: string): boolean {
@@ -75,6 +89,7 @@ const TAB_FEATURES: Record<string, string[]> = {
   stage: ["stage-dex", "route-map"],
   sim: ["sim-page"],
   ra: ["ra-guide"],
+  autochess: ["autochess-guide"],
 };
 
 /** 해당 탭 안에 아직 '새기능' 기간인 기능이 하나라도 있으면 true. */

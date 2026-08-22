@@ -35,6 +35,12 @@ const SANDBOX_GUIDE = {
   en: lazy(() => import("./sandbox-en")),
   ja: lazy(() => import("./sandbox-ja")),
 } as const;
+// 위수 협의(오토체스) 가이드 — 로케일별 청크 (데이터 ~160KB, 2026-08-22)
+const AUTOCHESS_GUIDE = {
+  ko: lazy(() => import("./autochess-ko")),
+  en: lazy(() => import("./autochess-en")),
+  ja: lazy(() => import("./autochess-ja")),
+} as const;
 import { normSearch, useSearchInput } from "./search";
 // 작전 시뮬레이터 런처 — SEO 본문이 프리렌더돼야 해서 정적 임포트 (데이터는 자체 지연 로드)
 import SimLauncher from "./sim-launcher";
@@ -69,7 +75,7 @@ const About = lazy(() => import("./about"));
 import FeedbackWidget from "./feedback-widget";
 import { bindEscClose } from "./esc-close";
 import { feedbackReady } from "./feedback";
-import { isNewFeature, tabHasNewFeature } from "./whats-new";
+import { isNewFeature, inTimeWindow, tabHasNewFeature } from "./whats-new";
 import { scrollMainTop } from "./scroll";
 import { PORTAL_TILES, PORTAL_ART, type PortalTile } from "./portal-themes";
 import { useLazyVisible } from "./lazy-img";
@@ -194,17 +200,17 @@ const JOB_ORDER = ["PIONEER", "WARRIOR", "TANK", "SNIPER", "CASTER", "MEDIC", "S
 
 const SORT_KEYS = ["기본", "이름", "성급", "발매순", "소속", "출신지", "종족", "직군", "세부 직군"];
 
-export type Tab = "portal" | "archive" | "enemy" | "stage" | "sim" | "planner" | "recruit" | "farm" | "upgrade" | "story" | "rogue" | "ra" | "about";
+export type Tab = "portal" | "archive" | "enemy" | "stage" | "sim" | "planner" | "recruit" | "farm" | "upgrade" | "story" | "rogue" | "ra" | "autochess" | "about";
 // 탭 ↔ URL 세그먼트 (portal이 로케일 루트, 오퍼 백과사전은 /operators — 사용자 확정 2026-07-17:
 // 루트 진입 시 오퍼 이미지 강제 로딩을 없애려 포탈 첫화면 도입). seo.ts의 TAB_SEG·라우트 폴더명과 일치.
 // URL 세그먼트 "stories"(← 정적 자산 디렉터리 public/story/ 와의 경로 충돌 회피). 내부 탭명은 story.
 // ⚠ 적 도감의 URL 세그먼트는 "enemies"(복수)인데 초상 자산 폴더는 public/enemy/(단수)다.
 //    일부러 다르게 뒀다 — scripts/deploy.sh가 스테이징에서 `rm -rf $STAGE/enemy`로 자산만
 //    떼어내는데(서빙은 R2), 이름이 같으면 라우트 HTML까지 통째로 지워진다.
-const TAB_SEG: Record<Tab, string> = { portal: "", archive: "operators", enemy: "enemies", stage: "stages", sim: "sim", planner: "infra", recruit: "recruit", farm: "farm", upgrade: "upgrade", story: "stories", rogue: "rogue", ra: "ra", about: "about" };
+const TAB_SEG: Record<Tab, string> = { portal: "", archive: "operators", enemy: "enemies", stage: "stages", sim: "sim", planner: "infra", recruit: "recruit", farm: "farm", upgrade: "upgrade", story: "stories", rogue: "rogue", ra: "ra", autochess: "autochess", about: "about" };
 // ⚠ TAB_SEG와 짝 — 세그먼트를 더하면 여기도 같이 (enemies·stages가 빠져 /stages가
 //   portal로 판정되던 기존 누락도 2026-08-10에 함께 채움)
-const SEG_TAB: Record<string, Tab> = { "": "portal", operators: "archive", enemies: "enemy", stages: "stage", sim: "sim", infra: "planner", recruit: "recruit", farm: "farm", upgrade: "upgrade", stories: "story", rogue: "rogue", ra: "ra", about: "about" };
+const SEG_TAB: Record<string, Tab> = { "": "portal", operators: "archive", enemies: "enemy", stages: "stage", sim: "sim", infra: "planner", recruit: "recruit", farm: "farm", upgrade: "upgrade", stories: "story", rogue: "rogue", ra: "ra", autochess: "autochess", about: "about" };
 const LOCALE_BASE: Record<Locale, string> = { ko: "", en: "/en", ja: "/ja" };
 
 // 빌드(=배포) 시각 — vite define으로 박히는 ISO 문자열을 KST 분 단위로 찍는다.
@@ -234,6 +240,22 @@ function tabFromPath(pathname: string): Tab {
 // 종전에는 #op-<id> 해시 모달뿐이라 검색엔진에 없는 화면이었다. 앱 안에서 모달을 열 때도
 // 이 주소로 replaceState한다 — 공유·새로고침이 곧 정본이 되고, 히스토리 엔트리를 쌓지
 // 않으므로 인앱 브라우저 리로드 버그(2026-07-18)와도 무관하다.
+// ── 기간 한정 헤더 바로가기 (사용자 요청 2026-08-22) ─────────────────────────
+// 게임에서 그 모드가 도는 동안에만 헤더에 바로가기 칩을 띄운다. 기간은 클뜯
+// basicInfo(act2autochess)의 startTime·endTime 그대로 —
+//   2026-08-20 16:00 KST 시작 / 2026-10-01 03:59:59 KST 종료.
+// ⚠ 판정 시계는 whats-new의 **빌드 시각**이다 (Date.now()를 렌더에 쓰면 프리렌더 HTML과
+//   어긋나 React #418 → 전 페이지 다크모드까지 날아간 전례. whats-new.ts 주석 참조).
+//   무인 파이프라인이 거의 매일 배포하므로 실제 노출 종료는 게임 종료 다음 배포다.
+const PROMO = {
+  tab: "autochess" as Tab,
+  label: "위수 협의",
+  icon: "♟",
+  from: "2026-08-20T16:00:00+09:00",
+  to: "2026-10-01T04:00:00+09:00",
+};
+const PROMO_ON = inTimeWindow(PROMO.from, PROMO.to);
+
 const OPERATOR_PATH_RE = /^\/(?:en\/|ja\/)?operators\/([^/]+)\/?$/;
 const operatorPath = (locale: Locale, id: string) => `${LOCALE_BASE[locale]}/operators/${id}`;
 const archivePath = (locale: Locale) => `${LOCALE_BASE[locale]}/operators`;
@@ -920,7 +942,8 @@ function Portal({ onOpenTab }: {
             </button>
           );
         };
-        const groups: { id: "dex" | "sim"; name: string }[] = [
+        const groups: { id: "dex" | "sim" | "guide"; name: string }[] = [
+          { id: "guide", name: t("가이드") },
           { id: "dex", name: t("도감") },
           { id: "sim", name: t("시뮬레이터") },
         ];
@@ -1004,7 +1027,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   // 메뉴 안 묶음(도감·시뮬레이터) 펼침 — 데스크탑은 호버로도 열리지만, iOS는 탭해도 버튼에
   // 포커스가 안 가 focus-within이 무력하므로 클릭 토글 상태가 따로 필요하다 (2026-08-09).
   // 초기화는 effect가 아니라 햄버거 토글 클릭에서 한다 (set-state-in-effect 린트 관례).
-  const [openGroup, setOpenGroup] = useState<"" | "dex" | "sim">("");
+  const [openGroup, setOpenGroup] = useState<"" | "dex" | "sim" | "guide">("");
   const [feedbackOpen, setFeedbackOpen] = useState(false); // 제안 패널 — 모바일 헤더 버튼·데스크탑 FAB 공용
   const [feedbackNew, setFeedbackNew] = useState(0); // 제안 게시판 새 답변 수 — 위젯이 올려주고 헤더 버튼 뱃지에 쓴다
   const [headerCollapsed, setHeaderCollapsed] = useState(true); // 모바일 헤더 접기 — 접힘이 기본(사용자 확정 2026-07-22). PC는 무관(관련 CSS가 모바일 블록에만 있음)
@@ -1020,6 +1043,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   const [enemyPageOpen, setEnemyPageOpen] = useState<boolean>(() => !!pageEnemy);
   const EnemyDexForLocale = ENEMY_DEX[locale as keyof typeof ENEMY_DEX] ?? ENEMY_DEX.ko;
   const SandboxForLocale = SANDBOX_GUIDE[locale as keyof typeof SANDBOX_GUIDE] ?? SANDBOX_GUIDE.ko;
+  const AutochessForLocale = AUTOCHESS_GUIDE[locale as keyof typeof AUTOCHESS_GUIDE] ?? AUTOCHESS_GUIDE.ko;
   const [stagePageOpen, setStagePageOpen] = useState<boolean>(() => !!pageStage);
   const StageDexForLocale = STAGE_DEX[locale as keyof typeof STAGE_DEX] ?? STAGE_DEX.ko;
   // 작전 도감 → 적 도감: 적 칩을 누르면 적 상세로 넘어간다 (두 도감이 서로를 가리킨다)
@@ -1354,11 +1378,14 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     story: t("스토리"),
     rogue: t("통합전략 가이드"),
     ra: t("생존연산 가이드"),
+    autochess: t("위수 협의 가이드"),
     about: t("테라 아카이브 소개"),
   };
   // 햄버거 메뉴 묶음 (사용자 확정 2026-08-09 '메뉴 마토메') — 도감(오퍼·적·작전)과
   // 시뮬레이터(공개채용·재료파밍·오퍼 육성)로 묶고, 하위 라벨은 짧게 쓴다.
   // **URL·페이지 제목·SEO는 그대로** — 헤더/푸터 내비 표시만 바꾸는 것이다.
+  // 가이드 묶음에 속한 탭 — 묶음 헤더 선택 표시·새기능 배지 판정에 쓴다
+  const GUIDE_TABS: Tab[] = ["rogue", "ra", "autochess"];
   const TAB_GROUPS: { id: "dex" | "sim"; name: string; icon: string; items: { tab: Tab; short: string }[] }[] = [
     { id: "dex", name: t("도감"), icon: "▤", items: [
       { tab: "archive", short: t("오퍼레이터") }, { tab: "enemy", short: t("적") }, { tab: "stage", short: t("작전") },
@@ -1398,9 +1425,10 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   }, [omniOpen]);
 
   // ⌘F/Ctrl+F — 브라우저 찾기 대신 **그 화면의 검색란**으로 (사용자 요청 2026-08-09).
-  // 검색란이 없는 화면(홈·소개 등)에서는 유니버셜 서치를 연다 (사용자 확정).
   // 모달이 떠 있으면 최상단 모달 안의 검색란만 후보다 — 모달에 검색란이 없으면
-  // 뒤 화면 검색란에 초점을 주는 게 더 이상하므로 이때도 유니버셜 서치.
+  // 뒤 화면 검색란에 초점을 주는 게 더 이상하다.
+  // ⚠ 검색란이 없으면 **아무것도 하지 않고 브라우저 찾기를 그대로 둔다**
+  //    (사용자 지시 2026-08-22: 예전엔 이때 유니버셜 서치를 열었는데 그 동작을 뺐다).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.key !== "f" && e.key !== "F") || !(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey) return;
@@ -1410,9 +1438,10 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
       const scope = modals.length ? modals[modals.length - 1] : document;
       const input = [...scope.querySelectorAll<HTMLInputElement>(SEL)]
         .find((x) => x.offsetParent !== null && !x.disabled);
+      if (!input) return;
       e.preventDefault();
-      if (input) { input.focus(); input.select(); }
-      else setOmniOpen(true);
+      input.focus();
+      input.select();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -1678,6 +1707,21 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
         {/* 업데이트 내역 — 로고 바로 오른쪽 1줄 소속: 헤더를 접어도 보인다
             (사용자 요청 2026-07-27: "헤더를 열어보지 않으면 알 수가 없으니") */}
         <ChangelogButton />
+        {/* 기간 한정 바로가기 — 그 모드가 게임에서 도는 동안에만 (사용자 요청 2026-08-22).
+            업데이트 내역과 같은 **1줄 소속**이라 헤더를 접어도 남는다 — 확장부에 두면
+            헤더가 접힌 기본 상태에서 아예 안 보인다. 링크라 크롤러도 따라가고, 클릭은 SPA 전환. */}
+        {PROMO_ON && (
+          <a className={`promo-trigger${tab === PROMO.tab ? " selected" : ""}`}
+            href={`${localeBase}/${TAB_SEG[PROMO.tab]}`}
+            onClick={(event) => {
+              if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+              event.preventDefault(); switchTab(PROMO.tab);
+            }}>
+            <span className="promo-mark" aria-hidden>{PROMO.icon}</span>
+            {t(PROMO.label)}
+            <span className="promo-hint">{t("기간 한정")}</span>
+          </a>
+        )}
         {/* 헤더 치비 (베타) — 1줄 가운데 빈 공간의 산책 장식, 데스크탑 전용 (사용자 요청 2026-08-03) */}
         <HeaderChibi operators={operators} onNavigate={switchTab} onShowOperator={(op) => setSelected(op)} />
         {/* 언어 전환 = 1줄 만능검색 왼쪽 — 헤더를 접어도 남는다 (사용자 요청 2026-08-17:
@@ -1740,42 +1784,71 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                 </div>
               </div>
             ))}
-            {/* 통합전략 가이드 — 마우스오버 시 테마별 부메뉴가 펼쳐진다 (플라이아웃).
-                버튼 자체는 페이지라 클릭=이동이지만, 하위가 있음을 알리는 ◂ 화살표는
-                도감·시뮬레이터와 똑같이 붙인다 (사용자 지적 2026-08-10). */}
-            <div className="tab-flyout">
-              <button className={`tab-rogue${tab === "rogue" ? " selected" : ""}`} onClick={() => switchTab("rogue")}><span className="tab-icon" aria-hidden>❖</span>{t("통합전략 가이드")}{tabHasNewFeature("rogue") && <span className="new-badge">{t("새기능")}</span>}<span className="tab-group-arrow" aria-hidden>◂</span></button>
-              <div className="tab-submenu" role="group" aria-label={t("통합전략 가이드")}>
-                {/* 실제 앵커 — 헤더 메뉴가 전부 버튼이라 크롤러에는 테마 링크가 하나도 없었다
-                    (2026-08-06). 클릭은 종전대로 가로채 SPA 전환. */}
-                {ROGUE_TOPICS.filter((tp) => tp.ready && (!tp.future || includeFuture)).map((tp) => (
-                  <a key={tp.id} href={`${localeBase}/rogue/${rogueSlugOf(tp.id)}`}
-                    className={`tab-sub${tab === "rogue" && rogueSlug === rogueSlugOf(tp.id) ? " selected" : ""}`}
-                    onClick={(event) => {
-                      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
-                      event.preventDefault(); switchRogueTopic(tp.id);
-                    }}>
-                    <span className="tab-sub-mark" aria-hidden>›</span>{t(tp.name)}{tp.future && <em className="tab-sub-future">{t("미래시")}</em>}
-                  </a>
-                ))}
-              </div>
-            </div>
-            {/* 생존연산 가이드 — 시즌별 하위 메뉴 (사용자 확정 2026-08-12 "록라처럼 메뉴를 아예 나눠줘") */}
-            <div className="tab-flyout">
-              <button className={`tab-ra${tab === "ra" ? " selected" : ""}`} onClick={() => switchTab("ra")}><span className="tab-icon" aria-hidden>❂</span>{t("생존연산 가이드")}{tabHasNewFeature("ra") && <span className="new-badge">{t("새기능")}</span>}<span className="tab-group-arrow" aria-hidden>◂</span></button>
-              <div className="tab-submenu" role="group" aria-label={t("생존연산 가이드")}>
-                <a href={`${localeBase}/ra/sand`} className="tab-sub"
+            {/* 가이드 — 게임 모드 공략 3종을 한 묶음으로 (사용자 확정 2026-08-22
+                "이제 각 모드를 가이드 메뉴로 합칠 필요가 있어보임"). 종전엔 통합전략·생존연산이
+                각각 톱레벨을 먹고 있었는데 위수 협의가 셋째로 붙으면서 메뉴가 길어졌다.
+                하위 테마·시즌 링크는 **크롤러용 내부 링크**라 없애지 않고 들여쓴 2단으로 남긴다
+                (2026-08-06에 넣은 이유 — 헤더가 전부 버튼이라 정적 HTML에 앵커가 없었다). */}
+            <div className={`tab-flyout${openGroup === "guide" ? " open" : ""}`}>
+              <button type="button"
+                className={`tab-group${GUIDE_TABS.includes(tab) ? " selected" : ""}`}
+                aria-expanded={openGroup === "guide"}
+                onClick={() => setOpenGroup((cur) => (cur === "guide" ? "" : "guide"))}>
+                <span className="tab-icon" aria-hidden>❖</span>{t("가이드")}
+                {GUIDE_TABS.some((x) => tabHasNewFeature(x)) && <span className="new-badge">{t("새기능")}</span>}
+                <span className="tab-group-arrow" aria-hidden>◂</span>
+              </button>
+              <div className="tab-submenu tab-submenu-guide" role="group" aria-label={t("가이드")}>
+                <a href={`${localeBase}/rogue`} className={`tab-sub tab-rogue${tab === "rogue" ? " selected" : ""}`}
                   onClick={(event) => {
                     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
-                    event.preventDefault(); switchSandbox("sand");
-                  }}><span className="tab-sub-mark" aria-hidden>›</span>{t("사막 이야기")}</a>
-                {includeFuture && (
-                  <a href={`${localeBase}/ra/anchor`} className="tab-sub"
+                    event.preventDefault(); switchTab("rogue");
+                  }}>
+                  <span className="tab-sub-mark" aria-hidden>›</span>{t("통합전략(로그라이크)")}
+                  {tabHasNewFeature("rogue") && <span className="new-badge">{t("새기능")}</span>}
+                </a>
+                <div className="tab-sub2-list">
+                  {ROGUE_TOPICS.filter((tp) => tp.ready && (!tp.future || includeFuture)).map((tp) => (
+                    <a key={tp.id} href={`${localeBase}/rogue/${rogueSlugOf(tp.id)}`}
+                      className={`tab-sub tab-sub2${tab === "rogue" && rogueSlug === rogueSlugOf(tp.id) ? " selected" : ""}`}
+                      onClick={(event) => {
+                        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+                        event.preventDefault(); switchRogueTopic(tp.id);
+                      }}>
+                      <span className="tab-sub-mark" aria-hidden>·</span>{t(tp.name)}{tp.future && <em className="tab-sub-future">{t("미래시")}</em>}
+                    </a>
+                  ))}
+                </div>
+                <a href={`${localeBase}/ra`} className={`tab-sub tab-ra${tab === "ra" ? " selected" : ""}`}
+                  onClick={(event) => {
+                    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+                    event.preventDefault(); switchTab("ra");
+                  }}>
+                  <span className="tab-sub-mark" aria-hidden>›</span>{t("생존연산")}
+                  {tabHasNewFeature("ra") && <span className="new-badge">{t("새기능")}</span>}
+                </a>
+                <div className="tab-sub2-list">
+                  <a href={`${localeBase}/ra/sand`} className="tab-sub tab-sub2"
                     onClick={(event) => {
                       if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
-                      event.preventDefault(); switchSandbox("anchor");
-                    }}><span className="tab-sub-mark" aria-hidden>›</span>{t("재기동 앵커")}<em className="tab-sub-future">{t("미래시")}</em></a>
-                )}
+                      event.preventDefault(); switchSandbox("sand");
+                    }}><span className="tab-sub-mark" aria-hidden>·</span>{t("사막 이야기")}</a>
+                  {includeFuture && (
+                    <a href={`${localeBase}/ra/anchor`} className="tab-sub tab-sub2"
+                      onClick={(event) => {
+                        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+                        event.preventDefault(); switchSandbox("anchor");
+                      }}><span className="tab-sub-mark" aria-hidden>·</span>{t("재기동 앵커")}<em className="tab-sub-future">{t("미래시")}</em></a>
+                  )}
+                </div>
+                <a href={`${localeBase}/autochess`} className={`tab-sub tab-autochess${tab === "autochess" ? " selected" : ""}`}
+                  onClick={(event) => {
+                    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+                    event.preventDefault(); switchTab("autochess");
+                  }}>
+                  <span className="tab-sub-mark" aria-hidden>›</span>{t("위수협의(명토체스)")}
+                  {tabHasNewFeature("autochess") && <span className="new-badge">{t("새기능")}</span>}
+                </a>
               </div>
             </div>
             <button className={`tab-story${tab === "story" ? " selected" : ""}`} onClick={() => switchTab("story")}><span className="tab-icon" aria-hidden>✦</span>{t("스토리")}{tabHasNewFeature("story") && <span className="new-badge">{t("새기능")}</span>}</button>
@@ -1952,6 +2025,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
         {tab === "enemy" && !(pageEnemy && enemyPageOpen) && <EnemyDexForLocale />}
         {tab === "stage" && !(pageStage && stagePageOpen) && <StageDexForLocale onOpenEnemy={openEnemyFromStage} />}
         {tab === "ra" && <SandboxForLocale includeFuture={includeFuture} season={sandboxSlug === "anchor" ? "v3" : "v2"} />}
+        {tab === "autochess" && <AutochessForLocale />}
         {tab === "about" && <About onOpenTab={switchTab} />}
       </Suspense>
       {/* 작전 시뮬레이터 런처 — SEO 표적 페이지라 **정적 임포트로 프리렌더**한다

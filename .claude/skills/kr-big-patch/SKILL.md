@@ -98,6 +98,16 @@ python3 scripts/build-stages-rogue.py        # → app/data/stages-rogue{,.en,.j
 
 생존연산 신시즌이 왔으면 `python3 scripts/build-sandbox.py`도 같은 취급.
 
+위수 협의(오토체스) 시즌이 열렸거나 갱신됐으면:
+
+```bash
+python3 scripts/build-autochess.py           # → app/data/autochess{,.en,.ja}.json + public/ac/ 아이콘
+```
+> 새 시즌은 `activity.AUTOCHESS_SEASON.act<N>autochess` 로 들어온다 —
+> 스크립트 상단 `ACT` 상수를 그 키로 올려야 한다 (ACT1은 EN 이름 폴백 전용).
+> 새 아이콘이 생기면 `node scripts/r2-sync.mjs` 를 같이 돌린다 — `asset()`은 로컬에서도 R2를 문다.
+> 헤더의 기간 한정 바로가기는 `app/home.tsx`의 `PROMO` 상수(시작·종료 시각)를 새 시즌 값으로 고친다.
+
 ## 4. 신규 이벤트
 
 ### 4-1. 배너부터 (activity_table이 아직 안 올라왔을 때만)

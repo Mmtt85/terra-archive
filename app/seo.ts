@@ -10,14 +10,14 @@ import { asset } from "./assets";
 export const SITE_URL = "https://terra-archive.net";
 
 type SeoLocale = "ko" | "en" | "ja";
-export type SeoTab = "portal" | "archive" | "enemy" | "stage" | "sim" | "planner" | "recruit" | "farm" | "upgrade" | "story" | "rogue" | "ra" | "about";
+export type SeoTab = "portal" | "archive" | "enemy" | "stage" | "sim" | "planner" | "recruit" | "farm" | "upgrade" | "story" | "rogue" | "ra" | "autochess" | "about";
 
 // 탭 → URL 세그먼트 (portal이 로케일 루트, 오퍼 백과사전은 /operators로 분리 — 사용자 확정
 // 2026-07-17: 루트 진입 시 오퍼 이미지 강제 로딩을 없애기 위해 포탈 첫화면 도입). 라우트 폴더명과 반드시 일치.
 // ⚠ 적 도감 세그먼트는 "enemies"(복수) — 초상 자산 폴더 public/enemy/(단수)와 일부러 다르다.
 //    deploy.sh가 스테이징에서 `rm -rf $STAGE/enemy`로 자산만 떼어내기 때문(서빙은 R2).
 export const TAB_SEG: Record<SeoTab, string> = {
-  portal: "", archive: "operators", enemy: "enemies", stage: "stages", sim: "sim", planner: "infra", recruit: "recruit", farm: "farm", upgrade: "upgrade", story: "stories", rogue: "rogue", ra: "ra", about: "about",
+  portal: "", archive: "operators", enemy: "enemies", stage: "stages", sim: "sim", planner: "infra", recruit: "recruit", farm: "farm", upgrade: "upgrade", story: "stories", rogue: "rogue", ra: "ra", autochess: "autochess", about: "about",
 };
 
 // 로케일 베이스 경로
@@ -95,6 +95,11 @@ const TAB_META: Record<Exclude<SeoTab, "portal">, Record<SeoLocale, { title: str
     ko: { title: "생존연산 가이드 - 명일방주 생존연산 공략 | 테라 아카이브", description: "명일방주(아크나이츠) 생존연산 가이드 — 요리·음료 조합, 제작·설치물 재료, 지역·날씨, 조우 선택지, 균열 목표를 게임 데이터에서 정리했습니다. 중국 서버 선행 신시즌도 비공식 번역으로 미리 봅니다." },
     en: { title: "Reclamation Algorithm Guide - Arknights RA Guide | Terra Archive", description: "Arknights Reclamation Algorithm guide — food recipes, crafting materials, areas & weather, encounter choices and rift objectives, plus a preview of the CN-first new season." },
     ja: { title: "生息演算ガイド - アークナイツ生息演算攻略 | テラアーカイブ", description: "アークナイツ生息演算ガイド — 料理レシピ、製作・設置物の素材、エリアと天候、遭遇の選択肢、裂け目の目標を整理。中国サーバー先行の新シーズンもプレビューできます。" },
+  },
+  autochess: {
+    ko: { title: "위수 협의 가이드 - 명일방주 명토체스 공략 | 테라 아카이브", description: "명일방주(아크나이츠) 위수 협의(오토체스) 가이드 — 맹약(진영·특성)별 오퍼레이터 목록, 오퍼레이터별 위수 협의 전용 능력, 리더 적 10종과 특훈 적 7유형 67종, 보급센터 티어별 가격·레벨 수치, 아이템·전략까지 게임 데이터에서 정리했습니다." },
+    en: { title: "Stronghold Protocol Guide - Arknights Auto Chess | Terra Archive", description: "Arknights Stronghold Protocol (auto chess) guide — operators by alliance, every garrison ability, 10 leader enemies and 67 Tactical Training enemies across 7 types, Supply Center tier prices and level tables, items and strategies, straight from game data." },
+    ja: { title: "堅守協定ガイド - アークナイツ オートチェス攻略 | テラアーカイブ", description: "アークナイツ堅守協定（オートチェス）ガイド — 盟約ごとのオペレーター、それぞれの専用能力、リーダー級10種と訓練用仮想敵7系統67種、補給センターの等級別価格とレベル表、アイテム・戦略までゲームデータから整理しました。" },
   },
   about: {
     ko: { title: "소개 - 기능 안내 | 테라 아카이브", description: "테라 아카이브의 기능 소개 — 오퍼 백과사전, 인프라 자동편성기, 공개채용 도우미, 파밍·육성 시뮬, AI 스토리 요약이 각각 무엇이고 어떤 상황에 쓰는지 안내합니다." },

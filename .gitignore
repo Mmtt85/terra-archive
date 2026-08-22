@@ -56,6 +56,7 @@ scripts/story-cn/
 
 # CI 임시 리포트/로그
 .ci/
+.cache/
 .gamedata-ci/
 .r2-sync-key
 .supabase-admin-key

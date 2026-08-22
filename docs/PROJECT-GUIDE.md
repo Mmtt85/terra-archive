@@ -32,6 +32,7 @@
 | 작전 도감 | `/stages` · 작전 모달 열면 `#st-<stage_id>` | `app/stages.tsx` + `app/stage-detail.tsx` |
 | 작전 시뮬레이터 | `/sim` — 리스트 없는 런처(검색+추천), `/stages/<id>?sim=1` 딥링크로 상세의 이동 경로 탭+시뮬 자동 재생 (2026-08-10 B안) | `app/sim-launcher.tsx` (home 정적 임포트 — SEO 본문 프리렌더) |
 | 생존연산 가이드 | `/ra` — 요리·제작·지역·조우·균열 + CN 선행 신시즌(미래시 토글). **CN 선행분은 중국어 원문이 메인, 한국어 비공식 번역(`scripts/sandbox-cn-ko.json`)이 서브 병기** (사용자 확정 2026-08-12 — 뒤집지 말 것). 이미지는 `public/sandbox/`(폴더명은 라우트와 다르게 — deploy.sh 함정) (2026-08-12) | `app/sandbox.tsx` + 로케일 래퍼 (lazy) |
+| 위수 협의 가이드 | `/autochess` — 맹약(진영 8·특성 15)별 오퍼레이터, 기물 133종의 위수 협의 전용 능력(일반/골든), 물자관리소 티어·레벨 수치, 장비·밴드·전략·특수 적·마일스톤. **EN은 시즌2 텍스트가 없어 설명문이 한국어 원문**(doc.krOnly 안내문 — IS6와 같은 취급). 이미지는 `public/ac/`(라우트 `/autochess`와 폴더명이 달라야 한다 — deploy.sh 함정) (2026-08-22) | `app/autochess.tsx` + 로케일 래퍼 (lazy) |
 | 인프라 플래너 | `#infra` | `app/planner.tsx` |
 | 공개채용 도우미 | `#recruit` | `app/recruit.tsx` |
 | 재료 파밍 효율표 | `#farm` | `app/farm.tsx` |
@@ -249,6 +250,14 @@ const { term, set, clear, inputRef, inputProps } = useSearchInput();
 - `app/data/sandbox.json` / `.en` / `.ja` — 생존연산 가이드 (build-sandbox.py, 로케일당 ~330KB).
   v2=사막 이야기(공식 3로케일) + v3=CN 선행 신시즌(비공식 번역 `scripts/sandbox-cn-ko.json`,
   미번역 문자열은 빌드 로그에 未 경고 — cn-translation-fill 흐름으로 보완).
+- `app/data/autochess.json` / `.en` / `.ja` — 위수 협의(오토체스) 가이드 (build-autochess.py,
+  로케일당 ~180KB). 맹약 23 · 오퍼레이터 133 · 전용 능력 230 · 아이템 59 · 전략 36 ·
+  전략 전술 43 · 특훈 적 67(7유형) · 리더 적 10 · 마일스톤 60 · 자유 선택 후보 ★6 127.
+  **EN은 설명문이 한국어 원문**(`krOnly: true`) — 글로벌 서버에 시즌2가 없다. 강조 태그는
+  빌드에서 `**굵게**`로 바뀌어 화면의 `rich()`가 렌더한다.
+  ⚠ **용어는 게임 표기 그대로**: 기물X 오퍼레이터O · 장비X 아이템O · 밴드X 전략O.
+  **물자관리소 ≠ 보급센터** — 물자관리소는 출전 전 편성 화면, 보급센터는 판 안의 상점이다
+  (사용자 교정 2026-08-22). 갱신 비용·레벨·진열 칸 같은 수치는 '모드·보상 → 보급센터'에 둔다.
 - `app/data/sim-stages.json` — 경로(=시뮬) 데이터가 있는 작전 id 목록 (별칭 포함, 28KB).
   작전 시뮬레이터 런처가 stage-routes 5.4MB 없이 시뮬 가능 여부를 판정한다 (build-enemies.py 산출).
 - `app/data/enemy-stages.json` / `.en` / `.ja` — 등장 작전 역색인 (`stages` 배열의 위치가 곧 id).

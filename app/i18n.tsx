@@ -2736,6 +2736,194 @@ const D: Record<string, Pair> = {
   "자주 선택": ["Often picked", "よく選ばれる"],
   "비슷한 이름": ["Close match", "似た名前"],
   "화면": ["View", "画面"],
+
+  // ── 위수 협의(오토체스) 가이드 — /autochess (2026-08-22) ──
+  // 게임 모드 3종을 한 메뉴로 묶으면서 하위 라벨은 '가이드' 없이 짧게 쓴다.
+  // ⚠ 영어에는 시즌2 공식 텍스트가 없다 — 계통은 시즌1 EN 표기(Stronghold Protocol)를
+  //    따르고, 게임에 없는 UI 용어(물자관리소 등)만 여기서 정한다. 일본어는 공식 표기.
+  "가이드": ["Guides", "ガイド"],
+  "통합전략(로그라이크)": ["Integrated Strategies", "統合戦略"],
+  "위수협의(명토체스)": ["Stronghold Protocol", "堅守協定"],
+  "위수협의": ["Stronghold Protocol", "堅守協定"],
+  "위수 협의 가이드": ["Stronghold Protocol Guide", "堅守協定ガイド"],
+  // 헤더 기간 한정 바로가기 (모드가 게임에서 도는 동안만)
+  "위수 협의": ["Stronghold Protocol", "堅守協定"],
+  "기간 한정": ["Limited time", "期間限定"],
+  "위수 협의 보기": ["Stronghold Protocol views", "堅守協定の表示"],
+  "위수 협의 능력": ["Garrison ability", "駐留能力"],
+  "맹약별 오퍼레이터·전용 능력·특훈 적·보급센터 수치를 정리": ["Operators by alliance, garrison abilities, training enemies and Supply Center numbers", "盟約ごとのオペレーター・専用能力・訓練用仮想敵・補給センターの数値"],
+  "오토체스 모드": ["Auto chess mode", "オートチェスモード"],
+  "맹약(진영·특성)별 오퍼레이터와 각자의 위수 협의 전용 능력, 특훈 적과 리더 적, 보급센터 수치와 라운드 지형을 게임 데이터에서 그대로 정리했습니다.": [
+    "Operators grouped by alliance (nation and trait) with the garrison ability each one carries, plus Tactical Training and leader enemies, Supply Center numbers and every round's map — straight from the game data.",
+    "盟約（国家・特性）ごとのオペレーターとそれぞれの専用能力、訓練用仮想敵とリーダー級の敵、補給センターの数値とラウンド地形をゲームデータからそのまま整理しました。"],
+  "이 모드는 아직 글로벌 서버에 출시되지 않아 설명문은 한국어 원문으로 표시됩니다. 일부 이름은 시즌 1의 영어 표기입니다.": [
+    "This mode has not launched on the Global server yet, so descriptions are shown in the original Korean. Some names come from the Season 1 English text.",
+    "このモードはグローバルサーバー未実装のため、説明文は韓国語の原文で表示されます。"],
+  // 뷰 이름
+  "맹약": ["Alliances", "盟約"],
+  "S.W.E.E.T. 리포트": ["S.W.E.E.T. Report", "S.W.E.E.T.レポート"],
+  "물자관리소": ["Supply Depot", "管理センター"],
+  "전략 전술": ["Tactics", "戦略戦術"],
+  // 기물 상태 라벨 — 표와 칩에서 쓰는 짧은 말 (VIEW_LABEL·KIND_LABEL·PHASE_LABEL 값)
+  "정예화 0": ["E0", "精鋭化0"],
+  "정예화 1": ["E1", "精鋭化1"],
+  "정예화 2": ["E2", "精鋭化2"],
+  "상점 등장": ["In shop pool", "ショップに出現"],
+  "특수 지급": ["Special grant", "特殊配布"],
+  "자유 선택": ["Free pick", "自由選択"],
+  "입문": ["Tutorial", "入門"],
+  "단독": ["Solo", "ソロ"],
+  "협동": ["Co-op", "協力"],
+  "모드·보상": ["Modes & rewards", "モード・報酬"],
+  // 맹약
+  "진영 맹약": ["Nation alliances", "国家系の盟約"],
+  "특성 맹약": ["Trait alliances", "特性系の盟約"],
+  "{n}명부터": ["From {n}", "{n}名から"],
+  "{n}명 이하": ["{n} or fewer", "{n}名以下"],
+  "예비 포함": ["Bench counts", "控えも計上"],
+  "정예화 전원": ["All Golden", "精鋭化全員"],
+  "소속 오퍼레이터가 따로 없는 맹약입니다 — 배치 조건만 맞으면 활성화됩니다.": ["This alliance has no member list — it activates purely from how you deploy.", "所属オペレーターを持たない盟約です — 配置条件を満たすだけで発動します。"],
+  "표준 제외": ["Not in Standard", "標準では対象外"],
+  "표준 시뮬레이션 제외": ["Not in Standard Simulation", "標準シミュレーションでは対象外"],
+  "오퍼레이터 {n}명": ["{n} operators", "オペレーター{n}名"],
+  "소속 오퍼레이터": ["Operators in this alliance", "所属オペレーター"],
+  "전장에 같은 맹약의 오퍼레이터를 모을수록 단계별 효과가 열립니다. 카드를 누르면 전체 효과와 소속 오퍼레이터를 볼 수 있습니다.": [
+    "The more operators of the same alliance you field, the more effect tiers unlock. Tap a card for the full effect list and every operator in it.",
+    "同じ盟約のオペレーターを戦場に多く並べるほど、段階ごとの効果が解放されます。カードを押すと全効果と所属オペレーターを確認できます。"],
+  // 기물
+  "오퍼레이터마다 위수 협의 전용 능력이 하나씩 붙고, 같은 오퍼레이터 {n}장을 모아 정예화(골든)하면 그 능력이 강해집니다.": [
+    "Every operator carries one garrison ability of its own, and combining {n} copies into a Golden unit strengthens it.",
+    "オペレーターにはそれぞれ専用能力が1つ付き、同じオペレーターを{n}体そろえて精鋭化（ゴールド）すると効果が強くなります。"],
+  "전용 능력이 없는 오퍼레이터입니다.": ["This operator has no garrison ability.", "このオペレーターに専用能力はありません。"],
+  "조건에 맞는 오퍼레이터가 없습니다.": ["No operators match these filters.", "条件に合うオペレーターがありません。"],
+  "전용 능력 없음": ["No garrison ability", "専用能力なし"],
+  "기본 스킬·모듈": ["Default skill & module", "初期スキル・モジュール"],
+  "오퍼레이터가 기본으로 들고 나오는 설정입니다.": ["The loadout the operator comes with by default.", "オペレーターが初期状態で持っている設定です。"],
+  "{n}스킬": ["Skill {n}", "スキル{n}"],
+  "가격과 능력치": ["Price and stats", "価格とステータス"],
+  "상태": ["State", "状態"],
+  "{n}장 합성": ["Combine {n}", "{n}体合成"],
+  "골든": ["Golden", "ゴールド"],
+  "{n}장": ["{n} copies", "{n}体"],
+  "이름·능력 검색": ["Search name or ability", "名前・能力で検索"],
+  "맹약으로 거르기": ["Filter by alliance", "盟約で絞り込み"],
+  "맹약 전체": ["All alliances", "盟約すべて"],
+  "티어": ["Tier", "等級"],
+  // 물자관리소
+  "갱신 비용": ["Reroll cost", "更新コスト"],
+  "{n} 자금": ["{n} gold", "資金{n}"],
+  "정예화(골든)": ["Golden upgrade", "精鋭化（ゴールド）"],
+  "같은 오퍼레이터 {n}장": ["{n} identical operators", "同じオペレーター{n}体"],
+  "전장 배치": ["On the field", "戦場配置"],
+  "최대 {n}명": ["Up to {n}", "最大{n}名"],
+  "보유 한도": ["Roster limit", "保有上限"],
+  "예비 칸": ["Bench slots", "控え枠"],
+  "최대 {n}칸": ["Up to {n}", "最大{n}枠"],
+  "지원 요청": ["Support units", "支援要請"],
+  "티어별 가격과 능력치": ["Price and stats by tier", "等級別の価格とステータス"],
+  "같은 티어면 오퍼레이터가 누구든 값과 성장 수치가 같습니다. 판매가는 티어와 무관하게 {n} 자금입니다.": [
+    "Within a tier every operator costs the same and grows the same. Selling always returns {n} gold regardless of tier.",
+    "同じ等級ならどのオペレーターでも価格と成長値は同じです。売却額は等級に関係なく資金{n}です。"],
+  "구매": ["Buy", "購入"],
+  "판매": ["Sell", "売却"],
+  "{n}단계": ["Stage {n}", "{n}段階"],
+  "모드": ["Mode", "モード"],
+  "승급 비용": ["Upgrade cost", "昇級コスト"],
+  "오퍼레이터 칸": ["Operator slots", "オペレーター枠"],
+  "아이템 칸": ["Item slots", "アイテム枠"],
+  "등장 티어": ["Tier offered", "出現等級"],
+  "최대": ["Max", "最大"],
+  "자유 선택 {n}칸": ["{n} free-pick slots", "自由選択{n}枠"],
+  "라운드 보상": ["Round rewards", "ラウンド報酬"],
+  "라운드를 넘길 때마다 받는 {token} 수량입니다.": ["How much {token} each round awards.", "ラウンドを越えるたびに受け取る{token}の量です。"],
+  // 장비·밴드
+  "아이템은 오퍼레이터에 장착해 능력치를 올립니다. 같은 아이템 {n}개를 모으면 강화판이 되고, 진영 아이템은 해당 맹약의 중첩도 함께 올려 줍니다.": [
+    "Items are attached to an operator to raise their stats. Combining {n} copies makes the enhanced version, and nation items also add stacks to their alliance.",
+    "アイテムはオペレーターに装着してステータスを上げます。同じアイテムを{n}個そろえると強化版になり、国家アイテムは該当する盟約の加算数も上げます。"],
+  "조건에 맞는 아이템이 없습니다.": ["No items match these filters.", "条件に合うアイテムがありません。"],
+  "강화 ({n}개 조합)": ["Enhanced (combine {n})", "強化（{n}個合成）"],
+  "장착하면 {bond} 맹약의 중첩도 함께 올라갑니다.": ["Equipping this also adds stacks to the {bond} alliance.", "装着すると{bond}盟約の加算数も上がります。"],
+  "전략은 판을 시작할 때 고르는 조직입니다. 고유 효과와 시작 목표 HP가 다릅니다.": [
+    "A strategy is the group you pick at the start of a run. Each has its own effect and starting target HP.",
+    "戦略は対戦開始時に選ぶ組織です。固有効果と初期目標HPが異なります。"],
+  // 모드·보상
+  "{n}종": ["{n} types", "{n}種"],
+  "맹약 {n}종": ["{n} alliances", "盟約{n}種"],
+  "보상 ×{n}": ["Rewards ×{n}", "報酬×{n}"],
+  "라운드 사이의 '전략 전술'에서 고르는 효과입니다. 판 시작 때 고르는 '전략'과는 다릅니다.": [
+    "Effects you choose from the Tactics node between rounds — not the same thing as the Strategy you pick at the start of a run.",
+    "ラウンド間の「戦略戦術」で選ぶ効果です。対戦開始時に選ぶ「戦略」とは別物です。"],
+  "특수 적": ["Special enemies", "特殊な敵"],
+  // ── 적 탭 — 리더 적 + 특훈 적 유형 (2026-08-22 재구성)
+  // 유형 이름 자체(특훈 적 - 비행 등)는 게임 데이터에서 로케일별로 오므로 사전에 없다.
+  "판마다 특훈 적 유형이 뽑히고, 그 유형의 적이 딸린 부대와 함께 나옵니다. 14라운드(표준 시뮬레이션은 9라운드)에는 리더 적이 기다립니다. 카드를 누르면 스탯과 능력, 함께 나오는 적을 볼 수 있습니다.": [
+    "Each run draws a Tactical Training enemy type, and those enemies arrive with an escort. A leader waits on round 14 (round 9 in the Standard simulation). Tap a card for stats, abilities and the units that come with it.",
+    "対戦ごとに訓練用仮想敵の系統が抽選され、その系統の敵が随伴部隊とともに出現します。14ラウンド（標準シミュレーションは9ラウンド）にはリーダー級の敵が待っています。カードを押すとステータス・能力・同時に出る敵を確認できます。"],
+  "리더 적": ["Leader enemies", "リーダー級の敵"],
+  "히든 리더": ["Hidden leaders", "隠しリーダー"],
+  "일반 리더": ["Standard leaders", "通常リーダー"],
+  "15라운드 — 극한·초월에서만 나옵니다": [
+    "Round 15 — Extreme and Transcendent only", "15ラウンド — 極限・超越のみ"],
+  "14라운드 — 표준 시뮬레이션은 9라운드": [
+    "Round 14 — round 9 in the Standard simulation", "14ラウンド — 標準シミュレーションは9ラウンド"],
+  "가중치 {n}": ["Weight {n}", "重み{n}"],
+  "특훈 적 유형": ["Tactical Training enemy types", "訓練用仮想敵の系統"],
+  "판마다 {n}종 추첨": ["{n} drawn per run", "対戦ごとに{n}種抽選"],
+  "유형 추첨에서 빠지는 기본 편성": [
+    "Base roster — not part of the type draw", "系統抽選から外れる基本編成"],
+  "전반": ["First half", "前半"],
+  "후반": ["Second half", "後半"],
+  "전반·후반은 그 적이 나올 수 있는 라운드 구간입니다. 추첨 가중치는 기본 {n}이고, 다른 값만 카드에 표시합니다.": [
+    "First/second half is the stretch of rounds where the enemy can turn up. The draw weight is {n} by default — cards only show it when it differs.",
+    "前半・後半はその敵が出現しうるラウンド区間です。抽選の重みは既定で{n}のため、異なる値のみカードに表示します。"],
+  "적 도감을 불러오는 중…": ["Loading the enemy index…", "敵図鑑を読み込み中…"],
+  "위수 협의 등장 정보": ["Stronghold Protocol appearance", "堅守協定での出現情報"],
+  "유형": ["Type", "系統"],
+  "등장 구간": ["Appears in", "出現区間"],
+  "추첨 가중치": ["Draw weight", "抽選の重み"],
+  "등장 라운드": ["Rounds", "出現ラウンド"],
+  "극한·초월에서만": ["Extreme and Transcendent only", "極限・超越のみ"],
+  "리더 적의 HP는 난이도마다 다릅니다 — 아래 값은 위수 협의 안에서만 쓰는 수치입니다.": [
+    "A leader's HP depends on the difficulty — these values apply inside Stronghold Protocol only.",
+    "リーダー級の敵のHPは難易度ごとに異なります — 以下は堅守協定内でのみ使われる数値です。"],
+  "HP {n}": ["HP {n}", "HP {n}"],
+  "이 적이 뽑힌 라운드에 함께 나오는 부대입니다.": [
+    "The units that show up alongside this enemy on its round.",
+    "この敵が抽選されたラウンドに同時に出現する部隊です。"],
+  // ── 모드·보상 하위 탭 (2026-08-22 — 보급센터를 물자관리소에서 떼어 옮김)
+  "라운드·지형": ["Rounds & maps", "ラウンド・地形"],
+  "보급센터": ["Supply Center", "補給センター"],
+  "보상": ["Rewards", "報酬"],
+  "난이도가 올라갈수록 적이 강해지고 보상 배율이 커집니다. 협동은 같은 난이도의 단독과 규칙이 같습니다.": [
+    "Higher difficulties mean tougher enemies and a bigger reward multiplier. Co-op follows the same rules as solo at the same difficulty.",
+    "難易度が上がるほど敵が強くなり報酬倍率も上がります。協力は同じ難易度のソロと同じルールです。"],
+  "보급센터는 판이 시작된 뒤 라운드마다 오퍼레이터와 아이템을 파는 인게임 상점입니다. 레벨을 올리면 더 높은 티어가 나오고 진열 칸도 늘어납니다.": [
+    "The Supply Center is the in-run shop that sells operators and items each round. Raising its level brings higher tiers and more display slots.",
+    "補給センターは対戦開始後、ラウンドごとにオペレーターとアイテムを売るゲーム内ショップです。レベルを上げると上位ティアが並び、陳列枠も増えます。"],
+  "보급센터 레벨": ["Supply Center level", "補給センターレベル"],
+  "승급 비용은 그 레벨에서 다음 레벨로 올릴 때 처음 드는 자금입니다. 자유 선택 칸에 넣을 수 있는 오퍼레이터는 '물자관리소 → 오퍼레이터' 맨 아래에 있습니다.": [
+    "The upgrade cost is what it first costs to go from that level to the next. The operators you can put in a free-pick slot are listed at the bottom of Supply Depot → Operators.",
+    "昇級コストはそのレベルから次のレベルへ上げる際に最初にかかる資金です。自由選択枠に入れられるオペレーターは「管理センター → オペレーター」の最下部にあります。"],
+  "보급센터 자유 선택 칸으로만 데려올 수 있는 오퍼레이터입니다. 상점 명단에 없어 전용 능력·기본 스킬 설정이 게임 데이터에 들어 있지 않습니다.": [
+    "This operator can only join through a Supply Center free-pick slot. Being off the shop roster, the game data carries no garrison ability or default skill setup for them.",
+    "補給センターの自由選択枠からのみ加入できるオペレーターです。ショップ名簿にないため、専用能力や初期スキルの設定はゲームデータに含まれていません。"],
+  "오퍼레이터 도감에서 보기": ["Open in the operator archive", "オペレーター図鑑で見る"],
+  "자유 선택 칸": ["Free-pick slots", "自由選択枠"],
+  "보급센터 레벨 5·6에서 각각 {n}칸씩 열립니다. 게임 데이터에는 후보 명단 대신 '★6 오퍼레이터'라는 조건만 들어 있어, 위 목록에 이미 들어 있는 ★6을 뺀 나머지 KR 출시 ★6 전원을 싣습니다. 누르면 오퍼레이터 상세로 갑니다.": [
+    "Supply Center levels 5 and 6 open {n} slots each. The game data carries no candidate list — only the condition \"6★ operator\" — so this lists every 6★ released on the KR server minus the ones already in the roster above. Tap one for its operator page.",
+    "補給センターレベル5・6でそれぞれ{n}枠開放されます。ゲームデータには候補リストがなく「★6オペレーター」という条件のみのため、上の一覧にすでにいる★6を除いた韓国サーバー実装済みの★6全員を載せています。押すとオペレーター詳細へ進みます。"],
+  "물자관리소는 출전 전에 이 모드에 나오는 오퍼레이터와 아이템을 확인하고 편성하는 곳입니다. 판이 시작된 뒤 이들을 사고파는 상점은 보급센터이고, 그 수치는 '모드·보상'에 있습니다.": [
+    "The Supply Depot is where you check and arrange the operators and items this mode offers before a run. The shop that sells them once a run starts is the Supply Center, and its numbers live under Modes & rewards.",
+    "管理センターは出撃前にこのモードに登場するオペレーターとアイテムを確認・編成する場所です。対戦開始後にそれらを売買するショップは補給センターで、その数値は「モード・報酬」にあります。"],
+  // 전략 상세 — 해금 조건 (게임 문구는 데이터에서 로케일별로 온다)
+  "해금 조건": ["Unlock condition", "解放条件"],
+  "처음부터 고를 수 있는 전략입니다.": [
+    "This strategy is available from the start.", "最初から選べる戦略です。"],
+  "마일스톤 보상": ["Milestone rewards", "マイルストーン報酬"],
+  "{token}을 모으면 단계마다 받습니다.": ["Earned at each step as you collect {token}.", "{token}を集めると段階ごとに受け取れます。"],
+  // 포탈 타일 설명 — 사전에서 빠져 있어 EN/JA에 한국어가 나가던 두 줄 (2026-08-22 발견)
+  "요리 조합·제작 재료·지역과 조우 선택지를 정리": ["Recipes, crafting materials, areas and encounter choices", "料理レシピ・製作素材・エリアと遭遇の選択肢"],
+  "적 1,500여 종의 스탯·능력·면역과 등장 작전": ["Stats, abilities and immunities for 1,500+ enemies, plus where they appear", "1,500種以上の敵のステータス・能力・耐性と出現作戦"],
 };
 
 export type T = (key: string, vars?: Record<string, string | number>) => string;

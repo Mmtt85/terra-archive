@@ -215,6 +215,17 @@ const CONTENT: Record<Locale, Content> = {
           "중국 선행 신시즌은 원문(중국어)이 기준이고 한국어 비공식 번역을 병기 — 전투 지형 171개의 도면·경로와 격자 노드 지도 포함",
         ],
       },
+      {
+        tab: "autochess", icon: "\u265f", name: "위수 협의 가이드",
+        summary: "오토체스 모드 「위수 협의: 맹약」의 맹약·오퍼레이터·적·보급센터를 게임 데이터 그대로 정리합니다.",
+        bullets: [
+          "맹약 23종 — 진영(염국·사르곤·빅토리아 등) 8종과 특성 15종을 단계별 발동 조건과 효과 전문으로, 각 맹약에 속한 오퍼레이터를 티어별로 나열",
+          "오퍼레이터 129종 — 저마다 다른 위수 협의 전용 능력을 일반·정예화(골든) 두 수치로 비교하고, 기본으로 드는 스킬과 모듈까지 표시. 자유 선택 칸에 넣을 수 있는 ★6 68명도 함께",
+          "적 — 리더 적 10종(히든 3종 포함)과 특훈 적 7유형 67종을 초상 카드로, 누르면 도감과 같은 스탯·능력에 함께 나오는 부대까지",
+          "보급센터 — 티어별 구매·판매가와 정예화·레벨·스킬 수치, 모드별 승급 비용과 진열 칸, 자유 선택 칸에 넣을 수 있는 ★6 명단",
+          "아이템 59종·전략 36종·전략 전술 효과 43종·마일스톤 보상 60단계",
+        ],
+      },
     ],
     chronicleCap: "테라 연대기 — 이벤트·메인스토리·통합 전략을 테라력 연표로",
     future: {
@@ -352,6 +363,18 @@ const CONTENT: Record<Locale, Content> = {
           "The CN-first season keeps Chinese as the source text with an unofficial translation alongside — including 171 battle-terrain blueprints and the grid node map",
         ],
       },
+      {
+        tab: "autochess", icon: "\u265f", name: "Stronghold Protocol Guide",
+        summary: "Alliances, operators, enemies and the Supply Center of the auto chess mode “Stronghold Protocol: Alliance”, straight from game data.",
+        bullets: [
+          "23 alliances — 8 nation and 15 trait alliances with every activation threshold and its full effect text, plus the operators in each, grouped by tier",
+          "129 operators — the garrison ability unique to each one, compared side by side at base and Golden, with the skill and module it comes with by default, plus the 68 6★ you can drop into a free-pick slot",
+          "Enemies — 10 leaders (3 hidden) and 67 Tactical Training enemies across 7 types as portrait cards; tap one for the same stats and abilities as the enemy index, plus the units that come with it",
+          "Supply Center — buy/sell price and promotion, level, skill and module values per tier, level-up cost and display slots per mode, and the 6★ roster you can drop into a free-pick slot",
+          "59 items, 36 strategies, 43 tactics effects and 60 milestone reward steps",
+          "Not yet on the Global server — descriptions are shown in the original Korean, clearly labeled",
+        ],
+      },
     ],
     chronicleCap: "Terra Chronicle — events, main story, and Integrated Strategies on a Terra-calendar timeline",
     future: {
@@ -487,6 +510,17 @@ const CONTENT: Record<Locale, Content> = {
           "エリア106か所 — 実写図面と移動ルートのシミュレーション、出現敵のステータス、地図上の資源オブジェクトの位置まで",
           "製作・設置物・遭遇・裂け目・派遣・テックツリーをカード+詳細モーダルで、生息演算専用の敵図鑑も",
           "中国先行シーズンは原文（中国語）を基準に韓国語の非公式訳を併記 — 戦闘地形171か所の図面・ルートとグリッドノードマップを含む",
+        ],
+      },
+      {
+        tab: "autochess", icon: "\u265f", name: "堅守協定ガイド",
+        summary: "オートチェスモード「堅守協定：盟約」の盟約・オペレーター・敵・補給センターをゲームデータそのままに整理。",
+        bullets: [
+          "盟約23種 — 国家系8種と特性系15種を段階ごとの発動条件と効果全文で、各盟約に所属するオペレーターを等級別に一覧",
+          "オペレーター129種 — それぞれ異なる専用能力を通常と精鋭化（ゴールド）の2つの数値で比較し、初期のスキルとモジュールも表示。自由選択枠に入れられる★6の68名も併記",
+          "敵 — リーダー級10種（隠し3種含む）と訓練用仮想敵7系統67種を肖像カードで、押すと図鑑と同じステータス・能力と同時に出る部隊まで",
+          "補給センター — 等級別の購入・売却価格と精鋭化・レベル・スキルの数値、モード別の昇級コストと陳列枠、自由選択枠に入れられる★6名簿",
+          "アイテム59種・戦略36種・戦略戦術の効果43種・マイルストーン報酬60段階",
         ],
       },
     ],

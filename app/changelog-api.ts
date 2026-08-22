@@ -11,7 +11,7 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY, adminWrite } from "./feedback";
 export type ChangeKind = "new" | "improve" | "change" | "fix" | "data";
 
 /** 어느 기능의 이야기인가 — 배지를 '인프라 개선'처럼 읽히게 한다 (사용자 요청 2026-07-29) */
-export type ChangeArea = "infra" | "archive" | "enemy" | "stage" | "sim" | "recruit" | "farm" | "upgrade" | "story" | "rogue" | "ra" | "site";
+export type ChangeArea = "infra" | "archive" | "enemy" | "stage" | "sim" | "recruit" | "farm" | "upgrade" | "story" | "rogue" | "ra" | "autochess" | "site";
 
 export type ChangeRow = {
   id: string;
@@ -36,17 +36,17 @@ export const CHANGE_KINDS: ChangeKind[] = ["new", "improve", "change", "fix", "d
 /** 영역 표시명 (i18n 키). 배지에 들어가므로 탭 정식명이 아니라 짧은 쪽을 쓴다. */
 export const CHANGE_AREA_LABEL: Record<ChangeArea, string> = {
   infra: "인프라", archive: "오퍼 백과사전", enemy: "적 도감", stage: "작전 도감", sim: "작전 시뮬", recruit: "공채", farm: "파밍",
-  upgrade: "육성", story: "스토리", rogue: "통합전략", ra: "생존연산", site: "사이트",
+  upgrade: "육성", story: "스토리", rogue: "통합전략", ra: "생존연산", autochess: "위수협의", site: "사이트",
 };
 
 export const CHANGE_AREAS: ChangeArea[] = [
-  "infra", "archive", "enemy", "stage", "sim", "recruit", "farm", "upgrade", "story", "rogue", "ra", "site",
+  "infra", "archive", "enemy", "stage", "sim", "recruit", "farm", "upgrade", "story", "rogue", "ra", "autochess", "site",
 ];
 
 /** 바로가기 경로 → 영역 (area가 비어 있는 옛 행의 폴백) */
 const AREA_BY_PATH: [string, ChangeArea][] = [
   ["/infra", "infra"], ["/operators", "archive"], ["/enemies", "enemy"], ["/stages", "stage"], ["/sim", "sim"], ["/recruit", "recruit"],
-  ["/farm", "farm"], ["/upgrade", "upgrade"], ["/stories", "story"], ["/rogue", "rogue"], ["/ra", "ra"],
+  ["/farm", "farm"], ["/upgrade", "upgrade"], ["/stories", "story"], ["/rogue", "rogue"], ["/ra", "ra"], ["/autochess", "autochess"],
 ];
 
 /**
