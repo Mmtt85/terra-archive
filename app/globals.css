@@ -4908,6 +4908,11 @@ legend {
   letter-spacing: -0.3px;
   white-space: nowrap;
 }
+/* 자리만 잡는 유령 배지 (planner.tsx) — 편성 전에도 제목 칸의 폭 사정을 편성 후와 같게
+   만들어, 제목이 나중에 두 줄로 접히며 카드가 커지는 것을 막는다. */
+.room-clock.hold {
+  visibility: hidden;
+}
 /* 신규 기능 배지 — 출시 3일간 표시 (app/whats-new.ts) */
 /* BETA 딱지 — 아직 다듬는 중인 기능에 붙인다 (PRTS 링크, 2026-07-26). 새기능 배지와
    달리 시간이 지나도 사라지지 않고, 시선을 덜 끌게 무채색 + 애니메이션 없음. */
@@ -5105,6 +5110,13 @@ legend {
 .ship-leftcol .shift-tabs {
   margin-top: 0;
   flex-wrap: wrap;
+}
+/* 추천 바는 **자식이 몇이든 항상 이 칸의 바닥**에 붙는다. space-between만 믿으면 자식이
+   하나일 때(=자동편성이 끝나기 전, 교대 탭이 아직 없을 때) 맨 위에 붙었다가 탭이 생기는
+   순간 바닥으로 86px 순간이동한다 — 그 아래 기지 전체가 같이 밀려 CLS로 잡혔다
+   (Cloudflare RUM 제보 2026-08-22, 실측: y 408 → 494). */
+.ship-leftcol > .ship-raisebar {
+  margin-top: auto;
 }
 .ship-raisebar {
   display: flex;
@@ -5339,6 +5351,10 @@ legend {
   font-size: 15px;
   letter-spacing: -0.4px;
 }
+/* ⚠ 제목을 white-space:nowrap + 말줄임으로 한 줄에 못박아 보았다 (자동편성 후 붙는 지속
+   시계 배지가 제목 칸을 좁혀 두 줄로 접히면서 카드가 21px 커지는 CLS 때문). 한국어는
+   깔끔했지만 EN/JA에서 'Control Center'·'製造所3 · 作戦記録'까지 잘려 되돌렸다
+   (실측 2026-08-22). 남은 21px는 제목 길이에 달린 문제라 여기서는 손대지 않는다. */
 .ship-room-head span {
   color: var(--room-accent);
   font: 800 12px monospace;
@@ -5422,6 +5438,11 @@ legend {
   color: var(--room-accent);
   font: 800 11.5px monospace;
   letter-spacing: 0.5px;
+}
+/* 자리만 잡는 유령 줄 (planner.tsx의 room-score-hold) — 폭·높이는 진짜 점수 줄과 같고
+   눈에는 안 보인다. display:none이면 자리가 안 잡히므로 visibility로 감춘다. */
+.ship-room > small.room-score-hold {
+  visibility: hidden;
 }
 .pos-control.ship-room {
   min-height: 122px;
@@ -6138,6 +6159,12 @@ legend {
 .import-code input {
   width: 130px;
   letter-spacing: 0.22em;
+}
+/* 인증코드를 받기 전 상태 — 자리는 잡되 아직 쓸 수 없다는 걸 눈으로도 알게 */
+.import-form input:disabled {
+  background: color-mix(in srgb, var(--line) 22%, var(--white));
+  color: var(--muted);
+  cursor: not-allowed;
 }
 .import-msg {
   margin: 0 0 10px;
@@ -11406,6 +11433,11 @@ html.dark .pt-stage {
   color: var(--pt-strip-ink);
 }
 .pt-lv b {
+  /* 운영 일수는 자릿수가 늘어도 옆 'DAY'를 밀면 안 된다 — 세 자리 폭을 미리 잡고
+     숫자 폭을 균일하게 고정한다 (CLS 대책 2026-08-22, 값 자체는 home.tsx가 빌드 시각으로 낸다) */
+  display: inline-block;
+  min-width: 3ch;
+  font-variant-numeric: tabular-nums;
   font-size: 30px;
   font-weight: 900;
   line-height: 1;
@@ -11452,8 +11484,8 @@ html.dark .pt-stage {
   /* 도감·시뮬레이터는 묶음 상자(dex·sim)로 — 헤더 메뉴 묶음과 같은 구성 (사용자 지시
      2026-08-10). 제안 보내기 타일은 뺐다(떠 있는 💬 버튼과 중복 — 같은 날 지시). */
   grid-template-areas:
-    "terminal terminal terminal terminal terminal terminal"
-    "guide    guide    guide    guide    banner   banner  "
+    "terminal terminal terminal terminal banner   banner  "
+    "guide    guide    guide    guide    guide    guide   "
     "dex      dex      dex      sim      sim      sim     "
     "dex      dex      dex      sim      sim      sim     "
     "dex      dex      dex      sim      sim      sim     "
@@ -11715,6 +11747,10 @@ html.dark .pt-stage {
   line-height: 1;
 }
 .pt-gauge b {
+  /* 'D-13' 기준 폭을 미리 잡는다 — 이벤트를 못 받았을 때의 '—', 6초마다 넘어가는 다음
+     이벤트의 자릿수 차이 때문에 이 글자가 매번 좌우로 다시 가운데를 잡았다 (CLS, 2026-08-22) */
+  min-width: 4ch;
+  text-align: center;
   font-family: monospace;
   font-size: 12.5px;
   font-weight: 900;

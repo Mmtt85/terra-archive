@@ -75,7 +75,7 @@ const About = lazy(() => import("./about"));
 import FeedbackWidget from "./feedback-widget";
 import { bindEscClose } from "./esc-close";
 import { feedbackReady } from "./feedback";
-import { isNewFeature, inTimeWindow, tabHasNewFeature } from "./whats-new";
+import { isNewFeature, inTimeWindow, tabHasNewFeature, BUILD_NOW } from "./whats-new";
 import { scrollMainTop } from "./scroll";
 import { PORTAL_TILES, PORTAL_ART, type PortalTile } from "./portal-themes";
 import { useLazyVisible } from "./lazy-img";
@@ -871,7 +871,10 @@ function Portal({ onOpenTab }: {
     if (tile.tab) { onOpenTab(tile.tab as Tab); scrollMainTop(); }
   };
 
-  const days = now == null ? 0 : Math.max(1, Math.floor((now - SITE_OPENED) / DAY) + 1);
+  // 서버 렌더엔 시각이 없어 0을 찍었다가 마운트 후 실제 값으로 바뀌었는데, 자릿수가
+  // 늘면서 옆 'DAY' 글자를 밀어 레이아웃이 흔들렸다 (CLS, 2026-08-22). 첫 값은 빌드 시각으로
+  // 내면 서버·클라가 같은 답을 내고, 배포 당일엔 마운트 후 값과도 같아 흔들림이 없다.
+  const days = Math.max(1, Math.floor(((now ?? BUILD_NOW) - SITE_OPENED) / DAY) + 1);
 
   return (
     <section className="pt-stage" aria-labelledby="portal-title">

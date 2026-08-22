@@ -98,18 +98,19 @@ export function RosterImportPanel({ t, onMaaFile, onScan, onAccount, scanBadge }
             {busy === "code" ? t("보내는 중…") : sent ? t("인증코드 다시 받기") : t("인증코드 받기")}
           </button>
         </div>
-        {sent && (
-          <div className="import-form">
-            <label className="import-code">
-              <span>{t("인증코드")}</span>
-              <input type="text" inputMode="numeric" autoComplete="one-time-code" maxLength={8} value={code}
-                onChange={(event) => setCode(event.target.value.replace(/\D/g, ""))} />
-            </label>
-            <button type="button" className="import-action apply" disabled={code.length < 4 || busy !== ""} onClick={() => void login()}>
-              {busy === "login" ? t("가져오는 중…") : t("로그인해서 보유 오퍼 가져오기")}
-            </button>
-          </div>
-        )}
+        {/* 코드를 받기 전에도 이 줄은 **자리를 잡고 있는다** — 발송 응답은 클릭 500ms 뒤에
+            오므로, 그때 줄이 새로 생기면 아래 안내문이 밀려 레이아웃 흔들림(CLS)으로 잡혔다
+            (2026-08-22). 비활성 상태로 미리 보이면 다음 단계가 뭔지도 같이 알려 준다. */}
+        <div className="import-form">
+          <label className="import-code">
+            <span>{t("인증코드")}</span>
+            <input type="text" inputMode="numeric" autoComplete="one-time-code" maxLength={8} value={code}
+              disabled={!sent} onChange={(event) => setCode(event.target.value.replace(/\D/g, ""))} />
+          </label>
+          <button type="button" className="import-action apply" disabled={!sent || code.length < 4 || busy !== ""} onClick={() => void login()}>
+            {busy === "login" ? t("가져오는 중…") : t("로그인해서 보유 오퍼 가져오기")}
+          </button>
+        </div>
         {notice && <p className="import-msg">{notice}</p>}
         {error && <p className="import-msg error">{error}</p>}
         <p className="import-privacy">{t("이메일과 인증코드는 저장하지 않습니다 — 요스타 인증을 대신 호출하는 데만 쓰고 바로 버립니다. 받은 보유 목록도 이 브라우저 안에만 남습니다.")}</p>

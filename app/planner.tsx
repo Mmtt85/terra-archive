@@ -1541,6 +1541,16 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
                       </em>
                     );
                   })()}
+                  {/* 편성 전에는 **같은 모양의 유령 배지**로 이 자리를 미리 잡아 둔다. 자동편성이
+                      끝나며 시계 배지가 새로 붙으면 그만큼 제목 칸이 좁아져 제목이 두 줄로 접히고,
+                      카드가 21px 커지면서 기지 전체가 아래로 밀렸다 (CLS, 2026-08-22 실측).
+                      폭을 px로 고정하면 배지가 짧은 EN에서 제목 자리를 헛되이 뺏으므로, 로케일별
+                      실제 문구(두 자리)를 그대로 써서 폭이 저절로 맞게 한다.
+                      대상은 시계가 붙는 방과 같다 — drainClock이 도는 방(휴게·훈련·숙소 제외). */}
+                  {!plan && activeShift === 0
+                    && !PARK_KEYS.includes(cell.key) && cell.key !== "TRAINING" && !cell.key.startsWith("DORM") && (
+                    <em className="room-clock hold" aria-hidden>{t("{n}시간", { n: 24 })}</em>
+                  )}
                   {team.length}/{slotsFor(cell.key)}
                 </span>
               </div>
@@ -1582,6 +1592,10 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
                 </small>
               )}
               {plan && PARK_KEYS.includes(cell.key) && team.length > 0 && <small>{t("세트 요원 고정 · 효율 무관")}</small>}
+              {/* 편성 전에도 효율 줄 한 칸을 잡아 둔다 — 자동편성이 끝나며 이 줄이 새로 생기면
+                  카드가 min-height(122px)를 넘겨 커지고, 그만큼 기지 전체가 아래로 밀렸다
+                  (CLS, 2026-08-22 실측 +21px). 특화 훈련실은 편성 뒤에도 이 줄이 없으니 제외. */}
+              {!plan && cell.key !== "TRAINING" && <small className="room-score-hold" aria-hidden>+0%</small>}
             </button>
           );
         })}
