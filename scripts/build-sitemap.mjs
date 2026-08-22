@@ -51,16 +51,33 @@ const SEG_SOURCES = {
   autochess: ["app/data/autochess.json"], // 위수 협의(오토체스) 가이드
   about: ["app/about/page.tsx"],
 };
+// ⚠ 파일 하나당 git을 **한 번만** 부른다. 종전엔 URL마다 불러서, 오퍼·적·작전 상세까지
+// 수천 개인 사이트맵에 git 프로세스가 수천 번 떴다 — 이 스크립트 하나가 280초를 먹었고
+// (실측 2026-08-23, 정작 vinext build는 166초였다) 배포 체감 시간의 절반이 여기였다.
+// 상세 페이지들은 어차피 같은 소스를 보므로(키가 같다) 결과도 같다.
+const GIT_DATE = new Map();
+function gitDate(file) {
+  if (!GIT_DATE.has(file)) {
+    let iso = null;
+    try {
+      iso = execFileSync("git", ["log", "-1", "--format=%cI", "--", file], { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim() || null;
+    } catch { /* git 없음·shallow clone·미추적 파일 — lastmod 생략(없는 게 거짓말보다 낫다) */ }
+    GIT_DATE.set(file, iso);
+  }
+  return GIT_DATE.get(file);
+}
+
+const LASTMOD = new Map();
 function lastmodFor(seg) {
-  let latest = null;
   // 스토리 상세(stories/<id>)는 목록과 같은 데이터에서 나오므로 같은 소스를 본다
   const key = seg.startsWith("stories/") ? "stories" : seg.startsWith("operators/") ? "operators" : seg.startsWith("enemies/") ? "enemies" : seg.startsWith("stages/") ? "stages" : seg.startsWith("rogue/") ? "rogue" : seg.startsWith("ra/") ? "ra" : seg;
+  if (LASTMOD.has(key)) return LASTMOD.get(key);
+  let latest = null;
   for (const file of SEG_SOURCES[key] ?? []) {
-    try {
-      const iso = execFileSync("git", ["log", "-1", "--format=%cI", "--", file], { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
-      if (iso && (!latest || iso > latest)) latest = iso;
-    } catch { /* git 없음·shallow clone·미추적 파일 — lastmod 생략(없는 게 거짓말보다 낫다) */ }
+    const iso = gitDate(file);
+    if (iso && (!latest || iso > latest)) latest = iso;
   }
+  LASTMOD.set(key, latest);
   return latest;
 }
 

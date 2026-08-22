@@ -44,7 +44,10 @@ cp -r dist/client/. "$STAGE/"
 # ⚠ enemy(단수)는 적 초상 폴더고, 라우트는 /enemies(복수)다 — 이름이 달라야 여기서
 #   자산만 떼어낼 수 있다. rogue가 2026-08-08에 정확히 이 함정(에셋과 페이지가 같은 폴더)에
 #   빠져 테마 페이지 6개가 매 배포마다 사라졌다. 적 도감은 처음부터 폴더를 갈라 뒀다.
-for dir in story lens tesseract avatars about og items scan profiles skins skin voice skills modules enemy stage sandbox ac; do
+# ⚠ 여기 빠지면 그 폴더는 R2와 Pages **양쪽에** 올라간다 — 배포 파일 수(2만 개 한도)를
+#   그대로 갉아먹고 업로드도 그만큼 길어진다. r2-sync.mjs의 DIRS와 **같은 집합**이어야 한다.
+#   (2026-08-23 점검: records 996개·32MB와 lore 99개가 빠져 있었다.)
+for dir in story lens tesseract avatars about og items scan profiles skins skin voice skills modules enemy stage sandbox ac records lore; do
   rm -rf "${STAGE:?}/$dir"
 done
 
