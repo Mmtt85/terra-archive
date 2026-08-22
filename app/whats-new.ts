@@ -26,6 +26,7 @@ export const FEATURE_RELEASED: Record<string, string | { date: string; days: num
   "sim-page": "2026-08-10", // 작전 시뮬레이터 런처(/sim) — 스폰 타임라인 재생 딥링크 (B안)
   "ra-guide": "2026-08-12", // 생존연산 가이드(/ra) — 요리·제작·지역·조우·균열 + CN 신시즌
   "autochess-guide": "2026-08-22", // 위수 협의 가이드(/autochess) — 맹약·오퍼레이터 전용 능력·적·보급센터
+  "event-lore": "2026-08-23", // 이벤트 기록(/stories#lore) — 미니게임·수집으로 풀리던 의뢰서·신문·편지·평론
   "feedback-board": "2026-08-17", // 제안 게시판 — 내 제안·개발자 답변 스레드 (작성자와 개발자만 열람)
 };
 
@@ -92,7 +93,7 @@ const TAB_FEATURES: Record<string, string[]> = {
   planner: ["scanner", "invest", "layout-153", "account", "endless", "op-level", "invest-payback"],
   recruit: ["lens"],
   rogue: ["lens", "rogue-inv", "bridge", "rogue-eff", "rogue-cn", "route-map"],
-  story: ["lens"], // 스샷 레이더 /stories 설치 (전문 대사 검색, 2026-07-24)
+  story: ["lens", "event-lore"], // 스샷 레이더(2026-07-24) · 이벤트 기록(2026-08-23)
   enemy: ["enemy-dex"],
   stage: ["stage-dex", "route-map"],
   sim: ["sim-page"],

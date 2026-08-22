@@ -108,6 +108,16 @@ python3 scripts/build-autochess.py           # → app/data/autochess{,.en,.ja}.
 > 새 아이콘이 생기면 `node scripts/r2-sync.mjs` 를 같이 돌린다 — `asset()`은 로컬에서도 R2를 문다.
 > 헤더의 기간 한정 바로가기는 `app/home.tsx`의 `PROMO` 상수(시작·종료 시각)를 새 시즌 값으로 고친다.
 
+새 이벤트에 미니게임·수집 읽을거리가 딸려 왔으면:
+
+```bash
+python3 scripts/build-eventlore.py           # → app/data/eventlore{,.en,.ja}.json
+```
+> 새 이벤트는 **자동으로 안 잡힌다** — `activity_table`의 자료 구조가 이벤트마다 달라서다.
+> 스크립트의 `EXTRACT`에 추출기를, `META`에 미니게임 이름·한 줄 안내(3로케일)를 더해야 한다.
+> 후보를 찾으려면 그 이벤트 블록에서 100자 넘는 문자열이 어디 모여 있는지 훑어본다.
+
+
 ## 4. 신규 이벤트
 
 ### 4-1. 배너부터 (activity_table이 아직 안 올라왔을 때만)

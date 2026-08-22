@@ -2749,6 +2749,15 @@ const D: Record<string, Pair> = {
   // 헤더 기간 한정 바로가기 (모드가 게임에서 도는 동안만)
   "위수 협의": ["Stronghold Protocol", "堅守協定"],
   "기간 한정": ["Limited time", "期間限定"],
+  // 이벤트 기록 (/stories#lore) — 사용자 제보 2026-08-22
+  "이벤트 기록": ["Event records", "イベント記録"],
+  "이벤트를 진행하면서 미니게임·수집 요소로 하나씩 풀리는 글입니다 — 의뢰서, 신문 기사, 편지, 오페라 평론처럼 본편 스토리에는 없고 이벤트가 끝나면 게임에서도 다시 볼 수 없는 것들입니다. 현재 {n}개 이벤트 · 글 {m}편.": [
+    "Writing that unlocks piece by piece through an event's minigames and collectibles — commission slips, newspaper articles, letters, opera reviews. None of it is in the main story, and once the event closes it is gone from the game too. {n} events · {m} pieces so far.",
+    "イベントを進める中でミニゲームや収集要素によって一つずつ解放される文章です — 依頼書、新聞記事、手紙、オペラ評論など、本編ストーリーにはなく、イベントが終わるとゲーム内でも二度と読めないものです。現在{n}イベント・{m}編。"],
+  "글 {n}편": ["{n} pieces", "{n}編"],
+  "{n}편": ["{n} found", "{n}編"],
+  "이 목록에서 검색": ["Search this list", "この一覧を検索"],
+  "찾는 글이 없습니다.": ["Nothing matches.", "該当する文章がありません。"],
   "위수 협의 보기": ["Stronghold Protocol views", "堅守協定の表示"],
   "위수 협의 능력": ["Garrison ability", "駐留能力"],
   "맹약별 오퍼레이터·전용 능력·특훈 적·보급센터 수치를 정리": ["Operators by alliance, garrison abilities, training enemies and Supply Center numbers", "盟約ごとのオペレーター・専用能力・訓練用仮想敵・補給センターの数値"],

@@ -250,6 +250,14 @@ const { term, set, clear, inputRef, inputProps } = useSearchInput();
 - `app/data/sandbox.json` / `.en` / `.ja` — 생존연산 가이드 (build-sandbox.py, 로케일당 ~330KB).
   v2=사막 이야기(공식 3로케일) + v3=CN 선행 신시즌(비공식 번역 `scripts/sandbox-cn-ko.json`,
   미번역 문자열은 빌드 로그에 未 경고 — cn-translation-fill 흐름으로 보완).
+- `app/data/eventlore.json` / `.en` / `.ja` — 이벤트 기록 (build-eventlore.py, 로케일당 ~330KB).
+  한정 이벤트의 미니게임·수집 요소로 풀리던 읽을거리 13개 이벤트 · 글 994편 — 의뢰서·신문
+  기사·편지·오페라 평론·조우문. 화면은 스토리 탭의 「이벤트 기록」(`/stories#lore`).
+  본편 스토리(story_review_table)와 **다른 출처**다 — 이쪽은 `activity_table` 안에 흩어져
+  있고, 이벤트가 끝나면 게임에서도 다시 못 본다. 이벤트마다 자료 구조가 달라 스크립트에
+  이벤트별 추출기를 둔다.
+  ⚠ **읽을거리만 싣는다** — 카드 조합 레시피(태양을 뿌리쳐라), 스테이지 기믹 설명(폴리비전
+  박물관), 토큰 능력(테라밥) 같은 순수 기능 텍스트는 제보 취지(서사)와 달라 뺐다.
 - `app/data/autochess.json` / `.en` / `.ja` — 위수 협의(오토체스) 가이드 (build-autochess.py,
   로케일당 ~180KB). 맹약 23 · 오퍼레이터 133 · 전용 능력 230 · 아이템 59 · 전략 36 ·
   전략 전술 43 · 특훈 적 67(7유형) · 리더 적 10 · 마일스톤 60 · 자유 선택 후보 ★6 127.

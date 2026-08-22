@@ -19735,3 +19735,199 @@ button.ac-card:hover { border-color: var(--border-strong); background: var(--pap
 .ac-oplink { margin: 8px 0 0; font-size: 12px; }
 .ac-oplink a { color: var(--muted); text-decoration: none; }
 .ac-oplink a:hover { color: var(--ink); text-decoration: underline; }
+
+/* ── 이벤트 기록 (/stories#lore) — 미니게임·수집으로 풀리던 읽을거리 ─────────────
+   사용자 제보 2026-08-22. 본편 스토리 요약과 달리 짧은 글 수백 편이라, 카드 목록 →
+   모달 안에서 섹션 탭 + 검색으로 훑는 구조다 (app/eventlore.tsx). */
+.el-wrap {
+  margin-top: 14px;
+}
+.el-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(268px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+.el-card {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+  padding: 10px;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg-panel);
+  cursor: pointer;
+  transition: 0.15s;
+}
+.el-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--lime);
+  box-shadow: 0 10px 24px #1f242522;
+}
+.el-thumb {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 92px;
+  height: 62px;
+  overflow: hidden;
+  border-radius: 7px;
+  /* ⚠ var(--chip)는 이 자리에서 거의 검정(rgb(19,23,25))이라 썸네일 없는 이벤트가
+     검은 상자로 보였다 (실측 2026-08-23: 재건 계획·자비의 등대). 패널과 이어지는
+     중립색으로 깔고, 없을 때의 ◆만 흐리게 얹는다. */
+  background: color-mix(in srgb, var(--line) 40%, var(--bg-panel));
+}
+.el-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.el-thumb em {
+  color: var(--muted);
+  font-style: normal;
+  font-size: 20px;
+  opacity: 0.5;
+}
+.el-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.el-card-body > b {
+  font-size: 14.5px;
+  line-height: 1.3;
+}
+.el-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+  font-size: 11px;
+}
+.el-note {
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+.el-note.big {
+  margin: 0 0 12px;
+  font-size: 12.5px;
+}
+.el-count {
+  margin-top: auto;
+  color: var(--lime-ink, var(--muted));
+  font: 800 11px monospace;
+  letter-spacing: 0.04em;
+}
+/* ── 모달 안 ── */
+.el-modal-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.el-modal-head h3 {
+  margin: 0;
+  font-size: 17px;
+}
+.el-subtabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.el-subtabs button {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  padding: 6px 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.el-subtabs button i {
+  font-style: normal;
+  font-size: 10.5px;
+  font-weight: 800;
+  opacity: 0.6;
+}
+.el-subtabs button.on {
+  border-color: var(--lime);
+  background: color-mix(in srgb, var(--lime) 16%, transparent);
+}
+.el-search {
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 8px 11px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--white);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+}
+.el-hits {
+  margin: 0 0 8px;
+  font-size: 11.5px;
+}
+.el-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.el-entry {
+  padding: 11px 13px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--white);
+}
+.el-entry > header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+.el-entry > header b {
+  font-size: 13.5px;
+}
+.el-tag {
+  color: var(--muted);
+  font-size: 11px;
+  font-style: normal;
+  line-height: 1.5;
+}
+/* 본문은 게임 원문의 줄바꿈을 그대로 살린다 — 편지·기사·의뢰서라 문단 나눔이 곧 호흡이다 */
+.el-body {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.75;
+  white-space: pre-line;
+}
+/* 해금분 — 의뢰를 끝내야 열리던 뒷이야기. 앞의 주문서와 눈으로 갈라 놓는다 */
+.el-unlock {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed color-mix(in srgb, var(--lime) 55%, var(--line));
+}
+.el-unlock-cap {
+  display: inline-block;
+  margin-bottom: 5px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--lime) 18%, transparent);
+  color: var(--ink);
+  font: 800 10.5px monospace;
+  letter-spacing: 0.08em;
+}
+@media (max-width: 560px) {
+  .el-cards { grid-template-columns: minmax(0, 1fr); }
+  .el-thumb { width: 74px; height: 52px; }
+}

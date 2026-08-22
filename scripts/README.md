@@ -96,6 +96,12 @@ python3 scripts/build-stages-rogue.py          # → app/data/stages-rogue{,.en,
 python3 scripts/build-sandbox.py               # → app/data/sandbox{,.en,.ja}.json (생존연산 가이드 —
 #     V2 사막 이야기는 kr/en/jp 공식 텍스트, V3 신시즌은 CN 선행 + scripts/sandbox-cn-ko.json
 #     비공식 번역. 미번역 문자열이 생기면 未 경고를 낸다 — cn-translation-fill 흐름으로 보완)
+python3 scripts/build-eventlore.py              # → app/data/eventlore{,.en,.ja}.json
+#     이벤트 부가 기록 — 미니게임·수집 요소로 풀리던 읽을거리 (사용자 제보 2026-08-22).
+#     입력은 .gamedata/{kr,en,jp}_activity_table.json 하나. 이벤트마다 자료 구조가 완전히
+#     달라 이벤트별 추출기(EXTRACT)를 둔다 — 새 이벤트를 실으려면 추출기 + META(미니게임
+#     이름·한 줄 안내 3로케일)를 함께 추가한다. 썸네일·출시월은 stories.json에서 끌어온다.
+#     ⚠ 읽을거리만 싣는다 — 카드 조합 레시피·스테이지 기믹 설명 같은 순수 기능 텍스트는 뺐다.
 python3 scripts/build-autochess.py             # → app/data/autochess{,.en,.ja}.json
 #     + public/ac/ 아이콘 134장 (맹약·밴드·장비·능력 분류·모드·특훈 적 유형). --no-icons로 아이콘 생략
 #     (위수 협의=오토체스 가이드. 입력은 .gamedata/{kr,jp,en}_activity_table.json 하나 —

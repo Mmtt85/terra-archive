@@ -117,6 +117,12 @@ function locText(locale: Locale, text: LocText): string {
 
 // 스샷 레이더 도움말 — 순수 설명 전용 모달 (입력 기능은 페이지 레벨 자동인식이 전담)
 const LensHelpModal = lazy(() => import("./lens/help"));
+// 이벤트 기록 — 데이터가 로케일당 300KB대라 이 탭에 들어왔을 때만 받는다 (사용자 제보 2026-08-22)
+const EVENT_LORE = {
+  ko: lazy(() => import("./eventlore-ko")),
+  en: lazy(() => import("./eventlore-en")),
+  ja: lazy(() => import("./eventlore-ja")),
+} as const;
 
 function eventFromHash(): StoryEvent | null {
   const hash = decodeURIComponent(window.location.hash);
@@ -1436,7 +1442,7 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
   onStoryTitle?: (name: string | null) => void;
 }) {
   const { locale, t } = useI18n();
-  const [view, setView] = useState<"digest" | "chronicle">("digest");
+  const [view, setView] = useState<"digest" | "chronicle" | "lore">("digest");
   // 기본 뷰는 테마별 (사용자 확정 2026-07-21)
   const [group, setGroup] = useState<GroupMode>("theme");
   const [selected, setSelected] = useState<StoryEvent | null>(
@@ -1454,6 +1460,7 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
       setSelected(detail);
       if (detail) return;                              // 상세 진입 시 뷰/그룹 상태는 유지
       if (h === "#chronicle") setView("chronicle");
+      else if (h === "#lore") setView("lore");
       else if (h === "#kind") { setView("digest"); setGroup("kind"); }
       else if (h === "#release") { setView("digest"); setGroup("release"); }
       // 기본(해시 없음·#story)은 테마별 (사용자 확정 2026-07-21)
@@ -1513,8 +1520,9 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
   };
   // 뷰·그룹 전환을 복붙 가능한 해시로 남긴다 (뒤로가기로 오갈 수 있게 pushState)
   const GROUP_HASH: Record<GroupMode, string> = { theme: "#theme", kind: "#kind", release: "#release" };
-  const goView = (v: "digest" | "chronicle") => {
-    history.pushState(null, "", v === "chronicle" ? "#chronicle" : GROUP_HASH[group]);
+  const VIEW_HASH: Record<string, string> = { chronicle: "#chronicle", lore: "#lore" };
+  const goView = (v: "digest" | "chronicle" | "lore") => {
+    history.pushState(null, "", VIEW_HASH[v] ?? GROUP_HASH[group]);
     setView(v);
   };
   const goGroup = (g: GroupMode) => {
@@ -1635,6 +1643,7 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
         <button type="button" role="tab" aria-selected={view === "digest" && group === "kind"} className={view === "digest" && group === "kind" ? "on" : ""} onClick={() => goGroup("kind")}>{t("종류별")}</button>
         <button type="button" role="tab" aria-selected={view === "digest" && group === "release"} className={view === "digest" && group === "release" ? "on" : ""} onClick={() => goGroup("release")}>{t("출시순")}</button>
         <button type="button" role="tab" aria-selected={view === "chronicle"} className={view === "chronicle" ? "on" : ""} onClick={() => goView("chronicle")}>{t("테라 연대기")}</button>
+        <button type="button" role="tab" aria-selected={view === "lore"} className={view === "lore" ? "on" : ""} onClick={() => goView("lore")}>{t("이벤트 기록")}{isNewFeature("event-lore") && <span className="new-badge">{t("새기능")}</span>}</button>
         {/* 스샷 레이더 — 버튼 자체가 자동인식 토글, ?는 도움말 (KR 클라 전용) */}
         {locale === "ko" && (
           <div className="lens-open-wrap">
@@ -1651,7 +1660,9 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
       {lensPill}
       {lensHelpModal}
 
-      {view === "chronicle" ? (
+      {view === "lore" ? (
+        <Suspense fallback={null}>{(() => { const Lore = EVENT_LORE[locale]; return <Lore />; })()}</Suspense>
+      ) : view === "chronicle" ? (
         <ChronologyView onOpenEvent={openEvent} />
       ) : (
         <DigestView onOpen={open} includeFuture={includeFuture} group={group} />
