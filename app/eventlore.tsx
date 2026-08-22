@@ -16,7 +16,9 @@ import { useI18n, rich } from "./i18n";
 import { ModalWindow } from "./modal-window";
 import { asset } from "./assets";
 
-export type LoreItem = { t?: string; by?: string; tag?: string; d?: string; d2?: string; img?: string; face?: string };
+/** 본문에 사진이 끼어 있는 글(신문 기사)은 문단·사진 순서를 그대로 담는다 — p=문단, i=사진 */
+export type LoreBlock = { p?: string; i?: string };
+export type LoreItem = { t?: string; by?: string; tag?: string; d?: string; d2?: string; img?: string; face?: string; blocks?: LoreBlock[] };
 export type LoreSec = { n: string; items: LoreItem[] };
 export type LoreEvent = { id: string; n: string; mini?: string; note?: string; thumb?: string; start?: string; secs: LoreSec[] };
 export type LoreDoc = { events: LoreEvent[] };
@@ -112,6 +114,16 @@ export default function EventLore({ doc }: { doc: LoreDoc }) {
                   </header>
                 )}
                 {it.d && <p className="el-body">{rich(it.d)}</p>}
+                {/* 신문 기사처럼 본문에 사진이 끼는 글 — 원문이 사진 위치를 갖고 있어 그대로 따른다
+                    (사용자 지적 2026-08-23: "<newsimg>…</newsimg> 이런 식으로 나와 있는 부분이
+                     아마 이미지가 나와야 하는 부분일 듯"). */}
+                {it.blocks && (
+                  <div className="el-article">
+                    {it.blocks.map((b, j) => b.i
+                      ? <img key={j} className="el-inline-img" src={asset(b.i)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
+                      : <p key={j} className="el-body">{rich(b.p ?? "")}</p>)}
+                  </div>
+                )}
                 {it.d2 && (
                   <div className="el-unlock">
                     <span className="el-unlock-cap">{t("해금")}</span>

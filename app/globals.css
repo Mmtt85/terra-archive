@@ -19980,3 +19980,20 @@ button.ac-card:hover { border-color: var(--border-strong); background: var(--pap
 @media (max-width: 560px) {
   .el-img { width: 56px; height: 56px; margin-left: 9px; }
 }
+
+/* 신문 기사 본문 — 문단 사이에 사진이 끼는 글 (마리아 니어). 사진은 글 폭에 맞춰 눕힌다. */
+.el-article {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-top: 9px;
+  padding-top: 9px;
+  border-top: 1px solid var(--line);
+}
+.el-inline-img {
+  width: 100%;
+  max-width: 420px;
+  height: auto;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--line) 30%, var(--bg-panel));
+}

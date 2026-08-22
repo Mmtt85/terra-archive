@@ -22,7 +22,9 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 S = os.path.join(REPO, ".gamedata")
 DATA = os.path.join(REPO, "app", "data")
 PUB = os.path.join(REPO, "public", "lore")
-ASSETS = "https://raw.githubusercontent.com/ArknightsAssets/ArknightsAssets2/cn/assets/dyn/ui"
+DYN = "https://raw.githubusercontent.com/ArknightsAssets/ArknightsAssets2/cn/assets/dyn"
+ASSETS = f"{DYN}/ui"        # ui/…      (게임 UI 번들)
+ARTS = f"{DYN}/arts/ui"     # arts/ui/… (일러스트·카드 아트)
 NO_ICONS = "--no-icons" in sys.argv
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -143,27 +145,68 @@ def ex_act42side(d, loc):
 
 
 def ex_act13d5(d, loc):
+    """신문 기사 — 본문 문단 순서를 그대로 싣는다 (newsLines).
+
+       ⚠ **사진은 싣지 않는다.** 본문에 <newsimg>newsTextPic_N_M<newsimg/> 로 사진 자리가
+         찍혀 있지만, 그 이름의 파일이 ArknightsAssets2에 없다. 이름이 같은
+         arts/ui/actarchive/act13side/act13side_newstextpic_* 를 갖다 붙여 봤다가
+         **다른 이벤트 그림**이라 되돌렸다 (사용자 지적 2026-08-23: 송곳니의 기사 기사에
+         양초의 기사 비비아나 그림이 붙었다). act13side는 '니어 라이트'라 newsInfoList가
+         아예 없는 별개 이벤트이고, 그 폴더는 그 이벤트의 기록 삽화다 — 번호만 우연히 겹쳤다.
+         마리아 니어(act13d5)의 신문 사진은 스프라이트팩이 해체돼 있지 않아 받을 길이 없다."""
     news = sorted(V(d.get("newsInfoList")), key=lambda x: x.get("newsSortId") or 0)
     out = []
     for x in news:
-        body = [ln.get("content") for ln in (x.get("newsLines") or [])
-                if ln.get("lineType") == "TextContent"]
-        out.append(item(t=x.get("newsTitle"), by=(x.get("styleInfo") or {}).get("typeName"),
-                        tag=x.get("newsFrom"), d=x.get("newsText"), d2=joinlist(body)))
+        blocks = []
+        for ln in x.get("newsLines") or []:
+            c = ln.get("content")
+            if not c:
+                continue
+            if ln.get("lineType") == "ImageContent":
+                continue          # 위 주석 참조 — 올바른 원본이 없다
+            else:
+                t = rich(c)
+                if t:
+                    blocks.append({"p": t})
+        # ⚠ newsText는 같은 기사를 <newsimg>사진id<newsimg/> 마커째로 담은 **원문 한 덩어리**다.
+        #   newsLines가 그걸 문단·사진으로 쪼갠 정본이라, 둘 다 실으면 본문이 두 번 나오고
+        #   마커가 그대로 보인다 (사용자 지적 2026-08-23). 블록만 싣는다.
+        it = item(t=x.get("newsTitle"), by=(x.get("styleInfo") or {}).get("typeName"),
+                  tag=x.get("newsFrom"),
+                  d="" if blocks else rich(re.sub(r"<newsimg>.*?<newsimg/>", "", x.get("newsText") or "")))
+        if it and blocks:
+            it["blocks"] = blocks
+        if it:
+            out.append(it)
     return [sec(SEC["news"][loc], out)]
+
+
+# 삽화가 있는 항목만 그림이 붙는다 — 파일 이름이 곧 id이고, **필드 이름이 폴더를 가른다**
+# (…SpecialPic → arts/ui/deepsea/specialpic, …Pic → normalpic). 실측으로 확인.
+def _deep(special, normal):
+    if special:
+        return f"/lore/act17side/{special}.webp"
+    if normal:
+        return f"/lore/act17side/{normal}.webp"
+    return ""
 
 
 def ex_act17side(d, loc):
     return [
-        sec(SEC["encounter"][loc], [item(t=x.get("eventTitle"), d=joinlist(x.get("eventDesList")))
+        sec(SEC["encounter"][loc], [item(t=x.get("eventTitle"), d=joinlist(x.get("eventDesList")),
+                                         img=_deep(x.get("eventSpecialPic"), x.get("eventPic")))
                                     for x in V(d.get("eventDataMap"))]),
-        sec(SEC["choice"][loc], [item(t=x.get("choiceName"), d=joinlist(x.get("choiceDesList")))
+        sec(SEC["choice"][loc], [item(t=x.get("choiceName"), d=joinlist(x.get("choiceDesList")),
+                                      img=_deep(x.get("choiceSpecialPic"), x.get("choicePic")))
                                  for x in V(d.get("choiceNodeDataMap"))]),
-        sec(SEC["treasure"][loc], [item(t=x.get("treasureName"), d=joinlist(x.get("treasureDesList")))
+        sec(SEC["treasure"][loc], [item(t=x.get("treasureName"), d=joinlist(x.get("treasureDesList")),
+                                        img=_deep(x.get("treasureSpecialPic"), x.get("treasurePic")))
                                    for x in V(d.get("treasureNodeDataMap"))]),
-        sec(SEC["tech"][loc], [item(t=x.get("techTreeName"), d=joinlist(x.get("techDesList")))
+        sec(SEC["tech"][loc], [item(t=x.get("techTreeName"), d=joinlist(x.get("techDesList")),
+                                    img=_deep(x.get("techSpecialPic"), x.get("techPic")))
                                for x in V(d.get("techNodeDataMap"))]),
-        sec(SEC["landmark"][loc], [item(t=x.get("landmarkName"), d=joinlist(x.get("landmarkDesList")))
+        sec(SEC["landmark"][loc], [item(t=x.get("landmarkName"), d=joinlist(x.get("landmarkDesList")),
+                                        img=_deep(x.get("landmarkSpecialPic"), x.get("landmarkPic")))
                                    for x in V(d.get("landmarkNodeDataMap"))]),
     ]
 
@@ -176,7 +219,9 @@ def ex_act46side(d, loc):
         for key, arr in (res or {}).items():
             label = RESULT.get(key, N(key, key, key))[loc]
             for one in arr or []:
-                lines.append(item(t=name_of.get(sid, ""), tag=label, d=one.get("dialogText")))
+                av = one.get("characterAvatarId")
+                lines.append(item(t=name_of.get(sid, ""), tag=label, d=one.get("dialogText"),
+                                  face=f"/lore/act46side/{av}.webp" if av else ""))
     return [
         sec(SEC["zone"][loc], [item(t=x.get("stageName"), d=x.get("stageDesc")) for x in stages]),
         sec(SEC["dialog"][loc], lines),
@@ -230,7 +275,8 @@ def ex_act25side(d, loc):
 
 
 def ex_act29side(d, loc):
-    return [sec(SEC["product"][loc], [item(t=x.get("groupName"), d=x.get("groupDesc"))
+    return [sec(SEC["product"][loc], [item(t=x.get("groupName"), d=x.get("groupDesc"),
+                                           img=f"/lore/act29side/{x['groupIcon'].lower()}.webp" if x.get("groupIcon") else "")
                                       for x in V(d.get("productGroupDataMap"))])]
 
 
@@ -252,10 +298,14 @@ def ex_siracusa(root, loc):
                      key=lambda x: (x.get("columnIndex") or 0, x.get("columnSortId") or 0))
     return [
         sec(SEC["opera"][loc], [item(t=x.get("operaName"), tag=x.get("operaSubName"),
-                                     d=f"★ {x.get('operaScore')}") for x in operas]),
+                                     d=f"★ {x.get('operaScore')}",
+                                     img=f"/lore/act21side/{x['operaId']}.webp" if x.get("operaId") else "")
+                                for x in operas]),
         sec(SEC["review"][loc], [item(t=x.get("commentTitle"), by=oname.get(x.get("referenceOperaId"), ""),
                                       tag=f"★ {x.get('score')}" if x.get("score") else "",
-                                      d=x.get("commentContent")) for x in reviews]),
+                                      d=x.get("commentContent"),
+                                      face=f"/lore/act21side/{x['commentCharId'].lower()}.webp" if x.get("commentCharId") else "")
+                                 for x in reviews]),
     ]
 
 
@@ -390,7 +440,7 @@ THUMB_FIX = {
     "act1vhalfidle": "/lore/act1vhalfidle/thumb.webp",
     "act1mainss": "/story/main_14.webp",
 }
-HOMEENTRY = ASSETS.rsplit("/", 1)[0] + "/arts/ui/stage/%5Buc%5Dhomeentry"
+HOMEENTRY = f"{ARTS}/stage/%5Buc%5Dhomeentry"
 
 
 def story_meta():
@@ -402,12 +452,31 @@ def story_meta():
     return {e["id"]: e for e in (evs or []) if e.get("id")}
 
 
+def have(web_path):
+    """이미 받아 둔 그림인가 — 원본이 없는 id를 데이터에 남기면 화면에서 404가 난다."""
+    return os.path.exists(os.path.join(REPO, "public", web_path.lstrip("/")))
+
+
+def block(root, act_id):
+    """activity.<TYPE>.<actId> — 타입 키를 몰라도 찾아 준다."""
+    for acts in (root.get("activity") or {}).values():
+        if act_id in acts:
+            return acts[act_id]
+    return None
+
+
 # ── 그림 ─────────────────────────────────────────────────────────────────────
 # 이벤트 번들은 이름이 제각각이다 (중생의 여정 = [uc]guntask). 새 이벤트의 그림을 실으려면
 # https://github.com/ArknightsAssets/ArknightsAssets2/tree/cn/assets/dyn/ui 에서 번들을 찾아
 # 여기에 (원본경로 → public/lore/<act>/<이름>.webp) 짝을 더한다.
 GUNTASK = f"{ASSETS}/%5Buc%5Dguntask/arts"          # 중생의 여정
 INFORMANT = f"{ASSETS}/%5Buc%5Dinformant/arts"      # 폐허 (⚠ 파일명이 전부 소문자다)
+DEEPSEA = f"{ARTS}/deepsea"                         # 스툴티페라 나비스 (specialpic/normalpic)
+SETTLEAVATAR = f"{ASSETS}/%5Buc%5Dmonopoly/dynload/settleavatar"   # 설산 강림 화자
+SIRACUSA = f"{ARTS}/siracusamap"                    # 시라쿠사인 (operaframe/charcard)
+# 츠빌링슈튀르메 (소문자). ⚠ 1번만 tuninghandbook에 있고 2~5번은 arts/productcommon에 있다
+# (실측 2026-08-23) — 두 곳을 차례로 시도한다.
+TUNING = [f"{ASSETS}/%5Buc%5Dtuning/tuninghandbook", f"{ASSETS}/%5Buc%5Dtuning/arts/productcommon"]
 
 
 def download(jobs):
@@ -427,10 +496,63 @@ def download(jobs):
         return [f for f in ex.map(one, jobs) if f]
 
 
-def fetch_images(d, d44):
-    """중생의 여정 — 의뢰인 초상 4 · 기억을 부른 물건 12 · 총기 4.
-       폐허 — 손님 초상 12 · 신문 사진 10."""
-    jobs = []
+def fetch_images(d, d44, root):
+    """받을 수 있는 그림을 전부 받는다 (사용자 지시 2026-08-23 "가능한 한 전부 다 붙여줘").
+       ⚠ 못 받는 것도 있다 — 마리아 니어 신문 사진·도솔레스 사진·편안한 잠꼬대 초상 등은
+         스프라이트팩이 해체돼 있지 않아 ArknightsAssets2에 개별 파일이 없다 (트리 전수 확인)."""
+    jobs = []      # (url, dest) — 한 곳에만 있는 그림
+    alts = []      # ([url…], dest) — 이벤트마다 폴더가 갈리는 그림, 되는 데까지 시도
+
+    def add(url, dest):
+        jobs.append((url, dest))
+
+    # 스툴티페라 나비스 — 조우·선택·탐색·장비·이정표 삽화 (…SpecialPic→specialpic, …Pic→normalpic)
+    d17 = block(root, "act17side")
+    if d17:
+        out17 = os.path.join(PUB, "act17side")
+        pairs = [("eventDataMap", "eventSpecialPic", "eventPic"),
+                 ("choiceNodeDataMap", "choiceSpecialPic", "choicePic"),
+                 ("treasureNodeDataMap", "treasureSpecialPic", "treasurePic"),
+                 ("techNodeDataMap", "techSpecialPic", "techPic"),
+                 ("landmarkNodeDataMap", "landmarkSpecialPic", "landmarkPic")]
+        seen = set()
+        for key, sp, np_ in pairs:
+            for x in V(d17.get(key)):
+                for pid, folder in ((x.get(sp), "specialpic"), (x.get(np_), "normalpic")):
+                    if pid and pid not in seen:
+                        seen.add(pid)
+                        add(f"{DEEPSEA}/{folder}/{pid}.png", os.path.join(out17, f"{pid}.webp"))
+                        break
+
+    # 설산 강림 1101 — 결과 대사 화자 아바타
+    d46 = block(root, "act46side")
+    if d46:
+        out46 = os.path.join(PUB, "act46side")
+        avs = {one.get("characterAvatarId")
+               for res in (d46.get("settleDialogDataMap") or {}).values()
+               for arr in (res or {}).values() for one in (arr or []) if one.get("characterAvatarId")}
+        for av in sorted(avs):
+            add(f"{SETTLEAVATAR}/{av}.png", os.path.join(out46, f"{av}.webp"))
+
+    # 시라쿠사인 — 오페라 포스터와 평론가 카드
+    sr = root.get("siracusaData") or {}
+    if sr:
+        out21 = os.path.join(PUB, "act21side")
+        for o in V(sr.get("operaInfoMap")):
+            if o.get("operaId"):
+                add(f"{SIRACUSA}/operaframe/{o['operaId']}.png", os.path.join(out21, f"{o['operaId']}.webp"))
+        for c in {x.get("commentCharId") for x in V(sr.get("operaCommentInfoMap")) if x.get("commentCharId")}:
+            add(f"{SIRACUSA}/charcard/{c.lower()}.png", os.path.join(out21, f"{c.lower()}.webp"))
+
+    # 츠빌링슈튀르메의 가을 — 제품군 아이콘
+    d29 = block(root, "act29side")
+    if d29:
+        out29 = os.path.join(PUB, "act29side")
+        for g in V(d29.get("productGroupDataMap")):
+            if g.get("groupIcon"):
+                name = g["groupIcon"].lower()
+                alts.append(([f"{base}/{name}.png" for base in TUNING],
+                             os.path.join(out29, f"{name}.webp")))
     if d44:
         out44 = os.path.join(PUB, "act44side")
         for c in V(d44.get("customerDataMap")):
@@ -456,10 +578,16 @@ def fetch_images(d, d44):
         if g.get("gunColorIcon"):
             jobs.append((f"{GUNTASK}/gunlarge/{g['gunColorIcon']}.png",
                          os.path.join(out, f"gun_{g['gunColorIcon']}.webp")))
-    return _run(jobs)
+    return _run(jobs, alts)
 
 
-def _run(jobs):
+def _run(jobs, alts=()):
+    for urls, dest in alts:
+        if os.path.exists(dest):
+            continue
+        for u in urls:
+            if not download([(u, dest)]):
+                break
     fails = download(jobs)
     print(f"그림 {len(jobs) - len(fails)}/{len(jobs)}장 → public/lore/")
     for url, err in fails[:6]:
@@ -476,15 +604,12 @@ def main():
             sys.exit(f"{path} 가 없다 — python3 scripts/fetch-gamedata.py 를 먼저 돌릴 것")
         roots[loc] = load(f"{pre}_activity_table.json")
 
-    def block(root, act_id):
-        for acts in (root.get("activity") or {}).values():
-            if act_id in acts:
-                return acts[act_id]
-        return None
-
     kr = roots["ko"]
     basic = kr.get("basicInfo") or {}
     order = sorted(EXTRACT, key=lambda a: -(basic.get(a, {}).get("startTime") or 0))
+
+    if not NO_ICONS:
+        fetch_images(block(kr, "act42side"), block(kr, "act44side"), kr)
 
     out = {loc: {"events": []} for loc in PREFIX}
     report = []
@@ -518,9 +643,6 @@ def main():
         else:
             n = sum(len(s["items"]) for s in out["ko"]["events"][-1]["secs"])
             report.append(f"  {act_id:<14} {basic.get(act_id, {}).get('name', ''):<22} 섹션 {len(out['ko']['events'][-1]['secs'])} · 글 {n}")
-
-    if not NO_ICONS:
-        fetch_images(block(kr, "act42side"), block(kr, "act44side"))
 
     for loc, suf in SUFFIX.items():
         path = os.path.join(DATA, f"eventlore{suf}.json")
