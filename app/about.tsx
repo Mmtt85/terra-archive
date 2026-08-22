@@ -217,7 +217,7 @@ const CONTENT: Record<Locale, Content> = {
       },
       {
         tab: "autochess", icon: "\u265f", name: "위수 협의 가이드",
-        summary: "오토체스 모드 「위수 협의: 맹약」의 맹약·오퍼레이터·적·보급센터를 게임 데이터 그대로 정리합니다.",
+        summary: "위수 협의 시즌 2 「맹약」의 맹약·오퍼레이터·적·보급센터를 게임 데이터 그대로 정리합니다.",
         bullets: [
           "맹약 23종 — 진영(염국·사르곤·빅토리아 등) 8종과 특성 15종을 단계별 발동 조건과 효과 전문으로, 각 맹약에 속한 오퍼레이터를 티어별로 나열",
           "오퍼레이터 129종 — 저마다 다른 위수 협의 전용 능력을 일반·정예화(골든) 두 수치로 비교하고, 기본으로 드는 스킬과 모듈까지 표시. 자유 선택 칸에 넣을 수 있는 ★6 68명도 함께",
@@ -365,7 +365,7 @@ const CONTENT: Record<Locale, Content> = {
       },
       {
         tab: "autochess", icon: "\u265f", name: "Stronghold Protocol Guide",
-        summary: "Alliances, operators, enemies and the Supply Center of the auto chess mode “Stronghold Protocol: Alliance”, straight from game data.",
+        summary: "Alliances, operators, enemies and the Supply Center of Stronghold Protocol Season 2 “Alliance”, straight from game data.",
         bullets: [
           "23 alliances — 8 nation and 15 trait alliances with every activation threshold and its full effect text, plus the operators in each, grouped by tier",
           "129 operators — the garrison ability unique to each one, compared side by side at base and Golden, with the skill and module it comes with by default, plus the 68 6★ you can drop into a free-pick slot",
@@ -514,7 +514,7 @@ const CONTENT: Record<Locale, Content> = {
       },
       {
         tab: "autochess", icon: "\u265f", name: "堅守協定ガイド",
-        summary: "オートチェスモード「堅守協定：盟約」の盟約・オペレーター・敵・補給センターをゲームデータそのままに整理。",
+        summary: "堅守協定シーズン2「盟約」の盟約・オペレーター・敵・補給センターをゲームデータそのままに整理。",
         bullets: [
           "盟約23種 — 国家系8種と特性系15種を段階ごとの発動条件と効果全文で、各盟約に所属するオペレーターを等級別に一覧",
           "オペレーター129種 — それぞれ異なる専用能力を通常と精鋭化（ゴールド）の2つの数値で比較し、初期のスキルとモジュールも表示。自由選択枠に入れられる★6の68名も併記",

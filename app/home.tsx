@@ -256,6 +256,10 @@ const PROMO = {
 };
 const PROMO_ON = inTimeWindow(PROMO.from, PROMO.to);
 
+/** 진행중 이벤트 배너를 눌렀을 때, 그 이벤트 전용 가이드가 사이트에 있으면 그쪽으로 보낸다.
+ *  키는 클뜯 basicInfo의 이벤트 type (broadcast 워커가 그대로 실어 준다). */
+const EVENT_GUIDE_TAB: Record<string, Tab> = { AUTOCHESS_SEASON: "autochess" };
+
 const OPERATOR_PATH_RE = /^\/(?:en\/|ja\/)?operators\/([^/]+)\/?$/;
 const operatorPath = (locale: Locale, id: string) => `${LOCALE_BASE[locale]}/operators/${id}`;
 const archivePath = (locale: Locale) => `${LOCALE_BASE[locale]}/operators`;
@@ -838,6 +842,11 @@ function Portal({ onOpenTab }: {
   const openTile = (tile: PortalTile) => {
     // 이벤트 칸은 공식 카페 공지로 (사용자 지시 2026-07-30). 공지가 없는 이벤트만 스토리로.
     if (tile.kind === "banner") {
+      // 단, **그 이벤트 전용 가이드가 사이트에 있으면 우리 화면으로** (사용자 지시 2026-08-22
+      // "위수협의 누르면 위수협의 메뉴로 넘어가야돼"). 위수 협의는 공식 공지 URL도 없어서
+      // 종전에는 카페 이벤트 게시판으로 튕겼다.
+      const guide = headline ? EVENT_GUIDE_TAB[headline.type ?? ""] : undefined;
+      if (guide) { onOpenTab(guide); scrollMainTop(); return; }
       if (headline?.url) { window.open(headline.url, "_blank", "noopener"); return; }
       // 공지를 못 찾았을 때: **스토리가 있는 이벤트만** 스토리 탭으로 보낸다. 벡터 돌파처럼
       // 스토리가 없는 이벤트를 스토리로 보내면 엉뚱한 곳에 떨어진다 (사용자 지적 2026-07-31
@@ -1719,7 +1728,10 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
             }}>
             <span className="promo-mark" aria-hidden>{PROMO.icon}</span>
             {t(PROMO.label)}
+            {/* '기간 한정'은 이 버튼의 존재 이유라 항상 붙는다 — 새기능 배지는 그 위에 얹는다
+                (사용자 지적 2026-08-22: 새기능 기간엔 기간 한정을 감췄었다) */}
             <span className="promo-hint">{t("기간 한정")}</span>
+            {tabHasNewFeature(PROMO.tab) && <span className="new-badge">{t("새기능")}</span>}
           </a>
         )}
         {/* 헤더 치비 (베타) — 1줄 가운데 빈 공간의 산책 장식, 데스크탑 전용 (사용자 요청 2026-08-03) */}

@@ -818,6 +818,9 @@ button {
   display: inline-flex;
   align-items: center;
   gap: 7px;
+  /* 헤더는 flex에 gap이 없고 각자 margin으로 띄운다 — 업데이트 내역 칩에 딱 붙어 보여서
+     한 칸 더 벌린다 (사용자 지적 2026-08-22). 모서리도 옆 칩과 같은 6px. */
+  margin-left: 12px;
   padding: 6px 11px;
   font-size: 12.5px;
   font-weight: 800;
@@ -825,6 +828,7 @@ button {
   text-decoration: none;
   background: transparent;
   border: 1px solid color-mix(in srgb, var(--lime) 55%, var(--line));
+  border-radius: 6px;
   cursor: pointer;
   transition: 0.15s;
   white-space: nowrap;
@@ -1151,12 +1155,13 @@ button {
   /* 기간 한정 바로가기 — 1줄, 업데이트 내역 오른쪽 (order 동률은 DOM 순서) */
   .promo-trigger {
     order: 1;
-    margin-left: 6px;
+    margin-left: 8px;
     padding: 4px 7px;
     font-size: 11.5px;
     gap: 5px;
   }
-  .promo-trigger .promo-hint { display: none; }
+  /* '기간 한정'은 모바일에서도 남긴다 (사용자 지시 2026-08-22) — 폭이 빠듯해 한 급 줄인다 */
+  .promo-trigger .promo-hint { font-size: 10px; }
   .event-group {
     order: 4;
     margin: 0;
@@ -16156,9 +16161,20 @@ main.site-main > .site-header {
   }
 }
 @media (max-width: 760px) {
+  /* 모바일 헤더는 **줄바꿈이 나도 오른쪽 정렬**이다 (사용자 지적 2026-08-22 "메뉴버튼이
+     왼쪽에 붙어있다"). 기간 한정 버튼이 1줄을 채우면서 언어 칩만 1줄에 남고 검색·햄버거가
+     2줄로 내려가는 폭(≈430px)이 생겼는데, 밀어내기를 언어 칩 하나가 맡고 있어 2줄 전체가
+     왼쪽에 붙어 버렸다. 컨테이너를 flex-end로 두고 로고만 margin-right:auto로 왼쪽에
+     못박으면, 어느 줄에 무엇이 떨어지든 로고는 왼쪽·나머지는 오른쪽으로 뭉친다. */
+  .site-header {
+    justify-content: flex-end;
+  }
+  .site-header > .brand {
+    margin-right: auto;
+  }
   .site-header > .lang-wrap {
     order: 1;
-    margin-left: auto;
+    margin-left: 8px;
   }
   .omni {
     order: 1;

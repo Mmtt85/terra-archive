@@ -1,6 +1,7 @@
 "use client";
 
-// 위수 협의(오토체스) 가이드 — 사용자 확정 2026-08-22
+// 위수 협의 가이드 — 사용자 확정 2026-08-22
+// (커뮤니티에서 '오토체스·명토체스'로 부르지만 그건 별명이다 — 화면에는 쓰지 않는다)
 //
 // 화면 규약: 생존연산·통합전략 가이드와 같은 「요약 카드 목록 → 클릭하면 상세 모달」.
 // 사용자가 짚은 우선순위 그대로 뷰 순서를 잡았다 —
@@ -349,11 +350,9 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
     <section className="ac-guide" aria-labelledby="ac-title">
       <header className="sim-head">
         <span className="section-no">STRONGHOLD PROTOCOL</span>
-        <h2 id="ac-title">{doc.name}
-          <span className="ac-sub">{t("오토체스 모드")}</span>
-        </h2>
+        <h2 id="ac-title">{doc.name}</h2>
       </header>
-      <p className="sim-intro">{t("맹약(진영·특성)별 오퍼레이터와 각자의 위수 협의 전용 능력, 특훈 적과 리더 적, 보급센터 수치와 라운드 지형을 게임 데이터에서 그대로 정리했습니다.")}</p>
+      <p className="sim-intro">{t("맹약(진영·특성)별 오퍼레이터와 각자의 위수 협의 전용 능력, 특훈 적과 리더 적, 보급센터 수치를 게임 데이터에서 그대로 정리했습니다.")}</p>
       {doc.krOnly && (
         <p className="sim-note">{t("이 모드는 아직 글로벌 서버에 출시되지 않아 설명문은 한국어 원문으로 표시됩니다. 일부 이름은 시즌 1의 영어 표기입니다.")}</p>
       )}
@@ -554,8 +553,6 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
              인게임 수치는 '모드·보상 → 보급센터'로 옮겼다 (사용자 교정 2026-08-22). */}
       {view === "shop" && (
         <div className="ac-shop">
-          <p className="sim-note">{t("물자관리소는 출전 전에 이 모드에 나오는 오퍼레이터와 아이템을 확인하고 편성하는 곳입니다. 판이 시작된 뒤 이들을 사고파는 상점은 보급센터이고, 그 수치는 '모드·보상'에 있습니다.")}</p>
-
           <div className="ac-subtabs" role="tablist" aria-label={t("물자관리소")}>
             {SHOP_TABS.map((tb) => (
               <button key={tb} type="button" role="tab" aria-selected={shopTab === tb}

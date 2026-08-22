@@ -2752,10 +2752,9 @@ const D: Record<string, Pair> = {
   "위수 협의 보기": ["Stronghold Protocol views", "堅守協定の表示"],
   "위수 협의 능력": ["Garrison ability", "駐留能力"],
   "맹약별 오퍼레이터·전용 능력·특훈 적·보급센터 수치를 정리": ["Operators by alliance, garrison abilities, training enemies and Supply Center numbers", "盟約ごとのオペレーター・専用能力・訓練用仮想敵・補給センターの数値"],
-  "오토체스 모드": ["Auto chess mode", "オートチェスモード"],
-  "맹약(진영·특성)별 오퍼레이터와 각자의 위수 협의 전용 능력, 특훈 적과 리더 적, 보급센터 수치와 라운드 지형을 게임 데이터에서 그대로 정리했습니다.": [
-    "Operators grouped by alliance (nation and trait) with the garrison ability each one carries, plus Tactical Training and leader enemies, Supply Center numbers and every round's map — straight from the game data.",
-    "盟約（国家・特性）ごとのオペレーターとそれぞれの専用能力、訓練用仮想敵とリーダー級の敵、補給センターの数値とラウンド地形をゲームデータからそのまま整理しました。"],
+  "맹약(진영·특성)별 오퍼레이터와 각자의 위수 협의 전용 능력, 특훈 적과 리더 적, 보급센터 수치를 게임 데이터에서 그대로 정리했습니다.": [
+    "Operators grouped by alliance (nation and trait) with the garrison ability each one carries, plus Tactical Training and leader enemies and every Supply Center number — straight from the game data.",
+    "盟約（国家・特性）ごとのオペレーターとそれぞれの専用能力、訓練用仮想敵とリーダー級の敵、補給センターの数値をゲームデータからそのまま整理しました。"],
   "이 모드는 아직 글로벌 서버에 출시되지 않아 설명문은 한국어 원문으로 표시됩니다. 일부 이름은 시즌 1의 영어 표기입니다.": [
     "This mode has not launched on the Global server yet, so descriptions are shown in the original Korean. Some names come from the Season 1 English text.",
     "このモードはグローバルサーバー未実装のため、説明文は韓国語の原文で表示されます。"],
@@ -2912,9 +2911,6 @@ const D: Record<string, Pair> = {
   "보급센터 레벨 5·6에서 각각 {n}칸씩 열립니다. 게임 데이터에는 후보 명단 대신 '★6 오퍼레이터'라는 조건만 들어 있어, 위 목록에 이미 들어 있는 ★6을 뺀 나머지 KR 출시 ★6 전원을 싣습니다. 누르면 오퍼레이터 상세로 갑니다.": [
     "Supply Center levels 5 and 6 open {n} slots each. The game data carries no candidate list — only the condition \"6★ operator\" — so this lists every 6★ released on the KR server minus the ones already in the roster above. Tap one for its operator page.",
     "補給センターレベル5・6でそれぞれ{n}枠開放されます。ゲームデータには候補リストがなく「★6オペレーター」という条件のみのため、上の一覧にすでにいる★6を除いた韓国サーバー実装済みの★6全員を載せています。押すとオペレーター詳細へ進みます。"],
-  "물자관리소는 출전 전에 이 모드에 나오는 오퍼레이터와 아이템을 확인하고 편성하는 곳입니다. 판이 시작된 뒤 이들을 사고파는 상점은 보급센터이고, 그 수치는 '모드·보상'에 있습니다.": [
-    "The Supply Depot is where you check and arrange the operators and items this mode offers before a run. The shop that sells them once a run starts is the Supply Center, and its numbers live under Modes & rewards.",
-    "管理センターは出撃前にこのモードに登場するオペレーターとアイテムを確認・編成する場所です。対戦開始後にそれらを売買するショップは補給センターで、その数値は「モード・報酬」にあります。"],
   // 전략 상세 — 해금 조건 (게임 문구는 데이터에서 로케일별로 온다)
   "해금 조건": ["Unlock condition", "解放条件"],
   "처음부터 고를 수 있는 전략입니다.": [
