@@ -102,6 +102,11 @@ python3 scripts/build-eventlore.py              # → app/data/eventlore{,.en,.j
 #     달라 이벤트별 추출기(EXTRACT)를 둔다 — 새 이벤트를 실으려면 추출기 + META(미니게임
 #     이름·한 줄 안내 3로케일)를 함께 추가한다. 썸네일·출시월은 stories.json에서 끌어온다.
 #     ⚠ 읽을거리만 싣는다 — 카드 조합 레시피·스테이지 기믹 설명 같은 순수 기능 텍스트는 뺐다.
+#     그림도 같이 받는다 → public/lore/<act>/ (중생의 여정 의뢰인·물건·총기 20 · 폐허 손님·신문 22
+#     · 재건 계획 썸네일 1). 이벤트마다 에셋 번들 이름이 제각각이라([uc]guntask, [uc]informant …)
+#     새 이벤트는 ArknightsAssets2 트리에서 번들을 찾아 스크립트에 짝을 더해야 한다. --no-icons로 생략.
+#     ⚠ 새 그림을 뽑았으면 node scripts/r2-sync.mjs 를 같이 돌린다 — asset()은 로컬에서도 R2를 문다.
+#       (업로드 **전에** 그 URL을 열어 보면 Cloudflare가 404를 캐시해 한동안 안 뜬다.)
 python3 scripts/build-autochess.py             # → app/data/autochess{,.en,.ja}.json
 #     + public/ac/ 아이콘 134장 (맹약·밴드·장비·능력 분류·모드·특훈 적 유형). --no-icons로 아이콘 생략
 #     (위수 협의=오토체스 가이드. 입력은 .gamedata/{kr,jp,en}_activity_table.json 하나 —

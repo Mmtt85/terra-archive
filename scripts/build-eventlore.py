@@ -15,11 +15,18 @@ ko/en/ja를 한 번에 낸다 (build-i18n.py 불필요 — build-autochess.py와
 사용: python3 scripts/build-eventlore.py
 입력: .gamedata/{kr,en,jp}_activity_table.json  (scripts/fetch-gamedata.py로 받는다)
 """
-import json, os, re, sys
+import json, os, re, sys, urllib.request
+from concurrent.futures import ThreadPoolExecutor
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 S = os.path.join(REPO, ".gamedata")
 DATA = os.path.join(REPO, "app", "data")
+PUB = os.path.join(REPO, "public", "lore")
+ASSETS = "https://raw.githubusercontent.com/ArknightsAssets/ArknightsAssets2/cn/assets/dyn/ui"
+NO_ICONS = "--no-icons" in sys.argv
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from imgutil import save_webp  # noqa: E402
 
 PREFIX = {"ko": "kr", "en": "en", "ja": "jp"}
 SUFFIX = {"ko": "", "en": ".en", "ja": ".ja"}
@@ -57,10 +64,14 @@ def V(x):
     return []
 
 
-def item(t="", d="", by="", d2="", tag=""):
+def item(t="", d="", by="", d2="", tag="", img="", face=""):
+    """img = 항목 그림(가로로 크게), face = 화자·인물 얼굴(작은 원판)."""
     o = {}
     for k, v in (("t", t), ("by", by), ("tag", tag), ("d", d), ("d2", d2)):
         v = rich(v)
+        if v:
+            o[k] = v
+    for k, v in (("img", img), ("face", face)):
         if v:
             o[k] = v
     return o if o.get("d") or o.get("d2") or o.get("t") else None
@@ -116,10 +127,18 @@ RESULT = {
 def ex_act42side(d, loc):
     tasks = sorted(V(d.get("taskData")), key=lambda x: x.get("sortId") or 0)
     guns = V(d.get("gunData"))
+    face = {t.get("trustorId"): t.get("trustorIconLarge") for t in V(d.get("trustorData"))}
+    P = "/lore/act42side"
     return [
+        # 물건 그림 = 그 기억을 불러온 물건이다 (afterTaskItemIcon) — 글과 짝이라 같이 싣는다
         sec(SEC["task"][loc], [item(t=x.get("taskName"), by=x.get("trustorName"),
-                                    d=x.get("taskContent"), d2=x.get("afterTaskContent")) for x in tasks]),
-        sec(SEC["gun"][loc], [item(t=x.get("gunName"), by=x.get("trustorName"), d=x.get("gunContent")) for x in guns]),
+                                    d=x.get("taskContent"), d2=x.get("afterTaskContent"),
+                                    img=f"{P}/item_{x['afterTaskItemIcon']}.webp" if x.get("afterTaskItemIcon") else "",
+                                    face=f"{P}/face_{face[x['trustorId']]}.webp" if face.get(x.get("trustorId")) else "")
+                               for x in tasks]),
+        sec(SEC["gun"][loc], [item(t=x.get("gunName"), by=x.get("trustorName"), d=x.get("gunContent"),
+                                   img=f"{P}/gun_{x['gunColorIcon']}.webp" if x.get("gunColorIcon") else "")
+                              for x in guns]),
     ]
 
 
@@ -165,10 +184,15 @@ def ex_act46side(d, loc):
 
 
 def ex_act44side(d, loc):
+    P = "/lore/act44side"
     return [
-        sec(SEC["customer"][loc], [item(t=x.get("name"), d=x.get("description")) for x in V(d.get("customerDataMap"))]),
+        sec(SEC["customer"][loc], [item(t=x.get("name"), d=x.get("description"),
+                                        face=f"{P}/cust_{x['iconId'].lower()}.webp" if x.get("iconId") else "")
+                                   for x in V(d.get("customerDataMap"))]),
         sec(SEC["trait"][loc], [item(t=x.get("name"), d=x.get("description")) for x in V(d.get("tagDataMap"))]),
-        sec(SEC["news"][loc], [item(t=x.get("title"), tag=x.get("desc1"), d=x.get("desc2")) for x in V(d.get("newsDataMap"))]),
+        sec(SEC["news"][loc], [item(t=x.get("title"), tag=x.get("desc1"), d=x.get("desc2"),
+                                    img=f"{P}/news_{x['imgId'].lower()}.webp" if x.get("imgId") else "")
+                               for x in V(d.get("newsDataMap"))]),
         sec(SEC["dialog"][loc], [item(d=v) for v in V(d.get("customerDialogMap"))]),
         sec(SEC["keeper"][loc], [item(d=v) for v in V(d.get("keeperDialogMap"))]),
     ]
@@ -358,6 +382,16 @@ META = {
 # 이벤트 썸네일·출시월은 스토리 아카이브(stories.json)가 이미 갖고 있다 — 새로 받지 않는다.
 THUMB_KEY = {"ko": "thumb", "en": "thumbEn", "ja": "thumbJa"}
 
+# stories.json에 없는 이벤트(스토리가 없거나 메인스토리에 묶인 것)의 썸네일 보정.
+#   · 재건 계획 — 스토리가 없는 미니게임 이벤트라 storyentrypic이 없다.
+#     홈 화면 진입 아트(arts/ui/stage/[uc]homeentry/<act>.png, 280×166)를 받아 쓴다.
+#   · 자비의 등대 — 메인스토리 14장과 같은 존(main_14)이라 이미 받아 둔 장 썸네일을 그대로.
+THUMB_FIX = {
+    "act1vhalfidle": "/lore/act1vhalfidle/thumb.webp",
+    "act1mainss": "/story/main_14.webp",
+}
+HOMEENTRY = ASSETS.rsplit("/", 1)[0] + "/arts/ui/stage/%5Buc%5Dhomeentry"
+
 
 def story_meta():
     path = os.path.join(DATA, "stories.json")
@@ -366,6 +400,70 @@ def story_meta():
     raw = json.load(open(path, encoding="utf-8"))
     evs = raw.get("events") if isinstance(raw, dict) else raw
     return {e["id"]: e for e in (evs or []) if e.get("id")}
+
+
+# ── 그림 ─────────────────────────────────────────────────────────────────────
+# 이벤트 번들은 이름이 제각각이다 (중생의 여정 = [uc]guntask). 새 이벤트의 그림을 실으려면
+# https://github.com/ArknightsAssets/ArknightsAssets2/tree/cn/assets/dyn/ui 에서 번들을 찾아
+# 여기에 (원본경로 → public/lore/<act>/<이름>.webp) 짝을 더한다.
+GUNTASK = f"{ASSETS}/%5Buc%5Dguntask/arts"          # 중생의 여정
+INFORMANT = f"{ASSETS}/%5Buc%5Dinformant/arts"      # 폐허 (⚠ 파일명이 전부 소문자다)
+
+
+def download(jobs):
+    def one(job):
+        url, dest = job
+        if os.path.exists(dest):
+            return None
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "terra-archive-eventlore/1.0"})
+            raw = urllib.request.urlopen(req, timeout=60).read()
+            os.makedirs(os.path.dirname(dest), exist_ok=True)
+            save_webp(raw, dest, method=4)
+            return None
+        except Exception as err:  # noqa: BLE001 — 그림 한 장 실패해도 글은 낸다
+            return (url, str(err))
+    with ThreadPoolExecutor(12) as ex:
+        return [f for f in ex.map(one, jobs) if f]
+
+
+def fetch_images(d, d44):
+    """중생의 여정 — 의뢰인 초상 4 · 기억을 부른 물건 12 · 총기 4.
+       폐허 — 손님 초상 12 · 신문 사진 10."""
+    jobs = []
+    if d44:
+        out44 = os.path.join(PUB, "act44side")
+        for c in V(d44.get("customerDataMap")):
+            if c.get("iconId"):
+                jobs.append((f"{INFORMANT}/customericon/{c['iconId'].lower()}.png",
+                             os.path.join(out44, f"cust_{c['iconId'].lower()}.webp")))
+        for n in V(d44.get("newsDataMap")):
+            if n.get("imgId"):
+                jobs.append((f"{INFORMANT}/newsicon/{n['imgId'].lower()}.png",
+                             os.path.join(out44, f"news_{n['imgId'].lower()}.webp")))
+    jobs.append((f"{HOMEENTRY}/act1vhalfidle.png",
+                 os.path.join(PUB, "act1vhalfidle", "thumb.webp")))
+    if not d:
+        return _run(jobs)
+    out = os.path.join(PUB, "act42side")
+    for t in V(d.get("trustorData")):
+        if t.get("trustorIconLarge"):
+            jobs.append((f"{GUNTASK}/avatarlarge/{t['trustorIconLarge']}.png",
+                         os.path.join(out, f"face_{t['trustorIconLarge']}.webp")))
+    for icon in {t.get("afterTaskItemIcon") for t in V(d.get("taskData")) if t.get("afterTaskItemIcon")}:
+        jobs.append((f"{GUNTASK}/itemicon/{icon}.png", os.path.join(out, f"item_{icon}.webp")))
+    for g in V(d.get("gunData")):
+        if g.get("gunColorIcon"):
+            jobs.append((f"{GUNTASK}/gunlarge/{g['gunColorIcon']}.png",
+                         os.path.join(out, f"gun_{g['gunColorIcon']}.webp")))
+    return _run(jobs)
+
+
+def _run(jobs):
+    fails = download(jobs)
+    print(f"그림 {len(jobs) - len(fails)}/{len(jobs)}장 → public/lore/")
+    for url, err in fails[:6]:
+        print(f"  ⚠ {url.rsplit('/', 1)[-1]}: {err}")
 
 
 def main():
@@ -407,7 +505,7 @@ def main():
             m = META.get(act_id, {})
             ev = {"id": act_id, "n": name, "secs": secs}
             sm = smeta.get(act_id) or {}
-            thumb = sm.get(THUMB_KEY[loc]) or sm.get("thumb")
+            thumb = sm.get(THUMB_KEY[loc]) or sm.get("thumb") or THUMB_FIX.get(act_id)
             if thumb:
                 ev["thumb"] = thumb
             if sm.get("start"):
@@ -420,6 +518,9 @@ def main():
         else:
             n = sum(len(s["items"]) for s in out["ko"]["events"][-1]["secs"])
             report.append(f"  {act_id:<14} {basic.get(act_id, {}).get('name', ''):<22} 섹션 {len(out['ko']['events'][-1]['secs'])} · 글 {n}")
+
+    if not NO_ICONS:
+        fetch_images(block(kr, "act42side"), block(kr, "act44side"))
 
     for loc, suf in SUFFIX.items():
         path = os.path.join(DATA, f"eventlore{suf}.json")

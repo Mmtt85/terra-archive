@@ -16911,6 +16911,26 @@ main.site-main > .site-header {
   flex: 1 1 auto;
   min-height: 0;
 }
+/* ── 창 안쪽 기본 여백 ──────────────────────────────────────────────────────
+   종전 관례는 "`.mw-body`는 패딩 0이 기본이고 **모달마다 자기 여백을 준다**"였는데,
+   새 모달을 만들 때마다 그걸 잊어 내용이 창 벽에 붙는 일이 반복됐다 (사용자 지적
+   2026-08-23: "또 모달에 padding이 없다. 매번 새 모달 만들 때마다 발생하는 문제 같은데
+   글로벌 스타일에 문제 있는 거 아님?" — 실측: 이벤트 기록 모달 벽↔글자 1px).
+   그래서 **기본값을 여백 있는 쪽으로 뒤집는다.** 새 모달은 아무것도 안 해도 옳고,
+   기존 모달은 그대로다:
+     · `.ac-modal .mw-body { padding }` 처럼 자기 값을 가진 모달 → 명시 규칙이 이긴다(0,2,0)
+     · 본문 컨테이너가 스스로 패딩을 갖는 모달 → 바로 아래 :has()가 0으로 되돌린다
+   값은 가장 최근 관례(.ac-modal)와 같은 12px 22px 24px. */
+.mw-body {
+  padding: 12px 22px 24px;
+}
+/* 자체 여백을 가진 본문 컨테이너를 **직접** 품은 창은 위 기본값을 물린다 — 겹치면 두 겹이 된다.
+   (:has 미지원 브라우저에서는 여백이 두 겹이 될 뿐 내용이 잘리지는 않는다.)
+   새로 그런 컨테이너를 만들면 여기 목록에 더한다. */
+.mw-body:has(> :where(.modal-body, .modal-scroll, .en-file, .st-file, .bcast-list, .chlog-list,
+  .invest-list, .fb-thread, .fb-thread-modal, .chibi-chat-clear, .room-modal-head, .item-modal-icon)) {
+  padding: 0;
+}
 .mw-chrome {
   flex: none;
   display: flex;
@@ -19930,4 +19950,33 @@ button.ac-card:hover { border-color: var(--border-strong); background: var(--pap
 @media (max-width: 560px) {
   .el-cards { grid-template-columns: minmax(0, 1fr); }
   .el-thumb { width: 74px; height: 52px; }
+}
+
+/* 이벤트 기록의 그림 — 의뢰인 얼굴(작은 원판)과 물건·총기 그림(글 옆에 흘림).
+   사용자 지적 2026-08-23: "각 이벤트 기록에 이미지같은것도 있는 경우 많지 않음?" */
+.el-face {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: color-mix(in srgb, var(--line) 40%, var(--bg-panel));
+}
+.el-entry > header {
+  align-items: center;
+}
+.el-img {
+  float: right;
+  width: 72px;
+  height: 72px;
+  margin: 0 0 8px 12px;
+  object-fit: contain;
+}
+.el-entry.has-img::after {
+  content: "";
+  display: block;
+  clear: both;
+}
+@media (max-width: 560px) {
+  .el-img { width: 56px; height: 56px; margin-left: 9px; }
 }

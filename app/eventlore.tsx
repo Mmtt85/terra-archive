@@ -16,7 +16,7 @@ import { useI18n, rich } from "./i18n";
 import { ModalWindow } from "./modal-window";
 import { asset } from "./assets";
 
-export type LoreItem = { t?: string; by?: string; tag?: string; d?: string; d2?: string };
+export type LoreItem = { t?: string; by?: string; tag?: string; d?: string; d2?: string; img?: string; face?: string };
 export type LoreSec = { n: string; items: LoreItem[] };
 export type LoreEvent = { id: string; n: string; mini?: string; note?: string; thumb?: string; start?: string; secs: LoreSec[] };
 export type LoreDoc = { events: LoreEvent[] };
@@ -99,9 +99,13 @@ export default function EventLore({ doc }: { doc: LoreDoc }) {
 
           <div className="el-entries">
             {shown.map((it, i) => (
-              <article key={i} className="el-entry">
-                {(it.t || it.by || it.tag) && (
+              <article key={i} className={`el-entry${it.img ? " has-img" : ""}`}>
+                {/* 물건 그림은 글의 장식이 아니라 **그 기억을 불러온 물건**이다 (중생의 여정) —
+                    글 옆에 흘려 두고, 글이 짧으면 자연스럽게 아래로 감긴다. */}
+                {it.img && <img className="el-img" src={asset(it.img)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />}
+                {(it.t || it.by || it.tag || it.face) && (
                   <header>
+                    {it.face && <img className="el-face" src={asset(it.face)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />}
                     {it.t && <b>{it.t}</b>}
                     {it.by && <i className="sb-chip">{it.by}</i>}
                     {it.tag && <i className="el-tag">{it.tag}</i>}
