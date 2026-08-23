@@ -219,6 +219,8 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
   // 시뮬레이터 — 진영·특성 맹약 하나씩 (사용자 요청 2026-08-23). ""는 미선택.
   const [simN, setSimN] = useState("");
   const [simT, setSimT] = useState("");
+  // 시뮬레이터 자체 특질 필터 — 물자관리소 필터와 별개 상태 (사용자 요청 2026-08-23)
+  const [simGar, setSimGar] = useState("");
   const [shopMode, setShopMode] = useState("mode_single_normal");
   const { term, clear, inputProps } = useSearchInput();
 
@@ -286,11 +288,11 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
     // 맹약 목록 순서(진영 먼저)대로, '핵심 맹약'은 맨 뒤
     return ids.sort((a, b) => (a === "core" ? 1 : b === "core" ? -1 : (bondById.get(a) ? doc.bonds.findIndex((x) => x.id === a) : 99) - (bondById.get(b) ? doc.bonds.findIndex((x) => x.id === b) : 99)));
   }, [doc, bondById]);
-  const matchGar = (c: AcChess) => {
-    if (!garFilter) return true;
+  const matchGarBy = (c: AcChess, filter: string) => {
+    if (!filter) return true;
     const e = garTagsOf.get(c.id);
     if (!e) return false;
-    return garFilter.startsWith("every:") ? e.evb.has(garFilter.slice(6)) : e.tags.has(garFilter);
+    return filter.startsWith("every:") ? e.evb.has(filter.slice(6)) : e.tags.has(filter);
   };
 
   // 시뮬레이터 추천 — 소속(양쪽/한쪽)과 '특질이 그 맹약을 언급'(중첩시키거나 세거나)을 가른다.
@@ -313,6 +315,7 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
     const both: AcChess[] = [], nOnly: AcChess[] = [], tOnly: AcChess[] = [];
     for (const c of doc.chess) {
       if (c.kind === "DIY") continue;
+      if (!matchGarBy(c, simGar)) continue;   // 시뮬레이터 자체 특질 필터
       const inN = Boolean(simN) && c.bonds.includes(simN);
       const inT = Boolean(simT) && c.bonds.includes(simT);
       if (inN && inT) both.push(c);
@@ -324,11 +327,12 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
     const byTier = (a: AcChess, b: AcChess) =>
       feeds(a) - feeds(b) || (a.t - b.t) || ((a.sort || 99) - (b.sort || 99)) || a.n.localeCompare(b.n);
     for (const arr of [both, nOnly, tOnly]) arr.sort(byTier);
-    const items = doc.equips.filter((e) => !e.hide && e.bond && (e.bond === simN || e.bond === simT))
-      .sort((a, b) => a.t - b.t || a.sort - b.sort);
-    return { both, nOnly, tOnly, items };
+    // 아이템 추천은 넣지 않는다 (사용자 확정 2026-08-23: "데이터 문제가 아니라 사용자의
+    // 주관이 들어가니까 추천 안 하는 게 맞겠다") — 맹약 아이템은 장착만으로 중첩을 주지도
+    // 않아서(클뜯 canGiveBond 전부 false, 변형 구조체 조합 시에만 맹약 부여) 근거도 약하다.
+    return { both, nOnly, tOnly };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [doc, simN, simT, garTagsOf]);
+  }, [doc, simN, simT, simGar, garTagsOf]);
 
   const q = normSearch(term);
   const chessRows = useMemo(() => doc.chess.filter((c) => {
@@ -337,7 +341,7 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
     if (c.kind === "DIY") return false;
     if (tier && c.t !== tier) return false;
     if (bondFilter && !c.bonds.includes(bondFilter)) return false;
-    if (!matchGar(c)) return false;
+    if (!matchGarBy(c, garFilter)) return false;
     if (!q) return true;
     const hay = [c.n, c.job ?? "", c.sk?.n ?? "", c.mod?.n ?? "",
       ...c.bonds.map(nameOfBond),
@@ -458,7 +462,7 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
   // 옆으로 펼쳐지고, 호버가 없는 기기는 ▸ 버튼을 탭하면 아래로 아코디언처럼 펼쳐진다.
   // 세 드롭다운(티어·맹약·특질)이 한 스타일을 쓴다 (사용자 요청 2026-08-23: T1~T6 버튼 줄과
   // 네이티브 select가 제각각이라 통일). 한 번에 하나만 열린다.
-  const [openMenu, setOpenMenu] = useState<"" | "tier" | "bond" | "gar">("");
+  const [openMenu, setOpenMenu] = useState<"" | "tier" | "bond" | "gar" | "simN" | "simT" | "simGar">("");
   const [garSubOpen, setGarSubOpen] = useState(false);
   const closeMenus = () => { setOpenMenu(""); setGarSubOpen(false); };
   useEffect(() => {
@@ -473,17 +477,88 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openMenu]);
   const evbName = (id: string) => (id === "core" ? t("핵심 맹약") : bondById.get(id)?.n ?? id);
-  const pickGar = (v: string) => { setGarFilter(v); closeMenus(); };
-  const garFilterLabel = !garFilter ? t("특질 전체")
-    : garFilter.startsWith("every:") ? `${t(GAR_CAT_LABEL.every)} · ${evbName(garFilter.slice(6))}`
-      : t(GAR_CAT_LABEL[garFilter]);
-  const garMenuItem = (value: string, label: string) => (
-    <li key={value || "all"} role="none">
-      <button type="button" role="menuitemradio" aria-checked={garFilter === value}
-        className={garFilter === value ? "on" : ""} onClick={() => pickGar(value)}>
-        <span>{label}</span><em>{garCatCount.get(value || "__all") ?? (value ? 0 : doc.chess.filter((c) => c.kind !== "DIY").length)}</em>
+  // 특질 드롭다운 — 물자관리소 필터 바와 시뮬레이터가 **같은 것**을 쓴다 (상태만 다르다,
+  // 사용자 요청 2026-08-23). menuKey로 어느 자리의 메뉴가 열렸는지 갈라 한 번에 하나만 연다.
+  const garDropdown = (cur: string, setCur: (v: string) => void, menuKey: "gar" | "simGar") => {
+    const pick = (v: string) => { setCur(v); closeMenus(); };
+    const label = !cur ? t("특질 전체")
+      : cur.startsWith("every:") ? `${t(GAR_CAT_LABEL.every)} · ${evbName(cur.slice(6))}`
+        : t(GAR_CAT_LABEL[cur]);
+    const item = (value: string, lab: string) => (
+      <li key={value || "all"} role="none">
+        <button type="button" role="menuitemradio" aria-checked={cur === value}
+          className={cur === value ? "on" : ""} onClick={() => pick(value)}>
+          <span>{lab}</span><em>{garCatCount.get(value || "__all") ?? (value ? 0 : doc.chess.filter((c) => c.kind !== "DIY").length)}</em>
+        </button>
+      </li>
+    );
+    return (
+      <div className="ac-garsel">
+        <button type="button" className={`ac-garsel-btn${cur ? " on" : ""}`}
+          aria-haspopup="menu" aria-expanded={openMenu === menuKey}
+          onClick={() => { setOpenMenu(openMenu === menuKey ? "" : menuKey); setGarSubOpen(false); }}>
+          {label} <i aria-hidden>▾</i>
+        </button>
+        {openMenu === menuKey && (
+          <ul className="ac-garsel-menu" role="menu" aria-label={t("특질로 거르기")}>
+            {item("", t("특질 전체"))}
+            {GAR_CATS.map((cat) => cat === "every" ? (
+              <li key={cat} role="none" className={`has-sub${garSubOpen ? " open" : ""}`}
+                /* ⚠ 터치 기기는 탭 직전에 합성 mouseenter를 쏜다 — 호버로 열자마자 ▾ 클릭이
+                   도로 닫아 서브메뉴가 안 열렸다 (2026-08-23 실측). 진짜 호버 기기에서만 듣는다. */
+                onMouseEnter={() => { if (matchMedia("(hover: hover)").matches) setGarSubOpen(true); }}
+                onMouseLeave={() => { if (matchMedia("(hover: hover)").matches) setGarSubOpen(false); }}>
+                <button type="button" role="menuitemradio" aria-checked={cur === "every"}
+                  className={cur.startsWith("every") ? "on" : ""} onClick={() => pick("every")}>
+                  <span>{t(GAR_CAT_LABEL.every)}</span><em>{garCatCount.get("every") ?? 0}</em>
+                </button>
+                {/* 펼침 버튼 — 행 클릭(=전체 선택)과 역할이 다르다. 데스크탑은 호버로도 열리지만
+                    키보드·터치스크린 노트북은 이 버튼이 유일한 경로라 **항상** 노출한다 (감사 2026-08-23) */}
+                <button type="button" className="ac-garsel-more" aria-expanded={garSubOpen}
+                  aria-label={t("맹약별로 보기")}
+                  onClick={(e) => { e.stopPropagation(); setGarSubOpen((v) => !v); }}>▾</button>
+                {garSubOpen && (
+                  <ul className="ac-garsel-sub" role="menu" aria-label={t(GAR_CAT_LABEL.every)}>
+                    {item("every", t("전체"))}
+                    {everyBonds.map((b) => item(`every:${b}`, evbName(b)))}
+                  </ul>
+                )}
+              </li>
+            ) : (
+              <li key={cat} role="none">
+                <button type="button" role="menuitemradio" aria-checked={cur === cat}
+                  className={cur === cat ? "on" : ""} onClick={() => pick(cat)}>
+                  <span>{t(GAR_CAT_LABEL[cat])}</span><em>{garCatCount.get(cat) ?? 0}</em>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    );
+  };
+  // 시뮬레이터의 맹약 선택 드롭다운 (진영/특성 각 1) — 같은 드롭다운 스타일 (사용자 요청 2026-08-23:
+  // "맹약 일렬로 주르르륵 하지 말고 전부 다 드랍다운으로")
+  const bondDropdown = (nation: boolean, cur: string, setCur: (v: string) => void, menuKey: "simN" | "simT") => (
+    <div className="ac-garsel">
+      <button type="button" className={`ac-garsel-btn${cur ? " on" : ""}`}
+        aria-haspopup="menu" aria-expanded={openMenu === menuKey}
+        onClick={() => { setOpenMenu(openMenu === menuKey ? "" : menuKey); setGarSubOpen(false); }}>
+        {cur ? nameOfBond(cur) : t(nation ? "진영 맹약 선택" : "특성 맹약 선택")} <i aria-hidden>▾</i>
       </button>
-    </li>
+      {openMenu === menuKey && (
+        <ul className="ac-garsel-menu scroll" role="menu" aria-label={t(nation ? "진영 맹약" : "특성 맹약")}>
+          <li role="none"><button type="button" role="menuitemradio" aria-checked={!cur}
+            className={!cur ? "on" : ""} onClick={() => { setCur(""); closeMenus(); }}><span>{t("선택 안 함")}</span></button></li>
+          {doc.bonds.filter((b) => b.nation === nation).map((b) => (
+            <li key={b.id} role="none"><button type="button" role="menuitemradio" aria-checked={cur === b.id}
+              className={cur === b.id ? "on" : ""} onClick={() => { setCur(b.id); closeMenus(); }}>
+              <img className="ac-garsel-icon" src={bondIcon(b.id)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
+              <span>{b.n}</span><em>{b.chess.length}</em></button></li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 
   const filterBar = (
@@ -531,50 +606,7 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
         )}
       </div>
       {/* 특질 필터는 오퍼레이터 목록에만 — 아이템 탭에는 특질이 없다 */}
-      {shopTab === "op" && (
-        <div className="ac-garsel">
-          <button type="button" className={`ac-garsel-btn${garFilter ? " on" : ""}`}
-            aria-haspopup="menu" aria-expanded={openMenu === "gar"}
-            onClick={() => { setOpenMenu(openMenu === "gar" ? "" : "gar"); setGarSubOpen(false); }}>
-            {garFilterLabel} <i aria-hidden>▾</i>
-          </button>
-          {openMenu === "gar" && (
-            <ul className="ac-garsel-menu" role="menu" aria-label={t("특질로 거르기")}>
-              {garMenuItem("", t("특질 전체"))}
-              {GAR_CATS.map((cat) => cat === "every" ? (
-                <li key={cat} role="none" className={`has-sub${garSubOpen ? " open" : ""}`}
-                  /* ⚠ 터치 기기는 탭 직전에 합성 mouseenter를 쏜다 — 호버로 열자마자 ▾ 클릭이
-                     도로 닫아 서브메뉴가 안 열렸다 (2026-08-23 실측). 진짜 호버 기기에서만 듣는다. */
-                  onMouseEnter={() => { if (matchMedia("(hover: hover)").matches) setGarSubOpen(true); }}
-                  onMouseLeave={() => { if (matchMedia("(hover: hover)").matches) setGarSubOpen(false); }}>
-                  <button type="button" role="menuitemradio" aria-checked={garFilter === "every"}
-                    className={garFilter.startsWith("every") ? "on" : ""} onClick={() => pickGar("every")}>
-                    <span>{t(GAR_CAT_LABEL.every)}</span><em>{garCatCount.get("every") ?? 0}</em>
-                  </button>
-                  {/* 펼침 버튼 — 행 클릭(=전체 선택)과 역할이 다르다. 데스크탑은 호버로도 열리지만
-                      키보드·터치스크린 노트북은 이 버튼이 유일한 경로라 **항상** 노출한다 (감사 2026-08-23) */}
-                  <button type="button" className="ac-garsel-more" aria-expanded={garSubOpen}
-                    aria-label={t("맹약별로 보기")}
-                    onClick={(e) => { e.stopPropagation(); setGarSubOpen((v) => !v); }}>▾</button>
-                  {garSubOpen && (
-                    <ul className="ac-garsel-sub" role="menu" aria-label={t(GAR_CAT_LABEL.every)}>
-                      {garMenuItem("every", t("전체"))}
-                      {everyBonds.map((b) => garMenuItem(`every:${b}`, evbName(b)))}
-                    </ul>
-                  )}
-                </li>
-              ) : (
-                <li key={cat} role="none">
-                  <button type="button" role="menuitemradio" aria-checked={garFilter === cat}
-                    className={garFilter === cat ? "on" : ""} onClick={() => pickGar(cat)}>
-                    <span>{t(GAR_CAT_LABEL[cat])}</span><em>{garCatCount.get(cat) ?? 0}</em>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
+      {shopTab === "op" && garDropdown(garFilter, setGarFilter, "gar")}
     </div>
   );
 
@@ -604,27 +636,12 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
       {/* ══ 시뮬레이터 — 진영·특성 맹약 하나씩 골라 조합을 설계한다 (사용자 요청 2026-08-23) ══ */}
       {view === "build" && (
         <div className="ac-sim">
-          <p className="sim-note">{t("진영 맹약과 특성 맹약을 하나씩 고르면, 그 맹약에 소속된 오퍼레이터 전원과 특질로 중첩을 도와주는 오퍼레이터, 관련 아이템을 모아서 보여줍니다.")}</p>
-          {[true, false].map((nation) => {
-            const cur = nation ? simN : simT;
-            const set = nation ? setSimN : setSimT;
-            return (
-              <div key={String(nation)} className="ac-simpick">
-                <h4>{t(nation ? "진영 맹약" : "특성 맹약")}</h4>
-                <div className="ac-simpick-row">
-                  {doc.bonds.filter((b) => b.nation === nation).map((b) => (
-                    <button key={b.id} type="button"
-                      className={`ac-bondchip${b.nation ? " nation" : ""}${cur === b.id ? " on" : ""}`}
-                      aria-pressed={cur === b.id}
-                      onClick={() => set(cur === b.id ? "" : b.id)}>
-                      <img src={bondIcon(b.id)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
-                      {b.n}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
+          <p className="sim-note">{t("진영 맹약과 특성 맹약을 하나씩 고르면, 그 맹약에 소속된 오퍼레이터 전원을 모아서 보여줍니다 — 특질로 중첩을 올리거나 중첩마다 강해지는 오퍼레이터가 맨 앞에 섭니다.")}</p>
+          <div className="ac-filters ac-sim-filters">
+            {bondDropdown(true, simN, setSimN, "simN")}
+            {bondDropdown(false, simT, setSimT, "simT")}
+            {garDropdown(simGar, setSimGar, "simGar")}
+          </div>
 
           {!simRec ? (
             <p className="sb-dim ac-sim-empty">{t("위에서 맹약을 골라 주세요 — 하나만 골라도 됩니다.")}</p>
@@ -670,30 +687,6 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
                 </section>
               ))}
 
-              {simRec.items.length > 0 && (
-                <section className="ac-sim-group">
-                  <h3 className="sb-h3">{t("관련 아이템")} <em className="sb-count">{simRec.items.length}</em></h3>
-                  <p className="sb-dim">{t("진영 아이템은 장착하면 해당 맹약의 중첩도 함께 올려 줍니다.")}</p>
-                  <div className="ac-cards">
-                    {simRec.items.map((e) => (
-                      <button key={e.id} type="button" className="ac-card ac-equipcard" onClick={() => setEquip(e)}>
-                        <header>
-                          <img className="ac-thumb ac-equipthumb" src={equipIcon(e.trap)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
-                          <div>
-                            <b className="ac-cname">{e.n}</b>
-                            <span className="ac-cmeta">
-                              {tierBadge(e.t)}
-                              <i className="sb-chip">{t("{n} 자금", { n: e.buy })}</i>
-                              {e.bond ? bondTag(e.bond) : null}
-                            </span>
-                          </div>
-                        </header>
-                        <p className="ac-eqd">{rich(e.d)}</p>
-                      </button>
-                    ))}
-                  </div>
-                </section>
-              )}
             </>
           )}
         </div>
@@ -938,7 +931,10 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
           {shopTab === "item" && (
             <>
               {filterBar}
-              <p className="sim-note">{t("아이템은 오퍼레이터에 장착해 능력치를 올립니다. 같은 아이템 {n}개를 모으면 강화판이 되고, 진영 아이템은 해당 맹약의 중첩도 함께 올려 줍니다.", { n: doc.equips[0]?.up ?? 2 })}</p>
+              {/* ⚠ "진영 아이템은 중첩도 올려 준다"고 썼다가 정정 (사용자 지적 2026-08-23) —
+                  클뜯 canGiveBond가 맹약 아이템 18종 전부 false다. 맹약 부여는 변형 구조체
+                  (canGiveBond=true, 유일)와 같이 장착했을 때만 일어난다. */}
+              <p className="sim-note">{t("아이템은 오퍼레이터에 장착해 능력치를 올립니다. 같은 아이템 {n}개를 모으면 강화판이 되고, 맹약 아이템은 변형 구조체와 같이 장착하면 착용자가 그 맹약을 추가로 얻습니다.", { n: doc.equips[0]?.up ?? 2 })}</p>
               <p className="ac-count">{t("{n}종", { n: equipRows.length })}</p>
               {[1, 2, 3, 4, 5, 6].map((tn) => {
                 const rows = equipRows.filter((e) => e.t === tn);

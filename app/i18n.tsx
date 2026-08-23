@@ -2795,18 +2795,19 @@ const D: Record<string, Pair> = {
   "맹약별로 보기": ["Break down by alliance", "盟約別に見る"],
   // 시뮬레이터 (view=build) — 사용자 요청 2026-08-23
   "시뮬레이터": ["Simulator", "シミュレーター"],
-  "진영 맹약과 특성 맹약을 하나씩 고르면, 그 맹약에 소속된 오퍼레이터 전원과 특질로 중첩을 도와주는 오퍼레이터, 관련 아이템을 모아서 보여줍니다.": [
-    "Pick one nation alliance and one trait alliance, and this gathers every operator that belongs to them, the operators whose traits feed their stacks, and the related items.",
-    "国家系と特性系の盟約を一つずつ選ぶと、その盟約に所属するオペレーター全員と、特性で加算を支えるオペレーター、関連アイテムをまとめて表示します。"],
+  "진영 맹약과 특성 맹약을 하나씩 고르면, 그 맹약에 소속된 오퍼레이터 전원을 모아서 보여줍니다 — 특질로 중첩을 올리거나 중첩마다 강해지는 오퍼레이터가 맨 앞에 섭니다.": [
+    "Pick one nation alliance and one trait alliance, and this gathers every operator that belongs to them — the ones whose traits add stacks or scale per stack come first.",
+    "国家系と特性系の盟約を一つずつ選ぶと、その盟約に所属するオペレーター全員をまとめて表示します — 特性で加算を増やす、または加算ごとに強くなるオペレーターが先頭に並びます。"],
   "위에서 맹약을 골라 주세요 — 하나만 골라도 됩니다.": [
     "Pick an alliance above — one is enough.", "上から盟約を選んでください — 一つだけでも構いません。"],
+  "진영 맹약 선택": ["Pick a nation alliance", "国家系の盟約を選択"],
+  "특성 맹약 선택": ["Pick a trait alliance", "特性系の盟約を選択"],
+  "선택 안 함": ["None", "選択しない"],
   "두 맹약 모두 소속": ["In both alliances", "両方の盟約に所属"],
   "{name} 소속": ["In {name}", "{name}所属"],
   "{name} 중첩 올림": ["Adds {name} stacks", "{name}加算を増やす"],
   "{name} 중첩마다 강화": ["Scales per {name} stack", "{name}加算ごとに強化"],
-  "관련 아이템": ["Related items", "関連アイテム"],
-  "진영 아이템은 장착하면 해당 맹약의 중첩도 함께 올려 줍니다.": [
-    "Nation items also add stacks to their alliance when equipped.", "国家系アイテムは装着するとその盟約の加算も増やします。"],
+
   "해당 없음": ["None", "該当なし"],
   // 기물 상태 라벨 — 표와 칩에서 쓰는 짧은 말 (VIEW_LABEL·KIND_LABEL·PHASE_LABEL 값)
   "정예화 0": ["E0", "精鋭化0"],
@@ -2881,9 +2882,11 @@ const D: Record<string, Pair> = {
   "라운드 보상": ["Round rewards", "ラウンド報酬"],
   "라운드를 넘길 때마다 받는 {token} 수량입니다.": ["How much {token} each round awards.", "ラウンドを越えるたびに受け取る{token}の量です。"],
   // 장비·밴드
-  "아이템은 오퍼레이터에 장착해 능력치를 올립니다. 같은 아이템 {n}개를 모으면 강화판이 되고, 진영 아이템은 해당 맹약의 중첩도 함께 올려 줍니다.": [
-    "Items are attached to an operator to raise their stats. Combining {n} copies makes the enhanced version, and nation items also add stacks to their alliance.",
-    "アイテムはオペレーターに装着してステータスを上げます。同じアイテムを{n}個そろえると強化版になり、国家アイテムは該当する盟約の加算数も上げます。"],
+  // ⚠ 정정 (사용자 지적 2026-08-23): 맹약 아이템은 장착만으로 중첩을 안 준다 —
+  //   클뜯 canGiveBond가 18종 전부 false. 변형 구조체(유일한 true)와 조합해야 맹약 부여.
+  "아이템은 오퍼레이터에 장착해 능력치를 올립니다. 같은 아이템 {n}개를 모으면 강화판이 되고, 맹약 아이템은 변형 구조체와 같이 장착하면 착용자가 그 맹약을 추가로 얻습니다.": [
+    "Items are attached to an operator to raise their stats. Combining {n} copies makes the enhanced version, and pairing an alliance item with a Morphing Structure grants the wearer that alliance.",
+    "アイテムはオペレーターに装着してステータスを上げます。同じアイテムを{n}個そろえると強化版になり、盟約アイテムは変形構造体と一緒に装着すると装着者がその盟約を追加で得ます。"],
   "조건에 맞는 아이템이 없습니다.": ["No items match these filters.", "条件に合うアイテムがありません。"],
   "강화 ({n}개 조합)": ["Enhanced (combine {n})", "強化（{n}個合成）"],
   "장착하면 {bond} 맹약의 중첩도 함께 올라갑니다.": ["Equipping this also adds stacks to the {bond} alliance.", "装着すると{bond}盟約の加算数も上がります。"],

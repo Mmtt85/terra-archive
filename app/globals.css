@@ -19137,23 +19137,16 @@ p.sb-trline { margin-top: 2px; }
 .ac-sim {
   margin-top: 14px;
 }
-.ac-simpick {
+/* 시뮬레이터 필터 줄 — 진영/특성/특질 세 드롭다운 (물자관리소와 같은 스타일) */
+.ac-sim-filters {
   margin-top: 12px;
+  justify-content: flex-start;
 }
-.ac-simpick h4 {
-  margin: 0 0 6px;
-  font-size: 13px;
-}
-.ac-simpick-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-/* 선택된 맹약 칩 — bondchip 스타일을 그대로 쓰되 켜짐만 뒤집는다 */
-.ac-simpick-row .ac-bondchip.on {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: var(--white);
+.ac-garsel-icon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
 }
 .ac-sim-empty {
   margin: 18px 0;
