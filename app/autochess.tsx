@@ -874,8 +874,9 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
         <div className="ac-shop">
           {(
             <>
-              {filterBar}
+              {/* 안내문이 먼저, 검색·필터가 그다음 — 전략 탭과 같은 순서 (사용자 지시 2026-08-23) */}
               <p className="sim-note">{t("오퍼레이터마다 위수 협의 전용 능력이 하나씩 붙고, 같은 오퍼레이터 {n}장을 모아 정예화(골든)하면 그 능력이 강해집니다.", { n: doc.chess[0]?.up ?? 3 })}</p>
+              {filterBar}
               {bondGroups ? (
                 <>
                   {/* 맹약을 골랐다 — 고른 맹약 요약 + 소속 그룹 (옛 시뮬레이터 화면, 2026-08-23 편입).

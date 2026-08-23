@@ -54,7 +54,6 @@ import ChangelogButton from "./changelog";
 import { ChibiChatPanel, chibiChatStatus, type ChibiActionRequest, type ChibiChatStatus } from "./chibi-chat";
 // 공용 창형 모달 — 이동·리사이즈·고정·z순서 (2026-08-03)
 import { ModalWindow } from "./modal-window";
-import TipBalloon from "./tip-balloon";
 import { useHashSync } from "./hash-modal";
 import type { OmniTarget } from "./omni";
 import { notifyHandoff, stashHandoff } from "./handoff";
@@ -2101,8 +2100,6 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
 
       {selected && <OperatorModal operator={selected} onClose={closeOperator} onUpgrade={openUpgradeFor} includeFuture={includeFuture} onPinChange={(pinned) => { opPinnedRef.current = pinned; }} operators={operators} onRelated={openOperator} />}
       <FeedbackWidget open={feedbackOpen} setOpen={setFeedbackOpen} onNewCount={setFeedbackNew} />
-      {/* 팁 풍선 — 화면 빈 곳을 찾아 떠다닌다 (본문을 가리면 스스로 자리를 옮긴다) */}
-      <TipBalloon />
     </main>
   );
 }

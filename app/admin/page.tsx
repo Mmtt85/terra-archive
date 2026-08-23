@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { adminAddReply, adminDeleteFeedback, adminDeleteReply, adminListFeedback, adminMe, adminSetHandling, adminSetReviewed, countryOf, flagOf, handlingAt, imagesOf, withHandling, type FeedbackRow } from "../feedback";
 import { adminDeleteRelease, adminDeleteRule, adminListRules, adminPublishRelease, adminUpsertRule, fetchLatestRelease, type ReleaseRow } from "../rules-api";
 import { adminDeleteChange, adminUpsertChange, fetchAllChanges, areaOf, CHANGE_KINDS, CHANGE_KIND_LABEL, CHANGE_AREAS, CHANGE_AREA_LABEL, daysAgoKst, type ChangeArea, type ChangeDraft, type ChangeRow } from "../changelog-api";
-import { adminDeleteTip, adminUpsertTip, fetchAllTips, type TipDraft, type TipRow } from "../tips-api";
 import { adminDeleteDevNote, adminUpsertDevNote, fetchAllDevNotes, DEVNOTE_STATUSES, DEVNOTE_STATUS_LABEL, type DevNoteDraft, type DevNoteRow } from "../devnotes-api";
 import { adminDeleteFile, adminListFiles, adminUploadFile, formatSize, isImageKey, type StoredFile } from "../files-api";
 import { useConfirm } from "../confirm";
@@ -162,59 +161,6 @@ function UploadButton({ onPick }: { onPick: (file: File) => void }) {
   );
 }
 
-// ── 팁 풍선 편집기 (docs/supabase-tips.sql) ─────────────────────────────────────
-// 제목은 풍선에 접힌 채로 보이므로 짧게. 이미지는 사이트 내부 경로(/about/*.webp 등)나
-// 파일 저장소(R2) URL — 옆의 올리기 버튼으로 그 자리에서 올릴 수 있다.
-function TipEditor({ row, onSave, onCancel, upload }: { row: TipDraft; onSave: (next: TipDraft) => Promise<void>; onCancel: () => void; upload?: (file: File) => Promise<string> }) {
-  const [v, setV] = useState<TipDraft>(row);
-  const [error, setError] = useState("");
-  const [saving, setSaving] = useState(false);
-  const set = (patch: Partial<TipDraft>) => setV((cur) => ({ ...cur, ...patch }));
-  const pickImage = (field: "image" | "image_dark") => async (file: File) => {
-    if (!upload) return;
-    setError("");
-    try { set({ [field]: await upload(file) }); }
-    catch (err) { setError(String((err as Error).message ?? err)); }
-  };
-  const save = async () => {
-    if (!v.title_ko.trim() || !v.body_ko.trim()) { setError("한국어 제목·설명은 필수입니다"); return; }
-    setSaving(true);
-    try { await onSave(v); } catch (err) { setError(String((err as Error).message ?? err)); }
-    setSaving(false);
-  };
-  return (
-    <div className="rule-editor chlog-editor">
-      <header>
-        <b>{row.id ? "팁 편집" : "새 팁"}</b>
-        <label className="tip-active-lbl">
-          <input type="checkbox" checked={v.active} onChange={(e) => set({ active: e.target.checked })} /> 표시
-        </label>
-        <input className="rule-seq" value={String(v.seq)} onChange={(e) => set({ seq: Number(e.target.value) || 0 })} title="정렬 순서" />
-      </header>
-      <input value={v.title_ko} onChange={(e) => set({ title_ko: e.target.value })} placeholder="제목 · 한국어 (필수, 20자 안팎 — 풍선에 그대로 보입니다)" />
-      <input value={v.title_en ?? ""} onChange={(e) => set({ title_en: e.target.value })} placeholder="Title · English" />
-      <input value={v.title_ja ?? ""} onChange={(e) => set({ title_ja: e.target.value })} placeholder="タイトル · 日本語" />
-      <textarea value={v.body_ko} onChange={(e) => set({ body_ko: e.target.value })} rows={3} placeholder="설명 · 한국어 (필수) — 풍선을 펼치면 나옵니다" />
-      <textarea value={v.body_en ?? ""} onChange={(e) => set({ body_en: e.target.value })} rows={3} placeholder="Description · English" />
-      <textarea value={v.body_ja ?? ""} onChange={(e) => set({ body_ja: e.target.value })} rows={3} placeholder="説明 · 日本語" />
-      <div className="file-inline">
-        <input value={v.image ?? ""} onChange={(e) => set({ image: e.target.value })} placeholder="이미지 경로 (선택) — 예: /about/planner.webp 또는 R2 URL" />
-        {upload && <UploadButton onPick={pickImage("image")} />}
-      </div>
-      <div className="file-inline">
-        <input value={v.image_dark ?? ""} onChange={(e) => set({ image_dark: e.target.value })} placeholder="다크 모드 이미지 (선택) — 예: /about/planner-dark.webp" />
-        {upload && <UploadButton onPick={pickImage("image_dark")} />}
-      </div>
-      <input value={v.href ?? ""} onChange={(e) => set({ href: e.target.value })} placeholder="바로가기 경로 (선택) — 예: /infra#roster-import" />
-      {error && <p className="admin-status">{error}</p>}
-      <div className="admin-tools">
-        <button onClick={save} disabled={saving}>{saving ? "저장 중…" : "저장"}</button>
-        <button onClick={onCancel}>취소</button>
-      </div>
-    </div>
-  );
-}
-
 // ── 개발자 코멘트 편집기 (docs/supabase-devnotes.sql) ──────────────────────────
 // 업데이트 내역 모달의 💬 개발자 코멘트 뷰에 뜬다. 받은 제안(인용)과 답변, 선택 이미지.
 // ko는 필수, en/ja는 비우면 ko로 폴백. 저장 즉시 반영 (빌드·배포 불필요).
@@ -361,11 +307,7 @@ export default function AdminPage() {
   const [status, setStatus] = useState("");
   const [filter, setFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("open"); // open(대응미완료) | reviewed(대응완료)
-  const [tab, setTab] = useState<"feedback" | "rules" | "changelog" | "devnotes" | "tips" | "files">("feedback"); // 상단 탭
-  // 팁 풍선 원장 (null = 조회 실패 → 미설치 안내)
-  const [tips, setTips] = useState<TipRow[] | null>(null);
-  const [tipStatus, setTipStatus] = useState("");
-  const [editingTip, setEditingTip] = useState<TipDraft | null>(null);
+  const [tab, setTab] = useState<"feedback" | "rules" | "changelog" | "devnotes" | "files">("feedback"); // 상단 탭
   // 개발자 코멘트 원장 (null = 조회 실패 → 미설치 안내)
   const [devNotes, setDevNotes] = useState<DevNoteRow[] | null>(null);
   const [devNoteStatus, setDevNoteStatus] = useState("");
@@ -405,7 +347,6 @@ export default function AdminPage() {
       setStatus(data.length ? "" : "항목이 없습니다");
       loadRules();
       loadChanges();
-      loadTips();
       loadDevNotes();
     } catch {
       setStatus("조회 실패 — 잠시 후 다시 시도해주세요");
@@ -439,27 +380,6 @@ export default function AdminPage() {
     } catch { setChangeStatus("삭제 실패"); }
   };
 
-  // ── 팁 풍선 (docs/supabase-tips.sql) — 저장하면 사이트에 바로 반영 ──
-  const loadTips = async () => {
-    try { setTips(await fetchAllTips()); setTipStatus(""); }
-    catch {
-      setTips(null);
-      setTipStatus("팁 테이블 조회 실패 — docs/supabase-tips.sql을 Supabase SQL Editor에서 실행했는지 확인");
-    }
-  };
-
-  const saveTip = async (next: TipDraft) => {
-    await adminUpsertTip(next);
-    setEditingTip(null);
-    setTipStatus("저장됨 — 사이트 팁 풍선에 즉시 반영됩니다");
-    loadTips();
-  };
-
-  const removeTip = async (row: TipRow) => {
-    if (!(await confirm({ message: `'${row.title_ko}' 팁을 삭제할까요?`, danger: true }))) return;
-    try { await adminDeleteTip(row.id); setTipStatus("삭제됨"); loadTips(); }
-    catch { setTipStatus("삭제 실패"); }
-  };
 
   // ── 개발자 코멘트 (docs/supabase-devnotes.sql) — 저장하면 사이트에 바로 반영 ──
   const loadDevNotes = async () => {
@@ -523,8 +443,8 @@ export default function AdminPage() {
     catch { setFileStatus("삭제 실패"); }
   };
 
-  // 팁 편집기 이미지칸 "올리기" — 올리고 나서 공개 URL을 돌려준다
-  const uploadForTip = async (file: File) => (await adminUploadFile(file)).url;
+  // 편집기 이미지칸 "올리기" — 올리고 나서 공개 URL을 돌려준다
+  const uploadForEditor = async (file: File) => (await adminUploadFile(file)).url;
 
   // ── 플래너 규칙 (docs/PLANNER-RULES-DB.md Phase 2) ────────────────────────────
   const loadRules = async (pw: string) => {
@@ -764,9 +684,6 @@ export default function AdminPage() {
           <button className={tab === "devnotes" ? "selected" : ""} onClick={() => setTab("devnotes")}>
             개발자 코멘트{devNotes ? ` (${devNotes.filter((row) => row.active).length}/${devNotes.length})` : ""}
           </button>
-          <button className={tab === "tips" ? "selected" : ""} onClick={() => setTab("tips")}>
-            팁 풍선{tips ? ` (${tips.filter((row) => row.active).length}/${tips.length})` : ""}
-          </button>
           <button className={tab === "files" ? "selected" : ""} onClick={() => setTab("files")}>
             파일{files ? ` (${uploadRows.length})` : ""}
           </button>
@@ -940,11 +857,11 @@ export default function AdminPage() {
             <button onClick={() => setEditingDevNote({ released_at: daysAgoKst(0), status: "considering", suggestion_ko: "", suggestion_en: "", suggestion_ja: "", reply_ko: "", reply_en: "", reply_ja: "", image: "", active: true, seq: 0 })}>+ 새 코멘트</button>
             <button onClick={loadDevNotes}>새로고침</button>
           </div>
-          {editingDevNote && !editingDevNote.id && <DevNoteEditor row={editingDevNote} onSave={saveDevNote} onCancel={() => setEditingDevNote(null)} upload={uploadForTip} />}
+          {editingDevNote && !editingDevNote.id && <DevNoteEditor row={editingDevNote} onSave={saveDevNote} onCancel={() => setEditingDevNote(null)} upload={uploadForEditor} />}
           {devNotes.length === 0 && <p className="admin-status">아직 등록된 코멘트가 없습니다.</p>}
           {devNotes.map((row) => (
             editingDevNote && editingDevNote.id === row.id
-              ? <DevNoteEditor key={row.id} row={editingDevNote} onSave={saveDevNote} onCancel={() => setEditingDevNote(null)} upload={uploadForTip} />
+              ? <DevNoteEditor key={row.id} row={editingDevNote} onSave={saveDevNote} onCancel={() => setEditingDevNote(null)} upload={uploadForEditor} />
               : (
                 <div key={row.id} className={`rule-row${row.active ? "" : " status-draft"}`}>
                   <code>{row.released_at}</code>
@@ -955,41 +872,6 @@ export default function AdminPage() {
                   {row.image && <span className="rule-note" title={row.image}>이미지</span>}
                   <button onClick={() => setEditingDevNote(row)}>편집</button>
                   <button onClick={() => removeDevNote(row)}>삭제</button>
-                </div>
-              )
-          ))}
-        </div>
-      )}
-      </>)}
-
-      {tab === "tips" && (<>
-      <p className="admin-status">
-        사이트 화면 빈 곳을 떠다니는 힌트 풍선입니다. 저장하면 <b>배포 없이</b> 바로 반영됩니다.
-        제목은 접힌 풍선에 그대로 보이니 짧게, 설명·이미지는 눌러서 펼쳤을 때 나옵니다.
-      </p>
-      {tipStatus && <p className="admin-status">{tipStatus}</p>}
-      {tips === null ? (
-        <p className="admin-status">팁 테이블이 아직 없습니다 — <code>docs/supabase-tips.sql</code>을 Supabase SQL Editor에서 실행하세요.</p>
-      ) : (
-        <div className="admin-rules">
-          <div className="admin-tools">
-            <button onClick={() => setEditingTip({ title_ko: "", title_en: "", title_ja: "", body_ko: "", body_en: "", body_ja: "", image: "", image_dark: "", href: "", active: true, seq: (tips.at(-1)?.seq ?? -1) + 1 })}>+ 새 팁</button>
-            <button onClick={loadTips}>새로고침</button>
-          </div>
-          {editingTip && !editingTip.id && <TipEditor row={editingTip} onSave={saveTip} onCancel={() => setEditingTip(null)} upload={uploadForTip} />}
-          {tips.length === 0 && <p className="admin-status">아직 등록된 팁이 없습니다.</p>}
-          {tips.map((row) => (
-            editingTip && editingTip.id === row.id
-              ? <TipEditor key={row.id} row={editingTip} onSave={saveTip} onCancel={() => setEditingTip(null)} upload={uploadForTip} />
-              : (
-                <div key={row.id} className={`rule-row${row.active ? "" : " status-draft"}`}>
-                  <code>{row.seq}</code>
-                  {!row.active && <i className="rule-status-chip">숨김</i>}
-                  <span className="rule-preview">💡 {row.title_ko}</span>
-                  {!row.title_en || !row.title_ja || !row.body_en || !row.body_ja ? <span className="rule-note" title="번역이 비면 한국어로 표시됩니다">번역 미완</span> : null}
-                  {row.image && <span className="rule-note" title={row.image}>이미지</span>}
-                  <button onClick={() => setEditingTip(row)}>편집</button>
-                  <button onClick={() => removeTip(row)}>삭제</button>
                 </div>
               )
           ))}
