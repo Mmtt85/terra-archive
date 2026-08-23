@@ -111,7 +111,8 @@ python3 scripts/build-autochess.py           # → app/data/autochess{,.en,.ja}.
 새 이벤트에 미니게임·수집 읽을거리가 딸려 왔으면:
 
 ```bash
-python3 scripts/build-eventlore.py           # → app/data/eventlore{,.en,.ja}.json
+python3 scripts/build-eventlore.py           # → app/data/eventlore-index.json + public/lore/data/
+node scripts/r2-sync.mjs                     # 본문 JSON·그림이 R2에 올라가야 화면에 뜬다
 ```
 > 새 이벤트는 **자동으로 안 잡힌다** — `activity_table`의 자료 구조가 이벤트마다 달라서다.
 > 스크립트의 `EXTRACT`에 추출기를, `META`에 미니게임 이름·한 줄 안내(3로케일)를 더해야 한다.

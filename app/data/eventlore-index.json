@@ -1,0 +1,67 @@
+{
+ "events": [
+  {
+   "id": "act46side",
+   "n": 170
+  },
+  {
+   "id": "act1vhalfidle",
+   "n": 46,
+   "name": {
+    "ko": "재건 계획",
+    "en": "Rebuilding Mandate",
+    "ja": "再建画策"
+   },
+   "thumb": "/lore/act1vhalfidle/thumb.webp",
+   "start": "2026-03"
+  },
+  {
+   "id": "act45side",
+   "n": 5
+  },
+  {
+   "id": "act44side",
+   "n": 169
+  },
+  {
+   "id": "act42side",
+   "n": 16
+  },
+  {
+   "id": "main_14",
+   "n": 148
+  },
+  {
+   "id": "act29side",
+   "n": 5
+  },
+  {
+   "id": "act25side",
+   "n": 4
+  },
+  {
+   "id": "act24side",
+   "n": 29
+  },
+  {
+   "id": "act21side",
+   "n": 55
+  },
+  {
+   "id": "act17side",
+   "n": 313
+  },
+  {
+   "id": "act12side",
+   "n": 19
+  },
+  {
+   "id": "act13d5",
+   "n": 15
+  },
+  {
+   "id": "act3d0",
+   "n": 3
+  }
+ ]
+}

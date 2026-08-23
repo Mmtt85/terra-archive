@@ -96,11 +96,15 @@ python3 scripts/build-stages-rogue.py          # → app/data/stages-rogue{,.en,
 python3 scripts/build-sandbox.py               # → app/data/sandbox{,.en,.ja}.json (생존연산 가이드 —
 #     V2 사막 이야기는 kr/en/jp 공식 텍스트, V3 신시즌은 CN 선행 + scripts/sandbox-cn-ko.json
 #     비공식 번역. 미번역 문자열이 생기면 未 경고를 낸다 — cn-translation-fill 흐름으로 보완)
-python3 scripts/build-eventlore.py              # → app/data/eventlore{,.en,.ja}.json
+python3 scripts/build-eventlore.py              # → app/data/eventlore-index.json + public/lore/data/
 #     이벤트 부가 기록 — 미니게임·수집 요소로 풀리던 읽을거리 (사용자 제보 2026-08-22).
 #     입력은 .gamedata/{kr,en,jp}_activity_table.json 하나. 이벤트마다 자료 구조가 완전히
 #     달라 이벤트별 추출기(EXTRACT)를 둔다 — 새 이벤트를 실으려면 추출기 + META(미니게임
 #     이름·한 줄 안내 3로케일)를 함께 추가한다. 썸네일·출시월은 stories.json에서 끌어온다.
+#     ⚠ 출력은 **이벤트 하나당 파일 하나**(public/lore/data/<스토리id>.json, en/·ja/ 하위) —
+#     기록은 그 이벤트의 스토리 상세에서 읽으므로 로케일당 330KB를 통째로 물릴 이유가 없다.
+#     앱 번들에 들어가는 건 색인(app/data/eventlore-index.json, ~1KB)뿐. 새 파일이 생기므로
+#     `node scripts/r2-sync.mjs` 를 같이 돌린다 — asset()은 로컬에서도 R2를 문다.
 #     ⚠ 읽을거리만 싣는다 — 카드 조합 레시피·스테이지 기믹 설명 같은 순수 기능 텍스트는 뺐다.
 #     그림도 같이 받는다 → public/lore/<act>/ 111장 — 중생의 여정 20 · 폐허 22 · 스툴티페라 26 ·
 #     시라쿠사 15 · 마리아 니어 12 · 설산 강림 10 · 츠빌링슈튀르메 5 · 재건 계획 썸네일 1.

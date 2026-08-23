@@ -16,6 +16,7 @@ import summaryIdsData from "./data/story-summary-ids.json";
 import summariesKo from "./data/story-summaries.json";
 import summariesEn from "./data/story-summaries.en.json";
 import summariesJa from "./data/story-summaries.ja.json";
+import loreIndexData from "./data/eventlore-index.json";
 
 type SeoLocale = "ko" | "en" | "ja";
 type LocText = { ko: string; en?: string; ja?: string };
@@ -38,9 +39,18 @@ for (const entry of (chronologyData as { entries: { id?: string; kind: string; t
     BY_ID.set(entry.id, { id: entry.id, name: entry.title ?? { ko: entry.id } });
   }
 }
+// 이벤트 기록만 있고 요약·전문이 없는 이벤트(재건 계획)도 상세가 열리므로 주소가 있어야 한다 —
+// 없으면 목록 카드의 href가 404다. 이름·출시월은 색인이 실어 보낸다 (build-eventlore.py).
+const loreRows = (loreIndexData as { events: { id: string; n: number; name?: LocText; start?: string }[] }).events;
+const LORE_IDS = new Set(loreRows.map((row) => row.id));
+for (const row of loreRows) {
+  if (row.name && !BY_ID.has(row.id)) BY_ID.set(row.id, { id: row.id, name: row.name, start: row.start });
+}
+/** 요약이 없어 '스토리 요약'이라고 부를 수 없는 상세 — 제목·설명을 이벤트 기록 쪽으로 바꾼다 */
+const loreOnly = (id: string) => LORE_IDS.has(id) && !TAGLINE.ko[id];
 
-/** 요약이 있는 스토리 id 전부 — 라우트 생성(generateStaticParams)용. 세 로케일 모두 같다. */
-export const storyIds = summaryIds.filter((id) => BY_ID.has(id));
+/** 상세 페이지를 만들 스토리 id 전부 — 라우트 생성(generateStaticParams)용. 세 로케일 모두 같다. */
+export const storyIds = [...new Set([...summaryIds, ...LORE_IDS])].filter((id) => BY_ID.has(id));
 
 const nameOf = (locale: SeoLocale, id: string) => {
   const meta = BY_ID.get(id);
@@ -62,9 +72,22 @@ const FALLBACK_DESC: Record<SeoLocale, (name: string) => string> = {
 const descOf = (locale: SeoLocale, id: string) => {
   const tagline = (TAGLINE[locale][id]?.tagline ?? "").trim();
   const name = nameOf(locale, id);
+  if (loreOnly(id)) return LORE_DESC[locale](name);
   if (!tagline) return FALLBACK_DESC[locale](name);
   // 검색 결과 발췌 길이(약 160자)에 맞춰 자른다 — 자를 땐 문장부호가 아니라 말줄임으로
   return tagline.length > 158 ? `${tagline.slice(0, 157).trimEnd()}…` : tagline;
+};
+
+// 요약이 없는(기록뿐인) 이벤트 — 이 주소로 색인되는 본문은 요약이 아니라 이벤트 기록이다.
+const LORE_TITLE: Record<SeoLocale, (name: string) => string> = {
+  ko: (name) => `${name} 이벤트 기록 - 명일방주 | 테라 아카이브`,
+  en: (name) => `${name} Event Records - Arknights | Terra Archive`,
+  ja: (name) => `${name} イベント記録 - アークナイツ | テラアーカイブ`,
+};
+const LORE_DESC: Record<SeoLocale, (name: string) => string> = {
+  ko: (name) => `명일방주 '${name}' 이벤트를 진행하며 미니게임·수집 요소로 풀리던 글 모음입니다. 이벤트가 끝나면 게임에서도 다시 볼 수 없는 기록입니다.`,
+  en: (name) => `The writings unlocked through minigames and collectibles during the Arknights event "${name}" — records that can no longer be read in game once the event ends.`,
+  ja: (name) => `アークナイツ「${name}」でミニゲームや収集要素を通じて解放された文章のアーカイブです。イベント終了後はゲーム内で読めなくなる記録です。`,
 };
 
 const urlOf = (locale: SeoLocale, id: string) => `${SITE_URL}${LOCALE_BASE[locale]}/stories/${id}`;
@@ -80,7 +103,7 @@ const RSS_ALT = (locale: SeoLocale) =>
 
 export function storyMetadata(locale: SeoLocale, id: string): Metadata {
   const name = nameOf(locale, id);
-  const title = TITLE[locale](name);
+  const title = (loreOnly(id) ? LORE_TITLE : TITLE)[locale](name);
   const description = descOf(locale, id);
   // 요약 91편이 세 로케일 모두 있으므로 hreflang은 항상 3개 + x-default(한국어)
   const languages = {
@@ -114,7 +137,7 @@ export function storyJsonLd(locale: SeoLocale, id: string) {
     "@graph": [
       {
         "@type": "Article",
-        headline: TITLE[locale](name).split(" | ")[0],
+        headline: (loreOnly(id) ? LORE_TITLE : TITLE)[locale](name).split(" | ")[0],
         description: descOf(locale, id),
         inLanguage: locale,
         url: urlOf(locale, id),

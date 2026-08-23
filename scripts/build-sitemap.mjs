@@ -45,7 +45,7 @@ const SEG_SOURCES = {
   recruit: ["app/data/recruit.json"],
   farm: ["app/data/farm.json"],
   upgrade: ["app/data/costs.json", "app/data/operators.json"],
-  stories: ["app/data/story-summaries.json", "app/data/stories.json", "app/data/chronology.json"],
+  stories: ["app/data/story-summaries.json", "app/data/stories.json", "app/data/chronology.json", "app/data/eventlore-index.json"],
   rogue: ["app/data/rogue1.json", "app/data/rogue2.json", "app/data/rogue3.json", "app/data/rogue4.json", "app/data/rogue5.json", "app/data/rogue6.json"],
   ra: ["app/data/sandbox.json"], // 생존연산 가이드
   autochess: ["app/data/autochess.json"], // 위수 협의(오토체스) 가이드
@@ -85,13 +85,16 @@ function lastmodFor(seg) {
 // /stories/[id]는 요약이 있는 스토리마다 실제 정적 페이지가 나온다 (app/seo-story.ts).
 // 사이트맵에도 그 목록을 그대로 펼친다 — 색인시키려고 만든 페이지인데 사이트맵에
 // 없으면 발견이 늦다. ⚠ 목록 산출 방식은 seo-story.ts의 storyIds와 같아야 한다:
-// 요약 id 중 stories.json 이벤트이거나 chronology.json 항목(메인스토리·통합전략)인 것.
+// 요약 id + 이벤트 기록 id 중, stories.json 이벤트이거나 chronology.json 항목
+// (메인스토리·통합전략)이거나 기록 색인이 이름을 실어 보낸 것(스토리 없는 이벤트).
 function storyIds() {
   const read = (p) => JSON.parse(readFileSync(join(ROOT, p), "utf8"));
-  const ids = read("app/data/story-summary-ids.json");
+  const lore = read("app/data/eventlore-index.json").events;
+  const ids = [...new Set([...read("app/data/story-summary-ids.json"), ...lore.map((r) => r.id)])];
   const known = new Set([
     ...read("app/data/stories.json").events.map((e) => e.id),
     ...read("app/data/chronology.json").entries.filter((e) => e.id).map((e) => e.id),
+    ...lore.filter((r) => r.name).map((r) => r.id),
   ]);
   return ids.filter((id) => known.has(id));
 }

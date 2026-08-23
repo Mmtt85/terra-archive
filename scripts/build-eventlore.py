@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""이벤트 부가 기록(미니게임·수집 요소로 풀리는 읽을거리) → app/data/eventlore*.json
+"""이벤트 부가 기록(미니게임·수집 요소로 풀리는 읽을거리) → public/lore/data/ + 색인
 
 사용자 제보(2026-08-22): "중생의 여정에서 미니게임으로 등장인물 과거사를 해금하는 글이
 있었는데 아카이브 가능한가요. 다른 한정 이벤트에도 있었던 것 같은데 같이."
@@ -12,10 +12,21 @@ ko/en/ja를 한 번에 낸다 (build-i18n.py 불필요 — build-autochess.py와
 ⚠ **읽을거리만 싣는다.** 카드 조합 레시피(태양을 뿌리쳐라), 스테이지 기믹 설명(폴리비전
 박물관), 토큰 능력(테라밥) 같은 순수 기능 텍스트는 제보 취지(서사)와 달라 뺐다.
 
+출력은 **이벤트 하나당 파일 하나**다 (public/lore/data/<스토리id>.json, en/·ja/ 하위).
+기록은 그 이벤트의 스토리 상세(/stories/<id>)에서 「이벤트 기록」 보기로 읽으므로,
+스토리 하나를 열 때 필요한 건 그 이벤트분뿐이다 — 로케일당 330KB를 통째로 물리면
+읽지도 않을 13개 이벤트를 같이 받는다 (사용자 확정 2026-08-23: "따로 빼지 말고 각
+스토리에 포함"). 앱 번들에 들어가는 건 app/data/eventlore-index.json(수 KB)뿐이고,
+본문은 전문 스크립트(/story/script/<id>.json)와 같이 화면에서 fetch 한다.
+
+⚠ 파일 이름은 **act id가 아니라 스토리 id**다 (STORY_ID 참조) — 자비의 등대(act1mainss)는
+  메인스토리 14장 그 자체라 main_14로 낸다. 스토리가 아예 없는 이벤트(재건 계획)는
+  act id를 그대로 쓰고, 색인에 이름·썸네일·출시월을 실어 목록이 카드를 만들 수 있게 한다.
+
 사용: python3 scripts/build-eventlore.py
 입력: .gamedata/{kr,en,jp}_activity_table.json  (scripts/fetch-gamedata.py로 받는다)
 """
-import json, os, re, sys, urllib.request
+import json, os, re, sys, time, urllib.request
 from concurrent.futures import ThreadPoolExecutor
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -31,7 +42,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from imgutil import save_webp  # noqa: E402
 
 PREFIX = {"ko": "kr", "en": "en", "ja": "jp"}
-SUFFIX = {"ko": "", "en": ".en", "ja": ".ja"}
+LOC_DIR = {"ko": "", "en": "en", "ja": "ja"}   # public/lore/data/{,en/,ja/}
 
 
 # ── 게임 마크업 정리 ──────────────────────────────────────────────────────────
@@ -440,7 +451,33 @@ THUMB_FIX = {
     "act1vhalfidle": "/lore/act1vhalfidle/thumb.webp",
     "act1mainss": "/story/main_14.webp",
 }
+
+# 기록이 붙을 **스토리 id**. 자비의 등대는 독립 이벤트가 아니라 메인스토리 14장 그 자체라
+# (activity_table: YEAR_5_GENERAL · 2024-10-31, chronology.json main_14 = 자비의 등대)
+# 그 상세에 붙인다. 나머지는 act id가 곧 stories.json의 이벤트 id다.
+STORY_ID = {"act1mainss": "main_14"}
 HOMEENTRY = f"{ARTS}/stage/%5Buc%5Dhomeentry"
+
+
+def index_entry(sid, act_id, n, out, smeta, basic):
+    """앱 번들에 들어가는 색인 한 줄 — 이 스토리에 기록이 몇 편 있는가.
+
+    스토리 아카이브가 이미 아는 이벤트는 id와 편수만 있으면 된다(이름·썸네일·출시월은
+    stories.json/chronology.json에서 온다). 스토리가 아예 없는 이벤트(재건 계획)만
+    목록이 카드를 만들 수 있도록 이름·썸네일·출시월을 여기에 실어 보낸다.
+    """
+    row = {"id": sid, "n": n}
+    if act_id in smeta or act_id in STORY_ID:
+        return row
+    row["name"] = {loc: out[loc][sid]["n"] for loc in PREFIX}
+    thumb = out["ko"][sid].get("thumb")
+    if thumb:
+        row["thumb"] = thumb
+    ts = (basic.get(act_id) or {}).get("startTime")
+    if ts:
+        # 인게임 시각은 KST(UTC+9) 기준 — stories.json의 start와 같은 YYYY-MM 표기로 맞춘다
+        row["start"] = time.strftime("%Y-%m", time.gmtime(ts + 9 * 3600))
+    return row
 
 
 def story_meta():
@@ -611,10 +648,11 @@ def main():
     if not NO_ICONS:
         fetch_images(block(kr, "act42side"), block(kr, "act44side"), kr)
 
-    out = {loc: {"events": []} for loc in PREFIX}
-    report = []
+    out = {loc: {} for loc in PREFIX}
+    index, report = [], []
     for act_id in order:
         fn, from_root = EXTRACT[act_id]
+        sid = STORY_ID.get(act_id, act_id)
         for loc in PREFIX:
             root = roots[loc]
             src = root if from_root else block(root, act_id)
@@ -628,7 +666,7 @@ def main():
             name = (root.get("basicInfo") or {}).get(act_id, {}).get("name") \
                 or basic.get(act_id, {}).get("name") or act_id
             m = META.get(act_id, {})
-            ev = {"id": act_id, "n": name, "secs": secs}
+            ev = {"id": sid, "n": name, "secs": secs}
             sm = smeta.get(act_id) or {}
             thumb = sm.get(THUMB_KEY[loc]) or sm.get("thumb") or THUMB_FIX.get(act_id)
             if thumb:
@@ -639,17 +677,33 @@ def main():
                 ev["mini"] = m["mini"][loc]
             if m.get("note"):
                 ev["note"] = m["note"][loc]
-            out[loc]["events"].append(ev)
+            out[loc][sid] = ev
         else:
-            n = sum(len(s["items"]) for s in out["ko"]["events"][-1]["secs"])
-            report.append(f"  {act_id:<14} {basic.get(act_id, {}).get('name', ''):<22} 섹션 {len(out['ko']['events'][-1]['secs'])} · 글 {n}")
+            n = sum(len(x["items"]) for x in out["ko"][sid]["secs"])
+            index.append(index_entry(sid, act_id, n, out, smeta, basic))
+            report.append(f"  {act_id:<14} → {sid:<14} {basic.get(act_id, {}).get('name', ''):<22} 섹션 {len(out['ko'][sid]['secs'])} · 글 {n}")
 
-    for loc, suf in SUFFIX.items():
-        path = os.path.join(DATA, f"eventlore{suf}.json")
-        with open(path, "w", encoding="utf-8") as f:
-            json.dump(out[loc], f, ensure_ascii=False, separators=(",", ":"))
-        kb = os.path.getsize(path) / 1024
-        print(f"{os.path.relpath(path, REPO)}  {len(out[loc]['events'])}개 이벤트  {kb:.0f}KB")
+    total = 0
+    for loc, sub in LOC_DIR.items():
+        d = os.path.join(PUB, "data", sub)
+        os.makedirs(d, exist_ok=True)
+        keep = set()
+        for sid, ev in out[loc].items():
+            path = os.path.join(d, f"{sid}.json")
+            keep.add(f"{sid}.json")
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(ev, f, ensure_ascii=False, separators=(",", ":"))
+            total += os.path.getsize(path)
+        # 이름이 바뀐(또는 빠진) 이벤트의 옛 파일은 남기지 않는다 — R2에 유령 파일이 쌓인다
+        for stale in set(os.listdir(d)) - keep - {"en", "ja"}:
+            if stale.endswith(".json"):
+                os.remove(os.path.join(d, stale))
+
+    ipath = os.path.join(DATA, "eventlore-index.json")
+    with open(ipath, "w", encoding="utf-8") as f:
+        json.dump({"events": index}, f, ensure_ascii=False, indent=1)
+    print(f"public/lore/data/  {len(index)}개 이벤트 × 3로케일  합계 {total / 1024:.0f}KB")
+    print(f"{os.path.relpath(ipath, REPO)}  {os.path.getsize(ipath) / 1024:.1f}KB")
     print("\n".join(report))
 
 

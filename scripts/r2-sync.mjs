@@ -48,8 +48,8 @@ const DIRS = ["story", "rogue", "lens", "tesseract", "avatars", "about", "og", "
   // 위수 협의 맹약·밴드·장비 아이콘 — scripts/build-autochess.py (2026-08-22).
   // 폴더는 ac, 라우트는 /autochess — 위와 같은 이유로 갈라 뒀다.
   "ac",
-  // 이벤트 기록의 인물 초상·물건 그림 — scripts/build-eventlore.py (2026-08-23).
-  // 화면은 /stories#lore.
+  // 이벤트 기록 — 인물 초상·물건 그림과 **본문 JSON**(lore/data/<스토리id>.json,
+  // scripts/build-eventlore.py 2026-08-23). 화면은 스토리 상세의 「이벤트 기록」 보기.
   "lore"];
 // (2026-08-01 제거) "portal" — 대문 배경 전용 폴더였는데 포탈이 이격 스카디 일러 한 장
 // (PORTAL_ART = /skin/full/…)으로 굳으면서 로컬·R2 양쪽에서 비었다. 남겨 두면 아래

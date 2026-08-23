@@ -35,7 +35,11 @@ import chronologyData from "./data/chronology.json";
 // 테마별 뷰의 순서·소속 정본 (사용자 확정 2026-07-21). guest=타 테마 소속의 시계열 참조(괄호).
 import storylinesData from "./data/storylines.json";
 import imageDimsData from "./data/story-image-dims.json";
+// 이벤트 기록(미니게임·수집으로 풀리던 읽을거리)이 있는 스토리와 편수 — build-eventlore.py.
+// 본문은 번들에 넣지 않는다 (전문 스크립트와 같은 규약: public/lore/data/<id>.json fetch).
+import loreIndexData from "./data/eventlore-index.json";
 import { rich, useI18n, type Locale } from "./i18n";
+import type { LoreEvent } from "./eventlore";
 import { normSearch, useSearchInput } from "./search";
 
 // CG·삽화의 실측 크기 (scripts/measure-story-images.py) — width/height를 박아 로딩 중
@@ -73,8 +77,17 @@ const scriptIdsByLocale: Record<string, Set<string>> = {
   en: new Set(scriptIdsEnData as string[]),
   ja: new Set(scriptIdsJaData as string[]),
 };
-// 전문(풀 스크립트)이나 AI 요약 중 하나만 있어도 열 수 있다 (사용자 확정 2026-07-20).
-export const canOpenStory = (id: string) => summaryIds.has(id) || scriptIds.has(id);
+// 이벤트 기록 색인 — { id: 스토리 id, n: 글 편수 }. 스토리 아카이브가 모르는 이벤트
+// (스토리가 아예 없는 미니게임 — 재건 계획)만 이름·썸네일·출시월을 함께 싣는다.
+type LoreIndexRow = { id: string; n: number; name?: LocText; thumb?: string; start?: string };
+const loreIndex = (loreIndexData as { events: LoreIndexRow[] }).events;
+const LORE_BY_ID = new Map(loreIndex.map((row) => [row.id, row]));
+/** 이 스토리에 이벤트 기록이 몇 편 있는가 (0 = 없음) */
+export const loreCount = (id: string) => LORE_BY_ID.get(id)?.n ?? 0;
+
+// 전문(풀 스크립트)·AI 요약·이벤트 기록 중 하나만 있어도 열 수 있다 (사용자 확정 2026-07-20,
+// 이벤트 기록 편입 2026-08-23).
+export const canOpenStory = (id: string) => summaryIds.has(id) || scriptIds.has(id) || LORE_BY_ID.has(id);
 
 // 전문(풀 스크립트) 스키마 — build-story-scripts.py 라인 스키마와 1:1
 export type ScriptLine = { n?: string; x?: string; st?: string; img?: string; loc?: string; opts?: string[]; vals?: string[]; br?: string };
@@ -106,9 +119,19 @@ const CHRON_SYNTH: StoryEvent[] = chronology.entries
       epNo,
     };
   });
+// 스토리(요약·전문)가 전혀 없고 **이벤트 기록만** 있는 이벤트 — 재건 계획처럼 스토리 없이
+// 미니게임만 돌던 것이다. 색인이 이름·썸네일·출시월을 함께 실어 보내므로(build-eventlore.py)
+// 그걸로 카드를 세운다. 상세를 열면 기록 보기 하나만 뜬다.
+const LORE_SYNTH: StoryEvent[] = loreIndex
+  .filter((row): row is LoreIndexRow & { name: LocText } => Boolean(row.name))
+  .map((row) => ({
+    id: row.id, name: row.name, start: row.start ?? "", episodes: 0,
+    thumb: row.thumb ?? "", mini: true,
+  }));
+
 // export는 scripts/verify-stories.mjs 전수 렌더 하네스용
 export const eventById = new Map<string, StoryEvent>(
-  [...data.events, ...CHRON_SYNTH].map((event) => [event.id, event]),
+  [...data.events, ...CHRON_SYNTH, ...LORE_SYNTH].map((event) => [event.id, event]),
 );
 
 function locText(locale: Locale, text: LocText): string {
@@ -117,12 +140,10 @@ function locText(locale: Locale, text: LocText): string {
 
 // 스샷 레이더 도움말 — 순수 설명 전용 모달 (입력 기능은 페이지 레벨 자동인식이 전담)
 const LensHelpModal = lazy(() => import("./lens/help"));
-// 이벤트 기록 — 데이터가 로케일당 300KB대라 이 탭에 들어왔을 때만 받는다 (사용자 제보 2026-08-22)
-const EVENT_LORE = {
-  ko: lazy(() => import("./eventlore-ko")),
-  en: lazy(() => import("./eventlore-en")),
-  ja: lazy(() => import("./eventlore-ja")),
-} as const;
+// 이벤트 기록 — 스토리 상세의 세 번째 보기 (사용자 확정 2026-08-23: 따로 빼지 말고 각 스토리에)
+const EventLoreView = lazy(() => import("./eventlore"));
+/** 스토리 상세의 보기 방식 — 전문 / AI 요약 / 이벤트 기록 */
+type DetailMode = "script" | "summary" | "lore";
 
 function eventFromHash(): StoryEvent | null {
   const hash = decodeURIComponent(window.location.hash);
@@ -656,42 +677,67 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex, 
   // StoryDetail은 key={event.id}로 리마운트되므로 이벤트 전환 시 상태가 새지 않는다.
   const hasScript = scriptIds.has(event.id);
   const hasSummary = Boolean(summary); // 요약이 아직 없는(전문만 있는) 이벤트도 열람 가능 (2026-07-20)
+  // 이벤트 기록 — 미니게임·수집으로 풀리던 읽을거리. 세 번째 보기로 들어온다
+  // (사용자 확정 2026-08-23: "스토리에서 따로 빼지 말고 각 스토리에 포함").
+  const loreN = loreCount(event.id);
+  const hasLore = loreN > 0;
   // 미출시(CN 선행) 이벤트: 전문이 없어도 버튼은 보여주고, 누르면 왜 없는지 안내 (사용자 요청 2026-07-18)
   const futureNoScript = !hasScript && Boolean(event.unreleased);
-  // 보기 방식(전문/요약)도 URL 해시에 남긴다 (사용자 요청 2026-07-22):
-  //  · #story-<id>/summary = AI 요약  · #story-<id>/ep<N> = 전문(에피소드)  · 접미 없음 = 전문 기본
-  // 복붙·공유·새로고침 시 보던 모드 그대로 열린다. 요약이 없으면 전문만 볼 수 있으니 전문으로 시작.
-  const viewFromHash = (): boolean | null => {
+  // 보기 방식도 URL 해시에 남긴다 (사용자 요청 2026-07-22):
+  //  · #story-<id>/summary = AI 요약  · #story-<id>/ep<N> = 전문(에피소드)
+  //  · #story-<id>/lore = 이벤트 기록  · 접미 없음 = 전문 기본
+  // 복붙·공유·새로고침 시 보던 모드 그대로 열린다. 없는 보기는 폴백한다.
+  const viewFromHash = (): DetailMode | null => {
     if (typeof window === "undefined") return null;
     const h = decodeURIComponent(window.location.hash);
-    if ((/\/summary$/.test(h) || h === "#summary") && hasSummary) return false;   // 요약 딥링크
+    if ((/\/summary$/.test(h) || h === "#summary") && hasSummary) return "summary";  // 요약 딥링크
+    if ((/\/lore$/.test(h) || h === "#lore") && hasLore) return "lore";              // 기록 딥링크
     // #script는 2026-08-06 이전에 공유된 링크 — 더 만들지는 않지만 계속 받아준다
-    if ((/(?:^#|\/)ep\d+$/.test(h) || h === "#script") && hasScript) return true; // 에피소드·전문 딥링크
+    if ((/(?:^#|\/)ep\d+$/.test(h) || h === "#script") && hasScript) return "script"; // 에피소드·전문 딥링크
     return null;
   };
-  const [scriptView, setScriptView] = useState(() => {
+  // 가진 것 중 가장 앞선 보기 — 전문 > 요약 > 기록. (전문·요약이 없으면 기록만 있는 이벤트다)
+  const fallbackMode: DetailMode = hasScript ? "script" : hasSummary ? "summary" : "lore";
+  const [mode, setMode] = useState<DetailMode>(() => {
     // 상세 라우트(/stories/<id>)의 기본은 요약 — 그 주소로 색인된 본문이 요약이라,
     // 검색으로 들어온 사람이 보는 화면과 검색 결과의 발췌가 어긋나면 안 된다.
     // ⚠ 이때는 해시를 **보지 않는다**: 프리렌더 HTML은 해시를 모른 채 요약으로 찍혀 있어서,
     //    첫 렌더가 전문이 되면 하이드레이션 불일치(React #418)로 SSR 결과가 통째로 버려진다.
     //    해시 지정은 마운트 직후 아래 effect가 반영한다.
-    if (defaultView) return defaultView === "script" ? hasScript : !hasSummary;
-    return viewFromHash() ?? (hasScript || !hasSummary);
+    if (defaultView) {
+      if (defaultView === "script") return hasScript ? "script" : hasSummary ? "summary" : "lore";
+      return hasSummary ? "summary" : fallbackMode;
+    }
+    return viewFromHash() ?? fallbackMode;
   });
-  // 상세 라우트에 #ep<N>로 들어온 경우만 — 하이드레이션이 끝난 뒤 전문으로 바꾼다.
+  const scriptView = mode === "script";
+  // 상세 라우트에 #ep<N>·#lore로 들어온 경우만 — 하이드레이션이 끝난 뒤 그 보기로 바꾼다.
   // (effect 안 setState는 렌더를 한 번 더 돌리지만, 하이드레이션 일치가 우선이다)
   // 같은 페이지에서 해시만 바뀌는 경우(주소창 편집·해시 딥링크 공유)도 따라간다 —
   // 상세는 remount되지 않으므로 hashchange를 직접 듣는다. 토글 버튼은 replaceState라
   // hashchange를 일으키지 않아 서로 간섭하지 않는다.
   useEffect(() => {
     if (!defaultView) return;
-    const apply = () => { const view = viewFromHash(); if (view !== null) setScriptView(view); };
+    const apply = () => { const view = viewFromHash(); if (view !== null) setMode(view); };
     apply();
     window.addEventListener("hashchange", apply);
     return () => window.removeEventListener("hashchange", apply);
-    // 마운트 1회 — 이후 전환은 아래 버튼(openScript/openSummary)이 담당한다
+    // 마운트 1회 — 이후 전환은 아래 버튼(openScript/openSummary/openLore)이 담당한다
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  // 이벤트 기록 본문 — 전문 스크립트와 같은 규약으로 그때 받는다 (번들에 넣으면 로케일당 330KB).
+  const [lore, setLore] = useState<LoreEvent | null>(null);
+  const [loreErr, setLoreErr] = useState(false);
+  useEffect(() => {
+    if (!hasLore || mode !== "lore" || lore || loreErr) return;
+    let alive = true;
+    const dir = locale === "ko" ? "" : `${locale}/`;
+    fetch(asset(`/lore/data/${dir}${event.id}.json`))
+      .then((res) => { if (!res.ok) throw new Error(String(res.status)); return res.json(); })
+      .then((json) => { if (alive) setLore(json as LoreEvent); })
+      .catch(() => { if (alive) setLoreErr(true); });
+    return () => { alive = false; };
+  }, [event.id, hasLore, mode, locale, lore, loreErr]);
   const [script, setScript] = useState<ScriptData | null>(null);
   const [scriptErr, setScriptErr] = useState(false);
   // 전문 언어: 현재 로케일 버전이 있으면 그 언어, 없으면 KR로 폴백 (EN/JA는 /story/script/<loc>/)
@@ -710,12 +756,16 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex, 
   //  · 전문 = 접미 없음(#story-<id>) — ScriptReader가 마운트되며 ep1부터, 이후 에피소드 전환은 자체적으로 /ep<N> 기록
   //  · AI 요약 = #story-<id>/summary
   const openScript = () => {
-    setScriptView(true);
+    setMode("script");
     history.replaceState(null, "", onStoryPath() ? "#ep1" : `#story-${event.id}`);
   };
   const openSummary = () => {
-    setScriptView(false);
+    setMode("summary");
     history.replaceState(null, "", onStoryPath() ? "#summary" : `#story-${event.id}/summary`);
+  };
+  const openLore = () => {
+    setMode("lore");
+    history.replaceState(null, "", onStoryPath() ? "#lore" : `#story-${event.id}/lore`);
   };
   const [readerPrefs, setReaderPrefs] = useReaderPrefs();
 
@@ -776,16 +826,29 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex, 
           {/* 제목 줄 — 왼쪽 제목, 오른쪽에 전문/요약 토글 (사용자 요청 2026-07-20, 모바일·PC 공통) */}
           <div className="story-detail-titlerow">
             <div className="story-detail-titlecol">
-              <span className="section-no">AI STORY DIGEST</span>
+              {/* 요약도 전문도 없이 기록만 있는 이벤트에 'AI STORY DIGEST'는 거짓말이다 */}
+              <span className="section-no">{hasSummary || hasScript ? "AI STORY DIGEST" : "EVENT RECORDS"}</span>
               <h2>{locText(locale, event.name)}</h2>
             </div>
-            {/* 보기 방식 토글 — 전문·요약이 둘 다 있을 때만(또는 미출시 안내). 하나만 있으면 토글 없이 그것만. */}
-            {((hasScript && hasSummary) || futureNoScript) && (
+            {/* 보기 방식 토글 — 볼 게 둘 이상일 때만(또는 미출시 안내). 하나뿐이면 토글 없이 그것만.
+                이벤트 기록은 있는 이벤트에만 붙는 세 번째 칸이다 (사용자 확정 2026-08-23). */}
+            {(Number(hasScript || futureNoScript) + Number(hasSummary) + Number(hasLore) > 1) && (
               <div className="story-mode-bar" role="tablist" aria-label={t("보기 방식")}>
-                <button type="button" role="tab" aria-selected={scriptView}
-                  className={scriptView ? "on" : ""} onClick={openScript}>{t("전문 보기 (풀 스크립트)")}</button>
-                <button type="button" role="tab" aria-selected={!scriptView}
-                  className={!scriptView ? "on" : ""} onClick={openSummary}>{t("AI 요약")}</button>
+                {(hasScript || futureNoScript) && (
+                  <button type="button" role="tab" aria-selected={scriptView}
+                    className={scriptView ? "on" : ""} onClick={openScript}>{t("전문 보기 (풀 스크립트)")}</button>
+                )}
+                {hasSummary && (
+                  <button type="button" role="tab" aria-selected={mode === "summary"}
+                    className={mode === "summary" ? "on" : ""} onClick={openSummary}>{t("AI 요약")}</button>
+                )}
+                {hasLore && (
+                  <button type="button" role="tab" aria-selected={mode === "lore"}
+                    className={mode === "lore" ? "on" : ""} onClick={openLore}>
+                    {t("이벤트 기록")}<i className="story-mode-n">{loreN}</i>
+                    {isNewFeature("event-lore") && <span className="new-badge">{t("새기능")}</span>}
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -793,15 +856,15 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex, 
           {summary?.tagline && <p className="story-tagline">{summary.tagline}</p>}
           {/* 전문만 있고 요약이 아직 없는 이벤트 안내 */}
           {!hasSummary && hasScript && <p className="story-tagline story-tagline-plain">{t("AI 요약은 아직 준비 중이에요. 지금은 게임 내 스토리 전문으로 만나 보세요.")}</p>}
-          {!scriptView && hasSummary && <p className="story-disclaimer">{t("이 요약은 AI가 게임 내 스토리 스크립트 전문을 읽고 쓴 2차 창작 요약입니다.")}</p>}
-          {!scriptView && locale !== "ko" && !translatedByLocale[locale]?.has(event.id) && (
+          {mode === "summary" && hasSummary && <p className="story-disclaimer">{t("이 요약은 AI가 게임 내 스토리 스크립트 전문을 읽고 쓴 2차 창작 요약입니다.")}</p>}
+          {mode === "summary" && hasSummary && locale !== "ko" && !translatedByLocale[locale]?.has(event.id) && (
             <p className="story-disclaimer">{t("이 편의 요약 본문은 아직 번역되지 않아 한국어로 표시됩니다.")}</p>
           )}
           {scriptView && hasScript && locale !== "ko" && scriptLoc === "ko" && (
             <p className="story-disclaimer">{t("이 이벤트의 전문은 아직 이 언어로 풀리지 않아 한국어로 표시됩니다.")}</p>
           )}
           {/* 읽기 설정(글자·삽화 크기) — 전문·요약 둘 다 실제 본문이 있을 때만 노출 (사용자 피드백 2026-07-20) */}
-          {(hasSummary || hasScript) && <ReaderPrefsBar prefs={readerPrefs} setPrefs={setReaderPrefs} />}
+          {mode !== "lore" && (hasSummary || hasScript) && <ReaderPrefsBar prefs={readerPrefs} setPrefs={setReaderPrefs} />}
         </header>
         {scriptView && hasScript && <ScriptReader script={script} error={scriptErr} entities={entities} opIndex={opIndex} onShowOperator={onShowOperator} eventId={event.id} />}
         {scriptView && futureNoScript && (
@@ -811,7 +874,7 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex, 
             <p>{t("정식 출시되면 공식 번역 전문을 바로 볼 수 있도록 준비해 두었어요. 그때까지는 줄거리를 꼼꼼히 담은 AI 요약으로 먼저 만나 보세요.")}</p>
           </div>
         )}
-        <div className="story-detail-grid" hidden={scriptView || !hasSummary}>
+        <div className="story-detail-grid" hidden={mode !== "summary" || !hasSummary}>
           {peekNode}
           <div className="story-body">
             {(summary?.blocks ?? []).map((block, index) => {
@@ -848,6 +911,11 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex, 
             })}
           </div>
         </div>
+        {mode === "lore" && hasLore && (
+          <Suspense fallback={null}>
+            <EventLoreView doc={lore} error={loreErr} />
+          </Suspense>
+        )}
         {related && related.items.length > 0 && (
           /* 같은 테마의 다른 이야기 — 상세가 목록에서만 링크되던 걸 서로 잇는다 (2026-08-06).
              크롤 깊이를 줄이는 게 1차 목적이고, 읽던 흐름을 이어가는 데도 쓸모가 있다. */
@@ -910,7 +978,15 @@ function resolveChron(): ChronItem[] {
     };
   });
 }
-const CHRON_ITEMS = resolveChron();
+const CHRON_ITEMS: ChronItem[] = [
+  ...resolveChron(),
+  // 연대기에 없는(스토리가 없어 큐레이션 대상이 아닌) 기록 전용 이벤트도 목록에는 선다 —
+  // 안 그러면 그 이벤트의 기록에 닿을 방법이 사라진다. 테라력을 지어내지 않으므로 arc는 비운다.
+  ...LORE_SYNTH.map<ChronItem>((ev) => ({
+    key: ev.id, kind: "mini", name: ev.name, start: ev.start, thumb: ev.thumb,
+    terraYear: null, arc: null, eventId: ev.id,
+  })),
+];
 
 // arc 색상 팔레트 (id 순환) + 종류 라벨
 const ARC_COLORS = ["#c2410c", "#0369a1", "#7c3aed", "#b45309", "#be123c", "#0f766e", "#4d7c0f", "#a16207"];
@@ -1301,6 +1377,10 @@ function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEve
   const renderCard = ({ it, guest }: GroupItem) => {
     const ev = it.eventId ? eventById.get(it.eventId) : undefined;
     const ready = Boolean(it.eventId && canOpenStory(it.eventId));
+    // 이 이벤트에 붙은 이벤트 기록 편수 — 상세의 세 번째 보기로 들어 있다 (2026-08-23).
+    // 요약도 전문도 없이 기록만 있는 이벤트(재건 계획)는 배지 자체가 '이벤트 기록'이 된다.
+    const lore = it.eventId ? loreCount(it.eventId) : 0;
+    const digest = Boolean(it.eventId && (summaryIds.has(it.eventId) || scriptIds.has(it.eventId)));
     const home = guest ? HOME_LINE_BY_ID.get(it.key) : undefined;
     const homeKey = home ? (ARC_ID_BY_NAME.get(home.name.ko) ?? home.id) : undefined;
     const thumb = ev
@@ -1322,9 +1402,12 @@ function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEve
           {thumb
             ? <img src={asset(thumb)} alt="" loading="lazy" decoding="async" />
             : <span className="story-thumb-kind">{t(KIND_KO[it.kind])}</span>}
-          {ready
+          {digest
             ? <em className="story-ready-badge">{t("AI 요약")}</em>
-            : <em className="story-pending-badge">{t("요약 준비 중")}</em>}
+            : ready
+              ? <em className="story-ready-badge story-lore-badge">{t("이벤트 기록")}</em>
+              : <em className="story-pending-badge">{t("요약 준비 중")}</em>}
+          {digest && lore > 0 && <em className="story-lore-mark" title={t("이 이벤트에는 미니게임·수집으로 풀리던 이벤트 기록이 함께 있습니다")}>{t("＋기록 {n}", { n: lore })}</em>}
           {/* 시계열 참조(인게임 괄호 항목) — 이 테마 소속은 아니지만 테라력상 이 위치 */}
           {guest && <em className="story-guest-badge" title={t("이 테마에 속하는 이야기는 아니지만, 테라력 시계열로는 이 위치에 있어요.")}>{t("시계열 참조용")}</em>}
         </div>
@@ -1392,7 +1475,7 @@ function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEve
                         <button type="button" className={ready ? "" : "pending"} disabled={!ready}
                           onClick={() => { if (ready && ev) { onOpen(ev); setSearchOpen(false); } }}>
                           <span className="ss-name">{locText(locale, it.name)}{ev?.unreleased && <em className="future-badge">{t("미실장")}</em>}</span>
-                          <span className="ss-meta">{t(KIND_KO[it.kind])}{ready ? "" : ` · ${t("요약 준비 중")}`}</span>
+                          <span className="ss-meta">{t(KIND_KO[it.kind])}{ready ? "" : ` · ${t("요약 준비 중")}`}{it.eventId && loreCount(it.eventId) > 0 ? ` · ${t("이벤트 기록")}` : ""}</span>
                         </button>
                       </li>
                     );
@@ -1442,7 +1525,7 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
   onStoryTitle?: (name: string | null) => void;
 }) {
   const { locale, t } = useI18n();
-  const [view, setView] = useState<"digest" | "chronicle" | "lore">("digest");
+  const [view, setView] = useState<"digest" | "chronicle">("digest");
   // 기본 뷰는 테마별 (사용자 확정 2026-07-21)
   const [group, setGroup] = useState<GroupMode>("theme");
   const [selected, setSelected] = useState<StoryEvent | null>(
@@ -1460,7 +1543,6 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
       setSelected(detail);
       if (detail) return;                              // 상세 진입 시 뷰/그룹 상태는 유지
       if (h === "#chronicle") setView("chronicle");
-      else if (h === "#lore") setView("lore");
       else if (h === "#kind") { setView("digest"); setGroup("kind"); }
       else if (h === "#release") { setView("digest"); setGroup("release"); }
       // 기본(해시 없음·#story)은 테마별 (사용자 확정 2026-07-21)
@@ -1481,7 +1563,9 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
     // view="summary" — 요약을 읽던 흐름에서 넘어온 경우(같은 테마 링크). 그 외에는 종전 규칙대로
     // 전문이 있으면 전문부터 (사용자 확정 2026-07-18).
     const script = !(view === "summary" && summaries[event.id]) && (scriptIds.has(event.id) || !summaries[event.id]);
-    history.pushState(null, "", storyPath(locale, event.id) + (script ? "#ep1" : "#summary"));
+    // 요약도 전문도 없이 **기록만** 있는 이벤트(재건 계획)는 곧장 기록으로 연다
+    const suffix = scriptIds.has(event.id) || summaries[event.id] ? (script ? "#ep1" : "#summary") : "#lore";
+    history.pushState(null, "", storyPath(locale, event.id) + suffix);
     pushedDetail.current = true;
     setSelected(event);
   };
@@ -1520,8 +1604,8 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
   };
   // 뷰·그룹 전환을 복붙 가능한 해시로 남긴다 (뒤로가기로 오갈 수 있게 pushState)
   const GROUP_HASH: Record<GroupMode, string> = { theme: "#theme", kind: "#kind", release: "#release" };
-  const VIEW_HASH: Record<string, string> = { chronicle: "#chronicle", lore: "#lore" };
-  const goView = (v: "digest" | "chronicle" | "lore") => {
+  const VIEW_HASH: Record<string, string> = { chronicle: "#chronicle" };
+  const goView = (v: "digest" | "chronicle") => {
     history.pushState(null, "", VIEW_HASH[v] ?? GROUP_HASH[group]);
     setView(v);
   };
@@ -1643,7 +1727,6 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
         <button type="button" role="tab" aria-selected={view === "digest" && group === "kind"} className={view === "digest" && group === "kind" ? "on" : ""} onClick={() => goGroup("kind")}>{t("종류별")}</button>
         <button type="button" role="tab" aria-selected={view === "digest" && group === "release"} className={view === "digest" && group === "release" ? "on" : ""} onClick={() => goGroup("release")}>{t("출시순")}</button>
         <button type="button" role="tab" aria-selected={view === "chronicle"} className={view === "chronicle" ? "on" : ""} onClick={() => goView("chronicle")}>{t("테라 연대기")}</button>
-        <button type="button" role="tab" aria-selected={view === "lore"} className={view === "lore" ? "on" : ""} onClick={() => goView("lore")}>{t("이벤트 기록")}{isNewFeature("event-lore") && <span className="new-badge">{t("새기능")}</span>}</button>
         {/* 스샷 레이더 — 버튼 자체가 자동인식 토글, ?는 도움말 (KR 클라 전용) */}
         {locale === "ko" && (
           <div className="lens-open-wrap">
@@ -1660,9 +1743,7 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
       {lensPill}
       {lensHelpModal}
 
-      {view === "lore" ? (
-        <Suspense fallback={null}>{(() => { const Lore = EVENT_LORE[locale]; return <Lore />; })()}</Suspense>
-      ) : view === "chronicle" ? (
+      {view === "chronicle" ? (
         <ChronologyView onOpenEvent={openEvent} />
       ) : (
         <DigestView onOpen={open} includeFuture={includeFuture} group={group} />

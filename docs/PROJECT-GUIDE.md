@@ -250,9 +250,15 @@ const { term, set, clear, inputRef, inputProps } = useSearchInput();
 - `app/data/sandbox.json` / `.en` / `.ja` — 생존연산 가이드 (build-sandbox.py, 로케일당 ~330KB).
   v2=사막 이야기(공식 3로케일) + v3=CN 선행 신시즌(비공식 번역 `scripts/sandbox-cn-ko.json`,
   미번역 문자열은 빌드 로그에 未 경고 — cn-translation-fill 흐름으로 보완).
-- `app/data/eventlore.json` / `.en` / `.ja` — 이벤트 기록 (build-eventlore.py, 로케일당 ~330KB).
-  한정 이벤트의 미니게임·수집 요소로 풀리던 읽을거리 13개 이벤트 · 글 994편 — 의뢰서·신문
-  기사·편지·오페라 평론·조우문. 화면은 스토리 탭의 「이벤트 기록」(`/stories#lore`).
+- `app/data/eventlore-index.json` (색인, ~1KB) + `public/lore/data/<스토리id>.json` (본문,
+  3로케일 합계 ~1MB) — 이벤트 기록 (build-eventlore.py). 한정 이벤트의 미니게임·수집 요소로
+  풀리던 읽을거리 14개 이벤트 · 글 997편 — 의뢰서·신문 기사·편지·오페라 평론·조우문.
+  화면은 **각 스토리 상세의 세 번째 보기**(`/stories/<id>#lore`) — 전문 / AI 요약 / 이벤트 기록
+  (사용자 확정 2026-08-23: "스토리에서 따로 빼지 말고 각 스토리에 포함". 그전엔 `/stories#lore`
+  독립 탭이었다). 번들에 들어가는 건 색인뿐이고 본문은 전문 스크립트처럼 그때 `fetch` 한다.
+  ⚠ 파일 이름은 act id가 아니라 **스토리 id**다 — 자비의 등대(`act1mainss`)는 메인스토리
+  14장 그 자체라 `main_14`로 낸다(`STORY_ID`). 스토리가 아예 없는 이벤트(재건 계획)는
+  색인이 이름·썸네일·출시월을 함께 실어 보내 목록이 카드를 세운다.
   본편 스토리(story_review_table)와 **다른 출처**다 — 이쪽은 `activity_table` 안에 흩어져
   있고, 이벤트가 끝나면 게임에서도 다시 못 본다. 이벤트마다 자료 구조가 달라 스크립트에
   이벤트별 추출기를 둔다.
