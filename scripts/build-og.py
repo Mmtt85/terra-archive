@@ -43,6 +43,7 @@ TAB_META = {
     "story":   ("AI STORY DIGEST",       "story"),
     "rogue":   ("INTEGRATED STRATEGIES", "nodes"),
     "ra":      ("RECLAMATION ALGORITHM", "hex"),
+    "autochess": ("STRONGHOLD PROTOCOL", "grid"),
     "about":   ("FEATURE GUIDE",         "info"),
 }
 
@@ -84,6 +85,9 @@ SUBLINE = {
     "ra":      {"ko": "생존연산의 요리 조합·제작 재료·조우 선택지.",
                 "en": "RA food recipes, crafting materials & encounters.",
                 "ja": "生息演算の料理レシピ・製作素材・遭遇選択肢。"},
+    "autochess": {"ko": "위수 협의 — 맹약·오퍼레이터·적을 게임 데이터 그대로.",
+                  "en": "Stronghold Protocol — alliances, operators & enemies from game data.",
+                  "ja": "堅守協定 — 盟約・オペレーター・敵をゲームデータそのままに。"},
     "about":   {"ko": "테라 아카이브가 무엇이고 무엇을 할 수 있는지.",
                 "en": "What Terra Archive is, and what it can do.",
                 "ja": "テラアーカイブが何で、何ができるのか。"},

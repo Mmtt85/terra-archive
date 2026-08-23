@@ -14,7 +14,7 @@ description: 소개(/about) 페이지 스크린샷 전면 재촬영·교체 절�
 # 0) 최신 코드가 반영된 프로덕션 빌드가 전제 — 안 돼 있으면 npm run build 먼저
 npm run start &                       # 로컬 프로덕션 서버 :3000 (반드시 프로덕션 — dev 아님)
 
-# 1) 촬영 — ko/en/ja × light/dark × 데스크탑(1200×760)/모바일(440×952) × 9화면 = 108장 PNG (~5분)
+# 1) 촬영 — ko/en/ja × light/dark × 데스크탑(1200×760)/모바일(440×952) × 14화면 = 168장 PNG (~7분)
 node scripts/capture-about.mjs <임시출력폴더>
 
 # 2) webp 변환·배치 — ko는 public/about/ 루트(기존 URL 유지), en/ja는 public/about/{en,ja}/
@@ -37,7 +37,7 @@ node scripts/r2-sync.mjs
 > 확인법: `md5 -q public/about/portal-dark.webp` 와
 > `curl -s "https://files.terra-archive.net/assets/about/portal-dark.webp?v=<SHOT_VER>" | md5 -q` 비교.
 
-끝나면 서버 종료(`pkill -f "vinext start"`) → `git status public/about`으로 108개 변경 확인 →
+끝나면 서버 종료(`pkill -f "vinext start"`) → `git status public/about`으로 168개 변경 확인 →
 몇 장 열어 품질 확인(아래 체크리스트) → 커밋·push. **deploy.sh는 돌리지 않는다** (CLAUDE.md 규칙).
 
 ## 스크립트가 자동으로 처리하는 것 (다시 구현하지 말 것)
@@ -50,8 +50,8 @@ node scripts/r2-sync.mjs
 
 ## 촬영 대상 (capture-about.mjs SHOTS)
 
-portal(홈) · planner(/infra) · archive(/operators) · recruit · farm ·
-upgrade(예시 오퍼 2명 쿼리) · story · rogue · chronicle(스토리→연대기 탭).
+portal(홈) · planner(/infra) · archive(/operators) · enemy · stage · sim · recruit · farm ·
+upgrade(예시 오퍼 2명 쿼리) · story · rogue · ra · autochess · chronicle(스토리→연대기 탭).
 **새 기능 페이지가 생기면 SHOTS 배열에 추가**하고 about.tsx의 SHOTS 맵도 함께 갱신.
 
 ## 품질 체크리스트 (몇 장만 샘플 확인)

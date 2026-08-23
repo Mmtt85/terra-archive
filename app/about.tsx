@@ -25,7 +25,7 @@ type ShotPair = { d: string; m: string };
 // 옛 캡처가 남는데, 쿼리가 바뀌면 새 캐시 키라 전부 즉시 새로 받는다 (2026-08-02).
 // ⚠ 순서 주의: 이 값을 올린 뒤 r2-sync 전에 /about을 열면, 새 쿼리 키에 옛 이미지가
 // 엣지 캐시(max-age 14400)로 4시간 박힌다. r2-sync를 먼저 돌리고 나서 올릴 것 (2026-08-13).
-const SHOT_VER = "20260813";
+const SHOT_VER = "20260824";
 const SHOTS: Partial<Record<Tab, ShotPair>> = {
   archive: { d: "/about/archive.webp", m: "/about/archive-m.webp" },
   planner: { d: "/about/planner.webp", m: "/about/planner-m.webp" },
@@ -38,6 +38,7 @@ const SHOTS: Partial<Record<Tab, ShotPair>> = {
   story: { d: "/about/story.webp", m: "/about/story-m.webp" },
   rogue: { d: "/about/rogue.webp", m: "/about/rogue-m.webp" },
   ra: { d: "/about/ra.webp", m: "/about/ra-m.webp" },
+  autochess: { d: "/about/autochess.webp", m: "/about/autochess-m.webp" },
 };
 
 // 다크모드 구독 — html.dark 클래스를 관찰해 테마 토글 시 실시간 리렌더.
@@ -220,8 +221,9 @@ const CONTENT: Record<Locale, Content> = {
         summary: "위수 협의 시즌 2 「맹약」의 맹약·오퍼레이터·적·보급센터를 게임 데이터 그대로 정리합니다.",
         bullets: [
           "맹약 23종 — 진영(염국·사르곤·빅토리아 등) 8종과 특성 15종을 단계별 발동 조건과 효과 전문으로, 각 맹약에 속한 오퍼레이터를 티어별로 나열",
-          "오퍼레이터 129종 — 저마다 다른 위수 협의 전용 능력을 일반·정예화(골든) 두 수치로 비교하고, 기본으로 드는 스킬과 모듈까지 표시. 자유 선택 칸에 넣을 수 있는 ★6 68명도 함께",
-          "적 — 리더 적 10종(히든 3종 포함)과 특훈 적 7유형 67종을 초상 카드로, 누르면 도감과 같은 스탯·능력에 함께 나오는 부대까지",
+          "오퍼레이터 112명 — 저마다 다른 위수 협의 전용 능력을 일반·정예화(골든) 두 수치로 비교하고, 보유 스킬과 모듈 설명을 전부 실었습니다",
+          "자유 선택 칸 — 상점 명단 밖 ★6 68명과, 본체가 없을 때 대신 출전하는 대체 기물 17종",
+          "적 — 리더 적 10종(히든 3종 포함)과 특훈 적 7유형 119종을 초상 카드로, 누르면 도감과 같은 스탯·능력까지",
           "보급센터 — 티어별 구매·판매가와 정예화·레벨·스킬 수치, 모드별 승급 비용과 진열 칸, 자유 선택 칸에 넣을 수 있는 ★6 명단",
           "아이템 59종·전략 36종·전략 전술 효과 43종·마일스톤 보상 60단계",
         ],
@@ -368,11 +370,11 @@ const CONTENT: Record<Locale, Content> = {
         summary: "Alliances, operators, enemies and the Supply Center of Stronghold Protocol Season 2 “Alliance”, straight from game data.",
         bullets: [
           "23 alliances — 8 nation and 15 trait alliances with every activation threshold and its full effect text, plus the operators in each, grouped by tier",
-          "129 operators — the garrison ability unique to each one, compared side by side at base and Golden, with the skill and module it comes with by default, plus the 68 6★ you can drop into a free-pick slot",
-          "Enemies — 10 leaders (3 hidden) and 67 Tactical Training enemies across 7 types as portrait cards; tap one for the same stats and abilities as the enemy index, plus the units that come with it",
+          "112 operators — the garrison ability unique to each one, compared side by side at base and Golden, with the full text of every skill and module they own",
+          "Free-pick slots — the 68 6★ outside the shop roster, plus the 17 stand-in units that deploy when you don't own the operator",
+          "Enemies — 10 leaders (3 hidden) and 119 Tactical Training enemies across 7 types as portrait cards; tap one for the same stats and abilities as the enemy index",
           "Supply Center — buy/sell price and promotion, level, skill and module values per tier, level-up cost and display slots per mode, and the 6★ roster you can drop into a free-pick slot",
           "59 items, 36 strategies, 43 tactics effects and 60 milestone reward steps",
-          "Not yet on the Global server — descriptions are shown in the original Korean, clearly labeled",
         ],
       },
     ],
@@ -517,8 +519,9 @@ const CONTENT: Record<Locale, Content> = {
         summary: "堅守協定シーズン2「盟約」の盟約・オペレーター・敵・補給センターをゲームデータそのままに整理。",
         bullets: [
           "盟約23種 — 国家系8種と特性系15種を段階ごとの発動条件と効果全文で、各盟約に所属するオペレーターを等級別に一覧",
-          "オペレーター129種 — それぞれ異なる専用能力を通常と精鋭化（ゴールド）の2つの数値で比較し、初期のスキルとモジュールも表示。自由選択枠に入れられる★6の68名も併記",
-          "敵 — リーダー級10種（隠し3種含む）と訓練用仮想敵7系統67種を肖像カードで、押すと図鑑と同じステータス・能力と同時に出る部隊まで",
+          "オペレーター112体 — それぞれ異なる専用能力を通常と精鋭化（ゴールド）の2つの数値で比較し、所持スキルとモジュールの説明を全部掲載",
+          "自由選択枠 — ショップ名簿外の★6が68名と、本体を所持していないとき代わりに出撃する代替ユニット17種",
+          "敵 — リーダー級10種（隠し3種含む）と訓練用仮想敵7系統119種を肖像カードで、押すと図鑑と同じステータス・能力まで",
           "補給センター — 等級別の購入・売却価格と精鋭化・レベル・スキルの数値、モード別の昇級コストと陳列枠、自由選択枠に入れられる★6名簿",
           "アイテム59種・戦略36種・戦略戦術の効果43種・マイルストーン報酬60段階",
         ],

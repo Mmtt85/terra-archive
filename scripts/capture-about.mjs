@@ -33,6 +33,7 @@ const SHOTS = [
   { name: "story", path: "/stories" },
   { name: "rogue", path: "/rogue" },
   { name: "ra", path: "/ra" },
+  { name: "autochess", path: "/autochess" },
   { name: "chronicle", path: "/stories", prep: async (page, loc) => {
     const btn = page.locator(".story-viewtabs button, .digest-viewtabs button", { hasText: loc.chron });
     if (await btn.count()) { await btn.first().click(); await page.waitForTimeout(600); }

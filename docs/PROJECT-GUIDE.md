@@ -805,6 +805,20 @@ CRUD가 늘며 위험해진 /admin을 본사이트에서 떼어냈다. **비밀�
 - 읽기는 anon 공개(`using (true)`), 쓰기·수정·삭제는 `x-admin-key` 헤더로만.
 - 프론트: `app/changelog-api.ts`(조회·관리자 CRUD) + `app/changelog.tsx`(버튼·모달).
 
+### 소개 스샷·OG 이미지에 새 화면 추가하기 (2026-08-24)
+
+기능 화면을 하나 늘리면 **세 곳**을 같이 손봐야 사이트가 일관된다 — 하나만 빠뜨리면
+소개 페이지에 빈 칸이 남거나 공유 카드 이미지가 404가 된다.
+1. `scripts/capture-about.mjs` SHOTS — 촬영 대상 (14화면 × 3언어 × 2테마 × 2뷰포트 = 168장)
+2. `app/about.tsx` SHOTS 맵 — 그 캡처를 소개 페이지에 붙인다 (+ `SHOT_VER`를 오늘 날짜로)
+3. `scripts/build-og.py` TAB_META·SUBLINE — 로케일×탭 OG 이미지(`/og/<locale>/<tab>.jpg`)
+
+⚠ 위수 협의는 2026-08-22에 탭이 생겼는데 1·3이 빠져 소개 페이지에 스샷이 없고 OG가
+404였다 (2026-08-24 발견). `app/seo.ts`의 TAB_META만으로는 OG가 생기지 않는다.
+⚠ 촬영 뒤 `node scripts/r2-sync.mjs`까지 돌려야 라이브에 나간다 — 소개 스샷과 OG는
+Pages가 아니라 R2에서 서빙된다. 자산 URL은 `/assets/` 접두사가 붙는다
+(`files.terra-archive.net/assets/about/…`) — 접두사 없이 확인하면 404로 보인다.
+
 ### 흰 글리프 아이콘과 라이트 모드 (2026-08-23)
 
 위수 협의의 **맹약 아이콘 23장·모듈 종류 아이콘 87장은 순백 글리프**(전 파일 밝기 255)다.

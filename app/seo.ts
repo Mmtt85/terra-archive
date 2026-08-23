@@ -97,9 +97,9 @@ const TAB_META: Record<Exclude<SeoTab, "portal">, Record<SeoLocale, { title: str
     ja: { title: "生息演算ガイド - アークナイツ生息演算攻略 | テラアーカイブ", description: "アークナイツ生息演算ガイド — 料理レシピ、製作・設置物の素材、エリアと天候、遭遇の選択肢、裂け目の目標を整理。中国サーバー先行の新シーズンもプレビューできます。" },
   },
   autochess: {
-    ko: { title: "위수 협의 가이드 - 명일방주 명토체스 공략 | 테라 아카이브", description: "명일방주(아크나이츠) 위수 협의(오토체스) 가이드 — 맹약(진영·특성)별 오퍼레이터 목록, 오퍼레이터별 위수 협의 전용 능력, 리더 적 10종과 특훈 적 7유형 67종, 보급센터 티어별 가격·레벨 수치, 아이템·전략까지 게임 데이터에서 정리했습니다." },
-    en: { title: "Stronghold Protocol Guide - Arknights Auto Chess | Terra Archive", description: "Arknights Stronghold Protocol (auto chess) guide — operators by alliance, every garrison ability, 10 leader enemies and 67 Tactical Training enemies across 7 types, Supply Center tier prices and level tables, items and strategies, straight from game data." },
-    ja: { title: "堅守協定ガイド - アークナイツ オートチェス攻略 | テラアーカイブ", description: "アークナイツ堅守協定（オートチェス）ガイド — 盟約ごとのオペレーター、それぞれの専用能力、リーダー級10種と訓練用仮想敵7系統67種、補給センターの等級別価格とレベル表、アイテム・戦略までゲームデータから整理しました。" },
+    ko: { title: "위수 협의 가이드 - 명일방주 명토체스 공략 | 테라 아카이브", description: "명일방주(아크나이츠) 위수 협의(오토체스) 시즌2 「맹약」 가이드 — 맹약 23종(진영 8·특성 15)별 오퍼레이터, 오퍼레이터 112명의 전용 능력과 스킬·모듈, 리더 적 10종과 특훈 적 7유형 119종, 보급센터 티어별 가격·레벨, 자유 선택 칸과 대체 기물, 아이템 59종·전략 36종까지 게임 데이터에서 정리했습니다." },
+    en: { title: "Stronghold Protocol Guide - Arknights Auto Chess | Terra Archive", description: "Arknights Stronghold Protocol (auto chess) Season 2 guide — 23 alliances (8 nation, 15 trait) with their operators, garrison abilities plus skills and modules for all 112 units, 10 leader enemies and 119 Tactical Training enemies across 7 types, Supply Center tier prices and levels, free-pick slots and stand-in units, 59 items and 36 strategies, straight from game data." },
+    ja: { title: "堅守協定ガイド - アークナイツ オートチェス攻略 | テラアーカイブ", description: "アークナイツ堅守協定（オートチェス）シーズン2「盟約」ガイド — 盟約23種（国家8・特性15）ごとのオペレーター、112体それぞれの専用能力とスキル・モジュール、リーダー級10種と訓練用仮想敵7系統119種、補給センターの等級別価格とレベル、自由選択枠と代替ユニット、アイテム59種・戦略36種までゲームデータから整理しました。" },
   },
   about: {
     ko: { title: "소개 - 기능 안내 | 테라 아카이브", description: "테라 아카이브의 기능 소개 — 오퍼 백과사전, 인프라 자동편성기, 공개채용 도우미, 파밍·육성 시뮬, AI 스토리 요약이 각각 무엇이고 어떤 상황에 쓰는지 안내합니다." },
