@@ -34,6 +34,10 @@ export type AcChess = {
   id: string; gid?: string | null; op?: string | null; n: string; t: number; sort: number;
   kind: string; bonds: string[]; gar: string[]; garG: string[]; up?: number;
   r?: number; job?: string; jobCode?: string; sub?: string;
+  /** 본체 미보유 시 대체 출전하는 전용 캐릭터 — 맹약·특질·스킬은 이 기물 것 그대로 */
+  bk?: { op: string; n: string };
+  /** 대체 기물(NPC) 모달 전용 — 이 캐릭터가 대체 출전하는 기물 id들 */
+  subsOf?: string[];
   // sks = 오퍼의 스킬 전부 (d/dG = 일반/골든 레벨 설명 — 같은 문장이면 dG 없음, df = 기물이
   // 기본으로 들고 나오는 것). mods = 보유 모듈 전부 (d = 전투 효과, s = 능력치, df = 기본 장착).
   // modG = 모듈 슬롯이 골든부터 열림.
@@ -83,6 +87,8 @@ export type AutochessDoc = {
     /** 그 조건에 맞는 오퍼레이터 — in이 있으면 이 모드 상점 명단에도 들어 있다 */
     /** bonds = 자유 선택 시 세어지는 맹약 — 시즌1 배정 또는 진영 도출 (build-autochess.py) */
     diyPool: { op: string; n: string; job?: string; seq?: number; in?: 1; bonds?: string[] }[];
+    /** 대체 기물(NPC) — 본체 미보유 기물로 대신 출전. subs = 대체하는 기물 id (사용자 제보 2026-08-23) */
+    diySubs: { op: string; n: string; r: number; job?: string; subs: string[] }[];
   };
   bonds: AcBond[];
   chess: AcChess[];
@@ -150,7 +156,7 @@ const MISC_LABEL: Record<MiscTab, string> = {
 // 정예화 표기 — 게임 데이터의 PHASE_n을 도감과 같은 말로
 const PHASE_LABEL: Record<string, string> = { PHASE_0: "정예화 0", PHASE_1: "정예화 1", PHASE_2: "정예화 2" };
 // 상점 등장 방식 — NORMAL만 물자관리소에 뜬다
-const KIND_LABEL: Record<string, string> = { NORMAL: "상점 등장", PRESET: "특수 지급", DIY: "자유 선택" };
+const KIND_LABEL: Record<string, string> = { NORMAL: "상점 등장", PRESET: "특수 지급", DIY: "자유 선택", SUB: "대체 기물" };
 const MODE_TYPE_LABEL: Record<string, string> = { LOCAL: "입문", SINGLE: "단독", MULTI: "협동" };
 // 맹약이 인원을 세는 범위 — 전장만 세는 BOARD는 기본값이라 배지를 붙이지 않는다
 const BOND_COND_LABEL: Record<string, string> = {
@@ -227,7 +233,7 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
   const [jobFilter, setJobFilter] = useState("");
   const [subFilter, setSubFilter] = useState("");
   const [shopMode, setShopMode] = useState("mode_single_normal");
-  const { term, clear, set: setTerm, inputProps } = useSearchInput();
+  const { term, clear, set: setTerm, inputRef, inputProps } = useSearchInput();
 
   // ── 필터 딥링크 (사용자 요청 2026-08-23: "각 필터 건 거 전부 딥링크로") ──────────
   // #<뷰>[/<게임 정보 탭>][?bn=&bt=&t=&g=&job=&sub=&q=] — 상태가 바뀔 때마다 replaceState로
@@ -249,7 +255,8 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
       setGarFilter(p.get("g") ?? "");
       setJobFilter(p.get("job") ?? "");
       setSubFilter(p.get("sub") ?? "");
-      if (p.get("q") != null) setTerm(p.get("q") ?? "");
+      // q가 없으면 지운다 — 남기면 뒤로가기로 뷰를 옮겼을 때 빈 검색칸으로 계속 걸러진다
+      setTerm(p.get("q") ?? "");
     };
     apply();
     hydrated.current = true;
@@ -280,6 +287,15 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
   }, [view, miscTab, bondN, bondT, tier, garFilter, jobFilter, subFilter, term]);
 
 
+  // 검색 입력은 비제어(useSearchInput)라 뷰가 바뀌어 입력칸이 새로 마운트되면 빈칸이 된다.
+  // 살아 있는 term을 DOM에 되써서 "빈 검색칸 + 걸러진 목록" 불일치를 막는다 — 딥링크
+  // ?q= 진입 복원도 이 이펙트가 담당한다 (사용자 제보 2026-08-23).
+  useEffect(() => {
+    const el = inputRef.current;
+    if (el && el.value !== term) el.value = term;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [term, view]);
+
   const chessById = useMemo(() => {
     const m = new Map<string, AcChess>();
     for (const c of doc.chess) m.set(c.id, c);
@@ -309,6 +325,11 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
   // 이미 상점 명단에 있는 ★6은 뺀다 — 자유 선택 칸으로 새로 데려올 수 있는 쪽만 남긴다
   // (사용자 지시 2026-08-22)
   const diyPool = useMemo(() => doc.shop.diyPool.filter((o) => !o.in), [doc]);
+  // 대체 기물(NPC) — 게임의 자유 선택 판에 항상 뜨는 나머지 절반 (사용자 제보 2026-08-23)
+  const diySubs = useMemo(() => doc.shop.diySubs ?? [], [doc]);
+  const openSub = (s: { op: string; n: string; r: number; job?: string; subs: string[] }) =>
+    openChess({ id: `sub_${s.op}`, op: s.op, n: s.n, t: 0, sort: 0, kind: "SUB",
+      bonds: [], gar: [], garG: [], r: s.r, job: s.job, subsOf: s.subs });
 
   const nameOfBond = (id: string) => bondById.get(id)?.n ?? id;
 
@@ -752,8 +773,10 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
         {VIEWS.map((vw) => (
           <button key={vw} type="button" role="tab" aria-selected={view === vw}
             className={view === vw ? "on" : ""}
-            /* 메뉴를 접고 이동 — 키보드 Enter는 mousedown이 없어 바깥클릭 감지를 안 탄다 (감사 2026-08-23) */
-            onClick={() => { setView(vw); closeMenus(); }}>
+            /* 메뉴를 접고 이동 — 키보드 Enter는 mousedown이 없어 바깥클릭 감지를 안 탄다 (감사 2026-08-23).
+               검색도 비운다 — 입력칸은 뷰마다 새로 마운트돼 빈칸인데 term만 남아
+               "빈 검색칸 + 걸러진 목록"이 됐다 (사용자 제보 2026-08-23) */
+            onClick={() => { setView(vw); closeMenus(); clear(false); }}>
             {t(VIEW_LABEL[vw])}
           </button>
         ))}
@@ -818,7 +841,7 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
               <div className="ac-filters">
                 <div className="search-wrap heading-search sim-search">
                   <span>⌕</span>
-                  <input {...inputProps} placeholder={t("이름·능력 검색")} autoComplete="off" spellCheck={false} />
+          <input {...inputProps} placeholder={t("이름·능력 검색")} autoComplete="off" spellCheck={false} />
                   <button type="button" className="search-clear" onClick={() => clear()} aria-label={t("검색어 지우기")}>×</button>
                 </div>
               </div>
@@ -916,10 +939,11 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
               )}
 
               {/* 자유 선택 칸 후보 — 편성하는 자리라 오퍼레이터 목록 맨 밑에 붙인다
-                  (사용자 지시 2026-08-22). 클뜯에는 후보 명단이 없고 '★6' 조건뿐이라
-                  ★6 전원에서 **이미 상점 명단에 있는 오퍼레이터를 뺀** 나머지를 싣는다. */}
+                  (사용자 지시 2026-08-22). 게임의 자체 편성 판 = 명단 밖 보유 ★6 + 대체 기물
+                  (사용자 스크린샷 검증 2026-08-23). 클뜯에 ★6 후보 명단은 없어 상점 명단에
+                  이미 있는 오퍼레이터를 뺀 KR 출시 ★6 전원을 싣는다. */}
               <h3 className="sb-h3">{t("자유 선택 칸")} <em className="sb-count">{diyPool.length}</em></h3>
-              <p className="sb-dim">{t("보급센터 레벨 5·6에서 각각 {n}칸씩 열립니다. 게임 데이터에는 후보 명단 대신 '★6 오퍼레이터'라는 조건만 들어 있어, 위 목록에 이미 들어 있는 ★6을 뺀 나머지 KR 출시 ★6 전원을 싣습니다. 누르면 오퍼레이터 상세로 갑니다.", { n: 2 })}</p>
+              <p className="sb-dim">{t("보급센터 레벨 5·6에서 각각 {n}칸씩 열립니다. 상점 명단에 없는 KR 출시 ★6 오퍼레이터를 보유하고 있으면 데려올 수 있습니다 — 단, 게임 안내대로 이렇게 편성한 오퍼레이터는 특질 없이 출전합니다. 누르면 오퍼레이터 상세로 갑니다.", { n: 2 })}</p>
               <div className="ac-diypool">
                 {diyPool.map((o) => (
                   <button key={o.op} type="button" className="ac-diyop"
@@ -929,6 +953,20 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
                     })}>
                     <img src={opFace(o.op)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
                     <b>{o.n}</b>
+                  </button>
+                ))}
+              </div>
+
+              {/* 대체 기물(NPC) — 자유 선택 판의 나머지 절반. 본체 미보유 기물의 대체 출전이
+                  본업이라, 특질·맹약은 그때 대체하는 기물의 것을 그대로 쓴다 (사용자 제보
+                  2026-08-23 — "스톰아이 특질" = 르무엔 기물 특질). */}
+              <h3 className="sb-h3">{t("대체 기물")} <em className="sb-count">{diySubs.length}</em></h3>
+              <p className="sb-dim">{t("명단 기물의 본체 오퍼레이터가 없을 때 그 기물 그대로(맹약·특질·스킬) 대신 출전하는 전용 오퍼레이터입니다. 자유 선택 판에도 보유와 무관하게 항상 후보로 떠서, ★6이 없어도 칸을 채울 수 있습니다. 누르면 어떤 기물을 대체하는지 보여줍니다.")}</p>
+              <div className="ac-diypool">
+                {diySubs.map((s) => (
+                  <button key={s.op} type="button" className="ac-diyop" onClick={() => openSub(s)}>
+                    <img src={opFace(s.op)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
+                    <b>{s.n}</b>
                   </button>
                 ))}
               </div>
@@ -1282,13 +1320,27 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
               <div>
                 <h2>{chess.n}</h2>
                 <p className="ac-cmeta">
-                  {tierBadge(chess.t)}
+                  {chess.t ? tierBadge(chess.t) : null}
                   {chess.r ? <i className="ac-star">★{chess.r}</i> : null}
                   {chess.job ? <i className="sb-chip">{chess.job}</i> : null}
                   <i className="sb-chip ac-kind">{t(KIND_LABEL[chess.kind] ?? chess.kind)}</i>
                 </p>
                 <p className="ac-bondline">{chess.bonds.map((b) => bondChip(b))}</p>
               </div>
+              {/* 본체 미보유 시 대신 출전하는 전용 캐릭터 — 얼굴만 바뀌고 기물은 그대로다
+                  (사용자 스크린샷 2026-08-23: 르무엔 미보유 계정의 스톰아이). 머리글 오른쪽
+                  빈자리에 둔다 — 본문에 두면 정예화 토글과 붙어 보인다 (사용자 지적). */}
+              {chess.bk && (
+                <button type="button" className="ac-subnote"
+                  title={t("본체 미보유 시 {n} 모습으로 대체 출전 — 맹약·특질·스킬은 그대로", { n: chess.bk.n })}
+                  onClick={() => { const s = diySubs.find((x) => x.op === chess.bk!.op); if (s) openSub(s); }}>
+                  <em>{t("본체 미보유 시 대체")}</em>
+                  <span>
+                    <img src={opFace(chess.bk.op)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
+                    <b>{chess.bk.n}</b>
+                  </span>
+                </button>
+              )}
             </header>
 
             {/* 일반 ↔ 정예화(골든) — 능력·스킬·모듈·표 강조가 전부 이 토글을 따른다 (2026-08-23) */}
@@ -1300,13 +1352,36 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
                   className={goldView ? "on gold" : "gold"} onClick={() => setGoldView(true)}>{t("정예화(골든)")}</button>
               </div>
             )}
-            <h4>{t("위수 협의 능력")}</h4>
-            {chess.gar.length || chess.garG.length ? (
-              (goldView && chess.garG.length ? chess.garG : chess.gar).map((g) => garLine(g, goldView))
-            ) : chess.id.startsWith("diy_")
-              /* 자유 선택 칸으로만 데려오는 ★6 — 상점 명단이 아니라 전용 능력이 아예 없다 */
-              ? <p className="sb-dim">{t("보급센터 자유 선택 칸으로만 데려올 수 있는 오퍼레이터입니다. 상점 명단에 없어 전용 능력·기본 스킬 설정이 게임 데이터에 들어 있지 않습니다.")}</p>
-              : <p className="sb-dim">{t("전용 능력이 없는 오퍼레이터입니다.")}</p>}
+            {/* 대체 기물(NPC) — 능력 대신 '어느 기물을 대체하는가'를 보여준다. 특질은
+                대체하는 기물의 것이라 각 기물 상세에서 읽는다 (사용자 요청 2026-08-23). */}
+            {chess.subsOf?.length ? (
+              <>
+                <p className="sb-dim ac-note">{t("본체 오퍼레이터가 없는 명단 기물이 이 모습으로 대신 출전합니다 — 맹약·특질·스킬은 대체하는 기물의 것을 그대로 씁니다. 자유 선택 판에도 보유와 무관하게 항상 후보로 뜹니다.")}</p>
+                <h4>{t("대체 출전하는 기물")} <em className="sb-count">{chess.subsOf.length}</em></h4>
+                <div className="ac-diypool">
+                  {chess.subsOf.map((cid) => {
+                    const c2 = chessById.get(cid);
+                    if (!c2) return null;
+                    return (
+                      <button key={cid} type="button" className="ac-diyop" onClick={() => openChess(c2)}>
+                        {c2.op && <img src={opFace(c2.op)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />}
+                        <b>{c2.n}</b>
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            ) : (
+              <>
+                <h4>{t("위수 협의 능력")}</h4>
+                {chess.gar.length || chess.garG.length ? (
+                  (goldView && chess.garG.length ? chess.garG : chess.gar).map((g) => garLine(g, goldView))
+                ) : chess.id.startsWith("diy_")
+                  /* 자유 선택 칸으로만 데려오는 ★6 — 상점 명단이 아니라 전용 능력이 아예 없다 */
+                  ? <p className="sb-dim">{t("보급센터 자유 선택 칸으로만 데려올 수 있는 오퍼레이터입니다. 상점 명단에 없어 전용 능력·기본 스킬 설정이 게임 데이터에 들어 있지 않고, 게임 안내대로 특질 없이 출전합니다.")}</p>
+                  : <p className="sb-dim">{t("전용 능력이 없는 오퍼레이터입니다.")}</p>}
+              </>
+            )}
             {chess.sks?.length ? (
               <>
                 <h4>{t("스킬")}</h4>
@@ -1351,11 +1426,13 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
               </>
             ) : null}
 
-            <h4>{t("가격과 능력치")}</h4>
+            {/* 제목도 표와 함께 숨긴다 — 대체 기물은 티어가 없어 표가 없는데 제목만 남았다 */}
             {(() => {
               const row = doc.shop.tiers.find((x) => x.t === chess.t);
               if (!row) return null;
               return (
+                <>
+                <h4>{t("가격과 능력치")}</h4>
                 <div className="ac-tablewrap">
                   <table className="ac-table ac-table-sm">
                     <thead><tr><th /><th>{t("구매")}</th><th>{t("정예화")}</th><th>{t("레벨")}</th><th>{t("스킬")}</th><th>{t("모듈")}</th></tr></thead>
@@ -1365,6 +1442,7 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
                     </tbody>
                   </table>
                 </div>
+                </>
               );
             })()}
           </div>

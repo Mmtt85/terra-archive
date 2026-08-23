@@ -420,6 +420,12 @@ def build_locale(loc):
             row["job"] = op.get("job")
             row["jobCode"] = op.get("jobCode")
             row["sub"] = op.get("subProfession")   # 세부직군 — 필터용 (사용자 요청 2026-08-23)
+        # 본체 미보유 시 대체 출전하는 전용 캐릭터 (backupCharId ≠ charId, 55기물) —
+        # 얼굴·이름만 바뀌고 맹약·특질·스킬 구성은 기물 것 그대로다 (사용자 스크린샷 검증
+        # 2026-08-23: 르무엔 미보유 계정의 '스톰아이' 특질 = garrison_24 = 르무엔 기물 특질).
+        bk = c.get("backupCharId")
+        if bk and char_id and bk != char_id:
+            row["bk"] = {"op": bk, "n": char_name(loc, bk) or bk}
         # 스킬·모듈 설명 (사용자 요청 2026-08-23: 도감 링크 대신 모달 안에서 바로 읽게.
         # 이어서 "1·2스와 보유 모듈 전부 설명을 붙이고, 기본 구성에는 '디폴트'만 표시").
         # 기물의 스킬 레벨·모듈 단계는 CHESSDATA status에 있다 — 일반/골든이 다르다
@@ -739,6 +745,30 @@ def build_locale(loc):
                          **({"in": 1} if oid in roster_ops else {})})
     diy_pool.sort(key=lambda r: -(r["seq"] or 0))
 
+    # ── 대체 기물(NPC) — 자유 선택 판의 나머지 절반 ──
+    # 게임의 자체 편성(자유 선택) 후보 = 명단 밖 보유 ★6 + 이 NPC들 (사용자 스크린샷
+    # 2026-08-23 — 예비 오퍼레이터·예비 인원·튤립~미저리 ac시리즈·로드샤프가 항상 뜬다).
+    # 클뜯 상 등장처는 charShopChessDatas.backupCharId 뿐이다: 진영·소속이 없어 맹약도 없고,
+    # 본업은 본체 미보유 기물의 대체 출전 — '특질'은 그때 대체하는 기물의 것을 그대로 쓴다.
+    job_label = {}
+    for o in OPS[loc].values():
+        job_label.setdefault(o.get("jobCode"), o.get("job"))
+    subs_map = {}
+    for cid2, c2 in CHESS.items():
+        bk2, main2 = c2.get("backupCharId"), c2.get("charId")
+        if bk2 and main2 and bk2 != main2:
+            subs_map.setdefault(bk2, []).append(cid2)
+    diy_subs = []
+    for bk2, targets in subs_map.items():
+        cc = chars["ko"].get(bk2) or {}
+        rar = int((cc.get("rarity") or "TIER_0").rsplit("_", 1)[-1])
+        targets.sort(key=lambda x: (-(CHESS[x].get("chessLevel") or 0), CHESS[x].get("shopLevelSortId") or 0))
+        prof = cc.get("profession")
+        diy_subs.append({"op": bk2, "n": char_name(loc, bk2) or bk2, "r": rar,
+                         **({"job": job_label[prof]} if job_label.get(prof) else {}),
+                         "subs": targets})
+    diy_subs.sort(key=lambda r: (-(r["r"] or 0), r["n"] or ""))
+
     const = KR["constData"]
     token = item_of(loc, const.get("milestoneId") or "")
     doc = {
@@ -759,7 +789,7 @@ def build_locale(loc):
                  "diy": {k: (v.get("charChessDiySlotIdList") or [])
                          for k, v in KR["shopLevelDisplayDataDict"].items()
                          if v.get("charChessDiySlotIdList")},
-                 "diyTier": diy_tier, "diyPool": diy_pool},
+                 "diyTier": diy_tier, "diyPool": diy_pool, "diySubs": diy_subs},
         "bonds": bond_rows,
         "chess": chess_rows,
         "gar": gar_rows,

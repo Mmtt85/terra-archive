@@ -11663,6 +11663,11 @@ html.dark .pt-stage {
   bottom: -14px;
   font-size: 92px;
   line-height: 1;
+  /* 글리프마다 폭이 달라, 6초마다 배너가 넘어갈 때 이 상자가 좌우로 늘었다 줄었다 하며
+     레이아웃 이동으로 집계됐다 (RUM 실측 2026-08-23 — 절대배치라 실제로 밀리는 건 없지만
+     엔트리는 남는다). 폭을 1em으로 고정하고 오른끝을 맞춰 겉모습은 그대로 둔다. */
+  width: 1em;
+  text-align: right;
   color: color-mix(in srgb, var(--pt-accent) 34%, transparent);
   pointer-events: none;
 }
@@ -18412,6 +18417,17 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
 }
 .sb-card p { margin: 4px 0 0; font-size: 12.5px; line-height: 1.6; }
 .sb-dim { color: var(--muted); }
+/* ⚠ .sb-dim은 색만 잡는다 — 본문 안내문에 그냥 쓰면 브라우저 기본 16px로 나와 옆의
+   .sim-note(12px)·.ac-count(12px)보다 크게 튄다 (사용자 지적 2026-08-23: 자유 선택 칸·
+   대체 기물·적 탭 '전반·후반' 문구). 위수 협의 화면에서는 주변 문구에 맞춘다.
+   ⚠ 모달 본문(.ac-dt p = 12.5px)은 자기 규칙이 있으므로 건드리지 않는다. */
+.ac-guide > .sb-dim,
+.ac-guide > * > .sb-dim,
+.ac-guide > * > * > .sb-dim {
+  max-width: 760px;
+  font-size: 12px;
+  line-height: 1.65;
+}
 .sb-chip {
   display: inline-flex;
   align-items: center;
@@ -20118,6 +20134,63 @@ button.ac-card:hover { border-color: var(--border-strong); background: var(--pap
   width: 18px;
   height: 18px;
   object-fit: contain;
+}
+/* 대체 출전 안내 — 기물 모달 **머리글 오른쪽 빈자리**에 (누르면 그 대체 기물 상세).
+   본문에 두면 바로 아래 정예화 토글과 붙어 한 덩어리로 보인다 (사용자 지적 2026-08-23). */
+.ac-subnote {
+  margin-left: auto;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg-panel);
+  color: var(--muted);
+  cursor: pointer;
+  /* 한 줄로 (사용자 지시 2026-08-23) — 폰트도 주변 칩(11.5px)에 맞춘다.
+     ⚠ font 단축으로 쓰지 말 것: `font: 700 11px/1 inherit`은 CSS 전역 키워드를 단축 안에
+     끼운 **무효 선언**이라 통째로 버려진다 (그래서 16px 그대로 나왔다 — 실측 2026-08-23). */
+  white-space: nowrap;
+  font-size: 11px;
+  line-height: 1;
+}
+.ac-subnote:hover { border-color: var(--lime); color: var(--ink); }
+.ac-subnote em {
+  font-size: 11px;
+  font-weight: 700;
+  font-style: normal;
+  letter-spacing: -0.01em;
+}
+.ac-subnote > span {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  min-width: 0;
+}
+.ac-subnote b {
+  font-size: 11.5px;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ac-subnote img {
+  width: 19px;
+  height: 19px;
+  object-fit: cover;
+  border-radius: 50%;
+  background: var(--chip);
+  flex: none;
+}
+/* 좁은 화면 — 머리글이 밀리므로 아래 줄로 내려 가로로 편다 (한 줄 유지) */
+@media (max-width: 560px) {
+  .ac-dt-head { flex-wrap: wrap; }
+  .ac-subnote {
+    margin-left: 0;
+    width: 100%;
+    justify-content: space-between;
+  }
 }
 .ac-skmod-stats {
   margin: 5px 0 0;

@@ -2953,13 +2953,26 @@ const D: Record<string, Pair> = {
   "승급 비용은 그 레벨에서 다음 레벨로 올릴 때 처음 드는 자금입니다. 자유 선택 칸에 넣을 수 있는 오퍼레이터는 '물자관리소 → 오퍼레이터' 맨 아래에 있습니다.": [
     "The upgrade cost is what it first costs to go from that level to the next. The operators you can put in a free-pick slot are listed at the bottom of Supply Depot → Operators.",
     "昇級コストはそのレベルから次のレベルへ上げる際に最初にかかる資金です。自由選択枠に入れられるオペレーターは「管理センター → オペレーター」の最下部にあります。"],
-  "보급센터 자유 선택 칸으로만 데려올 수 있는 오퍼레이터입니다. 상점 명단에 없어 전용 능력·기본 스킬 설정이 게임 데이터에 들어 있지 않습니다.": [
-    "This operator can only join through a Supply Center free-pick slot. Being off the shop roster, the game data carries no garrison ability or default skill setup for them.",
-    "補給センターの自由選択枠からのみ加入できるオペレーターです。ショップ名簿にないため、専用能力や初期スキルの設定はゲームデータに含まれていません。"],
+  "보급센터 자유 선택 칸으로만 데려올 수 있는 오퍼레이터입니다. 상점 명단에 없어 전용 능력·기본 스킬 설정이 게임 데이터에 들어 있지 않고, 게임 안내대로 특질 없이 출전합니다.": [
+    "This operator can only join through a Supply Center free-pick slot. Being off the shop roster, the game data carries no garrison ability or default skill setup for them, and per the in-game notice they deploy without a trait.",
+    "補給センターの自由選択枠からのみ加入できるオペレーターです。ショップ名簿にないため専用能力や初期スキルの設定はゲームデータに含まれず、ゲーム内の案内どおり特質なしで出撃します。"],
   "자유 선택 칸": ["Free-pick slots", "自由選択枠"],
-  "보급센터 레벨 5·6에서 각각 {n}칸씩 열립니다. 게임 데이터에는 후보 명단 대신 '★6 오퍼레이터'라는 조건만 들어 있어, 위 목록에 이미 들어 있는 ★6을 뺀 나머지 KR 출시 ★6 전원을 싣습니다. 누르면 오퍼레이터 상세로 갑니다.": [
-    "Supply Center levels 5 and 6 open {n} slots each. The game data carries no candidate list — only the condition \"6★ operator\" — so this lists every 6★ released on the KR server minus the ones already in the roster above. Tap one for its operator page.",
-    "補給センターレベル5・6でそれぞれ{n}枠開放されます。ゲームデータには候補リストがなく「★6オペレーター」という条件のみのため、上の一覧にすでにいる★6を除いた韓国サーバー実装済みの★6全員を載せています。押すとオペレーター詳細へ進みます。"],
+  "보급센터 레벨 5·6에서 각각 {n}칸씩 열립니다. 상점 명단에 없는 KR 출시 ★6 오퍼레이터를 보유하고 있으면 데려올 수 있습니다 — 단, 게임 안내대로 이렇게 편성한 오퍼레이터는 특질 없이 출전합니다. 누르면 오퍼레이터 상세로 갑니다.": [
+    "Supply Center levels 5 and 6 open {n} slots each. Any 6★ you own that is off the shop roster can join through one — though, per the in-game notice, operators formed this way deploy without a trait. Tap one for its operator page.",
+    "補給センターレベル5・6でそれぞれ{n}枠開放されます。ショップ名簿にない実装済み★6を所持していれば連れて来られます — ただしゲーム内の案内どおり、この方法で編成したオペレーターは特質なしで出撃します。押すとオペレーター詳細へ進みます。"],
+  // 대체 기물(NPC) — 본체 미보유 기물로 대신 출전 (사용자 제보 2026-08-23)
+  "대체 기물": ["Stand-in units", "代替ユニット"],
+  "명단 기물의 본체 오퍼레이터가 없을 때 그 기물 그대로(맹약·특질·스킬) 대신 출전하는 전용 오퍼레이터입니다. 자유 선택 판에도 보유와 무관하게 항상 후보로 떠서, ★6이 없어도 칸을 채울 수 있습니다. 누르면 어떤 기물을 대체하는지 보여줍니다.": [
+    "Dedicated operators that step in for a roster unit when you don't own its operator — same alliances, trait and skills. They also always appear on the free-pick board regardless of ownership, so the slots can be filled without any 6★. Tap one to see which units it stands in for.",
+    "名簿ユニットの本体オペレーターを所持していないとき、そのユニットのまま(盟約・特質・スキル)代わりに出撃する専用オペレーターです。自由選択の画面にも所持と無関係に常に候補として並ぶため、★6がいなくても枠を埋められます。押すとどのユニットを代替するかを表示します。"],
+  "본체 미보유 시 대체": ["Stand-in if unowned", "本体未所持時の代替"],
+  "본체 미보유 시 {n} 모습으로 대체 출전 — 맹약·특질·스킬은 그대로": [
+    "If you don't own this operator, {n} steps in — same alliances, trait and skills",
+    "本体未所持の場合は{n}の姿で代替出撃 — 盟約・特質・スキルはそのまま"],
+  "본체 오퍼레이터가 없는 명단 기물이 이 모습으로 대신 출전합니다 — 맹약·특질·스킬은 대체하는 기물의 것을 그대로 씁니다. 자유 선택 판에도 보유와 무관하게 항상 후보로 뜹니다.": [
+    "Roster units whose operator you don't own deploy in this operator's guise — the alliances, trait and skills all stay those of the unit being stood in for. It also always appears on the free-pick board regardless of ownership.",
+    "本体オペレーターを所持していない名簿ユニットが、この姿で代わりに出撃します — 盟約・特質・スキルは代替されるユニットのものをそのまま使います。自由選択の画面にも所持と無関係に常に候補として並びます。"],
+  "대체 출전하는 기물": ["Units it stands in for", "代替出撃するユニット"],
   // 전략 상세 — 해금 조건 (게임 문구는 데이터에서 로케일별로 온다)
   "해금 조건": ["Unlock condition", "解放条件"],
   "처음부터 고를 수 있는 전략입니다.": [
