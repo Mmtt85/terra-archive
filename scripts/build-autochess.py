@@ -702,12 +702,40 @@ def build_locale(loc):
     # ⚠ 미래시(중국 서버 선행, KR 미출시) 오퍼레이터는 뺀다 — 한국 서버 이벤트라
     #   중섭 오퍼는 자유 선택 칸에 나오지 않는다 (사용자 교정 2026-08-22).
     roster_ops = {c["op"] for c in chess_rows if c.get("op")}
+    # 자유 선택 오퍼의 맹약 (사용자 확정 2026-08-23: "전부 진영 혹은 특성 맹약이 있음 —
+    # 어떻게든 찾아와줘"). 시즌2 명단 밖 오퍼는 클뜯 어디에도 명시 배정이 없어 두 경로로 찾는다:
+    #  ① 시즌1 명단에 있던 오퍼(46) — 그 배정 그대로 (골든글로우 → 빅토리아 ✓)
+    #  ② 나머지 — 진영 맹약을 autoChessData.bondInfoDict의 powerIdList(진영 팀 id 목록)와
+    #     character_table의 nationId/groupId/teamId 대조로 도출. 특성 맹약은 명단 밖 오퍼에
+    #     대한 데이터가 없어 지어내지 않는다 (진영 없는 로도스 소속 등은 맹약 없이 남는다).
+    s1_bonds = {}
+    a1_ko = acts.get("ko1") or (load("kr_activity_table.json").get("activity", {}).get("AUTOCHESS_SEASON", {}).get(ACT1))
+    if a1_ko:
+        cdd1 = a1_ko.get("charChessDataDict") or {}
+        rows1 = a1_ko.get("charShopChessDatas") or []
+        for r1 in (rows1 if isinstance(rows1, list) else list(rows1.values())):
+            cid1 = r1.get("charId")
+            bl1 = (cdd1.get(r1.get("chessId")) or {}).get("bondIds") or []
+            if cid1 and bl1:
+                s1_bonds[cid1] = [b for b in bl1 if b in bond_order]
+    power_map = {bid: set(b.get("powerIdList") or []) for bid, b in (outers["ko"].get("bondInfoDict") or {}).items()
+                 if b.get("isPower") and bid in bond_order}
+
+    def diy_bonds(oid):
+        if s1_bonds.get(oid):
+            return s1_bonds[oid]
+        c0 = chars["ko"].get(oid) or {}
+        ids = {c0.get("nationId"), c0.get("groupId"), c0.get("teamId")} - {None}
+        return [bid for bid, pl in power_map.items() if ids & pl]
+
     diy_pool = []
     for oid, o in OPS[loc].items():
         if o.get("rarity") != 6 or o.get("unreleased"):
             continue
+        bs = diy_bonds(oid)
         diy_pool.append({"op": oid, "n": o.get("name") or oid,
                          "job": o.get("job"), "seq": o.get("seq") or 0,
+                         **({"bonds": bs} if bs else {}),
                          **({"in": 1} if oid in roster_ops else {})})
     diy_pool.sort(key=lambda r: -(r["seq"] or 0))
 

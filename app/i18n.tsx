@@ -2807,6 +2807,10 @@ const D: Record<string, Pair> = {
     "数値は上で選んだ精鋭化状態のスキルレベル基準で、初期構成には「デフォルト」が付いています。"],
   "모듈 슬롯은 정예화(골든)부터 열립니다.": ["The module slot opens from Golden.", "モジュールスロットはゴールデンから開放されます。"],
   "디폴트": ["Default", "デフォルト"],
+  "자유 선택 칸 후보": ["Free-pick candidates", "自由選択枠の候補"],
+  "상점 명단에는 없지만, 보급센터 자유 선택 칸으로 데려오면 이 맹약으로 셉니다.": [
+    "Not in the shop pool, but brought in through a free-pick slot they count toward this alliance.",
+    "ショップの一覧にはいませんが、自由選択枠で連れてくるとこの盟約にカウントされます。"],
   "변형 구조체와 함께 장착하면 착용자가 {bond} 맹약을 추가로 얻습니다.": [
     "Pair it with a Morphing Structure and the wearer gains the {bond} alliance.",
     "変形構造体と一緒に装着すると、装着者が{bond}の盟約を追加で得ます。"],

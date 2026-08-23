@@ -81,7 +81,8 @@ export type AutochessDoc = {
     /** 자유 선택 칸이 받는 등급 (전부 TIER_6 = ★6) */
     diyTier: Record<string, string>;
     /** 그 조건에 맞는 오퍼레이터 — in이 있으면 이 모드 상점 명단에도 들어 있다 */
-    diyPool: { op: string; n: string; job?: string; seq?: number; in?: 1 }[];
+    /** bonds = 자유 선택 시 세어지는 맹약 — 시즌1 배정 또는 진영 도출 (build-autochess.py) */
+    diyPool: { op: string; n: string; job?: string; seq?: number; in?: 1; bonds?: string[] }[];
   };
   bonds: AcBond[];
   chess: AcChess[];
@@ -460,6 +461,25 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
         {b.n}
       </button>
     );
+  };
+
+  // 맹약 문구가 대괄호로 부르는 전략(밴드) — "전략에서 [나란투야] 선택 시"의 나란투야는
+  // band_narant(균등 배분)의 대표 오퍼다. 눌러서 그 전략 상세로 (사용자 요청 2026-08-23).
+  const bandByRef = useMemo(() => {
+    const m = new Map<string, AcBand>();
+    for (const b of doc.bands) { if (b.by) m.set(b.by, b); m.set(b.n, b); }
+    return m;
+  }, [doc]);
+  const richBands = (text: string) => {
+    const parts = text.split(/(\[[^\]]+\])/);
+    if (!parts.some((seg) => seg.startsWith("[") && bandByRef.has(seg.slice(1, -1)))) return rich(text);
+    return parts.map((seg, i) => {
+      const name = seg.startsWith("[") ? seg.slice(1, -1) : "";
+      const b = name ? bandByRef.get(name) : undefined;
+      return b
+        ? <button key={i} type="button" className="ac-bandref" onClick={() => setBand(b)}>{name} ↗</button>
+        : <span key={i}>{rich(seg)}</span>;
+    });
   };
 
   const garLine = (id: string, gold: boolean) => {
@@ -905,7 +925,7 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
                   <button key={o.op} type="button" className="ac-diyop"
                     onClick={() => openChess({
                       id: `diy_${o.op}`, op: o.op, n: o.n, t: 6, sort: 0,
-                      kind: "DIY", bonds: [], gar: [], garG: [], r: 6, job: o.job,
+                      kind: "DIY", bonds: o.bonds ?? [], gar: [], garG: [], r: 6, job: o.job,
                     })}>
                     <img src={opFace(o.op)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
                     <b>{o.n}</b>
@@ -1205,8 +1225,8 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
             <ol className="ac-steps">
               {bond.steps.map((s, i) => (
                 <li key={i}>
-                  {s.c && <span className="ac-stepcond">{rich(s.c)}</span>}
-                  <span className="ac-steptxt">{rich(s.t)}</span>
+                  {s.c && <span className="ac-stepcond">{richBands(s.c)}</span>}
+                  <span className="ac-steptxt">{richBands(s.t)}</span>
                 </li>
               ))}
             </ol>
@@ -1223,6 +1243,30 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
                 </div>
               );
             })}
+            {/* 자유 선택 칸으로 데려올 수 있는 이 맹약 오퍼 (사용자 요청 2026-08-23:
+                "골든글로우 같은 경우는 빅토리아 맹약 밑에 뜨게") — 상점 명단과 구분해 맨 밑에 */}
+            {(() => {
+              const cand = diyPool.filter((o) => o.bonds?.includes(bond.id));
+              if (!cand.length) return null;
+              return (
+                <>
+                  <h4>{t("자유 선택 칸 후보")} <em className="sb-count">{cand.length}</em></h4>
+                  <p className="sb-dim">{t("상점 명단에는 없지만, 보급센터 자유 선택 칸으로 데려오면 이 맹약으로 셉니다.")}</p>
+                  <div className="ac-diypool">
+                    {cand.map((o) => (
+                      <button key={o.op} type="button" className="ac-diyop"
+                        onClick={() => openChess({
+                          id: `diy_${o.op}`, op: o.op, n: o.n, t: 6, sort: 0,
+                          kind: "DIY", bonds: o.bonds ?? [], gar: [], garG: [], r: 6, job: o.job,
+                        })}>
+                        <img src={opFace(o.op)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
+                        <b>{o.n}</b>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              );
+            })()}
           </div>
         </ModalWindow>
       )}

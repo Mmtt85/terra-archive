@@ -20073,6 +20073,24 @@ button.ac-card:hover { border-color: var(--border-strong); background: var(--pap
   line-height: 1.6;
   white-space: pre-line;   /* 스킬 설명의 줄바꿈 보존 */
 }
+/* 맹약 문구 안의 전략 바로가기 — [나란투야]처럼 대괄호로 부르는 전략을 누르면 상세로 */
+.ac-bandref {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 2px;
+  padding: 1px 7px;
+  border: 1px solid color-mix(in srgb, var(--lime) 45%, var(--line));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--lime) 16%, transparent);
+  color: var(--ink);
+  font-size: 11.5px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.ac-bandref:hover {
+  border-color: var(--lime);
+}
+
 /* 장비 모달의 변형 구조체 바로가기 — 문장 뒤에 붙는 작은 칩 */
 .ac-morphnote {
   display: flex;
