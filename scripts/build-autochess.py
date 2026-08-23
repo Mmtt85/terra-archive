@@ -41,6 +41,8 @@ ASSETS = "https://raw.githubusercontent.com/ArknightsAssets/ArknightsAssets2/cn/
 AC_ARTS = f"{ASSETS}/ui/autochess/%5Buc%5Dautochesscommon/arts"
 AC_OUTER = f"{ASSETS}/ui/autochess/%5Buc%5Dautochessouter/arts"
 ITEM_ICON = "https://raw.githubusercontent.com/yuanyan3060/ArknightsGameResource/main/item"
+SKILL_ICON = f"{ASSETS}/arts/skills"          # skill_icon_<iconId>.png
+MODTYPE_ICON = f"{ASSETS}/arts/ui/uniequiptype"  # <typeIcon 소문자>.png
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from imgutil import save_webp  # noqa: E402
@@ -125,7 +127,7 @@ def steps_of(desc):
 PREFIX = {"ko": "kr", "en": "en", "ja": "jp"}
 SUFFIX = {"ko": "", "en": ".en", "ja": ".ja"}
 
-acts, act1s, chars, skills, equips, items, enemies, teams, outers = {}, {}, {}, {}, {}, {}, {}, {}, {}
+acts, act1s, chars, skills, equips, char_equips, bequips, items, enemies, teams, outers = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}
 for loc, pre in PREFIX.items():
     at = load(f"{pre}_activity_table.json")
     season = at.get("activity", {}).get("AUTOCHESS_SEASON", {})
@@ -133,7 +135,11 @@ for loc, pre in PREFIX.items():
     act1s[loc] = season.get(ACT1)
     chars[loc] = load(f"{pre}_character_table.json")
     skills[loc] = load(f"{pre}_skill_table.json")
-    equips[loc] = load(f"{pre}_uniequip_table.json").get("equipDict", {})
+    _uq = load(f"{pre}_uniequip_table.json")
+    equips[loc] = _uq.get("equipDict", {})
+    char_equips[loc] = _uq.get("charEquip", {})   # 오퍼 → 보유 모듈 id 목록
+    _be = load(f"{pre}_battle_equip_table.json")
+    bequips[loc] = _be.get("equips", _be)   # 모듈 전투 효과 (특성 변경·재능 강화 문구)
     items[loc] = load(f"{pre}_item_table.json")["items"]
     enemies[loc] = load(f"{pre}_enemy_handbook_table.json").get("enemyData", {})
     teams[loc] = load(f"{pre}_handbook_team_table.json")
@@ -267,25 +273,89 @@ OPS = {loc: {o["id"]: o for o in json.load(open(os.path.join(DATA, f"operators{S
        for loc in ("ko", "en", "ja")}
 
 
-def skill_name(loc, cid, idx):
+# {key} / {key:0%} / {-key} 토큰을 그 레벨의 blackboard 값으로 — build-skill-levels.py의
+# value_at과 같은 규칙 (기물 상세 모달에 스킬·모듈 설명을 싣는다, 사용자 요청 2026-08-23).
+TOKEN_RE = re.compile(r"\{(-?)([0-9a-zA-Z_@\[\].']+)(?::([^}]*))?\}")
+
+
+def interp(text, blackboard, duration=None):
+    bb = {str(e.get("key", "")).lower(): (e.get("valueStr") if e.get("valueStr") is not None else e.get("value"))
+          for e in (blackboard or [])}
+    if duration and duration > 0:
+        bb.setdefault("duration", duration)
+
+    def rep(m):
+        neg, key, fmt = m.group(1) == "-", m.group(2).lower(), m.group(3) or ""
+        if key not in bb:
+            return m.group(0)
+        v = bb[key]
+        if isinstance(v, str):
+            return v
+        if neg:
+            v = -v
+        if "%" in fmt:
+            v *= 100
+            v = int(round(v)) if abs(v - round(v)) < 1e-6 else round(v, 1)
+            return f"{v}%"
+        if isinstance(v, float) and v.is_integer():
+            v = int(v)
+        return str(round(v, 2) if isinstance(v, float) else v)
+    return TOKEN_RE.sub(rep, text or "")
+
+
+def skill_of(loc, cid, idx, level):
+    """기물이 들고 나오는 스킬의 (이름, 그 레벨 설명). level은 1부터."""
     c = chars[loc].get(cid) or chars["ko"].get(cid)
     if not c or idx is None or idx < 0:
-        return None
+        return None, None, None
     sk = (c.get("skills") or [])
     if idx >= len(sk):
-        return None
+        return None, None, None
     sid = sk[idx].get("skillId")
-    lv = ((skills[loc].get(sid) or skills["ko"].get(sid) or {}).get("levels") or [{}])
-    return lv[0].get("name") if lv else None
+    lvs = ((skills[loc].get(sid) or skills["ko"].get(sid) or {}).get("levels") or [])
+    if not lvs:
+        return None, None, None
+    lv = lvs[min((level or 1) - 1, len(lvs) - 1)]
+    entry = skills["ko"].get(sid) or {}
+    icon = entry.get("iconId") or sid   # 아이콘 파일명 — iconId가 따로 있는 스킬이 있다
+    return lvs[0].get("name"), rich(interp(lv.get("description"), lv.get("blackboard"), lv.get("duration"))), icon
 
 
-def module_of(loc, ueid):
+def module_of(loc, ueid, equip_level=None):
     if not ueid:
         return None
     e = equips[loc].get(ueid) or equips["ko"].get(ueid)
     if not e:
         return None
-    return {"n": e.get("uniEquipName"), "i": e.get("typeIcon")}
+    row = {"n": e.get("uniEquipName"), "i": e.get("typeIcon")}
+    # 전투 효과 — battle_equip의 해당 단계(phase). 특성 변경·재능 강화 문구를 모아 잇는다.
+    be = bequips[loc].get(ueid) or bequips["ko"].get(ueid) or {}
+    phases = be.get("phases") or []
+    if equip_level and phases:
+        ph = phases[min(equip_level - 1, len(phases) - 1)]
+        lines = []
+        for part in ph.get("parts") or []:
+            for bundle in ("overrideTraitDataBundle", "addOrOverrideTalentDataBundle"):
+                for cand in (part.get(bundle) or {}).get("candidates") or []:
+                    if (cand.get("requiredPotentialRank") or 0) > 0:
+                        continue   # 잠재 조건부 판은 기본 잠재로 취급
+                    txt = cand.get("additionalDescription") or cand.get("overrideDescripton") \
+                        or cand.get("upgradeDescription") or cand.get("description")
+                    if txt:
+                        lines.append(rich(interp(txt, cand.get("blackboard"))))
+        if lines:
+            row["d"] = "\n".join(dict.fromkeys(lines))
+        stats = [f"{STAT_KO.get(a.get('key'), a.get('key'))} +{int(a['value']) if float(a['value']).is_integer() else a['value']}"
+                 for a in ph.get("attributeBlackboard") or []]
+        if stats:
+            row["s"] = " · ".join(stats)
+    return row
+
+
+# 모듈 능력치 키 → 화면 표기 (세 로케일 공통 게임 용어라 KR 표기 그대로 두면 안 된다 —
+# 로케일별 표기는 화면(i18n)이 아니라 여기서 갈리기 어려워 대표 표기만 쓴다)
+STAT_KO = {"max_hp": "HP", "atk": "ATK", "def": "DEF", "magic_resistance": "RES",
+           "attack_speed": "ASPD", "cost": "COST", "respawn_time": "REDEPLOY"}
 
 
 def build_locale(loc):
@@ -350,12 +420,45 @@ def build_locale(loc):
             row["job"] = op.get("job")
             row["jobCode"] = op.get("jobCode")
             row["sub"] = op.get("subProfession")   # 세부직군 — 필터용 (사용자 요청 2026-08-23)
-        sn = skill_name(loc, char_id, c.get("defaultSkillIndex"))
-        if sn:
-            row["sk"] = {"n": sn, "i": (c.get("defaultSkillIndex") or 0) + 1}
-        md = module_of(loc, c.get("defaultUniEquipId"))
-        if md:
-            row["mod"] = md
+        # 스킬·모듈 설명 (사용자 요청 2026-08-23: 도감 링크 대신 모달 안에서 바로 읽게.
+        # 이어서 "1·2스와 보유 모듈 전부 설명을 붙이고, 기본 구성에는 '디폴트'만 표시").
+        # 기물의 스킬 레벨·모듈 단계는 CHESSDATA status에 있다 — 일반/골든이 다르다
+        # (예: 인사이더 일반 Lv4 → 골든 Lv7 + 모듈 1단계. 일반은 equipLevel 0 = 모듈 없음).
+        st_b, st_g = base.get("status") or {}, gold.get("status") or {}
+        idx = c.get("defaultSkillIndex")
+        n_skills = len((chars["ko"].get(char_id) or {}).get("skills") or [])
+        sks = []
+        for i2 in range(n_skills):
+            n2, d2, ic2 = skill_of(loc, char_id, i2, st_b.get("skillLevel"))
+            if not n2:
+                continue
+            sk_row = {"n": n2, "i": i2 + 1, **({"ic": ic2} if ic2 else {})}
+            if d2:
+                sk_row["d"] = d2
+                sk_row["lv"] = st_b.get("skillLevel")
+            _, d2g, _ic = skill_of(loc, char_id, i2, st_g.get("skillLevel"))
+            if d2g and d2g != d2:
+                sk_row["dG"] = d2g
+                sk_row["lvG"] = st_g.get("skillLevel")
+            if i2 == idx:
+                sk_row["df"] = 1
+            sks.append(sk_row)
+        if sks:
+            row["sks"] = sks
+        mods = []
+        for eid in char_equips["ko"].get(char_id) or []:
+            e0 = equips["ko"].get(eid) or {}
+            if e0.get("type") == "INITIAL":
+                continue   # 기본형(빈) 모듈 — 효과가 없다
+            md = module_of(loc, eid, st_g.get("equipLevel"))
+            if md:
+                if eid == c.get("defaultUniEquipId"):
+                    md["df"] = 1
+                mods.append(md)
+        if mods:
+            row["mods"] = mods
+            if not (st_b.get("equipLevel") or 0):
+                row["modG"] = 1   # 모듈 슬롯은 골든부터 열린다
         chess_rows.append(row)
         for bid in row["bonds"]:
             if bid in bond_order:
@@ -709,6 +812,16 @@ if not NO_ICONS:
             icon = item_of("ko", iid).get("iconId")
             if icon:
                 jobs.append((f"{ITEM_ICON}/{urllib.request.quote(icon)}.png", dest))
+    # 스킬·모듈 타입 아이콘 — 기물 상세 모달용 (사용자 요청 2026-08-23). 참조된 것만.
+    for c2 in d["chess"]:
+        for sk2 in c2.get("sks") or []:
+            if sk2.get("ic"):
+                jobs.append((f"{SKILL_ICON}/skill_icon_{urllib.request.quote(sk2['ic'])}.png",
+                             os.path.join(PUB, "skill", f"{sk2['ic']}.webp")))
+        for md2 in c2.get("mods") or []:
+            if md2.get("i"):
+                jobs.append((f"{MODTYPE_ICON}/{md2['i'].lower()}.png",
+                             os.path.join(PUB, "modtype", f"{md2['i'].lower()}.webp")))
     jobs = list(dict.fromkeys(jobs))
     fails = download(jobs)
     print(f"아이콘 {len(jobs) - len(fails)}/{len(jobs)}", file=sys.stderr)

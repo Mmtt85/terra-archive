@@ -19986,9 +19986,126 @@ button.ac-card:hover { border-color: var(--border-strong); background: var(--pap
 }
 
 /* 오퍼 상세 모달 하단 — 백과사전으로 넘어가는 줄 */
-.ac-oplink { margin: 8px 0 0; font-size: 12px; }
-.ac-oplink a { color: var(--muted); text-decoration: none; }
-.ac-oplink a:hover { color: var(--ink); text-decoration: underline; }
+/* 기물 상세의 일반/정예화(골든) 토글 — 능력·스킬·모듈·표 강조가 전부 이걸 따른다 */
+.ac-goldbar {
+  display: inline-flex;
+  margin: 14px 0 2px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+}
+.ac-goldbar button {
+  padding: 7px 16px;
+  border: 0;
+  background: var(--white);
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.ac-goldbar button + button {
+  border-left: 1px solid var(--line);
+}
+.ac-goldbar button.on {
+  background: var(--ink);
+  color: var(--white);
+}
+/* 골든 칸이 켜졌을 땐 금색 기운 — 골든 능력 블록(.ac-gar.gold)과 같은 계열 */
+.ac-goldbar button.gold.on {
+  background: #8a6d1d;
+  color: #fff;
+}
+.ac-table .ac-activerow th,
+.ac-table .ac-activerow td {
+  background: color-mix(in srgb, var(--lime) 14%, transparent);
+  font-weight: 800;
+}
+
+/* 기물 상세의 스킬·모듈 설명 카드 — 도감 링크(ac-oplink)를 대체 (사용자 확정 2026-08-23) */
+.ac-skmod {
+  margin-top: 8px;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg-panel);
+}
+.ac-skmod > header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  font-size: 12.5px;
+}
+/* 게임 스킬·모듈 아이콘은 흰 선화라 밝은 배경에서 안 보인다 — 어두운 판을 깐다 */
+.ac-skmod-ic {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  padding: 3px;
+  border-radius: 7px;
+  background: #23282b;
+  object-fit: contain;
+}
+/* 모듈 카드는 스킬과 확실히 갈라 보이게 — 왼쪽 금색 띠 (사용자 요청 2026-08-23) */
+.ac-skmod.mod {
+  border-left: 3px solid #b98a2b;
+}
+/* 일반 토글에서 모듈은 아직 안 열린 상태 — 눕혀 둔다 */
+.ac-skmod.off {
+  opacity: 0.45;
+}
+.ac-skmod-cap {
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+  font: 800 10.5px monospace;
+  letter-spacing: 0.04em;
+}
+.sb-chip.ac-df {
+  background: color-mix(in srgb, var(--lime) 22%, transparent);
+  border-color: color-mix(in srgb, var(--lime) 45%, var(--line));
+  font-weight: 800;
+}
+.ac-skmod-d {
+  margin: 6px 0 0;
+  color: var(--ink2);
+  font-size: 12.5px;
+  line-height: 1.6;
+  white-space: pre-line;   /* 스킬 설명의 줄바꿈 보존 */
+}
+/* 장비 모달의 변형 구조체 바로가기 — 문장 뒤에 붙는 작은 칩 */
+.ac-morphnote {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: center;
+}
+.ac-morphlink {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  padding: 3px 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg-panel);
+  color: var(--ink);
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.ac-morphlink:hover {
+  border-color: var(--lime);
+}
+.ac-morphlink img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+.ac-skmod-stats {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font: 700 11.5px monospace;
+}
 
 /* ── 이벤트 기록 — 미니게임·수집으로 풀리던 읽을거리 ──────────────────────────
    사용자 제보 2026-08-22. **스토리 상세의 세 번째 보기**로 들어간다 (사용자 확정

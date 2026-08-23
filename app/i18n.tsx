@@ -2800,6 +2800,16 @@ const D: Record<string, Pair> = {
   "두 맹약 모두 소속": ["In both alliances", "両方の盟約に所属"],
   "{name} 소속": ["In {name}", "{name}所属"],
   "{name} 중첩 올림": ["Adds {name} stacks", "{name}加算を増やす"],
+  // 기물 상세 — 스킬·모듈 설명 (2026-08-23: 도감 링크 대신 모달 안에서)
+  "정예화 상태": ["Promotion state", "精鋭化状態"],
+  "수치는 위에서 고른 정예화 상태의 스킬 레벨 기준이고, 기본으로 들고 나오는 구성에 '디폴트'가 붙어 있습니다.": [
+    "Numbers follow the promotion state picked above; the loadout the unit spawns with is tagged \"Default\".",
+    "数値は上で選んだ精鋭化状態のスキルレベル基準で、初期構成には「デフォルト」が付いています。"],
+  "모듈 슬롯은 정예화(골든)부터 열립니다.": ["The module slot opens from Golden.", "モジュールスロットはゴールデンから開放されます。"],
+  "디폴트": ["Default", "デフォルト"],
+  "변형 구조체와 함께 장착하면 착용자가 {bond} 맹약을 추가로 얻습니다.": [
+    "Pair it with a Morphing Structure and the wearer gains the {bond} alliance.",
+    "変形構造体と一緒に装着すると、装着者が{bond}の盟約を追加で得ます。"],
   "{name} 중첩마다 강화": ["Scales per {name} stack", "{name}加算ごとに強化"],
 
   "해당 없음": ["None", "該当なし"],
@@ -2835,8 +2845,6 @@ const D: Record<string, Pair> = {
   "전용 능력이 없는 오퍼레이터입니다.": ["This operator has no garrison ability.", "このオペレーターに専用能力はありません。"],
   "조건에 맞는 오퍼레이터가 없습니다.": ["No operators match these filters.", "条件に合うオペレーターがありません。"],
   "전용 능력 없음": ["No garrison ability", "専用能力なし"],
-  "기본 스킬·모듈": ["Default skill & module", "初期スキル・モジュール"],
-  "오퍼레이터가 기본으로 들고 나오는 설정입니다.": ["The loadout the operator comes with by default.", "オペレーターが初期状態で持っている設定です。"],
   "{n}스킬": ["Skill {n}", "スキル{n}"],
   "가격과 능력치": ["Price and stats", "価格とステータス"],
   "상태": ["State", "状態"],
@@ -2880,7 +2888,6 @@ const D: Record<string, Pair> = {
     "アイテムはオペレーターに装着してステータスを上げます。同じアイテムを{n}個そろえると強化版になり、盟約アイテムは変形構造体と一緒に装着すると装着者がその盟約を追加で得ます。"],
   "조건에 맞는 아이템이 없습니다.": ["No items match these filters.", "条件に合うアイテムがありません。"],
   "강화 ({n}개 조합)": ["Enhanced (combine {n})", "強化（{n}個合成）"],
-  "장착하면 {bond} 맹약의 중첩도 함께 올라갑니다.": ["Equipping this also adds stacks to the {bond} alliance.", "装着すると{bond}盟約の加算数も上がります。"],
   "전략은 판을 시작할 때 고르는 조직입니다. 고유 효과와 시작 목표 HP가 다릅니다.": [
     "A strategy is the group you pick at the start of a run. Each has its own effect and starting target HP.",
     "戦略は対戦開始時に選ぶ組織です。固有効果と初期目標HPが異なります。"],
@@ -2945,7 +2952,6 @@ const D: Record<string, Pair> = {
   "보급센터 자유 선택 칸으로만 데려올 수 있는 오퍼레이터입니다. 상점 명단에 없어 전용 능력·기본 스킬 설정이 게임 데이터에 들어 있지 않습니다.": [
     "This operator can only join through a Supply Center free-pick slot. Being off the shop roster, the game data carries no garrison ability or default skill setup for them.",
     "補給センターの自由選択枠からのみ加入できるオペレーターです。ショップ名簿にないため、専用能力や初期スキルの設定はゲームデータに含まれていません。"],
-  "오퍼레이터 도감에서 보기": ["Open in the operator archive", "オペレーター図鑑で見る"],
   "자유 선택 칸": ["Free-pick slots", "自由選択枠"],
   "보급센터 레벨 5·6에서 각각 {n}칸씩 열립니다. 게임 데이터에는 후보 명단 대신 '★6 오퍼레이터'라는 조건만 들어 있어, 위 목록에 이미 들어 있는 ★6을 뺀 나머지 KR 출시 ★6 전원을 싣습니다. 누르면 오퍼레이터 상세로 갑니다.": [
     "Supply Center levels 5 and 6 open {n} slots each. The game data carries no candidate list — only the condition \"6★ operator\" — so this lists every 6★ released on the KR server minus the ones already in the roster above. Tap one for its operator page.",

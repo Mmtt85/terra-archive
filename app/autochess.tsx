@@ -15,7 +15,7 @@
 // ⚠ 영어판은 시즌2가 글로벌 서버에 없어 **설명문이 한국어 원문**이다 (doc.krOnly).
 //    통합전략 IS6와 같은 취급 — 안내문을 띄우고 그대로 보여 준다.
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useI18n, rich } from "./i18n";
 import { normSearch, useSearchInput } from "./search";
 import { asset } from "./assets";
@@ -34,7 +34,12 @@ export type AcChess = {
   id: string; gid?: string | null; op?: string | null; n: string; t: number; sort: number;
   kind: string; bonds: string[]; gar: string[]; garG: string[]; up?: number;
   r?: number; job?: string; jobCode?: string; sub?: string;
-  sk?: { n: string; i: number }; mod?: { n: string; i?: string };
+  // sks = 오퍼의 스킬 전부 (d/dG = 일반/골든 레벨 설명 — 같은 문장이면 dG 없음, df = 기물이
+  // 기본으로 들고 나오는 것). mods = 보유 모듈 전부 (d = 전투 효과, s = 능력치, df = 기본 장착).
+  // modG = 모듈 슬롯이 골든부터 열림.
+  sks?: { n: string; i: number; ic?: string; d?: string; lv?: number; dG?: string; lvG?: number; df?: 1 }[];
+  mods?: { n: string; i?: string; d?: string; s?: string; df?: 1 }[];
+  modG?: 1;
 };
 export type AcTierStat = { buy: number; sell: number; ph: string; lv: number; sk: number; md: number };
 export type AcEquip = {
@@ -96,13 +101,14 @@ export type AutochessDoc = {
 // 이미지 — build-autochess.py가 public/ac/에 받아 R2로 서빙한다.
 // ⚠ 폴더는 ac, 라우트는 /autochess — 이름이 달라야 deploy.sh가 자산만 떼어낸다.
 const bondIcon = (id: string) => asset(`/ac/bond/${id}.webp`);
+const skillIcon = (ic: string) => asset(`/ac/skill/${ic}.webp`);
+const modTypeIcon = (i: string) => asset(`/ac/modtype/${i.toLowerCase()}.webp`);
 const bandIcon = (id: string) => asset(`/ac/band/${id}.webp`);
 const equipIcon = (trap: string) => asset(`/ac/equip/${trap}.webp`);
 const garIcon = (k: string) => asset(`/ac/type/${k}.webp`);
 const modeIcon = (k: string) => asset(`/ac/mode/${k}.webp`);
 const etypeIcon = (k: string) => asset(`/ac/etype/${k}.webp`);
 const opFace = (id: string) => asset(`/avatars/${id}.webp`);
-const itemIcon = (id: string) => asset(`/items/${id}.webp`);
 const hideErr = (ev: React.SyntheticEvent<HTMLImageElement>) => { ev.currentTarget.style.display = "none"; };
 
 // 화면 구성은 **게임 UI를 따른다** (사용자 확정 2026-08-22):
@@ -125,19 +131,19 @@ const GAR_CAT_LABEL: Record<string, string> = {
 // 시뮬레이터 뷰는 반나절 만에 접었다 (사용자 확정 2026-08-23: "그냥 물자관리소 →
 // 오퍼레이터에서 필터링하는 거랑 똑같네") — 맹약 2축 선택·소속 그룹·중첩 기여 배지는
 // 전부 물자관리소 오퍼레이터 탭의 필터로 들어갔다.
-const VIEWS = ["bond", "band", "op", "misc"] as const;
+const VIEWS = ["bond", "band", "op", "item", "misc"] as const;
 type View = (typeof VIEWS)[number];
 const VIEW_LABEL: Record<View, string> = {
-  bond: "맹약", band: "전략", op: "오퍼레이터", misc: "게임 정보",
+  bond: "맹약", band: "전략", op: "오퍼레이터", item: "아이템", misc: "게임 정보",
 };
 // 게임 정보 = 핵심 셋 밖의 나머지 전부 (사용자 확정 2026-08-23: "맹약, 전략, 오퍼레이터만
 // 제일 큰 탭으로 빼고 그 외는 다 게임 정보로"). 보상 탭은 같은 날 제거.
 // ⚠ 물자관리소 ≠ 보급센터 (사용자 교정 2026-08-22, 옛 탭 이름의 유래): 물자관리소는 출전 전
 //   편성 화면(→ 지금의 오퍼레이터·아이템), 판 안에서 도는 상점 수치가 보급센터(supply)다.
-const MISC_TABS = ["enemy", "item", "mode", "supply", "buff"] as const;
+const MISC_TABS = ["enemy", "mode", "supply", "buff"] as const;
 type MiscTab = (typeof MISC_TABS)[number];
 const MISC_LABEL: Record<MiscTab, string> = {
-  enemy: "적", item: "아이템", mode: "모드", supply: "보급센터", buff: "전략 전술",
+  enemy: "적", mode: "모드", supply: "보급센터", buff: "전략 전술",
 };
 
 // 정예화 표기 — 게임 데이터의 PHASE_n을 도감과 같은 말로
@@ -202,6 +208,10 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
   const [etype, setEtype] = useState("");              // 특훈 적 유형 거르기 ("" = 전체)
   const [bond, setBond] = useState<AcBond | null>(null);
   const [chess, setChess] = useState<AcChess | null>(null);
+  // 기물 상세의 일반/정예화(골든) 토글 (사용자 확정 2026-08-23: "정예화를 따로 설명으로 빼지
+  // 말고 버튼으로" — 능력·스킬·모듈이 전부 이 토글을 따라간다). 열 때마다 일반부터(openChess).
+  const [goldView, setGoldView] = useState(false);
+  const openChess = (c: AcChess) => { setGoldView(false); setChess(c); };
   const [equip, setEquip] = useState<AcEquip | null>(null);
   const [band, setBand] = useState<AcBand | null>(null);
   const [enemy, setEnemy] = useState<string | null>(null);   // 적 id (딸린 적·연계 소환도 열 수 있어 id로 든다)
@@ -216,7 +226,58 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
   const [jobFilter, setJobFilter] = useState("");
   const [subFilter, setSubFilter] = useState("");
   const [shopMode, setShopMode] = useState("mode_single_normal");
-  const { term, clear, inputProps } = useSearchInput();
+  const { term, clear, set: setTerm, inputProps } = useSearchInput();
+
+  // ── 필터 딥링크 (사용자 요청 2026-08-23: "각 필터 건 거 전부 딥링크로") ──────────
+  // #<뷰>[/<게임 정보 탭>][?bn=&bt=&t=&g=&job=&sub=&q=] — 상태가 바뀔 때마다 replaceState로
+  // 남기고(히스토리는 안 쌓는다), 진입·해시 편집 시 복원한다. 전부 기본값이면 해시를 지운다.
+  const hydrated = useRef(false);
+  useEffect(() => {
+    const apply = () => {
+      const h = decodeURIComponent(window.location.hash.slice(1));
+      if (!h) return;
+      const [head, qs] = h.split("?");
+      const [v, tab] = head.split("/");
+      if ((VIEWS as readonly string[]).includes(v)) setView(v as View);
+      if (v === "misc" && (MISC_TABS as readonly string[]).includes(tab)) setMiscTab(tab as MiscTab);
+      const p = new URLSearchParams(qs ?? "");
+      setBondN(p.get("bn") ?? "");
+      setBondT(p.get("bt") ?? "");
+      const tn = Number(p.get("t"));
+      setTier(tn >= 1 && tn <= 6 ? tn : 0);
+      setGarFilter(p.get("g") ?? "");
+      setJobFilter(p.get("job") ?? "");
+      setSubFilter(p.get("sub") ?? "");
+      if (p.get("q") != null) setTerm(p.get("q") ?? "");
+    };
+    apply();
+    hydrated.current = true;
+    window.addEventListener("hashchange", apply);
+    return () => window.removeEventListener("hashchange", apply);
+    // 마운트 1회 + 해시 편집 — 이후 상태 변화는 아래 effect가 해시로 내보낸다
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    if (!hydrated.current) return;
+    const p = new URLSearchParams();
+    if (view === "op" || view === "item") {
+      if (bondN) p.set("bn", bondN);
+      if (bondT) p.set("bt", bondT);
+      if (tier) p.set("t", String(tier));
+      if (term) p.set("q", term);
+      if (view === "op") {
+        if (garFilter) p.set("g", garFilter);
+        if (jobFilter) p.set("job", jobFilter);
+        if (subFilter) p.set("sub", subFilter);
+      }
+    }
+    const qs = p.toString();
+    const hash = view === "bond" && !qs ? "" : `#${view}${view === "misc" ? `/${miscTab}` : ""}${qs ? `?${qs}` : ""}`;
+    if (hash !== window.location.hash) {
+      history.replaceState(null, "", hash || window.location.pathname + window.location.search);
+    }
+  }, [view, miscTab, bondN, bondT, tier, garFilter, jobFilter, subFilter, term]);
+
 
   const chessById = useMemo(() => {
     const m = new Map<string, AcChess>();
@@ -247,7 +308,6 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
   // 이미 상점 명단에 있는 ★6은 뺀다 — 자유 선택 칸으로 새로 데려올 수 있는 쪽만 남긴다
   // (사용자 지시 2026-08-22)
   const diyPool = useMemo(() => doc.shop.diyPool.filter((o) => !o.in), [doc]);
-  const opPath = (id: string) => `${locale === "ko" ? "" : `/${locale}`}/operators/${id}`;
 
   const nameOfBond = (id: string) => bondById.get(id)?.n ?? id;
 
@@ -315,7 +375,7 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
     if (subFilter && c.sub !== subFilter) return false;
     if (!matchGarBy(c, garFilter)) return false;
     if (!q) return true;
-    const hay = [c.n, c.job ?? "", c.sub ?? "", c.sk?.n ?? "", c.mod?.n ?? "",
+    const hay = [c.n, c.job ?? "", c.sub ?? "", ...(c.sks?.map((x) => x.n) ?? []), ...(c.mods?.map((x) => x.n) ?? []),
       ...c.bonds.map(nameOfBond),
       ...[...c.gar, ...c.garG].map((g) => doc.gar[g]?.d ?? "")].join(" ");
     return normSearch(hay).includes(q);
@@ -357,14 +417,6 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
     return m;
   }, [doc]);
 
-  const equipRows = useMemo(() => doc.equips.filter((e) => {
-    if (tier && e.t !== tier) return false;
-    // 맹약 2축 — 하나라도 골랐으면 그 맹약 담당 아이템만
-    if ((bondN || bondT) && !(e.bond && (e.bond === bondN || e.bond === bondT))) return false;
-    if (!q) return true;
-    return normSearch(`${e.n} ${e.d} ${e.dG} ${e.bond ? nameOfBond(e.bond) : ""}`).includes(q);
-  }), [doc, tier, bondN, bondT, q]);   // eslint-disable-line react-hooks/exhaustive-deps
-
   const bandRows = useMemo(() => doc.bands.filter((b) =>
     !q || normSearch(`${b.n} ${b.d}`).includes(q)), [doc, q]);
 
@@ -373,7 +425,7 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
 
   // 기물 카드 — 물자관리소 목록과 시뮬레이터 추천이 같은 카드를 쓴다 (2026-08-23 추출)
   const chessCard = (c: AcChess, marks?: string[]) => (
-    <button key={c.id} type="button" className="ac-card ac-chesscard" onClick={() => setChess(c)}>
+    <button key={c.id} type="button" className="ac-card ac-chesscard" onClick={() => openChess(c)}>
       <header>
         {c.op
           ? <img className="ac-thumb" src={opFace(c.op)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
@@ -445,7 +497,7 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
       // 맹약 모달은 **닫지 않는다** — 소속 오퍼를 하나씩 눌러 보는 자리라, 볼 때마다 맹약
       // 목록이 사라지면 매번 되돌아가야 한다 (사용자 지적 2026-08-22). ModalWindow가 창을
       // 겹쳐 띄우므로 오퍼 창을 닫으면 맹약 창이 그대로 남는다.
-      onClick={() => setChess(c)}>
+      onClick={() => openChess(c)}>
       {c.op
         ? <img src={opFace(c.op)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
         : <span className="ac-face-diy" aria-hidden>?</span>}
@@ -851,7 +903,7 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
               <div className="ac-diypool">
                 {diyPool.map((o) => (
                   <button key={o.op} type="button" className="ac-diyop"
-                    onClick={() => setChess({
+                    onClick={() => openChess({
                       id: `diy_${o.op}`, op: o.op, n: o.n, t: 6, sort: 0,
                       kind: "DIY", bonds: [], gar: [], garG: [], r: 6, job: o.job,
                     })}>
@@ -866,8 +918,50 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
         </div>
       )}
 
+      {/* ══ 아이템 — 최상위 탭 승격 (사용자 확정 2026-08-23: "아이템까지 표시") ══ */}
+      {view === "item" && (
+        <div className="ac-shop">
+          {(
+            <>
+              {/* 필터 없음 (사용자 확정 2026-08-23: "아이템에는 필터 필요 없어" — 59종 고정 목록) */}
+              {/* ⚠ "진영 아이템은 중첩도 올려 준다"고 썼다가 정정 (사용자 지적 2026-08-23) —
+                  클뜯 canGiveBond가 맹약 아이템 18종 전부 false다. 맹약 부여는 변형 구조체
+                  (canGiveBond=true, 유일)와 같이 장착했을 때만 일어난다. */}
+              <p className="sim-note">{t("아이템은 오퍼레이터에 장착해 능력치를 올립니다. 같은 아이템 {n}개를 모으면 강화판이 되고, 맹약 아이템은 변형 구조체와 같이 장착하면 착용자가 그 맹약을 추가로 얻습니다.", { n: doc.equips[0]?.up ?? 2 })}</p>
+              <p className="ac-count">{t("{n}종", { n: doc.equips.length })}</p>
+              {[1, 2, 3, 4, 5, 6].map((tn) => {
+                const rows = doc.equips.filter((e) => e.t === tn);
+                if (!rows.length) return null;
+                return (
+                  <section key={tn} className="ac-tiersec">
+                    <h3 className="ac-tierhead">{tierBadge(tn)}<span>{t("{n}종", { n: rows.length })}</span></h3>
+                    <div className="ac-cards">
+                      {rows.map((e) => (
+                        <button key={e.id} type="button" className="ac-card ac-equipcard" onClick={() => setEquip(e)}>
+                          <header>
+                            <img className="ac-thumb ac-equipthumb" src={equipIcon(e.trap)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
+                            <div>
+                              <b className="ac-cname">{e.n}</b>
+                              <span className="ac-cmeta">
+                                <i className="sb-chip">{t("{n} 자금", { n: e.buy })}</i>
+                                {e.bond ? bondTag(e.bond) : null}
+                              </span>
+                            </div>
+                          </header>
+                          <p className="ac-eqd">{rich(e.d)}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+                );
+              })}
+            </>
+          )}
+        </div>
+      )}
+
       {/* ══ 게임 정보 — 핵심 셋(맹약·전략·오퍼레이터) 밖의 나머지 전부 (2026-08-23 재편):
-          적 · 아이템 · 모드 · 보급센터 · 전략 전술 ══ */}
+          적 · 모드 · 보급센터 · 전략 전술 (아이템은 2026-08-23 최상위로 승격) ══ */}
       {view === "misc" && (
         <div className="ac-misc">
           <div className="ac-subtabs" role="tablist" aria-label={t("게임 정보")}>
@@ -971,43 +1065,6 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
             </>
           )}
 
-          {miscTab === "item" && (
-            <>
-              {filterBar}
-              {/* ⚠ "진영 아이템은 중첩도 올려 준다"고 썼다가 정정 (사용자 지적 2026-08-23) —
-                  클뜯 canGiveBond가 맹약 아이템 18종 전부 false다. 맹약 부여는 변형 구조체
-                  (canGiveBond=true, 유일)와 같이 장착했을 때만 일어난다. */}
-              <p className="sim-note">{t("아이템은 오퍼레이터에 장착해 능력치를 올립니다. 같은 아이템 {n}개를 모으면 강화판이 되고, 맹약 아이템은 변형 구조체와 같이 장착하면 착용자가 그 맹약을 추가로 얻습니다.", { n: doc.equips[0]?.up ?? 2 })}</p>
-              <p className="ac-count">{t("{n}종", { n: equipRows.length })}</p>
-              {[1, 2, 3, 4, 5, 6].map((tn) => {
-                const rows = equipRows.filter((e) => e.t === tn);
-                if (!rows.length) return null;
-                return (
-                  <section key={tn} className="ac-tiersec">
-                    <h3 className="ac-tierhead">{tierBadge(tn)}<span>{t("{n}종", { n: rows.length })}</span></h3>
-                    <div className="ac-cards">
-                      {rows.map((e) => (
-                        <button key={e.id} type="button" className="ac-card ac-equipcard" onClick={() => setEquip(e)}>
-                          <header>
-                            <img className="ac-thumb ac-equipthumb" src={equipIcon(e.trap)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
-                            <div>
-                              <b className="ac-cname">{e.n}</b>
-                              <span className="ac-cmeta">
-                                <i className="sb-chip">{t("{n} 자금", { n: e.buy })}</i>
-                                {e.bond ? bondTag(e.bond) : null}
-                              </span>
-                            </div>
-                          </header>
-                          <p className="ac-eqd">{rich(e.d)}</p>
-                        </button>
-                      ))}
-                    </div>
-                  </section>
-                );
-              })}
-              {!equipRows.length && <p className="sb-dim">{t("조건에 맞는 아이템이 없습니다.")}</p>}
-            </>
-          )}
 
           {miscTab === "mode" && (
             <>
@@ -1190,35 +1247,65 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
               </div>
             </header>
 
+            {/* 일반 ↔ 정예화(골든) — 능력·스킬·모듈·표 강조가 전부 이 토글을 따른다 (2026-08-23) */}
+            {(chess.garG.length > 0 || chess.sks?.some((x) => x.dG) || chess.modG) && (
+              <div className="ac-goldbar" role="tablist" aria-label={t("정예화 상태")}>
+                <button type="button" role="tab" aria-selected={!goldView}
+                  className={!goldView ? "on" : ""} onClick={() => setGoldView(false)}>{t("일반")}</button>
+                <button type="button" role="tab" aria-selected={goldView}
+                  className={goldView ? "on gold" : "gold"} onClick={() => setGoldView(true)}>{t("정예화(골든)")}</button>
+              </div>
+            )}
             <h4>{t("위수 협의 능력")}</h4>
             {chess.gar.length || chess.garG.length ? (
-              <>
-                {chess.gar.map((g) => garLine(g, false))}
-                {chess.garG.length > 0 && (
-                  <>
-                    <p className="ac-goldhead">{t("정예화(골든)")}</p>
-                    {chess.garG.map((g) => garLine(g, true))}
-                  </>
-                )}
-              </>
+              (goldView && chess.garG.length ? chess.garG : chess.gar).map((g) => garLine(g, goldView))
             ) : chess.id.startsWith("diy_")
               /* 자유 선택 칸으로만 데려오는 ★6 — 상점 명단이 아니라 전용 능력이 아예 없다 */
               ? <p className="sb-dim">{t("보급센터 자유 선택 칸으로만 데려올 수 있는 오퍼레이터입니다. 상점 명단에 없어 전용 능력·기본 스킬 설정이 게임 데이터에 들어 있지 않습니다.")}</p>
               : <p className="sb-dim">{t("전용 능력이 없는 오퍼레이터입니다.")}</p>}
-            {chess.op && (
-              <p className="ac-oplink"><a href={opPath(chess.op)}>{t("오퍼레이터 도감에서 보기")} →</a></p>
-            )}
-
-            {(chess.sk || chess.mod) && (
+            {chess.sks?.length ? (
               <>
-                <h4>{t("기본 스킬·모듈")}</h4>
-                <p className="sb-dim ac-note">{t("오퍼레이터가 기본으로 들고 나오는 설정입니다.")}</p>
-                <ul className="ac-kv">
-                  {chess.sk && <li><span>{t("스킬")}</span><b>{t("{n}스킬", { n: chess.sk.i })} · {chess.sk.n}</b></li>}
-                  {chess.mod && <li><span>{t("모듈")}</span><b>{chess.mod.n}{chess.mod.i ? ` (${chess.mod.i.toUpperCase()})` : ""}</b></li>}
-                </ul>
+                <h4>{t("스킬")}</h4>
+                {/* 도감 링크 대신 설명을 그대로 싣는다 (사용자 확정 2026-08-23). 수치는 위 토글이
+                    가리키는 그 상태(일반/골든)의 스킬 레벨·모듈 단계 기준이다. */}
+                <p className="sb-dim ac-note">{t("수치는 위에서 고른 정예화 상태의 스킬 레벨 기준이고, 기본으로 들고 나오는 구성에 '디폴트'가 붙어 있습니다.")}</p>
+                {chess.sks.map((sk) => {
+                  const lv = goldView ? (sk.lvG ?? sk.lv) : sk.lv;
+                  const d = goldView ? (sk.dG ?? sk.d) : sk.d;
+                  return (
+                    <div key={sk.i} className="ac-skmod">
+                      <header>
+                        {sk.ic && <img className="ac-skmod-ic" src={skillIcon(sk.ic)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />}
+                        <span className="ac-skmod-cap">{t("{n}스킬", { n: sk.i })}</span>
+                        <b>{sk.n}</b>
+                        {lv ? <i className="sb-chip">Lv{lv}</i> : null}
+                        {sk.df ? <i className="sb-chip ac-df">{t("디폴트")}</i> : null}
+                      </header>
+                      {d && <p className="ac-skmod-d">{rich(d)}</p>}
+                    </div>
+                  );
+                })}
               </>
-            )}
+            ) : null}
+            {chess.mods?.length ? (
+              <>
+                <h4>{t("모듈")}</h4>
+                {/* 모듈 슬롯은 골든부터 — 일반 토글에서는 흐리게 눕혀 둔다 */}
+                {chess.modG && !goldView && <p className="sb-dim ac-note">{t("모듈 슬롯은 정예화(골든)부터 열립니다.")}</p>}
+                {chess.mods.map((md) => (
+                  <div key={md.n} className={`ac-skmod mod${chess.modG && !goldView ? " off" : ""}`}>
+                    <header>
+                      {md.i && <img className="ac-skmod-ic mod" src={modTypeIcon(md.i)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />}
+                      <span className="ac-skmod-cap">{md.i ? md.i.toUpperCase() : t("모듈")}</span>
+                      <b>{md.n}</b>
+                      {md.df ? <i className="sb-chip ac-df">{t("디폴트")}</i> : null}
+                    </header>
+                    {md.d && <p className="ac-skmod-d">{rich(md.d)}</p>}
+                    {md.s && <p className="ac-skmod-stats">{md.s}</p>}
+                  </div>
+                ))}
+              </>
+            ) : null}
 
             <h4>{t("가격과 능력치")}</h4>
             {(() => {
@@ -1229,8 +1316,8 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
                   <table className="ac-table ac-table-sm">
                     <thead><tr><th /><th>{t("구매")}</th><th>{t("정예화")}</th><th>{t("레벨")}</th><th>{t("스킬")}</th><th>{t("모듈")}</th></tr></thead>
                     <tbody>
-                      <tr><th scope="row">{t("일반")}</th><td>{row.b.buy}</td><td>{t(PHASE_LABEL[row.b.ph] ?? row.b.ph)}</td><td>Lv{row.b.lv}</td><td>{row.b.sk}</td><td>{row.b.md ? t("{n}단계", { n: row.b.md }) : "—"}</td></tr>
-                      <tr className="ac-gold-row"><th scope="row">{t("골든")}</th><td>{t("{n}장", { n: chess.up ?? 3 })}</td><td>{t(PHASE_LABEL[row.g.ph] ?? row.g.ph)}</td><td>Lv{row.g.lv}</td><td>{row.g.sk}</td><td>{row.g.md ? t("{n}단계", { n: row.g.md }) : "—"}</td></tr>
+                      <tr className={!goldView ? "ac-activerow" : ""}><th scope="row">{t("일반")}</th><td>{row.b.buy}</td><td>{t(PHASE_LABEL[row.b.ph] ?? row.b.ph)}</td><td>Lv{row.b.lv}</td><td>{row.b.sk}</td><td>{row.b.md ? t("{n}단계", { n: row.b.md }) : "—"}</td></tr>
+                      <tr className={`ac-gold-row${goldView ? " ac-activerow" : ""}`}><th scope="row">{t("골든")}</th><td>{t("{n}장", { n: chess.up ?? 3 })}</td><td>{t(PHASE_LABEL[row.g.ph] ?? row.g.ph)}</td><td>Lv{row.g.lv}</td><td>{row.g.sk}</td><td>{row.g.md ? t("{n}단계", { n: row.g.md }) : "—"}</td></tr>
                     </tbody>
                   </table>
                 </div>
@@ -1263,9 +1350,22 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
                 <div className="ac-gar gold"><span className="ac-gar-txt"><Lines text={equip.dG} /></span></div>
               </>
             )}
-            {equip.bond && (
-              <p className="sb-dim">{t("장착하면 {bond} 맹약의 중첩도 함께 올라갑니다.", { bond: nameOfBond(equip.bond) })}</p>
-            )}
+            {/* ⚠ "장착하면 중첩도 올라간다"고 썼다가 정정 (사용자 지적 2026-08-23 ×2) —
+                클뜯 canGiveBond가 맹약 아이템 전부 false. 변형 구조체와 조합해야 맹약 부여. */}
+            {equip.bond && (() => {
+              const morph = doc.equips.find((e) => e.id === "chess_item_6_09_e_a");
+              return (
+                <p className="sb-dim ac-morphnote">
+                  {t("변형 구조체와 함께 장착하면 착용자가 {bond} 맹약을 추가로 얻습니다.", { bond: nameOfBond(equip.bond) })}
+                  {morph && (
+                    <button type="button" className="ac-morphlink" onClick={() => setEquip(morph)}>
+                      <img src={equipIcon(morph.trap)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
+                      {morph.n} →
+                    </button>
+                  )}
+                </p>
+              );
+            })()}
           </div>
         </ModalWindow>
       )}
