@@ -388,8 +388,33 @@ def build_locale(loc):
         })
 
     # ── 기물 ──
+    # ⚠ 같은 오퍼레이터가 **두 기물로 실린 경우가 8건** 있다 (레코드키퍼 T4/T5, 가비알 디
+    #   인빈서블 T4/T5, 틴맨·쉐라·프틸롭시스·시빌라이트 에테르나·와파린·님프). 맹약도 능력도
+    #   글자까지 같고 티어만 다른데, 한쪽에 `isHidden`이 붙어 있다 — 지난 시즌 잔재로 보인다.
+    #   둘 다 실으면 화면에 같은 오퍼가 두 번, 그중 하나는 **틀린 티어**로 나온다
+    #   (사용자 제보 2026-08-23: "레코드키퍼는 T5고 가비알 디 인빈서블은 T4임").
+    #   → 짝이 있을 때만 숨김 쪽을 버린다. 짝 없이 혼자 숨김인 9건(비즈왁스 T4·비그나·
+    #   어스스피릿·클리프하트·아코르트·인포서·샤마르·로즈솔트·맹약 서포터)은 **그대로 싣는다** —
+    #   isHidden은 '상점 진열에서 뺀다'는 뜻이지 없는 기물이 아니다 (전부 특수 지급 PRESET).
+    _by_char = {}
+    for _cid, _c in CHESS.items():
+        if _c.get("charId"):
+            _by_char.setdefault(_c["charId"], []).append(_cid)
+    STALE = {cid for ids in _by_char.values() if len(ids) > 1
+             for cid in ids if CHESS[cid].get("isHidden")}
+
+    # 직군 코드 → 로케일 라벨. NPC 기물(예비 오퍼레이터·맹약 서포터 등)은 operators.json에
+    # 없어 rarity·job이 비는데, 화면에서 ★와 직군 칩이 통째로 사라진다 (전수 대조 2026-08-23).
+    # 그래서 클뜯 character_table로 폴백한다.
+    job_label = {}
+    for _o in OPS[loc].values():
+        job_label.setdefault(_o.get("jobCode"), _o.get("job"))
+    RARITY_N = {"TIER_1": 1, "TIER_2": 2, "TIER_3": 3, "TIER_4": 4, "TIER_5": 5, "TIER_6": 6}
+
     chess_rows, gar_used = [], {}
     for cid, c in CHESS.items():
+        if cid in STALE:
+            continue
         base = CHESSDATA.get(cid) or {}
         gold_id = c.get("goldenChessId")
         gold = CHESSDATA.get(gold_id) or {}
@@ -420,6 +445,14 @@ def build_locale(loc):
             row["job"] = op.get("job")
             row["jobCode"] = op.get("jobCode")
             row["sub"] = op.get("subProfession")   # 세부직군 — 필터용 (사용자 요청 2026-08-23)
+        elif char_id:
+            # 백과사전에 없는 NPC 기물 — 성급·직군만이라도 클뜯에서 채운다
+            cc = chars["ko"].get(char_id) or {}
+            if cc.get("rarity") in RARITY_N:
+                row["r"] = RARITY_N[cc["rarity"]]
+            if job_label.get(cc.get("profession")):
+                row["job"] = job_label[cc["profession"]]
+                row["jobCode"] = cc.get("profession")
         # 본체 미보유 시 대체 출전하는 전용 캐릭터 (backupCharId ≠ charId, 55기물) —
         # 얼굴·이름만 바뀌고 맹약·특질·스킬 구성은 기물 것 그대로다 (사용자 스크린샷 검증
         # 2026-08-23: 르무엔 미보유 계정의 '스톰아이' 특질 = garrison_24 = 르무엔 기물 특질).
@@ -750,18 +783,17 @@ def build_locale(loc):
     # 2026-08-23 — 예비 오퍼레이터·예비 인원·튤립~미저리 ac시리즈·로드샤프가 항상 뜬다).
     # 클뜯 상 등장처는 charShopChessDatas.backupCharId 뿐이다: 진영·소속이 없어 맹약도 없고,
     # 본업은 본체 미보유 기물의 대체 출전 — '특질'은 그때 대체하는 기물의 것을 그대로 쓴다.
-    job_label = {}
-    for o in OPS[loc].values():
-        job_label.setdefault(o.get("jobCode"), o.get("job"))
     subs_map = {}
     for cid2, c2 in CHESS.items():
+        if cid2 in STALE:
+            continue          # 걷어낸 중복 기물을 대체 대상으로 가리키지 않게
         bk2, main2 = c2.get("backupCharId"), c2.get("charId")
         if bk2 and main2 and bk2 != main2:
             subs_map.setdefault(bk2, []).append(cid2)
     diy_subs = []
     for bk2, targets in subs_map.items():
         cc = chars["ko"].get(bk2) or {}
-        rar = int((cc.get("rarity") or "TIER_0").rsplit("_", 1)[-1])
+        rar = RARITY_N.get(cc.get("rarity"), 0)
         targets.sort(key=lambda x: (-(CHESS[x].get("chessLevel") or 0), CHESS[x].get("shopLevelSortId") or 0))
         prof = cc.get("profession")
         diy_subs.append({"op": bk2, "n": char_name(loc, bk2) or bk2, "r": rar,

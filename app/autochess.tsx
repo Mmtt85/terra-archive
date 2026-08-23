@@ -1245,7 +1245,7 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
 
 
       {bond && (
-        <ModalWindow label={bond.n} className="operator-modal ac-modal" onClose={() => setBond(null)}>
+        <ModalWindow key={bond.id} label={bond.n} className="operator-modal ac-modal" onClose={() => setBond(null)}>
           <div className="ac-dt">
             <header className="ac-dt-head">
               <img src={bondIcon(bond.id)} alt="" aria-hidden onError={hideErr} />
@@ -1312,7 +1312,11 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
 
       {/* ── 기물 상세 모달 ── */}
       {chess && (
-        <ModalWindow label={chess.n} className="operator-modal ac-modal" onClose={() => setChess(null)}>
+        /* key로 기물마다 새로 마운트한다 — ModalWindow는 **마운트할 때** 맨 앞 z를 받으므로,
+           맹약 상세(위에 떠 있는 창)에서 오퍼레이터를 누르면 뒤에 있던 이 창이 앞으로 나오면서
+           그 오퍼레이터로 바뀐다. key가 없으면 내용만 바뀌고 뒤에 가려 있어 안 바뀐 것처럼
+           보인다 (사용자 지적 2026-08-23). */
+        <ModalWindow key={chess.id} label={chess.n} className="operator-modal ac-modal" onClose={() => setChess(null)}>
           <div className="ac-dt">
             <header className="ac-dt-head">
               {chess.op
@@ -1452,7 +1456,7 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
 
       {/* ── 장비 상세 모달 ── */}
       {equip && (
-        <ModalWindow label={equip.n} className="operator-modal ac-modal" onClose={() => setEquip(null)}>
+        <ModalWindow key={equip.id} label={equip.n} className="operator-modal ac-modal" onClose={() => setEquip(null)}>
           <div className="ac-dt">
             <header className="ac-dt-head">
               <img src={equipIcon(equip.trap)} alt="" aria-hidden onError={hideErr} />
@@ -1495,7 +1499,7 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
 
       {/* ── 밴드 상세 모달 ── */}
       {band && (
-        <ModalWindow label={band.n} className="operator-modal ac-modal" onClose={() => setBand(null)}>
+        <ModalWindow key={band.id} label={band.n} className="operator-modal ac-modal" onClose={() => setBand(null)}>
           <div className="ac-dt">
             <header className="ac-dt-head">
               <img src={bandIcon(band.id)} alt="" aria-hidden onError={hideErr} />
@@ -1523,7 +1527,7 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
              그 아래 이 모드에서만 뜻이 있는 등장 정보를 덧댄다. 도감 데이터가 아직
              안 왔으면 이름·초상만 먼저 띄운다 (사용자 요청 2026-08-22). ── */}
       {enemy && (
-        <ModalWindow label={enemyRow?.n ?? bossRow?.n ?? enemyName(enemy)} className="operator-modal ac-modal ac-enmodal"
+        <ModalWindow key={enemy} label={enemyRow?.n ?? bossRow?.n ?? enemyName(enemy)} className="operator-modal ac-modal ac-enmodal"
           onClose={() => setEnemy(null)}>
           {(() => {
             const full = enemyDex?.get(enemy);
