@@ -2794,15 +2794,11 @@ const D: Record<string, Pair> = {
   "핵심 맹약": ["Core alliance", "コア盟約"],
   "맹약별로 보기": ["Break down by alliance", "盟約別に見る"],
   // 시뮬레이터 (view=build) — 사용자 요청 2026-08-23
-  "시뮬레이터": ["Simulator", "シミュレーター"],
-  "진영 맹약과 특성 맹약을 하나씩 고르면, 그 맹약에 소속된 오퍼레이터 전원을 모아서 보여줍니다 — 특질로 중첩을 올리거나 중첩마다 강해지는 오퍼레이터가 맨 앞에 섭니다.": [
-    "Pick one nation alliance and one trait alliance, and this gathers every operator that belongs to them — the ones whose traits add stacks or scale per stack come first.",
-    "国家系と特性系の盟約を一つずつ選ぶと、その盟約に所属するオペレーター全員をまとめて表示します — 特性で加算を増やす、または加算ごとに強くなるオペレーターが先頭に並びます。"],
-  "위에서 맹약을 골라 주세요 — 하나만 골라도 됩니다.": [
-    "Pick an alliance above — one is enough.", "上から盟約を選んでください — 一つだけでも構いません。"],
-  "진영 맹약 선택": ["Pick a nation alliance", "国家系の盟約を選択"],
-  "특성 맹약 선택": ["Pick a trait alliance", "特性系の盟約を選択"],
-  "선택 안 함": ["None", "選択しない"],
+  "진영 맹약 전체": ["All nation alliances", "国家系すべて"],
+  "특성 맹약 전체": ["All trait alliances", "特性系すべて"],
+  "직군 전체": ["All classes", "職分すべて"],
+  "세부직군으로 보기": ["Break down by branch", "サブ職分別に見る"],
+  "게임 정보": ["Game info", "ゲーム情報"],
   "두 맹약 모두 소속": ["In both alliances", "両方の盟約に所属"],
   "{name} 소속": ["In {name}", "{name}所属"],
   "{name} 중첩 올림": ["Adds {name} stacks", "{name}加算を増やす"],
@@ -2819,7 +2815,6 @@ const D: Record<string, Pair> = {
   "입문": ["Tutorial", "入門"],
   "단독": ["Solo", "ソロ"],
   "협동": ["Co-op", "協力"],
-  "모드·보상": ["Modes & rewards", "モード・報酬"],
   // 맹약
   "진영 맹약": ["Nation alliances", "国家系の盟約"],
   "특성 맹약": ["Trait alliances", "特性系の盟約"],
@@ -2879,8 +2874,6 @@ const D: Record<string, Pair> = {
   "등장 티어": ["Tier offered", "出現等級"],
   "최대": ["Max", "最大"],
   "자유 선택 {n}칸": ["{n} free-pick slots", "自由選択{n}枠"],
-  "라운드 보상": ["Round rewards", "ラウンド報酬"],
-  "라운드를 넘길 때마다 받는 {token} 수량입니다.": ["How much {token} each round awards.", "ラウンドを越えるたびに受け取る{token}の量です。"],
   // 장비·밴드
   // ⚠ 정정 (사용자 지적 2026-08-23): 맹약 아이템은 장착만으로 중첩을 안 준다 —
   //   클뜯 canGiveBond가 18종 전부 false. 변형 구조체(유일한 true)와 조합해야 맹약 부여.
@@ -2963,8 +2956,6 @@ const D: Record<string, Pair> = {
   "해금 조건": ["Unlock condition", "解放条件"],
   "처음부터 고를 수 있는 전략입니다.": [
     "This strategy is available from the start.", "最初から選べる戦略です。"],
-  "마일스톤 보상": ["Milestone rewards", "マイルストーン報酬"],
-  "{token}을 모으면 단계마다 받습니다.": ["Earned at each step as you collect {token}.", "{token}を集めると段階ごとに受け取れます。"],
   // 포탈 타일 설명 — 사전에서 빠져 있어 EN/JA에 한국어가 나가던 두 줄 (2026-08-22 발견)
   "요리 조합·제작 재료·지역과 조우 선택지를 정리": ["Recipes, crafting materials, areas and encounter choices", "料理レシピ・製作素材・エリアと遭遇の選択肢"],
   "적 1,500여 종의 스탯·능력·면역과 등장 작전": ["Stats, abilities and immunities for 1,500+ enemies, plus where they appear", "1,500種以上の敵のステータス・能力・耐性と出現作戦"],

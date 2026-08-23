@@ -19136,22 +19136,11 @@ p.sb-trline { margin-top: 2px; }
   box-shadow: 0 12px 32px #1f242533;
 }
 /* ── 시뮬레이터 (view=build) — 맹약 조합 설계 (사용자 요청 2026-08-23) ── */
-.ac-sim {
-  margin-top: 14px;
-}
-/* 시뮬레이터 필터 줄 — 진영/특성/특질 세 드롭다운 (물자관리소와 같은 스타일) */
-.ac-sim-filters {
-  margin-top: 12px;
-  justify-content: flex-start;
-}
 .ac-garsel-icon {
   flex: none;
   width: 16px;
   height: 16px;
   object-fit: contain;
-}
-.ac-sim-empty {
-  margin: 18px 0;
 }
 .ac-sim-bonds {
   display: flex;

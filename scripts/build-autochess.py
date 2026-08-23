@@ -349,6 +349,7 @@ def build_locale(loc):
             row["r"] = op.get("rarity")
             row["job"] = op.get("job")
             row["jobCode"] = op.get("jobCode")
+            row["sub"] = op.get("subProfession")   # 세부직군 — 필터용 (사용자 요청 2026-08-23)
         sn = skill_name(loc, char_id, c.get("defaultSkillIndex"))
         if sn:
             row["sk"] = {"n": sn, "i": (c.get("defaultSkillIndex") or 0) + 1}
