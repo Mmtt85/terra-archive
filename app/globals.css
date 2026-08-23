@@ -20025,6 +20025,11 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   height: 18px;
   object-fit: contain;
 }
+/* 함께 나오는 적 — 부대를 끌고 오는 '대표' 적과 구분해 한 단계 눌러 둔다
+   (유형 목록은 게임처럼 대표 → 동행 순서로 이어진다, 2026-08-24) */
+.ac-encard-sub { background: var(--paper); }
+.ac-ensub { color: var(--muted); }
+
 /* 대체 출전 안내 — 기물 모달 **머리글 오른쪽 빈자리**에 (누르면 그 대체 기물 상세).
    본문에 두면 바로 아래 정예화 토글과 붙어 한 덩어리로 보인다 (사용자 지적 2026-08-23). */
 .ac-subnote {

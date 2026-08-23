@@ -665,6 +665,37 @@ def build_locale(loc):
             sp_names[k2] = en_name(k2)
     sp_rows.sort(key=lambda r: (r["type"] or "", -(r["w"] or 0), r["n"]))
 
+    # ── 유형별 **전체 적 명단** (enemyInfoDict) ──
+    # specialEnemyInfoDict는 각 부대의 '대표' 적 67종뿐이고, 같이 나오는 일반·정예 적은
+    # 그 안의 attached* 에만 들어 있다. 그래서 화면에 대표만 깔면 게임의 '특훈 적 - 특이'
+    # 목록보다 한참 짧아 보인다 (사용자 지적 2026-08-24: 특이 17종만 보였는데 실제 35종).
+    # enemyInfoDict가 유형별 전 명단을 게임 표기 순서대로 갖고 있으므로 그걸 정본으로 싣고,
+    # 각 적이 대표(sp)인지 함께 나오는 일반(n)·정예(e)인지만 표시한다.
+    role_of = {}
+    for key, s in KR["specialEnemyInfoDict"].items():
+        role_of[key] = "sp"
+        for k2 in (s.get("attachedNormalEnemyKeys") or []):
+            role_of.setdefault(k2, "n")
+        for k2 in (s.get("attachedEliteEnemyKeys") or []):
+            role_of.setdefault(k2, "e")
+    sp_by_id = {r["id"]: r for r in sp_rows}
+    en_list = {}
+    for ty, keys in (KR.get("enemyInfoDict") or {}).items():
+        rows2 = []
+        for key in keys:
+            e = enemies[loc].get(key) or enemies["ko"].get(key) or {}
+            sp = sp_by_id.get(key)
+            rows2.append({
+                "id": key,
+                "n": e.get("name") or key,
+                "code": e.get("enemyIndex"),
+                "rank": e.get("enemyLevel"),
+                "role": role_of.get(key, "n"),
+                **({"w": sp["w"], "half": sp["half"]} if sp else {}),
+            })
+            sp_names.setdefault(key, en_name(key))
+        en_list[ty] = rows2
+
     # 유형은 '특훈 적 - 비행' 처럼 게임에 **공식 이름과 설명**이 있다 (autoChessData).
     # 처음엔 내부 enum(FLY/TIMES/…)만 보고 우리 말을 지어냈는데, 사용자가 게임 표기를
     # 알려 줘서 바로잡았다 (2026-08-22) — TIMES는 '부활'이 아니라 '빈도', REFLECTION은 '굴절'.
@@ -828,6 +859,7 @@ def build_locale(loc):
         "bands": band_rows,
         "buffs": buff_rows,
         "enemies": sp_rows,
+        "enemyList": en_list,
         "enemyTypes": sp_types,
         "enemyNames": sp_names,
         "bosses": boss_rows,

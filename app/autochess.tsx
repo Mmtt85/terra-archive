@@ -97,6 +97,9 @@ export type AutochessDoc = {
   bands: AcBand[];
   buffs: { id: string; n: string; d: string; round: number }[];
   enemies: AcEnemy[];
+  /** 유형별 **전체** 적 명단 (게임 표기 순서: 대표 → 함께 나오는 일반·정예). role: sp/n/e */
+  enemyList: Record<string, { id: string; n: string; code?: string | null; rank?: string | null;
+    role: "sp" | "n" | "e"; w?: number; half?: boolean }[]>;
   enemyTypes: Record<string, AcEnemyType>;
   enemyNames: Record<string, string>;
   bosses: AcBoss[];
@@ -1085,10 +1088,15 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
                   </button>
                 ))}
               </div>
-              <p className="ac-count">{t("{n}종", { n: doc.enemies.filter((e) => !etype || e.type === etype).length })}</p>
+              <p className="ac-count">{t("{n}종", { n: etypes.reduce((a, [k]) =>
+                a + (!etype || k === etype ? (doc.enemyList?.[k]?.length ?? 0) : 0), 0) })}</p>
               {etypes.map(([ty, info]) => {
                 if (etype && ty !== etype) return null;
-                const rows = doc.enemies.filter((e) => e.type === ty);
+                // 유형의 **전 명단**을 게임 순서대로 (대표 → 함께 나오는 일반·정예).
+                // 종전엔 대표(특수 적)만 깔아 '특이'가 17종으로 보였다 — 실제 35종
+                // (사용자 지적 2026-08-24). enemyList가 없던 옛 데이터는 종전대로 폴백.
+                const rows = doc.enemyList?.[ty]
+                  ?? doc.enemies.filter((e) => e.type === ty).map((e) => ({ ...e, role: "sp" as const }));
                 if (!rows.length) return null;
                 return (
                   <section key={ty} className="ac-enemygrp">
@@ -1102,16 +1110,24 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
                     {info.d && <p className="sb-dim ac-note">{info.d}</p>}
                     <div className="ac-encards">
                       {rows.map((e) => (
-                        <button key={e.id} type="button" className="ac-encard" onClick={() => setEnemy(e.id)}>
+                        <button key={e.id} type="button"
+                          className={`ac-encard${e.role === "sp" ? "" : " ac-encard-sub"}`}
+                          onClick={() => setEnemy(e.id)}>
                           <EnFace id={e.id} />
                           <span className="ac-encard-body">
                             <i className="ac-encode">{e.code ?? "—"}</i>
                             <b>{e.n}</b>
                             <span className="ac-encard-meta">
                               {e.rank && <em className={`en-rank r-${e.rank.toLowerCase()}`}>{t(RANK_KEY[e.rank] ?? e.rank)}</em>}
-                              <em>{e.half ? t("전반") : t("후반")}</em>
-                              {/* 가중치는 대부분 기본값이라, 더 자주·덜 나오는 적만 짚는다 */}
-                              {e.w !== ENEMY_W_BASE && <em className="ac-enw">{t("가중치 {n}", { n: e.w })}</em>}
+                              {/* 대표(부대를 끌고 오는 적)만 등장 구간·가중치를 갖는다.
+                                  나머지는 그 대표를 따라 나오는 적이라 '함께 나옴'으로 묶는다. */}
+                              {e.role === "sp" ? (
+                                <>
+                                  <em>{e.half ? t("전반") : t("후반")}</em>
+                                  {/* 가중치는 대부분 기본값이라, 더 자주·덜 나오는 적만 짚는다 */}
+                                  {e.w !== ENEMY_W_BASE && <em className="ac-enw">{t("가중치 {n}", { n: e.w })}</em>}
+                                </>
+                              ) : <em className="ac-ensub">{t("함께 나옴")}</em>}
                             </span>
                           </span>
                         </button>

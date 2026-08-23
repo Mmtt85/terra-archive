@@ -2957,6 +2957,7 @@ const D: Record<string, Pair> = {
     "Supply Center levels 5 and 6 open {n} slots each. Any 6★ you own that is off the shop roster can join through one — though, per the in-game notice, operators formed this way deploy without a trait. Tap one for its operator page.",
     "補給センターレベル5・6でそれぞれ{n}枠開放されます。ショップ名簿にない実装済み★6を所持していれば連れて来られます — ただしゲーム内の案内どおり、この方法で編成したオペレーターは特質なしで出撃します。押すとオペレーター詳細へ進みます。"],
   // 대체 기물(NPC) — 본체 미보유 기물로 대신 출전 (사용자 제보 2026-08-23)
+  "함께 나옴": ["Comes along", "同時出現"],
   "대체 기물": ["Stand-in units", "代替ユニット"],
   "명단 기물의 본체 오퍼레이터가 없을 때 그 기물 그대로(맹약·특질·스킬) 대신 출전하는 전용 오퍼레이터입니다. 자유 선택 판에도 보유와 무관하게 항상 후보로 떠서, ★6이 없어도 칸을 채울 수 있습니다. 누르면 어떤 기물을 대체하는지 보여줍니다.": [
     "Dedicated operators that step in for a roster unit when you don't own its operator — same alliances, trait and skills. They also always appear on the free-pick board regardless of ownership, so the slots can be filled without any 6★. Tap one to see which units it stands in for.",
