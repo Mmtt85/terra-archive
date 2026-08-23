@@ -32,7 +32,7 @@
 | 작전 도감 | `/stages` · 작전 모달 열면 `#st-<stage_id>` | `app/stages.tsx` + `app/stage-detail.tsx` |
 | 작전 시뮬레이터 | `/sim` — 리스트 없는 런처(검색+추천), `/stages/<id>?sim=1` 딥링크로 상세의 이동 경로 탭+시뮬 자동 재생 (2026-08-10 B안) | `app/sim-launcher.tsx` (home 정적 임포트 — SEO 본문 프리렌더) |
 | 생존연산 가이드 | `/ra` — 요리·제작·지역·조우·균열 + CN 선행 신시즌(미래시 토글). **CN 선행분은 중국어 원문이 메인, 한국어 비공식 번역(`scripts/sandbox-cn-ko.json`)이 서브 병기** (사용자 확정 2026-08-12 — 뒤집지 말 것). 이미지는 `public/sandbox/`(폴더명은 라우트와 다르게 — deploy.sh 함정) (2026-08-12) | `app/sandbox.tsx` + 로케일 래퍼 (lazy) |
-| 위수 협의 가이드 | `/autochess` — 맹약(진영 8·특성 15)별 오퍼레이터, 기물 133종의 위수 협의 전용 능력(일반/골든), 물자관리소 티어·레벨 수치, 장비·밴드·전략·특수 적·마일스톤. **EN은 시즌2 텍스트가 없어 설명문이 한국어 원문**(doc.krOnly 안내문 — IS6와 같은 취급). 이미지는 `public/ac/`(라우트 `/autochess`와 폴더명이 달라야 한다 — deploy.sh 함정) (2026-08-22) | `app/autochess.tsx` + 로케일 래퍼 (lazy) |
+| 위수 협의 가이드 | `/autochess` — 맹약(진영 8·특성 15)별 오퍼레이터, 기물 133종의 위수 협의 전용 능력(일반/골든), 물자관리소 티어·레벨 수치, 장비·밴드·전략·특수 적·마일스톤. **EN은 시즌2 텍스트가 없어 설명문이 한국어 원문**(doc.krOnly 안내문 — IS6와 같은 취급). 이미지는 `public/ac/`(라우트 `/autochess`와 폴더명이 달라야 한다 — deploy.sh 함정) (2026-08-22). 오퍼레이터 목록에 **특질 필터**(발동 시점·효과 유형, build-autochess.py `classify_gar`가 KR 원문에서 태깅 — '맹약을 계속 중첩'은 필라에처럼 반복해서 쌓는 류만, 1회짜리 제외가 사용자 확정) (2026-08-23) | `app/autochess.tsx` + 로케일 래퍼 (lazy) |
 | 인프라 플래너 | `#infra` | `app/planner.tsx` |
 | 공개채용 도우미 | `#recruit` | `app/recruit.tsx` |
 | 재료 파밍 효율표 | `#farm` | `app/farm.tsx` |

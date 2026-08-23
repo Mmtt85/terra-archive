@@ -207,6 +207,62 @@ EFFECTS = KR["effectInfoDataDict"]        # 361 — 효과 이름·설명 (장�
 # 능력 분류 아이콘 — eventTypeIcon(icon_battle 등)에서 접미만 딴다
 TYPE_ICON = {"icon_battle": "battle", "icon_bond": "bond", "icon_gold": "gold", "icon_support": "support"}
 
+# ── 특질(전용 능력) 분류 — 오퍼레이터 필터용 (사용자 요청 2026-08-23) ─────────────
+# 발동 시점은 원문에 <획득 시> 같은 홑화살괄호 마커로 박혀 있고(rich()가 보존한다),
+# '맹약이 N회 중첩할 때마다'·'중첩 수 +N'·'전방 1칸' 같은 효과 유형은 문구 패턴이 고정돼
+# 있어 정규식으로 갈린다. ⚠ 분류는 **항상 KR 원문**으로 한다 — EN/JA 데이터도 설명문이
+# 한국어 그대로라(krOnly) 로케일마다 태그가 갈리면 안 된다.
+#   tg  = 카테고리 코드 목록 (하나의 능력이 여러 카테고리에 속할 수 있다 —
+#         예: "<휴식 기간 종료 시> [빅토리아] 맹약의 중첩 수 +1" 은 restEnd + stack)
+#   evb = 'every'(중첩될 때마다)일 때 그 능력이 세는 맹약 id **목록** (병기 가능 —
+#         "[사르곤]/[고수] 맹약이"). 특정 맹약이 아니라 '핵심 맹약'을 세면 ["core"].
+TRIG_TAGS = [
+    ("acq", "<획득 시>"), ("restEnd", "<휴식 기간 종료 시>"), ("restIn", "<휴식 기간 진입 시>"),
+    ("sell", "<판매 시>"), ("battle", "<전투 중>"), ("deploy", "<배치 시>"),
+]
+# '맹약을 중첩' = **계속해서** 쌓을 수 있는 것만 (사용자 확정 2026-08-23: 필라에·가비알처럼
+# 스킬 발동마다 쌓는 류. 파피루스는 '스킬 **처음** 발동 시' 1회라 제외 — 획득 시·휴식 기간
+# 종료 시처럼 트리거당 한 번뿐인 중첩은 그 트리거 카테고리로 충분하다).
+# 반복 트리거 = "~할 때마다" / "스킬 발동 시"(처음 아님) / "적 처치 시"(첫 아님) /
+# "(전투당 최대 N회)" 상한부(상한이 있다는 것 자체가 반복된다는 뜻) / 남의 중첩에 얹는 증폭.
+STACK_RE = re.compile(r"중첩 수 ?\*{0,2}\+")
+# '최대 N회'에 '전투당' 접두를 강제하지 않는다 — 데겐블레허(garrison_155)는 "(최대 24회 중첩)"
+# 이라 접두 없이 같은 기전(배치마다 중첩·상한)이다 (전수 감사 2026-08-23에서 걸림).
+REPEAT_RE = re.compile(r"때마다|스킬 발동 시|적을? 처치 시|최대 ?\*{0,2}\d+\*{0,2}회|증가할 경우")
+FIRST_KILL_RE = re.compile(r"첫 ?\*{0,2}\d*\*{0,2}회? ?적을? 처치")
+# "[사르곤]/[고수] 맹약이 3회 중첩할 때마다"처럼 여러 맹약이 병기된다 (실데이터 6쌍 —
+# 전수 감사 2026-08-23에서 마지막 하나만 잡던 버그가 걸림). 병기 전체를 잡아 evb를 목록으로.
+EVERY_RE = re.compile(r"((?:\[[^\]]+\][/·, ]*)+|핵심 )맹약이 \*{0,2}\d+\*{0,2}회 중첩[할될] 때마다")
+POS_RE = re.compile(r"(전방|후방|주변|근처|주위) ?\*{0,2}\d")
+
+
+def classify_gar(kr_text, bond_id_by_kr_name):
+    """KR 설명문 → (tg 목록, evb, bs). 어느 카테고리에도 안 걸리면 tg=[] — 화면이 '그 외'로 묶는다.
+
+    bs = 설명문이 [이름] 꼴로 언급하는 맹약 id 전부 (시뮬레이터의 '이 맹약을 돕는 특질' 판정용,
+    사용자 요청 2026-08-23). 맹약이 아닌 대괄호([빅토리아]식 이름과 안 겹침)는 조용히 버린다.
+    """
+    tg, evb = [], None
+    bs = [bond_id_by_kr_name[n] for n in dict.fromkeys(re.findall(r"\[([^\]]+)\]", kr_text))
+          if n in bond_id_by_kr_name]
+    for code, marker in TRIG_TAGS:
+        if marker in kr_text:
+            tg.append(code)
+    m = EVERY_RE.search(kr_text)
+    if m:
+        tg.append("every")
+        names = re.findall(r"\[([^\]]+)\]", m.group(1))
+        evb = [bond_id_by_kr_name[n] for n in names if n in bond_id_by_kr_name] if names else ["core"]
+        for n in names:
+            if n not in bond_id_by_kr_name:
+                print(f"  ⚠ '때마다' 맹약 이름을 못 찾음: [{n}] — {kr_text[:50]}")
+        evb = evb or None
+    if STACK_RE.search(kr_text) and REPEAT_RE.search(FIRST_KILL_RE.sub("", kr_text)):
+        tg.append("stack")
+    if POS_RE.search(kr_text):
+        tg.append("pos")
+    return tg, evb, bs
+
 OPS = {loc: {o["id"]: o for o in json.load(open(os.path.join(DATA, f"operators{SUFFIX[loc]}.json"), encoding="utf-8"))}
        for loc in ("ko", "en", "ja")}
 
@@ -307,15 +363,20 @@ def build_locale(loc):
     chess_rows.sort(key=lambda r: (r["t"] or 0, r["sort"] if (r["sort"] or 0) > 0 else 99, r["n"] or ""))
 
     # ── 기물 능력(garrison) — 참조된 것만 ──
+    bond_id_by_kr_name = {b["name"]: bid for bid, b in BONDS.items()}
     gar_rows = {}
     for gid in gar_used:
         g = GARRISON.get(gid)
         if not g:
             continue
+        tg, evb, bs = classify_gar(rich(g["garrisonDesc"]), bond_id_by_kr_name)
         gar_rows[gid] = {
             "d": rich(loc_desc(loc, "garrisonDataDict", gid, "garrisonDesc", g["garrisonDesc"])),
             "t": loc_name(loc, "garrisonDataDict", gid, "eventTypeDesc", g.get("eventTypeDesc")),
             "ic": TYPE_ICON.get(g.get("eventTypeIcon"), "battle"),
+            **({"tg": tg} if tg else {}),
+            **({"evb": evb} if evb else {}),
+            **({"bs": bs} if bs else {}),
         }
 
     # 같은 말을 두 번 하는 슬롯 정리 (dedupe_texts 주석 참조) — 정리 후 안 쓰이는 능력은 뺀다

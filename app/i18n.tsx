@@ -2777,6 +2777,37 @@ const D: Record<string, Pair> = {
   "S.W.E.E.T. 리포트": ["S.W.E.E.T. Report", "S.W.E.E.T.レポート"],
   "물자관리소": ["Supply Depot", "管理センター"],
   "전략 전술": ["Tactics", "戦略戦術"],
+  // 특질(전용 능력) 필터 — 발동 시점·효과 유형 (GAR_CAT_LABEL 값, 사용자 요청 2026-08-23)
+  "특질 전체": ["All traits", "特性すべて"],
+  "티어 전체": ["All tiers", "全等級"],
+  "특질로 거르기": ["Filter by trait", "特性で絞り込む"],
+  "획득 시": ["On acquire", "獲得時"],
+  "휴식 기간 종료 시": ["When rest ends", "休息期間終了時"],
+  "휴식 기간 진입 시": ["When rest begins", "休息期間突入時"],
+  "판매 시": ["On sale", "売却時"],
+  // '계속' = 필라에·가비알처럼 반복해서 쌓는 류만 — 획득 시 1회짜리는 제외 (사용자 확정 2026-08-23)
+  "맹약을 계속 중첩": ["Stacks alliances repeatedly", "盟約を繰り返し加算"],
+  "배치 시": ["On deploy", "配置時"],
+  "맹약이 중첩될 때마다": ["Per alliance stack", "盟約が加算されるたび"],
+  "전방·후방·주변 칸": ["Front / rear / nearby tiles", "前方・後方・周囲マス"],
+  "그 외 나머지": ["Everything else", "その他"],
+  "핵심 맹약": ["Core alliance", "コア盟約"],
+  "맹약별로 보기": ["Break down by alliance", "盟約別に見る"],
+  // 시뮬레이터 (view=build) — 사용자 요청 2026-08-23
+  "시뮬레이터": ["Simulator", "シミュレーター"],
+  "진영 맹약과 특성 맹약을 하나씩 고르면, 그 맹약에 소속된 오퍼레이터 전원과 특질로 중첩을 도와주는 오퍼레이터, 관련 아이템을 모아서 보여줍니다.": [
+    "Pick one nation alliance and one trait alliance, and this gathers every operator that belongs to them, the operators whose traits feed their stacks, and the related items.",
+    "国家系と特性系の盟約を一つずつ選ぶと、その盟約に所属するオペレーター全員と、特性で加算を支えるオペレーター、関連アイテムをまとめて表示します。"],
+  "위에서 맹약을 골라 주세요 — 하나만 골라도 됩니다.": [
+    "Pick an alliance above — one is enough.", "上から盟約を選んでください — 一つだけでも構いません。"],
+  "두 맹약 모두 소속": ["In both alliances", "両方の盟約に所属"],
+  "{name} 소속": ["In {name}", "{name}所属"],
+  "{name} 중첩 올림": ["Adds {name} stacks", "{name}加算を増やす"],
+  "{name} 중첩마다 강화": ["Scales per {name} stack", "{name}加算ごとに強化"],
+  "관련 아이템": ["Related items", "関連アイテム"],
+  "진영 아이템은 장착하면 해당 맹약의 중첩도 함께 올려 줍니다.": [
+    "Nation items also add stacks to their alliance when equipped.", "国家系アイテムは装着するとその盟約の加算も増やします。"],
+  "해당 없음": ["None", "該当なし"],
   // 기물 상태 라벨 — 표와 칩에서 쓰는 짧은 말 (VIEW_LABEL·KIND_LABEL·PHASE_LABEL 값)
   "정예화 0": ["E0", "精鋭化0"],
   "정예화 1": ["E1", "精鋭化1"],

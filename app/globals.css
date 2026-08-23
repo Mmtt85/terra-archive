@@ -19068,12 +19068,12 @@ p.sb-trline { margin-top: 2px; }
   margin: 12px 0 4px;
 }
 .ac-filters .search-wrap { margin-top: 0; flex: 1 1 220px; }
-.ac-tierbar, .ac-modebar {
+.ac-modebar {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
 }
-.ac-tierbar button, .ac-modebar button {
+.ac-modebar button {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -19085,14 +19085,22 @@ p.sb-trline { margin-top: 2px; }
   border: 1px solid var(--line);
   cursor: pointer;
 }
-.ac-tierbar button.on, .ac-modebar button.on {
+.ac-modebar button.on {
   color: var(--white);
   background: var(--ink);
   border-color: var(--ink);
 }
 .ac-modebar button img { width: 16px; height: 16px; object-fit: contain; }
 .ac-modebar { margin: 10px 0 8px; }
-.ac-bondsel {
+.ac-count { margin: 10px 0 0; font-size: 12px; color: var(--muted); }
+
+/* ── 특질 필터 메뉴 (사용자 요청 2026-08-23) — 발동 시점·효과 유형으로 거른다.
+   네이티브 select로 못 만든 이유: '맹약이 중첩될 때마다' 항목이 맹약별 서브메뉴를
+   가진다 (데스크탑 = 행 호버로 옆에 펼침, 모바일 = ▾ 탭으로 아래에 아코디언). */
+.ac-garsel {
+  position: relative;
+}
+.ac-garsel-btn {
   padding: 7px 10px;
   font-size: 12px;
   font-weight: 700;
@@ -19100,8 +19108,203 @@ p.sb-trline { margin-top: 2px; }
   color: var(--ink2);
   background: var(--white);
   border: 1px solid var(--line);
+  cursor: pointer;
 }
-.ac-count { margin: 10px 0 0; font-size: 12px; color: var(--muted); }
+.ac-garsel-btn.on {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+.ac-garsel-btn i {
+  font-style: normal;
+  font-size: 9px;
+  opacity: 0.6;
+}
+.ac-garsel-menu {
+  position: absolute;
+  z-index: 60;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 220px;
+  margin: 0;
+  padding: 5px;
+  list-style: none;
+  background: var(--bg-panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  box-shadow: 0 12px 32px #1f242533;
+}
+/* ── 시뮬레이터 (view=build) — 맹약 조합 설계 (사용자 요청 2026-08-23) ── */
+.ac-sim {
+  margin-top: 14px;
+}
+.ac-simpick {
+  margin-top: 12px;
+}
+.ac-simpick h4 {
+  margin: 0 0 6px;
+  font-size: 13px;
+}
+.ac-simpick-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+/* 선택된 맹약 칩 — bondchip 스타일을 그대로 쓰되 켜짐만 뒤집는다 */
+.ac-simpick-row .ac-bondchip.on {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--white);
+}
+.ac-sim-empty {
+  margin: 18px 0;
+}
+.ac-sim-bonds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+.ac-sim-bondcard {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex: 1 1 320px;
+  max-width: 520px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg-panel);
+  text-align: left;
+  cursor: pointer;
+}
+.ac-sim-bondcard:hover {
+  border-color: var(--lime);
+}
+.ac-sim-bondcard > img {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+}
+.ac-sim-bondcard > span {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  align-items: center;
+  min-width: 0;
+  font-size: 12px;
+}
+.ac-sim-bondcard b {
+  font-size: 13.5px;
+}
+.ac-sim-bondcard em {
+  flex-basis: 100%;
+  color: var(--muted);
+  font-style: normal;
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+.ac-sim-group {
+  margin-top: 6px;
+}
+/* 중첩 기여 배지 — 이 카드가 조합의 엔진임을 표시 (기여자는 그룹 맨 앞에 정렬된다) */
+.sb-chip.ac-feed {
+  background: color-mix(in srgb, var(--lime) 22%, transparent);
+  border-color: color-mix(in srgb, var(--lime) 45%, var(--line));
+  font-weight: 800;
+}
+
+/* 맹약 메뉴(23개)만 스크롤 — 특질 메뉴에 걸면 서브메뉴 플라이아웃이 잘린다 */
+.ac-garsel-menu.scroll {
+  max-height: min(60vh, 440px);
+  overflow-y: auto;
+}
+.ac-garsel-menu li {
+  position: relative;
+}
+.ac-garsel-menu li > button[role="menuitemradio"] {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  padding: 7px 9px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.ac-garsel-menu li > button[role="menuitemradio"]:hover {
+  background: var(--veil);
+}
+.ac-garsel-menu li > button.on {
+  background: var(--ink);
+  color: var(--white);
+}
+.ac-garsel-menu li > button span {
+  flex: 1 1 auto;
+}
+.ac-garsel-menu li.has-sub > button[role="menuitemradio"] {
+  padding-right: 34px;   /* 상시 노출되는 ▾ 펼침 버튼 자리 */
+}
+.ac-garsel-menu li > button em {
+  font-style: normal;
+  font-size: 10.5px;
+  font-family: monospace;
+  font-weight: 800;
+  opacity: 0.55;
+}
+/* 서브메뉴 펼침 버튼 — 데스크탑은 행 호버로도 열리지만, 키보드·터치스크린 노트북은
+   이 버튼이 유일한 경로다 (감사 2026-08-23: display:none이면 포커스조차 못 받는다) */
+.ac-garsel-more {
+  display: block;
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 28px;
+  height: 26px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 11px;
+  cursor: pointer;
+}
+.ac-garsel-sub {
+  position: absolute;
+  z-index: 61;
+  top: -5px;
+  right: 100%;   /* 메뉴가 오른쪽 정렬이라 서브는 왼쪽으로. ⚠ 틈을 두면 안 된다 —
+                    포인터가 행→서브로 건너는 동안 틈에서 mouseleave가 발화해 닫힌다 (감사 2026-08-23) */
+  min-width: 150px;
+  margin: 0;
+  padding: 5px;
+  list-style: none;
+  background: var(--bg-panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  box-shadow: 0 12px 32px #1f242533;
+}
+@media (hover: none), (max-width: 640px) {
+  /* 호버가 없거나 화면이 좁으면: 서브메뉴는 ▾ 탭으로 그 자리(아래)에 펼친다 —
+     옆으로 내밀면 화면 밖으로 나간다 */
+  /* 좁은 화면에선 버튼이 줄 왼쪽에 있어 오른쪽 정렬(right:0)이 패널을 화면 밖으로 민다 —
+     버튼 기준 왼쪽 정렬로 뒤집는다 (2026-08-23 실측: '획득 시'가 '득 시'로 잘림) */
+  .ac-garsel-menu { right: auto; left: 0; }
+  .ac-garsel-sub {
+    position: static;
+    margin: 2px 0 4px 14px;
+    border: 0;
+    border-left: 2px solid var(--line);
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+    padding: 0 0 0 4px;
+  }
+}
 
 /* 티어(코스트) 색 — 1~6이 한눈에 갈라져야 목록이 읽힌다. 게임의 등급색과 같은 계열. */
 .ac-tier {
