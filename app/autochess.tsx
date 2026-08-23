@@ -125,25 +125,19 @@ const GAR_CAT_LABEL: Record<string, string> = {
 // 시뮬레이터 뷰는 반나절 만에 접었다 (사용자 확정 2026-08-23: "그냥 물자관리소 →
 // 오퍼레이터에서 필터링하는 거랑 똑같네") — 맹약 2축 선택·소속 그룹·중첩 기여 배지는
 // 전부 물자관리소 오퍼레이터 탭의 필터로 들어갔다.
-const VIEWS = ["report", "shop", "misc"] as const;
+const VIEWS = ["bond", "band", "op", "misc"] as const;
 type View = (typeof VIEWS)[number];
 const VIEW_LABEL: Record<View, string> = {
-  report: "S.W.E.E.T. 리포트", shop: "물자관리소", misc: "게임 정보",
+  bond: "맹약", band: "전략", op: "오퍼레이터", misc: "게임 정보",
 };
-const REPORT_TABS = ["bond", "band", "enemy"] as const;
-type ReportTab = (typeof REPORT_TABS)[number];
-const REPORT_LABEL: Record<ReportTab, string> = { bond: "맹약", band: "전략", enemy: "적" };
-const SHOP_TABS = ["op", "item"] as const;
-type ShopTab = (typeof SHOP_TABS)[number];
-const SHOP_LABEL: Record<ShopTab, string> = { op: "오퍼레이터", item: "아이템" };
-// ⚠ 물자관리소 ≠ 보급센터 (사용자 교정 2026-08-22). 물자관리소는 **출전 전**에
-//   오퍼레이터·아이템을 확인·편성하는 곳이고, 판 안에서 돌아가는 상점(갱신 비용·
-//   레벨·진열 칸)은 보급센터다 — 그래서 수치는 이쪽 '모드·보상'으로 옮겼다.
-// reward(라운드·마일스톤 보상)는 뺐다 (사용자 지시 2026-08-23) — 뷰 이름도 '모드·보상'에서 변경
-const MISC_TABS = ["mode", "supply", "buff"] as const;
+// 게임 정보 = 핵심 셋 밖의 나머지 전부 (사용자 확정 2026-08-23: "맹약, 전략, 오퍼레이터만
+// 제일 큰 탭으로 빼고 그 외는 다 게임 정보로"). 보상 탭은 같은 날 제거.
+// ⚠ 물자관리소 ≠ 보급센터 (사용자 교정 2026-08-22, 옛 탭 이름의 유래): 물자관리소는 출전 전
+//   편성 화면(→ 지금의 오퍼레이터·아이템), 판 안에서 도는 상점 수치가 보급센터(supply)다.
+const MISC_TABS = ["enemy", "item", "mode", "supply", "buff"] as const;
 type MiscTab = (typeof MISC_TABS)[number];
 const MISC_LABEL: Record<MiscTab, string> = {
-  mode: "모드", supply: "보급센터", buff: "전략 전술",
+  enemy: "적", item: "아이템", mode: "모드", supply: "보급센터", buff: "전략 전술",
 };
 
 // 정예화 표기 — 게임 데이터의 PHASE_n을 도감과 같은 말로
@@ -203,10 +197,8 @@ function Lines({ text, className }: { text: string; className?: string }) {
 
 export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
   const { t, locale } = useI18n();
-  const [view, setView] = useState<View>("report");
-  const [reportTab, setReportTab] = useState<ReportTab>("bond");
-  const [shopTab, setShopTab] = useState<ShopTab>("op");
-  const [miscTab, setMiscTab] = useState<MiscTab>("mode");
+  const [view, setView] = useState<View>("bond");
+  const [miscTab, setMiscTab] = useState<MiscTab>("enemy");
   const [etype, setEtype] = useState("");              // 특훈 적 유형 거르기 ("" = 전체)
   const [bond, setBond] = useState<AcBond | null>(null);
   const [chess, setChess] = useState<AcChess | null>(null);
@@ -240,7 +232,7 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
   const funnyBonds = useMemo(
     () => new Set(doc.modes.find((m) => m.diff === "FUNNY")?.bonds ?? []), [doc]);
 
-  const enemyDex = useEnemyDex(locale, view === "report" && reportTab === "enemy");
+  const enemyDex = useEnemyDex(locale, view === "misc" && miscTab === "enemy");
   const enemyRow = useMemo(
     () => (enemy ? doc.enemies.find((e) => e.id === enemy) ?? null : null), [doc, enemy]);
   const bossRow = useMemo(
@@ -645,6 +637,12 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
         <input {...inputProps} placeholder={t("이름·능력 검색")} autoComplete="off" spellCheck={false} />
         <button type="button" className="search-clear" onClick={() => clear()} aria-label={t("검색어 지우기")}>×</button>
       </div>
+      {/* 순서는 사용자 지시 (2026-08-23): 진영 맹약 · 특성 맹약 · 특질 · 티어 · 직군.
+          맹약 2축은 옛 시뮬레이터의 선택 축이 필터로 들어온 것. */}
+      {bondDropdown(true, bondN, setBondN, "bondN")}
+      {bondDropdown(false, bondT, setBondT, "bondT")}
+      {/* 특질·직군(세부직군 서브메뉴) 필터는 오퍼레이터 목록에만 — 아이템에는 없는 개념이다 */}
+      {view === "op" && garDropdown(garFilter, setGarFilter, "gar")}
       <div className="ac-garsel">
         <button type="button" className={`ac-garsel-btn${tier ? " on" : ""}`}
           aria-haspopup="menu" aria-expanded={openMenu === "tier"}
@@ -663,12 +661,7 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
           </ul>
         )}
       </div>
-      {/* 맹약 2축 — 진영·특성 하나씩. 옛 시뮬레이터의 선택 축이 필터로 들어온 것 (2026-08-23) */}
-      {bondDropdown(true, bondN, setBondN, "bondN")}
-      {bondDropdown(false, bondT, setBondT, "bondT")}
-      {/* 직군(세부직군 서브메뉴)·특질 필터는 오퍼레이터 목록에만 — 아이템에는 없는 개념이다 */}
-      {shopTab === "op" && jobDropdown()}
-      {shopTab === "op" && garDropdown(garFilter, setGarFilter, "gar")}
+      {view === "op" && jobDropdown()}
     </div>
   );
 
@@ -694,19 +687,10 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
         ))}
       </div>
 
-      {/* ══ S.W.E.E.T. 리포트 — 맹약 · 전략 · 적 ══ */}
-      {view === "report" && (
+      {/* ══ 맹약 — 최상위 탭 (사용자 확정 2026-08-23: 맹약·전략·오퍼레이터가 제일 중요) ══ */}
+      {view === "bond" && (
         <>
-          <div className="ac-subtabs" role="tablist" aria-label={t("S.W.E.E.T. 리포트")}>
-            {REPORT_TABS.map((tb) => (
-              <button key={tb} type="button" role="tab" aria-selected={reportTab === tb}
-                className={reportTab === tb ? "on" : ""} onClick={() => setReportTab(tb)}>
-                {t(REPORT_LABEL[tb])}
-              </button>
-            ))}
-          </div>
-
-          {reportTab === "bond" && (
+          {(
             <>
               <p className="sim-note">{t("전장에 같은 맹약의 오퍼레이터를 모을수록 단계별 효과가 열립니다. 카드를 누르면 전체 효과와 소속 오퍼레이터를 볼 수 있습니다.")}</p>
               {[true, false].map((nation) => {
@@ -750,8 +734,13 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
               })}
             </>
           )}
+        </>
+      )}
 
-          {reportTab === "band" && (
+      {/* ══ 전략 ══ */}
+      {view === "band" && (
+        <>
+          {(
             <>
               <p className="sim-note">{t("전략은 판을 시작할 때 고르는 조직입니다. 고유 효과와 시작 목표 HP가 다릅니다.")}</p>
               <div className="ac-filters">
@@ -782,7 +771,115 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
             </>
           )}
 
-          {reportTab === "enemy" && (
+        </>
+      )}
+
+      {/* ══ 오퍼레이터 ══ */}
+      {view === "op" && (
+        <div className="ac-shop">
+          {(
+            <>
+              {filterBar}
+              <p className="sim-note">{t("오퍼레이터마다 위수 협의 전용 능력이 하나씩 붙고, 같은 오퍼레이터 {n}장을 모아 정예화(골든)하면 그 능력이 강해집니다.", { n: doc.chess[0]?.up ?? 3 })}</p>
+              {bondGroups ? (
+                <>
+                  {/* 맹약을 골랐다 — 고른 맹약 요약 + 소속 그룹 (옛 시뮬레이터 화면, 2026-08-23 편입).
+                      중첩에 관여하는 오퍼가 배지를 달고 그룹 맨 앞에 선다. */}
+                  <div className="ac-sim-bonds">
+                    {[bondN, bondT].filter(Boolean).map((id) => {
+                      const b = bondById.get(id);
+                      if (!b) return null;
+                      return (
+                        <button key={id} type="button" className="ac-sim-bondcard" onClick={() => setBond(b)}>
+                          <img src={bondIcon(id)} alt="" aria-hidden onError={hideErr} />
+                          <span>
+                            <b>{b.n}</b>
+                            <i className="sb-chip">{b.down ? t("{n}명 이하", { n: b.min }) : t("{n}명부터", { n: b.min })}</i>
+                            {b.steps[0] && <em>{rich(b.steps[0].t)}</em>}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {([
+                    // 양쪽 소속이 조합의 축 — 한 명이 두 카운터를 동시에 채운다
+                    { key: "both", label: t("두 맹약 모두 소속"), rows: bondGroups.both, need: Boolean(bondN && bondT) },
+                    { key: "n", label: bondN ? t("{name} 소속", { name: nameOfBond(bondN) }) : "", rows: bondGroups.nOnly, need: Boolean(bondN) },
+                    { key: "t", label: bondT ? t("{name} 소속", { name: nameOfBond(bondT) }) : "", rows: bondGroups.tOnly, need: Boolean(bondT) },
+                  ] as const).map((g) => g.need && (
+                    <section key={g.key} className="ac-sim-group">
+                      <h3 className="sb-h3">{g.label} <em className="sb-count">{g.rows.length}</em></h3>
+                      {g.rows.length ? (
+                        <div className="ac-cards">
+                          {g.rows.map((c) => {
+                            const f = bondFeed(c);
+                            return chessCard(c, [
+                              ...f.stack.map((id) => t("{name} 중첩 올림", { name: nameOfBond(id) })),
+                              ...f.every.map((id) => t("{name} 중첩마다 강화", { name: nameOfBond(id) })),
+                            ]);
+                          })}
+                        </div>
+                      ) : <p className="sb-dim">{t("해당 없음")}</p>}
+                    </section>
+                  ))}
+                </>
+              ) : (
+                <>
+                  <p className="ac-count">{t("{n}명", { n: chessRows.length })}</p>
+                  {/* 티어별로 묶는다 (사용자 지시 2026-08-22) — 133명을 한 덩어리로 늘어놓으면
+                      "몇 티어에 누가 있나"를 못 읽는다. 티어 필터를 걸면 그 티어만 남는다. */}
+                  {[1, 2, 3, 4, 5, 6].map((tn) => {
+                    const rows = chessRows.filter((c) => c.t === tn);
+                    if (!rows.length) return null;
+                    return (
+                      <section key={tn} className="ac-tiersec">
+                        <h3 className="ac-tierhead">{tierBadge(tn)}<span>{t("{n}명", { n: rows.length })}</span></h3>
+                        {/* ⚠ rows.map(chessCard)로 넘기면 map의 index가 marks 인자로 들어간다 */}
+                        <div className="ac-cards">{rows.map((c) => chessCard(c))}</div>
+                      </section>
+                    );
+                  })}
+                  {!chessRows.length && <p className="sb-dim">{t("조건에 맞는 오퍼레이터가 없습니다.")}</p>}
+                </>
+              )}
+
+              {/* 자유 선택 칸 후보 — 편성하는 자리라 오퍼레이터 목록 맨 밑에 붙인다
+                  (사용자 지시 2026-08-22). 클뜯에는 후보 명단이 없고 '★6' 조건뿐이라
+                  ★6 전원에서 **이미 상점 명단에 있는 오퍼레이터를 뺀** 나머지를 싣는다. */}
+              <h3 className="sb-h3">{t("자유 선택 칸")} <em className="sb-count">{diyPool.length}</em></h3>
+              <p className="sb-dim">{t("보급센터 레벨 5·6에서 각각 {n}칸씩 열립니다. 게임 데이터에는 후보 명단 대신 '★6 오퍼레이터'라는 조건만 들어 있어, 위 목록에 이미 들어 있는 ★6을 뺀 나머지 KR 출시 ★6 전원을 싣습니다. 누르면 오퍼레이터 상세로 갑니다.", { n: 2 })}</p>
+              <div className="ac-diypool">
+                {diyPool.map((o) => (
+                  <button key={o.op} type="button" className="ac-diyop"
+                    onClick={() => setChess({
+                      id: `diy_${o.op}`, op: o.op, n: o.n, t: 6, sort: 0,
+                      kind: "DIY", bonds: [], gar: [], garG: [], r: 6, job: o.job,
+                    })}>
+                    <img src={opFace(o.op)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
+                    <b>{o.n}</b>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+
+        </div>
+      )}
+
+      {/* ══ 게임 정보 — 핵심 셋(맹약·전략·오퍼레이터) 밖의 나머지 전부 (2026-08-23 재편):
+          적 · 아이템 · 모드 · 보급센터 · 전략 전술 ══ */}
+      {view === "misc" && (
+        <div className="ac-misc">
+          <div className="ac-subtabs" role="tablist" aria-label={t("게임 정보")}>
+            {MISC_TABS.map((tb) => (
+              <button key={tb} type="button" role="tab" aria-selected={miscTab === tb}
+                className={miscTab === tb ? "on" : ""} onClick={() => { setMiscTab(tb); closeMenus(); }}>
+                {t(MISC_LABEL[tb])}
+              </button>
+            ))}
+          </div>
+
+          {miscTab === "enemy" && (
             <>
               <p className="sim-note">{t("판마다 특훈 적 유형이 뽑히고, 그 유형의 적이 딸린 부대와 함께 나옵니다. 14라운드(표준 시뮬레이션은 9라운드)에는 리더 적이 기다립니다. 카드를 누르면 스탯과 능력, 함께 나오는 적을 볼 수 있습니다.")}</p>
 
@@ -873,111 +970,8 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
               <p className="sb-dim">{t("전반·후반은 그 적이 나올 수 있는 라운드 구간입니다. 추첨 가중치는 기본 {n}이고, 다른 값만 카드에 표시합니다.", { n: ENEMY_W_BASE })}</p>
             </>
           )}
-        </>
-      )}
 
-      {/* ══ 물자관리소 — 출전 전에 오퍼레이터·아이템을 확인·편성하는 곳 ══
-          ⚠ 판 안에서 도는 상점(보급센터)과는 다르다 — 갱신 비용·관리소 레벨 같은
-             인게임 수치는 '모드·보상 → 보급센터'로 옮겼다 (사용자 교정 2026-08-22). */}
-      {view === "shop" && (
-        <div className="ac-shop">
-          <div className="ac-subtabs" role="tablist" aria-label={t("물자관리소")}>
-            {SHOP_TABS.map((tb) => (
-              <button key={tb} type="button" role="tab" aria-selected={shopTab === tb}
-                className={shopTab === tb ? "on" : ""}
-                onClick={() => { setShopTab(tb); closeMenus(); }}>
-                {t(SHOP_LABEL[tb])}
-              </button>
-            ))}
-          </div>
-
-          {shopTab === "op" && (
-            <>
-              {filterBar}
-              <p className="sim-note">{t("오퍼레이터마다 위수 협의 전용 능력이 하나씩 붙고, 같은 오퍼레이터 {n}장을 모아 정예화(골든)하면 그 능력이 강해집니다.", { n: doc.chess[0]?.up ?? 3 })}</p>
-              {bondGroups ? (
-                <>
-                  {/* 맹약을 골랐다 — 고른 맹약 요약 + 소속 그룹 (옛 시뮬레이터 화면, 2026-08-23 편입).
-                      중첩에 관여하는 오퍼가 배지를 달고 그룹 맨 앞에 선다. */}
-                  <div className="ac-sim-bonds">
-                    {[bondN, bondT].filter(Boolean).map((id) => {
-                      const b = bondById.get(id);
-                      if (!b) return null;
-                      return (
-                        <button key={id} type="button" className="ac-sim-bondcard" onClick={() => setBond(b)}>
-                          <img src={bondIcon(id)} alt="" aria-hidden onError={hideErr} />
-                          <span>
-                            <b>{b.n}</b>
-                            <i className="sb-chip">{b.down ? t("{n}명 이하", { n: b.min }) : t("{n}명부터", { n: b.min })}</i>
-                            {b.steps[0] && <em>{rich(b.steps[0].t)}</em>}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  {([
-                    // 양쪽 소속이 조합의 축 — 한 명이 두 카운터를 동시에 채운다
-                    { key: "both", label: t("두 맹약 모두 소속"), rows: bondGroups.both, need: Boolean(bondN && bondT) },
-                    { key: "n", label: bondN ? t("{name} 소속", { name: nameOfBond(bondN) }) : "", rows: bondGroups.nOnly, need: Boolean(bondN) },
-                    { key: "t", label: bondT ? t("{name} 소속", { name: nameOfBond(bondT) }) : "", rows: bondGroups.tOnly, need: Boolean(bondT) },
-                  ] as const).map((g) => g.need && (
-                    <section key={g.key} className="ac-sim-group">
-                      <h3 className="sb-h3">{g.label} <em className="sb-count">{g.rows.length}</em></h3>
-                      {g.rows.length ? (
-                        <div className="ac-cards">
-                          {g.rows.map((c) => {
-                            const f = bondFeed(c);
-                            return chessCard(c, [
-                              ...f.stack.map((id) => t("{name} 중첩 올림", { name: nameOfBond(id) })),
-                              ...f.every.map((id) => t("{name} 중첩마다 강화", { name: nameOfBond(id) })),
-                            ]);
-                          })}
-                        </div>
-                      ) : <p className="sb-dim">{t("해당 없음")}</p>}
-                    </section>
-                  ))}
-                </>
-              ) : (
-                <>
-                  <p className="ac-count">{t("{n}명", { n: chessRows.length })}</p>
-                  {/* 티어별로 묶는다 (사용자 지시 2026-08-22) — 133명을 한 덩어리로 늘어놓으면
-                      "몇 티어에 누가 있나"를 못 읽는다. 티어 필터를 걸면 그 티어만 남는다. */}
-                  {[1, 2, 3, 4, 5, 6].map((tn) => {
-                    const rows = chessRows.filter((c) => c.t === tn);
-                    if (!rows.length) return null;
-                    return (
-                      <section key={tn} className="ac-tiersec">
-                        <h3 className="ac-tierhead">{tierBadge(tn)}<span>{t("{n}명", { n: rows.length })}</span></h3>
-                        {/* ⚠ rows.map(chessCard)로 넘기면 map의 index가 marks 인자로 들어간다 */}
-                        <div className="ac-cards">{rows.map((c) => chessCard(c))}</div>
-                      </section>
-                    );
-                  })}
-                  {!chessRows.length && <p className="sb-dim">{t("조건에 맞는 오퍼레이터가 없습니다.")}</p>}
-                </>
-              )}
-
-              {/* 자유 선택 칸 후보 — 편성하는 자리라 오퍼레이터 목록 맨 밑에 붙인다
-                  (사용자 지시 2026-08-22). 클뜯에는 후보 명단이 없고 '★6' 조건뿐이라
-                  ★6 전원에서 **이미 상점 명단에 있는 오퍼레이터를 뺀** 나머지를 싣는다. */}
-              <h3 className="sb-h3">{t("자유 선택 칸")} <em className="sb-count">{diyPool.length}</em></h3>
-              <p className="sb-dim">{t("보급센터 레벨 5·6에서 각각 {n}칸씩 열립니다. 게임 데이터에는 후보 명단 대신 '★6 오퍼레이터'라는 조건만 들어 있어, 위 목록에 이미 들어 있는 ★6을 뺀 나머지 KR 출시 ★6 전원을 싣습니다. 누르면 오퍼레이터 상세로 갑니다.", { n: 2 })}</p>
-              <div className="ac-diypool">
-                {diyPool.map((o) => (
-                  <button key={o.op} type="button" className="ac-diyop"
-                    onClick={() => setChess({
-                      id: `diy_${o.op}`, op: o.op, n: o.n, t: 6, sort: 0,
-                      kind: "DIY", bonds: [], gar: [], garG: [], r: 6, job: o.job,
-                    })}>
-                    <img src={opFace(o.op)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
-                    <b>{o.n}</b>
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-
-          {shopTab === "item" && (
+          {miscTab === "item" && (
             <>
               {filterBar}
               {/* ⚠ "진영 아이템은 중첩도 올려 준다"고 썼다가 정정 (사용자 지적 2026-08-23) —
@@ -1014,20 +1008,6 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
               {!equipRows.length && <p className="sb-dim">{t("조건에 맞는 아이템이 없습니다.")}</p>}
             </>
           )}
-        </div>
-      )}
-
-      {/* ══ 모드·보상 — 판에 들어간 뒤 돌아가는 것들 ══ */}
-      {view === "misc" && (
-        <div className="ac-misc">
-          <div className="ac-subtabs" role="tablist" aria-label={t("게임 정보")}>
-            {MISC_TABS.map((tb) => (
-              <button key={tb} type="button" role="tab" aria-selected={miscTab === tb}
-                className={miscTab === tb ? "on" : ""} onClick={() => setMiscTab(tb)}>
-                {t(MISC_LABEL[tb])}
-              </button>
-            ))}
-          </div>
 
           {miscTab === "mode" && (
             <>
