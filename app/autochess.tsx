@@ -464,7 +464,17 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
   // 네이티브 select가 제각각이라 통일). 한 번에 하나만 열린다.
   const [openMenu, setOpenMenu] = useState<"" | "tier" | "bond" | "gar" | "simN" | "simT" | "simGar">("");
   const [garSubOpen, setGarSubOpen] = useState(false);
+  // 메뉴가 펼쳐질 방향 — 버튼이 화면 왼쪽에 붙어 있으면 오른쪽으로, 오른쪽 끝이면 왼쪽으로
+  // (사용자 지적 2026-08-23: 시뮬레이터의 왼쪽 드롭다운이 왼쪽으로 펼쳐져 잘렸다).
+  const [menuSide, setMenuSide] = useState<"left" | "right">("left");
   const closeMenus = () => { setOpenMenu(""); setGarSubOpen(false); };
+  const toggleMenu = (menuKey: typeof openMenu) => (e: React.MouseEvent<HTMLButtonElement>) => {
+    // 270px = 제일 넓은 메뉴(특질) 폭 + 여유. 오른쪽 공간이 모자라면 왼쪽으로 편다.
+    setMenuSide(e.currentTarget.getBoundingClientRect().left + 270 <= window.innerWidth ? "left" : "right");
+    setOpenMenu(openMenu === menuKey ? "" : menuKey);
+    setGarSubOpen(false);
+  };
+  const menuCls = (extra = "") => `ac-garsel-menu${extra}${menuSide === "right" ? " align-right" : ""}`;
   useEffect(() => {
     if (!openMenu) return;
     const onDown = (e: MouseEvent) => {
@@ -496,11 +506,11 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
       <div className="ac-garsel">
         <button type="button" className={`ac-garsel-btn${cur ? " on" : ""}`}
           aria-haspopup="menu" aria-expanded={openMenu === menuKey}
-          onClick={() => { setOpenMenu(openMenu === menuKey ? "" : menuKey); setGarSubOpen(false); }}>
+          onClick={toggleMenu(menuKey)}>
           {label} <i aria-hidden>▾</i>
         </button>
         {openMenu === menuKey && (
-          <ul className="ac-garsel-menu" role="menu" aria-label={t("특질로 거르기")}>
+          <ul className={menuCls()} role="menu" aria-label={t("특질로 거르기")}>
             {item("", t("특질 전체"))}
             {GAR_CATS.map((cat) => cat === "every" ? (
               <li key={cat} role="none" className={`has-sub${garSubOpen ? " open" : ""}`}
@@ -543,11 +553,11 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
     <div className="ac-garsel">
       <button type="button" className={`ac-garsel-btn${cur ? " on" : ""}`}
         aria-haspopup="menu" aria-expanded={openMenu === menuKey}
-        onClick={() => { setOpenMenu(openMenu === menuKey ? "" : menuKey); setGarSubOpen(false); }}>
+        onClick={toggleMenu(menuKey)}>
         {cur ? nameOfBond(cur) : t(nation ? "진영 맹약 선택" : "특성 맹약 선택")} <i aria-hidden>▾</i>
       </button>
       {openMenu === menuKey && (
-        <ul className="ac-garsel-menu scroll" role="menu" aria-label={t(nation ? "진영 맹약" : "특성 맹약")}>
+        <ul className={menuCls(" scroll")} role="menu" aria-label={t(nation ? "진영 맹약" : "특성 맹약")}>
           <li role="none"><button type="button" role="menuitemradio" aria-checked={!cur}
             className={!cur ? "on" : ""} onClick={() => { setCur(""); closeMenus(); }}><span>{t("선택 안 함")}</span></button></li>
           {doc.bonds.filter((b) => b.nation === nation).map((b) => (
@@ -571,11 +581,11 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
       <div className="ac-garsel">
         <button type="button" className={`ac-garsel-btn${tier ? " on" : ""}`}
           aria-haspopup="menu" aria-expanded={openMenu === "tier"}
-          onClick={() => { setOpenMenu(openMenu === "tier" ? "" : "tier"); setGarSubOpen(false); }}>
+          onClick={toggleMenu("tier")}>
           {tier ? `T${tier}` : t("티어 전체")} <i aria-hidden>▾</i>
         </button>
         {openMenu === "tier" && (
-          <ul className="ac-garsel-menu" role="menu" aria-label={t("티어")}>
+          <ul className={menuCls()} role="menu" aria-label={t("티어")}>
             <li role="none"><button type="button" role="menuitemradio" aria-checked={tier === 0}
               className={tier === 0 ? "on" : ""} onClick={() => { setTier(0); closeMenus(); }}><span>{t("전체")}</span></button></li>
             {[1, 2, 3, 4, 5, 6].map((n) => (
@@ -589,12 +599,12 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
       <div className="ac-garsel">
         <button type="button" className={`ac-garsel-btn${bondFilter ? " on" : ""}`}
           aria-haspopup="menu" aria-expanded={openMenu === "bond"}
-          onClick={() => { setOpenMenu(openMenu === "bond" ? "" : "bond"); setGarSubOpen(false); }}>
+          onClick={toggleMenu("bond")}>
           {bondFilter ? nameOfBond(bondFilter) : t("맹약 전체")} <i aria-hidden>▾</i>
         </button>
         {openMenu === "bond" && (
           /* 맹약 23개 — 세로로 다 펼치면 화면을 넘으므로 이 메뉴만 스크롤 (.scroll) */
-          <ul className="ac-garsel-menu scroll" role="menu" aria-label={t("맹약으로 거르기")}>
+          <ul className={menuCls(" scroll")} role="menu" aria-label={t("맹약으로 거르기")}>
             <li role="none"><button type="button" role="menuitemradio" aria-checked={!bondFilter}
               className={!bondFilter ? "on" : ""} onClick={() => { setBondFilter(""); closeMenus(); }}><span>{t("맹약 전체")}</span></button></li>
             {doc.bonds.map((b) => (

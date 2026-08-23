@@ -19123,7 +19123,9 @@ p.sb-trline { margin-top: 2px; }
   position: absolute;
   z-index: 60;
   top: calc(100% + 4px);
-  right: 0;
+  /* 기본은 버튼 왼끝 정렬(오른쪽으로 펼침). 화면 오른쪽 끝에 붙은 버튼만 열 때 실측으로
+     .align-right가 붙어 왼쪽으로 펼친다 (사용자 지적 2026-08-23: 왼쪽 드롭다운이 잘림) */
+  left: 0;
   min-width: 220px;
   margin: 0;
   padding: 5px;
@@ -19208,6 +19210,10 @@ p.sb-trline { margin-top: 2px; }
 }
 
 /* 맹약 메뉴(23개)만 스크롤 — 특질 메뉴에 걸면 서브메뉴 플라이아웃이 잘린다 */
+.ac-garsel-menu.align-right {
+  left: auto;
+  right: 0;
+}
 .ac-garsel-menu.scroll {
   max-height: min(60vh, 440px);
   overflow-y: auto;
@@ -19230,10 +19236,15 @@ p.sb-trline { margin-top: 2px; }
   text-align: left;
   cursor: pointer;
 }
+/* 호버는 잉크 12% 섞기 — 라이트·다크 어느 쪽에서도 보인다 (다크에서 --veil은 티가 안 났다,
+   사용자 지적 2026-08-23) */
 .ac-garsel-menu li > button[role="menuitemradio"]:hover {
-  background: var(--veil);
+  background: color-mix(in srgb, var(--ink) 12%, transparent);
 }
-.ac-garsel-menu li > button.on {
+/* 선택 행은 호버해도 반전 유지 — :hover 규칙이 더 구체적이라 배경만 갈아타면서 글자색(--white)이
+   남아 다크에서 검정 위 검정이 됐다 (사용자 지적 2026-08-23) */
+.ac-garsel-menu li > button.on,
+.ac-garsel-menu li > button.on:hover {
   background: var(--ink);
   color: var(--white);
 }
@@ -19270,7 +19281,7 @@ p.sb-trline { margin-top: 2px; }
   position: absolute;
   z-index: 61;
   top: -5px;
-  right: 100%;   /* 메뉴가 오른쪽 정렬이라 서브는 왼쪽으로. ⚠ 틈을 두면 안 된다 —
+  left: 100%;    /* 메뉴가 펼쳐진 쪽으로 이어서 편다. ⚠ 틈을 두면 안 된다 —
                     포인터가 행→서브로 건너는 동안 틈에서 mouseleave가 발화해 닫힌다 (감사 2026-08-23) */
   min-width: 150px;
   margin: 0;
@@ -19281,12 +19292,13 @@ p.sb-trline { margin-top: 2px; }
   border-radius: var(--r-md);
   box-shadow: 0 12px 32px #1f242533;
 }
+.ac-garsel-menu.align-right .ac-garsel-sub {
+  left: auto;
+  right: 100%;
+}
 @media (hover: none), (max-width: 640px) {
   /* 호버가 없거나 화면이 좁으면: 서브메뉴는 ▾ 탭으로 그 자리(아래)에 펼친다 —
      옆으로 내밀면 화면 밖으로 나간다 */
-  /* 좁은 화면에선 버튼이 줄 왼쪽에 있어 오른쪽 정렬(right:0)이 패널을 화면 밖으로 민다 —
-     버튼 기준 왼쪽 정렬로 뒤집는다 (2026-08-23 실측: '획득 시'가 '득 시'로 잘림) */
-  .ac-garsel-menu { right: auto; left: 0; }
   .ac-garsel-sub {
     position: static;
     margin: 2px 0 4px 14px;
