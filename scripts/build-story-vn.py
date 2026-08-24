@@ -1,0 +1,251 @@
+#!/usr/bin/env python3
+"""'장면 모드'(스토리 전문의 VN 재생)용 배경·스탠딩 스프라이트를 받아 webp로 굽는다.
+
+Usage:
+  python3 scripts/build-story-vn.py act6d5      # 한 이벤트
+  python3 scripts/build-story-vn.py             # 연출 트랙(vn)이 있는 전 이벤트
+
+입력은 build-story-scripts.py 가 이미 만들어 둔 public/story/script/<eid>.json 의 `vn`
+트랙이다 (배경 이름·스프라이트 base·표정 번호). 여기서는 그 이름들을 실제 파일로만 바꾼다.
+
+산출물 (둘 다 public/story/ 밑 — deploy.sh 가 통째로 R2 로 보내는 폴더라
+Cloudflare Pages 의 2만 파일 한도를 건드리지 않는다):
+  public/story/bg/<배경이름>.webp
+  public/story/sprite/<base>__<표정번호>.webp     ← 알파 여백을 잘라낸 것
+
+## 스프라이트 파일명 규칙 (전수 확인 2026-08-25)
+클뜯 레포 avg/characters 아래 항목은 **두 형태**다:
+  · 폴더  char_002_amiya_1/ → char_002_amiya_1.png, char_002_amiya_2.png … (표정별)
+  · 낱장  char_015_lmg.png                                                  (표정 없음)
+폴더 이름은 표정 1번 파일 이름과 같고, 표정 번호는 **띄엄띄엄**하다
+(char_136_hsguma 는 _1 과 _3 만 있다). 그래서 번호를 계산하지 않고 폴더 목록을 읽어
+고른다. 없는 번호는 가장 가까운 번호로 대체하되, **파일 이름은 대본이 부른 번호**로
+저장한다 — 화면이 대본 그대로 찾으면 되게.
+
+## 알파 트림을 왜 하는가
+원본은 1024×1024 캔버스에 인물이 가운데 떠 있고 여백이 절반 가까이 된다
+(예: 첸 1024×1024 → 실제 505×931). 그대로 붙이면 인물 키가 제각각이라 무대에 세울 수
+없다. 투명 여백을 잘라 바닥 기준으로 세우면 키가 대체로 맞는다.
+"""
+import json, os, re, sys, urllib.error, urllib.parse, urllib.request
+from concurrent.futures import ThreadPoolExecutor
+from io import BytesIO
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ASSETS = "https://raw.githubusercontent.com/ArknightsAssets/ArknightsAssets2/cn/assets/dyn"
+API = "https://api.github.com/repos/ArknightsAssets/ArknightsAssets2/contents/assets/dyn"
+SCRIPT_DIR = os.path.join(REPO, "public", "story", "script")
+BG_DIR = os.path.join(REPO, "public", "story", "bg")
+SPR_DIR = os.path.join(REPO, "public", "story", "sprite")
+CACHE = os.path.join(REPO, ".gamedata", "story-vn-cache")
+
+BG_MAX = 1280      # 무대는 아무리 커도 가로 1280 이면 충분하다 (원본 1024×576 이 대부분)
+SPR_MAX = 760      # 트림 후 긴 변 — 무대 높이의 90% 로 그려도 선명하다
+
+
+def _get(url, binary=True):
+    req = urllib.request.Request(url, headers={"User-Agent": "terra-archive-vn/1.0"})
+    with urllib.request.urlopen(req, timeout=60) as res:
+        raw = res.read()
+        return raw if binary else json.loads(raw.decode("utf-8"))
+
+
+# ── 스프라이트 폴더 목록 ─────────────────────────────────────────────────────
+# avg/characters 최상위(1,473개)를 한 번만 받아 캐시한다. 대소문자가 대본과 다른 경우가
+# 있어(avg_6D5_1 → avg_6d5_1) 소문자 색인을 함께 둔다.
+_index = None
+
+def char_index():
+    global _index
+    if _index is not None:
+        return _index
+    os.makedirs(CACHE, exist_ok=True)
+    path = os.path.join(CACHE, "characters.json")
+    if os.path.exists(path):
+        names = json.load(open(path, encoding="utf-8"))
+    else:
+        tree = _get("https://api.github.com/repos/ArknightsAssets/ArknightsAssets2/"
+                    "git/trees/cn:assets/dyn/avg/characters", binary=False)
+        names = [x["path"] for x in tree["tree"]]
+        json.dump(names, open(path, "w", encoding="utf-8"))
+    _index = {n.lower(): n for n in names}
+    return _index
+
+
+_folder_cache = {}
+
+def folder_files(folder):
+    """폴더 안 파일 이름(확장자 제외). 캐시한다."""
+    if folder in _folder_cache:
+        return _folder_cache[folder]
+    os.makedirs(CACHE, exist_ok=True)
+    path = os.path.join(CACHE, f"dir__{folder}.json")
+    if os.path.exists(path):
+        files = json.load(open(path, encoding="utf-8"))
+    else:
+        try:
+            data = _get(f"{API}/avg/characters/{urllib.parse.quote(folder)}?ref=cn", binary=False)
+            files = [x["name"][:-4] for x in data if x["name"].endswith(".png")]
+        except urllib.error.HTTPError:
+            files = []
+        json.dump(files, open(path, "w", encoding="utf-8"))
+    _folder_cache[folder] = files
+    return files
+
+
+def resolve_sprite(base, expr):
+    """(base, 표정번호) → 내려받을 URL. 못 찾으면 None."""
+    idx = char_index()
+    entry = idx.get(base.lower()) or idx.get(base.lower() + ".png")
+    if entry is None:
+        # 미러가 이름을 바꾼 경우 — 캐릭터 번호(char_2006_…)가 같은 항목으로 넘어간다.
+        # 실측 2026-08-25: 대본의 char_2006_weiywfmzuki_1 이 미러엔 char_2006_fmzuki_1.png.
+        m = re.match(r"(char_\d+)_", base.lower())
+        if m:
+            same = sorted(v for k, v in idx.items() if k.startswith(m.group(1) + "_"))
+            if same:
+                entry = same[0]
+                print(f"    · {base} → {entry} (번호가 같은 항목으로 대체)")
+    if entry is None:
+        return None
+    if entry.endswith(".png"):                      # 낱장 — 표정 변형이 없다
+        return f"{ASSETS}/avg/characters/{urllib.parse.quote(entry)}"
+    files = folder_files(entry)
+    if not files:
+        return None
+    if len(files) == 1:
+        return f"{ASSETS}/avg/characters/{urllib.parse.quote(entry)}/{urllib.parse.quote(files[0])}.png"
+    # ⚠ 줄기를 폴더 이름에서 번호를 떼어 구하면 안 된다 — avg_npc_034 는 번호가 아니라
+    #   인물 번호라 avg_npc 로 잘려 전부 빗나간다 (실측 2026-08-25). 파일 이름들의
+    #   **공통 접두**에서 구하면 두 형태(폴더가 표정1인 경우/아닌 경우)를 모두 맞춘다.
+    stem = os.path.commonprefix(files).rstrip("_")
+    by_num = {}
+    for f in files:
+        m = re.fullmatch(re.escape(stem) + r"_(\d+)", f)
+        if m:
+            by_num[int(m.group(1))] = f
+    if stem in files:
+        by_num.setdefault(1, stem)          # 표정 1은 번호 없이 오기도 한다 (avg_npc_034.png)
+    if not by_num:
+        want = files[0]
+    else:
+        # 띄엄띄엄한 번호 — 없으면 가장 가까운 번호로 (표정만 조금 다르고 인물은 같다)
+        want = by_num.get(expr) or by_num[min(by_num, key=lambda n: (abs(n - expr), n))]
+    return f"{ASSETS}/avg/characters/{urllib.parse.quote(entry)}/{urllib.parse.quote(want)}.png"
+
+
+# ── 저장 ────────────────────────────────────────────────────────────────────
+def save_bg(png, dest):
+    from PIL import Image
+    im = Image.open(BytesIO(png))
+    if im.mode not in ("RGB", "RGBA"):
+        im = im.convert("RGBA")
+    if max(im.size) > BG_MAX:
+        im.thumbnail((BG_MAX, BG_MAX), Image.LANCZOS)
+    os.makedirs(os.path.dirname(dest), exist_ok=True)
+    # 배경은 사진에 가깝고 투명이 없다 — 손실 q82 로 충분하다 (알파가 있으면 유지)
+    if im.mode == "RGBA" and im.getchannel("A").getextrema()[0] == 255:
+        im = im.convert("RGB")
+    im.save(dest, "WEBP", quality=82, method=4)
+
+
+def save_sprite(png, dest):
+    """투명 여백을 잘라 저장. 잘린 크기를 (w, h)로 돌려준다."""
+    from PIL import Image
+    im = Image.open(BytesIO(png)).convert("RGBA")
+    bbox = im.getbbox()
+    if bbox:
+        im = im.crop(bbox)
+    if max(im.size) > SPR_MAX:
+        im.thumbnail((SPR_MAX, SPR_MAX), Image.LANCZOS)
+    os.makedirs(os.path.dirname(dest), exist_ok=True)
+    im.save(dest, "WEBP", quality=90, method=4)
+    return im.size
+
+
+# ── 수집 ────────────────────────────────────────────────────────────────────
+def collect(eid):
+    """이벤트 JSON 의 vn 트랙에서 배경 이름·(스프라이트 base, 표정) 쌍을 모은다."""
+    doc = json.load(open(os.path.join(SCRIPT_DIR, f"{eid}.json"), encoding="utf-8"))
+    bgs, sprites = set(), set()
+    for ep in doc.get("eps", []):
+        for snap in ep.get("vn", []):
+            if snap.get("bg"):
+                bgs.add(snap["bg"])
+            for base, expr in snap.get("ch", []):
+                if base and base != "char_empty":
+                    sprites.add((base, int(expr)))
+    return bgs, sprites
+
+
+def run(eid):
+    bgs, sprites = collect(eid)
+    if not bgs and not sprites:
+        print(f"{eid}: 연출 트랙 없음 — 건너뜀")
+        return
+    missing_bg, missing_spr = [], []
+
+    def dl_bg(name):
+        dest = os.path.join(BG_DIR, f"{name}.webp")
+        if os.path.exists(dest):
+            return
+        for cand in dict.fromkeys([name, name.lower()]):
+            try:
+                save_bg(_get(f"{ASSETS}/avg/backgrounds/{urllib.parse.quote(cand)}.png"), dest)
+                return
+            except urllib.error.HTTPError:
+                continue
+        missing_bg.append(name)
+
+    def dl_spr(item):
+        base, expr = item
+        dest = os.path.join(SPR_DIR, f"{base}__{expr}.webp")
+        if os.path.exists(dest):
+            return
+        url = resolve_sprite(base, expr)
+        if not url:
+            missing_spr.append(f"{base}#{expr}")
+            return
+        try:
+            save_sprite(_get(url), dest)
+        except urllib.error.HTTPError:
+            missing_spr.append(f"{base}#{expr}")
+
+    with ThreadPoolExecutor(8) as ex:
+        list(ex.map(dl_bg, sorted(bgs)))
+    # 스프라이트는 폴더 목록 조회가 끼어 있어 (같은 폴더를 여러 표정이 공유) 순차가 안전하다
+    for item in sorted(sprites):
+        dl_spr(item)
+
+    def folder_kb(d, names):
+        return sum(os.path.getsize(os.path.join(d, n)) for n in names if os.path.exists(os.path.join(d, n))) // 1024
+
+    bg_kb = folder_kb(BG_DIR, [f"{n}.webp" for n in bgs])
+    spr_kb = folder_kb(SPR_DIR, [f"{b}__{e}.webp" for b, e in sprites])
+    print(f"{eid}: 배경 {len(bgs) - len(missing_bg)}/{len(bgs)}장 {bg_kb}KB · "
+          f"스탠딩 {len(sprites) - len(missing_spr)}/{len(sprites)}장 {spr_kb}KB")
+    if missing_bg:
+        print("  미러에 없는 배경:", ", ".join(sorted(missing_bg)))
+    if missing_spr:
+        print("  미러에 없는 스탠딩:", ", ".join(sorted(missing_spr)))
+
+
+def main():
+    args = [a for a in sys.argv[1:] if not a.startswith("-")]
+    if args:
+        targets = args
+    else:
+        targets = []
+        for f in sorted(os.listdir(SCRIPT_DIR)):
+            if not f.endswith(".json"):
+                continue
+            doc = json.load(open(os.path.join(SCRIPT_DIR, f), encoding="utf-8"))
+            if any(ep.get("vn") for ep in doc.get("eps", [])):
+                targets.append(doc["id"])
+    for eid in targets:
+        run(eid)
+
+
+if __name__ == "__main__":
+    main()

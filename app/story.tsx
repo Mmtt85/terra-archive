@@ -39,6 +39,7 @@ import imageDimsData from "./data/story-image-dims.json";
 // 본문은 번들에 넣지 않는다 (전문 스크립트와 같은 규약: public/lore/data/<id>.json fetch).
 import loreIndexData from "./data/eventlore-index.json";
 import { rich, useI18n, type Locale } from "./i18n";
+const SceneMode = lazy(() => import("./story-vn"));
 import type { LoreEvent } from "./eventlore";
 import { normSearch, useSearchInput } from "./search";
 
@@ -91,7 +92,11 @@ export const canOpenStory = (id: string) => summaryIds.has(id) || scriptIds.has(
 
 // 전문(풀 스크립트) 스키마 — build-story-scripts.py 라인 스키마와 1:1
 export type ScriptLine = { n?: string; x?: string; st?: string; img?: string; loc?: string; opts?: string[]; vals?: string[]; br?: string };
-export type ScriptEp = { code: string; name: string; tag: string; lines: ScriptLine[] };
+/** 무대 연출 스냅샷 (scripts/build-story-scripts.py parse_story) — '장면 모드'가 쓴다.
+ *  i = 이 무대가 처음 그려지는 줄 번호. 화면은 "현재 줄 이하의 마지막 스냅샷"만 보면 된다.
+ *  ch = [스프라이트 base, 표정번호] 목록(무대 왼→오른쪽) · f = 포커스 슬롯(1-base) */
+export type VnSnap = { i: number; bg?: string; cut?: string; ch?: [string, number][]; f?: number; bk?: string; sh?: number };
+export type ScriptEp = { code: string; name: string; tag: string; lines: ScriptLine[]; vn?: VnSnap[] };
 // tr: "cn" = 미출시 이벤트 — CN 원문 AI 번역본 (비공식 번역 안내 표시)
 export type ScriptData = { id: string; eps: ScriptEp[]; tr?: string; faces?: Record<string, string> };
 const translatedByLocale: Record<string, Set<string>> = {
@@ -487,6 +492,8 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
     return m ? Math.max(0, parseInt(m[1], 10) - 1) : 0;
   });
   const topRef = useRef<HTMLDivElement>(null);
+  // 장면 모드 — 열려 있으면 시작 줄 번호. 닫을 때 보던 줄로 글 읽기를 스크롤시킨다.
+  const [scene, setScene] = useState<number | null>(null);
   // 에피소드 탭 클릭은 화면을 움직이지 않는다(사용자 확정 2026-07-22). 단, 하단 이전/다음
   // 에피소드 버튼은 새 화가 처음부터 보이도록 리더 맨 위로 올려준다(사용자 요청 2026-07-22).
   const goEp = (i: number, scrollTop = false) => {
@@ -594,7 +601,15 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
           </button>
         ))}
       </div>
-      <h3 className="sc-ep-title">{ep.code} {ep.name}{ep.tag && <small>{ep.tag}</small>}</h3>
+      <h3 className="sc-ep-title">{ep.code} {ep.name}{ep.tag && <small>{ep.tag}</small>}
+        {/* 장면 모드 — 연출 트랙(vn)이 있는 화에서만. 원작처럼 배경·스탠딩을 세워 재생한다.
+            트랙이 없는 옛 이벤트는 버튼 자체가 안 뜨고 지금까지의 글 읽기 그대로다. */}
+        {ep.vn && ep.vn.length > 0 && (
+          <button type="button" className="sc-scene-go" onClick={() => setScene(0)}>
+            ▶ {t("장면 모드")}
+          </button>
+        )}
+      </h3>
       <div className="story-detail-grid">
         {peekNode}
         <div className="story-body sc-body">
@@ -651,6 +666,22 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
         {epIdx > 0 && <button type="button" onClick={() => goEp(epIdx - 1, true)}>← {t("이전 에피소드")}</button>}
         {epIdx < script.eps.length - 1 && <button type="button" onClick={() => goEp(epIdx + 1, true)}>{t("다음 에피소드")} →</button>}
       </div>
+      {scene !== null && ep.vn && (
+        <Suspense fallback={null}>
+          {/* key: 에피소드가 바뀌면 새로 마운트해 첫 줄부터 — 안에서 이펙트로 되감으면
+              연쇄 렌더가 된다 (react-compiler 규칙) */}
+          <SceneMode key={epIdx} ep={ep} title={`${ep.code} ${ep.name}`.trim()} startAt={scene}
+            hasPrev={epIdx > 0} hasNext={epIdx < script.eps.length - 1}
+            onEp={(d) => { setScene(0); goEp(epIdx + d); }}
+            onClose={(lineIdx) => {
+              setScene(null);
+              // 보던 자리로 글 읽기를 옮긴다 — 각 줄에 data-idx 가 붙어 있다
+              requestAnimationFrame(() => {
+                document.querySelector(`[data-idx="${lineIdx}"]`)?.scrollIntoView({ block: "center" });
+              });
+            }} />
+        </Suspense>
+      )}
       {/* 화자 스탠딩 크게 보기 — 아무 곳이나 클릭하면 닫힘 */}
       {faceZoom && (
         <div className="sc-face-zoom" role="presentation" onClick={() => setFaceZoom(null)}>

@@ -20501,3 +20501,176 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   border-radius: 6px;
   background: color-mix(in srgb, var(--line) 30%, var(--bg-panel));
 }
+
+/* ── 장면 모드 (app/story-vn.tsx, 2026-08-25) ─────────────────────────────────
+   스토리 전문을 원작처럼 무대로 재생한다. 화면을 통째로 덮는 오버레이라
+   **테마와 무관하게 항상 어둡다** — 게임 화면이 원래 그렇고, 라이트 테마에서
+   흰 바탕에 배경 그림만 떠 있으면 무대로 안 읽힌다.
+   z 9500 = 공용 창(ModalWindow, 200~)·록라 인벤(9000)보다 위. 전체 화면 점유가 목적. */
+.vn-root {
+  position: fixed;
+  inset: 0;
+  z-index: 9500;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  background: #05060a;
+  color: #e9edf5;
+}
+.vn-stage {
+  position: relative;
+  width: min(100%, calc((100dvh - 118px) * 16 / 9));
+  aspect-ratio: 16 / 9;
+  max-height: calc(100dvh - 118px);
+  overflow: hidden;
+  border-radius: 10px;
+  background: #000;
+  cursor: pointer;
+  user-select: none;
+}
+.vn-bg, .vn-cut {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.vn-cut { object-fit: contain; background: #000; }
+/* 스탠딩 — 빌드에서 투명 여백을 잘라 뒀으므로 **높이만** 맞추면 키가 대체로 선다.
+   바닥 기준(bottom:0)으로 세우고 슬롯 위치는 인라인 style 의 left 로 온다. */
+.vn-char {
+  position: absolute;
+  bottom: 0;
+  height: 88%;
+  width: auto;
+  max-width: 46%;
+  object-fit: contain;
+  object-position: bottom center;
+  transform: translateX(-50%);
+  transition: filter 0.18s ease, opacity 0.18s ease;
+}
+/* 포커스가 아닌 쪽 — 원작도 뒤로 물러난 인물을 어둡게 깔아 둔다 */
+.vn-char.dim { filter: brightness(0.42) saturate(0.65); }
+.vn-blocker { position: absolute; inset: 0; opacity: 0.92; }
+@keyframes vn-shake {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-6px, 3px); }
+  40% { transform: translate(5px, -4px); }
+  60% { transform: translate(-4px, -2px); }
+  80% { transform: translate(3px, 3px); }
+}
+.vn-stage.shake { animation: vn-shake 0.42s ease-in-out; }
+
+/* 대사창 — 무대 아래쪽에 겹친다 (원작과 같은 자리). 긴 대사는 이 안에서만 스크롤. */
+.vn-box {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: 46%;
+  overflow-y: auto;
+  padding: 14px clamp(16px, 4vw, 52px) 18px;
+  background: linear-gradient(to top, rgba(4, 6, 12, 0.94) 62%, rgba(4, 6, 12, 0));
+  font-size: clamp(13px, 1.5vw, 17px);
+  line-height: 1.72;
+}
+.vn-name {
+  margin: 0 0 2px;
+  font-weight: 800;
+  font-size: 1.02em;
+  color: var(--lime, #b8e04a);
+  letter-spacing: -0.01em;
+}
+.vn-say { margin: 0; color: #f2f5fb; white-space: pre-wrap; }
+.vn-narr { margin: 0; color: #c3cbd9; white-space: pre-wrap; }
+.vn-beat { color: #6e7889; font-size: 0.86em; }
+.vn-st {
+  margin: 0 0 4px;
+  color: #dfe6f2;
+  font-style: italic;
+  white-space: pre-wrap;
+}
+.vn-loc {
+  margin: 0 0 6px;
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 0.82em;
+  font-weight: 700;
+}
+.vn-opts { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.vn-opts i {
+  font-style: normal;
+  font-size: 0.78em;
+  font-weight: 800;
+  color: #8d97a8;
+}
+.vn-opts span {
+  padding: 3px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 999px;
+  font-size: 0.92em;
+}
+.vn-br { margin: 0; color: #8d97a8; font-size: 0.86em; }
+
+/* 조작 막대 */
+.vn-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  width: min(100%, calc((100dvh - 118px) * 16 / 9));
+}
+.vn-bar button {
+  padding: 5px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #e9edf5;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.vn-bar button:hover:not(:disabled) { border-color: var(--lime, #b8e04a); color: #fff; }
+.vn-bar button:disabled { opacity: 0.35; cursor: default; }
+.vn-bar .vn-x { font-size: 14px; line-height: 1; padding: 5px 10px; }
+.vn-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #aab3c2;
+}
+.vn-count { font-size: 11.5px; color: #8d97a8; font-variant-numeric: tabular-nums; }
+.vn-nextep { background: rgba(184, 224, 74, 0.16) !important; }
+.vn-hint { margin: 0; font-size: 11px; color: #5f6878; }
+
+/* 전문 리더의 진입 버튼 */
+.sc-scene-go {
+  margin-left: 10px;
+  padding: 3px 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg-panel);
+  color: var(--ink);
+  font-size: 11.5px;
+  font-weight: 800;
+  vertical-align: middle;
+  cursor: pointer;
+}
+.sc-scene-go:hover { border-color: var(--lime); }
+
+@media (max-width: 720px) {
+  .vn-root { padding: 6px; gap: 6px; }
+  .vn-stage, .vn-bar { width: 100%; }
+  .vn-box { max-height: 52%; padding: 10px 14px 12px; }
+  .vn-hint { display: none; }
+}
+

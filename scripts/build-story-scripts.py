@@ -82,11 +82,62 @@ RE_DECIS = re.compile(r'\[decision\s*\([^\]]*?options\s*=\s*"([^"]*)"(?:[^\]]*?v
 RE_PRED = re.compile(r'\[predicate\s*\([^\]]*?references\s*=\s*"([^"]*)"', re.I)
 RE_ANIM = re.compile(r'\[animtext\s*\([^\]]*\)\]\s*(.*)', re.I)
 
+# ── VN 연출 트랙 (2026-08-25) ────────────────────────────────────────────────
+# 종전엔 이 태그들을 전부 버렸다. 이제 **무대 상태**(배경·스탠딩·가림막)를 같이 뽑아
+# '장면 모드'가 원작처럼 그릴 수 있게 한다. 자세한 규약은 build-story-vn.py 참고.
+RE_BG = re.compile(r'\[background\s*\(([^)]*)\)', re.I)
+RE_CHAR = re.compile(r'\[character\s*(?:\(([^)]*)\))?\s*\]', re.I)
+RE_CHARSLOT = re.compile(r'\[charslot\s*\(([^)]*)\)', re.I)
+RE_BLOCKER = re.compile(r'\[blocker\s*\(([^)]*)\)', re.I)
+RE_SHAKE = re.compile(r'\[camerashake\s*\(', re.I)
+RE_IMG_ANY = re.compile(r'\[image\s*\(([^)]*)\)', re.I)
+_ATTR_S = lambda k, a: (re.search(k + r'\s*=\s*"([^"]*)"', a, re.I) or [None, None])[1] \
+    if re.search(k + r'\s*=\s*"([^"]*)"', a, re.I) else None
+def _attr_f(k, a, default=None):
+    m = re.search(k + r"\s*=\s*(-?\d+(?:\.\d+)?)", a, re.I)
+    return float(m.group(1)) if m else default
 
-def parse_story(txt):
-    """스크립트 원문 → 라인 배열. 연출 태그(음악·이펙트·스탠딩)는 버린다."""
-    lines = []
+def sprite_ref(raw):
+    """'char_002_amiya_1#6$1 ' → ['char_002_amiya_1', 6]. 표정 없으면 1.
+    #N 은 표정 번호, $N 은 하위 변형(무시). char_empty 는 빈 슬롯 표식으로 그대로 둔다
+    — 슬롯 순번이 focus= 와 맞아야 하므로 지우면 안 된다."""
+    name = raw.split("$")[0].strip()
+    base, _, expr = name.partition("#")
+    base = base.strip()
+    try:
+        n = int(expr.strip() or 1)
+    except ValueError:
+        n = 1
+    return [base, n]
+
+
+
+def parse_story(txt, vn=None):
+    """스크립트 원문 → 라인 배열. vn 리스트를 주면 **무대 상태 스냅샷**도 함께 채운다.
+
+    스냅샷은 무대가 바뀐 채로 처음 그려지는 줄에만 찍힌다 (i = 그 줄의 인덱스):
+      {"i": 12, "bg": "bg_park", "ch": [["char_010_chen_1", 3], …], "f": 2, "bk": "#000", "sh": 1}
+      · ch = [스프라이트 base, 표정번호] 목록 (무대 왼→오른쪽 순, char_empty = 빈 슬롯)
+      · f  = 포커스된 슬롯 (1-base, 0이면 없음)   · bk = 가림막 색   · sh = 화면 흔들림
+    UI 는 "현재 줄 이하의 마지막 스냅샷"만 찾으면 되므로 상태 기계가 필요 없다.
+    """
     last_img = None
+    stage = {"bg": None, "cut": None, "ch": [], "f": 0, "bk": None, "sh": 0}
+    snaps, last_key = {}, None
+
+    class Lines(list):
+        """append 를 가로채 '이 줄이 그려질 때의 무대'를 찍는다 — 호출부를 안 건드리려고
+        리스트를 상속했다 (append 지점이 10곳 가까이 흩어져 있다)."""
+        def append(self, item):
+            nonlocal last_key
+            key = json.dumps(stage, sort_keys=True, ensure_ascii=False)
+            if key != last_key:
+                snaps[len(self)] = {k: v for k, v in stage.items() if v}
+                last_key = key
+                stage["sh"] = 0          # 흔들림은 1회성 — 찍고 나면 끈다
+            super().append(item)
+
+    lines = Lines()
     for raw in txt.splitlines():
         line = raw.strip()
         if not line:
@@ -117,6 +168,7 @@ def parse_story(txt):
         m = RE_IMAGE.match(line)
         if m:
             name = m.group(1)
+            stage["cut"] = name          # 내릴 때까지 무대에 깔려 있다 (아래 RE_IMG_ANY 에서 해제)
             if name != last_img:
                 lines.append({"img": name})
                 last_img = name
@@ -148,15 +200,73 @@ def parse_story(txt):
             if x:
                 lines.append({"loc": x})
             continue
+        # ── 무대 상태 (버리지 않고 vn 트랙으로) ──
+        m = RE_BG.search(line)
+        if m:
+            img = _ATTR_S("image", m.group(1))
+            if img:
+                stage["bg"] = img
+            continue
+        m = RE_CHAR.search(line)
+        if m:
+            attrs = m.group(1) or ""
+            names = RE_CHARNAME.findall(attrs)
+            stage["ch"] = [sprite_ref(n) for n in names]
+            stage["f"] = int(RE_FOCUS.search(attrs).group(1)) if RE_FOCUS.search(attrs) else 0
+            continue
+        m = RE_CHARSLOT.search(line)
+        if m:
+            # 슬롯 지정형 — l/m/r 자리에 하나씩 올린다 (act6d5 엔 없고 후기 이벤트에서 쓴다)
+            attrs = m.group(1)
+            names = RE_CHARNAME.findall(attrs)
+            slot = (_ATTR_S("slot", attrs) or "m").lower()
+            idx = {"l": 0, "m": 1, "r": 2}.get(slot, 1)
+            ch = list(stage["ch"]) + [["char_empty", 1]] * max(0, idx + 1 - len(stage["ch"]))
+            ch[idx] = sprite_ref(names[0]) if names else ["char_empty", 1]
+            stage["ch"] = ch
+            stage["f"] = int(RE_FOCUS.search(attrs).group(1)) if RE_FOCUS.search(attrs) else 0
+            continue
+        m = RE_BLOCKER.search(line)
+        if m:
+            a = _attr_f("a", m.group(1), 0.0) or 0.0
+            if a >= 0.5:
+                rgb = [int(max(0.0, min(1.0, _attr_f(c, m.group(1), 0.0) or 0.0)) * 255) for c in "rgb"]
+                stage["bk"] = "#%02x%02x%02x" % tuple(rgb)
+            else:
+                stage["bk"] = None
+            continue
+        if RE_SHAKE.search(line):
+            stage["sh"] = 1
+            continue
+        if RE_IMG_ANY.search(line) and not RE_IMAGE.match(line):
+            stage["cut"] = None         # [Image(fadetime=0)] = 컷씬 내리기
+            stage["bk"] = None
+            last_img = None
+            continue
         # 그 외 연출 태그는 전부 무시
     # 앞뒤 의미 없는 br 정리: opts 없이 나온 br(연출 분기)은 버린다
-    out, seen_opts = [], False
-    for ln in lines:
+    out, seen_opts, remap = [], False, {}
+    for i, ln in enumerate(lines):
         if "opts" in ln:
             seen_opts = True
         if "br" in ln and not seen_opts:
             continue
+        remap[i] = len(out)
         out.append(ln)
+    if vn is not None:
+        # ⚠ 위에서 줄이 빠지면 인덱스가 밀린다 — 스냅샷을 살아남은 줄 기준으로 다시 매긴다.
+        #   빠진 줄에 걸린 스냅샷은 그 다음 살아있는 줄로 옮긴다 (무대를 잃지 않게).
+        alive = sorted(remap)
+        merged = {}
+        for i in sorted(snaps):
+            j = remap.get(i)
+            if j is None:
+                nxt = next((k for k in alive if k > i), None)
+                if nxt is None:
+                    continue
+                j = remap[nxt]
+            merged[j] = {"i": j, **snaps[i]}   # 같은 줄에 겹치면 마지막 무대가 이긴다
+        vn.extend(merged[k] for k in sorted(merged))
     return out
 
 
@@ -332,7 +442,8 @@ def build_event(eid, entry):
         txt = txts.get(info["storyId"])
         if not txt:
             continue
-        lines = parse_story(txt)
+        vn = []
+        lines = parse_story(txt, vn)
         if not lines:
             continue
         scan_faces(txt, votes)
@@ -345,6 +456,9 @@ def build_event(eid, entry):
             "name": info.get("storyName") or "",
             "tag": info.get("avgTag") or "",
             "lines": lines,
+            # 무대 연출 트랙 — '장면 모드'가 쓴다. 배경·스탠딩이 하나도 없으면 싣지 않는다
+            # (옛 이벤트엔 연출 태그가 거의 없어 빈 배열이 파일만 키운다).
+            **({"vn": vn} if any(v.get("bg") or v.get("ch") for v in vn) else {}),
         })
     # 화자 → 스탠딩 스프라이트 얼굴 (오퍼가 아닌 인물도 썸네일 연결, 사용자 요청 2026-07-18)
     faces = resolve_faces(votes)

@@ -2145,6 +2145,16 @@ const D: Record<string, Pair> = {
   ],
   "본문의 이 단어 때문에 표시됨": ["Shown because of this word in the text", "本文中のこの単語により表示"],
   "이전 에피소드": ["Previous episode", "前のエピソード"],
+  // ── 장면 모드 (스토리 전문 VN 재생, 2026-08-25) ──
+  "이전 줄": ["Back", "前の行"],
+  "다음 줄": ["Next", "次の行"],
+  "장면 모드": ["Scene mode", "シーンモード"],
+  "장면 모드 닫기": ["Close scene mode", "シーンモードを閉じる"],
+  "장면 전환": ["Scene change", "場面転換"],
+  "마지막 화입니다": ["Last episode", "最終話です"],
+  "클릭 · Space · → 다음 · ← 이전 · Esc 닫기": [
+    "Click / Space / → next · ← back · Esc to close",
+    "クリック・Space・→ 次へ ・← 戻る ・Esc で閉じる"],
   "다음 에피소드": ["Next episode", "次のエピソード"],
   "에피소드": ["Episodes", "エピソード"],
   "에피소드 {n}개": ["{n} episodes", "エピソード{n}話"],
