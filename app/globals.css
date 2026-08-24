@@ -11837,7 +11837,8 @@ html.rg-theme.rg6 body,
 html.rg-theme.rg6 main.site-main {
   background: linear-gradient(180deg, #060d0e, #0a1413 220px, #0b1512);
 }
-.rg.rg6 {
+.rg.rg6,
+html.rg-theme.rg6 {
   --rgbg: #0a1413;
   --rgcard: #101d1a;
   --rgline: #1f3a34;
@@ -11853,10 +11854,7 @@ html.rg-theme.rg6 main.site-main {
   --rgup: #5ee6d0;
   --rgupbg: #0e2a25;
 }
-.rg.rg6 .rg-modal-back {
-  background: #030b0ad9;
-}
-.rg.rg6 .rg-modal-back.stack {
+html.rg-theme.rg6 .mw-backdrop:has(> .rg-modal) {
   background: #030b0ae6;
 }
 .rg.rg6 .rg-topic.on {
@@ -11877,7 +11875,8 @@ html.rg-theme.rg2 body,
 html.rg-theme.rg2 main.site-main {
   background: linear-gradient(180deg, #03060e, #060b18 220px, #070d1c);
 }
-.rg.rg2 {
+.rg.rg2,
+html.rg-theme.rg2 {
   --rgbg: #070d1c;
   --rgcard: #0f1830;
   --rgline: #213858;
@@ -11893,10 +11892,7 @@ html.rg-theme.rg2 main.site-main {
   --rgup: #69c8ff;
   --rgupbg: #0c264a;
 }
-.rg.rg2 .rg-modal-back {
-  background: #02040bd9;
-}
-.rg.rg2 .rg-modal-back.stack {
+html.rg-theme.rg2 .mw-backdrop:has(> .rg-modal) {
   background: #02040be6;
 }
 .rg.rg2 .rg-topic.on {
@@ -11918,7 +11914,8 @@ html.rg-theme.rg3 body,
 html.rg-theme.rg3 main.site-main {
   background: linear-gradient(180deg, #0b0d11, #101318 220px, #13151a);
 }
-.rg.rg3 {
+.rg.rg3,
+html.rg-theme.rg3 {
   --rgbg: #13151a;
   --rgcard: #1c1f25;
   --rgline: #3e434e;
@@ -11934,10 +11931,7 @@ html.rg-theme.rg3 main.site-main {
   --rgup: #c2e4f2;
   --rgupbg: #1c2f3a;
 }
-.rg.rg3 .rg-modal-back {
-  background: #05070bd9;
-}
-.rg.rg3 .rg-modal-back.stack {
+html.rg-theme.rg3 .mw-backdrop:has(> .rg-modal) {
   background: #05070be6;
 }
 /* 은색 포인트(--rgcrim)가 밝아 흰 글자 요소는 어두운 잉크로 대비 보정 */
@@ -11969,7 +11963,8 @@ html.rg-theme.rg4 body,
 html.rg-theme.rg4 main.site-main {
   background: linear-gradient(180deg, #070202, #0d0404 220px, #0f0505);
 }
-.rg.rg4 {
+.rg.rg4,
+html.rg-theme.rg4 {
   --rgbg: #0f0505;
   --rgcard: #1b0909;
   --rgline: #3d1815;
@@ -11985,10 +11980,7 @@ html.rg-theme.rg4 main.site-main {
   --rgup: #e8515f;
   --rgupbg: #2b0c0c;
 }
-.rg.rg4 .rg-modal-back {
-  background: #060202d9;
-}
-.rg.rg4 .rg-modal-back.stack {
+html.rg-theme.rg4 .mw-backdrop:has(> .rg-modal) {
   background: #060202e6;
 }
 .rg.rg4 .rg-topic.on {
@@ -12010,7 +12002,8 @@ html.rg-theme.rg5 body,
 html.rg-theme.rg5 main.site-main {
   background: linear-gradient(180deg, #160c11, #1f1219 220px, #22131b);
 }
-.rg.rg5 {
+.rg.rg5,
+html.rg-theme.rg5 {
   --rgbg: #22131b;
   --rgcard: #301b26;
   --rgline: #573448;
@@ -12026,10 +12019,7 @@ html.rg-theme.rg5 main.site-main {
   --rgup: #ffb4d0;
   --rgupbg: #43182a;
 }
-.rg.rg5 .rg-modal-back {
-  background: #080406d9;
-}
-.rg.rg5 .rg-modal-back.stack {
+html.rg-theme.rg5 .mw-backdrop:has(> .rg-modal) {
   background: #080406e6;
 }
 .rg.rg5 .rg-topic.on {
@@ -12274,12 +12264,11 @@ html.dark.rg-theme.rg6 .site-header {
 .rg-map-zoom .rg-modal-map {
   transition: transform 0.18s ease;
 }
-.rg {
-  /* CLS 방지 (실측 2026-08-02): 프리렌더 HTML의 rogue 섹션은 178px짜리 토막이라 footer가
-     첫 화면(top 541)에 보였다가, 하이드레이션이 본문(1,265px+)을 채우는 순간 통째로 밀려났다
-     — 느린 폰에선 그 순간이 ~9초 뒤라 CLS 0.26(Poor)로 집계됐다. 섹션 최소 높이를 화면만큼
-     잡아 footer를 처음부터 접힘 아래로 내리면, 내용이 자라도 보이는 것은 아무것도 안 움직인다. */
-  min-height: 100vh;
+/* 테마 변수는 **html에도** 건다 — 록라 모달이 공용 창(ModalWindow)으로 옮겨가면서
+   body 포털로 그려지므로, .rg 섹션 안쪽이 아니라 문서 루트에서 색을 받아야 한다
+   (2026-08-24). 페이지 안에서는 종전대로 .rg 쪽 정의가 이긴다. */
+.rg,
+html.rg-theme {
   --rgbg: #150a0e;
   --rgcard: #211218;
   --rgline: #3c2129;
@@ -12294,6 +12283,13 @@ html.dark.rg-theme.rg6 .site-header {
   --rgupbg: #2b1016;
   --rgcrim: #c23b4e;
   --rggold: #c9a35c;
+}
+.rg {
+  /* CLS 방지 (실측 2026-08-02): 프리렌더 HTML의 rogue 섹션은 178px짜리 토막이라 footer가
+     첫 화면(top 541)에 보였다가, 하이드레이션이 본문(1,265px+)을 채우는 순간 통째로 밀려났다
+     — 느린 폰에선 그 순간이 ~9초 뒤라 CLS 0.26(Poor)로 집계됐다. 섹션 최소 높이를 화면만큼
+     잡아 footer를 처음부터 접힘 아래로 내리면, 내용이 자라도 보이는 것은 아무것도 안 움직인다. */
+  min-height: 100vh;
   padding: 34px clamp(22px, 5vw, 76px) 60px;
   color: var(--rgink);
 }
@@ -13829,12 +13825,14 @@ html.dark.rg-theme.rg6 .site-header {
   }
 }
 /* 기록 원문 모달 — 읽기 전용 좁은 판 */
-.rg-recmodal {
+/* ⚠ .rg-modal 기본 규칙(max-width:980)이 이 줄보다 **뒤에** 나오므로 복합 선택자로 이겨야
+   한다 — 종전엔 단일 클래스라 조용히 980px로 떠 있었다 (2026-08-24 공통 창 이관 중 발견) */
+.rg-modal.rg-recmodal {
   max-width: 640px;
 }
 .rg-rec-body {
-  padding: 4px 18px 18px;
-  overflow-y: auto;
+  /* 여백·스크롤은 창 본문(.mw-body)이 맡는다 — 여기서 또 주면 두 겹이 된다 (2026-08-24) */
+  padding: 0;
 }
 .rg-rec-body p {
   margin: 0 0 0.9em;
@@ -13945,28 +13943,11 @@ button.rg-visitor-scene-row:hover {
 }
 
 /* 스테이지 모달 */
-.rg-modal-back {
-  position: fixed;
-  inset: 0;
-  background: #0b0508d9;
-  z-index: 80;
-  display: grid;
-  /* ⚠ place-items:center로 두면 내용이 화면보다 클 때 **위쪽이 잘려 스크롤로도 못 본다**.
-     start 정렬 + 자식 margin auto가 표준 회피법 — 짧으면 가운데, 길면 위에서부터. */
-  justify-items: center;
-  align-items: start;
-  padding: 20px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  /* 스크롤바가 생겼다 사라져도 가운데 정렬이 흔들리지 않게 자리를 미리 비운다
-     (공통 모달 .modal-backdrop과 같은 이유) */
-  scrollbar-gutter: stable;
-}
-.rg-modal-back > .rg-modal {
-  margin: auto 0;
-}
-.rg-modal-back.stack {
-  z-index: 90;
+/* 록라 모달의 전용 백드롭(.rg-modal-back)은 2026-08-24에 사라졌다 — 전부 공용 창
+   (ModalWindow)으로 옮겨서 백드롭·스크롤·겹침(z)·Esc를 .mw-backdrop이 맡는다.
+   남은 건 색뿐이다: 록라는 사이트 공통 백드롭(#111719ec)보다 더 어둡고 테마 색이 돈다.
+   토픽별 색은 위 스킨 블록에서 같은 선택자로 덮는다. */
+html.rg-theme .mw-backdrop:has(> .rg-modal) {
   background: #0b0508e6;
 }
 .rg-enemy-face.lg {
@@ -14087,19 +14068,39 @@ button.rg-visitor-scene-row:hover {
   background: var(--rgmodal);
   border: 1px solid var(--rgmodalline);
   color: var(--rgink);
+  /* 공용 창(.mw-window) 위에 올라가는 록라 색·규격 (2026-08-24 이관).
+     ⚠ display는 건드리지 않는다 — .mw-window의 flex 컬럼(크롬 바 + .mw-body)이 배치를 잡는다.
+     높이·여백 규약은 .operator-modal과 같다: 패널이 뷰포트를 넘지 않게 max-height를 잡고
+     스크롤은 .mw-body가 맡는다 (백드롭 스크롤 시절의 떨림·비대칭 패딩 문제가 여기서도 없다). */
   max-width: 980px;
   width: 100%;
-  /* 스크롤은 **백드롭이 맡는다** — 공통 모달(.modal-backdrop)과 같은 규약.
-     종전에는 패널 자신이 스크롤 컨테이너(max-height:84vh + overflow-y:auto)여서
-     ① 클래식 스크롤바 환경에서 스크롤바 등장→폭 축소→카드 재배치→스크롤바 소멸이
-        무한 진동했고(사용자 제보 2026-08-16: 3층 맵 호버 시 떨림),
-     ② 그걸 막으려 넣은 scrollbar-gutter:stable이 패널 **안쪽 오른쪽**을 차지해
-        스크롤이 없는 모달에서도 오른쪽만 17px 넓어 보였다 — 닫기 버튼 옆 빈칸
-        (사용자 지적 2026-08-23).
-     패널에 스크롤바가 아예 생기지 않으므로 폭이 변할 일이 없어 ①도 함께 사라지고,
-     좌우 패딩은 언제나 대칭이다. */
-  padding: 20px 22px;
+  --modal-top: clamp(10px, 4svh, 40px);
+  max-height: min(880px, 100svh - var(--modal-pad, 24px) * 2 - var(--modal-top));
+  margin: var(--modal-top) auto auto;
+  overflow: hidden;
   box-shadow: 0 8px 48px #000c;
+}
+/* 본문 여백 — 종전 패널 패딩(20px 22px)을 그대로 창 본문으로 옮겼다.
+   .mw-window를 함께 쓴 (0,3,0) 선택자라 .mw-body의 기본값·:has() 예외보다 뒤에 온다. */
+.mw-window.rg-modal .mw-body {
+  padding: 20px 22px;
+}
+/* 창 크롬은 사이트 공통 색(--line/--muted)이라 록라의 어두운 판 위에서 안 보인다 */
+.mw-window.rg-modal .mw-chrome {
+  border-bottom-color: var(--rgline);
+}
+.mw-window.rg-modal .mw-title {
+  color: var(--rgtext2);
+}
+.mw-window.rg-modal .mw-close,
+.mw-window.rg-modal .mw-pin {
+  color: var(--rgink);
+}
+.mw-window.rg-modal .mw-close:hover {
+  color: #fff;
+}
+.mw-window.rg-modal .mw-pin.on {
+  background: var(--rgsel);
 }
 .rg-modal-head {
   display: flex;
@@ -14856,11 +14857,12 @@ main.site-main > .site-header {
 /* ── 보유 리스트는 '떠 있는 창' (사용자 지시 2026-07-29) ──────────────────
    모달이 아니다: 백드롭을 렌더하지 않으므로 바깥 클릭으로 닫히지 않고 뒤를 덮지도 않는다.
    담으면서 가이드를 계속 보라는 창이라 화면을 막으면 목적이 사라진다.
-   z-index 150 = 사이트의 모든 모달(.modal-backdrop 100 · .term-backdrop 110 ·
-   .rg-modal-back 80/90 · 그 외 최대 140)보다 위. 연결 상태 토스트(10000)만 더 위다. */
+   z-index 9000 = 공용 창(ModalWindow)보다 위. 공용 창은 z 200에서 시작해 창을 열 때마다
+   1씩 올라가므로(zTop) 종전의 150으로는 모달 몇 개만 열려도 밑에 깔린다 (2026-08-24
+   록라 모달 공통화). 연결 상태 토스트(10000)만 더 위다. */
 .rg-invmodal {
   position: fixed;
-  z-index: 150;
+  z-index: 9000;
   width: min(420px, calc(100vw - 16px));
   max-width: none;
   height: min(62vh, calc(100vh - 16px));
@@ -14980,9 +14982,6 @@ main.site-main > .site-header {
   font-size: 8.5px;
 }
 /* 효과 총합 모달 — 떠 있는 보유 창(150)보다 위 */
-.rg-effback {
-  z-index: 160;
-}
 .rg-effmodal {
   max-width: 640px;
 }

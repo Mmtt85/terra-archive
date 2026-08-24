@@ -28,6 +28,7 @@ import { useBridgeWatch, noteBridge, bridgeLock, logBridgeEvent, memoBridgeScene
 import { BridgeTopicButton } from "./lens/bridge-button";
 import { useDropWatch } from "./lens/dropwatch";
 import { asset } from "./assets";
+import { ModalWindow } from "./modal-window";
 import { StageRouteMap, enemyRouteColor, type StageRoutes } from "./stage-route-map";
 
 // 전투 노드 적 이동 경로 (scripts/build-rogue-routes.py) — 작전 도감과 같은 렌더러를
@@ -122,6 +123,8 @@ function setActiveData(d: RogueData) { data = d; }
 function Nm({ name, cn }: { name: string; cn?: string }) {
   return cn ? <><span lang="zh">{cn}</span><span className="rg-sub">{name}</span></> : <>{name}</>;
 }
+/** 창 제목(문자열)용 한 줄 이름 — Nm과 같은 규칙(중국어 원문이 대표, 번역이 뒤) */
+const nmText = (name: string, cn?: string) => (cn ? `${cn} ${name}` : name);
 
 // 우연한 만남 선택지 노드 — 계단식 트리로 렌더. 선택 → (결과 서사) → 이어지는 하위 선택지.
 // cn 병기 룰: 중국어(rogue_6)가 대표, 한국어 번역이 뒤 (Nm과 동일).
@@ -338,10 +341,11 @@ function StatRow({ e, grade, ctx }: { e: Enemy; grade: number; ctx: StatCtx }) {
 
 // ── 스테이지 상세 모달 — 일반/긴급이 같은 맵을 공유하므로 페어로 받아 탭 전환 ──
 export type StagePair = { n: Stage; e?: Stage; init?: "n" | "e" };   // init — 렌즈가 긴급 화면을 인식하면 "e"
-function StageModal({ pair, grade, onClose, onOpenEnemy, stack }: {
+function StageModal({ pair, grade, onClose, onOpenEnemy }: {
   pair: StagePair; grade: number; onClose: () => void; onOpenEnemy: (key: string, ctx: StatCtx) => void;
-  stack?: boolean;   // 조우 모달 위에 겹쳐 뜰 때 — z-index를 stack층(90)으로 올린다
 }) {
+  // 겹쳐 뜰 때의 앞뒤는 공용 창(ModalWindow)의 z 카운터가 맡는다 — 종전엔 stack 플래그로
+  // 백드롭 z를 80↔90으로 올렸다 (2026-08-24 공통 모달 이관).
   const { t } = useI18n();
   const [mode, setMode] = useState<"n" | "e">(pair.init === "e" && pair.e ? "e" : "n");
   const [mapZoom, setMapZoom] = useState(false); // 미리보기 클릭 → 2배 확대, 축소는 아무 곳이나 클릭
@@ -384,112 +388,109 @@ function StageModal({ pair, grade, onClose, onOpenEnemy, stack }: {
     return next;
   });
   return (
-    <div className={`rg-modal-back${stack ? " stack" : ""}`} onClick={onClose} role="presentation">
-      <div className="rg-modal" role="dialog" aria-modal onClick={(e) => e.stopPropagation()}>
-        <header className="rg-modal-head">
-          <div>
-            <span className={`rg-kind k-${stage.kind}`}>{t(KIND_LABEL[stage.kind] ?? stage.kind)}</span>
-            <h3><NodeIco id={KIND_NODE[stage.kind]} cls="rg-modal-ico" /><span className="rg-modal-title"><Nm name={stage.name} cn={stage.cn} /></span></h3>
-            {stage.zone != null && <span className="rg-modal-zone">{t("{n}층", { n: stage.zone })}</span>}
+    <ModalWindow label={nmText(stage.name, stage.cn)} className="rg-modal" onClose={onClose}>
+      <header className="rg-modal-head">
+        <div>
+          <span className={`rg-kind k-${stage.kind}`}>{t(KIND_LABEL[stage.kind] ?? stage.kind)}</span>
+          <h3><NodeIco id={KIND_NODE[stage.kind]} cls="rg-modal-ico" /><span className="rg-modal-title"><Nm name={stage.name} cn={stage.cn} /></span></h3>
+          {stage.zone != null && <span className="rg-modal-zone">{t("{n}층", { n: stage.zone })}</span>}
+        </div>
+        {/* 일반/긴급 탭은 모달 오른쪽 위 — 작전 도감의 환경 탭과 같은 자리 (사용자 지시 2026-08-10) */}
+        {pair.e && (
+          <div className="rg-modal-modes in-head" role="tablist" aria-label={t("작전 모드")}>
+            <button type="button" role="tab" aria-selected={mode === "n"} className={mode === "n" ? "on" : ""} onClick={() => setMode("n")}>{t("일반 작전")}</button>
+            <button type="button" role="tab" aria-selected={mode === "e"} className={`emg${mode === "e" ? " on" : ""}`} onClick={() => setMode("e")}>{t("긴급 작전")}</button>
           </div>
-          {/* 일반/긴급 탭은 모달 오른쪽 위 — 작전 도감의 환경 탭과 같은 자리 (사용자 지시 2026-08-10) */}
-          {pair.e && (
-            <div className="rg-modal-modes in-head" role="tablist" aria-label={t("작전 모드")}>
-              <button type="button" role="tab" aria-selected={mode === "n"} className={mode === "n" ? "on" : ""} onClick={() => setMode("n")}>{t("일반 작전")}</button>
-              <button type="button" role="tab" aria-selected={mode === "e"} className={`emg${mode === "e" ? " on" : ""}`} onClick={() => setMode("e")}>{t("긴급 작전")}</button>
+        )}
+      </header>
+      <div className="rg-modal-cols">
+        <div className="rg-modal-left">
+          {stage.map && (
+            <div className="rg-modal-modes rg-maptabs" role="tablist" aria-label={t("도면 보기")}>
+              <button type="button" role="tab" aria-selected={mapView === "map"}
+                className={mapView === "map" ? "on" : ""} onClick={() => setMapView("map")}>{t("실사 도면")}</button>
+              <button type="button" role="tab" aria-selected={mapView === "route"}
+                className={mapView === "route" ? "on" : ""}
+                onClick={() => {
+                  setMapView("route");
+                  if (!ROUTES_CACHE) loadRogueRoutes().then(() => bumpRoutes((k) => k + 1)).catch(() => { ROUTES_LOADING = null; bumpRoutes((k) => k + 1); });
+                }}>{t("이동 경로")}{isNewFeature("route-map") && <span className="new-badge">{t("새기능")}</span>}</button>
             </div>
           )}
-          <button type="button" className="rg-modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
-        </header>
-        <div className="rg-modal-cols">
-          <div className="rg-modal-left">
-            {stage.map && (
-              <div className="rg-modal-modes rg-maptabs" role="tablist" aria-label={t("도면 보기")}>
-                <button type="button" role="tab" aria-selected={mapView === "map"}
-                  className={mapView === "map" ? "on" : ""} onClick={() => setMapView("map")}>{t("실사 도면")}</button>
-                <button type="button" role="tab" aria-selected={mapView === "route"}
-                  className={mapView === "route" ? "on" : ""}
-                  onClick={() => {
-                    setMapView("route");
-                    if (!ROUTES_CACHE) loadRogueRoutes().then(() => bumpRoutes((k) => k + 1)).catch(() => { ROUTES_LOADING = null; bumpRoutes((k) => k + 1); });
-                  }}>{t("이동 경로")}{isNewFeature("route-map") && <span className="new-badge">{t("새기능")}</span>}</button>
-              </div>
-            )}
-            {mapView === "route" ? (rd ? (
-              // 호버 중이면 그 적만, 아니면 고정된 적들의 합집합 — 고정 조작은 오른쪽
-              // 적 셀이 맡는다 (셀 클릭 = 고정, 셀 속 섬네일 클릭 = 적 상세 모달)
-              <StageRouteMap data={rd} order={routeOrder}
-                highlights={hover ? [hover] : pinned.size ? [...pinned] : null}
-                imgOf={(k2) => { const e2 = data.enemies[k2]; return e2?.img ? asset(`/rogue/enemy/${e2.img}.webp`) : undefined; }}
-                nameOf={(k2) => data.enemies[k2]?.name}
-                onPick={togglePin} />
-            ) : (
-              <p className="rg-modal-desc">{ROUTES_CACHE ? t("이 작전은 경로 데이터가 없습니다.") : t("경로 데이터를 불러오는 중…")}</p>
-            )) : stage.map && (
-              <button type="button" className={`rg-map-zoom${mapZoom ? " zoom" : ""}`}
-                onClick={() => setMapZoom((z) => !z)}
-                title={mapZoom ? t("아무 곳이나 클릭하면 원래 크기로 돌아갑니다") : t("클릭하면 2배로 확대됩니다")}>
-                <img className="rg-modal-map" src={asset(`/rogue/map/${stage.map}.webp`)} alt={t("전장 미니맵")} loading="lazy" decoding="async" />
-              </button>
-            )}
-            {stage.desc && <p className="rg-modal-desc">{stage.desc}</p>}
-            {stage.eliteDesc && <p className="rg-modal-elite">⚠ {stage.eliteDesc}</p>}
-            {isEmg && (mul.atk || mul.max_hp || mul.def) && (
-              <p className="rg-modal-elite">
-                {t("긴급 배율")}: {mul.atk ? `${t("공격")} ×${mul.atk} ` : ""}{mul.def ? `${t("방어")} ×${mul.def} ` : ""}{mul.max_hp ? `HP ×${mul.max_hp}` : ""}
-              </p>
-            )}
-            {isEmg && (stage.emg?.per ?? []).map((p, i) => (
-              <p key={i} className="rg-modal-elite">
-                {t("특정 적 강화")} ({p.keys.map((k) => data.enemies[k]?.name ?? k).join(", ")}):
-                {p.mul.atk ? ` ${t("공격")} ×${p.mul.atk}` : ""}{p.mul.def ? ` ${t("방어")} ×${p.mul.def}` : ""}{p.mul.max_hp ? ` HP ×${p.mul.max_hp}` : ""}
-              </p>
-            ))}
-            {isEmg && stage.emg?.replace && Object.keys(stage.emg.replace).length > 0 && (
-              <p className="rg-modal-elite">
-                {t("긴급 시 적 교체")}: {Object.entries(stage.emg.replace).map(([f, to]) =>
-                  `${data.enemies[f]?.name ?? f} → ${data.enemies[to]?.name ?? to}`).join(" · ")}
-              </p>
-            )}
-          </div>
-          <div className="rg-modal-enemies">
-          {/* 리더 → 정예 → 일반 → 공통 특수몹 순으로 정렬 (사용자 확정 2026-07-18).
-              전 테마 공통 특수몹은 데이터에 판별 플래그가 없어 이름 하드코딩 */}
-          {sorted.map((se) => {
-            // 긴급 모드에선 교체 룬(level_enemy_replace)이 적용된 변종으로 표시
-            const key = isEmg ? (stage.emg?.replace?.[se.key] ?? se.key) : se.key;
-            const e = data.enemies[key];
-            if (!e) return null;
-            // 경로 모드 (작전 도감과 동일 조작): 셀 클릭 = 경로 고정 토글, 호버 = 그 적만
-            // 강조, **섬네일 클릭 = 항상 적 상세 모달** (stopPropagation으로 고정과 분리)
-            const pinColor = rd && rd.e[se.key]?.length ? enemyRouteColor(routeOrder, se.key) : undefined;
-            const routeMode = !!rd && !!pinColor;
-            return (
-              <button type="button" key={se.key}
-                className={`rg-enemy-cell${pinned.has(se.key) ? " pinned" : ""}${routeMode ? " has-route" : ""}`}
-                style={pinColor ? ({ "--rc": pinColor } as React.CSSProperties) : undefined}
-                onMouseEnter={rd ? () => setHover(se.key) : undefined}
-                onMouseLeave={rd ? () => setHover(null) : undefined}
-                onClick={() => { if (routeMode) togglePin(se.key); else onOpenEnemy(key, { ...ctx, enemyKey: key }); }}>
-                {e.img ? <img className="rg-enemy-face" src={asset(`/rogue/enemy/${e.img}.webp`)} alt="" aria-hidden width={158} height={158} loading="lazy" decoding="async"
-                  onClick={(ev) => {
-                    if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
-                    ev.stopPropagation(); onOpenEnemy(key, { ...ctx, enemyKey: key });
-                  }} />
-                  : <span className="rg-enemy-face none" aria-hidden>?</span>}
-                <span className="rg-enemy-cell-head">
-                  <span className={`rg-rank r-${e.rank ?? "NORMAL"}`}>{t(RANK_KO[e.rank ?? ""] ?? "일반")}</span>
-                  {se.cnt > 0 && <span className="rg-enemy-cnt">×{se.cnt}</span>}
-                </span>
-                <span className="rg-enemy-name"><Nm name={e.name} cn={e.cn} /></span>
-                <StatRow e={e} grade={grade} ctx={{ ...ctx, enemyKey: key }} />
-              </button>
-            );
-          })}
-          </div>
+          {mapView === "route" ? (rd ? (
+            // 호버 중이면 그 적만, 아니면 고정된 적들의 합집합 — 고정 조작은 오른쪽
+            // 적 셀이 맡는다 (셀 클릭 = 고정, 셀 속 섬네일 클릭 = 적 상세 모달)
+            <StageRouteMap data={rd} order={routeOrder}
+              highlights={hover ? [hover] : pinned.size ? [...pinned] : null}
+              imgOf={(k2) => { const e2 = data.enemies[k2]; return e2?.img ? asset(`/rogue/enemy/${e2.img}.webp`) : undefined; }}
+              nameOf={(k2) => data.enemies[k2]?.name}
+              onPick={togglePin} />
+          ) : (
+            <p className="rg-modal-desc">{ROUTES_CACHE ? t("이 작전은 경로 데이터가 없습니다.") : t("경로 데이터를 불러오는 중…")}</p>
+          )) : stage.map && (
+            <button type="button" className={`rg-map-zoom${mapZoom ? " zoom" : ""}`}
+              onClick={() => setMapZoom((z) => !z)}
+              title={mapZoom ? t("아무 곳이나 클릭하면 원래 크기로 돌아갑니다") : t("클릭하면 2배로 확대됩니다")}>
+              <img className="rg-modal-map" src={asset(`/rogue/map/${stage.map}.webp`)} alt={t("전장 미니맵")} loading="lazy" decoding="async" />
+            </button>
+          )}
+          {stage.desc && <p className="rg-modal-desc">{stage.desc}</p>}
+          {stage.eliteDesc && <p className="rg-modal-elite">⚠ {stage.eliteDesc}</p>}
+          {isEmg && (mul.atk || mul.max_hp || mul.def) && (
+            <p className="rg-modal-elite">
+              {t("긴급 배율")}: {mul.atk ? `${t("공격")} ×${mul.atk} ` : ""}{mul.def ? `${t("방어")} ×${mul.def} ` : ""}{mul.max_hp ? `HP ×${mul.max_hp}` : ""}
+            </p>
+          )}
+          {isEmg && (stage.emg?.per ?? []).map((p, i) => (
+            <p key={i} className="rg-modal-elite">
+              {t("특정 적 강화")} ({p.keys.map((k) => data.enemies[k]?.name ?? k).join(", ")}):
+              {p.mul.atk ? ` ${t("공격")} ×${p.mul.atk}` : ""}{p.mul.def ? ` ${t("방어")} ×${p.mul.def}` : ""}{p.mul.max_hp ? ` HP ×${p.mul.max_hp}` : ""}
+            </p>
+          ))}
+          {isEmg && stage.emg?.replace && Object.keys(stage.emg.replace).length > 0 && (
+            <p className="rg-modal-elite">
+              {t("긴급 시 적 교체")}: {Object.entries(stage.emg.replace).map(([f, to]) =>
+                `${data.enemies[f]?.name ?? f} → ${data.enemies[to]?.name ?? to}`).join(" · ")}
+            </p>
+          )}
+        </div>
+        <div className="rg-modal-enemies">
+        {/* 리더 → 정예 → 일반 → 공통 특수몹 순으로 정렬 (사용자 확정 2026-07-18).
+            전 테마 공통 특수몹은 데이터에 판별 플래그가 없어 이름 하드코딩 */}
+        {sorted.map((se) => {
+          // 긴급 모드에선 교체 룬(level_enemy_replace)이 적용된 변종으로 표시
+          const key = isEmg ? (stage.emg?.replace?.[se.key] ?? se.key) : se.key;
+          const e = data.enemies[key];
+          if (!e) return null;
+          // 경로 모드 (작전 도감과 동일 조작): 셀 클릭 = 경로 고정 토글, 호버 = 그 적만
+          // 강조, **섬네일 클릭 = 항상 적 상세 모달** (stopPropagation으로 고정과 분리)
+          const pinColor = rd && rd.e[se.key]?.length ? enemyRouteColor(routeOrder, se.key) : undefined;
+          const routeMode = !!rd && !!pinColor;
+          return (
+            <button type="button" key={se.key}
+              className={`rg-enemy-cell${pinned.has(se.key) ? " pinned" : ""}${routeMode ? " has-route" : ""}`}
+              style={pinColor ? ({ "--rc": pinColor } as React.CSSProperties) : undefined}
+              onMouseEnter={rd ? () => setHover(se.key) : undefined}
+              onMouseLeave={rd ? () => setHover(null) : undefined}
+              onClick={() => { if (routeMode) togglePin(se.key); else onOpenEnemy(key, { ...ctx, enemyKey: key }); }}>
+              {e.img ? <img className="rg-enemy-face" src={asset(`/rogue/enemy/${e.img}.webp`)} alt="" aria-hidden width={158} height={158} loading="lazy" decoding="async"
+                onClick={(ev) => {
+                  if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
+                  ev.stopPropagation(); onOpenEnemy(key, { ...ctx, enemyKey: key });
+                }} />
+                : <span className="rg-enemy-face none" aria-hidden>?</span>}
+              <span className="rg-enemy-cell-head">
+                <span className={`rg-rank r-${e.rank ?? "NORMAL"}`}>{t(RANK_KO[e.rank ?? ""] ?? "일반")}</span>
+                {se.cnt > 0 && <span className="rg-enemy-cnt">×{se.cnt}</span>}
+              </span>
+              <span className="rg-enemy-name"><Nm name={e.name} cn={e.cn} /></span>
+              <StatRow e={e} grade={grade} ctx={{ ...ctx, enemyKey: key }} />
+            </button>
+          );
+        })}
         </div>
       </div>
-    </div>
+    </ModalWindow>
   );
 }
 
@@ -556,63 +557,55 @@ function EnemyModal({ ekey, grade, ctx, onClose, onOpenStage, appear }: {
 }) {
   const { t } = useI18n();
   const e = data.enemies[ekey];
-  useEffect(() => {
-    const onKey = (ev: KeyboardEvent) => { if (ev.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
   if (!e) return null;
   return (
-    <div className="rg-modal-back stack" onClick={onClose} role="presentation">
-      <div className="rg-modal rg-emodal" role="dialog" aria-modal onClick={(ev) => ev.stopPropagation()}>
-        <header className="rg-modal-head">
-          <div>
-            <span className={`rg-rank r-${e.rank ?? "NORMAL"}`}>{t(RANK_KO[e.rank ?? ""] ?? "일반")}</span>
-            <h3><Nm name={e.name} cn={e.cn} /></h3>
-            {e.index && <span className="rg-modal-zone">{e.index}</span>}
-          </div>
-          <button type="button" className="rg-modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
-        </header>
-        {/* 초상은 원본 해상도(158px) 그대로 크게 — 작은 헤더 아이콘 대신 (피드백 반영 2026-07-18) */}
-        <div className="rg-emodal-cols">
-          {e.img ? <img className="rg-emodal-portrait" src={asset(`/rogue/enemy/${e.img}.webp`)} alt="" aria-hidden width={158} height={158} loading="lazy" decoding="async" />
-            : <span className="rg-emodal-portrait none" aria-hidden>?</span>}
-          <div className="rg-emodal-main">
-            {e.attack && <p className="rg-emodal-row"><strong>{t("공격 방식")}</strong> {e.attack}</p>}
-            {e.desc && <p className="rg-emodal-desc">{e.desc}</p>}
-            {e.ability && <p className="rg-emodal-ability">{e.ability}</p>}
-            {e.immune && e.immune.length > 0 && (
-              <p className="rg-emodal-immune"><strong>{t("상태이상 면역")}</strong>
-                {e.immune.map((im) => <span key={im} className="rg-immune-chip">{t(im)}</span>)}
-              </p>
-            )}
-          </div>
+    <ModalWindow label={nmText(e.name, e.cn)} className="rg-modal rg-emodal" onClose={onClose}>
+      <header className="rg-modal-head">
+        <div>
+          <span className={`rg-rank r-${e.rank ?? "NORMAL"}`}>{t(RANK_KO[e.rank ?? ""] ?? "일반")}</span>
+          <h3><Nm name={e.name} cn={e.cn} /></h3>
+          {e.index && <span className="rg-modal-zone">{e.index}</span>}
         </div>
-        {/* 연 곳(노드 상세/도감)의 배율 컨텍스트를 그대로 물려받아 표시 — 수치 불일치 방지 */}
-        {ctx.emg && <p className="rg-ctx-note">{t("긴급 작전 배율이 반영된 수치입니다.")}</p>}
-        {!ctx.emg && ctx.emergencyOrBoss && grade >= 10 && <p className="rg-ctx-note">{t("난이도 10 이상 험난한 길·긴급 작전 배율(공격·HP ×1.15)이 반영된 수치입니다.")}</p>}
-        <StatRow e={e} grade={grade} ctx={{ ...ctx, enemyKey: ekey }} />
-        <div className="rg-stats sub">
-          <span className="rg-stat">{t("공속")} {e.aspd}</span>
-          <span className="rg-stat">{t("이속")} {e.ms}</span>
-          <span className="rg-stat">{t("무게")} {e.weight}</span>
-          <span className="rg-stat">{t("침투 피해")} {e.lifePoint}</span>
+      </header>
+      {/* 초상은 원본 해상도(158px) 그대로 크게 — 작은 헤더 아이콘 대신 (피드백 반영 2026-07-18) */}
+      <div className="rg-emodal-cols">
+        {e.img ? <img className="rg-emodal-portrait" src={asset(`/rogue/enemy/${e.img}.webp`)} alt="" aria-hidden width={158} height={158} loading="lazy" decoding="async" />
+          : <span className="rg-emodal-portrait none" aria-hidden>?</span>}
+        <div className="rg-emodal-main">
+          {e.attack && <p className="rg-emodal-row"><strong>{t("공격 방식")}</strong> {e.attack}</p>}
+          {e.desc && <p className="rg-emodal-desc">{e.desc}</p>}
+          {e.ability && <p className="rg-emodal-ability">{e.ability}</p>}
+          {e.immune && e.immune.length > 0 && (
+            <p className="rg-emodal-immune"><strong>{t("상태이상 면역")}</strong>
+              {e.immune.map((im) => <span key={im} className="rg-immune-chip">{t(im)}</span>)}
+            </p>
+          )}
         </div>
-        {appear.length > 0 && (
-          <div className="rg-appear">
-            <strong>{t("등장 노드")}</strong>
-            <div className="rg-chips">
-              {appear.map((s) => (
-                <button key={s.id} type="button" className={`rg-chip${s.kind === "boss" ? " boss" : ""}`}
-                  onClick={() => onOpenStage(s)}>
-                  {s.zone != null ? `${s.zone}F ` : ""}<Nm name={s.name} cn={s.cn} />
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
-    </div>
+      {/* 연 곳(노드 상세/도감)의 배율 컨텍스트를 그대로 물려받아 표시 — 수치 불일치 방지 */}
+      {ctx.emg && <p className="rg-ctx-note">{t("긴급 작전 배율이 반영된 수치입니다.")}</p>}
+      {!ctx.emg && ctx.emergencyOrBoss && grade >= 10 && <p className="rg-ctx-note">{t("난이도 10 이상 험난한 길·긴급 작전 배율(공격·HP ×1.15)이 반영된 수치입니다.")}</p>}
+      <StatRow e={e} grade={grade} ctx={{ ...ctx, enemyKey: ekey }} />
+      <div className="rg-stats sub">
+        <span className="rg-stat">{t("공속")} {e.aspd}</span>
+        <span className="rg-stat">{t("이속")} {e.ms}</span>
+        <span className="rg-stat">{t("무게")} {e.weight}</span>
+        <span className="rg-stat">{t("침투 피해")} {e.lifePoint}</span>
+      </div>
+      {appear.length > 0 && (
+        <div className="rg-appear">
+          <strong>{t("등장 노드")}</strong>
+          <div className="rg-chips">
+            {appear.map((s) => (
+              <button key={s.id} type="button" className={`rg-chip${s.kind === "boss" ? " boss" : ""}`}
+                onClick={() => onOpenStage(s)}>
+                {s.zone != null ? `${s.zone}F ` : ""}<Nm name={s.name} cn={s.cn} />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </ModalWindow>
   );
 }
 
@@ -636,29 +629,21 @@ function RecordModal({ rid, title, sub, onClose }: { rid: string; title: string;
       .catch(() => { if (alive) setErr(true); });
     return () => { alive = false; };
   }, [rid, locale]);
-  useEffect(() => {
-    const onKey = (ev: KeyboardEvent) => { if (ev.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
   return (
-    <div className="rg-modal-back stack" onClick={onClose} role="presentation">
-      <div className="rg-modal rg-recmodal" role="dialog" aria-modal onClick={(ev) => ev.stopPropagation()}>
-        <header className="rg-modal-head">
-          <div>
-            <span className="rg-kind">{t("기록")}</span>
-            <h3><span className="rg-modal-title">{title}</span></h3>
-            {sub && <span className="rg-modal-zone">{sub}</span>}
-          </div>
-          <button type="button" className="rg-modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
-        </header>
-        <div className="rg-rec-body" lang={zh ? "zh" : undefined}>
-          {err ? <p className="rg-rec-status">{t("기록을 불러오지 못했습니다.")}</p>
-            : paras === null ? <p className="rg-rec-status">{t("기록 불러오는 중…")}</p>
-              : paras.map((p, i) => <p key={i}>{p}</p>)}
+    <ModalWindow label={title} className="rg-modal rg-recmodal" onClose={onClose}>
+      <header className="rg-modal-head">
+        <div>
+          <span className="rg-kind">{t("기록")}</span>
+          <h3><span className="rg-modal-title">{title}</span></h3>
+          {sub && <span className="rg-modal-zone">{sub}</span>}
         </div>
+      </header>
+      <div className="rg-rec-body" lang={zh ? "zh" : undefined}>
+        {err ? <p className="rg-rec-status">{t("기록을 불러오지 못했습니다.")}</p>
+          : paras === null ? <p className="rg-rec-status">{t("기록 불러오는 중…")}</p>
+            : paras.map((p, i) => <p key={i}>{p}</p>)}
       </div>
-    </div>
+    </ModalWindow>
   );
 }
 
@@ -670,57 +655,49 @@ function EncounterModal({ enc, onClose, link, battles, onOpenStage }: {
   // battlesRandom: 전투 선택지는 있지만 고정 맵이 없는 조우 — '힘든 전투 직면' 류는
   // 그 층의 일반 전투 맵에서 무작위로 벌어진다 (사용자 지시 2026-08-16 "랜덤전투라고 적어줘")
   const { t } = useI18n();
-  useEffect(() => {
-    const onKey = (ev: KeyboardEvent) => { if (ev.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
   return (
-    <div className="rg-modal-back stack" onClick={onClose} role="presentation">
-      <div className="rg-modal" role="dialog" aria-modal onClick={(ev) => ev.stopPropagation()}>
-        <header className="rg-modal-head">
-          <div>
-            <span className="rg-kind">{t("우연한 만남")}</span>
-            <h3><NodeIco id="INCIDENT" cls="rg-modal-ico" /><span className="rg-modal-title"><Nm name={enc.title} cn={enc.cn} /></span></h3>
-            {enc.floors && <span className="rg-modal-zone">{enc.floors.join("·")}{t("층")}</span>}
-          </div>
-          <button type="button" className="rg-modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
-        </header>
-        <div className="rg-modal-cols enc">
-          <div className="rg-modal-left">
-            {enc.bg && <img className="rg-enc-cg modal" src={asset(`/rogue/scene/${enc.bg}.webp`)} alt={enc.title} loading="lazy" decoding="async" />}
-          </div>
-          <div className="rg-enc-body">
-            {enc.desc && <p className="rg-modal-desc">{enc.desc}</p>}
-            {enc.note && <p className="rg-enc-note">{enc.note}</p>}
-            {/* 씬 트리(PRTS 매칭)가 있으면 게임처럼 클릭해 다음 씬을 펼치는 렌더,
-                없으면 기존 평탄 트리. rogue_6은 게임 버튼이 중국어라 원문을 대표로 병기. */}
-            {enc.scenes ? (
-              <SceneChoices scenes={enc.scenes} idx={0} path={[0]} link={link} />
-            ) : (
-              <ul className="rg-enc-choices">
-                {enc.choices.map((c, i) => <ChoiceNode key={i} c={c} link={link} />)}
-              </ul>
-            )}
-            {/* 이 조우에서 전투가 벌어지면 그 맵을 바로 열 수 있게 (사용자 요청 2026-08-16).
-                게임 데이터에 조우↔전투 링크가 없어 수작업 대응표로만 붙는다 — 없으면 안 그린다. */}
-            {battles && battles.length > 0 && onOpenStage ? (
-              <div className="rg-enc-battles">
-                <strong>{t("이 만남의 전투")}</strong>
-                <div className="rg-stage-cards">
-                  {battles.map((p) => <StageCard key={p.n.id} pair={p} onOpen={onOpenStage} />)}
-                </div>
+    <ModalWindow label={nmText(enc.title, enc.cn)} className="rg-modal" onClose={onClose}>
+      <header className="rg-modal-head">
+        <div>
+          <span className="rg-kind">{t("우연한 만남")}</span>
+          <h3><NodeIco id="INCIDENT" cls="rg-modal-ico" /><span className="rg-modal-title"><Nm name={enc.title} cn={enc.cn} /></span></h3>
+          {enc.floors && <span className="rg-modal-zone">{enc.floors.join("·")}{t("층")}</span>}
+        </div>
+      </header>
+      <div className="rg-modal-cols enc">
+        <div className="rg-modal-left">
+          {enc.bg && <img className="rg-enc-cg modal" src={asset(`/rogue/scene/${enc.bg}.webp`)} alt={enc.title} loading="lazy" decoding="async" />}
+        </div>
+        <div className="rg-enc-body">
+          {enc.desc && <p className="rg-modal-desc">{enc.desc}</p>}
+          {enc.note && <p className="rg-enc-note">{enc.note}</p>}
+          {/* 씬 트리(PRTS 매칭)가 있으면 게임처럼 클릭해 다음 씬을 펼치는 렌더,
+              없으면 기존 평탄 트리. rogue_6은 게임 버튼이 중국어라 원문을 대표로 병기. */}
+          {enc.scenes ? (
+            <SceneChoices scenes={enc.scenes} idx={0} path={[0]} link={link} />
+          ) : (
+            <ul className="rg-enc-choices">
+              {enc.choices.map((c, i) => <ChoiceNode key={i} c={c} link={link} />)}
+            </ul>
+          )}
+          {/* 이 조우에서 전투가 벌어지면 그 맵을 바로 열 수 있게 (사용자 요청 2026-08-16).
+              게임 데이터에 조우↔전투 링크가 없어 수작업 대응표로만 붙는다 — 없으면 안 그린다. */}
+          {battles && battles.length > 0 && onOpenStage ? (
+            <div className="rg-enc-battles">
+              <strong>{t("이 만남의 전투")}</strong>
+              <div className="rg-stage-cards">
+                {battles.map((p) => <StageCard key={p.n.id} pair={p} onOpen={onOpenStage} />)}
               </div>
-            ) : enc.battlesRandom ? (
-              <div className="rg-enc-battles">
-                <strong>{t("이 만남의 전투")}</strong>
-                <p className="rg-enc-battles-random">{t("랜덤 전투 — 고정된 전투 맵 없이, 현재 층의 일반 전투 맵 중 하나에서 벌어집니다.")}</p>
-              </div>
-            ) : null}
-          </div>
+            </div>
+          ) : enc.battlesRandom ? (
+            <div className="rg-enc-battles">
+              <strong>{t("이 만남의 전투")}</strong>
+              <p className="rg-enc-battles-random">{t("랜덤 전투 — 고정된 전투 맵 없이, 현재 층의 일반 전투 맵 중 하나에서 벌어집니다.")}</p>
+            </div>
+          ) : null}
         </div>
       </div>
-    </div>
+    </ModalWindow>
   );
 }
 
@@ -730,46 +707,38 @@ function RelicModal({ relic, owned, onToggleOwn, onClose }: {
   relic: InvItem; owned?: boolean; onToggleOwn?: () => void; onClose: () => void;
 }) {
   const { t } = useI18n();
-  useEffect(() => {
-    const onKey = (ev: KeyboardEvent) => { if (ev.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
   return (
-    <div className="rg-modal-back stack" onClick={onClose} role="presentation">
-      <div className="rg-modal rg-rmodal" role="dialog" aria-modal onClick={(ev) => ev.stopPropagation()}>
-        <header className="rg-modal-head">
-          <div>
-            {relic.img && <img className="rg-relic-icon lg" src={asset(`/rogue/relic/${relic.iconId ?? relic.id}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />}
-            {relic.order && <span className="rg-relic-no">{relic.order}</span>}
-            <h3><Nm name={relic.name} cn={relic.cn} /></h3>
-            {(relic.kind || relic.typeName) && <span className="rg-modal-zone">{t((relic.kind ?? relic.typeName)!)}</span>}
+    <ModalWindow label={nmText(relic.name, relic.cn)} className="rg-modal rg-rmodal" onClose={onClose}>
+      <header className="rg-modal-head">
+        <div>
+          {relic.img && <img className="rg-relic-icon lg" src={asset(`/rogue/relic/${relic.iconId ?? relic.id}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />}
+          {relic.order && <span className="rg-relic-no">{relic.order}</span>}
+          <h3><Nm name={relic.name} cn={relic.cn} /></h3>
+          {(relic.kind || relic.typeName) && <span className="rg-modal-zone">{t((relic.kind ?? relic.typeName)!)}</span>}
+        </div>
+      </header>
+      {/* 해당 소장품의 모든 데이터 — 효과·설명·획득 방법 (사용자 확정 2026-07-24).
+          다단계(stages, 붕괴 패러다임)는 단계별 [섬네일+이름+효과+플레이버] 블록으로 */}
+      {relic.stages ? relic.stages.map((s) => (
+        <div key={s.name} className="rg-stage rg-stage-modal">
+          {relic.img && <img className="rg-relic-icon" src={asset(`/rogue/relic/${relic.iconId ?? relic.id}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />}
+          <div className="rg-stage-txt">
+            <h4>{s.name} <em className="rg-stage-lb">{s.label}</em></h4>
+            {s.usage && <p className="rg-relic-usage rg-multiline">{s.usage}</p>}
+            {s.desc && <p className="rg-relic-desc rg-multiline">{s.desc}</p>}
           </div>
-          <button type="button" className="rg-modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
-        </header>
-        {/* 해당 소장품의 모든 데이터 — 효과·설명·획득 방법 (사용자 확정 2026-07-24).
-            다단계(stages, 붕괴 패러다임)는 단계별 [섬네일+이름+효과+플레이버] 블록으로 */}
-        {relic.stages ? relic.stages.map((s) => (
-          <div key={s.name} className="rg-stage rg-stage-modal">
-            {relic.img && <img className="rg-relic-icon" src={asset(`/rogue/relic/${relic.iconId ?? relic.id}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />}
-            <div className="rg-stage-txt">
-              <h4>{s.name} <em className="rg-stage-lb">{s.label}</em></h4>
-              {s.usage && <p className="rg-relic-usage rg-multiline">{s.usage}</p>}
-              {s.desc && <p className="rg-relic-desc rg-multiline">{s.desc}</p>}
-            </div>
-          </div>
-        )) : (<>
-          {relic.usage && <p className="rg-relic-usage rg-multiline">{relic.usage}</p>}
-          {relic.desc && <p className="rg-relic-desc rg-multiline">{relic.desc}</p>}
-        </>)}
-        {relic.obtain && <p className="rg-relic-obtain"><em>{t("획득 방법")}</em> {relic.obtain}</p>}
-        {onToggleOwn && (
-          <button type="button" className={`rg-inv-toggle${owned ? " on" : ""}`} onClick={onToggleOwn}>
-            {owned ? `✓ ${t("보유중 — 누르면 보유 리스트에서 뺍니다")}` : `🎒 ${t("보유 리스트에 추가")}`}
-          </button>
-        )}
-      </div>
-    </div>
+        </div>
+      )) : (<>
+        {relic.usage && <p className="rg-relic-usage rg-multiline">{relic.usage}</p>}
+        {relic.desc && <p className="rg-relic-desc rg-multiline">{relic.desc}</p>}
+      </>)}
+      {relic.obtain && <p className="rg-relic-obtain"><em>{t("획득 방법")}</em> {relic.obtain}</p>}
+      {onToggleOwn && (
+        <button type="button" className={`rg-inv-toggle${owned ? " on" : ""}`} onClick={onToggleOwn}>
+          {owned ? `✓ ${t("보유중 — 누르면 보유 리스트에서 뺍니다")}` : `🎒 ${t("보유 리스트에 추가")}`}
+        </button>
+      )}
+    </ModalWindow>
   );
 }
 
@@ -906,55 +875,52 @@ function EffectTotals({ items, label, onClose }: { items: { eff?: Eff[] }[]; lab
   };
   const nothing = !global.size && !conds.length && !got.size;
   return (
-    <div className="rg-modal-back rg-effback" onClick={onClose} role="presentation">
-      <div className="rg-modal rg-effmodal" role="dialog" aria-modal onClick={(ev) => ev.stopPropagation()}>
-        <header className="rg-modal-head">
-          <div>
-            <h3>Σ {t("효과 총합")}</h3>
-            {/* 몇 개를 더했는지 밝힌다 — 조건부·고유 효과는 합이 없으므로 감추면 거짓말이 된다 */}
-            <span className="rg-modal-zone">{t("{n}개 중 {m}개 합산", { n: items.length, m: items.length - plain })}</span>
-          </div>
-          <button type="button" className="rg-modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
-        </header>
-        {nothing ? (
-          <p className="rg-efftot-none">{t("담아둔 항목에는 더할 수 있는 수치 효과가 없습니다 — 조건부·고유 효과뿐입니다.")}</p>
-        ) : (
-          <>
-            {group(EFF_ALLY, "아군")}
-            {group(EFF_ENEMY, "적군")}
-            {group(EFF_FIELD, "판 수치")}
-            {conds.length > 0 && (
-              <div className="rg-efftot-grp">
-                <h5>{t("조건부")}</h5>
-                {conds.map(([sel, m]) => (
-                  <ul className="rg-efftot-row cond" key={sel}>
-                    <li className="rg-efftot-sel">{selName(sel)}</li>
-                    {EFF_ORDER.filter((k) => m.has(k)).map((k) => chip(k, m.get(k)!))}
-                  </ul>
-                ))}
-              </div>
-            )}
-            {got.size > 0 && (
-              <div className="rg-efftot-grp">
-                <h5>{t("누계 획득")}</h5>
-                <ul className="rg-efftot-row get">
-                  {GET_ORDER.filter((k) => got.has(k)).map((k) => (
-                    <li key={k}><span>{t(GET_LABEL[k])}</span><b>{signed(got.get(k)!, false)}</b></li>
-                  ))}
+    <ModalWindow label={`Σ ${t("효과 총합")}`} className="rg-modal rg-effmodal" onClose={onClose}>
+      <header className="rg-modal-head">
+        <div>
+          <h3>Σ {t("효과 총합")}</h3>
+          {/* 몇 개를 더했는지 밝힌다 — 조건부·고유 효과는 합이 없으므로 감추면 거짓말이 된다 */}
+          <span className="rg-modal-zone">{t("{n}개 중 {m}개 합산", { n: items.length, m: items.length - plain })}</span>
+        </div>
+      </header>
+      {nothing ? (
+        <p className="rg-efftot-none">{t("담아둔 항목에는 더할 수 있는 수치 효과가 없습니다 — 조건부·고유 효과뿐입니다.")}</p>
+      ) : (
+        <>
+          {group(EFF_ALLY, "아군")}
+          {group(EFF_ENEMY, "적군")}
+          {group(EFF_FIELD, "판 수치")}
+          {conds.length > 0 && (
+            <div className="rg-efftot-grp">
+              <h5>{t("조건부")}</h5>
+              {conds.map(([sel, m]) => (
+                <ul className="rg-efftot-row cond" key={sel}>
+                  <li className="rg-efftot-sel">{selName(sel)}</li>
+                  {EFF_ORDER.filter((k) => m.has(k)).map((k) => chip(k, m.get(k)!))}
                 </ul>
-              </div>
-            )}
-          </>
-        )}
-        {/* 합산된 게 하나도 없으면 위 안내가 이미 같은 말을 하므로 겹쳐 적지 않는다 */}
-        {plain > 0 && !nothing && (
-          <p className="rg-efftot-rest">
-            {t("나머지 {n}개는 조건부·고유 효과라 합산 대상이 아닙니다 (카드에서 개별 확인).", { n: plain })}
-          </p>
-        )}
-        <p className="rg-efftot-note">{t("같은 종류의 배율은 더해서, 「받는 대미지」류는 곱해서 적용됩니다. {label} 기준.", { label })}</p>
-      </div>
-    </div>
+              ))}
+            </div>
+          )}
+          {got.size > 0 && (
+            <div className="rg-efftot-grp">
+              <h5>{t("누계 획득")}</h5>
+              <ul className="rg-efftot-row get">
+                {GET_ORDER.filter((k) => got.has(k)).map((k) => (
+                  <li key={k}><span>{t(GET_LABEL[k])}</span><b>{signed(got.get(k)!, false)}</b></li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </>
+      )}
+      {/* 합산된 게 하나도 없으면 위 안내가 이미 같은 말을 하므로 겹쳐 적지 않는다 */}
+      {plain > 0 && !nothing && (
+        <p className="rg-efftot-rest">
+          {t("나머지 {n}개는 조건부·고유 효과라 합산 대상이 아닙니다 (카드에서 개별 확인).", { n: plain })}
+        </p>
+      )}
+      <p className="rg-efftot-note">{t("같은 종류의 배율은 더해서, 「받는 대미지」류는 곱해서 적용됩니다. {label} 기준.", { label })}</p>
+    </ModalWindow>
   );
 }
 
@@ -964,44 +930,36 @@ function ZoneModal({ zone, badge, pairs, bosses, onOpenStage, onClose }: {
   onOpenStage: (p: StagePair) => void; onClose: () => void;
 }) {
   const { t } = useI18n();
-  useEffect(() => {
-    const onKey = (ev: KeyboardEvent) => { if (ev.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
   return (
-    <div className="rg-modal-back" onClick={onClose} role="presentation">
-      <div className="rg-modal rg-zmodal" role="dialog" aria-modal onClick={(ev) => ev.stopPropagation()}>
-        <header className="rg-modal-head">
-          <div>
-            <span className="rg-zone-num">{badge}</span>
-            <h3><Nm name={zone.name} cn={zone.cn} /></h3>
-            {zone.variant && <span className="rg-zone-hidden">{t("변형 구역")}</span>}
-            {zone.hidden && <span className="rg-zone-hidden">{t("히든 층")}</span>}
-            {zone.time && <span className="rg-modal-zone">{zone.time}</span>}
+    <ModalWindow label={nmText(zone.name, zone.cn)} className="rg-modal rg-zmodal" onClose={onClose}>
+      <header className="rg-modal-head">
+        <div>
+          <span className="rg-zone-num">{badge}</span>
+          <h3><Nm name={zone.name} cn={zone.cn} /></h3>
+          {zone.variant && <span className="rg-zone-hidden">{t("변형 구역")}</span>}
+          {zone.hidden && <span className="rg-zone-hidden">{t("히든 층")}</span>}
+          {zone.time && <span className="rg-modal-zone">{zone.time}</span>}
+        </div>
+      </header>
+      <p className="rg-zone-desc">{zone.desc}</p>
+      {zone.buff && <p className="rg-modal-elite">{zone.buff}</p>}
+      {pairs.length > 0 && (
+        <div className="rg-stage-group">
+          <h4>{t("작전")} <em>{pairs.length}</em> <span className="rg-stage-hint">{t("카드를 열면 일반/긴급 탭으로 전환할 수 있습니다")}</span></h4>
+          <div className="rg-stage-cards">
+            {pairs.map((p) => <StageCard key={p.n.id} pair={p} onOpen={onOpenStage} />)}
           </div>
-          <button type="button" className="rg-modal-close" onClick={onClose} aria-label={t("닫기")}>×</button>
-        </header>
-        <p className="rg-zone-desc">{zone.desc}</p>
-        {zone.buff && <p className="rg-modal-elite">{zone.buff}</p>}
-        {pairs.length > 0 && (
-          <div className="rg-stage-group">
-            <h4>{t("작전")} <em>{pairs.length}</em> <span className="rg-stage-hint">{t("카드를 열면 일반/긴급 탭으로 전환할 수 있습니다")}</span></h4>
-            <div className="rg-stage-cards">
-              {pairs.map((p) => <StageCard key={p.n.id} pair={p} onOpen={onOpenStage} />)}
-            </div>
+        </div>
+      )}
+      {bosses.length > 0 && (
+        <div className="rg-stage-group">
+          <h4 className="boss">{t("험난한 길 (보스)")} <em>{bosses.length}</em></h4>
+          <div className="rg-stage-cards">
+            {bosses.map((s) => <StageCard key={s.id} pair={{ n: s }} onOpen={onOpenStage} boss />)}
           </div>
-        )}
-        {bosses.length > 0 && (
-          <div className="rg-stage-group">
-            <h4 className="boss">{t("험난한 길 (보스)")} <em>{bosses.length}</em></h4>
-            <div className="rg-stage-cards">
-              {bosses.map((s) => <StageCard key={s.id} pair={{ n: s }} onOpen={onOpenStage} boss />)}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+        </div>
+      )}
+    </ModalWindow>
   );
 }
 
@@ -2802,7 +2760,7 @@ export default function RogueGuide({ includeFuture, initialTopic }: {
       )}
       {stageOpen && (
         <StageModal key={stageOpen.n.id} pair={stageOpen} grade={grade} onClose={() => setStageOpen(null)}
-          onOpenEnemy={(key, ctx) => setEnemyOpen({ key, ctx })} stack={!!encOpen} />
+          onOpenEnemy={(key, ctx) => setEnemyOpen({ key, ctx })} />
       )}
       {enemyOpen && (
         <EnemyModal ekey={enemyOpen.key} grade={grade} ctx={enemyOpen.ctx} onClose={() => setEnemyOpen(null)}
@@ -2838,6 +2796,9 @@ export default function RogueGuide({ includeFuture, initialTopic }: {
                 <h3>🎒 {t("보유 리스트")}</h3>
                 <span className="rg-modal-zone">{t(TOPICS.find((tp) => tp.id === topic)?.name ?? "")}</span>
               </div>
+              {/* 보유 리스트는 모달이 아니라 상시 떠 있는 창이라 공통 창으로 옮기지 않았다
+                  (위치·크기를 localStorage에 저장하는데 ModalWindow는 그걸 돌려주지 않는다) —
+                  자체 닫기 버튼도 그대로 둔다 */}
               <button type="button" className="rg-modal-close" onClick={() => setInvOpen(false)} aria-label={t("닫기")}>×</button>
             </header>
             {/* 안내문은 창을 키우지 않도록 헤더 툴팁으로 내렸다 (사용자 지시 2026-07-29: 내용 줄이기) */}
@@ -2901,38 +2862,35 @@ export default function RogueGuide({ includeFuture, initialTopic }: {
         const multiIds = lensMulti.filter((r) => invSection(r.id)).map((r) => r.id);
         const multiAllOwned = multiIds.length > 0 && multiIds.every((id) => inv.has(id));
         return (
-        <div className="rg-modal-back stack" onClick={() => setLensMulti(null)} role="presentation">
-          <div className="rg-modal rg-rmodal rg-rmulti" role="dialog" aria-modal onClick={(ev) => ev.stopPropagation()}>
-            <header className="rg-modal-head">
-              <div>
-                <h3>📷 {t("인식된 항목 {n}개", { n: lensMulti.length })}</h3>
-                {multiIds.length > 0 && (
-                  <button type="button" className={`rg-inv-btn rg-inv-all${multiAllOwned ? " on" : ""}`}
-                    title={multiAllOwned ? t("인식된 항목을 모두 보유 리스트에서 뺍니다") : t("인식된 항목을 모두 보유 리스트에 담습니다")}
-                    onClick={() => toggleInvAll(multiIds, !multiAllOwned)}>
-                    {multiAllOwned ? t("✓ 전체 보유중") : t("＋ 전체 보유")}
-                  </button>
-                )}
-              </div>
-              <button type="button" className="rg-modal-close" onClick={() => setLensMulti(null)} aria-label={t("닫기")}>×</button>
-            </header>
-            <div className="rg-rmulti-list">
-              {lensMulti.map((r) => (
-                <article key={r.id} className="rg-rmulti-item">
-                  <header>
-                    {r.img && <img className="rg-relic-icon lg" src={asset(`/rogue/relic/${r.iconId ?? r.id}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />}
-                    {r.order && <span className="rg-relic-no">{r.order}</span>}
-                    <h4><Nm name={r.name} cn={r.cn} /></h4>
-                    {/* 스샷 인식 → 바로 보유 담기 (피드백 반영 2026-07-24) */}
-                    {invSection(r.id) && <InvPill owned={inv.has(r.id)} onToggle={() => toggleInv(r.id)} />}
-                  </header>
-                  {r.usage && <p className="rg-relic-usage">{r.usage}</p>}
-                  {r.desc && <p className="rg-relic-desc">{r.desc}</p>}
-                </article>
-              ))}
+        <ModalWindow label={t("인식된 항목 {n}개", { n: lensMulti.length })} className="rg-modal rg-rmodal rg-rmulti" onClose={() => setLensMulti(null)}>
+          <header className="rg-modal-head">
+            <div>
+              <h3>📷 {t("인식된 항목 {n}개", { n: lensMulti.length })}</h3>
+              {multiIds.length > 0 && (
+                <button type="button" className={`rg-inv-btn rg-inv-all${multiAllOwned ? " on" : ""}`}
+                  title={multiAllOwned ? t("인식된 항목을 모두 보유 리스트에서 뺍니다") : t("인식된 항목을 모두 보유 리스트에 담습니다")}
+                  onClick={() => toggleInvAll(multiIds, !multiAllOwned)}>
+                  {multiAllOwned ? t("✓ 전체 보유중") : t("＋ 전체 보유")}
+                </button>
+              )}
             </div>
+          </header>
+          <div className="rg-rmulti-list">
+            {lensMulti.map((r) => (
+              <article key={r.id} className="rg-rmulti-item">
+                <header>
+                  {r.img && <img className="rg-relic-icon lg" src={asset(`/rogue/relic/${r.iconId ?? r.id}.webp`)} alt="" aria-hidden loading="lazy" decoding="async" />}
+                  {r.order && <span className="rg-relic-no">{r.order}</span>}
+                  <h4><Nm name={r.name} cn={r.cn} /></h4>
+                  {/* 스샷 인식 → 바로 보유 담기 (피드백 반영 2026-07-24) */}
+                  {invSection(r.id) && <InvPill owned={inv.has(r.id)} onToggle={() => toggleInv(r.id)} />}
+                </header>
+                {r.usage && <p className="rg-relic-usage">{r.usage}</p>}
+                {r.desc && <p className="rg-relic-desc">{r.desc}</p>}
+              </article>
+            ))}
           </div>
-        </div>
+        </ModalWindow>
         );
       })()}
       {/* 자동인식이 테마를 특정 못 한 경우(분대 이름은 테마 공통) — 테마 선택 전용 미니 모달 */}
