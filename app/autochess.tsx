@@ -32,9 +32,13 @@ export type AcRef = [string, string];
 const REF_TOKEN = /(<[^<>\n]+>|\[[^\[\]\n]+\]|【[^【】\n]+】)/;
 
 /** 중첩 수치 — k=대상 코드, u=단위, b=기본값, p=중첩 1당 (build-autochess.py stack_rows) */
-export type AcStack = { k: string; u: "pct" | "flat" | "sec" | "mult"; b: number; p?: number;
-  /** 이 계수가 걸린 효과 단계 (steps의 인덱스) — "6명 배치 시" 같은 상위 단계도 중첩을 탄다 */
-  s?: number };
+export type AcStack = { k: string; u: "pct" | "flat" | "sec" | "mult"; b: number;
+  /** 중첩 1당 증가분 — 없으면 중첩과 무관한 상수다 */
+  p?: number;
+  /** 이 값이 걸린 효과 단계 (steps의 인덱스) — "6명 배치 시" 같은 상위 단계도 여기 들어온다 */
+  s?: number;
+  /** 상한값과 그 단위 ("stack" = 중첩 횟수, 그 외는 u와 같다) */
+  cap?: number; capU?: string };
 export type AcBond = { id: string; n: string; nation: boolean; min: number; cond?: string; down?: 1; steps: AcStep[]; stk?: AcStack[]; chess: string[] };
 // tg = 특질 분류 태그(발동 시점·효과 유형, build-autochess.py classify_gar) — 오퍼레이터 필터용.
 // evb = '맹약이 N회 중첩할 때마다' 능력이 세는 맹약 id 목록 ("core" = 핵심 맹약, 병기 가능).
@@ -189,8 +193,13 @@ const STACK_LABEL: Record<string, string> = {
   atk: "공격력", hp: "HP", def: "방어력", aspd: "공격 속도",
   time: "지속 시간", duration: "지속 시간", stormtime: "냉기 지속 시간",
   truedmg: "트루 대미지", magicdmg: "마법 대미지",
-  dmgscale: "대미지 배율", magictaken: "받는 마법 대미지", lowhpdmg: "HP 50% 미만 적 대미지",
+  dmgscale: "대미지 배율", chilldmg: "냉기·빙결 적 대미지 배율",
+  magictaken: "받는 마법 대미지", lowhpdmg: "HP 50% 미만 적 대미지",
   ammo: "탄약", atkcap: "공격력 상한", prob: "발동 확률",
+  // 설명문이 "(최대치 존재)"·"일정량"으로만 적어 둔 상수 (build-autochess.py BOND_CONST)
+  atkperammo: "탄약 1발당 공격력", atkequip: "장비 장착 시 공격력",
+  atkequipgold: "승급 장비면 추가", pen: "방어력·마법 저항 무시", respawn: "재배치 시간",
+  aspdcast: "스킬 발동마다 공격 속도", atkcast: "스킬 발동마다 공격력",
 };
 /** 소수점 지저분한 값 정리 — 0.9 / 0.35 / 1.5 는 그대로, 0.90000001 같은 건 잘라낸다 */
 const trim = (n: number) => String(Math.round(n * 1e4) / 1e4);
@@ -1480,8 +1489,8 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
                 클뜯 전투 블랙보드에서 뽑는다 — build-autochess.py stack_rows 참고. */}
             {bond.stk && bond.stk.length > 0 && (
               <div className="ac-stack">
-                <h5>{t("중첩 수치")}</h5>
-                <p className="sb-dim">{t("게임 설명문이 '(중첩 수에 따라 변경)'으로만 적어 둔 실제 계수입니다. 중첩 수는 판이 도는 동안 오퍼레이터 능력·이벤트로 쌓이는 맹약별 누적 값입니다. 'N명 배치' 상위 단계 효과도 중첩을 타면 여기 함께 있습니다.")}</p>
+                <h5>{t("실제 수치")}</h5>
+                <p className="sb-dim">{t("게임 설명문이 '(중첩 수에 따라 변경)'·'(최대치 존재)'·'일정량'으로만 적어 둔 값입니다. 중첩 수는 판이 도는 동안 오퍼레이터 능력·이벤트로 쌓이는 맹약별 누적 값이고, 'N명 배치' 상위 단계 효과의 수치도 여기 함께 있습니다.")}</p>
                 <ul>
                   {bond.stk.map((sk) => (
                     <li key={sk.k}>
@@ -1494,8 +1503,9 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
                         <em>{stackNum(sk.b, sk.u)}</em>
                         {sk.p != null && <>{" + "}{t("중첩당")} <em>{stackNum(sk.p, sk.u)}</em></>}
                       </span>
-                      {sk.p != null && <i>{t("중첩 {n} → {v}", {
-                        n: 10, v: stackNum(sk.b + sk.p * 10, sk.u) })}</i>}
+                      {sk.cap != null && <i>{sk.capU === "stack"
+                        ? t("최대 {n}중첩", { n: trim(sk.cap) })
+                        : t("최대 {v}", { v: stackNum(sk.cap, sk.u) })}</i>}
                     </li>
                   ))}
                 </ul>

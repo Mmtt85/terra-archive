@@ -223,7 +223,7 @@ STACK_META = {
     "base_damage":                   ("truedmg", "flat"),
     "base_damage_value":             ("magicdmg", "flat"),
     "base_damage_scale":             ("dmgscale", "mult"),
-    "base_ex_damage_scale":          ("dmgscale", "mult"),
+    "base_ex_damage_scale":          ("chilldmg", "mult"),   # 쉐라그 — 냉기·빙결 상태 적 전용
     "base_damage_scale_show":        ("magictaken", "pct"),
     "base_damage_scale_show_ex":     ("lowhpdmg", "pct"),
     "base_ammo_percent":             ("ammo", "pct"),
@@ -239,6 +239,25 @@ STACK_META = {
 # (2026-08-24 실측). 아케인의 base_damage_scale 1.2는 damage_scale_show 0.2와 같은 값의
 # 배율 표기라 일부러 안 넣는다 — 넣으면 같은 수치가 두 줄로 나온다.
 STACK_EXTRA = {"raidShip": ["base_max_hp"]}
+
+# ── 설명문이 숫자를 감춘 **상수** (사용자 지적 2026-08-24: "라테라노는 6명 모이면 공격력
+# 증가인데 그거에 대한 설명은 왜 없냐") ─────────────────────────────────────────
+# "(최대치 존재)"·"일정량"·"증가"로만 적힌 값들. 실수치는 전투 블랙보드에 있는데 화면
+# 어디에도 안 나와서 "그래서 얼마나 오르는데?"가 됐다. 중첩 계수(STACK_META)와 달리 게임이
+# 어느 키인지 알려 주지 않으므로, **원문과 하나씩 대조해 확인한 것만** 손으로 적는다.
+#   (코드, 단위, 블랙보드 키, 몇 번째 단계, 상한 키 또는 None, 상한 단위)
+BOND_CONST = {
+    "lateranoShip": [("atkperammo", "pct", "atk_per_consume", 1, "max_atk_for_consume", "pct")],
+    # 쉐라그는 일반 대미지 배율(상수)과 냉기·빙결 배율(중첩)이 따로다 — 앞의 것이 빠져 있었다
+    "kjeragShip":   [("dmgscale", "mult", "base_damage_scale", 0, None, None)],
+    "victoriaShip": [("atkequip", "pct", "atk_normal_equip", 2, None, None),
+                     ("atkequipgold", "pct", "atk_golden_equip", 2, None, None)],
+    "preciShip":    [("pen", "pct", "power_def_penetrate", 1, None, None)],
+    "deputShip":    [("respawn", "pct", "respawn_time", 0, None, None)],
+    # 사르곤은 스킬을 쏠 때마다 쌓이고 25중첩에서 멈춘다 ("스킬 발동 시 … 증가(최대치 존재)")
+    "sargonShip":   [("aspdcast", "flat", "base_attack_speed", 0, "max_buff_stack_cnt", "stack"),
+                     ("atkcast", "pct", "base_atk", 1, "max_buff_stack_cnt", "stack")],
+}
 
 
 def stack_rows(b):
@@ -287,6 +306,20 @@ def stack_rows(b):
         for j, row in enumerate(out):
             m = len(out) - j          # 이 행 뒤로 남은 개수(자기 포함)
             row["s"] = marks[max(0, len(marks) - m)]
+    # 설명문이 감춘 상수 — 중첩과 무관하므로 p가 없다
+    for code, unit, key, step, cap_key, cap_unit in BOND_CONST.get(b["bondId"], []):
+        v = board.get(key)
+        if v is None:
+            print(f"  ⚠ 맹약 {b['bondId']}: 블랙보드에 {key} 없음 (BOND_CONST)", file=sys.stderr)
+            continue
+        row = {"k": code, "u": unit, "b": round(v, 6), "s": step}
+        if cap_key is not None and board.get(cap_key) is not None:
+            row["cap"] = round(board[cap_key], 6)
+            row["capU"] = cap_unit
+        out.append(row)
+    # 같은 단계 안에서는 **상수 먼저, 중첩 계수 나중** — 쉐라그처럼 "기본 배율 / 특정 상태에
+    # 추가 배율"인 경우 기본값이 먼저 와야 읽힌다 (설명문 순서와도 같다)
+    out.sort(key=lambda r: (r.get("s", 0), 1 if "p" in r else 0))
     return out
 
 TRAPS = KR["trapChessDataDict"]           # 115 — 장비(일반/강화)
