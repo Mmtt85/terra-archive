@@ -205,6 +205,71 @@ CHESS = KR["charShopChessDatas"]          # 133 — 상점에 뜨는 기물 정�
 CHESSDATA = KR["charChessDataDict"]       # 266 — 일반(_a)/골든(_b) 각각의 능력치·맹약·능력
 GARRISON = KR["garrisonDataDict"]         # 320 — 기물별 위수 협의 전용 능력
 BONDS = KR["bondInfoDict"]                # 23  — 맹약(진영 8 + 특성 15)
+
+# ── 맹약의 '중첩 수에 따라 변경' 실수치 (사용자 요청 2026-08-24) ─────────────────
+# 게임 설명문은 "공격력 증가 (중첩 수에 따라 변경)"처럼 숫자를 안 준다. 진짜 값은
+# effectBuffInfoDataDict의 전투 블랙보드에 있고, 어느 키를 봐야 하는지는 bondInfoDict의
+# descParamBaseList/descParamPerStackList가 **순서대로 짝지어** 알려 준다.
+#   예) 염국 base_atk 0.23 · atk_per_stack 0.009 → 기본 +23%, 중첩 1당 +0.9%
+# 키 이름만으로는 단위를 알 수 없어(공속은 정수, 배율은 ×) 여기 손으로 짝지어 둔다.
+# 코드는 화면(app/autochess.tsx STACK_LABEL)이 로케일 라벨로 옮긴다.
+STACK_META = {
+    "base_atk":                      ("atk", "pct"),
+    "base_max_hp":                   ("hp", "pct"),
+    "base_def":                      ("def", "pct"),
+    "base_attack_speed":             ("aspd", "flat"),
+    "base_time":                     ("time", "sec"),
+    "base_duration":                 ("duration", "sec"),
+    "base_damage":                   ("truedmg", "flat"),
+    "base_damage_value":             ("magicdmg", "flat"),
+    "base_damage_scale":             ("dmgscale", "mult"),
+    "base_ex_damage_scale":          ("dmgscale", "mult"),
+    "base_damage_scale_show":        ("magictaken", "pct"),
+    "base_damage_scale_show_ex":     ("lowhpdmg", "pct"),
+    "base_ammo_percent":             ("ammo", "pct"),
+    "base_max_atk_when_born":        ("atkcap", "pct"),
+    "base_prob":                     ("prob", "pct"),
+    "baseprob":                      ("prob", "pct"),
+    "bond_eff_kjerag[storm].base_time": ("stormtime", "sec"),
+}
+
+
+# 게임의 descParam 목록이 빠뜨린 값 — 기습은 설명문이 "공격력 및 HP 증가"인데 목록엔
+# 공격력만 있다. 블랙보드에 같은 크기(0.25 / 0.01)의 HP 값이 실제로 있으므로 함께 낸다
+# (2026-08-24 실측). 아케인의 base_damage_scale 1.2는 damage_scale_show 0.2와 같은 값의
+# 배율 표기라 일부러 안 넣는다 — 넣으면 같은 수치가 두 줄로 나온다.
+STACK_EXTRA = {"raidShip": ["base_max_hp"]}
+
+
+def stack_rows(b):
+    """맹약 하나의 중첩 수치 — [{k: 코드, u: 단위, b: 기본값, p: 중첩 1당}]"""
+    base = b.get("descParamBaseList") or []
+    per = b.get("descParamPerStackList") or []
+    if not base:
+        return []
+    board = {}
+    for blk in (KR["effectBuffInfoDataDict"].get(b.get("effectId")) or []):
+        for kv in (blk.get("blackboard") or []):
+            board.setdefault(kv["key"], kv["value"])
+    pairs = [(bk, per[i] if i < len(per) else None) for i, bk in enumerate(base)]
+    for bk in STACK_EXTRA.get(b["bondId"], []):
+        pairs.append((bk, re.sub(r"^base_", "", bk) + "_per_stack"))
+    out = []
+    for bk, pk in pairs:
+        meta = STACK_META.get(bk)
+        bv, pv = board.get(bk), board.get(pk) if pk else None
+        if not meta or bv is None:
+            if bv is None:
+                print(f"  ⚠ 맹약 {b['bondId']}: 블랙보드에 {bk} 없음", file=sys.stderr)
+            elif not meta:
+                print(f"  ⚠ 맹약 {b['bondId']}: STACK_META에 {bk} 미등록", file=sys.stderr)
+            continue
+        row = {"k": meta[0], "u": meta[1], "b": round(bv, 6)}
+        if pv:
+            row["p"] = round(pv, 6)
+        out.append(row)
+    return out
+
 TRAPS = KR["trapChessDataDict"]           # 115 — 장비(일반/강화)
 TRAPSHOP = KR["trapShopChessDatas"]       # 59  — 상점 장비 목록
 BANDS = KR["bandDataListDict"]            # 36  — 밴드(시작 조직)
@@ -384,6 +449,7 @@ def build_locale(loc):
             "cond": b.get("activeCondition"),
             **({"down": 1} if "downward" in (b.get("activeConditionTemplate") or "") else {}),
             "steps": steps_of(loc_desc(loc, "bondInfoDict", bid, "desc", b["desc"])),
+            **({"stk": stk} if (stk := stack_rows(b)) else {}),
             "chess": [],                    # 아래에서 채운다
         })
 

@@ -20112,6 +20112,50 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   height: 18px;
   object-fit: contain;
 }
+/* ── 맹약 중첩 수치 — 게임이 "(중첩 수에 따라 변경)"으로 뭉갠 값의 실제 숫자 (2026-08-24).
+      대상 / 기본 / 중첩 1당 / 예시 를 한 줄에 나란히. ── */
+.ac-stack {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: var(--bg-faint);
+  border: 1px solid var(--line);
+}
+.ac-stack h5 {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.ac-stack ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 5px; }
+.ac-stack li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  font-size: 12.5px;
+}
+.ac-stack li > b { min-width: 96px; font-weight: 800; }
+.ac-stack li > span { color: var(--muted); }
+.ac-stack li em { font-style: normal; font-weight: 800; color: var(--ink); }
+.ac-stack li > i {
+  font-style: normal;
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-left: auto;
+}
+/* 목록 카드의 한 줄 요약 — 훑으면서 맹약끼리 비교되게 */
+.ac-stacksum {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 10px;
+  margin: 4px 0 0;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--ink2);
+}
+.ac-stacksum em { font-style: normal; margin-left: 3px; color: var(--muted); font-weight: 700; }
+
 /* ── 변형 구조체 대응표 — 맹약 칩 한 줄 + 그 맹약을 주는 장비들 (2026-08-24).
       게임은 "해당 장비의 재능에서 확인"이라며 표를 안 주는데, 이 장비의 값어치가
       전부 그 표에 있어서 상세 모달에 통째로 편다. ── */

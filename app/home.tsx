@@ -87,7 +87,7 @@ import { EnemyPage, type Enemy as EnemyEntry, type EnemyStages } from "./enemy-d
 // 작전 상세도 **lazy가 아니다** — 같은 프리렌더 이유 (app/enemy-detail.tsx 머리주석)
 import { StagePage } from "./stage-detail";
 import type { StageView } from "./stage-data";
-import { I18nProvider, useI18n, conceptName, DT_LOCALE, MAGIC_TRAIT_RE, LOCALES, type Locale, type ExtraI18n } from "./i18n";
+import { I18nProvider, useI18n, conceptName, DT_LOCALE, MAGIC_TRAIT_RE, LOCALES, type Locale, type ExtraI18n, type T } from "./i18n";
 import { SPECIAL_CONCEPTS, conceptTitle, conceptMatches, resolveConcepts, suggestConcepts } from "./concepts";
 
 type RangeGrid = { row: number; col: number };
@@ -254,6 +254,21 @@ const PROMO = {
   to: "2026-10-01T04:00:00+09:00",
 };
 const PROMO_ON = inTimeWindow(PROMO.from, PROMO.to);
+const PROMO_END = Date.parse(PROMO.to);
+/** 기간 한정 바로가기의 남은 시간 문구 (사용자 요청 2026-08-24) —
+ *  하루 이상이면 며칠, 하루 미만이면 몇 시간, 한 시간 미만이면 몇 분.
+ *  ⚠ 시계는 첫 렌더에서 **빌드 시각**(BUILD_NOW)이다 — 렌더 중 Date.now()를 쓰면 서버·클라
+ *  답이 갈려 하이드레이션이 깨진다(React #418, whats-new.ts 주석). 마운트 후 진짜 시각으로
+ *  갈아 끼운다. */
+function promoLeftLabel(nowMs: number, t: T): string | null {
+  const ms = PROMO_END - nowMs;
+  if (!Number.isFinite(ms) || ms <= 0) return null;
+  const d = Math.floor(ms / 86400000);
+  if (d >= 1) return t("{n}일 남음", { n: d });
+  const h = Math.floor(ms / 3600000);
+  if (h >= 1) return t("{n}시간 남음", { n: h });
+  return t("{n}분 남음", { n: Math.max(1, Math.floor(ms / 60000)) });
+}
 
 /** 진행중 이벤트 배너를 눌렀을 때, 그 이벤트 전용 가이드가 사이트에 있으면 그쪽으로 보낸다.
  *  키는 클뜯 basicInfo의 이벤트 type (broadcast 워커가 그대로 실어 준다). */
@@ -1034,6 +1049,17 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   // 경로 기반 라우팅: 서버가 라우트별로 올바른 탭을 렌더하므로 initialTab을 그대로
   // 초기값으로 쓴다 (SSR/클라이언트 첫 렌더 일치 → hydration mismatch 없음).
   const [tab, setTab] = useState<Tab>(initialTab);
+  // 기간 한정 바로가기의 남은 시간 시계 — 첫 값은 빌드 시각(서버·클라 일치), 마운트 뒤
+  // 실제 시각으로 갈아 끼우고 1분마다 갱신한다. PROMO가 안 뜨는 동안은 타이머도 안 돈다.
+  const [promoNow, setPromoNow] = useState(BUILD_NOW);
+  useEffect(() => {
+    if (!PROMO_ON) return;
+    // 첫 보정도 타이머로 미룬다 — 이펙트 안에서 곧바로 setState하면 렌더가 한 번 더 돈다
+    const tick = () => setPromoNow(Date.now());
+    const first = setTimeout(tick, 0);
+    const id = setInterval(tick, 60_000);
+    return () => { clearTimeout(first); clearInterval(id); };
+  }, []);
   const [navOpen, setNavOpen] = useState(false); // 모바일 탭 메뉴(햄버거) 열림 상태
   // 메뉴 안 묶음(도감·시뮬레이터) 펼침 — 데스크탑은 호버로도 열리지만, iOS는 탭해도 버튼에
   // 포커스가 안 가 focus-within이 무력하므로 클릭 토글 상태가 따로 필요하다 (2026-08-09).
@@ -1730,9 +1756,9 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
             }}>
             <span className="promo-mark" aria-hidden>{PROMO.icon}</span>
             {t(PROMO.label)}
-            {/* '기간 한정'은 이 버튼의 존재 이유라 항상 붙는다 — 새기능 배지는 그 위에 얹는다
-                (사용자 지적 2026-08-22: 새기능 기간엔 기간 한정을 감췄었다) */}
-            <span className="promo-hint">{t("기간 한정")}</span>
+            {/* 남은 기간 — '기간 한정'보다 쓸모 있는 정보라 그 자리를 대신한다
+                (사용자 요청 2026-08-24). 못 구하면 종전 문구로 되돌아간다. */}
+            <span className="promo-hint">{promoLeftLabel(promoNow, t) ?? t("기간 한정")}</span>
             {tabHasNewFeature(PROMO.tab) && <span className="new-badge">{t("새기능")}</span>}
           </a>
         )}

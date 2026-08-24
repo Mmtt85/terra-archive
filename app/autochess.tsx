@@ -20,6 +20,7 @@ import { useI18n, rich } from "./i18n";
 import { normSearch, useSearchInput } from "./search";
 import { asset } from "./assets";
 import { ModalWindow } from "./modal-window";
+import { GLOBAL_MODAL_HASH } from "./hash-modal";
 import { loadEnemies } from "./dex-cross";
 import { EnemyFile, RANK_KEY, enemyImg, enemyImgBase, type Enemy } from "./enemy-detail";
 
@@ -30,7 +31,9 @@ export type AcRef = [string, string];
 /** 게임 문구가 다른 항목을 부르는 괄호 — <고유명사> · [분류] · 【분류】(일본어판) */
 const REF_TOKEN = /(<[^<>\n]+>|\[[^\[\]\n]+\]|【[^【】\n]+】)/;
 
-export type AcBond = { id: string; n: string; nation: boolean; min: number; cond?: string; down?: 1; steps: AcStep[]; chess: string[] };
+/** 중첩 수치 — k=대상 코드, u=단위, b=기본값, p=중첩 1당 (build-autochess.py stack_rows) */
+export type AcStack = { k: string; u: "pct" | "flat" | "sec" | "mult"; b: number; p?: number };
+export type AcBond = { id: string; n: string; nation: boolean; min: number; cond?: string; down?: 1; steps: AcStep[]; stk?: AcStack[]; chess: string[] };
 // tg = 특질 분류 태그(발동 시점·효과 유형, build-autochess.py classify_gar) — 오퍼레이터 필터용.
 // evb = '맹약이 N회 중첩할 때마다' 능력이 세는 맹약 id 목록 ("core" = 핵심 맹약, 병기 가능).
 // bs = 설명문이 [이름] 꼴로 언급하는 맹약 전부 — 시뮬레이터의 '돕는 특질' 판정용.
@@ -178,6 +181,24 @@ const BOND_COND_LABEL: Record<string, string> = {
  *  재능에서 확인"이라며 표를 안 준다 — 그래서 상세 모달에서 우리가 모아 보여 준다
  *  (사용자 요청 2026-08-24 "되게 중요한 아이템인데 싹 정리를"). */
 const MORPH_ID = "chess_item_6_09_e_a";
+/** 맹약 중첩 수치의 대상 이름 — build-autochess.py가 낸 코드를 화면 말로 (2026-08-24).
+ *  게임 설명문이 "(중첩 수에 따라 변경)"으로 뭉갠 값을 실제 숫자로 펴 주는 자리다. */
+const STACK_LABEL: Record<string, string> = {
+  atk: "공격력", hp: "HP", def: "방어력", aspd: "공격 속도",
+  time: "지속 시간", duration: "지속 시간", stormtime: "냉기 지속 시간",
+  truedmg: "트루 대미지", magicdmg: "마법 대미지",
+  dmgscale: "대미지 배율", magictaken: "받는 마법 대미지", lowhpdmg: "HP 50% 미만 적 대미지",
+  ammo: "탄약", atkcap: "공격력 상한", prob: "발동 확률",
+};
+/** 소수점 지저분한 값 정리 — 0.9 / 0.35 / 1.5 는 그대로, 0.90000001 같은 건 잘라낸다 */
+const trim = (n: number) => String(Math.round(n * 1e4) / 1e4);
+/** 단위별 표기. pct는 배율(0.23)을 퍼센트로, mult는 ×배율, sec는 초, flat은 날숫자 */
+const stackNum = (v: number, u: AcStack["u"], signed = false) => {
+  if (u === "pct") return `${signed || v > 0 ? "+" : ""}${trim(v * 100)}%`;
+  if (u === "mult") return signed ? `+${trim(v)}` : `×${trim(v)}`;
+  if (u === "sec") return `${signed ? "+" : ""}${trim(v)}초`;
+  return `${signed || v > 0 ? "+" : ""}${trim(v)}`;
+};
 /** 추첨 가중치의 기본값 — 67마리 중 62마리가 이 값이라, 다른 값만 카드에 띄운다 */
 const ENEMY_W_BASE = 10;
 /** 리더 HP는 난이도별로 다르다 — hp 키 ↔ 모드 difficulty 키 (이름은 doc.modes에서 끌어온다,
@@ -253,17 +274,48 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
   const [shopMode, setShopMode] = useState("mode_single_normal");
   const { term, clear, set: setTerm, inputRef, inputProps } = useSearchInput();
 
-  // ── 필터 딥링크 (사용자 요청 2026-08-23: "각 필터 건 거 전부 딥링크로") ──────────
-  // #<뷰>[/<게임 정보 탭>][?bn=&bt=&t=&g=&job=&sub=&q=] — 상태가 바뀔 때마다 replaceState로
-  // 남기고(히스토리는 안 쌓는다), 진입·해시 편집 시 복원한다. 전부 기본값이면 해시를 지운다.
+  // ── 딥링크 (필터: 사용자 요청 2026-08-23 · 모달: 2026-08-24) ─────────────────
+  // #<뷰>[/<게임 정보 탭>][?bn=&bt=&t=&g=&job=&sub=&q=&m=<종류>~<id>]
+  //   필터·뷰 변화 → replaceState (히스토리를 안 쌓는다)
+  //   모달이 **새로 열릴 때만** → pushState (뒤로가기로 닫힌다 — 록라와 같은 규약)
+  // m의 종류: bond 맹약 · op 기물 · item 장비 · band 전략 · enemy 적
+  //
+  // ⚠ 겹쳐 뜬 모달 중 **하나만** 해시에 남는다. 아래 우선순위(맨 앞이 이김)는 실제로 겹치는
+  //   순서에 맞춘 것 — 적은 어디서든 맨 위, 기물은 맹약 목록에서 열리고, 맹약은 전략 문구
+  //   (<염국>)에서 열린다. 반대 방향([나란투야]로 전략을 여는 자리)은 한 곳뿐이라 양보했다.
+  const curModal: [string, string] | null =
+    enemy ? ["enemy", enemy]
+    : equip ? ["item", equip.id]
+    : chess ? ["op", chess.id]
+    : bond ? ["bond", bond.id]
+    : band ? ["band", band.id]
+    : null;
+  // 해시의 m=<종류>~<id> → 모달 상태. 해당 항목이 없으면(옛 링크·오타) 그냥 안 연다.
+  // ⚠ 함수 선언이라 호이스팅된다 — 아래 effect보다 뒤에 적어도 되지만, 여기 두어야 읽힌다.
+  function applyModalHash(m: string | null) {
+    const cut = (m ?? "").indexOf("~");
+    const kind = cut < 0 ? "" : (m as string).slice(0, cut);
+    const id = cut < 0 ? "" : (m as string).slice(cut + 1);
+    setEnemy(kind === "enemy" && id ? id : null);
+    setEquip(kind === "item" && id ? doc.equips.find((e) => e.id === id) ?? null : null);
+    setBand(kind === "band" && id ? doc.bands.find((b) => b.id === id) ?? null : null);
+    setBond(kind === "bond" && id ? doc.bonds.find((b) => b.id === id) ?? null : null);
+    setGoldView(false);   // 기물 상세는 언제나 일반부터 (openChess와 같은 규약)
+    setChess(kind === "op" && id ? doc.chess.find((c) => c.id === id) ?? null : null);
+  }
   const hydrated = useRef(false);
+  const prevHash = useRef("");
   useEffect(() => {
     const apply = () => {
+      // 전역 모달(#changelog·#broadcast…)이 떠 있으면 내 상태로 해석하지 않는다 — 그대로
+      // 두면 다른 모달을 여는 순간 이 페이지의 필터·모달이 통째로 초기화된다 (2026-08-24)
+      if (GLOBAL_MODAL_HASH.test(window.location.hash)) return;
+      // 빈 해시 = **기본 상태**(맹약 탭·필터 없음·모달 없음)다. 종전엔 여기서 그냥 빠져나가
+      // 뒤로가기로 해시가 지워져도 모달이 안 닫혔다 (2026-08-24 실측).
       const h = decodeURIComponent(window.location.hash.slice(1));
-      if (!h) return;
       const [head, qs] = h.split("?");
       const [v, tab] = head.split("/");
-      if ((VIEWS as readonly string[]).includes(v)) setView(v as View);
+      setView((VIEWS as readonly string[]).includes(v) ? (v as View) : "bond");
       if (v === "misc" && (MISC_TABS as readonly string[]).includes(tab)) setMiscTab(tab as MiscTab);
       const p = new URLSearchParams(qs ?? "");
       setBondN(p.get("bn") ?? "");
@@ -275,9 +327,11 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
       setSubFilter(p.get("sub") ?? "");
       // q가 없으면 지운다 — 남기면 뒤로가기로 뷰를 옮겼을 때 빈 검색칸으로 계속 걸러진다
       setTerm(p.get("q") ?? "");
+      applyModalHash(p.get("m"));
     };
     apply();
     hydrated.current = true;
+    prevHash.current = window.location.hash;
     window.addEventListener("hashchange", apply);
     return () => window.removeEventListener("hashchange", apply);
     // 마운트 1회 + 해시 편집 — 이후 상태 변화는 아래 effect가 해시로 내보낸다
@@ -285,6 +339,7 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
   }, []);
   useEffect(() => {
     if (!hydrated.current) return;
+    if (GLOBAL_MODAL_HASH.test(window.location.hash)) return;
     const p = new URLSearchParams();
     if (view === "op" || view === "item") {
       if (bondN) p.set("bn", bondN);
@@ -297,12 +352,21 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
         if (subFilter) p.set("sub", subFilter);
       }
     }
-    const qs = p.toString();
+    if (curModal) p.set("m", `${curModal[0]}~${curModal[1]}`);
+    // ~는 URL에서 그대로 써도 되는 글자인데 URLSearchParams가 %7E로 인코딩한다 — 링크가
+    // 읽히게 되돌린다 (해석은 decodeURIComponent가 하므로 양쪽 다 받는다)
+    const qs = p.toString().replace(/%7E/g, "~");
     const hash = view === "bond" && !qs ? "" : `#${view}${view === "misc" ? `/${miscTab}` : ""}${qs ? `?${qs}` : ""}`;
     if (hash !== window.location.hash) {
-      history.replaceState(null, "", hash || window.location.pathname + window.location.search);
+      // 모달이 **새로 열린** 경우만 히스토리를 쌓아 뒤로가기로 닫히게 한다.
+      // ⚠ vinext가 history.pushState를 인스턴스 패치해 내비게이션으로 취급 — .site-scroll을
+      //   맨 위로 리셋한다. 네이티브 프로토타입을 직접 불러 라우터를 우회한다 (rogue.tsx 실측).
+      const opening = !!curModal && !/[?&]m=/.test(prevHash.current);
+      if (opening) History.prototype.pushState.call(history, null, "", hash);
+      else history.replaceState(null, "", hash || window.location.pathname + window.location.search);
     }
-  }, [view, miscTab, bondN, bondT, tier, garFilter, jobFilter, subFilter, term]);
+    prevHash.current = hash;
+  }, [view, miscTab, bondN, bondT, tier, garFilter, jobFilter, subFilter, term, curModal?.[0], curModal?.[1]]); // eslint-disable-line react-hooks/exhaustive-deps
 
 
   // 검색 입력은 비제어(useSearchInput)라 뷰가 바뀌어 입력칸이 새로 마운트되면 빈칸이 된다.
@@ -479,6 +543,19 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
   // '와파린 전략'으로 부른다 (사용자 확정 2026-08-24)
   const bandRows = useMemo(() => doc.bands.filter((b) =>
     !q || normSearch(`${b.n} ${b.by ?? ""} ${b.d}`).includes(q)), [doc, q]);
+  const equipRows = useMemo(() => doc.equips.filter((e) =>
+    !q || normSearch(`${e.n} ${e.d} ${e.dG}`).includes(q)), [doc, q]);
+  const buffRows = useMemo(() => doc.buffs.filter((b) =>
+    !q || normSearch(`${b.n} ${b.d}`).includes(q)), [doc, q]);
+  // 맹약 검색 — 이름·효과문에 더해 **소속 오퍼레이터 이름**까지 훑는다.
+  // "이 오퍼가 어느 맹약이더라"가 이 탭에서 가장 흔한 물음이라서 (2026-08-24)
+  const bondRows = useMemo(() => {
+    if (!q) return doc.bonds;
+    const nameOf = new Map(doc.chess.map((c) => [c.id, c.n]));
+    return doc.bonds.filter((b) => normSearch(
+      `${b.n} ${b.steps.map((st) => `${st.c ?? ""} ${st.t}`).join(" ")} `
+      + b.chess.map((id) => nameOf.get(id) ?? "").join(" ")).includes(q));
+  }, [doc, q]);
 
   // ── 조각들 ────────────────────────────────────────────────────────────────
   const tierBadge = (n: number) => <em className={`ac-tier ac-t${n}`}>T{n}</em>;
@@ -790,6 +867,17 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
     );
   };
 
+  // 검색칸 — 모든 탭이 같은 것을 쓴다 (사용자 요청 2026-08-24: "모든 탭에 전부 검색란")
+  const searchBox = (
+    <div className="ac-filters">
+      <div className="search-wrap heading-search sim-search">
+        <span>⌕</span>
+        <input {...inputProps} placeholder={t("이름·능력 검색")} autoComplete="off" spellCheck={false} />
+        <button type="button" className="search-clear" onClick={() => clear()} aria-label={t("검색어 지우기")}>×</button>
+      </div>
+    </div>
+  );
+
   const filterBar = (
     <div className="ac-filters">
       <div className="search-wrap heading-search sim-search">
@@ -855,8 +943,10 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
           {(
             <>
               <p className="sim-note">{t("전장에 같은 맹약의 오퍼레이터를 모을수록 단계별 효과가 열립니다. 카드를 누르면 전체 효과와 소속 오퍼레이터를 볼 수 있습니다.")}</p>
+              {searchBox}
+              <p className="ac-count">{t("{n}종", { n: bondRows.length })}</p>
               {[true, false].map((nation) => {
-                const rows = doc.bonds.filter((b) => b.nation === nation);
+                const rows = bondRows.filter((b) => b.nation === nation);
                 if (!rows.length) return null;
                 return (
                   <section key={String(nation)} className="ac-bondsec">
@@ -874,6 +964,17 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
                             </span>
                           </header>
                           {b.steps[0] && <p className="ac-bonddesc">{rich(b.steps[0].t)}</p>}
+                          {/* 카드에서도 숫자가 바로 보이게 — 목록을 훑을 때 비교가 된다 */}
+                          {b.stk && b.stk.length > 0 && (
+                            <p className="ac-stacksum">
+                              {b.stk.map((sk) => (
+                                <span key={sk.k}>
+                                  {t(STACK_LABEL[sk.k] ?? sk.k)} {stackNum(sk.b, sk.u)}
+                                  {sk.p != null && <em>{stackNum(sk.p, sk.u, true)}{t("/중첩")}</em>}
+                                </span>
+                              ))}
+                            </p>
+                          )}
                           {b.chess.length > 0 && <div className="ac-facerow">
                             {b.chess.slice(0, 14).map((cid) => {
                               const c = chessById.get(cid);
@@ -905,13 +1006,7 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
           {(
             <>
               <p className="sim-note">{t("전략은 판을 시작할 때 고르는 조직입니다. 고유 효과와 시작 목표 HP가 다릅니다.")}</p>
-              <div className="ac-filters">
-                <div className="search-wrap heading-search sim-search">
-                  <span>⌕</span>
-          <input {...inputProps} placeholder={t("이름·능력 검색")} autoComplete="off" spellCheck={false} />
-                  <button type="button" className="search-clear" onClick={() => clear()} aria-label={t("검색어 지우기")}>×</button>
-                </div>
-              </div>
+              {searchBox}
               <p className="ac-count">{t("{n}종", { n: bandRows.length })}</p>
               <div className="ac-cards">
                 {bandRows.map((b) => (
@@ -1056,9 +1151,12 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
                   클뜯 canGiveBond가 맹약 아이템 18종 전부 false다. 맹약 부여는 변형 구조체
                   (canGiveBond=true, 유일)와 같이 장착했을 때만 일어난다. */}
               <p className="sim-note">{t("아이템은 오퍼레이터에 장착해 능력치를 올립니다. 같은 아이템 {n}개를 모으면 강화판이 되고, 맹약 아이템은 변형 구조체와 같이 장착하면 착용자가 그 맹약을 추가로 얻습니다.", { n: doc.equips[0]?.up ?? 2 })}</p>
-              <p className="ac-count">{t("{n}종", { n: doc.equips.length })}</p>
+              {/* 필터는 안 붙이지만(59종 고정 목록) 검색은 붙인다 — 이름·효과로 찾는 건 별개다
+                  (사용자 요청 2026-08-24: "모든 탭에 전부 검색란") */}
+              {searchBox}
+              <p className="ac-count">{t("{n}종", { n: equipRows.length })}</p>
               {[1, 2, 3, 4, 5, 6].map((tn) => {
-                const rows = doc.equips.filter((e) => e.t === tn);
+                const rows = equipRows.filter((e) => e.t === tn);
                 if (!rows.length) return null;
                 return (
                   <section key={tn} className="ac-tiersec">
@@ -1104,12 +1202,16 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
           {miscTab === "enemy" && (
             <>
               <p className="sim-note">{t("판마다 특훈 적 유형이 뽑히고, 그 유형의 적이 딸린 부대와 함께 나옵니다. 14라운드(표준 시뮬레이션은 9라운드)에는 리더 적이 기다립니다. 카드를 누르면 스탯과 능력, 함께 나오는 적을 볼 수 있습니다.")}</p>
+              {/* 목록이 긴 두 탭(적 119종·전략 전술 43종)에만 검색칸을 둔다 — 모드·보급센터는
+                  한 화면에 들어오는 짧은 표라 검색이 할 일이 없다 (2026-08-24) */}
+              {searchBox}
 
               {/* 리더 적 — 유형 추첨과 별개라 맨 위에 따로 (사용자 지시 2026-08-22) */}
               <section className="ac-enemygrp">
                 <h3 className="sb-h3">{t("리더 적")} <em className="sb-count">{doc.bosses.length}</em></h3>
                 {[false, true].map((hide) => {
-                  const rows = doc.bosses.filter((b) => b.hide === hide);
+                  const rows = doc.bosses.filter((b) => b.hide === hide
+                    && (!q || normSearch(`${b.n} ${b.code ?? ""}`).includes(q)));
                   if (!rows.length) return null;
                   return (
                     <div key={String(hide)} className="ac-bossgrp">
@@ -1161,8 +1263,9 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
                 // 유형의 **전 명단**을 게임 순서대로 (대표 → 함께 나오는 일반·정예).
                 // 종전엔 대표(특수 적)만 깔아 '특이'가 17종으로 보였다 — 실제 35종
                 // (사용자 지적 2026-08-24). enemyList가 없던 옛 데이터는 종전대로 폴백.
-                const rows = doc.enemyList?.[ty]
-                  ?? doc.enemies.filter((e) => e.type === ty).map((e) => ({ ...e, role: "sp" as const }));
+                const rows = (doc.enemyList?.[ty]
+                  ?? doc.enemies.filter((e) => e.type === ty).map((e) => ({ ...e, role: "sp" as const })))
+                  .filter((e) => !q || normSearch(`${e.n} ${e.code ?? ""}`).includes(q));
                 if (!rows.length) return null;
                 return (
                   <section key={ty} className="ac-enemygrp">
@@ -1193,7 +1296,7 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
                                 <>
                                   <em>{e.half ? t("전반") : t("후반")}</em>
                                   {/* 가중치는 대부분 기본값이라, 더 자주·덜 나오는 적만 짚는다 */}
-                                  {e.w !== ENEMY_W_BASE && <em className="ac-enw">{t("가중치 {n}", { n: e.w })}</em>}
+                                  {e.w != null && e.w !== ENEMY_W_BASE && <em className="ac-enw">{t("가중치 {n}", { n: e.w })}</em>}
                                 </>
                               ) : <em className="ac-ensub">{t("함께 나옴")}</em>}
                             </span>
@@ -1315,9 +1418,10 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
           {miscTab === "buff" && (
             <>
               <p className="sim-note">{t("라운드 사이의 '전략 전술'에서 고르는 효과입니다. 판 시작 때 고르는 '전략'과는 다릅니다.")}</p>
-              <p className="ac-count">{t("{n}종", { n: doc.buffs.length })}</p>
+              {searchBox}
+              <p className="ac-count">{t("{n}종", { n: buffRows.length })}</p>
               <div className="ac-buffs">
-                {doc.buffs.map((b) => (
+                {buffRows.map((b) => (
                   <div key={b.id} className="ac-buff"><b>{b.n}</b><span>{acRich(b.d)}</span></div>
                 ))}
               </div>
@@ -1353,6 +1457,25 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
                 </li>
               ))}
             </ol>
+            {/* 게임 설명문이 "(중첩 수에 따라 변경)"으로 뭉갠 값의 **실제 숫자**
+                (사용자 요청 2026-08-24: "대충 두루뭉술 해놓으니 얼마나 오르는지 모르겠음").
+                클뜯 전투 블랙보드에서 뽑는다 — build-autochess.py stack_rows 참고. */}
+            {bond.stk && bond.stk.length > 0 && (
+              <div className="ac-stack">
+                <h5>{t("중첩 수치")}</h5>
+                <ul>
+                  {bond.stk.map((sk) => (
+                    <li key={sk.k}>
+                      <b>{t(STACK_LABEL[sk.k] ?? sk.k)}</b>
+                      <span>{t("기본")} <em>{stackNum(sk.b, sk.u)}</em></span>
+                      {sk.p != null && <span>{t("중첩 1당")} <em>{stackNum(sk.p, sk.u, true)}</em></span>}
+                      {sk.p != null && <i>{t("중첩 {n}회 = {v}", {
+                        n: 10, v: stackNum(sk.b + sk.p * 10, sk.u) })}</i>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             {bond.chess.length === 0
               ? <p className="sb-dim">{t("소속 오퍼레이터가 따로 없는 맹약입니다 — 배치 조건만 맞으면 활성화됩니다.")}</p>
               : <h4>{t("소속 오퍼레이터")} <em className="sb-count">{bond.chess.length}</em></h4>}
