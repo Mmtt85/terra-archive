@@ -74,8 +74,7 @@ function send(row: Record<string, unknown>): void {
   }).catch(() => { /* 테이블 미설치·오프라인 */ });
 }
 
-/** 메모리 집계에 내 표를 즉시 얹는다 (다음 접속엔 DB에서 같은 값이 돌아온다).
- *  실패→도착 추론은 DB가 짝지으므로 여기서 미리 얹지 않는다 — 다음 접속부터 반영된다. */
+/** 메모리 집계에 내 표를 즉시 얹는다 (다음 접속엔 DB에서 같은 값이 돌아온다). */
 function bump(q: string, uid: string, weight: number): void {
   const map = crowdIndex[q] ?? (crowdIndex[q] = {});
   map[uid] = (map[uid] ?? 0) + weight;
@@ -98,9 +97,13 @@ export function recordPick(q: string, uid: string, meta: {
   });
 }
 
-/** 컨텐츠 도착 — app/trail.ts가 부른다. 짝짓기(직전 miss와 연결)는 **DB 뷰가** 한다. */
-export function recordVisit(uid: string, meta: { kind: string; name: string; locale: string }): void {
+/** 컨텐츠 도착 — app/trail.ts가 부른다. 정본 짝짓기(직전 miss와 연결)는 **DB 뷰가** 한다.
+ *  다만 그 결과는 다음 접속에나 돌아오므로, 짝지어질 것이 뻔한 표(0.5)는 메모리 지도에도
+ *  미리 얹는다 — 안 그러면 "못 찾아서 직접 찾아갔는데 바로 다시 검색해도 여전히 없다"가
+ *  된다 (사용자 제보 2026-08-24). DB가 같은 값을 내므로 다음 접속에도 그대로 남는다. */
+export function recordVisit(uid: string, meta: { kind: string; name: string; locale: string; missQ?: string }): void {
   send({ q: "-", uid, kind: meta.kind, name: meta.name.slice(0, 80), locale: meta.locale, source: "visit" });
+  if (meta.missQ) bump(meta.missQ, uid, TRAIL_WEIGHT);
 }
 
 /** 결과가 0건이었던 검색어 자체 — 가중치가 아니라 **무엇을 못 찾는지** 모으는 통계다

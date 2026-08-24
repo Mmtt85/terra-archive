@@ -1230,23 +1230,26 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   }, []);
 
   // ── 실패한 검색의 목적지 추적 (app/trail.ts) ────────────────────────────
-  // URL 해시로 표현되는 도착(오퍼 상세·스토리 상세·통합전략 상세)을 한 곳에서 잡아,
-  // 앞서 아무것도 못 찾았던 검색어들에 "결국 여기로 갔다"를 이어 붙인다.
+  // 도착(스토리 상세·통합전략 상세)을 한 곳에서 잡아, 앞서 아무것도 못 찾았던
+  // 검색어들에 "결국 여기로 갔다"를 이어 붙인다.
+  // ⚠ **오퍼 상세는 여기서 안 잡는다** — 아래 별도 이펙트에서 상태로 잡는다.
+  //   상세 주소가 정본 경로(/operators/<id>)로 바뀐 뒤(2026-08-06)로 해시 감시로는
+  //   카드 클릭도, 플래너 등에서 띄운 모달(URL 무변화)도 하나도 못 잡았다.
   useEffect(() => {
-    const seen = { hash: "" };
+    const seen = { url: "" };
     const check = () => {
       const hash = decodeURIComponent(window.location.hash);
-      if (hash === seen.hash) return;
-      seen.hash = hash;
-      if (hash.startsWith("#op-")) {
-        const id = hash.slice(4);
-        const op = operators.find((candidate) => candidate.id === id);
-        if (op) noteArrival(`op:${id}`, { kind: "op", name: op.name, locale });
-        return;
-      }
-      if (hash.startsWith("#story-")) {
-        const id = hash.slice(7).split("/")[0];
-        noteArrival(`story:${id}`, { kind: "story", name: id, locale });
+      const url = window.location.pathname + hash;
+      if (url === seen.url) return;
+      seen.url = url;
+      // 스토리 상세 — 정본 경로 /stories/<id> (2026-08-06) 또는 옛 해시 #story-<id>.
+      // ⚠ 정규식을 story.tsx(STORY_PATH_RE)에서 가져오지 않고 여기 둔 건, 값 import가
+      //   스토리 청크를 첫 화면 번들로 끌고 오기 때문이다 (home.tsx는 타입만 가져온다).
+      const onStory = /^\/(?:en\/|ja\/)?stories\/([^/]+)\/?$/.exec(window.location.pathname);
+      const storyId = onStory ? decodeURIComponent(onStory[1])
+        : hash.startsWith("#story-") ? hash.slice(7).split("/")[0] : null;
+      if (storyId) {
+        noteArrival(`story:${storyId}`, { kind: "story", name: storyId, locale });
         return;
       }
       // 통합전략 상세 모달: #rg-<뷰>~<타입>~<id> · 토픽은 ?topic=isN
@@ -1267,9 +1270,17 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
       window.removeEventListener("popstate", check);
       window.clearInterval(timer);
     };
-    // operators는 라우트 수명 동안 불변
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locale]);
+
+  // 오퍼 상세 도착 — 모달이든 상세 페이지든 **화면에 떠 있는 오퍼**를 그대로 신호로 쓴다.
+  // 주소를 보고 판단하지 않는 이유: 카드 클릭은 경로(/operators/<id>)로, 유니버셜 서치는
+  // 해시(#op-<id>)로, 플래너·치비에서 띄운 모달은 주소를 아예 안 바꾸는 등 길이 제각각이라
+  // 한 가지만 감시하면 반드시 새는 길이 생긴다 (사용자 제보 2026-08-24).
+  const arrivedOp = selected ?? pageOperator;
+  useEffect(() => {
+    if (!arrivedOp) return;
+    noteArrival(`op:${arrivedOp.id}`, { kind: "op", name: arrivedOp.name, locale });
+  }, [arrivedOp, locale]);
 
   // 스크롤 복원: 페이지(탭·스토리) 이동 시 top으로, 뒤로/앞으로 시 직전 스크롤 복구.
   // pushState를 감싸 (1) 떠나는 위치 저장 (2) 엔트리에 고유 키 부여 (3) 페이지가 바뀌면 top.
