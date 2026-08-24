@@ -475,8 +475,10 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
     return m;
   }, [doc]);
 
+  // 대표 오퍼 이름으로도 찾을 수 있어야 한다 — 커뮤니티는 '집중 케어'가 아니라
+  // '와파린 전략'으로 부른다 (사용자 확정 2026-08-24)
   const bandRows = useMemo(() => doc.bands.filter((b) =>
-    !q || normSearch(`${b.n} ${b.d}`).includes(q)), [doc, q]);
+    !q || normSearch(`${b.n} ${b.by ?? ""} ${b.d}`).includes(q)), [doc, q]);
 
   // ── 조각들 ────────────────────────────────────────────────────────────────
   const tierBadge = (n: number) => <em className={`ac-tier ac-t${n}`}>T{n}</em>;
@@ -917,7 +919,9 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
                     <header>
                       <img className="ac-thumb" src={bandIcon(b.id)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
                       <div>
-                        <b className="ac-cname">{b.n}</b>
+                        {/* 커뮤니티가 부르는 이름은 대표 오퍼 쪽이다 — '집중 케어'보다
+                            '와파린 전략'이 먼저 통한다 (사용자 확정 2026-08-24) */}
+                        <b className="ac-cname">{b.n}{b.by && <em className="ac-bandby">{b.by}</em>}</b>
                         <span className="ac-cmeta">
                           <i className="sb-chip ac-hp">HP {b.hp}</i>
                           {b.modes.map((m) => <i key={m} className="sb-chip">{t(MODE_TYPE_LABEL[m] ?? m)}</i>)}
@@ -1607,20 +1611,23 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
 
       {/* ── 밴드 상세 모달 ── */}
       {band && (
-        <ModalWindow key={band.id} label={band.n} className="operator-modal ac-modal" onClose={() => setBand(null)}>
+        <ModalWindow key={band.id} label={band.by ? `${band.n} (${band.by})` : band.n} className="operator-modal ac-modal" onClose={() => setBand(null)}>
           <div className="ac-dt">
             <header className="ac-dt-head">
               <img src={bandIcon(band.id)} alt="" aria-hidden onError={hideErr} />
               <div>
-                <h2>{band.n}</h2>
+                {/* 대표 오퍼 이름을 제목에 붙인다 — 커뮤니티는 '집중 케어'가 아니라
+                    '와파린 전략'으로 부른다 (사용자 확정 2026-08-24). 그 오퍼가 이 모드의
+                    기물이면(36개 중 8개) 눌러서 기물 상세로 간다. */}
+                <h2>{band.n}{band.by && (() => {
+                  const byOp = chessByName.get(band.by as string);
+                  return byOp
+                    ? <button key="by" type="button" className="ac-bandby ac-bandby-link"
+                      title={t("{name} 상세 열기", { name: band.by })}
+                      onClick={() => openChess(byOp)}>{band.by}</button>
+                    : <em key="by" className="ac-bandby">{band.by}</em>;
+                })()}</h2>
                 <p className="ac-cmeta">
-                  {band.by && (() => {
-                    const byOp = chessByName.get(band.by as string);
-                    return byOp
-                      ? <button type="button" className="sb-chip ac-chipref"
-                        onClick={() => openChess(byOp)}>{band.by}</button>
-                      : <i className="sb-chip">{band.by}</i>;
-                  })()}
                   <i className="sb-chip ac-hp">{t("목표 HP")} {band.hp}</i>
                   {band.modes.map((m) => <i key={m} className="sb-chip">{t(MODE_TYPE_LABEL[m] ?? m)}</i>)}
                 </p>

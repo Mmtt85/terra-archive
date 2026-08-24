@@ -20062,13 +20062,28 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
 .ac-ref-band { background: var(--tint-warm2); color: var(--tint-warm2-ink); }
 .ac-ref-op { background: var(--tint-warm); color: var(--tint-warm-ink); }
 .ac-ref-enemy { background: var(--tint-red); color: var(--tint-warm-ink); }
-/* 칩 자리에 그대로 들어가는 참조 (전략 상세의 대표 오퍼레이터) — 칩 모양은 sb-chip이 잡는다 */
-.ac-chipref {
-  font: inherit;
+/* 전략 이름 뒤의 대표 오퍼레이터 — '집중 케어 (와파린)'. 커뮤니티가 부르는 이름이
+   이쪽이라 목록·제목 어디서든 같이 보인다 (사용자 확정 2026-08-24). */
+.ac-bandby {
+  margin-left: 5px;
+  font-style: normal;
+  font-size: 0.82em;
+  font-weight: 700;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.ac-bandby::before { content: "("; }
+.ac-bandby::after { content: ")"; }
+/* 그 오퍼가 이 모드의 기물이면 눌러서 상세로 */
+.ac-bandby-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  border-bottom: 1px dotted currentColor;
   cursor: pointer;
   transition: 0.12s;
 }
-.ac-chipref:hover { border-color: var(--border-strong); }
+.ac-bandby-link:hover { color: var(--ink); }
 
 /* 장비 모달의 변형 구조체 바로가기 — 문장 뒤에 붙는 작은 칩 */
 .ac-morphnote {
