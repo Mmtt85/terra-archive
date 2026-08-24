@@ -19829,7 +19829,9 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   flex-direction: column;
   gap: 8px;
 }
-.ac-steps li {
+/* ⚠ 자식 선택자 — 효과 줄 안에 '실제 수치' 목록(.ac-stack li)이 들어와서(2026-08-24),
+   자손 선택자로 두면 안쪽 줄까지 같은 카드 배경·왼쪽 띠를 뒤집어쓴다. */
+.ac-steps > li {
   padding: 9px 11px;
   font-size: 12.5px;
   line-height: 1.65;
@@ -20123,49 +20125,38 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
 }
 /* ── 맹약 중첩 수치 — 게임이 "(중첩 수에 따라 변경)"으로 뭉갠 값의 실제 숫자 (2026-08-24).
       대상 / 기본 / 중첩 1당 / 예시 를 한 줄에 나란히. ── */
+/* 실제 수치 — 게임이 "(중첩 수에 따라 변경)"·"(최대치 존재)"로 뭉갠 값을 **그 효과 줄 안에**
+   붙인다 (사용자 지시 2026-08-24: "효과 쪽에다가 그냥 같이 넣어주면 안되나"). 종전엔 효과
+   목록 아래 별도 블록이라 어느 줄 이야기인지 눈으로 맞춰야 했다. */
 .ac-stack {
-  margin-top: 12px;
-  padding: 10px 12px;
+  margin: 7px 0 0;
+  padding: 6px 10px;
+  list-style: none;
   background: var(--bg-faint);
   border: 1px solid var(--line);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
-.ac-stack h5 {
-  margin: 0 0 6px;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  color: var(--muted);
-}
-.ac-stack ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 5px; }
-.ac-stack li {
+.ac-stack > li {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 4px 12px;
-  font-size: 12.5px;
+  gap: 3px 12px;
+  font-size: 12px;
+  line-height: 1.5;
 }
-.ac-stack > .sb-dim { margin: 0 0 8px; font-size: 11.5px; line-height: 1.55; }
-.ac-stack li > b { min-width: 96px; font-weight: 800; }
-/* 상위 단계(6명 배치 등) 계수 표식 */
-.ac-stack-tier {
-  margin-left: 5px;
-  padding: 1px 6px;
-  border-radius: 999px;
-  background: var(--tint-lime);
-  color: var(--tint-lime-ink);
-  font-style: normal;
-  font-size: 10px;
-  font-weight: 800;
-  white-space: nowrap;
-}
-.ac-stack li > .ac-stack-eq { color: var(--muted); }
-.ac-stack li em { font-style: normal; font-weight: 800; color: var(--ink); }
-.ac-stack li > i {
+.ac-stack > li > b { min-width: 92px; font-weight: 800; }
+.ac-stack > li > .ac-stack-eq { color: var(--muted); }
+.ac-stack em { font-style: normal; font-weight: 800; color: var(--ink); }
+.ac-stack > li > i {
   font-style: normal;
   font-size: 11.5px;
   color: var(--muted);
   margin-left: auto;
 }
+
 /* 목록 카드의 한 줄 요약 — 훑으면서 맹약끼리 비교되게 */
 .ac-stacksum {
   display: flex;

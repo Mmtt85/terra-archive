@@ -206,15 +206,11 @@ const trim = (n: number) => String(Math.round(n * 1e4) / 1e4);
 /** 단위별 표기. pct는 배율(0.23)을 퍼센트로, mult는 ×배율, sec는 초, flat은 날숫자.
  *  "23% + 중첩당 0.9%"처럼 **식**으로 읽히게 부호를 붙이지 않는다 — '기본 +23% / 중첩 1당
  *  +0.9%'로 나눠 적었더니 둘의 관계가 안 읽혔다 (사용자 지적 2026-08-24). */
-/** 상위 단계 조건을 짧은 꼬리표로 — "전장에 서로 다른 [쉐라그] 오퍼레이터 **6**명 배치" → "6명 배치" */
-const stepTag = (cond: string | undefined, t: T) => {
-  const m = cond ? /\*\*(\d+)\*\*\s*명?\s*배치/.exec(cond) : null;
-  return m ? t("{n}명 배치", { n: m[1] }) : t("상위 단계");
-};
-const stackNum = (v: number, u: AcStack["u"]) => {
+const stackNum = (v: number, u: AcStack["u"], t: T) => {
   if (u === "pct") return `${trim(v * 100)}%`;
   if (u === "mult") return `×${trim(v)}`;
-  if (u === "sec") return `${trim(v)}초`;
+  // ⚠ "초"를 문자열에 박아 두면 영어판에도 "20초"가 나온다 (2026-08-24 실측) — 사전을 탄다
+  if (u === "sec") return t("{n}초", { n: trim(v) });
   return trim(v);
 };
 /** 추첨 가중치의 기본값 — 67마리 중 62마리가 이 값이라, 다른 값만 카드에 띄운다 */
@@ -999,8 +995,8 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                             <p className="ac-stacksum">
                               {b.stk.map((sk) => (
                                 <span key={sk.k}>
-                                  {t(STACK_LABEL[sk.k] ?? sk.k)} {stackNum(sk.b, sk.u)}
-                                  {sk.p != null && <em>{" + "}{stackNum(sk.p, sk.u)}{t("/중첩")}</em>}
+                                  {t(STACK_LABEL[sk.k] ?? sk.k)} {stackNum(sk.b, sk.u, t)}
+                                  {sk.p != null && <em>{" + "}{stackNum(sk.p, sk.u, t)}{t("/중첩")}</em>}
                                 </span>
                               ))}
                             </p>
@@ -1480,40 +1476,40 @@ export default function AutochessGuide({ doc, onShowOperator }: {
               </div>
             </header>
             <h4>{t("효과")}</h4>
+            {/* 게임 설명문이 "(중첩 수에 따라 변경)"·"(최대치 존재)"로 뭉갠 값의 **실제 숫자**를
+                그 효과 줄 **안에** 붙인다 (사용자 지시 2026-08-24: "효과 쪽에다가 그냥 같이
+                넣어주면 안되나 — 굳이 따로 빼는것보단"). 따로 뺐을 땐 어느 줄 이야기인지
+                눈으로 다시 맞춰야 했다. 계수는 클뜯 전투 블랙보드에서 뽑는다 —
+                build-autochess.py stack_rows 참고, sk.s = 그 값이 걸린 단계 인덱스. */}
             <ol className="ac-steps">
-              {bond.steps.map((s, i) => (
-                <li key={i}>
-                  {s.c && <span className="ac-stepcond">{acRich(s.c, bond.id)}</span>}
-                  <span className="ac-steptxt">{acRich(s.t, bond.id)}</span>
-                </li>
-              ))}
+              {bond.steps.map((s, i) => {
+                // s가 범위를 벗어나면 마지막 줄에 붙인다 — 어떤 경우에도 수치를 잃지 않게
+                const nums = (bond.stk ?? []).filter(
+                  (sk) => Math.min(sk.s ?? 0, bond.steps.length - 1) === i);
+                return (
+                  <li key={i}>
+                    {s.c && <span className="ac-stepcond">{acRich(s.c, bond.id)}</span>}
+                    <span className="ac-steptxt">{acRich(s.t, bond.id)}</span>
+                    {nums.length > 0 && (
+                      <ul className="ac-stack">
+                        {nums.map((sk) => (
+                          <li key={sk.k}>
+                            <b>{t(STACK_LABEL[sk.k] ?? sk.k)}</b>
+                            <span className="ac-stack-eq">
+                              <em>{stackNum(sk.b, sk.u, t)}</em>
+                              {sk.p != null && <>{" + "}{t("중첩당")} <em>{stackNum(sk.p, sk.u, t)}</em></>}
+                            </span>
+                            {sk.cap != null && <i>{sk.capU === "stack"
+                              ? t("최대 {n}중첩", { n: trim(sk.cap) })
+                              : t("최대 {v}", { v: stackNum(sk.cap, sk.u, t) })}</i>}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                );
+              })}
             </ol>
-            {/* 게임 설명문이 "(중첩 수에 따라 변경)"으로 뭉갠 값의 **실제 숫자**
-                (사용자 요청 2026-08-24: "대충 두루뭉술 해놓으니 얼마나 오르는지 모르겠음").
-                클뜯 전투 블랙보드에서 뽑는다 — build-autochess.py stack_rows 참고. */}
-            {bond.stk && bond.stk.length > 0 && (
-              <div className="ac-stack">
-                <h5>{t("실제 수치")}</h5>
-                <ul>
-                  {bond.stk.map((sk) => (
-                    <li key={sk.k}>
-                      <b>{t(STACK_LABEL[sk.k] ?? sk.k)}
-                        {/* 상위 단계(6명 배치 등) 효과의 계수임을 밝힌다 — 기본 효과와 섞이면
-                            "6명 조건 쪽은 중첩이 없나?"로 읽힌다 (사용자 물음 2026-08-24) */}
-                        {sk.s ? <em className="ac-stack-tier">{stepTag(bond.steps[sk.s]?.c, t)}</em> : null}
-                      </b>
-                      <span className="ac-stack-eq">
-                        <em>{stackNum(sk.b, sk.u)}</em>
-                        {sk.p != null && <>{" + "}{t("중첩당")} <em>{stackNum(sk.p, sk.u)}</em></>}
-                      </span>
-                      {sk.cap != null && <i>{sk.capU === "stack"
-                        ? t("최대 {n}중첩", { n: trim(sk.cap) })
-                        : t("최대 {v}", { v: stackNum(sk.cap, sk.u) })}</i>}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
             {bond.chess.length === 0
               ? <p className="sb-dim">{t("소속 오퍼레이터가 따로 없는 맹약입니다 — 배치 조건만 맞으면 활성화됩니다.")}</p>
               : <h4>{t("소속 오퍼레이터")} <em className="sb-count">{bond.chess.length}</em></h4>}
