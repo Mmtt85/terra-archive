@@ -105,10 +105,17 @@ window.addEventListener('load',function(){setTimeout(function(){if(!hit){try{ses
         />
         {/* 첫 페인트 전에 해시를 읽어 초기 탭을 표시 — 서버 HTML은 항상 백과사전이라
             #infra·#recruit로 새로고침 시 백과사전이 잠깐 보이는 플래시를 막는다.
-            React 하이드레이션 후 home.tsx의 useLayoutEffect가 data-route를 지운다. */}
+            React 하이드레이션 후 home.tsx의 useLayoutEffect가 data-route를 지운다.
+
+            ⚠ 마지막 data-hashboot은 **범용 장치**다 (2026-08-24). 프리렌더 HTML은 해시를 볼 수
+            없어 언제나 그 페이지의 **기본 화면**이 그려져 있다. 그래서 딥링크로 바로 들어오면
+            "기본 탭이 잠깐 보였다가 딥링크 탭으로 튀는" 플래시가 난다 — 새 메뉴가 생길 때마다
+            되풀이된 버그다. 해시가 있으면 하이드레이션 전까지 [data-hashswap] 영역을 가리고,
+            해시를 읽어 상태를 맞춘 화면이 useLayoutEffect에서 이 플래그를 뗀다.
+            JS가 아예 안 뜨는 상황에 대비해 4초 뒤 스스로 풀린다. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var h=location.hash;var r=h==='#infra'?'infra':h==='#recruit'?'recruit':h==='#farm'?'farm':h.indexOf('#story')===0?'story':'';if(r)document.documentElement.setAttribute('data-route',r);if(/^#story-.+/.test(h))document.documentElement.setAttribute('data-story-detail','1');}catch(e){}`,
+            __html: `try{var h=location.hash;var r=h==='#infra'?'infra':h==='#recruit'?'recruit':h==='#farm'?'farm':h.indexOf('#story')===0?'story':'';if(r)document.documentElement.setAttribute('data-route',r);if(/^#story-.+/.test(h))document.documentElement.setAttribute('data-story-detail','1');if(h.length>1&&!/^#(changelog|devnotes|broadcast|replay|prts-help|roster|op-)/.test(h)){var de=document.documentElement;de.setAttribute('data-hashboot','1');setTimeout(function(){de.removeAttribute('data-hashboot')},4000);}}catch(e){}`,
           }}
         />
         {/* 다크모드 — 저장값(ta-theme) 우선, 없으면 OS 설정. 첫 페인트 전에 html.dark를

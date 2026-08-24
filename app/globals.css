@@ -102,6 +102,15 @@ html[lang="ja"] body {
 html[data-story-detail] .story:not(.story-detail) {
   display: none;
 }
+/* ── 해시 딥링크 첫 페인트 가리개 (2026-08-24) ────────────────────────────────
+   프리렌더 HTML은 URL 해시를 볼 수 없어 언제나 그 페이지의 **기본 화면**이 그려져 있다.
+   그래서 딥링크(#item·#rg-relic~… 등)로 바로 들어오면 기본 탭이 잠깐 보였다가 딥링크
+   탭으로 튄다 — 새 메뉴를 붙일 때마다 되풀이된 버그다. pre-paint 스크립트(layout.tsx)가
+   html[data-hashboot]을 세우고, 해시를 읽는 화면이 useLayoutEffect에서 그걸 뗀다.
+   ⚠ visibility라 자리는 그대로 잡힌다 — display:none으로 하면 접힌 만큼 CLS가 된다. */
+html[data-hashboot] [data-hashswap] {
+  visibility: hidden;
+}
 main {
   height: 100dvh;
   overflow: hidden;
@@ -20135,8 +20144,21 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   gap: 4px 12px;
   font-size: 12.5px;
 }
+.ac-stack > .sb-dim { margin: 0 0 8px; font-size: 11.5px; line-height: 1.55; }
 .ac-stack li > b { min-width: 96px; font-weight: 800; }
-.ac-stack li > span { color: var(--muted); }
+/* 상위 단계(6명 배치 등) 계수 표식 */
+.ac-stack-tier {
+  margin-left: 5px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--tint-lime);
+  color: var(--tint-lime-ink);
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.ac-stack li > .ac-stack-eq { color: var(--muted); }
 .ac-stack li em { font-style: normal; font-weight: 800; color: var(--ink); }
 .ac-stack li > i {
   font-style: normal;

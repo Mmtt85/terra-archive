@@ -242,7 +242,15 @@ STACK_EXTRA = {"raidShip": ["base_max_hp"]}
 
 
 def stack_rows(b):
-    """맹약 하나의 중첩 수치 — [{k: 코드, u: 단위, b: 기본값, p: 중첩 1당}]"""
+    """맹약 하나의 중첩 수치 — [{k: 코드, u: 단위, b: 기본값, p: 중첩 1당, s: 몇 번째 단계}]
+
+    s(단계 번호)는 "6명 배치 시" 같은 **상위 단계 효과에도 중첩 계수가 붙는지**를 화면에서
+    보여 주기 위한 것이다 (사용자 물음 2026-08-24). 게임의 파라미터 목록은 설명문에
+    '(중첩 수에 따라 변경)'이 나오는 **순서 그대로**라, 그 표식을 가진 단계에 앞에서부터
+    나눠 준다. 표식보다 파라미터가 많은 경우(시라쿠사 공속+지속시간이 한 표식 안에 있고,
+    기습은 목록이 HP를 빠뜨려 우리가 채웠다)는 **남는 몫을 첫 표식에** 붙인다 —
+    두 사례 모두 원문과 대조해 확인했다.
+    """
     base = b.get("descParamBaseList") or []
     per = b.get("descParamPerStackList") or []
     if not base:
@@ -251,6 +259,12 @@ def stack_rows(b):
     for blk in (KR["effectBuffInfoDataDict"].get(b.get("effectId")) or []):
         for kv in (blk.get("blackboard") or []):
             board.setdefault(kv["key"], kv["value"])
+    # ⚠ 표식 위치는 **한국어 원문**에서 센다 — 로케일 문구에는 '중첩 수에 따라 변경'이라는
+    #   말이 없다. 단계 구성(줄 수·순서)은 로케일이 같으므로 인덱스를 그대로 쓴다.
+    #   (2026-08-24: 로케일 steps로 세다가 EN/JA에서만 단계 표식이 통째로 빠졌다)
+    kr_steps = steps_of(b["desc"])
+    marks = [i for i, st in enumerate(kr_steps)
+             if "중첩 수에 따라 변경" in (st.get("c") or "") + st["t"]]
     pairs = [(bk, per[i] if i < len(per) else None) for i, bk in enumerate(base)]
     for bk in STACK_EXTRA.get(b["bondId"], []):
         pairs.append((bk, re.sub(r"^base_", "", bk) + "_per_stack"))
@@ -268,6 +282,11 @@ def stack_rows(b):
         if pv:
             row["p"] = round(pv, 6)
         out.append(row)
+    # 단계 배정 — 뒤에서부터 표식 하나에 하나씩, 남는 몫은 첫 표식으로
+    if marks:
+        for j, row in enumerate(out):
+            m = len(out) - j          # 이 행 뒤로 남은 개수(자기 포함)
+            row["s"] = marks[max(0, len(marks) - m)]
     return out
 
 TRAPS = KR["trapChessDataDict"]           # 115 — 장비(일반/강화)
@@ -439,6 +458,7 @@ def build_locale(loc):
             t = teams["en"].get(BOND_TEAM[bid]) or {}
             name = t.get("powerName") or name
         bond_order[bid] = len(bond_rows)
+        steps = steps_of(loc_desc(loc, "bondInfoDict", bid, "desc", b["desc"]))
         bond_rows.append({
             "id": bid,
             "n": name,
@@ -448,7 +468,7 @@ def build_locale(loc):
             # ⚠ '독행'만 downward다 — 인원이 **적을수록** 강해지므로 "N명부터"로 쓰면 뜻이 뒤집힌다.
             "cond": b.get("activeCondition"),
             **({"down": 1} if "downward" in (b.get("activeConditionTemplate") or "") else {}),
-            "steps": steps_of(loc_desc(loc, "bondInfoDict", bid, "desc", b["desc"])),
+            "steps": steps,
             **({"stk": stk} if (stk := stack_rows(b)) else {}),
             "chess": [],                    # 아래에서 채운다
         })

@@ -15,8 +15,8 @@
 // ⚠ 영어판은 시즌2가 글로벌 서버에 없어 **설명문이 한국어 원문**이다 (doc.krOnly).
 //    통합전략 IS6와 같은 취급 — 안내문을 띄우고 그대로 보여 준다.
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useI18n, rich } from "./i18n";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useI18n, rich, type T } from "./i18n";
 import { normSearch, useSearchInput } from "./search";
 import { asset } from "./assets";
 import { ModalWindow } from "./modal-window";
@@ -32,7 +32,9 @@ export type AcRef = [string, string];
 const REF_TOKEN = /(<[^<>\n]+>|\[[^\[\]\n]+\]|【[^【】\n]+】)/;
 
 /** 중첩 수치 — k=대상 코드, u=단위, b=기본값, p=중첩 1당 (build-autochess.py stack_rows) */
-export type AcStack = { k: string; u: "pct" | "flat" | "sec" | "mult"; b: number; p?: number };
+export type AcStack = { k: string; u: "pct" | "flat" | "sec" | "mult"; b: number; p?: number;
+  /** 이 계수가 걸린 효과 단계 (steps의 인덱스) — "6명 배치 시" 같은 상위 단계도 중첩을 탄다 */
+  s?: number };
 export type AcBond = { id: string; n: string; nation: boolean; min: number; cond?: string; down?: 1; steps: AcStep[]; stk?: AcStack[]; chess: string[] };
 // tg = 특질 분류 태그(발동 시점·효과 유형, build-autochess.py classify_gar) — 오퍼레이터 필터용.
 // evb = '맹약이 N회 중첩할 때마다' 능력이 세는 맹약 id 목록 ("core" = 핵심 맹약, 병기 가능).
@@ -192,12 +194,19 @@ const STACK_LABEL: Record<string, string> = {
 };
 /** 소수점 지저분한 값 정리 — 0.9 / 0.35 / 1.5 는 그대로, 0.90000001 같은 건 잘라낸다 */
 const trim = (n: number) => String(Math.round(n * 1e4) / 1e4);
-/** 단위별 표기. pct는 배율(0.23)을 퍼센트로, mult는 ×배율, sec는 초, flat은 날숫자 */
-const stackNum = (v: number, u: AcStack["u"], signed = false) => {
-  if (u === "pct") return `${signed || v > 0 ? "+" : ""}${trim(v * 100)}%`;
-  if (u === "mult") return signed ? `+${trim(v)}` : `×${trim(v)}`;
-  if (u === "sec") return `${signed ? "+" : ""}${trim(v)}초`;
-  return `${signed || v > 0 ? "+" : ""}${trim(v)}`;
+/** 단위별 표기. pct는 배율(0.23)을 퍼센트로, mult는 ×배율, sec는 초, flat은 날숫자.
+ *  "23% + 중첩당 0.9%"처럼 **식**으로 읽히게 부호를 붙이지 않는다 — '기본 +23% / 중첩 1당
+ *  +0.9%'로 나눠 적었더니 둘의 관계가 안 읽혔다 (사용자 지적 2026-08-24). */
+/** 상위 단계 조건을 짧은 꼬리표로 — "전장에 서로 다른 [쉐라그] 오퍼레이터 **6**명 배치" → "6명 배치" */
+const stepTag = (cond: string | undefined, t: T) => {
+  const m = cond ? /\*\*(\d+)\*\*\s*명?\s*배치/.exec(cond) : null;
+  return m ? t("{n}명 배치", { n: m[1] }) : t("상위 단계");
+};
+const stackNum = (v: number, u: AcStack["u"]) => {
+  if (u === "pct") return `${trim(v * 100)}%`;
+  if (u === "mult") return `×${trim(v)}`;
+  if (u === "sec") return `${trim(v)}초`;
+  return trim(v);
 };
 /** 추첨 가중치의 기본값 — 67마리 중 62마리가 이 값이라, 다른 값만 카드에 띄운다 */
 const ENEMY_W_BASE = 10;
@@ -305,7 +314,9 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
   }
   const hydrated = useRef(false);
   const prevHash = useRef("");
-  useEffect(() => {
+  // ⚠ useEffect가 아니라 **useLayoutEffect** — 해시 반영이 페인트 뒤로 밀리면 기본 탭(맹약)이
+  // 한 프레임 보였다가 딥링크 탭으로 튄다 (story.tsx #story-<id>와 같은 규약).
+  useLayoutEffect(() => {
     const apply = () => {
       // 전역 모달(#changelog·#broadcast…)이 떠 있으면 내 상태로 해석하지 않는다 — 그대로
       // 두면 다른 모달을 여는 순간 이 페이지의 필터·모달이 통째로 초기화된다 (2026-08-24)
@@ -332,6 +343,8 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
     apply();
     hydrated.current = true;
     prevHash.current = window.location.hash;
+    // 첫 페인트 가리개 해제 — 이제 화면이 해시대로 그려진다 (layout.tsx pre-paint 스크립트)
+    document.documentElement.removeAttribute("data-hashboot");
     window.addEventListener("hashchange", apply);
     return () => window.removeEventListener("hashchange", apply);
     // 마운트 1회 + 해시 편집 — 이후 상태 변화는 아래 effect가 해시로 내보낸다
@@ -924,6 +937,10 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
         <p className="sim-note">{t("이 모드는 아직 글로벌 서버에 출시되지 않아 설명문은 한국어 원문으로 표시됩니다. 일부 이름은 시즌 1의 영어 표기입니다.")}</p>
       )}
 
+      {/* data-hashswap = 해시가 정하는 영역. 프리렌더 HTML은 언제나 맹약 탭이라, 딥링크로
+          들어온 첫 페인트에서는 가려 두고 하이드레이션이 제 탭을 그린 뒤에 보인다
+          (globals.css html[data-hashboot], layout.tsx pre-paint 스크립트) */}
+      <div data-hashswap>
       <div className="sb-views ac-views" role="tablist" aria-label={t("위수 협의 보기")}>
         {VIEWS.map((vw) => (
           <button key={vw} type="button" role="tab" aria-selected={view === vw}
@@ -970,7 +987,7 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
                               {b.stk.map((sk) => (
                                 <span key={sk.k}>
                                   {t(STACK_LABEL[sk.k] ?? sk.k)} {stackNum(sk.b, sk.u)}
-                                  {sk.p != null && <em>{stackNum(sk.p, sk.u, true)}{t("/중첩")}</em>}
+                                  {sk.p != null && <em>{" + "}{stackNum(sk.p, sk.u)}{t("/중첩")}</em>}
                                 </span>
                               ))}
                             </p>
@@ -1430,6 +1447,7 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
 
         </div>
       )}
+      </div>{/* /data-hashswap — 모달은 body 포털이라 이 가리개와 무관하다 */}
 
 
       {bond && (
@@ -1463,13 +1481,20 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
             {bond.stk && bond.stk.length > 0 && (
               <div className="ac-stack">
                 <h5>{t("중첩 수치")}</h5>
+                <p className="sb-dim">{t("게임 설명문이 '(중첩 수에 따라 변경)'으로만 적어 둔 실제 계수입니다. 중첩 수는 판이 도는 동안 오퍼레이터 능력·이벤트로 쌓이는 맹약별 누적 값입니다. 'N명 배치' 상위 단계 효과도 중첩을 타면 여기 함께 있습니다.")}</p>
                 <ul>
                   {bond.stk.map((sk) => (
                     <li key={sk.k}>
-                      <b>{t(STACK_LABEL[sk.k] ?? sk.k)}</b>
-                      <span>{t("기본")} <em>{stackNum(sk.b, sk.u)}</em></span>
-                      {sk.p != null && <span>{t("중첩 1당")} <em>{stackNum(sk.p, sk.u, true)}</em></span>}
-                      {sk.p != null && <i>{t("중첩 {n}회 = {v}", {
+                      <b>{t(STACK_LABEL[sk.k] ?? sk.k)}
+                        {/* 상위 단계(6명 배치 등) 효과의 계수임을 밝힌다 — 기본 효과와 섞이면
+                            "6명 조건 쪽은 중첩이 없나?"로 읽힌다 (사용자 물음 2026-08-24) */}
+                        {sk.s ? <em className="ac-stack-tier">{stepTag(bond.steps[sk.s]?.c, t)}</em> : null}
+                      </b>
+                      <span className="ac-stack-eq">
+                        <em>{stackNum(sk.b, sk.u)}</em>
+                        {sk.p != null && <>{" + "}{t("중첩당")} <em>{stackNum(sk.p, sk.u)}</em></>}
+                      </span>
+                      {sk.p != null && <i>{t("중첩 {n} → {v}", {
                         n: 10, v: stackNum(sk.b + sk.p * 10, sk.u) })}</i>}
                     </li>
                   ))}

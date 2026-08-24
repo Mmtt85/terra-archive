@@ -831,6 +831,28 @@ Pages가 아니라 R2에서 서빙된다. 자산 URL은 `/assets/` 접두사가 
 같다. 글자 칩에 쓰면 라이트에서 **검정 배경 + 검정 글씨**가 된다(실측 1.74:1). 칩 배경은
 `color-mix(in srgb, var(--ink) 6%, var(--white))` 쪽을 쓴다.
 
+### 딥링크 첫 페인트 — 기본 탭이 잠깐 보이는 플래시 (2026-08-24)
+
+프리렌더 HTML은 **URL 해시를 볼 수 없다.** 그래서 `/autochess#item`으로 바로 들어오면
+서버가 그려 둔 기본 탭(맹약)이 먼저 보였다가 하이드레이션 뒤 아이템으로 튄다. 새 메뉴를
+붙일 때마다 되풀이된 버그다 (사용자 지적: "네댓번정도 고친거 같은데 또 발생").
+
+**근본 원인은 해시가 서버에 안 간다는 것**이고, 그건 못 고친다. 대신 하이드레이션 전까지
+**잘못된 화면을 안 보여 준다**:
+
+1. `app/layout.tsx` pre-paint 스크립트가 해시가 있으면 `html[data-hashboot]`을 세운다
+   (전역 모달 해시는 제외, JS가 안 뜨는 상황 대비 4초 뒤 자동 해제)
+2. `app/globals.css`가 `html[data-hashboot] [data-hashswap] { visibility: hidden }`
+   — `visibility`라 자리는 그대로라 CLS가 없다
+3. 화면이 **useLayoutEffect**(useEffect 아님)에서 해시를 반영하고
+   `document.documentElement.removeAttribute("data-hashboot")`으로 가리개를 뗀다
+
+`npm run build`의 **`scripts/check-hashboot.mjs`가 이 셋을 강제한다** — `location.hash`를
+읽는 `app/**/*.tsx`가 셋을 안 갖추면 빌드가 멈춘다. 해당 없는 화면은 그 스크립트의
+`EXEMPT`에 이유를 적어 넣는다 (록라는 프리렌더가 '불러오는 중' 자리표시자뿐이라 해당 없음).
+
+새 화면을 붙일 때의 전체 점검표는 **`new-screen` 스킬**에 있다.
+
 ### 통합전략 모달을 공용 창으로 (2026-08-24)
 
 `/rogue`의 상세 모달 8종(작전·적·기록·조우·소장품·효과 총합·층·스샷 다중 인식)은 자체
