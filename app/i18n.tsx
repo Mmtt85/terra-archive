@@ -2859,9 +2859,8 @@ const D: Record<string, Pair> = {
   "재배치 시간": ["Redeploy time", "再配置時間"],
   "스킬 발동마다 공격 속도": ["ASPD per skill use", "スキル発動ごとの攻撃速度"],
   "스킬 발동마다 공격력": ["ATK per skill use", "スキル発動ごとの攻撃力"],
-  "게임 설명문이 '(중첩 수에 따라 변경)'·'(최대치 존재)'·'일정량'으로만 적어 둔 값입니다. 중첩 수는 판이 도는 동안 오퍼레이터 능력·이벤트로 쌓이는 맹약별 누적 값이고, 'N명 배치' 상위 단계 효과의 수치도 여기 함께 있습니다.": [
-    "The numbers the game hides behind \"(varies with stack count)\", \"(has a cap)\" and \"a certain amount\". Stack count is a per-alliance total that builds up over a run through operator abilities and events; higher-tier effects (\"N deployed\") are listed here too.",
-    "ゲームの説明文が「(加算数によって変動)」「(上限あり)」「一定量」としか書いていない値です。加算数は周回中にオペレーターの能力やイベントで盟約ごとに積み上がる累計値で、「N名配置」の上位段階効果の数値もここに含まれます。"],
+  "백과사전에서 {n} 보기": ["Open {n} in the archive", "百科事典で{n}を見る"],
+  "특질 · 스킬 · 모듈 · 능력치 전문": ["Full talent, skills, modules and stats", "特性・スキル・モジュール・ステータスの全文"],
   "공격 속도": ["ASPD", "攻撃速度"],
   "지속 시간": ["Duration", "持続時間"],
   "냉기 지속 시간": ["Chill duration", "冷気の持続時間"],
@@ -3024,9 +3023,9 @@ const D: Record<string, Pair> = {
     "This operator can only join through a Supply Center free-pick slot. Being off the shop roster, the game data carries no garrison ability or default skill setup for them, and per the in-game notice they deploy without a trait.",
     "補給センターの自由選択枠からのみ加入できるオペレーターです。ショップ名簿にないため専用能力や初期スキルの設定はゲームデータに含まれず、ゲーム内の案内どおり特質なしで出撃します。"],
   "자유 선택 칸": ["Free-pick slots", "自由選択枠"],
-  "보급센터 레벨 5·6에서 각각 {n}칸씩 열립니다. 상점 명단에 없는 KR 출시 ★6 오퍼레이터를 보유하고 있으면 데려올 수 있습니다 — 단, 게임 안내대로 이렇게 편성한 오퍼레이터는 특질 없이 출전합니다. 누르면 오퍼레이터 상세로 갑니다.": [
-    "Supply Center levels 5 and 6 open {n} slots each. Any 6★ you own that is off the shop roster can join through one — though, per the in-game notice, operators formed this way deploy without a trait. Tap one for its operator page.",
-    "補給センターレベル5・6でそれぞれ{n}枠開放されます。ショップ名簿にない実装済み★6を所持していれば連れて来られます — ただしゲーム内の案内どおり、この方法で編成したオペレーターは特質なしで出撃します。押すとオペレーター詳細へ進みます。"],
+  "보급센터 레벨 5·6에서 각각 {n}칸씩 열립니다. 상점 명단에 없는 KR 출시 ★6 오퍼레이터를 보유하고 있으면 데려올 수 있습니다 — 단, 게임 안내대로 이렇게 편성한 오퍼레이터는 특질 없이 출전합니다. 누르면 어느 맹약으로 세는지가 뜨고, 거기서 백과사전 상세(특질·스킬·모듈)로 갈 수 있습니다.": [
+    "Supply Center levels 5 and 6 open {n} slots each. Any 6★ you own that is off the shop roster can join through one — though, per the in-game notice, operators formed this way deploy without a trait. Tap one to see which alliances it counts for, and open its archive entry (talent, skills, modules) from there.",
+    "補給センターレベル5・6でそれぞれ{n}枠開放されます。ショップ名簿にない実装済み★6を所持していれば連れて来られます — ただしゲーム内の案内どおり、この方法で編成したオペレーターは特質なしで出撃します。押すとどの盟約に数えられるかが表示され、そこから百科事典の詳細(特性・スキル・モジュール)へ進めます。"],
   // 대체 기물(NPC) — 본체 미보유 기물로 대신 출전 (사용자 제보 2026-08-23)
   "함께 나옴": ["Comes along", "同時出現"],
   "대체 기물": ["Stand-in units", "代替ユニット"],

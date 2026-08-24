@@ -20272,6 +20272,58 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   background: var(--chip);
   flex: none;
 }
+/* 백과사전 오퍼 상세로 가는 줄 — 위수 협의 전용 데이터가 없는 자유 선택 칸 후보에겐
+   이게 유일한 스킬·모듈 통로다 (사용자 요청 2026-08-24). 기물 머리글 바로 아래 한 줄. */
+.ac-opdex {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin: 10px 0 2px;
+  padding: 8px 12px 8px 9px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg-panel);
+  color: var(--muted);
+  cursor: pointer;
+  text-align: left;
+}
+.ac-opdex:hover { border-color: var(--lime); color: var(--ink); }
+.ac-opdex img {
+  width: 34px;
+  height: 34px;
+  object-fit: cover;
+  border-radius: 50%;
+  background: var(--chip);
+  flex: none;
+}
+.ac-opdex > span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+.ac-opdex b {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ac-opdex em {
+  font-size: 11px;
+  font-style: normal;
+  color: var(--muted);
+}
+.ac-opdex > i {
+  flex: none;
+  font-style: normal;
+  font-size: 16px;
+  color: var(--muted);
+}
+
 /* 좁은 화면 — 머리글이 밀리므로 아래 줄로 내려 가로로 편다 (한 줄 유지) */
 @media (max-width: 560px) {
   .ac-dt-head { flex-wrap: wrap; }

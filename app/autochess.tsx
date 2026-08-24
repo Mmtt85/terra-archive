@@ -265,7 +265,11 @@ function Lines({ text, className, render = rich }:
   return <>{rows.map((r, i) => <p key={i} className={className}>{render(r)}</p>)}</>;
 }
 
-export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
+export default function AutochessGuide({ doc, onShowOperator }: {
+  doc: AutochessDoc;
+  /** 백과사전 오퍼 상세 모달 열기 — 기물 상세에서 특질·스킬·모듈 전문을 볼 때 쓴다 */
+  onShowOperator?: (id: string) => void;
+}) {
   const { t, locale } = useI18n();
   const [view, setView] = useState<View>("bond");
   const [miscTab, setMiscTab] = useState<MiscTab>("enemy");
@@ -1134,7 +1138,7 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
                   (사용자 스크린샷 검증 2026-08-23). 클뜯에 ★6 후보 명단은 없어 상점 명단에
                   이미 있는 오퍼레이터를 뺀 KR 출시 ★6 전원을 싣는다. */}
               <h3 className="sb-h3">{t("자유 선택 칸")} <em className="sb-count">{diyPool.length}</em></h3>
-              <p className="sb-dim">{t("보급센터 레벨 5·6에서 각각 {n}칸씩 열립니다. 상점 명단에 없는 KR 출시 ★6 오퍼레이터를 보유하고 있으면 데려올 수 있습니다 — 단, 게임 안내대로 이렇게 편성한 오퍼레이터는 특질 없이 출전합니다. 누르면 오퍼레이터 상세로 갑니다.", { n: 2 })}</p>
+              <p className="sb-dim">{t("보급센터 레벨 5·6에서 각각 {n}칸씩 열립니다. 상점 명단에 없는 KR 출시 ★6 오퍼레이터를 보유하고 있으면 데려올 수 있습니다 — 단, 게임 안내대로 이렇게 편성한 오퍼레이터는 특질 없이 출전합니다. 누르면 어느 맹약으로 세는지가 뜨고, 거기서 백과사전 상세(특질·스킬·모듈)로 갈 수 있습니다.", { n: 2 })}</p>
               <div className="ac-diypool">
                 {diyPool.map((o) => (
                   <button key={o.op} type="button" className="ac-diyop"
@@ -1490,7 +1494,6 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
             {bond.stk && bond.stk.length > 0 && (
               <div className="ac-stack">
                 <h5>{t("실제 수치")}</h5>
-                <p className="sb-dim">{t("게임 설명문이 '(중첩 수에 따라 변경)'·'(최대치 존재)'·'일정량'으로만 적어 둔 값입니다. 중첩 수는 판이 도는 동안 오퍼레이터 능력·이벤트로 쌓이는 맹약별 누적 값이고, 'N명 배치' 상위 단계 효과의 수치도 여기 함께 있습니다.")}</p>
                 <ul>
                   {bond.stk.map((sk) => (
                     <li key={sk.k}>
@@ -1589,6 +1592,21 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
                 </button>
               )}
             </header>
+
+            {/* 백과사전 오퍼 상세로 — 특질·스킬·모듈·능력치 전문은 도감 쪽에 있다.
+                특히 자유 선택 칸 후보(diy_)는 위수 협의 전용 데이터가 아예 없어서 이 창만으로는
+                볼 게 없다 (사용자 요청 2026-08-24: "자유선택 칸 후보의 오퍼도 클릭하면 스킬 및
+                모듈 등등 설명 볼 수 있게"). 대체 기물(NPC)은 백과사전에 항목이 없어 제외한다. */}
+            {chess.op && onShowOperator && !chess.subsOf?.length && (
+              <button type="button" className="ac-opdex" onClick={() => onShowOperator(chess.op!)}>
+                <img src={opFace(chess.op)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
+                <span>
+                  <b>{t("백과사전에서 {n} 보기", { n: chess.n })}</b>
+                  <em>{t("특질 · 스킬 · 모듈 · 능력치 전문")}</em>
+                </span>
+                <i aria-hidden>›</i>
+              </button>
+            )}
 
             {/* 일반 ↔ 정예화(골든) — 능력·스킬·모듈·표 강조가 전부 이 토글을 따른다 (2026-08-23) */}
             {(chess.garG.length > 0 || chess.sks?.some((x) => x.dG) || chess.modG) && (

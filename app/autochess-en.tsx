@@ -4,6 +4,6 @@
 import AutochessGuide, { type AutochessDoc } from "./autochess";
 import doc from "./data/autochess.en.json";
 
-export default function AutochessEn() {
-  return <AutochessGuide doc={doc as unknown as AutochessDoc} />;
+export default function AutochessEn({ onShowOperator }: { onShowOperator?: (id: string) => void }) {
+  return <AutochessGuide doc={doc as unknown as AutochessDoc} onShowOperator={onShowOperator} />;
 }
