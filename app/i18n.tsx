@@ -2872,7 +2872,7 @@ const D: Record<string, Pair> = {
   "받는 마법 대미지": ["Arts damage taken", "受ける術ダメージ"],
   "HP 50% 미만 적 대미지": ["Damage to enemies below 50% HP", "HP50%未満の敵へのダメージ"],
   "탄약": ["Ammo", "弾薬"],
-  "공격력 상한": ["ATK cap", "攻撃力の上限"],
+  "공격력 증가 상한": ["ATK gain cap", "攻撃力上昇の上限"],
   "발동 확률": ["Trigger chance", "発動確率"],
   "{name} 상세 열기": ["Open {name}", "{name}の詳細を開く"],
   "이 중 하나를 변형 구조체와 함께 장착하면 착용자가 그 맹약을 추가로 얻습니다. 장비만 장착해서는 맹약이 붙지 않습니다.": [

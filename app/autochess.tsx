@@ -195,7 +195,7 @@ const STACK_LABEL: Record<string, string> = {
   truedmg: "트루 대미지", magicdmg: "마법 대미지",
   dmgscale: "대미지 배율", chilldmg: "냉기·빙결 적 대미지 배율",
   magictaken: "받는 마법 대미지", lowhpdmg: "HP 50% 미만 적 대미지",
-  ammo: "탄약", atkcap: "공격력 상한", prob: "발동 확률",
+  ammo: "탄약", atkcap: "공격력 증가 상한", prob: "발동 확률",
   // 설명문이 "(최대치 존재)"·"일정량"으로만 적어 둔 상수 (build-autochess.py BOND_CONST)
   atkperammo: "탄약 1발당 공격력", atkequip: "장비 장착 시 공격력",
   atkequipgold: "승급 장비면 추가", pen: "방어력·마법 저항 무시", respawn: "재배치 시간",
