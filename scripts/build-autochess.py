@@ -831,6 +831,87 @@ def build_locale(loc):
                          "subs": targets})
     diy_subs.sort(key=lambda r: (-(r["r"] or 0), r["n"] or ""))
 
+    # ── 문구 상호 참조 (refs) ────────────────────────────────────────────────
+    # 게임 문구는 다른 항목을 홑화살괄호·대괄호로 부른다 — "<염국> 오퍼레이터 1명 우선 등장",
+    # "[사르곤] 오퍼레이터 스킬 발동", "<호출 모듈> 1개 획득", "일부 적이 <덕로드>로 변경".
+    # 화면에서 눌러 그 상세를 바로 열 수 있게 **이름 → 대상** 매핑을 여기서 미리 풀어 싣는다
+    # (사용자 요청 2026-08-24 "매핑할 수 있는 건 전부"). 런타임에 못 푸는 이유가 둘 —
+    #   ① 이름이 로케일마다 다르다 (EN/JA 표가 따로 있어야 한다)
+    #   ② 적 이름표는 1MB짜리 적 도감에만 있다 (autochess.json엔 이 모드에 나오는 적뿐)
+    def _norm(s):
+        return re.sub(r"\s+", "", s or "").lower()
+
+    # 넣는 순서가 곧 우선순위다 (먼저 넣은 쪽이 이긴다).
+    # 밴드의 대표 오퍼 이름(by)을 맨 뒤로 미루는 게 중요하다 — '덕로드'는 band_ducklord의
+    # 대표 이름이면서 동시에 그 밴드가 소환하는 **적**이라, 문구가 부르는 쪽은 적이다.
+    ref_index = {}
+
+    def _put(kind, name, ident):
+        k = _norm(name)
+        if k and k not in ref_index:
+            ref_index[k] = [kind, ident]
+
+    for r in bond_rows:
+        _put("bond", r["n"], r["id"])
+    for r in equip_rows:
+        _put("item", r["n"], r["id"])
+    for r in band_rows:
+        _put("band", r["n"], r["id"])
+    for r in chess_rows:
+        _put("op", r["n"], r["id"])
+    for r in mode_rows:
+        _put("mode", r["n"], r["id"])
+    # 밴드의 대표 오퍼 이름(by)은 **맨 뒤**로 미룬다 — '덕로드'는 band_ducklord의 대표
+    # 이름이면서 동시에 그 밴드가 소환하는 적이라, 문구가 부르는 쪽은 적이다.
+    by_index = {}
+    for r in band_rows:
+        k = _norm(r.get("by"))
+        if k and k not in ref_index and k not in by_index:
+            by_index[k] = ["band", r["id"]]
+
+    # 적 이름은 **홑화살괄호로 불릴 때만** 인정한다. 게임 문구에서 홑화살괄호는 고유명사
+    # (아이템·소환물·특정 적), 대괄호는 분류(맹약·직군·팀)를 뜻하는데, 적 도감에는
+    # '스나이퍼'·'캐스터' 같은 직군과 같은 이름의 잡몹이 있어서 그대로 두면
+    # "[스나이퍼] 오퍼레이터의 공격력" 이 엉뚱한 잡몹 상세로 이어진다.
+    enemy_index = {}
+    for src in (enemies[loc], enemies["ko"]):     # EN은 설명이 한국어 원문이다 (krOnly)
+        for key, e in src.items():
+            k = _norm(e.get("name"))
+            if k and k not in enemy_index:
+                enemy_index[k] = ["enemy", key]
+
+    refs = {}
+
+    def _scan(o):
+        if isinstance(o, dict):
+            for v in o.values():
+                _scan(v)
+        elif isinstance(o, list):
+            for v in o:
+                _scan(v)
+        elif isinstance(o, str):
+            # 괄호 종류마다 따로 훑는다 — "<전장에 서로 다른 [사르곤] 오퍼레이터 6명 배치>"
+            # 처럼 조건절이 대괄호 참조를 품고 있어서, 한 번에 훑으면 안쪽을 놓친다.
+            # ⚠ 일본어판은 대괄호 대신 **【】** 를 쓴다 (JA 원문 실측 2026-08-24).
+            for name in re.findall(r"<([^<>\n]{1,40})>", o):
+                k = _norm(name)
+                hit = ref_index.get(k) or enemy_index.get(k) or by_index.get(k)
+                if hit:
+                    refs[name] = hit
+            for name in re.findall(r"[\[【]([^\[\]【】\n]{1,40})[\]】]", o):
+                k = _norm(name)
+                hit = ref_index.get(k) or by_index.get(k)
+                if hit:
+                    refs[name] = hit
+
+    _scan([bond_rows, chess_rows, gar_rows, equip_rows, band_rows, buff_rows, mode_rows, sp_types])
+
+    # 문구가 부르는 적은 이 모드의 특훈 적 명단 밖일 수 있다 (덕로드·고프닉 …). 상세 모달이
+    # 적 도감(1MB)을 받기 전에도 이름은 떠야 하므로 이름표에 미리 채워 둔다.
+    for name, (kind, ident) in refs.items():
+        if kind == "enemy":
+            sp_names.setdefault(ident, name)
+
     const = KR["constData"]
     token = item_of(loc, const.get("milestoneId") or "")
     doc = {
@@ -862,6 +943,7 @@ def build_locale(loc):
         "enemyList": en_list,
         "enemyTypes": sp_types,
         "enemyNames": sp_names,
+        "refs": refs,
         "bosses": boss_rows,
         "milestones": ms_rows,
         "rounds": [{"r": r["round"], "tk": (r.get("item") or {}).get("count")}

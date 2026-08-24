@@ -19980,22 +19980,41 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   white-space: pre-line;   /* 스킬 설명의 줄바꿈 보존 */
 }
 /* 맹약 문구 안의 전략 바로가기 — [나란투야]처럼 대괄호로 부르는 전략을 누르면 상세로 */
-.ac-bandref {
+/* ── 문구 상호 참조 링크 — "<염국> 오퍼레이터", "<호출 모듈> 1개 획득" 처럼 게임 문구가
+      부르는 다른 항목을 눌러 상세로 (사용자 요청 2026-08-24). 종류마다 색을 달리해
+      맹약인지 아이템인지 적인지 문장 안에서 바로 구분되게 한다. ── */
+.ac-ref {
   display: inline-flex;
   align-items: center;
-  margin: 0 2px;
+  /* 좌우 여백은 1px만 — 칩 안쪽 패딩이 이미 띄워 주는데 여기에 여백까지 주면
+     한국어 문장에서 "…시뮬레이션 에서" 처럼 조사 앞이 벌어진다 */
+  margin: 0 1px;
   padding: 1px 7px;
-  border: 1px solid color-mix(in srgb, var(--lime) 45%, var(--line));
+  border: 1px solid transparent;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--lime) 16%, transparent);
-  color: var(--ink);
+  background: var(--bg-soft);
+  color: var(--ink2);
+  font: inherit;
   font-size: 11.5px;
   font-weight: 800;
+  line-height: 1.5;
+  white-space: nowrap;
   cursor: pointer;
+  transition: 0.12s;
 }
-.ac-bandref:hover {
-  border-color: var(--lime);
+.ac-ref:hover { border-color: currentColor; }
+.ac-ref-bond { background: var(--tint-lime); color: var(--tint-lime-ink); }
+.ac-ref-item { background: var(--tint-gold); color: var(--tint-warm2-ink); }
+.ac-ref-band { background: var(--tint-warm2); color: var(--tint-warm2-ink); }
+.ac-ref-op { background: var(--tint-warm); color: var(--tint-warm-ink); }
+.ac-ref-enemy { background: var(--tint-red); color: var(--tint-warm-ink); }
+/* 칩 자리에 그대로 들어가는 참조 (전략 상세의 대표 오퍼레이터) — 칩 모양은 sb-chip이 잡는다 */
+.ac-chipref {
+  font: inherit;
+  cursor: pointer;
+  transition: 0.12s;
 }
+.ac-chipref:hover { border-color: var(--border-strong); }
 
 /* 장비 모달의 변형 구조체 바로가기 — 문장 뒤에 붙는 작은 칩 */
 .ac-morphnote {
@@ -20025,9 +20044,50 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   height: 18px;
   object-fit: contain;
 }
+/* ── 변형 구조체 대응표 — 맹약 칩 한 줄 + 그 맹약을 주는 장비들 (2026-08-24).
+      게임은 "해당 장비의 재능에서 확인"이라며 표를 안 주는데, 이 장비의 값어치가
+      전부 그 표에 있어서 상세 모달에 통째로 편다. ── */
+.ac-morphmap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+.ac-morphgrp {
+  display: grid;
+  grid-template-columns: 118px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  padding: 6px 8px;
+  background: var(--bg-faint);
+  border: 1px solid var(--line);
+}
+/* 맹약 칩은 그리드 칸을 꽉 채우지 않게 — 기본 stretch면 118px짜리 빈 상자가 된다 */
+.ac-morphgrp > .ac-bondchip { justify-self: start; }
+.ac-morphitems { display: flex; flex-wrap: wrap; gap: 5px; }
+.ac-morphitem {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  padding: 3px 8px 3px 4px;
+  text-align: left;
+  font: inherit;
+  font-size: 11.5px;
+  color: var(--ink);
+  background: var(--white);
+  border: 1px solid var(--line);
+  cursor: pointer;
+  transition: 0.12s;
+}
+.ac-morphitem:hover { border-color: var(--border-strong); }
+.ac-morphitem img { width: 20px; height: 20px; object-fit: contain; }
+.ac-morphitem b { font-weight: 700; }
+@media (max-width: 560px) {
+  .ac-morphgrp { grid-template-columns: minmax(0, 1fr); }
+}
+
 /* 함께 나오는 적 — 부대를 끌고 오는 '대표' 적과 구분해 한 단계 눌러 둔다
    (유형 목록은 게임처럼 대표 → 동행 순서로 이어진다, 2026-08-24) */
-.ac-encard-sub { background: var(--paper); }
 .ac-ensub { color: var(--muted); }
 
 /* 대체 출전 안내 — 기물 모달 **머리글 오른쪽 빈자리**에 (누르면 그 대체 기물 상세).

@@ -25,6 +25,11 @@ import { EnemyFile, RANK_KEY, enemyImg, enemyImgBase, type Enemy } from "./enemy
 
 // ── 데이터 타입 (build-autochess.py 산출과 1:1) ──────────────────────────────
 export type AcStep = { c?: string; t: string };
+/** 문구 상호 참조 — [종류, 대상 id]. 종류: bond·item·band·op·enemy·mode */
+export type AcRef = [string, string];
+/** 게임 문구가 다른 항목을 부르는 괄호 — <고유명사> · [분류] · 【분류】(일본어판) */
+const REF_TOKEN = /(<[^<>\n]+>|\[[^\[\]\n]+\]|【[^【】\n]+】)/;
+
 export type AcBond = { id: string; n: string; nation: boolean; min: number; cond?: string; down?: 1; steps: AcStep[]; chess: string[] };
 // tg = 특질 분류 태그(발동 시점·효과 유형, build-autochess.py classify_gar) — 오퍼레이터 필터용.
 // evb = '맹약이 N회 중첩할 때마다' 능력이 세는 맹약 id 목록 ("core" = 핵심 맹약, 병기 가능).
@@ -106,6 +111,8 @@ export type AutochessDoc = {
   milestones: { lv: number; tk: number; id: string; n: string; c: number }[];
   rounds: { r: number; tk: number }[];
   difficulty: Record<string, number>;
+  /** 문구가 <염국>·[사르곤]·<호출 모듈>처럼 부르는 이름 → 그 상세 (build-autochess.py) */
+  refs?: Record<string, AcRef>;
 };
 
 // 이미지 — build-autochess.py가 public/ac/에 받아 R2로 서빙한다.
@@ -165,6 +172,12 @@ const MODE_TYPE_LABEL: Record<string, string> = { LOCAL: "입문", SINGLE: "단�
 const BOND_COND_LABEL: Record<string, string> = {
   BOARD_AND_DECK: "예비 포함", BOARD_ALL_CHESS: "정예화 전원",
 };
+/** 변형 구조체 — 맹약 아이템의 맹약을 실제로 부여하는 **유일한** 장비.
+ *  클뜯 trapChessDataDict의 canGiveBond가 true인 건 이것(과 그 골든판)뿐이고,
+ *  맹약 아이템 18종은 전부 false다. 게임 안내문은 "상세 대응 관계는 해당 장비의
+ *  재능에서 확인"이라며 표를 안 준다 — 그래서 상세 모달에서 우리가 모아 보여 준다
+ *  (사용자 요청 2026-08-24 "되게 중요한 아이템인데 싹 정리를"). */
+const MORPH_ID = "chess_item_6_09_e_a";
 /** 추첨 가중치의 기본값 — 67마리 중 62마리가 이 값이라, 다른 값만 카드에 띄운다 */
 const ENEMY_W_BASE = 10;
 /** 리더 HP는 난이도별로 다르다 — hp 키 ↔ 모드 difficulty 키 (이름은 doc.modes에서 끌어온다,
@@ -204,11 +217,13 @@ function useEnemyDex(locale: string, want: boolean) {
 /** 리더 HP는 수십만~수백만이라 그대로 쓰면 안 읽힌다 — 천 단위 구분 */
 const fmtHp = (n?: number) => (n == null ? "—" : n.toLocaleString("en-US"));
 
-/** 게임 텍스트를 줄 단위로 — 빈 줄은 버리고 **굵게**는 rich()가 <b>로 바꾼다. */
-function Lines({ text, className }: { text: string; className?: string }) {
+/** 게임 텍스트를 줄 단위로 — 빈 줄은 버리고 **굵게**는 rich()가 <b>로 바꾼다.
+ *  render를 주면 줄마다 그걸로 그린다 (상호 참조 링크를 다는 acRich). */
+function Lines({ text, className, render = rich }:
+  { text: string; className?: string; render?: (s: string) => React.ReactNode }) {
   const rows = text.split("\n").map((s) => s.trim()).filter(Boolean);
   if (!rows.length) return null;
-  return <>{rows.map((r, i) => <p key={i} className={className}>{rich(r)}</p>)}</>;
+  return <>{rows.map((r, i) => <p key={i} className={className}>{render(r)}</p>)}</>;
 }
 
 export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
@@ -309,11 +324,29 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
     for (const b of doc.bonds) m.set(b.id, b);
     return m;
   }, [doc]);
+  // 변형 구조체 대응표 — 맹약을 주는 장비를 맹약별로 묶는다. 맹약 순서는 목록과 같고
+  // (진영 → 특성), 같은 맹약 안에서는 티어순이다. 빅토리아 해머처럼 한 맹약에 여러
+  // 장비가 걸린 경우가 있어 묶어서 보여야 읽힌다.
+  const morphMap = useMemo(() => {
+    const by = new Map<string, AcEquip[]>();
+    for (const e of doc.equips) if (e.bond) (by.get(e.bond) ?? by.set(e.bond, []).get(e.bond)!).push(e);
+    for (const list of by.values()) list.sort((a, b) => a.t - b.t || a.sort - b.sort);
+    return doc.bonds.filter((b) => by.has(b.id)).map((b) => [b, by.get(b.id)!] as const);
+  }, [doc]);
+  // 전략의 대표 오퍼레이터 이름 → 기물. 36개 중 8개만 이 모드의 기물이고 나머지는
+  // 판 밖의 NPC라, 기물인 것만 눌러서 상세를 연다 (2026-08-24).
+  const chessByName = useMemo(() => {
+    const m = new Map<string, AcChess>();
+    for (const c of doc.chess) if (!m.has(c.n)) m.set(c.n, c);
+    return m;
+  }, [doc]);
   // 표준 시뮬레이션은 맹약이 13개뿐 — 어느 모드에서 도는 맹약인지 배지로 알린다
   const funnyBonds = useMemo(
     () => new Set(doc.modes.find((m) => m.diff === "FUNNY")?.bonds ?? []), [doc]);
 
-  const enemyDex = useEnemyDex(locale, view === "misc" && miscTab === "enemy");
+  // 적 모달은 '적' 탭 밖에서도 열린다 — 전략 문구의 <덕로드>처럼 문구가 부르는 적
+  // (2026-08-24). 창이 떠 있으면 도감을 받아 본문을 채운다.
+  const enemyDex = useEnemyDex(locale, (view === "misc" && miscTab === "enemy") || enemy != null);
   const enemyRow = useMemo(
     () => (enemy ? doc.enemies.find((e) => e.id === enemy) ?? null : null), [doc, enemy]);
   const bossRow = useMemo(
@@ -487,26 +520,55 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
     );
   };
 
-  // 맹약 문구가 대괄호로 부르는 전략(밴드) — "전략에서 [나란투야] 선택 시"의 나란투야는
-  // band_narant(균등 배분)의 대표 오퍼다. 눌러서 그 전략 상세로 (사용자 요청 2026-08-23).
-  const bandByRef = useMemo(() => {
-    const m = new Map<string, AcBand>();
-    for (const b of doc.bands) { if (b.by) m.set(b.by, b); m.set(b.n, b); }
-    return m;
-  }, [doc]);
-  const richBands = (text: string) => {
-    const parts = text.split(/(\[[^\]]+\])/);
-    if (!parts.some((seg) => seg.startsWith("[") && bandByRef.has(seg.slice(1, -1)))) return rich(text);
+  /** 문구가 부르는 다른 항목을 눌러서 여는 링크 (사용자 요청 2026-08-24 "매핑할 수 있는 건 전부").
+   *
+   *  게임 문구는 다른 항목을 괄호로 부른다 — "<염국> 오퍼레이터 1명 우선 등장",
+   *  "[사르곤] 오퍼레이터 스킬 발동", "<호출 모듈> 1개 획득", "일부 적이 <덕로드>로 변경".
+   *  이름 ↔ 대상 표(doc.refs)는 build-autochess.py가 로케일별로 미리 풀어 실어 준다 —
+   *  이름이 언어마다 다르고(JA는 대괄호 대신 【】), 적 이름표는 1MB짜리 적 도감에만 있어
+   *  화면에서는 풀 수 없다.
+   *
+   *  self를 주면 **지금 열려 있는 항목 자신**을 가리키는 참조는 링크로 만들지 않는다
+   *  (사르곤 맹약 상세 안의 [사르곤]을 눌러 같은 창을 또 여는 건 무의미하다). */
+  const acRich = (text: string, self?: string): React.ReactNode => {
+    const map = doc.refs;
+    if (!map) return rich(text);
+    const parts = text.split(REF_TOKEN);
+    if (parts.length === 1) return rich(text);
     return parts.map((seg, i) => {
-      const name = seg.startsWith("[") ? seg.slice(1, -1) : "";
-      const b = name ? bandByRef.get(name) : undefined;
-      return b
-        ? <button key={i} type="button" className="ac-bandref" onClick={() => setBand(b)}>{name} ↗</button>
-        : <span key={i}>{rich(seg)}</span>;
+      if (!(i % 2)) return <span key={i}>{rich(seg)}</span>;
+      const name = seg.slice(1, -1);
+      const ref = map[name];
+      if (ref && ref[1] !== self) {
+        return (
+          <button key={i} type="button" className={`ac-ref ac-ref-${ref[0]}`}
+            onClick={() => openRef(ref)}>{name}</button>
+        );
+      }
+      // 못 푼 조건절이 안쪽에 참조를 품고 있다 — "<전장에 서로 다른 [사르곤] 오퍼레이터 6명 배치>"
+      if (!ref && /[[【]/.test(name)) {
+        return <span key={i}>{seg[0]}{acRich(name, self)}{seg[seg.length - 1]}</span>;
+      }
+      return <span key={i}>{rich(seg)}</span>;
     });
   };
+  const openRef = ([kind, id]: AcRef) => {
+    if (kind === "bond") { const b = bondById.get(id); if (b) setBond(b); return; }
+    if (kind === "item") { const e = doc.equips.find((x) => x.id === id); if (e) setEquip(e); return; }
+    if (kind === "band") { const b = doc.bands.find((x) => x.id === id); if (b) setBand(b); return; }
+    if (kind === "op") { const c = chessById.get(id); if (c) openChess(c); return; }
+    if (kind === "enemy") { setEnemy(id); return; }
+    // 모드는 상세 모달이 없다 — 게임 정보 → 모드 목록으로 데려간다. 목록이 뒤에 가려지지
+    // 않게 열려 있는 창을 모두 닫는다.
+    if (kind === "mode") {
+      setBond(null); setChess(null); setEquip(null); setBand(null); setEnemy(null);
+      setView("misc"); setMiscTab("mode");
+    }
+  };
 
-  const garLine = (id: string, gold: boolean) => {
+  // linked = 문구 안의 참조를 눌러서 열 수 있게 (모달 전용 — 카드는 그 자체가 버튼이라
+  // 안에 버튼을 또 넣을 수 없다. 2026-08-22 하이드레이션 오류로 확인된 규약).
+  const garLine = (id: string, gold: boolean, linked = false, self?: string) => {
     const g = doc.gar[id];
     if (!g) return null;
     return (
@@ -515,7 +577,7 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
           <img src={garIcon(g.ic)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
           {g.t}
         </span>
-        <span className="ac-gar-txt">{rich(g.d)}</span>
+        <span className="ac-gar-txt">{linked ? acRich(g.d, self) : rich(g.d)}</span>
       </div>
     );
   };
@@ -1108,10 +1170,12 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
                         : t("유형 추첨에서 빠지는 기본 편성")}</span>
                     </h3>
                     {info.d && <p className="sb-dim ac-note">{info.d}</p>}
+                    {/* 대표(sp)든 딸린 적이든 카드 배경은 **같다** — 딸린 적만 --paper를 쓰던
+                        시절엔 라이트모드에서 페이지 바탕색과 겹쳐 그 카드만 투명해 보였다
+                        (사용자 지적 2026-08-24). 구분은 '함께 나옴' 표시가 한다. */}
                     <div className="ac-encards">
                       {rows.map((e) => (
-                        <button key={e.id} type="button"
-                          className={`ac-encard${e.role === "sp" ? "" : " ac-encard-sub"}`}
+                        <button key={e.id} type="button" className="ac-encard"
                           onClick={() => setEnemy(e.id)}>
                           <EnFace id={e.id} />
                           <span className="ac-encard-body">
@@ -1250,7 +1314,7 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
               <p className="ac-count">{t("{n}종", { n: doc.buffs.length })}</p>
               <div className="ac-buffs">
                 {doc.buffs.map((b) => (
-                  <div key={b.id} className="ac-buff"><b>{b.n}</b><span>{rich(b.d)}</span></div>
+                  <div key={b.id} className="ac-buff"><b>{b.n}</b><span>{acRich(b.d)}</span></div>
                 ))}
               </div>
             </>
@@ -1280,8 +1344,8 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
             <ol className="ac-steps">
               {bond.steps.map((s, i) => (
                 <li key={i}>
-                  {s.c && <span className="ac-stepcond">{richBands(s.c)}</span>}
-                  <span className="ac-steptxt">{richBands(s.t)}</span>
+                  {s.c && <span className="ac-stepcond">{acRich(s.c, bond.id)}</span>}
+                  <span className="ac-steptxt">{acRich(s.t, bond.id)}</span>
                 </li>
               ))}
             </ol>
@@ -1396,7 +1460,8 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
               <>
                 <h4>{t("위수 협의 능력")}</h4>
                 {chess.gar.length || chess.garG.length ? (
-                  (goldView && chess.garG.length ? chess.garG : chess.gar).map((g) => garLine(g, goldView))
+                  (goldView && chess.garG.length ? chess.garG : chess.gar)
+                    .map((g) => garLine(g, goldView, true, chess.id))
                 ) : chess.id.startsWith("diy_")
                   /* 자유 선택 칸으로만 데려오는 ★6 — 상점 명단이 아니라 전용 능력이 아예 없다 */
                   ? <p className="sb-dim">{t("보급센터 자유 선택 칸으로만 데려올 수 있는 오퍼레이터입니다. 상점 명단에 없어 전용 능력·기본 스킬 설정이 게임 데이터에 들어 있지 않고, 게임 안내대로 특질 없이 출전합니다.")}</p>
@@ -1421,7 +1486,7 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
                         {lv ? <i className="sb-chip">Lv{lv}</i> : null}
                         {sk.df ? <i className="sb-chip ac-df">{t("디폴트")}</i> : null}
                       </header>
-                      {d && <p className="ac-skmod-d">{rich(d)}</p>}
+                      {d && <p className="ac-skmod-d">{acRich(d, chess.id)}</p>}
                     </div>
                   );
                 })}
@@ -1440,7 +1505,7 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
                       <b>{md.n}</b>
                       {md.df ? <i className="sb-chip ac-df">{t("디폴트")}</i> : null}
                     </header>
-                    {md.d && <p className="ac-skmod-d">{rich(md.d)}</p>}
+                    {md.d && <p className="ac-skmod-d">{acRich(md.d, chess.id)}</p>}
                     {md.s && <p className="ac-skmod-stats">{md.s}</p>}
                   </div>
                 ))}
@@ -1486,17 +1551,44 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
               </div>
             </header>
             <h4>{t("효과")}</h4>
-            <Lines text={equip.d} />
+            <Lines text={equip.d} render={(x) => acRich(x, equip.id)} />
             {equip.dG && equip.dG !== equip.d && (
               <>
                 <p className="ac-goldhead">{t("강화 ({n}개 조합)", { n: equip.up ?? 2 })}</p>
-                <div className="ac-gar gold"><span className="ac-gar-txt"><Lines text={equip.dG} /></span></div>
+                <div className="ac-gar gold"><span className="ac-gar-txt">
+                  <Lines text={equip.dG} render={(x) => acRich(x, equip.id)} /></span></div>
               </>
             )}
             {/* ⚠ "장착하면 중첩도 올라간다"고 썼다가 정정 (사용자 지적 2026-08-23 ×2) —
                 클뜯 canGiveBond가 맹약 아이템 전부 false. 변형 구조체와 조합해야 맹약 부여. */}
+            {/* 변형 구조체 본인 — 게임이 "해당 장비의 재능에서 확인"으로 떠넘기는
+                대응 관계를 여기서 통째로 편다 (사용자 요청 2026-08-24). */}
+            {equip.id === MORPH_ID && morphMap.length > 0 && (
+              <>
+                <h4>{t("맹약을 주는 장비")} <em className="sb-count">{
+                  morphMap.reduce((a, [, list]) => a + list.length, 0)}</em></h4>
+                <p className="sb-dim ac-note">{t("이 중 하나를 변형 구조체와 함께 장착하면 착용자가 그 맹약을 추가로 얻습니다. 장비만 장착해서는 맹약이 붙지 않습니다.")}</p>
+                <div className="ac-morphmap">
+                  {morphMap.map(([b, list]) => (
+                    <div key={b.id} className="ac-morphgrp">
+                      {bondChip(b.id, true)}
+                      <div className="ac-morphitems">
+                        {list.map((e) => (
+                          <button key={e.id} type="button" className="ac-morphitem"
+                            onClick={() => setEquip(e)}>
+                            <img src={equipIcon(e.trap)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
+                            <b>{e.n}</b>
+                            {tierBadge(e.t)}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
             {equip.bond && (() => {
-              const morph = doc.equips.find((e) => e.id === "chess_item_6_09_e_a");
+              const morph = doc.equips.find((e) => e.id === MORPH_ID);
               return (
                 <p className="sb-dim ac-morphnote">
                   {t("변형 구조체와 함께 장착하면 착용자가 {bond} 맹약을 추가로 얻습니다.", { bond: nameOfBond(equip.bond) })}
@@ -1522,18 +1614,24 @@ export default function AutochessGuide({ doc }: { doc: AutochessDoc }) {
               <div>
                 <h2>{band.n}</h2>
                 <p className="ac-cmeta">
-                  {band.by && <i className="sb-chip">{band.by}</i>}
+                  {band.by && (() => {
+                    const byOp = chessByName.get(band.by as string);
+                    return byOp
+                      ? <button type="button" className="sb-chip ac-chipref"
+                        onClick={() => openChess(byOp)}>{band.by}</button>
+                      : <i className="sb-chip">{band.by}</i>;
+                  })()}
                   <i className="sb-chip ac-hp">{t("목표 HP")} {band.hp}</i>
                   {band.modes.map((m) => <i key={m} className="sb-chip">{t(MODE_TYPE_LABEL[m] ?? m)}</i>)}
                 </p>
               </div>
             </header>
             <h4>{t("효과")}</h4>
-            <Lines text={band.d} />
+            <Lines text={band.d} render={(x) => acRich(x, band.id)} />
             {/* 해금 조건 — 37개 중 25개만 조건이 있다 (사용자 요청 2026-08-22) */}
             <h4>{t("해금 조건")}</h4>
             {band.un
-              ? <p className="ac-unlock">{rich(band.un)}</p>
+              ? <p className="ac-unlock">{acRich(band.un, band.id)}</p>
               : <p className="sb-dim">{t("처음부터 고를 수 있는 전략입니다.")}</p>}
           </div>
         </ModalWindow>

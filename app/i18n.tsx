@@ -2807,6 +2807,10 @@ const D: Record<string, Pair> = {
   "상점 명단에는 없지만, 보급센터 자유 선택 칸으로 데려오면 이 맹약으로 셉니다.": [
     "Not in the shop pool, but brought in through a free-pick slot they count toward this alliance.",
     "ショップの一覧にはいませんが、自由選択枠で連れてくるとこの盟約にカウントされます。"],
+  "맹약을 주는 장비": ["Alliance-granting gear", "盟約を与える装備"],
+  "이 중 하나를 변형 구조체와 함께 장착하면 착용자가 그 맹약을 추가로 얻습니다. 장비만 장착해서는 맹약이 붙지 않습니다.": [
+    "Equip one of these together with a Morphing Structure and the wearer gains that alliance. The gear alone grants nothing.",
+    "これらのいずれかを変形構造体と一緒に装着すると、装着者がその盟約を追加で得ます。装備だけでは盟約は付きません。"],
   "변형 구조체와 함께 장착하면 착용자가 {bond} 맹약을 추가로 얻습니다.": [
     "Pair it with a Morphing Structure and the wearer gains the {bond} alliance.",
     "変形構造体と一緒に装着すると、装着者が{bond}の盟約を追加で得ます。"],
