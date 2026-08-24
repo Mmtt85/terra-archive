@@ -6819,6 +6819,60 @@ legend {
   font-size: 10.5px;
   color: var(--muted);
 }
+/* 검색어에 걸렸지만 **보유 목록에 없어** 후보에 아예 안 잡히는 오퍼 (제보 2026-08-24:
+   "I dont see Vigil in Base Plan (Trading Post)" — 6성은 기본 미보유라 이름을 쳐도
+   '검색 결과 없음'만 나왔다). 근무 중 칩과 같은 톤으로 두되 점선으로 구분한다. */
+.bench-blocked > span, .bench-unowned > span { color: var(--muted); }
+.bench-unowned .sub-chip.unowned {
+  border-style: dashed;
+  background: var(--bg-soft);
+  color: var(--ink3);
+  cursor: pointer;
+}
+.bench-unowned .sub-chip.unowned img { opacity: 0.55; }
+.bench-unowned .sub-chip.unowned em {
+  font-family: inherit;
+  font-size: 10.5px;
+  color: var(--muted);
+}
+/* 이 시설 스킬이 정예화·레벨로 잠긴 후보 — 기여가 +0으로만 떠서 이유를 알 수 없었다.
+   필요 조건을 적고, 정예화로 풀리면 칩 안 버튼으로 그 자리에서 올린다. */
+.sub-chip.locked {
+  border-style: dashed;
+  border-color: var(--tint-warm-ink);
+}
+.sub-chip.locked img { opacity: 0.6; }
+.sub-chip.locked em.need {
+  font-family: inherit;
+  font-size: 10.5px;
+  color: var(--tint-warm-ink);
+}
+.chip-fix {
+  margin-left: 2px;
+  padding: 1px 6px;
+  border: 1px solid var(--tint-warm-ink);
+  border-radius: 999px;
+  background: var(--tint-warm);
+  color: var(--tint-warm-ink);
+  font: inherit;
+  font-size: 10.5px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.chip-fix:hover { background: var(--tint-warm-ink); color: var(--white); }
+/* 보유 카드에서 "이 정예화로는 기지 스킬이 안 열린다"는 경고 — 새로 체크하면 E0에서
+   시작하는데 정예화 해금 스킬만 가진 오퍼는 켜도 편성에 안 뜬다 (제보 2026-08-24) */
+.roster-locked {
+  display: block;
+  margin: 2px 4px 0;
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--tint-warm-ink);
+  word-break: keep-all;
+}
+
 /* ─ 피드백 위젯 ─ */
 /* bottom을 footer 높이보다 살짝 크게 띄워 버튼이 푸터 위에 겹치지 않게 한다 */
 .feedback-widget {

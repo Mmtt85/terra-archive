@@ -630,6 +630,38 @@ const D: Record<string, Pair> = {
     ["Every operator you own is recorded as fully elited, so there is nothing to test — lower the elite level of operators you haven't raised yet. (Closing a scan or account import without pressing Apply leaves elite levels unset.)",
      "所持オペレーターが全員「昇進完了」として記録されているため、検証する候補がありません — まだ育てていないオペレーターの昇進を下げてください。（スキャンやアカウント連携の結果を「適用」せずに閉じると昇進が反映されません）"],
   "보유 오퍼 설정 열기": ["Open roster settings", "所持オペレーター設定を開く"],
+  // 후보에 왜 없는지 — 미보유·정예화 잠김 안내 (제보 2026-08-24 "I dont see Vigil in Base Plan")
+  "{name}의 이 시설 스킬은 {need}부터 열립니다 — 지금 배치해도 효과가 없습니다":
+    ["{name}'s skill for this facility only unlocks at {need} — assigning them now does nothing.",
+     "{name}のこの施設スキルは{need}から解放されます — 今配置しても効果はありません。"],
+  "{name}을(를) {need}로 올려 이 스킬을 켭니다": [
+    "Raise {name} to {need} to switch this skill on",
+    "{name}を{need}に上げてこのスキルを有効にします"],
+  "{need} 필요 ↑": ["Needs {need} ↑", "{need}が必要 ↑"],
+  "{need} 필요": ["Needs {need}", "{need}が必要"],
+  "이 시설 스킬은 있지만 보유 목록에 없습니다 — 6성은 기본이 미보유이니 가진 오퍼를 켜 주세요:": [
+    "They have a skill for this facility but aren't in your roster — 6★ start out unowned, so tick the ones you have:",
+    "この施設のスキルを持っていますが所持リストにありません — ★6は初期状態が未所持なので、持っているオペレーターを有効にしてください："],
+  "보유 오퍼 설정을 열어 {name}을(를) 켜세요": [
+    "Open roster settings and tick {name}",
+    "所持オペレーター設定を開いて{name}を有効にしてください"],
+  "미보유": ["Not owned", "未所持"],
+  "이 시설 스킬이 아직 안 열렸습니다 — 정예화를 실제 보유대로 올려 주세요:": [
+    "Their skill for this facility isn't unlocked yet — set the promotion to match what you actually own:",
+    "この施設のスキルがまだ解放されていません — 昇進を実際の所持状況に合わせてください："],
+  "자리가 다 찼습니다 — 이름을 검색하면 그 오퍼가 지금 어디 있는지, 왜 여기 못 쓰는지 알려 줍니다:": [
+    "Every seat is taken — search a name to see where that operator is now, or why they can't work here:",
+    "席がすべて埋まっています — 名前で検索すると、そのオペレーターが今どこにいるか、なぜここで使えないかが分かります："],
+  "추가할 수 있는 후보가 없습니다.": ["No operators available to add.", "追加できる候補がいません。"],
+  "{name} 정예화를 올리고 자동편성을 다시 돌립니다": [
+    "Raising {name}'s promotion and re-running the auto-assign",
+    "{name}の昇進を上げて自動編成をやり直します"],
+  "이 정예화에서는 기지 스킬 {n}개가 아직 열리지 않아 자동편성 후보에 들지 않습니다. 실제로 키운 만큼 정예화를 올려 주세요.": [
+    "At this promotion stage {n} of their base skills are still locked, so they won't be picked by the auto-planner. Set the promotion to match what you actually own.",
+    "この昇進段階では基地スキル{n}個がまだ解放されず、自動編成の候補に入りません。実際に育てた分だけ昇進を上げてください。"],
+  "기지 스킬 {n}개 잠김 · {need}부터": [
+    "{n} base skill(s) locked · from {need}",
+    "基地スキル{n}個ロック · {need}から"],
   "미완성 {n}명 중 정예화로 인프라 스킬이 새로 열리는 오퍼가 없습니다 — 완성해도 편성이 바뀌지 않습니다.":
     ["None of the {n} unfinished operators unlock a new base skill by eliting — completing them wouldn't change the plan.",
      "未完成の{n}名の中に、昇進で新しい基地スキルが解放されるオペレーターはいません — 完成させても編成は変わりません。"],

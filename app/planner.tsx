@@ -11,7 +11,7 @@ import { anyNewFeature, isNewFeature } from "./whats-new";
 import { useHashSync } from "./hash-modal";
 
 import {
-  infra, ops, opById, factionsOf, withElite, clueBase, maxElite, eliteOptions,
+  infra, ops, opById, factionsOf, withElite, clueBase, maxElite, eliteOptions, eliteLocks, levelLocks,
   ELITE_LABEL, MAX_OP_LEVEL, LAYOUT, cellByKey, ROOM_ACCENT, UNIT, PARK_KEYS, SHIFT_COUNT,
   JOB_ORDER, ROSTER_SORT_KEYS, PRODUCTION_KEYS, SUPPORT_KEYS,
   AURA_WEIGHT, AURA_LABEL, skillApplies, breakdown, teamScore, aurasOf, ambientFor, capConvFor, orderFixFor, roomMaxNetDrain,
@@ -1226,6 +1226,34 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
 
   const openCell = LAYOUT.find((cell) => cell.key === openRoom);
 
+  // ── "왜 이 오퍼가 후보에 없나" (제보 2026-08-24) ────────────────────────────
+  // "I dont see Vigil in Base Plan (Trading Post)" — 비질은 무역소 스킬이 있는데도
+  // 안 뜬다. 문이 둘이다: ① 6성은 기본 미보유 ② 새로 체크하면 E0에서 시작하는데
+  // 비질의 무역소 스킬은 정예화 2 해금이다. 둘 다 화면에 아무 흔적을 안 남기고
+  // 후보에서 사라지기만 해서 "데이터에 없다"로 읽혔다. 방 상세에서 이름을 검색하면
+  // 이유를 대도록, 두 갈래를 여기서 추려 내려 준다.
+  //
+  // 잠김 판정은 withElite와 **같은 규칙**을 자동으로 따른다 — 원본에 이 방 스킬이
+  // 있는데 정예화 반영본(effectiveOpById)에 없으면 잠긴 것이다 (하위 단계로 대체되는
+  // 스킬은 반영본에도 남으므로 여기 안 걸린다).
+  const roomBlocked = useMemo(() => {
+    const map = new Map<string, string>();   // opId → 필요 조건 (unlock 문자열)
+    const room = openCell?.room;
+    if (!room) return map;
+    for (const raw of visibleOps) {
+      if (!ownedIds.has(raw.id)) continue;
+      if (effectiveOpById.get(raw.id)?.skills.some((sk) => sk.room === room)) continue;
+      const need = raw.skills.find((sk) => sk.room === room);
+      if (need) map.set(raw.id, need.unlock);
+    }
+    return map;
+  }, [openCell, visibleOps, ownedIds, effectiveOpById]);
+  const roomUnowned = useMemo(() => {
+    const room = openCell?.room;
+    if (!room) return [] as InfraOp[];
+    return visibleOps.filter((op) => !ownedIds.has(op.id) && op.skills.some((sk) => sk.room === room));
+  }, [openCell, visibleOps, ownedIds]);
+
   return (
     <section className="planner">
       {confirmDialog}
@@ -1668,6 +1696,20 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
             : (opId: string) => toggleRoomPin(openCell.key, opId)}
           eliteById={viewElite}
           onSetElite={setOperatorElite}
+          blocked={roomBlocked}
+          unowned={roomUnowned}
+          /* 잠긴 스킬을 그 자리에서 열어 준다 — 정예화만 올리고 끝내면 편성이 그대로라
+             "올렸는데도 안 뜬다"가 되므로 자동편성까지 이어서 돌린다 (제보 2026-08-24) */
+          onUnlockElite={(id, e) => {
+            const next = new Map(eliteById);
+            if (e === 2) next.delete(id); else next.set(id, e);
+            setEliteById(next);
+            persist(ownedIds, plan, next);
+            setDirty(true);
+            showToast(t("{name} 정예화를 올리고 자동편성을 다시 돌립니다", { name: opById.get(id)?.name ?? id }));
+            void runOptimize(ownedIds, next, priority, levelById);
+          }}
+          onOpenRoster={() => { setOpenRoom(null); startTransition(() => { setRosterMode("direct"); setShowRoster(true); }); }}
           tempIds={new Set(tempApplied.keys())}
           onRevertTempOne={(id) => { void revertTempOne(id); }}
         />
@@ -1975,7 +2017,7 @@ function TermPopup({ termKey, presentIds, onNavigate, onShowOperator, onClose }:
   );
 }
 
-function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClose, onOpenRoom, onShowOperator, onUpdateTeam, eliteById, onSetElite, tempIds, onRevertTempOne, onSetLevel, pins, onTogglePin }: { cell: { key: string; room: string; label: string; product?: string }; plan: Plan; allAssigned: Set<string>; roster: InfraOp[]; opMap: Map<string, InfraOp>; initialShift: number; onClose: () => void; onOpenRoom?: (key: string, shift: number) => void; onShowOperator?: (id: string) => void; onUpdateTeam?: (cellKey: string, shiftIdx: number, ids: string[]) => void; eliteById: Map<string, Elite>; onSetElite: (id: string, elite: Elite) => void; tempIds: Set<string>; onRevertTempOne: (opId: string) => void; onSetLevel?: (key: string, lv: number) => void; pins?: string[]; onTogglePin?: (opId: string) => void }) {
+function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClose, onOpenRoom, onShowOperator, onUpdateTeam, eliteById, onSetElite, onUnlockElite, blocked, unowned, onOpenRoster, tempIds, onRevertTempOne, onSetLevel, pins, onTogglePin }: { cell: { key: string; room: string; label: string; product?: string }; plan: Plan; allAssigned: Set<string>; roster: InfraOp[]; opMap: Map<string, InfraOp>; initialShift: number; onClose: () => void; onOpenRoom?: (key: string, shift: number) => void; onShowOperator?: (id: string) => void; onUpdateTeam?: (cellKey: string, shiftIdx: number, ids: string[]) => void; eliteById: Map<string, Elite>; onSetElite: (id: string, elite: Elite) => void; /** 잠긴 스킬 열기 — 정예화를 올리고 자동편성까지 다시 돌린다 */ onUnlockElite?: (id: string, elite: Elite) => void; /** 보유했지만 이 방 스킬이 정예화·레벨로 잠긴 오퍼 → 필요 조건 */ blocked: Map<string, string>; /** 이 방 스킬이 있는데 아직 보유로 안 켠 오퍼 */ unowned: InfraOp[]; onOpenRoster?: () => void; tempIds: Set<string>; onRevertTempOne: (opId: string) => void; onSetLevel?: (key: string, lv: number) => void; pins?: string[]; onTogglePin?: (opId: string) => void }) {
   const { locale, t } = useI18n();
   const [shift, setShift] = useState(initialShift);
   const [termOpen, setTermOpen] = useState<string | null>(null); // RIIC 용어 팝업 (외세·실리 등)
@@ -2059,6 +2101,20 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
     ? benchFull.filter(({ op }) => normSearch(op.name).includes(benchKeyword) || normSearch(op.faction).includes(benchKeyword))
     : benchFull;
   const bench = benchAll ? benchFiltered : benchFiltered.slice(0, 12);
+  // 보유했지만 이 시설 스킬이 정예화·레벨로 잠긴 오퍼 — 후보 목록에 이미 떠 있으면
+  // 거기 칩에 이유가 붙으므로(위) 여기서는 빼고, **자리가 꽉 차 후보 목록이 없을 때**만 뜬다.
+  const blockedMatches = !benchKeyword ? [] : roster
+    .filter((op) => blocked.has(op.id)
+      && !bench.some((row) => row.op.id === op.id)
+      && (normSearch(op.name).includes(benchKeyword) || normSearch(op.faction).includes(benchKeyword)))
+    .sort((a, b) => b.rarity - a.rarity || a.name.localeCompare(b.name))
+    .slice(0, 12);
+  // 검색어에 걸렸지만 **보유 목록에 없어** 후보에 아예 안 잡히는 오퍼 (6성 기본 미보유).
+  // benchFiltered와 같이 그냥 계산한다 — 검색어가 있을 때만 도는 짧은 필터라 memo가 필요 없다.
+  const unownedMatches = !benchKeyword ? [] : unowned
+    .filter((op) => normSearch(op.name).includes(benchKeyword) || normSearch(op.faction).includes(benchKeyword))
+    .sort((a, b) => b.rarity - a.rarity || a.name.localeCompare(b.name))
+    .slice(0, 12);
   // 검색어에 걸렸는데 **이미 어딘가 근무 중**이라 후보에서 빠진 오퍼 — "검색 결과가 없습니다"로
   // 끝내지 말고 어느 시설 어느 조에 있는지 알려준다 (사용자 요청 2026-07-31).
   // 한 오퍼가 A조·B조에 따로 들어가 있을 수 있으므로 시설별로 조를 모아 표시한다.
@@ -2600,9 +2656,13 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
               })}
               {team.length === 0 && !benchFull.length && <p className="no-detail">{t("자동 편성을 먼저 실행해 주세요.")}</p>}
             </div>
-            {benchFull.length > 0 && (
+            {/* 자리가 꽉 차도 검색칸은 남긴다 — "왜 이 오퍼가 여기 없나"를 물어볼 곳이
+                여기뿐인데, 종전엔 빈 자리가 있을 때만 이 블록이 떴다 (제보 2026-08-24). */}
+            {(benchFull.length > 0 || (!!onUpdateTeam && slots > 0)) && (
               <div className="bench">
-                <span>{cell.room === "DORMITORY"
+                <span>{benchFull.length === 0
+                  ? t("자리가 다 찼습니다 — 이름을 검색하면 그 오퍼가 지금 어디 있는지, 왜 여기 못 쓰는지 알려 줍니다:")
+                  : cell.room === "DORMITORY"
                   ? t("빈 자리에 추가 — 클릭 시 즉시 배치·고정 (다른 방의 조건을 켜 주는 오퍼가 맨 앞):")
                   : t("빈 자리에 추가 — 클릭 시 즉시 배치·📌 고정 (기여 예상):")}</span>
                 <input className="bench-search" {...benchProps} placeholder={t("이름·소속으로 후보 검색")} />
@@ -2613,20 +2673,37 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                       const wakes = enablerFor.get(op.id);
                       // 자동편성 제외 명단(케이퍼·인포서)은 후보로만 뜬다 — 직접 넣는 건 자유 (2026-07-28)
                       const manualOnly = AUTO_BENCH_IDS.has(op.id);
+                      // 이 방 스킬이 정예화·레벨로 잠긴 오퍼 — 기여가 +0으로만 떠서 "왜 쓸모가
+                      // 없는지" 알 길이 없었다 (제보 2026-08-24). 필요 조건을 적고, 정예화로
+                      // 풀리는 경우엔 그 자리에서 올린다.
+                      const need = blocked.get(op.id);
+                      const needElite = need ? ELITE_NEED[need] : undefined;
                       return (
-                        <small key={op.id} className={`sub-chip swappable${wakes ? " enabler" : ""}${manualOnly ? " manual-only" : ""}`}
-                          title={manualOnly
+                        <small key={op.id} className={`sub-chip swappable${wakes ? " enabler" : ""}${manualOnly ? " manual-only" : ""}${need ? " locked" : ""}`}
+                          title={need
+                            ? t("{name}의 이 시설 스킬은 {need}부터 열립니다 — 지금 배치해도 효과가 없습니다", { name: op.name, need: t(need) })
+                            : manualOnly
                             ? t("자동편성 제외 — 조건을 많이 타고 컨디션 소모가 커서 자동으로는 배치하지 않습니다. 직접 넣는 건 가능합니다")
                             : wakes ? t("{name}의 조건을 켭니다 (기지 어디든 있으면 발동)", { name: wakes }) : t("{name} 추가", { name: op.name })}
                           onClick={() => setIds([...rawIds, op.id])}>
                           <img src={asset(op.image)} alt="" width={180} height={180} loading="lazy" className={onShowOperator ? "op-link" : undefined} onClick={(event) => { event.stopPropagation(); onShowOperator?.(op.id); }} />{op.name}{" "}
-                          <em>{manualOnly ? t("수동 전용") : wakes ? t("{name} 조건", { name: wakes }) : delta >= 0 ? `+${delta}` : delta}</em>
+                          {need ? (
+                            needElite != null
+                              ? <button type="button" className="chip-fix"
+                                  title={t("{name}을(를) {need}로 올려 이 스킬을 켭니다", { name: op.name, need: t(need) })}
+                                  onClick={(event) => { event.stopPropagation(); (onUnlockElite ?? onSetElite)(op.id, needElite); }}>
+                                  {t("{need} 필요 ↑", { need: t(need) })}
+                                </button>
+                              : <em className="need">{t("{need} 필요", { need: t(need) })}</em>
+                          ) : (
+                            <em>{manualOnly ? t("수동 전용") : wakes ? t("{name} 조건", { name: wakes }) : delta >= 0 ? `+${delta}` : delta}</em>
+                          )}
                         </small>
                       );
                     })}
                   </div>
-                ) : busyMatches.length === 0 && (
-                  <p className="no-detail">{t("검색 결과가 없습니다.")}</p>
+                ) : busyMatches.length === 0 && blockedMatches.length === 0 && unownedMatches.length === 0 && (
+                  <p className="no-detail">{benchKeyword ? t("검색 결과가 없습니다.") : t("추가할 수 있는 후보가 없습니다.")}</p>
                 )}
                 {/* 이미 근무 중이라 후보에 못 뜨는 오퍼 — 어디 있는지 알려주고, 누르면 그 시설
                     상세로 건너뛴다 (사용자 요청 2026-07-31: 오퍼 상세는 얼굴 클릭으로 충분) */}
@@ -2648,6 +2725,56 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
                         </small>
                       ))}
                     </div>
+                  </div>
+                )}
+                {/* 보유했지만 정예화·레벨이 모자라 이 시설 스킬이 아직 안 열린 오퍼 */}
+                {blockedMatches.length > 0 && (
+                  <div className="bench-busy bench-blocked">
+                    <span>{t("이 시설 스킬이 아직 안 열렸습니다 — 정예화를 실제 보유대로 올려 주세요:")}</span>
+                    <div className="bench-chips">
+                      {blockedMatches.map((op) => {
+                        const need = blocked.get(op.id)!;
+                        const needElite = ELITE_NEED[need];
+                        return (
+                          <small key={op.id} className="sub-chip locked"
+                            title={t("{name}의 이 시설 스킬은 {need}부터 열립니다 — 지금 배치해도 효과가 없습니다", { name: op.name, need: t(need) })}>
+                            <img src={asset(op.image)} alt="" width={180} height={180} loading="lazy"
+                              className={onShowOperator ? "op-link" : undefined}
+                              onClick={(event) => { event.stopPropagation(); onShowOperator?.(op.id); }} />{op.name}{" "}
+                            {needElite != null
+                              ? <button type="button" className="chip-fix"
+                                  title={t("{name}을(를) {need}로 올려 이 스킬을 켭니다", { name: op.name, need: t(need) })}
+                                  onClick={() => (onUnlockElite ?? onSetElite)(op.id, needElite)}>
+                                  {t("{need} 필요 ↑", { need: t(need) })}
+                                </button>
+                              : <em className="need">{t("{need} 필요", { need: t(need) })}</em>}
+                          </small>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                {/* 이 시설 스킬은 있는데 **보유 목록에 없어서** 아예 안 뜨는 오퍼 —
+                    6성은 기본 미보유라 여기 가장 많이 걸린다 (제보 2026-08-24). 종전엔
+                    "검색 결과가 없습니다"로 끝나 데이터가 없는 것처럼 보였다. */}
+                {unownedMatches.length > 0 && (
+                  <div className="bench-busy bench-unowned">
+                    <span>{t("이 시설 스킬은 있지만 보유 목록에 없습니다 — 6성은 기본이 미보유이니 가진 오퍼를 켜 주세요:")}</span>
+                    <div className="bench-chips">
+                      {unownedMatches.map((op) => (
+                        <small key={op.id} className="sub-chip unowned"
+                          title={t("보유 오퍼 설정을 열어 {name}을(를) 켜세요", { name: op.name })}
+                          onClick={() => onOpenRoster?.()}>
+                          <img src={asset(op.image)} alt="" width={180} height={180} loading="lazy"
+                            className={onShowOperator ? "op-link" : undefined}
+                            onClick={(event) => { event.stopPropagation(); onShowOperator?.(op.id); }} />{op.name}{" "}
+                          <em>{t("미보유")}</em>
+                        </small>
+                      ))}
+                    </div>
+                    {onOpenRoster && (
+                      <button type="button" className="more-filter" onClick={onOpenRoster}>{t("보유 오퍼 설정 열기")}</button>
+                    )}
                   </div>
                 )}
                 {benchFiltered.length > 12 && (
@@ -2739,6 +2866,10 @@ function FlowModal({ plan, opMap, onClose, onShowOperator }: { plan: Plan; opMap
   );
 }
 
+/** 잠금 해제 조건 문자열 → 그 자리에서 올려 줄 수 있는 정예화 단계.
+ *  'Lv.30'은 레벨이라 여기 없다 — 보유 오퍼 설정의 Lv. 칸에서 고쳐야 한다. */
+const ELITE_NEED: Record<string, Elite> = { "정예화 1": 1, "정예화 2": 2 };
+
 // 보유 오퍼 카드 — memo로 감싼다. 카드가 405장이라 memo가 없으면 체크 한 번에 전 카드가
 // 다시 렌더돼 클릭 응답이 CPU 4배 느린 환경에서 ~49ms까지 늘었다 (INP 악화, 2026-07-26 실측).
 // props를 전부 원시값·안정 참조로 유지해야 memo가 듣는다 — options는 op에서 파생되므로
@@ -2753,6 +2884,19 @@ const RosterCard = memo(function RosterCard({ op, owned, elite, level, onToggle,
   // 레벨은 노정예에서만 인프라 계산에 영향을 준다('Lv.30' 해금 스킬) — 1정 이상은
   // 그 조건을 이미 넘겼으므로 입력칸을 흐리게 두되 기록은 그대로 남긴다
   const levelMatters = elite === 0;
+  // 지금 정예화에서 **못 쓰는** 기지 스킬 — 새로 체크한 오퍼는 E0에서 시작하므로,
+  // 정예화 해금 스킬만 가진 오퍼는 켜도 편성에 안 나타난다. 왜 안 뜨는지 알 길이
+  // 없어 "그 오퍼가 없다"는 제보로 돌아왔다 (2026-08-24, 비질·무역소).
+  // 하위 단계가 있는 스킬은 그걸로 대체돼 실제로 잠기지 않으므로 세지 않는다 (withElite와 같은 규칙).
+  const lockedNeed = useMemo(() => {
+    if (!owned || elite >= 2) return null;
+    const locks = (unlock: string) => eliteLocks(unlock, elite) || levelLocks(unlock, elite, level);
+    const hard = op.skills.filter((sk) => locks(sk.unlock) && !(sk.tiers ?? []).some((lower) => !locks(lower.unlock)));
+    if (!hard.length) return null;
+    // 여러 개면 **가장 쉬운** 조건을 알린다 (그거 하나만 넘겨도 뭔가는 열린다)
+    const rank = (u: string) => (u === "Lv.30" ? 0 : u === "정예화 1" ? 1 : 2);
+    return { n: hard.length, need: hard.map((sk) => sk.unlock).sort((a, b) => rank(a) - rank(b))[0] };
+  }, [owned, elite, level, op]);
   return (
     <div className={`roster-card${owned ? " owned" : ""}${op.unreleased ? " future" : ""}`}>
       <button type="button" onClick={() => onToggle(op.id)} title={op.name}>
@@ -2760,6 +2904,12 @@ const RosterCard = memo(function RosterCard({ op, owned, elite, level, onToggle,
           onClick={(event) => { if (onShowOperator) { event.stopPropagation(); onShowOperator(op.id); } }} />
         <span>{op.name}{op.unreleased && <em className="future-badge">{t("미실장")}</em>}</span>
       </button>
+      {lockedNeed && (
+        <em className="roster-locked"
+          title={t("이 정예화에서는 기지 스킬 {n}개가 아직 열리지 않아 자동편성 후보에 들지 않습니다. 실제로 키운 만큼 정예화를 올려 주세요.", { n: lockedNeed.n })}>
+          {t("기지 스킬 {n}개 잠김 · {need}부터", { n: lockedNeed.n, need: t(lockedNeed.need) })}
+        </em>
+      )}
       {owned && options.length > 0 && (
         <div className="elite-toggle" role="group" aria-label={t("{name} 정예화 단계", { name: op.name })}>
           {options.map((option) => (
