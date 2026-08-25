@@ -243,7 +243,7 @@ const CONTENT: Record<Locale, Content> = {
     disclaimer: {
       title: "비공식 팬 사이트 안내",
       body:
-        "테라 아카이브는 Hypergryph 및 Yostar와 무관한 비공식·비영리 팬 사이트입니다. 게임 내 이미지·명칭·스토리·효과음 등 모든 저작권은 원저작자에게 있으며, 팬 콘텐츠 가이드라인을 존중합니다. 배경음악은 별도로 발매되는 저작물이라 이곳에서 재배포하지 않으며, 공식 채널에서 들으실 수 있습니다. 수익을 목적으로 하지 않습니다.",
+        "테라 아카이브는 Hypergryph 및 Yostar와 무관한 비공식·비영리 팬 사이트입니다. 게임 내 이미지·명칭·스토리 등 모든 저작권은 원저작자에게 있으며, 팬 콘텐츠 가이드라인을 존중합니다. 수익을 목적으로 하지 않습니다.",
     },
     cta: "오류 제보나 기능 제안은 각 페이지의 피드백 버튼으로 보내주세요.",
   },
@@ -392,7 +392,7 @@ const CONTENT: Record<Locale, Content> = {
     disclaimer: {
       title: "Unofficial fan site",
       body:
-        "Terra Archive is an unofficial, non-commercial fan site unaffiliated with Hypergryph or Yostar. All in-game images, names, story text, and sound effects remain the property of their respective owners, and we respect the fan-content guidelines. Background music is released separately and is not redistributed here — please listen through the official channels. It is not operated for profit.",
+        "Terra Archive is an unofficial, non-commercial fan site unaffiliated with Hypergryph or Yostar. All in-game images, names, and story text remain the property of their respective owners, and we respect the fan-content guidelines. It is not operated for profit.",
     },
     cta: "Report errors or suggest features via the feedback button on each page.",
   },
@@ -541,7 +541,7 @@ const CONTENT: Record<Locale, Content> = {
     disclaimer: {
       title: "非公式ファンサイトについて",
       body:
-        "テラアーカイブは、HypergryphおよびYostarとは無関係の非公式・非営利ファンサイトです。ゲーム内の画像・名称・ストーリー・効果音等の著作権はすべて原著作者に帰属し、ファンコンテンツのガイドラインを尊重します。BGMは別途リリースされている著作物のため当サイトでは再配布せず、公式チャンネルでお聴きいただけます。営利を目的としていません。",
+        "テラアーカイブは、HypergryphおよびYostarとは無関係の非公式・非営利ファンサイトです。ゲーム内の画像・名称・ストーリー等の著作権はすべて原著作者に帰属し、ファンコンテンツのガイドラインを尊重します。営利を目的としていません。",
     },
     cta: "不具合の報告や機能の提案は、各ページのフィードバックボタンからお寄せください。",
   },

@@ -2151,18 +2151,14 @@ const D: Record<string, Pair> = {
   "배경과 인물 일러스트를 세워 원작처럼 한 줄씩 재생합니다": [
     "Plays line by line like the game, with backgrounds and character art.",
     "背景と立ち絵を出して、ゲームと同じように1行ずつ再生します。"],
-  "게임 내 스토리 원문을 배경·인물 일러스트와 함께 재생합니다. 효과음은 🔊 버튼으로 켤 수 있고, 음악은 포함되어 있지 않습니다.": [
-    "Plays the in-game story script with its backgrounds and character art. Sound effects can be turned on with the 🔊 button; music is not included.",
-    "ゲーム内のストーリー原文を背景・立ち絵とともに再生します。効果音は🔊ボタンでオンにでき、音楽は含まれていません。",
-  ],
+  "게임 내 스토리 원문을 배경·인물 일러스트와 함께 재생합니다. 음악·효과음은 빠져 있습니다.": [
+    "Plays the in-game story script with its backgrounds and character art. Music and sound effects are not included.",
+    "ゲーム内のストーリー原文を、背景と立ち絵つきで再生します。音楽・効果音は含まれません。"],
   "이전 화": ["Prev ep.", "前話"],
   "다음 화": ["Next ep.", "次話"],
   "리더기": ["Reader", "リーダー"],
   "전체 모드": ["Full screen", "全画面"],
   "전체 모드 끄기": ["Exit full screen", "全画面を終了"],
-  "효과음 음량": ["Sound effect volume", "効果音の音量"],
-  "효과음 켜기": ["Turn sound effects on", "効果音をオンにする"],
-  "효과음 끄기": ["Turn sound effects off", "効果音をオフにする"],
   "자동 넘김": ["Auto play", "オート"],
   "자동 넘김 끄기": ["Stop auto", "オート停止"],
   "클릭 · Space · → 다음 · ← 이전 · Esc 전체 모드 끄기": [

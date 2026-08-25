@@ -9,7 +9,6 @@
 import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { asset } from "./assets";
 import { Dropdown } from "./dropdown";
-import type { AuCue } from "./story-audio";
 import { scrollMainTop } from "./scroll";
 // 스샷 레이더 (/stories 설치, 2026-07-24) — 게임 전문 대사 화면을 인식해 해당 에피소드로 이동
 import { warmOcr } from "./lens/ocr";
@@ -102,10 +101,7 @@ export type ScriptLine = { n?: string; x?: string; st?: string; img?: string; lo
  *  i = 이 무대가 처음 그려지는 줄 번호. 화면은 "현재 줄 이하의 마지막 스냅샷"만 보면 된다.
  *  ch = [스프라이트 base, 표정번호] 목록(무대 왼→오른쪽) · f = 포커스 슬롯(1-base) */
 export type VnSnap = { i: number; bg?: string; cut?: string; ch?: [string, number][]; f?: number; bk?: string; sh?: number };
-export type ScriptEp = { code: string; name: string; tag: string; lines: ScriptLine[];
-  vn?: VnSnap[];
-  /** 오디오 큐 트랙 — 효과음 재생에 쓴다 (BGM 은 소리로 내지 않는다, app/story-audio.ts) */
-  au?: AuCue[] };
+export type ScriptEp = { code: string; name: string; tag: string; lines: ScriptLine[]; vn?: VnSnap[] };
 // tr: "cn" = 미출시 이벤트 — CN 원문 AI 번역본 (비공식 번역 안내 표시)
 export type ScriptData = { id: string; eps: ScriptEp[]; tr?: string; faces?: Record<string, string> };
 const translatedByLocale: Record<string, Set<string>> = {
@@ -623,7 +619,7 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
   return (
     <div className="story-script" ref={topRef}>
       <p className="story-disclaimer">{sceneOn
-        ? t("게임 내 스토리 원문을 배경·인물 일러스트와 함께 재생합니다. 효과음은 🔊 버튼으로 켤 수 있고, 음악은 포함되어 있지 않습니다.")
+        ? t("게임 내 스토리 원문을 배경·인물 일러스트와 함께 재생합니다. 음악·효과음은 빠져 있습니다.")
         : t("게임 내 스토리 스크립트 원문입니다. 대사·지문·컷씬만 표시되며 연출(음악·효과)은 생략됩니다.")}</p>
       {script.tr === "cn" && <p className="story-disclaimer">{t("아직 정식 출시되지 않은 이벤트라, 중국 서버 원문을 AI가 번역한 비공식 텍스트입니다.")}</p>}
       {/* 에피소드 고르기 — 종전엔 칩을 전부 늘어놓았는데(메인 스토리는 39개까지 간다)
