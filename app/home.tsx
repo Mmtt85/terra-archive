@@ -2113,7 +2113,9 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
       {tab === "sim" && <SimLauncher />}
 
       <footer>
-        <span>RHODES ISLAND // TERRA ARCHIVE</span>
+        {/* 'RHODES ISLAND // TERRA ARCHIVE' 장식 문구는 뺐다 (사용자 지시 2026-08-25).
+            SEO에는 쓰이지 않았다 — 크롤러가 읽는 건 아래 footer-tabs(내부 링크)와
+            footer-langs(언어 대체 링크)이고, 사이트 이름은 <title>·JSON-LD가 이미 준다. */}
         <p>{t("명일방주(Arknights) 비공식 팬 프로젝트 · 게임 내 명칭과 데이터의 권리는 Hypergryph / Yostar 등 각 권리자에게 있습니다.")}</p>
         {/* 비상업 고지 바로 아래에 자발적 서버 후원 링크(작게) — 수익이 아니라 운영비 보탬임을 명확히 */}
         <p className="footer-donate">
@@ -2325,7 +2327,7 @@ function FilterGroup({ title, items, selected, onToggle, rows = 1, countForItem,
         })}
       </div>
       {(hiddenCount > 0 || expanded) && (
-        <button className="more-filter" type="button" onClick={() => setExpanded((current) => !current)} aria-expanded={expanded}><span className="btn-icon" aria-hidden>{expanded ? "▴" : "▾"}</span>{expanded ? t("접기") : t("더보기 +{n}", { n: hiddenCount })}</button>
+        <button className="more-filter" type="button" onClick={() => setExpanded((current) => !current)} aria-expanded={expanded}><span className="btn-icon drop-caret" aria-hidden>{expanded ? "▴" : "▾"}</span>{expanded ? t("접기") : t("더보기 +{n}", { n: hiddenCount })}</button>
       )}
     </fieldset>
   );
@@ -2732,7 +2734,7 @@ function ModuleSection({ operator, modules }: { operator: Operator; modules: Ope
                 </div>
                 <button type="button" className="module-story-toggle" aria-expanded={shown}
                   onClick={() => setOpen((current) => (current === module.id ? null : module.id))}>
-                  <span className="btn-icon" aria-hidden>{shown ? "▴" : "▾"}</span>
+                  <span className="btn-icon drop-caret" aria-hidden>{shown ? "▴" : "▾"}</span>
                   {t("모듈 이야기")}
                 </button>
                 {shown && (
@@ -3840,7 +3842,7 @@ function VoiceSection({ operator }: { operator: Operator }) {
           </dl>
           {lines.length > VOICE_HEAD && (
             <button type="button" className="more-filter" onClick={() => setAll((current) => !current)} aria-expanded={all}>
-              <span className="btn-icon" aria-hidden>{all ? "▴" : "▾"}</span>
+              <span className="btn-icon drop-caret" aria-hidden>{all ? "▴" : "▾"}</span>
               {all ? t("접기") : t("전체 {n}줄 보기", { n: lines.length })}
             </button>
           )}

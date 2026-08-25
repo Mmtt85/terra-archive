@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --ink: #131719;
-  --muted: #687176;
+  --ink: #242b2f;        /* 종전 #131719 — '라이트에서 너무 새까맣다'는 지적(2026-08-25)으로 한 단계 눅였다. 종이 대비 12.6:1로 여전히 넉넉하다 */
+  --muted: #646c71;      /* 종전 #687176 — 종이 위 4.37:1로 WCAG AA(4.5)에 못 미쳐 4.66:1로 (2026-08-25 전수 실측) */
   --paper: #f1f0eb;
   --line: #d2d0c9;
   --lime: #c3d24b; /* 종전 #dfff00 — 형광이 눈아프다는 피드백(2026-07-18)으로 톤 다운 */
@@ -10,7 +10,7 @@
   /* 시맨틱 표면·텍스트 변수 — 다크모드(html.dark)가 통째로 갈아끼운다 */
   --ink2: #3a4146; /* 본문 보조 텍스트 (진함) */
   --ink3: #4f585c; /* 본문 보조 텍스트 (연함) */
-  --chip: #131719; /* 어두운 강조 배경 (라이트에선 잉크와 동일) */
+  --chip: #242b2f; /* 어두운 강조 배경 (라이트에선 잉크와 동일) */
   --chip-ink: #f1f0eb; /* chip 위 텍스트 */
   --header-bg: #f1f0ebe6; /* 상단 고정 헤더 (반투명 블러) */
   --header-solid: #f1f0eb; /* 같은 색의 불투명판 — 헤더 밖으로 나가는 핸들용 */
@@ -20,7 +20,11 @@
   --bg-soft2: #e6e5df; /* 노트 박스 */
   --bg-faint: #f7f6f1;
   --veil: #ffffffd9; /* 반투명 덮개 */
-  --border-strong: #131719; /* 강조 보더 — 라이트에선 잉크, 다크에선 중간 회색(과한 흰 테두리 방지) */
+  /* 마우스오버 보더 — 강조 보더(거의 검정)를 그대로 쓰면 라이트에서 너무 툭 튄다는
+     지적(2026-08-25). --line(#d2d0c9)과 --border-strong(#242b2f) 사이의 중간 회색이라
+     '누를 수 있다'는 신호는 남기고 검정은 피한다. */
+  --border-hover: #6f7a80;
+  --border-strong: #242b2f; /* 강조 보더 — 라이트에선 잉크, 다크에선 중간 회색(과한 흰 테두리 방지) */
   /* 파스텔 틴트 칩 (배경+전용 잉크 페어) — 다크에서 어두운 동계열 틴트로 뒤집힌다 */
   --tint-lime: #eef3d2;
   --tint-lime-ink: #5b6b00;
@@ -32,6 +36,11 @@
   --tint-red: #f5d3cd;
   --tint-gold: #f5ecc9;
   --gold-ink: #b8860b;
+  /* 상태색 — 다크 배경에서는 그대로 밝게 읽히던 값이라 라이트에서만 어둡게 잡는다
+     (라이트 실측: amber 3.11 · blue 2.85 · star 2.48 → 전부 4.6 이상, 2026-08-25) */
+  --amber-ink: #946b26;
+  --blue-ink: #3b77a3;
+  --star-ink: #8e6e1a;
   --ok: #2e7d32;
   --ok-ring: #d9ecd7; /* 성공(녹색) 텍스트·포커스 링 */
   --bad: #c62828; /* 경고·라이브(적색) */
@@ -58,7 +67,11 @@ html.dark {
   --bg-soft2: #232a2d;
   --bg-faint: #161b1e;
   --veil: #171c1fd9;
+  --border-hover: #63707a;  /* 다크에선 강조 보더보다 한 톤 밝게 — 밝아지는 게 호버 신호 */
   --border-strong: #47525a; /* 미래시 토글 보더 수준의 무난한 회색 (사용자 피드백 2026-07-18) */
+  --amber-ink: #b9862f;  /* 다크 배경에선 종전 값이 5.3~7.2:1로 충분하다 */
+  --blue-ink: #4d9dd6;
+  --star-ink: #c89b25;
   --tint-lime: #2a3312;
   --tint-lime-ink: #c6d96e;
   --tint-cream: #26290f;
@@ -366,7 +379,7 @@ button {
   white-space: nowrap;
 }
 .bcast-trigger:hover {
-  border-color: var(--border-strong);
+  border-color: var(--border-hover);
 }
 .bcast-trigger .bcast-hint {
   font: 700 11px monospace;
@@ -405,7 +418,7 @@ button {
   white-space: nowrap;
 }
 .chlog-trigger:hover {
-  border-color: var(--border-strong);
+  border-color: var(--border-hover);
 }
 .chlog-modal {
   position: relative;
@@ -524,7 +537,7 @@ button {
   transition: 0.15s;
 }
 .chlog-go:hover {
-  border-color: var(--border-strong);
+  border-color: var(--border-hover);
 }
 /* 항목 안 '상세보기/접기' — 본문 끝에 붙는 조용한 인라인 링크.
    테두리 칩인 .chlog-go(바로가기)와 위계를 벌려 둘이 나란히 있어도 구분된다. */
@@ -567,7 +580,7 @@ button {
   transition: 0.15s;
 }
 .chlog-more-btn:hover {
-  border-color: var(--border-strong);
+  border-color: var(--border-hover);
   color: var(--ink);
 }
 /* 후원 안내 — 목록 하단 상시 노트 */
@@ -640,7 +653,7 @@ button {
   transition: 0.15s;
 }
 .devnote-q:hover {
-  border-left-color: var(--border-strong);
+  border-left-color: var(--border-hover);
   color: var(--ink);
 }
 .devnote-q > i {
@@ -701,7 +714,9 @@ button {
 }
 .promo-trigger:hover { border-color: var(--lime); }
 .promo-trigger.selected { background: color-mix(in srgb, var(--lime) 14%, transparent); }
-.promo-trigger .promo-mark { color: var(--lime); }
+/* 라임 원색은 밝은 종이 위에서 1.46:1이라 사실상 안 보인다 — 배경에 맞춰 도는
+   --tint-lime-ink(라이트 #5b6b00 · 다크 #c6d96e)를 쓴다 (2026-08-25) */
+.promo-trigger .promo-mark { color: var(--tint-lime-ink); }
 .promo-trigger .promo-hint { font-size: 11px; font-weight: 700; color: var(--muted); }
 /* 확장부의 작은 버튼 — 옆에 붙는 '공식 방송'(.bcast-trigger)과 같은 치수로 맞춘다.
    종전엔 배너 섬네일을 통째로 품은 큰 버튼이 헤더 1줄에 누워 있었다
@@ -721,7 +736,7 @@ button {
   white-space: nowrap;
 }
 .event-trigger:hover {
-  border-color: var(--border-strong);
+  border-color: var(--border-hover);
 }
 .event-trigger .event-mark {
   color: var(--accent, #b98a2f);
@@ -852,7 +867,7 @@ button {
   transition: 0.15s;
 }
 .bcast-card:hover {
-  border-color: var(--border-strong);
+  border-color: var(--border-hover);
   background: #0000000a;
 }
 .bcast-card.live {
@@ -1534,7 +1549,7 @@ legend {
   transition: all 0.15s;
 }
 .filter-list button span {
-  color: #8b9294;
+  color: var(--muted);   /* 종전 #8b9294 고정값 — 라이트에서 3.05:1이었다 (2026-08-25) */
   margin-left: 7px;
   font: 10px monospace;
 }
@@ -1854,7 +1869,7 @@ legend {
   font-weight: 800;
 }
 .more-filter:hover {
-  border-color: var(--border-strong);
+  border-color: var(--border-hover);
   color: var(--ink);
 }
 .data-note {
@@ -2058,7 +2073,7 @@ legend {
   line-height: 1;
 }
 .sort-direction:hover {
-  border-color: var(--border-strong);
+  border-color: var(--border-hover);
 }
 .portrait img {
   z-index: 2;
@@ -2274,7 +2289,7 @@ legend {
   transition: 0.12s;
 }
 .confirm-cancel:hover {
-  border-color: var(--border-strong);
+  border-color: var(--border-hover);
   background: var(--paper);
 }
 .confirm-ok {
@@ -2648,8 +2663,11 @@ legend {
   font-weight: 800;
   font-variant-numeric: tabular-nums;
 }
+/* '등록된 …이 없습니다' 같은 빈 상태 안내. font-size를 안 주면 루트(16px)를 그대로 물려받아
+   11~12.5px짜리 주변 글자들 사이에서 혼자 커 보인다 (사용자 지적 2026-08-25). */
 .no-detail {
   color: var(--muted) !important;
+  font-size: 13px;
 }
 .stat-table {
   border: 1px solid var(--line);
@@ -2943,7 +2961,7 @@ legend {
   transition: 0.15s;
 }
 .skin-tabs button:hover {
-  border-color: var(--border-strong);
+  border-color: var(--border-hover);
   color: var(--ink);
 }
 .skin-tabs button.selected {
@@ -4065,11 +4083,6 @@ legend {
   color: #b6bbbd;
   font-weight: 600;
 }
-.site-scroll > footer span {
-  color: var(--lime);
-  letter-spacing: 1px;
-  font: 700 11px monospace;
-}
 .site-scroll > footer p {
   margin: 0;
 }
@@ -4535,13 +4548,17 @@ legend {
   padding: 2px 5px;
   border-radius: 4px;
   background: color-mix(in srgb, var(--room-accent, var(--lime)) 30%, transparent);
-  color: var(--ink);
+  /* ⚠ --ink 를 쓰면 안 된다 (사용자 제보 2026-08-25 "라이트에서 레벨이 어두워 안 보인다").
+     시설 카드(.ship-room)는 **양 모드 모두 어두운 판**(#171b1d)인데 --ink 는 테마를 따라
+     뒤집혀서, 라이트에서 거의 검정 글자가 검정 판에 얹혔다. 판의 글자색을 그대로 물려받는다. */
+  color: inherit;
   vertical-align: 1px;
 }
 /* 만렙은 차분하게 — 낮춘 방(악센트 배지)만 눈에 띄도록 */
 .room-lv.max {
   background: color-mix(in srgb, var(--ink) 7%, transparent);
-  color: var(--muted);
+  /* --muted 는 어두운 판 위에서 3.48:1이었다 — 판 글자색을 옅게 쓰면 6:1로 올라간다 */
+  color: color-mix(in srgb, currentColor 62%, transparent);
 }
 /* 방 상세 모달 헤더: 이름 오른쪽에 레벨 조절 버튼 (사용자 요청 2026-07-24) */
 .room-head-row {
@@ -4677,7 +4694,7 @@ legend {
   color: var(--ink);
   /* 보더만 또렷하게 — 라이트 모드는 --paper와 --bg-panel이 거의 같은 색이라 배경 변화만으론
      호버 신호가 아예 안 보인다 (실측 확인). 채움 대신 테두리로 조용히 알린다. */
-  border-color: var(--border-strong);
+  border-color: var(--border-hover);
 }
 /* 핵심 2버튼 — 보유 오퍼 설정 · 전체 자동편성. 색만이 아니라 **크기로도** 도드라지게
    (사용자 확정 2026-07-27: "눈에 띄는 크기의 커다란 버튼"). */
@@ -4696,7 +4713,7 @@ legend {
 .planner-buttons button.primary:hover {
   background: var(--lime);
   color: var(--on-lime);
-  border-color: var(--border-strong);
+  border-color: var(--border-hover);
   transform: translateY(-1px);
   box-shadow: 0 6px 16px #00000026;
 }
@@ -4801,7 +4818,7 @@ legend {
 }
 .shift-notes i {
   font-style: normal;
-  color: var(--line);
+  color: var(--muted);   /* 종전 --line 은 종이 위 1.35:1이라 구분자가 아예 안 보였다 */
 }
 /* A조 지속 시계 (소모 모드 전용) — 조 탭의 병목 기준 일괄 교대 시계 + 방 카드의 방별 배지.
    풀 컨디션 24 ÷ 방 순소모, 순소모 0(무한동력)은 ∞ (사용자 요청 2026-07-28) */
@@ -5347,7 +5364,7 @@ legend {
   color: #17201a;
 }
 .ship-room-crew i {
-  color: #5d686c;
+  color: #8b9599;   /* 종전 #5d686c — 어두운 카드 위 3.02:1이라 4.9:1로 (2026-08-25) */
   font-size: 11px;
   font-style: normal;
   align-self: center;
@@ -5513,7 +5530,7 @@ legend {
   font-size: 15px;
 }
 .crew-card b i {
-  color: #c89b25;
+  color: var(--star-ink);
   font-style: normal;
   font-size: 11px;
   letter-spacing: -1px;
@@ -5717,6 +5734,17 @@ legend {
   background: var(--paper);
   color: var(--ink);
 }
+/* ⚠ 선택된 부메뉴 항목의 글자색을 **여기서 다시 지정해야 한다** (사용자 제보 2026-08-25
+   "선택돼 있는 경우 글자도 배경도 검정이라 안 보임"). 위쪽 `.main-tabs
+   :where(button, a.tab-sub).selected`가 라임을 주지만, `:where()`는 특이도가 0이라
+   그 규칙은 `.main-tabs .selected`(0,2,0)이고 바로 위 `.main-tabs .tab-sub`(0,2,0)와
+   **특이도가 같다** — 그러면 뒤에 온 쪽이 이겨서 --ink2(어두운 회색)로 덮인다.
+   배경은 --chip(거의 검정)이라 명암비 1.74로 글자가 사실상 안 보였다. */
+.main-tabs .tab-sub.selected,
+.main-tabs .tab-sub2.selected {
+  color: var(--lime);
+}
+.main-tabs .tab-sub.selected .tab-sub-mark { opacity: 0.75; }
 .tab-sub-mark {
   opacity: 0.5;
   font-weight: 800;
@@ -5757,7 +5785,7 @@ legend {
   transition: 0.15s;
 }
 .strategy-cell:hover {
-  border-color: var(--border-strong);
+  border-color: var(--border-hover);
   background: var(--tint-cream);
 }
 .token-chip {
@@ -6042,7 +6070,7 @@ legend {
 }
 .import-action.apply:hover:not(:disabled) {
   background: var(--ink2);
-  border-color: var(--ink2);
+  border-color: var(--border-hover);
 }
 .import-way .maa-import input {
   display: none;
@@ -6127,7 +6155,7 @@ legend {
   cursor: pointer;
 }
 .bulk-group button:hover {
-  border-color: var(--border-strong);
+  border-color: var(--border-hover);
 }
 /* 정렬 바 — 오퍼 리스트 바로 위 (어두운 모달 톤에 맞춰 흰 글씨) */
 .roster-sortbar {
@@ -6264,7 +6292,10 @@ legend {
 }
 .elite-pill button.selected {
   background: var(--accent);
-  color: var(--ink);
+  /* --accent 는 오퍼마다 다른 **중간톤** 채움이라, 테마 따라 뒤집히는 --ink 를 쓰면
+     다크에서 밝은 글자가 중간톤 위에 얹혀 2.37:1이 된다 (2026-08-25 다크 실측).
+     양 모드 모두 어두운 글자로 고정한다. */
+  color: #141a1d;
 }
 /* 미저장 알림: 약 5초(1s×5회)만 깜빡인 뒤 정적인 라임 배경으로 남는다 */
 .save-pending {
@@ -6561,7 +6592,7 @@ legend {
   font-weight: 800;
 }
 .dict-toggle:hover {
-  border-color: var(--border-strong);
+  border-color: var(--border-hover);
   color: var(--ink);
 }
 .recruit-dict > p {
@@ -7140,7 +7171,7 @@ legend {
   transition: 0.15s;
 }
 .fb-attach-btn:hover {
-  border-color: var(--border-strong);
+  border-color: var(--border-hover);
   color: var(--ink);
 }
 .fb-thumb {
@@ -7639,7 +7670,7 @@ legend {
   cursor: pointer;
 }
 .fb-tool-btn:hover:not(:disabled) {
-  border-color: var(--border-strong);
+  border-color: var(--border-hover);
   color: var(--ink);
 }
 .fb-tool-btn:disabled {
@@ -7728,7 +7759,7 @@ legend {
 }
 .fb-code-row button:hover,
 .fb-code-entry button:hover {
-  border-color: var(--border-strong);
+  border-color: var(--border-hover);
 }
 .fb-code-toggle {
   margin-left: auto;
@@ -8500,7 +8531,7 @@ legend {
   transition: 0.15s;
 }
 .farm-more-stages:hover {
-  border-color: var(--border-strong);
+  border-color: var(--border-hover);
   color: var(--ink);
 }
 .farm-head h2 {
@@ -8545,7 +8576,7 @@ legend {
   font-size: 12px;
 }
 .farm-tier-filter button:hover {
-  border-color: var(--border-strong);
+  border-color: var(--border-hover);
 }
 .farm-tier-filter button.selected {
   background: var(--chip);
@@ -8698,8 +8729,8 @@ legend {
   color: #c05f6e;
 }
 .kind-badge.daily {
-  border-color: #4d9dd6;
-  color: #4d9dd6;
+  border-color: var(--blue-ink);
+  color: var(--blue-ink);
 }
 .farm-rate {
   font-weight: 800;
@@ -8794,7 +8825,7 @@ legend {
   border-color: var(--border-strong);
 }
 .story-viewtabs button:not(.on):hover {
-  border-color: var(--border-strong);
+  border-color: var(--border-hover);
 }
 /* ── 테라 연대기 ── */
 .chron {
@@ -8908,7 +8939,7 @@ legend {
   transition: 0.12s;
 }
 .chron-slider-arrow:hover {
-  border-color: var(--border-strong);
+  border-color: var(--border-hover);
   background: var(--chip);
   color: var(--chip-ink);
 }
@@ -9095,7 +9126,7 @@ legend {
   border-color: var(--border-strong);
 }
 .chron-tabs button:not(.on):hover {
-  border-color: var(--border-strong);
+  border-color: var(--border-hover);
 }
 /* 그룹 목록 — 레일과 스크롤 동기화되는 세로 스크롤 패널 */
 .chron-groups {
@@ -9166,7 +9197,7 @@ legend {
     box-shadow 0.15s;
 }
 .chron-item:not(:disabled):hover {
-  border-color: var(--border-strong);
+  border-color: var(--border-hover);
   box-shadow: 2px 2px 0 #13171914;
 }
 .chron-item:disabled {
@@ -9310,7 +9341,7 @@ legend {
 }
 .story-card button:hover:not(:disabled),
 .story-card a:hover {
-  border-color: var(--border-strong);
+  border-color: var(--border-hover);
   transform: translateY(-2px);
 }
 .story-card button:disabled {
@@ -9427,7 +9458,9 @@ html.dark .story-card:hover .story-thumb img {
    지금 읽을 수 있는 것이 무엇인지 말해 준다 (사용자 확정 2026-08-23). */
 .story-ready-badge.story-lore-badge {
   background: var(--chip);
-  color: var(--white);
+  /* --white 는 다크에서 **더 어두운** 판 색(#171c1f)이라 --chip(#262d31) 위에서 1.23:1로
+     글자가 사라졌다 (2026-08-25 다크 실측). chip 위 글자는 --chip-ink 가 정본이다. */
+  color: var(--chip-ink);
 }
 /* 요약이 있는 이벤트에 기록이 **덤으로** 붙어 있음 — 배지 아래 한 칸에 조용히 */
 .story-lore-mark {
@@ -9539,7 +9572,7 @@ html.dark .story-card:hover .story-thumb img {
   transition: 0.15s;
 }
 .story-back:hover {
-  border-color: var(--border-strong);
+  border-color: var(--border-hover);
 }
 /* 상단 뒤로가기: 좁은 화면에서도 sticky. 래퍼를 display:contents로 풀어
    버튼이 섹션(긴 본문) 기준으로 상단에 달라붙어 스크롤을 따라온다 */
@@ -10530,7 +10563,7 @@ html.dark .story-card:hover .story-thumb img {
 .about-card-go:hover {
   background: var(--chip);
   color: var(--white);
-  border-color: var(--border-strong);
+  border-color: var(--border-hover);
 }
 .about-notes {
   display: grid;
@@ -10873,7 +10906,7 @@ html.dark .story-card:hover .story-thumb img {
     0 0 0 4px var(--accent, var(--chip));
 }
 .cost-step-dot:hover::after {
-  border-color: var(--border-strong);
+  border-color: var(--border-hover);
 }
 /* 목표 밖(off) 행 — 흐리게 */
 .cost-row.off .cost-row-group,
@@ -10898,7 +10931,7 @@ html.dark .story-card:hover .story-thumb img {
   cursor: pointer;
 }
 .cost-op-all:hover {
-  border-color: var(--border-strong);
+  border-color: var(--border-hover);
 }
 /* 그룹 경계선은 텍스트 열에만 긋는다 (레일이 지나는 첫 칼럼은 비워 연속성 유지).
    그룹 사이는 레일이 끊겨야 하므로 새 그룹 첫 노드는 위쪽 레일을 그리지 않는다(.first). */
@@ -11003,7 +11036,7 @@ html.dark .story-card:hover .story-thumb img {
   transition: 0.15s;
 }
 .cost-mini.farmable:hover {
-  border-color: var(--border-strong);
+  border-color: var(--border-hover);
   background: var(--lime);
 }
 /* 모바일 육성 계산기: 레일·그룹·단계 칼럼을 좁혀 재료 칩 열(1fr)에 폭을 몰아준다.
@@ -11231,7 +11264,7 @@ html.dark .story-card:hover .story-thumb img {
   cursor: pointer;
 }
 .cost-clear:hover {
-  border-color: var(--border-strong);
+  border-color: var(--border-hover);
 }
 .cost-result {
   display: flex;
@@ -11288,7 +11321,7 @@ html.dark .story-card:hover .story-thumb img {
   transition: 0.15s;
 }
 .cost-item.farmable:hover {
-  border-color: var(--border-strong);
+  border-color: var(--border-hover);
   background: var(--white);
 }
 .cost-item-icon {
@@ -11338,7 +11371,7 @@ html.dark .story-card:hover .story-thumb img {
   --pt-plate: #f4efe4;
   --pt-plate-2: #e9e2d3;
   --pt-ink: #1d1c1a;
-  --pt-mut: #7b7468;
+  --pt-mut: #716b60;   /* 종전 #7b7468 — 판 위 4.03:1이라 4.62:1로 (2026-08-25) */
   --pt-accent: #e2622a;
   --pt-strip: #17171a;
   --pt-strip-ink: #efe9dc;
@@ -11597,7 +11630,9 @@ html.dark .pt-stage {
   height: 20px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--pt-accent) 18%, transparent);
-  color: var(--pt-accent);
+  /* 포인트색 그대로면 라이트 판 위에서 3.05:1이라 12px 글리프가 흐리다. 판의 본문색 쪽으로
+     조금 섞어 4.7:1로 올린다 — 다크에선 --pt-ink가 밝은색이라 오히려 또렷해진다 (2026-08-25) */
+  color: color-mix(in srgb, var(--pt-accent) 72%, var(--pt-ink));
   font-size: 12px;
 }
 .pt-ko {
@@ -15385,7 +15420,7 @@ main.site-main > .site-header {
   background: color-mix(in srgb, var(--card) 60%, transparent);
 }
 .scanner-dropzone:hover {
-  border-color: var(--ink2);
+  border-color: var(--border-hover);
 }
 /* 클립 토글 줄 — 안내문은 ? 도움말로 이동(2026-07-24)해 박스 없는 슬림한 툴바 한 줄만 남긴다.
    토글은 스샷 레이더의 .lens-open-btn 재사용 (세그먼트의 margin-left:auto는 여기선 해제) */
@@ -16437,6 +16472,44 @@ main.site-main > .site-header {
 :where(.about-hero) {
   border-radius: var(--r-lg);
 }
+/* ── 여닫이 화살표 자리 고정 (사용자 지적 2026-08-25) ────────────────────────────
+   ▾(U+25BE)와 ▴(U+25B4)는 **자체 폭이 다르다** — 본문 16px 기준 10.22px 대 13.84px.
+   그래서 여는 순간 캐럿이 3.6px 넓어지며 버튼이 통째로 늘었다 줄었다 했다
+   (실측: 속성 필터 버튼 55px → 57px). 한 칸을 미리 잡아 두면 글리프만 바뀐다.
+   ⚠ 새 드롭다운을 만들면 캐럿에 .drop-caret 을 붙일 것. */
+.drop-caret,
+.attr-caret,
+.event-caret,
+.tab-group-arrow,
+.rg-choice-caret,
+.server-chip > i,
+.ac-garsel-btn > i {
+  display: inline-block;
+  width: 1em;
+  text-align: center;
+  font-style: normal;
+  /* 글리프가 칸보다 커도 잘리지 않고 가운데로 넘친다 — 칸 자체는 안 흔들린다 */
+  overflow: visible;
+}
+
+/* ── 한쪽 보더만 있는 요소는 각지게 되돌린다 (사용자 지시 2026-08-25) ─────────────
+   위 전역 라운딩은 :where()로 "radius가 없던 곳"에 두루 스미는데, **테두리가 사방이
+   아니라 한쪽뿐인** 요소까지 굴려 놓았다. 그러면 그 한 줄의 양 끝이 안쪽으로 말려
+   구분선이 흐물흐물해 보인다 — 오퍼 상세 모달의 섹션 윗줄(.detail-section)이 대표적이다.
+   CSS로는 '보더가 한쪽뿐'을 선택할 수 없어, 실렌더 감사로 뽑은 목록을 명시한다.
+   ⚠ 새로 border-top/bottom/left 하나만 주는 요소를 만들면 여기에 추가할 것. */
+.detail-section,
+.recruit-picked,
+.farm-nonfarm-body,
+.farm-cols,
+.farm-card li.best,
+.digest-group > h3,
+.rg-tabs,
+.about-hero,
+.about-card-highlight {
+  border-radius: 0;
+}
+
 .story-reader-prefs-btns {
   border-radius: var(--r-sm);
   overflow: hidden;
@@ -17121,7 +17194,7 @@ main.site-main > .site-header {
   transition: border-color 0.15s, color 0.15s;
 }
 .op-related-chip:hover {
-  border-color: var(--border-strong);
+  border-color: var(--border-hover);
   color: var(--ink);
 }
 .op-related-chip img {
@@ -17176,7 +17249,7 @@ main.site-main > .site-header {
   transition: border-color 0.15s, color 0.15s;
 }
 .story-related-list a:hover {
-  border-color: var(--border-strong);
+  border-color: var(--border-hover);
   color: var(--ink);
 }
 
@@ -17210,7 +17283,7 @@ main.site-main > .site-header {
 .en-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 24px #1f242518;
-  border-color: var(--border-strong);
+  border-color: var(--border-hover);
 }
 .en-card:focus-visible {
   outline: 3px solid var(--lime);
@@ -17285,8 +17358,8 @@ main.site-main > .site-header {
   white-space: nowrap;
 }
 .en-rank.r-elite {
-  border-color: #b9862f;
-  color: #b9862f;
+  border-color: var(--amber-ink);
+  color: var(--amber-ink);
 }
 .en-rank.r-boss {
   border-color: #b8433a;
@@ -17429,7 +17502,7 @@ main.site-main > .site-header {
   text-decoration: none;
 }
 .en-links a:hover {
-  border-color: var(--border-strong);
+  border-color: var(--border-hover);
 }
 /* 등장 작전 — 구역별로 접어 보여준다. 최다 71개까지 나오므로 자체 스크롤을 준다. */
 .en-stagelist {
@@ -17506,12 +17579,12 @@ main.site-main > .site-header {
 }
 /* 강화된 스탯으로 나오는 작전 표시 */
 .en-stagegroup li.reinforced {
-  border-color: #b9862f;
+  border-color: var(--amber-ink);
 }
 .en-lv {
   font-style: normal;
   font-size: 10px;
-  color: #b9862f;
+  color: var(--amber-ink);
 }
 
 /* ── 작전 도감 (/stages) ────────────────────────────────────────────────────
@@ -17540,7 +17613,7 @@ main.site-main > .site-header {
 .st-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 24px #1f242518;
-  border-color: var(--border-strong);
+  border-color: var(--border-hover);
 }
 .st-card:focus-visible {
   outline: 3px solid var(--lime);
@@ -17769,7 +17842,7 @@ main.site-main > .site-header {
 .st-mapscale:hover {
   color: var(--white);
   background: var(--ink);
-  border-color: var(--ink);
+  border-color: var(--border-hover);
 }
 .rg-modal .st-mapscale {
   border-color: var(--rgline);
@@ -17841,7 +17914,7 @@ main.site-main > .site-header {
   line-height: 1.45;
   color: var(--white);
   background: var(--ink);
-  border: 1px solid var(--border-strong);
+  border: 1px solid var(--border-hover);
   pointer-events: none;
 }
 .st-tilekey i {
@@ -18070,7 +18143,7 @@ main.site-main > .site-header {
   min-width: 0;
 }
 .st-enemy:hover {
-  border-color: var(--border-strong);
+  border-color: var(--border-hover);
 }
 /* 생존연산 전투 지형 상세의 적은 <a>가 아니라 <button>이라 커서가 기본값이 된다 —
    누를 수 있다는 걸 커서로도 알려준다 (사용자 지시 2026-08-13). */
@@ -18078,7 +18151,7 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
 /* 적 도감 상세를 모달 안에 그대로 싣는다 — 위 요약과 겹치지 않게 선으로 끊는다 */
 .sb-dexfull { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
 .st-enemy.reinforced {
-  border-color: #b9862f;
+  border-color: var(--amber-ink);
 }
 .st-enemy-body {
   display: flex;
@@ -18135,7 +18208,7 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
 }
 .st-enemy-name i {
   font-style: normal;
-  color: #b9862f;
+  color: var(--amber-ink);
   margin-left: 4px;
   font-family: var(--font-geist-mono), ui-monospace, monospace;
   font-size: 11px;
@@ -18200,7 +18273,7 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
   min-width: 0;
 }
 .en-stagegroup li:hover {
-  border-color: var(--border-strong);
+  border-color: var(--border-hover);
 }
 /* 드랍 항목이 재료 상세를 여는 버튼이 됐다 (2026-08-09) */
 .st-dropgroup li {
@@ -18221,7 +18294,7 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
   cursor: default;
 }
 .st-dropgroup li:has(button:not(:disabled)):hover {
-  border-color: var(--border-strong);
+  border-color: var(--border-hover);
 }
 /* 적 스탯표가 가로로 길어져 좁은 화면에서 넘칠 수 있다 — 표만 따로 스크롤한다 */
 .en-stats-wrap {
@@ -18253,8 +18326,8 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
 }
 /* 어려움(高難) 판 배지 — 강화 스탯 표시(★)와 같은 주황 계열 */
 .kind-badge.tough {
-  border-color: #b9862f;
-  color: #b9862f;
+  border-color: var(--amber-ink);
+  color: var(--amber-ink);
 }
 /* 작전기록의 경험치 배지 — 재료 상세 모달 헤더 (2026-08-09) */
 .exp-badge {
@@ -18730,7 +18803,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
 .sb-cards .sb-card > .sb-cmeta { grid-column: 2; }
 .sb-cards .sb-card > .sb-cdesc { grid-column: 2; align-self: start; }
 .sb-clickable { cursor: pointer; transition: transform 0.14s, box-shadow 0.14s, border-color 0.14s; }
-.sb-clickable:hover { transform: translateY(-2px); box-shadow: 0 6px 16px #0003; border-color: var(--ink2); }
+.sb-clickable:hover { transform: translateY(-2px); box-shadow: 0 6px 16px #0003; border-color: var(--border-hover); }
 .sb-thumb {
   width: 62px;
   height: 62px;
@@ -18742,7 +18815,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
 .sb-thumb-en { object-fit: cover; }
 .sb-thumb-dim { background: #1d2330; }
 .sb-cname { font-size: 13.5px; line-height: 1.4; }
-.sb-cname .sb-lv { color: #b9862f; margin-left: 4px; font-style: normal; font-size: 11px; }
+.sb-cname .sb-lv { color: var(--amber-ink); margin-left: 4px; font-style: normal; font-size: 11px; }
 .sb-cmeta { display: flex; flex-wrap: wrap; gap: 4px; }
 .sb-cdesc {
   font-size: 11.5px;
@@ -18821,7 +18894,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   border: 1px solid var(--line);
   cursor: pointer;
 }
-.sb-atlist button:hover { color: var(--white); background: var(--ink); border-color: var(--ink); }
+.sb-atlist button:hover { color: var(--white); background: var(--ink); border-color: var(--border-hover); }
 .sb-atlist em { font-style: normal; margin-left: 5px; color: var(--muted); }
 .sb-atlist button:hover em { color: currentColor; opacity: .62; }
 /* 자원 목록 버튼 — 클릭 = 지도에서 그것만 강조.
@@ -18857,7 +18930,7 @@ td.sb-cn-td { display: table-cell; margin: 0; }
   border-radius: 999px;
   cursor: pointer;
 }
-.sb-matchip:hover { color: var(--white); background: var(--ink); border-color: var(--ink); }
+.sb-matchip:hover { color: var(--white); background: var(--ink); border-color: var(--border-hover); }
 .sb-matchip img { width: 22px; height: 22px; object-fit: contain; background: #10141c; border-radius: 50%; }
 .sb-matchip em { font-style: normal; color: var(--muted); }
 .sb-matchip:hover em { color: currentColor; opacity: .62; }
@@ -19027,7 +19100,7 @@ p.sb-trline { margin-top: 2px; }
   padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px;
   background: var(--bg-faint); cursor: pointer; text-align: left; font: inherit; color: inherit;
 }
-.rec-item:hover { border-color: var(--border-strong); }
+.rec-item:hover { border-color: var(--border-hover); }
 .rec-item > b { font-size: 13.5px; font-weight: 900; letter-spacing: -0.01em; }
 .rec-tag { color: var(--muted); font-size: 12.5px; }
 .rec-chips { margin-left: auto; display: flex; gap: 4px; }
@@ -19104,7 +19177,7 @@ p.sb-trline { margin-top: 2px; }
   cursor: pointer;
   transition: 0.12s;
 }
-.ac-subtabs button:hover { border-color: var(--border-strong); }
+.ac-subtabs button:hover { border-color: var(--border-hover); }
 .ac-subtabs button.on {
   color: var(--on-lime);
   background: var(--lime);
@@ -19395,7 +19468,7 @@ html:not(.dark) .ac-star { color: #8f6512; }
   cursor: pointer;
   transition: 0.12s;
 }
-.ac-bondcard:hover { border-color: var(--border-strong); background: var(--paper); }
+.ac-bondcard:hover { border-color: var(--border-hover); background: var(--paper); }
 .ac-bondcard > header {
   display: flex;
   align-items: center;
@@ -19500,7 +19573,7 @@ html:not(.dark) .ac-star { color: #8f6512; }
   border: 1px solid var(--line);
 }
 button.ac-card { cursor: pointer; transition: 0.12s; }
-button.ac-card:hover { border-color: var(--border-strong); background: var(--paper); }
+button.ac-card:hover { border-color: var(--border-hover); background: var(--paper); }
 .ac-card > header { display: flex; align-items: flex-start; gap: 10px; }
 .ac-card > header > div { min-width: 0; }
 .ac-thumb {
@@ -19562,7 +19635,7 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
 .ac-bondchip.sm { font-size: 10.5px; padding: 2px 8px 2px 3px; }
 .ac-bondchip img { width: 15px; height: 15px; object-fit: contain; }
 .ac-bondchip.sm img { width: 13px; height: 13px; }
-.ac-bondchip:hover { border-color: var(--border-strong); }
+.ac-bondchip:hover { border-color: var(--border-hover); }
 /* 진영 맹약은 테두리로만 구분한다 — 배경을 물들이면 칩 글자 대비가 떨어진다 */
 .ac-bondchip.nation { border-color: color-mix(in srgb, var(--lime) 55%, var(--line)); }
 
@@ -19730,7 +19803,7 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
 }
 /* 고른 칩은 라임 배경이라 원판을 흰색으로 뒤집어야 실루엣이 보인다 */
 .ac-etypebar button.on img { background: var(--on-lime); }
-.ac-etypebar button:hover { border-color: var(--border-strong); }
+.ac-etypebar button:hover { border-color: var(--border-hover); }
 .ac-etypebar button.on { color: var(--on-lime); background: var(--lime); border-color: var(--lime); }
 /* 리더 적 — 유형 추첨과 별개라 맨 위에 따로 (히든 리더는 아래 묶음) */
 .ac-bossgrp { margin-top: 10px; }
@@ -19773,7 +19846,7 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   cursor: pointer;
   transition: 0.12s;
 }
-.ac-encard:hover { border-color: var(--border-strong); }
+.ac-encard:hover { border-color: var(--border-hover); }
 /* 적 초상은 배경이 비어 있어, 도감과 같은 어두운 판을 깔아야 형태가 보인다 */
 .ac-enface {
   width: 52px;
@@ -19826,7 +19899,7 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   cursor: pointer;
   transition: 0.12s;
 }
-.ac-enminicard:hover { border-color: var(--border-strong); }
+.ac-enminicard:hover { border-color: var(--border-hover); }
 .ac-enminicard .ac-enface { width: 40px; height: 40px; }
 .ac-enminicard span { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .ac-enminicard b { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -20302,7 +20375,7 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   cursor: pointer;
   transition: 0.12s;
 }
-.ac-morphitem:hover { border-color: var(--border-strong); }
+.ac-morphitem:hover { border-color: var(--border-hover); }
 .ac-morphitem img { width: 20px; height: 20px; object-fit: contain; }
 .ac-morphitem b { font-weight: 700; }
 @media (max-width: 560px) {
