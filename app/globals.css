@@ -20703,11 +20703,12 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
 .vn-obtn:disabled { opacity: 0.16; cursor: default; }
 
 /* 양옆 줄 이동 — 화면 크기와 무관하게 **무대 안 양옆**이 전부다 (사용자 확정 2026-08-25).
-   대사창(아래 46%)을 피해 그림 영역 한가운데 높이에 둔다 — 글을 가리지 않는다. */
+   높이는 무대 **정중앙**. 한때 그림 영역 한가운데(27%)에 뒀는데 위쪽 조작줄과 겹쳤다
+   (사용자 스크린샷 2026-08-25) — 모바일·PC 모두 정중앙으로 통일한다. */
 .vn-arrow {
   display: flex;
   position: absolute;
-  top: 27%;
+  top: 50%;
   transform: translateY(-50%);
   z-index: 3;
   align-items: center;
