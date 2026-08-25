@@ -18,6 +18,7 @@
 //   · [전체 모드]를 눌러야 화면을 덮고, 그때 오른쪽 위 ✕ 나 Esc 로 인라인으로 돌아온다.
 //   · 리더기를 아예 벗어나는 건 위쪽 보기 방식 탭(전문 보기·AI 요약)이 맡는다.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useStorySfx } from "./story-audio";
 import { createPortal } from "react-dom";
 import { asset } from "./assets";
 import { useI18n } from "./i18n";
@@ -72,6 +73,9 @@ export default function SceneMode({ ep, title, hasPrev, hasNext, onEp }: {
   const [auto, setAuto] = useState(false);
   const last = ep.lines.length - 1;
   const boxRef = useRef<HTMLDivElement>(null);
+  // 효과음 — 대본의 au 트랙을 그 줄에서 울린다. 기본은 꺼짐이고(자동재생 정책),
+  // 버튼을 누르는 그 클릭이 첫 제스처가 된다. BGM 은 소리로 내지 않는다.
+  const sfx = useStorySfx(ep.au, idx);
 
   // 줄마다의 무대 — vn 트랙(변화 지점만 있음)을 앞으로 펴 둔다
   const stages = useMemo(() => {
@@ -197,6 +201,13 @@ export default function SceneMode({ ep, title, hasPrev, hasNext, onEp }: {
           <button type="button" className={`vn-obtn vn-auto${auto ? " on" : ""}`} disabled={atEnd}
             title={auto ? t("자동 넘김 끄기") : t("자동 넘김")} aria-label={auto ? t("자동 넘김 끄기") : t("자동 넘김")}
             onClick={(e) => { e.stopPropagation(); setAuto((v) => !v); }}>AUTO</button>
+          {/* 효과음 — 이 화에 울릴 게 있을 때만 띄운다 (옛 이벤트엔 지시가 없다) */}
+          {sfx.hasSfx && (
+            <button type="button" className={`vn-obtn vn-sfx${sfx.on ? " on" : ""}`}
+              title={sfx.on ? t("효과음 끄기") : t("효과음 켜기")}
+              aria-label={sfx.on ? t("효과음 끄기") : t("효과음 켜기")} aria-pressed={sfx.on}
+              onClick={(e) => { e.stopPropagation(); sfx.toggle(); }}>{sfx.on ? "🔊" : "🔇"}</button>
+          )}
           {hasNext && onEp && (
             <button type="button" className={`vn-obtn${atEnd ? " ready" : ""}`}
               title={t("다음 화")} aria-label={t("다음 화")}

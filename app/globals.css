@@ -20987,6 +20987,12 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   font-weight: 800;
   letter-spacing: 0.06em;
 }
+/* 효과음 토글 — 켜져 있을 때만 또렷하게 (꺼짐이 기본이라 평소엔 조용히 있는다) */
+.vn-obtn.vn-sfx.on {
+  color: var(--lime);
+  border-color: color-mix(in srgb, var(--lime) 55%, transparent);
+}
+
 /* 전체 모드에서만 위쪽 줄에 화 제목 — 인라인이면 바로 위에 같은 제목이 있다 */
 .vn-top-title {
   max-width: 42%;

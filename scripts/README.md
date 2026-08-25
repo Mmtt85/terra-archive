@@ -255,6 +255,17 @@ python3 scripts/build-story-scripts.py --lang ja  # JA 전문 → public/story/s
 #      같이 돌려야 EN/JA 리더기의 무대가 빈 채로 남지 않는다.
 python3 scripts/build-story-vn.py act6d5   # 한 이벤트
 python3 scripts/build-story-vn.py          # vn 트랙이 있는 전 이벤트
+# ── 리더기 효과음 — build-story-scripts.py **뒤에** 돌린다 (2026-08-25) ──
+#    전문 JSON 의 au 트랙에서 효과음 키를 모아 KR 공식 CDN 에서 언팩·인코딩한다.
+#    산출: public/story/sfx/<키>.m4a + app/data/story-sfx-ids.json  (1,260종 57MB)
+#    ⚠ **macOS 전용** — 인코딩에 내장 afconvert 를 쓴다. CI 는 이 단계를 돌리지 않는다.
+#      pip3 install --user UnityPy lz4inv 필요 (build-story.py --kr-thumbs 와 같은 경로).
+#    ⚠ **BGM 은 뽑지 않는다** — 음악은 별도 발매 저작물이라 재호스팅하지 않는다.
+#      대본의 BGM 키는 au 트랙에 남지만 소리로 내지 않는다 (PROJECT-GUIDE §리더기 참조).
+#    ⚠ 이미 구워진 키는 건너뛴다 — 새 이벤트가 들어와 키가 늘었을 때만 다시 돌리면 된다.
+python3 scripts/build-story-sfx.py             # 없는 것만 (권장)
+python3 scripts/build-story-sfx.py --limit 20  # 앞 N개만 (시험용)
+
 python3 scripts/build-story-search.py          # 스샷 레이더 전문 검색 인덱스 → public/story/search.bin (KR 전문 갱신 시 같이 실행)
 python3 scripts/build-records.py               # 오퍼레이터 기록(밀록) 전문 → public/records/{ko,en,ja}/<charId>.json + app/data/record-ids.json
 ```

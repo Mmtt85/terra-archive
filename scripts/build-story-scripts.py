@@ -91,6 +91,26 @@ RE_CHARSLOT = re.compile(r'\[charslot\s*\(([^)]*)\)', re.I)
 RE_BLOCKER = re.compile(r'\[blocker\s*\(([^)]*)\)', re.I)
 RE_SHAKE = re.compile(r'\[camerashake\s*\(', re.I)
 RE_IMG_ANY = re.compile(r'\[image\s*\(([^)]*)\)', re.I)
+
+# ── 오디오 큐 (au 트랙) ────────────────────────────────────────────────────
+# 대본은 BGM·효과음을 **줄 사이에** 지시한다: [PlayMusic(intro="$x_intro", key="$x_loop",
+# volume=0.6, crossfade=1.5)] / [PlaySound(key="$d_gen_walk_n", volume=0.7)] / [stopmusic].
+# 종전엔 "그 외 연출 태그"로 전부 버렸다. 리더가 효과음을 내고 지금 곡을 표시하려면
+# 필요하다 (사용자 요청 2026-08-25).
+# ⚠ 대본에 오타가 실재한다 — palysound(9) · stopmucis(3) · musicvolune(3). 원문을 못 고치니
+#   정규식이 받아 준다. 안 그러면 그 줄만 조용히 사라진다.
+RE_PLAYMUSIC = re.compile(r'\[play\s*music\s*\(([^)]*)\)', re.I)
+RE_STOPMUSIC = re.compile(r'\[stop\s*(?:music|mucis)\b', re.I)
+RE_PLAYSOUND = re.compile(r'\[(?:play|paly)\s*sound\s*\(([^)]*)\)', re.I)
+RE_STOPSOUND = re.compile(r'\[stop\s*sound\b', re.I)
+RE_MUSICVOL = re.compile(r'\[music\s*volum?[en]\s*\(([^)]*)\)', re.I)
+RE_AUKEY = re.compile(r'(?:key|intro)\s*=\s*"?\$?([A-Za-z0-9_.\-]+)"?', re.I)
+
+
+def _au_key(attrs, name):
+    """key=/intro= 값에서 앞의 $ 를 떼어 파일 이름으로 쓴다 ($m_dia_street_loop → …)."""
+    m = re.search(name + r'\s*=\s*"?\$?([A-Za-z0-9_.\-]+)"?', attrs or "", re.I)
+    return m.group(1) if m else None
 _ATTR_S = lambda k, a: (re.search(k + r'\s*=\s*"([^"]*)"', a, re.I) or [None, None])[1] \
     if re.search(k + r'\s*=\s*"([^"]*)"', a, re.I) else None
 def _attr_f(k, a, default=None):
@@ -124,8 +144,17 @@ def sprite_ref(raw):
 
 
 
-def parse_story(txt, vn=None):
+def parse_story(txt, vn=None, au=None):
     """스크립트 원문 → 라인 배열. vn 리스트를 주면 **무대 상태 스냅샷**도 함께 채운다.
+
+    au 리스트를 주면 **오디오 큐**도 채운다 (줄 하나에 하나씩, 이벤트):
+      {"i": 12, "m": ["x_intro", "x_loop"], "mv": 0.6, "cf": 1.5}   BGM 시작
+      {"i": 20, "m": 0}                                             BGM 정지
+      {"i": 14, "s": [["d_gen_walk_n", 1], ["b_char_defboost", 0.7]]}  효과음
+      {"i": 30, "ss": 1}                                            효과음 전부 정지
+      {"i": 33, "mv": 0.3}                                          BGM 음량만 변경
+    vn(상태 스냅샷)과 달리 **그 줄이 뜰 때 벌어지는 일**이라 직전까지 쌓인 지시를
+    다음 줄에 붙인다 — 대본이 태그를 대사 줄 **사이**에 두기 때문이다.
 
     스냅샷은 무대가 바뀐 채로 처음 그려지는 줄에만 찍힌다 (i = 그 줄의 인덱스):
       {"i": 12, "bg": "bg_park", "ch": [["char_010_chen_1", 3], …], "f": 2, "bk": "#000", "sh": 1}
@@ -136,17 +165,21 @@ def parse_story(txt, vn=None):
     last_img = None
     stage = {"bg": None, "cut": None, "ch": [], "f": 0, "bk": None, "sh": 0}
     snaps, last_key = {}, None
+    cues, pending = {}, {}          # 오디오 — pending 은 '다음 줄에 붙일 지시'
 
     class Lines(list):
         """append 를 가로채 '이 줄이 그려질 때의 무대'를 찍는다 — 호출부를 안 건드리려고
         리스트를 상속했다 (append 지점이 10곳 가까이 흩어져 있다)."""
         def append(self, item):
-            nonlocal last_key
+            nonlocal last_key, pending
             key = json.dumps(stage, sort_keys=True, ensure_ascii=False)
             if key != last_key:
                 snaps[len(self)] = {k: v for k, v in stage.items() if v}
                 last_key = key
                 stage["sh"] = 0          # 흔들림은 1회성 — 찍고 나면 끈다
+            if pending:                  # 직전까지 쌓인 오디오 지시를 이 줄에 붙인다
+                cues[len(self)] = pending
+                pending = {}
             super().append(item)
 
     lines = Lines()
@@ -255,6 +288,49 @@ def parse_story(txt, vn=None):
             stage["bk"] = None
             last_img = None
             continue
+        # ── 오디오 큐 (버리지 않고 au 트랙으로) ──
+        if au is not None:
+            m = RE_PLAYMUSIC.search(line)
+            if m:
+                attrs = m.group(1) or ""
+                loop = _au_key(attrs, "key")
+                intro = _au_key(attrs, "intro")
+                if loop or intro:
+                    # [intro, loop] — intro 가 없으면 loop 만. 둘 다 파일 하나씩이다.
+                    pending["m"] = [intro, loop] if intro else [None, loop]
+                    v = _attr_f("volume", attrs, None)
+                    if v is not None:
+                        pending["mv"] = round(v, 3)
+                    cf = _attr_f("crossfade", attrs, None)
+                    if cf:
+                        pending["cf"] = round(cf, 3)
+                continue
+            if RE_STOPMUSIC.search(line):
+                pending["m"] = 0
+                continue
+            m = RE_PLAYSOUND.search(line)
+            if m:
+                attrs = m.group(1) or ""
+                k = _au_key(attrs, "key")
+                if k:
+                    v = _attr_f("volume", attrs, None)
+                    # 한 줄에 여러 발이 겹칠 수 있다 (발소리 연타 등)
+                    if not isinstance(pending.get("s"), list):
+                        pending["s"] = []
+                    pending["s"].append([k, round(v, 3)] if v is not None else [k])
+                continue
+            if RE_STOPSOUND.search(line):
+                # 정지는 재생 목록과 **따로** 든다 — 한 묶음 안에서 "다 끄고 이걸 튼다"가
+                # 실제로 나온다. 종전엔 s를 0으로 덮어써서 뒤따르는 PlaySound가 터졌다.
+                pending["ss"] = 1
+                pending.pop("s", None)      # 정지 앞에 쌓인 소리는 취소된 것
+                continue
+            m = RE_MUSICVOL.search(line)
+            if m:
+                v = _attr_f("volume", m.group(1) or "", None)
+                if v is not None:
+                    pending["mv"] = round(v, 3)      # m 없이 mv 만 = 현재 곡 음량 변경
+                continue
         # 그 외 연출 태그는 전부 무시
     # 앞뒤 의미 없는 br 정리: opts 없이 나온 br(연출 분기)은 버린다
     out, seen_opts, remap = [], False, {}
@@ -279,6 +355,26 @@ def parse_story(txt, vn=None):
                 j = remap[nxt]
             merged[j] = {"i": j, **snaps[i]}   # 같은 줄에 겹치면 마지막 무대가 이긴다
         vn.extend(merged[k] for k in sorted(merged))
+    if au is not None:
+        # vn 과 같은 이유로 인덱스를 다시 매긴다 (빠진 줄에 걸린 큐는 다음 살아있는 줄로).
+        alive = sorted(remap)
+        merged = {}
+        for i in sorted(cues):
+            j = remap.get(i)
+            if j is None:
+                nxt = next((k for k in alive if k > i), None)
+                if nxt is None:
+                    continue
+                j = remap[nxt]
+            prev = merged.get(j)
+            if prev:                      # 같은 줄에 겹치면 합친다 (효과음은 이어 붙인다)
+                cur = cues[i]
+                if isinstance(prev.get("s"), list) and isinstance(cur.get("s"), list):
+                    cur = {**cur, "s": prev["s"] + cur["s"]}
+                merged[j] = {**prev, **cur}
+            else:
+                merged[j] = {"i": j, **cues[i]}
+        au.extend(merged[k] for k in sorted(merged))
     return out
 
 
@@ -454,8 +550,8 @@ def build_event(eid, entry):
         txt = txts.get(info["storyId"])
         if not txt:
             continue
-        vn = []
-        lines = parse_story(txt, vn)
+        vn, au = [], []
+        lines = parse_story(txt, vn, au)
         if not lines:
             continue
         scan_faces(txt, votes)
@@ -471,6 +567,8 @@ def build_event(eid, entry):
             # 무대 연출 트랙 — '장면 모드'가 쓴다. 배경·스탠딩이 하나도 없으면 싣지 않는다
             # (옛 이벤트엔 연출 태그가 거의 없어 빈 배열이 파일만 키운다).
             **({"vn": vn} if any(v.get("bg") or v.get("ch") for v in vn) else {}),
+            # 오디오 큐 트랙 — 효과음 재생·현재 BGM 표시에 쓴다. 지시가 없으면 안 싣는다.
+            **({"au": au} if au else {}),
         })
     # 화자 → 스탠딩 스프라이트 얼굴 (오퍼가 아닌 인물도 썸네일 연결, 사용자 요청 2026-07-18)
     faces = resolve_faces(votes)
