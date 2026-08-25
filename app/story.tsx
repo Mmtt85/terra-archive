@@ -1599,15 +1599,17 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
   }, []);
 
   // 목록에서 상세를 열 때도 정본 주소(/stories/<id>)를 쓴다 — 공유한 링크가 곧 색인된 주소.
-  // 다만 목록 클릭의 기본 보기는 종전대로 **전문**이므로(사용자 확정 2026-07-18) #ep1을
-  // 달아 둔다. 접미 없는 맨 주소는 요약(= 그 URL로 색인된 본문)이라는 뜻을 지킨다.
+  // 기본 보기는 **리더기**다 (사용자 확정 2026-08-25). 연출 트랙이 없는 옛 이벤트만
+  // 종전대로 전문(#ep1)으로 열린다. 접미 없는 맨 주소는 요약(= 그 URL로 색인된 본문)이라는
+  // 뜻을 지킨다.
   // pushState로 진입 → 홈의 스크롤 매니저가 상세는 top으로, 뒤로가기 시 목록 스크롤을 복구한다
   const open = (event: StoryEvent, view?: "summary") => {
-    // view="summary" — 요약을 읽던 흐름에서 넘어온 경우(같은 테마 링크). 그 외에는 종전 규칙대로
-    // 전문이 있으면 전문부터 (사용자 확정 2026-07-18).
-    const script = !(view === "summary" && summaries[event.id]) && (scriptIds.has(event.id) || !summaries[event.id]);
-    // 요약도 전문도 없이 **기록만** 있는 이벤트(재건 계획)는 곧장 기록으로 연다
-    const suffix = scriptIds.has(event.id) || summaries[event.id] ? (script ? "#ep1" : "#summary") : "#lore";
+    // view="summary" — 요약을 읽던 흐름에서 넘어온 경우(같은 테마 링크). 그때만 요약으로 연다.
+    const suffix = view === "summary" && summaries[event.id] ? "#summary"
+      : sceneIds.has(event.id) ? "#scene"          // 리더기 (기본)
+      : scriptIds.has(event.id) ? "#ep1"           // 연출 트랙이 없는 이벤트 — 전문
+      // 요약도 전문도 없이 **기록만** 있는 이벤트(재건 계획)는 곧장 기록으로 연다
+      : summaries[event.id] ? "#summary" : "#lore";
     history.pushState(null, "", storyPath(locale, event.id) + suffix);
     pushedDetail.current = true;
     setSelected(event);

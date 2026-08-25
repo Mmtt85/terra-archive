@@ -44,54 +44,84 @@ BG_MAX = 1280      # 무대는 아무리 커도 가로 1280 이면 충분하다 
 SPR_MAX = 760      # 트림 후 긴 변 — 무대 높이의 90% 로 그려도 선명하다
 
 
+_token = ...
+
+def gh_token():
+    """GitHub API 토큰 — 없으면 None. 인증 없는 한도가 **시간당 60회**라 목록 조회에
+    금방 걸린다 (실측 2026-08-25: 4이벤트 만에 403, 그걸 빈 목록으로 캐시해 스탠딩이
+    통째로 사라졌다). 로컬에선 gh CLI 로그인을, CI 에선 GITHUB_TOKEN 을 쓴다."""
+    global _token
+    if _token is not ...:
+        return _token
+    _token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+    if not _token:
+        try:
+            import subprocess
+            _token = subprocess.run(["gh", "auth", "token"], capture_output=True,
+                                    text=True, timeout=15).stdout.strip() or None
+        except Exception:
+            _token = None
+    return _token
+
+
 def _get(url, binary=True):
-    req = urllib.request.Request(url, headers={"User-Agent": "terra-archive-vn/1.0"})
+    headers = {"User-Agent": "terra-archive-vn/1.0"}
+    if url.startswith("https://api.github.com/"):
+        tok = gh_token()
+        if tok:
+            headers["Authorization"] = f"Bearer {tok}"
+    req = urllib.request.Request(url, headers=headers)
     with urllib.request.urlopen(req, timeout=60) as res:
         raw = res.read()
         return raw if binary else json.loads(raw.decode("utf-8"))
 
 
-# ── 스프라이트 폴더 목록 ─────────────────────────────────────────────────────
-# avg/characters 최상위(1,473개)를 한 번만 받아 캐시한다. 대소문자가 대본과 다른 경우가
-# 있어(avg_6D5_1 → avg_6d5_1) 소문자 색인을 함께 둔다.
-_index = None
+# ── 스프라이트 목록 ─────────────────────────────────────────────────────────
+# avg/characters 아래를 **API 한 번**(recursive 트리)으로 통째로 받아 캐시한다.
+# ⚠ 폴더마다 contents API 를 부르면 안 된다 — 인증 없는 한도(60회/시간)에 4이벤트 만에
+#   걸리고, 403 을 빈 목록으로 캐시해 그 인물의 스탠딩이 조용히 사라진다 (실측 2026-08-25).
+# 대소문자가 대본과 다른 경우가 있어(avg_6D5_1 → avg_6d5_1) 소문자 색인을 함께 둔다.
+_tree = None
+
+def char_tree():
+    """(최상위 이름 목록, {폴더: [파일이름…]})"""
+    global _tree
+    if _tree is not None:
+        return _tree
+    os.makedirs(CACHE, exist_ok=True)
+    path = os.path.join(CACHE, "tree.json")
+    if os.path.exists(path):
+        data = json.load(open(path, encoding="utf-8"))
+    else:
+        # ⚠ recursive 는 `cn:<경로>` 형식에 500 을 돌려준다 — 먼저 그 폴더의 sha 를 받고
+        #   sha 로 recursive 를 부른다 (실측 2026-08-25: 14,088개, 잘리지 않음).
+        root = _get("https://api.github.com/repos/ArknightsAssets/ArknightsAssets2/"
+                    "git/trees/cn:assets/dyn/avg/characters", binary=False)
+        tree = _get("https://api.github.com/repos/ArknightsAssets/ArknightsAssets2/"
+                    f"git/trees/{root['sha']}?recursive=1", binary=False)
+        if tree.get("truncated"):
+            raise SystemExit("avg/characters 트리가 잘렸다 — 폴더별 조회로 되돌려야 한다")
+        names, dirs = [], {}
+        for e in tree["tree"]:
+            path_ = e["path"]
+            if "/" not in path_:
+                names.append(path_)
+            elif path_.endswith(".png"):
+                folder, name = path_.split("/", 1)
+                dirs.setdefault(folder, []).append(name[:-4])
+        data = {"names": names, "dirs": dirs}
+        json.dump(data, open(path, "w", encoding="utf-8"))
+    _tree = ({n.lower(): n for n in data["names"]}, data["dirs"])
+    return _tree
+
 
 def char_index():
-    global _index
-    if _index is not None:
-        return _index
-    os.makedirs(CACHE, exist_ok=True)
-    path = os.path.join(CACHE, "characters.json")
-    if os.path.exists(path):
-        names = json.load(open(path, encoding="utf-8"))
-    else:
-        tree = _get("https://api.github.com/repos/ArknightsAssets/ArknightsAssets2/"
-                    "git/trees/cn:assets/dyn/avg/characters", binary=False)
-        names = [x["path"] for x in tree["tree"]]
-        json.dump(names, open(path, "w", encoding="utf-8"))
-    _index = {n.lower(): n for n in names}
-    return _index
+    return char_tree()[0]
 
-
-_folder_cache = {}
 
 def folder_files(folder):
-    """폴더 안 파일 이름(확장자 제외). 캐시한다."""
-    if folder in _folder_cache:
-        return _folder_cache[folder]
-    os.makedirs(CACHE, exist_ok=True)
-    path = os.path.join(CACHE, f"dir__{folder}.json")
-    if os.path.exists(path):
-        files = json.load(open(path, encoding="utf-8"))
-    else:
-        try:
-            data = _get(f"{API}/avg/characters/{urllib.parse.quote(folder)}?ref=cn", binary=False)
-            files = [x["name"][:-4] for x in data if x["name"].endswith(".png")]
-        except urllib.error.HTTPError:
-            files = []
-        json.dump(files, open(path, "w", encoding="utf-8"))
-    _folder_cache[folder] = files
-    return files
+    """폴더 안 파일 이름(확장자 제외). 정렬해 돌려준다 — 공통 접두 계산이 순서를 탄다."""
+    return sorted(char_tree()[1].get(folder, []))
 
 
 def resolve_sprite(base, expr):
@@ -160,7 +190,9 @@ def save_sprite(png, dest):
     if max(im.size) > SPR_MAX:
         im.thumbnail((SPR_MAX, SPR_MAX), Image.LANCZOS)
     os.makedirs(os.path.dirname(dest), exist_ok=True)
-    im.save(dest, "WEBP", quality=90, method=4)
+    # q84 — 무대에서 세로 630px 안팎으로 그려지는 그림이라 육안 차이가 없고, 전체 용량이
+    # 40% 줄어든다 (q90 평균 68KB → 40KB대). 스탠딩은 수천 장이라 이 차이가 크다.
+    im.save(dest, "WEBP", quality=84, method=5)
     return im.size
 
 
@@ -214,9 +246,9 @@ def run(eid):
 
     with ThreadPoolExecutor(8) as ex:
         list(ex.map(dl_bg, sorted(bgs)))
-    # 스프라이트는 폴더 목록 조회가 끼어 있어 (같은 폴더를 여러 표정이 공유) 순차가 안전하다
-    for item in sorted(sprites):
-        dl_spr(item)
+    # 폴더 목록이 트리 캐시(char_tree)로 바뀌어 조회가 없어졌으므로 배경과 같이 병렬로 받는다
+    with ThreadPoolExecutor(8) as ex:
+        list(ex.map(dl_spr, sorted(sprites)))
 
     def folder_kb(d, names):
         return sum(os.path.getsize(os.path.join(d, n)) for n in names if os.path.exists(os.path.join(d, n))) // 1024

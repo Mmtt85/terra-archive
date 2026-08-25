@@ -251,6 +251,8 @@ python3 scripts/build-story-scripts.py --lang ja  # JA 전문 → public/story/s
 #    ⚠ 스탠딩은 투명 여백을 잘라 저장한다 — 원본 1024 캔버스 그대로면 인물 키가 제각각이다.
 #    ⚠ 표정 파일 번호는 띄엄띄엄하다(char_136_hsguma 는 _1·_3뿐) — 폴더 목록을 읽어 고르고
 #      없는 번호는 가장 가까운 것으로 대체한다. 폴더 목록은 .gamedata/story-vn-cache/ 에 캐시.
+#    ⚠ vn 트랙은 **로케일별 전문 JSON 안에** 들어간다 — KR 을 재생성했으면 --lang en/ja 도
+#      같이 돌려야 EN/JA 리더기의 무대가 빈 채로 남지 않는다.
 python3 scripts/build-story-vn.py act6d5   # 한 이벤트
 python3 scripts/build-story-vn.py          # vn 트랙이 있는 전 이벤트
 python3 scripts/build-story-search.py          # 스샷 레이더 전문 검색 인덱스 → public/story/search.bin (KR 전문 갱신 시 같이 실행)

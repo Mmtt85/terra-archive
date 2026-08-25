@@ -2159,6 +2159,8 @@ const D: Record<string, Pair> = {
   "리더기": ["Reader", "リーダー"],
   "전체 모드": ["Full screen", "全画面"],
   "전체 모드 끄기": ["Exit full screen", "全画面を終了"],
+  "자동 넘김": ["Auto play", "オート"],
+  "자동 넘김 끄기": ["Stop auto", "オート停止"],
   "클릭 · Space · → 다음 · ← 이전 · Esc 전체 모드 끄기": [
     "Click / Space / → next · ← back · Esc to exit full screen",
     "クリック・Space・→ 次へ ・← 戻る ・Esc で全画面終了"],

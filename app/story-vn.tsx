@@ -27,6 +27,31 @@ const hideErr = (e: { currentTarget: { style: { visibility: string } } }) => {
   e.currentTarget.style.visibility = "hidden";
 };
 
+// 대사창 글꼴(본고딕) — **리더기를 열 때 처음** 가져온다.
+// ⚠ next/font 로 자체 호스팅하면 안 된다: 한글은 unicode-range 로 124조각이라
+//   vinext 가 그 전부를 `Link: rel=preload` **응답 헤더 한 줄**에 넣어 헤더 한도를 넘기고,
+//   프리렌더가 8,466개 라우트 전부 "Headers Overflow Error"로 죽는다 (실측 2026-08-25).
+//   `preload: false` 로도 안 막힌다 — 헤더는 CSS 안의 url() 을 훑어 만든다.
+// 못 받아 와도 폴백 글꼴로 그대로 읽힌다 (display=swap).
+const FONT_CSS = "https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap";
+
+function ensureReaderFont(): void {
+  if (typeof document === "undefined" || document.getElementById("vn-font")) return;
+  const pre = document.createElement("link");
+  pre.rel = "preconnect";
+  pre.href = "https://fonts.gstatic.com";
+  pre.crossOrigin = "";
+  const css = document.createElement("link");
+  css.id = "vn-font";
+  css.rel = "stylesheet";
+  css.href = FONT_CSS;
+  document.head.append(pre, css);
+}
+
+/** 자동 넘김 대기(ms) — 대사가 길수록 더 오래 머문다. 앞의 1.2초는 줄과 줄 사이의
+ *  숨 돌릴 틈이다 (사용자 요청 2026-08-25: "0.5초쯤 더 주라"). */
+const autoDelay = (chars: number) => Math.min(9500, Math.max(1600, 1200 + chars * 95));
+
 /** 슬롯 n개를 무대에 고르게 세울 때 k번째의 가로 위치(%) */
 const slotAt = (k: number, n: number) => (100 / (n + 1)) * (k + 1);
 
@@ -41,6 +66,7 @@ export default function SceneMode({ ep, title, hasPrev, hasNext, onEp }: {
   const { t } = useI18n();
   const [idx, setIdx] = useState(0);
   const [full, setFull] = useState(false);
+  const [auto, setAuto] = useState(false);
   const last = ep.lines.length - 1;
   const boxRef = useRef<HTMLDivElement>(null);
 
@@ -94,9 +120,21 @@ export default function SceneMode({ ep, title, hasPrev, hasNext, onEp }: {
   // 대사가 바뀔 때마다 말풍선을 맨 위로 (긴 대사에서 이전 스크롤이 남지 않게)
   useEffect(() => { if (boxRef.current) boxRef.current.scrollTop = 0; }, [idx]);
 
+  // 대사창 글꼴은 리더기가 실제로 열렸을 때만 받아 온다
+  useEffect(() => { ensureReaderFont(); }, []);
+
   const cutSrc = stage.cut ? asset(`/story/cut/${stage.cut}.webp`) : null;
   const bgSrc = stage.bg ? asset(`/story/bg/${stage.bg}.webp`) : null;
   const atEnd = idx >= last;
+
+  // 자동 넘김 — 지금 줄의 글자 수로 머무는 시간을 정한다 (짧으면 빨리, 길면 천천히).
+  // idx 가 바뀌면 타이머가 새로 걸리므로, 손으로 넘겨도 박자가 그 줄 기준으로 다시 잡힌다.
+  useEffect(() => {
+    if (!auto || atEnd) return;
+    const chars = ((line?.x ?? "") + (line?.st ?? "") + (line?.loc ?? "")).length;
+    const timer = setTimeout(() => go(1), autoDelay(chars));
+    return () => clearTimeout(timer);
+  }, [auto, atEnd, idx, line, go]);
 
   const body = (
     <div className={`vn-root${full ? " full" : ""}`}
@@ -119,10 +157,14 @@ export default function SceneMode({ ep, title, hasPrev, hasNext, onEp }: {
         {cutSrc && <img key={stage.cut} className="vn-cut" src={cutSrc} alt="" aria-hidden onError={hideErr} />}
         {stage.bk && <div className="vn-blocker" style={{ background: stage.bk }} aria-hidden />}
 
-        {/* 전체 모드에서만 뜨는 닫기 — 누르거나 Esc 를 누르면 인라인으로 돌아온다 */}
-        {full && (
-          <button type="button" className="vn-exit" aria-label={t("전체 모드 끄기")}
+        {/* 무대 오른쪽 위 — 인라인이면 [전체 모드], 전체 모드면 [닫기]. 둘 다 **살짝 흐리게**
+            떠 있다가 올리면 또렷해진다 (사용자 확정 2026-08-25: 조작 막대를 비우고 화면 위로). */}
+        {full ? (
+          <button type="button" className="vn-corner" aria-label={t("전체 모드 끄기")}
             onClick={(e) => { e.stopPropagation(); setFull(false); }}>✕</button>
+        ) : (
+          <button type="button" className="vn-corner" aria-label={t("전체 모드")} title={t("전체 모드")}
+            onClick={(e) => { e.stopPropagation(); setFull(true); }}>⛶</button>
         )}
 
         {/* 대사창 — ⚠ 줄마다 애니메이션을 걸지 말 것. 글자가 매 줄 깜빡여 읽기 힘들다
@@ -143,21 +185,32 @@ export default function SceneMode({ ep, title, hasPrev, hasNext, onEp }: {
         </div>
       </div>
 
-      {/* 조작 막대 */}
+      {/* 조작 막대 — 왼쪽(이전 화·제목) / **가운데(줄 이동)** / 오른쪽(자동·다음 화) 3분할.
+          가운데 칸은 양옆이 무엇이든 화면 정중앙에 온다 (사용자 지시 2026-08-25).
+          전체 모드 버튼은 무대 오른쪽 위로 올라가서 여기 없다. */}
       <div className="vn-bar">
-        {!full && (
-          <button type="button" className="vn-full" onClick={() => setFull(true)}>⛶ {t("전체 모드")}</button>
-        )}
-        {hasPrev && onEp && (
-          <button type="button" className="vn-ep" onClick={() => onEp(-1)}>⏮ {t("이전 화")}</button>
-        )}
-        <span className="vn-title">{title}</span>
-        <button type="button" onClick={() => go(-1)} disabled={idx === 0}>← {t("이전 줄")}</button>
-        <span className="vn-count">{idx + 1} / {ep.lines.length}</span>
-        <button type="button" onClick={() => go(1)} disabled={atEnd}>{t("다음 줄")} →</button>
-        {hasNext && onEp
-          ? <button type="button" className={`vn-ep${atEnd ? " ready" : ""}`} onClick={() => onEp(1)}>{t("다음 화")} ⏭</button>
-          : atEnd && <span className="vn-count">{t("마지막 화입니다")}</span>}
+        <div className="vn-side">
+          {hasPrev && onEp && (
+            <button type="button" className="vn-ep" onClick={() => onEp(-1)}>⏮ {t("이전 화")}</button>
+          )}
+          {/* 화 제목은 **전체 모드에서만** — 인라인이면 바로 위에 같은 제목이 이미 있다
+              (사용자 지적 2026-08-25). 전체 모드는 그 머리글이 가려지므로 여기서 보여준다. */}
+          {full && <span className="vn-title">{title}</span>}
+        </div>
+        <div className="vn-nav">
+          <button type="button" onClick={() => go(-1)} disabled={idx === 0}>← {t("이전 줄")}</button>
+          <span className="vn-count">{idx + 1} / {ep.lines.length}</span>
+          <button type="button" onClick={() => go(1)} disabled={atEnd}>{t("다음 줄")} →</button>
+        </div>
+        <div className="vn-side end">
+          <button type="button" className={`vn-auto${auto ? " on" : ""}`} disabled={atEnd}
+            onClick={() => setAuto((v) => !v)}>
+            {auto ? `⏸ ${t("자동 넘김 끄기")}` : `▶ ${t("자동 넘김")}`}
+          </button>
+          {hasNext && onEp
+            ? <button type="button" className={`vn-ep${atEnd ? " ready" : ""}`} onClick={() => onEp(1)}>{t("다음 화")} ⏭</button>
+            : atEnd && <span className="vn-count">{t("마지막 화입니다")}</span>}
+        </div>
       </div>
       <p className="vn-hint">
         {full ? t("클릭 · Space · → 다음 · ← 이전 · Esc 전체 모드 끄기")

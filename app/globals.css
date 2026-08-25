@@ -20587,7 +20587,10 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
 .vn-stage.shake { animation: vn-shake 0.42s ease-in-out; }
 
 /* 전체 모드 끄기 — 무대 오른쪽 위 */
-.vn-exit {
+/* 무대 오른쪽 위 단추 — 인라인이면 [전체 모드](⛶), 전체 모드면 [닫기](✕).
+   그림을 가리지 않게 **살짝 흐리게** 떠 있다가 마우스를 올리거나 포커스가 오면 또렷해진다
+   (사용자 확정 2026-08-25). 터치 기기는 hover 가 없으므로 기본 투명도를 너무 낮추지 않는다. */
+.vn-corner {
   position: absolute;
   top: 10px;
   right: 10px;
@@ -20596,15 +20599,20 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   height: 34px;
   border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: 50%;
-  background: rgba(6, 8, 14, 0.62);
+  background: rgba(6, 8, 14, 0.55);
   color: #e9edf5;
   font-size: 15px;
   line-height: 1;
   cursor: pointer;
+  opacity: 0.42;
   backdrop-filter: blur(3px);
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition: opacity 0.15s ease, background 0.15s ease, border-color 0.15s ease;
 }
-.vn-exit:hover { background: rgba(6, 8, 14, 0.86); border-color: var(--lime, #b8e04a); }
+.vn-corner:hover, .vn-corner:focus-visible {
+  opacity: 1;
+  background: rgba(6, 8, 14, 0.86);
+  border-color: var(--lime, #b8e04a);
+}
 
 /* 대사창 — 무대 아래쪽에 겹친다 (원작과 같은 자리). 긴 대사는 이 안에서만 스크롤. */
 .vn-box {
@@ -20616,20 +20624,43 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   overflow-y: auto;
   padding: 14px clamp(16px, 4vw, 52px) 18px;
   background: linear-gradient(to top, rgba(4, 6, 12, 0.94) 62%, rgba(4, 6, 12, 0));
-  font-size: clamp(13px, 1.4vw, 17px);
-  line-height: 1.72;
+  /* 대사창 글꼴 — 사이트 본문(Arial→맑은 고딕/Apple SD Gothic Neo)을 그대로 쓰면 웹 문서처럼
+     보인다. 인게임 대사창과 같은 계열인 본고딕(Noto Sans KR)을 쓴다 (사용자 요청 2026-08-25).
+     ⚠ 글꼴은 **리더기가 열릴 때** story-vn.tsx 가 <link> 로 붙인다 — next/font 로 자체
+       호스팅하면 한글 조각 124개가 전부 Link 응답 헤더로 나가 프리렌더가 죽는다.
+     아직 안 왔거나 못 받아 왔으면 시스템 한글로 그대로 읽힌다 (display=swap). */
+  font-family: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  font-size: clamp(13.5px, 1.45vw, 17.5px);
+  line-height: 1.78;
+  letter-spacing: -0.005em;
+  word-break: keep-all;      /* 한국어는 어절 단위로 줄바꿈해야 읽힌다 */
+  overflow-wrap: anywhere;   /* 그래도 안 들어가는 긴 토큰은 잘라 넘긴다 */
+}
+/* 일본어는 본문 규칙과 같이 Meiryo 계열을 우선한다 (본고딕 KR 은 가나 글자꼴이 한국식이다) */
+html[lang="ja"] .vn-box {
+  font-family: Meiryo, "Hiragino Kaku Gothic ProN", "Yu Gothic", "Noto Sans JP", sans-serif;
 }
 .vn-name {
-  margin: 0 0 2px;
-  font-weight: 800;
+  margin: 0 0 3px;
+  font-weight: 700;
   font-size: 1.02em;
   color: var(--lime, #b8e04a);
-  letter-spacing: -0.01em;
+  letter-spacing: 0.01em;
 }
-.vn-say { margin: 0; color: #f2f5fb; white-space: pre-wrap; }
-.vn-narr { margin: 0; color: #c3cbd9; white-space: pre-wrap; }
-.vn-beat { color: #6e7889; font-size: 0.86em; }
-.vn-st { margin: 0 0 4px; color: #dfe6f2; font-style: italic; white-space: pre-wrap; }
+/* 무대 위에 겹치는 글자라 아주 옅은 그림자를 깔아 밝은 배경에서도 읽히게 한다 */
+.vn-say, .vn-narr, .vn-st { text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55); }
+.vn-say { margin: 0; color: #f4f7fc; white-space: pre-wrap; }
+.vn-narr { margin: 0; color: #c8d0dd; white-space: pre-wrap; }
+.vn-beat { color: #6e7889; font-size: 0.86em; text-shadow: none; }
+/* 지문 — 한글에 이탤릭을 걸면 브라우저가 기울여 흉내 내(가짜 이탤릭) 지저분하다.
+   기울이는 대신 왼쪽 세로선 + 옅은 색으로 대사와 구분한다 (2026-08-25). */
+.vn-st {
+  margin: 0 0 5px;
+  padding-left: 9px;
+  border-left: 2px solid rgba(255, 255, 255, 0.22);
+  color: #cdd6e4;
+  white-space: pre-wrap;
+}
 .vn-loc {
   margin: 0 0 6px;
   display: inline-block;
@@ -20650,13 +20681,18 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
 .vn-br { margin: 0; color: #8d97a8; font-size: 0.86em; }
 
 /* 조작 막대 */
+/* 3분할 — 가운데 칸(줄 이동)이 양옆 내용과 **무관하게** 정중앙에 온다.
+   flex + margin-auto 로는 왼쪽 제목 길이에 따라 가운데가 흔들린다 (1fr auto 1fr 이라야 한다). */
 .vn-bar {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: 8px;
   width: 100%;
 }
+.vn-side { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.vn-side.end { justify-content: flex-end; }
+.vn-nav { display: flex; align-items: center; gap: 8px; }
 .vn-root.full .vn-bar { width: min(100%, calc((100dvh - 118px) * 16 / 9)); }
 .vn-bar button {
   padding: 5px 12px;
@@ -20676,7 +20712,12 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
 }
 .vn-bar button:hover:not(:disabled) { border-color: var(--lime); }
 .vn-bar button:disabled { opacity: 0.35; cursor: default; }
-.vn-full { font-weight: 800 !important; }
+/* 자동 넘김 — 켜져 있으면 라임으로 또렷하게 (지금 저절로 넘어가는 중이라는 신호) */
+.vn-auto.on {
+  border-color: var(--lime, #b8e04a) !important;
+  color: var(--lime, #b8e04a);
+  font-weight: 700;
+}
 /* 에피소드 이동 — 이전은 왼쪽, 다음은 오른쪽 끝에 붙인다 (사용자 지시 2026-08-25).
    줄 이동보다 한 단계 작고 옅게 — 자주 누르는 건 줄 이동이다. */
 .vn-bar .vn-ep {
@@ -20688,7 +20729,6 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
 .vn-bar .vn-ep:hover { opacity: 1; }
 /* 마지막 줄에 닿으면 '다음 화'가 다음 행동이 된다 — 그때만 또렷하게 */
 .vn-bar .vn-ep.ready { opacity: 1; border-color: var(--lime); }
-.vn-bar .vn-ep:last-child { margin-left: auto; }
 .vn-title {
   flex: 1;
   min-width: 0;
@@ -20722,4 +20762,10 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   .vn-root.full .vn-stage, .vn-root.full .vn-bar { width: 100%; }
   .vn-box { max-height: 52%; padding: 10px 14px 12px; }
   .vn-hint { display: none; }
+  /* 좁으면 한 줄에 3분할이 안 들어간다 — 줄 이동을 윗줄 가운데로 올리고 나머지를 아래에 편다.
+     막대의 제목은 바로 위 화 제목과 겹치므로 여기서는 뺀다. */
+  .vn-bar { grid-template-columns: 1fr 1fr; row-gap: 6px; }
+  .vn-nav { grid-column: 1 / -1; grid-row: 1; justify-content: center; }
+  .vn-side { grid-row: 2; }
+  .vn-title { display: none; }
 }
