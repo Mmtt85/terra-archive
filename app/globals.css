@@ -14521,11 +14521,21 @@ main.site-main > .site-header {
    `.rg`·`.sim-launch`가 이미 같은 가드를 달아 뒀는데 지연 탭 본문 중
    `.story`·`.planner`만 빠져 있었다.
      · /stories/<id> — 자리표시 1440 → 상세 682 → 리더 도착 1128. 푸터 1519→1338 (CLS 0.041)
-     · /infra        — 편성 1259 → 자리표시 1440 → 편성 1259. 푸터가 1338↔1519로 왕복 (CLS 0.018)
    본문 최소 높이를 자리표시와 같게 맞추면 푸터가 처음부터 끝까지 접힘 밖에 머물러
-   '보이던 것이 움직인' 일이 없어진다. **새 지연 탭을 붙이면 그 루트도 여기에 넣을 것.** */
+   '보이던 것이 움직인' 일이 없어진다.
+
+   ⚠⚠ **`flex-basis: 0`인 루트에는 절대 넣지 말 것 — 푸터가 본문 한가운데 박힌다.**
+   `.planner`가 `flex: 1`(= `flex-basis: 0`)이라 크기를 내용이 아니라 flex 계산으로 잡는데,
+   여기에 min-height를 주면 flex 항목을 지켜 주던 기본 `min-height: auto`(내용 높이 밑으론
+   안 줄어듦)가 **대체되어 사라진다**. 그러면 박스가 100vh로 굳고 그보다 긴 내용이
+   밖으로 넘쳐 푸터가 그 위에 얹힌다 (사용자 제보 2026-08-25 · 1400×900에서 박스 900px에
+   내용 1206px). `flex-shrink: 0`으로도 못 막는다 — 문제는 줄어드는 게 아니라 기준 크기가
+   0인 것이다. 2026-08-03 록라 소장품 사고와 같은 뿌리다 (`.site-scroll > *` 주석 참조).
+   `.planner`는 `flex: 1`이라 어차피 남는 공간을 스스로 채우므로 가드 없이도 푸터가
+   화면 바닥에 붙는다 — 남는 CLS는 0.018(good)뿐이라 그대로 둔다.
+
+   **새 지연 탭을 붙일 때는 그 루트의 `flex`가 `0 0 auto`인지 먼저 확인하고 넣을 것.** */
 .site-scroll > section.story,
-.site-scroll > section.planner,
 .site-scroll > section.recruit,
 .site-scroll > section.farm,
 .site-scroll > section.about,

@@ -957,8 +957,19 @@ Cloudflare RUM에서 CLS Poor 비율이 20%를 넘어 **전 페이지를 Playwri
 **① 지연 탭 본문의 최소 높이** — `.tab-loading`이 `min-height:100vh`로 자리표시를 잡아도,
 도착한 본문이 그보다 **짧으면** 푸터가 접힘 아래에서 첫 화면 안으로 **올라오며** CLS가 된다.
 그래서 자리표시뿐 아니라 **본문 루트에도 같은 `min-height:100vh`를 건다** (`.rg`·`.sim-launch`가
-먼저 달았고, 2026-08-25에 `.story`·`.planner`·`.recruit`·`.farm`·`.about`·`.explorer`·
-`.sb-guide`·`.ac-guide`를 추가). **새 지연 탭을 붙이면 그 루트도 globals.css의 그 목록에 넣을 것.**
+먼저 달았고, 2026-08-25에 `.story`·`.recruit`·`.farm`·`.about`·`.explorer`·`.sb-guide`·
+`.ac-guide`를 추가).
+
+⚠⚠ **`flex-basis: 0`인 루트에는 넣으면 안 된다 — 푸터가 본문 한가운데 박힌다.**
+`.planner`는 `flex: 1`(= `flex-basis: 0`)이라 크기를 내용이 아니라 flex 계산으로 잡는데,
+거기에 `min-height`를 주면 flex 항목을 지켜 주던 기본 `min-height: auto`(내용 높이 밑으론
+안 줄어듦)가 **대체되어 사라진다.** 박스가 100vh로 굳고 더 긴 내용이 밖으로 넘쳐 푸터가
+그 위에 얹힌다 — 실제로 이번에 `.planner`에 넣었다가 사용자 제보로 되돌렸다
+(1400×900에서 박스 900px · 내용 1206px). `flex-shrink: 0`으로도 못 막는다. 문제는 줄어드는
+게 아니라 **기준 크기가 0**인 것이다 (2026-08-03 록라 소장품 사고와 같은 뿌리).
+`.planner`는 `flex: 1`이라 어차피 남는 공간을 스스로 채워 푸터가 바닥에 붙으므로,
+남는 CLS 0.018(good)은 그냥 둔다.
+**새 지연 탭을 붙일 때는 그 루트의 `flex`가 `0 0 auto`인지 확인하고 넣을 것.**
 
 **② `.site-scroll` 안에서 `margin: 0 auto`는 폭을 내용에 맡긴다** ← 가장 컸던 범인.
 `.site-scroll`은 세로 flex다. 그 자식에 `margin:0 auto`가 붙으면 flexbox 규칙상
@@ -974,7 +985,7 @@ Cloudflare RUM에서 CLS Poor 비율이 20%를 넘어 **전 페이지를 Playwri
 (폰 0.080 · PC 0.041). **진짜 클래스를 그대로 쓴 빈 껍데기**를 깔면 CSS가 바뀌어도 높이가 따라간다.
 
 **결과** — 24개 라우트 × PC/폰 전수에서 `/sim` 0.326→0.003, `/stories/<id>` 0.102→0.000,
-`/infra`(세로 1440) 0.018→0.000, 나머지 전부 0.000.
+나머지 전부 0.000. `/infra`는 위 이유로 0.018을 그대로 둔다.
 
 ⚠ **로컬에서 `/ja`·`/en`의 CLS를 재지 말 것 — 허수가 나온다.** `vinext start`는
 `fix-html-lang.mjs`가 후처리한 정적 `dist/client/ja.html`(`lang="ja"`)을 안 쓰고 다시 렌더해
