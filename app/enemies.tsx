@@ -115,6 +115,10 @@ export default function EnemyDex({ enemies }: { enemies: Enemy[] }) {
   const [itemRaise, setItemRaise] = useState(0);
 
   const byId = useMemo(() => new Map(enemies.map((e) => [e.id, e])), [enemies]);
+  // 게임 도감이 감추는 적(hid)은 목록·필터·집계에서 뺀다 — 위수 협의 15라운드 보스
+  // 2형태처럼 **그 화면에서 id로 열 때만** 보여야 한다 (2026-08-25). byId는 전체를
+  // 그대로 둬서 #en-<id> 딥링크로는 열린다.
+  const listed = useMemo(() => enemies.filter((e) => !e.hid), [enemies]);
   const openStage = (sid: string) => {
     setStageRaise((k) => k + 1);
     // 스탯 색인을 같이 받아야 등장 적 카드에 HP·공격 수치가 실린다 (사용자 제보 2026-08-11)
@@ -135,7 +139,7 @@ export default function EnemyDex({ enemies }: { enemies: Enemy[] }) {
   const opts = useMemo(() => {
     const uniq = (get: (e: Enemy) => (string | null | undefined)[]) => {
       const s = new Set<string>();
-      for (const e of enemies) for (const v of get(e)) if (v) s.add(v);
+      for (const e of listed) for (const v of get(e)) if (v) s.add(v);
       return [...s].sort((a, b) => a.localeCompare(b, locale));
     };
     return {
@@ -145,13 +149,13 @@ export default function EnemyDex({ enemies }: { enemies: Enemy[] }) {
       dmg: uniq((e) => e.dmg),
       imm: uniq((e) => e.lv.flatMap((l) => l.imm)),
     };
-  }, [enemies, locale]);
+  }, [listed, locale]);
 
   const immOf = (e: Enemy) => e.lv.find((l) => l.imm.length)?.imm ?? [];
 
   const shown = useMemo(() => {
     const q = normSearch(term);
-    return enemies.filter((e) => {
+    return listed.filter((e) => {
       if (ranks.length && !ranks.includes(e.rank ?? "")) return false;
       if (races.length && !races.some((r) => e.race.includes(r))) return false;
       if (ways.length && !ways.includes(e.way ?? "")) return false;
@@ -161,13 +165,13 @@ export default function EnemyDex({ enemies }: { enemies: Enemy[] }) {
       if (!q) return true;
       return normSearch(`${e.name} ${e.idx ?? ""} ${e.abil.join(" ")} ${e.desc ?? ""}`).includes(q);
     });
-  }, [enemies, term, ranks, races, ways, motions, dmgs, imms]);
+  }, [listed, term, ranks, races, ways, motions, dmgs, imms]);
 
   // 칩 개수는 **다른 필터가 적용된 뒤**의 수가 아니라 전체 기준 — 오퍼 백과사전과 같은 방식
   const countBy = useMemo(() => {
     const mk = (get: (e: Enemy) => string[]) => {
       const m = new Map<string, number>();
-      for (const e of enemies) for (const v of new Set(get(e))) m.set(v, (m.get(v) ?? 0) + 1);
+      for (const e of listed) for (const v of new Set(get(e))) m.set(v, (m.get(v) ?? 0) + 1);
       return m;
     };
     return {
@@ -178,7 +182,7 @@ export default function EnemyDex({ enemies }: { enemies: Enemy[] }) {
       dmg: mk((e) => e.dmg),
       imm: mk(immOf),
     };
-  }, [enemies]);
+  }, [listed]);
 
   const toggle = (set: (fn: (cur: string[]) => string[]) => void) => (v: string) =>
     set((cur) => (cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v]));

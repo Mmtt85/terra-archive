@@ -25,6 +25,9 @@ export type Enemy = {
   id: string; idx: string | null; name: string; rank: string | null; sort: number;
   desc: string | null; abil: string[]; dmg: string[]; race: string[];
   way: string | null; motion: string | null; rng?: number; link?: string[];
+  /** 게임 도감이 감추는 적 (hideInHandbook) — /enemies 목록엔 안 뜨고 위수 협의처럼
+   *  id로 직접 여는 화면에서만 보인다. build-enemies.py의 AC_HIDDEN 참조. */
+  hid?: 1;
   lv: EnemyLevel[];
 };
 /** 등장 작전 역색인 — stages[i] = [코드, 이름, 구역, 스테이지종류, stageId] */

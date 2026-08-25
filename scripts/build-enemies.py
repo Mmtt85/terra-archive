@@ -25,7 +25,7 @@
   levels/enemydata/enemy_database.json               스탯 원본 (서버 공통 수치)
   levels/<levelId>.json                              스테이지별 등장 적·스폰 수
 """
-import json, os, re, shutil, sys, urllib.error, urllib.request
+import json, os, re, shutil, sys, time, urllib.error, urllib.request
 from concurrent.futures import ThreadPoolExecutor
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -139,9 +139,21 @@ def fetch_level(path, cache_dir=CACHE):
 
 # ── 1. 스탯 원본 ────────────────────────────────────────────────────────────
 os.makedirs(CACHE, exist_ok=True)
-_shared = os.path.join(ROGUE_CACHE, "levels__enemydata__enemy_database.json")
-if os.path.exists(_shared):
-    enemy_db = load(_shared)          # build-rogue.py가 이미 받아 둔 14MB — 다시 받지 않는다
+# 14MB짜리 스탯 원본 — 다른 스크립트가 이미 받아 둔 사본이 있으면 재사용한다.
+# ⚠ 종전엔 록라 캐시(.gamedata/rogue/)가 있으면 **무조건** 그걸 썼는데, 사본들이 서로
+#   다른 시점에 받아져 실제로는 벌어진다. 2026-08-25 실측: 록라 사본 07-17자 1,824종 vs
+#   .gamedata 루트 사본 08-12자 1,829종 — 묵은 걸 집는 바람에 이미 커밋돼 있던
+#   enemy_8016_misery·enemy_8017_vcblva의 스탯이 빈 배열로 **지워졌다**.
+#   그래서 "있으면 아무거나"가 아니라 **가장 최근에 받은 사본**을 고른다.
+_cands = [os.path.join(ROGUE_CACHE, "levels__enemydata__enemy_database.json"),
+          os.path.join(S, "levels__enemydata__enemy_database.json"),
+          os.path.join(CACHE, "levels__enemydata__enemy_database.json")]
+_have = [c for c in _cands if os.path.exists(c)]
+if _have:
+    _pick = max(_have, key=os.path.getmtime)
+    enemy_db = load(_pick)
+    print(f"enemy_database 사본: {os.path.relpath(_pick, REPO)} "
+          f"({time.strftime('%Y-%m-%d', time.localtime(os.path.getmtime(_pick)))})")
 else:
     enemy_db = fetch_level("levels/enemydata/enemy_database.json")
 print(f"enemy_database: {len(enemy_db)}종")
@@ -161,7 +173,26 @@ def first_defined(recs, key):
 kr_book = load(f"{S}/kr_enemy_handbook_table.json")
 # 도감에 노출되는 적만 — hideInHandbook은 게임 안에서도 안 보이는 내부용 더미다
 VISIBLE = [k for k, v in kr_book["enemyData"].items() if not v.get("hideInHandbook")]
-print(f"도감 노출 적: {len(VISIBLE)}종 (전체 {len(kr_book['enemyData'])})")
+# ⚠ 예외: 위수 협의(오토체스)에 **실제로 나오는** 숨김 적은 살린다 (사용자 요청 2026-08-25).
+#   보스 2형태(가상적: 갑주/총/관 = enemy_9013_acstmk_2 등 3종)가 hideInHandbook이라
+#   통째로 빠져 있었는데, 15라운드에서 진짜로 싸우는 상대다 (HP가 1형태의 2~4배).
+#   나머지 46종(맵 기믹·약화 패널·연출용 더미)은 게임이 감추는 게 맞으니 그대로 둔다 —
+#   그래서 필터를 푸는 게 아니라 **autochess.json이 참조하는 id만** 통과시킨다.
+#   다음 시즌에 새 숨김 보스가 생겨도 데이터만 갱신하면 자동으로 따라온다.
+#   이렇게 들어온 적에는 hid=1이 붙어 /enemies 목록·집계에서는 빠지고, 위수 협의처럼
+#   id로 직접 여는 상세에서만 보인다 (게임 도감 표기를 그대로 따르기 위해서).
+AC_HIDDEN = set()
+_ac_path = os.path.join(REPO, "app", "data", "autochess.json")
+if os.path.exists(_ac_path):
+    _ac = json.load(open(_ac_path, encoding="utf-8"))
+    _refs = {e["id"] for e in _ac.get("enemies") or []}
+    _refs |= {b["enemy"] for b in _ac.get("bosses") or [] if b.get("enemy")}
+    for _lst in (_ac.get("enemyList") or {}).values():
+        _refs |= {e["id"] for e in _lst}
+    AC_HIDDEN = {k for k in _refs if kr_book["enemyData"].get(k, {}).get("hideInHandbook")}
+    VISIBLE += sorted(AC_HIDDEN)
+print(f"도감 노출 적: {len(VISIBLE)}종 (전체 {len(kr_book['enemyData'])})"
+      + (f" — 위수 협의 숨김 보스 {len(AC_HIDDEN)}종 포함" if AC_HIDDEN else ""))
 
 books, races = {}, {}
 for loc, pre, _ in LOCALES:
@@ -218,6 +249,9 @@ def build_enemies(loc):
         # 사거리 0/-1은 "근접이라 사거리 개념 없음" — 키를 아예 안 넣어 파일을 줄인다
         if rng and rng > 0:
             e["rng"] = num(rng)
+        # 게임 도감이 감추는 적 — 위수 협의 등 id로 직접 여는 화면에서만 보인다 (위 AC_HIDDEN)
+        if eid in AC_HIDDEN:
+            e["hid"] = 1
         # 연계 소환 적 — 도감에 있는 것만 (내부 더미로 이어지는 참조가 섞여 있다)
         link = [x for x in (hb.get("linkEnemies") or []) if x in set(VISIBLE)]
         if link:
