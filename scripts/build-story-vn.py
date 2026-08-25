@@ -27,7 +27,7 @@ Cloudflare Pages 의 2만 파일 한도를 건드리지 않는다):
 (예: 첸 1024×1024 → 실제 505×931). 그대로 붙이면 인물 키가 제각각이라 무대에 세울 수
 없다. 투명 여백을 잘라 바닥 기준으로 세우면 키가 대체로 맞는다.
 """
-import json, os, re, sys, urllib.error, urllib.parse, urllib.request
+import json, os, re, sys, time, urllib.error, urllib.parse, urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from io import BytesIO
 
@@ -97,8 +97,19 @@ def char_tree():
         #   sha 로 recursive 를 부른다 (실측 2026-08-25: 14,088개, 잘리지 않음).
         root = _get("https://api.github.com/repos/ArknightsAssets/ArknightsAssets2/"
                     "git/trees/cn:assets/dyn/avg/characters", binary=False)
-        tree = _get("https://api.github.com/repos/ArknightsAssets/ArknightsAssets2/"
-                    f"git/trees/{root['sha']}?recursive=1", binary=False)
+        # 14,000개짜리 트리라 GitHub 가 가끔 500 을 던진다 — 몇 번 다시 물어본다 (실측)
+        tree = None
+        for attempt in range(5):
+            try:
+                tree = _get("https://api.github.com/repos/ArknightsAssets/ArknightsAssets2/"
+                            f"git/trees/{root['sha']}?recursive=1", binary=False)
+                break
+            except urllib.error.HTTPError as err:
+                if err.code < 500 or attempt == 4:
+                    raise
+                time.sleep(2 * (attempt + 1))
+        if tree is None:
+            raise SystemExit("avg/characters 트리를 못 받았다")
         if tree.get("truncated"):
             raise SystemExit("avg/characters 트리가 잘렸다 — 폴더별 조회로 되돌려야 한다")
         names, dirs = [], {}
@@ -108,7 +119,8 @@ def char_tree():
                 names.append(path_)
             elif path_.endswith(".png"):
                 folder, name = path_.split("/", 1)
-                dirs.setdefault(folder, []).append(name[:-4])
+                # 크기까지 담는다 — '얼굴만 잘라 둔 파일'을 골라내는 데 쓴다 (아래 pick_hash)
+                dirs.setdefault(folder, {})[name[:-4]] = e.get("size", 0)
         data = {"names": names, "dirs": dirs}
         json.dump(data, open(path, "w", encoding="utf-8"))
     _tree = ({n.lower(): n for n in data["names"]}, data["dirs"])
@@ -121,13 +133,90 @@ def char_index():
 
 def folder_files(folder):
     """폴더 안 파일 이름(확장자 제외). 정렬해 돌려준다 — 공통 접두 계산이 순서를 탄다."""
-    return sorted(char_tree()[1].get(folder, []))
+    return sorted(char_tree()[1].get(folder, {}))
+
+
+def folder_sizes(folder):
+    return char_tree()[1].get(folder, {})
+
+
+# ── `<이름>#<표정>$<몸>` 계열 (미러 폴더 1,037개 중 877개) ────────────────────
+# 스크립트가 부르는 이름이 곧 파일 이름이다: [charslot(name="avg_4179_monstr_1#4$1")].
+# ⚠ 여기서 $N(몸 변형)을 버리면 안 된다 — 2026-08-25 사용자 제보 'Mon3tr 일러스트가 이상함'.
+#   대부분(켈시 등)은 `#N$M` 자체가 표정이 들어간 **전신**이지만, Mon3tr 처럼 `#N$M` 이
+#   512px **얼굴만** 잘라 둔 인물이 있다(전신은 `$M`, 1816px). 그대로 쓰면 얼굴 클로즈업이
+#   전신 자리에 들어간다. 그래서 **몸(`$M`)보다 눈에 띄게 작으면 몸을 쓴다** —
+#   표정은 잃지만 그림은 멀쩡하다 (얼굴을 몸에 합성하려면 위치 정보가 필요한데 없다).
+FACE_ONLY_RATIO = 0.5
+
+def pick_hash(entry, expr, part):
+    """`#표정`·`#표정$몸` 계열 폴더에서 쓸 파일 이름을 고른다. 못 고르면 None.
+
+    미러의 이름 규칙은 세 갈래다 (실측 2026-08-25, 폴더 1,037개):
+      · `<이름>_<표정>`      옛 규칙 — 여기 말고 아래 옛 경로가 맡는다
+      · `<이름>#<표정>`      몸 변형이 없는 인물 (avg_1013_spchen_1#2 …)
+      · `<이름>#<표정>$<몸>` 몸 변형이 있는 인물 (avg_003_kalts_1#1$1 …)
+    표정도 몸도 없는 `<이름>` / `<이름>$<몸>` 은 **표정 없는 몸**이다."""
+    files = folder_sizes(entry)
+    pat = re.compile(re.escape(entry) + r"(?:#(\d+))?(?:\$(\d+))?$")
+    items = {}                      # (표정, 몸) → 파일 이름. 없는 자리는 0
+    for name in files:
+        m = pat.fullmatch(name)
+        if m:
+            items[(int(m.group(1) or 0), int(m.group(2) or 0))] = name
+    if not items:
+        return None
+    want_part = int(part or 0)
+    # 몸(표정 0) — 같은 몸 번호 우선
+    body = items.get((0, want_part)) or items.get((0, 0))
+    if body is None:
+        zeros = sorted(k for k in items if k[0] == 0)
+        body = items[zeros[0]] if zeros else None
+    # 표정: 정확히 → 같은 표정의 다른 몸 → 가장 가까운 표정
+    want = items.get((expr, want_part))
+    if want is None:
+        same = sorted(k for k in items if k[0] == expr)
+        want = items[same[0]] if same else None
+    if want is None:
+        exprs = sorted({k[0] for k in items if k[0] > 0})
+        if exprs:
+            near = min(exprs, key=lambda e: (abs(e - expr), e))
+            want = items.get((near, want_part)) or items[sorted(k for k in items if k[0] == near)[0]]
+    # ⚠ Mon3tr 처럼 `#표정$몸` 이 **얼굴만 잘라 둔 파일**인 인물이 있다 (512px, 전신은 1816px).
+    #   그대로 쓰면 얼굴 클로즈업이 전신 자리에 들어간다 (사용자 제보 2026-08-25).
+    #   몸보다 눈에 띄게 작으면 표정을 포기하고 전신을 쓴다 — 얼굴을 몸에 합성하려면
+    #   위치 정보가 필요한데 미러에 없다.
+    if want and body and files.get(want, 0) < FACE_ONLY_RATIO * files.get(body, 0):
+        return body
+    return want or body
 
 
 def resolve_sprite(base, expr):
-    """(base, 표정번호) → 내려받을 URL. 못 찾으면 None."""
+    """(base, 표정번호) → 내려받을 URL. 못 찾으면 None.
+    base 끝의 `-p<N>` 은 대본이 부른 몸 변형($N) 이다 (build-story-scripts.py sprite_ref)."""
     idx = char_index()
+    part = None
+    m = re.fullmatch(r"(.+)-p(\d+)", base)
+    if m:
+        base, part = m.group(1), m.group(2)
     entry = idx.get(base.lower()) or idx.get(base.lower() + ".png")
+    # 폴더가 없으면 **낱장 이름에 #표정·$몸이 그대로 붙은 경우**를 찾는다 —
+    # 미러는 표정이 하나뿐인 인물을 폴더 없이 `avg_286_cast3_1$1.png` 로도 둔다
+    # (실측 2026-08-25: 미해결 515건 중 177건이 이 형태였다).
+    if entry is None and part:
+        for cand in (f"{base}#{expr}${part}.png", f"{base}${part}.png"):
+            entry = idx.get(cand.lower())
+            if entry:
+                break
+    # avg_ ↔ char_ — 같은 인물을 두 접두로 나눠 둔 경우 (avg_1505_frstar_1 → char_1505_frstar_1)
+    if entry is None and base.lower().startswith("avg_"):
+        alt = "char_" + base[4:]
+        entry = idx.get(alt.lower()) or idx.get(alt.lower() + ".png")
+        if entry is None and part:
+            for cand in (f"{alt}#{expr}${part}.png", f"{alt}${part}.png"):
+                entry = idx.get(cand.lower())
+                if entry:
+                    break
     if entry is None:
         # 미러가 이름을 바꾼 경우 — 캐릭터 번호(char_2006_…)가 같은 항목으로 넘어간다.
         # 실측 2026-08-25: 대본의 char_2006_weiywfmzuki_1 이 미러엔 char_2006_fmzuki_1.png.
@@ -144,6 +233,13 @@ def resolve_sprite(base, expr):
     files = folder_files(entry)
     if not files:
         return None
+    # ⚠ `-p<N>` 이 붙어 있어도 폴더가 옛 규칙(<stem>_<표정>)이면 아래 옛 경로로 간다 —
+    #   대본은 늘 $1 을 달고 부르지만 미러의 옛 폴더에는 $ 파일이 없다 (char_002_amiya_1 등).
+    if any("#" in f for f in files):
+        want = pick_hash(entry, expr, part)
+        if not want:
+            return None
+        return f"{ASSETS}/avg/characters/{urllib.parse.quote(entry)}/{urllib.parse.quote(want)}.png"
     if len(files) == 1:
         return f"{ASSETS}/avg/characters/{urllib.parse.quote(entry)}/{urllib.parse.quote(files[0])}.png"
     # ⚠ 줄기를 폴더 이름에서 번호를 떼어 구하면 안 된다 — avg_npc_034 는 번호가 아니라
@@ -184,7 +280,11 @@ def save_sprite(png, dest):
     """투명 여백을 잘라 저장. 잘린 크기를 (w, h)로 돌려준다."""
     from PIL import Image
     im = Image.open(BytesIO(png)).convert("RGBA")
-    bbox = im.getbbox()
+    # ⚠ getbbox() 는 알파가 1이라도 있으면 남긴다. 큰 캔버스에 아틀라스 찌꺼기가 거의
+    #   투명하게 깔려 있는 원본(예: avg_4179_monstr_1$1, 1816px)에서는 그래서 아무것도
+    #   안 잘리고 인물이 손톱만 하게 들어간다 — 알파 16 이상만 내용으로 본다 (2026-08-25).
+    mask = im.getchannel("A").point(lambda v: 255 if v > 16 else 0)
+    bbox = mask.getbbox() or im.getbbox()
     if bbox:
         im = im.crop(bbox)
     if max(im.size) > SPR_MAX:
@@ -280,6 +380,46 @@ def write_ids():
     print(f"장면 모드 가능 {len(ids)}편 → app/data/story-scene-ids.json")
 
 
+def patch_missing():
+    """미러에 없는 스탠딩을 vn 트랙에서 char_empty 로 바꾼다 (KR·EN·JA 전부).
+
+    안 하면 화면이 없는 파일을 계속 불러 콘솔이 404로 도배된다 (사용자 제보 2026-08-25:
+    avg_npc_1981_1). char_empty 로 바꾸는 이유는 **슬롯 번호를 지키기 위해서**다 —
+    ch 에서 빼 버리면 focus 가 가리키는 자리가 어긋난다."""
+    roots = [SCRIPT_DIR, os.path.join(SCRIPT_DIR, "en"), os.path.join(SCRIPT_DIR, "ja")]
+    gone, fixed, files = set(), 0, 0
+    for root in roots:
+        if not os.path.isdir(root):
+            continue
+        for f in sorted(os.listdir(root)):
+            if not f.endswith(".json"):
+                continue
+            path = os.path.join(root, f)
+            doc = json.load(open(path, encoding="utf-8"))
+            hit = 0
+            for ep in doc.get("eps", []):
+                for snap in ep.get("vn", []):
+                    for pair in snap.get("ch", []):
+                        base, expr = pair[0], int(pair[1])
+                        if not base or base == "char_empty":
+                            continue
+                        if os.path.exists(os.path.join(SPR_DIR, f"{base}__{expr}.webp")):
+                            continue
+                        gone.add(f"{base}#{expr}")
+                        pair[0], pair[1] = "char_empty", 1
+                        hit += 1
+            if hit:
+                json.dump(doc, open(path, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
+                fixed += hit
+                files += 1
+    if fixed:
+        print(f"미러에 없는 스탠딩 {len(gone)}종을 빈 슬롯으로 정리 — {fixed}자리 / {files}파일")
+        for k in sorted(gone)[:20]:
+            print("   ·", k)
+        if len(gone) > 20:
+            print(f"   … 외 {len(gone) - 20}종")
+
+
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith("-")]
     if args:
@@ -294,6 +434,7 @@ def main():
                 targets.append(doc["id"])
     for eid in targets:
         run(eid)
+    patch_missing()
     write_ids()
 
 

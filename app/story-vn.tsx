@@ -33,7 +33,10 @@ const hideErr = (e: { currentTarget: { style: { visibility: string } } }) => {
 //   프리렌더가 8,466개 라우트 전부 "Headers Overflow Error"로 죽는다 (실측 2026-08-25).
 //   `preload: false` 로도 안 막힌다 — 헤더는 CSS 안의 url() 을 훑어 만든다.
 // 못 받아 와도 폴백 글꼴로 그대로 읽힌다 (display=swap).
-const FONT_CSS = "https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap";
+// 고운돋움 — 본고딕(Noto Sans KR)이 "너무 딱딱하다"는 지적으로 바꿨다 (2026-08-25).
+// 획 끝이 살짝 둥근 인간미 있는 고딕이라 무대 위 대사에 더 어울린다.
+// ⚠ 굵기가 400 하나뿐이다 — 화자 이름은 굵게 대신 색(라임)과 자간으로 세운다.
+const FONT_CSS = "https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap";
 
 function ensureReaderFont(): void {
   if (typeof document === "undefined" || document.getElementById("vn-font")) return;
@@ -189,9 +192,11 @@ export default function SceneMode({ ep, title, hasPrev, hasNext, onEp }: {
               onClick={(e) => { e.stopPropagation(); onEp(-1); }}>⏮</button>
           )}
           <span className="vn-top-mid">{idx + 1} / {ep.lines.length}</span>
-          <button type="button" className={`vn-obtn${auto ? " on" : ""}`} disabled={atEnd}
+          {full && <span className="vn-top-title">{title}</span>}
+          {/* 자동 진행 — 아이콘(▶)은 무슨 뜻인지 헷갈린다는 지적으로 글자로 바꿨다 (2026-08-25) */}
+          <button type="button" className={`vn-obtn vn-auto${auto ? " on" : ""}`} disabled={atEnd}
             title={auto ? t("자동 넘김 끄기") : t("자동 넘김")} aria-label={auto ? t("자동 넘김 끄기") : t("자동 넘김")}
-            onClick={(e) => { e.stopPropagation(); setAuto((v) => !v); }}>{auto ? "⏸" : "▶"}</button>
+            onClick={(e) => { e.stopPropagation(); setAuto((v) => !v); }}>AUTO</button>
           {hasNext && onEp && (
             <button type="button" className={`vn-obtn${atEnd ? " ready" : ""}`}
               title={t("다음 화")} aria-label={t("다음 화")}
@@ -202,8 +207,8 @@ export default function SceneMode({ ep, title, hasPrev, hasNext, onEp }: {
             onClick={(e) => { e.stopPropagation(); if (full) exitFull(); else enterFull(); }}>{full ? "✕" : "⛶"}</button>
         </div>
 
-        {/* 가로모드(낮은 화면)에서만 뜨는 양옆 줄 이동 — 아래 막대를 놓을 자리가 없다
-            (사용자 제보 2026-08-25: 가로로 돌리면 버튼 글자가 세로로 눌린다). */}
+        {/* 줄 이동은 **무대 안 양옆**이 전부다 (사용자 확정 2026-08-25: "모바일 가로모드처럼
+            전부 통일"). 아래 막대와 거기 있던 페이지 번호는 없앴다 — 번호는 왼쪽 위에 있다. */}
         <button type="button" className="vn-arrow left" aria-label={t("이전 줄")} disabled={idx === 0}
           onClick={(e) => { e.stopPropagation(); go(-1); }}>‹</button>
         <button type="button" className="vn-arrow right" aria-label={t("다음 줄")} disabled={atEnd}
@@ -227,17 +232,6 @@ export default function SceneMode({ ep, title, hasPrev, hasNext, onEp }: {
         </div>
       </div>
 
-      {/* 아래 막대에는 줄 이동만 남는다 — 나머지는 전부 무대 위로 올라갔다.
-          가로모드에서는 이 막대를 감추고 무대 양옆 화살표가 대신한다. */}
-      <div className="vn-bar">
-        <div className="vn-nav">
-          <button type="button" onClick={() => go(-1)} disabled={idx === 0}>← {t("이전 줄")}</button>
-          <span className="vn-count">{idx + 1} / {ep.lines.length}</span>
-          <button type="button" onClick={() => go(1)} disabled={atEnd}>{t("다음 줄")} →</button>
-        </div>
-        {full && <span className="vn-title">{title}</span>}
-        {atEnd && !(hasNext && onEp) && <span className="vn-count">{t("마지막 화입니다")}</span>}
-      </div>
       <p className="vn-hint">
         {full ? t("클릭 · Space · → 다음 · ← 이전 · Esc 전체 모드 끄기")
           : t("클릭하면 한 줄씩 넘어갑니다 · 전체 모드에서는 키보드로도 넘길 수 있어요")}

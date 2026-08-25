@@ -135,6 +135,10 @@ function eventMatchKeys(name) {
   // (2026-08-20 위수 협의 시즌2 개방 때 링크가 안 붙던 원인). 너무 짧은 본제는 오매칭 방지로 제외.
   const colon = name.split(/[:：]/)[0].trim();
   if (colon && colon !== name && normTitle(colon).length >= 4) keys.push(colon);
+  // "불타버린 엘레지여 (재개방)" — 공지 제목은 꼬리표를 안 쓰거나 앞에 붙인다
+  // ("재개방 SideStory '불타버린 엘레지여' / …"). 괄호를 떼야 걸린다 (2026-08-25).
+  const bare = name.replace(/\s*[（(][^）)]*[）)]\s*$/, "").trim();
+  if (bare && bare !== name && normTitle(bare).length >= 4) keys.push(bare);
   return keys;
 }
 
@@ -183,6 +187,17 @@ const MANUAL_EVENTS = [
   // 2026-08-20 비움 — act2break(벡터 돌파#2)는 실데이터가 들어온 지 오래고 이벤트도 끝났다.
 ];
 
+// 실데이터를 **덮어쓰는** 자리 (2026-08-25). MANUAL_EVENTS는 activity_table에 아직 없는
+// 이벤트를 채우는 곳이고, 여기는 표는 있는데 **값이 옛것**일 때 쓴다 (기간 연장·연기).
+// 규칙은 MANUAL_EVENTS와 같다: `until`이 지나면 무시 — 잊힌 채 남지 않게.
+const EVENT_OVERRIDES = [
+  // 재개방 SideStory '불타버린 엘레지여' — activity_table은 9/6 03:59(KST) 종료로 들어와
+  // 있는데(일요일, KR 이벤트 종료일로는 이상하다) 공식 공지는 9월 10일까지다.
+  // 공지 https://cafe.naver.com/arknightskor/1246570 — 개방 8/27(목) 04:00은 실데이터와 같다.
+  // 종료는 KR 관례대로 업데이트 당일(목) 03:59 = 2026-09-10 03:59 KST.
+  { id: "act41sre", until: "2026-09-11", end: "2026-09-09T18:59:59.000Z" },
+];
+
 async function fetchEvents() {
   const res = await fetch(`${GAMEDATA_BASE}/activity_table.json`);
   if (!res.ok) throw new Error(`activity fetch ${res.status}`);
@@ -190,17 +205,24 @@ async function fetchEvents() {
   const now = Date.now();
   const soon = now + 21 * 86_400_000;
   const articles = await fetchEventNotices().catch(() => []); // 카페 불통이어도 이벤트는 살린다
+  // ⚠ 덮어쓰기를 **거르기 전에** 먹인다 — 실데이터 종료일이 지나 버린 경우(그래서 늘리는
+  //   것이다) 먼저 거르면 그 이벤트가 목록에서 통째로 빠진다.
+  const overrides = new Map(EVENT_OVERRIDES.filter((o) => Date.parse(o.until) > now).map((o) => [o.id, o]));
   const real = Object.values(table.basicInfo ?? {})
-    .filter((a) => a.startTime > 0 && a.endTime * 1000 > now && a.startTime * 1000 < soon)
-    .map((a) => ({
-      id: a.id,
-      name: a.name,
-      type: a.type ?? null,
-      displayType: a.displayType ?? null,
-      start: new Date(a.startTime * 1000).toISOString(),
-      end: new Date(a.endTime * 1000).toISOString(),
-      url: noticeUrlFor(a.name, articles),
-    }));
+    .filter((a) => a.startTime > 0)
+    .map((a) => {
+      const ov = overrides.get(a.id);
+      return {
+        id: a.id,
+        name: a.name,
+        type: a.type ?? null,
+        displayType: a.displayType ?? null,
+        start: ov?.start ?? new Date(a.startTime * 1000).toISOString(),
+        end: ov?.end ?? new Date(a.endTime * 1000).toISOString(),
+        url: ov?.url ?? noticeUrlFor(a.name, articles),
+      };
+    })
+    .filter((e) => Date.parse(e.end) > now && Date.parse(e.start) < soon);
   const known = new Set(real.map((e) => e.id));
   const manual = MANUAL_EVENTS
     .filter((m) => !known.has(m.id) && Date.parse(m.until) > now

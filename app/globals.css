@@ -1098,19 +1098,54 @@ button {
      한 번에 못 감추지만, visibility 는 상속되므로 핸들만 다시 켜면 된다 (2026-08-25). */
   /* 핸들을 세로로 끌 때 페이지가 같이 스크롤되면 안 된다 */
   .header-collapse-toggle { touch-action: none; }
+  /* 치우기 애니메이션 (사용자 요청 2026-08-25) — 높이는 max-height 로 줄이고, 내용은 따로
+     페이드아웃시킨 뒤 마지막에 visibility 로 끈다.
+     ⚠ 헤더에 overflow 를 걸어 자르면 안 된다 — 언어·햄버거·이벤트 드롭다운이 헤더 안의
+       position:absolute 라 통째로 잘린다 (2026-07-26 회귀와 같은 함정). 그래서 자르는 대신
+       내용을 흐려서 없앤다.
+     ⚠ 헤더 자체에 opacity 를 주면 **핸들까지 같이 투명해진다** (자식은 부모 opacity 를
+       거스를 수 없다) — 그래서 자식들에게만 건다. .header-sub 는 display:contents 라
+       박스가 없어 opacity 가 안 먹으므로 그 자식까지 따로 짚는다. */
+  .site-header {
+    max-height: 60vh;
+    transition: max-height 0.28s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.28s;
+  }
+  .site-header > *:not(.header-collapse-toggle),
+  .site-header .header-sub > *,
+  .site-header .header-sub-right > * {
+    transition: opacity 0.18s ease;
+  }
   .site-header.tucked {
-    height: 0;
+    max-height: 0;
     min-height: 0;
     padding-top: 0;
     padding-bottom: 0;
-    border-bottom: 0;
+    border-bottom-color: transparent;
     visibility: hidden;
+  }
+  .site-header.tucked > *:not(.header-collapse-toggle),
+  .site-header.tucked .header-sub > *,
+  .site-header.tucked .header-sub-right > * {
+    opacity: 0;
   }
   .site-header.tucked .header-collapse-toggle {
     visibility: visible;
     bottom: -18px;
     border-top: 1px solid var(--line);
     border-radius: 0 0 8px 8px;
+  }
+  /* 펼칠 때 2줄째가 툭 나타나지 않게 아주 짧게 내려오며 뜬다 */
+  .site-header:not(.collapsed):not(.tucked) .feedback-header-btn,
+  .site-header:not(.collapsed):not(.tucked) .event-group,
+  .site-header:not(.collapsed):not(.tucked) .bcast-trigger,
+  .site-header:not(.collapsed):not(.tucked) .future-toggle,
+  .site-header:not(.collapsed):not(.tucked) .theme-toggle,
+  .site-header:not(.collapsed):not(.tucked) .about-icon {
+    animation: hdr-row-in 0.22s ease-out;
+  }
+  @keyframes hdr-row-in {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: none; }
   }
   .site-header.collapsed .feedback-header-btn,
   .site-header.collapsed .event-group,
@@ -20563,10 +20598,10 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   user-select: none;
 }
 .vn-stage:focus-visible { outline: 2px solid var(--lime, #b8e04a); outline-offset: 2px; }
-/* 아래에 남은 건 줄 이동 한 줄뿐이라 예약 높이를 118px → 84px 로 줄였다 (무대가 그만큼 커진다) */
+/* 아래에 남은 건 안내문 한 줄뿐 — 예약 높이 44px (조작은 전부 무대 위에 있다) */
 .vn-root.full .vn-stage {
-  width: min(100%, calc((100dvh - 84px) * 16 / 9));
-  max-height: calc(100dvh - 84px);
+  width: min(100%, calc((100dvh - 44px) * 16 / 9));
+  max-height: calc(100dvh - 44px);
 }
 .vn-bg, .vn-cut {
   position: absolute;
@@ -20667,8 +20702,55 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
 .vn-obtn.ready { opacity: 0.95; border-color: var(--lime, #b8e04a); }
 .vn-obtn:disabled { opacity: 0.16; cursor: default; }
 
-/* 양옆 줄 이동 — **가로모드(낮은 화면)에서만**. 그 외에는 아래 막대가 맡는다. */
-.vn-arrow { display: none; }
+/* 양옆 줄 이동 — 화면 크기와 무관하게 **무대 안 양옆**이 전부다 (사용자 확정 2026-08-25).
+   대사창(아래 46%)을 피해 그림 영역 한가운데 높이에 둔다 — 글을 가리지 않는다. */
+.vn-arrow {
+  display: flex;
+  position: absolute;
+  top: 27%;
+  transform: translateY(-50%);
+  z-index: 3;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 72px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 12px;
+  background: rgba(6, 8, 14, 0.5);
+  color: #e9edf5;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.32;
+  backdrop-filter: blur(3px);
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+.vn-arrow.left { left: 8px; }
+.vn-arrow.right { right: 8px; }
+.vn-arrow:hover:not(:disabled), .vn-arrow:active:not(:disabled), .vn-arrow:focus-visible { opacity: 0.92; }
+.vn-arrow:disabled { opacity: 0.1; cursor: default; }
+
+/* 자동 진행 — 아이콘이 아니라 글자라 알약 모양으로 (2026-08-25) */
+.vn-obtn.vn-auto {
+  width: auto;
+  padding: 0 11px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+/* 전체 모드에서만 위쪽 줄에 화 제목 — 인라인이면 바로 위에 같은 제목이 있다 */
+.vn-top-title {
+  max-width: 42%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-right: auto;
+  color: #aab3c2;
+  font-size: 11.5px;
+  font-weight: 700;
+  opacity: 0.5;
+}
 
 /* 대사창 — 무대 아래쪽에 겹친다 (원작과 같은 자리). 긴 대사는 이 안에서만 스크롤. */
 .vn-box {
@@ -20681,11 +20763,12 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   padding: 14px clamp(16px, 4vw, 52px) 18px;
   background: linear-gradient(to top, rgba(4, 6, 12, 0.94) 62%, rgba(4, 6, 12, 0));
   /* 대사창 글꼴 — 사이트 본문(Arial→맑은 고딕/Apple SD Gothic Neo)을 그대로 쓰면 웹 문서처럼
-     보인다. 인게임 대사창과 같은 계열인 본고딕(Noto Sans KR)을 쓴다 (사용자 요청 2026-08-25).
+     보인다. 획 끝이 살짝 둥근 고운돋움을 쓴다 — 본고딕(Noto Sans KR)으로 갔다가
+     "너무 딱딱하다"는 지적에 바꿨다 (사용자 요청 2026-08-25).
      ⚠ 글꼴은 **리더기가 열릴 때** story-vn.tsx 가 <link> 로 붙인다 — next/font 로 자체
        호스팅하면 한글 조각 124개가 전부 Link 응답 헤더로 나가 프리렌더가 죽는다.
      아직 안 왔거나 못 받아 왔으면 시스템 한글로 그대로 읽힌다 (display=swap). */
-  font-family: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  font-family: "Gowun Dodum", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
   font-size: clamp(13.5px, 1.45vw, 17.5px);
   line-height: 1.78;
   letter-spacing: -0.005em;
@@ -20696,12 +20779,14 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
 html[lang="ja"] .vn-box {
   font-family: Meiryo, "Hiragino Kaku Gothic ProN", "Yu Gothic", "Noto Sans JP", sans-serif;
 }
+/* 화자 이름 — 고운돋움은 굵기가 400 하나뿐이라 bold 를 걸면 브라우저가 억지로 굵혀
+   뭉개진다. 색(라임)과 자간·크기로 세운다 (2026-08-25). */
 .vn-name {
   margin: 0 0 3px;
-  font-weight: 700;
-  font-size: 1.02em;
+  font-weight: 400;
+  font-size: 1.06em;
   color: var(--lime, #b8e04a);
-  letter-spacing: 0.01em;
+  letter-spacing: 0.03em;
 }
 /* 무대 위에 겹치는 글자라 아주 옅은 그림자를 깔아 밝은 배경에서도 읽히게 한다 */
 .vn-say, .vn-narr, .vn-st { text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55); }
@@ -20737,48 +20822,6 @@ html[lang="ja"] .vn-box {
 .vn-br { margin: 0; color: #8d97a8; font-size: 0.86em; }
 
 /* 조작 막대 */
-/* 아래 막대에는 줄 이동만 남는다 (나머지는 무대 위로) — 그래서 그냥 가운데 정렬이면 된다. */
-.vn-bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-}
-.vn-nav { display: flex; align-items: center; gap: 8px; }
-.vn-root.full .vn-bar { width: min(100%, calc((100dvh - 84px) * 16 / 9)); }
-.vn-bar button {
-  padding: 5px 12px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--bg-panel);
-  color: var(--ink);
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
-}
-.vn-root.full .vn-bar button {
-  border-color: rgba(255, 255, 255, 0.22);
-  background: rgba(255, 255, 255, 0.06);
-  color: #e9edf5;
-}
-.vn-bar button:hover:not(:disabled) { border-color: var(--lime); }
-.vn-bar button:disabled { opacity: 0.35; cursor: default; }
-.vn-title {
-  max-width: 40%;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 12.5px;
-  font-weight: 700;
-  color: var(--muted);
-}
-.vn-root.full .vn-title { color: #aab3c2; }
-.vn-count { font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.vn-root.full .vn-count { color: #8d97a8; }
 .vn-hint { margin: 0; align-self: flex-start; font-size: 11px; color: var(--muted); }
 .vn-root.full .vn-hint { align-self: center; color: #5f6878; }
 
@@ -20791,14 +20834,18 @@ html[lang="ja"] .vn-box {
 @media (prefers-reduced-motion: reduce) {
   .vn-bg, .vn-cut, .vn-char, .vn-blocker, .vn-box, .vn-root.full,
   .vn-stage.shake, .story-body, .story-script { animation: none !important; }
+  .site-header, .site-header > *, .site-header .header-sub > * {
+    transition: none !important;
+    animation: none !important;
+  }
 }
 
 @media (max-width: 720px) {
   .vn-root.full { padding: 6px; gap: 6px; }
-  .vn-root.full .vn-stage, .vn-root.full .vn-bar { width: 100%; }
+  .vn-root.full .vn-stage { width: 100%; }
   .vn-box { max-height: 52%; padding: 10px 14px 12px; }
   .vn-hint { display: none; }
-  .vn-title { display: none; }   /* 바로 위 화 제목과 겹친다 */
+  .vn-top-title { display: none; }   /* 좁은 화면에선 위쪽 줄에 자리가 없다 */
 }
 
 /* ── 가로모드(낮은 화면) ─────────────────────────────────────────────────────
@@ -20806,38 +20853,12 @@ html[lang="ja"] .vn-box {
    버튼 글자가 세로로 눌린다 (사용자 제보 2026-08-25 · 스크린샷). 그래서 여기서는
    **막대를 없애고 무대를 화면에 꽉 채운 뒤, 줄 이동을 화면 양옆에 큰 화살표로 둔다.** */
 @media (orientation: landscape) and (max-height: 620px) {
-  .vn-bar, .vn-hint { display: none; }
+  .vn-hint { display: none; }
   .vn-root.full { padding: 0; gap: 0; }
   .vn-root.full .vn-stage {
     width: min(100%, calc(100dvh * 16 / 9));
     max-height: 100dvh;
     border-radius: 0;
   }
-  .vn-arrow {
-    display: flex;
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 3;
-    align-items: center;
-    justify-content: center;
-    width: 46px;
-    height: 84px;
-    border: 1px solid rgba(255, 255, 255, 0.22);
-    border-radius: 14px;
-    background: rgba(6, 8, 14, 0.5);
-    color: #e9edf5;
-    font-size: 26px;
-    line-height: 1;
-    cursor: pointer;
-    opacity: 0.34;
-    backdrop-filter: blur(3px);
-    transition: opacity 0.15s ease, background 0.15s ease;
-  }
-  .vn-arrow.left { left: 8px; }
-  .vn-arrow.right { right: 8px; }
-  .vn-arrow:hover:not(:disabled), .vn-arrow:active:not(:disabled) { opacity: 0.9; }
-  .vn-arrow:disabled { opacity: 0.1; cursor: default; }
-  /* 대사창이 양옆 화살표를 피해 가운데로 좁아진다 */
-  .vn-box { left: 62px; right: 62px; max-height: 46%; }
+  .vn-arrow { width: 46px; height: 84px; font-size: 26px; }
 }

@@ -98,16 +98,28 @@ def _attr_f(k, a, default=None):
     return float(m.group(1)) if m else default
 
 def sprite_ref(raw):
-    """'char_002_amiya_1#6$1 ' → ['char_002_amiya_1', 6]. 표정 없으면 1.
-    #N 은 표정 번호, $N 은 하위 변형(무시). char_empty 는 빈 슬롯 표식으로 그대로 둔다
-    — 슬롯 순번이 focus= 와 맞아야 하므로 지우면 안 된다."""
-    name = raw.split("$")[0].strip()
-    base, _, expr = name.partition("#")
+    """'char_002_amiya_1#6$1 ' → ['char_002_amiya_1-p1', 6]. 표정 없으면 1.
+
+    #N = 표정 번호, **$N = 몸 변형 번호**. char_empty 는 빈 슬롯 표식으로 그대로 둔다
+    — 슬롯 순번이 focus= 와 맞아야 하므로 지우면 안 된다.
+
+    ⚠ $N 을 버리면 안 된다 (2026-08-25 사용자 제보 'Mon3tr 일러스트가 이상하다').
+      미러의 파일 이름이 실제로 `<이름>#<표정>$<몸>` 이라, $N 을 떼면 그 인물 폴더에서
+      아무거나(정렬상 첫 파일 = 표정1) 집어 오게 된다. 표정이 늘 1번으로 고정되고,
+      Mon3tr 처럼 `#N$M` 이 **얼굴만 잘라 둔 파일**인 인물은 얼굴 클로즈업이 전신 자리에
+      들어가 화면이 깨진다.
+      파일 이름에 $ 를 그대로 쓰면 URL·키에서 성가시므로 `-p<N>` 으로 바꿔 싣는다."""
+    name = raw.strip()
+    body, _, part = name.partition("$")
+    base, _, expr = body.partition("#")
     base = base.strip()
     try:
         n = int(expr.strip() or 1)
     except ValueError:
         n = 1
+    part = part.strip()
+    if base != "char_empty" and part.isdigit():
+        base = f"{base}-p{part}"
     return [base, n]
 
 
