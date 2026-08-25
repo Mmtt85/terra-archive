@@ -133,10 +133,16 @@ node scripts/r2-sync.mjs                     # 본문 JSON·그림이 R2에 올�
 ```bash
 python3 scripts/build-story.py               # 목록·썸네일 (ci-refresh에 포함돼 있음)
 python3 scripts/build-story-scripts.py       # ⚠ 전체 실행할 것
+python3 scripts/build-story-scripts.py --lang en   # vn(연출) 트랙이 로케일별 파일 안에 있다
+python3 scripts/build-story-scripts.py --lang ja
+python3 scripts/build-story-vn.py            # 리더기 무대 — 배경·스탠딩 + story-scene-ids.json
 python3 scripts/build-records.py             # 오퍼레이터 기록(밀록) — ci 미포함, 여기서만 돈다
 ```
 > ⚠ `build-story-scripts.py <id>`처럼 **단일 id로 돌리면 `story-script-ids.json`을 갱신하지
 > 않는다**(목록이 잘리는 걸 막으려는 의도적 동작). 새 이벤트가 목록에 안 뜨면 이게 원인이다.
+> ⚠ **`build-story-vn.py`를 빼먹으면 새 이벤트만 리더기가 안 열린다** — 리더기 목록
+> (`app/data/story-scene-ids.json`)은 이 스크립트만 갱신한다. 무인 CI에는 없는 단계다.
+> 스탠딩이 대량으로 "미러에 없음"으로 나오면 GitHub API 한도를 의심할 것 (gh 로그인 필요).
 
 그다음 `story-summary` 스킬 → 집필 → 번역 파이프라인 → `chronicle-register` 스킬(연대기 등록).
 **요약 집필과 번역은 하위 에이전트에 위임하지 않는다** (`scripts/story-i18n/TRANSLATE.md`).
