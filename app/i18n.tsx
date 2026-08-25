@@ -2160,6 +2160,7 @@ const D: Record<string, Pair> = {
   "리더기": ["Reader", "リーダー"],
   "전체 모드": ["Full screen", "全画面"],
   "전체 모드 끄기": ["Exit full screen", "全画面を終了"],
+  "효과음 음량": ["Sound effect volume", "効果音の音量"],
   "효과음 켜기": ["Turn sound effects on", "効果音をオンにする"],
   "효과음 끄기": ["Turn sound effects off", "効果音をオフにする"],
   "자동 넘김": ["Auto play", "オート"],

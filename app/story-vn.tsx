@@ -201,12 +201,21 @@ export default function SceneMode({ ep, title, hasPrev, hasNext, onEp }: {
           <button type="button" className={`vn-obtn vn-auto${auto ? " on" : ""}`} disabled={atEnd}
             title={auto ? t("자동 넘김 끄기") : t("자동 넘김")} aria-label={auto ? t("자동 넘김 끄기") : t("자동 넘김")}
             onClick={(e) => { e.stopPropagation(); setAuto((v) => !v); }}>AUTO</button>
-          {/* 효과음 — 이 화에 울릴 게 있을 때만 띄운다 (옛 이벤트엔 지시가 없다) */}
+          {/* 효과음 — 이 화에 울릴 게 있을 때만 띄운다 (옛 이벤트엔 지시가 없다).
+              켜져 있을 때만 음량 슬라이더가 따라 나온다 (평소엔 조작 줄을 안 잡아먹게). */}
           {sfx.hasSfx && (
-            <button type="button" className={`vn-obtn vn-sfx${sfx.on ? " on" : ""}`}
-              title={sfx.on ? t("효과음 끄기") : t("효과음 켜기")}
-              aria-label={sfx.on ? t("효과음 끄기") : t("효과음 켜기")} aria-pressed={sfx.on}
-              onClick={(e) => { e.stopPropagation(); sfx.toggle(); }}>{sfx.on ? "🔊" : "🔇"}</button>
+            <span className="vn-sfxwrap" onClick={(e) => e.stopPropagation()} role="presentation">
+              <button type="button" className={`vn-obtn vn-sfx${sfx.on ? " on" : ""}`}
+                title={sfx.on ? t("효과음 끄기") : t("효과음 켜기")}
+                aria-label={sfx.on ? t("효과음 끄기") : t("효과음 켜기")} aria-pressed={sfx.on}
+                onClick={() => sfx.toggle()}>{sfx.on ? "🔊" : "🔇"}</button>
+              {sfx.on && (
+                <input type="range" className="vn-sfxvol" min={0} max={100} step={5}
+                  value={Math.round(sfx.vol * 100)} aria-label={t("효과음 음량")}
+                  title={`${t("효과음 음량")} ${Math.round(sfx.vol * 100)}%`}
+                  onChange={(e) => sfx.setVol(Number(e.currentTarget.value) / 100)} />
+              )}
+            </span>
           )}
           {hasNext && onEp && (
             <button type="button" className={`vn-obtn${atEnd ? " ready" : ""}`}

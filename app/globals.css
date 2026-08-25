@@ -20988,9 +20988,50 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   letter-spacing: 0.06em;
 }
 /* 효과음 토글 — 켜져 있을 때만 또렷하게 (꺼짐이 기본이라 평소엔 조용히 있는다) */
+.vn-sfxwrap { display: inline-flex; align-items: center; gap: 6px; }
 .vn-obtn.vn-sfx.on {
   color: var(--lime);
   border-color: color-mix(in srgb, var(--lime) 55%, transparent);
+}
+/* 음량 — 켜져 있을 때만 나온다. 무대 위라 바탕을 깔아야 밝은 배경에서도 보인다. */
+.vn-sfxvol {
+  width: 84px;
+  height: 22px;
+  margin: 0;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: rgba(6, 8, 14, 0.5);
+  accent-color: var(--lime);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.vn-sfxvol::-webkit-slider-runnable-track,
+.vn-sfxvol::-moz-range-track {
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.35);
+}
+.vn-sfxvol::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 11px;
+  height: 11px;
+  margin-top: -4px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--lime);
+}
+.vn-sfxvol::-moz-range-thumb {
+  width: 11px;
+  height: 11px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--lime);
+}
+/* 눕힌 폰에선 무대가 좁다 — 슬라이더를 줄여 조작 줄이 안 밀리게 */
+@media (orientation: landscape) and (max-height: 620px) {
+  .vn-sfxvol { width: 56px; }
 }
 
 /* 전체 모드에서만 위쪽 줄에 화 제목 — 인라인이면 바로 위에 같은 제목이 있다 */
