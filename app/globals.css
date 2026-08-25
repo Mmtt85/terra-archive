@@ -9800,34 +9800,40 @@ html.dark .story-card:hover .story-thumb img {
   color: var(--muted);
   padding: 30px 0;
 }
+/* 에피소드 고르기 — 칩 나열 대신 드롭다운 (2026-08-25). 메인 스토리는 39편까지 있어서
+   칩이 화면 위쪽을 통째로 덮었다. 지금 몇 번째인지는 옆의 n / N 이 알려준다. */
 .sc-ep-nav {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin: 14px 0 20px;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 16px;
 }
-.sc-ep-nav button {
+.sc-ep-pick {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.sc-ep-pick > span {
+  color: var(--muted);
+  font: 700 11px monospace;
+  letter-spacing: 1px;
+}
+.sc-ep-pick select {
+  max-width: min(460px, 72vw);
   border: 1px solid var(--line);
   background: var(--white);
-  padding: 6px 10px;
-  font-size: 11.5px;
+  color: var(--ink);
+  padding: 6px 8px;
+  font-size: 12.5px;
+  font-weight: 600;
   cursor: pointer;
-  display: flex;
-  align-items: baseline;
-  gap: 5px;
 }
-.sc-ep-nav button small {
+.sc-ep-count {
   color: var(--muted);
-  font-size: 10px;
-}
-.sc-ep-nav button.on {
-  background: var(--ink);
-  color: var(--white);
-}
-.sc-ep-nav button.on small {
-  /* 하드코딩 흰색은 다크모드(밝은 --ink 배경)에서 안 보인다 (사용자 리포트 2026-07-22) */
-  color: var(--white);
-  opacity: 0.72;
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
 }
 .sc-ep-title {
   margin: 0 0 16px;
@@ -20762,10 +20768,12 @@ html[lang="ja"] .vn-box {
   .vn-root.full .vn-stage, .vn-root.full .vn-bar { width: 100%; }
   .vn-box { max-height: 52%; padding: 10px 14px 12px; }
   .vn-hint { display: none; }
-  /* 좁으면 한 줄에 3분할이 안 들어간다 — 줄 이동을 윗줄 가운데로 올리고 나머지를 아래에 편다.
+  /* 좁으면 한 줄에 3분할이 안 들어간다 — **윗줄에 화 이동·자동 넘김**, 아랫줄 가운데에
+     줄 이동 (사용자 지시 2026-08-25). 자주 누르는 줄 이동이 엄지에 가까운 아래로 온다.
      막대의 제목은 바로 위 화 제목과 겹치므로 여기서는 뺀다. */
-  .vn-bar { grid-template-columns: 1fr 1fr; row-gap: 6px; }
-  .vn-nav { grid-column: 1 / -1; grid-row: 1; justify-content: center; }
-  .vn-side { grid-row: 2; }
+  .vn-bar { grid-template-columns: 1fr auto; row-gap: 7px; }
+  .vn-side { grid-row: 1; }
+  .vn-side.end { grid-column: 2; }
+  .vn-nav { grid-column: 1 / -1; grid-row: 2; justify-content: center; }
   .vn-title { display: none; }
 }

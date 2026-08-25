@@ -50,7 +50,7 @@ function ensureReaderFont(): void {
 
 /** 자동 넘김 대기(ms) — 대사가 길수록 더 오래 머문다. 앞의 1.2초는 줄과 줄 사이의
  *  숨 돌릴 틈이다 (사용자 요청 2026-08-25: "0.5초쯤 더 주라"). */
-const autoDelay = (chars: number) => Math.min(9500, Math.max(1600, 1200 + chars * 95));
+const autoDelay = (chars: number) => Math.min(7500, Math.max(1600, 1200 + chars * 70));
 
 /** 슬롯 n개를 무대에 고르게 세울 때 k번째의 가로 위치(%) */
 const slotAt = (k: number, n: number) => (100 / (n + 1)) * (k + 1);

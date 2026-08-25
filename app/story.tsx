@@ -600,13 +600,21 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
         ? t("게임 내 스토리 원문을 배경·인물 일러스트와 함께 재생합니다. 음악·효과음은 빠져 있습니다.")
         : t("게임 내 스토리 스크립트 원문입니다. 대사·지문·컷씬만 표시되며 연출(음악·효과)은 생략됩니다.")}</p>
       {script.tr === "cn" && <p className="story-disclaimer">{t("아직 정식 출시되지 않은 이벤트라, 중국 서버 원문을 AI가 번역한 비공식 텍스트입니다.")}</p>}
-      <div className="sc-ep-nav" role="tablist" aria-label={t("에피소드")}>
-        {script.eps.map((e, i) => (
-          <button key={i} type="button" role="tab" aria-selected={i === epIdx}
-            className={i === epIdx ? "on" : ""} onClick={() => goEp(i)}>
-            <b>{e.code || `#${i + 1}`}</b>{e.tag && <small>{e.tag}</small>}
-          </button>
-        ))}
+      {/* 에피소드 고르기 — 종전엔 칩을 전부 늘어놓았는데(메인 스토리는 39개까지 간다)
+          화면 위쪽을 통째로 먹어서 드롭다운으로 바꿨다 (사용자 지시 2026-08-25). */}
+      <div className="sc-ep-nav">
+        <label className="sc-ep-pick">
+          <span>{t("에피소드")}</span>
+          <select value={epIdx} onChange={(event) => goEp(Number(event.target.value))}
+            aria-label={t("에피소드")}>
+            {script.eps.map((e, i) => (
+              <option key={i} value={i}>
+                {[e.code || `#${i + 1}`, e.name, e.tag].filter(Boolean).join(" · ")}
+              </option>
+            ))}
+          </select>
+        </label>
+        <span className="sc-ep-count">{epIdx + 1} / {script.eps.length}</span>
       </div>
       <h3 className="sc-ep-title">{ep.code} {ep.name}{ep.tag && <small>{ep.tag}</small>}</h3>
       {sceneOn && ep.vn && ep.vn.length > 0 && (
