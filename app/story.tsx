@@ -28,6 +28,7 @@ import translatedJaData from "./data/story-translated.ja.json";
 // 전문(풀 스크립트)이 준비된 이벤트 id — scripts/build-story-scripts.py 생성.
 // 본문은 public/story/script/<id>.json 정적 파일을 fetch (번들 import 금지 — 수백 KB/이벤트).
 import scriptIdsData from "./data/story-script-ids.json";
+import sceneIdsData from "./data/story-scene-ids.json";
 import scriptIdsEnData from "./data/story-script-ids.en.json";
 import scriptIdsJaData from "./data/story-script-ids.ja.json";
 import chronologyData from "./data/chronology.json";
@@ -73,6 +74,9 @@ type ChronItem = { key: string; kind: ChronKind; name: LocText; start?: string; 
 const data = storiesData as { updated: string; events: StoryEvent[] };
 const summaryIds = new Set(summaryIdsData as string[]);
 const scriptIds = new Set(scriptIdsData as string[]);
+// 장면 모드(무대 재생)를 켤 수 있는 이벤트 — scripts/build-story-vn.py 산출.
+// 스크립트 JSON 을 받기 전에 버튼을 띄울지 알아야 해서 목록을 따로 싣는다.
+const sceneIds = new Set(sceneIdsData as string[]);
 // 로케일별 전문 가용성 — 해당 언어 스크립트가 있으면 그 언어로, 없으면 KR로 폴백한다.
 const scriptIdsByLocale: Record<string, Set<string>> = {
   en: new Set(scriptIdsEnData as string[]),
@@ -147,8 +151,9 @@ function locText(locale: Locale, text: LocText): string {
 const LensHelpModal = lazy(() => import("./lens/help"));
 // 이벤트 기록 — 스토리 상세의 세 번째 보기 (사용자 확정 2026-08-23: 따로 빼지 말고 각 스토리에)
 const EventLoreView = lazy(() => import("./eventlore"));
-/** 스토리 상세의 보기 방식 — 전문 / AI 요약 / 이벤트 기록 */
-type DetailMode = "script" | "summary" | "lore";
+/** 스토리 상세의 보기 방식 — 전문 / 장면 재생 / AI 요약 / 이벤트 기록.
+ *  scene 은 전문과 **같은 본문 위에** 전체 화면 무대를 띄운다 (닫으면 전문으로 내려온다). */
+type DetailMode = "script" | "scene" | "summary" | "lore";
 
 function eventFromHash(): StoryEvent | null {
   const hash = decodeURIComponent(window.location.hash);
@@ -459,9 +464,11 @@ function EntityPeekCard({ anchor, mobile, pinned, label, children }: {
 // 데이터는 public/story/script/<id>.json 을 지연 fetch. 에피소드 단위로 렌더.
 // 요약과 같은 참조 레일이 오른쪽에 따라다닌다 (사용자 요청 2026-07-18).
 // export는 scripts/verify-stories.mjs 전수 렌더 하네스용 (앱 내 사용처는 이 파일뿐)
-export function ScriptReader({ script, error, entities, opIndex, onShowOperator, eventId }: {
+export function ScriptReader({ script, error, entities, opIndex, onShowOperator, eventId, sceneOn }: {
   script: ScriptData | null; error: boolean;
   entities: Entity[]; opIndex?: OpIndex; onShowOperator?: (id: string) => void; eventId?: string;
+  /** 장면 모드(무대 재생)가 켜져 있는가 — 보기 방식 탭이 소유한다 */
+  sceneOn?: boolean;
 }) {
   const { locale, t } = useI18n();
   // 오퍼가 아닌 화자의 스탠딩 스프라이트 — 썸네일 클릭 시 원본 크게 보기 (사용자 요청 2026-07-18)
@@ -492,8 +499,6 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
     return m ? Math.max(0, parseInt(m[1], 10) - 1) : 0;
   });
   const topRef = useRef<HTMLDivElement>(null);
-  // 장면 모드 — 열려 있으면 시작 줄 번호. 닫을 때 보던 줄로 글 읽기를 스크롤시킨다.
-  const [scene, setScene] = useState<number | null>(null);
   // 에피소드 탭 클릭은 화면을 움직이지 않는다(사용자 확정 2026-07-22). 단, 하단 이전/다음
   // 에피소드 버튼은 새 화가 처음부터 보이도록 리더 맨 위로 올려준다(사용자 요청 2026-07-22).
   const goEp = (i: number, scrollTop = false) => {
@@ -591,7 +596,9 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
   if (!script || !ep) return <p className="sc-loading">{t("스크립트 불러오는 중…")}</p>;
   return (
     <div className="story-script" ref={topRef}>
-      <p className="story-disclaimer">{t("게임 내 스토리 스크립트 원문입니다. 대사·지문·컷씬만 표시되며 연출(음악·효과)은 생략됩니다.")}</p>
+      <p className="story-disclaimer">{sceneOn
+        ? t("게임 내 스토리 원문을 배경·인물 일러스트와 함께 재생합니다. 음악·효과음은 빠져 있습니다.")
+        : t("게임 내 스토리 스크립트 원문입니다. 대사·지문·컷씬만 표시되며 연출(음악·효과)은 생략됩니다.")}</p>
       {script.tr === "cn" && <p className="story-disclaimer">{t("아직 정식 출시되지 않은 이벤트라, 중국 서버 원문을 AI가 번역한 비공식 텍스트입니다.")}</p>}
       <div className="sc-ep-nav" role="tablist" aria-label={t("에피소드")}>
         {script.eps.map((e, i) => (
@@ -601,18 +608,19 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
           </button>
         ))}
       </div>
-      <h3 className="sc-ep-title">{ep.code} {ep.name}{ep.tag && <small>{ep.tag}</small>}
-        {/* 장면 모드 — 연출 트랙(vn)이 있는 화에서만. 원작처럼 배경·스탠딩을 세워 재생한다.
-            트랙이 없는 옛 이벤트는 버튼 자체가 안 뜨고 지금까지의 글 읽기 그대로다. */}
-        {ep.vn && ep.vn.length > 0 && (
-          <button type="button" className="sc-scene-go" onClick={() => setScene(0)}>
-            ▶ {t("장면 모드")}
-          </button>
-        )}
-      </h3>
+      <h3 className="sc-ep-title">{ep.code} {ep.name}{ep.tag && <small>{ep.tag}</small>}</h3>
+      {sceneOn && ep.vn && ep.vn.length > 0 && (
+        <Suspense fallback={null}>
+          {/* key: 에피소드가 바뀌면 새로 마운트해 첫 줄부터 — 안에서 이펙트로 되감으면
+              연쇄 렌더가 된다 (react-compiler 규칙) */}
+          <SceneMode key={epIdx} ep={ep} title={`${ep.code} ${ep.name}`.trim()}
+            hasPrev={epIdx > 0} hasNext={epIdx < script.eps.length - 1}
+            onEp={(d) => goEp(epIdx + d)} />
+        </Suspense>
+      )}
       <div className="story-detail-grid">
         {peekNode}
-        <div className="story-body sc-body">
+        <div className={`story-body sc-body${sceneOn ? " sc-hidden" : ""}`}>
         {lines.map((ln, i) => {
           if (ln.opts) return (
             <div key={i} className="sc-opts" data-idx={i}><i>{t("선택지")}</i>{ln.opts.map((o, j) => <span key={j}>{o}</span>)}</div>
@@ -662,26 +670,10 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
         })}
         </div>
       </div>
-      <div className="sc-ep-foot">
+      <div className="sc-ep-foot" hidden={sceneOn}>
         {epIdx > 0 && <button type="button" onClick={() => goEp(epIdx - 1, true)}>← {t("이전 에피소드")}</button>}
         {epIdx < script.eps.length - 1 && <button type="button" onClick={() => goEp(epIdx + 1, true)}>{t("다음 에피소드")} →</button>}
       </div>
-      {scene !== null && ep.vn && (
-        <Suspense fallback={null}>
-          {/* key: 에피소드가 바뀌면 새로 마운트해 첫 줄부터 — 안에서 이펙트로 되감으면
-              연쇄 렌더가 된다 (react-compiler 규칙) */}
-          <SceneMode key={epIdx} ep={ep} title={`${ep.code} ${ep.name}`.trim()} startAt={scene}
-            hasPrev={epIdx > 0} hasNext={epIdx < script.eps.length - 1}
-            onEp={(d) => { setScene(0); goEp(epIdx + d); }}
-            onClose={(lineIdx) => {
-              setScene(null);
-              // 보던 자리로 글 읽기를 옮긴다 — 각 줄에 data-idx 가 붙어 있다
-              requestAnimationFrame(() => {
-                document.querySelector(`[data-idx="${lineIdx}"]`)?.scrollIntoView({ block: "center" });
-              });
-            }} />
-        </Suspense>
-      )}
       {/* 화자 스탠딩 크게 보기 — 아무 곳이나 클릭하면 닫힘 */}
       {faceZoom && (
         <div className="sc-face-zoom" role="presentation" onClick={() => setFaceZoom(null)}>
@@ -697,7 +689,7 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
 export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex, defaultView, related, onOpenStory }: {
   event: StoryEvent; summary?: Summary; onClose: () => void; onShowOperator?: (id: string) => void; opIndex?: OpIndex;
   /** 해시로 지정된 게 없을 때의 기본 보기 — 상세 라우트(/stories/<id>)는 "summary"를 준다 */
-  defaultView?: "summary" | "script";
+  defaultView?: "summary" | "script" | "scene";
   /** 같은 테마의 다른 이야기 — 상세끼리 잇는 내부 링크 (2026-08-06) */
   related?: { label: string; items: { id: string; name: string }[] } | null;
   onOpenStory?: (id: string) => void;
@@ -714,6 +706,8 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex, 
   const hasLore = loreN > 0;
   // 미출시(CN 선행) 이벤트: 전문이 없어도 버튼은 보여주고, 누르면 왜 없는지 안내 (사용자 요청 2026-07-18)
   const futureNoScript = !hasScript && Boolean(event.unreleased);
+  // 장면 모드 — 연출 트랙이 있는 이벤트에만 (build-story-vn.py 가 목록을 만든다)
+  const hasScene = hasScript && sceneIds.has(event.id);
   // 보기 방식도 URL 해시에 남긴다 (사용자 요청 2026-07-22):
   //  · #story-<id>/summary = AI 요약  · #story-<id>/ep<N> = 전문(에피소드)
   //  · #story-<id>/lore = 이벤트 기록  · 접미 없음 = 전문 기본
@@ -724,11 +718,12 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex, 
     if ((/\/summary$/.test(h) || h === "#summary") && hasSummary) return "summary";  // 요약 딥링크
     if ((/\/lore$/.test(h) || h === "#lore") && hasLore) return "lore";              // 기록 딥링크
     // #script는 2026-08-06 이전에 공유된 링크 — 더 만들지는 않지만 계속 받아준다
+    if ((/\/scene$/.test(h) || h === "#scene") && hasScene) return "scene";          // 장면 모드 딥링크
     if ((/(?:^#|\/)ep\d+$/.test(h) || h === "#script") && hasScript) return "script"; // 에피소드·전문 딥링크
     return null;
   };
-  // 가진 것 중 가장 앞선 보기 — 전문 > 요약 > 기록. (전문·요약이 없으면 기록만 있는 이벤트다)
-  const fallbackMode: DetailMode = hasScript ? "script" : hasSummary ? "summary" : "lore";
+  // 가진 것 중 가장 앞선 보기 — 리더기 > 전문 > 요약 > 기록 (사용자 확정 2026-08-25).
+  const fallbackMode: DetailMode = hasScene ? "scene" : hasScript ? "script" : hasSummary ? "summary" : "lore";
   const [mode, setMode] = useState<DetailMode>(() => {
     // 상세 라우트(/stories/<id>)의 기본은 요약 — 그 주소로 색인된 본문이 요약이라,
     // 검색으로 들어온 사람이 보는 화면과 검색 결과의 발췌가 어긋나면 안 된다.
@@ -736,12 +731,13 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex, 
     //    첫 렌더가 전문이 되면 하이드레이션 불일치(React #418)로 SSR 결과가 통째로 버려진다.
     //    해시 지정은 마운트 직후 아래 effect가 반영한다.
     if (defaultView) {
+      if (defaultView === "scene") return fallbackMode;
       if (defaultView === "script") return hasScript ? "script" : hasSummary ? "summary" : "lore";
       return hasSummary ? "summary" : fallbackMode;
     }
     return viewFromHash() ?? fallbackMode;
   });
-  const scriptView = mode === "script";
+  const scriptView = mode === "script" || mode === "scene";
   // 상세 라우트에 #ep<N>·#lore로 들어온 경우만 — 하이드레이션이 끝난 뒤 그 보기로 바꾼다.
   // (effect 안 setState는 렌더를 한 번 더 돌리지만, 하이드레이션 일치가 우선이다)
   // 같은 페이지에서 해시만 바뀌는 경우(주소창 편집·해시 딥링크 공유)도 따라간다 —
@@ -789,6 +785,10 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex, 
   const openScript = () => {
     setMode("script");
     history.replaceState(null, "", onStoryPath() ? "#ep1" : `#story-${event.id}`);
+  };
+  const openScene = () => {
+    setMode("scene");
+    history.replaceState(null, "", onStoryPath() ? "#scene" : `#story-${event.id}/scene`);
   };
   const openSummary = () => {
     setMode("summary");
@@ -863,11 +863,21 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex, 
             </div>
             {/* 보기 방식 토글 — 볼 게 둘 이상일 때만(또는 미출시 안내). 하나뿐이면 토글 없이 그것만.
                 이벤트 기록은 있는 이벤트에만 붙는 세 번째 칸이다 (사용자 확정 2026-08-23). */}
-            {(Number(hasScript || futureNoScript) + Number(hasSummary) + Number(hasLore) > 1) && (
+            {(Number(hasScript || futureNoScript) + Number(hasScene) + Number(hasSummary) + Number(hasLore) > 1) && (
               <div className="story-mode-bar" role="tablist" aria-label={t("보기 방식")}>
+                {/* 리더기 — 배경·스탠딩을 세워 원작처럼 재생. 연출 트랙이 있는 이벤트에만 뜨고,
+                    있으면 **기본 보기**다 (사용자 확정 2026-08-25: 버튼이 묻혀 아무도 못 찾았다). */}
+                {hasScene && (
+                  <button type="button" role="tab" aria-selected={mode === "scene"}
+                    className={mode === "scene" ? "on" : ""} onClick={openScene}
+                    title={t("배경과 인물 일러스트를 세워 원작처럼 한 줄씩 재생합니다")}>
+                    {t("리더기")}
+                    {isNewFeature("story-scene") && <span className="new-badge">{t("새기능")}</span>}
+                  </button>
+                )}
                 {(hasScript || futureNoScript) && (
-                  <button type="button" role="tab" aria-selected={scriptView}
-                    className={scriptView ? "on" : ""} onClick={openScript}>{t("전문 보기 (풀 스크립트)")}</button>
+                  <button type="button" role="tab" aria-selected={mode === "script"}
+                    className={mode === "script" ? "on" : ""} onClick={openScript}>{t("전문 보기 (풀 스크립트)")}</button>
                 )}
                 {hasSummary && (
                   <button type="button" role="tab" aria-selected={mode === "summary"}
@@ -895,9 +905,11 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex, 
             <p className="story-disclaimer">{t("이 이벤트의 전문은 아직 이 언어로 풀리지 않아 한국어로 표시됩니다.")}</p>
           )}
           {/* 읽기 설정(글자·삽화 크기) — 전문·요약 둘 다 실제 본문이 있을 때만 노출 (사용자 피드백 2026-07-20) */}
-          {mode !== "lore" && (hasSummary || hasScript) && <ReaderPrefsBar prefs={readerPrefs} setPrefs={setReaderPrefs} />}
+          {mode !== "lore" && mode !== "scene" && (hasSummary || hasScript) && <ReaderPrefsBar prefs={readerPrefs} setPrefs={setReaderPrefs} />}
         </header>
-        {scriptView && hasScript && <ScriptReader script={script} error={scriptErr} entities={entities} opIndex={opIndex} onShowOperator={onShowOperator} eventId={event.id} />}
+        {scriptView && hasScript && <ScriptReader script={script} error={scriptErr} entities={entities}
+          opIndex={opIndex} onShowOperator={onShowOperator} eventId={event.id}
+          sceneOn={mode === "scene"} />}
         {scriptView && futureNoScript && (
           <div className="sc-future-note">
             <b>{t("전문은 정식 출시 후에 열려요")}</b>
@@ -1735,7 +1747,9 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
         {lensPill}
         {lensHelpModal}
         <StoryDetail key={`${selected.id}:${lensNav}`} event={selected} summary={summaries[selected.id]} onClose={close} onShowOperator={onShowOperator} opIndex={opIndex}
-          defaultView={initialStory ? "summary" : undefined}
+          /* 리더기가 있는 이벤트면 상세 라우트도 리더기로 연다. 정적 목록으로 판정하므로
+             프리렌더 HTML 과 클라이언트 첫 렌더가 같은 값이 된다 (React #418 회피). */
+          defaultView={initialStory ? (sceneIds.has(initialStory) ? "scene" : "summary") : undefined}
           related={relatedFor(selected.id)} onOpenStory={(id) => { const ev = eventById.get(id); if (ev) open(ev, "summary"); }} />
       </>
     );

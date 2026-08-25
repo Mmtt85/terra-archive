@@ -1,6 +1,6 @@
 "use client";
 
-// 장면 모드 — 스토리 전문을 원작처럼 **무대**로 재생한다 (2026-08-25 파일럿: act6d5).
+// 리더기 — 스토리 전문을 원작처럼 **무대**로 재생한다 (2026-08-25).
 //
 // 데이터는 스크립트 JSON 의 `vn` 트랙(scripts/build-story-scripts.py) 하나뿐이다.
 // 트랙은 "무대가 바뀐 줄"에만 스냅샷이 찍혀 있어서, 여기서는 줄마다 **직전 스냅샷**을
@@ -12,6 +12,11 @@
 //
 // ⚠ 스탠딩은 빌드에서 **투명 여백을 잘라** 저장한다 — 원본은 1024 캔버스에 인물이 떠
 //   있어 그대로 세우면 키가 제각각이다. 그래서 여기선 높이 기준으로만 맞추면 된다.
+//
+// 화면 규약 (사용자 확정 2026-08-25):
+//   · 기본은 **페이지 안 인라인** — 처음부터 화면을 덮지 않는다.
+//   · [전체 모드]를 눌러야 화면을 덮고, 그때 오른쪽 위 ✕ 나 Esc 로 인라인으로 돌아온다.
+//   · 리더기를 아예 벗어나는 건 위쪽 보기 방식 탭(전문 보기·AI 요약)이 맡는다.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { asset } from "./assets";
@@ -25,19 +30,17 @@ const hideErr = (e: { currentTarget: { style: { visibility: string } } }) => {
 /** 슬롯 n개를 무대에 고르게 세울 때 k번째의 가로 위치(%) */
 const slotAt = (k: number, n: number) => (100 / (n + 1)) * (k + 1);
 
-export default function SceneMode({ ep, title, startAt = 0, hasPrev, hasNext, onEp, onClose }: {
+export default function SceneMode({ ep, title, hasPrev, hasNext, onEp }: {
   ep: ScriptEp;
   title: string;
-  startAt?: number;
   hasPrev?: boolean;
   hasNext?: boolean;
   /** 에피소드 이동 (-1 이전 / +1 다음) */
   onEp?: (delta: number) => void;
-  /** 닫기 — 마지막으로 보던 줄 번호를 넘겨 글 읽기가 그 자리로 갈 수 있게 한다 */
-  onClose: (lineIdx: number) => void;
 }) {
   const { t } = useI18n();
-  const [idx, setIdx] = useState(() => Math.min(Math.max(0, startAt), Math.max(0, ep.lines.length - 1)));
+  const [idx, setIdx] = useState(0);
+  const [full, setFull] = useState(false);
   const last = ep.lines.length - 1;
   const boxRef = useRef<HTMLDivElement>(null);
 
@@ -62,26 +65,31 @@ export default function SceneMode({ ep, title, startAt = 0, hasPrev, hasNext, on
     setIdx((i) => Math.min(last, Math.max(0, i + delta)));
   }, [last]);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.isComposing) return;
-      if (e.key === "Escape") { e.preventDefault(); onClose(idx); return; }
-      if (e.key === " " || e.key === "ArrowRight" || e.key === "Enter" || e.key === "PageDown") {
-        e.preventDefault(); go(1); return;
-      }
-      if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); go(-1); }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [go, idx, onClose]);
+  const onKey = useCallback((e: { key: string; preventDefault: () => void }) => {
+    if (e.key === "Escape") { if (full) { e.preventDefault(); setFull(false); } return; }
+    if (e.key === " " || e.key === "ArrowRight" || e.key === "Enter" || e.key === "PageDown") {
+      e.preventDefault(); go(1); return;
+    }
+    if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); go(-1); }
+  }, [go, full]);
 
-  // 배경 스크롤 잠금 (오퍼 모달과 같은 규약 — .site-scroll 이 스크롤러다)
+  // 전체 모드에서만 창 전체의 키를 가져온다 — 인라인에서 가로채면 페이지 스크롤(Space)이
+  // 막힌다. 인라인일 땐 무대에 포커스가 있을 때만 먹는다 (무대의 onKeyDown).
   useEffect(() => {
+    if (!full) return;
+    const handler = (e: KeyboardEvent) => { if (!e.isComposing) onKey(e); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [full, onKey]);
+
+  // 전체 모드일 때만 배경 스크롤을 잠근다 (.site-scroll 이 이 사이트의 스크롤러다)
+  useEffect(() => {
+    if (!full) return;
     const el = document.querySelector(".site-scroll") as HTMLElement | null;
     const prev = el?.style.overflow;
     if (el) el.style.overflow = "hidden";
     return () => { if (el) el.style.overflow = prev ?? ""; };
-  }, []);
+  }, [full]);
 
   // 대사가 바뀔 때마다 말풍선을 맨 위로 (긴 대사에서 이전 스크롤이 남지 않게)
   useEffect(() => { if (boxRef.current) boxRef.current.scrollTop = 0; }, [idx]);
@@ -90,26 +98,37 @@ export default function SceneMode({ ep, title, startAt = 0, hasPrev, hasNext, on
   const bgSrc = stage.bg ? asset(`/story/bg/${stage.bg}.webp`) : null;
   const atEnd = idx >= last;
 
-  return createPortal(
-    <div className="vn-root" role="dialog" aria-modal="true" aria-label={`${title} — ${t("장면 모드")}`}>
-      {/* 무대: 배경 → 스탠딩 → 컷 CG → 가림막 순으로 겹친다 */}
-      <div className={`vn-stage${stage.sh ? " shake" : ""}`} key={`${stage.i}-${stage.sh ?? 0}`}
-        onClick={() => go(1)} role="presentation">
-        {bgSrc && <img className="vn-bg" src={bgSrc} alt="" aria-hidden onError={hideErr} />}
+  const body = (
+    <div className={`vn-root${full ? " full" : ""}`}
+      {...(full ? { role: "dialog", "aria-modal": true, "aria-label": `${title} — ${t("리더기")}` } : {})}>
+      {/* 무대: 배경 → 스탠딩 → 컷 CG → 가림막 순으로 겹친다.
+          ⚠ 각 층의 key 에 **그림 이름**을 넣는다 — 그래야 등장 애니메이션이 매 줄이 아니라
+             그림이 실제로 바뀐 순간에만 돈다 (매 줄 깜빡이면 눈이 아프다). */}
+      <div className={`vn-stage${stage.sh ? " shake" : ""}`}
+        onClick={() => go(1)} onKeyDown={onKey} role="button" tabIndex={0} aria-label={t("다음 줄")}>
+        {bgSrc && <img key={stage.bg} className="vn-bg" src={bgSrc} alt="" aria-hidden onError={hideErr} />}
         {chars.map(([base, expr], k) => {
           if (!base || base === "char_empty") return null;
           const dim = (stage.f ?? 0) > 0 && k !== (stage.f ?? 0) - 1;
           return (
-            <img key={`${k}-${base}-${expr}`} className={`vn-char${dim ? " dim" : ""}`}
+            <img key={`${k}-${base}`} className={`vn-char${dim ? " dim" : ""}`}
               style={{ left: `${slotAt(k, chars.length)}%` }}
               src={asset(`/story/sprite/${base}__${expr}.webp`)} alt="" aria-hidden onError={hideErr} />
           );
         })}
-        {cutSrc && <img className="vn-cut" src={cutSrc} alt="" aria-hidden onError={hideErr} />}
+        {cutSrc && <img key={stage.cut} className="vn-cut" src={cutSrc} alt="" aria-hidden onError={hideErr} />}
         {stage.bk && <div className="vn-blocker" style={{ background: stage.bk }} aria-hidden />}
 
-        {/* 대사창 */}
-        <div className="vn-box" ref={boxRef} onClick={(e) => { e.stopPropagation(); go(1); }} role="presentation">
+        {/* 전체 모드에서만 뜨는 닫기 — 누르거나 Esc 를 누르면 인라인으로 돌아온다 */}
+        {full && (
+          <button type="button" className="vn-exit" aria-label={t("전체 모드 끄기")}
+            onClick={(e) => { e.stopPropagation(); setFull(false); }}>✕</button>
+        )}
+
+        {/* 대사창 — ⚠ 줄마다 애니메이션을 걸지 말 것. 글자가 매 줄 깜빡여 읽기 힘들다
+            (사용자 지적 2026-08-25). 바뀌는 건 글자뿐이라 전환 효과가 필요 없다. */}
+        <div className="vn-box" ref={boxRef}
+          onClick={(e) => { e.stopPropagation(); go(1); }} role="presentation">
           {line?.loc && <p className="vn-loc">{line.loc}</p>}
           {line?.opts && (
             <div className="vn-opts"><i>{t("선택지")}</i>{line.opts.map((o, j) => <span key={j}>{o}</span>)}</div>
@@ -126,20 +145,27 @@ export default function SceneMode({ ep, title, startAt = 0, hasPrev, hasNext, on
 
       {/* 조작 막대 */}
       <div className="vn-bar">
-        <button type="button" className="vn-x" onClick={() => onClose(idx)} aria-label={t("장면 모드 닫기")}>✕</button>
+        {!full && (
+          <button type="button" className="vn-full" onClick={() => setFull(true)}>⛶ {t("전체 모드")}</button>
+        )}
+        {hasPrev && onEp && (
+          <button type="button" className="vn-ep" onClick={() => onEp(-1)}>⏮ {t("이전 화")}</button>
+        )}
         <span className="vn-title">{title}</span>
         <button type="button" onClick={() => go(-1)} disabled={idx === 0}>← {t("이전 줄")}</button>
         <span className="vn-count">{idx + 1} / {ep.lines.length}</span>
         <button type="button" onClick={() => go(1)} disabled={atEnd}>{t("다음 줄")} →</button>
-        {atEnd && hasNext && onEp && (
-          <button type="button" className="vn-nextep" onClick={() => onEp(1)}>{t("다음 에피소드")} ⏭</button>
-        )}
-        {atEnd && !hasNext && <span className="vn-count">{t("마지막 화입니다")}</span>}
-        {idx === 0 && hasPrev && onEp && (
-          <button type="button" className="vn-nextep" onClick={() => onEp(-1)}>⏮ {t("이전 에피소드")}</button>
-        )}
+        {hasNext && onEp
+          ? <button type="button" className={`vn-ep${atEnd ? " ready" : ""}`} onClick={() => onEp(1)}>{t("다음 화")} ⏭</button>
+          : atEnd && <span className="vn-count">{t("마지막 화입니다")}</span>}
       </div>
-      <p className="vn-hint">{t("클릭 · Space · → 다음 · ← 이전 · Esc 닫기")}</p>
-    </div>,
-    document.body);
+      <p className="vn-hint">
+        {full ? t("클릭 · Space · → 다음 · ← 이전 · Esc 전체 모드 끄기")
+          : t("클릭하면 한 줄씩 넘어갑니다 · 전체 모드에서는 키보드로도 넘길 수 있어요")}
+      </p>
+    </div>
+  );
+
+  // 전체 모드일 때만 body 포털 — 인라인일 땐 페이지 흐름 안에 그대로 있는다
+  return full ? createPortal(body, document.body) : body;
 }

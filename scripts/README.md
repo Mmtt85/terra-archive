@@ -243,6 +243,16 @@ python3 scripts/build-story-scripts.py         # KR 전문 → public/story/scri
 python3 scripts/build-story-scripts.py act49side  # 한 이벤트만 (신규 이벤트 요약 추가 시 같이 실행)
 python3 scripts/build-story-scripts.py --lang en  # EN 전문 → public/story/script/en/ (+ story-script-ids.en.json)
 python3 scripts/build-story-scripts.py --lang ja  # JA 전문 → public/story/script/ja/ ({@nickname}=Doctor/ドクター)
+
+# ── 리더기(무대 재생) 에셋 — build-story-scripts.py **뒤에** 돌린다 (2026-08-25) ──
+#    전문 JSON 의 vn 트랙(배경 이름·스탠딩 base·표정 번호)을 읽어 실제 그림만 받아 온다.
+#    산출: public/story/bg/<이름>.webp · public/story/sprite/<base>__<표정>.webp
+#         + app/data/story-scene-ids.json (리더기 버튼을 띄울 이벤트 목록)
+#    ⚠ 스탠딩은 투명 여백을 잘라 저장한다 — 원본 1024 캔버스 그대로면 인물 키가 제각각이다.
+#    ⚠ 표정 파일 번호는 띄엄띄엄하다(char_136_hsguma 는 _1·_3뿐) — 폴더 목록을 읽어 고르고
+#      없는 번호는 가장 가까운 것으로 대체한다. 폴더 목록은 .gamedata/story-vn-cache/ 에 캐시.
+python3 scripts/build-story-vn.py act6d5   # 한 이벤트
+python3 scripts/build-story-vn.py          # vn 트랙이 있는 전 이벤트
 python3 scripts/build-story-search.py          # 스샷 레이더 전문 검색 인덱스 → public/story/search.bin (KR 전문 갱신 시 같이 실행)
 python3 scripts/build-records.py               # 오퍼레이터 기록(밀록) 전문 → public/records/{ko,en,ja}/<charId>.json + app/data/record-ids.json
 ```

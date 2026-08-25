@@ -9,6 +9,7 @@
 
 ---
 
+
 ## 1. 프로젝트 개요
 
 | 항목 | 내용 |
@@ -1079,3 +1080,20 @@ recruit, R2 쪽은 `avatars/<id>.webp` 1개와 `{skills,profiles,voice,skins}/{k
    `app/i18n.tsx` CONCEPT_I18N에 EN/JA 표시명 추가.
 4. 공채 풀 변동 확인 (recruitDetail 파싱 경고 로그 확인).
 5. 빌드 → 커밋 → 푸시 (배포는 사용자가 직접 — §1 운영 수칙).
+
+
+## 로컬에서 새 에셋 확인하기 (TA_LOCAL_ASSETS=1)
+
+`asset()`은 `/story/*`·`/avatars/*` 같은 대용량 폴더를 **R2(files.terra-archive.net)** 로 보낸다.
+그래서 방금 만든 그림은 `npm run build` 를 해도 로컬에서 안 보인다 — 브라우저가 R2 의
+옛 파일을 받기 때문이다 (2026-08-25 실측: 리더기 배경·스탠딩이 로컬에서 통째로 안 나왔다).
+
+로컬 파일을 그대로 보려면 빌드할 때 플래그를 준다:
+
+```bash
+TA_LOCAL_ASSETS=1 npm run build && npm run start
+```
+
+`vite.config.ts` 의 `__ASSET_BASE__` define 을 빈 문자열로 바꿔 `public/` 을 직접 쓰게 한다.
+**빌드 타임 상수**라 프리렌더와 클라이언트 값이 같다 — `location.hostname` 같은 런타임
+분기로 하면 하이드레이션이 갈라진다(React #418). 배포 빌드에는 절대 넣지 말 것.

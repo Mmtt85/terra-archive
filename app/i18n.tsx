@@ -2148,13 +2148,25 @@ const D: Record<string, Pair> = {
   // ── 장면 모드 (스토리 전문 VN 재생, 2026-08-25) ──
   "이전 줄": ["Back", "前の行"],
   "다음 줄": ["Next", "次の行"],
-  "장면 모드": ["Scene mode", "シーンモード"],
-  "장면 모드 닫기": ["Close scene mode", "シーンモードを閉じる"],
+  "배경과 인물 일러스트를 세워 원작처럼 한 줄씩 재생합니다": [
+    "Plays line by line like the game, with backgrounds and character art.",
+    "背景と立ち絵を出して、ゲームと同じように1行ずつ再生します。"],
+  "게임 내 스토리 원문을 배경·인물 일러스트와 함께 재생합니다. 음악·효과음은 빠져 있습니다.": [
+    "Plays the in-game story script with its backgrounds and character art. Music and sound effects are not included.",
+    "ゲーム内のストーリー原文を、背景と立ち絵つきで再生します。音楽・効果音は含まれません。"],
+  "이전 화": ["Prev ep.", "前話"],
+  "다음 화": ["Next ep.", "次話"],
+  "리더기": ["Reader", "リーダー"],
+  "전체 모드": ["Full screen", "全画面"],
+  "전체 모드 끄기": ["Exit full screen", "全画面を終了"],
+  "클릭 · Space · → 다음 · ← 이전 · Esc 전체 모드 끄기": [
+    "Click / Space / → next · ← back · Esc to exit full screen",
+    "クリック・Space・→ 次へ ・← 戻る ・Esc で全画面終了"],
+  "클릭하면 한 줄씩 넘어갑니다 · 전체 모드에서는 키보드로도 넘길 수 있어요": [
+    "Click to advance one line · use the keyboard in full screen",
+    "クリックで1行ずつ進みます・全画面ではキーボードでも進められます"],
   "장면 전환": ["Scene change", "場面転換"],
   "마지막 화입니다": ["Last episode", "最終話です"],
-  "클릭 · Space · → 다음 · ← 이전 · Esc 닫기": [
-    "Click / Space / → next · ← back · Esc to close",
-    "クリック・Space・→ 次へ ・← 戻る ・Esc で閉じる"],
   "다음 에피소드": ["Next episode", "次のエピソード"],
   "에피소드": ["Episodes", "エピソード"],
   "에피소드 {n}개": ["{n} episodes", "エピソード{n}話"],

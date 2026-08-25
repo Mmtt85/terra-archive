@@ -231,6 +231,23 @@ def run(eid):
         print("  미러에 없는 스탠딩:", ", ".join(sorted(missing_spr)))
 
 
+def write_ids():
+    """장면 모드를 켤 수 있는 이벤트 목록 → app/data/story-scene-ids.json.
+    화면이 버튼을 띄울지 **스크립트 JSON 을 받기 전에** 알아야 해서 따로 둔다
+    (전문 목록 story-script-ids.json 과 같은 규약). 어느 한 편만 다시 빌드해도
+    전체를 다시 훑어 만든다 — 목록이 부분 갱신으로 어긋나지 않게."""
+    ids = []
+    for f in sorted(os.listdir(SCRIPT_DIR)):
+        if not f.endswith(".json"):
+            continue
+        doc = json.load(open(os.path.join(SCRIPT_DIR, f), encoding="utf-8"))
+        if any(ep.get("vn") for ep in doc.get("eps", [])):
+            ids.append(doc["id"])
+    dest = os.path.join(REPO, "app", "data", "story-scene-ids.json")
+    json.dump(sorted(ids), open(dest, "w", encoding="utf-8"), ensure_ascii=False)
+    print(f"장면 모드 가능 {len(ids)}편 → app/data/story-scene-ids.json")
+
+
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith("-")]
     if args:
@@ -245,6 +262,7 @@ def main():
                 targets.append(doc["id"])
     for eid in targets:
         run(eid)
+    write_ids()
 
 
 if __name__ == "__main__":
