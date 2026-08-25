@@ -209,20 +209,28 @@ def resolve_sprite(base, expr):
             if entry:
                 break
     # avg_ ↔ char_ — 같은 인물을 두 접두로 나눠 둔 경우 (avg_1505_frstar_1 → char_1505_frstar_1)
-    if entry is None and base.lower().startswith("avg_"):
-        alt = "char_" + base[4:]
-        entry = idx.get(alt.lower()) or idx.get(alt.lower() + ".png")
-        if entry is None and part:
-            for cand in (f"{alt}#{expr}${part}.png", f"{alt}${part}.png"):
-                entry = idx.get(cand.lower())
-                if entry:
-                    break
+    # ⚠ **양방향**이어야 한다. 종전엔 avg_→char_ 만 봐서 반대가 통째로 빠졌다
+    #   (사용자 제보 2026-08-25: 대본의 char_214_kafka_1 이 미러엔 avg_214_kafka_1 —
+    #    act15d0 이 167회 부르는데 한 장도 안 받아져 404 가 쌓이고 있었다).
+    if entry is None:
+        low = base.lower()
+        alt = ("char_" + base[4:]) if low.startswith("avg_") else (
+            ("avg_" + base[5:]) if low.startswith("char_") else None)
+        if alt:
+            entry = idx.get(alt.lower()) or idx.get(alt.lower() + ".png")
+            if entry is None and part:
+                for cand in (f"{alt}#{expr}${part}.png", f"{alt}${part}.png"):
+                    entry = idx.get(cand.lower())
+                    if entry:
+                        break
     if entry is None:
         # 미러가 이름을 바꾼 경우 — 캐릭터 번호(char_2006_…)가 같은 항목으로 넘어간다.
         # 실측 2026-08-25: 대본의 char_2006_weiywfmzuki_1 이 미러엔 char_2006_fmzuki_1.png.
-        m = re.match(r"(char_\d+)_", base.lower())
+        # 접두는 avg_/char_ 둘 다 볼 것 — 위와 같은 이유다
+        m = re.match(r"(?:char|avg)_(\d+)_", base.lower())
         if m:
-            same = sorted(v for k, v in idx.items() if k.startswith(m.group(1) + "_"))
+            pre = re.compile(r"(?:char|avg)_" + m.group(1) + r"_")
+            same = sorted(v for k, v in idx.items() if pre.match(k))
             if same:
                 entry = same[0]
                 print(f"    · {base} → {entry} (번호가 같은 항목으로 대체)")

@@ -112,7 +112,13 @@ def sprite_ref(raw):
     name = raw.strip()
     body, _, part = name.partition("$")
     base, _, expr = body.partition("#")
-    base = base.strip()
+    # ⚠ **소문자로 통일**한다 (사용자 제보 2026-08-25 '스프라이트 404').
+    #   게임 대본이 같은 인물을 두 대소문자로 부르는 경우가 실재한다 — act15d0 안에
+    #   char_214_Kafka_1 과 char_214_kafka_1 이 같이 나온다. 파일은 이름 하나로만
+    #   저장되고 맥은 대소문자를 무시해 로컬에선 안 드러나지만, **R2 는 구분하므로**
+    #   배포하면 한쪽 참조가 통째로 404 가 된다. 미러 색인도 이미 소문자로 찾으니
+    #   여기서 눕혀 두면 이 부류가 아예 사라진다.
+    base = base.strip().lower()
     try:
         n = int(expr.strip() or 1)
     except ValueError:
