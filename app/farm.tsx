@@ -17,6 +17,7 @@ import type { Operator } from "./home";
 import { useI18n, type Locale } from "./i18n";
 import { normSearch, useSearchInput } from "./search";
 import { SearchSuggest } from "./search-suggest";
+import { Dropdown } from "./dropdown";
 import { useHashSync } from "./hash-modal";
 import { HANDOFF_EVENT, takeHandoff } from "./handoff";
 import { noteArrival, noteMiss } from "./trail";
@@ -268,19 +269,23 @@ export default function FarmGuide({ includeFuture }: { includeFuture: boolean })
       </div>
 
       <div className="farm-tools">
-        <div className="filter-list farm-tier-filter" role="group" aria-label={t("등급 필터")}>
-          {TIERS.map((tier) => (
-            <button key={tier} type="button" className={tiers.includes(tier) ? "selected" : ""} aria-pressed={tiers.includes(tier)} onClick={() => toggleTier(tier)}>
-              T{tier}<span>{ALL_MATERIALS.filter((item) => item.rarity === tier && (includeFuture || !item.unreleased)).length}</span>
-            </button>
-          ))}
-        </div>
         <div className="search-wrap farm-search"><span>⌕</span><input {...searchProps} placeholder={t("재료 이름·별명 검색")} aria-label={t("재료 이름·별명 검색")} />
           {/* 검색란 제안 — 고르면 그 재료 상세가 바로 열린다 (사용자 확정 2026-08-10) */}
           <SearchSuggest query={searchTerm}
             items={visible.map((m) => ({ key: m.id, label: locText(locale, m.name), sub: `T${m.rarity}`, img: asset(`/items/${m.id}.webp`) }))}
             onPick={openItem} />
         </div>
+        {/* 등급(T1~T6) — 버튼 6개를 늘어놓던 걸 드롭다운으로 바꾸고 검색란 오른쪽에 뒀다
+            (사용자 지시 2026-08-25). 여러 등급을 함께 볼 수 있어야 하므로 multi다. */}
+        <Dropdown className="farm-tier-drop" multi ariaLabel={t("등급 필터")}
+          label={tiers.length > 0 ? tiers.slice().sort((a, b) => b - a).map((tier) => `T${tier}`).join(" · ") : t("등급 전체")}
+          selected={tiers.map(String)}
+          items={TIERS.map((tier) => ({
+            value: String(tier),
+            label: `T${tier}`,
+            count: ALL_MATERIALS.filter((item) => item.rarity === tier && (includeFuture || !item.unreleased)).length,
+          }))}
+          onPick={(value) => toggleTier(Number(value))} />
         <label className="farm-perm-toggle">
           <input type="checkbox" checked={permOnly} onChange={(event) => setPermOnly(event.target.checked)} />
           {t("상시 파밍 가능한 스테이지만 (이벤트 한정 제외)")}

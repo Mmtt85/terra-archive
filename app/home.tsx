@@ -80,6 +80,7 @@ import { PORTAL_TILES, PORTAL_ART, type PortalTile } from "./portal-themes";
 import { useLazyVisible } from "./lazy-img";
 // 속성 필터는 적 도감(app/enemies.tsx)과 공유하는 부품이라 별도 모듈에 있다 (2026-08-09)
 import { AttributeFilter } from "./attr-filter";
+import { Dropdown } from "./dropdown";
 import { SearchSuggest } from "./search-suggest";
 // ⚠ 적 상세는 **lazy가 아니다.** /enemies/<id> HTML에 본문이 박히려면 인라인 렌더여야 한다
 //    (app/enemy-detail.tsx 머리주석의 실측 근거 참조). 데이터는 안 딸려 온다 — props로만 받는다.
@@ -2040,13 +2041,16 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                 onPick={(id) => { const op = filtered.find((o) => o.id === id); if (op) openOperator(op); }} />
             </div>
             <div className="results-tools">
-              <label className="sort-wrap">
+              {/* 공용 드롭다운으로 통일 (사용자 지시 2026-08-25). 종전엔 네이티브 <select>라
+                  운영체제마다 생김새가 달랐고, <label>이 버튼까지 감싸고 있어 정렬 방향
+                  버튼을 눌러도 라벨이 select를 깨우는 구조였다. */}
+              <div className="sort-wrap">
                 <span>{t("정렬")}</span>
-                <select value={sortKey} onChange={(event) => setSortKey(event.target.value)}>
-                  {SORT_KEYS.map((key) => <option key={key} value={key}>{t(key)}</option>)}
-                </select>
+                <Dropdown ariaLabel={t("정렬")} label={t(sortKey)} selected={[sortKey]}
+                  items={SORT_KEYS.map((key) => ({ value: key, label: t(key) }))}
+                  onPick={setSortKey} />
                 <button type="button" className="sort-direction" onClick={() => setSortAsc((current) => !current)} aria-label={sortAsc ? t("내림차순으로 변경") : t("오름차순으로 변경")}>{sortAsc ? "↑" : "↓"}</button>
-              </label>
+              </div>
               <span className="count"><b>{sorted.length}</b> OPERATORS</span>
             </div>
           </div>

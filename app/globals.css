@@ -8556,9 +8556,13 @@ legend {
   gap: 14px;
   margin: 20px 0 24px;
 }
-.farm-tier-filter {
-  display: flex;
-  gap: 7px;
+/* 종전 버튼 나열(.farm-tier-filter)은 공용 드롭다운으로 바뀌었다 (2026-08-25).
+   검색란 바로 오른쪽 자리라 줄어들지 않게 flex를 고정한다. */
+.farm-tier-drop {
+  flex: 0 0 auto;
+}
+.farm-tier-drop .drop-btn {
+  padding: 8px 11px;
 }
 .farm-tier-filter button {
   border: 1px solid var(--line);
@@ -16472,6 +16476,115 @@ main.site-main > .site-header {
 :where(.about-hero) {
   border-radius: var(--r-lg);
 }
+/* ── 공용 드롭다운 (app/dropdown.tsx, 2026-08-25) ────────────────────────────────
+   버튼 하나 + 목록 하나짜리 한 칸 컨트롤. 생김새는 위수 협의에서 다듬어진 .ac-garsel
+   규격을 그대로 물려받았다 (호버는 잉크 12% 섞기 — 라이트·다크 어디서나 보인다). */
+.drop {
+  position: relative;
+}
+.drop-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  background: var(--white);
+  color: var(--ink2);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.drop-btn.on {
+  border-color: var(--border-strong);
+  color: var(--ink);
+}
+.drop-btn:hover:not(:disabled) {
+  border-color: var(--border-hover);
+}
+.drop-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.drop-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.drop-btn .drop-caret {
+  font-size: 9px;
+  opacity: 0.6;
+}
+.drop-menu {
+  position: absolute;
+  z-index: 60;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 200px;
+  margin: 0;
+  padding: 5px;
+  list-style: none;
+  background: var(--bg-panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  box-shadow: 0 12px 32px #1f242533;
+}
+/* 화면 오른끝 버튼만 — 열 때 실측해서 왼쪽으로 펼친다 */
+.drop-menu.align-right {
+  left: auto;
+  right: 0;
+}
+.drop-menu.scroll {
+  max-height: min(60vh, 440px);
+  overflow-y: auto;
+}
+.drop-menu li {
+  position: relative;
+}
+.drop-menu li > button {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  padding: 7px 9px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.drop-menu li > button span {
+  flex: 1 1 auto;
+}
+.drop-menu li > button em {
+  font-style: normal;
+  font-family: monospace;
+  font-size: 10.5px;
+  color: var(--muted);
+}
+.drop-menu li > button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ink) 12%, transparent);
+}
+/* 고른 줄은 호버해도 반전을 유지한다 — 배경만 갈아타면 글자색이 남아 다크에서 검정 위
+   검정이 된다 (.ac-garsel에서 겪은 회귀, 2026-08-23) */
+.drop-menu li > button.on,
+.drop-menu li > button.on:hover {
+  background: var(--ink);
+  color: var(--white);
+}
+.drop-menu li > button.on em {
+  color: inherit;
+  opacity: 0.7;
+}
+.drop-menu li > button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
 /* ── 여닫이 화살표 자리 고정 (사용자 지적 2026-08-25) ────────────────────────────
    ▾(U+25BE)와 ▴(U+25B4)는 **자체 폭이 다르다** — 본문 16px 기준 10.22px 대 13.84px.
    그래서 여는 순간 캐럿이 3.6px 넓어지며 버튼이 통째로 늘었다 줄었다 했다
