@@ -6082,7 +6082,8 @@ legend {
   gap: 10px;
   margin-bottom: 10px;
 }
-.import-form label {
+.import-form label,
+.import-form .import-field {
   display: flex;
   flex-direction: column;
   gap: 5px;
@@ -6090,6 +6091,16 @@ legend {
   font-weight: 800;
   color: var(--muted);
   letter-spacing: 0.04em;
+}
+/* 서버 고르기가 <select>에서 공용 드롭다운으로 바뀌었다 (2026-08-25) — 옆 이메일 입력칸과
+   높이를 맞춘다 (.import-form은 align-items:flex-end라 바닥이 정렬된다) */
+.import-field .drop-btn {
+  padding: 9px 11px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  border-radius: var(--r-sm, 6px);
+  letter-spacing: normal;
 }
 .import-form input,
 .import-form select {
@@ -9910,6 +9921,11 @@ html.dark .story-card:hover .story-thumb img {
   color: var(--muted);
   font: 700 11px monospace;
   letter-spacing: 1px;
+}
+/* 에피소드 고르기가 <select>에서 공용 드롭다운으로 바뀌었다 (2026-08-25).
+   제목이 길어도 한 줄로 — 종전 select와 같은 최대 폭을 쓴다. */
+.sc-ep-pick .drop-btn {
+  max-width: min(460px, 72vw);
 }
 .sc-ep-pick select {
   max-width: min(460px, 72vw);

@@ -8,6 +8,7 @@
 // 뜬다 (`useEntityPeek` — 2026-07-25에 종전 오른쪽 참조 레일을 대체).
 import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { asset } from "./assets";
+import { Dropdown } from "./dropdown";
 import { scrollMainTop } from "./scroll";
 // 스샷 레이더 (/stories 설치, 2026-07-24) — 게임 전문 대사 화면을 인식해 해당 에피소드로 이동
 import { warmOcr } from "./lens/ocr";
@@ -464,6 +465,10 @@ function EntityPeekCard({ anchor, mobile, pinned, label, children }: {
 // 데이터는 public/story/script/<id>.json 을 지연 fetch. 에피소드 단위로 렌더.
 // 요약과 같은 참조 레일이 오른쪽에 따라다닌다 (사용자 요청 2026-07-18).
 // export는 scripts/verify-stories.mjs 전수 렌더 하네스용 (앱 내 사용처는 이 파일뿐)
+/** 에피소드 한 줄 표기 — 드롭다운 버튼과 목록이 같은 문구를 쓴다 */
+const epLabelOf = (e: { code?: string; name?: string; tag?: string } | undefined, i: number) =>
+  [e?.code || `#${i + 1}`, e?.name, e?.tag].filter(Boolean).join(" · ");
+
 export function ScriptReader({ script, error, entities, opIndex, onShowOperator, eventId, sceneOn }: {
   script: ScriptData | null; error: boolean;
   entities: Entity[]; opIndex?: OpIndex; onShowOperator?: (id: string) => void; eventId?: string;
@@ -603,7 +608,7 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
       {sceneOn && (
         <div aria-hidden>
           <div className="sc-ep-nav">
-            <label className="sc-ep-pick"><span>&nbsp;</span><select disabled /></label>
+            <div className="sc-ep-pick"><span>&nbsp;</span><span className="drop-btn">&nbsp;</span></div>
           </div>
           <h3 className="sc-ep-title">&nbsp;</h3>
           <div className="vn-root"><div className="vn-stage" /><p className="vn-hint">&nbsp;</p></div>
@@ -620,17 +625,15 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
       {/* 에피소드 고르기 — 종전엔 칩을 전부 늘어놓았는데(메인 스토리는 39개까지 간다)
           화면 위쪽을 통째로 먹어서 드롭다운으로 바꿨다 (사용자 지시 2026-08-25). */}
       <div className="sc-ep-nav">
-        <label className="sc-ep-pick">
+        <div className="sc-ep-pick">
           <span>{t("에피소드")}</span>
-          <select value={epIdx} onChange={(event) => goEp(Number(event.target.value))}
-            aria-label={t("에피소드")}>
-            {script.eps.map((e, i) => (
-              <option key={i} value={i}>
-                {[e.code || `#${i + 1}`, e.name, e.tag].filter(Boolean).join(" · ")}
-              </option>
-            ))}
-          </select>
-        </label>
+          {/* 공용 드롭다운으로 통일 (사용자 지시 2026-08-25). 메인 스토리는 39편까지 가므로
+              scroll을 켜 목록이 화면을 넘지 않게 한다. */}
+          <Dropdown ariaLabel={t("에피소드")} scroll selected={[String(epIdx)]}
+            label={epLabelOf(script.eps[epIdx], epIdx)}
+            items={script.eps.map((e, i) => ({ value: String(i), label: epLabelOf(e, i) }))}
+            onPick={(value) => goEp(Number(value))} />
+        </div>
         <span className="sc-ep-count">{epIdx + 1} / {script.eps.length}</span>
       </div>
       <h3 className="sc-ep-title">{ep.code} {ep.name}{ep.tag && <small>{ep.tag}</small>}</h3>

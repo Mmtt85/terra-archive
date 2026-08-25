@@ -2,6 +2,7 @@
 
 import { lazy, memo, startTransition, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { asset } from "./assets";
+import { Dropdown } from "./dropdown";
 import { useI18n, tokenName, rich, type ExtraI18n, type Locale, type T } from "./i18n";
 import { RULES } from "./rules";
 import { useConfirm } from "./confirm";
@@ -3216,13 +3217,14 @@ function RosterModal({ allOps, ownedIds, eliteById, levelById, onApply, onClose,
             ))}
           </div>
           <div className="roster-sortbar">
-            <label className="sort-wrap">
+            {/* 오퍼 백과사전 정렬과 같은 공용 드롭다운 (2026-08-25) */}
+            <div className="sort-wrap">
               <span>{t("정렬")}</span>
-              <select value={sortKey} onChange={(event) => setSortKey(event.target.value)}>
-                {ROSTER_SORT_KEYS.map((key) => <option key={key} value={key}>{t(key)}</option>)}
-              </select>
+              <Dropdown ariaLabel={t("정렬")} label={t(sortKey)} selected={[sortKey]}
+                items={ROSTER_SORT_KEYS.map((key) => ({ value: key, label: t(key) }))}
+                onPick={setSortKey} />
               <button type="button" className="sort-direction" onClick={() => setSortAsc((current) => !current)} aria-label={sortAsc ? t("내림차순으로 변경") : t("오름차순으로 변경")}>{sortAsc ? "↑" : "↓"}</button>
-            </label>
+            </div>
             <span className="count"><b>{visible.length}</b> OPERATORS</span>
           </div>
           {futureOps.length > 0 && (
