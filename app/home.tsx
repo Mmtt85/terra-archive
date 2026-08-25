@@ -1068,6 +1068,12 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   const [feedbackOpen, setFeedbackOpen] = useState(false); // 제안 패널 — 모바일 헤더 버튼·데스크탑 FAB 공용
   const [feedbackNew, setFeedbackNew] = useState(0); // 제안 게시판 새 답변 수 — 위젯이 올려주고 헤더 버튼 뱃지에 쓴다
   const [headerCollapsed, setHeaderCollapsed] = useState(true); // 모바일 헤더 접기 — 접힘이 기본(사용자 확정 2026-07-22). PC는 무관(관련 CSS가 모바일 블록에만 있음)
+  // 헤더 완전히 치우기 — 핸들을 **위로 끌어올리면** 헤더가 통째로 사라지고 핸들만 남는다
+  // (사용자 요청 2026-08-25: 폰 가로모드에서 리더기를 볼 때 헤더가 화면을 너무 먹는다).
+  // 모바일 전용(CSS가 모바일 블록에만 있다). 다시 끌어내리거나 누르면 접힘 상태로 돌아온다.
+  const [headerTucked, setHeaderTucked] = useState(false);
+  const handleFrom = useRef<number | null>(null);
+  const handleDragged = useRef(false);
   // 햄버거 '통합전략 가이드' 부메뉴 활성 표시용 — 현재 URL의 ?topic= 슬러그 (기본 is1)
   // 열려 있는 스토리 상세의 이름 — 문서 제목에 반영 (StoryGuide가 알려준다)
   const [storyTitle, setStoryTitle] = useState<string | null>(null);
@@ -1746,7 +1752,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
 
   return (
     <main className={tab === "archive" ? "site-main" : "base-main site-main"}>
-      <header className={`site-header${headerCollapsed ? " collapsed" : ""}`} id="top">
+      <header className={`site-header${headerCollapsed ? " collapsed" : ""}${headerTucked ? " tucked" : ""}`} id="top">
         <a className="brand" href={localeBase || "/"} aria-label={t("테라 아카이브 홈")}
           onClick={(event) => { event.preventDefault(); switchTab("portal"); scrollMainTop(); }}>
           <span className="brand-mark"><img src={asset("/avatars/char_1012_skadi2.webp")} alt="" width={180} height={180} /></span>
@@ -1933,11 +1939,34 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
           </div>
         </div>
         {/* 헤더 접기 핸들 — 헤더 맨 아래 중앙, 데스크탑·모바일 공통 (접힘이 기본).
-            접으면 로고·햄버거 한 줄만 남는다 (사용자 확정 2026-07-22). */}
+            접으면 로고·햄버거 한 줄만 남는다 (사용자 확정 2026-07-22).
+            **위로 끌어올리면 헤더가 통째로 사라지고 이 핸들만 남는다** (모바일, 2026-08-25).
+            끌기 판정은 pointerup 에서 하고, 그때 처리했으면 뒤따라오는 click 은 흘려보낸다
+            (키보드 Enter·Space 는 pointer 이벤트가 없어 click 으로 들어온다). */}
         <button type="button" className="header-collapse-toggle"
-          aria-expanded={!headerCollapsed} aria-label={headerCollapsed ? t("헤더 펼치기") : t("헤더 접기")}
-          onClick={() => setHeaderCollapsed((collapsed) => !collapsed)}>
-          <span aria-hidden>{headerCollapsed ? "⌄" : "⌃"}</span>
+          aria-expanded={!headerCollapsed && !headerTucked}
+          aria-label={headerTucked || headerCollapsed ? t("헤더 펼치기") : t("헤더 접기")}
+          onPointerDown={(e) => {
+            handleFrom.current = e.clientY;
+            handleDragged.current = false;
+            // ⚠ 포인터를 잡아 두지 않으면 위로 끌어올리는 순간 커서가 버튼 밖으로 나가고,
+            //    pointerup 이 헤더의 다른 요소에서 발생해 끌기 판정이 통째로 날아간다.
+            try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* 미지원 */ }
+          }}
+          onPointerUp={(e) => {
+            const from = handleFrom.current;
+            handleFrom.current = null;
+            if (from == null) return;
+            const dy = e.clientY - from;
+            if (dy <= -14) { handleDragged.current = true; setHeaderTucked(true); }
+            else if (dy >= 14) { handleDragged.current = true; setHeaderTucked(false); setHeaderCollapsed(false); }
+          }}
+          onClick={() => {
+            if (handleDragged.current) { handleDragged.current = false; return; }
+            if (headerTucked) { setHeaderTucked(false); return; }
+            setHeaderCollapsed((collapsed) => !collapsed);
+          }}>
+          <span aria-hidden>{headerTucked || headerCollapsed ? "⌄" : "⌃"}</span>
         </button>
       </header>
 

@@ -91,13 +91,27 @@ export default function SceneMode({ ep, title, hasPrev, hasNext, onEp }: {
     setIdx((i) => Math.min(last, Math.max(0, i + delta)));
   }, [last]);
 
+  // 전체 모드 = 우리 오버레이 + **브라우저 전체화면**. 후자를 같이 걸어야 주소창·툴바가
+  // 사라진다 (사용자 요청 2026-08-25). 지원하지 않는 환경(아이폰 사파리는 요소 전체화면이
+  // 없다)에서는 조용히 실패하고 오버레이만 남는다 — 기능은 그대로 쓸 수 있다.
+  const enterFull = useCallback(() => {
+    setFull(true);
+    const el = document.documentElement as HTMLElement & { webkitRequestFullscreen?: () => Promise<void> };
+    try { void (el.requestFullscreen?.({ navigationUI: "hide" }) ?? el.webkitRequestFullscreen?.()); } catch { /* 미지원 */ }
+  }, []);
+  const exitFull = useCallback(() => {
+    setFull(false);
+    const doc = document as Document & { webkitExitFullscreen?: () => Promise<void> };
+    try { if (doc.fullscreenElement) void (doc.exitFullscreen?.() ?? doc.webkitExitFullscreen?.()); } catch { /* 미지원 */ }
+  }, []);
+
   const onKey = useCallback((e: { key: string; preventDefault: () => void }) => {
-    if (e.key === "Escape") { if (full) { e.preventDefault(); setFull(false); } return; }
+    if (e.key === "Escape") { if (full) { e.preventDefault(); exitFull(); } return; }
     if (e.key === " " || e.key === "ArrowRight" || e.key === "Enter" || e.key === "PageDown") {
       e.preventDefault(); go(1); return;
     }
     if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); go(-1); }
-  }, [go, full]);
+  }, [go, full, exitFull]);
 
   // 전체 모드에서만 창 전체의 키를 가져온다 — 인라인에서 가로채면 페이지 스크롤(Space)이
   // 막힌다. 인라인일 땐 무대에 포커스가 있을 때만 먹는다 (무대의 onKeyDown).
@@ -107,6 +121,15 @@ export default function SceneMode({ ep, title, hasPrev, hasNext, onEp }: {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [full, onKey]);
+
+  // 브라우저 쪽에서 전체화면이 풀리면(Esc·제스처) 오버레이도 같이 내린다 — 상태가 갈리면
+  // 화면은 덮여 있는데 나가는 길이 안 보인다.
+  useEffect(() => {
+    if (!full) return;
+    const sync = () => { if (!document.fullscreenElement) setFull(false); };
+    document.addEventListener("fullscreenchange", sync);
+    return () => document.removeEventListener("fullscreenchange", sync);
+  }, [full]);
 
   // 전체 모드일 때만 배경 스크롤을 잠근다 (.site-scroll 이 이 사이트의 스크롤러다)
   useEffect(() => {
@@ -157,15 +180,34 @@ export default function SceneMode({ ep, title, hasPrev, hasNext, onEp }: {
         {cutSrc && <img key={stage.cut} className="vn-cut" src={cutSrc} alt="" aria-hidden onError={hideErr} />}
         {stage.bk && <div className="vn-blocker" style={{ background: stage.bk }} aria-hidden />}
 
-        {/* 무대 오른쪽 위 — 인라인이면 [전체 모드], 전체 모드면 [닫기]. 둘 다 **살짝 흐리게**
-            떠 있다가 올리면 또렷해진다 (사용자 확정 2026-08-25: 조작 막대를 비우고 화면 위로). */}
-        {full ? (
-          <button type="button" className="vn-corner" aria-label={t("전체 모드 끄기")}
-            onClick={(e) => { e.stopPropagation(); setFull(false); }}>✕</button>
-        ) : (
-          <button type="button" className="vn-corner" aria-label={t("전체 모드")} title={t("전체 모드")}
-            onClick={(e) => { e.stopPropagation(); setFull(true); }}>⛶</button>
-        )}
+        {/* 조작은 전부 **무대 위**에 얹는다 (사용자 지시 2026-08-25) — 화 이동·자동 넘김·
+            전체 모드까지. 살짝 흐리게 떠 있다가 올리면 또렷해진다.
+            ⚠ 빈 자리는 pointer-events:none 이라 눌러도 무대(다음 줄)로 통과한다. */}
+        <div className="vn-top" role="presentation">
+          {hasPrev && onEp && (
+            <button type="button" className="vn-obtn" title={t("이전 화")} aria-label={t("이전 화")}
+              onClick={(e) => { e.stopPropagation(); onEp(-1); }}>⏮</button>
+          )}
+          <span className="vn-top-mid">{idx + 1} / {ep.lines.length}</span>
+          <button type="button" className={`vn-obtn${auto ? " on" : ""}`} disabled={atEnd}
+            title={auto ? t("자동 넘김 끄기") : t("자동 넘김")} aria-label={auto ? t("자동 넘김 끄기") : t("자동 넘김")}
+            onClick={(e) => { e.stopPropagation(); setAuto((v) => !v); }}>{auto ? "⏸" : "▶"}</button>
+          {hasNext && onEp && (
+            <button type="button" className={`vn-obtn${atEnd ? " ready" : ""}`}
+              title={t("다음 화")} aria-label={t("다음 화")}
+              onClick={(e) => { e.stopPropagation(); onEp(1); }}>⏭</button>
+          )}
+          <button type="button" className="vn-obtn"
+            title={full ? t("전체 모드 끄기") : t("전체 모드")} aria-label={full ? t("전체 모드 끄기") : t("전체 모드")}
+            onClick={(e) => { e.stopPropagation(); if (full) exitFull(); else enterFull(); }}>{full ? "✕" : "⛶"}</button>
+        </div>
+
+        {/* 가로모드(낮은 화면)에서만 뜨는 양옆 줄 이동 — 아래 막대를 놓을 자리가 없다
+            (사용자 제보 2026-08-25: 가로로 돌리면 버튼 글자가 세로로 눌린다). */}
+        <button type="button" className="vn-arrow left" aria-label={t("이전 줄")} disabled={idx === 0}
+          onClick={(e) => { e.stopPropagation(); go(-1); }}>‹</button>
+        <button type="button" className="vn-arrow right" aria-label={t("다음 줄")} disabled={atEnd}
+          onClick={(e) => { e.stopPropagation(); go(1); }}>›</button>
 
         {/* 대사창 — ⚠ 줄마다 애니메이션을 걸지 말 것. 글자가 매 줄 깜빡여 읽기 힘들다
             (사용자 지적 2026-08-25). 바뀌는 건 글자뿐이라 전환 효과가 필요 없다. */}
@@ -185,32 +227,16 @@ export default function SceneMode({ ep, title, hasPrev, hasNext, onEp }: {
         </div>
       </div>
 
-      {/* 조작 막대 — 왼쪽(이전 화·제목) / **가운데(줄 이동)** / 오른쪽(자동·다음 화) 3분할.
-          가운데 칸은 양옆이 무엇이든 화면 정중앙에 온다 (사용자 지시 2026-08-25).
-          전체 모드 버튼은 무대 오른쪽 위로 올라가서 여기 없다. */}
+      {/* 아래 막대에는 줄 이동만 남는다 — 나머지는 전부 무대 위로 올라갔다.
+          가로모드에서는 이 막대를 감추고 무대 양옆 화살표가 대신한다. */}
       <div className="vn-bar">
-        <div className="vn-side">
-          {hasPrev && onEp && (
-            <button type="button" className="vn-ep" onClick={() => onEp(-1)}>⏮ {t("이전 화")}</button>
-          )}
-          {/* 화 제목은 **전체 모드에서만** — 인라인이면 바로 위에 같은 제목이 이미 있다
-              (사용자 지적 2026-08-25). 전체 모드는 그 머리글이 가려지므로 여기서 보여준다. */}
-          {full && <span className="vn-title">{title}</span>}
-        </div>
         <div className="vn-nav">
           <button type="button" onClick={() => go(-1)} disabled={idx === 0}>← {t("이전 줄")}</button>
           <span className="vn-count">{idx + 1} / {ep.lines.length}</span>
           <button type="button" onClick={() => go(1)} disabled={atEnd}>{t("다음 줄")} →</button>
         </div>
-        <div className="vn-side end">
-          <button type="button" className={`vn-auto${auto ? " on" : ""}`} disabled={atEnd}
-            onClick={() => setAuto((v) => !v)}>
-            {auto ? `⏸ ${t("자동 넘김 끄기")}` : `▶ ${t("자동 넘김")}`}
-          </button>
-          {hasNext && onEp
-            ? <button type="button" className={`vn-ep${atEnd ? " ready" : ""}`} onClick={() => onEp(1)}>{t("다음 화")} ⏭</button>
-            : atEnd && <span className="vn-count">{t("마지막 화입니다")}</span>}
-        </div>
+        {full && <span className="vn-title">{title}</span>}
+        {atEnd && !(hasNext && onEp) && <span className="vn-count">{t("마지막 화입니다")}</span>}
       </div>
       <p className="vn-hint">
         {full ? t("클릭 · Space · → 다음 · ← 이전 · Esc 전체 모드 끄기")
