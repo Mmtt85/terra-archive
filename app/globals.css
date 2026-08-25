@@ -14515,6 +14515,25 @@ main.site-main > .site-header {
 .tab-loading {
   min-height: 100vh;
 }
+/* ⚠ **자리표시가 비켜난 뒤에도 같은 높이가 유지돼야 한다** (실측 2026-08-25).
+   자리표시만 100vh면, 도착한 본문이 그보다 **짧을 때** 푸터가 접힘 아래(1519)에서
+   첫 화면 안(1338)으로 **올라오며** 그 이동이 그대로 CLS가 된다 — 짧은 쪽이 문제라
+   `.rg`·`.sim-launch`가 이미 같은 가드를 달아 뒀는데 지연 탭 본문 중
+   `.story`·`.planner`만 빠져 있었다.
+     · /stories/<id> — 자리표시 1440 → 상세 682 → 리더 도착 1128. 푸터 1519→1338 (CLS 0.041)
+     · /infra        — 편성 1259 → 자리표시 1440 → 편성 1259. 푸터가 1338↔1519로 왕복 (CLS 0.018)
+   본문 최소 높이를 자리표시와 같게 맞추면 푸터가 처음부터 끝까지 접힘 밖에 머물러
+   '보이던 것이 움직인' 일이 없어진다. **새 지연 탭을 붙이면 그 루트도 여기에 넣을 것.** */
+.site-scroll > section.story,
+.site-scroll > section.planner,
+.site-scroll > section.recruit,
+.site-scroll > section.farm,
+.site-scroll > section.about,
+.site-scroll > section.explorer,
+.site-scroll > section.sb-guide,
+.site-scroll > section.ac-guide {
+  min-height: 100vh;
+}
 .site-scroll {
   flex: 1 1 auto;
   min-height: 0;
@@ -18244,6 +18263,13 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
 .sim-launch {
   max-width: 1080px;
   margin: 0 auto;
+  /* ⚠ width를 안 주면 폭이 **내용에 따라** 정해진다 (실측 CLS 0.324, POOR, 2026-08-25).
+     .site-scroll은 세로 flex인데 여기 margin:0 auto가 붙어 있어 align-items:stretch가 꺼지고
+     항목이 fit-content가 된다. 그래서 목록이 오기 전에는 폭이 800px(.sim-intro의 max-width
+     760 + 좌우 여백 40)이었다가, 카드 격자가 도착하는 순간 942px로 벌어지며 **본문 칼럼
+     전체가 좌우로 71px씩 밀려났다** — 화면에 보이던 게 전부 움직이니 값이 크게 잡힌다.
+     width:100%면 폭이 내용과 무관하게 min(칸 너비, 1080px)으로 고정된다. */
+  width: 100%;
   padding: 26px 20px 60px;
   /* /sim은 프리렌더 SEO 페이지라 껍데기(제목·소개·검색란)가 먼저 그려지고 목록 데이터는
      나중에 온다. 그 사이 본문이 550px밖에 안 돼 푸터가 첫 화면에 들어왔다가 목록이
@@ -18274,6 +18300,8 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
    위아래 여백만 준다 (사용자 요청 2026-08-16) */
 .sim-filter {
   margin: 18px 0 4px;
+  /* 데이터 도착 전에도 같은 자리를 잡아 둔다 — 이유는 sim-launcher.tsx 쪽 주석 참조 */
+  min-height: 62px;
 }
 .sim-filter .attr-filter {
   margin: 0;
@@ -20591,6 +20619,13 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
+  /* 대사 글자는 **뷰포트가 아니라 이 무대**를 기준으로 커지고 작아진다 (사용자 요청
+     2026-08-25). vw 기준이던 종전 규칙은 무대와 화면 크기가 따로 노는 자리에서 어긋났다 —
+     인라인 무대는 1024px 화면에서도 2560px 화면에서도 720px로 똑같은데 글자만 14.8px→17.5px로
+     커졌고, 반대로 전체화면 2560px 화면에서는 무대가 2482px인데 글자는 17.5px에 묶여 있었다.
+     inline-size 컨테이너로 두면 1cqw = 무대 폭의 1%라 무대에 정확히 비례한다.
+     ⚠ size가 아니라 inline-size다 — 세로까지 가두면 aspect-ratio로 잡는 높이가 흔들린다. */
+  container-type: inline-size;
   overflow: hidden;
   border-radius: 10px;
   background: #000;
@@ -20770,7 +20805,13 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
        호스팅하면 한글 조각 124개가 전부 Link 응답 헤더로 나가 프리렌더가 죽는다.
      아직 안 왔거나 못 받아 왔으면 시스템 한글로 그대로 읽힌다 (display=swap). */
   font-family: "Gowun Dodum", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  /* 무대 폭에 비례 — 폰(무대 354px) 13.5px · 인라인(720px) 16.6px · 전체화면 FHD(1842px)
+     26px · QHD(2482px)는 상한 30px. 순수 비례(3.8cqw)면 큰 무대에서 글자가 터지고 작은
+     무대에서 못 읽으므로, 기울기를 눕히고 고정분을 더한 뒤 위아래를 clamp로 막는다.
+     ⚠ 위 줄의 vw 규칙은 **일부러 남겨 둔 폴백**이다 — 컨테이너 쿼리 단위를 모르는
+       브라우저는 아래 선언만 버리고 종전 동작을 그대로 쓴다. */
   font-size: clamp(13.5px, 1.45vw, 17.5px);
+  font-size: clamp(13px, calc(0.84cqw + 10.5px), 30px);
   line-height: 1.78;
   letter-spacing: -0.005em;
   word-break: keep-all;      /* 한국어는 어절 단위로 줄바꿈해야 읽힌다 */

@@ -593,7 +593,24 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
   const em = useMemo(() => entMatchOf(railMatchers), [railMatchers]);
   const { ent, peekNode } = useEntityPeek(railEntities, onShowOperator);
   if (error) return <p className="story-disclaimer">{t("스크립트를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.")}</p>;
-  if (!script || !ep) return <p className="sc-loading">{t("스크립트 불러오는 중…")}</p>;
+  // ⚠ 한 줄짜리 안내만 두면, 스크립트 JSON이 도착하는 순간 장면 블록(에피소드 고르기 +
+  //    16:9 무대)이 통째로 344px 생기며 아래 '같은 테마의 다른 이야기'를 밀어낸다 —
+  //    실측 CLS 0.068 (390×844, 2026-08-25). 리더기일 때는 도착할 것과 **같은 구조**의 빈
+  //    껍데기를 미리 깔아 둔다. 진짜 클래스를 그대로 써야 나중에 CSS가 바뀌어도 높이가 따라간다.
+  if (!script || !ep) return (
+    <div className="story-script" aria-busy>
+      <p className="sc-loading">{t("스크립트 불러오는 중…")}</p>
+      {sceneOn && (
+        <div aria-hidden>
+          <div className="sc-ep-nav">
+            <label className="sc-ep-pick"><span>&nbsp;</span><select disabled /></label>
+          </div>
+          <h3 className="sc-ep-title">&nbsp;</h3>
+          <div className="vn-root"><div className="vn-stage" /><p className="vn-hint">&nbsp;</p></div>
+        </div>
+      )}
+    </div>
+  );
   return (
     <div className="story-script" ref={topRef}>
       <p className="story-disclaimer">{sceneOn
@@ -618,7 +635,16 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
       </div>
       <h3 className="sc-ep-title">{ep.code} {ep.name}{ep.tag && <small>{ep.tag}</small>}</h3>
       {sceneOn && ep.vn && ep.vn.length > 0 && (
-        <Suspense fallback={null}>
+        /* ⚠ fallback을 null로 두지 말 것 (실측 CLS 2026-08-25). story-vn 청크는 상세 본문보다
+           한 박자 늦게 도착하는데, 그 순간 16:9 무대(390×844에서 199px · 1280에서 405px)가
+           불쑥 생기며 아래 '같은 테마의 다른 이야기'와 푸터를 통째로 밀어냈다 — 모바일 0.080.
+           같은 크기의 빈 무대를 미리 깔아 두면 진짜 리더기가 와도 아무것도 안 움직인다. */
+        <Suspense fallback={
+          <div className="vn-root" aria-hidden>
+            <div className="vn-stage" />
+            <p className="vn-hint">&nbsp;</p>
+          </div>
+        }>
           {/* key: 에피소드가 바뀌면 새로 마운트해 첫 줄부터 — 안에서 이펙트로 되감으면
               연쇄 렌더가 된다 (react-compiler 규칙) */}
           <SceneMode key={epIdx} ep={ep} title={`${ep.code} ${ep.name}`.trim()}

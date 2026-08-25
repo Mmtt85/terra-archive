@@ -245,19 +245,25 @@ export default function SimLauncher() {
       <p className="sim-intro">{t("작전을 고르면 적이 몇 초에 어디서 나와 어떤 경로로 어디에 들어가는지, 스폰 타임라인을 재생해 보여줍니다. 배속·구간 이동으로 흐름을 훑고, 선이나 말을 누르면 적별 경로를 확인할 수 있습니다.")}</p>
       <p className="sim-note">{t("저지 없이 두었을 때의 기준 타임라인입니다.")} {t("처치 수 등 조건 분기 증원은 재생에 포함되지 않습니다.")} {t("통합전략 가이드의 전투 노드에서도 '이동 경로' 탭으로 같은 시뮬레이션을 재생할 수 있습니다.")}</p>
 
-      {/* 계층 필터 — 작전 도감과 같은 부품·같은 조작 (사용자 요청 2026-08-16) */}
-      {filterGroups.length > 0 && (
-        <div className="sim-filter">
-          <AttributeFilter groups={filterGroups} />
-          {types.length > 0 && (
-            <div className="active-filters">
-              <button type="button" onClick={() => { setTypes([]); setEvSel([]); setZonesSel([]); }}>
-                {filterLabel} ×
-              </button>
-            </div>
-          )}
-        </div>
-      )}
+      {/* 계층 필터 — 작전 도감과 같은 부품·같은 조작 (사용자 요청 2026-08-16)
+          ⚠ 상자는 **작전 데이터가 오기 전에도 그린다**. 종전처럼 통째로 빼 두면 데이터가
+             도착하는 순간 62px이 검색창 **위쪽에** 끼어들어 검색창부터 아래 화면 전체가
+             밀렸다 — 실측 CLS 0.326(1280×900, POOR) · 0.010(390×844), 2026-08-25.
+             높이는 어느 화면에서나 62px로 같아 min-height 하나로 자리가 맞는다. */}
+      <div className="sim-filter">
+        {filterGroups.length > 0 && (
+          <>
+            <AttributeFilter groups={filterGroups} />
+            {types.length > 0 && (
+              <div className="active-filters">
+                <button type="button" onClick={() => { setTypes([]); setEvSel([]); setZonesSel([]); }}>
+                  {filterLabel} ×
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
 
       <div className="sim-search-row">
         <div className="search-wrap heading-search sim-search">
