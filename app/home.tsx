@@ -1082,7 +1082,10 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   // (tuck 이 max-height 기반이라 같은 축을 쓴다 — transform 을 쓰면 본문과 겹친다).
   const headerRef = useRef<HTMLElement>(null);
   const headerH = useRef(0);
-  const [dragH, setDragH] = useState<number | null>(null);
+  // 끄는 동안의 높이와 **내용 불투명도**를 같이 든다. 헤더는 안쪽 드롭다운이 absolute 라
+  // overflow 로 자를 수 없어서(위 CSS 주석 참조), 높이만 줄이면 버튼이 상자 밖으로 삐져나온
+  // 채 남는다 (사용자 제보 2026-08-25). 그래서 진행률만큼 내용을 같이 흐린다.
+  const [drag, setDrag] = useState<{ h: number } | null>(null);
   // 모바일 푸터 접기 — **접힘이 기본**(사용자 요청 2026-08-25: 폰에서 푸터가 너무 커서
   // 본문을 가린다). 헤더 핸들과 같은 규약: 눌러서 여닫고, 끌면 손가락을 따라온다.
   // PC 는 무관 — 관련 CSS 가 모바일 블록에만 있다.
@@ -1771,8 +1774,8 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   return (
     <main className={tab === "archive" ? "site-main" : "base-main site-main"}>
       <header ref={headerRef} id="top"
-        className={`site-header${headerCollapsed ? " collapsed" : ""}${headerTucked ? " tucked" : ""}${dragH != null ? " dragging" : ""}`}
-        style={dragH != null ? { maxHeight: `${dragH}px` } : undefined}>
+        className={`site-header${headerCollapsed ? " collapsed" : ""}${headerTucked ? " tucked" : ""}${drag ? " dragging" : ""}`}
+        style={drag ? { maxHeight: `${drag.h}px` } : undefined}>
         <a className="brand" href={localeBase || "/"} aria-label={t("테라 아카이브 홈")}
           onClick={(event) => { event.preventDefault(); switchTab("portal"); scrollMainTop(); }}>
           <span className="brand-mark"><img src={asset("/avatars/char_1012_skadi2.webp")} alt="" width={180} height={180} /></span>
@@ -1981,20 +1984,20 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
             if (from == null) return;
             const dy = e.clientY - from;
             // 잡은 자리에서 3px 안쪽은 무시 — 탭이 미세하게 흔들려도 헤더가 떨지 않게
-            if (dragH == null && Math.abs(dy) < 3) return;
+            if (drag == null && Math.abs(dy) < 3) return;
             const open = headerTucked ? (headerRef.current?.scrollHeight ?? 0) : headerH.current;
-            setDragH(Math.max(0, Math.min(open, headerH.current + dy)));
+            setDrag({ h: Math.max(0, Math.min(open, headerH.current + dy)) });
           }}
           onPointerUp={(e) => {
             const from = handleFrom.current;
             handleFrom.current = null;
-            setDragH(null);                       // 손을 떼면 CSS 전환이 나머지를 마무리한다
+            setDrag(null);                        // 손을 떼면 CSS 전환이 나머지를 마무리한다
             if (from == null) return;
             const dy = e.clientY - from;
             if (dy <= -14) { handleDragged.current = true; setHeaderTucked(true); }
             else if (dy >= 14) { handleDragged.current = true; setHeaderTucked(false); setHeaderCollapsed(false); }
           }}
-          onPointerCancel={() => { handleFrom.current = null; setDragH(null); }}
+          onPointerCancel={() => { handleFrom.current = null; setDrag(null); }}
           onClick={() => {
             if (handleDragged.current) { handleDragged.current = false; return; }
             if (headerTucked) { setHeaderTucked(false); return; }

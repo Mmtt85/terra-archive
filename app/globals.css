@@ -1130,12 +1130,17 @@ button {
   .site-header.dragging {
     transition: none;
   }
-  /* 끄는 중에는 내용 페이드도 멈춘다 — 높이만 따라오고 글자는 그대로 붙어 있어야
-     '잡아서 밀어 올리는' 느낌이 난다 */
+  /* 끄기 시작하면 내용은 **바로 감춘다** (사용자 확정 2026-08-25: 점점 흐려지지 말고
+     줄어들면 곧장 안 보이게).
+     ⚠ overflow:hidden 으로 자르는 방법은 못 쓴다 — 핸들이 헤더 박스 **밖**(bottom:-14px)에
+        있어서 같이 잘려 사라진다. 그래서 자식만 감춘다.
+     ⚠ 헤더는 안쪽 드롭다운이 absolute 라 어차피 overflow 를 자를 수 없다(위 주석). 높이만
+        줄이면 버튼이 상자 밖으로 삐져나온 채 남아 이상했다. */
   .site-header.dragging > *:not(.header-collapse-toggle),
   .site-header.dragging .header-sub > *,
   .site-header.dragging .header-sub-right > * {
     transition: none;
+    opacity: 0;
   }
   .site-header > *:not(.header-collapse-toggle),
   .site-header .header-sub > *,
@@ -7082,6 +7087,23 @@ legend {
   line-height: 1;
   cursor: pointer;
   z-index: 1;
+}
+/* 모바일 핸들은 **가로 전체** — 가운데 작은 탭은 잡기 어렵다 (사용자 지시 2026-08-25,
+   푸터 시트 손잡이와 같은 규격). 헤더 아래에 걸린 띠 모양이 된다.
+   ⚠ 반드시 **기본 규칙 뒤**에 와야 한다 — 앞쪽 모바일 블록(985줄대)에 뒀더니 같은 특이도의
+     기본 규칙이 뒤에 있어 그대로 덮였다 (실측: 390px 에서도 52x16 그대로). */
+@media (max-width: 760px) {
+  .site-header .header-collapse-toggle {
+    left: 0;
+    right: 0;
+    bottom: -22px;
+    width: auto;
+    height: 22px;
+    transform: none;
+    border-left: 0;
+    border-right: 0;
+    border-radius: 0;
+  }
 }
 
 /* ── 데스크탑(761px+) 헤더 2줄 구조 (사용자 확정 2026-07-22) ──
