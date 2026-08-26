@@ -1125,6 +1125,18 @@ button {
     max-height: 60vh;
     transition: max-height 0.28s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.28s;
   }
+  /* 끄는 **동안**은 전환을 끈다 — 손가락을 따라 매 프레임 max-height 를 직접 준다.
+     전환이 켜져 있으면 0.28s 뒤를 쫓아가느라 손가락과 어긋난다 (2026-08-25). */
+  .site-header.dragging {
+    transition: none;
+  }
+  /* 끄는 중에는 내용 페이드도 멈춘다 — 높이만 따라오고 글자는 그대로 붙어 있어야
+     '잡아서 밀어 올리는' 느낌이 난다 */
+  .site-header.dragging > *:not(.header-collapse-toggle),
+  .site-header.dragging .header-sub > *,
+  .site-header.dragging .header-sub-right > * {
+    transition: none;
+  }
   .site-header > *:not(.header-collapse-toggle),
   .site-header .header-sub > *,
   .site-header .header-sub-right > * {
@@ -4047,6 +4059,8 @@ legend {
 /* ⚠ 셀렉터를 `footer`로 두면 모달·본문 안의 <footer>까지 검은 띠가 된다 —
    다크에선 안 보이다 라이트모드에서 드러났다 (제안 모달·스토리 상세, 사용자 제보
    2026-08-06). 사이트 푸터는 .site-scroll 직속 하나뿐이라 거기로 한정한다. */
+/* 푸터 접기 핸들 — 모바일 전용이라 기본은 숨김 (아래 모바일 블록에서 켠다) */
+.footer-collapse-toggle { display: none; }
 .site-scroll > footer {
   color: #b6bbbd;
   background: #171b1d;
@@ -4323,10 +4337,64 @@ legend {
     min-width: 21px;
     padding: 3px 2px;
   }
+  /* 모바일 푸터 = **바텀시트** (사용자 제보 2026-08-25: 문서 흐름 안에서 접었더니
+     펼칠 때 아래로 자라 화면 밖으로 나가 버렸다 — "뭐가 어케되는지 판단도 안 된다").
+     화면 아래에 고정해 두고 **위로 올라오게** 한다. 접히면 핸들 줄만 남는다. */
   .site-scroll > footer {
     line-height: 1.6;
     display: block;
+    /* ⚠ position:fixed 를 쓰면 안 된다 — iOS 는 fixed 를 **레이아웃 뷰포트** 기준으로 잡는데
+       main 은 100dvh(툴바 제외)라 둘이 어긋나, 시트가 브라우저 툴바 밑으로 내려가고 그 위로
+       본문이 비쳤다 (사용자 제보 2026-08-25, 사파리·iOS 크롬 both).
+       sticky 는 **스크롤 컨테이너(.site-scroll)** 기준이라 그 함정을 통째로 피한다. */
+    position: sticky;
+    bottom: 0;
+    z-index: 15;                       /* 헤더(20)보다 아래, 본문보다 위 */
+    margin: 0;
+    /* 홈 인디케이터·툴바에 손잡이가 가리지 않게 안전영역만큼 띄운다
+       (layout.tsx 의 viewportFit:"cover" 가 있어야 0이 아닌 값이 온다) */
+    padding: 0 clamp(18px, 5vw, 28px) calc(14px + env(safe-area-inset-bottom, 0px));
+    max-height: 72dvh;                 /* dvh — iOS 툴바가 접혔다 펴져도 넘치지 않게 */
+    overflow-y: auto;                  /* 다 펴도 화면보다 길면 시트 안에서 스크롤 */
+    overscroll-behavior: contain;      /* 시트 끝에서 본문이 따라 스크롤되지 않게 */
+    transition: max-height 0.28s cubic-bezier(0.4, 0, 0.2, 1);
   }
+  /* 접힘 — 핸들 줄(28px)만. padding-bottom 을 0으로 눕혀야 실제로 28px 이 된다
+     (border-box 에서 패딩은 max-height 로 안 눌린다). */
+  .site-scroll > footer.folded {
+    max-height: calc(28px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    overflow: hidden;
+  }
+  /* 끄는 동안은 전환을 끈다 — 손가락을 매 프레임 따라가야 하므로 (헤더와 같은 이유) */
+  .site-scroll > footer.dragging {
+    transition: none;
+  }
+  /* 핸들 = 시트 맨 위 가로 전체. 잡기 쉬워야 하고, 펴서 스크롤해도 붙어 있어야 한다. */
+  .footer-collapse-toggle {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 28px;
+    /* 좌우 패딩 밖까지 넓혀 시트 가로 전체를 잡는 손잡이로.
+       ⚠ <button>은 블록 자식이라도 width:auto 가 안 늘어난다(fit-content) — 실측 10px.
+          그래서 폭을 명시한다 (2026-08-25). */
+    width: calc(100% + clamp(18px, 5vw, 28px) * 2);
+    margin: 0 calc(clamp(18px, 5vw, 28px) * -1);
+    padding: 0;
+    border: 0;
+    background: #171b1d;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+    touch-action: none;               /* 세로로 끌 때 페이지가 같이 스크롤되지 않게 */
+  }
+  /* sticky 는 흐름 안에 남아 문서 끝에서는 제자리를 차지한다 — 그래서 fixed 때와 달리
+     스크롤 영역에 따로 자리를 비워 둘 필요가 없다 (비워 두면 빈 띠가 하나 더 생긴다). */
   .site-scroll > footer p {
     margin-top: 7px;
   }
@@ -11880,6 +11948,13 @@ html.dark .pt-stage {
   }
   .pt-tiles {
     height: auto;
+    /* ⚠ 기본 규칙의 max-height:640px 을 **반드시 풀어야 한다** (사용자 제보 2026-08-25
+       "홈 화면 밑부분이 잘려서 나온다"). 모바일은 2열이라 줄 수가 늘고 글자도 줄바꿈돼
+       grid-auto-rows 가 706px 을 요구하는데, 640px 상한에 걸린 66px 은 부모(.pt-stage)의
+       높이 계산에서 빠진 채 그 overflow:hidden 에 잘린다 — 스크롤로도 못 간다.
+       height:auto·grid-template-rows:none 만 풀고 이걸 빠뜨려서 마지막 줄(업데이트 내역·
+       소개)이 통째로 잘려 있었다. 2026-07-30 의 .pt-stage 눌림 사고와 같은 부류다. */
+    max-height: none;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-template-rows: none;
     grid-auto-rows: minmax(64px, auto);

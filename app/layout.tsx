@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -15,6 +15,16 @@ const geistMono = Geist_Mono({
 // 제목·설명·OG·hreflang 등 로케일별 메타데이터는 각 라우트 페이지(app/seo.ts)가 담당하고,
 // 레이아웃은 metadataBase 등 공통값만 제공한다. 정적 내보내기(output: "export")라
 // 요청 헤더를 읽을 수 없으므로 정본 도메인을 고정한다 (OG·canonical 절대 URL 기준).
+// ⚠ viewportFit: "cover" 가 없으면 iOS 에서 env(safe-area-inset-*) 이 **항상 0** 이다
+// (2026-08-25 실측: 사파리에서 하단 시트가 홈 인디케이터·툴바 밑으로 내려가 잘렸다).
+// 노치·홈 인디케이터 영역까지 레이아웃을 넓히고, 가려지면 안 되는 것만 CSS 에서 inset 만큼
+// 띄운다 (globals.css 의 모바일 푸터 시트).
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://terra-archive.net"),
   icons: {

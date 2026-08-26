@@ -34,3 +34,25 @@ for (const [seg, lang] of Object.entries(LOCALES)) {
   total += count;
 }
 console.log(`fix-html-lang: 총 ${total}개 완료`);
+
+// ── 뷰포트에 viewport-fit=cover 주입 (2026-08-25) ───────────────────────────
+// iOS 는 이게 없으면 env(safe-area-inset-*) 을 **항상 0** 으로 준다. 그러면 하단 푸터
+// 시트의 손잡이가 홈 인디케이터에 깔린다 (사용자 제보: 사파리·iOS 크롬 both).
+// ⚠ layout.tsx 의 `export const viewport` 는 이 프레임워크가 안 먹는다 (실측: 메타가
+//    width=device-width, initial-scale=1 그대로 나온다). 그래서 lang 과 같은 이유로
+//    여기서 후처리한다. **ko 포함 전 로케일**이 대상이라 위 루프와 따로 돈다.
+let vp = 0;
+for (const file of htmlFiles(ROOT)) {
+  const html = readFileSync(file, "utf8");
+  // 이미 들어 있으면 건드리지 않는다 (재실행 안전)
+  if (/name="viewport"[^>]*viewport-fit=cover/.test(html)) continue;
+  const fixed = html.replace(
+    /(<meta name="viewport" content=")([^"]*)(")/,
+    (_m, a, content, c) => `${a}${content}, viewport-fit=cover${c}`);
+  if (fixed !== html) {
+    writeFileSync(file, fixed);
+    vp++;
+  }
+}
+if (vp === 0) throw new Error("fix-html-lang: viewport-fit 적용이 0개 — 메타 형식이 바뀌었는지 확인");
+console.log(`fix-html-lang: viewport-fit=cover ${vp}개 적용`);

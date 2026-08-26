@@ -1075,6 +1075,23 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   const [headerTucked, setHeaderTucked] = useState(false);
   const handleFrom = useRef<number | null>(null);
   const handleDragged = useRef(false);
+  // 끄는 **동안** 헤더가 손가락을 따라오게 한다 (사용자 정정 2026-08-25: "클릭하면
+  // 애니메이션이 아니라 붙잡고 끄는 와중에 애니메이션이 필요하다"). 종전엔 pointerup 에서
+  // 한 번에 스냅만 해서, 끄는 내내 아무 반응이 없었다.
+  // 잡은 순간의 헤더 높이를 재 두고 max-height 를 그 값 ± 이동량으로 실시간 갱신한다
+  // (tuck 이 max-height 기반이라 같은 축을 쓴다 — transform 을 쓰면 본문과 겹친다).
+  const headerRef = useRef<HTMLElement>(null);
+  const headerH = useRef(0);
+  const [dragH, setDragH] = useState<number | null>(null);
+  // 모바일 푸터 접기 — **접힘이 기본**(사용자 요청 2026-08-25: 폰에서 푸터가 너무 커서
+  // 본문을 가린다). 헤더 핸들과 같은 규약: 눌러서 여닫고, 끌면 손가락을 따라온다.
+  // PC 는 무관 — 관련 CSS 가 모바일 블록에만 있다.
+  const [footerFolded, setFooterFolded] = useState(true);
+  const footerRef = useRef<HTMLElement>(null);
+  const footerFrom = useRef<number | null>(null);
+  const footerDragged = useRef(false);
+  const footerH = useRef(0);
+  const [footDragH, setFootDragH] = useState<number | null>(null);
   // 햄버거 '통합전략 가이드' 부메뉴 활성 표시용 — 현재 URL의 ?topic= 슬러그 (기본 is1)
   // 열려 있는 스토리 상세의 이름 — 문서 제목에 반영 (StoryGuide가 알려준다)
   const [storyTitle, setStoryTitle] = useState<string | null>(null);
@@ -1753,7 +1770,9 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
 
   return (
     <main className={tab === "archive" ? "site-main" : "base-main site-main"}>
-      <header className={`site-header${headerCollapsed ? " collapsed" : ""}${headerTucked ? " tucked" : ""}`} id="top">
+      <header ref={headerRef} id="top"
+        className={`site-header${headerCollapsed ? " collapsed" : ""}${headerTucked ? " tucked" : ""}${dragH != null ? " dragging" : ""}`}
+        style={dragH != null ? { maxHeight: `${dragH}px` } : undefined}>
         <a className="brand" href={localeBase || "/"} aria-label={t("테라 아카이브 홈")}
           onClick={(event) => { event.preventDefault(); switchTab("portal"); scrollMainTop(); }}>
           <span className="brand-mark"><img src={asset("/avatars/char_1012_skadi2.webp")} alt="" width={180} height={180} /></span>
@@ -1950,18 +1969,32 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
           onPointerDown={(e) => {
             handleFrom.current = e.clientY;
             handleDragged.current = false;
+            // 잡은 순간의 실제 높이 — 끄는 동안 이 값을 기준으로 따라간다.
+            // tuck 상태면 0에서 시작해 끌어내리는 만큼 열린다.
+            headerH.current = headerTucked ? 0 : (headerRef.current?.offsetHeight ?? 0);
             // ⚠ 포인터를 잡아 두지 않으면 위로 끌어올리는 순간 커서가 버튼 밖으로 나가고,
             //    pointerup 이 헤더의 다른 요소에서 발생해 끌기 판정이 통째로 날아간다.
             try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* 미지원 */ }
           }}
+          onPointerMove={(e) => {
+            const from = handleFrom.current;
+            if (from == null) return;
+            const dy = e.clientY - from;
+            // 잡은 자리에서 3px 안쪽은 무시 — 탭이 미세하게 흔들려도 헤더가 떨지 않게
+            if (dragH == null && Math.abs(dy) < 3) return;
+            const open = headerTucked ? (headerRef.current?.scrollHeight ?? 0) : headerH.current;
+            setDragH(Math.max(0, Math.min(open, headerH.current + dy)));
+          }}
           onPointerUp={(e) => {
             const from = handleFrom.current;
             handleFrom.current = null;
+            setDragH(null);                       // 손을 떼면 CSS 전환이 나머지를 마무리한다
             if (from == null) return;
             const dy = e.clientY - from;
             if (dy <= -14) { handleDragged.current = true; setHeaderTucked(true); }
             else if (dy >= 14) { handleDragged.current = true; setHeaderTucked(false); setHeaderCollapsed(false); }
           }}
+          onPointerCancel={() => { handleFrom.current = null; setDragH(null); }}
           onClick={() => {
             if (handleDragged.current) { handleDragged.current = false; return; }
             if (headerTucked) { setHeaderTucked(false); return; }
@@ -2116,7 +2149,46 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
           (lazy면 /sim의 HTML이 빈 껍데기가 된다). 무거운 데이터는 컴포넌트가 지연 로드. */}
       {tab === "sim" && <SimLauncher />}
 
-      <footer>
+      <footer ref={footerRef}
+        className={`${footerFolded ? "folded" : ""}${footDragH != null ? " dragging" : ""}`}
+        style={footDragH != null ? { maxHeight: `${footDragH}px` } : undefined}>
+        {/* 푸터 접기 핸들 — 모바일에서만 보인다 (CSS). 헤더 핸들과 같은 동작:
+            눌러서 여닫고, 끄는 **동안** 손가락을 따라 높이가 바뀐다. */}
+        <button type="button" className="footer-collapse-toggle"
+          aria-expanded={!footerFolded} aria-label={footerFolded ? t("푸터 펼치기") : t("푸터 접기")}
+          onPointerDown={(e) => {
+            footerFrom.current = e.clientY;
+            footerDragged.current = false;
+            footerH.current = footerFolded ? (footerRef.current?.offsetHeight ?? 0)
+              : (footerRef.current?.offsetHeight ?? 0);
+            try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* 미지원 */ }
+          }}
+          onPointerMove={(e) => {
+            const from = footerFrom.current;
+            if (from == null) return;
+            const dy = e.clientY - from;              // 위로 끌면 음수 = 더 열린다
+            if (footDragH == null && Math.abs(dy) < 3) return;
+            // 시트가 올라올 수 있는 최대치 = 내용 높이와 72vh 중 작은 쪽 (CSS 상한과 같다)
+            const full = Math.min(footerRef.current?.scrollHeight ?? 0,
+              Math.round(window.innerHeight * 0.72));
+            setFootDragH(Math.max(0, Math.min(full, footerH.current - dy)));
+          }}
+          onPointerUp={(e) => {
+            const from = footerFrom.current;
+            footerFrom.current = null;
+            setFootDragH(null);
+            if (from == null) return;
+            const dy = e.clientY - from;
+            if (dy <= -14) { footerDragged.current = true; setFooterFolded(false); }
+            else if (dy >= 14) { footerDragged.current = true; setFooterFolded(true); }
+          }}
+          onPointerCancel={() => { footerFrom.current = null; setFootDragH(null); }}
+          onClick={() => {
+            if (footerDragged.current) { footerDragged.current = false; return; }
+            setFooterFolded((f) => !f);
+          }}>
+          <span aria-hidden>{footerFolded ? "⌃" : "⌄"}</span>
+        </button>
         {/* 'RHODES ISLAND // TERRA ARCHIVE' 장식 문구는 뺐다 (사용자 지시 2026-08-25).
             SEO에는 쓰이지 않았다 — 크롤러가 읽는 건 아래 footer-tabs(내부 링크)와
             footer-langs(언어 대체 링크)이고, 사이트 이름은 <title>·JSON-LD가 이미 준다. */}
