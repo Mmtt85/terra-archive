@@ -19893,7 +19893,9 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   padding-top: 1px;
 }
 .ac-gar-type img { width: 14px; height: 14px; object-fit: contain; }
-.ac-gar-txt { min-width: 0; }
+/* 특질 문구의 줄바꿈 보존 — 게임 원문이 두 줄인 능력이 6종 있다
+   (그라벨·파인콘·라플란드 더 데카덴차·데겐블레허). .ac-skmod-d 와 같은 처리. */
+.ac-gar-txt { min-width: 0; white-space: pre-line; }
 .ac-goldhead {
   margin: 12px 0 4px;
   font-size: 12px;
@@ -20310,6 +20312,13 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
 }
 .ac-oprow-meta { display: flex; align-items: center; gap: 4px; }
 .ac-oprow-gar { min-width: 0; font-size: 12px; line-height: 1.55; }
+/* 맹약 모달의 오퍼 행 — 특질이 **둘인 기물이 9종** 있다 (니어 더 래디언트 나이트·메테오·
+   해럴드·그라벨·틴맨·이그제큐터 디 엑스 포에데레·산탈라·로즈몬티스·데겐블레허).
+   span 이 인라인이라 두 능력이 한 줄로 이어 붙어 "개행이 안 된다"로 보였다
+   (사용자 제보 2026-08-26). 능력 하나가 한 덩이가 되게 블록으로 세우고,
+   원문이 두 줄인 능력은 pre-line 으로 그 줄바꿈까지 살린다. */
+.ac-oprow-gar > span { display: block; white-space: pre-line; }
+.ac-oprow-gar > span + span { margin-top: 5px; }
 .ac-oprow-gar em {
   font-style: normal;
   font-size: 10.5px;
