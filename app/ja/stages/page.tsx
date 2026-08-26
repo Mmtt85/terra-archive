@@ -1,16 +1,14 @@
 import type { Metadata } from "next";
 import HomeJa from "../../home-ja";
 import { pageMetadata, jsonLdFor } from "../../seo";
+import JsonLd from "../../json-ld";
 
 export const metadata: Metadata = pageMetadata("ja", "stage");
 
 export default function Page() {
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdFor("ja", "stage")) }}
-      />
+      <JsonLd data={jsonLdFor("ja", "stage")} />
       <HomeJa initialTab="stage" />
     </>
   );

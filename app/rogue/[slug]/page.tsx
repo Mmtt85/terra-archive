@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import HomeKo from "../../home-ko";
 import { rogueSlugs, rogueMetadata, rogueJsonLd } from "../../seo-rogue";
+import JsonLd from "../../json-ld";
 
 // 통합전략 테마 — 테마마다 실제 정적 페이지 (2026-08-06, SEO).
 // 종전엔 6개 테마가 /rogue?topic=isN 쿼리 파라미터 하나를 나눠 써서 사이트맵에도 없었다.
@@ -21,10 +22,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   const { slug } = await params;
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(rogueJsonLd("ko", slug)) }}
-      />
+      <JsonLd data={rogueJsonLd("ko", slug)} />
       <HomeKo initialTab="rogue" initialRogue={slug} />
     </>
   );

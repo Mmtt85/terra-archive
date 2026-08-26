@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import HomeEn from "../../../home-en";
 import { stageIds, stageMetadata, stageJsonLd, stagePageData } from "../../../seo-stage";
+import JsonLd from "../../../json-ld";
 
 // 작전 상세 — **상시 콘텐츠만** 정적 페이지다 (2026-08-09, 파일 수 한도).
 // 종료된 이벤트까지 3개 언어로 펼치면 그것만 13,000파일이라 Cloudflare Pages의
@@ -20,10 +21,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const { id } = await params;
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(stageJsonLd("en", id)) }}
-      />
+      <JsonLd data={stageJsonLd("en", id)} />
       <HomeEn initialTab="stage" pageStage={stagePageData("en", id)} />
     </>
   );

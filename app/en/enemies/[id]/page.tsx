@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import HomeEn from "../../../home-en";
 import { enemyIds, enemyMetadata, enemyJsonLd, enemyPageData } from "../../../seo-enemy";
+import JsonLd from "../../../json-ld";
 
 // 적 상세 — 도감에 나오는 적마다 실제 정적 페이지 (2026-08-09, SEO).
 //
@@ -24,10 +25,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const { enemy, stages } = enemyPageData("en", id);
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(enemyJsonLd("en", id)) }}
-      />
+      <JsonLd data={enemyJsonLd("en", id)} />
       <HomeEn initialTab="enemy" initialEnemy={id} pageEnemy={enemy} pageEnemyStages={stages} />
     </>
   );
