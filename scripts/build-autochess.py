@@ -79,25 +79,6 @@ def rich(s):
     return re.sub(r"[ \t]+\n", "\n", s).strip()
 
 
-def dedupe_texts(pairs):
-    """(id, 설명) 목록에서 **같은 말을 두 번 하는 슬롯**을 걷어낸다.
-
-    클뜯 데이터는 한 기물에 능력 슬롯을 두세 개 달아 두고 같은 문구를 그대로 복제해 넣는
-    경우가 있다 (2026-08-22 실측 6건: 레코드키퍼 garrison_156/157이 글자까지 동일,
-    비질 garrison_152/153이 동일하고 garrison_01이 그 문장의 부분집합).
-    그대로 두면 화면에 같은 능력이 두 번 나온다 — 공백을 지운 뒤 완전히 같거나
-    다른 항목에 통째로 포함되는 것을 버린다.
-    """
-    keep = []
-    norm = [(gid, re.sub(r"\s+", "", txt)) for gid, txt in pairs]
-    for i, (gid, flat) in enumerate(norm):
-        if not flat:
-            continue
-        dup = any(j != i and (flat in other) and (len(flat) < len(other) or j < i)
-                  for j, (_, other) in enumerate(norm))
-        if not dup:
-            keep.append(gid)
-    return keep or [gid for gid, _ in pairs[:1]]
 
 
 COND_RE = re.compile(r"^<([^>]+)>\s*")
@@ -205,6 +186,146 @@ CHESS = KR["charShopChessDatas"]          # 133 — 상점에 뜨는 기물 정�
 CHESSDATA = KR["charChessDataDict"]       # 266 — 일반(_a)/골든(_b) 각각의 능력치·맹약·능력
 GARRISON = KR["garrisonDataDict"]         # 320 — 기물별 위수 협의 전용 능력
 BONDS = KR["bondInfoDict"]                # 23  — 맹약(진영 8 + 특성 15)
+
+
+# ── 특질 중복 판정 — 설명문이 아니라 **원본 구현(blackboard)** 을 본다 ──────────────
+#
+# 사용자 지적 2026-08-26: "그라벨은 특질이 두 갠데 '배치 시 중첩 +1'이 중복돼 있는 것
+# 같은데, 두 개 합쳐서 총 +2가 중첩된다는 말이야? 아니면 진짜로 그냥 중복인 거야?"
+#
+# 원본을 파 보면 능력 하나는 **설명문(garrisonDesc)** 과 **구현(blackboard)** 을 따로 갖는데,
+# 구현은 조각 하나만 담고 설명문은 그 기물의 **최종 효과 전체**를 적는다. 그래서 조각이
+# 둘이면 첫 카드의 설명문이 둘째 카드의 내용을 이미 포함한다 — 화면에서는 수치가 두 배로
+# 붙는 것처럼 읽힌다. 실측(2026-08-26, 특질 2개인 기물 9종):
+#
+#   그라벨      75 = 쓰러질 시 [불굴] +2 만 구현   / 143 = 배치 시 [카시미어] +1 만 구현
+#               → 75 의 설명문이 배치 시 줄까지 적어 둔 것. 카시미어는 **+1** 이다.
+#   데겐블레허  155 = 배치 시 +8(전투당 최대 24)  / 65 = 획득 시 +8(SERVER_GAIN)
+#               → 155 의 설명문이 획득 시 줄까지 적어 둔 것. 획득은 **+8** 이다.
+#   해럴드·틴맨·로즈몬티스  03 = 공·HP ×1.2 만    / 09·151 = 맹약 3중첩당 +1% 만
+#   메테오      137 = 공·HP ×1.25 만              / 01 = 약점 대미지 변환만
+#   니어2       145 → 144(재배치 -1.5%)           / 160 → 159(공속 +0.5)
+#   이그제큐터  23 = [라테라노] +7                 / 55 = [예견] +3  (설명문은 둘 다 양쪽을 적음)
+#   산탈라      141 = 휴식 진입 시 +4              / 142 = 휴식 종료 시 +4  ← **여기만 진짜 합산**
+#
+# ⚠ 그래서 "글자가 비슷하면 지운다"로는 안 된다 — 산탈라(유사도 0.848)가 그라벨(0.650)보다
+#   더 닮았는데 산탈라는 지우면 안 된다. **발동 시점(blackboard 의 key·eventType)** 이
+#   판정 기준이다 (사용자 확정 2026-08-26).
+
+# 조건 문구 → 발동 시점. **한국어 원문 기준**으로만 판정하고, 그 결과(줄 번호·능력 id)를
+# EN/JA 에 그대로 적용한다 — 세 로케일의 줄 수가 같은 것은 전수 확인했다.
+COND_TRIGGER = {"배치 시": "onstart", "쓰러질 시": "selfdead", "획득 시": "SERVER_GAIN"}
+
+
+def gar_trigger(gid):
+    """이 능력이 **실제로** 언제 발동하는가 — 설명문이 아니라 blackboard/eventType 에서 뽑는다."""
+    g = GARRISON.get(gid) or {}
+    ev = g.get("eventType") or ""
+    if ev.startswith("SERVER_"):          # SERVER_GAIN(획득) · SERVER_PREP_START/FIN(휴식 전후)
+        return ev
+    key = ""
+    for b in g.get("blackboard") or []:
+        if b.get("key") == "key":
+            key = b.get("valueStr") or ""
+    for mark in ("onstart", "selfdead", "consume_ammo", "onkill"):
+        if mark in key:
+            return mark
+    return ev or "IN_BATTLE"
+
+
+def gar_line_keep(gid, siblings):
+    """여러 줄 설명에서 **형제 능력이 구현하는 줄**을 뺀다 → 남길 줄 번호 (없으면 None)."""
+    g = GARRISON.get(gid)
+    if not g:
+        return None
+    lines = rich(g["garrisonDesc"]).split("\n")
+    if len(lines) < 2:
+        return None
+    mine = gar_trigger(gid)
+    sib = {gar_trigger(x) for x in siblings if x != gid}
+    keep = []
+    for i, ln in enumerate(lines):
+        m = COND_RE.match(ln)
+        trig = COND_TRIGGER.get(m.group(1).strip()) if m else None
+        # 이 줄의 조건이 **형제 능력의 발동 시점**이고 내 것이 아니면, 그 줄은 형제 몫이다
+        if trig and trig != mine and trig in sib:
+            continue
+        keep.append(i)
+    return keep if 0 < len(keep) < len(lines) else None
+
+
+# 비교에서 지우는 것 — 강조(**)·괄호 주석·따옴표. 괄호를 빼는 이유는 같은 효과를 다르게
+# 풀어 쓰기 때문이고(메테오 01 "물리 또는 마법 대미지로 변경" vs 137 "대미지 유형 변경"),
+# 따옴표를 빼는 이유는 '부여하는 특질'을 인용부호로 감싸기 때문이다(니어2 145 의 '…' 안이
+# 곧 144 의 설명문 전체다).
+_GAR_QUOTE = "\u0027\u0022\u2018\u2019\u201c\u201d\u300c\u300d"
+
+
+def _gar_norm(txt):
+    txt = txt.replace("**", "")
+    return re.sub(r"[(（][^)）]*[)）]", " ", txt)
+
+
+def _gar_flat(txt):
+    """공백·구두점을 다 지운 비교용 문자열 — 부분문자열 판정."""
+    return re.sub(r"[\s,、" + _GAR_QUOTE + r"]+", "", _gar_norm(txt))
+
+
+def _gar_tokens(txt):
+    """토큰 집합 — 긴 쪽이 문장 **중간에** 구절을 끼워 넣으면 부분문자열로는 안 걸린다
+    (니어2 145 는 160 의 문장 가운데에 '재배치 시간 -1.5%, ' 를 끼워 넣는다)."""
+    return set(t.strip(_GAR_QUOTE) for t in re.split(r"[\s,、]+", _gar_norm(txt)) if t.strip(_GAR_QUOTE))
+
+
+def dedupe_gar(ids, texts):
+    """같은 말을 두 번 하는 슬롯 정리 — **발동 시점이 같을 때만** 지운다.
+
+    발동 시점이 다르면 진짜로 각각 터지는 것이므로(산탈라·그라벨·데겐블레허) 건드리지 않는다.
+    """
+    if len(ids) < 2:
+        return list(ids)
+    tok = [_gar_tokens(texts[g]) for g in ids]
+    flat = [_gar_flat(texts[g]) for g in ids]
+    trig = [gar_trigger(g) for g in ids]
+    keep = []
+    for i, gid in enumerate(ids):
+        dup = any(j != i and trig[j] == trig[i] and flat[i]
+                  and (flat[i] in flat[j] or (tok[i] and tok[i] <= tok[j]))
+                  and (len(flat[i]) < len(flat[j]) or j < i)
+                  for j in range(len(ids)))
+        if not dup:
+            keep.append(gid)
+    return keep or [ids[0]]
+
+
+# 남길 능력·줄을 **한국어 기준으로 한 번만** 계산해 세 로케일이 같은 결과를 쓰게 한다
+GAR_KEPT, GAR_LINES = {}, {}
+for _cid, _cd in CHESSDATA.items():
+    _ids = [g for g in (_cd.get("garrisonIds") or []) if g in GARRISON]
+    if not _ids:
+        continue
+    for _g in _ids:
+        _lk = gar_line_keep(_g, _ids)
+        if _lk is not None:
+            GAR_LINES[_g] = _lk
+    _texts = {}
+    for _g in _ids:
+        _ls = rich(GARRISON[_g]["garrisonDesc"]).split("\n")
+        _texts[_g] = "\n".join(_ls[i] for i in GAR_LINES.get(_g, range(len(_ls))))
+    GAR_KEPT[_cid] = dedupe_gar(_ids, _texts)
+
+
+def gar_desc(loc, gid, g):
+    """능력 설명 — 형제 능력이 구현하는 줄은 뺀 뒤 로케일 문구로 낸다.
+
+    줄 번호는 **한국어에서 계산**해 그대로 쓴다 (세 로케일의 줄 수가 같은 것은 전수 확인).
+    """
+    txt = rich(loc_desc(loc, "garrisonDataDict", gid, "garrisonDesc", g["garrisonDesc"]))
+    idx = GAR_LINES.get(gid)
+    if idx is None:
+        return txt
+    lines = txt.split("\n")
+    return "\n".join(lines[i] for i in idx if i < len(lines))
 
 # ── 맹약의 '중첩 수에 따라 변경' 실수치 (사용자 요청 2026-08-24) ─────────────────
 # 게임 설명문은 "공격력 증가 (중첩 수에 따라 변경)"처럼 숫자를 안 준다. 진짜 값은
@@ -541,8 +662,9 @@ def build_locale(loc):
         name = char_name(loc, char_id)
         if not name and c.get("chessType") == "DIY":
             name = {"ko": "자유 선택 슬롯", "en": "Free pick slot", "ja": "自由選択スロット"}[loc]
-        gar = list(base.get("garrisonIds") or [])
-        garG = list(gold.get("garrisonIds") or [])
+        # 남길 능력은 **한국어 blackboard 기준**으로 이미 골라 뒀다 (GAR_KEPT — 위 주석 참조)
+        gar = list(GAR_KEPT.get(cid) or base.get("garrisonIds") or [])
+        garG = list(GAR_KEPT.get(gold_id) or gold.get("garrisonIds") or [])
         for g in gar + garG:
             gar_used[g] = True
         row = {
@@ -632,7 +754,7 @@ def build_locale(loc):
             continue
         tg, evb, bs = classify_gar(rich(g["garrisonDesc"]), bond_id_by_kr_name)
         gar_rows[gid] = {
-            "d": rich(loc_desc(loc, "garrisonDataDict", gid, "garrisonDesc", g["garrisonDesc"])),
+            "d": gar_desc(loc, gid, g),
             "t": loc_name(loc, "garrisonDataDict", gid, "eventTypeDesc", g.get("eventTypeDesc")),
             "ic": TYPE_ICON.get(g.get("eventTypeIcon"), "battle"),
             **({"tg": tg} if tg else {}),
@@ -640,11 +762,12 @@ def build_locale(loc):
             **({"bs": bs} if bs else {}),
         }
 
-    # 같은 말을 두 번 하는 슬롯 정리 (dedupe_texts 주석 참조) — 정리 후 안 쓰이는 능력은 뺀다
+    # 중복 정리는 GAR_KEPT 가 이미 했다 (blackboard 기준, 로케일 무관) — 여기서는 정리 후
+    # 아무 기물도 안 쓰는 능력만 사전에서 뺀다
     used_after = set()
     for row in chess_rows:
         for key in ("gar", "garG"):
-            row[key] = dedupe_texts([(g, gar_rows[g]["d"]) for g in row[key] if g in gar_rows])
+            row[key] = [g for g in row[key] if g in gar_rows]
             used_after.update(row[key])
     gar_rows = {k: v for k, v in gar_rows.items() if k in used_after}
 
