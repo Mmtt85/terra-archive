@@ -11968,6 +11968,14 @@ html.dark .pt-stage {
   .pt-scrim {
     background: linear-gradient(180deg, color-mix(in srgb, var(--pt-veil) 40%, transparent), color-mix(in srgb, var(--pt-veil) 72%, transparent));
   }
+  /* 가이드 묶음도 모바일에선 설명을 보인다 (사용자 확정 2026-08-26).
+     PC 는 가이드 상자가 한 줄뿐이라 계속 숨긴다(위 .pt-g-guide .pt-desc). 모바일은
+     max-height 상한을 푼 뒤로 세로가 늘어나 자리가 난다. 다만 3칸이라 타일이 107px 뿐이라
+     **문구를 짧게 다시 썼다** — 종전 도감용 긴 문구는 8글자쯤에서 잘려 쓸모가 없었다. */
+  .pt-g-guide .pt-desc {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+  }
   .pt-tiles {
     height: auto;
     /* ⚠ 기본 규칙의 max-height:640px 을 **반드시 풀어야 한다** (사용자 제보 2026-08-25

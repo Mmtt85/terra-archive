@@ -2206,7 +2206,7 @@ const D: Record<string, Pair> = {
   "거부반응": ["Rejection", "拒絶反応"],
   "계시": ["Revelation", "啓示"],
   "통합전략 가이드 - 명일방주 통합전략 공략 | 테라 아카이브": ["Integrated Strategies Guide - Arknights IS Guide | Terra Archive", "統合戦略ガイド - アークナイツ統合戦略攻略 | テラアーカイブ"],
-  "층별 노드·적 도감·유물·엔딩 조건을 난이도별로 정리": ["Floor nodes, enemy handbook, relics, and ending requirements by difficulty", "階層ノード・敵図鑑・秘宝・エンディング条件を難易度別に整理"],
+  "층별 노드 · 유물 · 엔딩": ["Floor nodes · relics · endings", "階層ノード · 秘宝 · エンディング"],
   "이 테마는 CN 선행 데이터라 아직 한국어·중국어로만 제공됩니다.": ["This theme is based on advance CN-server data and is only available in Korean/Chinese for now.", "このテーマはCN先行データのため、現在は韓国語・中国語のみの提供です。"],
   "다른 테마는 준비 중": ["Other themes coming soon", "他のテーマは準備中"],
   "준비 중": ["Coming soon", "準備中"],
@@ -2819,7 +2819,7 @@ const D: Record<string, Pair> = {
   "찾는 글이 없습니다.": ["Nothing matches.", "該当する文章がありません。"],
   "위수 협의 보기": ["Stronghold Protocol views", "堅守協定の表示"],
   "위수 협의 능력": ["Garrison ability", "駐留能力"],
-  "맹약별 오퍼레이터·전용 능력·특훈 적·보급센터 수치를 정리": ["Operators by alliance, garrison abilities, training enemies and Supply Center numbers", "盟約ごとのオペレーター・専用能力・訓練用仮想敵・補給センターの数値"],
+  "맹약 · 전용 능력 · 특훈 적": ["Alliances · abilities · training foes", "盟約 · 専用能力 · 訓練用仮想敵"],
   "맹약(진영·특성)별 오퍼레이터와 각자의 위수 협의 전용 능력, 특훈 적과 리더 적, 보급센터 수치를 게임 데이터에서 그대로 정리했습니다.": [
     "Operators grouped by alliance (nation and trait) with the garrison ability each one carries, plus Tactical Training and leader enemies and every Supply Center number — straight from the game data.",
     "盟約（国家・特性）ごとのオペレーターとそれぞれの専用能力、訓練用仮想敵とリーダー級の敵、補給センターの数値をゲームデータからそのまま整理しました。"],
@@ -3068,7 +3068,7 @@ const D: Record<string, Pair> = {
   "처음부터 고를 수 있는 전략입니다.": [
     "This strategy is available from the start.", "最初から選べる戦略です。"],
   // 포탈 타일 설명 — 사전에서 빠져 있어 EN/JA에 한국어가 나가던 두 줄 (2026-08-22 발견)
-  "요리 조합·제작 재료·지역과 조우 선택지를 정리": ["Recipes, crafting materials, areas and encounter choices", "料理レシピ・製作素材・エリアと遭遇の選択肢"],
+  "요리 · 제작 · 조우 선택지": ["Recipes · crafting · encounters", "料理 · 製作 · 遭遇の選択肢"],
   "적 1,500여 종의 스탯·능력·면역과 등장 작전": ["Stats, abilities and immunities for 1,500+ enemies, plus where they appear", "1,500種以上の敵のステータス・能力・耐性と出現作戦"],
 };
 
