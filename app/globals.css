@@ -11640,7 +11640,9 @@ html.dark .pt-stage {
   /* 사용자 지정 배치 (2026-07-30): 1줄 인프라 통째, 2줄 통합전략 2칸 + 이벤트 1칸,
      나머지는 PORTAL_TILES 순서대로. 6열이라야 "2칸 : 1칸"이 정확히 떨어진다. */
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  grid-template-rows: 1.1fr 1fr 1fr 1fr 1fr 0.95fr;
+  /* 2행(가이드)은 라벨+설명 한 줄이 들어가야 해 조금 크다. 6행은 업데이트 내역 타일을
+     뺀 뒤라 여유가 있어 거기서 떼어 왔다 (사용자 지시 2026-08-26). 합(6.05)은 그대로. */
+  grid-template-rows: 1.1fr 1.15fr 1fr 1fr 1fr 0.8fr;
   /* 도감·시뮬레이터는 묶음 상자(dex·sim)로 — 헤더 메뉴 묶음과 같은 구성 (사용자 지시
      2026-08-10). 제안 보내기 타일은 뺐다(떠 있는 💬 버튼과 중복 — 같은 날 지시). */
   grid-template-areas:
@@ -11649,7 +11651,7 @@ html.dark .pt-stage {
     "dex      dex      dex      sim      sim      sim     "
     "dex      dex      dex      sim      sim      sim     "
     "dex      dex      dex      sim      sim      sim     "
-    "story    story    mission  mission  archives archives";
+    "story    story    story    archives archives archives";
 }
 /* 묶음 상자 — 캡션 + 세로로 쌓인 작은 타일들 */
 .pt-group {
@@ -11681,12 +11683,11 @@ html.dark .pt-stage {
 .pt-g-guide .pt-group-tiles {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
-/* 가이드 상자는 한 줄(row 2)뿐이라 설명 줄이 칸 밖으로 잘린다 — 이름만 둔다
-   (도감·시뮬레이터 상자는 세 줄을 차지해 설명이 들어간다) */
-.pt-g-guide .pt-desc { display: none; }
+/* 가이드 상자는 종전엔 설명을 통째로 숨겼다 (2026-08-22 "한 줄뿐이라 칸 밖으로 잘린다").
+   2026-08-26 부터 보인다 — 홈 타일 설명은 전부 1줄 + … 로 통일했으므로 그 안에 들어간다. */
 /* 묶음 속 타일은 한 단계 촘촘하게 — 시뮬레이터 상자엔 4칸이 들어간다 */
 .pt-group .pt-tile { padding: 5px 10px; }
-.pt-group .pt-desc { -webkit-line-clamp: 1; }
+
 /* 납작한 묶음 타일에선 위로 뺀 배지(top:-13px)가 overflow에 잘린다 (사용자 제보
    2026-08-10 "새기능 뱃지가 짤려서 보임") — 세로 메뉴 행과 같은 줄 안 오른쪽 배치로 */
 .pt-group .pt-tile .new-badge {
@@ -11759,15 +11760,21 @@ html.dark .pt-stage {
 .pt-t-terminal .pt-ic { width: 32px; height: 32px; font-size: 16px; }
 .pt-t-terminal .pt-desc { font-size: 13px; }
 /* 큰 칸 가운데를 채우는 한 줄 설명 — 게임에선 이성 시계가 있던 자리 */
+/* 홈 타일 설명은 **한 줄 + …** 로 통일한다 (사용자 지시 2026-08-26: "너비가 모자라면
+   …으로, 지금은 좀 길면 두 줄로 넘어간다").
+   ⚠ -webkit-line-clamp 는 여기서 **안 먹는다**. .pt-tile 이 세로 flex 라 자식의
+     display:-webkit-box 가 블록화되어 flow-root 로 계산된다 (실측 2026-08-26:
+     computed display=flow-root, clamp=1 인데 높이 8.5px 로 짜부라짐). 그래서 제목(.pt-ko)이
+     쓰는 것과 같은 nowrap + ellipsis 로 자른다 — 이건 flex 자식에서도 확실히 동작한다. */
 .pt-desc {
   font-size: 12px;
   font-weight: 600;
   line-height: 1.45;
   color: var(--pt-mut);
   overflow: hidden;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: none;            /* 세로 flex 에서 눌려 사라지지 않게 */
 }
 /* 이벤트 배너 칸 — 게이지(이성 시계 자리) + 배너 이미지 */
 .pt-banner {
@@ -11941,9 +11948,6 @@ html.dark .pt-stage {
   .pt-tile {
     padding: 6px 11px;
   }
-  .pt-desc {
-    -webkit-line-clamp: 1;
-  }
 }
 
 /* 좁은 화면 — 아트를 배경으로 눕히고 타일을 2열로. 게임도 세로에선 칸을 접는다. */
@@ -11968,14 +11972,6 @@ html.dark .pt-stage {
   .pt-scrim {
     background: linear-gradient(180deg, color-mix(in srgb, var(--pt-veil) 40%, transparent), color-mix(in srgb, var(--pt-veil) 72%, transparent));
   }
-  /* 가이드 묶음도 모바일에선 설명을 보인다 (사용자 확정 2026-08-26).
-     PC 는 가이드 상자가 한 줄뿐이라 계속 숨긴다(위 .pt-g-guide .pt-desc). 모바일은
-     max-height 상한을 푼 뒤로 세로가 늘어나 자리가 난다. 다만 3칸이라 타일이 107px 뿐이라
-     **문구를 짧게 다시 썼다** — 종전 도감용 긴 문구는 8글자쯤에서 잘려 쓸모가 없었다. */
-  .pt-g-guide .pt-desc {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-  }
   .pt-tiles {
     height: auto;
     /* ⚠ 기본 규칙의 max-height:640px 을 **반드시 풀어야 한다** (사용자 제보 2026-08-25
@@ -11994,7 +11990,7 @@ html.dark .pt-stage {
       "banner   story   "
       "dex      dex     "
       "sim      sim     "
-      "mission  archives";
+      "archives archives";
   }
   /* 묶음 속은 2열로 접는다 — 세로 한 줄이면 홈이 너무 길어진다 */
   .pt-group-tiles {

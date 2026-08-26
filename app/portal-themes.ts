@@ -62,16 +62,16 @@ export const PORTAL_TILES: PortalTile[] = [
     desc: "이벤트 스토리를 AI 요약과 전문(풀 스크립트)으로", icon: "✦" },
   // 게임 모드 공략 3종은 '가이드' 묶음 상자로 (사용자 확정 2026-08-22) — 헤더 메뉴와 같은 구성
   { id: "squads", label: "통합전략", tab: "rogue", area: "guide", kind: "plate", group: "guide",
-    desc: "층별 노드 · 유물 · 엔딩", icon: "❖" },
+    desc: "층별 노드·적 도감·유물·엔딩 조건을 난이도별로 정리", icon: "❖" },
   { id: "ra", label: "생존연산", tab: "ra", area: "guide", kind: "plate", group: "guide",
-    desc: "요리 · 제작 · 조우 선택지", icon: "❂" },
+    desc: "요리 조합·제작 재료·지역과 조우 선택지를 정리", icon: "❂" },
   { id: "autochess", label: "위수협의", tab: "autochess", area: "guide", kind: "plate", group: "guide",
-    desc: "맹약 · 전용 능력 · 특훈 적", icon: "♟" },
-  { id: "mission", label: "업데이트 내역", action: "changelog", area: "mission", kind: "plate",
-    desc: "최근 무엇이 바뀌었는지, 지난 기록까지 한 곳에", icon: "🛠" },
+    desc: "맹약별 오퍼레이터·전용 능력·특훈 적·보급센터 수치를 정리", icon: "♟" },
   { id: "archives", label: "테라 아카이브 소개", tab: "about", area: "archives", kind: "plate",
     desc: "각 기능이 무엇이고 언제 쓰는지 안내", icon: "ⓘ" },
   // 제안 보내기 타일은 뺐다 (사용자 지시 2026-08-10) — 떠 있는 💬 제안 버튼과 중복.
+  // 업데이트 내역 타일도 뺐다 (사용자 지시 2026-08-26) — 헤더 로고 옆 🛠 버튼과 중복이고,
+  // 그 자리를 6행에 돌려주면 가이드 상자에 설명 두 줄이 들어간다.
 ];
 
 /**
