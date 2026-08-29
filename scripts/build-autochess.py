@@ -677,9 +677,16 @@ def build_locale(loc):
         gates = [gate_of(st.get("c")) for st in steps_of(b["desc"])]
         if loc == "ko":
             validate_gates(bid, b, gates)
-        for st, g in zip(steps, gates):
+        # 정비구역(덱)까지 세게 되는 **해금 단계** 표식 — 예견·기적·투자자는 발동 범위가
+        # BOARD_AND_DECK 이지만, 정비구역을 실제로 세는 건 이 단계(중첩 150·100·100)에
+        # 도달한 뒤다. 문구가 "(정비 구역의 [X] 오퍼레이터도 맹약 활성화 가능)"으로 알려 준다.
+        # ⚠ 그 전까지는 정비구역이 맹약에 **아무 영향이 없다** (사용자 지적 2026-08-29).
+        kr_steps = steps_of(b["desc"])
+        for i, (st, g) in enumerate(zip(steps, gates)):
             if g:
                 st["g"] = g
+            if i < len(kr_steps) and "정비 구역" in kr_steps[i]["t"]:
+                st["dk"] = 1
         bond_rows.append({
             "id": bid,
             "n": name,

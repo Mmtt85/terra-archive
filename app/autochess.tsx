@@ -505,6 +505,43 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     if (where === "b" && slots.length < (slot9 ? MAX_BOARD_ITEM : MAX_BOARD)) setSlots((v) => [...v, { id: c.id }]);
     else if (where === "d" && bench.length < MAX_DECK) setBench((v) => [...v, { id: c.id }]);
   };
+  // ── 끌어 옮기기 (사용자 요청 2026-08-29) ─────────────────────────────────
+  // 배치 ↔ 정비구역을 마우스로 옮긴다. 빈 칸에 놓으면 그 구역 끝에 붙고, 기물 위에
+  // 놓으면 **자리를 맞바꾼다**. 담긴 배열은 앞에서부터 촘촘하므로 인덱스로만 다룬다.
+  const dragFrom = useRef<{ z: "b" | "d"; i: number } | null>(null);
+  const [dropAt, setDropAt] = useState<string>("");     // "b3" 처럼 — 놓을 자리 강조용
+  const boardCap = slot9 ? MAX_BOARD_ITEM : MAX_BOARD;
+  const moveSlot = (from: { z: "b" | "d"; i: number }, to: { z: "b" | "d"; i: number }) => {
+    const src = from.z === "b" ? [...slots] : [...bench];
+    const item = src[from.i];
+    if (!item) return;
+    if (from.z === to.z) {
+      const tgt = src[to.i];
+      if (tgt) { src[from.i] = tgt; src[to.i] = item; }
+      else { src.splice(from.i, 1); src.push(item); }
+      (from.z === "b" ? setSlots : setBench)(src);
+      return;
+    }
+    const dst = to.z === "b" ? [...slots] : [...bench];
+    const tgt = dst[to.i];
+    if (tgt) { src[from.i] = tgt; dst[to.i] = item; }          // 맞바꾸기 — 정원은 그대로다
+    else {
+      if (dst.length >= (to.z === "b" ? boardCap : MAX_DECK)) return;
+      src.splice(from.i, 1); dst.push(item);
+    }
+    if (from.z === "b") { setSlots(src); setBench(dst); } else { setBench(src); setSlots(dst); }
+  };
+  /** 놓을 수 있는 칸에 공통으로 다는 속성 */
+  const dropProps = (z: "b" | "d", i: number) => ({
+    onDragOver: (e: React.DragEvent) => { e.preventDefault(); setDropAt(`${z}${i}`); },
+    onDragLeave: () => setDropAt((v) => (v === `${z}${i}` ? "" : v)),
+    onDrop: (e: React.DragEvent) => {
+      e.preventDefault(); setDropAt("");
+      const from = dragFrom.current; dragFrom.current = null;
+      if (from) moveSlot(from, { z, i });
+    },
+  });
+
   const dropFrom = (where: "b" | "d", i: number) =>
     (where === "b" ? setSlots : setBench)((v) => v.filter((_, k) => k !== i));
 
@@ -1581,7 +1618,8 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                 <i className="sb-chip">{t("{a}/{b}명", { a: st.counted, b: b.min })}</i>
                 {b.down ? <i className="sb-chip">{t("적을수록 강함")}</i> : null}
                 {st.deck > 0 && b.cond === "BOARD_AND_DECK"
-                  ? <i className="sb-chip">{t("덱 {n}", { n: st.deck })}</i> : null}
+                  ? <i className="sb-chip">{st.deckOn ? t("정비구역 {n} 포함", { n: st.deck })
+                    : t("정비구역 {n} — 아직 안 셈", { n: st.deck })}</i> : null}
                 <i className={`sb-chip ${st.active ? "ac-on" : "ac-off"}`}>{st.active ? t("발동") : t("미발동")}</i>
               </p>
               {/* 중첩은 이 맹약 것만 여기서 지정한다 — 전투 중에 쌓이는 값이라 편성만으로는
@@ -1676,11 +1714,17 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                 const sl = slots[i];
                 const c = sl && chessById.get(sl.id);
                 if (!c) return (
-                  <button key={i} type="button" className="ac-slot empty" title={t("기물 담기")}
+                  <button key={i} type="button" title={t("기물 담기")}
+                    className={`ac-slot empty${dropAt === `b${i}` ? " over" : ""}`}
+                    {...dropProps("b", i)}
                     onClick={() => setPicking("b")}>+</button>
                 );
                 return (
-                  <div key={i} className={`ac-slot${isGold(sl.id) ? " gold" : ""}`}>
+                  <div key={i} draggable
+                    className={`ac-slot${isGold(sl.id) ? " gold" : ""}${dropAt === `b${i}` ? " over" : ""}`}
+                    onDragStart={() => { dragFrom.current = { z: "b", i }; }}
+                    onDragEnd={() => { dragFrom.current = null; setDropAt(""); }}
+                    {...dropProps("b", i)}>
                     <button type="button" className="ac-slot-face" onClick={() => openChess(c)} title={t("기물 상세")}>
                       {c.op ? <img src={opFace(c.op)} alt="" aria-hidden loading="lazy" onError={hideErr} />
                         : <span className="ac-face-diy" aria-hidden>?</span>}
@@ -1706,11 +1750,17 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                 const sl = bench[i];
                 const c = sl && chessById.get(sl.id);
                 if (!c) return (
-                  <button key={i} type="button" className="ac-slot empty sm" title={t("기물 담기")}
+                  <button key={i} type="button" title={t("기물 담기")}
+                    className={`ac-slot empty sm${dropAt === `d${i}` ? " over" : ""}`}
+                    {...dropProps("d", i)}
                     onClick={() => setPicking("d")}>+</button>
                 );
                 return (
-                  <div key={i} className="ac-slot sm">
+                  <div key={i} draggable
+                    className={`ac-slot sm${isGold(sl.id) ? " gold" : ""}${dropAt === `d${i}` ? " over" : ""}`}
+                    onDragStart={() => { dragFrom.current = { z: "d", i }; }}
+                    onDragEnd={() => { dragFrom.current = null; setDropAt(""); }}
+                    {...dropProps("d", i)}>
                     <button type="button" className="ac-slot-face" onClick={() => openChess(c)} title={t("기물 상세")}>
                       {c.op ? <img src={opFace(c.op)} alt="" aria-hidden loading="lazy" onError={hideErr} />
                         : <span className="ac-face-diy" aria-hidden>?</span>}

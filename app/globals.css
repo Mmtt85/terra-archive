@@ -20373,6 +20373,13 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   cursor: pointer;   /* 누르면 기물 고르기 모달 */
 }
 .ac-slot.empty:hover { border-color: var(--lime); color: var(--lime); }
+/* 끌어 옮기는 중 — 놓을 자리 강조 (배치 ↔ 정비구역, 2026-08-29) */
+.ac-slot[draggable="true"] { cursor: grab; }
+.ac-slot[draggable="true"]:active { cursor: grabbing; }
+.ac-slot.over {
+  border-color: var(--lime); border-style: solid;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--lime) 40%, transparent);
+}
 /* 9번째 배치 칸 — 아이템 '인사부 파일'을 먹어야 열린다. 눌러서 해금한다. */
 .ac-slot.locked {
   padding: 4px 5px; gap: 2px; align-items: center; justify-content: center;

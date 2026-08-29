@@ -38,8 +38,10 @@ export type BondState = {
   id: string;
   /** 전장에 있는 이 맹약 소속 기물 수 */
   board: number;
-  /** 덱(예비)에 있는 수 */
+  /** 정비구역에 있는 수 (세어지는지는 deckOn 이 정한다) */
   deck: number;
+  /** 정비구역까지 세는 단계가 켜졌는가 — 예견·기적·투자자만, 그것도 중첩 도달 뒤 */
+  deckOn: boolean;
   /** 발동 판정에 실제로 쓰이는 수 — 맹약의 세는 범위(cond)에 따라 다르다 */
   counted: number;
   active: boolean;
@@ -76,11 +78,21 @@ export function computeBoard(
   return bonds.map((b) => {
     const onBoard = board.filter((s) => bondsOf(s).includes(b.id)).length;
     const inDeck = deck.filter((s) => bondsOf(s).includes(b.id)).length;
+    const stack = stacks?.[b.id];
+    // ⚠ 정비구역(덱)은 **기본적으로 맹약에 아무 영향이 없다** (사용자 지적 2026-08-29).
+    //   예견·기적·투자자만 범위가 BOARD_AND_DECK 인데, 정비구역을 실제로 세는 건
+    //   중첩 150·100·100 단계에 도달한 뒤다 — 그 단계 문구가 "(정비 구역의 [X]
+    //   오퍼레이터도 맹약 활성화 가능)"이고, 빌드가 dk 표식을 달아 둔다.
+    const deckOn = b.cond === "BOARD_AND_DECK" && b.steps.some((st) => {
+      const d = st as { dk?: 1; g?: AcGate };
+      if (!d.dk) return false;
+      if (!d.g) return true;
+      return d.g.k === "stack" ? stack != null && stack >= d.g.n : false;
+    });
     const counted = b.cond === "BOARD_ALL_CHESS" ? goldOnBoard
-      : b.cond === "BOARD_AND_DECK" ? onBoard + inDeck
+      : deckOn ? onBoard + inDeck
         : onBoard;
     const active = b.down ? counted <= (b.min ?? 0) && counted > 0 : counted >= (b.min ?? 0);
-    const stack = stacks?.[b.id];
 
     const steps: StepState[] = b.steps.map((st, i) => {
       const g = (st as { g?: AcGate }).g;
@@ -91,7 +103,7 @@ export function computeBoard(
       if (stack == null) return { i, on: null, gate: g };
       return { i, on: active && stack >= g.n, gate: g, need: Math.max(0, g.n - stack) };
     });
-    return { id: b.id, board: onBoard, deck: inDeck, counted, active, steps };
+    return { id: b.id, board: onBoard, deck: inDeck, deckOn, counted, active, steps };
   });
 }
 
