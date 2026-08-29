@@ -26,6 +26,19 @@ import { GLOBAL_MODAL_HASH } from "./hash-modal";
 import { loadEnemies } from "./dex-cross";
 import { EnemyFile, RANK_KEY, enemyImg, enemyImgBase, type Enemy } from "./enemy-detail";
 
+// ── 편성 판의 칸 ────────────────────────────────────────────────────────────
+/** 한 칸 — 비어 있으면 null. **성긴 배열**이라 인덱스가 곧 화면의 칸 위치다
+ *  (끌어다 놓은 자리를 그대로 지키려면 앞으로 당겨 채우면 안 된다, 사용자 지시 2026-08-29). */
+type AcCell = BoardSlot | null;
+/** 담긴 기물만 — 맹약 계산·인원수는 전부 이걸 거친다 */
+const kept = (v: AcCell[]) => v.filter((x): x is BoardSlot => !!x);
+/** 뒤쪽 빈 칸은 들고 다닐 이유가 없으니 잘라 낸다 (화면은 cap 만큼 늘 그린다) */
+const trimCells = (v: AcCell[]) => {
+  const o = [...v];
+  while (o.length && !o[o.length - 1]) o.pop();
+  return o;
+};
+
 // ── 데이터 타입 (build-autochess.py 산출과 1:1) ──────────────────────────────
 export type AcStep = { c?: string; t: string };
 /** 문구 상호 참조 — [종류, 대상 id]. 종류: bond·item·band·op·enemy·mode */
@@ -285,8 +298,11 @@ export default function AutochessGuide({ doc, onShowOperator }: {
   // 판에 담으면 23개 맹약 상태가 한 번에 나온다. 계산 규칙은 autochess-board.ts 참고 —
   // **인원 게이트만 자동 판정하고 중첩은 자동 합산하지 않는다** (중첩을 올리는 능력 130개 중
   // 58개만 대상·수치가 고정이라, 절반 빠진 합계를 확정값처럼 보이면 안 된다).
-  const [slots, setSlots] = useState<BoardSlot[]>([]);   // 전장 (최대 8)
-  const [bench, setBench] = useState<BoardSlot[]>([]);   // 덱 (최대 10)
+  // ⚠ 배열을 **성기게** 든다 — 빈 칸은 null 로 남는다. 앞에서부터 촘촘히 채우면 끌어다
+  // 놓은 자리가 아니라 맨 앞 빈칸으로 튕겨 나갔다 (사용자 지적 2026-08-29
+  // "제일 왼쪽으로 보내지 말고 드롭한 부분에다가 놔줘"). 세는 곳은 전부 kept() 를 거친다.
+  const [slots, setSlots] = useState<AcCell[]>([]);   // 전장 (최대 8~9)
+  const [bench, setBench] = useState<AcCell[]>([]);   // 덱 (최대 10)
   // 중첩 수는 **맹약마다 따로**다 (사용자 지적 2026-08-29 "중첩수는 공통이 아니니까") —
   // 공통 입력칸을 없애고 맹약을 눌러 연 작은 창에서 그 맹약 것만 지정한다.
   const [stacks, setStacks] = useState<Record<string, number>>({});
@@ -301,7 +317,9 @@ export default function AutochessGuide({ doc, onShowOperator }: {
   });
   const [sim, setSim] = useState(false);                 // 덱편성 시뮬레이터 모달
   const [slot9, setSlot9] = useState(false);             // 9번째 배치 칸 — '인사부 파일' 해금
-  const [picking, setPicking] = useState<null | "b" | "d">(null);
+  // ⚠ 구역만이 아니라 **누른 칸의 번호까지** 든다 — 누른 자리에 그대로 놓기 위함
+  // (사용자 지적 2026-08-29 "+ 버튼 눌러서 지정해도 그 카드에 지정이 돼야지").
+  const [picking, setPicking] = useState<null | { z: "b" | "d"; i: number }>(null);
   const [peek, setPeek] = useState<string>("");           // 원형 맹약을 눌러 연 작은 상세 창
   const [equip, setEquip] = useState<AcEquip | null>(null);
   const [band, setBand] = useState<AcBand | null>(null);
@@ -490,7 +508,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     () => Object.fromEntries(doc.bonds.map((b) => [b.id, stacks[b.id] ?? 0])), [doc, stacks]);
   const withGold = (v: BoardSlot[]) => v.map((x) => ({ ...x, gold: goldMark.has(x.id) }));
   const boardState = useMemo(
-    () => computeBoard(doc.bonds, chessById, withGold(slots), withGold(bench), stacksAll),
+    () => computeBoard(doc.bonds, chessById, withGold(kept(slots)), withGold(kept(bench)), stacksAll),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [doc, chessById, slots, bench, stacksAll, goldMark]);
   /** 켜진 맹약 먼저, 그다음 인원이 많은 순 — 판을 보는 사람이 궁금한 순서다 */
@@ -499,38 +517,45 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     .filter((x) => x.st.counted > 0 || x.st.active)
     .sort((a, b) => Number(b.st.active) - Number(a.st.active) || b.st.counted - a.st.counted),
     [boardState, doc]);
-  const placed = useMemo(() => new Set([...slots, ...bench].map((x) => x.id)), [slots, bench]);
-  /** 고르기 모달에서 담기 — 어느 줄의 + 를 눌렀는지(where)를 그대로 따른다 */
-  const addPieceTo = (where: "b" | "d", c: AcChess) => {
+  const placed = useMemo(() => new Set([...kept(slots), ...kept(bench)].map((x) => x.id)), [slots, bench]);
+  const nBoard = kept(slots).length, nBench = kept(bench).length;
+  const boardCap = slot9 ? MAX_BOARD_ITEM : MAX_BOARD;
+  /** 고르기 모달에서 담기 — **누른 그 칸**에 놓는다. 그 칸이 이미 찼으면(있을 수 없지만)
+   *  같은 줄의 첫 빈 칸으로 물러난다. */
+  const addPieceTo = (at: { z: "b" | "d"; i: number }, c: AcChess) => {
     if (placed.has(c.id)) return;
-    if (where === "b" && slots.length < (slot9 ? MAX_BOARD_ITEM : MAX_BOARD)) setSlots((v) => [...v, { id: c.id }]);
-    else if (where === "d" && bench.length < MAX_DECK) setBench((v) => [...v, { id: c.id }]);
+    const cap = at.z === "b" ? boardCap : MAX_DECK;
+    if (at.i >= cap) return;
+    (at.z === "b" ? setSlots : setBench)((v) => {
+      const out = [...v];
+      if (!out[at.i]) { out[at.i] = { id: c.id }; return trimCells(out); }
+      for (let i = 0; i < cap; i++) if (!out[i]) { out[i] = { id: c.id }; return trimCells(out); }
+      return v;                                   // 자리가 없다
+    });
   };
   // ── 끌어 옮기기 (사용자 요청 2026-08-29) ─────────────────────────────────
-  // 배치 ↔ 정비구역을 마우스로 옮긴다. 빈 칸에 놓으면 그 구역 끝에 붙고, 기물 위에
-  // 놓으면 **자리를 맞바꾼다**. 담긴 배열은 앞에서부터 촘촘하므로 인덱스로만 다룬다.
+  // 배치 ↔ 정비구역을 마우스로 옮긴다. **놓은 칸이 곧 결과 자리다** — 빈 칸이면 거기에
+  // 그대로 놓고, 기물 위면 자리를 맞바꾼다. 정원은 인덱스가 cap 미만이라는 것으로 지켜진다.
   const dragFrom = useRef<{ z: "b" | "d"; i: number } | null>(null);
   const [dropAt, setDropAt] = useState<string>("");     // "b3" 처럼 — 놓을 자리 강조용
-  const boardCap = slot9 ? MAX_BOARD_ITEM : MAX_BOARD;
   const moveSlot = (from: { z: "b" | "d"; i: number }, to: { z: "b" | "d"; i: number }) => {
-    const src = from.z === "b" ? [...slots] : [...bench];
-    const item = src[from.i];
-    if (!item) return;
+    if (from.z === to.z && from.i === to.i) return;
+    if (to.i >= (to.z === "b" ? boardCap : MAX_DECK)) return;
     if (from.z === to.z) {
-      const tgt = src[to.i];
-      if (tgt) { src[from.i] = tgt; src[to.i] = item; }
-      else { src.splice(from.i, 1); src.push(item); }
-      (from.z === "b" ? setSlots : setBench)(src);
+      const v = [...(from.z === "b" ? slots : bench)];
+      const a = v[from.i] ?? null;
+      if (!a) return;
+      v[from.i] = v[to.i] ?? null; v[to.i] = a;
+      (from.z === "b" ? setSlots : setBench)(trimCells(v));
       return;
     }
-    const dst = to.z === "b" ? [...slots] : [...bench];
-    const tgt = dst[to.i];
-    if (tgt) { src[from.i] = tgt; dst[to.i] = item; }          // 맞바꾸기 — 정원은 그대로다
-    else {
-      if (dst.length >= (to.z === "b" ? boardCap : MAX_DECK)) return;
-      src.splice(from.i, 1); dst.push(item);
-    }
-    if (from.z === "b") { setSlots(src); setBench(dst); } else { setBench(src); setSlots(dst); }
+    const src = [...(from.z === "b" ? slots : bench)];
+    const dst = [...(to.z === "b" ? slots : bench)];
+    const a = src[from.i] ?? null;
+    if (!a) return;
+    src[from.i] = dst[to.i] ?? null; dst[to.i] = a;            // 빈 칸이면 그냥 옮겨지고, 기물이면 맞바꾼다
+    if (from.z === "b") { setSlots(trimCells(src)); setBench(trimCells(dst)); }
+    else { setBench(trimCells(src)); setSlots(trimCells(dst)); }
   };
   /** 놓을 수 있는 칸에 공통으로 다는 속성 */
   const dropProps = (z: "b" | "d", i: number) => ({
@@ -544,7 +569,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
   });
 
   const dropFrom = (where: "b" | "d", i: number) =>
-    (where === "b" ? setSlots : setBench)((v) => v.filter((_, k) => k !== i));
+    (where === "b" ? setSlots : setBench)((v) => { const o = [...v]; o[i] = null; return trimCells(o); });
 
 
   // 기물 → 특질 카테고리 집합 (gar+garG 합집합, 아무 태그도 없으면 "etc") + 세는 맹약 집합
@@ -1695,7 +1720,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
           </section>
 
           <section className="ac-board">
-            <h3 className="sb-h3">{t("배치")} <em className="sb-count">{slots.length}/{slot9 ? MAX_BOARD_ITEM : MAX_BOARD}</em></h3>
+            <h3 className="sb-h3">{t("배치")} <em className="sb-count">{nBoard}/{boardCap}</em></h3>
             <div className="ac-slots">
               {Array.from({ length: MAX_BOARD_ITEM }, (_, i) => {
                 // 9번째 칸은 아이템 '인사부 파일'을 장착해야 열린다 — 기본은 잠금이고,
@@ -1720,7 +1745,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                   <button key={i} type="button" title={t("기물 담기")}
                     className={`ac-slot empty${dropAt === `b${i}` ? " over" : ""}`}
                     {...dropProps("b", i)}
-                    onClick={() => setPicking("b")}>+</button>
+                    onClick={() => setPicking({ z: "b", i })}>+</button>
                 );
                 return (
                   <div key={i} draggable
@@ -1748,7 +1773,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
               })}
             </div>
 
-            <h3 className="sb-h3">{t("정비구역")} <em className="sb-count">{bench.length}/{MAX_DECK}</em>
+            <h3 className="sb-h3">{t("정비구역")} <em className="sb-count">{nBench}/{MAX_DECK}</em>
               <span className="sb-dim ac-note">{t("배치+정비구역을 함께 세는 맹약이 셋 있습니다 — 예견·기적·투자자")}</span></h3>
             <div className="ac-slots deck">
               {Array.from({ length: MAX_DECK }, (_, i) => {
@@ -1758,7 +1783,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                   <button key={i} type="button" title={t("기물 담기")}
                     className={`ac-slot empty sm${dropAt === `d${i}` ? " over" : ""}`}
                     {...dropProps("d", i)}
-                    onClick={() => setPicking("d")}>+</button>
+                    onClick={() => setPicking({ z: "d", i })}>+</button>
                 );
                 return (
                   <div key={i} draggable
@@ -1784,7 +1809,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                 );
               })}
             </div>
-            {(slots.length > 0 || bench.length > 0) && (
+            {(nBoard > 0 || nBench > 0) && (
               <button type="button" className="ac-clear" onClick={() => { setSlots([]); setBench([]); }}>
                 {t("판 비우기")}
               </button>
@@ -1800,7 +1825,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
           (사용자 지시 2026-08-29). 필터 바·티어 묶음·카드 모양을 그대로 쓰되, 카드를 누르면
           상세가 아니라 **그 칸에 담긴다**. 담고 나면 바로 닫아 판이 보이게 한다. */}
       {picking && (
-        <ModalWindow label={picking === "b" ? t("배치에 담기") : t("정비구역에 담기")}
+        <ModalWindow label={picking.z === "b" ? t("배치에 담기") : t("정비구역에 담기")}
           className="operator-modal ac-modal" onClose={() => setPicking(null)}>
           <div className="ac-guide ac-pickmodal">
             {filterBar}
