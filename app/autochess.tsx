@@ -15,7 +15,8 @@
 // ⚠ 영어판은 시즌2가 글로벌 서버에 없어 **설명문이 한국어 원문**이다 (doc.krOnly).
 //    통합전략 IS6와 같은 취급 — 안내문을 띄우고 그대로 보여 준다.
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { cloneElement, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useI18n, rich, type T } from "./i18n";
 import { isNewFeature } from "./whats-new";
 import { computeBoard, MAX_BOARD, MAX_BOARD_ITEM, MAX_DECK, BOARD9_ITEM, type BoardSlot } from "./autochess-board";
@@ -587,17 +588,6 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     }
     return m;
   }, [doc]);
-  // 카테고리별 인원수(전체 기준) + 서브메뉴에 띄울 맹약 목록 — 실제로 세는 맹약만
-  const garCatCount = useMemo(() => {
-    const cnt = new Map<string, number>();
-    for (const c of doc.chess) {
-      if (c.kind === "DIY") continue;
-      const e = garTagsOf.get(c.id)!;
-      for (const tg of e.tags) cnt.set(tg, (cnt.get(tg) ?? 0) + 1);
-      for (const b of e.evb) cnt.set(`every:${b}`, (cnt.get(`every:${b}`) ?? 0) + 1);
-    }
-    return cnt;
-  }, [doc, garTagsOf]);
   const everyBonds = useMemo(() => {
     const ids = [...new Set(Object.values(doc.gar).flatMap((g) => g.evb ?? []))];
     // 맹약 목록 순서(진영 먼저)대로, '핵심 맹약'은 맨 뒤
@@ -627,20 +617,52 @@ export default function AutochessGuide({ doc, onShowOperator }: {
   const q = normSearch(term);
   // 오퍼 필터 풀 — 맹약은 여기서 거르지 않는다. 맹약을 고르면 아래 bondGroups가
   // 이 풀을 '두 맹약 모두 / 진영 / 특성 소속'으로 갈라 그 자체가 맹약 필터가 된다.
-  const chessRows = useMemo(() => doc.chess.filter((c) => {
+  // ⚠ 특질을 거르기 **전** 단계를 따로 둔다 — 드롭다운 옆 숫자는 자기 축을 빼고 세야 해서
+  // (아래 facetCount) 특질 필터가 걸리지 않은 풀이 필요하다.
+  const rowsNoGar = useMemo(() => doc.chess.filter((c) => {
     // 자유 선택 슬롯 4칸은 오퍼레이터가 아니라 빈 칸이다 — 목록 맨 아래 후보 명단이
     // 그 자리를 대신하므로 카드에서는 뺀다 (2026-08-22)
     if (c.kind === "DIY") return false;
     if (tier && c.t !== tier) return false;
     if (jobFilter && c.job !== jobFilter) return false;
     if (subFilter && c.sub !== subFilter) return false;
-    if (!matchGarBy(c, garFilter)) return false;
     if (!q) return true;
     const hay = [c.n, c.job ?? "", c.sub ?? "", ...(c.sks?.map((x) => x.n) ?? []), ...(c.mods?.map((x) => x.n) ?? []),
       ...c.bonds.map(nameOfBond),
       ...[...c.gar, ...c.garG].map((g) => doc.gar[g]?.d ?? "")].join(" ");
     return normSearch(hay).includes(q);
-  }), [doc, tier, jobFilter, subFilter, garFilter, q]);   // eslint-disable-line react-hooks/exhaustive-deps
+  }), [doc, tier, jobFilter, subFilter, q]);   // eslint-disable-line react-hooks/exhaustive-deps
+  const chessRows = useMemo(
+    () => rowsNoGar.filter((c) => matchGarBy(c, garFilter)),
+    [rowsNoGar, garFilter]);   // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── 드롭다운 옆 숫자 (사용자 지시 2026-08-29) ─────────────────────────────
+  // "염국 누르면 특성 맹약에서 기민이 11명이 아니라 1명이라고 나오게" — 숫자는 전체 인원이
+  // 아니라 **지금 걸린 다른 필터를 반영한 인원**이다 (염국 10명 ∩ 기민 11명 = 1명).
+  // ⚠ 자기 축은 빼고 센다 — 그래야 같은 축의 다른 값으로 갈아탈 수 있다 (특성 맹약 칸의
+  // 숫자에 지금 고른 특성 맹약을 또 걸면 고른 것만 남고 나머지가 전부 0이 된다).
+  // 고르기 모달에서는 이미 담은 기물도 뺀다 — 그 목록이 그렇게 나오므로 숫자도 맞춰야 한다.
+  const facetCount = useMemo(() => {
+    const base = picking ? rowsNoGar.filter((c) => !placed.has(c.id)) : rowsNoGar;
+    const nation = new Map<string, number>(), trait = new Map<string, number>(), gar = new Map<string, number>();
+    const bump = (m: Map<string, number>, k: string) => m.set(k, (m.get(k) ?? 0) + 1);
+    for (const c of base) {
+      const okN = !bondN || c.bonds.includes(bondN);
+      const okT = !bondT || c.bonds.includes(bondT);
+      if (matchGarBy(c, garFilter)) {
+        for (const id of c.bonds) {
+          if (bondById.get(id)?.nation) { if (okT) bump(nation, id); }   // 진영 칸엔 특성 선택만 건다
+          else if (okN) bump(trait, id);                                 // 특성 칸엔 진영 선택만 건다
+        }
+      }
+      if (okN && okT) {          // 특질 칸엔 맹약 2축을 다 건다 (자기 축은 garFilter 라 뺀다)
+        bump(gar, "__all");
+        const e = garTagsOf.get(c.id);
+        if (e) { for (const tg of e.tags) bump(gar, tg); for (const b of e.evb) bump(gar, `every:${b}`); }
+      }
+    }
+    return { nation, trait, gar };
+  }, [rowsNoGar, picking, placed, bondN, bondT, garFilter, bondById, garTagsOf]);   // eslint-disable-line react-hooks/exhaustive-deps
 
   /** 고르기 모달의 목록 — 이미 담은 기물은 빼고, **맹약 필터도 여기서 건다.**
    *  chessRows 는 진영·특성 맹약을 안 본다 (오퍼레이터 탭은 맹약을 고르면 bondGroups 로
@@ -866,28 +888,58 @@ export default function AutochessGuide({ doc, onShowOperator }: {
   // 메뉴가 펼쳐질 방향 — 버튼이 화면 왼쪽에 붙어 있으면 오른쪽으로, 오른쪽 끝이면 왼쪽으로
   // (사용자 지적 2026-08-23: 시뮬레이터의 왼쪽 드롭다운이 왼쪽으로 펼쳐져 잘렸다).
   const [menuSide, setMenuSide] = useState<"left" | "right">("left");
+  /** 메뉴를 연 버튼의 **화면 좌표** — 목록을 body 로 빼서 여기에 맞춰 띄운다 (menuPop) */
+  const [menuAt, setMenuAt] = useState<{ l: number; r: number; t: number; b: number } | null>(null);
   const closeMenus = () => { setOpenMenu(""); setFlyout(""); };
   const toggleMenu = (menuKey: typeof openMenu) => (e: React.MouseEvent<HTMLButtonElement>) => {
     // 270px = 제일 넓은 메뉴(특질) 폭 + 여유. 오른쪽 공간이 모자라면 왼쪽으로 편다.
-    // ⚠ 기준은 창이 아니라 **실제로 잘라내는 상자**다. 모달(.mw-body) 안에서 열면 창은
-    //   넓어도 모달 오른쪽에서 잘린다 — 덱편성 시뮬의 '티어 전체'가 64px 삐져나갔다
-    //   (사용자 제보 2026-08-29).
-    const host = (e.currentTarget as HTMLElement).closest(".mw-body");
-    const rightEdge = host ? host.getBoundingClientRect().right : window.innerWidth;
-    setMenuSide(e.currentTarget.getBoundingClientRect().left + 270 <= rightEdge ? "left" : "right");
+    // 목록이 이제 화면 좌표(fixed)로 뜨므로 기준도 창이다 — 자르는 상자가 없어졌다.
+    const r = e.currentTarget.getBoundingClientRect();
+    setMenuAt({ l: r.left, r: r.right, t: r.top, b: r.bottom });
+    setMenuSide(r.left + 270 <= window.innerWidth - 8 ? "left" : "right");
     setOpenMenu(openMenu === menuKey ? "" : menuKey);
     setFlyout("");
   };
   const menuCls = (extra = "") => `ac-garsel-menu${extra}${menuSide === "right" ? " align-right" : ""}`;
+  // ── 드롭다운 목록 띄우기 ────────────────────────────────────────────────
+  // ⚠ 목록을 **body 로 빼서 화면 좌표(fixed)에 놓는다**. 버튼 옆에 absolute 로 달아 두면
+  // 모달·스크롤 상자의 overflow 가 목록을 잘라 먹는다 — 가로로 삐져나가던 걸 align-right
+  // 로 땜질했지만 세로(모달 높이)로도 잘렸다 (사용자 지적 2026-08-29 "근본적으로 해결").
+  // body 자식이면 어떤 조상도 자르지 못한다. 아래 자리가 좁으면 버튼 **위로 뒤집고**,
+  // 남는 높이를 max-height 로 넘겨 긴 목록(맹약 23개)이 스스로 스크롤하게 한다.
+  const menuPop = (el: React.ReactElement) => {
+    if (typeof document === "undefined") return null;
+    const at = menuAt ?? { l: 8, r: 8, t: 8, b: 8 };
+    const vh = window.innerHeight, vw = window.innerWidth;
+    const below = vh - at.b - 12, above = at.t - 12;
+    const up = below < Math.min(280, above);          // 아래가 좁고 위가 더 넓을 때만 뒤집는다
+    const style: React.CSSProperties = {
+      position: "fixed", zIndex: 9200,                 // 공용 창(z 200~)보다 위, 연결 토스트(10000)보다 아래
+      maxHeight: Math.max(160, up ? above : below),
+      ...(up ? { top: "auto", bottom: vh - at.t + 4 } : { top: at.b + 4, bottom: "auto" }),
+      ...(menuSide === "right" ? { right: Math.max(8, vw - at.r) } : { left: Math.max(8, at.l) }),
+    };
+    return createPortal(
+      cloneElement(el as React.ReactElement<{ style?: React.CSSProperties }>, { style }), document.body);
+  };
   useEffect(() => {
     if (!openMenu) return;
     const onDown = (e: MouseEvent) => {
-      if (!(e.target as Element)?.closest?.(".ac-garsel")) closeMenus();
+      // ⚠ 목록은 이제 body 자식이라 .ac-garsel 안에 없다 — 목록 자신도 '안'으로 쳐야
+      // 항목 클릭이 mousedown 단계에서 닫혀 선택이 씹히지 않는다.
+      if (!(e.target as Element)?.closest?.(".ac-garsel, .ac-garsel-menu")) closeMenus();
     };
     const onEsc = (e: KeyboardEvent) => { if (e.key === "Escape") closeMenus(); };
     window.addEventListener("mousedown", onDown);
     window.addEventListener("keydown", onEsc);
-    return () => { window.removeEventListener("mousedown", onDown); window.removeEventListener("keydown", onEsc); };
+    // 화면 좌표에 고정해 띄우므로, 뒤가 스크롤되면 버튼과 어긋난다 — 그때는 닫는다.
+    // (모달 본문 스크롤은 window 로 안 올라오니 캡처 단계에서 듣는다)
+    window.addEventListener("scroll", closeMenus, true);
+    window.addEventListener("resize", closeMenus);
+    return () => {
+      window.removeEventListener("mousedown", onDown); window.removeEventListener("keydown", onEsc);
+      window.removeEventListener("scroll", closeMenus, true); window.removeEventListener("resize", closeMenus);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openMenu]);
   const evbName = (id: string) => (id === "core" ? t("핵심 맹약") : bondById.get(id)?.n ?? id);
@@ -902,7 +954,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
       <li key={value || "all"} role="none">
         <button type="button" role="menuitemradio" aria-checked={cur === value}
           className={cur === value ? "on" : ""} onClick={() => pick(value)}>
-          <span>{lab}</span><em>{garCatCount.get(value || "__all") ?? (value ? 0 : doc.chess.filter((c) => c.kind !== "DIY").length)}</em>
+          <span>{lab}</span><em>{facetCount.gar.get(value || "__all") ?? 0}</em>
         </button>
       </li>
     );
@@ -913,7 +965,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
           onClick={toggleMenu(menuKey)}>
           {label} <i aria-hidden>▾</i>
         </button>
-        {openMenu === menuKey && (
+        {openMenu === menuKey && menuPop(
           <ul className={menuCls()} role="menu" aria-label={t("특질로 거르기")}>
             {item("", t("특질 전체"))}
             {GAR_CATS.map((cat) => cat === "every" ? (
@@ -924,7 +976,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                 onMouseLeave={() => { if (matchMedia("(hover: hover)").matches) setFlyout(""); }}>
                 <button type="button" role="menuitemradio" aria-checked={cur === "every"}
                   className={cur.startsWith("every") ? "on" : ""} onClick={() => pick("every")}>
-                  <span>{t(GAR_CAT_LABEL.every)}</span><em>{garCatCount.get("every") ?? 0}</em>
+                  <span>{t(GAR_CAT_LABEL.every)}</span><em>{facetCount.gar.get("every") ?? 0}</em>
                 </button>
                 {/* 펼침 버튼 — 행 클릭(=전체 선택)과 역할이 다르다. 데스크탑은 호버로도 열리지만
                     키보드·터치스크린 노트북은 이 버튼이 유일한 경로라 **항상** 노출한다 (감사 2026-08-23) */}
@@ -942,7 +994,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
               <li key={cat} role="none">
                 <button type="button" role="menuitemradio" aria-checked={cur === cat}
                   className={cur === cat ? "on" : ""} onClick={() => pick(cat)}>
-                  <span>{t(GAR_CAT_LABEL[cat])}</span><em>{garCatCount.get(cat) ?? 0}</em>
+                  <span>{t(GAR_CAT_LABEL[cat])}</span><em>{facetCount.gar.get(cat) ?? 0}</em>
                 </button>
               </li>
             ))}
@@ -960,7 +1012,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
         onClick={toggleMenu(menuKey)}>
         {cur ? nameOfBond(cur) : t(nation ? "진영 맹약 전체" : "특성 맹약 전체")} <i aria-hidden>▾</i>
       </button>
-      {openMenu === menuKey && (
+      {openMenu === menuKey && menuPop(
         <ul className={menuCls(" scroll")} role="menu" aria-label={t(nation ? "진영 맹약" : "특성 맹약")}>
           <li role="none"><button type="button" role="menuitemradio" aria-checked={!cur}
             className={!cur ? "on" : ""} onClick={() => { setCur(""); closeMenus(); }}><span>{t(nation ? "진영 맹약 전체" : "특성 맹약 전체")}</span></button></li>
@@ -968,7 +1020,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
             <li key={b.id} role="none"><button type="button" role="menuitemradio" aria-checked={cur === b.id}
               className={cur === b.id ? "on" : ""} onClick={() => { setCur(b.id); closeMenus(); }}>
               <img className="ac-garsel-icon" src={bondIcon(b.id)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
-              <span>{b.n}</span><em>{b.chess.length}</em></button></li>
+              <span>{b.n}</span><em>{(nation ? facetCount.nation : facetCount.trait).get(b.id) ?? 0}</em></button></li>
           ))}
         </ul>
       )}
@@ -987,7 +1039,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
           onClick={toggleMenu("job")}>
           {label} <i aria-hidden>▾</i>
         </button>
-        {openMenu === "job" && (
+        {openMenu === "job" && menuPop(
           <ul className={menuCls()} role="menu" aria-label={t("직군 전체")}>
             <li role="none"><button type="button" role="menuitemradio" aria-checked={!jobFilter}
               className={!jobFilter ? "on" : ""} onClick={() => pickJob("")}><span>{t("직군 전체")}</span></button></li>
@@ -1035,6 +1087,12 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     </div>
   );
 
+  // 걸린 조건을 한 번에 푼다 (사용자 요청 2026-08-29) — 하나라도 걸렸을 때만 나온다
+  const anyFilter = Boolean(term || bondN || bondT || garFilter || tier || jobFilter || subFilter);
+  const clearFilters = () => {
+    clear(false); setBondN(""); setBondT(""); setGarFilter("");
+    setTier(0); setJobFilter(""); setSubFilter(""); closeMenus();
+  };
   const filterBar = (
     <div className="ac-filters">
       <div className="search-wrap heading-search sim-search">
@@ -1046,15 +1104,17 @@ export default function AutochessGuide({ doc, onShowOperator }: {
           맹약 2축은 옛 시뮬레이터의 선택 축이 필터로 들어온 것. */}
       {bondDropdown(true, bondN, setBondN, "bondN")}
       {bondDropdown(false, bondT, setBondT, "bondT")}
-      {/* 특질·직군(세부직군 서브메뉴) 필터는 오퍼레이터 목록에만 — 아이템에는 없는 개념이다 */}
-      {view === "op" && garDropdown(garFilter, setGarFilter, "gar")}
+      {/* 특질·직군(세부직군 서브메뉴) 필터는 오퍼레이터 목록에만 — 아이템에는 없는 개념이다.
+          ⚠ 담기 모달은 **언제나 오퍼 목록**이라 탭이 무엇이든 함께 낸다 — view 기본값이
+          "bond" 라 모달에서 이 두 필터가 통째로 빠져 있었다 (2026-08-29). */}
+      {(view === "op" || picking) && garDropdown(garFilter, setGarFilter, "gar")}
       <div className="ac-garsel">
         <button type="button" className={`ac-garsel-btn${tier ? " on" : ""}`}
           aria-haspopup="menu" aria-expanded={openMenu === "tier"}
           onClick={toggleMenu("tier")}>
           {tier ? `T${tier}` : t("티어 전체")} <i aria-hidden>▾</i>
         </button>
-        {openMenu === "tier" && (
+        {openMenu === "tier" && menuPop(
           <ul className={menuCls()} role="menu" aria-label={t("티어")}>
             <li role="none"><button type="button" role="menuitemradio" aria-checked={tier === 0}
               className={tier === 0 ? "on" : ""} onClick={() => { setTier(0); closeMenus(); }}><span>{t("전체")}</span></button></li>
@@ -1066,7 +1126,11 @@ export default function AutochessGuide({ doc, onShowOperator }: {
           </ul>
         )}
       </div>
-      {view === "op" && jobDropdown()}
+      {(view === "op" || picking) && jobDropdown()}
+      {anyFilter && (
+        <button type="button" className="ac-filters-clear" onClick={clearFilters}
+          title={t("걸린 조건을 모두 풉니다")}>{t("조건 지우기")}</button>
+      )}
     </div>
   );
 

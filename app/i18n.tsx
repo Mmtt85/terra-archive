@@ -2882,6 +2882,8 @@ const D: Record<string, Pair> = {
   // 특질(전용 능력) 필터 — 발동 시점·효과 유형 (GAR_CAT_LABEL 값, 사용자 요청 2026-08-23)
   "특질 전체": ["All traits", "特性すべて"],
   "티어 전체": ["All tiers", "全等級"],
+  "조건 지우기": ["Clear filters", "条件をクリア"],
+  "걸린 조건을 모두 풉니다": ["Clear every active filter", "有効な絞り込みをすべて解除します"],
   "특질로 거르기": ["Filter by trait", "特性で絞り込む"],
   "획득 시": ["On acquire", "獲得時"],
   "휴식 기간 종료 시": ["When rest ends", "休息期間終了時"],
