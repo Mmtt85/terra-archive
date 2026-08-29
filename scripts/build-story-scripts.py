@@ -90,7 +90,12 @@ RE_CHAR = re.compile(r'\[character\s*(?:\(([^)]*)\))?\s*\]', re.I)
 RE_CHARSLOT = re.compile(r'\[charslot\s*\(([^)]*)\)', re.I)
 RE_BLOCKER = re.compile(r'\[blocker\s*\(([^)]*)\)', re.I)
 RE_SHAKE = re.compile(r'\[camerashake\s*\(', re.I)
-RE_IMG_ANY = re.compile(r'\[image\s*\(([^)]*)\)', re.I)
+# ⚠ 컷씬 내리기는 **괄호 없는 `[Image]` 로도 온다** (사용자 제보 2026-08-29, 10-9 작전 후).
+# 종전 정규식이 괄호 있는 형태만 봐서 `[Image]` 를 통째로 흘렸고, 그러면 컷씬이 안 내려간 채
+# 다음 [Image(image=…)] 가 나올 때까지 화면을 덮는다 — 10-9 작전 후는 60쪽부터 97쪽 동안
+# 같은 컷씬(27_i22)이 깔려 있어 그 아래에서 배경이 세 번 바뀌는 게 하나도 안 보였다.
+# KR 원문 1,900편 중 **664편**이 같은 상태였다 (놓친 해제 1,104건).
+RE_IMG_ANY = re.compile(r'\[image\s*(?:\(([^)]*)\))?\s*\]', re.I)
 _ATTR_S = lambda k, a: (re.search(k + r'\s*=\s*"([^"]*)"', a, re.I) or [None, None])[1] \
     if re.search(k + r'\s*=\s*"([^"]*)"', a, re.I) else None
 def _attr_f(k, a, default=None):
