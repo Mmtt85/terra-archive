@@ -19,13 +19,19 @@ else
   npm run build
 fi
 
+# ⚠ 관리자 사이트는 **/admin 한 장**이다 — 본사이트 산출물을 통째로 복사한 뒤 몇 폴더만
+#   지우는 방식은 2026-08-29에 Pages 20,000파일 한도에 걸려 배포가 실패했다
+#   (dist/client 49,116파일 중 제외 목록을 다 빼도 route 페이지만 2만 개가 넘는다:
+#    ja 5,676 · en 5,676 · enemies 3,088 · stages 1,516 …).
+#   그래서 **필요한 것만 담는다** — admin.html/.rsc + assets/ + 아이콘 몇 개.
 STAGE=$(mktemp -d)
 trap 'rm -rf "$STAGE"' EXIT
-cp -r dist/client/. "$STAGE/"
-
-# 대용량 에셋은 본사이트와 동일하게 R2 서빙 — Pages에 안 올린다
-for dir in story rogue lens tesseract avatars about og items scan; do
-  rm -rf "${STAGE:?}/$dir"
+cp dist/client/admin.html dist/client/admin.rsc "$STAGE/"
+cp -r dist/client/assets "$STAGE/assets"
+# Pages 업로드 제외 규칙과 없는 페이지용 404, 파비콘류만 함께 (본사이트 전용인
+# sitemap·robots·feed·검색엔진 인증 파일은 관리자 도메인에 올리지 않는다)
+for f in .assetsignore 404.html favicon.ico favicon-16.png favicon-32.png favicon-180.png; do
+  [ -f "dist/client/$f" ] && cp "dist/client/$f" "$STAGE/"
 done
 
 # 루트로 오면 관리자 페이지로
@@ -37,5 +43,17 @@ EOF
 while IFS= read -r rsc; do
   printf '\n%s\n  Content-Type: text/x-component\n' "${rsc#"$STAGE"}" >> "$STAGE/_headers"
 done < <(find "$STAGE" -name "*.rsc" -type f | sort)
+
+# 안전망 — 한도에 다시 다가가면 배포 전에 멈춘다 (조용히 실패하느니 여기서 실패한다)
+COUNT=$(find "$STAGE" -type f | wc -l | tr -d ' ')
+echo "관리자 스테이지 파일 $COUNT개"
+if [ "$COUNT" -gt 19000 ]; then
+  echo "관리자 배포 파일이 $COUNT개 — Pages 한도(20,000)에 너무 가깝다. 담는 목록을 확인할 것." >&2
+  exit 1
+fi
+if [ ! -s "$STAGE/admin.html" ]; then
+  echo "admin.html이 비었다 — 빌드 산출물을 확인할 것." >&2
+  exit 1
+fi
 
 npx wrangler pages deploy "$STAGE" --project-name terra-archive-admin --branch main --commit-dirty=true
