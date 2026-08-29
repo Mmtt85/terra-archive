@@ -1681,7 +1681,8 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                 <button key={b.id} type="button" className={`ac-bring${st.active ? " on" : ""}`}
                   onClick={() => setPeek(b.id)}
                   title={`${b.n} — ${t("{a}/{b}명", { a: st.counted, b: b.min })}`}>
-                  <span className="ac-bring-dial">
+                  <span className="ac-bring-dial"
+                    style={{ ["--p" as string]: `${Math.min(1, st.counted / Math.max(1, b.min ?? 1)) * 100}%` }}>
                     <img src={bondIcon(b.id)} alt="" aria-hidden loading="lazy" onError={hideErr} />
                     <em>{stacks[b.id] ?? 0}</em>
                   </span>
@@ -1730,7 +1731,9 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                         : <span className="ac-face-diy" aria-hidden>?</span>}
                       <b>{c.n}</b>
                     </button>
-                    <span className="ac-slot-act">
+                    <span className="ac-slot-act"
+                      draggable={false}
+                      onDragStart={(e) => { e.preventDefault(); e.stopPropagation(); }}>
                       {/* ⚠ ★ 로 뒀더니 누가 봐도 즐겨찾기·고정 버튼으로 읽혔다
                           (사용자 지적 2026-08-29) — 게임 용어 그대로 글자로 적는다. */}
                       <button type="button" className={`ac-goldbtn${isGold(sl.id) ? " on" : ""}`}
@@ -1766,7 +1769,9 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                         : <span className="ac-face-diy" aria-hidden>?</span>}
                       <b>{c.n}</b>
                     </button>
-                    <span className="ac-slot-act">
+                    <span className="ac-slot-act"
+                      draggable={false}
+                      onDragStart={(e) => { e.preventDefault(); e.stopPropagation(); }}>
                       {/* 골든은 기물의 성질이라 어느 구역에서 눌러도 같다 (사용자 지적 2026-08-29) */}
                       <button type="button" className={`ac-goldbtn${isGold(sl.id) ? " on" : ""}`}
                         onClick={() => toggleGoldOf(sl.id)}

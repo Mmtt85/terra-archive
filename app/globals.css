@@ -20496,9 +20496,33 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   position: relative; width: 44px; height: 44px; border-radius: 50%;
   display: grid; place-items: center;
   border: 2px solid var(--line); background: var(--paper);
+  /* ⚠ 여기에 isolation/transform 을 주지 말 것 — 쌓임 맥락이 생기면 ::before 의
+     z-index:-1 이 **이 배경보다 위**로 올라와 원 전체가 라임으로 덮인다. 맥락이 없어야
+     링이 배경 뒤로 가서 바깥 3px 만 남는다. */
 }
 /* 아이콘을 살짝 위로 — 아래 숫자와 4px 겹쳤다 (실측 2026-08-29) */
 .ac-bring-dial img { width: 21px; height: 21px; object-fit: contain; margin-bottom: 9px; }
+/* 진행 링 — 기물이 하나 늘 때마다 테두리가 1/min 씩 차오른다 (인게임과 같은 표현,
+   사용자 지시 2026-08-29). conic-gradient 를 원판으로 깔고 가운데를 마스크로 파내
+   **띠**만 남긴다. --p 는 컴포넌트가 백분율로 넣어 준다. */
+/* ⚠ mask/-webkit-mask 로 가운데를 파내는 판을 먼저 썼는데 **규칙이 통째로 사라졌다** —
+   빌드의 CSS 변환기가 그 선언을 못 삼키고 블록을 버렸다 (브라우저 스타일시트에 selector
+   자체가 없었다, 실측 2026-08-29). 마스크 없이, 원판을 **뒤에** 깔고 다이얼 자신의
+   배경이 가운데를 덮게 해서 바깥 3px 만 띠로 남긴다. */
+.ac-bring-dial::before,
+.ac-bring-dial::after {
+  content: ""; position: absolute; border-radius: 50%; z-index: -1; pointer-events: none;
+}
+/* ::before = 진행 원판(바깥) · ::after = 안쪽을 덮는 뚜껑 → 남는 3px 이 띠가 된다.
+   둘 다 z-index:-1 이라 실제 내용(아이콘·숫자)보다 아래이고, 그 사이 순서는 DOM 순서라
+   ::after 가 ::before 를 덮는다. 다이얼에 opacity 가 걸려 쌓임 맥락이 생기므로
+   '배경 뒤로 보내기'는 못 쓴다 — 그래서 뚜껑을 따로 둔다 (실측 2026-08-29). */
+.ac-bring-dial::before {
+  inset: -3px;
+  background: conic-gradient(var(--lime) var(--p, 0%), var(--line) 0);
+}
+.ac-bring-dial::after { inset: 0; background: var(--paper); }
+.ac-bring.on .ac-bring-dial::after { background: color-mix(in srgb, var(--lime) 14%, var(--paper)); }
 /* 숫자는 원 **안쪽 아래**에 둔다 — 테두리에 걸쳐 겹쳐 보였다 (사용자 지적 2026-08-29) */
 .ac-bring-dial em {
   position: absolute; inset: auto 0 3px 0; text-align: center;
