@@ -1628,7 +1628,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
         <ModalWindow label={t("덱편성 시뮬레이터")} className="operator-modal ac-modal ac-simmodal"
           onClose={() => setSim(false)}>
           <div className="ac-guide ac-simbody">
-          <p className="sim-note">{t("기물을 담으면 맹약이 몇 명이고 어느 단계가 켜지는지 계산합니다. 어떤 편성이 좋은지는 판단하지 않습니다 — 게임 데이터에 숫자로 있는 것만 보여 줍니다.")}</p>
+          <p className="sim-note">{t("기물을 담으면 맹약이 몇 명이고 어느 단계가 켜지는지 계산합니다.")}</p>
 
           {/* 맹약 상태 — 켜진 것 먼저 */}
           <section className="ac-boardout">
