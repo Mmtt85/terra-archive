@@ -20480,6 +20480,9 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   border: 1px solid var(--line); border-radius: 8px; background: none; cursor: pointer;
   padding: 4px 12px; font-size: 11.5px; color: var(--muted);
 }
+.ac-clear:hover { color: var(--ink); border-color: var(--ink2); }
+/* 판 비우기 · 공유 링크 복사 — 한 줄에 나란히 */
+.ac-simfoot { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0; }
 
 /* 덱편성 시뮬레이터 — **탭이 아니라** 제목 줄 한가운데의 버튼이다 (사용자 지시 2026-08-29
    "위수협의: 맹약 이 있는 줄의 정 가운데에다 … 탭 사이에 끼면 안 돼").
@@ -20537,9 +20540,6 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   position: relative; width: 44px; height: 44px; border-radius: 50%;
   display: grid; place-items: center;
   border: 2px solid var(--line); background: var(--paper);
-  /* ⚠ 여기에 isolation/transform 을 주지 말 것 — 쌓임 맥락이 생기면 ::before 의
-     z-index:-1 이 **이 배경보다 위**로 올라와 원 전체가 라임으로 덮인다. 맥락이 없어야
-     링이 배경 뒤로 가서 바깥 3px 만 남는다. */
 }
 /* 아이콘을 살짝 위로 — 아래 숫자와 4px 겹쳤다 (실측 2026-08-29) */
 .ac-bring-dial img { width: 21px; height: 21px; object-fit: contain; margin-bottom: 9px; }
@@ -20548,22 +20548,51 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
    **띠**만 남긴다. --p 는 컴포넌트가 백분율로 넣어 준다. */
 /* ⚠ mask/-webkit-mask 로 가운데를 파내는 판을 먼저 썼는데 **규칙이 통째로 사라졌다** —
    빌드의 CSS 변환기가 그 선언을 못 삼키고 블록을 버렸다 (브라우저 스타일시트에 selector
-   자체가 없었다, 실측 2026-08-29). 마스크 없이, 원판을 **뒤에** 깔고 다이얼 자신의
-   배경이 가운데를 덮게 해서 바깥 3px 만 띠로 남긴다. */
+   자체가 없었다, 실측 2026-08-29). 마스크 없이 두 겹으로 만든다:
+   ::before = 진행 원판(바깥 3px 까지) · ::after = 안쪽을 덮는 뚜껑 → 남는 3px 이 띠다.
+   ⚠⚠ **음수 z-index 를 쓰지 말 것.** 처음엔 둘 다 z-index:-1 로 '다이얼 배경 뒤'로
+   보냈는데, 그게 통한 건 미발동 다이얼의 opacity 가 우연히 쌓임 맥락을 만들어 줬기
+   때문이었다 — 맥락이 없는 **발동 상태에서는 링이 조상 배경 뒤까지 내려가 아예 안 보였다**
+   (실측 2026-08-29, opacity 를 걷어내자 미발동도 같이 사라져 드러났다).
+   그래서 양수 z-index 로 쌓고 내용(아이콘·숫자)을 그 위로 올린다 — opacity 와 무관해진다.
+   원판이 다이얼의 2px 테두리를 덮으므로 hover 표시는 box-shadow 로 낸다. */
 .ac-bring-dial::before,
 .ac-bring-dial::after {
-  content: ""; position: absolute; border-radius: 50%; z-index: -1; pointer-events: none;
+  content: ""; position: absolute; border-radius: 50%; pointer-events: none;
 }
-/* ::before = 진행 원판(바깥) · ::after = 안쪽을 덮는 뚜껑 → 남는 3px 이 띠가 된다.
-   둘 다 z-index:-1 이라 실제 내용(아이콘·숫자)보다 아래이고, 그 사이 순서는 DOM 순서라
-   ::after 가 ::before 를 덮는다. 다이얼에 opacity 가 걸려 쌓임 맥락이 생기므로
-   '배경 뒤로 보내기'는 못 쓴다 — 그래서 뚜껑을 따로 둔다 (실측 2026-08-29). */
+/* ⚠ 링 색은 --lime 이 아니라 --ring 이다. 라이트의 --lime(#c3d24b)은 안 찬 쪽으로 쓰는
+   --line(#d2d0c9)과 **명도가 거의 같아**(1.12:1) 얼마나 찼는지 분간이 안 됐다
+   (사용자 지적 2026-08-29). 라이트에서만 진한 초록으로 내린다 — 3.2:1. */
+/* 발동한 맹약의 안쪽을 채우는 색(--ringfill)도 여기서 갈라 둔다 — 종전 라임 14% 는
+   두 모드 모두에서 거의 티가 안 났다 (사용자 지적 2026-08-29 "좀 더 밝게").
+   다크는 바탕이 검정이라 같은 비율이 되레 어두워지므로 라이트보다 더 진하게 섞는다. */
+/* 색이 **두 벌**이다 — 차오르는 중(--ring)과 다 찼을 때(--ring-on)를 나눈다.
+   · 차오르는 중: 안 찬 쪽 --line 과 붙어 있어야 하므로 **명도 대비**가 우선이다.
+     라이트에서 --lime(#c3d24b)을 그대로 쓰면 --line(#d2d0c9)과 명도가 거의 같아
+     (1.12:1) 얼마나 찼는지 분간이 안 됐다 (사용자 지적 2026-08-29) → 진한 풀색.
+   · 다 찼을 때: 옆에 비교할 회색이 없고 '완성'을 알리는 자리라 **밝기**가 우선이다
+     (사용자 지적 2026-08-29 "완성됐을 때 테두리도 채우는 색도 좀 더 밝게"). */
+.ac-bring-dial {
+  --ring: #6b7a1a;
+  --ring-on: #b6d130;
+  --ringfill: color-mix(in srgb, var(--ring-on) 46%, var(--paper));
+}
+html.dark .ac-bring-dial {
+  /* 다크는 바탕이 검정이라 차오르는 중에도 --lime 이 잘 보인다. 완성은 한 단계 더 밝게
+     — 본문용 --lime(#a8bd4f)은 눈부심 때문에 톤다운된 값이라 이 자리엔 모자란다. */
+  --ring: var(--lime);
+  --ring-on: #d5ec63;
+  --ringfill: color-mix(in srgb, var(--ring-on) 55%, var(--paper));
+}
 .ac-bring-dial::before {
-  inset: -3px;
-  background: conic-gradient(var(--lime) var(--p, 0%), var(--line) 0);
+  inset: -3px; z-index: 0;
+  background: conic-gradient(var(--ring) var(--p, 0%), var(--line) 0);
 }
-.ac-bring-dial::after { inset: 0; background: var(--paper); }
-.ac-bring.on .ac-bring-dial::after { background: color-mix(in srgb, var(--lime) 14%, var(--paper)); }
+.ac-bring-dial::after { inset: 0; z-index: 1; background: var(--paper); }
+/* 다 찬 맹약은 링 전체가 --ring-on (--p 가 100% 라 conic 이 통째로 그 색이 된다) */
+.ac-bring.on .ac-bring-dial::before { background: var(--ring-on); }
+.ac-bring-dial img, .ac-bring-dial em { position: relative; z-index: 2; }
+.ac-bring.on .ac-bring-dial::after { background: var(--ringfill); }
 /* 숫자는 원 **안쪽 아래**에 둔다 — 테두리에 걸쳐 겹쳐 보였다 (사용자 지적 2026-08-29) */
 .ac-bring-dial em {
   position: absolute; inset: auto 0 3px 0; text-align: center;
@@ -20575,15 +20604,26 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   color: var(--muted);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
 }
-/* 미발동은 흐리게 — 아이콘까지 회색으로 눕힌다 */
-.ac-bring:not(.on) .ac-bring-dial { opacity: 0.45; }
-.ac-bring:not(.on) .ac-bring-dial img { filter: grayscale(1); }
+/* 미발동은 흐리게 — 단, **링은 빼고** 아이콘·숫자만 눕힌다. 다이얼 전체에 opacity 를
+   걸었더니 진행 링까지 반투명해져 라이트에서 거의 사라졌다 (사용자 지적 2026-08-29).
+   링은 '몇 명 모였나'를 보여 주는 본체라 미발동일수록 오히려 잘 보여야 한다.
+   ⚠ 곁들여 얻는 것: 다이얼에서 opacity 가 빠지면 쌓임 맥락도 사라져 ::before(z-index:-1)가
+   다이얼 배경 **뒤로** 내려간다 — 발동 상태와 같은 경로가 되고 ::after 뚜껑은 놀게 된다
+   (뚜껑은 그대로 둔다, 지우면 맥락이 생기는 순간 원이 통째로 초록이 된다).
+   ⚠ 여기에 `filter: grayscale(1)` 을 두면 안 된다. 맹약 아이콘 23장은 **전부 흰색
+   무채색**(실측 채도 0)이라 grayscale 은 아무 일도 안 하면서, 라이트 모드에서 흰 글리프를
+   검정으로 뒤집어 주는 공용 규칙(html:not(.dark) img[src*="/ac/bond/"] → invert(1))만
+   특이도로 눌러 지워 버렸다. 그래서 라이트 모드의 미발동 동그라미가 흰 아이콘 위 흰
+   아이콘이 되어 안 보였다 (사용자 지적 2026-08-29). filter 는 덮어쓰기라 겹칠 수 없다. */
+.ac-bring:not(.on) .ac-bring-dial img { opacity: 0.5; }
+.ac-bring:not(.on) .ac-bring-dial em { opacity: 0.75; }
 .ac-bring.on .ac-bring-dial {
-  border-color: var(--lime);
-  background: color-mix(in srgb, var(--lime) 14%, var(--paper));
+  border-color: var(--ring-on);
+  background: var(--ringfill);
 }
 .ac-bring.on .ac-bring-dial em, .ac-bring.on b { color: var(--ink); }
-.ac-bring:hover .ac-bring-dial { border-color: var(--ink2); }
+/* 테두리는 진행 원판에 덮여 안 보인다 — hover 는 바깥 그림자로 낸다 */
+.ac-bring:hover .ac-bring-dial { box-shadow: 0 0 0 2px color-mix(in srgb, var(--ink2) 50%, transparent); }
 
 /* 배지를 눌러 여는 작은 창 */
 .ac-peekbody { padding: 2px 0; }

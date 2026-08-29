@@ -40,6 +40,17 @@ const trimCells = (v: AcCell[]) => {
   return o;
 };
 
+// ── 편성 딥링크 코덱 (사용자 요청 2026-08-29) ───────────────────────────────
+// 기물 id 116개가 **전부** `chess_char_…` 라 접두사를 뗀다 (`chess_char_1_01_a` → `1_01_a`,
+// 최대 8자). 19칸을 다 채워도 132자라 해시에 그대로 실을 만하다.
+// ⚠ 구분자는 URLSearchParams 가 **손대지 않는 글자**만 쓴다 — 실측으로 `. - * _` 는
+// 그대로 나오고 `~ !` 는 %7E·%21 로 인코딩된다. 칸 사이 `.` · 중첩 짝 `*` · 예외 접두 `-`.
+const CH_PRE = "chess_char_";
+const pieceCode = (id: string) => (id.startsWith(CH_PRE) ? id.slice(CH_PRE.length) : `-${id}`);
+const pieceId = (code: string) => (code.startsWith("-") ? code.slice(1) : CH_PRE + code);
+/** 칸 배열 → "1_01_a..2_04_a" (빈 칸은 빈 토막) */
+const cellsToCode = (v: AcCell[]) => trimCells(v).map((x) => (x ? pieceCode(x.id) : "")).join(".");
+
 // ── 데이터 타입 (build-autochess.py 산출과 1:1) ──────────────────────────────
 export type AcStep = { c?: string; t: string };
 /** 문구 상호 참조 — [종류, 대상 id]. 종류: bond·item·band·op·enemy·mode */
@@ -317,6 +328,14 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     return next;
   });
   const [sim, setSim] = useState(false);                 // 덱편성 시뮬레이터 모달
+  const [copied, setCopied] = useState(false);           // 공유 링크 복사 알림
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1600);
+    } catch { /* 클립보드 권한이 없으면 그냥 넘어간다 */ }
+  };
   const [slot9, setSlot9] = useState(false);             // 9번째 배치 칸 — '인사부 파일' 해금
   // ⚠ 구역만이 아니라 **누른 칸의 번호까지** 든다 — 누른 자리에 그대로 놓기 위함
   // (사용자 지적 2026-08-29 "+ 버튼 눌러서 지정해도 그 카드에 지정이 돼야지").
@@ -367,6 +386,36 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     setGoldView(false);   // 기물 상세는 언제나 일반부터 (openChess와 같은 규약)
     setChess(kind === "op" && id ? doc.chess.find((c) => c.id === id) ?? null : null);
   }
+  /** 해시의 편성 파라미터 → 시뮬레이터 상태. 없는 기물 코드(옛 링크·오타)는 조용히 버린다.
+   *  ⚠ 함수 선언이라 호이스팅된다 — applyModalHash 와 같은 규약. */
+  function applySimHash(p: URLSearchParams) {
+    const known = new Set(doc.chess.map((c) => c.id));
+    const seen = new Set<string>();
+    const cells = (v: string | null, cap: number): AcCell[] => {
+      const out: AcCell[] = [];
+      (v ?? "").split(".").slice(0, cap).forEach((code, i) => {
+        if (!code) return;
+        const id = pieceId(code);
+        if (!known.has(id) || seen.has(id)) return;   // 같은 기물이 두 칸에 있을 수는 없다
+        seen.add(id); out[i] = { id };
+      });
+      return trimCells(out);
+    };
+    const board = cells(p.get("b"), MAX_BOARD_ITEM);
+    setSlots(board);
+    setBench(cells(p.get("d"), MAX_DECK));
+    // 9번째 칸은 링크에 기물이 있으면 자동으로 열어 준다 — 안 그러면 그 칸이 안 그려진다
+    setSlot9(p.get("s9") === "1" || Boolean(board[MAX_BOARD]));
+    setGoldMark(new Set((p.get("gd") ?? "").split(".").map(pieceId).filter((id) => known.has(id))));
+    const st: Record<string, number> = {};
+    for (const pair of (p.get("k") ?? "").split(".")) {
+      const [id, n] = pair.split("*");
+      const v = Number(n);
+      if (id && Number.isFinite(v) && v > 0) st[id] = Math.min(999, Math.floor(v));
+    }
+    setStacks(st);
+    setSim(p.get("sim") === "1");
+  }
   const hydrated = useRef(false);
   const prevHash = useRef("");
   // ⚠ useEffect가 아니라 **useLayoutEffect** — 해시 반영이 페인트 뒤로 밀리면 기본 탭(맹약)이
@@ -394,6 +443,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
       // q가 없으면 지운다 — 남기면 뒤로가기로 뷰를 옮겼을 때 빈 검색칸으로 계속 걸러진다
       setTerm(p.get("q") ?? "");
       applyModalHash(p.get("m"));
+      applySimHash(p);
     };
     apply();
     hydrated.current = true;
@@ -420,6 +470,20 @@ export default function AutochessGuide({ doc, onShowOperator }: {
         if (subFilter) p.set("sub", subFilter);
       }
     }
+    // 편성(덱편성 시뮬레이터)은 탭과 무관하게 싣는다 — 링크 하나로 판이 그대로 열린다
+    if (sim) {
+      p.set("sim", "1");
+      const bc = cellsToCode(slots), dc = cellsToCode(bench);
+      if (bc) p.set("b", bc);
+      if (dc) p.set("d", dc);
+      if (slot9) p.set("s9", "1");
+      // 골든은 **판에 올라온 기물 것만** 싣는다 (표식은 판을 비워도 남지만 링크엔 군더더기)
+      const onBoard = new Set([...kept(slots), ...kept(bench)].map((x) => x.id));
+      const gd = [...goldMark].filter((id) => onBoard.has(id)).map(pieceCode).join(".");
+      if (gd) p.set("gd", gd);
+      const k = Object.entries(stacks).filter(([, n]) => n > 0).map(([id, n]) => `${id}*${n}`).join(".");
+      if (k) p.set("k", k);
+    }
     if (curModal) p.set("m", `${curModal[0]}~${curModal[1]}`);
     // ~는 URL에서 그대로 써도 되는 글자인데 URLSearchParams가 %7E로 인코딩한다 — 링크가
     // 읽히게 되돌린다 (해석은 decodeURIComponent가 하므로 양쪽 다 받는다)
@@ -429,12 +493,15 @@ export default function AutochessGuide({ doc, onShowOperator }: {
       // 모달이 **새로 열린** 경우만 히스토리를 쌓아 뒤로가기로 닫히게 한다.
       // ⚠ vinext가 history.pushState를 인스턴스 패치해 내비게이션으로 취급 — .site-scroll을
       //   맨 위로 리셋한다. 네이티브 프로토타입을 직접 불러 라우터를 우회한다 (rogue.tsx 실측).
-      const opening = !!curModal && !/[?&]m=/.test(prevHash.current);
+      // 모달이 새로 열린 경우만 히스토리를 쌓는다 — 시뮬레이터도 같은 규약이라 뒤로가기로 닫힌다
+      const opening = (!!curModal && !/[?&]m=/.test(prevHash.current))
+        || (sim && !/[?&]sim=/.test(prevHash.current));
       if (opening) History.prototype.pushState.call(history, null, "", hash);
       else history.replaceState(null, "", hash || window.location.pathname + window.location.search);
     }
     prevHash.current = hash;
-  }, [view, miscTab, bondN, bondT, tier, garFilter, jobFilter, subFilter, term, curModal?.[0], curModal?.[1]]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [view, miscTab, bondN, bondT, tier, garFilter, jobFilter, subFilter, term, curModal?.[0], curModal?.[1],
+      sim, slots, bench, slot9, goldMark, stacks]); // eslint-disable-line react-hooks/exhaustive-deps
 
 
   // 검색 입력은 비제어(useSearchInput)라 뷰가 바뀌어 입력칸이 새로 마운트되면 빈칸이 된다.
@@ -1874,9 +1941,16 @@ export default function AutochessGuide({ doc, onShowOperator }: {
               })}
             </div>
             {(nBoard > 0 || nBench > 0) && (
-              <button type="button" className="ac-clear" onClick={() => { setSlots([]); setBench([]); }}>
-                {t("판 비우기")}
-              </button>
+              <p className="ac-simfoot">
+                <button type="button" className="ac-clear" onClick={() => { setSlots([]); setBench([]); }}>
+                  {t("판 비우기")}
+                </button>
+                {/* 지금 판이 그대로 주소에 실려 있다 — 그 주소를 복사한다 (사용자 요청 2026-08-29).
+                    farm.tsx 의 ShareLinkButton 과 같은 규약. */}
+                <button type="button" className="ac-clear" onClick={copyLink}>
+                  <span aria-hidden>🔗</span> {copied ? t("복사됨!") : t("공유 링크 복사")}
+                </button>
+              </p>
             )}
           </section>
 
