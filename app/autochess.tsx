@@ -1767,6 +1767,10 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                       <b>{c.n}</b>
                     </button>
                     <span className="ac-slot-act">
+                      {/* 골든은 기물의 성질이라 어느 구역에서 눌러도 같다 (사용자 지적 2026-08-29) */}
+                      <button type="button" className={`ac-goldbtn${isGold(sl.id) ? " on" : ""}`}
+                        onClick={() => toggleGoldOf(sl.id)}
+                        title={t("정예화(골든) 전환 — 판을 비워도 남습니다")}>{t("골든")}</button>
                       <button type="button" onClick={() => dropFrom("d", i)} title={t("빼기")}>×</button>
                     </span>
                   </div>

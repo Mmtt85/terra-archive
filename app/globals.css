@@ -20419,6 +20419,8 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
 .ac-slot-act button.on { color: var(--lime); font-weight: 800; }
 /* 정예화(골든) 토글 — 별표는 즐겨찾기로 읽혀서 게임 용어를 글자로 적는다 */
 .ac-goldbtn { font-size: 9.5px; font-weight: 800; letter-spacing: -0.2px; }
+/* 정비구역 칸은 더 좁다 — 글자를 한 단계 줄여 × 와 나란히 들어가게 */
+.ac-slot.sm .ac-goldbtn { font-size: 8.5px; }
 /* ⚠ 선택자를 .ac-slot-act button.on(0-2-1) 보다 높여야 한다 — .ac-goldbtn.on(0-2-0) 은
    특이도에서 져서 글자색이 라임으로 남고, 라임 배경 위 라임 글자가 되어 안 읽혔다
    (실측 2026-08-29 — 이 세션에서 같은 함정에 세 번째다). */
