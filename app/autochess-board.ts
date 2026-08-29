@@ -46,9 +46,13 @@ export type BondState = {
   steps: StepState[];
 };
 
-/** 전장 최대 8칸 · 덱 최대 10칸 (게임 constData: maxBattleChessCnt · maxDeckChessCnt) */
+/** 배치 최대 8칸 · 정비구역 최대 10칸 (게임 constData: maxBattleChessCnt · maxDeckChessCnt) */
 export const MAX_BOARD = 8;
 export const MAX_DECK = 10;
+/** 아이템 '인사부 파일'(chess_item_6_08_e_a)을 장착하면 배치가 9칸이 된다 —
+ *  "장착 즉시 파기, 최대 배치 가능 인원수가 9로 변경" (사용자 지적 2026-08-29). */
+export const MAX_BOARD_ITEM = 9;
+export const BOARD9_ITEM = "chess_item_6_08_e_a";
 
 /**
  * 판 상태 계산. stacks 를 주면 중첩 게이트도 판정한다 (안 주면 그 단계는 on=null).

@@ -2821,6 +2821,11 @@ const D: Record<string, Pair> = {
   "위수 협의 능력": ["Garrison ability", "駐留能力"],
   // 편성 계산기 (2026-08-29)
   "덱편성 시뮬레이터": ["Deck builder", "デッキ編成シミュレーター"],
+  "있으면 해금": ["Unlock if held", "所持なら解放"],
+  "인사부 파일": ["HR File", "人事部ファイル"],
+  "아이템 '인사부 파일'을 장착하면 최대 배치 인원이 9로 늘어납니다. 보유 중이라면 눌러서 해금하세요.": [
+    "Equipping the HR File item raises the maximum board size to 9. If you have it, click to unlock this slot.",
+    "アイテム「人事部ファイル」を装備すると最大配置人数が9になります。所持しているならクリックで解放してください。"],
   "기물 담기": ["Add a piece", "駒を入れる"],
   "배치에 담기": ["Add to the board", "配置に入れる"],
   "정비구역에 담기": ["Add to the standby area", "整備エリアに入れる"],
@@ -2831,6 +2836,7 @@ const D: Record<string, Pair> = {
   "빼기": ["Remove", "外す"],
   "판 비우기": ["Clear board", "盤をクリア"],
   "맹약 상태": ["Bond status", "盟約の状態"],
+  "맹약 상세 보기": ["View bond details", "盟約の詳細を見る"],
   "중첩 수": ["Stacks", "重ね掛け数"],
   "기물 고르기": ["Pick pieces", "駒を選ぶ"],
   "기물을 담으면 여기에 맹약이 나옵니다.": ["Add pieces and their bonds show up here.", "駒を入れると、ここに盟約が表示されます。"],
