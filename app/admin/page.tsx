@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { adminAddReply, adminDeleteFeedback, adminDeleteReply, adminListFeedback, adminMe, adminSetHandling, adminSetReviewed, countryOf, flagOf, handlingAt, imagesOf, withHandling, type FeedbackRow } from "../feedback";
+import { adminAddReply, adminDeleteFeedback, adminDeleteReply, adminEditReply, adminListFeedback, adminMe, adminSetHandling, adminSetReviewed, countryOf, flagOf, handlingAt, imagesOf, withHandling, type FeedbackRow } from "../feedback";
 import { adminDeleteRelease, adminDeleteRule, adminListRules, adminPublishRelease, adminUpsertRule, fetchLatestRelease, type ReleaseRow } from "../rules-api";
 import { adminDeleteChange, adminUpsertChange, fetchAllChanges, areaOf, CHANGE_KINDS, CHANGE_KIND_LABEL, CHANGE_AREAS, CHANGE_AREA_LABEL, daysAgoKst, type ChangeArea, type ChangeDraft, type ChangeRow } from "../changelog-api";
 import { adminDeleteDevNote, adminUpsertDevNote, fetchAllDevNotes, DEVNOTE_STATUSES, DEVNOTE_STATUS_LABEL, type DevNoteDraft, type DevNoteRow } from "../devnotes-api";
@@ -543,6 +543,27 @@ export default function AdminPage() {
     }
   };
 
+  // 답변 수정 (사용자 요청 2026-08-29) — 지우고 다시 쓰면 등록 시각이 바뀌어
+  // 작성자에게 '새 답변'이 다시 뜬다. 문구만 고칠 때는 이쪽.
+  const [repEditId, setRepEditId] = useState("");
+  const [repEditVal, setRepEditVal] = useState("");
+  const [repEditBusy, setRepEditBusy] = useState(false);
+  const saveReply = async (row: FeedbackRow, replyId: string) => {
+    const body = repEditVal.trim();
+    if (!body) return;
+    setRepEditBusy(true);
+    try {
+      await adminEditReply(replyId, body);
+      setRows((current) => current.map((item) => item.id === row.id
+        ? { ...item, feedback_replies: (item.feedback_replies ?? []).map((r) => (r.id === replyId ? { ...r, body } : r)) }
+        : item));
+      setRepEditId(""); setRepEditVal("");
+    } catch (err) {
+      setStatus(`답변 수정 실패 — ${String((err as Error).message ?? err)}`);
+    }
+    setRepEditBusy(false);
+  };
+
   const removeReply = async (row: FeedbackRow, replyId: string) => {
     if (!(await confirm({ message: "이 답변을 삭제할까요?", danger: true }))) return;
     try {
@@ -785,9 +806,23 @@ export default function AdminPage() {
             <div className="fb-admin-replies">
               {(row.feedback_replies ?? []).map((rep) => (
                 <div key={rep.id} className="fb-admin-reply">
-                  <span className="fb-admin-reply-body">{rep.body}</span>
-                  <time>{new Date(rep.created_at).toLocaleString("ko-KR")}</time>
-                  <button onClick={() => removeReply(row, rep.id)}>삭제</button>
+                  {repEditId === rep.id ? (
+                    <>
+                      <textarea className="fb-admin-reply-edit" rows={8} maxLength={4000}
+                        value={repEditVal} onChange={(e) => setRepEditVal(e.target.value)} />
+                      <button disabled={!repEditVal.trim() || repEditBusy} onClick={() => saveReply(row, rep.id)}>
+                        {repEditBusy ? "저장 중…" : "저장"}
+                      </button>
+                      <button onClick={() => { setRepEditId(""); setRepEditVal(""); }}>취소</button>
+                    </>
+                  ) : (
+                    <>
+                      <span className="fb-admin-reply-body">{rep.body}</span>
+                      <time>{new Date(rep.created_at).toLocaleString("ko-KR")}</time>
+                      <button onClick={() => { setRepEditId(rep.id); setRepEditVal(rep.body); }}>수정</button>
+                      <button onClick={() => removeReply(row, rep.id)}>삭제</button>
+                    </>
+                  )}
                 </div>
               ))}
               {row.author_token

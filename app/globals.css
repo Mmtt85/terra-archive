@@ -7349,6 +7349,12 @@ legend {
   padding: 6px 8px;
   font-size: 12px;
 }
+/* 답변 수정 폼 — 목록 자리에서 바로 고친다 (2026-08-29) */
+.fb-admin-reply-edit {
+  flex: 1 1 100%; min-width: 0; font: inherit; font-size: 12.5px; line-height: 1.55;
+  padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--paper); color: var(--ink); resize: vertical;
+}
 .fb-admin-reply-body {
   flex: 1;
   white-space: pre-wrap;

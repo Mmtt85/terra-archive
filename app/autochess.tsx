@@ -17,6 +17,7 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useI18n, rich, type T } from "./i18n";
+import { isNewFeature } from "./whats-new";
 import { computeBoard, MAX_BOARD, MAX_BOARD_ITEM, MAX_DECK, BOARD9_ITEM, type BoardSlot } from "./autochess-board";
 import { normSearch, useSearchInput } from "./search";
 import { asset } from "./assets";
@@ -1053,6 +1054,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
         <button type="button" className={`ac-simcta${sim ? " on" : ""}`} aria-haspopup="dialog"
           onClick={() => { setSim(true); closeMenus(); clear(false); }}>
           {t("덱편성 시뮬레이터")}
+          {isNewFeature("ac-deck") && <span className="new-badge">{t("새기능")}</span>}
         </button>
       </header>
       <p className="sim-intro">{t("맹약(진영·특성)별 오퍼레이터와 각자의 위수 협의 전용 능력, 특훈 적과 리더 적, 보급센터 수치를 게임 데이터에서 그대로 정리했습니다.")}</p>

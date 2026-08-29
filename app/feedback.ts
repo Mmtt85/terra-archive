@@ -374,6 +374,18 @@ export async function adminAddReply(feedbackId: string, body: string): Promise<F
   return rows[0];
 }
 
+/** 관리자 페이지에서 답변 수정 (사용자 요청 2026-08-29) — 게시판 위젯의
+ *  boardAdminEditReply 와 짝. 지우고 다시 쓰면 등록 시각이 바뀌어 작성자에게
+ *  '새 답변'이 다시 뜨므로, 문구만 고칠 때는 이쪽을 쓴다. */
+export async function adminEditReply(id: string, body: string): Promise<FeedbackReply> {
+  const rows = await adminWrite(`/feedback_replies?id=eq.${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ body: body.slice(0, 4000) }),
+  }, "답변 수정");
+  return rows[0];
+}
+
 export async function adminDeleteReply(id: string) {
   await adminWrite(`/feedback_replies?id=eq.${id}`, { method: "DELETE" }, "답변 삭제");
 }

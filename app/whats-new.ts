@@ -29,6 +29,7 @@ export const FEATURE_RELEASED: Record<string, string | { date: string; days: num
   "event-lore": "2026-08-23", // 이벤트 기록 — 미니게임·수집으로 풀리던 의뢰서·신문·편지·평론 (각 스토리 상세의 세 번째 보기)
   "story-scene": "2026-08-25", // 스토리 리더기 — 배경·스탠딩을 세워 인게임처럼 한 줄씩 재생 (스토리 상세의 기본 보기)
   "feedback-board": "2026-08-17", // 제안 게시판 — 내 제안·개발자 답변 스레드 (작성자와 개발자만 열람)
+  "ac-deck": "2026-08-29", // 덱편성 시뮬레이터 — 배치·정비구역에 기물을 담아 맹약 상태를 계산 (/autochess 제목 줄 버튼)
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
