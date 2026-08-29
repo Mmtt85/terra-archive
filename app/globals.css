@@ -20336,20 +20336,32 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
 .ac-slots {
   display: grid; gap: 8px; margin: 6px 0 14px;
   grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
-  /* 격자 칸은 기본이 stretch 라 채워진 칸이 줄에서 가장 높은 칸만큼 늘어난다 — 얼굴 아래로
-     빈 공간이 길게 남아 보였다 (2026-08-29 실측). 내용 높이에 맞춘다. */
-  align-items: start;
+  /* ⚠ 행 높이를 **못 박는다.** 격자는 align-items 뿐 아니라 align-content 기본값도
+     stretch 라, 컨테이너가 세로로 늘어나면 그 여백이 자동 행 트랙으로 통째로 들어간다 —
+     빈 칸이 226px 까지 늘어나 있었다 (실측 2026-08-29, 행 트랙 자체가 226px 였다).
+     칸은 담기 전후로 크기가 같아야 하므로(사용자 지시) 빈 칸·채운 칸 모두 같은 정사각형. */
+  grid-auto-rows: 96px; align-items: start; align-content: start;
 }
-.ac-slots.deck { grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); }
+.ac-slots.deck { grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); grid-auto-rows: 82px; }
 .ac-slot {
   border: 1px solid var(--line); border-radius: 10px; background: var(--paper);
   display: flex; flex-direction: column; overflow: hidden; min-width: 0;
 }
+/* ⚠ height:100% 는 쓰지 않는다 — 격자 아이템의 퍼센트 높이가 행 트랙(96px)이 아닌 다른
+   기준으로 풀려 빈 칸이 202px 이 됐다 (실측 2026-08-29). 픽셀로 못 박는다. */
+.ac-slot { height: 96px; }
+.ac-slot.sm { height: 82px; }
 .ac-slot.empty {
-  align-items: center; justify-content: center; min-height: 84px;
+  /* ⚠ padding 을 0 으로 못 박는다 — 빈 칸을 <div>에서 <button>으로 바꾸자 어딘가의 버튼
+     규칙이 `padding: 100px 30px` 을 얹어, border-box 라 높이가 202px 로 튀었다
+     (실측 2026-08-29 — height 를 96px 로 줘도 패딩이 이겼다). */
+  padding: 0;
+  align-items: center; justify-content: center;
   border-style: dashed; color: var(--muted); font-size: 20px; font-weight: 700;
+  cursor: pointer;   /* 누르면 기물 고르기 모달 */
 }
-.ac-slot.sm.empty { min-height: 64px; font-size: 16px; }
+.ac-slot.empty:hover { border-color: var(--lime); color: var(--lime); }
+.ac-slot.sm.empty { font-size: 16px; }
 .ac-slot.gold { border-color: color-mix(in srgb, var(--lime) 60%, var(--line)); }
 .ac-slot-face {
   border: 0; background: none; cursor: pointer; padding: 8px 6px 4px;
@@ -20375,6 +20387,18 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   padding: 4px 12px; font-size: 11.5px; color: var(--muted);
 }
 
+/* 덱편성 시뮬레이터 탭 — 도감·목록 탭과 성격이 달라(직접 만들어 보는 자리) 줄 가운데에서
+   눈에 띄게 세운다 (사용자 지시 2026-08-29 "정 가운데쯤에 좀 잘 보이게"). */
+.ac-views button.ac-simtab {
+  border-color: color-mix(in srgb, var(--lime) 55%, var(--line));
+  color: var(--lime); font-weight: 800;
+}
+.ac-views button.ac-simtab.on {
+  background: color-mix(in srgb, var(--lime) 18%, transparent);
+  border-color: var(--lime);
+}
+.ac-pickmodal .ac-pickcard { cursor: pointer; }
+.ac-pickmodal .ac-tiersec { margin-bottom: 12px; }
 .ac-stackin { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 6px 0 12px; font-size: 12px; font-weight: 700; }
 .ac-stackin input {
   width: 84px; padding: 4px 8px; font-size: 12.5px;

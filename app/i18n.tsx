@@ -2820,8 +2820,12 @@ const D: Record<string, Pair> = {
   "위수 협의 보기": ["Stronghold Protocol views", "堅守協定の表示"],
   "위수 협의 능력": ["Garrison ability", "駐留能力"],
   // 편성 계산기 (2026-08-29)
-  "전장": ["Board", "戦場"],
-  "덱(예비)": ["Deck (bench)", "デッキ（控え）"],
+  "덱편성 시뮬레이터": ["Deck builder", "デッキ編成シミュレーター"],
+  "기물 담기": ["Add a piece", "駒を入れる"],
+  "배치에 담기": ["Add to the board", "配置に入れる"],
+  "정비구역에 담기": ["Add to the standby area", "整備エリアに入れる"],
+  "배치": ["Board", "配置"],
+  "정비구역": ["Standby area", "整備エリア"],
   "기물 상세": ["Piece details", "駒の詳細"],
   "정예화(골든) 전환": ["Toggle Golden", "精鋭化（ゴールデン）切替"],
   "빼기": ["Remove", "外す"],
@@ -2838,9 +2842,9 @@ const D: Record<string, Pair> = {
   "중첩 {n}": ["{n} stacks", "重ね掛け{n}"],
   " — {n} 남음": [" — {n} to go", " — 残り{n}"],
   "정예화 {n}명": ["{n} Golden", "精鋭化{n}人"],
-  "전장+덱을 함께 세는 맹약이 셋 있습니다 — 예견·기적·투자자": [
-    "Three bonds count the board and the deck together — Foresight, Miracle and Investor.",
-    "戦場とデッキを合わせて数える盟約が3つあります — 予見・奇跡・投資家。"],
+  "배치+정비구역을 함께 세는 맹약이 셋 있습니다 — 예견·기적·투자자": [
+    "Three bonds count the board and the standby area together — Foresight, Miracle and Investor.",
+    "配置と整備エリアを合わせて数える盟約が3つあります — 予見・奇跡・投資家。"],
   "기물을 담으면 맹약이 몇 명이고 어느 단계가 켜지는지 계산합니다. 어떤 편성이 좋은지는 판단하지 않습니다 — 게임 데이터에 숫자로 있는 것만 보여 줍니다.": [
     "Add pieces and it works out how many operators each bond has and which tiers switch on. It does not judge which line-up is good — only what the game data states as numbers.",
     "駒を入れると、各盟約の人数とどの段階が入るかを計算します。どの編成が強いかは判断しません — ゲームデータに数値としてあるものだけを表示します。"],
