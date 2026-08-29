@@ -20410,6 +20410,14 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
 }
 .ac-slot-act button:hover { background: color-mix(in srgb, var(--line) 40%, transparent); }
 .ac-slot-act button.on { color: var(--lime); font-weight: 800; }
+/* 정예화(골든) 토글 — 별표는 즐겨찾기로 읽혀서 게임 용어를 글자로 적는다 */
+.ac-goldbtn { font-size: 9.5px; font-weight: 800; letter-spacing: -0.2px; }
+/* ⚠ 선택자를 .ac-slot-act button.on(0-2-1) 보다 높여야 한다 — .ac-goldbtn.on(0-2-0) 은
+   특이도에서 져서 글자색이 라임으로 남고, 라임 배경 위 라임 글자가 되어 안 읽혔다
+   (실측 2026-08-29 — 이 세션에서 같은 함정에 세 번째다). */
+.ac-slot-act button.ac-goldbtn.on {
+  background: var(--lime); color: #16181a;
+}
 /* 제목 옆 안내문 — sb-count 바로 뒤라 숫자에 붙어 읽혔다 */
 .sb-h3 .ac-note { margin-left: 8px; font-weight: 500; }
 .ac-clear {
@@ -20461,17 +20469,19 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
 }
 .ac-bring {
   border: 0; background: none; cursor: pointer; padding: 0;
-  display: flex; flex-direction: column; align-items: center; gap: 4px; width: 66px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px; width: 58px;
 }
 .ac-bring-dial {
-  position: relative; width: 52px; height: 52px; border-radius: 50%;
+  position: relative; width: 44px; height: 44px; border-radius: 50%;
   display: grid; place-items: center;
   border: 2px solid var(--line); background: var(--paper);
 }
-.ac-bring-dial img { width: 26px; height: 26px; object-fit: contain; }
+/* 아이콘을 살짝 위로 — 아래 숫자와 4px 겹쳤다 (실측 2026-08-29) */
+.ac-bring-dial img { width: 21px; height: 21px; object-fit: contain; margin-bottom: 9px; }
+/* 숫자는 원 **안쪽 아래**에 둔다 — 테두리에 걸쳐 겹쳐 보였다 (사용자 지적 2026-08-29) */
 .ac-bring-dial em {
-  position: absolute; inset: auto 0 -3px 0; text-align: center;
-  font-style: normal; font-size: 11px; font-weight: 800; line-height: 1;
+  position: absolute; inset: auto 0 3px 0; text-align: center;
+  font-style: normal; font-size: 10px; font-weight: 800; line-height: 1;
   color: var(--muted);
 }
 .ac-bring b {

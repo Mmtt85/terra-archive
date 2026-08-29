@@ -286,7 +286,18 @@ export default function AutochessGuide({ doc, onShowOperator }: {
   // 58개만 대상·수치가 고정이라, 절반 빠진 합계를 확정값처럼 보이면 안 된다).
   const [slots, setSlots] = useState<BoardSlot[]>([]);   // 전장 (최대 8)
   const [bench, setBench] = useState<BoardSlot[]>([]);   // 덱 (최대 10)
-  const [stackIn, setStackIn] = useState("");            // 중첩 수 — 사용자가 직접 넣는다
+  // 중첩 수는 **맹약마다 따로**다 (사용자 지적 2026-08-29 "중첩수는 공통이 아니니까") —
+  // 공통 입력칸을 없애고 맹약을 눌러 연 작은 창에서 그 맹약 것만 지정한다.
+  const [stacks, setStacks] = useState<Record<string, number>>({});
+  // ★(정예화)는 **칸이 아니라 기물의 성질**로 든다 — 판을 비워도 남아야 한다
+  // (사용자 지시 2026-08-29 "판 비우기 할 때 스타 표시 해둔 건 지우지 말아줘").
+  const [goldMark, setGoldMark] = useState<Set<string>>(new Set());
+  const isGold = (id: string) => goldMark.has(id);
+  const toggleGoldOf = (id: string) => setGoldMark((prev) => {
+    const next = new Set(prev);
+    if (!next.delete(id)) next.add(id);
+    return next;
+  });
   const [sim, setSim] = useState(false);                 // 덱편성 시뮬레이터 모달
   const [slot9, setSlot9] = useState(false);             // 9번째 배치 칸 — '인사부 파일' 해금
   const [picking, setPicking] = useState<null | "b" | "d">(null);
@@ -471,13 +482,16 @@ export default function AutochessGuide({ doc, onShowOperator }: {
   const nameOfBond = (id: string) => bondById.get(id)?.n ?? id;
 
   // ── 편성 계산 ────────────────────────────────────────────────────────────
-  // ⚠ 이름 주의 — stackNum 은 위(213행)에 **수치 표기 함수**로 이미 있다. 겹치면 조용히
-  //   덮여 렌더 중에 "stackNum is not a function" 으로 터진다 (2026-08-29 실측).
-  const stackAt = stackIn.trim() === "" ? undefined : Math.max(0, Math.floor(Number(stackIn) || 0));
-  const boardState = useMemo(() => computeBoard(
-    doc.bonds, chessById, slots, bench,
-    stackAt == null ? undefined : Object.fromEntries(doc.bonds.map((b) => [b.id, stackAt])),
-  ), [doc, chessById, slots, bench, stackAt]);
+  // 중첩은 **기본 0** 으로 본다 (사용자 지시 2026-08-29 "처음엔 - 이 아니라 0으로").
+  // 배지에 0 을 띄우면서 단계만 '판정 불가(?)' 로 두면 앞뒤가 안 맞아, 계산도 0 기준으로
+  // 맞춘다 — 중첩이 전투 중에 쌓인다는 단서는 작은 창의 안내문이 계속 들고 있다.
+  const stacksAll = useMemo(
+    () => Object.fromEntries(doc.bonds.map((b) => [b.id, stacks[b.id] ?? 0])), [doc, stacks]);
+  const withGold = (v: BoardSlot[]) => v.map((x) => ({ ...x, gold: goldMark.has(x.id) }));
+  const boardState = useMemo(
+    () => computeBoard(doc.bonds, chessById, withGold(slots), withGold(bench), stacksAll),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [doc, chessById, slots, bench, stacksAll, goldMark]);
   /** 켜진 맹약 먼저, 그다음 인원이 많은 순 — 판을 보는 사람이 궁금한 순서다 */
   const boardBonds = useMemo(() => boardState
     .map((st, i) => ({ st, b: doc.bonds[i] }))
@@ -493,8 +507,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
   };
   const dropFrom = (where: "b" | "d", i: number) =>
     (where === "b" ? setSlots : setBench)((v) => v.filter((_, k) => k !== i));
-  const toggleGold = (where: "b" | "d", i: number) =>
-    (where === "b" ? setSlots : setBench)((v) => v.map((x, k) => (k === i ? { ...x, gold: !x.gold } : x)));
+
 
   // 기물 → 특질 카테고리 집합 (gar+garG 합집합, 아무 태그도 없으면 "etc") + 세는 맹약 집합
   const garTagsOf = useMemo(() => {
@@ -1571,6 +1584,23 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                   ? <i className="sb-chip">{t("덱 {n}", { n: st.deck })}</i> : null}
                 <i className={`sb-chip ${st.active ? "ac-on" : "ac-off"}`}>{st.active ? t("발동") : t("미발동")}</i>
               </p>
+              {/* 중첩은 이 맹약 것만 여기서 지정한다 — 전투 중에 쌓이는 값이라 편성만으로는
+                  못 구하고, 맹약마다 값이 다르다 (사용자 지적 2026-08-29) */}
+              <label className="ac-stackin">
+                {t("중첩 수")}
+                <input type="number" min={0} inputMode="numeric" placeholder="—"
+                  value={stacks[b.id] ?? ""}
+                  onChange={(e) => {
+                    const v = e.target.value.trim();
+                    setStacks((prev) => {
+                      const next = { ...prev };
+                      if (v === "") delete next[b.id];
+                      else next[b.id] = Math.max(0, Math.floor(Number(v) || 0));
+                      return next;
+                    });
+                  }} />
+                <span className="sb-dim">{t("중첩은 전투 중에 특질이 쌓는 값이라 편성만으로 정해지지 않습니다. 값을 넣으면 그 기준으로 수치와 단계를 보여 줍니다.")}</span>
+              </label>
               <ol className="ac-bstat-steps">
                 {st.steps.map((sp) => (
                   <li key={sp.i} className={sp.on === true ? "on" : sp.on === null ? "unknown" : "off"}>
@@ -1603,12 +1633,6 @@ export default function AutochessGuide({ doc, onShowOperator }: {
           {/* 맹약 상태 — 켜진 것 먼저 */}
           <section className="ac-boardout">
             <h3 className="sb-h3">{t("맹약 상태")} <em className="sb-count">{boardBonds.filter((x) => x.st.active).length}</em></h3>
-            <label className="ac-stackin">
-              {t("중첩 수")}
-              <input type="number" min={0} inputMode="numeric" value={stackIn} placeholder="—"
-                onChange={(e) => setStackIn(e.target.value)} />
-              <span className="sb-dim">{t("중첩은 전투 중에 특질이 쌓는 값이라 편성만으로 정해지지 않습니다. 값을 넣으면 그 기준으로 수치와 단계를 보여 줍니다.")}</span>
-            </label>
             {boardBonds.length === 0 && <p className="chlog-empty">{t("기물을 담으면 여기에 맹약이 나옵니다.")}</p>}
             {/* 인게임처럼 **동그란 배지 줄**로 (사용자 지시 2026-08-29 + 스크린샷).
                 미발동은 흐리게, 누르면 작은 창으로 상세를 편다.
@@ -1618,10 +1642,10 @@ export default function AutochessGuide({ doc, onShowOperator }: {
               {boardBonds.map(({ st, b }) => (
                 <button key={b.id} type="button" className={`ac-bring${st.active ? " on" : ""}`}
                   onClick={() => setPeek(b.id)}
-                  title={`${b.n} — ${st.counted}/${b.min}`}>
+                  title={`${b.n} — ${t("{a}/{b}명", { a: st.counted, b: b.min })}`}>
                   <span className="ac-bring-dial">
                     <img src={bondIcon(b.id)} alt="" aria-hidden loading="lazy" onError={hideErr} />
-                    <em>{st.counted}</em>
+                    <em>{stacks[b.id] ?? 0}</em>
                   </span>
                   <b>{b.n}</b>
                 </button>
@@ -1656,15 +1680,18 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                     onClick={() => setPicking("b")}>+</button>
                 );
                 return (
-                  <div key={i} className={`ac-slot${sl.gold ? " gold" : ""}`}>
+                  <div key={i} className={`ac-slot${isGold(sl.id) ? " gold" : ""}`}>
                     <button type="button" className="ac-slot-face" onClick={() => openChess(c)} title={t("기물 상세")}>
                       {c.op ? <img src={opFace(c.op)} alt="" aria-hidden loading="lazy" onError={hideErr} />
                         : <span className="ac-face-diy" aria-hidden>?</span>}
                       <b>{c.n}</b>
                     </button>
                     <span className="ac-slot-act">
-                      <button type="button" className={sl.gold ? "on" : ""} onClick={() => toggleGold("b", i)}
-                        title={t("정예화(골든) 전환")}>★</button>
+                      {/* ⚠ ★ 로 뒀더니 누가 봐도 즐겨찾기·고정 버튼으로 읽혔다
+                          (사용자 지적 2026-08-29) — 게임 용어 그대로 글자로 적는다. */}
+                      <button type="button" className={`ac-goldbtn${isGold(sl.id) ? " on" : ""}`}
+                        onClick={() => toggleGoldOf(sl.id)}
+                        title={t("정예화(골든) 전환 — 판을 비워도 남습니다")}>{t("골든")}</button>
                       <button type="button" onClick={() => dropFrom("b", i)} title={t("빼기")}>×</button>
                     </span>
                   </div>
