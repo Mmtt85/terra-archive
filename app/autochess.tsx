@@ -17,6 +17,7 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useI18n, rich, type T } from "./i18n";
+import { computeBoard, MAX_BOARD, MAX_DECK, type BoardSlot } from "./autochess-board";
 import { normSearch, useSearchInput } from "./search";
 import { asset } from "./assets";
 import { ModalWindow } from "./modal-window";
@@ -110,6 +111,9 @@ export type AutochessDoc = {
   equips: AcEquip[];
   bands: AcBand[];
   buffs: { id: string; n: string; d: string; round: number }[];
+  /** 수배·특훈 — **직접 골라서 불러오는 적** (ENEMY_GAIN, 사용자 지적 2026-08-29).
+   *  e=등장하는 적 · c=마릿수 · coin=보상 자금 · w=자금 지급 시점(kill 처치/win 승리) · r=지속 라운드 */
+  hunts: { id: string; n: string; d: string; e: string; c: number; coin: number; w?: string; r?: number }[];
   enemies: AcEnemy[];
   /** 유형별 **전체** 적 명단 (게임 표기 순서: 대표 → 함께 나오는 일반·정예). role: sp/n/e */
   enemyList: Record<string, { id: string; n: string; code?: string | null; rank?: string | null;
@@ -157,19 +161,19 @@ const GAR_CAT_LABEL: Record<string, string> = {
 // 시뮬레이터 뷰는 반나절 만에 접었다 (사용자 확정 2026-08-23: "그냥 물자관리소 →
 // 오퍼레이터에서 필터링하는 거랑 똑같네") — 맹약 2축 선택·소속 그룹·중첩 기여 배지는
 // 전부 물자관리소 오퍼레이터 탭의 필터로 들어갔다.
-const VIEWS = ["bond", "band", "op", "item", "misc"] as const;
+const VIEWS = ["bond", "board", "band", "op", "item", "misc"] as const;
 type View = (typeof VIEWS)[number];
 const VIEW_LABEL: Record<View, string> = {
-  bond: "맹약", band: "전략", op: "오퍼레이터", item: "아이템", misc: "게임 정보",
+  bond: "맹약", board: "편성", band: "전략", op: "오퍼레이터", item: "아이템", misc: "게임 정보",
 };
 // 게임 정보 = 핵심 셋 밖의 나머지 전부 (사용자 확정 2026-08-23: "맹약, 전략, 오퍼레이터만
 // 제일 큰 탭으로 빼고 그 외는 다 게임 정보로"). 보상 탭은 같은 날 제거.
 // ⚠ 물자관리소 ≠ 보급센터 (사용자 교정 2026-08-22, 옛 탭 이름의 유래): 물자관리소는 출전 전
 //   편성 화면(→ 지금의 오퍼레이터·아이템), 판 안에서 도는 상점 수치가 보급센터(supply)다.
-const MISC_TABS = ["enemy", "mode", "supply", "buff"] as const;
+const MISC_TABS = ["enemy", "hunt", "mode", "supply", "buff"] as const;
 type MiscTab = (typeof MISC_TABS)[number];
 const MISC_LABEL: Record<MiscTab, string> = {
-  enemy: "적", mode: "모드", supply: "보급센터", buff: "전략 전술",
+  enemy: "적", hunt: "수배·특훈", mode: "모드", supply: "보급센터", buff: "전략 전술",
 };
 
 // 정예화 표기 — 게임 데이터의 PHASE_n을 도감과 같은 말로
@@ -276,6 +280,13 @@ export default function AutochessGuide({ doc, onShowOperator }: {
   // 말고 버튼으로" — 능력·스킬·모듈이 전부 이 토글을 따라간다). 열 때마다 일반부터(openChess).
   const [goldView, setGoldView] = useState(false);
   const openChess = (c: AcChess) => { setGoldView(false); setChess(c); };
+  // ── 편성 계산기 (사용자 요청 2026-08-29) ──────────────────────────────────
+  // 판에 담으면 23개 맹약 상태가 한 번에 나온다. 계산 규칙은 autochess-board.ts 참고 —
+  // **인원 게이트만 자동 판정하고 중첩은 자동 합산하지 않는다** (중첩을 올리는 능력 130개 중
+  // 58개만 대상·수치가 고정이라, 절반 빠진 합계를 확정값처럼 보이면 안 된다).
+  const [slots, setSlots] = useState<BoardSlot[]>([]);   // 전장 (최대 8)
+  const [bench, setBench] = useState<BoardSlot[]>([]);   // 덱 (최대 10)
+  const [stackIn, setStackIn] = useState("");            // 중첩 수 — 사용자가 직접 넣는다
   const [equip, setEquip] = useState<AcEquip | null>(null);
   const [band, setBand] = useState<AcBand | null>(null);
   const [enemy, setEnemy] = useState<string | null>(null);   // 적 id (딸린 적·연계 소환도 열 수 있어 id로 든다)
@@ -455,6 +466,31 @@ export default function AutochessGuide({ doc, onShowOperator }: {
 
   const nameOfBond = (id: string) => bondById.get(id)?.n ?? id;
 
+  // ── 편성 계산 ────────────────────────────────────────────────────────────
+  // ⚠ 이름 주의 — stackNum 은 위(213행)에 **수치 표기 함수**로 이미 있다. 겹치면 조용히
+  //   덮여 렌더 중에 "stackNum is not a function" 으로 터진다 (2026-08-29 실측).
+  const stackAt = stackIn.trim() === "" ? undefined : Math.max(0, Math.floor(Number(stackIn) || 0));
+  const boardState = useMemo(() => computeBoard(
+    doc.bonds, chessById, slots, bench,
+    stackAt == null ? undefined : Object.fromEntries(doc.bonds.map((b) => [b.id, stackAt])),
+  ), [doc, chessById, slots, bench, stackAt]);
+  /** 켜진 맹약 먼저, 그다음 인원이 많은 순 — 판을 보는 사람이 궁금한 순서다 */
+  const boardBonds = useMemo(() => boardState
+    .map((st, i) => ({ st, b: doc.bonds[i] }))
+    .filter((x) => x.st.counted > 0 || x.st.active)
+    .sort((a, b) => Number(b.st.active) - Number(a.st.active) || b.st.counted - a.st.counted),
+    [boardState, doc]);
+  const placed = useMemo(() => new Set([...slots, ...bench].map((x) => x.id)), [slots, bench]);
+  const addPiece = (c: AcChess) => {
+    if (placed.has(c.id)) return;
+    if (slots.length < MAX_BOARD) setSlots((v) => [...v, { id: c.id }]);
+    else if (bench.length < MAX_DECK) setBench((v) => [...v, { id: c.id }]);
+  };
+  const dropFrom = (where: "b" | "d", i: number) =>
+    (where === "b" ? setSlots : setBench)((v) => v.filter((_, k) => k !== i));
+  const toggleGold = (where: "b" | "d", i: number) =>
+    (where === "b" ? setSlots : setBench)((v) => v.map((x, k) => (k === i ? { ...x, gold: !x.gold } : x)));
+
   // 기물 → 특질 카테고리 집합 (gar+garG 합집합, 아무 태그도 없으면 "etc") + 세는 맹약 집합
   const garTagsOf = useMemo(() => {
     const m = new Map<string, { tags: Set<string>; evb: Set<string>; refs: Set<string> }>();
@@ -569,6 +605,10 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     !q || normSearch(`${e.n} ${e.d} ${e.dG}`).includes(q)), [doc, q]);
   const buffRows = useMemo(() => doc.buffs.filter((b) =>
     !q || normSearch(`${b.n} ${b.d}`).includes(q)), [doc, q]);
+  // 수배·특훈 — 효과 이름·설명에 더해 **등장하는 적 이름**까지 훑는다
+  // ("제셀톤이 어디서 나오지"가 이 탭의 물음이다, 사용자 지적 2026-08-29)
+  const huntRows = useMemo(() => doc.hunts.filter((h) =>
+    !q || normSearch(`${h.n} ${h.d} ${doc.enemyNames[h.e] ?? ""}`).includes(q)), [doc, q]);
   // 맹약 검색 — 이름·효과문에 더해 **소속 오퍼레이터 이름**까지 훑는다.
   // "이 오퍼가 어느 맹약이더라"가 이 탭에서 가장 흔한 물음이라서 (2026-08-24)
   const bondRows = useMemo(() => {
@@ -1026,6 +1066,123 @@ export default function AutochessGuide({ doc, onShowOperator }: {
         </>
       )}
 
+      {/* ══ 편성 계산기 ══ (사용자 요청 2026-08-29)
+          지난번 '시뮬레이터' 뷰는 축이 맹약→기물이라 필터의 재탕이어서 접혔다
+          (2026-08-23 "물자관리소에서 필터링하는 거랑 똑같네"). 여기는 축이 반대다 —
+          기물을 담으면 23개 맹약 전체 상태가 한 번에 나온다. */}
+      {view === "board" && (
+        <>
+          <p className="sim-note">{t("기물을 담으면 맹약이 몇 명이고 어느 단계가 켜지는지 계산합니다. 어떤 편성이 좋은지는 판단하지 않습니다 — 게임 데이터에 숫자로 있는 것만 보여 줍니다.")}</p>
+
+          <section className="ac-board">
+            <h3 className="sb-h3">{t("전장")} <em className="sb-count">{slots.length}/{MAX_BOARD}</em></h3>
+            <div className="ac-slots">
+              {Array.from({ length: MAX_BOARD }, (_, i) => {
+                const sl = slots[i];
+                const c = sl && chessById.get(sl.id);
+                if (!c) return <div key={i} className="ac-slot empty" aria-hidden>+</div>;
+                return (
+                  <div key={i} className={`ac-slot${sl.gold ? " gold" : ""}`}>
+                    <button type="button" className="ac-slot-face" onClick={() => openChess(c)} title={t("기물 상세")}>
+                      {c.op ? <img src={opFace(c.op)} alt="" aria-hidden loading="lazy" onError={hideErr} />
+                        : <span className="ac-face-diy" aria-hidden>?</span>}
+                      <b>{c.n}</b>
+                    </button>
+                    <span className="ac-slot-act">
+                      <button type="button" className={sl.gold ? "on" : ""} onClick={() => toggleGold("b", i)}
+                        title={t("정예화(골든) 전환")}>★</button>
+                      <button type="button" onClick={() => dropFrom("b", i)} title={t("빼기")}>×</button>
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            <h3 className="sb-h3">{t("덱(예비)")} <em className="sb-count">{bench.length}/{MAX_DECK}</em>
+              <span className="sb-dim ac-note">{t("전장+덱을 함께 세는 맹약이 셋 있습니다 — 예견·기적·투자자")}</span></h3>
+            <div className="ac-slots deck">
+              {Array.from({ length: MAX_DECK }, (_, i) => {
+                const sl = bench[i];
+                const c = sl && chessById.get(sl.id);
+                if (!c) return <div key={i} className="ac-slot empty sm" aria-hidden>+</div>;
+                return (
+                  <div key={i} className="ac-slot sm">
+                    <button type="button" className="ac-slot-face" onClick={() => openChess(c)} title={t("기물 상세")}>
+                      {c.op ? <img src={opFace(c.op)} alt="" aria-hidden loading="lazy" onError={hideErr} />
+                        : <span className="ac-face-diy" aria-hidden>?</span>}
+                      <b>{c.n}</b>
+                    </button>
+                    <span className="ac-slot-act">
+                      <button type="button" onClick={() => dropFrom("d", i)} title={t("빼기")}>×</button>
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            {(slots.length > 0 || bench.length > 0) && (
+              <button type="button" className="ac-clear" onClick={() => { setSlots([]); setBench([]); }}>
+                {t("판 비우기")}
+              </button>
+            )}
+          </section>
+
+          {/* 맹약 상태 — 켜진 것 먼저 */}
+          <section className="ac-boardout">
+            <h3 className="sb-h3">{t("맹약 상태")} <em className="sb-count">{boardBonds.filter((x) => x.st.active).length}</em></h3>
+            <label className="ac-stackin">
+              {t("중첩 수")}
+              <input type="number" min={0} inputMode="numeric" value={stackIn} placeholder="—"
+                onChange={(e) => setStackIn(e.target.value)} />
+              <span className="sb-dim">{t("중첩은 전투 중에 특질이 쌓는 값이라 편성만으로 정해지지 않습니다. 값을 넣으면 그 기준으로 수치와 단계를 보여 줍니다.")}</span>
+            </label>
+            {boardBonds.length === 0 && <p className="chlog-empty">{t("기물을 담으면 여기에 맹약이 나옵니다.")}</p>}
+            {boardBonds.map(({ st, b }) => (
+              <div key={b.id} className={`ac-bstat${st.active ? " on" : ""}`}>
+                <button type="button" className="ac-bstat-head" onClick={() => setBond(b)}>
+                  <img src={bondIcon(b.id)} alt="" aria-hidden loading="lazy" onError={hideErr} />
+                  <b>{b.n}</b>
+                  <i className="sb-chip">{t("{a}/{b}명", { a: st.counted, b: b.min })}</i>
+                  {b.down ? <i className="sb-chip">{t("적을수록 강함")}</i> : null}
+                  {st.deck > 0 && b.cond === "BOARD_AND_DECK"
+                    ? <i className="sb-chip">{t("덱 {n}", { n: st.deck })}</i> : null}
+                  <i className={`sb-chip ${st.active ? "ac-on" : "ac-off"}`}>{st.active ? t("발동") : t("미발동")}</i>
+                </button>
+                <ol className="ac-bstat-steps">
+                  {st.steps.map((s) => (
+                    <li key={s.i} className={s.on === true ? "on" : s.on === null ? "unknown" : "off"}>
+                      <span className="ac-bstat-mark" aria-hidden>{s.on === true ? "●" : s.on === null ? "?" : "○"}</span>
+                      {s.gate?.k === "stack"
+                        ? <em>{t("중첩 {n}", { n: s.gate.n })}{s.need != null && s.need > 0 ? t(" — {n} 남음", { n: s.need }) : ""}</em>
+                        : s.gate ? <em>{s.gate.k === "gold" ? t("정예화 {n}명", { n: s.gate.n }) : t("{n}명", { n: s.gate.n })}</em>
+                          : null}
+                      <span>{acRich(b.steps[s.i].t, b.id)}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            ))}
+          </section>
+
+          {/* 기물 고르기 — 위 필터·검색을 그대로 쓴다 */}
+          <section className="ac-pick">
+            <h3 className="sb-h3">{t("기물 고르기")} <em className="sb-count">{chessRows.length}</em></h3>
+            {searchBox}
+            <div className="ac-picklist">
+              {chessRows.map((c) => (
+                <button key={c.id} type="button" className={`ac-pickone${placed.has(c.id) ? " used" : ""}`}
+                  disabled={placed.has(c.id) || (slots.length >= MAX_BOARD && bench.length >= MAX_DECK)}
+                  onClick={() => addPiece(c)}>
+                  {c.op ? <img src={opFace(c.op)} alt="" aria-hidden loading="lazy" onError={hideErr} />
+                    : <span className="ac-face-diy" aria-hidden>?</span>}
+                  <b>{c.n}</b>
+                  <span className="ac-pickbonds">{c.bonds.map((x) => nameOfBond(x)).join(" · ")}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+        </>
+      )}
+
       {/* ══ 전략 ══ */}
       {view === "band" && (
         <>
@@ -1438,6 +1595,37 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                 </table>
               </div>
               <p className="sb-dim">{t("승급 비용은 그 레벨에서 다음 레벨로 올릴 때 처음 드는 자금입니다. 자유 선택 칸에 넣을 수 있는 오퍼레이터는 '물자관리소 → 오퍼레이터' 맨 아래에 있습니다.")}</p>
+            </>
+          )}
+
+          {miscTab === "hunt" && (
+            <>
+              {/* 사용자 지적 2026-08-29: "제셀톤이나 투척수 같은, 자기가 직접 골라야 나오는
+                  적들". 전략 선택지 중 적을 불러오는 쪽(ENEMY_GAIN)이 통째로 빠져 있었다. */}
+              <p className="sim-note">{t("골라서 다음 전투에 불러오는 적입니다. 처치하거나 그 전투를 이기면 자금을 줍니다 — 자금이 클수록 그만큼 버거운 적입니다.")}</p>
+              {searchBox}
+              <p className="ac-count">{t("{n}종", { n: huntRows.length })}</p>
+              <div className="ac-cards">
+                {huntRows.map((h) => (
+                  <button key={h.id} type="button" className="ac-card ac-huntcard"
+                    onClick={() => setEnemy(h.e)} title={t("적 상세 보기")}>
+                    <header>
+                      <EnFace id={h.e} />
+                      <div>
+                        <b className="ac-cname">{h.n}</b>
+                        <span className="ac-cmeta">
+                          <i className="sb-chip">{doc.enemyNames[h.e] ?? h.e}</i>
+                          {h.c > 1 ? <i className="sb-chip">{t("{n}마리", { n: h.c })}</i> : null}
+                          <i className="sb-chip ac-coin">
+                            {t(h.w === "win" ? "승리 시 자금 {n}" : "처치 시 자금 {n}", { n: h.coin })}
+                          </i>
+                        </span>
+                      </div>
+                    </header>
+                    <p className="ac-eqd">{rich(h.d)}</p>
+                  </button>
+                ))}
+              </div>
             </>
           )}
 

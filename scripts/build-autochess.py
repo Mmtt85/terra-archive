@@ -84,6 +84,65 @@ def rich(s):
 COND_RE = re.compile(r"^<([^>]+)>\s*")
 
 
+# ── 단계 게이트 — 그 단계가 **언제 켜지는가** (편성 계산기용, 2026-08-29) ──────────
+# 조건 문구가 규칙적이라 파싱이 되고, 같은 숫자가 게임 blackboard 에도 있는 것은 대조한다
+# (validate_gates). 손 표를 안 쓰는 이유는 시즌이 바뀌면 표가 먼저 썩기 때문이다.
+#
+#   전장에 서로 다른 [염국] 오퍼레이터 **6**명 배치  → {"k":"char","n":6}
+#   전장에 서로 다른 [아케인] 오퍼레이터 **3**배치    → 같은 뜻인데 '명'이 없다
+#   전장에 [독행] 오퍼레이터 1명 배치                → 강조(**)조차 없다
+#   전장에 정예화 오퍼레이터 **2**명 배치            → {"k":"gold","n":2}  (궁극기 전용)
+#   중첩 수 **40**회 달성 · 최초로 **80**회 중첩     → {"k":"stack","n":40}
+#   중첩 수 **25**회당                              → {"k":"stack","n":25,"rep":1} (반복 발동)
+#
+# ⚠ **인원 게이트와 중첩 게이트는 성격이 다르다.** 인원은 판을 짜는 순간 확정되지만,
+#   중첩은 전투 중에 쌓이는 값이라 편성만으로는 도달 여부를 알 수 없다 (신속·기민 40,
+#   기습 50, 기적·투자자 100, 예견 80/150). 화면에서 반드시 갈라 보여야 한다 —
+#   섞어 놓으면 "편성만 하면 켜지는 효과"로 읽힌다.
+_GN = r"\*{0,2}(\d+)\*{0,2}"
+GATE_GOLD = re.compile(r"정예화.*?" + _GN + r"\s*명")
+GATE_CHAR = re.compile(r"오퍼레이터\s*" + _GN + r"\s*명?\s*배치")
+GATE_STACK_REP = re.compile(r"중첩\s*수\s*" + _GN + r"\s*회당")
+GATE_STACK = re.compile(r"중첩\s*수\s*" + _GN + r"\s*회\s*달성|최초로\s*" + _GN + r"\s*회\s*중첩")
+
+
+def gate_of(cond):
+    """조건 문구(한국어) → 기계가 판정할 수 있는 게이트. 못 읽으면 None(=항상 적용)."""
+    if not cond:
+        return None
+    if "정예화" in cond and (m := GATE_GOLD.search(cond)):
+        return {"k": "gold", "n": int(m.group(1))}
+    if m := GATE_STACK_REP.search(cond):
+        return {"k": "stack", "n": int(m.group(1)), "rep": 1}
+    if m := GATE_STACK.search(cond):
+        return {"k": "stack", "n": int(m.group(1) or m.group(2))}
+    if m := GATE_CHAR.search(cond):
+        return {"k": "char", "n": int(m.group(1))}
+    return None
+
+
+# blackboard 의 임계 키 → 게이트 종류. `layer`류는 맹약마다 뜻이 갈려(조력=중첩 증가량,
+# 빅토리아·기적=발동 주기, 투자자=달성 임계) 대조에 쓰지 않는다 — 문구가 정본이다.
+GATE_BB_KEYS = {"power_bond_char_cnt": "char", "ex_bond_char_cnt": "char",
+                "power_char_cnt": "gold", "ex_char_cnt": "gold",
+                "power_bond_stack_cnt": "stack"}
+
+
+def validate_gates(bid, b, gates):
+    """문구에서 읽은 게이트를 blackboard 숫자와 대조한다. 어긋나면 빌드를 세운다."""
+    board = {}
+    for blk in (KR["effectBuffInfoDataDict"].get(b.get("effectId")) or []):
+        for kv in (blk.get("blackboard") or []):
+            board.setdefault(kv["key"], kv["value"])
+    for key, kind in GATE_BB_KEYS.items():
+        want = int(board.get(key) or 0)
+        if want <= 0:          # 불굴의 power_bond_stack_cnt=0 처럼 뜻 없는 0 은 건너뛴다
+            continue
+        if not any(g and g["k"] == kind and g["n"] == want for g in gates):
+            sys.exit(f"단계 게이트 불일치: {bid}({b['name']}) blackboard {key}={want} 인데 "
+                     f"문구에서 읽은 게이트는 {[g for g in gates if g]} — 조건 문구 형태가 바뀌었는지 확인")
+
+
 def steps_of(desc):
     """설명문을 '조건 → 효과' 단계로 쪼갠다.
 
@@ -613,6 +672,14 @@ def build_locale(loc):
             name = t.get("powerName") or name
         bond_order[bid] = len(bond_rows)
         steps = steps_of(loc_desc(loc, "bondInfoDict", bid, "desc", b["desc"]))
+        # 게이트는 **한국어 원문**에서 읽어 인덱스로 얹는다 (stack_rows 의 marks 와 같은 이유 —
+        # 로케일 문구는 표현이 달라 파싱이 안 되고, 단계 구성은 세 언어가 같다)
+        gates = [gate_of(st.get("c")) for st in steps_of(b["desc"])]
+        if loc == "ko":
+            validate_gates(bid, b, gates)
+        for st, g in zip(steps, gates):
+            if g:
+                st["g"] = g
         bond_rows.append({
             "id": bid,
             "n": name,
@@ -622,6 +689,8 @@ def build_locale(loc):
             # ⚠ '독행'만 downward다 — 인원이 **적을수록** 강해지므로 "N명부터"로 쓰면 뜻이 뒤집힌다.
             "cond": b.get("activeCondition"),
             **({"down": 1} if "downward" in (b.get("activeConditionTemplate") or "") else {}),
+            # 중첩 개념이 없는 맹약 (조화·협동방어·독행·궁극기) — 계산기가 중첩 칸을 안 그린다
+            **({"ns": 1} if b.get("noStack") else {}),
             "steps": steps,
             **({"stk": stk} if (stk := stack_rows(b)) else {}),
             "chess": [],                    # 아래에서 채운다
@@ -876,6 +945,7 @@ def build_locale(loc):
         })
     buff_rows.sort(key=lambda r: r["n"] or "")
 
+
     # ── 특수 적 ──
     # 유형별로 '대장' 한 마리(specialEnemyKey)가 뽑히고, 그 라운드에는 딸린 일반/정예
     # 적(attached*)이 함께 나온다. 화면에서 초상 카드 + 상세 모달로 보여 주므로
@@ -906,6 +976,44 @@ def build_locale(loc):
         for k2 in [key, *an, *ae]:
             sp_names[k2] = en_name(k2)
     sp_rows.sort(key=lambda r: (r["type"] or "", -(r["w"] or 0), r["n"]))
+
+    # ── 수배·특훈 (직접 고르는 적) ────────────────────────────────────────────
+    # 사용자 지적 2026-08-29: "제셀톤이나 투척수 같은, 자기가 직접 골라야 나오는 적들".
+    # 전략 선택지 중 **적을 불러오는 쪽**(ENEMY_GAIN)이 통째로 빠져 있었다 — 위에서 싣던 건
+    # BUFF_GAIN(오퍼 지원류) 43종뿐이고, 이쪽은 129종이 0종이었다. 고르면 다음 전투에 그 적이
+    # 나오고 처치·승리 시 자금을 준다 (제셀톤 윌리엄스 - 수배 = enemyeffect_b_9, 자금 4).
+    #
+    # 데이터가 균일해서 추출이 확정적이다 — 129종 전부 blackboard 에
+    # enemy_id·count·coin·round 를 갖고 있다 (실측). 자금 조건만 세 갈래다:
+    #   add_enemy_kill_gain_coin(109) 처치 시 · add_enemy_selfbattle_win_gain_coin(20) 승리 시
+    #   next_battle_add_enemy_win_gain_coin(1) 다음 전투 승리 시
+    COIN_WHEN = {"add_enemy_kill_gain_coin": "kill",
+                 "add_enemy_selfbattle_win_gain_coin": "win",
+                 "next_battle_add_enemy_win_gain_coin": "next"}
+    hunt_rows = []
+    for eid, e in EFFECTS.items():
+        if e.get("effectType") != "ENEMY_GAIN":
+            continue
+        bb, when = {}, None
+        for blk in (KR["effectBuffInfoDataDict"].get(eid) or []):
+            when = COIN_WHEN.get(blk.get("key"), when)
+            for kv in (blk.get("blackboard") or []):
+                bb.setdefault(kv["key"], kv["valueStr"] if kv["valueStr"] is not None else kv["value"])
+        enemy = bb.get("enemy_id")
+        if not enemy:
+            continue
+        hunt_rows.append({
+            "id": eid,
+            "n": loc_name(loc, "effectInfoDataDict", eid, "effectName", e.get("effectName")),
+            "d": rich(loc_desc(loc, "effectInfoDataDict", eid, "effectDesc", e.get("effectDesc"))),
+            "e": enemy,                                   # 등장하는 적
+            "c": int(bb.get("count") or 1),               # 마릿수
+            "coin": int(bb.get("coin") or 0),             # 보상 자금
+            **({"w": when} if when else {}),              # 자금을 언제 주나
+            **({"r": int(bb["round"])} if bb.get("round") else {}),
+        })
+        sp_names.setdefault(enemy, en_name(enemy))        # 적 이름표를 같이 싣는다
+    hunt_rows.sort(key=lambda r: (-r["coin"], r["n"] or ""))
 
     # ── 유형별 **전체 적 명단** (enemyInfoDict) ──
     # specialEnemyInfoDict는 각 부대의 '대표' 적 67종뿐이고, 같이 나오는 일반·정예 적은
@@ -1146,7 +1254,7 @@ def build_locale(loc):
                 if hit:
                     refs[name] = hit
 
-    _scan([bond_rows, chess_rows, gar_rows, equip_rows, band_rows, buff_rows, mode_rows, sp_types])
+    _scan([bond_rows, chess_rows, gar_rows, equip_rows, band_rows, buff_rows, hunt_rows, mode_rows, sp_types])
 
     # 문구가 부르는 적은 이 모드의 특훈 적 명단 밖일 수 있다 (덕로드·고프닉 …). 상세 모달이
     # 적 도감(1MB)을 받기 전에도 이름은 떠야 하므로 이름표에 미리 채워 둔다.
@@ -1181,6 +1289,7 @@ def build_locale(loc):
         "equips": equip_rows,
         "bands": band_rows,
         "buffs": buff_rows,
+        "hunts": hunt_rows,          # 직접 고르는 적 (수배·특훈) — ENEMY_GAIN
         "enemies": sp_rows,
         "enemyList": en_list,
         "enemyTypes": sp_types,

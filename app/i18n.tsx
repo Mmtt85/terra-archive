@@ -2819,6 +2819,43 @@ const D: Record<string, Pair> = {
   "찾는 글이 없습니다.": ["Nothing matches.", "該当する文章がありません。"],
   "위수 협의 보기": ["Stronghold Protocol views", "堅守協定の表示"],
   "위수 협의 능력": ["Garrison ability", "駐留能力"],
+  // 편성 계산기 (2026-08-29)
+  "전장": ["Board", "戦場"],
+  "덱(예비)": ["Deck (bench)", "デッキ（控え）"],
+  "기물 상세": ["Piece details", "駒の詳細"],
+  "정예화(골든) 전환": ["Toggle Golden", "精鋭化（ゴールデン）切替"],
+  "빼기": ["Remove", "外す"],
+  "판 비우기": ["Clear board", "盤をクリア"],
+  "맹약 상태": ["Bond status", "盟約の状態"],
+  "중첩 수": ["Stacks", "重ね掛け数"],
+  "기물 고르기": ["Pick pieces", "駒を選ぶ"],
+  "기물을 담으면 여기에 맹약이 나옵니다.": ["Add pieces and their bonds show up here.", "駒を入れると、ここに盟約が表示されます。"],
+  "{a}/{b}명": ["{a}/{b}", "{a}/{b}人"],
+  "적을수록 강함": ["Fewer is stronger", "少ないほど強い"],
+  "덱 {n}": ["Deck {n}", "デッキ{n}"],
+  "발동": ["Active", "発動"],
+  "미발동": ["Inactive", "未発動"],
+  "중첩 {n}": ["{n} stacks", "重ね掛け{n}"],
+  " — {n} 남음": [" — {n} to go", " — 残り{n}"],
+  "정예화 {n}명": ["{n} Golden", "精鋭化{n}人"],
+  "전장+덱을 함께 세는 맹약이 셋 있습니다 — 예견·기적·투자자": [
+    "Three bonds count the board and the deck together — Foresight, Miracle and Investor.",
+    "戦場とデッキを合わせて数える盟約が3つあります — 予見・奇跡・投資家。"],
+  "기물을 담으면 맹약이 몇 명이고 어느 단계가 켜지는지 계산합니다. 어떤 편성이 좋은지는 판단하지 않습니다 — 게임 데이터에 숫자로 있는 것만 보여 줍니다.": [
+    "Add pieces and it works out how many operators each bond has and which tiers switch on. It does not judge which line-up is good — only what the game data states as numbers.",
+    "駒を入れると、各盟約の人数とどの段階が入るかを計算します。どの編成が強いかは判断しません — ゲームデータに数値としてあるものだけを表示します。"],
+  "중첩은 전투 중에 특질이 쌓는 값이라 편성만으로 정해지지 않습니다. 값을 넣으면 그 기준으로 수치와 단계를 보여 줍니다.": [
+    "Stacks build up during battle from operator abilities, so a line-up alone does not fix them. Enter a number and the values and tiers are shown against it.",
+    "重ね掛けは戦闘中に特性が積む値なので、編成だけでは決まりません。数値を入れると、それを基準に数値と段階を表示します。"],
+  // 수배·특훈 — 직접 골라서 불러오는 적 (2026-08-29)
+  "수배·특훈": ["Bounties", "懸賞・訓練"],
+  "골라서 다음 전투에 불러오는 적입니다. 처치하거나 그 전투를 이기면 자금을 줍니다 — 자금이 클수록 그만큼 버거운 적입니다.": [
+    "Enemies you choose to bring into the next battle. Beating them — or winning that battle — pays out funds, and a bigger payout means a tougher enemy.",
+    "選んで次の戦闘に呼び込む敵です。撃破するか、その戦闘に勝つと資金がもらえます — 資金が大きいほど手強い敵です。"],
+  "적 상세 보기": ["View enemy details", "敵の詳細を見る"],
+  "{n}마리": ["{n} of them", "{n}体"],
+  "처치 시 자금 {n}": ["{n} funds on kill", "撃破で資金{n}"],
+  "승리 시 자금 {n}": ["{n} funds on win", "勝利で資金{n}"],
   "맹약별 오퍼레이터·전용 능력·특훈 적·보급센터 수치를 정리": ["Operators by alliance, garrison abilities, training enemies and Supply Center numbers", "盟約ごとのオペレーター・専用能力・訓練用仮想敵・補給センターの数値"],
   "맹약(진영·특성)별 오퍼레이터와 각자의 위수 협의 전용 능력, 특훈 적과 리더 적, 보급센터 수치를 게임 데이터에서 그대로 정리했습니다.": [
     "Operators grouped by alliance (nation and trait) with the garrison ability each one carries, plus Tactical Training and leader enemies and every Supply Center number — straight from the game data.",

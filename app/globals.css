@@ -20328,6 +20328,100 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   white-space: nowrap;
 }
 .ac-note { margin: 0 0 6px; font-size: 11.5px; }
+/* ── 편성 계산기 (2026-08-29) ─────────────────────────────────────────────
+   전장 8칸 · 덱 10칸을 격자로 깔고, 아래에 맹약 상태를 쌓는다. 칸은 얼굴+이름 버튼과
+   조작 버튼(정예화·빼기)이 겹치지 않게 세로로 나눈다 — 카드 안에 버튼을 또 넣는 게 아니라
+   형제로 두는 것이 규약이다 (버튼 중첩은 HTML 위반, 2026-08-22 하이드레이션 오류 전례). */
+.ac-board { margin: 0 0 18px; }
+.ac-slots {
+  display: grid; gap: 8px; margin: 6px 0 14px;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  /* 격자 칸은 기본이 stretch 라 채워진 칸이 줄에서 가장 높은 칸만큼 늘어난다 — 얼굴 아래로
+     빈 공간이 길게 남아 보였다 (2026-08-29 실측). 내용 높이에 맞춘다. */
+  align-items: start;
+}
+.ac-slots.deck { grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); }
+.ac-slot {
+  border: 1px solid var(--line); border-radius: 10px; background: var(--paper);
+  display: flex; flex-direction: column; overflow: hidden; min-width: 0;
+}
+.ac-slot.empty {
+  align-items: center; justify-content: center; min-height: 84px;
+  border-style: dashed; color: var(--muted); font-size: 20px; font-weight: 700;
+}
+.ac-slot.sm.empty { min-height: 64px; font-size: 16px; }
+.ac-slot.gold { border-color: color-mix(in srgb, var(--lime) 60%, var(--line)); }
+.ac-slot-face {
+  border: 0; background: none; cursor: pointer; padding: 8px 6px 4px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0;
+}
+.ac-slot-face img { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; }
+.ac-slot.sm .ac-slot-face img { width: 32px; height: 32px; }
+.ac-slot-face b {
+  font-size: 11px; font-weight: 700; line-height: 1.3; text-align: center;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
+}
+.ac-slot-act { display: flex; border-top: 1px solid var(--line); }
+.ac-slot-act button {
+  flex: 1; border: 0; background: none; cursor: pointer; padding: 3px 0;
+  font-size: 11px; color: var(--muted);
+}
+.ac-slot-act button:hover { background: color-mix(in srgb, var(--line) 40%, transparent); }
+.ac-slot-act button.on { color: var(--lime); font-weight: 800; }
+/* 제목 옆 안내문 — sb-count 바로 뒤라 숫자에 붙어 읽혔다 */
+.sb-h3 .ac-note { margin-left: 8px; font-weight: 500; }
+.ac-clear {
+  border: 1px solid var(--line); border-radius: 8px; background: none; cursor: pointer;
+  padding: 4px 12px; font-size: 11.5px; color: var(--muted);
+}
+
+.ac-stackin { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 6px 0 12px; font-size: 12px; font-weight: 700; }
+.ac-stackin input {
+  width: 84px; padding: 4px 8px; font-size: 12.5px;
+  border: 1px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--ink);
+}
+.ac-stackin .sb-dim { flex: 1 1 260px; font-weight: 500; line-height: 1.5; }
+
+.ac-bstat { border: 1px solid var(--line); border-radius: 10px; margin: 0 0 8px; overflow: hidden; }
+.ac-bstat.on { border-color: color-mix(in srgb, var(--lime) 50%, var(--line)); }
+.ac-bstat-head {
+  width: 100%; border: 0; background: none; cursor: pointer;
+  display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 8px 10px;
+}
+.ac-bstat-head img { width: 20px; height: 20px; object-fit: contain; }
+.ac-bstat-head b { font-size: 13px; }
+.sb-chip.ac-on { color: var(--lime); border-color: color-mix(in srgb, var(--lime) 45%, var(--line)); font-weight: 800; }
+.sb-chip.ac-off { color: var(--muted); }
+.ac-bstat-steps { margin: 0; padding: 0 10px 8px 10px; list-style: none; font-size: 12px; line-height: 1.55; }
+.ac-bstat-steps li { display: flex; gap: 6px; padding: 3px 0; }
+.ac-bstat-steps li.off, .ac-bstat-steps li.unknown { color: var(--muted); }
+.ac-bstat-mark { flex: none; width: 12px; text-align: center; }
+/* 중첩 게이트는 **판정하지 않는다**는 뜻이라 물음표를 눈에 띄게 남긴다 (autochess-board.ts) */
+.ac-bstat-steps li.unknown .ac-bstat-mark { color: var(--lime); font-weight: 800; }
+.ac-bstat-steps em {
+  flex: none; font-style: normal; font-size: 10.5px; font-weight: 800;
+  color: var(--muted); white-space: nowrap; padding-top: 1px;
+}
+
+.ac-picklist { display: grid; gap: 6px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.ac-pickone {
+  display: flex; align-items: center; gap: 7px; min-width: 0; text-align: left;
+  border: 1px solid var(--line); border-radius: 9px; background: var(--paper);
+  cursor: pointer; padding: 5px 8px;
+}
+.ac-pickone:disabled { opacity: 0.4; cursor: default; }
+.ac-pickone img { width: 28px; height: 28px; border-radius: 6px; object-fit: cover; flex: none; }
+.ac-pickone b { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ac-pickbonds {
+  font-size: 10.5px; color: var(--muted); margin-left: auto; flex: none;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 46%;
+}
+
+/* 수배·특훈 카드 — 적 초상 + 효과 문구. 카드 전체가 적 상세를 여는 버튼이라
+   .ac-card 의 클릭 가능한 모양을 그대로 쓰고, 보상 자금만 눈에 띄게 세운다. */
+.ac-huntcard { text-align: left; cursor: pointer; }
+.ac-huntcard .ac-cmeta { flex-wrap: wrap; gap: 4px; }
+.sb-chip.ac-coin { color: var(--lime); border-color: color-mix(in srgb, var(--lime) 45%, var(--line)); font-weight: 800; }
 @media (max-width: 560px) {
   .ac-oprow { grid-template-columns: 40px 1fr; }
   .ac-oprow-gar { grid-column: 1 / -1; }
