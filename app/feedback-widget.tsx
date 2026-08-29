@@ -7,7 +7,7 @@ import {
   getFeedbackToken, setFeedbackToken, getFeedbackSeen, markFeedbackSeen,
   fetchMyFeedback, countNewReplies, updateMyFeedback, deleteMyFeedback,
   getBoardAdminKey, setBoardAdminKey, probeBoardAdminKey, fetchAllFeedbackBoard,
-  boardAdminAddReply, boardAdminDeleteReply, boardAdminDeleteFeedback, boardAdminSetReviewed,
+  boardAdminAddReply, boardAdminDeleteReply, boardAdminEditReply, boardAdminDeleteFeedback, boardAdminSetReviewed,
   countryOf, flagOf,
   type FeedbackKind, type BoardRow,
 } from "./feedback";
@@ -186,6 +186,30 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
     } finally {
       setReplyBusy(false);
     }
+  };
+
+  // 답변 수정 (사용자 요청 2026-08-29) — 종전엔 지우고 다시 쓰는 수밖에 없어서 등록 시각이
+  // 바뀌고 작성자에게 '새 답변'이 다시 떴다. 한 번에 하나만 편집한다.
+  // ⚠ 이름 주의 — editingId/editVal/editBusy 는 위(63행)에 **본인 제안 수정**용으로 이미 있다.
+  //   그대로 쓰면 재선언이라 페이지가 500 이 된다 (실측 2026-08-29).
+  const [repEditId, setRepEditId] = useState("");
+  const [repEditVal, setRepEditVal] = useState("");
+  const [repEditBusy, setRepEditBusy] = useState(false);
+  const startEditReply = (replyId: string, body: string) => { setRepEditId(replyId); setRepEditVal(body); setActErr(false); };
+  const cancelEditReply = () => { setRepEditId(""); setRepEditVal(""); };
+  const saveReplyAdmin = async (row: BoardRow, replyId: string) => {
+    if (!adminKey || !repEditVal.trim()) return;
+    setRepEditBusy(true); setActErr(false);
+    try {
+      await boardAdminEditReply(adminKey, replyId, repEditVal.trim());
+      setRows((cur) => (cur ?? []).map((r) => (r.id === row.id
+        ? { ...r, feedback_replies: r.feedback_replies.map((rep) => (rep.id === replyId ? { ...rep, body: repEditVal.trim() } : rep)) }
+        : r)));
+      cancelEditReply();
+    } catch {
+      setActErr(true);
+    }
+    setRepEditBusy(false);
   };
 
   const removeReplyAdmin = async (row: BoardRow, replyId: string) => {
@@ -615,12 +639,27 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
                   <b>🛠 {t("개발자")}</b>
                   {isNewReply(rep.created_at) && <i className="fb-new-tag">{t("새 답변")}</i>}
                   <time>{fmtDate(rep.created_at)}</time>
+                  {adminKey && repEditId !== rep.id && (
+                    <button type="button" className="fb-reply-edit" title={t("수정")}
+                      onClick={() => startEditReply(rep.id, rep.body)}>✎</button>
+                  )}
                   {adminKey && (
                     <button type="button" className="fb-reply-del" title={t("삭제")}
                       onClick={() => void removeReplyAdmin(threadRow, rep.id)}>×</button>
                   )}
                 </header>
-                <p>{rep.body}</p>
+                {adminKey && repEditId === rep.id ? (
+                  <div className="fb-admin-reply-form fb-reply-editform">
+                    <textarea value={repEditVal} onChange={(e) => setRepEditVal(e.target.value)} rows={6} maxLength={4000} />
+                    <span className="fb-reply-editbtns">
+                      <button type="button" disabled={!repEditVal.trim() || repEditBusy}
+                        onClick={() => void saveReplyAdmin(threadRow, rep.id)}>
+                        {repEditBusy ? t("저장 중…") : t("저장")}
+                      </button>
+                      <button type="button" className="fb-tool-btn" onClick={cancelEditReply}>{t("취소")}</button>
+                    </span>
+                  </div>
+                ) : <p>{rep.body}</p>}
               </div>
             ))}
             {adminKey ? (<>

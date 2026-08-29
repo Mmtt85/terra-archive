@@ -2456,6 +2456,7 @@ const D: Record<string, Pair> = {
   "답변 등록": ["Post reply", "返信を登録"],
   "등록 중…": ["Posting…", "登録中…"],
   "익명 제안 — 답변해도 작성자가 볼 수 없습니다": ["Anonymous suggestion — the author can't see replies", "匿名の提案 — 返信しても投稿者には見えません"],
+  "저장 중…": ["Saving…", "保存中…"],
   "이 답변을 삭제할까요?": ["Delete this reply?", "この返信を削除しますか？"],
   "대응완료": ["Resolved", "対応済み"],
   "대응 취소": ["Unresolve", "対応済み解除"],

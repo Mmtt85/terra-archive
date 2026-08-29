@@ -7675,6 +7675,16 @@ legend {
   padding: 0 2px;
   cursor: pointer;
 }
+/* 답변 수정 — 삭제(×) 옆의 ✎. 같은 모양을 쓰되 위험한 색은 안 준다 (2026-08-29) */
+/* ⚠ margin-left: auto 를 주지 말 것 — 헤더의 <time> 이 이미 auto 를 갖고 있어서
+   둘이 남는 공간을 나눠 가져 시각이 가운데로 밀린다 (2026-08-29). */
+.fb-reply-edit {
+  border: 0; background: 0 0; cursor: pointer;
+  color: var(--muted); font-size: 12px; line-height: 1; padding: 0 2px;
+}
+.fb-reply-edit:hover { color: var(--ink); }
+.fb-reply-editform textarea { width: 100%; }
+.fb-reply-editbtns { display: flex; gap: 6px; margin-top: 6px; }
 .fb-reply-del:hover {
   color: #e0483c;
 }

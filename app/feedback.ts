@@ -224,6 +224,21 @@ export async function boardAdminAddReply(key: string, feedbackId: string, body: 
   return rows[0];
 }
 
+/** 게시판에서 관리자 답변 수정 (사용자 요청 2026-08-29) — 종전엔 지우고 다시 쓰는 수밖에
+ *  없어서 등록 시각이 바뀌고 '새 답변' 표시가 다시 떴다. 0행 처리는 실패로 본다
+ *  (RLS에 걸리면 에러가 아니라 200 + 빈 배열이 온다 — adminWrite 와 같은 함정). */
+export async function boardAdminEditReply(key: string, replyId: string, body: string) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/feedback_replies?id=eq.${replyId}`, {
+    method: "PATCH",
+    headers: { ...adminKeyHeaders(key), "Content-Type": "application/json", Prefer: "return=representation" },
+    body: JSON.stringify({ body: body.slice(0, 4000) }),
+  });
+  if (!res.ok) throw new Error(`답변 수정 실패 (${res.status})`);
+  const rows = await res.json().catch(() => null);
+  if (!Array.isArray(rows) || rows.length === 0) throw new Error("답변 수정 실패 — 0행 처리");
+  return rows[0];
+}
+
 export async function boardAdminDeleteReply(key: string, replyId: string) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/feedback_replies?id=eq.${replyId}`, {
     method: "DELETE",
