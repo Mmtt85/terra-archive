@@ -575,23 +575,6 @@ export default function AdminPage() {
     }
   };
 
-  // "한꺼번에 대응중" — 지금 보이는 목록 중 아직 대응중이 아닌 항목을 일괄 표시
-  const markShownHandling = async () => {
-    const targets = shown.filter((row) => !handlingAt(row.payload));
-    if (!targets.length) { setStatus("이미 모두 대응중입니다"); return; }
-    if (!(await confirm({ message: `표시된 ${targets.length}건을 대응중으로 표시할까요?` }))) return;
-    setStatus(`대응중 표시 중… (0/${targets.length})`);
-    let done = 0;
-    for (const row of targets) {
-      try {
-        await adminSetHandling(row.id, row.payload, true);
-        setRows((current) => current.map((item) => item.id === row.id ? { ...item, payload: withHandling(item.payload, true) } : item));
-      } catch { /* 개별 실패는 건너뛴다 */ }
-      setStatus(`대응중 표시 중… (${++done}/${targets.length})`);
-    }
-    setStatus(`${done}건 대응중 표시 완료`);
-  };
-
   // 첨부 이미지 URL → R2 키 (files.terra-archive.net/<key> 또는 워커 /f/<key> 폴백 둘 다)
   const keyOfImageUrl = (u: string): string | null => {
     try {
@@ -637,7 +620,6 @@ export default function AdminPage() {
   const shown = rows
     .filter((row) => (filter === "all" || row.kind === filter) && matchStatus(row))
     .sort((a, b) => statusRank(a) - statusRank(b) || Date.parse(b.created_at) - Date.parse(a.created_at));
-  const handlingCount = rows.filter((row) => handlingAt(row.payload) && !row.reviewed_at).length;
 
   // 게임 데이터 비교 — 획득 불가(가짜 게스트·컬래버 잔재 등)는 사이트가 의도적으로
   // 제외한 것이므로 obtainable=true만 신규로 판정한다
@@ -708,7 +690,6 @@ export default function AdminPage() {
           <button className={tab === "files" ? "selected" : ""} onClick={() => setTab("files")}>
             파일{files ? ` (${uploadRows.length})` : ""}
           </button>
-          <button onClick={() => load()}>새로고침</button>
           {/* Access 세션 종료 — 다시 들어오려면 구글 로그인 필요 */}
           <button onClick={() => { window.location.href = "/cdn-cgi/access/logout"; }}>로그아웃</button>
         </div>
@@ -757,7 +738,9 @@ export default function AdminPage() {
 
       {tab === "feedback" && (<>
       <div className="admin-tools admin-status-tools">
-        {["all", "feature", "data_error", "plan"].map((kind) => (
+        {/* 'plan'(편성 제안)은 뺐다 — 더는 들어오지 않는 종류다 (사용자 지시 2026-08-29).
+            KIND_LABEL 에는 남겨 둔다: 옛 행이 그 kind 로 저장돼 있어 배지 이름이 필요하다. */}
+        {["all", "feature", "data_error"].map((kind) => (
           <button key={kind} className={filter === kind ? "selected" : ""} onClick={() => setFilter(kind)}>
             {kind === "all" ? "전체" : KIND_LABEL[kind]} ({kind === "all" ? rows.length : rows.filter((row) => row.kind === kind).length})
           </button>
@@ -767,7 +750,8 @@ export default function AdminPage() {
             {label} ({rows.filter((row) => (key === "reviewed" ? row.reviewed_at : !row.reviewed_at)).length})
           </button>
         ))}
-        <button className="bulk-handling-btn" onClick={markShownHandling} title="지금 보이는 목록을 한꺼번에 대응중으로 표시">🔧 표시된 항목 일괄 대응중{handlingCount ? ` (현재 ${handlingCount})` : ""}</button>
+        {/* 새로고침은 이 탭 것이라 머리글이 아니라 필터 줄에 둔다 (사용자 지시 2026-08-29) */}
+        <button className="admin-refresh" onClick={() => load()}>↻ 새로고침</button>
       </div>
       <div className="admin-list">
         {shown.map((row) => (
