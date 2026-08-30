@@ -2854,9 +2854,6 @@ const D: Record<string, Pair> = {
   "배치+정비구역을 함께 세는 맹약이 셋 있습니다 — 예견·기적·투자자": [
     "Three bonds count the board and the standby area together — Foresight, Miracle and Investor.",
     "配置と整備エリアを合わせて数える盟約が3つあります — 予見・奇跡・投資家。"],
-  "기물을 담으면 맹약이 몇 명이고 어느 단계가 켜지는지 계산합니다.": [
-    "Add pieces and it works out how many operators each bond has and which tiers switch on.",
-    "駒を入れると、各盟約の人数とどの段階が入るかを計算します。"],
   "중첩은 전투 중에 특질이 쌓는 값이라 편성만으로 정해지지 않습니다. 값을 넣으면 그 기준으로 수치와 단계를 보여 줍니다.": [
     "Stacks build up during battle from operator abilities, so a line-up alone does not fix them. Enter a number and the values and tiers are shown against it.",
     "重ね掛けは戦闘中に特性が積む値なので、編成だけでは決まりません。数値を入れると、それを基準に数値と段階を表示します。"],
