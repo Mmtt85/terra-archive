@@ -2889,6 +2889,9 @@ const D: Record<string, Pair> = {
     "One battlefield is drawn when a run starts. Its terrain stays the same for the whole run; what changes each round is which enemies show up. Tap a battlefield to see its terrain and the rounds played on it.",
     "盤の開始時に戦場がひとつ抽選されます。地形はその盤の間ずっと同じで、ラウンドごとに変わるのは出てくる敵です。戦場を押すと地形とそこで回るラウンドが見られます。"],
   "리더 전장": ["Leader battlefield", "リーダー戦場"],
+  "⚠ 바로 위 그림은 실제 지형이 아니라 적 편성을 담은 도식입니다 — 게임 데이터가 적 구성과 등장 순서를 이 판 위에 정의해 둡니다. 실제로 어느 길로 오는지는 뽑힌 전장에 맞춰 다시 계산되므로 지형 위에 겹쳐 그리지 않았습니다.": [
+    "⚠ The diagram just above is not the real terrain — it is the schematic the game data uses to define which enemies appear and in what order. Their actual paths are recomputed for whichever battlefield was drawn, so they are not overlaid on the terrain.",
+    "⚠ すぐ上の図は実際の地形ではなく、敵の構成と出現順を定義した図式です。実際の進路は抽選された戦場に合わせて再計算されるため、地形には重ねていません。"],
   "라운드 카드를 누르면 그 라운드의 적 편성을 볼 수 있습니다. 적이 실제로 어느 길로 오는지는 뽑힌 전장에 맞춰 게임이 다시 계산합니다.": [
     "Tap a round to see the enemies it brings. The paths they actually take are recomputed by the game for whichever battlefield was drawn.",
     "ラウンドを押すとその敵の構成が見られます。実際の進路は抽選された戦場に合わせてゲームが再計算します。"],

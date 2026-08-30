@@ -1969,22 +1969,32 @@ export default function AutochessGuide({ doc, onShowOperator }: {
       {/* 맹약 배지를 누르면 뜨는 **작은 창** — 이 판에서 그 맹약이 어떤 상태인지만 본다
           (맹약 자체의 전체 설명은 아래 '맹약 상세'로 넘긴다). 사용자 지시 2026-08-29. */}
       {/* ══ 전장 모달 — 지형 + 그 구획에서 도는 라운드 (사용자 지시 2026-08-30
-            "각 맵마다 라운드를 맵 상세에다가 넣어야"). 아래 구획이 리더 전장이라는 것도
-            사용자가 게임 화면에서 확인해 줬다. 라운드 카드를 누르면 적 편성 도식이 겹쳐 뜬다. ══ */}
+            "각 맵마다 라운드를 맵 상세에다가"). 라운드를 누르면 **모달을 또 띄우지 않고
+            그 자리에서 펼친다** (사용자 지시 2026-08-30).
+            ⚠ 적 편성 도식을 지형 **위에 겹치지는 않는다** — 경로는 웨이브 템플릿 기준이라
+            실제 지형에 얹으면 지나는 칸의 38%가 벽·배치블록이다 (실측 2026-08-30, m01/04R).
+            아래 구획이 리더 전장이라는 것은 사용자가 게임 화면에서 확인해 줬다. ══ */}
       {acMap && AC_ROUTES && (() => {
         const R = AC_ROUTES!;
         const boards = R.maps.filter((m) => m.stage === acMap);
         if (!boards.length) return null;
         const idx = [...new Set(R.maps.map((m) => m.stage))].indexOf(acMap);
+        const li = locale === "en" ? 1 : locale === "ja" ? 2 : 0;
+        const nameOfEnemy = (id: string) =>
+          enemyDex?.get(id)?.name ?? doc.enemyNames[id] ?? R.nm[id]?.[li] ?? id;
+        const waveName = (w: AcWave) => {
+          const b = w.boss ? doc.bosses.find((x) => x.id === w.boss) : null;
+          return b ? b.n : w.train ? t("입문 {n}R", { n: w.rs.join("·") }) : t("{n}R", { n: w.rs.join("·") });
+        };
         const waveCard = (w: AcWave) => {
           const b = w.boss ? doc.bosses.find((x) => x.id === w.boss) : null;
           return (
-            <button key={w.k} type="button" className="ac-card ac-mapcard"
-              onClick={() => { setMapPin(new Set()); setAcWave(w.k); }}>
+            <button key={w.k} type="button"
+              className={`ac-card ac-mapcard${acWave === w.k ? " on" : ""}`}
+              onClick={() => { setMapPin(new Set()); setAcWave(acWave === w.k ? "" : w.k); }}>
               {b ? <EnFace id={b.enemy} className="ac-mapcardface" /> : null}
               <span className="ac-mapcard-body">
-                <b>{b ? b.n : w.train ? t("입문 {n}R", { n: w.rs.join("·") }) : t("{n}R", { n: w.rs.join("·") })}
-                  {w.boss ? <i className="ac-wavemode">{w.solo ? t("단독") : t("협동")}</i> : null}</b>
+                <b>{waveName(w)}{w.boss ? <i className="ac-wavemode">{w.solo ? t("단독") : t("협동")}</i> : null}</b>
                 <em>{t("적 {a}종 · 오는 길 {b}갈래", { a: Object.keys(w.e).length, b: w.r.filter(Boolean).length })}</em>
               </span>
             </button>
@@ -1992,11 +2002,12 @@ export default function AutochessGuide({ doc, onShowOperator }: {
         };
         return (
           <ModalWindow key={acMap} label={t("전장 {n}", { n: idx + 1 })}
-            className="operator-modal ac-modal ac-mapmodal" onClose={() => setAcMap("")}>
+            className="operator-modal ac-modal ac-mapmodal" onClose={() => { setAcMap(""); setAcWave(""); }}>
             <div className="ac-mapbody">
               <p className="ac-mapcap"><em>{[...new Set(boards[0].modes)].join(" · ")}</em></p>
               {boards.map((bd) => {
                 const ws = R.rounds.filter((w) => w.band === bd.band);
+                const sel = ws.find((w) => w.k === acWave);
                 return (
                   <div key={bd.id} className="ac-mapboard">
                     <h4 className="ac-bosshead">{bd.band === 0 ? t("일반 라운드 전장") : t("리더 전장")}
@@ -2004,50 +2015,35 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                     <StageRouteMap data={{ ...bd, r: [], f: [], e: {} }} order={[]}
                       highlights={null} imgOf={() => undefined} nameOf={() => ""} />
                     <div className="ac-cards ac-mapcards ac-waverow">{ws.map(waveCard)}</div>
+                    {sel && (
+                      <div className="ac-wavepanel">
+                        <p className="ac-mapcap">
+                          <b>{waveName(sel)}</b>
+                          {sel.boss && <i className="sb-chip">{sel.solo ? t("단독") : t("협동")}</i>}
+                          <em>{t("적 {a}종 · 오는 길 {b}갈래",
+                            { a: Object.keys(sel.e).length, b: sel.r.filter(Boolean).length })}</em>
+                        </p>
+                        <p className="ac-mapenemies">
+                          {Object.keys(sel.e).map((k) => (
+                            <button key={k} type="button" className="ac-bondchip sm" onClick={() => setEnemy(k)}>
+                              <EnFace id={k} className="ac-mapenface" />{nameOfEnemy(k)}
+                            </button>
+                          ))}
+                        </p>
+                        <StageRouteMap data={sel} order={Object.keys(sel.e)}
+                          highlights={mapPin.size ? [...mapPin] : null}
+                          imgOf={(k) => enemyImg(k)} nameOf={nameOfEnemy}
+                          onPick={(id) => setMapPin((prev) => {
+                            const next = new Set(prev);
+                            if (!next.delete(id)) next.add(id);
+                            return next;
+                          })} />
+                        <p className="sb-dim ac-mapnote">{t("⚠ 바로 위 그림은 실제 지형이 아니라 적 편성을 담은 도식입니다 — 게임 데이터가 적 구성과 등장 순서를 이 판 위에 정의해 둡니다. 실제로 어느 길로 오는지는 뽑힌 전장에 맞춰 다시 계산되므로 지형 위에 겹쳐 그리지 않았습니다.")}</p>
+                      </div>
+                    )}
                   </div>
                 );
               })}
-              <p className="sb-dim ac-mapnote">{t("라운드 카드를 누르면 그 라운드의 적 편성을 볼 수 있습니다. 적이 실제로 어느 길로 오는지는 뽑힌 전장에 맞춰 게임이 다시 계산합니다.")}</p>
-            </div>
-          </ModalWindow>
-        );
-      })()}
-
-      {/* 라운드 적 편성 — ⚠ 실제 지형이 아니라 웨이브 템플릿 위의 도식이다 */}
-      {acWave && AC_ROUTES && (() => {
-        const R = AC_ROUTES!;
-        const w = R.rounds.find((x) => x.k === acWave);
-        if (!w) return null;
-        const li = locale === "en" ? 1 : locale === "ja" ? 2 : 0;
-        const nameOfEnemy = (id: string) =>
-          enemyDex?.get(id)?.name ?? doc.enemyNames[id] ?? R.nm[id]?.[li] ?? id;
-        const order = Object.keys(w.e);
-        const b = w.boss ? doc.bosses.find((x) => x.id === w.boss) : null;
-        const nm = b ? b.n : w.train ? t("입문 {n}R", { n: w.rs.join("·") }) : t("{n}R", { n: w.rs.join("·") });
-        return (
-          <ModalWindow key={w.k} label={nm} className="operator-modal ac-modal ac-mapmodal"
-            onClose={() => setAcWave("")}>
-            <div className="ac-mapbody">
-              <p className="ac-mapcap">
-                {w.boss && <i className="sb-chip">{w.solo ? t("단독") : t("협동")}</i>}
-                <em>{t("적 {a}종 · 오는 길 {b}갈래", { a: order.length, b: w.r.filter(Boolean).length })}</em>
-              </p>
-              <StageRouteMap data={w} order={order}
-                highlights={mapPin.size ? [...mapPin] : null}
-                imgOf={(k) => enemyImg(k)} nameOf={nameOfEnemy}
-                onPick={(id) => setMapPin((prev) => {
-                  const next = new Set(prev);
-                  if (!next.delete(id)) next.add(id);
-                  return next;
-                })} />
-              <p className="ac-mapenemies">
-                {order.map((k) => (
-                  <button key={k} type="button" className="ac-bondchip sm" onClick={() => setEnemy(k)}>
-                    <EnFace id={k} className="ac-mapenface" />{nameOfEnemy(k)}
-                  </button>
-                ))}
-              </p>
-              <p className="sb-dim ac-mapnote">{t("⚠ 이 그림은 실제 전장이 아니라 적 편성을 담은 도식입니다. 게임 데이터가 적 구성·등장 순서를 이 판 위에 정의해 두고, 실제 이동 경로는 뽑힌 전장에 맞춰 다시 계산합니다.")}</p>
             </div>
           </ModalWindow>
         );
