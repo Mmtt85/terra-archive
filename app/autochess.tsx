@@ -26,7 +26,7 @@ import { ModalWindow } from "./modal-window";
 import { GLOBAL_MODAL_HASH } from "./hash-modal";
 import { loadEnemies } from "./dex-cross";
 import { EnemyFile, RANK_KEY, enemyImg, enemyImgBase, type Enemy } from "./enemy-detail";
-import { StageRouteMap, type StageRoutes } from "./stage-route-map";
+import { StageRouteMap, enemyRouteColor, type StageRoutes } from "./stage-route-map";
 
 // 전투 맵 (scripts/build-autochess-routes.py) — 작전 도감·통합전략과 **같은 렌더러**를 쓴다
 // (규칙: .claude/skills/route-map-rules). '전투 맵' 탭을 처음 눌렀을 때만 지연 로드한다.
@@ -36,86 +36,9 @@ export type AcMapBoard = { id: string; stage: string; band: 0 | 1; w: number; h:
  *  (경로 꼭짓점이 자기 템플릿에선 100%, 실제 맵 6장에선 69~93%만 이동 가능 타일에 얹힌다). */
 export type AcWave = StageRoutes & { k: string; rs: number[]; boss: string | null; train: 0 | 1; solo: 0 | 1; band: 0 | 1 };
 export type AcRouteDoc = { maps: AcMapBoard[]; rounds: AcWave[]; bosses: Record<string, string>; nm: Record<string, [string, string, string]> };
-/** 지상 적이 밟을 수 있는 타일 (routeutil.tile_char 분류) — b(배치만)·w/x(고지형)·
- *  f(장애물)·d(깊은 물)·h(구멍)는 못 밟는다. */
-const GROUND_OK = new Set(["r", "p", "s", "e", "i", "o", "u"]);
-/** 지상 경로를 **실제 지형에 맞춰 다시 잇는다** (사용자 지시 2026-08-30
- *  "이동불가 타일이랑 안 겹치게 경로 만들어줘").
- *
- *  원본 경로는 장애물이 없는 웨이브 템플릿 기준이라 그대로 얹으면 벽을 지난다.
- *  꼭짓점은 그대로 두고 **그 사이를 이동 가능 칸만 밟는 최단 경로(BFS)** 로 다시 잇는다.
- *  비행(f=1)은 손대지 않는다 — 실제로 장애물을 넘어간다.
- *  ⚠ 좌표계: g는 row 0 = 위, 경로 y는 row 0 = 아래 (stage-route-map.tsx 규약).
- */
-function groundPath(g: string[], h: number, w: number, poly: [number, number][]): [number, number][] {
-  const ok = (x: number, y: number) => {
-    const gr = h - 1 - y;
-    return gr >= 0 && gr < h && x >= 0 && x < w && GROUND_OK.has(g[gr][x]);
-  };
-  // 꼭짓점이 못 밟는 칸이면 가장 가까운 밟을 수 있는 칸으로 당긴다
-  const snap = ([x, y]: [number, number]): [number, number] => {
-    if (ok(x, y)) return [x, y];
-    for (let r = 1; r <= Math.max(w, h); r++) {
-      for (let dx = -r; dx <= r; dx++) {
-        for (const dy of [-r, r]) if (ok(x + dx, y + dy)) return [x + dx, y + dy];
-      }
-      for (let dy = -r; dy <= r; dy++) {
-        for (const dx of [-r, r]) if (ok(x + dx, y + dy)) return [x + dx, y + dy];
-      }
-    }
-    return [x, y];
-  };
-  const key = (x: number, y: number) => y * w + x;
-  const bfs = (a: [number, number], b: [number, number]): [number, number][] | null => {
-    if (a[0] === b[0] && a[1] === b[1]) return [a];
-    const prev = new Map<number, number>();
-    const q: [number, number][] = [a];
-    const seen = new Set([key(a[0], a[1])]);
-    while (q.length) {
-      const [x, y] = q.shift()!;
-      if (x === b[0] && y === b[1]) {
-        const out: [number, number][] = [];
-        let cur = key(x, y);
-        for (;;) {
-          out.push([cur % w, Math.floor(cur / w)] as [number, number]);
-          const p = prev.get(cur);
-          if (p === undefined) break;
-          cur = p;
-        }
-        return out.reverse();
-      }
-      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-        const nx = x + dx, ny = y + dy;
-        if (!ok(nx, ny) || seen.has(key(nx, ny))) continue;
-        seen.add(key(nx, ny));
-        prev.set(key(nx, ny), key(x, y));
-        q.push([nx, ny] as [number, number]);
-      }
-    }
-    return null;
-  };
-  let cur = snap(poly[0]);
-  const out: [number, number][] = [cur];
-  for (const raw of poly.slice(1)) {
-    const to = snap(raw);
-    const seg = bfs(cur, to);
-    if (seg) out.push(...seg.slice(1));
-    else out.push(to);            // 길이 없으면 원래대로 (끊긴 그림보다 낫다)
-    cur = to;
-  }
-  // 일직선으로 이어지는 칸은 접는다 — 꼭짓점이 수백 개가 되면 렌더가 무거워진다
-  const slim: [number, number][] = [];
-  for (const pt of out) {
-    const n = slim.length;
-    if (n >= 2) {
-      const [ax, ay] = slim[n - 2], [bx, by] = slim[n - 1];
-      if ((bx - ax) === (pt[0] - bx) && (by - ay) === (pt[1] - by)) { slim[n - 1] = pt; continue; }
-    }
-    if (n === 0 || slim[n - 1][0] !== pt[0] || slim[n - 1][1] !== pt[1]) slim.push(pt);
-  }
-  return slim.length >= 2 ? slim : out;
-}
-
+// ⚠ 지상 경로를 여기서 다시 잇지 않는다 — StageRouteMap 이 이미 격자 위에서 8방향
+// BFS(모서리 뚫기 금지) + 통로 순간이동 간선까지 걸어 준다 (.claude/skills/route-map-rules).
+// 4방향 BFS를 따로 짜 넣었다가 걷어냈다 (2026-08-30) — 규칙의 정본은 렌더러 한 곳이다.
 let AC_ROUTES: AcRouteDoc | null = null;
 let AC_ROUTES_LOADING: Promise<void> | null = null;
 function loadAcRoutes(): Promise<void> {
@@ -474,6 +397,13 @@ export default function AutochessGuide({ doc, onShowOperator }: {
   const [acMap, setAcMap] = useState<string>("");
   const [acWave, setAcWave] = useState<string>("");
   const [mapPin, setMapPin] = useState<Set<string>>(new Set());
+  const [mapHover, setMapHover] = useState<string>("");
+  /** 등장 적 카드·지도 위 선 공용 — 경로 고정 토글 (route-map-rules 규약) */
+  const togglePinEnemy = (id: string) => setMapPin((prev) => {
+    const next = new Set(prev);
+    if (!next.delete(id)) next.add(id);
+    return next;
+  });
   const [routesReady, setRoutesReady] = useState(false);
   const [equip, setEquip] = useState<AcEquip | null>(null);
   const [band, setBand] = useState<AcBand | null>(null);
@@ -2095,32 +2025,56 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                       <span>{ws.length}</span></h4>
                     {/* 지형 격자 + 고른 라운드의 경로·적을 **한 장에** 겹친다.
                         경로 필드(r·f·e·sp·wv·ems·cw·mm)만 웨이브에서 가져오고 격자는 지형 것을 쓴다. */}
-                    <StageRouteMap
-                      data={sel ? { ...sel, g: bd.g, w: bd.w, h: bd.h,
-                        r: sel.r.map((poly, i) => (!poly || sel.f[i] ? poly
-                          : groundPath(bd.g, bd.h, bd.w, poly))) } : { ...bd, r: [], f: [], e: {} }}
-                      order={sel ? Object.keys(sel.e) : []}
-                      highlights={mapPin.size ? [...mapPin] : null}
-                      imgOf={(k) => enemyImg(k)}
-                      nameOf={sel ? nameOfEnemy : () => ""}
-                      onPick={sel ? (id) => setMapPin((prev) => {
-                        const next = new Set(prev);
-                        if (!next.delete(id)) next.add(id);
-                        return next;
-                      }) : undefined} />
-                    {sel && (
-                      <p className="ac-mapcap ac-wavecap">
-                        <b>{waveName(sel)}</b>
-                        {sel.boss && <i className="sb-chip">{sel.solo ? t("단독") : t("협동")}</i>}
-                        <em>{t("적 {a}종 · 오는 길 {b}갈래",
-                          { a: Object.keys(sel.e).length, b: sel.r.filter(Boolean).length })}</em>
-                        {Object.keys(sel.e).map((k) => (
-                          <button key={k} type="button" className="ac-bondchip sm" onClick={() => setEnemy(k)}>
-                            <EnFace id={k} className="ac-mapenface" />{nameOfEnemy(k)}
-                          </button>
-                        ))}
-                      </p>
-                    )}
+                    {/* 지도 | 등장 적 2단 — 작전 도감·통합전략과 같은 규약
+                        (.claude/skills/route-map-rules: 카드 클릭=경로 고정, 호버=강조,
+                         섬네일 클릭=적 상세). 지도 확대(⤢)는 .ac-mapcols 가 :has() 로 받는다. */}
+                    <div className="ac-mapcols">
+                      <StageRouteMap
+                        data={sel ? { ...sel, g: bd.g, w: bd.w, h: bd.h } : { ...bd, r: [], f: [], e: {} }}
+                        order={sel ? Object.keys(sel.e) : []}
+                        highlights={mapHover ? [mapHover] : mapPin.size ? [...mapPin] : null}
+                        imgOf={(k) => enemyImg(k)}
+                        nameOf={sel ? nameOfEnemy : () => ""}
+                        onPick={sel ? togglePinEnemy : undefined} />
+                      <div className="ac-mapencol">
+                        {sel ? (
+                          <>
+                            <p className="ac-mapcap ac-wavecap">
+                              <b>{waveName(sel)}</b>
+                              {sel.boss && <i className="sb-chip">{sel.solo ? t("단독") : t("협동")}</i>}
+                              <em>{t("적 {a}종 · 오는 길 {b}갈래",
+                                { a: Object.keys(sel.e).length, b: sel.r.filter(Boolean).length })}</em>
+                            </p>
+                            {Object.keys(sel.e).map((k) => {
+                              const rc = enemyRouteColor(Object.keys(sel.e), k);
+                              const ex = enemyDex?.get(k);
+                              return (
+                                <button key={k} type="button"
+                                  className={`ac-encard ac-mapencard${mapPin.has(k) ? " pinned" : ""}`}
+                                  style={{ ["--rc" as string]: rc }}
+                                  onMouseEnter={() => setMapHover(k)}
+                                  onMouseLeave={() => setMapHover("")}
+                                  onClick={() => togglePinEnemy(k)}>
+                                  {/* 섬네일 클릭은 **항상 적 상세** — 고정 토글과 분리한다 */}
+                                  <span role="presentation" onClick={(ev) => {
+                                    if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
+                                    ev.stopPropagation(); setEnemy(k);
+                                  }}><EnFace id={k} className="ac-mapencard-face" /></span>
+                                  <span className="ac-encard-body">
+                                    <b>{nameOfEnemy(k)}</b>
+                                    <span className="ac-encard-meta">
+                                      {ex?.rank && <em className={`en-rank r-${ex.rank}`}>{t(RANK_KEY[ex.rank] ?? "일반")}</em>}
+                                      <em>{t("{n}갈래", { n: sel.e[k].length })}</em>
+                                    </span>
+                                  </span>
+                                </button>
+                              );
+                            })}
+                            <p className="sb-dim ac-mapnote">{t("카드를 누르면 그 적의 경로만 남기고, 섬네일을 누르면 적 상세가 열립니다.")}</p>
+                          </>
+                        ) : <p className="sb-dim ac-mapnote">{t("아래에서 라운드를 고르면 그 라운드의 적과 오는 길이 이 지도에 그려집니다.")}</p>}
+                      </div>
+                    </div>
                     <div className="ac-cards ac-mapcards ac-waverow">{ws.map(waveCard)}</div>
                   </div>
                 );

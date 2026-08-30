@@ -20549,9 +20549,34 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
 .ac-waverow { margin-top: 8px; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); }
 /* 라운드를 고르면 그 자리에서 펼친다 — 모달을 또 띄우지 않는다 (사용자 지시 2026-08-30) */
 .ac-mapcard.on { border-color: var(--lime); background: color-mix(in srgb, var(--lime) 12%, var(--paper)); }
-/* 겹쳐 그린 라운드의 머리줄 — 지도 바로 밑, 적 칩까지 한 줄에 */
-.ac-wavecap { margin: 6px 0 0; gap: 5px 8px; }
+/* 지도 | 등장 적 2단 — 통합전략 모달(.rg-modal-cols)과 같은 규격.
+   지도 확대(⤢)는 .st-routewrap.big 을 :has() 로 받아 넓힌다 (route-map-rules). */
+.ac-mapcols { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 14px; align-items: start; }
+.ac-mapcols:has(.st-routewrap.big) { grid-template-columns: minmax(0, 62%) minmax(0, 1fr); }
+.ac-mapcols:has(.st-routewrap.full) { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 760px) { .ac-mapcols { grid-template-columns: minmax(0, 1fr); } }
+/* ⚠ 카드를 한 줄씩 쌓으면 지도(6행)보다 훨씬 길어져 오른쪽이 세로로 늘어진다
+   (사용자 지적 2026-08-30). 격자로 깔아 지도 높이 안에 담는다. */
+.ac-mapencol {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 6px; min-width: 0; align-content: start;
+}
+.ac-mapencol > .ac-wavecap, .ac-mapencol > .ac-mapnote { grid-column: 1 / -1; }
+.ac-wavecap { margin: 0 0 2px; gap: 5px 8px; }
 .ac-wavecap > b { font-size: 12.5px; }
+/* 등장 적 카드 — 경로 색을 --rc 로 물려받아 테두리에 쓴다 (route-map-rules) */
+.ac-mapencard {
+  display: flex; align-items: center; gap: 6px; text-align: left; padding: 5px 7px;
+  cursor: pointer; border-left: 3px solid var(--rc, var(--line)); min-width: 0;
+}
+.ac-mapencard.pinned { border-color: var(--rc); background: color-mix(in srgb, var(--rc) 12%, var(--paper)); }
+.ac-mapencard.pinned .ac-encard-body > b::after { content: " ✓"; color: var(--rc); font-weight: 900; }
+.ac-mapencard-face { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; flex: none; cursor: pointer; }
+.ac-mapencard .ac-encard-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ac-mapencard .ac-encard-body > b {
+  font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
+}
+.ac-mapencard .ac-encard-meta { font-size: 10px; gap: 4px; }
 /* 조건부 — 수치를 합치지 않고 설명문 그대로 (기물 이름 굵게) */
 .ac-gaincond { margin: 2px 0 0; font-size: 11.5px; line-height: 1.55; color: var(--muted); }
 .ac-gaincond > b { color: var(--ink2); }
