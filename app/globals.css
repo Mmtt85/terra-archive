@@ -20514,10 +20514,10 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
 /* ── 전투 맵 (제보 c3d2c056, 2026-08-30) — 카드 격자 → 모달.
    작전 도감·통합전략과 같은 규약이다 (사용자 지적 2026-08-30 "다른 기능들처럼 모달로").
    ⚠ 전장은 하나뿐이라 카드가 구분하는 건 지형이 아니라 **그 라운드의 적과 경로**다. ── */
-.ac-mapcards { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.ac-mapcards { grid-template-columns: repeat(auto-fill, minmax(205px, 1fr)); gap: 8px; }
 .ac-mapcard {
   display: flex; align-items: center; gap: 8px; text-align: left;
-  cursor: pointer; padding: 8px 10px; min-width: 0;
+  cursor: pointer; padding: 8px 10px; min-width: 0; overflow: hidden;
 }
 .ac-mapcardface { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; flex: none; }
 .ac-mapcard-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
@@ -20526,8 +20526,15 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   font-size: 12.5px; font-weight: 800; max-width: 100%;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.ac-mapcard-body > i, .ac-mapcard-body > em {
-  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+/* ⚠ flex 자식의 기본 min-width 는 auto — 긴 모드 목록이 카드(150px)를 200px 로 밀어
+   격자를 뚫고 서로 겹쳤다 (사용자 지적 2026-08-30). 0 으로 못 박아야 잘림이 먹는다. */
+.ac-mapcard-body > b, .ac-mapcard-body > i, .ac-mapcard-body > em { min-width: 0; max-width: 100%; }
+/* 이름·라운드는 한 줄 말줄임 */
+.ac-mapcard-body > b, .ac-mapcard-body > i { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* 설명(모드 목록 등)은 한 줄로는 안 담긴다 — 두 줄까지 접어 보여 준다 */
+.ac-mapcard-body > em {
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; line-height: 1.4;
 }
 .ac-mapcard-body > em { font-style: normal; font-size: 11px; color: var(--muted); }
 /* 단독/협동 — 리더 맵만 갈리므로 그 제목 줄에 붙인다 */
