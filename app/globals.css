@@ -20506,6 +20506,39 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
 /* 자금 등 자원 라벨 — 아이콘 + 글자 (/ac/type/ 아이콘은 중간 회색이라 양쪽 테마에서 그대로 보인다) */
 .ac-gainres { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 700; color: var(--ink2); }
 .ac-gainres img { width: 14px; height: 14px; object-fit: contain; }
+
+/* 맹약 상세 — 시뮬레이터에서 넣은 중첩 기준으로 푼 실제 값 (사용자 지시 2026-08-30) */
+.ac-atstack { margin-left: 8px; font-weight: 700; color: var(--ink2); }
+.ac-stack-now { margin-left: 6px; font-weight: 800; color: var(--ink); }
+
+/* ── 전투 맵 탭 (제보 c3d2c056, 2026-08-30) — 라운드 고르기 + 격자 지도 ── */
+.ac-maprow { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 14px; }
+.ac-mapchip {
+  min-width: 46px; padding: 6px 10px; font: inherit; font-size: 12px; font-weight: 700;
+  color: var(--ink2); background: var(--white); border: 1px solid var(--line);
+  border-radius: 8px; cursor: pointer;
+}
+.ac-mapchip:hover { border-color: var(--ink2); }
+.ac-mapchip.on { background: var(--lime); border-color: var(--lime); color: #16181a; }
+.ac-mapboss {
+  display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px 5px 5px;
+  font: inherit; font-size: 11.5px; font-weight: 700; color: var(--ink2);
+  background: var(--white); border: 1px solid var(--line); border-radius: 999px; cursor: pointer;
+}
+.ac-mapboss:hover { border-color: var(--ink2); }
+.ac-mapboss.on { background: var(--lime); border-color: var(--lime); color: #16181a; }
+.ac-mapbossface { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; flex: none; }
+/* 단독/협동 — 리더 맵만 갈리므로 그 제목 줄에 붙인다 */
+.ac-mapmode { display: inline-flex; gap: 4px; margin-left: 10px; }
+.ac-mapmode button {
+  padding: 3px 10px; font: inherit; font-size: 11px; font-weight: 700; color: var(--muted);
+  background: none; border: 1px solid var(--line); border-radius: 999px; cursor: pointer;
+}
+.ac-mapmode button.on { color: var(--ink); border-color: var(--ink2); }
+.ac-mapbosses { margin-bottom: 4px; }
+.ac-mapview { margin-top: 8px; }
+.ac-mapenemies { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0; }
+.ac-mapenface { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; flex: none; }
 /* 조건부 — 수치를 합치지 않고 설명문 그대로 (기물 이름 굵게) */
 .ac-gaincond { margin: 2px 0 0; font-size: 11.5px; line-height: 1.55; color: var(--muted); }
 .ac-gaincond > b { color: var(--ink2); }

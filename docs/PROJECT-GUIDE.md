@@ -311,6 +311,11 @@ const { term, set, clear, inputRef, inputProps } = useSearchInput();
 - `app/data/rogue-routes.json` — 통합전략 전투 노드의 적 이동 경로 (`scripts/build-rogue-routes.py`,
   전 토픽 한 벌 ~770KB. 긴급 노드 값은 같은 레벨을 쓰는 일반 노드 id **별칭 문자열** —
   app/rogue.tsx가 한 단계 풀어 읽는다. 역시 '이동 경로' 탭 클릭 시에만 지연 로드)
+- `app/data/autochess-routes.json` — 위수 협의 전투 맵 (`scripts/build-autochess-routes.py`,
+  로케일 무관 한 벌 42KB. 라운드마다 전장이 고정이라 R1~R13 공통 13개 + 리더 R14 7종·R15 3종
+  (단독 `_S` / 협동 두 벌) + 입문 3개 = 36개. 격자 21x19 중 실제 전장 17x12만 잘라 담는다.
+  '게임 정보 → 전투 맵' 탭을 열 때만 지연 로드. 제보 c3d2c056로 2026-08-30 추가 —
+  **맵 이미지는 안 쓴다**, 타일·경로를 데이터에서 그리므로 이미지 자산이 안 든다)
 - `app/data/stages.json` / `.en` / `.ja` — 작전 도감 (작전 **2,224개**의 지형 도면 보유 여부·
   이성·보상·권장 편성·기믹 설명·드랍·등장 적). **사전 인코딩**이다 — 구역·아이템·적 id 같은
   반복 값은 문서 위쪽 사전에 한 번만 두고 본문은 번호로 가리킨다 (그냥 늘어놓으면 3MB)

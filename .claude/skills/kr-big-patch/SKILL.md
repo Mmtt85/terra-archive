@@ -102,6 +102,7 @@ python3 scripts/build-stages-rogue.py        # → app/data/stages-rogue{,.en,.j
 
 ```bash
 python3 scripts/build-autochess.py           # → app/data/autochess{,.en,.ja}.json + public/ac/ 아이콘
+python3 scripts/build-autochess-routes.py    # → app/data/autochess-routes.json (전투 맵·적 이동 경로)
 ```
 > 새 시즌은 `activity.AUTOCHESS_SEASON.act<N>autochess` 로 들어온다 —
 > 스크립트 상단 `ACT` 상수를 그 키로 올려야 한다 (ACT1은 EN 이름 폴백 전용).

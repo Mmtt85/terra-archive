@@ -26,6 +26,29 @@ import { ModalWindow } from "./modal-window";
 import { GLOBAL_MODAL_HASH } from "./hash-modal";
 import { loadEnemies } from "./dex-cross";
 import { EnemyFile, RANK_KEY, enemyImg, enemyImgBase, type Enemy } from "./enemy-detail";
+import { StageRouteMap, enemyRouteColor, type StageRoutes } from "./stage-route-map";
+
+// 전투 맵 (scripts/build-autochess-routes.py) — 작전 도감·통합전략과 **같은 렌더러**를 쓴다
+// (규칙: .claude/skills/route-map-rules). '전투 맵' 탭을 처음 눌렀을 때만 지연 로드한다.
+// ⚠ 맵 이미지는 안 쓴다 — 타일 격자와 경로를 데이터에서 그린다 (제보 c3d2c056, 2026-08-30).
+export type AcRouteDoc = {
+  crop: [number, number, number, number];
+  maps: Record<string, StageRoutes>;
+  rounds: { r: number; m: string }[];
+  leaders: Record<string, { s: string; c: string }>;
+  train: { r: number; m: string }[];
+  /** 적 도감이 못 푸는 적만 — [ko, en, ja] */
+  nm: Record<string, [string, string, string]>;
+};
+let AC_ROUTES: AcRouteDoc | null = null;
+let AC_ROUTES_LOADING: Promise<void> | null = null;
+function loadAcRoutes(): Promise<void> {
+  if (AC_ROUTES) return Promise.resolve();
+  AC_ROUTES_LOADING ??= import("./data/autochess-routes.json").then((m) => {
+    AC_ROUTES = (m.default ?? m) as unknown as AcRouteDoc;
+  });
+  return AC_ROUTES_LOADING;
+}
 
 // ── 편성 판의 칸 ────────────────────────────────────────────────────────────
 /** 한 칸 — 비어 있으면 null. **성긴 배열**이라 인덱스가 곧 화면의 칸 위치다
@@ -214,10 +237,10 @@ const VIEW_LABEL: Record<View, string> = {
 // 제일 큰 탭으로 빼고 그 외는 다 게임 정보로"). 보상 탭은 같은 날 제거.
 // ⚠ 물자관리소 ≠ 보급센터 (사용자 교정 2026-08-22, 옛 탭 이름의 유래): 물자관리소는 출전 전
 //   편성 화면(→ 지금의 오퍼레이터·아이템), 판 안에서 도는 상점 수치가 보급센터(supply)다.
-const MISC_TABS = ["enemy", "hunt", "mode", "supply", "buff"] as const;
+const MISC_TABS = ["enemy", "map", "hunt", "mode", "supply", "buff"] as const;
 type MiscTab = (typeof MISC_TABS)[number];
 const MISC_LABEL: Record<MiscTab, string> = {
-  enemy: "적", hunt: "수배·특훈", mode: "모드", supply: "보급센터", buff: "전략 전술",
+  enemy: "적", map: "전투 맵", hunt: "수배·특훈", mode: "모드", supply: "보급센터", buff: "전략 전술",
 };
 
 // 정예화 표기 — 게임 데이터의 PHASE_n을 도감과 같은 말로
@@ -260,6 +283,16 @@ const stackNum = (v: number, u: AcStack["u"], t: T) => {
   // ⚠ "초"를 문자열에 박아 두면 영어판에도 "20초"가 나온다 (2026-08-24 실측) — 사전을 탄다
   if (u === "sec") return t("{n}초", { n: trim(v) });
   return trim(v);
+};
+/** 중첩 n 에서의 실제 값 — 중첩당 증가분(p)이 없으면 중첩과 무관한 상수라 null.
+ *  ⚠ 지금 데이터엔 p 와 cap 을 **함께** 가진 행이 없다(실측 2026-08-30). 그래도 상한을
+ *  같이 처리해 둔다 — 새 패치가 상한을 붙였을 때 조용히 틀린 값을 내보내지 않도록.
+ *  capU="stack" 이면 중첩 횟수 자체가 잘리고, 그 외 단위면 결과값이 잘린다. */
+const stackValueAt = (sk: AcStack, n: number): number | null => {
+  if (sk.p == null) return null;
+  const eff = sk.capU === "stack" && sk.cap != null ? Math.min(n, sk.cap) : n;
+  const v = sk.b + sk.p * eff;
+  return sk.cap != null && sk.capU !== "stack" ? Math.min(v, sk.cap) : v;
 };
 /** 추첨 가중치의 기본값 — 67마리 중 62마리가 이 값이라, 다른 값만 카드에 띄운다 */
 const ENEMY_W_BASE = 10;
@@ -359,6 +392,11 @@ export default function AutochessGuide({ doc, onShowOperator }: {
   // (사용자 지적 2026-08-29 "+ 버튼 눌러서 지정해도 그 카드에 지정이 돼야지").
   const [picking, setPicking] = useState<null | { z: "b" | "d"; i: number }>(null);
   const [peek, setPeek] = useState<string>("");           // 원형 맹약을 눌러 연 작은 상세 창
+  // 전투 맵 — 고른 맵 id, 단독/협동 (리더 맵만 갈린다), 강조할 적
+  const [acMap, setAcMap] = useState<string>("");
+  const [mapCoop, setMapCoop] = useState(false);
+  const [mapPin, setMapPin] = useState<Set<string>>(new Set());
+  const [routesReady, setRoutesReady] = useState(false);
   const [equip, setEquip] = useState<AcEquip | null>(null);
   const [band, setBand] = useState<AcBand | null>(null);
   const [enemy, setEnemy] = useState<string | null>(null);   // 적 id (딸린 적·연계 소환도 열 수 있어 id로 든다)
@@ -563,7 +601,25 @@ export default function AutochessGuide({ doc, onShowOperator }: {
 
   // 적 모달은 '적' 탭 밖에서도 열린다 — 전략 문구의 <덕로드>처럼 문구가 부르는 적
   // (2026-08-24). 창이 떠 있으면 도감을 받아 본문을 채운다.
-  const enemyDex = useEnemyDex(locale, (view === "misc" && miscTab === "enemy") || enemy != null);
+  const enemyDex = useEnemyDex(locale,
+    (view === "misc" && (miscTab === "enemy" || miscTab === "map")) || enemy != null);
+  // 전투 맵 데이터는 그 탭을 처음 열 때만 받는다 (42KB)
+  const wantRoutes = view === "misc" && miscTab === "map";
+  useEffect(() => {
+    if (!wantRoutes || routesReady) return;
+    let live = true;
+    loadAcRoutes().then(() => { if (live) setRoutesReady(true); })
+      .catch(() => { /* 못 받아도 나머지 탭은 그대로 돈다 */ });
+    return () => { live = false; };
+  }, [wantRoutes, routesReady]);
+  /** 리더 상세 → 그 리더의 전투 맵으로. 데이터를 기다렸다가 고른다 (사용자 확정 2026-08-30) */
+  const openLeaderMap = async (bossId: string) => {
+    setEnemy(null); setView("misc"); setMiscTab("map"); setMapPin(new Set());
+    await loadAcRoutes().catch(() => { /* 못 받으면 탭의 안내문이 그대로 뜬다 */ });
+    setRoutesReady(true);
+    const v = AC_ROUTES?.leaders[bossId];
+    if (v) setAcMap(mapCoop ? v.c : v.s);
+  };
   const enemyRow = useMemo(
     () => (enemy ? doc.enemies.find((e) => e.id === enemy) ?? null : null), [doc, enemy]);
   const bossRow = useMemo(
@@ -1809,6 +1865,108 @@ export default function AutochessGuide({ doc, onShowOperator }: {
             </>
           )}
 
+          {/* ══ 전투 맵 — 라운드마다 전장이 정해져 있다 (제보 c3d2c056, 2026-08-30
+                "add the maps … positioning aegir alliance on different maps").
+                맵 그림이 아니라 **게임 데이터의 타일·경로**를 작전 도감과 같은 렌더러로
+                그린다 — 이미지 자산이 안 든다. 격자는 원본 21x19 중 실제 전장만 잘라 썼다. ══ */}
+          {miscTab === "map" && (
+            <>
+              <p className="sim-note">{t("라운드마다 전장이 정해져 있습니다. 1~13라운드는 난이도와 상관없이 같고, 리더 라운드만 어느 리더가 나오느냐에 따라 갈립니다. 배치 칸과 적이 오는 길을 보고 편성을 맞춰 보세요.")}</p>
+              {!routesReady || !AC_ROUTES
+                ? <p className="chlog-empty">{t("전투 맵을 불러오는 중…")}</p>
+                : (() => {
+                  const R = AC_ROUTES;
+                  const li = locale === "en" ? 1 : locale === "ja" ? 2 : 0;
+                  const nameOfEnemy = (id: string) =>
+                    enemyDex?.get(id)?.name ?? doc.enemyNames[id] ?? R.nm[id]?.[li] ?? id;
+                  const cur = R.maps[acMap] ?? R.maps[R.rounds[0].m];
+                  const curId = R.maps[acMap] ? acMap : R.rounds[0].m;
+                  const order = Object.keys(cur.e);
+                  const pick = (m: string) => { setAcMap(m); setMapPin(new Set()); };
+                  const bossAt = (n: number) => doc.bosses.filter((b) => b.round.includes(n));
+                  const leaderMap = (id: string) => {
+                    const v = R.leaders[id];
+                    return v ? (mapCoop ? v.c : v.s) : "";
+                  };
+                  return (
+                    <>
+                      <h3 className="sb-h3">{t("고정 라운드")} <em className="sb-count">{R.rounds.length}</em>
+                        <span className="sb-dim ac-note">{t("모든 난이도 공통")}</span></h3>
+                      <div className="ac-maprow">
+                        {R.rounds.map((x) => (
+                          <button key={x.r} type="button"
+                            className={`ac-mapchip${curId === x.m ? " on" : ""}`}
+                            onClick={() => pick(x.m)}>{t("{n}R", { n: x.r })}</button>
+                        ))}
+                      </div>
+
+                      <h3 className="sb-h3">{t("리더 라운드")}
+                        <span className="sb-dim ac-note">{t("14R · 15R — 표준 시뮬레이션은 9R")}</span>
+                        <span className="ac-mapmode">
+                          {[[false, "단독"], [true, "협동"]].map(([co, lb]) => (
+                            <button key={String(co)} type="button" className={mapCoop === co ? "on" : ""}
+                              onClick={() => { setMapCoop(co as boolean); setAcMap(""); setMapPin(new Set()); }}>
+                              {t(lb as string)}
+                            </button>
+                          ))}
+                        </span>
+                      </h3>
+                      {[14, 15].map((rn) => {
+                        const rows = bossAt(rn).filter((b) => leaderMap(b.id));
+                        if (!rows.length) return null;
+                        return (
+                          <div key={rn} className="ac-mapbosses">
+                            <h4 className="ac-bosshead">{t("{n}R", { n: rn })} <span>{rows.length}</span></h4>
+                            <div className="ac-maprow">
+                              {rows.map((b) => (
+                                <button key={b.id} type="button"
+                                  className={`ac-mapboss${curId === leaderMap(b.id) ? " on" : ""}`}
+                                  onClick={() => pick(leaderMap(b.id))}>
+                                  <EnFace id={b.enemy} className="ac-mapbossface" />
+                                  <span>{b.n}</span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      <h3 className="sb-h3">{t("입문 협의")} <em className="sb-count">{R.train.length}</em></h3>
+                      <div className="ac-maprow">
+                        {R.train.map((x) => (
+                          <button key={x.r} type="button"
+                            className={`ac-mapchip${curId === x.m ? " on" : ""}`}
+                            onClick={() => pick(x.m)}>{t("{n}R", { n: x.r })}</button>
+                        ))}
+                      </div>
+
+                      <div className="ac-mapview">
+                        <StageRouteMap data={cur} order={order}
+                          highlights={mapPin.size ? [...mapPin] : null}
+                          imgOf={(k) => enemyImg(k)}
+                          nameOf={nameOfEnemy}
+                          onPick={(id) => setMapPin((prev) => {
+                            const next = new Set(prev);
+                            if (!next.delete(id)) next.add(id);
+                            return next;
+                          })} />
+                        <p className="ac-mapenemies">
+                          {order.map((k) => (
+                            <button key={k} type="button"
+                              className={`ac-bondchip sm${mapPin.has(k) ? " nation" : ""}`}
+                              style={{ borderLeft: `3px solid ${enemyRouteColor(order, k)}` }}
+                              onClick={() => setEnemy(k)}>
+                              <EnFace id={k} className="ac-mapenface" />{nameOfEnemy(k)}
+                            </button>
+                          ))}
+                        </p>
+                      </div>
+                    </>
+                  );
+                })()}
+            </>
+          )}
+
           {miscTab === "hunt" && (
             <>
               {/* 사용자 지적 2026-08-29: "제셀톤이나 투척수 같은, 자기가 직접 골라야 나오는
@@ -2186,7 +2344,14 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                 </p>
               </div>
             </header>
-            <h4>{t("효과")}</h4>
+            <h4>{t("효과")}
+              {/* 시뮬레이터에서 중첩을 넣어 두면 그 기준으로 수치를 풀어 준다
+                  (사용자 지시 2026-08-30 "중첩을 변경하면 해당 중첩에 맞춰서 맹약 상세에 뜨도록").
+                  맹약 탭에서 그냥 연 경우엔 중첩이 없으니 종전대로 식만 보인다. */}
+              {(stacks[bond.id] ?? 0) > 0 && (
+                <em className="sb-count ac-atstack">{t("중첩 {n} 기준", { n: stacks[bond.id] })}</em>
+              )}
+            </h4>
             {/* 게임 설명문이 "(중첩 수에 따라 변경)"·"(최대치 존재)"로 뭉갠 값의 **실제 숫자**를
                 그 효과 줄 **안에** 붙인다 (사용자 지시 2026-08-24: "효과 쪽에다가 그냥 같이
                 넣어주면 안되나 — 굳이 따로 빼는것보단"). 따로 뺐을 땐 어느 줄 이야기인지
@@ -2209,6 +2374,11 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                             <span className="ac-stack-eq">
                               <em>{stackNum(sk.b, sk.u, t)}</em>
                               {sk.p != null && <>{" + "}{t("중첩당")} <em>{stackNum(sk.p, sk.u, t)}</em></>}
+                              {(() => {
+                                const n = stacks[bond.id] ?? 0;
+                                const v = n > 0 ? stackValueAt(sk, n) : null;
+                                return v == null ? null : <b className="ac-stack-now">= {stackNum(v, sk.u, t)}</b>;
+                              })()}
                             </span>
                             {sk.cap != null && <i>{sk.capU === "stack"
                               ? t("최대 {n}중첩", { n: trim(sk.cap) })
@@ -2579,6 +2749,11 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                         <div key={k}><dt>{modeNameOf(diff)}</dt><dd>{fmtHp(bossRow.hp[k])}</dd></div>
                       ))}
                     </dl>
+                    {/* 이 리더가 나오는 전장으로 바로 (사용자 확정 2026-08-30) — 맵 데이터는
+                        탭이 열릴 때 지연 로드되므로 여기서는 탭만 열고 맵 id를 예약해 둔다. */}
+                    <button type="button" className="ac-clear"
+                      onClick={() => { void openLeaderMap(bossRow.id); }}>
+                      {t("이 리더의 전투 맵 보기")}</button>
                   </>
                 )}
                 {enemyRow && (enemyRow.an.length > 0 || enemyRow.ae.length > 0) && (
