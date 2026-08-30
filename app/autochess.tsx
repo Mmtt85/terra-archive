@@ -641,6 +641,36 @@ export default function AutochessGuide({ doc, onShowOperator }: {
       bonds: [], gar: [], garG: [], r: s.r, job: s.job, subsOf: s.subs });
 
   const nameOfBond = (id: string) => bondById.get(id)?.n ?? id;
+  /** 그 효과 줄에 걸린 실제 수치 — 맹약 상세와 원형 배지의 작은 창이 **같은 것**을 쓴다.
+   *  중첩을 넣어 두면 "20% + 중첩당 0.35% = 34%" 처럼 푼 값을 뒤에 붙인다
+   *  (사용자 지적 2026-08-30 "40중첩 설정했는데 왜 일정확률로 나옴" — 정작 중첩을 넣는
+   *  작은 창에는 수치가 아예 없어서, 게임 원문의 '일정 확률로'만 보였다).
+   *  s가 범위를 벗어나면 마지막 줄에 붙인다 — 어떤 경우에도 수치를 잃지 않게. */
+  const stackList = (b: AcBond, i: number) => {
+    const nums = (b.stk ?? []).filter((sk) => Math.min(sk.s ?? 0, b.steps.length - 1) === i);
+    if (!nums.length) return null;
+    const n = stacks[b.id] ?? 0;
+    return (
+      <ul className="ac-stack">
+        {nums.map((sk) => {
+          const v = n > 0 ? stackValueAt(sk, n) : null;
+          return (
+            <li key={sk.k}>
+              <b>{t(STACK_LABEL[sk.k] ?? sk.k)}</b>
+              <span className="ac-stack-eq">
+                <em>{stackNum(sk.b, sk.u, t)}</em>
+                {sk.p != null && <>{" + "}{t("중첩당")} <em>{stackNum(sk.p, sk.u, t)}</em></>}
+                {v != null && <b className="ac-stack-now">= {stackNum(v, sk.u, t)}</b>}
+              </span>
+              {sk.cap != null && <i>{sk.capU === "stack"
+                ? t("최대 {n}중첩", { n: trim(sk.cap) })
+                : t("최대 {v}", { v: stackNum(sk.cap, sk.u, t) })}</i>}
+            </li>
+          );
+        })}
+      </ul>
+    );
+  };
 
   // ── 편성 계산 ────────────────────────────────────────────────────────────
   // 중첩은 **기본 0** 으로 본다 (사용자 지시 2026-08-29 "처음엔 - 이 아니라 0으로").
@@ -2060,6 +2090,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                       : sp.gate ? <em>{sp.gate.k === "gold" ? t("정예화 {n}명", { n: sp.gate.n }) : t("{n}명", { n: sp.gate.n })}</em>
                         : null}
                     <span>{acRich(b.steps[sp.i].t, b.id)}</span>
+                    {stackList(b, sp.i)}
                   </li>
                 ))}
               </ol>
@@ -2358,38 +2389,13 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                 눈으로 다시 맞춰야 했다. 계수는 클뜯 전투 블랙보드에서 뽑는다 —
                 build-autochess.py stack_rows 참고, sk.s = 그 값이 걸린 단계 인덱스. */}
             <ol className="ac-steps">
-              {bond.steps.map((s, i) => {
-                // s가 범위를 벗어나면 마지막 줄에 붙인다 — 어떤 경우에도 수치를 잃지 않게
-                const nums = (bond.stk ?? []).filter(
-                  (sk) => Math.min(sk.s ?? 0, bond.steps.length - 1) === i);
-                return (
-                  <li key={i}>
-                    {s.c && <span className="ac-stepcond">{acRich(s.c, bond.id)}</span>}
-                    <span className="ac-steptxt">{acRich(s.t, bond.id)}</span>
-                    {nums.length > 0 && (
-                      <ul className="ac-stack">
-                        {nums.map((sk) => (
-                          <li key={sk.k}>
-                            <b>{t(STACK_LABEL[sk.k] ?? sk.k)}</b>
-                            <span className="ac-stack-eq">
-                              <em>{stackNum(sk.b, sk.u, t)}</em>
-                              {sk.p != null && <>{" + "}{t("중첩당")} <em>{stackNum(sk.p, sk.u, t)}</em></>}
-                              {(() => {
-                                const n = stacks[bond.id] ?? 0;
-                                const v = n > 0 ? stackValueAt(sk, n) : null;
-                                return v == null ? null : <b className="ac-stack-now">= {stackNum(v, sk.u, t)}</b>;
-                              })()}
-                            </span>
-                            {sk.cap != null && <i>{sk.capU === "stack"
-                              ? t("최대 {n}중첩", { n: trim(sk.cap) })
-                              : t("최대 {v}", { v: stackNum(sk.cap, sk.u, t) })}</i>}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </li>
-                );
-              })}
+              {bond.steps.map((s, i) => (
+                <li key={i}>
+                  {s.c && <span className="ac-stepcond">{acRich(s.c, bond.id)}</span>}
+                  <span className="ac-steptxt">{acRich(s.t, bond.id)}</span>
+                  {stackList(bond, i)}
+                </li>
+              ))}
             </ol>
             {bond.chess.length === 0
               ? <p className="sb-dim">{t("소속 오퍼레이터가 따로 없는 맹약입니다 — 배치 조건만 맞으면 활성화됩니다.")}</p>
