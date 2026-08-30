@@ -139,9 +139,23 @@ def main():
                                           "train": mode == "mode_training_1"})
                 w["rounds"].add(int(rnd))
     for lid, info in seen.items():
-        doc = routes_of_level(fetch(f"levels/{lid}.json"), edb)
+        lv = fetch(f"levels/{lid}.json")
+        doc = routes_of_level(lv, edb)
         if not doc:
             sys.exit(f"웨이브 경로를 못 만들었다: {lid}")
+        # ⚠ branches(조건 분기 증원)에는 **아군 소환**이 섞여 있다 — 염국 맹약의 '염의 가호'가
+        #   모든 라운드 적 목록에 끼어 있었다 (사용자 지적 2026-08-30 "염의 가호도 아군거임").
+        #   waves 에서 실제로 스폰되는 적만 남긴다.
+        spawned = {a["key"] for w in lv.get("waves") or [] for fg in w.get("fragments") or []
+                   for a in fg.get("actions") or []
+                   if a.get("actionType") in (0, "SPAWN") and a.get("key")}
+        doc["e"] = {k: v for k, v in doc["e"].items() if k in spawned}
+        # ⚠⚠ 일반 라운드의 적 **이름은 못 믿는다** — R4~R13 의 적 구성이 글자까지 똑같다
+        #   (실측 2026-08-30). 이 레벨은 경로·타이밍만 정의한 뼈대이고, 실제로 어떤 적이
+        #   오는지는 판마다 뽑히는 특훈 적 유형(enemyInfoDict: FLY·ELEMENT·DOT…)이 정한다
+        #   (사용자 지적 "살카즈 부패의 선봉이 왜 모든 라운드에", "3R에 영장은 못 봤다",
+        #    "전장 3은 4~13R 적이 다 똑같음"). 리더 라운드는 보스가 고정이라 그대로 둔다.
+        doc["skel"] = 0 if info["boss"] else 1
         H = doc["h"]
         if doc["w"] != BOX["W"]:
             sys.exit(f"{lid}: 웨이브 격자 폭이 맵과 다르다 ({doc['w']} vs {BOX['W']})")

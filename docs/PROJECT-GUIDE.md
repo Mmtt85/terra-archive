@@ -316,10 +316,14 @@ const { term, set, clear, inputRef, inputProps } = useSearchInput();
   · `maps` = 진짜 전장 6장의 **지형**. `stageDatasDict` → `stage_table[stageId].levelId` 다
     (act1autochess_m01~m04 + act2autochess_m01~m02; m05~m07 weight 0, act2 m03·m04 KR 미실장).
     판 시작 때 하나가 뽑히고 그 판 내내 고정. 각 전장은 위(일반)·아래(리더) 두 구획 21x6.
-  · `rounds` = 라운드별 **적 구성과 경로**. `battleDataDict` 의 levelId — 이건 지형이
-    장애물 없는 판 하나로 전부 같은 **웨이브 템플릿**이라, 그 경로를 실제 맵에 얹으면
-    벽을 뚫는다(실측: 자기 템플릿 100% vs 실제 맵 6장 69~93%). 실제 경로는 게임이
-    뽑힌 전장에 맞춰 다시 구한다 — 화면이 "실제 지형이 아니라 도식"이라고 명시한다.
+  · `rounds` = 라운드별 **경로와 등장 타이밍**. `battleDataDict` 의 levelId.
+    ⚠⚠ **일반 라운드의 적 이름은 못 믿는다** — R4~R13 의 적 구성이 글자까지 똑같다
+    (실측 2026-08-30). 이 레벨은 경로·타이밍만 정의한 뼈대고, 실제로 어떤 적이 오는지는
+    판마다 뽑히는 특훈 적 유형(`enemyInfoDict`: FLY·ELEMENT·DOT·INVISIBLE…)이 정한다.
+    그래서 `skel: 1` 을 달아 화면이 적 이름을 안 쓰고 경로만 회색으로 그린다.
+    리더 라운드는 보스가 고정이라 `skel: 0` — 적 카드를 낸다.
+    ⚠ `branches`(조건 분기)에는 **아군 소환**이 섞인다 — 염국 맹약의 '염의 가호'가 전
+    라운드 적 목록에 끼어 있었다. `waves` 에서 실제 스폰되는 적만 남긴다.
   화면은 전장 카드 → 모달(지형 + 그 구획 라운드 카드) → 라운드 모달(적 편성·재생).
   제보 c3d2c056
 - `app/data/stages.json` / `.en` / `.ja` — 작전 도감 (작전 **2,224개**의 지형 도면 보유 여부·

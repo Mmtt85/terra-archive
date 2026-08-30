@@ -2890,6 +2890,10 @@ const D: Record<string, Pair> = {
     "盤の開始時に戦場がひとつ抽選されます。地形はその盤の間ずっと同じで、ラウンドごとに変わるのは出てくる敵です。戦場を押すと地形とそこで回るラウンドが見られます。"],
   "리더 전장": ["Leader battlefield", "リーダー戦場"],
   "{n}갈래": ["{n} paths", "{n}本"],
+  "오는 길 {n}갈래": ["{n} paths in", "進路{n}本"],
+  "이 라운드에 **어떤 적이** 오는지는 판마다 뽑히는 특훈 적 유형이 정합니다 — 게임 데이터의 라운드 정의에는 경로와 등장 타이밍만 들어 있어 적 이름은 싣지 않았습니다. 뽑히는 적은 '적' 탭에서 볼 수 있습니다.": [
+    "**Which** enemies come in this round is decided by the Tactical Training enemy type drawn for the run — the round definition in the game data holds only paths and spawn timing, so no enemy names are listed here. See the Enemies tab for what can be drawn.",
+    "このラウンドに**どの敵が**来るかは、盤ごとに抽選される特訓の敵タイプが決めます — ゲームデータのラウンド定義には進路と出現タイミングしかないため、敵の名前は載せていません。抽選される敵は「敵」タブで確認できます。"],
   "카드를 누르면 그 적의 경로만 남기고, 섬네일을 누르면 적 상세가 열립니다.": [
     "Tap a card to isolate that enemy's paths; tap its portrait to open the enemy page.",
     "カードを押すとその敵の進路だけを残し、サムネイルを押すと敵の詳細が開きます。"],

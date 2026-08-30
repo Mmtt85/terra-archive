@@ -34,7 +34,10 @@ import { StageRouteMap, enemyRouteColor, type StageRoutes } from "./stage-route-
 export type AcMapBoard = { id: string; stage: string; band: 0 | 1; w: number; h: number; g: string[]; modes: string[] };
 /** 라운드별 적·경로 — ⚠ 실제 지형이 아니라 **웨이브 템플릿** 격자 위의 도식이다
  *  (경로 꼭짓점이 자기 템플릿에선 100%, 실제 맵 6장에선 69~93%만 이동 가능 타일에 얹힌다). */
-export type AcWave = StageRoutes & { k: string; rs: number[]; boss: string | null; train: 0 | 1; solo: 0 | 1; band: 0 | 1 };
+/** skel=1 이면 **적 이름을 믿을 수 없는** 뼈대다 — 일반 라운드 레벨은 경로·타이밍만
+ *  정의하고 실제 등장 적은 판마다 뽑히는 특훈 적 유형이 정한다 (R4~R13 적 구성이 글자까지
+ *  똑같은 것이 그 방증, 실측 2026-08-30). 리더 라운드는 보스가 고정이라 skel=0. */
+export type AcWave = StageRoutes & { k: string; rs: number[]; boss: string | null; train: 0 | 1; solo: 0 | 1; band: 0 | 1; skel: 0 | 1 };
 export type AcRouteDoc = { maps: AcMapBoard[]; rounds: AcWave[]; bosses: Record<string, string>; nm: Record<string, [string, string, string]> };
 // ⚠ 지상 경로를 여기서 다시 잇지 않는다 — StageRouteMap 이 이미 격자 위에서 8방향
 // BFS(모서리 뚫기 금지) + 통로 순간이동 간선까지 걸어 준다 (.claude/skills/route-map-rules).
@@ -2005,8 +2008,10 @@ export default function AutochessGuide({ doc, onShowOperator }: {
               onClick={() => { setMapPin(new Set()); setAcWave(acWave === w.k ? "" : w.k); }}>
               {b ? <EnFace id={b.enemy} className="ac-mapcardface" /> : null}
               <span className="ac-mapcard-body">
-                <b>{waveName(w)}{w.boss ? <i className="ac-wavemode">{w.solo ? t("단독") : t("협동")}</i> : null}</b>
-                <em>{t("적 {a}종 · 오는 길 {b}갈래", { a: Object.keys(w.e).length, b: w.r.filter(Boolean).length })}</em>
+                <b>{waveName(w)}{w.boss ? <i className="ac-wavemode">
+                  {t("{n}R", { n: w.rs.join("·") })} · {w.solo ? t("단독") : t("협동")}</i> : null}</b>
+                <em>{w.skel === 1 ? t("오는 길 {n}갈래", { n: w.r.filter(Boolean).length })
+                  : t("적 {a}종 · 오는 길 {b}갈래", { a: Object.keys(w.e).length, b: w.r.filter(Boolean).length })}</em>
               </span>
             </button>
           );
@@ -2030,8 +2035,9 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                          섬네일 클릭=적 상세). 지도 확대(⤢)는 .ac-mapcols 가 :has() 로 받는다. */}
                     <div className="ac-mapcols">
                       <StageRouteMap
-                        data={sel ? { ...sel, g: bd.g, w: bd.w, h: bd.h } : { ...bd, r: [], f: [], e: {} }}
-                        order={sel ? Object.keys(sel.e) : []}
+                        data={sel ? { ...sel, g: bd.g, w: bd.w, h: bd.h, e: sel.skel ? {} : sel.e }
+                          : { ...bd, r: [], f: [], e: {} }}
+                        order={sel && !sel.skel ? Object.keys(sel.e) : []}
                         highlights={mapHover ? [mapHover] : mapPin.size ? [...mapPin] : null}
                         imgOf={(k) => enemyImg(k)}
                         nameOf={sel ? nameOfEnemy : () => ""}
@@ -2042,10 +2048,14 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                             <p className="ac-mapcap ac-wavecap">
                               <b>{waveName(sel)}</b>
                               {sel.boss && <i className="sb-chip">{sel.solo ? t("단독") : t("협동")}</i>}
-                              <em>{t("적 {a}종 · 오는 길 {b}갈래",
-                                { a: Object.keys(sel.e).length, b: sel.r.filter(Boolean).length })}</em>
+                              <em>{sel.skel === 1 ? t("오는 길 {n}갈래", { n: sel.r.filter(Boolean).length })
+                                : t("적 {a}종 · 오는 길 {b}갈래",
+                                  { a: Object.keys(sel.e).length, b: sel.r.filter(Boolean).length })}</em>
                             </p>
-                            {Object.keys(sel.e).map((k) => {
+                            {sel.skel === 1 && (
+                              <p className="sb-dim ac-mapnote">{t("이 라운드에 **어떤 적이** 오는지는 판마다 뽑히는 특훈 적 유형이 정합니다 — 게임 데이터의 라운드 정의에는 경로와 등장 타이밍만 들어 있어 적 이름은 싣지 않았습니다. 뽑히는 적은 '적' 탭에서 볼 수 있습니다.")}</p>
+                            )}
+                            {(sel.skel ? [] : Object.keys(sel.e)).map((k) => {
                               const rc = enemyRouteColor(Object.keys(sel.e), k);
                               const ex = enemyDex?.get(k);
                               return (
@@ -2070,7 +2080,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                                 </button>
                               );
                             })}
-                            <p className="sb-dim ac-mapnote">{t("카드를 누르면 그 적의 경로만 남기고, 섬네일을 누르면 적 상세가 열립니다.")}</p>
+                            {!sel.skel && <p className="sb-dim ac-mapnote">{t("카드를 누르면 그 적의 경로만 남기고, 섬네일을 누르면 적 상세가 열립니다.")}</p>}
                           </>
                         ) : <p className="sb-dim ac-mapnote">{t("아래에서 라운드를 고르면 그 라운드의 적과 오는 길이 이 지도에 그려집니다.")}</p>}
                       </div>

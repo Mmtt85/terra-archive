@@ -20535,7 +20535,11 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
 .ac-mapmode button.on { color: var(--ink); border-color: var(--ink2); }
 .ac-mapbosses { margin-bottom: 10px; }
 /* 모달 — 지도가 가로로 넓어(17칸) 창을 넉넉히 준다 */
-.ac-mapmodal { max-width: 900px; }
+/* 전투 맵만 특수 — 지도(21칸)와 적 카드 2열을 나란히 담아야 한다
+   (사용자 지시 2026-08-30 "위수협의 전투맵만 특수로 모달 너비를 늘리자") */
+/* ⚠ .operator-modal 은 max-width 가 아니라 `width: min(960px, 100%)` 로 못 박는다 —
+   max-width 만 얹으면 960 에서 안 움직인다 (실측 2026-08-30). width 를 같이 덮는다. */
+.ac-mapmodal { width: min(1180px, calc(100vw - 32px)); max-width: none; }
 .ac-mapbody { padding: 2px 0; }
 .ac-mapcap { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 0 0 8px; }
 .ac-mapcap > b { font-size: 12.5px; }
