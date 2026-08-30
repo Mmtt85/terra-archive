@@ -1903,10 +1903,9 @@ export default function AutochessGuide({ doc, onShowOperator }: {
           onClose={() => setSim(false)}>
           <div className="ac-guide ac-simbody">
 
-          {/* 맹약 상태 — 켜진 것 먼저 */}
+          {/* 맹약 상태 — 켜진 것 먼저. 제목·빈 안내문은 걷어냈다 (사용자 지시 2026-08-30
+              "이것도 다 없애도 될듯") — 동그라미 줄 자체가 설명이 된다. */}
           <section className="ac-boardout">
-            <h3 className="sb-h3">{t("맹약 상태")} <em className="sb-count">{boardBonds.filter((x) => x.st.active).length}</em></h3>
-            {boardBonds.length === 0 && <p className="chlog-empty">{t("기물을 담으면 여기에 맹약이 나옵니다.")}</p>}
             {/* 인게임처럼 **동그란 배지 줄**로 (사용자 지시 2026-08-29 + 스크린샷).
                 미발동은 흐리게, 누르면 작은 창으로 상세를 편다.
                 ⚠ 가운데 숫자는 게임처럼 '중첩'이 아니라 **인원**이다 — 중첩은 전투 중에
