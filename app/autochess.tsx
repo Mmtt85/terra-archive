@@ -2008,8 +2008,11 @@ export default function AutochessGuide({ doc, onShowOperator }: {
               onClick={() => { setMapPin(new Set()); setAcWave(acWave === w.k ? "" : w.k); }}>
               {b ? <EnFace id={b.enemy} className="ac-mapcardface" /> : null}
               <span className="ac-mapcard-body">
-                <b>{waveName(w)}{w.boss ? <i className="ac-wavemode">
-                  {t("{n}R", { n: w.rs.join("·") })} · {w.solo ? t("단독") : t("협동")}</i> : null}</b>
+                {/* ⚠ 라운드·단독/협동을 이름과 **같은 줄**에 두면 긴 보스 이름에서 삐져나간다
+                    (사용자 지적 2026-08-30) — 이름은 한 줄 말줄임, 나머지는 아랫줄로 내린다 */}
+                <b>{waveName(w)}</b>
+                {w.boss ? <i className="ac-wavemode">
+                  {t("{n}R", { n: w.rs.join("·") })} · {w.solo ? t("단독") : t("협동")}</i> : null}
                 <em>{w.skel === 1 ? t("오는 길 {n}갈래", { n: w.r.filter(Boolean).length })
                   : t("적 {a}종 · 오는 길 {b}갈래", { a: Object.keys(w.e).length, b: w.r.filter(Boolean).length })}</em>
               </span>
