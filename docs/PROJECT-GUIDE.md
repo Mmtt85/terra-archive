@@ -312,13 +312,15 @@ const { term, set, clear, inputRef, inputProps } = useSearchInput();
   전 토픽 한 벌 ~770KB. 긴급 노드 값은 같은 레벨을 쓰는 일반 노드 id **별칭 문자열** —
   app/rogue.tsx가 한 단계 풀어 읽는다. 역시 '이동 경로' 탭 클릭 시에만 지연 로드)
 - `app/data/autochess-routes.json` — 위수 협의 전투 맵 (`scripts/build-autochess-routes.py`,
-  로케일 무관 4KB). ⚠ **어느 레벨이 맵인지를 두 번 틀렸다**(2026-08-30): `battleDataDict`의
-  levelId는 라운드별 **웨이브 정의**로, 지형이 장애물 없는 판 하나로 전부 같고 거기 담긴
-  routes를 실제 맵에 얹으면 **벽을 뚫는다**(실측). 진짜 맵은 `stageDatasDict` →
-  `stage_table[stageId].levelId` — 시즌2는 act1autochess_m01~m04 + act2autochess_m01~m02
-  **6장**이고 판 시작 때 하나가 뽑힌다(m05~m07 weight 0, act2 m03·m04 KR 미실장).
-  각 맵은 위·아래 두 판(21x6)이고 **지형만** 싣는다 — 적 경로는 라운드마다 다르고 실제 맵
-  위에서 다시 계산되는 값이라 넣지 않는다. 화면은 작전 도감과 같은 **카드 → 모달**.
+  로케일 무관 42KB). **두 가지를 따로 싣는다** — 2026-08-30에 이 둘을 혼동해 두 번 갈아엎었다:
+  · `maps` = 진짜 전장 6장의 **지형**. `stageDatasDict` → `stage_table[stageId].levelId` 다
+    (act1autochess_m01~m04 + act2autochess_m01~m02; m05~m07 weight 0, act2 m03·m04 KR 미실장).
+    판 시작 때 하나가 뽑히고 그 판 내내 고정. 각 전장은 위(일반)·아래(리더) 두 구획 21x6.
+  · `rounds` = 라운드별 **적 구성과 경로**. `battleDataDict` 의 levelId — 이건 지형이
+    장애물 없는 판 하나로 전부 같은 **웨이브 템플릿**이라, 그 경로를 실제 맵에 얹으면
+    벽을 뚫는다(실측: 자기 템플릿 100% vs 실제 맵 6장 69~93%). 실제 경로는 게임이
+    뽑힌 전장에 맞춰 다시 구한다 — 화면이 "실제 지형이 아니라 도식"이라고 명시한다.
+  화면은 전장 카드 → 모달(지형 + 그 구획 라운드 카드) → 라운드 모달(적 편성·재생).
   제보 c3d2c056
 - `app/data/stages.json` / `.en` / `.ja` — 작전 도감 (작전 **2,224개**의 지형 도면 보유 여부·
   이성·보상·권장 편성·기믹 설명·드랍·등장 적). **사전 인코딩**이다 — 구역·아이템·적 id 같은

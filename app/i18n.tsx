@@ -2885,18 +2885,22 @@ const D: Record<string, Pair> = {
   "갱신 시": ["On refresh", "更新時"],
   "전투 맵": ["Battle maps", "戦闘マップ"],
   "이 리더의 전투 맵 보기": ["View this leader's battle map", "このリーダーの戦闘マップを見る"],
-  "판을 시작할 때 전장 하나가 뽑힙니다. 지형은 그 판 내내 그대로고, 라운드마다 달라지는 건 나오는 적입니다. 각 전장은 위·아래 두 판으로 되어 있습니다. 카드를 누르면 배치할 수 있는 칸과 적이 들어오는 지점을 볼 수 있습니다.": [
-    "One battlefield is drawn when a run starts. Its terrain stays the same for the whole run; what changes each round is which enemies show up. Every battlefield has an upper and a lower board. Tap a card to see the deployable tiles and where enemies come in.",
-    "盤の開始時に戦場がひとつ抽選されます。地形はその盤の間ずっと同じで、ラウンドごとに変わるのは出てくる敵です。各戦場は上下2つの盤で構成されています。カードを押すと配置できるマスと敵の侵入地点が見られます。"],
+  "판을 시작할 때 전장 하나가 뽑힙니다. 지형은 그 판 내내 그대로고, 라운드마다 달라지는 건 나오는 적입니다. 전장을 누르면 지형과 그 위에서 도는 라운드를 볼 수 있습니다.": [
+    "One battlefield is drawn when a run starts. Its terrain stays the same for the whole run; what changes each round is which enemies show up. Tap a battlefield to see its terrain and the rounds played on it.",
+    "盤の開始時に戦場がひとつ抽選されます。地形はその盤の間ずっと同じで、ラウンドごとに変わるのは出てくる敵です。戦場を押すと地形とそこで回るラウンドが見られます。"],
+  "리더 전장": ["Leader battlefield", "リーダー戦場"],
+  "라운드 카드를 누르면 그 라운드의 적 편성을 볼 수 있습니다. 적이 실제로 어느 길로 오는지는 뽑힌 전장에 맞춰 게임이 다시 계산합니다.": [
+    "Tap a round to see the enemies it brings. The paths they actually take are recomputed by the game for whichever battlefield was drawn.",
+    "ラウンドを押すとその敵の構成が見られます。実際の進路は抽選された戦場に合わせてゲームが再計算します。"],
+  "⚠ 이 그림은 실제 전장이 아니라 적 편성을 담은 도식입니다. 게임 데이터가 적 구성·등장 순서를 이 판 위에 정의해 두고, 실제 이동 경로는 뽑힌 전장에 맞춰 다시 계산합니다.": [
+    "⚠ This diagram is not the real battlefield — it is the schematic the game data uses to define which enemies appear and in what order. Actual movement is recomputed on whichever battlefield was drawn.",
+    "⚠ この図は実際の戦場ではなく、敵の構成と出現順を定義した図式です。実際の進路は抽選された戦場に合わせて再計算されます。"],
+  "판마다 이 중 하나가 뽑힙니다 — 배치할 수 있는 칸이 전장마다 다릅니다": [
+    "one of these is drawn per run — deployable tiles differ by battlefield",
+    "盤ごとにこの中から抽選されます — 配置できるマスは戦場ごとに異なります"],
   "전장": ["Battlefields", "戦場"],
   "전장 {n}": ["Battlefield {n}", "戦場{n}"],
-  "판마다 이 중 하나가 뽑힙니다": ["one of these is drawn per run", "盤ごとにこの中から抽選されます"],
   "모든 모드": ["All modes", "全モード"],
-  "위쪽 판": ["Upper board", "上の盤"],
-  "아래쪽 판": ["Lower board", "下の盤"],
-  "적이 어느 길로 오는지는 라운드마다 달라져 여기에 담지 않았습니다. 표시된 것은 지형 — 배치할 수 있는 칸, 적이 들어오는 지점, 지켜야 할 지점입니다.": [
-    "The paths enemies take change from round to round, so they are not shown here. What you see is the terrain — where you can deploy, where enemies come in, and what you defend.",
-    "敵の進路はラウンドごとに変わるためここには載せていません。表示しているのは地形 — 配置できるマス、敵の侵入地点、守るべき地点です。"],
   "입문 {n}R": ["Intro R{n}", "入門{n}R"],
   "일반 라운드 전장": ["Normal-round battlefield", "通常ラウンドの戦場"],
   "리더 라운드 전장": ["Leader-round battlefield", "リーダーラウンドの戦場"],

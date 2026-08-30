@@ -20544,6 +20544,9 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
 .ac-mapenface { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; flex: none; }
 .ac-mapboard { margin-bottom: 14px; }
 .ac-mapnote { font-size: 11.5px; line-height: 1.55; margin: 2px 0 0; }
+.ac-wavemode { font-style: normal; font-size: 10px; font-weight: 700; color: var(--muted); margin-left: 5px; }
+/* 전장 모달 안의 라운드 카드 줄 — 지형 바로 밑에 붙는다 */
+.ac-waverow { margin-top: 8px; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); }
 /* 조건부 — 수치를 합치지 않고 설명문 그대로 (기물 이름 굵게) */
 .ac-gaincond { margin: 2px 0 0; font-size: 11.5px; line-height: 1.55; color: var(--muted); }
 .ac-gaincond > b { color: var(--ink2); }
