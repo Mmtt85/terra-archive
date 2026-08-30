@@ -156,6 +156,14 @@ def main():
         #   (사용자 지적 "살카즈 부패의 선봉이 왜 모든 라운드에", "3R에 영장은 못 봤다",
         #    "전장 3은 4~13R 적이 다 똑같음"). 리더 라운드는 보스가 고정이라 그대로 둔다.
         doc["skel"] = 0 if info["boss"] else 1
+        # 제자리 개체 — 첫 꼭짓점에서 **사실상 영원히** 대기하는 경로 (사미의 의지가
+        # cw [[0, 999, 0]] = 999초 고정 대기다. 사용자 지적 2026-08-30 "멈춰있는 보스들은
+        # 왜 경로가 있지?"). 데이터엔 갈 길이 적혀 있지만 전투 내내 안 간다 —
+        # 선을 그으면 "이리로 온다"는 틀린 그림이 된다.
+        still = sorted(int(i) for i, cws in (doc.get("cw") or {}).items()
+                       if any(c[0] == 0 and c[2] == 0 and c[1] >= 300 for c in cws))
+        if still:
+            doc["still"] = still
         H = doc["h"]
         if doc["w"] != BOX["W"]:
             sys.exit(f"{lid}: 웨이브 격자 폭이 맵과 다르다 ({doc['w']} vs {BOX['W']})")

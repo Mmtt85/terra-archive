@@ -37,7 +37,9 @@ export type AcMapBoard = { id: string; stage: string; band: 0 | 1; w: number; h:
 /** skel=1 이면 **적 이름을 믿을 수 없는** 뼈대다 — 일반 라운드 레벨은 경로·타이밍만
  *  정의하고 실제 등장 적은 판마다 뽑히는 특훈 적 유형이 정한다 (R4~R13 적 구성이 글자까지
  *  똑같은 것이 그 방증, 실측 2026-08-30). 리더 라운드는 보스가 고정이라 skel=0. */
-export type AcWave = StageRoutes & { k: string; rs: number[]; boss: string | null; train: 0 | 1; solo: 0 | 1; band: 0 | 1; skel: 0 | 1 };
+export type AcWave = StageRoutes & { k: string; rs: number[]; boss: string | null; train: 0 | 1; solo: 0 | 1; band: 0 | 1; skel: 0 | 1;
+  /** 첫 꼭짓점에서 사실상 영원히 대기하는 **제자리** 경로 번호 (사미의 의지 등) */
+  still?: number[] };
 export type AcRouteDoc = { maps: AcMapBoard[]; rounds: AcWave[]; bosses: Record<string, string>; nm: Record<string, [string, string, string]> };
 // ⚠ 지상 경로를 여기서 다시 잇지 않는다 — StageRouteMap 이 이미 격자 위에서 8방향
 // BFS(모서리 뚫기 금지) + 통로 순간이동 간선까지 걸어 준다 (.claude/skills/route-map-rules).
@@ -2038,7 +2040,9 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                          섬네일 클릭=적 상세). 지도 확대(⤢)는 .ac-mapcols 가 :has() 로 받는다. */}
                     <div className="ac-mapcols">
                       <StageRouteMap
-                        data={sel ? { ...sel, g: bd.g, w: bd.w, h: bd.h, e: sel.skel ? {} : sel.e }
+                        data={sel ? { ...sel, g: bd.g, w: bd.w, h: bd.h, e: sel.skel ? {} : sel.e,
+                          // 제자리 개체는 출현 지점에 세워 둔다 (선을 그으면 온다는 뜻이 된다)
+                          r: sel.r.map((poly, i) => (poly && sel.still?.includes(i) ? [poly[0], poly[0]] : poly)) }
                           : { ...bd, r: [], f: [], e: {} }}
                         order={sel && !sel.skel ? Object.keys(sel.e) : []}
                         highlights={mapHover ? [mapHover] : mapPin.size ? [...mapPin] : null}
@@ -2077,7 +2081,9 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                                     <b>{nameOfEnemy(k)}</b>
                                     <span className="ac-encard-meta">
                                       {ex?.rank && <em className={`en-rank r-${ex.rank}`}>{t(RANK_KEY[ex.rank] ?? "일반")}</em>}
-                                      <em>{t("{n}갈래", { n: sel.e[k].length })}</em>
+                                      {sel.e[k].every((i) => sel.still?.includes(i))
+                                        ? <em>{t("제자리")}</em>
+                                        : <em>{t("{n}갈래", { n: sel.e[k].length })}</em>}
                                     </span>
                                   </span>
                                 </button>
