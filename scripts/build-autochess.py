@@ -850,6 +850,12 @@ def build_locale(loc):
             **({"ns": 1} if b.get("noStack") else {}),
             "steps": steps,
             **({"stk": stk} if (stk := stack_rows(b)) else {}),
+            # 중첩 개념이 **아예 없는** 맹약이 넷 있다 (조화·협동방어·독행·궁극기) —
+            # 계수도 없고 문구가 중첩을 언급조차 않는다. 그런데도 화면이 중첩 입력칸을
+            # 내주면 "여긴 중첩 없지 않냐"가 된다 (사용자 지적 2026-08-30).
+            # ⚠ 판정은 **한국어 원문**으로 한다 — EN/JA는 문구가 번역돼 정규식이 안 먹는다.
+            **({"stku": 1} if (stk or any("중첩" in (st.get("t") or "") + (st.get("c") or "")
+                                          for st in kr_steps)) else {}),
             "chess": [],                    # 아래에서 채운다
         })
 

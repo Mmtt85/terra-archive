@@ -21,14 +21,21 @@
   ⚠ 시즌2는 시즌1 맵을 그대로 물려받는다 — 36개 중 34개가 ACT1AUTOCHESS 레벨이고
     새 맵은 boss_5용 2개(단독/협동)뿐이다. levelId 대문자 경로는 404, 파일은 소문자다.
 
-**잘라내기**: 격자는 전부 21x19인데 실제 전장은 가운데 두 레인뿐이라 바깥이 텅 빈다
-(사용자 확정 2026-08-30 "잘라내는 게 낫다"). 36개 맵의 타일 bbox가 **완전히 동일**해서
-균일하게 자른다 — 맵끼리 규격이 어긋나지 않는다. 좌표를 옮겨야 하는 곳은 두 군데뿐:
+⚠⚠ **전장은 하나뿐이다** (실측 2026-08-30: 36개 맵의 타일 격자가 전부 동일).
+라운드가 바뀌어도 지형은 그대로고, 달라지는 건 **적의 종류와 오는 길**뿐이다.
+그 하나의 전장이 위·아래 두 구획으로 나뉘어 있고 — 전부 'x'인 행이 사이를 끊는다 —
+**일반 라운드는 위 구획만, 리더 라운드는 아래 구획만** 쓴다 (전수 확인: 양쪽을 함께
+쓰는 맵 0개). 그래서 맵마다 **자기 구획만** 잘라낸다. 통째로 그리면 어느 전투에서든
+절반이 늘 빈 칸이라 "위아래로 두 개인데 뭘 뜻하는지 모르겠다"가 된다 (사용자 지적
+2026-08-30 — 처음엔 21x19를 17x12로만 줄였다가 이 지적을 받고 구획별로 다시 잘랐다).
+
+**잘라내기** 좌표를 옮겨야 하는 곳은 두 군데뿐:
   g = 행 문자열 (row 0 = 위)      → 행·열을 잘라낸다
   r = 경로 꼭짓점 [col, row]      (row 0 = **아래**) → col -= c0, row -= (H-1-r1)
 나머지 필드(f·e·sp·wv·ems·cw·mm)에는 좌표가 없다.
 
-출력: { crop, maps{id: 경로문서}, rounds[], leaders{}, train[], nm{} }
+출력: { bands, maps{id: 경로문서+band}, rounds[], leaders{}, train[], nm{} }
+  band = 0 위 구획(일반 라운드) · 1 아래 구획(리더 라운드)
   nm = 적 도감(enemy-names.json)에 없는 적의 3개 국어 이름표 (리더 하위 형태 6종).
        나머지 33종은 화면이 loadEnemies()로 이미 풀 수 있어 싣지 않는다.
 """
@@ -117,26 +124,42 @@ def main():
             sys.exit(f"경로 문서를 못 만들었다: {lid}")
         docs[mid] = doc
 
-    # ── 잘라낼 상자 — 전부 같아야 균일하게 자른다 ──
-    boxes = set()
+    # ── 전장은 하나 — 확인하고, 위·아래 구획으로 갈라 맵마다 자기 구획만 자른다 ──
+    grids = {tuple(d["g"]) for d in docs.values()}
+    if len(grids) != 1:
+        sys.exit(f"전장이 하나가 아니다({len(grids)}가지) — 구획 나누기 전제가 깨졌다")
+    g0 = docs[next(iter(docs))]["g"]
+    H, W = len(g0), len(g0[0])
+    bands, cur = [], None                      # 전부 'x' 인 행이 구획을 끊는다
+    for i, row in enumerate(g0):
+        if set(row) == {"x"}:
+            if cur:
+                bands.append(cur); cur = None
+        else:
+            cur = (cur[0], i) if cur else (i, i)
+    if cur:
+        bands.append(cur)
+    if len(bands) != 2:
+        sys.exit(f"구획이 2개가 아니다({len(bands)}개): {bands} — 전장 구조가 바뀌었다")
+    cols = [c for row in g0 for c, ch in enumerate(row) if ch != "x"]
+    c0, c1 = min(cols), max(cols)
+    w = c1 - c0 + 1
+    band_of = {}
     for mid, doc in docs.items():
-        r0 = min(i for i, row in enumerate(doc["g"]) if set(row) != {"x"})
-        r1 = max(i for i, row in enumerate(doc["g"]) if set(row) != {"x"})
-        cols = [c for row in doc["g"] for c, ch in enumerate(row) if ch != "x"]
-        boxes.add((r0, r1, min(cols), max(cols), doc["h"], doc["w"]))
-    if len(boxes) != 1:
-        sys.exit(f"맵마다 전장 범위가 다르다({len(boxes)}가지) — 균일 잘라내기 불가: {boxes}")
-    r0, r1, c0, c1, H, W = boxes.pop()
-    w, h = c1 - c0 + 1, r1 - r0 + 1
-    # 경로가 상자 밖으로 나가면 잘려 나간다 — 그 전에 세운다
-    for mid, doc in docs.items():
-        for poly in doc["r"]:
-            for x, y in poly or []:
-                if not (c0 <= x <= c1 and r0 <= H - 1 - y <= r1):
-                    sys.exit(f"{mid}: 경로 좌표 ({x},{y})가 잘라낼 상자 밖이다")
-    for mid, doc in docs.items():
-        crop_doc(doc, c0, r1, w, h, H)
-    print(f"  잘라내기 {W}x{H} → {w}x{h} (col {c0}~{c1} · row {r0}~{r1}, 36맵 동일)")
+        rows = {H - 1 - y for poly in doc["r"] for _x, y in poly or []}
+        hit = [b for b in bands if rows <= set(range(b[0], b[1] + 1))]
+        if len(hit) != 1:
+            sys.exit(f"{mid}: 경로가 한 구획에 안 담긴다 (구획 {bands}, 경로 행 {sorted(rows)})")
+        r0, r1 = hit[0]
+        if not all(c0 <= x <= c1 for poly in doc["r"] for x, _y in poly or []):
+            sys.exit(f"{mid}: 경로 열이 잘라낼 폭 밖이다")
+        crop_doc(doc, c0, r1, w, r1 - r0 + 1, H)
+        band_of[mid] = bands.index(hit[0])
+        doc["band"] = band_of[mid]
+    cnt = [sum(1 for v in band_of.values() if v == i) for i in range(2)]
+    print(f"  전장 1개 · 구획 {bands} → 맵마다 자기 구획만: "
+          f"{W}x{H} → {w}x{bands[0][1]-bands[0][0]+1} (위 {cnt[0]}개) · "
+          f"{w}x{bands[1][1]-bands[1][0]+1} (아래 {cnt[1]}개)")
 
     # ── 적 도감이 못 푸는 적만 이름표를 싣는다 ──
     known = set(json.load(open(os.path.join(DATA, "enemy-names.json"), encoding="utf-8"))["ids"])
@@ -149,7 +172,7 @@ def main():
         nm[eid] = [(books[loc].get(eid) or {}).get("name") or eid for loc, _ in LOCS]
 
     out = {
-        "crop": [c0, r0, w, h],
+        "bands": [[b[0], b[1]] for b in bands],
         "maps": docs,
         "rounds": [{"r": r, "m": fixed[r]} for r in sorted(fixed)],
         "leaders": leaders,

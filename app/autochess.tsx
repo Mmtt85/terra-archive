@@ -32,8 +32,9 @@ import { StageRouteMap, enemyRouteColor, type StageRoutes } from "./stage-route-
 // (규칙: .claude/skills/route-map-rules). '전투 맵' 탭을 처음 눌렀을 때만 지연 로드한다.
 // ⚠ 맵 이미지는 안 쓴다 — 타일 격자와 경로를 데이터에서 그린다 (제보 c3d2c056, 2026-08-30).
 export type AcRouteDoc = {
-  crop: [number, number, number, number];
-  maps: Record<string, StageRoutes>;
+  /** 전장을 끊는 위·아래 구획의 g행 범위 — [위, 아래] */
+  bands: [number, number][];
+  maps: Record<string, StageRoutes & { band: 0 | 1 }>;
   rounds: { r: number; m: string }[];
   leaders: Record<string, { s: string; c: string }>;
   train: { r: number; m: string }[];
@@ -89,7 +90,9 @@ export type AcStack = { k: string; u: "pct" | "flat" | "sec" | "mult"; b: number
   s?: number;
   /** 상한값과 그 단위 ("stack" = 중첩 횟수, 그 외는 u와 같다) */
   cap?: number; capU?: string };
-export type AcBond = { id: string; n: string; nation: boolean; min: number; cond?: string; down?: 1; steps: AcStep[]; stk?: AcStack[]; chess: string[] };
+export type AcBond = { id: string; n: string; nation: boolean; min: number; cond?: string; down?: 1; steps: AcStep[]; stk?: AcStack[]; chess: string[];
+  /** 중첩 개념이 있는 맹약만 1 — 조화·협동방어·독행·궁극기는 없다 (build-autochess.py) */
+  stku?: 1 };
 // tg = 특질 분류 태그(발동 시점·효과 유형, build-autochess.py classify_gar) — 오퍼레이터 필터용.
 // evb = '맹약이 N회 중첩할 때마다' 능력이 세는 맹약 id 목록 ("core" = 핵심 맹약, 병기 가능).
 // bs = 설명문이 [이름] 꼴로 언급하는 맹약 전부 — 시뮬레이터의 '돕는 특질' 판정용.
@@ -651,7 +654,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     if (!nums.length) return null;
     const n = stacks[b.id] ?? 0;
     return (
-      <ul className="ac-stack">
+      <div className="ac-stackrow"><ul className="ac-stack">
         {nums.map((sk) => {
           const v = n > 0 ? stackValueAt(sk, n) : null;
           return (
@@ -668,7 +671,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
             </li>
           );
         })}
-      </ul>
+      </ul></div>
     );
   };
 
@@ -1901,43 +1904,48 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                 그린다 — 이미지 자산이 안 든다. 격자는 원본 21x19 중 실제 전장만 잘라 썼다. ══ */}
           {miscTab === "map" && (
             <>
-              <p className="sim-note">{t("라운드마다 전장이 정해져 있습니다. 1~13라운드는 난이도와 상관없이 같고, 리더 라운드만 어느 리더가 나오느냐에 따라 갈립니다. 배치 칸과 적이 오는 길을 보고 편성을 맞춰 보세요.")}</p>
+              <p className="sim-note">{t("위수 협의의 전장은 하나뿐입니다 — 지형은 라운드가 바뀌어도 그대로고, 달라지는 건 적의 종류와 그들이 오는 길입니다. 전장은 두 구획으로 나뉘어 일반 라운드와 리더 라운드가 각각 한쪽씩 씁니다. 카드를 누르면 타일 지도와 적 이동 경로가 열립니다.")}</p>
               {!routesReady || !AC_ROUTES
                 ? <p className="chlog-empty">{t("전투 맵을 불러오는 중…")}</p>
                 : (() => {
                   const R = AC_ROUTES;
-                  const li = locale === "en" ? 1 : locale === "ja" ? 2 : 0;
-                  const nameOfEnemy = (id: string) =>
-                    enemyDex?.get(id)?.name ?? doc.enemyNames[id] ?? R.nm[id]?.[li] ?? id;
-                  const cur = R.maps[acMap] ?? R.maps[R.rounds[0].m];
-                  const curId = R.maps[acMap] ? acMap : R.rounds[0].m;
-                  const order = Object.keys(cur.e);
-                  const pick = (m: string) => { setAcMap(m); setMapPin(new Set()); };
-                  const bossAt = (n: number) => doc.bosses.filter((b) => b.round.includes(n));
-                  const leaderMap = (id: string) => {
-                    const v = R.leaders[id];
-                    return v ? (mapCoop ? v.c : v.s) : "";
+                  /** 같은 전장을 쓰는 라운드는 한 장으로 묶는다 — 입문 2·3R이 그렇다.
+                   *  안 묶으면 2R을 눌렀는데 3R도 같이 켜져 고장으로 보인다
+                   *  (사용자 지적 2026-08-30). */
+                  const chips = (xs: { r: number; m: string }[]) => {
+                    const by = new Map<string, number[]>();
+                    for (const x of xs) by.set(x.m, [...(by.get(x.m) ?? []), x.r]);
+                    return [...by].map(([m, rs]) => ({ m, label: t("{n}R", { n: rs.join("·") }) }));
                   };
+                  const card = (m: string, label: string, face?: string) => {
+                    const d = R.maps[m];
+                    if (!d) return null;
+                    return (
+                      <button key={m} type="button" className="ac-card ac-mapcard"
+                        onClick={() => { setMapPin(new Set()); setAcMap(m); }}>
+                        {face ? <EnFace id={face} className="ac-mapcardface" /> : null}
+                        <span className="ac-mapcard-body">
+                          <b>{label}</b>
+                          <em>{t("적 {a}종 · 오는 길 {b}갈래",
+                            { a: Object.keys(d.e).length, b: d.r.filter(Boolean).length })}</em>
+                        </span>
+                      </button>
+                    );
+                  };
+                  const bossAt = (n: number) => doc.bosses.filter((b) => b.round.includes(n));
+                  const leaderMap = (id: string) => { const v = R.leaders[id]; return v ? (mapCoop ? v.c : v.s) : ""; };
                   return (
                     <>
-                      <h3 className="sb-h3">{t("고정 라운드")} <em className="sb-count">{R.rounds.length}</em>
-                        <span className="sb-dim ac-note">{t("모든 난이도 공통")}</span></h3>
-                      <div className="ac-maprow">
-                        {R.rounds.map((x) => (
-                          <button key={x.r} type="button"
-                            className={`ac-mapchip${curId === x.m ? " on" : ""}`}
-                            onClick={() => pick(x.m)}>{t("{n}R", { n: x.r })}</button>
-                        ))}
-                      </div>
+                      <h3 className="sb-h3">{t("일반 라운드")} <em className="sb-count">{R.rounds.length}</em>
+                        <span className="sb-dim ac-note">{t("모든 난이도 공통 — 라운드가 오를수록 적이 늘고 오는 길이 많아집니다")}</span></h3>
+                      <div className="ac-cards ac-mapcards">{chips(R.rounds).map((x) => card(x.m, x.label))}</div>
 
                       <h3 className="sb-h3">{t("리더 라운드")}
                         <span className="sb-dim ac-note">{t("14R · 15R — 표준 시뮬레이션은 9R")}</span>
                         <span className="ac-mapmode">
                           {[[false, "단독"], [true, "협동"]].map(([co, lb]) => (
                             <button key={String(co)} type="button" className={mapCoop === co ? "on" : ""}
-                              onClick={() => { setMapCoop(co as boolean); setAcMap(""); setMapPin(new Set()); }}>
-                              {t(lb as string)}
-                            </button>
+                              onClick={() => setMapCoop(co as boolean)}>{t(lb as string)}</button>
                           ))}
                         </span>
                       </h3>
@@ -1947,50 +1955,16 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                         return (
                           <div key={rn} className="ac-mapbosses">
                             <h4 className="ac-bosshead">{t("{n}R", { n: rn })} <span>{rows.length}</span></h4>
-                            <div className="ac-maprow">
-                              {rows.map((b) => (
-                                <button key={b.id} type="button"
-                                  className={`ac-mapboss${curId === leaderMap(b.id) ? " on" : ""}`}
-                                  onClick={() => pick(leaderMap(b.id))}>
-                                  <EnFace id={b.enemy} className="ac-mapbossface" />
-                                  <span>{b.n}</span>
-                                </button>
-                              ))}
+                            <div className="ac-cards ac-mapcards">
+                              {rows.map((b) => card(leaderMap(b.id), b.n, b.enemy))}
                             </div>
                           </div>
                         );
                       })}
 
-                      <h3 className="sb-h3">{t("입문 협의")} <em className="sb-count">{R.train.length}</em></h3>
-                      <div className="ac-maprow">
-                        {R.train.map((x) => (
-                          <button key={x.r} type="button"
-                            className={`ac-mapchip${curId === x.m ? " on" : ""}`}
-                            onClick={() => pick(x.m)}>{t("{n}R", { n: x.r })}</button>
-                        ))}
-                      </div>
-
-                      <div className="ac-mapview">
-                        <StageRouteMap data={cur} order={order}
-                          highlights={mapPin.size ? [...mapPin] : null}
-                          imgOf={(k) => enemyImg(k)}
-                          nameOf={nameOfEnemy}
-                          onPick={(id) => setMapPin((prev) => {
-                            const next = new Set(prev);
-                            if (!next.delete(id)) next.add(id);
-                            return next;
-                          })} />
-                        <p className="ac-mapenemies">
-                          {order.map((k) => (
-                            <button key={k} type="button"
-                              className={`ac-bondchip sm${mapPin.has(k) ? " nation" : ""}`}
-                              style={{ borderLeft: `3px solid ${enemyRouteColor(order, k)}` }}
-                              onClick={() => setEnemy(k)}>
-                              <EnFace id={k} className="ac-mapenface" />{nameOfEnemy(k)}
-                            </button>
-                          ))}
-                        </p>
-                      </div>
+                      <h3 className="sb-h3">{t("입문 협의")}
+                        <span className="sb-dim ac-note">{t("2·3라운드는 같은 전장입니다")}</span></h3>
+                      <div className="ac-cards ac-mapcards">{chips(R.train).map((x) => card(x.m, x.label))}</div>
                     </>
                   );
                 })()}
@@ -2048,6 +2022,58 @@ export default function AutochessGuide({ doc, onShowOperator }: {
 
       {/* 맹약 배지를 누르면 뜨는 **작은 창** — 이 판에서 그 맹약이 어떤 상태인지만 본다
           (맹약 자체의 전체 설명은 아래 '맹약 상세'로 넘긴다). 사용자 지시 2026-08-29. */}
+      {/* ══ 전투 맵 모달 — 작전 도감·통합전략과 같은 규약(카드 → 창)이다
+            (사용자 지적 2026-08-30 "맵 시뮬레이터는 다른 기능들에 많잖아, 동일하게
+            모달 띄우거나 해서 보여줘야"). 지도·경로 재생은 공용 StageRouteMap 이 맡는다. ══ */}
+      {acMap && AC_ROUTES?.maps[acMap] && (() => {
+        const R = AC_ROUTES!;
+        const d = R.maps[acMap];
+        const li = locale === "en" ? 1 : locale === "ja" ? 2 : 0;
+        const nameOfEnemy = (id: string) =>
+          enemyDex?.get(id)?.name ?? doc.enemyNames[id] ?? R.nm[id]?.[li] ?? id;
+        const order = Object.keys(d.e);
+        const rs = R.rounds.filter((x) => x.m === acMap).map((x) => x.r);
+        const tr = R.train.filter((x) => x.m === acMap).map((x) => x.r);
+        const boss = doc.bosses.find((b) => {
+          const v = R.leaders[b.id];
+          return v && (v.s === acMap || v.c === acMap);
+        });
+        const title = boss ? boss.n
+          : rs.length ? t("{n}R", { n: rs.join("·") })
+            : t("입문 {n}R", { n: tr.join("·") });
+        return (
+          <ModalWindow key={acMap} label={title} className="operator-modal ac-modal ac-mapmodal"
+            onClose={() => setAcMap("")}>
+            <div className="ac-mapbody">
+              <p className="ac-mapcap">
+                <b>{d.band === 0 ? t("일반 라운드 전장") : t("리더 라운드 전장")}</b>
+                {boss && <i className="sb-chip">{mapCoop ? t("협동") : t("단독")}</i>}
+                <em>{t("적 {a}종 · 오는 길 {b}갈래", { a: order.length, b: d.r.filter(Boolean).length })}</em>
+              </p>
+              <StageRouteMap data={d} order={order}
+                highlights={mapPin.size ? [...mapPin] : null}
+                imgOf={(k) => enemyImg(k)}
+                nameOf={nameOfEnemy}
+                onPick={(id) => setMapPin((prev) => {
+                  const next = new Set(prev);
+                  if (!next.delete(id)) next.add(id);
+                  return next;
+                })} />
+              <p className="ac-mapenemies">
+                {order.map((k) => (
+                  <button key={k} type="button"
+                    className={`ac-bondchip sm${mapPin.has(k) ? " nation" : ""}`}
+                    style={{ borderLeft: `3px solid ${enemyRouteColor(order, k)}` }}
+                    onClick={() => setEnemy(k)}>
+                    <EnFace id={k} className="ac-mapenface" />{nameOfEnemy(k)}
+                  </button>
+                ))}
+              </p>
+            </div>
+          </ModalWindow>
+        );
+      })()}
+
       {peek && (() => {
         const row = boardBonds.find((x) => x.b.id === peek);
         if (!row) return null;
@@ -2065,7 +2091,10 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                 <i className={`sb-chip ${st.active ? "ac-on" : "ac-off"}`}>{st.active ? t("발동") : t("미발동")}</i>
               </p>
               {/* 중첩은 이 맹약 것만 여기서 지정한다 — 전투 중에 쌓이는 값이라 편성만으로는
-                  못 구하고, 맹약마다 값이 다르다 (사용자 지적 2026-08-29) */}
+                  못 구하고, 맹약마다 값이 다르다 (사용자 지적 2026-08-29).
+                  ⚠ 중첩 개념이 없는 맹약(조화·협동방어·독행·궁극기)에는 아예 안 낸다
+                  (사용자 지적 2026-08-30 "독행이랑 궁극기는 중첩 없지 않음?") */}
+              {b.stku && (
               <label className="ac-stackin">
                 {t("중첩 수")}
                 <input type="number" min={0} inputMode="numeric" placeholder="—"
@@ -2081,6 +2110,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                   }} />
                 <span className="sb-dim">{t("중첩은 전투 중에 특질이 쌓는 값이라 편성만으로 정해지지 않습니다. 값을 넣으면 그 기준으로 수치와 단계를 보여 줍니다.")}</span>
               </label>
+              )}
               <ol className="ac-bstat-steps">
                 {st.steps.map((sp) => (
                   <li key={sp.i} className={sp.on === true ? "on" : sp.on === null ? "unknown" : "off"}>

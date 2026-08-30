@@ -126,10 +126,11 @@ python3 scripts/build-autochess.py             # → app/data/autochess{,.en,.ja
 #        특훈 적 유형의 공식 이름·설명, 리더 적(boss)→적 id 매핑이 거기에만 있다.
 #      --no-icons 로 아이콘 다운로드를 건너뛸 수 있다)
 python3 scripts/build-autochess-routes.py      # → app/data/autochess-routes.json (위수 협의 전투 맵 42KB)
-#     라운드마다 전장이 고정이다: R1~R13 공통 13개 + 리더 R14 7종·R15 3종(단독 `_S` / 협동) + 입문 3개.
+#     ⚠ **전장은 하나뿐이다** — 36개 맵의 타일 격자가 전부 같고 라운드마다 달라지는 건
+#       적과 경로 수뿐. 그 전장이 위·아래 두 구획으로 나뉘어 일반 라운드는 위, 리더는 아래만
+#       쓴다 → 맵마다 자기 구획만 17x5로 자른다(원본 21x19). 스크립트가 매번 검증한다.
 #     ⚠ 시즌2는 시즌1 맵을 물려받는다 — 36개 중 34개가 ACT1AUTOCHESS 레벨. levelId 대문자
-#       경로는 404라 소문자로 받는다. 격자 21x19 중 실제 전장(17x12)만 잘라 싣는다 —
-#       36개 맵의 타일 bbox가 완전히 같아 균일하게 자를 수 있다(스크립트가 매번 검증).
+#       경로는 404라 소문자로 받는다.
 #     맵 '사진'은 안 쓴다 — 타일·경로를 데이터에서 그리므로 이미지 자산이 안 든다.
 python3 scripts/build-rogue-routes.py          # → app/data/rogue-routes.json (통전 전투 노드 적 이동 경로,
 #     로케일 무관 1벌 · .gamedata/rogue 레벨 캐시 재사용. 추출 정본은 routeutil.py —

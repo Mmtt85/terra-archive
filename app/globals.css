@@ -20511,23 +20511,21 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
 .ac-atstack { margin-left: 8px; font-weight: 700; color: var(--ink2); }
 .ac-stack-now { margin-left: 6px; font-weight: 800; color: var(--ink); }
 
-/* ── 전투 맵 탭 (제보 c3d2c056, 2026-08-30) — 라운드 고르기 + 격자 지도 ── */
-.ac-maprow { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 14px; }
-.ac-mapchip {
-  min-width: 46px; padding: 6px 10px; font: inherit; font-size: 12px; font-weight: 700;
-  color: var(--ink2); background: var(--white); border: 1px solid var(--line);
-  border-radius: 8px; cursor: pointer;
+/* ── 전투 맵 (제보 c3d2c056, 2026-08-30) — 카드 격자 → 모달.
+   작전 도감·통합전략과 같은 규약이다 (사용자 지적 2026-08-30 "다른 기능들처럼 모달로").
+   ⚠ 전장은 하나뿐이라 카드가 구분하는 건 지형이 아니라 **그 라운드의 적과 경로**다. ── */
+.ac-mapcards { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.ac-mapcard {
+  display: flex; align-items: center; gap: 8px; text-align: left;
+  cursor: pointer; padding: 8px 10px; min-width: 0;
 }
-.ac-mapchip:hover { border-color: var(--ink2); }
-.ac-mapchip.on { background: var(--lime); border-color: var(--lime); color: #16181a; }
-.ac-mapboss {
-  display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px 5px 5px;
-  font: inherit; font-size: 11.5px; font-weight: 700; color: var(--ink2);
-  background: var(--white); border: 1px solid var(--line); border-radius: 999px; cursor: pointer;
+.ac-mapcardface { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; flex: none; }
+.ac-mapcard-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ac-mapcard-body > b {
+  font-size: 12.5px; font-weight: 800;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.ac-mapboss:hover { border-color: var(--ink2); }
-.ac-mapboss.on { background: var(--lime); border-color: var(--lime); color: #16181a; }
-.ac-mapbossface { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; flex: none; }
+.ac-mapcard-body > em { font-style: normal; font-size: 11px; color: var(--muted); }
 /* 단독/협동 — 리더 맵만 갈리므로 그 제목 줄에 붙인다 */
 .ac-mapmode { display: inline-flex; gap: 4px; margin-left: 10px; }
 .ac-mapmode button {
@@ -20535,8 +20533,13 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   background: none; border: 1px solid var(--line); border-radius: 999px; cursor: pointer;
 }
 .ac-mapmode button.on { color: var(--ink); border-color: var(--ink2); }
-.ac-mapbosses { margin-bottom: 4px; }
-.ac-mapview { margin-top: 8px; }
+.ac-mapbosses { margin-bottom: 10px; }
+/* 모달 — 지도가 가로로 넓어(17칸) 창을 넉넉히 준다 */
+.ac-mapmodal { max-width: 900px; }
+.ac-mapbody { padding: 2px 0; }
+.ac-mapcap { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 0 0 8px; }
+.ac-mapcap > b { font-size: 12.5px; }
+.ac-mapcap > em { font-style: normal; font-size: 11.5px; color: var(--muted); }
 .ac-mapenemies { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0; }
 .ac-mapenface { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; flex: none; }
 /* 조건부 — 수치를 합치지 않고 설명문 그대로 (기물 이름 굵게) */
@@ -20691,6 +20694,20 @@ html.dark .ac-bring-dial {
 .ac-peekhead img { width: 22px; height: 22px; object-fit: contain; }
 .ac-peekbody .ac-bstat-steps { padding: 0; }
 .ac-peekbody .ac-clear { margin-top: 10px; }
+/* 작은 창 다듬기 (사용자 지적 2026-08-30 "레이아웃이 좀 이상하니 보기좋게") ─────
+   ① 수치 상자를 문구 **아래**로 내린다 — 단계 li 가 가로 flex 라 상자가 문구 옆으로
+      떠밀려 두 칸짜리 표처럼 보였다. 글머리(12px)+간격(6px)만큼 들여써 문구와 맞춘다.
+   ② 라벨의 min-width 92px 은 여러 줄을 세로로 맞추려던 것 — 작은 창은 보통 한 줄이라
+      가운데가 휑하게 벌어지기만 했다. 자연스러운 간격으로 붙인다.
+   ③ 중첩 수 입력 옆에 붙던 긴 안내문을 아랫줄 전체 폭으로 내린다. */
+.ac-bstat-steps li { flex-wrap: wrap; }
+/* basis 0 — auto 면 긴 문구가 제 너비를 요구해 글머리·게이트와 갈라져 다음 줄로
+   떨어졌다(들여쓰기도 잃는다). 남는 폭을 먹게 해서 같은 줄에 붙인다. */
+.ac-bstat-steps li > span:not(.ac-bstat-mark) { flex: 1 1 0; min-width: 0; }
+/* 줄바꿈 담당 — 100% 를 차지해 반드시 다음 줄로 내려간다 (상자 자체는 내용 폭) */
+.ac-peekbody .ac-stackrow { flex: 0 0 100%; margin-left: 18px; }
+.ac-peekbody .ac-stack > li > b { min-width: 0; }
+.ac-peekbody .ac-stackin .sb-dim { flex: 1 1 100%; }
 
 .ac-bstat { border: 1px solid var(--line); border-radius: 10px; margin: 0 0 8px; overflow: hidden; }
 .ac-bstat.on { border-color: color-mix(in srgb, var(--lime) 50%, var(--line)); }
@@ -20942,7 +20959,13 @@ html.dark .ac-bring-dial {
 /* 실제 수치 — 게임이 "(중첩 수에 따라 변경)"·"(최대치 존재)"로 뭉갠 값을 **그 효과 줄 안에**
    붙인다 (사용자 지시 2026-08-24: "효과 쪽에다가 그냥 같이 넣어주면 안되나"). 종전엔 효과
    목록 아래 별도 블록이라 어느 줄 이야기인지 눈으로 맞춰야 했다. */
+/* ⚠ 폭은 **내용만큼** — 전체 폭으로 늘리면 오른쪽이 휑하다 (사용자 지적 2026-08-30
+   "왜 너비가 100%임? 텍스트 길이에 맞춰줘야 하는거 아님?"). 줄바꿈은 감싸는
+   .ac-stackrow 가 맡고, 상자는 폭만 신경 쓴다 — 둘을 한 요소로 하면 flex 가
+   fit-content 를 줄바꿈 판정에도 써서 짧은 문구 옆에 붙어 버린다. */
 .ac-stack {
+  width: fit-content;
+  max-width: 100%;
   margin: 7px 0 0;
   padding: 6px 10px;
   list-style: none;
