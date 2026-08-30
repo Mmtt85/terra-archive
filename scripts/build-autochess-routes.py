@@ -15,7 +15,11 @@
 
 그래서 이 파일은 **둘 다, 따로** 싣는다 (사용자 지적 "경로 데이터 있었잖아? 다 있는데?"):
   maps   = 진짜 전장 6장의 **지형** — 배치 칸·적 출현·방어 지점. 실제로 플레이하는 판이다.
-  rounds = 라운드별 **적 구성과 경로** (band = 0 일반 전장 · 1 리더 전장). 이건 웨이브 템플릿 격자 위의 도식이라 실제 지형과
+  rounds = 라운드별 **적 구성과 경로** (band = 0 일반 전장 · 1 리더 전장).
+           ⚠ 이 경로는 실제 전장 위에 **그대로 겹쳐 그린다** (사용자 확인 2026-08-30
+           "맞으니 겹쳐 그려줘" — 게임에서 적이 지형과 무관하게 이 길로 온다).
+           그래서 지형과 **같은 상자로 잘라야** 좌표가 맞는다: 구획 행·전체 폭 모두
+           맵 기준을 따르고, 웨이브를 거기에 맞춘다. 이건 웨이브 템플릿 격자 위의 도식이라 실제 지형과
            겹쳐 놓으면 안 된다 — 화면이 "실제 지형이 아니라 도식"이라고 명시한다.
            실측: 경로 꼭짓점이 자기 템플릿에서는 100% 이동 가능 타일에 얹히지만 실제 맵
            6장에서는 69~93%에 그친다(=벽을 뚫는다). 실제 경로는 게임이 맵마다 다시 구한다.
@@ -78,6 +82,8 @@ def main():
     modes = {m["modeId"]: m for m in act["modeDataDict"].values()}
 
     rows, skipped = [], []
+    # 지형과 경로를 **같은 상자**로 자르려고 맵에서 기준을 잡아 둔다
+    BOX = {"rows": None, "W": None}
     for sid, sd in act["stageDatasDict"].items():
         if not sd.get("weight"):
             skipped.append((sid, "weight 0"))
@@ -102,7 +108,12 @@ def main():
             bands.append(cur)
         if len(bands) != 3:
             sys.exit(f"{sid}: 구획이 3개가 아니다({len(bands)}) {bands} — 맵 구조가 바뀌었다")
-        for bi, (r0, r1) in enumerate(bands[1:]):      # [0] = 위쪽 표시 상자, 버린다
+        arena = bands[1:]                              # [0] = 위쪽 표시 상자, 버린다
+        if BOX["rows"] is None:
+            BOX["rows"], BOX["W"] = arena, W
+        elif BOX["rows"] != arena or BOX["W"] != W:
+            sys.exit(f"{sid}: 전장 구획이 다른 맵과 다르다 {arena} vs {BOX['rows']}")
+        for bi, (r0, r1) in enumerate(arena):
             rows.append({
                 "id": f"{sid}#{bi}", "stage": sid, "band": bi,
                 "w": W, "h": r1 - r0 + 1, "g": g[r0:r1 + 1],
@@ -131,24 +142,15 @@ def main():
         doc = routes_of_level(fetch(f"levels/{lid}.json"), edb)
         if not doc:
             sys.exit(f"웨이브 경로를 못 만들었다: {lid}")
-        g, H = doc["g"], doc["h"]
-        bands, cur = [], None
-        for i, row in enumerate(g):
-            if set(row) == {"x"}:
-                if cur:
-                    bands.append(cur); cur = None
-            else:
-                cur = (cur[0], i) if cur else (i, i)
-        if cur:
-            bands.append(cur)
+        H = doc["h"]
+        if doc["w"] != BOX["W"]:
+            sys.exit(f"{lid}: 웨이브 격자 폭이 맵과 다르다 ({doc['w']} vs {BOX['W']})")
         rws = {H - 1 - y for poly in doc["r"] for _x, y in poly or []}
-        hit = [b for b in bands if rws <= set(range(b[0], b[1] + 1))]
+        hit = [b for b in BOX["rows"] if rws <= set(range(b[0], b[1] + 1))]
         if len(hit) != 1:
-            sys.exit(f"{lid}: 경로가 한 구획에 안 담긴다")
+            sys.exit(f"{lid}: 경로가 전장 구획 하나에 안 담긴다 (구획 {BOX['rows']}, 행 {sorted(rws)})")
         r0, r1 = hit[0]
-        cols = [c for row in g for c, ch in enumerate(row) if ch != "x"]
-        c0, c1 = min(cols), max(cols)
-        crop_doc(doc, c0, r1, c1 - c0 + 1, r1 - r0 + 1, H)
+        crop_doc(doc, 0, r1, BOX["W"], r1 - r0 + 1, H)
         doc["k"] = lid.split("/")[-1].replace("level_act1autochess_", "").replace("level_act2autochess_", "")
         doc["boss"] = info["boss"]
         doc["train"] = 1 if info["train"] else 0
@@ -156,7 +158,7 @@ def main():
         doc["solo"] = 1 if doc["k"].endswith("_s") else 0
         # 이 웨이브가 어느 구획에서 도는가 — 0 일반, 1 리더. 사용자가 게임 화면에서
         # "아랫판은 보스맵"이라고 확인해 줬고(2026-08-30), 경로가 실제로 그 구획에만 있다.
-        doc["band"] = bands.index(hit[0])
+        doc["band"] = BOX["rows"].index(hit[0])
         waves.append(doc)
     waves.sort(key=lambda d: (d["train"], min(d["rs"]), d["k"]))
 

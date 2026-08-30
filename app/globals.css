@@ -20549,12 +20549,9 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
 .ac-waverow { margin-top: 8px; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); }
 /* 라운드를 고르면 그 자리에서 펼친다 — 모달을 또 띄우지 않는다 (사용자 지시 2026-08-30) */
 .ac-mapcard.on { border-color: var(--lime); background: color-mix(in srgb, var(--lime) 12%, var(--paper)); }
-.ac-wavepanel {
-  margin-top: 10px; padding: 10px 12px 12px;
-  border: 1px solid var(--line); border-radius: 10px; background: var(--paper);
-}
-.ac-wavepanel .ac-mapcap { margin-bottom: 6px; }
-.ac-wavepanel .ac-mapenemies { margin: 0 0 8px; }
+/* 겹쳐 그린 라운드의 머리줄 — 지도 바로 밑, 적 칩까지 한 줄에 */
+.ac-wavecap { margin: 6px 0 0; gap: 5px 8px; }
+.ac-wavecap > b { font-size: 12.5px; }
 /* 조건부 — 수치를 합치지 않고 설명문 그대로 (기물 이름 굵게) */
 .ac-gaincond { margin: 2px 0 0; font-size: 11.5px; line-height: 1.55; color: var(--muted); }
 .ac-gaincond > b { color: var(--ink2); }

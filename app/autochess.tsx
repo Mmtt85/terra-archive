@@ -36,6 +36,86 @@ export type AcMapBoard = { id: string; stage: string; band: 0 | 1; w: number; h:
  *  (경로 꼭짓점이 자기 템플릿에선 100%, 실제 맵 6장에선 69~93%만 이동 가능 타일에 얹힌다). */
 export type AcWave = StageRoutes & { k: string; rs: number[]; boss: string | null; train: 0 | 1; solo: 0 | 1; band: 0 | 1 };
 export type AcRouteDoc = { maps: AcMapBoard[]; rounds: AcWave[]; bosses: Record<string, string>; nm: Record<string, [string, string, string]> };
+/** 지상 적이 밟을 수 있는 타일 (routeutil.tile_char 분류) — b(배치만)·w/x(고지형)·
+ *  f(장애물)·d(깊은 물)·h(구멍)는 못 밟는다. */
+const GROUND_OK = new Set(["r", "p", "s", "e", "i", "o", "u"]);
+/** 지상 경로를 **실제 지형에 맞춰 다시 잇는다** (사용자 지시 2026-08-30
+ *  "이동불가 타일이랑 안 겹치게 경로 만들어줘").
+ *
+ *  원본 경로는 장애물이 없는 웨이브 템플릿 기준이라 그대로 얹으면 벽을 지난다.
+ *  꼭짓점은 그대로 두고 **그 사이를 이동 가능 칸만 밟는 최단 경로(BFS)** 로 다시 잇는다.
+ *  비행(f=1)은 손대지 않는다 — 실제로 장애물을 넘어간다.
+ *  ⚠ 좌표계: g는 row 0 = 위, 경로 y는 row 0 = 아래 (stage-route-map.tsx 규약).
+ */
+function groundPath(g: string[], h: number, w: number, poly: [number, number][]): [number, number][] {
+  const ok = (x: number, y: number) => {
+    const gr = h - 1 - y;
+    return gr >= 0 && gr < h && x >= 0 && x < w && GROUND_OK.has(g[gr][x]);
+  };
+  // 꼭짓점이 못 밟는 칸이면 가장 가까운 밟을 수 있는 칸으로 당긴다
+  const snap = ([x, y]: [number, number]): [number, number] => {
+    if (ok(x, y)) return [x, y];
+    for (let r = 1; r <= Math.max(w, h); r++) {
+      for (let dx = -r; dx <= r; dx++) {
+        for (const dy of [-r, r]) if (ok(x + dx, y + dy)) return [x + dx, y + dy];
+      }
+      for (let dy = -r; dy <= r; dy++) {
+        for (const dx of [-r, r]) if (ok(x + dx, y + dy)) return [x + dx, y + dy];
+      }
+    }
+    return [x, y];
+  };
+  const key = (x: number, y: number) => y * w + x;
+  const bfs = (a: [number, number], b: [number, number]): [number, number][] | null => {
+    if (a[0] === b[0] && a[1] === b[1]) return [a];
+    const prev = new Map<number, number>();
+    const q: [number, number][] = [a];
+    const seen = new Set([key(a[0], a[1])]);
+    while (q.length) {
+      const [x, y] = q.shift()!;
+      if (x === b[0] && y === b[1]) {
+        const out: [number, number][] = [];
+        let cur = key(x, y);
+        for (;;) {
+          out.push([cur % w, Math.floor(cur / w)] as [number, number]);
+          const p = prev.get(cur);
+          if (p === undefined) break;
+          cur = p;
+        }
+        return out.reverse();
+      }
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nx = x + dx, ny = y + dy;
+        if (!ok(nx, ny) || seen.has(key(nx, ny))) continue;
+        seen.add(key(nx, ny));
+        prev.set(key(nx, ny), key(x, y));
+        q.push([nx, ny] as [number, number]);
+      }
+    }
+    return null;
+  };
+  let cur = snap(poly[0]);
+  const out: [number, number][] = [cur];
+  for (const raw of poly.slice(1)) {
+    const to = snap(raw);
+    const seg = bfs(cur, to);
+    if (seg) out.push(...seg.slice(1));
+    else out.push(to);            // 길이 없으면 원래대로 (끊긴 그림보다 낫다)
+    cur = to;
+  }
+  // 일직선으로 이어지는 칸은 접는다 — 꼭짓점이 수백 개가 되면 렌더가 무거워진다
+  const slim: [number, number][] = [];
+  for (const pt of out) {
+    const n = slim.length;
+    if (n >= 2) {
+      const [ax, ay] = slim[n - 2], [bx, by] = slim[n - 1];
+      if ((bx - ax) === (pt[0] - bx) && (by - ay) === (pt[1] - by)) { slim[n - 1] = pt; continue; }
+    }
+    if (n === 0 || slim[n - 1][0] !== pt[0] || slim[n - 1][1] !== pt[1]) slim.push(pt);
+  }
+  return slim.length >= 2 ? slim : out;
+}
+
 let AC_ROUTES: AcRouteDoc | null = null;
 let AC_ROUTES_LOADING: Promise<void> | null = null;
 function loadAcRoutes(): Promise<void> {
@@ -1971,9 +2051,10 @@ export default function AutochessGuide({ doc, onShowOperator }: {
       {/* ══ 전장 모달 — 지형 + 그 구획에서 도는 라운드 (사용자 지시 2026-08-30
             "각 맵마다 라운드를 맵 상세에다가"). 라운드를 누르면 **모달을 또 띄우지 않고
             그 자리에서 펼친다** (사용자 지시 2026-08-30).
-            ⚠ 적 편성 도식을 지형 **위에 겹치지는 않는다** — 경로는 웨이브 템플릿 기준이라
-            실제 지형에 얹으면 지나는 칸의 38%가 벽·배치블록이다 (실측 2026-08-30, m01/04R).
-            아래 구획이 리더 전장이라는 것은 사용자가 게임 화면에서 확인해 줬다. ══ */}
+            라운드를 고르면 그 경로를 **지형 위에 그대로 겹친다** (사용자 확인 2026-08-30
+            "맞으니 겹쳐 그려줘" — 적이 지형과 무관하게 이 길로 온다). 그러려면 두 격자를
+            같은 상자로 잘라야 하고, build-autochess-routes.py 가 맵 기준으로 맞춰 낸다.
+            아래 구획이 리더 전장이라는 것도 사용자가 게임 화면에서 확인해 줬다. ══ */}
       {acMap && AC_ROUTES && (() => {
         const R = AC_ROUTES!;
         const boards = R.maps.filter((m) => m.stage === acMap);
@@ -2012,35 +2093,35 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                   <div key={bd.id} className="ac-mapboard">
                     <h4 className="ac-bosshead">{bd.band === 0 ? t("일반 라운드 전장") : t("리더 전장")}
                       <span>{ws.length}</span></h4>
-                    <StageRouteMap data={{ ...bd, r: [], f: [], e: {} }} order={[]}
-                      highlights={null} imgOf={() => undefined} nameOf={() => ""} />
-                    <div className="ac-cards ac-mapcards ac-waverow">{ws.map(waveCard)}</div>
+                    {/* 지형 격자 + 고른 라운드의 경로·적을 **한 장에** 겹친다.
+                        경로 필드(r·f·e·sp·wv·ems·cw·mm)만 웨이브에서 가져오고 격자는 지형 것을 쓴다. */}
+                    <StageRouteMap
+                      data={sel ? { ...sel, g: bd.g, w: bd.w, h: bd.h,
+                        r: sel.r.map((poly, i) => (!poly || sel.f[i] ? poly
+                          : groundPath(bd.g, bd.h, bd.w, poly))) } : { ...bd, r: [], f: [], e: {} }}
+                      order={sel ? Object.keys(sel.e) : []}
+                      highlights={mapPin.size ? [...mapPin] : null}
+                      imgOf={(k) => enemyImg(k)}
+                      nameOf={sel ? nameOfEnemy : () => ""}
+                      onPick={sel ? (id) => setMapPin((prev) => {
+                        const next = new Set(prev);
+                        if (!next.delete(id)) next.add(id);
+                        return next;
+                      }) : undefined} />
                     {sel && (
-                      <div className="ac-wavepanel">
-                        <p className="ac-mapcap">
-                          <b>{waveName(sel)}</b>
-                          {sel.boss && <i className="sb-chip">{sel.solo ? t("단독") : t("협동")}</i>}
-                          <em>{t("적 {a}종 · 오는 길 {b}갈래",
-                            { a: Object.keys(sel.e).length, b: sel.r.filter(Boolean).length })}</em>
-                        </p>
-                        <p className="ac-mapenemies">
-                          {Object.keys(sel.e).map((k) => (
-                            <button key={k} type="button" className="ac-bondchip sm" onClick={() => setEnemy(k)}>
-                              <EnFace id={k} className="ac-mapenface" />{nameOfEnemy(k)}
-                            </button>
-                          ))}
-                        </p>
-                        <StageRouteMap data={sel} order={Object.keys(sel.e)}
-                          highlights={mapPin.size ? [...mapPin] : null}
-                          imgOf={(k) => enemyImg(k)} nameOf={nameOfEnemy}
-                          onPick={(id) => setMapPin((prev) => {
-                            const next = new Set(prev);
-                            if (!next.delete(id)) next.add(id);
-                            return next;
-                          })} />
-                        <p className="sb-dim ac-mapnote">{t("⚠ 바로 위 그림은 실제 지형이 아니라 적 편성을 담은 도식입니다 — 게임 데이터가 적 구성과 등장 순서를 이 판 위에 정의해 둡니다. 실제로 어느 길로 오는지는 뽑힌 전장에 맞춰 다시 계산되므로 지형 위에 겹쳐 그리지 않았습니다.")}</p>
-                      </div>
+                      <p className="ac-mapcap ac-wavecap">
+                        <b>{waveName(sel)}</b>
+                        {sel.boss && <i className="sb-chip">{sel.solo ? t("단독") : t("협동")}</i>}
+                        <em>{t("적 {a}종 · 오는 길 {b}갈래",
+                          { a: Object.keys(sel.e).length, b: sel.r.filter(Boolean).length })}</em>
+                        {Object.keys(sel.e).map((k) => (
+                          <button key={k} type="button" className="ac-bondchip sm" onClick={() => setEnemy(k)}>
+                            <EnFace id={k} className="ac-mapenface" />{nameOfEnemy(k)}
+                          </button>
+                        ))}
+                      </p>
                     )}
+                    <div className="ac-cards ac-mapcards ac-waverow">{ws.map(waveCard)}</div>
                   </div>
                 );
               })}
