@@ -539,6 +539,99 @@ EVERY_RE = re.compile(r"((?:\[[^\]]+\][/·, ]*)+|핵심 )맹약이 \*{0,2}\d+\*{
 POS_RE = re.compile(r"(전방|후방|주변|근처|주위) ?\*{0,2}\d")
 
 
+# ── 특질이 올려 주는 중첩 — 구조화 (사용자 요청 2026-08-30 "어느 상황에 어느 맹약이
+# 몇 개씩 추가되는지 전부 토탈") ──────────────────────────────────────────────
+# 설명문(KR 원문)을 시점(w)·대상(to)·수치(n)로 갈라 gn 행으로 낸다. 시뮬레이터가 판에
+# 올라온 기물들의 gn 을 시점별로 합산한다.
+#   w  = acq 획득 · restIn 휴식 진입 · restEnd 휴식 종료 · deploy 배치 · down 쓰러질 시 ·
+#        battle 전투 중(시작 포함) · refresh 갱신 · sell 판매
+#   to = 맹약 id 목록 | "own"(자신이 속한 맹약) | "ownAct"(자신의 활성화된 맹약) |
+#        "top"(가장 많이 중첩된 맹약) | "benchAct"(정비 구역 각 오퍼의 활성화된 맹약)
+#   c  = 1 이면 **조건부** — 횟수·확률·남의 행동에 달려 있어 합산 불가. 화면은 설명문을
+#        그대로 보여 준다 (수치를 절반만 합쳐 확정값처럼 보이면 안 된다, autochess-board.ts
+#        머리주석과 같은 원칙).
+#   per= "bench"(정비 구역 오퍼 1명당) | "tiers"(전장의 pb 소속 각기 다른 티어 1명당) —
+#        1명당류 중 **판만 보고 셀 수 있는** 두 형태만 확정으로 남긴다.
+#   na = 맹약 활성화 불필요 · bn = 정비 구역에 있어도 적용 · nb = 전방(f)/후방(b) 1칸에도
+GAIN_W_MARK = [("acq", "<획득 시>"), ("restIn", "<휴식 기간 진입 시>"), ("restEnd", "<휴식 기간 종료 시>"),
+               ("deploy", "<배치 시>"), ("down", "<쓰러질 시>"), ("battle", "<전투 중>"),
+               ("battle", "<전투 시작 시>"), ("refresh", "<갱신 시>"), ("sell", "<판매 시>")]
+# ⚠ "1명당"은 기본이 조건부다 — garrison_119(휴식 기간에 획득한 오퍼 1명당)를 확정으로
+#   오분류했던 시제품 버그(2026-08-30). 셀 수 있는 두 형태는 probe 에서 문구를 지워 살린다.
+GAIN_COND_RE = re.compile(r"때마다|1명당|확률|첫 |처음|보급센터|증가할 경우|특질 획득|될 경우|쓰러[질지]|적 처치|스킬 발동|같은 행|이번 라운드")
+GAIN_BENCH_RE = re.compile(r"정비 구역에 있는 오퍼레이터 1명당")
+GAIN_TIER_RE = re.compile(r"전장에 있는 각기 다른 티어의 ((?:\[[^\]]+\][/·, ]*)+)오퍼레이터 1명당")
+GAIN_NB_RE = re.compile(r"자신과 (전방|후방) 1칸 오퍼레이터의 활성화된 맹약")
+GAIN_PAIR_RE = re.compile(r"((?:\[[^\]]+\][/·, ]*)+)(?:맹약의? )?중첩 수 \*\*\+(\d+)\*\*")
+GAIN_OWN_RE = re.compile(r"자신이 속한 맹약의 중첩 수 \*\*\+(\d+)\*\*")
+GAIN_OWNACT_RE = re.compile(r"자신(?:과 (?:전방|후방) 1칸 오퍼레이터)?의 활성화된 맹약(?:의)? 중첩 수 \*\*\+(\d+)\*\*")
+GAIN_TOP_RE = re.compile(r"가장 많이 중첩된 맹약의 중첩 수 \*\*\+(\d+)\*\*")
+GAIN_BENCHACT_RE = re.compile(r"정비 구역에 있는 각 오퍼레이터의 활성화된 맹약 중첩 수 \*\*\+(\d+)\*\*")
+
+
+def stack_gains(kr_text, bond_id_by_kr_name):
+    """KR 설명문 → gn 행 목록 (중첩을 올리는 특질이 아니면 None)."""
+    if "중첩 수" not in kr_text:
+        return None
+    # '중첩 수를 세기만 하는'(every) 문장 — "N회 중첩할 때마다"만 있고 +를 안 올리면 대상 아님
+    if "중첩 수 **+" not in kr_text and "중첩 수 획득" not in kr_text:
+        return None
+    ws = []
+    for w, mk in GAIN_W_MARK:
+        if mk in kr_text and w not in ws:
+            ws.append(w)
+    if not ws:
+        ws = ["battle"]      # 시점 마커가 없는 전투 문장 (부여형 등)
+    na = "맹약 활성화 불필요" in kr_text
+    bn = "정비 구역에 있어도" in kr_text
+    per = pb = nb = None
+    m = GAIN_NB_RE.search(kr_text)
+    if m:
+        nb = "f" if m.group(1) == "전방" else "b"
+    if GAIN_BENCH_RE.search(kr_text):
+        per = "bench"
+    m = GAIN_TIER_RE.search(kr_text)
+    if m:
+        per = "tiers"
+        pb = [bond_id_by_kr_name[n] for n in re.findall(r"\[([^\]]+)\]", m.group(1)) if n in bond_id_by_kr_name]
+    probe = GAIN_BENCH_RE.sub("", GAIN_TIER_RE.sub("", kr_text))
+    if GAIN_COND_RE.search(probe):
+        return [{"w": w, "c": 1} for w in ws]
+    rows = []
+    for m in GAIN_BENCHACT_RE.finditer(kr_text):
+        rows.append({"to": "benchAct", "n": int(m.group(1))})
+    for m in GAIN_OWN_RE.finditer(kr_text):
+        rows.append({"to": "own", "n": int(m.group(1))})
+    if not any(r["to"] == "benchAct" for r in rows):   # benchAct 문장은 ownAct 패턴에도 걸린다
+        for m in GAIN_OWNACT_RE.finditer(kr_text):
+            rows.append({"to": "ownAct", "n": int(m.group(1))})
+    for m in GAIN_TOP_RE.finditer(kr_text):
+        rows.append({"to": "top", "n": int(m.group(1))})
+    for m in GAIN_PAIR_RE.finditer(kr_text):
+        names = re.findall(r"\[([^\]]+)\]", m.group(1))
+        ids = [bond_id_by_kr_name[n] for n in names if n in bond_id_by_kr_name]
+        if ids:
+            rows.append({"to": ids, "n": int(m.group(2))})
+    if not rows:
+        return [{"w": w, "c": 1} for w in ws]   # 수치를 못 읽으면 조건부로 강등 (30: 보급센터 레벨)
+    out = []
+    for w in ws:
+        for r in rows:
+            e = {"w": w, **r}
+            if na:
+                e["na"] = 1
+            if bn:
+                e["bn"] = 1
+            if per:
+                e["per"] = per
+            if pb:
+                e["pb"] = pb
+            if nb:
+                e["nb"] = nb
+            out.append(e)
+    return out
+
+
 def classify_gar(kr_text, bond_id_by_kr_name):
     """KR 설명문 → (tg 목록, evb, bs). 어느 카테고리에도 안 걸리면 tg=[] — 화면이 '그 외'로 묶는다.
 
@@ -828,7 +921,9 @@ def build_locale(loc):
         g = GARRISON.get(gid)
         if not g:
             continue
-        tg, evb, bs = classify_gar(rich(g["garrisonDesc"]), bond_id_by_kr_name)
+        kr_desc = rich(g["garrisonDesc"])
+        tg, evb, bs = classify_gar(kr_desc, bond_id_by_kr_name)
+        gn = stack_gains(kr_desc, bond_id_by_kr_name)   # 항상 KR 원문 기준 — 로케일 무관 동일
         gar_rows[gid] = {
             "d": gar_desc(loc, gid, g),
             "t": loc_name(loc, "garrisonDataDict", gid, "eventTypeDesc", g.get("eventTypeDesc")),
@@ -836,6 +931,7 @@ def build_locale(loc):
             **({"tg": tg} if tg else {}),
             **({"evb": evb} if evb else {}),
             **({"bs": bs} if bs else {}),
+            **({"gn": gn} if gn else {}),
         }
 
     # 중복 정리는 GAR_KEPT 가 이미 했다 (blackboard 기준, 로케일 무관) — 여기서는 정리 후
@@ -846,6 +942,17 @@ def build_locale(loc):
             row[key] = [g for g in row[key] if g in gar_rows]
             used_after.update(row[key])
     gar_rows = {k: v for k, v in gar_rows.items() if k in used_after}
+
+    # gn 전수 검증 — 확정 행에 수치·대상이 비면 파이프라인을 세운다 (validate_gates 와 같은 원칙:
+    # 새 패치에서 문구 패턴이 바뀌면 조용히 틀린 합계를 내보내는 대신 여기서 터져야 한다)
+    if loc == "ko":
+        det = sum(1 for v in gar_rows.values() if any(not r.get("c") for r in v.get("gn", [])))
+        cond = sum(1 for v in gar_rows.values() if v.get("gn") and all(r.get("c") for r in v["gn"]))
+        print(f"  중첩 수급(gn): 확정 {det} · 조건부 {cond}")
+        for k, v in gar_rows.items():
+            for r in v.get("gn", []):
+                if not r.get("c") and (not r.get("n") or not r.get("to")):
+                    sys.exit(f"gn 검증 실패: {k} {r} — 확정 행에 n/to 가 없다")
 
     # ── 물자관리소(보급센터) ──
     tiers = []

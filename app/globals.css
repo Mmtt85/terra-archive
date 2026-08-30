@@ -20484,6 +20484,27 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
 /* 판 비우기 · 공유 링크 복사 — 한 줄에 나란히 */
 .ac-simfoot { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0; }
 
+/* ── 중첩 수급 총정리 (사용자 요청 2026-08-30) — 시점별 확정 합계 + 조건부 목록 ── */
+.ac-gains { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 14px; }
+.ac-gainrow {
+  display: grid; grid-template-columns: 130px 1fr; gap: 4px 12px; align-items: start;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--paper); padding: 8px 12px;
+}
+@media (max-width: 560px) { .ac-gainrow { grid-template-columns: 1fr; } }
+.ac-gainw b { display: block; font-size: 12px; }
+.ac-gainw i { font-style: normal; font-size: 10.5px; color: var(--muted); }
+.ac-gainchips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 0; }
+.ac-gainchip { display: inline-flex; align-items: center; gap: 4px; }
+.ac-gainchip em { font-style: normal; font-size: 12px; font-weight: 800; }
+.ac-gainchip u { text-decoration: none; font-size: 10px; color: var(--muted); }
+/* 대상 맹약 미발동 — 발동해야 세는 특질이라 합계 밖. 흐리게 눕힌다 */
+.ac-gainchip.off { opacity: 0.5; }
+.ac-gaintop { font-size: 11.5px; font-weight: 700; color: var(--ink2); }
+/* 조건부 — 수치를 합치지 않고 설명문 그대로 (기물 이름 굵게) */
+.ac-gaincond { margin: 2px 0 0; font-size: 11.5px; line-height: 1.55; color: var(--muted); }
+.ac-gaincond > b { color: var(--ink2); }
+.ac-gaincond i { font-style: normal; font-size: 10.5px; }
+
 /* 덱편성 시뮬레이터 — **탭이 아니라** 제목 줄 한가운데의 버튼이다 (사용자 지시 2026-08-29
    "위수협의: 맹약 이 있는 줄의 정 가운데에다 … 탭 사이에 끼면 안 돼").
    ⚠ 라임 **글자색**으로 세웠더니 라이트 모드에서 안 읽혔다 (--lime #c3d24b 는 흰 바탕에

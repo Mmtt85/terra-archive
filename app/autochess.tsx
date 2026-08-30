@@ -70,7 +70,13 @@ export type AcBond = { id: string; n: string; nation: boolean; min: number; cond
 // tg = 특질 분류 태그(발동 시점·효과 유형, build-autochess.py classify_gar) — 오퍼레이터 필터용.
 // evb = '맹약이 N회 중첩할 때마다' 능력이 세는 맹약 id 목록 ("core" = 핵심 맹약, 병기 가능).
 // bs = 설명문이 [이름] 꼴로 언급하는 맹약 전부 — 시뮬레이터의 '돕는 특질' 판정용.
-export type AcGar = { d: string; t: string; ic: string; tg?: string[]; evb?: string[]; bs?: string[] };
+/** 특질이 올려 주는 중첩 한 행 — build-autochess.py stack_gains 산출.
+ *  w = 시점(acq·restIn·restEnd·deploy·down·battle·refresh·sell) · c = 조건부(합산 불가) ·
+ *  to = 맹약 id 목록 | own(자신 소속) | ownAct(자신의 활성) | top(최다 중첩) | benchAct(정비 각자의 활성) ·
+ *  n = 수치 · na = 활성화 불필요 · bn = 정비 구역에서도 · per = bench/tiers 곱셈 · nb = 이웃(f/b)에도 */
+export type AcGain = { w: string; c?: 1; to?: string[] | "own" | "ownAct" | "top" | "benchAct";
+  n?: number; na?: 1; bn?: 1; per?: "bench" | "tiers"; pb?: string[]; nb?: "f" | "b" };
+export type AcGar = { d: string; t: string; ic: string; tg?: string[]; evb?: string[]; bs?: string[]; gn?: AcGain[] };
 export type AcChess = {
   id: string; gid?: string | null; op?: string | null; n: string; t: number; sort: number;
   kind: string; bonds: string[]; gar: string[]; garG: string[]; up?: number;
@@ -187,6 +193,15 @@ const GAR_CAT_LABEL: Record<string, string> = {
 // 시뮬레이터 뷰는 반나절 만에 접었다 (사용자 확정 2026-08-23: "그냥 물자관리소 →
 // 오퍼레이터에서 필터링하는 거랑 똑같네") — 맹약 2축 선택·소속 그룹·중첩 기여 배지는
 // 전부 물자관리소 오퍼레이터 탭의 필터로 들어갔다.
+// 중첩 수급 표의 시점 라벨 — acq/restIn/restEnd/deploy/battle/sell 은 GAR_CAT_LABEL 과
+// 같은 문구를 쓰고(번역 키 공유), refresh/down 만 여기서 새로 든다.
+const GAIN_W_LABEL: Record<string, string> = {
+  acq: "획득 시", deploy: "배치 시", restIn: "휴식 기간 진입 시", restEnd: "휴식 기간 종료 시",
+  refresh: "갱신 시", battle: "전투 중", down: "쓰러질 시", sell: "판매 시",
+};
+const GAIN_W_NOTE: Record<string, string> = {
+  acq: "획득할 때 1회", deploy: "전투마다", restIn: "라운드마다", restEnd: "라운드마다",
+};
 const VIEWS = ["bond", "band", "op", "item", "misc"] as const;
 type View = (typeof VIEWS)[number];
 const VIEW_LABEL: Record<View, string> = {
@@ -586,6 +601,69 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     .sort((a, b) => Number(b.st.active) - Number(a.st.active) || b.st.counted - a.st.counted),
     [boardState, doc]);
   const placed = useMemo(() => new Set([...kept(slots), ...kept(bench)].map((x) => x.id)), [slots, bench]);
+
+  // ── 중첩 수급 총정리 (사용자 요청 2026-08-30 "어느 상황에 어느 맹약이 몇 개씩") ────
+  // 판에 올라온 기물들의 gn(특질의 중첩 행)을 시점별로 모은다. **확정 행만 합산**하고
+  // 조건부(횟수·확률·남의 행동에 달린 것)는 설명문 그대로 보여 준다 — 절반 섞인 합계를
+  // 확정값처럼 내보이지 않는다 (autochess-board.ts 머리주석과 같은 원칙).
+  // 정비 구역 기물은 <획득 시>와 '정비 구역에 있어도 적용'(bn) 행만 낸다 — 나머지 특질은
+  // 전장에 있어야 돈다 (원문이 bn 을 예외로 명기하는 것이 그 방증).
+  const gainRows = useMemo(() => {
+    const activeB = new Set(doc.bonds.filter((_, i) => boardState[i]?.active).map((b) => b.id));
+    const onB = kept(slots).map((x) => chessById.get(x.id)).filter((c): c is AcChess => !!c);
+    const onD = kept(bench).map((x) => chessById.get(x.id)).filter((c): c is AcChess => !!c);
+    type Cond = { c: AcChess; gid: string; selfIn?: boolean };
+    type Bucket = { sum: Map<string, number>; wait: Map<string, number>; top: number; conds: Cond[] };
+    const buckets = new Map<string, Bucket>();
+    const at = (w: string): Bucket => {
+      let b = buckets.get(w);
+      if (!b) { b = { sum: new Map(), wait: new Map(), top: 0, conds: [] }; buckets.set(w, b); }
+      return b;
+    };
+    const add = (m: Map<string, number>, id: string, n: number) => m.set(id, (m.get(id) ?? 0) + n);
+    // per="tiers" — 전장의 pb 소속 기물이 가진 서로 다른 티어 수
+    const tiersOf = (pb: string[]) =>
+      new Set(onB.filter((c) => c.bonds.some((b) => pb.includes(b))).map((c) => c.t)).size;
+    const handle = (c: AcChess, onBoard: boolean) => {
+      for (const gid of (isGold(c.id) ? c.garG : c.gar)) {
+        for (const r of doc.gar[gid]?.gn ?? []) {
+          if (!onBoard && !r.bn && r.w !== "acq") continue;
+          const B = at(r.w);
+          if (r.c) { B.conds.push({ c, gid }); continue; }
+          const mult = r.per === "bench" ? onD.length : r.per === "tiers" ? tiersOf(r.pb ?? []) : 1;
+          const n = (r.n ?? 0) * mult;
+          if (!n) continue;
+          if (r.to === "top") { if (activeB.size) B.top += n; continue; }
+          if (r.to === "benchAct") {
+            for (const bc of onD) for (const b of bc.bonds) if (activeB.has(b)) add(B.sum, b, r.n ?? 0);
+            continue;
+          }
+          const targets = r.to === "own" ? c.bonds
+            : r.to === "ownAct" ? c.bonds.filter((b) => activeB.has(b))
+            : (r.to ?? []);
+          for (const b of targets)
+            add(r.na || r.to === "ownAct" || activeB.has(b) ? B.sum : B.wait, b, n);
+          // 이웃(전방/후방 1칸)에게도 같은 중첩 — 그 몫은 대상 기물을 모르니 안내만 한다
+          if (r.nb) B.conds.push({ c, gid, selfIn: true });
+        }
+      }
+    };
+    for (const c of onB) handle(c, true);
+    for (const c of onD) handle(c, false);
+    const order = ["acq", "deploy", "restIn", "restEnd", "refresh", "battle", "down", "sell"];
+    return order
+      .map((w) => ({ w, b: buckets.get(w) }))
+      .filter((x): x is { w: string; b: Bucket } =>
+        !!x.b && (x.b.sum.size > 0 || x.b.wait.size > 0 || x.b.top > 0 || x.b.conds.length > 0))
+      .map(({ w, b }) => ({
+        w,
+        sum: [...b.sum].sort((a, z) => z[1] - a[1]),
+        wait: [...b.wait].sort((a, z) => z[1] - a[1]),
+        top: b.top,
+        conds: b.conds,
+      }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [doc, chessById, slots, bench, boardState, goldMark]);
   const nBoard = kept(slots).length, nBench = kept(bench).length;
   const boardCap = slot9 ? MAX_BOARD_ITEM : MAX_BOARD;
   /** 고르기 모달에서 담기 — **누른 그 칸**에 놓는다. 그 칸이 이미 찼으면(있을 수 없지만)
@@ -1851,6 +1929,49 @@ export default function AutochessGuide({ doc, onShowOperator }: {
           </section>
 
           <section className="ac-board">
+            {gainRows.length > 0 && (
+              <>
+                <h3 className="sb-h3">{t("중첩 수급")}
+                  <span className="sb-dim ac-note">{t("기물 특질이 올려 주는 중첩 — 아이템·전략 효과는 계산에 없습니다")}</span></h3>
+                <div className="ac-gains">
+                  {gainRows.map((g) => (
+                    <div key={g.w} className="ac-gainrow">
+                      <div className="ac-gainw">
+                        <b>{t(GAIN_W_LABEL[g.w] ?? g.w)}</b>
+                        {GAIN_W_NOTE[g.w] && <i>{t(GAIN_W_NOTE[g.w])}</i>}
+                      </div>
+                      <div className="ac-gainbody">
+                        {(g.sum.length > 0 || g.top > 0 || g.wait.length > 0) && (
+                          <p className="ac-gainchips">
+                            {g.sum.map(([id, n]) => (
+                              <span key={id} className="ac-gainchip">{bondChip(id, true)}<em>+{n}</em></span>
+                            ))}
+                            {g.top > 0 && (
+                              <span className="ac-gainchip">
+                                <span className="ac-gaintop">{t("가장 많이 중첩된 맹약")}</span><em>+{g.top}</em>
+                              </span>
+                            )}
+                            {/* 대상 맹약이 아직 미발동 — 발동해야 세는 특질이라 합계 밖 */}
+                            {g.wait.map(([id, n]) => (
+                              <span key={`w${id}`} className="ac-gainchip off">
+                                {bondChip(id, true)}<em>+{n}</em><u>{t("미발동")}</u>
+                              </span>
+                            ))}
+                          </p>
+                        )}
+                        {g.conds.map((cd, i) => (
+                          <p key={i} className="ac-gaincond">
+                            <b>{cd.c.n}</b> — {acRich(doc.gar[cd.gid]?.d ?? "")}
+                            {cd.selfIn && <i> · {t("자신 몫은 위 합계에 포함, 이웃 몫은 대상에 따라 다릅니다")}</i>}
+                          </p>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
             <h3 className="sb-h3">{t("배치")} <em className="sb-count">{nBoard}/{boardCap}</em></h3>
             <div className="ac-slots">
               {Array.from({ length: MAX_BOARD_ITEM }, (_, i) => {
