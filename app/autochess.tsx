@@ -2060,7 +2060,34 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                                   { a: Object.keys(sel.e).length, b: sel.r.filter(Boolean).length })}</em>
                             </p>
                             {sel.skel === 1 && (
-                              <p className="sb-dim ac-mapnote">{t("이 라운드에 **어떤 적이** 오는지는 판마다 뽑히는 특훈 적 유형이 정합니다 — 게임 데이터의 라운드 정의에는 경로와 등장 타이밍만 들어 있어 적 이름은 싣지 않았습니다. 뽑히는 적은 '적' 탭에서 볼 수 있습니다.")}</p>
+                              <>
+                                <p className="sb-dim ac-mapnote">{t("일반 라운드는 판을 시작할 때 뽑힌 **특훈 적 유형**에서 적이 나옵니다 — 라운드마다 어느 적인지는 게임 데이터에 없어(라운드 정의엔 경로와 등장 타이밍만 있습니다) 아래 후보를 싣습니다.")}</p>
+                                {/* 후보를 **여기서 다 펼친다** — 다른 탭으로 보내지 않는다
+                                    (사용자 지시 2026-08-30 "거기에서 다 보여줘야지").
+                                    판마다 유형 하나가 뽑히고 그 안에서 나온다. */}
+                                <div className="ac-mappool">
+                                  {etypes.map(([k, v]) => {
+                                    const rows = doc.enemies.filter((e) => e.type === k);
+                                    if (!rows.length) return null;
+                                    return (
+                                      <div key={k} className="ac-mappoolgrp">
+                                        <h5 className="ac-mappoolhead" title={v.d}>
+                                          {v.n}<em className="sb-count">{rows.length}</em>
+                                        </h5>
+                                        <p className="ac-mapenemies">
+                                          {rows.map((e) => (
+                                            <button key={e.id} type="button" className="ac-bondchip sm"
+                                              onClick={() => setEnemy(e.id)}
+                                              title={t("{n}에 나옵니다", { n: e.half ? t("전반") : t("후반") })}>
+                                              <EnFace id={e.id} className="ac-mapenface" />{e.n}
+                                            </button>
+                                          ))}
+                                        </p>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </>
                             )}
                             {(sel.skel ? [] : Object.keys(sel.e)).map((k) => {
                               const rc = enemyRouteColor(Object.keys(sel.e), k);

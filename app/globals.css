@@ -20559,6 +20559,15 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
 .ac-mapenface { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; flex: none; }
 .ac-mapboard { margin-bottom: 14px; }
 .ac-mapnote { font-size: 11.5px; line-height: 1.55; margin: 2px 0 0; }
+/* 일반 라운드의 후보 적 — 유형별로 **이 자리에** 다 펼친다 (다른 탭으로 안 보낸다) */
+.ac-mappool { margin-top: 8px; display: flex; flex-direction: column; gap: 8px; }
+.ac-mappoolhead {
+  margin: 0 0 3px; font-size: 11px; font-weight: 800; color: var(--ink2);
+  display: flex; align-items: baseline; gap: 5px;
+}
+.ac-mappoolhead .sb-count { font-size: 10.5px; }
+.ac-mappool .ac-mapenemies { margin: 0; gap: 4px; }
+.ac-mappool .ac-bondchip { cursor: pointer; font-size: 10.5px; }
 /* 보스 카드의 라운드·단독/협동 — 이름 아랫줄로 (이름과 한 줄이면 삐져나간다) */
 .ac-wavemode { display: block; font-style: normal; font-size: 10px; font-weight: 700; color: var(--muted); }
 /* 전장 모달 안의 라운드 카드 줄 — 지형 바로 밑에 붙는다 */
