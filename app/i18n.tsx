@@ -2885,9 +2885,18 @@ const D: Record<string, Pair> = {
   "갱신 시": ["On refresh", "更新時"],
   "전투 맵": ["Battle maps", "戦闘マップ"],
   "이 리더의 전투 맵 보기": ["View this leader's battle map", "このリーダーの戦闘マップを見る"],
-  "위수 협의의 전장은 하나뿐입니다 — 지형은 라운드가 바뀌어도 그대로고, 달라지는 건 적의 종류와 그들이 오는 길입니다. 전장은 두 구획으로 나뉘어 일반 라운드와 리더 라운드가 각각 한쪽씩 씁니다. 카드를 누르면 타일 지도와 적 이동 경로가 열립니다.": [
-    "Stronghold Protocol has only one battlefield — the terrain never changes between rounds; what changes is which enemies come and the paths they take. The battlefield is split in two, one half for normal rounds and the other for leader rounds. Tap a card to open its tile map and enemy paths.",
-    "堅守協定の戦場はひとつだけです — 地形はラウンドが変わっても同じで、変わるのは敵の種類と進路です。戦場は2区画に分かれ、通常ラウンドとリーダーラウンドがそれぞれ片方を使います。カードを押すとタイル地図と敵の進路が開きます。"],
+  "판을 시작할 때 전장 하나가 뽑힙니다. 지형은 그 판 내내 그대로고, 라운드마다 달라지는 건 나오는 적입니다. 각 전장은 위·아래 두 판으로 되어 있습니다. 카드를 누르면 배치할 수 있는 칸과 적이 들어오는 지점을 볼 수 있습니다.": [
+    "One battlefield is drawn when a run starts. Its terrain stays the same for the whole run; what changes each round is which enemies show up. Every battlefield has an upper and a lower board. Tap a card to see the deployable tiles and where enemies come in.",
+    "盤の開始時に戦場がひとつ抽選されます。地形はその盤の間ずっと同じで、ラウンドごとに変わるのは出てくる敵です。各戦場は上下2つの盤で構成されています。カードを押すと配置できるマスと敵の侵入地点が見られます。"],
+  "전장": ["Battlefields", "戦場"],
+  "전장 {n}": ["Battlefield {n}", "戦場{n}"],
+  "판마다 이 중 하나가 뽑힙니다": ["one of these is drawn per run", "盤ごとにこの中から抽選されます"],
+  "모든 모드": ["All modes", "全モード"],
+  "위쪽 판": ["Upper board", "上の盤"],
+  "아래쪽 판": ["Lower board", "下の盤"],
+  "적이 어느 길로 오는지는 라운드마다 달라져 여기에 담지 않았습니다. 표시된 것은 지형 — 배치할 수 있는 칸, 적이 들어오는 지점, 지켜야 할 지점입니다.": [
+    "The paths enemies take change from round to round, so they are not shown here. What you see is the terrain — where you can deploy, where enemies come in, and what you defend.",
+    "敵の進路はラウンドごとに変わるためここには載せていません。表示しているのは地形 — 配置できるマス、敵の侵入地点、守るべき地点です。"],
   "입문 {n}R": ["Intro R{n}", "入門{n}R"],
   "일반 라운드 전장": ["Normal-round battlefield", "通常ラウンドの戦場"],
   "리더 라운드 전장": ["Leader-round battlefield", "リーダーラウンドの戦場"],
