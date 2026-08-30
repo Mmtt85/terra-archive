@@ -2878,11 +2878,13 @@ const D: Record<string, Pair> = {
   "특질 전체": ["All traits", "特性すべて"],
   "티어 전체": ["All tiers", "全等級"],
   "조건 지우기": ["Clear filters", "条件をクリア"],
-  "중첩 수급": ["Stack income", "重ね掛けの収入"],
-  "기물 특질이 올려 주는 중첩 — 아이템·전략 효과는 계산에 없습니다": [
-    "Stacks added by operator garrisons — item and tactic effects are not counted",
-    "オペレーター特性が増やす重ね掛け — アイテム・戦略の効果は含みません"],
+  "특질 수급": ["Garrison income", "特性の収入"],
+  "기물 특질이 주는 중첩·자금·아이템 — 아이템·전략 자체의 효과는 계산에 없습니다": [
+    "Stacks, funds and items granted by operator garrisons — effects of items and tactics themselves are not counted",
+    "オペレーター特性がもたらす重ね掛け・資金・アイテム — アイテム・戦略自体の効果は含みません"],
   "갱신 시": ["On refresh", "更新時"],
+  "자금": ["Funds", "資金"],
+  "무료 갱신": ["Free refresh", "無料更新"],
   "쓰러질 시": ["On defeat", "撃破された時"],
   "획득할 때 1회": ["once, on acquisition", "獲得時に1回"],
   "전투마다": ["every battle", "戦闘ごと"],

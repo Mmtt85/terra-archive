@@ -576,12 +576,7 @@ def stack_gains(kr_text, bond_id_by_kr_name):
     # '중첩 수를 세기만 하는'(every) 문장 — "N회 중첩할 때마다"만 있고 +를 안 올리면 대상 아님
     if "중첩 수 **+" not in kr_text and "중첩 수 획득" not in kr_text:
         return None
-    ws = []
-    for w, mk in GAIN_W_MARK:
-        if mk in kr_text and w not in ws:
-            ws.append(w)
-    if not ws:
-        ws = ["battle"]      # 시점 마커가 없는 전투 문장 (부여형 등)
+    ws = gain_timings(kr_text)   # 시점 마커가 없으면 battle (부여형 등)
     na = "맹약 활성화 불필요" in kr_text
     bn = "정비 구역에 있어도" in kr_text
     per = pb = nb = None
@@ -628,6 +623,68 @@ def stack_gains(kr_text, bond_id_by_kr_name):
                 e["pb"] = pb
             if nb:
                 e["nb"] = nb
+            out.append(e)
+    return out
+
+
+# ── 특질이 주는 자금·무료 갱신·아이템 — 구조화 (사용자 요청 2026-08-30 "중첩뿐만 아니라
+# 스와이어처럼 아이템이나 자금 같은 것도") ───────────────────────────────────────
+#   k = "gold" 자금 · "ref" 무료 갱신 · "item" 아이템(it = 장비 id) · "res" 조건부(설명문 표시)
+#   확률·랜덤·'또는'·'~할 경우'·같은 행 조건·오퍼레이터 획득(대상 유동)은 전부 조건부.
+# ⚠ 따옴표 이름을 통째로 힌트로 삼으면 안 된다 — "'휴식 기간 진입 시' 특질 보유"(프틸롭시스)
+#   같은 특질 부여·복제형이 자원으로 오분류됐다 (2026-08-30 실측 3건). 반드시 "N개 획득"까지.
+RES_HINT_RE = re.compile(r"자금 |무료 갱신|'[^']+' ?\d+개 획득|\d명 (?:랜덤 )?획득|랜덤으로|'획득 시' 특질 발동")
+RES_COND_RE = re.compile(r"확률|또는|랜덤|경우|같은 행|특질 발동")
+RES_GOLD_RE = re.compile(r"자금 \*{0,2}(\d+)\*{0,2} 추가 획득")
+RES_REF_RE = re.compile(r"(\d+)회 무료 갱신 획득|무료 갱신 (\d+)회 획득")
+RES_ITEM_RE = re.compile(r"'([^']+)' ?(\d+)개 획득")
+# 스와이어 디 엘리건트 위트(garrison_98) — 정비 구역 적용이 "[염국]/[투자자] 활성화 시"로
+# 조건부다. bna = 그 맹약 중 하나라도 발동 중이면 정비 구역에서도 센다.
+RES_BNA_RE = re.compile(r"\(((?:\[[^\]]+\][/·, ]*)+)활성화 시 정비 구역에 있어도")
+
+
+def gain_timings(kr_text):
+    ws = []
+    for w, mk in GAIN_W_MARK:
+        if mk in kr_text and w not in ws:
+            ws.append(w)
+    return ws or ["battle"]
+
+
+def res_gains(kr_text, bond_id_by_kr_name, equip_id_by_kr_name):
+    """KR 설명문 → 자원 수급 행 목록 (자원을 주는 특질이 아니면 None)."""
+    if "중첩 수" in kr_text or not RES_HINT_RE.search(kr_text):
+        return None
+    ws = gain_timings(kr_text)
+    rows = []
+    if not RES_COND_RE.search(kr_text):
+        m = RES_GOLD_RE.search(kr_text)
+        if m:
+            rows.append({"k": "gold", "n": int(m.group(1))})
+        for m in RES_REF_RE.finditer(kr_text):
+            rows.append({"k": "ref", "n": int(m.group(1) or m.group(2))})
+        for m in RES_ITEM_RE.finditer(kr_text):
+            iid = equip_id_by_kr_name.get(m.group(1))
+            if iid:
+                rows.append({"k": "item", "it": iid, "n": int(m.group(2))})
+            else:
+                rows = []
+                break
+    if not rows:
+        rows = [{"k": "res", "c": 1}]
+    bna = None
+    m = RES_BNA_RE.search(kr_text)
+    if m:
+        bna = [bond_id_by_kr_name[n] for n in re.findall(r"\[([^\]]+)\]", m.group(1)) if n in bond_id_by_kr_name]
+    bn = bool(not bna and "정비 구역에 있어도" in kr_text)
+    out = []
+    for w in ws:
+        for r in rows:
+            e = {"w": w, **r}
+            if bn:
+                e["bn"] = 1
+            if bna:
+                e["bna"] = bna
             out.append(e)
     return out
 
@@ -916,6 +973,12 @@ def build_locale(loc):
 
     # ── 기물 능력(garrison) — 참조된 것만 ──
     bond_id_by_kr_name = {b["name"]: bid for bid, b in BONDS.items()}
+    # KR 장비 이름 → 장비 id (자원 수급의 '맹약코인' 같은 따옴표 이름을 장비 카드로 잇는다)
+    equip_id_by_kr_name = {}
+    for _iid, _s in TRAPSHOP.items():
+        _eff = EFFECTS.get((TRAPS.get(_iid) or {}).get("effectId")) or {}
+        if _eff.get("effectName"):
+            equip_id_by_kr_name[_eff["effectName"]] = _iid
     gar_rows = {}
     for gid in gar_used:
         g = GARRISON.get(gid)
@@ -923,7 +986,8 @@ def build_locale(loc):
             continue
         kr_desc = rich(g["garrisonDesc"])
         tg, evb, bs = classify_gar(kr_desc, bond_id_by_kr_name)
-        gn = stack_gains(kr_desc, bond_id_by_kr_name)   # 항상 KR 원문 기준 — 로케일 무관 동일
+        gn = (stack_gains(kr_desc, bond_id_by_kr_name) or []) + \
+             (res_gains(kr_desc, bond_id_by_kr_name, equip_id_by_kr_name) or []) or None   # 항상 KR 원문 기준
         gar_rows[gid] = {
             "d": gar_desc(loc, gid, g),
             "t": loc_name(loc, "garrisonDataDict", gid, "eventTypeDesc", g.get("eventTypeDesc")),
@@ -948,10 +1012,15 @@ def build_locale(loc):
     if loc == "ko":
         det = sum(1 for v in gar_rows.values() if any(not r.get("c") for r in v.get("gn", [])))
         cond = sum(1 for v in gar_rows.values() if v.get("gn") and all(r.get("c") for r in v["gn"]))
-        print(f"  중첩 수급(gn): 확정 {det} · 조건부 {cond}")
+        res_det = sum(1 for v in gar_rows.values() for r in v.get("gn", []) if r.get("k") and not r.get("c"))
+        print(f"  중첩 수급(gn): 확정 {det} · 조건부 {cond} · 자원 확정 행 {res_det}")
         for k, v in gar_rows.items():
             for r in v.get("gn", []):
-                if not r.get("c") and (not r.get("n") or not r.get("to")):
+                if r.get("c"):
+                    continue
+                if r.get("k") == "item" and not r.get("it"):
+                    sys.exit(f"gn 검증 실패: {k} {r} — item 행에 it(장비 id)가 없다")
+                if not r.get("n") or (not r.get("k") and not r.get("to")):
                     sys.exit(f"gn 검증 실패: {k} {r} — 확정 행에 n/to 가 없다")
 
     # ── 물자관리소(보급센터) ──

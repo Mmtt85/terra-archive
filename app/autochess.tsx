@@ -75,7 +75,10 @@ export type AcBond = { id: string; n: string; nation: boolean; min: number; cond
  *  to = 맹약 id 목록 | own(자신 소속) | ownAct(자신의 활성) | top(최다 중첩) | benchAct(정비 각자의 활성) ·
  *  n = 수치 · na = 활성화 불필요 · bn = 정비 구역에서도 · per = bench/tiers 곱셈 · nb = 이웃(f/b)에도 */
 export type AcGain = { w: string; c?: 1; to?: string[] | "own" | "ownAct" | "top" | "benchAct";
-  n?: number; na?: 1; bn?: 1; per?: "bench" | "tiers"; pb?: string[]; nb?: "f" | "b" };
+  n?: number; na?: 1; bn?: 1; per?: "bench" | "tiers"; pb?: string[]; nb?: "f" | "b";
+  /** 자원 수급 (사용자 요청 2026-08-30) — gold 자금 · ref 무료 갱신 · item 아이템(it=장비 id) ·
+   *  res 조건부 자원. bna = 이 맹약 중 하나가 발동 중이면 정비 구역에서도 센다 (스와이어 엘위) */
+  k?: "gold" | "ref" | "item" | "res"; it?: string; bna?: string[] };
 export type AcGar = { d: string; t: string; ic: string; tg?: string[]; evb?: string[]; bs?: string[]; gn?: AcGain[] };
 export type AcChess = {
   id: string; gid?: string | null; op?: string | null; n: string; t: number; sort: number;
@@ -613,11 +616,12 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     const onB = kept(slots).map((x) => chessById.get(x.id)).filter((c): c is AcChess => !!c);
     const onD = kept(bench).map((x) => chessById.get(x.id)).filter((c): c is AcChess => !!c);
     type Cond = { c: AcChess; gid: string; selfIn?: boolean };
-    type Bucket = { sum: Map<string, number>; wait: Map<string, number>; top: number; conds: Cond[] };
+    type Bucket = { sum: Map<string, number>; wait: Map<string, number>; top: number; topWait: number;
+      conds: Cond[]; gold: number; ref: number; items: Map<string, number> };
     const buckets = new Map<string, Bucket>();
     const at = (w: string): Bucket => {
       let b = buckets.get(w);
-      if (!b) { b = { sum: new Map(), wait: new Map(), top: 0, conds: [] }; buckets.set(w, b); }
+      if (!b) { b = { sum: new Map(), wait: new Map(), top: 0, topWait: 0, conds: [], gold: 0, ref: 0, items: new Map() }; buckets.set(w, b); }
       return b;
     };
     const add = (m: Map<string, number>, id: string, n: number) => m.set(id, (m.get(id) ?? 0) + n);
@@ -627,13 +631,22 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     const handle = (c: AcChess, onBoard: boolean) => {
       for (const gid of (isGold(c.id) ? c.garG : c.gar)) {
         for (const r of doc.gar[gid]?.gn ?? []) {
-          if (!onBoard && !r.bn && r.w !== "acq") continue;
+          // 정비 구역: 획득·판매 시점(구역 무관)과 '정비 구역에서도' 표기(bn),
+          // 맹약 발동을 조건으로 정비 구역까지 미치는 것(bna — 스와이어 엘위)만 센다
+          if (!onBoard && !r.bn && r.w !== "acq" && r.w !== "sell"
+            && !(r.bna && r.bna.some((id) => activeB.has(id)))) continue;
           const B = at(r.w);
           if (r.c) { B.conds.push({ c, gid }); continue; }
+          if (r.k === "gold") { B.gold += r.n ?? 0; continue; }
+          if (r.k === "ref") { B.ref += r.n ?? 0; continue; }
+          if (r.k === "item") {
+            if (r.it) B.items.set(r.it, (B.items.get(r.it) ?? 0) + (r.n ?? 0));
+            continue;
+          }
           const mult = r.per === "bench" ? onD.length : r.per === "tiers" ? tiersOf(r.pb ?? []) : 1;
           const n = (r.n ?? 0) * mult;
           if (!n) continue;
-          if (r.to === "top") { if (activeB.size) B.top += n; continue; }
+          if (r.to === "top") { if (activeB.size) B.top += n; else B.topWait += n; continue; }
           if (r.to === "benchAct") {
             for (const bc of onD) for (const b of bc.bonds) if (activeB.has(b)) add(B.sum, b, r.n ?? 0);
             continue;
@@ -654,13 +667,18 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     return order
       .map((w) => ({ w, b: buckets.get(w) }))
       .filter((x): x is { w: string; b: Bucket } =>
-        !!x.b && (x.b.sum.size > 0 || x.b.wait.size > 0 || x.b.top > 0 || x.b.conds.length > 0))
+        !!x.b && (x.b.sum.size > 0 || x.b.wait.size > 0 || x.b.top > 0 || x.b.topWait > 0
+          || x.b.conds.length > 0 || x.b.gold > 0 || x.b.ref > 0 || x.b.items.size > 0))
       .map(({ w, b }) => ({
         w,
         sum: [...b.sum].sort((a, z) => z[1] - a[1]),
         wait: [...b.wait].sort((a, z) => z[1] - a[1]),
         top: b.top,
+        topWait: b.topWait,
         conds: b.conds,
+        gold: b.gold,
+        ref: b.ref,
+        items: [...b.items],
       }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [doc, chessById, slots, bench, boardState, goldMark]);
@@ -1930,8 +1948,8 @@ export default function AutochessGuide({ doc, onShowOperator }: {
           <section className="ac-board">
             {gainRows.length > 0 && (
               <>
-                <h3 className="sb-h3">{t("중첩 수급")}
-                  <span className="sb-dim ac-note">{t("기물 특질이 올려 주는 중첩 — 아이템·전략 효과는 계산에 없습니다")}</span></h3>
+                <h3 className="sb-h3">{t("특질 수급")}
+                  <span className="sb-dim ac-note">{t("기물 특질이 주는 중첩·자금·아이템 — 아이템·전략 자체의 효과는 계산에 없습니다")}</span></h3>
                 <div className="ac-gains">
                   {gainRows.map((g) => (
                     <div key={g.w} className="ac-gainrow">
@@ -1940,14 +1958,43 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                         {GAIN_W_NOTE[g.w] && <i>{t(GAIN_W_NOTE[g.w])}</i>}
                       </div>
                       <div className="ac-gainbody">
-                        {(g.sum.length > 0 || g.top > 0 || g.wait.length > 0) && (
+                        {(g.sum.length > 0 || g.top > 0 || g.topWait > 0 || g.wait.length > 0
+                          || g.gold > 0 || g.ref > 0 || g.items.length > 0) && (
                           <p className="ac-gainchips">
                             {g.sum.map(([id, n]) => (
                               <span key={id} className="ac-gainchip">{bondChip(id, true)}<em>+{n}</em></span>
                             ))}
+                            {g.gold > 0 && (
+                              <span className="ac-gainchip">
+                                <span className="ac-gainres"><img src={garIcon("gold")} alt="" aria-hidden loading="lazy" onError={hideErr} />{t("자금")}</span><em>+{g.gold}</em>
+                              </span>
+                            )}
+                            {g.ref > 0 && (
+                              <span className="ac-gainchip"><span className="ac-gaintop">{t("무료 갱신")}</span><em>+{g.ref}</em></span>
+                            )}
+                            {g.items.map(([id, n]) => {
+                              const e = doc.equips.find((x) => x.id === id);
+                              if (!e) return null;
+                              return (
+                                <span key={id} className="ac-gainchip">
+                                  <button type="button" className="ac-bondchip sm" onClick={() => setEquip(e)}>
+                                    <img src={equipIcon(e.trap)} alt="" aria-hidden loading="lazy" onError={hideErr} />
+                                    {e.n}
+                                  </button>
+                                  <em>×{n}</em>
+                                </span>
+                              );
+                            })}
                             {g.top > 0 && (
                               <span className="ac-gainchip">
                                 <span className="ac-gaintop">{t("가장 많이 중첩된 맹약")}</span><em>+{g.top}</em>
+                              </span>
+                            )}
+                            {/* '이미 활성화된' 맹약이 아직 없다 — 숨기면 안 세는 걸로 오해받는다
+                                (포덴코·퍼퓨머 정비구역, 사용자 지적 2026-08-30) */}
+                            {g.topWait > 0 && (
+                              <span className="ac-gainchip off">
+                                <span className="ac-gaintop">{t("가장 많이 중첩된 맹약")}</span><em>+{g.topWait}</em><u>{t("미발동")}</u>
                               </span>
                             )}
                             {/* 대상 맹약이 아직 미발동 — 발동해야 세는 특질이라 합계 밖 */}
