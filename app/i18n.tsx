@@ -2895,9 +2895,9 @@ const D: Record<string, Pair> = {
   "전반": ["first half", "前半"],
   "후반": ["second half", "後半"],
   "오는 길 {n}갈래": ["{n} paths in", "進路{n}本"],
-  "일반 라운드는 판을 시작할 때 뽑힌 **특훈 적 유형**에서 적이 나옵니다 — 라운드마다 어느 적인지는 게임 데이터에 없어(라운드 정의엔 경로와 등장 타이밍만 있습니다) 아래 후보를 싣습니다.": [
-    "Normal rounds draw their enemies from the **Tactical Training enemy type** rolled at the start of the run. Which one shows up in a given round is not in the game data (round definitions hold only paths and spawn timing), so the candidates are listed below.",
-    "通常ラウンドの敵は、盤の開始時に抽選される**特訓の敵タイプ**から出ます。どのラウンドにどれが出るかはゲームデータにないため(ラウンド定義には進路と出現タイミングしかありません)、下に候補を載せます。"],
+  "일반 라운드는 판을 시작할 때 뽑힌 **특훈 적 유형**에서 적이 나옵니다 — 라운드마다 어느 적인지는 게임 데이터에 없어(라운드 정의엔 경로와 등장 타이밍만 있습니다) 적 이름은 싣지 않았습니다. 여기서 확실한 것은 **오는 길**입니다.": [
+    "Normal rounds draw their enemies from the **Tactical Training enemy type** rolled at the start of the run. Which one shows up in a given round is not in the game data (round definitions hold only paths and spawn timing), so no enemy names are listed. What is certain here is **the paths**.",
+    "通常ラウンドの敵は、盤の開始時に抽選される**特訓の敵タイプ**から出ます。どのラウンドにどれが出るかはゲームデータにないため(ラウンド定義には進路と出現タイミングしかありません)、敵の名前は載せていません。ここで確かなのは**進路**です。"],
   "카드를 누르면 그 적의 경로만 남기고, 섬네일을 누르면 적 상세가 열립니다.": [
     "Tap a card to isolate that enemy's paths; tap its portrait to open the enemy page.",
     "カードを押すとその敵の進路だけを残し、サムネイルを押すと敵の詳細が開きます。"],

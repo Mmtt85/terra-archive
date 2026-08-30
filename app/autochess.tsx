@@ -2062,31 +2062,11 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                             {sel.skel === 1 && (
                               <>
                                 <p className="sb-dim ac-mapnote">{t("일반 라운드는 판을 시작할 때 뽑힌 **특훈 적 유형**에서 적이 나옵니다 — 라운드마다 어느 적인지는 게임 데이터에 없어(라운드 정의엔 경로와 등장 타이밍만 있습니다) 아래 후보를 싣습니다.")}</p>
-                                {/* 후보를 **여기서 다 펼친다** — 다른 탭으로 보내지 않는다
-                                    (사용자 지시 2026-08-30 "거기에서 다 보여줘야지").
-                                    판마다 유형 하나가 뽑히고 그 안에서 나온다. */}
-                                <div className="ac-mappool">
-                                  {etypes.map(([k, v]) => {
-                                    const rows = doc.enemies.filter((e) => e.type === k);
-                                    if (!rows.length) return null;
-                                    return (
-                                      <div key={k} className="ac-mappoolgrp">
-                                        <h5 className="ac-mappoolhead" title={v.d}>
-                                          {v.n}<em className="sb-count">{rows.length}</em>
-                                        </h5>
-                                        <p className="ac-mapenemies">
-                                          {rows.map((e) => (
-                                            <button key={e.id} type="button" className="ac-bondchip sm"
-                                              onClick={() => setEnemy(e.id)}
-                                              title={t("{n}에 나옵니다", { n: e.half ? t("전반") : t("후반") })}>
-                                              <EnFace id={e.id} className="ac-mapenface" />{e.n}
-                                            </button>
-                                          ))}
-                                        </p>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
+                                {/* ⚠ 후보 67종을 칩으로 다 깔아 봤다가 걷어냈다 (사용자 지적
+                                    2026-08-30 "니가 봐도 이건 좀 아닌 것 같지 않냐") — 유형별로
+                                    나눠도 라운드마다 똑같은 벽이라 읽을 게 없다. 후보 목록의
+                                    정본은 '적' 탭이고, 여기서는 무엇이 정해져 있고 무엇이
+                                    안 정해져 있는지만 밝힌다. */}
                               </>
                             )}
                             {(sel.skel ? [] : Object.keys(sel.e)).map((k) => {
