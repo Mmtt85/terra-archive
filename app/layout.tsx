@@ -81,24 +81,56 @@ export default function RootLayout({
                  **플래그가 섰을 때만** 그렇게 본다.
             ② modulepreload는 LINK 태그라 tagName==='SCRIPT' 검사에 안 걸렸다. → LINK 추가.
             재시도를 다 쓰면 흰 화면 대신 안내와 '다시 시도' 버튼을 띄운다.
-            성공적으로 뜬 뒤 5초가 지나면 카운터를 지워 다음 배포 때 다시 0부터 센다. */}
+
+            ⚠ 2026-08-31 3차 수정 (제보 01dbfebd — /en/rogue/is5, UA:
+               "It would be great if site didn't refresh on its own every 5 seconds").
+               물러섬(W)이 통째로 무력화되는 구멍이 둘 있었다. 둘 다 결과가 같다 —
+               **n이 영원히 0이라 물러섬도 8회 상한도 안내 패널도 없는 무한 새로고침.**
+               ① **정상 로드 5초 뒤 카운터를 지우던 줄**. 청크가 로드 5초 '뒤에' 실패하면
+                  (느린 회선에서 rogue5.en.json 940KB·rogue-routes.json 1.3MB가 늘어지다
+                  죽는 경우 — 제보자가 있던 화면이 정확히 그것) 카운터는 이미 지워진 뒤였다.
+                  → 지우지 않는다. 대신 **이 페이지가 Q(60초) 넘게 멀쩡히 살아 있다가
+                    터졌을 때만** 새 사고로 보고 n을 0으로 되돌린다(페이지당 1회).
+                    배포 사고는 몇 초 간격으로 연달아 터지므로 물러섬이 그대로 살고,
+                    한참 뒤의 별개 사고(재빌드 등)는 종전처럼 즉시 복구된다.
+                  ⚠ 기준을 '마지막 새로고침에서 Q 경과'로 잡으면 안 된다 — W의 60초를
+                    기다리는 것 자체가 그 조건을 만족시켜 n이 되감긴다.
+               ② sessionStorage가 막힌 브라우저(프라이버시 설정·차단 확장)에선 카운터가
+                  아예 저장되지 않아 역시 항상 n=0이었다.
+                  → 저장이 실패하면 window.name으로 물러선다(같은 탭의 새로고침을 넘어
+                    살아남는다). 우리 접두사가 붙었거나 비어 있을 때만 건드린다.
+               ③ 세션 절대 상한 CAP회 — 어떤 경로로도 그 이상은 자동 새로고침하지 않는다.
+                  무한히 도는 가드는 가드가 없느니만 못하다.
+               ④ 안내 패널이 한국어 고정이라 /en·/ja 방문자는 읽지 못했다(이 제보자가 /en).
+                  → 경로 접두사로 3개 언어. 포기한 뒤엔 "곧 다시 불러옵니다"가 거짓말이
+                    되므로 문구도 바꾼다. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){var K='ta-chunk-reload',W=[0,3000,10000,30000,30000,60000,60000,60000],hit=0,shown=0,timer=0;
+            __html: `(function(){var K='ta-chunk-reload',P='ta-chunk-reload:',W=[0,3000,10000,30000,30000,60000,60000,60000],Q=60000,CAP=20,T0=Date.now(),first=1,hit=0,box=null,timer=0;
 function isChunk(m){return /dynamically imported module|Importing a module script failed|error loading dynamically imported|Failed to fetch dynamically/i.test(m);}
-function panel(){if(shown)return;shown=1;var d=document.createElement('div');d.setAttribute('style','position:fixed;inset:auto 0 0 0;margin:0 auto 18px;width:max-content;max-width:92vw;z-index:2147483647;padding:12px 16px;border-radius:12px;background:#171b1d;color:#e7eaeb;font:600 13px/1.5 system-ui,-apple-system,sans-serif;box-shadow:0 8px 32px rgba(0,0,0,.45)');d.textContent='새 버전을 배포하는 중이라 일부 파일을 불러오지 못했습니다. 곧 자동으로 다시 불러옵니다. ';var b=document.createElement('button');b.textContent='지금 다시 시도';b.setAttribute('style','margin-left:8px;padding:5px 12px;border:0;border-radius:8px;background:#4a9eff;color:#fff;font:600 13px system-ui;cursor:pointer');b.onclick=function(){try{sessionStorage.removeItem(K);}catch(e){}location.reload();};d.appendChild(b);(document.body||document.documentElement).appendChild(d);}
-function bust(){var n=0,v={};try{v=JSON.parse(sessionStorage.getItem(K)||'{}');n=v.n||0;}catch(e){}
-if(n>=W.length){panel();return;}
-var wait=W[n]-(Date.now()-(v.at||0));
-if(wait>0){if(n>=2)panel();if(!timer)timer=setTimeout(function(){timer=0;bust();},wait+50);return;}
-try{sessionStorage.setItem(K,JSON.stringify({n:n+1,at:Date.now()}));}catch(e){}
+function rd(){try{var s=sessionStorage.getItem(K);if(s)return JSON.parse(s);}catch(e){}
+try{var w=window.name||'';if(w.slice(0,P.length)===P)return JSON.parse(w.slice(P.length));}catch(e){}
+return {};}
+function wr(v){var s=JSON.stringify(v);try{sessionStorage.setItem(K,s);return;}catch(e){}
+try{var w=window.name||'';if(!w||w.slice(0,P.length)===P)window.name=P+s;}catch(e){}}
+function say(fin){var p=location.pathname,l=p==='/en'||p.slice(0,4)==='/en/'?'en':p==='/ja'||p.slice(0,4)==='/ja/'?'ja':'ko';
+var T={ko:['새 버전을 배포하는 중이라 일부 파일을 불러오지 못했습니다. 곧 자동으로 다시 불러옵니다. ','일부 파일을 계속 불러오지 못해 자동 새로고침을 멈췄습니다. 잠시 후 다시 시도해 주세요. ','지금 다시 시도'],en:['Some files could not be loaded while a new version is being deployed. Reloading shortly. ','Some files still fail to load, so automatic reloading has stopped. Please try again in a moment. ','Retry now'],ja:['新しいバージョンの配信中のため、一部のファイルを読み込めませんでした。まもなく自動で読み込み直します。 ','一部のファイルを読み込めない状態が続くため、自動再読み込みを停止しました。しばらくしてからお試しください。 ','今すぐ再試行']};
+var a=T[l]||T.ko;return [fin?a[1]:a[0],a[2]];}
+function panel(fin){var s=say(fin);
+if(box){if(fin)box.firstChild.nodeValue=s[0];return;}
+var d=document.createElement('div');d.setAttribute('style','position:fixed;inset:auto 0 0 0;margin:0 auto 18px;width:max-content;max-width:92vw;z-index:2147483647;padding:12px 16px;border-radius:12px;background:#171b1d;color:#e7eaeb;font:600 13px/1.5 system-ui,-apple-system,sans-serif;box-shadow:0 8px 32px rgba(0,0,0,.45)');d.textContent=s[0];var b=document.createElement('button');b.textContent=s[1];b.setAttribute('style','margin-left:8px;padding:5px 12px;border:0;border-radius:8px;background:#4a9eff;color:#fff;font:600 13px system-ui;cursor:pointer');b.onclick=function(){location.reload();};d.appendChild(b);(document.body||document.documentElement).appendChild(d);box=d;}
+function bust(){var v=rd(),n=v.n||0,at=v.at||0,tot=v.t||0;
+if(first){first=0;if(Date.now()-T0>Q)n=0;}
+if(tot>=CAP||n>=W.length){panel(1);return;}
+var wait=W[n]-(Date.now()-at);
+if(wait>0){if(n>=2)panel(0);if(!timer)timer=setTimeout(function(){timer=0;bust();},wait+50);return;}
+wr({n:n+1,at:Date.now(),t:tot+1});
 location.reload();}
 window.addEventListener('vite:preloadError',function(e){e.preventDefault();hit=1;bust();});
 window.addEventListener('unhandledrejection',function(e){var m=''+((e&&e.reason&&(e.reason.message||e.reason))||'');if(isChunk(m)){hit=1;bust();}});
 window.addEventListener('error',function(e){var t=e&&e.target;
 if(t&&t!==window&&(t.tagName==='SCRIPT'||t.tagName==='LINK')){var u=t.src||t.href||'';if(u.indexOf('/assets/')>-1){hit=1;bust();}return;}
-var m=''+((e&&e.message)||'');if(isChunk(m)||(hit&&/reading '?default'?|of undefined|of null/i.test(m)))bust();},true);
-window.addEventListener('load',function(){setTimeout(function(){if(!hit){try{sessionStorage.removeItem(K);}catch(e){}}},5000);});})();`,
+var m=''+((e&&e.message)||'');if(isChunk(m)||(hit&&/reading '?default'?|of undefined|of null/i.test(m)))bust();},true);})();`,
           }}
         />
         {/* 언어 자동 전환 (사용자 요청 2026-08-16 — 트위터로 유입된 일본 방문자가 한국어
