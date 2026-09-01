@@ -348,6 +348,38 @@ function Lines({ text, className, render = rich }:
   return <>{rows.map((r, i) => <p key={i} className={className}>{render(r)}</p>)}</>;
 }
 
+// ── 오퍼 목록 필터 한 벌 ────────────────────────────────────────────────────
+// 오퍼레이터 탭과 덱편성 시뮬레이터의 담기 모달이 **각자 하나씩** 든다.
+// ⚠ 종전엔 filterBar(JSX 값) 하나를 두 자리에 그려서 상태를 통째로 공유했다 — 모달에서
+//   조건을 걸면 뒤의 오퍼레이터 탭까지 같이 걸렸고, 비제어 입력의 ref(useSearchInput)도
+//   두 <input>이 나눠 가져 '×'가 엉뚱한 칸을 지웠다 (사용자 지적 2026-09-01).
+//   딥링크(#op?bn=…)에 실리는 것은 **탭 쪽만** — 모달 필터는 URL에 남기지 않는다.
+function useAcFilters() {
+  const { term, clear, set: setTerm, inputRef, inputProps } = useSearchInput();
+  const [tier, setTier] = useState(0);                 // 0 = 전체
+  // 맹약 필터 2축 — 진영·특성 하나씩 (옛 시뮬레이터의 선택 축을 그대로 필터로,
+  // 사용자 확정 2026-08-23). 하나라도 고르면 오퍼 목록이 티어 섹션 대신 소속 그룹으로 갈린다.
+  const [bondN, setBondN] = useState("");
+  const [bondT, setBondT] = useState("");
+  // 특질 필터 — "" | 카테고리 코드 | "every:<맹약 id>" (특정 맹약을 세는 능력만)
+  const [gar, setGar] = useState("");
+  // 직군·세부직군 필터 (사용자 요청 2026-08-23)
+  const [job, setJob] = useState("");
+  const [sub, setSub] = useState("");
+  /** 걸린 조건을 한 번에 푼다 (사용자 요청 2026-08-29) */
+  const reset = () => {
+    clear(false); setBondN(""); setBondT(""); setGar(""); setTier(0); setJob(""); setSub("");
+  };
+  return {
+    term, setTerm, clear, inputRef, inputProps,
+    tier, setTier, bondN, setBondN, bondT, setBondT, gar, setGar, job, setJob, sub, setSub,
+    any: Boolean(term || bondN || bondT || gar || tier || job || sub), reset,
+  };
+}
+type AcFilters = ReturnType<typeof useAcFilters>;
+/** 드롭다운 옆 숫자 — 필터 한 벌마다 따로 센다 (facetCount) */
+type AcFacets = { nation: Map<string, number>; trait: Map<string, number>; gar: Map<string, number> };
+
 export default function AutochessGuide({ doc, onShowOperator }: {
   doc: AutochessDoc;
   /** 백과사전 오퍼 상세 모달 열기 — 기물 상세에서 특질·스킬·모듈 전문을 볼 때 쓴다 */
@@ -413,18 +445,15 @@ export default function AutochessGuide({ doc, onShowOperator }: {
   const [equip, setEquip] = useState<AcEquip | null>(null);
   const [band, setBand] = useState<AcBand | null>(null);
   const [enemy, setEnemy] = useState<string | null>(null);   // 적 id (딸린 적·연계 소환도 열 수 있어 id로 든다)
-  const [tier, setTier] = useState(0);                 // 0 = 전체
-  // 맹약 필터 2축 — 진영·특성 하나씩 (옛 시뮬레이터의 선택 축을 그대로 필터로,
-  // 사용자 확정 2026-08-23). 하나라도 고르면 오퍼 목록이 티어 섹션 대신 소속 그룹으로 갈린다.
-  const [bondN, setBondN] = useState("");
-  const [bondT, setBondT] = useState("");
-  // 특질 필터 — "" | 카테고리 코드 | "every:<맹약 id>" (특정 맹약을 세는 능력만)
-  const [garFilter, setGarFilter] = useState("");
-  // 직군·세부직군 필터 (사용자 요청 2026-08-23)
-  const [jobFilter, setJobFilter] = useState("");
-  const [subFilter, setSubFilter] = useState("");
   const [shopMode, setShopMode] = useState("mode_single_normal");
-  const { term, clear, set: setTerm, inputRef, inputProps } = useSearchInput();
+  // 필터 두 벌 — 오퍼레이터 탭(tabF)과 담기 모달(pickF)은 서로 안 건드린다 (useAcFilters 주석).
+  const tabF = useAcFilters();
+  const pickF = useAcFilters();
+  // 아래 코드·딥링크가 그대로 읽는 **탭 쪽** 별칭 (모달은 언제나 pickF를 명시해 쓴다)
+  const { term, clear, inputRef, tier, bondN, bondT } = tabF;
+  const { setTerm, setTier, setBondN, setBondT } = tabF;
+  const { gar: garFilter, job: jobFilter, sub: subFilter } = tabF;
+  const { setGar: setGarFilter, setJob: setJobFilter, setSub: setSubFilter } = tabF;
 
   // ── 딥링크 (필터: 사용자 요청 2026-08-23 · 모달: 2026-08-24) ─────────────────
   // #<뷰>[/<게임 정보 탭>][?bn=&bt=&t=&g=&job=&sub=&q=&m=<종류>~<id>]
@@ -581,6 +610,14 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     if (el && el.value !== term) el.value = term;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [term, view]);
+  // 담기 모달의 검색칸도 같은 처지다 — 모달은 닫을 때 통째로 언마운트되므로, 다시 열면
+  // 필터는 살아 있는데(pickF.term) 칸만 비어 보인다 (2026-09-01 실측, 티어는 멀쩡한데
+  // 검색어만 안 맞아 더 헷갈린다). 열릴 때마다 되써 준다.
+  useEffect(() => {
+    const el = pickF.inputRef.current;
+    if (el && el.value !== pickF.term) el.value = pickF.term;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pickF.term, picking]);
 
   const chessById = useMemo(() => {
     const m = new Map<string, AcChess>();
@@ -869,63 +906,74 @@ export default function AutochessGuide({ doc, onShowOperator }: {
   };
 
   const q = normSearch(term);
-  // 오퍼 필터 풀 — 맹약은 여기서 거르지 않는다. 맹약을 고르면 아래 bondGroups가
-  // 이 풀을 '두 맹약 모두 / 진영 / 특성 소속'으로 갈라 그 자체가 맹약 필터가 된다.
-  // ⚠ 특질을 거르기 **전** 단계를 따로 둔다 — 드롭다운 옆 숫자는 자기 축을 빼고 세야 해서
-  // (아래 facetCount) 특질 필터가 걸리지 않은 풀이 필요하다.
-  const rowsNoGar = useMemo(() => doc.chess.filter((c) => {
-    // 자유 선택 슬롯 4칸은 오퍼레이터가 아니라 빈 칸이다 — 목록 맨 아래 후보 명단이
-    // 그 자리를 대신하므로 카드에서는 뺀다 (2026-08-22)
-    if (c.kind === "DIY") return false;
-    if (tier && c.t !== tier) return false;
-    if (jobFilter && c.job !== jobFilter) return false;
-    if (subFilter && c.sub !== subFilter) return false;
-    if (!q) return true;
-    const hay = [c.n, c.job ?? "", c.sub ?? "", ...(c.sks?.map((x) => x.n) ?? []), ...(c.mods?.map((x) => x.n) ?? []),
-      ...c.bonds.map(nameOfBond),
-      ...[...c.gar, ...c.garG].map((g) => doc.gar[g]?.d ?? "")].join(" ");
-    return normSearch(hay).includes(q);
-  }), [doc, tier, jobFilter, subFilter, q]);   // eslint-disable-line react-hooks/exhaustive-deps
-  const chessRows = useMemo(
-    () => rowsNoGar.filter((c) => matchGarBy(c, garFilter)),
-    [rowsNoGar, garFilter]);   // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ── 드롭다운 옆 숫자 (사용자 지시 2026-08-29) ─────────────────────────────
-  // "염국 누르면 특성 맹약에서 기민이 11명이 아니라 1명이라고 나오게" — 숫자는 전체 인원이
-  // 아니라 **지금 걸린 다른 필터를 반영한 인원**이다 (염국 10명 ∩ 기민 11명 = 1명).
-  // ⚠ 자기 축은 빼고 센다 — 그래야 같은 축의 다른 값으로 갈아탈 수 있다 (특성 맹약 칸의
-  // 숫자에 지금 고른 특성 맹약을 또 걸면 고른 것만 남고 나머지가 전부 0이 된다).
-  // 고르기 모달에서는 이미 담은 기물도 뺀다 — 그 목록이 그렇게 나오므로 숫자도 맞춰야 한다.
-  const facetCount = useMemo(() => {
-    const base = picking ? rowsNoGar.filter((c) => !placed.has(c.id)) : rowsNoGar;
+  // ── 목록·숫자 도출 ───────────────────────────────────────────────────────
+  // 필터 한 벌(f)을 받아 그 벌의 결과를 낸다 — 탭과 담기 모달이 **각자 돌린다**
+  // (기물 266장이라 두 벌을 다 세도 비용은 없다).
+  //
+  // rowsNoGar: 맹약은 여기서 거르지 않는다. 맹약을 고르면 아래 bondGroups가 이 풀을
+  //   '두 맹약 모두 / 진영 / 특성 소속'으로 갈라 그 자체가 맹약 필터가 된다.
+  //   ⚠ 특질을 거르기 **전** 단계를 따로 둔다 — 드롭다운 옆 숫자는 자기 축을 빼고 세야 해서
+  //   (facets) 특질 필터가 걸리지 않은 풀이 필요하다.
+  //
+  // facets — 드롭다운 옆 숫자 (사용자 지시 2026-08-29): "염국 누르면 특성 맹약에서 기민이
+  //   11명이 아니라 1명이라고 나오게". 전체 인원이 아니라 **지금 걸린 다른 필터를 반영한
+  //   인원**이다 (염국 10명 ∩ 기민 11명 = 1명).
+  //   ⚠ 자기 축은 빼고 센다 — 그래야 같은 축의 다른 값으로 갈아탈 수 있다 (특성 맹약 칸의
+  //   숫자에 지금 고른 특성 맹약을 또 걸면 고른 것만 남고 나머지가 전부 0이 된다).
+  //   고르기 모달에서는 이미 담은 기물도 뺀다 — 그 목록이 그렇게 나오므로 숫자도 맞춰야 한다.
+  const derive = (f: AcFilters, forPick: boolean) => {
+    const fq = normSearch(f.term);
+    const rowsNoGar = doc.chess.filter((c) => {
+      // 자유 선택 슬롯 4칸은 오퍼레이터가 아니라 빈 칸이다 — 목록 맨 아래 후보 명단이
+      // 그 자리를 대신하므로 카드에서는 뺀다 (2026-08-22)
+      if (c.kind === "DIY") return false;
+      if (f.tier && c.t !== f.tier) return false;
+      if (f.job && c.job !== f.job) return false;
+      if (f.sub && c.sub !== f.sub) return false;
+      if (!fq) return true;
+      const hay = [c.n, c.job ?? "", c.sub ?? "", ...(c.sks?.map((x) => x.n) ?? []), ...(c.mods?.map((x) => x.n) ?? []),
+        ...c.bonds.map(nameOfBond),
+        ...[...c.gar, ...c.garG].map((g) => doc.gar[g]?.d ?? "")].join(" ");
+      return normSearch(hay).includes(fq);
+    });
+    const chessRows = rowsNoGar.filter((c) => matchGarBy(c, f.gar));
+    const base = forPick ? rowsNoGar.filter((c) => !placed.has(c.id)) : rowsNoGar;
     const nation = new Map<string, number>(), trait = new Map<string, number>(), gar = new Map<string, number>();
     const bump = (m: Map<string, number>, k: string) => m.set(k, (m.get(k) ?? 0) + 1);
     for (const c of base) {
-      const okN = !bondN || c.bonds.includes(bondN);
-      const okT = !bondT || c.bonds.includes(bondT);
-      if (matchGarBy(c, garFilter)) {
+      const okN = !f.bondN || c.bonds.includes(f.bondN);
+      const okT = !f.bondT || c.bonds.includes(f.bondT);
+      if (matchGarBy(c, f.gar)) {
         for (const id of c.bonds) {
           if (bondById.get(id)?.nation) { if (okT) bump(nation, id); }   // 진영 칸엔 특성 선택만 건다
           else if (okN) bump(trait, id);                                 // 특성 칸엔 진영 선택만 건다
         }
       }
-      if (okN && okT) {          // 특질 칸엔 맹약 2축을 다 건다 (자기 축은 garFilter 라 뺀다)
+      if (okN && okT) {          // 특질 칸엔 맹약 2축을 다 건다 (자기 축은 f.gar 라 뺀다)
         bump(gar, "__all");
         const e = garTagsOf.get(c.id);
         if (e) { for (const tg of e.tags) bump(gar, tg); for (const b of e.evb) bump(gar, `every:${b}`); }
       }
     }
-    return { nation, trait, gar };
-  }, [rowsNoGar, picking, placed, bondN, bondT, garFilter, bondById, garTagsOf]);   // eslint-disable-line react-hooks/exhaustive-deps
+    return { rowsNoGar, chessRows, facets: { nation, trait, gar } as AcFacets };
+  };
+  const tabD = useMemo(() => derive(tabF, false),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [doc, q, tier, jobFilter, subFilter, garFilter, bondN, bondT, bondById, garTagsOf]);
+  const pickD = useMemo(() => derive(pickF, true),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [doc, pickF.term, pickF.tier, pickF.job, pickF.sub, pickF.gar, pickF.bondN, pickF.bondT,
+      placed, bondById, garTagsOf]);
+  const chessRows = tabD.chessRows;
 
   /** 고르기 모달의 목록 — 이미 담은 기물은 빼고, **맹약 필터도 여기서 건다.**
    *  chessRows 는 진영·특성 맹약을 안 본다 (오퍼레이터 탭은 맹약을 고르면 bondGroups 로
    *  갈라지기 때문). 모달은 카드 한 벌만 쓰므로 여기서 직접 걸러야 필터가 먹는다
    *  (사용자 제보 2026-08-29 "진영맹약 특성맹약 어쩌고 바꿔도 밑에 오퍼들이 필터링이 안 됨"). */
-  const pickRows = useMemo(() => chessRows.filter((c) =>
+  const pickRows = useMemo(() => pickD.chessRows.filter((c) =>
     !placed.has(c.id)
-    && (!bondN || c.bonds.includes(bondN))
-    && (!bondT || c.bonds.includes(bondT))), [chessRows, placed, bondN, bondT]);
+    && (!pickF.bondN || c.bonds.includes(pickF.bondN))
+    && (!pickF.bondT || c.bonds.includes(pickF.bondT))), [pickD, placed, pickF.bondN, pickF.bondT]);
 
   // 맹약을 골랐을 때의 소속 그룹 (옛 시뮬레이터 로직 그대로) — 기여자 먼저, 티어순
   const bondGroups = useMemo(() => {
@@ -1136,7 +1184,10 @@ export default function AutochessGuide({ doc, onShowOperator }: {
   // 옆으로 펼쳐지고, 호버가 없는 기기는 ▸ 버튼을 탭하면 아래로 아코디언처럼 펼쳐진다.
   // 세 드롭다운(티어·맹약·특질)이 한 스타일을 쓴다 (사용자 요청 2026-08-23: T1~T6 버튼 줄과
   // 네이티브 select가 제각각이라 통일). 한 번에 하나만 열린다.
-  const [openMenu, setOpenMenu] = useState<"" | "tier" | "bondN" | "bondT" | "gar" | "job">("");
+  // ⚠ 키에 자리(scope)를 붙인다 — "tab:gar" / "pick:gar". 담기 모달이 열리면 필터 바가
+  // 화면에 **둘** 있는데(모달 + 뒤의 탭), 키가 같으면 menuPop이 body에 목록을 두 개
+  // 겹쳐 띄운다 (2026-09-01, 필터를 두 벌로 가르면서 드러난 것).
+  const [openMenu, setOpenMenu] = useState("");
   // 열린 서브메뉴의 행 키 ("" = 없음) — 특질 메뉴의 "every", 직군 메뉴의 직군 이름
   const [flyout, setFlyout] = useState("");
   // 메뉴가 펼쳐질 방향 — 버튼이 화면 왼쪽에 붙어 있으면 오른쪽으로, 오른쪽 끝이면 왼쪽으로
@@ -1145,7 +1196,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
   /** 메뉴를 연 버튼의 **화면 좌표** — 목록을 body 로 빼서 여기에 맞춰 띄운다 (menuPop) */
   const [menuAt, setMenuAt] = useState<{ l: number; r: number; t: number; b: number } | null>(null);
   const closeMenus = () => { setOpenMenu(""); setFlyout(""); };
-  const toggleMenu = (menuKey: typeof openMenu) => (e: React.MouseEvent<HTMLButtonElement>) => {
+  const toggleMenu = (menuKey: string) => (e: React.MouseEvent<HTMLButtonElement>) => {
     // 270px = 제일 넓은 메뉴(특질) 폭 + 여유. 오른쪽 공간이 모자라면 왼쪽으로 편다.
     // 목록이 이제 화면 좌표(fixed)로 뜨므로 기준도 창이다 — 자르는 상자가 없어졌다.
     const r = e.currentTarget.getBoundingClientRect();
@@ -1199,7 +1250,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
   const evbName = (id: string) => (id === "core" ? t("핵심 맹약") : bondById.get(id)?.n ?? id);
   // 특질 드롭다운 — 물자관리소 필터 바와 시뮬레이터가 **같은 것**을 쓴다 (상태만 다르다,
   // 사용자 요청 2026-08-23). menuKey로 어느 자리의 메뉴가 열렸는지 갈라 한 번에 하나만 연다.
-  const garDropdown = (cur: string, setCur: (v: string) => void, menuKey: "gar") => {
+  const garDropdown = (cur: string, setCur: (v: string) => void, menuKey: string, facetCount: AcFacets) => {
     const pick = (v: string) => { setCur(v); closeMenus(); };
     const label = !cur ? t("특질 전체")
       : cur.startsWith("every:") ? `${t(GAR_CAT_LABEL.every)} · ${evbName(cur.slice(6))}`
@@ -1259,7 +1310,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
   };
   // 시뮬레이터의 맹약 선택 드롭다운 (진영/특성 각 1) — 같은 드롭다운 스타일 (사용자 요청 2026-08-23:
   // "맹약 일렬로 주르르륵 하지 말고 전부 다 드랍다운으로")
-  const bondDropdown = (nation: boolean, cur: string, setCur: (v: string) => void, menuKey: "bondN" | "bondT") => (
+  const bondDropdown = (nation: boolean, cur: string, setCur: (v: string) => void, menuKey: string, facetCount: AcFacets) => (
     <div className="ac-garsel">
       <button type="button" className={`ac-garsel-btn${cur ? " on" : ""}`}
         aria-haspopup="menu" aria-expanded={openMenu === menuKey}
@@ -1283,17 +1334,18 @@ export default function AutochessGuide({ doc, onShowOperator }: {
 
   // 직군 드롭다운 — 직군 행에 마우스오버(터치는 ▾)하면 그 직군의 세부직군이 서브메뉴로
   // 열린다 (사용자 확정 2026-08-23: 두 드롭다운 대신 하나로). 행 클릭 = 직군만 선택.
-  const jobDropdown = () => {
-    const pickJob = (j: string, sub = "") => { setJobFilter(j); setSubFilter(sub); closeMenus(); };
+  const jobDropdown = (f: AcFilters, menuKey: string) => {
+    const jobFilter = f.job, subFilter = f.sub;
+    const pickJob = (j: string, sub = "") => { f.setJob(j); f.setSub(sub); closeMenus(); };
     const label = jobFilter ? (subFilter ? `${jobFilter} · ${subFilter}` : jobFilter) : t("직군 전체");
     return (
       <div className="ac-garsel">
         <button type="button" className={`ac-garsel-btn${jobFilter ? " on" : ""}`}
-          aria-haspopup="menu" aria-expanded={openMenu === "job"}
-          onClick={toggleMenu("job")}>
+          aria-haspopup="menu" aria-expanded={openMenu === menuKey}
+          onClick={toggleMenu(menuKey)}>
           {label} <i aria-hidden>▾</i>
         </button>
-        {openMenu === "job" && menuPop(
+        {openMenu === menuKey && menuPop(
           <ul className={menuCls()} role="menu" aria-label={t("직군 전체")}>
             <li role="none"><button type="button" role="menuitemradio" aria-checked={!jobFilter}
               className={!jobFilter ? "on" : ""} onClick={() => pickJob("")}><span>{t("직군 전체")}</span></button></li>
@@ -1335,54 +1387,52 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     <div className="ac-filters">
       <div className="search-wrap heading-search sim-search">
         <span>⌕</span>
-        <input {...inputProps} placeholder={t("이름·능력 검색")} autoComplete="off" spellCheck={false} />
+        <input {...tabF.inputProps} placeholder={t("이름·능력 검색")} autoComplete="off" spellCheck={false} />
         <button type="button" className="search-clear" onClick={() => clear()} aria-label={t("검색어 지우기")}>×</button>
       </div>
     </div>
   );
 
-  // 걸린 조건을 한 번에 푼다 (사용자 요청 2026-08-29) — 하나라도 걸렸을 때만 나온다
-  const anyFilter = Boolean(term || bondN || bondT || garFilter || tier || jobFilter || subFilter);
-  const clearFilters = () => {
-    clear(false); setBondN(""); setBondT(""); setGarFilter("");
-    setTier(0); setJobFilter(""); setSubFilter(""); closeMenus();
-  };
-  const filterBar = (
+  /** 필터 바 — 필터 한 벌(f)과 그 벌의 숫자(facets)를 받아 그린다.
+   *  scope는 드롭다운 키 접두사이자 **어느 자리인지**의 표식이다: "tab" 오퍼레이터 탭 ·
+   *  "pick" 담기 모달. 두 자리가 상태를 나눠 쓰지 않는다 (사용자 지적 2026-09-01). */
+  const renderFilterBar = (f: AcFilters, facets: AcFacets, scope: "tab" | "pick") => (
     <div className="ac-filters">
       <div className="search-wrap heading-search sim-search">
         <span>⌕</span>
-        <input {...inputProps} placeholder={t("이름·능력 검색")} autoComplete="off" spellCheck={false} />
-        <button type="button" className="search-clear" onClick={() => clear()} aria-label={t("검색어 지우기")}>×</button>
+        <input {...f.inputProps} placeholder={t("이름·능력 검색")} autoComplete="off" spellCheck={false} />
+        <button type="button" className="search-clear" onClick={() => f.clear()} aria-label={t("검색어 지우기")}>×</button>
       </div>
       {/* 순서는 사용자 지시 (2026-08-23): 진영 맹약 · 특성 맹약 · 특질 · 티어 · 직군.
           맹약 2축은 옛 시뮬레이터의 선택 축이 필터로 들어온 것. */}
-      {bondDropdown(true, bondN, setBondN, "bondN")}
-      {bondDropdown(false, bondT, setBondT, "bondT")}
+      {bondDropdown(true, f.bondN, f.setBondN, `${scope}:bondN`, facets)}
+      {bondDropdown(false, f.bondT, f.setBondT, `${scope}:bondT`, facets)}
       {/* 특질·직군(세부직군 서브메뉴) 필터는 오퍼레이터 목록에만 — 아이템에는 없는 개념이다.
           ⚠ 담기 모달은 **언제나 오퍼 목록**이라 탭이 무엇이든 함께 낸다 — view 기본값이
           "bond" 라 모달에서 이 두 필터가 통째로 빠져 있었다 (2026-08-29). */}
-      {(view === "op" || picking) && garDropdown(garFilter, setGarFilter, "gar")}
+      {(view === "op" || scope === "pick") && garDropdown(f.gar, f.setGar, `${scope}:gar`, facets)}
       <div className="ac-garsel">
-        <button type="button" className={`ac-garsel-btn${tier ? " on" : ""}`}
-          aria-haspopup="menu" aria-expanded={openMenu === "tier"}
-          onClick={toggleMenu("tier")}>
-          {tier ? `T${tier}` : t("티어 전체")} <i aria-hidden>▾</i>
+        <button type="button" className={`ac-garsel-btn${f.tier ? " on" : ""}`}
+          aria-haspopup="menu" aria-expanded={openMenu === `${scope}:tier`}
+          onClick={toggleMenu(`${scope}:tier`)}>
+          {f.tier ? `T${f.tier}` : t("티어 전체")} <i aria-hidden>▾</i>
         </button>
-        {openMenu === "tier" && menuPop(
+        {openMenu === `${scope}:tier` && menuPop(
           <ul className={menuCls()} role="menu" aria-label={t("티어")}>
-            <li role="none"><button type="button" role="menuitemradio" aria-checked={tier === 0}
-              className={tier === 0 ? "on" : ""} onClick={() => { setTier(0); closeMenus(); }}><span>{t("전체")}</span></button></li>
+            <li role="none"><button type="button" role="menuitemradio" aria-checked={f.tier === 0}
+              className={f.tier === 0 ? "on" : ""} onClick={() => { f.setTier(0); closeMenus(); }}><span>{t("전체")}</span></button></li>
             {[1, 2, 3, 4, 5, 6].map((n) => (
-              <li key={n} role="none"><button type="button" role="menuitemradio" aria-checked={tier === n}
-                className={tier === n ? "on" : ""} onClick={() => { setTier(n); closeMenus(); }}>
+              <li key={n} role="none"><button type="button" role="menuitemradio" aria-checked={f.tier === n}
+                className={f.tier === n ? "on" : ""} onClick={() => { f.setTier(n); closeMenus(); }}>
                 <span>{tierBadge(n)}</span></button></li>
             ))}
           </ul>
         )}
       </div>
-      {(view === "op" || picking) && jobDropdown()}
-      {anyFilter && (
-        <button type="button" className="ac-filters-clear" onClick={clearFilters}
+      {(view === "op" || scope === "pick") && jobDropdown(f, `${scope}:job`)}
+      {f.any && (
+        <button type="button" className="ac-filters-clear"
+          onClick={() => { f.reset(); closeMenus(); }}
           title={t("걸린 조건을 모두 풉니다")}>{t("조건 지우기")}</button>
       )}
     </div>
@@ -1525,7 +1575,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
             <>
               {/* 안내문이 먼저, 검색·필터가 그다음 — 전략 탭과 같은 순서 (사용자 지시 2026-08-23) */}
               <p className="sim-note">{t("오퍼레이터마다 위수 협의 전용 능력이 하나씩 붙고, 같은 오퍼레이터 {n}장을 모아 정예화(골든)하면 그 능력이 강해집니다.", { n: doc.chess[0]?.up ?? 3 })}</p>
-              {filterBar}
+              {renderFilterBar(tabF, tabD.facets, "tab")}
               {bondGroups ? (
                 <>
                   {/* 맹약을 골랐다 — 고른 맹약 요약 + 소속 그룹 (옛 시뮬레이터 화면, 2026-08-23 편입).
@@ -2388,7 +2438,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
         <ModalWindow label={picking.z === "b" ? t("배치에 담기") : t("정비구역에 담기")}
           className="operator-modal ac-modal" onClose={() => setPicking(null)}>
           <div className="ac-guide ac-pickmodal">
-            {filterBar}
+            {renderFilterBar(pickF, pickD.facets, "pick")}
             <p className="ac-count">{t("{n}명", { n: pickRows.length })}</p>
             {[1, 2, 3, 4, 5, 6].map((tn) => {
               const rows = pickRows.filter((c) => c.t === tn);
