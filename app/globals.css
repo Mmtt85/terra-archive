@@ -4122,13 +4122,16 @@ legend {
   color: #e2e6e8;
   font-weight: 600;
 }
-/* 서버 운영 후원 — 비상업 고지 아래, 작고 눈에 안 띄는 알약형 링크 (레이아웃 안 밀게 compact) */
-.footer-donate {
+/* 서버 운영 후원 · 문의 메일 — 비상업 고지 아래, 작고 눈에 안 띄는 알약형 링크
+   (레이아웃 안 밀게 compact). 둘은 같은 알약이고 호버 색만 다르다 */
+.footer-donate,
+.footer-contact {
   margin: 0;
   flex: 0 0 auto;
   white-space: nowrap;
 }
-.footer-donate a {
+.footer-donate a,
+.footer-contact span {
   color: #b6bbbd;
   text-decoration: none;
   border: 1px solid #303536;
@@ -4139,6 +4142,23 @@ legend {
 .footer-donate a:hover {
   color: #f5c877;
   border-color: #6b5324;
+}
+/* 문의 주소는 링크가 아니라 글자다 (mailto 금지 — 사용자 지시 2026-09-03).
+   한 번 클릭하면 주소 전체가 잡히도록 user-select:all 을 주되, **✉ 아이콘은 선택에서 뺀다**
+   (사용자 지시 2026-09-03 — 알약 전체에 걸었더니 복사할 때 이모지까지 딸려 왔다).
+   그래서 알약(span)은 선택 대상이 아니고, 안의 <b>(주소)만 all 이다. */
+.footer-contact span {
+  display: inline-block;
+  user-select: none;
+}
+.footer-contact i {
+  font-style: normal;
+  margin-right: 5px;
+}
+.footer-contact b {
+  font-weight: inherit;
+  user-select: all;
+  cursor: text;
 }
 /* 배포 시각 — 푸터 맨 아래 한 줄, 찾으면 보이는 정도로만 (사용자 요청: "아주 작게") */
 .footer-build {
@@ -10718,6 +10738,21 @@ html.dark .story-card:hover .story-thumb img {
   color: var(--muted);
   text-align: center;
   margin: 8px 0 0;
+}
+/* 문의 메일 한 줄 — cta 바로 아래, 한 단 더 작고 조용하게 */
+.about-contact {
+  font-size: 12.5px;
+  color: var(--muted);
+  text-align: center;
+  margin: 4px 0 0;
+  opacity: 0.85;
+}
+/* 링크가 아니라 글자다 (mailto 금지 — 사용자 지시 2026-09-03). 한 번 클릭에 통째로 잡히게. */
+.about-contact b {
+  color: var(--lime);
+  font-weight: 600;
+  user-select: all;
+  cursor: text;
 }
 @media (max-width: 720px) {
   .about-features,

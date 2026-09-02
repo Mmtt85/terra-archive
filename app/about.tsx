@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { asset } from "./assets";
+import { CONTACT_EMAIL } from "./contact";
 import { useI18n, rich, type Locale } from "./i18n";
 import { scrollMainTop } from "./scroll";
 import type { Tab } from "./home";
@@ -95,6 +96,8 @@ type Content = {
   data: { title: string; body: string };
   disclaimer: { title: string; body: string };
   cta: string;
+  /** 피드백 위젯으로는 못 보내는 용건(저작권·삭제 요청 등)용 메일 안내. 주소 자리는 {mail} */
+  contact: string;
 };
 
 const CONTENT: Record<Locale, Content> = {
@@ -246,6 +249,7 @@ const CONTENT: Record<Locale, Content> = {
         "테라 아카이브는 Hypergryph 및 Yostar와 무관한 비공식·비영리 팬 사이트입니다. 게임 내 이미지·명칭·스토리 등 모든 저작권은 원저작자에게 있으며, 팬 콘텐츠 가이드라인을 존중합니다. 수익을 목적으로 하지 않습니다.",
     },
     cta: "오류 제보나 기능 제안은 각 페이지의 피드백 버튼으로 보내주세요.",
+    contact: "저작권·삭제 요청처럼 그 밖의 용건은 {mail} 로 연락해 주세요.",
   },
   en: {
     kicker: "ABOUT",
@@ -395,6 +399,7 @@ const CONTENT: Record<Locale, Content> = {
         "Terra Archive is an unofficial, non-commercial fan site unaffiliated with Hypergryph or Yostar. All in-game images, names, and story text remain the property of their respective owners, and we respect the fan-content guidelines. It is not operated for profit.",
     },
     cta: "Report errors or suggest features via the feedback button on each page.",
+    contact: "For anything else — copyright or takedown requests included — write to {mail}.",
   },
   ja: {
     kicker: "ABOUT",
@@ -544,6 +549,7 @@ const CONTENT: Record<Locale, Content> = {
         "テラアーカイブは、HypergryphおよびYostarとは無関係の非公式・非営利ファンサイトです。ゲーム内の画像・名称・ストーリー等の著作権はすべて原著作者に帰属し、ファンコンテンツのガイドラインを尊重します。営利を目的としていません。",
     },
     cta: "不具合の報告や機能の提案は、各ページのフィードバックボタンからお寄せください。",
+    contact: "著作権・削除のご依頼など、その他のお問い合わせは {mail} までご連絡ください。",
   },
 };
 
@@ -597,6 +603,18 @@ export default function About({ onOpenTab }: { onOpenTab?: (tab: Tab) => void })
       </div>
 
       <p className="about-cta">{c.cta}</p>
+      {/* 오류·제안은 위 cta대로 피드백 위젯이 낫다 — 어느 화면에서 눌렀는지까지 같이 오므로.
+          여기 메일은 위젯으로 못 보내는 용건(저작권·삭제 요청)용이라 그렇게 써 뒀다.
+          ⚠ mailto: 링크를 달지 않는다 (사용자 지시 2026-09-03) — 글자로만 두고 클릭 한 번에
+          통째로 선택되게 한다(.about-contact b { user-select: all }). */}
+      <p className="about-contact">
+        {c.contact.split("{mail}").map((part, i) => (
+          <span key={i}>
+            {i > 0 && <b>{CONTACT_EMAIL}</b>}
+            {part}
+          </span>
+        ))}
+      </p>
     </section>
   );
 }

@@ -519,7 +519,7 @@ else:
             last = None
             for _ in range(2):
                 try:
-                    req = urllib.request.Request(url, headers={"User-Agent": "terra-archive-fetch (fansite; contact nzkonaru@gmail.com)"})
+                    req = urllib.request.Request(url, headers={"User-Agent": "terra-archive-fetch (fansite; contact contact@terra-archive.net)"})
                     return urllib.request.urlopen(req, timeout=15).read()
                 except Exception as err:
                     last = err

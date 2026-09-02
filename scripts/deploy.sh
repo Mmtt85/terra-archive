@@ -1,6 +1,6 @@
 #!/bin/bash
 # 테라 아카이브 배포: vinext 정적 내보내기(output:"export") → Cloudflare Pages (https://terra-archive.net)
-# 사전 조건: 이 기기에서 wrangler OAuth 로그인 완료 (nzkonaru@gmail.com)
+# 사전 조건: 이 기기에서 wrangler OAuth 로그인 완료 (운영자 클라우드플레어 계정)
 #
 # 2026-07: SSR 워커 배포 → 완전 정적 배포로 전환. 데이터 JSON이 워커에 인라인되어
 # 무료 플랜 워커 한도(3MiB, no_bundle 모듈 합산 기준)를 넘었기 때문. 사이트는 전부

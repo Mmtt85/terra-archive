@@ -49,6 +49,7 @@ import SimLauncher from "./sim-launcher";
 const OmniSearch = lazy(() => import("./omni-search"));
 import BridgeButton from "./lens/bridge-button";
 import { asset } from "./assets";
+import { CONTACT_EMAIL } from "./contact";
 import ChangelogButton from "./changelog";
 // 헤더 치비 대화 — 크롬 내장 Gemini Nano (베타, 2026-08-03)
 import { ChibiChatPanel, chibiChatStatus, type ChibiActionRequest, type ChibiChatStatus } from "./chibi-chat";
@@ -2202,6 +2203,14 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
             title={t("광고 없이 운영되는 이 사이트의 서버·도메인 비용에 자발적으로 보태 주실 수 있어요 (Buy Me a Coffee). 후원은 전적으로 선택이며 아무 대가가 없습니다.")}>
             ☕ {t("서버 운영 후원")}
           </a>
+        </p>
+        {/* 문의 메일 — 후원 옆 같은 알약. 오류 제보·기능 제안은 피드백 버튼이 페이지 맥락까지
+            같이 실어 보내므로 그쪽이 낫고, 이건 저작권·삭제 요청처럼 위젯으로 못 보내는 용건용이다.
+            수신은 Cloudflare Email Routing → 운영자 지메일 전달, 발신은 Resend (2026-09-03).
+            ⚠ **mailto: 링크를 달지 않는다** (사용자 지시 2026-09-03 — 메일 클라이언트가 뜨는 게
+            불편하다). 주소를 글자로만 두고 user-select:all 로 한 번 클릭에 통째로 잡히게 한다. */}
+        <p className="footer-contact">
+          <span><i aria-hidden>✉</i><b>{CONTACT_EMAIL}</b></span>
         </p>
         {/* 크롤러용 실제 탭 링크 — 헤더 메뉴는 전부 버튼(SPA 탭 전환)이라 정적 HTML에 내부
             앵커가 하나도 없었고, 검색엔진에는 모든 탭이 고아 페이지였다 (GSC "발견됨 — 현재

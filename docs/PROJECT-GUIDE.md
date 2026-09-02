@@ -16,13 +16,13 @@
 |---|---|
 | 위치 | `~/Documents/명일방주` |
 | Git | `github.com:Mmtt85/terra-archive.git` (main 브랜치) |
-| 배포 (주) | **https://terra-archive.pages.dev** — Cloudflare Pages. `bash scripts/deploy.sh` 한 방 (빌드→스테이징→pages deploy). wrangler는 이 기기에 OAuth 로그인됨(nzkonaru@gmail.com), 프로젝트에 nodejs_compat 플래그 설정됨. **⚠️ 자동 실행 금지 — 배포는 사용자가 변경분을 모아서 직접 돌린다** (2026-07 규칙 변경). |
+| 배포 (주) | **https://terra-archive.pages.dev** — Cloudflare Pages. `bash scripts/deploy.sh` 한 방 (빌드→스테이징→pages deploy). wrangler는 이 기기에 OAuth 로그인됨(운영자 클라우드플레어 계정), 프로젝트에 nodejs_compat 플래그 설정됨. **⚠️ 자동 실행 금지 — 배포는 사용자가 변경분을 모아서 직접 돌린다** (2026-07 규칙 변경). |
 | 방송 워커 | `terra-archive-broadcast` (workers/broadcast) — 6시간마다 유튜브 공식 채널 3개(KR·JP·GL)에서 방송 일정 자동 수집 → KV → https://terra-archive-broadcast.nzkonaru.workers.dev (프론트 폴백: app/data/broadcasts.json). 배포는 `bash workers/broadcast/deploy.sh`, 상세는 `.claude/skills/broadcast-check`. **중국 서버(미래시)는 비리비리 라이브룸**이라 워커가 아니라 GitHub Actions(`scripts/build-broadcasts-cn.py`)가 수집한다 — 비리비리가 클라우드플레어 이그레스를 412로 밴하기 때문 |
 | 계정 워커 | `terra-archive-account` (workers/account) — **요스타(KR/JP/EN) 이메일 인증코드 로그인 → 게임서버 syncData → 보유 오퍼 목록**. 보유 오퍼 설정 → 가져오기 → 게임 로그인이 호출한다 (`app/account.ts`). 무상태(KV·시크릿 없음, 이메일/코드/토큰 저장·로깅 안 함), Origin은 사이트+localhost만 허용. 배포 `bash workers/account/deploy.sh` · 점검 `curl ".../probe?server=kr"`. 브라우저에서 직접 못 부르는 이유: Yostar API가 CORS를 안 주고 MD5/HMAC 서명 + 안드로이드 UA 위장이 필요(Workers에 MD5가 없어 `src/md5.js` 자체 구현). **동기화하면 게임 세션이 끊긴다**(계정당 접속 1개) — UI에 반드시 경고를 남겨둘 것 |
 | 스택 | vinext(Cloudflare용 Next 호환 런타임) + Next.js 16 / React 19 / Tailwind 4 |
 | 명령 | `npm run dev`(localhost:3000) / `npm run build` / `npm run lint` |
 | 운영 수칙 | 수정하면 **빌드 확인 → 커밋 → git push 까지만** 진행하고 **멈춘다**. `scripts/deploy.sh`는 절대 자동 실행하지 않음 — 세션마다 자동 배포하면 토큰이 낭비되므로, 배포는 사용자가 여러 변경을 모아서 직접 실행한다 (2026-07 규칙). 모든 허가 요청은 기본 YES |
-| 알려진 무시 항목 | git author가 로컬 기본값(nzkonaru@local). 스타터 템플릿 잔재(ChatGPT 인증·D1/drizzle·스켈레톤 테스트 등)는 2026-07 전부 제거됨 — `npm test` 스크립트 없음 |
+| 알려진 무시 항목 | git author가 로컬 기본값(`<계정명>@local`). 스타터 템플릿 잔재(ChatGPT 인증·D1/drizzle·스켈레톤 테스트 등)는 2026-07 전부 제거됨 — `npm test` 스크립트 없음 |
 
 ### 화면 구성 — 단일 페이지 + 탭 4개 × 언어 3종
 
@@ -941,7 +941,7 @@ CRUD가 늘며 위험해진 /admin을 본사이트에서 떼어냈다. **비밀�
 - **admin.terra-archive.net** (Pages 프로젝트 `terra-archive-admin`, `scripts/deploy-admin.sh`) —
   같은 빌드 산출물에서 /admin이 입구. 본사이트 deploy.sh는 admin.html/.rsc를 지우고
   옛 주소를 301로 넘긴다. 도메인 전체를 **Cloudflare Access(Zero Trust, 구글 SSO,
-  nzkonaru@gmail.com만 허용)** 가 막는다.
+  운영자 지메일 계정 하나만 허용)** 가 막는다.
   - ⚠ **문지기는 로그인 방식이 아니라 정책의 Include 규칙이다** (2026-08-15 사용자 발견:
     "아무 구글 계정으로 로그인해도 그냥 들어가진다"). Access는 ① 인증(그 계정의 주인이
     맞나) ② 정책(그 신원을 들여보낼까) 두 단계인데, ②에 조건이 없으면 **구글이든 OTP든
@@ -949,7 +949,11 @@ CRUD가 늘며 위험해진 /admin을 본사이트에서 떼어냈다. **비밀�
     있지 않으면 아무 의미가 없다 — 2026-07-29 정책 키가 `admin` 플레이스홀더로 되돌아간
     사고와 같은 계열(설정이 문서와 어긋난 채 조용히 열려 있는 것)이다.
     **정본 설정**: Zero Trust → Access → Applications → `admin.terra-archive.net` →
-    Policies → **Include: Emails = `nzkonaru@gmail.com`**.
+    Policies → **Include: Emails = 운영자 지메일 계정**. 그 주소의 실제 값은
+    `workers/admin-api/wrangler.toml`의 `ALLOWED_EMAIL`이 들고 있고, **대시보드 정책과
+    이 값이 반드시 같아야 한다** — 어긋나면 Access는 통과시키는데 워커가 403을 준다.
+    (공개 문의용 `contact@terra-archive.net`과 혼동하지 말 것. 이쪽은 관리자 신원이라
+    전달 주소가 아니라 실제 로그인 계정이어야 한다.)
     **확인법**: 시크릿 창에서 다른 구글 계정으로 접속 → Cloudflare 차단 페이지가 떠야
     한다(관리자 HTML·JS가 아예 전달되지 않음). 게이트 화면이 보이면 ②가 여전히 열려 있는
     것이다. 로그인 방식(구글/OTP)은 취향 문제이고 보안 차이가 없다.

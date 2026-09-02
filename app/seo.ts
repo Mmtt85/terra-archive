@@ -6,6 +6,7 @@
 // (sitemap.xml은 빌드 시 build-sitemap.mjs가 라우트 스캔으로 자동 생성 — 직접 수정 금지).
 import type { Metadata } from "next";
 import { asset } from "./assets";
+import { CONTACT_EMAIL } from "./contact";
 
 export const SITE_URL = "https://terra-archive.net";
 
@@ -204,6 +205,12 @@ const BROWSER_REQ: Record<SeoLocale, string> = {
  *  · WebApplication — 편성기·공채·육성·파밍은 읽을거리가 아니라 도구라는 신호
  * (사이트링크 검색창 SearchAction은 구글이 2024년에 폐지해 넣지 않는다.)
  */
+/** 발행처 노드. 공개 문의 주소를 실어 검색엔진이 사이트 연락처로 읽게 한다 (2026-09-03).
+ *  개인 지메일이 아니라 도메인 역할 주소여야 한다 — 구조화 데이터는 한번 색인되면 오래 남는다. */
+function publisherOf(name: string, url: string) {
+  return { "@type": "Organization", name, url, email: CONTACT_EMAIL };
+}
+
 export function jsonLdFor(locale: SeoLocale, tab: SeoTab = "portal") {
   const meta = META[locale];
   const tabMeta = tab === "portal" ? null : TAB_META[tab][locale];
@@ -219,7 +226,7 @@ export function jsonLdFor(locale: SeoLocale, tab: SeoTab = "portal") {
     url: home,
     description: meta.description,
     inLanguage: locale,
-    publisher: { "@type": "Organization", name: meta.siteName, url: home },
+    publisher: publisherOf(meta.siteName, home),
   }];
 
   if (tab !== "portal") {
@@ -242,7 +249,7 @@ export function jsonLdFor(locale: SeoLocale, tab: SeoTab = "portal") {
         operatingSystem: "Any",
         browserRequirements: BROWSER_REQ[locale],
         isAccessibleForFree: true,
-        publisher: { "@type": "Organization", name: meta.siteName, url: home },
+        publisher: publisherOf(meta.siteName, home),
       });
     }
   }
