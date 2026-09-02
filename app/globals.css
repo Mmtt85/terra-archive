@@ -19737,19 +19737,22 @@ html:not(.dark) .ac-star { color: #8f6512; }
 .ac-ways .sb-chip.maybe { opacity: .66; border: 1px dashed color-mix(in srgb, var(--ink) 32%, transparent); }
 .dark .ac-ways { background: color-mix(in srgb, #c8891a 9%, transparent); border-color: color-mix(in srgb, #c8891a 26%, transparent); }
 
-/* 배지 설명 — title의 1초 지연 없이 즉시 (route-map-rules의 data-tip과 같은 규약) */
-.ac-offshop[data-tip], .ac-kind[data-tip] { position: relative; cursor: help; }
-.ac-offshop[data-tip]:hover::after, .ac-kind[data-tip]:hover::after {
-  content: attr(data-tip);
-  position: absolute; left: 0; bottom: calc(100% + 6px); z-index: 30;
-  width: max-content; max-width: 280px;
-  padding: 6px 9px;
+/* 배지 설명 (TipChip) — title의 1초 지연 없이 즉시.
+   ⚠ 위치는 **JS가 fixed 로 잡는다** (body portal). 여기에 position/left/top 을 다시 쓰면
+   인라인 스타일과 싸운다. absolute로 되돌리면 모달 overflow에 잘린다 (2026-09-02 지적). */
+.ac-tip {
+  display: block;
+  padding: 7px 10px;
   font-size: 11px; font-weight: 600; line-height: 1.5;
-  white-space: normal; text-align: left;
+  white-space: normal; text-align: left; word-break: keep-all;
   color: var(--white); background: var(--ink);
   border: 1px solid var(--border-hover); border-radius: 7px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .28);
   pointer-events: none;
 }
+.ac-offshop, .ac-kind { cursor: help; }
+/* 칩이 포커스를 받을 수 있게 됐다 (키보드로도 설명이 뜬다) — 기본 outline은 유지 */
+.ac-offshop:focus-visible, .ac-kind:focus-visible { outline: 2px solid var(--accent, #b98a2f); outline-offset: 1px; }
 .dark .ac-offshop {
   background: color-mix(in srgb, #c8891a 24%, transparent);
   color: #f0c470;

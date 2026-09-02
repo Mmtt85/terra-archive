@@ -325,6 +325,50 @@ const BOSS_HP_KEYS: [string, string][] = [
 ];
 
 /** 적 초상 — 변종 id(…_2)에 파일이 없으면 원본 id로 한 번 폴백한다 (적 도감과 같은 규칙) */
+/** 설명이 붙는 칩 — 툴팁을 **body로 portal + position:fixed** 로 띄운다.
+ *
+ *  ⚠ ::after(absolute)로 두면 모달의 overflow에 잘린다 (사용자 지적 2026-09-02).
+ *    이 파일의 드롭다운(menuPop)이 정확히 같은 함정을 겪고 같은 처방으로 해결했다 —
+ *    body 자식이면 어떤 조상의 overflow·겹침에도 안 걸린다. 새 툴팁을 만들 때도
+ *    absolute로 되돌리지 말 것.
+ *  위가 좁으면 아래로 뒤집고, 좌우는 화면 안으로 물린다. 키보드 포커스에도 뜬다.
+ */
+function TipChip({ className, tip, children }:
+  { className: string; tip?: string; children: React.ReactNode }) {
+  const ref = useRef<HTMLElement | null>(null);
+  const [at, setAt] = useState<{ l: number; t: number; b: number } | null>(null);
+  const show = () => {
+    const r = ref.current?.getBoundingClientRect();
+    if (r) setAt({ l: r.left, t: r.top, b: r.bottom });
+  };
+  const hide = () => setAt(null);
+  // 뒤가 스크롤되면 칩과 어긋난다 — 그때는 닫는다 (드롭다운과 같은 규약)
+  useEffect(() => {
+    if (!at) return;
+    window.addEventListener("scroll", hide, true);
+    window.addEventListener("resize", hide);
+    return () => { window.removeEventListener("scroll", hide, true); window.removeEventListener("resize", hide); };
+  }, [at]);
+  if (!tip) return <i className={className}>{children}</i>;
+  const TIP_W = 280;
+  const up = at ? at.t > 90 : true;
+  return (
+    <>
+      <i ref={ref} className={className} tabIndex={0}
+        onMouseEnter={show} onMouseLeave={hide} onFocus={show} onBlur={hide}>
+        {children}
+      </i>
+      {at && typeof document !== "undefined" && createPortal(
+        <span className="ac-tip" role="tooltip" style={{
+          position: "fixed", zIndex: 9300,          // 드롭다운(9200)보다 위
+          maxWidth: TIP_W,
+          left: Math.max(8, Math.min(at.l, window.innerWidth - TIP_W - 8)),
+          ...(up ? { bottom: window.innerHeight - at.t + 6 } : { top: at.b + 6 }),
+        }}>{tip}</span>, document.body)}
+    </>
+  );
+}
+
 function EnFace({ id, className = "ac-enface" }: { id: string; className?: string }) {
   return (
     <img className={className} src={enemyImg(id)} alt="" aria-hidden loading="lazy" decoding="async"
@@ -1068,8 +1112,8 @@ export default function AutochessGuide({ doc, onShowOperator }: {
             {tierBadge(c.t)}
             {c.r ? <i className="ac-star">★{c.r}</i> : null}
             {c.job ? <i className="sb-chip">{c.job}</i> : null}
-            {KIND_LABEL[c.kind] && <i className="sb-chip ac-kind" data-tip={KIND_TIP[c.kind] ? t(KIND_TIP[c.kind]) : undefined}>{t(KIND_LABEL[c.kind])}</i>}
-            {c.off === 1 && <i className="sb-chip ac-offshop" data-tip={t("보급센터에 진열되지 않아 살 수 없습니다 — 맹약에서 직접 뽑는 경로로만 나옵니다")}>{t("보급센터 미진열")}</i>}
+            {KIND_LABEL[c.kind] && <TipChip className="sb-chip ac-kind" tip={KIND_TIP[c.kind] ? t(KIND_TIP[c.kind]) : undefined}>{t(KIND_LABEL[c.kind])}</TipChip>}
+            {c.off === 1 && <TipChip className="sb-chip ac-offshop" tip={t("보급센터에 진열되지 않아 살 수 없습니다 — 맹약에서 직접 뽑는 경로로만 나옵니다")}>{t("보급센터 미진열")}</TipChip>}
           </span>
         </div>
       </header>
@@ -1190,9 +1234,9 @@ export default function AutochessGuide({ doc, onShowOperator }: {
           {/* 맹약 소속 목록에도 단다 (사용자 요청 2026-09-02) — 여기가 "이 맹약 6명 맞추자"를
               세는 자리라, 살 수 없는 기물이 섞여 있으면 계획이 어긋난다 */}
           {c.off === 1 && (
-            <i className="sb-chip ac-offshop" data-tip={t("보급센터에 진열되지 않아 살 수 없습니다 — 맹약에서 직접 뽑는 경로로만 나옵니다")}>
+            <TipChip className="sb-chip ac-offshop" tip={t("보급센터에 진열되지 않아 살 수 없습니다 — 맹약에서 직접 뽑는 경로로만 나옵니다")}>
               {t("보급센터 미진열")}
-            </i>
+            </TipChip>
           )}
         </span>
         {c.bonds.length > 0 && <span className="ac-oprow-bonds">{c.bonds.map(bondTag)}</span>}
@@ -2599,8 +2643,8 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                   {chess.t ? tierBadge(chess.t) : null}
                   {chess.r ? <i className="ac-star">★{chess.r}</i> : null}
                   {chess.job ? <i className="sb-chip">{chess.job}</i> : null}
-                  {KIND_LABEL[chess.kind] && <i className="sb-chip ac-kind" data-tip={KIND_TIP[chess.kind] ? t(KIND_TIP[chess.kind]) : undefined}>{t(KIND_LABEL[chess.kind])}</i>}
-                  {chess.off === 1 && <i className="sb-chip ac-offshop" data-tip={t("보급센터에 진열되지 않아 살 수 없습니다 — 맹약에서 직접 뽑는 경로로만 나옵니다")}>{t("보급센터 미진열")}</i>}
+                  {KIND_LABEL[chess.kind] && <TipChip className="sb-chip ac-kind" tip={KIND_TIP[chess.kind] ? t(KIND_TIP[chess.kind]) : undefined}>{t(KIND_LABEL[chess.kind])}</TipChip>}
+                  {chess.off === 1 && <TipChip className="sb-chip ac-offshop" tip={t("보급센터에 진열되지 않아 살 수 없습니다 — 맹약에서 직접 뽑는 경로로만 나옵니다")}>{t("보급센터 미진열")}</TipChip>}
                 </p>
                 <p className="ac-bondline">{chess.bonds.map((b) => bondChip(b))}</p>
                 {/* 살 수 없는 기물이니 "그럼 어떻게 얻나"를 바로 붙인다 (사용자 확정 2026-09-02 —
