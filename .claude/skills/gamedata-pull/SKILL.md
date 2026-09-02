@@ -98,9 +98,29 @@ CDN에서 못 뜯으면 스크립트가 클뜯 레포판으로 메우고 **경�
 고쳐야 하는 것이다 — 그냥 두면 그 표만 며칠 낡은 데이터로 사이트가 만들어진다.
 2026-09-02에 이 폴백이 실패를 가려서 일본어가 한국어로 나간 채 배포됐다.
 
+## 3-5. 무엇이 바뀌었나 — 짐작하지 말고 뽑는다
+
+```bash
+python3 scripts/whatsnew-gamedata.py --local --no-rogue
+```
+
+`fetch-gamedata-cdn.py`가 덮어쓰기 전에 남긴 `.gamedata/.prev/` 스냅샷과 비교해
+① 무엇이 바뀌었고 ② **어떤 파이프라인을 돌려야 하는지**까지 찍는다.
+
+```
+■ [activity_table] 기존 활동 **속**이 바뀐 것 1개
+    ~ act2autochess        bandDataListDict 36→40
+■ 사이트 반영 — 돌려야 할 파이프라인
+    · 위수 협의: python3 scripts/build-autochess.py (+ build-autochess-routes.py …) → r2-sync
+```
+
+⚠ 신규 이벤트만 보지 말 것. **기존 이벤트가 속으로 불어나는 경우**가 있다 —
+2026-09-02 위수 협의 2단계가 그랬다. 새 이벤트가 아니라 `act2autochess` 안에서 전략이
+36→40이 된 것이라 `basicInfo`는 한 글자도 안 바뀌었다. 위 출력의 "속이 바뀐 것" 절이 그걸 잡는다.
+
 ## 4. 재생성 → 검증 → 빌드
 
-바뀐 표에 맞는 스크립트만 돌린다 (`scripts/README.md` §3~). 위수 협의라면:
+3-5가 찍어 준 파이프라인을 돌린다 (목록 전체는 `scripts/README.md` §3~). 위수 협의라면:
 
 ```bash
 python3 scripts/build-autochess.py          # + public/ac/ 아이콘

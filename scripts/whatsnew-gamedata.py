@@ -79,13 +79,28 @@ def table_at(sha, table):
     return json.loads(urlread(f"{RAW}/{sha}/kr/gamedata/excel/{table}.json", timeout=180))
 
 
+def canon(x):
+    """비교용 정규화 — 빈 컨테이너와 null 을 하나로 본다.
+
+    출처마다 빈 값을 다르게 쓴다: 클뜯 레포는 빈 맵을 `{}`, 우리 CDN 디코더는 스키마
+    타입대로 `[]`(빈 벡터)로 낸다. 이걸 다르다고 세면 `picGroup` 하나 때문에 활동 276개가
+    "변경"으로 잡혀 **진짜 변경이 파묻힌다** (2026-09-02 실측).
+    """
+    if x is None or x == [] or x == {}:
+        return None
+    if isinstance(x, dict):
+        return {k: canon(v) for k, v in x.items() if canon(v) is not None}
+    if isinstance(x, list):
+        return [canon(v) for v in x]
+    return x
+
+
 def diff_map(before, after, label_of):
     """dict-of-dicts 두 개 → (신규 키, 사라진 키, 내용이 바뀐 키)"""
+    j = lambda v: json.dumps(canon(v), sort_keys=True, ensure_ascii=False)
     add = [k for k in after if k not in before]
     rem = [k for k in before if k not in after]
-    mod = [k for k in after if k in before
-           and json.dumps(before[k], sort_keys=True, ensure_ascii=False)
-           != json.dumps(after[k], sort_keys=True, ensure_ascii=False)]
+    mod = [k for k in after if k in before and j(before[k]) != j(after[k])]
     return add, rem, mod
 
 
@@ -106,12 +121,57 @@ def scan_future(doc, prefix=""):
     return sorted(out)
 
 
+def local_pair(out_dir, prefix, table):
+    """`--local`: `<out>/.prev/<prefix>_<table>.json` (직전) vs `<out>/<prefix>_<table>.json` (지금).
+
+    `fetch-gamedata-cdn.py` 가 덮어쓰기 전에 남겨 둔 스냅샷을 쓴다. 클뜯 레포를 안 쓰게
+    되면서 '직전 커밋 대비'라는 기준이 사라진 자리를 이게 대신한다.
+    """
+    now = os.path.join(out_dir, "%s_%s.json" % (prefix, table))
+    old = os.path.join(out_dir, ".prev", "%s_%s.json" % (prefix, table))
+    if not os.path.exists(now):
+        return None, None
+    after = json.load(open(now, encoding="utf-8"))
+    before = json.load(open(old, encoding="utf-8")) if os.path.exists(old) else {}
+    return before, after
+
+
+def main_local(args):
+    out, pre = args.out, {"kr": "kr", "jp": "jp", "en": "en", "cn": "cn"}[args.server]
+    print("■ 로컬 비교  %s/.prev/%s_*  →  %s/%s_*\n" % (out, pre, out, pre))
+    need, seen = [], 0
+    for table in TABLES:
+        if args.no_rogue and table == "roguelike_topic_table":
+            continue
+        before, after = local_pair(out, pre, table)
+        if after is None:
+            continue
+        seen += 1
+        if not before:
+            print("■ [%s] 직전 스냅샷 없음 — 이번 것이 처음이라 비교를 건너뛴다\n" % table)
+            continue
+        _report_diff(table, before, after, need)
+    if not seen:
+        sys.exit("비교할 로컬 표가 없다 — python3 scripts/fetch-gamedata-cdn.py 를 먼저 돌릴 것")
+    print("■ 사이트 반영 — 돌려야 할 파이프라인")
+    for line in (dict.fromkeys(need) or ["없음 (데이터 변화가 사이트 산출물에 닿지 않는다)"]):
+        print("    · %s" % line)
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--since", help="비교 기준 커밋 sha (기본: 최신 KR 커밋의 부모)")
     ap.add_argument("--no-rogue", action="store_true", help="통합전략 표(21MB×2) 생략")
     ap.add_argument("--future-only", action="store_true", help="미래 일정 스캔만")
+    ap.add_argument("--local", action="store_true",
+                    help="클뜯 레포 대신 `<out>/.prev/` 스냅샷과 비교 (CDN으로 받은 뒤 쓴다)")
+    ap.add_argument("--out", default=".gamedata", help="--local 일 때 볼 폴더")
+    ap.add_argument("--server", default="kr", choices=["kr", "jp", "en", "cn"])
     args = ap.parse_args()
+
+    if args.local:
+        return main_local(args)
 
     commits = recent_kr_commits()
     if not commits:
@@ -161,6 +221,46 @@ def main():
         print("    · 없음 (데이터 변화가 사이트 산출물에 닿지 않는다)")
     print("    · 공통 마무리: bash scripts/ci-refresh.sh → npm run build → 커밋·푸시 "
           "(deploy.sh는 사용자 몫)")
+
+
+# 활동 속이 바뀌었을 때 돌려야 하는 파이프라인 — 활동 id 접두사로 고른다
+INNER_PIPE = [
+    ("autochess", "위수 협의: python3 scripts/build-autochess.py "
+                  "(+ build-autochess-routes.py 전투 맵이 바뀌었으면) → node scripts/r2-sync.mjs"),
+    ("sandbox",   "생존연산: python3 scripts/build-sandbox.py"),
+]
+
+
+def _report_activity_inner(before, after, need):
+    """활동 **하나하나의 속**을 비교한다 — 새 이벤트가 아니라 기존 이벤트가 불어난 경우."""
+    ba, aa = before.get("activity") or {}, after.get("activity") or {}
+    rows = []
+    for typ in aa:
+        for aid, node in (aa[typ] or {}).items():
+            old = (ba.get(typ) or {}).get(aid)
+            if old is None or not isinstance(node, dict) or not isinstance(old, dict):
+                continue
+            grew = []
+            for k, v in node.items():
+                o = old.get(k)
+                if isinstance(v, dict) and isinstance(o, dict) and len(v) != len(o):
+                    grew.append("%s %d→%d" % (k, len(o), len(v)))
+                elif isinstance(v, list) and isinstance(o, list) and len(v) != len(o):
+                    grew.append("%s %d→%d" % (k, len(o), len(v)))
+            if grew:
+                rows.append((aid, grew))
+    if not rows:
+        return
+    print("■ [activity_table] 기존 활동 **속**이 바뀐 것 %d개" % len(rows))
+    for aid, grew in rows[:12]:
+        print("    ~ %-20s %s" % (aid, ", ".join(grew[:5]) + (" …" if len(grew) > 5 else "")))
+    if len(rows) > 12:
+        print("    … 외 %d개" % (len(rows) - 12))
+    print()
+    for aid, _ in rows:
+        for key, line in INNER_PIPE:
+            if key in aid:
+                need.append(line)
 
 
 def _report_diff(table, before, after, need):
@@ -224,6 +324,12 @@ def _report_diff(table, before, after, need):
         if len(mod) > 10:
             print(f"    … 외 {len(mod)-10}건")
     print()
+
+    # ⚠ basicInfo 만 보면 **기존 활동 안이 바뀐 것**은 못 잡는다. 2026-09-02 위수 협의 2단계가
+    #   딱 그랬다 — 새 이벤트가 아니라 act2autochess 안에 전략 4종이 늘어난 것이라 basicInfo는
+    #   한 글자도 안 바뀌었다. 그래서 활동별 속을 따로 한 번 더 훑는다.
+    if table == "activity_table":
+        _report_activity_inner(before, after, need)
 
     if add or mod:
         need.append({

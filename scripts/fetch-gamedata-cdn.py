@@ -27,6 +27,7 @@ FlatBuffer를 JSON으로 되돌리려면 `.fbs` 스키마가 필요하다. 공�
 import argparse
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -56,6 +57,23 @@ DEFAULT_TABLES = [
 # (2026-08-13, 06-22, 02-10, 2025-12-11 …). 그래서 레포판으로 메우고 넘어간다.
 REPO = "https://raw.githubusercontent.com/ArknightsAssets/ArknightsGamedata/master/%s/gamedata/excel/%s.json"
 FALLBACK = {"range_table"}
+
+
+def keep_prev(dest, out_dir):
+    """덮어쓰기 전 직전 판을 `<out>/.prev/` 에 남긴다.
+
+    이게 있어야 받은 직후에 `whatsnew-gamedata.py --local` 로 **무엇이 바뀌었는지**
+    바로 볼 수 있다. 클뜯 레포를 안 쓰게 되면서 "직전 커밋 대비"라는 기준이 사라졌고,
+    그 자리를 이 스냅샷이 대신한다.
+    """
+    if not os.path.exists(dest):
+        return
+    prev = os.path.join(out_dir, ".prev")
+    os.makedirs(prev, exist_ok=True)
+    try:
+        shutil.copy2(dest, os.path.join(prev, os.path.basename(dest)))
+    except OSError:
+        pass          # 스냅샷은 편의 기능이다 — 실패해도 받는 것은 계속한다
 
 
 def schema_for(table, server):
@@ -152,6 +170,7 @@ def main():
             except Exception as e:
                 print("✗ 레포도 실패: %s" % str(e)[:50]); skipped += 1
             continue
+        keep_prev(dest, a.out)
         with open(dest, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False)
         print("→ %s (%d KB)" % (os.path.basename(dest), os.path.getsize(dest) // 1024))
