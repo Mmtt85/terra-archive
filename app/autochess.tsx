@@ -117,6 +117,10 @@ export type AcChess = {
   bk?: { op: string; n: string };
   /** 대체 기물(NPC) 모달 전용 — 이 캐릭터가 대체 출전하는 기물 id들 */
   subsOf?: string[];
+  /** 보급센터 미진열 (isHidden) — 사지 못하고 맹약에서 직접 뽑는 경로로만 나온다.
+   *  ways = 그 경로들 (maybe=1 은 데이터로 확정 못 한 것). build-autochess.py ways_of 참조 */
+  off?: 1;
+  ways?: { e: string; maybe?: 1 }[];
   // sks = 오퍼의 스킬 전부 (d/dG = 일반/골든 레벨 설명 — 같은 문장이면 dG 없음, df = 기물이
   // 기본으로 들고 나오는 것). mods = 보유 모듈 전부 (d = 전투 효과, s = 능력치, df = 기본 장착).
   // modG = 모듈 슬롯이 골든부터 열림.
@@ -252,7 +256,12 @@ const MISC_LABEL: Record<MiscTab, string> = {
 // 정예화 표기 — 게임 데이터의 PHASE_n을 도감과 같은 말로
 const PHASE_LABEL: Record<string, string> = { PHASE_0: "정예화 0", PHASE_1: "정예화 1", PHASE_2: "정예화 2" };
 // 상점 등장 방식 — NORMAL만 물자관리소에 뜬다
-const KIND_LABEL: Record<string, string> = { NORMAL: "상점 등장", PRESET: "특수 지급", DIY: "자유 선택", SUB: "대체 기물" };
+// 기물 출처. ⚠ 상점 진열 여부가 아니다 — PRESET·NORMAL 둘 다 보급센터에 뜬다 (2026-09-02 실측:
+// 둘 다 charShopChessDatas에 있고 진열에서 빠지는 건 isHidden뿐). 종전 라벨이 '상점 등장'/
+// '특수 지급'이라 4★·5★ 일반 기물에 '특수 지급'이 붙어 거꾸로 읽혔다. 실제 축은 **능력치를
+// 어디서 가져오느냐**다: PRESET은 모드가 고정으로 주고(charId==backupCharId), NORMAL은 내 계정의
+// ★6를 쓰되 미보유면 예비 오퍼로 대체된다(전원 ★6).
+const KIND_LABEL: Record<string, string> = { NORMAL: "보유 시 본인 출전", PRESET: "기본 지급", DIY: "자유 선택", SUB: "대체 기물" };
 const MODE_TYPE_LABEL: Record<string, string> = { LOCAL: "입문", SINGLE: "단독", MULTI: "협동" };
 // 맹약이 인원을 세는 범위 — 전장만 세는 BOARD는 기본값이라 배지를 붙이지 않는다
 const BOND_COND_LABEL: Record<string, string> = {
@@ -613,11 +622,14 @@ export default function AutochessGuide({ doc, onShowOperator }: {
   // 담기 모달의 검색칸도 같은 처지다 — 모달은 닫을 때 통째로 언마운트되므로, 다시 열면
   // 필터는 살아 있는데(pickF.term) 칸만 비어 보인다 (2026-09-01 실측, 티어는 멀쩡한데
   // 검색어만 안 맞아 더 헷갈린다). 열릴 때마다 되써 준다.
+  // ⚠ ref·term을 **미리 꺼내 쓴다** — pickF.inputRef.current 를 직접 대입하면
+  //   "훅이 돌려준 값을 수정한다"로 잡힌다 (react-compiler). 위 탭 쪽과 같은 모양.
+  const { inputRef: pickInputRef, term: pickTerm } = pickF;
   useEffect(() => {
-    const el = pickF.inputRef.current;
-    if (el && el.value !== pickF.term) el.value = pickF.term;
+    const el = pickInputRef.current;
+    if (el && el.value !== pickTerm) el.value = pickTerm;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pickF.term, picking]);
+  }, [pickTerm, picking]);
 
   const chessById = useMemo(() => {
     const m = new Map<string, AcChess>();
@@ -1050,6 +1062,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
             {c.r ? <i className="ac-star">★{c.r}</i> : null}
             {c.job ? <i className="sb-chip">{c.job}</i> : null}
             {c.kind !== "NORMAL" && <i className="sb-chip ac-kind">{t(KIND_LABEL[c.kind] ?? c.kind)}</i>}
+            {c.off === 1 && <i className="sb-chip ac-offshop">{t("보급센터 미진열")}</i>}
           </span>
         </div>
       </header>
@@ -2573,8 +2586,22 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                   {chess.r ? <i className="ac-star">★{chess.r}</i> : null}
                   {chess.job ? <i className="sb-chip">{chess.job}</i> : null}
                   <i className="sb-chip ac-kind">{t(KIND_LABEL[chess.kind] ?? chess.kind)}</i>
+                  {chess.off === 1 && <i className="sb-chip ac-offshop">{t("보급센터 미진열")}</i>}
                 </p>
                 <p className="ac-bondline">{chess.bonds.map((b) => bondChip(b))}</p>
+                {/* 살 수 없는 기물이니 "그럼 어떻게 얻나"를 바로 붙인다 (사용자 확정 2026-09-02 —
+                    퍼퓨머에 의태 물질을 끼워 로즈솔트가 나온 제보에서 출발). 확정 못 한 경로는
+                    ways[].maybe 로 와서 단정하지 않고 '가능성'으로 쓴다. */}
+                {chess.ways?.length ? (
+                  <p className="ac-ways">
+                    <em>{t("획득 경로")}</em>
+                    {chess.ways.map((w) => (
+                      <i key={w.e} className={`sb-chip${w.maybe ? " maybe" : ""}`}>
+                        {w.e}{w.maybe ? t(" (가능성)") : ""}
+                      </i>
+                    ))}
+                  </p>
+                ) : null}
               </div>
               {/* 본체 미보유 시 대신 출전하는 전용 캐릭터 — 얼굴만 바뀌고 기물은 그대로다
                   (사용자 스크린샷 2026-08-23: 르무엔 미보유 계정의 스톰아이). 머리글 오른쪽

@@ -860,19 +860,62 @@ def build_locale(loc):
         })
 
     # ── 기물 ──
-    # ⚠ `isHidden`이 붙은 기물 17개는 **이 시즌에 없는 기물**이다 — 전부 뺀다.
-    #   처음엔 '상점 진열에서만 뺀다'는 뜻으로 읽고 짝이 있는 8건만 버렸는데, 짝 없이 혼자
-    #   숨김인 것도 게임에 아예 없다는 것이 실사용 확인으로 드러났다
-    #   (사용자 확인 2026-08-24: "비즈왁스는 아예 없는데? 왜 아예 없는 오퍼들이 잡히지?").
-    #   두 갈래가 다 여기로 모인다:
-    #     ① 티어가 옮겨진 8건 — 옛 티어의 항목이 숨김으로 남고 새 티어 항목이 목록 끝에
-    #        덧붙는다 (레코드키퍼 T4→T5, 가비알 디 인빈서블 T5→T4, 틴맨·쉐라·프틸롭시스·
-    #        시빌라이트 에테르나·와파린·님프). 남기면 같은 오퍼가 두 번, 하나는 틀린 티어로 뜬다.
-    #     ② 시즌에서 빠진 9건 (비그나·어스스피릿·맹약 서포터·클리프하트·아코르트·인포서·
-    #        샤마르·비즈왁스·로즈솔트) — 대체 항목 없이 그냥 사라진 기물.
-    #   ⚠ bondInfoDict.chessIdList에는 숨김 기물도 그대로 들어 있어 **판별 근거가 못 된다**.
-    #     맹약 소속 목록을 만들 때도 이 STALE을 걸러야 유령이 안 남는다.
-    STALE = {cid for cid, c in CHESS.items() if c.get("isHidden")}
+    # `isHidden`은 이름 그대로 **보급센터(상점) 미진열**이라는 뜻이고, 그 이상이 아니다.
+    # 붙은 17개를 "같은 charId가 다른 티어에 살아 있나"로 가르면 성격이 완전히 갈린다:
+    #
+    #   ① 짝이 있는 8건 = **옛 티어 잔재** → 버린다. 티어가 옮겨지면서 옛 항목이 숨김으로
+    #      남고 새 티어 항목이 목록 끝에 덧붙는다 (틴맨 T1→T2, 쉐라 T4→T3, 레코드키퍼 T4→T5,
+    #      와파린·시빌라이트 에테르나·프틸롭시스·가비알 디 인빈서블 T5→T4, 님프 T6→T5).
+    #      남기면 같은 오퍼가 두 번, 하나는 틀린 티어로 뜬다.
+    #
+    #   ② 짝이 없는 9건 = **상점에만 안 뜨는 실존 기물** → 남긴다 (offshop=1).
+    #      비그나·어스스피릿·맹약 서포터·클리프하트·아코르트·인포서·샤마르·비즈왁스·로즈솔트.
+    #
+    # ⚠ 2026-09-02 정정 — 종전엔 17개를 통째로 버렸다. 2026-08-24에 ②도 "게임에 아예 없다"고
+    #   판단했는데(“비즈왁스는 아예 없는데?”), 그건 **상점에서 안 보인다**는 관찰이었고 실제로는
+    #   맹약에서 직접 뽑는 경로로 나온다. 사용자 실사용 제보 2026-09-02: 퍼퓨머(조력·협동방어)에
+    #   〈의태 물질〉을 끼워 **로즈솔트**(협동방어)가 나왔고, 다른 사람은 **클리프하트**도 봤다.
+    #   둘 다 ②에 있다. 통째로 버리면 맹약 소속 인원이 11개 맹약에서 모자라게 나온다
+    #   (조력 8→11, 불굴 7→9, 협동방어 5→7 …) — 시너지 판정에 쓰는 숫자라 표시만의 문제가 아니다.
+    #   그래서 bondInfoDict.chessIdList가 숨김 기물을 품고 있는 것은 데이터 찌꺼기가 아니라
+    #   **뽑기 풀 그 자체**다. 맹약 소속 목록에서도 ②는 빼지 않는다.
+    LIVE_CHARS = {c["charId"] for c in CHESS.values() if not c.get("isHidden")}
+    STALE = {cid for cid, c in CHESS.items()
+             if c.get("isHidden") and c.get("charId") in LIVE_CHARS}
+    OFFSHOP = {cid for cid, c in CHESS.items()
+               if c.get("isHidden") and c.get("charId") not in LIVE_CHARS}
+
+    # ── OFFSHOP 기물의 획득 경로 (2026-09-02) ────────────────────────────────
+    # 보급센터에 안 뜨니 "그럼 어떻게 얻느냐"를 기물마다 적어 준다. 판정 기준은
+    # **효과 문구에 '보급센터'가 없고 맹약/풀에서 곧장 주는 것**이다 — 보급센터를 거치는
+    # 경로(호출 모듈·긴급 차출권·비콘·상업 포장 계획·헤드헌터·구류의 인연·집단 행동·
+    # 클리어 보상)는 진열이 막혀 있어 OFFSHOP이 나올 수 없다.
+    #   · WAY_ANY   착용자와 같은 맹약이면 무엇이든 → 9종 전부 해당
+    #   · WAY_FIX   특정 기물을 고정 지급 (우등생 → 맹약 서포터)
+    #   · 진영 지원 allybuff_select_7_* 은 blackboard의 bond로 맹약을 맞춰 붙인다.
+    #     ⚠ 이 8종을 참조하는 컨테이너를 못 찾았다 — 협동 지원 선택지로 보이나 확정 못 해
+    #     `maybe: 1`로 내보내고 화면이 "가능성 있음"으로 낮춰 쓴다.
+    WAY_ANY = ["eff_acarm069", "eff_acarm114"]        # 의태 물질 · 간이 통신기
+    WAY_FIX = {}                                       # chessId → [effectId]
+    WAY_BOND = {}                                      # bondId  → effectId (미확정)
+    for _eid, _arr in (KR.get("effectBuffInfoDataDict") or {}).items():
+        for _b in (_arr or []):
+            _bb = {x.get("key"): x.get("valueStr") for x in (_b.get("blackboard") or [])}
+            if _b.get("key") == "single_special_choice_gain_bond_chess" and _bb.get("bond"):
+                WAY_BOND[_bb["bond"]] = _eid
+            if _b.get("key") == "preparation_start_gain_chess_from_round" and _bb.get("chess", "").startswith("chess_char_"):
+                WAY_FIX.setdefault(_bb["chess"], []).append(_eid)
+
+    def ways_of(cid, bond_ids):
+        """OFFSHOP 기물 하나의 획득 경로 — [{e: 효과명, maybe?: 1}] (로케일 이름으로)"""
+        name = lambda e: (loc_name(loc, "effectInfoDataDict", e, "effectName",
+                                   (EFFECTS.get(e) or {}).get("effectName")) or e)
+        rows = [{"e": name(e)} for e in WAY_FIX.get(cid, [])]
+        rows += [{"e": name(e)} for e in WAY_ANY]
+        for b in bond_ids:
+            if b in WAY_BOND:
+                rows.append({"e": name(WAY_BOND[b]), "maybe": 1})
+        return rows
 
     # 직군 코드 → 로케일 라벨. NPC 기물(예비 오퍼레이터·맹약 서포터 등)은 operators.json에
     # 없어 rarity·job이 비는데, 화면에서 ★와 직군 칩이 통째로 사라진다 (전수 대조 2026-08-23).
@@ -906,11 +949,18 @@ def build_locale(loc):
             "n": name,
             "t": c.get("chessLevel"),           # 티어(코스트) 1~6
             "sort": c.get("shopLevelSortId"),
-            "kind": c.get("chessType"),         # NORMAL(상점 등장) / PRESET(특수 지급) / DIY
+            # 기물 출처 — 이름과 달리 **상점 진열 여부가 아니다** (2026-09-02 실측):
+            #   PRESET 모드가 고정 지급 (charId == backupCharId, 4★15·5★38·6★6)
+            #   NORMAL 내 계정의 ★6, 미보유면 backupCharId의 예비 오퍼로 대체 (전원 ★6)
+            #   DIY    자유 선택 슬롯
+            # 둘 다 보급센터에 뜬다 — 진열에서 빠지는 건 isHidden(OFFSHOP)뿐이다.
+            "kind": c.get("chessType"),
             "bonds": list(base.get("bondIds") or []),
             "gar": gar,
             "garG": garG,
             "up": base.get("upgradeNum"),       # 골든까지 필요한 장수
+            # 보급센터 미진열 — 맹약에서 직접 뽑는 경로로만 나온다 (ways_of 주석)
+            **({"off": 1, "ways": ways_of(cid, base.get("bondIds") or [])} if cid in OFFSHOP else {}),
         }
         if op:
             row["r"] = op.get("rarity")

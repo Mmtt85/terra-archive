@@ -19712,6 +19712,24 @@ p.sb-trline { margin-top: 2px; }
 html:not(.dark) .ac-star { color: #8f6512; }
 .ac-warn { border-color: #b3543a; color: #b3543a; }
 .ac-kind { background: color-mix(in srgb, var(--ink) 6%, var(--white)); }
+/* 보급센터에 안 뜨는 기물 — 목록에 섞여 있으면 "왜 상점에 없지?"가 되므로 눈에 띄게
+   (사용자 확정 2026-09-02). 경고가 아니라 '조건부'라서 붉은색은 피하고 호박색을 쓴다. */
+.ac-offshop {
+  background: color-mix(in srgb, #c8891a 18%, var(--white));
+  color: color-mix(in srgb, #8a5c00 82%, var(--ink));
+  border: 1px solid color-mix(in srgb, #c8891a 34%, transparent);
+}
+.ac-ways { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin: 6px 0 0; }
+.ac-ways > em { font-style: normal; font-weight: 700; font-size: 12px; opacity: .72; margin-right: 2px; }
+.ac-ways .sb-chip { background: color-mix(in srgb, #c8891a 12%, var(--white)); }
+/* 데이터로 확정 못 한 경로 — 확정된 것과 같은 무게로 읽히면 안 된다 */
+.ac-ways .sb-chip.maybe { opacity: .66; border-style: dashed; }
+.dark .ac-offshop {
+  background: color-mix(in srgb, #c8891a 24%, transparent);
+  color: #f0c470;
+  border-color: color-mix(in srgb, #c8891a 44%, transparent);
+}
+.dark .ac-ways .sb-chip { background: color-mix(in srgb, #c8891a 14%, transparent); }
 .ac-hp { font-weight: 800; }
 
 /* ── 맹약 카드 ── */
