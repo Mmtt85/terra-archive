@@ -235,6 +235,63 @@ const { term, set, clear, inputRef, inputProps } = useSearchInput();
 | 오퍼 아바타 | `yuanyan3060/ArknightsGameResource` 레포 `avatar/<char_id>.png` | **로컬 `public/avatars/`에 다운로드해 서빙** (핫링크 아님) |
 | ❌ 사용 금지 | `Kengxxiao/ArknightsGameData_YoStar` | 2025-11 업데이트 중단 — 쓰지 말 것 |
 
+### 2-1. 게임 CDN 직접 받기 — 클뜯 레포를 안 기다리는 길 (2026-09-02 구축)
+
+클뜯 레포는 **사람이 돌려야** 올라온다. 2026-09-02 위수 협의 2단계 때 실측하니 레포의
+`kr/gamedata/excel`은 8/20이 최신인데 게임 CDN에는 이미 새 데이터가 올라와 있었다 —
+**11일 차이**. 그래서 게임이 실제로 받는 CDN에서 직접 받는 경로를 만들었다.
+
+```bash
+python3 scripts/fetch-gamedata-cdn.py --check      # 지금 CDN의 resVersion만 확인
+python3 scripts/fetch-gamedata-cdn.py              # kr 기본 세트 → .gamedata/kr_*.json
+python3 scripts/fetch-gamedata-cdn.py --tables activity_table --server kr
+```
+
+출력이 `fetch-gamedata.py`와 **완전히 같아서** 뒤 파이프라인은 손댈 것이 없다.
+필요한 것: `brew install flatbuffers`(flatc), pip `UnityPy` `lz4inv`.
+
+흐르는 길 (`scripts/fbsutil.py` docstring이 정본):
+
+```
+ak-conf.<서버>/config/prod/official/network_config   ← 인증 없음, 공개
+  → {hv}/Android/version → resVersion
+  → {hu}/Android/assets/<resVersion>/hot_update_list.json
+  → 번들 .dat (zip 한 겹) → UnityPy → TextAsset
+  → 앞 128바이트 RSA 서명 제거 → 평문 FlatBuffer
+  → flatc + .fbs 스키마 → normalize() → 공식 JSON 모양
+```
+
+**흔한 오해 (둘 다 직접 시험해 아님을 확인)**
+
+- "AES로 암호화돼 있다" — **아니다.** 표가 JSON이던 옛 시절 유물이다. 공개된 중섭 마스크
+  (`UITpAi82pHAWwnzq…`)를 오프셋 0·128 양쪽으로 돌려봐도 안 풀린다. 애초에 암호문이 아니라서다
+  (엔트로피 5.6 bits/byte, 암호문이면 8.0). 중섭도 한섭도 똑같이 평문 FlatBuffer다.
+- "ipatool로 IPA를 받아 뜯으면 된다" — **아니다.** FairPlay는 실행 바이너리만 걸고,
+  애초에 앱 패키지엔 gamedata가 거의 없다. 첫 실행 때 이 CDN에서 통째로 받는다.
+
+**진짜 장벽은 스키마 하나뿐이다.** 클뜯 레포가 하는 일의 본체도 그거다 — 클라의 il2cpp
+메타데이터에서 역으로 뽑은 `.fbs`를 유지보수하는 것. 공개 스키마는
+`MooncellWiki/OpenArknightsFBS`를 쓴다 (`main`=중섭 최신, `YoStar`=2025-10에서 멈춤 ·
+`bondInfoDict`가 없어 **쓰지 말 것**). 서버별로 손본 게 있으면
+`scripts/fbs/<server>/<table>.fbs`가 우선하고, 없으면 main을 받아 `scripts/fbs/_cache/`에 둔다.
+
+⚠ **스키마가 어긋나면 flatc는 조용히 세그폴트한다.** 그래서 돌리기 전에 바이너리 루트
+vtable 슬롯 수와 스키마 필드 수를 대조해, 안 맞으면 그 표만 건너뛰고 몇 개 어긋났는지 찍는다.
+어긋났을 때 고치는 법 — **클뜯 레포의 그 서버 JSON을 정답지로 쓴다.** 최상위 키 목록과
+순서가 곧 루트 테이블의 필드 목록이므로, 중섭 스키마에서 남는 필드를 지우면 맞는다
+(한섭 activity_table은 `anniv7thData`·`arkhubData` 두 줄을 뺐다 — `scripts/fbs/kr/` 참조).
+
+**현재 커버리지 (2026-09-02, 한섭 클라 36.7.22): 기본 20표 중 16개.**
+못 하는 것 — `building_data`(81 vs 83슬롯), `stage_table`·`retro_table`(하위 테이블 어긋남),
+`range_table` 등 해시 접미사 없는 소수 레거시 표(`3_GcWr` 접두사의 옛 난독화 방식).
+이것들은 아직 클뜯 레포에서 받는다.
+
+⚠ flatc 산출물과 공식 JSON은 세 군데가 다르고 `Normalizer`가 메운다 — 맵 `[{key,value}]`→`{k:v}`,
+중첩배열 래퍼 `[{values}]`→`[[...]]`, 부재 필드→`null`. 그리고 **루트 테이블 필드가 하나면 벗긴다**
+(character_table의 `characters` 껍데기 — 안 벗기면 charId 조회가 전부 None이 되어 기물 121개의
+이름·스킬이 통째로 날아간다. 실제로 한 번 그랬다). `Blackboard_DataPair`처럼 key/value를 갖고도
+맵이 **아닌** 테이블이 있으니 모양으로 넘겨짚지 말고 반드시 스키마 타입(`dict__` 접두사)으로 판정할 것.
+
 정적 데이터 파일 (전부 스크립트로 재생성 가능):
 
 - `app/data/operators.json` — 백과사전용 오퍼 전체 (2026-07 기준 **416명**)
@@ -266,7 +323,7 @@ const { term, set, clear, inputRef, inputProps } = useSearchInput();
   ⚠ **읽을거리만 싣는다** — 카드 조합 레시피(태양을 뿌리쳐라), 스테이지 기믹 설명(폴리비전
   박물관), 토큰 능력(테라밥) 같은 순수 기능 텍스트는 제보 취지(서사)와 달라 뺐다.
 - `app/data/autochess.json` / `.en` / `.ja` — 위수 협의(오토체스) 가이드 (build-autochess.py,
-  로케일당 ~370KB). 맹약 23 · 오퍼레이터 133 · 전용 능력 230 · 아이템 59 · 전략 36 ·
+  로케일당 ~370KB). 맹약 23 · 오퍼레이터 133 · 전용 능력 230 · 아이템 59 · 전략 40 ·
   전략 전술 43 · 특훈 적 67(7유형) · 리더 적 10 · 마일스톤 60 · 자유 선택 후보 ★6 127 ·
   대체 기물 17. **EN도 정식 영문**(시즌2가 글로벌에 열림 — `krOnly`는 안전장치로만 남음).
   강조 태그는 빌드에서 `**굵게**`로 바뀌어 화면의 `rich()`가 렌더한다.
