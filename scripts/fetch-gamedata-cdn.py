@@ -122,28 +122,33 @@ def main():
     print("매니페스트 읽는 중…")
     cdn.manifest()
 
-    ok = fell_back = skipped = 0
+    ok, expected, unexpected, skipped = 0, [], [], 0
     for t in tables:
         print("  %-24s" % t, end=" ", flush=True)
         dest = os.path.join(a.out, "%s_%s.json" % (a.server, t))
-        data = None
+        data, why = None, None
         if t not in FALLBACK:
             try:
                 fb, path = cdn.text_asset("gamedata/excel/" + t)
                 fbs_path, fbs_text = schema_for(t, a.server)
                 if fbs_text:
                     data = decode(fb, fbs_path, fbs_text, t)
+                    if data is None:
+                        why = "디코딩 실패"
                 else:
-                    print("스키마 없음 →", end=" ")
+                    why = "스키마 없음"
             except KeyError as e:
-                print("%s →" % e, end=" ")
+                why = str(e)[:40]
         if data is None:                      # CDN에서 못 얻었으면 클뜯 레포로
             try:
-                raw = urlread(REPO % (a.server if a.server != "jp" else "jp", t),
-                              timeout=180, ua="terra-archive-cdn/1.0")
+                raw = urlread(REPO % (a.server, t), timeout=180, ua="terra-archive-cdn/1.0")
                 open(dest, "wb").write(raw)
-                print("레포 폴백 (%d KB)" % (len(raw) // 1024))
-                fell_back += 1
+                if why:
+                    print("⚠ %s → 레포 폴백 (%d KB)" % (why, len(raw) // 1024))
+                    unexpected.append((t, why))
+                else:
+                    print("레포 폴백 (%d KB)" % (len(raw) // 1024))
+                    expected.append(t)
             except Exception as e:
                 print("✗ 레포도 실패: %s" % str(e)[:50]); skipped += 1
             continue
@@ -152,9 +157,19 @@ def main():
         print("→ %s (%d KB)" % (os.path.basename(dest), os.path.getsize(dest) // 1024))
         ok += 1
 
-    print("\nCDN %d개 / 레포 폴백 %d개 / 실패 %d개  (resVersion %s)"
-          % (ok, fell_back, skipped, cdn.res_version))
-    return 1 if skipped else 0
+    print("\nCDN %d개 / 예정된 레포 폴백 %d개 / 실패 %d개  (resVersion %s)"
+          % (ok, len(expected), skipped, cdn.res_version))
+
+    # ⚠ 예정에 없던 폴백은 조용히 넘기지 않는다. 레포판은 CDN보다 며칠씩 낡아서, 이걸 놓치면
+    #   "그 서버엔 아직 데이터가 없나 보다"로 오해하게 된다 — 2026-09-02에 일섭 activity_table이
+    #   딱 이래서, 이미 들어와 있던 일본어 전략 4종이 한국어로 폴백된 채 배포됐다.
+    if unexpected:
+        print("\n⚠ 예정에 없던 레포 폴백 %d개 — 레포판은 CDN보다 낡았을 수 있다:" % len(unexpected))
+        for t, why in unexpected:
+            print("    %-24s %s" % (t, why))
+        print("  → python3 scripts/fbs-repair.py <표이름> --server %s  로 스키마를 고친 뒤 다시 받을 것"
+              % a.server)
+    return 1 if (skipped or unexpected) else 0
 
 
 if __name__ == "__main__":

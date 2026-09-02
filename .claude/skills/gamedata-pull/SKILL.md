@@ -48,27 +48,55 @@ print(re.sub(r"\n{2,}", "\n", re.sub(r"<[^>]+>", "\n", urlread(a["webUrl"], time
 PY
 ```
 
-## 2. 받는다
+## 2. 받는다 — **세 서버를 다 받는다**
 
 ```bash
 python3 scripts/fetch-gamedata-cdn.py                  # kr 기본 20표 → .gamedata/kr_*.json
+python3 scripts/fetch-gamedata-cdn.py --server jp      # 일섭
+python3 scripts/fetch-gamedata-cdn.py --server en      # 글섭
 python3 scripts/fetch-gamedata-cdn.py --tables activity_table,character_table   # 필요한 것만
 ```
 
 `fetch-gamedata.py`(레포판)와 **출력이 완전히 같아서** 뒤 파이프라인은 손댈 것이 없다.
-EN/JA도 필요하면 `--server en` / `--server jp`.
+
+⚠ **한섭만 받고 끝내지 말 것.** 사이트는 3개 언어인데 한섭만 새로 받으면 EN/JA가 낡은
+데이터로 만들어져 **번역이 있는데도 한국어로 폴백한다.** 2026-09-02에 실제로 그랬다 —
+일섭엔 신규 전략 4종이 이미 들어와 있었는데 한섭만 CDN에서 받는 바람에 일본어가 한국어로
+나간 채 배포됐다.
+
+⚠ **서버마다 리소스 버전이 따로 논다.** 같은 날 실측: kr `26-08-31` · jp `26-08-28` ·
+en `26-08-17` (클라는 셋 다 36.7.22). 그러니 "한섭에 있으면 일섭에도 있겠지"도,
+"일섭에 없으니 글섭에도 없겠지"도 둘 다 틀린다 — **서버마다 직접 확인한다.**
+정말로 그 서버에 아직 안 들어온 것이면 한국어 폴백이 정상이니 억지로 메우지 말고 사용자에게 알린다.
 
 ⚠ 표를 건너뛰면 **3번**으로. 건너뛴 채로 파이프라인을 돌리면 그 표를 쓰는 데이터가 조용히 망가진다.
 
 ## 3. 스키마가 어긋났을 때 (클라가 올라가면 생긴다)
 
 ```bash
-python3 scripts/fbs-repair.py <표이름> --dry-run   # 무엇을 지울지만 본다
-python3 scripts/fbs-repair.py <표이름>             # → scripts/fbs/<서버>/<표>.fbs
+python3 scripts/fbs-repair.py <표이름> --server <서버> --dry-run   # 무엇을 지울지만 본다
+python3 scripts/fbs-repair.py <표이름> --server <서버>             # → scripts/fbs/<서버>/<표>.fbs
 ```
 
 클뜯 레포의 그 서버 JSON을 정답지로 삼아 자동으로 고친다 (하위 테이블까지).
 **정답지가 낡아도 된다** — 어긋난 필드를 찾는 데만 쓰지, 데이터를 가져오는 게 아니다.
+
+⚠ **`--server`를 빼먹지 말 것.** 스키마는 서버마다 따로 둔다(`scripts/fbs/<서버>/`).
+kr 것만 만들어 두면 jp·en은 중섭 스키마를 물다 실패한다.
+
+### ⚠ "예정에 없던 레포 폴백" 경고를 무시하지 말 것
+
+CDN에서 못 뜯으면 스크립트가 클뜯 레포판으로 메우고 **경고를 찍는다**:
+
+```
+⚠ 예정에 없던 레포 폴백 1개 — 레포판은 CDN보다 낡았을 수 있다:
+    activity_table           디코딩 실패
+  → python3 scripts/fbs-repair.py <표이름> --server jp  로 스키마를 고친 뒤 다시 받을 것
+```
+
+`range_table`처럼 **예정된** 폴백은 요약줄에만 세고 경고하지 않는다. 경고가 뜨는 건
+고쳐야 하는 것이다 — 그냥 두면 그 표만 며칠 낡은 데이터로 사이트가 만들어진다.
+2026-09-02에 이 폴백이 실패를 가려서 일본어가 한국어로 나간 채 배포됐다.
 
 ## 4. 재생성 → 검증 → 빌드
 
