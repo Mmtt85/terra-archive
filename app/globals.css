@@ -19719,11 +19719,37 @@ html:not(.dark) .ac-star { color: #8f6512; }
   color: color-mix(in srgb, #8a5c00 82%, var(--ink));
   border: 1px solid color-mix(in srgb, #c8891a 34%, transparent);
 }
-.ac-ways { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin: 6px 0 0; }
-.ac-ways > em { font-style: normal; font-weight: 700; font-size: 12px; opacity: .72; margin-right: 2px; }
+/* 획득 경로 — 위(맹약 칩 줄)와 붙어 보여 별개 항목인 걸 못 읽었다 (사용자 지적 2026-09-02).
+   여백만 벌리면 붕 뜨므로 옅은 구분선 + 살짝 들여쓴 블록으로 묶는다. */
+.ac-ways {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+  margin: 12px 0 0; padding: 9px 11px;
+  border-radius: 9px;
+  background: color-mix(in srgb, #c8891a 7%, var(--white));
+  border: 1px solid color-mix(in srgb, #c8891a 20%, transparent);
+}
+.ac-ways > em {
+  font-style: normal; font-weight: 800; font-size: 11px; letter-spacing: .02em;
+  opacity: .78; margin-right: 3px;
+}
 .ac-ways .sb-chip { background: color-mix(in srgb, #c8891a 12%, var(--white)); }
 /* 데이터로 확정 못 한 경로 — 확정된 것과 같은 무게로 읽히면 안 된다 */
-.ac-ways .sb-chip.maybe { opacity: .66; border-style: dashed; }
+.ac-ways .sb-chip.maybe { opacity: .66; border: 1px dashed color-mix(in srgb, var(--ink) 32%, transparent); }
+.dark .ac-ways { background: color-mix(in srgb, #c8891a 9%, transparent); border-color: color-mix(in srgb, #c8891a 26%, transparent); }
+
+/* 배지 설명 — title의 1초 지연 없이 즉시 (route-map-rules의 data-tip과 같은 규약) */
+.ac-offshop[data-tip], .ac-kind[data-tip] { position: relative; cursor: help; }
+.ac-offshop[data-tip]:hover::after, .ac-kind[data-tip]:hover::after {
+  content: attr(data-tip);
+  position: absolute; left: 0; bottom: calc(100% + 6px); z-index: 30;
+  width: max-content; max-width: 280px;
+  padding: 6px 9px;
+  font-size: 11px; font-weight: 600; line-height: 1.5;
+  white-space: normal; text-align: left;
+  color: var(--white); background: var(--ink);
+  border: 1px solid var(--border-hover); border-radius: 7px;
+  pointer-events: none;
+}
 .dark .ac-offshop {
   background: color-mix(in srgb, #c8891a 24%, transparent);
   color: #f0c470;

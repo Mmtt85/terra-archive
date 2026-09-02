@@ -120,7 +120,7 @@ export type AcChess = {
   /** 보급센터 미진열 (isHidden) — 사지 못하고 맹약에서 직접 뽑는 경로로만 나온다.
    *  ways = 그 경로들 (maybe=1 은 데이터로 확정 못 한 것). build-autochess.py ways_of 참조 */
   off?: 1;
-  ways?: { e: string; maybe?: 1 }[];
+  ways?: { e: string; k?: "item" | "band"; tid?: string; maybe?: 1 }[];
   // sks = 오퍼의 스킬 전부 (d/dG = 일반/골든 레벨 설명 — 같은 문장이면 dG 없음, df = 기물이
   // 기본으로 들고 나오는 것). mods = 보유 모듈 전부 (d = 전투 효과, s = 능력치, df = 기본 장착).
   // modG = 모듈 슬롯이 골든부터 열림.
@@ -241,7 +241,7 @@ const GAIN_W_NOTE: Record<string, string> = {
 const VIEWS = ["bond", "band", "op", "item", "misc"] as const;
 type View = (typeof VIEWS)[number];
 const VIEW_LABEL: Record<View, string> = {
-  bond: "맹약", band: "전략", op: "오퍼레이터", item: "아이템", misc: "게임 정보",
+  bond: "맹약", band: "전략", op: "오퍼레이터 (기물)", item: "아이템", misc: "게임 정보",
 };
 // 게임 정보 = 핵심 셋 밖의 나머지 전부 (사용자 확정 2026-08-23: "맹약, 전략, 오퍼레이터만
 // 제일 큰 탭으로 빼고 그 외는 다 게임 정보로"). 보상 탭은 같은 날 제거.
@@ -261,7 +261,14 @@ const PHASE_LABEL: Record<string, string> = { PHASE_0: "정예화 0", PHASE_1: "
 // '특수 지급'이라 4★·5★ 일반 기물에 '특수 지급'이 붙어 거꾸로 읽혔다. 실제 축은 **능력치를
 // 어디서 가져오느냐**다: PRESET은 모드가 고정으로 주고(charId==backupCharId), NORMAL은 내 계정의
 // ★6를 쓰되 미보유면 예비 오퍼로 대체된다(전원 ★6).
-const KIND_LABEL: Record<string, string> = { NORMAL: "보유 시 본인 출전", PRESET: "기본 지급", DIY: "자유 선택", SUB: "대체 기물" };
+// ⚠ PRESET에는 **아무 칩도 안 붙인다.** 116종 중 59종이라 그게 기본값이고, 알려줄 게 없다.
+// (2026-09-02: 종전 '상점 등장'/'특수 지급'이 진열 여부처럼 읽혀 '기본 지급'으로 고쳤더니
+//  이번엔 "그게 뭔지 모르겠다"는 지적 — 붙는 쪽이 반대였다. 정작 알아야 할 건 NORMAL이다.)
+const KIND_LABEL: Record<string, string> = { NORMAL: "내 계정 ★6", DIY: "자유 선택", SUB: "대체 기물" };
+const KIND_TIP: Record<string, string> = {
+  NORMAL: "내 계정의 ★6 오퍼레이터가 그대로 출전합니다 — 미보유면 예비 오퍼레이터가 대신 나옵니다",
+  DIY: "보급센터의 자유 선택 칸 — 명단 밖의 보유 ★6를 데려오는 자리입니다",
+};
 const MODE_TYPE_LABEL: Record<string, string> = { LOCAL: "입문", SINGLE: "단독", MULTI: "협동" };
 // 맹약이 인원을 세는 범위 — 전장만 세는 BOARD는 기본값이라 배지를 붙이지 않는다
 const BOND_COND_LABEL: Record<string, string> = {
@@ -1061,8 +1068,8 @@ export default function AutochessGuide({ doc, onShowOperator }: {
             {tierBadge(c.t)}
             {c.r ? <i className="ac-star">★{c.r}</i> : null}
             {c.job ? <i className="sb-chip">{c.job}</i> : null}
-            {c.kind !== "NORMAL" && <i className="sb-chip ac-kind">{t(KIND_LABEL[c.kind] ?? c.kind)}</i>}
-            {c.off === 1 && <i className="sb-chip ac-offshop">{t("보급센터 미진열")}</i>}
+            {KIND_LABEL[c.kind] && <i className="sb-chip ac-kind" data-tip={KIND_TIP[c.kind] ? t(KIND_TIP[c.kind]) : undefined}>{t(KIND_LABEL[c.kind])}</i>}
+            {c.off === 1 && <i className="sb-chip ac-offshop" data-tip={t("보급센터에 진열되지 않아 살 수 없습니다 — 맹약에서 직접 뽑는 경로로만 나옵니다")}>{t("보급센터 미진열")}</i>}
           </span>
         </div>
       </header>
@@ -1180,6 +1187,13 @@ export default function AutochessGuide({ doc, onShowOperator }: {
         <span className="ac-oprow-meta">
           {c.r ? <i className="ac-star">★{c.r}</i> : null}
           {c.job ? <i className="sb-chip">{c.job}</i> : null}
+          {/* 맹약 소속 목록에도 단다 (사용자 요청 2026-09-02) — 여기가 "이 맹약 6명 맞추자"를
+              세는 자리라, 살 수 없는 기물이 섞여 있으면 계획이 어긋난다 */}
+          {c.off === 1 && (
+            <i className="sb-chip ac-offshop" data-tip={t("보급센터에 진열되지 않아 살 수 없습니다 — 맹약에서 직접 뽑는 경로로만 나옵니다")}>
+              {t("보급센터 미진열")}
+            </i>
+          )}
         </span>
         {c.bonds.length > 0 && <span className="ac-oprow-bonds">{c.bonds.map(bondTag)}</span>}
       </span>
@@ -2585,8 +2599,8 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                   {chess.t ? tierBadge(chess.t) : null}
                   {chess.r ? <i className="ac-star">★{chess.r}</i> : null}
                   {chess.job ? <i className="sb-chip">{chess.job}</i> : null}
-                  <i className="sb-chip ac-kind">{t(KIND_LABEL[chess.kind] ?? chess.kind)}</i>
-                  {chess.off === 1 && <i className="sb-chip ac-offshop">{t("보급센터 미진열")}</i>}
+                  {KIND_LABEL[chess.kind] && <i className="sb-chip ac-kind" data-tip={KIND_TIP[chess.kind] ? t(KIND_TIP[chess.kind]) : undefined}>{t(KIND_LABEL[chess.kind])}</i>}
+                  {chess.off === 1 && <i className="sb-chip ac-offshop" data-tip={t("보급센터에 진열되지 않아 살 수 없습니다 — 맹약에서 직접 뽑는 경로로만 나옵니다")}>{t("보급센터 미진열")}</i>}
                 </p>
                 <p className="ac-bondline">{chess.bonds.map((b) => bondChip(b))}</p>
                 {/* 살 수 없는 기물이니 "그럼 어떻게 얻나"를 바로 붙인다 (사용자 확정 2026-09-02 —
@@ -2595,11 +2609,14 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                 {chess.ways?.length ? (
                   <p className="ac-ways">
                     <em>{t("획득 경로")}</em>
-                    {chess.ways.map((w) => (
-                      <i key={w.e} className={`sb-chip${w.maybe ? " maybe" : ""}`}>
-                        {w.e}{w.maybe ? t(" (가능성)") : ""}
-                      </i>
-                    ))}
+                    {chess.ways.map((w) => (w.k && w.tid ? (
+                      // 누르면 그 장비·전략 상세로 (사용자 요청 2026-09-02) — 문구 참조와
+                      // 같은 openRef를 태워 모달 겹침·해시 규약을 그대로 따른다.
+                      <button key={w.e} type="button" className={`ac-ref ac-ref-${w.k}`}
+                        onClick={() => openRef([w.k!, w.tid!] as AcRef)}>{w.e}</button>
+                    ) : (
+                      <i key={w.e} className="sb-chip maybe">{w.e}{w.maybe ? t(" (가능성)") : ""}</i>
+                    )))}
                   </p>
                 ) : null}
               </div>

@@ -3024,13 +3024,23 @@ const D: Record<string, Pair> = {
   "정예화 2": ["E2", "精鋭化2"],
   // 기물 출처 (KIND_LABEL) — 2026-09-02에 뜻을 바로잡았다. 옛 "상점 등장"/"특수 지급"은
   // 진열 여부처럼 읽혔지만 실제 축은 능력치 출처다 (autochess.tsx KIND_LABEL 주석 참조).
-  "보유 시 본인 출전": ["Yours if owned", "所持していれば本人"],
-  "기본 지급": ["Provided", "標準支給"],
+  "내 계정 ★6": ["Your own 6★", "自分の★6"],
+  "내 계정의 ★6 오퍼레이터가 그대로 출전합니다 — 미보유면 예비 오퍼레이터가 대신 나옵니다":
+    ["The 6★ operator from your own account is deployed as-is — if you don't own them, a reserve operator stands in",
+     "自分のアカウントの★6オペレーターがそのまま出撃します — 未所持の場合は予備オペレーターが代わりに出ます"],
+  "보급센터의 자유 선택 칸 — 명단 밖의 보유 ★6를 데려오는 자리입니다":
+    ["The free-pick slot in the Supply Center — brings in a 6★ you own from outside the roster",
+     "補給センターの自由選択枠 — 名簿外の所持★6を連れてくる枠です"],
   "자유 선택": ["Free pick", "自由選択"],
   // 보급센터에 안 뜨고 맹약 뽑기로만 나오는 기물 9종
   "보급센터 미진열": ["Not stocked", "補給センター非陳列"],
   "획득 경로": ["How to get", "入手経路"],
   " (가능성)": [" (possible)", "（可能性）"],
+  "보급센터에 진열되지 않아 살 수 없습니다 — 맹약에서 직접 뽑는 경로로만 나옵니다":
+    ["Never stocked in the Supply Center, so it cannot be bought — it only turns up through effects that draw straight from an Alliance",
+     "補給センターに並ばないため購入できません — 盟約から直接引く経路でのみ出現します"],
+  // 위수 협의 탭 — 이 모드에서는 오퍼레이터를 '기물'이라 부르므로 둘 다 적는다 (2026-09-02)
+  "오퍼레이터 (기물)": ["Operators (Units)", "オペレーター（駒）"],
   "입문": ["Tutorial", "入門"],
   "단독": ["Solo", "ソロ"],
   "협동": ["Co-op", "協力"],

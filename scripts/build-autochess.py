@@ -906,15 +906,31 @@ def build_locale(loc):
             if _b.get("key") == "preparation_start_gain_chess_from_round" and _bb.get("chess", "").startswith("chess_char_"):
                 WAY_FIX.setdefault(_bb["chess"], []).append(_eid)
 
+    # 효과 id → 그 효과를 지닌 화면 항목 (누르면 상세가 열리게 — 사용자 요청 2026-09-02
+    # "의태물질같은것도 다 매핑시켜주고"). doc.refs는 게임 문구에 실제로 등장한 이름만
+    # 담아서 여기 이름들(의태 물질·간이 통신기·우등생)이 없다 — 그래서 따로 푼다.
+    WAY_TARGET = {}                                    # effectId → (kind, id)
+    for _tid, _t in (KR.get("trapChessDataDict") or {}).items():
+        if _t.get("effectId") and not (KR["trapShopChessDatas"].get(_tid) or {}).get("hideInShop"):
+            WAY_TARGET.setdefault(_t["effectId"], ("item", _tid))
+    for _b in (KR.get("bandDataListDict") or {}).values():
+        WAY_TARGET.setdefault(_b.get("effectId"), ("band", _b.get("bandId")))
+
     def ways_of(cid, bond_ids):
-        """OFFSHOP 기물 하나의 획득 경로 — [{e: 효과명, maybe?: 1}] (로케일 이름으로)"""
+        """OFFSHOP 기물 하나의 획득 경로 — [{e: 효과명, k/id: 링크 대상, maybe?: 1}]"""
         name = lambda e: (loc_name(loc, "effectInfoDataDict", e, "effectName",
                                    (EFFECTS.get(e) or {}).get("effectName")) or e)
-        rows = [{"e": name(e)} for e in WAY_FIX.get(cid, [])]
-        rows += [{"e": name(e)} for e in WAY_ANY]
-        for b in bond_ids:
-            if b in WAY_BOND:
-                rows.append({"e": name(WAY_BOND[b]), "maybe": 1})
+        def row(e, maybe=False):
+            r = {"e": name(e)}
+            tgt = WAY_TARGET.get(e)
+            if tgt:
+                r["k"], r["tid"] = tgt
+            if maybe:
+                r["maybe"] = 1
+            return r
+        rows = [row(e) for e in WAY_FIX.get(cid, [])]
+        rows += [row(e) for e in WAY_ANY]
+        rows += [row(WAY_BOND[b], True) for b in bond_ids if b in WAY_BOND]
         return rows
 
     # 직군 코드 → 로케일 라벨. NPC 기물(예비 오퍼레이터·맹약 서포터 등)은 operators.json에
