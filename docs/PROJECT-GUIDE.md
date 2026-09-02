@@ -277,14 +277,47 @@ ak-conf.<서버>/config/prod/official/network_config   ← 인증 없음, 공개
 
 ⚠ **스키마가 어긋나면 flatc는 조용히 세그폴트한다.** 그래서 돌리기 전에 바이너리 루트
 vtable 슬롯 수와 스키마 필드 수를 대조해, 안 맞으면 그 표만 건너뛰고 몇 개 어긋났는지 찍는다.
-어긋났을 때 고치는 법 — **클뜯 레포의 그 서버 JSON을 정답지로 쓴다.** 최상위 키 목록과
-순서가 곧 루트 테이블의 필드 목록이므로, 중섭 스키마에서 남는 필드를 지우면 맞는다
-(한섭 activity_table은 `anniv7thData`·`arkhubData` 두 줄을 뺐다 — `scripts/fbs/kr/` 참조).
 
-**현재 커버리지 (2026-09-02, 한섭 클라 36.7.22): 기본 20표 중 16개.**
-못 하는 것 — `building_data`(81 vs 83슬롯), `stage_table`·`retro_table`(하위 테이블 어긋남),
-`range_table` 등 해시 접미사 없는 소수 레거시 표(`3_GcWr` 접두사의 옛 난독화 방식).
-이것들은 아직 클뜯 레포에서 받는다.
+**어긋났을 때는 손으로 고치지 말고 `scripts/fbs-repair.py`를 돌린다.**
+
+```bash
+python3 scripts/fbs-repair.py building_data --dry-run   # 무엇을 지울지만 본다
+python3 scripts/fbs-repair.py building_data             # → scripts/fbs/kr/building_data.fbs
+```
+
+원리: **클뜯 레포의 그 서버 JSON이 정답지다.** 공식 직렬화기는 부재 필드도 `null`로 찍어
+주므로 "레포 JSON에 한 번도 안 나온 키" = "그 서버 클라에 없는 필드"다. 스키마와 레포 JSON을
+나란히 걸어가며 타입마다 관측된 키를 모으고, 한 번도 안 보인 필드를 지운다. 루트뿐 아니라
+**하위 테이블까지** 고치므로 stage_table·retro_table처럼 깊은 곳이 어긋난 것도 잡힌다.
+⚠ 표본이 하나도 없는 타입은 손대지 않는다 — 필드가 없어서가 아니라 그 데이터가 아직
+안 들어온 것일 수 있고, 그걸 비우면 멀쩡한 스키마를 망가뜨린다.
+
+**현재 커버리지 (2026-09-02, 한섭 클라 36.7.22): 기본 20표 중 19개 + 폴백 1개 = 전부.**
+
+| | |
+|---|---|
+| CDN 직접 19개 | activity·character·skill·uniequip·battle_equip·**building_data**·handbook_team·handbook_info·gamedata_const·item·gacha·**stage_table**·skin·charword·enemy_handbook·zone·climb_tower·sandbox_perm·**retro_table** |
+| 레포 폴백 1개 | `range_table` — 아래 참조 |
+
+`range_table`처럼 매니페스트 경로에 **해시 접미사가 없는** 소수 레거시 표는 FlatBuffer가
+아니라 **진짜로 암호화**돼 있다 (엔트로피 7.997 — FlatBuffer 표는 5.6). 옛 JSON+AES 시절
+형식이 남은 것이고 공개된 중섭 마스크로는 안 풀린다. 다만 **콘텐츠 업데이트와 함께 바뀌지
+않아** 급하지 않다 — range_table(공격 범위 격자)은 연 2~4회, 새 범위 모양이 나오는 오퍼가
+있을 때만 바뀐다 (2026-08-13 · 06-22 · 02-10 · 2025-12-11 …). `fetch-gamedata-cdn.py`의
+`FALLBACK` 집합에 넣어 자동으로 레포판을 받아 메우므로 **호출부는 신경 쓸 것이 없다.**
+
+**내려받는 양**: 서버당 **46MB** (그중 31MB가 `.idx` 매니페스트 하나, 표 번들은 압축돼 15MB
+남짓). `.gamedata/.cdn/`에 resVersion별로 캐시하므로 같은 버전을 다시 돌리면 네트워크가 안 탄다.
+3개 서버를 다 받아도 140MB 정도다 — 기가 단위가 아니다.
+
+**검증 (2026-09-02, 클뜯 레포 8/20 한섭 JSON 대비)**
+
+| 표 | 결과 |
+|---|---|
+| `activity_table` | 위수협의 시즌1 차이 **0건**, 공통 활동 234개 중 차이는 새로 들어온 act2autochess 하나뿐 |
+| `building_data` | 차이 **0건** |
+| `stage_table` | 차이 2건 — 둘 다 이번에 새로 들어온 `act2autochess_m03/m04` (우리가 더 최신) |
+| `retro_table` | 차이 8건 — 우리는 `PLOT_ITEM`·`CONDITION_DROP`(열거형 이름), 레포는 `90`·`12`(모르는 값이라 숫자로 흘림). `build-stages.py`의 `DROP_LABELS`가 이름으로 찾으므로 **우리 쪽이 맞다** — 레포판이면 화면에 "12"로 떴다 |
 
 ⚠ flatc 산출물과 공식 JSON은 세 군데가 다르고 `Normalizer`가 메운다 — 맵 `[{key,value}]`→`{k:v}`,
 중첩배열 래퍼 `[{values}]`→`[[...]]`, 부재 필드→`null`. 그리고 **루트 테이블 필드가 하나면 벗긴다**

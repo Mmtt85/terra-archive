@@ -21,7 +21,10 @@
   통합전략)를 로컬에서 따로 돌려야 해서 손으로 꿰면 매번 빠뜨린다.
 - 사이트는 3개 언어(`/` 한국어 · `/en` · `/ja`). UI의 **한국어 문구를 수정하면
   `app/i18n.tsx` 사전의 같은 키도 함께 수정**해야 EN/JA 번역이 유지된다 (PROJECT-GUIDE §1).
-- 데이터 소스는 `ArknightsAssets/ArknightsGamedata`(kr) 클뜯 레포.
+- **데이터는 게임 CDN에서 직접 받는다** (`scripts/fetch-gamedata-cdn.py`, 2026-09-02~) —
+  인게임 업데이트와 동시에 손에 들어온다. 절차는 `gamedata-pull` 스킬, 원리는 PROJECT-GUIDE §2-1.
+  클뜯 레포 `ArknightsAssets/ArknightsGamedata`는 사람이 돌려야 올라와서 몇 시간~며칠 밀리므로
+  (실측 11일) **`range_table` 폴백과 스키마 수리용 정답지로만** 쓴다.
   Kengxxiao 레포는 죽었음(2025-11) — 사용 금지.
 - 사용자가 교정해준 도메인 규칙(가짜 게스트 오퍼 제외, KR 출시순 seq, 시너지 팟 판정,
   인프라 buffChar 슬롯 규칙 등)은 PROJECT-GUIDE/INFRA-RULES에 기록되어 있다 — 어기지 말 것.

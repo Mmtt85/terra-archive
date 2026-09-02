@@ -34,6 +34,28 @@ KR 최신 `character_table`과 로컬 JSON을 비교해 미수록 오퍼레이�
 
 ## 2. 게임 데이터 다운로드
 
+**두 가지 길이 있다. 새 패치를 따라잡을 때는 ①을 쓴다.**
+
+### ① 게임 CDN에서 직접 (권장 — 인게임 업데이트와 동시)
+
+```bash
+python3 scripts/fetch-gamedata-cdn.py --check     # 지금 CDN의 resVersion만 확인 (1초)
+python3 scripts/fetch-gamedata-cdn.py             # kr 기본 세트 → .gamedata/kr_*.json
+python3 scripts/fetch-gamedata-cdn.py --server jp # 일섭 / --server cn 중섭 / --server en 글로벌
+```
+
+②와 **출력이 완전히 같아서** 뒤 파이프라인은 손댈 것이 없다. 필요한 것:
+`brew install flatbuffers`(flatc), pip `UnityPy` `lz4inv`. 서버당 46MB를 받고
+`.gamedata/.cdn/`에 resVersion별로 캐시한다.
+
+②는 사람이 돌려야 올라오는 레포라 몇 시간~며칠 밀린다 (2026-09-02 실측 **11일**).
+자세한 원리·검증·스키마 고치는 법은 [docs/PROJECT-GUIDE.md](../docs/PROJECT-GUIDE.md) §2-1.
+
+> 스키마가 어긋나 표를 건너뛰면 `python3 scripts/fbs-repair.py <표이름>`을 돌린다.
+> 클뜯 레포 JSON을 정답지로 삼아 서버별 스키마를 자동으로 고쳐 준다.
+
+### ② 클뜯 레포에서 (`fetch-gamedata.py`)
+
 `ArknightsAssets/ArknightsGamedata` 레포(자동 클뜯, kr 폴더)에서 아래 테이블을 받아 한 폴더(예: `.gamedata/`)에 저장:
 
 - `kr_character_table.json`, `kr_skill_table.json`, `kr_uniequip_table.json`,

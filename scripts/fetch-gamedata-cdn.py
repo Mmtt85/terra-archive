@@ -48,6 +48,15 @@ DEFAULT_TABLES = [
     "climb_tower_table", "sandbox_perm_table", "retro_table",
 ]
 
+# CDN에서 못 뜯는 표 → 클뜯 레포에서 받는다.
+# 매니페스트 경로에 해시 접미사가 없는 소수 레거시 표들은 FlatBuffer가 아니라 **진짜 암호화**돼
+# 있다 (엔트로피 7.997 — FlatBuffer 표는 5.6). 옛 JSON+AES 시절 형식이 그대로 남은 것들이고,
+# 공개된 중섭 마스크로는 안 풀린다. 다만 콘텐츠 업데이트와 함께 바뀌지 않아 급하지 않다 —
+# range_table(공격 범위 격자)은 연 2~4회, 새 범위 모양이 나오는 오퍼가 있을 때만 바뀐다
+# (2026-08-13, 06-22, 02-10, 2025-12-11 …). 그래서 레포판으로 메우고 넘어간다.
+REPO = "https://raw.githubusercontent.com/ArknightsAssets/ArknightsGamedata/master/%s/gamedata/excel/%s.json"
+FALLBACK = {"range_table"}
+
 
 def schema_for(table, server):
     """서버 전용 스키마 > 공용 손본 스키마 > 공개 스키마(캐시). 없으면 None."""
@@ -113,27 +122,39 @@ def main():
     print("매니페스트 읽는 중…")
     cdn.manifest()
 
-    ok = skipped = 0
+    ok = fell_back = skipped = 0
     for t in tables:
         print("  %-24s" % t, end=" ", flush=True)
-        try:
-            fb, path = cdn.text_asset("gamedata/excel/" + t)
-        except KeyError as e:
-            print("✗ %s" % e); skipped += 1; continue
-        fbs_path, fbs_text = schema_for(t, a.server)
-        if not fbs_text:
-            print("✗ 스키마 없음"); skipped += 1; continue
-        data = decode(fb, fbs_path, fbs_text, t)
-        if data is None:
-            skipped += 1; continue
         dest = os.path.join(a.out, "%s_%s.json" % (a.server, t))
+        data = None
+        if t not in FALLBACK:
+            try:
+                fb, path = cdn.text_asset("gamedata/excel/" + t)
+                fbs_path, fbs_text = schema_for(t, a.server)
+                if fbs_text:
+                    data = decode(fb, fbs_path, fbs_text, t)
+                else:
+                    print("스키마 없음 →", end=" ")
+            except KeyError as e:
+                print("%s →" % e, end=" ")
+        if data is None:                      # CDN에서 못 얻었으면 클뜯 레포로
+            try:
+                raw = urlread(REPO % (a.server if a.server != "jp" else "jp", t),
+                              timeout=180, ua="terra-archive-cdn/1.0")
+                open(dest, "wb").write(raw)
+                print("레포 폴백 (%d KB)" % (len(raw) // 1024))
+                fell_back += 1
+            except Exception as e:
+                print("✗ 레포도 실패: %s" % str(e)[:50]); skipped += 1
+            continue
         with open(dest, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False)
         print("→ %s (%d KB)" % (os.path.basename(dest), os.path.getsize(dest) // 1024))
         ok += 1
 
-    print("\n%d개 완료 / %d개 건너뜀  (resVersion %s)" % (ok, skipped, cdn.res_version))
-    return 1 if skipped and not ok else 0
+    print("\nCDN %d개 / 레포 폴백 %d개 / 실패 %d개  (resVersion %s)"
+          % (ok, fell_back, skipped, cdn.res_version))
+    return 1 if skipped else 0
 
 
 if __name__ == "__main__":

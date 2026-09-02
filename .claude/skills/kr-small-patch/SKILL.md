@@ -19,6 +19,16 @@ description: 한국서버 작은 점검(오후 4시경 10분, 큰 점검 때 미
 ## 절차
 
 ### 1. 정말 데이터가 안 바뀌었는지만 확인 (30초)
+
+**먼저 CDN의 resVersion을 본다** — 여기가 움직였으면 해금이 아니라 새 데이터가 온 것이다:
+```bash
+python3 scripts/fetch-gamedata-cdn.py --check
+```
+움직였으면 [`gamedata-pull`](../gamedata-pull/SKILL.md) 스킬로 받아 갱신한다.
+⚠ 리소스 업데이트는 **점검 없이** 진행되기도 한다 (2026-09-02 위수협의 2단계: 16:00~16:10
+"점검 없음" 공지인데 실제로는 전략 4종·신규 모드가 들어왔다) — "작은 점검이니 데이터는 그대로"로
+넘겨짚지 말고 반드시 확인할 것.
+
 ```bash
 python3 scripts/whatsnew-gamedata.py --future-only
 ```
