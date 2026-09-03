@@ -44,7 +44,20 @@ run() {
 
 # 클뜯 수신은 두 레인 모두 필요하다 (rest도 .gamedata를 읽는다). 러너가 매번 새 체크아웃이라
 # 캐시가 없어 각자 받는다 — 3초짜리라 나눠도 손해가 없다.
-run "fetch-gamedata"   python3 scripts/fetch-gamedata.py "$G"
+#
+# ⚠ SKIP_FETCH=1 이면 이 단계를 건너뛰고 **`.gamedata`에 이미 있는 것을 그대로 쓴다.**
+#   CDN에서 직접 뜯어 온 뒤(`fetch-gamedata-cdn.py`, PROJECT-GUIDE §2-1) 이 스크립트를
+#   그냥 돌리면, 여기서 클뜯 레포판을 다시 받아 **방금 받은 최신 데이터를 덮어쓴다.**
+#   레포는 사람이 돌려야 올라와서 며칠씩 밀리므로(실측 11일), 덮이면 조용히 옛 데이터로
+#   사이트가 만들어진다 — 점검 당일에 이걸 당하면 신규 콘텐츠가 통째로 빠진다.
+#   무인 CI는 CDN 단계가 없으므로 기본값(레포에서 받기) 그대로 둔다.
+if [ "${SKIP_FETCH:-}" = "1" ]; then
+  echo "▶ fetch-gamedata 건너뜀 (SKIP_FETCH=1 — $G 의 기존 데이터를 쓴다)"
+  ls "$G"/kr_character_table.json >/dev/null 2>&1 \
+    || { echo "$G 가 비어 있다 — SKIP_FETCH 를 빼거나 fetch-gamedata-cdn.py 를 먼저 돌릴 것" >&2; exit 2; }
+else
+  run "fetch-gamedata"   python3 scripts/fetch-gamedata.py "$G"
+fi
 
 if in_phase fast; then
 # 1) 오퍼레이터 기계 필드 재생성 → 컨셉 태그 → operators.json

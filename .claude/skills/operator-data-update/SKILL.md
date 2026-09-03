@@ -18,15 +18,22 @@ description: 명일방주 KR 신규 오퍼레이터 데이터·아바타(썸네�
 ## 절차
 
 1. **신규 오퍼 확인**: `node scripts/check-new-operators.mjs` — 미수록 오퍼레이터 목록 출력. 없으면 여기서 종료.
-2. **게임 데이터 다운로드** → 스크래치 폴더(예: `.gamedata/`)에 저장:
-   - `kr/gamedata/excel/`에서: `character_table`, `skill_table`, `uniequip_table`, `battle_equip_table`, `building_data`, `range_table`, `handbook_team_table`, `handbook_info_table`, `gacha_table` → 각각 `kr_<name>.json`으로.
-   - 별명(다국어)용: `jp_character_table.json`, `cn_character_table.json`.
-   - **EN/JA 사이트 데이터용**: `en/`·`jp/` 폴더에서 같은 테이블 세트(range 제외)를 `en_<name>.json`·`jp_<name>.json`으로.
+2. **게임 데이터 다운로드** — 손으로 URL을 나열하지 말고 **CDN에서 직접 받는다**
+   (절차 정본: [`gamedata-pull`](../gamedata-pull/SKILL.md) 스킬):
+   ```bash
+   python3 scripts/fetch-gamedata-cdn.py                 # kr
+   python3 scripts/fetch-gamedata-cdn.py --server jp     # 일섭
+   python3 scripts/fetch-gamedata-cdn.py --server en     # 글섭
+   python3 scripts/fetch-gamedata-cdn.py --server cn     # 중섭(미래시·별명용)
+   ```
+   서버별 표 목록은 스크립트의 `TABLES` 상수가 정본이라 빠뜨릴 일이 없다.
+   클뜯 레포(`fetch-gamedata.py`)는 사람이 돌려야 올라와 며칠씩 밀리므로 예비로만 쓴다.
 3. **재생성은 손으로 스크립트를 나열하지 말고 파이프라인을 쓴다** — 무인 레인과 같은 경로라
    빠뜨리는 단계가 없다:
    ```bash
-   bash scripts/ci-refresh.sh          # 전체(=all). 도감만 급하면 `fast`, 나머지는 `rest`
+   SKIP_FETCH=1 bash scripts/ci-refresh.sh   # 전체(=all). 도감만 급하면 `fast`, 나머지는 `rest`
    ```
+   > ⚠ **`SKIP_FETCH=1` 을 빼면 2번에서 받은 CDN 데이터가 클뜯 레포판으로 덮인다.**
    fast(~57초) = 오퍼 데이터·EN/JA·아바타·**스킬 레벨**·**프로필**,
    rest(~7분) = 인프라·회귀검증·공채·파밍·비용·스토리·**보이스**·**스킨 메타**.
    ⚠ 굵게 표시한 **오퍼당 지연 로딩 파일 4종**은 2026-08-01까지 파이프라인에서 빠져 있었다.

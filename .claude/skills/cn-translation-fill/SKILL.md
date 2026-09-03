@@ -14,9 +14,13 @@ description: 미실장(중국 선행) 신규 오퍼레이터·재료의 중국�
 
 1. **미번역 원문 수집** — 파이프라인을 돌리면 미번역 중국어 원문을 경고로 출력한다:
    ```bash
-   bash scripts/ci-refresh.sh 2>&1 | grep -Ei "미번역|未|译" | sort -u
+   SKIP_FETCH=1 bash scripts/ci-refresh.sh 2>&1 | grep -Ei "미번역|未|译" | sort -u
    ```
    또는 무인 리포트 이메일의 "파이프라인 경고" 블록에 찍힌 원문을 쓴다.
+
+   > ⚠ **CDN에서 직접 받아 온 뒤라면 `SKIP_FETCH=1`이 필수다** — 없으면 `ci-refresh.sh`가
+   > 맨 앞에서 클뜯 레포판을 다시 받아 방금 받은 최신 데이터를 덮어쓴다(레포는 며칠씩 밀린다).
+   > `.gamedata`가 아직 비어 있을 때만 플래그를 빼고 돌린다.
 
 2. **cn-translations.json에 번역 추가** — 각 원문을 키로, ko/en/ja를 채운다:
    ```json
@@ -36,7 +40,7 @@ description: 미실장(중국 선행) 신규 오퍼레이터·재료의 중국�
 
 3. **재생성 + 확인** — 번역이 반영되는지, 남은 미번역이 없는지:
    ```bash
-   bash scripts/ci-refresh.sh 2>&1 | grep -Ei "미번역|未|译" | sort -u   # 비어야 정상
+   SKIP_FETCH=1 bash scripts/ci-refresh.sh 2>&1 | grep -Ei "미번역|未|译" | sort -u   # 비어야 정상
    ```
    (regen-operators / build-costs / build-i18n가 이 파일을 읽어 operators.json·costs.json·
    EN/JA 데이터에 반영한다. build-i18n는 ko→en/ja 대응도 이 파일에서 수확.)

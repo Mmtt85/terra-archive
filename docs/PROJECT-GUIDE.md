@@ -243,12 +243,43 @@ const { term, set, clear, inputRef, inputProps } = useSearchInput();
 
 ```bash
 python3 scripts/fetch-gamedata-cdn.py --check      # 지금 CDN의 resVersion만 확인
-python3 scripts/fetch-gamedata-cdn.py              # kr 기본 세트 → .gamedata/kr_*.json
+python3 scripts/fetch-gamedata-cdn.py              # kr 세트 → .gamedata/kr_*.json
+python3 scripts/fetch-gamedata-cdn.py --server cn  # 중섭(미래시) 14표
 python3 scripts/fetch-gamedata-cdn.py --tables activity_table --server kr
 ```
 
 출력이 `fetch-gamedata.py`와 **완전히 같아서** 뒤 파이프라인은 손댈 것이 없다.
+받는 표 목록도 서버별로 같다 (`TABLES` 상수 — kr 20 · jp/en 18 · **cn 14**).
 필요한 것: `brew install flatbuffers`(flatc), pip `UnityPy` `lz4inv`.
+
+네 서버 모두 같은 구조로 뜯린다 (2026-09-04 실측):
+
+| 서버 | network_config | 클라 버전 체계 | 표 | 비고 |
+|---|---|---|---|---|
+| kr | `ak-conf.arknights.kr` | `36.7.22` | 20 | 사이트 본체 |
+| jp | `ak-conf.arknights.jp` | `36.7.22` | 18 | 일본어 화면 |
+| en | `ak-conf.arknights.global` | `36.7.22` | 18 | 영어 화면 |
+| cn | `ak-conf.hypergryph.com` | **`2.7.61`** | 14 | **미래시 전용** |
+
+⚠ **중섭 클라 버전 체계는 요스타 서버들과 아예 다르다** — 숫자를 서로 비교하지 말 것.
+⚠ **중섭은 서버 전용 스키마가 필요 없다.** 공개 스키마(`scripts/fbs/_cache/`,
+OpenArknightsFBS `main`)가 곧 중섭 현행판이라 그대로 맞는다 — 실측 13/13 성공
+(+ 예정된 `range_table` 폴백). 검증도 클뜯 레포판과 **차이 0건**이었다
+(character_table 1,368 · item_table 1,540 · building_data 747 전수 일치).
+⚠ **중섭 공지 엔드포인트(`network_config` → `an`)는 죽어 있다** — 2026-09-04에 조회하니
+2025년 5월 공지(announceId 2069)가 그대로 나왔다. 중섭은 표 비교로만 판단한다.
+
+### ⚠ 받은 뒤 `ci-refresh.sh`를 그냥 돌리면 다 날아간다
+
+`ci-refresh.sh`는 맨 앞에서 `fetch-gamedata.py`(클뜯 레포)를 돌려 **방금 CDN에서 받은
+것을 통째로 덮어쓴다.** 레포는 며칠씩 밀리므로 조용히 옛 데이터로 사이트가 만들어진다.
+
+```bash
+SKIP_FETCH=1 bash scripts/ci-refresh.sh    # .gamedata 의 기존(=CDN) 데이터를 쓴다
+```
+
+무인 CI(GitHub Actions)는 CDN 단계가 없으므로 **기본값 그대로** 둔다 — 이 플래그는
+로컬 전용이다. `.gamedata`가 비어 있으면 가드가 종료 코드 2로 막는다.
 
 흐르는 길 (`scripts/fbsutil.py` docstring이 정본):
 

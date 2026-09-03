@@ -40,14 +40,31 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 FBS_DIR = os.path.join(HERE, "fbs")
 FBS_URL = "https://raw.githubusercontent.com/MooncellWiki/OpenArknightsFBS/main/FBS/%s.fbs"
 
-# fetch-gamedata.py 의 kr 세트와 같은 목록 (그쪽이 정본 — 바뀌면 같이 고칠 것)
-DEFAULT_TABLES = [
-    "character_table", "skill_table", "uniequip_table", "battle_equip_table",
-    "building_data", "range_table", "handbook_team_table", "handbook_info_table",
-    "gamedata_const", "item_table", "gacha_table", "stage_table", "skin_table",
-    "charword_table", "enemy_handbook_table", "zone_table", "activity_table",
-    "climb_tower_table", "sandbox_perm_table", "retro_table",
-]
+# fetch-gamedata.py 의 서버별 세트와 같은 목록 (그쪽이 정본 — 바뀌면 같이 고칠 것).
+# ⚠ 서버마다 다르다. 중섭은 **미래시 전용**이라 14표만 쓴다 — 이벤트·구역·스테이지처럼
+#   한섭 화면을 만드는 표는 중섭에서 받아도 쓰는 데가 없다(중섭 콘텐츠를 사이트에 싣지
+#   않는다). 예전엔 kr 세트를 네 서버에 그대로 물렸는데, 그러면 중섭에서 40MB를 헛으로
+#   받고 `.gamedata/cn_activity_table.json` 같은 **아무도 안 읽는 파일**만 쌓인다.
+TABLES = {
+    "kr": ["character_table", "skill_table", "uniequip_table", "battle_equip_table",
+           "building_data", "range_table", "handbook_team_table", "handbook_info_table",
+           "gamedata_const", "item_table", "gacha_table", "stage_table", "skin_table",
+           "charword_table", "enemy_handbook_table", "zone_table", "activity_table",
+           "climb_tower_table", "sandbox_perm_table", "retro_table"],
+    "cn": ["character_table", "skill_table", "uniequip_table", "battle_equip_table",
+           "building_data", "range_table", "handbook_team_table", "handbook_info_table",
+           "gamedata_const", "item_table", "charword_table", "skin_table",
+           "enemy_handbook_table", "sandbox_perm_table"],
+    # en/jp 에 range_table 이 없는 것은 의도다 — 공격 범위 격자는 **언어와 무관**해서
+    # kr(없으면 cn) 것만 읽는다 (build-skill-levels.py, regen-operators.py). 넣어 봐야
+    # 아무도 안 읽는 파일이 하나 더 생길 뿐이고, 하필 CDN에서 못 뜯는 표라 레포까지 다녀온다.
+    "en": ["character_table", "skill_table", "uniequip_table", "battle_equip_table",
+           "building_data", "handbook_team_table", "handbook_info_table",
+           "item_table", "gacha_table", "stage_table", "skin_table", "charword_table",
+           "enemy_handbook_table", "zone_table", "activity_table", "climb_tower_table",
+           "sandbox_perm_table", "retro_table"],
+}
+TABLES["jp"] = TABLES["en"]
 
 # CDN에서 못 뜯는 표 → 클뜯 레포에서 받는다.
 # 매니페스트 경로에 해시 접미사가 없는 소수 레거시 표들은 FlatBuffer가 아니라 **진짜 암호화**돼
@@ -136,7 +153,7 @@ def main():
         return 0
 
     os.makedirs(a.out, exist_ok=True)
-    tables = a.tables.split(",") if a.tables else DEFAULT_TABLES
+    tables = a.tables.split(",") if a.tables else TABLES[a.server]
     print("매니페스트 읽는 중…")
     cdn.manifest()
 

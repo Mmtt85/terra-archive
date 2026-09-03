@@ -48,11 +48,25 @@ python3 scripts/fetch-gamedata-cdn.py --server jp # 일섭 / --server cn 중섭 
 `brew install flatbuffers`(flatc), pip `UnityPy` `lz4inv`. 서버당 46MB를 받고
 `.gamedata/.cdn/`에 resVersion별로 캐시한다.
 
+받는 표 목록은 서버마다 다르다 (`TABLES` 상수 — kr 20 · jp/en 18 · **cn 14**).
+중섭은 **미래시 전용**이라 이벤트·구역·스테이지 표를 아예 받지 않는다.
+
 ②는 사람이 돌려야 올라오는 레포라 몇 시간~며칠 밀린다 (2026-09-02 실측 **11일**).
 자세한 원리·검증·스키마 고치는 법은 [docs/PROJECT-GUIDE.md](../docs/PROJECT-GUIDE.md) §2-1.
 
-> 스키마가 어긋나 표를 건너뛰면 `python3 scripts/fbs-repair.py <표이름>`을 돌린다.
-> 클뜯 레포 JSON을 정답지로 삼아 서버별 스키마를 자동으로 고쳐 준다.
+> 스키마가 어긋나 표를 건너뛰면 `python3 scripts/fbs-repair.py <표이름> --server <서버>`를
+> 돌린다. 클뜯 레포 JSON을 정답지로 삼아 서버별 스키마를 자동으로 고쳐 준다.
+> **중섭은 예외 — 공개 스키마가 곧 중섭 현행판이라 고칠 일이 거의 없다.**
+
+#### ⚠ 받은 직후에 `ci-refresh.sh`를 그냥 돌리지 말 것
+
+그 스크립트는 맨 앞에서 ②(`fetch-gamedata.py`)를 돌려 **방금 받은 것을 통째로 덮어쓴다.**
+
+```bash
+SKIP_FETCH=1 bash scripts/ci-refresh.sh    # .gamedata 의 기존(=CDN) 데이터를 쓴다
+```
+
+무인 CI는 CDN 단계가 없으므로 기본값 그대로 둔다 — 이 플래그는 **로컬 전용**이다.
 
 ### ② 클뜯 레포에서 (`fetch-gamedata.py`)
 

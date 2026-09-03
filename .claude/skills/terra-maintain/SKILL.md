@@ -20,8 +20,14 @@ description: 테라 아카이브 무인 파이프라인이 못 하는 수작업(
 무인 결정론 레인이 이미 돌았다면 `app/data/*.json`은 최신이다. 확신이 없으면 로컬에서
 한 번 리프레시해 최신 상태에서 감지한다 (네트워크·수 분 소요):
 ```bash
-bash scripts/ci-refresh.sh
+SKIP_FETCH=1 bash scripts/ci-refresh.sh      # `.gamedata` 에 이미 받아 둔 것을 쓴다
 ```
+
+> ⚠ **`SKIP_FETCH=1` 을 빼지 말 것.** 이 스킬은 `kr-big-patch` §6에서 불리는데, 그때
+> `.gamedata`에는 CDN에서 방금 받은 최신 데이터가 들어 있다. 플래그가 없으면
+> `ci-refresh.sh`가 맨 앞에서 클뜯 레포판을 다시 받아 **그걸 통째로 덮어쓴다**
+> (레포는 며칠씩 밀린다 — 실측 11일).
+> `.gamedata`가 비어 있는 맨바닥 상태에서만 플래그 없이 돌린다.
 
 ## 1. 감지 — 무엇이 밀렸는지 스캔
 
