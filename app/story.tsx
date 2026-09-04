@@ -1341,7 +1341,7 @@ type GroupMode = "theme" | "kind" | "release";
 
 // 요약 뷰 — 이벤트·메인스토리·로그라이크 카드 그리드 + 검색 + 종류별/테마별 그룹핑(기본 종류별).
 // 각 그룹은 최신순(이벤트=출시월, 메인=에피소드 번호). 요약이 있는 이벤트만 열린다.
-function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEvent) => void; includeFuture?: boolean; group: GroupMode }) {
+function DigestView({ onOpen, group }: { onOpen: (event: StoryEvent) => void; group: GroupMode }) {
   const { locale, t } = useI18n();
   // 비제어 입력 — 타이핑 중 렌더 0회, 멈춘 뒤 0.5초에만 목록 갱신 (search.ts)
   const { term: searchTerm, inputProps: searchProps } = useSearchInput();
@@ -1367,10 +1367,10 @@ function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEve
     return () => { window.removeEventListener("mousedown", onDown); window.removeEventListener("keydown", onEsc); };
   }, [searchOpen]);
 
-  // 중섭 선행(미실장) 이벤트 — '미래시 데이터 포함' 체크 시에만 목록에 합류
-  // (chronology.json엔 없으므로 stories.json의 unreleased 플래그에서 직접 만든다)
+  // 중섭 선행(미실장) 이벤트 — 미래시와 무관하게 **항상** 목록에 합류한다
+  // (2026-09-04 규칙 변경: 숨기지 않고 흑백 + 미실장 표시. chronology.json엔 없으므로
+  //  stories.json의 unreleased 플래그에서 직접 만든다)
   const allItems = useMemo<ChronItem[]>(() => {
-    if (!includeFuture) return CHRON_ITEMS;
     const future = data.events.filter((ev) => ev.unreleased).map<ChronItem>((ev) => ({
       key: ev.id, kind: "event", name: ev.name, start: ev.start, thumb: ev.thumb,
       terraYear: null, arc: null, eventId: ev.id,
@@ -1378,7 +1378,7 @@ function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEve
     // 방어적 dedup — 연대기에 실수로 미출시 이벤트가 들어가도 future와 중복되지 않게 (key 기준)
     const futureKeys = new Set(future.map((f) => f.key));
     return [...future, ...CHRON_ITEMS.filter((it) => !futureKeys.has(it.key))];
-  }, [includeFuture]);
+  }, []);
 
   const keyword = normSearch(searchTerm);
   const filtered = useMemo(() => {
@@ -1542,7 +1542,7 @@ function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEve
     }
     return (
       <article key={it.key} id={group === "theme" ? `sl-${it.key}` : undefined}
-        className={`story-card${ready ? "" : " pending"}`}>
+        className={`story-card${ready ? "" : " pending"}${ev?.unreleased ? " fut-dim" : ""}`}>
         {/* 열 수 있는 카드는 실제 앵커 — 하이드레이션 전 클릭도 네이티브 이동으로 동작하고,
             마운트 시 apply()가 주소를 읽어 상세를 연다 (로드 직후 클릭 무반응 수정, 2026-07-21).
             href는 상세의 정본 경로 /stories/<id> — 크롤러가 따라갈 수 있는 내부 링크가 된다
@@ -1628,8 +1628,8 @@ function DigestView({ onOpen, includeFuture, group }: { onOpen: (event: StoryEve
   );
 }
 
-export default function StoryGuide({ summaries, onShowOperator, includeFuture, opIndex, initialStory, onStoryTitle }: {
-  summaries: StorySummaries; onShowOperator?: (id: string) => void; includeFuture?: boolean; opIndex?: OpIndex;
+export default function StoryGuide({ summaries, onShowOperator, opIndex, initialStory, onStoryTitle }: {
+  summaries: StorySummaries; onShowOperator?: (id: string) => void; opIndex?: OpIndex;
   /** 상세 라우트(/stories/<id>)가 넘겨주는 이벤트 id — 프리렌더 HTML에 요약 본문이 담긴다 */
   initialStory?: string;
   /** 열린 스토리 이름(없으면 null) — 홈이 문서 제목에 반영한다 */
@@ -1832,7 +1832,8 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
         <h2>{t("스토리")}</h2>
         <p>{t("출시된 스토리 {count}개의 아카이브입니다. AI가 스토리 스크립트 전문을 정독하고 컷씬과 함께 10분 분량으로 요약합니다. 현재 {done}개 수록 — 계속 추가됩니다.", { count: data.events.filter((event) => !event.unreleased).length, done: summarized })}</p>
         <p className="story-source">{t("요약에는 결말 포함 스포일러가 있습니다. 이벤트 제목·썸네일 출처: 게임 데이터 · {date} 기준.", { date: data.updated })}</p>
-        {includeFuture && data.events.some((event) => event.unreleased) && (
+        {/* 미실장 이벤트는 미래시와 무관하게 목록에 있으므로 안내도 항상 (2026-09-04 규칙 변경) */}
+        {data.events.some((event) => event.unreleased) && (
           <p className="story-source">{t("미실장(중국 서버 선행) 이벤트의 제목은 비공식 AI 번역으로, 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>
         )}
       </div>
@@ -1861,7 +1862,7 @@ export default function StoryGuide({ summaries, onShowOperator, includeFuture, o
       {view === "chronicle" ? (
         <ChronologyView onOpenEvent={openEvent} />
       ) : (
-        <DigestView onOpen={open} includeFuture={includeFuture} group={group} />
+        <DigestView onOpen={open} group={group} />
       )}
     </section>
   );

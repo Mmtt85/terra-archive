@@ -624,8 +624,9 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
       {season === "v2" ? (
         <>
           <p className="sim-intro">{t("생존연산 상설 「사막 이야기」의 요리 조합, 제작·설치물 재료, 지역과 날씨, 조우 선택지, 균열 목표를 게임 데이터에서 그대로 정리했습니다.")}</p>
+          {/* 신시즌 메뉴는 2026-09-04부터 미래시와 무관하게 늘 보인다 — 안내문도 그에 맞춘다 */}
           {!includeFuture && (
-            <p className="sim-note">{t("중국 서버 선행 신시즌 「재기동 앵커」는 헤더의 '미래시 데이터 포함'을 켜면 메뉴에 나타납니다.")}</p>
+            <p className="sim-note">{t("중국 서버 선행 신시즌 「재기동 앵커」는 메뉴에서 흑백으로 표시됩니다 — 헤더의 '미래시 데이터 포함'을 켜면 정상 표시됩니다.")}</p>
           )}
         </>
       ) : (

@@ -10816,6 +10816,58 @@ html.dark .story-card:hover .story-thumb img {
     grid-template-columns: 1fr;
   }
 }
+/* ── 미실장(중섭 선행) 항목의 흑백 처리 ─────────────────────────────────────────
+   2026-09-04 사용자 지시로 규칙이 바뀌었다: 미래시를 꺼도 **숨기지 않고 보여준다**.
+   대신 "아직 한섭에 없는 것"임이 한눈에 보이도록 흑백으로 눕히고 미실장 배지를 단다.
+   계산(인프라 편성·육성 비용·공채)에는 종전대로 안 들어간다 — 그건 각 화면의
+   includeFuture 판정이 그대로 맡는다. 여긴 **보이기만** 담당한다.
+
+   토글을 켜면 <html data-fut="1"> 이 붙어 흑백이 풀리고 정상 취급된다.
+   ⚠ data-fut 은 마운트 후 이펙트가 붙인다 — 속성이 아직 없는 첫 페인트도 OFF로 보이도록
+     `:not([data-fut="1"])` 로 쓴다 (`[data-fut="0"]` 로 쓰면 프리렌더 HTML에서 안 걸린다). */
+/* ⚠ filter 를 **카드 전체**에 걸면 안 된다 — filter 는 자식까지 통째로 래스터화해서,
+   안쪽에서 `filter: grayscale(0)` 으로 되돌릴 수 없다. 그러면 정작 제일 읽혀야 할
+   보라색 '미실장' 배지가 같이 회색이 되어 묻힌다 (2026-09-04 실측).
+   → **그림(img)만 흑백**으로 눕히고, 나머지는 opacity 로만 눌러 배지 색을 지킨다. */
+:root:not([data-fut="1"]) .fut-dim {
+  opacity: 0.78;
+  /* 눌러도 아무 일이 안 난다 (future-tip.tsx 가 클릭을 캡처 단계에서 삼킨다) —
+     커서로 미리 알린다. pointer-events:none 은 쓰면 안 된다: 호버 툴팁까지 죽는다. */
+  cursor: not-allowed;
+}
+:root:not([data-fut="1"]) .fut-dim * { cursor: inherit; }
+:root:not([data-fut="1"]) .fut-dim img { filter: grayscale(0.95); }
+/* 마우스를 올리면 조금 돌아온다 — 지금 무엇을 가리키고 있는지 보이게 */
+:root:not([data-fut="1"]) .fut-dim:hover { opacity: 0.95; }
+:root:not([data-fut="1"]) .fut-dim:hover img { filter: grayscale(0.45); }
+/* 표식은 흐리지 않는다 — 왜 회색인지 알려주는 글자다 */
+:root:not([data-fut="1"]) .fut-dim .future-badge,
+:root:not([data-fut="1"]) .fut-dim .tab-sub-future,
+:root:not([data-fut="1"]) .fut-dim .rg-topicsel-future { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .fut-dim { transition: none !important; }
+}
+/* 미실장 안내 툴팁 (app/future-tip.tsx) — **커서를 따라다닌다** (사용자 요청 2026-09-04).
+   위치는 JS가 transform 으로 민다 (초당 60번 리렌더를 피하려고 state 를 안 쓴다) —
+   그래서 left/top 은 0 고정이고, 여기에 transform 을 쓰면 그 값이 덮이니 넣지 말 것. */
+.fut-tip {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 9600;              /* 리더기 전체화면(9500)보다 위 — 어디서 눌러도 읽힌다 */
+  width: max-content;
+  max-width: min(300px, calc(100vw - 24px));
+  padding: 7px 10px;
+  border: 1px solid #b06dff;
+  background: var(--ink);
+  color: var(--white);
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.5;
+  pointer-events: none;       /* 툴팁이 커서를 가리면 pointermove 가 끊겨 깜빡인다 */
+  animation: 0.12s both fadeIn;
+}
+
 .future-badge {
   display: inline-block;
   background: #8a2be2;

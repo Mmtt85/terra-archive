@@ -127,15 +127,14 @@ const SECTION_LABEL: Record<string, string> = {
 };
 
 export type OmniSource = {
-  roster: Operator[];                                  // 미래시 토글이 이미 반영된 목록
-  includeFuture: boolean;
+  roster: Operator[];                                  // 전원 (2026-09-04: 미실장도 검색된다)
   locale: Locale;
   t: T;
   extra?: ExtraI18n | null;
 };
 
 /** 가벼운 색인 — 이미 번들에 들어 있는 데이터만 쓴다 (통합전략 세부 항목 제외). */
-export function buildOmniIndex({ roster, includeFuture, locale, t, extra }: OmniSource): OmniItem[] {
+export function buildOmniIndex({ roster, locale, t, extra }: OmniSource): OmniItem[] {
   const items: OmniItem[] = [];
 
   for (const entry of TAB_ENTRIES) {
@@ -147,7 +146,7 @@ export function buildOmniIndex({ roster, includeFuture, locale, t, extra }: Omni
   }
 
   for (const tp of TOPICS) {
-    if (!tp.ready || (tp.future && !includeFuture)) continue;
+    if (!tp.ready) continue;   // 미래시 토픽도 검색된다 (2026-09-04 규칙 변경)
     const num = tp.id.split("_")[1];
     const nicks = TOPIC_NICKS[tp.id] ?? [];
     // 테마 별명("사미")과 별명+분류어("사미록라") 조합까지 키로 — 커뮤니티가 쓰는 호칭이 정답이다
@@ -198,7 +197,7 @@ export function buildOmniIndex({ roster, includeFuture, locale, t, extra }: Omni
   for (const tp of TOPICS) if (TOPIC_NICKS[tp.id]) nickByKoName.set(norm(tp.name), TOPIC_NICKS[tp.id]);
 
   for (const ev of eventById.values()) {
-    if (!canOpenStory(ev.id) || (ev.unreleased && !includeFuture)) continue;
+    if (!canOpenStory(ev.id)) continue;   // 미실장 이벤트도 검색된다 (2026-09-04 규칙 변경)
     const name = (locale === "ko" ? ev.name.ko : ev.name[locale]) ?? ev.name.ko;
     items.push({
       uid: `story:${ev.id}`, kind: "story", name,
@@ -208,8 +207,7 @@ export function buildOmniIndex({ roster, includeFuture, locale, t, extra }: Omni
     });
   }
 
-  for (const item of ALL_MATERIALS) {
-    if (item.unreleased && !includeFuture) continue;
+  for (const item of ALL_MATERIALS) {   // 미실장 재료도 검색된다 (2026-09-04 규칙 변경)
     const name = (locale === "ko" ? item.name.ko : item.name[locale]) ?? item.name.ko;
     items.push({
       uid: `mat:${item.id}`, kind: "material", name,
@@ -234,8 +232,8 @@ export function buildOmniIndex({ roster, includeFuture, locale, t, extra }: Omni
 /** 통합전략 세부 항목 — 스샷 레이더 인덱스(지연 로드)를 그대로 재활용한다.
  *  덧붙여 **전시관 서브탭 이름**(암호판·사고·레퍼토리…)도 항목으로 만든다 — 탭 목록은 테마
  *  데이터에만 있어서(mechanics[].label) 지연 로드 시점에야 알 수 있다. */
-export function rogueOmniItems(index: LensIndex, includeFuture: boolean, t: T): OmniItem[] {
-  const allowed = new Set(TOPICS.filter((tp) => tp.ready && (!tp.future || includeFuture)).map((tp) => tp.id));
+export function rogueOmniItems(index: LensIndex, t: T): OmniItem[] {
+  const allowed = new Set(TOPICS.filter((tp) => tp.ready).map((tp) => tp.id));
   const topicName = new Map<string, string>();
   const arcTabs = new Map<string, Set<string>>();   // 토픽 → 전시관 탭 라벨
   const items: OmniItem[] = [];

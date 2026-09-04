@@ -1044,8 +1044,7 @@ const serverFromUrl = (): Server =>
   new URLSearchParams(window.location.search).get("sv") === "cn" || topicFromUrl() === "rogue_6" ? "cn" : "kr";
 
 // ── 메인 ───────────────────────────────────────────────────────────────────
-export default function RogueGuide({ includeFuture, initialTopic }: {
-  includeFuture?: boolean;
+export default function RogueGuide({ initialTopic }: {
   /** 테마 라우트(/rogue/<slug>)가 넘겨주는 토픽 id — 프리렌더 HTML의 히어로가 이걸 쓴다 */
   initialTopic?: string;
 }) {
@@ -2049,12 +2048,14 @@ export default function RogueGuide({ includeFuture, initialTopic }: {
           </div>
           {topicMenu && (
             <ul className="rg-topicsel-menu" role="listbox" aria-label={t("테마 변경")}>
-              {/* 중국섭 탭에선 전 토픽이 CN 서버 콘텐츠 — 미래시 토글과 무관하게 전부 노출 */}
-              {TOPICS.filter((tp) => tp.ready && (server === "cn" || !tp.future || includeFuture)).map((tp) => (
+              {/* 미래시 토픽도 항상 목록에 둔다 — 흑백(.fut-dim) + '미래시' 표식 (2026-09-04 규칙 변경) */}
+              {TOPICS.filter((tp) => tp.ready).map((tp) => (
                 <li key={tp.id} role="option" aria-selected={tp.id === topic}>
                   {/* 실제 앵커 — 크롤러가 테마 페이지로 따라갈 내부 링크이자 새 탭 대상 (2026-08-06).
                       클릭은 종전대로 가로채 그 자리에서 전환한다. */}
-                  <a href={roguePath(LOCALE_BASE[locale] ?? "", tp.id)} className={tp.id === topic ? "on" : ""}
+                  {/* 중국섭 탭에선 전 토픽이 CN 서버 콘텐츠라 흑백 처리하지 않는다 */}
+                  <a href={roguePath(LOCALE_BASE[locale] ?? "", tp.id)}
+                    className={`${tp.id === topic ? "on" : ""}${tp.future && server !== "cn" ? " fut-dim" : ""}`}
                     onClick={(e) => {
                       if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
                       e.preventDefault(); setTopicMenu(false); goTopic(tp.id);

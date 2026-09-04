@@ -187,7 +187,7 @@ function useStageSubModal(onShowItem: (id: string) => void) {
   return { openStage, node };
 }
 
-export default function FarmGuide({ includeFuture }: { includeFuture: boolean }) {
+export default function FarmGuide() {
   const { locale, t } = useI18n();
   const [tiers, setTiers] = useState<number[]>([]);
   // 비제어 입력 — 타이핑 중 렌더 0회, 멈춘 뒤 0.5초에 searchTerm만 갱신 (search.ts)
@@ -242,14 +242,14 @@ export default function FarmGuide({ includeFuture }: { includeFuture: boolean })
       // 상시 파밍 토글 시: 파밍 가능한데 상설 스테이지가 하나도 안 남은 재료만 숨긴다.
       // 파밍 불가 재료(칩·조합 T5 등)는 정보 표시용이라 토글과 무관하게 항상 노출.
       .filter((item) => item.farmable ? (permOnly ? item.stages.length > 0 : true) : true)
-      // 미래시 데이터 미포함이면 KR 미출시 재료(중국 선행)는 숨긴다
-      .filter((item) => includeFuture || !item.unreleased)
+      // 미실장(중국 선행) 재료도 항상 목록에 둔다 — 흑백(.fut-dim) + 미실장 배지로 구분
+      // (2026-09-04 규칙 변경. 종전엔 미래시가 꺼지면 통째로 숨겼다.)
       .filter((item) =>
         (tiers.length === 0 || tiers.includes(item.rarity)) &&
         (!keyword ||
           normSearch([item.name.ko, item.name.en, item.name.ja].filter(Boolean).join(" ")).includes(keyword) ||
           (MATERIAL_ALIASES[item.id] ?? []).some((alias) => normSearch(alias).includes(keyword))));
-  }, [tiers, searchTerm, permOnly, includeFuture]);
+  }, [tiers, searchTerm, permOnly]);
 
   // 재료 검색이 0건이면 "실패한 검색"으로 남긴다 (app/trail.ts — 이후 도착지에 이어 붙는다)
   useEffect(() => {
@@ -263,9 +263,8 @@ export default function FarmGuide({ includeFuture }: { includeFuture: boolean })
         <h2>{t("재료 파밍 효율표")}</h2>
         <p>{t("정예화 재료 {count}종의 실측 드랍 통계입니다. 재료마다 어느 스테이지에서 나오는지와 개당 기대 이성(이성 소모 ÷ 드랍률)을 표시하고, 이성 대비 획득 확률이 가장 높은 스테이지에 최고 효율 배지를 붙입니다.", { count: data.items.length })}</p>
         <p className="farm-source">{t("출처: 펭귄 물류 실측 통계(표본 {min}회 이상) + 클뜯 게임 데이터 · {date} 기준 정식 개방된 스테이지만 수록 · 기대 이성은 낮을수록 좋습니다.", { min: data.minTimes, date: data.updated })}</p>
-        {includeFuture && (
-          <p className="farm-source">{t("미실장(중국 서버 선행) 오퍼레이터·재료의 텍스트는 비공식 AI 번역으로, 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>
-        )}
+        {/* 미실장 재료가 늘 목록에 있으므로 안내도 항상 (2026-09-04 규칙 변경) */}
+        <p className="farm-source">{t("미실장(중국 서버 선행) 오퍼레이터·재료의 텍스트는 비공식 AI 번역으로, 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>
       </div>
 
       <div className="farm-tools">
@@ -283,7 +282,7 @@ export default function FarmGuide({ includeFuture }: { includeFuture: boolean })
           items={TIERS.map((tier) => ({
             value: String(tier),
             label: `T${tier}`,
-            count: ALL_MATERIALS.filter((item) => item.rarity === tier && (includeFuture || !item.unreleased)).length,
+            count: ALL_MATERIALS.filter((item) => item.rarity === tier).length,
           }))}
           onPick={(value) => toggleTier(Number(value))} />
         <label className="farm-perm-toggle">
@@ -300,7 +299,7 @@ export default function FarmGuide({ includeFuture }: { includeFuture: boolean })
             const meta = costs.items[item.id];
             const craftable = !item.farmable && (meta?.craft?.length ?? 0) > 0;
             return (
-              <article key={item.id} className={`farm-card${item.farmable ? "" : " nonfarm"}`} style={{ "--tier": item.rarity } as React.CSSProperties}>
+              <article key={item.id} className={`farm-card${item.farmable ? "" : " nonfarm"}${item.unreleased ? " fut-dim" : ""}`} style={{ "--tier": item.rarity } as React.CSSProperties}>
                 <header>
                   <button type="button" className="farm-item-btn" onClick={() => openItem(item.id)} title={t("{name} 상세 정보 열기", { name: locText(locale, item.name) })}>
                     <img src={asset(item.image)} alt={locText(locale, item.name)} width={183} height={183} loading="lazy" decoding="async" />
@@ -408,9 +407,7 @@ export function UpgradeSim({ operators, includeFuture, onShowOperator }: { opera
   });
   return (
     <section className="farm" aria-label={t("육성 비용 계산기")}>
-      {includeFuture && (
-        <p className="farm-source cost-future-note">{t("미실장(중국 서버 선행) 오퍼레이터·재료의 텍스트는 비공식 AI 번역으로, 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>
-      )}
+      <p className="farm-source cost-future-note">{t("미실장(중국 서버 선행) 오퍼레이터·재료의 텍스트는 비공식 AI 번역으로, 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>
       <CostCalculator operators={operators} includeFuture={includeFuture} onShowOperator={onShowOperator} onShowItem={setShownItem} />
       {shownItem && (
         <ItemModal key={itemRaise} id={shownItem} onClose={() => setShownItem(null)} onShowItem={setShownItem} onShowStage={sub.openStage} />
@@ -517,10 +514,11 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
     window.history.replaceState(null, "", url);
   }, [picked]);
 
-  // 비용 데이터가 있는 오퍼만 (로봇 등 정예화·스킬 없는 유닛 제외) · 미래시 토글 반영
-  const pool = useMemo(() =>
-    operators.filter((operator) => costs.ops[operator.id] && (includeFuture || !operator.unreleased)),
-    [operators, includeFuture]);
+  // 비용 데이터가 있는 오퍼만 (로봇 등 정예화·스킬 없는 유닛 제외).
+  // 미실장도 **목록에는 둔다** — 흑백으로 보이되, 미래시가 꺼져 있으면 고를 수 없다
+  // (고르는 순간 비용 계산에 들어간다 — 2026-09-04 규칙: 보여주되 계산엔 안 넣는다).
+  const pool = useMemo(() => operators.filter((operator) => costs.ops[operator.id]), [operators]);
+  const lockedOp = (operator: Operator) => !includeFuture && Boolean(operator.unreleased);
   const keyword = normSearch(draftTerm);
   // 포커스만 해도 전체 목록(선택 안 된 오퍼)을 보여주고, 입력이 있으면 그 안에서 필터링한다.
   // operators는 성급 오름차순이라 그대로 자르면 저성급만 나온다 → 성급·출시순 내림차순으로 정렬.
@@ -655,7 +653,10 @@ function CostCalculator({ operators, includeFuture, onShowOperator, onShowItem }
           {matches.length > 0 && (
             <div className="cost-suggest" role="listbox">
               {matches.map((operator) => (
-                <button key={operator.id} type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => addOp(operator.id)}>
+                <button key={operator.id} type="button" className={lockedOp(operator) ? "fut-dim" : undefined}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => { if (!lockedOp(operator)) addOp(operator.id); }}
+                  aria-disabled={lockedOp(operator) || undefined}>
                   <img src={asset(operator.image)} alt="" width={180} height={180} loading="lazy" decoding="async" />
                   <b>{operator.name}</b>
                   <small>{"★".repeat(operator.rarity)}</small>

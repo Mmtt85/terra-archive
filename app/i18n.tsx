@@ -1761,6 +1761,9 @@ const D: Record<string, Pair> = {
   "중국 서버 선행 신시즌 「재기동 앵커」는 헤더의 '미래시 데이터 포함'을 켜면 메뉴에 나타납니다.": [
     "The CN-first new season appears in the menu when “Include future data” is enabled in the header.",
     "中国サーバー先行の新シーズンは、ヘッダーの「未実装データを含む」をオンにするとメニューに表示されます。"],
+  "중국 서버 선행 신시즌 「재기동 앵커」는 메뉴에서 흑백으로 표시됩니다 — 헤더의 '미래시 데이터 포함'을 켜면 정상 표시됩니다.": [
+    "The CN-first new season is shown greyed out in the menu — turn on “Include future data” in the header to show it normally.",
+    "中国サーバー先行の新シーズンはメニューにグレー表示されます — ヘッダーの「未実装データを含む」をオンにすると通常表示になります。"],
   "전체": ["All", "すべて"],
   "거점 시설": ["Base facility", "拠点施設"],
   "전투 설치물": ["Combat structure", "戦闘設置物"],
@@ -1979,6 +1982,23 @@ const D: Record<string, Pair> = {
   "**미실장** 배지가 붙은 오퍼는 미출시(중국 서버 선행) 오퍼입니다 — 미래시 데이터 포함이 켜져 있을 때만 표시되며, 스킬 텍스트는 비공식 AI 번역입니다.": [
     "Operators with the **Unreleased** badge are not yet released (CN-first) — they appear only while 'Include future data' is on, and their skill text is an unofficial AI translation.",
     "**未実装**バッジ付きのオペレーターは未実装（中国サーバー先行）です — 「未実装データを含む」がオンの間のみ表示され、スキルテキストは非公式のAI翻訳です。",
+  ],
+  // 2026-09-04 규칙 변경 — 미실장도 숨기지 않고 흑백으로 보여준다. 토글은 '계산 포함' 스위치.
+  "**미실장** 배지가 붙은 오퍼는 미출시(중국 서버 선행) 오퍼입니다 — 참고용으로 흑백으로 보여줄 뿐, 헤더의 **미래시 데이터 포함**을 켜야 보유로 체크하고 편성 계산에 넣을 수 있습니다. 스킬 텍스트는 비공식 AI 번역입니다.": [
+    "Operators with the **Unreleased** badge are not yet released (CN-first). They are shown greyed out for reference only — turn on **Include future data** in the header to mark them as owned and include them in planning. Their skill text is an unofficial AI translation.",
+    "**未実装**バッジ付きのオペレーターは未実装（中国サーバー先行）です。参考用にグレー表示しているだけで、所持チェックや編成計算に入れるにはヘッダーの**未実装データを含む**をオンにしてください。スキルテキストは非公式のAI翻訳です。",
+  ],
+  "**미실장** 배지가 붙은 오퍼는 미출시(중국 서버 선행) 오퍼입니다 — 미래시 데이터 포함이 켜져 있어 편성 계산에도 들어갑니다. 스킬 텍스트는 비공식 AI 번역입니다.": [
+    "Operators with the **Unreleased** badge are not yet released (CN-first). 'Include future data' is on, so they are included in planning. Their skill text is an unofficial AI translation.",
+    "**未実装**バッジ付きのオペレーターは未実装（中国サーバー先行）です。「未実装データを含む」がオンなので編成計算にも入ります。スキルテキストは非公式のAI翻訳です。",
+  ],
+  "미출시(중국 서버 선행) 오퍼라 보유로 체크할 수 없습니다 — 헤더의 '미래시 데이터 포함'을 켜면 편성 계산에도 넣을 수 있어요.": [
+    "Not yet released (CN-first), so it can't be marked as owned — turn on 'Include future data' in the header to include it in planning.",
+    "未実装（中国サーバー先行）のため所持チェックできません — ヘッダーの「未実装データを含む」をオンにすると編成計算にも入れられます。",
+  ],
+  "아직 한국 서버에 나오지 않은 항목입니다 — 헤더를 펼쳐 '미래시 데이터 포함'을 켜면 활성화됩니다.": [
+    "Not on the Korean server yet — expand the header and turn on 'Include future data' to enable it.",
+    "まだ韓国サーバーに実装されていない項目です — ヘッダーを開いて「未実装データを含む」をオンにすると有効になります。",
   ],
   "미래시(미실장) 오퍼": ["Future (unreleased) operators", "未実装（先行）オペレーター"],
   "미실장 (중국 서버 선행)": ["Unreleased (CN server)", "未実装（中国サーバー先行）"],

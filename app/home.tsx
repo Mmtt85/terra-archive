@@ -52,6 +52,7 @@ import { asset } from "./assets";
 import { CONTACT_EMAIL } from "./contact";
 import { descLines } from "./desc-lines";
 import ChangelogButton from "./changelog";
+import FutureTip from "./future-tip";
 // 헤더 치비 대화 — 크롬 내장 Gemini Nano (베타, 2026-08-03)
 import { ChibiChatPanel, chibiChatStatus, type ChibiActionRequest, type ChibiChatStatus } from "./chibi-chat";
 // 공용 창형 모달 — 이동·리사이즈·고정·z순서 (2026-08-03)
@@ -287,9 +288,10 @@ const archivePath = (locale: Locale) => `${LOCALE_BASE[locale]}/operators`;
 //    (비공식 AI 번역이 색인됐다가 정식 출시 때 통째로 갈리는 게 검색 품질에 더 나쁘다).
 //    그래서 그 주소로 replaceState하면 새로고침·공유가 404다 (사용자 제보 2026-09-04).
 //    미실장만 목록 경로 + #op- 딥링크로 둔다 — 새로고침해도 모달이 그대로 열린다.
-//    ?future=1을 붙여야 미래시 토글이 꺼진 사람에게도 그 오퍼가 존재한다.
+//    ⚠ ?future=1은 붙이지 않는다 (사용자 지시 2026-09-04) — 2026-09-04부터 미실장은 토글과
+//      무관하게 목록에 있으므로 주소에 실을 이유가 없고, 주소창이 지저분해진다.
 const operatorHref = (locale: Locale, op: { id: string; unreleased?: boolean }) =>
-  op.unreleased ? `${archivePath(locale)}?future=1#op-${op.id}` : operatorPath(locale, op.id);
+  op.unreleased ? `${archivePath(locale)}#op-${op.id}` : operatorPath(locale, op.id);
 const operatorIdFromPath = (pathname: string) => {
   const m = OPERATOR_PATH_RE.exec(pathname);
   return m ? decodeURIComponent(m[1]) : null;
@@ -662,14 +664,14 @@ function BroadcastBadges({ includeFuture, slot }: { includeFuture?: boolean; slo
             </ul>
           </>}
           {/* 향후 다가올 이벤트 — 아직 KR 미출시(중섭 선행) 이벤트를 순서대로 + 추정월과 함께.
-              미래시 데이터 포함이 켜져 있을 때만 노출한다 (사이트 공통 규칙, 사용자 확정 2026-07-25). */}
-          {includeFuture && futureEvents.length > 0 && <>
+              2026-09-04 규칙 변경: 미래시를 꺼도 숨기지 않고 흑백(.fut-dim)으로 보여준다. */}
+          {futureEvents.length > 0 && <>
             <h3 className="event-menu-upcoming">{t("향후 다가올 이벤트")}</h3>
             <ul>
               {futureEvents.map((event) => {
                 const name = (locale === "ko" ? event.name.ko : event.name[locale]) ?? event.name.ko;
                 return (
-                  <li key={event.id}>
+                  <li key={event.id} className="fut-dim">
                     <span className="event-row-plain">
                       <span className="event-row-name">{name}</span>
                       {event.eta && <small>{t("{ym}쯤 예정 (추정)", { ym: fmtYm(locale, event.eta) })}</small>}
@@ -1044,6 +1046,12 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     if (fromUrl === "0") { setIncludeFuture(false); return; }
     try { if (localStorage.getItem(FUTURE_KEY) === "1") setIncludeFuture(true); } catch { /* ignore */ }
   }, []);
+  // 미실장 항목의 **흑백 처리**는 <html data-fut> 하나로 건다 (사용자 지시 2026-09-04:
+  // "미래시 꺼도 보여주되 살짝 흑백처리"). 화면마다 토글 값을 실어 나르지 않아도 되고,
+  // 모달·포털(createPortal)처럼 트리 밖으로 나가는 곳까지 한 번에 걸린다.
+  // ⚠ 렌더가 아니라 이펙트로 documentElement 에 쓴다 — 마크업에 넣으면 프리렌더 HTML과
+  //   갈라져 하이드레이션이 깨진다. 기본값(OFF)이 프리렌더 상태와 같아 첫 화면도 맞다.
+  useEffect(() => { document.documentElement.dataset.fut = includeFuture ? "1" : "0"; }, [includeFuture]);
   const toggleFuture = (on: boolean) => {
     setIncludeFuture(on);
     try { localStorage.setItem(FUTURE_KEY, on ? "1" : "0"); } catch { /* ignore */ }
@@ -1052,9 +1060,10 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     if (on) url.searchParams.set("future", "1"); else url.searchParams.delete("future");
     window.history.replaceState(null, "", url);
   };
-  // 백과사전 목록·필터·카운트가 쓰는 로스터 — 미래시 꺼짐(기본)이면 미실장 오퍼 제외.
-  // 딥링크(#op-…)·플래너발 모달 열기는 전체 operators에서 찾으므로 토글과 무관하게 동작.
-  const roster = useMemo(() => (includeFuture ? operators : operators.filter((operator) => !operator.unreleased)), [operators, includeFuture]);
+  // 백과사전 목록·필터·카운트가 쓰는 로스터 — **미래시와 무관하게 전원**이다
+  // (2026-09-04 규칙 변경: 미실장도 숨기지 않고 흑백으로 보여준다).
+  // 여기 쓰이는 곳은 전부 표시용(목록·필터 선택지·개수·검색)이라 계산에 영향이 없다.
+  const roster = operators;
   // 스토리 전문 보기 레일용 — 화자명이 오퍼레이터면 자동 카드 (요약 미등록 인물 커버, 2026-07-18)
   const storyOpIndex = useMemo<OpIndex>(() => {
     const m: OpIndex = {};
@@ -1453,10 +1462,9 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   //   검색 결과로 직접 들어오면 종전대로 상세 페이지가 뜬다.
   const openOperator = useCallback((operator: Operator) => {
     setSelected(operator);
-    const base = tabPath("archive");   // ?future=1이 켜져 있으면 tabPath가 이미 달고 온다
-    // 미실장은 미래시 토글이 꺼진 사람이 링크를 받아도 열리도록 ?future=1을 실어 둔다
-    const path = operator.unreleased && !base.includes("?") ? `${base}?future=1` : base;
-    history.replaceState(null, "", `${path}#op-${operator.id}`);
+    // ⚠ 미실장이라고 ?future=1을 덧붙이지 않는다 (사용자 지시 2026-09-04) — 토글이 켜져
+    //   있으면 tabPath가 이미 달고 오고, 꺼져 있어도 목록에 있으므로 실을 이유가 없다.
+    history.replaceState(null, "", `${tabPath("archive")}#op-${operator.id}`);
   }, [tabPath]);
   const closeOperator = () => {
     setSelected(null);
@@ -1852,7 +1860,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
             자기 것으로 다시 그리므로 화면은 종전과 같다. */}
         {omniOpen ? (
           <Suspense fallback={omniTrigger}>
-            <OmniSearch roster={roster} includeFuture={includeFuture} extra={extra} onGo={runOmni} autoOpen />
+            <OmniSearch roster={roster} extra={extra} onGo={runOmni} autoOpen />
           </Suspense>
         ) : omniTrigger}
         {/* 게임 연결 — 크롬 확장(extension/)이 깔린 사람에게만 나타난다. 누르면 게임 창
@@ -1924,9 +1932,10 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                   {tabHasNewFeature("rogue") && <span className="new-badge">{t("새기능")}</span>}
                 </a>
                 <div className="tab-sub2-list">
-                  {ROGUE_TOPICS.filter((tp) => tp.ready && (!tp.future || includeFuture)).map((tp) => (
+                  {/* 미래시 토픽도 항상 메뉴에 둔다 — 흑백 + '미래시' 표식 (2026-09-04 규칙 변경) */}
+                  {ROGUE_TOPICS.filter((tp) => tp.ready).map((tp) => (
                     <a key={tp.id} href={`${localeBase}/rogue/${rogueSlugOf(tp.id)}`}
-                      className={`tab-sub tab-sub2${tab === "rogue" && rogueSlug === rogueSlugOf(tp.id) ? " selected" : ""}`}
+                      className={`tab-sub tab-sub2${tab === "rogue" && rogueSlug === rogueSlugOf(tp.id) ? " selected" : ""}${tp.future ? " fut-dim" : ""}`}
                       onClick={(event) => {
                         if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
                         event.preventDefault(); switchRogueTopic(tp.id);
@@ -1949,13 +1958,12 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                       if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
                       event.preventDefault(); switchSandbox("sand");
                     }}><span className="tab-sub-mark" aria-hidden>·</span>{t("사막 이야기")}</a>
-                  {includeFuture && (
-                    <a href={`${localeBase}/ra/anchor`} className="tab-sub tab-sub2"
-                      onClick={(event) => {
-                        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
-                        event.preventDefault(); switchSandbox("anchor");
-                      }}><span className="tab-sub-mark" aria-hidden>·</span>{t("재기동 앵커")}<em className="tab-sub-future">{t("미래시")}</em></a>
-                  )}
+                  {/* 중섭 선행 신시즌도 항상 메뉴에 둔다 (2026-09-04 규칙 변경) */}
+                  <a href={`${localeBase}/ra/anchor`} className="tab-sub tab-sub2 fut-dim"
+                    onClick={(event) => {
+                      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+                      event.preventDefault(); switchSandbox("anchor");
+                    }}><span className="tab-sub-mark" aria-hidden>·</span>{t("재기동 앵커")}<em className="tab-sub-future">{t("미래시")}</em></a>
                 </div>
                 <a href={`${localeBase}/autochess`} className={`tab-sub tab-autochess${tab === "autochess" ? " selected" : ""}`}
                   onClick={(event) => {
@@ -2169,15 +2177,15 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
       <Suspense fallback={<div className="tab-loading" aria-hidden />}>
         {tab === "planner" && <InfraPlanner onShowOperator={showOperatorById} extra={extra} includeFuture={includeFuture} />}
         {tab === "recruit" && <RecruitHelper onShowOperator={showOperatorById} extra={extra} />}
-        {tab === "farm" && <FarmGuide includeFuture={includeFuture} />}
+        {tab === "farm" && <FarmGuide />}
         {tab === "upgrade" && <UpgradeSim operators={operators} includeFuture={includeFuture} onShowOperator={showOperatorById} />}
         {/* 요약 JSON은 Suspense가 아니라 상태로 받으므로(summariesLoader), 도착 전에는
             Suspense 자리표시가 뜨지 않는다 — 그냥 아무것도 안 그리면 푸터가 헤더 바로 밑에
             붙었다가 밀려나며 CLS가 된다 (실측 모바일 0.281, 2026-08-13). 같은 자리표시를 쓴다. */}
         {tab === "story" && (summaries
-          ? <StoryGuide summaries={summaries} onShowOperator={showOperatorById} includeFuture={includeFuture} opIndex={storyOpIndex} initialStory={initialStory} onStoryTitle={setStoryTitle} />
+          ? <StoryGuide summaries={summaries} onShowOperator={showOperatorById} opIndex={storyOpIndex} initialStory={initialStory} onStoryTitle={setStoryTitle} />
           : <div className="tab-loading" aria-hidden />)}
-        {tab === "rogue" && <RogueGuide includeFuture={includeFuture} initialTopic={initialRogue ? `rogue_${initialRogue.replace(/^is/, "")}` : undefined} />}
+        {tab === "rogue" && <RogueGuide initialTopic={initialRogue ? `rogue_${initialRogue.replace(/^is/, "")}` : undefined} />}
         {tab === "enemy" && !(pageEnemy && enemyPageOpen) && <EnemyDexForLocale />}
         {tab === "stage" && !(pageStage && stagePageOpen) && <StageDexForLocale onOpenEnemy={openEnemyFromStage} />}
         {tab === "ra" && <SandboxForLocale includeFuture={includeFuture} season={sandboxSlug === "anchor" ? "v3" : "v2"} />}
@@ -2289,6 +2297,8 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
       </footer>
       </div>{/* /.site-scroll */}
 
+      {/* 미실장 항목(.fut-dim) 안내 툴팁 — 위임 리스너 하나가 사이트 전체를 맡는다 */}
+      <FutureTip />
       {selected && <OperatorModal operator={selected} onClose={closeOperator} onUpgrade={openUpgradeFor} includeFuture={includeFuture} onPinChange={(pinned) => { opPinnedRef.current = pinned; }} operators={operators} onRelated={openOperator} />}
       <FeedbackWidget open={feedbackOpen} setOpen={setFeedbackOpen} onNewCount={setFeedbackNew} />
     </main>
@@ -2464,7 +2474,7 @@ function OperatorCard({ operator, index, onSelect }: { operator: Operator; index
   // 실제 앵커 — 크롤러가 따라갈 내부 링크이자 새 탭/북마크가 되는 정본 주소.
   // 클릭은 종전대로 가로채 모달을 연다 (미실장 오퍼는 상세 라우트가 없어 목록 주소로).
   return (
-    <a className="operator-card" href={operatorHref(locale, operator)}
+    <a className={`operator-card${operator.unreleased ? " fut-dim" : ""}`} href={operatorHref(locale, operator)}
       onClick={(event) => {
         if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
         event.preventDefault(); onSelect(operator);
@@ -2611,8 +2621,9 @@ function RelatedOperators({ operator, operators, onSelect }: {
 function OperatorFile({ operator, onUpgrade, includeFuture, operators, onRelated }: { operator: Operator; onUpgrade?: (operatorId: string) => void; includeFuture?: boolean; operators?: Operator[]; onRelated?: (op: Operator) => void }) {
   const { locale, t } = useI18n();
   const scrollRef = useRef<HTMLDivElement>(null);
-  // 미래 모듈은 '미래시 포함'이 켜졌을 때만 (사용자 요청 2026-08-01)
-  const shownModules = operator.modules.filter((m) => includeFuture || !m.unreleased);
+  // 미래 모듈도 항상 보여준다 — 미래시가 꺼져 있으면 흑백(.fut-dim) + 미실장 배지
+  // (2026-09-04 규칙 변경. 종전엔 includeFuture 일 때만 목록에 넣었다.)
+  const shownModules = operator.modules;
   return (
     <>
         <header className="modal-hero">
@@ -2757,7 +2768,7 @@ function OperatorFile({ operator, onUpgrade, includeFuture, operators, onRelated
 
           <ProfileSection operator={operator} />
 
-          <RecordSection operator={operator} includeFuture={includeFuture} operators={operators} onRelated={onRelated} />
+          <RecordSection operator={operator} operators={operators} onRelated={onRelated} />
 
           <VoiceSection operator={operator} />
 
@@ -2854,7 +2865,7 @@ function ModuleSection({ operator, modules }: { operator: Operator; modules: Ope
             const shown = open === module.id;
             const story = doc?.[module.id];
             return (
-              <article key={module.id} className={`module-card${module.unreleased ? " future" : ""}`}>
+              <article key={module.id} className={`module-card${module.unreleased ? " future fut-dim" : ""}`}>
                 <header>
                   <span>{module.type}</span>
                   <div>
@@ -3792,8 +3803,8 @@ const recordIds = new Set(recordIdsData as string[]);
 const recordCache = new Map<string, RecordDoc | null>();
 const StoryScriptReader = lazy(() => import("./story").then((m) => ({ default: m.ScriptReader })));
 
-function RecordSection({ operator, includeFuture, operators, onRelated }: {
-  operator: Operator; includeFuture?: boolean; operators?: Operator[]; onRelated?: (op: Operator) => void;
+function RecordSection({ operator, operators, onRelated }: {
+  operator: Operator; operators?: Operator[]; onRelated?: (op: Operator) => void;
 }) {
   const { locale, t } = useI18n();
   const key = `${locale}/${operator.id}`;
@@ -3821,7 +3832,8 @@ function RecordSection({ operator, includeFuture, operators, onRelated }: {
     return m;
   }, [operators]);
 
-  const shown = useMemo(() => (doc?.recs ?? []).filter((r) => includeFuture || !r.f), [doc, includeFuture]);
+  // CN 선행 기록(f:1)도 항상 목록에 둔다 — 흑백 + 미실장 배지로 구분한다 (2026-09-04 규칙 변경)
+  const shown = doc?.recs ?? [];
   const open = openIdx != null ? shown[openIdx] : null;
   // ScriptReader 는 eps 배열을 받는다 — 기록 하나를 단일 에피소드로 감싼다 (탭 없이 본문만)
   const script = useMemo<ScriptData | null>(() => (open && doc
@@ -3853,7 +3865,7 @@ function RecordSection({ operator, includeFuture, operators, onRelated }: {
       ) : (
         <div className="rec-list">
           {shown.map((rec, index) => (
-            <button key={index} type="button" className="rec-item" onClick={() => setOpenIdx(index)}>
+            <button key={index} type="button" className={`rec-item${rec.f ? " fut-dim" : ""}`} onClick={() => setOpenIdx(index)}>
               <b>{rec.name}{rec.f ? <em className="future-badge">{t("미실장")}</em> : null}</b>
               {rec.tag && <span className="rec-tag">{rec.tag}</span>}
               <span className="rec-chips">{unlockChips(rec).map((chip, i) => <i key={i}>{chip}</i>)}</span>

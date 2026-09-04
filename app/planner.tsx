@@ -78,9 +78,13 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       skills: op.skills.map(loc),
     }));
   }, [extra]);
-  // 미실장(중국 선행) 오퍼는 '미래시 데이터 포함' 토글이 켜져야 로스터·설정·편성에 등장.
-  // 토글을 바꿔도 현재 편성은 갈아엎지 않는다 — 다음 자동편성부터 반영 (설정 불변 원칙)
+  // ⚠ visibleOps = **계산에 들어가는 로스터**다. 미실장은 미래시가 켜졌을 때만 들어간다 —
+  //   2026-09-04에 "보여는 주되 계산엔 넣지 말라"로 규칙이 바뀌었어도 **이쪽은 그대로**다.
+  //   토글을 바꿔도 현재 편성은 갈아엎지 않는다 — 다음 자동편성부터 반영 (설정 불변 원칙)
   const visibleOps = useMemo(() => (includeFuture ? lops : lops.filter((op) => !op.unreleased)), [lops, includeFuture]);
+  // 보유 오퍼 설정 창에 **보이는** 로스터는 언제나 전원이다. 미래시가 꺼져 있으면 미실장은
+  // 흑백 + 자물쇠로 나오고 체크할 수 없다 (체크되면 곧장 편성 계산에 들어가 버린다).
+  const lockFuture = !includeFuture;
   const { confirm, dialog: confirmDialog } = useConfirm();
   const [plan, setPlan] = useState<Plan | null>(null);
   const [priority, setPriorityState] = useState<ProdPriority>("gold"); // 우선 생산 모드
@@ -1633,7 +1637,8 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       {showRoster && (
         <RosterModal
           levelById={levelById}
-          allOps={visibleOps}
+          allOps={lops}
+          lockFuture={lockFuture}
           ownedIds={ownedIds}
           eliteById={eliteById}
           onApply={(ids, elite, lv) => { setOwnedIds(ids); setEliteById(elite); setLevelById(lv); setShowRoster(false); runOptimize(ids, elite, priority, lv); setDirty(true); }}
@@ -2875,8 +2880,10 @@ const ELITE_NEED: Record<string, Elite> = { "정예화 1": 1, "정예화 2": 2 }
 // 다시 렌더돼 클릭 응답이 CPU 4배 느린 환경에서 ~49ms까지 늘었다 (INP 악화, 2026-07-26 실측).
 // props를 전부 원시값·안정 참조로 유지해야 memo가 듣는다 — options는 op에서 파생되므로
 // 배열을 넘기지 않고 안에서 계산한다.
-const RosterCard = memo(function RosterCard({ op, owned, elite, level, onToggle, onElite, onLevel, onShowOperator, t }: {
+const RosterCard = memo(function RosterCard({ op, owned, elite, level, locked, onToggle, onElite, onLevel, onShowOperator, t }: {
   op: InfraOp; owned: boolean; elite: Elite; level: number | undefined;
+  /** 보이기만 하고 보유로 체크할 수 없는 카드 — 미래시 꺼짐 + 미실장 (2026-09-04) */
+  locked?: boolean;
   onToggle: (id: string) => void; onElite: (id: string, elite: Elite) => void;
   onLevel: (id: string, level: number | undefined) => void;
   onShowOperator?: (id: string) => void; t: T;
@@ -2899,8 +2906,11 @@ const RosterCard = memo(function RosterCard({ op, owned, elite, level, onToggle,
     return { n: hard.length, need: hard.map((sk) => sk.unlock).sort((a, b) => rank(a) - rank(b))[0] };
   }, [owned, elite, level, op]);
   return (
-    <div className={`roster-card${owned ? " owned" : ""}${op.unreleased ? " future" : ""}`}>
-      <button type="button" onClick={() => onToggle(op.id)} title={op.name}>
+    <div className={`roster-card${owned ? " owned" : ""}${op.unreleased ? " future" : ""}${locked ? " fut-dim locked" : ""}`}>
+      {/* 잠긴 카드는 보유 체크가 안 된다 — 얼굴을 눌러 상세를 보는 건 그대로 (2026-09-04) */}
+      <button type="button" onClick={() => { if (!locked) onToggle(op.id); }} title={locked
+        ? t("미출시(중국 서버 선행) 오퍼라 보유로 체크할 수 없습니다 — 헤더의 '미래시 데이터 포함'을 켜면 편성 계산에도 넣을 수 있어요.")
+        : op.name} aria-disabled={locked || undefined}>
         <img src={asset(op.image)} alt={op.name} width={180} height={180} loading="lazy" className={onShowOperator ? "op-link" : undefined}
           onClick={(event) => { if (onShowOperator) { event.stopPropagation(); onShowOperator(op.id); } }} />
         <span>{op.name}{op.unreleased && <em className="future-badge">{t("미실장")}</em>}</span>
@@ -2939,8 +2949,14 @@ const RosterCard = memo(function RosterCard({ op, owned, elite, level, onToggle,
   );
 });
 
-function RosterModal({ allOps, ownedIds, eliteById, levelById, onApply, onClose, onShowOperator, mode, onMode }:{ allOps: InfraOp[]; ownedIds: Set<string>; eliteById: Map<string, Elite>; levelById: Map<string, number>; onApply: (ids: Set<string>, elite: Map<string, Elite>, level: Map<string, number>) => void; onClose: () => void; onShowOperator?: (id: string) => void; mode: "direct" | "import"; onMode: (m: "direct" | "import") => void }) {
+function RosterModal({ allOps, lockFuture, ownedIds, eliteById, levelById, onApply, onClose, onShowOperator, mode, onMode }:{ allOps: InfraOp[]; lockFuture?: boolean; ownedIds: Set<string>; eliteById: Map<string, Elite>; levelById: Map<string, number>; onApply: (ids: Set<string>, elite: Map<string, Elite>, level: Map<string, number>) => void; onClose: () => void; onShowOperator?: (id: string) => void; mode: "direct" | "import"; onMode: (m: "direct" | "import") => void }) {
   const { t } = useI18n();
+  // allOps 는 **보여줄 전원**, ownableOps 는 **보유로 체크할 수 있는 오퍼**다 (2026-09-04).
+  // 미래시가 꺼져 있으면 미실장은 보이기만 하고 체크·일괄조작·가져오기 어디에도 안 들어간다 —
+  // 한 번이라도 draft 에 들어가면 그대로 편성 계산으로 넘어간다.
+  const isLocked = useCallback((op: InfraOp) => Boolean(lockFuture && op.unreleased), [lockFuture]);
+  const ownableOps = useMemo(() => (lockFuture ? allOps.filter((op) => !op.unreleased) : allOps), [allOps, lockFuture]);
+  const lockedIds = useMemo(() => new Set(lockFuture ? allOps.filter((op) => op.unreleased).map((op) => op.id) : []), [allOps, lockFuture]);
   const { confirm, dialog: confirmDialog } = useConfirm();
   const [draft, setDraft] = useState<Set<string>>(new Set(ownedIds));
   const [eliteDraft, setEliteDraft] = useState<Map<string, Elite>>(new Map(eliteById));
@@ -3039,6 +3055,7 @@ function RosterModal({ allOps, ownedIds, eliteById, levelById, onApply, onClose,
     const elite = Math.min(eliteDraft.get(op.id) ?? 2, options.length ? options[options.length - 1] : 2) as Elite;
     return (
       <RosterCard key={op.id} op={op} owned={draft.has(op.id)} elite={elite} level={levelDraft.get(op.id)}
+        locked={isLocked(op)}
         onToggle={toggle} onElite={setElite} onLevel={setLevel} onShowOperator={onShowOperator} t={t} />
     );
   };
@@ -3048,7 +3065,7 @@ function RosterModal({ allOps, ownedIds, eliteById, levelById, onApply, onClose,
     const added: string[] = [];
     setDraft((current) => {
       const next = new Set(current);
-      for (const op of allOps) {
+      for (const op of ownableOps) {
         if (!test(op.rarity)) continue;
         if (own) { if (!next.has(op.id)) added.push(op.id); next.add(op.id); } else next.delete(op.id);
       }
@@ -3061,7 +3078,7 @@ function RosterModal({ allOps, ownedIds, eliteById, levelById, onApply, onClose,
   };
   const bulkElite = (test: (rarity: number) => boolean, elite: Elite) => setEliteDraft((current) => {
     const next = new Map(current);
-    for (const op of allOps) {
+    for (const op of ownableOps) {
       if (!test(op.rarity) || eliteOptions(op).length === 0) continue;
       if (elite === 2) next.delete(op.id); else next.set(op.id, elite);
     }
@@ -3084,7 +3101,7 @@ function RosterModal({ allOps, ownedIds, eliteById, levelById, onApply, onClose,
         const entries: MaaOper[] = Array.isArray(parsed)
           ? parsed
           : [...((parsed?.all_opers as MaaOper[]) ?? []), ...((parsed?.own_opers as MaaOper[]) ?? [])];
-        const byId = new Map(allOps.map((op) => [op.id, op]));
+        const byId = new Map(ownableOps.map((op) => [op.id, op]));
         const nextDraft = new Set(draft);
         const nextElite = new Map(eliteDraft);
         const nextLevel = new Map(levelDraft);
@@ -3117,7 +3134,7 @@ function RosterModal({ allOps, ownedIds, eliteById, levelById, onApply, onClose,
   // 목록**이라 보유 체크를 통째로 덮어쓴다 — 계정에 없는 오퍼는 미보유가 정답이다.
   // 사이트에 없는 오퍼(미실장 데이터를 끈 상태의 중섭 선행분 등)는 건너뛰고 건수만 알린다.
   const applyAccount = (roster: AccountRoster) => {
-    const byId = new Map(allOps.map((op) => [op.id, op]));
+    const byId = new Map(ownableOps.map((op) => [op.id, op]));
     const nextDraft = new Set<string>();
     const nextElite = new Map<string, Elite>();
     const nextLevel = new Map<string, number>();
@@ -3163,7 +3180,7 @@ function RosterModal({ allOps, ownedIds, eliteById, levelById, onApply, onClose,
     <ModalWindow label={t("보유 오퍼레이터 설정")} className="operator-modal room-modal" onClose={() => { void closeGuarded(); }} style={{ "--accent": "var(--lime)" } as React.CSSProperties}>
         {confirmDialog}
         <header className="room-modal-head">
-          <span className="modal-kicker">ROSTER · {t("{n}/{m} 보유", { n: draft.size, m: allOps.length })}</span>
+          <span className="modal-kicker">ROSTER · {t("{n}/{m} 보유", { n: draft.size, m: ownableOps.length })}</span>
           {/* 제목 오른쪽에 입력 방식 — 직접 입력(카드 격자) / 가져오기(MAA·스크린샷·게임 로그인) */}
           <div className="roster-head-row">
             <h2>{t("보유 오퍼레이터 설정")}</h2>
@@ -3182,9 +3199,13 @@ function RosterModal({ allOps, ownedIds, eliteById, levelById, onApply, onClose,
             <SearchSuggest query={searchTerm}
               items={visible.map((op) => ({ key: op.id, label: op.name, sub: draft.has(op.id) ? "✓" : undefined, img: asset(`/avatars/${op.id}.webp`) }))}
               onPick={toggle} />
-            <button type="button" onClick={() => setDraft(new Set(allOps.map((op) => op.id)))}><span className="btn-icon" aria-hidden>✓</span>{t("전체 선택")}</button>
+            <button type="button" onClick={() => setDraft(new Set(ownableOps.map((op) => op.id)))}><span className="btn-icon" aria-hidden>✓</span>{t("전체 선택")}</button>
             <button type="button" onClick={() => setDraft(new Set())}><span className="btn-icon" aria-hidden>✕</span>{t("전체 해제")}</button>
-            <button type="button" className="apply" onClick={() => onApply(draft, eliteDraft, levelDraft)}><span className="btn-icon" aria-hidden>⟳</span>{t("적용 및 자동편성 실행")}</button>
+            {/* 마지막 방어선 — 잠긴(미실장) 오퍼가 어떤 경로로든 draft 에 남아 있으면 여기서 뺀다.
+                예: 미래시를 켠 채 체크해 두고 껐다가 이 창을 열어 적용하는 경우 (2026-09-04) */}
+            <button type="button" className="apply" onClick={() => onApply(
+              lockedIds.size ? new Set([...draft].filter((id) => !lockedIds.has(id))) : draft,
+              eliteDraft, levelDraft)}><span className="btn-icon" aria-hidden>⟳</span>{t("적용 및 자동편성 실행")}</button>
           </div>
           )}
         </header>
@@ -3202,7 +3223,9 @@ function RosterModal({ allOps, ownedIds, eliteById, levelById, onApply, onClose,
           <>
           <p className="dorm-note">{rich(t("3성 이상 오퍼는 카드 아래에서 **노정예/1정/2정**(3성은 1정까지)을 선택할 수 있고, 그 아래 **Lv.** 칸에 레벨을 적어 둘 수 있습니다 — 새로 체크하면 **노정예 Lv.1로 시작**하니 키운 만큼 올려 주세요. 레벨은 **노정예 Lv.30**부터 열리는 기지 스킬 판정에 쓰입니다(1정 이상은 영향 없음). 얼굴을 클릭하면 상세 정보가 열립니다."))}</p>
           {allOps.some((op) => op.unreleased) && (
-            <p className="dorm-note">{rich(t("**미실장** 배지가 붙은 오퍼는 미출시(중국 서버 선행) 오퍼입니다 — 미래시 데이터 포함이 켜져 있을 때만 표시되며, 스킬 텍스트는 비공식 AI 번역입니다."))}</p>
+            <p className="dorm-note">{rich(lockFuture
+              ? t("**미실장** 배지가 붙은 오퍼는 미출시(중국 서버 선행) 오퍼입니다 — 참고용으로 흑백으로 보여줄 뿐, 헤더의 **미래시 데이터 포함**을 켜야 보유로 체크하고 편성 계산에 넣을 수 있습니다. 스킬 텍스트는 비공식 AI 번역입니다.")
+              : t("**미실장** 배지가 붙은 오퍼는 미출시(중국 서버 선행) 오퍼입니다 — 미래시 데이터 포함이 켜져 있어 편성 계산에도 들어갑니다. 스킬 텍스트는 비공식 AI 번역입니다."))}</p>
           )}
           <div className="roster-bulk">
             {BULK_GROUPS.map(({ label, test, elites }) => (
