@@ -469,7 +469,7 @@ function EntityPeekCard({ anchor, mobile, pinned, label, children }: {
 const epLabelOf = (e: { code?: string; name?: string; tag?: string } | undefined, i: number) =>
   [e?.code || `#${i + 1}`, e?.name, e?.tag].filter(Boolean).join(" · ");
 
-export function ScriptReader({ script, error, entities, opIndex, onShowOperator, eventId, sceneOn, withPrefs }: {
+export function ScriptReader({ script, error, entities, opIndex, onShowOperator, eventId, sceneOn, withPrefs, withScene }: {
   script: ScriptData | null; error: boolean;
   entities: Entity[]; opIndex?: OpIndex; onShowOperator?: (id: string) => void; eventId?: string;
   /** 장면 모드(무대 재생)가 켜져 있는가 — 보기 방식 탭이 소유한다 */
@@ -478,9 +478,14 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
    *  바깥(StoryDetail)이 갖고 있지만, 오퍼 기록 모달처럼 리더만 쓰는 곳은 이걸 켠다
    *  (사용자 요청 2026-09-04). */
   withPrefs?: boolean;
+  /** 전문 ↔ 장면 전환 버튼을 리더가 직접 붙인다 — 스토리 상세는 보기 방식 탭이 갖고
+   *  있지만, 오퍼 기록 모달엔 그 탭이 없다 (사용자 요청 2026-09-04). 연출 트랙이 있는
+   *  에피소드에서만 버튼이 뜨고, 없으면 전문 그대로다. */
+  withScene?: boolean;
 }) {
   const { locale, t } = useI18n();
   const [ownPrefs, setOwnPrefs] = useReaderPrefs();
+  const [ownScene, setOwnScene] = useState(false);
   // 오퍼가 아닌 화자의 스탠딩 스프라이트 — 썸네일 클릭 시 원본 크게 보기 (사용자 요청 2026-07-18)
   const [faceZoom, setFaceZoom] = useState<string | null>(null);
   // 요약 카드에 없는 화자라도 오퍼레이터면 자동으로 레일 카드 생성 (호시구마 등 — 사용자 리포트 2026-07-18)
@@ -521,6 +526,9 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
     if (scrollTop) topRef.current?.scrollIntoView({ block: "start" });
   };
   const ep = script ? script.eps[Math.min(epIdx, script.eps.length - 1)] : null;
+  // 장면 모드 — 바깥(보기 방식 탭)이 주면 그걸 따르고, withScene 이면 리더가 직접 쥔다.
+  const scene = withScene ? ownScene : Boolean(sceneOn);
+  const canScene = Boolean(ep?.vn?.length);
   // 렌더용 라인 가공 — 렌더 중 변수 재할당 금지(react-compiler)라 memo에서 미리 계산:
   //  · br 마커에 직전 선택지 텍스트 부착 (references 는 Decision values 참조 — 옵션 순번 아님)
   //  · 같은 화자의 연속 대사는 첫 줄만 이름 표시 (showN — 사용자 요청 2026-07-18)
@@ -610,7 +618,7 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
   if (!script || !ep) return (
     <div className="story-script" aria-busy>
       <p className="sc-loading">{t("스크립트 불러오는 중…")}</p>
-      {sceneOn && (
+      {scene && (
         <div aria-hidden>
           <div className="sc-ep-nav">
             <div className="sc-ep-pick"><span>&nbsp;</span><span className="drop-btn">&nbsp;</span></div>
@@ -623,9 +631,20 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
   );
   return (
     <div className={withPrefs ? `reader-font-${ownPrefs.font} reader-img-${ownPrefs.img}` : undefined}>
-    {withPrefs && <ReaderPrefsBar prefs={ownPrefs} setPrefs={setOwnPrefs} />}
+    {/* 리더가 직접 쥔 보기 방식 — 스토리 상세엔 헤더 탭이 있지만 기록 모달엔 없다.
+        연출 트랙이 없는 기록(옛 밀록)은 버튼 없이 전문만 나온다. */}
+    {withScene && canScene && (
+      <div className="sc-view-switch" role="tablist" aria-label={t("보기 방식")}>
+        <button type="button" role="tab" aria-selected={scene} className={scene ? "on" : ""}
+          onClick={() => setOwnScene(true)}
+          title={t("배경과 인물 일러스트를 세워 원작처럼 한 줄씩 재생합니다")}>{t("리더기")}</button>
+        <button type="button" role="tab" aria-selected={!scene} className={!scene ? "on" : ""}
+          onClick={() => setOwnScene(false)}>{t("전문 보기 (풀 스크립트)")}</button>
+      </div>
+    )}
+    {withPrefs && !scene && <ReaderPrefsBar prefs={ownPrefs} setPrefs={setOwnPrefs} />}
     <div className="story-script" ref={topRef}>
-      <p className="story-disclaimer">{sceneOn
+      <p className="story-disclaimer">{scene
         ? t("게임 내 스토리 원문을 배경·인물 일러스트와 함께 재생합니다. 음악·효과음은 빠져 있습니다.")
         : t("게임 내 스토리 스크립트 원문입니다. 대사·지문·컷씬만 표시되며 연출(음악·효과)은 생략됩니다.")}</p>
       {script.tr === "cn" && <p className="story-disclaimer">{t("아직 정식 출시되지 않은 이벤트라, 중국 서버 원문을 AI가 번역한 비공식 텍스트입니다.")}</p>}
@@ -644,7 +663,7 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
         <span className="sc-ep-count">{epIdx + 1} / {script.eps.length}</span>
       </div>
       <h3 className="sc-ep-title">{ep.code} {ep.name}{ep.tag && <small>{ep.tag}</small>}</h3>
-      {sceneOn && ep.vn && ep.vn.length > 0 && (
+      {scene && ep.vn && ep.vn.length > 0 && (
         /* ⚠ fallback을 null로 두지 말 것 (실측 CLS 2026-08-25). story-vn 청크는 상세 본문보다
            한 박자 늦게 도착하는데, 그 순간 16:9 무대(390×844에서 199px · 1280에서 405px)가
            불쑥 생기며 아래 '같은 테마의 다른 이야기'와 푸터를 통째로 밀어냈다 — 모바일 0.080.
@@ -664,7 +683,7 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
       )}
       <div className="story-detail-grid">
         {peekNode}
-        <div className={`story-body sc-body${sceneOn ? " sc-hidden" : ""}`}>
+        <div className={`story-body sc-body${scene ? " sc-hidden" : ""}`}>
         {lines.map((ln, i) => {
           if (ln.opts) return (
             <div key={i} className="sc-opts" data-idx={i}><i>{t("선택지")}</i>{ln.opts.map((o, j) => <span key={j}>{o}</span>)}</div>
@@ -714,7 +733,7 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
         })}
         </div>
       </div>
-      <div className="sc-ep-foot" hidden={sceneOn}>
+      <div className="sc-ep-foot" hidden={scene}>
         {epIdx > 0 && <button type="button" onClick={() => goEp(epIdx - 1, true)}>← {t("이전 에피소드")}</button>}
         {epIdx < script.eps.length - 1 && <button type="button" onClick={() => goEp(epIdx + 1, true)}>{t("다음 에피소드")} →</button>}
       </div>

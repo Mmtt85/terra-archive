@@ -3770,7 +3770,8 @@ function ProfileSection({ operator }: { operator: Operator }) {
 // ScriptReader 를 창모달로 재사용한다 — story 청크는 lazy 라 기록을 열 때만 받는다.
 // CN 선행 기록(f:1)은 '미래시 포함'일 때만 노출한다. 번역이 채워진 것은 tr:"cn"으로
 // 표시돼 안내 문구가 바뀐다 (원문 그대로 → 비공식 AI 번역, scripts/records-cn/).
-type RecordEntry = { name: string; tag: string; unlock: { t: string; p: string[] }[]; f?: 1; tr?: "cn"; lines: ScriptData["eps"][number]["lines"] };
+type RecordEntry = { name: string; tag: string; unlock: { t: string; p: string[] }[]; f?: 1; tr?: "cn";
+  lines: ScriptData["eps"][number]["lines"]; vn?: ScriptData["eps"][number]["vn"] };
 type RecordDoc = { id: string; recs: RecordEntry[]; faces?: Record<string, string> };
 const recordIds = new Set(recordIdsData as string[]);
 const recordCache = new Map<string, RecordDoc | null>();
@@ -3809,7 +3810,10 @@ function RecordSection({ operator, includeFuture, operators, onRelated }: {
   const open = openIdx != null ? shown[openIdx] : null;
   // ScriptReader 는 eps 배열을 받는다 — 기록 하나를 단일 에피소드로 감싼다 (탭 없이 본문만)
   const script = useMemo<ScriptData | null>(() => (open && doc
-    ? { id: `${operator.id}-rec`, eps: [{ code: "", name: open.name, tag: open.tag, lines: open.lines }], faces: doc.faces }
+    ? { id: `${operator.id}-rec`,
+        // vn — 무대 연출 트랙이 있으면 '장면' 보기 버튼이 뜬다 (build-records.py + build-story-vn.py --records)
+        eps: [{ code: "", name: open.name, tag: open.tag, lines: open.lines, ...(open.vn ? { vn: open.vn } : {}) }],
+        faces: doc.faces }
     : null), [open, doc, operator.id]);
   const showOp = onRelated && operators
     ? (id: string) => { const target = operators.find((o) => o.id === id); if (target) { setOpenIdx(null); onRelated(target); } }
@@ -3849,8 +3853,10 @@ function RecordSection({ operator, includeFuture, operators, onRelated }: {
             : t("중국 서버 선행 기록입니다 — 아직 한국어 번역 전이라 중국어 원문으로 표시됩니다.")}</p> : null}
           <Suspense fallback={<p className="no-detail">{t("불러오는 중…")}</p>}>
             {/* withPrefs — 스토리 탭과 같은 읽기 설정(글자·삽화 크기)을 기록 모달에도
-                붙인다 (사용자 요청 2026-09-04). 설정값은 스토리 리더와 공유된다. */}
-            <StoryScriptReader script={script} error={false} entities={[]} opIndex={opIndex} onShowOperator={showOp} withPrefs />
+                붙인다 (사용자 요청 2026-09-04). 설정값은 스토리 리더와 공유된다.
+                withScene — 연출 트랙이 있는 기록은 스토리 리더기(무대 재생)로도 볼 수 있다. */}
+            <StoryScriptReader key={openIdx} script={script} error={false} entities={[]}
+              opIndex={opIndex} onShowOperator={showOp} withPrefs withScene />
           </Suspense>
         </ModalWindow>
       )}

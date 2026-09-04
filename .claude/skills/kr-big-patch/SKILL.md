@@ -145,11 +145,15 @@ python3 scripts/build-story-scripts.py --lang en   # vn(연출) 트랙이 로케
 python3 scripts/build-story-scripts.py --lang ja
 python3 scripts/build-story-vn.py            # 리더기 무대 — 배경·스탠딩 + story-scene-ids.json
 python3 scripts/build-records.py             # 오퍼레이터 기록(밀록) — ci 미포함, 여기서만 돈다
+python3 scripts/build-story-vn.py --records  #   └ 기록 리더기 무대 (기록 JSON 의 vn 트랙 → 배경·스탠딩)
 ```
 > ⚠ `build-story-scripts.py <id>`처럼 **단일 id로 돌리면 `story-script-ids.json`을 갱신하지
 > 않는다**(목록이 잘리는 걸 막으려는 의도적 동작). 새 이벤트가 목록에 안 뜨면 이게 원인이다.
 > ⚠ **`build-story-vn.py`를 빼먹으면 새 이벤트만 리더기가 안 열린다** — 리더기 목록
 > (`app/data/story-scene-ids.json`)은 이 스크립트만 갱신한다. 무인 CI에는 없는 단계다.
+> ⚠ `--records`는 **`build-records.py` 뒤에** 돌린다 — 기록 JSON 안의 vn 트랙을 읽어
+> 배경·스탠딩을 받는다. 빼먹으면 기록 리더기 무대가 검게 빈다 (목록 파일은 없다 —
+> 화면이 기록 JSON 의 vn 유무를 직접 본다).
 > 스탠딩이 대량으로 "미러에 없음"으로 나오면 GitHub API 한도를 의심할 것 (gh 로그인 필요).
 
 그다음 `story-summary` 스킬 → 집필 → 번역 파이프라인 → `chronicle-register` 스킬(연대기 등록).

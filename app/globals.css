@@ -9982,6 +9982,24 @@ html.dark .story-card:hover .story-thumb img {
   background: var(--ink);
   color: var(--white);
 }
+/* 리더가 직접 쥔 보기 방식(전문 ↔ 장면) — 오퍼 기록 모달처럼 헤더 탭이 없는 자리 전용
+   (사용자 요청 2026-09-04). 스토리 상세는 .story-mode-bar 가 같은 일을 한다. */
+.sc-view-switch {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  margin: 12px 0 0;
+}
+.sc-view-switch button {
+  border: 0;
+  background: var(--white);
+  padding: 6px 16px;
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--muted);
+}
+.sc-view-switch button + button { border-left: 1px solid var(--line); }
+.sc-view-switch button.on { background: var(--ink); color: var(--white); }
 /* 글자 크기 3단계 — 전문(.sc-*)·요약(.story-body) 본문 폰트에 함께 적용 */
 .reader-font-sm .sc-line,
 .reader-font-sm .sc-narr,
@@ -16829,11 +16847,13 @@ main.site-main > .site-header {
   border-radius: 0;
 }
 
-.story-reader-prefs-btns {
+.story-reader-prefs-btns,
+.sc-view-switch {
   border-radius: var(--r-sm);
   overflow: hidden;
 }
-.story-reader-prefs-btns button {
+.story-reader-prefs-btns button,
+.sc-view-switch button {
   border-radius: 0;
 }
 
@@ -19443,6 +19463,16 @@ p.sb-trline { margin-top: 2px; }
 .op-record-modal .mw-body { overflow-y: auto; padding: 0 16px 16px; min-height: 0; }
 /* 단일 기록이라 에피소드 탭·하단 이동은 무의미하고, 창 제목이 이미 기록명이다 */
 .op-record-modal .sc-ep-nav, .op-record-modal .sc-ep-foot, .op-record-modal .sc-ep-title { display: none; }
+/* 리더기(무대 재생) — 창 높이가 읽기용으로 고정돼 있어서, 16:9 무대를 넣으면 아래가
+   통째로 빈다. 리더기일 때만 창을 **내용 높이**로 줄이고(상한은 그대로), 무대는 창이
+   낮을 때 넘치지 않게 높이 예산으로도 묶는다 (.vn-root.full 과 같은 방식). */
+.op-record-modal:has(.vn-root) { height: auto; max-height: min(82dvh, 900px); }
+.op-record-modal .vn-root { margin-top: 10px; }
+.op-record-modal .vn-stage {
+  /* 창 높이 − 제목·보기전환·안내문·조작안내·여백 ≈ 220px (실측 1440×700에서 딱 안 넘침) */
+  width: min(100%, calc((min(82dvh, 900px) - 220px) * 16 / 9));
+  max-height: calc(min(82dvh, 900px) - 220px);
+}
 /* 미실장 기록 안내 — .future-note는 `.detail-section` / `.modal-actions` 밑에서만 꾸며져
    있어서(위 두 규칙) 이 창에선 맨 <p>로 떨어져 본문보다 크게 나왔다 (사용자 지적
    2026-09-04). 상세 섹션 쪽과 같은 모양을 준다. */

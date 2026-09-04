@@ -297,7 +297,13 @@ python3 scripts/build-story-vn.py act6d5   # 한 이벤트
 python3 scripts/build-story-vn.py          # vn 트랙이 있는 전 이벤트
 python3 scripts/build-story-search.py          # 스샷 레이더 전문 검색 인덱스 → public/story/search.bin (KR 전문 갱신 시 같이 실행)
 python3 scripts/build-records.py               # 오퍼레이터 기록(밀록) 전문 → public/records/{ko,en,ja}/<charId>.json + app/data/record-ids.json
+python3 scripts/build-story-vn.py --records    #   └ 기록 리더기 무대 — 배경·스탠딩 (build-records.py 바로 뒤에)
 ```
+
+기록도 같은 AVG 파서를 쓰므로 **연출(vn) 트랙이 기록 JSON 안에 함께 실린다** (2026-09-04) —
+기록 모달의 '리더기 / 전문' 전환이 그걸 쓴다. `--records` 를 빼먹으면 무대가 검게 비므로
+`build-records.py` 와 **한 쌍으로** 돌린다. 배경·스탠딩은 이벤트 전문과 같은
+`public/story/{bg,sprite}/` 를 공유해 이미 있는 그림은 다시 받지 않는다.
 
 '전문 보기'는 사이드+메인만 지원 (rogue_N은 원문이 조각이라 제외). 산출 JSON은 정적 파일로
 UI(story.tsx ScriptReader)가 fetch — **JS 번들에 import 금지** (home 청크 폭증). 버튼 노출은

@@ -108,8 +108,13 @@ export default function SceneMode({ ep, title, hasPrev, hasNext, onEp }: {
     try { if (doc.fullscreenElement) void (doc.exitFullscreen?.() ?? doc.webkitExitFullscreen?.()); } catch { /* 미지원 */ }
   }, []);
 
-  const onKey = useCallback((e: { key: string; preventDefault: () => void }) => {
-    if (e.key === "Escape") { if (full) { e.preventDefault(); exitFull(); } return; }
+  const onKey = useCallback((e: { key: string; preventDefault: () => void; stopPropagation?: () => void }) => {
+    // ⚠ 전체 모드의 Esc 는 **전체화면만** 닫는다 — 전파를 끊지 않으면 layout.tsx 의 전역 Esc
+    //    처리기가 뒤이어 밑에 깔린 창까지 닫는다. 스토리 상세에선 리더기 아래에 창이 없어
+    //    안 드러났지만, 오퍼 기록 모달 안에서 열면 Esc 한 번에 기록 창까지 사라졌다
+    //    (2026-09-04). 아래 리스너를 **캡처 단계**로 두는 것과 한 쌍이다 — 전역 처리기는
+    //    document 버블이라 그냥 두면 이쪽보다 먼저 돈다.
+    if (e.key === "Escape") { if (full) { e.preventDefault(); e.stopPropagation?.(); exitFull(); } return; }
     if (e.key === " " || e.key === "ArrowRight" || e.key === "Enter" || e.key === "PageDown") {
       e.preventDefault(); go(1); return;
     }
@@ -121,8 +126,8 @@ export default function SceneMode({ ep, title, hasPrev, hasNext, onEp }: {
   useEffect(() => {
     if (!full) return;
     const handler = (e: KeyboardEvent) => { if (!e.isComposing) onKey(e); };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    window.addEventListener("keydown", handler, true);
+    return () => window.removeEventListener("keydown", handler, true);
   }, [full, onKey]);
 
   // 브라우저 쪽에서 전체화면이 풀리면(Esc·제스처) 오버레이도 같이 내린다 — 상태가 갈리면

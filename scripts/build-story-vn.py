@@ -4,9 +4,12 @@
 Usage:
   python3 scripts/build-story-vn.py act6d5      # 한 이벤트
   python3 scripts/build-story-vn.py             # 연출 트랙(vn)이 있는 전 이벤트
+  python3 scripts/build-story-vn.py --records   # 오퍼레이터 기록(밀록) 전부 — build-records.py 뒤에
 
 입력은 build-story-scripts.py 가 이미 만들어 둔 public/story/script/<eid>.json 의 `vn`
 트랙이다 (배경 이름·스프라이트 base·표정 번호). 여기서는 그 이름들을 실제 파일로만 바꾼다.
+`--records` 는 같은 일을 public/records/<locale>/<charId>.json 의 rec.vn 에 대해 한다
+(build-records.py 산출 — 기록도 같은 AVG 파서를 쓰므로 트랙 모양이 똑같다).
 
 산출물 (둘 다 public/story/ 밑 — deploy.sh 가 통째로 R2 로 보내는 폴더라
 Cloudflare Pages 의 2만 파일 한도를 건드리지 않는다):
@@ -36,6 +39,7 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ASSETS = "https://raw.githubusercontent.com/ArknightsAssets/ArknightsAssets2/cn/assets/dyn"
 API = "https://api.github.com/repos/ArknightsAssets/ArknightsAssets2/contents/assets/dyn"
 SCRIPT_DIR = os.path.join(REPO, "public", "story", "script")
+REC_DIR = os.path.join(REPO, "public", "records")     # build-records.py 산출 (--records)
 BG_DIR = os.path.join(REPO, "public", "story", "bg")
 SPR_DIR = os.path.join(REPO, "public", "story", "sprite")
 CACHE = os.path.join(REPO, ".gamedata", "story-vn-cache")
@@ -305,25 +309,45 @@ def save_sprite(png, dest):
 
 
 # ── 수집 ────────────────────────────────────────────────────────────────────
-def collect(eid):
-    """이벤트 JSON 의 vn 트랙에서 배경 이름·(스프라이트 base, 표정) 쌍을 모은다."""
-    doc = json.load(open(os.path.join(SCRIPT_DIR, f"{eid}.json"), encoding="utf-8"))
-    bgs, sprites = set(), set()
-    for ep in doc.get("eps", []):
-        for snap in ep.get("vn", []):
+def take_tracks(tracks, bgs, sprites):
+    """vn 트랙 묶음에서 배경 이름·(스프라이트 base, 표정) 쌍을 모은다."""
+    for vn in tracks:
+        for snap in vn or []:
             if snap.get("bg"):
                 bgs.add(snap["bg"])
             for base, expr in snap.get("ch", []):
                 if base and base != "char_empty":
                     sprites.add((base, int(expr)))
+
+
+def collect(eid):
+    """이벤트 JSON 의 vn 트랙에서 배경 이름·(스프라이트 base, 표정) 쌍을 모은다."""
+    doc = json.load(open(os.path.join(SCRIPT_DIR, f"{eid}.json"), encoding="utf-8"))
+    bgs, sprites = set(), set()
+    take_tracks((ep.get("vn") for ep in doc.get("eps", [])), bgs, sprites)
     return bgs, sprites
 
 
-def run(eid):
-    bgs, sprites = collect(eid)
-    if not bgs and not sprites:
-        print(f"{eid}: 연출 트랙 없음 — 건너뜀")
-        return
+def collect_records():
+    """오퍼레이터 기록(밀록) 전 로케일의 vn 트랙 — 한 번에 모아서 받는다.
+
+    로케일마다 대본이 달라도 배경·스탠딩 이름은 같은 자산을 가리키지만, CN 선행 기록처럼
+    한 로케일에만 있는 세트가 있어 세 폴더를 모두 훑는다."""
+    bgs, sprites = set(), set()
+    for loc in ("ko", "en", "ja"):
+        d = os.path.join(REC_DIR, loc)
+        if not os.path.isdir(d):
+            continue
+        for f in sorted(os.listdir(d)):
+            if not f.endswith(".json"):
+                continue
+            doc = json.load(open(os.path.join(d, f), encoding="utf-8"))
+            take_tracks((rec.get("vn") for rec in doc.get("recs", [])), bgs, sprites)
+    return bgs, sprites
+
+
+def fetch_all(label, bgs, sprites):
+    """모은 배경·스탠딩을 실제 파일로 받아 굽는다. 이미 있는 건 건드리지 않는다."""
     missing_bg, missing_spr = [], []
 
     def dl_bg(name):
@@ -363,12 +387,29 @@ def run(eid):
 
     bg_kb = folder_kb(BG_DIR, [f"{n}.webp" for n in bgs])
     spr_kb = folder_kb(SPR_DIR, [f"{b}__{e}.webp" for b, e in sprites])
-    print(f"{eid}: 배경 {len(bgs) - len(missing_bg)}/{len(bgs)}장 {bg_kb}KB · "
+    print(f"{label}: 배경 {len(bgs) - len(missing_bg)}/{len(bgs)}장 {bg_kb}KB · "
           f"스탠딩 {len(sprites) - len(missing_spr)}/{len(sprites)}장 {spr_kb}KB")
     if missing_bg:
         print("  미러에 없는 배경:", ", ".join(sorted(missing_bg)))
     if missing_spr:
-        print("  미러에 없는 스탠딩:", ", ".join(sorted(missing_spr)))
+        print("  미러에 없는 스탠딩:", ", ".join(sorted(missing_spr)[:20]),
+              f"… 외 {len(missing_spr) - 20}종" if len(missing_spr) > 20 else "")
+
+
+def run(eid):
+    bgs, sprites = collect(eid)
+    if not bgs and not sprites:
+        print(f"{eid}: 연출 트랙 없음 — 건너뜀")
+        return
+    fetch_all(eid, bgs, sprites)
+
+
+def run_records():
+    bgs, sprites = collect_records()
+    if not bgs and not sprites:
+        print("기록: 연출 트랙 없음 — build-records.py 를 먼저 돌렸는지 확인할 것")
+        return
+    fetch_all("오퍼 기록", bgs, sprites)
 
 
 def write_ids():
@@ -388,13 +429,20 @@ def write_ids():
     print(f"장면 모드 가능 {len(ids)}편 → app/data/story-scene-ids.json")
 
 
-def patch_missing():
+def patch_missing(records=False):
     """미러에 없는 스탠딩을 vn 트랙에서 char_empty 로 바꾼다 (KR·EN·JA 전부).
 
     안 하면 화면이 없는 파일을 계속 불러 콘솔이 404로 도배된다 (사용자 제보 2026-08-25:
     avg_npc_1981_1). char_empty 로 바꾸는 이유는 **슬롯 번호를 지키기 위해서**다 —
-    ch 에서 빼 버리면 focus 가 가리키는 자리가 어긋난다."""
-    roots = [SCRIPT_DIR, os.path.join(SCRIPT_DIR, "en"), os.path.join(SCRIPT_DIR, "ja")]
+    ch 에서 빼 버리면 focus 가 가리키는 자리가 어긋난다.
+
+    records=True 면 이벤트 전문 대신 오퍼레이터 기록(public/records/<loc>/)을 훑는다."""
+    if records:
+        roots = [os.path.join(REC_DIR, loc) for loc in ("ko", "en", "ja")]
+        tracks_of = lambda doc: [rec.get("vn") for rec in doc.get("recs", [])]
+    else:
+        roots = [SCRIPT_DIR, os.path.join(SCRIPT_DIR, "en"), os.path.join(SCRIPT_DIR, "ja")]
+        tracks_of = lambda doc: [ep.get("vn") for ep in doc.get("eps", [])]
     gone, fixed, files = set(), 0, 0
     for root in roots:
         if not os.path.isdir(root):
@@ -405,8 +453,8 @@ def patch_missing():
             path = os.path.join(root, f)
             doc = json.load(open(path, encoding="utf-8"))
             hit = 0
-            for ep in doc.get("eps", []):
-                for snap in ep.get("vn", []):
+            for vn in tracks_of(doc):
+                for snap in vn or []:
                     for pair in snap.get("ch", []):
                         base, expr = pair[0], int(pair[1])
                         if not base or base == "char_empty":
@@ -429,6 +477,13 @@ def patch_missing():
 
 
 def main():
+    # 오퍼레이터 기록(밀록) — 이벤트 전문과 자산 폴더를 공유하지만 색인(story-scene-ids)은
+    # 만들지 않는다. 화면은 기록 JSON 을 이미 받아 놓고 열기 때문에 rec.vn 유무를 직접 본다.
+    if "--records" in sys.argv[1:]:
+        run_records()
+        patch_missing(records=True)
+        print("→ R2 반영: node scripts/r2-sync.mjs")
+        return
     args = [a for a in sys.argv[1:] if not a.startswith("-")]
     if args:
         targets = args

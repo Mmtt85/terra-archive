@@ -21,9 +21,12 @@ story.tsx ScriptReader 재사용).
   { "id": cid,
     "recs": [ { "name": 세트명, "tag": 스토리 소개문, "lines": [ScriptLine…],
                 "unlock": [{"t": "AWAKE", "p": ["0","30"]}, {"t": "FAVOR", "p": ["50"]}],
-                "f": 1? } ],
+                "vn": [VnSnap…]?, "f": 1? } ],
     "faces": { 화자: 스탠딩 스프라이트 } }
 + app/data/record-ids.json — 기록이 있는 오퍼 id 목록 (UI가 fetch 여부·섹션 표시 판단)
+
+⚠ vn(무대 연출 트랙)을 실은 뒤에는 **`python3 scripts/build-story-vn.py --records`** 를
+  이어서 돌려야 한다 — 배경·스탠딩 이미지를 안 받으면 장면 보기가 빈 무대로 나온다.
 """
 import importlib.util
 import json
@@ -171,13 +174,19 @@ for loc, (server, nickname) in LOCALES.items():
                 txt = read_txt(src, st["storyTxt"])
                 if not txt:
                     continue
-                lines = bss.parse_story(txt)
+                vn = []
+                lines = bss.parse_story(txt, vn)
                 if not lines:
                     continue
                 bss.scan_faces(txt, votes)
                 bss.scan_cg_layers(txt, cut_needed)
                 rec = {"name": s.get("storySetName") or "", "tag": st.get("storyIntro") or "",
                        "unlock": unlock_of(s), "lines": lines}
+                # 무대 연출 트랙 — 기록 모달의 '장면' 보기가 쓴다 (사용자 요청 2026-09-04).
+                # 배경·스탠딩이 하나도 없으면 싣지 않는다 (이벤트 전문과 같은 규약).
+                # 배경·스탠딩 이미지는 build-story-vn.py --records 가 받는다.
+                if any(v.get("bg") or v.get("ch") for v in vn):
+                    rec["vn"] = vn
                 if src == "cn":
                     rec["f"] = 1
                     future_sets += 1
@@ -216,7 +225,8 @@ for loc in LOCALES:
         changed = False
         for rec in doc["recs"]:
             kept = []
-            for ln in rec["lines"]:
+            remap = {}          # 원래 줄 번호 → 살아남은 줄 번호 (vn 스냅샷이 줄 번호로 건다)
+            for i, ln in enumerate(rec["lines"]):
                 if "img" in ln:
                     if ln["img"] in bad_cuts:
                         changed = True
@@ -225,7 +235,23 @@ for loc in LOCALES:
                     if fixed != ln["img"]:
                         ln["img"] = fixed
                         changed = True
+                remap[i] = len(kept)
                 kept.append(ln)
+            # ⚠ 줄이 빠지면 vn 의 i 가 밀린다 — parse_story 와 같은 규칙으로 다시 매긴다.
+            #   빠진 줄에 걸린 무대는 그 다음 살아있는 줄로 옮긴다 (무대를 잃지 않게).
+            if rec.get("vn") and len(kept) != len(rec["lines"]):
+                alive = sorted(remap)
+                merged = {}
+                for snap in rec["vn"]:
+                    j = remap.get(snap["i"])
+                    if j is None:
+                        nxt = next((k for k in alive if k > snap["i"]), None)
+                        if nxt is None:
+                            continue
+                        j = remap[nxt]
+                    merged[j] = {**snap, "i": j}
+                rec["vn"] = [merged[k] for k in sorted(merged)]
+                changed = True
             rec["lines"] = kept
         fixed_faces = {w: char_case.get(s.lower(), s) for w, s in doc["faces"].items() if s not in bad_sprites}
         if fixed_faces != doc["faces"]:
