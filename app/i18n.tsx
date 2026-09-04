@@ -2848,6 +2848,8 @@ const D: Record<string, Pair> = {
   "위수 협의 보기": ["Stronghold Protocol views", "堅守協定の表示"],
   // 시즌 전환 (2026-09-05) — 지난 시즌 데이터를 그대로 볼 수 있다 ("시즌"은 위에 이미 있다)
   "시즌 {n}": ["Season {n}", "シーズン{n}"],
+  // 메뉴 부메뉴의 지난 시즌 표식 ("종료"는 다른 뜻으로 이미 쓰여 별도 키)
+  "지난 시즌": ["Ended", "終了済"],
   "종료된 시즌입니다 — 당시 데이터를 그대로 보여 줍니다. 개최 기간 {p}": [
     "This season has ended — the data is shown exactly as it was. Ran {p}",
     "終了したシーズンです — 当時のデータをそのまま表示します。開催期間 {p}"],

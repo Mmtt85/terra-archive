@@ -167,10 +167,6 @@ export type AcBoss = {
   id: string; sort: number; enemy: string; n: string; code?: string | null;
   w: number; hide: boolean; hp: Record<string, number>; round: number[];
 };
-/** 시즌 목록 (app/data/autochess-seasons.json) — 화면 위 시즌 전환기가 읽는다.
- *  s·e 는 **한국 서버** 개최 기간(초). file 은 데이터 파일 이름 뿌리. */
-export type AcSeason = { n: number; id: string; file: string; s: number; e: number };
-
 export type AutochessDoc = {
   id: string; name: string; krOnly: boolean; token: string;
   /** 몇 번째 시즌인가 (build-autochess.py — autoChessData.versionInfoDict 가 정본) */
@@ -460,15 +456,8 @@ type AcFilters = ReturnType<typeof useAcFilters>;
 /** 드롭다운 옆 숫자 — 필터 한 벌마다 따로 센다 (facetCount) */
 type AcFacets = { nation: Map<string, number>; trait: Map<string, number>; gar: Map<string, number> };
 
-export default function AutochessGuide({ doc, seasons, onSeason, seasonBusy, onShowOperator }: {
+export default function AutochessGuide({ doc, onShowOperator }: {
   doc: AutochessDoc;
-  /** 고를 수 있는 시즌 목록. 하나뿐이면 전환기를 안 그린다 */
-  seasons?: AcSeason[];
-  /** 시즌 갈아타기 — 래퍼가 그 시즌 데이터를 받아 오고 `key` 로 통째로 새로 마운트한다
-   *  (판·필터·모달이 다른 시즌 id 를 들고 넘어가지 않게 하려면 리마운트가 가장 확실하다) */
-  onSeason?: (n: number) => void;
-  /** 시즌 데이터를 받는 중 — 버튼을 잠근다 */
-  seasonBusy?: number;
   /** 백과사전 오퍼 상세 모달 열기 — 기물 상세에서 특질·스킬·모듈 전문을 볼 때 쓴다 */
   onShowOperator?: (id: string) => void;
 }) {
@@ -1585,22 +1574,9 @@ export default function AutochessGuide({ doc, seasons, onSeason, seasonBusy, onS
         </button>
       </header>
       <p className="sim-intro">{t("맹약(진영·특성)별 오퍼레이터와 각자의 위수 협의 전용 능력, 특훈 적과 리더 적, 보급센터 수치를 게임 데이터에서 그대로 정리했습니다.")}</p>
-      {/* 시즌 전환 (사용자 요청 2026-09-05 "예전 맹약 어땠는지 궁금해하는 사람들도 많더라").
-          ⚠ 시즌마다 **같은 id인데 수치가 다르다** — 섞어 보여 주면 안 된다. 그래서 래퍼가
-          key로 통째로 새로 마운트하고, 여기서는 무엇을 보고 있는지만 밝힌다. */}
-      {(seasons?.length ?? 0) > 1 && (
-        <div className="ac-seasons" role="tablist" aria-label={t("시즌")}>
-          {[...seasons!].sort((a, b) => b.n - a.n).map((sn) => (
-            <button key={sn.n} type="button" role="tab" aria-selected={sn.n === doc.season}
-              className={sn.n === doc.season ? "on" : ""}
-              disabled={seasonBusy != null}
-              onClick={() => { if (sn.n !== doc.season) onSeason?.(sn.n); }}>
-              {t("시즌 {n}", { n: sn.n })}
-              {seasonBusy === sn.n && <span className="ac-seasons-busy" aria-hidden />}
-            </button>
-          ))}
-        </div>
-      )}
+      {/* ⚠ 시즌 고르기는 **메뉴 부메뉴에만** 둔다 (사용자 지시 2026-09-05 "페이지 안에 있는
+          시즌2 시즌1 버튼은 걍 없애줘") — 통합전략 테마·생존연산 시즌과 같은 자리다.
+          화면 안에 다시 넣지 말 것. 여기서는 지난 시즌일 때 그 사실만 밝힌다. */}
       {doc.cur === false && (
         <p className="sim-note">{t("종료된 시즌입니다 — 당시 데이터를 그대로 보여 줍니다. 개최 기간 {p}", { p: seasonPeriod })}</p>
       )}

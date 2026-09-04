@@ -5895,6 +5895,17 @@ legend {
   color: var(--on-lime);
   background: var(--lime);
 }
+/* 지난 시즌(끝난 위수 협의) 표식 — 미래시 표식과 같은 자리·같은 크기지만 색은 죽인다.
+   '아직 안 나온 것'(lime)과 '이미 끝난 것'을 한눈에 가르려는 것이다 (2026-09-05) */
+.tab-sub-past {
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 1px 5px;
+  margin-left: 4px;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--muted) 16%, transparent);
+}
 .planner-summary .strategy {
   font-size: 13.5px;
   font-family: inherit;
@@ -18935,7 +18946,11 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
   border-color: var(--ink);
 }
 .sb-views .tab-sub-future { margin-left: 5px; }
-.sb-search { margin-top: 10px; }
+/* ⚠ 좌우 margin 을 0 으로 **못 박는다** — .heading-search 가 `margin: 0 20px` 를 갖고 있어서
+   생존연산 검색란만 왼쪽이 20px 들어가 있었다 (사용자 지적 2026-09-05 "검색란 왼쪽에
+   이유없이 살짝 띄워져있는거 딱 붙여줘 다른데랑 마찬가지로"). 위수 협의에서 같은 지적을
+   받아 .ac-filters .search-wrap 을 0 으로 둔 것과 같은 자리다 — margin-top 만 주면 좌우가 남는다. */
+.sb-search { margin: 10px 0 0; }
 .sb-h3 {
   margin: 26px 0 6px;
   font-size: 15.5px;
@@ -19629,44 +19644,6 @@ p.sb-trline { margin-top: 2px; }
   color: var(--muted);
 }
 .ac-views { margin-bottom: 8px; }
-/* 시즌 전환 (2026-09-05) — 소개문 바로 아래, 뷰 탭보다 한 단계 작게. 지난 시즌을 고르면
-   가이드가 통째로 새로 마운트된다 (autochess-seasons.tsx) */
-.ac-seasons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 0 0 10px;
-}
-.ac-seasons button {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 12px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--card);
-  color: var(--muted);
-  font-size: 12.5px;
-  font-weight: 700;
-  cursor: pointer;
-}
-.ac-seasons button:hover:not(:disabled) { border-color: var(--accent); color: var(--fg); }
-.ac-seasons button.on {
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
-  color: var(--fg);
-}
-.ac-seasons button:disabled { cursor: progress; opacity: 0.7; }
-.ac-seasons-busy {
-  width: 10px;
-  height: 10px;
-  border: 2px solid color-mix(in srgb, var(--accent) 35%, transparent);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: ac-seasons-spin 0.7s linear infinite;
-}
-@keyframes ac-seasons-spin { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .ac-seasons-busy { animation: none; } }
 /* 뷰 안의 2단 탭 — S.W.E.E.T. 리포트(맹약·전략·적), 물자관리소(오퍼레이터·아이템·수치).
    상단 뷰 탭(.ac-views)과 한 단계 위계가 다르게 보이도록 알약형으로 (2026-08-22) */
 .ac-subtabs {

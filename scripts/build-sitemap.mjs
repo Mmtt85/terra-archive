@@ -48,7 +48,7 @@ const SEG_SOURCES = {
   stories: ["app/data/story-summaries.json", "app/data/stories.json", "app/data/chronology.json", "app/data/eventlore-index.json"],
   rogue: ["app/data/rogue1.json", "app/data/rogue2.json", "app/data/rogue3.json", "app/data/rogue4.json", "app/data/rogue5.json", "app/data/rogue6.json"],
   ra: ["app/data/sandbox.json"], // 생존연산 가이드
-  autochess: ["app/data/autochess.json"], // 위수 협의(오토체스) 가이드
+  autochess: ["app/data/autochess.json", "app/data/autochess-s1.json"], // 위수 협의(오토체스) 가이드 — 지난 시즌 포함
   about: ["app/about/page.tsx"],
 };
 // ⚠ 파일 하나당 git을 **한 번만** 부른다. 종전엔 URL마다 불러서, 오퍼·적·작전 상세까지
@@ -70,7 +70,7 @@ function gitDate(file) {
 const LASTMOD = new Map();
 function lastmodFor(seg) {
   // 스토리 상세(stories/<id>)는 목록과 같은 데이터에서 나오므로 같은 소스를 본다
-  const key = seg.startsWith("stories/") ? "stories" : seg.startsWith("operators/") ? "operators" : seg.startsWith("enemies/") ? "enemies" : seg.startsWith("stages/") ? "stages" : seg.startsWith("rogue/") ? "rogue" : seg.startsWith("ra/") ? "ra" : seg;
+  const key = seg.startsWith("stories/") ? "stories" : seg.startsWith("operators/") ? "operators" : seg.startsWith("enemies/") ? "enemies" : seg.startsWith("stages/") ? "stages" : seg.startsWith("rogue/") ? "rogue" : seg.startsWith("ra/") ? "ra" : seg.startsWith("autochess/") ? "autochess" : seg;
   if (LASTMOD.has(key)) return LASTMOD.get(key);
   let latest = null;
   for (const file of SEG_SOURCES[key] ?? []) {
@@ -123,7 +123,11 @@ function rogueSlugs() {
   const idx = JSON.parse(readFileSync(join(ROOT, "app/data/rogue-index.json"), "utf8"));
   return Object.keys(idx).map((id) => `is${id.split("_")[1]}`);
 }
-const DYNAMIC = { "stories/[id]": storyIds, "operators/[id]": operatorIds, "enemies/[id]": enemyIds, "stages/[id]": stageIds, "rogue/[slug]": rogueSlugs, "ra/[slug]": () => ["sand", "anchor"] };
+// 위수 협의 시즌 — /autochess/<slug> (app/seo-autochess.ts autochessSlugs와 같은 목록)
+function autochessSlugs() {
+  return JSON.parse(readFileSync(join(ROOT, "app/data/autochess-seasons.json"), "utf8")).map((x) => `s${x.n}`);
+}
+const DYNAMIC = { "stories/[id]": storyIds, "operators/[id]": operatorIds, "enemies/[id]": enemyIds, "stages/[id]": stageIds, "rogue/[slug]": rogueSlugs, "ra/[slug]": () => ["sand", "anchor"], "autochess/[slug]": autochessSlugs };
 
 // 라우트 → { locale, seg } (seg="" = 포탈 루트)
 function parseRoute(route) {

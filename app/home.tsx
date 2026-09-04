@@ -65,6 +65,7 @@ import type { StorySummaries, OpIndex, ScriptData } from "./story";
 // 오퍼레이터 기록(밀록)이 있는 오퍼 id — scripts/build-records.py 생성. 본문은
 // public/records/<locale>/<id>.json 을 모달에서 지연 fetch (R2 서빙, 번들 import 금지).
 import recordIdsData from "./data/record-ids.json";
+import acSeasonList from "./data/autochess-seasons.json";
 /** 스토리 요약(로케일별 1.8MB)은 **스토리 탭에 들어갈 때만** 받는다 (2026-08-09 INP 작업).
  *  종전엔 로케일 래퍼가 정적 import해 모든 페이지가 파싱했다. 셸에서 쓰던 곳은
  *  Portal의 죽은 stats prop 하나뿐이라 데이터 자체가 필요 없었다. */
@@ -280,6 +281,16 @@ function promoLeftLabel(nowMs: number, t: T): string | null {
 /** 진행중 이벤트 배너를 눌렀을 때, 그 이벤트 전용 가이드가 사이트에 있으면 그쪽으로 보낸다.
  *  키는 클뜯 basicInfo의 이벤트 type (broadcast 워커가 그대로 실어 준다). */
 const EVENT_GUIDE_TAB: Record<string, Tab> = { AUTOCHESS_SEASON: "autochess" };
+
+// 위수 협의 시즌 — 메뉴 부메뉴와 /autochess/<slug> 라우팅에 쓴다 (2026-09-05).
+// 목록은 build-autochess.py 산출물이라 **여기에 숫자를 안 적는다** — 새 시즌이 오면 늘어난다.
+// (SEO 쪽 같은 판정은 app/seo-autochess.ts. 그쪽은 서버 전용이라 여기서 임포트하지 않는다)
+const AC_SEASONS = (acSeasonList as { n: number }[]).map((x) => x.n).sort((a, b) => a - b);
+const AC_LATEST = AC_SEASONS[AC_SEASONS.length - 1] ?? 1;
+const autochessSeasonOf = (slug?: string) => {
+  const n = Number(String(slug ?? "").replace(/^s/, ""));
+  return AC_SEASONS.includes(n) ? n : AC_LATEST;
+};
 
 const OPERATOR_PATH_RE = /^\/(?:en\/|ja\/)?operators\/([^/]+)\/?$/;
 const operatorPath = (locale: Locale, id: string) => `${LOCALE_BASE[locale]}/operators/${id}`;
@@ -1024,10 +1035,10 @@ function Portal({ onOpenTab }: {
   );
 }
 
-export default function Home({ locale, operators, extra, summariesLoader, initialTab = "portal", initialStory, initialOperator, initialRogue, initialSandbox, initialEnemy, pageEnemy, pageEnemyStages, pageStage }: { locale: Locale; operators: Operator[]; extra: ExtraI18n | null; summariesLoader: SummariesLoader; initialTab?: Tab; initialStory?: string; initialOperator?: string; initialRogue?: string; initialSandbox?: string; initialEnemy?: string; pageEnemy?: EnemyEntry | null; pageEnemyStages?: EnemyStages | null; pageStage?: StageView | null }) {
+export default function Home({ locale, operators, extra, summariesLoader, initialTab = "portal", initialStory, initialOperator, initialRogue, initialSandbox, initialAutochess, initialEnemy, pageEnemy, pageEnemyStages, pageStage }: { locale: Locale; operators: Operator[]; extra: ExtraI18n | null; summariesLoader: SummariesLoader; initialTab?: Tab; initialStory?: string; initialOperator?: string; initialRogue?: string; initialSandbox?: string; initialAutochess?: string; initialEnemy?: string; pageEnemy?: EnemyEntry | null; pageEnemyStages?: EnemyStages | null; pageStage?: StageView | null }) {
   return (
     <I18nProvider locale={locale}>
-      <HomeInner operators={operators} extra={extra} summariesLoader={summariesLoader} initialTab={initialTab} initialStory={initialStory} initialOperator={initialOperator} initialRogue={initialRogue} initialSandbox={initialSandbox} initialEnemy={initialEnemy} pageEnemy={pageEnemy} pageEnemyStages={pageEnemyStages} pageStage={pageStage} />
+      <HomeInner operators={operators} extra={extra} summariesLoader={summariesLoader} initialTab={initialTab} initialStory={initialStory} initialOperator={initialOperator} initialRogue={initialRogue} initialSandbox={initialSandbox} initialAutochess={initialAutochess} initialEnemy={initialEnemy} pageEnemy={pageEnemy} pageEnemyStages={pageEnemyStages} pageStage={pageStage} />
     </I18nProvider>
   );
 }
@@ -1035,7 +1046,7 @@ export default function Home({ locale, operators, extra, summariesLoader, initia
 // '미래시 포함' 토글 localStorage 키 — 켜면 한국 서버 미실장(CN 선행) 오퍼도 목록에 표시
 const FUTURE_KEY = "ta-include-future";
 
-function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory, initialOperator, initialRogue, initialSandbox, initialEnemy, pageEnemy, pageEnemyStages, pageStage }: { operators: Operator[]; extra: ExtraI18n | null; summariesLoader: SummariesLoader; initialTab: Tab; initialStory?: string; initialOperator?: string; initialRogue?: string; initialSandbox?: string; initialEnemy?: string; pageEnemy?: EnemyEntry | null; pageEnemyStages?: EnemyStages | null; pageStage?: StageView | null }) {
+function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory, initialOperator, initialRogue, initialSandbox, initialAutochess, initialEnemy, pageEnemy, pageEnemyStages, pageStage }: { operators: Operator[]; extra: ExtraI18n | null; summariesLoader: SummariesLoader; initialTab: Tab; initialStory?: string; initialOperator?: string; initialRogue?: string; initialSandbox?: string; initialAutochess?: string; initialEnemy?: string; pageEnemy?: EnemyEntry | null; pageEnemyStages?: EnemyStages | null; pageStage?: StageView | null }) {
   const { locale, t } = useI18n();
   // SSR엔 localStorage가 없으므로 false로 하이드레이션 후 이펙트에서 복원한다.
   // 우선순위: URL 쿼리(?future=1|0) > localStorage. URL 파라미터는 공유 링크용.
@@ -1601,6 +1612,17 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     startTransition(() => { setTab("ra"); setSelected(null); });
   };
 
+  // 위수 협의 시즌 전환 — /autochess/<slug>로 주소를 바꾸고 탭을 연다 (생존연산과 같은 짜임).
+  // ⚠ tabPath가 ?future=1을 달고 올 수 있어 문자열 이어붙이기 금지.
+  const [autochessSeason, setAutochessSeason] = useState(() => autochessSeasonOf(initialAutochess));
+  const switchAutochess = (n: number) => {
+    setNavOpen(false); setOpenGroup("");
+    const [, query] = tabPath("autochess").split("?");
+    history.pushState(null, "", `${localeBase}/autochess/s${n}${query ? `?${query}` : ""}`);
+    setAutochessSeason(n);
+    startTransition(() => { setTab("autochess"); setSelected(null); });
+  };
+
   const switchTab = (next: Tab) => {
     setNavOpen(false);
     noteAction();                       // 실패 추적 창 카운트 (app/trail.ts)
@@ -1973,6 +1995,21 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                   <span className="tab-sub-mark" aria-hidden>›</span>{t("위수협의(명토체스)")}
                   {tabHasNewFeature("autochess") && <span className="new-badge">{t("새기능")}</span>}
                 </a>
+                {/* 시즌도 통전 테마·생존연산 시즌과 같이 부메뉴에 둔다 (사용자 요청 2026-09-05).
+                    최신 시즌이 위 — 지난 시즌은 수치가 당시 것이라 섞이면 안 된다 */}
+                <div className="tab-sub2-list">
+                  {[...AC_SEASONS].reverse().map((n) => (
+                    <a key={n} href={`${localeBase}/autochess/s${n}`}
+                      className={`tab-sub tab-sub2${tab === "autochess" && autochessSeason === n ? " selected" : ""}`}
+                      onClick={(event) => {
+                        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+                        event.preventDefault(); switchAutochess(n);
+                      }}>
+                      <span className="tab-sub-mark" aria-hidden>·</span>{t("시즌 {n}", { n })}
+                      {n !== AC_LATEST && <em className="tab-sub-past">{t("지난 시즌")}</em>}
+                    </a>
+                  ))}
+                </div>
               </div>
             </div>
             <button className={`tab-story${tab === "story" ? " selected" : ""}`} onClick={() => switchTab("story")}><span className="tab-icon" aria-hidden>✦</span>{t("스토리")}{tabHasNewFeature("story") && <span className="new-badge">{t("새기능")}</span>}</button>
@@ -2189,7 +2226,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
         {tab === "enemy" && !(pageEnemy && enemyPageOpen) && <EnemyDexForLocale />}
         {tab === "stage" && !(pageStage && stagePageOpen) && <StageDexForLocale onOpenEnemy={openEnemyFromStage} />}
         {tab === "ra" && <SandboxForLocale includeFuture={includeFuture} season={sandboxSlug === "anchor" ? "v3" : "v2"} />}
-        {tab === "autochess" && <AutochessForLocale onShowOperator={showOperatorById} />}
+        {tab === "autochess" && <AutochessForLocale season={autochessSeason} onShowOperator={showOperatorById} />}
         {tab === "about" && <About onOpenTab={switchTab} />}
       </Suspense>
       {/* 작전 시뮬레이터 런처 — SEO 표적 페이지라 **정적 임포트로 프리렌더**한다

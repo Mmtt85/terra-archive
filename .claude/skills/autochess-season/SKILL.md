@@ -66,25 +66,34 @@ public/ac/…                                ← 새로 생긴 아이콘만 받�
   대조해 갱신할지 판단한다 (모르면 그냥 두는 게 맞다 — 없는 숫자를 만들지 않는다).
 - `건너뜀: …(weight 0)` — 그 시즌에서 안 뽑히는 전장이다.
 
-## 3. 화면에 새 시즌 잇기 — **고칠 곳 4줄뿐**
+## 3. 화면에 새 시즌 잇기 — **고칠 곳 4파일뿐**
 
-지난 시즌이 하나 늘 때마다 아래 네 군데에 **한 줄씩** 더한다. 여기 말고는 없다.
+나머지(메뉴 부메뉴 · `/autochess/<slug>` 라우트 · 사이트맵 · SEO 문구)는 전부
+`app/data/autochess-seasons.json` 을 읽어 저절로 늘어난다. **손댈 곳은 여기뿐이다.**
 
 | 파일 | 고치는 것 |
 |---|---|
-| [app/autochess.tsx](../../../app/autochess.tsx) `AC_ROUTE_IMPORT` | `2: () => import("./data/autochess-s2-routes.json"), 3: () => import("./data/autochess-routes.json")` — **최신 번호가 접미사 없는 파일**을 가리킨다 |
-| [app/autochess-ko.tsx](../../../app/autochess-ko.tsx) `PAST` | `2: () => import("./data/autochess-s2.json")` 추가 |
-| [app/autochess-en.tsx](../../../app/autochess-en.tsx) `PAST` | `2: () => import("./data/autochess-s2.en.json")` 추가 |
-| [app/autochess-ja.tsx](../../../app/autochess-ja.tsx) `PAST` | `2: () => import("./data/autochess-s2.ja.json")` 추가 |
+| [app/autochess.tsx](../../../app/autochess.tsx) `AC_ROUTE_IMPORT` | 최신 줄을 `-s<N>-routes` 로 내리고 새 번호가 접미사 없는 파일을 가리키게 — 예: `2: () => import("./data/autochess-s2-routes.json"), 3: () => import("./data/autochess-routes.json")` |
+| [app/autochess-ko.tsx](../../../app/autochess-ko.tsx) | `import s2 from "./data/autochess-s2.json"` 로 내리고, 새 시즌을 `import s3 from "./data/autochess.json"` 으로. `SEASON_DOCS` 에 `3: s3` 추가 |
+| [app/autochess-en.tsx](../../../app/autochess-en.tsx) | 같은 것, `.en.json` |
+| [app/autochess-ja.tsx](../../../app/autochess-ja.tsx) | 같은 것, `.ja.json` |
 
-⚠ **`AC_ROUTE_IMPORT` 는 최신 시즌 줄도 같이 고쳐야 한다** — 옛 최신본이 `-s<N>` 으로
-내려가면서 파일명이 바뀌기 때문이다. `PAST` 는 줄을 더하기만 하면 된다.
+⚠ **최신 시즌 줄도 같이 고쳐야 한다** — 옛 최신본이 `-s<N>` 으로 내려가며 파일명이 바뀐다.
 
-시즌 전환 자체(상태·리마운트)는 [app/autochess-seasons.tsx](../../../app/autochess-seasons.tsx)
-한 곳에 있고 **손댈 일이 없다.** `key={doc.season}` 로 가이드를 통째로 새로 마운트하는데,
-편성 판·필터·열린 모달이 다른 시즌의 id 를 들고 넘어가지 않게 하려는 것이다 — 걷어내지 말 것.
+⚠ 시즌 데이터는 **정적 임포트로 둔다** (지연 로드로 바꾸지 말 것). `/autochess/s1` 은
+프리렌더된 정적 페이지라 지연 로드로 두면 **그 HTML에 최신 시즌 내용이 박혀 색인된다.**
+이 청크 자체가 위수 협의 탭을 열 때만 받아지므로 첫 화면 번들에는 영향이 없다.
 
-i18n 은 이미 있다 (`"시즌 {n}"`, `"종료된 시즌입니다 — …"`). 새로 넣을 문구 없음.
+시즌 고르기는 [app/autochess-seasons.tsx](../../../app/autochess-seasons.tsx)(문서 고르기)와
+`home.tsx`의 `switchAutochess`(주소·메뉴)로 갈려 있고 **손댈 일이 없다.**
+`key={doc.season}` 로 가이드를 통째로 새로 마운트하는데, 편성 판·필터·열린 모달이 다른
+시즌의 id 를 들고 넘어가지 않게 하려는 것이다 — 걷어내지 말 것.
+
+⚠ **시즌 고르기는 메뉴 부메뉴에만 둔다.** 화면 안에도 전환 버튼을 뒀다가 사용자 지시로
+걷어냈다 (2026-09-05 "페이지 안에 있는 시즌2 시즌1 버튼은 걍 없애줘") — 통합전략 테마·
+생존연산 시즌과 같은 자리다. 다시 넣지 말 것.
+
+i18n 은 이미 있다 (`"시즌 {n}"`, `"지난 시즌"`, `"종료된 시즌입니다 — …"`). 새로 넣을 문구 없음.
 
 ## 4. 검증
 
@@ -94,8 +103,9 @@ npm run build          # 0 에러
 
 그다음 로컬(`npm run dev`, :3000)에서 **세 언어 다** 본다 — Playwright 로 훑어도 된다:
 
-- [ ] `/autochess` `/en/autochess` `/ja/autochess` 에 시즌 버튼이 **최신이 왼쪽**으로 뜨는가
-- [ ] 지난 시즌을 누르면 `종료된 시즌입니다 … 개최 기간 …` 안내와 **그 시즌 개최 기간**이 뜨는가
+- [ ] 메뉴 → 가이드 → 위수협의 아래에 시즌이 **최신이 위**로 뜨고, 지난 시즌엔 '지난 시즌' 표식이 붙는가
+- [ ] `/autochess/s<N>` 을 직접 열었을 때 **그 시즌 내용이 HTML에 들어 있는가** (프리렌더 확인)
+- [ ] 지난 시즌엔 `종료된 시즌입니다 … 개최 기간 …` 안내와 **그 시즌 개최 기간**이 뜨는가
 - [ ] 맹약 수가 시즌마다 다른가 (시즌1 18 · 시즌2 23 — 섞이면 잘못 물린 것이다)
 - [ ] 게임 정보 → 전투 맵에서 그 시즌 전장 수가 맞는가 (시즌1 7 · 시즌2 8), 전장을 누르면 지형이 그려지는가
 - [ ] 시즌을 오갔다 최신으로 돌아와도 편성 판·필터가 깨끗한가

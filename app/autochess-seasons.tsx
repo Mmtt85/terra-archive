@@ -1,44 +1,32 @@
 "use client";
 
-// 위수 협의 시즌 전환 (사용자 요청 2026-09-05 "예전 맹약 어땠는지 궁금해하는 사람들도 많더라").
+// 위수 협의 시즌 고르기 (사용자 요청 2026-09-05 "예전 맹약 어땠는지 궁금해하는 사람들도 많더라",
+// 같은 날 "시즌1이랑 2는 메뉴에다가 서브메뉴로 넣어줘").
 //
-// 로케일 래퍼 셋이 이걸 공유한다 — 지난 시즌 데이터는 **언어별 파일**이라 어느 파일을 물지는
-// 래퍼가 정하고(past), 갈아타는 절차는 여기 한 곳에만 둔다.
+// ⚠ 시즌 고르기는 **메뉴 부메뉴에만** 있다 (통합전략 테마·생존연산 시즌과 같은 자리).
+//   화면 안 전환 버튼은 사용자 지시로 걷어냈다 — 다시 넣지 말 것. 여기는 home.tsx 가 준
+//   시즌 번호로 문서만 고르는 자리다.
+//
+// ⚠ 시즌 데이터는 **정적 임포트**다 (지연 로드 아님). /autochess/s1 은 프리렌더된 정적
+//   페이지라, 지연 로드로 두면 그 HTML에 시즌2 내용이 박혀 색인된다. 이 청크 자체가
+//   위수 협의 탭을 열 때만 받아지므로 첫 화면 번들에는 영향이 없다.
 //
 // ⚠ 시즌이 바뀌면 `key` 로 가이드를 **통째로 새로 마운트**한다. 편성 판·필터·열린 모달이
 //   전부 그 시즌의 기물·맹약 id 를 들고 있어서, 상태를 이어 주면 시즌1 화면에 시즌2 기물이
 //   남는다. 시즌1↔2 는 같은 id 인데 수치가 갈아엎어져 있어(밴드 29/29 · 맹약 18/18 ·
 //   기물 195/200 실측) 섞이면 틀린 수치가 그대로 보인다.
-import { useState } from "react";
-import AutochessGuide, { type AcSeason, type AutochessDoc } from "./autochess";
+import AutochessGuide, { type AutochessDoc } from "./autochess";
 import seasonList from "./data/autochess-seasons.json";
 
-/** 지난 시즌 데이터 로더 — `{ 1: () => import("./data/autochess-s1.json") }` 꼴 */
-export type AcPastMap = Record<number, () => Promise<unknown>>;
+const LATEST = Math.max(...(seasonList as { n: number }[]).map((x) => x.n), 1);
 
-export default function AutochessSeasons({ cur, past, onShowOperator }: {
-  /** 최신 시즌 — 정적 임포트라 첫 페인트·프리렌더가 이걸 쓴다 */
-  cur: AutochessDoc;
-  past: AcPastMap;
+export default function AutochessSeasons({ docs, season, onShowOperator }: {
+  /** 시즌 번호 → 그 시즌 문서 (래퍼가 자기 언어 것으로 채운다) */
+  docs: Record<number, AutochessDoc>;
+  /** 지금 보는 시즌 — home.tsx 가 /autochess/s<N> 주소와 함께 들고 있다 */
+  season?: number;
   onShowOperator?: (id: string) => void;
 }) {
-  const [doc, setDoc] = useState<AutochessDoc>(cur);
-  const [busy, setBusy] = useState<number | undefined>(undefined);
-
-  const pick = (n: number) => {
-    if (n === doc.season || busy != null) return;
-    if (n === cur.season) { setDoc(cur); return; }
-    const load = past[n];
-    if (!load) return;
-    setBusy(n);
-    // import() 는 모듈 캐시를 타므로 오가며 눌러도 두 번 받지 않는다
-    load().then((m) => setDoc(((m as { default?: unknown }).default ?? m) as AutochessDoc))
-      .catch(() => { /* 못 받으면 보던 시즌 그대로 둔다 */ })
-      .finally(() => setBusy(undefined));
-  };
-
-  return (
-    <AutochessGuide key={doc.season} doc={doc} seasons={seasonList as AcSeason[]}
-      onSeason={pick} seasonBusy={busy} onShowOperator={onShowOperator} />
-  );
+  const doc = docs[season ?? LATEST] ?? docs[LATEST];
+  return <AutochessGuide key={doc.season} doc={doc} onShowOperator={onShowOperator} />;
 }
