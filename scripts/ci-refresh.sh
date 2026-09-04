@@ -61,10 +61,21 @@ if [ "${SKIP_FETCH:-}" = "1" ]; then
   #   빠진 채 stages.json 이 만들어졌다 — 무인 CI가 먼저 커밋해 둔 덕에 겨우 발견했다.
   #   그래서 서버별로 가장 오래된 표와 가장 새 표의 나이 차를 재서, 하루를 넘으면 경고한다.
   python3 - "$G" <<'PY' | tee -a "$WARN" >&2
-import os, sys, glob, time
+import importlib.util, os, sys, glob
 g = sys.argv[1]
+# 대조 대상은 **CDN 페처가 관리하는 표**만이다 — `.gamedata` 에는 레벨 캐시(cn__levels__*)나
+# 예전에 쓰던 잔재(kr_term_description_table)도 섞여 있어서, 아무 파일이나 세면 매번 헛경고가 뜬다.
+_h = os.path.join(os.path.dirname(os.path.abspath(__file__)), "scripts", "fetch-gamedata-cdn.py")
+_h = _h if os.path.exists(_h) else os.path.join(os.getcwd(), "scripts", "fetch-gamedata-cdn.py")
+_s = importlib.util.spec_from_file_location("_f", _h); _m = importlib.util.module_from_spec(_s)
+try:
+    _s.loader.exec_module(_m); MANAGED = _m.TABLES
+except Exception:
+    MANAGED = {}
 for srv in ("kr", "jp", "en", "cn"):
-    fs = glob.glob(os.path.join(g, "%s_*.json" % srv))
+    want = MANAGED.get(srv)
+    fs = [os.path.join(g, "%s_%s.json" % (srv, t)) for t in want] if want else []
+    fs = [f for f in fs if os.path.exists(f)]
     if len(fs) < 2:
         continue
     ts = {f: os.path.getmtime(f) for f in fs}

@@ -18,6 +18,7 @@ public/modules/<locale>/<id>.json에 쓰고, 버튼을 눌렀을 때만 받아�
 출력 형식:
   {"<uniEquipId>": "본문\n본문…", …}   # 모듈 id → 이야기 전문
 """
+import cnmiss
 import json
 import os
 import re
@@ -65,6 +66,7 @@ def localize(text, loc, mid):
         return hit[loc]
     if CJK_RE.search(text):
         untranslated.append((loc, mid, len(text)))
+        cnmiss.note(text, "modules", mid)
     return text
 
 
@@ -124,3 +126,5 @@ if untranslated:
     ko = [x for x in untranslated if x[0] == "ko"]
     print(f"  ⚠ 미번역 CN 모듈 이야기: {len(ko)}편 · {sum(x[2] for x in ko):,}자 "
           f"— scripts/cn-translations.json에 채울 것", file=sys.stderr)
+
+cnmiss.dump()

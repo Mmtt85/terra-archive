@@ -23,6 +23,7 @@ AI 번역을 거치지 않는다 (미실장 오퍼만 CN을 폴백으로 쓴다)
    { "title": "임상 진단 분석", "text": "...", "unlock": {"type": "FAVOR", "param": "25"} }]
   unlock: null = 즉시 열람(DIRECT). FAVOR=신뢰도, AWAKE=승진(param "2;1" = 정예화2 1단계).
 """
+import cnmiss
 import json
 import os
 import re
@@ -197,7 +198,15 @@ def manual_field_values(loc):
 
 
 def localize_value(value, loc, op_name, values=None):
-    """필드 값 — 생일은 로케일 날짜 형식, 코드명은 그 오퍼의 이름, 나머지는 수확 사전."""
+    """필드 값 — 생일은 로케일 날짜 형식, 코드명은 그 오퍼의 이름, 나머지는 수확 사전.
+
+    ⚠ 마지막에 **수동 사전(cn-translations.json)도 본다.** 본문은 줄 단위로 조회하는데
+      `【种族】佩洛兽亲（据称）` 같은 줄은 라벨+값이 한 줄이라 통째로는 절대 안 잡힌다.
+      그래서 라벨만 번역되고 값은 중국어로 남았다 — 미실장 22명에서 이런 줄만 수백 개였고
+      (2026-09-04 전수조사), 정작 그 값(`未录入`·`虎狼丸`·`佩洛兽亲（据称）`)은 이미
+      사전에 들어 있었다. 값을 따로 한 번 더 조회하는 것으로 그 줄들이 전부 풀린다.
+      값마다 줄을 통째로 사전에 넣는 방식은 값이 바뀔 때마다 키가 깨져서 쓰면 안 된다.
+    """
     if values and value in values:
         return values[value]
     m = DATE_CN.match(value)
@@ -206,7 +215,12 @@ def localize_value(value, loc, op_name, values=None):
         if loc == "en":
             return f"{EN_MONTHS[mo - 1]} {day}"
         return DATE_FMT[loc].format(m=mo, d=day)
-    return op_name or value
+    if op_name:
+        return op_name
+    hit = MANUAL.get(value.strip())
+    if hit and hit.get(loc):
+        return hit[loc]
+    return value
 
 
 def localize_fields(text, fields, loc, op_name, values=None):
@@ -228,7 +242,7 @@ def localize_fields(text, fields, loc, op_name, values=None):
     return "\n".join(out)
 
 
-def localize_lines(text, table):
+def localize_lines(text, table, cid="", report=False):
     """줄 단위로 수확 사전을 적용 — 못 찾은 줄(오퍼 고유 산문)은 원문 그대로 둔다."""
     if not text:
         return text, 0
@@ -241,6 +255,8 @@ def localize_lines(text, table):
             out.append(line)
             if CJK_RE.search(line):
                 left += len(line)
+                if report:      # 마지막 패스에서만 집계 — 앞 패스는 뒤 규칙이 아직 안 돌았다
+                    cnmiss.note(line, "profiles-본문", cid)
     return "\n".join(out), left
 
 
@@ -254,6 +270,7 @@ def localize(text, loc, cid, what):
         return hit[loc]
     if CJK_RE.search(text):
         untranslated.append((loc, cid, what, len(text)))
+        cnmiss.note(text, "profiles-%s" % what, cid)
     return text
 
 
@@ -309,10 +326,10 @@ for loc, (prefix, fallback) in LOCALES.items():
                 # ① 수확 사전(공식 번역) → ② 필드 규칙 → ③ 수동 사전(비공식 AI 번역)
                 # ⚠ 셋 다 **줄 단위**로 적용한다. 예전엔 ③이 섹션 텍스트를 통째로 키로 조회해서
                 #   줄 단위로 적어 넣은 번역이 하나도 안 붙었다 (2026-08-01).
-                text, left = localize_lines(sec.get("text"), harvested[loc])
+                text, left = localize_lines(sec.get("text"), harvested[loc], cid)
                 if left:
                     text = localize_fields(text, harvested_fields[loc], loc, op_names[loc].get(cid), harvested_values[loc])
-                    text, left = localize_lines(text, manual_lines[loc])
+                    text, left = localize_lines(text, manual_lines[loc], cid, report=True)
                 if left:
                     untranslated.append((loc, cid, "text", left))
                 new_secs.append({**sec, "title": localize(sec.get("title"), loc, cid, "title"), "text": text})
@@ -337,7 +354,7 @@ for loc, (prefix, fallback) in LOCALES.items():
             if not text:
                 continue
             if from_cn:
-                text, left = localize_lines(text, manual_lines[loc])
+                text, left = localize_lines(text, manual_lines[loc], cid, report=True)
                 if left:
                     untranslated.append((loc, cid, "text", left))
                 used_fallback = True  # 모달의 '중국 서버 원문' 안내를 띄운다
@@ -377,3 +394,5 @@ if untranslated:
     if by_op:
         print(f"  ⚠ 미번역 CN 프로필 본문: {len(by_op)}명 · {total_chars:,}자 "
               f"— scripts/cn-translations.json에 채울 것", file=sys.stderr)
+
+cnmiss.dump()

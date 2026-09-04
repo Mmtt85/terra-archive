@@ -2859,6 +2859,19 @@ legend {
   font-size: 13.5px;
   line-height: 1.45;
 }
+/* 재능 강화형 잠재의 실제 증가폭 — 설명 아래 한 단 작게 (사용자 요청 2026-09-04).
+   게임 원문이 "제2재능 강화"라고만 해서 무엇이 얼마나 오르는지 알 수 없던 것을 채운다. */
+.potential-detail {
+  display: block;
+  margin: -4px 11px 10px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--line);
+  color: var(--lime);
+  font-size: 12px;
+  font-style: normal;
+  line-height: 1.45;
+  word-break: keep-all;
+}
 .module-list {
   gap: 13px;
   display: grid;

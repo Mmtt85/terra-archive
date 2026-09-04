@@ -33,6 +33,7 @@ KR·EN·JP 테이블이 각각 공식 번역이라 AI 번역을 거치지 않는
    "sets": [{"name": "황홀", "lines": [...]}]}        # 복장 전용 보이스(있을 때만)
   lines 순서 = 게임 내 순서(voiceIndex).
 """
+import cnmiss
 import json
 import os
 import re
@@ -226,6 +227,7 @@ def localize(text, loc, cid):
         return hit[loc]
     if CJK_RE.search(text):
         untranslated.append((loc, cid, len(text)))
+        cnmiss.note(text, "voice", cid)
     return text
 
 
@@ -305,3 +307,5 @@ if untranslated:
     ops_n = len({x[1] for x in ko})
     print(f"  ⚠ 미번역 CN 보이스 대사: {ops_n}명 · {sum(x[2] for x in ko):,}자 "
           f"— scripts/cn-translations.json에 채울 것", file=sys.stderr)
+
+cnmiss.dump()

@@ -20,6 +20,7 @@
 #
 # Missing text falls back to the KR value — the site must never break because a
 # locale table lags behind KR.
+import potutil
 import json, os, re, sys
 from collections import Counter, defaultdict
 
@@ -231,9 +232,9 @@ def build_locale(prefix):
         return out
 
     def build_potentials(c, kr_pot):
-        out = []
-        for i, p in enumerate(c.get("potentialRanks") or []):
-            out.append({"rank": i + 2, "description": strip_tags(p.get("description"))})
+        # detail(재능 강화 증가폭)도 그 로케일 표에서 다시 계산한다 — regen-operators와 같은
+        # potutil을 쓰므로 세 언어가 같은 규칙으로 나온다.
+        out = potutil.build_potentials(c, strip_tags)
         return out if len(out) == len(kr_pot) else kr_pot
 
     def build_modules(cid, kr_modules):

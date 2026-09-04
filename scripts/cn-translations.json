@@ -12058,5 +12058,420 @@
   "ko": "코로마루의 보은",
   "en": "Koromaru's Repayment",
   "ja": "コロマルの恩返し"
+ },
+ "欲雪时": {
+  "ko": "눈이 내리려 할 때",
+  "en": "When Snow Draws Near",
+  "ja": "雪の降る頃"
+ },
+ "加密报告": {
+  "ko": "암호화 보고서",
+  "en": "Encrypted Report",
+  "ja": "暗号化レポート"
+ },
+ "学生概况": {
+  "ko": "학생 개요",
+  "en": "Student Overview",
+  "ja": "生徒概要"
+ },
+ "特殊疾病筛查": {
+  "ko": "특수 질병 검사",
+  "en": "Special Disease Screening",
+  "ja": "特殊疾病スクリーニング"
+ },
+ "综合能力测试": {
+  "ko": "종합 능력 평가",
+  "en": "Comprehensive Aptitude Test",
+  "ja": "総合能力テスト"
+ },
+ "攻击时有23%的几率使目标束缚1.5秒，首次命中敌人时提升至100%且束缚时间提升至3秒": {
+  "ko": "공격 시 23% 확률로 목표를 1.5초간 속박. 적을 처음 명중시켰을 때는 확률이 100%로 오르고 속박 시간도 3초로 증가",
+  "en": "Attacks have a 23% chance to Bind the target for 1.5 seconds; on the first hit against an enemy this rises to 100% and the Bind duration increases to 3 seconds",
+  "ja": "攻撃時、23%の確率で目標を1.5秒間束縛する。敵に初めて命中した時は確率が100%に上昇し、束縛時間も3秒に増加する"
+ },
+ "攻击时有25%的几率使目标束缚1.5秒，首次命中敌人时提升至100%且束缚时间提升至3秒": {
+  "ko": "공격 시 25% 확률로 목표를 1.5초간 속박. 적을 처음 명중시켰을 때는 확률이 100%로 오르고 속박 시간도 3초로 증가",
+  "en": "Attacks have a 25% chance to Bind the target for 1.5 seconds; on the first hit against an enemy this rises to 100% and the Bind duration increases to 3 seconds",
+  "ja": "攻撃時、25%の確率で目標を1.5秒間束縛する。敵に初めて命中した時は確率が100%に上昇し、束縛時間も3秒に増加する"
+ },
+ "自身生命会不断流失（该效果不会使生命降至0）；生命值高于50%时获得+25%攻击力的精力充沛；高于80%效果翻倍； 在集成战略中，生命流失速度减缓，菲亚梅塔精力充沛时，该天赋的攻击力加成提升100%，技能或技能期间的攻击，会以最后部署的另一名干员的攻击范围再度施放": {
+  "ko": "자신의 HP가 지속해서 감소(0까지 감소하지 않음), HP가 50%보다 높으면 공격력 +25%의 기운 충만 효과를 획득하고, 80%보다 높으면 2배 효과 적용. 통합 전략에서 HP 감소 속도가 완화되고, 피아메타가 기운 충만 상태일 때 이 재능의 공격력 증가량이 100% 상승하며, 스킬 또는 스킬 지속 시간 동안의 공격이 마지막으로 배치된 다른 오퍼레이터 1명의 공격 범위로 다시 한번 발동",
+  "en": "Continually loses HP over time (HP cannot drop to 0 as a result of this effect); While HP is above 50%, this unit gains Vigor, increasing ATK by 25%; this effect is doubled above 80% HP. In Integrated Strategies, the HP loss is slowed, and while Fiammetta has Vigor, this talent's ATK bonus is increased by 100%, and her skill, or her attacks while a skill is active, are cast a second time using the Attack Range of the last deployed other Operator",
+  "ja": "HPが徐々に減少（この効果でHPは0にならない）。HPが最大値の50%以上で攻撃力+25%の勇猛状態を付与する。HPが80%以上の場合、攻撃力上昇の効果値倍増。統合戦略において、HPの減少速度が緩和され、フィアメッタが勇猛状態の時、この素質の攻撃力上昇効果+100%。スキル、またはスキル発動中の攻撃は、最後に配置した他のオペレーター1名の攻撃範囲で再度発動する"
+ },
+ "自身生命会不断流失（该效果不会使生命降至0）；生命值高于50%时获得+25%攻击力的精力充沛；高于80%效果翻倍； 在集成战略中，生命流失速度减缓，菲亚梅塔精力充沛时，该天赋的攻击力加成提升100%，技能或技能期间的攻击，会以最后部署的另一名干员的攻击范围再度施放，菲亚梅塔和该干员额外获得30攻速": {
+  "ko": "자신의 HP가 지속해서 감소(0까지 감소하지 않음), HP가 50%보다 높으면 공격력 +25%의 기운 충만 효과를 획득하고, 80%보다 높으면 2배 효과 적용. 통합 전략에서 HP 감소 속도가 완화되고, 피아메타가 기운 충만 상태일 때 이 재능의 공격력 증가량이 100% 상승하며, 스킬 또는 스킬 지속 시간 동안의 공격이 마지막으로 배치된 다른 오퍼레이터 1명의 공격 범위로 다시 한번 발동. 피아메타와 해당 오퍼레이터는 공격 속도 +30을 추가로 획득",
+  "en": "Continually loses HP over time (HP cannot drop to 0 as a result of this effect); While HP is above 50%, this unit gains Vigor, increasing ATK by 25%; this effect is doubled above 80% HP. In Integrated Strategies, the HP loss is slowed, and while Fiammetta has Vigor, this talent's ATK bonus is increased by 100%, and her skill, or her attacks while a skill is active, are cast a second time using the Attack Range of the last deployed other Operator; Fiammetta and that Operator additionally gain ASPD +30",
+  "ja": "HPが徐々に減少（この効果でHPは0にならない）。HPが最大値の50%以上で攻撃力+25%の勇猛状態を付与する。HPが80%以上の場合、攻撃力上昇の効果値倍増。統合戦略において、HPの減少速度が緩和され、フィアメッタが勇猛状態の時、この素質の攻撃力上昇効果+100%。スキル、またはスキル発動中の攻撃は、最後に配置した他のオペレーター1名の攻撃範囲で再度発動し、フィアメッタとそのオペレーターは追加で攻撃速度+30を獲得する"
+ },
+ "嗯。": {
+  "ko": "응.",
+  "en": "Mm.",
+  "ja": "ああ。"
+ },
+ "来吧！": {
+  "ko": "가자!",
+  "en": "Let's go!",
+  "ja": "行くぞ！"
+ },
+ "那么……": {
+  "ko": "그럼……",
+  "en": "Then...",
+  "ja": "それじゃあ……"
+ },
+ "交给我吧。": {
+  "ko": "맡겨 줘.",
+  "en": "Leave it to me.",
+  "ja": "任せてくれ。"
+ },
+ "就是这里。": {
+  "ko": "여기다.",
+  "en": "Right here.",
+  "ja": "ここだ。"
+ },
+ "目前安全。": {
+  "ko": "지금은 안전해.",
+  "en": "Clear for now.",
+  "ja": "今のところ安全だ。"
+ },
+ "要怎么做。": {
+  "ko": "어떻게 할까.",
+  "en": "What should I do?",
+  "ja": "どうすればいい。"
+ },
+ "不会这样结束！": {
+  "ko": "이대로 끝나지 않아!",
+  "en": "It doesn't end like this!",
+  "ja": "こんなところで終わらない！"
+ },
+ "博士，拜托了。": {
+  "ko": "박사, 부탁해.",
+  "en": "Doctor, I'm counting on you.",
+  "ja": "ドクター、頼む。"
+ },
+ "怎么了，博士？": {
+  "ko": "무슨 일이야, 박사?",
+  "en": "What is it, Doctor?",
+  "ja": "どうした、ドクター？"
+ },
+ "我……不会逃避！": {
+  "ko": "난…… 도망치지 않아!",
+  "en": "I... won't run away!",
+  "ja": "俺は……逃げない！"
+ },
+ "博士会为我们导航吗？": {
+  "ko": "박사가 우리를 이끌어 주는 거야?",
+  "en": "Will you navigate for us, Doctor?",
+  "ja": "ドクターが導いてくれるのか？"
+ },
+ "战斗训练吗？明白了。": {
+  "ko": "전투 훈련? 알겠어.",
+  "en": "Combat training? Understood.",
+  "ja": "戦闘訓練か？わかった。"
+ },
+ "轮到我值日吗……明白了。": {
+  "ko": "내가 당번인가…… 알겠어.",
+  "en": "It's my turn on duty... understood.",
+  "ja": "俺が日直か……わかった。"
+ },
+ "现在还是撤退吧。勉力战斗可不好。": {
+  "ko": "지금은 물러나자. 무리해서 싸우는 건 좋지 않아.",
+  "en": "Let's pull back for now. Forcing a fight is no good.",
+  "ja": "今は退こう。無理に戦うのはよくない。"
+ },
+ "协助教学……虽然以前没做过，希望能做好。": {
+  "ko": "수업 보조라…… 해 본 적은 없지만, 잘할 수 있으면 좋겠어.",
+  "en": "Assisting with class... I've never done it before, but I hope I can manage.",
+  "ja": "授業の手伝いか……やったことはないけど、うまくやれるといいな。"
+ },
+ "我要提前升入高年级了吗……？啊，原来不是。": {
+  "ko": "내가 월반이라도 하는 건가……? 아, 그건 아니구나.",
+  "en": "Am I skipping a grade...? Ah, guess not.",
+  "ja": "飛び級でもするのか……？ああ、そうじゃないのか。"
+ },
+ "赢了。由博士来指挥，就可以专注于战斗了。还不错。": {
+  "ko": "이겼다. 박사가 지휘해 주니까 싸움에만 집중할 수 있어. 나쁘지 않네.",
+  "en": "We won. With you commanding, I can focus on the fight. Not bad.",
+  "ja": "勝った。ドクターが指揮してくれるから、戦いに集中できる。悪くない。"
+ },
+ "我来了。这是博士你要我带的炸弹甜甜圈。……好吃吗？": {
+  "ko": "왔어. 박사가 사 오라던 폭탄 도넛이야. ……맛있어?",
+  "en": "I'm here. This is the bomb doughnut you asked me to bring. ...Is it good?",
+  "ja": "来たぞ。ドクターが頼んでいた爆弾ドーナツだ。……美味いのか？"
+ },
+ "老师好……不，Dr.{@nickname}，你好。": {
+  "ko": "선생님, 안녕하세…… 아니, Dr.{@nickname}, 안녕.",
+  "en": "Good day, Teacher... no, hello, Dr. {@nickname}.",
+  "ja": "先生、こんにち……いや、Dr.{@nickname}、こんにちは。"
+ },
+ "总觉得还有资源没有收集……博士，确认已经探索完毕了吗？": {
+  "ko": "아직 못 챙긴 자원이 있는 것 같은데…… 박사, 탐색은 다 끝난 게 맞아?",
+  "en": "It feels like there are still resources left... Doctor, are you sure we've finished exploring?",
+  "ja": "まだ回収していない資源がある気がする……ドクター、探索は終わったのか？"
+ },
+ "还好，这个随身听在这里也能工作……博士想听？也可以……": {
+  "ko": "다행이야, 이 워크맨은 여기서도 작동하네…… 박사도 들어 볼래? 그래도 돼……",
+  "en": "Good, this player still works here... You want to listen too, Doctor? Sure...",
+  "ja": "よかった、このプレイヤーはここでも動くのか……ドクターも聴くか？いいけど……"
+ },
+ "……拉特兰春天的阳光，把屋子照得暖洋洋的了啊。真舒服呢。": {
+  "ko": "……라테라노의 봄볕이 방 안을 따뜻하게 덥히고 있네. 참 편안해.",
+  "en": "...Laterano's spring sunlight has warmed the whole room. It feels good.",
+  "ja": "……ラテラーノの春の日差しが、部屋を暖かく照らしているな。心地いい。"
+ },
+ "我是结城理。刚转学过来，还不太了解情况……请和我讲讲这里的事吧。": {
+  "ko": "유키 마코토야. 막 전학 와서 아직 잘 모르는 게 많아…… 여기 이야기를 좀 들려줘.",
+  "en": "I'm Makoto Yuki. I've just transferred in and don't know much yet... tell me about this place.",
+  "ja": "結城理だ。転校してきたばかりで、まだよく分からない……ここのことを教えてくれ。"
+ },
+ "博士，不是说看你收藏的电影吗……好多戍卫队，还有铳骑，这些都是真的吗？": {
+  "ko": "박사, 소장 영화를 보자고 하지 않았어……? 호위대가 잔뜩 나오고 총기사도 있는데, 이거 다 실제야?",
+  "en": "Doctor, weren't we going to watch a film from your collection...? There are so many Guards, and Gunlancers too—are they all real?",
+  "ja": "ドクター、コレクションの映画を観るんじゃなかったのか……護衛隊がたくさん出てくるし、銃騎もいる。これは全部本物なのか？"
+ },
+ "如此艰难的战斗……博士，你似乎也不会恐惧呢。不过，你一定和之前的我不一样吧。": {
+  "ko": "이렇게 힘든 싸움인데…… 박사, 당신은 두려워하지 않는구나. 하지만 예전의 나와는 다르겠지.",
+  "en": "Such a hard battle... and yet you don't seem afraid, Doctor. But you must be different from who I used to be.",
+  "ja": "これほど厳しい戦いなのに……ドクター、あなたは怖がらないんだな。でも、昔の俺とは違うんだろう。"
+ },
+ "……Dr.{@nickname}，是有烦恼吗？之前也有人和我说过，老师的工作压力很大……": {
+  "ko": "……Dr.{@nickname}, 무슨 고민이라도 있어? 선생님이라는 일은 스트레스가 크다고 누가 그러던데……",
+  "en": "...Dr. {@nickname}, is something troubling you? Someone once told me a teacher's job carries a lot of pressure...",
+  "ja": "……Dr.{@nickname}、悩みでもあるのか？先生の仕事はストレスが大きいと、前に誰かが言っていた……"
+ },
+ "……博士好像很忙碌，一直有人来找你。有什么我能帮忙的吗？……这样啊，我明白了。那我就待在这里好了。": {
+  "ko": "……박사, 바빠 보이네. 계속 누가 찾아오잖아. 내가 도울 일은 없어? ……그래, 알겠어. 그럼 여기 있을게.",
+  "en": "...You look busy, Doctor. People keep coming to see you. Is there anything I can help with? ...I see, understood. Then I'll stay here.",
+  "ja": "……ドクター、忙しそうだな。ずっと誰かが訪ねてくる。俺に手伝えることはあるか？……そうか、分かった。なら、ここにいる。"
+ },
+ "这是……成为主力的意思吗？要是之后有机会参加大赛就好了。谢谢你的信任，Dr.{@nickname}。": {
+  "ko": "이건…… 주전이 됐다는 뜻인가? 나중에 큰 대회에 나갈 기회가 있으면 좋겠는데. 믿어 줘서 고마워, Dr.{@nickname}.",
+  "en": "Does this... mean I'm a starter now? I hope I get to enter a tournament someday. Thank you for trusting me, Dr. {@nickname}.",
+  "ja": "これは……主力になったということか？いつか大会に出る機会があればいいな。信頼してくれてありがとう、Dr.{@nickname}。"
+ },
+ "我没有一放学就回宿舍。前天我去了闲逛部，昨天在莱娜老师的疗养庭院，今天答应了隔壁班同学去看改装铳……不过，还不知道那位同学的名字。": {
+  "ko": "방과 후에 바로 기숙사로 돌아가지는 않았어. 그저께는 산책부에 갔고, 어제는 레나 선생님의 요양 정원에 있었고, 오늘은 옆 반 친구랑 개조 총을 보러 가기로 했어…… 그런데 아직 그 친구 이름을 몰라.",
+  "en": "I haven't been going straight back to the dorm after class. The day before yesterday I went to the Strolling Club, yesterday I was in Miss Lena's convalescent garden, and today I promised a classmate from next door I'd go see a modified gun... though I still don't know their name.",
+  "ja": "放課後すぐに寮へ帰ってはいない。一昨日は散策部に行って、昨日はレナ先生の療養庭園にいて、今日は隣のクラスの子と改造銃を見に行く約束をした……でも、その子の名前はまだ知らない。"
+ },
+ "新年快乐，博士。新的一年，如果能再前进一些就好了。你和许多人都在为了某个美好的未来而努力吧……我们也会为此尽力的。今年，也请多关照。": {
+  "ko": "새해 복 많이 받아, 박사. 새해에는 조금 더 나아갈 수 있으면 좋겠어. 당신도, 많은 사람들도 어떤 좋은 미래를 위해 애쓰고 있는 거겠지…… 우리도 그러기 위해 힘을 다할게. 올해도 잘 부탁해.",
+  "en": "Happy New Year, Doctor. I hope we can move forward a little more this year. You and so many others are working toward some better future... we'll do our part too. Please look after me again this year.",
+  "ja": "あけましておめでとう、ドクター。新しい年は、もう少し前に進めるといいな。あなたも大勢の人も、どこかの良い未来のために頑張っているんだろう……俺たちもそのために力を尽くす。今年もよろしく。"
+ },
+ "博士，一会儿有空吗？我答应了里凯莱先生和他去新开的餐厅……我们聊到，或许也可以邀请博士一起，听说完成指定套餐的挑战可以免单。你有兴趣吗？": {
+  "ko": "박사, 이따 시간 있어? 리켈레 씨랑 새로 문 연 식당에 가기로 했는데…… 박사도 부르면 어떨까 하는 얘기가 나왔거든. 지정 세트 도전을 완주하면 공짜라던데. 관심 있어?",
+  "en": "Doctor, are you free later? I promised Mr. Ricchelle I'd go to a newly opened restaurant with him... we thought we might invite you along. Apparently if you finish the challenge set, the meal is free. Interested?",
+  "ja": "ドクター、後で時間はあるか？リッケーレさんと新しく開いた店に行く約束をしたんだ……ドクターも誘ってみようという話になってな。指定のセットを完食すればタダになるらしい。興味あるか？"
+ },
+ "生日快乐，Dr.{@nickname}。阿米娅很早就开始准备这个派对了，我帮忙选了派对的音乐，希望你会喜欢。今天就开心一些吧，这是属于你的一天。": {
+  "ko": "생일 축하해, Dr.{@nickname}. 아미야가 아주 오래전부터 이 파티를 준비했어. 나는 파티 음악을 고르는 걸 도왔는데, 마음에 들면 좋겠다. 오늘은 좀 즐겁게 보내. 당신의 날이잖아.",
+  "en": "Happy birthday, Dr. {@nickname}. Amiya started preparing this party a long time ago; I helped pick the music, and I hope you like it. Enjoy yourself today—it's your day.",
+  "ja": "誕生日おめでとう、Dr.{@nickname}。アーミヤはずっと前からこのパーティーを準備していた。俺は音楽選びを手伝ったんだ、気に入るといいな。今日は楽しんでくれ。あなたの日だから。"
+ },
+ "如果能一直待在拉特兰吗？执行者的工作也许会很有趣……志愿实践的时候，如果能去公证所实习，说不定也不错。不过，还有更重要的事。同伴们还在等着我们回去。": {
+  "ko": "계속 라테라노에 있을 수 있다면? 집행자 일도 재미있을지 몰라…… 봉사 실습 때 공증소에서 인턴을 할 수 있다면 그것도 괜찮을 것 같고. 그래도 더 중요한 일이 있어. 동료들이 우리가 돌아오기를 기다리고 있으니까.",
+  "en": "If I could stay in Laterano forever? Being an Executor might be interesting... and interning at the notary office during volunteer practice wouldn't be bad either. But there's something more important. Our companions are still waiting for us to come back.",
+  "ja": "ずっとラテラーノにいられたら？執行者の仕事も面白いかもしれない……奉仕実習で公証所に行けたら、それも悪くないな。でも、もっと大事なことがある。仲間たちが俺たちの帰りを待っているんだ。"
+ },
+ "没想到校庆日会这么热闹，颁奖仪式真是精彩。我也在“人气教师”的评奖中给博士投了票。博士得了第一名，这就是深受师生信赖的证明吧。恭喜，Dr.{@nickname}。": {
+  "ko": "개교기념일이 이렇게 떠들썩할 줄은 몰랐어. 시상식도 정말 볼만했고. 나도 '인기 교사' 부문에 박사를 찍었어. 박사가 1등을 했으니, 그만큼 학생과 교사들에게 신뢰받는다는 증거겠지. 축하해, Dr.{@nickname}.",
+  "en": "I didn't expect the school anniversary to be so lively—the awards ceremony was quite something. I voted for you in the \"Most Popular Teacher\" category. You took first place, which must be proof of how much the students and staff trust you. Congratulations, Dr. {@nickname}.",
+  "ja": "創立記念日がこんなに賑やかだとは思わなかった。表彰式も見事だったな。俺も「人気教師」の投票でドクターに入れたんだ。一位を取ったということは、それだけ生徒にも教師にも信頼されている証だろう。おめでとう、Dr.{@nickname}。"
+ },
+ "我好像渐渐习惯拉特兰了，现在即使看到人们吃着冰淇淋爆破泡芙雕像也不会惊讶了。也许是因为同伴们在身边，就会安心吧……而且，也遇到了新的同伴。博士，多谢你一直以来的照顾。": {
+  "ko": "점점 라테라노에 익숙해지는 것 같아. 이젠 사람들이 아이스크림을 먹으면서 슈크림 조각상을 폭파해도 놀라지 않게 됐어. 아마 동료들이 곁에 있어서 마음이 놓이는 거겠지…… 게다가 새 동료도 만났고. 박사, 늘 챙겨 줘서 고마워.",
+  "en": "I think I'm getting used to Laterano. These days I don't even blink when people blow up a cream-puff statue while eating ice cream. Maybe it's because my companions are beside me that I feel at ease... and I've made new ones, too. Doctor, thank you for looking after me all this time.",
+  "ja": "少しずつラテラーノに慣れてきた気がする。今では、人々がアイスを食べながらシュークリームの像を爆破していても驚かなくなった。仲間がそばにいるから安心できるんだろうな……それに、新しい仲間にも出会えた。ドクター、いつも気にかけてくれてありがとう。"
+ },
+ "予愿安洁莉娜攻击额外造成相当于攻击力25%的法术伤害，攻击重量较轻（小于等于3）的敌人时则额外造成相当于攻击力35%的法术伤害；处于起飞状态时使攻击范围内的敌人失重": {
+  "ko": "공격 시 공격력 25%에 해당하는 마법 대미지를 추가로 입히며, 무게가 가벼운(3 이하) 적을 공격할 때는 공격력 35%에 해당하는 마법 대미지를 추가로 입힘. 이륙 상태에서는 공격 범위 내 적을 무중력 상태로 만듦",
+  "en": "Angelina's attacks deal an additional 25% of ATK as Arts damage; against lighter enemies (Weight 3 or below), the bonus is 35% of ATK instead. While lifted off, enemies within her attack range become Weightless",
+  "ja": "攻撃時、攻撃力25%に相当する術ダメージを追加で与える。重量が軽い（3以下）敵への攻撃時は攻撃力35%相当の術ダメージを追加で与える。離陸状態では攻撃範囲内の敵を無重力状態にする"
+ },
+ "其他友方干员进入自身攻击范围时立刻获得1层护盾并额外获得一次每秒回复50点生命值的增益治疗，持续30秒（不可叠加），增益治疗对【罗德岛】干员的效果翻倍": {
+  "ko": "다른 아군 오퍼레이터가 자신의 공격 범위에 진입 시 즉시 실드 1회를 획득하고, 추가로 초당 HP 50 회복하는 회복 버프를 1회 획득, 30초간 지속 (중첩 불가), 회복 버프는 [로도스 아일랜드] 오퍼레이터에게 효과 2배",
+  "en": "When another allied Operator enters this unit's attack range, they immediately gain 1 Shield and a regeneration buff that restores 50 HP per second for 30 seconds (does not stack); the regeneration buff is twice as effective on [Rhodes Island] Operators",
+  "ja": "他の味方オペレーターが自身の攻撃範囲に入った時、即座にシールドを1枚獲得し、さらに1秒ごとにHPを50回復するバフを1回獲得する（30秒間継続、重複不可）。回復バフは【ロドス】オペレーターに対して効果が2倍になる"
+ },
+ "受到自身的跳跃治疗时，治疗量提升至120%，并额外进行一次不衰减的治疗跳跃": {
+  "ko": "자신의 치료 튕김을 받을 시 치유량이 120%로 증가, 추가로 감쇠되지 않는 치료 튕김 1회 진행",
+  "en": "When affected by this unit's own bouncing heal, healing increases to 120%, and the heal bounces one additional time without decay",
+  "ja": "自身の跳躍治療を受けた時、治療量が120%まで上昇し、追加で減衰しない跳躍治療を1回行う"
+ },
+ "在场时，所有处于起飞状态的友方干员攻击力+13%且阻挡时每秒回复8%的最大生命值": {
+  "ko": "전장에 있는 동안, 이륙 상태인 모든 아군 오퍼레이터의 공격력 +13%, 저지 중일 때 매초 최대 HP의 8% 회복",
+  "en": "While she is on the field, all allied Operators in Lift Off state gain ATK +13% and recover 8% of Max HP per second while blocking",
+  "ja": "在場時、離陸状態の味方オペレーター全員の攻撃力+13%、ブロック中は毎秒最大体力の8%を回復"
+ },
+ "对前三个敌人首次进行攻击时改为使用“猫式起爆龙弹”。来自我方其他单位的伤害会将其引爆，造成罗德岛隐秘队150%攻击力的伤害和2秒晕眩，并回复1点部署费用。“猫式起爆龙弹”在被引爆后或30秒后消失": {
+  "ko": "처음 세 명의 적에게 첫 공격 시 '고양이식 기폭룡탄'을 대신 사용. 다른 아군 유닛의 대미지로 기폭되며, 로도스 아일랜드 은밀 정찰대 공격력의 150%에 해당하는 대미지와 2초 기절을 부여하고 배치 코스트 1 회복. '고양이식 기폭룡탄'은 기폭 후 또는 30초 후 소멸",
+  "en": "The first attack against each of the first 2 enemies is replaced with a 'Felyne Wyvernblast'. Damage from other allied units detonates it, dealing damage equal to 150% of Rhodes Island Recon's ATK, Stunning for 2 seconds, and recovering 1 DP. The 'Felyne Wyvernblast' disappears after detonating or after 30 seconds",
+  "ja": "最初の2体の敵への初回攻撃時、「ネコ式起爆竜弾」を代わりに使用する。他の味方ユニットからのダメージで起爆し、ロドス隠密調査隊の攻撃力の150%のダメージと2秒間のスタンを与え、コストを1回復する。「ネコ式起爆竜弾」は起爆後、または30秒後に消滅する"
+ },
+ "对前三个敌人首次进行攻击时改为使用“猫式起爆龙弹”。来自我方其他单位的伤害会将其引爆，造成罗德岛隐秘队230%攻击力的伤害和2.2秒晕眩，并回复1点部署费用。“猫式起爆龙弹”在被引爆后或30秒后消失": {
+  "ko": "처음 세 명의 적에게 첫 공격 시 '고양이식 기폭룡탄'을 대신 사용. 다른 아군 유닛의 대미지로 기폭되며, 로도스 아일랜드 은밀 정찰대 공격력의 230%에 해당하는 대미지와 2.2초 기절을 부여하고 배치 코스트 1 회복. '고양이식 기폭룡탄'은 기폭 후 또는 30초 후 소멸",
+  "en": "The first attack against each of the first 2.2 enemies is replaced with a 'Felyne Wyvernblast'. Damage from other allied units detonates it, dealing damage equal to 230% of Rhodes Island Recon's ATK, Stunning for 2.2 seconds, and recovering 1 DP. The 'Felyne Wyvernblast' disappears after detonating or after 30 seconds",
+  "ja": "最初の2.2体の敵への初回攻撃時、「ネコ式起爆竜弾」を代わりに使用する。他の味方ユニットからのダメージで起爆し、ロドス隠密調査隊の攻撃力の230%のダメージと2.2秒間のスタンを与え、コストを1回復する。「ネコ式起爆竜弾」は起爆後、または30秒後に消滅する"
+ },
+ "对前三个敌人首次进行攻击时改为使用“猫式起爆龙弹”。来自我方其他单位的伤害会将其引爆，造成罗德岛隐秘队280%攻击力的伤害和2.4秒晕眩，并回复1点部署费用。“猫式起爆龙弹”在被引爆后或30秒后消失": {
+  "ko": "처음 세 명의 적에게 첫 공격 시 '고양이식 기폭룡탄'을 대신 사용. 다른 아군 유닛의 대미지로 기폭되며, 로도스 아일랜드 은밀 정찰대 공격력의 280%에 해당하는 대미지와 2.4초 기절을 부여하고 배치 코스트 1 회복. '고양이식 기폭룡탄'은 기폭 후 또는 30초 후 소멸",
+  "en": "The first attack against each of the first 2.4 enemies is replaced with a 'Felyne Wyvernblast'. Damage from other allied units detonates it, dealing damage equal to 280% of Rhodes Island Recon's ATK, Stunning for 2.4 seconds, and recovering 1 DP. The 'Felyne Wyvernblast' disappears after detonating or after 30 seconds",
+  "ja": "最初の2.4体の敵への初回攻撃時、「ネコ式起爆竜弾」を代わりに使用する。他の味方ユニットからのダメージで起爆し、ロドス隠密調査隊の攻撃力の280%のダメージと2.4秒間のスタンを与え、コストを1回復する。「ネコ式起爆竜弾」は起爆後、または30秒後に消滅する"
+ },
+ "对前三个敌人首次进行攻击时改为使用“猫式起爆龙弹”。来自我方其他单位的伤害会将其引爆，造成罗德岛隐秘队350%攻击力的伤害和2.6秒晕眩，并回复1点部署费用。“猫式起爆龙弹”在被引爆后或30秒后消失": {
+  "ko": "처음 세 명의 적에게 첫 공격 시 '고양이식 기폭룡탄'을 대신 사용. 다른 아군 유닛의 대미지로 기폭되며, 로도스 아일랜드 은밀 정찰대 공격력의 350%에 해당하는 대미지와 2.6초 기절을 부여하고 배치 코스트 1 회복. '고양이식 기폭룡탄'은 기폭 후 또는 30초 후 소멸",
+  "en": "The first attack against each of the first 2.6 enemies is replaced with a 'Felyne Wyvernblast'. Damage from other allied units detonates it, dealing damage equal to 350% of Rhodes Island Recon's ATK, Stunning for 2.6 seconds, and recovering 1 DP. The 'Felyne Wyvernblast' disappears after detonating or after 30 seconds",
+  "ja": "最初の2.6体の敵への初回攻撃時、「ネコ式起爆竜弾」を代わりに使用する。他の味方ユニットからのダメージで起爆し、ロドス隠密調査隊の攻撃力の350%のダメージと2.6秒間のスタンを与え、コストを1回復する。「ネコ式起爆竜弾」は起爆後、または30秒後に消滅する"
+ },
+ "对前三个敌人首次进行攻击时改为使用“猫式起爆龙弹”。来自我方其他单位的伤害会将其引爆，造成罗德岛隐秘队420%攻击力的伤害和2.8秒晕眩，并回复1点部署费用。“猫式起爆龙弹”在被引爆后或30秒后消失": {
+  "ko": "처음 세 명의 적에게 첫 공격 시 '고양이식 기폭룡탄'을 대신 사용. 다른 아군 유닛의 대미지로 기폭되며, 로도스 아일랜드 은밀 정찰대 공격력의 420%에 해당하는 대미지와 2.8초 기절을 부여하고 배치 코스트 1 회복. '고양이식 기폭룡탄'은 기폭 후 또는 30초 후 소멸",
+  "en": "The first attack against each of the first 2.8 enemies is replaced with a 'Felyne Wyvernblast'. Damage from other allied units detonates it, dealing damage equal to 420% of Rhodes Island Recon's ATK, Stunning for 2.8 seconds, and recovering 1 DP. The 'Felyne Wyvernblast' disappears after detonating or after 30 seconds",
+  "ja": "最初の2.8体の敵への初回攻撃時、「ネコ式起爆竜弾」を代わりに使用する。他の味方ユニットからのダメージで起爆し、ロドス隠密調査隊の攻撃力の420%のダメージと2.8秒間のスタンを与え、コストを1回復する。「ネコ式起爆竜弾」は起爆後、または30秒後に消滅する"
+ },
+ "技能期间所有场上干员攻击力和防御力+14%，【乌萨斯学生自治团】干员获得加成效果翻倍": {
+  "ko": "스킬 지속 시간 동안 전장의 모든 오퍼레이터 공격력 및 방어력 +14%, [우르수스 학생자치단] 오퍼레이터는 획득하는 강화 효과 2배",
+  "en": "While a skill is active, all Operators on the field gain ATK and DEF +14%; [Ursus Student Self-Governing Group] Operators gain double this bonus",
+  "ja": "スキル中、場にいるすべてのオペレーターの攻撃力・防御力+14%。【ウルサス学生自治団】オペレーターは獲得するバフ効果が2倍になる"
+ },
+ "携带可露希尔时，部署费用下限降低3，【罗德岛】干员攻击力+4%": {
+  "ko": "클로저 편성 시, 배치 코스트 하한 3 감소, [로도스 아일랜드] 오퍼레이터 공격력 +4%",
+  "en": "When Closure is in the squad, the minimum DP cost is reduced by 3, and [Rhodes Island] Operators gain ATK +4%",
+  "ja": "クロージャを編成した時、コストの下限が3低下し、【ロドス】オペレーターの攻撃力+4%"
+ },
+ "攻击力+8%，浮游单元攻击时有15%概率使目标停顿1.5秒": {
+  "ko": "공격력 +8%, 공중 유닛 공격 시 15% 확률로 대상을 1.5초간 정지",
+  "en": "ATK +8%; the Drone's attacks have a 15% chance to halt the target for 1.5 seconds",
+  "ja": "攻撃力+8%、空中ユニットの攻撃時15%の確率で対象を1.5秒間停止させる"
+ },
+ "攻击范围内有敌人侵蚀损伤爆发时攻击速度+6，最多可叠加3层": {
+  "ko": "공격 범위 내 적의 침식 손상이 폭발할 시 공격 속도 +6, 최대 3층 중첩 가능",
+  "en": "ASPD +6 whenever an enemy within attack range has a Corrosion burst; stacks up to 3 times",
+  "ja": "攻撃範囲内の敵の侵蝕損傷が爆発した時、攻撃速度+6。最大3層まで重複可能"
+ },
+ "攻击范围内的友方干员攻击时无视敌方10点法术抗性": {
+  "ko": "공격 범위 내 아군 오퍼레이터가 공격 시 적의 마법 저항 10 무시",
+  "en": "Allied Operators within attack range ignore 10 RES when attacking",
+  "ja": "攻撃範囲内の味方オペレーターが攻撃時、敵の術耐性を10無視する"
+ },
+ "攻击范围内至少有2名其他干员时，自身攻击力+10%": {
+  "ko": "공격 범위 내 다른 오퍼레이터가 2명 이상일 시, 자신의 공격력 +10%",
+  "en": "When there are at least 2 other Operators within attack range, this unit's ATK +10%",
+  "ja": "攻撃範囲内に他のオペレーターが2名以上いる時、自身の攻撃力+10%"
+ },
+ "特性储存的能量达到3个时，合成为1个转置能量（至多储存等同于9倍的能量），拥有转置能量时攻击力+10%，未拥有转置能量时攻击速度+15": {
+  "ko": "특성으로 저장한 에너지가 3개에 도달하면 전치 에너지 1개로 합성 (최대 9배에 해당하는 에너지 저장 가능), 전치 에너지 보유 시 공격력 +10%, 미보유 시 공격 속도 +15",
+  "en": "When 3 units of energy stored by the Trait accumulate, they combine into 1 Transposed Energy (can store up to the equivalent of 9 units); ATK +10% while holding Transposed Energy, ASPD +15 while not",
+  "ja": "特性で蓄えたエネルギーが3個に達すると、1個の転置エネルギーに合成される（最大9倍相当まで蓄積可能）。転置エネルギー所持時、攻撃力+10%。未所持時、攻撃速度+15"
+ },
+ "特性溅射造成的物理伤害提升24%，且溅射到的每个高台对周围四格所有地面敌人造成相当于攻击力24%的物理伤害和0.5秒停顿": {
+  "ko": "특성의 스플래시가 입히는 물리 대미지 24% 상승, 스플래시가 닿은 각 원거리 타일이 주변 4칸의 모든 지상 적에게 공격력의 24%에 해당하는 물리 대미지와 0.5초 정지를 부여",
+  "en": "Physical damage dealt by the Trait's splash +24%; each Ranged tile hit by the splash deals 24% ATK as Physical damage and a 0.5-second Slow to all ground enemies in the surrounding 4 tiles",
+  "ja": "特性のスプラッシュが与える物理ダメージ+24%。スプラッシュが及んだ各高台マスは、周囲4マスのすべての地上の敵に攻撃力の24%の物理ダメージと0.5秒の足止めを与える"
+ },
+ "珊比受到的元素损伤降低15%；珊比造成物理伤害时，附带攻击力10%的侵蚀损伤，并使目标的侵蚀损伤冷却减少1秒": {
+  "ko": "받는 원소 손상 15% 감소. 물리 대미지를 입힐 때 공격력 10%의 침식 손상을 함께 입히며, 대상의 침식 손상 쿨타임을 1초 감소",
+  "en": "Elemental Injury taken -15%. When dealing Physical damage, also inflicts Corrosion equal to 10% of ATK and reduces the target's Corrosion cooldown by 1 seconds",
+  "ja": "受ける元素損傷が15%減少。物理ダメージを与える際、攻撃力10%の侵蝕損傷を付与し、対象の侵蝕損傷のクールダウンを1秒短縮する"
+ },
+ "生命上限和防御力+25%，阻挡数+1，阻挡范围扩大，部署后生命修复单元升空，自身起飞": {
+  "ko": "최대 HP 및 방어력 +25%, 저지 가능 수 +1, 저지 범위 확대, 배치 후 생명 수복 유닛이 공중으로 떠오르며 자신이 이륙",
+  "en": "Max HP and DEF +25%, Block +1, block range expands; after deployment, the Life Restoration Unit rises into the air and this unit Lifts Off",
+  "ja": "最大HP・防御力+25%、ブロック数+1、ブロック範囲が拡大。配置後、生命修復ユニットが浮上し、自身が離陸する"
+ },
+ "结城理<替身>状态结束后，带领S.E.E.S.小队发动总攻击，对S.E.E.S.小队队员周围一定范围内的所有敌人造成相当于结城理攻击力430%的真实伤害（可叠加）": {
+  "ko": "유키 마코토의 [대역] 상태가 끝난 후, S.E.E.S. 부대를 이끌고 총공격을 발동. S.E.E.S. 부대원 주변 일정 범위 내 모든 적에게 유키 마코토 공격력의 430%에 해당하는 트루 대미지를 입힘 (중첩 가능)",
+  "en": "After Makoto Yuki's <Substitute> state ends, he leads the S.E.E.S. squad in an All-Out Attack, dealing True damage equal to 430% of Makoto Yuki's ATK to all enemies within a certain range around S.E.E.S. squad members (stackable)",
+  "ja": "結城理の〈身替り〉状態終了後、S.E.E.S.隊を率いて総攻撃を発動し、S.E.E.S.隊員の周囲一定範囲内のすべての敵に結城理の攻撃力430%の確定ダメージを与える（重複可能）"
+ },
+ "结城理切换为<替身>状态时停顿周围一定范围内敌人8秒；<替身>状态下结城理召唤人格面具作战，攻击间隔增大，攻击力+80%，生命值+35%，作战能力随技能选择而改变": {
+  "ko": "유키 마코토가 [대역] 상태로 전환할 때 주변 일정 범위 내 적을 8초간 정지. [대역] 상태에서 유키 마코토는 페르소나를 소환해 전투하며, 공격 딜레이 증가, 공격력 +80%, HP +35%, 전투 능력은 선택한 스킬에 따라 달라짐",
+  "en": "When Makoto Yuki switches to <Substitute> state, holds enemies within a certain range around him in place for 8 seconds; in <Substitute> state Makoto Yuki summons a Persona to fight, attack interval increases, ATK +80%, HP +35%, and his combat capability changes with the skill selected",
+  "ja": "結城理が〈身替り〉状態に切り替わる際、周囲一定範囲内の敵を8秒間足止めする。〈身替り〉状態では結城理はペルソナを召喚して戦い、攻撃間隔が増加、攻撃力+80%、HP+35%、戦闘能力は選択したスキルによって変化する"
+ },
+ "自身受到的元素损伤-10%，受到的侵蚀损伤额外-10%": {
+  "ko": "자신이 받는 원소 손상 -10%, 받는 침식 손상 추가 -10%",
+  "en": "Elemental Injury taken -10%; Corrosion taken additionally -10%",
+  "ja": "自身が受ける元素損傷-10%、受ける侵蝕損傷が追加で-10%"
+ },
+ "自身和结构性原理部署时获得最大生命30%的屏障；来自自身的屏障可以抵挡超额的伤害": {
+  "ko": "자신과 '구조적 원리'는 배치 시 최대 HP 30%의 보호막 획득. 자신이 부여한 보호막은 초과 대미지를 막아냄",
+  "en": "Self and Structural Principle gain a barrier equal to 30% of Max HP when deployed; barriers from this unit block excess damage",
+  "ja": "自身と「構造的原理」は配置時、最大HPの30%のバリアを獲得。自身のバリアは超過ダメージを防ぐ"
+ },
+ "造成的物理伤害+10%，受到的物理伤害-10%": {
+  "ko": "입히는 물리 대미지 +10%, 받는 물리 대미지 -10%",
+  "en": "Physical damage dealt +10%, Physical damage taken -10%",
+  "ja": "与える物理ダメージ+10%、受ける物理ダメージ-10%"
+ },
+ "部署后20秒内，攻击使敌人法术抗性-15%（持续10秒），且优先攻击未获得此效果的敌人": {
+  "ko": "배치 후 20초 이내, 공격 시 적의 마법 저항 -15% (10초간 지속), 해당 효과를 받지 않은 적을 우선 공격",
+  "en": "For 20 seconds after deployment, attacks reduce the target's RES by 15% (lasts 10 seconds), prioritizing enemies not affected by this effect",
+  "ja": "配置後20秒間、攻撃時に敵の術耐性-15%（10秒間継続）。この効果を受けていない敵を優先して攻撃する"
+ },
+ "部署后20秒内，攻击使敌人法术抗性-17%（持续10秒），且优先攻击未获得此效果的敌人": {
+  "ko": "배치 후 20초 이내, 공격 시 적의 마법 저항 -17% (10초간 지속), 해당 효과를 받지 않은 적을 우선 공격",
+  "en": "For 20 seconds after deployment, attacks reduce the target's RES by 17% (lasts 10 seconds), prioritizing enemies not affected by this effect",
+  "ja": "配置後20秒間、攻撃時に敵の術耐性-17%（10秒間継続）。この効果を受けていない敵を優先して攻撃する"
+ },
+ "部署后20秒内，攻击使敌人法术抗性-19%（持续10秒），且优先攻击未获得此效果的敌人": {
+  "ko": "배치 후 20초 이내, 공격 시 적의 마법 저항 -19% (10초간 지속), 해당 효과를 받지 않은 적을 우선 공격",
+  "en": "For 20 seconds after deployment, attacks reduce the target's RES by 19% (lasts 10 seconds), prioritizing enemies not affected by this effect",
+  "ja": "配置後20秒間、攻撃時に敵の術耐性-19%（10秒間継続）。この効果を受けていない敵を優先して攻撃する"
+ },
+ "部署后20秒内，攻击使敌人法术抗性-21%（持续10秒），且优先攻击未获得此效果的敌人": {
+  "ko": "배치 후 20초 이내, 공격 시 적의 마법 저항 -21% (10초간 지속), 해당 효과를 받지 않은 적을 우선 공격",
+  "en": "For 20 seconds after deployment, attacks reduce the target's RES by 21% (lasts 10 seconds), prioritizing enemies not affected by this effect",
+  "ja": "配置後20秒間、攻撃時に敵の術耐性-21%（10秒間継続）。この効果を受けていない敵を優先して攻撃する"
+ },
+ "部署后20秒内，攻击使敌人法术抗性-23%（持续10秒），且优先攻击未获得此效果的敌人": {
+  "ko": "배치 후 20초 이내, 공격 시 적의 마법 저항 -23% (10초간 지속), 해당 효과를 받지 않은 적을 우선 공격",
+  "en": "For 20 seconds after deployment, attacks reduce the target's RES by 23% (lasts 10 seconds), prioritizing enemies not affected by this effect",
+  "ja": "配置後20秒間、攻撃時に敵の術耐性-23%（10秒間継続）。この効果を受けていない敵を優先して攻撃する"
+ },
+ "部署后对周围一定范围内最近的1名敌人发动总计6次无视闪避的斩击，每次斩击造成相当于攻击力100%的法术伤害，最后一次斩击改为造成攻击力200%的法术伤害并使目标恐惧4秒": {
+  "ko": "배치 후 주변 일정 범위 내 가장 가까운 적 1명에게 회피를 무시하는 참격을 총 6회 발동. 참격 1회당 공격력의 100%에 해당하는 마법 대미지를 입히며, 마지막 참격은 공격력의 200%에 해당하는 마법 대미지로 변경되고 목표를 4초간 공포에 빠뜨림",
+  "en": "After deployment, unleashes a total of 6 Dodge-ignoring slashes at the nearest enemy within a certain range; each slash deals 100% of ATK as Arts damage, and the final slash instead deals 200% of ATK as Arts damage and Fears the target for 4 seconds",
+  "ja": "配置後、周囲一定範囲内の最も近い敵1体に回避を無視する斬撃を合計6回放つ。斬撃1回につき攻撃力の100%の術ダメージを与え、最後の斬撃は攻撃力の200%の術ダメージに変化し、目標を4秒間恐怖状態にする"
+ },
+ "部署后对周围一定范围内最近的1名敌人发动总计6次无视闪避的斩击，每次斩击造成相当于攻击力120%的法术伤害，最后一次斩击改为造成攻击力240%的法术伤害并使目标恐惧4秒": {
+  "ko": "배치 후 주변 일정 범위 내 가장 가까운 적 1명에게 회피를 무시하는 참격을 총 6회 발동. 참격 1회당 공격력의 120%에 해당하는 마법 대미지를 입히며, 마지막 참격은 공격력의 240%에 해당하는 마법 대미지로 변경되고 목표를 4초간 공포에 빠뜨림",
+  "en": "After deployment, unleashes a total of 6 Dodge-ignoring slashes at the nearest enemy within a certain range; each slash deals 120% of ATK as Arts damage, and the final slash instead deals 240% of ATK as Arts damage and Fears the target for 4 seconds",
+  "ja": "配置後、周囲一定範囲内の最も近い敵1体に回避を無視する斬撃を合計6回放つ。斬撃1回につき攻撃力の120%の術ダメージを与え、最後の斬撃は攻撃力の240%の術ダメージに変化し、目標を4秒間恐怖状態にする"
+ },
+ "部署后对周围一定范围内最近的1名敌人发动总计6次无视闪避的斩击，每次斩击造成相当于攻击力140%的法术伤害，最后一次斩击改为造成攻击力280%的法术伤害并使目标恐惧4秒": {
+  "ko": "배치 후 주변 일정 범위 내 가장 가까운 적 1명에게 회피를 무시하는 참격을 총 6회 발동. 참격 1회당 공격력의 140%에 해당하는 마법 대미지를 입히며, 마지막 참격은 공격력의 280%에 해당하는 마법 대미지로 변경되고 목표를 4초간 공포에 빠뜨림",
+  "en": "After deployment, unleashes a total of 6 Dodge-ignoring slashes at the nearest enemy within a certain range; each slash deals 140% of ATK as Arts damage, and the final slash instead deals 280% of ATK as Arts damage and Fears the target for 4 seconds",
+  "ja": "配置後、周囲一定範囲内の最も近い敵1体に回避を無視する斬撃を合計6回放つ。斬撃1回につき攻撃力の140%の術ダメージを与え、最後の斬撃は攻撃力の280%の術ダメージに変化し、目標を4秒間恐怖状態にする"
+ },
+ "部署后对周围一定范围内最近的1名敌人发动总计6次无视闪避的斩击，每次斩击造成相当于攻击力160%的法术伤害，最后一次斩击改为造成攻击力320%的法术伤害并使目标恐惧4秒": {
+  "ko": "배치 후 주변 일정 범위 내 가장 가까운 적 1명에게 회피를 무시하는 참격을 총 6회 발동. 참격 1회당 공격력의 160%에 해당하는 마법 대미지를 입히며, 마지막 참격은 공격력의 320%에 해당하는 마법 대미지로 변경되고 목표를 4초간 공포에 빠뜨림",
+  "en": "After deployment, unleashes a total of 6 Dodge-ignoring slashes at the nearest enemy within a certain range; each slash deals 160% of ATK as Arts damage, and the final slash instead deals 320% of ATK as Arts damage and Fears the target for 4 seconds",
+  "ja": "配置後、周囲一定範囲内の最も近い敵1体に回避を無視する斬撃を合計6回放つ。斬撃1回につき攻撃力の160%の術ダメージを与え、最後の斬撃は攻撃力の320%の術ダメージに変化し、目標を4秒間恐怖状態にする"
+ },
+ "部署后对周围一定范围内最近的1名敌人发动总计6次无视闪避的斩击，每次斩击造成相当于攻击力180%的法术伤害，最后一次斩击改为造成攻击力360%的法术伤害并使目标恐惧4秒": {
+  "ko": "배치 후 주변 일정 범위 내 가장 가까운 적 1명에게 회피를 무시하는 참격을 총 6회 발동. 참격 1회당 공격력의 180%에 해당하는 마법 대미지를 입히며, 마지막 참격은 공격력의 360%에 해당하는 마법 대미지로 변경되고 목표를 4초간 공포에 빠뜨림",
+  "en": "After deployment, unleashes a total of 6 Dodge-ignoring slashes at the nearest enemy within a certain range; each slash deals 180% of ATK as Arts damage, and the final slash instead deals 360% of ATK as Arts damage and Fears the target for 4 seconds",
+  "ja": "配置後、周囲一定範囲内の最も近い敵1体に回避を無視する斬撃を合計6回放つ。斬撃1回につき攻撃力の180%の術ダメージを与え、最後の斬撃は攻撃力の360%の術ダメージに変化し、目標を4秒間恐怖状態にする"
+ },
+ "部署后首次开启技能时，接下来50次攻击的攻击力提升至115%": {
+  "ko": "배치 후 처음 스킬 발동 시, 이후 50회 공격의 공격력이 115%로 증가",
+  "en": "When activating a skill for the first time after deployment, the next 50 attacks have ATK increased to 115%",
+  "ja": "配置後、初めてスキルを発動した時、以降50回の攻撃の攻撃力が115%まで上昇"
+ },
+ "部署后，嘉辛塔自身与周围八格的友方单位获得13%的对空庇护": {
+  "ko": "배치 후, 자신타와 주변 8칸의 아군 유닛이 13%의 대공 가호 획득",
+  "en": "After deployment, Jacinta and allied units in the surrounding 8 tiles gain 13% Anti-Air Shelter",
+  "ja": "配置後、ジャシンタ自身と周囲8マスの味方ユニットが13%の対空加護を獲得"
+ },
+ "受到过来自珊比伤害的敌人侵蚀损伤爆发时，珊比获得8点防御力（最多叠加30层）和250点屏障（不超过最大生命值的300%）": {
+  "ko": "썸피에게 대미지를 받은 적의 침식 손상이 폭발할 때, 방어력 8 획득(최대 30중첩)과 보호막 250 획득(최대 HP의 300%를 넘지 않음)",
+  "en": "When Corrosion bursts on an enemy that has taken damage from Thumpy, Thumpy gains 8 DEF (stacking up to 30 times) and a 250 Barrier (not exceeding 300% of Max HP)",
+  "ja": "サンビからダメージを受けた敵の侵蝕損傷が爆発した時、防御力8を獲得（最大30層まで累積）し、250のバリアを獲得（最大体力の300%を超えない）"
+ },
+ "技能期间攻击距离延长。开启技能时施展变形斩造成伤害，同时消耗所有充能，每层使技能持续时间增加40%": {
+  "ko": "스킬 지속 시간 동안 공격 거리 연장. 스킬 발동 시 변형 베기로 대미지를 입히며 모든 충전을 소모, 1층당 스킬 지속 시간 40% 증가",
+  "en": "Extends attack range while skill is active. Performs a Morph Slash dealing damage when activating the skill, consuming all charges; each charge increases skill duration by 40%",
+  "ja": "スキル中、攻撃距離が延長される。スキル発動時に変形斬りでダメージを与え、すべてのチャージを消費する。1チャージごとにスキル継続時間+40%"
  }
 }

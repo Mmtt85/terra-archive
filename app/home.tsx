@@ -139,7 +139,10 @@ type Summon = {
   talents: Talent[]; skills: Skill[];
 };
 
-type Potential = { rank: number; description: string };
+// detail = '제2재능 강화'처럼 게임 원문이 수치를 안 알려 주는 잠재의 **실제 증가폭**
+// ("공격 속도 +8 → +10 · 피격 대미지 25% → 30%"). scripts/potutil.py가 재능 후보를
+// 잠재 단계끼리 견줘 계산한다 (사용자 요청 2026-09-04). 수치가 이미 설명에 있는 잠재는 null.
+type Potential = { rank: number; description: string; detail?: string | null };
 
 type ModuleLevel = { level: number; stats: string | null; effects: string[] };
 // unreleased = KR엔 아직 없고 중섭에만 있는 모듈 — '미래시 포함'이 켜졌을 때만 보여준다
@@ -2627,7 +2630,11 @@ function OperatorFile({ operator, onUpgrade, includeFuture, operators, onRelated
               <div className="potential-scroll">
                 <div className="potential-list">
                   {operator.potentials.map((potential) => (
-                    <article key={potential.rank}><span>P{potential.rank}</span><p>{potential.description}</p></article>
+                    <article key={potential.rank}>
+                      <span>P{potential.rank}</span>
+                      <p>{potential.description}</p>
+                      {potential.detail ? <em className="potential-detail">{potential.detail}</em> : null}
+                    </article>
                   ))}
                 </div>
               </div>

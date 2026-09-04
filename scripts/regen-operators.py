@@ -1,5 +1,7 @@
 # Regenerate app/data/operators.json (430 ops) from KR gamedata.
 # Mechanical fields rebuilt for everyone; curated accent/nicknames preserved from old data.
+import potutil
+import cnmiss
 import json, re, sys
 
 import os, sys
@@ -248,10 +250,39 @@ def build_talents(c):
     return out
 
 def build_potentials(c):
-    out = []
-    for i, p in enumerate(c.get("potentialRanks") or []):
-        out.append({"rank": i + 2, "description": strip_tags(p.get("description"))})
-    return out
+    """잠재 목록. `detail` = 재능 강화형 잠재가 실제로 얼마나 올려 주는지 (potutil이 계산).
+    게임 원문은 "제2재능 강화"라고만 해서 무엇이 얼마나 오르는지 알 수 없었다
+    (사용자 요청 2026-09-04). 계산 근거는 scripts/potutil.py 참조."""
+    return potutil.build_potentials(c, strip_tags, _pot_tr)
+
+
+def _pot_tr(s):
+    """잠재 detail 계산용 CN→KO 변환. 미실장 오퍼는 재능 설명이 중국어라 그대로 견주면
+    detail도 중국어로 나온다 — 사전으로 한 번 옮긴 뒤 견준다. 사전·수확표는 이 함수보다
+    뒤에서 만들어지므로 **호출 시점에** globals()로 늦게 집는다.
+    미번역 집계에는 넣지 않는다(원문 키는 재능 설명 쪽에서 이미 집계된다)."""
+    if not s:
+        return s
+    # ⚠ 사전 키는 **태그를 벗긴** 문장이다(다른 경로가 전부 strip_tags 뒤에 조회한다).
+    #   원문 그대로 조회하면 <$ba.sluggish> 같은 태그 때문에 이미 번역해 둔 것도 다 빗나간다.
+    s = strip_tags(s)
+    g = globals()
+    m = (g.get("MANUAL") or {}).get(s)
+    hit = (m or {}).get("ko") or (g.get("CN2KR_TEXT") or {}).get(s)
+    if hit:
+        return hit
+    # ⚠ 못 찾으면 집계한다. 재능의 **하위 잠재 후보** 설명은 operators.json 에 안 실린다
+    #   (재능은 최고 후보만 남긴다) — 그래서 다른 경로로는 미번역 목록에 절대 안 잡히는데,
+    #   잠재 증가폭에는 그대로 나온다. 이걸 안 세면 화면에만 중국어가 남는다 (2026-09-04).
+    if POT_REPORT[0]:
+        cnmiss.note(s, "potential-하위후보")
+    return s
+
+
+# 잠재 하위후보 미번역을 **미실장 오퍼를 만들 때만** 센다. build_op 은 CN↔KR 어휘 대조용
+# 임시 빌드에도 쓰이는데(415명분, 결과는 버린다) 거기까지 세면 838건으로 부풀어
+# 실제로 화면에 나오는 것과 뒤섞인다 (2026-09-04 실측).
+POT_REPORT = [False]
 
 def build_trait(c):
     tr = c.get("trait")
@@ -550,7 +581,10 @@ TR_FIELDS = ("subProfession", "reason", "trait", "talents", "skills", "potential
 untranslated = []
 def translate_cn(x, ctx):
     if isinstance(x, dict):
-        return {k: (translate_cn(v, f"{ctx}.{k}") if k != "id" else v) for k, v in x.items()}
+        # detail(잠재 증가폭)은 재능 설명에서 **계산된** 파생값이다 — 사전 키가 아니므로
+        # 통째로 조회해 봐야 못 찾고, 미번역 목록만 어지럽힌다. 원문은 재능 쪽에서 집계된다.
+        return {k: (translate_cn(v, f"{ctx}.{k}") if k not in ("id", "detail") else v)
+                for k, v in x.items()}
     if isinstance(x, list):
         return [translate_cn(v, ctx) for v in x]
     if isinstance(x, str) and CJK_RE.search(x):
@@ -582,6 +616,7 @@ print("future modules (KR 실장 오퍼 · CN 선행):", _future_mods)
 cn_seq = {c2: i for i, c2 in enumerate(cn_tables["handbook"].keys())}
 release_seq = {cid: 100000 + cn_seq.get(cid, 99999) for cid in cn if cid not in chars}
 unreleased_count = 0
+POT_REPORT[0] = True          # 여기부터가 실제로 사이트에 실리는 미실장 오퍼다
 for cid, c in cn.items():
     if not cid.startswith("char_") or cid in chars: continue
     if c.get("isNotObtainable") and build_modules(cid): continue
@@ -618,6 +653,7 @@ if untranslated:
           file=sys.stderr)
     for m in dedup_miss:
         print(json.dumps(m, ensure_ascii=False), file=sys.stderr)
+        cnmiss.note(m["cn"], "operators", m.get("ctx", ""))
 
 # 동명 중복 정리 (사용자 확정 2026-07): 같은 이름이 여럿이면 입수 가능 버전 우선,
 # 전부 입수 불가면 먼저 나온(char 번호 낮은) 쪽만 남긴다 — 샬렘은 진짜(char_4025)만,
@@ -644,3 +680,5 @@ new = [o for o in result if o["id"] not in old_ops]
 print("new ops:", len(new))
 missing_reason = [o["name"] for o in result if not o["reason"]]
 print("missing reason:", missing_reason[:10])
+
+cnmiss.dump()
