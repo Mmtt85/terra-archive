@@ -2849,6 +2849,15 @@ const D: Record<string, Pair> = {
   "위수 협의 능력": ["Garrison ability", "駐留能力"],
   // 편성 계산기 (2026-08-29)
   "덱편성 시뮬레이터": ["Deck builder", "デッキ編成シミュレーター"],
+  // 덱편성 시뮬레이터의 전략 고르기 (2026-09-04)
+  "전략 고르기": ["Pick a strategy", "戦略を選ぶ"],
+  "고르지 않음": ["Not selected", "選択なし"],
+  "아직 고르지 않았습니다.": ["Nothing selected yet.", "まだ選択されていません。"],
+  "전략 상세 보기": ["View strategy details", "戦略の詳細を見る"],
+  "고른 전략은 기록·공유용입니다 — 효과는 전투 중에 붙어서 편성 계산에는 넣지 않습니다": [
+    "Your chosen strategy is recorded for sharing only — its effects apply during battle, so they are not part of the deck calculation.",
+    "選んだ戦略は記録・共有用です — 効果は戦闘中に付与されるため、編成計算には含めません",
+  ],
   "있으면 해금": ["Unlock if held", "所持なら解放"],
   "인사부 파일": ["HR File", "人事部ファイル"],
   "아이템 '인사부 파일'을 장착하면 최대 배치 인원이 9로 늘어납니다. 보유 중이라면 눌러서 해금하세요.": [

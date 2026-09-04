@@ -477,6 +477,10 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     return next;
   });
   const [sim, setSim] = useState(false);                 // 덱편성 시뮬레이터 모달
+  // 판을 시작할 때 고른 전략 — 편성과 함께 링크(?bd=)에 실린다 (사용자 요청 2026-09-04).
+  // ⚠ 계산에는 넣지 않는다 — 전략 효과는 전투 중에 붙는 것이라 편성만으로 못 구한다
+  //   (아이템·전략은 계산에 없다는 기존 안내와 같은 선). 여기선 '무엇을 골랐는지'를 남긴다.
+  const [simBand, setSimBand] = useState<string>("");
   const [copied, setCopied] = useState(false);           // 공유 링크 복사 알림
   const copyLink = async () => {
     try {
@@ -572,6 +576,8 @@ export default function AutochessGuide({ doc, onShowOperator }: {
       if (id && Number.isFinite(v) && v > 0) st[id] = Math.min(999, Math.floor(v));
     }
     setStacks(st);
+    const bd = p.get("bd") ?? "";
+    setSimBand(doc.bands.some((b) => b.id === bd) ? bd : "");
     setSim(p.get("sim") === "1");
   }
   const hydrated = useRef(false);
@@ -641,6 +647,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
       if (gd) p.set("gd", gd);
       const k = Object.entries(stacks).filter(([, n]) => n > 0).map(([id, n]) => `${id}*${n}`).join(".");
       if (k) p.set("k", k);
+      if (simBand) p.set("bd", simBand);
     }
     if (curModal) p.set("m", `${curModal[0]}~${curModal[1]}`);
     // ~는 URL에서 그대로 써도 되는 글자인데 URLSearchParams가 %7E로 인코딩한다 — 링크가
@@ -659,7 +666,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     }
     prevHash.current = hash;
   }, [view, miscTab, bondN, bondT, tier, garFilter, jobFilter, subFilter, term, curModal?.[0], curModal?.[1],
-      sim, slots, bench, slot9, goldMark, stacks]); // eslint-disable-line react-hooks/exhaustive-deps
+      sim, slots, bench, slot9, goldMark, stacks, simBand]); // eslint-disable-line react-hooks/exhaustive-deps
 
 
   // 검색 입력은 비제어(useSearchInput)라 뷰가 바뀌어 입력칸이 새로 마운트되면 빈칸이 된다.
@@ -1150,6 +1157,20 @@ export default function AutochessGuide({ doc, onShowOperator }: {
    *  self를 주면 **지금 열려 있는 항목 자신**을 가리키는 참조는 링크로 만들지 않는다
    *  (사르곤 맹약 상세 안의 [사르곤]을 눌러 같은 창을 또 여는 건 무의미하다). */
   const acRich = (text: string, self?: string): React.ReactNode => {
+    // ⚠ **굵게**가 참조 토큰을 가로지르면 별표가 그대로 화면에 남는다 (2026-09-04 실측:
+    //   "**일부 <염국> 오퍼레이터 부재 시…**"). 아래에서 토큰으로 먼저 쪼개면 별표 짝이
+    //   양쪽 조각으로 갈라져 rich()가 어느 쪽에서도 짝을 못 찾기 때문이다.
+    //   → **굵게를 먼저 가르고**, 그 안에서 토큰을 푼다.
+    const bold = text.split(/\*\*([\s\S]+?)\*\*/g);
+    if (bold.length > 1) {
+      return bold.map((seg, i) => (i % 2
+        ? <b key={i}>{acRichRefs(seg, self)}</b>
+        : <span key={i}>{acRichRefs(seg, self)}</span>));
+    }
+    return acRichRefs(text, self);
+  };
+  /** acRich의 참조 토큰 풀이 부분 — 굵게는 위에서 이미 갈랐다 */
+  const acRichRefs = (text: string, self?: string): React.ReactNode => {
     const map = doc.refs;
     if (!map) return rich(text);
     const parts = text.split(REF_TOKEN);
@@ -2296,6 +2317,52 @@ export default function AutochessGuide({ doc, onShowOperator }: {
         <ModalWindow label={t("덱편성 시뮬레이터")} className="operator-modal ac-modal ac-simmodal"
           onClose={() => setSim(false)}>
           <div className="ac-guide ac-simbody">
+
+          {/* 전략 — 판을 시작할 때 고르는 조직. 편성과 함께 링크에 실린다 (사용자 요청 2026-09-04).
+              맹약 위에 둔다 — 게임에서도 판을 시작할 때 제일 먼저 고르는 것이다. */}
+          <section className="ac-boardout ac-simband">
+            <h3 className="sb-h3">{t("전략")}
+              <span className="sb-dim ac-note">{t("고른 전략은 기록·공유용입니다 — 효과는 전투 중에 붙어서 편성 계산에는 넣지 않습니다")}</span></h3>
+            <div className="ac-simband-row">
+              {/* 고르는 자리 — 맹약·정예화 드롭다운(.ac-garsel)과 같은 모양·같은 메뉴 규약 */}
+              <div className="ac-garsel">
+                <button type="button" className={`ac-garsel-btn${simBand ? " on" : ""}`}
+                  aria-haspopup="menu" aria-expanded={openMenu === "simband"}
+                  onClick={toggleMenu("simband")}>
+                  {simBand ? (doc.bands.find((b) => b.id === simBand)?.n ?? t("전략 고르기")) : t("전략 고르기")} <i aria-hidden>▾</i>
+                </button>
+                {openMenu === "simband" && menuPop(
+                  <ul className={menuCls(" scroll")} role="menu" aria-label={t("전략")}>
+                    <li role="none"><button type="button" role="menuitemradio" aria-checked={!simBand}
+                      className={!simBand ? "on" : ""} onClick={() => { setSimBand(""); closeMenus(); }}>
+                      <span>{t("고르지 않음")}</span></button></li>
+                    {doc.bands.slice().sort((a, b) => a.sort - b.sort).map((b) => (
+                      <li key={b.id} role="none"><button type="button" role="menuitemradio" aria-checked={simBand === b.id}
+                        className={simBand === b.id ? "on" : ""} onClick={() => { setSimBand(b.id); closeMenus(); }}>
+                        <img className="ac-garsel-icon" src={bandIcon(b.id)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
+                        <span>{b.n}{b.by && <em className="ac-bandby">{b.by}</em>}</span><em>HP {b.hp}</em></button></li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              {/* 고른 전략 — 누르면 상세가 열린다 (전략 탭 카드와 같은 동작) */}
+              {(() => {
+                const b = simBand ? doc.bands.find((x) => x.id === simBand) : null;
+                if (!b) return <span className="sb-dim ac-note">{t("아직 고르지 않았습니다.")}</span>;
+                return (
+                  <button type="button" className="ac-simband-card" onClick={() => setBand(b)}
+                    title={t("전략 상세 보기")}>
+                    <img src={bandIcon(b.id)} alt="" aria-hidden loading="lazy" onError={hideErr} />
+                    <span>
+                      <b>{b.n}{b.by && <em className="ac-bandby">{b.by}</em>}</b>
+                      <i className="sb-chip ac-hp">HP {b.hp}</i>
+                    </span>
+                    <small>{rich(b.d.split("\n")[0])}</small>
+                  </button>
+                );
+              })()}
+            </div>
+          </section>
 
           {/* 맹약 — 켜진 것 먼저. 빈 안내문·'상태' 군더더기는 걷어내되 제목과 발동 수는
               남긴다 (사용자 지시 2026-08-30 "맹약 0 은 다시 만들어줘"). */}
