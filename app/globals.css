@@ -19441,6 +19441,9 @@ p.sb-trline { margin-top: 2px; }
 }
 .rec-item:hover { border-color: var(--border-hover); }
 .rec-item > b { font-size: 13.5px; font-weight: 900; letter-spacing: -0.01em; }
+/* 미실장 배지 — .future-badge 자체엔 여백이 없고 자리마다 붙인다 (.modal-rarity 8px 등).
+   여기선 기록명에 딱 달라붙어 있었다 (사용자 지적 2026-09-04). */
+.rec-item > b .future-badge { margin-left: 7px; }
 .rec-tag { color: var(--muted); font-size: 12.5px; }
 .rec-chips { margin-left: auto; display: flex; gap: 4px; }
 .rec-chips i {

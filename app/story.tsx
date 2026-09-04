@@ -485,7 +485,9 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
 }) {
   const { locale, t } = useI18n();
   const [ownPrefs, setOwnPrefs] = useReaderPrefs();
-  const [ownScene, setOwnScene] = useState(false);
+  // 리더기가 기본 (사용자 확정 2026-09-04) — 스토리 상세도 연출 트랙이 있으면 리더기로 연다
+  // (fallbackMode). 트랙이 없는 기록은 아래 canScene 이 막아 전문으로 떨어진다.
+  const [ownScene, setOwnScene] = useState(true);
   // 오퍼가 아닌 화자의 스탠딩 스프라이트 — 썸네일 클릭 시 원본 크게 보기 (사용자 요청 2026-07-18)
   const [faceZoom, setFaceZoom] = useState<string | null>(null);
   // 요약 카드에 없는 화자라도 오퍼레이터면 자동으로 레일 카드 생성 (호시구마 등 — 사용자 리포트 2026-07-18)
@@ -527,8 +529,10 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
   };
   const ep = script ? script.eps[Math.min(epIdx, script.eps.length - 1)] : null;
   // 장면 모드 — 바깥(보기 방식 탭)이 주면 그걸 따르고, withScene 이면 리더가 직접 쥔다.
-  const scene = withScene ? ownScene : Boolean(sceneOn);
+  // ⚠ canScene 을 반드시 곱할 것 — 기본이 켜짐이라, 연출 트랙 없는 기록에서 그냥 ownScene 을
+  //   쓰면 무대는 안 그려지는데 본문만 sc-hidden 으로 숨어 **빈 창**이 된다.
   const canScene = Boolean(ep?.vn?.length);
+  const scene = withScene ? (canScene && ownScene) : Boolean(sceneOn);
   // 렌더용 라인 가공 — 렌더 중 변수 재할당 금지(react-compiler)라 memo에서 미리 계산:
   //  · br 마커에 직전 선택지 텍스트 부착 (references 는 Decision values 참조 — 옵션 순번 아님)
   //  · 같은 화자의 연속 대사는 첫 줄만 이름 표시 (showN — 사용자 요청 2026-07-18)
