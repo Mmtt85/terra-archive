@@ -14,7 +14,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useI18n, DT_LOCALE } from "./i18n";
+import { useI18n, rich, DT_LOCALE } from "./i18n";
 import { useHashSync } from "./hash-modal";
 import { ModalWindow } from "./modal-window";
 import {
@@ -170,7 +170,9 @@ export default function ChangelogButton() {
                             })}
                           </span>
                           <span className="chlog-text">
-                            {open ? full : head}
+                            {/* **굵게** 마크업을 실제로 굵게 — 종전엔 원문 그대로 나와
+                                별표가 그냥 보였다 (2026-09-04 실측, 등록된 옛 항목 포함) */}
+                            {rich(open ? full : head)}
                             {rest && (
                               <button type="button" className="chlog-more" aria-expanded={open}
                                 onClick={() => toggleRow(row.id)}>
