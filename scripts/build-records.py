@@ -52,6 +52,49 @@ LOCALES = {"ko": ("kr", "박사"), "en": ("en", "Doctor"), "ja": ("jp", "ドク�
 HB = {sv: load(f"{S}/{sv}_handbook_info_table.json")["handbookDict"] for sv in ("kr", "en", "jp", "cn")}
 
 
+# ── CN 선행 기록의 한국어 번역 ────────────────────────────────────────────────
+# 기록 본문은 AVG 스크립트 전문이라 cn-translations.json(줄 사전)에 넣을 물건이 아니다.
+# 이벤트 스토리 전문과 **같은 규약**을 쓴다 (build-story-scripts.py --cn / --cn-merge):
+#   ① 이 스크립트가 원문 골격을 scripts/records-cn/_src/<cid>.json 으로 떨어뜨린다
+#   ② AI가 같은 구조로 scripts/records-cn/<cid>.json 에 한국어를 채운다
+#   ③ 다음 실행에서 **문자열만** 갈아 끼운다 — 줄 수·키가 어긋나면 그 기록은 손대지 않는다
+# EN/JA는 원문 유지 (스토리 전문 선례 — 번역본은 한국어만, UI가 비공식 번역임을 알린다).
+CN_TR = f"{REPO}/scripts/records-cn"
+
+
+def cn_translate(cid, recs):
+    """CN 원문 기록(f:1)에 번역을 덮어쓰고, 없으면 번역용 원문 골격을 떨어뜨린다."""
+    fut = [r for r in recs if r.get("f")]
+    if not fut:
+        return
+    p = f"{CN_TR}/{cid}.json"
+    tr = load(p) if os.path.exists(p) else None
+    src = (tr or {}).get("recs") or []
+    if tr and len(src) != len(fut):
+        print(f"  ✗ {cid}: 번역 기록 {len(src)}편 ≠ 원문 {len(fut)}편 — 통째로 건너뜀", file=sys.stderr)
+        src = []
+    for i, rec in enumerate(fut):
+        t = src[i] if i < len(src) else None
+        if t and len(t.get("lines") or []) == len(rec["lines"]):
+            for ln, tl in zip(rec["lines"], t["lines"]):
+                for k in ("n", "x", "st", "loc"):
+                    if k in ln and tl.get(k):
+                        ln[k] = tl[k]
+                if ln.get("opts") and tl.get("opts") and len(ln["opts"]) == len(tl["opts"]):
+                    ln["opts"] = tl["opts"]
+            rec["name"] = t.get("name") or rec["name"]
+            rec["tag"] = t.get("tag") or rec["tag"]
+            rec["tr"] = "cn"      # UI 안내를 '원문 그대로'에서 '비공식 AI 번역'으로 바꾼다
+            continue
+        if t:
+            print(f"  ✗ {cid}[{i}]: 줄 수 {len(t.get('lines') or [])} ≠ {len(rec['lines'])} — 건너뜀", file=sys.stderr)
+        os.makedirs(f"{CN_TR}/_src", exist_ok=True)
+        skel = {"id": cid, "recs": [{"name": r["name"], "tag": r["tag"],
+                                     "lines": [{k: v for k, v in ln.items() if k in ("n", "x", "st", "loc", "opts")}
+                                               for ln in r["lines"]]} for r in fut]}
+        json.dump(skel, open(f"{CN_TR}/_src/{cid}.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+
+
 def txt_path(server, path):
     prefix = "" if server == "kr" else f"{server}__"  # bss 캐시 규약과 동일 — 캐시 공유
     return os.path.join(bss.CACHE, prefix + path.replace("/", "__") + ".txt")
@@ -144,6 +187,8 @@ for loc, (server, nickname) in LOCALES.items():
                         cut_needed.setdefault(ln["img"], cut_needed.get(ln["img"]))
         if not recs:
             continue
+        if loc == "ko":
+            cn_translate(cid, recs)
         faces = bss.resolve_faces(votes)
         sprites.update(faces.values())
         payload = {"id": cid, "recs": recs, "faces": faces}

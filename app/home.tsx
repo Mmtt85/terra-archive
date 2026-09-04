@@ -3768,8 +3768,9 @@ function ProfileSection({ operator }: { operator: Operator }) {
 // 게임 아카이브 '기록 복원' 미니 스토리 전문 (scripts/build-records.py — AVG 스크립트를
 // build-story-scripts.py 파서로 파싱). 목록만 이 섹션에 그리고, 열람은 스토리 탭의
 // ScriptReader 를 창모달로 재사용한다 — story 청크는 lazy 라 기록을 열 때만 받는다.
-// CN 선행 기록(f:1)은 '미래시 포함'일 때만 노출하고 중국어 원문 안내를 띄운다.
-type RecordEntry = { name: string; tag: string; unlock: { t: string; p: string[] }[]; f?: 1; lines: ScriptData["eps"][number]["lines"] };
+// CN 선행 기록(f:1)은 '미래시 포함'일 때만 노출한다. 번역이 채워진 것은 tr:"cn"으로
+// 표시돼 안내 문구가 바뀐다 (원문 그대로 → 비공식 AI 번역, scripts/records-cn/).
+type RecordEntry = { name: string; tag: string; unlock: { t: string; p: string[] }[]; f?: 1; tr?: "cn"; lines: ScriptData["eps"][number]["lines"] };
 type RecordDoc = { id: string; recs: RecordEntry[]; faces?: Record<string, string> };
 const recordIds = new Set(recordIdsData as string[]);
 const recordCache = new Map<string, RecordDoc | null>();
@@ -3843,7 +3844,9 @@ function RecordSection({ operator, includeFuture, operators, onRelated }: {
       )}
       {open && script && (
         <ModalWindow label={open.name} className="op-record-modal" onClose={() => setOpenIdx(null)}>
-          {open.f ? <p className="future-note">{t("중국 서버 선행 기록입니다 — 아직 한국어 번역 전이라 중국어 원문으로 표시됩니다.")}</p> : null}
+          {open.f ? <p className="future-note">{open.tr === "cn"
+            ? t("중국 서버 선행 기록입니다 — 중국어 원문을 AI가 번역한 비공식 텍스트라 정식 출시 시 공식 번역과 다를 수 있습니다.")
+            : t("중국 서버 선행 기록입니다 — 아직 한국어 번역 전이라 중국어 원문으로 표시됩니다.")}</p> : null}
           <Suspense fallback={<p className="no-detail">{t("불러오는 중…")}</p>}>
             <StoryScriptReader script={script} error={false} entities={[]} opIndex={opIndex} onShowOperator={showOp} />
           </Suspense>

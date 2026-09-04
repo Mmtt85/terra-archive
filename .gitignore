@@ -76,3 +76,6 @@ scripts/story-cn/
 
 # 직전 배포 청크 캐시 (scripts/keep-assets.mjs) — 배포마다 갱신되는 로컬 산출물
 .deploy-assets/
+
+# 기록 번역용 CN 원문 골격 — build-records.py가 매번 다시 떨어뜨린다 (번역본만 커밋)
+scripts/records-cn/_src/

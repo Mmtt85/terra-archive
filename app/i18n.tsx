@@ -195,6 +195,11 @@ const D: Record<string, Pair> = {
     "This record is ahead of this server's release — shown in the original Chinese until an official translation arrives.",
     "中国サーバー先行の記録です — 公式翻訳前のため中国語原文で表示されます。",
   ],
+  // 번역이 채워진 CN 선행 기록 (scripts/records-cn/) — 한국어만 번역본이라 EN/JA는 원문 안내와 같은 뜻으로 둔다
+  "중국 서버 선행 기록입니다 — 중국어 원문을 AI가 번역한 비공식 텍스트라 정식 출시 시 공식 번역과 다를 수 있습니다.": [
+    "This record is ahead of this server's release — shown in the original Chinese until an official translation arrives.",
+    "中国サーバー先行の記録です — 公式翻訳前のため中国語原文で表示されます。",
+  ],
   "메뉴 열기": ["Open menu", "メニューを開く"],
   "메뉴": ["Menu", "メニュー"],   // 햄버거 버튼 고정 라벨 (현재 탭 이름을 넣으면 폭이 흔들린다)
   "검색어 지우기": ["Clear search", "検索語をクリア"],
