@@ -31,6 +31,7 @@ import urllib.parse
 import urllib.request
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import cntr  # noqa: E402
 from imgutil import save_webp  # noqa: E402
 
 ONLY_META = "--meta-only" in sys.argv
@@ -76,6 +77,32 @@ def clean(s):
     s = re.sub(r"<[@$/][^>]*>", "", s).replace("</>", "")
     s = re.sub(r"</?[a-zA-Z][^>]*>", "", s)
     return s.replace("\\n", "\n").strip()
+
+
+# ── 미실장 스킨의 CN 원문 번역 (2026-09-04) ──────────────────────────────────
+# 미실장 오퍼는 KR 스킨 테이블에 없어 CN 원문으로 폴백되는데, 이 스크립트는 종전에
+# cn-translations.json 을 아예 읽지 않아 **스킨 설명만 중국어로 남아 있었다**
+# (사용자 제보 2026-09-04 — 오퍼 상세 · 복장 탭). 다른 빌더(regen-operators·
+# build-profiles·build-costs …)와 같은 사전을 같은 방식으로 태운다.
+#   · cntr.load = 말줄임표 표기 흔들림(…… ↔ ......) 흡수
+#   · 사전에 없으면 원문 유지 + 아래 집계로 보고 (지어내지 않는다)
+CN_TR = cntr.load(f"{REPO}/scripts/cn-translations.json")
+CJK_ONLY = re.compile(r"[一-鿿]")
+HANGUL = re.compile(r"[가-힣]")
+cn_missing = Counter()
+
+
+def tr(text, loc):
+    """CN 원문이면 사전의 로케일 문구로 갈아끼운다. 없으면 원문 그대로 + 미번역 집계."""
+    if not text:
+        return text
+    hit = CN_TR.get(text)
+    if isinstance(hit, dict) and hit.get(loc):
+        return hit[loc]
+    # 한자만 있고 한글이 없으면 아직 CN 원문이다 — ko 패스에서만 센다(중복 집계 방지)
+    if loc == "ko" and CJK_ONLY.search(text) and not HANGUL.search(text):
+        cn_missing[text] += 1
+    return text
 
 
 # 기본 복장(skinName 없음)은 전부 이름이 "기본 복장"이라 탭에서 구분이 안 된다
@@ -141,16 +168,18 @@ def entry(skin_id, base, localized, loc=None):
             content_txt = (ko_default["content"]
                            if (kd.get("content") or "") == cn_default.get("content", "\x00")
                            else pick("content"))
+            # tr(): CN 폴백으로 남은 중국어를 cn-translations.json 으로 갈아끼운다.
+            # artists(일러스트레이터 필명)는 대상이 아니다 — 게임도 원문 표기를 쓴다.
             return {
                 "id": skin_id,
-                "name": clean(group_txt) or "",
+                "name": tr(clean(group_txt), loc) or "",
                 "stage": ILLUST_STAGE.get(gid, ""),
-                "group": clean(group_txt),
+                "group": tr(clean(group_txt), loc),
                 "artists": kd.get("drawerList") or [],
-                "content": clean(content_txt),
-                "usage": clean(pick("usage")),
-                "quote": clean(pick("description")),
-                "obtain": clean(pick("obtainApproach")),
+                "content": tr(clean(content_txt), loc),
+                "usage": tr(clean(pick("usage")), loc),
+                "quote": tr(clean(pick("description")), loc),
+                "obtain": tr(clean(pick("obtainApproach")), loc),
                 "portrait": base.get("portraitId") or "",
                 "sort": kd.get("sortId") or 0,
                 "default": True,
@@ -158,15 +187,15 @@ def entry(skin_id, base, localized, loc=None):
     return {
         "id": skin_id,
         # 기본 복장·정예화2 일러는 skinName이 없다 — 시리즈명(기본 복장 등)으로 대신 표시
-        "name": clean(pick("skinName")) or clean(pick("skinGroupName")) or "",
+        "name": tr(clean(pick("skinName")) or clean(pick("skinGroupName")), loc) or "",
         # 기본 복장 탭 구분용 꼬리표 ("1정 일러"/"2정 일러") — UI가 이름 뒤에 붙인다
         "stage": ILLUST_STAGE.get(kd.get("skinGroupId") or "", ""),
-        "group": clean(pick("skinGroupName")),
+        "group": tr(clean(pick("skinGroupName")), loc),
         "artists": kd.get("drawerList") or [],
-        "content": clean(pick("content")),
-        "usage": clean(pick("usage")),
-        "quote": clean(pick("description")),
-        "obtain": clean(pick("obtainApproach")),
+        "content": tr(clean(pick("content")), loc),
+        "usage": tr(clean(pick("usage")), loc),
+        "quote": tr(clean(pick("description")), loc),
+        "obtain": tr(clean(pick("obtainApproach")), loc),
         "portrait": base.get("portraitId") or "",
         "sort": kd.get("sortId") or 0,
         # 기본 복장 여부 — UI가 유료/이벤트 스킨과 가르는 데 쓴다
@@ -218,6 +247,11 @@ for loc in LOCALES:
         written += 1
 print(f"skins 메타: {written}개 파일 ({len(by_char)}명 × {len(LOCALES)}로케일)"
       f" · 스킨 {sum(len(v) for v in by_char.values())}종")
+if cn_missing:
+    print(f"  ⚠ 미번역 CN 스킨 텍스트 {len(cn_missing)}줄 "
+          f"{sum(len(k) for k in cn_missing)}자 — scripts/cn-translations.json 에 채울 것")
+    for txt in list(cn_missing)[:5]:
+        print(f"     · {txt[:60]}")
 
 if ONLY_META:
     sys.exit(0)

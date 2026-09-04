@@ -27,11 +27,18 @@ import re
 # 말줄임표: `...`(3개 이상) · `…`(하나 이상) 전부 한 형태로 본다.
 # 다음에 또 다른 표기 흔들림이 발견되면 여기에 규칙을 더한다 (원문·사전은 건드리지 않는다).
 _ELLIPSIS = re.compile(r"(?:\.{3,}|…+)")
+# 눈에 안 보이는 공백 변종 — 줄바꿈 없는 공백(U+00A0)·전각 공백(U+3000)·제로폭(U+200B/FEFF).
+# 2026-09-04 실측: 스킨 설명의 "女神异闻录3 Reload"가 원문에서는 3과 Reload 사이가 U+00A0라,
+# 보통 공백으로 적은 사전 키와 **눈으로는 똑같은데** 안 맞았다 (P3 콜라보 4줄 미번역).
+# 말줄임표와 같은 부류의 함정이라 같은 자리에서 흡수한다.
+_SPACE = re.compile(r"[ 　​﻿]")
 
 
 def norm(s):
     """조회용 정규화 — 사람이 읽을 텍스트를 만드는 데 쓰면 안 된다."""
-    return _ELLIPSIS.sub("…", s) if isinstance(s, str) else s
+    if not isinstance(s, str):
+        return s
+    return _ELLIPSIS.sub("…", _SPACE.sub(" ", s))
 
 
 class Dict(dict):
