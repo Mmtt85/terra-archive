@@ -151,9 +151,11 @@ python3 scripts/whatsnew-gamedata.py --local --no-rogue
 3-5가 찍어 준 파이프라인을 돌린다 (목록 전체는 `scripts/README.md` §3~). 위수 협의라면:
 
 ```bash
-python3 scripts/build-autochess.py          # + public/ac/ 아이콘
-python3 scripts/build-autochess-routes.py   # 전투 맵이 바뀌었으면
+python3 scripts/build-autochess.py --all          # 지난 시즌까지 (+ public/ac/ 아이콘)
+python3 scripts/build-autochess-routes.py --all   # 전투 맵이 바뀌었으면
 ```
+> **새 시즌(`act<N>autochess`)이 처음 보이면** 화면 배선을 같이 고쳐야 한다 —
+> `.claude/skills/autochess-season` 스킬이 정본이다.
 
 **돌린 뒤 반드시 커밋본과 대조한다** — 순수 추가여야 하고, 기존 항목이 무더기로 바뀌면
 디코딩이 잘못된 것이다 (2026-09-02에 실제로 기물 121개의 이름·스킬이 통째로 `None`이 된 적이

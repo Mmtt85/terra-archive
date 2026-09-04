@@ -151,7 +151,12 @@ python3 scripts/build-eventlore.py              # → app/data/eventlore-index.j
 #       (표제 사진 newsTitlePic_*, 도솔레스 사진, 편안한 잠꼬대 초상 등은 이 레포에 없다).
 #     ⚠ 새 그림을 뽑았으면 node scripts/r2-sync.mjs 를 같이 돌린다 — asset()은 로컬에서도 R2를 문다.
 #       (업로드 **전에** 그 URL을 열어 보면 Cloudflare가 404를 캐시해 한동안 안 뜬다.)
-python3 scripts/build-autochess.py             # → app/data/autochess{,.en,.ja}.json
+python3 scripts/build-autochess.py --all        # → app/data/autochess{,-s<N>}{,.en,.ja}.json
+#     시즌 (2026-09-05): 최신 시즌은 파일명이 그대로, 지난 시즌만 -s<N> 이 붙는다.
+#     목록은 autochess-seasons.json. 시즌 번호는 autoChessData.versionInfoDict 가 정본이라
+#     **손으로 안 적는다** — 새 시즌이 들어오면 --all 이 저절로 늘어난다 (scripts/acseason.py).
+#     ⚠ 시즌1↔2 는 같은 id인데 수치가 갈아엎어졌다 (밴드 29/29·맹약 18/18·기물 195/200) —
+#       시즌을 섞어 참조하면 안 된다. 새 시즌 대응 절차는 .claude/skills/autochess-season.
 #     + public/ac/ 아이콘 134장 (맹약·밴드·장비·능력 분류·모드·특훈 적 유형). --no-icons로 아이콘 생략
 #     (위수 협의=오토체스 가이드. 입력은 .gamedata/{kr,jp,en}_activity_table.json 하나 —
 #      activity.AUTOCHESS_SEASON.act2autochess 에 774KB가 통째로 박혀 있다.
@@ -161,7 +166,7 @@ python3 scripts/build-autochess.py             # → app/data/autochess{,.en,.ja
 #      ⚠ 시즌 블록(activity.AUTOCHESS_SEASON) 말고 **최상위 autoChessData** 도 같이 읽는다 —
 #        특훈 적 유형의 공식 이름·설명, 리더 적(boss)→적 id 매핑이 거기에만 있다.
 #      --no-icons 로 아이콘 다운로드를 건너뛸 수 있다)
-python3 scripts/build-autochess-routes.py      # → app/data/autochess-routes.json (위수 협의 전장 6장)
+python3 scripts/build-autochess-routes.py --all # → autochess{,-s<N>}-routes.json (위수 협의 전장)
 #     ⚠ **맵은 stageDatasDict → stage_table[stageId].levelId** 다. battleDataDict 의 levelId 는
 #       라운드별 웨이브 정의라 지형이 전부 같고, 그 routes 를 실제 맵에 얹으면 벽을 뚫는다
 #       (2026-08-30에 두 번 틀린 자리). 지형만 싣고 적 경로는 넣지 않는다.

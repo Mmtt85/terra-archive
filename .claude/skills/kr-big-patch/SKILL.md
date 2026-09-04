@@ -108,11 +108,12 @@ python3 scripts/build-stages-rogue.py        # → app/data/stages-rogue{,.en,.j
 위수 협의(오토체스) 시즌이 열렸거나 갱신됐으면:
 
 ```bash
-python3 scripts/build-autochess.py           # → app/data/autochess{,.en,.ja}.json + public/ac/ 아이콘
-python3 scripts/build-autochess-routes.py    # → app/data/autochess-routes.json (전투 맵·적 이동 경로)
+python3 scripts/build-autochess.py --all         # → autochess{,-s<N>}{,.en,.ja}.json + public/ac/ 아이콘
+python3 scripts/build-autochess-routes.py --all  # → autochess{,-s<N>}-routes.json (전투 맵·적 이동 경로)
 ```
-> 새 시즌은 `activity.AUTOCHESS_SEASON.act<N>autochess` 로 들어온다 —
-> 스크립트 상단 `ACT` 상수를 그 키로 올려야 한다 (ACT1은 EN 이름 폴백 전용).
+> **`--all` 로 돌린다** — 지난 시즌 보기(시즌 전환기)가 있어서 옛 시즌 산출물도 같이 있어야 한다.
+> 시즌 목록은 `autoChessData.versionInfoDict` 에서 저절로 읽으므로 **상수를 손댈 일이 없다.**
+> **새 시즌이 처음 들어왔다면 화면 배선 4줄을 더 고쳐야 한다 — `autochess-season` 스킬을 쓸 것.**
 > 새 아이콘이 생기면 `node scripts/r2-sync.mjs` 를 같이 돌린다 — `asset()`은 로컬에서도 R2를 문다.
 > 헤더의 기간 한정 바로가기는 `app/home.tsx`의 `PROMO` 상수(시작·종료 시각)를 새 시즌 값으로 고친다.
 

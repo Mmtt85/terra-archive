@@ -2,8 +2,22 @@
 """위수 협의(오토체스) 가이드 데이터 — app/data/autochess{,.en,.ja}.json + public/ac/ 아이콘.
 
 사용:
-  python3 scripts/build-autochess.py            # 데이터 + 아이콘
+  python3 scripts/build-autochess.py            # 최신 시즌 (데이터 + 아이콘)
+  python3 scripts/build-autochess.py --all      # 지난 시즌까지 전부 — 점검일엔 이걸 쓴다
+  python3 scripts/build-autochess.py --season 1 # 그 시즌만
   python3 scripts/build-autochess.py --no-icons # 데이터만 (아이콘은 이미 받아둔 경우)
+
+시즌 (사용자 요청 2026-09-05 "예전 맹약 어땠는지 궁금해하는 사람들도 많더라"):
+  최신 시즌은 **파일명이 그대로** autochess.json — 기존 임포트·링크가 안 깨진다.
+  지난 시즌은 autochess-s<N>.json 이고, 목록은 autochess-seasons.json 이 낸다.
+  시즌 번호·활동 id 는 **손으로 적지 않는다** — autoChessData.versionInfoDict 가 정본이라
+  새 시즌이 들어오면 `--all` 한 번으로 저절로 늘어난다. 새 시즌 대응 절차는
+  `.claude/skills/autochess-season` 스킬이 정본.
+  ⚠ 시즌1↔2 사이에 **같은 id인데 수치가 갈아엎어졌다** (밴드 29/29 · 맹약 18/18 ·
+    기물 195/200 실측). 그래서 시즌을 섞어 참조하면 안 된다 — 각 시즌 블록만 본다.
+  ⚠ 최상위 autoChessData 는 시즌 union 이라 **지난 시즌을 구워도 현재 값**이 나온다
+    (밴드 해금 조건·특훈 적 유형 이름 등). 이름·조건 수준이라 그대로 두지만, 지난 시즌
+    화면에서 해금 조건이 당시와 다를 수 있다.
 
 입력은 **이미 받아둔 .gamedata/*_activity_table.json** 이다 (fetch-gamedata.py가 챙긴다).
 위수 협의는 별도 테이블이 아니라 activity_table 안에
@@ -52,8 +66,8 @@ MODTYPE_ICON = f"{ASSETS}/arts/ui/uniequiptype"  # <typeIcon 소문자>.png
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from imgutil import save_webp  # noqa: E402
+from acseason import dispatch_all, out_name, season_arg, seasons_of  # noqa: E402
 
-ACT = "act2autochess"          # 시즌2 (위수 협의: 맹약)
 ACT1 = "act1autochess"         # 시즌1 — EN 이름 폴백 전용
 NO_ICONS = "--no-icons" in sys.argv
 
@@ -174,8 +188,23 @@ PREFIX = {"ko": "kr", "en": "en", "ja": "jp"}
 SUFFIX = {"ko": "", "en": ".en", "ja": ".ja"}
 
 acts, act1s, chars, skills, equips, char_equips, bequips, items, enemies, teams, outers = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}
+ats = {loc: load(f"{pre}_activity_table.json") for loc, pre in PREFIX.items()}
+
+SEASONS = seasons_of(ats["ko"])
+if not SEASONS:
+    sys.exit("kr_activity_table.json 에서 위수 협의 시즌을 못 찾았다 — fetch-gamedata 를 먼저 돌릴 것")
+LATEST = SEASONS[-1][0]
+
+if dispatch_all(__file__, SEASONS, sys.argv):     # --all → 시즌마다 새 프로세스
+    sys.exit()
+
+SEASON = season_arg(sys.argv) or LATEST
+ACT = dict(SEASONS).get(SEASON)
+if not ACT:
+    sys.exit(f"시즌 {SEASON} 이 없다 — 있는 시즌: {[n for n, _ in SEASONS]}")
+
 for loc, pre in PREFIX.items():
-    at = load(f"{pre}_activity_table.json")
+    at = ats[loc]
     season = at.get("activity", {}).get("AUTOCHESS_SEASON", {})
     acts[loc] = season.get(ACT)
     act1s[loc] = season.get(ACT1)
@@ -197,7 +226,8 @@ for loc, pre in PREFIX.items():
 
 KR = acts["ko"]
 if not KR:
-    sys.exit("kr_activity_table.json 에 act2autochess 가 없다 — fetch-gamedata.py 를 먼저 돌릴 것")
+    sys.exit(f"kr_activity_table.json 에 {ACT} 가 없다 — fetch-gamedata.py 를 먼저 돌릴 것")
+BASIC = acts["ko_basic"].get(ACT) or {}
 
 # 시즌1 EN에 없는 맹약의 영문 이름 — 국가 맹약만 공식 표기가 handbook_team_table에 있다
 BOND_TEAM = {"siracusaShip": "siracusa", "kazimierzShip": "kazimierz", "yanShip": "yan",
@@ -1389,7 +1419,7 @@ def build_locale(loc):
     #     character_table의 nationId/groupId/teamId 대조로 도출. 특성 맹약은 명단 밖 오퍼에
     #     대한 데이터가 없어 지어내지 않는다 (진영 없는 로도스 소속 등은 맹약 없이 남는다).
     s1_bonds = {}
-    a1_ko = acts.get("ko1") or (load("kr_activity_table.json").get("activity", {}).get("AUTOCHESS_SEASON", {}).get(ACT1))
+    a1_ko = act1s.get("ko")
     if a1_ko:
         cdd1 = a1_ko.get("charChessDataDict") or {}
         rows1 = a1_ko.get("charShopChessDatas") or []
@@ -1528,6 +1558,10 @@ def build_locale(loc):
     doc = {
         "id": ACT,
         "name": season_name,
+        "season": SEASON,
+        "cur": SEASON == LATEST,
+        # 한국 서버 개최 기간 (basicInfo) — 지난 시즌 안내문에 그대로 쓴다
+        "period": [BASIC.get("startTime"), BASIC.get("endTime")],
         "krOnly": krOnly,
         "token": token.get("name") or "",
         "const": {
@@ -1568,12 +1602,20 @@ def build_locale(loc):
 docs = {}
 for loc in ("ko", "en", "ja"):
     docs[loc] = build_locale(loc)
-    path = os.path.join(DATA, f"autochess{SUFFIX[loc]}.json")
+    path = os.path.join(DATA, out_name(SEASON, LATEST, SUFFIX[loc]) + ".json")
     with open(path, "w", encoding="utf-8") as f:
         json.dump(docs[loc], f, ensure_ascii=False, separators=(",", ":"))
     print(f"{os.path.relpath(path, REPO)}  {os.path.getsize(path)/1024:.0f}KB", file=sys.stderr)
 
+# 시즌 목록 — 화면의 시즌 전환기가 읽는다. 어느 시즌을 굽든 같은 내용이라 매번 덮어쓴다.
+idx = [{"n": n, "id": aid, "file": out_name(n, LATEST),
+        "s": (acts["ko_basic"].get(aid) or {}).get("startTime"),
+        "e": (acts["ko_basic"].get(aid) or {}).get("endTime")} for n, aid in SEASONS]
+with open(os.path.join(DATA, "autochess-seasons.json"), "w", encoding="utf-8") as f:
+    json.dump(idx, f, ensure_ascii=False, separators=(",", ":"))
+
 d = docs["ko"]
+print(f"시즌 {SEASON}/{LATEST} ({ACT})", file=sys.stderr)
 print(f"  맹약 {len(d['bonds'])} · 기물 {len(d['chess'])} · 능력 {len(d['gar'])} · 장비 {len(d['equips'])}"
       f" · 밴드 {len(d['bands'])} · 전략 {len(d['buffs'])} · 특수 적 {len(d['enemies'])}"
       f" · 마일스톤 {len(d['milestones'])} · 모드 {len(d['modes'])}", file=sys.stderr)

@@ -2846,6 +2846,11 @@ const D: Record<string, Pair> = {
   "이 목록에서 검색": ["Search this list", "この一覧を検索"],
   "찾는 글이 없습니다.": ["Nothing matches.", "該当する文章がありません。"],
   "위수 협의 보기": ["Stronghold Protocol views", "堅守協定の表示"],
+  // 시즌 전환 (2026-09-05) — 지난 시즌 데이터를 그대로 볼 수 있다 ("시즌"은 위에 이미 있다)
+  "시즌 {n}": ["Season {n}", "シーズン{n}"],
+  "종료된 시즌입니다 — 당시 데이터를 그대로 보여 줍니다. 개최 기간 {p}": [
+    "This season has ended — the data is shown exactly as it was. Ran {p}",
+    "終了したシーズンです — 当時のデータをそのまま表示します。開催期間 {p}"],
   "위수 협의 능력": ["Garrison ability", "駐留能力"],
   // 편성 계산기 (2026-08-29)
   "덱편성 시뮬레이터": ["Deck builder", "デッキ編成シミュレーター"],

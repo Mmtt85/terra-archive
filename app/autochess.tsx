@@ -17,7 +17,7 @@
 
 import { cloneElement, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useI18n, rich, type T } from "./i18n";
+import { useI18n, rich, DT_LOCALE, type T } from "./i18n";
 import { isNewFeature } from "./whats-new";
 import { computeBoard, MAX_BOARD, MAX_BOARD_ITEM, MAX_DECK, BOARD9_ITEM, type BoardSlot } from "./autochess-board";
 import { normSearch, useSearchInput } from "./search";
@@ -44,12 +44,22 @@ export type AcRouteDoc = { maps: AcMapBoard[]; rounds: AcWave[]; bosses: Record<
 // ⚠ 지상 경로를 여기서 다시 잇지 않는다 — StageRouteMap 이 이미 격자 위에서 8방향
 // BFS(모서리 뚫기 금지) + 통로 순간이동 간선까지 걸어 준다 (.claude/skills/route-map-rules).
 // 4방향 BFS를 따로 짜 넣었다가 걷어냈다 (2026-08-30) — 규칙의 정본은 렌더러 한 곳이다.
+// 전투 맵은 **언어와 무관**하다 (적 이름표 nm이 ko/en/ja를 다 들고 있다) — 그래서
+// 로케일 래퍼가 아니라 여기서 시즌별로 문다. ⚠ 새 시즌이 오면 이 표에 한 줄 더한다
+// (지난 시즌이 -s<N> 으로 내려가므로 그 줄도 같이 고친다 — autochess-season 스킬 참조).
+const AC_ROUTE_IMPORT: Record<number, () => Promise<unknown>> = {
+  1: () => import("./data/autochess-s1-routes.json"),
+  2: () => import("./data/autochess-routes.json"),
+};
 let AC_ROUTES: AcRouteDoc | null = null;
+let AC_ROUTES_SEASON = 0;
 let AC_ROUTES_LOADING: Promise<void> | null = null;
-function loadAcRoutes(): Promise<void> {
-  if (AC_ROUTES) return Promise.resolve();
-  AC_ROUTES_LOADING ??= import("./data/autochess-routes.json").then((m) => {
-    AC_ROUTES = (m.default ?? m) as unknown as AcRouteDoc;
+function loadAcRoutes(season: number): Promise<void> {
+  if (AC_ROUTES && AC_ROUTES_SEASON === season) return Promise.resolve();
+  if (AC_ROUTES_SEASON !== season) { AC_ROUTES = null; AC_ROUTES_LOADING = null; }
+  AC_ROUTES_SEASON = season;
+  AC_ROUTES_LOADING ??= (AC_ROUTE_IMPORT[season] ?? AC_ROUTE_IMPORT[2])().then((m) => {
+    AC_ROUTES = ((m as { default?: unknown }).default ?? m) as AcRouteDoc;
   });
   return AC_ROUTES_LOADING;
 }
@@ -157,8 +167,18 @@ export type AcBoss = {
   id: string; sort: number; enemy: string; n: string; code?: string | null;
   w: number; hide: boolean; hp: Record<string, number>; round: number[];
 };
+/** 시즌 목록 (app/data/autochess-seasons.json) — 화면 위 시즌 전환기가 읽는다.
+ *  s·e 는 **한국 서버** 개최 기간(초). file 은 데이터 파일 이름 뿌리. */
+export type AcSeason = { n: number; id: string; file: string; s: number; e: number };
+
 export type AutochessDoc = {
   id: string; name: string; krOnly: boolean; token: string;
+  /** 몇 번째 시즌인가 (build-autochess.py — autoChessData.versionInfoDict 가 정본) */
+  season: number;
+  /** 지금 열려 있는 최신 시즌인가 */
+  cur: boolean;
+  /** 한국 서버 개최 기간 [시작, 끝] (초) */
+  period: [number | null, number | null];
   const: { deck: number; board: number; refresh: number; store: number; borrow: number; hpCost: number };
   modes: AcMode[];
   shop: {
@@ -440,8 +460,15 @@ type AcFilters = ReturnType<typeof useAcFilters>;
 /** 드롭다운 옆 숫자 — 필터 한 벌마다 따로 센다 (facetCount) */
 type AcFacets = { nation: Map<string, number>; trait: Map<string, number>; gar: Map<string, number> };
 
-export default function AutochessGuide({ doc, onShowOperator }: {
+export default function AutochessGuide({ doc, seasons, onSeason, seasonBusy, onShowOperator }: {
   doc: AutochessDoc;
+  /** 고를 수 있는 시즌 목록. 하나뿐이면 전환기를 안 그린다 */
+  seasons?: AcSeason[];
+  /** 시즌 갈아타기 — 래퍼가 그 시즌 데이터를 받아 오고 `key` 로 통째로 새로 마운트한다
+   *  (판·필터·모달이 다른 시즌 id 를 들고 넘어가지 않게 하려면 리마운트가 가장 확실하다) */
+  onSeason?: (n: number) => void;
+  /** 시즌 데이터를 받는 중 — 버튼을 잠근다 */
+  seasonBusy?: number;
   /** 백과사전 오퍼 상세 모달 열기 — 기물 상세에서 특질·스킬·모듈 전문을 볼 때 쓴다 */
   onShowOperator?: (id: string) => void;
 }) {
@@ -728,10 +755,10 @@ export default function AutochessGuide({ doc, onShowOperator }: {
   useEffect(() => {
     if (!wantRoutes || routesReady) return;
     let live = true;
-    loadAcRoutes().then(() => { if (live) setRoutesReady(true); })
+    loadAcRoutes(doc.season ?? 2).then(() => { if (live) setRoutesReady(true); })
       .catch(() => { /* 못 받아도 나머지 탭은 그대로 돈다 */ });
     return () => { live = false; };
-  }, [wantRoutes, routesReady]);
+  }, [wantRoutes, routesReady, doc.season]);
   const enemyRow = useMemo(
     () => (enemy ? doc.enemies.find((e) => e.id === enemy) ?? null : null), [doc, enemy]);
   const bossRow = useMemo(
@@ -1537,6 +1564,14 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     </div>
   );
 
+  // 지난 시즌 안내문의 개최 기간 — 한국 서버 basicInfo 그대로 (build-autochess.py period)
+  const seasonPeriod = useMemo(() => {
+    const [s, e] = doc.period ?? [];
+    if (!s || !e) return "";
+    const f = new Intl.DateTimeFormat(DT_LOCALE[locale], { year: "numeric", month: "short", day: "numeric" });
+    return `${f.format(new Date(s * 1000))} ~ ${f.format(new Date(e * 1000))}`;
+  }, [doc.period, locale]);
+
   return (
     <section className="ac-guide" aria-labelledby="ac-title">
       <header className="sim-head ac-head">
@@ -1550,6 +1585,25 @@ export default function AutochessGuide({ doc, onShowOperator }: {
         </button>
       </header>
       <p className="sim-intro">{t("맹약(진영·특성)별 오퍼레이터와 각자의 위수 협의 전용 능력, 특훈 적과 리더 적, 보급센터 수치를 게임 데이터에서 그대로 정리했습니다.")}</p>
+      {/* 시즌 전환 (사용자 요청 2026-09-05 "예전 맹약 어땠는지 궁금해하는 사람들도 많더라").
+          ⚠ 시즌마다 **같은 id인데 수치가 다르다** — 섞어 보여 주면 안 된다. 그래서 래퍼가
+          key로 통째로 새로 마운트하고, 여기서는 무엇을 보고 있는지만 밝힌다. */}
+      {(seasons?.length ?? 0) > 1 && (
+        <div className="ac-seasons" role="tablist" aria-label={t("시즌")}>
+          {[...seasons!].sort((a, b) => b.n - a.n).map((sn) => (
+            <button key={sn.n} type="button" role="tab" aria-selected={sn.n === doc.season}
+              className={sn.n === doc.season ? "on" : ""}
+              disabled={seasonBusy != null}
+              onClick={() => { if (sn.n !== doc.season) onSeason?.(sn.n); }}>
+              {t("시즌 {n}", { n: sn.n })}
+              {seasonBusy === sn.n && <span className="ac-seasons-busy" aria-hidden />}
+            </button>
+          ))}
+        </div>
+      )}
+      {doc.cur === false && (
+        <p className="sim-note">{t("종료된 시즌입니다 — 당시 데이터를 그대로 보여 줍니다. 개최 기간 {p}", { p: seasonPeriod })}</p>
+      )}
       {doc.krOnly && (
         <p className="sim-note">{t("이 모드는 아직 글로벌 서버에 출시되지 않아 설명문은 한국어 원문으로 표시됩니다. 일부 이름은 시즌 1의 영어 표기입니다.")}</p>
       )}

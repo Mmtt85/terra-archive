@@ -2,7 +2,13 @@
 """위수 협의 전투 맵 — app/data/autochess-routes.json (제보 c3d2c056, 2026-08-30).
 
 사용:
-  python3 scripts/build-autochess-routes.py
+  python3 scripts/build-autochess-routes.py             # 최신 시즌
+  python3 scripts/build-autochess-routes.py --all       # 지난 시즌까지 전부
+  python3 scripts/build-autochess-routes.py --season 1  # 그 시즌만
+
+시즌 규약은 build-autochess.py 와 같다 (거기가 정본) — 최신 시즌만 파일명이 그대로
+`autochess-routes.json`, 지난 시즌은 `autochess-routes-s<N>.json`. 시즌 목록은
+autoChessData.versionInfoDict 에서 나온다.
 
 ⚠⚠ **어느 레벨이 '맵'인지** — 여기서 두 번 틀렸다 (2026-08-30):
   · battleDataDict 의 levelId(level_act1autochess_01 …)는 **라운드별 웨이브 정의**다.
@@ -42,8 +48,7 @@ CACHE = os.path.join(REPO, ".gamedata", "aclevel")
 os.makedirs(CACHE, exist_ok=True)
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from routeutil import grid_of_level  # noqa: E402
-
-ACT = "act2autochess"
+from acseason import dispatch_all, out_name, season_arg, seasons_of  # noqa: E402
 
 
 def fetch(path, branch="kr"):
@@ -77,7 +82,18 @@ def fetch_handbook(branch):
 
 
 def main():
-    act = local("kr_activity_table.json")["activity"]["AUTOCHESS_SEASON"][ACT]
+    at = local("kr_activity_table.json")
+    seasons = seasons_of(at)
+    if not seasons:
+        sys.exit("위수 협의 시즌을 못 찾았다 — fetch-gamedata 를 먼저 돌릴 것")
+    if dispatch_all(__file__, seasons, sys.argv):      # --all → 시즌마다 새 프로세스
+        return
+    latest = seasons[-1][0]
+    season = season_arg(sys.argv) or latest
+    ACT = dict(seasons).get(season)
+    if not ACT:
+        sys.exit(f"시즌 {season} 이 없다 — 있는 시즌: {[n for n, _ in seasons]}")
+    act = at["activity"]["AUTOCHESS_SEASON"][ACT]
     stages = local("kr_stage_table.json")["stages"]
     modes = {m["modeId"]: m for m in act["modeDataDict"].values()}
 
@@ -192,9 +208,10 @@ def main():
             nm[eid] = [(books[l].get(eid) or {}).get("name") or eid for l in ("ko", "en", "ja")]
 
     out = {"maps": rows, "rounds": waves, "bosses": bosses, "nm": nm}
-    fn = os.path.join(DATA, "autochess-routes.json")
+    name = out_name(season, latest) + "-routes.json"
+    fn = os.path.join(DATA, name)
     json.dump(out, open(fn, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
-    print(f"  app/data/autochess-routes.json  {os.path.getsize(fn) // 1024}KB")
+    print(f"  app/data/{name}  {os.path.getsize(fn) // 1024}KB  (시즌 {season}/{latest}, {ACT})")
     print(f"  전장 {len({r['stage'] for r in rows})}장 x 구획 2 = {len(rows)}판 · {rows[0]['w']}x{rows[0]['h']}")
     print(f"  실린 맵: {', '.join(sorted({r['stage'] for r in rows}))}")
     print(f"  라운드 웨이브 {len(waves)}판 · 적 이름표 보충 {len(nm)}")

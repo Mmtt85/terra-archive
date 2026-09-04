@@ -19629,6 +19629,44 @@ p.sb-trline { margin-top: 2px; }
   color: var(--muted);
 }
 .ac-views { margin-bottom: 8px; }
+/* 시즌 전환 (2026-09-05) — 소개문 바로 아래, 뷰 탭보다 한 단계 작게. 지난 시즌을 고르면
+   가이드가 통째로 새로 마운트된다 (autochess-seasons.tsx) */
+.ac-seasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 10px;
+}
+.ac-seasons button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.ac-seasons button:hover:not(:disabled) { border-color: var(--accent); color: var(--fg); }
+.ac-seasons button.on {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--fg);
+}
+.ac-seasons button:disabled { cursor: progress; opacity: 0.7; }
+.ac-seasons-busy {
+  width: 10px;
+  height: 10px;
+  border: 2px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: ac-seasons-spin 0.7s linear infinite;
+}
+@keyframes ac-seasons-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .ac-seasons-busy { animation: none; } }
 /* 뷰 안의 2단 탭 — S.W.E.E.T. 리포트(맹약·전략·적), 물자관리소(오퍼레이터·아이템·수치).
    상단 뷰 탭(.ac-views)과 한 단계 위계가 다르게 보이도록 알약형으로 (2026-08-22) */
 .ac-subtabs {
