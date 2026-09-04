@@ -1327,15 +1327,22 @@ export default function AutochessGuide({ doc, onShowOperator }: {
       if (!(e.target as Element)?.closest?.(".ac-garsel, .ac-garsel-menu")) closeMenus();
     };
     const onEsc = (e: KeyboardEvent) => { if (e.key === "Escape") closeMenus(); };
-    window.addEventListener("mousedown", onDown);
-    window.addEventListener("keydown", onEsc);
     // 화면 좌표에 고정해 띄우므로, 뒤가 스크롤되면 버튼과 어긋난다 — 그때는 닫는다.
     // (모달 본문 스크롤은 window 로 안 올라오니 캡처 단계에서 듣는다)
-    window.addEventListener("scroll", closeMenus, true);
+    // ⚠ 캡처 단계라 **목록 자신의 스크롤도 여기로 올라온다** — 그대로 닫으면 긴 목록에서
+    //   휠을 굴리는 순간 창이 꺼진다 (사용자 제보 2026-09-04). 목록 안에서 난 스크롤은 뺀다.
+    const onScroll = (e: Event) => {
+      const el = e.target as Element | null;
+      if (el && typeof el.closest === "function" && el.closest(".ac-garsel-menu")) return;
+      closeMenus();
+    };
+    window.addEventListener("mousedown", onDown);
+    window.addEventListener("keydown", onEsc);
+    window.addEventListener("scroll", onScroll, true);
     window.addEventListener("resize", closeMenus);
     return () => {
       window.removeEventListener("mousedown", onDown); window.removeEventListener("keydown", onEsc);
-      window.removeEventListener("scroll", closeMenus, true); window.removeEventListener("resize", closeMenus);
+      window.removeEventListener("scroll", onScroll, true); window.removeEventListener("resize", closeMenus);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openMenu]);
