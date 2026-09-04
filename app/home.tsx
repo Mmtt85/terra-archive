@@ -50,6 +50,7 @@ const OmniSearch = lazy(() => import("./omni-search"));
 import BridgeButton from "./lens/bridge-button";
 import { asset } from "./assets";
 import { CONTACT_EMAIL } from "./contact";
+import { descLines } from "./desc-lines";
 import ChangelogButton from "./changelog";
 // 헤더 치비 대화 — 크롬 내장 Gemini Nano (베타, 2026-08-03)
 import { ChibiChatPanel, chibiChatStatus, type ChibiActionRequest, type ChibiChatStatus } from "./chibi-chat";
@@ -282,6 +283,13 @@ const EVENT_GUIDE_TAB: Record<string, Tab> = { AUTOCHESS_SEASON: "autochess" };
 const OPERATOR_PATH_RE = /^\/(?:en\/|ja\/)?operators\/([^/]+)\/?$/;
 const operatorPath = (locale: Locale, id: string) => `${LOCALE_BASE[locale]}/operators/${id}`;
 const archivePath = (locale: Locale) => `${LOCALE_BASE[locale]}/operators`;
+// ⚠ 미실장(중섭 선행) 오퍼는 **상세 라우트가 없다** — seo-operator.ts가 일부러 안 만든다
+//    (비공식 AI 번역이 색인됐다가 정식 출시 때 통째로 갈리는 게 검색 품질에 더 나쁘다).
+//    그래서 그 주소로 replaceState하면 새로고침·공유가 404다 (사용자 제보 2026-09-04).
+//    미실장만 목록 경로 + #op- 딥링크로 둔다 — 새로고침해도 모달이 그대로 열린다.
+//    ?future=1을 붙여야 미래시 토글이 꺼진 사람에게도 그 오퍼가 존재한다.
+const operatorHref = (locale: Locale, op: { id: string; unreleased?: boolean }) =>
+  op.unreleased ? `${archivePath(locale)}?future=1#op-${op.id}` : operatorPath(locale, op.id);
 const operatorIdFromPath = (pathname: string) => {
   const m = OPERATOR_PATH_RE.exec(pathname);
   return m ? decodeURIComponent(m[1]) : null;
@@ -1419,13 +1427,22 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   // (카톡·네이버 카페 웹뷰 — bfcache 미지원)에서 back()이 문서를 통째로 리로드시켜
   // 목록·필터·스크롤이 전부 초기화되는 버그가 있었다 (사용자 리포트 2026-07-18).
   // replaceState는 네비게이션이 아니라 리로드가 원천적으로 발생하지 않는다.
-  // 주소는 상세의 정본 경로(/operators/<id>)로 바꾼다 — 공유·새로고침이 색인된 주소가 된다
-  // (2026-08-06). replaceState라 히스토리 엔트리는 여전히 안 쌓인다.
+  //
+  // ⚠ 주소는 **목록 경로 + #op-<id>** 다. 2026-08-06에 상세의 정본 경로(/operators/<id>)로
+  //   바꿨다가 2026-09-04에 되돌렸다 — 그 주소로 새로고침하면 **모달이 페이지에 박힌 채로**
+  //   뜬다(그 라우트의 프리렌더 HTML이 페이지 뷰이기 때문). 하이드레이션 뒤에 모달로 바꿔
+  //   봤지만, 브라우저는 JS가 돌기 전에 이미 그 HTML을 그려 놓아서 **페이지 → 모달 번쩍임**이
+  //   남는다 (사용자 제보 2026-09-04, 두 번). 목록 경로는 프리렌더가 곧 목록이라 새로고침해도
+  //   모달이 목록 위에 그대로 뜬다.
+  //   정본 경로는 그대로 살아 있다 — 카드 <a href>·사이트맵이 가리키므로 색인은 영향 없고,
+  //   검색 결과로 직접 들어오면 종전대로 상세 페이지가 뜬다.
   const openOperator = useCallback((operator: Operator) => {
     setSelected(operator);
-    const fut = new URLSearchParams(window.location.search).get("future") === "1";
-    history.replaceState(null, "", operatorPath(locale, operator.id) + (fut ? "?future=1" : ""));
-  }, [locale]);
+    const base = tabPath("archive");   // ?future=1이 켜져 있으면 tabPath가 이미 달고 온다
+    // 미실장은 미래시 토글이 꺼진 사람이 링크를 받아도 열리도록 ?future=1을 실어 둔다
+    const path = operator.unreleased && !base.includes("?") ? `${base}?future=1` : base;
+    history.replaceState(null, "", `${path}#op-${operator.id}`);
+  }, [tabPath]);
   const closeOperator = () => {
     setSelected(null);
     // 주소를 되돌리는 건 **주소가 오퍼를 가리키고 있을 때만**. 플래너 등 다른 탭에서
@@ -2023,7 +2040,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
       {tab === "archive" && pageOperator && (
         <OperatorPage operator={pageOperator} onUpgrade={openUpgradeFor} includeFuture={includeFuture}
           listHref={tabPath("archive")} operators={operators}
-          onRelated={(op) => { setPageOperator(op); history.pushState(null, "", operatorPath(locale, op.id)); scrollMainTop(); }}
+          onRelated={(op) => { setPageOperator(op); history.pushState(null, "", operatorHref(locale, op)); scrollMainTop(); }}
           onBack={() => { setPageOperator(null); history.pushState(null, "", tabPath("archive")); }} />
       )}
       {tab === "archive" && !pageOperator && <section className="explorer" aria-labelledby="explorer-title">
@@ -2432,7 +2449,7 @@ function OperatorCard({ operator, index, onSelect }: { operator: Operator; index
   // 실제 앵커 — 크롤러가 따라갈 내부 링크이자 새 탭/북마크가 되는 정본 주소.
   // 클릭은 종전대로 가로채 모달을 연다 (미실장 오퍼는 상세 라우트가 없어 목록 주소로).
   return (
-    <a className="operator-card" href={operator.unreleased ? archivePath(locale) : operatorPath(locale, operator.id)}
+    <a className="operator-card" href={operatorHref(locale, operator)}
       onClick={(event) => {
         if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
         event.preventDefault(); onSelect(operator);
@@ -2556,7 +2573,7 @@ function RelatedOperators({ operator, operators, onSelect }: {
           <span className="op-related-label">{g.label}</span>
           <div className="op-related-list">
             {g.items.map((o) => (
-              <a key={o.id} href={operatorPath(locale, o.id)} className="op-related-chip"
+              <a key={o.id} href={operatorHref(locale, o)} className="op-related-chip"
                 onClick={(event) => {
                   if (!onSelect || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
                   event.preventDefault(); onSelect(o);
@@ -2633,7 +2650,15 @@ function OperatorFile({ operator, onUpgrade, includeFuture, operators, onRelated
                     <article key={potential.rank}>
                       <span>P{potential.rank}</span>
                       <p>{potential.description}</p>
-                      {potential.detail ? <em className="potential-detail">{potential.detail}</em> : null}
+                      {/* 증가폭은 " · "(같은 재능 안의 여러 수치)와 " / "(재능이 여럿)로 이어
+                          붙여 오므로, 그 자리에서 줄을 나눈다 — 한 줄로 붙이면 좁은 칸에서
+                          벽이 된다 (사용자 요청 2026-09-04). 구분자는 potutil.py가 문맥에서
+                          제외하는 문자라 본문 안에 다시 나타나지 않는다. */}
+                      {potential.detail ? (
+                        <em className="potential-detail">
+                          {potential.detail.split(/ \/ | · /).map((line, at) => <b key={at}>{line}</b>)}
+                        </em>
+                      ) : null}
                     </article>
                   ))}
                 </div>
@@ -2672,8 +2697,12 @@ function OperatorFile({ operator, onUpgrade, includeFuture, operators, onRelated
             <h3>{t("재능")}</h3>
             {operator.talents.length ? (
               <div className="detail-list">
+                {/* 효과가 여럿인 재능은 한 덩어리로 오므로 줄을 나눠 준다 (desc-lines.ts) */}
                 {operator.talents.map((talent, index) => (
-                  <article key={`${talent.name}-${index}`}><b>{talent.name}</b><p>{talent.description}</p></article>
+                  <article key={`${talent.name}-${index}`}>
+                    <b>{talent.name}</b>
+                    {descLines(talent.description).map((line, at) => <p key={at}>{line}</p>)}
+                  </article>
                 ))}
               </div>
             ) : (
@@ -4009,7 +4038,10 @@ function SummonList({ summons }: { summons: Summon[] }) {
               <div className="summon-sub">
                 <b>{t("재능")}</b>
                 {summon.talents.map((talent, i) => (
-                  <p key={i}><i>{talent.name}</i>{talent.description}</p>
+                  // 이름표(<i>)가 첫 줄 앞에 붙어야 해서 여기선 <br>로 나눈다
+                  <p key={i}><i>{talent.name}</i>{descLines(talent.description).map((line, at) => (
+                    <span key={at}>{at > 0 && <br />}{line}</span>
+                  ))}</p>
                 ))}
               </div>
             )}

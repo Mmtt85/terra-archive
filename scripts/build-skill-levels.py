@@ -38,6 +38,7 @@ Usage: python3 scripts/build-skill-levels.py [gamedata-dir]   # default: .gameda
      "ri":  [0,0,0,0,0,1,1,1,1,1]}}  # 레벨→rg 색인. 레벨을 안 타면 operators.json의 것 하나로 충분
   배열 길이 = 레벨 수(보통 10, 특화가 없는 스킬은 7).
 """
+import cntr
 import json
 import os
 import re
@@ -293,7 +294,7 @@ def main():
     # 미실장 오퍼 텍스트의 비공식 번역 사전 — ti 변형 문장을 여기서 찾는다 (regen-operators와 공용)
     mpath = f"{REPO}/scripts/cn-translations.json"
     global MANUAL
-    MANUAL = load(mpath) if os.path.exists(mpath) else {}
+    MANUAL = cntr.load(mpath)   # 말줄임표 표기 흔들림 흡수 (cntr.py)
     # 로케일별 operators.json — 미실장 오퍼 폴백 시 번역된 설명을 여기서 가져온다
     op_text = {}
     for locale in LOCALES:

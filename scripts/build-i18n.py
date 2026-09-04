@@ -21,6 +21,7 @@
 # Missing text falls back to the KR value — the site must never break because a
 # locale table lags behind KR.
 import potutil
+import cntr
 import json, os, re, sys
 from collections import Counter, defaultdict
 
@@ -41,7 +42,7 @@ _kr_chars = _kr_chars.get("chars", _kr_chars)
 # 채우고, ② cn-translations.json(AI 비공식 번역)의 ko→en/ja 대응으로 고유 텍스트를
 # 채운다. 둘 다 없으면 한국어 그대로 폴백 (사이트가 깨지지 않는 게 우선).
 CN_MANUAL_PATH = f"{REPO}/scripts/cn-translations.json"
-CN_MANUAL = load(CN_MANUAL_PATH) if os.path.exists(CN_MANUAL_PATH) else {}
+CN_MANUAL = cntr.load(CN_MANUAL_PATH)   # 말줄임표 표기 흔들림 흡수 (cntr.py)
 HANGUL = re.compile(r"[가-힣]")
 
 # ─── shared text helpers (same rules as regen-operators.py) ───────────────────

@@ -1,6 +1,7 @@
 # Build app/data/infra.json — structured RIIC data for the base planner.
 # Usage: python3 scripts/build-infra.py <gamedata-dir>
 import json, os, re, sys
+import cntr
 
 S = sys.argv[1] if len(sys.argv) > 1 else os.environ.get("GAMEDATA_DIR", ".gamedata")
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -47,7 +48,7 @@ applied_overrides = set()
 # 번역이 없으면 원문 유지 + 경고 — 파서가 못 읽으므로 스킬 수치가 0으로 잡힌다.
 cn_building = load(f"{S}/cn_building_data.json")
 MANUAL_PATH = f"{REPO}/scripts/cn-translations.json"
-MANUAL = load(MANUAL_PATH) if os.path.exists(MANUAL_PATH) else {}
+MANUAL = cntr.load(MANUAL_PATH)   # 말줄임표 표기 흔들림 흡수 (cntr.py)
 
 ROOM_KO = {"MANUFACTURE": "제조소", "TRADING": "무역소", "POWER": "발전소", "WORKSHOP": "가공소",
            "DORMITORY": "숙소", "MEETING": "응접실", "HIRE": "사무실", "TRAINING": "훈련실",

@@ -24,6 +24,7 @@ AI 번역을 거치지 않는다 (미실장 오퍼만 CN을 폴백으로 쓴다)
   unlock: null = 즉시 열람(DIRECT). FAVOR=신뢰도, AWAKE=승진(param "2;1" = 정예화2 1단계).
 """
 import cnmiss
+import cntr
 import json
 import os
 import re
@@ -83,7 +84,7 @@ def sections(entry):
 # 미실장 오퍼의 CN 원문을 비공식 번역으로 덮어쓴다 (regen-operators와 같은 사전).
 # 제목 10종은 전부 번역돼 있고, 본문은 채워진 것만 바뀐다 — 없으면 원문 유지 + 경고.
 MANUAL_PATH = f"{REPO}/scripts/cn-translations.json"
-MANUAL = load(MANUAL_PATH) if os.path.exists(MANUAL_PATH) else {}
+MANUAL = cntr.load(MANUAL_PATH)   # 말줄임표 표기 흔들림 흡수 (cntr.py)
 untranslated = []
 
 
@@ -270,14 +271,21 @@ def localize(text, loc, cid, what):
         return hit[loc]
     if CJK_RE.search(text):
         untranslated.append((loc, cid, what, len(text)))
-        cnmiss.note(text, "profiles-%s" % what, cid)
+        # ⚠ 집계는 **ko 패스에서만** 한다 — 사전 항목 하나가 ko/en/ja를 함께 담으므로 ko만
+        #   훑어도 채울 키가 전부 나온다. 세 로케일에서 다 부르면 **이미 그 로케일 말인 줄**까지
+        #   미번역으로 잡힌다 (JA의 `【身長】147cm`·`【誕生日】6月1日` 등 70건, 2026-09-04 실측).
+        #   미실장 오퍼는 세 로케일이 모두 CN으로 폴백하므로 ko 패스에 같은 키가 반드시 나온다.
+        #   (로케일별 남은 글자 수 경고는 그대로라 ja만 비는 경우도 조용히 묻히지는 않는다.)
+        if loc == "ko":
+            cnmiss.note(text, "profiles-%s" % what, cid)
     return text
 
 
 CJK_RE = re.compile(r"[\u3400-\u9fff]")
 
 # 수동 사전을 로케일별 {CN 줄: 번역} 로 펴 둔다 — 본문은 줄 단위로 갈아 끼운다
-manual_lines = {loc: {k: v[loc] for k, v in MANUAL.items() if isinstance(v, dict) and v.get(loc)}
+# cntr.Dict로 감싼다 — 본문 줄 조회도 말줄임표 변종을 흡수해야 한다 (cntr.py 참조)
+manual_lines = {loc: cntr.Dict({k: v[loc] for k, v in MANUAL.items() if isinstance(v, dict) and v.get(loc)})
                 for loc in LOCALES}
 
 written = {}
@@ -329,7 +337,7 @@ for loc, (prefix, fallback) in LOCALES.items():
                 text, left = localize_lines(sec.get("text"), harvested[loc], cid)
                 if left:
                     text = localize_fields(text, harvested_fields[loc], loc, op_names[loc].get(cid), harvested_values[loc])
-                    text, left = localize_lines(text, manual_lines[loc], cid, report=True)
+                    text, left = localize_lines(text, manual_lines[loc], cid, report=loc == "ko")
                 if left:
                     untranslated.append((loc, cid, "text", left))
                 new_secs.append({**sec, "title": localize(sec.get("title"), loc, cid, "title"), "text": text})
@@ -354,7 +362,7 @@ for loc, (prefix, fallback) in LOCALES.items():
             if not text:
                 continue
             if from_cn:
-                text, left = localize_lines(text, manual_lines[loc], cid, report=True)
+                text, left = localize_lines(text, manual_lines[loc], cid, report=loc == "ko")
                 if left:
                     untranslated.append((loc, cid, "text", left))
                 used_fallback = True  # 모달의 '중국 서버 원문' 안내를 띄운다

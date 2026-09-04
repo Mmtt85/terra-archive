@@ -23,6 +23,7 @@ import json, os, re, sys, time, urllib.request
 import sys as _sys, os as _os
 _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
 from imgutil import save_webp
+import cntr
 
 S = sys.argv[1] if len(sys.argv) > 1 else os.environ.get("GAMEDATA_DIR", ".gamedata")
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -160,7 +161,7 @@ except FileNotFoundError:
 # 미실장 재료의 중국어 원문 → AI 비공식 번역 (scripts/cn-translations.json, {cn: {ko,en,ja}}).
 # 새 미실장 재료가 잡히면 AI(Claude)가 채운다 — 없으면 원문 유지 + 경고 출력.
 CN_MANUAL_PATH = f"{REPO}/scripts/cn-translations.json"
-CN_MANUAL = load(CN_MANUAL_PATH) if os.path.exists(CN_MANUAL_PATH) else {}
+CN_MANUAL = cntr.load(CN_MANUAL_PATH)   # 말줄임표 표기 흔들림 흡수 (cntr.py)
 
 def loc_field(iid, field):
     out = {"ko": ((kr_items.get(iid) or cn_items.get(iid) or {}).get(field))}

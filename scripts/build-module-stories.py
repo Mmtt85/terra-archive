@@ -19,6 +19,7 @@ public/modules/<locale>/<id>.json에 쓰고, 버튼을 눌렀을 때만 받아�
   {"<uniEquipId>": "본문\n본문…", …}   # 모듈 id → 이야기 전문
 """
 import cnmiss
+import cntr
 import json
 import os
 import re
@@ -37,7 +38,7 @@ ops = load(f"{REPO}/app/data/operators.json")
 LOCALES = {"ko": ("kr", "cn"), "en": ("en", "cn"), "ja": ("jp", "cn")}
 
 MANUAL_PATH = f"{REPO}/scripts/cn-translations.json"
-MANUAL = load(MANUAL_PATH) if os.path.exists(MANUAL_PATH) else {}
+MANUAL = cntr.load(MANUAL_PATH)   # 말줄임표 표기 흔들림 흡수 (cntr.py)
 CJK_RE = re.compile(r"[㐀-鿿]")
 untranslated = []
 
@@ -66,7 +67,13 @@ def localize(text, loc, mid):
         return hit[loc]
     if CJK_RE.search(text):
         untranslated.append((loc, mid, len(text)))
-        cnmiss.note(text, "modules", mid)
+        # ⚠ 집계는 **ko 패스에서만** 한다 — 사전 항목 하나가 ko/en/ja를 함께 담으므로 ko만
+        #   훑어도 채울 키가 전부 나온다. 세 로케일에서 다 부르면 **이미 그 로케일 말인 줄**까지
+        #   미번역으로 잡힌다 (JA의 `【身長】147cm`·`【誕生日】6月1日` 등 70건, 2026-09-04 실측).
+        #   미실장 오퍼는 세 로케일이 모두 CN으로 폴백하므로 ko 패스에 같은 키가 반드시 나온다.
+        #   (로케일별 남은 글자 수 경고는 그대로라 ja만 비는 경우도 조용히 묻히지는 않는다.)
+        if loc == "ko":
+            cnmiss.note(text, "modules", mid)
     return text
 
 

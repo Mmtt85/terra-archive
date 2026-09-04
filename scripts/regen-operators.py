@@ -2,6 +2,7 @@
 # Mechanical fields rebuilt for everyone; curated accent/nicknames preserved from old data.
 import potutil
 import cnmiss
+import cntr
 import json, re, sys
 
 import os, sys
@@ -555,7 +556,7 @@ ranges = cn_tables["ranges"]; team_table = cn_tables["team_table"]; handbook = c
 # 수동이 자동보다 우선(자동 다수결 오역 교정용). 남은 미번역은 원문 유지 + 경고 출력.
 CJK_RE = re.compile(r"[㐀-鿿]")
 MANUAL_PATH = f"{REPO}/scripts/cn-translations.json"
-MANUAL = load(MANUAL_PATH) if os.path.exists(MANUAL_PATH) else {}
+MANUAL = cntr.load(MANUAL_PATH)   # 말줄임표 표기 흔들림 흡수 (cntr.py)
 _pair_votes = defaultdict(Counter)
 def _pair(cn_v, kr_v):
     if isinstance(cn_v, dict) and isinstance(kr_v, dict):
