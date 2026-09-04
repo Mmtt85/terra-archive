@@ -469,13 +469,18 @@ function EntityPeekCard({ anchor, mobile, pinned, label, children }: {
 const epLabelOf = (e: { code?: string; name?: string; tag?: string } | undefined, i: number) =>
   [e?.code || `#${i + 1}`, e?.name, e?.tag].filter(Boolean).join(" · ");
 
-export function ScriptReader({ script, error, entities, opIndex, onShowOperator, eventId, sceneOn }: {
+export function ScriptReader({ script, error, entities, opIndex, onShowOperator, eventId, sceneOn, withPrefs }: {
   script: ScriptData | null; error: boolean;
   entities: Entity[]; opIndex?: OpIndex; onShowOperator?: (id: string) => void; eventId?: string;
   /** 장면 모드(무대 재생)가 켜져 있는가 — 보기 방식 탭이 소유한다 */
   sceneOn?: boolean;
+  /** 읽기 설정(글자·삽화 크기)을 리더가 직접 붙인다 — 스토리 상세는 요약과 공유하느라
+   *  바깥(StoryDetail)이 갖고 있지만, 오퍼 기록 모달처럼 리더만 쓰는 곳은 이걸 켠다
+   *  (사용자 요청 2026-09-04). */
+  withPrefs?: boolean;
 }) {
   const { locale, t } = useI18n();
+  const [ownPrefs, setOwnPrefs] = useReaderPrefs();
   // 오퍼가 아닌 화자의 스탠딩 스프라이트 — 썸네일 클릭 시 원본 크게 보기 (사용자 요청 2026-07-18)
   const [faceZoom, setFaceZoom] = useState<string | null>(null);
   // 요약 카드에 없는 화자라도 오퍼레이터면 자동으로 레일 카드 생성 (호시구마 등 — 사용자 리포트 2026-07-18)
@@ -617,6 +622,8 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
     </div>
   );
   return (
+    <div className={withPrefs ? `reader-font-${ownPrefs.font} reader-img-${ownPrefs.img}` : undefined}>
+    {withPrefs && <ReaderPrefsBar prefs={ownPrefs} setPrefs={setOwnPrefs} />}
     <div className="story-script" ref={topRef}>
       <p className="story-disclaimer">{sceneOn
         ? t("게임 내 스토리 원문을 배경·인물 일러스트와 함께 재생합니다. 음악·효과음은 빠져 있습니다.")
@@ -717,6 +724,7 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
           <img src={asset(faceZoom)} alt="" />
         </div>
       )}
+    </div>
     </div>
   );
 }

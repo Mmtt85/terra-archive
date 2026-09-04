@@ -3848,7 +3848,9 @@ function RecordSection({ operator, includeFuture, operators, onRelated }: {
             ? t("중국 서버 선행 기록입니다 — 중국어 원문을 AI가 번역한 비공식 텍스트라 정식 출시 시 공식 번역과 다를 수 있습니다.")
             : t("중국 서버 선행 기록입니다 — 아직 한국어 번역 전이라 중국어 원문으로 표시됩니다.")}</p> : null}
           <Suspense fallback={<p className="no-detail">{t("불러오는 중…")}</p>}>
-            <StoryScriptReader script={script} error={false} entities={[]} opIndex={opIndex} onShowOperator={showOp} />
+            {/* withPrefs — 스토리 탭과 같은 읽기 설정(글자·삽화 크기)을 기록 모달에도
+                붙인다 (사용자 요청 2026-09-04). 설정값은 스토리 리더와 공유된다. */}
+            <StoryScriptReader script={script} error={false} entities={[]} opIndex={opIndex} onShowOperator={showOp} withPrefs />
           </Suspense>
         </ModalWindow>
       )}
