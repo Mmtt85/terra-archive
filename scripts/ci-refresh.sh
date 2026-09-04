@@ -55,6 +55,27 @@ if [ "${SKIP_FETCH:-}" = "1" ]; then
   echo "▶ fetch-gamedata 건너뜀 (SKIP_FETCH=1 — $G 의 기존 데이터를 쓴다)"
   ls "$G"/kr_character_table.json >/dev/null 2>&1 \
     || { echo "$G 가 비어 있다 — SKIP_FETCH 를 빼거나 fetch-gamedata-cdn.py 를 먼저 돌릴 것" >&2; exit 2; }
+  # ⚠ 여기서 쓰는 표들이 **서로 다른 날짜**일 수 있다. `--tables` 로 몇 개만 받거나 폴백이
+  #   섞이면 `.gamedata` 가 조용히 누더기가 되는데, SKIP_FETCH 는 그걸 그대로 믿는다.
+  #   2026-09-04에 한섭 20표 중 12표가 8/20자로 남아 있어 위수 협의 스테이지 2개가 통째로
+  #   빠진 채 stages.json 이 만들어졌다 — 무인 CI가 먼저 커밋해 둔 덕에 겨우 발견했다.
+  #   그래서 서버별로 가장 오래된 표와 가장 새 표의 나이 차를 재서, 하루를 넘으면 경고한다.
+  python3 - "$G" <<'PY' | tee -a "$WARN" >&2
+import os, sys, glob, time
+g = sys.argv[1]
+for srv in ("kr", "jp", "en", "cn"):
+    fs = glob.glob(os.path.join(g, "%s_*.json" % srv))
+    if len(fs) < 2:
+        continue
+    ts = {f: os.path.getmtime(f) for f in fs}
+    old, new = min(ts.values()), max(ts.values())
+    if new - old > 86400:
+        stale = sorted(f for f in fs if new - ts[f] > 86400)
+        print("  ⚠ [%s] 표들의 시각이 %.1f일 벌어져 있다 — 낡은 %d개: %s"
+              % (srv, (new - old) / 86400, len(stale),
+                 ", ".join(os.path.basename(f)[3:-5] for f in stale[:6])))
+        print("     `python3 scripts/fetch-gamedata-cdn.py --server %s` 로 전체를 다시 받는 게 안전하다." % srv)
+PY
 else
   run "fetch-gamedata"   python3 scripts/fetch-gamedata.py "$G"
 fi

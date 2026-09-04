@@ -591,9 +591,18 @@ for cid, c in cn.items():
                      if a and a != op["name"]]
     op["aliases"] = list(dict.fromkeys(op["aliases"]))
     # 공통 어휘 사전으로 한국어화 (없으면 원문 유지)
-    op["birthplace"] = BIRTH_CN2KR.get(op["birthplace"], op["birthplace"])
-    op["race"] = RACE_CN2KR.get(op["race"], op["race"])
-    op["combatTags"] = [TAG_CN2KR.get(t, t) for t in op["combatTags"]]
+    # ⚠ BIRTH/RACE/TAG 사전은 **KR·CN 양쪽에 다 있는 오퍼로 투표해** 만든다. 그래서
+    #   KR에 아직 한 번도 안 나온 말은 표가 안 모여 중국어로 남는다 — 콜라보 오퍼가
+    #   특히 그렇다 (2026-09-04 페르소나3: 출신지 `未录入`, 종족 `佩洛兽亲（据称）`가
+    #   도감에 한자로 떴다). 그럴 때는 수동 사전(cn-translations.json)을 폴백으로 쓴다.
+    def _term(v):
+        if not isinstance(v, str) or not CJK_RE.search(v):
+            return v
+        m = MANUAL.get(v)
+        return (m.get("ko") or v) if isinstance(m, dict) else v
+    op["birthplace"] = _term(BIRTH_CN2KR.get(op["birthplace"], op["birthplace"]))
+    op["race"] = _term(RACE_CN2KR.get(op["race"], op["race"]))
+    op["combatTags"] = [_term(TAG_CN2KR.get(t, t)) for t in op["combatTags"]]
     # 상세 텍스트(특성·재능·스킬·잠재·모듈·기반시설) 한국어화 — 자동 사전 + 수동 오버레이
     for f in TR_FIELDS:
         op[f] = translate_cn(op[f], f"{op['name']}.{f}")

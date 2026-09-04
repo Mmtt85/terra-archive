@@ -11768,5 +11768,295 @@
   "ko": "금빛 훈장 하나. 가운데 파란 법랑 내륜에는 우르수스어로 '신념과 충성'이라 새겨져 있다. 그는 이런 것들을 믿어 본 적이 없다.",
   "en": "A golden medal. On the blue enamel ring at its center, the words \"Faith and Loyalty\" are engraved in Ursus script. He has never believed in any of it.",
   "ja": "金色の勲章。中央の青いエナメルの内輪には、ウルサス語で「信念と忠誠」と刻まれている。彼はそんなものを信じたことなど一度もない。"
+ },
+ "未录入": {
+  "ko": "미등록",
+  "en": "Not recorded",
+  "ja": "未登録"
+ },
+ "佩洛兽亲（据称）": {
+  "ko": "페로 근연종(추정)",
+  "en": "Perro kin (allegedly)",
+  "ja": "ペッロの同族（とされる）"
+ },
+ "结城理": {
+  "ko": "유키 마코토",
+  "en": "Makoto Yuki",
+  "ja": "結城理"
+ },
+ "埃癸斯": {
+  "ko": "아이기스",
+  "en": "Aigis",
+  "ja": "アイギス"
+ },
+ "岳羽由加莉": {
+  "ko": "타케바 유카리",
+  "en": "Yukari Takeba",
+  "ja": "岳羽ゆかり"
+ },
+ "虎狼丸": {
+  "ko": "코로마루",
+  "en": "Koromaru",
+  "ja": "コロマル"
+ },
+ "S.E.E.S.队长结城理，于满月之夜得见另一个自己。": {
+  "ko": "S.E.E.S. 대장 유키 마코토, 보름달이 뜬 밤에 또 하나의 자신과 마주하다.",
+  "en": "S.E.E.S. leader Makoto Yuki met another self on the night of the full moon.",
+  "ja": "S.E.E.S.隊長・結城理、満月の夜にもう一人の自分と出会う。"
+ },
+ "S.E.E.S.成员埃癸斯，走在校园中时，像是一名普通的少女。": {
+  "ko": "S.E.E.S. 대원 아이기스, 교정을 걸을 때는 평범한 소녀처럼 보인다.",
+  "en": "S.E.E.S. member Aigis looks like an ordinary girl when walking through the school grounds.",
+  "ja": "S.E.E.S.メンバー・アイギス、校内を歩く姿はごく普通の少女のようだ。"
+ },
+ "S.E.E.S.成员岳羽由加莉，性格开朗，姿容明丽。": {
+  "ko": "S.E.E.S. 대원 타케바 유카리, 성격이 밝고 용모가 수려하다.",
+  "en": "S.E.E.S. member Yukari Takeba, cheerful in temperament and radiant in appearance.",
+  "ja": "S.E.E.S.メンバー・岳羽ゆかり、朗らかな性格で、容姿も麗しい。"
+ },
+ "S.E.E.S.成员虎狼丸，等候着你归来。": {
+  "ko": "S.E.E.S. 대원 코로마루, 당신이 돌아오기를 기다리고 있다.",
+  "en": "S.E.E.S. member Koromaru is waiting for you to return.",
+  "ja": "S.E.E.S.メンバー・コロマル、あなたの帰りを待っている。"
+ },
+ "不羁之力": {
+  "ko": "얽매이지 않는 힘",
+  "en": "Unfettered Power",
+  "ja": "束縛されざる力"
+ },
+ "结城理切换为<替身>状态时停顿周围一定范围内敌人8秒；<替身>状态下结城理召唤人格面具作战，攻击间隔增大，攻击力+85%（+5%），生命值+35%，作战能力随技能选择而改变": {
+  "ko": "유키 마코토가 [대역] 상태로 전환할 때 주변 일정 범위 내 적을 8초간 정지. [대역] 상태에서 유키 마코토는 페르소나를 소환해 전투하며, 공격 딜레이 증가, 공격력 +85%(+5%), HP +35%, 전투 능력은 선택한 스킬에 따라 달라짐",
+  "en": "When Makoto Yuki switches to <Substitute> state, holds enemies within a certain range around him in place for 8 seconds; in <Substitute> state Makoto Yuki summons a Persona to fight, attack interval increases, ATK +85% (+5%), HP +35%, and his combat capability changes with the skill selected",
+  "ja": "結城理が〈身替り〉状態に切り替わる際、周囲一定範囲内の敵を8秒間足止めする。〈身替り〉状態では結城理はペルソナを召喚して戦い、攻撃間隔が増加、攻撃力+85%（+5%）、HP+35%、戦闘能力は選択したスキルによって変化する"
+ },
+ "S.E.E.S.队长": {
+  "ko": "S.E.E.S. 대장",
+  "en": "S.E.E.S. Leader",
+  "ja": "S.E.E.S.隊長"
+ },
+ "结城理<替身>状态结束后，带领S.E.E.S.小队发动总攻击，对S.E.E.S.小队队员周围一定范围内的所有敌人造成相当于结城理攻击力450%（+20%）的真实伤害（可叠加）": {
+  "ko": "유키 마코토의 [대역] 상태가 끝난 후, S.E.E.S. 부대를 이끌고 총공격을 발동. S.E.E.S. 부대원 주변 일정 범위 내 모든 적에게 유키 마코토 공격력의 450%(+20%)에 해당하는 트루 대미지를 입힘 (중첩 가능)",
+  "en": "After Makoto Yuki's <Substitute> state ends, he leads the S.E.E.S. squad in an All-Out Attack, dealing True damage equal to 450% (+20%) of Makoto Yuki's ATK to all enemies within a certain range around S.E.E.S. squad members (stackable)",
+  "ja": "結城理の〈身替り〉状態終了後、S.E.E.S.隊を率いて総攻撃を発動し、S.E.E.S.隊員の周囲一定範囲内のすべての敵に結城理の攻撃力450%（+20%）の確定ダメージを与える（重複可能）"
+ },
+ "俄耳甫斯的竖琴": {
+  "ko": "오르페우스의 리라",
+  "en": "Orpheus's Lyre",
+  "ja": "オルフェウスの竪琴"
+ },
+ "被动：<替身>状态召唤俄耳甫斯，攻击对敌人造成攻击力280%的法术伤害，范围内有生命值低于50%的友方干员时，改为对其治疗相当于结城理攻击力60%的生命值 主动：立即切换为<替身>状态作战": {
+  "ko": "패시브: [대역] 상태에서 오르페우스를 소환. 공격 시 적에게 공격력의 280%에 해당하는 마법 대미지를 입히며, 범위 내에 HP가 50% 미만인 아군 오퍼레이터가 있으면 대신 유키 마코토 공격력의 60%에 해당하는 HP를 회복시킴 액티브: 즉시 [대역] 상태로 전환해 전투",
+  "en": "Passive: In <Substitute> state, summons Orpheus; attacks deal 280% of ATK as Arts damage to enemies, but if an allied Operator below 50% HP is within range, heals them for 60% of Makoto Yuki's ATK instead. Active: Immediately switches to <Substitute> state to fight",
+  "ja": "パッシブ：〈身替り〉状態でオルフェウスを召喚。攻撃時、敵に攻撃力の280%の術ダメージを与える。範囲内にHPが50%未満の味方オペレーターがいる場合、代わりに結城理の攻撃力の60%のHPを回復する アクティブ：即座に〈身替り〉状態に切り替えて戦闘する"
+ },
+ "塔纳托斯的囚锁": {
+  "ko": "타나토스의 사슬",
+  "en": "Thanatos's Chains",
+  "ja": "タナトスの囚鎖"
+ },
+ "被动：<替身>状态召唤塔纳托斯，攻击对至多4名敌人造成攻击力250%的法术伤害并有35%概率恐惧敌人1.5秒，范围内恐惧中的敌人若生命值低于结城理攻击力的280%则立刻倒下 主动：立即切换为<替身>状态作战": {
+  "ko": "패시브: [대역] 상태에서 타나토스를 소환. 공격 시 최대 4명의 적에게 공격력의 250%에 해당하는 마법 대미지를 입히고 35% 확률로 1.5초간 공포에 빠뜨림. 범위 내 공포 상태인 적의 HP가 유키 마코토 공격력의 280% 미만이면 즉시 쓰러뜨림 액티브: 즉시 [대역] 상태로 전환해 전투",
+  "en": "Passive: In <Substitute> state, summons Thanatos; attacks deal 250% of ATK as Arts damage to up to 4 enemies with a 35% chance to Fear them for 1.5 seconds, and Feared enemies within range whose HP is below 280% of Makoto Yuki's ATK are instantly felled. Active: Immediately switches to <Substitute> state to fight",
+  "ja": "パッシブ：〈身替り〉状態でタナトスを召喚。攻撃時、最大4体の敵に攻撃力の250%の術ダメージを与え、35%の確率で1.5秒間恐怖状態にする。範囲内の恐怖状態の敵のHPが結城理の攻撃力の280%を下回っている場合、即座に倒す アクティブ：即座に〈身替り〉状態に切り替えて戦闘する"
+ },
+ "开辟明日的剑刃": {
+  "ko": "내일을 여는 검",
+  "en": "Blade that Carves Tomorrow",
+  "ja": "明日を切り開く剣"
+ },
+ "被动：<替身>状态初始召唤塔纳托斯，攻击速度+60，攻击对至多4名敌人造成攻击力230%的弱点伤害，塔纳托斯在场时，开启技能或受到致命伤时改为召唤俄耳甫斯，阻挡数+2，使范围内友方干员获得40%的物理与法术闪避并每秒治疗范围内最多4名友方干员相当于结城理攻击力35%的生命值，直到<替身>状态结束 主动：立即切换为<替身>状态作战": {
+  "ko": "패시브: [대역] 상태에서 처음에 타나토스를 소환. 공격 속도 +60, 공격 시 최대 4명의 적에게 공격력의 230%에 해당하는 약점 대미지를 입힘. 타나토스가 있는 상태에서 스킬을 발동하거나 치명상을 입으면 대신 오르페우스를 소환. 저지 가능 수 +2, 범위 내 아군 오퍼레이터에게 40%의 물리 및 마법 회피를 부여하고 매초 범위 내 최대 4명의 아군 오퍼레이터에게 유키 마코토 공격력의 35%에 해당하는 HP를 회복시킴. [대역] 상태가 끝날 때까지 지속 액티브: 즉시 [대역] 상태로 전환해 전투",
+  "en": "Passive: In <Substitute> state, initially summons Thanatos; ASPD +60, attacks deal 230% of ATK as Weakness damage to up to 4 enemies. While Thanatos is present, activating the skill or taking a fatal blow summons Orpheus instead: Block +2, allied Operators within range gain 40% Physical and Arts Dodge, and up to 4 allied Operators within range are healed each second for 35% of Makoto Yuki's ATK, lasting until the <Substitute> state ends. Active: Immediately switches to <Substitute> state to fight",
+  "ja": "パッシブ：〈身替り〉状態で最初にタナトスを召喚。攻撃速度+60、攻撃時、最大4体の敵に攻撃力の230%の弱点ダメージを与える。タナトスが場にいる間、スキルを発動するか致命傷を受けると代わりにオルフェウスを召喚し、ブロック数+2、範囲内の味方オペレーターに40%の物理・術回避を付与し、毎秒、範囲内の最大4体の味方オペレーターに結城理の攻撃力の35%のHPを回復する。〈身替り〉状態が終了するまで持続 アクティブ：即座に〈身替り〉状態に切り替えて戦闘する"
+ },
+ "彼此的声音": {
+  "ko": "서로의 목소리",
+  "en": "Each Other's Voices",
+  "ja": "互いの声"
+ },
+ "结城理切换为<替身>状态时停顿周围一定范围内敌人9秒；<替身>状态下结城理召唤人格面具作战，攻击间隔增大，攻击力+88%，生命值+38%，作战能力随技能选择而改变": {
+  "ko": "유키 마코토가 [대역] 상태로 전환할 때 주변 일정 범위 내 적을 9초간 정지. [대역] 상태에서 유키 마코토는 페르소나를 소환해 전투하며, 공격 딜레이 증가, 공격력 +88%, HP +38%, 전투 능력은 선택한 스킬에 따라 달라짐",
+  "en": "When Makoto Yuki switches to <Substitute> state, holds enemies within a certain range around him in place for 9 seconds; in <Substitute> state Makoto Yuki summons a Persona to fight, attack interval increases, ATK +88%, HP +38%, and his combat capability changes with the skill selected",
+  "ja": "結城理が〈身替り〉状態に切り替わる際、周囲一定範囲内の敵を9秒間足止めする。〈身替り〉状態では結城理はペルソナを召喚して戦い、攻撃間隔が増加、攻撃力+88%、HP+38%、戦闘能力は選択したスキルによって変化する"
+ },
+ "结城理切换为<替身>状态时停顿周围一定范围内敌人10秒；<替身>状态下结城理召唤人格面具作战，攻击间隔增大，攻击力+95%，生命值+40%，作战能力随技能选择而改变": {
+  "ko": "유키 마코토가 [대역] 상태로 전환할 때 주변 일정 범위 내 적을 10초간 정지. [대역] 상태에서 유키 마코토는 페르소나를 소환해 전투하며, 공격 딜레이 증가, 공격력 +95%, HP +40%, 전투 능력은 선택한 스킬에 따라 달라짐",
+  "en": "When Makoto Yuki switches to <Substitute> state, holds enemies within a certain range around him in place for 10 seconds; in <Substitute> state Makoto Yuki summons a Persona to fight, attack interval increases, ATK +95%, HP +40%, and his combat capability changes with the skill selected",
+  "ja": "結城理が〈身替り〉状態に切り替わる際、周囲一定範囲内の敵を10秒間足止めする。〈身替り〉状態では結城理はペルソナを召喚して戦い、攻撃間隔が増加、攻撃力+95%、HP+40%、戦闘能力は選択したスキルによって変化する"
+ },
+ "领袖魅力": {
+  "ko": "리더의 카리스마",
+  "en": "Leader's Charisma",
+  "ja": "リーダーのカリスマ"
+ },
+ "社群的意义": {
+  "ko": "커뮤니티의 의미",
+  "en": "Meaning of Community",
+  "ja": "コミュニティの意義"
+ },
+ "进驻制造站时，生产力+20%，基建内（不包含副手）每有1名S.E.E.S.干员（最多4名），生产力额外+5%": {
+  "ko": "제조소에 배치 시, 생산력 +20%. 기반시설(어시스턴트 미포함) 내 S.E.E.S. 오퍼레이터 1명당 생산력 추가 +5% (최대 4명)",
+  "en": "When assigned to a Factory, productivity +20%; for each S.E.E.S. Operator in the base (excluding the Assistant), productivity increases by an additional 5% (up to 4)",
+  "ja": "製造所に配置時、生産力+20%。基地内（アシスタントを除く）にS.E.E.S.オペレーターが1人いるごとに生産力がさらに+5%（最大4人）"
+ },
+ "反暗影特殊压制兵装": {
+  "ko": "대(對)섀도우 특수 제압 병장",
+  "en": "Anti-Shadow Suppression Weapon",
+  "ja": "対シャドウ特殊制圧兵装"
+ },
+ "造成的物理伤害+12%（+2%），受到的物理伤害-12%（+2%）": {
+  "ko": "입히는 물리 대미지 +12%(+2%), 받는 물리 대미지 -12%(+2%)",
+  "en": "Physical damage dealt +12% (+2%), Physical damage taken -12% (+2%)",
+  "ja": "与える物理ダメージ+12%（+2%）、受ける物理ダメージ-12%（+2%）"
+ },
+ "启动狂宴模式": {
+  "ko": "오르지아 모드 기동",
+  "en": "Activate Orgia Mode",
+  "ja": "オルギアモード起動"
+ },
+ "攻击力+140%，防御力+70%，随机攻击范围内的目标 技能结束后自身晕眩10秒": {
+  "ko": "공격력 +140%, 방어력 +70%, 공격 범위 내 목표를 무작위로 공격. 스킬 종료 후 자신이 10초간 기절",
+  "en": "ATK +140%, DEF +70%, attacks random targets within attack range. After the skill ends, she is Stunned for 10 seconds",
+  "ja": "攻撃力+140%、防御力+70%、攻撃範囲内の目標をランダムに攻撃する。スキル終了後、自身が10秒間スタンする"
+ },
+ "全弹发射": {
+  "ko": "전탄 발사",
+  "en": "All-Out Barrage",
+  "ja": "全弾発射"
+ },
+ "锁定范围内一个目标，对其发射6枚导弹，每枚导弹造成相当于攻击力160%的物理伤害，之后自身飞踢向目标，对目标及目标周围敌人造成相当于攻击力300%的物理伤害": {
+  "ko": "범위 내 목표 1명을 지정해 미사일 6발을 발사. 미사일 1발당 공격력의 160%에 해당하는 물리 대미지를 입힘. 이후 자신이 목표를 향해 날아 차기를 시전해 목표와 그 주변 적에게 공격력의 300%에 해당하는 물리 대미지를 입힘",
+  "en": "Locks onto one target within range and fires 6 missiles, each dealing 160% of ATK as Physical damage; then she flying-kicks the target, dealing 300% of ATK as Physical damage to the target and enemies around it",
+  "ja": "範囲内の目標1体をロックし、ミサイルを6発発射する。ミサイル1発につき攻撃力の160%の物理ダメージを与える。その後、自身が目標に飛び蹴りを放ち、目標とその周囲の敵に攻撃力の300%の物理ダメージを与える"
+ },
+ "约定的证明": {
+  "ko": "약속의 증표",
+  "en": "Proof of a Promise",
+  "ja": "約束の証"
+ },
+ "部署后起飞，起飞后只攻击空中敌人；技能开启时降落，攻击造成群体物理伤害且攻击地面敌人时攻击力提升至110％": {
+  "ko": "배치 후 이륙, 이륙 후 공중 적만 공격. 스킬 발동 시 착륙하며, 공격이 광역 물리 대미지를 입히고 지상 적을 공격할 때 공격력이 110%로 상승",
+  "en": "Lifts Off after deployment and only attacks aerial enemies while airborne; on skill activation she lands, her attacks deal AoE Physical damage, and her ATK rises to 110% when attacking ground enemies",
+  "ja": "配置後に離陸し、離陸後は空中の敵のみを攻撃する。スキル発動時に着陸し、攻撃が範囲物理ダメージに変化、地上の敵を攻撃する際は攻撃力が110%に上昇する"
+ },
+ "造成的物理伤害+13%，受到的物理伤害-13%": {
+  "ko": "입히는 물리 대미지 +13%, 받는 물리 대미지 -13%",
+  "en": "Physical damage dealt +13%, Physical damage taken -13%",
+  "ja": "与える物理ダメージ+13%、受ける物理ダメージ-13%"
+ },
+ "造成的物理伤害+15%，受到的物理伤害-15%": {
+  "ko": "입히는 물리 대미지 +15%, 받는 물리 대미지 -15%",
+  "en": "Physical damage dealt +15%, Physical damage taken -15%",
+  "ja": "与える物理ダメージ+15%、受ける物理ダメージ-15%"
+ },
+ "机械工学": {
+  "ko": "기계공학",
+  "en": "Mechanical Engineering",
+  "ja": "機械工学"
+ },
+ "进驻发电站时，无人机每小时充能速度+15%，如果结城理进驻在制造站，则无人机充能速度额外+5%": {
+  "ko": "발전소에 배치 시, 드론의 시간당 충전 속도 +15%. 유키 마코토가 제조소에 배치되어 있으면 드론 충전 속도 추가 +5%",
+  "en": "When assigned to a Power Plant, drone recharge rate per hour +15%; if Makoto Yuki is assigned to a Factory, drone recharge rate increases by an additional 5%",
+  "ja": "発電所に配置時、ドローンの1時間ごとの充電速度+15%。結城理が製造所に配置されている場合、ドローンの充電速度がさらに+5%"
+ },
+ "跨领域交流": {
+  "ko": "분야를 넘은 교류",
+  "en": "Cross-Disciplinary Exchange",
+  "ja": "分野を越えた交流"
+ },
+ "进驻会客室时，线索搜集速度提升10%，当与虎狼丸进驻会客室一起工作时，更容易获得线索板上尚未拥有的线索": {
+  "ko": "응접실에 배치 시, 단서 수집 속도 +10%. 코로마루와 함께 응접실에 배치되어 일할 때, 단서판에 아직 없는 단서를 더 얻기 쉬워짐",
+  "en": "When assigned to the Reception Room, clue collection speed +10%; when working in the Reception Room together with Koromaru, clues not yet on the clue board are more likely to be obtained",
+  "ja": "応接室に配置時、手がかりの収集速度+10%。コロマルと共に応接室で勤務している場合、手がかりボードにまだ揃っていない手がかりを入手しやすくなる"
+ },
+ "治愈之风": {
+  "ko": "치유의 바람",
+  "en": "Healing Wind",
+  "ja": "癒しの風"
+ },
+ "技能结束后，治疗自身和攻击范围内最多3名干员相当于岳羽由加莉攻击力100%的生命值": {
+  "ko": "스킬 종료 후, 자신과 공격 범위 내 최대 3명의 오퍼레이터에게 타케바 유카리 공격력의 100%에 해당하는 HP를 회복시킴",
+  "en": "After the skill ends, heals herself and up to 3 Operators within attack range for 100% of Yukari Takeba's ATK",
+  "ja": "スキル終了後、自身と攻撃範囲内の最大3人のオペレーターに岳羽ゆかりの攻撃力の100%のHPを回復する"
+ },
+ "龙卷箭": {
+  "ko": "회오리 화살",
+  "en": "Tornado Arrow",
+  "ja": "竜巻の矢"
+ },
+ "立即发射三发箭矢，每发对目标造成相当于80%攻击力的法术伤害，随后追加一次相当于攻击力400%的范围法术伤害并浮空所有目标1.5秒": {
+  "ko": "즉시 화살 3발을 발사, 1발당 목표에게 공격력의 80%에 해당하는 마법 대미지를 입힘. 이후 공격력의 400%에 해당하는 광역 마법 대미지를 1회 추가로 입히고 모든 목표를 1.5초간 부양시킴",
+  "en": "Immediately fires three arrows, each dealing 80% of ATK as Arts damage to the target, then follows up with one instance of AoE Arts damage equal to 400% of ATK, Levitating all targets for 1.5 seconds",
+  "ja": "即座に矢を3発発射し、1発ごとに目標へ攻撃力の80%の術ダメージを与える。その後、攻撃力の400%の範囲術ダメージを追加で1回与え、すべての目標を1.5秒間浮遊させる"
+ },
+ "明镜止水": {
+  "ko": "명경지수",
+  "en": "Still Waters",
+  "ja": "明鏡止水"
+ },
+ "为范围内最多4名我方干员（优先选择结城理、术师干员）施加触发型效果： 干员施放技能后，自身在15秒内获得30%术法充盈": {
+  "ko": "범위 내 최대 4명의 아군 오퍼레이터(유키 마코토, 캐스터 오퍼레이터 우선 선택)에게 발동형 효과 부여: 해당 오퍼레이터가 스킬을 발동한 후, 15초간 30%의 마법 충만 획득",
+  "en": "Applies a trigger-type effect to up to 4 allied Operators within range (prioritizing Makoto Yuki and Caster Operators): after that Operator activates a skill, they gain 30% Arts Amplification for 15 seconds",
+  "ja": "範囲内の最大4人の味方オペレーター（結城理、術師オペレーターを優先して選択）にトリガー型の効果を付与する：そのオペレーターがスキルを発動した後、15秒間30%の術法充溢を獲得する"
+ },
+ "命运的奖赏": {
+  "ko": "운명의 보상",
+  "en": "Fate's Reward",
+  "ja": "運命の報い"
+ },
+ "攻击范围内有干员处于技能持续期间时，自身攻击力+8%": {
+  "ko": "공격 범위 내에 스킬 지속 중인 오퍼레이터가 있을 때, 자신의 공격력 +8%",
+  "en": "While an Operator within attack range has a skill active, her own ATK +8%",
+  "ja": "攻撃範囲内にスキル持続中のオペレーターがいる場合、自身の攻撃力+8%"
+ },
+ "技能结束后，治疗自身和攻击范围内最多3名干员相当于岳羽由加莉攻击力110%的生命值": {
+  "ko": "스킬 종료 후, 자신과 공격 범위 내 최대 3명의 오퍼레이터에게 타케바 유카리 공격력의 110%에 해당하는 HP를 회복시킴",
+  "en": "After the skill ends, heals herself and up to 3 Operators within attack range for 110% of Yukari Takeba's ATK",
+  "ja": "スキル終了後、自身と攻撃範囲内の最大3人のオペレーターに岳羽ゆかりの攻撃力の110%のHPを回復する"
+ },
+ "技能结束后，治疗自身和攻击范围内最多3名干员相当于岳羽由加莉攻击力120%的生命值": {
+  "ko": "스킬 종료 후, 자신과 공격 범위 내 최대 3명의 오퍼레이터에게 타케바 유카리 공격력의 120%에 해당하는 HP를 회복시킴",
+  "en": "After the skill ends, heals herself and up to 3 Operators within attack range for 120% of Yukari Takeba's ATK",
+  "ja": "スキル終了後、自身と攻撃範囲内の最大3人のオペレーターに岳羽ゆかりの攻撃力の120%のHPを回復する"
+ },
+ "独立调查": {
+  "ko": "독자 조사",
+  "en": "Independent Investigation",
+  "ja": "独自調査"
+ },
+ "合理兼职": {
+  "ko": "적절한 겸업",
+  "en": "Balanced Part-Time Work",
+  "ja": "適切な兼業"
+ },
+ "进驻训练室协助位时，狙击与医疗干员的专精技能训练速度+45%": {
+  "ko": "훈련실에 배치 시, 스나이퍼 및 메딕 오퍼레이터의 스킬 훈련 속도 +45%",
+  "en": "When assigned to the Training Room, the skill training speed of Sniper and Medic Operators +45%",
+  "ja": "訓練室に配置時、狙撃・医療オペレーターのスキル訓練速度+45%"
+ },
+ "普通攻击连续造成两次伤害，且不受部署数量限制，但再部署时间极长": {
+  "ko": "일반 공격이 연속으로 2회 대미지를 입히며, 배치 가능 인원수 제약을 받지 않으나, 재배치 시간이 매우 김",
+  "en": "Normal attacks deal damage twice in a row, and he is not restricted by deployment limits, but his redeployment time is extremely long",
+  "ja": "通常攻撃が連続で2回ダメージを与える。配置数の制限を受けないが、再配置時間が非常に長い"
+ },
+ "黑色猎犬·VI": {
+  "ko": "검은 사냥개·VI",
+  "en": "Black Hound VI",
+  "ja": "黒き猟犬・VI"
+ },
+ "部署后对周围一定范围内最近的1名敌人发动总计6次无视闪避的斩击，每次斩击造成相当于攻击力200%的法术伤害，最后一次斩击改为造成攻击力400%的法术伤害并使目标恐惧4秒": {
+  "ko": "배치 후 주변 일정 범위 내 가장 가까운 적 1명에게 회피를 무시하는 참격을 총 6회 발동. 참격 1회당 공격력의 200%에 해당하는 마법 대미지를 입히며, 마지막 참격은 공격력의 400%에 해당하는 마법 대미지로 변경되고 목표를 4초간 공포에 빠뜨림",
+  "en": "After deployment, unleashes a total of 6 Dodge-ignoring slashes at the nearest enemy within a certain range; each slash deals 200% of ATK as Arts damage, and the final slash instead deals 400% of ATK as Arts damage and Fears the target for 4 seconds",
+  "ja": "配置後、周囲一定範囲内の最も近い敵1体に回避を無視する斬撃を合計6回放つ。斬撃1回につき攻撃力の200%の術ダメージを与え、最後の斬撃は攻撃力の400%の術ダメージに変化し、目標を4秒間恐怖状態にする"
+ },
+ "毛茸茸的抚慰": {
+  "ko": "복슬복슬한 위로",
+  "en": "Fluffy Comfort",
+  "ja": "もふもふの慰め"
+ },
+ "虎狼丸的报恩": {
+  "ko": "코로마루의 보은",
+  "en": "Koromaru's Repayment",
+  "ja": "コロマルの恩返し"
  }
 }

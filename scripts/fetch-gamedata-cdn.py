@@ -177,6 +177,11 @@ def main():
         if data is None:                      # CDN에서 못 얻었으면 클뜯 레포로
             try:
                 raw = urlread(REPO % (a.server, t), timeout=180, ua="terra-archive-cdn/1.0")
+                # ⚠ 폴백도 **덮어쓰기 전에 스냅샷을 남긴다.** 안 남기면 whatsnew --local 의
+                #   비교 기준이 조용히 사라져, 스키마를 고쳐 다시 받은 뒤 "바뀐 게 없다"는
+                #   거짓 보고가 나온다 (2026-09-04 중섭 큰 패치의 item_table 이 실제로 그랬다 —
+                #   폴백이 원본 스냅샷 자리에 레포판을 올려놨다).
+                keep_prev(dest, a.out)
                 open(dest, "wb").write(raw)
                 if why:
                     print("⚠ %s → 레포 폴백 (%d KB)" % (why, len(raw) // 1024))

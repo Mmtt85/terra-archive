@@ -252,7 +252,7 @@ python3 scripts/fetch-gamedata-cdn.py --tables activity_table --server kr
 받는 표 목록도 서버별로 같다 (`TABLES` 상수 — kr 20 · jp/en 18 · **cn 14**).
 필요한 것: `brew install flatbuffers`(flatc), pip `UnityPy` `lz4inv`.
 
-네 서버 모두 같은 구조로 뜯린다 (2026-09-04 실측):
+네 서버 모두 같은 구조로 뜯긴다 (2026-09-04 실측):
 
 | 서버 | network_config | 클라 버전 체계 | 표 | 비고 |
 |---|---|---|---|---|

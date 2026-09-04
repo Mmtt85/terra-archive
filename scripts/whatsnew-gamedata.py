@@ -58,11 +58,25 @@ def fmt(t):
 
 
 def dig(doc, path):
+    """표에서 비교할 dict를 꺼낸다.
+
+    ⚠ **CDN 산출물은 껍데기가 벗겨져 있을 수 있다.** `fetch-gamedata-cdn.py` 의 Normalizer는
+      루트 테이블의 필드가 하나뿐이면 그 값을 그대로 돌려준다(그래야 뒤 파이프라인의 id 조회가
+      된다 — PROJECT-GUIDE §2-1). `character_table` 이 딱 그래서 **`chars` 키가 없고 루트가
+      곧 오퍼 맵**이다. 예전엔 그걸 모르고 `.get("chars")` 로 빈 dict를 집어서, CDN에서 받은
+      뒤에는 신규 오퍼가 **항상 0으로** 보고됐다 (2026-09-04 중섭 큰 패치에서 페르소나3
+      콜라보 오퍼 4명을 통째로 놓치고서야 발견 — 조용히 틀리는 쪽이라 더 위험했다).
+      그래서 경로가 안 잡히면 **루트를 그대로 쓴다.** 헛다리를 짚어 시끄러운 편이
+      말없이 0을 찍는 것보다 낫다.
+    """
     if not path:
         return doc
+    cur = doc
     for part in path.split("."):
-        doc = (doc or {}).get(part) or {}
-    return doc
+        if not isinstance(cur, dict) or part not in cur:
+            return doc if isinstance(doc, dict) else {}
+        cur = cur[part] or {}
+    return cur
 
 
 def api_json(url):
