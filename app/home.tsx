@@ -90,7 +90,7 @@ import { EnemyPage, type Enemy as EnemyEntry, type EnemyStages } from "./enemy-d
 // 작전 상세도 **lazy가 아니다** — 같은 프리렌더 이유 (app/enemy-detail.tsx 머리주석)
 import { StagePage } from "./stage-detail";
 import type { StageView } from "./stage-data";
-import { I18nProvider, useI18n, conceptName, DT_LOCALE, MAGIC_TRAIT_RE, LOCALES, type Locale, type ExtraI18n, type T } from "./i18n";
+import { I18nProvider, useI18n, conceptName, makeT, DT_LOCALE, MAGIC_TRAIT_RE, LOCALES, type Locale, type ExtraI18n, type T } from "./i18n";
 import { SPECIAL_CONCEPTS, conceptTitle, conceptMatches, resolveConcepts, suggestConcepts } from "./concepts";
 
 type RangeGrid = { row: number; col: number };
@@ -460,12 +460,26 @@ function sortRunning(events: GameEvent[], now: number): GameEvent[] {
       return majorA === 0 ? Date.parse(b.start) - Date.parse(a.start) : Date.parse(a.end) - Date.parse(b.end);
     });
 }
+// ⚠ 재개방(복각)은 **activity id 가 원본과 다르다** — act41side 의 복각이 act41sre 다.
+//   그래서 id 로만 찾으면 stories.json 을 못 만나고, 이름·썸네일이 KR activity_table 원문
+//   (= 한국어)으로 떨어진다 (사용자 제보 2026-09-04: "EN·JA 홈에서 이벤트 이름이 한글").
+//   id → 실패하면 **"(재개방)"을 뗀 한국어 이름**으로 잇는다. 실측 35건 중 34건이 붙는다
+//   (act1r6sre '오리지늄 더스트'만 stories.json 에 항목 자체가 없어 원문 그대로 나간다).
+//   ⚠ `act(\d+)sre → act$1side` 로 잇지 말 것 — act5sre·act9sre 처럼 옛 이벤트는 원본 id 가
+//     act5d0·act9d0 이라 8건이 통째로 빗나간다 (실측).
+const RERUN_SUFFIX = /\s*\(재개방\)\s*$/;
+const storyEventByKoName = new Map(storyEventsList.map((event) => [event.name.ko, event]));
+const storyOf = (event: GameEvent): StoryEventLite | undefined =>
+  storyEventById.get(event.id) ?? storyEventByKoName.get(event.name.replace(RERUN_SUFFIX, ""));
 function eventName(locale: Locale, event: GameEvent): string {
-  const story = storyEventById.get(event.id);
-  return story ? ((locale === "ko" ? story.name.ko : story.name[locale]) ?? story.name.ko) : event.name;
+  const story = storyOf(event);
+  if (!story) return event.name;
+  const base = (locale === "ko" ? story.name.ko : story.name[locale]) ?? story.name.ko;
+  // 복각 표시는 살린다 — 원본과 이름이 같아 구분이 안 되면 "이미 본 이벤트"인지 알 수 없다
+  return RERUN_SUFFIX.test(event.name) ? `${base} (${makeT(locale)("재개방")})` : base;
 }
 function eventThumb(locale: Locale, event: GameEvent): string | undefined {
-  const story = storyEventById.get(event.id);
+  const story = storyOf(event);
   if (!story) return undefined;
   { const p = (locale === "ja" ? story.thumbJa : locale === "en" ? story.thumbEn : undefined) ?? story.thumb; return p ? asset(p) : undefined; }
 }
@@ -878,7 +892,8 @@ function Portal({ onOpenTab }: {
       // 공지를 못 찾았을 때: **스토리가 있는 이벤트만** 스토리 탭으로 보낸다. 벡터 돌파처럼
       // 스토리가 없는 이벤트를 스토리로 보내면 엉뚱한 곳에 떨어진다 (사용자 지적 2026-07-31
       // "왜 스토리로 연결이 돼?") — 그런 이벤트는 공식 카페 이벤트 게시판으로.
-      if (headline && !storyEventById.has(headline.id)) {
+      // storyOf — 재개방은 id 가 원본과 달라(act41sre) id 로만 보면 "스토리 없음"이 된다
+      if (headline && !storyOf(headline)) {
         window.open(CAFE_EVENT_BOARD, "_blank", "noopener"); return;
       }
       onOpenTab("story"); scrollMainTop(); return;

@@ -371,6 +371,8 @@ const D: Record<string, Pair> = {
   "진행중인 이벤트 보기": ["View events currently running", "開催中のイベントを見る"],
   "진행중·예정 이벤트 보기": ["View ongoing & upcoming events", "開催中・予定イベントを見る"],
   "진행중 이벤트": ["Ongoing events", "開催中イベント"],
+  // 복각 이벤트 이름 뒤에 괄호로 붙는다 — KR 원문 "(재개방)" 을 로케일별로 갈아 끼운다
+  "재개방": ["Rerun", "復刻"],
   "진행중·예정 이벤트": ["Ongoing & upcoming events", "開催中・予定イベント"],
   "진행 예정": ["Upcoming", "開催予定"],
   "진행 예정 이벤트": ["Upcoming event · KR", "開催予定イベント · 韓国"],
