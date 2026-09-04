@@ -1113,6 +1113,33 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   // 포커스가 안 가 focus-within이 무력하므로 클릭 토글 상태가 따로 필요하다 (2026-08-09).
   // 초기화는 effect가 아니라 햄버거 토글 클릭에서 한다 (set-state-in-effect 린트 관례).
   const [openGroup, setOpenGroup] = useState<"" | "dex" | "sim" | "guide">("");
+  // ── 플라이아웃 닫힘 지연 (사용자 요청 2026-09-05 "마우스 오버했던거 밖으로 삐져나가도
+  //    안사라지게 해 줘") ────────────────────────────────────────────────────────
+  // CSS `:hover` 만으로는 커서가 경계를 1px만 벗어나도 그 순간 닫힌다. 가이드 안에 2단
+  // 부메뉴가 생기면서 대각선으로 옮겨 가는 동안 자꾸 닫혔다. 들어올 때는 즉시 열고,
+  // 나갈 때만 잠깐 붙잡는다 — 열려 있는 동안 `.open` 을 얹으므로 CSS 는 그대로 둔다.
+  // id 는 `guide` / `guide/rogue` 처럼 경로로 둔다 (자식이 열려 있으면 부모도 열린 채).
+  // 1초 — 420ms는 "너무 빨리 사라진다", 2초는 너무 길어 사용자가 1초로 확정했다 (2026-09-05).
+  // 대각선으로 옮겨 가다 잠깐 벗어나는 정도로는 안 닫힌다. 이동·Esc·바깥 클릭은
+  // holdFlyout("")로 **즉시** 닫으므로 이 지연에 갇히지 않는다.
+  const HOVER_HOLD_MS = 1000;
+  const [hoverFlyout, setHoverFlyout] = useState("");
+  const hoverTimer = useRef<number | null>(null);
+  const holdFlyout = (id: string) => {
+    if (hoverTimer.current) { clearTimeout(hoverTimer.current); hoverTimer.current = null; }
+    setHoverFlyout(id);
+  };
+  /** 빠져나갔다 — `back` 은 되돌아갈 자리(2단에서 나오면 부모 메뉴는 열린 채 둔다).
+   *  바깥으로 완전히 나가면 부모의 onMouseLeave 가 이어서 ""로 다시 예약한다. */
+  const releaseFlyout = (back = "") => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    hoverTimer.current = window.setTimeout(() => {
+      hoverTimer.current = null;
+      setHoverFlyout(back);
+    }, HOVER_HOLD_MS);
+  };
+  const flyoutOpen = (id: string) => hoverFlyout === id || hoverFlyout.startsWith(`${id}/`);
+  useEffect(() => () => { if (hoverTimer.current) clearTimeout(hoverTimer.current); }, []);
   const [feedbackOpen, setFeedbackOpen] = useState(false); // 제안 패널 — 모바일 헤더 버튼·데스크탑 FAB 공용
   const [feedbackNew, setFeedbackNew] = useState(0); // 제안 게시판 새 답변 수 — 위젯이 올려주고 헤더 버튼 뱃지에 쓴다
   const [headerCollapsed, setHeaderCollapsed] = useState(true); // 모바일 헤더 접기 — 접힘이 기본(사용자 확정 2026-07-22). PC는 무관(관련 CSS가 모바일 블록에만 있음)
@@ -1605,7 +1632,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   // ⚠ tabPath가 ?future=1을 달고 올 수 있어 문자열 이어붙이기 금지 (switchRogueTopic과 같은 함정).
   const [sandboxSlug, setSandboxSlug] = useState(initialSandbox ?? "sand");
   const switchSandbox = (slug: string) => {
-    setNavOpen(false); setOpenGroup("");
+    setNavOpen(false); setOpenGroup(""); holdFlyout("");
     const [, query] = tabPath("ra").split("?");
     history.pushState(null, "", `${localeBase}/ra/${slug}${query ? `?${query}` : ""}`);
     setSandboxSlug(slug);
@@ -1616,7 +1643,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   // ⚠ tabPath가 ?future=1을 달고 올 수 있어 문자열 이어붙이기 금지.
   const [autochessSeason, setAutochessSeason] = useState(() => autochessSeasonOf(initialAutochess));
   const switchAutochess = (n: number) => {
-    setNavOpen(false); setOpenGroup("");
+    setNavOpen(false); setOpenGroup(""); holdFlyout("");
     const [, query] = tabPath("autochess").split("?");
     history.pushState(null, "", `${localeBase}/autochess/s${n}${query ? `?${query}` : ""}`);
     setAutochessSeason(n);
@@ -1624,7 +1651,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   };
 
   const switchTab = (next: Tab) => {
-    setNavOpen(false);
+    setNavOpen(false); holdFlyout("");
     noteAction();                       // 실패 추적 창 카운트 (app/trail.ts)
     if (next === tab && !selected) return;
     history.pushState(null, "", tabPath(next));
@@ -1649,7 +1676,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   // 탭이면 탭 전환 시 RogueGuide가 마운트되며 URL의 topic을 읽는다.
   // ⚠ 합성 popstate를 쓰지 않는다 — vinext 라우터가 그걸 내비게이션으로 보고 RSC를 재요청한다.
   const switchRogueTopic = (topicId: string) => {
-    setNavOpen(false);
+    setNavOpen(false); holdFlyout("");
     const slug = rogueSlugOf(topicId);
     startTransition(() => {
       setSelected(null);
@@ -1733,9 +1760,16 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     if (!navOpen) return;
     const onPointer = (event: PointerEvent) => {
       const target = event.target as HTMLElement;
-      if (!target.closest(".main-tabs") && !target.closest(".nav-toggle")) setNavOpen(false);
+      if (!target.closest(".main-tabs") && !target.closest(".nav-toggle")) {
+        // 붙잡아 둔 플라이아웃도 같이 놓는다 — 안 그러면 메뉴를 다시 열 때
+        // 2초 지연이 남아 엉뚱한 패널이 펼쳐진 채로 뜬다
+        setNavOpen(false); holdFlyout("");
+      }
     };
-    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") setNavOpen(false); };
+    const onKey = (event: KeyboardEvent) => {
+      // Esc 는 붙잡아 둔 플라이아웃까지 같이 닫는다 (닫힘 지연이 남아 있으면 갇힌다)
+      if (event.key === "Escape") { setNavOpen(false); setOpenGroup(""); holdFlyout(""); }
+    };
     document.addEventListener("pointerdown", onPointer);
     document.addEventListener("keydown", onKey);
     return () => { document.removeEventListener("pointerdown", onPointer); document.removeEventListener("keydown", onKey); };
@@ -1906,7 +1940,8 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
             {/* 도감·시뮬레이터 묶음 — 통합전략과 같은 플라이아웃 규격. 하위 항목은 실제 <a>
                 (크롤러용 내부 링크 — 통전 부메뉴와 같은 이유, 2026-08-06). 클릭은 SPA 전환. */}
             {TAB_GROUPS.map((g) => (
-              <div key={g.id} className={`tab-flyout${openGroup === g.id ? " open" : ""}`}>
+              <div key={g.id} className={`tab-flyout${openGroup === g.id || flyoutOpen(g.id) ? " open" : ""}`}
+                onMouseEnter={() => holdFlyout(g.id)} onMouseLeave={() => releaseFlyout()}>
                 <button type="button"
                   className={`tab-group${g.items.some((it) => it.tab === tab) ? " selected" : ""}`}
                   aria-expanded={openGroup === g.id}
@@ -1933,9 +1968,14 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
             {/* 가이드 — 게임 모드 공략 3종을 한 묶음으로 (사용자 확정 2026-08-22
                 "이제 각 모드를 가이드 메뉴로 합칠 필요가 있어보임"). 종전엔 통합전략·생존연산이
                 각각 톱레벨을 먹고 있었는데 위수 협의가 셋째로 붙으면서 메뉴가 길어졌다.
-                하위 테마·시즌 링크는 **크롤러용 내부 링크**라 없애지 않고 들여쓴 2단으로 남긴다
-                (2026-08-06에 넣은 이유 — 헤더가 전부 버튼이라 정적 HTML에 앵커가 없었다). */}
-            <div className={`tab-flyout${openGroup === "guide" ? " open" : ""}`}>
+                하위 테마·시즌 링크는 **크롤러용 내부 링크**라 없애지 않는다
+                (2026-08-06에 넣은 이유 — 헤더가 전부 버튼이라 정적 HTML에 앵커가 없었다).
+                ⚠ 그 하위 링크는 2026-09-05부터 **모드마다 자기 플라이아웃**으로 옆에 뜬다
+                (사용자 요청 "주메뉴 - 부메뉴로 구성해서 마우스오버하면 뜨게 해 줘") —
+                들여쓴 인라인 목록으로 되돌리지 말 것. 호버가 없는 기기(터치)에서는 CSS가
+                알아서 인라인 목록으로 펼친다 (globals.css `@media (hover: none)`). */}
+            <div className={`tab-flyout${openGroup === "guide" || flyoutOpen("guide") ? " open" : ""}`}
+              onMouseEnter={() => holdFlyout("guide")} onMouseLeave={() => releaseFlyout()}>
               <button type="button"
                 className={`tab-group${GUIDE_TABS.includes(tab) ? " selected" : ""}`}
                 aria-expanded={openGroup === "guide"}
@@ -1945,70 +1985,82 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                 <span className="tab-group-arrow" aria-hidden>◂</span>
               </button>
               <div className="tab-submenu tab-submenu-guide" role="group" aria-label={t("가이드")}>
-                <a href={`${localeBase}/rogue`} className={`tab-sub tab-rogue${tab === "rogue" ? " selected" : ""}`}
-                  onClick={(event) => {
-                    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
-                    event.preventDefault(); switchTab("rogue");
-                  }}>
-                  <span className="tab-sub-mark" aria-hidden>›</span>{t("통합전략(로그라이크)")}
-                  {tabHasNewFeature("rogue") && <span className="new-badge">{t("새기능")}</span>}
-                </a>
-                <div className="tab-sub2-list">
-                  {/* 미래시 토픽도 항상 메뉴에 둔다 — 흑백 + '미래시' 표식 (2026-09-04 규칙 변경) */}
-                  {ROGUE_TOPICS.filter((tp) => tp.ready).map((tp) => (
-                    <a key={tp.id} href={`${localeBase}/rogue/${rogueSlugOf(tp.id)}`}
-                      className={`tab-sub tab-sub2${tab === "rogue" && rogueSlug === rogueSlugOf(tp.id) ? " selected" : ""}${tp.future ? " fut-dim" : ""}`}
-                      onClick={(event) => {
-                        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
-                        event.preventDefault(); switchRogueTopic(tp.id);
-                      }}>
-                      <span className="tab-sub-mark" aria-hidden>·</span>{t(tp.name)}{tp.future && <em className="tab-sub-future">{t("미래시")}</em>}
-                    </a>
-                  ))}
-                </div>
-                <a href={`${localeBase}/ra`} className={`tab-sub tab-ra${tab === "ra" ? " selected" : ""}`}
-                  onClick={(event) => {
-                    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
-                    event.preventDefault(); switchTab("ra");
-                  }}>
-                  <span className="tab-sub-mark" aria-hidden>›</span>{t("생존연산")}
-                  {tabHasNewFeature("ra") && <span className="new-badge">{t("새기능")}</span>}
-                </a>
-                <div className="tab-sub2-list">
-                  <a href={`${localeBase}/ra/sand`} className="tab-sub tab-sub2"
+                <div className={`tab-flyout tab-flyout2${flyoutOpen("guide/rogue") ? " open" : ""}`}
+                  onMouseEnter={() => holdFlyout("guide/rogue")} onMouseLeave={() => releaseFlyout("guide")}>
+                  <a href={`${localeBase}/rogue`} className={`tab-sub tab-rogue${tab === "rogue" ? " selected" : ""}`}
                     onClick={(event) => {
                       if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
-                      event.preventDefault(); switchSandbox("sand");
-                    }}><span className="tab-sub-mark" aria-hidden>·</span>{t("사막 이야기")}</a>
-                  {/* 중섭 선행 신시즌도 항상 메뉴에 둔다 (2026-09-04 규칙 변경) */}
-                  <a href={`${localeBase}/ra/anchor`} className="tab-sub tab-sub2 fut-dim"
+                      event.preventDefault(); switchTab("rogue");
+                    }}>
+                    <span className="tab-sub-mark" aria-hidden>›</span>{t("통합전략(로그라이크)")}
+                    {tabHasNewFeature("rogue") && <span className="new-badge">{t("새기능")}</span>}
+                    <span className="tab-group-arrow" aria-hidden>◂</span>
+                  </a>
+                  <div className="tab-submenu tab-submenu2" role="group" aria-label={t("통합전략(로그라이크)")}>
+                    {/* 미래시 토픽도 항상 메뉴에 둔다 — 흑백 + '미래시' 표식 (2026-09-04 규칙 변경) */}
+                    {ROGUE_TOPICS.filter((tp) => tp.ready).map((tp) => (
+                      <a key={tp.id} href={`${localeBase}/rogue/${rogueSlugOf(tp.id)}`}
+                        className={`tab-sub tab-sub2${tab === "rogue" && rogueSlug === rogueSlugOf(tp.id) ? " selected" : ""}${tp.future ? " fut-dim" : ""}`}
+                        onClick={(event) => {
+                          if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+                          event.preventDefault(); switchRogueTopic(tp.id);
+                        }}>
+                        <span className="tab-sub-mark" aria-hidden>·</span>{t(tp.name)}{tp.future && <em className="tab-sub-future">{t("미래시")}</em>}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+                <div className={`tab-flyout tab-flyout2${flyoutOpen("guide/ra") ? " open" : ""}`}
+                  onMouseEnter={() => holdFlyout("guide/ra")} onMouseLeave={() => releaseFlyout("guide")}>
+                  <a href={`${localeBase}/ra`} className={`tab-sub tab-ra${tab === "ra" ? " selected" : ""}`}
                     onClick={(event) => {
                       if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
-                      event.preventDefault(); switchSandbox("anchor");
-                    }}><span className="tab-sub-mark" aria-hidden>·</span>{t("재기동 앵커")}<em className="tab-sub-future">{t("미래시")}</em></a>
-                </div>
-                <a href={`${localeBase}/autochess`} className={`tab-sub tab-autochess${tab === "autochess" ? " selected" : ""}`}
-                  onClick={(event) => {
-                    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
-                    event.preventDefault(); switchTab("autochess");
-                  }}>
-                  <span className="tab-sub-mark" aria-hidden>›</span>{t("위수협의(명토체스)")}
-                  {tabHasNewFeature("autochess") && <span className="new-badge">{t("새기능")}</span>}
-                </a>
-                {/* 시즌도 통전 테마·생존연산 시즌과 같이 부메뉴에 둔다 (사용자 요청 2026-09-05).
-                    최신 시즌이 위 — 지난 시즌은 수치가 당시 것이라 섞이면 안 된다 */}
-                <div className="tab-sub2-list">
-                  {[...AC_SEASONS].reverse().map((n) => (
-                    <a key={n} href={`${localeBase}/autochess/s${n}`}
-                      className={`tab-sub tab-sub2${tab === "autochess" && autochessSeason === n ? " selected" : ""}`}
+                      event.preventDefault(); switchTab("ra");
+                    }}>
+                    <span className="tab-sub-mark" aria-hidden>›</span>{t("생존연산")}
+                    {tabHasNewFeature("ra") && <span className="new-badge">{t("새기능")}</span>}
+                    <span className="tab-group-arrow" aria-hidden>◂</span>
+                  </a>
+                  <div className="tab-submenu tab-submenu2" role="group" aria-label={t("생존연산")}>
+                    <a href={`${localeBase}/ra/sand`} className={`tab-sub tab-sub2${tab === "ra" && sandboxSlug === "sand" ? " selected" : ""}`}
                       onClick={(event) => {
                         if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
-                        event.preventDefault(); switchAutochess(n);
-                      }}>
-                      <span className="tab-sub-mark" aria-hidden>·</span>{t("시즌 {n}", { n })}
-                      {n !== AC_LATEST && <em className="tab-sub-past">{t("지난 시즌")}</em>}
-                    </a>
-                  ))}
+                        event.preventDefault(); switchSandbox("sand");
+                      }}><span className="tab-sub-mark" aria-hidden>·</span>{t("사막 이야기")}</a>
+                    {/* 중섭 선행 신시즌도 항상 메뉴에 둔다 (2026-09-04 규칙 변경) */}
+                    <a href={`${localeBase}/ra/anchor`} className={`tab-sub tab-sub2 fut-dim${tab === "ra" && sandboxSlug === "anchor" ? " selected" : ""}`}
+                      onClick={(event) => {
+                        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+                        event.preventDefault(); switchSandbox("anchor");
+                      }}><span className="tab-sub-mark" aria-hidden>·</span>{t("재기동 앵커")}<em className="tab-sub-future">{t("미래시")}</em></a>
+                  </div>
+                </div>
+                <div className={`tab-flyout tab-flyout2${flyoutOpen("guide/autochess") ? " open" : ""}`}
+                  onMouseEnter={() => holdFlyout("guide/autochess")} onMouseLeave={() => releaseFlyout("guide")}>
+                  <a href={`${localeBase}/autochess`} className={`tab-sub tab-autochess${tab === "autochess" ? " selected" : ""}`}
+                    onClick={(event) => {
+                      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+                      event.preventDefault(); switchTab("autochess");
+                    }}>
+                    <span className="tab-sub-mark" aria-hidden>›</span>{t("위수협의(명토체스)")}
+                    {tabHasNewFeature("autochess") && <span className="new-badge">{t("새기능")}</span>}
+                    <span className="tab-group-arrow" aria-hidden>◂</span>
+                  </a>
+                  {/* 시즌도 통전 테마·생존연산 시즌과 같이 부메뉴에 둔다 (사용자 요청 2026-09-05).
+                      최신 시즌이 위 — 지난 시즌은 수치가 당시 것이라 섞이면 안 된다 */}
+                  <div className="tab-submenu tab-submenu2" role="group" aria-label={t("위수협의(명토체스)")}>
+                    {[...AC_SEASONS].reverse().map((n) => (
+                      <a key={n} href={`${localeBase}/autochess/s${n}`}
+                        className={`tab-sub tab-sub2${tab === "autochess" && autochessSeason === n ? " selected" : ""}`}
+                        onClick={(event) => {
+                          if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+                          event.preventDefault(); switchAutochess(n);
+                        }}>
+                        <span className="tab-sub-mark" aria-hidden>·</span>{t("시즌 {n}", { n })}
+                        {n !== AC_LATEST && <em className="tab-sub-past">{t("지난 시즌")}</em>}
+                      </a>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
