@@ -14202,6 +14202,33 @@ html.rg-theme {
 .rg-rec-status {
   color: var(--rgmut);
 }
+/* 대사형 기록 — IS1 월간 친목회만 원문이 산문이 아니라 대화 스크립트다 (2026-09-06).
+   창이 좁게 리사이즈돼도 깨지지 않게 화자를 왼쪽 거터가 아니라 **윗줄**에 둔다. */
+.rg-rec-body .rg-rec-say {
+  margin: 0 0 0.5em;
+  padding-left: 30px;
+}
+.rg-rec-body .rg-rec-say.cont {
+  margin-top: -0.3em;
+}
+.rg-rec-who {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 2px -30px;
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--rggold);
+}
+.rg-rec-who img {
+  width: 23px;
+  height: 23px;
+  border-radius: 50%;
+  border: 1px solid var(--rgline);
+  background: var(--rgdeep);
+  object-fit: cover;
+  flex: none;
+}
 
 /* 월간 방문객 — 전시관 서브탭 (사용자 소원 2026-08-17) */
 .rg-visitor-note {

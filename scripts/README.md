@@ -184,7 +184,9 @@ python3 scripts/build-rogue-enc-scenes.py      # → scripts/rogue-enc-scenes.js
 python3 scripts/build-rogue-records.py         # → public/rogue/record/*.json (엔딩북 조각·월간 방문객
 #     장면의 스토리 전문 — archiveComp의 textId/chatStoryId가 가리키는 gamedata 산문을
 #     ko/en/ja(+IS6 cn)로 받아 저장. build-rogue.py가 파일 존재를 보고 txt 플래그를 붙이므로
-#     **build-rogue보다 먼저** 돌린다. 산출물은 R2 서빙 — 배포 전 r2-sync 필수)
+#     **build-rogue보다 먼저** 돌린다. 산출물은 R2 서빙 — 배포 전 r2-sync 필수.
+#     문단은 산문=문자열 / 대사={c,n,x} 두 종류 — IS1 방문객 기록만 대화 스크립트다.
+#     손으로 채운 로케일(IS6 ko 번역)은 덮어쓰지 않고 살린다)
 python3 scripts/build-i18n.py .gamedata       # → app/data/operators.{en,ja}.json + extra-i18n.{en,ja}.json
 python3 scripts/download-avatars.py           # 신규 오퍼 아바타를 public/avatars/에 다운로드
 ```
