@@ -15099,6 +15099,12 @@ main.site-main > .site-header {
   opacity: 1;
   box-shadow: 0 0 6px var(--lime);
 }
+/* 맵 노드 자동 이동 — 스샷 레이더와 ? 사이의 가운데 세그먼트 (제보 f1c050b2, 2026-09-05).
+   인식을 끄는 게 아니라 **이동만** 끄는 토글이라 스샷 레이더와 같은 계열로 둔다. */
+.lens-node-btn {
+  border-radius: 0;
+  border-left: none;
+}
 /* ? 도움말 — 오른쪽 세그먼트, 설명 모달을 연다 */
 .lens-help-btn {
   display: inline-flex;

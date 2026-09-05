@@ -2495,6 +2495,15 @@ const D: Record<string, Pair> = {
   // (사용자 확정 2026-07-23). Phase 1은 KR 클라 전용(kor.traineddata만 호스팅)이라 진입 버튼이
   // ko에서만 보이지만, 키는 미리 등록해 둔다 (EN/JA 클라 지원 시 버튼 게이트만 풀면 됨).
   "스샷 레이더": ["Snap Radar", "スクショレーダー"],
+  // 맵 노드 자동 이동 토글 (제보 f1c050b2, 2026-09-05) — 인식이 아니라 이동만 끈다
+  "노드 이동": ["Node jump", "ノード移動"],
+  "맵 노드(작전·조우·구역)를 인식했을 때 그 상세로 자동으로 이동할지 정합니다. 꺼도 소장품·도구 인식은 그대로 동작합니다": [
+    "Whether recognising a map node (operation, encounter, zone) jumps to its details. Turning it off leaves collectible and tool recognition working.",
+    "マップノード（作戦・遭遇・区域）を認識したとき、その詳細へ自動で移動するかを決めます。オフにしても収蔵品・道具の認識はそのまま動きます"],
+  "노드 이동 꺼짐": ["Node jump off", "ノード移動オフ"],
+  "맵 노드를 인식했지만 '노드 이동'이 꺼져 있어 이동하지 않았습니다.": [
+    "Recognised a map node, but Node jump is off so nothing moved.",
+    "マップノードを認識しましたが、「ノード移動」がオフのため移動しませんでした。"],
   "스샷으로 태그 입력": ["Tags from Screenshot", "スクショでタグ入力"],
   "클릭해 스샷 자동인식을 켜고 끕니다 — 켜두면 게임 화면을 캡처만 해도 바로 인식·적용됩니다": ["Click to toggle screenshot auto-recognition — while on, just capturing the game screen recognizes and applies instantly", "クリックでスクショ自動認識のオン/オフ — オンの間はゲーム画面をキャプチャするだけで即認識・適用されます"],
   "스샷 레이더 도움말": ["Snap Radar help", "スクショレーダーのヘルプ"],
