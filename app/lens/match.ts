@@ -149,6 +149,12 @@ const SCREEN_KEYWORDS: { key: string; label: string }[] = [
 // 키워드(2개 이상, 또는 1개+태그 2개)로 게이트해야 오발동하지 않는다.
 const RECRUIT_KEYWORDS = ["모집시간", "모집요건", "모집예산", "모집설명", "획득가능오퍼레이터", "인재아웃서칭", "태그갱신"];
 
+/** '소장품 1개 획득' 류의 줄 — 바로 아래에 **색 글씨로** 그 소장품 이름이 붙는다
+ *  (제보 16138722, 2026-09-05: 조우 선택지가 주는 소장품). 이 줄이 보이면 색 글씨 밴드를
+ *  한 번 더 읽어 이름을 건진다. OCR이 `收藏品`을 `收茂`로 흘리는 일이 잦아 느슨하게 본다. */
+const COLLECT_LINE = [/收藏|收茂/, /获得\s*\d*\s*件/, /소장품/, /수집품/, /collectible/i, /収蔵品/];
+export const isCollectLine = (text: string): boolean => COLLECT_LINE.some((re) => re.test(text));
+
 /** 칩 패스(어두운 버튼 개별 OCR)가 필요한 화면인지 — 현재는 공개모집 키워드가 보일 때만.
  *  칩 패스는 크롭당 recognize를 돌려 비싸므로(최대 20회) 필요할 때만 실행한다. */
 export function wantsChipPass(rawLines: string[]): boolean {
@@ -530,6 +536,16 @@ export function analyzeChinese(rawLines: string[], index: LensIndex,
           let hit = 0;
           for (const b of nb) if (lineBG.has(b)) hit++;
           if (hit / nb.size >= 0.6) w = Math.max(w, 2);
+          // ⚠ 바이그램은 **가운데** 1자 오독에 약하다 — 5자 이름이면 4쌍 중 2쌍이 깨져
+          //   0.5로 떨어져 위 문턱을 못 넘는다 (실측: 血魔的寝床 → 血魔的究床, 제보
+          //   16138722). 끝자리 오독(多生苔藓)만 통과하던 셈이라, 길이가 같을 때는
+          //   **다른 자리 수를 직접 세서** 1자까지 허용한다. 문턱을 낮추는 게 아니라
+          //   조건을 하나 더 두는 것이라 오탐이 늘지 않는다.
+          else if (line.length === n.length) {
+            let diff = 0;
+            for (let k = 0; k < n.length && diff < 2; k++) if (line[k] !== n[k]) diff++;
+            if (diff <= 1) w = Math.max(w, 2);
+          }
         }
         if (w === 3) break;   // 최고 가중치면 더 볼 필요 없다
       }

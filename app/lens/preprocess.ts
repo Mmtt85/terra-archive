@@ -22,6 +22,34 @@ export function grayNormalize(data: Uint8ClampedArray | Uint8Array): void {
   }
 }
 
+/**
+ * **색 글씨** 강조 그레이스케일 (제보 16138722, 2026-09-05).
+ *
+ * 휘도(grayNormalize)는 색 글씨를 중간값으로 뭉갠다 — 조우 선택지가 주는 소장품 이름이
+ * 분홍(#e8628f쯤)인데 휘도가 143이라, 흰 글씨(240)와 어두운 패널(50) 사이에 끼어
+ * min-max 스트레치에서 묻힌다 (실측: 바로 윗줄 `获得1件收藏品`은 읽는데 `·显圣吊坠`는
+ * 한 글자도 안 나왔다). 채널 **최댓값**을 쓰면 분홍의 R이 232라 흰 글씨만큼 밝아진다.
+ *
+ * ⚠ 이건 **작은 밴드 크롭 전용**이다 — 전체 프레임에 쓰면 배경 아트까지 밝아져 기존
+ *   인식이 흔들린다. 본 패스(grayNormalize)는 그대로 두고, 필요한 자리만 이걸로 한 번 더
+ *   읽는다 (공개모집 칩 패스와 같은 구조).
+ */
+export function colorNormalize(data: Uint8ClampedArray | Uint8Array): void {
+  const n = data.length;
+  let min = 255, max = 0;
+  for (let i = 0; i < n; i += 4) {
+    const v = Math.max(data[i], data[i + 1], data[i + 2]);
+    data[i] = v;
+    if (v < min) min = v;
+    if (v > max) max = v;
+  }
+  const range = Math.max(1, max - min);
+  for (let i = 0; i < n; i += 4) {
+    const v = Math.round(((data[i] - min) * 255) / range);
+    data[i] = data[i + 1] = data[i + 2] = v;
+  }
+}
+
 /** 업스케일 배율 — 폭 2000px 미만(비레티나 캡처)이면 2x, 이미 크면 원본 유지.
  *  ⚠ 1.5x로 낮추면 f1 분대 효과문(소형 텍스트) 인식이 깨진다 (A/B 실측 2026-07-23) — 2x 고정. */
 export function upscaleFactor(width: number): number {

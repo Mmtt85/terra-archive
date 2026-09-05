@@ -4,7 +4,7 @@
 
 import { createOcrSession } from "./ocr";
 import { asset } from "../assets";
-import { buildIndex, analyzeLines, analyzeChinese, analyzeRecruit, wantsChipPass, normFor, type LensIndex, type LensOutcome, type LensHud } from "./match";
+import { buildIndex, analyzeLines, analyzeChinese, analyzeRecruit, wantsChipPass, isCollectLine, LENS_ITEM_SECTIONS, normFor, type LensIndex, type LensOutcome, type LensHud } from "./match";
 import { parseStoryIndex, analyzeStoryLines, type StoryIndex } from "./storymatch";
 import storySearchMeta from "../data/story-search-meta.json";
 
@@ -220,6 +220,28 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
       oc = analyzeLines(lines, index, ctx);
       // 폴백까지 실패(무신호)면 마지막으로 중국어를 시도한다 (zhRan이면 이미 돌려 스킵)
       if (zhPossible && oc.target.kind === "none") await tryZh();
+    }
+    // ── 색 글씨 밴드 패스 (제보 16138722, 2026-09-05) ────────────────────────────
+    // 조우 선택지가 주는 소장품은 **판마다 랜덤**이라 우리 데이터엔 "소장품 1개 획득"으로만
+    // 적혀 있다 — 이름은 화면에서 읽어야 안다. 그런데 그 이름만 **분홍 글씨**라 휘도
+    // 그레이스케일에서 묻힌다 (실측: 윗줄 `获得1件收藏品`은 읽고 `·显圣吊坠`는 0줄).
+    // 그래서 그 줄 **바로 아래**만 채널최댓값 전처리로 한 번 더 읽는다.
+    // ⚠ 목표(target)는 건드리지 않는다 — **엔티티만** 보탠다. 조우 모달은 그대로 열리고,
+    //   화면(rogue.tsx)이 그 소장품을 모아보기로 곁들인다. 섹션 투표를 다시 하면 조우가
+    //   소장품으로 뒤집혀 정작 조우 정보를 잃는다.
+    // ⚠ **이미 아이템을 잡았으면 돌지 않는다** — 소장품 화면은 본 패스가 이미 처리한다.
+    const hasItem = oc.entities.some((e) => LENS_ITEM_SECTIONS.has(e.section));
+    if (!hasItem && oc.target.kind !== "none" && lines.some(isCollectLine)) {
+      const cLines = await session.colorBand(isCollectLine, zhHit);
+      if (cLines.length) {
+        const cOc = zhHit
+          ? analyzeChinese(cLines, index, { topic, lock: opts?.lock })
+          : analyzeLines(cLines, index, ctx);
+        const add = cOc.entities.filter((e) => LENS_ITEM_SECTIONS.has(e.section)
+          && !oc.entities.some((x) => x.id === e.id));
+        console.debug(`[lens] 색 글씨 밴드: ${cLines.length}줄 → 소장품 ${add.length}개`, cLines);
+        if (add.length) { oc.entities = [...oc.entities, ...add]; lines = lines.concat(cLines); }
+      }
     }
     // 전투 입장 암전 — 화면이 검게 덮이고 전투 이름만 뜨는 로딩 화면 (사용자 확정 2026-07-26).
     // 리플레이가 "노드를 눌러 본 것"과 "실제로 들어간 것"을 가르는 신호다. 지도·모달은

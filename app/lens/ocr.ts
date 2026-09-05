@@ -5,7 +5,7 @@
 // PSM3(auto)·칩 패스를 생략한다. 칩 패스(공채 태그 등 어두운 버튼 개별 OCR)는
 // 화면 키워드가 보일 때만 — 오케스트레이션은 lens.tsx·verify-lens.ts가 동일 순서로 수행.
 
-import { grayNormalize, upscaleFactor, findDarkChips, chipCropRect, binarizeGlyph, isolateGlyphs } from "./preprocess";
+import { grayNormalize, colorNormalize, upscaleFactor, findDarkChips, chipCropRect, binarizeGlyph, isolateGlyphs } from "./preprocess";
 import { asset } from "../assets";
 import type { Worker } from "tesseract.js";
 
@@ -101,6 +101,10 @@ export type OcrSession = {
   auto(): Promise<string[]>;
   /** 중국어(chi_sim) PSM11 전체 프레임 — kor 매칭이 무신호일 때만 (블랙플로우 CN 스크린샷) */
   zh(): Promise<string[]>;
+  /** **색 글씨 밴드** — 직전 패스에서 test에 걸린 줄 바로 아래를 채널최댓값 전처리로 다시
+   *  읽는다. 조우 선택지가 주는 소장품 이름(분홍)이 대상 (제보 16138722, 2026-09-05).
+   *  zh=true 면 chi_sim 워커. 걸린 줄이 없으면 아무것도 안 하고 빈 배열. */
+  colorBand(test: (text: string) => boolean, zh?: boolean): Promise<string[]>;
   /** 좌하단 난이도 배지(육각형 숫자) — 있으면 0~18 반환, 없으면 null */
   difficulty(): Promise<number | null>;
   /** 강한 빨강 픽셀 비율(0~1) — 긴급 작전 화면이면 ~0.02, 평시 ≤0.009 (실측) */
@@ -159,23 +163,72 @@ export async function createOcrSession(blob: Blob, lang = "kor"): Promise<OcrSes
   // 출력은 blocks(→lines)만 생성 — 기본값의 hocr·tsv 생성 비용을 끈다 (속도)
   const OUT = { blocks: true, text: false, hocr: false, tsv: false } as const;
 
+  // 직전 전체프레임 패스의 줄 상자 — colorBand가 "이 줄 바로 아래"를 잡는 데 쓴다.
+  // (캔버스 좌표계 = 업스케일 후 좌표라 크롭에 그대로 쓸 수 있다)
+  type LineBox = { text: string; x0: number; y0: number; x1: number; y1: number };
+  let lastBoxes: LineBox[] = [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const takeLines = (lines: any[]): string[] => {
+    lastBoxes = (lines ?? []).map((l) => ({
+      text: String(l.text ?? "").trim(),
+      x0: l.bbox?.x0 ?? 0, y0: l.bbox?.y0 ?? 0, x1: l.bbox?.x1 ?? 0, y1: l.bbox?.y1 ?? 0,
+    })).filter((l: LineBox) => l.text);
+    return lastBoxes.map((l) => l.text);
+  };
+
   return {
     redness,
     luma,
     async sparse() {
       await setPsm(worker, "11");
       const r = await worker.recognize(c, {}, OUT);
-      return (r.data.lines ?? []).map((l) => l.text.trim()).filter(Boolean);
+      return takeLines(r.data.lines ?? []);
     },
     async auto() {
       await setPsm(worker, "3");
       const r = await worker.recognize(c, {}, OUT);
-      return (r.data.lines ?? []).map((l) => l.text.trim()).filter(Boolean);
+      return takeLines(r.data.lines ?? []);
     },
     async zh() {
       const zw = await getChiWorker();
       const r = await zw.recognize(c, {}, OUT);
-      return (r.data.lines ?? []).map((l) => l.text.trim()).filter(Boolean);
+      return takeLines(r.data.lines ?? []);
+    },
+    async colorBand(test, zh) {
+      const hits = lastBoxes.filter((l) => l.x1 > l.x0 && l.y1 > l.y0 && test(l.text));
+      if (!hits.length) return [];
+      // 본 캔버스(c)는 이미 그레이라 원본 색이 없다 — blob에서 한 번 더 디코드한다.
+      // 밴드 하나짜리 크롭이라 비용이 작고, 전체 프레임 사본을 들고 있지 않아도 된다.
+      let bmp2: ImageBitmap;
+      try { bmp2 = await createImageBitmap(blob); } catch { return []; }
+      const cc = document.createElement("canvas");
+      const cctx = cc.getContext("2d", { willReadFrequently: true })!;
+      cctx.imageSmoothingEnabled = true;
+      cctx.imageSmoothingQuality = "high";
+      const out: string[] = [];
+      const zw = zh ? await getChiWorker() : worker;
+      if (!zh) await setPsm(worker, "7");
+      for (const b of hits.slice(0, 4)) {          // 한 화면에 선택지가 넷을 넘지 않는다
+        const lh = b.y1 - b.y0;
+        // 이름 줄은 바로 아래 한 줄. 좌우로는 넉넉히 — 이름 길이가 윗줄과 다르다.
+        const sx = Math.max(0, Math.round(b.x0 - lh * 0.6) / scale);
+        const sy = Math.max(0, Math.round(b.y1 - lh * 0.15) / scale);
+        const sw = Math.min(W / scale - sx, Math.round((b.x1 - b.x0) + lh * 3) / scale);
+        const sh = Math.min(H / scale - sy, Math.round(lh * 1.9) / scale);
+        if (sw < 8 || sh < 6) continue;
+        const zoom = 4;                            // 작은 밴드라 크게 키워 읽는다
+        cc.width = Math.round(sw * zoom); cc.height = Math.round(sh * zoom);
+        cctx.clearRect(0, 0, cc.width, cc.height);
+        cctx.drawImage(bmp2, sx, sy, sw, sh, 0, 0, cc.width, cc.height);
+        const bimg = cctx.getImageData(0, 0, cc.width, cc.height);
+        colorNormalize(bimg.data);
+        cctx.putImageData(bimg, 0, 0);
+        const rr = await zw.recognize(cc, {}, { blocks: false, text: true, hocr: false, tsv: false });
+        const txt = (rr.data.text ?? "").trim();
+        if (txt) out.push(...txt.split("\n").map((l) => l.trim()).filter(Boolean));
+      }
+      bmp2.close();
+      return out;
     },
     async difficulty() {
       // 좌하단 코너를 1:1로 잘라 이진화 → nearest 4배 확대 → eng 워커 한 줄 OCR.
