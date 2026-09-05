@@ -205,6 +205,24 @@ _enc_i18n_cache = None
 enc_untranslated = {}     # 빌드 전체에서 수집 → rogue-enc-untranslated.json
 
 
+def needs_ko(s):
+    """아직 번역이 안 된 중국어 문자열인가 — 미번역 리포트(rogue6/rogue-cn)의 판정.
+
+    한자가 있어도 **한글이 섞여 있으면 미번역이 아니다.** 오버레이는 필드를 통째로
+    갈아끼우므로 한 문자열이 한국어와 중국어로 섞일 수 없다 — 한글이 보인다는 건
+    이미 KR 공식 텍스트(또는 우리 사전의 집필문)라는 뜻이고, 그 안의 한자는 공식
+    표기가 일부러 남겨 둔 것이다.
+
+    2026-09-05 실측: IS5 중국섭 리포트 10건이 전부 이 오탐이었다 — `여전(厉钱)`,
+    `花 없음·厉 없음`, `희망 및 최대 희망 1 소모 ※ 如岁의 소원을 …` 같은 것들로,
+    KR 공식판(app/data/rogue5.json)에 **글자 그대로** 들어 있다. 여기를 '번역'하면
+    공식 표기를 망가뜨린다.
+    """
+    if any("가" <= ch <= "힣" for ch in s):
+        return False
+    return any("一" <= ch <= "鿿" for ch in s)
+
+
 def load_enc_i18n():
     global _enc_i18n_cache
     if _enc_i18n_cache is None:
@@ -1655,13 +1673,23 @@ def build_topic(tid="rogue_1", loc=None):
     print(f"{fname}: zones={len(zones)} stages={len(stages)} enemies={len(enemies)} "
           f"relics={len(relics)} capsules={len(capsules)} variations={len(variations)} "
           f"encounters={len(encounters)} → {kb}KB")
-    if loc and tr_missing:
+    # 미번역 큐레이션 문장 리포트 — **로케일 × 토픽 칸을 통째로 갈아끼운다.**
+    # ⚠ 종전엔 로케일별 목록에 합집합(|)으로 쌓기만 해서, 번역을 채워 넣어도 옛 문장이
+    #   영원히 남았다 (실측 2026-09-06: 8건이 전부 '한국어 원문이 수정된 옛 판'이었는데도
+    #   리포트에 그대로 있었다). 그래서 SKILL 의 '0건 유지'를 확인할 방법이 없었다.
+    #   토픽별로 나눠 덮어쓰면 rogue-cn-untranslated.json 과 같은 규약이 되고, 토픽 하나만
+    #   다시 빌드해도(rogue4-en) 다른 토픽 칸은 보존된다.
+    if loc:
         rep = os.path.join(REPO, "scripts", "rogue-i18n-missing.json")
         old = json.load(open(rep, encoding="utf-8")) if os.path.exists(rep) else {}
-        old.setdefault(loc, [])
-        old[loc] = sorted(set(old[loc]) | tr_missing)
+        # 옛 평면 구조({en: [...]})가 남아 있으면 버린다 — 토픽 정보가 없어 옮길 수 없다
+        if any(isinstance(v, list) for v in old.values()):
+            old = {}
+        old.setdefault(loc, {})
+        old[loc][tid] = sorted(tr_missing)
         json.dump(old, open(rep, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
-        print(f"  ⚠ {loc} 미번역 큐레이션 문장 {len(tr_missing)}건 → rogue-i18n-missing.json")
+        if tr_missing:
+            print(f"  ⚠ {loc} 미번역 큐레이션 문장 {len(tr_missing)}건 → rogue-i18n-missing.json")
 
 
 # ── 중국섭 변형 (rogue_1~5 → rogueN.cn.json — /rogue 서버 탭 '중국 서버') ──────
@@ -1815,14 +1843,12 @@ def cn_koreanize(ronum, out):
     if os.path.exists(ko_path):
         tr.update(json.load(open(ko_path, encoding="utf-8")))
     untranslated = {}
-    def has_cjk(s):
-        return any("一" <= ch <= "鿿" for ch in s)
     def translate(v, path=""):
         if isinstance(v, str):
             s = v.strip()
             if s in tr:
                 return v.replace(s, tr[s])
-            if has_cjk(v):
+            if needs_ko(v):          # 한글이 섞여 있으면 이미 공식 KR — needs_ko 주석 참조
                 untranslated.setdefault(s, path)
             return v
         if isinstance(v, list):
@@ -2492,14 +2518,12 @@ def build_rogue6():
     if os.path.exists(ko_path):
         tr.update(json.load(open(ko_path, encoding="utf-8")))
     untranslated = {}
-    def has_cjk(s):
-        return any("一" <= ch <= "鿿" for ch in s)
     def translate(v, path=""):
         if isinstance(v, str):
             s = v.strip()
             if s in tr:
                 return v.replace(s, tr[s])
-            if has_cjk(v):
+            if needs_ko(v):          # 한글이 섞여 있으면 이미 공식 KR — needs_ko 주석 참조
                 untranslated.setdefault(s, path)
             return v
         if isinstance(v, list):

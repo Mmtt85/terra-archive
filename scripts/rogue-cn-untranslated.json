@@ -3,16 +3,5 @@
  "rogue2": {},
  "rogue3": {},
  "rogue4": {},
- "rogue5": {
-  "花 없음·厉 없음": "encounters.scenes.choices.branch",
-  "花 있음·厉 없음": "encounters.scenes.choices.branch",
-  "花 있음·厉 1개": "encounters.scenes.choices.branch",
-  "花 없음·厉 1개": "encounters.scenes.choices.branch",
-  "花 있음·厉 2개": "encounters.scenes.choices.branch",
-  "花 없음·厉 2개": "encounters.scenes.choices.branch",
-  "희망 및 최대 희망 1 소모 ※ 如岁의 소원을 심었을 때는 상한 2": "encounters.scenes.choices.desc",
-  "여전(厉钱)": "encounters.scenes.choices.branch",
-  "화전(花钱)": "encounters.scenes.choices.branch",
-  "형전(衡钱)": "encounters.scenes.choices.branch"
- }
+ "rogue5": {}
 }
