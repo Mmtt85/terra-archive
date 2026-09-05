@@ -44,12 +44,16 @@ function rgbToHsv(r: number, g: number, b: number): [number, number, number] {
 }
 
 /** 카드 좌하단 배지를 읽어 티어(1~6)를 낸다. 못 읽으면 null. */
-export function readTier(px: Uint8ClampedArray, W: number,
+export function readTier(px: Uint8ClampedArray, W: number, H: number,
   cx: number, cy: number, cw: number, chh: number): number | null {
   // 배지 영역 — 카드 기준 상대 위치 (실측: 좌 2~24% · 하 70~97%)
   const x0 = Math.round(cx + cw * 0.02), x1 = Math.round(cx + cw * 0.24);
   const y0 = Math.round(cy + chh * 0.70), y1 = Math.round(cy + chh * 0.97);
   if (x1 - x0 < 3 || y1 - y0 < 3) return null;
+  // ⚠ 배지가 화면 밖으로 잘렸으면 **읽지 않는다** — 잘린 배지는 색을 잃어 전부 T1 로
+  //   읽히고, 그 틀린 티어가 풀이에 들어가면 조용히 엉뚱한 밴이 나온다. 스크롤 중에는
+  //   위아래 행이 늘 잘려 있으므로 이 가드가 정확도의 핵심이다 (2026-09-06).
+  if (y1 > H || y0 < 0 || x1 > W) return null;
   // ① 진한 색 픽셀들의 평균 색상 — 채도×명도 상위만 본다 (배지 테두리·글리프)
   const hits: [number, number, number][] = [];
   let white = 0, total = 0;
@@ -135,8 +139,12 @@ export function findAcCards(px: Uint8ClampedArray, W: number, H: number): AcCard
     }
     rowP[y] = n / (W / 2);
   }
-  const cards: AcCard[] = [];
-  for (const [ry0, ry1] of runs(rowP, 0.10, minH)) {
+  // 행 단위로 모은다 — 아래 ⑤ 검사가 **행 통째로** 판정하기 때문
+  const rowsOut: { cards: AcCard[]; size: number }[] = [];
+  // ⚠ 행 임계를 낮게 (2026-09-06 실측). 카드가 둘뿐인 행은 밝은 픽셀이 화면 폭의 5% 밖에
+  //   안 돼서 0.10 이면 통째로 놓친다 (독행 행). 헐거운 행은 아래 열 단계에서 걸러진다 —
+  //   카드 크기 조각이 없으면 아무것도 안 나온다.
+  for (const [ry0, ry1] of runs(rowP, 0.05, minH)) {
     const rh = ry1 - ry0 + 1;
     if (rh > H * 0.35) continue;            // 너무 두꺼우면 카드 행이 아니다 (배너 등)
     // 이 행 안에서만 열 투영
@@ -163,23 +171,59 @@ export function findAcCards(px: Uint8ClampedArray, W: number, H: number): AcCard
       if (last && s[0] - last[1] - 1 < mw * 0.25) last[1] = s[1];
       else merged.push([s[0], s[1]]);
     }
-    // ② 카드보다 한참 좁은 것은 카드가 아니다 — 맹약 아이콘·UI 조각
+    // ② 카드보다 한참 좁은 것은 카드가 아니다 — UI 조각
     mw = med(merged.map(([s, e]) => e - s + 1));
     segs = merged.filter(([s, e]) => e - s + 1 >= mw * 0.5 && e - s + 1 <= rh * 1.6);
+    // ③ 맨 앞의 **맹약 아이콘**을 떼어낸다 — 원형 아이콘이 카드와 크기가 비슷해 폭으로는
+    //    안 걸린다. 대신 아이콘과 첫 카드 사이 간격이 카드 사이 간격보다 확연히 넓다
+    //    (실측 115px vs 60px). 카드가 셋 이상일 때만 — 둘뿐이면 간격 통계를 못 믿는다.
+    if (segs.length >= 3) {
+      const gaps: number[] = [];
+      for (let i = 1; i < segs.length; i++) gaps.push(segs[i][0] - segs[i - 1][1] - 1);
+      const inner = med(gaps.slice(1));
+      if (gaps[0] > inner * 1.6) segs = segs.slice(1);
+    }
+    // ④ **카드는 서로 크기가 같다.** 화면 위쪽 제목·카운트다운 글자도 비슷한 높이의 띠를
+    //    이뤄 여기까지 올라오는데, 글자는 폭이 제각각이라 이 검사에서 떨어진다
+    //    (2026-09-06: f16 헤더가 카드 10장으로 잡히던 것을 이걸로 걷어냈다).
+    if (segs.length >= 2) {
+      const wm = med(segs.map(([s, e]) => e - s + 1));
+      const alike = segs.filter(([s, e]) => Math.abs(e - s + 1 - wm) <= wm * 0.25).length;
+      if (alike / segs.length < 0.7) continue;
+    }
+    const rowCards: AcCard[] = [];
+    const rowSizes: number[] = [];
     for (const [cx0, cx1] of segs) {
       const cw = cx1 - cx0 + 1;
       // ⚠ 배지 위치는 **폭으로 잰 높이**를 기준으로 잡는다 (2026-09-06 실측). 행 높이는
       //   아트 아래쪽이 어두우면 짧게 잡히는데(정밀 행 145 vs 실제 177), 그 값으로 좌하단을
       //   찾으면 배지 **위쪽**을 크롭해 티어를 전부 놓친다. 카드는 정사각이라 폭이 더 낫다.
       const ch2 = Math.max(rh, cw);
-      // 화면 끝에 잘린 행은 버린다 — 배지가 화면 밖이라 티어가 전부 T1 로 읽힌다.
-      // 스크롤 중에는 위아래가 늘 잘려 있으므로 이 가드가 없으면 오답이 계속 쌓인다.
-      if (ry0 + ch2 > H - 2 || ry0 < 2) continue;
-      cards.push({
-        x: cx0 / W, y: ry0 / H, w: cw / W, h: ch2 / H,
-        tier: readTier(px, W, cx0, ry0, cw, ch2),
-      });
+      const tier = readTier(px, W, H, cx0, ry0, cw, ch2);
+      if (tier === null) continue;          // 배지를 못 읽은 카드는 관측에 넣지 않는다
+      rowCards.push({ x: cx0 / W, y: ry0 / H, w: cw / W, h: ch2 / H, tier });
+      rowSizes.push(cw);
     }
+    if (rowCards.length) rowsOut.push({ cards: rowCards, size: med(rowSizes) });
   }
-  return cards;
+  // ⑤ **행은 일정한 간격으로 늘어선다.** 화면 끝에 걸쳐 잘린 행은 배지가 잘려 티어가 전부
+  //    T1 로 읽히는데, 카드 **폭**으로는 안 걸린다 (실측: 잘린 행도 폭 중앙값 179로 정상).
+  //    대신 위치가 어긋난다 — 잘린 행의 위끝은 카드 위끝이 아니라 '보이기 시작하는 곳'이라
+  //    간격이 깨진다 (실측 265·264·265·265 뒤에 227). 그 격자에서 벗어난 행을 버린다.
+  //    스크롤 중에는 위아래가 늘 잘려 있으니 이게 오답을 막는 마지막 관문이다 (2026-09-06).
+  if (rowsOut.length < 3) return rowsOut.flatMap((r) => r.cards);
+  const ys = rowsOut.map((r) => r.cards[0].y * H);
+  const gaps: number[] = [];
+  for (let i = 1; i < ys.length; i++) gaps.push(ys[i] - ys[i - 1]);
+  const pitch = gaps.slice().sort((a, b) => a - b)[gaps.length >> 1];
+  if (!(pitch > 0)) return rowsOut.flatMap((r) => r.cards);
+  // 기준선 = 카드가 가장 많은 행 (가장 믿을 만한 행)
+  let ref = 0;
+  for (let i = 1; i < rowsOut.length; i++) {
+    if (rowsOut[i].cards.length > rowsOut[ref].cards.length) ref = i;
+  }
+  return rowsOut.filter((_, i) => {
+    const off = Math.abs(ys[i] - ys[ref]) % pitch;
+    return Math.min(off, pitch - off) <= pitch * 0.12;
+  }).flatMap((r) => r.cards);
 }
