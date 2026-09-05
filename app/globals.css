@@ -20918,6 +20918,9 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
 }
 .ac-banchip:hover { filter: none; opacity: 1; background: var(--bg-soft); }
 .ac-banchip > b { font-weight: 700; }
+/* 후보 — 아직 확정 아님. 점선 테두리로 확정과 한눈에 구분한다 (거짓말 방지) */
+.ac-banchip.maybe { border-style: dashed; opacity: 0.6; }
+.ac-banmaybe-note { margin: 10px 0 6px; font-size: 12px; }
 
 /* 한 판 스트립 — PRTS 연결 중에만 뜬다 (2026-09-06). 덱편성 모달 **밖**이라
    탭을 옮겨 다녀도 인식 상태가 보인다. */

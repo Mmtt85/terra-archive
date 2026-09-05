@@ -2,11 +2,13 @@
 // 스샷 레이더 — 인식 파이프라인 (모달과 페이지 레벨 자동인식이 공유).
 // 모드별 단계형 OCR + 매칭: 판정이 나면 나머지 패스를 생략한다 (속도).
 
-import { createOcrSession } from "./ocr";
+import { createOcrSession, type OcrSession } from "./ocr";
 import { asset } from "../assets";
-import { buildIndex, analyzeLines, analyzeChinese, analyzeRecruit, wantsChipPass, isCollectLine, LENS_ITEM_SECTIONS, normFor, type LensIndex, type LensOutcome, type LensHud } from "./match";
+import { buildIndex, analyzeLines, analyzeChinese, analyzeRecruit, wantsChipPass, isCollectLine, LENS_ITEM_SECTIONS, normFor, type LensIndex, type LensOutcome, type LensHud, type Normalizer } from "./match";
 import { parseStoryIndex, analyzeStoryLines, type StoryIndex } from "./storymatch";
-import { buildAcIndex, planAcStacks, parseStack, parseDeploy, parseSeats, isAcInfoScreen, type AcIndex } from "./acmatch";
+import { buildAcIndex, planAcStacks, parseStack, parseDeploy, parseSeats, isAcInfoScreen,
+  acBanBands, bandTexts, pickBond, type AcIndex } from "./acmatch";
+import { findAcCards } from "./acvision";
 import storySearchMeta from "../data/story-search-meta.json";
 
 export type LensMode = "rogue" | "recruit" | "story" | "autochess";
@@ -137,6 +139,44 @@ export function getAcIndex(locale = "ko"): Promise<AcIndex> {
   return p;
 }
 
+/** 밴 화면의 행별 티어 관측 — 못 읽으면 빈 객체.
+ *  ⚠ 카드 격자·티어 배지는 **원본 색**이 있어야 읽는다 (배지를 색상으로 가른다).
+ *  OCR 세션 캔버스는 grayNormalize 를 거쳐 색이 없으므로 blob 을 한 번 더 디코드한다 —
+ *  ocr.ts colorBand 가 같은 이유로 하는 일이다. 밴 화면이 아니면 카드가 안 잡혀 빈 값이다. */
+async function readBanRows(file: Blob, session: OcrSession, idx: AcIndex, norm: Normalizer):
+  Promise<Record<string, number[]>> {
+  try {
+    const bmp = await createImageBitmap(file);
+    const c = document.createElement("canvas");
+    c.width = bmp.width; c.height = bmp.height;
+    const ctx = c.getContext("2d", { willReadFrequently: true });
+    if (!ctx) { bmp.close(); return {}; }
+    ctx.drawImage(bmp, 0, 0);
+    bmp.close();
+    const img = ctx.getImageData(0, 0, c.width, c.height);
+    const bands = acBanBands(findAcCards(img.data, c.width, c.height));
+    if (!bands.length) return {};
+    const boxes = session.boxes();
+    const out: Record<string, number[]> = {};
+    const used = new Set<string>();
+    for (const b of bands) {
+      // ① 전체 프레임 패스에 이미 잡힌 줄로 먼저 시도 (공짜)
+      let bond = pickBond(bandTexts(b, boxes), idx, norm, used);
+      // ② 못 찾으면 그 자리만 잘라 다시 읽는다 — 맹약 이름은 작아서 PSM11 이 자주 놓친다
+      //    (실측: 5개 행 중 2개만 잡혔다). 자리를 아니까 확대해서 한 줄로 읽으면 잘 잡힌다.
+      if (!bond) bond = pickBond(await session.crop(b.nameRect), idx, norm, used);
+      if (!bond) continue;                      // 이름을 못 붙인 행은 버린다 (짐작하지 않는다)
+      used.add(bond);
+      out[bond] = b.tiers.slice().sort((p, q) => q - p);
+    }
+    if (Object.keys(out).length) {
+      console.debug(`[lens] 밴 행 ${Object.keys(out).length}/${bands.length}개:`,
+        Object.entries(out).map(([k, v]) => `${k} [${v.join(",")}]`).join(" · "));
+    }
+    return out;
+  } catch { return {}; }
+}
+
 /** 데이터 예열 (모달 열림/토글 켜짐 시 호출). locale은 rogue 인덱스를 로케일별로 예열.
  *  cnTopic — 중섭 탭을 켠 테마. 인덱스가 로케일+중섭 조합으로 캐시되므로 같이 넘겨야
  *  실제로 쓸 인덱스가 예열된다 (안 넘기면 한섭 인덱스만 데워 놓고 다시 받는다). */
@@ -184,12 +224,15 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
     // 배치 가능 인원 — 원시 라인에서 (정규화가 '/'를 지운다)
     const deploy = parseDeploy(lines);
     if (deploy) console.debug(`[lens] 배치 가능 인원: ${deploy.cur}/${deploy.max}${deploy.max === 9 ? " (인사부 파일)" : ""}`);
-    // 참가자 카드 수 — 1이면 독립, 2 이상이면 멀티 (전략 정보 화면에서만 잡힌다)
+    // 참가자 카드 수 — 1이면 독립, 2 이상이면 연합 (전략 정보 화면에서만 잡힌다)
     const seats = parseSeats(lines);
-    if (seats) console.debug(`[lens] 참가자 ${seats}명 → ${seats > 1 ? "멀티" : "독립"}`);
+    if (seats) console.debug(`[lens] 참가자 ${seats}명 → ${seats > 1 ? "연합" : "독립"}`);
+    // 밴 행 — 카드 격자는 **원본 색 픽셀**이 필요하다 (티어 배지를 색으로 가리므로).
+    // 세션 캔버스는 이미 그레이라 blob 에서 한 번 더 디코드한다 (colorBand 와 같은 이유).
+    const banObs = await readBanRows(file, session, idx, norm);
     oc = {
       screens: [], entities: [], topics: [], section: fresh ? "acinfo" : null,
-      target: { kind: "acrun", stacks, fresh, deploy, seats },
+      target: { kind: "acrun", stacks, fresh, deploy, seats, banObs },
     };
   } else if (mode === "story") {
     // 스토리 전문 대사 화면 — OCR 라인의 10자 그램을 역색인에 투표해 스토리·ep 특정 (2026-07-24)

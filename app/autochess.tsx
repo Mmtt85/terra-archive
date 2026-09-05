@@ -31,6 +31,7 @@ import { useBridgeWatch, useBridgeStatus, connectBridge, disconnectBridge, bridg
 import { recognizeShot, warmData, ocrLangFor } from "./lens/run";
 import { warmOcr, warmDigitOcr } from "./lens/ocr";
 import { useAcRun, setAcStack, setAcStacks, mergeAcRun, resetAcRun, isAcLock, acModeOf, AC_LOCK } from "./autochess-run";
+import { solveAcBans } from "./lens/acsolve";
 
 // 전투 맵 (scripts/build-autochess-routes.py) — 작전 도감·통합전략과 **같은 렌더러**를 쓴다
 // (규칙: .claude/skills/route-map-rules). '전투 맵' 탭을 처음 눌렀을 때만 지연 로드한다.
@@ -602,7 +603,10 @@ export default function AutochessGuide({ doc, onShowOperator }: {
       const v = Number(n);
       if (id && Number.isFinite(v) && v > 0) st[id] = Math.min(999, Math.floor(v));
     }
-    setAcStacks(st);
+    // ⚠ 해시에 중첩이 있을 때**만** 쓴다. 종전엔 빈 해시에서도 setAcStacks({}) 를 불러,
+    //   PRTS 로 읽어 둔 중첩이 페이지를 열 때마다 조용히 지워졌다 (2026-09-06 실측).
+    //   중첩의 주인은 이제 한 판 스토어이고, 해시(공유 링크)는 값을 실어 왔을 때만 끼어든다.
+    if (p.has("k")) setAcStacks(st);
     const bd = p.get("bd") ?? "";
     setSimBand(doc.bands.some((b) => b.id === bd) ? bd : "");
     setSim(p.get("sim") === "1");
@@ -631,10 +635,13 @@ export default function AutochessGuide({ doc, onShowOperator }: {
       const n = Object.keys(oc.target.stacks).length;
       const dp = oc.target.deploy ?? null;
       const seats = oc.target.seats ?? 0;
-      if (n || dp || seats) {
-        mergeAcRun({ stacks: oc.target.stacks, deploy: dp, seats });
+      const banObs = oc.target.banObs ?? {};
+      const nb = Object.keys(banObs).length;
+      if (n || dp || seats || nb) {
+        mergeAcRun({ stacks: oc.target.stacks, deploy: dp, seats, banObs });
         const msg = [n ? t("맹약 {n}개", { n }) : "", dp ? `${dp.cur}/${dp.max}` : "",
-          seats ? (seats > 1 ? t("연합") : t("독립")) : ""]
+          seats ? (seats > 1 ? t("연합") : t("독립")) : "",
+          nb ? t("밴 {n}행", { n: nb }) : ""]
           .filter(Boolean).join(" · ");
         noteBridge(msg);
         setAcMsg(msg);
@@ -646,6 +653,14 @@ export default function AutochessGuide({ doc, onShowOperator }: {
   };
   useBridgeWatch(acLocked, handleAcShot);
   const acStackCount = Object.keys(stacks).length;
+  // 밴 역산 — 관측(맹약별 티어)에서 어느 기물이 밴됐는지 조합으로 푼다 (lens/acsolve.ts).
+  // 해가 여럿이면 **교집합만 확정**이고 나머지는 후보다 — 틀린 밴을 사실처럼 보이지 않게.
+  // 화면을 끝까지 스크롤할수록 관측이 늘어 후보가 확정으로 옮겨 간다.
+  const acBans = useMemo(() => {
+    const rows = Object.entries(acrun.banObs).map(([bond, tiers]) => ({ bond, tiers }));
+    if (!rows.length) return { sure: [] as string[], maybe: [] as string[], solutions: 0 };
+    return solveAcBans(rows, doc.chess.map((c) => ({ id: c.id, op: c.op ?? "", t: c.t, bonds: c.bonds })));
+  }, [acrun.banObs, doc.chess]);
   // 지원 여부·모바일은 navigator 를 봐야 알 수 있어 서버에선 판단할 수 없다 — 그냥 호출하면
   // 프리렌더와 하이드레이션 결과가 갈리므로(React #418) 서버 스냅샷을 고정해 읽는다
   // (bridge-button.tsx BridgeTopicButton 과 같은 규약).
@@ -2500,31 +2515,46 @@ export default function AutochessGuide({ doc, onShowOperator }: {
           {acLocked && (
             <section className="ac-boardout ac-banlist">
               <h3 className="sb-h3">{t("밴 리스트")}
-                {acrun.bans.length > 0 && <em className="sb-count">{acrun.bans.length}</em>}</h3>
+                {acBans.sure.length > 0 && <em className="sb-count">{acBans.sure.length}</em>}</h3>
               <p className="ac-bannote">{t("게임의 밴 목록 화면에서 끝까지 스크롤을 내려 주세요 — 화면에 보인 기물만 인식됩니다.")}</p>
-              {acrun.bans.length > 0 && (
-                <ul className="ac-banrow">
-                  {acrun.bans.map((id) => {
-                    const c = chessById.get(id);
-                    if (!c) return null;
-                    return (
-                      <li key={id}>
-                        {/* 기물 얼굴 + 티어 배지 — 맹약 카드의 .ac-facemini 와 같은 규약 */}
-                        <button type="button" className="ac-banchip" onClick={() => setChess(c)}
-                          title={`${c.n} · T${c.t}`}>
-                          <span className="ac-facemini">
-                            {c.op
-                              ? <img src={opFace(c.op)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
-                              : <em aria-hidden>?</em>}
-                            <em className={`ac-face-t ac-t${c.t}`}>{c.t}</em>
-                          </span>
-                          <b>{c.n}</b>
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
+              {/* 확정 / 후보를 나눠 보여 준다 — 화면을 더 볼수록 후보가 확정으로 옮겨 간다.
+                  얼굴을 맞히는 게 아니라 (맹약, 티어) 조합으로 역산하기 때문에, 관측이
+                  모자라면 여러 답이 남는다. 그때 하나를 골라 보여 주면 거짓말이 된다. */}
+              {(() => {
+                const chip = (id: string, sure: boolean) => {
+                  const c = chessById.get(id);
+                  if (!c) return null;
+                  return (
+                    <li key={id}>
+                      {/* 기물 얼굴 + 티어 배지 — 맹약 카드의 .ac-facemini 와 같은 규약 */}
+                      <button type="button" className={`ac-banchip${sure ? "" : " maybe"}`}
+                        onClick={() => setChess(c)} title={`${c.n} · T${c.t}`}>
+                        <span className="ac-facemini">
+                          {c.op
+                            ? <img src={opFace(c.op)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
+                            : <em aria-hidden>?</em>}
+                          <em className={`ac-face-t ac-t${c.t}`}>{c.t}</em>
+                        </span>
+                        <b>{c.n}</b>
+                      </button>
+                    </li>
+                  );
+                };
+                return (
+                  <>
+                    {acBans.sure.length > 0 && (
+                      <ul className="ac-banrow">{acBans.sure.map((id) => chip(id, true))}</ul>
+                    )}
+                    {acBans.maybe.length > 0 && (
+                      <>
+                        <p className="ac-bannote ac-banmaybe-note">
+                          {t("아래는 아직 확정되지 않은 후보입니다 — 밴 목록을 더 보여 주면 좁혀집니다.")}</p>
+                        <ul className="ac-banrow">{acBans.maybe.map((id) => chip(id, false))}</ul>
+                      </>
+                    )}
+                  </>
+                );
+              })()}
             </section>
           )}
 

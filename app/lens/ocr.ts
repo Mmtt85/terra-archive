@@ -118,6 +118,10 @@ export type OcrSession = {
   /** 정규화 rect(0~1)를 잘라 **숫자 전용 eng 워커**로 읽는다 — difficulty()가 고정 위치에
    *  하는 일의 일반화. kor/jpn 모델은 단독 숫자를 글자로 오독하므로 반드시 이걸 쓴다. */
   digits(rect: OcrRect): Promise<{ text: string; conf: number }>;
+  /** 정규화 rect(0~1)를 잘라 프라이머리 워커로 읽는다 (PSM7 한 줄, 4배 확대).
+   *  전체 프레임 패스가 놓친 **작은 글자**를 자리를 알 때 다시 읽는 용도 —
+   *  위수 협의 밴 화면의 맹약 이름이 그렇다 (PSM11 이 5개 중 2개만 잡았다). */
+  crop(rect: OcrRect): Promise<string[]>;
   /** 강한 빨강 픽셀 비율(0~1) — 긴급 작전 화면이면 ~0.02, 평시 ≤0.009 (실측) */
   redness: number;
   /** 화면 평균 밝기(0~255) — 전투 입장 암전 화면 판정용 (DARK_LUMA 미만) */
@@ -225,6 +229,30 @@ export async function createOcrSession(blob: Blob, lang = "kor"): Promise<OcrSes
       const x = Math.max(0, Math.round(rect.x * W)), y = Math.max(0, Math.round(rect.y * H));
       const w = Math.min(Math.round(rect.w * W), W - x), h = Math.min(Math.round(rect.h * H), H - y);
       return readDigits(x, y, w, h);
+    },
+    async crop(rect) {
+      const x = Math.max(0, Math.round(rect.x * W)), y = Math.max(0, Math.round(rect.y * H));
+      const w = Math.min(Math.round(rect.w * W), W - x), h = Math.min(Math.round(rect.h * H), H - y);
+      if (w < 8 || h < 8) return [];
+      // ⚠ **1:1 이진화 → nearest 확대**. 어두운 배경 위의 흐린 글자라 그냥 확대하면
+      //   배경 무늬까지 같이 커져 못 읽는다 (실측: 5행 중 0행 → 이진화 후 4행).
+      //   difficulty() 와 같은 순서다 — 확대 후 이진화하면 리샘플링에 결과가 휘둘린다.
+      const c1 = document.createElement("canvas");
+      c1.width = w; c1.height = h;
+      const c1x = c1.getContext("2d", { willReadFrequently: true })!;
+      c1x.drawImage(c, x, y, w, h, 0, 0, w, h);
+      const cimg = c1x.getImageData(0, 0, w, h);
+      binarizeGlyph(cimg.data, 0.55);
+      c1x.putImageData(cimg, 0, 0);
+      const zoom = 3;
+      const cc = document.createElement("canvas");
+      cc.width = w * zoom; cc.height = h * zoom;
+      const cctx = cc.getContext("2d")!;
+      cctx.imageSmoothingEnabled = false;   // nearest
+      cctx.drawImage(c1, 0, 0, cc.width, cc.height);
+      await setPsm(worker, "7");
+      const r = await worker.recognize(cc, {}, { blocks: false, text: true, hocr: false, tsv: false });
+      return (r.data.text ?? "").split("\n").map((l) => l.trim()).filter(Boolean);
     },
     async sparse() {
       await setPsm(worker, "11");

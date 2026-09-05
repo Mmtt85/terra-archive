@@ -2853,6 +2853,10 @@ const D: Record<string, Pair> = {
   // PRTS 시뮬레이션 — 위수 협의 게임 연결 (2026-09-06)
   "PRTS 시뮬레이션": ["PRTS Simulation", "PRTS シミュレーション"],
   "밴 리스트": ["Ban list", "BANリスト"],
+  "밴 {n}행": ["{n} ban rows", "BAN {n}行"],
+  "아래는 아직 확정되지 않은 후보입니다 — 밴 목록을 더 보여 주면 좁혀집니다.": [
+    "These are still candidates — show more of the ban list and they will narrow down.",
+    "以下はまだ確定していない候補です — BANリストをもっと見せれば絞り込まれます。"],
   "게임의 밴 목록 화면에서 끝까지 스크롤을 내려 주세요 — 화면에 보인 기물만 인식됩니다.": [
     "Scroll the game's ban list all the way down — only pieces that appeared on screen are recognized.",
     "ゲームのBANリスト画面を最後までスクロールしてください — 画面に映った駒だけが認識されます。"],

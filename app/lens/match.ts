@@ -40,7 +40,9 @@ export type LensTarget =
   // 목적지 하나로 끝나지만, 여기서는 한 판 도는 동안 같은 화면이 계속 들어오며 값만 바뀐다
   // (app/autochess-run.ts 스토어에 병합). 형태를 평평하게 둬 순환 import를 만들지 않는다.
   | { kind: "acrun"; stacks: Record<string, number>; fresh?: boolean;
-      deploy?: { cur: number; max: number } | null; seats?: number };
+      deploy?: { cur: number; max: number } | null; seats?: number;
+      /** 밴 화면 관측 — 맹약 id → 그 행에 보인 티어들 (누가 밴됐는지는 acsolve 가 역산) */
+      banObs?: Record<string, number[]> };
 export type LensOutcome = {
   screens: string[];               // 화면 타이틀 키워드 라벨 (표시용, i18n 키)
   entities: LensEntity[];          // 확신 엔티티 (이름 기준 중복 제거, 점수순)

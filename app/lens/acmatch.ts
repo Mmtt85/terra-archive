@@ -60,6 +60,9 @@ function editsWithin(a: string, b: string, max: number): boolean {
 
 /** 이 줄이 어느 맹약 이름인가 — 아니면 null. 두 글자 이름은 오독 보정을 끈다(서로 1자 차이라). */
 export function bondOfLine(textN: string, idx: AcIndex): string | null {
+  // ⚠ **숫자를 떼고 본다.** 정규화는 숫자를 남기는데(normText), 맹약 이름엔 숫자가 없고
+  //   OCR 은 배경 무늬를 숫자로 자주 붙인다 (실측: "아케인11", "정밀."). 떼면 그대로 맞는다.
+  textN = textN.replace(/[0-9]/g, "");
   if (!textN) return null;
   let exact: string | null = null;
   let near: string | null = null;
@@ -135,6 +138,59 @@ export function planAcStacks(boxes: OcrBox[], idx: AcIndex, norm: Normalizer, ma
     if (plan.length >= max) break;
   }
   return plan;
+}
+
+// ── 밴 화면: 카드 행 ↔ 맹약 이름 ────────────────────────────────────────────
+// 카드 격자는 acvision.findAcCards 가 찾고(순수 픽셀), 그 행이 **어느 맹약인지**는
+// 여기서 OCR 줄 상자로 붙인다. 맹약 이름은 아이콘 아래 — 카드 행의 세로 범위 안에,
+// 카드보다 **왼쪽**에 있다 (실측: 염국 라벨 y≈325, 1행 카드 y 206~386).
+
+/** 한 행의 관측 — 맹약 id 와 그 행에 보인 티어들 */
+export type AcBanRow = { bond: string; tiers: number[] };
+/** 아직 맹약을 못 붙인 행 — 이름이 있을 자리(rect)를 준다. 호출 측이 그 자리를 다시 OCR 한다. */
+export type AcBanBand = { y0: number; y1: number; x0: number; tiers: number[]; nameRect: OcrRect };
+
+/** 카드들을 행으로 묶고, 각 행의 **이름 자리**를 계산한다 (순수 계산).
+ *  ⚠ 맹약 이름은 카드 행의 세로 범위 **살짝 아래**에 있다 (아이콘 밑에 붙는 캡션이라 —
+ *  실측: 2행 카드 y 0.282~0.390, 쉐라그 라벨 y 0.382~0.403). 딱 맞춰 자르면 놓친다. */
+export function acBanBands(
+  cards: { x: number; y: number; w: number; h: number; tier: number | null }[],
+): AcBanBand[] {
+  const rows: AcBanBand[] = [];
+  for (const c of cards.slice().sort((a, b) => a.y - b.y || a.x - b.x)) {
+    if (c.tier === null) continue;
+    const r = rows[rows.length - 1];
+    if (r && c.y < r.y1 - c.h * 0.5) { r.tiers.push(c.tier); r.x0 = Math.min(r.x0, c.x); continue; }
+    const y0 = c.y, y1 = c.y + c.h;
+    rows.push({
+      y0, y1, x0: c.x, tiers: [c.tier],
+      // 이름 자리 = **아이콘 바로 아래**. 왼쪽 영역 전체를 잡으면 넓고 성긴 띠가 되어
+      // PSM7(한 줄)이 배경 잡음에 휘둘린다 — 실측에서 5행 중 0행만 읽혔다. 아이콘 아래로
+      // 좁히고 아래로 늘리면(라벨이 카드 행보다 살짝 아래) 5행 중 4행이 읽힌다.
+      nameRect: { x: c.x * 0.15, y: y0 + c.h * 0.60, w: c.x * 0.85, h: c.h * 0.65 },
+    });
+  }
+  return rows;
+}
+
+/** 이름 후보 텍스트들에서 맹약을 고른다 — 이미 쓴 맹약은 건너뛴다 (한 화면에 같은 행 둘 없음). */
+export function pickBond(texts: string[], idx: AcIndex, norm: Normalizer,
+  used: Set<string>): string | null {
+  for (const tx of texts) {
+    const id = bondOfLine(norm(tx), idx);
+    if (id && !used.has(id)) return id;
+  }
+  return null;
+}
+
+/** 전체 프레임 OCR 상자 중 이 행의 이름 자리에 걸치는 것들 — 1차 시도(공짜).
+ *  ⚠ 세로 판정에 여유를 크게 준다 (위 주석의 라벨 위치 때문). */
+export function bandTexts(band: AcBanBand, boxes: OcrBox[]): string[] {
+  const h = band.y1 - band.y0;
+  const lo = band.y0 - h * 0.25, hi = band.y1 + h * 0.45;
+  return boxes
+    .filter((b) => b.x0 < band.x0 && (b.y0 + b.y1) / 2 >= lo && (b.y0 + b.y1) / 2 <= hi)
+    .map((b) => b.text);
 }
 
 // ── 배치 가능 인원 (n/8 · n/9) ──────────────────────────────────────────────

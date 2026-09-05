@@ -33,9 +33,12 @@ export const acModeOf = (run: AcRun): AcMode | null =>
 export type AcRun = {
   /** 맹약 id → 중첩 수 — 화면의 맹약 원형에서 읽는다 */
   stacks: Record<string, number>;
-  /** 밴된 기물 chessId — '사용 제한 오퍼레이터' 화면에서 누적.
-   *  스크롤하며 여러 프레임으로 들어오므로 **합집합**으로 쌓아야 한다. */
-  bans: string[];
+  /** 밴 관측 — 맹약 id → 그 행에 보인 티어 목록. **밴된 기물 자체가 아니라 관측을 쌓는다.**
+   *  밴 화면은 이름 없이 얼굴만 나와서 얼굴로는 못 맞힌다(초상 ZNCC 실패). 대신 행별
+   *  (맹약, 티어)만 모아 두고 조합으로 역산한다 — 풀이는 lens/acsolve.ts.
+   *  스크롤하며 여러 프레임으로 들어오므로 **(맹약, 티어)마다 최댓값**으로 쌓는다:
+   *  한 프레임에 다 보인 행이 그 맹약의 완전한 목록이고, 잘려 덜 보인 프레임은 부분집합이다. */
+  banObs: Record<string, number[]>;
   /** 자리별 전략 — seat 0 = 나, 1~3 = 상대 (연합 전용) */
   bands: { seat: number; band: string }[];
   /** 참가자 수 — '전략 정보' 화면의 참가자 카드 수. 0 = 아직 그 화면을 못 봤다 */
@@ -47,7 +50,7 @@ export type AcRun = {
   at: number;
 };
 
-const EMPTY: AcRun = { stacks: {}, bans: [], bands: [], deploy: null, seats: 0, at: 0 };
+const EMPTY: AcRun = { stacks: {}, banObs: {}, bands: [], deploy: null, seats: 0, at: 0 };
 const KEY = "ta-ac-run";
 
 let run: AcRun = EMPTY;
@@ -55,6 +58,19 @@ let loaded = false;
 const subs = new Set<() => void>();
 
 function emit(): void { for (const f of subs) f(); }
+
+/** 티어 목록 → 티어별 개수 */
+const tally = (ts: number[]): Map<number, number> => {
+  const m = new Map<number, number>();
+  for (const t of ts) m.set(t, (m.get(t) ?? 0) + 1);
+  return m;
+};
+/** 티어별 개수 → 티어 목록 (내림차순) */
+const expand = (m: Map<number, number>): number[] => {
+  const out: number[] = [];
+  for (const [t, n] of [...m].sort((a, b) => b[0] - a[0])) for (let i = 0; i < n; i++) out.push(t);
+  return out;
+};
 
 function persist(): void {
   try { sessionStorage.setItem(KEY, JSON.stringify(run)); } catch { /* 사생활 모드 등 — 메모리로만 */ }
@@ -70,7 +86,7 @@ function hydrate(): void {
     const d = JSON.parse(raw) as Partial<AcRun>;
     run = {
       stacks: d.stacks && typeof d.stacks === "object" ? d.stacks : {},
-      bans: Array.isArray(d.bans) ? d.bans : [],
+      banObs: d.banObs && typeof d.banObs === "object" ? d.banObs : {},
       bands: Array.isArray(d.bands) ? d.bands : [],
       deploy: d.deploy && typeof d.deploy.max === "number" ? d.deploy : null,
       seats: typeof d.seats === "number" ? d.seats : 0,
@@ -88,14 +104,26 @@ export function acRun(): AcRun { hydrate(); return run; }
  *  "연결되면 인식된 내용만 자동으로 바뀐다"가 규약이다 (사용자 확정 2026-09-06). */
 export function mergeAcRun(patch: {
   stacks?: Record<string, number>;
-  bans?: string[];
+  banObs?: Record<string, number[]>;
   bands?: { seat: number; band: string }[];
   deploy?: { cur: number; max: number } | null;
   seats?: number;
 }): boolean {
   hydrate();
   const stacks = { ...run.stacks, ...(patch.stacks ?? {}) };
-  const bans = patch.bans?.length ? [...new Set([...run.bans, ...patch.bans])] : run.bans;
+  // 밴 관측 누적 — **(맹약, 티어)마다 최댓값**. 스크롤하면 같은 행이 여러 프레임에 걸쳐
+  // 덜 보였다 다 보였다 하는데, 최댓값을 쥐면 가장 많이 보인 프레임이 남는다.
+  let banObs = run.banObs;
+  if (patch.banObs && Object.keys(patch.banObs).length) {
+    banObs = { ...run.banObs };
+    for (const [bd, tiers] of Object.entries(patch.banObs)) {
+      const cur = tally(banObs[bd] ?? []);
+      const inc = tally(tiers);
+      let grew = !banObs[bd];
+      for (const [t, n] of inc) if (n > (cur.get(t) ?? 0)) { cur.set(t, n); grew = true; }
+      if (grew) banObs[bd] = expand(cur);
+    }
+  }
   // 전략은 자리(seat)로 덮어쓴다 — 같은 자리를 다시 읽으면 최신이 이긴다
   let bands = run.bands;
   if (patch.bands?.length) {
@@ -109,11 +137,11 @@ export function mergeAcRun(patch: {
   const seats = Math.max(run.seats, patch.seats ?? 0);
   const sameBands = bands === run.bands;
   const sameDeploy = deploy?.cur === run.deploy?.cur && deploy?.max === run.deploy?.max;
-  const same = bans === run.bans && sameBands && sameDeploy && seats === run.seats
+  const same = banObs === run.banObs && sameBands && sameDeploy && seats === run.seats
     && Object.keys(stacks).length === Object.keys(run.stacks).length
     && Object.entries(stacks).every(([k, v]) => run.stacks[k] === v);
   if (same) return false;                      // 값이 그대로면 리렌더를 만들지 않는다
-  run = { stacks, bans, bands, deploy, seats, at: Date.now() };
+  run = { stacks, banObs, bands, deploy, seats, at: Date.now() };
   persist();
   emit();
   return true;
@@ -143,9 +171,9 @@ export function setAcStacks(stacks: Record<string, number>): void {
  *  지난 판의 중첩이 새 판에 새면 조용히 틀린 계산이 나온다 (run.ts resetGradeCache 와 같은 규약). */
 export function resetAcRun(): void {
   hydrate();
-  if (run.at === 0 && !Object.keys(run.stacks).length && !run.bans.length
+  if (run.at === 0 && !Object.keys(run.stacks).length && !Object.keys(run.banObs).length
     && !run.bands.length && !run.deploy && !run.seats) return;
-  run = { stacks: {}, bans: [], bands: [], deploy: null, seats: 0, at: 0 };
+  run = { stacks: {}, banObs: {}, bands: [], deploy: null, seats: 0, at: 0 };
   persist();
   emit();
 }
