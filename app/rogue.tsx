@@ -20,7 +20,7 @@ import { normSearch, useSearchInput } from "./search";
 import { SearchSuggest } from "./search-suggest";
 import { anyNewFeature, isNewFeature } from "./whats-new";
 import { GLOBAL_MODAL_HASH } from "./hash-modal";
-import type { LensGoto, LensOutcome } from "./lens/match";
+import { LENS_ITEM_SECTIONS, type LensGoto, type LensOutcome } from "./lens/match";
 import { recognizeShot, warmData, ocrLangFor, resetGradeCache } from "./lens/run";
 import { warmOcr, warmDigitOcr } from "./lens/ocr";
 import { useClipboardWatch } from "./lens/clipwatch";
@@ -1604,7 +1604,7 @@ export default function RogueGuide({ initialTopic }: {
     let raw: string | null = null;
     try { raw = sessionStorage.getItem("ta:lens-handoff"); } catch { return; }
     if (!raw) return;
-    let g: { page?: string; topic?: string; view?: string; arcTab?: string; modal?: { type: string; id: string }; highlight?: string[]; gather?: boolean; grade?: number; emergency?: boolean };
+    let g: { page?: string; topic?: string; view?: string; arcTab?: string; modal?: { type: string; id: string }; highlight?: string[]; gather?: boolean; grade?: number; emergency?: boolean; items?: string[] };
     try { g = JSON.parse(raw); } catch { sessionStorage.removeItem("ta:lens-handoff"); return; }
     if (g.page && g.page !== "rogue") return; // 공채 등 다른 페이지 핸드오프는 해당 페이지가 소비
     if (g.topic !== topicRef.current) return; // 토픽 전환 완료 후 데이터 로드 effect에서 다시 불린다
@@ -1631,6 +1631,11 @@ export default function RogueGuide({ initialTopic }: {
     if (g.gather && (g.highlight?.length ?? 0) >= 2) {
       const rs = g.highlight!.map((id) => lensItemById.get(id)).filter((r): r is NonNullable<typeof r> => !!r);
       setLensMulti(rs.length >= 2 ? rs : null);
+    } else if (g.items?.length) {
+      // 조우·작전 화면에 같이 떠 있던 소장품 — **한 개여도** 띄운다 (제보 16138722).
+      // 조우 선택지는 보통 소장품을 하나씩 준다.
+      const rs = g.items.map((id) => lensItemById.get(id)).filter((r): r is NonNullable<typeof r> => !!r);
+      setLensMulti(rs.length ? rs : null);
     } else {
       setLensMulti(null);
     }
@@ -1674,6 +1679,33 @@ export default function RogueGuide({ initialTopic }: {
   //   조우·구역)은 그대로 남는다.
   const lensGotoBlocked = (g: LensGoto, live: boolean) =>
     live && !bridgeNodeJump() && g.page === "rogue" && g.view === "map";
+  // ── 화면에 같이 떠 있던 소장품 (제보 16138722, 2026-09-05) ─────────────────────
+  // 조우 선택지가 주는 소장품은 **판마다 랜덤**이라 우리 조우 데이터엔 "소장품 1개 획득"
+  // 으로만 적혀 있다 — 무엇인지는 화면에서 읽어야만 안다. 게임이 효과를 안 적어 주는
+  // 것도 있어서(뱀파이어의 침대) 사이트가 채울 값이 실제로 있다.
+  // ⚠ 이동 목표가 조우·작전이어도 인식 결과에는 그 소장품이 이미 들어 있다 —
+  //   match.ts within()이 섹션 구분 없이 확신 엔티티를 모으고, 이동 목표만 우세 섹션으로
+  //   정하기 때문이다. 버려지던 그것을 여기서 주워 쓴다.
+  // ⚠ **'노드 이동' 토글과 무관하게** 보여 준다 (사용자 확정 2026-09-05). 그 토글은
+  //   "이동만 끄고 아이템 인식은 그대로"가 취지인데, 조우가 맵 노드라 같이 막히면
+  //   정작 이 정보를 못 보게 된다 — 제보자가 짚은 충돌이다.
+  /** LensGoto 는 공채·스토리 변형이 있는 유니온이라, 통전 목표만 좁혀 쓴다 */
+  const rogueGoto = (g: LensGoto) => (g.page === "rogue" ? g : null);
+  const lensSideItems = (oc: LensOutcome): string[] => {
+    if (oc.target.kind !== "goto") return [];
+    const g = rogueGoto(oc.target.goto);
+    if (!g || g.view !== "map") return [];   // 아이템 화면은 이미 모아보기가 맡는다
+    return oc.entities.filter((e) => e.topic === g.topic && LENS_ITEM_SECTIONS.has(e.section)).map((e) => e.id);
+  };
+  /** 그 소장품들을 모아보기 창에 띄운다 — 띄운 개수를 준다 (0이면 안 띄운 것).
+   *  이동 없이 띄우는 자리라 **지금 보고 있는 테마와 같을 때만** 한다 (다른 테마 항목은
+   *  lensItemById에 없다 — 테마를 갈아타는 건 이동이고, 그건 토글이 막은 동작이다). */
+  const showLensItems = (ids: string[], topic: string): number => {
+    if (!ids.length || topic !== topicRef.current) return 0;
+    const rs = ids.map((id) => lensItemById.get(id)).filter((r): r is NonNullable<typeof r> => !!r);
+    if (rs.length) setLensMulti(rs);
+    return rs.length;
+  };
   const [lensMsg, setLensMsg] = useState<string | null>(null);
   const [lensThumb, setLensThumb] = useState<string | null>(null); // 인식 중/최근 이미지 미니 썸네일
   const lensMsgTimer = useRef<number | undefined>(undefined);
@@ -1757,11 +1789,17 @@ export default function RogueGuide({ initialTopic }: {
         for (const ev of journeyEvents(oc, false)) logBridgeEvent(ev);
       }
       if (oc.target.kind === "goto" && lensGotoBlocked(oc.target.goto, live)) {
-        // 맵 노드 이동을 꺼 뒀다 — 인식·기록은 이미 위에서 끝났고 이동만 건너뛴다
-        noteBridge(t("노드 이동 꺼짐"));
-        flashLensMsg(t("맵 노드를 인식했지만 '노드 이동'이 꺼져 있어 이동하지 않았습니다."), 2000);
+        // 맵 노드 이동을 꺼 뒀다 — 인식·기록은 이미 위에서 끝났고 이동만 건너뛴다.
+        // 다만 화면에 소장품이 같이 떠 있었으면 그 효과는 띄운다 (토글과 무관, 위 주석).
+        const side = showLensItems(lensSideItems(oc), rogueGoto(oc.target.goto)?.topic ?? "");
+        noteBridge(side ? t("소장품 {n}개", { n: side }) : t("노드 이동 꺼짐"));
+        flashLensMsg(side
+          ? t("화면에서 소장품을 찾았습니다 — 노드 이동은 꺼져 있어 그대로 둡니다.")
+          : t("맵 노드를 인식했지만 '노드 이동'이 꺼져 있어 이동하지 않았습니다."), 2000);
       } else if (oc.target.kind === "goto") {
-        onLensGoto(oc.target.goto);
+        const items = lensSideItems(oc);
+        const rg = rogueGoto(oc.target.goto);
+        onLensGoto(rg && items.length ? { ...rg, items } : oc.target.goto);
         noteBridge(oc.entities[0]?.name ?? t("이동"));
         flashLensMsg(t("인식 완료 — 해당 정보로 이동했습니다."), 2000);
       } else if (oc.target.kind === "tie") {
@@ -1787,8 +1825,14 @@ export default function RogueGuide({ initialTopic }: {
     // HUD 수치는 그때 것이라 신선하지 않으므로 로그에 싣지 않는다 (cached 표기).
     if (oc.target.kind !== "goto") return;
     for (const ev of journeyEvents(oc, true)) logBridgeEvent(ev);
-    if (lensGotoBlocked(oc.target.goto, true)) { noteBridge(t("노드 이동 꺼짐")); return; }
-    onLensGoto(oc.target.goto);
+    const side = lensSideItems(oc);
+    const rg = rogueGoto(oc.target.goto);
+    if (lensGotoBlocked(oc.target.goto, true)) {
+      const n = showLensItems(side, rg?.topic ?? "");
+      noteBridge(n ? t("소장품 {n}개", { n }) : t("노드 이동 꺼짐"));
+      return;
+    }
+    onLensGoto(rg && side.length ? { ...rg, items: side } : oc.target.goto);
     noteBridge(oc.entities[0]?.name ?? t("이동"));
   });
   useEffect(() => {

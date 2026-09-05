@@ -23,6 +23,10 @@ export type LensGoto =
     modal?: { type: string; id: string };
     emergency?: boolean; // 화면에 '긴급 작전'이 보임 — 스테이지 모달을 긴급 탭으로 연다
     highlight?: string[];
+    /** 이동 목표와 **별개로** 같은 화면에 떠 있던 아이템(소장품 등) — 조우 선택지가 주는
+     *  소장품이 전형이다. 판마다 랜덤이라 우리 데이터엔 "소장품 1개 획득"으로만 적혀
+     *  있어서, 무엇인지는 화면에서 읽어야만 안다 (제보 16138722, 2026-09-05). */
+    items?: string[];
     gather?: boolean; // 아이템 다중 인식 — 모아보기 모달로 표시
     grade?: number;   // 좌하단 난이도 배지 인식값 — 난이도 셀렉터에 자동 적용
   }
@@ -647,7 +651,11 @@ function dedupEntities(solids: LensEntity[]): LensEntity[] {
 
 // 아이템류 섹션 — 상점·전리품 화면엔 유물/도구/음반/부품/토픽 고유 시스템이 섞여 나오므로
 // 섹션을 가르지 않고 함께 수집한다 (사용자 요청 2026-07-23: 상인 화면 전 품목 인식)
-const ITEM_SECTIONS = new Set(["relic", "tool", "capsule", "mech", "scrap"]);
+/** 아이템류 섹션 — 맵 노드가 아니라 **물건**이라 이동 규칙(모아보기)이 따로다.
+ *  화면(rogue.tsx)도 조우·작전 화면에 같이 떠 있는 소장품을 골라내는 데 쓴다
+ *  (제보 16138722, 2026-09-05) — 그래서 여기서 내보낸다. */
+export const LENS_ITEM_SECTIONS = new Set(["relic", "tool", "capsule", "mech", "scrap"]);
+const ITEM_SECTIONS = LENS_ITEM_SECTIONS;
 
 // 특정 토픽+섹션의 확신 엔티티들로 LensGoto 구성.
 // 동급 스코어(1위의 절반 이상) 엔티티가 여럿이면 단일 모달 대신 모아보기/하이라이트.

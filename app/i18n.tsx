@@ -2501,6 +2501,11 @@ const D: Record<string, Pair> = {
     "Whether recognising a map node (operation, encounter, zone) jumps to its details. Turning it off leaves collectible and tool recognition working.",
     "マップノード（作戦・遭遇・区域）を認識したとき、その詳細へ自動で移動するかを決めます。オフにしても収蔵品・道具の認識はそのまま動きます"],
   "노드 이동 꺼짐": ["Node jump off", "ノード移動オフ"],
+  // 조우 화면에 같이 뜬 소장품 (제보 16138722, 2026-09-05)
+  "소장품 {n}개": ["{n} collectibles", "収蔵品{n}件"],
+  "화면에서 소장품을 찾았습니다 — 노드 이동은 꺼져 있어 그대로 둡니다.": [
+    "Found collectibles on screen — Node jump is off, so the view stayed put.",
+    "画面から収蔵品を見つけました — ノード移動はオフなので画面はそのままです。"],
   "맵 노드를 인식했지만 '노드 이동'이 꺼져 있어 이동하지 않았습니다.": [
     "Recognised a map node, but Node jump is off so nothing moved.",
     "マップノードを認識しましたが、「ノード移動」がオフのため移動しませんでした。"],
