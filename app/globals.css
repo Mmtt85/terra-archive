@@ -539,7 +539,7 @@ button {
 .chlog-go:hover {
   border-color: var(--border-hover);
 }
-/* 항목 안 '상세보기/접기' — 본문 끝에 붙는 조용한 인라인 링크.
+/* 항목 안 '상세보기' — 본문 끝에 붙는 조용한 인라인 링크.
    테두리 칩인 .chlog-go(바로가기)와 위계를 벌려 둘이 나란히 있어도 구분된다. */
 .chlog-more {
   margin-left: 6px;
@@ -2282,6 +2282,89 @@ legend {
   font-weight: 800;
   letter-spacing: -0.01em;
   color: var(--ink);
+}
+
+/* ── 항목 상세 모달 (2026-09-05, 사용자 지시 "상세보기 접기 말고 … 간이 모달창") ──
+   그 자리에서 펼치면 아래 항목들이 밀려 읽던 자리를 잃었다. 창형(ModalWindow)이 아니라
+   읽고 닫는 일회성 대화상자다 — confirm.tsx 와 같은 결. */
+.chlog-detail-backdrop {
+  /* 업데이트 내역 창(z 200대) 위, confirm(1200) 아래 */
+  z-index: 1100;
+  place-items: center;
+}
+.chlog-detail {
+  width: min(560px, 100%);
+  max-height: calc(100dvh - 2 * var(--modal-pad));
+  margin: auto;
+  padding: 18px 22px 20px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  box-shadow: 0 24px 70px #0009;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  animation: 0.18s both confirmPop;
+}
+.chlog-detail-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.chlog-detail-head .chlog-kind { margin-top: 0; max-width: none; }
+.chlog-detail-date {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--muted);
+}
+/* × 는 머리줄 오른쪽 끝 — 창형 모달의 위치 규칙(.mw-close)과 달리 흐름 안에 둔다 */
+.chlog-detail-close {
+  position: static;
+  margin-left: auto;
+  flex: none;
+}
+.chlog-detail-title {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.5;
+  word-break: keep-all;
+}
+/* 본문 — detailBlocks()가 문장·열거 단위로 갈라 준 덩어리를 **문단마다 띄워** 그린다.
+   한 문단으로 쏟아 놓으면 벽이 된다 (사용자 요청 "줄바꿈을 잘 해서 가독성 좀 좋게"). */
+.chlog-detail-body {
+  overflow: auto;
+  margin: 0 -4px;
+  padding: 0 4px;
+  font-size: 13.5px;
+  line-height: 1.75;
+  color: var(--ink2);
+  word-break: keep-all;
+}
+.chlog-detail-body p { margin: 0 0 11px; }
+.chlog-detail-body p:last-child { margin-bottom: 0; }
+/* ①②③ 열거 — 번호가 글머리라 들여쓰고 첫 줄만 내어쓴다 (번호가 눈에 걸리게) */
+.chlog-detail-item {
+  padding-left: 1.35em;
+  text-indent: -1.35em;
+}
+.chlog-detail-go {
+  align-self: flex-start;
+  margin-top: 14px;
+  padding: 5px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink);
+  text-decoration: none;
+  transition: 0.15s;
+}
+.chlog-detail-go:hover { border-color: var(--border-hover); }
+@media (max-width: 560px) {
+  .chlog-detail { padding: 16px 16px 18px; }
+  .chlog-detail-title { font-size: 14.5px; }
 }
 .confirm-message {
   margin: 0 0 22px;

@@ -18,7 +18,7 @@ import { useI18n, rich, DT_LOCALE } from "./i18n";
 import { useHashSync } from "./hash-modal";
 import { ModalWindow } from "./modal-window";
 import {
-  fetchChangelogRange, fetchOldestReleaseDate, windowRange, changeText, splitChange, areaOf,
+  fetchChangelogRange, fetchOldestReleaseDate, windowRange, changeText, splitChange, detailBlocks, areaOf,
   CHANGE_KIND_LABEL, CHANGE_AREA_LABEL, RECENT_DAYS, daysAgoKst, type ChangeRow,
 } from "./changelog-api";
 
@@ -58,16 +58,10 @@ export default function ChangelogButton() {
   const [oldest, setOldest] = useState<string | null>(null); // 전체에서 가장 오래된 항목 날짜
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState("");
-  // 항목별 펼침 — 기본은 핵심 한 줄만 (사용자 요청 2026-07-29: "줄줄줄줄 너무 길어지니까").
-  // 헤더의 '상세보기'는 어떤 **종류**를 보일지 고르는 필터라 축이 다르다.
-  const [opened, setOpened] = useState<Set<string>>(new Set());
-  const toggleRow = useCallback((id: string) => {
-    setOpened((prev) => {
-      const next = new Set(prev);
-      if (!next.delete(id)) next.add(id);
-      return next;
-    });
-  }, []);
+  // 항목은 **핵심 한 줄만** 보이고, 상세는 작은 모달로 띄운다 (사용자 지시 2026-09-05
+  // "상세보기 접기 말고, 상세보기 누르면 간이 모달창 하나 띄워서 디테일내용 표시").
+  // 종전엔 그 자리에서 펼쳤는데(2026-07-29), 펼친 항목이 목록을 밀어내 읽던 자리를 잃었다.
+  const [detail, setDetail] = useState<ChangeRow | null>(null);
   const loaded = useRef(false);                       // 첫 로드 1회 가드
 
   // 딥링크: #changelog — 기간 확장 상태는 URL에 담지 않는다. #devnotes는 제안 게시판이,
@@ -99,6 +93,19 @@ export default function ChangelogButton() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
+
+  // 상세 모달의 Esc는 **캡처 단계**에서 잡아 전파를 끊는다 — 안 그러면 layout.tsx의 전역
+  // esc-close(document)와 위의 본 모달 핸들러(window)가 이어서 돌아 목록까지 같이 닫힌다.
+  useEffect(() => {
+    if (!detail) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" && e.key !== "Esc") return;
+      e.preventDefault(); e.stopPropagation();
+      setDetail(null);
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [detail]);
 
   // 불러온 구간의 시작일 — 이보다 오래된 항목이 있으면 '지난 기록' 버튼을 보인다
   const loadedFrom = daysAgoKst(RECENT_DAYS * weeks);
@@ -158,7 +165,6 @@ export default function ChangelogButton() {
                       // 펼치면 원문을 그대로 — head+rest로 이어 붙이면 " — " 구분자가 사라진다
                       const full = changeText(row, locale);
                       const { head, rest } = splitChange(full);
-                      const open = opened.has(row.id);
                       return (
                         <li key={row.id}>
                           {/* 배지는 '인프라 개선'처럼 기능+종류로 읽힌다 (사용자 요청 2026-07-29).
@@ -172,11 +178,11 @@ export default function ChangelogButton() {
                           <span className="chlog-text">
                             {/* **굵게** 마크업을 실제로 굵게 — 종전엔 원문 그대로 나와
                                 별표가 그냥 보였다 (2026-09-04 실측, 등록된 옛 항목 포함) */}
-                            {rich(open ? full : head)}
+                            {rich(head)}
                             {rest && (
-                              <button type="button" className="chlog-more" aria-expanded={open}
-                                onClick={() => toggleRow(row.id)}>
-                                {open ? t("접기") : t("상세보기")}
+                              <button type="button" className="chlog-more" aria-haspopup="dialog"
+                                onClick={() => setDetail(row)}>
+                                {t("상세보기")}
                               </button>
                             )}
                             {row.href && (
@@ -205,6 +211,54 @@ export default function ChangelogButton() {
         </ModalWindow>,
         document.body
       )}
+      {/* 상세 — 목록을 밀어내지 않게 작은 모달로 띄운다 (사용자 지시 2026-09-05).
+          ⚠ ModalWindow(창형)를 쓰지 않는다 — 그쪽은 이동·리사이즈되는 상시 창이고,
+             여기 필요한 건 읽고 닫는 일회성 대화상자다 (modal-window.tsx '대상 밖' 주석). */}
+      {detail && createPortal(
+        <DetailDialog row={detail} localeBase={localeBase} onClose={() => setDetail(null)} />,
+        document.body
+      )}
     </>
+  );
+}
+
+/** 항목 하나의 상세 — 본문은 detailBlocks()가 문장·열거 단위로 갈라 준다 (가독성, 2026-09-05) */
+function DetailDialog({ row, localeBase, onClose }: { row: ChangeRow; localeBase: string; onClose: () => void }) {
+  const { locale, t } = useI18n();
+  const closeRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => { closeRef.current?.focus(); }, []);
+  const full = changeText(row, locale);
+  const { head, rest } = splitChange(full);
+  const blocks = detailBlocks(rest);
+  return (
+    <div className="modal-backdrop chlog-detail-backdrop"
+      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <section className="chlog-detail" role="dialog" aria-modal="true" aria-label={head}>
+        <header className="chlog-detail-head">
+          <span className={`chlog-kind ${row.kind}`}>
+            {t("{area} {kind}", {
+              area: t(CHANGE_AREA_LABEL[areaOf(row)]),
+              kind: t(CHANGE_KIND_LABEL[row.kind] ?? row.kind),
+            })}
+          </span>
+          <time className="chlog-detail-date">{dateLabel(row.released_at, locale)}</time>
+          <button type="button" ref={closeRef} className="modal-close chlog-detail-close"
+            onClick={onClose} aria-label={t("닫기")}>×</button>
+        </header>
+        <h3 className="chlog-detail-title">{rich(head)}</h3>
+        <div className="chlog-detail-body">
+          {blocks.map((b, i) => (
+            b.kind === "num"
+              ? <p key={i} className="chlog-detail-item">{rich(b.text)}</p>
+              : <p key={i}>{rich(b.text)}</p>
+          ))}
+        </div>
+        {row.href && (
+          <a className="chlog-detail-go" href={row.href.startsWith("/") ? `${localeBase}${row.href}` : row.href}>
+            {t("바로가기")} →
+          </a>
+        )}
+      </section>
+    </div>
   );
 }

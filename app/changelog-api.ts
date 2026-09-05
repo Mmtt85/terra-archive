@@ -159,6 +159,67 @@ export function splitChange(text: string): { head: string; rest: string } {
   return rest.length >= REST_MIN ? { head: text.slice(0, m.index + 1), rest } : whole;
 }
 
+/** 상세 본문의 한 덩어리 — `num` 은 ①②③ 열거 항목, `p` 는 보통 문단. */
+export type DetailBlock = { kind: "num" | "p"; text: string };
+
+/**
+ * 상세 본문을 **읽기 좋게 쪼갠다** (사용자 요청 2026-09-05 "줄바꿈을 잘 해서 가독성 좀
+ * 좋게 만들어줘"). 등록된 항목은 대부분 마침표로만 이어진 한 문단이라, 그대로 띄우면
+ * 모달 안에서 벽이 된다.
+ *   ① 사람이 넣은 줄바꿈이 있으면 그것부터 존중한다.
+ *   ② `①②③` 열거가 둘 이상이면 항목으로 가른다 (마토메 규칙상 묶은 상세가 이 꼴이다).
+ *   ③ 나머지는 문장 단위 문단.
+ * ⚠ 문장 끝 판정은 splitChange 와 같은 규칙을 쓴다 — 일본어 구두점(。！？)은 뒤에 공백이
+ *   없고, ASCII 마침표는 소수점·도메인(contact@terra-archive.net)을 피하려 공백을 요구한다.
+ */
+const SENT_END = /[。！？]|[.!?](?=\s|$)/g;
+const NUM_MARK = /[\u2460-\u2473]/g;      // ①(2460) ~ ⑳(2473)
+const SENT_MIN = 10;                       // 이보다 짧은 조각은 앞 문장에 붙인다
+
+function sentencesOf(text: string): string[] {
+  const out: string[] = [];
+  let last = 0;
+  SENT_END.lastIndex = 0;
+  for (let m = SENT_END.exec(text); m; m = SENT_END.exec(text)) {
+    const end = m.index + m[0].length;
+    const seg = text.slice(last, end).trim();
+    if (seg.length >= SENT_MIN) { out.push(seg); last = end; }
+  }
+  const tail = text.slice(last).trim();
+  if (tail) {
+    if (tail.length < SENT_MIN && out.length) out[out.length - 1] += ` ${tail}`;
+    else out.push(tail);
+  }
+  return out.length ? out : [text.trim()];
+}
+
+export function detailBlocks(rest: string): DetailBlock[] {
+  const out: DetailBlock[] = [];
+  const paras = rest.replace(/\r\n/g, "\n").split(/\n+/).map((x) => x.trim()).filter(Boolean);
+  for (const para of paras) {
+    NUM_MARK.lastIndex = 0;
+    const marks = [...para.matchAll(NUM_MARK)];
+    if (marks.length < 2) {
+      for (const text of sentencesOf(para)) out.push({ kind: "p", text });
+      continue;
+    }
+    const lead = para.slice(0, marks[0].index).trim();
+    if (lead) for (const text of sentencesOf(lead)) out.push({ kind: "p", text });
+    marks.forEach((m, i) => {
+      const at = m.index ?? 0;
+      const end = i + 1 < marks.length ? (marks[i + 1].index ?? para.length) : para.length;
+      const seg = para.slice(at, end).trim().replace(/[,，·]$/, "");
+      if (i + 1 < marks.length) { out.push({ kind: "num", text: seg }); return; }
+      // 마지막 항목 뒤에는 열거와 상관없는 마무리 문장이 이어 붙는 일이 잦다 —
+      // 첫 문장까지만 항목으로 두고 나머지는 문단으로 뺀다.
+      const [first, ...tail] = sentencesOf(seg);
+      out.push({ kind: "num", text: first });
+      for (const text of tail) out.push({ kind: "p", text });
+    });
+  }
+  return out;
+}
+
 // ── 관리자 (/admin) — RLS가 x-admin-key 헤더를 검사한다 ──
 
 export type ChangeDraft = Omit<ChangeRow, "id"> & { id?: string };
