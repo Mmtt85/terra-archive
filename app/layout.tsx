@@ -138,11 +138,24 @@ var m=''+((e&&e.message)||'');if(isChunk(m)||(hit&&/reading '?default'?|of undef
             그 언어로, 없으면 브라우저 언어(ja→/ja, ko→/, 그 외→/en)로 경로를 맞춘다.
             첫 페인트 전 location.replace라 플래시·히스토리 오염 없음. 크롤러(UA)와
             자동화 브라우저(navigator.webdriver — 우리 Playwright 검증·about 캡처 포함)는
-            제외해 SEO·스크립트에 영향을 주지 않는다. /admin(dev 전용, ko만 존재)도
-            제외 — 언어 경로가 없어서 리다이렉트하면 404로 떨어진다 (사용자 지시 2026-08-17). */}
+            제외해 SEO·스크립트에 영향을 주지 않는다.
+
+            ⚠ 경로에 /en·/ja 가 붙은 URL은 **손대지 않는다** (사용자 지시 2026-09-05).
+            경로에 언어가 적혀 있으면 그 자체가 이미 언어 선택이다 — 종전엔 저장된 선호와
+            다르면 되돌려 버려서, 한국어 선호 방문자가 https://terra-archive.net/en/autochess
+            같은 **영어 링크를 열면 곧장 /autochess(한국어)로 튕겼다.** 공유된 EN/JA 딥링크가
+            사실상 동작하지 않던 것. 이제 접두사가 붙은 URL은 그대로 그 언어로 뜨고,
+            그 뒤 내부 링크는 전부 localeBase를 달고 다니므로 세션 내내 그 언어를 유지한다.
+            대신 저장된 선호(ta-locale)는 **덮어쓰지 않는다** — EN 링크 한 번 눌렀다고
+            사이트 언어가 영구히 바뀌면 안 된다. 영구 전환은 헤더·푸터 스위처의 몫.
+            (그래서 '한국어로 돌아가기'는 여전히 접두사 없는 경로 + 스위처가 기록하는
+            ta-locale 조합으로 동작한다 — home.tsx 푸터 주석 참조.)
+
+            접두사 없는 경로만 판정 대상이고, /admin(dev 전용, ko만 존재)도 함께 제외한다 —
+            언어 경로가 없어서 리다이렉트하면 404로 떨어진다 (사용자 지시 2026-08-17). */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{if(!navigator.webdriver&&!/^\\/admin(\\/|$)/.test(location.pathname)&&!/bot|crawl|spider|slurp|lighthouse|headless|preview/i.test(navigator.userAgent)){var lm=location.pathname.match(/^\\/(en|ja)(?=\\/|$)/);var cur=lm?lm[1]:'ko';var lp=null;try{lp=localStorage.getItem('ta-locale')}catch(e){}if(lp!=='ko'&&lp!=='en'&&lp!=='ja'){var nl=(navigator.language||'').slice(0,2).toLowerCase();lp=nl==='ko'?'ko':nl==='ja'?'ja':'en';}if(lp!==cur){var rest=location.pathname.replace(/^\\/(en|ja)(?=\\/|$)/,'');if(rest==='/')rest='';var tg=(lp==='ko'?'':'/'+lp)+rest;location.replace((tg||'/')+location.search+location.hash);}}}catch(e){}`,
+            __html: `try{if(!navigator.webdriver&&!/^\\/(en|ja|admin)(\\/|$)/.test(location.pathname)&&!/bot|crawl|spider|slurp|lighthouse|headless|preview/i.test(navigator.userAgent)){var lp=null;try{lp=localStorage.getItem('ta-locale')}catch(e){}if(lp!=='ko'&&lp!=='en'&&lp!=='ja'){var nl=(navigator.language||'').slice(0,2).toLowerCase();lp=nl==='ko'?'ko':nl==='ja'?'ja':'en';}if(lp!=='ko'){var rest=location.pathname==='/'?'':location.pathname;location.replace('/'+lp+rest+location.search+location.hash);}}}catch(e){}`,
           }}
         />
         {/* 첫 페인트 전에 해시를 읽어 초기 탭을 표시 — 서버 HTML은 항상 백과사전이라
