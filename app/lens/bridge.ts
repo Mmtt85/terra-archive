@@ -163,6 +163,9 @@ export const bridgeGate = () => gate;
 export const bridgeError = () => error;
 export const bridgeBusy = () => busy;
 export const bridgeLock = () => lock;
+/** 지금 연결돼 있나 — connectBridge 는 실패해도 throw 하지 않고 조용히 돌아오므로
+ *  (창 선택 취소 등) 호출한 쪽이 성사 여부를 이걸로 확인한다. */
+export const bridgeOn = () => !!settings;
 export const bridgeNote = () => note;
 /** 각 탭의 handleLensShot이 판정 결과를 한 줄로 알려준다 — "잘 안된다"의 원인을
  *  헤더에서 바로 보기 위한 것이다 (사용자 요청 2026-07-26). */

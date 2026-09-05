@@ -27,7 +27,7 @@ import { GLOBAL_MODAL_HASH } from "./hash-modal";
 import { loadEnemies } from "./dex-cross";
 import { EnemyFile, RANK_KEY, enemyImg, enemyImgBase, type Enemy } from "./enemy-detail";
 import { StageRouteMap, enemyRouteColor, type StageRoutes } from "./stage-route-map";
-import { useBridgeWatch, useBridgeStatus, connectBridge, disconnectBridge, bridgeSupported, bridgeOnMobile, noteBridge } from "./lens/bridge";
+import { useBridgeWatch, useBridgeStatus, connectBridge, disconnectBridge, bridgeSupported, bridgeOnMobile, bridgeOn, noteBridge } from "./lens/bridge";
 import { recognizeShot, warmData, ocrLangFor } from "./lens/run";
 import { warmOcr, warmDigitOcr } from "./lens/ocr";
 import { useAcRun, setAcStack, setAcStacks, mergeAcRun, resetAcRun, isAcLock, acModeOf, AC_LOCK } from "./autochess-run";
@@ -1654,12 +1654,14 @@ export default function AutochessGuide({ doc, onShowOperator }: {
               ? t("PRTS 링크는 PC 브라우저에서만 사용할 수 있습니다")
               : acLocked ? t("PRTS 링크 끊기")
                 : t("게임 창을 골라 연결하면, 판이 도는 동안 편성이 화면을 따라갑니다")}
-            onClick={() => {
+            onClick={async () => {
               if (acLocked) { disconnectBridge(); return; }
               resetAcRun();                 // 새 판으로 들어가는 길목 — 지난 판 값을 버린다
               setAcMsg("");
-              setSim(true);                 // 따라가는 걸 보려면 편성기가 떠 있어야 한다
-              void connectBridge({ topic: AC_LOCK, name: t("PRTS 시뮬레이션") });
+              // ⚠ 편성기는 **연결이 된 뒤에** 연다 (사용자 지적 2026-09-06 "지금은 먼저
+              //   열리고 나서 그위에 연결화면이 뜨니까"). 창 선택을 취소하면 아무 일도 없다.
+              await connectBridge({ topic: AC_LOCK, name: t("PRTS 시뮬레이션") });
+              if (bridgeOn()) { closeMenus(); setSim(true); }
             }}>
             <span aria-hidden>{acLocked ? "◉" : "○"}</span> {t("PRTS 시뮬레이션")}
             <span className="beta-badge">{acPrtsMobile ? t("PC 전용") : "BETA"}</span>

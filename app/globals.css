@@ -20863,6 +20863,17 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   border-color: var(--lime);
 }
 .ac-prtscta:disabled { opacity: 0.5; cursor: default; }
+/* ? — /rogue 툴바에서는 버튼에 딱 붙는 오른쪽 세그먼트(왼쪽 테두리 없는 사각)지만,
+   여기 PRTS 버튼은 알약이라 그 모양이 뜯어진 것처럼 보였다 (사용자 지적 2026-09-06).
+   같은 높이의 **원**으로 바꾸고 세그먼트 규칙을 전부 되돌린다. */
+.ac-ctarow .lens-help-btn {
+  min-width: 0; width: 34px; height: 34px; margin: 0; padding: 0;
+  border: 1px solid color-mix(in srgb, var(--lime) 45%, var(--line));
+  border-radius: 50%;
+  background: var(--bg);
+  font-size: 13px;
+}
+.ac-ctarow .lens-help-btn:hover { background: var(--bg-soft); color: var(--ink); }
 
 /* PRTS 연결 중 편성 잠금 (사용자 확정 2026-09-06) — 실제 판이 정답이라 손을 막는다.
    ⚠ 잠그는 것은 **편성을 바꾸는 자리**뿐이다. 맹약 카드를 눌러 상세를 보거나 스크롤하는
