@@ -170,7 +170,7 @@ var m=''+((e&&e.message)||'');if(isChunk(m)||(hit&&/reading '?default'?|of undef
             JS가 아예 안 뜨는 상황에 대비해 4초 뒤 스스로 풀린다. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var h=location.hash;var r=h==='#infra'?'infra':h==='#recruit'?'recruit':h==='#farm'?'farm':h.indexOf('#story')===0?'story':'';if(r)document.documentElement.setAttribute('data-route',r);if(/^#story-.+/.test(h))document.documentElement.setAttribute('data-story-detail','1');if(h.length>1&&!/^#(changelog|devnotes|broadcast|replay|prts-help|roster|op-)/.test(h)){var de=document.documentElement;de.setAttribute('data-hashboot','1');setTimeout(function(){de.removeAttribute('data-hashboot')},4000);}}catch(e){}`,
+            __html: `try{var h=location.hash;var r=h==='#infra'?'infra':h==='#recruit'?'recruit':h==='#farm'?'farm':h.indexOf('#story')===0?'story':'';if(r)document.documentElement.setAttribute('data-route',r);if(/^#story-.+/.test(h))document.documentElement.setAttribute('data-story-detail','1');if(h.length>1&&!/^#(changelog|broadcast|replay|prts-help|roster|op-)/.test(h)){var de=document.documentElement;de.setAttribute('data-hashboot','1');setTimeout(function(){de.removeAttribute('data-hashboot')},4000);}}catch(e){}`,
           }}
         />
         {/* 다크모드 — 저장값(ta-theme) 우선, 없으면 OS 설정. 첫 페인트 전에 html.dark를

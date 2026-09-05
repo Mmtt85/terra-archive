@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { adminAddReply, adminDeleteFeedback, adminDeleteReply, adminEditReply, adminListFeedback, adminMe, adminSetHandling, adminSetReviewed, countryOf, flagOf, handlingAt, imagesOf, withHandling, type FeedbackRow } from "../feedback";
 import { adminDeleteRelease, adminDeleteRule, adminListRules, adminPublishRelease, adminUpsertRule, fetchLatestRelease, type ReleaseRow } from "../rules-api";
 import { adminDeleteChange, adminUpsertChange, fetchAllChanges, areaOf, CHANGE_KINDS, CHANGE_KIND_LABEL, CHANGE_AREAS, CHANGE_AREA_LABEL, daysAgoKst, type ChangeArea, type ChangeDraft, type ChangeRow } from "../changelog-api";
-import { adminDeleteDevNote, adminUpsertDevNote, fetchAllDevNotes, DEVNOTE_STATUSES, DEVNOTE_STATUS_LABEL, type DevNoteDraft, type DevNoteRow } from "../devnotes-api";
 import { adminDeleteFile, adminListFiles, adminUploadFile, formatSize, isImageKey, type StoredFile } from "../files-api";
 import { useConfirm } from "../confirm";
 import { compileSnapshot, validateRules, RULE_KINDS, type RuleRow } from "../rules-compile";
@@ -143,77 +142,6 @@ function ChangeEditor({ row, onSave, onCancel }: { row: ChangeDraft; onSave: (ne
   );
 }
 
-// 이미지 입력칸 옆의 "올리기" 버튼 — 파일을 고르면 R2에 올리고 URL을 칸에 채운다
-function UploadButton({ onPick }: { onPick: (file: File) => void }) {
-  return (
-    <label className="file-pick-btn" title="파일을 R2에 올리고 URL을 채웁니다">
-      올리기
-      <input
-        type="file"
-        accept="image/*"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) onPick(file);
-          e.target.value = ""; // 같은 파일을 다시 골라도 change가 뜨게
-        }}
-      />
-    </label>
-  );
-}
-
-// ── 개발자 코멘트 편집기 (docs/supabase-devnotes.sql) ──────────────────────────
-// 업데이트 내역 모달의 💬 개발자 코멘트 뷰에 뜬다. 받은 제안(인용)과 답변, 선택 이미지.
-// ko는 필수, en/ja는 비우면 ko로 폴백. 저장 즉시 반영 (빌드·배포 불필요).
-function DevNoteEditor({ row, onSave, onCancel, upload }: { row: DevNoteDraft; onSave: (next: DevNoteDraft) => Promise<void>; onCancel: () => void; upload?: (file: File) => Promise<string> }) {
-  const [v, setV] = useState<DevNoteDraft>(row);
-  const [error, setError] = useState("");
-  const [saving, setSaving] = useState(false);
-  const set = (patch: Partial<DevNoteDraft>) => setV((cur) => ({ ...cur, ...patch }));
-  const pickImage = async (file: File) => {
-    if (!upload) return;
-    setError("");
-    try { set({ image: await upload(file) }); }
-    catch (err) { setError(String((err as Error).message ?? err)); }
-  };
-  const save = async () => {
-    if (!v.suggestion_ko.trim() || !v.reply_ko.trim()) { setError("한국어 제안·답변은 필수입니다"); return; }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(v.released_at)) { setError("날짜는 YYYY-MM-DD 형식이어야 합니다"); return; }
-    setSaving(true);
-    try { await onSave(v); } catch (err) { setError(String((err as Error).message ?? err)); }
-    setSaving(false);
-  };
-  return (
-    <div className="rule-editor chlog-editor">
-      <header>
-        <b>{row.id ? "코멘트 편집" : "새 코멘트"}</b>
-        <input type="date" value={v.released_at} onChange={(e) => set({ released_at: e.target.value })} title="표시·정렬 기준일" />
-        <select value={v.status} onChange={(e) => set({ status: e.target.value as DevNoteRow["status"] })} title="제안 처리 상태 — 배지로 보인다">
-          {DEVNOTE_STATUSES.map((s) => <option key={s} value={s}>{DEVNOTE_STATUS_LABEL[s]}</option>)}
-        </select>
-        <label className="tip-active-lbl">
-          <input type="checkbox" checked={v.active} onChange={(e) => set({ active: e.target.checked })} /> 표시
-        </label>
-        <input className="rule-seq" value={String(v.seq)} onChange={(e) => set({ seq: Number(e.target.value) || 0 })} title="같은 날짜 안 정렬 (작을수록 위)" />
-      </header>
-      <textarea value={v.suggestion_ko} onChange={(e) => set({ suggestion_ko: e.target.value })} rows={2} placeholder="받은 제안 · 한국어 (필수) — 인용문으로 보입니다" />
-      <textarea value={v.suggestion_en ?? ""} onChange={(e) => set({ suggestion_en: e.target.value })} rows={2} placeholder="Suggestion · English (비우면 한국어로 표시됩니다)" />
-      <textarea value={v.suggestion_ja ?? ""} onChange={(e) => set({ suggestion_ja: e.target.value })} rows={2} placeholder="提案 · 日本語" />
-      <textarea value={v.reply_ko} onChange={(e) => set({ reply_ko: e.target.value })} rows={3} placeholder="개발자 답변 · 한국어 (필수) — 뭐가 되고 뭐가 왜 어려운지" />
-      <textarea value={v.reply_en ?? ""} onChange={(e) => set({ reply_en: e.target.value })} rows={3} placeholder="Reply · English" />
-      <textarea value={v.reply_ja ?? ""} onChange={(e) => set({ reply_ja: e.target.value })} rows={3} placeholder="返信 · 日本語" />
-      <div className="file-inline">
-        <input value={v.image ?? ""} onChange={(e) => set({ image: e.target.value })} placeholder="이미지 URL (선택) — R2 파일 저장소 URL 또는 사이트 내부 경로" />
-        {upload && <UploadButton onPick={pickImage} />}
-      </div>
-      {error && <p className="admin-status">{error}</p>}
-      <div className="admin-tools">
-        <button onClick={save} disabled={saving}>{saving ? "저장 중…" : "저장"}</button>
-        <button onClick={onCancel}>취소</button>
-      </div>
-    </div>
-  );
-}
-
 // ── 파일 저장소 표시 (R2) — 공용 행 + assets/ 폴더 트리 ─────────────────────────
 function FileRow({ row, label, showDate, onStatus, onDelete }: {
   row: StoredFile; label: string; showDate?: boolean;
@@ -307,11 +235,7 @@ export default function AdminPage() {
   const [status, setStatus] = useState("");
   const [filter, setFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("open"); // open(대응미완료) | reviewed(대응완료)
-  const [tab, setTab] = useState<"feedback" | "rules" | "changelog" | "devnotes" | "files">("feedback"); // 상단 탭
-  // 개발자 코멘트 원장 (null = 조회 실패 → 미설치 안내)
-  const [devNotes, setDevNotes] = useState<DevNoteRow[] | null>(null);
-  const [devNoteStatus, setDevNoteStatus] = useState("");
-  const [editingDevNote, setEditingDevNote] = useState<DevNoteDraft | null>(null);
+  const [tab, setTab] = useState<"feedback" | "rules" | "changelog" | "files">("feedback"); // 상단 탭
   // 파일 저장소(R2) — 워커 미배포·비밀번호 불일치면 null + 안내
   const [files, setFiles] = useState<StoredFile[] | null>(null);
   const [fileStatus, setFileStatus] = useState("");
@@ -347,7 +271,6 @@ export default function AdminPage() {
       setStatus(data.length ? "" : "항목이 없습니다");
       loadRules();
       loadChanges();
-      loadDevNotes();
     } catch {
       setStatus("조회 실패 — 잠시 후 다시 시도해주세요");
     }
@@ -381,27 +304,6 @@ export default function AdminPage() {
   };
 
 
-  // ── 개발자 코멘트 (docs/supabase-devnotes.sql) — 저장하면 사이트에 바로 반영 ──
-  const loadDevNotes = async () => {
-    try { setDevNotes(await fetchAllDevNotes()); setDevNoteStatus(""); }
-    catch {
-      setDevNotes(null);
-      setDevNoteStatus("개발자 코멘트 테이블 조회 실패 — docs/supabase-devnotes.sql을 Supabase SQL Editor에서 실행했는지 확인");
-    }
-  };
-
-  const saveDevNote = async (next: DevNoteDraft) => {
-    await adminUpsertDevNote(next);
-    setEditingDevNote(null);
-    setDevNoteStatus("저장됨 — 업데이트 내역 모달의 💬 개발자 코멘트에 즉시 반영됩니다");
-    loadDevNotes();
-  };
-
-  const removeDevNote = async (row: DevNoteRow) => {
-    if (!(await confirm({ message: `'${row.suggestion_ko.slice(0, 40)}…' 코멘트를 삭제할까요?`, danger: true }))) return;
-    try { await adminDeleteDevNote(row.id); setDevNoteStatus("삭제됨"); loadDevNotes(); }
-    catch { setDevNoteStatus("삭제 실패"); }
-  };
 
   // ── 파일 저장소 (workers/upload → R2) ────────────────────────────────────────
   const loadFiles = async (pw: string) => {
@@ -442,9 +344,6 @@ export default function AdminPage() {
     try { await adminDeleteFile(row.key); setFileStatus("삭제됨"); loadFiles(); }
     catch { setFileStatus("삭제 실패"); }
   };
-
-  // 편집기 이미지칸 "올리기" — 올리고 나서 공개 URL을 돌려준다
-  const uploadForEditor = async (file: File) => (await adminUploadFile(file)).url;
 
   // ── 플래너 규칙 (docs/PLANNER-RULES-DB.md Phase 2) ────────────────────────────
   const loadRules = async (pw: string) => {
@@ -684,9 +583,6 @@ export default function AdminPage() {
           <button className={tab === "changelog" ? "selected" : ""} onClick={() => setTab("changelog")}>
             업데이트 내역{changes ? ` (${changes.length})` : ""}
           </button>
-          <button className={tab === "devnotes" ? "selected" : ""} onClick={() => setTab("devnotes")}>
-            개발자 코멘트{devNotes ? ` (${devNotes.filter((row) => row.active).length}/${devNotes.length})` : ""}
-          </button>
           <button className={tab === "files" ? "selected" : ""} onClick={() => setTab("files")}>
             파일{files ? ` (${uploadRows.length})` : ""}
           </button>
@@ -861,42 +757,6 @@ export default function AdminPage() {
       )}
       </>)}
 
-      {tab === "devnotes" && (<>
-      <p className="admin-status">
-        받은 제안에 대한 개발자의 답변입니다 — 사이트 헤더 🛠 업데이트 내역 모달의
-        <b> 💬 개발자 코멘트</b> 버튼에 뜹니다. 저장하면 <b>배포 없이</b> 바로 반영됩니다.
-        제안은 인용문으로, 답변은 그 아래로 보이고 이미지는 선택입니다 (파일 탭에서 올린 URL 사용 가능).
-      </p>
-      {devNoteStatus && <p className="admin-status">{devNoteStatus}</p>}
-      {devNotes === null ? (
-        <p className="admin-status">개발자 코멘트 테이블이 아직 없습니다 — <code>docs/supabase-devnotes.sql</code>을 Supabase SQL Editor에서 실행하세요.</p>
-      ) : (
-        <div className="admin-rules">
-          <div className="admin-tools">
-            <button onClick={() => setEditingDevNote({ released_at: daysAgoKst(0), status: "considering", suggestion_ko: "", suggestion_en: "", suggestion_ja: "", reply_ko: "", reply_en: "", reply_ja: "", image: "", active: true, seq: 0 })}>+ 새 코멘트</button>
-            <button onClick={loadDevNotes}>새로고침</button>
-          </div>
-          {editingDevNote && !editingDevNote.id && <DevNoteEditor row={editingDevNote} onSave={saveDevNote} onCancel={() => setEditingDevNote(null)} upload={uploadForEditor} />}
-          {devNotes.length === 0 && <p className="admin-status">아직 등록된 코멘트가 없습니다.</p>}
-          {devNotes.map((row) => (
-            editingDevNote && editingDevNote.id === row.id
-              ? <DevNoteEditor key={row.id} row={editingDevNote} onSave={saveDevNote} onCancel={() => setEditingDevNote(null)} upload={uploadForEditor} />
-              : (
-                <div key={row.id} className={`rule-row${row.active ? "" : " status-draft"}`}>
-                  <code>{row.released_at}</code>
-                  <i className="rule-status-chip">{DEVNOTE_STATUS_LABEL[row.status]}</i>
-                  {!row.active && <i className="rule-status-chip">숨김</i>}
-                  <span className="rule-preview">💬 {row.suggestion_ko.slice(0, 60)}</span>
-                  {!row.suggestion_en || !row.suggestion_ja || !row.reply_en || !row.reply_ja ? <span className="rule-note" title="번역이 비면 한국어로 표시됩니다">번역 미완</span> : null}
-                  {row.image && <span className="rule-note" title={row.image}>이미지</span>}
-                  <button onClick={() => setEditingDevNote(row)}>편집</button>
-                  <button onClick={() => removeDevNote(row)}>삭제</button>
-                </div>
-              )
-          ))}
-        </div>
-      )}
-      </>)}
 
       {tab === "files" && (<>
       <p className="admin-status">

@@ -997,9 +997,9 @@ function Portal({ onOpenTab }: {
                   <span className="pt-head">
                     <span className="pt-ic" aria-hidden>{tile.icon}</span>
                     <span className="pt-ko">{t(tile.label)}</span>
-                    {/* 포탈 타일의 새 기능 표시 — 탭 배지는 헤더 메뉴와 같은 판정을 쓴다 */}
-                    {((tile.action === "changelog" && isNewFeature("dev-notes"))
-                      || (!!tile.tab && tabHasNewFeature(tile.tab))) && (
+                    {/* 포탈 타일의 새 기능 표시 — 탭 배지는 헤더 메뉴와 같은 판정을 쓴다.
+                        (업데이트 내역 타일에 붙던 dev-notes 배지는 2026-09-05 기능 제거로 삭제) */}
+                    {!!tile.tab && tabHasNewFeature(tile.tab) && (
                       <span className="new-badge">{t("새기능")}</span>
                     )}
                   </span>

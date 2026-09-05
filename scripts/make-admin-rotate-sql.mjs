@@ -53,6 +53,9 @@ const POLICIES = [
   ["feedback", "admin update feedback", "update"],
   ["feedback", "admin delete feedback", "delete"],
   ["feedback_replies", "admin all feedback_replies", "all"],
+  // 개발자 코멘트 기능은 2026-09-05에 사이트에서 제거됐지만 **테이블은 Supabase에 남아 있다**
+  // (데이터를 지우지 않았다). 정책이 살아 있는 한 회전 대상에서 빼면 안 된다 — 빼면 옛 키가
+  // 그 테이블에 그대로 남는다. Supabase에서 dev_notes를 drop 하면 이 줄도 함께 지울 것.
   ["dev_notes", "admin write dev_notes", "all"],
   ["planner_rules", "admin all planner_rules", "all"],
   ["rule_releases", "admin insert releases", "insert"],

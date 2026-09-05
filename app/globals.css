@@ -596,93 +596,6 @@ button {
   text-underline-offset: 3px;
 }
 
-/* 개발자 코멘트 — 업데이트 내역 모달 안 뷰 (사용자 요청 2026-08-05: 받은 제안에 대한
-   답변을 이미지·코멘트로. 크롬 바 💬 버튼은 .chlog-detail-toggle을 그대로 입는다) */
-.devnote-intro {
-  margin: 0 0 14px;
-  font-size: 12px;
-  line-height: 1.6;
-  color: var(--muted);
-}
-.chlog-notes li.devnote {
-  align-items: flex-start;
-}
-.devnote-body {
-  min-width: 0;   /* 긴 제안문이 flex 칸을 밀고 나가지 않게 */
-}
-/* 상태 배지 색 — 업데이트 내역 종류 배지(.chlog-kind)와 같은 팔레트로 위계를 맞춘다 */
-.devnote-status.done {
-  background: var(--tint-lime);
-  color: var(--tint-lime-ink);
-  border-color: transparent;
-}
-.devnote-status.planned {
-  background: var(--tint-gold);
-  color: var(--tint-warm2-ink);
-  border-color: transparent;
-}
-.devnote-status.considering {
-  background: var(--bg-soft);
-  color: var(--ink2);
-  border-color: transparent;
-}
-.devnote-status.rejected {
-  background: var(--tint-red);
-  color: var(--tint-warm-ink);
-  border-color: transparent;
-}
-/* 받은 제안 = 제목 겸 펼침 버튼 (사용자 요청 2026-08-05: 답변은 눌러야 나오게).
-   인용문 모양(왼쪽 세로선)은 그대로 두고 클릭 대상임을 화살표로 알린다. */
-.devnote-q {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  width: 100%;
-  margin: 0;
-  padding: 2px 0 2px 10px;
-  border: 0;
-  border-left: 3px solid var(--line);
-  background: none;
-  font: inherit;
-  font-size: 12.5px;
-  line-height: 1.55;
-  color: var(--ink2);
-  text-align: left;
-  white-space: pre-wrap;
-  cursor: pointer;
-  transition: 0.15s;
-}
-.devnote-q:hover {
-  border-left-color: var(--border-hover);
-  color: var(--ink);
-}
-.devnote-q > i {
-  flex: none;
-  margin-left: auto;
-  font-style: normal;
-  font-size: 10px;
-  color: var(--muted);
-}
-.devnote-q[aria-expanded="true"] {
-  color: var(--ink);
-  font-weight: 700;
-}
-.devnote-reply {
-  margin: 6px 0 0;
-  font-size: 13px;
-  line-height: 1.6;
-  color: var(--ink2);
-  white-space: pre-wrap;
-}
-.devnote-img {
-  display: block;
-  margin-top: 8px;
-  max-width: 100%;
-  max-height: 280px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-}
-
 /* 진행중 게임 이벤트 — 헤더 중앙 배지 + 팝오버 */
 /* 방송 버튼 오른쪽에 그대로 흐름 배치한다. (절대 중앙배치는 방송 버튼·토글과 겹쳐
    레이아웃이 깨지고 스켈레톤 예약도 무력화되어 제거 — 사용자 확정 2026-07-17) */
@@ -7617,55 +7530,6 @@ legend {
   display: flex;
   flex-direction: column;
 }
-/* 게시판 탭 — 내 제안(비공개) | 개발자 코멘트(공개, 2026-08-17 업데이트 내역 모달에서 이사) */
-.fb-tabs {
-  display: flex;
-  gap: 6px;
-  padding: 12px 14px 0;
-}
-.fb-tabs button {
-  flex: 1;
-  border: 1px solid var(--line);
-  background: 0 0;
-  color: inherit;
-  padding: 8px;
-  font-size: 12px;
-  font-weight: 800;
-  cursor: pointer;
-}
-.fb-tabs button.selected {
-  background: var(--chip);
-  color: var(--lime);
-  border-color: var(--border-strong);
-}
-/* 개발자 코멘트 목록 — devnote-* 본체 스타일은 종전 업데이트 내역 뷰의 것을 그대로 쓴다 */
-.fb-notes {
-  padding: 12px 14px;
-  overflow-y: auto;
-  max-height: min(58dvh, 520px);
-}
-.fb-notes > ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.fb-notes li.devnote {
-  display: flex;
-  gap: 8px;
-  align-items: flex-start;
-}
-.fb-notes .devnote-intro {
-  margin: 0 0 12px;
-}
-.fb-note-date {
-  display: block;
-  margin-top: 6px;
-  font-size: 10px;
-  color: var(--muted);
-}
 .fb-list-tools {
   display: flex;
   align-items: center;
@@ -7855,7 +7719,7 @@ legend {
   margin: 0;
   width: auto;
 }
-/* 스레드·개발자 코멘트 창모달 — 목록 클릭 시 인라인 확장 대신 이 창이 뜬다
+/* 제안 스레드 창모달 — 목록 클릭 시 인라인 확장 대신 이 창이 뜬다
    (사용자 지시 2026-08-17: "높이가 휙 늘어나지 말고 모달창 하나 더") */
 .fb-thread-modal {
   position: relative;
@@ -7876,20 +7740,6 @@ legend {
 .fb-thread-date {
   font-size: 10.5px;
   color: var(--muted);
-}
-.fb-note-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.fb-note-q {
-  margin: 0;
-  border-left: 3px solid var(--line);
-  padding: 2px 0 2px 10px;
-  font-size: 12.5px;
-  line-height: 1.55;
-  color: var(--ink2);
-  white-space: pre-wrap;
 }
 /* 첨부 이미지 확대 — 새 탭 대신 오버레이 (사용자 지시 2026-08-17). body 포털이라
    창모달(z 200대) 위·confirm(1200) 아래에 둔다 */
@@ -8643,31 +8493,6 @@ legend {
 .ftree-body .rule-row {
   border-top: 0;
   padding: 3px 0;
-}
-/* 팁 편집기 이미지칸 + 올리기 버튼 */
-.file-inline {
-  display: flex;
-  gap: 6px;
-}
-.file-inline input[type="text"],
-.file-inline input:not([type]) {
-  flex: 1;
-  min-width: 0;
-}
-.file-pick-btn {
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  border: 1px solid var(--line);
-  background: var(--white);
-  padding: 0 12px;
-  font-size: 11.5px;
-  font-weight: 800;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.file-pick-btn input {
-  display: none;
 }
 .recruit-combo li.pending {
   border-style: dashed;

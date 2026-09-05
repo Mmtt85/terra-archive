@@ -50,9 +50,8 @@ export default function ChangelogButton() {
   const [open, setOpen] = useState(false);
   // '신기능만' 헤더 토글은 2026-08-19에 제거 (사용자 지시: "신기능만 보는 사람은 없어보이니")
   // — 항상 전 종류를 보여 준다. 종전 detail 상태·필터·#changelog(신기능만) 딥링크도 함께 정리.
-  // 개발자 코멘트 뷰는 2026-08-17에 제안 게시판(feedback-widget)으로 이사했다
-  // (사용자 지시: "업데이트 내역의 개발자코멘트 기능을 없애버리고 게시판에, 모두 볼 수 있게").
-  // #devnotes 딥링크도 게시판이 이어받는다.
+  // 개발자 코멘트는 2026-09-05에 **기능째 제거**됐다 (사용자 지시: "이제 필요 없을거 같음.
+  // 기능 자체를 지워버리자") — 2026-08-17에 제안 게시판으로 옮겼던 뷰와 #devnotes 딥링크도 함께.
   const [rows, setRows] = useState<ChangeRow[] | null>(null);
   const [weeks, setWeeks] = useState(1);              // 지금까지 불러온 7일 창 수
   const [oldest, setOldest] = useState<string | null>(null); // 전체에서 가장 오래된 항목 날짜
@@ -64,7 +63,7 @@ export default function ChangelogButton() {
   const [detail, setDetail] = useState<ChangeRow | null>(null);
   const loaded = useRef(false);                       // 첫 로드 1회 가드
 
-  // 딥링크: #changelog — 기간 확장 상태는 URL에 담지 않는다. #devnotes는 제안 게시판이,
+  // 딥링크: #changelog — 기간 확장 상태는 URL에 담지 않는다.
   // 옛 #changelog-all(상세보기 시절 링크)도 계속 받아 준다.
   useHashSync(open ? "#changelog" : null, (h) => {
     if (h === "#changelog" || h === "#changelog-all") setOpen(true);

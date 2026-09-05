@@ -13,8 +13,6 @@ import {
 } from "./feedback";
 import { ModalWindow } from "./modal-window";
 import { useConfirm } from "./confirm";
-import { fetchDevNotes, noteSuggestion, noteReply, DEVNOTE_STATUS_LABEL, type DevNoteRow } from "./devnotes-api";
-import { useHashSync } from "./hash-modal";
 import { isNewFeature } from "./whats-new";
 import { useI18n } from "./i18n";
 
@@ -28,15 +26,10 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
 }) {
   const { t, locale } = useI18n();
   const [view, setView] = useState<"list" | "compose">("list");
-  // 게시판 탭 — 내 제안(비공개 스레드) | 개발자 코멘트(전체 공개, 2026-08-17 업데이트 내역
-  // 모달에서 이사. 사용자 지시: "개발자코멘트를 없애고 여기다가, 모두가 볼 수 있도록")
-  const [tab, setTab] = useState<"mine" | "notes">("mine");
-  const [notes, setNotes] = useState<DevNoteRow[] | null>(null);
-  const [notesError, setNotesError] = useState(false);
-  const notesLoaded = useRef(false);
+  // 게시판은 '내 제안' 하나뿐이다 — 개발자 코멘트 탭은 기능째 제거됐다 (사용자 지시
+  // 2026-09-05: "개발자 코멘트도 이제 필요 없을거 같음. 기능 자체를 지워버리자").
   // 목록 클릭은 인라인 확장이 아니라 **별도 창모달**을 띄운다 (사용자 지시 2026-08-17:
-  // "높이가 휙 늘어나지 말고 모달창 하나 더" — 개발자 코멘트도 마찬가지)
-  const [noteId, setNoteId] = useState<string | null>(null);
+  // "높이가 휙 늘어나지 말고 모달창 하나 더")
 
   // ── 게시판 상태 ──
   const [rows, setRows] = useState<BoardRow[] | null>(null);
@@ -120,34 +113,10 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  // #devnotes 딥링크 — 종전 업데이트 내역 모달의 코멘트 뷰가 쓰던 해시를 이어받는다
-  // (이미 배포된 업데이트 내역 행의 href "/#devnotes"가 살아 있어야 한다)
-  useHashSync(open && view === "list" && tab === "notes" ? "#devnotes" : null, (h) => {
-    if (h.startsWith("#devnotes")) { setOpen(true); setView("list"); setTab("notes"); }
-    else if (tab === "notes" && open) setOpen(false); // 뒤로가기로 해시가 걷히면 닫는다
-  });
-
-  // 개발자 코멘트 — 탭을 처음 열 때 1회 로드 (게시판만 열고 안 보면 안 부른다)
-  useEffect(() => {
-    if (!open || tab !== "notes" || notesLoaded.current) return;
-    notesLoaded.current = true;
-    let alive = true;
-    fetchDevNotes()
-      .then((data) => { if (alive) setNotes(data); })
-      .catch(() => {
-        if (!alive) return;
-        notesLoaded.current = false; // 실패는 재시도 가능하게
-        setNotesError(true);
-      });
-    return () => { alive = false; };
-  }, [open, tab]);
-
   const close = () => {
     setOpen(false);
     setView("list");
-    setTab("mine");
     setThreadId(null);
-    setNoteId(null);
     setCodeOpen(false);
     setCodeErr(false);
     setEditingId(null);
@@ -402,39 +371,10 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
   // 제안·답변 시각은 초까지 (사용자 지시 2026-08-17: "시간 분 초까지 다 나오게")
   const fmtDate = (iso: string) =>
     new Date(iso).toLocaleString(DT_LOC, { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
-  // 개발자 코멘트는 DB에 날짜만 있다(released_at date) — 시각 없이 날짜만
-  const fmtDay = (iso: string) =>
-    new Date(iso).toLocaleDateString(DT_LOC, { year: "numeric", month: "short", day: "numeric" });
-
   const KIND_KEY: Record<FeedbackKind, string> = { feature: "기능 제안", data_error: "데이터 오류 리포트", plan: "편성 제안" };
   const isNewReply = (iso: string) => newSince !== undefined && (!newSince || iso > newSince);
 
   if (!feedbackReady) return null;
-
-  // 개발자 코멘트 탭 — 모두에게 공개 (devnote-* 스타일은 종전 업데이트 내역 뷰의 것을 재사용)
-  const notesView = (
-    <div className="fb-notes">
-      <p className="devnote-intro">{t("여러분이 보내 주신 제안·피드백에 대한 답변입니다 — 무엇이 반영되고, 무엇이 왜 어려운지 남깁니다.")}</p>
-      {notes === null && !notesError && <p className="fb-board-empty">{t("불러오는 중…")}</p>}
-      {notesError && <p className="fb-board-empty">{t("개발자 코멘트를 불러오지 못했습니다 — 잠시 뒤 다시 시도해 주세요.")}</p>}
-      {notes !== null && !notesError && notes.length === 0 && (
-        <p className="fb-board-empty">{t("아직 등록된 개발자 코멘트가 없습니다.")}</p>
-      )}
-      <ul>
-        {(notes ?? []).map((row) => (
-          <li key={row.id} className="devnote">
-            <span className={`chlog-kind devnote-status ${row.status}`}>{t(DEVNOTE_STATUS_LABEL[row.status])}</span>
-            <div className="devnote-body">
-              <button type="button" className="devnote-q" onClick={() => setNoteId(row.id)}>
-                <span>{noteSuggestion(row, locale)}</span>
-                <i aria-hidden>›</i>
-              </button>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
 
   // 관리자 기본 보기는 대응완료 가림 (/admin '대응미완료'와 같은 감각)
   const reviewedCount = adminKey ? (rows ?? []).filter((r) => r.reviewed_at).length : 0;
@@ -537,11 +477,7 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
 
   const board = (
     <div className="feedback-panel fb-board-panel">
-      <div className="fb-tabs">
-        <button type="button" className={tab === "mine" ? "selected" : ""} onClick={() => setTab("mine")}>{t("내 제안")}</button>
-        <button type="button" className={tab === "notes" ? "selected" : ""} onClick={() => setTab("notes")}>💬 {t("개발자 코멘트")}</button>
-      </div>
-      {tab === "notes" ? notesView : mineView}
+      {mineView}
     </div>
   );
 
@@ -588,10 +524,9 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
     </div>
   );
 
-  // 목록 클릭으로 여는 두 번째 창 — 목록 높이는 그대로, 스레드/코멘트는 창모달에서
+  // 목록 클릭으로 여는 두 번째 창 — 목록 높이는 그대로, 스레드는 창모달에서
   const threadRow = threadId ? (rows ?? []).find((r) => r.id === threadId) ?? null : null;
   const threadImgs = threadRow ? imagesOf(threadRow.payload) : [];
-  const noteRow = noteId ? (notes ?? []).find((n) => n.id === noteId) ?? null : null;
 
   return (
     <div className="feedback-widget">
@@ -687,23 +622,6 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
               </div>
             )}
             {actErr && <small className="fb-act-err">{t("실패했습니다 — 잠시 후 다시 시도해주세요")}</small>}
-          </div>
-        </ModalWindow>
-      )}
-      {open && noteRow && (
-        <ModalWindow label={t("개발자 코멘트")} className="fb-thread-modal" onClose={() => setNoteId(null)}>
-          <div className="fb-thread fb-modal-thread">
-            <div className="fb-note-head">
-              <span className={`chlog-kind devnote-status ${noteRow.status}`}>{t(DEVNOTE_STATUS_LABEL[noteRow.status])}</span>
-              <time className="fb-thread-date">{fmtDay(`${noteRow.released_at}T00:00:00+09:00`)}</time>
-            </div>
-            <p className="fb-note-q">{noteSuggestion(noteRow, locale)}</p>
-            <p className="devnote-reply">{noteReply(noteRow, locale)}</p>
-            {noteRow.image && (
-              <button type="button" className="fb-img-zoom-btn" title={t("이미지 크게 보기")} onClick={() => setZoomSrc(noteRow.image)}>
-                <img className="devnote-img" src={noteRow.image} alt="" loading="lazy" />
-              </button>
-            )}
           </div>
         </ModalWindow>
       )}
