@@ -630,9 +630,11 @@ export default function AutochessGuide({ doc, onShowOperator }: {
       if (oc.target.fresh) resetAcRun();
       const n = Object.keys(oc.target.stacks).length;
       const dp = oc.target.deploy ?? null;
-      if (n || dp) {
-        mergeAcRun({ stacks: oc.target.stacks, deploy: dp });
-        const msg = [n ? t("맹약 {n}개", { n }) : "", dp ? `${dp.cur}/${dp.max}` : ""]
+      const seats = oc.target.seats ?? 0;
+      if (n || dp || seats) {
+        mergeAcRun({ stacks: oc.target.stacks, deploy: dp, seats });
+        const msg = [n ? t("맹약 {n}개", { n }) : "", dp ? `${dp.cur}/${dp.max}` : "",
+          seats ? (seats > 1 ? t("멀티") : t("독립")) : ""]
           .filter(Boolean).join(" · ");
         noteBridge(msg);
         setAcMsg(msg);
@@ -1647,7 +1649,9 @@ export default function AutochessGuide({ doc, onShowOperator }: {
             {t("덱편성 시뮬레이터")}
             {isNewFeature("ac-deck") && <span className="new-badge">{t("새기능")}</span>}
           </button>
-          {/* 독립/멀티는 **버튼으로 나누지 않는다** — 화면에서 알아낸다 (사용자 확정 2026-09-06) */}
+          {/* 독립/멀티는 **버튼으로 나누지 않는다** — 화면에서 알아낸다 (사용자 확정 2026-09-06).
+              PRTS 와 ? 는 /rogue 툴바처럼 **붙은 한 덩어리**다. */}
+          <span className="ac-prtsgrp">
           <button type="button" className={`ac-simcta ac-prtscta${acLocked ? " on" : ""}`}
             disabled={acPrtsBlocked}
             title={acPrtsMobile
@@ -1667,8 +1671,9 @@ export default function AutochessGuide({ doc, onShowOperator }: {
             <span className="beta-badge">{acPrtsMobile ? t("PC 전용") : "BETA"}</span>
           </button>
           {/* ? 는 PRTS 버튼 **바로 오른쪽**에 붙는다 (bridge-button.tsx 와 같은 규약) */}
-          <button type="button" className="lens-help-btn bridge-help-btn"
+          <button type="button" className="lens-help-btn"
             aria-label={t("PRTS 링크 도움말")} onClick={() => setAcHelp(true)}>?</button>
+          </span>
         </div>
       </header>
       {/* 한 판 스트립 — 게임 연결이 켜져 있을 때만. **모달 밖**에 두는 게 핵심이다:

@@ -6,7 +6,7 @@ import { createOcrSession } from "./ocr";
 import { asset } from "../assets";
 import { buildIndex, analyzeLines, analyzeChinese, analyzeRecruit, wantsChipPass, isCollectLine, LENS_ITEM_SECTIONS, normFor, type LensIndex, type LensOutcome, type LensHud } from "./match";
 import { parseStoryIndex, analyzeStoryLines, type StoryIndex } from "./storymatch";
-import { buildAcIndex, planAcStacks, parseStack, parseDeploy, isAcInfoScreen, type AcIndex } from "./acmatch";
+import { buildAcIndex, planAcStacks, parseStack, parseDeploy, parseSeats, isAcInfoScreen, type AcIndex } from "./acmatch";
 import storySearchMeta from "../data/story-search-meta.json";
 
 export type LensMode = "rogue" | "recruit" | "story" | "autochess";
@@ -184,9 +184,12 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
     // 배치 가능 인원 — 원시 라인에서 (정규화가 '/'를 지운다)
     const deploy = parseDeploy(lines);
     if (deploy) console.debug(`[lens] 배치 가능 인원: ${deploy.cur}/${deploy.max}${deploy.max === 9 ? " (인사부 파일)" : ""}`);
+    // 참가자 카드 수 — 1이면 독립, 2 이상이면 멀티 (전략 정보 화면에서만 잡힌다)
+    const seats = parseSeats(lines);
+    if (seats) console.debug(`[lens] 참가자 ${seats}명 → ${seats > 1 ? "멀티" : "독립"}`);
     oc = {
       screens: [], entities: [], topics: [], section: fresh ? "acinfo" : null,
-      target: { kind: "acrun", stacks, fresh, deploy },
+      target: { kind: "acrun", stacks, fresh, deploy, seats },
     };
   } else if (mode === "story") {
     // 스토리 전문 대사 화면 — OCR 라인의 10자 그램을 역색인에 투표해 스토리·ep 특정 (2026-07-24)

@@ -22,10 +22,11 @@ export const isAcLock = (topic?: string): boolean => topic === AC_LOCK;
 
 /** 독립(싱글) / 멀티 — **버튼으로 고르지 않는다.** 화면에서 알아낸다
  *  (사용자 확정 2026-09-06 "그냥 화면인식으로 정할 수 있을거 같으니 굳이 나누지 말자").
- *  상대 자리(seat ≥ 1)의 전략이 하나라도 잡히면 멀티다. */
+ *  판정 근거는 '전략 정보' 화면 왼쪽의 참가자 카드 수 — 한 명이면 독립, 여럿이면 멀티.
+ *  아직 그 화면을 못 봤으면 null (모르는 걸 아는 척하지 않는다). */
 export type AcMode = "single" | "multi";
 export const acModeOf = (run: AcRun): AcMode | null =>
-  run.bands.some((b) => b.seat > 0) ? "multi" : run.at ? "single" : null;
+  !run.seats ? null : run.seats > 1 ? "multi" : "single";
 
 export type AcRun = {
   /** 맹약 id → 중첩 수 — 화면의 맹약 원형에서 읽는다 */
@@ -35,6 +36,8 @@ export type AcRun = {
   bans: string[];
   /** 자리별 전략 — seat 0 = 나, 1~3 = 상대 (멀티 전용) */
   bands: { seat: number; band: string }[];
+  /** 참가자 수 — '전략 정보' 화면의 참가자 카드 수. 0 = 아직 그 화면을 못 봤다 */
+  seats: number;
   /** 배치 가능 인원 — 화면의 n/8 · n/9. **분모가 9면 인사부 파일을 쓴 것**이다
    *  (사용자 확정 2026-09-06). max 가 9로 바뀌면 9번째 칸을 열어 준다. */
   deploy: { cur: number; max: number } | null;
@@ -42,7 +45,7 @@ export type AcRun = {
   at: number;
 };
 
-const EMPTY: AcRun = { stacks: {}, bans: [], bands: [], deploy: null, at: 0 };
+const EMPTY: AcRun = { stacks: {}, bans: [], bands: [], deploy: null, seats: 0, at: 0 };
 const KEY = "ta-ac-run";
 
 let run: AcRun = EMPTY;
@@ -68,6 +71,7 @@ function hydrate(): void {
       bans: Array.isArray(d.bans) ? d.bans : [],
       bands: Array.isArray(d.bands) ? d.bands : [],
       deploy: d.deploy && typeof d.deploy.max === "number" ? d.deploy : null,
+      seats: typeof d.seats === "number" ? d.seats : 0,
       at: typeof d.at === "number" ? d.at : 0,
     };
   } catch { /* 깨진 저장본은 버린다 */ }
@@ -85,6 +89,7 @@ export function mergeAcRun(patch: {
   bans?: string[];
   bands?: { seat: number; band: string }[];
   deploy?: { cur: number; max: number } | null;
+  seats?: number;
 }): boolean {
   hydrate();
   const stacks = { ...run.stacks, ...(patch.stacks ?? {}) };
@@ -97,13 +102,16 @@ export function mergeAcRun(patch: {
     bands = [...by].map(([seat, band]) => ({ seat, band })).sort((a, b) => a.seat - b.seat);
   }
   const deploy = patch.deploy !== undefined ? patch.deploy : run.deploy;
+  // 참가자 수는 **줄어들지 않는다** — 전략 정보 화면을 스크롤하면 카드가 화면 밖으로
+  // 나가면서 덜 잡히는데, 그때마다 멀티가 독립으로 바뀌면 안 된다.
+  const seats = Math.max(run.seats, patch.seats ?? 0);
   const sameBands = bands === run.bands;
   const sameDeploy = deploy?.cur === run.deploy?.cur && deploy?.max === run.deploy?.max;
-  const same = bans === run.bans && sameBands && sameDeploy
+  const same = bans === run.bans && sameBands && sameDeploy && seats === run.seats
     && Object.keys(stacks).length === Object.keys(run.stacks).length
     && Object.entries(stacks).every(([k, v]) => run.stacks[k] === v);
   if (same) return false;                      // 값이 그대로면 리렌더를 만들지 않는다
-  run = { stacks, bans, bands, deploy, at: Date.now() };
+  run = { stacks, bans, bands, deploy, seats, at: Date.now() };
   persist();
   emit();
   return true;
@@ -134,8 +142,8 @@ export function setAcStacks(stacks: Record<string, number>): void {
 export function resetAcRun(): void {
   hydrate();
   if (run.at === 0 && !Object.keys(run.stacks).length && !run.bans.length
-    && !run.bands.length && !run.deploy) return;
-  run = { stacks: {}, bans: [], bands: [], deploy: null, at: 0 };
+    && !run.bands.length && !run.deploy && !run.seats) return;
+  run = { stacks: {}, bans: [], bands: [], deploy: null, seats: 0, at: 0 };
   persist();
   emit();
 }

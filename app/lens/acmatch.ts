@@ -159,6 +159,26 @@ export function parseDeploy(rawLines: string[]): { cur: number; max: number } | 
   return best;
 }
 
+// ── 독립 / 멀티 ─────────────────────────────────────────────────────────────
+// '전략 정보(2/2)' 화면 왼쪽에 참가자 카드가 늘어선다 — **한 명이면 독립, 여럿이면 멀티**
+// (사용자 확정 2026-09-06). 카드에는 언제나 `<닉네임> #1234` 꼴의 번호가 붙는다.
+//
+// ⚠ 화면 제목("전략 정보")으로 게이트하지 않는다 — 로케일마다 문구가 다르고 EN/JA 클라의
+//   실제 표기를 확인하지 못했다. 대신 **번호 패턴 자체**로 센다: 3자리 이상 숫자 앞의 #는
+//   다른 화면에 나오지 않는다. 로케일을 안 타는 게 이 방식의 장점이다.
+// ⚠ 정규화가 '#'을 지우므로 **원시 라인**에서 읽는다.
+const SEAT_ID = /#\s?(\d{3,})/g;
+
+export function parseSeats(rawLines: string[]): number {
+  const ids = new Set<string>();
+  for (const l of rawLines) {
+    SEAT_ID.lastIndex = 0;
+    let m: RegExpExecArray | null;
+    while ((m = SEAT_ID.exec(l))) ids.add(m[1]);
+  }
+  return ids.size;
+}
+
 // ── 새 판 신호 ──────────────────────────────────────────────────────────────
 // '시뮬레이션 정보' 화면 = 판의 시작. 이걸 보면 지난 판 값을 버린다.
 // 로케일별 클라 문구 (KR/EN/JA) — 정규화 후 부분 일치로 본다 (제목 줄이 통째로 잡히므로).
