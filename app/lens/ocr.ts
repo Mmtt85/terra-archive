@@ -92,6 +92,11 @@ export async function warmDigitOcr(): Promise<void> {
   try { await getDigitWorker(); } catch { /* 실제 인식 시 재시도 */ }
 }
 
+/** 줄 상자 — 0~1 정규화 좌표 (해상도에 안 묶이게. 캔버스 업스케일 배율도 흡수한다) */
+export type OcrBox = { text: string; x0: number; y0: number; x1: number; y1: number };
+/** 크롭 영역 — 0~1 정규화 좌표 */
+export type OcrRect = { x: number; y: number; w: number; h: number };
+
 export type OcrSession = {
   /** PSM11(sparse) 전체 프레임 — 흩어진 텍스트에 강함, 1차 패스 */
   sparse(): Promise<string[]>;
@@ -107,6 +112,12 @@ export type OcrSession = {
   colorBand(test: (text: string) => boolean, zh?: boolean): Promise<string[]>;
   /** 좌하단 난이도 배지(육각형 숫자) — 있으면 0~18 반환, 없으면 null */
   difficulty(): Promise<number | null>;
+  /** 직전 전체프레임 패스의 줄 상자 — **0~1 정규화 좌표**. 호출 측이 화면 배치를 읽어
+   *  "이 글자 위/옆"을 짚을 때 쓴다 (위수 협의 맹약 원형의 중첩 숫자 등). */
+  boxes(): OcrBox[];
+  /** 정규화 rect(0~1)를 잘라 **숫자 전용 eng 워커**로 읽는다 — difficulty()가 고정 위치에
+   *  하는 일의 일반화. kor/jpn 모델은 단독 숫자를 글자로 오독하므로 반드시 이걸 쓴다. */
+  digits(rect: OcrRect): Promise<{ text: string; conf: number }>;
   /** 강한 빨강 픽셀 비율(0~1) — 긴급 작전 화면이면 ~0.02, 평시 ≤0.009 (실측) */
   redness: number;
   /** 화면 평균 밝기(0~255) — 전투 입장 암전 화면 판정용 (DARK_LUMA 미만) */
@@ -176,9 +187,45 @@ export async function createOcrSession(blob: Blob, lang = "kor"): Promise<OcrSes
     return lastBoxes.map((l) => l.text);
   };
 
+  // 숫자 크롭 1회 — difficulty()와 digits()가 공유한다.
+  // 1:1 이진화 → nearest 4배 확대 → eng 워커 한 줄. **확대 후 이진화하면 안 된다** —
+  // 리샘플링 방식(canvas bilinear vs sharp lanczos)에 따라 결과가 갈려 브라우저와
+  // 하네스가 어긋난다 (2026-07-24 실측). 글리프가 하나도 안 남으면 읽지 않고 포기.
+  const readDigits = async (x: number, y: number, w: number, h: number):
+    Promise<{ text: string; conf: number }> => {
+    if (w < 4 || h < 4) return { text: "", conf: 0 };
+    const c1 = document.createElement("canvas");
+    c1.width = w; c1.height = h;
+    const c1x = c1.getContext("2d", { willReadFrequently: true })!;
+    c1x.drawImage(c, x, y, w, h, 0, 0, w, h);
+    const cimg = c1x.getImageData(0, 0, w, h);
+    binarizeGlyph(cimg.data);
+    // 테두리에 닿은 성분은 버린다 — 아트 침입은 물론 **맹약 원형의 발광 링**도 이걸로 빠진다
+    if (isolateGlyphs(cimg.data, w, h) === 0) return { text: "", conf: 0 };
+    c1x.putImageData(cimg, 0, 0);
+    const cc = document.createElement("canvas");
+    cc.width = w * 4; cc.height = h * 4;
+    const cctx = cc.getContext("2d")!;
+    cctx.imageSmoothingEnabled = false; // nearest
+    cctx.drawImage(c1, 0, 0, w * 4, h * 4);
+    const dw = await getDigitWorker();
+    const r = await dw.recognize(cc, {}, { blocks: false, text: true, hocr: false, tsv: false });
+    return { text: (r.data.text ?? "").trim(), conf: r.data.confidence ?? 0 };
+  };
+
   return {
     redness,
     luma,
+    boxes() {
+      return lastBoxes.map((l) => ({
+        text: l.text, x0: l.x0 / W, y0: l.y0 / H, x1: l.x1 / W, y1: l.y1 / H,
+      }));
+    },
+    async digits(rect) {
+      const x = Math.max(0, Math.round(rect.x * W)), y = Math.max(0, Math.round(rect.y * H));
+      const w = Math.min(Math.round(rect.w * W), W - x), h = Math.min(Math.round(rect.h * H), H - y);
+      return readDigits(x, y, w, h);
+    },
     async sparse() {
       await setPsm(worker, "11");
       const r = await worker.recognize(c, {}, OUT);
@@ -231,33 +278,16 @@ export async function createOcrSession(blob: Blob, lang = "kor"): Promise<OcrSes
       return out;
     },
     async difficulty() {
-      // 좌하단 코너를 1:1로 잘라 이진화 → nearest 4배 확대 → eng 워커 한 줄 OCR.
-      // ⚠ 확대 후 이진화하면 리샘플링 방식(canvas bilinear vs sharp lanczos)에 따라 결과가
-      // 갈린다 — 1:1 이진화 + nearest 확대는 결정적이라 브라우저·하네스가 일치 (실측 90%).
-      // kor은 단독 숫자를 한글로 오독하므로 eng 전용 워커를 쓴다 (2026-07-24)
+      // 좌하단 코너 고정 위치 — 크롭·이진화·확대·OCR은 readDigits 공유 (2026-09-06 추출).
       const x = Math.round(W * DIFF_REGION.x), y = Math.round(H * DIFF_REGION.y);
       const w = Math.round(W * DIFF_REGION.w), h = Math.min(Math.round(H * DIFF_REGION.h), H - y);
-      const c1 = document.createElement("canvas");
-      c1.width = w; c1.height = h;
-      const c1x = c1.getContext("2d", { willReadFrequently: true })!;
-      c1x.drawImage(c, x, y, w, h, 0, 0, w, h);
-      const cimg = c1x.getImageData(0, 0, w, h);
-      binarizeGlyph(cimg.data);
-      // 가장자리 침입 아트 노이즈 제거 — 글리프가 하나도 안 남으면 배지 없음 (OCR 생략)
-      if (isolateGlyphs(cimg.data, w, h) === 0) {
+      const { text, conf } = await readDigits(x, y, w, h);
+      if (!text) {
         console.debug(`[lens] 난이도 OCR: 글리프 없음 (배지 미검출)`);
         return null;
       }
-      c1x.putImageData(cimg, 0, 0);
-      const cc = document.createElement("canvas");
-      cc.width = w * 4; cc.height = h * 4;
-      const cctx = cc.getContext("2d")!;
-      cctx.imageSmoothingEnabled = false; // nearest
-      cctx.drawImage(c1, 0, 0, w * 4, h * 4);
-      const dw = await getDigitWorker();
-      const r = await dw.recognize(cc, {}, { blocks: false, text: true, hocr: false, tsv: false });
-      console.debug(`[lens] 난이도 OCR: "${(r.data.text ?? "").trim()}" ${Math.round(r.data.confidence ?? 0)}%`);
-      return parseDifficulty(r.data.text ?? "", r.data.confidence ?? 0);
+      console.debug(`[lens] 난이도 OCR: "${text}" ${Math.round(conf)}%`);
+      return parseDifficulty(text, conf);
     },
     async chips() {
       const boxes = findDarkChips(img.data, W, H);

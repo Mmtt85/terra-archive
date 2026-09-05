@@ -6,9 +6,10 @@ import { createOcrSession } from "./ocr";
 import { asset } from "../assets";
 import { buildIndex, analyzeLines, analyzeChinese, analyzeRecruit, wantsChipPass, isCollectLine, LENS_ITEM_SECTIONS, normFor, type LensIndex, type LensOutcome, type LensHud } from "./match";
 import { parseStoryIndex, analyzeStoryLines, type StoryIndex } from "./storymatch";
+import { buildAcIndex, planAcStacks, parseStack, parseDeploy, isAcInfoScreen, type AcIndex } from "./acmatch";
 import storySearchMeta from "../data/story-search-meta.json";
 
-export type LensMode = "rogue" | "recruit" | "story";
+export type LensMode = "rogue" | "recruit" | "story" | "autochess";
 
 // 라이브 스트림용 난이도 캐시 — 한 판 도는 동안 불변 (배지 OCR 생략, 10분 TTL).
 // 미검출(배지 없는 화면·모달)도 기억해 10초 쿨다운을 둔다 — 없는 배지를 화면마다
@@ -119,12 +120,30 @@ export function getStoryIndex(): Promise<StoryIndex> {
   return storyIndexP;
 }
 
+// 위수 협의 맹약 이름 색인 — 맹약 23개 이름뿐이라 아주 가볍다(록라 2.9MB와 다르다).
+// autochess.json 전체를 지연 import 하고 이름만 뽑는다 (페이지가 이미 들고 있어 캐시 적중).
+const acIndexByLoc = new Map<string, Promise<AcIndex>>();
+export function getAcIndex(locale = "ko"): Promise<AcIndex> {
+  let p = acIndexByLoc.get(locale);
+  if (!p) {
+    const load = locale === "en" ? import("../data/autochess.en.json")
+      : locale === "ja" ? import("../data/autochess.ja.json")
+        : import("../data/autochess.json");
+    p = load.then((m) => buildAcIndex(
+      ((m.default as { bonds?: { id: string; n: string }[] }).bonds ?? []), normFor(locale)));
+    p.catch(() => { acIndexByLoc.delete(locale); });
+    acIndexByLoc.set(locale, p);
+  }
+  return p;
+}
+
 /** 데이터 예열 (모달 열림/토글 켜짐 시 호출). locale은 rogue 인덱스를 로케일별로 예열.
  *  cnTopic — 중섭 탭을 켠 테마. 인덱스가 로케일+중섭 조합으로 캐시되므로 같이 넘겨야
  *  실제로 쓸 인덱스가 예열된다 (안 넘기면 한섭 인덱스만 데워 놓고 다시 받는다). */
 export function warmData(mode: LensMode, locale = "ko", cnTopic?: string): void {
   if (mode === "recruit") void getRecruitTags();
   else if (mode === "story") void getStoryIndex();
+  else if (mode === "autochess") void getAcIndex(locale);
   else void getRogueIndex(locale, cnTopic);
 }
 
@@ -145,6 +164,30 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
     const [tags, session] = await Promise.all([getRecruitTags(), createOcrSession(file)]);
     lines = (await session.chips()).concat(await session.sparse());
     oc = analyzeRecruit(lines, tags);
+  } else if (mode === "autochess") {
+    // 위수 협의 — 이동이 아니라 **한 판 상태 갱신**이다. 화면이 계속 들어오며 값만 바뀐다.
+    // 맹약 이름 줄을 찾고(PSM11이 위치까지 준다) 그 위의 숫자를 **숫자 전용 워커**로 읽는다.
+    const norm = normFor(locale);
+    const [idx, session] = await Promise.all([
+      getAcIndex(locale), createOcrSession(file, OCR_LANG[locale] ?? "kor")]);
+    lines = await session.sparse();
+    const plan = planAcStacks(session.boxes(), idx, norm);
+    const stacks: Record<string, number> = {};
+    // 숫자 크롭은 아주 작아(한 자리 수) 순차로 돌려도 프레임 하나에 수십 ms다.
+    for (const p of plan) {
+      const { text, conf } = await session.digits(p.rect);
+      const n = parseStack(text, conf);
+      if (n !== null) stacks[p.id] = n;
+      console.debug(`[lens] 맹약 ${p.id} 중첩: "${text}" ${Math.round(conf)}% (${p.from}) → ${n ?? "버림"}`);
+    }
+    const fresh = isAcInfoScreen(lines.map(norm));
+    // 배치 가능 인원 — 원시 라인에서 (정규화가 '/'를 지운다)
+    const deploy = parseDeploy(lines);
+    if (deploy) console.debug(`[lens] 배치 가능 인원: ${deploy.cur}/${deploy.max}${deploy.max === 9 ? " (인사부 파일)" : ""}`);
+    oc = {
+      screens: [], entities: [], topics: [], section: fresh ? "acinfo" : null,
+      target: { kind: "acrun", stacks, fresh, deploy },
+    };
   } else if (mode === "story") {
     // 스토리 전문 대사 화면 — OCR 라인의 10자 그램을 역색인에 투표해 스토리·ep 특정 (2026-07-24)
     const [idx, session] = await Promise.all([getStoryIndex(), createOcrSession(file)]);

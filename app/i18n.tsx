@@ -2850,15 +2850,76 @@ const D: Record<string, Pair> = {
   "위수 협의 능력": ["Garrison ability", "駐留能力"],
   // 편성 계산기 (2026-08-29)
   "덱편성 시뮬레이터": ["Deck builder", "デッキ編成シミュレーター"],
+  // PRTS 시뮬레이션 — 위수 협의 게임 연결 (2026-09-06)
+  "PRTS 시뮬레이션": ["PRTS Simulation", "PRTS シミュレーション"],
+  "밴 리스트": ["Ban list", "BANリスト"],
+  "게임의 밴 목록 화면에서 끝까지 스크롤을 내려 주세요 — 화면에 보인 기물만 인식됩니다.": [
+    "Scroll the game's ban list all the way down — only pieces that appeared on screen are recognized.",
+    "ゲームのBANリスト画面を最後までスクロールしてください — 画面に映った駒だけが認識されます。"],
+  "독립": ["Solo", "ソロ"],
+  "멀티": ["Multi", "マルチ"],
+  "배치": ["Deployed", "配置"],
+  "인사부 파일": ["HR File", "人事部ファイル"],
+  "맹약 중첩 {n}개를 읽었습니다": ["Read {n} alliance stacks", "盟約の重なりを{n}件読み取りました"],
+  "아직 읽은 중첩이 없습니다 — 게임에서 맹약이 보이는 화면을 띄워 주세요": [
+    "No stacks read yet — bring up a screen in game where alliances are visible",
+    "まだ重なりを読み取れていません — ゲームで盟約が見える画面を表示してください"],
+  "맹약 {n}개": ["{n} alliances", "盟約{n}件"],
+  "새 판 — 기록을 비웠습니다": ["New run — cleared the record", "新しい一戦 — 記録を消去しました"],
+  "게임 창을 골라 연결하면, 판이 도는 동안 편성이 화면을 따라갑니다": [
+    "Pick the game window and your board will follow the screen for the whole run",
+    "ゲームウィンドウを選ぶと、一戦のあいだ編成が画面に追従します"],
+  "연결 중에는 편성을 손으로 고칠 수 없습니다 — 게임 화면에서 읽은 내용만 반영됩니다.": [
+    "While linked you cannot edit the board by hand — only what is read from the game screen is applied.",
+    "接続中は編成を手動で変更できません — ゲーム画面から読み取った内容のみが反映されます。"],
+  "PRTS 연결 중에는 화면에서 읽은 값만 반영됩니다": [
+    "While PRTS is linked, only values read from the screen are applied",
+    "PRTS接続中は画面から読み取った値のみが反映されます"],
+  // PRTS 시뮬레이션 도움말 (2026-09-06)
+  "위수 협의는 한 판에 필요한 정보가 화면에서 순식간에 사라집니다 — 밴 목록은 시작 화면에서 20~30초뿐이고, 맹약 중첩은 라운드마다 바뀝니다. 그 사이에 전략까지 골라야 해서 받아적을 틈이 없습니다. PRTS 시뮬레이션은 게임 창을 물려 그것들을 대신 읽어 둡니다.": [
+    "In Stronghold Protocol the things you need vanish fast — the ban list shows for only 20-30 seconds at the start, and alliance stacks change every round. You also have to pick a strategy in that window, so there is no time to write anything down. PRTS Simulation hooks the game window and reads them for you.",
+    "駐留協議は一戦に必要な情報が画面からすぐ消えます — BANリストは開始画面の20〜30秒だけ、盟約の重なりはラウンドごとに変わります。その間に戦略まで選ぶ必要があり、書き留める余裕がありません。PRTSシミュレーションはゲームウィンドウを繋いで代わりに読み取ります。"],
+  "PRTS 시뮬레이션 누르기": ["Press PRTS Simulation", "PRTSシミュレーションを押す"],
+  "누르면 지난 판 기록을 비우고 편성기를 함께 엽니다. 판에 들어가기 직전에 누르는 것이 가장 좋습니다.": [
+    "It clears the previous run's record and opens the deck builder. Best pressed right before you enter a run.",
+    "前の一戦の記録を消し、編成画面も一緒に開きます。一戦に入る直前に押すのが最適です。"],
+  "독립인지 멀티인지도 화면을 보고 알아서 가립니다. 따로 고를 것이 없습니다.": [
+    "It works out solo vs multi from the screen too. Nothing to choose.",
+    "ソロかマルチかも画面から判別します。選ぶものはありません。"],
+  "무엇을 읽나": ["What it reads", "何を読み取るか"],
+  "**맹약 중첩 수** — 편성 계산기가 유일하게 손으로 받던 값입니다. 화면의 맹약 원형에서 읽어 자동으로 채웁니다.": [
+    "**Alliance stacks** — the only value the board calculator used to ask you to type. Read from the alliance circles on screen and filled in automatically.",
+    "**盟約の重なり** — 編成計算機が唯一手入力を求めていた値です。画面の盟約サークルから読み取って自動で埋めます。"],
+  "**배치 가능 인원** — n/8이 n/9로 바뀌면 '인사부 파일'을 쓴 것으로 보고 9번째 배치 칸을 열어 줍니다.": [
+    "**Deployable count** — when n/8 becomes n/9 it takes that as the HR File being used and unlocks the 9th slot.",
+    "**配置可能人数** — n/8がn/9に変われば「人事部ファイル」を使ったと判断し、9番目の配置枠を開きます。"],
+  "**새 판 감지** — '시뮬레이션 정보' 화면이 보이면 지난 판 기록을 스스로 비웁니다.": [
+    "**New-run detection** — when the 'Simulation Info' screen appears it clears the previous run by itself.",
+    "**新しい一戦の検出** — 「シミュレーション情報」画面が見えると前の記録を自動で消します。"],
+  "연결 중에는 편성이 잠깁니다": ["The board locks while linked", "接続中は編成がロックされます"],
+  "기물을 옮기거나 중첩을 손으로 넣을 수 없습니다. 실제 판이 언제나 정답이라, 손이 끼어들면 화면과 어긋난 계산이 나오기 때문입니다.": [
+    "You cannot move pieces or type stacks. The real run is always the truth, so a hand edit would produce a calculation that disagrees with the screen.",
+    "駒を動かしたり重なりを手入力したりできません。実際の一戦が常に正解であり、手が入ると画面と食い違う計算になるからです。"],
+  "맹약을 눌러 상세를 보거나 다른 탭을 둘러보는 것은 그대로 됩니다 — 막는 것은 편성을 바꾸는 자리뿐입니다.": [
+    "Opening alliance details or browsing other tabs still works — only the places that change the board are blocked.",
+    "盟約を押して詳細を見たり他のタブを見たりはそのままできます — 塞ぐのは編成を変える箇所だけです。"],
+  "직접 짜 보고 싶으면 연결을 끊으면 됩니다. 끊어도 읽어 둔 값은 남습니다.": [
+    "Unlink if you want to build by hand. What was read stays.",
+    "自分で組みたいときは接続を切ってください。読み取った値は残ります。"],
+  "**아직 BETA입니다.** 화면 인식이 늘 완벽하지는 않습니다 — 못 읽고 지나갈 수 있습니다. 이상한 값을 만나면 피드백으로 알려주시면 그 화면을 기준으로 고칩니다.": [
+    "**Still BETA.** Recognition is not always perfect — it can miss a screen. Report an odd value through feedback and it gets fixed against that screen.",
+    "**まだBETAです。** 画面認識は常に完璧とは限りません — 読み落とすことがあります。おかしな値に出会ったらフィードバックでお知らせいただければ、その画面を基準に直します。"],
+  "기록은 이 탭에만 남습니다 — 새로 고쳐도 이어지지만 탭을 닫으면 지워집니다.": [
+    "The record lives only in this tab — it survives a refresh but is gone when the tab closes.",
+    "記録はこのタブにのみ残ります — 再読み込みでは続きますが、タブを閉じると消えます。"],
+  "화면 공유를 지원하는 데스크톱 브라우저(크롬·엣지 등)에서만 버튼이 보입니다.": [
+    "The button only appears in desktop browsers that support screen sharing (Chrome, Edge, etc.).",
+    "画面共有に対応したデスクトップブラウザ（Chrome・Edgeなど）でのみボタンが表示されます。"],
   // 덱편성 시뮬레이터의 전략 고르기 (2026-09-04)
   "전략 고르기": ["Pick a strategy", "戦略を選ぶ"],
   "고르지 않음": ["Not selected", "選択なし"],
   "아직 고르지 않았습니다.": ["Nothing selected yet.", "まだ選択されていません。"],
   "전략 상세 보기": ["View strategy details", "戦略の詳細を見る"],
-  "고른 전략은 기록·공유용입니다 — 효과는 전투 중에 붙어서 편성 계산에는 넣지 않습니다": [
-    "Your chosen strategy is recorded for sharing only — its effects apply during battle, so they are not part of the deck calculation.",
-    "選んだ戦略は記録・共有用です — 効果は戦闘中に付与されるため、編成計算には含めません",
-  ],
   "있으면 해금": ["Unlock if held", "所持なら解放"],
   "인사부 파일": ["HR File", "人事部ファイル"],
   "아이템 '인사부 파일'을 장착하면 최대 배치 인원이 9로 늘어납니다. 보유 중이라면 눌러서 해금하세요.": [

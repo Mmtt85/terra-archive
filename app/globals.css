@@ -20844,10 +20844,107 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
 }
 .ac-simcta:hover { background: color-mix(in srgb, var(--lime) 85%, #fff); }
 .ac-simcta.on { box-shadow: 0 0 0 3px color-mix(in srgb, var(--lime) 35%, transparent); }
-/* 좁은 화면에서는 제목 위로 겹치므로 흐름 안으로 되돌린다 */
+
+/* 제목 줄 버튼 셋 — 편성기 + PRTS 두 모드 (2026-09-06) */
+.ac-ctarow {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center;
+}
+.ac-ctarow .ac-simcta { position: static; transform: none; }
+/* PRTS 두 개는 편성기 버튼과 무게를 다르게 — 라임 채움은 '주' 버튼 하나만 */
+.ac-prtscta {
+  background: var(--bg); color: inherit;
+  border-color: color-mix(in srgb, var(--lime) 45%, var(--line));
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.ac-prtscta:hover:not(:disabled) { background: var(--bg-soft); }
+.ac-prtscta.on {
+  background: color-mix(in srgb, var(--lime) 16%, var(--bg));
+  border-color: var(--lime);
+}
+.ac-prtscta:disabled { opacity: 0.5; cursor: default; }
+
+/* PRTS 연결 중 편성 잠금 (사용자 확정 2026-09-06) — 실제 판이 정답이라 손을 막는다.
+   ⚠ 잠그는 것은 **편성을 바꾸는 자리**뿐이다. 맹약 카드를 눌러 상세를 보거나 스크롤하는
+   읽기 동작까지 막으면 연결 중에 아무것도 못 보게 된다. */
+.ac-locked .ac-slots {
+  pointer-events: none;
+  opacity: 0.75;
+  filter: saturate(0.8);
+}
+.ac-lockbar {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px;
+  margin: 0 0 14px; padding: 8px 12px;
+  border: 1px solid color-mix(in srgb, var(--lime) 40%, var(--line));
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--lime) 8%, var(--bg-soft));
+  font-size: 12.5px; line-height: 1.5;
+}
+.ac-lockbar > strong { font-weight: 800; }
+
+/* 밴 리스트 — PRTS 연결 중에만, 전략 위 (2026-09-06) */
+.ac-bannote {
+  margin: 0 0 10px;
+  font-size: 12.5px; line-height: 1.6;
+  color: var(--ink3);
+}
+.ac-banrow {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.ac-banchip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 10px 3px 3px;
+  border: 1px solid var(--line); border-radius: 999px;
+  background: var(--bg); color: inherit; font: inherit; font-size: 12px; cursor: pointer;
+  /* 밴 = 못 쓰는 기물이라 죽은 색으로 (읽을 수는 있어야 하니 회색조 + 살짝 흐리게) */
+  filter: grayscale(0.85); opacity: 0.85;
+}
+.ac-banchip:hover { filter: none; opacity: 1; background: var(--bg-soft); }
+.ac-banchip > b { font-weight: 700; }
+
+/* 한 판 스트립 — PRTS 연결 중에만 뜬다 (2026-09-06). 덱편성 모달 **밖**이라
+   탭을 옮겨 다녀도 인식 상태가 보인다. */
+.ac-runbar {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px;
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  border: 1px solid color-mix(in srgb, var(--lime) 40%, var(--line));
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--lime) 7%, var(--bg-soft));
+  font-size: 12.5px;
+}
+.ac-runbar > strong { font-weight: 800; }
+.ac-runbar-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex: none;
+  background: var(--lime);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--lime) 25%, transparent);
+  animation: ac-runbar-pulse 2s ease-in-out infinite;
+}
+@keyframes ac-runbar-pulse { 50% { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { .ac-runbar-dot { animation: none; } }
+/* 독립/멀티 — 화면에서 가려낸 값이라 확정되기 전엔 아예 안 그린다 */
+.ac-runbar-mode {
+  padding: 1px 8px; border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--lime) 45%, var(--line));
+  font-size: 11.5px; font-weight: 800;
+}
+.ac-runbar-stat { color: var(--ink3); }
+.ac-runbar-msg { color: var(--lime-ink, var(--ink2)); font-style: normal; font-weight: 700; }
+.ac-runbar-btn {
+  margin-left: auto; padding: 4px 12px;
+  border: 1px solid var(--line); border-radius: 999px;
+  background: var(--bg); color: inherit; font: inherit; font-size: 12px; cursor: pointer;
+}
+/* 두 번째 버튼부터는 auto 여백을 주지 않는다 — 첫 버튼만 오른쪽으로 밀린다 */
+.ac-runbar-btn + .ac-runbar-btn { margin-left: 0; }
+.ac-runbar-btn:hover:not(:disabled) { background: var(--bg-soft); }
+.ac-runbar-btn:disabled { opacity: 0.45; cursor: default; }
+.ac-runbar-btn[aria-pressed="true"] { border-color: var(--lime); font-weight: 800; }
+/* 좁은 화면에서는 제목 위로 겹치므로 흐름 안으로 되돌린다 (버튼 줄 통째로) */
 @media (max-width: 760px) {
-  .ac-simcta {
-    position: static; transform: none; display: block; width: fit-content;
+  .ac-ctarow {
+    position: static; transform: none; width: fit-content;
     margin: 10px auto 0;
   }
 }

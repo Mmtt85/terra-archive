@@ -11,6 +11,7 @@ import { useBridgeStatus, connectBridge, disconnectBridge, bridgeSupported, brid
 import BridgeReplayModal from "./bridge-replay";
 import { isNewFeature } from "../whats-new";
 import { useHashSync } from "../hash-modal";
+import { isAcLock } from "../autochess-run";
 import type { T } from "../i18n";
 
 // 지원 여부는 navigator를 봐야 알 수 있어 서버에선 판단할 수 없다. 그냥 호출하면
@@ -40,12 +41,16 @@ export default function BridgeButton({ t }: { t: T }) {
         {note ? ` · ${note}` : ""}
       </span>
       {/* 맵 노드 자동 이동 (제보 f1c050b2) — 연결 중에만 보이면 되는 설정이라 여기 둔다.
-          인식을 끄는 게 아니라 **이동만** 끈다: 소장품·도구 인식은 그대로 동작한다. */}
-      <button type="button" className={`bridge-toast-node${nodeJump ? " on" : ""}`}
-        aria-pressed={nodeJump} onClick={() => setBridgeNodeJump(!nodeJump)}
-        title={t("맵 노드(작전·조우·구역)를 인식했을 때 그 상세로 자동으로 이동할지 정합니다. 꺼도 소장품·도구 인식은 그대로 동작합니다")}>
-        <span className="bridge-node-knob" aria-hidden />🗺 {t("노드 이동")}
-      </button>
+          인식을 끄는 게 아니라 **이동만** 끈다: 소장품·도구 인식은 그대로 동작한다.
+          ⚠ 위수 협의(PRTS 시뮬레이션)에는 맵 노드가 없다 — 거기선 아예 안 그린다
+          (사용자 지시 2026-09-06 "명토체스의 경우는 노드이동 이거 없애줘야지"). */}
+      {!isAcLock(lock?.topic) && (
+        <button type="button" className={`bridge-toast-node${nodeJump ? " on" : ""}`}
+          aria-pressed={nodeJump} onClick={() => setBridgeNodeJump(!nodeJump)}
+          title={t("맵 노드(작전·조우·구역)를 인식했을 때 그 상세로 자동으로 이동할지 정합니다. 꺼도 소장품·도구 인식은 그대로 동작합니다")}>
+          <span className="bridge-node-knob" aria-hidden />🗺 {t("노드 이동")}
+        </button>
+      )}
       <button type="button" className="bridge-toast-off" onClick={disconnectBridge} title={t("PRTS 링크 끊기")}>
         {t("연결 끊기")}
       </button>

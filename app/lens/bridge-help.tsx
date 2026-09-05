@@ -6,11 +6,69 @@
 
 import React from "react";
 import { asset } from "../assets";
-import { useI18n, rich } from "../i18n";
+import { useI18n, rich, type T } from "../i18n";
 import { ModalWindow } from "../modal-window";
 
-export default function BridgeHelpModal({ onClose }: { onClose: () => void }) {
+/** 위수 협의 PRTS — 록라와 목적이 다르다. 록라는 '따라가서 정보를 여는' 기능이고,
+ *  여기는 **한 판을 받아 적는** 기능이다 (밴·중첩·배치처럼 화면에서 사라지는 값들). */
+function AcBridgeHelp({ t, onClose }: { t: T; onClose: () => void }) {
+  return (
+    <ModalWindow className="operator-modal lens-modal" onClose={onClose} label={`◉ ${t("PRTS 시뮬레이션")}`}
+      chrome={<span className="beta-badge">BETA</span>}>
+      <div className="lens-body lens-help">
+        <p className="lens-help-intro">{t("위수 협의는 한 판에 필요한 정보가 화면에서 순식간에 사라집니다 — 밴 목록은 시작 화면에서 20~30초뿐이고, 맹약 중첩은 라운드마다 바뀝니다. 그 사이에 전략까지 골라야 해서 받아적을 틈이 없습니다. PRTS 시뮬레이션은 게임 창을 물려 그것들을 대신 읽어 둡니다.")}</p>
+
+        <section className="lens-usage" aria-label={t("사용법")}>
+          <h3>{t("사용법")}</h3>
+          <ol className="lens-usage-steps">
+            <li>
+              <strong>{t("PRTS 시뮬레이션 누르기")}</strong>
+              <span>{t("누르면 지난 판 기록을 비우고 편성기를 함께 엽니다. 판에 들어가기 직전에 누르는 것이 가장 좋습니다.")}</span>
+            </li>
+            <li>
+              <strong>{t("공유할 창 고르기")}</strong>
+              <span>{t("브라우저가 공유 대상을 물어봅니다. 게임이 돌아가는 에뮬레이터(또는 PC 클라이언트) 창을 고르세요. '창' 단위로 고르면 그 창만 읽으므로 다른 작업이 새지 않습니다.")}</span>
+            </li>
+            <li>
+              <strong>{t("그냥 게임하기")}</strong>
+              <span>{t("독립인지 멀티인지도 화면을 보고 알아서 가립니다. 따로 고를 것이 없습니다.")}</span>
+            </li>
+          </ol>
+        </section>
+
+        <h3>{t("무엇을 읽나")}</h3>
+        <ul>
+          <li>{rich(t("**맹약 중첩 수** — 편성 계산기가 유일하게 손으로 받던 값입니다. 화면의 맹약 원형에서 읽어 자동으로 채웁니다."))}</li>
+          <li>{rich(t("**배치 가능 인원** — n/8이 n/9로 바뀌면 '인사부 파일'을 쓴 것으로 보고 9번째 배치 칸을 열어 줍니다."))}</li>
+          <li>{rich(t("**새 판 감지** — '시뮬레이션 정보' 화면이 보이면 지난 판 기록을 스스로 비웁니다."))}</li>
+        </ul>
+
+        <h3>{t("연결 중에는 편성이 잠깁니다")}</h3>
+        <ul>
+          <li>{t("기물을 옮기거나 중첩을 손으로 넣을 수 없습니다. 실제 판이 언제나 정답이라, 손이 끼어들면 화면과 어긋난 계산이 나오기 때문입니다.")}</li>
+          <li>{t("맹약을 눌러 상세를 보거나 다른 탭을 둘러보는 것은 그대로 됩니다 — 막는 것은 편성을 바꾸는 자리뿐입니다.")}</li>
+          <li>{t("직접 짜 보고 싶으면 연결을 끊으면 됩니다. 끊어도 읽어 둔 값은 남습니다.")}</li>
+        </ul>
+
+        <h3>{t("참고")}</h3>
+        <ul>
+          <li>{rich(t("**아직 BETA입니다.** 화면 인식이 늘 완벽하지는 않습니다 — 못 읽고 지나갈 수 있습니다. 이상한 값을 만나면 피드백으로 알려주시면 그 화면을 기준으로 고칩니다."))}</li>
+          <li>{rich(t("**화면은 서버로 가지 않습니다.** 인식은 100% 브라우저 안에서 처리되고, 프레임을 저장하거나 녹화하지 않습니다."))}</li>
+          <li>{t("기록은 이 탭에만 남습니다 — 새로 고쳐도 이어지지만 탭을 닫으면 지워집니다.")}</li>
+          <li>{t("화면 공유를 지원하는 데스크톱 브라우저(크롬·엣지 등)에서만 버튼이 보입니다.")}</li>
+          <li>{t("게임 창이 너무 작거나 가려져 있으면 글자를 못 읽습니다 — 창을 다른 창으로 덮지 마세요.")}</li>
+        </ul>
+      </div>
+    </ModalWindow>
+  );
+}
+
+/** where — 어느 화면의 PRTS인가. 록라는 '따라가서 여는' 기능이고, 위수 협의는 '한 판을
+ *  받아 적는' 기능이라 설명이 아예 다르다 (껍데기·클래스만 공유한다, 2026-09-06). */
+export default function BridgeHelpModal({ onClose, where = "rogue" }:
+  { onClose: () => void; where?: "rogue" | "autochess" }) {
   const { t } = useI18n();
+  if (where === "autochess") return <AcBridgeHelp t={t} onClose={onClose} />;
   // 공용 창(ModalWindow) — 스샷 레이더 도움말(help.tsx)과 같은 껍데기 (2026-09-05 일괄 전환)
   return (
     <ModalWindow className="operator-modal lens-modal" onClose={onClose} label={`◉ ${t("PRTS 링크")}`}
