@@ -1735,6 +1735,14 @@ def cn_koreanize(ronum, out):
             keep_cn(x)
     for v in out.get("visitors") or []:
         keep_cn(v)   # 방문객 팀명 원문 병기
+        # 방문객 장면 한 줄 소개도 병기 — 인게임 화면은 중국어라 대조할 것이 있어야 한다
+        for sc in v.get("scenes") or []:
+            keep_cn(sc, "desc")
+    # 엔딩 기록(엔딩북) 조각 이름 — 사용자 지적 2026-09-06: "한국어만 있으면 실제
+    # 인게임에선 중국어로 나오니까 매칭이 안 된다". 다른 이름류와 같은 규칙으로 병기한다.
+    for e in out.get("endings") or []:
+        for b in e.get("book") or []:
+            keep_cn(b)
     for enc in out["encounters"]:
         keep_cn(enc, "title")
         keep_cn_tree(enc["choices"])
@@ -2504,6 +2512,14 @@ def build_rogue6():
                 keep_cn_tree(ch["next"]["choices"])
     for v in out.get("visitors") or []:
         keep_cn(v)   # 방문객 팀명 원문 병기
+        # 방문객 장면 한 줄 소개도 병기 — 인게임 화면은 중국어라 대조할 것이 있어야 한다
+        for sc in v.get("scenes") or []:
+            keep_cn(sc, "desc")
+    # 엔딩 기록(엔딩북) 조각 이름 — 사용자 지적 2026-09-06: "한국어만 있으면 실제
+    # 인게임에선 중국어로 나오니까 매칭이 안 된다". 다른 이름류와 같은 규칙으로 병기한다.
+    for e in out.get("endings") or []:
+        for b in e.get("book") or []:
+            keep_cn(b)
     for enc in out["encounters"]:
         keep_cn(enc, "title")
         keep_cn_tree(enc["choices"])

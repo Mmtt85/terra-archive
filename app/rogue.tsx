@@ -85,9 +85,9 @@ type InvStage = { label: string; name: string; usage?: string | null; desc?: str
 type InvItem = { id: string; name: string; usage?: string | null; desc?: string | null; obtain?: string | null; order?: string | null; kind?: string | null; typeName?: string | null; img?: boolean; iconId?: string; cn?: string; stages?: InvStage[] };
 // book = 엔딩 기록(엔딩북) 조각 — 게임 공식 해금 조건 텍스트 (사용자 소원 2026-08-17).
 // rid/txt = 기록 원문 (public/rogue/record/<rid>.json — build-rogue-records.py), txt면 클릭 열람.
-type Ending = { id: string; name: string; desc: string | null; boss: string | null; priority: number; change: string | null; cond?: string[]; cn?: string; book?: { name?: string; cond?: string; rid?: string; txt?: 1 }[] };
+type Ending = { id: string; name: string; desc: string | null; boss: string | null; priority: number; change: string | null; cond?: string[]; cn?: string; book?: { name?: string; cond?: string; rid?: string; txt?: 1; cn?: string }[] };
 // 월간 방문객 — 매달 로테이션되는 방문객 오퍼(chars)와 층·구역별 특별 조우 장면(scenes)
-type Visitor = { id: string; name?: string; cn?: string; desc?: string; ym?: string; chars: { id: string; name: string }[]; scenes?: { floor?: number; zone?: string; desc?: string; rid?: string; txt?: 1 }[] };
+type Visitor = { id: string; name?: string; cn?: string; desc?: string; ym?: string; chars: { id: string; name: string }[]; scenes?: { floor?: number; zone?: string; desc?: string; rid?: string; txt?: 1; cn?: string }[] };
 // 선택지는 계단식 트리 — next.desc는 그 선택의 결과 서사, next.choices는 이어지는 하위 선택지
 // (현재 데이터는 대부분 결과 서사까지 깊이 2. 하위 선택지가 생기면 재귀로 중첩 렌더).
 type EncChoice = { title: string; desc: string | null; cn?: string; variants?: string[]; next?: { desc: string | null; choices: EncChoice[] } };
@@ -2569,7 +2569,9 @@ export default function RogueGuide({ initialTopic }: {
                           const inner = (
                             <>
                               <span className="rg-visitor-where">{where}{s.txt && <i className="rg-rec-read" aria-hidden>▸ {t("읽기")}</i>}</span>
-                              {s.desc && <span className="rg-visitor-quote">{s.desc}</span>}
+                              {(s.desc || s.cn) && (
+                                <span className="rg-visitor-quote"><Nm name={s.desc ?? ""} cn={s.cn} /></span>
+                              )}
                             </>
                           );
                           return (
@@ -2792,11 +2794,11 @@ export default function RogueGuide({ initialTopic }: {
                       <li key={i}>
                         {b.txt && b.rid ? (
                           <button type="button" className="rg-rec-btn"
-                            onClick={() => setRecOpen({ rid: b.rid!, title: b.name ?? "", sub: e.name })}>
-                            <strong>{b.name}</strong><span>{b.cond}</span><i className="rg-rec-read" aria-hidden>▸ {t("읽기")}</i>
+                            onClick={() => setRecOpen({ rid: b.rid!, title: nmText(b.name ?? "", b.cn), sub: e.name })}>
+                            <strong><Nm name={b.name ?? ""} cn={b.cn} /></strong><span>{b.cond}</span><i className="rg-rec-read" aria-hidden>▸ {t("읽기")}</i>
                           </button>
                         ) : (
-                          <div className="rg-rec-row"><strong>{b.name}</strong><span>{b.cond}</span></div>
+                          <div className="rg-rec-row"><strong><Nm name={b.name ?? ""} cn={b.cn} /></strong><span>{b.cond}</span></div>
                         )}
                       </li>
                     ))}
