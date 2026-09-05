@@ -20,9 +20,11 @@ import { useSyncExternalStore } from "react";
 export const AC_LOCK = "autochess";
 export const isAcLock = (topic?: string): boolean => topic === AC_LOCK;
 
-/** 독립(싱글) / 멀티 — **버튼으로 고르지 않는다.** 화면에서 알아낸다
+/** 독립 / 연합 — **버튼으로 고르지 않는다.** 화면에서 알아낸다.
+ *  둘 다 게임 자신의 용어다 (메인 화면이 '독립 시뮬레이션' 과 '연합 시뮬레이션' 으로 가르고,
+ *  연합 아래에 동맹 시뮬레이션·파티 매칭이 있다). 내부 값은 게임 데이터의 modeType 그대로.
  *  (사용자 확정 2026-09-06 "그냥 화면인식으로 정할 수 있을거 같으니 굳이 나누지 말자").
- *  판정 근거는 '전략 정보' 화면 왼쪽의 참가자 카드 수 — 한 명이면 독립, 여럿이면 멀티.
+ *  판정 근거는 '전략 정보' 화면 왼쪽의 참가자 카드 수 — 한 명이면 독립, 여럿이면 연합.
  *  아직 그 화면을 못 봤으면 null (모르는 걸 아는 척하지 않는다). */
 export type AcMode = "single" | "multi";
 export const acModeOf = (run: AcRun): AcMode | null =>
@@ -34,7 +36,7 @@ export type AcRun = {
   /** 밴된 기물 chessId — '사용 제한 오퍼레이터' 화면에서 누적.
    *  스크롤하며 여러 프레임으로 들어오므로 **합집합**으로 쌓아야 한다. */
   bans: string[];
-  /** 자리별 전략 — seat 0 = 나, 1~3 = 상대 (멀티 전용) */
+  /** 자리별 전략 — seat 0 = 나, 1~3 = 상대 (연합 전용) */
   bands: { seat: number; band: string }[];
   /** 참가자 수 — '전략 정보' 화면의 참가자 카드 수. 0 = 아직 그 화면을 못 봤다 */
   seats: number;
@@ -103,7 +105,7 @@ export function mergeAcRun(patch: {
   }
   const deploy = patch.deploy !== undefined ? patch.deploy : run.deploy;
   // 참가자 수는 **줄어들지 않는다** — 전략 정보 화면을 스크롤하면 카드가 화면 밖으로
-  // 나가면서 덜 잡히는데, 그때마다 멀티가 독립으로 바뀌면 안 된다.
+  // 나가면서 덜 잡히는데, 그때마다 연합이 독립으로 바뀌면 안 된다.
   const seats = Math.max(run.seats, patch.seats ?? 0);
   const sameBands = bands === run.bands;
   const sameDeploy = deploy?.cur === run.deploy?.cur && deploy?.max === run.deploy?.max;

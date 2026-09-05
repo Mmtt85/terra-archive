@@ -2856,8 +2856,11 @@ const D: Record<string, Pair> = {
   "게임의 밴 목록 화면에서 끝까지 스크롤을 내려 주세요 — 화면에 보인 기물만 인식됩니다.": [
     "Scroll the game's ban list all the way down — only pieces that appeared on screen are recognized.",
     "ゲームのBANリスト画面を最後までスクロールしてください — 画面に映った駒だけが認識されます。"],
+  // 독립 / 연합 — **게임 자신의 용어**다 (메인 화면이 1인 아이콘 '독립 시뮬레이션' 과
+  // 다인 아이콘 '연합 시뮬레이션' 으로 가르고, 연합 아래에 동맹 시뮬레이션·파티 매칭이 있다).
+  // 내부 값은 게임 데이터의 modeType 그대로 single/multi 를 쓴다.
   "독립": ["Solo", "ソロ"],
-  "멀티": ["Multi", "マルチ"],
+  "연합": ["Allied", "連合"],
   "배치": ["Deployed", "配置"],
   "인사부 파일": ["HR File", "人事部ファイル"],
   "맹약 중첩 {n}개를 읽었습니다": ["Read {n} alliance stacks", "盟約の重なりを{n}件読み取りました"],
@@ -2883,9 +2886,9 @@ const D: Record<string, Pair> = {
   "누르면 지난 판 기록을 비우고 편성기를 함께 엽니다. 판에 들어가기 직전에 누르는 것이 가장 좋습니다.": [
     "It clears the previous run's record and opens the deck builder. Best pressed right before you enter a run.",
     "前の一戦の記録を消し、編成画面も一緒に開きます。一戦に入る直前に押すのが最適です。"],
-  "독립인지 멀티인지도 화면을 보고 알아서 가립니다. 따로 고를 것이 없습니다.": [
-    "It works out solo vs multi from the screen too. Nothing to choose.",
-    "ソロかマルチかも画面から判別します。選ぶものはありません。"],
+  "독립인지 연합인지도 화면을 보고 알아서 가립니다. 따로 고를 것이 없습니다.": [
+    "It works out solo vs allied from the screen too. Nothing to choose.",
+    "ソロか連合かも画面から判別します。選ぶものはありません。"],
   "무엇을 읽나": ["What it reads", "何を読み取るか"],
   "**맹약 중첩 수** — 편성 계산기가 유일하게 손으로 받던 값입니다. 화면의 맹약 원형에서 읽어 자동으로 채웁니다.": [
     "**Alliance stacks** — the only value the board calculator used to ask you to type. Read from the alliance circles on screen and filled in automatically.",

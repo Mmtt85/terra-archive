@@ -31,7 +31,7 @@ function AcBridgeHelp({ t, onClose }: { t: T; onClose: () => void }) {
             </li>
             <li>
               <strong>{t("그냥 게임하기")}</strong>
-              <span>{t("독립인지 멀티인지도 화면을 보고 알아서 가립니다. 따로 고를 것이 없습니다.")}</span>
+              <span>{t("독립인지 연합인지도 화면을 보고 알아서 가립니다. 따로 고를 것이 없습니다.")}</span>
             </li>
           </ol>
         </section>

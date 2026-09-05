@@ -620,7 +620,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
   //   실제 판이 언제나 정답이므로, 손이 끼어들면 화면과 어긋난 계산이 나온다.
   //   /rogue 에서 연결한 상태라면 잠그지 않는다 — 다른 탭의 연결을 가로채지 않는다.
   const acLocked = !!acBridgeSettings && isAcLock(acLock?.topic);
-  // 독립/멀티는 버튼으로 고르지 않고 **화면에서 파생**한다 (사용자 확정 2026-09-06)
+  // 독립/연합는 버튼으로 고르지 않고 **화면에서 파생**한다 (사용자 확정 2026-09-06)
   const acMode = acModeOf(acrun);
   const handleAcShot = async (file: File) => {
     try {
@@ -634,7 +634,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
       if (n || dp || seats) {
         mergeAcRun({ stacks: oc.target.stacks, deploy: dp, seats });
         const msg = [n ? t("맹약 {n}개", { n }) : "", dp ? `${dp.cur}/${dp.max}` : "",
-          seats ? (seats > 1 ? t("멀티") : t("독립")) : ""]
+          seats ? (seats > 1 ? t("연합") : t("독립")) : ""]
           .filter(Boolean).join(" · ");
         noteBridge(msg);
         setAcMsg(msg);
@@ -1649,7 +1649,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
             {t("덱편성 시뮬레이터")}
             {isNewFeature("ac-deck") && <span className="new-badge">{t("새기능")}</span>}
           </button>
-          {/* 독립/멀티는 **버튼으로 나누지 않는다** — 화면에서 알아낸다 (사용자 확정 2026-09-06).
+          {/* 독립/연합는 **버튼으로 나누지 않는다** — 화면에서 알아낸다 (사용자 확정 2026-09-06).
               PRTS 와 ? 는 /rogue 툴바처럼 **붙은 한 덩어리**다. */}
           <span className="ac-prtsgrp">
           <button type="button" className={`ac-simcta ac-prtscta${acLocked ? " on" : ""}`}
@@ -1683,9 +1683,9 @@ export default function AutochessGuide({ doc, onShowOperator }: {
         <div className="ac-runbar">
           <span className="ac-runbar-dot" aria-hidden />
           <strong>{t("PRTS 시뮬레이션")}</strong>
-          {/* 독립/멀티는 화면에서 파생된다 — 아직 못 가렸으면 아무 말도 안 한다 */}
+          {/* 독립/연합는 화면에서 파생된다 — 아직 못 가렸으면 아무 말도 안 한다 */}
           {acMode && <span className="ac-runbar-mode">
-            {acMode === "multi" ? t("멀티") : t("독립")}</span>}
+            {acMode === "multi" ? t("연합") : t("독립")}</span>}
           <span className="ac-runbar-stat">
             {acStackCount > 0
               ? t("맹약 중첩 {n}개를 읽었습니다", { n: acStackCount })
