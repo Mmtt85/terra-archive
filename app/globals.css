@@ -4378,6 +4378,15 @@ legend {
     right: 22px; /* 헤더 오른쪽 패딩(22px)과 정렬 */
     left: 16px;
     min-width: 0;
+    /* 가이드 부메뉴가 인라인으로 펼쳐지면서(2026-09-05 2단 플라이아웃) 메뉴가 화면보다
+       길어졌다 — 사용자 제보: "위아래로 스크롤업다운이 안돼서 밑에메뉴가 안보임"
+       (생존연산·위수협의가 잘림). 헤더 아래 남은 높이만큼만 쓰고 넘치면 **메뉴 안에서**
+       스크롤한다. 배경 스크롤은 열려 있는 동안 잠겨 있다(home.tsx) — overscroll-behavior로
+       끝까지 내렸을 때 뒤 페이지로 스크롤이 새는 것도 막는다.
+       ⚠ --header-h 는 home.tsx가 ResizeObserver로 실시간 갱신한다 (헤더가 가변 높이). */
+    max-height: calc(100dvh - var(--header-h, 120px) - 12px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
   .server-chip {
     font-size: 9.5px;
@@ -21265,6 +21274,18 @@ html.dark .ac-bring-dial {
   }
   /* 옆으로 열리지 않으니 방향 화살표도 지운다 */
   .tab-flyout2 > .tab-sub > .tab-group-arrow { display: none; }
+}
+
+/* 터치인데 화면은 넓은 기기(태블릿) — 바깥 메뉴는 여전히 옆으로 뜨는 패널이라, 안의 2단이
+   인라인으로 펼쳐지면 그 패널이 화면보다 길어질 수 있다. 모바일과 같은 처방을 그 패널에.
+   ⚠ 데스크탑에는 걸지 말 것 — 거기선 2단이 **absolute 플라이아웃**이라 overflow 를 주면
+      옆으로 나가는 패널이 잘린다. */
+@media (hover: none) and (min-width: 761px) {
+  .tab-flyout > .tab-submenu {
+    max-height: calc(100dvh - var(--header-h, 120px) - 12px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
 }
 
 /* 전략 해금 조건 — 게임 문구 그대로 (37개 중 25개만 조건이 있다) */

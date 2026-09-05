@@ -1432,6 +1432,27 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     };
   }, []);
 
+  // 헤더를 접고 펼치면 본문 스크롤러(.site-scroll)의 높이가 그만큼 바뀐다. iOS 사파리는
+  // `body{overflow:hidden}` + 안쪽 `overflow-y:auto` 조합에서 **스크롤 중에 그 높이가
+  // 바뀌면** 스크롤 영역을 다시 잡지 못하고 위로 못 올라가는 일이 있다 (사용자 제보
+  // 2026-09-05: "헤더 열린상태에서 이 페이지 들어와서 헤더 접고나면 위로 못올림").
+  // ⚠ 이건 **재현하지 못한 채 넣은 완화책**이다 — Chromium·WebKit(headless) 둘 다에서
+  //   같은 순서를 밟아도 정상이라(실측) 실기기 사파리 고유 동작으로 보인다. 1px 흔들어
+  //   레이아웃을 다시 잡게 하는 고전적 처방이고, 눈에 보이는 변화도 부작용도 없다.
+  //   그래도 안 되면 이 자리가 아니라 스크롤 구조(main 100dvh) 쪽을 봐야 한다.
+  useEffect(() => {
+    const kick = () => {
+      const sc = document.querySelector<HTMLElement>(".site-scroll");
+      if (!sc) return;
+      const at = sc.scrollTop;
+      sc.scrollTop = at + 1;
+      sc.scrollTop = at;
+    };
+    const raf = requestAnimationFrame(kick);
+    const later = window.setTimeout(kick, 320);   // CSS 전환이 끝난 뒤 한 번 더
+    return () => { cancelAnimationFrame(raf); clearTimeout(later); };
+  }, [headerCollapsed, headerTucked]);
+
   // 모바일 sticky 요소(스토리 레일)가 가변 높이 헤더 아래에 붙도록 헤더 높이를 CSS 변수로 노출
   useEffect(() => {
     if (typeof window === "undefined") return;
