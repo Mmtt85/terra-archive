@@ -135,6 +135,29 @@ const replaySubs = new Set<(oc: LensOutcome) => void>();
 const statusSubs = new Set<() => void>();
 const notify = () => { for (const cb of statusSubs) cb(); };
 
+// ── 맵 노드 자동 이동 (제보 f1c050b2, 2026-09-04 "노드인식이 방해되는 경우가 조금 있네요") ──
+// 인식을 끄는 게 아니라 **맵 노드(작전·조우·구역)로 튀는 이동만** 끈다 — 소장품·도구·분대
+// 인식은 그대로 동작한다. 맵을 훑으며 노드를 하나씩 눌러 보는 동안 사이트가 계속 그 작전
+// 상세로 넘어가는 게 방해였다는 제보다.
+// ⚠ 이 설정은 **PRTS 링크 전용**이다 (사용자 확정 2026-09-05 "prts에서만 켜고끄고 할 수
+//   있어야하니"). 스샷 레이더는 사람이 한 장씩 일부러 붙여넣는 것이라 그 화면으로 가는 게
+//   목적이므로 게이트하지 않는다. 그래서 상태도 rogue.tsx 가 아니라 여기(브리지)에 둔다.
+// ⚠ 읽기를 **지연**시킨다 — 모듈 최상위에서 localStorage 를 만지면 서버 렌더에서 터진다.
+//   토스트는 연결 뒤(클라이언트)에만 그려지므로 하이드레이션 불일치도 없다.
+const NODE_JUMP_KEY = "ta:bridge-node-jump";
+let nodeJump: boolean | null = null;
+export function bridgeNodeJump(): boolean {
+  if (nodeJump === null) {
+    try { nodeJump = localStorage.getItem(NODE_JUMP_KEY) !== "0"; } catch { nodeJump = true; }
+  }
+  return nodeJump;
+}
+export function setBridgeNodeJump(on: boolean) {
+  nodeJump = on;
+  try { localStorage.setItem(NODE_JUMP_KEY, on ? "1" : "0"); } catch { /* 프라이빗 모드 등 */ }
+  notify();
+}
+
 export const bridgeSettings = () => settings;
 export const bridgeGate = () => gate;
 export const bridgeError = () => error;
@@ -453,7 +476,7 @@ export function useBridgeStatus() {
     statusSubs.add(cb);
     return () => { statusSubs.delete(cb); };
   }, []);
-  return { settings, gate, error, busy, note, lock };
+  return { settings, gate, error, busy, note, lock, nodeJump: bridgeNodeJump() };
 }
 
 /** 프레임 공급원 — useClipboardWatch와 같은 모양이라 각 탭이 그대로 갈아 끼울 수 있다.

@@ -7,7 +7,7 @@
 
 import { lazy, Suspense, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
-import { useBridgeStatus, connectBridge, disconnectBridge, bridgeSupported, bridgeOnMobile, bridgeLogCount } from "./bridge";
+import { useBridgeStatus, connectBridge, disconnectBridge, bridgeSupported, bridgeOnMobile, bridgeLogCount, setBridgeNodeJump } from "./bridge";
 import BridgeReplayModal from "./bridge-replay";
 import { isNewFeature } from "../whats-new";
 import { useHashSync } from "../hash-modal";
@@ -25,7 +25,7 @@ const PHASE: Record<string, string> = {
 
 /** 연결 상태 토스트 — 문서 최상위에 포털로 그려 모달 백드롭 위에도 항상 보인다. */
 export default function BridgeButton({ t }: { t: T }) {
-  const { settings, gate, busy, note, lock } = useBridgeStatus();
+  const { settings, gate, busy, note, lock, nodeJump } = useBridgeStatus();
   if (!settings) return null;   // 연결 전·미지원 — 아무것도 그리지 않는다
 
   const phase = busy ? t("인식 중…") : t(PHASE[gate?.phase ?? ""] ?? "연결됨");
@@ -39,6 +39,13 @@ export default function BridgeButton({ t }: { t: T }) {
         {gate ? ` · ${t("인식")} ${gate.emitted} · ${t("기록")} ${bridgeLogCount()}` : ""}
         {note ? ` · ${note}` : ""}
       </span>
+      {/* 맵 노드 자동 이동 (제보 f1c050b2) — 연결 중에만 보이면 되는 설정이라 여기 둔다.
+          인식을 끄는 게 아니라 **이동만** 끈다: 소장품·도구 인식은 그대로 동작한다. */}
+      <button type="button" className={`bridge-toast-node${nodeJump ? " on" : ""}`}
+        aria-pressed={nodeJump} onClick={() => setBridgeNodeJump(!nodeJump)}
+        title={t("맵 노드(작전·조우·구역)를 인식했을 때 그 상세로 자동으로 이동할지 정합니다. 꺼도 소장품·도구 인식은 그대로 동작합니다")}>
+        <span className="bridge-node-knob" aria-hidden />🗺 {t("노드 이동")}
+      </button>
       <button type="button" className="bridge-toast-off" onClick={disconnectBridge} title={t("PRTS 링크 끊기")}>
         {t("연결 끊기")}
       </button>

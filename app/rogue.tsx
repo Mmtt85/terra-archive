@@ -24,7 +24,7 @@ import type { LensGoto, LensOutcome } from "./lens/match";
 import { recognizeShot, warmData, ocrLangFor, resetGradeCache } from "./lens/run";
 import { warmOcr, warmDigitOcr } from "./lens/ocr";
 import { useClipboardWatch } from "./lens/clipwatch";
-import { useBridgeWatch, noteBridge, bridgeLock, logBridgeEvent, memoBridgeScene, type BridgeLogEvent } from "./lens/bridge";
+import { useBridgeWatch, noteBridge, bridgeLock, bridgeNodeJump, logBridgeEvent, memoBridgeScene, type BridgeLogEvent } from "./lens/bridge";
 import { BridgeTopicButton } from "./lens/bridge-button";
 import { useDropWatch } from "./lens/dropwatch";
 import { asset } from "./assets";
@@ -1660,30 +1660,20 @@ export default function RogueGuide({ initialTopic }: {
     if (next) { void warmOcr(ocrLangFor(locale)); warmData("rogue", locale, cnTopicNow()); } // 켜는 순간 화면 언어의 OCR·데이터 예열
     return next;
   });
-  // ── 맵 노드 자동 이동 토글 (제보 f1c050b2, 2026-09-04: "노드인식이 방해되는 경우가 조금
-  //    있네요") ─────────────────────────────────────────────────────────────────
+  // ── 맵 노드 자동 이동 게이트 (제보 f1c050b2, 2026-09-04: "노드인식이 방해되는 경우가
+  //    조금 있네요") ────────────────────────────────────────────────────────────
   // 인식 자체를 끄는 게 아니다 — **맵 노드(작전·조우·구역)로 튀는 이동만** 막고 소장품·
   // 도구·분대 인식은 그대로 둔다. 맵을 훑으며 노드를 하나씩 눌러 보는 동안 사이트가 계속
   // 그 작전 상세로 넘어가는 게 방해였다는 제보다.
+  // ⚠ **PRTS 링크(live) 에만** 건다 — 스샷 레이더는 사람이 한 장씩 일부러 붙여넣는 것이라
+  //   그 화면으로 가는 게 목적이다 (사용자 확정 2026-09-05 "prts에서만 켜고끄고").
+  //   토글은 연결 중에만 떠 있는 브리지 토스트에 있다 (lens/bridge-button.tsx).
   // ⚠ 판정은 goto.view 로 한다 — SECTION_NAV(match.ts)에서 맵으로 가는 섹션이 stage·enc·zone
   //   셋이고 전부 view:"map" 이다. 섹션 이름을 여기 복제해 두면 새 섹션이 늘 때 어긋난다.
   // ⚠ journeyEvents 는 이 게이트보다 **먼저** 돈다 — 이동만 막히고 리플레이 기록(작전 입장·
   //   조우·구역)은 그대로 남는다.
-  const NODE_GOTO_KEY = "ta:rogue-node-goto";
-  const [nodeGoto, setNodeGoto] = useState(true);
-  useEffect(() => {
-    try { if (localStorage.getItem(NODE_GOTO_KEY) === "0") setNodeGoto(false); } catch { /* 프라이빗 모드 등 */ }
-  }, []);
-  const toggleNodeGoto = () => setNodeGoto((v) => {
-    const next = !v;
-    try { localStorage.setItem(NODE_GOTO_KEY, next ? "1" : "0"); } catch { /* 프라이빗 모드 등 */ }
-    return next;
-  });
-  const nodeGotoRef = useRef(nodeGoto);
-  nodeGotoRef.current = nodeGoto;
-  /** 이 인식 결과로 이동해도 되는가 — 맵 노드는 토글이 꺼져 있으면 건너뛴다 */
-  const lensGotoAllowed = (g: LensGoto) =>
-    nodeGotoRef.current || !(g.page === "rogue" && g.view === "map");
+  const lensGotoBlocked = (g: LensGoto, live: boolean) =>
+    live && !bridgeNodeJump() && g.page === "rogue" && g.view === "map";
   const [lensMsg, setLensMsg] = useState<string | null>(null);
   const [lensThumb, setLensThumb] = useState<string | null>(null); // 인식 중/최근 이미지 미니 썸네일
   const lensMsgTimer = useRef<number | undefined>(undefined);
@@ -1766,7 +1756,7 @@ export default function RogueGuide({ initialTopic }: {
         memoBridgeScene(oc);
         for (const ev of journeyEvents(oc, false)) logBridgeEvent(ev);
       }
-      if (oc.target.kind === "goto" && !lensGotoAllowed(oc.target.goto)) {
+      if (oc.target.kind === "goto" && lensGotoBlocked(oc.target.goto, live)) {
         // 맵 노드 이동을 꺼 뒀다 — 인식·기록은 이미 위에서 끝났고 이동만 건너뛴다
         noteBridge(t("노드 이동 꺼짐"));
         flashLensMsg(t("맵 노드를 인식했지만 '노드 이동'이 꺼져 있어 이동하지 않았습니다."), 2000);
@@ -1797,7 +1787,7 @@ export default function RogueGuide({ initialTopic }: {
     // HUD 수치는 그때 것이라 신선하지 않으므로 로그에 싣지 않는다 (cached 표기).
     if (oc.target.kind !== "goto") return;
     for (const ev of journeyEvents(oc, true)) logBridgeEvent(ev);
-    if (!lensGotoAllowed(oc.target.goto)) { noteBridge(t("노드 이동 꺼짐")); return; }
+    if (lensGotoBlocked(oc.target.goto, true)) { noteBridge(t("노드 이동 꺼짐")); return; }
     onLensGoto(oc.target.goto);
     noteBridge(oc.entities[0]?.name ?? t("이동"));
   });
@@ -2045,13 +2035,6 @@ export default function RogueGuide({ initialTopic }: {
             title={t("클릭해 스샷 자동인식을 켜고 끕니다 — 켜두면 게임 화면을 캡처만 해도 바로 인식·적용됩니다")}
             onClick={toggleLensAuto}>
             <span className="lens-auto-knob" aria-hidden />📷 {t("스샷 레이더")}{isNewFeature("lens") && <span className="new-badge">{t("새기능")}</span>}
-          </button>
-          {/* 맵 노드 자동 이동 (제보 f1c050b2) — 인식은 그대로 두고 **이동만** 끈다.
-              소장품·도구·분대 인식은 이 토글과 무관하게 계속 동작한다. */}
-          <button type="button" className={`lens-open-btn lens-node-btn${nodeGoto ? " on" : ""}`} aria-pressed={nodeGoto}
-            title={t("맵 노드(작전·조우·구역)를 인식했을 때 그 상세로 자동으로 이동할지 정합니다. 꺼도 소장품·도구 인식은 그대로 동작합니다")}
-            onClick={toggleNodeGoto}>
-            <span className="lens-auto-knob" aria-hidden />🗺 {t("노드 이동")}
           </button>
           <button type="button" className="lens-help-btn" aria-label={t("스샷 레이더 도움말")}
             onClick={() => setLensOpen(true)}>?</button>
