@@ -14,6 +14,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { asset } from "../assets";
 import type { T } from "../i18n";
+import { ModalWindow } from "../modal-window";
 import { ops, opById, maxElite, ELITE_LABEL, type Elite, type InfraOp } from "../planner-engine";
 import { normSearch, useSearchInput } from "../search";
 import { analyzeFrame } from "./artmatch";
@@ -264,13 +265,11 @@ export function ScannerModal({ t, onClose, onApply }: {
     if (e.dataTransfer.files.length) void recognizeFiles(e.dataTransfer.files);
   }, [recognizeFiles]);
 
+  // 공용 창(ModalWindow) — 백드롭·Esc·겹침(z)·이동·📌 고정은 창이 맡는다 (2026-09-05 일괄 전환).
+  // 드롭 영역은 창 본문을 가득 채우는 래퍼가 받는다 — 종전엔 모달 <section>이 직접 받았다.
   return (
-    <section className="operator-modal scanner-modal" role="dialog" aria-modal="true" aria-label={t("보유 오퍼 스캔")}
-      onDragOver={(e) => e.preventDefault()} onDrop={onDropFiles}>
-      <header className="scanner-head">
-        <h2>{t("보유 오퍼 스캔")}</h2>
-        <button className="modal-close" onClick={onClose} aria-label={t("닫기")}>✕</button>
-      </header>
+    <ModalWindow label={t("보유 오퍼 스캔")} className="operator-modal scanner-modal" onClose={onClose}>
+      <div className="scanner-drop" onDragOver={(e) => e.preventDefault()} onDrop={onDropFiles}>
       <input ref={fileInputRef} type="file" accept="image/*" multiple hidden
         onChange={(e) => { if (e.target.files?.length) void recognizeFiles(e.target.files); e.target.value = ""; }} />
 
@@ -363,29 +362,18 @@ export function ScannerModal({ t, onClose, onApply }: {
           {t("{n}명 보유로 추가", { n: String(kept.length) })}
         </button>
       </footer>
+      </div>
 
-      {helpOpen && (
-        <div className="modal-backdrop scanner-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) setHelpOpen(false); }}>
-          <ScanClipHelp t={t} onClose={() => setHelpOpen(false)} />
-        </div>
-      )}
-    </section>
+      {/* 도움말도 공용 창 — 이 창 위에 겹쳐 뜬다 (ModalWindow가 z를 쌓는다) */}
+      {helpOpen && <ScanClipHelp t={t} onClose={() => setHelpOpen(false)} />}
+    </ModalWindow>
   );
 }
 
-// 스캔 도움말 모달 — 순수 설명 전용, 스샷 레이더 도움말과 동일 패턴 (사용법 스텝 카드 최상단)
+// 스캔 도움말 창 — 순수 설명 전용, 스샷 레이더 도움말과 동일 패턴 (사용법 스텝 카드 최상단)
 function ScanClipHelp({ t, onClose }: { t: T; onClose: () => void }) {
-  useEffect(() => {
-    const onKey = (ev: KeyboardEvent) => { if (ev.key === "Escape") { ev.stopPropagation(); onClose(); } };
-    window.addEventListener("keydown", onKey, true);
-    return () => window.removeEventListener("keydown", onKey, true);
-  }, [onClose]);
   return (
-    <section className="operator-modal lens-modal" role="dialog" aria-modal="true" aria-label={t("클립보드 자동인식 도움말")}>
-      <header className="scanner-head">
-        <h2>📋 {t("클립보드 자동인식")}</h2>
-        <button className="modal-close" onClick={onClose} aria-label={t("닫기")}>✕</button>
-      </header>
+    <ModalWindow label={`📋 ${t("클립보드 자동인식")}`} className="operator-modal lens-modal" onClose={onClose}>
       <div className="lens-body lens-help">
         <p className="lens-help-intro">{t("게임 오퍼레이터 목록 화면의 스크린샷을 인식해, 보유 오퍼와 정예화 단계를 자동으로 채워 주는 기능입니다.")}</p>
 
@@ -431,6 +419,6 @@ function ScanClipHelp({ t, onClose }: { t: T; onClose: () => void }) {
           <li>{t("모든 인식은 100% 브라우저 안에서 처리되며 이미지는 서버로 전송되지 않습니다.")}</li>
         </ul>
       </div>
-    </section>
+    </ModalWindow>
   );
 }

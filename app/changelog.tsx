@@ -211,13 +211,10 @@ export default function ChangelogButton() {
         </ModalWindow>,
         document.body
       )}
-      {/* 상세 — 목록을 밀어내지 않게 작은 모달로 띄운다 (사용자 지시 2026-09-05).
-          ⚠ ModalWindow(창형)를 쓰지 않는다 — 그쪽은 이동·리사이즈되는 상시 창이고,
-             여기 필요한 건 읽고 닫는 일회성 대화상자다 (modal-window.tsx '대상 밖' 주석). */}
-      {detail && createPortal(
-        <DetailDialog row={detail} localeBase={localeBase} onClose={() => setDetail(null)} />,
-        document.body
-      )}
+      {/* 상세 — 목록을 밀어내지 않게 작은 창으로 띄운다 (사용자 지시 2026-09-05).
+          다른 모달과 같은 공용 창(ModalWindow)이다 — 자체 백드롭·포털을 만들므로 여기서
+          감싸지 않는다 (2026-09-05 "간이 모달 없애고 모든 모달을 기존 모달창으로"). */}
+      {detail && <DetailDialog row={detail} localeBase={localeBase} onClose={() => setDetail(null)} />}
     </>
   );
 }
@@ -225,15 +222,13 @@ export default function ChangelogButton() {
 /** 항목 하나의 상세 — 본문은 detailBlocks()가 문장·열거 단위로 갈라 준다 (가독성, 2026-09-05) */
 function DetailDialog({ row, localeBase, onClose }: { row: ChangeRow; localeBase: string; onClose: () => void }) {
   const { locale, t } = useI18n();
-  const closeRef = useRef<HTMLButtonElement>(null);
-  useEffect(() => { closeRef.current?.focus(); }, []);
   const full = changeText(row, locale);
   const { head, rest } = splitChange(full);
   const blocks = detailBlocks(rest);
+  // 창 머리(크롬 바)의 제목은 문자열만 받으므로 **굵게** 표기를 벗긴다 — 본문 h3가 서식 있는 원본.
   return (
-    <div className="modal-backdrop chlog-detail-backdrop"
-      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <section className="chlog-detail" role="dialog" aria-modal="true" aria-label={head}>
+    <ModalWindow label={head.replace(/\*\*/g, "")} className="chlog-detail" onClose={onClose}>
+      <div className="chlog-detail-in">
         <header className="chlog-detail-head">
           <span className={`chlog-kind ${row.kind}`}>
             {t("{area} {kind}", {
@@ -242,8 +237,6 @@ function DetailDialog({ row, localeBase, onClose }: { row: ChangeRow; localeBase
             })}
           </span>
           <time className="chlog-detail-date">{dateLabel(row.released_at, locale)}</time>
-          <button type="button" ref={closeRef} className="modal-close chlog-detail-close"
-            onClick={onClose} aria-label={t("닫기")}>×</button>
         </header>
         <h3 className="chlog-detail-title">{rich(head)}</h3>
         <div className="chlog-detail-body">
@@ -258,7 +251,7 @@ function DetailDialog({ row, localeBase, onClose }: { row: ChangeRow; localeBase
             {t("바로가기")} →
           </a>
         )}
-      </section>
-    </div>
+      </div>
+    </ModalWindow>
   );
 }

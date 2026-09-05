@@ -2913,12 +2913,11 @@ export default function RogueGuide({ initialTopic }: {
         <EffectTotals items={ownedRelics} onClose={() => setEffOpen(false)}
           label={t(TOPICS.find((tp) => tp.id === topic)?.name ?? "")} />
       )}
+      {/* 도움말은 공용 창(ModalWindow)이라 백드롭·포털을 스스로 만든다 (2026-09-05) */}
       {lensOpen && (
-        <div className="modal-backdrop scanner-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) setLensOpen(false); }}>
-          <Suspense fallback={null}>
-            <LensHelpModal mode="rogue" onClose={() => setLensOpen(false)} />
-          </Suspense>
-        </div>
+        <Suspense fallback={null}>
+          <LensHelpModal mode="rogue" onClose={() => setLensOpen(false)} />
+        </Suspense>
       )}
       {/* 소장품 다중 인식 모아보기 — 인식된 유물들을 상세 카드로 한 화면에 (사용자 요청 2026-07-23) */}
       {lensMulti && (() => {
@@ -2957,26 +2956,21 @@ export default function RogueGuide({ initialTopic }: {
         </ModalWindow>
         );
       })()}
-      {/* 자동인식이 테마를 특정 못 한 경우(분대 이름은 테마 공통) — 테마 선택 전용 미니 모달 */}
+      {/* 자동인식이 테마를 특정 못 한 경우(분대 이름은 테마 공통) — 테마 선택 전용 미니 창 */}
       {lensInitial?.target.kind === "tie" && (
-        <div className="modal-backdrop scanner-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) setLensInitial(null); }}>
-          <section className="operator-modal lens-modal lens-tie" role="dialog" aria-modal="true" aria-label={t("테마 선택")}>
-            <header className="scanner-head">
-              <h2>📷 {t("테마 선택")}</h2>
-              <button className="modal-close" onClick={() => setLensInitial(null)} aria-label={t("닫기")}>✕</button>
-            </header>
-            <div className="lens-body">
-              <p className="lens-verdict">{t("인식은 됐지만 어느 테마인지 화면만으론 알 수 없습니다 — 테마를 선택하세요.")}</p>
-              <div className="lens-topic-chips">
-                {lensInitial.target.options.map((o) => (
-                  <button key={o.topic} type="button" className="lens-chip" onClick={() => onLensGoto(o.goto)}>
-                    {t(o.topicName)}
-                  </button>
-                ))}
-              </div>
+        <ModalWindow label={`📷 ${t("테마 선택")}`} className="operator-modal lens-modal lens-tie"
+          onClose={() => setLensInitial(null)}>
+          <div className="lens-body">
+            <p className="lens-verdict">{t("인식은 됐지만 어느 테마인지 화면만으론 알 수 없습니다 — 테마를 선택하세요.")}</p>
+            <div className="lens-topic-chips">
+              {lensInitial.target.options.map((o) => (
+                <button key={o.topic} type="button" className="lens-chip" onClick={() => onLensGoto(o.goto)}>
+                  {t(o.topicName)}
+                </button>
+              ))}
             </div>
-          </section>
-        </div>
+          </div>
+        </ModalWindow>
       )}
       {confirmDialog}
       </>)}

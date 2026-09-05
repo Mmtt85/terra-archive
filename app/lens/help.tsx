@@ -2,25 +2,18 @@
 // 스샷 레이더 도움말 모달 — 순수 설명 전용 (버튼·입력 기능 없음, 사용자 확정 2026-07-23).
 // 실제 입력(클립보드 캡처·드래그앤드롭·⌘V)은 전부 페이지 레벨 자동인식이 처리한다.
 
-import React, { useEffect } from "react";
+import React from "react";
 import { useI18n } from "../i18n";
+import { ModalWindow } from "../modal-window";
 import type { LensMode } from "./run";
 
 export default function LensHelpModal({ mode, onClose }: { mode: LensMode; onClose: () => void }) {
   const { t } = useI18n();
-  useEffect(() => {
-    const onKey = (ev: KeyboardEvent) => { if (ev.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
+  // 공용 창(ModalWindow) — 백드롭·Esc·겹침(z)·이동·📌 고정을 전부 창이 맡는다
+  // (사용자 지시 2026-09-05: "간이 모달 없애고 모든 모달을 기존 모달창으로").
   return (
-    <section className="operator-modal lens-modal" role="dialog" aria-modal="true"
-      aria-label={mode === "recruit" ? t("스샷 인식 도움말") : t("스샷 레이더 도움말")}>
-      <header className="scanner-head">
-        <h2>📷 {mode === "recruit" ? t("스샷으로 태그 입력") : t("스샷 레이더")}</h2>
-        <button className="modal-close" onClick={onClose} aria-label={t("닫기")}>✕</button>
-      </header>
+    <ModalWindow className="operator-modal lens-modal" onClose={onClose}
+      label={`📷 ${mode === "recruit" ? t("스샷으로 태그 입력") : t("스샷 레이더")}`}>
       <div className="lens-body lens-help">
         <p className="lens-help-intro">{mode === "recruit"
           ? t("게임 공개모집 화면의 스크린샷을 인식해, 제시된 태그를 공개채용 도우미에 자동으로 선택해 주는 기능입니다.")
@@ -109,6 +102,6 @@ export default function LensHelpModal({ mode, onClose }: { mode: LensMode; onClo
             : t("한국어 클라이언트 화면 전용입니다. 캡처가 선명할수록 정확합니다.")}</li>
         </ul>
       </div>
-    </section>
+    </ModalWindow>
   );
 }

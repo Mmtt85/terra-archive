@@ -1801,12 +1801,11 @@ export default function StoryGuide({ summaries, onShowOperator, opIndex, initial
         : t("스샷 자동인식 켜짐 — 게임 화면을 캡처하고 돌아오거나, 이미지를 화면에 드롭하세요"))}</span>
     </div>
   ) : null;
+  // 도움말은 공용 창(ModalWindow)이라 백드롭·포털을 스스로 만든다 (2026-09-05)
   const lensHelpModal = lensHelp ? (
-    <div className="modal-backdrop scanner-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) setLensHelp(false); }}>
-      <Suspense fallback={null}>
-        <LensHelpModal mode="story" onClose={() => setLensHelp(false)} />
-      </Suspense>
-    </div>
+    <Suspense fallback={null}>
+      <LensHelpModal mode="story" onClose={() => setLensHelp(false)} />
+    </Suspense>
   ) : null;
 
   const summarized = data.events.filter((event) => summaryIds.has(event.id)).length;

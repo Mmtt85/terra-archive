@@ -5,9 +5,9 @@
 // 표시 대상은 ① 현재(또는 마지막) 연결의 로그, ② 가져온 JSON 파일 — 같은 스키마다.
 
 import { useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import { bridgeLogPayload, downloadBridgePayload, type BridgeLogPayload, type BridgeLogEvent } from "./bridge";
 import type { T } from "../i18n";
+import { ModalWindow } from "../modal-window";
 
 // 여정 이벤트 type → 표시 라벨 (i18n 키). 여기 없는 type(옛 파일의 map·none·battle 등)은
 // 여정이 아니므로 표시하지 않는다 — 사용자 확정 2026-07-26: "유저가 뭘 선택했는지만".
@@ -113,20 +113,17 @@ export default function BridgeReplayModal({ t, onClose }: { t: T; onClose: () =>
     });
   };
 
-  return createPortal(
-    <div className="bridge-replay-back" role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bridge-replay" role="dialog" aria-modal="true" aria-label={t("리플레이")}>
-        <header>
-          <h3>
-            {t("리플레이")}
-            {payload?.themeName ? <span className="br-theme">{t(payload.themeName)}</span> : null}
-            {payload && gradeOf(payload) !== undefined && (
-              <span className="br-grade">{t("난이도")} {gradeOf(payload)}</span>
-            )}
-            {imported && <span className="br-imported">{t("가져온 파일")}</span>}
-          </h3>
-          <button type="button" className="br-close" onClick={onClose} aria-label={t("닫기")}>×</button>
-        </header>
+  // 공용 창(ModalWindow) — 백드롭·Esc·겹침(z)·이동·📌 고정은 창이 맡는다 (2026-09-05 일괄 전환).
+  // 테마·난이도·가져온 파일 표시는 크롬 바에 끼워 넣는다 (종전 <header> 안 배지들).
+  return (
+    <ModalWindow label={t("리플레이")} className="bridge-replay" onClose={onClose}
+      chrome={<>
+        {payload?.themeName ? <span className="br-theme">{t(payload.themeName)}</span> : null}
+        {payload && gradeOf(payload) !== undefined && (
+          <span className="br-grade">{t("난이도")} {gradeOf(payload)}</span>
+        )}
+        {imported && <span className="br-imported">{t("가져온 파일")}</span>}
+      </>}>
         {payload ? (
           <>
             {/* 여정 이벤트만 보여주고(옛 파일의 잡음 type 제외) 연속 중복은 ×N 한 줄로 */}
@@ -163,8 +160,6 @@ export default function BridgeReplayModal({ t, onClose }: { t: T; onClose: () =>
             onChange={(e) => { onImport(e.target.files?.[0]); e.target.value = ""; }}
           />
         </footer>
-      </div>
-    </div>,
-    document.body,
+    </ModalWindow>
   );
 }

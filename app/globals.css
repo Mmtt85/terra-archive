@@ -2284,27 +2284,25 @@ legend {
   color: var(--ink);
 }
 
-/* ── 항목 상세 모달 (2026-09-05, 사용자 지시 "상세보기 접기 말고 … 간이 모달창") ──
-   그 자리에서 펼치면 아래 항목들이 밀려 읽던 자리를 잃었다. 창형(ModalWindow)이 아니라
-   읽고 닫는 일회성 대화상자다 — confirm.tsx 와 같은 결. */
-.chlog-detail-backdrop {
-  /* 업데이트 내역 창(z 200대) 위, confirm(1200) 아래 */
-  z-index: 1100;
-  place-items: center;
-}
+/* ── 항목 상세 창 (2026-09-05, 사용자 지시 "상세보기 접기 말고 … 모달창") ──
+   그 자리에서 펼치면 아래 항목들이 밀려 읽던 자리를 잃었다. 다른 모달과 같은 공용
+   창(ModalWindow)이다 — 백드롭·제목줄·×·Esc·겹침(z)은 전부 창이 맡고, 여기 남는 건
+   창 규격과 본문 서식뿐 (같은 날 2차 지시: "간이 모달 없애고 전부 기존 모달창으로"). */
 .chlog-detail {
   width: min(560px, 100%);
   max-height: calc(100dvh - 2 * var(--modal-pad));
   margin: auto;
-  padding: 18px 22px 20px;
   background: var(--white);
   border: 1px solid var(--line);
   border-radius: var(--r-md);
   box-shadow: 0 24px 70px #0009;
-  position: relative;
+  overflow: hidden;
+}
+/* 본문 래퍼 — 배지줄·제목·문단·바로가기를 세로로 쌓고, 넘치면 .chlog-detail-body만 구른다 */
+.chlog-detail-in {
   display: flex;
   flex-direction: column;
-  animation: 0.18s both confirmPop;
+  min-height: 0;
 }
 .chlog-detail-head {
   display: flex;
@@ -2317,12 +2315,6 @@ legend {
   font-size: 11.5px;
   font-weight: 700;
   color: var(--muted);
-}
-/* × 는 머리줄 오른쪽 끝 — 창형 모달의 위치 규칙(.mw-close)과 달리 흐름 안에 둔다 */
-.chlog-detail-close {
-  position: static;
-  margin-left: auto;
-  flex: none;
 }
 .chlog-detail-title {
   margin: 0 0 12px;
@@ -2363,7 +2355,7 @@ legend {
 }
 .chlog-detail-go:hover { border-color: var(--border-hover); }
 @media (max-width: 560px) {
-  .chlog-detail { padding: 16px 16px 18px; }
+  .chlog-detail .mw-body { padding: 12px 16px 18px; }
   .chlog-detail-title { font-size: 14.5px; }
 }
 .confirm-message {
@@ -15053,12 +15045,6 @@ main.site-main > .site-header {
   }
 }
 
-/* ── 보유 오퍼 스캐너 (2026-07-23) ─────────────────────────────────────────── */
-.scanner-backdrop {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 /* ── 스샷 레이더 — 페이지별 진입 버튼 + 자동인식 토글 (2026-07-23) ──────────
    /rogue 탭 줄·공채 quick-wrap 오른쪽 끝. 메인 버튼(모달) | 자동 토글 세그먼트 구조 */
 .lens-open-wrap {
@@ -15753,17 +15739,7 @@ main.site-main > .site-header {
   border-radius: 12px;
   overflow: hidden;
 }
-.scanner-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 18px;
-  border-bottom: 1px solid var(--bg-panel2);
-}
-.scanner-head h2 {
-  margin: 0;
-  font-size: 1.05rem;
-}
+/* (.scanner-head 는 2026-09-05 제거 — 스캐너·도움말이 공용 창으로 옮겨가며 제목줄은 .mw-chrome 이 맡는다) */
 .modal-close {
   background: none;
   border: none;
@@ -15809,6 +15785,13 @@ main.site-main > .site-header {
 .scanner-primary:disabled {
   opacity: 0.5;
   cursor: default;
+}
+/* 드롭 영역 — 창 본문을 가득 채워 스캐너 창 어디에 파일을 놓아도 받는다 (2026-09-05
+   공용 창 이관: 종전엔 모달 <section> 자신이 드롭 대상이었다) */
+.scanner-drop {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 .scanner-body {
   display: grid;
@@ -16097,12 +16080,6 @@ main.site-main > .site-header {
 .scanner-foot .scanner-primary {
   border: none;
 }
-.scanner-loading {
-  padding: 40px;
-  color: var(--muted);
-  background: var(--paper);
-  border-radius: 12px;
-}
 @media (max-width: 760px) {
   .scanner-body {
     grid-template-columns: 1fr;
@@ -16360,39 +16337,18 @@ main.site-main > .site-header {
   box-shadow: 0 0 6px var(--lime);
 }
 
-/* 리플레이 프리뷰 모달 — 로그를 내려받기 전에 가독성 있게 보여준다 (2026-07-26) */
-.bridge-replay-back {
-  position: fixed;
-  inset: 0;
-  z-index: 140;
-  background: #111719c4;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px 14px;
-}
+/* 리플레이 프리뷰 창 — 로그를 내려받기 전에 가독성 있게 보여준다 (2026-07-26).
+   2026-09-05 공용 창(ModalWindow)으로 이관 — 백드롭·제목줄·×는 창이 맡고, 테마·난이도
+   배지는 크롬 바(chrome prop)로 올라갔다. 여기 남는 건 창 규격과 본문뿐. */
 .bridge-replay {
   width: min(680px, 100%);
   max-height: min(78vh, 720px);
-  display: flex;
-  flex-direction: column;
+  margin: auto;
   background: var(--white);
   border: 1px solid var(--border-strong);
-  border-radius: 10px;
-  padding: 14px 16px;
 }
-.bridge-replay header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-.bridge-replay h3 {
-  margin: 0;
-  font-size: 15px;
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
+.bridge-replay .mw-body {
+  padding: 10px 16px 14px;
 }
 .br-theme {
   font-size: 12px;
@@ -16415,15 +16371,6 @@ main.site-main > .site-header {
   padding: 1px 6px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-}
-.br-close {
-  border: none;
-  background: none;
-  color: var(--muted);
-  font-size: 20px;
-  line-height: 1;
-  cursor: pointer;
-  padding: 2px 6px;
 }
 .br-range {
   margin: 4px 0 8px;
@@ -17629,7 +17576,9 @@ main.site-main > .site-header {
 .mw-body > * {
   flex-shrink: 0;
 }
-.mw-body > :where(.modal-body, .modal-scroll, .term-body, .bcast-list, .chlog-list, .invest-list) {
+.mw-body > :where(.modal-body, .modal-scroll, .term-body, .bcast-list, .chlog-list, .invest-list,
+  /* 2026-09-05 간이 모달 일괄 이관분 — 스샷/PRTS 도움말·오퍼 스캐너·리플레이·업데이트 상세 */
+  .lens-body, .scanner-drop, .chlog-detail-in, .bridge-replay-list) {
   flex: 1 1 auto;
   min-height: 0;
 }
@@ -17653,7 +17602,10 @@ main.site-main > .site-header {
   .invest-list, .fb-thread, .fb-thread-modal, .chibi-chat-clear, .room-modal-head, .item-modal-icon,
   /* 제안 게시판·작성 폼 — 안쪽 줄(.feedback-kind 등)이 이미 14px 여백을 갖고 있어
      기본 22px가 겹치면 36px가 된다 (사용자 지적 2026-08-23) */
-  .feedback-panel)) {
+  .feedback-panel,
+  /* 2026-09-05 간이 모달 이관분 — 도움말 본문(.lens-body 16/18)과 스캐너 드롭 영역
+     (.scanner-body 14/18 + .scanner-foot 12/18)은 이미 자기 여백을 갖고 있다 */
+  .lens-body, .scanner-drop)) {
   padding: 0;
 }
 .mw-chrome {

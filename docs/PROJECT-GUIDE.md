@@ -1211,6 +1211,42 @@ Cloudflare RUM에서 CLS Poor 비율이 20%를 넘어 **전 페이지를 Playwri
 z-index를 150 → 9000으로 올렸다: 공용 창은 z 200에서 시작해 창을 열 때마다 1씩 오르므로
 150으로는 모달 몇 개만 열려도 밑에 깔린다.
 
+### 남은 간이 모달 전수 정리 (2026-09-05) — **예외 없음**
+
+2026-08-24에 록라만 옮겨서, 헤더·×를 직접 그린 `<section>`을 `.modal-backdrop`으로 감싸는
+'간이 모달'이 곳곳에 남아 있었다. 사용자 지시("간이 모달 같은 거 없애고 모든 모달을 기존에
+쓰던 모달창으로 싹 다 바꿔줘 — 전수조사 해야 하겠네")로 **7곳을 전부 `ModalWindow`로** 옮겼다:
+
+| 옮긴 것 | 파일 | 종전 껍데기 |
+|---|---|---|
+| 스샷 레이더 도움말 (록라·공채·스토리 3곳 공용) | `app/lens/help.tsx` | `.scanner-backdrop` + `.scanner-head` |
+| PRTS 링크 도움말 | `app/lens/bridge-help.tsx` | `.modal-backdrop` + `.scanner-head` |
+| 클립보드 자동인식 도움말 | `app/scan/scanner.tsx` | 〃 |
+| 보유 오퍼 스캐너 | `app/scan/scanner.tsx` | `.scanner-modal` 자체 헤더·푸터 |
+| PRTS 리플레이 | `app/lens/bridge-replay.tsx` | 자체 백드롭 `.bridge-replay-back` |
+| 록라 테마 선택(인식 동점) | `app/rogue.tsx` | `.scanner-backdrop` + `.lens-tie` |
+| 업데이트 내역 항목 상세 | `app/changelog.tsx` | `.chlog-detail-backdrop` |
+
+같이 지운 죽은 CSS: `.scanner-backdrop` · `.scanner-head`(+h2) · `.scanner-loading` ·
+`.br-close` · `.bridge-replay-back` · `.chlog-detail-backdrop` · `.chlog-detail-close`.
+
+옮길 때 실제로 걸린 것 세 가지 — 다음에도 똑같이 밟는다:
+- **`.mw-body` 여백이 두 겹이 된다.** `.mw-body` 기본 패딩(12/22/24)이 있으므로, 자기 여백을
+  가진 본문 컨테이너는 `.mw-body:has(> …)` 목록에 **이름을 넣어야** 0으로 돌아간다
+  (이번에 `.lens-body`·`.scanner-drop` 추가).
+- **`.mw-body > *`의 `flex-shrink:0`이 내부 스크롤을 죽인다.** 남은 높이를 다 갖고 스스로
+  굴러야 하는 컨테이너는 `.mw-body > :where(…)` 목록에도 넣는다 (`.lens-body`·`.scanner-drop`·
+  `.chlog-detail-in`·`.bridge-replay-list`). 안 넣으면 창이 넘쳐 `.mw-body`가 통째로 구른다.
+- **드롭 대상은 래퍼로 내린다.** 스캐너는 모달 `<section>`이 직접 `onDrop`을 받았는데
+  `ModalWindow`는 핸들러를 받지 않는다 → 본문을 채우는 `.scanner-drop` 래퍼가 대신 받는다.
+
+제목은 문자열만 들어가므로(`label`) 배지·아이콘은 `chrome` prop으로 올린다 (PRTS 도움말의
+BETA, 리플레이의 테마·난이도). 서식이 있는 제목은 `**`를 벗겨 넣고 본문 `<h3>`가 원본을 그린다.
+
+**모달이 아닌 것만 남았다** — 확인 대화상자(`confirm.tsx`) · 라이트박스(`.skin-lightbox`·
+`.fb-lightbox`) · 드롭다운/팁 풍선/만능검색 패널 · 보유 리스트 창(`.rg-invmodal`).
+목록은 `app/modal-window.tsx` 머리 주석이 정본이다.
+
 ### 위수 협의 — 특질 중복 판정은 **설명문이 아니라 blackboard** (2026-08-26)
 
 사용자 지적: *"그라벨은 특질이 두 갠데 '배치 시 중첩 +1'이 중복돼 있는 것 같은데, 두 개

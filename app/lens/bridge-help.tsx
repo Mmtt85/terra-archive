@@ -4,24 +4,17 @@
 // 에뮬레이터·PC 클라이언트 화면을 사이트가 실시간으로 읽어 따라가는 기능이라, 로도스 아일랜드의
 // 시스템 이름(PRTS)을 빌렸다.
 
-import React, { useEffect } from "react";
+import React from "react";
 import { asset } from "../assets";
 import { useI18n, rich } from "../i18n";
+import { ModalWindow } from "../modal-window";
 
 export default function BridgeHelpModal({ onClose }: { onClose: () => void }) {
   const { t } = useI18n();
-  useEffect(() => {
-    const onKey = (ev: KeyboardEvent) => { if (ev.key === "Escape") { ev.stopPropagation(); onClose(); } };
-    window.addEventListener("keydown", onKey, true);
-    return () => window.removeEventListener("keydown", onKey, true);
-  }, [onClose]);
-
+  // 공용 창(ModalWindow) — 스샷 레이더 도움말(help.tsx)과 같은 껍데기 (2026-09-05 일괄 전환)
   return (
-    <section className="operator-modal lens-modal" role="dialog" aria-modal="true" aria-label={t("PRTS 링크 도움말")}>
-      <header className="scanner-head">
-        <h2>◉ {t("PRTS 링크")}<span className="beta-badge">BETA</span></h2>
-        <button className="modal-close" onClick={onClose} aria-label={t("닫기")}>✕</button>
-      </header>
+    <ModalWindow className="operator-modal lens-modal" onClose={onClose} label={`◉ ${t("PRTS 링크")}`}
+      chrome={<span className="beta-badge">BETA</span>}>
       <div className="lens-body lens-help">
         <p className="lens-help-intro">{t("에뮬레이터나 PC 클라이언트의 게임 창을 사이트에 물려, 화면이 바뀔 때마다 자동으로 인식해 이 가이드가 따라오게 하는 기능입니다. 스샷 레이더가 '캡처 한 장'을 읽는다면, PRTS 링크는 '보고 있는 화면'을 계속 읽습니다 — 층을 오르는 동안 손댈 일이 없습니다.")}</p>
 
@@ -87,6 +80,6 @@ export default function BridgeHelpModal({ onClose }: { onClose: () => void }) {
           <li>{t("게임 창이 너무 작거나 가려져 있으면 글자를 못 읽습니다 — 창을 다른 창으로 덮지 마세요.")}</li>
         </ul>
       </div>
-    </section>
+    </ModalWindow>
   );
 }

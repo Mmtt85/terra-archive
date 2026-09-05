@@ -3262,11 +3262,11 @@ function RosterModal({ allOps, lockFuture, ownedIds, eliteById, levelById, onApp
           )}
         </div>
       {/* 스크린샷 스캐너 — 모달 내부에서 열고, 인식 결과를 draft/eliteDraft에 병합(MAA 가져오기와 동일
-          흐름: 검토 후 '적용 및 자동편성 실행'). 오퍼 스캐너 v6, 픽스처 178셀 100% (verify-scan.ts). */}
+          흐름: 검토 후 '적용 및 자동편성 실행'). 오퍼 스캐너 v6, 픽스처 178셀 100% (verify-scan.ts).
+          공용 창(ModalWindow)이라 백드롭·포털은 스캐너가 스스로 만든다 (2026-09-05). */}
       {showScan && (
-        <div className="modal-backdrop scanner-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowScan(false); }}>
-          <Suspense fallback={<div className="scanner-loading">{t("스캐너 불러오는 중…")}</div>}>
-            <ScannerModal
+        <Suspense fallback={null}>
+          <ScannerModal
               t={t}
               onClose={() => setShowScan(false)}
               onApply={(dets) => {
@@ -3284,9 +3284,8 @@ function RosterModal({ allOps, lockFuture, ownedIds, eliteById, levelById, onApp
                 setMode("direct"); // 인식 결과를 카드 격자에서 바로 검토하게 한다
                 setImportMsg(t("스캔 결과 {n}명을 반영했습니다 — 확인 후 '적용 및 자동편성 실행'을 누르세요.", { n: String(dets.length) }));
               }}
-            />
-          </Suspense>
-        </div>
+          />
+        </Suspense>
       )}
     </ModalWindow>
   );

@@ -119,13 +119,11 @@ export function BridgeTopicButton({ topic, name, t }: { topic: string; name: str
         <span aria-hidden>▤</span> {t("리플레이")}
       </button>
       {replayOpen && <BridgeReplayModal t={t} onClose={() => setReplayOpen(false)} />}
-      {helpOpen && createPortal(
-        <div className="modal-backdrop" onMouseDown={(ev) => { if (ev.target === ev.currentTarget) setHelpOpen(false); }}>
-          <Suspense fallback={<div className="scanner-loading">{t("불러오는 중…")}</div>}>
-            <BridgeHelpModal onClose={() => setHelpOpen(false)} />
-          </Suspense>
-        </div>,
-        document.body,
+      {/* 도움말은 공용 창(ModalWindow)이라 백드롭·포털을 스스로 만든다 — 여기서 감싸지 않는다 */}
+      {helpOpen && (
+        <Suspense fallback={null}>
+          <BridgeHelpModal onClose={() => setHelpOpen(false)} />
+        </Suspense>
       )}
     </>
   );

@@ -358,12 +358,11 @@ export default function RecruitHelper({ onShowOperator, extra }: { onShowOperato
           </>
         )}
       </div>
+      {/* 도움말은 공용 창(ModalWindow)이라 백드롭·포털을 스스로 만든다 (2026-09-05) */}
       {lensOpen && (
-        <div className="modal-backdrop scanner-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) setLensOpen(false); }}>
-          <Suspense fallback={null}>
-            <LensHelpModal mode="recruit" onClose={() => setLensOpen(false)} />
-          </Suspense>
-        </div>
+        <Suspense fallback={null}>
+          <LensHelpModal mode="recruit" onClose={() => setLensOpen(false)} />
+        </Suspense>
       )}
     </section>
   );
