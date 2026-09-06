@@ -79,3 +79,9 @@ scripts/story-cn/
 
 # 기록 번역용 CN 원문 골격 — build-records.py가 매번 다시 떨어뜨린다 (번역본만 커밋)
 scripts/records-cn/_src/
+
+# 위수 협의·록라 인식 회귀 픽스처 — 게임 스크린샷/녹화라 크고(45MB) 개인 화면이 찍힌다.
+# fixtures/lens/expected.json(작은 기대값)만 커밋하고 원본 이미지는 로컬에만 둔다.
+/fixtures/lens/screenshots/
+# tesseract 한국어 모델(2MB) — 스크립트가 받아 쓰는 캐시지 소스가 아니다
+/kor.traineddata

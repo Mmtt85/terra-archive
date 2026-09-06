@@ -15,7 +15,7 @@
 // ⚠ 영어판은 시즌2가 글로벌 서버에 없어 **설명문이 한국어 원문**이다 (doc.krOnly).
 //    통합전략 IS6와 같은 취급 — 안내문을 띄우고 그대로 보여 준다.
 
-import { cloneElement, lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { cloneElement, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useI18n, rich, DT_LOCALE, type T } from "./i18n";
 import { isNewFeature } from "./whats-new";
@@ -27,10 +27,10 @@ import { GLOBAL_MODAL_HASH } from "./hash-modal";
 import { loadEnemies } from "./dex-cross";
 import { EnemyFile, RANK_KEY, enemyImg, enemyImgBase, type Enemy } from "./enemy-detail";
 import { StageRouteMap, enemyRouteColor, type StageRoutes } from "./stage-route-map";
-import { useBridgeWatch, useBridgeStatus, connectBridge, disconnectBridge, bridgeSupported, bridgeOnMobile, bridgeOn, noteBridge } from "./lens/bridge";
+import { useBridgeWatch, useBridgeStatus, noteBridge } from "./lens/bridge";
 import { recognizeShot, warmData, ocrLangFor } from "./lens/run";
 import { warmOcr, warmDigitOcr } from "./lens/ocr";
-import { useAcRun, setAcStack, setAcStacks, mergeAcRun, resetAcRun, isAcLock, acModeOf, AC_LOCK } from "./autochess-run";
+import { useAcRun, setAcStack, setAcStacks, mergeAcRun, resetAcRun, isAcLock, acModeOf } from "./autochess-run";
 import { solveAcBans } from "./lens/acsolve";
 
 // 전투 맵 (scripts/build-autochess-routes.py) — 작전 도감·통합전략과 **같은 렌더러**를 쓴다
@@ -261,10 +261,6 @@ const GAIN_W_NOTE: Record<string, string> = {
 };
 const VIEWS = ["bond", "band", "op", "item", "misc"] as const;
 type View = (typeof VIEWS)[number];
-/** PRTS 지원 여부·모바일 판정용 — 값이 바뀌지 않으므로 구독은 빈 해제 함수만 돌려준다
- *  (bridge-button.tsx noSubscribe 와 같은 것). */
-const acNoSub = () => () => { /* 값이 바뀌지 않는다 */ };
-const AcBridgeHelpModal = lazy(() => import("./lens/bridge-help"));
 const VIEW_LABEL: Record<View, string> = {
   bond: "맹약", band: "전략", op: "오퍼레이터 (기물)", item: "아이템", misc: "게임 정보",
 };
@@ -661,13 +657,6 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     if (!rows.length) return { sure: [] as string[], maybe: [] as string[], solutions: 0 };
     return solveAcBans(rows, doc.chess.map((c) => ({ id: c.id, op: c.op ?? "", t: c.t, bonds: c.bonds })));
   }, [acrun.banObs, doc.chess]);
-  // 지원 여부·모바일은 navigator 를 봐야 알 수 있어 서버에선 판단할 수 없다 — 그냥 호출하면
-  // 프리렌더와 하이드레이션 결과가 갈리므로(React #418) 서버 스냅샷을 고정해 읽는다
-  // (bridge-button.tsx BridgeTopicButton 과 같은 규약).
-  const acPrtsOk = useSyncExternalStore(acNoSub, bridgeSupported, () => false);
-  const acPrtsMobile = useSyncExternalStore(acNoSub, bridgeOnMobile, () => true);
-  const acPrtsBlocked = acPrtsMobile || !acPrtsOk;
-  const [acHelp, setAcHelp] = useState(false);
   useEffect(() => {
     if (!acLocked) return;
     // 첫 인식에서 wasm·traineddata(~9MB) 로드로 수 초를 잃지 않게 연결 즉시 예열.
@@ -1656,39 +1645,15 @@ export default function AutochessGuide({ doc, onShowOperator }: {
         <span className="section-no">STRONGHOLD PROTOCOL</span>
         <h2 id="ac-title">{doc.name}</h2>
         {/* 도감·목록 탭과 성격이 달라(직접 짜 보는 자리) 탭 줄이 아니라 제목 줄 한가운데 세운다.
-            2026-09-06부터 셋 — 손으로 짜는 편성기 + PRTS로 게임을 따라가는 두 모드
-            (사용자 지시 "덱편성시뮬레이터 - 독립 시뮬레이션 시작하기 - 멀티 시뮬레이션 시작하기"). */}
+            ⚠ 'PRTS 시뮬레이션'(게임 화면 인식) 버튼은 2026-09-06에 **폐기**했다 — 다시 달지 말 것.
+            인식 배선(lens/acvision·acsolve·acmatch, autochess-run)은 아직 남아 있지만
+            들어가는 문이 없어 동작하지 않는다. */}
         <div className="ac-ctarow">
           <button type="button" className={`ac-simcta${sim ? " on" : ""}`} aria-haspopup="dialog"
             onClick={() => { setSim(true); closeMenus(); clear(false); }}>
             {t("덱편성 시뮬레이터")}
             {isNewFeature("ac-deck") && <span className="new-badge">{t("새기능")}</span>}
           </button>
-          {/* 독립/연합는 **버튼으로 나누지 않는다** — 화면에서 알아낸다 (사용자 확정 2026-09-06).
-              PRTS 와 ? 는 /rogue 툴바처럼 **붙은 한 덩어리**다. */}
-          <span className="ac-prtsgrp">
-          <button type="button" className={`ac-simcta ac-prtscta${acLocked ? " on" : ""}`}
-            disabled={acPrtsBlocked}
-            title={acPrtsMobile
-              ? t("PRTS 링크는 PC 브라우저에서만 사용할 수 있습니다")
-              : acLocked ? t("PRTS 링크 끊기")
-                : t("게임 창을 골라 연결하면, 판이 도는 동안 편성이 화면을 따라갑니다")}
-            onClick={async () => {
-              if (acLocked) { disconnectBridge(); return; }
-              resetAcRun();                 // 새 판으로 들어가는 길목 — 지난 판 값을 버린다
-              setAcMsg("");
-              // ⚠ 편성기는 **연결이 된 뒤에** 연다 (사용자 지적 2026-09-06 "지금은 먼저
-              //   열리고 나서 그위에 연결화면이 뜨니까"). 창 선택을 취소하면 아무 일도 없다.
-              await connectBridge({ topic: AC_LOCK, name: t("PRTS 시뮬레이션") });
-              if (bridgeOn()) { closeMenus(); setSim(true); }
-            }}>
-            <span aria-hidden>{acLocked ? "◉" : "○"}</span> {t("PRTS 시뮬레이션")}
-            <span className="beta-badge">{acPrtsMobile ? t("PC 전용") : "BETA"}</span>
-          </button>
-          {/* ? 는 PRTS 버튼 **바로 오른쪽**에 붙는다 (bridge-button.tsx 와 같은 규약) */}
-          <button type="button" className="lens-help-btn"
-            aria-label={t("PRTS 링크 도움말")} onClick={() => setAcHelp(true)}>?</button>
-          </span>
         </div>
       </header>
       {/* 한 판 스트립 — 게임 연결이 켜져 있을 때만. **모달 밖**에 두는 게 핵심이다:
@@ -2429,12 +2394,6 @@ export default function AutochessGuide({ doc, onShowOperator }: {
         );
       })()}
 
-      {/* PRTS 도움말 — 설명만 담긴 모달이라 필요할 때만 받아온다 (bridge-button.tsx 와 같은 규약) */}
-      {acHelp && (
-        <Suspense fallback={null}>
-          <AcBridgeHelpModal where="autochess" onClose={() => setAcHelp(false)} />
-        </Suspense>
-      )}
       {peek && (() => {
         const row = boardBonds.find((x) => x.b.id === peek);
         if (!row) return null;
