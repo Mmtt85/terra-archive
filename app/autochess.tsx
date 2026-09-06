@@ -2532,16 +2532,23 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                   onClick={toggleMenu("simband")}>
                   {simBand ? (doc.bands.find((b) => b.id === simBand)?.n ?? t("전략 고르기")) : t("전략 고르기")} <i aria-hidden>▾</i>
                 </button>
+                {/* 전략 고르기는 **타일 그리드**다 — 게임의 '전략 정보' 화면이 한 줄에 넷씩
+                    얼굴을 깔아 주고, 사람도 이름보다 대표 오퍼 얼굴로 먼저 알아본다
+                    (사용자 지시 2026-09-07 "이 화면처럼 한줄에 네개씩"). 맹약·정예화 같은
+                    목록형 드롭다운과 달리 이것만 그리드이므로 .ac-bandmenu 로 갈라 놓는다. */}
                 {openMenu === "simband" && menuPop(
-                  <ul className={menuCls(" scroll")} role="menu" aria-label={t("전략")}>
-                    <li role="none"><button type="button" role="menuitemradio" aria-checked={!simBand}
-                      className={!simBand ? "on" : ""} onClick={() => { setSimBand(""); closeMenus(); }}>
-                      <span>{t("고르지 않음")}</span></button></li>
+                  <ul className={menuCls(" scroll ac-bandmenu")} role="menu" aria-label={t("전략")}>
+                    <li role="none" className="ac-bandmenu-none">
+                      <button type="button" role="menuitemradio" aria-checked={!simBand}
+                        className={!simBand ? "on" : ""} onClick={() => { setSimBand(""); closeMenus(); }}>
+                        <span>{t("고르지 않음")}</span></button></li>
                     {doc.bands.slice().sort((a, b) => a.sort - b.sort).map((b) => (
                       <li key={b.id} role="none"><button type="button" role="menuitemradio" aria-checked={simBand === b.id}
-                        className={simBand === b.id ? "on" : ""} onClick={() => { setSimBand(b.id); closeMenus(); }}>
-                        <img className="ac-garsel-icon" src={bandIcon(b.id)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
-                        <span>{b.n}{b.by && <em className="ac-bandby">{b.by}</em>}</span><em>HP {b.hp}</em></button></li>
+                        className={`ac-bandtile${simBand === b.id ? " on" : ""}`}
+                        title={`${b.n}${b.by ? ` · ${b.by}` : ""} · HP ${b.hp}`}
+                        onClick={() => { setSimBand(b.id); closeMenus(); }}>
+                        <img src={bandIcon(b.id)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
+                        <b>{b.n}</b>{b.by && <em>{b.by}</em>}</button></li>
                     ))}
                   </ul>
                 )}
