@@ -4,7 +4,7 @@
 
 import { createOcrSession, type OcrSession } from "./ocr";
 import { asset } from "../assets";
-import { buildIndex, analyzeLines, analyzeChinese, analyzeRecruit, wantsChipPass, isCollectLine, LENS_ITEM_SECTIONS, normFor, type LensIndex, type LensOutcome, type LensHud, type Normalizer } from "./match";
+import { buildIndex, analyzeLines, analyzeChinese, analyzeRecruit, wantsChipPass, isCollectLine, isCollectLineCn, LENS_ITEM_SECTIONS, normFor, type LensIndex, type LensOutcome, type LensHud, type Normalizer } from "./match";
 import { parseStoryIndex, analyzeStoryLines, type StoryIndex } from "./storymatch";
 import { buildAcIndex, planAcStacks, parseStack, parseDeploy, parseSeats, isAcInfoScreen,
   acBanBands, bandTexts, pickBond, type AcIndex } from "./acmatch";
@@ -319,11 +319,24 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
     //   화면(rogue.tsx)이 그 소장품을 모아보기로 곁들인다. 섹션 투표를 다시 하면 조우가
     //   소장품으로 뒤집혀 정작 조우 정보를 잃는다.
     // ⚠ **이미 아이템을 잡았으면 돌지 않는다** — 소장품 화면은 본 패스가 이미 처리한다.
+    //
+    // ⚠ 언어는 zhHit 이 아니라 **트리거 줄 자체**로 판정한다 (제보 8368a46c, 2026-09-06).
+    //   zhHit 은 "한국어 패스가 완전 무신호여서 zh 를 돌렸고 그게 맞았다"일 때만 선다.
+    //   그런데 CN 클라 화면에서 kor 워커가 한자를 흘리다 **약한 오탐 하나**만 내도
+    //   위 1차 게이트(297줄)가 막혀 zh 패스가 영영 안 돌고, 그 상태로 여기 내려오면
+    //   중국어 이름을 **kor 워커로** 읽어(ocr.ts: zh 가 거짓이면 프라이머리 워커) 통째로
+    //   놓쳤다. 제보자가 "될 때도 있고 안 될 때도 있다"고 한 것이 이것 — 소장품이 아니라
+    //   **한국어 패스가 그 화면에서 헛것을 봤느냐**가 갈랐다.
+    //   `收藏品`이 보이는 화면은 그냥 중국어이므로, 그걸 근거로 삼는다.
+    const bandZh = zhHit || lines.some(isCollectLineCn);
+    // 확실한 중국어인데 zh 패스를 아직 안 돌렸으면 지금 돌린다 — 본 판정(조우 모달)도
+    // 중국어로 다시 보는 게 맞다. 이미 돌렸으면 zhRan 가드가 막는다.
+    if (zhPossible && bandZh) await tryZh();
     const hasItem = oc.entities.some((e) => LENS_ITEM_SECTIONS.has(e.section));
     if (!hasItem && oc.target.kind !== "none" && lines.some(isCollectLine)) {
-      const cLines = await session.colorBand(isCollectLine, zhHit);
+      const cLines = await session.colorBand(isCollectLine, bandZh);
       if (cLines.length) {
-        const cOc = zhHit
+        const cOc = bandZh
           ? analyzeChinese(cLines, index, { topic, lock: opts?.lock })
           : analyzeLines(cLines, index, ctx);
         const add = cOc.entities.filter((e) => LENS_ITEM_SECTIONS.has(e.section)

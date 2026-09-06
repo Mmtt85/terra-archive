@@ -257,6 +257,31 @@ export function countNewReplies(rows: MyFeedbackRow[]): number {
   return n;
 }
 
+/** 마지막으로 게시판을 연 뒤 들어온 **새 제안** 수 — 관리자 모드 뱃지용 (사용자 요청 2026-09-06).
+ *  일반 방문자의 '새 답변'과 같은 자리를 쓰되 세는 대상이 반대다 — 답변은 관리자가 **쓰는**
+ *  쪽이라 무의미하고, 알고 싶은 건 새 제보가 들어왔는지다.
+ *  ⚠ 기준(seen)이 없으면 **0** — 없다고 전부 새 것으로 세면 첫 방문에 200이 찍힌다. */
+export function countNewFeedback(rows: { created_at: string }[]): number {
+  const seen = getFeedbackSeen();
+  if (!seen) return 0;
+  let n = 0;
+  for (const row of rows) if (row.created_at > seen) n += 1;
+  return n;
+}
+
+/** 새 제안 **개수만** 세는 경량 조회 — 폴링용이라 본문·답변·이미지를 안 끌어온다.
+ *  PostgREST count 헤더를 쓴다: `Prefer: count=exact` + `limit=0` → `Content-Range: * / 12`.
+ *  ⚠ RLS에 걸리면 에러가 아니라 0행이 온다 — 잘못된 키는 조용히 0이 된다(adminWrite와 같은 함정). */
+export async function countNewFeedbackSince(key: string, since: string): Promise<number> {
+  const q = `select=id&created_at=gt.${encodeURIComponent(since)}&limit=0`;
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/feedback?${q}`, {
+    headers: { ...adminKeyHeaders(key), Prefer: "count=exact" },
+  });
+  if (!res.ok) throw new Error(`조회 실패 (${res.status})`);
+  const n = Number((res.headers.get("content-range") ?? "").split("/")[1]);
+  return Number.isFinite(n) ? n : 0;
+}
+
 /** 방문자 국가 코드 — Cloudflare 엣지가 같은 오리진 /cdn-cgi/trace에 붙여 주는 loc= 값.
  *  외부 지오IP 서비스 없이 공짜로 얻는다. 로컬 dev(:3000)나 실패 시엔 조용히 생략.
  *  관리자 화면(게시판 관리자 모드·/admin)에서만 표시한다 (사용자 요청 2026-08-19). */

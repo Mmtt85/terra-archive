@@ -23,29 +23,48 @@ export function grayNormalize(data: Uint8ClampedArray | Uint8Array): void {
 }
 
 /**
- * **색 글씨** 강조 그레이스케일 (제보 16138722, 2026-09-05).
+ * **색 글씨** 강조 그레이스케일 (제보 16138722, 2026-09-05 · 제보 8368a46c, 2026-09-06).
  *
  * 휘도(grayNormalize)는 색 글씨를 중간값으로 뭉갠다 — 조우 선택지가 주는 소장품 이름이
  * 분홍(#e8628f쯤)인데 휘도가 143이라, 흰 글씨(240)와 어두운 패널(50) 사이에 끼어
  * min-max 스트레치에서 묻힌다 (실측: 바로 윗줄 `获得1件收藏品`은 읽는데 `·显圣吊坠`는
- * 한 글자도 안 나왔다). 채널 **최댓값**을 쓰면 분홍의 R이 232라 흰 글씨만큼 밝아진다.
+ * 한 글자도 안 나왔다).
+ *
+ * 그래서 처음엔 채널 **최댓값**(분홍의 R=232)을 썼는데, 그건 **어두운 패널에서만** 통했다.
+ * 배경 아트가 밝으면(불 켜진 편의점 등) 반투명 선택지 패널이 밝은 회색(~220)이 되고,
+ * 최댓값은 분홍(232)과 그걸 못 가른다 — 글자가 배경에 묻힌다. 제보자가 "될 때도 있고
+ * 안 될 때도 있다"고 한 것이 이것이었다: **어느 소장품이냐가 아니라 뒤에 깔린 배경 아트의
+ * 밝기**가 갈랐다 (2026-09-06 제보 8368a46c, CN 클라 无人商店 조우).
+ *
+ * 그래서 지금은 **채도(max−min)** 를 쓴다. 무채색은 밝든 어둡든 0으로 죽고 색 글씨만 남는다:
+ *   분홍 #e8628f → 232−98 = 134 · 밝은 회색 220 → 0 · 흰 글씨 240 → 0 · 어두운 패널 → ~0
+ * 덤으로 같은 밴드에 걸린 **흰 글씨(윗줄 꼬리)도 사라져** 이름만 깨끗이 남는다.
  *
  * ⚠ 이건 **작은 밴드 크롭 전용**이다 — 전체 프레임에 쓰면 배경 아트까지 밝아져 기존
  *   인식이 흔들린다. 본 패스(grayNormalize)는 그대로 두고, 필요한 자리만 이걸로 한 번 더
  *   읽는다 (공개모집 칩 패스와 같은 구조).
  */
+/** 색 글씨가 있다고 볼 최소 채도 — JPEG 잡음의 채도는 한 자릿수라 이보다 한참 아래다.
+ *  이 문턱을 안 두면 무채색 밴드(색 글씨가 없는 자리)에서 잡음이 스트레치로 증폭돼
+ *  OCR이 없는 글자를 지어낸다 — 최댓값 방식엔 없던 위험이라 채도로 바꾸며 같이 넣었다. */
+const CHROMA_MIN = 24;
+
 export function colorNormalize(data: Uint8ClampedArray | Uint8Array): void {
   const n = data.length;
-  let min = 255, max = 0;
+  let max = 0;
   for (let i = 0; i < n; i += 4) {
-    const v = Math.max(data[i], data[i + 1], data[i + 2]);
+    const r = data[i], g = data[i + 1], b = data[i + 2];
+    const v = Math.max(r, g, b) - Math.min(r, g, b);   // 채도
     data[i] = v;
-    if (v < min) min = v;
     if (v > max) max = v;
   }
-  const range = Math.max(1, max - min);
+  if (max < CHROMA_MIN) {                              // 색 글씨가 없는 밴드 — 새까맣게 두고 끝낸다
+    for (let i = 0; i < n; i += 4) data[i] = data[i + 1] = data[i + 2] = 0;
+    return;
+  }
+  // 바닥은 0으로 고정한다 (무채색 배경 = 채도 0). min을 재서 빼면 배경이 다시 들린다.
   for (let i = 0; i < n; i += 4) {
-    const v = Math.round(((data[i] - min) * 255) / range);
+    const v = Math.min(255, Math.round((data[i] * 255) / max));
     data[i] = data[i + 1] = data[i + 2] = v;
   }
 }

@@ -159,8 +159,12 @@ const RECRUIT_KEYWORDS = ["모집시간", "모집요건", "모집예산", "모�
 /** '소장품 1개 획득' 류의 줄 — 바로 아래에 **색 글씨로** 그 소장품 이름이 붙는다
  *  (제보 16138722, 2026-09-05: 조우 선택지가 주는 소장품). 이 줄이 보이면 색 글씨 밴드를
  *  한 번 더 읽어 이름을 건진다. OCR이 `收藏品`을 `收茂`로 흘리는 일이 잦아 느슨하게 본다. */
-const COLLECT_LINE = [/收藏|收茂/, /获得\s*\d*\s*件/, /소장품/, /수집품/, /collectible/i, /収蔵品/];
+/** 그중 **중국어판**만 — 이 줄이 보이면 그 화면은 중국어다(간체 전용 글자). 한국어 패스가
+ *  약한 오탐을 내도 흔들리지 않는 언어 증거로 쓴다 (제보 8368a46c, run.ts 참조). */
+const COLLECT_LINE_CN = [/收藏|收茂/, /获得\s*\d*\s*件/];
+const COLLECT_LINE = [...COLLECT_LINE_CN, /소장품/, /수집품/, /collectible/i, /収蔵品/];
 export const isCollectLine = (text: string): boolean => COLLECT_LINE.some((re) => re.test(text));
+export const isCollectLineCn = (text: string): boolean => COLLECT_LINE_CN.some((re) => re.test(text));
 
 /** 칩 패스(어두운 버튼 개별 OCR)가 필요한 화면인지 — 현재는 공개모집 키워드가 보일 때만.
  *  칩 패스는 크롭당 recognize를 돌려 비싸므로(최대 20회) 필요할 때만 실행한다. */

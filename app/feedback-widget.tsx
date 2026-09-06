@@ -5,7 +5,8 @@ import { createPortal } from "react-dom";
 import {
   feedbackReady, sendFeedback, uploadFeedbackImage, imagesOf, FEEDBACK_IMG_MAX, FEEDBACK_IMG_MB,
   getFeedbackToken, setFeedbackToken, getFeedbackSeen, markFeedbackSeen,
-  fetchMyFeedback, countNewReplies, updateMyFeedback, deleteMyFeedback,
+  fetchMyFeedback, countNewReplies, countNewFeedback, countNewFeedbackSince,
+  updateMyFeedback, deleteMyFeedback,
   getBoardAdminKey, setBoardAdminKey, probeBoardAdminKey, fetchAllFeedbackBoard,
   boardAdminAddReply, boardAdminDeleteReply, boardAdminEditReply, boardAdminDeleteFeedback, boardAdminSetReviewed,
   countryOf, flagOf,
@@ -21,8 +22,16 @@ import { useI18n } from "./i18n";
 // 2026-08-17 게시판 개편 (사용자 확정): 모달이 스레드 목록이 됐다 — 이 브라우저(localStorage
 // 토큰)로 보낸 제안과 개발자 답변을 작성자 본인만 본다. 새 답변 수는 onNewCount로 부모에
 // 올려 헤더 버튼 뱃지에도 쓴다. 데이터 규칙: app/feedback.ts · docs/supabase-feedback-board.sql.
+//
+// onNewCount의 `admin`은 **그 숫자가 무엇의 개수인지**를 알린다 — 일반 방문자는 '새 답변',
+// 관리자 모드는 '새 제안'이라 부모의 뱃지 툴팁 문구가 갈린다 (사용자 요청 2026-09-06).
+
+/** 관리자 새 제안 폴링 주기. 탭이 보일 때만 돌고 개수만 세는 질의라 부담이 없다.
+ *  더 짧게 잡을 이유가 없다 — 제보는 하루 몇 건이고, 30초면 체감상 즉시다. */
+const ADMIN_POLL_MS = 30_000;
+
 export default function FeedbackWidget({ open, setOpen, onNewCount }: {
-  open: boolean; setOpen: (value: boolean) => void; onNewCount?: (n: number) => void;
+  open: boolean; setOpen: (value: boolean) => void; onNewCount?: (n: number, admin: boolean) => void;
 }) {
   const { t, locale } = useI18n();
   const [view, setView] = useState<"list" | "compose">("list");
@@ -79,22 +88,58 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
     if (data === null) { setLoadError(true); return; }
     setLoadError(false);
     if (ak) {
-      // 관리자에게 '새 답변' 뱃지는 무의미 (답변을 쓰는 쪽이므로)
-      setBadge(0);
-      onNewCount?.(0);
+      // 관리자는 '새 답변'이 아니라 **새 제안**을 센다 (사용자 요청 2026-09-06) — 답변은
+      // 본인이 쓰는 쪽이라 무의미하고, 알고 싶은 건 새 제보가 들어왔는지다. 뱃지 자리는 공유한다.
+      const n = markSeen ? 0 : countNewFeedback(data);
+      setBadge(n);
+      onNewCount?.(n, true);
       if (markSeen) { setNewSince(baselineSeen); markFeedbackSeen(); }
     } else if (markSeen) {
       setNewSince(baselineSeen);
       markFeedbackSeen();
       setBadge(0);
-      onNewCount?.(0);
+      onNewCount?.(0, false);
     } else {
       const n = countNewReplies(data);
       setBadge(n);
-      onNewCount?.(n);
+      onNewCount?.(n, false);
     }
     setRows(data);
   }, [onNewCount]);
+
+  // ── 관리자 새 제안 폴링 (사용자 요청 2026-09-06 "리얼타임으로 표시됐으면") ──────────
+  // Supabase Realtime(웹소켓)을 쓰려면 supabase-js 의존성 + 테이블 publication 설정이 붙는데,
+  // 이건 **관리자 본인 브라우저 하나**에서만 도는 조회라 폴링으로 충분하다(체감은 같다).
+  // 개수만 세는 경량 질의라 본문·답변·이미지를 안 끌어온다.
+  // ⚠ 탭이 숨으면 멈춘다 — 배경 탭에서 종일 도는 걸 막고, 돌아오면 즉시 한 번 본다.
+  // ⚠ 모달이 열려 있으면 돌지 않는다 — 그때는 refresh(true)가 이미 읽고 seen을 갱신한다.
+  // ⚠ onNewCount 를 ref 로 잡아 pollBadge 를 **불변**으로 만든다. 이게 없으면 부모가 인라인
+  //   함수를 넘길 때(home.tsx가 그렇다) 렌더마다 pollBadge 신원이 바뀌고, 아래 이펙트가
+  //   매번 정리·재시작되며 **30초 타이머가 영영 리셋**된다 (2026-09-06 실측: 70초 동안 1회만 발화).
+  const onNewCountRef = useRef(onNewCount);
+  useEffect(() => { onNewCountRef.current = onNewCount; }, [onNewCount]);
+
+  const pollBadge = useCallback(async () => {
+    const ak = getBoardAdminKey();
+    const seen = getFeedbackSeen();
+    if (!ak || !seen) return;
+    try {
+      const n = await countNewFeedbackSince(ak, seen);
+      setBadge(n);
+      onNewCountRef.current?.(n, true);
+    } catch { /* 일시적 실패는 무시 — 다음 틱에 다시 본다 */ }
+  }, []);
+
+  useEffect(() => {
+    if (!adminKey || open) return;
+    let timer: number | undefined;
+    const stop = () => { if (timer !== undefined) { window.clearInterval(timer); timer = undefined; } };
+    const start = () => { if (timer === undefined) timer = window.setInterval(() => void pollBadge(), ADMIN_POLL_MS); };
+    const onVis = () => { if (document.hidden) stop(); else { void pollBadge(); start(); } };
+    if (!document.hidden) start();
+    document.addEventListener("visibilitychange", onVis);
+    return () => { stop(); document.removeEventListener("visibilitychange", onVis); };
+  }, [adminKey, open, pollBadge]);
 
   // 마운트: 토큰 보유자(제안 이력 있는 방문자)·관리자만 조회 — 일반 방문자는 네트워크 0.
   // refresh의 setState는 전부 await 뒤(비동기 콜백)라 동기 캐스케이드가 없다 — 린터가
@@ -627,7 +672,11 @@ export default function FeedbackWidget({ open, setOpen, onNewCount }: {
       )}
       <button type="button" className="feedback-fab" onClick={() => (open ? close() : setOpen(true))} aria-label={t("제안 게시판")}>
         {open ? t("닫기") : t("💬 제안")}
-        {!open && badge > 0 && <span className="fb-reply-badge" title={t("새 답변 {n}개", { n: badge })}>{badge}</span>}
+        {/* 같은 뱃지 자리, 세는 대상만 다르다 — 방문자는 '새 답변', 관리자는 '새 제안' */}
+        {!open && badge > 0 && (
+          <span className="fb-reply-badge"
+            title={adminKey ? t("새 제안 {n}개", { n: badge }) : t("새 답변 {n}개", { n: badge })}>{badge}</span>
+        )}
         {!open && badge === 0 && isNewFeature("feedback-board") && <span className="new-badge">{t("새기능")}</span>}
       </button>
       {/* modal-backdrop 클래스 = 전역 esc-close 편입 — z 최상단이라 ESC가 이것만 닫고,

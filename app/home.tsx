@@ -1141,7 +1141,10 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   const flyoutOpen = (id: string) => hoverFlyout === id || hoverFlyout.startsWith(`${id}/`);
   useEffect(() => () => { if (hoverTimer.current) clearTimeout(hoverTimer.current); }, []);
   const [feedbackOpen, setFeedbackOpen] = useState(false); // 제안 패널 — 모바일 헤더 버튼·데스크탑 FAB 공용
-  const [feedbackNew, setFeedbackNew] = useState(0); // 제안 게시판 새 답변 수 — 위젯이 올려주고 헤더 버튼 뱃지에 쓴다
+  // 제안 게시판 뱃지 숫자 — 위젯이 올려주고 헤더 버튼 뱃지에 쓴다. 방문자는 '새 답변',
+  // 관리자 모드는 '새 제안'이라 무엇의 개수인지도 같이 받는다 (2026-09-06).
+  const [feedbackNew, setFeedbackNew] = useState(0);
+  const [feedbackNewAdmin, setFeedbackNewAdmin] = useState(false);
   const [headerCollapsed, setHeaderCollapsed] = useState(true); // 모바일 헤더 접기 — 접힘이 기본(사용자 확정 2026-07-22). PC는 무관(관련 CSS가 모바일 블록에만 있음)
   // 헤더 완전히 치우기 — 핸들을 **위로 끌어올리면** 헤더가 통째로 사라지고 핸들만 남는다
   // (사용자 요청 2026-08-25: 폰 가로모드에서 리더기를 볼 때 헤더가 화면을 너무 먹는다).
@@ -2097,7 +2100,10 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
           {feedbackReady && (
             <button type="button" className="feedback-header-btn" onClick={() => setFeedbackOpen(true)} aria-label={t("제안 게시판")}>
               <span aria-hidden>💬</span> {t("제안")}
-              {feedbackNew > 0 && <span className="fb-reply-badge" title={t("새 답변 {n}개", { n: feedbackNew })}>{feedbackNew}</span>}
+              {feedbackNew > 0 && (
+                <span className="fb-reply-badge"
+                  title={feedbackNewAdmin ? t("새 제안 {n}개", { n: feedbackNew }) : t("새 답변 {n}개", { n: feedbackNew })}>{feedbackNew}</span>
+              )}
               {feedbackNew === 0 && isNewFeature("feedback-board") && <span className="new-badge">{t("새기능")}</span>}
             </button>
           )}
@@ -2410,7 +2416,8 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
       {/* 미실장 항목(.fut-dim) 안내 툴팁 — 위임 리스너 하나가 사이트 전체를 맡는다 */}
       <FutureTip />
       {selected && <OperatorModal operator={selected} onClose={closeOperator} onUpgrade={openUpgradeFor} includeFuture={includeFuture} onPinChange={(pinned) => { opPinnedRef.current = pinned; }} operators={operators} onRelated={openOperator} />}
-      <FeedbackWidget open={feedbackOpen} setOpen={setFeedbackOpen} onNewCount={setFeedbackNew} />
+      <FeedbackWidget open={feedbackOpen} setOpen={setFeedbackOpen}
+        onNewCount={(n, admin) => { setFeedbackNew(n); setFeedbackNewAdmin(admin); }} />
     </main>
   );
 }
