@@ -14,13 +14,18 @@
 // 900px 판이 운영 조건이라 그 결과로 pass/fail 을 정하고, 원본 해상도 판·전체화면 스샷(ban1: 카드 없는 화면
 // → 0행, ban2: 5행 + 잘린 6번째 행)도 함께 재서 같은 기준을 건다.
 //
+// 그리고 **게이트** — 밴 화면 밖에서 밴 행이 나오지 않는가 (2026-09-07 회귀 방지). 이 하네스가 밴 프레임만
+// 넣어 보고 다른 화면(정비·전투·전략·메인)을 한 번도 안 재서, 붉은 UI를 카드로 착각하는 버그가 살아 있었다
+// (실측 밴 구간 밖 22프레임에 '온전한 행' — 사용자 신고 "밴 리스트 인식이 뭔 모든 상황에서 계속 되냐").
+// 그래서 아래 게이트 검사는 **녹화 전 프레임(117장)** 을 훑는다.
+//
 // ⚠ 픽스처(fixtures/lens/…)는 git 미추적 로컬 전용 — 없으면 조용히 건너뛴다 (pass 0 fail 0).
 // ⚠ 정답 라벨은 이 파일 안의 상수다 (scripts/ac-lab/ban-truth.ts 에서 옮겨 옴 — ac-lab 은 지워진다).
 
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import sharp from "sharp";
-import { findAcRows, type AcGrid } from "../../app/lens/acvision";
+import { findAcRows, isAcBanScreen, acBanRows, type AcGrid } from "../../app/lens/acvision";
 
 const ROOT = resolve(import.meta.dirname ?? __dirname, "../..");
 const FRAMES_DIR = resolve(ROOT, "fixtures/lens/ac-frames");
@@ -78,6 +83,13 @@ set("v2", 16, 16, ["기민", "고수", "예견", "기적"], ["카시미어"]);
 set("v2", 17, 17, ["고수", "예견", "기적"], []);
 set("v2", 18, 20, ["고수", "예견", "기적"], ["기민"]);
 const BAN_FRAMES: Record<"v1" | "v2", [number, number]> = { v1: [16, 36], v2: [10, 20] };
+/** 녹화 전체 길이와, 밴 **카드가 화면에 보이는** 구간 (게이트 검사용).
+ *  v1 f015 는 첫 행(쉐라그)이 화면 아래에서 막 들어오는 프레임이라 정답 라벨엔 없지만 진짜 밴 행이다. */
+const ALL_FRAMES: Record<"v1" | "v2", number> = { v1: 36, v2: 81 };
+const BAN_VISIBLE: Record<"v1" | "v2", [number, number]> = { v1: [15, 36], v2: [10, 20] };
+/** 게이트를 통과해야 하는 밴 프레임 수 하한 — 실측 33장 중 31장.
+ *  빠지는 v2/f010·f011 은 카드가 보이지만 전 행이 '준비 완료' 버튼에 가려 cut 인 프레임이다 (의도된 동작). */
+const MIN_GATE_BAN_FRAMES = 30;
 
 /** 전체화면 스샷 — 행별 티어 (verify-autochess.ts EXPECT 와 같은 값; 이름은 못 붙이니 목록 집합으로 대조) */
 const SHOTS: Record<string, { rows: number[][]; cutRows: number }> = {
@@ -199,6 +211,35 @@ export async function verify(): Promise<{ name: string; pass: number; fail: numb
       if (ok) pass++; else { fail++; lines.push(`  ❌ ${variant}: 기대 하한(온전한 행 ≥ ${MIN_FULL_FOUND}/${st.fullRows} · 누출 0 · 오탐 0) 미달`); }
     }
   } else lines.push("녹화 프레임 없음 — 건너뜀 (fixtures/lens/ac-frames/)");
+
+  // ── 게이트 — 밴 화면 밖에서 밴 행이 나오지 않는가 (녹화 전 프레임 117장) ──────────────────────
+  // 통과 조건: 밴 카드가 안 보이는 프레임에서 게이트를 넘는 행이 **0개**, 그리고 밴 프레임 33장 중
+  // 30장 이상은 여전히 통과. (게이트 = isAcBanScreen 화면 서명 + acBanRows 행 위생)
+  if (haveFrames) {
+    let fpRows = 0, fpFrames = 0, banFrames = 0, banRows = 0;
+    for (const v of ["v1", "v2"] as const) {
+      const [a, b] = BAN_VISIBLE[v];
+      for (let n = 1; n <= ALL_FRAMES[v]; n++) {
+        const key = `${v}/f${String(n).padStart(3, "0")}`;
+        const p = `${FRAMES_DIR}/${key}.png`;
+        if (!existsSync(p)) continue;
+        const f = await loadBridgeFrame(p, OCR_MAX_W);
+        const g = findAcRows(f.px, f.W, f.H);
+        const rows = isAcBanScreen(g) ? acBanRows(g) : [];
+        if (n >= a && n <= b) {
+          if (rows.length) { banFrames++; banRows += rows.length; }
+        } else if (rows.length) {
+          fpRows += rows.length; fpFrames++;
+          lines.push(`  게이트 ❌ ${key} — 밴 화면이 아닌데 행 ${rows.length}개: `
+            + rows.map((r) => `[${r.cards.map((k) => `c${k.col}${k.tier === null ? "·" : R[k.tier]}(${k.red.toFixed(2)})`).join(" ")}]`).join(" "));
+        }
+      }
+    }
+    const okGate = fpRows === 0 && banFrames >= MIN_GATE_BAN_FRAMES;
+    lines.push(`${okGate ? "✅" : "❌"} 게이트: 밴 화면 밖 오탐 ${fpRows}행/${fpFrames}프레임 (기대 0) · `
+      + `밴 프레임 통과 ${banFrames}/33 (하한 ${MIN_GATE_BAN_FRAMES}) · 통과 행 ${banRows}개`);
+    if (okGate) pass++; else fail++;
+  }
 
   for (const file of shots) {
     const want = SHOTS[file];

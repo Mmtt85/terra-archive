@@ -2885,6 +2885,17 @@ const D: Record<string, Pair> = {
   "게임의 밴 목록 화면에서 끝까지 스크롤을 내려 주세요 — 화면에 온전히 보인 카드만 얼굴로 확정합니다.": [
     "Scroll the game's ban list all the way down — only cards fully visible on screen are identified by face.",
     "ゲームのBANリスト画面を最後までスクロールしてください — 画面に完全に映ったカードだけを顔で確定します。"],
+  // 밴 리스트 맹약별 그룹 (사용자 요청 2026-09-07) — 게임의 '사용 제한 오퍼레이터' 화면과 같은 모양
+  "두 맹약에 걸친 기물은 게임처럼 양쪽 줄에 다시 나옵니다.": [
+    "A piece that belongs to two alliances appears on both rows, just like in game.",
+    "二つの盟約にまたがる駒は、ゲームと同じく両方の行に出ます。"],
+  "점선 칩은 아직 확정되지 않은 후보입니다 — 밴 목록을 더 보여 주면 좁혀집니다.": [
+    "Dashed chips are still candidates — show more of the ban list and they will narrow down.",
+    "破線のチップはまだ確定していない候補です — BANリストをもっと見せれば絞り込まれます。"],
+  "확정 {a}장 · 화면에서 본 카드 {b}장": [
+    "{a} identified of {b} cards seen on screen",
+    "確定{a}枚 / 画面で見たカード{b}枚"],
+  "맹약 줄을 아직 못 읽음": ["Alliance row not read yet", "盟約の行はまだ読めていません"],
   "**밴 기물** — 시작 화면의 '사용 제한 오퍼레이터' 카드를 얼굴로 알아봅니다. 목록은 스크롤해야 다 보이므로 25초 안에 끝까지 내려 주세요 — 화면에 온전히 보인 카드만 셉니다.": [
     "**Banned pieces** — the 'Restricted Operators' cards on the start screen are identified by face. The list only shows fully when scrolled, so scroll to the bottom within the 25 seconds — only cards fully on screen count.",
     "**BAN駒** — 開始画面の「使用制限オペレーター」カードを顔で見分けます。リストはスクロールしないと全部見えないので、25秒以内に一番下まで下げてください — 画面に完全に映ったカードだけを数えます。"],

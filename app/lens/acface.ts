@@ -151,9 +151,13 @@ export type FacePick = { id: string; op: string; score: number; margin: number }
  *   두 맹약의 합이 정확히 같으면(같은 기물들이 두 맹약에 다 속함) 얼굴만으론 못 가르므로 bond=null.
  * picks[i] 는 cards[i] 에 대응한다 (후보가 하나도 없는 카드 — 그 티어에 템플릿 있는 기물이 없을 때 — 는
  * id·op 빈 문자열). pick 의 id 는 chess 의 기본형 id (pieces 에 넣은 그대로).
+ *
+ * hint — 행의 맹약을 이미 아는 경우(맹약 아이콘 매칭 acbond.ts, 실측 95/95 정답). 주면 역산을 건너뛰고
+ *   후보를 곧바로 그 맹약으로 제한한다: 한 장짜리 행에서도 맹약이 정해지고(역산은 두 맹약 기물이면 포기했다),
+ *   같은 기물 집합을 공유하는 두 맹약이 동점이라 포기하던 경우도 없어진다.
  */
 export function solveBanRow(cards: { tier: number; feat: Float32Array }[], pieces: FacePiece[],
-  tpl: Map<string, Float32Array[]>): { bond: string | null; picks: FacePick[] } {
+  tpl: Map<string, Float32Array[]>, hint?: string | null): { bond: string | null; picks: FacePick[] } {
   if (!cards.length) return { bond: null, picks: [] };
   type Sc = { p: FacePiece; score: number };
   // 카드별 티어 후보 점수 (내림차순)
@@ -172,6 +176,8 @@ export function solveBanRow(cards: { tier: number; feat: Float32Array }[], piece
     ? { id: pool[0].p.id, op: pool[0].p.op, score: pool[0].score, margin: pool.length >= 2 ? pool[0].score - pool[1].score : 1 }
     : empty;
 
+  // 맹약을 이미 아는 경우 — 역산 없이 그 맹약 후보만 본다
+  if (hint) return { bond: hint, picks: scored.map((list) => pickFrom(list.filter((x) => x.p.bonds.includes(hint)))) };
   if (cards.length === 1) {
     const top = scored[0][0];
     return { bond: top && top.p.bonds.length === 1 ? top.p.bonds[0] : null, picks: [pickFrom(scored[0])] };

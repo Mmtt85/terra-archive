@@ -9,11 +9,13 @@ import { parseStoryIndex, analyzeStoryLines, type StoryIndex } from "./storymatc
 import { buildAcIndex, bondOfLine, parseSeats, isAcInfoScreen, classifyAcScreen, parseAcMode, badgeRectFromTitle,
   parseAcBand, parseDeployLeft, parseAcHud, findAcRings, ringNameRect, ringNumRect, RING_DIGITS, parseRingStack,
   buildPieceNameIndex, matchPieceName, type AcIndex, type PieceIndex, type AcScreen } from "./acmatch";
-import { findAcRows } from "./acvision";
+import { findAcRows, isAcBanScreen, acBanRows } from "./acvision";
 import { cardFeature, solveBanRow, type FacePiece } from "./acface";
 import { loadFaceTemplates } from "./acface-load";
 import { participantSlots, searchBand, BAND_ACCEPT } from "./acband";
 import { loadBandTemplates } from "./acband-load";
+import { matchBondIcon, bondOfHit } from "./acbond";
+import { loadBondTemplates } from "./acbond-load";
 import storySearchMeta from "../data/story-search-meta.json";
 
 export type LensMode = "rogue" | "recruit" | "story" | "autochess";
@@ -134,6 +136,7 @@ type AcData = {
   pieces: FacePiece[];                // 얼굴 매칭 후보 — chess 기본형 id · op(초상 파일명) · 티어 · 맹약
   ops: string[];                      // 초상이 필요한 op 전부 (예열용)
   bands: { id: string; n: string; by?: string }[];
+  bondIds: string[];                  // 맹약 아이콘 템플릿(public/ac/bond/<id>.webp) — 밴 행 게이트·라벨
   pieceIdx: PieceIndex;               // 상점 카드·툴팁 이름 → chess/equip id
 };
 type AcJson = {
@@ -159,6 +162,7 @@ export function getAcData(locale = "ko"): Promise<AcData> {
         pieces,
         ops: [...new Set(pieces.map((x) => x.op))],
         bands: d.bands ?? [],
+        bondIds: (d.bonds ?? []).map((b) => b.id),
         pieceIdx: buildPieceNameIndex(d.chess ?? [], d.equips ?? [], norm),
       };
     });
@@ -229,24 +233,43 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
     lines = [];
 
     // ① 밴 격자 — 카드 우상단 빨간 금지 표식으로 잡는다 (acvision). 잘린 행(cut)은 티어가 없으니 건너뛴다.
+    //    ⚠ 표식만 보면 전투 화면의 붉은 UI가 카드로 잡힌다 (실측 밴 구간 밖 22프레임 — 사용자 신고
+    //      2026-09-07 "밴 화면에서만 인식되게 해 줘야지"). 그래서 게이트가 세 겹이다, 값이 싼 순서로:
+    //        ① 화면 서명 — 우하단 '준비 완료' 버튼의 자리·크기 (isAcBanScreen, 공짜·정보 42/42·오탐 0/75)
+    //        ② 행 위생 — col 0 부터 연속·2장 이상·red 고름 (acBanRows, 공짜·오탐 행 49→0·잃는 행 0)
+    //        ③ 맹약 아이콘 — 행 왼쪽 아이콘이 23종 중 하나로 붙어야 밴 행 (acbond, 행당 ≈71ms)
+    //      ③은 ①②를 통과한 행에만 도므로 다른 화면에서는 비용이 0 이다. 하나가 흔들려도 나머지가 남는다.
     const grid = color ? findAcRows(color.px, color.W, color.H) : null;
-    const banRows = (grid?.rows ?? []).filter((r) => !r.cut && r.cards.length > 0 && r.cards.every((c) => c.tier !== null));
+    const clean = grid && isAcBanScreen(grid) ? acBanRows(grid) : [];
+    // ③ 맹약 아이콘 — 게이트이면서 동시에 **행의 맹약 라벨**이다 (실측 95/95 정답, 오탐 0).
+    //    라벨을 직접 얻으므로 얼굴로 푼 기물들의 공통 맹약을 역산하지 않는다 — 한 장짜리 행도 맹약이 정해진다.
+    const banRows: { row: (typeof clean)[number]; bond: string }[] = [];
+    if (clean.length && color) {
+      const bondTpl = await loadBondTemplates(ac.bondIds);
+      for (const row of clean) {
+        const hit = matchBondIcon(color.px, color.W, color.H, row.icon, bondTpl);
+        const bond = bondOfHit(hit);
+        if (bond) banRows.push({ row, bond });
+        else console.debug(`[lens] 밴 행 아님 — 맹약 아이콘 미승인 (${hit ? `${hit.band} ${hit.score.toFixed(2)}/${hit.margin.toFixed(2)}` : "평탄"})`);
+      }
+    }
     if (banRows.length && color) {
       screen = "ban";
       // 얼굴 템플릿은 **보이는 티어의 기물**만 받는다 (op 당 초상 25KB) — 캐시되므로 두 번째 프레임부터는 공짜
-      const tiers = new Set(banRows.flatMap((r) => r.cards.map((c) => c.tier as number)));
+      const tiers = new Set(banRows.flatMap((r) => r.row.cards.map((c) => c.tier as number)));
       const ops = ac.pieces.filter((p) => tiers.has(p.t)).map((p) => p.op);
       const tpl = await loadFaceTemplates(ops);
-      for (const row of banRows) {
+      for (const { row, bond } of banRows) {
         const cards = row.cards.map((c) => ({
           tier: c.tier as number,
           feat: cardFeature(color.px, color.W, color.H, { x: c.x * color.W, y: c.y * color.H, w: c.w * color.W, h: c.h * color.H }),
         }));
-        const { bond, picks } = solveBanRow(cards, ac.pieces, tpl);
+        const { picks } = solveBanRow(cards, ac.pieces, tpl, bond);
         for (const p of picks) if (p.id) bans.push({ id: p.id, margin: p.margin });
-        // (맹약, 티어) 관측도 남긴다 — 얼굴이 못 가른 자리(초상 없는 기물)는 acsolve 조합 풀이가 보탠다
-        if (bond) banObs[bond] = cards.map((c) => c.tier).sort((p, q) => q - p);
-        console.debug(`[lens] 밴 행 ${bond ?? "?"}: ${picks.map((p) => `${p.op || "?"}(${p.margin.toFixed(2)})`).join(" ")}`);
+        // (맹약, 티어) 관측도 남긴다 — 얼굴이 못 가른 자리(초상 없는 기물)는 acsolve 조합 풀이가 보태고,
+        // 맹약 키는 밴 리스트를 맹약별로 묶는 UI 의 근거가 된다 (autochess.tsx banGroups)
+        banObs[bond] = cards.map((c) => c.tier).sort((p, q) => q - p);
+        console.debug(`[lens] 밴 행 ${bond}: ${picks.map((p) => `${p.op || "?"}(${p.margin.toFixed(2)})`).join(" ")}`);
       }
     } else {
       // ② 문구 — 화면 종류를 가르고 종류에 맞는 것만 읽는다
@@ -256,6 +279,13 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
       const boxes = session.boxes();
       screen = classifyAcScreen(linesN, lines, boxes);
       fresh = screen === "info" || isAcInfoScreen(linesN);
+      // OCR 을 게이트로 쓰진 않지만(803ms·CN 클라에 문구가 없다) **이미 돌았으면 확증으로는 쓴다** — 공짜다.
+      // 정보 화면인데 버튼 서명이 거짓이면 위 ①이 미검증 상태('준비 완료'를 누른 뒤·연합 다인 화면·초광각)에
+      // 걸린 것이다. 실사용에서 이 줄이 뜨면 서명을 고쳐야 한다는 신호다.
+      if (screen === "info" && grid && !isAcBanScreen(grid)) {
+        const b = grid.button;
+        console.debug(`[lens] ⚠ 정보 화면인데 '준비 완료' 서명 거짓 — ${b ? `버튼 x=${b.x.toFixed(3)} w=${b.w.toFixed(3)}` : "버튼 없음"} (밴 인식이 꺼진다)`);
+      }
       // 시뮬레이션 종류 — 로딩 화면은 큰 글씨 그대로(11/11), 정보·전략 화면은 좌상단 붉은 배지를
       // 채널최댓값 크롭으로(51/51). ⚠ 정보·전략 화면의 PSM11 줄에 parseAcMode 를 쓰면 잠긴 전략의
       // 개방 조건('[표준 시뮬레이션]에서 …')이 AC-1 로 오판된다 — 배지 크롭 결과에만 쓴다.

@@ -15,7 +15,7 @@
 // ⚠ 영어판은 시즌2가 글로벌 서버에 없어 **설명문이 한국어 원문**이다 (doc.krOnly).
 //    통합전략 IS6와 같은 취급 — 안내문을 띄우고 그대로 보여 준다.
 
-import { cloneElement, lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { cloneElement, lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useI18n, rich, DT_LOCALE, type T } from "./i18n";
 import { isNewFeature } from "./whats-new";
@@ -32,6 +32,7 @@ import { recognizeShot, warmData, ocrLangFor } from "./lens/run";
 import { warmOcr, warmDigitOcr } from "./lens/ocr";
 import { warmFaceTemplates } from "./lens/acface-load";
 import { warmBandTemplates } from "./lens/acband-load";
+import { warmBondTemplates } from "./lens/acbond-load";
 import { useAcRun, acRun, setAcStack, setAcStacks, mergeAcRun, resetAcRun, isAcLock, acModeOf, AC_LOCK, BAN_VOTE_SURE } from "./autochess-run";
 import { solveAcBans } from "./lens/acsolve";
 
@@ -680,9 +681,11 @@ export default function AutochessGuide({ doc, onShowOperator }: {
   // 밴 역산 — 관측(맹약별 티어)에서 어느 기물이 밴됐는지 조합으로 푼다 (lens/acsolve.ts).
   // 해가 여럿이면 **교집합만 확정**이고 나머지는 후보다 — 틀린 밴을 사실처럼 보이지 않게.
   // 화면을 끝까지 스크롤할수록 관측이 늘어 후보가 확정으로 옮겨 간다.
+  // ⚠ 해가 상한(64)에 걸리면 풀이는 확정을 내지 않는다 (acsolve.ts, 2026-09-07 실측 버그 — 끊긴
+  //   해 집합의 교집합은 과하게 좁아 없는 기물이 '확정'으로 나왔다). 스크롤 초반이 늘 그 상태다.
   const acBans = useMemo(() => {
     const rows = Object.entries(acrun.banObs).map(([bond, tiers]) => ({ bond, tiers }));
-    if (!rows.length) return { sure: [] as string[], maybe: [] as string[], solutions: 0 };
+    if (!rows.length) return { sure: [] as string[], maybe: [] as string[], solutions: 0, truncated: false };
     return solveAcBans(rows, doc.chess.map((c) => ({ id: c.id, op: c.op ?? "", t: c.t, bonds: c.bonds })));
   }, [acrun.banObs, doc.chess]);
   // 밴 리스트 최종 — **얼굴로 확정한 기물(표 ≥ 1)** 이 1순위, 조합 풀이(acsolve)는 얼굴이 못 가른
@@ -722,10 +725,12 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     warmOcr(ocrLangFor(locale));
     void warmDigitOcr();
     warmData("autochess", locale);
-    // 얼굴·전략 템플릿 — 초상 121장(≈3MB)·전략 아이콘 40장. 밴 화면은 25초뿐이라 첫 프레임에서 받기 시작하면 늦다.
+    // 얼굴·전략·맹약 템플릿 — 초상 121장(≈3MB)·전략 아이콘 40장·맹약 아이콘 23장.
+    // 밴 화면은 25초뿐이라 첫 프레임에서 받기 시작하면 늦다. 맹약 아이콘은 밴 행 게이트라 없으면 인식이 안 돈다.
     warmFaceTemplates(doc.chess.filter((c) => c.op).map((c) => c.op as string));
     warmBandTemplates(doc.bands.map((b) => b.id));
-  }, [acLocked, locale, doc.chess, doc.bands]);
+    warmBondTemplates(doc.bonds.map((b) => b.id));
+  }, [acLocked, locale, doc.chess, doc.bands, doc.bonds]);
   // 남은 배치 칸이 9 로 찍힌 적 있음 = 인사부 파일을 쓴 것 → 9번째 칸을 열어 준다 (사용자 확정 2026-09-06).
   // ⚠ 상태로 밀어 넣지 않고 **파생**시킨다 — 효과 안에서 setState 하면 렌더가 한 번 더 돌고
   //   (린트 규칙 위반) 연결을 끊었을 때 손으로 켠 것과 구분이 안 된다. OR 로 합치면 둘 다 산다.
@@ -850,6 +855,51 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     for (const b of doc.bonds) m.set(b.id, b);
     return m;
   }, [doc]);
+  /** 밴 리스트 **맹약별 그룹** — 게임의 '사용 제한 오퍼레이터' 화면과 같은 모양으로 나눈다
+   *  (사용자 요청 2026-09-07 "밴 리스트는 맹약별로 그루핑을 좀 해 줘").
+   *
+   *  정답 밴 목록 2판(scripts/verify-ac/face.ts TRUTH — 사람이 프레임을 눈으로 보고 확정)으로 잰 게임 규칙:
+   *    · 줄 순서 = doc.bonds 배열 순 (진영 먼저, 그 안은 데이터 순) — 14행 중 어긋난 행 0
+   *    · 기물은 자기 소속 맹약 줄에 **빠짐없이** 나온다 — 빠진 자리 0건 (두 줄에 걸친 기물 v1 5 · v2 5)
+   *    · 줄 안은 티어 내림차순 — 14행 중 13행
+   *    · 그래서 칩이 늘어난다: v1 19→24(+26%) · v2 21→26(+24%) — 접지 않아도 되는 양이다
+   *
+   *  ⚠ 그룹은 **화면에서 실제로 읽은 줄(banObs)** 로만 만든다. 확정 기물의 소속 맹약을 보고 "그 줄도
+   *     있겠지"라고 지어내면 밴 하나가 틀렸을 때 없는 줄까지 만들어 낸다 (실측: 조합 풀이가 v1 의
+   *     (쉐라그,T4) 자리에서 노시스(쉐라그+기민)를 냈고, 그걸 믿었으면 v1 에 없는 '기민' 줄이 생겼다).
+   *  ⚠ 관측만 있고 아직 아무도 못 붙인 줄은 **남긴다** — 사용자가 분명히 보여 준 줄이 사라지면
+   *     "왜 안 잡히지"가 되고, 관측이 모순이라 풀이가 해를 못 낸 상황을 숨기게 된다.
+   *  ⚠ 어느 줄에도 못 붙는 기물은 버리지 않고 '기타'로 모은다 — 줄 맹약은 아이콘 매칭으로 실측 95/95
+   *     잡히지만(acbond.ts), 아이콘이 미승인된 행의 기물이 조합 풀이로만 들어오는 경로가 남는다.
+   */
+  const banGroups = useMemo(() => {
+    const seen = new Set(Object.keys(acrun.banObs));
+    const put = new Map<string, { sure: string[]; maybe: string[] }>();
+    const rest: { sure: string[]; maybe: string[] } = { sure: [], maybe: [] };
+    let dup = 0;                                  // 두 줄 이상에 나온 기물 수 — 안내문을 띄울지 판단
+    const add = (id: string, sure: boolean) => {
+      const c = chessById.get(id);
+      if (!c) return;
+      const mine = c.bonds.filter((b) => seen.has(b));
+      if (!mine.length) { (sure ? rest.sure : rest.maybe).push(id); return; }
+      if (mine.length > 1) dup++;
+      for (const b of mine) {
+        const g = put.get(b) ?? put.set(b, { sure: [], maybe: [] }).get(b)!;
+        (sure ? g.sure : g.maybe).push(id);
+      }
+    };
+    for (const id of banSure) add(id, true);
+    for (const id of banMaybe) add(id, false);
+    // 줄 안 순서 — 게임처럼 티어 내림차순, 같은 티어는 데이터 순(기물 목록과 같은 차례)
+    const byTier = (x: string, y: string) =>
+      (chessById.get(y)?.t ?? 0) - (chessById.get(x)?.t ?? 0)
+      || (chessById.get(x)?.sort ?? 0) - (chessById.get(y)?.sort ?? 0);
+    const list = doc.bonds.filter((b) => put.has(b.id) || seen.has(b.id)).map((b) => {
+      const g = put.get(b.id) ?? { sure: [], maybe: [] };
+      return { b, sure: g.sure.sort(byTier), maybe: g.maybe.sort(byTier), cards: acrun.banObs[b.id]?.length ?? 0 };
+    });
+    return { list, dup, rest: rest.sure.length || rest.maybe.length ? rest : null };
+  }, [acrun.banObs, banSure, banMaybe, chessById, doc.bonds]);
   // 변형 구조체 대응표 — 맹약을 주는 장비를 맹약별로 묶는다. 맹약 순서는 목록과 같고
   // (진영 → 특성), 같은 맹약 안에서는 티어순이다. 빅토리아 해머처럼 한 맹약에 여러
   // 장비가 걸린 경우가 있어 묶어서 보여야 읽힌다.
@@ -2621,18 +2671,62 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                     </li>
                   );
                 };
+                // 맹약 줄을 하나도 못 읽었으면 옛 평평한 목록으로 물러난다 — 그룹이 없으면 그룹 UI 도 없다
+                if (!banGroups.list.length && !banGroups.rest) {
+                  return (
+                    <>
+                      {banSure.length > 0 && (
+                        <ul className="ac-banrow">{banSure.map((id) => chip(id, true))}</ul>
+                      )}
+                      {banMaybe.length > 0 && (
+                        <>
+                          <p className="ac-bannote ac-banmaybe-note">
+                            {t("아래는 아직 확정되지 않은 후보입니다 — 밴 목록을 더 보여 주면 좁혀집니다.")}</p>
+                          <ul className="ac-banrow">{banMaybe.map((id) => chip(id, false))}</ul>
+                        </>
+                      )}
+                    </>
+                  );
+                }
+                // 한 줄 = 그리드 자식 **둘**(머리 · 칩). 줄마다 따로 그리드를 만들면 맹약 열 너비가 줄마다
+                // 달라져 카드 시작 x 가 어긋난다 — 게임은 모든 줄에서 x 가 같다. 그래서 평평하게 편다.
+                const group = (key: string, head: ReactNode, g: { sure: string[]; maybe: string[] }) => [
+                  <span key={`h${key}`} className="ac-banhead">{head}</span>,
+                  <ul key={`r${key}`} className="ac-banrow">
+                    {g.sure.map((id) => chip(id, true))}
+                    {g.maybe.map((id) => chip(id, false))}
+                    {/* 관측은 있는데 아직 아무도 못 붙인 줄 — 빈 채로 두면 인식이 죽은 것처럼 보인다 */}
+                    {!g.sure.length && !g.maybe.length && <li className="sb-dim" aria-hidden>—</li>}
+                  </ul>,
+                ];
                 return (
                   <>
-                    {banSure.length > 0 && (
-                      <ul className="ac-banrow">{banSure.map((id) => chip(id, true))}</ul>
+                    {/* 안내는 **그럴 일이 실제로 생겼을 때만** — 반복 칩이 없는데 "두 번 나옵니다"를 띄우면
+                        없는 걱정을 만든다. 확정/후보 구분은 두 덩어리로 가르지 않고 그룹 안에서 점선으로 유지한다
+                        (게임처럼 티어순으로 완전히 섞으면 후보가 자리 수를 넘겨 없는 카드가 있는 것처럼 보인다). */}
+                    {(banGroups.dup > 0 || banMaybe.length > 0) && (
+                      <p className="ac-bannote ac-banmaybe-note">
+                        {banGroups.dup > 0 && t("두 맹약에 걸친 기물은 게임처럼 양쪽 줄에 다시 나옵니다.")}
+                        {banGroups.dup > 0 && banMaybe.length > 0 && " "}
+                        {banMaybe.length > 0 && t("점선 칩은 아직 확정되지 않은 후보입니다 — 밴 목록을 더 보여 주면 좁혀집니다.")}
+                      </p>
                     )}
-                    {banMaybe.length > 0 && (
-                      <>
-                        <p className="ac-bannote ac-banmaybe-note">
-                          {t("아래는 아직 확정되지 않은 후보입니다 — 밴 목록을 더 보여 주면 좁혀집니다.")}</p>
-                        <ul className="ac-banrow">{banMaybe.map((id) => chip(id, false))}</ul>
-                      </>
-                    )}
+                    <div className="ac-bangroups" aria-label={t("밴 리스트")}>
+                      {banGroups.list.flatMap(({ b, sure, maybe, cards }) => group(b.id, (
+                        <>
+                          {bondChip(b.id, true)}
+                          {/* 확정 / 화면에서 본 카드 — 왜 후보가 남는지를 숫자로 말해 준다
+                              (분자는 확정만 센다. 후보를 더하면 관측 장수를 넘는다) */}
+                          {cards > 0 && (
+                            <em className="sb-count"
+                              title={t("확정 {a}장 · 화면에서 본 카드 {b}장", { a: sure.length, b: cards })}>
+                              {sure.length}/{cards}</em>
+                          )}
+                        </>
+                      ), { sure, maybe }))}
+                      {banGroups.rest && group("rest",
+                        <em className="ac-banhead-rest">{t("맹약 줄을 아직 못 읽음")}</em>, banGroups.rest)}
+                    </div>
                   </>
                 );
               })()}

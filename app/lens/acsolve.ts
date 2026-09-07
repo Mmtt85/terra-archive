@@ -26,6 +26,8 @@ export type AcSolveResult = {
   maybe: string[];
   /** 찾은 해의 수 (0 = 관측이 모순이거나 아직 부족) */
   solutions: number;
+  /** 상한에 걸려 해를 다 못 셌다 — 이때 sure 는 비어 있다 (아래 ⚠) */
+  truncated: boolean;
 };
 
 const MAX_SOLUTIONS = 64;      // 이보다 많으면 관측이 아직 헐거운 것 — 더 찾아도 의미 없다
@@ -45,7 +47,7 @@ export function solveAcBans(rows: AcRow[], pieces: AcPiece[]): AcSolveResult {
       need.set(k, (need.get(k) ?? 0) + 1);
     }
   }
-  if (!need.size) return { sure: [], maybe: [], solutions: 0 };
+  if (!need.size) return { sure: [], maybe: [], solutions: 0, truncated: false };
 
   // 후보 — 관측된 맹약에 걸치고, 걸친 칸이 **전부** 관측에 있는 기물만
   type Cand = { id: string; cover: string[] };
@@ -91,7 +93,7 @@ export function solveAcBans(rows: AcRow[], pieces: AcPiece[]): AcSolveResult {
   };
   rec();
 
-  if (!sols.length) return { sure: [], maybe: [], solutions: 0 };
+  if (!sols.length) return { sure: [], maybe: [], solutions: 0, truncated: false };
   // 교집합 = 확정, 합집합 − 교집합 = 후보
   const inter = new Set(sols[0]);
   const union = new Set<string>();
@@ -100,9 +102,16 @@ export function solveAcBans(rows: AcRow[], pieces: AcPiece[]): AcSolveResult {
     for (const id of [...inter]) if (!set.has(id)) inter.delete(id);
     for (const id of s) union.add(id);
   }
+  // ⚠ 상한에 걸렸으면 **확정을 내지 않는다** (2026-09-07 실측 버그).
+  //   교집합은 "찾은 해 전부에 공통" 이라는 뜻인데, 64개에서 끊으면 못 본 해가 남아 교집합이 과하게 좁아진다.
+  //   정답 밴 목록 v1 로 실측: (쉐라그, T4) 자리에서 정답 실버애쉬(맹약 [쉐라그])가 통째로 빠지고
+  //   노시스(쉐라그+기민)가 **확정**으로 나왔다 — 실버애쉬는 후보에도 없었다 (해가 정확히 상한 64개).
+  //   맹약이 두세 줄만 보인 스크롤 초반에는 해가 늘 상한에 걸리므로, 그 구간에서 '확정'은 거짓말이다.
+  const truncated = sols.length >= MAX_SOLUTIONS || nodes > MAX_NODES;
   return {
-    sure: [...inter].sort(),
-    maybe: [...union].filter((id) => !inter.has(id)).sort(),
+    sure: truncated ? [] : [...inter].sort(),
+    maybe: truncated ? [...union].sort() : [...union].filter((id) => !inter.has(id)).sort(),
     solutions: sols.length,
+    truncated,
   };
 }

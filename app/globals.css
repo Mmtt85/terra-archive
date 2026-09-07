@@ -20996,6 +20996,43 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
 /* 후보 — 아직 확정 아님. 점선 테두리로 확정과 한눈에 구분한다 (거짓말 방지) */
 .ac-banchip.maybe { border-style: dashed; opacity: 0.6; }
 .ac-banmaybe-note { margin: 10px 0 6px; font-size: 12px; }
+/* 맹약별 그룹 (사용자 요청 2026-09-07 "밴 리스트는 맹약별로 그루핑을 좀 해 줘") —
+   게임의 '사용 제한 오퍼레이터' 화면과 같은 배치다 (fixtures/lens/screenshots/ban2.jpg 실물):
+   왼쪽에 맹약, 오른쪽에 그 줄의 카드, 줄 사이에 가는 구분선.
+   모양·접힘 규칙은 이 페이지에 이미 있는 맹약 그룹 .ac-morphgrp('맹약을 주는 장비')에서 가져왔다.
+   ⚠ 다른 점 둘.
+   ① 한 줄이 그리드 자식 **둘**(.ac-banhead · .ac-banrow)이다 — 줄마다 따로 그리드를 만들면 맹약 열
+      너비가 줄마다 달라져 카드 시작 x 가 어긋난다. 게임은 모든 줄에서 x 가 같다.
+      그래서 아래 :nth-child(2) 규칙은 "한 줄 = 자식 2개" 전제에 묶여 있다 — 머리에 자식을 더 붙이면 깨진다.
+   ② 맹약 열이 118px 고정이 아니라 max-content 다. 맹약 이름 길이가 로케일마다 다르고
+      (실측 최대: ko 4자 '빅토리아' · ja 7자 'カジミエーシュ' · en 15자 'Assist Operator')
+      .ac-bondchip 은 white-space:nowrap 이라 고정폭이면 EN 에서 칩이 옆 칸을 덮는다.
+      제일 긴 이름에 열을 맞춘다 (전략 타일과 같은 규칙, 2026-09-07). */
+.ac-bangroups {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  column-gap: 10px;
+  align-items: start;
+  margin-top: 8px;
+}
+/* 줄 구분선 — 한 줄이 자식 둘이라, 첫 두 자식만 선을 빼면 나머지 경계가 그대로 줄 구분선이 된다 */
+.ac-bangroups > * { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+.ac-bangroups > :first-child,
+.ac-bangroups > :nth-child(2) { margin-top: 0; padding-top: 0; border-top: 0; }
+/* 맹약 머리 — 페이지 전역의 맹약 지시자 .ac-bondchip 을 그대로 쓴다 (누르면 맹약 상세가 열린다).
+   ⚠ 게임의 동그란 링 아이콘(.ac-bring)은 흉내내지 않는다 — 이 사이트에서 그 링은 '발동까지 몇 명'을
+      뜻해서, 밴 줄에 붙이면 없는 뜻이 생긴다. */
+.ac-banhead { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+/* .sb-count 는 .sb-h3 밖에서는 크기가 없다 — 쓰는 자리에서 정해 준다 (.ac-mappoolhead 와 같은 규약) */
+.ac-banhead .sb-count { font-style: normal; font-size: 10.5px; color: var(--muted); }
+/* 줄 맹약을 못 읽어 남은 기물 — 맹약 칩 자리에 글자만 (.ac-mappoolhead 와 같은 톤) */
+.ac-banhead-rest { font-style: normal; font-size: 11px; font-weight: 800; color: var(--ink2); }
+@media (max-width: 560px) {
+  /* 좁으면 한 칸으로 접힌다 (.ac-morphgrp 와 같은 브레이크포인트) — 머리 바로 아래에 칩이 붙어
+     한 덩어리로 읽히도록, 칩 줄의 구분선은 지우고 간격만 남긴다 */
+  .ac-bangroups { grid-template-columns: minmax(0, 1fr); }
+  .ac-bangroups > .ac-banrow { margin-top: 0; padding-top: 6px; border-top: 0; }
+}
 
 /* 한 판 스트립 — PRTS 연결 중에만 뜬다 (2026-09-06). 덱편성 모달 **밖**이라
    탭을 옮겨 다녀도 인식 상태가 보인다. */
