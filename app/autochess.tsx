@@ -500,10 +500,9 @@ export default function AutochessGuide({ doc, onShowOperator }: {
   // ⚠ 중첩의 출처가 **둘로 갈렸다** (사용자 확정 2026-09-07 "덱편성 시뮬레이터랑 PRTS에서 나오는
   //   시뮬레이터는 서로 별도로 데이터가 들어가야 함. 공유하면 안됨"):
   //     stacks  = 손으로 넣은 계획값 (acrun.manual) — 덱편성 시뮬레이터·해시 링크(?st=)
-  //     liveStacks = 화면에서 읽은 값 (acrun.stacks) — PRTS 시뮬레이션
+  //     acrun.stacks = 화면에서 읽은 값 — 인식 전용 (런바·창에 적지는 않는다)
   //   계획한 편성을 옆에 띄워 놓고 실제 판을 PRTS 로 따라가는 게 쓰임새라, 한 값을 다투면 안 된다.
   const stacks = acrun.manual;
-  const liveStacks = acrun.stacks;
   // ★(정예화)는 **칸이 아니라 기물의 성질**로 든다 — 판을 비워도 남아야 한다
   // (사용자 지시 2026-08-29 "판 비우기 할 때 스타 표시 해둔 건 지우지 말아줘").
   const [goldMark, setGoldMark] = useState<Set<string>>(new Set());
@@ -520,7 +519,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
    *  읽은 값은 이 창들에만 있고, 손으로 짜는 편성에는 섞이지 않는다.
    *  ⚠ 조건에 acLocked 를 함께 걸어 **끊으면 창도 닫힌다** (사용자 요청 "PRTS끊으면 모달창도 자동으로
    *    꺼지게"). 효과 안에서 setState 하지 않는 게 리포 규약이라 조건으로만 만든다. */
-  const [prtsView, setPrtsView] = useState<"" | "ban" | "band">("");
+  const [prtsView, setPrtsView] = useState<"" | "ban">("");
   // 판을 시작할 때 고른 전략 — 편성과 함께 링크(?bd=)에 실린다 (사용자 요청 2026-09-04).
   // ⚠ 계산에는 넣지 않는다 — 전략 효과는 전투 중에 붙는 것이라 편성만으로 못 구한다
   //   (아이템·전략은 계산에 없다는 기존 안내와 같은 선). 여기선 '무엇을 골랐는지'를 남긴다.
@@ -633,7 +632,6 @@ export default function AutochessGuide({ doc, onShowOperator }: {
   // 프레임 공급원은 록라·공채와 같은 브리지 — 연결 버튼은 헤더에 이미 있다(bridge-button).
   // 겹침 방지는 useBridgeWatch 가 이미 한다(busyLocal) — 프레임 공급원이 브리지 하나뿐이라
   // rogue.tsx 처럼 별도 busy 를 들지 않는다 (거긴 클립보드·드롭도 같은 핸들러를 부른다).
-  const [acMsg, setAcMsg] = useState<string>("");
   const { settings: acBridgeSettings, lock: acLock } = useBridgeStatus();
   // ⚠ **연결 중에는 편성을 손으로 못 고친다** (사용자 확정 2026-09-06 "연결이 되는순간,
   //   덱편성 시뮬레이터는 본인이 뭔가 클릭하면서 수정이 안되게 막고, 인식된 내용만 자동으로").
@@ -683,15 +681,13 @@ export default function AutochessGuide({ doc, onShowOperator }: {
           bans.length ? t("밴 {n}개", { n: bans.length }) : "",
           bandName ? (mine?.final ? bandName : `${bandName} (${t("고르는 중")})`) : ""]
           .filter(Boolean).join(" · ");
-        if (msg) { noteBridge(msg); setAcMsg(msg); }
+        if (msg) noteBridge(msg);
       } else if (tg.fresh) {
         noteBridge(t("새 판"));
-        setAcMsg(t("새 판 — 기록을 비웠습니다"));
       }
     } catch { /* 프레임 하나 실패는 무시 — 다음 프레임이 온다 */ }
   };
   useBridgeWatch(acLocked, handleAcShot);
-  const acStackCount = Object.keys(liveStacks).length;   // 런바·PRTS 창은 **인식값** 기준 (손 입력 아님)
   // 밴 역산 — 관측(맹약별 티어)에서 어느 기물이 밴됐는지 조합으로 푼다 (lens/acsolve.ts).
   // 해가 여럿이면 **교집합만 확정**이고 나머지는 후보다 — 틀린 밴을 사실처럼 보이지 않게.
   // 화면을 끝까지 스크롤할수록 관측이 늘어 후보가 확정으로 옮겨 간다.
@@ -1815,7 +1811,6 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                 return;
               }
               resetAcRun();                 // 새 판으로 들어가는 길목 — 지난 판 값을 버린다
-              setAcMsg("");
               // ⚠ 편성기는 **연결이 된 뒤에** 연다 (사용자 지적 2026-09-06 "지금은 먼저
               //   열리고 나서 그위에 연결화면이 뜨니까"). 창 선택을 취소하면 아무 일도 없다.
               await connectBridge({ topic: AC_LOCK, name: t("PRTS 시뮬레이션") });
@@ -1829,23 +1824,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
           <button type="button" className="lens-help-btn"
             aria-label={t("PRTS 링크 도움말")} onClick={() => setAcHelp(true)}>?</button>
           </span>
-          {/* 읽은 것을 보는 버튼 둘 — PRTS 버튼 **오른쪽**에 (사용자 지시 2026-09-07 "그냥 PRTS시뮬레이션
-              버튼 오른쪽에 밴목록, 현재 전략 버튼 만들어서, 클릭하면 인식된 애들이 모달로 뜨도록 하자").
-              연결 중에만 보인다 — 끊긴 동안에는 보여 줄 값이 없다. */}
-          {acLocked && (
-            <>
-              <button type="button" className={`ac-simcta ac-prtsview${prtsView === "ban" ? " on" : ""}`}
-                aria-haspopup="dialog" onClick={() => { setPrtsView((v) => (v === "ban" ? "" : "ban")); closeMenus(); }}>
-                {t("밴 목록")}
-                {banSure.length > 0 && <em className="sb-count">{banSure.length}</em>}
-              </button>
-              <button type="button" className={`ac-simcta ac-prtsview${prtsView === "band" ? " on" : ""}`}
-                aria-haspopup="dialog" onClick={() => { setPrtsView((v) => (v === "band" ? "" : "band")); closeMenus(); }}>
-                {t("현재 전략")}
-                {acMyBand && <em className="sb-count">{doc.bands.find((b) => b.id === acMyBand)?.n ?? ""}</em>}
-              </button>
-            </>
-          )}
+
         </div>
       </header>
       {/* 한 판 스트립 — 게임 연결이 켜져 있을 때만. **모달 밖**에 두는 게 핵심이다:
@@ -1859,35 +1838,51 @@ export default function AutochessGuide({ doc, onShowOperator }: {
           {acModeName && <span className="ac-runbar-mode">{acModeName}</span>}
           {acMode && <span className="ac-runbar-mode">
             {acMode === "multi" ? t("연합") : t("독립")}</span>}
-          <span className="ac-runbar-stat">
-            {acStackCount > 0
-              ? t("맹약 중첩 {n}개를 읽었습니다", { n: acStackCount })
-              : t("아직 읽은 중첩이 없습니다 — 게임에서 맹약이 보이는 화면을 띄워 주세요")}
-            {typeof acrun.deployLeft === "number" && ` · ${t("남은 배치 {n}", { n: acrun.deployLeft })}`}
-            {acrun.deploy9 && ` (${t("인사부 파일")})`}
-            {typeof acrun.hp === "number" && ` · HP ${acrun.hp}`}
-            {banSure.length > 0 && ` · ${t("밴 {n}개", { n: banSure.length })}`}
-          </span>
-          {/* 전략 — 내 것(확정/고르는 중)과 상대 것(연합). 이름은 데이터의 로케일 이름을 그대로 쓴다 */}
-          {acBandPick && (
-            <span className="ac-runbar-band">
-              <img src={bandIcon(acBandPick.band)} alt="" aria-hidden onError={hideErr} />
-              <b>{t("내 전략")}</b> {doc.bands.find((b) => b.id === acBandPick.band)?.n ?? acBandPick.band}
-              {!acBandPick.final && <i className="sb-dim"> ({t("고르는 중")})</i>}
-            </span>
-          )}
-          {acOtherBands.length > 0 && (
-            <span className="ac-runbar-band">
-              <b>{t("다른 참가자")}</b>
-              {acOtherBands.map((b) => (
-                <span key={b.seat} className="ac-runbar-seat">
-                  <img src={bandIcon(b.band)} alt="" aria-hidden onError={hideErr} />
-                  {doc.bands.find((x) => x.id === b.band)?.n ?? b.band}
+          {/* 밴 목록 버튼 — **읽은 상태 문구가 있던 자리**다 (사용자 지시 2026-09-07: 중첩 안내·남은
+              배치·밴 개수 "이거 전부 필요없고, 이자리에 밴 목록 버튼을 위치시켜줘"). 남은 배치·맹약
+              중첩은 인게임에서 보는 게 편하다는 판단 — 인식은 계속 돌지만 여기 적지 않는다. */}
+          <button type="button" className={`ac-runbar-btn ac-prtsview${prtsView === "ban" ? " on" : ""}`}
+            aria-haspopup="dialog" onClick={() => { setPrtsView((v) => (v === "ban" ? "" : "ban")); closeMenus(); }}>
+            {t("현재 밴 목록")}
+            {banSure.length > 0 && <em className="sb-count">{banSure.length}</em>}
+          </button>
+          {/* 현재 전략 — **모달이 아니라 여기 바깥에** 둔다 (사용자 지시 2026-09-07 "현재 전략은,
+              굳이 모달창 필요 없이 바깥에다 보여줘"). 판이 도는 동안 늘 보여야 하는 값이고,
+              창을 열고 닫아 확인할 성질이 아니다. 칩을 누르면 전략 상세가 열린다.
+              연합은 자리를 **최대 4명**까지 준다 — 못 읽은 자리는 '읽는 중'으로 남긴다
+              (다른 참가자 인식은 아직 실플레이 확인 전이라 없는 값을 지어내면 안 된다). */}
+          {(() => {
+            const chip = (tag: string, id: string | null, previewing?: boolean) => {
+              const b = id ? doc.bands.find((x) => x.id === id) : null;
+              return (
+                <span key={tag} className="ac-runbar-seat">
+                  <b>{tag}</b>
+                  {b ? (
+                    <button type="button" className="ac-runbar-bandbtn" onClick={() => setBand(b)}
+                      title={t("전략 상세 보기")}>
+                      <img src={bandIcon(b.id)} alt="" aria-hidden onError={hideErr} />
+                      {b.n}
+                      {previewing && <i className="sb-dim">({t("고르는 중")})</i>}
+                    </button>
+                  ) : <i className="sb-dim">{t("읽는 중")}</i>}
                 </span>
-              ))}
-            </span>
-          )}
-          {acMsg && <em className="ac-runbar-msg">{acMsg}</em>}
+              );
+            };
+            const seatN = acMode === "multi" ? Math.min(4, Math.max(acrun.seats, acOtherBands.length + 1)) : 1;
+            const bySeat = new Map(acOtherBands.map((b) => [b.seat, b.band]));
+            if (!acBandPick && seatN <= 1) return null;
+            return (
+              <span className="ac-runbar-band">
+                {chip(t("내 전략"), acBandPick?.band ?? null, acBandPick ? !acBandPick.final : false)}
+                {Array.from({ length: Math.max(0, seatN - 1) }, (_, k) =>
+                  chip(t("참가자 {n}", { n: k + 2 }), bySeat.get(k + 1) ?? null))}
+              </span>
+            );
+          })()}
+          {/* ⚠ 인식 결과를 문장으로 늘어놓던 자리(acMsg — "초월 시뮬레이션 · 헤드헌터 · 남은 배치 8" 꼴)는
+              없앴다 (사용자 지시 2026-09-07 "이 문구도 필요 없어"). 같은 값이 위 배지·전략 칩에 이미
+              있어 중복이었다. 브리지 토스트(noteBridge)에는 그대로 남긴다 — 그쪽은 인식이 돌고 있다는
+              신호라서 값 자체가 필요하다. */}
 
           {/* 연결 끊기는 두지 않는다 — 위쪽 PRTS 토스트와 제목 줄 버튼이 이미 한다
               (사용자 지시 2026-09-06 "애초에 위에 있으니 필요 없을테니 그냥 없애줘") */}
@@ -2962,7 +2957,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
           밴목록, 현재 전략 버튼 만들어서, 클릭하면 인식된 애들이 모달로 뜨도록 하자."
           한 창에 다 몰아넣지 않고 **볼 것 하나에 창 하나**다 — 밴 목록은 그것만으로도 세로가 길다. */}
       {prtsView === "ban" && acLocked && (
-        <ModalWindow label={banSure.length > 0 ? `${t("밴 리스트")} ${banSure.length}` : t("밴 리스트")}
+        <ModalWindow label={banSure.length > 0 ? `${t("현재 밴 목록")} ${banSure.length}` : t("현재 밴 목록")}
           className="operator-modal ac-modal ac-prtsmodal"
           chrome={acModeName ? <span className="ac-modemark" title={acrun.mode ?? undefined}>{acModeName}</span> : null}
           onClose={() => setPrtsView("")}>
@@ -3057,68 +3052,6 @@ export default function AutochessGuide({ doc, onShowOperator }: {
               );
             })()}
           </section>
-          </div>
-        </ModalWindow>
-      )}
-
-      {/* ── 현재 전략 창 ── 내 것 + 다른 참가자 (연합 최대 4명) */}
-      {prtsView === "band" && acLocked && (
-        <ModalWindow label={t("현재 전략")} className="operator-modal ac-modal ac-prtsmodal"
-          chrome={acModeName ? <span className="ac-modemark" title={acrun.mode ?? undefined}>{acModeName}</span> : null}
-          onClose={() => setPrtsView("")}>
-          <div className="ac-guide ac-simbody">
-            {acMode && <p className="ac-prtshead"><b>{acMode === "multi" ? t("연합") : t("독립")}</b></p>}
-            {/* 전략 — 내 것과 다른 참가자 것. **읽은 값**이고 덱편성 시뮬레이터의 전략과 별개다.
-                누르면 전략 상세가 열린다 (사용자 요청 2026-09-07 "전략은 클릭하면 정보가 나와야함") —
-                덱편성 시뮬레이터의 .ac-simband-card 와 같은 관용구다.
-                연합은 **최대 4명**까지 자리를 준다 (사용자 요청 "멀티플레이일경우 최대 네명까지").
-                ⚠ 다른 참가자 인식은 아직 실플레이 확인 전이다 (연합 다인 녹화가 없다) — 그래서 자리만
-                  준비해 두고, 못 읽은 자리는 '읽는 중'으로 남긴다. 없는 값을 지어내지 않는다. */}
-            <section className="ac-boardout">
-              <h3 className="sb-h3">{t("전략")}</h3>
-              {(() => {
-                const card = (id: string, opts?: { seat?: number; previewing?: boolean }) => {
-                  const b = doc.bands.find((x) => x.id === id);
-                  if (!b) return null;
-                  return (
-                    <button key={opts?.seat ?? "me"} type="button" className="ac-simband-card"
-                      onClick={() => setBand(b)} title={t("전략 상세 보기")}>
-                      <img src={bandIcon(b.id)} alt="" aria-hidden loading="lazy" onError={hideErr} />
-                      <span>
-                        <b>{b.n}{b.by && <em className="ac-bandby">{b.by}</em>}</b>
-                        <i className="sb-chip ac-hp">HP {b.hp}</i>
-                        {opts?.previewing && <i className="sb-chip">{t("고르는 중")}</i>}
-                      </span>
-                      <small>{rich(b.d.split("\n")[0])}</small>
-                    </button>
-                  );
-                };
-                // 연합이면 참가자 수만큼(최대 4) 자리를 만든다 — 인식된 자리는 카드, 못 읽은 자리는 안내
-                const seatN = acMode === "multi" ? Math.min(4, Math.max(acrun.seats, acOtherBands.length + 1)) : 1;
-                const bySeat = new Map(acOtherBands.map((b) => [b.seat, b.band]));
-                return (
-                  <>
-                    <div className="ac-prtsseat">
-                      <span className="ac-prtsseat-tag">{t("내 전략")}</span>
-                      {acBandPick
-                        ? card(acBandPick.band, { previewing: !acBandPick.final })
-                        : <p className="sb-dim ac-note">{t("아직 읽지 못했습니다 — 게임에서 '선택한 전략' 화면을 띄워 주세요")}</p>}
-                    </div>
-                    {seatN > 1 && Array.from({ length: seatN - 1 }, (_, k) => {
-                      const seat = k + 1;
-                      const id = bySeat.get(seat);
-                      return (
-                        <div key={seat} className="ac-prtsseat">
-                          <span className="ac-prtsseat-tag">{t("참가자 {n}", { n: seat + 1 })}</span>
-                          {id ? card(id, { seat })
-                            : <p className="sb-dim ac-note">{t("읽는 중 — 게임에서 전략 정보 화면을 띄워 주세요")}</p>}
-                        </div>
-                      );
-                    })}
-                  </>
-                );
-              })()}
-            </section>
           </div>
         </ModalWindow>
       )}

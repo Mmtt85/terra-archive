@@ -2901,7 +2901,8 @@ const D: Record<string, Pair> = {
   // PRTS 시뮬레이션 창 — 덱편성 시뮬레이터와 별개 창 (사용자 지시 2026-09-07)
   "맹약 중첩": ["Alliance stacks", "盟約の重ね"],
   "밴 목록": ["Ban list", "BANリスト"],
-  "현재 전략": ["Current strategies", "現在の戦略"],
+  "읽는 중": ["Reading…", "読み取り中"],
+  "현재 밴 목록": ["Current ban list", "現在のBANリスト"],
   "참가자 {n}": ["Player {n}", "参加者{n}"],
   "읽는 중 — 게임에서 전략 정보 화면을 띄워 주세요": [
     "Reading — bring up the strategy info screen in game.",
