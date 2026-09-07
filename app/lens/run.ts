@@ -2,13 +2,18 @@
 // 스샷 레이더 — 인식 파이프라인 (모달과 페이지 레벨 자동인식이 공유).
 // 모드별 단계형 OCR + 매칭: 판정이 나면 나머지 패스를 생략한다 (속도).
 
-import { createOcrSession, type OcrSession } from "./ocr";
+import { createOcrSession } from "./ocr";
 import { asset } from "../assets";
-import { buildIndex, analyzeLines, analyzeChinese, analyzeRecruit, wantsChipPass, isCollectLine, isCollectLineCn, LENS_ITEM_SECTIONS, normFor, type LensIndex, type LensOutcome, type LensHud, type Normalizer } from "./match";
+import { buildIndex, analyzeLines, analyzeChinese, analyzeRecruit, wantsChipPass, isCollectLine, isCollectLineCn, LENS_ITEM_SECTIONS, normFor, type LensIndex, type LensOutcome, type LensHud } from "./match";
 import { parseStoryIndex, analyzeStoryLines, type StoryIndex } from "./storymatch";
-import { buildAcIndex, planAcStacks, parseStack, parseDeploy, parseSeats, isAcInfoScreen,
-  acBanBands, bandTexts, pickBond, type AcIndex } from "./acmatch";
-import { findAcCards } from "./acvision";
+import { buildAcIndex, bondOfLine, parseSeats, isAcInfoScreen, classifyAcScreen, parseAcMode, badgeRectFromTitle,
+  parseAcBand, parseDeployLeft, parseAcHud, findAcRings, ringNameRect, ringNumRect, RING_DIGITS, parseRingStack,
+  buildPieceNameIndex, matchPieceName, type AcIndex, type PieceIndex, type AcScreen } from "./acmatch";
+import { findAcRows } from "./acvision";
+import { cardFeature, solveBanRow, type FacePiece } from "./acface";
+import { loadFaceTemplates } from "./acface-load";
+import { participantSlots, searchBand, BAND_ACCEPT } from "./acband";
+import { loadBandTemplates } from "./acband-load";
 import storySearchMeta from "../data/story-search-meta.json";
 
 export type LensMode = "rogue" | "recruit" | "story" | "autochess";
@@ -122,59 +127,61 @@ export function getStoryIndex(): Promise<StoryIndex> {
   return storyIndexP;
 }
 
-// 위수 협의 맹약 이름 색인 — 맹약 23개 이름뿐이라 아주 가볍다(록라 2.9MB와 다르다).
-// autochess.json 전체를 지연 import 하고 이름만 뽑는다 (페이지가 이미 들고 있어 캐시 적중).
-const acIndexByLoc = new Map<string, Promise<AcIndex>>();
-export function getAcIndex(locale = "ko"): Promise<AcIndex> {
-  let p = acIndexByLoc.get(locale);
+// 위수 협의 데이터 — 맹약 이름 색인 + 기물(얼굴 매칭용 op·티어·맹약) + 전략(대표 오퍼 이름) + 기물/장비 이름 색인.
+// autochess.json 을 로케일별로 지연 import 한다 (페이지가 이미 들고 있어 캐시 적중). 이름은 로케일판, 정규화는 normFor(locale).
+type AcData = {
+  idx: AcIndex;                       // 맹약 이름 → id (링 아래 이름 줄)
+  pieces: FacePiece[];                // 얼굴 매칭 후보 — chess 기본형 id · op(초상 파일명) · 티어 · 맹약
+  ops: string[];                      // 초상이 필요한 op 전부 (예열용)
+  bands: { id: string; n: string; by?: string }[];
+  pieceIdx: PieceIndex;               // 상점 카드·툴팁 이름 → chess/equip id
+};
+type AcJson = {
+  bonds?: { id: string; n: string }[];
+  chess?: { id: string; op?: string | null; n: string; t: number; bonds: string[] }[];
+  bands?: { id: string; n: string; by?: string }[];
+  equips?: { id: string; n: string }[];
+};
+const acDataByLoc = new Map<string, Promise<AcData>>();
+export function getAcData(locale = "ko"): Promise<AcData> {
+  let p = acDataByLoc.get(locale);
   if (!p) {
     const load = locale === "en" ? import("../data/autochess.en.json")
       : locale === "ja" ? import("../data/autochess.ja.json")
         : import("../data/autochess.json");
-    p = load.then((m) => buildAcIndex(
-      ((m.default as { bonds?: { id: string; n: string }[] }).bonds ?? []), normFor(locale)));
-    p.catch(() => { acIndexByLoc.delete(locale); });
-    acIndexByLoc.set(locale, p);
+    p = load.then((m) => {
+      const d = m.default as AcJson;
+      const norm = normFor(locale);
+      const pieces: FacePiece[] = (d.chess ?? []).filter((c) => !!c.op)
+        .map((c) => ({ id: c.id, op: c.op as string, t: c.t, bonds: c.bonds }));
+      return {
+        idx: buildAcIndex(d.bonds ?? [], norm),
+        pieces,
+        ops: [...new Set(pieces.map((x) => x.op))],
+        bands: d.bands ?? [],
+        pieceIdx: buildPieceNameIndex(d.chess ?? [], d.equips ?? [], norm),
+      };
+    });
+    p.catch(() => { acDataByLoc.delete(locale); });
+    acDataByLoc.set(locale, p);
   }
   return p;
 }
 
-/** 밴 화면의 행별 티어 관측 — 못 읽으면 빈 객체.
- *  ⚠ 카드 격자·티어 배지는 **원본 색**이 있어야 읽는다 (배지를 색상으로 가른다).
- *  OCR 세션 캔버스는 grayNormalize 를 거쳐 색이 없으므로 blob 을 한 번 더 디코드한다 —
- *  ocr.ts colorBand 가 같은 이유로 하는 일이다. 밴 화면이 아니면 카드가 안 잡혀 빈 값이다. */
-async function readBanRows(file: Blob, session: OcrSession, idx: AcIndex, norm: Normalizer):
-  Promise<Record<string, number[]>> {
+/** 프레임의 **원색 픽셀** — 밴 격자(티어 배지 색)·얼굴·맹약 링·전략 아이콘이 전부 색을 본다.
+ *  OCR 세션 캔버스는 grayNormalize 를 거쳐 색이 없으므로 blob 을 한 번 더 디코드한다 (ocr.ts colorBand 와 같은 이유). */
+async function decodeColor(file: Blob): Promise<{ px: Uint8ClampedArray; W: number; H: number } | null> {
   try {
     const bmp = await createImageBitmap(file);
     const c = document.createElement("canvas");
     c.width = bmp.width; c.height = bmp.height;
     const ctx = c.getContext("2d", { willReadFrequently: true });
-    if (!ctx) { bmp.close(); return {}; }
+    if (!ctx) { bmp.close(); return null; }
     ctx.drawImage(bmp, 0, 0);
     bmp.close();
     const img = ctx.getImageData(0, 0, c.width, c.height);
-    const bands = acBanBands(findAcCards(img.data, c.width, c.height));
-    if (!bands.length) return {};
-    const boxes = session.boxes();
-    const out: Record<string, number[]> = {};
-    const used = new Set<string>();
-    for (const b of bands) {
-      // ① 전체 프레임 패스에 이미 잡힌 줄로 먼저 시도 (공짜)
-      let bond = pickBond(bandTexts(b, boxes), idx, norm, used);
-      // ② 못 찾으면 그 자리만 잘라 다시 읽는다 — 맹약 이름은 작아서 PSM11 이 자주 놓친다
-      //    (실측: 5개 행 중 2개만 잡혔다). 자리를 아니까 확대해서 한 줄로 읽으면 잘 잡힌다.
-      if (!bond) bond = pickBond(await session.crop(b.nameRect), idx, norm, used);
-      if (!bond) continue;                      // 이름을 못 붙인 행은 버린다 (짐작하지 않는다)
-      used.add(bond);
-      out[bond] = b.tiers.slice().sort((p, q) => q - p);
-    }
-    if (Object.keys(out).length) {
-      console.debug(`[lens] 밴 행 ${Object.keys(out).length}/${bands.length}개:`,
-        Object.entries(out).map(([k, v]) => `${k} [${v.join(",")}]`).join(" · "));
-    }
-    return out;
-  } catch { return {}; }
+    return { px: img.data, W: c.width, H: c.height };
+  } catch { return null; }
 }
 
 /** 데이터 예열 (모달 열림/토글 켜짐 시 호출). locale은 rogue 인덱스를 로케일별로 예열.
@@ -183,7 +190,7 @@ async function readBanRows(file: Blob, session: OcrSession, idx: AcIndex, norm: 
 export function warmData(mode: LensMode, locale = "ko", cnTopic?: string): void {
   if (mode === "recruit") void getRecruitTags();
   else if (mode === "story") void getStoryIndex();
-  else if (mode === "autochess") void getAcIndex(locale);
+  else if (mode === "autochess") void getAcData(locale);
   else void getRogueIndex(locale, cnTopic);
 }
 
@@ -205,34 +212,118 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
     lines = (await session.chips()).concat(await session.sparse());
     oc = analyzeRecruit(lines, tags);
   } else if (mode === "autochess") {
-    // 위수 협의 — 이동이 아니라 **한 판 상태 갱신**이다. 화면이 계속 들어오며 값만 바뀐다.
-    // 맹약 이름 줄을 찾고(PSM11이 위치까지 준다) 그 위의 숫자를 **숫자 전용 워커**로 읽는다.
+    // 위수 협의 — 이동이 아니라 **한 판 상태 갱신**이다. 화면이 계속 들어오며 값만 바뀐다 (2026-09-07 재가동).
+    // 순서: ① 원색 픽셀로 밴 격자를 먼저 본다 — 밴 화면이면 얼굴로 기물을 확정하고 **OCR 은 건너뛴다**
+    // (스크롤 중 프레임이 많이 들어오는데 OCR 1~2초가 프레임을 떨어뜨린다; 모드·전략은 다른 화면에서 읽힌다).
+    // ② 그 외 화면은 PSM11 로 문구를 읽어 화면 종류를 가르고, 종류에 맞는 것만 읽는다 (모드 배지·전략·HUD·링).
     const norm = normFor(locale);
-    const [idx, session] = await Promise.all([
-      getAcIndex(locale), createOcrSession(file, OCR_LANG[locale] ?? "kor")]);
-    lines = await session.sparse();
-    const plan = planAcStacks(session.boxes(), idx, norm);
+    const [ac, color] = await Promise.all([getAcData(locale), decodeColor(file)]);
     const stacks: Record<string, number> = {};
-    // 숫자 크롭은 아주 작아(한 자리 수) 순차로 돌려도 프레임 하나에 수십 ms다.
-    for (const p of plan) {
-      const { text, conf } = await session.digits(p.rect);
-      const n = parseStack(text, conf);
-      if (n !== null) stacks[p.id] = n;
-      console.debug(`[lens] 맹약 ${p.id} 중첩: "${text}" ${Math.round(conf)}% (${p.from}) → ${n ?? "버림"}`);
+    const bans: { id: string; margin: number }[] = [];
+    const banObs: Record<string, number[]> = {};
+    let screen: AcScreen | "ban" | null = null;
+    let fresh = false, seats = 0;
+    let modeCode: string | null = null, deployLeft: number | null = null, hp: number | null = null;
+    const bands: { seat: number; band: string; final: boolean }[] = [];
+    const pieces: { id: string; kind: "chess" | "equip" }[] = [];
+    lines = [];
+
+    // ① 밴 격자 — 카드 우상단 빨간 금지 표식으로 잡는다 (acvision). 잘린 행(cut)은 티어가 없으니 건너뛴다.
+    const grid = color ? findAcRows(color.px, color.W, color.H) : null;
+    const banRows = (grid?.rows ?? []).filter((r) => !r.cut && r.cards.length > 0 && r.cards.every((c) => c.tier !== null));
+    if (banRows.length && color) {
+      screen = "ban";
+      // 얼굴 템플릿은 **보이는 티어의 기물**만 받는다 (op 당 초상 25KB) — 캐시되므로 두 번째 프레임부터는 공짜
+      const tiers = new Set(banRows.flatMap((r) => r.cards.map((c) => c.tier as number)));
+      const ops = ac.pieces.filter((p) => tiers.has(p.t)).map((p) => p.op);
+      const tpl = await loadFaceTemplates(ops);
+      for (const row of banRows) {
+        const cards = row.cards.map((c) => ({
+          tier: c.tier as number,
+          feat: cardFeature(color.px, color.W, color.H, { x: c.x * color.W, y: c.y * color.H, w: c.w * color.W, h: c.h * color.H }),
+        }));
+        const { bond, picks } = solveBanRow(cards, ac.pieces, tpl);
+        for (const p of picks) if (p.id) bans.push({ id: p.id, margin: p.margin });
+        // (맹약, 티어) 관측도 남긴다 — 얼굴이 못 가른 자리(초상 없는 기물)는 acsolve 조합 풀이가 보탠다
+        if (bond) banObs[bond] = cards.map((c) => c.tier).sort((p, q) => q - p);
+        console.debug(`[lens] 밴 행 ${bond ?? "?"}: ${picks.map((p) => `${p.op || "?"}(${p.margin.toFixed(2)})`).join(" ")}`);
+      }
+    } else {
+      // ② 문구 — 화면 종류를 가르고 종류에 맞는 것만 읽는다
+      const session = await createOcrSession(file, OCR_LANG[locale] ?? "kor");
+      lines = await session.sparse();
+      const linesN = lines.map(norm);
+      const boxes = session.boxes();
+      screen = classifyAcScreen(linesN, lines, boxes);
+      fresh = screen === "info" || isAcInfoScreen(linesN);
+      // 시뮬레이션 종류 — 로딩 화면은 큰 글씨 그대로(11/11), 정보·전략 화면은 좌상단 붉은 배지를
+      // 채널최댓값 크롭으로(51/51). ⚠ 정보·전략 화면의 PSM11 줄에 parseAcMode 를 쓰면 잠긴 전략의
+      // 개방 조건('[표준 시뮬레이션]에서 …')이 AC-1 로 오판된다 — 배지 크롭 결과에만 쓴다.
+      if (screen === "loading") modeCode = parseAcMode(linesN);
+      else if (screen === "info" || screen === "band" || screen === "confirm") {
+        const r = badgeRectFromTitle(boxes);
+        if (r) modeCode = parseAcMode((await session.maxCrop(r)).map(norm));
+      }
+      if (modeCode) console.debug(`[lens] 시뮬레이션 종류: ${modeCode} (${screen})`);
+      // 전략 — 우측 패널 대표 오퍼 이름. '선택한 전략' 화면이면 확정, 아니면 미리보기
+      if (screen === "band" || screen === "confirm") {
+        const pick = parseAcBand(lines, ac.bands, norm);
+        if (pick) bands.push({ seat: 0, band: pick.band, final: pick.final });
+        seats = parseSeats(lines);
+        // 참가자 카드 썸네일 — 연합에서 **다른 참가자**의 전략. 카드 슬롯은 청록 요소로 찾고(참가자 1명 녹화로만
+        // 검증, 다인 화면은 미검증) 썸네일을 전략 아이콘과 그림으로 맞춘다. 내 전략과 같은 그림은 내 카드로 본다.
+        if (color && screen === "confirm") {
+          try {
+            const slots = participantSlots(color.px, color.W, color.H);
+            if (slots.length) {
+              const tpl = await loadBandTemplates(ac.bands.map((b) => b.id));
+              let seat = 1;
+              for (const sl of slots) {
+                const hit = searchBand(color.px, color.W, color.H, sl.thumb, tpl);
+                if (!hit || hit.score < BAND_ACCEPT.score || hit.margin < BAND_ACCEPT.margin) continue;
+                if (pick && hit.band === pick.band) continue;          // 내 카드
+                bands.push({ seat: seat++, band: hit.band, final: true });
+              }
+              if (slots.length > 1) seats = Math.max(seats, slots.length);
+              console.debug(`[lens] 참가자 카드 ${slots.length}개 → 상대 전략 ${bands.filter((b) => b.seat > 0).map((b) => b.band).join(",") || "없음"}`);
+            }
+          } catch { /* 실험적 — 실패해도 내 전략은 살린다 */ }
+        }
+        if (pick) console.debug(`[lens] 전략: ${pick.band} ${pick.final ? "확정" : "고르는 중"}`);
+      }
+      // 인게임 — 남은 배치 칸·목표 HP·맹약 링·상점/툴팁 이름. 다이얼로그가 덮인 전환 프레임은 종류가 null 로
+      // 나오므로 링만 시도한다 (링이 없으면 아무 일도 없다 — 정보·전략 화면 오탐 0 실측).
+      if (screen === "rest" || screen === "battle" || screen === null) {
+        deployLeft = parseDeployLeft(lines);
+        const hud = parseAcHud(boxes);
+        hp = hud.hp;
+        if (color) {
+          const rings = findAcRings(color.px, color.W, color.H);
+          for (const ring of rings) {
+            // 링 아래 이름 → 맹약 (그레이 반전 크롭 34/35) · 링 안 숫자 → 중첩 (0 은 O/()/C 로 읽혀 매핑, 1 이상은 미검증)
+            const names = await session.cropInverted(ringNameRect(ring));
+            let id: string | null = null;
+            for (const tx of names) { id = bondOfLine(norm(tx).replace(/[0-9]/g, ""), ac.idx); if (id) break; }
+            if (!id) continue;
+            const { text } = await session.digits(ringNumRect(ring), RING_DIGITS);
+            const n = parseRingStack(text);
+            if (n !== null) stacks[id] = n;
+            console.debug(`[lens] 맹약 링 ${id}: "${text}" → ${n ?? "버림"}`);
+          }
+        }
+        if (screen === "rest") {
+          for (const l of lines) {
+            const m = matchPieceName(l, ac.pieceIdx, norm);
+            if (m && !pieces.some((x) => x.id === m.id)) pieces.push(m);
+          }
+        }
+        if (deployLeft !== null) console.debug(`[lens] 남은 배치: ${deployLeft}${deployLeft >= 9 ? " (인사부 파일)" : ""}`);
+      }
     }
-    const fresh = isAcInfoScreen(lines.map(norm));
-    // 배치 가능 인원 — 원시 라인에서 (정규화가 '/'를 지운다)
-    const deploy = parseDeploy(lines);
-    if (deploy) console.debug(`[lens] 배치 가능 인원: ${deploy.cur}/${deploy.max}${deploy.max === 9 ? " (인사부 파일)" : ""}`);
-    // 참가자 카드 수 — 1이면 독립, 2 이상이면 연합 (전략 정보 화면에서만 잡힌다)
-    const seats = parseSeats(lines);
-    if (seats) console.debug(`[lens] 참가자 ${seats}명 → ${seats > 1 ? "연합" : "독립"}`);
-    // 밴 행 — 카드 격자는 **원본 색 픽셀**이 필요하다 (티어 배지를 색으로 가리므로).
-    // 세션 캔버스는 이미 그레이라 blob 에서 한 번 더 디코드한다 (colorBand 와 같은 이유).
-    const banObs = await readBanRows(file, session, idx, norm);
     oc = {
-      screens: [], entities: [], topics: [], section: fresh ? "acinfo" : null,
-      target: { kind: "acrun", stacks, fresh, deploy, seats, banObs },
+      screens: [], entities: [], topics: [], section: screen,
+      target: { kind: "acrun", screen, stacks, fresh, deployLeft, seats, mode: modeCode, bands, bans, banObs, hp, pieces },
+      battle: screen === "battle",
     };
   } else if (mode === "story") {
     // 스토리 전문 대사 화면 — OCR 라인의 10자 그램을 역색인에 투표해 스토리·ep 특정 (2026-07-24)

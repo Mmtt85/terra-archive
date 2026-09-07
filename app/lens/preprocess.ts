@@ -69,6 +69,41 @@ export function colorNormalize(data: Uint8ClampedArray | Uint8Array): void {
   }
 }
 
+/**
+ * **채널 최댓값** 그레이 + min-max 스트레치 (위수 협의 좌상단 붉은 모드 배지, 2026-09-07).
+ *
+ * 붉은 글씨(R 만 높음)는 휘도에서 어두운 배경과 뭉개져 이진화 crop 이 4/51 이었다. colorNormalize
+ * (채도)는 47/51 — 배지 배경 자체가 붉어 글자/배경의 채도 차가 작은 프레임에서 흔들린다.
+ * 채널 최댓값은 붉은 배경 위 흰·연분홍 글씨를 그대로 밝게 남겨 51/51 (900px 브리지 판, v1 f009~036 ·
+ * v2 f007~029). colorNormalize 처럼 **작은 크롭 전용** — 전체 프레임에 쓰면 배경 아트가 들린다.
+ * (colorNormalize 의 CHROMA_MIN 같은 문턱은 두지 않는다 — 배지 자리는 제목 줄 앵커로 잡아 무채색
+ * 밴드에 헛돌 일이 없고, 배지 자체가 흰 글씨라 채도 문턱을 두면 오히려 죽는다.)
+ */
+export function maxChannelNormalize(data: Uint8ClampedArray | Uint8Array): void {
+  const n = data.length;
+  let min = 255, max = 0;
+  for (let i = 0; i < n; i += 4) {
+    const v = Math.max(data[i], data[i + 1], data[i + 2]);
+    data[i] = v;
+    if (v < min) min = v;
+    if (v > max) max = v;
+  }
+  const range = Math.max(1, max - min);
+  for (let i = 0; i < n; i += 4) {
+    const v = Math.round(((data[i] - min) * 255) / range);
+    data[i] = data[i + 1] = data[i + 2] = v;
+  }
+}
+
+/** RGB 반전 (알파 유지) — 어두운 배경 위 밝은 글씨를 LSTM 이 좋아하는 "흰 종이 위 검은 글씨" 로.
+ *  위수 협의 맹약 링 아래 이름이 이걸로 34/35 (이진화 crop 은 10/35, 2026-09-07). 이진화와 달리
+ *  회색조를 살리므로 4배 확대 뒤 안티에일리어싱이 남아 작은 한글(13px@900)이 덜 깨진다. */
+export function invertRgb(data: Uint8ClampedArray | Uint8Array): void {
+  for (let i = 0; i < data.length; i += 4) {
+    data[i] = 255 - data[i]; data[i + 1] = 255 - data[i + 1]; data[i + 2] = 255 - data[i + 2];
+  }
+}
+
 /** 업스케일 배율 — 폭 2000px 미만(비레티나 캡처)이면 2x, 이미 크면 원본 유지.
  *  ⚠ 1.5x로 낮추면 f1 분대 효과문(소형 텍스트) 인식이 깨진다 (A/B 실측 2026-07-23) — 2x 고정. */
 export function upscaleFactor(width: number): number {

@@ -40,9 +40,23 @@ export type LensTarget =
   // 목적지 하나로 끝나지만, 여기서는 한 판 도는 동안 같은 화면이 계속 들어오며 값만 바뀐다
   // (app/autochess-run.ts 스토어에 병합). 형태를 평평하게 둬 순환 import를 만들지 않는다.
   | { kind: "acrun"; stacks: Record<string, number>; fresh?: boolean;
-      deploy?: { cur: number; max: number } | null; seats?: number;
-      /** 밴 화면 관측 — 맹약 id → 그 행에 보인 티어들 (누가 밴됐는지는 acsolve 가 역산) */
-      banObs?: Record<string, number[]> };
+      /** 화면 종류 — acmatch.classifyAcScreen 이 문구·픽셀로 가른 값 (select·info·band·confirm·loading·rest·battle) */
+      screen?: string | null;
+      /** '배치 가능 인원:N' — **남은** 배치 칸. 9 가 보이면 인사부 파일(최대 9)을 쓴 것 (2026-09-07 실측: 분수 n/8 이 아니라 콜론 형식) */
+      deployLeft?: number | null;
+      seats?: number;
+      /** 시뮬레이션 종류 코드 — AC-1 표준 · AC-2 험지 · AC-3 극한 · AC-4 초월 · AC-TR-1 입문 (로딩 화면 큰 글씨 / 좌상단 붉은 배지) */
+      mode?: string | null;
+      /** 전략 — seat 0 = 나. final=false 는 아직 고르는 중(우측 패널 미리보기), true 는 '선택한 전략' 확정 화면 */
+      bands?: { seat: number; band: string; final: boolean }[];
+      /** 밴 기물 — 카드 **얼굴**로 확정한 chess 기본형 id 와 마진(1위−2위, 후보 하나면 1) (2026-09-07 재가동) */
+      bans?: { id: string; margin: number }[];
+      /** 밴 화면 관측 — 맹약 id → 그 행에 보인 티어들 (얼굴이 못 가른 자리는 acsolve 가 역산) */
+      banObs?: Record<string, number[]>;
+      /** 목표 HP — 인게임 HUD 상단 (판 내 불변) */
+      hp?: number | null;
+      /** 화면에서 이름을 읽은 기물·장비 (상점 카드·툴팁) — 정보용, 편성 확정 근거로 쓰지 않는다 */
+      pieces?: { id: string; kind: "chess" | "equip" }[] };
 export type LensOutcome = {
   screens: string[];               // 화면 타이틀 키워드 라벨 (표시용, i18n 키)
   entities: LensEntity[];          // 확신 엔티티 (이름 기준 중복 제거, 점수순)

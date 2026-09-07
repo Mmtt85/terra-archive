@@ -5,7 +5,7 @@
 // PSM3(auto)·칩 패스를 생략한다. 칩 패스(공채 태그 등 어두운 버튼 개별 OCR)는
 // 화면 키워드가 보일 때만 — 오케스트레이션은 lens.tsx·verify-lens.ts가 동일 순서로 수행.
 
-import { grayNormalize, colorNormalize, upscaleFactor, findDarkChips, chipCropRect, binarizeGlyph, isolateGlyphs } from "./preprocess";
+import { grayNormalize, colorNormalize, maxChannelNormalize, invertRgb, upscaleFactor, findDarkChips, chipCropRect, binarizeGlyph, isolateGlyphs } from "./preprocess";
 import { asset } from "../assets";
 import type { Worker } from "tesseract.js";
 
@@ -116,12 +116,24 @@ export type OcrSession = {
    *  "이 글자 위/옆"을 짚을 때 쓴다 (위수 협의 맹약 원형의 중첩 숫자 등). */
   boxes(): OcrBox[];
   /** 정규화 rect(0~1)를 잘라 **숫자 전용 eng 워커**로 읽는다 — difficulty()가 고정 위치에
-   *  하는 일의 일반화. kor/jpn 모델은 단독 숫자를 글자로 오독하므로 반드시 이걸 쓴다. */
-  digits(rect: OcrRect): Promise<{ text: string; conf: number }>;
+   *  하는 일의 일반화. kor/jpn 모델은 단독 숫자를 글자로 오독하므로 반드시 이걸 쓴다.
+   *  opts.cut — 이진화 문턱(기본 0.65). opts.isolate=false — 테두리에 닿은 성분을 지우지 않는다:
+   *  위수 협의 맹약 링 안 숫자는 발광 링에 닿아 있어 기본 격리가 글리프를 통째로 지운다(0/35) —
+   *  acmatch.RING_DIGITS({cut:0.6, isolate:false}) 로 부른다 (2026-09-07). */
+  digits(rect: OcrRect, opts?: { cut?: number; isolate?: boolean }): Promise<{ text: string; conf: number }>;
   /** 정규화 rect(0~1)를 잘라 프라이머리 워커로 읽는다 (PSM7 한 줄, 4배 확대).
    *  전체 프레임 패스가 놓친 **작은 글자**를 자리를 알 때 다시 읽는 용도 —
    *  위수 협의 밴 화면의 맹약 이름이 그렇다 (PSM11 이 5개 중 2개만 잡았다). */
   crop(rect: OcrRect): Promise<string[]>;
+  /** **색 배지** 크롭 — 원색 blob 을 다시 디코드해 rect 를 4배 확대(smoothing) 한 뒤 픽셀별
+   *  max(R,G,B) 그레이 + min-max 스트레치 → 프라이머리 PSM7. 위수 협의 정보/전략 화면 좌상단의
+   *  붉은 모드 배지('극한 시뮬레이션')가 대상 — 휘도 이진화 crop 은 4/51, 이건 51/51 (2026-09-07).
+   *  자리는 acmatch.badgeRectFromTitle 로 잡는다. 화면당 1회만 필요(판 시작 시 모드 고정). */
+  maxCrop(rect: OcrRect): Promise<string[]>;
+  /** **반전** 크롭 — 그레이 캔버스의 rect 를 4배 확대(smoothing) → RGB 반전 → **검은** 12px 패딩 →
+   *  프라이머리 PSM7. 어두운 HUD 위 작은 흰 한글(위수 협의 맹약 링 아래 이름, 13px@900) 이 대상:
+   *  이진화 crop 10/35 → 이걸로 34/35 (2026-09-07; 흰 패딩이면 19/33). 자리는 acmatch.ringNameRect. */
+  cropInverted(rect: OcrRect): Promise<string[]>;
   /** 강한 빨강 픽셀 비율(0~1) — 긴급 작전 화면이면 ~0.02, 평시 ≤0.009 (실측) */
   redness: number;
   /** 화면 평균 밝기(0~255) — 전투 입장 암전 화면 판정용 (DARK_LUMA 미만) */
@@ -195,7 +207,8 @@ export async function createOcrSession(blob: Blob, lang = "kor"): Promise<OcrSes
   // 1:1 이진화 → nearest 4배 확대 → eng 워커 한 줄. **확대 후 이진화하면 안 된다** —
   // 리샘플링 방식(canvas bilinear vs sharp lanczos)에 따라 결과가 갈려 브라우저와
   // 하네스가 어긋난다 (2026-07-24 실측). 글리프가 하나도 안 남으면 읽지 않고 포기.
-  const readDigits = async (x: number, y: number, w: number, h: number):
+  const readDigits = async (x: number, y: number, w: number, h: number,
+    opts?: { cut?: number; isolate?: boolean }):
     Promise<{ text: string; conf: number }> => {
     if (w < 4 || h < 4) return { text: "", conf: 0 };
     const c1 = document.createElement("canvas");
@@ -203,9 +216,10 @@ export async function createOcrSession(blob: Blob, lang = "kor"): Promise<OcrSes
     const c1x = c1.getContext("2d", { willReadFrequently: true })!;
     c1x.drawImage(c, x, y, w, h, 0, 0, w, h);
     const cimg = c1x.getImageData(0, 0, w, h);
-    binarizeGlyph(cimg.data);
-    // 테두리에 닿은 성분은 버린다 — 아트 침입은 물론 **맹약 원형의 발광 링**도 이걸로 빠진다
-    if (isolateGlyphs(cimg.data, w, h) === 0) return { text: "", conf: 0 };
+    binarizeGlyph(cimg.data, opts?.cut);
+    // 테두리에 닿은 성분은 버린다 — 아트 침입 격리. ⚠ 맹약 링 안 숫자는 링에 닿아 있어 이 격리가
+    // 글리프까지 지운다(실측 0/35) — 그 경로는 isolate:false 로 끄고 parseRingStack 이 O→0 을 맡는다.
+    if (opts?.isolate !== false && isolateGlyphs(cimg.data, w, h) === 0) return { text: "", conf: 0 };
     c1x.putImageData(cimg, 0, 0);
     const cc = document.createElement("canvas");
     cc.width = w * 4; cc.height = h * 4;
@@ -225,10 +239,57 @@ export async function createOcrSession(blob: Blob, lang = "kor"): Promise<OcrSes
         text: l.text, x0: l.x0 / W, y0: l.y0 / H, x1: l.x1 / W, y1: l.y1 / H,
       }));
     },
-    async digits(rect) {
+    async digits(rect, opts) {
       const x = Math.max(0, Math.round(rect.x * W)), y = Math.max(0, Math.round(rect.y * H));
       const w = Math.min(Math.round(rect.w * W), W - x), h = Math.min(Math.round(rect.h * H), H - y);
-      return readDigits(x, y, w, h);
+      return readDigits(x, y, w, h, opts);
+    },
+    async maxCrop(rect) {
+      // 본 캔버스(c)는 그레이라 원본 색이 없다 — colorBand 와 같은 이유로 blob 을 한 번 더 디코드한다.
+      // rect 는 0~1 이라 원본(업스케일 전) 좌표계에 그대로 적용한다.
+      let bmp2: ImageBitmap;
+      try { bmp2 = await createImageBitmap(blob); } catch { return []; }
+      const sx = Math.max(0, Math.round(rect.x * bmp2.width)), sy = Math.max(0, Math.round(rect.y * bmp2.height));
+      const sw = Math.min(Math.round(rect.w * bmp2.width), bmp2.width - sx);
+      const sh = Math.min(Math.round(rect.h * bmp2.height), bmp2.height - sy);
+      if (sw < 8 || sh < 6) { bmp2.close(); return []; }
+      const zoom = 4;
+      const cc = document.createElement("canvas");
+      cc.width = sw * zoom; cc.height = sh * zoom;
+      const cctx = cc.getContext("2d", { willReadFrequently: true })!;
+      cctx.imageSmoothingEnabled = true;
+      cctx.imageSmoothingQuality = "high";
+      cctx.drawImage(bmp2, sx, sy, sw, sh, 0, 0, cc.width, cc.height);
+      bmp2.close();
+      const bimg = cctx.getImageData(0, 0, cc.width, cc.height);
+      maxChannelNormalize(bimg.data);
+      cctx.putImageData(bimg, 0, 0);
+      await setPsm(worker, "7");
+      const r = await worker.recognize(cc, {}, { blocks: false, text: true, hocr: false, tsv: false });
+      return (r.data.text ?? "").split("\n").map((l) => l.trim()).filter(Boolean);
+    },
+    async cropInverted(rect) {
+      const x = Math.max(0, Math.round(rect.x * W)), y = Math.max(0, Math.round(rect.y * H));
+      const w = Math.min(Math.round(rect.w * W), W - x), h = Math.min(Math.round(rect.h * H), H - y);
+      if (w < 4 || h < 4) return [];
+      const zoom = 4, pad = 12;
+      const cc = document.createElement("canvas");
+      cc.width = w * zoom + pad * 2; cc.height = h * zoom + pad * 2;
+      const cctx = cc.getContext("2d", { willReadFrequently: true })!;
+      // 희게 채우고 그린 뒤 **통째로 반전** → 글자는 검정, **패딩은 검정**. ⚠ 패딩은 검정이어야 한다 —
+      // 흰 패딩이면 같은 크롭이 19/33 로 떨어진다 (2026-09-07 A/B: 실측 34/35 를 낸 sharp 파이프라인은
+      // extend 뒤에 negate 가 적용돼 패딩이 검게 반전돼 있었다). 반전은 선형이라 확대 전후 어느 쪽에 해도 같다.
+      cctx.fillStyle = "#fff";
+      cctx.fillRect(0, 0, cc.width, cc.height);
+      cctx.imageSmoothingEnabled = true;
+      cctx.imageSmoothingQuality = "high";
+      cctx.drawImage(c, x, y, w, h, pad, pad, w * zoom, h * zoom);
+      const bimg = cctx.getImageData(0, 0, cc.width, cc.height);
+      invertRgb(bimg.data);
+      cctx.putImageData(bimg, 0, 0);
+      await setPsm(worker, "7");
+      const r = await worker.recognize(cc, {}, { blocks: false, text: true, hocr: false, tsv: false });
+      return (r.data.text ?? "").split("\n").map((l) => l.trim()).filter(Boolean);
     },
     async crop(rect) {
       const x = Math.max(0, Math.round(rect.x * W)), y = Math.max(0, Math.round(rect.y * H));

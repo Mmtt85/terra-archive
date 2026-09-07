@@ -29,6 +29,7 @@ export const FEATURE_RELEASED: Record<string, string | { date: string; days: num
   "story-scene": "2026-08-25", // 스토리 리더기 — 배경·스탠딩을 세워 인게임처럼 한 줄씩 재생 (스토리 상세의 기본 보기)
   "feedback-board": "2026-08-17", // 제안 게시판 — 내 제안·개발자 답변 스레드 (작성자와 개발자만 열람)
   "ac-deck": "2026-08-29", // 덱편성 시뮬레이터 — 배치·정비구역에 기물을 담아 맹약 상태를 계산 (/autochess 제목 줄 버튼)
+  "ac-prts": "2026-09-07", // PRTS 시뮬레이션 — 게임 창을 물려 밴 기물·시뮬레이션 종류·전략·맹약 중첩을 화면에서 읽는다 (/autochess 제목 줄 버튼, 2026-09-06 폐기 → 09-07 재가동)
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;

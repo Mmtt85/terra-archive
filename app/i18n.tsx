@@ -2875,6 +2875,31 @@ const D: Record<string, Pair> = {
     "まだ重なりを読み取れていません — ゲームで盟約が見える画面を表示してください"],
   "맹약 {n}개": ["{n} alliances", "盟約{n}件"],
   "새 판 — 기록을 비웠습니다": ["New run — cleared the record", "新しい一戦 — 記録を消去しました"],
+  // PRTS 시뮬레이션 재가동 (2026-09-07) — 밴 얼굴 확정·시뮬레이션 종류·전략 자동·남은 배치
+  "새 판": ["New run", "新しい一戦"],
+  "남은 배치 {n}": ["{n} deploy slots left", "配置残り{n}"],
+  "밴 {n}개": ["{n} banned", "BAN {n}体"],
+  "내 전략": ["My strategy", "自分の戦略"],
+  "고르는 중": ["Choosing…", "選択中"],
+  "다른 참가자": ["Other players", "他の参加者"],
+  "게임의 밴 목록 화면에서 끝까지 스크롤을 내려 주세요 — 화면에 온전히 보인 카드만 얼굴로 확정합니다.": [
+    "Scroll the game's ban list all the way down — only cards fully visible on screen are identified by face.",
+    "ゲームのBANリスト画面を最後までスクロールしてください — 画面に完全に映ったカードだけを顔で確定します。"],
+  "**밴 기물** — 시작 화면의 '사용 제한 오퍼레이터' 카드를 얼굴로 알아봅니다. 목록은 스크롤해야 다 보이므로 25초 안에 끝까지 내려 주세요 — 화면에 온전히 보인 카드만 셉니다.": [
+    "**Banned pieces** — the 'Restricted Operators' cards on the start screen are identified by face. The list only shows fully when scrolled, so scroll to the bottom within the 25 seconds — only cards fully on screen count.",
+    "**BAN駒** — 開始画面の「使用制限オペレーター」カードを顔で見分けます。リストはスクロールしないと全部見えないので、25秒以内に一番下まで下げてください — 画面に完全に映ったカードだけを数えます。"],
+  "**시뮬레이션 종류** — 표준·험지·극한·초월을 로딩 화면과 화면 위쪽 붉은 배지에서 읽습니다.": [
+    "**Simulation type** — Standard / Perilous / Dire / Ultimate is read from the loading screen and the red badge at the top.",
+    "**シミュレーション種別** — 標準・逆境・死地・究極をロード画面と画面上部の赤いバッジから読み取ります。"],
+  "**전략** — '선택한 전략' 확정 화면에서 내가 고른 전략을 편성기에 자동으로 넣습니다. 연합에서 다른 참가자의 전략은 참가자 카드의 그림으로 알아봅니다 (아직 실플레이 확인 전).": [
+    "**Strategy** — your pick is placed into the deck builder from the 'Selected Strategy' screen. In Allied runs, other players' strategies are identified from the picture on their participant card (not yet verified in a real multi-player run).",
+    "**戦略** — 「選択した戦略」確定画面から自分の戦略をデッキ編成に自動で入れます。連合では他の参加者の戦略を参加者カードの絵で見分けます（実プレイでの確認はまだです）。"],
+  "**맹약 중첩 수** — 편성 계산기가 유일하게 손으로 받던 값입니다. 전투 화면 위쪽 맹약 원형에서 읽어 자동으로 채웁니다.": [
+    "**Alliance stacks** — the one value the deck calculator used to need typed in. Read from the alliance rings at the top of the battle screen.",
+    "**盟約の重なり** — 編成計算機が唯一手入力に頼っていた値です。戦闘画面上部の盟約リングから読み取って自動で埋めます。"],
+  "**배치 가능 인원** — 남은 배치 칸을 따라가고, 9가 보이면 '인사부 파일'을 쓴 것으로 보고 9번째 배치 칸을 열어 줍니다.": [
+    "**Deployable count** — tracks the remaining deploy slots; if a 9 is ever shown, the 'HR File' is assumed and the 9th slot opens.",
+    "**配置可能人数** — 残り配置枠を追い、9が見えたら「人事部ファイル」使用と見なして9枠目を開けます。"],
   "게임 창을 골라 연결하면, 판이 도는 동안 편성이 화면을 따라갑니다": [
     "Pick the game window and your board will follow the screen for the whole run",
     "ゲームウィンドウを選ぶと、一戦のあいだ編成が画面に追従します"],
@@ -2896,12 +2921,6 @@ const D: Record<string, Pair> = {
     "It works out solo vs allied from the screen too. Nothing to choose.",
     "ソロか連合かも画面から判別します。選ぶものはありません。"],
   "무엇을 읽나": ["What it reads", "何を読み取るか"],
-  "**맹약 중첩 수** — 편성 계산기가 유일하게 손으로 받던 값입니다. 화면의 맹약 원형에서 읽어 자동으로 채웁니다.": [
-    "**Alliance stacks** — the only value the board calculator used to ask you to type. Read from the alliance circles on screen and filled in automatically.",
-    "**盟約の重なり** — 編成計算機が唯一手入力を求めていた値です。画面の盟約サークルから読み取って自動で埋めます。"],
-  "**배치 가능 인원** — n/8이 n/9로 바뀌면 '인사부 파일'을 쓴 것으로 보고 9번째 배치 칸을 열어 줍니다.": [
-    "**Deployable count** — when n/8 becomes n/9 it takes that as the HR File being used and unlocks the 9th slot.",
-    "**配置可能人数** — n/8がn/9に変われば「人事部ファイル」を使ったと判断し、9番目の配置枠を開きます。"],
   "**새 판 감지** — '시뮬레이션 정보' 화면이 보이면 지난 판 기록을 스스로 비웁니다.": [
     "**New-run detection** — when the 'Simulation Info' screen appears it clears the previous run by itself.",
     "**新しい一戦の検出** — 「シミュレーション情報」画面が見えると前の記録を自動で消します。"],

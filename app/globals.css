@@ -21025,6 +21025,12 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
 }
 .ac-runbar-stat { color: var(--ink3); }
 .ac-runbar-msg { color: var(--lime-ink, var(--ink2)); font-style: normal; font-weight: 700; }
+/* 전략 칩 — 내 전략(확정/고르는 중)·다른 참가자(연합). 아이콘은 전략 아트를 작게 (2026-09-07) */
+.ac-runbar-band { display: inline-flex; align-items: center; gap: 6px; color: var(--ink2); }
+.ac-runbar-band > b { font-weight: 800; color: var(--ink3); }
+.ac-runbar-band img { width: 18px; height: 18px; border-radius: 4px; object-fit: cover; flex: none; }
+.ac-runbar-seat { display: inline-flex; align-items: center; gap: 4px; }
+.ac-runbar-seat + .ac-runbar-seat { margin-left: 6px; }
 .ac-runbar-btn {
   margin-left: auto; padding: 4px 12px;
   border: 1px solid var(--line); border-radius: 999px;

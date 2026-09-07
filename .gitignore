@@ -86,3 +86,5 @@ scripts/records-cn/_src/
 # tesseract 언어 모델(kor·chi_sim 등, 각 2~20MB) — 검증 스크립트가 리포 루트에 받아 두는
 # 캐시지 소스가 아니다. 지워도 다음 실행에 다시 받는다.
 /*.traineddata
+# 위수 협의 PRTS 녹화 프레임(2026-09-07, 수백 MB) — 로컬 전용. 기대값은 scripts/verify-autochess.ts 에 코드로 둔다.
+/fixtures/lens/ac-frames/

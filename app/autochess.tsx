@@ -15,7 +15,7 @@
 // ⚠ 영어판은 시즌2가 글로벌 서버에 없어 **설명문이 한국어 원문**이다 (doc.krOnly).
 //    통합전략 IS6와 같은 취급 — 안내문을 띄우고 그대로 보여 준다.
 
-import { cloneElement, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { cloneElement, lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { useI18n, rich, DT_LOCALE, type T } from "./i18n";
 import { isNewFeature } from "./whats-new";
@@ -27,10 +27,12 @@ import { GLOBAL_MODAL_HASH } from "./hash-modal";
 import { loadEnemies } from "./dex-cross";
 import { EnemyFile, RANK_KEY, enemyImg, enemyImgBase, type Enemy } from "./enemy-detail";
 import { StageRouteMap, enemyRouteColor, type StageRoutes } from "./stage-route-map";
-import { useBridgeWatch, useBridgeStatus, noteBridge } from "./lens/bridge";
+import { useBridgeWatch, useBridgeStatus, connectBridge, disconnectBridge, bridgeSupported, bridgeOnMobile, bridgeOn, noteBridge, memoBridgeScene } from "./lens/bridge";
 import { recognizeShot, warmData, ocrLangFor } from "./lens/run";
 import { warmOcr, warmDigitOcr } from "./lens/ocr";
-import { useAcRun, setAcStack, setAcStacks, mergeAcRun, resetAcRun, isAcLock, acModeOf } from "./autochess-run";
+import { warmFaceTemplates } from "./lens/acface-load";
+import { warmBandTemplates } from "./lens/acband-load";
+import { useAcRun, acRun, setAcStack, setAcStacks, mergeAcRun, resetAcRun, isAcLock, acModeOf, AC_LOCK, BAN_VOTE_SURE } from "./autochess-run";
 import { solveAcBans } from "./lens/acsolve";
 
 // 전투 맵 (scripts/build-autochess-routes.py) — 작전 도감·통합전략과 **같은 렌더러**를 쓴다
@@ -261,6 +263,10 @@ const GAIN_W_NOTE: Record<string, string> = {
 };
 const VIEWS = ["bond", "band", "op", "item", "misc"] as const;
 type View = (typeof VIEWS)[number];
+/** PRTS 지원 여부·모바일 판정용 — 값이 바뀌지 않으므로 구독은 빈 해제 함수만 돌려준다
+ *  (bridge-button.tsx noSubscribe 와 같은 것). */
+const acNoSub = () => () => { /* 값이 바뀌지 않는다 */ };
+const AcBridgeHelpModal = lazy(() => import("./lens/bridge-help"));
 const VIEW_LABEL: Record<View, string> = {
   bond: "맹약", band: "전략", op: "오퍼레이터 (기물)", item: "아이템", misc: "게임 정보",
 };
@@ -626,22 +632,44 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     try {
       const oc = await recognizeShot("autochess", file, undefined, locale, { live: true });
       if (oc.target.kind !== "acrun") return;
-      // '시뮬레이션 정보' 화면 = 새 판. 지난 판 중첩이 남으면 조용히 틀린 계산이 된다.
-      if (oc.target.fresh) resetAcRun();
-      const n = Object.keys(oc.target.stacks).length;
-      const dp = oc.target.deploy ?? null;
-      const seats = oc.target.seats ?? 0;
-      const banObs = oc.target.banObs ?? {};
-      const nb = Object.keys(banObs).length;
-      if (n || dp || seats || nb) {
-        mergeAcRun({ stacks: oc.target.stacks, deploy: dp, seats, banObs });
-        const msg = [n ? t("맹약 {n}개", { n }) : "", dp ? `${dp.cur}/${dp.max}` : "",
+      const tg = oc.target;
+      // 전투 화면이면 브리지 전투 홀드 — 타이머·이펙트의 국소 변화마다 OCR 을 돌리지 않는다
+      // (20초마다 한 번은 다시 읽으므로 전투 중 맹약 중첩도 따라온다, bridge.ts BATTLE_RECHECK_MS)
+      if (oc.battle) memoBridgeScene(oc);
+      // 새 판 감지 — '시뮬레이션 선택' 화면(판에 들어가는 길목)이거나, 판이 진행됐던 뒤(전략·로딩·휴식·전투)에
+      // '시뮬레이션 정보' 화면이 다시 보이면 지난 판이다. ⚠ 정보 화면은 밴 목록을 스크롤하는 25초 동안 계속
+      // 보이므로 **볼 때마다 비우면 안 된다** — 2026-09-06 판은 그래서 밴 표가 프레임마다 지워졌다.
+      const cur = acRun();
+      const progressed = cur.screen === "band" || cur.screen === "confirm" || cur.screen === "loading"
+        || cur.screen === "rest" || cur.screen === "battle";
+      if (tg.screen === "select" || (tg.fresh && progressed)) resetAcRun();
+      const n = Object.keys(tg.stacks).length;
+      const bans = tg.bans ?? [];
+      const banObs = tg.banObs ?? {};
+      const bands = tg.bands ?? [];
+      const seats = tg.seats ?? 0;
+      const hasDeploy = typeof tg.deployLeft === "number";
+      const hasHp = typeof tg.hp === "number";
+      const any = n || bans.length || Object.keys(banObs).length || bands.length || seats || hasDeploy || hasHp
+        || !!tg.mode || !!tg.pieces?.length || !!tg.screen;
+      if (any) {
+        mergeAcRun({
+          stacks: tg.stacks, banObs, bans, bands, seats,
+          deployLeft: hasDeploy ? tg.deployLeft : undefined,
+          mode: tg.mode ?? undefined, hp: hasHp ? tg.hp : undefined,
+          pieces: tg.pieces, screen: tg.screen ?? undefined,
+        });
+        const modeName = tg.mode ? (doc.modes.find((m) => m.code === tg.mode)?.n ?? tg.mode) : "";
+        const mine = bands.find((b) => b.seat === 0);
+        const bandName = mine ? (doc.bands.find((b) => b.id === mine.band)?.n ?? mine.band) : "";
+        const msg = [modeName, n ? t("맹약 {n}개", { n }) : "",
+          typeof tg.deployLeft === "number" ? t("남은 배치 {n}", { n: tg.deployLeft }) : "",
           seats ? (seats > 1 ? t("연합") : t("독립")) : "",
-          nb ? t("밴 {n}행", { n: nb }) : ""]
+          bans.length ? t("밴 {n}개", { n: bans.length }) : "",
+          bandName ? (mine?.final ? bandName : `${bandName} (${t("고르는 중")})`) : ""]
           .filter(Boolean).join(" · ");
-        noteBridge(msg);
-        setAcMsg(msg);
-      } else if (oc.target.fresh) {
+        if (msg) { noteBridge(msg); setAcMsg(msg); }
+      } else if (tg.fresh) {
         noteBridge(t("새 판"));
         setAcMsg(t("새 판 — 기록을 비웠습니다"));
       }
@@ -657,6 +685,36 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     if (!rows.length) return { sure: [] as string[], maybe: [] as string[], solutions: 0 };
     return solveAcBans(rows, doc.chess.map((c) => ({ id: c.id, op: c.op ?? "", t: c.t, bonds: c.bonds })));
   }, [acrun.banObs, doc.chess]);
+  // 밴 리스트 최종 — **얼굴로 확정한 기물(표 ≥ 1)** 이 1순위, 조합 풀이(acsolve)는 얼굴이 못 가른
+  // 자리(초상 없는 기물·잘린 카드)만 보탠다. 표가 있으나 모자란 것과 풀이의 후보는 점선 칩으로.
+  // (2026-09-07 재가동 — 실측 900px 294카드에서 (맹약,티어) 후보 제한 얼굴 매칭 100%)
+  const banSure = useMemo(() => {
+    const votes = Object.entries(acrun.banVotes).sort((a, b) => b[1] - a[1]);
+    const sure = votes.filter(([, v]) => v >= BAN_VOTE_SURE).map(([id]) => id);
+    for (const id of acBans.sure) if (!sure.includes(id)) sure.push(id);
+    return sure;
+  }, [acrun.banVotes, acBans.sure]);
+  const banMaybe = useMemo(() => {
+    const set = new Set<string>();
+    for (const [id, v] of Object.entries(acrun.banVotes)) if (v > 0 && v < BAN_VOTE_SURE && !banSure.includes(id)) set.add(id);
+    for (const id of acBans.maybe) if (!banSure.includes(id)) set.add(id);
+    return [...set];
+  }, [acrun.banVotes, acBans.maybe, banSure]);
+  // 시뮬레이션 종류 — 코드(AC-1~4·AC-TR-1)는 독립/연합 양쪽에 같은 이름이라, 이름만 쓴다.
+  const acModeName = acrun.mode ? (doc.modes.find((m) => m.code === acrun.mode)?.n ?? acrun.mode) : "";
+  // 내 전략 — 확정('선택한 전략' 화면)이면 편성기의 전략 자리를 **파생값으로** 채운다 (slot9On 과 같은
+  // 규약 — setState 로 밀어 넣지 않는다). 고르는 중이면 미리보기로만 보여 준다.
+  const acBandPick = acLocked ? acrun.bands.find((b) => b.seat === 0) : undefined;
+  const acMyBand = acBandPick?.final ? acBandPick.band : "";
+  const bandShown = acMyBand || simBand;
+  const acOtherBands = acLocked ? acrun.bands.filter((b) => b.seat > 0) : [];
+  // 지원 여부·모바일은 navigator 를 봐야 알 수 있어 서버에선 판단할 수 없다 — 그냥 호출하면
+  // 프리렌더와 하이드레이션 결과가 갈리므로(React #418) 서버 스냅샷을 고정해 읽는다
+  // (bridge-button.tsx BridgeTopicButton 과 같은 규약).
+  const acPrtsOk = useSyncExternalStore(acNoSub, bridgeSupported, () => false);
+  const acPrtsMobile = useSyncExternalStore(acNoSub, bridgeOnMobile, () => true);
+  const acPrtsBlocked = acPrtsMobile || !acPrtsOk;
+  const [acHelp, setAcHelp] = useState(false);
   useEffect(() => {
     if (!acLocked) return;
     // 첫 인식에서 wasm·traineddata(~9MB) 로드로 수 초를 잃지 않게 연결 즉시 예열.
@@ -664,11 +722,14 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     warmOcr(ocrLangFor(locale));
     void warmDigitOcr();
     warmData("autochess", locale);
-  }, [acLocked, locale]);
-  // 배치 가능 인원의 분모가 9 = 인사부 파일을 쓴 것 → 9번째 칸을 열어 준다 (사용자 확정 2026-09-06).
+    // 얼굴·전략 템플릿 — 초상 121장(≈3MB)·전략 아이콘 40장. 밴 화면은 25초뿐이라 첫 프레임에서 받기 시작하면 늦다.
+    warmFaceTemplates(doc.chess.filter((c) => c.op).map((c) => c.op as string));
+    warmBandTemplates(doc.bands.map((b) => b.id));
+  }, [acLocked, locale, doc.chess, doc.bands]);
+  // 남은 배치 칸이 9 로 찍힌 적 있음 = 인사부 파일을 쓴 것 → 9번째 칸을 열어 준다 (사용자 확정 2026-09-06).
   // ⚠ 상태로 밀어 넣지 않고 **파생**시킨다 — 효과 안에서 setState 하면 렌더가 한 번 더 돌고
   //   (린트 규칙 위반) 연결을 끊었을 때 손으로 켠 것과 구분이 안 된다. OR 로 합치면 둘 다 산다.
-  const slot9On = slot9 || acrun.deploy?.max === 9;
+  const slot9On = slot9 || acrun.deploy9;
 
   const hydrated = useRef(false);
   const prevHash = useRef("");
@@ -737,7 +798,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
       if (gd) p.set("gd", gd);
       const k = Object.entries(stacks).filter(([, n]) => n > 0).map(([id, n]) => `${id}*${n}`).join(".");
       if (k) p.set("k", k);
-      if (simBand) p.set("bd", simBand);
+      if (bandShown) p.set("bd", bandShown);
     }
     if (curModal) p.set("m", `${curModal[0]}~${curModal[1]}`);
     // ~는 URL에서 그대로 써도 되는 글자인데 URLSearchParams가 %7E로 인코딩한다 — 링크가
@@ -756,7 +817,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     }
     prevHash.current = hash;
   }, [view, miscTab, bondN, bondT, tier, garFilter, jobFilter, subFilter, term, curModal?.[0], curModal?.[1],
-      sim, slots, bench, slot9On, goldMark, stacks, simBand]); // eslint-disable-line react-hooks/exhaustive-deps
+      sim, slots, bench, slot9On, goldMark, stacks, bandShown]); // eslint-disable-line react-hooks/exhaustive-deps
 
 
   // 검색 입력은 비제어(useSearchInput)라 뷰가 바뀌어 입력칸이 새로 마운트되면 빈칸이 된다.
@@ -1645,15 +1706,47 @@ export default function AutochessGuide({ doc, onShowOperator }: {
         <span className="section-no">STRONGHOLD PROTOCOL</span>
         <h2 id="ac-title">{doc.name}</h2>
         {/* 도감·목록 탭과 성격이 달라(직접 짜 보는 자리) 탭 줄이 아니라 제목 줄 한가운데 세운다.
-            ⚠ 'PRTS 시뮬레이션'(게임 화면 인식) 버튼은 2026-09-06에 **폐기**했다 — 다시 달지 말 것.
-            인식 배선(lens/acvision·acsolve·acmatch, autochess-run)은 아직 남아 있지만
-            들어가는 문이 없어 동작하지 않는다. */}
+            둘 — 손으로 짜는 편성기 + PRTS 로 게임을 따라가는 모드.
+            PRTS 시뮬레이션은 2026-09-06 에 한 번 폐기했다가 **2026-09-07 사용자 재요청**(실플레이 녹화 2편 제공,
+            "아무리 생각해도 포기하기 힘들다")으로 되살렸다 — 밴 기물은 얼굴(스킨 초상 HOG)로, 시뮬레이션 종류·
+            전략은 문구로, 맹약 중첩은 링으로 읽는다 (lens/acvision·acface·acmatch·acband, autochess-run). */}
         <div className="ac-ctarow">
           <button type="button" className={`ac-simcta${sim ? " on" : ""}`} aria-haspopup="dialog"
             onClick={() => { setSim(true); closeMenus(); clear(false); }}>
             {t("덱편성 시뮬레이터")}
             {isNewFeature("ac-deck") && <span className="new-badge">{t("새기능")}</span>}
           </button>
+          {/* 독립/연합는 **버튼으로 나누지 않는다** — 화면에서 알아낸다 (사용자 확정 2026-09-06).
+              PRTS 와 ? 는 /rogue 툴바처럼 **붙은 한 덩어리**다. */}
+          <span className="ac-prtsgrp">
+          <button type="button" className={`ac-simcta ac-prtscta${acLocked ? " on" : ""}`}
+            disabled={acPrtsBlocked}
+            title={acPrtsMobile
+              ? t("PRTS 링크는 PC 브라우저에서만 사용할 수 있습니다")
+              : acLocked ? t("PRTS 링크 끊기")
+                : t("게임 창을 골라 연결하면, 판이 도는 동안 편성이 화면을 따라갑니다")}
+            onClick={async () => {
+              if (acLocked) {
+                // 끊을 때 화면에서 읽은 전략은 손 상태로 옮겨 남긴다 — 끊어도 읽어 둔 값은 남는다는 규약
+                if (acMyBand) setSimBand(acMyBand);
+                disconnectBridge();
+                return;
+              }
+              resetAcRun();                 // 새 판으로 들어가는 길목 — 지난 판 값을 버린다
+              setAcMsg("");
+              // ⚠ 편성기는 **연결이 된 뒤에** 연다 (사용자 지적 2026-09-06 "지금은 먼저
+              //   열리고 나서 그위에 연결화면이 뜨니까"). 창 선택을 취소하면 아무 일도 없다.
+              await connectBridge({ topic: AC_LOCK, name: t("PRTS 시뮬레이션") });
+              if (bridgeOn()) { closeMenus(); setSim(true); }
+            }}>
+            <span aria-hidden>{acLocked ? "◉" : "○"}</span> {t("PRTS 시뮬레이션")}
+            <span className="beta-badge">{acPrtsMobile ? t("PC 전용") : "BETA"}</span>
+            {!acLocked && isNewFeature("ac-prts") && <span className="new-badge">{t("새기능")}</span>}
+          </button>
+          {/* ? 는 PRTS 버튼 **바로 오른쪽**에 붙는다 (bridge-button.tsx 와 같은 규약) */}
+          <button type="button" className="lens-help-btn"
+            aria-label={t("PRTS 링크 도움말")} onClick={() => setAcHelp(true)}>?</button>
+          </span>
         </div>
       </header>
       {/* 한 판 스트립 — 게임 연결이 켜져 있을 때만. **모달 밖**에 두는 게 핵심이다:
@@ -1663,16 +1756,38 @@ export default function AutochessGuide({ doc, onShowOperator }: {
         <div className="ac-runbar">
           <span className="ac-runbar-dot" aria-hidden />
           <strong>{t("PRTS 시뮬레이션")}</strong>
-          {/* 독립/연합는 화면에서 파생된다 — 아직 못 가렸으면 아무 말도 안 한다 */}
+          {/* 시뮬레이션 종류·독립/연합은 화면에서 파생된다 — 아직 못 가렸으면 아무 말도 안 한다 */}
+          {acModeName && <span className="ac-runbar-mode">{acModeName}</span>}
           {acMode && <span className="ac-runbar-mode">
             {acMode === "multi" ? t("연합") : t("독립")}</span>}
           <span className="ac-runbar-stat">
             {acStackCount > 0
               ? t("맹약 중첩 {n}개를 읽었습니다", { n: acStackCount })
               : t("아직 읽은 중첩이 없습니다 — 게임에서 맹약이 보이는 화면을 띄워 주세요")}
-            {acrun.deploy && ` · ${t("배치")} ${acrun.deploy.cur}/${acrun.deploy.max}`}
-            {acrun.deploy?.max === 9 && ` (${t("인사부 파일")})`}
+            {typeof acrun.deployLeft === "number" && ` · ${t("남은 배치 {n}", { n: acrun.deployLeft })}`}
+            {acrun.deploy9 && ` (${t("인사부 파일")})`}
+            {typeof acrun.hp === "number" && ` · HP ${acrun.hp}`}
+            {banSure.length > 0 && ` · ${t("밴 {n}개", { n: banSure.length })}`}
           </span>
+          {/* 전략 — 내 것(확정/고르는 중)과 상대 것(연합). 이름은 데이터의 로케일 이름을 그대로 쓴다 */}
+          {acBandPick && (
+            <span className="ac-runbar-band">
+              <img src={bandIcon(acBandPick.band)} alt="" aria-hidden onError={hideErr} />
+              <b>{t("내 전략")}</b> {doc.bands.find((b) => b.id === acBandPick.band)?.n ?? acBandPick.band}
+              {!acBandPick.final && <i className="sb-dim"> ({t("고르는 중")})</i>}
+            </span>
+          )}
+          {acOtherBands.length > 0 && (
+            <span className="ac-runbar-band">
+              <b>{t("다른 참가자")}</b>
+              {acOtherBands.map((b) => (
+                <span key={b.seat} className="ac-runbar-seat">
+                  <img src={bandIcon(b.band)} alt="" aria-hidden onError={hideErr} />
+                  {doc.bands.find((x) => x.id === b.band)?.n ?? b.band}
+                </span>
+              ))}
+            </span>
+          )}
           {acMsg && <em className="ac-runbar-msg">{acMsg}</em>}
           {/* 연결 끊기는 두지 않는다 — 위쪽 PRTS 토스트와 제목 줄 버튼이 이미 한다
               (사용자 지시 2026-09-06 "애초에 위에 있으니 필요 없을테니 그냥 없애줘") */}
@@ -2394,6 +2509,12 @@ export default function AutochessGuide({ doc, onShowOperator }: {
         );
       })()}
 
+      {/* PRTS 도움말 — 설명만 담긴 모달이라 필요할 때만 받아온다 (bridge-button.tsx 와 같은 규약) */}
+      {acHelp && (
+        <Suspense fallback={null}>
+          <AcBridgeHelpModal where="autochess" onClose={() => setAcHelp(false)} />
+        </Suspense>
+      )}
       {peek && (() => {
         const row = boardBonds.find((x) => x.b.id === peek);
         if (!row) return null;
@@ -2474,11 +2595,12 @@ export default function AutochessGuide({ doc, onShowOperator }: {
           {acLocked && (
             <section className="ac-boardout ac-banlist">
               <h3 className="sb-h3">{t("밴 리스트")}
-                {acBans.sure.length > 0 && <em className="sb-count">{acBans.sure.length}</em>}</h3>
-              <p className="ac-bannote">{t("게임의 밴 목록 화면에서 끝까지 스크롤을 내려 주세요 — 화면에 보인 기물만 인식됩니다.")}</p>
+                {banSure.length > 0 && <em className="sb-count">{banSure.length}</em>}</h3>
+              <p className="ac-bannote">{t("게임의 밴 목록 화면에서 끝까지 스크롤을 내려 주세요 — 화면에 온전히 보인 카드만 얼굴로 확정합니다.")}</p>
               {/* 확정 / 후보를 나눠 보여 준다 — 화면을 더 볼수록 후보가 확정으로 옮겨 간다.
-                  얼굴을 맞히는 게 아니라 (맹약, 티어) 조합으로 역산하기 때문에, 관측이
-                  모자라면 여러 답이 남는다. 그때 하나를 골라 보여 주면 거짓말이 된다. */}
+                  확정은 카드 얼굴(스킨 초상 HOG 매칭, 2026-09-07)로 정하고, 얼굴이 못 가른 자리만
+                  (맹약, 티어) 조합 풀이가 보탠다 — 풀이에 해가 여럿이면 후보로만 둔다.
+                  그때 하나를 골라 보여 주면 거짓말이 된다. */}
               {(() => {
                 const chip = (id: string, sure: boolean) => {
                   const c = chessById.get(id);
@@ -2501,14 +2623,14 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                 };
                 return (
                   <>
-                    {acBans.sure.length > 0 && (
-                      <ul className="ac-banrow">{acBans.sure.map((id) => chip(id, true))}</ul>
+                    {banSure.length > 0 && (
+                      <ul className="ac-banrow">{banSure.map((id) => chip(id, true))}</ul>
                     )}
-                    {acBans.maybe.length > 0 && (
+                    {banMaybe.length > 0 && (
                       <>
                         <p className="ac-bannote ac-banmaybe-note">
                           {t("아래는 아직 확정되지 않은 후보입니다 — 밴 목록을 더 보여 주면 좁혀집니다.")}</p>
-                        <ul className="ac-banrow">{acBans.maybe.map((id) => chip(id, false))}</ul>
+                        <ul className="ac-banrow">{banMaybe.map((id) => chip(id, false))}</ul>
                       </>
                     )}
                   </>
@@ -2556,7 +2678,10 @@ export default function AutochessGuide({ doc, onShowOperator }: {
               )}
               {/* 고른 전략 — 누르면 상세가 열린다 (전략 탭 카드와 같은 동작) */}
               {(() => {
-                const b = simBand ? doc.bands.find((x) => x.id === simBand) : null;
+                // 연결 중에는 화면에서 읽은 전략(확정)이 우선이고, 고르는 중이면 미리보기로 같은 카드를 그린다
+                const shownId = bandShown || (acBandPick?.band ?? "");
+                const b = shownId ? doc.bands.find((x) => x.id === shownId) : null;
+                const previewing = !!acBandPick && !acBandPick.final && !acMyBand;
                 // 연결 중에는 아무 말도 안 한다 — 게임에서 고르면 채워질 자리다 (2026-09-06
                 // 사용자 지시 "꼭 필요한 문구만 나타나게")
                 if (!b) return acLocked ? null : <span className="sb-dim ac-note">{t("아직 고르지 않았습니다.")}</span>;
@@ -2567,6 +2692,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                     <span>
                       <b>{b.n}{b.by && <em className="ac-bandby">{b.by}</em>}</b>
                       <i className="sb-chip ac-hp">HP {b.hp}</i>
+                      {previewing && <i className="sb-chip">{t("고르는 중")}</i>}
                     </span>
                     <small>{rich(b.d.split("\n")[0])}</small>
                   </button>

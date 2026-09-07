@@ -1,33 +1,99 @@
-// 위수 협의 '사용 제한 오퍼레이터'(밴) 화면 — 카드 격자와 티어 배지를 읽는다 (2026-09-06).
-// (순수 계산 코어. React·DOM 무의존 — 브라우저와 verify-lens 하네스가 같은 함수를 쓴다)
+// 위수 협의 '사용 제한 오퍼레이터'(밴) 화면 — 카드 격자와 티어 배지를 읽는다 (2026-09-07, grid2 정식화).
+// (순수 계산 코어. React·DOM·sharp 무의존 — 브라우저와 scripts/verify-ac/grid.ts 하네스가 같은 함수를 쓴다)
 //
-// 왜 얼굴을 안 보는가 (2026-09-06 실측 후 방향 전환):
-//   초상·아바타 템플릿 ZNCC 로 얼굴을 맞히려 했으나 121종 중 순위 2·25·9·31위로 못 쓸
-//   수준이었다. 대신 **밴된 기물은 자기가 속한 모든 맹약 행에 동시에 나타난다**는 성질을
-//   쓴다 — 행끼리 서로를 구속하므로 (맹약, 티어) 관측만으로 조합이 거의 유일하게 정해진다
-//   (ban2.jpg 5개 행만으로 17종 중 15종 확정, 탐색 24노드·0.0초). 풀이는 acsolve.ts.
-//   그래서 여기서 뽑아야 하는 것은 **행별 티어 목록**뿐이다.
+// 왜 얼굴이 아니라 티어 목록인가 (2026-09-06 결정):
+//   밴된 기물은 자기가 속한 모든 맹약 행에 동시에 나타나므로, 행별 (맹약, 티어 목록) 관측만으로
+//   조합이 거의 유일하게 정해진다 (풀이는 acsolve.ts). 여기서는 **행별 카드 박스와 티어**만 뽑는다.
+//   맹약 이름·아이콘 매칭은 소비자(acmatch·통합 run) 몫 — 그래서 행마다 아이콘 자리도 함께 낸다.
+//
+// 왜 밝기 투영을 버리고 **빨간 금지 표식**을 쓰는가 (2026-09-07 실측):
+//   구 findAcCards(밝기 투영 + 오츠)는 브리지 운영 조건(가로 900px, 카드 ≈68px)에서 온전한 행을
+//   36% 만 맞혔다 — 어두운 아트 카드가 통째로 빠지고 헤더 글자가 카드로 잡혔다. 카드 우상단의
+//   빨간 금지 표식(사람+X 글리프가 박힌 빨간 삼각형)은 아트와 무관하게 **모든 카드에 늘 있고**
+//   UI 어디에도 같은 모양의 빨강이 없다. 이걸로 바꾼 뒤 32프레임 온전한 행 87/88(99%)·카드 티어
+//   276/276·오탐 0·잘린 행 누출 0·4ms (900px, scripts/verify-ac/grid.ts 로 재현).
 //
 // 화면 배치:
-//   [맹약 아이콘]  [카드][카드][카드]…      ← 한 행 = 한 맹약
-//    맹약 이름                                 카드 좌하단에 티어 배지(로마숫자)
+//   [맹약 아이콘]  [카드][카드][카드]…(최대 6장)      ← 한 행 = 한 맹약. 7장째는 아이콘 없이 다음 줄(줄바꿈 행)
+//    맹약 이름      카드 좌하단에 티어 배지(로마숫자), 우상단에 빨간 금지 표식
 //
-// ⚠ 카드 크기가 화면마다 다르다 — 전체화면 스샷은 179px, 창모드 BlueStacks 영상은 55px.
-//   그래서 상수로 박지 않고 밝기 투영으로 격자를 찾는다.
+// 방법 (수치는 카드 한 변 c 기준):
+//   · c ≈ 0.0757·W — 세 소스 모두 0.075~0.076 (v1 146/1916 · v2 137/1807 · ban2 181/2388). 피치 ≈1.41c.
+//     크기는 ±3% 만 훑는다 (0.97~1.03) — 신호가 없으면(ban1 처럼 카드가 없는 화면) 최솟값에 머무는 게 정상.
+//   · 열 격자: **표식 띠 [x+0.76c, x+c] 의 빨강 질량이 최대가 되는 (피치, 위상)**. 열 합은 누적합으로 O(1).
+//     아트 속 빨강(머리카락·눈)은 흩어져 있어 못 이긴다. 헤더의 빨간 제목·카운트다운을 피해 y ≥ 0.15H 만 합산.
+//   · 첫 열 = 띠 질량이 표식 하나의 절반 이상인 가장 왼쪽 열 (아이콘 자리에 허깃 열이 안 생기게).
+//   · 행 상단: **열마다** 띠의 빨강 y-런 시작을 후보로 모아 ±0.12c 로 묶는다. 한 카드의 아트 속 빨강이 런을
+//     늘려도 다른 열의 런이 깨끗해 top 이 살아남는다. ⚠ 원본 해상도에서는 표식 속 흰 글리프가 빨강 런을
+//     10/14/18px 조각으로 갈라 0.10c(18.08px) 문턱에 걸렸다(ban2 정밀·아케인 행 통째로 놓침) —
+//     그래서 **0.04c 이하 틈은 이어 붙인 뒤** 길이를 본다. 후보 스캔은 y=0 부터 (ban2 첫 행은 0.12H).
+//   · 카드 존재: 우상단 창(0.24c 정방) 빨강 ≥0.10 **그리고 표식 모양** — 3×3 셀에서 위중앙·우하가 진하고
+//     우상·좌하가 비어 있어야 한다 (S = 위중앙+우하−우상−좌하 ≥ 0.3, 정답 위치 실측 최악 0.87·보통 1.6).
+//     격자 오차는 ±0.08c 를 x 로 훑어 S 최대 자리로 보정한다. 한 장짜리 행은 S ≥ 0.7 이어야 받는다
+//     (아트 속 빨강으로 생기는 허깃 행은 대개 한 열).
+//   · 행은 카드 수가 많은 순으로 받고 세로로 겹치는(< c) 행은 버린다 (행 간격 ≥1.35c 라 겹칠 수 없다).
+//   · 줄바꿈 행: 아이콘 자리가 어둡고(luma ≤ 35 — 실측 아이콘 49~68 · 줄바꿈 자리 16~18) 바로 위 행이
+//     6장이면 위 행에 붙인다 (col 은 이어서 증가). 붙일 곳이 없는 어두운 아이콘 행은 불완전으로 본다.
+//   · 티어 배지(readTier): 색 배지(VI 주황·V 노랑·IV 청록·III 초록)는 색상으로, 회색 II/I 는 **3% 인셋 창**의
+//     흰 비율 0.02 로 가른다. 배지 판이 안 보이면(창의 luma>40 비율 < 0.17) null.
+//
+// cut(불완전) 판정 — 소비자는 cut 행을 건너뛴다. 하나라도 걸리면 행의 tier 는 전부 null:
+//   ① top < 1 (위가 잘림)  ② 어느 카드든 배지를 못 읽음(창이 화면 밖·판이 안 보임·'준비 완료' 버튼 아래)
+//   ③ 마지막 카드 **다음 열**의 표식 자리가 버튼 패널에 걸림 — 카드가 숨어 있어도 알 수 없다. 표식 자리가
+//     패널 밖인데 카드가 안 잡혔으면 카드가 없는 것이니 온전하다 (봉투 규칙 x>0.76W·y>0.85H 는 v2 f014 고수·
+//     v1 f020 예견 같은 온전한 바닥 행을 잘라냈다).
+//   ④ 6의 배수 장이고 줄바꿈 행이 붙지 않았는데 다음 줄(top+1.5c, 행 간격 상한)의 표식 자리가 화면 밖
+//   버튼은 teal 덩어리(g>120 ∧ g−r>80 ∧ g−b>20 가 한 줄에 0.10W 이상 이어짐, x ≥ 0.6W · y ≥ 0.6H)로 찾는다 —
+//   실측 top 0.874H(v1)·0.885~0.904H(v2)·0.897H(ban2), left 0.773~0.791W. 없으면 가림 없음으로 본다.
+//   ⚠ teal 블록 둘레에 **어두운 반투명 패널**이 있어 그 아래 카드는 표식이 흐려져 잡히지 않는다 (v2 f011 6번째
+//     사르곤 카드: 표식 창 빨강 0.02 vs 보통 0.40 — 완화 문턱으로도 0.11 이라 못 가른다. v2 f010 은 teal 왼쪽
+//     35px 의 5번째 카드까지 놓쳤다). 패널 어두워짐은 teal 위 ≈0.3c 부터 시작(luma 19→11) — 그래서 teal 을
+//     **위·왼쪽으로 0.6c 넓힌 사각형**을 패널로 보고 ③·②에 쓴다. 대가: 바닥 행의 5번째 자리가 패널에 걸리면
+//     온전한 5장 행도 cut 이 된다 (v1 f020 예견 — 다음 프레임들(f021~)에서 잡히므로 누적 소비자에겐 무해).
+//   ⚠ ②의 '판이 안 보임'이 뷰포트 잘림을 잡는다 — v1 녹화는 게임 화면 아래에 창 밖 띠(24px@900)가 붙어
+//     있어 화면 끝(H)만 보면 줄바꿈 카드가 안 잘린 것으로 나왔고, 그 카드의 배지 자리는 어두운 띠라
+//     회색 분기에서 I 로 읽혔다(orig 실측 누출 1). 판 존재 실측: 온전한 카드 min 0.266(orig)/0.344(900)
+//     vs 잘린 카드 0.059/0.079 → 문턱 0.17.
+//   ⚠ 화면 끝 1px 규칙(top+c > H−1)은 쓰지 않는다 — v2 f014 고수 행이 0.2px 차로 잘림 판정되어 88 중 1을
+//     잃었고, 배지(0.97c 까지)가 다 보이면 카드 아래 1px 은 필요 없다.
+//
+// 좌표는 **0~1 정규화** (x·w 는 W, y·h·top 은 H 기준; icon.d 는 W 기준). 호출 측이 해상도를 몰라도 된다.
+// ⚠ AcCard.x 는 카드 **아트**의 왼쪽 끝이다 — 티어 배지는 아트 밖 왼쪽으로 ≈0.10c 튀어나와 있으므로
+//   배지까지 포함한 상자가 필요하면 x−0.10c 로 넓혀 쓴다 (face 정답 상자와의 차이가 이것이다, 2026-09-07).
 
-/** 밴 카드 한 장 — 좌표는 0~1 정규화 */
-export type AcCard = { x: number; y: number; w: number; h: number; tier: number | null };
+/** 밴 카드 한 장 — 좌표는 0~1 정규화 (w=h=카드 변; 각각 W·H 기준). tier 는 행이 cut 이면 null. */
+export type AcCard = { x: number; y: number; w: number; h: number; col: number; tier: number | null; red: number };
+/** 한 맹약 행 — 줄바꿈 행은 이미 위 행에 합쳐져 있다. icon 은 왼쪽 맹약 아이콘 자리(원, 정규화). */
+export type AcRow = { top: number; cut: boolean; cards: AcCard[]; icon: { cx: number; cy: number; d: number; luma: number } };
+export type AcGrid = {
+  cardPx: number;      // 카드 한 변 (px)
+  pitchPx: number;     // 열 간격 (px)
+  cols: number[];      // 열의 x (정규화) — 카드 아트 왼쪽 끝 격자 위치
+  rows: AcRow[];       // 위→아래
+  note: string[];      // 디버그 기록 (하네스·관리자 화면용)
+  button: { x: number; y: number; w: number; h: number } | null;   // '준비 완료' 버튼 (정규화) — 없으면 null
+};
 
-// ── 티어 배지 ───────────────────────────────────────────────────────────────
-// 실측 색상 (ban2.jpg, 표본 3~5개씩 · 편차 ±0.3°):
-//   T6 H=30.8° S=0.99 · T5 H=45.5° S=0.97 · T4 H=189.4° S=0.77 · T3 H=161.2° S=0.78
-//   T2/T1 은 무채색(S≤0.20) — 흰 글리프 면적으로 가른다 (T2 0.304 vs T1 0.012~0.072)
-const HUES: { tier: number; h: number }[] = [
-  { tier: 6, h: 31 }, { tier: 5, h: 46 }, { tier: 4, h: 189 }, { tier: 3, h: 161 },
-];
-const HUE_TOL = 12;        // 실측 편차가 ±0.3° 라 아주 넉넉한 값
-const SAT_MIN = 0.45;      // 이보다 낮으면 무채색 배지(T1/T2)로 본다
-const GREY_SPLIT = 0.15;   // 흰 글리프 면적비 — 위면 T2(획 둘), 아래면 T1(획 하나)
+const C_RATIO = 0.0757;          // 카드 변 / 화면 폭
+const PITCH_RATIO = 1.41;        // 열 간격 / 카드 변
+const SIZE_SCALES = [0.97, 0.985, 1, 1.015, 1.03];
+const MARK_X0 = 0.76, MARK_H = 0.24;   // 우상단 표식 창 (카드 기준)
+const PHASE_Y_MIN = 0.15;        // 위상 탐색에서 헤더(빨간 제목·카운트다운)를 피하는 상한
+const RUN_GAP = 0.04, RUN_MIN = 0.10, CLUSTER_TOL = 0.12;
+const MARK_FRAC_MIN = 0.10, MARK_S_MIN = 0.3, MARK_S_SINGLE = 0.7, REFINE_SPAN = 0.08;
+const BUTTON_X_MIN = 0.6, BUTTON_Y_MIN = 0.6, BUTTON_RUN = 0.10;   // '준비 완료' 버튼 탐색 영역·최소 가로 길이
+const PANEL_PAD = 0.6;           // teal 블록 둘레 어두운 패널 — 위·왼쪽으로 넓히는 폭 (c 단위)
+const WRAP_ICON_LUMA = 35;       // 아이콘 자리 luma 이하면 줄바꿈 행
+const WRAP_GAP_MAX = 1.7;        // 줄바꿈 행과 위 행의 top 차 상한 (c 단위)
+const ROW_PITCH_MAX = 1.5;       // 행 간격 상한 (c 단위) — 실측 1.35(v1)~1.47(ban2)
+const CARDS_PER_LINE = 6;
+
+const isRed = (r: number, g: number, b: number) => r > 100 && r - Math.max(g, b) > 45;
+const isTeal = (r: number, g: number, b: number) => g > 120 && g - r > 80 && g - b > 20;
+type Rect = { x0: number; y0: number; x1: number; y1: number };   // px, 반열림 [x0,x1)×[y0,y1)
+const overlaps = (a: Rect, b: Rect | null) => !!b && a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1;
+const lumaAt = (px: Uint8ClampedArray, i: number) => px[i] * 0.299 + px[i + 1] * 0.587 + px[i + 2] * 0.114;
+const median = (a: number[]) => (a.length ? a.slice().sort((p, q) => p - q)[a.length >> 1] : 0);
 
 function rgbToHsv(r: number, g: number, b: number): [number, number, number] {
   r /= 255; g /= 255; b /= 255;
@@ -43,187 +109,266 @@ function rgbToHsv(r: number, g: number, b: number): [number, number, number] {
   return [h, mx > 0 ? d / mx : 0, mx];
 }
 
-/** 카드 좌하단 배지를 읽어 티어(1~6)를 낸다. 못 읽으면 null. */
+// ── 티어 배지 ───────────────────────────────────────────────────────────────
+// 실측 색상 (ban2.jpg, 표본 3~5개씩 · 편차 ±0.3°): T6 31° · T5 46° · T4 189° · T3 161°. T2/T1 은 무채색.
+const HUES: { tier: number; h: number }[] = [
+  { tier: 6, h: 31 }, { tier: 5, h: 46 }, { tier: 4, h: 189 }, { tier: 3, h: 161 },
+];
+const HUE_TOL = 12;
+const SAT_MIN = 0.45;
+const GREY_SPLIT = 0.02;     // 인셋 창 흰 비율 — 실측 108+111장: T1 max 0.007(900)/0.000(orig) · T2 min 0.094/0.027
+const PLATE_MIN = 0.17;      // 배지 창의 luma>40 비율 하한 — 아래면 배지 판이 없다(잘림)
+
+/**
+ * 카드 좌하단 배지를 읽어 티어(1~6)를 낸다. 못 읽으면 null (창이 화면 밖·배지 판이 안 보임).
+ * (cx, cy) 카드 아트 좌상단 px, c 카드 변 px. 색 배지는 창 2~24%·70~97% 의 색상으로, 회색 II/I 는
+ * 3% 인셋 창(5~21%·73~94%)의 흰 비율로 가른다 — 창 가장자리의 밝은 테두리가 I 를 II 로 올리던 것을 막는다.
+ */
 export function readTier(px: Uint8ClampedArray, W: number, H: number,
-  cx: number, cy: number, cw: number, chh: number): number | null {
-  // 배지 영역 — 카드 기준 상대 위치 (실측: 좌 2~24% · 하 70~97%)
-  const x0 = Math.round(cx + cw * 0.02), x1 = Math.round(cx + cw * 0.24);
-  const y0 = Math.round(cy + chh * 0.70), y1 = Math.round(cy + chh * 0.97);
-  if (x1 - x0 < 3 || y1 - y0 < 3) return null;
-  // ⚠ 배지가 화면 밖으로 잘렸으면 **읽지 않는다** — 잘린 배지는 색을 잃어 전부 T1 로
-  //   읽히고, 그 틀린 티어가 풀이에 들어가면 조용히 엉뚱한 밴이 나온다. 스크롤 중에는
-  //   위아래 행이 늘 잘려 있으므로 이 가드가 정확도의 핵심이다 (2026-09-06).
-  if (y1 > H || y0 < 0 || x1 > W) return null;
-  // ① 진한 색 픽셀들의 평균 색상 — 채도×명도 상위만 본다 (배지 테두리·글리프)
-  const hits: [number, number, number][] = [];
-  let white = 0, total = 0;
+  cx: number, cy: number, c: number, split = GREY_SPLIT): number | null {
+  const x0 = Math.round(cx + c * 0.02), x1 = Math.round(cx + c * 0.24);
+  const y0 = Math.round(cy + c * 0.70), y1 = Math.round(cy + c * 0.97);
+  if (x1 - x0 < 3 || y1 - y0 < 3 || y1 > H || y0 < 0 || x1 > W || x0 < 0) return null;
+  const ix0 = Math.round(cx + c * 0.05), ix1 = Math.round(cx + c * 0.21);
+  const iy0 = Math.round(cy + c * 0.73), iy1 = Math.round(cy + c * 0.94);
+  const hits: number[] = [];
+  let white = 0, total = 0, inTot = 0, plate = 0;
   for (let y = y0; y < y1; y++) {
     for (let x = x0; x < x1; x++) {
       const i = (y * W + x) * 4;
       const [h, s, v] = rgbToHsv(px[i], px[i + 1], px[i + 2]);
       total++;
-      if (v > 0.72 && s < 0.30) white++;          // 흰 글리프 (무채색 배지의 로마숫자)
-      if (s >= SAT_MIN && v > 0.55) hits.push([h, s, v]);
+      if (lumaAt(px, i) > 40) plate++;
+      if (x >= ix0 && x < ix1 && y >= iy0 && y < iy1) { inTot++; if (v > 0.72 && s < 0.30) white++; }
+      if (s >= SAT_MIN && v > 0.55) hits.push(h);
     }
   }
-  if (!total) return null;
-  // ② 진한 색이 충분하면 색상으로 — 아니면 무채색 배지
+  if (!total || !inTot) return null;
+  if (plate / total < PLATE_MIN) return null;          // 배지 판이 없다 — 뷰포트 아래로 잘린 카드
   if (hits.length > total * 0.06) {
     // 색상 평균은 원형이라 벡터로 낸다 (0°/360° 경계 안전)
     let sx = 0, sy = 0;
-    for (const [h] of hits) { sx += Math.cos(h * Math.PI / 180); sy += Math.sin(h * Math.PI / 180); }
+    for (const h of hits) { sx += Math.cos(h * Math.PI / 180); sy += Math.sin(h * Math.PI / 180); }
     let hm = Math.atan2(sy, sx) * 180 / Math.PI;
     if (hm < 0) hm += 360;
     let best: number | null = null, bestD = HUE_TOL;
-    for (const c of HUES) {
-      const d = Math.min(Math.abs(hm - c.h), 360 - Math.abs(hm - c.h));
-      if (d < bestD) { bestD = d; best = c.tier; }
+    for (const k of HUES) {
+      const d = Math.min(Math.abs(hm - k.h), 360 - Math.abs(hm - k.h));
+      if (d < bestD) { bestD = d; best = k.tier; }
     }
     if (best !== null) return best;
   }
-  return white / total > GREY_SPLIT ? 2 : 1;
+  return white / inTot > split ? 2 : 1;
 }
 
-// ── 카드 격자 ───────────────────────────────────────────────────────────────
-/** 밝은 픽셀 비율이 thr 이상인 구간들 — 최소 길이 minLen */
-function runs(v: Float32Array, thr: number, minLen: number): [number, number][] {
-  const out: [number, number][] = [];
-  let s = -1;
-  for (let i = 0; i < v.length; i++) {
-    if (v[i] >= thr && s < 0) s = i;
-    else if (v[i] < thr && s >= 0) { if (i - s >= minLen) out.push([s, i - 1]); s = -1; }
+// ── 표식 모양 ───────────────────────────────────────────────────────────────
+/** 카드 우상단 창의 빨강 비율 + 3×3 모양 점수 S (위중앙 + 우하 − 우상 − 좌하) */
+function markScore(px: Uint8ClampedArray, W: number, H: number, x: number, y: number, c: number) {
+  const x0 = Math.round(x + c * MARK_X0), x1 = Math.round(x + c), y0 = Math.round(y), y1 = Math.round(y + c * MARK_H);
+  const cnt = [0, 0, 0, 0, 0, 0, 0, 0, 0], tot = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+  let n = 0, t = 0;
+  const bw = Math.max(1, x1 - x0), bh = Math.max(1, y1 - y0);
+  for (let yy = Math.max(0, y0); yy < Math.min(H, y1); yy++) {
+    const gy = Math.min(2, Math.floor((yy - y0) * 3 / bh));
+    for (let xx = Math.max(0, x0); xx < Math.min(W, x1); xx++) {
+      const gx = Math.min(2, Math.floor((xx - x0) * 3 / bw));
+      const i = (yy * W + xx) * 4;
+      t++; tot[gy * 3 + gx]++;
+      if (isRed(px[i], px[i + 1], px[i + 2])) { n++; cnt[gy * 3 + gx]++; }
+    }
   }
-  if (s >= 0 && v.length - s >= minLen) out.push([s, v.length - 1]);
-  return out;
+  const f = (k: number) => (tot[k] ? cnt[k] / tot[k] : 0);
+  return { frac: t ? n / t : 0, S: f(1) + f(8) - f(2) - f(6) };
 }
+/** 열 격자 오차(±0.08c)를 x 로 훑어 모양 점수가 최대인 자리를 카드 x 로 잡는다 */
+function refineMark(px: Uint8ClampedArray, W: number, H: number, x: number, y: number, c: number) {
+  const span = Math.max(2, Math.round(c * REFINE_SPAN));
+  let best = { dx: 0, ...markScore(px, W, H, x, y, c) };
+  for (let dx = -span; dx <= span; dx++) {
+    const m = markScore(px, W, H, x + dx, y, c);
+    if (m.frac >= MARK_FRAC_MIN && m.S > best.S) best = { dx, ...m };
+  }
+  return best;
+}
+
+// ── '준비 완료' 버튼 ─────────────────────────────────────────────────────────
+/** 우하단 teal 덩어리 — 한 줄에 0.10W 이상 이어진 teal 이 있는 y 범위와 그 x 범위. 없으면 null. */
+function findButton(px: Uint8ClampedArray, W: number, H: number): Rect | null {
+  const xs = Math.round(W * BUTTON_X_MIN), minRun = W * BUTTON_RUN;
+  let top = -1, bottom = -1, left = W, right = 0;
+  for (let y = Math.round(H * BUTTON_Y_MIN); y < H; y++) {
+    let run = 0, best = 0, start = xs, bl = 0, br = 0;
+    for (let x = xs, i = (y * W + xs) * 4; x < W; x++, i += 4) {
+      if (isTeal(px[i], px[i + 1], px[i + 2])) { if (!run) start = x; run++; if (run > best) { best = run; bl = start; br = x + 1; } }
+      else run = 0;
+    }
+    if (best >= minRun) { if (top < 0) top = y; bottom = y + 1; left = Math.min(left, bl); right = Math.max(right, br); }
+  }
+  return top < 0 ? null : { x0: left, y0: top, x1: right, y1: bottom };
+}
+
+// ── 격자 ───────────────────────────────────────────────────────────────────
+type PxCard = { x: number; y: number; col: number; red: number; tier: number | null };
+type PxRow = { top: number; cards: PxCard[]; iconLuma: number; icon: { cx: number; cy: number; d: number }; wrapped: boolean };
 
 /**
- * 밴 화면의 카드들을 찾는다 — 밝기 투영으로 행·열을 잡고 교차점을 카드로 본다.
- * 카드 아트는 밝고 UI 배경은 아주 어두워서, 이 단순한 방법이 179px·55px 양쪽에서 모두 먹힌다.
- * 좌표는 0~1 정규화라 호출 측이 해상도를 몰라도 된다.
+ * 밴 화면의 카드 행들을 찾는다. 줄바꿈 행은 위 행에 합쳐져 있고, 불완전한 행은 cut=true·tier=null 이다.
+ * 카드가 없는 화면(다른 화면·맹약 정보 상단)에서는 rows 가 빈 배열 — ban1.jpg 실측 0행.
  */
-export function findAcCards(px: Uint8ClampedArray, W: number, H: number): AcCard[] {
-  // ⚠ 밝기 임계를 **고정하지 않는다** (2026-09-06 실측). 전체화면 스샷은 밝고 창모드
-  //   에뮬레이터 녹화는 어두워서, 110 으로 박으면 어두운 쪽에서 카드 조각만 잡힌다.
-  //   오츠(Otsu) 로 화면마다 어두운 UI 와 밝은 카드 아트를 가르는 지점을 직접 찾는다.
-  const hist = new Float64Array(256);
-  for (let y = 0; y < H; y += 2) {
-    for (let x = 0; x < W; x += 2) {
-      const i = (y * W + x) * 4;
-      hist[(px[i] * 0.299 + px[i + 1] * 0.587 + px[i + 2] * 0.114) | 0]++;
+export function findAcRows(px: Uint8ClampedArray, W: number, H: number): AcGrid {
+  const note: string[] = [];
+  const c0 = C_RATIO * W;
+  // ① 열별 빨강 질량 (헤더를 피해 y ≥ 0.15H) → 누적합
+  const yMin = Math.round(H * PHASE_Y_MIN);
+  const cum = new Float64Array(W + 1);
+  {
+    const colMass = new Uint32Array(W);
+    for (let y = yMin; y < H; y++) {
+      let i = y * W * 4;
+      for (let x = 0; x < W; x++, i += 4) if (isRed(px[i], px[i + 1], px[i + 2])) colMass[x]++;
     }
+    for (let x = 0; x < W; x++) cum[x + 1] = cum[x] + colMass[x];
   }
-  let sum = 0, tot = 0;
-  for (let v = 0; v < 256; v++) { sum += v * hist[v]; tot += hist[v]; }
-  let wB = 0, sB = 0, bestVar = -1, BRIGHT = 110;
-  for (let v = 0; v < 256; v++) {
-    wB += hist[v];
-    if (!wB) continue;
-    const wF = tot - wB;
-    if (!wF) break;
-    sB += v * hist[v];
-    const mB = sB / wB, mF = (sum - sB) / wF;
-    const between = wB * wF * (mB - mF) * (mB - mF);
-    if (between > bestVar) { bestVar = between; BRIGHT = v; }
-  }
-  // 아주 어두운 화면에서 임계가 바닥으로 내려가면 UI 잡음까지 카드로 본다 — 하한을 둔다
-  BRIGHT = Math.max(BRIGHT, 55);
-  const minH = Math.max(12, Math.round(H * 0.035));   // 카드 최소 변 (55px 카드도 통과)
-  // 행 투영
-  const rowP = new Float32Array(H);
-  for (let y = 0; y < H; y++) {
-    let n = 0;
-    for (let x = 0; x < W; x += 2) {        // 2픽셀 스트라이드 — 전수 불필요
-      const i = (y * W + x) * 4;
-      if (px[i] * 0.299 + px[i + 1] * 0.587 + px[i + 2] * 0.114 > BRIGHT) n++;
-    }
-    rowP[y] = n / (W / 2);
-  }
-  // 행 단위로 모은다 — 아래 ⑤ 검사가 **행 통째로** 판정하기 때문
-  const rowsOut: { cards: AcCard[]; size: number }[] = [];
-  // ⚠ 행 임계를 낮게 (2026-09-06 실측). 카드가 둘뿐인 행은 밝은 픽셀이 화면 폭의 5% 밖에
-  //   안 돼서 0.10 이면 통째로 놓친다 (독행 행). 헐거운 행은 아래 열 단계에서 걸러진다 —
-  //   카드 크기 조각이 없으면 아무것도 안 나온다.
-  for (const [ry0, ry1] of runs(rowP, 0.05, minH)) {
-    const rh = ry1 - ry0 + 1;
-    if (rh > H * 0.35) continue;            // 너무 두꺼우면 카드 행이 아니다 (배너 등)
-    // 이 행 안에서만 열 투영
-    const colP = new Float32Array(W);
-    for (let x = 0; x < W; x++) {
-      let n = 0;
-      for (let y = ry0; y <= ry1; y += 2) {
-        const i = (y * W + x) * 4;
-        if (px[i] * 0.299 + px[i + 1] * 0.587 + px[i + 2] * 0.114 > BRIGHT) n++;
+  const bandMass = (x0: number, c: number) => {
+    const a = Math.max(0, Math.min(W, Math.round(x0 + c * MARK_X0))), b = Math.max(a, Math.min(W, Math.round(x0 + c)));
+    return cum[b] - cum[a];
+  };
+  // ② 열 격자 — (크기, 위상) 탐색: 표식 띠 질량 최대
+  let best = { mass: -1, pitch: c0 * PITCH_RATIO, phase: 0, c: c0 };
+  for (const sc of SIZE_SCALES) {
+    const c = c0 * sc, pitch = c * PITCH_RATIO;
+    for (let off = 0; off < pitch; off += 1) {
+      let mass = 0;
+      for (let x0 = off; x0 + c <= W + 2; x0 += pitch) {
+        if (x0 < c * 1.7) continue;           // 아이콘 자리
+        mass += bandMass(x0, c);
       }
-      colP[x] = n / (rh / 2);
+      if (mass > best.mass) best = { mass, pitch, phase: off, c };
     }
-    // ⚠ 임계를 낮게 잡고 **뒤에서 정리**한다 (2026-09-06 실측). 높이면 어두운 아트를 가진
-    //   카드를 통째로 놓치고, 낮추면 한 카드가 둘로 쪼개진다 — 쪼개짐은 붙이면 되지만
-    //   놓친 카드는 되살릴 수 없으므로 낮게 잡는 쪽이 맞다.
-    let segs = runs(colP, 0.10, Math.round(rh * 0.22));
-    if (!segs.length) continue;
-    // ① 아주 좁은 틈으로 갈라진 조각은 한 카드다 (아트 중앙이 어두운 경우)
-    const med = (a: number[]): number => a.slice().sort((p, q) => p - q)[a.length >> 1] || 1;
-    let mw = med(segs.map(([s, e]) => e - s + 1));
-    const merged: [number, number][] = [];
-    for (const s of segs) {
-      const last = merged[merged.length - 1];
-      if (last && s[0] - last[1] - 1 < mw * 0.25) last[1] = s[1];
-      else merged.push([s[0], s[1]]);
-    }
-    // ② 카드보다 한참 좁은 것은 카드가 아니다 — UI 조각
-    mw = med(merged.map(([s, e]) => e - s + 1));
-    segs = merged.filter(([s, e]) => e - s + 1 >= mw * 0.5 && e - s + 1 <= rh * 1.6);
-    // ③ 맨 앞의 **맹약 아이콘**을 떼어낸다 — 원형 아이콘이 카드와 크기가 비슷해 폭으로는
-    //    안 걸린다. 대신 아이콘과 첫 카드 사이 간격이 카드 사이 간격보다 확연히 넓다
-    //    (실측 115px vs 60px). 카드가 셋 이상일 때만 — 둘뿐이면 간격 통계를 못 믿는다.
-    if (segs.length >= 3) {
-      const gaps: number[] = [];
-      for (let i = 1; i < segs.length; i++) gaps.push(segs[i][0] - segs[i - 1][1] - 1);
-      const inner = med(gaps.slice(1));
-      if (gaps[0] > inner * 1.6) segs = segs.slice(1);
-    }
-    // ④ **카드는 서로 크기가 같다.** 화면 위쪽 제목·카운트다운 글자도 비슷한 높이의 띠를
-    //    이뤄 여기까지 올라오는데, 글자는 폭이 제각각이라 이 검사에서 떨어진다
-    //    (2026-09-06: f16 헤더가 카드 10장으로 잡히던 것을 이걸로 걷어냈다).
-    if (segs.length >= 2) {
-      const wm = med(segs.map(([s, e]) => e - s + 1));
-      const alike = segs.filter(([s, e]) => Math.abs(e - s + 1 - wm) <= wm * 0.25).length;
-      if (alike / segs.length < 0.7) continue;
-    }
-    const rowCards: AcCard[] = [];
-    const rowSizes: number[] = [];
-    for (const [cx0, cx1] of segs) {
-      const cw = cx1 - cx0 + 1;
-      // ⚠ 배지 위치는 **폭으로 잰 높이**를 기준으로 잡는다 (2026-09-06 실측). 행 높이는
-      //   아트 아래쪽이 어두우면 짧게 잡히는데(정밀 행 145 vs 실제 177), 그 값으로 좌하단을
-      //   찾으면 배지 **위쪽**을 크롭해 티어를 전부 놓친다. 카드는 정사각이라 폭이 더 낫다.
-      const ch2 = Math.max(rh, cw);
-      const tier = readTier(px, W, H, cx0, ry0, cw, ch2);
-      if (tier === null) continue;          // 배지를 못 읽은 카드는 관측에 넣지 않는다
-      rowCards.push({ x: cx0 / W, y: ry0 / H, w: cw / W, h: ch2 / H, tier });
-      rowSizes.push(cw);
-    }
-    if (rowCards.length) rowsOut.push({ cards: rowCards, size: med(rowSizes) });
   }
-  // ⑤ **행은 일정한 간격으로 늘어선다.** 화면 끝에 걸쳐 잘린 행은 배지가 잘려 티어가 전부
-  //    T1 로 읽히는데, 카드 **폭**으로는 안 걸린다 (실측: 잘린 행도 폭 중앙값 179로 정상).
-  //    대신 위치가 어긋난다 — 잘린 행의 위끝은 카드 위끝이 아니라 '보이기 시작하는 곳'이라
-  //    간격이 깨진다 (실측 265·264·265·265 뒤에 227). 그 격자에서 벗어난 행을 버린다.
-  //    스크롤 중에는 위아래가 늘 잘려 있으니 이게 오답을 막는 마지막 관문이다 (2026-09-06).
-  if (rowsOut.length < 3) return rowsOut.flatMap((r) => r.cards);
-  const ys = rowsOut.map((r) => r.cards[0].y * H);
-  const gaps: number[] = [];
-  for (let i = 1; i < ys.length; i++) gaps.push(ys[i] - ys[i - 1]);
-  const pitch = gaps.slice().sort((a, b) => a - b)[gaps.length >> 1];
-  if (!(pitch > 0)) return rowsOut.flatMap((r) => r.cards);
-  // 기준선 = 카드가 가장 많은 행 (가장 믿을 만한 행)
-  let ref = 0;
-  for (let i = 1; i < rowsOut.length; i++) {
-    if (rowsOut[i].cards.length > rowsOut[ref].cards.length) ref = i;
+  const { pitch, phase, c } = best;
+  const oneMark = 0.3 * (MARK_H * c) * (0.19 * c);
+  const all: { x0: number; mass: number }[] = [];
+  for (let x0 = phase; x0 + c <= W + 2; x0 += pitch) if (x0 >= 0) all.push({ x0, mass: bandMass(x0, c) });
+  const firstIdx = all.findIndex((k) => k.mass >= oneMark * 0.5);
+  const colsPx: number[] = firstIdx < 0 ? [] : all.slice(firstIdx).map((k) => k.x0);
+  note.push(`c=${c.toFixed(1)} pitch=${pitch.toFixed(1)} phase=${phase} cols=[${colsPx.map((x) => x.toFixed(0)).join(",")}]`);
+  const button = findButton(px, W, H);
+  // 패널 = teal 을 위·왼쪽으로 넓힌 것 — 이 안의 표식·배지는 믿지 않는다
+  const panel: Rect | null = button ? { x0: button.x0 - c * PANEL_PAD, y0: button.y0 - c * PANEL_PAD, x1: W, y1: H } : null;
+  if (button) note.push(`button x=${button.x0}..${button.x1} y=${button.y0}..${button.y1} (패널 x≥${panel!.x0.toFixed(0)} y≥${panel!.y0.toFixed(0)})`);
+  const grid: AcGrid = {
+    cardPx: c, pitchPx: pitch, cols: colsPx.map((x) => x / W), rows: [], note,
+    button: button ? { x: button.x0 / W, y: button.y0 / H, w: (button.x1 - button.x0) / W, h: (button.y1 - button.y0) / H } : null,
+  };
+  if (!colsPx.length) return grid;
+
+  // ③ 열마다 표식 띠의 빨강 y-런(틈 ≤0.04c 는 이어서) 시작 → 후보 top → ±0.12c 로 묶기
+  const cand: number[] = [];
+  const gapMax = c * RUN_GAP, runMin = c * RUN_MIN;
+  for (const x0 of colsPx) {
+    const a = Math.max(0, Math.round(x0 + c * MARK_X0)), b = Math.min(W, Math.round(x0 + c)), thr = (b - a) * 0.2;
+    if (b <= a) continue;
+    let run = -1, last = -1;   // run: 현재 런 시작, last: 마지막 켜진 y
+    const flush = () => { if (run >= 0 && last - run + 1 >= runMin) cand.push(run); run = -1; };
+    for (let y = 0; y < H; y++) {
+      let n = 0;
+      for (let x = a, i = (y * W + a) * 4; x < b; x++, i += 4) if (isRed(px[i], px[i + 1], px[i + 2])) n++;
+      if (n >= thr) {
+        if (run >= 0 && y - last > gapMax) flush();
+        if (run < 0) run = y;
+        last = y;
+      } else if (run >= 0 && y - last > gapMax) flush();
+    }
+    flush();
   }
-  return rowsOut.filter((_, i) => {
-    const off = Math.abs(ys[i] - ys[ref]) % pitch;
-    return Math.min(off, pitch - off) <= pitch * 0.12;
-  }).flatMap((r) => r.cards);
+  cand.sort((p, q) => p - q);
+  const clusters: number[][] = [];
+  for (const t of cand) {
+    const k = clusters[clusters.length - 1];
+    if (k && t - k[0] <= c * CLUSTER_TOL) k.push(t); else clusters.push([t]);
+  }
+  // ④ 후보 행마다 카드 판정 → 카드 수 많은 순으로 받되 세로로 겹치면 버린다
+  type Cand = { top: number; cards: PxCard[]; support: number };
+  const cands: Cand[] = [];
+  for (const k of clusters) {
+    const top = median(k);
+    const cards: PxCard[] = [];
+    const Ss: number[] = [];
+    colsPx.forEach((x0, ci) => {
+      const m = refineMark(px, W, H, x0, top, c);
+      if (m.frac < MARK_FRAC_MIN || m.S < MARK_S_MIN) return;
+      const x = x0 + m.dx;
+      Ss.push(m.S);
+      cards.push({ x, y: top, col: ci, red: m.frac, tier: null });
+    });
+    if (cards.length === 1 && Ss[0] < MARK_S_SINGLE) { note.push(`한 장 행 top=${top.toFixed(0)} S=${Ss[0].toFixed(2)} 버림`); continue; }
+    if (cards.length) cands.push({ top, cards, support: k.length });
+    else note.push(`후보 top=${top.toFixed(0)} (열 ${k.length}) 카드 없음`);
+  }
+  cands.sort((p, q) => q.cards.length - p.cards.length || q.support - p.support);
+  const accepted: Cand[] = [];
+  for (const cd of cands) {
+    if (accepted.some((a) => Math.abs(a.top - cd.top) < c)) { note.push(`겹침 버림 top=${cd.top.toFixed(0)} ${cd.cards.length}장`); continue; }
+    accepted.push(cd);
+  }
+  accepted.sort((p, q) => p.top - q.top);
+
+  // ⑤ 행 — 아이콘 자리 밝기, 티어
+  const rows: PxRow[] = [];
+  for (const cd of accepted) {
+    const top = cd.top;
+    const icon = { cx: colsPx[0] - 1.26 * c, cy: top + 0.33 * c, d: 0.74 * c };
+    let lum = 0, n = 0;
+    for (let y = Math.max(0, Math.round(icon.cy - icon.d / 2)); y < Math.min(H, Math.round(icon.cy + icon.d / 2)); y++)
+      for (let x = Math.max(0, Math.round(icon.cx - icon.d / 2)); x < Math.min(W, Math.round(icon.cx + icon.d / 2)); x++) { lum += lumaAt(px, (y * W + x) * 4); n++; }
+    for (const k of cd.cards) {
+      // 배지 창이 버튼 패널에 걸리면 못 읽는다 — 버튼의 teal 이 색 분기에서 III(161°)로 읽히므로 반드시 먼저 막는다
+      const badge: Rect = { x0: k.x + c * 0.02, y0: k.y + c * 0.70, x1: k.x + c * 0.24, y1: k.y + c * 0.97 };
+      k.tier = overlaps(badge, panel) ? null : readTier(px, W, H, k.x, k.y, c);
+    }
+    rows.push({ top, cards: cd.cards, iconLuma: n ? lum / n : 0, icon, wrapped: false });
+    note.push(`row top=${top.toFixed(0)} cards=${cd.cards.map((k) => `${k.col}:${k.red.toFixed(2)}${k.tier === null ? "·" : `T${k.tier}`}`).join(" ")} iconLuma=${(n ? lum / n : 0).toFixed(0)}`);
+  }
+  // ⑥ 줄바꿈 행 — 아이콘 자리가 어둡고 바로 위 행이 6장(의 배수)이면 위 행에 붙인다 (col 은 이어서)
+  const merged: (PxRow & { orphan: boolean })[] = [];
+  for (const r of rows) {
+    const prev = merged[merged.length - 1];
+    const dark = r.iconLuma <= WRAP_ICON_LUMA;
+    if (dark && prev && prev.cards.length > 0 && prev.cards.length % CARDS_PER_LINE === 0 && r.top - prev.top < c * WRAP_GAP_MAX) {
+      const base = prev.cards[prev.cards.length - 1].col + 1;
+      for (const k of r.cards) prev.cards.push({ ...k, col: base + k.col });
+      prev.wrapped = true;
+      note.push(`줄바꿈 행 top=${r.top.toFixed(0)} ${r.cards.length}장 → 위 행(top=${prev.top.toFixed(0)})에 붙임`);
+      continue;
+    }
+    merged.push({ ...r, orphan: dark });
+    if (dark) note.push(`아이콘 어두운 행 top=${r.top.toFixed(0)} 붙일 곳 없음 → 불완전`);
+  }
+  // ⑦ cut 판정 + 정규화
+  for (const r of merged) {
+    const reasons: string[] = [];
+    if (r.top < 1) reasons.push("위 잘림");
+    if (r.cards.some((k) => k.tier === null)) reasons.push("배지 못 읽음");
+    if (r.orphan) reasons.push("줄바꿈 고아");
+    // ③ 마지막 카드 다음 열의 **표식 자리**가 버튼에 가려 있으면 카드가 숨어 있어도 알 수 없다
+    //    (줄의 마지막 줄 기준 — 줄바꿈 줄은 0열부터 다시 채우고 top 이 다르다)
+    const lineTop = r.cards.length ? r.cards[r.cards.length - 1].y : r.top;
+    const onLine = r.cards.filter((k) => k.y === lineTop).length;   // 그 줄의 카드 수 = 다음 열 번호
+    if (onLine > 0 && onLine < CARDS_PER_LINE && onLine < colsPx.length) {
+      const nx = colsPx[onLine];
+      const mark: Rect = { x0: nx + c * MARK_X0, y0: lineTop, x1: nx + c, y1: lineTop + c * MARK_H };
+      if (overlaps(mark, panel)) reasons.push("다음 열 표식이 버튼 패널에 걸림");
+    }
+    // ④ 줄이 꽉 찼는데(6장) 다음 줄의 표식 자리가 화면 밖 — 줄바꿈 카드가 숨어 있을 수 있다
+    if (onLine === CARDS_PER_LINE && lineTop + c * ROW_PITCH_MAX + c * MARK_H > H) reasons.push("다음 줄 표식이 화면 밖");
+    const cut = reasons.length > 0;
+    if (cut) note.push(`cut top=${r.top.toFixed(0)}: ${reasons.join(", ")}`);
+    grid.rows.push({
+      top: r.top / H, cut,
+      cards: r.cards.map((k) => ({ x: k.x / W, y: k.y / H, w: c / W, h: c / H, col: k.col, tier: cut ? null : k.tier, red: k.red })),
+      icon: { cx: r.icon.cx / W, cy: r.icon.cy / H, d: r.icon.d / W, luma: r.iconLuma },
+    });
+  }
+  return grid;
 }
