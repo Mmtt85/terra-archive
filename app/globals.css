@@ -21062,6 +21062,20 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
 .ac-facemini > .ac-banmark::before { height: 1.5px; margin-top: -0.75px; }
 /* 배치·정비구역 칸은 얼굴이 크다 — 표식도 조금 키운다 */
 .ac-slot-face > .ac-banmark { top: 4px; right: 4px; width: 17px; height: 17px; }
+
+/* ⚠ 표식을 담는 상자들 — **여기가 없으면 표식이 창 우상단으로 튀어나간다.**
+   position:absolute 의 기준이 없어져 가장 가까운 위치 지정 조상(모달 창)으로 올라가기 때문이다
+   (실제로 그렇게 새서 사용자가 "모달창 오른쪽위에 뭐 이상한거 나오잖아" 라고 지적, 2026-09-07 —
+   죽은 CSS 를 걷어내다 이 규칙들을 같이 지운 게 원인이었다). 지우지 말 것. */
+.ac-thumbwrap { position: relative; flex: none; display: inline-flex; }
+.ac-slot-face { position: relative; }
+/* .ac-oprow 는 첫 칸이 40px 격자이고 원래 `.ac-oprow > img` 로 크기를 줬다 — 상자를 끼웠으니
+   상자와 그 안의 이미지 둘 다 챈다 (이 규칙도 위와 함께 지워져 얼굴이 커졌었다). */
+.ac-oprow > .ac-thumbwrap { width: 40px; height: 40px; }
+.ac-oprow > .ac-thumbwrap > img,
+.ac-oprow > .ac-thumbwrap > .ac-face-diy {
+  width: 40px; height: 40px; object-fit: cover; border-radius: 4px; background: var(--chip);
+}
 /* 밴된 기물은 **줄·칸째로** 옅게 물들인다 (사용자 지적 2026-09-07 "한눈에 알아보기 쉽게") —
    15px 표식은 목록을 훑을 때 놓치기 쉽다. 맹약 모달의 소속 오퍼 목록·기물 카드·편성 칸 전부. */
 .ac-oprow:has(.ac-banmark) { background: color-mix(in srgb, #e0323f 8%, var(--paper)); }

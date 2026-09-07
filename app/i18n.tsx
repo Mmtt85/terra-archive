@@ -2882,9 +2882,9 @@ const D: Record<string, Pair> = {
   "내 전략": ["My strategy", "自分の戦略"],
   "고르는 중": ["Choosing…", "選択中"],
   "다른 참가자": ["Other players", "他の参加者"],
-  "게임의 밴 목록 화면에서 끝까지 스크롤을 내려 주세요 — 화면에 온전히 보인 카드만 얼굴로 확정합니다.": [
-    "Scroll the game's ban list all the way down — only cards fully visible on screen are identified by face.",
-    "ゲームのBANリスト画面を最後までスクロールしてください — 画面に完全に映ったカードだけを顔で確定します。"],
+  "게임의 밴 목록 화면에서 끝까지 스크롤을 내려 주세요 — 인식은 **화면이 멈춘 순간**에 일어납니다. 쭉 훑지 말고 조금씩 내린 뒤 한 번씩 완전히 멈춰 주세요. 화면에 온전히 보인 카드만 얼굴로 확정합니다.": [
+    "Scroll the game's ban list all the way down — recognition happens **the moment the screen holds still**. Don't sweep through it: scroll a little, then come to a complete stop each time. Only cards fully visible on screen are identified by face.",
+    "ゲームのBANリスト画面を最後までスクロールしてください — 認識は**画面が止まった瞬間**に行われます。一気に流さず、少しずつ下げて毎回完全に止めてください。画面に完全に映ったカードだけを顔で確定します。"],
   // 밴 리스트 맹약별 그룹 (사용자 요청 2026-09-07) — 게임의 '사용 제한 오퍼레이터' 화면과 같은 모양
   "두 맹약에 걸친 기물은 게임처럼 양쪽 줄에 다시 나옵니다.": [
     "A piece that belongs to two alliances appears on both rows, just like in game.",
@@ -2914,9 +2914,9 @@ const D: Record<string, Pair> = {
   "아직 읽지 못했습니다 — 게임에서 '선택한 전략' 화면을 띄워 주세요": [
     "Not read yet — bring up the 'Selected Strategy' screen in game.",
     "まだ読めていません — ゲームで「選択した戦略」画面を表示してください。"],
-  "**밴 기물** — 시작 화면의 '사용 제한 오퍼레이터' 카드를 얼굴로 알아봅니다. 목록은 스크롤해야 다 보이므로 25초 안에 끝까지 내려 주세요 — 화면에 온전히 보인 카드만 셉니다.": [
-    "**Banned pieces** — the 'Restricted Operators' cards on the start screen are identified by face. The list only shows fully when scrolled, so scroll to the bottom within the 25 seconds — only cards fully on screen count.",
-    "**BAN駒** — 開始画面の「使用制限オペレーター」カードを顔で見分けます。リストはスクロールしないと全部見えないので、25秒以内に一番下まで下げてください — 画面に完全に映ったカードだけを数えます。"],
+  "**밴 기물** — 시작 화면의 '사용 제한 오퍼레이터' 카드를 얼굴로 알아봅니다. 목록은 스크롤해야 다 보이므로 25초 안에 끝까지 내려 주세요. 인식은 화면이 멈춘 순간에 일어나니 조금씩 내린 뒤 한 번씩 완전히 멈춰야 하고, 화면에 온전히 보인 카드만 셉니다.": [
+    "**Banned pieces** — the 'Restricted Operators' cards on the start screen are identified by face. The list only shows fully when scrolled, so scroll to the bottom within the 25 seconds. Recognition happens the moment the screen holds still, so scroll a little and come to a complete stop each time; only cards fully on screen count.",
+    "**BAN駒** — 開始画面の「使用制限オペレーター」カードを顔で見分けます。リストはスクロールしないと全部見えないので、25秒以内に一番下まで下げてください。認識は画面が止まった瞬間に行われるので、少しずつ下げて毎回完全に止めてください。画面に完全に映ったカードだけを数えます。"],
   "**시뮬레이션 종류** — 표준·험지·극한·초월을 로딩 화면과 화면 위쪽 붉은 배지에서 읽습니다.": [
     "**Simulation type** — Standard / Perilous / Dire / Ultimate is read from the loading screen and the red badge at the top.",
     "**シミュレーション種別** — 標準・逆境・死地・究極をロード画面と画面上部の赤いバッジから読み取ります。"],

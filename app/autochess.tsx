@@ -1886,6 +1886,10 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                       title={t("전략 상세 보기")}>
                       <img src={bandIcon(b.id)} alt="" aria-hidden onError={hideErr} />
                       {b.n}
+                      {/* 대표 오퍼레이터 이름도 함께 (사용자 요청 2026-09-07 "전략에 (키라라) 이것도
+                          내보여줘") — 커뮤니티는 '집중 케어'보다 '와파린 전략'으로 먼저 부른다
+                          (2026-08-24 확정과 같은 이유). 전략 카드·목록도 이미 이렇게 적는다. */}
+                      {b.by && <em className="ac-bandby">({b.by})</em>}
                       {previewing && <i className="sb-dim">({t("고르는 중")})</i>}
                     </button>
                   ) : <i className="sb-dim">{t("읽는 중")}</i>}
@@ -1917,7 +1921,8 @@ export default function AutochessGuide({ doc, onShowOperator }: {
           </div>
           {prtsView === "ban" && (
             <section className="ac-boardout ac-banlist">
-              <p className="ac-bannote">{t("게임의 밴 목록 화면에서 끝까지 스크롤을 내려 주세요 — 화면에 온전히 보인 카드만 얼굴로 확정합니다.")}</p>
+              {/* ⚠ rich() 를 거쳐야 **강조**가 굵게 나온다 — 그냥 t() 만 쓰면 별표가 그대로 보인다 */}
+              <p className="ac-bannote">{rich(t("게임의 밴 목록 화면에서 끝까지 스크롤을 내려 주세요 — 인식은 **화면이 멈춘 순간**에 일어납니다. 쭉 훑지 말고 조금씩 내린 뒤 한 번씩 완전히 멈춰 주세요. 화면에 온전히 보인 카드만 얼굴로 확정합니다."))}</p>
               {/* 확정 / 후보를 나눠 보여 준다 — 화면을 더 볼수록 후보가 확정으로 옮겨 간다.
                   확정은 카드 얼굴(스킨 초상 HOG 매칭, 2026-09-07)로 정하고, 얼굴이 못 가른 자리만
                   (맹약, 티어) 조합 풀이가 보탠다 — 풀이에 해가 여럿이면 후보로만 둔다.
