@@ -12,7 +12,7 @@ import { buildAcIndex, bondOfLine, parseSeats, isAcInfoScreen, classifyAcScreen,
 import { findAcRows, isAcBanScreen, acBanRows } from "./acvision";
 import { cardFeature, solveBanRow, type FacePiece } from "./acface";
 import { loadFaceTemplates } from "./acface-load";
-import { participantSlots, searchBand, BAND_ACCEPT } from "./acband";
+import { participantRows, searchBand, BAND_ACCEPT } from "./acband";
 import { loadBandTemplates } from "./acband-load";
 import { matchBondIcon, bondOfHit } from "./acbond";
 import { loadBondTemplates } from "./acbond-load";
@@ -230,6 +230,7 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
     let fresh = false, seats = 0;
     let modeCode: string | null = null, deployLeft: number | null = null, hp: number | null = null;
     const bands: { seat: number; band: string; final: boolean }[] = [];
+    let rowsRead = false;              // 상대 자리를 참가자 줄에서 통째로 다시 읽었나 (저장소가 갈아 끼운다)
     const pieces: { id: string; kind: "chess" | "equip" }[] = [];
     lines = [];
 
@@ -335,24 +336,40 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
         const pick = parseAcBand(lines, ac.bands, norm);
         if (pick) bands.push({ seat: 0, band: pick.band, final: pick.final });
         seats = parseSeats(lines);
-        // 참가자 카드 썸네일 — 연합에서 **다른 참가자**의 전략. 카드 슬롯은 청록 요소로 찾고(참가자 1명 녹화로만
-        // 검증, 다인 화면은 미검증) 썸네일을 전략 아이콘과 그림으로 맞춘다. 내 전략과 같은 그림은 내 카드로 본다.
-        if (color && screen === "confirm") {
+        // 참가자 줄 — 연합에서 **다른 참가자**의 전략 (사용자 요청 2026-09-07 "다른사람 전략도 다 띄워줘야함").
+        // 줄은 오른쪽 체크박스로 찾고(acband.participantRows — 전략을 고른 줄에만 켜진다) 썸네일을 전략
+        // 아이콘과 그림으로 맞춘다. **기하는 후보만 내고 판정은 이 매칭이 한다** — 화면 어딘가의 청록
+        // 정사각이 없는 줄을 만들어 내지 못하게. 실측: 진짜 줄 0.78~0.87 vs 헛자리 0.29~0.41.
+        // ⚠ 'confirm'(내가 확정한 뒤) 뿐 아니라 'band'(내가 아직 고르는 중)에도 읽는다 — 참가자 목록은
+        //   그때도 왼쪽에 떠 있고, **먼저 고른 사람의 체크박스는 이미 켜져 있다**. 확정 화면에서만 읽으면
+        //   남의 전략이 내가 고를 때까지 안 보인다. 격자가 떠 있는 화면(11.png)에서 오탐 0 확인.
+        if (color && (screen === "confirm" || screen === "band")) {
           try {
-            const slots = participantSlots(color.px, color.W, color.H);
-            if (slots.length) {
+            const rows = participantRows(color.px, color.W, color.H);
+            if (rows.length) {
               const tpl = await loadBandTemplates(ac.bands.map((b) => b.id));
-              let seat = 1;
-              for (const sl of slots) {
-                const hit = searchBand(color.px, color.W, color.H, sl.thumb, tpl);
+              const read: { mine: boolean; band: string }[] = [];
+              for (const r of rows) {
+                const hit = searchBand(color.px, color.W, color.H, r.thumb, tpl);
                 if (!hit || hit.score < BAND_ACCEPT.score || hit.margin < BAND_ACCEPT.margin) continue;
-                if (pick && hit.band === pick.band) continue;          // 내 카드
-                bands.push({ seat: seat++, band: hit.band, final: true });
+                read.push({ mine: r.mine, band: hit.band });
               }
-              if (slots.length > 1) seats = Math.max(seats, slots.length);
-              console.debug(`[lens] 참가자 카드 ${slots.length}개 → 상대 전략 ${bands.filter((b) => b.seat > 0).map((b) => b.band).join(",") || "없음"}`);
+              // 내 줄 — 카드 좌상단 '나' 표식이 정답이다. 표식을 못 봤을 때만 우측 패널이 읽은 전략과 대조한다
+              // (패널은 **돋보기로 남의 전략을 열면 그 사람 것을 보여주므로** 그 자체로는 내 것의 근거가 못 된다).
+              let mineAt = read.findIndex((x) => x.mine);
+              if (mineAt < 0 && pick) mineAt = read.findIndex((x) => x.band === pick.band);
+              let seat = 1;
+              read.forEach((x, i) => { if (i !== mineAt) bands.push({ seat: seat++, band: x.band, final: true }); });
+              // 내 줄의 썸네일이 우측 패널보다 낫다 — 뒤에 넣어 같은 자리를 덮는다
+              if (mineAt >= 0) bands.push({ seat: 0, band: read[mineAt].band, final: true });
+              else if (read.length) console.debug("[lens] ⚠ '나' 줄을 못 가렸다 — 참가자 칩이 하나 더 보일 수 있다");
+              // ⚠ 줄이 하나면 참가자 수를 **주장하지 않는다** — 독립인지, 연합인데 아직 한 명만 골랐는지
+              //   구별할 수 없다. 1 이라고 적으면 그 순간 런바가 '독립'으로 뒤집힌다.
+              if (read.length > 1) seats = Math.max(seats, read.length + (mineAt < 0 ? 1 : 0));
+              rowsRead = true;
+              console.debug(`[lens] 참가자 줄 ${rows.length}개(승인 ${read.length}) → 나 ${mineAt < 0 ? "?" : read[mineAt].band} · 상대 ${bands.filter((b) => b.seat > 0).map((b) => b.band).join(",") || "없음"}`);
             }
-          } catch { /* 실험적 — 실패해도 내 전략은 살린다 */ }
+          } catch (e) { console.warn("[lens] 참가자 줄 인식 실패 — 내 전략은 살린다", e); }
         }
         if (pick) console.debug(`[lens] 전략: ${pick.band} ${pick.final ? "확정" : "고르는 중"}`);
       }
@@ -387,7 +404,7 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
     }
     oc = {
       screens: [], entities: [], topics: [], section: screen,
-      target: { kind: "acrun", screen, stacks, fresh, deployLeft, seats, mode: modeCode, bands, bans, banObs, banSeen, hp, pieces },
+      target: { kind: "acrun", screen, stacks, fresh, deployLeft, seats, mode: modeCode, bands, bandRows: rowsRead, bans, banObs, banSeen, hp, pieces },
       battle: screen === "battle",
     };
   } else if (mode === "story") {

@@ -1783,7 +1783,7 @@ const D: Record<string, Pair> = {
   "종류": ["Type", "種類"],
   "편성": ["Team setup", "編成"],
   "시즌": ["Season", "シーズン"],
-  "한국 서버 상설": ["KR permanent", "韓国サーバー常設"],
+  "한국 서버 상설": ["Permanent", "常設"],
   "중국 서버 선행": ["CN first", "中国サーバー先行"],
   "가공·건설": ["Processing & Building", "加工・建設"],
   "지역·날씨": ["Areas & Weather", "エリア・天候"],
@@ -1950,8 +1950,8 @@ const D: Record<string, Pair> = {
   "광고 없이 운영되는 이 사이트의 서버·도메인 비용에 자발적으로 보태 주실 수 있어요 (Buy Me a Coffee). 후원은 전적으로 선택이며 아무 대가가 없습니다.": ["This ad-free site runs on donated server and domain costs — you can chip in voluntarily via Buy Me a Coffee. It's entirely optional and comes with no perks.", "広告なしで運営されるこのサイトのサーバー・ドメイン費用に、任意でご支援いただけます（Buy Me a Coffee）。支援は完全に任意で、見返りはありません。"],
   "향후 다가올 이벤트": ["Coming later", "今後のイベント"],
   "중국 서버 선행 이벤트예요. 한국 출시일은 미정이며, 표시 월은 중↔한 시차로 추정한 대략적 시점입니다.": [
-    "These run on the CN server first. Korean dates aren't set yet; the months shown are rough estimates from the CN↔KR gap.",
-    "中国サーバー先行のイベントです。韓国の配信日は未定で、表示月は中↔韓の時差から推定したおおよその時期です。",
+    "These run on the CN server first. There is no Global release date yet; the months shown are rough estimates based on how far ahead the CN server usually runs.",
+    "中国サーバー先行のイベントです。日本サーバーでの配信日は未定で、表示月は中国サーバーが通常先行する期間から推定したおおよその時期です。",
   ],
   "미실장(중국 서버 선행) 오퍼레이터·재료의 텍스트는 비공식 AI 번역으로, 정식 출시 시 공식 번역과 다를 수 있습니다.": [
     "Text for unreleased (CN-first) operators and materials is an unofficial AI translation and may differ from the official localization.",
@@ -1979,8 +1979,8 @@ const D: Record<string, Pair> = {
     "未実装（中国サーバー先行）のため所持チェックできません — ヘッダーの「未実装データを含む」をオンにすると編成計算にも入れられます。",
   ],
   "아직 한국 서버에 나오지 않은 항목입니다 — 헤더를 펼쳐 '미래시 데이터 포함'을 켜면 활성화됩니다.": [
-    "Not on the Korean server yet — expand the header and turn on 'Include future data' to enable it.",
-    "まだ韓国サーバーに実装されていない項目です — ヘッダーを開いて「未実装データを含む」をオンにすると有効になります。",
+    "Not on the Global server yet — expand the header and turn on 'Include future data' to enable it.",
+    "まだ日本サーバーに実装されていない項目です — ヘッダーを開いて「未実装データを含む」をオンにすると有効になります。",
   ],
   "미래시(미실장) 오퍼": ["Future (unreleased) operators", "未実装（先行）オペレーター"],
   "미실장 (중국 서버 선행)": ["Unreleased (CN server)", "未実装（中国サーバー先行）"],
@@ -2935,9 +2935,9 @@ const D: Record<string, Pair> = {
   "**밴 기물** — 시작 화면의 '사용 제한 오퍼레이터' 카드를 얼굴로 알아봅니다. 줄 왼쪽의 맹약 아이콘으로 어느 맹약 줄인지 먼저 가린 뒤 그 맹약에 속한 기물끼리만 맞춰 보므로, 게임과 같은 맹약별 묶음으로 정리됩니다. 화면에 온전히 보인 카드만 셉니다.": [
     "**Banned pieces** — the 'Restricted Operators' cards on the start screen are identified by face. The bond icon at the left of each row is read first, so cards are only compared against pieces of that bond and the result is grouped by bond exactly like the game. Only cards fully on screen are counted.",
     "**BAN駒** — 開始画面の「使用制限オペレーター」カードを顔で見分けます。行の左にある盟約アイコンで先にどの盟約の行かを判別し、その盟約に属する駒とだけ照合するため、ゲームと同じ盟約ごとのまとまりで整理されます。画面に完全に映ったカードだけを数えます。"],
-  "**전략** — '선택한 전략' 확정 화면에서 내가 고른 전략을 읽어 표시줄에 띄웁니다. 연합에서는 다른 참가자의 전략도 참가자 카드의 그림으로 알아봅니다 — 최대 네 명까지 보여 주고, 아직 못 읽은 자리는 '읽는 중'으로 둡니다 (다른 참가자 인식은 아직 실플레이 확인 전).": [
-    "**Strategy** — your pick is read from the 'Selected Strategy' screen and shown in the run bar. In Allied runs, other players' strategies are identified from the picture on their participant card — up to four seats, with anything unread left as 'Reading…' (other-player recognition is not yet verified in a real multi-player run).",
-    "**戦略** — 「選択した戦略」確定画面から自分の戦略を読み取り、表示バーに出します。連合では他の参加者の戦略も参加者カードの絵で見分けます — 最大4人まで表示し、まだ読めていない枠は「読み取り中」のままにします（他の参加者の認識は実プレイでの確認がまだです）。"],
+  "**전략** — '선택한 전략' 확정 화면에서 내가 고른 전략을 읽어 표시줄에 띄웁니다. 연합에서는 다른 참가자의 전략도 참가자 줄의 그림으로 알아봅니다 — 최대 네 명까지, 전략을 고른 사람부터 차례로 채워지고 아직 안 고른 자리는 '읽는 중'으로 남습니다.": [
+    "**Strategy** — your pick is read from the 'Selected Strategy' screen and shown in the run bar. In Allied runs, other players' strategies are identified from the picture on their row — up to four of them, filling in as each player locks a strategy, with anyone still choosing left as 'Reading…'.",
+    "**戦略** — 「選択した戦略」確定画面から自分の戦略を読み取り、表示バーに出します。連合では他の参加者の戦略も参加者行の絵で見分けます — 最大4人まで、戦略を決めた人から順に埋まり、まだ選んでいない枠は「読み取り中」のままです。"],
   "읽은 값이 어디에 보이나": ["Where what it reads shows up", "読み取った値はどこに出るか"],
   "**판 상자** — 연결하면 제목 줄 아래에 생깁니다. 상자 안 아무 곳이나 누르면 밴 목록이 그 자리에서 맹약별로 펼쳐지고, 다시 누르면 접힙니다. 전략 칩을 누르면 그 전략의 상세가 열리고, 연결 끊기는 상자 맨 오른쪽에 있습니다.": [
     "**The run bar** — appears under the title once linked. Click anywhere in it to unfold the ban list right there, grouped by bond; click again to fold it. Clicking a strategy chip opens that strategy's details, and Unlink sits at the far right of the bar.",

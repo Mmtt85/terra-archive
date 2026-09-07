@@ -17,7 +17,7 @@
 //  · f021~f025 의 카드는 '선택 중'(모래시계) — 썸네일 매칭이 BAND_ACCEPT 를 넘으면 안 된다 (미선택 판정 근거).
 //
 // 하한(아래로 떨어지면 실패): 격자 5/5 · 비격자 0/12 · SELECTED 3/3(+없음 2/2) · 타일 ≥78/80 · 썸네일 3/3 ·
-// 큰 초상 ≥6/7 · 참가자 슬롯(실험적) f026/f027/f029 에서 썸네일 3/3.
+// 큰 초상 ≥6/7 · 참가자 줄 1인 3/3 · 안 고른 화면 0줄 6/6 · 연합 4인 스크린샷 11/22/33/44 줄 수·순서·'나' 정확 일치.
 // 실측 2026-09-07 (node, Apple Silicon): 격자 5/5 · 비격자 0/12 · 타일 80/80 최소 마진 0.276 · 썸네일 3/3
 // 마진 0.30~0.40 · 큰 초상 7/7 마진 0.42~0.50 · 55 ms/타일(1232 창).
 //
@@ -29,11 +29,12 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
-import { findBandGrid, searchBand, bandTemplate, participantSlots, BAND_ACCEPT, type BandRect } from "../../app/lens/acband";
+import { findBandGrid, searchBand, bandTemplate, participantRows, BAND_ACCEPT, type BandRect } from "../../app/lens/acband";
 import type { Raster } from "../../app/lens/pix";
 
 const ROOT = resolve(import.meta.dirname ?? __dirname, "../..");
 const FRAMES = resolve(ROOT, "fixtures/lens/ac-frames/v2");
+const SHOTS = resolve(ROOT, "fixtures/lens/screenshots");
 
 // ── 정답 상수 ─────────────────────────────────────────────────────────────────
 /** 격자 타일 행우선 정답 (sort 1~16) */
@@ -59,8 +60,25 @@ const BIG_PORTRAITS: { kind: string; frames: number[]; rect: BandRect }[] = [
   { kind: "확정 화면", frames: [26, 27, 29], rect: { x: 1097, y: 317, w: 253, h: 253 } },
   { kind: "팝업", frames: [28], rect: { x: 456, y: 374, w: 245, h: 245 } },
 ];
+/**
+ * 연합(4인) '전략 정보' 화면 — fixtures/lens/screenshots/{11,22,33,44}.png (사용자 제공 2026-09-07,
+ * git 미추적). 이 픽스처가 생긴 이유: 참가자 줄 기하를 **1인 녹화만 보고** 맞춰 놨더니 연합에서 남의
+ * 줄을 하나도 못 찾았다. 양성만 재면 못 보는 것과 같은 실수라 여기에 박아 둔다.
+ *  · 11 = 아무도 아직 안 골랐다(한 명 '선택 중', 셋은 '···') → 0줄
+ *  · 22 = 셋이 골랐다(둘째가 '선택 중') → 3줄
+ *  · 33 = 넷 다 골랐다 → 4줄
+ *  · 44 = 동맹 로비(준비 완료) → 0줄. 전략 화면이 아니다.
+ * '나'(테라아카이브)는 위에서 셋째 줄 — 카드 좌상단 청록 표식으로 가른다.
+ */
+const ALLY_SHOTS: { name: string; rows: string[]; mine: number }[] = [
+  { name: "11", rows: [], mine: -1 },
+  { name: "22", rows: ["band_duyaoy", "band_humus", "band_pepe"], mine: 1 },
+  { name: "33", rows: ["band_duyaoy", "band_chiave", "band_humus", "band_pepe"], mine: 2 },
+  { name: "44", rows: [], mine: -1 },
+];
+
 /** 하한 */
-const MIN = { tiles: 78, big: 6 };
+const MIN = { tiles: 78, big: 6, slots: 2 };
 
 // ── 브리지 시뮬레이션 (bridge.ts 와 같은 로직) ───────────────────────────────
 const OCR_MAX_W = 900;
@@ -81,8 +99,7 @@ function contentRect(g: Uint8Array, w: number, h: number) {
   return { x: Math.round(fx * w), y: Math.round(fy * h), w: Math.max(4, Math.round(fw * w)), h: Math.max(4, Math.round(fh * h)) };
 }
 
-async function loadFrame(n: number): Promise<Frame> {
-  const path = resolve(FRAMES, `f${String(n).padStart(3, "0")}.png`);
+async function loadPath(path: string): Promise<Frame> {
   const meta = await sharp(path).metadata();
   const w = meta.width!, h = meta.height!;
   const small = await sharp(path).resize(SMALL_W, SMALL_H, { fit: "fill" }).greyscale().raw().toBuffer();
@@ -94,6 +111,7 @@ async function loadFrame(n: number): Promise<Frame> {
   const { data, info } = await sharp(jpeg).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
   return { rgba: new Uint8ClampedArray(data.buffer, data.byteOffset, data.length), width: info.width, height: info.height, crop };
 }
+const loadFrame = (n: number) => loadPath(resolve(FRAMES, `f${String(n).padStart(3, "0")}.png`));
 
 /** 원본 좌표 rect → 브리지 프레임 정규화 rect */
 const norm = (f: Frame, r: BandRect): BandRect =>
@@ -203,27 +221,54 @@ export async function verify(): Promise<{ name: string; pass: number; fail: numb
   }
   check(bigOk >= MIN.big, `큰 초상 ${bigOk}/${bigN} (하한 ${MIN.big})`);
 
-  // ── 참가자 슬롯 (실험적 — 1인 카드 픽스처만) ──
+  // ── 참가자 줄 ──
+  // 호출자와 같은 규약으로 잰다: 기하가 후보를 내고 **searchBand 승인이 판정**한다.
+  const readRows = (f: Frame) => participantRows(f.rgba, f.width, f.height)
+    .map((r) => ({ r, h: searchBand(f.rgba, f.width, f.height, r.thumb, tpl) }))
+    .filter((x) => accepted(x.h));
+
+  // 1인 카드(v2). ⚠ f026 은 체크박스가 **막 켜지는 번쩍임** 프레임이라 흰빛에 가까워 청록 마스크에
+  // 안 잡힌다 (그 자리 청록 조각 3×7). 애니메이션 한 프레임이고, 브리지는 화면이 잠잠할 때만 프레임을
+  // 내보내므로 실사용에서 이 상태로 굳을 일은 없다 — 그래서 하한을 2/3 로 둔다.
   let slotOk = 0;
   for (const n of THUMB_FRAMES) {
     const f = await frame(n);
     const s0 = performance.now();
-    const slots = participantSlots(f.rgba, f.width, f.height);
+    const got = readRows(f);
     const ms = performance.now() - s0;
-    const h = slots.length === 1 ? searchBand(f.rgba, f.width, f.height, slots[0].thumb, tpl) : null;
-    const ok = slots.length === 1 && h?.band === JUSTIN && accepted(h);
+    const ok = got.length === 1 && got[0].h!.band === JUSTIN;
     if (ok) slotOk++;
-    const c = slots[0]?.card;
-    lines.push(`  f${n} 참가자 슬롯 ${slots.length}개 ${ms.toFixed(1)}ms${c ? ` 카드(${(c.x * f.crop.w + f.crop.x).toFixed(0)},${(c.y * f.crop.h + f.crop.y).toFixed(0)} ${(c.w * f.crop.w).toFixed(0)}×${(c.h * f.crop.h).toFixed(0)} 원본px)` : ""} → ${h?.band ?? "없음"} ${h ? `${f3(h.score)} 마진 ${f3(h.margin)}` : ""}${ok ? "" : " ✗"}`);
+    lines.push(`  f${n} 참가자 줄 ${got.length}개 ${ms.toFixed(1)}ms${got[0]?.r.mine ? " (나)" : ""} → ${got.map((x) => `${x.h!.band} ${f3(x.h!.score)}`).join(",") || "없음"}${ok ? "" : " ✗"}`);
   }
-  check(slotOk === THUMB_FRAMES.length, `참가자 슬롯(실험적) 썸네일 ${slotOk}/${THUMB_FRAMES.length}`);
-  // 정보용: '선택 중'·팝업 프레임의 슬롯 수 (기대: 카드 1장 / 팝업은 가려져 0 또는 미승인)
+  check(slotOk >= MIN.slots, `참가자 줄(1인 화면) ${slotOk}/${THUMB_FRAMES.length} (하한 ${MIN.slots})`);
+
+  // '선택 중'·팝업 프레임엔 체크박스가 없다 → 승인된 줄 0개여야 한다
+  let emptyOk = 0;
   for (const n of [...UNSELECTED_FRAMES, 28]) {
     const f = await frame(n);
-    const slots = participantSlots(f.rgba, f.width, f.height);
-    const hs = slots.map((s) => searchBand(f.rgba, f.width, f.height, s.thumb, tpl));
-    const acc = hs.filter(accepted).length;
-    lines.push(`  ℹ f${n} 참가자 슬롯 ${slots.length}개 · 승인 ${acc}개${acc ? " ⚠" : ""}`);
+    const got = readRows(f);
+    if (!got.length) emptyOk++; else lines.push(`    ✗ f${n} 안 고른 화면인데 참가자 줄 ${got.length}개 (${got.map((x) => x.h!.band).join(",")})`);
+  }
+  check(emptyOk === UNSELECTED_FRAMES.length + 1, `안 고른 화면 0줄 ${emptyOk}/${UNSELECTED_FRAMES.length + 1}`);
+
+  // ── 참가자 줄 — 연합 4인 (스크린샷 픽스처) ──
+  if (!existsSync(resolve(SHOTS, "33.png"))) {
+    lines.push("  연합 스크린샷 없음 — 건너뜀 (fixtures/lens/screenshots 는 로컬 전용)");
+  } else {
+    for (const shot of ALLY_SHOTS) {
+      const f = await loadPath(resolve(SHOTS, `${shot.name}.png`));
+      const s0 = performance.now();
+      const got = readRows(f);
+      const ms = performance.now() - s0;
+      const ids = got.map((x) => x.h!.band);
+      const mineAt = got.findIndex((x) => x.r.mine);
+      const okRows = ids.length === shot.rows.length && ids.every((v, i) => v === shot.rows[i]);
+      const okMine = mineAt === shot.mine;
+      check(okRows, `${shot.name}.png 줄 ${ids.length}/${shot.rows.length}개${okRows ? "" : ` → ${ids.join(",") || "없음"} (기대 ${shot.rows.join(",") || "없음"})`}`);
+      if (shot.rows.length) check(okMine, `${shot.name}.png '나' 줄 ${mineAt} (기대 ${shot.mine})`);
+      const worst = got.reduce((a, x) => Math.min(a, x.h!.score), 1);
+      lines.push(`  ${shot.name}.png ${got.length}줄 ${ms.toFixed(1)}ms${got.length ? ` · 최소 점수 ${f3(worst)}` : ""}`);
+    }
   }
 
   return { name, pass, fail, lines };

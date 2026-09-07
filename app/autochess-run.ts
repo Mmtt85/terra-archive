@@ -155,6 +155,8 @@ export type AcRunPatch = {
   banSeen?: Record<string, number>;
   bans?: { id: string; margin: number }[];
   bands?: { seat: number; band: string; final?: boolean }[];
+  /** bands 의 상대 자리(seat>0)가 **참가자 줄을 통째로 다시 읽은 결과**인가 — 그렇다면 갈아 끼운다 */
+  bandRows?: boolean;
   seats?: number;
   deployLeft?: number | null;
   mode?: string | null;
@@ -206,9 +208,14 @@ export function mergeAcRun(patch: AcRunPatch): boolean {
     for (const [id, m] of best) banVotes[id] = (banVotes[id] ?? 0) + Math.min(1, Math.max(0, m) / BAN_MARGIN_SURE);
   }
   // 전략은 자리(seat)로 덮어쓴다 — 같은 자리를 다시 읽으면 최신이 이긴다. 단 확정을 미리보기가 덮지 않는다.
+  // ⚠ 참가자 줄을 읽은 패치(bandRows)면 **상대 자리를 통째로 갈아 끼운다**. 자리 번호는 '전략을 고른
+  //   줄' 중의 순서라, 누가 새로 고르면 그 아래 줄들이 한 칸씩 밀린다 — 자리별로 병합하면 밀려나기 전
+  //   값이 유령 자리로 남아 없는 참가자가 하나 더 생긴다. 화면이 그때그때 다 보여주므로 누적할 이유도 없다.
+  //   내 자리(0)는 우측 패널도 쓰는 자리라 남긴다.
   let bands = run.bands;
   if (patch.bands?.length) {
-    const by = new Map(run.bands.map((b) => [b.seat, b]));
+    const keep = patch.bandRows ? run.bands.filter((b) => b.seat === 0) : run.bands;
+    const by = new Map(keep.map((b) => [b.seat, b]));
     for (const b of patch.bands) {
       const cur = by.get(b.seat);
       if (cur?.final && !b.final) continue;

@@ -667,7 +667,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
         || !!tg.mode || !!tg.pieces?.length || !!tg.screen;
       if (any) {
         mergeAcRun({
-          stacks: tg.stacks, banObs, banSeen, bans, bands, seats,
+          stacks: tg.stacks, banObs, banSeen, bans, bands, bandRows: tg.bandRows, seats,
           deployLeft: hasDeploy ? tg.deployLeft : undefined,
           mode: tg.mode ?? undefined, hp: hasHp ? tg.hp : undefined,
           pieces: tg.pieces, screen: tg.screen ?? undefined,

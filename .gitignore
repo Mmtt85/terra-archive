@@ -88,3 +88,6 @@ scripts/records-cn/_src/
 /*.traineddata
 # 위수 협의 PRTS 녹화 프레임(2026-09-07, 수백 MB) — 로컬 전용. 기대값은 scripts/verify-autochess.ts 에 코드로 둔다.
 /fixtures/lens/ac-frames/
+
+# 위수 협의 인식 실험 스크립트 (측정용 — 정본은 scripts/verify-ac/*)
+/scripts/ac-lab/

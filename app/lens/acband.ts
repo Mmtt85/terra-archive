@@ -298,131 +298,135 @@ export function searchBand(px: Uint8ClampedArray, W: number, H: number, rect: Ba
   return { band: ids[i1], score: v1, margin: i2 >= 0 ? v1 - v2 : v1, second: i2 >= 0 ? ids[i2] : null, at, windows };
 }
 
-// ── 참가자 카드 (실험적) ────────────────────────────────────────────────────
+// ── 참가자 줄 (연합 '전략 정보' 화면) ──────────────────────────────────────
 //
-// ⚠ **미검증** — 연합(2~4인) 픽스처가 없다. v2 f021~f029 의 1인 카드 한 장으로만 맞춰 놓은 기하다.
-//    실제 연합 화면(카드 2~4장 배치·간격·크기)이 확인되기 전까지 결과는 '실험적' 표시를 달 것.
+// 2026-09-07 재작성 — 처음엔 카드 좌상단 '참가자' 배지를 앵커로 삼았는데, 그 배지는 **내 카드에만**
+// 붙는 '나' 표식이었다 (연합 4인 스크린샷 11/22/33 에서 확인). 그래서 남의 줄은 한 줄도 못 찾았다
+// (사용자 신고 "다른사람 전략도 다 띄워줘야함"). 1인 녹화만 보고 맞춘 기하의 대가다.
 //
-// 카드 고정 요소 (원본 1826×1030 f026 실측): 카드 테두리 x130~770 · y504~641 (w 640 · h 137, w/h≈4.67).
-//  · 좌상단 '참가자' 배지: 밝은 청록(0,207,159) 정사각 x135~166 · y512~543 (변 32 = h×0.234) 안에 어두운 글리프.
-//    → 이것을 앵커로 쓴다. 화면이 어두워지는 전환 프레임(f029)에서도 (0,124,97) 로 색상은 유지된다.
-//    900px 판에서는 17×18 정사각 고리 — 카드 왼쪽 테두리와 2px 밖에 안 떨어져 있어 **팽창을 하면 붙는다**
-//    (f026 은 왼쪽 테두리가 (0,129,88) 로 밝아 한 덩어리가 됐다). 8-연결 성분을 팽창 없이 쓴다.
-//  · 왼쪽 ▶ 마커(0,210,162)는 x110~130 사이를 **움직이고** f029 에선 사라져(0,16,11) 앵커로 못 쓴다.
-//  · 체크박스(0,254,236) x712~765 는 '선택 중'(f021~f025) 상태엔 없다.
-//  · 썸네일 브래킷 박스 x586~705 · y516~628 ≈ 카드 높이 0.85 배 정사각, 오른쪽 끝에서 0.475h 안쪽.
-//    '선택 중'이면 이 자리에 모래시계+글자만 있어 매칭 점수가 낮게 나온다(실측 0.15~0.38, 마진 ≤0.06)
-//    → BAND_ACCEPT 미달 = 미선택 판정에 쓸 수 있다.
-//  · 검증 두 가지로 격자·패널 속 배지 크기 청록 조각(f023~f025 에서 실제로 나왔다)을 걸러낸다:
-//    (b) 카드 위/아래 변의 어두운 청록 테두리(0,56,46 · 어두워지면 4,35,29 / 바닥 바 7,26,24) — 예상 y 의
-//        ±6% 안에서 가장 잘 맞는 행이 열의 40% 이상,
-//    (c) 이름 띠 아래 어두운 띠(x 0.20~0.50w · y 0.40~0.60h, 실측 휘도 12~38) — 얼굴 타일은 여기가 밝다.
-//  · 실측(900px 판): f021~f027·f029 카드 1장씩(원본 환산 x126~131 · y501~504 · 650~657×139~141 — 정답
-//    130,504,640×137), 썸네일 매칭 f026/f027/f029 저스틴 0.82~0.89, '선택 중' f021~f025 ≤0.39 미승인.
-//    f028 은 팝업이 카드를 덮어 0장 (위 변 대비가 안 나온다) — 그 화면은 팝업 큰 초상으로 읽는다.
+// 새 앵커는 **줄 오른쪽 체크박스**다. 고른 줄에만 켜지므로 "읽을 썸네일이 있다" 와 정확히 같은 조건이고,
+// 밝은 청록이라 마스크 한 번으로 잡힌다. 1px 팽창해 체크 글리프(16×15)와 네모 테두리(24×23)를 한
+// 덩어리로 만들면 **거의 꽉 찬 정사각**이 되어 글자 조각과 갈린다.
+//   실측(900px 판, 11/22/33.png): 체크박스 26×25 채움 0.94~0.97 · 청록 글자 조각 채움 0.31~0.82.
+//   22.png 은 3개(한 명은 '선택 중'), 33.png 은 4개, 11.png(아무도 안 골랐다)·44.png(로비)는 0개.
+//
+// 기하 (체크박스 **마스크** 변 단위 — 마스크는 경계 흐림 때문에 실제보다 ~7% 작게 잡힌다):
+//   썸네일 중심 = 체크박스 중심 + (-1.80, 0) · 썸네일 변 = 2.25 — dx -2.2~-1.7 · 변 2.0~2.5 를
+//   훑어 **전 구간 오답 0**(33.png 4줄)이라 값에 예민하지 않다. 넓게 맞는 구간의 가운데를 골랐다.
+//   두 픽스처가 서로 다른 해상도인데도 같은 비율이다 — v2 1인 화면(원본 1826px: 체크박스 54px,
+//   썸네일 중심 -93px·변 119px)과 4인 스크린샷(원본 1920px: 54px, -95px·115px).
+//   searchBand 가 사방 10%·3스케일을 훑으므로 이 정도 오차는 흡수된다.
+//
+// '나' 표식: 카드 좌상단의 작은 청록 정사각(실측 18×16 채움 0.78, 체크박스의 0.73배). 이걸로 내 줄을
+// 가른다 — 우측 패널은 **돋보기로 남의 전략을 열어 보면 그 사람 것을 보여주므로** 내 전략의 근거로
+// 쓰기엔 약하다. 표식을 못 찾으면 호출자가 우측 패널 값과 대조해 거른다.
 
-const BADGE_OVER_W = 32 / 1826;     // 배지 변 / 화면 폭
-const CARD_H_OVER_BADGE = 137 / 32;
-const CARD_W_OVER_H = 640 / 137;
-const BADGE_DX = 5 / 137, BADGE_DY = 8 / 137;   // 카드 좌상단 → 배지 좌상단 (h 단위)
-const THUMB_SIDE = 0.85, THUMB_CX = 515.5 / 137;   // 썸네일 변 / 카드 높이, 썸네일 중심 x 오프셋 / 카드 높이
+/** 팽창 성분의 채움 — 이 아래는 글자 조각 (실측 경계: 글자 ≤0.82 vs 체크박스 ≥0.94) */
+const CB_FILL = 0.88;
+/** 체크박스 변 (900px 판 기준 px) — 실측 23~24 */
+const CB_MIN = 12, CB_MAX = 44;
+/** 체크박스 마스크 중심 → 썸네일 중심·변 (마스크 변 단위) */
+const THUMB_DX = -1.80, THUMB_SIDE = 2.25;
+/** '나' 표식 — 체크박스 변 대비 크기·최소 채움·체크박스보다 왼쪽이어야 하는 거리 */
+const BADGE_LO = 0.45, BADGE_HI = 1.05, BADGE_FILL = 0.55, BADGE_DX = -6;
 
-/** 밝은 청록 (배지·체크박스·마커) — 상대 기준이라 어두워진 프레임도 잡고, 어두운 테두리(G≈56)는 버린다 */
+/** 밝은 청록 (체크박스·'나' 표식) — 상대 기준이라 어두워진 프레임도 잡는다 */
 function brightTeal(r: number, g: number, b: number): boolean {
   return r < 60 && g >= 90 && g - r >= 60 && b - r >= 40 && b >= 0.6 * g && b <= 0.95 * g;
 }
-/** 카드 테두리 청록 — 아주 어두운 것까지 (7,26,24); 배경(10,22,22)·카드 속(3,12,19)은 아니다 */
-function borderTeal(r: number, g: number, b: number): boolean {
-  return g >= 24 && g - r >= 17 && b - r >= 13 && b >= 0.6 * g && b <= 0.95 * g;
-}
 
-export function participantSlots(px: Uint8ClampedArray, W: number, H: number): { card: BandRect; thumb: BandRect }[] {
-  // 1) 밝은 청록 마스크 (팽창 없음 — 위 주석)
-  const m = new Uint8Array(W * H);
-  for (let i = 0, p = 0; i < W * H; i++, p += 4) if (brightTeal(px[p], px[p + 1], px[p + 2])) m[i] = 1;
-  // 2) 8-연결 성분 → 배지 크기의 정사각 덩어리만
-  const side0 = BADGE_OVER_W * W;
-  const minS = side0 * 0.65, maxS = side0 * 1.4 + 2;
-  const cap = Math.ceil(maxS * maxS * 4);
-  const seen = new Uint8Array(W * H);
-  const stack = new Int32Array(W * H);
-  const cands: { x: number; y: number; s: number }[] = [];
-  for (let start = 0; start < W * H; start++) {
-    if (!m[start] || seen[start]) continue;
+type Blob = { cx: number; cy: number; side: number; fill: number };
+
+/**
+ * 밝은 청록 8-연결 성분. `dilate` 면 1px 팽창해서 찾는다 — 체크박스는 체크 글리프와 네모 테두리가
+ * 떨어져 있어 붙여야 한 덩어리가 된다.
+ * ⚠ '나' 표식은 **팽창 없이** 찾아야 한다: 내 줄은 청록 테두리로 강조돼 있고 표식이 그 모서리에
+ *   2px 붙어 있어, 팽창하면 테두리와 한 덩어리가 되어 크기 조건에서 통째로 탈락한다 (실측 11/22/33).
+ * 변은 언제나 **팽창 전** 화소로 다시 재 해상도 의존을 없앤다.
+ */
+function tealBlobs(px: Uint8ClampedArray, W: number, H: number, dilate: boolean): Blob[] {
+  const raw = new Uint8Array(W * H);
+  for (let i = 0, p = 0; i < W * H; i++, p += 4) if (brightTeal(px[p], px[p + 1], px[p + 2])) raw[i] = 1;
+  let m = raw;
+  if (dilate) {
+    m = new Uint8Array(W * H);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      if (!raw[y * W + x]) continue;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        const yy = y + dy, xx = x + dx;
+        if (yy >= 0 && yy < H && xx >= 0 && xx < W) m[yy * W + xx] = 1;
+      }
+    }
+  }
+  const s = W / 900;
+  const lo = CB_MIN * s, hi = CB_MAX * s;
+  const seen = new Uint8Array(W * H), st = new Int32Array(W * H);
+  const out: Blob[] = [];
+  for (let s0 = 0; s0 < W * H; s0++) {
+    if (!m[s0] || seen[s0]) continue;
     let sp = 0, cnt = 0, x0 = W, x1 = -1, y0 = H, y1 = -1;
-    stack[sp++] = start; seen[start] = 1;
+    st[sp++] = s0; seen[s0] = 1;
     while (sp) {
-      const i = stack[--sp]; cnt++;
+      const i = st[--sp]; cnt++;
       const x = i % W, y = (i - x) / W;
       if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
-      for (let dy = -1; dy <= 1; dy++) {
-        const yy = y + dy; if (yy < 0 || yy >= H) continue;
-        for (let dx = -1; dx <= 1; dx++) {
-          const xx = x + dx; if (xx < 0 || xx >= W) continue;
-          const j = yy * W + xx;
-          if (m[j] && !seen[j]) { seen[j] = 1; stack[sp++] = j; }
-        }
-      }
-      if (cnt > cap) break;   // 얼굴 타일·초상처럼 큰 덩어리는 더 볼 것 없다 (남은 픽셀은 다음 성분으로 새지만 크기로 걸러진다)
+      for (let dy = -1; dy <= 1; dy++) { const yy = y + dy; if (yy < 0 || yy >= H) continue;
+        for (let dx = -1; dx <= 1; dx++) { const xx = x + dx; if (xx < 0 || xx >= W) continue;
+          const j = yy * W + xx; if (m[j] && !seen[j]) { seen[j] = 1; st[sp++] = j; } } }
     }
     const bw = x1 - x0 + 1, bh = y1 - y0 + 1;
-    if (bw < minS || bh < minS || bw > maxS || bh > maxS) continue;
-    if (Math.abs(bw - bh) > 0.2 * Math.max(bw, bh)) continue;   // 0.3 이면 헤더의 청록 숫자 '2'(15×21)가 통과했다
-    if (cnt / (bw * bh) < 0.35) continue;    // 속이 텅 빈 고리(브래킷)는 아니다
-    // 변 추정: 이진 마스크 bbox 는 축소·JPEG 번짐으로 실제보다 ≈1px 크다 (900px 판 실측 17.5 vs 16.6).
-    // 카드 높이는 이 값의 4.28 배, 썸네일 x 는 3.35 배로 증폭되므로 1px 이 썸네일 위치 ±7px 를 좌우한다.
-    cands.push({ x: x0 + 0.5, y: y0 + 0.5, s: (bw + bh) / 2 - 1 });
+    if (bw < lo || bh < lo || bw > hi || bh > hi) continue;
+    if (Math.abs(bw - bh) > 0.25 * Math.max(bw, bh)) continue;
+    // 변은 팽창 전 화소의 bbox 로 — 팽창분(항상 1px)이 해상도에 따라 다른 비율로 섞이지 않게
+    let rx0 = x1, rx1 = x0, ry0 = y1, ry1 = y0, has = false;
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+      if (!raw[y * W + x]) continue;
+      has = true;
+      if (x < rx0) rx0 = x; if (x > rx1) rx1 = x; if (y < ry0) ry0 = y; if (y > ry1) ry1 = y;
+    }
+    if (!has) continue;
+    out.push({ cx: (x0 + x1 + 1) / 2, cy: (y0 + y1 + 1) / 2, side: ((rx1 - rx0) + (ry1 - ry0)) / 2 + 1, fill: cnt / (bw * bh) });
   }
-  // 3) 배지 → 대략의 카드 기하 → 위 테두리 선·아래 바닥 바로 높이를 **다시 재고** 검증
-  //    (배지 변 ±1px 가 카드 높이 ±4px·썸네일 x ±7px 로 증폭돼 f027 썸네일을 놓쳤다 — 테두리는 ±1px 다)
-  const lum = (p: number) => px[p] * 0.299 + px[p + 1] * 0.587 + px[p + 2] * 0.114;
-  const out: { card: BandRect; thumb: BandRect }[] = [];
-  for (const c of cands) {
-    const h0 = c.s * CARD_H_OVER_BADGE, w0 = h0 * CARD_W_OVER_H;
-    const cx0 = c.x - BADGE_DX * h0, cy0 = c.y - BADGE_DY * h0;
-    if (cx0 < -2 || cy0 < -2 || cx0 + w0 > W + 2 || cy0 + h0 > H + 2) continue;
-    // 행 y 에서 카드 폭 30~90% 구간의 테두리 청록 열 비율
-    const xa = Math.max(0, Math.round(cx0 + w0 * 0.3)), xb = Math.min(W - 1, Math.round(cx0 + w0 * 0.9));
-    const rowFrac = (y: number): number => {
-      if (y < 0 || y >= H) return 0;
-      let cols = 0, hit = 0;
-      for (let x = xa; x <= xb; x += 2) { cols++; const p = (y * W + x) * 4; if (borderTeal(px[p], px[p + 1], px[p + 2])) hit++; }
-      return cols ? hit / cols : 0;
-    };
-    // 위 변: 예상 ±8% 안에서 비율 ≥0.45 인 첫 행 — 단 그 2~3px 위는 ≤0.25 여야 한다 (선이지 무늬가 아니다).
-    // 아래 변: 바닥 바(두께 h×0.09)의 마지막 행(≥0.5) — 그 2~3px 아래는 ≤0.25 (카드가 거기서 끝난다).
-    // 실측(900px): 진짜 카드는 위 0.51~1.00 / 아래 0.61~0.96 뒤 0.00~0.20 으로 뚝 떨어지고, 패널·초상 속
-    // 배지 크기 청록 조각(f027·f029)은 0.3~0.8 이 평평하게 이어져 여기서 걸러진다. 둘 다 있어야 카드다.
-    let top = -1, bottom = -1;
-    for (let y = Math.round(cy0 - h0 * 0.08); y <= Math.round(cy0 + h0 * 0.08); y++) {
-      if (rowFrac(y) >= 0.45 && rowFrac(y - 2) <= 0.25 && rowFrac(y - 3) <= 0.25) { top = y; break; }
-    }
-    for (let y = Math.round(cy0 + h0 * 1.08); y >= Math.round(cy0 + h0 * 0.85); y--) {
-      if (rowFrac(y) >= 0.5 && rowFrac(y + 2) <= 0.25 && rowFrac(y + 3) <= 0.25) { bottom = y; break; }
-    }
-    if (top < 0 || bottom < 0) continue;
-    const h = bottom - top + 1;
-    if (Math.abs(h - h0) > h0 * 0.15) continue;           // 배지 크기와 너무 어긋나면 카드가 아니다
-    const cy = top, w = h * CARD_W_OVER_H, cx = c.x - BADGE_DX * h;
-    // (c) 이름 띠 아래 어두운 띠 — 얼굴 타일·초상은 여기가 밝다
-    let sum = 0, n = 0;
-    for (let y = Math.round(cy + h * 0.40); y <= Math.round(cy + h * 0.60); y += 2) {
-      if (y < 0 || y >= H) continue;
-      for (let x = Math.round(cx + w * 0.20); x <= Math.round(cx + w * 0.50); x += 2) {
-        if (x < 0 || x >= W) continue;
-        sum += lum((y * W + x) * 4); n++;
-      }
-    }
-    if (!n || sum / n > 60) continue;
-    if (out.some((o) => Math.abs(o.card.y * H - cy) < h * 0.5)) continue;   // 같은 카드 중복
-    // 썸네일 = 브래킷 박스(원본 586~705 × 516~628, 카드 130~770 × 504~641): 중심 x = 카드 왼쪽 + 3.76h, 변 0.85h
-    const ts = h * THUMB_SIDE;
-    const tx = cx + THUMB_CX * h - ts / 2, ty = cy + (h - ts) / 2;
-    out.push({
-      card: { x: cx / W, y: cy / H, w: w / W, h: h / H },
-      thumb: { x: tx / W, y: ty / H, w: ts / W, h: ts / H },
-    });
-  }
-  out.sort((a, b) => a.card.y - b.card.y);
   return out;
+}
+
+/**
+ * 연합 참가자 줄 **후보** — 전략을 고른 줄에만 체크박스가 켜지므로 "읽을 썸네일이 있다" 와 같은 조건이다.
+ * ⚠ 여기서 내는 건 후보일 뿐이고, **판정은 호출자의 searchBand + BAND_ACCEPT 가 한다** (밴 인식의
+ *   두 겹 게이트와 같은 규약). 값싼 기하로 넓게 제안하고, 답을 내는 매칭이 그대로 확인을 겸한다 —
+ *   그래야 화면 어딘가의 청록 정사각 하나가 없는 줄을 만들어 내지 못한다.
+ *   실측: 진짜 줄 0.78~0.87 vs 헛자리 0.29~0.41 (임계 0.60).
+ */
+export type PartRow = {
+  /** 썸네일이 있을 자리 — searchBand 에 그대로 넘긴다 */
+  thumb: BandRect;
+  /** '나' 표식이 붙은 줄인가 */
+  mine: boolean;
+};
+
+export function participantRows(px: Uint8ClampedArray, W: number, H: number): PartRow[] {
+  const rows = tealBlobs(px, W, H, true).filter((b) => b.fill >= CB_FILL).sort((a, b) => a.cy - b.cy);
+  if (!rows.length) return [];
+
+  // '나' 표식 — 어느 줄과 같은 높이이고 그 줄의 체크박스보다 충분히 왼쪽인 작은 청록 정사각.
+  // 후보가 여럿이면 줄 중심에 가장 가까운 것.
+  let mineAt = -1, mineD = Infinity;
+  for (const b of tealBlobs(px, W, H, false)) {
+    if (b.fill < BADGE_FILL) continue;
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      if (b.side < r.side * BADGE_LO || b.side > r.side * BADGE_HI) continue;
+      if (b.cx > r.cx + BADGE_DX * r.side) continue;
+      const d = Math.abs(b.cy - r.cy);
+      if (d <= r.side * 1.6 && d < mineD) { mineD = d; mineAt = i; }
+    }
+  }
+
+  return rows.map((r, i) => {
+    const ts = THUMB_SIDE * r.side;
+    return {
+      thumb: { x: (r.cx + THUMB_DX * r.side - ts / 2) / W, y: (r.cy - ts / 2) / H, w: ts / W, h: ts / H },
+      mine: i === mineAt,
+    };
+  });
 }

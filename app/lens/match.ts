@@ -49,6 +49,8 @@ export type LensTarget =
       mode?: string | null;
       /** 전략 — seat 0 = 나. final=false 는 아직 고르는 중(우측 패널 미리보기), true 는 '선택한 전략' 확정 화면 */
       bands?: { seat: number; band: string; final: boolean }[];
+      /** bands 의 상대 자리가 참가자 줄을 통째로 다시 읽은 결과인가 */
+      bandRows?: boolean;
       /** 밴 기물 — 카드 **얼굴**로 확정한 chess 기본형 id 와 마진(1위−2위, 후보 하나면 1) (2026-09-07 재가동) */
       bans?: { id: string; margin: number }[];
       /** 밴 화면 관측 — 맹약 id → 그 행에 보인 티어들 (얼굴이 못 가른 자리는 acsolve 가 역산).
