@@ -2914,38 +2914,59 @@ const D: Record<string, Pair> = {
   "아직 읽지 못했습니다 — 게임에서 '선택한 전략' 화면을 띄워 주세요": [
     "Not read yet — bring up the 'Selected Strategy' screen in game.",
     "まだ読めていません — ゲームで「選択した戦略」画面を表示してください。"],
-  "**밴 기물** — 시작 화면의 '사용 제한 오퍼레이터' 카드를 얼굴로 알아봅니다. 목록은 스크롤해야 다 보이므로 25초 안에 끝까지 내려 주세요. 인식은 화면이 멈춘 순간에 일어나니 조금씩 내린 뒤 한 번씩 완전히 멈춰야 하고, 화면에 온전히 보인 카드만 셉니다.": [
-    "**Banned pieces** — the 'Restricted Operators' cards on the start screen are identified by face. The list only shows fully when scrolled, so scroll to the bottom within the 25 seconds. Recognition happens the moment the screen holds still, so scroll a little and come to a complete stop each time; only cards fully on screen count.",
-    "**BAN駒** — 開始画面の「使用制限オペレーター」カードを顔で見分けます。リストはスクロールしないと全部見えないので、25秒以内に一番下まで下げてください。認識は画面が止まった瞬間に行われるので、少しずつ下げて毎回完全に止めてください。画面に完全に映ったカードだけを数えます。"],
   "**시뮬레이션 종류** — 표준·험지·극한·초월을 로딩 화면과 화면 위쪽 붉은 배지에서 읽습니다.": [
     "**Simulation type** — Standard / Perilous / Dire / Ultimate is read from the loading screen and the red badge at the top.",
     "**シミュレーション種別** — 標準・逆境・死地・究極をロード画面と画面上部の赤いバッジから読み取ります。"],
-  "**전략** — '선택한 전략' 확정 화면에서 내가 고른 전략을 편성기에 자동으로 넣습니다. 연합에서 다른 참가자의 전략은 참가자 카드의 그림으로 알아봅니다 (아직 실플레이 확인 전).": [
-    "**Strategy** — your pick is placed into the deck builder from the 'Selected Strategy' screen. In Allied runs, other players' strategies are identified from the picture on their participant card (not yet verified in a real multi-player run).",
-    "**戦略** — 「選択した戦略」確定画面から自分の戦略をデッキ編成に自動で入れます。連合では他の参加者の戦略を参加者カードの絵で見分けます（実プレイでの確認はまだです）。"],
-  "**맹약 중첩 수** — 편성 계산기가 유일하게 손으로 받던 값입니다. 전투 화면 위쪽 맹약 원형에서 읽어 자동으로 채웁니다.": [
-    "**Alliance stacks** — the one value the deck calculator used to need typed in. Read from the alliance rings at the top of the battle screen.",
-    "**盟約の重なり** — 編成計算機が唯一手入力に頼っていた値です。戦闘画面上部の盟約リングから読み取って自動で埋めます。"],
-  "**배치 가능 인원** — 남은 배치 칸을 따라가고, 9가 보이면 '인사부 파일'을 쓴 것으로 보고 9번째 배치 칸을 열어 줍니다.": [
-    "**Deployable count** — tracks the remaining deploy slots; if a 9 is ever shown, the 'HR File' is assumed and the 9th slot opens.",
-    "**配置可能人数** — 残り配置枠を追い、9が見えたら「人事部ファイル」使用と見なして9枠目を開けます。"],
-  "게임 창을 골라 연결하면, 판이 도는 동안 편성이 화면을 따라갑니다": [
-    "Pick the game window and your board will follow the screen for the whole run",
-    "ゲームウィンドウを選ぶと、一戦のあいだ編成が画面に追従します"],
-  "연결 중에는 편성을 손으로 고칠 수 없습니다 — 게임 화면에서 읽은 내용만 반영됩니다.": [
-    "While linked you cannot edit the board by hand — only what is read from the game screen is applied.",
-    "接続中は編成を手動で変更できません — ゲーム画面から読み取った内容のみが反映されます。"],
-  "PRTS 연결 중에는 화면에서 읽은 값만 반영됩니다": [
-    "While PRTS is linked, only values read from the screen are applied",
-    "PRTS接続中は画面から読み取った値のみが反映されます"],
   // PRTS 시뮬레이션 도움말 (2026-09-06)
-  "위수 협의는 한 판에 필요한 정보가 화면에서 순식간에 사라집니다 — 밴 목록은 시작 화면에서 20~30초뿐이고, 맹약 중첩은 라운드마다 바뀝니다. 그 사이에 전략까지 골라야 해서 받아적을 틈이 없습니다. PRTS 시뮬레이션은 게임 창을 물려 그것들을 대신 읽어 둡니다.": [
-    "In Stronghold Protocol the things you need vanish fast — the ban list shows for only 20-30 seconds at the start, and alliance stacks change every round. You also have to pick a strategy in that window, so there is no time to write anything down. PRTS Simulation hooks the game window and reads them for you.",
-    "駐留協議は一戦に必要な情報が画面からすぐ消えます — BANリストは開始画面の20〜30秒だけ、盟約の重なりはラウンドごとに変わります。その間に戦略まで選ぶ必要があり、書き留める余裕がありません。PRTSシミュレーションはゲームウィンドウを繋いで代わりに読み取ります。"],
+  // PRTS 시뮬레이션 도움말 개편 (2026-09-07) — 편성 잠금·중첩 자동 채움을 걷어내고,
+  // 밴 표시가 사이트 어디에 나오는지와 두 시뮬레이터가 따로 돈다는 사실을 대신 적는다.
+  "위수 협의는 한 판에 필요한 정보가 화면에서 순식간에 사라집니다 — 밴 목록은 시작 화면에서 20~30초뿐인데 그 사이에 전략까지 골라야 해서 받아적을 틈이 없습니다. PRTS 시뮬레이션은 게임 창을 물려 그것들을 대신 읽어 두고, 사이트의 기물과 맹약에 그대로 입혀 둡니다.": [
+    "In Stronghold Protocol the things you need vanish fast — the ban list shows for only 20-30 seconds at the start, and you have to pick a strategy in that same window, so there is no time to write anything down. PRTS Simulation hooks the game window, reads them for you, and marks up the pieces and bonds across the site.",
+    "駐留協議は一戦に必要な情報が画面からすぐ消えます — BANリストは開始画面の20〜30秒だけで、その間に戦略まで選ぶ必要があり、書き留める余裕がありません。PRTSシミュレーションはゲームウィンドウを繋いで代わりに読み取り、サイトの駒と盟約にそのまま反映します。"],
+  "누르면 지난 판 기록을 비웁니다. 판에 들어가기 직전에 누르는 것이 가장 좋습니다.": [
+    "It clears the previous run's record. Best pressed right before you enter a run.",
+    "前の一戦の記録を消します。一戦に入る直前に押すのが最適です。"],
+  "밴 목록을 멈춰 가며 끝까지 내리기": [
+    "Scroll the ban list to the bottom, stopping as you go",
+    "BANリストを止めながら一番下まで下げる"],
+  "손으로 할 일은 이것 하나뿐입니다. 밴 목록은 20여 초 만에 닫히니 그 안에 끝까지 내려 주세요. 인식은 화면이 멈춘 순간에 일어나므로, 조금씩 내린 뒤 한 번씩 완전히 멈춰야 합니다 — 쭉 훑어 내리면 중간이 통째로 빕니다.": [
+    "This is the only thing you have to do by hand. The ban list closes after about 20 seconds, so reach the bottom within it. Recognition happens the moment the screen holds still, so scroll a little and come to a complete stop each time — a single continuous swipe leaves the middle entirely blank.",
+    "手で行うのはこれだけです。BANリストは20秒ほどで閉じるので、その間に一番下まで下げてください。認識は画面が止まった瞬間に行われるため、少しずつ下げて毎回完全に止めてください — 一気に流すと途中がまるごと抜けます。"],
+  "**밴 기물** — 시작 화면의 '사용 제한 오퍼레이터' 카드를 얼굴로 알아봅니다. 줄 왼쪽의 맹약 아이콘으로 어느 맹약 줄인지 먼저 가린 뒤 그 맹약에 속한 기물끼리만 맞춰 보므로, 게임과 같은 맹약별 묶음으로 정리됩니다. 화면에 온전히 보인 카드만 셉니다.": [
+    "**Banned pieces** — the 'Restricted Operators' cards on the start screen are identified by face. The bond icon at the left of each row is read first, so cards are only compared against pieces of that bond and the result is grouped by bond exactly like the game. Only cards fully on screen are counted.",
+    "**BAN駒** — 開始画面の「使用制限オペレーター」カードを顔で見分けます。行の左にある盟約アイコンで先にどの盟約の行かを判別し、その盟約に属する駒とだけ照合するため、ゲームと同じ盟約ごとのまとまりで整理されます。画面に完全に映ったカードだけを数えます。"],
+  "**전략** — '선택한 전략' 확정 화면에서 내가 고른 전략을 읽어 표시줄에 띄웁니다. 연합에서는 다른 참가자의 전략도 참가자 카드의 그림으로 알아봅니다 — 최대 네 명까지 보여 주고, 아직 못 읽은 자리는 '읽는 중'으로 둡니다 (다른 참가자 인식은 아직 실플레이 확인 전).": [
+    "**Strategy** — your pick is read from the 'Selected Strategy' screen and shown in the run bar. In Allied runs, other players' strategies are identified from the picture on their participant card — up to four seats, with anything unread left as 'Reading…' (other-player recognition is not yet verified in a real multi-player run).",
+    "**戦略** — 「選択した戦略」確定画面から自分の戦略を読み取り、表示バーに出します。連合では他の参加者の戦略も参加者カードの絵で見分けます — 最大4人まで表示し、まだ読めていない枠は「読み取り中」のままにします（他の参加者の認識は実プレイでの確認がまだです）。"],
+  "읽은 값이 어디에 보이나": ["Where what it reads shows up", "読み取った値はどこに出るか"],
+  "**판 상자** — 연결하면 제목 줄 아래에 생깁니다. 상자 안 아무 곳이나 누르면 밴 목록이 그 자리에서 맹약별로 펼쳐지고, 다시 누르면 접힙니다. 전략 칩을 누르면 그 전략의 상세가 열리고, 연결 끊기는 상자 맨 오른쪽에 있습니다.": [
+    "**The run bar** — appears under the title once linked. Click anywhere in it to unfold the ban list right there, grouped by bond; click again to fold it. Clicking a strategy chip opens that strategy's details, and Unlink sits at the far right of the bar.",
+    "**一戦バー** — 接続するとタイトル行の下に現れます。バー内のどこを押してもBANリストがその場で盟約ごとに開き、もう一度押すと閉じます。戦略チップを押すとその戦略の詳細が開き、接続を切るボタンはバーの右端にあります。"],
+  "**기물 목록** — 밴된 기물은 붉은 바탕에 이름이 그어지고 얼굴에 금지 표식이 붙습니다. 맹약 상세 안의 기물도 똑같이 표시됩니다.": [
+    "**The piece list** — banned pieces get a red background, a line through the name and a prohibition mark on the face. Pieces inside bond details are marked the same way.",
+    "**駒一覧** — BANされた駒は赤い背景になり、名前に線が引かれ、顔に禁止マークが付きます。盟約詳細の中の駒も同じように表示されます。"],
+  "**맹약 카드** — 맹약 이름 옆에 '밴 N명'이 붙고 카드가 붉게 물듭니다. 어느 맹약이 이번 판에 얼마나 깎였는지 목록에서 바로 보입니다.": [
+    "**Bond cards** — an 'N banned' badge appears next to the bond name and the card takes on a red tint, so you can see at a glance which bonds got cut down this run.",
+    "**盟約カード** — 盟約名の横に「BAN N体」が付き、カードが赤く色づきます。どの盟約が今回どれだけ削られたかが一覧のまま分かります。"],
+  "**전략 탭** — 내가 고른 전략과 다른 참가자가 고른 전략에 표가 붙습니다.": [
+    "**The strategy tab** — your pick and the other players' picks are flagged on the cards.",
+    "**戦略タブ** — 自分が選んだ戦略と他の参加者が選んだ戦略に印が付きます。"],
+  "덱편성 시뮬레이터와는 따로 돕니다": [
+    "It runs separately from the deck builder",
+    "デッキ編成シミュレーターとは別に動きます"],
+  "두 시뮬레이터는 값을 주고받지 않습니다. 손으로 짜 둔 편성은 연결해도 그대로 남고, 화면에서 읽은 값이 그 위에 얹히지 않습니다.": [
+    "The two simulators do not exchange values. A board you built by hand stays exactly as it was when you link, and nothing read from the screen is written over it.",
+    "2つのシミュレーターは値をやり取りしません。手で組んだ編成は接続してもそのまま残り、画面から読み取った値が上書きすることはありません。"],
+  "그래서 연결 중에도 편성기를 자유롭게 만질 수 있습니다 — 미리 짜 둔 구성을 띄워 놓고 실제 판과 견주라고 나눠 놓은 것입니다.": [
+    "So the deck builder stays fully editable while linked — they are kept apart precisely so you can leave a planned build open and compare it against the live run.",
+    "そのため接続中もデッキ編成を自由に触れます — あらかじめ組んだ構成を開いたまま実際の一戦と見比べられるように分けてあります。"],
+  "배치·정비구역의 기물과 맹약 중첩은 아직 읽어서 적지 않습니다. 그 둘은 인게임 화면에서 보는 편이 빠릅니다.": [
+    "Pieces on the board and in the standby area, and alliance stack counts, are not written down yet — both are quicker to read off the game screen itself.",
+    "配置・整備エリアの駒と盟約の重ね掛け数はまだ書き留めません。その2つはゲーム画面で見るほうが速いためです。"],
+  "게임 창을 골라 연결하면, 밴 목록과 전략을 대신 읽어 둡니다": [
+    "Pick the game window and it will read the ban list and strategies for you",
+    "ゲームウィンドウを選ぶと、BANリストと戦略を代わりに読み取ります"],
   "PRTS 시뮬레이션 누르기": ["Press PRTS Simulation", "PRTSシミュレーションを押す"],
-  "누르면 지난 판 기록을 비우고 편성기를 함께 엽니다. 판에 들어가기 직전에 누르는 것이 가장 좋습니다.": [
-    "It clears the previous run's record and opens the deck builder. Best pressed right before you enter a run.",
-    "前の一戦の記録を消し、編成画面も一緒に開きます。一戦に入る直前に押すのが最適です。"],
   "독립인지 연합인지도 화면을 보고 알아서 가립니다. 따로 고를 것이 없습니다.": [
     "It works out solo vs allied from the screen too. Nothing to choose.",
     "ソロか連合かも画面から判別します。選ぶものはありません。"],
@@ -2953,16 +2974,6 @@ const D: Record<string, Pair> = {
   "**새 판 감지** — '시뮬레이션 정보' 화면이 보이면 지난 판 기록을 스스로 비웁니다.": [
     "**New-run detection** — when the 'Simulation Info' screen appears it clears the previous run by itself.",
     "**新しい一戦の検出** — 「シミュレーション情報」画面が見えると前の記録を自動で消します。"],
-  "연결 중에는 편성이 잠깁니다": ["The board locks while linked", "接続中は編成がロックされます"],
-  "기물을 옮기거나 중첩을 손으로 넣을 수 없습니다. 실제 판이 언제나 정답이라, 손이 끼어들면 화면과 어긋난 계산이 나오기 때문입니다.": [
-    "You cannot move pieces or type stacks. The real run is always the truth, so a hand edit would produce a calculation that disagrees with the screen.",
-    "駒を動かしたり重なりを手入力したりできません。実際の一戦が常に正解であり、手が入ると画面と食い違う計算になるからです。"],
-  "맹약을 눌러 상세를 보거나 다른 탭을 둘러보는 것은 그대로 됩니다 — 막는 것은 편성을 바꾸는 자리뿐입니다.": [
-    "Opening alliance details or browsing other tabs still works — only the places that change the board are blocked.",
-    "盟約を押して詳細を見たり他のタブを見たりはそのままできます — 塞ぐのは編成を変える箇所だけです。"],
-  "직접 짜 보고 싶으면 연결을 끊으면 됩니다. 끊어도 읽어 둔 값은 남습니다.": [
-    "Unlink if you want to build by hand. What was read stays.",
-    "自分で組みたいときは接続を切ってください。読み取った値は残ります。"],
   "**아직 BETA입니다.** 화면 인식이 늘 완벽하지는 않습니다 — 못 읽고 지나갈 수 있습니다. 이상한 값을 만나면 피드백으로 알려주시면 그 화면을 기준으로 고칩니다.": [
     "**Still BETA.** Recognition is not always perfect — it can miss a screen. Report an odd value through feedback and it gets fixed against that screen.",
     "**まだBETAです。** 画面認識は常に完璧とは限りません — 読み落とすことがあります。おかしな値に出会ったらフィードバックでお知らせいただければ、その画面を基準に直します。"],

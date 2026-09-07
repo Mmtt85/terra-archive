@@ -1814,7 +1814,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
             title={acPrtsMobile
               ? t("PRTS 링크는 PC 브라우저에서만 사용할 수 있습니다")
               : acLocked ? t("PRTS 링크 끊기")
-                : t("게임 창을 골라 연결하면, 판이 도는 동안 편성이 화면을 따라갑니다")}
+                : t("게임 창을 골라 연결하면, 밴 목록과 전략을 대신 읽어 둡니다")}
             onClick={async () => {
               if (acLocked) {
                 // ⚠ 예전엔 읽은 전략을 손 상태(simBand)로 옮겼다 — 두 시뮬레이터가 데이터를 섞는 통로였다.
