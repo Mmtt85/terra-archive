@@ -2898,6 +2898,20 @@ const D: Record<string, Pair> = {
   "맹약 줄을 아직 못 읽음": ["Alliance row not read yet", "盟約の行はまだ読めていません"],
   "밴": ["Banned", "BAN"],
   "밴 — 이 판에서는 쓸 수 없습니다": ["Banned — unavailable in this run", "BAN — この試合では使えません"],
+  // PRTS 시뮬레이션 창 — 덱편성 시뮬레이터와 별개 창 (사용자 지시 2026-09-07)
+  "맹약 중첩": ["Alliance stacks", "盟約の重ね"],
+  "밴 목록": ["Ban list", "BANリスト"],
+  "현재 전략": ["Current strategies", "現在の戦略"],
+  "참가자 {n}": ["Player {n}", "参加者{n}"],
+  "읽는 중 — 게임에서 전략 정보 화면을 띄워 주세요": [
+    "Reading — bring up the strategy info screen in game.",
+    "読み取り中 — ゲームで戦略情報画面を表示してください。"],
+  "아직 읽은 것이 없습니다 — 게임 화면을 띄워 주세요": [
+    "Nothing read yet — bring the game screen up.",
+    "まだ何も読めていません — ゲーム画面を表示してください。"],
+  "아직 읽지 못했습니다 — 게임에서 '선택한 전략' 화면을 띄워 주세요": [
+    "Not read yet — bring up the 'Selected Strategy' screen in game.",
+    "まだ読めていません — ゲームで「選択した戦略」画面を表示してください。"],
   "**밴 기물** — 시작 화면의 '사용 제한 오퍼레이터' 카드를 얼굴로 알아봅니다. 목록은 스크롤해야 다 보이므로 25초 안에 끝까지 내려 주세요 — 화면에 온전히 보인 카드만 셉니다.": [
     "**Banned pieces** — the 'Restricted Operators' cards on the start screen are identified by face. The list only shows fully when scrolled, so scroll to the bottom within the 25 seconds — only cards fully on screen count.",
     "**BAN駒** — 開始画面の「使用制限オペレーター」カードを顔で見分けます。リストはスクロールしないと全部見えないので、25秒以内に一番下まで下げてください — 画面に完全に映ったカードだけを数えます。"],

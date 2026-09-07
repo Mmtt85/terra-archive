@@ -57,6 +57,11 @@ export type AcRun = {
    *  버리면 그 맹약 그룹이 화면에서 통째로 사라진다 (사용자 신고 2026-09-07 "시라쿠사 맹약 밴목록이
    *  인식이 안됐네"). 그룹 목록·"확정/본 카드" 분모는 이 값을 쓰고, 조합 풀이는 banObs 만 쓴다. */
   banSeen: Record<string, number>;
+  /** **손으로 넣은** 맹약 중첩 — 덱편성 시뮬레이터(계획용)의 값. 위 stacks(인식값)와 **섞지 않는다**.
+   *  사용자 확정 2026-09-07: "덱편성 시뮬레이터랑 PRTS에서 나오는 시뮬레이터는 서로 별도로 데이터가
+   *  들어가야 함. 공유하면 안됨" — 계획한 편성을 옆에 띄워 놓고 실제 판을 PRTS 로 따라가기 때문이다.
+   *  해시 링크(?st=)에 실리는 것도 이쪽이다 (공유하는 건 계획이다). */
+  manual: Record<string, number>;
   /** 밴 기물 — 얼굴 매칭으로 확정한 chess 기본형 id → 누적 표. 프레임마다 마진을 표로 바꿔 더한다
    *  (마진 ≥ BAN_MARGIN_SURE 면 1표, 아니면 그 비율). 줄어들지 않는다 — resetAcRun 만 비운다. */
   banVotes: Record<string, number>;
@@ -80,7 +85,7 @@ export type AcRun = {
   at: number;
 };
 
-const EMPTY: AcRun = { stacks: {}, banObs: {}, banSeen: {}, banVotes: {}, bands: [], seats: 0, deployLeft: null, deploy9: false,
+const EMPTY: AcRun = { stacks: {}, banObs: {}, banSeen: {}, manual: {}, banVotes: {}, bands: [], seats: 0, deployLeft: null, deploy9: false,
   mode: null, hp: null, pieces: {}, screen: null, at: 0 };
 const KEY = "ta-ac-run";
 
@@ -126,6 +131,7 @@ function hydrate(): void {
       stacks: numMap(d.stacks),
       banObs: d.banObs && typeof d.banObs === "object" ? d.banObs : {},
       banSeen: numMap(d.banSeen),
+      manual: numMap(d.manual),
       banVotes: numMap(d.banVotes),
       bands: Array.isArray(d.bands) ? d.bands.filter((b) => b && typeof b.seat === "number" && typeof b.band === "string") : [],
       seats: typeof d.seats === "number" ? d.seats : 0,
@@ -227,28 +233,29 @@ export function mergeAcRun(patch: AcRunPatch): boolean {
     && seats === run.seats && deployLeft === run.deployLeft && deploy9 === run.deploy9 && mode === run.mode
     && hp === run.hp && screen === run.screen && sameNumMap(stacks, run.stacks);
   if (same) return false;                      // 값이 그대로면 리렌더를 만들지 않는다
-  run = { stacks, banObs, banSeen, banVotes, bands, seats, deployLeft, deploy9, mode, hp, pieces, screen, at: Date.now() };
+  run = { stacks, banObs, banSeen, manual: run.manual, banVotes, bands, seats, deployLeft, deploy9, mode, hp, pieces, screen, at: Date.now() };
   persist();
   emit();
   return true;
 }
 
-/** 손으로 넣은 중첩 — 인식과 같은 스토어에 쓴다 (writer 를 하나로 모은다).
- *  일시정지 여부와 무관하게 언제나 반영된다. */
+/** 손으로 넣은 중첩 — **manual 에만** 쓴다. 인식값(stacks)과 섞지 않는다 (위 manual 주석).
+ *  ⚠ 2026-09-06~07 에는 둘이 같은 곳에 썼다. 그러면 계획한 편성과 실제 판이 한 값을 다투게 되고,
+ *  PRTS 를 켠 순간 손으로 넣어 둔 중첩이 인식값에 덮인다 — 사용자가 그래서 분리를 지시했다. */
 export function setAcStack(bondId: string, n: number | null): void {
   hydrate();
-  const stacks = { ...run.stacks };
-  if (n === null || !Number.isFinite(n)) delete stacks[bondId];
-  else stacks[bondId] = n;
-  run = { ...run, stacks };
+  const manual = { ...run.manual };
+  if (n === null || !Number.isFinite(n)) delete manual[bondId];
+  else manual[bondId] = n;
+  run = { ...run, manual };
   persist();
   emit();
 }
 
-/** 여러 맹약 중첩을 한 번에 (해시 링크 복원용) — at 을 건드리지 않는다(인식이 아니므로). */
-export function setAcStacks(stacks: Record<string, number>): void {
+/** 여러 맹약 중첩을 한 번에 (해시 링크 복원용) — 계획값이므로 manual 이다. at 은 건드리지 않는다. */
+export function setAcStacks(manual: Record<string, number>): void {
   hydrate();
-  run = { ...run, stacks };
+  run = { ...run, manual };
   persist();
   emit();
 }
@@ -259,7 +266,8 @@ export function resetAcRun(): void {
   hydrate();
   if (run.at === 0 && !Object.keys(run.stacks).length && !Object.keys(run.banObs).length && !Object.keys(run.banVotes).length
     && !run.bands.length && run.deployLeft === null && !run.seats && !run.mode) return;
-  run = { ...EMPTY };
+  // ⚠ 손으로 넣은 중첩(manual)은 **남긴다** — 새 판이 시작됐다고 사용자가 계획해 둔 편성을 지우면 안 된다
+  run = { ...EMPTY, manual: run.manual };
   persist();
   emit();
 }

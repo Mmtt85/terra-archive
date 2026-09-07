@@ -20955,14 +20955,7 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
 /* 연결되면 왼쪽 반이 켜지므로 가운데 이음매도 같은 색으로 맞춘다 */
 .ac-prtsgrp:has(.ac-prtscta.on) .lens-help-btn { border-color: var(--lime); }
 
-/* PRTS 연결 중 편성 잠금 (사용자 확정 2026-09-06) — 실제 판이 정답이라 손을 막는다.
-   ⚠ 잠그는 것은 **편성을 바꾸는 자리**뿐이다. 맹약 카드를 눌러 상세를 보거나 스크롤하는
-   읽기 동작까지 막으면 연결 중에 아무것도 못 보게 된다. */
-.ac-locked .ac-slots {
-  pointer-events: none;
-  opacity: 0.75;
-  filter: saturate(0.8);
-}
+
 .ac-lockbar {
   display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px;
   margin: 0 0 14px; padding: 8px 12px;
@@ -21034,44 +21027,83 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   .ac-bangroups > .ac-banrow { margin-top: 0; padding-top: 6px; border-top: 0; }
 }
 
-/* 밴 리스트 접기 핸들 (사용자 요청 2026-09-07 "기본은 펼치고, 접을 수 있게") — 맹약별로 묶으면
-   세로로 길어져 아래 전략·맹약까지 한참 스크롤해야 한다. 제목 자체를 버튼으로 만든다. */
-.ac-banfold {
-  display: inline-flex; align-items: baseline; gap: 5px;
-  border: 0; background: none; padding: 0;
-  font: inherit; color: inherit; cursor: pointer; text-align: left;
-}
-.ac-banfold-caret { font-size: 10px; color: var(--muted); }
-.ac-banfold:hover .ac-banfold-caret { color: var(--ink2); }
 
-/* 밴 표식 — 게임의 카드 우상단 빨간 금지 마크와 같은 자리·같은 뜻 (사용자 요청 2026-09-07
-   "밴당한 기물의 경우 알기쉽게 밴당했다고 빨간색 금지 뱃지 같은거 하나 좀 보기 쉽게").
+
+/* 밴 표식 — **금지 표지**를 CSS 로 그린다 (빨간 원 + 사선).
+   사용자 지적 2026-09-07 "밴 됐다는 뱃지가 좀 뭔가 이상하지 않음? 보기 영 이상함. 좀 더 예쁘게
+   한눈에 알아보기 쉽게 해 줘" — 처음엔 8.5px 글자 ✕ 를 넣은 각진 빨간 조각이었다. 작은 글자는
+   얼굴 아트 위에서 뭉개져 무슨 표시인지 안 읽혔다. 그래서 글자를 버리고 도형으로 바꿨다:
+     · 원 + 사선은 크기가 작아도 **모양만으로** 읽힌다 (글리프 판독이 필요 없다)
+     · 흰 테두리를 둘러 밝은 아트·어두운 아트 양쪽에서 윤곽이 산다
+     · 얼굴 **밖으로 살짝 걸치게**(-4px) 놓아 아트를 가리지 않고 눈에 먼저 든다
    ⚠ 담는 상자가 position:relative 여야 한다 — .ac-facemini 는 원래 그렇고, .ac-slot-face 와
-     새로 만든 .ac-thumbwrap 에 아래에서 붙여 준다.
-   ⚠ 티어 배지(.ac-face-t)는 좌하단이 아니라 **우하단**이다. 그래서 밴 표식은 우상단에 둔다 —
-     게임과도 같은 자리이고 두 배지가 겹치지 않는다. */
+     새로 만든 .ac-thumbwrap 에 아래에서 붙여 준다. overflow:hidden 인 상자는 표식이 잘리므로
+     .ac-facemini 만 예외로 안쪽에 붙인다.
+   ⚠ 티어 배지(.ac-face-t)는 **우하단**이라 우상단에 두면 겹치지 않는다 (게임과도 같은 자리다). */
 .ac-banmark {
-  position: absolute; top: 0; right: 0; z-index: 1;
-  font-style: normal; font-weight: 900; line-height: 1;
-  font-size: 8.5px; padding: 2px 3px;
-  color: #fff; background: #c8323c;
-  border-radius: 0 0 0 3px;
-  /* 회색조 필터가 걸린 칩(.ac-banchip) 안에서도 빨강이 살아야 한다 — 그게 이 표식의 존재 이유다 */
-  filter: none;
+  position: absolute; top: -4px; right: -4px; z-index: 2;
+  width: 15px; height: 15px; box-sizing: border-box;
+  border-radius: 50%;
+  background: #e0323f;
+  border: 2px solid var(--white);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.35);
+  font-size: 0; line-height: 0;               /* 안의 글자는 접근성용 — 눈에는 도형만 */
+  filter: none;                                /* 회색조 필터가 걸린 칩 안에서도 빨강이 살아야 한다 */
+  pointer-events: none;
 }
-/* 얼굴 위에 표식을 얹기 위한 상자 — 크기는 안의 이미지가 정한다 (레이아웃을 바꾸지 않는다) */
-.ac-thumbwrap { position: relative; flex: none; display: inline-flex; }
-/* .ac-oprow 는 첫 칸이 40px 격자였고 `.ac-oprow > img` 로 크기를 줬다 — 상자를 끼웠으니 둘 다 챈다 */
-.ac-oprow > .ac-thumbwrap { width: 40px; height: 40px; }
-.ac-oprow > .ac-thumbwrap > img,
-.ac-oprow > .ac-thumbwrap > .ac-face-diy {
-  width: 40px; height: 40px; object-fit: cover; border-radius: 4px; background: var(--chip);
+.ac-banmark::before {
+  content: ""; position: absolute;
+  left: 2px; right: 2px; top: 50%; height: 2px;
+  margin-top: -1px; border-radius: 1px; background: var(--white);
+  transform: rotate(-45deg);
 }
-.ac-slot-face { position: relative; }
-/* 밴된 기물이 편성에 들어 있으면 칸째로 눈에 띄게 — 표식만으로는 96px 칸에서 작다 */
-.ac-slot-face:has(> .ac-banmark) { background: color-mix(in srgb, #c8323c 9%, transparent); }
-/* 밴 칩 안 얼굴은 30px 이라 표식을 조금 줄인다 */
-.ac-facemini > .ac-banmark { font-size: 7.5px; padding: 1px 2.5px; }
+/* .ac-facemini 는 overflow:hidden 이라 밖으로 걸치면 잘린다 — 안쪽에 붙이고 조금 줄인다 */
+.ac-facemini > .ac-banmark { top: 1px; right: 1px; width: 12px; height: 12px; border-width: 1.5px; }
+.ac-facemini > .ac-banmark::before { height: 1.5px; margin-top: -0.75px; }
+/* 배치·정비구역 칸은 얼굴이 크다 — 표식도 조금 키운다 */
+.ac-slot-face > .ac-banmark { top: 4px; right: 4px; width: 17px; height: 17px; }
+
+/* PRTS 로 읽은 '지금 고른 전략' 표 — 전략 목록에서 현재 판의 상태를 알아보게 (사용자 지시 2026-09-07
+   "위수협의 메뉴 내의 기물이라든가 그런거도 다 밴이라든지 선택된 전략이라든지 등의 현재상태 반영") */
+.ac-bandcard.picked { border-color: var(--teal, #16b47f); box-shadow: inset 0 0 0 1px var(--teal, #16b47f); }
+.ac-nowchip { background: var(--teal, #16b47f); color: #fff; border-color: transparent; font-weight: 800; }
+.ac-nowchip.other { background: var(--ink2); }
+
+/* PRTS 읽은 값 보기 버튼 — 제목 줄의 PRTS 버튼 오른쪽에 붙는다 */
+.ac-prtsview .sb-count { margin-left: 5px; font-style: normal; font-size: 10.5px; opacity: 0.85; }
+
+/* ── PRTS 시뮬레이션 창 ─────────────────────────────────────────────────────
+   덱편성 시뮬레이터와 **별개 창**이다 (사용자 지시 2026-09-07 "애초에 모달창도 서로 별도로
+   만들어줘야할듯. 덱편성 시뮬레이터에 완성시켜서 옆에 띄워놓고 PRTS연결해서 실제로 뭐 할수도 있으니").
+   둘을 나란히 띄우는 게 쓰임새라 기본 폭을 덱편성보다 좁게 잡는다. */
+/* ⚠ 폭을 넉넉히 준다 (사용자 지적 2026-09-07 "모달창이 너무 좁아서 세로로 너무 길어짐") —
+   밴 리스트가 맹약별 2열 격자라 좁으면 줄마다 칩이 여러 줄로 접혀 세로로 끝없이 길어진다.
+   덱편성 시뮬레이터(.operator-modal = min(960px,100%))보다 조금 좁게 두어 나란히 띄울 수 있게 한다. */
+.ac-prtsmodal { width: min(880px, 100%); }
+/* 시뮬레이션 종류 — 제목 줄 **오른쪽**에 (사용자 요청 2026-09-07 "난이도도 모달창 오른쪽 위에다가
+   표시하게 해 줘"). 게임 로딩 화면의 큰 글씨와 좌상단 붉은 배지에서 읽은 값이다. */
+.ac-modemark {
+  margin-left: auto; align-self: center;
+  padding: 2px 8px; border-radius: 999px;
+  font-size: 11px; font-weight: 800; letter-spacing: -0.01em; white-space: nowrap;
+  color: var(--white); background: #c8323c;
+}
+/* 판의 얼개 한 줄 — 독립/연합 · 남은 배치 · HP */
+.ac-prtshead {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px;
+  margin: 0 0 4px; font-size: 12px; color: var(--ink2);
+}
+.ac-prtshead > b { font-weight: 800; }
+/* 자리별 전략 — 내 것 + 다른 참가자 (연합 최대 4명). 카드는 덱편성 시뮬레이터와 같은
+   .ac-simband-card 를 쓴다 (누르면 전략 상세가 열린다). 넓은 창에서는 두 칸으로 눕는다. */
+.ac-prtsseat { display: grid; grid-template-columns: 64px minmax(0, 1fr); align-items: start; gap: 8px; margin-top: 8px; }
+.ac-prtsseat:first-of-type { margin-top: 4px; }
+.ac-prtsseat-tag { padding-top: 6px; font-size: 11px; font-weight: 800; color: var(--ink2); }
+.ac-prtsseat > .ac-note { margin: 6px 0 0; }
+@media (max-width: 560px) {
+  .ac-prtsseat { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  .ac-prtsseat-tag { padding-top: 0; }
+}
 
 /* 한 판 스트립 — PRTS 연결 중에만 뜬다 (2026-09-06). 덱편성 모달 **밖**이라
    탭을 옮겨 다녀도 인식 상태가 보인다. */

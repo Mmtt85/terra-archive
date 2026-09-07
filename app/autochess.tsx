@@ -497,7 +497,13 @@ export default function AutochessGuide({ doc, onShowOperator }: {
   // ⚠ 2026-09-06부터 출처가 **한 판 스토어**(autochess-run.ts)다 — 손 입력·해시 링크·게임
   //   연결 인식이 같은 곳에 쓴다. 모달을 닫고 다른 탭을 봐도 값이 살아 있어야 하기 때문.
   const acrun = useAcRun();
-  const stacks = acrun.stacks;
+  // ⚠ 중첩의 출처가 **둘로 갈렸다** (사용자 확정 2026-09-07 "덱편성 시뮬레이터랑 PRTS에서 나오는
+  //   시뮬레이터는 서로 별도로 데이터가 들어가야 함. 공유하면 안됨"):
+  //     stacks  = 손으로 넣은 계획값 (acrun.manual) — 덱편성 시뮬레이터·해시 링크(?st=)
+  //     liveStacks = 화면에서 읽은 값 (acrun.stacks) — PRTS 시뮬레이션
+  //   계획한 편성을 옆에 띄워 놓고 실제 판을 PRTS 로 따라가는 게 쓰임새라, 한 값을 다투면 안 된다.
+  const stacks = acrun.manual;
+  const liveStacks = acrun.stacks;
   // ★(정예화)는 **칸이 아니라 기물의 성질**로 든다 — 판을 비워도 남아야 한다
   // (사용자 지시 2026-08-29 "판 비우기 할 때 스타 표시 해둔 건 지우지 말아줘").
   const [goldMark, setGoldMark] = useState<Set<string>>(new Set());
@@ -508,6 +514,13 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     return next;
   });
   const [sim, setSim] = useState(false);                 // 덱편성 시뮬레이터 모달
+  /** PRTS 로 읽은 것을 보는 창 — **볼 것 하나에 창 하나**다 (사용자 지시 2026-09-07 "PRTS 모달창이
+   *  굳이 필요 없겠다. 그냥 PRTS시뮬레이션 버튼 오른쪽에 밴목록, 현재 전략 버튼 만들어서, 클릭하면
+   *  인식된 애들이 모달로 뜨도록"). 덱편성 시뮬레이터와 데이터를 나눈 것과 같은 결이다 —
+   *  읽은 값은 이 창들에만 있고, 손으로 짜는 편성에는 섞이지 않는다.
+   *  ⚠ 조건에 acLocked 를 함께 걸어 **끊으면 창도 닫힌다** (사용자 요청 "PRTS끊으면 모달창도 자동으로
+   *    꺼지게"). 효과 안에서 setState 하지 않는 게 리포 규약이라 조건으로만 만든다. */
+  const [prtsView, setPrtsView] = useState<"" | "ban" | "band">("");
   // 판을 시작할 때 고른 전략 — 편성과 함께 링크(?bd=)에 실린다 (사용자 요청 2026-09-04).
   // ⚠ 계산에는 넣지 않는다 — 전략 효과는 전투 중에 붙는 것이라 편성만으로 못 구한다
   //   (아이템·전략은 계산에 없다는 기존 안내와 같은 선). 여기선 '무엇을 골랐는지'를 남긴다.
@@ -678,7 +691,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     } catch { /* 프레임 하나 실패는 무시 — 다음 프레임이 온다 */ }
   };
   useBridgeWatch(acLocked, handleAcShot);
-  const acStackCount = Object.keys(stacks).length;
+  const acStackCount = Object.keys(liveStacks).length;   // 런바·PRTS 창은 **인식값** 기준 (손 입력 아님)
   // 밴 역산 — 관측(맹약별 티어)에서 어느 기물이 밴됐는지 조합으로 푼다 (lens/acsolve.ts).
   // 해가 여럿이면 **교집합만 확정**이고 나머지는 후보다 — 틀린 밴을 사실처럼 보이지 않게.
   // 화면을 끝까지 스크롤할수록 관측이 늘어 후보가 확정으로 옮겨 간다.
@@ -706,11 +719,10 @@ export default function AutochessGuide({ doc, onShowOperator }: {
   }, [acrun.banVotes, acBans.maybe, banSure]);
   // 시뮬레이션 종류 — 코드(AC-1~4·AC-TR-1)는 독립/연합 양쪽에 같은 이름이라, 이름만 쓴다.
   const acModeName = acrun.mode ? (doc.modes.find((m) => m.code === acrun.mode)?.n ?? acrun.mode) : "";
-  // 내 전략 — 확정('선택한 전략' 화면)이면 편성기의 전략 자리를 **파생값으로** 채운다 (slot9On 과 같은
-  // 규약 — setState 로 밀어 넣지 않는다). 고르는 중이면 미리보기로만 보여 준다.
+  // 내 전략 — PRTS 모달에서만 보여 준다. ⚠ 예전엔 편성기의 전략 자리를 이 값으로 덮었는데,
+  // 그게 두 시뮬레이터가 데이터를 공유하는 통로였다 (사용자 지시로 끊었다, 2026-09-07).
   const acBandPick = acLocked ? acrun.bands.find((b) => b.seat === 0) : undefined;
   const acMyBand = acBandPick?.final ? acBandPick.band : "";
-  const bandShown = acMyBand || simBand;
   const acOtherBands = acLocked ? acrun.bands.filter((b) => b.seat > 0) : [];
   // 지원 여부·모바일은 navigator 를 봐야 알 수 있어 서버에선 판단할 수 없다 — 그냥 호출하면
   // 프리렌더와 하이드레이션 결과가 갈리므로(React #418) 서버 스냅샷을 고정해 읽는다
@@ -735,7 +747,9 @@ export default function AutochessGuide({ doc, onShowOperator }: {
   // 남은 배치 칸이 9 로 찍힌 적 있음 = 인사부 파일을 쓴 것 → 9번째 칸을 열어 준다 (사용자 확정 2026-09-06).
   // ⚠ 상태로 밀어 넣지 않고 **파생**시킨다 — 효과 안에서 setState 하면 렌더가 한 번 더 돌고
   //   (린트 규칙 위반) 연결을 끊었을 때 손으로 켠 것과 구분이 안 된다. OR 로 합치면 둘 다 산다.
-  const slot9On = slot9 || acrun.deploy9;
+  // ⚠ 예전엔 `slot9 || acrun.deploy9` 로 인식값을 얹었다 — 그것도 두 시뮬레이터를 잇는 통로였다.
+  //   덱편성 시뮬레이터의 9번째 칸은 손 토글만 본다. 인식된 '인사부 파일'은 PRTS 모달이 말해 준다.
+  const slot9On = slot9;
 
   const hydrated = useRef(false);
   const prevHash = useRef("");
@@ -804,7 +818,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
       if (gd) p.set("gd", gd);
       const k = Object.entries(stacks).filter(([, n]) => n > 0).map(([id, n]) => `${id}*${n}`).join(".");
       if (k) p.set("k", k);
-      if (bandShown) p.set("bd", bandShown);
+      if (simBand) p.set("bd", simBand);
     }
     if (curModal) p.set("m", `${curModal[0]}~${curModal[1]}`);
     // ~는 URL에서 그대로 써도 되는 글자인데 URLSearchParams가 %7E로 인코딩한다 — 링크가
@@ -823,7 +837,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     }
     prevHash.current = hash;
   }, [view, miscTab, bondN, bondT, tier, garFilter, jobFilter, subFilter, term, curModal?.[0], curModal?.[1],
-      sim, slots, bench, slot9On, goldMark, stacks, bandShown]); // eslint-disable-line react-hooks/exhaustive-deps
+      sim, slots, bench, slot9On, goldMark, stacks, simBand]); // eslint-disable-line react-hooks/exhaustive-deps
 
 
   // 검색 입력은 비제어(useSearchInput)라 뷰가 바뀌어 입력칸이 새로 마운트되면 빈칸이 된다.
@@ -856,8 +870,6 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     for (const b of doc.bonds) m.set(b.id, b);
     return m;
   }, [doc]);
-  /** 밴 리스트 접기 (사용자 요청 2026-09-07 "기본은 펼치고, 접을 수 있게") */
-  const [banOpen, setBanOpen] = useState(true);
   /** 밴 리스트 **맹약별 그룹** — 게임의 '사용 제한 오퍼레이터' 화면과 같은 모양으로 나눈다
    *  (사용자 요청 2026-09-07 "밴 리스트는 맹약별로 그루핑을 좀 해 줘").
    *
@@ -1126,10 +1138,9 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     if (from.z === "b") { setSlots(trimCells(src)); setBench(trimCells(dst)); }
     else { setBench(trimCells(src)); setSlots(trimCells(dst)); }
   };
-  /** 놓을 수 있는 칸에 공통으로 다는 속성.
-   *  ⚠ PRTS 연결 중에는 아무것도 안 단다 — CSS 차단이 뚫려도(드래그는 pointer-events 밖에서도
-   *  일어날 수 있다) 판이 바뀌지 않게 하는 두 번째 겹이다. */
-  const dropProps = (z: "b" | "d", i: number) => (acLocked ? {} : {
+  /** 놓을 수 있는 칸에 공통으로 다는 속성. (덱편성 시뮬레이터는 PRTS 와 별개 데이터라 잠그지 않는다 —
+   *  2026-09-07 사용자 지시로 두 시뮬레이터를 나눴다) */
+  const dropProps = (z: "b" | "d", i: number) => ({
     onDragOver: (e: React.DragEvent) => { e.preventDefault(); setDropAt(`${z}${i}`); },
     onDragLeave: () => setDropAt((v) => (v === `${z}${i}` ? "" : v)),
     onDrop: (e: React.DragEvent) => {
@@ -1140,7 +1151,6 @@ export default function AutochessGuide({ doc, onShowOperator }: {
   });
 
   const dropFrom = (where: "b" | "d", i: number) => {
-    if (acLocked) return;
     (where === "b" ? setSlots : setBench)((v) => { const o = [...v]; o[i] = null; return trimCells(o); });
   };
 
@@ -1323,7 +1333,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
    *  ⚠ 붙이는 자리는 **position:relative 인 상자** 안이어야 한다 (.ac-facemini · .ac-slot-face · .ac-thumbwrap). */
   const bannedSet = useMemo(() => new Set(acLocked ? banSure : []), [acLocked, banSure]);
   const banMark = (id: string) => (bannedSet.has(id)
-    ? <em className="ac-banmark" title={t("밴 — 이 판에서는 쓸 수 없습니다")} aria-label={t("밴")}>✕</em>
+    ? <em className="ac-banmark" title={t("밴 — 이 판에서는 쓸 수 없습니다")}>{t("밴")}</em>
     : null);
 
   // 기물 카드 — 물자관리소 목록과 시뮬레이터 추천이 같은 카드를 쓴다 (2026-08-23 추출)
@@ -1791,6 +1801,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
               PRTS 와 ? 는 /rogue 툴바처럼 **붙은 한 덩어리**다. */}
           <span className="ac-prtsgrp">
           <button type="button" className={`ac-simcta ac-prtscta${acLocked ? " on" : ""}`}
+            aria-haspopup="dialog"
             disabled={acPrtsBlocked}
             title={acPrtsMobile
               ? t("PRTS 링크는 PC 브라우저에서만 사용할 수 있습니다")
@@ -1798,8 +1809,8 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                 : t("게임 창을 골라 연결하면, 판이 도는 동안 편성이 화면을 따라갑니다")}
             onClick={async () => {
               if (acLocked) {
-                // 끊을 때 화면에서 읽은 전략은 손 상태로 옮겨 남긴다 — 끊어도 읽어 둔 값은 남는다는 규약
-                if (acMyBand) setSimBand(acMyBand);
+                // ⚠ 예전엔 읽은 전략을 손 상태(simBand)로 옮겼다 — 두 시뮬레이터가 데이터를 섞는 통로였다.
+                //   사용자 지시로 끊었다 (2026-09-07). 읽은 값은 PRTS 창 안에만 남는다.
                 disconnectBridge();
                 return;
               }
@@ -1808,7 +1819,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
               // ⚠ 편성기는 **연결이 된 뒤에** 연다 (사용자 지적 2026-09-06 "지금은 먼저
               //   열리고 나서 그위에 연결화면이 뜨니까"). 창 선택을 취소하면 아무 일도 없다.
               await connectBridge({ topic: AC_LOCK, name: t("PRTS 시뮬레이션") });
-              if (bridgeOn()) { closeMenus(); setSim(true); }
+              if (bridgeOn()) closeMenus();
             }}>
             <span aria-hidden>{acLocked ? "◉" : "○"}</span> {t("PRTS 시뮬레이션")}
             <span className="beta-badge">{acPrtsMobile ? t("PC 전용") : "BETA"}</span>
@@ -1818,6 +1829,23 @@ export default function AutochessGuide({ doc, onShowOperator }: {
           <button type="button" className="lens-help-btn"
             aria-label={t("PRTS 링크 도움말")} onClick={() => setAcHelp(true)}>?</button>
           </span>
+          {/* 읽은 것을 보는 버튼 둘 — PRTS 버튼 **오른쪽**에 (사용자 지시 2026-09-07 "그냥 PRTS시뮬레이션
+              버튼 오른쪽에 밴목록, 현재 전략 버튼 만들어서, 클릭하면 인식된 애들이 모달로 뜨도록 하자").
+              연결 중에만 보인다 — 끊긴 동안에는 보여 줄 값이 없다. */}
+          {acLocked && (
+            <>
+              <button type="button" className={`ac-simcta ac-prtsview${prtsView === "ban" ? " on" : ""}`}
+                aria-haspopup="dialog" onClick={() => { setPrtsView((v) => (v === "ban" ? "" : "ban")); closeMenus(); }}>
+                {t("밴 목록")}
+                {banSure.length > 0 && <em className="sb-count">{banSure.length}</em>}
+              </button>
+              <button type="button" className={`ac-simcta ac-prtsview${prtsView === "band" ? " on" : ""}`}
+                aria-haspopup="dialog" onClick={() => { setPrtsView((v) => (v === "band" ? "" : "band")); closeMenus(); }}>
+                {t("현재 전략")}
+                {acMyBand && <em className="sb-count">{doc.bands.find((b) => b.id === acMyBand)?.n ?? ""}</em>}
+              </button>
+            </>
+          )}
         </div>
       </header>
       {/* 한 판 스트립 — 게임 연결이 켜져 있을 때만. **모달 밖**에 두는 게 핵심이다:
@@ -1860,6 +1888,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
             </span>
           )}
           {acMsg && <em className="ac-runbar-msg">{acMsg}</em>}
+
           {/* 연결 끊기는 두지 않는다 — 위쪽 PRTS 토스트와 제목 줄 버튼이 이미 한다
               (사용자 지시 2026-09-06 "애초에 위에 있으니 필요 없을테니 그냥 없애줘") */}
         </div>
@@ -1966,7 +1995,12 @@ export default function AutochessGuide({ doc, onShowOperator }: {
               <p className="ac-count">{t("{n}종", { n: bandRows.length })}</p>
               <div className="ac-cards">
                 {bandRows.map((b) => (
-                  <button key={b.id} type="button" className="ac-card ac-bandcard" onClick={() => setBand(b)}>
+                  /* PRTS 로 읽은 현재 전략에 표를 단다 (사용자 지시 2026-09-07 "위수협의 메뉴 내의
+                     기물이라든가 그런거도 다 밴이라든지 선택된 전략이라든지 등의 현재상태 반영돼서
+                     나오게") — 내 것과 다른 참가자 것을 갈라 준다. 연결 중에만 붙는다. */
+                  <button key={b.id} type="button"
+                    className={`ac-card ac-bandcard${acLocked && (acMyBand === b.id || acOtherBands.some((x) => x.band === b.id)) ? " picked" : ""}`}
+                    onClick={() => setBand(b)}>
                     <header>
                       <img className="ac-thumb" src={bandIcon(b.id)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
                       <div>
@@ -1974,6 +2008,10 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                             '와파린 전략'이 먼저 통한다 (사용자 확정 2026-08-24) */}
                         <b className="ac-cname">{b.n}{b.by && <em className="ac-bandby">{b.by}</em>}</b>
                         <span className="ac-cmeta">
+                          {acLocked && acMyBand === b.id && <i className="sb-chip ac-nowchip">{t("내 전략")}</i>}
+                          {acLocked && acOtherBands.filter((x) => x.band === b.id).map((x) => (
+                            <i key={x.seat} className="sb-chip ac-nowchip other">{t("참가자 {n}", { n: x.seat + 1 })}</i>
+                          ))}
                           <i className="sb-chip ac-hp">HP {b.hp}</i>
                           {b.modes.map((m) => <i key={m} className="sb-chip">{t(MODE_TYPE_LABEL[m] ?? m)}</i>)}
                         </span>
@@ -2611,7 +2649,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
               <label className="ac-stackin">
                 {t("중첩 수")}
                 <input type="number" min={0} inputMode="numeric" placeholder="—"
-                  disabled={acLocked} title={acLocked ? t("PRTS 연결 중에는 화면에서 읽은 값만 반영됩니다") : undefined}
+
                   value={stacks[b.id] ?? ""}
                   onChange={(e) => {
                     const v = e.target.value.trim();
@@ -2647,127 +2685,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
       {sim && (
         <ModalWindow label={t("덱편성 시뮬레이터")} className="operator-modal ac-modal ac-simmodal"
           onClose={() => setSim(false)}>
-          <div className={`ac-guide ac-simbody${acLocked ? " ac-locked" : ""}`}>
-          {/* PRTS 연결 중 — 손으로 못 고친다 (사용자 확정 2026-09-06 "연결이 되는순간, 덱편성
-              시뮬레이터는 본인이 뭔가 클릭하면서 수정이 안되게 막고, 인식된 내용만 자동으로").
-              실제 판이 언제나 정답이라, 손이 끼어들면 화면과 어긋난 계산이 나온다.
-              막는 방식은 두 겹 — 아래 .ac-locked CSS(포인터 차단)와 각 핸들러의 acLocked 가드. */}
-          {acLocked && (
-            <p className="ac-lockbar">
-              <span aria-hidden>🔒</span>
-              <strong>{t("PRTS 시뮬레이션")}</strong>
-              {t("연결 중에는 편성을 손으로 고칠 수 없습니다 — 게임 화면에서 읽은 내용만 반영됩니다.")}
-            </p>
-          )}
-
-          {/* 밴 리스트 — **PRTS 연결 중에만**. 게임의 '사용 제한 오퍼레이터'가 여기 쌓인다
-              (사용자 지시 2026-09-06 "PRTS시뮬레이터 에서만 전략 위에 밴 리스트를 표시").
-              밴은 런마다 기물 단위로 랜덤이고 화면은 스크롤해야 다 보이므로, 사용자가
-              끝까지 내려 줘야 전부 잡힌다 — 그래서 안내 문구가 기능의 일부다. */}
-          {acLocked && (
-            <section className="ac-boardout ac-banlist">
-              {/* 접었다 펼 수 있다 (사용자 요청 2026-09-07) — 기본은 펼침. 맹약별로 묶으면 세로로 길어져
-                  아래 전략·맹약을 보려면 한참 스크롤해야 한다. 상태는 컴포넌트 안에만 둔다: 판마다 달라질
-                  성질이 아니고, 링크·세션에 실을 값도 아니다. */}
-              <h3 className="sb-h3">
-                <button type="button" className="ac-banfold" aria-expanded={banOpen}
-                  onClick={() => setBanOpen((v) => !v)}>
-                  <span aria-hidden className="ac-banfold-caret">{banOpen ? "▾" : "▸"}</span>
-                  {t("밴 리스트")}
-                  {banSure.length > 0 && <em className="sb-count">{banSure.length}</em>}
-                </button>
-              </h3>
-              {banOpen && (
-              <>
-              <p className="ac-bannote">{t("게임의 밴 목록 화면에서 끝까지 스크롤을 내려 주세요 — 화면에 온전히 보인 카드만 얼굴로 확정합니다.")}</p>
-              {/* 확정 / 후보를 나눠 보여 준다 — 화면을 더 볼수록 후보가 확정으로 옮겨 간다.
-                  확정은 카드 얼굴(스킨 초상 HOG 매칭, 2026-09-07)로 정하고, 얼굴이 못 가른 자리만
-                  (맹약, 티어) 조합 풀이가 보탠다 — 풀이에 해가 여럿이면 후보로만 둔다.
-                  그때 하나를 골라 보여 주면 거짓말이 된다. */}
-              {(() => {
-                const chip = (id: string, sure: boolean) => {
-                  const c = chessById.get(id);
-                  if (!c) return null;
-                  return (
-                    <li key={id}>
-                      {/* 기물 얼굴 + 티어 배지 — 맹약 카드의 .ac-facemini 와 같은 규약 */}
-                      <button type="button" className={`ac-banchip${sure ? "" : " maybe"}`}
-                        onClick={() => setChess(c)} title={`${c.n} · T${c.t}`}>
-                        <span className="ac-facemini">
-                          {c.op
-                            ? <img src={opFace(c.op)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
-                            : <em aria-hidden>?</em>}
-                          <em className={`ac-face-t ac-t${c.t}`}>{c.t}</em>
-                          {sure && <em className="ac-banmark" aria-hidden>✕</em>}
-                        </span>
-                        <b>{c.n}</b>
-                      </button>
-                    </li>
-                  );
-                };
-                // 맹약 줄을 하나도 못 읽었으면 옛 평평한 목록으로 물러난다 — 그룹이 없으면 그룹 UI 도 없다
-                if (!banGroups.list.length && !banGroups.rest) {
-                  return (
-                    <>
-                      {banSure.length > 0 && (
-                        <ul className="ac-banrow">{banSure.map((id) => chip(id, true))}</ul>
-                      )}
-                      {banMaybe.length > 0 && (
-                        <>
-                          <p className="ac-bannote ac-banmaybe-note">
-                            {t("아래는 아직 확정되지 않은 후보입니다 — 밴 목록을 더 보여 주면 좁혀집니다.")}</p>
-                          <ul className="ac-banrow">{banMaybe.map((id) => chip(id, false))}</ul>
-                        </>
-                      )}
-                    </>
-                  );
-                }
-                // 한 줄 = 그리드 자식 **둘**(머리 · 칩). 줄마다 따로 그리드를 만들면 맹약 열 너비가 줄마다
-                // 달라져 카드 시작 x 가 어긋난다 — 게임은 모든 줄에서 x 가 같다. 그래서 평평하게 편다.
-                const group = (key: string, head: ReactNode, g: { sure: string[]; maybe: string[] }) => [
-                  <span key={`h${key}`} className="ac-banhead">{head}</span>,
-                  <ul key={`r${key}`} className="ac-banrow">
-                    {g.sure.map((id) => chip(id, true))}
-                    {g.maybe.map((id) => chip(id, false))}
-                    {/* 관측은 있는데 아직 아무도 못 붙인 줄 — 빈 채로 두면 인식이 죽은 것처럼 보인다 */}
-                    {!g.sure.length && !g.maybe.length && <li className="sb-dim" aria-hidden>—</li>}
-                  </ul>,
-                ];
-                return (
-                  <>
-                    {/* 안내는 **그럴 일이 실제로 생겼을 때만** — 반복 칩이 없는데 "두 번 나옵니다"를 띄우면
-                        없는 걱정을 만든다. 확정/후보 구분은 두 덩어리로 가르지 않고 그룹 안에서 점선으로 유지한다
-                        (게임처럼 티어순으로 완전히 섞으면 후보가 자리 수를 넘겨 없는 카드가 있는 것처럼 보인다). */}
-                    {(banGroups.dup > 0 || banMaybe.length > 0) && (
-                      <p className="ac-bannote ac-banmaybe-note">
-                        {banGroups.dup > 0 && t("두 맹약에 걸친 기물은 게임처럼 양쪽 줄에 다시 나옵니다.")}
-                        {banGroups.dup > 0 && banMaybe.length > 0 && " "}
-                        {banMaybe.length > 0 && t("점선 칩은 아직 확정되지 않은 후보입니다 — 밴 목록을 더 보여 주면 좁혀집니다.")}
-                      </p>
-                    )}
-                    <div className="ac-bangroups" aria-label={t("밴 리스트")}>
-                      {banGroups.list.flatMap(({ b, sure, maybe, cards }) => group(b.id, (
-                        <>
-                          {bondChip(b.id, true)}
-                          {/* 확정 / 화면에서 본 카드 — 왜 후보가 남는지를 숫자로 말해 준다
-                              (분자는 확정만 센다. 후보를 더하면 관측 장수를 넘는다) */}
-                          {cards > 0 && (
-                            <em className="sb-count"
-                              title={t("확정 {a}장 · 화면에서 본 카드 {b}장", { a: sure.length, b: cards })}>
-                              {sure.length}/{cards}</em>
-                          )}
-                        </>
-                      ), { sure, maybe }))}
-                      {banGroups.rest && group("rest",
-                        <em className="ac-banhead-rest">{t("맹약 줄을 아직 못 읽음")}</em>, banGroups.rest)}
-                    </div>
-                  </>
-                );
-              })()}
-              </>
-              )}
-            </section>
-          )}
+          <div className="ac-guide ac-simbody">
 
           {/* 전략 — 판을 시작할 때 고르는 조직. 편성과 함께 링크에 실린다 (사용자 요청 2026-09-04).
               맹약 위에 둔다 — 게임에서도 판을 시작할 때 제일 먼저 고르는 것이다. */}
@@ -2777,7 +2695,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
               {/* 고르는 자리 — 맹약·정예화 드롭다운(.ac-garsel)과 같은 모양·같은 메뉴 규약.
                   ⚠ PRTS 연결 중에는 **아예 그리지 않는다** — 전략도 화면에서 읽으므로 고를 게 없다
                   (사용자 지시 2026-09-06 "전략도 자동으로 선택돼야 하니까 드랍다운 버튼도 필요 없겠지"). */}
-              {!acLocked && (
+              {(
               <div className="ac-garsel">
                 <button type="button" className={`ac-garsel-btn${simBand ? " on" : ""}`}
                   aria-haspopup="menu" aria-expanded={openMenu === "simband"}
@@ -2809,12 +2727,12 @@ export default function AutochessGuide({ doc, onShowOperator }: {
               {/* 고른 전략 — 누르면 상세가 열린다 (전략 탭 카드와 같은 동작) */}
               {(() => {
                 // 연결 중에는 화면에서 읽은 전략(확정)이 우선이고, 고르는 중이면 미리보기로 같은 카드를 그린다
-                const shownId = bandShown || (acBandPick?.band ?? "");
+                const shownId = simBand;
                 const b = shownId ? doc.bands.find((x) => x.id === shownId) : null;
                 const previewing = !!acBandPick && !acBandPick.final && !acMyBand;
                 // 연결 중에는 아무 말도 안 한다 — 게임에서 고르면 채워질 자리다 (2026-09-06
                 // 사용자 지시 "꼭 필요한 문구만 나타나게")
-                if (!b) return acLocked ? null : <span className="sb-dim ac-note">{t("아직 고르지 않았습니다.")}</span>;
+                if (!b) return <span className="sb-dim ac-note">{t("아직 고르지 않았습니다.")}</span>;
                 return (
                   <button type="button" className="ac-simband-card" onClick={() => setBand(b)}
                     title={t("전략 상세 보기")}>
@@ -3021,7 +2939,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
             </div>
             {(nBoard > 0 || nBench > 0) && (
               <p className="ac-simfoot">
-                <button type="button" className="ac-clear" disabled={acLocked}
+                <button type="button" className="ac-clear"
                   onClick={() => { setSlots([]); setBench([]); }}>
                   {t("판 비우기")}
                 </button>
@@ -3035,6 +2953,172 @@ export default function AutochessGuide({ doc, onShowOperator }: {
           </section>
 
 
+          </div>
+        </ModalWindow>
+      )}
+
+      {/* ── 밴 목록 창 ────────────────────────────────────────────────────────────
+          사용자 지시 2026-09-07: "PRTS 모달창이 굳이 필요 없겠다. 그냥 PRTS시뮬레이션 버튼 오른쪽에
+          밴목록, 현재 전략 버튼 만들어서, 클릭하면 인식된 애들이 모달로 뜨도록 하자."
+          한 창에 다 몰아넣지 않고 **볼 것 하나에 창 하나**다 — 밴 목록은 그것만으로도 세로가 길다. */}
+      {prtsView === "ban" && acLocked && (
+        <ModalWindow label={banSure.length > 0 ? `${t("밴 리스트")} ${banSure.length}` : t("밴 리스트")}
+          className="operator-modal ac-modal ac-prtsmodal"
+          chrome={acModeName ? <span className="ac-modemark" title={acrun.mode ?? undefined}>{acModeName}</span> : null}
+          onClose={() => setPrtsView("")}>
+          <div className="ac-guide ac-simbody">
+          {/* ⚠ 안쪽 제목과 접기 UI 는 뺐다 — 창 제목 줄이 이미 '밴 리스트'이고 개수도 거기 붙는다.
+              접기는 이 목록이 **덱편성 모달 안에 얹혀** 세로를 잡아먹던 때의 장치였다 (2026-09-07 오전).
+              자기 창이 생긴 뒤로는 창을 닫으면 되므로 접을 이유가 없다. */}
+          <section className="ac-boardout ac-banlist">
+            <p className="ac-bannote">{t("게임의 밴 목록 화면에서 끝까지 스크롤을 내려 주세요 — 화면에 온전히 보인 카드만 얼굴로 확정합니다.")}</p>
+            {/* 확정 / 후보를 나눠 보여 준다 — 화면을 더 볼수록 후보가 확정으로 옮겨 간다.
+                확정은 카드 얼굴(스킨 초상 HOG 매칭, 2026-09-07)로 정하고, 얼굴이 못 가른 자리만
+                (맹약, 티어) 조합 풀이가 보탠다 — 풀이에 해가 여럿이면 후보로만 둔다.
+                그때 하나를 골라 보여 주면 거짓말이 된다. */}
+            {(() => {
+              const chip = (id: string, sure: boolean) => {
+                const c = chessById.get(id);
+                if (!c) return null;
+                return (
+                  <li key={id}>
+                    {/* 기물 얼굴 + 티어 배지 — 맹약 카드의 .ac-facemini 와 같은 규약 */}
+                    <button type="button" className={`ac-banchip${sure ? "" : " maybe"}`}
+                      onClick={() => setChess(c)} title={`${c.n} · T${c.t}`}>
+                      <span className="ac-facemini">
+                        {c.op
+                          ? <img src={opFace(c.op)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
+                          : <em aria-hidden>?</em>}
+                        <em className={`ac-face-t ac-t${c.t}`}>{c.t}</em>
+                        {sure && <em className="ac-banmark" aria-hidden>✕</em>}
+                      </span>
+                      <b>{c.n}</b>
+                    </button>
+                  </li>
+                );
+              };
+              // 맹약 줄을 하나도 못 읽었으면 옛 평평한 목록으로 물러난다 — 그룹이 없으면 그룹 UI 도 없다
+              if (!banGroups.list.length && !banGroups.rest) {
+                return (
+                  <>
+                    {banSure.length > 0 && (
+                      <ul className="ac-banrow">{banSure.map((id) => chip(id, true))}</ul>
+                    )}
+                    {banMaybe.length > 0 && (
+                      <>
+                        <p className="ac-bannote ac-banmaybe-note">
+                          {t("아래는 아직 확정되지 않은 후보입니다 — 밴 목록을 더 보여 주면 좁혀집니다.")}</p>
+                        <ul className="ac-banrow">{banMaybe.map((id) => chip(id, false))}</ul>
+                      </>
+                    )}
+                  </>
+                );
+              }
+              // 한 줄 = 그리드 자식 **둘**(머리 · 칩). 줄마다 따로 그리드를 만들면 맹약 열 너비가 줄마다
+              // 달라져 카드 시작 x 가 어긋난다 — 게임은 모든 줄에서 x 가 같다. 그래서 평평하게 편다.
+              const group = (key: string, head: ReactNode, g: { sure: string[]; maybe: string[] }) => [
+                <span key={`h${key}`} className="ac-banhead">{head}</span>,
+                <ul key={`r${key}`} className="ac-banrow">
+                  {g.sure.map((id) => chip(id, true))}
+                  {g.maybe.map((id) => chip(id, false))}
+                  {/* 관측은 있는데 아직 아무도 못 붙인 줄 — 빈 채로 두면 인식이 죽은 것처럼 보인다 */}
+                  {!g.sure.length && !g.maybe.length && <li className="sb-dim" aria-hidden>—</li>}
+                </ul>,
+              ];
+              return (
+                <>
+                  {/* 안내는 **그럴 일이 실제로 생겼을 때만** — 반복 칩이 없는데 "두 번 나옵니다"를 띄우면
+                      없는 걱정을 만든다. 확정/후보 구분은 두 덩어리로 가르지 않고 그룹 안에서 점선으로 유지한다
+                      (게임처럼 티어순으로 완전히 섞으면 후보가 자리 수를 넘겨 없는 카드가 있는 것처럼 보인다). */}
+                  {(banGroups.dup > 0 || banMaybe.length > 0) && (
+                    <p className="ac-bannote ac-banmaybe-note">
+                      {banGroups.dup > 0 && t("두 맹약에 걸친 기물은 게임처럼 양쪽 줄에 다시 나옵니다.")}
+                      {banGroups.dup > 0 && banMaybe.length > 0 && " "}
+                      {banMaybe.length > 0 && t("점선 칩은 아직 확정되지 않은 후보입니다 — 밴 목록을 더 보여 주면 좁혀집니다.")}
+                    </p>
+                  )}
+                  <div className="ac-bangroups" aria-label={t("밴 리스트")}>
+                    {banGroups.list.flatMap(({ b, sure, maybe, cards }) => group(b.id, (
+                      <>
+                        {bondChip(b.id, true)}
+                        {/* 확정 / 화면에서 본 카드 — 왜 후보가 남는지를 숫자로 말해 준다
+                            (분자는 확정만 센다. 후보를 더하면 관측 장수를 넘는다) */}
+                        {cards > 0 && (
+                          <em className="sb-count"
+                            title={t("확정 {a}장 · 화면에서 본 카드 {b}장", { a: sure.length, b: cards })}>
+                            {sure.length}/{cards}</em>
+                        )}
+                      </>
+                    ), { sure, maybe }))}
+                    {banGroups.rest && group("rest",
+                      <em className="ac-banhead-rest">{t("맹약 줄을 아직 못 읽음")}</em>, banGroups.rest)}
+                  </div>
+                </>
+              );
+            })()}
+          </section>
+          </div>
+        </ModalWindow>
+      )}
+
+      {/* ── 현재 전략 창 ── 내 것 + 다른 참가자 (연합 최대 4명) */}
+      {prtsView === "band" && acLocked && (
+        <ModalWindow label={t("현재 전략")} className="operator-modal ac-modal ac-prtsmodal"
+          chrome={acModeName ? <span className="ac-modemark" title={acrun.mode ?? undefined}>{acModeName}</span> : null}
+          onClose={() => setPrtsView("")}>
+          <div className="ac-guide ac-simbody">
+            {acMode && <p className="ac-prtshead"><b>{acMode === "multi" ? t("연합") : t("독립")}</b></p>}
+            {/* 전략 — 내 것과 다른 참가자 것. **읽은 값**이고 덱편성 시뮬레이터의 전략과 별개다.
+                누르면 전략 상세가 열린다 (사용자 요청 2026-09-07 "전략은 클릭하면 정보가 나와야함") —
+                덱편성 시뮬레이터의 .ac-simband-card 와 같은 관용구다.
+                연합은 **최대 4명**까지 자리를 준다 (사용자 요청 "멀티플레이일경우 최대 네명까지").
+                ⚠ 다른 참가자 인식은 아직 실플레이 확인 전이다 (연합 다인 녹화가 없다) — 그래서 자리만
+                  준비해 두고, 못 읽은 자리는 '읽는 중'으로 남긴다. 없는 값을 지어내지 않는다. */}
+            <section className="ac-boardout">
+              <h3 className="sb-h3">{t("전략")}</h3>
+              {(() => {
+                const card = (id: string, opts?: { seat?: number; previewing?: boolean }) => {
+                  const b = doc.bands.find((x) => x.id === id);
+                  if (!b) return null;
+                  return (
+                    <button key={opts?.seat ?? "me"} type="button" className="ac-simband-card"
+                      onClick={() => setBand(b)} title={t("전략 상세 보기")}>
+                      <img src={bandIcon(b.id)} alt="" aria-hidden loading="lazy" onError={hideErr} />
+                      <span>
+                        <b>{b.n}{b.by && <em className="ac-bandby">{b.by}</em>}</b>
+                        <i className="sb-chip ac-hp">HP {b.hp}</i>
+                        {opts?.previewing && <i className="sb-chip">{t("고르는 중")}</i>}
+                      </span>
+                      <small>{rich(b.d.split("\n")[0])}</small>
+                    </button>
+                  );
+                };
+                // 연합이면 참가자 수만큼(최대 4) 자리를 만든다 — 인식된 자리는 카드, 못 읽은 자리는 안내
+                const seatN = acMode === "multi" ? Math.min(4, Math.max(acrun.seats, acOtherBands.length + 1)) : 1;
+                const bySeat = new Map(acOtherBands.map((b) => [b.seat, b.band]));
+                return (
+                  <>
+                    <div className="ac-prtsseat">
+                      <span className="ac-prtsseat-tag">{t("내 전략")}</span>
+                      {acBandPick
+                        ? card(acBandPick.band, { previewing: !acBandPick.final })
+                        : <p className="sb-dim ac-note">{t("아직 읽지 못했습니다 — 게임에서 '선택한 전략' 화면을 띄워 주세요")}</p>}
+                    </div>
+                    {seatN > 1 && Array.from({ length: seatN - 1 }, (_, k) => {
+                      const seat = k + 1;
+                      const id = bySeat.get(seat);
+                      return (
+                        <div key={seat} className="ac-prtsseat">
+                          <span className="ac-prtsseat-tag">{t("참가자 {n}", { n: seat + 1 })}</span>
+                          {id ? card(id, { seat })
+                            : <p className="sb-dim ac-note">{t("읽는 중 — 게임에서 전략 정보 화면을 띄워 주세요")}</p>}
+                        </div>
+                      );
+                    })}
+                  </>
+                );
+              })()}
+            </section>
           </div>
         </ModalWindow>
       )}
