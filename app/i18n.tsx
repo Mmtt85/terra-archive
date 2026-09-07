@@ -2903,6 +2903,7 @@ const D: Record<string, Pair> = {
   "밴 목록": ["Ban list", "BANリスト"],
   "읽는 중": ["Reading…", "読み取り中"],
   "현재 밴 목록": ["Current ban list", "現在のBANリスト"],
+  "밴 {n}명": ["{n} banned", "BAN {n}体"],
   "참가자 {n}": ["Player {n}", "参加者{n}"],
   "읽는 중 — 게임에서 전략 정보 화면을 띄워 주세요": [
     "Reading — bring up the strategy info screen in game.",
