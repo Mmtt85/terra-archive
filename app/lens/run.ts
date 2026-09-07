@@ -234,42 +234,70 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
 
     // ① 밴 격자 — 카드 우상단 빨간 금지 표식으로 잡는다 (acvision). 잘린 행(cut)은 티어가 없으니 건너뛴다.
     //    ⚠ 표식만 보면 전투 화면의 붉은 UI가 카드로 잡힌다 (실측 밴 구간 밖 22프레임 — 사용자 신고
-    //      2026-09-07 "밴 화면에서만 인식되게 해 줘야지"). 그래서 게이트가 세 겹이다, 값이 싼 순서로:
-    //        ① 화면 서명 — 우하단 '준비 완료' 버튼의 자리·크기 (isAcBanScreen, 공짜·정보 42/42·오탐 0/75)
+    //      2026-09-07 "밴 화면에서만 인식되게 해 줘야지"). 그래서 게이트가 두 겹이다:
     //        ② 행 위생 — col 0 부터 연속·2장 이상·red 고름 (acBanRows, 공짜·오탐 행 49→0·잃는 행 0)
-    //        ③ 맹약 아이콘 — 행 왼쪽 아이콘이 23종 중 하나로 붙어야 밴 행 (acbond, 행당 ≈71ms)
-    //      ③은 ①②를 통과한 행에만 도므로 다른 화면에서는 비용이 0 이다. 하나가 흔들려도 나머지가 남는다.
+    //        ③ 맹약 아이콘 — 행 왼쪽 아이콘이 23종 중 하나로 붙어야 밴 행 (acbond, 행당 ≈50ms)
+    //      둘 다 단독으로 오탐 0 이고, ③은 ②를 통과한 행에만 도므로 다른 화면에서는 비용이 0 이다.
+    //    ⚠ 버튼 위치 서명(isAcBanScreen)은 **조건으로 쓰지 않는다** — 셋 중 유일하게 창 비율에 의존해서,
+    //      녹화와 다른 창으로 캡처하면 밴이 통째로 죽는다 (2026-09-07 오후 "밴리스트가 전~혀 안나온다").
+    //      진단 로그와, 아이콘 템플릿을 못 받았을 때의 폴백으로만 남긴다.
     const grid = color ? findAcRows(color.px, color.W, color.H) : null;
-    const clean = grid && isAcBanScreen(grid) ? acBanRows(grid) : [];
+    const clean = grid ? acBanRows(grid) : [];
     // ③ 맹약 아이콘 — 게이트이면서 동시에 **행의 맹약 라벨**이다 (실측 95/95 정답, 오탐 0).
     //    라벨을 직접 얻으므로 얼굴로 푼 기물들의 공통 맹약을 역산하지 않는다 — 한 장짜리 행도 맹약이 정해진다.
     const banRows: { row: (typeof clean)[number]; bond: string }[] = [];
-    if (clean.length && color) {
-      const bondTpl = await loadBondTemplates(ac.bondIds);
-      for (const row of clean) {
+    if (clean.length && color && grid) {
+      let bondTpl: Map<string, Float32Array> | null = null;
+      try {
+        bondTpl = await loadBondTemplates(ac.bondIds);
+      } catch (e) {
+        // 아이콘을 못 받으면(오프라인·R2 404·CORS) ③을 못 돈다. 밴 인식을 통째로 끄는 대신
+        // 버튼 서명으로 물러난다 — 정확도는 떨어지지만 기능이 살아 있고, 원인이 로그에 남는다.
+        console.warn(`[lens] 맹약 아이콘 템플릿 실패 — 버튼 서명으로 폴백: ${e instanceof Error ? e.message : String(e)}`);
+        if (isAcBanScreen(grid)) for (const row of clean) banRows.push({ row, bond: "" });
+      }
+      if (bondTpl) for (const row of clean) {
         const hit = matchBondIcon(color.px, color.W, color.H, row.icon, bondTpl);
         const bond = bondOfHit(hit);
         if (bond) banRows.push({ row, bond });
         else console.debug(`[lens] 밴 행 아님 — 맹약 아이콘 미승인 (${hit ? `${hit.band} ${hit.score.toFixed(2)}/${hit.margin.toFixed(2)}` : "평탄"})`);
       }
     }
+    // 게이트가 왜 닫혔는지 한 줄로 — 캡처 환경이 녹화와 다를 때 이 줄만 보고 원인을 가린다
+    if (grid && grid.rows.length) {
+      const b = grid.button;
+      console.debug(`[lens] 밴 격자: 행 ${grid.rows.length}(잘림 ${grid.rows.filter((r) => r.cut).length}) → 위생 통과 ${clean.length} → 맹약 확정 ${banRows.length}`
+        + ` | c=${(grid.cardPx / (color?.W ?? 1)).toFixed(4)}W 첫열=${grid.cols[0]?.toFixed(3) ?? "-"} 버튼=${b ? `x${b.x.toFixed(3)} w${b.w.toFixed(3)}${isAcBanScreen(grid) ? " ✓" : " ✗"}` : "없음"}`);
+    }
     if (banRows.length && color) {
       screen = "ban";
-      // 얼굴 템플릿은 **보이는 티어의 기물**만 받는다 (op 당 초상 25KB) — 캐시되므로 두 번째 프레임부터는 공짜
-      const tiers = new Set(banRows.flatMap((r) => r.row.cards.map((c) => c.tier as number)));
-      const ops = ac.pieces.filter((p) => tiers.has(p.t)).map((p) => p.op);
-      const tpl = await loadFaceTemplates(ops);
+      // 얼굴 템플릿은 **행의 (맹약, 티어) 후보만** 받는다 (사용자 지시 2026-09-07). 조합당 1~4명이라
+      // 티어 전체(≈20명)를 받던 것보다 훨씬 적다 — 예열이 아직 도는 중에도 곧바로 시작할 수 있다.
+      // 맹약을 모르는 폴백 행(bond="")만 예전처럼 그 티어 전체를 받는다.
+      const ops = new Set<string>();
+      for (const { row, bond } of banRows) {
+        const tiers = new Set(row.cards.map((c) => c.tier as number));
+        for (const p of ac.pieces) {
+          if (!tiers.has(p.t)) continue;
+          if (bond && !p.bonds.includes(bond)) continue;
+          ops.add(p.op);
+        }
+      }
+      const tpl = await loadFaceTemplates([...ops]);
+      console.debug(`[lens] 밴 얼굴 후보 ${ops.size}명 (${banRows.map((r) => r.bond || "?").join(",")})`);
       for (const { row, bond } of banRows) {
         const cards = row.cards.map((c) => ({
           tier: c.tier as number,
           feat: cardFeature(color.px, color.W, color.H, { x: c.x * color.W, y: c.y * color.H, w: c.w * color.W, h: c.h * color.H }),
         }));
-        const { picks } = solveBanRow(cards, ac.pieces, tpl, bond);
-        for (const p of picks) if (p.id) bans.push({ id: p.id, margin: p.margin });
+        // bond 가 빈 문자열이면 아이콘 폴백 경로다 — 맹약을 모르니 예전처럼 역산에 맡긴다
+        const solved = solveBanRow(cards, ac.pieces, tpl, bond || null);
+        for (const p of solved.picks) if (p.id) bans.push({ id: p.id, margin: p.margin });
         // (맹약, 티어) 관측도 남긴다 — 얼굴이 못 가른 자리(초상 없는 기물)는 acsolve 조합 풀이가 보태고,
         // 맹약 키는 밴 리스트를 맹약별로 묶는 UI 의 근거가 된다 (autochess.tsx banGroups)
-        banObs[bond] = cards.map((c) => c.tier).sort((p, q) => q - p);
-        console.debug(`[lens] 밴 행 ${bond}: ${picks.map((p) => `${p.op || "?"}(${p.margin.toFixed(2)})`).join(" ")}`);
+        const key = bond || solved.bond;
+        if (key) banObs[key] = cards.map((c) => c.tier).sort((p, q) => q - p);
+        console.debug(`[lens] 밴 행 ${key || "?"}: ${solved.picks.map((p) => `${p.op || "?"}(${p.margin.toFixed(2)})`).join(" ")}`);
       }
     } else {
       // ② 문구 — 화면 종류를 가르고 종류에 맞는 것만 읽는다

@@ -25,7 +25,7 @@
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import sharp from "sharp";
-import { findAcRows, isAcBanScreen, acBanRows, type AcGrid } from "../../app/lens/acvision";
+import { findAcRows, acBanRows, type AcGrid } from "../../app/lens/acvision";
 
 const ROOT = resolve(import.meta.dirname ?? __dirname, "../..");
 const FRAMES_DIR = resolve(ROOT, "fixtures/lens/ac-frames");
@@ -90,6 +90,12 @@ const BAN_VISIBLE: Record<"v1" | "v2", [number, number]> = { v1: [15, 36], v2: [
 /** 게이트를 통과해야 하는 밴 프레임 수 하한 — 실측 33장 중 31장.
  *  빠지는 v2/f010·f011 은 카드가 보이지만 전 행이 '준비 완료' 버튼에 가려 cut 인 프레임이다 (의도된 동작). */
 const MIN_GATE_BAN_FRAMES = 30;
+/** 구조 조건(acBanRows)만으로 남는 오탐 — **정확히 이 프레임뿐이어야 한다**.
+ *  v2/f001 은 메인 메뉴이고 붉은 UI 세 조각이 우연히 col 0,1,2 로 이어진다. red 비율 조건을 걸면 0 이
+ *  되지만 그 조건은 라이브 캡처에서 진짜 행을 버릴 위험이 있어 뺐다 (acvision.ts ② 주석).
+ *  운영 코드는 여기에 맹약 아이콘 매칭을 얹어 이 행을 죽인다 — 그쪽 오탐 0 은 verify-ac/bond.ts 가
+ *  같은 117프레임으로 따로 잰다 (음성 149행 중 승인 0, 점수 최고 0.431 vs 문턱 0.62). */
+const GATE_FP_ALLOW = new Set(["v2/f001"]);
 
 /** 전체화면 스샷 — 행별 티어 (verify-autochess.ts EXPECT 와 같은 값; 이름은 못 붙이니 목록 집합으로 대조) */
 const SHOTS: Record<string, { rows: number[][]; cutRows: number }> = {
@@ -213,8 +219,11 @@ export async function verify(): Promise<{ name: string; pass: number; fail: numb
   } else lines.push("녹화 프레임 없음 — 건너뜀 (fixtures/lens/ac-frames/)");
 
   // ── 게이트 — 밴 화면 밖에서 밴 행이 나오지 않는가 (녹화 전 프레임 117장) ──────────────────────
-  // 통과 조건: 밴 카드가 안 보이는 프레임에서 게이트를 넘는 행이 **0개**, 그리고 밴 프레임 33장 중
-  // 30장 이상은 여전히 통과. (게이트 = isAcBanScreen 화면 서명 + acBanRows 행 위생)
+  // 통과 조건: 밴 카드가 안 보이는 프레임에서 구조 조건을 넘는 행이 **GATE_FP_ALLOW 뿐**, 그리고 밴 프레임 33장 중
+  // 30장 이상은 여전히 통과. 게이트는 `acBanRows` **단독**으로 잰다 — 운영 코드가 버튼 위치 서명
+  // (isAcBanScreen)을 조건으로 쓰지 않기 때문이다 (창 비율에 의존해서 다른 창으로 캡처하면 밴이
+  // 통째로 죽었다 — 2026-09-07 오후). 실제 파이프라인은 여기에 맹약 아이콘 매칭을 한 겹 더 얹고,
+  // 그쪽 오탐 0 은 verify-ac/bond.ts 가 같은 117프레임으로 따로 잰다.
   if (haveFrames) {
     let fpRows = 0, fpFrames = 0, banFrames = 0, banRows = 0;
     for (const v of ["v1", "v2"] as const) {
@@ -225,18 +234,19 @@ export async function verify(): Promise<{ name: string; pass: number; fail: numb
         if (!existsSync(p)) continue;
         const f = await loadBridgeFrame(p, OCR_MAX_W);
         const g = findAcRows(f.px, f.W, f.H);
-        const rows = isAcBanScreen(g) ? acBanRows(g) : [];
+        const rows = acBanRows(g);
         if (n >= a && n <= b) {
           if (rows.length) { banFrames++; banRows += rows.length; }
         } else if (rows.length) {
-          fpRows += rows.length; fpFrames++;
-          lines.push(`  게이트 ❌ ${key} — 밴 화면이 아닌데 행 ${rows.length}개: `
+          const known = GATE_FP_ALLOW.has(key);
+          if (!known) { fpRows += rows.length; fpFrames++; }
+          lines.push(`  게이트 ${known ? "△ 알려진" : "❌"} ${key} — 밴 화면이 아닌데 행 ${rows.length}개${known ? " (맹약 아이콘이 죽인다 — bond.ts)" : ""}: `
             + rows.map((r) => `[${r.cards.map((k) => `c${k.col}${k.tier === null ? "·" : R[k.tier]}(${k.red.toFixed(2)})`).join(" ")}]`).join(" "));
         }
       }
     }
     const okGate = fpRows === 0 && banFrames >= MIN_GATE_BAN_FRAMES;
-    lines.push(`${okGate ? "✅" : "❌"} 게이트: 밴 화면 밖 오탐 ${fpRows}행/${fpFrames}프레임 (기대 0) · `
+    lines.push(`${okGate ? "✅" : "❌"} 게이트(구조 조건만): 밴 화면 밖 새 오탐 ${fpRows}행/${fpFrames}프레임 (기대 0, 알려진 ${[...GATE_FP_ALLOW].join(",")} 제외) · `
       + `밴 프레임 통과 ${banFrames}/33 (하한 ${MIN_GATE_BAN_FRAMES}) · 통과 행 ${banRows}개`);
     if (okGate) pass++; else fail++;
   }

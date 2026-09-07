@@ -165,6 +165,11 @@ export function solveBanRow(cards: { tier: number; feat: Float32Array }[], piece
     const out: Sc[] = [];
     for (const p of pieces) {
       if (p.t !== c.tier) continue;
+      // 맹약을 알면 **(맹약,티어) 후보만** 비교한다 (사용자 지시 2026-09-07 "사르곤에 속한 기물이랑
+      // 만 비교하는 식으로"). 조합당 후보는 1~4명뿐이다 (1명 57조합 · 2명 52 · 3명 13 · 4명 1) —
+      // 티어 전체(≈20명)를 다 재고 나중에 거르던 것과 결과는 같고(같은 부분집합의 argmax) 비교가 5~20배 줄며,
+      // 후보가 1명인 조합은 비교 없이 확정된다. 필요한 초상 템플릿도 그만큼만 받으면 된다 (run.ts).
+      if (hint && !p.bonds.includes(hint)) continue;
       const feats = tpl.get(p.op);
       if (!feats || !feats.length) continue;
       out.push({ p, score: bestSim(c.feat, feats) });
@@ -176,8 +181,8 @@ export function solveBanRow(cards: { tier: number; feat: Float32Array }[], piece
     ? { id: pool[0].p.id, op: pool[0].p.op, score: pool[0].score, margin: pool.length >= 2 ? pool[0].score - pool[1].score : 1 }
     : empty;
 
-  // 맹약을 이미 아는 경우 — 역산 없이 그 맹약 후보만 본다
-  if (hint) return { bond: hint, picks: scored.map((list) => pickFrom(list.filter((x) => x.p.bonds.includes(hint)))) };
+  // 맹약을 이미 아는 경우 — 역산할 것이 없다 (위에서 이미 그 맹약 후보만 쟀다)
+  if (hint) return { bond: hint, picks: scored.map(pickFrom) };
   if (cards.length === 1) {
     const top = scored[0][0];
     return { bond: top && top.p.bonds.length === 1 ? top.p.bonds[0] : null, picks: [pickFrom(scored[0])] };

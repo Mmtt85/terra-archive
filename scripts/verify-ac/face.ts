@@ -219,11 +219,14 @@ const f3 = (x: number) => isNaN(x) ? "-" : x.toFixed(3);
 type Eval = {
   n: number; nClean: number; top1: number; tier1: number; cand1: number; cand1Clean: number; mOk: number[]; mBad: number[]; msRank: number;
   rowN: number; rowBondOk: number; rowBondNull: number; rowBondBad: number; pickN: number; pickOk: number; pickNClean: number; pickOkClean: number; wrong: string[];
+  /** 맹약 힌트를 넘긴 경로 (운영 코드가 쓰는 길 — 맹약 아이콘이 라벨을 준다). cmp 는 비교 횟수 */
+  hintOk: number; hintDiff: number; hintCmp: number; noHintCmp: number;
 };
 function evaluate(boxes: Box[], feats: Float32Array[], pieces: FacePiece[], ops: string[], tpl: Map<string, Float32Array[]>): Eval {
   const cands: FaceCand[] = ops.filter((o) => tpl.has(o)).map((o) => ({ op: o, feats: tpl.get(o)! }));
   const ev: Eval = { n: boxes.length, nClean: 0, top1: 0, tier1: 0, cand1: 0, cand1Clean: 0, mOk: [], mBad: [], msRank: 0,
-    rowN: 0, rowBondOk: 0, rowBondNull: 0, rowBondBad: 0, pickN: 0, pickOk: 0, pickNClean: 0, pickOkClean: 0, wrong: [] };
+    rowN: 0, rowBondOk: 0, rowBondNull: 0, rowBondBad: 0, pickN: 0, pickOk: 0, pickNClean: 0, pickOkClean: 0, wrong: [],
+    hintOk: 0, hintDiff: 0, hintCmp: 0, noHintCmp: 0 };
   const tag = (b: Box, k = b.col) => `${b.video}/f${String(b.frame).padStart(3, "0")} 행${b.rowIdx}열${k}${isArtifact(b) ? "(결함)" : ""}`;
   boxes.forEach((b, i) => {
     const t = performance.now();
@@ -259,6 +262,17 @@ function evaluate(boxes: Box[], feats: Float32Array[], pieces: FacePiece[], ops:
       ev.pickN++; if (!art) ev.pickNClean++;
       if (r.picks[k]?.op === b.op) { ev.pickOk++; if (!art) ev.pickOkClean++; }
       else ev.wrong.push(`pick 오답 ${tag(b, k)} ${b.op}→${r.picks[k]?.op} m=${f3(r.picks[k]?.margin ?? NaN)}`);
+    });
+    // **운영 코드가 쓰는 길** — 맹약 아이콘(acbond)이 준 라벨을 hint 로 넘긴다 (사용자 지시 2026-09-07:
+    // "사르곤에 속한 기물이랑 만 비교"). 역산 경로와 pick 이 **한 자리도 달라선 안 된다** — 같은 부분집합의
+    // argmax 라 결과는 같고 비교 횟수만 줄어야 한다. 줄어든 정도도 같이 잰다.
+    const rh = solveBanRow(idx.map((i) => ({ tier: boxes[i].t, feat: feats[i] })), pieces, tpl, b0.bond);
+    idx.forEach((i, k) => {
+      if (rh.picks[k]?.op === r.picks[k]?.op) ev.hintOk++;
+      else { ev.hintDiff++; ev.wrong.push(`힌트 경로 불일치 ${tag(boxes[i], k)} 역산 ${r.picks[k]?.op} → 힌트 ${rh.picks[k]?.op}`); }
+      const t = boxes[i].t;
+      ev.noHintCmp += pieces.filter((q) => q.t === t && tpl.has(q.op)).length;
+      ev.hintCmp += pieces.filter((q) => q.t === t && q.bonds.includes(b0.bond) && tpl.has(q.op)).length;
     });
   }
   return ev;
@@ -330,6 +344,8 @@ export async function verify(): Promise<{ name: string; pass: number; fail: numb
   check(base.cand1 / N >= 0.99, `(c) (맹약,티어) 제한 1위 ${pct(base.cand1, N)} ≥ 99%`);
   check(base.pickOk / base.pickN >= 0.98, `(d) solveBanRow pick ${pct(base.pickOk, base.pickN)} ≥ 98%`);
   check(base.rowBondBad === 0, `(d) solveBanRow 행 맹약 오답 ${base.rowBondBad} (정답 ${base.rowBondOk} · 미정 ${base.rowBondNull} / ${base.rowN})`);
+  check(base.hintDiff === 0, `(d) 맹약 힌트 경로 = 역산 경로 ${base.hintOk}/${base.hintOk + base.hintDiff} 자리 일치 (불일치 ${base.hintDiff})`);
+  lines.push(`  후보 비교 횟수: 티어만 ${base.noHintCmp} → (맹약,티어) ${base.hintCmp} (${base.hintCmp ? (base.noHintCmp / base.hintCmp).toFixed(1) : "-"}배 감소, 카드당 ${(base.noHintCmp / base.pickN).toFixed(1)} → ${(base.hintCmp / base.pickN).toFixed(1)}명)`);
 
   // 박스 흔들림 (기본 모드) — 격자가 몇 px 어긋나도 (맹약,티어) 제한이 버티는지
   for (const mode of ["sh+2", "sh-2", "sc0.94", "sc1.06"]) {
