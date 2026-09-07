@@ -225,7 +225,7 @@ export async function verify(): Promise<{ name: string; pass: number; fail: numb
   // 통째로 죽었다 — 2026-09-07 오후). 실제 파이프라인은 여기에 맹약 아이콘 매칭을 한 겹 더 얹고,
   // 그쪽 오탐 0 은 verify-ac/bond.ts 가 같은 117프레임으로 따로 잰다.
   if (haveFrames) {
-    let fpRows = 0, fpFrames = 0, banFrames = 0, banRows = 0;
+    let fpRows = 0, fpFrames = 0, banFrames = 0, banRows = 0, banPartial = 0;
     for (const v of ["v1", "v2"] as const) {
       const [a, b] = BAN_VISIBLE[v];
       for (let n = 1; n <= ALL_FRAMES[v]; n++) {
@@ -236,18 +236,18 @@ export async function verify(): Promise<{ name: string; pass: number; fail: numb
         const g = findAcRows(f.px, f.W, f.H);
         const rows = acBanRows(g);
         if (n >= a && n <= b) {
-          if (rows.length) { banFrames++; banRows += rows.length; }
+          if (rows.length) { banFrames++; banRows += rows.length; banPartial += rows.filter((r) => !r.complete).length; }
         } else if (rows.length) {
           const known = GATE_FP_ALLOW.has(key);
           if (!known) { fpRows += rows.length; fpFrames++; }
           lines.push(`  게이트 ${known ? "△ 알려진" : "❌"} ${key} — 밴 화면이 아닌데 행 ${rows.length}개${known ? " (맹약 아이콘이 죽인다 — bond.ts)" : ""}: `
-            + rows.map((r) => `[${r.cards.map((k) => `c${k.col}${k.tier === null ? "·" : R[k.tier]}(${k.red.toFixed(2)})`).join(" ")}]`).join(" "));
+            + rows.map(({ row }) => `[${row.cards.map((k) => `c${k.col}${k.tier === null ? "·" : R[k.tier]}(${k.red.toFixed(2)})`).join(" ")}]`).join(" "));
         }
       }
     }
     const okGate = fpRows === 0 && banFrames >= MIN_GATE_BAN_FRAMES;
     lines.push(`${okGate ? "✅" : "❌"} 게이트(구조 조건만): 밴 화면 밖 새 오탐 ${fpRows}행/${fpFrames}프레임 (기대 0, 알려진 ${[...GATE_FP_ALLOW].join(",")} 제외) · `
-      + `밴 프레임 통과 ${banFrames}/33 (하한 ${MIN_GATE_BAN_FRAMES}) · 통과 행 ${banRows}개`);
+      + `밴 프레임 통과 ${banFrames}/33 (하한 ${MIN_GATE_BAN_FRAMES}) · 통과 행 ${banRows}개(그중 불완전 ${banPartial} — 카드는 쓰고 티어 목록은 안 쓴다)`);
     if (okGate) pass++; else fail++;
   }
 

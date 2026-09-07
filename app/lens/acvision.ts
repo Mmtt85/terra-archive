@@ -37,19 +37,27 @@
 //   · 티어 배지(readTier): 색 배지(VI 주황·V 노랑·IV 청록·III 초록)는 색상으로, 회색 II/I 는 **3% 인셋 창**의
 //     흰 비율 0.02 로 가른다. 배지 판이 안 보이면(창의 luma>40 비율 < 0.17) null.
 //
-// cut(불완전) 판정 — 소비자는 cut 행을 건너뛴다. 하나라도 걸리면 행의 tier 는 전부 null:
+// cut(불완전) 판정 — **성질이 다른 두 무리**를 readable 로 갈라 낸다 (2026-09-07 오후).
+//   ①②⑤ 는 카드 자체를 못 믿는 것 → readable=false, tier 전부 null, 소비자는 아무것도 쓰지 않는다.
+//   ③④ 는 "보이는 카드는 멀쩡한데 **못 본 카드가 있을 수 있다**" → readable=true, tier 를 남긴다.
+//     소비자는 카드 단위 사실(얼굴로 기물 확정)은 쓰고, 그 행의 티어 목록을 완전한 관측으로는 쓰지 않는다.
+//     이렇게 안 갈랐더니 5장 행이 화면 맨 아래에 올 때(버튼이 6번째 열을 가림) 다 읽은 행을 통째로 버렸다 —
+//     사용자 신고 "시라쿠사 맹약 밴목록이 인식이 안됐네". 브리지는 화면이 잠잠할 때만 프레임을 내보내므로
+//     "다음 프레임에 위로 올라가면 잡힌다" 는 기대가 성립하지 않는다.
 //   ① top < 1 (위가 잘림)  ② 어느 카드든 배지를 못 읽음(창이 화면 밖·판이 안 보임·'준비 완료' 버튼 아래)
 //   ③ 마지막 카드 **다음 열**의 표식 자리가 버튼 패널에 걸림 — 카드가 숨어 있어도 알 수 없다. 표식 자리가
 //     패널 밖인데 카드가 안 잡혔으면 카드가 없는 것이니 온전하다 (봉투 규칙 x>0.76W·y>0.85H 는 v2 f014 고수·
 //     v1 f020 예견 같은 온전한 바닥 행을 잘라냈다).
 //   ④ 6의 배수 장이고 줄바꿈 행이 붙지 않았는데 다음 줄(top+1.5c, 행 간격 상한)의 표식 자리가 화면 밖
+//   ⑤ 줄바꿈 고아 — 아이콘이 어두운데 붙일 위 행이 없다 (맹약을 알 수 없다)
 //   버튼은 teal 덩어리(g>120 ∧ g−r>80 ∧ g−b>20 가 한 줄에 0.10W 이상 이어짐, x ≥ 0.6W · y ≥ 0.6H)로 찾는다 —
 //   실측 top 0.874H(v1)·0.885~0.904H(v2)·0.897H(ban2), left 0.773~0.791W. 없으면 가림 없음으로 본다.
 //   ⚠ teal 블록 둘레에 **어두운 반투명 패널**이 있어 그 아래 카드는 표식이 흐려져 잡히지 않는다 (v2 f011 6번째
 //     사르곤 카드: 표식 창 빨강 0.02 vs 보통 0.40 — 완화 문턱으로도 0.11 이라 못 가른다. v2 f010 은 teal 왼쪽
 //     35px 의 5번째 카드까지 놓쳤다). 패널 어두워짐은 teal 위 ≈0.3c 부터 시작(luma 19→11) — 그래서 teal 을
 //     **위·왼쪽으로 0.6c 넓힌 사각형**을 패널로 보고 ③·②에 쓴다. 대가: 바닥 행의 5번째 자리가 패널에 걸리면
-//     온전한 5장 행도 cut 이 된다 (v1 f020 예견 — 다음 프레임들(f021~)에서 잡히므로 누적 소비자에겐 무해).
+//     온전한 5장 행도 cut 이 된다 (v1 f020 예견 · v2 f016 기적). 그래서 그 경우를 readable 로 갈라
+//     카드 단위 사실은 살린다 (위 cut 판정 설명).
 //   ⚠ ②의 '판이 안 보임'이 뷰포트 잘림을 잡는다 — v1 녹화는 게임 화면 아래에 창 밖 띠(24px@900)가 붙어
 //     있어 화면 끝(H)만 보면 줄바꿈 카드가 안 잘린 것으로 나왔고, 그 카드의 배지 자리는 어두운 띠라
 //     회색 분기에서 I 로 읽혔다(orig 실측 누출 1). 판 존재 실측: 온전한 카드 min 0.266(orig)/0.344(900)
@@ -61,10 +69,15 @@
 // ⚠ AcCard.x 는 카드 **아트**의 왼쪽 끝이다 — 티어 배지는 아트 밖 왼쪽으로 ≈0.10c 튀어나와 있으므로
 //   배지까지 포함한 상자가 필요하면 x−0.10c 로 넓혀 쓴다 (face 정답 상자와의 차이가 이것이다, 2026-09-07).
 
-/** 밴 카드 한 장 — 좌표는 0~1 정규화 (w=h=카드 변; 각각 W·H 기준). tier 는 행이 cut 이면 null. */
+/** 밴 카드 한 장 — 좌표는 0~1 정규화 (w=h=카드 변; 각각 W·H 기준). tier 는 행을 못 읽으면 null. */
 export type AcCard = { x: number; y: number; w: number; h: number; col: number; tier: number | null; red: number };
-/** 한 맹약 행 — 줄바꿈 행은 이미 위 행에 합쳐져 있다. icon 은 왼쪽 맹약 아이콘 자리(원, 정규화). */
-export type AcRow = { top: number; cut: boolean; cards: AcCard[]; icon: { cx: number; cy: number; d: number; luma: number } };
+/** 한 맹약 행 — 줄바꿈 행은 이미 위 행에 합쳐져 있다. icon 은 왼쪽 맹약 아이콘 자리(원, 정규화).
+ *  cut = 이 행을 **완전한 관측으로 쓰면 안 된다**. 두 가지가 섞여 있으니 readable 로 갈라 쓴다:
+ *    readable=true  — 보이는 카드는 다 제대로 읽었고, 다만 **오른쪽·아래에 못 본 카드가 있을 수 있다**
+ *                     (버튼에 가림 · 다음 줄이 화면 밖). 카드 단위 사실(얼굴로 기물 확정)은 그대로 쓸 수 있다.
+ *    readable=false — 카드 자체를 못 믿는다 (배지 못 읽음 · 위 잘림 · 줄바꿈 고아). 아무것도 쓰지 않는다.
+ *  ⚠ readable 행의 tier 는 **남겨 둔다** — 그게 없으면 얼굴 후보를 좁힐 수 없다. */
+export type AcRow = { top: number; cut: boolean; readable: boolean; cards: AcCard[]; icon: { cx: number; cy: number; d: number; luma: number } };
 export type AcGrid = {
   cardPx: number;      // 카드 한 변 (px)
   pitchPx: number;     // 열 간격 (px)
@@ -144,14 +157,18 @@ export function isAcBanScreen(grid: AcGrid): boolean {
 //      그래서 **같은 프레임에 2장 이상 행이 있으면 한 장 행도 받는다** — 실측 결과는 완전히 같으면서
 //      (87/89 · f015 살음) 진짜 한 장 행을 구제할 여지가 남는다.
 function rowClean(r: AcRow): boolean {
-  if (r.cut || !r.cards.length) return false;
+  if (!r.readable || !r.cards.length) return false;
   return r.cards.every((c, i) => c.col === i && c.tier !== null);
 }
 
-/** 밴으로 받아도 되는 행만 — 위 ② 규칙. 이것만으로 밴 구간 밖 오탐 0 이고, 최종 확정은 맹약 아이콘(③)이 한다. */
-export function acBanRows(grid: AcGrid): AcRow[] {
-  const clean = grid.rows.filter(rowClean);
-  return clean.some((r) => r.cards.length >= 2) ? clean : [];
+/** 밴으로 받아도 되는 행 — 위 ② 규칙을 통과한 행. `complete` 가 false 면 **오른쪽·아래에 못 본 카드가
+ *  있을 수 있는** 행이다: 카드 단위 사실(어느 기물이 밴됐나)은 써도 되지만, 그 행의 티어 목록을
+ *  **완전한 관측으로 쓰면 안 된다** (조합 풀이 acsolve 가 없는 카드를 있다고 믿는다).
+ *  이것만으로 밴 구간 밖 오탐 1행이고, 최종 확정은 맹약 아이콘(③)이 한다. */
+export function acBanRows(grid: AcGrid): { row: AcRow; complete: boolean }[] {
+  const ok = grid.rows.filter(rowClean);
+  if (!ok.some((r) => r.cards.length >= 2)) return [];
+  return ok.map((row) => ({ row, complete: !row.cut }));
 }
 
 const isRed = (r: number, g: number, b: number) => r > 100 && r - Math.max(g, b) > 45;
@@ -428,11 +445,20 @@ export function findAcRows(px: Uint8ClampedArray, W: number, H: number): AcGrid 
     }
     // ④ 줄이 꽉 찼는데(6장) 다음 줄의 표식 자리가 화면 밖 — 줄바꿈 카드가 숨어 있을 수 있다
     if (onLine === CARDS_PER_LINE && lineTop + c * ROW_PITCH_MAX + c * MARK_H > H) reasons.push("다음 줄 표식이 화면 밖");
+    // ③④ 는 "**못 본 카드가 있을 수 있다**" 일 뿐이고 보이는 카드는 멀쩡하다 — ①②⑤ 와 성질이 다르다.
+    //   그래서 cut 은 그대로 두되 readable 로 갈라, 소비자가 카드 단위 사실은 살릴 수 있게 한다
+    //   (2026-09-07 오후 사용자 신고 "시라쿠사 맹약 밴목록이 인식이 안됐네" — 5장 행이 화면 맨 아래에
+    //    오면 버튼이 6번째 열 자리를 가려, 다 읽은 행을 통째로 버렸다. 하네스의 실패 프레임 2개
+    //    (v1/f020 예견 · v2/f016 기적)도 같은 원인이었다).
+    //   브리지는 **화면이 300ms 잠잠할 때만** 프레임을 내보내므로(bridge.ts SETTLE_MS) "다음 프레임에서
+    //   위로 올라가면 잡힌다" 는 기대가 성립하지 않는다 — 사용자가 그 자리에서만 멈췄다면 그 줄은 영영 못 본다.
+    const hidden = reasons.filter((x) => x.startsWith("다음 "));
+    const readable = reasons.length === hidden.length;
     const cut = reasons.length > 0;
-    if (cut) note.push(`cut top=${r.top.toFixed(0)}: ${reasons.join(", ")}`);
+    if (cut) note.push(`cut top=${r.top.toFixed(0)}: ${reasons.join(", ")}${readable ? " (카드는 읽을 수 있다)" : ""}`);
     grid.rows.push({
-      top: r.top / H, cut,
-      cards: r.cards.map((k) => ({ x: k.x / W, y: k.y / H, w: c / W, h: c / H, col: k.col, tier: cut ? null : k.tier, red: k.red })),
+      top: r.top / H, cut, readable,
+      cards: r.cards.map((k) => ({ x: k.x / W, y: k.y / H, w: c / W, h: c / H, col: k.col, tier: readable ? k.tier : null, red: k.red })),
       icon: { cx: r.icon.cx / W, cy: r.icon.cy / H, d: r.icon.d / W, luma: r.iconLuma },
     });
   }

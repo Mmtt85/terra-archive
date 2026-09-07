@@ -2896,6 +2896,8 @@ const D: Record<string, Pair> = {
     "{a} identified of {b} cards seen on screen",
     "確定{a}枚 / 画面で見たカード{b}枚"],
   "맹약 줄을 아직 못 읽음": ["Alliance row not read yet", "盟約の行はまだ読めていません"],
+  "밴": ["Banned", "BAN"],
+  "밴 — 이 판에서는 쓸 수 없습니다": ["Banned — unavailable in this run", "BAN — この試合では使えません"],
   "**밴 기물** — 시작 화면의 '사용 제한 오퍼레이터' 카드를 얼굴로 알아봅니다. 목록은 스크롤해야 다 보이므로 25초 안에 끝까지 내려 주세요 — 화면에 온전히 보인 카드만 셉니다.": [
     "**Banned pieces** — the 'Restricted Operators' cards on the start screen are identified by face. The list only shows fully when scrolled, so scroll to the bottom within the 25 seconds — only cards fully on screen count.",
     "**BAN駒** — 開始画面の「使用制限オペレーター」カードを顔で見分けます。リストはスクロールしないと全部見えないので、25秒以内に一番下まで下げてください — 画面に完全に映ったカードだけを数えます。"],

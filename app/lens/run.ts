@@ -225,6 +225,7 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
     const stacks: Record<string, number> = {};
     const bans: { id: string; margin: number }[] = [];
     const banObs: Record<string, number[]> = {};
+    const banSeen: Record<string, number> = {};
     let screen: AcScreen | "ban" | null = null;
     let fresh = false, seats = 0;
     let modeCode: string | null = null, deployLeft: number | null = null, hp: number | null = null;
@@ -245,7 +246,7 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
     const clean = grid ? acBanRows(grid) : [];
     // ③ 맹약 아이콘 — 게이트이면서 동시에 **행의 맹약 라벨**이다 (실측 95/95 정답, 오탐 0).
     //    라벨을 직접 얻으므로 얼굴로 푼 기물들의 공통 맹약을 역산하지 않는다 — 한 장짜리 행도 맹약이 정해진다.
-    const banRows: { row: (typeof clean)[number]; bond: string }[] = [];
+    const banRows: { row: (typeof clean)[number]["row"]; bond: string; complete: boolean }[] = [];
     if (clean.length && color && grid) {
       let bondTpl: Map<string, Float32Array> | null = null;
       try {
@@ -254,19 +255,19 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
         // 아이콘을 못 받으면(오프라인·R2 404·CORS) ③을 못 돈다. 밴 인식을 통째로 끄는 대신
         // 버튼 서명으로 물러난다 — 정확도는 떨어지지만 기능이 살아 있고, 원인이 로그에 남는다.
         console.warn(`[lens] 맹약 아이콘 템플릿 실패 — 버튼 서명으로 폴백: ${e instanceof Error ? e.message : String(e)}`);
-        if (isAcBanScreen(grid)) for (const row of clean) banRows.push({ row, bond: "" });
+        if (isAcBanScreen(grid)) for (const { row, complete } of clean) banRows.push({ row, bond: "", complete });
       }
-      if (bondTpl) for (const row of clean) {
+      if (bondTpl) for (const { row, complete } of clean) {
         const hit = matchBondIcon(color.px, color.W, color.H, row.icon, bondTpl);
         const bond = bondOfHit(hit);
-        if (bond) banRows.push({ row, bond });
+        if (bond) banRows.push({ row, bond, complete });
         else console.debug(`[lens] 밴 행 아님 — 맹약 아이콘 미승인 (${hit ? `${hit.band} ${hit.score.toFixed(2)}/${hit.margin.toFixed(2)}` : "평탄"})`);
       }
     }
     // 게이트가 왜 닫혔는지 한 줄로 — 캡처 환경이 녹화와 다를 때 이 줄만 보고 원인을 가린다
     if (grid && grid.rows.length) {
       const b = grid.button;
-      console.debug(`[lens] 밴 격자: 행 ${grid.rows.length}(잘림 ${grid.rows.filter((r) => r.cut).length}) → 위생 통과 ${clean.length} → 맹약 확정 ${banRows.length}`
+      console.debug(`[lens] 밴 격자: 행 ${grid.rows.length}(못 읽음 ${grid.rows.filter((r) => !r.readable).length}) → 위생 통과 ${clean.length}(완전 ${clean.filter((r) => r.complete).length}) → 맹약 확정 ${banRows.length}`
         + ` | c=${(grid.cardPx / (color?.W ?? 1)).toFixed(4)}W 첫열=${grid.cols[0]?.toFixed(3) ?? "-"} 버튼=${b ? `x${b.x.toFixed(3)} w${b.w.toFixed(3)}${isAcBanScreen(grid) ? " ✓" : " ✗"}` : "없음"}`);
     }
     if (banRows.length && color) {
@@ -285,19 +286,25 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
       }
       const tpl = await loadFaceTemplates([...ops]);
       console.debug(`[lens] 밴 얼굴 후보 ${ops.size}명 (${banRows.map((r) => r.bond || "?").join(",")})`);
-      for (const { row, bond } of banRows) {
+      for (const { row, bond, complete } of banRows) {
         const cards = row.cards.map((c) => ({
           tier: c.tier as number,
           feat: cardFeature(color.px, color.W, color.H, { x: c.x * color.W, y: c.y * color.H, w: c.w * color.W, h: c.h * color.H }),
         }));
         // bond 가 빈 문자열이면 아이콘 폴백 경로다 — 맹약을 모르니 예전처럼 역산에 맡긴다
         const solved = solveBanRow(cards, ac.pieces, tpl, bond || null);
+        // 얼굴로 확정한 기물은 **행이 완전하지 않아도** 사실이다 — 카드 단위 관측이니까
         for (const p of solved.picks) if (p.id) bans.push({ id: p.id, margin: p.margin });
-        // (맹약, 티어) 관측도 남긴다 — 얼굴이 못 가른 자리(초상 없는 기물)는 acsolve 조합 풀이가 보태고,
-        // 맹약 키는 밴 리스트를 맹약별로 묶는 UI 의 근거가 된다 (autochess.tsx banGroups)
         const key = bond || solved.bond;
-        if (key) banObs[key] = cards.map((c) => c.tier).sort((p, q) => q - p);
-        console.debug(`[lens] 밴 행 ${key || "?"}: ${solved.picks.map((p) => `${p.op || "?"}(${p.margin.toFixed(2)})`).join(" ")}`);
+        if (key) {
+          // 본 줄과 그 줄에서 본 카드 수 — 밴 리스트를 맹약별로 묶는 UI 의 근거 (autochess.tsx banGroups).
+          // 행이 불완전해도 남긴다: 그래야 "이 줄을 봤다" 는 사실이 화면에서 안 사라진다.
+          banSeen[key] = cards.length;
+          // (맹약, 티어) **완전한** 관측만 조합 풀이에 넘긴다 — 못 본 카드가 있는 행을 완전하다고 넘기면
+          // acsolve 가 없는 카드를 있다고 믿어 엉뚱한 조합을 낸다 (얼굴이 못 가른 자리를 보태는 게 그쪽 몫이다)
+          if (complete) banObs[key] = cards.map((c) => c.tier).sort((p, q) => q - p);
+        }
+        console.debug(`[lens] 밴 행 ${key || "?"}${complete ? "" : " (불완전 — 오른쪽·아래에 못 본 카드가 있을 수 있다)"}: ${solved.picks.map((p) => `${p.op || "?"}(${p.margin.toFixed(2)})`).join(" ")}`);
       }
     } else {
       // ② 문구 — 화면 종류를 가르고 종류에 맞는 것만 읽는다
@@ -380,7 +387,7 @@ export async function recognizeShot(mode: LensMode, file: Blob, topic?: string, 
     }
     oc = {
       screens: [], entities: [], topics: [], section: screen,
-      target: { kind: "acrun", screen, stacks, fresh, deployLeft, seats, mode: modeCode, bands, bans, banObs, hp, pieces },
+      target: { kind: "acrun", screen, stacks, fresh, deployLeft, seats, mode: modeCode, bands, bans, banObs, banSeen, hp, pieces },
       battle: screen === "battle",
     };
   } else if (mode === "story") {

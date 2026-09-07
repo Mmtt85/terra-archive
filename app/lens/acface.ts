@@ -181,8 +181,40 @@ export function solveBanRow(cards: { tier: number; feat: Float32Array }[], piece
     ? { id: pool[0].p.id, op: pool[0].p.op, score: pool[0].score, margin: pool.length >= 2 ? pool[0].score - pool[1].score : 1 }
     : empty;
 
+  /**
+   * 한 행 안에서 **같은 기물을 두 자리에 배정하지 않는다** (2026-09-07 오후).
+   * 게임의 한 맹약 줄에 같은 오퍼레이터가 두 번 나올 수는 없다. 그런데 카드마다 독립적으로 1위를
+   * 뽑으면 같은 (맹약,티어) 카드 두 장이 같은 기물을 고를 수 있고, 그러면 **한 기물을 통째로 잃는다**
+   * (사용자 실플레이: 시라쿠사 행에 T1 카드가 두 장이고 그 조합의 후보는 프로방스·텍사스 정확히 2명).
+   * 점수 내림차순 그리디로 배정한다 — 후보 수가 카드 수와 같으면 배정이 **강제**되므로 얼굴 점수가
+   * 애매해도 정답이 된다. 그때 margin 은 1 로 둔다 (경쟁자가 남지 않았다 = 확정).
+   */
+  const assign = (): FacePick[] => {
+    type Pair = { ci: number; si: number; score: number };
+    const pairs: Pair[] = [];
+    scored.forEach((list, ci) => list.forEach((_, si) => pairs.push({ ci, si, score: list[si].score })));
+    pairs.sort((a, b) => b.score - a.score);
+    const takenCard = new Array<number>(cards.length).fill(-1);   // 카드 → 배정된 후보 index
+    const takenId = new Set<string>();
+    for (const { ci, si } of pairs) {
+      if (takenCard[ci] >= 0) continue;
+      const id = scored[ci][si].p.id;
+      if (takenId.has(id)) continue;
+      takenCard[ci] = si; takenId.add(id);
+    }
+    return scored.map((list, ci) => {
+      const si = takenCard[ci];
+      if (si < 0) return list.length ? pickFrom(list) : empty;     // 후보가 다 다른 카드에 갔다 (있을 수 없지만)
+      const mine = list[si];
+      // 경쟁자 = 이 카드의 다른 후보 중 **아무 카드에도 안 배정된** 것. 없으면 배정이 강제됐다는 뜻.
+      let rival = -Infinity;
+      list.forEach((x, j) => { if (j !== si && !takenId.has(x.p.id) && x.score > rival) rival = x.score; });
+      return { id: mine.p.id, op: mine.p.op, score: mine.score, margin: rival === -Infinity ? 1 : Math.max(0, mine.score - rival) };
+    });
+  };
+
   // 맹약을 이미 아는 경우 — 역산할 것이 없다 (위에서 이미 그 맹약 후보만 쟀다)
-  if (hint) return { bond: hint, picks: scored.map(pickFrom) };
+  if (hint) return { bond: hint, picks: assign() };
   if (cards.length === 1) {
     const top = scored[0][0];
     return { bond: top && top.p.bonds.length === 1 ? top.p.bonds[0] : null, picks: [pickFrom(scored[0])] };
@@ -205,5 +237,7 @@ export function solveBanRow(cards: { tier: number; feat: Float32Array }[], piece
   if (!full.length) return { bond: null, picks: scored.map(pickFrom) };
   const best = full[0][0];
   const tied = full.length >= 2 && Math.abs(full[0][1].sum - full[1][1].sum) < 1e-9;
-  return { bond: tied ? null : best, picks: scored.map((list) => pickFrom(list.filter((x) => x.p.bonds.includes(best)))) };
+  // 역산 경로도 같은 규칙으로 — 맹약을 좁힌 뒤 서로 다른 기물을 배정한다
+  for (let i = 0; i < scored.length; i++) scored[i] = scored[i].filter((x) => x.p.bonds.includes(best));
+  return { bond: tied ? null : best, picks: assign() };
 }

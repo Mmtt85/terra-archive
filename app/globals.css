@@ -21034,6 +21034,45 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   .ac-bangroups > .ac-banrow { margin-top: 0; padding-top: 6px; border-top: 0; }
 }
 
+/* 밴 리스트 접기 핸들 (사용자 요청 2026-09-07 "기본은 펼치고, 접을 수 있게") — 맹약별로 묶으면
+   세로로 길어져 아래 전략·맹약까지 한참 스크롤해야 한다. 제목 자체를 버튼으로 만든다. */
+.ac-banfold {
+  display: inline-flex; align-items: baseline; gap: 5px;
+  border: 0; background: none; padding: 0;
+  font: inherit; color: inherit; cursor: pointer; text-align: left;
+}
+.ac-banfold-caret { font-size: 10px; color: var(--muted); }
+.ac-banfold:hover .ac-banfold-caret { color: var(--ink2); }
+
+/* 밴 표식 — 게임의 카드 우상단 빨간 금지 마크와 같은 자리·같은 뜻 (사용자 요청 2026-09-07
+   "밴당한 기물의 경우 알기쉽게 밴당했다고 빨간색 금지 뱃지 같은거 하나 좀 보기 쉽게").
+   ⚠ 담는 상자가 position:relative 여야 한다 — .ac-facemini 는 원래 그렇고, .ac-slot-face 와
+     새로 만든 .ac-thumbwrap 에 아래에서 붙여 준다.
+   ⚠ 티어 배지(.ac-face-t)는 좌하단이 아니라 **우하단**이다. 그래서 밴 표식은 우상단에 둔다 —
+     게임과도 같은 자리이고 두 배지가 겹치지 않는다. */
+.ac-banmark {
+  position: absolute; top: 0; right: 0; z-index: 1;
+  font-style: normal; font-weight: 900; line-height: 1;
+  font-size: 8.5px; padding: 2px 3px;
+  color: #fff; background: #c8323c;
+  border-radius: 0 0 0 3px;
+  /* 회색조 필터가 걸린 칩(.ac-banchip) 안에서도 빨강이 살아야 한다 — 그게 이 표식의 존재 이유다 */
+  filter: none;
+}
+/* 얼굴 위에 표식을 얹기 위한 상자 — 크기는 안의 이미지가 정한다 (레이아웃을 바꾸지 않는다) */
+.ac-thumbwrap { position: relative; flex: none; display: inline-flex; }
+/* .ac-oprow 는 첫 칸이 40px 격자였고 `.ac-oprow > img` 로 크기를 줬다 — 상자를 끼웠으니 둘 다 챈다 */
+.ac-oprow > .ac-thumbwrap { width: 40px; height: 40px; }
+.ac-oprow > .ac-thumbwrap > img,
+.ac-oprow > .ac-thumbwrap > .ac-face-diy {
+  width: 40px; height: 40px; object-fit: cover; border-radius: 4px; background: var(--chip);
+}
+.ac-slot-face { position: relative; }
+/* 밴된 기물이 편성에 들어 있으면 칸째로 눈에 띄게 — 표식만으로는 96px 칸에서 작다 */
+.ac-slot-face:has(> .ac-banmark) { background: color-mix(in srgb, #c8323c 9%, transparent); }
+/* 밴 칩 안 얼굴은 30px 이라 표식을 조금 줄인다 */
+.ac-facemini > .ac-banmark { font-size: 7.5px; padding: 1px 2.5px; }
+
 /* 한 판 스트립 — PRTS 연결 중에만 뜬다 (2026-09-06). 덱편성 모달 **밖**이라
    탭을 옮겨 다녀도 인식 상태가 보인다. */
 .ac-runbar {

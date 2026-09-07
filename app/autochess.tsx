@@ -647,15 +647,16 @@ export default function AutochessGuide({ doc, onShowOperator }: {
       const n = Object.keys(tg.stacks).length;
       const bans = tg.bans ?? [];
       const banObs = tg.banObs ?? {};
+      const banSeen = tg.banSeen ?? {};
       const bands = tg.bands ?? [];
       const seats = tg.seats ?? 0;
       const hasDeploy = typeof tg.deployLeft === "number";
       const hasHp = typeof tg.hp === "number";
-      const any = n || bans.length || Object.keys(banObs).length || bands.length || seats || hasDeploy || hasHp
+      const any = n || bans.length || Object.keys(banObs).length || Object.keys(banSeen).length || bands.length || seats || hasDeploy || hasHp
         || !!tg.mode || !!tg.pieces?.length || !!tg.screen;
       if (any) {
         mergeAcRun({
-          stacks: tg.stacks, banObs, bans, bands, seats,
+          stacks: tg.stacks, banObs, banSeen, bans, bands, seats,
           deployLeft: hasDeploy ? tg.deployLeft : undefined,
           mode: tg.mode ?? undefined, hp: hasHp ? tg.hp : undefined,
           pieces: tg.pieces, screen: tg.screen ?? undefined,
@@ -855,6 +856,8 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     for (const b of doc.bonds) m.set(b.id, b);
     return m;
   }, [doc]);
+  /** 밴 리스트 접기 (사용자 요청 2026-09-07 "기본은 펼치고, 접을 수 있게") */
+  const [banOpen, setBanOpen] = useState(true);
   /** 밴 리스트 **맹약별 그룹** — 게임의 '사용 제한 오퍼레이터' 화면과 같은 모양으로 나눈다
    *  (사용자 요청 2026-09-07 "밴 리스트는 맹약별로 그루핑을 좀 해 줘").
    *
@@ -864,7 +867,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
    *    · 줄 안은 티어 내림차순 — 14행 중 13행
    *    · 그래서 칩이 늘어난다: v1 19→24(+26%) · v2 21→26(+24%) — 접지 않아도 되는 양이다
    *
-   *  ⚠ 그룹은 **화면에서 실제로 읽은 줄(banObs)** 로만 만든다. 확정 기물의 소속 맹약을 보고 "그 줄도
+   *  ⚠ 그룹은 **화면에서 실제로 본 줄(banSeen)** 로만 만든다. 확정 기물의 소속 맹약을 보고 "그 줄도
    *     있겠지"라고 지어내면 밴 하나가 틀렸을 때 없는 줄까지 만들어 낸다 (실측: 조합 풀이가 v1 의
    *     (쉐라그,T4) 자리에서 노시스(쉐라그+기민)를 냈고, 그걸 믿었으면 v1 에 없는 '기민' 줄이 생겼다).
    *  ⚠ 관측만 있고 아직 아무도 못 붙인 줄은 **남긴다** — 사용자가 분명히 보여 준 줄이 사라지면
@@ -873,7 +876,10 @@ export default function AutochessGuide({ doc, onShowOperator }: {
    *     잡히지만(acbond.ts), 아이콘이 미승인된 행의 기물이 조합 풀이로만 들어오는 경로가 남는다.
    */
   const banGroups = useMemo(() => {
-    const seen = new Set(Object.keys(acrun.banObs));
+    // banObs(완전한 관측)가 아니라 banSeen(본 줄)을 쓴다 — 5장 행이 화면 맨 아래에 오면 '준비 완료'
+    // 버튼이 6번째 열을 가려 완전한 관측이 못 되는데, 그렇다고 그 맹약 줄을 화면에서 빼면
+    // "인식이 안 됐다" 가 된다 (사용자 신고 2026-09-07 "시라쿠사 맹약 밴목록이 인식이 안됐네").
+    const seen = new Set(Object.keys(acrun.banSeen));
     const put = new Map<string, { sure: string[]; maybe: string[] }>();
     const rest: { sure: string[]; maybe: string[] } = { sure: [], maybe: [] };
     let dup = 0;                                  // 두 줄 이상에 나온 기물 수 — 안내문을 띄울지 판단
@@ -896,10 +902,10 @@ export default function AutochessGuide({ doc, onShowOperator }: {
       || (chessById.get(x)?.sort ?? 0) - (chessById.get(y)?.sort ?? 0);
     const list = doc.bonds.filter((b) => put.has(b.id) || seen.has(b.id)).map((b) => {
       const g = put.get(b.id) ?? { sure: [], maybe: [] };
-      return { b, sure: g.sure.sort(byTier), maybe: g.maybe.sort(byTier), cards: acrun.banObs[b.id]?.length ?? 0 };
+      return { b, sure: g.sure.sort(byTier), maybe: g.maybe.sort(byTier), cards: acrun.banSeen[b.id] ?? 0 };
     });
     return { list, dup, rest: rest.sure.length || rest.maybe.length ? rest : null };
-  }, [acrun.banObs, banSure, banMaybe, chessById, doc.bonds]);
+  }, [acrun.banSeen, banSure, banMaybe, chessById, doc.bonds]);
   // 변형 구조체 대응표 — 맹약을 주는 장비를 맹약별로 묶는다. 맹약 순서는 목록과 같고
   // (진영 → 특성), 같은 맹약 안에서는 티어순이다. 빅토리아 해머처럼 한 맹약에 여러
   // 장비가 걸린 경우가 있어 묶어서 보여야 읽힌다.
@@ -1310,14 +1316,26 @@ export default function AutochessGuide({ doc, onShowOperator }: {
 
   // ── 조각들 ────────────────────────────────────────────────────────────────
   const tierBadge = (n: number) => <em className={`ac-tier ac-t${n}`}>T{n}</em>;
+  /** 밴 표식 — 게임의 카드 우상단 빨간 금지 마크와 같은 자리·같은 뜻 (사용자 요청 2026-09-07
+   *  "밴당한 기물의 경우 알기쉽게 밴당했다고 빨간색 금지 뱃지 같은거 하나 좀 보기 쉽게").
+   *  PRTS 연결 중에만 뜬다 — 연결을 안 했으면 무엇이 밴인지 알 길이 없고, 그때 아무 표시도 없는 게 맞다.
+   *  확정(banSure)에만 단다: 후보에 달면 "못 쓰는 기물" 이라고 단정하는 셈이라 편성을 잘못 유도한다.
+   *  ⚠ 붙이는 자리는 **position:relative 인 상자** 안이어야 한다 (.ac-facemini · .ac-slot-face · .ac-thumbwrap). */
+  const bannedSet = useMemo(() => new Set(acLocked ? banSure : []), [acLocked, banSure]);
+  const banMark = (id: string) => (bannedSet.has(id)
+    ? <em className="ac-banmark" title={t("밴 — 이 판에서는 쓸 수 없습니다")} aria-label={t("밴")}>✕</em>
+    : null);
 
   // 기물 카드 — 물자관리소 목록과 시뮬레이터 추천이 같은 카드를 쓴다 (2026-08-23 추출)
   const chessCard = (c: AcChess, marks?: string[]) => (
     <button key={c.id} type="button" className="ac-card ac-chesscard" onClick={() => openChess(c)}>
       <header>
-        {c.op
-          ? <img className="ac-thumb" src={opFace(c.op)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
-          : <span className="ac-thumb ac-face-diy" aria-hidden>?</span>}
+        <span className="ac-thumbwrap">
+          {c.op
+            ? <img className="ac-thumb" src={opFace(c.op)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
+            : <span className="ac-thumb ac-face-diy" aria-hidden>?</span>}
+          {banMark(c.id)}
+        </span>
         <div>
           <b className="ac-cname">{c.n}</b>
           <span className="ac-cmeta">
@@ -1449,9 +1467,12 @@ export default function AutochessGuide({ doc, onShowOperator }: {
       // 목록이 사라지면 매번 되돌아가야 한다 (사용자 지적 2026-08-22). ModalWindow가 창을
       // 겹쳐 띄우므로 오퍼 창을 닫으면 맹약 창이 그대로 남는다.
       onClick={() => openChess(c)}>
-      {c.op
-        ? <img src={opFace(c.op)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
-        : <span className="ac-face-diy" aria-hidden>?</span>}
+      <span className="ac-thumbwrap">
+        {c.op
+          ? <img src={opFace(c.op)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
+          : <span className="ac-face-diy" aria-hidden>?</span>}
+        {banMark(c.id)}
+      </span>
       <span className="ac-oprow-main">
         <b>{c.n}</b>
         <span className="ac-oprow-meta">
@@ -1917,6 +1938,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                                   {c.op
                                     ? <img src={opFace(c.op)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
                                     : <em aria-hidden>?</em>}
+                                  {banMark(cid)}
                                   <em className={`ac-face-t ac-t${c.t}`}>{c.t}</em>
                                 </span>
                               ) : null;
@@ -2644,8 +2666,19 @@ export default function AutochessGuide({ doc, onShowOperator }: {
               끝까지 내려 줘야 전부 잡힌다 — 그래서 안내 문구가 기능의 일부다. */}
           {acLocked && (
             <section className="ac-boardout ac-banlist">
-              <h3 className="sb-h3">{t("밴 리스트")}
-                {banSure.length > 0 && <em className="sb-count">{banSure.length}</em>}</h3>
+              {/* 접었다 펼 수 있다 (사용자 요청 2026-09-07) — 기본은 펼침. 맹약별로 묶으면 세로로 길어져
+                  아래 전략·맹약을 보려면 한참 스크롤해야 한다. 상태는 컴포넌트 안에만 둔다: 판마다 달라질
+                  성질이 아니고, 링크·세션에 실을 값도 아니다. */}
+              <h3 className="sb-h3">
+                <button type="button" className="ac-banfold" aria-expanded={banOpen}
+                  onClick={() => setBanOpen((v) => !v)}>
+                  <span aria-hidden className="ac-banfold-caret">{banOpen ? "▾" : "▸"}</span>
+                  {t("밴 리스트")}
+                  {banSure.length > 0 && <em className="sb-count">{banSure.length}</em>}
+                </button>
+              </h3>
+              {banOpen && (
+              <>
               <p className="ac-bannote">{t("게임의 밴 목록 화면에서 끝까지 스크롤을 내려 주세요 — 화면에 온전히 보인 카드만 얼굴로 확정합니다.")}</p>
               {/* 확정 / 후보를 나눠 보여 준다 — 화면을 더 볼수록 후보가 확정으로 옮겨 간다.
                   확정은 카드 얼굴(스킨 초상 HOG 매칭, 2026-09-07)로 정하고, 얼굴이 못 가른 자리만
@@ -2665,6 +2698,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                             ? <img src={opFace(c.op)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
                             : <em aria-hidden>?</em>}
                           <em className={`ac-face-t ac-t${c.t}`}>{c.t}</em>
+                          {sure && <em className="ac-banmark" aria-hidden>✕</em>}
                         </span>
                         <b>{c.n}</b>
                       </button>
@@ -2730,6 +2764,8 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                   </>
                 );
               })()}
+              </>
+              )}
             </section>
           )}
 
@@ -2929,6 +2965,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                       {c.op ? <img src={opFace(c.op)} alt="" aria-hidden loading="lazy" onError={hideErr} />
                         : <span className="ac-face-diy" aria-hidden>?</span>}
                       <b>{c.n}</b>
+                      {banMark(c.id)}
                     </button>
                     <span className="ac-slot-act"
                       draggable={false}
@@ -2967,6 +3004,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                       {c.op ? <img src={opFace(c.op)} alt="" aria-hidden loading="lazy" onError={hideErr} />
                         : <span className="ac-face-diy" aria-hidden>?</span>}
                       <b>{c.n}</b>
+                      {banMark(c.id)}
                     </button>
                     <span className="ac-slot-act"
                       draggable={false}
@@ -3021,9 +3059,12 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                       <button key={c.id} type="button" className="ac-card ac-chesscard ac-pickcard"
                         onClick={() => { addPieceTo(picking, c); setPicking(null); }}>
                         <header>
-                          {c.op
-                            ? <img className="ac-thumb" src={opFace(c.op)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
-                            : <span className="ac-thumb ac-face-diy" aria-hidden>?</span>}
+                          <span className="ac-thumbwrap">
+                            {c.op
+                              ? <img className="ac-thumb" src={opFace(c.op)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
+                              : <span className="ac-thumb ac-face-diy" aria-hidden>?</span>}
+                            {banMark(c.id)}
+                          </span>
                           <div>
                             <b className="ac-cname">{c.n}</b>
                             <span className="ac-cmeta">

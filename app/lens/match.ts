@@ -51,8 +51,12 @@ export type LensTarget =
       bands?: { seat: number; band: string; final: boolean }[];
       /** 밴 기물 — 카드 **얼굴**로 확정한 chess 기본형 id 와 마진(1위−2위, 후보 하나면 1) (2026-09-07 재가동) */
       bans?: { id: string; margin: number }[];
-      /** 밴 화면 관측 — 맹약 id → 그 행에 보인 티어들 (얼굴이 못 가른 자리는 acsolve 가 역산) */
+      /** 밴 화면 관측 — 맹약 id → 그 행에 보인 티어들 (얼굴이 못 가른 자리는 acsolve 가 역산).
+       *  **완전한 행만** 들어간다 — 못 본 카드가 있을 수 있는 행을 넣으면 조합 풀이가 엉뚱한 해를 낸다. */
       banObs?: Record<string, number[]>;
+      /** 화면에서 **본** 맹약 줄 → 그 줄에서 본 카드 수. banObs 와 달리 불완전한 행도 들어간다
+       *  (밴 리스트를 맹약별로 묶는 UI 가 "이 줄을 봤다" 는 사실을 잃지 않게) */
+      banSeen?: Record<string, number>;
       /** 목표 HP — 인게임 HUD 상단 (판 내 불변) */
       hp?: number | null;
       /** 화면에서 이름을 읽은 기물·장비 (상점 카드·툴팁) — 정보용, 편성 확정 근거로 쓰지 않는다 */

@@ -51,6 +51,12 @@ export type AcRun = {
    *  스크롤하며 여러 프레임으로 들어오므로 **(맹약, 티어)마다 최댓값**으로 쌓는다:
    *  한 프레임에 다 보인 행이 그 맹약의 완전한 목록이고, 잘려 덜 보인 프레임은 부분집합이다. */
   banObs: Record<string, number[]>;
+  /** 화면에서 **본** 맹약 줄 → 그 줄에서 본 카드 수 (맹약별 최댓값).
+   *  banObs 와 다른 점: **불완전한 행도 여기엔 들어간다.** 5장 행이 화면 맨 아래에 오면 '준비 완료'
+   *  버튼이 6번째 열을 가려 완전한 관측이 못 되는데(acvision cut ③), 그렇다고 "이 줄을 봤다" 는 사실을
+   *  버리면 그 맹약 그룹이 화면에서 통째로 사라진다 (사용자 신고 2026-09-07 "시라쿠사 맹약 밴목록이
+   *  인식이 안됐네"). 그룹 목록·"확정/본 카드" 분모는 이 값을 쓰고, 조합 풀이는 banObs 만 쓴다. */
+  banSeen: Record<string, number>;
   /** 밴 기물 — 얼굴 매칭으로 확정한 chess 기본형 id → 누적 표. 프레임마다 마진을 표로 바꿔 더한다
    *  (마진 ≥ BAN_MARGIN_SURE 면 1표, 아니면 그 비율). 줄어들지 않는다 — resetAcRun 만 비운다. */
   banVotes: Record<string, number>;
@@ -74,7 +80,7 @@ export type AcRun = {
   at: number;
 };
 
-const EMPTY: AcRun = { stacks: {}, banObs: {}, banVotes: {}, bands: [], seats: 0, deployLeft: null, deploy9: false,
+const EMPTY: AcRun = { stacks: {}, banObs: {}, banSeen: {}, banVotes: {}, bands: [], seats: 0, deployLeft: null, deploy9: false,
   mode: null, hp: null, pieces: {}, screen: null, at: 0 };
 const KEY = "ta-ac-run";
 
@@ -119,6 +125,7 @@ function hydrate(): void {
     run = {
       stacks: numMap(d.stacks),
       banObs: d.banObs && typeof d.banObs === "object" ? d.banObs : {},
+      banSeen: numMap(d.banSeen),
       banVotes: numMap(d.banVotes),
       bands: Array.isArray(d.bands) ? d.bands.filter((b) => b && typeof b.seat === "number" && typeof b.band === "string") : [],
       seats: typeof d.seats === "number" ? d.seats : 0,
@@ -139,6 +146,7 @@ export function acRun(): AcRun { hydrate(); return run; }
 export type AcRunPatch = {
   stacks?: Record<string, number>;
   banObs?: Record<string, number[]>;
+  banSeen?: Record<string, number>;
   bans?: { id: string; margin: number }[];
   bands?: { seat: number; band: string; final?: boolean }[];
   seats?: number;
@@ -177,6 +185,12 @@ export function mergeAcRun(patch: AcRunPatch): boolean {
       if (grew) banObs[bd] = expand(cur);
     }
   }
+  // 본 맹약 줄 — 줄마다 **본 카드 수의 최댓값** (스크롤하며 덜 보였다 다 보였다 하므로)
+  let banSeen = run.banSeen;
+  if (patch.banSeen && Object.keys(patch.banSeen).length) {
+    banSeen = { ...run.banSeen };
+    for (const [bd, n] of Object.entries(patch.banSeen)) if (n > (banSeen[bd] ?? 0)) banSeen[bd] = n;
+  }
   // 얼굴 확정 밴 — 표 누적. 한 프레임에 같은 기물이 둘 이상 나오면(여러 맹약 행) 그중 큰 마진 하나만 센다
   let banVotes = run.banVotes;
   if (patch.bans?.length) {
@@ -209,11 +223,11 @@ export function mergeAcRun(patch: AcRunPatch): boolean {
     for (const p of new Set(patch.pieces.map((x) => x.id))) pieces[p] = (pieces[p] ?? 0) + 1;
   }
   const screen = patch.screen ?? run.screen;
-  const same = banObs === run.banObs && bands === run.bands && banVotes === run.banVotes && pieces === run.pieces
+  const same = banObs === run.banObs && banSeen === run.banSeen && bands === run.bands && banVotes === run.banVotes && pieces === run.pieces
     && seats === run.seats && deployLeft === run.deployLeft && deploy9 === run.deploy9 && mode === run.mode
     && hp === run.hp && screen === run.screen && sameNumMap(stacks, run.stacks);
   if (same) return false;                      // 값이 그대로면 리렌더를 만들지 않는다
-  run = { stacks, banObs, banVotes, bands, seats, deployLeft, deploy9, mode, hp, pieces, screen, at: Date.now() };
+  run = { stacks, banObs, banSeen, banVotes, bands, seats, deployLeft, deploy9, mode, hp, pieces, screen, at: Date.now() };
   persist();
   emit();
   return true;
