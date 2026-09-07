@@ -1849,6 +1849,13 @@ export default function AutochessGuide({ doc, onShowOperator }: {
               PRTS 시뮬레이션 박스 안에, 표시해줘") — 창을 띄우면 판을 가리고, 이 값은 판이 도는
               동안 계속 보면서 대조하는 자리다. */}
           <div className="ac-runbar-top">
+          {/* 박스 어디를 눌러도 밴 목록이 열린다 (사용자 지시 2026-09-07 "PRTS 시뮬레이션 어딜 눌러도
+              그냥 열려서 밴목록 다 볼 수 있도록 해 줘"). 줄 전체를 버튼으로 만들 수는 없어서(안에 버튼이
+              들어 있다) **투명한 클릭 판**을 뒤에 깔고, 글자는 클릭을 아래로 흘리고 버튼만 자기 클릭을
+              받는다 (CSS pointer-events). 접근성용 이름이 있는 진짜 버튼이라 키보드로도 열린다. */}
+          <button type="button" className="ac-runbar-hit"
+            aria-expanded={prtsView === "ban"} aria-label={t("현재 밴 목록")}
+            onClick={() => { setPrtsView((v) => (v === "ban" ? "" : "ban")); closeMenus(); }} />
           <span className="ac-runbar-dot" aria-hidden />
           <strong>{t("PRTS 시뮬레이션")}</strong>
           {/* 시뮬레이션 종류·독립/연합은 화면에서 파생된다 — 아직 못 가렸으면 아무 말도 안 한다 */}

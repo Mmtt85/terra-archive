@@ -21090,6 +21090,10 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
 /* 맹약 카드의 '밴 N명' — 이 맹약 후보가 깎였다는 뜻이라 경고 톤(.ac-warn)과 같은 자리, 붉은 색으로.
    (사용자 요청 2026-09-07 "밴당한 기물이 존재하는 맹약은 맹약 카드에서 일부 밴 기물 당했다고 표시") */
 .ac-banwarn { color: #e0323f; font-weight: 800; font-style: normal; }
+/* 밴이 있는 맹약은 카드째로 옅게 물들인다 (사용자 지시 2026-09-07 "해당 카드도 살짝 빨간색 계열의
+   백그라운드 컬러를 주자") — 목록을 훑을 때 뱃지보다 배경이 먼저 눈에 든다. */
+.ac-bondcard:has(.ac-banwarn) { background: color-mix(in srgb, #e0323f 7%, var(--white)); }
+.ac-bondcard:has(.ac-banwarn):hover { background: color-mix(in srgb, #e0323f 12%, var(--white)); }
 
 /* PRTS 읽은 값 보기 버튼 — 제목 줄의 PRTS 버튼 오른쪽에 붙는다 */
 .ac-prtsview .sb-count { margin-left: 5px; font-style: normal; font-size: 10.5px; opacity: 0.85; }
@@ -21097,8 +21101,13 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
 
 /* 시뮬레이션 종류 — 제목 줄 **오른쪽**에 (사용자 요청 2026-09-07 "난이도도 모달창 오른쪽 위에다가
    표시하게 해 줘"). 게임 로딩 화면의 큰 글씨와 좌상단 붉은 배지에서 읽은 값이다. */
+/* 창 제목 줄 뱃지 — **제목 바로 오른쪽**에 붙는다 (사용자 지적 2026-09-07 "맹약 상세모달 오른쪽위
+   X버튼 근처에 밴 뱃지가 이상한데 붙어있다"). .mw-title 이 flex:1 이라 그냥 두면 뱃지가 핀·닫기
+   버튼 옆까지 밀린다 — 뱃지가 있을 때만 제목을 내용 폭으로 줄이고(아래 :has 규칙) 뱃지가
+   margin-right:auto 로 나머지를 오른쪽으로 밀어 낸다. */
+.mw-chrome:has(.ac-modemark) .mw-title { flex: 0 1 auto; }
 .ac-modemark {
-  margin-left: auto; align-self: center;
+  margin-right: auto; align-self: center;
   padding: 2px 8px; border-radius: 999px;
   font-size: 11px; font-weight: 800; letter-spacing: -0.01em; white-space: nowrap;
   color: var(--white); background: #c8323c;
@@ -21119,7 +21128,19 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   background: color-mix(in srgb, var(--lime) 7%, var(--bg-soft));
   font-size: 12.5px;
 }
-.ac-runbar-top { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
+.ac-runbar-top { position: relative; display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
+/* 박스 전체 클릭 판 — 뒤에 깔린 투명 버튼 (사용자 지시 2026-09-07 "어딜 눌러도 그냥 열려서").
+   위·좌·우로 박스 패딩만큼 넓혀 여백을 눌러도 열리게 한다. */
+.ac-runbar-hit {
+  position: absolute; inset: -8px -12px 0; z-index: 0;
+  border: 0; background: none; padding: 0; cursor: pointer;
+}
+/* 글자·칩 묶음은 클릭을 아래(클릭 판)로 흘린다. 그 안의 진짜 버튼만 자기 클릭을 받는다. */
+.ac-runbar-top > strong,
+.ac-runbar-top > span { position: relative; z-index: 1; pointer-events: none; }
+.ac-runbar-top > span button,
+.ac-runbar-top > span a { pointer-events: auto; }
+.ac-runbar-top > button:not(.ac-runbar-hit) { position: relative; z-index: 1; }
 .ac-runbar > strong { font-weight: 800; }
 .ac-runbar-dot {
   width: 8px; height: 8px; border-radius: 50%; flex: none;
