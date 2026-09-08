@@ -66,9 +66,9 @@ public/ac/…                                ← 새로 생긴 아이콘만 받�
   대조해 갱신할지 판단한다 (모르면 그냥 두는 게 맞다 — 없는 숫자를 만들지 않는다).
 - `건너뜀: …(weight 0)` — 그 시즌에서 안 뽑히는 전장이다.
 
-## 3. 화면에 새 시즌 잇기 — **고칠 곳 4파일뿐**
+## 3. 화면에 새 시즌 잇기 — **고칠 곳 5파일뿐**
 
-나머지(메뉴 부메뉴 · `/autochess/<slug>` 라우트 · 사이트맵 · SEO 문구)는 전부
+나머지(메뉴 부메뉴 · `/autochess/<slug>` 라우트 · 사이트맵 · 시즌 페이지 SEO 문구)는 전부
 `app/data/autochess-seasons.json` 을 읽어 저절로 늘어난다. **손댈 곳은 여기뿐이다.**
 
 | 파일 | 고치는 것 |
@@ -77,8 +77,24 @@ public/ac/…                                ← 새로 생긴 아이콘만 받�
 | [app/autochess-ko.tsx](../../../app/autochess-ko.tsx) | `import s2 from "./data/autochess-s2.json"` 로 내리고, 새 시즌을 `import s3 from "./data/autochess.json"` 으로. `SEASON_DOCS` 에 `3: s3` 추가 |
 | [app/autochess-en.tsx](../../../app/autochess-en.tsx) | 같은 것, `.en.json` |
 | [app/autochess-ja.tsx](../../../app/autochess-ja.tsx) | 같은 것, `.ja.json` |
+| [app/seo.ts](../../../app/seo.ts) `TAB_SEO.autochess` | **기본 탭 `/autochess` 설명 3개 언어** — 시즌 번호와 수치가 손으로 박혀 있다 |
 
 ⚠ **최신 시즌 줄도 같이 고쳐야 한다** — 옛 최신본이 `-s<N>` 으로 내려가며 파일명이 바뀐다.
+
+⚠ **`app/seo.ts` 만 자동이 아니다.** 시즌 페이지(`/autochess/<slug>`)는
+[app/seo-autochess.ts](../../../app/seo-autochess.ts) 가 시즌 목록에서 찍어 내지만, 기본 탭
+설명은 사람이 쓴 글이라 `시즌2` · `맹약 23종(진영 8·특성 15)` · `오퍼레이터 121명` 같은 게
+그대로 남는다. 안 고치면 **새 시즌 페이지에 옛 시즌 설명이 붙는다.** 수치는 새로 센다:
+
+```bash
+python3 -c "
+import json; d=json.load(open('app/data/autochess.json'))
+print('맹약', len(d['bonds']), '(진영', sum(1 for b in d['bonds'] if b.get('nation')), '특성', sum(1 for b in d['bonds'] if not b.get('nation')), ')')
+print('오퍼레이터', sum(1 for c in d['chess'] if c['kind'] != 'DIY'))   # 자유 선택 슬롯(DIY) 제외
+print('리더 적', len(d['bosses']), '/ 특훈 적', len(d['enemyTypes']), '유형', sum(len(v) for v in d['enemyList'].values()), '종')
+print('장비', len(d['equips']), '/ 전략', len(d['bands']))
+"
+```
 
 ⚠ 시즌 데이터는 **정적 임포트로 둔다** (지연 로드로 바꾸지 말 것). `/autochess/s1` 은
 프리렌더된 정적 페이지라 지연 로드로 두면 **그 HTML에 최신 시즌 내용이 박혀 색인된다.**
@@ -110,6 +126,7 @@ npm run build          # 0 에러
 - [ ] 게임 정보 → 전투 맵에서 그 시즌 전장 수가 맞는가 (시즌1 7 · 시즌2 8), 전장을 누르면 지형이 그려지는가
 - [ ] 시즌을 오갔다 최신으로 돌아와도 편성 판·필터가 깨끗한가
 - [ ] 콘솔 오류 0
+- [ ] `/autochess` 기본 탭 소스의 `<meta name="description">` 이 **새 시즌** 을 말하는가 (§3 마지막 ⚠)
 
 ## 5. 마무리
 
