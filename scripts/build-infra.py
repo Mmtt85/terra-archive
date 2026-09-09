@@ -1200,12 +1200,17 @@ for o in operators:
                                    "perDormLevel": grants[sc["name"]] / P["DORM_LEVEL"] / sc["per"] * sc["amount"]})
     # 공사용 로봇 세트 결합 (미니멀리스트): 형제 스킬의 로봇 상한 × 소비 스킬 배율.
     # 로봇 수 = 전 시설 레벨 합(만렙 기지 = 정확히 64) — roboLevels로 엔진이 실제 레벨 합으로 재계산
+    # ⚠ 하위 tier까지 돌아야 한다. 미니멀리스트의 α("16대당 +5%")는 β와 달리 **노정예화**에
+    #   열리는데, 최종 단계만 결합하면 α는 본문의 "+5%"를 글자 그대로 든 채 roboLevels도 없이
+    #   남아 엔진이 레벨 합으로 재계산할 길이 없다 — 노정예 미니멀리스트가 20%가 아니라 5%로
+    #   계산돼 대체 오퍼 후보에서 밀려났다 (제보 2026-09-09).
     robo_caps = [sk["_roboCap"] for sk in skills if sk["_roboCap"]]
     for sk in skills:
-        if sk["_roboUse"] and robo_caps:
-            per, val = sk["_roboUse"]
-            sk["kind"], sk["value"] = "output", robo_caps[0] / per * val  # 64/8×5 = +40%
-            sk["roboLevels"] = {"cap": robo_caps[0], "per": per, "add": val}
+        for s in [sk, *sk.get("tiers", [])]:
+            if s["_roboUse"] and robo_caps:
+                per, val = s["_roboUse"]
+                s["kind"], s["value"] = "output", robo_caps[0] / per * val  # β 64/8×5 = +40%, α 64/16×5 = +20%
+                s["roboLevels"] = {"cap": robo_caps[0], "per": per, "add": val}
     for sk in skills:
         for s in [sk, *sk.get("tiers", [])]:  # 하위 tier의 임시 필드도 함께 정리
             for k in ("_stackGrant", "_stackCount", "_stackConv", "_roboCap", "_roboUse"):
