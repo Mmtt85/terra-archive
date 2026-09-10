@@ -34,7 +34,7 @@ export type SynergySetDef = {
   note?: string;
   anchor?: {                   // 세트를 여는 오라원 (별도 방에 앉는 오퍼 — 없으면 본체만)
     room: string;              // 앵커가 앉는 방 (CONTROL 등)
-    detect: "gateFaction" | "perProduct"; // 앵커 스킬 판별 평가기 (L0)
+    detect: "gateFaction" | "perProduct" | "globalAura"; // 앵커 스킬 판별 평가기 (L0)
   };
   bodies: {
     room: string;              // 본체가 앉는 방 종류
@@ -44,7 +44,8 @@ export type SynergySetDef = {
     min?: number | "gateCount";      // 세트 성립 최소 인원 (기본: roles 수 또는 count)
     requireRoomSkill?: boolean;      // 본체가 그 방 스킬을 가져야 하는가 (쉐라그는 머릿수라 false)
   };
-  target: { cell: "first" | "firstFree" | "byAnchorProduct" }; // bodies.room의 어느 칸에
+  // bodies.room의 어느 칸에 — spread는 한 칸에 몰지 않고 칸마다 하나씩 흩는다 (어비설)
+  target: { cell: "first" | "firstFree" | "byAnchorProduct" | "spread" };
 };
 
 export type Fixture = {

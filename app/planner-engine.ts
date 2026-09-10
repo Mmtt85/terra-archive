@@ -75,6 +75,13 @@ export type InfraSkill = {
   meetingLevel?: { per: number };   // "응접실 레벨 1당 추가 +N%" (비질·미틈, 만렙 3)
   trainingLevel?: { per: number };  // "훈련실 레벨 1당 +N%" (Вий, 만렙 3)
   roboLevels?: { cap: number; per: number; add: number }; // 공사용 로봇 = 전 시설 레벨 합(만렙 64) — floor(합/per)×add (미니멀리스트)
+  // 기지 전역 카운트형 오라 (글래디아 '무리 사냥' — 어비설 헌터스 특수 버프, 제보 2026-09-10).
+  // N = **room에 앉은 faction 총원(기지 전체)**, 그리고 그 진영원이 한 명이라도 앉은 방마다
+  // per×N (방당 상한 cap). 방별 인원수로 나누는 perScope "mfg"(피누스·플레임테일)와 다르다:
+  // 스카디·스펙터가 A제조소, 울피아누스가 B제조소면 A도 B도 +30%지 20%/10%가 아니다.
+  // 수치가 스킬 본문이 아니라 용어 사전(termDescriptionDict)에만 있어 파서가 못 읽는다 →
+  // rules.json skillOverrides가 얹어 준다.
+  globalAura?: { kind: string; room: string; faction: string; per: number; cap: number };
   basePartners?: string[];      // 기지 어디든(숙소 포함) 있으면 발동하는 동반 조건
   basePartnerBonus?: number | null; // 위 조건 충족 시 추가 효율 (언더플로우 +10)
   // 시설 집합 동반 조건 (외드레르 '자수성가', 2026-07-25): "이네스와 W가 **작업 시설**에 배치 시
@@ -838,6 +845,19 @@ export function aurasOf(controlTeam: InfraOp[], ctx: Ctx): AmbientAura[] {
       if (skill.recoverAura) {
         list.push({ kind: "drain_recover", aura: true, value: recoverAuraValue(skill, ctx.tokenPoints), rooms: RECOVER_SCOPE_ROOMS[skill.recoverAura.scope] ?? [] });
       }
+      // 기지 전역 카운트형 오라 (글래디아 '무리 사냥' → 어비설 헌터스 제조소 특수 버프).
+      // kind와 무관하게 따로 실어 준다 — 글래디아 스킬 자체는 컨디션 회복(morale)이라
+      // 아래 AURA_WEIGHT 관문에서 걸러진다. 방 게이트(그 진영원이 앉은 방에만)는
+      // ambientFor의 gateFaction이 그대로 처리하므로 값은 방마다 일률이면 된다.
+      if (skill.globalAura) {
+        const g = skill.globalAura;
+        let seated = 0;
+        for (const [id, room] of ctx.roomOf ?? []) {
+          const member = opById.get(id);
+          if (room === g.room && member && memberOf(member, g.faction)) seated += 1;
+        }
+        if (seated > 0) list.push({ kind: g.kind, value: Math.min(g.per * seated, g.cap), gateFaction: g.faction, gateCount: 1 });
+      }
       if (!(skill.kind in AURA_WEIGHT)) continue;
       if (skill.gateFaction || skill.belowThreshold != null) {
         list.push({ kind: skill.kind, value: skill.value, gateFaction: skill.gateFaction, gateCount: skill.gateCount ?? 1, belowThreshold: skill.belowThreshold });
@@ -1545,7 +1565,12 @@ export type FactionSets = Record<string, boolean>; // def.key → 이 후보안�
 const matchAnchorSkill = (detect: string, skill: InfraSkill): boolean =>
   detect === "gateFaction" ? Boolean(skill.gateFaction && skill.gateCount)
   : detect === "perProduct" ? Boolean(skill.kind in AURA_WEIGHT && skill.perFaction && skill.perProduct)
+  : detect === "globalAura" ? Boolean(skill.globalAura)
   : false;
+
+// 세트 본체를 고를 진영 — 앵커 스킬이 어느 필드로 진영을 지목하든 하나로 모은다
+const anchorFactionOf = (skill?: InfraSkill): string | null =>
+  skill?.gateFaction ?? skill?.perFaction ?? skill?.globalAura?.faction ?? null;
 
 // 로스터로 조립 가능한 시너지 세트 키 목록 — 육성 추천(planner-invest)이 후보별로 "완성 시
 // 새로 열릴 세트"만 좁혀 평가하도록(전체 optimize 대신 baseline 세트 + 신규 가용 세트만 buildPlan).
@@ -1566,7 +1591,7 @@ export function synergySetMembers(roster: InfraOp[]): Record<string, string[]> {
       const anchor = def.anchor;
       for (const op of roster) {
         const sk = op.skills.find((s) => s.room === anchor.room && matchAnchorSkill(anchor.detect, s));
-        if (sk) { ids.add(op.id); anchorFaction = anchorFaction ?? sk.gateFaction ?? sk.perFaction ?? null; }
+        if (sk) { ids.add(op.id); anchorFaction = anchorFaction ?? anchorFactionOf(sk); }
       }
     }
     if (def.bodies) {
@@ -1625,7 +1650,7 @@ function seedSynergySet(def: SynergySetDef, roster: InfraOp[], used: Set<string>
   // 본체 선발 — anchorFaction: 앵커 진영원(쉐라그는 머릿수라 방 스킬 불요), roles: kind 역할 슬롯
   const bodies: InfraOp[] = [];
   if (def.bodies.from === "anchorFaction") {
-    const faction = anchorSkill?.gateFaction ?? anchorSkill?.perFaction;
+    const faction = anchorFactionOf(anchorSkill);
     if (!faction) return;
     bodies.push(...roster
       .filter((op) => op.id !== anchorOp!.id && free(op) && factionsOf(op).includes(faction)
@@ -1649,12 +1674,29 @@ function seedSynergySet(def: SynergySetDef, roster: InfraOp[], used: Set<string>
   if (bodies.length < min) return;
   // 시드 + 예약 — 같은 조의 앞 순서 방이 시드를 채가거나 전수 감사(seedKeep)가 쓸어내지 않게
   const cells = LAYOUT.filter((c) => c.room === room);
-  const cell = def.target.cell === "firstFree" ? cells.find((c) => !(seeds[c.key]?.length))
-    : def.target.cell === "byAnchorProduct" ? cells.find((c) => c.product === product)
-    : cells[0];
-  if (!cell) return;
-  seeds[cell.key] = [...(seeds[cell.key] ?? []), ...bodies].slice(0, slotsFor(cell.key));
-  for (const op of seeds[cell.key]) reserved.set(op.id, cell.key);
+  // spread — 한 칸에 모으지 않고 **칸마다 하나씩** 흩는다 (어비설 헌터스 제조소 세트).
+  // 전역 카운트형 오라(globalAura)는 N = 그 방 종류에 앉은 진영원 **총원**인데 그 값이
+  // 진영원이 앉은 **모든** 방에 일률로 붙는다. 그래서 4명을 네 제조소에 하나씩 두면 네 방이
+  // 각각 +40%지만, 한 방에 몰면 그 방 하나만 +40%다 — 모으는 순간 4분의 1이 된다.
+  if (def.target.cell === "spread") {
+    // 매번 **가장 덜 찬 칸**을 고른다. 고정 순번(round-robin)으로 돌리면 다른 세트가 이미
+    // 시드를 넣어 둔 칸이 섞였을 때 한 방에 둘이 겹치고 빈 제조소가 남는다 — 흩는 의미가 없다.
+    for (const op of bodies) {
+      const cell = cells
+        .filter((c) => slotsFor(c.key) > (seeds[c.key]?.length ?? 0))
+        .sort((a, b) => (seeds[a.key]?.length ?? 0) - (seeds[b.key]?.length ?? 0))[0];
+      if (!cell) break;
+      seeds[cell.key] = [...(seeds[cell.key] ?? []), op];
+      reserved.set(op.id, cell.key);
+    }
+  } else {
+    const cell = def.target.cell === "firstFree" ? cells.find((c) => !(seeds[c.key]?.length))
+      : def.target.cell === "byAnchorProduct" ? cells.find((c) => c.product === product)
+      : cells[0];
+    if (!cell) return;
+    seeds[cell.key] = [...(seeds[cell.key] ?? []), ...bodies].slice(0, slotsFor(cell.key));
+    for (const op of seeds[cell.key]) reserved.set(op.id, cell.key);
+  }
   if (anchorOp && def.anchor) {
     const anchorCell = LAYOUT.find((c) => c.room === def.anchor!.room);
     if (anchorCell) {

@@ -478,6 +478,30 @@
   },
   "skillOverrides": {
     "_doc": "buffId → { patch: {필드 덮어쓰기}, note } — 파서가 새 문구를 오분류했을 때 정규식 패치 대신 여기에 교정 행을 추가한다. build-infra.py가 파싱 직후 적용. 파서가 정식 지원하게 되면 행을 지운다 (재생성 diff가 없으면 안전)",
+    "control_mp_aegir2[000]": {
+      "patch": {
+        "globalAura": {
+          "cap": 45,
+          "faction": "어비설 헌터스",
+          "kind": "ctrl_mfg",
+          "per": 5,
+          "room": "MANUFACTURE"
+        }
+      },
+      "reason": "글래디아 무리 사냥 α의 수치는 스킬 본문에 없고 용어 사전(gamedata_const.termDescriptionDict cc.c.abyssal2_1)에만 있어 파서가 못 읽는다. 원문: 제조소에 어비설 헌터스 1명 배치될 때마다 제어 센터가 어비설 헌터스 1명당 제조소에 5%의 생산력 제공, 제조소 1개에 최대 45%."
+    },
+    "control_mp_aegir2[010]": {
+      "patch": {
+        "globalAura": {
+          "cap": 90,
+          "faction": "어비설 헌터스",
+          "kind": "ctrl_mfg",
+          "per": 10,
+          "room": "MANUFACTURE"
+        }
+      },
+      "reason": "글래디아 무리 사냥 β의 수치는 스킬 본문에 없고 용어 사전(gamedata_const.termDescriptionDict cc.c.abyssal2_2)에만 있어 파서가 못 읽는다. 원문: 제조소에 어비설 헌터스 1명 배치될 때마다 제어 센터가 어비설 헌터스 1명당 제조소에 10%의 생산력 제공, 제조소 1개에 최대 90%."
+    },
     "trade_ord_closure[000]": {
       "patch": {
         "orderFix": 16.9
@@ -550,6 +574,27 @@
       "target": {
         "cell": "byAnchorProduct"
       }
+    },
+    {
+      "anchor": {
+        "detect": "globalAura",
+        "room": "CONTROL"
+      },
+      "badge": true,
+      "bodies": {
+        "count": 4,
+        "from": "anchorFaction",
+        "min": 2,
+        "requireRoomSkill": false,
+        "room": "MANUFACTURE"
+      },
+      "key": "abyssal",
+      "name": "어비설 헌터스 제조소 세트",
+      "note": "글래디아를 제어센터에 앉히면 제조소에 앉은 어비설 헌터스 1명당 어비설이 있는 모든 제조소에 +10%(2정)/+5%(그 아래). 4명을 네 제조소에 하나씩 흩으면 네 방이 각각 +40%지만 한 방에 모으면 그 방만 +40%라 target=spread다. 어비설 5인은 제조소 스킬이 아예 없어(글래디아 제어·스카디/스펙터/안드레아나 숙소·울피아누스 훈련실) 오라 말고는 방 기여가 0이므로 requireRoomSkill=false. 채택은 planScore 비교에 맡긴다.",
+      "shift": 0,
+      "target": {
+        "cell": "spread"
+      }
     }
   ],
   "tokens": [
@@ -561,5 +606,5 @@
     "주술 결정",
     "마물 요리"
   ],
-  "version": 23
+  "version": 25
 }

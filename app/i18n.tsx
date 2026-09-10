@@ -951,6 +951,7 @@ const D: Record<string, Pair> = {
   "쉐라그 무역소 세트": ["Kjerag trading set", "イェラグ貿易セット"],
   "피누스 실베스트리스 세트": ["Pinus Sylvestris set", "ピヌス・シルウェストリスセット"],
   "품질 수익 조합": ["quality-payout combo", "品質収益コンボ"],
+  "어비설 헌터스 제조소 세트": ["Abyssal Hunters factory set", "アビサルハンターズ製造所セット"],
   "제어센터 카드의 '+N 오라 가중 점수'는 %가 아니라 오라를 우선순위 가중치(제조소 ×10 > 무역소 ×2 > 인맥 ×0.6 > 단서 ×0.2)로 환산한 비교용 점수입니다. 일반 방 카드에 '(오라 ±N)'이 붙어 있으면 제어센터 오라 수신분이 포함된 것으로, 방 점수가 오퍼 스킬 합과 달라 보이는 이유입니다 — 방 상세의 '제어센터 오라 수신' 항목에서 내역을 확인할 수 있습니다.": [
     "The Control Center card's '+N weighted aura score' is not a % — it converts auras with the priority multipliers (Factory ×10 > Trading Post ×2 > HR ×0.6 > Clue ×0.2) into a comparison score. When a room card shows '(aura ±N)', received Control Center auras are included — that's why a room score can differ from the sum of operator skills. See 'Received Control Center auras' in the room details.",
     "制御中枢カードの「+N オーラ加重スコア」は%ではなく、オーラを優先度加重（製造所×10＞貿易所×2＞人脈×0.6＞手がかり×0.2）で換算した比較用スコアです。部屋カードに「(オーラ ±N)」が付いていれば制御中枢オーラの受信分が含まれており、部屋スコアがオペレータースキルの合計と違って見える理由です — 部屋詳細の「制御中枢オーラ受信」で内訳を確認できます。",
