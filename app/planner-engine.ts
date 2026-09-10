@@ -81,7 +81,10 @@ export type InfraSkill = {
   // 스카디·스펙터가 A제조소, 울피아누스가 B제조소면 A도 B도 +30%지 20%/10%가 아니다.
   // 수치가 스킬 본문이 아니라 용어 사전(termDescriptionDict)에만 있어 파서가 못 읽는다 →
   // rules.json skillOverrides가 얹어 준다.
-  globalAura?: { kind: string; room: string; faction: string; per: number; cap: number };
+  // term — 게임 용어의 확정 명단(TERMS[term].ops)이 있으면 **진영 태그보다 우선**한다.
+  // 어비설 헌터스는 진영 태그로는 스펙터 디 언체인드까지 6명이지만, 이 버프에 세어지는 건
+  // 용어에 적힌 5명뿐이다 (사용자 확인 2026-09-10: "언체인드는 안 오르는 거 맞다").
+  globalAura?: { kind: string; room: string; faction: string; per: number; cap: number; term?: string };
   basePartners?: string[];      // 기지 어디든(숙소 포함) 있으면 발동하는 동반 조건
   basePartnerBonus?: number | null; // 위 조건 충족 시 추가 효율 (언더플로우 +10)
   // 시설 집합 동반 조건 (외드레르 '자수성가', 2026-07-25): "이네스와 W가 **작업 시설**에 배치 시
@@ -827,7 +830,9 @@ export const AURA_TARGET: Record<string, string> = { MANUFACTURE: "ctrl_mfg", TR
 // 1명당 생산품별 가감 맵({exp:+10, gold:-10} 또는 {any:+5}), 방별 인원은 ambientFor가 센다.
 // rooms: drain_recover(제어센터 횡단 컨디션 회복 — 위셔델·총웨·무에나) 오라의 대상 방 집합.
 // 동종 최고 경쟁(ambientFor)이 아니라 endless 순소모 모델(roomMaxNetDrain)만 소비한다.
-export type AmbientAura = { kind: string; value: number; gateFaction?: string | null; gateCount?: number | null; belowThreshold?: number | null; perFaction?: string | null; perProduct?: Record<string, number> | null; cap?: number; capPer?: number; rooms?: string[]; aura?: boolean };
+export type AmbientAura = { kind: string; value: number; gateFaction?: string | null;
+  gateOps?: string[];  // 진영 태그가 아니라 **확정 명단**으로 거는 방 게이트 (어비설 헌터스)
+  gateCount?: number | null; belowThreshold?: number | null; perFaction?: string | null; perProduct?: Record<string, number> | null; cap?: number; capPer?: number; rooms?: string[]; aura?: boolean };
 
 // 방 기본 속도 — 임계값 조건("N% 미만인 경우, 기본 속도 포함") 판정용 (사무실 기본 누적 5%)
 export const ROOM_BASE_RATE: Record<string, number> = C.ROOM_BASE_RATE;
@@ -851,12 +856,16 @@ export function aurasOf(controlTeam: InfraOp[], ctx: Ctx): AmbientAura[] {
       // ambientFor의 gateFaction이 그대로 처리하므로 값은 방마다 일률이면 된다.
       if (skill.globalAura) {
         const g = skill.globalAura;
+        const named = g.term ? TERMS[g.term]?.ops : undefined; // 용어의 확정 명단이 진영 태그를 이긴다
+        const counts = (id: string) => (named ? named.includes(id) : memberOf(opById.get(id)!, g.faction));
         let seated = 0;
         for (const [id, room] of ctx.roomOf ?? []) {
-          const member = opById.get(id);
-          if (room === g.room && member && memberOf(member, g.faction)) seated += 1;
+          if (room === g.room && opById.has(id) && counts(id)) seated += 1;
         }
-        if (seated > 0) list.push({ kind: g.kind, value: Math.min(g.per * seated, g.cap), gateFaction: g.faction, gateCount: 1 });
+        if (seated > 0) {
+          list.push({ kind: g.kind, value: Math.min(g.per * seated, g.cap),
+            ...(named ? { gateOps: named } : { gateFaction: g.faction, gateCount: 1 }) });
+        }
       }
       if (!(skill.kind in AURA_WEIGHT)) continue;
       if (skill.gateFaction || skill.belowThreshold != null) {
@@ -898,6 +907,7 @@ export function ambientFor(room: string, team: InfraOp[], ambient?: AmbientAura[
       if (members > 0) productAdd += ((product ? aura.perProduct[product] : undefined) ?? aura.perProduct.any ?? 0) * members;
       continue;
     }
+    if (aura.gateOps && !team.some((member) => aura.gateOps!.includes(member.id))) continue;
     if (aura.gateFaction && team.filter((member) => factionsOf(member).includes(aura.gateFaction!)).length < (aura.gateCount ?? 1)) continue;
     if (aura.belowThreshold != null && (ROOM_BASE_RATE[room] ?? 0) + roomEfficiency >= aura.belowThreshold) continue;
     if (aura.value < 0) neg += aura.value;
@@ -1571,6 +1581,13 @@ const matchAnchorSkill = (detect: string, skill: InfraSkill): boolean =>
 // 세트 본체를 고를 진영 — 앵커 스킬이 어느 필드로 진영을 지목하든 하나로 모은다
 const anchorFactionOf = (skill?: InfraSkill): string | null =>
   skill?.gateFaction ?? skill?.perFaction ?? skill?.globalAura?.faction ?? null;
+// 본체 자격 판정 — 앵커가 게임 용어로 명단을 지목하면 그 명단이 진영 태그보다 우선한다
+const anchorMemberOf = (skill: InfraSkill | undefined, op: InfraOp): boolean => {
+  const named = skill?.globalAura?.term ? TERMS[skill.globalAura.term]?.ops : undefined;
+  if (named) return named.includes(op.id);
+  const faction = anchorFactionOf(skill);
+  return Boolean(faction && factionsOf(op).includes(faction));
+};
 
 // 로스터로 조립 가능한 시너지 세트 키 목록 — 육성 추천(planner-invest)이 후보별로 "완성 시
 // 새로 열릴 세트"만 좁혀 평가하도록(전체 optimize 대신 baseline 세트 + 신규 가용 세트만 buildPlan).
@@ -1587,16 +1604,17 @@ export function synergySetMembers(roster: InfraOp[]): Record<string, string[]> {
     if (!synergySetAvailable(def, roster)) continue;
     const ids = new Set<string>();
     let anchorFaction: string | null = null;
+    let anchorSkill: InfraSkill | undefined;
     if (def.anchor) {
       const anchor = def.anchor;
       for (const op of roster) {
         const sk = op.skills.find((s) => s.room === anchor.room && matchAnchorSkill(anchor.detect, s));
-        if (sk) { ids.add(op.id); anchorFaction = anchorFaction ?? anchorFactionOf(sk); }
+        if (sk) { ids.add(op.id); anchorSkill = anchorSkill ?? sk; anchorFaction = anchorFaction ?? anchorFactionOf(sk); }
       }
     }
     if (def.bodies) {
-      if (def.bodies.from === "anchorFaction" && anchorFaction) {
-        for (const op of roster) if (factionsOf(op).includes(anchorFaction)) ids.add(op.id);
+      if (def.bodies.from === "anchorFaction" && (anchorFaction || anchorSkill)) {
+        for (const op of roster) if (anchorMemberOf(anchorSkill, op)) ids.add(op.id);
       }
       for (const kind of def.bodies.roles ?? []) {
         for (const op of roster) if (op.skills.some((s) => s.room === def.bodies.room && s.kind === kind)) ids.add(op.id);
@@ -1653,7 +1671,7 @@ function seedSynergySet(def: SynergySetDef, roster: InfraOp[], used: Set<string>
     const faction = anchorFactionOf(anchorSkill);
     if (!faction) return;
     bodies.push(...roster
-      .filter((op) => op.id !== anchorOp!.id && free(op) && factionsOf(op).includes(faction)
+      .filter((op) => op.id !== anchorOp!.id && free(op) && anchorMemberOf(anchorSkill, op)
         && (def.bodies.requireRoomSkill === false || op.skills.some((sk) => skillApplies(sk, room, product))))
       .sort((a, b) => opSolo(b, room, 3, soloCtx) - opSolo(a, room, 3, soloCtx))
       .slice(0, resolve(def.bodies.count, 3)));

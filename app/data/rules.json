@@ -485,7 +485,8 @@
           "faction": "어비설 헌터스",
           "kind": "ctrl_mfg",
           "per": 5,
-          "room": "MANUFACTURE"
+          "room": "MANUFACTURE",
+          "term": "cc.g.abyssal"
         }
       },
       "reason": "글래디아 무리 사냥 α의 수치는 스킬 본문에 없고 용어 사전(gamedata_const.termDescriptionDict cc.c.abyssal2_1)에만 있어 파서가 못 읽는다. 원문: 제조소에 어비설 헌터스 1명 배치될 때마다 제어 센터가 어비설 헌터스 1명당 제조소에 5%의 생산력 제공, 제조소 1개에 최대 45%."
@@ -497,7 +498,8 @@
           "faction": "어비설 헌터스",
           "kind": "ctrl_mfg",
           "per": 10,
-          "room": "MANUFACTURE"
+          "room": "MANUFACTURE",
+          "term": "cc.g.abyssal"
         }
       },
       "reason": "글래디아 무리 사냥 β의 수치는 스킬 본문에 없고 용어 사전(gamedata_const.termDescriptionDict cc.c.abyssal2_2)에만 있어 파서가 못 읽는다. 원문: 제조소에 어비설 헌터스 1명 배치될 때마다 제어 센터가 어비설 헌터스 1명당 제조소에 10%의 생산력 제공, 제조소 1개에 최대 90%."
@@ -606,5 +608,5 @@
     "주술 결정",
     "마물 요리"
   ],
-  "version": 25
+  "version": 26
 }
