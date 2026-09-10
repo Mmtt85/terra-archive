@@ -1659,6 +1659,45 @@ recruit, R2 쪽은 `avatars/<id>.webp` 1개와 `{skills,profiles,voice,skins}/{k
 하고, 실장 오퍼의 시너지 판정이 미실장 오퍼 이름을 키로 쓰고 있기 때문이다
 (`build-infra.py`의 파트너 탐지). 이것도 `data-refresh.yml`이 자동으로 처리한다.
 
+## 7.5 크롤러·봇 대응 (Cloudflare)
+
+**Cloudflare 계정에만 있고 리포엔 흔적이 없던 설정이 있다** — 2026-09-06 조사를 두 번 하게
+만든 원인이라 여기 적어 둔다. 코드만 봐서는 알 수 없는 것들이다.
+
+**`sg-observe` 커스텀 룰** (Security → WAF → Custom rules):
+`ip.src.country eq "SG"` → Action **Skip**, `All remaining custom rules`만 체크.
+무료 플랜에 Log 액션이 없어서 **Skip을 로거로 쓴 것**이다 — 아무것도 막지 않고 Security →
+Events에만 남는다. ⚠ **차단 룰을 새로 만들면 이 룰이 위에 있는 한 무시된다.** Skip 액션은
+rate limiting·Super Bot Fight Mode·Managed Rules를 통째로 건너뛴다. 그때 지우거나 아래로 내릴 것.
+
+**싱가포르발 트래픽의 정체** (2026-09-06 확인, 09-10 재확인 시 계속 증가):
+
+| 정체 | 인프라 | 특징 |
+|---|---|---|
+| PetalBot (화웨이 검색) | Huawei Cloud `114.119.x` | 요청 수 1위. UA에 이름 명시 |
+| Bytespider (ByteDance) | AWS SG | UA에 이름 명시 — 학습용이라 robots.txt에서 차단 |
+| DuckAssistBot (DuckDuckGo AI) | Azure | UA에 이름 명시 |
+| **미상** | Tencent Cloud | **선언 없음**, Chrome 109 위장 UA, direct, JS 렌더링 |
+| 실사용자 | Starhub (SG 통신사) | 진짜 사람도 있다 — **싱가포르 통째 차단 금지** |
+
+**집계 착시 주의.** Web Analytics는 **JS를 실행하는 브라우저만** 센다
+(비콘은 `app/layout.tsx`에서 `!navigator.webdriver`일 때만 붙는다). 그래서 `Exclude bots = Yes`를
+켜고도 남는 싱가포르 숫자는 대개 **위장 UA를 쓰는 미상 하나**다 — 이름을 밝히는 크롤러는
+Cloudflare가 봇으로 분류해 이미 걸러낸 뒤다. 건별 확인은 Security → Events
+(무료는 24시간 보관 + **Sampled logs**라 전수가 아니다).
+
+**막을 이유는 생각보다 약하다.** 정적 Pages + R2라 비용이 사실상 0이다 — Pages 대역폭은
+무제한이고, R2는 egress가 무료이며 과금되는 Class B(읽기)는 월 1,000만 건이 무료인데 전수
+크롤 1회가 15,300파일이다. 유입도 PetalBot·Bytespider 모두 0건. **실질 피해는 분석 숫자가
+더러워지는 것과 데이터 JSON이 통째로 복제되는 것 둘뿐이다.**
+
+**robots.txt 방침** (사용자 확정 2026-09-10): 학습용만 차단, 검색·인용은 허용.
+목록과 이유는 `public/robots.txt`의 주석에 있다. 대시보드 사이드바의 **AI Crawl Control**로
+크롤러별 허용/차단을 클릭으로도 할 수 있는데, 손으로 짠 robots.txt보다 정확하다 — 다만
+어느 쪽이든 **규칙을 지키는 봇에게만** 통하므로 위 '미상'은 WAF로만 막힌다.
+
+**사이트맵 7,980 URL 중 enemies가 58%**라, 크롤러가 적 도감에 몰리는 건 표적이 아니라 부피 탓이다.
+
 ## 8. 디자인 시스템
 
 - 팔레트: `--ink #131719 / --paper #f1f0eb / --lime #dfff00` 계열, 각 오퍼 `accent` 색.

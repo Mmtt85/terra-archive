@@ -1,4 +1,54 @@
+# 테라 아카이브 robots.txt
+#
+# 방침 (사용자 확정 2026-09-10): **학습용 크롤러만 막고, 검색·인용 크롤러는 열어 둔다.**
+# AI 검색이 사이트를 인용해 주는 유입은 남기고, 모델 학습에 통째로 실려 가는 것만 거절한다.
+#
+# ⚠ robots.txt는 **규칙을 지키는 봇에게만** 통한다. 이름을 숨기고 UA를 위장하는 크롤러
+#   (텐센트 클라우드발 미상 — docs/PROJECT-GUIDE.md §7.5)는 이 파일로 막히지 않는다.
+#   그쪽은 Cloudflare WAF 몫이고, 손대기 전에 `sg-observe` Skip 룰부터 치워야 한다.
+
 User-agent: *
+Allow: /
+Disallow: /admin
+
+# ── 학습용 — 차단 ────────────────────────────────────────────────────────────
+# Google-Extended·Applebot-Extended는 크롤러가 아니라 "학습에 쓰지 말라"는 표식이라
+# 막아도 구글 검색·Siri 색인에는 영향이 없다 (검색용 Googlebot·Applebot은 아래에서 허용).
+# ClaudeBot도 학습용이고, 인용은 Claude-User·Claude-SearchBot이 따로 받아 간다.
+User-agent: GPTBot
+User-agent: ClaudeBot
+User-agent: anthropic-ai
+User-agent: Claude-Web
+User-agent: CCBot
+User-agent: Google-Extended
+User-agent: Applebot-Extended
+User-agent: Bytespider
+User-agent: meta-externalagent
+User-agent: FacebookBot
+User-agent: Omgilibot
+User-agent: Omgili
+User-agent: Diffbot
+User-agent: AI2Bot
+User-agent: ImagesiftBot
+Disallow: /
+
+# ── 검색·인용 — 허용 ─────────────────────────────────────────────────────────
+# 굳이 이름을 적어 두는 건 위 차단 목록과 헷갈리지 않기 위해서다 (`*` 규칙으로도 허용된다).
+# OAI-SearchBot·PerplexityBot·Claude-SearchBot은 색인용이고, ChatGPT-User·Perplexity-User·
+# Claude-User는 사람이 그 자리에서 링크를 열 때 받아 가는 것이라 둘 다 유입으로 돌아온다.
+User-agent: Googlebot
+User-agent: Bingbot
+User-agent: Yeti
+User-agent: Daumoa
+User-agent: Applebot
+User-agent: PetalBot
+User-agent: DuckAssistBot
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: Claude-SearchBot
+User-agent: Claude-User
 Allow: /
 Disallow: /admin
 
