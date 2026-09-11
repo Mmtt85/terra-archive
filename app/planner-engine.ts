@@ -69,6 +69,11 @@ export type InfraSkill = {
   // 진영명(링 '멈추지 않는 술잔' = 쉐이) · "*" 방 전원(와이후 '팀워크') · "@self" 본인만(무츠미)
   selfDrainNegate?: string | null;
   goldLine?: { per: number; add: number; base: number } | null; // 순금 라인 N개당 +add% (투예·파죰카) — 활성 레이아웃 순금방 수로 재계산
+  // 제조소에서 가공 중인 **항목 종류 1개당** 추가 효율 (쿼츠 '정확한 스케줄': 오더 수주 효율
+  // +30%에 더해 항목 1종당 +2%). 본문 뒷절이라 파서가 놓쳤다 → rules.json skillOverrides.
+  // 활성 레이아웃의 제조소 품목 종류 수로 재계산한다 (goldLine과 같은 규격 — 사이트 모델은
+  // 순금·작전기록 2종이라 243·252 기본 배치에서 +4%, 전 제조소가 한 품목이면 +2%).
+  factoryProducts?: { per: number };
   // 시설 레벨 연동 단위값 (전력·레벨 시스템 2026-07-24) — baked value는 만렙 기준,
   // 엔진이 실제 레벨과의 차이만큼 보정한다: value + per×(현재 − 만렙), 하한 0
   dormLevels?: { per: number };     // "모든 숙소의 레벨 1당 +N%" (아르케토·틴맨·나란투야·필라에, 만렙 합 20)
@@ -512,15 +517,19 @@ export function powerBudget(levels?: Levels | null): { provide: number; consume:
 const dormLevelSum = () => LAYOUT.filter((c) => c.room === "DORMITORY").reduce((s, c) => s + levelOf(c.key), 0);
 const dormLevelMax = () => Math.max(1, ...LAYOUT.filter((c) => c.room === "DORMITORY").map((c) => levelOf(c.key)));
 const totalLevelSum = () => LAYOUT.reduce((s, c) => s + levelOf(c.key), 0);
+// 활성 레이아웃에서 제조소가 가공 중인 품목 **종류 수** (쿼츠 '정확한 스케줄')
+const factoryProductKinds = () =>
+  new Set(LAYOUT.filter((c) => c.room === "MANUFACTURE" && c.product).map((c) => c.product)).size;
 // 레벨 연동 스킬 값 보정 — baked(만렙) 값에 실제 레벨과의 차이만큼 가감 (하한 0).
 // 로봇(미니멀리스트)은 전 시설 레벨 합으로 전량 재계산 (만렙 합 64 = baked 40과 일치)
 function levelAdjusted(skill: InfraSkill): number {
-  if (!skill.dormLevels && !skill.meetingLevel && !skill.trainingLevel && !skill.roboLevels) return skill.value;
+  if (!skill.dormLevels && !skill.meetingLevel && !skill.trainingLevel && !skill.roboLevels && !skill.factoryProducts) return skill.value;
   let v = skill.value;
   if (skill.dormLevels) v += skill.dormLevels.per * (dormLevelSum() - 4 * maxLevelOf("DORMITORY"));
   if (skill.meetingLevel) v += skill.meetingLevel.per * (levelOf("MEETING") - maxLevelOf("MEETING"));
   if (skill.trainingLevel) v += skill.trainingLevel.per * (levelOf("TRAINING") - maxLevelOf("TRAINING"));
   if (skill.roboLevels) v = Math.floor(Math.min(skill.roboLevels.cap, totalLevelSum()) / skill.roboLevels.per) * skill.roboLevels.add;
+  if (skill.factoryProducts) v += skill.factoryProducts.per * factoryProductKinds();
   return Math.max(0, v);
 }
 // 숙소 레벨당 토큰 생성(센시·아이리스·체르니 — 숙소 고정 요원은 최고 레벨 숙소에 앉는다 가정)
