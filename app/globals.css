@@ -6875,6 +6875,27 @@ legend {
   white-space: nowrap;
 }
 .toast-undo:hover { background: var(--lime); color: var(--ink); }
+
+/* 방 상세 창 안 되돌리기 (사용자 요청 2026-09-11) — 헤더의 '자동편성 시점으로'와 짝이라
+   같은 ↩ 아이콘을 쓰고, 시설 이름 옆에서 눈에 띄되 레벨 선택을 밀어내지 않을 만큼만 작게.
+   ⚠ 배경에 --chip 을 쓰지 않는다 — 그건 이미지 뒤에 까는 어두운 판이라 라이트에서 잉크색과
+   같아져 글씨가 묻힌다. 표면은 --bg-faint, 글자는 --ink. */
+.room-revert {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 10px;
+  padding: 4px 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg-faint);
+  color: var(--ink);
+  font-size: 11.5px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.room-revert:hover { border-color: var(--ink); }
 @keyframes toastIn {
   from {
     opacity: 0;

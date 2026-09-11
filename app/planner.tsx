@@ -122,6 +122,17 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   const [roomPins, setRoomPinsState] = useState<Record<string, string[]>>({});
   const [activeShift, setActiveShift] = useState(0);
   const [openRoom, setOpenRoom] = useState<string | null>(null);
+  // 방 상세를 연 뒤 창 안에서 바꾼 편성을 그 자리에서 되돌리기 위한 기준 (사용자 요청 2026-09-11).
+  // 첫 변경 때 '바꾸기 직전' 상태를 잡아 두고, 창을 닫거나 다른 방을 열면 버린다.
+  // ⚠ 토스트의 '실행 취소'로는 부족하다 — 공용 창(ModalWindow)은 z 200에서 시작하는데
+  //   토스트도 z 200이라, 창이 열려 있는 동안 토스트가 창에 가려 보이지 않는다.
+  //   그래서 창을 닫는 순간에야 잠깐 스쳐 보였다 ("괴리감이 있음").
+  const [roomEditBase, setRoomEditBase] = useState<{ plan: Plan; dormPins: Record<string, string[]>; roomPins: Record<string, string[]> } | null>(null);
+  // 방 상세 열기·닫기는 항상 이 함수로 — 방이 바뀌면 창 안 되돌리기 기준도 함께 버린다
+  const openRoomAt = (key: string | null) => {
+    if (key !== openRoom) setRoomEditBase(null);
+    setOpenRoom(key);
+  };
   const [showFlows, setShowFlows] = useState(false);
   const [showRoster, setShowRoster] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
@@ -144,7 +155,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       else if (h === "#roster-import") setRosterMode("import");
       setShowHelp(h === "#help");
       setShowFlows(h === "#flows");
-      setOpenRoom(h.startsWith("#room-") && LAYOUT.some((cell) => cell.key === h.slice(6)) ? h.slice(6) : null);
+      openRoomAt(h.startsWith("#room-") && LAYOUT.some((cell) => cell.key === h.slice(6)) ? h.slice(6) : null);
     },
   );
   const [moreOpen, setMoreOpen] = useState(false); // '그 외' 드롭다운(이미지·파일·도움말)
@@ -393,7 +404,11 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     // 뺀 사람이 있을 때만 실행 취소를 띄운다 (사용자 요청 2026-09-11: "삭제하는 순간 곧바로
     // 적용돼버리면 좀 그럼"). 순수 추가는 다시 빼면 그만이라 토스트가 시끄럽기만 하고,
     // 교체(빼고 넣기)는 뺀 쪽이 있으니 여기 걸린다.
-    if (removed.length) {
+    if (openRoom) {
+      // 창이 열려 있으면 토스트가 창에 가려 안 보인다 — 되돌리기는 창 안 버튼이 맡는다.
+      // 창 안에서는 **뺀 것만이 아니라 어떤 편성 변경이든** 한 번에 되돌릴 수 있어야 한다.
+      setRoomEditBase((prev) => prev ?? undoTo);
+    } else if (removed.length) {
       const names = removed.map((id) => effectiveOpById.get(id)?.name ?? opById.get(id)?.name ?? id).join(", ");
       showToast(t("편성에서 뺐습니다 — {names}", { names }), () => {
         setPlan(undoTo.plan);
@@ -439,7 +454,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       cancelLabel: t("나중에"),
     }).then((go) => {
       if (!go) return;
-      setOpenRoom(null); // 재편성하면 방 내용이 통째로 바뀐다 — 보던 모달을 닫는다 (사용자 요청 2026-08-19)
+      openRoomAt(null); // 재편성하면 방 내용이 통째로 바뀐다 — 보던 모달을 닫는다 (사용자 요청 2026-08-19)
       void runOptimize(ownedIds, eliteById, priority, levelById, rpins);
     });
   };
@@ -511,6 +526,21 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     return n;
   }, [plan, basePlan]);
 
+  // 방 상세 창 안 되돌리기 — 이 창을 연 뒤 바꾼 편성만 되돌린다 (헤더의 '자동편성 시점으로'와
+  // 같은 장치를 창 하나 범위로 좁힌 것). 창을 열고 바로 확인할 수 있는 범위라 확인 대화상자는
+  // 두지 않는다 — 헤더 쪽은 기지 전체를 되돌리므로 확인을 받는다.
+  const revertRoomEdits = () => {
+    if (!roomEditBase) return;
+    const { plan: was, dormPins: wasDorm, roomPins: wasRoom } = roomEditBase;
+    setPlan(was);
+    setDormPinsState(wasDorm);
+    setRoomPinsState(wasRoom);
+    setRoomEditBase(null);
+    persist(ownedIds, was, eliteById, levelById, priority, investRecs, investHidden, layout, levels, customRooms, customProducts, wasDorm, wasRoom);
+    setDirty(true);
+    showToast(t("이 창에서 바꾼 편성을 되돌렸습니다"));
+  };
+
   // 자동편성 돌린 시점으로 되돌리기 — 손으로 바꾼 것을 버리므로 확인을 받는다.
   // 임시 적용(육성 추천) 세션 중에는 숨긴다 — 그쪽은 자기 '되돌리기'가 따로 있다.
   const revertToAutoPlan = async () => {
@@ -523,7 +553,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     if (!ok) return;
     setPlan(basePlan);
     setActiveShift(0);
-    setOpenRoom(null);
+    openRoomAt(null);
     persist(ownedIds, basePlan, eliteById, levelById, priority, investRecs, investHidden, layout, levels, customRooms, customProducts, dormPins, roomPins);
     setDirty(true);
     showToast(t("자동편성 직후 편성으로 되돌렸습니다"));
@@ -727,7 +757,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     setDormPinsState(restoreDormPins(b.dormPins));
     setRoomPinsState(restoreRoomPins(b.roomPins));
     setShowInvest(false);
-    setOpenRoom(null);
+    openRoomAt(null);
     setActiveShift(0);
     endTemp(false); // 임시 적용 세션은 프리셋 간 이월하지 않는다
     persist(ownedIds, restored, eliteById, levelById, priority, b.invest, new Set(b.investHidden), next, b.levels, customRooms, customProducts, restoreDormPins(b.dormPins), restoreRoomPins(b.roomPins));
@@ -786,7 +816,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     const sanitized = plan ? sanitizePlan(plan) : null;
     setPlan(sanitized);
     setBasePlan(null); // 칸 구성이 바뀌면 셀 키가 재번호돼 옛 스냅샷은 맞지 않는다
-    setOpenRoom(null);
+    openRoomAt(null);
     // 칸 종류를 바꾸면 셀 키가 재번호된다 — 사라진 칸의 생산방 고정은 편성 드랍과 함께 정리
     const validPins = restoreRoomPins(roomPins);
     setRoomPinsState(validPins);
@@ -1580,7 +1610,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
             return (
               // 숙소도 클릭 → 상세 모달 (사용자 요청 2026-07-24) — 레벨 조절(전력·숙소 연동 스킬)용.
               // 편성은 시너지 고정 전용이라 모달에서 읽기 전용.
-              <button key={cell.key} type="button" className={`ship-room dorm-room pos-${cell.key.toLowerCase()}`} onClick={() => setOpenRoom(cell.key)} style={{ "--room-accent": ROOM_ACCENT[cell.room] } as React.CSSProperties}>
+              <button key={cell.key} type="button" className={`ship-room dorm-room pos-${cell.key.toLowerCase()}`} onClick={() => openRoomAt(cell.key)} style={{ "--room-accent": ROOM_ACCENT[cell.room] } as React.CSSProperties}>
                 <div className="ship-room-head"><b>{t(cell.label)}<em className={`room-lv${levelOf(cell.key) < maxLevelOf(cell.room) ? "" : " max"}`}>Lv{levelOf(cell.key)}</em></b><span>{locked.length ? t("고정 {n}명", { n: locked.length }) : t("휴식")}</span></div>
                 {/* 얼굴은 **클릭 대상이 아니다** — 다른 시설 카드와 동일하게 카드 전체가 방 상세를
                     여는 버튼이고 썸네일은 표시 전용 (사용자 요청 2026-07-28). 편성 안내 문구도
@@ -1608,7 +1638,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           const raiseBefore = tempApplied.size > 0 && tempBasePlan && cell.room !== "CONTROL" && !PARK_KEYS.includes(cell.key)
             ? Math.round(scoreRoomIn(tempBasePlan, committedOpById, cell.key, activeShift)) : null;
           return (
-            <button key={cell.key} type="button" className={`ship-room ${cell.slot != null ? `pos-slot-${cell.slot}` : `pos-${cell.key.toLowerCase()}`}`} onClick={() => setOpenRoom(cell.key)} style={{ "--room-accent": ROOM_ACCENT[cell.room] } as React.CSSProperties}>
+            <button key={cell.key} type="button" className={`ship-room ${cell.slot != null ? `pos-slot-${cell.slot}` : `pos-${cell.key.toLowerCase()}`}`} onClick={() => openRoomAt(cell.key)} style={{ "--room-accent": ROOM_ACCENT[cell.room] } as React.CSSProperties}>
               <div className="ship-room-head">
                 <b>
                   {/* 사용자 지정 제조소: 제목의 품목 자리에 2버튼 그룹 — 제조/무역/발전 토글과 동일한 모양
@@ -1755,8 +1785,10 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           roster={roster}
           opMap={effectiveOpById}
           initialShift={activeShift}
-          onClose={() => setOpenRoom(null)}
-          onOpenRoom={(key, shift) => { setActiveShift(shift); setOpenRoom(key); }}
+          onClose={() => openRoomAt(null)}
+          canRevert={!!roomEditBase}
+          onRevert={revertRoomEdits}
+          onOpenRoom={(key, shift) => { setActiveShift(shift); openRoomAt(key); }}
           onShowOperator={onShowOperator}
           onSetLevel={setRoomLevel}
           onUpdateTeam={openCell.room === "DORMITORY" ? (key, _shift, ids) => updateDorm(key, ids) : updateWorkTeam}
@@ -1779,7 +1811,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
             showToast(t("{name} 정예화를 올리고 자동편성을 다시 돌립니다", { name: opById.get(id)?.name ?? id }));
             void runOptimize(ownedIds, next, priority, levelById);
           }}
-          onOpenRoster={() => { setOpenRoom(null); startTransition(() => { setRosterMode("direct"); setShowRoster(true); }); }}
+          onOpenRoster={() => { openRoomAt(null); startTransition(() => { setRosterMode("direct"); setShowRoster(true); }); }}
           tempIds={new Set(tempApplied.keys())}
           onRevertTempOne={(id) => { void revertTempOne(id); }}
         />
@@ -2096,7 +2128,7 @@ function TermPopup({ termKey, presentIds, onNavigate, onShowOperator, onClose }:
   );
 }
 
-function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClose, onOpenRoom, onShowOperator, onUpdateTeam, eliteById, onSetElite, onUnlockElite, blocked, unowned, onOpenRoster, tempIds, onRevertTempOne, onSetLevel, pins, onTogglePin }: { cell: { key: string; room: string; label: string; product?: string }; plan: Plan; allAssigned: Set<string>; roster: InfraOp[]; opMap: Map<string, InfraOp>; initialShift: number; onClose: () => void; onOpenRoom?: (key: string, shift: number) => void; onShowOperator?: (id: string) => void; onUpdateTeam?: (cellKey: string, shiftIdx: number, ids: string[]) => void; eliteById: Map<string, Elite>; onSetElite: (id: string, elite: Elite) => void; /** 잠긴 스킬 열기 — 정예화를 올리고 자동편성까지 다시 돌린다 */ onUnlockElite?: (id: string, elite: Elite) => void; /** 보유했지만 이 방 스킬이 정예화·레벨로 잠긴 오퍼 → 필요 조건 */ blocked: Map<string, string>; /** 이 방 스킬이 있는데 아직 보유로 안 켠 오퍼 */ unowned: InfraOp[]; onOpenRoster?: () => void; tempIds: Set<string>; onRevertTempOne: (opId: string) => void; onSetLevel?: (key: string, lv: number) => void; pins?: string[]; onTogglePin?: (opId: string) => void }) {
+function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClose, canRevert, onRevert, onOpenRoom, onShowOperator, onUpdateTeam, eliteById, onSetElite, onUnlockElite, blocked, unowned, onOpenRoster, tempIds, onRevertTempOne, onSetLevel, pins, onTogglePin }: { cell: { key: string; room: string; label: string; product?: string }; plan: Plan; allAssigned: Set<string>; roster: InfraOp[]; opMap: Map<string, InfraOp>; initialShift: number; onClose: () => void; /** 이 창을 연 뒤 편성을 바꿨는가 — 창 안 되돌리기 버튼 표시 */ canRevert?: boolean; onRevert?: () => void; onOpenRoom?: (key: string, shift: number) => void; onShowOperator?: (id: string) => void; onUpdateTeam?: (cellKey: string, shiftIdx: number, ids: string[]) => void; eliteById: Map<string, Elite>; onSetElite: (id: string, elite: Elite) => void; /** 잠긴 스킬 열기 — 정예화를 올리고 자동편성까지 다시 돌린다 */ onUnlockElite?: (id: string, elite: Elite) => void; /** 보유했지만 이 방 스킬이 정예화·레벨로 잠긴 오퍼 → 필요 조건 */ blocked: Map<string, string>; /** 이 방 스킬이 있는데 아직 보유로 안 켠 오퍼 */ unowned: InfraOp[]; onOpenRoster?: () => void; tempIds: Set<string>; onRevertTempOne: (opId: string) => void; onSetLevel?: (key: string, lv: number) => void; pins?: string[]; onTogglePin?: (opId: string) => void }) {
   const { locale, t } = useI18n();
   const [shift, setShift] = useState(initialShift);
   const [termOpen, setTermOpen] = useState<string | null>(null); // RIIC 용어 팝업 (외세·실리 등)
@@ -2515,6 +2547,14 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
           {/* 레벨 조절 버튼은 시설 이름 오른쪽에 (사용자 요청 2026-07-24) */}
           <div className="room-head-row">
             <h2>{t(cell.label)}</h2>
+            {/* 창 안에서 바꾼 편성 되돌리기 (사용자 요청 2026-09-11) — 헤더의
+                '자동편성 시점으로'와 같은 ↩ 아이콘·같은 말로 묶어 둘이 한 짝으로 읽히게 한다 */}
+            {canRevert && onRevert && (
+              <button type="button" className="room-revert" onClick={onRevert}
+                title={t("이 창을 연 뒤 바꾼 편성을 되돌립니다 (시설 레벨·정예화는 그대로)")}>
+                <span className="btn-icon" aria-hidden>↩</span>{t("되돌리기")}
+              </button>
+            )}
             {/* 시설 레벨 선택 (전력·레벨 시스템 2026-07-24) — 슬롯·전력·레벨 연동 스킬에 즉시 반영 */}
             {onSetLevel && maxLevelOf(cell.room) > 1 && (
               <div className="room-level-sel" role="radiogroup" aria-label={t("시설 레벨")}

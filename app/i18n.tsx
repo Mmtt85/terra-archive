@@ -700,6 +700,11 @@ const D: Record<string, Pair> = {
     "自動編成の後に手で変えた{n}件を、その時点の編成に戻します",
   ],
   "자동편성 직후 편성으로 되돌렸습니다": ["Reverted to the plan as auto-planning left it", "自動編成直後の編成に戻しました"],
+  "이 창을 연 뒤 바꾼 편성을 되돌립니다 (시설 레벨·정예화는 그대로)": [
+    "Reverts the assignment changes you made since opening this window (facility level and Elite stay)",
+    "このウィンドウを開いた後に変えた編成を元に戻します（施設レベル・昇進はそのまま）",
+  ],
+  "이 창에서 바꾼 편성을 되돌렸습니다": ["Reverted the changes made in this window", "このウィンドウで変えた編成を元に戻しました"],
   "추천 열기": ["Open list", "リストを開く"],
   "추천 열기 ({n})": ["Open list ({n})", "リストを開く（{n}）"],
   "임시 적용을 모두 취소하고 이전 편성으로 되돌립니다": ["Cancels all temporary applies and restores the previous plan", "一時適用を全て取消し、以前の編成に戻します"],
