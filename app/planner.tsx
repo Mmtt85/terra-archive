@@ -169,6 +169,11 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   const [levelById, setLevelById] = useState<Map<string, number>>(new Map());
   // 보유 오퍼·정예화 구성이나 방별 수동 편성을 바꾼 뒤 파일로 저장하지 않았으면 true
   const [dirty, setDirty] = useState(false);
+  // 자동편성 직후 편성 스냅샷 — 방 상세에서 손을 댄 뒤 "자동편성 돌린 시점"으로 되돌리는
+  // 기준이다 (사용자 요청 2026-09-11). 육성 추천 임시 적용의 tempBasePlan과 같은 장치를
+  // 자동편성에 한 번 더 단 것. **세션 한정** — 편성 자체는 저장되지만 되돌릴 기준은 남기지
+  // 않는다(새로고침하면 사라진다). 보유 오퍼·프리셋·칸 구성이 바뀌면 근거가 사라지므로 버린다.
+  const [basePlan, setBasePlan] = useState<Plan | null>(null);
   // 육성(정예화 완성) 추천 — 반사실 재최적화 결과(null=미실행)와 진행률, 모달 표시 여부.
   // 결과는 한 번 분석하면 새 자동편성 전까지 유지된다 (persist·export 포함, 사용자 확정 2026-07-21)
   const [investRecs, setInvestRecs] = useState<RaiseRec[] | null>(null);
@@ -360,6 +365,9 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   // 토큰 포인트·패키지 구성은 마지막 자동편성 기준으로 유지된다 (근사).
   const updateTeam = (cellKey: string, shiftIdx: number, ids: string[], pins?: Record<string, string[]>, rpins?: Record<string, string[]>) => {
     if (!plan) return;
+    // 되돌릴 스냅샷 — 편성만이 아니라 고정 목록까지 함께 되살려야 원래 상태다
+    const undoTo = { plan, dormPins, roomPins };
+    const removed = (plan.assignments[cellKey]?.[shiftIdx] ?? []).filter((id) => !ids.includes(id));
     const shifts = (plan.assignments[cellKey] ?? []).map((team, index) => (index === shiftIdx ? ids : team));
     const assignments = { ...plan.assignments, [cellKey]: shifts };
     const factionCounts = [0, 1].map((s) => {
@@ -382,6 +390,19 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     if (cleanedR) setRoomPinsState(cleanedR);
     persist(ownedIds, next, eliteById, levelById, priority, investRecs, investHidden, layout, levels, customRooms, customProducts, cleaned ?? dormPins, cleanedR ?? roomPins);
     setDirty(true);
+    // 뺀 사람이 있을 때만 실행 취소를 띄운다 (사용자 요청 2026-09-11: "삭제하는 순간 곧바로
+    // 적용돼버리면 좀 그럼"). 순수 추가는 다시 빼면 그만이라 토스트가 시끄럽기만 하고,
+    // 교체(빼고 넣기)는 뺀 쪽이 있으니 여기 걸린다.
+    if (removed.length) {
+      const names = removed.map((id) => effectiveOpById.get(id)?.name ?? opById.get(id)?.name ?? id).join(", ");
+      showToast(t("편성에서 뺐습니다 — {names}", { names }), () => {
+        setPlan(undoTo.plan);
+        setDormPinsState(undoTo.dormPins);
+        setRoomPinsState(undoTo.roomPins);
+        persist(ownedIds, undoTo.plan, eliteById, levelById, priority, investRecs, investHidden, layout, levels, customRooms, customProducts, undoTo.dormPins, undoTo.roomPins);
+        showToast(t("실행 취소했습니다"));
+      });
+    }
   };
 
   // 숙소 편성 변경 — 숙소는 조 전환과 무관한 단일 팀이라 항상 0번 슬롯을 고친다.
@@ -457,12 +478,13 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     setDirty(true);
   };
 
-  const [toast, setToast] = useState<string | null>(null);
+  // 토스트 — undo가 붙으면 '실행 취소' 버튼이 뜨고, 누를 시간을 주려고 더 오래 머문다
+  const [toast, setToast] = useState<{ message: string; undo?: () => void } | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const showToast = (message: string) => {
-    setToast(message);
+  const showToast = (message: string, undo?: () => void) => {
+    setToast({ message, undo });
     if (toastTimer.current) clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => setToast(null), 2400);
+    toastTimer.current = setTimeout(() => setToast(null), undo ? 6500 : 2400);
   };
 
   // 자동편성 진행 안내 — 계산이 수 초 걸려도 전수 비교가 우선(사용자 확정 2026-07-19)이라,
@@ -473,6 +495,38 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     if (step.phase === "variant") return t("자동편성 엔진 계산 중 — 시너지 세트 후보안 {i}/{n} 평가…", { i: step.index ?? 0, n: step.total ?? 0 });
     if (step.index) return t("자동편성 엔진 계산 중 — 채택안 전수 감사 {crew}조 {i}/{n}회차 검수…", { crew: step.crew ?? "A", i: step.index, n: step.total ?? step.index });
     return t("자동편성 엔진 계산 중 — 최적안 비교·마무리 검증…");
+  };
+
+  // 자동편성 스냅샷과 달라진 칸 수 (조별로 센다) — 0이면 되돌릴 게 없다
+  const changedCells = useMemo(() => {
+    if (!plan || !basePlan) return 0;
+    let n = 0;
+    for (const key of new Set([...Object.keys(plan.assignments), ...Object.keys(basePlan.assignments)])) {
+      const now = plan.assignments[key] ?? [];
+      const was = basePlan.assignments[key] ?? [];
+      for (let i = 0; i < Math.max(now.length, was.length); i += 1) {
+        if ((now[i] ?? []).join(",") !== (was[i] ?? []).join(",")) n += 1;
+      }
+    }
+    return n;
+  }, [plan, basePlan]);
+
+  // 자동편성 돌린 시점으로 되돌리기 — 손으로 바꾼 것을 버리므로 확인을 받는다.
+  // 임시 적용(육성 추천) 세션 중에는 숨긴다 — 그쪽은 자기 '되돌리기'가 따로 있다.
+  const revertToAutoPlan = async () => {
+    if (!basePlan || !changedCells) return;
+    const ok = await confirm({
+      title: t("자동편성 시점으로 되돌리기"),
+      message: t("자동편성 이후 손으로 바꾼 {n}곳을 되돌립니다. 계속할까요?", { n: changedCells }),
+      confirmLabel: t("되돌리기"),
+    });
+    if (!ok) return;
+    setPlan(basePlan);
+    setActiveShift(0);
+    setOpenRoom(null);
+    persist(ownedIds, basePlan, eliteById, levelById, priority, investRecs, investHidden, layout, levels, customRooms, customProducts, dormPins, roomPins);
+    setDirty(true);
+    showToast(t("자동편성 직후 편성으로 되돌렸습니다"));
   };
 
   // rpins = 방금 갱신된 생산방 고정 목록 — 고정 직후 안내 모달의 [지금 재편성]이 넘긴다.
@@ -486,6 +540,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       const paced = (step: OptimizeStep) => { setOptimizing(stepMessage(step)); };
       const next = await optimizeOff({ owned: ids, elite, opLevels: lvById, includeFuture: !!includeFuture, priority: prio, layout, levels, customRooms, customProducts, dormPins, roomPins: rpins }, paced);
       setPlan(next);
+      setBasePlan(next); // 되돌리기 기준 — 미리보기(previewOptimize)는 여기 손대지 않는다
       setActiveShift(0);
       // 새 자동편성 → 기존 육성 추천·숨김 무효화 + 임시 적용 세션 종료(새 편성이 기준). 2026-07-21
       setInvestRecs(null);
@@ -666,6 +721,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     setLayoutState(next);
     setLevelsState(b.levels);
     setPlan(restored);
+    setBasePlan(null); // 프리셋마다 편성이 다르다 — 되돌릴 기준은 이월하지 않는다
     setInvestRecs(b.invest);
     setInvestHidden(new Set(b.investHidden));
     setDormPinsState(restoreDormPins(b.dormPins));
@@ -729,6 +785,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     setLayoutPreset("custom", next, customProducts);
     const sanitized = plan ? sanitizePlan(plan) : null;
     setPlan(sanitized);
+    setBasePlan(null); // 칸 구성이 바뀌면 셀 키가 재번호돼 옛 스냅샷은 맞지 않는다
     setOpenRoom(null);
     // 칸 종류를 바꾸면 셀 키가 재번호된다 — 사라진 칸의 생산방 고정은 편성 드랍과 함께 정리
     const validPins = restoreRoomPins(roomPins);
@@ -847,6 +904,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     );
     const next = { ...plan, assignments, tokenPoints: {}, factionCounts: plan.factionCounts.map(() => ({})) };
     setPlan(next);
+    setBasePlan(null); // 비운 편성에 "자동편성 시점"은 없다
     setActiveShift(0);
     // 육성 추천도 함께 비운다 (사용자 요청 2026-08-05) — 추천은 "지금 이 편성에서 이 오퍼를
     // 완성하면 얼마나 오르는가"의 결과라, 편성을 비우면 근거가 사라져 숫자가 거짓이 된다.
@@ -1281,6 +1339,12 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           </button>
           <button onClick={fillGaps} title={t("현재 편성(수동 수정 포함)은 그대로 두고, 남은 빈 자리만 효율 순으로 자동 편성합니다")}><span className="btn-icon" aria-hidden>⊕</span>{t("빈 자리만 자동편성")}</button>
           <button onClick={clearAll} title={t("모든 방의 편성을 비웁니다 (보유 오퍼 설정은 유지)")}><span className="btn-icon" aria-hidden>⌫</span>{t("편성 전체 비우기")}</button>
+          {/* 자동편성 이후 손을 댔을 때만 뜬다 (사용자 요청 2026-09-11) */}
+          {!!basePlan && changedCells > 0 && !tempApplied.size && (
+            <button onClick={revertToAutoPlan} title={t("자동편성 이후 손으로 바꾼 {n}곳을 그 시점의 편성으로 되돌립니다", { n: changedCells })}>
+              <span className="btn-icon" aria-hidden>↩</span>{t("자동편성 시점으로 ({n}곳)", { n: changedCells })}
+            </button>
+          )}
           {/* 이미지·파일·도움말은 '그 외' 드롭다운으로 묶는다 (사용자 요청 2026-07) */}
           <span className="more-group">
             <button className={`more-toggle${dirty ? " save-pending" : ""}`} aria-expanded={moreOpen} aria-haspopup="menu"
@@ -1720,7 +1784,16 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
           onRevertTempOne={(id) => { void revertTempOne(id); }}
         />
       )}
-      {toast && <div className="toast" role="status">{toast}</div>}
+      {toast && (
+        <div className={`toast${toast.undo ? " has-undo" : ""}`} role="status">
+          {toast.message}
+          {toast.undo && (
+            <button type="button" className="toast-undo" onClick={() => { const run = toast.undo!; setToast(null); run(); }}>
+              {t("실행 취소")}
+            </button>
+          )}
+        </div>
+      )}
     </section>
   );
 }

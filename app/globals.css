@@ -6849,6 +6849,32 @@ legend {
     toastOut 0.3s ease-in 2.1s both;
   pointer-events: none;
 }
+
+/* 실행 취소가 붙은 토스트 (사용자 요청 2026-09-11) — 두 가지를 덮어써야 한다:
+   ① 기본 토스트는 pointer-events: none 이라 버튼을 누를 수 없다
+   ② 기본 사라짐이 2.1s 인데 누를 시간이 안 된다 — JS 타이머(6.5s)에 맞춰 늦춘다 */
+.toast.has-undo {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  pointer-events: auto;
+  animation:
+    toastIn 0.22s ease-out,
+    toastOut 0.3s ease-in 6.2s both;
+}
+.toast-undo {
+  border: 1px solid var(--lime);
+  background: transparent;
+  color: var(--lime);
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  padding: 3px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.toast-undo:hover { background: var(--lime); color: var(--ink); }
 @keyframes toastIn {
   from {
     opacity: 0;

@@ -685,6 +685,21 @@ const D: Record<string, Pair> = {
   "추천 오퍼 전부를 임시 적용합니다 — 되돌리기 가능": ["Temporarily applies all recommended operators — revertible", "おすすめオペレーター全てを一時適用します — 元に戻せます"],
   "되돌리기 ({n})": ["Revert ({n})", "元に戻す（{n}）"],
   "되돌리기": ["Revert", "元に戻す"],
+  // ── 자동편성 시점 되돌리기 · 실행 취소 (사용자 요청 2026-09-11) ──
+  "실행 취소": ["Undo", "元に戻す"],
+  "실행 취소했습니다": ["Undone", "元に戻しました"],
+  "편성에서 뺐습니다 — {names}": ["Removed from the plan — {names}", "編成から外しました — {names}"],
+  "자동편성 시점으로 되돌리기": ["Revert to the auto-plan", "自動編成の時点に戻す"],
+  "자동편성 시점으로 ({n}곳)": ["Revert to auto-plan ({n})", "自動編成の時点へ（{n}件）"],
+  "자동편성 이후 손으로 바꾼 {n}곳을 되돌립니다. 계속할까요?": [
+    "This reverts the {n} spots you changed by hand since the auto-plan. Continue?",
+    "自動編成の後に手で変えた{n}件を元に戻します。続けますか？",
+  ],
+  "자동편성 이후 손으로 바꾼 {n}곳을 그 시점의 편성으로 되돌립니다": [
+    "Reverts the {n} spots changed by hand since the auto-plan back to how it planned them",
+    "自動編成の後に手で変えた{n}件を、その時点の編成に戻します",
+  ],
+  "자동편성 직후 편성으로 되돌렸습니다": ["Reverted to the plan as auto-planning left it", "自動編成直後の編成に戻しました"],
   "추천 열기": ["Open list", "リストを開く"],
   "추천 열기 ({n})": ["Open list ({n})", "リストを開く（{n}）"],
   "임시 적용을 모두 취소하고 이전 편성으로 되돌립니다": ["Cancels all temporary applies and restores the previous plan", "一時適用を全て取消し、以前の編成に戻します"],
