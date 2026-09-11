@@ -103,7 +103,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   const [switchFlash, setSwitchFlash] = useState(false);
   // 프리셋별 저장 버킷 — 243/153/252 각각의 편성·레벨·육성추천을 따로 보관해 전환 시
   // 재편성 없이 그대로 복원한다 (사용자 확정 2026-07-24: "각각 따로 한번 자동편성하면 유지")
-  type LayoutBucket = { plan: Plan | null; levels: Levels; invest: RaiseRec[] | null; investHidden: string[]; dormPins?: Record<string, string[]>; roomPins?: Record<string, string[]> };
+  type LayoutBucket = { plan: Plan | null; levels: Levels; invest: RaiseRec[] | null; investHidden: string[]; dormPins?: Record<string, string[]>; roomPins?: Record<string, string[]>; /** 자동편성 직후 스냅샷 — '자동편성 시점으로' 되돌리기 기준 (새로고침 후에도 유지) */ basePlan?: Plan | null };
   const bucketsRef = useRef<Partial<Record<LayoutPreset, LayoutBucket>>>({});
   const syncBucket = (lay: LayoutPreset, patch: Partial<LayoutBucket>) => {
     bucketsRef.current[lay] = {
@@ -182,9 +182,18 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   const [dirty, setDirty] = useState(false);
   // 자동편성 직후 편성 스냅샷 — 방 상세에서 손을 댄 뒤 "자동편성 돌린 시점"으로 되돌리는
   // 기준이다 (사용자 요청 2026-09-11). 육성 추천 임시 적용의 tempBasePlan과 같은 장치를
-  // 자동편성에 한 번 더 단 것. **세션 한정** — 편성 자체는 저장되지만 되돌릴 기준은 남기지
-  // 않는다(새로고침하면 사라진다). 보유 오퍼·프리셋·칸 구성이 바뀌면 근거가 사라지므로 버린다.
+  // 자동편성에 한 번 더 단 것.
+  // ⚠ 처음엔 세션 한정으로 뒀다가 **프리셋 버킷에 함께 저장**으로 바꿨다 (2026-09-11):
+  //   새로고침·핫리로드 한 번이면 기준이 사라져 "버튼이 대체 어디로 사라진 거냐"가 됐다.
+  //   편성은 저장되는데 되돌릴 기준만 날아가니, 편성을 짜 둔 다음 날 손대면 버튼이 영영 안 뜬다.
+  //   보유 오퍼·프리셋·칸 구성이 바뀌면 근거가 사라지므로 그때는 버린다.
   const [basePlan, setBasePlan] = useState<Plan | null>(null);
+  // 스냅샷 갱신은 항상 이 함수로 — 상태와 버킷(저장분)을 함께 맞춘다.
+  // bucketsRef는 동기 갱신이라 바로 뒤에 오는 persist가 이 값을 그대로 저장한다.
+  const rememberBase = (next: Plan | null, lay: LayoutPreset = layout) => {
+    setBasePlan(next);
+    syncBucket(lay, { basePlan: next });
+  };
   // 육성(정예화 완성) 추천 — 반사실 재최적화 결과(null=미실행)와 진행률, 모달 표시 여부.
   // 결과는 한 번 분석하면 새 자동편성 전까지 유지된다 (persist·export 포함, 사용자 확정 2026-07-21)
   const [investRecs, setInvestRecs] = useState<RaiseRec[] | null>(null);
@@ -307,7 +316,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
   };
 
   const exportState = () => {
-    const payload = JSON.stringify({ version: 1, exported: new Date().toISOString(), owned: Array.from(ownedIds), elite: Array.from(eliteById.entries()), opLevels: Array.from(levelById.entries()), plan, invest: investRecs, layout, levels, customRooms, customProducts, dormPins, roomPins, buckets: { ...bucketsRef.current, [layout]: { plan, levels, invest: investRecs, investHidden: Array.from(investHidden), dormPins, roomPins } } }, null, 1);
+    const payload = JSON.stringify({ version: 1, exported: new Date().toISOString(), owned: Array.from(ownedIds), elite: Array.from(eliteById.entries()), opLevels: Array.from(levelById.entries()), plan, invest: investRecs, layout, levels, customRooms, customProducts, dormPins, roomPins, buckets: { ...bucketsRef.current, [layout]: { plan, levels, invest: investRecs, investHidden: Array.from(investHidden), dormPins, roomPins, basePlan } } }, null, 1);
     const blob = new Blob([payload], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
@@ -355,6 +364,9 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         setEliteById(elite);
         setLevelById(lvById);
         if (plan) { setPlan(plan); setActiveShift(0); }
+        // 되돌리기 기준 — 파일에 있으면 살리고, 없으면(구버전 파일) 비운다
+        const fileBase = fileBuckets[lay]?.basePlan;
+        setBasePlan(fileBase ? sanitizePlan(fileBase) : null);
         setInvestRecs(invest);
         setInvestHidden(hidden);
         setShowInvest(false);
@@ -570,7 +582,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       const paced = (step: OptimizeStep) => { setOptimizing(stepMessage(step)); };
       const next = await optimizeOff({ owned: ids, elite, opLevels: lvById, includeFuture: !!includeFuture, priority: prio, layout, levels, customRooms, customProducts, dormPins, roomPins: rpins }, paced);
       setPlan(next);
-      setBasePlan(next); // 되돌리기 기준 — 미리보기(previewOptimize)는 여기 손대지 않는다
+      rememberBase(next); // 되돌리기 기준 — 미리보기(previewOptimize)는 여기 손대지 않는다
       setActiveShift(0);
       // 새 자동편성 → 기존 육성 추천·숨김 무효화 + 임시 적용 세션 종료(새 편성이 기준). 2026-07-21
       setInvestRecs(null);
@@ -751,7 +763,8 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     setLayoutState(next);
     setLevelsState(b.levels);
     setPlan(restored);
-    setBasePlan(null); // 프리셋마다 편성이 다르다 — 되돌릴 기준은 이월하지 않는다
+    // 프리셋마다 편성이 다르니 이월하지 않고, **그 프리셋이 갖고 있던** 기준을 복원한다
+    setBasePlan(b.basePlan ? sanitizePlan(b.basePlan) : null);
     setInvestRecs(b.invest);
     setInvestHidden(new Set(b.investHidden));
     setDormPinsState(restoreDormPins(b.dormPins));
@@ -815,7 +828,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     setLayoutPreset("custom", next, customProducts);
     const sanitized = plan ? sanitizePlan(plan) : null;
     setPlan(sanitized);
-    setBasePlan(null); // 칸 구성이 바뀌면 셀 키가 재번호돼 옛 스냅샷은 맞지 않는다
+    rememberBase(null); // 칸 구성이 바뀌면 셀 키가 재번호돼 옛 스냅샷은 맞지 않는다
     openRoomAt(null);
     // 칸 종류를 바꾸면 셀 키가 재번호된다 — 사라진 칸의 생산방 고정은 편성 드랍과 함께 정리
     const validPins = restoreRoomPins(roomPins);
@@ -934,7 +947,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     );
     const next = { ...plan, assignments, tokenPoints: {}, factionCounts: plan.factionCounts.map(() => ({})) };
     setPlan(next);
-    setBasePlan(null); // 비운 편성에 "자동편성 시점"은 없다
+    rememberBase(null); // 비운 편성에 "자동편성 시점"은 없다
     setActiveShift(0);
     // 육성 추천도 함께 비운다 (사용자 요청 2026-08-05) — 추천은 "지금 이 편성에서 이 오퍼를
     // 완성하면 얼마나 오르는가"의 결과라, 편성을 비우면 근거가 사라져 숫자가 거짓이 된다.
@@ -996,6 +1009,7 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
             investHidden: Array.isArray(rb.investHidden) ? rb.investHidden : [],
             dormPins: restoreDormPins(rb.dormPins),
             roomPins: restoreRoomPins(rb.roomPins),
+            basePlan: rb.basePlan ?? null,
           };
         }
         if (savedLayout !== "243") { setLayoutPreset(savedLayout, savedCustom, savedProducts); setLayoutState(savedLayout); }
@@ -1004,6 +1018,8 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
         setEngineLevels(savedLevels);
         setLevelsState(savedLevels);
         if (bucket) { setInvestRecs(restoreInvest(bucket.invest)); setInvestHidden(restoreHidden(bucket.investHidden)); setDormPinsState(restoreDormPins(bucket.dormPins)); setRoomPinsState(restoreRoomPins(bucket.roomPins)); }
+        // 되돌리기 기준도 함께 복원 — 손상 저장분 방어를 위해 plan과 같은 sanitize를 태운다
+        if (bucket?.basePlan) { try { setBasePlan(sanitizePlan(bucket.basePlan)); } catch { setBasePlan(null); } }
         // 손상·구버전 저장분 방어 — raw 복원은 assignments 등 누락 시 렌더 크래시
         // (개발 중간 상태가 저장된 localStorage에서 실제 발병, 2026-07-19). 정규화 실패면
         // 아래로 떨어져 새 편성을 만든다.
