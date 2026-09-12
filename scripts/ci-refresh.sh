@@ -103,6 +103,10 @@ run "build-i18n"       python3 scripts/build-i18n.py "$G"
 # 5) 신규 오퍼 아바타 (이미 있으면 건너뜀; 다운로드 실패는 치명적이지 않게 경고만)
 run "download-avatars" python3 scripts/download-avatars.py || echo "[download-avatars] 일부 아바타 다운로드 실패 — 수동 확인 필요" | tee -a "$WARN" >&2
 
+# 5-1) 전투 스킬 아이콘 (없는 것만 받는다 — 신규 오퍼가 들어왔을 때만 몇 장 붙는다).
+#      소환물 전용 토큰 스킬 일부는 원본에 그림이 아예 없어 404가 정상이다 — 경고만 남긴다.
+run "build-skill-icons" python3 scripts/build-skill-icons.py "$G" || echo "[build-skill-icons] 일부 스킬 아이콘 다운로드 실패 — 수동 확인 필요" | tee -a "$WARN" >&2
+
 # 6) 오퍼당 지연 로딩 파일 중 **도감에서 바로 보이는 것** — 스킬 레벨 수치·프로필.
 # ⚠ 이 넷(+보이스·스킨)이 파이프라인에 빠져 있어서 신규 오퍼가 들어와도 상세 모달의
 #   레벨 탭·프로필·대사가 비어 있었다 (2026-08-01 사용자 지적).

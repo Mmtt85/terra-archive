@@ -231,11 +231,16 @@ def build_skills(c):
         rid = lv.get("rangeId")
         rng = ([{"row": g["row"], "col": g["col"]} for g in ranges[rid]["grids"]]
                if rid and rid in ranges else None)
+        # 아이콘 파일명 — iconId가 따로 있는 스킬(1,630개 중 139개)만 다르고 나머지는 스킬 id와
+        # 같다. **다를 때만** 내보내 operators.json(번들 1.7MB)을 괜히 불리지 않는다 —
+        # 화면은 icon이 없으면 id를 쓴다. 그림은 scripts/build-skill-icons.py가 받아 온다.
+        icon = skill_table[sid].get("iconId")
         out.append({"id": sid, "name": lv.get("name"),
                     "spType": SP_KO.get(sp.get("spType"), str(sp.get("spType"))),
                     "initialSp": sp.get("initSp"), "spCost": sp.get("spCost"),
                     "duration": dur,
                     "description": interpolate(lv.get("description"), lv.get("blackboard")),
+                    **({"icon": icon} if icon and icon != sid else {}),
                     **({"rangeId": rid, "range": rng} if rng else {})})
     return out
 

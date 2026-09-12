@@ -120,6 +120,9 @@ type Skill = {
   spCost: number;
   duration: number | null;
   description: string;
+  // 아이콘 파일명 — **스킬 id와 다를 때만** 붙는다 (1,630개 중 139개). 없으면 id가 곧 파일명이다
+  // (scripts/regen-operators.py). 그림은 scripts/build-skill-icons.py가 public/skills/icon/에 받는다.
+  icon?: string;
   // 스킬이 공격 범위를 바꿀 때만 붙는다 (범위 확대·변경 계열 228개) — 없으면 기본 범위 그대로
   rangeId?: string;
   range?: RangeGrid[];
@@ -3108,7 +3111,12 @@ function SkillCard({ skill, index, levels, baseRange, summons = [] }: { skill: S
 
   return (
     <article className="skill-detail">
-      <div className="skill-index">S{index + 1}</div>
+      {/* 스킬 아이콘 (사용자 요청 2026-09-12) — 본체 스킬 897개는 전부 그림이 있다.
+          S번호는 아이콘 위 모서리 칩으로 남긴다 (어느 스킬인지 + 몇 번째인지 둘 다 필요). */}
+      <div className="skill-index">
+        <img src={asset(`/skills/icon/${skill.icon ?? skill.id}.webp`)} alt="" loading="lazy" decoding="async" width={42} height={42} />
+        <span>S{index + 1}</span>
+      </div>
       <div>
         <h4>{skill.name}</h4>
         <div className="skill-meta">
