@@ -1443,6 +1443,72 @@ export function bestTeam(room: string, slots: number, pool: Map<string, InfraOp>
 export type FlowGenerator = { opId: string; at: string; amount: number; via?: string; convRate?: number; need?: string[]; perMember?: { per: number; cap: number; match: string } };
 export type FlowConsumer = { opId: string; at: string; room: string; rate: number; percent: boolean; gain: number };
 
+// 토큰 원장 재집계 — **실제 A조 배치**를 기준으로 perMember 생성원을 다시 세고, 자리를 잃은
+// 생성원을 걷어낸 뒤 포인트를 받아 쓰는 오퍼(consumers)를 다시 기록한다.
+// 자동편성(buildPlan) 끝에서 한 번 돌고, **방 상세에서 손으로 고친 뒤에도 UI가 같은 함수를 부른다.**
+// 종전엔 자동편성 안에만 있어서, 빈 훈련실에 왕을 손으로 넣어도 총웨의 속세의 화식이 그대로였다
+// (제보 2026-09-12: "인게임에서는 1번 무역소에 추가 효율이 붙는데 계산기에서는 아무 변화가 없다").
+// ⚠ 원본 flows를 건드리지 않는다 — 리액트 상태로 들고 다니는 플랜이라 새 객체로 돌려준다.
+//   consumers도 매번 새로 쓴다(같은 플랜에 두 번 돌리면 중복으로 쌓인다).
+// ⚠ 한계: 원장에 **없던 생성원은 되살아나지 않는다.** 자동편성이 앉히지 않은 총웨를 손으로
+//   제어센터에 넣어도 화식 생성원이 새로 생기지는 않는다 — 그건 전체 자동편성을 다시 돌려야 한다.
+//   손 배치가 바꿀 수 있는 건 '몇 명이 세어지는가'(perMember)와 '생성원이 아직 앉아 있는가'다.
+export function recountTokens(
+  assignments: Record<string, string[][]>,
+  rosterById: Map<string, InfraOp>,
+  flows: TokenFlow[],
+): { tokenPoints: Record<string, number>; flows: TokenFlow[] } {
+  const tokenPoints: Record<string, number> = {};
+  const placedA: InfraOp[] = [];
+  for (const key of [...PRODUCTION_KEYS, ...SUPPORT_KEYS]) {
+    for (const id of assignments[key]?.[0] ?? []) {
+      const op = rosterById.get(id);
+      if (op) placedA.push(op);
+    }
+  }
+  // 원장에 실린 생성원 중 **결국 빠진 오퍼**는 재집계에서 뺀다 — 지에윈이 벤치로 가면 그가
+  // 만들던 주술 결정도 0이어야 한다. 숙소 생성원(센시 마물 요리)이 있으니 존재 판정엔 숙소도 넣는다.
+  const presentA = new Set(placedA.map((op) => op.id));
+  for (let d = 0; d < 4; d += 1) for (const id of assignments[`DORM-${d}`]?.[0] ?? []) presentA.add(id);
+  const nextFlows = flows.map((flow) => {
+    // 전환 사슬(via)은 **경로 전환자가 전부** 앉아 있을 때만 산다 — 로즈몬티스가 빠지면
+    // 위스퍼레인의 기억 조각→감지 정보→생각의 사슬이 통째로 죽는다(유령 점수 방지).
+    // 구버전 저장 플랜은 need가 없으니 종전 판정(직접 전환자 아무나 존재)으로 되돌린다.
+    const converterLive = flow.converters.some((conv) => presentA.has(conv.opId));
+    const generators = flow.generators
+      .filter((gen) => presentA.has(gen.opId)
+        && (!gen.via || (gen.need ? gen.need.every((id) => presentA.has(id)) : converterLive)))
+      .map((gen) => {
+        if (!gen.perMember) return gen;
+        const count = placedA.filter((op) => factionsOf(op).some((faction) => faction.includes(gen.perMember!.match))).length;
+        // 전환 생성원(총웨 속세의 화식→주술 결정 등)은 재집계 때도 전환율을 다시 곱한다
+        return { ...gen, amount: gen.perMember.per * Math.min(count, gen.perMember.cap) * (gen.convRate ?? 1) };
+      });
+    const total = generators.reduce((sum, gen) => sum + gen.amount, 0);
+    const consumers: FlowConsumer[] = [];
+    for (const key of [...PRODUCTION_KEYS, ...SUPPORT_KEYS, "DORM-0", "DORM-1", "DORM-2", "DORM-3"]) {
+      const team = (assignments[key]?.[0] ?? []).map((id) => rosterById.get(id)).filter(Boolean) as InfraOp[];
+      const cell = cellByKey.get(key);
+      for (const op of team) {
+        let bestRate = 0;
+        let percent = true;
+        for (const skill of activeSkills(op, cell?.room ?? key, cell?.product)) {
+          for (const use of skill.tokenUse) {
+            if (use.token !== flow.token) continue;
+            const rate = use.value / use.per;
+            if (use.percent && rate > bestRate) { bestRate = rate; percent = true; }
+            if (!use.percent && bestRate === 0) { bestRate = rate; percent = false; }
+          }
+        }
+        if (bestRate !== 0) consumers.push({ opId: op.id, at: cell?.label ?? key, room: cell?.room ?? key, rate: bestRate, percent, gain: percent ? total * bestRate : bestRate * total });
+      }
+    }
+    tokenPoints[flow.token] = total;
+    return { ...flow, generators, total, consumers };
+  });
+  return { tokenPoints, flows: nextFlows };
+}
+
 export type TokenFlow = {
   token: string;
   total: number;
@@ -2698,58 +2764,11 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
   // 숙소 인원은 편성을 읽을 수 없게 만든다), 새로 필요해진 짝은 이득일 때만 넣는다.
   if (park) parkEnablers();
 
-  // ledger: recount per-member generators against the actual A-crew roster,
-  // then record who cashes the points in
+  // ledger: 실제 배치 기준으로 원장을 다시 센다 (recountTokens — 손 배치 뒤 UI도 같은 함수를 쓴다)
   const rosterById = new Map(roster.map((op) => [op.id, op]));
-  const placedA: InfraOp[] = [];
-  for (const key of [...PRODUCTION_KEYS, ...SUPPORT_KEYS]) {
-    for (const id of assignments[key]?.[0] ?? []) {
-      const op = rosterById.get(id);
-      if (op) placedA.push(op);
-    }
-  }
-  // 원장에 실린 생성원 중 **감사가 결국 빼 버린 오퍼**는 재집계에서 뺀다 — 패키지 예약
-  // 해제(자기 소비 전환자 등)로 지에윈이 벤치로 가면 그가 만들던 주술 결정도 0이어야 한다.
-  // 숙소 생성원(센시 마물 요리)이 있으니 존재 판정은 숙소까지 포함한다.
-  const presentA = new Set(placedA.map((op) => op.id));
-  for (let d = 0; d < 4; d += 1) for (const id of assignments[`DORM-${d}`]?.[0] ?? []) presentA.add(id);
-  for (const flow of flows) {
-    // 전환 사슬(via)은 **경로 전환자가 전부** 앉아 있을 때만 산다 — 지에윈이 벤치로 가면
-    // 화식→주술 결정 환산분이 전부 죽고, 로즈몬티스가 빠지면 위스퍼레인의 기억 조각→감지 정보→
-    // 생각의 사슬도 통째로 죽는다(원장에 유령 점수가 남지 않게). 구버전 저장 플랜은 need가
-    // 없으니 종전 판정(직접 전환자 아무나 존재)으로 되돌린다.
-    const converterLive = flow.converters.some((conv) => presentA.has(conv.opId));
-    flow.generators = flow.generators.filter((gen) => presentA.has(gen.opId)
-      && (!gen.via || (gen.need ? gen.need.every((id) => presentA.has(id)) : converterLive)));
-    let total = 0;
-    for (const gen of flow.generators) {
-      if (gen.perMember) {
-        const count = placedA.filter((op) => factionsOf(op).some((faction) => faction.includes(gen.perMember!.match))).length;
-        // 전환 생성원(총웨 속세의 화식→주술 결정 등)은 재집계 때도 전환율을 다시 곱해야 한다
-        gen.amount = gen.perMember.per * Math.min(count, gen.perMember.cap) * (gen.convRate ?? 1);
-      }
-      total += gen.amount;
-    }
-    tokenPoints[flow.token] = total;
-    flow.total = total;
-    for (const key of [...PRODUCTION_KEYS, ...SUPPORT_KEYS, "DORM-0", "DORM-1", "DORM-2", "DORM-3"]) {
-      const team = (assignments[key]?.[0] ?? []).map((id) => rosterById.get(id)).filter(Boolean) as InfraOp[];
-      const cell = cellByKey.get(key);
-      for (const op of team) {
-        let bestRate = 0;
-        let percent = true;
-        for (const skill of activeSkills(op, cell?.room ?? key, cell?.product)) {
-          for (const use of skill.tokenUse) {
-            if (use.token !== flow.token) continue;
-            const rate = use.value / use.per;
-            if (use.percent && rate > bestRate) { bestRate = rate; percent = true; }
-            if (!use.percent && bestRate === 0) { bestRate = rate; percent = false; }
-          }
-        }
-        if (bestRate !== 0) flow.consumers.push({ opId: op.id, at: cell?.label ?? key, room: cell?.room ?? key, rate: bestRate, percent, gain: percent ? flow.total * bestRate : bestRate * flow.total });
-      }
-    }
-  }
+  const ledger = recountTokens(assignments, rosterById, flows);
+  Object.assign(tokenPoints, ledger.tokenPoints);
+  flows.splice(0, flows.length, ...ledger.flows);
   const setUsed = SYNERGY_SETS.some((def) => def.badge && factionSets[def.key]);
   const strategy = (packageTokens.length ? `${packageTokens.join(" + ")} 패키지` : "기본 편성") + (setUsed ? " + 진영 세트" : "");
   // 조별 교대 시계 — 최종 편성 기준. 성장형 평균의 근거 주기이며 planScore·UI가 재사용한다

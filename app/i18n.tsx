@@ -705,6 +705,10 @@ const D: Record<string, Pair> = {
     "このウィンドウを開いた後に変えた編成を元に戻します（施設レベル・昇進はそのまま）",
   ],
   "이 창에서 바꾼 편성을 되돌렸습니다": ["Reverted the changes made in this window", "このウィンドウで変えた編成を元に戻しました"],
+  "**{faction} 오라는 제어 센터에 {anchor} 배치가 필요합니다** — 이 조의 제어 센터에 없어서, 이 방의 {faction} 오퍼레이터에게 지금은 붙지 않습니다.": [
+    "**The {faction} aura needs {anchor} in the Control Center** — they are not there on this shift, so it is not applying to the {faction} operators in this room.",
+    "**{faction}のオーラは制御中枢に{anchor}の配置が必要です** — この班の制御中枢にいないため、この部屋の{faction}オペレーターには今は付きません。",
+  ],
   "추천 열기": ["Open list", "リストを開く"],
   "추천 열기 ({n})": ["Open list ({n})", "リストを開く（{n}）"],
   "임시 적용을 모두 취소하고 이전 편성으로 되돌립니다": ["Cancels all temporary applies and restores the previous plan", "一時適用を全て取消し、以前の編成に戻します"],

@@ -16,7 +16,7 @@ import {
   ELITE_LABEL, MAX_OP_LEVEL, LAYOUT, cellByKey, ROOM_ACCENT, UNIT, PARK_KEYS, SHIFT_COUNT,
   JOB_ORDER, ROSTER_SORT_KEYS, PRODUCTION_KEYS, SUPPORT_KEYS,
   AURA_WEIGHT, AURA_LABEL, skillApplies, breakdown, teamScore, aurasOf, ambientFor, capConvFor, orderFixFor, roomMaxNetDrain,
-  ctxFor, sanitizePlan, presentIdsFor, roomOfFor, cellOfFor, slotSubstitutes, setLayoutPreset, setPriorityMode, memberOf, growAvg, DEFAULT_CUSTOM_ROOMS, DEFAULT_CUSTOM_PRODUCTS,
+  ctxFor, sanitizePlan, presentIdsFor, roomOfFor, cellOfFor, slotSubstitutes, setLayoutPreset, setPriorityMode, memberOf, growAvg, recountTokens, DEFAULT_CUSTOM_ROOMS, DEFAULT_CUSTOM_PRODUCTS,
   setLevels as setEngineLevels, slotsFor, maxLevelOf, levelOf, powerBudget, suggestedLevels, TERMS,
   splitPriority, joinPriority, AUTO_BENCH_IDS,
   type InfraOp, type InfraSkill, type Elite, type Plan, type ProdPriority, type ProdAxis, type DrainMode, type TokenFlow, type OptimizeStep, type LayoutPreset, type Levels, type CustomRoom, type CustomProduct,
@@ -384,8 +384,11 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
     return set;
   }, [plan]);
 
-  // 방 모달에서 직접 편집: 해당 조의 팀을 교체하고 진영 카운트를 다시 센다.
-  // 토큰 포인트·패키지 구성은 마지막 자동편성 기준으로 유지된다 (근사).
+  // 방 모달에서 직접 편집: 해당 조의 팀을 교체하고 진영 카운트·토큰 원장을 다시 센다.
+  // ⚠ 토큰 원장은 종전에 "마지막 자동편성 기준으로 유지(근사)"였다 — 그래서 빈 훈련실에
+  //   왕을 손으로 넣어도 총웨의 속세의 화식이 그대로였고, 화식을 먹는 무역소 효율도 안 올랐다
+  //   (제보 2026-09-12). 이제 자동편성과 **같은 함수**(recountTokens)로 다시 센다.
+  //   다만 원장에 없던 생성원은 되살아나지 않는다(그건 전체 자동편성이 할 일) — 엔진 주석 참고.
   const updateTeam = (cellKey: string, shiftIdx: number, ids: string[], pins?: Record<string, string[]>, rpins?: Record<string, string[]>) => {
     if (!plan) return;
     // 되돌릴 스냅샷 — 편성만이 아니라 고정 목록까지 함께 되살려야 원래 상태다
@@ -405,7 +408,10 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       }
       return counts;
     });
-    const next = { ...plan, assignments, factionCounts };
+    // 원장이 비어 있는(구버전·수기) 플랜은 건드리지 않는다 — 빈 flows로 재집계하면
+    // 남아 있던 tokenPoints까지 0으로 지워진다
+    const ledger = plan.flows?.length ? recountTokens(assignments, effectiveOpById, plan.flows) : null;
+    const next = { ...plan, assignments, factionCounts, ...(ledger ? { tokenPoints: ledger.tokenPoints, flows: ledger.flows } : {}) };
     setPlan(next);
     const cleaned = pins && Object.fromEntries(Object.entries(pins).filter(([, list]) => list.length));
     if (cleaned) setDormPinsState(cleaned);
@@ -920,7 +926,8 @@ export default function InfraPlanner({ onShowOperator, extra, includeFuture }: {
       }
       return counts;
     });
-    const next = { ...plan, assignments, factionCounts };
+    const gapLedger = plan.flows?.length ? recountTokens(assignments, effectiveOpById, plan.flows) : null;
+    const next = { ...plan, assignments, factionCounts, ...(gapLedger ? { tokenPoints: gapLedger.tokenPoints, flows: gapLedger.flows } : {}) };
     setPlan(next);
     persist(ownedIds, next);
     setDirty(true);
@@ -2161,6 +2168,24 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
   const ambient = cell.key === "CONTROL" ? undefined
     : aurasOf(controlTeam, ctxFor("CONTROL", points, plan.factionCounts[shiftIndex] ?? {}, plan.plants, presentIdsFor(plan, shiftIndex), undefined, roomOf, cellOf));
   const ctx = { ...ctxFor(cell.key, points, plan.factionCounts[shiftIndex] ?? {}, plan.plants, presentIdsFor(plan, shiftIndex), ambient, roomOf, cellOf), shiftHours: plan.shiftHours?.[shiftIndex], shift: shiftIndex };
+  // 전역 카운트형 오라(글래디아 「무리 사냥」)의 미충족 안내 — 앵커가 **이 조의** 제어 센터에
+  // 없으면 진영원을 이 방에 앉혀도 오라가 0이다. 화면이 이유를 말해 주지 않아 "고쳐지지 않았다"로
+  // 읽혔다 (제보 2026-09-12: 어비설 헌터스를 제조소에 넣었는데 오라가 안 붙는다).
+  const auraGateNote = (() => {
+    if (cell.key === "CONTROL") return null;
+    const ccIds = new Set(controlTeam.map((op) => op.id));
+    for (const anchor of roster) {
+      for (const skill of anchor.skills) {
+        const g = skill.globalAura;
+        if (!g || g.room !== cell.room || ccIds.has(anchor.id)) continue;
+        const named = g.term ? TERMS[g.term]?.ops : null;
+        const isMember = (op: InfraOp) => (named ? named.includes(op.id) : memberOf(op, g.faction));
+        if (!team.some(isMember)) continue; // 이 방에 진영원이 없으면 안내할 것도 없다
+        return t("**{faction} 오라는 제어 센터에 {anchor} 배치가 필요합니다** — 이 조의 제어 센터에 없어서, 이 방의 {faction} 오퍼레이터에게 지금은 붙지 않습니다.", { faction: g.faction, anchor: anchor.name });
+      }
+    }
+    return null;
+  })();
   const excluded = new Set([...allAssigned, ...teamIds]);
   const currentScore = Math.round(teamScore(team, cell.room, ctx));
   const slots = slotsFor(cell.key); // 시설 레벨 반영 (2026-07-24)
@@ -2648,6 +2673,7 @@ function RoomModal({ cell, plan, allAssigned, roster, opMap, initialShift, onClo
             )}
             {/* 생산방 고정 안내 — 숙소와 상호작용은 같지만 계약이 다르다: 고정 = A·B 양조 근무
                 (교대 휴식 없음). 고정된 오퍼가 실제로 있을 때만 띄워 평소 모달을 어지럽히지 않는다 */}
+            {auraGateNote && <p className="dorm-note">{rich(auraGateNote)}</p>}
             {cell.room !== "DORMITORY" && onTogglePin && (pins?.length ?? 0) > 0 && (
               <p className="dorm-note pin-note">{rich(t("**📌 고정된 오퍼는 자동편성이 이 방 A조·B조 모두에 그대로 앉힙니다** — 교대 휴식이 없어지므로 컨디션(지속시간) 관리는 피아메타 등으로 직접 해 주세요. 카드의 📌로 잠그거나 풀고, ✕로 빼면 고정도 풀립니다."))}</p>
             )}
