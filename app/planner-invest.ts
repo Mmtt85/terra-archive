@@ -26,7 +26,7 @@ import sanityData from "./data/sanity.json";
 import {
   optimizeConfig, buildPlan, planScore, teamScore, opSolo, withElite, maxElite, eliteLocks, setCapCluster, setShiftTiebreak,
   availableSetKeys, synergySetMembers, cellByKey, LAYOUT, aurasOf, ctxFor, presentIdsFor, roomOfFor, cellOfFor, SHIFT_COUNT, AUTO_BENCH_IDS,
-  type InfraOp, type Elite, type Plan, type ProdPriority, type FactionSets,
+  type InfraOp, type Elite, type Plan, type ProdPriority, type FactionSets, type RoomPin,
 } from "./planner-engine";
 
 type CostPhase = { lmd: number; items: [string, number][] };
@@ -287,7 +287,7 @@ export async function recommendRaises(
   onProgress?: (p: InvestProgress) => void | Promise<void>,
   pinnedDorms: Record<string, string[]> = {},  // 사용자가 숙소에 고정한 인원 — 반사실도 같은 기지 조건에서
   levelById: Map<string, number> = new Map(),  // 오퍼 레벨 — 노정예 'Lv.30' 스킬이 잠긴 상태를 베이스라인에 반영
-  roomPins: Record<string, string[]> = {},     // 생산방 고정 인원 (2026-08-19) — 숙소 고정과 같은 이유로 관통
+  roomPins: Record<string, RoomPin[]> = {},   // 생산방 고정 인원 — 숙소 고정과 같은 이유로 관통 (조별 고정 포함)
 ): Promise<RaiseRec[]> {
   const cur = (op: InfraOp): Elite => eliteById.get(op.id) ?? maxElite(op.rarity);
   // 정예화는 **지정이 없으면 만정예로 간주**하므로(성급 상한), 보유 설정에서 아무도 낮춰 두지

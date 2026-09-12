@@ -279,9 +279,18 @@ export const AUTO_BENCH_IDS = new Set<string>(
 );
 // 자동편성용 로스터 — 벤치 명단 제거. 단, 사용자가 숙소·생산방에 직접 고정한 인원은 남긴다
 // (사용자 의도 우선 — 고정 유지 원칙은 숙소·생산방 공통, 2026-08-19).
-export function autoRoster(roster: InfraOp[], pinnedDorms: Record<string, string[]> = {}, roomPins: Record<string, string[]> = {}): InfraOp[] {
+// ── 생산방 고정 (2026-08-19) 과 **조별 고정** (제보 2026-09-12) ─────────────────────
+// 문자열이면 종전대로 **양조 고정**(A·B 같은 자리), 객체면 그 조에만 고정한다.
+// 유니온으로 둔 건 저장된 옛 플랜이 그대로 읽히게 하기 위해서다 — 마이그레이션이 필요 없다.
+// 쓰임새: "B조에서만 글래디아를 제어센터에 두고 피아메타로 컨디션을 채운다" (제보자 운용).
+export type RoomPin = string | { id: string; shift: number };
+export const pinId = (pin: RoomPin): string => (typeof pin === "string" ? pin : pin.id);
+/** null = 양조 고정 */
+export const pinShift = (pin: RoomPin): number | null => (typeof pin === "string" ? null : pin.shift);
+
+export function autoRoster(roster: InfraOp[], pinnedDorms: Record<string, string[]> = {}, roomPins: Record<string, RoomPin[]> = {}): InfraOp[] {
   if (!AUTO_BENCH_IDS.size) return roster;
-  const pinned = new Set([...Object.values(pinnedDorms).flat(), ...Object.values(roomPins).flat()]);
+  const pinned = new Set([...Object.values(pinnedDorms).flat(), ...Object.values(roomPins).flat().map(pinId)]);
   return roster.filter((op) => !AUTO_BENCH_IDS.has(op.id) || pinned.has(op.id));
 }
 
@@ -1823,7 +1832,7 @@ export function detectPerpetualControl(roster: InfraOp[]): boolean {
   return value;
 }
 
-export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factionSets: FactionSets = {}, priority: ProdPriority = "gold", extraSeeds: { opId: string; room: string }[] = [], concentrate = true, park = false, pinnedDorms: Record<string, string[]> = {}, roomPins: Record<string, string[]> = {}): Plan {
+export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factionSets: FactionSets = {}, priority: ProdPriority = "gold", extraSeeds: { opId: string; room: string }[] = [], concentrate = true, park = false, pinnedDorms: Record<string, string[]> = {}, roomPins: Record<string, RoomPin[]> = {}): Plan {
   // 자동편성 제외 명단(케이퍼·인포서)은 여기서 한 번에 걷어낸다 — buildPlan이 모든 편성
   // 생성의 유일한 관문이라 optimize·육성 추천·감사 재편성이 전부 같은 로스터를 본다.
   const roster = autoRoster(fullRoster, pinnedDorms, roomPins);
@@ -1879,15 +1888,17 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
   // 계약이므로 **A·B 양조에 같은 자리로** 들어간다 — 동시 배치 금지의 예외(무한동력 permaBoth와
   // 같은 경로). reserved에 올려 다른 방 후보·숙소 주차·백필에서 빠지고, 슬롯 초과분은 슬롯
   // 수만큼만, 로스터에 없는 id는 조용히 무시한다. roomPins가 비면 종전 편성과 완전히 동일.
-  const roomLockOps: Record<string, InfraOp[]> = {};
+  // shift: null = 양조 고정(종전), 0·1 = 그 조에만 고정
+  const roomLockOps: Record<string, { op: InfraOp; shift: number | null }[]> = {};
   const roomLocked = new Set<string>();
   for (const cell of LAYOUT) {
     if (cell.room === "DORMITORY") continue;
-    for (const id of roomPins[cell.key] ?? []) {
+    for (const pin of roomPins[cell.key] ?? []) {
       if ((roomLockOps[cell.key]?.length ?? 0) >= slotsFor(cell.key)) break;
+      const id = pinId(pin);
       const op = roster.find((member) => member.id === id);
       if (!op || roomLocked.has(id) || dormLocked.has(id)) continue;
-      (roomLockOps[cell.key] = roomLockOps[cell.key] ?? []).push(op);
+      (roomLockOps[cell.key] = roomLockOps[cell.key] ?? []).push({ op, shift: pinShift(pin) });
       roomLocked.add(id);
       reserved.set(id, cell.key);
     }
@@ -1900,8 +1911,15 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
     const seeds: Record<string, InfraOp[]> = {};
     // 고정 인원을 시드로 먼저 깔아 둔다 — 토큰 패키지의 숙소 배치가 남은 슬롯만 쓰게
     for (const [key, list] of Object.entries(dormLockOps)) seeds[key] = [...list];
-    // 생산방 고정 인원은 **매 조** 시드 — 숙소와 달리 근무 방이라 A·B 모두 같은 자리 (양조 근무)
-    for (const [key, list] of Object.entries(roomLockOps)) seeds[key] = [...(seeds[key] ?? []), ...list];
+    // 생산방 고정 인원 시드 — 양조 고정(shift null)은 매 조, 조별 고정은 그 조에만.
+    // 조별 고정은 **반대 조에서 후보에서도 빼야** 한다: reserved가 그 칸을 열어 두고 있어
+    // 그냥 두면 그리디가 반대 조의 같은 칸에 도로 앉힌다 (B조 전용이 A조에도 나오는 원인).
+    const offShift = new Set<string>();
+    for (const [key, list] of Object.entries(roomLockOps)) {
+      const mine = list.filter((p) => p.shift === null || p.shift === shift);
+      if (mine.length) seeds[key] = [...(seeds[key] ?? []), ...mine.map((p) => p.op)];
+      for (const p of list) if (p.shift !== null && p.shift !== shift) offShift.add(p.op.id);
+    }
     if (shift === 0 && plantBooster && !roomLocked.has(plantBooster.id) && (seeds["POWER-0"]?.length ?? 0) < slotsFor("POWER-0")) {
       seeds["POWER-0"] = [...(seeds["POWER-0"] ?? []), plantBooster];
       reserved.set(plantBooster.id, "POWER-0");
@@ -1932,7 +1950,11 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
     // 생산방 고정 인원은 패키지 눈에도 **이미 앉은 것**으로 실린다(preSeeded 관례) — 소비자·
     // 생성원 시딩이 다른 방으로 끌어가지 못하고, 고정석에서 나오는 토큰 생성분은 원장에 계상된다
     if (shift === 0) for (const [key, list] of Object.entries(roomLockOps)) {
-      for (const op of list) { preSeeded.add(op.id); preSeededAt.set(op.id, cellByKey.get(key)?.label ?? key); }
+      for (const { op, shift: pinned } of list) {
+        if (pinned !== null && pinned !== 0) continue; // B조 전용 고정은 A조 원장에 안 실린다
+        preSeeded.add(op.id);
+        preSeededAt.set(op.id, cellByKey.get(key)?.label ?? key);
+      }
     }
     if (shift === 0 && packageTokens.length) {
       const parked = new Set<string>(preSeeded);
@@ -2075,7 +2097,7 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
       const slots = slotsFor(key);
       // 예약(시드)은 조 불문 강제 — A조 세트(쉐라그·토큰 코어)뿐 아니라 B조 세트(피누스)도
       // 앞 순서 방이 시드를 채가지 못하게 한다 (A조 예약 오퍼는 이미 used라 B풀에 없음)
-      const pool = new Map(roster.filter((op) => !used.has(op.id) && (!reserved.has(op.id) || reserved.get(op.id) === key)).map((op) => [op.id, op]));
+      const pool = new Map(roster.filter((op) => !used.has(op.id) && !offShift.has(op.id) && (!reserved.has(op.id) || reserved.get(op.id) === key)).map((op) => [op.id, op]));
       const ctx = { ...ctxFor(key, shift === 0 ? tokenPoints : {}, shiftFactionCounts, plants, placedIds), shift };
       const seed = (seeds[key] ?? []).filter((op) => pool.has(op.id));
       const team = bestTeam(room, slots, pool, ctx, seed);
@@ -2264,7 +2286,8 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
     const permaBoth = new Map<string, string>();
     // 생산방 수동 고정도 처음부터 양조 고정이다 (2026-08-19) — 동시 배치 제거·B조 감사가
     // 고정석을 쓸어내지 않도록 같은 예외 경로(permaBoth)에 태운다
-    for (const [key, list] of Object.entries(roomLockOps)) for (const op of list) permaBoth.set(op.id, key);
+    // 조별 고정은 한 조에만 나오므로 예외 대상이 아니다 — 양조 고정만 태운다
+    for (const [key, list] of Object.entries(roomLockOps)) for (const p of list) if (p.shift === null) permaBoth.set(p.op.id, key);
     for (let auditShift = 0; auditShift < SHIFT_COUNT; auditShift += 1) {
       // ── 무한동력 방 양조 고정 (사용자 확정 2026-07-27: "무한동력이면 절대룰(A·B 동시 배치
       // 금지)을 깨고 같이 넣어도 됨") ── A조 감사 수렴 직후: 제어센터의 A조 순소모가 0이면
@@ -2848,7 +2871,7 @@ export type OptimizeResult = {
   /** 채택안이 지속시간 타이브레이크를 켠 안인지 (동점 시 저소모 우선) */
   shiftTiebreak: boolean;
 };
-export async function optimizeConfig(fullRoster: InfraOp[], priority: ProdPriority = "gold", onStep?: (step: OptimizeStep) => void | Promise<void>, pinnedDorms: Record<string, string[]> = {}, roomPins: Record<string, string[]> = {}): Promise<OptimizeResult> {
+export async function optimizeConfig(fullRoster: InfraOp[], priority: ProdPriority = "gold", onStep?: (step: OptimizeStep) => void | Promise<void>, pinnedDorms: Record<string, string[]> = {}, roomPins: Record<string, RoomPin[]> = {}): Promise<OptimizeResult> {
   // 자동편성 제외 명단은 탐색 시작부터 뺀다 — 토큰 패키지·세트 성립 판정도 벤치 없는
   // 로스터 기준이어야 buildPlan(내부에서 같은 필터)과 결과가 어긋나지 않는다.
   const roster = autoRoster(fullRoster, pinnedDorms, roomPins);
@@ -3107,7 +3130,7 @@ export async function optimizeConfig(fullRoster: InfraOp[], priority: ProdPriori
 }
 
 // 얇은 래퍼 — 편성만 필요한 호출부(planner.tsx·verify-plan)는 종전대로 Plan을 받는다.
-export async function optimize(roster: InfraOp[], priority: ProdPriority = "gold", onStep?: (step: OptimizeStep) => void | Promise<void>, pinnedDorms: Record<string, string[]> = {}, roomPins: Record<string, string[]> = {}): Promise<Plan> {
+export async function optimize(roster: InfraOp[], priority: ProdPriority = "gold", onStep?: (step: OptimizeStep) => void | Promise<void>, pinnedDorms: Record<string, string[]> = {}, roomPins: Record<string, RoomPin[]> = {}): Promise<Plan> {
   return (await optimizeConfig(roster, priority, onStep, pinnedDorms, roomPins)).plan;
 }
 

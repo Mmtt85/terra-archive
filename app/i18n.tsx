@@ -705,6 +705,23 @@ const D: Record<string, Pair> = {
     "このウィンドウを開いた後に変えた編成を元に戻します（施設レベル・昇進はそのまま）",
   ],
   "이 창에서 바꾼 편성을 되돌렸습니다": ["Reverted the changes made in this window", "このウィンドウで変えた編成を元に戻しました"],
+  // ── 조별 고정 (제보 2026-09-12) ──
+  "이 방에 고정 — 자동편성이 A조·B조 모두 이 자리에 유지합니다 (교대 휴식 없음, 컨디션 관리는 직접). 한 번 더 누르면 지금 보고 있는 조에만 고정됩니다": [
+    "Pin to this room — auto-planning keeps them here on both shifts (no rest rotation, so manage Morale yourself). Press again to pin them to the shift you are viewing only.",
+    "この部屋に固定 — 自動編成がA班・B班の両方でこの席に残します（交代休憩なし、体力管理はご自身で）。もう一度押すと今見ている班だけに固定されます。",
+  ],
+  "지금은 A조·B조 모두 고정 — 누르면 지금 보고 있는 조에만 고정합니다": [
+    "Currently pinned on both shifts — press to pin to the shift you are viewing only",
+    "現在はA班・B班の両方に固定 — 押すと今見ている班だけに固定します",
+  ],
+  "지금은 {n}조에만 고정 — 누르면 고정을 해제합니다": [
+    "Currently pinned to shift {n} only — press to unpin",
+    "現在は{n}班だけに固定 — 押すと固定を解除します",
+  ],
+  "**📌 고정된 오퍼는 자동편성이 이 방 A조·B조 모두에 그대로 앉힙니다** — 교대 휴식이 없어지므로 컨디션(지속시간) 관리는 피아메타 등으로 직접 해 주세요. 📌를 한 번 더 누르면 **지금 보고 있는 조에만**(📌A·📌B) 고정되고, 그 조에만 배치됩니다. 한 번 더 누르면 해제됩니다. ✕로 빼도 고정이 풀립니다.": [
+    "**Pinned operators are kept in this room on both shifts by auto-planning** — there is no rest rotation, so manage Morale (uptime) yourself with Fiammetta or similar. Press 📌 again to pin them to **the shift you are viewing only** (📌A / 📌B); they are then placed on that shift alone. Press once more to unpin. Removing with ✕ also clears the pin.",
+    "**固定したオペレーターは自動編成がこの部屋のA班・B班の両方にそのまま配置します** — 交代休憩がなくなるため、体力（稼働時間）の管理はフィアメッタ等でご自身で行ってください。📌をもう一度押すと**今見ている班だけ**（📌A・📌B）に固定され、その班にのみ配置されます。さらに押すと解除されます。✕で外しても固定は解けます。",
+  ],
   "**{faction} 오라는 제어 센터에 {anchor} 배치가 필요합니다** — 이 조의 제어 센터에 없어서, 이 방의 {faction} 오퍼레이터에게 지금은 붙지 않습니다.": [
     "**The {faction} aura needs {anchor} in the Control Center** — they are not there on this shift, so it is not applying to the {faction} operators in this room.",
     "**{faction}のオーラは制御中枢に{anchor}の配置が必要です** — この班の制御中枢にいないため、この部屋の{faction}オペレーターには今は付きません。",

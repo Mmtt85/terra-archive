@@ -2,7 +2,7 @@
 // Web Worker(planner-worker.ts)로 id·정예화만 보내 계산하고, 진행 콜백(step/progress)은
 // postMessage로 돌려받아 메인 스레드는 상태 갱신·리페인트만 한다 (INP 근본 해결, 2026-07-22).
 // 워커 생성 실패·미지원(구형 브라우저)이면 종전대로 메인 스레드에서 직접 계산(폴백).
-import { ops, withElite, optimize, setLayoutPreset, setLevels, type Elite, type Plan, type ProdPriority, type OptimizeStep, type LayoutPreset, type Levels, type CustomRoom, type CustomProduct } from "./planner-engine";
+import { ops, withElite, optimize, setLayoutPreset, setLevels, type Elite, type Plan, type ProdPriority, type OptimizeStep, type LayoutPreset, type Levels, type CustomRoom, type CustomProduct, type RoomPin } from "./planner-engine";
 import { recommendRaises, type RaiseRec, type InvestProgress } from "./planner-invest";
 
 export type PlannerJob = {
@@ -17,7 +17,7 @@ export type PlannerJob = {
   customRooms?: CustomRoom[] | null; // 그외(커스텀) 배치 9칸 구성 — layout === "custom"일 때 필수
   customProducts?: (CustomProduct | null)[] | null; // 커스텀 제조소 품목(순금/작전기록)
   dormPins?: Record<string, string[]>; // 사용자가 숙소 칸에 고정한 오퍼 (자동편성이 건드리지 않는다)
-  roomPins?: Record<string, string[]>; // 생산방(비숙소 칸) 고정 오퍼 — A·B 양조에 그대로 유지 (2026-08-19)
+  roomPins?: Record<string, RoomPin[]>; // 생산방 고정 오퍼 — 문자열=양조 고정, {id,shift}=조별 고정 (2026-09-12)
 };
 
 type Pending = {
