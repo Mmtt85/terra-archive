@@ -6860,6 +6860,13 @@ legend {
   font-size: 12.5px;
   line-height: 1.6;
 }
+/* ⚠ 방 상세 안에서는 이 margin이 **안 먹는다.** `.detail-section > p { margin: 0 }`(본문 리셋)이
+   클래스 하나짜리 .dorm-note보다 우선순위가 높기 때문이다(0,1,1 > 0,1,0). 그래서 숙소 안내는
+   줄곧 카드에 딱 붙어 있었고(사용자 지적 2026-09-12), 생산방 고정 안내(.dorm-note.pin-note)만
+   클래스가 둘이라 우연히 리셋을 이기고 있었다. 여기서 명시적으로 되돌린다.
+   안내문끼리는 좁게 붙여 한 덩어리로 읽히게 하고, **마지막 안내문과 오퍼 카드 사이만** 넉넉히. */
+.detail-section > .dorm-note { margin: 0 0 10px; }
+.detail-section > .dorm-note + .crew-list { margin-top: 24px; }
 .toast {
   position: fixed;
   left: 50%;
@@ -19633,7 +19640,8 @@ p.sb-trline { margin-top: 2px; }
 
 /* 생산방 고정 안내 — 바로 아래 오퍼 카드(crew-list)와 붙지 않게 아래 간격을 넉넉히,
    안내문이라 본문보다 작게 (사용자 지적 2026-08-19 ×2 — 처음에 위 간격만 줘서 재지적) */
-.dorm-note.pin-note { margin: 0 0 24px; font-size: 11.5px; }
+/* 간격은 .dorm-note 기본값(24px)이 맡는다 — 여기선 글자 크기만 (안내문이라 본문보다 작게) */
+.dorm-note.pin-note { font-size: 11.5px; }
 
 /* ══ 위수 협의(오토체스) 가이드 — /autochess (2026-08-22) ═══════════════════
    생존연산 가이드(.sb-*)와 같은 규격을 공유하고, 이 모드에만 있는 것(티어 색·맹약 칩·
