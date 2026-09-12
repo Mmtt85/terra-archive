@@ -2118,7 +2118,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
               <p className="sim-note">{t("전략은 판을 시작할 때 고르는 조직입니다. 고유 효과와 시작 목표 HP가 다릅니다.")}</p>
               {searchBox}
               <p className="ac-count">{t("{n}종", { n: bandRows.length })}</p>
-              <div className="ac-cards">
+              <div className="ac-cards ac-bandgrid">
                 {bandRows.map((b) => (
                   /* PRTS 로 읽은 현재 전략에 표를 단다 (사용자 지시 2026-09-07 "위수협의 메뉴 내의
                      기물이라든가 그런거도 다 밴이라든지 선택된 전략이라든지 등의 현재상태 반영돼서
