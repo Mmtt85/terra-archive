@@ -62,6 +62,10 @@ export default function ChangelogButton() {
   // 종전엔 그 자리에서 펼쳤는데(2026-07-29), 펼친 항목이 목록을 밀어내 읽던 자리를 잃었다.
   const [detail, setDetail] = useState<ChangeRow | null>(null);
   const loaded = useRef(false);                       // 첫 로드 1회 가드
+  const listRef = useRef<HTMLDivElement | null>(null);   // 스크롤 컨테이너(.chlog-list)
+  const sentinelRef = useRef<HTMLDivElement | null>(null); // 바닥 감시자
+  const [autoLoad, setAutoLoad] = useState(false);       // IntersectionObserver가 붙었는가
+  const lastLoadAt = useRef(0);                          // 직전 구간을 불러온 시각 (연속 로드 간격 조절)
 
   // 딥링크: #changelog — 기간 확장 상태는 URL에 담지 않는다.
   // 옛 #changelog-all(상세보기 시절 링크)도 계속 받아 준다.
@@ -113,6 +117,11 @@ export default function ChangelogButton() {
   const loadOlder = useCallback(async () => {
     if (loadingMore) return;
     setLoadingMore(true);
+    // 연속 구간이 한꺼번에 쏟아지면 "퍽퍽퍽퍽" 튀어 보인다 (사용자 지적 2026-09-12) —
+    // 묶음 사이에 최소 간격을 둬서 각 묶음의 등장 애니메이션(0.32s)이 보이게 한다.
+    // 이 대기 동안 loadingMore가 켜져 있어 감시자가 다시 불러도 위에서 막힌다.
+    const gap = Date.now() - lastLoadAt.current;
+    if (gap < 320) await new Promise((resolve) => { window.setTimeout(resolve, 320 - gap); });
     try {
       let i = weeks;
       // 항목이 하나도 없는 주는 건너뛰고, 뭔가 나오거나 더 과거가 없을 때까지 이어 간다
@@ -130,8 +139,27 @@ export default function ChangelogButton() {
     } catch {
       setError(t("업데이트 내역을 불러오지 못했습니다 — 잠시 뒤 다시 시도해 주세요."));
     }
+    lastLoadAt.current = Date.now();
     setLoadingMore(false);
   }, [weeks, oldest, loadingMore, t]);
+
+  // 무한 스크롤 (사용자 요청 2026-09-12: "클릭클릭으로 과거이력 불러오지 말고 무한스크롤로").
+  // root는 **목록 자체**다 — .chlog-list가 overflow-y:auto인 스크롤 컨테이너라, 뷰포트 기준으로
+  // 두면 모달 안에서 감시자가 안 걸리는 경우가 생긴다. rootMargin으로 바닥에 닿기 전에 당겨 온다.
+  // loadOlder가 loadingMore를 보고 스스로 막으므로 중복 호출은 안전하고, 한 번 불러온 뒤
+  // 감시자가 다시 붙어 화면이 안 찼으면 이어서 다음 구간을 당긴다.
+  useEffect(() => {
+    if (!open || !hasOlder || error) return;
+    const target = sentinelRef.current;
+    if (!target || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(
+      (entries) => { if (entries.some((e) => e.isIntersecting)) void loadOlder(); },
+      { root: listRef.current, rootMargin: "200px 0px" },
+    );
+    io.observe(target);
+    setAutoLoad(true);
+    return () => io.disconnect();
+  }, [open, hasOlder, error, loadOlder]);
 
   const shown = rows ?? [];
   const groups = groupByDate(shown);
@@ -150,7 +178,7 @@ export default function ChangelogButton() {
           상세보기 토글(사용자 요청 2026-07-28: 제목 옆)은 크롬 바에 얹는다 (2026-08-03) */}
       {open && createPortal(
         <ModalWindow label={t("업데이트 내역")} className="chlog-modal" onClose={() => setOpen(false)}>
-            <div className="chlog-list">
+            <div className="chlog-list" ref={listRef}>
               {rows === null && !error && <p className="chlog-empty">{t("불러오는 중…")}</p>}
               {error && <p className="chlog-empty">{error}</p>}
               {rows !== null && !error && shown.length === 0 && (
@@ -194,11 +222,16 @@ export default function ChangelogButton() {
                   </ul>
                 </section>
               ))}
+              {/* 바닥 감시자 — 여기까지 스크롤하면 다음 구간을 당겨 온다.
+                  IntersectionObserver가 없는 환경에서만 종전 버튼을 대신 남긴다 */}
               {rows !== null && !error && hasOlder && (
-                <div className="chlog-actions">
-                  <button type="button" className="chlog-more-btn" onClick={() => { void loadOlder(); }} disabled={loadingMore}>
-                    {loadingMore ? t("불러오는 중…") : t("예전 기록 가져오기")}
-                  </button>
+                <div className="chlog-sentinel" ref={sentinelRef}>
+                  {loadingMore && <span className="chlog-loading">{t("불러오는 중…")}</span>}
+                  {!loadingMore && !autoLoad && (
+                    <button type="button" className="chlog-more-btn" onClick={() => { void loadOlder(); }}>
+                      {t("예전 기록 가져오기")}
+                    </button>
+                  )}
                 </div>
               )}
               {/* 후원 안내 — 항상 보이는 하단 노트 (사용자 요청 2026-07-27) */}

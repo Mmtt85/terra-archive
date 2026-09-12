@@ -451,6 +451,19 @@ button {
   padding-top: 12px;
   border-top: 1px solid var(--line);
 }
+/* 무한 스크롤로 **새로 붙는 날짜 묶음만** 부드럽게 들어온다 (사용자 지적 2026-09-12:
+   "퍽퍽퍽퍽 튀어나와서 뭔가싶음"). CSS 애니메이션은 마운트 때 한 번만 도는데, 묶음의 key가
+   날짜라 이미 떠 있던 묶음은 리마운트되지 않는다 — 그래서 새 것만 애니메이션이 걸린다. */
+.chlog-list section {
+  animation: chlogSectionIn 0.32s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+@keyframes chlogSectionIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chlog-list section { animation: none; }
+}
 .chlog-list h3 {
   margin: 0 0 8px;
   font-size: 12px;
@@ -565,6 +578,22 @@ button {
   display: flex;
   gap: 8px;
   margin-top: 14px;
+}
+
+/* 무한 스크롤 바닥 감시자 (2026-09-12) — 평소엔 보이지 않는 얇은 띠고, 불러오는 동안만
+   글자가 뜬다. 높이를 0으로 두면 IntersectionObserver가 못 잡으므로 최소 높이를 준다. */
+.chlog-sentinel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  margin-top: 14px;
+}
+.chlog-loading {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--muted);
 }
 .chlog-more-btn {
   flex: 1;
