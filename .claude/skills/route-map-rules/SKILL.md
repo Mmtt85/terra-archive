@@ -30,6 +30,15 @@ description: 적 이동 경로 격자 지도의 확정 규칙 (경로 접기·�
 - 경로 = startPosition + MOVE 체크포인트 + endPosition. **routes 배열의 자리를
   지우면 안 된다** — waves가 routeIndex 번호로 가리킨다. 못 그리는 경로는 null.
 - 적↔경로 연결: waves/branches의 SPAWN 액션 (`key`, `routeIndex`).
+  ⚠ **그 번호가 가리키는 배열이 둘로 갈린다** — waves 는 `routes`, **branches(기믹 소환)는
+  `extraRoutes`** 다. 2026-09-13 제보로 발견: IS-EX 의 '패밀리 어둠의 멸살자'가 빨간 출현칸이
+  아니라 엉뚱한 이동 타일에서 시작했다. 같은 0번이라도 웨이브는 `routes[0]`, 브랜치는
+  `extraRoutes[0]` 이라 **남의 경로를 덮어 그리고 있었다**(365개 레벨·693조합).
+  `routes_of_level` 은 두 배열을 이어 붙이고(기존 번호 보존) 브랜치에만 오프셋을 더한다.
+  전수 검증에서 웨이브 65,861건이 100% `routes` 범위 안, 브랜치 2,367건이 100% `extraRoutes`
+  범위 안이라 배열로 가르는 것이 안전하다. `managedByScheduler` 는 양쪽 다 true 라 판별에 못 쓴다.
+  `motionMode` 가 `E_NUM` 인 extraRoutes 는 빈 자리이므로 경로 없음으로 떨어뜨린다
+  (위수 협의 연습 맵의 소환 더미 — 예전엔 이 자리에 남의 경로가 그려졌다).
 
 ## ⚠ 좌표계 함정 (한 번 틀렸던 것)
 

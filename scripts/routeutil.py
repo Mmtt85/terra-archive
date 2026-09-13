@@ -69,6 +69,8 @@ def routes_of_level(lv, enemy_db=None):
 
     g: 행 문자열 배열 (타일 분류 문자), r: 경로별 [col,row] 꼭짓점 (null 자리 보존),
     f: 경로별 비행 플래그, e: 적 id → 경로 번호 목록.
+    ⚠ r 은 **routes + extraRoutes 를 이어 붙인 것**이다. 웨이브의 routeIndex 는 앞쪽(routes)을,
+      브랜치(기믹 소환)의 routeIndex 는 뒤쪽(extraRoutes)을 가리킨다 — 자세한 근거는 아래 주석.
 
     시뮬레이션 확장 (사용자 요청 2026-08-10 "시뮬레이트 버튼") — enemy_db(평탄화된
     enemy_database: 적id → 레벨 레코드[])를 주면 이동속도까지 실어 준다.
@@ -98,11 +100,12 @@ def routes_of_level(lv, enemy_db=None):
     g = ["".join(tile_char(tdefs[c]) if 0 <= c < len(tdefs) else "f" for c in row) for row in grid]
 
     rts, fly, waits = [], [], []
-    for rt in lv.get("routes") or []:
+
+    def add_route(rt):
         # ⚠ 자리를 지워선 안 된다 — waves가 routeIndex 번호로 가리킨다. 못 그리면 null.
         if not isinstance(rt, dict) or rt.get("motionMode") not in ("WALK", "FLY"):
             rts.append(None); fly.append(0); waits.append(None)
-            continue
+            return
         # 경유 대기 — 폴리라인의 k번째 꼭짓점(start=0) **도착 후**의 대기.
         # WAIT_*는 MOVE 사이에 끼어 있으므로 직전 꼭짓점 번호에 단다.
         # ⚠ cw의 번호가 poly 번호와 어긋나지 않게, 좌표가 없는 항목은 pts에 아예 안 넣는다.
@@ -127,18 +130,34 @@ def routes_of_level(lv, enemy_db=None):
         fly.append(1 if rt.get("motionMode") == "FLY" else 0)
         waits.append(cw or None)
 
+    for rt in lv.get("routes") or []:
+        add_route(rt)
+    # ⚠ **기믹 소환(branches)의 routeIndex 는 routes 가 아니라 `extraRoutes` 를 가리킨다.**
+    #   2026-09-13 제보로 발견 — IS-EX 의 '패밀리 어둠의 멸살자'가 빨간 출현칸이 아니라
+    #   엉뚱한 이동 타일에서 시작하는 것으로 그려졌다. 같은 0번이라도 웨이브는 routes[0],
+    #   브랜치는 extraRoutes[0] 이라 남의 경로(리무진·시민 것)를 덮어 쓰고 있었다.
+    #   전수 검증: 브랜치 SPAWN 2,367건이 100% extraRoutes 범위 안, 웨이브 65,861건이
+    #   100% routes 범위 안 — 예외 0건이라 배열로 가르는 것이 안전하다.
+    #   기존 번호를 깨지 않으려고 **뒤에 이어 붙이고** 브랜치만 이 오프셋을 더해 가리킨다
+    #   (앞에 끼워 넣으면 waves 의 routeIndex 가 통째로 밀린다).
+    xoff = len(rts)
+    for rt in lv.get("extraRoutes") or []:
+        add_route(rt)
+
     eroutes = {}
 
-    def walk(actions):
+    def walk(actions, off=0):
+        """off — 이 액션들의 routeIndex 가 가리키는 배열의 시작 번호.
+        웨이브는 routes(0), 브랜치는 extraRoutes(xoff). 위 주석 참조."""
         for a in actions or []:
             if a.get("actionType") in (0, "SPAWN") and a.get("key") and a.get("routeIndex") is not None:
-                eroutes.setdefault(a["key"], set()).add(a["routeIndex"])
+                eroutes.setdefault(a["key"], set()).add(off + a["routeIndex"])
     for w in lv.get("waves") or []:
         for fg in w.get("fragments") or []:
             walk(fg.get("actions"))
     for b in (lv.get("branches") or {}).values():
         for ph in b.get("phases") or []:
-            walk(ph.get("actions"))
+            walk(ph.get("actions"), xoff)
     er = {k: sorted(i for i in v if 0 <= i < len(rts) and rts[i]) for k, v in eroutes.items()}
     er = {k: v for k, v in er.items() if v}
     if not any(rts):
