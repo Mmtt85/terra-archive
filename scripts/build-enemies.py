@@ -56,17 +56,20 @@ load = lambda p: json.load(open(p, encoding="utf-8"))
 ENEMY_NAME_FIX = {"캔모씨": "캔낫"}
 
 IMMUNE_FIELDS = ["stunImmune", "silenceImmune", "sleepImmune", "frozenImmune", "levitateImmune",
-                 "disarmedCombatImmune", "fearedImmune", "palsyImmune", "attractImmune"]
+                 "fearedImmune", "palsyImmune", "attractImmune"]
 # ⚠ 표기는 **게임 원문 그대로** 쓴다 (사용자 지적 2026-09-13). 원본 스킬 설명의 용어 태그가
 #   정본이다: `<$ba.levitate>공중 부양</>` · `<$ba.attract>유도</>` (kr_skill_table 실측 —
 #   '부양'은 단독으로 쓰인 적이 없고 153건 전부 '공중 부양'의 일부, '흡인'은 0건).
 #   EN `<$ba.attract>Lures</>` · JA `<$ba.attract>誘導</>` 도 같은 방식으로 확인했다.
 #   teleportImmune('강제 이동')은 뺐다 — 적 1,829종을 전수로 세었더니 True 인 적이 **0종**이라
 #   화면에 뜬 적이 없는 죽은 항목이었다 (사용자 지시 2026-09-13 "애초부터 안나오고 있었잖음").
+#   disarmedCombatImmune('무장 해제')도 뺐다 (사용자 지시 2026-09-13 "항목째 빼자") —
+#   게임 원문에서 이 상태는 오퍼가 **자기 자신에게** 거는 "공격 중지"(머틀·재키·우타게·굼 등)뿐이고,
+#   적에게 거는 수단이 KR 스킬 표에 없다. 85종에 면역만 달려 있어 뜨기만 하고 뜻이 없었다.
 IMMUNE_LABELS = {
-    "ko": ["기절", "침묵", "수면", "빙결", "공중 부양", "무장 해제", "공포", "마비", "유도"],
-    "en": ["Stun", "Silence", "Sleep", "Freeze", "Levitate", "Disarm", "Fear", "Paralysis", "Lure"],
-    "ja": ["スタン", "沈黙", "睡眠", "凍結", "浮遊", "武装解除", "恐怖", "麻痺", "誘導"],
+    "ko": ["기절", "침묵", "수면", "빙결", "공중 부양", "공포", "마비", "유도"],
+    "en": ["Stun", "Silence", "Sleep", "Freeze", "Levitate", "Fear", "Paralysis", "Lure"],
+    "ja": ["スタン", "沈黙", "睡眠", "凍結", "浮遊", "恐怖", "麻痺", "誘導"],
 }
 DAMAGE_LABELS = {
     "ko": {"PHYSIC": "물리", "MAGIC": "마법", "NO_DAMAGE": "피해 없음", "HEAL": "치유"},
