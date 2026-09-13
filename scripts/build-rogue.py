@@ -121,10 +121,14 @@ def mv(field, default=None):
 # 적 상태 면역 필드 → 표기 (도감 상세 표시용, 사용자 요청 2026-07-18). 로케일별.
 IMMUNE_FIELDS = ["stunImmune", "silenceImmune", "sleepImmune", "frozenImmune", "levitateImmune",
                  "disarmedCombatImmune", "fearedImmune", "palsyImmune", "attractImmune", "teleportImmune"]
+# ⚠ 표기는 **게임 원문 그대로** 쓴다 (사용자 지적 2026-09-13). 원본 스킬 설명의 용어 태그가
+#   정본이다: `<$ba.levitate>공중 부양</>` · `<$ba.attract>유도</>` (kr_skill_table 실측 —
+#   '부양'은 단독으로 쓰인 적이 없고 153건 전부 '공중 부양'의 일부, '흡인'은 0건).
+#   EN `<$ba.attract>Lures</>` · JA `<$ba.attract>誘導</>` 도 같은 방식으로 확인했다.
 IMMUNE_LABELS = {
-    None: ["기절", "침묵", "수면", "빙결", "부양", "무장 해제", "공포", "마비", "흡인", "강제 이동"],
-    "en": ["Stun", "Silence", "Sleep", "Freeze", "Levitate", "Disarm", "Fear", "Paralysis", "Pull", "Forced movement"],
-    "ja": ["スタン", "沈黙", "睡眠", "凍結", "浮遊", "武装解除", "恐怖", "麻痺", "吸引", "強制移動"],
+    None: ["기절", "침묵", "수면", "빙결", "공중 부양", "무장 해제", "공포", "마비", "유도", "강제 이동"],
+    "en": ["Stun", "Silence", "Sleep", "Freeze", "Levitate", "Disarm", "Fear", "Paralysis", "Lure", "Forced movement"],
+    "ja": ["スタン", "沈黙", "睡眠", "凍結", "浮遊", "武装解除", "恐怖", "麻痺", "誘導", "強制移動"],
 }
 IMMUNE_KO = list(zip(IMMUNE_FIELDS, IMMUNE_LABELS[None]))
 
