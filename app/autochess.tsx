@@ -1390,7 +1390,11 @@ export default function AutochessGuide({ doc, onShowOperator }: {
         {marks?.map((m) => <i key={m} className="sb-chip ac-feed">{m}</i>)}
       </div>
       {c.gar.map((g) => garLine(g, false))}
-      {goldDiffers(c) && c.garG.map((g) => garLine(g, true))}
+      {goldDiffers(c)
+        ? c.garG.map((g) => garLine(g, true))
+        /* 골든 문구가 일반과 한 글자도 안 다른 기물이 7종 있다 — 그냥 비워 두면
+           "빠뜨렸나" 싶어진다 (사용자 지적 2026-09-15). 같다는 걸 말해 준다. */
+        : c.garG.length > 0 && <p className="ac-garsame">{t("골든도 같음")}</p>}
     </button>
   );
 
@@ -1481,6 +1485,8 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     if (!g) return null;
     return (
       <div key={`${id}${gold ? "-g" : ""}`} className={`ac-gar${gold ? " gold" : ""}`}>
+        {/* 라벨을 옆에 두면 본문 폭이 그만큼 깎여 4열에서 서너 줄로 늘어난다
+            (사용자 지적 2026-09-15). 라벨은 윗줄, 본문은 아랫줄 전체 폭으로. */}
         <span className="ac-gar-type">
           <img src={garIcon(g.ic)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
           {g.t}
@@ -2146,7 +2152,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
               <p className="sim-note">{t("전략은 판을 시작할 때 고르는 조직입니다. 고유 효과와 시작 목표 HP가 다릅니다.")}</p>
               {searchBox}
               <p className="ac-count">{t("{n}종", { n: bandRows.length })}</p>
-              <div className="ac-cards ac-bandgrid">
+              <div className="ac-cards ac-grid4">
                 {bandRows.map((b) => (
                   /* PRTS 로 읽은 현재 전략에 표를 단다 (사용자 지시 2026-09-07 "위수협의 메뉴 내의
                      기물이라든가 그런거도 다 밴이라든지 선택된 전략이라든지 등의 현재상태 반영돼서
@@ -2222,7 +2228,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                     <section key={g.key} className="ac-sim-group">
                       <h3 className="sb-h3">{g.label} <em className="sb-count">{g.rows.length}</em></h3>
                       {g.rows.length ? (
-                        <div className="ac-cards">
+                        <div className="ac-cards ac-grid4">
                           {g.rows.map((c) => {
                             const f = bondFeed(c);
                             return chessCard(c, [
@@ -2247,7 +2253,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                       <section key={tn} className="ac-tiersec">
                         <h3 className="ac-tierhead">{tierBadge(tn)}<span>{t("{n}명", { n: rows.length })}</span></h3>
                         {/* ⚠ rows.map(chessCard)로 넘기면 map의 index가 marks 인자로 들어간다 */}
-                        <div className="ac-cards">{rows.map((c) => chessCard(c))}</div>
+                        <div className="ac-cards ac-grid4">{rows.map((c) => chessCard(c))}</div>
                       </section>
                     );
                   })}
@@ -2313,7 +2319,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                 return (
                   <section key={tn} className="ac-tiersec">
                     <h3 className="ac-tierhead">{tierBadge(tn)}<span>{t("{n}종", { n: rows.length })}</span></h3>
-                    <div className="ac-cards">
+                    <div className="ac-cards ac-grid4">
                       {rows.map((e) => (
                         <button key={e.id} type="button" className="ac-card ac-equipcard" onClick={() => setEquip(e)}>
                           <header>
@@ -2327,6 +2333,13 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                             </div>
                           </header>
                           <p className="ac-eqd">{rich(e.d)}</p>
+                          {/* 강화판도 카드에서 바로 (사용자 지시 2026-09-15 "골든까지 한번에").
+                              같은 문장이면 덧붙이지 않는다 — 카드만 길어진다. */}
+                          {e.dG && e.dG !== e.d && (
+                            <p className="ac-eqd gold">
+                              <i className="ac-gar-gold">{t("강화")}</i>{rich(e.dG)}
+                            </p>
+                          )}
                         </button>
                       ))}
                     </div>
@@ -2606,7 +2619,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
               <p className="sim-note">{t("골라서 다음 전투에 불러오는 적입니다. 처치하거나 그 전투를 이기면 자금을 줍니다 — 자금이 클수록 그만큼 버거운 적입니다.")}</p>
               {searchBox}
               <p className="ac-count">{t("{n}종", { n: huntRows.length })}</p>
-              <div className="ac-cards">
+              <div className="ac-cards ac-grid4">
                 {huntRows.map((h) => (
                   <button key={h.id} type="button" className="ac-card ac-huntcard"
                     onClick={() => setEnemy(h.e)} title={t("적 상세 보기")}>
@@ -3339,7 +3352,9 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                 {chess.gar.length || chess.garG.length ? (
                   <>
                     {chess.gar.map((g) => garLine(g, false, true, chess.id))}
-                    {goldDiffers(chess) && chess.garG.map((g) => garLine(g, true, true, chess.id))}
+                    {goldDiffers(chess)
+                      ? chess.garG.map((g) => garLine(g, true, true, chess.id))
+                      : chess.garG.length > 0 && <p className="ac-garsame">{t("골든도 같음")}</p>}
                   </>
                 ) : chess.id.startsWith("diy_")
                   /* 자유 선택 칸으로만 데려오는 ★6 — 상점 명단이 아니라 전용 능력이 아예 없다 */

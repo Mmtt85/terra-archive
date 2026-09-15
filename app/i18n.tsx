@@ -3317,6 +3317,8 @@ const D: Record<string, Pair> = {
     "アイテムはオペレーターに装着してステータスを上げます。同じアイテムを{n}個そろえると強化版になり、盟約アイテムは変形構造体と一緒に装着すると装着者がその盟約を追加で得ます。"],
   "조건에 맞는 아이템이 없습니다.": ["No items match these filters.", "条件に合うアイテムがありません。"],
   "강화 ({n}개 조합)": ["Enhanced (combine {n})", "強化（{n}個合成）"],
+  "강화": ["Enhanced", "強化"],
+  "골든도 같음": ["Same when Golden", "ゴールデンも同じ"],
   "전략은 판을 시작할 때 고르는 조직입니다. 고유 효과와 시작 목표 HP가 다릅니다.": [
     "A strategy is the group you pick at the start of a run. Each has its own effect and starting target HP.",
     "戦略は対戦開始時に選ぶ組織です。固有効果と初期目標HPが異なります。"],

@@ -20316,10 +20316,14 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
 .ac-bondchip.nation { border-color: color-mix(in srgb, var(--lime) 55%, var(--line)); }
 
 /* ── 기물 능력 줄 — 분류 아이콘 + 본문 ── */
+/* ⚠ 라벨(.ac-gar-type)을 본문 **옆**에 두면 그만큼 본문 폭이 깎여, 4열에서 서너 줄로
+   늘어난다 (사용자 지적 2026-09-15 — 포덴코가 4줄이 됐다). 세로로 쌓아 본문에 전체 폭을
+   준다. 라벨은 어차피 짧아서 한 줄을 다 쓰지 않는다. */
 .ac-gar {
   display: flex;
+  flex-direction: column;
   align-items: flex-start;
-  gap: 8px;
+  gap: 3px;
   padding: 8px 10px;
   font-size: 12.5px;
   line-height: 1.6;
@@ -20336,7 +20340,6 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   font-weight: 800;
   color: var(--muted);
   white-space: nowrap;
-  padding-top: 1px;
 }
 .ac-gar-type img { width: 14px; height: 14px; object-fit: contain; }
 /* ── 일반/골든을 한 화면에 같이 둔다 (사용자 지시 2026-09-15 "탭으로 나누지 말고 한눈에") ──
@@ -20369,6 +20372,13 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
 /* 특질 문구의 줄바꿈 보존 — 게임 원문이 두 줄인 능력이 6종 있다
    (그라벨·파인콘·라플란드 더 데카덴차·데겐블레허). .ac-skmod-d 와 같은 처리. */
 .ac-gar-txt { min-width: 0; white-space: pre-line; }
+/* 골든 문구가 일반과 똑같은 기물 — 비워 두면 빠뜨린 걸로 읽혀서 한 마디 적는다 */
+.ac-garsame {
+  margin: 3px 0 0;
+  padding-left: 10px;
+  font-size: 11px;
+  color: var(--muted);
+}
 /* 원문이 빠뜨린 조건을 괄호로 한 마디만 (사용자 지시 2026-09-15 "간단하게").
    ⚠ 원문 뒤에 **같은 줄로 이어 붙이면 딱 붙어 읽기 나쁘다** (2026-09-15 지적) —
    아랫줄로 떨어뜨리되 길이는 한 마디로 유지한다. 딱지·근거줄은 달지 않는다. */
@@ -21246,11 +21256,19 @@ html.dark .ac-krfix { color: #d8b153; }
   text-underline-offset: 0;
 }
 
-/* 전략 탭만 4열 고정 — 게임의 '전략 정보' 화면이 한 줄에 넷을 깔아 준다
-   (사용자 지시 2026-09-13). 카드 생김새는 다른 탭과 **그대로 같다** — 열 수만 바꾼다.
-   좁은 화면은 아래 `@media (max-width: 640px)` 의 1열 규칙에 그대로 넘긴다
-   (명시도가 같고 그쪽이 뒤라 저절로 이긴다 — 의도한 것이다). */
-.ac-bandgrid { grid-template-columns: repeat(4, 1fr); }
+/* 한 줄에 넷으로 고정하는 목록 — 전략·기물·아이템·수배 특훈이 같이 쓴다
+   (사용자 지시 2026-09-13 전략, 2026-09-15 나머지). 카드 생김새는 건드리지 않고
+   **열 수만** 바꾼다. 좁은 화면은 아래 `@media (max-width: 640px)` 의 1열 규칙에
+   그대로 넘긴다 (명시도가 같고 그쪽이 뒤라 저절로 이긴다 — 의도한 것이다).
+   ⚠ 기물 고르기 모달은 제외 — `.ac-pickmodal .ac-cards` 가 명시도로 이긴다. */
+.ac-grid4 { grid-template-columns: repeat(4, 1fr); }
+/* 아이템 강화판 한 줄 — 기물 골든 능력(.ac-gar.gold)과 같은 금색 계열로 묶는다 */
+.ac-eqd.gold {
+  margin-top: 5px;
+  padding-left: 8px;
+  border-left: 2px solid #c08a2e;
+}
+.ac-eqd.gold .ac-gar-gold { margin: 0 6px 0 0; }
 
 /* PRTS 로 읽은 '지금 고른 전략' 표 — 전략 목록에서 현재 판의 상태를 알아보게 (사용자 지시 2026-09-07
    "위수협의 메뉴 내의 기물이라든가 그런거도 다 밴이라든지 선택된 전략이라든지 등의 현재상태 반영") */
