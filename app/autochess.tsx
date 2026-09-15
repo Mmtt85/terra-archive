@@ -157,19 +157,23 @@ export type AcBand = {
   d: string; sort: number; by?: string; un?: string;
 };
 
-/** ── 한국어판 원문이 빠뜨린 조건 보충 (사용자 지시 2026-09-15) ──────────────
- *  설명은 게임 원문(`bandDesc`)을 그대로 싣는 것이 원칙이지만, **원문 자체가 조건을
- *  빠뜨려 사람이 잘못 판단할 위험이 있으면** 원문은 두고 아래에 한 줄을 덧붙인다.
- *  전략 41종을 KR·EN·JA 원문으로 전수 대조해 찾은 2건이다 (2026-09-15).
- *  ⚠ **한국어에서만 띄운다** — EN·JA 원문은 조건이 온전해서 이 주석이 군더더기가 된다.
- *  새로 넣을 땐 반드시 EN·JA 원문을 근거로 댈 것. 추측으로 적지 않는다. */
+/** ── 한국어판 원문이 빠뜨린 조건 (사용자 지시 2026-09-15) ────────────────────
+ *  설명은 게임 원문(`bandDesc`)을 그대로 싣는 것이 원칙이지만, **원문이 조건을 빠뜨려
+ *  사람이 잘못 판단할 위험이 있으면** 원문은 두고 짧은 괄호 한 마디만 덧붙인다.
+ *  길게 쓰지 말 것 — 원문을 밀어내면 안 된다 (사용자 지시 "간단하게").
+ *  ⚠ **한국어에서만 띄운다** — EN·JA 원문은 온전해서 군더더기가 된다.
+ *  ⚠ 넣을 땐 반드시 EN·JA 원문을 근거로 댈 것. 추측으로 적지 않는다.
+ *
+ *  ⚠ **대조는 반드시 `app/data/autochess*.json`(싣는 데이터)으로 한다.** 원본
+ *  `kr_activity_table` 에는 같은 band 가 시즌별로 **여러 번** 들어 있어서, 거기서 긁으면
+ *  옛 시즌 문구를 현재 EN/JA 와 견주게 된다 (2026-09-15에 실제로 그렇게 오판했다 —
+ *  티타임을 '1명'으로 읽고 주석을 달았는데 시즌2 원문은 이미 '각각 1명'이었다).
+ *
+ *  전략 40종·능력 226종을 싣는 데이터로 전수 대조해 남은 건 아래 1건뿐이다. */
 const BAND_KR_FIX: Record<string, string> = {
-  // KR "라운드마다 **기본** 오퍼레이터를 판매 시" — '처음'이 통째로 빠졌다.
+  // KR "라운드마다 **기본** 오퍼레이터를 판매 시" — '처음'이 빠졌다.
   // EN "The **first** non-Elite Operator sold every round" · JA "**最初に**昇進前の…売却する際"
-  band_vodfox: "한국어판 설명에 '처음'이 빠져 있습니다 — 그 라운드에서 **맨 먼저** 파는 기본(비정예화) 오퍼레이터만 교환됩니다.",
-  // KR "2/4티어 오퍼레이터 **1명** 획득" — 한 명처럼 읽히지만 실제로는 둘이다.
-  // EN "obtain **1 Tier 2 Operator and 1 Tier 4 Operator**" · JA "等級2、4の…**1名ずつ**獲得"
-  band_lmlee: "한국어판 설명은 한 명처럼 읽히지만, 실제로는 **2티어 1명과 4티어 1명, 합쳐 2명**을 받습니다.",
+  band_vodfox: "그 라운드에서 **맨 먼저** 파는 기본 오퍼레이터만",
 };
 export type AcMode = {
   id: string; n: string; code: string; sort: number; diff: string; type: string;
@@ -2166,10 +2170,12 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                         </span>
                       </div>
                     </header>
-                    <p className="ac-eqd">{rich(b.d.split("\n")[0])}</p>
-                    {locale === "ko" && BAND_KR_FIX[b.id] && (
-                      <p className="ac-krfix">{rich(BAND_KR_FIX[b.id])}</p>
-                    )}
+                    <p className="ac-eqd">
+                      {rich(b.d.split("\n")[0])}
+                      {locale === "ko" && BAND_KR_FIX[b.id] && (
+                        <span className="ac-krfix"> ({rich(BAND_KR_FIX[b.id])})</span>
+                      )}
+                    </p>
                   </button>
                 ))}
               </div>
@@ -3511,10 +3517,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
             <h4>{t("효과")}</h4>
             <Lines text={band.d} render={(x) => acRich(x, band.id)} />
             {locale === "ko" && BAND_KR_FIX[band.id] && (
-              <p className="ac-krfix">
-                {rich(BAND_KR_FIX[band.id])}
-                <em>영문·일본어판 원문 기준</em>
-              </p>
+              <p className="ac-krfix">({rich(BAND_KR_FIX[band.id])})</p>
             )}
             {/* 해금 조건 — 37개 중 25개만 조건이 있다 (사용자 요청 2026-08-22) */}
             <h4>{t("해금 조건")}</h4>

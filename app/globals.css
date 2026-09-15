@@ -20369,38 +20369,10 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
 /* 특질 문구의 줄바꿈 보존 — 게임 원문이 두 줄인 능력이 6종 있다
    (그라벨·파인콘·라플란드 더 데카덴차·데겐블레허). .ac-skmod-d 와 같은 처리. */
 .ac-gar-txt { min-width: 0; white-space: pre-line; }
-/* ── 한국어판 원문이 빠뜨린 조건 보충 (사용자 지시 2026-09-15) ──
-   원문 설명 **아래에** 붙어서, 원문이 아니라 우리가 덧댄 말임이 보여야 한다.
-   경고가 아니라 도움말이므로 붉은색은 쓰지 않는다 — 노란 기운으로 눈에만 띄게. */
-.ac-krfix {
-  margin: 6px 0 0;
-  padding: 7px 10px;
-  font-size: 12px;
-  line-height: 1.6;
-  color: var(--ink2);
-  background: color-mix(in srgb, #d8a72a 10%, transparent);
-  border-left: 3px solid #d8a72a;
-  border-radius: 0 4px 4px 0;
-}
-.ac-krfix::before {
-  content: "보충";
-  display: inline-block;
-  margin-right: 6px;
-  padding: 1px 5px;
-  border-radius: 3px;
-  background: #8a6d1d;
-  color: #fff;
-  font-size: 9.5px;
-  font-weight: 800;
-  vertical-align: 1px;
-}
-.ac-krfix em {
-  display: block;
-  margin-top: 3px;
-  color: var(--muted);
-  font-size: 10.5px;
-  font-style: normal;
-}
+/* 원문이 빠뜨린 조건을 괄호로 한 마디만 (사용자 지시 2026-09-15 "간단하게").
+   원문과 같은 줄에 이어 붙되, 우리가 덧댄 말임이 색으로만 드러나게 한다. */
+.ac-krfix { color: #b8912f; }
+html.dark .ac-krfix { color: #d8b153; }
 .ac-goldhead {
   margin: 12px 0 4px;
   font-size: 12px;
