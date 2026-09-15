@@ -479,10 +479,10 @@ export default function AutochessGuide({ doc, onShowOperator }: {
   const [etype, setEtype] = useState("");              // 특훈 적 유형 거르기 ("" = 전체)
   const [bond, setBond] = useState<AcBond | null>(null);
   const [chess, setChess] = useState<AcChess | null>(null);
-  // 기물 상세의 일반/정예화(골든) 토글 (사용자 확정 2026-08-23: "정예화를 따로 설명으로 빼지
-  // 말고 버튼으로" — 능력·스킬·모듈이 전부 이 토글을 따라간다). 열 때마다 일반부터(openChess).
-  const [goldView, setGoldView] = useState(false);
-  const openChess = (c: AcChess) => { setGoldView(false); setChess(c); };
+  // 기물 상세는 일반/골든을 **같이** 보여준다 (사용자 지시 2026-09-15 "탭으로 나누지 말고
+  // 한눈에"). 종전엔 토글 하나가 능력·스킬·모듈을 전부 갈아끼웠는데, 골든이 뭐가 달라지는지
+  // 보려면 창을 두 번 눌러 비교해야 했다. 지금은 다른 것만 골든 줄을 덧붙인다.
+  const openChess = (c: AcChess) => { setChess(c); };
   // ── 편성 계산기 (사용자 요청 2026-08-29) ──────────────────────────────────
   // 판에 담으면 23개 맹약 상태가 한 번에 나온다. 계산 규칙은 autochess-board.ts 참고 —
   // **인원 게이트만 자동 판정하고 중첩은 자동 합산하지 않는다** (중첩을 올리는 능력 130개 중
@@ -588,7 +588,6 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     setEquip(kind === "item" && id ? doc.equips.find((e) => e.id === id) ?? null : null);
     setBand(kind === "band" && id ? doc.bands.find((b) => b.id === id) ?? null : null);
     setBond(kind === "bond" && id ? doc.bonds.find((b) => b.id === id) ?? null : null);
-    setGoldView(false);   // 기물 상세는 언제나 일반부터 (openChess와 같은 규약)
     setChess(kind === "op" && id ? doc.chess.find((c) => c.id === id) ?? null : null);
   }
   /** 해시의 편성 파라미터 → 시뮬레이터 상태. 없는 기물 코드(옛 링크·오타)는 조용히 버린다.
@@ -1372,6 +1371,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
         {marks?.map((m) => <i key={m} className="sb-chip ac-feed">{m}</i>)}
       </div>
       {c.gar.map((g) => garLine(g, false))}
+      {goldDiffers(c) && c.garG.map((g) => garLine(g, true))}
     </button>
   );
 
@@ -1447,6 +1447,14 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     }
   };
 
+  /** 골든 능력을 따로 보여줄 값어치가 있는가 — **문구가 실제로 달라질 때만** 참.
+   *  garG 가 있어도 일반과 한 글자도 안 다른 기물이 9종 있다(비그나·라플란드·텍사스 등,
+   *  2026-09-15 실측). 그 경우까지 golden 줄을 덧붙이면 같은 문장이 두 번 나와 카드만 길어진다.
+   *  id 가 아니라 **렌더되는 문구**로 비교한다 — id 가 달라도 내용이 같은 경우가 있다. */
+  const garText = (ids: string[]) =>
+    ids.map((i) => { const g = doc.gar[i]; return g ? `${g.t}\u0000${g.d}` : i; }).join("\u0001");
+  const goldDiffers = (c: AcChess) => c.garG.length > 0 && garText(c.garG) !== garText(c.gar);
+
   // linked = 문구 안의 참조를 눌러서 열 수 있게 (모달 전용 — 카드는 그 자체가 버튼이라
   // 안에 버튼을 또 넣을 수 없다. 2026-08-22 하이드레이션 오류로 확인된 규약).
   const garLine = (id: string, gold: boolean, linked = false, self?: string) => {
@@ -1457,6 +1465,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
         <span className="ac-gar-type">
           <img src={garIcon(g.ic)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />
           {g.t}
+          {gold && <i className="ac-gar-gold">{t("골든")}</i>}
         </span>
         <span className="ac-gar-txt">{linked ? acRich(g.d, self) : rich(g.d)}</span>
       </div>
@@ -3281,15 +3290,6 @@ export default function AutochessGuide({ doc, onShowOperator }: {
               </button>
             )}
 
-            {/* 일반 ↔ 정예화(골든) — 능력·스킬·모듈·표 강조가 전부 이 토글을 따른다 (2026-08-23) */}
-            {(chess.garG.length > 0 || chess.sks?.some((x) => x.dG) || chess.modG) && (
-              <div className="ac-goldbar" role="tablist" aria-label={t("정예화 상태")}>
-                <button type="button" role="tab" aria-selected={!goldView}
-                  className={!goldView ? "on" : ""} onClick={() => setGoldView(false)}>{t("일반")}</button>
-                <button type="button" role="tab" aria-selected={goldView}
-                  className={goldView ? "on gold" : "gold"} onClick={() => setGoldView(true)}>{t("정예화(골든)")}</button>
-              </div>
-            )}
             {/* 대체 기물(NPC) — 능력 대신 '어느 기물을 대체하는가'를 보여준다. 특질은
                 대체하는 기물의 것이라 각 기물 상세에서 읽는다 (사용자 요청 2026-08-23). */}
             {chess.subsOf?.length ? (
@@ -3313,8 +3313,10 @@ export default function AutochessGuide({ doc, onShowOperator }: {
               <>
                 <h4>{t("위수 협의 능력")}</h4>
                 {chess.gar.length || chess.garG.length ? (
-                  (goldView && chess.garG.length ? chess.garG : chess.gar)
-                    .map((g) => garLine(g, goldView, true, chess.id))
+                  <>
+                    {chess.gar.map((g) => garLine(g, false, true, chess.id))}
+                    {goldDiffers(chess) && chess.garG.map((g) => garLine(g, true, true, chess.id))}
+                  </>
                 ) : chess.id.startsWith("diy_")
                   /* 자유 선택 칸으로만 데려오는 ★6 — 상점 명단이 아니라 전용 능력이 아예 없다 */
                   ? <p className="sb-dim">{t("보급센터 자유 선택 칸으로만 데려올 수 있는 오퍼레이터입니다. 상점 명단에 없어 전용 능력·기본 스킬 설정이 게임 데이터에 들어 있지 않고, 게임 안내대로 특질 없이 출전합니다.")}</p>
@@ -3326,20 +3328,26 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                 <h4>{t("스킬")}</h4>
                 {/* 도감 링크 대신 설명을 그대로 싣는다 (사용자 확정 2026-08-23). 수치는 위 토글이
                     가리키는 그 상태(일반/골든)의 스킬 레벨·모듈 단계 기준이다. */}
-                <p className="sb-dim ac-note">{t("수치는 위에서 고른 정예화 상태의 스킬 레벨 기준이고, 기본으로 들고 나오는 구성에 '디폴트'가 붙어 있습니다.")}</p>
+                <p className="sb-dim ac-note">{t("일반과 골든의 스킬 레벨·수치가 다르면 둘 다 적었습니다. 기본으로 들고 나오는 구성에 '디폴트'가 붙어 있습니다.")}</p>
                 {chess.sks.map((sk) => {
-                  const lv = goldView ? (sk.lvG ?? sk.lv) : sk.lv;
-                  const d = goldView ? (sk.dG ?? sk.d) : sk.d;
+                  const gLv = sk.lvG != null && sk.lvG !== sk.lv ? sk.lvG : null;
+                  const gD = sk.dG && sk.dG !== sk.d ? sk.dG : null;
                   return (
                     <div key={sk.i} className="ac-skmod">
                       <header>
                         {sk.ic && <img className="ac-skmod-ic" src={skillIcon(sk.ic)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />}
                         <span className="ac-skmod-cap">{t("{n}스킬", { n: sk.i })}</span>
                         <b>{sk.n}</b>
-                        {lv ? <i className="sb-chip">Lv{lv}</i> : null}
+                        {sk.lv ? <i className="sb-chip">Lv{sk.lv}</i> : null}
+                        {gLv ? <i className="sb-chip ac-goldchip">{t("골든")} Lv{gLv}</i> : null}
                         {sk.df ? <i className="sb-chip ac-df">{t("디폴트")}</i> : null}
                       </header>
-                      {d && <p className="ac-skmod-d">{acRich(d, chess.id)}</p>}
+                      {sk.d && <p className="ac-skmod-d">{acRich(sk.d, chess.id)}</p>}
+                      {gD && (
+                        <p className="ac-skmod-d gold">
+                          <i className="ac-gar-gold">{t("골든")}</i>{acRich(gD, chess.id)}
+                        </p>
+                      )}
                     </div>
                   );
                 })}
@@ -3349,9 +3357,9 @@ export default function AutochessGuide({ doc, onShowOperator }: {
               <>
                 <h4>{t("모듈")}</h4>
                 {/* 모듈 슬롯은 골든부터 — 일반 토글에서는 흐리게 눕혀 둔다 */}
-                {chess.modG && !goldView && <p className="sb-dim ac-note">{t("모듈 슬롯은 정예화(골든)부터 열립니다.")}</p>}
+                {chess.modG && <p className="sb-dim ac-note">{t("모듈 슬롯은 정예화(골든)부터 열립니다.")}</p>}
                 {chess.mods.map((md) => (
-                  <div key={md.n} className={`ac-skmod mod${chess.modG && !goldView ? " off" : ""}`}>
+                  <div key={md.n} className="ac-skmod mod">
                     <header>
                       {md.i && <img className="ac-skmod-ic mod" src={modTypeIcon(md.i)} alt="" aria-hidden loading="lazy" decoding="async" onError={hideErr} />}
                       <span className="ac-skmod-cap">{md.i ? md.i.toUpperCase() : t("모듈")}</span>
@@ -3376,8 +3384,8 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                   <table className="ac-table ac-table-sm">
                     <thead><tr><th /><th>{t("구매")}</th><th>{t("정예화")}</th><th>{t("레벨")}</th><th>{t("스킬")}</th><th>{t("모듈")}</th></tr></thead>
                     <tbody>
-                      <tr className={!goldView ? "ac-activerow" : ""}><th scope="row">{t("일반")}</th><td>{row.b.buy}</td><td>{t(PHASE_LABEL[row.b.ph] ?? row.b.ph)}</td><td>Lv{row.b.lv}</td><td>{row.b.sk}</td><td>{row.b.md ? t("{n}단계", { n: row.b.md }) : "—"}</td></tr>
-                      <tr className={`ac-gold-row${goldView ? " ac-activerow" : ""}`}><th scope="row">{t("골든")}</th><td>{t("{n}장", { n: chess.up ?? 3 })}</td><td>{t(PHASE_LABEL[row.g.ph] ?? row.g.ph)}</td><td>Lv{row.g.lv}</td><td>{row.g.sk}</td><td>{row.g.md ? t("{n}단계", { n: row.g.md }) : "—"}</td></tr>
+                      <tr><th scope="row">{t("일반")}</th><td>{row.b.buy}</td><td>{t(PHASE_LABEL[row.b.ph] ?? row.b.ph)}</td><td>Lv{row.b.lv}</td><td>{row.b.sk}</td><td>{row.b.md ? t("{n}단계", { n: row.b.md }) : "—"}</td></tr>
+                      <tr className="ac-gold-row"><th scope="row">{t("골든")}</th><td>{t("{n}장", { n: chess.up ?? 3 })}</td><td>{t(PHASE_LABEL[row.g.ph] ?? row.g.ph)}</td><td>Lv{row.g.lv}</td><td>{row.g.sk}</td><td>{row.g.md ? t("{n}단계", { n: row.g.md }) : "—"}</td></tr>
                     </tbody>
                   </table>
                 </div>

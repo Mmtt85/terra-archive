@@ -3176,9 +3176,9 @@ const D: Record<string, Pair> = {
   "{name} 중첩 올림": ["Adds {name} stacks", "{name}加算を増やす"],
   // 기물 상세 — 스킬·모듈 설명 (2026-08-23: 도감 링크 대신 모달 안에서)
   "정예화 상태": ["Promotion state", "精鋭化状態"],
-  "수치는 위에서 고른 정예화 상태의 스킬 레벨 기준이고, 기본으로 들고 나오는 구성에 '디폴트'가 붙어 있습니다.": [
-    "Numbers follow the promotion state picked above; the loadout the unit spawns with is tagged \"Default\".",
-    "数値は上で選んだ精鋭化状態のスキルレベル基準で、初期構成には「デフォルト」が付いています。"],
+  "일반과 골든의 스킬 레벨·수치가 다르면 둘 다 적었습니다. 기본으로 들고 나오는 구성에 '디폴트'가 붙어 있습니다.": [
+    "Where Normal and Golden differ in skill level or numbers, both are listed. The loadout the unit spawns with is tagged \"Default\".",
+    "通常とゴールデンでスキルレベル・数値が異なる場合は両方を記載しています。初期構成には「デフォルト」が付いています。"],
   "모듈 슬롯은 정예화(골든)부터 열립니다.": ["The module slot opens from Golden.", "モジュールスロットはゴールデンから開放されます。"],
   "디폴트": ["Default", "デフォルト"],
   "자유 선택 칸 후보": ["Free-pick candidates", "自由選択枠の候補"],

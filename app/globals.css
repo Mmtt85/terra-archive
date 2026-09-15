@@ -20339,6 +20339,33 @@ html:not(.dark) img[src*="/ac/modtype/"] { filter: invert(1); }
   padding-top: 1px;
 }
 .ac-gar-type img { width: 14px; height: 14px; object-fit: contain; }
+/* ── 일반/골든을 한 화면에 같이 둔다 (사용자 지시 2026-09-15 "탭으로 나누지 말고 한눈에") ──
+   종전엔 토글이 내용을 갈아끼워서 뭐가 달라지는지 보려면 두 번 눌러 비교해야 했다.
+   지금은 다른 것만 골든 줄이 덧붙으므로, 그 줄이 스스로 골든임을 말해야 한다. */
+.ac-gar-gold {
+  margin-left: 4px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: #8a6d1d;
+  color: #fff;
+  font-size: 9.5px;
+  font-style: normal;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+.sb-chip.ac-goldchip {
+  background: color-mix(in srgb, #c08a2e 18%, transparent);
+  border-color: color-mix(in srgb, #c08a2e 55%, var(--line));
+  color: var(--ink);
+  font-weight: 800;
+}
+/* 골든일 때만 달라지는 스킬 설명 — 능력줄과 같은 금색 계열로 묶는다 */
+.ac-skmod-d.gold {
+  margin-top: 4px;
+  padding-left: 8px;
+  border-left: 2px solid #c08a2e;
+}
+.ac-skmod-d.gold .ac-gar-gold { margin: 0 6px 0 0; }
 /* 특질 문구의 줄바꿈 보존 — 게임 원문이 두 줄인 능력이 6종 있다
    (그라벨·파인콘·라플란드 더 데카덴차·데겐블레허). .ac-skmod-d 와 같은 처리. */
 .ac-gar-txt { min-width: 0; white-space: pre-line; }
@@ -21601,39 +21628,6 @@ html.dark .ac-bring-dial {
 
 /* 오퍼 상세 모달 하단 — 백과사전으로 넘어가는 줄 */
 /* 기물 상세의 일반/정예화(골든) 토글 — 능력·스킬·모듈·표 강조가 전부 이걸 따른다 */
-.ac-goldbar {
-  display: inline-flex;
-  margin: 14px 0 2px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-sm);
-  overflow: hidden;
-}
-.ac-goldbar button {
-  padding: 7px 16px;
-  border: 0;
-  background: var(--white);
-  color: var(--muted);
-  font-weight: 700;
-  font-size: 12.5px;
-  cursor: pointer;
-}
-.ac-goldbar button + button {
-  border-left: 1px solid var(--line);
-}
-.ac-goldbar button.on {
-  background: var(--ink);
-  color: var(--white);
-}
-/* 골든 칸이 켜졌을 땐 금색 기운 — 골든 능력 블록(.ac-gar.gold)과 같은 계열 */
-.ac-goldbar button.gold.on {
-  background: #8a6d1d;
-  color: #fff;
-}
-.ac-table .ac-activerow th,
-.ac-table .ac-activerow td {
-  background: color-mix(in srgb, var(--lime) 14%, transparent);
-  font-weight: 800;
-}
 
 /* 기물 상세의 스킬·모듈 설명 카드 — 도감 링크(ac-oplink)를 대체 (사용자 확정 2026-08-23) */
 .ac-skmod {
@@ -21663,10 +21657,6 @@ html.dark .ac-bring-dial {
 /* 모듈 카드는 스킬과 확실히 갈라 보이게 — 왼쪽 금색 띠 (사용자 요청 2026-08-23) */
 .ac-skmod.mod {
   border-left: 3px solid #b98a2b;
-}
-/* 일반 토글에서 모듈은 아직 안 열린 상태 — 눕혀 둔다 */
-.ac-skmod.off {
-  opacity: 0.45;
 }
 .ac-skmod-cap {
   padding: 2px 7px;
