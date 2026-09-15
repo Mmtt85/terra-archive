@@ -2173,7 +2173,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
                     <p className="ac-eqd">
                       {rich(b.d.split("\n")[0])}
                       {locale === "ko" && BAND_KR_FIX[b.id] && (
-                        <span className="ac-krfix"> ({rich(BAND_KR_FIX[b.id])})</span>
+                        <span className="ac-krfix">({rich(BAND_KR_FIX[b.id])})</span>
                       )}
                     </p>
                   </button>
