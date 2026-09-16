@@ -47073,6 +47073,33 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/enemies/enemy_9023_acdums"/>
   </url>
   <url>
+    <loc>https://terra-archive.net/events</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/events"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/events"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/events"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/events"/>
+  </url>
+  <url>
+    <loc>https://terra-archive.net/en/events</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/events"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/events"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/events"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/events"/>
+  </url>
+  <url>
+    <loc>https://terra-archive.net/ja/events</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://terra-archive.net/events"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://terra-archive.net/en/events"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://terra-archive.net/ja/events"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://terra-archive.net/events"/>
+  </url>
+  <url>
     <loc>https://terra-archive.net/farm</loc>
     <lastmod>2026-09-16T17:48:22+09:00</lastmod>
     <changefreq>weekly</changefreq>

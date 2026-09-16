@@ -33,6 +33,7 @@ const SHOTS = [
   { name: "enemy", path: "/enemies" },
   { name: "stage", path: "/stages" },
   { name: "item", path: "/items" },
+  { name: "event", path: "/events" },
   { name: "sim", path: "/sim" },
   { name: "recruit", path: "/recruit" },
   { name: "farm", path: "/farm" },

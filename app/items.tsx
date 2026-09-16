@@ -98,8 +98,10 @@ function ItemCard({ item, onSelect }: { item: DexItem; onSelect: (i: DexItem) =>
   );
 }
 
-/** 아이템 상세 — 설명·용도·획득처 + 드랍 작전. 재료파밍 효율표가 있으면 그쪽으로 보낸다. */
-function ItemFile({ item, doc, onOpenStage }: {
+/** 아이템 상세 — 설명·용도·획득처 + 드랍 작전. 재료파밍 효율표가 있으면 그쪽으로 보낸다.
+ *  ⚠ export — 이벤트 도감(app/events.tsx)이 교환 재화를 **모달로 겹쳐** 띄울 때 그대로 쓴다.
+ *  그쪽은 문서를 dex-cross.loadItems 로 그때 받는다 (청크를 미리 끌어오지 않으려고). */
+export function ItemFile({ item, doc, onOpenStage }: {
   item: DexItem; doc: ItemDoc; onOpenStage: (id: string) => void;
 }) {
   const { locale, t } = useI18n();

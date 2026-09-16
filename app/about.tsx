@@ -33,6 +33,7 @@ const SHOTS: Partial<Record<Tab, ShotPair>> = {
   enemy: { d: "/about/enemy.webp", m: "/about/enemy-m.webp" },
   stage: { d: "/about/stage.webp", m: "/about/stage-m.webp" },
   item: { d: "/about/item.webp", m: "/about/item-m.webp" },
+  event: { d: "/about/event.webp", m: "/about/event-m.webp" },
   sim: { d: "/about/sim.webp", m: "/about/sim-m.webp" },
   recruit: { d: "/about/recruit.webp", m: "/about/recruit-m.webp" },
   farm: { d: "/about/farm.webp", m: "/about/farm-m.webp" },
@@ -210,6 +211,16 @@ const CONTENT: Record<Locale, Content> = {
         ],
       },
       {
+        tab: "event", icon: "✧", name: "이벤트 도감",
+        summary: "이벤트 하나를 열면 그 이벤트의 작전·등장 적·교환 재화·보상 오퍼가 한자리에 모입니다.",
+        bullets: [
+          "이벤트 150여 개 — 사이드 스토리·미니 이벤트·막간 이야기를 종류와 수록 내용으로 거릅니다",
+          "작전을 누르면 작전 도감이, 적을 누르면 적 도감이 그 자리에 겹쳐 뜹니다",
+          "끝난 이벤트도 그대로 남습니다 — 게임에서는 통째로 사라지는 것들입니다",
+          "이벤트 보상 오퍼레이터는 게임 임무 데이터에서 그대로 가져옵니다 (지어내지 않습니다)",
+        ],
+      },
+      {
         tab: "rogue", icon: "❖", name: "통합전략 가이드",
         summary: "통합전략(IS) 전 테마의 층 구성·전투 노드·적 도감·유물·엔딩 조건을 난이도별로 정리합니다. 한국어·영어·일본어 완전 현지화.",
         bullets: [
@@ -370,6 +381,16 @@ const CONTENT: Record<Locale, Content> = {
         ],
       },
       {
+        tab: "event", icon: "✧", name: "Event Handbook",
+        summary: "Open an event and its operations, enemies, exchange currencies and reward operator are all in one place.",
+        bullets: [
+          "150+ events — filter Side Stories, mini events and Intermezzi by type and by what they contain",
+          "Tap an operation for the Stage Handbook, an enemy for the Enemy Handbook — they stack on top",
+          "Ended events stay here; in-game they disappear entirely",
+          "Reward operators come straight from the game's mission data — nothing is invented",
+        ],
+      },
+      {
         tab: "rogue", icon: "❖", name: "Integrated Strategies Guide",
         summary: "Every IS theme's floor layouts, battle nodes, enemy dex, relics, and ending conditions — all difficulty-aware, fully localized in Korean, English, and Japanese.",
         bullets: [
@@ -527,6 +548,16 @@ const CONTENT: Record<Locale, Content> = {
           "本文中の点線下線の人物・用語を押すと、読んでいるその場でポップオーバー表示",
           "忙しいドクターのためのAI要約 — スクリプト全文を読み込み、約10分のあらすじに整理",
           "テラ年代記のタイムラインとテーマ別のまとめ表示 — テーマリンクはURLでそのまま共有",
+        ],
+      },
+      {
+        tab: "event", icon: "✧", name: "イベント図鑑",
+        summary: "イベントを開くと、その作戦・出現する敵・交換素材・報酬オペレーターが一箇所にまとまります。",
+        bullets: [
+          "150以上のイベント — サイドストーリー・ミニイベント・幕間を種類と収録内容で絞り込み",
+          "作戦を押せば作戦図鑑、敵を押せば敵図鑑がその場に重なって開きます",
+          "終了したイベントもそのまま残ります — ゲーム内では丸ごと消えるものです",
+          "報酬オペレーターはゲームのミッションデータからそのまま取得します（推測しません）",
         ],
       },
       {

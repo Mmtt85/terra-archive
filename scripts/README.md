@@ -130,6 +130,15 @@ python3 scripts/build-items.py .gamedata       # → app/data/items{,.en,.ja}.js
 #     뒤집어 만들고, 효율표 링크는 farm.json, 이벤트 링크는 stories.json 을 본다.
 #     KR item_table 전량(1,423종). 아이콘은 게임 CDN에서 파일명으로 매니페스트를 뒤져
 #     받는다(멱등 — 이미 있는 파일은 건너뜀). 못 찾는 54종은 아이콘 없이 글만 싣는다.
+python3 scripts/build-operator-debut.py        # → app/data/operator-debut.json (오퍼 한섭 데뷔일 장부)
+#   ⚠ operators.json **커밋 이력**에서 되짚는다 — 게임 데이터에 출시일이 없기 때문이다
+#     (character_table·스킨 getTime·handbook 어디에도 없고, 정규 배너 dynMeta 에도 명단이 없다).
+#     첫 커밋에 이미 있던 430명은 '모름'이다. 얕은 체크아웃(CI)에서는 커밋된 장부에
+#     새 오퍼만 덧붙인다. 이벤트 도감의 '신규 오퍼'가 이걸 먹는다.
+python3 scripts/build-events.py .gamedata     # → app/data/events{,.en,.ja}.json (이벤트 도감, 3개 언어 동시)
+#   ⚠ **build-stages·build-items·build-story·build-operator-debut 뒤에** 돌린다 — 그 산출물을
+#     이벤트 단위로 접는다. 작전↔이벤트는 zoneToActivity, 재화↔이벤트는 activityItems,
+#     보상 오퍼는 missionData 의 missionGroup 이 정본이다 (이름 매칭 금지).
 python3 scripts/build-stages-rogue.py          # → app/data/stages-rogue{,.en,.ja}.json (작전 도감의 통합전략 693건)
 #   ⚠ 입력이 app/data/rogue{1..6}.json 뿐이라 **build-rogue.py 뒤에** 돌린다 (네트워크 불필요).
 #     stages.json에 섞지 않는 이유 = 상세 페이지 파일 수 한도. 스크립트 머리주석 참조.

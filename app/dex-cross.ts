@@ -42,6 +42,24 @@ export async function loadStages(locale: string): Promise<StageDoc> {
   return doc;
 }
 
+const ITEM_LOADERS: Record<string, () => Promise<unknown>> = {
+  ko: () => import("./data/items.json"),
+  en: () => import("./data/items.en.json"),
+  ja: () => import("./data/items.ja.json"),
+};
+const itemCache = new Map<string, unknown>();
+
+/** 아이템 도감 문서 (로케일당 ~650KB) — 이벤트 도감에서 재화를 누를 때 처음 필요해진다.
+ *  페이지로 넘기지 않고 **모달로 겹쳐 띄우기** 위한 것이다 (사용자 지시 2026-09-16:
+ *  "교환재화 클릭하면 페이지 이동이 아니라 모달창이 떠야됨"). */
+export async function loadItems<T>(locale: string): Promise<T> {
+  const hit = itemCache.get(locale);
+  if (hit) return hit as T;
+  const doc = unwrap<T>(await (ITEM_LOADERS[locale] ?? ITEM_LOADERS.ko)());
+  itemCache.set(locale, doc);
+  return doc;
+}
+
 /** 적 코어 스탯 색인 (70KB, 로케일 무관) — 작전 모달의 등장 적 수치에 필요하다.
  *  ⚠ viewOf에 이걸 안 넘기면 등장 적 카드에 HP·공격 수치가 통째로 빠진다
  *  (2026-08-11 사용자 제보: 적 도감→작전 모달 경로에서 실제로 빠져 있었다). */

@@ -188,6 +188,12 @@ run "build-stages"       python3 scripts/build-stages.py "$G" --no-images
 #   새 이벤트마다 재화 아이콘 몇 장이 느는 정도라 CI가 매번 돌려도 무겁지 않다.
 #   UnityPy·lz4inv 가 없으면 아이콘만 조용히 건너뛰고 표는 그대로 갱신된다.
 run "build-items"        python3 scripts/build-items.py "$G"
+# 오퍼 데뷔 장부 — 신규 오퍼를 이벤트에 붙이는 근거다 (배너 명단이 게임 데이터에 없다).
+# ⚠ 러너는 얕은 체크아웃(fetch-depth 2)이라 이력을 되짚을 수 없다 — 커밋된 장부에
+#   새 오퍼만 덧붙이는 증분 모드로 돈다 (scripts/build-operator-debut.py 머리주석).
+run "build-op-debut"     python3 scripts/build-operator-debut.py
+# 이벤트 도감 — **맨 뒤**. 작전·아이템·스토리·오퍼 데뷔 장부를 전부 읽어 이벤트 단위로 접는다.
+run "build-events"       python3 scripts/build-events.py "$G"
 
 # 8) 오퍼 지연 에셋 전수 검사 (사용자 요청 2026-08-02) — 데이터가 번들(배포)과 R2(동기화)
 # 두 경로로 나가는데 한쪽만 돌면 반쪽이 된다. 2026-08-01에 R2 키가 없어 아바타가 안 올라갔고

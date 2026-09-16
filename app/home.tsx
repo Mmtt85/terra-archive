@@ -29,6 +29,12 @@ const STAGE_DEX = {
   en: lazy(() => import("./stages-en")),
   ja: lazy(() => import("./stages-ja")),
 } as const;
+// 이벤트 도감도 같은 이유로 로케일별 청크 (데이터 ~240KB, 2026-09-16)
+const EVENT_DEX = {
+  ko: lazy(() => import("./events-ko")),
+  en: lazy(() => import("./events-en")),
+  ja: lazy(() => import("./events-ja")),
+} as const;
 // 아이템 도감도 같은 이유로 로케일별 청크 (데이터 ~650KB, 2026-09-16)
 const ITEM_DEX = {
   ko: lazy(() => import("./items-ko")),
@@ -216,17 +222,17 @@ const JOB_ORDER = ["PIONEER", "WARRIOR", "TANK", "SNIPER", "CASTER", "MEDIC", "S
 
 const SORT_KEYS = ["기본", "이름", "성급", "발매순", "소속", "출신지", "종족", "직군", "세부 직군"];
 
-export type Tab = "portal" | "archive" | "enemy" | "stage" | "item" | "sim" | "planner" | "recruit" | "farm" | "upgrade" | "story" | "rogue" | "ra" | "autochess" | "about";
+export type Tab = "portal" | "archive" | "enemy" | "stage" | "item" | "event" | "sim" | "planner" | "recruit" | "farm" | "upgrade" | "story" | "rogue" | "ra" | "autochess" | "about";
 // 탭 ↔ URL 세그먼트 (portal이 로케일 루트, 오퍼 백과사전은 /operators — 사용자 확정 2026-07-17:
 // 루트 진입 시 오퍼 이미지 강제 로딩을 없애려 포탈 첫화면 도입). seo.ts의 TAB_SEG·라우트 폴더명과 일치.
 // URL 세그먼트 "stories"(← 정적 자산 디렉터리 public/story/ 와의 경로 충돌 회피). 내부 탭명은 story.
 // ⚠ 적 도감의 URL 세그먼트는 "enemies"(복수)인데 초상 자산 폴더는 public/enemy/(단수)다.
 //    일부러 다르게 뒀다 — scripts/deploy.sh가 스테이징에서 `rm -rf $STAGE/enemy`로 자산만
 //    떼어내는데(서빙은 R2), 이름이 같으면 라우트 HTML까지 통째로 지워진다.
-const TAB_SEG: Record<Tab, string> = { portal: "", archive: "operators", enemy: "enemies", stage: "stages", item: "items", sim: "sim", planner: "infra", recruit: "recruit", farm: "farm", upgrade: "upgrade", story: "stories", rogue: "rogue", ra: "ra", autochess: "autochess", about: "about" };
+const TAB_SEG: Record<Tab, string> = { portal: "", archive: "operators", enemy: "enemies", stage: "stages", item: "items", event: "events", sim: "sim", planner: "infra", recruit: "recruit", farm: "farm", upgrade: "upgrade", story: "stories", rogue: "rogue", ra: "ra", autochess: "autochess", about: "about" };
 // ⚠ TAB_SEG와 짝 — 세그먼트를 더하면 여기도 같이 (enemies·stages가 빠져 /stages가
 //   portal로 판정되던 기존 누락도 2026-08-10에 함께 채움)
-const SEG_TAB: Record<string, Tab> = { "": "portal", operators: "archive", enemies: "enemy", stages: "stage", items: "item", sim: "sim", infra: "planner", recruit: "recruit", farm: "farm", upgrade: "upgrade", stories: "story", rogue: "rogue", ra: "ra", autochess: "autochess", about: "about" };
+const SEG_TAB: Record<string, Tab> = { "": "portal", operators: "archive", enemies: "enemy", stages: "stage", items: "item", events: "event", sim: "sim", infra: "planner", recruit: "recruit", farm: "farm", upgrade: "upgrade", stories: "story", rogue: "rogue", ra: "ra", autochess: "autochess", about: "about" };
 const LOCALE_BASE: Record<Locale, string> = { ko: "", en: "/en", ja: "/ja" };
 
 // 빌드(=배포) 시각 — vite define으로 박히는 ISO 문자열을 KST 분 단위로 찍는다.
@@ -1216,6 +1222,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   const [stagePageOpen, setStagePageOpen] = useState<boolean>(() => !!pageStage);
   const StageDexForLocale = STAGE_DEX[locale as keyof typeof STAGE_DEX] ?? STAGE_DEX.ko;
   const ItemDexForLocale = ITEM_DEX[locale as keyof typeof ITEM_DEX] ?? ITEM_DEX.ko;
+  const EventDexForLocale = EVENT_DEX[locale as keyof typeof EVENT_DEX] ?? EVENT_DEX.ko;
   // 작전 도감 → 적 도감: 적 칩을 누르면 적 상세로 넘어간다 (두 도감이 서로를 가리킨다)
   const openEnemyFromStage = (id: string) => {
     history.pushState(null, "", `${tabPath("enemy")}#en-${id}`);
@@ -1519,6 +1526,8 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
               : t("작전 도감 - 명일방주 스테이지 지형·드랍 | 테라 아카이브"))
           : tab === "item"
             ? t("아이템 도감 - 명일방주 아이템 정보 | 테라 아카이브")
+          : tab === "event"
+            ? t("이벤트 도감 - 명일방주 이벤트 정보 | 테라 아카이브")
           : tab === "farm"
             ? t("재료파밍 도우미 - 명일방주 재료 파밍 효율표 | 테라 아카이브")
             : tab === "sim"
@@ -1583,6 +1592,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     enemy: t("적 도감"),
     stage: t("작전 도감"),
     item: t("아이템 도감"),
+    event: t("이벤트 도감"),
     planner: t("인프라 자동편성기"),
     recruit: t("공개채용 도우미"),
     farm: t("재료파밍 도우미"),
@@ -1598,7 +1608,10 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   // 시뮬레이터(공개채용·재료파밍·오퍼 육성)로 묶고, 하위 라벨은 짧게 쓴다.
   // **URL·페이지 제목·SEO는 그대로** — 헤더/푸터 내비 표시만 바꾸는 것이다.
   // 가이드 묶음에 속한 탭 — 묶음 헤더 선택 표시·새기능 배지 판정에 쓴다
-  const GUIDE_TABS: Tab[] = ["rogue", "ra", "autochess"];
+  // ⚠ 이벤트는 **가이드 묶음**이다 (사용자 확정 2026-09-16: "이벤트를 메인메뉴로 빼기는 좀
+    //   그런가? 가이드에 이벤트를 넣어야 할듯"). 통합전략·생존연산·위수 협의와 같은 결 —
+    //   "이 콘텐츠를 보러 간다"는 메뉴지 자료를 뒤지는 도감 묶음이 아니다.
+  const GUIDE_TABS: Tab[] = ["rogue", "ra", "autochess", "event"];
   const TAB_GROUPS: { id: "dex" | "sim"; name: string; icon: string; items: { tab: Tab; short: string }[] }[] = [
     { id: "dex", name: t("도감"), icon: "▤", items: [
       { tab: "archive", short: t("오퍼레이터") }, { tab: "enemy", short: t("적") }, { tab: "stage", short: t("작전") },
@@ -2139,6 +2152,17 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                     ))}
                   </div>
                 </div>
+                {/* 이벤트 도감 — 하위 플라이아웃을 달지 않는다. 이벤트가 150개라 메뉴에
+                    풀면 화면을 덮는다(통전 테마 6개·생존연산 2시즌과는 규모가 다르다).
+                    고르는 것은 화면 안 검색·필터가 맡는다. */}
+                <a href={`${localeBase}/events`} className={`tab-sub tab-event${tab === "event" ? " selected" : ""}`}
+                  onClick={(event) => {
+                    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+                    event.preventDefault(); switchTab("event");
+                  }}>
+                  <span className="tab-sub-mark" aria-hidden>›</span>{t("이벤트")}
+                  {tabHasNewFeature("event") && <span className="new-badge">{t("새기능")}</span>}
+                </a>
               </div>
             </div>
             <button className={`tab-story${tab === "story" ? " selected" : ""}`} onClick={() => switchTab("story")}><span className="tab-icon" aria-hidden>✦</span>{t("스토리")}{tabHasNewFeature("story") && <span className="new-badge">{t("새기능")}</span>}</button>
@@ -2358,6 +2382,11 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
         {tab === "enemy" && !(pageEnemy && enemyPageOpen) && <EnemyDexForLocale />}
         {tab === "stage" && !(pageStage && stagePageOpen) && <StageDexForLocale onOpenEnemy={openEnemyFromStage} />}
         {tab === "item" && <ItemDexForLocale />}
+        {/* 전용 가이드가 있는 모드(위수 협의)는 이벤트 모달 대신 그 가이드 탭으로 넘긴다 */}
+        {tab === "event" && (
+          <EventDexForLocale onShowOperator={showOperatorById}
+            onOpenGuide={(seg) => switchTab((SEG_TAB[seg] ?? "event") as Tab)} />
+        )}
         {tab === "ra" && <SandboxForLocale includeFuture={includeFuture} season={sandboxSlug === "anchor" ? "v3" : "v2"} />}
         {tab === "autochess" && <AutochessForLocale season={autochessSeason} onShowOperator={showOperatorById} />}
         {tab === "about" && <About onOpenTab={switchTab} />}
