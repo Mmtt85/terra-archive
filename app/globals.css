@@ -22747,3 +22747,12 @@ html[lang="ja"] .vn-box {
 .it-event b {
   color: var(--ink);
 }
+
+/* 하위 열(서브 드롭다운)의 검색줄 — 루트와 같은 모양이되 인라인(터치) 쪽은 붙어 있지 않게.
+   `.attr-drop .attr-search` 를 그대로 물려받으므로 여기서는 차이만 적는다
+   (사용자 요청 2026-09-16: "서브 드롭다운도 각각 다 검색란 만들어줘"). */
+.attr-sub .attr-search {
+  position: static;
+  padding: 2px 2px 5px;
+  background: 0 0;
+}

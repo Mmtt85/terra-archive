@@ -53,6 +53,30 @@ export type AttrGroup = {
   subFor?: (path: string[]) => AttrSub | null;
 };
 
+/** 목록 검색줄 — 루트 드롭다운과 하위 열이 **똑같이** 쓴다.
+ *  하위에도 붙인 이유(사용자 요청 2026-09-16): 작전 계열 → 이벤트까지 좁히고 나면 그 아래가
+ *  이벤트 80여 개라 "드르륵 드르륵" 훑어야 했다. 루트에만 검색이 있는 게 더 이상했다.
+ *  ⚠ **자동 포커스하지 않는다.** 하위 열은 마우스를 올리기만 해도 열리므로, 포커스를 뺏으면
+ *  루트 검색란에 치던 글자가 줄을 지나칠 때마다 날아간다. 터치에서는 키보드가 목록을 덮는다. */
+function SearchRow({ label, value, onChange }: {
+  label: string; value: string; onChange: (v: string) => void;
+}) {
+  const { t } = useI18n();
+  return (
+    <li className="attr-search">
+      <input type="search" value={value} placeholder={t("입력해서 찾기")}
+        aria-label={`${label} — ${t("입력해서 찾기")}`}
+        onChange={(event) => onChange(event.target.value)} />
+    </li>
+  );
+}
+
+/** 검색어로 값 목록 걸러내기 — 보이는 이름(labelFor) 기준 */
+const filterItems = (items: string[], query: string, labelFor?: (v: string) => string) => {
+  const q = query.trim().toLowerCase();
+  return q ? items.filter((item) => (labelFor ? labelFor(item) : item).toLowerCase().includes(q)) : items;
+};
+
 /** 목록의 한 계층 — 루트도 하위 열도 같은 모양이라 한 타입으로 다룬다 */
 type Level = {
   title: string; items: string[]; selected: string[];
@@ -90,6 +114,9 @@ function AttrRow({ item, path, level, subFor, hoverMode, openPath, openAt, pick 
   /** 값 하나를 고르고 목록을 닫는다 */ pick: (level: Level, value: string) => void;
 }) {
   const { t } = useI18n();
+  // 터치 모드에서 이 줄 아래로 펼쳐지는 하위 목록의 검색어. 줄이 닫히면 컴포넌트가 아니라
+  // 목록만 사라지므로, 다시 열었을 때 옛 검색어가 남지 않게 openHere 가 꺼질 때 비운다.
+  const [subQuery, setSubQuery] = useState("");
   const sub = subFor?.(path) ?? null;
   const hasSub = !!sub && sub.items.length > 0;
   const openHere = hasSub && startsWith(openPath, path);
@@ -114,7 +141,11 @@ function AttrRow({ item, path, level, subFor, hoverMode, openPath, openAt, pick 
         onClick={() => {
           // 터치: 하위가 있으면 **펼치기**가 우선 (부모만 고르려면 펼쳐진 '전체'를 쓴다).
           // 마우스: 줄을 누르면 종전처럼 그 값으로 확정하고 닫는다.
-          if (!hoverMode && hasSub) { openAt(openHere ? path.slice(0, -1) : path); return; }
+          if (!hoverMode && hasSub) {
+            if (openHere) setSubQuery("");
+            openAt(openHere ? path.slice(0, -1) : path);
+            return;
+          }
           pick(level, item);
         }}>
         <i aria-hidden>{isSelected ? "✓" : ""}</i>
@@ -126,20 +157,70 @@ function AttrRow({ item, path, level, subFor, hoverMode, openPath, openAt, pick 
       {!hoverMode && openHere && sub && (
         <ul className="attr-sub" role="listbox" aria-multiselectable={!sub.single} aria-label={sub.title}>
           <li className="attr-sub-head" aria-hidden>{sub.title}</li>
-          <li>
-            <button type="button" role="option" aria-selected={false} className="attr-sub-all"
-              onClick={() => pick(level, item)}>
-              <i aria-hidden />{t("{name} 전체", { name: label })}
-              <span>{level.countForItem(item)}</span>
-            </button>
-          </li>
-          {sub.items.map((child) => (
+          {/* 짧은 목록에도 항상 붙인다 — 루트 칸과 같은 규칙 (사용자 재확정 2026-08-10:
+              긴 칸에만 얹었더니 "뭐가 바뀐지 모르겠다"는 지적을 받았다) */}
+          <SearchRow label={sub.title} value={subQuery} onChange={setSubQuery} />
+          {/* 검색 중에는 '전체'를 감춘다 — 찾는 값을 치고 있는데 부모 확정 버튼이 끼면 헷갈린다 */}
+          {!subQuery.trim() && (
+            <li>
+              <button type="button" role="option" aria-selected={false} className="attr-sub-all"
+                onClick={() => pick(level, item)}>
+                <i aria-hidden />{t("{name} 전체", { name: label })}
+                <span>{level.countForItem(item)}</span>
+              </button>
+            </li>
+          )}
+          {filterItems(sub.items, subQuery, sub.labelFor).map((child) => (
             <AttrRow key={child} item={child} path={[...path, child]} level={levelOfSub(sub)}
               subFor={subFor} hoverMode={hoverMode} openPath={openPath} openAt={openAt} pick={pick} />
           ))}
+          {filterItems(sub.items, subQuery, sub.labelFor).length === 0 && (
+            <li className="attr-none">{t("검색 결과가 없습니다")}</li>
+          )}
         </ul>
       )}
     </li>
+  );
+}
+
+/** 마우스 모드에서 옆에 뜨는 하위 열 하나 (body portal).
+ *  검색어를 **자기가** 들고 있는 이유: 부모가 배열로 관리하면 깊이가 바뀔 때마다 잘라내야
+ *  하는데, 이 컴포넌트는 경로가 곧 key 라 경로가 바뀌면 리마운트되면서 저절로 비워진다. */
+function AttrFlyout({ sub, parentLevel, parent, place, subFor, openPath, openAt, pick, depth }: {
+  sub: AttrSub; parentLevel: Level; parent: string;
+  place: { left?: number; right?: number; top: number; maxWidth: number };
+  subFor?: (path: string[]) => AttrSub | null;
+  openPath: string[];
+  openAt: (path: string[], anchor?: Anchor) => void;
+  pick: (level: Level, value: string) => void;
+  depth: number;
+}) {
+  const { t } = useI18n();
+  const [query, setQuery] = useState("");
+  const parentLabel = parentLevel.labelFor ? parentLevel.labelFor(parent) : parent;
+  const shown = filterItems(sub.items, query, sub.labelFor);
+  return (
+    <ul className="attr-drop attr-fly" style={place}
+      role="listbox" aria-multiselectable={!sub.single} aria-label={sub.title}>
+      <li className="attr-sub-head" aria-hidden>{sub.title}</li>
+      <SearchRow label={sub.title} value={query} onChange={setQuery} />
+      {/* 하위로 좁히지 않고 부모 값만 고른다 — 검색 중에는 감춘다 */}
+      {!query.trim() && (
+        <li>
+          <button type="button" role="option" aria-selected={false} className="attr-sub-all"
+            onClick={() => pick(parentLevel, parent)}>
+            <i aria-hidden />{t("{name} 전체", { name: parentLabel })}
+            <span>{parentLevel.countForItem(parent)}</span>
+          </button>
+        </li>
+      )}
+      {shown.map((item) => (
+        <AttrRow key={item} item={item} path={[...openPath.slice(0, depth + 1), item]}
+          level={levelOfSub(sub)} subFor={subFor} hoverMode
+          openPath={openPath} openAt={openAt} pick={pick} />
+      ))}
+      {shown.length === 0 && <li className="attr-none">{t("검색 결과가 없습니다")}</li>}
+    </ul>
   );
 }
 
@@ -212,10 +293,7 @@ export function AttributeFilter({ groups }: { groups: AttrGroup[] }) {
           </button>
         ))}
         {active && (() => {
-          const q = query.trim().toLowerCase();
-          const shown = q
-            ? active.items.filter((item) => (active.labelFor ? active.labelFor(item) : item).toLowerCase().includes(q))
-            : active.items;
+          const shown = filterItems(active.items, query, active.labelFor);
           // 마우스 모드의 서브메뉴 — openPath의 깊이마다 하나. body로 portal해 fixed로 띄우므로
           // .attr-drop의 overflow에도, 결과 영역의 겹침에도 걸리지 않는다.
           const flyouts: { sub: AttrSub; parentLevel: Level; parent: string; anchor: Anchor }[] = [];
@@ -248,7 +326,6 @@ export function AttributeFilter({ groups }: { groups: AttrGroup[] }) {
                 {shown.length === 0 && <li className="attr-none">{t("검색 결과가 없습니다")}</li>}
               </ul>
               {flyouts.map(({ sub, parentLevel, parent, anchor }, depth) => {
-                const parentLabel = parentLevel.labelFor ? parentLevel.labelFor(parent) : parent;
                 // 오른쪽이 좁으면 왼쪽으로 뒤집고, 아래가 모자라면 위로 끌어올린다.
                 // 폭은 내용에 맡기되 **남은 공간을 maxWidth로 알려** 화면 밖으로 못 나가게 한다.
                 // 뒤집을 때는 left가 아니라 right를 걸어야 폭이 내용만큼 왼쪽으로 자란다.
@@ -260,24 +337,10 @@ export function AttributeFilter({ groups }: { groups: AttrGroup[] }) {
                   ? { right: window.innerWidth - anchor.left + 2, top, maxWidth: spaceLeft }
                   : { left: anchor.right + 2, top, maxWidth: spaceRight };
                 return createPortal(
-                  <ul key={openPath.slice(0, depth + 1).join(" ")} className="attr-drop attr-fly"
-                    style={place}
-                    role="listbox" aria-multiselectable={!sub.single} aria-label={sub.title}>
-                    <li className="attr-sub-head" aria-hidden>{sub.title}</li>
-                    {/* 하위로 좁히지 않고 부모 값만 고른다 */}
-                    <li>
-                      <button type="button" role="option" aria-selected={false} className="attr-sub-all"
-                        onClick={() => pick(parentLevel, parent)}>
-                        <i aria-hidden />{t("{name} 전체", { name: parentLabel })}
-                        <span>{parentLevel.countForItem(parent)}</span>
-                      </button>
-                    </li>
-                    {sub.items.map((item) => (
-                      <AttrRow key={item} item={item} path={[...openPath.slice(0, depth + 1), item]}
-                        level={levelOfSub(sub)} subFor={active.subFor} hoverMode={hoverMode}
-                        openPath={openPath} openAt={openAt} pick={pick} />
-                    ))}
-                  </ul>, document.body);
+                  <AttrFlyout key={openPath.slice(0, depth + 1).join(" ")}
+                    sub={sub} parentLevel={parentLevel} parent={parent} place={place}
+                    subFor={active.subFor} openPath={openPath} openAt={openAt} pick={pick}
+                    depth={depth} />, document.body);
               })}
             </>
           );
