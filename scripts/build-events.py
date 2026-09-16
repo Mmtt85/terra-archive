@@ -120,10 +120,13 @@ for aid, items in (kr_act.get("activityItems") or {}).items():
 # 우선순위: 시작일이 데뷔일과 같은 이벤트 > 기간이 데뷔일을 품는 이벤트 중 가장 늦게 시작한 것.
 # — 배너는 이벤트 개방과 함께 열리므로 앞쪽이 거의 항상 맞는다 (2026-09-16 act51side 실측:
 #   우쿠시크·지마 더 레이징 타이드·보타니 셋 다 개방일에 올라왔다).
-DEBUT = {}
+DEBUT, CN_EVENT_OPS = {}, {}
 _dp = os.path.join(DATA, "operator-debut.json")
 if os.path.exists(_dp):
-    DEBUT = (load(_dp).get("debut") or {})
+    _d = load(_dp)
+    DEBUT = _d.get("debut") or {}
+    # 미래시 이벤트의 신규 오퍼는 **중섭 데뷔**라 한섭 장부에 없다 — 따로 잡아 둔 표를 쓴다
+    CN_EVENT_OPS = _d.get("cnEventOps") or {}
 else:
     print("⚠ operator-debut.json 이 없다 — 신규 오퍼는 보상 오퍼만 싣는다")
 
@@ -430,6 +433,10 @@ def cn_event_body(aid):
             rid = str(r.get("id") or "")
             if rid.startswith("char_") and rid not in [o[0] for o in ops]:
                 ops.append([rid, rid, 0, "reward"])
+    # 그 이벤트와 함께 중섭에 데뷔한 오퍼 (build-operator-debut.py --cn-events)
+    for rid in CN_EVENT_OPS.get(aid, []):
+        if rid not in [o[0] for o in ops]:
+            ops.append([rid, rid, 0, "new"])
     out = {}
     if stages:
         out["stages"] = stages
@@ -467,7 +474,7 @@ for eid, st in stories.items():
         body_loc = dict(body)
         if body.get("ops"):
             body_loc["ops"] = [[o[0], (loc_ops.get(o[0]) or {}).get("name", o[0]),
-                                (loc_ops.get(o[0]) or {}).get("rarity", 0), "reward"]
+                                (loc_ops.get(o[0]) or {}).get("rarity", 0), o[3]]
                                for o in body["ops"]]
         row.update(body_loc)
         rows[loc].insert(0, row)      # 아직 안 나온 것이라 맨 위

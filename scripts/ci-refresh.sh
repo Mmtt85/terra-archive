@@ -192,6 +192,9 @@ run "build-items"        python3 scripts/build-items.py "$G"
 # ⚠ 러너는 얕은 체크아웃(fetch-depth 2)이라 이력을 되짚을 수 없다 — 커밋된 장부에
 #   새 오퍼만 덧붙이는 증분 모드로 돈다 (scripts/build-operator-debut.py 머리주석).
 run "build-op-debut"     python3 scripts/build-operator-debut.py
+#   ⚠ `--repo-history`·`--cn-events` 는 **CI에서 돌리지 않는다.** 클뜯 레포 원본을 수십~수백 MB
+#     받는 과거 채우기라, 결과를 커밋해 두고 사람이 필요할 때만 로컬에서 돌린다
+#     (새 미래시 이벤트가 열리면 `--cn-events` 를 한 번).
 # 이벤트 도감 — **맨 뒤**. 작전·아이템·스토리·오퍼 데뷔 장부를 전부 읽어 이벤트 단위로 접는다.
 run "build-events"       python3 scripts/build-events.py "$G"
 

@@ -40,7 +40,15 @@
   · 레포 날짜가 실제 한섭 패치일이라, 사이트 이력과 겹치면 **레포 쪽을 쓴다**.
   · raw.githubusercontent.com 으로 받아 API 한도를 쓰지 않는다. 커밋 목록만 API 한 번.
 
-사용: python3 scripts/build-operator-debut.py [--repo-history]
+## 미래시(중섭 선행) 이벤트 (--cn-events)
+
+미래시 이벤트의 신규 오퍼는 **중섭 데뷔**라 한섭 이력엔 없다. 그런데 중섭 쪽
+`cn/gamedata/excel/character_table.json` 은 커밋이 6,400개라 전수는 수십 GB다.
+그래서 **그 이벤트 개방일 앞뒤 커밋 두 개씩만** 집어 차분을 낸다 —
+개방일 직전 판과 직후 판의 오퍼 id 집합을 빼면 그 패치로 들어온 오퍼가 나온다.
+미래시 이벤트가 셋이면 여섯 판(약 110MB)이면 끝난다.
+
+사용: python3 scripts/build-operator-debut.py [--repo-history] [--cn-events]
 """
 import json, os, re, subprocess, sys
 
@@ -82,7 +90,7 @@ def repo_commits():
     return out
 
 
-def ids_at(sha, keep):
+def ids_at(sha, keep, path=GH_PATH):
     """그 커밋 시점의 오퍼 id 집합. 한 번 뽑으면 캐시한다 (원본은 18MB)."""
     import urllib.request
     os.makedirs(CACHE_DIR, exist_ok=True)
@@ -91,7 +99,7 @@ def ids_at(sha, keep):
         return set(json.load(open(dest, encoding="utf-8")))
     found = set()
     tail = b""
-    with urllib.request.urlopen(RAW % (GH_REPO, sha, GH_PATH), timeout=300) as fp:
+    with urllib.request.urlopen(RAW % (GH_REPO, sha, path), timeout=300) as fp:
         while True:
             chunk = fp.read(1 << 20)
             if not chunk:
@@ -103,6 +111,95 @@ def ids_at(sha, keep):
     found &= keep
     json.dump(sorted(found), open(dest, "w", encoding="utf-8"))
     return found
+
+
+LOOKBACK = 14      # 개방일 기준 며칠 전까지 거슬러 볼까 (중섭 이벤트 간격이 2~3주다)
+
+
+def _iso_shift(date, days):
+    import datetime as _d
+    return (_d.date.fromisoformat(date) + _d.timedelta(days=days)).isoformat()
+
+
+def _commits(branch_path, since=None, until=None, per_page=100):
+    args = ["gh", "api", "-X", "GET", f"repos/{GH_REPO}/commits",
+            "-f", f"path={branch_path}", "-f", f"per_page={per_page}"]
+    if since:
+        args += ["-f", f"since={since}"]
+    if until:
+        args += ["-f", f"until={until}"]
+    out = json.loads(subprocess.run(args, capture_output=True, text=True, check=True).stdout)
+    return [(c["sha"], c["commit"]["committer"]["date"][:10]) for c in out]
+
+
+def commit_near(branch_path, date, before, span=21):
+    """그 날짜 **직전**(before=True) 또는 **그날 이후 첫**(before=False) 커밋 (sha, date).
+
+    ⚠ GitHub 은 **최신순**으로 준다. `since=` 만 걸고 마지막 항목을 집으면 '그날 이후 첫'이
+    아니라 '한 페이지치 뒤'가 잡힌다 (중섭은 커밋이 6,400개라 실제로 어긋났다 — 차분이 0).
+    그래서 `since`+`until` 로 **창을 막고** 그 안에서 가장 오래된 것을 집는다.
+    """
+    import datetime as _d
+    d = _d.date.fromisoformat(date)
+    if before:
+        got = _commits(branch_path, until=f"{d.isoformat()}T00:00:00Z", per_page=1)
+        return got[0] if got else None
+    got = _commits(branch_path, since=f"{d.isoformat()}T00:00:00Z",
+                   until=f"{(d + _d.timedelta(days=span)).isoformat()}T23:59:59Z")
+    return got[-1] if got else None
+
+
+def cn_event_debuts(names):
+    """미래시 이벤트별로 중섭 개방 패치에 들어온 오퍼 — {이벤트id: [오퍼id, …]}
+
+    ⚠ 날짜가 아니라 **이벤트 id 로 바로 묶어 둔다.** 중섭 표는 개방보다 하루 이틀 먼저
+    들어와서 날짜로 되짚으면 어느 이벤트 것인지 다시 헷갈린다."""
+    import time as _t
+    out = {}
+    try:
+        cn = json.load(open(os.path.join(REPO, ".gamedata", "cn_activity_table.json"), encoding="utf-8"))
+        stories = json.load(open(os.path.join(REPO, "app", "data", "stories.json"), encoding="utf-8"))["events"]
+    except OSError:
+        print("⚠ 중섭 활동표나 스토리 목록이 없다 — 미래시 데뷔는 건너뛴다")
+        return out
+    basic = cn.get("basicInfo") or {}
+    path = "cn/gamedata/excel/character_table.json"
+    for ev in stories:
+        if not ev.get("unreleased"):
+            continue
+        info = basic.get(ev["id"]) or {}
+        st = info.get("startTime")
+        if not st:
+            print(f"  ⚠ {ev['id']}: 중섭 개방일을 모른다")
+            continue
+        day = _t.strftime("%Y-%m-%d", _t.localtime(st))
+        # ⚠ 중섭 표에는 오퍼가 **개방 하루 전쯤 먼저 들어온다** (act53side 실측: 08-01 개방인데
+        #   07-31 스냅샷에 이미 있다). 그래서 개방일 앞뒤 한 판씩만 보면 차분이 0이 된다.
+        #   창을 넉넉히 열어 **처음 나타난 판**을 직접 찾는다.
+        win = _commits(path, since=f"{_iso_shift(day, -LOOKBACK)}T00:00:00Z",
+                       until=f"{_iso_shift(day, 3)}T23:59:59Z")
+        win.reverse()                       # 오래된 것부터
+        base = commit_near(path, _iso_shift(day, -LOOKBACK), before=True)
+        if not base or not win:
+            print(f"  ⚠ {ev['id']}: 창 안에 커밋이 없다")
+            continue
+        try:
+            seen_ids = ids_at(base[0], names, path)
+            fresh, when = set(), day
+            for sha, d in win:
+                now_ids = ids_at(sha, names, path)
+                new_ids = now_ids - seen_ids
+                if new_ids and not fresh:
+                    fresh, when = new_ids, d   # 처음 나타난 판이 그 이벤트의 데뷔
+                seen_ids |= now_ids
+        except Exception as e:  # noqa: BLE001
+            print(f"  ⚠ {ev['id']} 받기 실패: {str(e)[:60]}")
+            continue
+        if fresh:
+            out[ev["id"]] = sorted(fresh)
+        print(f"  {ev['id']} 중섭 개방 {day} · 기준 {base[1]} · 창 {len(win)}판 → {when} +{len(fresh)}: "
+              + ", ".join(sorted(names_by.get(c, c) for c in fresh)[:6]))
+    return out
 
 
 def backfill(debut, baseline, names):
@@ -165,6 +262,7 @@ def kr_ids(blob):
 
 
 REPO_HISTORY = "--repo-history" in sys.argv
+CN_EVENTS = "--cn-events" in sys.argv
 prev = json.load(open(DEST, encoding="utf-8")) if os.path.exists(DEST) else {}
 debut = dict(prev.get("debut") or {})
 baseline = set(prev.get("baselineIds") or [])
@@ -207,16 +305,25 @@ else:
         debut[cid] = today
     mode = f"얕은 이력 — 새 오퍼 {len(fresh)}명 덧붙임"
 
-if REPO_HISTORY:
+cn_event_ops = dict(prev.get("cnEventOps") or {})
+if REPO_HISTORY or CN_EVENTS:
     _ops = json.load(open(os.path.join(REPO, TARGET), encoding="utf-8"))
     names_by.update({o["id"]: o["name"] for o in _ops})
-    debut, baseline = backfill(debut, baseline, {o["id"] for o in _ops})
+    _keep = {o["id"] for o in _ops}
+    if REPO_HISTORY:
+        debut, baseline = backfill(debut, baseline, _keep)
+    if CN_EVENTS:
+        print("미래시(중섭 선행) 이벤트 — 개방일 앞뒤 커밋만 본다")
+        cn_event_ops.update(cn_event_debuts(_keep))
+        print(f"중섭 데뷔 — 이벤트 {len(cn_event_ops)}개 · 오퍼 {sum(len(v) for v in cn_event_ops.values())}명")
 
 json.dump({"note": "한섭 데뷔일 — app/data/operators.json 커밋 이력에서 되짚었다. "
                    "baselineIds 는 첫 커밋에 이미 있던(=데뷔일을 모르는) 오퍼다. "
                    "얕은 체크아웃에서도 덧붙일 수 있게 둘 다 커밋한다.",
            "baseline": baseline_date, "baselineIds": sorted(baseline),
-           "debut": dict(sorted(debut.items(), key=lambda kv: kv[1]))},
+           "debut": dict(sorted(debut.items(), key=lambda kv: kv[1])),
+           # 미래시(중섭 선행) 이벤트의 신규 오퍼 — 한섭 데뷔 장부와는 별개다
+           "cnEventOps": dict(sorted(cn_event_ops.items()))},
           open(DEST, "w", encoding="utf-8"), ensure_ascii=False, indent=0)
 print(f"{mode} · 기준선 {baseline_date}({len(baseline)}명) · 데뷔 기록 {len(debut)}명")
 names = {o["id"]: o["name"] for o in json.load(open(os.path.join(REPO, TARGET), encoding="utf-8"))}
