@@ -677,6 +677,22 @@ for name, group in by_name.items():
     deduped.append(group[0])
 result = deduped
 
+# ── 실장 래칫 (2026-09-16) ──────────────────────────────────────────────────
+# 게임은 한 번 실장한 오퍼를 되돌리지 않는다. 그런데 **클뜯 레포가 밀리면** KR 표에 아직
+# 그 오퍼가 없어서 여기가 다시 '미실장(CN 선행)'으로 판정해 버린다. 무인 CI는 레포를 보고
+# 도니까, CDN으로 제대로 채워 둔 신규 오퍼가 다음 자동 갱신에 조용히 원복되고 그대로
+# 배포된다 — 2026-09-16 개방 당일 보타니·우쿠시크·지마 더 레이징 타이드가 실제로 그랬다
+# (레포 kr character_table 에 셋 다 없었다. CDN 에는 한국어 정식명까지 다 있었다).
+# 직전 산출물에서 이미 실장이던 오퍼는 **직전 항목을 통째로** 되살린다 — 플래그만 떼면
+# 이름·설명이 CN 원문인 채로 남아 오히려 더 나쁘다.
+demoted = [o for o in result
+           if o.get("unreleased") and old_ops.get(o["id"]) and not old_ops[o["id"]].get("unreleased")]
+if demoted:
+    keep = {o["id"] for o in demoted}
+    result = [old_ops[o["id"]] if o["id"] in keep else o for o in result]
+    print("⚠ 실장 래칫: 레포가 못 따라와 미실장으로 내려갈 뻔한 오퍼를 직전 판으로 되살렸다 —",
+          ", ".join(sorted(old_ops[o["id"]].get("name", o["id"]) for o in demoted)))
+
 # stable order: rarity asc, then name (matches deployed robots-first look)
 result.sort(key=lambda o: (o["rarity"], o["name"]))
 json.dump(result, open(f"{S}/operators-regen.json", "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
