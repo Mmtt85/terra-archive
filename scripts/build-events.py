@@ -38,7 +38,7 @@ LOCALES = {"ko": "kr", "en": "en", "ja": "jp"}
 OUT = {"ko": "events.json", "en": "events.en.json", "ja": "events.ja.json"}
 
 load = lambda p: json.load(open(p, encoding="utf-8"))
-MAT_TIER = 4        # '파밍 가능한 상위 재료' 기준 등급 (사용자 지정 2026-09-17)
+MAT_TIER = 3        # '파밍 가능한 상위 재료' 기준 등급 (사용자 지정 2026-09-17: T4 → T3)
 day = lambda ts: time.strftime("%Y-%m-%d", time.localtime(ts)) if ts else None
 
 acts, stage_tables = {}, {}
@@ -178,7 +178,9 @@ for aid, info in sorted(kr_basic.items(), key=lambda kv: -(kv[1].get("startTime"
                 ix = e[0]
                 if 0 <= ix < len(eids) and eids[ix] not in seen_enemy:
                     seen_enemy[eids[ix]] = enames.get(eids[ix], eids[ix])
-            # 이 맵에서 파밍되는 **상위 재료**(T4 이상) — 사용자 요청 2026-09-17.
+            # 이 맵에서 파밍되는 **상위 재료**(MAT_TIER 이상) — 사용자 요청 2026-09-17.
+            # 처음엔 T4 이상이었는데 근래 사이드 스토리는 맵에서 T3까지만 나오고(추가 드랍이
+            # 없다) T4는 상점 교환으로 옮겨 가, 21/153 이벤트에만 붙었다 → T3으로 내렸다.
             # ⚠ 이벤트 상점(교환소)에서 재화로 바꾸는 재료는 여기 없다. 상점 품목표가
             #   클라이언트 데이터에 없기 때문이다(서버가 쥐고 있다) — 맵 드랍만 싣는다.
             for d in (s.get("d") or []):

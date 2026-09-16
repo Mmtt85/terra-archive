@@ -754,6 +754,38 @@ export function ScriptReader({ script, error, entities, opIndex, onShowOperator,
 
 // 요약 상세 — 본문 + 스크롤 추적 참조 레일
 // export는 scripts/verify-stories.mjs 전수 렌더 하네스용 (앱 내 사용처는 이 파일뿐)
+// ── 모달로 여는 껍데기 (이벤트 도감 → "이 이벤트 스토리 읽기", 2026-09-17) ──────────
+// 사용자 요청: "이벤트 스토리 읽기도 그냥 모달로 띄워줄 수 있어?"
+// 스토리 상세는 원래 **페이지**다(그 주소가 검색 색인 대상이다). 그걸 그대로 두고, 이벤트
+// 도감에서 열 때만 같은 컴포넌트를 모달 안에 얹는다 — 요약 본문(1.8MB)은 여기서 처음
+// 필요해지므로 그때 받는다.
+// ⚠ 캐시를 **렌더 중에 읽는다** — 이펙트에서 동기 setState 하면 연쇄 렌더가 난다
+//   (react-hooks/set-state-in-effect, app/enemies.tsx useStagesDoc 과 같은 처방).
+let _summaryCache: StorySummaries | null = null;
+
+export function StoryDetailById({ id, onClose, onShowOperator }: {
+  id: string; onClose: () => void; onShowOperator?: (operatorId: string) => void;
+}) {
+  const { t } = useI18n();
+  const [, bump] = useState(0);
+  useEffect(() => {
+    if (_summaryCache) return;
+    let live = true;
+    void import("./data/story-summaries.json").then((m) => {
+      _summaryCache = (m.default ?? m) as StorySummaries;
+      if (live) bump((n) => n + 1);
+    }).catch(() => { /* 요약이 없어도 전문·기록은 읽힌다 */ });
+    return () => { live = false; };
+  }, []);
+  const event = data.events.find((e) => e.id === id);
+  if (!event) return null;
+  if (!_summaryCache) return <p className="no-detail">{t("불러오는 중…")}</p>;
+  return (
+    <StoryDetail event={event} summary={_summaryCache[id]} onClose={onClose}
+      onShowOperator={onShowOperator} defaultView="summary" />
+  );
+}
+
 export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex, defaultView, related, onOpenStory }: {
   event: StoryEvent; summary?: Summary; onClose: () => void; onShowOperator?: (id: string) => void; opIndex?: OpIndex;
   /** 해시로 지정된 게 없을 때의 기본 보기 — 상세 라우트(/stories/<id>)는 "summary"를 준다 */

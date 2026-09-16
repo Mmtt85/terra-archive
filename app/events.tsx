@@ -18,7 +18,7 @@
 // ⚠ 개별 라우트(/events/<id>)를 만들지 않는다 — 항목 1개당 6파일(html+rsc × 3언어)이고
 //   Pages 파일 수 한도가 있다 (아이템 도감과 같은 판단). 상세는 모달 + `#ev-<id>` 딥링크.
 
-import { useMemo, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 import { asset } from "./assets";
 import { useI18n } from "./i18n";
 import { normSearch, useSearchInput } from "./search";
@@ -32,6 +32,9 @@ import { EnemyFile, enemyImg, type Enemy } from "./enemy-detail";
 import { StageFile } from "./stage-detail";
 import { viewOf, type StageView } from "./stage-data";
 import { ItemFile, itemIcon, type DexItem, type ItemDoc } from "./items";
+// 스토리 상세를 **모달로** 겹쳐 띄운다 (사용자 요청 2026-09-17). 스토리 모듈과 요약 본문
+// (1.8MB)은 누를 때 처음 받는다 — 정적 임포트면 이벤트 도감 청크에 통째로 딸려 온다.
+const StoryModal = lazy(() => import("./story").then((m) => ({ default: m.StoryDetailById })));
 
 /** 작전 [id, 코드, 이름] · 적 [id, 이름] · 재화 [id, 이름, 아이콘?] · 오퍼 [id, 이름, 성급, 종류] */
 export type EventRow = {
@@ -45,7 +48,7 @@ export type EventRow = {
   stages?: [string, string, string][];
   enemies?: [string, string][];
   items?: ([string, string] | [string, string, string])[];
-  /** 맵에서 파밍되는 상위 재료 [id, 이름, 아이콘, 등급, 작전 코드들] — T4 이상만 */
+  /** 맵에서 파밍되는 상위 재료 [id, 이름, 아이콘, 등급, 작전 코드들] — T3 이상 */
   mats?: [string, string, string, number, string[]][];
   /** [id, 이름, 성급, 종류] — reward=이벤트 보상(무료 배포) · new=이 이벤트와 함께 데뷔 */
   ops?: [string, string, number, "reward" | "new"][];
@@ -145,12 +148,13 @@ function EventCard({ row, onSelect, onGuide }: {
 }
 
 /** 이벤트 상세 — 작전·등장 적·교환 재화·보상 오퍼를 한 화면에. 누르면 각 도감이 겹쳐 뜬다. */
-function EventFile({ row, onOpenStage, onOpenEnemy, onOpenItem, onShowOperator }: {
+function EventFile({ row, onOpenStage, onOpenEnemy, onOpenItem, onShowOperator, onOpenStory }: {
   row: EventRow;
   onOpenStage: (id: string) => void;
   onOpenEnemy: (id: string) => void;
   onOpenItem: (id: string) => void;
   onShowOperator: (id: string) => void;
+  onOpenStory: (id: string) => void;
 }) {
   const { locale, t } = useI18n();
   return (
@@ -176,7 +180,13 @@ function EventFile({ row, onOpenStage, onOpenEnemy, onOpenItem, onShowOperator }
         <div className="ev-top-main">
       {row.story ? (
         <p className="ev-links">
-          <a className="it-link" href={storyHref(locale, row.id)}>{t("이 이벤트 스토리 읽기")}</a>
+          {/* 정본 주소는 그대로 앵커에 둔다 — 새 탭·주소 복사·크롤러가 살아 있어야 한다.
+              그냥 누르면 페이지로 넘어가지 않고 모달로 겹쳐 뜬다. */}
+          <a className="it-link" href={storyHref(locale, row.id)}
+            onClick={(e) => {
+              if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+              e.preventDefault(); onOpenStory(row.id);
+            }}>{t("이 이벤트 스토리 읽기")}</a>
         </p>
       ) : null}
 
@@ -288,6 +298,7 @@ export default function EventDex({ doc, onShowOperator, onOpenGuide }: {
   const [subEnemy, setSubEnemy] = useState<Enemy | null>(null);
   const [subItem, setSubItem] = useState<DexItem | null>(null);
   const [itemDoc, setItemDoc] = useState<ItemDoc | null>(null);
+  const [subStory, setSubStory] = useState<string | null>(null);
   const [raise, setRaise] = useState(0);
 
   const events = doc.events;
@@ -314,7 +325,11 @@ export default function EventDex({ doc, onShowOperator, onOpenGuide }: {
     });
   };
 
-  useHashSync(open ? `#ev-${open.id}` : null, (hash) => {
+  // ⚠ 스토리 모달이 떠 있는 동안은 **해시를 비켜 준다.** 스토리 상세는 자기 보기 방식을
+  //   해시(#story-<id>/ep3 등)에 쓰는데, 여기가 계속 #ev-<id>로 되돌리면 둘이 서로를
+  //   덮어써 창이 닫힌다 (이 화면의 다른 겹침 모달들이 해시를 안 쓰는 것과 같은 이유).
+  useHashSync(subStory ? null : (open ? `#ev-${open.id}` : null), (hash) => {
+    if (subStory) return;
     const m = /^#ev-(.+)$/.exec(hash);
     setOpen(m ? byId.get(m[1]) ?? null : null);
   });
@@ -397,7 +412,8 @@ export default function EventDex({ doc, onShowOperator, onOpenGuide }: {
       {open && (
         <ModalWindow label={open.n} className="operator-modal ev-modal" onClose={() => setOpen(null)}>
           <EventFile row={open} onOpenStage={openStage} onOpenEnemy={openEnemy}
-            onOpenItem={openItem} onShowOperator={onShowOperator} />
+            onOpenItem={openItem} onShowOperator={onShowOperator}
+            onOpenStory={(id) => { setRaise((k) => k + 1); setSubStory(id); }} />
         </ModalWindow>
       )}
       {subStage && (
@@ -410,6 +426,14 @@ export default function EventDex({ doc, onShowOperator, onOpenGuide }: {
         <ModalWindow key={`en-${raise}`} label={subEnemy.name} className="operator-modal en-modal"
           onClose={() => setSubEnemy(null)}>
           <EnemyFile enemy={subEnemy} stagesDoc={null} onOpenStage={openStage} />
+        </ModalWindow>
+      )}
+      {subStory && (
+        <ModalWindow key={`sy-${raise}`} label={byId.get(subStory)?.n ?? ""}
+          className="operator-modal sy-modal" onClose={() => setSubStory(null)}>
+          <Suspense fallback={<p className="no-detail">{t("불러오는 중…")}</p>}>
+            <StoryModal id={subStory} onClose={() => setSubStory(null)} onShowOperator={onShowOperator} />
+          </Suspense>
         </ModalWindow>
       )}
       {subItem && itemDoc && (
