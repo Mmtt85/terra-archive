@@ -131,12 +131,26 @@ def read_txt(server, path):
     return open(p, encoding="utf-8").read() if os.path.exists(p) else None
 
 
-def op_sets(cid, server):
-    """이 오퍼의 (세트, 출처서버) 목록 — 로케일 서버 세트 + CN에만 있는 선행 세트."""
+def op_sets(cid, server, resolved=False):
+    """이 오퍼의 (세트, 출처서버) 목록 — 로케일 서버 세트 + CN에만 있는 선행 세트.
+
+    resolved=True 는 프리페치 **뒤**에 쓴다: 게임 CDN에서 받은 한섭 표가 에셋 레포보다
+    앞서면 표엔 기록이 실렸는데 대본 .txt 는 아직 없다(2026-09-16 실측 — 보타니 등 4명).
+    그때 CN 대본으로 대신 읽는다. 안 그러면 손질해 둔 번역(scripts/records-cn/)째로
+    기록이 화면에서 통째로 사라진다.
+    """
     loc = (HB[server].get(cid) or {}).get("handbookAvgList") or []
     cn = (HB["cn"].get(cid) or {}).get("handbookAvgList") or []
+    cn_by_id = {s["storySetId"]: s for s in cn}
+    out = []
+    for s in loc:
+        alt = cn_by_id.get(s["storySetId"])
+        if resolved and alt and not any(read_txt(server, st["storyTxt"]) for st in (s.get("avgList") or [])):
+            out.append((alt, "cn"))
+        else:
+            out.append((s, server))
     have = {s["storySetId"] for s in loc}
-    out = [(s, server) for s in loc] + [(s, "cn") for s in cn if s["storySetId"] not in have]
+    out += [(s, "cn") for s in cn if s["storySetId"] not in have]
     return sorted(out, key=lambda x: x[0].get("sortId") or 0)
 
 
@@ -154,6 +168,17 @@ for loc, (server, _) in LOCALES.items():
                 pairs.add((src, st["storyTxt"]))
 prefetch(sorted(pairs))
 
+# 로케일 대본이 끝내 안 받아진 세트만 골라 CN 대본을 마저 받아 둔다 (op_sets(resolved=True)가 읽는다).
+fallback = set()
+for _, (server, _nick) in LOCALES.items():
+    for cid in ops:
+        cn_by_id = {s["storySetId"]: s for s in ((HB["cn"].get(cid) or {}).get("handbookAvgList") or [])}
+        for s in (HB[server].get(cid) or {}).get("handbookAvgList") or []:
+            alt = cn_by_id.get(s["storySetId"])
+            if alt and not any(read_txt(server, st["storyTxt"]) for st in (s.get("avgList") or [])):
+                fallback.update(("cn", st["storyTxt"]) for st in (alt.get("avgList") or []))
+prefetch(sorted(fallback))
+
 # ── 2) 로케일별 파싱·조립 ─────────────────────────────────────────────────────
 cut_needed = {}        # 컷씬 이름 → cg 레이어 (로케일 공용 — 이름이 같으면 같은 그림)
 written = {}
@@ -169,7 +194,7 @@ for loc, (server, nickname) in LOCALES.items():
     for cid in ops:
         recs = []
         votes = defaultdict(Counter)
-        for s, src in op_sets(cid, server):
+        for s, src in op_sets(cid, server, resolved=True):
             for st in s.get("avgList") or []:
                 txt = read_txt(src, st["storyTxt"])
                 if not txt:

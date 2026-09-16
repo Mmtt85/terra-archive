@@ -185,6 +185,12 @@ const MANUAL_EVENTS = [
   // zone_table의 zoneValidInfo.startTs가 그 11:00을 이미 갖고 있었다. 다음에 급히 채울 땐
   // **zone_table(zoneValidInfo) → 공지 순**으로 믿을 것.
   // 2026-08-20 비움 — act2break(벡터 돌파#2)는 실데이터가 들어온 지 오래고 이벤트도 끝났다.
+  // 2026-09-16 SideStory '사람들, 우리들' — 16:00 개방인데 레포 activity_table이 못 따라왔다.
+  // 값은 게임 CDN에서 직접 받은 activity_table 그대로이고, zone_table의 zoneValidInfo와도 같다
+  // (zone1 09-16 16:00 · zone2 09-23 16:00 개방, 둘 다 09-30 03:59 종료).
+  // until = 이벤트 종료일 — 레포가 끝내 안 올라와도 이벤트와 함께 저절로 사라진다.
+  { id: "act51side", name: "사람들, 우리들", type: "TYPE_ACT9D0", displayType: "SIDESTORY",
+    start: "2026-09-16T07:00:00.000Z", end: "2026-09-29T18:59:59.000Z", until: "2026-09-30" },
 ];
 
 // 실데이터를 **덮어쓰는** 자리 (2026-08-25). MANUAL_EVENTS는 activity_table에 아직 없는

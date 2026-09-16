@@ -484,6 +484,19 @@ CN_PROVISIONAL_NAMES = {
 # 콜라보 등 배너 에셋이 클뜯 레포에 없는(라이선스상 제외) 이벤트용 공용 플레이스홀더 썸네일.
 # 없으면 스킵하던 걸(과거 act50side 泡影苍霆 누락 원인) 폐지하고, 목록엔 반드시 넣는다.
 CN_PLACEHOLDER_THUMB = "/story/_placeholder.webp"
+# 한섭에 **이미 열렸는데** 레포 story_review_table이 아직 못 따라온 이벤트 — 게임 CDN에서
+# 받아 둔 KR activity_table이 있으면 그게 정답이다 (레포는 사람이 돌려야 올라와 몇 시간~며칠
+# 밀린다 — PROJECT-GUIDE §2-1). 이게 없으면 개방 당일의 신규 이벤트가 '미실장(중섭 선행)'으로
+# 잡혀, 헤더 배지 제목이 공식명 대신 CN 임시번역으로 나가고 '향후 다가올' 목록에도 중복으로 걸린다
+# (2026-09-16 '사람들, 우리들' 실측). CI에는 이 파일이 레포판이라 밀린 채여서 자동으로 무동작.
+kr_live = {}
+try:
+    with open(f"{REPO}/.gamedata/kr_activity_table.json", encoding="utf-8") as fp:
+        kr_live = {k: v["name"] for k, v in (json.load(fp).get("basicInfo") or {}).items()
+                   if v.get("startTime", 0) > 0 and v["startTime"] <= time.time()}
+except (OSError, ValueError, KeyError):
+    pass
+
 print("fetching story_review_table (cn) …", file=sys.stderr)
 cn = fetch(f"{GAMEDATA}/cn/gamedata/excel/story_review_table.json")
 cn_dir = os.path.join(thumb_dir, "cn")
@@ -530,7 +543,14 @@ for act in cn_acts:
         "thumb": thumb_path,
         "unreleased": True,
     }
-    if _gap_sec:  # CN 출시월 + 시차 = KR 추정월 (확정 아님)
+    if eid in kr_live:
+        # 이미 한섭에 열린 이벤트 — 제목은 activity_table의 공식 한국어명이 정답이고,
+        # EN/JA는 로케일 표가 따라올 때까지 임시 번역을 쓴다(빼면 한국어로 폴백한다 —
+        # 사용자 제보 2026-09-04 "EN·JA 홈에서 이벤트 이름이 한글"). 미실장이 아니므로
+        # unreleased·eta는 달지 않는다 — 레포가 따라오면 위 KR 블록이 이 항목을 대체한다.
+        ev_obj["name"] = {**(trans or {}), "ko": kr_live[eid]}
+        del ev_obj["unreleased"]
+    elif _gap_sec:  # CN 출시월 + 시차 = KR 추정월 (확정 아님)
         ev_obj["eta"] = time.strftime("%Y-%m", time.gmtime(act["startTime"] + _gap_sec))
     events.append(ev_obj)
 
