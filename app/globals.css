@@ -1879,6 +1879,88 @@ legend {
   gap: 11px;
   display: grid;
 }
+/* ── 미실장 스트립 (사용자 요청 2026-09-16) ─────────────────────────────────
+   '미래시 포함'이 꺼져 있으면 미실장(중섭 선행) 오퍼를 목록 맨 위에 **절반 크기**로
+   따로 모은다. 기본 정렬이 발매순 내림차순인데 미실장 seq 가 100420~ 이라 그냥 두면
+   19명이 앞자리를 다 먹어, 한섭 유저가 그걸 훑고 내려가야 최신 한섭 오퍼가 나왔다.
+   흑백 처리(.fut-dim)는 종전대로 <html data-fut> 가 건다. */
+.future-strip {
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+.future-strip > h3 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.future-strip > h3 small {
+  font-size: 11px;
+  font-weight: 400;
+  opacity: 0.8;
+}
+/* 절반 크기 = 한 줄에 두 배로 */
+.operator-grid.mini {
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  /* 카드 높이를 **가장 긴 것에 전부 맞춘다** (사용자 요청 2026-09-16) — 이름이 길어
+     두 줄이 되는 카드가 섞이면 줄마다 높이가 달라 들쭉날쭉했다. auto 행에서 1fr 은
+     '가장 큰 행에 맞춘 균등 높이'라 이 한 줄이면 전 카드가 같아진다. */
+  grid-auto-rows: 1fr;
+  gap: 7px;
+}
+/* 스트립은 목록 맨 위라 늘 화면에 있다 — 화면 밖 건너뛰기(content-visibility)를 끄지
+   않으면 자리높이 추정치가 섞여 들어와 높이 균등이 깨진다. */
+.operator-grid.mini .operator-card {
+  content-visibility: visible;
+}
+.operator-grid.mini .portrait {
+  min-height: 60px;
+  padding: 7px;
+}
+.operator-grid.mini .portrait-info h3 {
+  font-size: 11.5px;
+  line-height: 1.25;
+}
+/* 카드가 절반이 됐으니 **안쪽 글자도 같이 줄인다** (사용자 지적 2026-09-16).
+   직군 태그·미실장 배지는 각자 font-size 를 갖고 있어서 부모만 줄여선 안 줄어든다. */
+.operator-grid.mini .portrait-meta {
+  gap: 3px;
+  margin-bottom: 5px;
+  font-size: 9px;
+}
+.operator-grid.mini .portrait-meta span {
+  font-size: 8px;
+}
+.operator-grid.mini .portrait-meta b {
+  padding: 1px 3px;
+  font-size: 8px;
+}
+/* 스트립 제목이 이미 '미실장'이라고 말한다 — 카드마다 또 붙일 이유가 없다
+   (사용자 지적 2026-09-16). 미래시를 켜면 본 그리드로 돌아가 배지가 다시 붙는다. */
+.operator-grid.mini .future-badge {
+  display: none;
+}
+/* 좁은 칸에선 소속·출신·종족과 컨셉 태그를 접는다 — 이름과 성급만 남긴다 */
+.operator-grid.mini .portrait-facts,
+.operator-grid.mini .card-body {
+  display: none;
+}
+@media (max-width: 1450px) {
+  .operator-grid.mini { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+}
+@media (max-width: 1100px) {
+  .operator-grid.mini { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  .operator-grid.mini { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
+@media (max-width: 460px) {
+  .operator-grid.mini { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
 .operator-card {
   border: 1px solid var(--line);
   background: var(--white);
@@ -1958,11 +2040,31 @@ legend {
   margin-bottom: 12px;
   display: flex;
 }
+/* 별 색은 **성급별로** 나눈다 (사용자 요청 2026-09-16) — 게임에서 오퍼를 뽑을 때 나오는
+   그 색이다. 전부 같은 금색이면 별 개수를 하나하나 세야 해서 분간이 안 된다.
+   1~3성 흰색 · 4성 푸른색 · 5성 금색 · 6성 살짝 무지갯빛 오렌지. */
 .portrait-meta span {
-  color: #ffd45f;
+  color: #f2f5f7;
   letter-spacing: -1px;
   text-shadow: 0 1px 5px #0008;
   font-size: 11px;
+}
+.portrait-meta span[data-rarity="4"] {
+  color: #9fb4ff;
+}
+.portrait-meta span[data-rarity="5"] {
+  color: #ffd45f;
+}
+/* 6성만 그라데이션 — **진한 오렌지**가 바탕이고 분홍을 살짝 섞는다. 금색을 많이 섞으면
+   5성 금색과 구분이 안 된다 (사용자 지적 2026-09-16). 글자에 배경을 잘라
+   입히므로 text-shadow 가 안 먹어, 대신 drop-shadow 로 같은 그림자를 준다. */
+.portrait-meta span[data-rarity="6"] {
+  background: linear-gradient(96deg, #ff8c1a 0%, #ff5a0f 34%, #ffa32b 62%, #ff5ec4 100%);
+  color: transparent;
+  text-shadow: none;
+  filter: drop-shadow(0 1px 5px #0008);
+  -webkit-background-clip: text;
+  background-clip: text;
 }
 .portrait-meta b {
   color: #fff;

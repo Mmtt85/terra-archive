@@ -1892,11 +1892,31 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
 
   // 카드 그리드를 **요소로 메모**한다 — 정렬 결과가 그대로면 리액트가 이 서브트리 재조정을
   // 통째로 건너뛰므로, 필터 칩·검색 결과 갱신 렌더에서 420장을 다시 만들지 않는다 (2026-07-25)
-  const operatorGrid = useMemo(() => (
-    <div className="operator-grid">
-      {sorted.map((operator, index) => <OperatorCard key={operator.id ?? `${operator.name}-${index}`} operator={operator} index={index} onSelect={openOperator} />)}
-    </div>
-  ), [sorted, openOperator]);
+  const operatorGrid = useMemo(() => {
+    // '미래시 포함'이 꺼져 있으면 미실장(중섭 선행)을 **위쪽 작은 칸으로 따로** 뺀다
+    // (사용자 요청 2026-09-16). 기본 정렬이 발매순 내림차순인데 미실장 seq 가 100420~
+    // 이라 19명이 통째로 앞자리를 먹어서, 한섭 유저가 그걸 다 훑고 내려가야 최신 한섭
+    // 오퍼가 나왔다. 토글을 켜면 종전대로 한 그리드에 섞는다 — 그때는 미래시를 보러 온 것이다.
+    const future = includeFuture ? [] : sorted.filter((operator) => operator.unreleased);
+    const main = includeFuture ? sorted : sorted.filter((operator) => !operator.unreleased);
+    const cards = (list: Operator[]) => list.map((operator, index) => (
+      <OperatorCard key={operator.id ?? `${operator.name}-${index}`} operator={operator} index={index} onSelect={openOperator} />
+    ));
+    return (
+      <>
+        {future.length > 0 && (
+          <section className="future-strip">
+            <h3>
+              {t("미실장 {n}명", { n: future.length })}
+              <small>{t("중국 서버 선행 — 한국 서버엔 아직 없습니다")}</small>
+            </h3>
+            <div className="operator-grid mini">{cards(future)}</div>
+          </section>
+        )}
+        <div className="operator-grid">{cards(main)}</div>
+      </>
+    );
+  }, [sorted, openOperator, includeFuture, t]);
 
   return (
     <main className={tab === "archive" ? "site-main" : "base-main site-main"}>
@@ -2603,7 +2623,7 @@ function OperatorCard({ operator, index, onSelect }: { operator: Operator; index
       <div className="portrait" ref={portraitRef}>
         <span className="portrait-grid" />
         <div className="portrait-info">
-          <div className="portrait-meta"><span>{"★".repeat(operator.rarity)}</span><b>{operator.job}</b>{operator.unreleased && <em className="future-badge">{t("미실장")}</em>}</div>
+          <div className="portrait-meta"><span data-rarity={operator.rarity}>{"★".repeat(operator.rarity)}</span><b>{operator.job}</b>{operator.unreleased && <em className="future-badge">{t("미실장")}</em>}</div>
           <h3>{operator.name}</h3>
           <small className="portrait-facts">
             <span><i>{t("소속")}</i>{operator.faction}</span>

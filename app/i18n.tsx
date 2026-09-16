@@ -1327,6 +1327,14 @@ const D: Record<string, Pair> = {
     "宿舎・シナジー固定要員（宿舎生成要員、ニェンなど）はA/B交代と無関係に固定されます。応接室もA/Bで交代運用 — 同じ人員を24時間回しません。",
   ],
   "숙소도 방을 눌러 직접 편성할 수 있습니다 — 직접 넣은 오퍼는 📌로 고정되어 전체 자동편성이 그대로 둡니다(카드의 📌로 잠그거나 풀고, ✕로 빼면 고정도 풀립니다). 울피아누스를 숙소에 고정해 두면 다음 자동편성이 언더플로우(+10%)를 자연히 뽑아 갑니다. 고정 인원은 근무 방 후보에서 빠지므로 이중 배치되지 않습니다.": ["Dormitories are editable too — tap the room to assign people yourself. Anyone you place is 📌 pinned, so a full auto-plan leaves them alone (use 📌 on a card to pin/unpin, ✕ to remove, which also unpins). Park Ulpianus in a dormitory and the next auto-plan will pick up Underflow (+10%) on its own. Pinned residents are excluded from work-room candidates, so they are never double-assigned.", "宿舎も部屋をタップして直接編成できます — 自分で入れたオペレーターは📌固定され、全体自動編成でもそのまま残ります（カードの📌で固定・解除、✕で外すと固定も解けます）。ウルピアヌスを宿舎に固定しておけば、次の自動編成がアンダーフロー（+10%）を自然に採用します。固定人員は勤務部屋の候補から外れるため二重配置にはなりません。"],
+  "미실장 {n}명": [
+    "{n} unreleased",
+    "未実装 {n}名",
+  ],
+  "중국 서버 선행 — 한국 서버엔 아직 없습니다": [
+    "Available on the Chinese server first — not on the Korean server yet.",
+    "中国サーバー先行 — 韓国サーバーにはまだ実装されていません。",
+  ],
   "숙소 고정 인원(생성원·주차)은 한 방에 몰지 않고 숙소마다 나눠 앉힙니다 — 숙소 회복은 계열별로 가장 높은 수치 하나만 적용되고, '전원 회복'은 그 방에서 쉬는 인원 수만큼 값이 붙기 때문입니다. 다만 아이리스·체르니·센시는 자기 숙소 레벨로 토큰을 만들므로 레벨이 가장 높은 숙소를 먼저 씁니다.": [
     "Dorm-locked members (generators and parked partners) are spread across the dormitories instead of piling into one — only the highest value of each dorm-recovery type applies, and the room-wide kind pays off per resting operator sharing the room. Iris, Czerny and Senshi are the exception: their output scales with their own dormitory's level, so they take the highest-level dorm first.",
     "宿舎の固定要員（生成要員・駐車）は1部屋に固めず、宿舎ごとに分けて配置します — 宿舎の回復は同種効果のうち最も高い数値ひとつしか乗らず、「全員回復」はその部屋で休む人数だけ効くためです。ただしアイリス・チェルニー・センシは自分の宿舎レベルでトークンを生むため、レベルが最も高い宿舎を優先します。",
