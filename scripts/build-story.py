@@ -39,6 +39,13 @@ ASSETS_EN = "https://raw.githubusercontent.com/ArknightsAssets/ArknightsAssets2/
 ASSETS_JP = "https://raw.githubusercontent.com/555me/ArknightsAssets2/jp/assets/dyn"            # 일본판 썸네일 (본가엔 jp 브랜치 없음)
 
 def fetch(url, binary=False):
+    # 그림은 **게임 CDN 우선** — 에셋 미러는 사람이 돌려야 올라와서 며칠씩 밀린다.
+    # 표·JSON 은 해당 없음(어댑터가 None 을 준다)이라 종전 경로로 간다.
+    if binary:
+        import cdnassets
+        png = cdnassets.from_mirror_url(url)
+        if png:
+            return png
     # CI 러너의 일시 429/5xx 플레이크 대비 재시도 (fetchutil) — 404는 즉시 전파(썸네일 폴백용)
     from fetchutil import urlread
     raw = urlread(url, timeout=60, ua="terra-archive-story/1.0")

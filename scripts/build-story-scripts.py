@@ -582,17 +582,22 @@ def normalize_case(eps, faces):
 
 
 def fetch_cut_png(name):
-    """컷씬/레이어 원본 png — 대문자 참조(21_I1)는 소문자로도 재시도. 없으면 None."""
-    for cand in dict.fromkeys([name, name.lower()]):
-        try:
-            return fetch(f"{ASSETS}/avg/images/{cand}.png", binary=True)
-        except urllib.error.HTTPError:
-            continue
-    for cand in dict.fromkeys([name, name.lower()]):
-        try:
-            return fetch(f"{ASSETS}/avg/items/{cand}.png", binary=True)
-        except urllib.error.HTTPError:
-            continue
+    """컷씬/레이어 원본 png — 대문자 참조(21_I1)는 소문자로도 재시도. 없으면 None.
+
+    게임 CDN을 먼저 본다 (에셋 미러는 며칠씩 밀린다). 없으면 종전대로 미러.
+    """
+    import cdnassets
+    for folder in ("avg/images", "avg/items"):
+        for cand in dict.fromkeys([name, name.lower()]):
+            png = cdnassets.png_bytes(f"{folder}/{cand}")
+            if png:
+                return png
+    for folder in ("avg/images", "avg/items"):
+        for cand in dict.fromkeys([name, name.lower()]):
+            try:
+                return fetch(f"{ASSETS}/{folder}/{cand}.png", binary=True)
+            except urllib.error.HTTPError:
+                continue
     return None
 
 

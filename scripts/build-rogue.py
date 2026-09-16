@@ -28,6 +28,7 @@ ASSETS = "https://raw.githubusercontent.com/ArknightsAssets/ArknightsAssets2/cn/
 CACHE = os.path.join(REPO, ".gamedata", "rogue")
 os.makedirs(CACHE, exist_ok=True)
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import cdnassets
 from imgutil import save_webp
 
 def fetch_json(path, branch="kr"):
@@ -49,8 +50,10 @@ def download_webp(jobs, max_px=None, photo=True):
         if os.path.exists(dest):
             return None
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-            png = urllib.request.urlopen(req, timeout=30).read()
+            png = cdnassets.from_mirror_url(url)   # 게임 CDN 우선 (에셋 미러는 며칠씩 밀린다)
+            if png is None:
+                req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+                png = urllib.request.urlopen(req, timeout=30).read()
             os.makedirs(os.path.dirname(dest), exist_ok=True)
             save_webp(png, dest, photo=photo, max_px=max_px)
             return None

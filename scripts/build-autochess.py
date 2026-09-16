@@ -65,6 +65,7 @@ SKILL_ICON = f"{ASSETS}/arts/skills"          # skill_icon_<iconId>.png
 MODTYPE_ICON = f"{ASSETS}/arts/ui/uniequiptype"  # <typeIcon 소문자>.png
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import cdnassets
 from imgutil import save_webp  # noqa: E402
 from acseason import dispatch_all, out_name, season_arg, seasons_of  # noqa: E402
 
@@ -1628,8 +1629,10 @@ def download(jobs):
         if os.path.exists(dest):
             return None
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": "terra-archive-autochess/1.0"})
-            png = urllib.request.urlopen(req, timeout=60).read()
+            png = cdnassets.from_mirror_url(url)   # 게임 CDN 우선 (에셋 미러는 며칠씩 밀린다)
+            if png is None:
+                req = urllib.request.Request(url, headers={"User-Agent": "terra-archive-autochess/1.0"})
+                png = urllib.request.urlopen(req, timeout=60).read()
             os.makedirs(os.path.dirname(dest), exist_ok=True)
             save_webp(png, dest)
             return None

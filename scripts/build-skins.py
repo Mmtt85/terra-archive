@@ -32,6 +32,7 @@ import urllib.request
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import cntr  # noqa: E402
+import cdnassets
 from imgutil import save_webp  # noqa: E402
 
 ONLY_META = "--meta-only" in sys.argv
@@ -275,8 +276,10 @@ def dl(job):
         name = f"{pid}b" if full else pid
         url = f"{src}/{urllib.parse.quote(name, safe='')}.png"
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": "terra-archive"})
-            body = urllib.request.urlopen(req, timeout=60).read()
+            body = cdnassets.from_mirror_url(url)   # 게임 CDN 우선
+            if body is None:
+                req = urllib.request.Request(url, headers={"User-Agent": "terra-archive"})
+                body = urllib.request.urlopen(req, timeout=60).read()
         except Exception as err:  # noqa: BLE001
             errs.append(str(err))
             continue

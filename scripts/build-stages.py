@@ -30,6 +30,7 @@ _pos = [a for a in sys.argv[1:] if not a.startswith("-")]
 S = _pos[0] if _pos else os.environ.get("GAMEDATA_DIR", os.path.join(REPO, ".gamedata"))
 DATA = os.path.join(REPO, "app", "data")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import cdnassets
 from imgutil import save_webp  # noqa: E402
 # 인게임 도면이 없는 작전은 레벨 파일의 타일 격자로 그린다 — 통합전략이 쓰던 렌더러를
 # 그대로 재사용한다 (build-rogue.py는 __main__ 가드가 있어 임포트해도 빌드가 돌지 않는다).
@@ -432,9 +433,11 @@ else:
 
     def one(sid):
         try:
-            req = urllib.request.Request(f"{ASSETS}/arts/ui/stage/mappreviews/{sid}.png",
-                                         headers={"User-Agent": "Mozilla/5.0"})
-            png = urllib.request.urlopen(req, timeout=90).read()
+            png = cdnassets.png_bytes(f"arts/ui/stage/mappreviews/{sid}")   # 게임 CDN 우선
+            if png is None:
+                req = urllib.request.Request(f"{ASSETS}/arts/ui/stage/mappreviews/{sid}.png",
+                                             headers={"User-Agent": "Mozilla/5.0"})
+                png = urllib.request.urlopen(req, timeout=90).read()
             # photo=True·method=4 — 2,327장이라 method 6(장당 수 초)은 쓸 수 없다.
             # 640px면 칸·진입로·고지가 충분히 읽힌다 (원본은 1000px 내외).
             save_webp(png, os.path.join(dest_dir, sid + ".webp"), photo=True, max_px=640, method=4)

@@ -30,6 +30,7 @@ SKILL_ICON = ("https://raw.githubusercontent.com/ArknightsAssets/ArknightsAssets
               "/cn/assets/dyn/arts/skills")
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import cdnassets
 from imgutil import save_webp  # noqa: E402
 
 
@@ -76,9 +77,11 @@ def main():
     def one(job):
         url, dest = job
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": "terra-archive-skill-icons/1.0"})
-            with urllib.request.urlopen(req, timeout=30) as res:
-                data = res.read()
+            data = cdnassets.from_mirror_url(url)   # 게임 CDN 우선
+            if data is None:
+                req = urllib.request.Request(url, headers={"User-Agent": "terra-archive-skill-icons/1.0"})
+                with urllib.request.urlopen(req, timeout=30) as res:
+                    data = res.read()
             # 아이콘은 작은 투명 PNG라 무손실이 대체로 더 작다 — 스킨 포트레이트와 달리
             # method=6 로 눌러도 장당 수십 ms 수준이다
             save_webp(data, dest)

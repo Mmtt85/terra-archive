@@ -38,6 +38,7 @@ CACHE = os.path.join(REPO, ".gamedata", "levels")
 # build-rogue.py가 이미 받아 둔 14MB 사본이 있으면 재사용한다 (같은 파일이다)
 ROGUE_CACHE = os.path.join(REPO, ".gamedata", "rogue")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import cdnassets
 from imgutil import save_webp  # noqa: E402
 from routeutil import routes_of_level  # noqa: E402
 
@@ -601,9 +602,11 @@ else:
         eid, cands = job
         for c in cands:
             try:
-                req = urllib.request.Request(ASSETS + "/arts/enemies/" + c + ".png",
-                                             headers={"User-Agent": "Mozilla/5.0"})
-                png = urllib.request.urlopen(req, timeout=60).read()
+                png = cdnassets.png_bytes("arts/enemies/" + c)   # 게임 CDN 우선
+                if png is None:
+                    req = urllib.request.Request(ASSETS + "/arts/enemies/" + c + ".png",
+                                                 headers={"User-Agent": "Mozilla/5.0"})
+                    png = urllib.request.urlopen(req, timeout=60).read()
                 # photo=True·method=4 — imgutil 주석 참고: 대량 변환에서 method 6은 장당
                 # 수 초가 걸리는데 결과 크기는 사실상 같다
                 save_webp(png, os.path.join(dest_dir, c + ".webp"), photo=True, max_px=256, method=4)

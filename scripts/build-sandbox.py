@@ -23,6 +23,7 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import cdnassets
 from imgutil import save_webp  # noqa: E402 — 공용 webp 저장 (scripts/imgutil.py)
 import routeutil  # noqa: E402 — 타일 격자·경로·스폰 추출 정본 (작전 도감·통전과 공유)
 
@@ -118,8 +119,10 @@ def download_webp(jobs, max_px=None, photo=True):
         if os.path.exists(dest):
             return None
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-            png = urllib.request.urlopen(req, timeout=30).read()
+            png = cdnassets.from_mirror_url(url)   # 게임 CDN 우선 (에셋 미러는 며칠씩 밀린다)
+            if png is None:
+                req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+                png = urllib.request.urlopen(req, timeout=30).read()
             os.makedirs(os.path.dirname(dest), exist_ok=True)
             save_webp(png, dest, photo=photo, max_px=max_px)
             return None

@@ -36,6 +36,8 @@ OUT = ROOT / "app" / "scan" / "portrait-templates.json"
 SKIN_TABLE = "https://raw.githubusercontent.com/ArknightsAssets/ArknightsGamedata/master/kr/gamedata/excel/skin_table.json"
 # 초상 미러 (우선순위대로) — # 은 %23으로 인코딩해야 한다.
 # 최신 오퍼(2026~)는 yuanyan3060 스냅샷에 없고 ArknightsAssets2(cn)에만 있다.
+import cdnassets
+
 MIRRORS = [
     "https://raw.githubusercontent.com/yuanyan3060/ArknightsGameResource/main/portrait/{}.png",
     "https://raw.githubusercontent.com/ArknightsAssets/ArknightsAssets2/cn/assets/dyn/arts/charportraits/{}.png",
@@ -54,6 +56,16 @@ def fetch_portrait(pid: str) -> Image.Image | None:
     cached = CACHE / f"{pid}.png"
     if cached.exists():
         return Image.open(cached).convert("RGBA")
+    # 게임 CDN 우선 — 미러 다섯 곳은 전부 사람이 돌려야 올라와서 신규 오퍼가 늦다.
+    # 받은 것은 캐시에 남겨 다음 실행이 다시 번들을 열지 않게 한다.
+    im = cdnassets.image(f"arts/charportraits/{pid}") or cdnassets.image(f"arts/charportraits/{pid}", "cn")
+    if im is not None:
+        im = im.convert("RGBA")
+        try:
+            im.save(cached)
+        except Exception:  # noqa: BLE001 — 캐시 실패는 치명적이지 않다
+            pass
+        return im
     # 미러에 따라 파일명이 전부 소문자인 경우가 있다 (예: ambienceSynesthesia → ambiencesynesthesia)
     variants = [urllib.parse.quote(pid)]
     if pid != pid.lower():

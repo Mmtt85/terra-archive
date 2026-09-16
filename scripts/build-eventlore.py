@@ -39,6 +39,7 @@ ARTS = f"{DYN}/arts/ui"     # arts/ui/… (일러스트·카드 아트)
 NO_ICONS = "--no-icons" in sys.argv
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import cdnassets
 from imgutil import save_webp  # noqa: E402
 
 PREFIX = {"ko": "kr", "en": "en", "ja": "jp"}
@@ -522,8 +523,10 @@ def download(jobs):
         if os.path.exists(dest):
             return None
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": "terra-archive-eventlore/1.0"})
-            raw = urllib.request.urlopen(req, timeout=60).read()
+            raw = cdnassets.from_mirror_url(url)   # 게임 CDN 우선 (에셋 미러는 며칠씩 밀린다)
+            if raw is None:
+                req = urllib.request.Request(url, headers={"User-Agent": "terra-archive-eventlore/1.0"})
+                raw = urllib.request.urlopen(req, timeout=60).read()
             os.makedirs(os.path.dirname(dest), exist_ok=True)
             save_webp(raw, dest, method=4)
             return None
