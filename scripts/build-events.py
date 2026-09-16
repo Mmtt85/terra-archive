@@ -175,6 +175,10 @@ for loc in LOCALES:
 
 rows = {loc: [] for loc in LOCALES}
 kr_basic = kr_act["basicInfo"]
+# 드랍 종류 번호 — '주요 드랍' 자리. 세 로케일의 kinds 배열은 같은 순서라(실측) 번호가
+# 그대로 통한다. 그래도 한국어 표기로 찾아 둔다 — 순서가 틀어지면 여기서 바로 드러난다.
+_ko_kinds = ((per_loc["ko"]["stages"] or {}).get("kinds")) or []
+MAIN_KIND = _ko_kinds.index("주요 드랍") if "주요 드랍" in _ko_kinds else 0
 
 # 데뷔일 → 이벤트 id (위 우선순위 규칙). 한 번만 계산해 둔다.
 # ⚠ 같은 날 **로그인 보상·체크인 활동**이 같이 열린다 (2026-07-16 「용문 복권방 로그인
@@ -237,7 +241,11 @@ for aid, info in sorted(kr_basic.items(), key=lambda kv: -(kv[1].get("startTime"
             # 없다) T4는 상점 교환으로 옮겨 가, 21/153 이벤트에만 붙었다 → T3으로 내렸다.
             # ⚠ 이벤트 상점(교환소)에서 재화로 바꾸는 재료는 여기 없다. 상점 품목표가
             #   클라이언트 데이터에 없기 때문이다(서버가 쥐고 있다) — 맵 드랍만 싣는다.
+            # ⚠ **주요 드랍만** 싣는다 (사용자 지시 2026-09-17). 추가·특별 드랍이나 완벽
+            #   작전 보상까지 세면 "여기서 파밍된다"는 뜻이 흐려진다 — 가끔 떨어지는 것들이다.
             for d in (s.get("d") or []):
+                if d[2] != MAIN_KIND:
+                    continue
                 it = loc_items.get(d[0])
                 if it and it.get("g") == "material" and (it.get("r") or 0) >= MAT_TIER:
                     mats.setdefault(d[0], set()).add(s["code"])
