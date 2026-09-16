@@ -22903,18 +22903,12 @@ html[lang="ja"] .vn-box {
   gap: 16px;
   margin-top: 10px;
 }
-.ev-top.no-thumb {
-  grid-template-columns: minmax(0, 1fr);
-}
 /* 왼쪽 칸 — 썸네일 + 그 밑의 교환 재화 */
 .ev-top-side {
   display: flex;
   flex-direction: column;
   gap: 10px;
   min-width: 0;
-}
-.ev-top.no-thumb .ev-top-side:empty {
-  display: none;
 }
 /* 왼쪽 칸의 섹션은 윗선·여백을 덜어 썸네일에 바로 붙인다 */
 .ev-sec-side {

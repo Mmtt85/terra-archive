@@ -197,7 +197,9 @@ function EventFile({ row, onOpenStage, onOpenEnemy, onOpenItem, onShowOperator, 
       </header>
       {/* 썸네일은 왼쪽, 스토리 읽기·이벤트 오퍼·작전은 오른쪽 — 한눈에 들어오게
           (사용자 요청 2026-09-17). 좁은 화면에서는 CSS가 한 줄로 되돌린다. */}
-      <div className={`ev-top${row.thumb ? "" : " no-thumb"}`}>
+      {/* ⚠ 썸네일이 없다고 한 칸으로 바꾸지 않는다 — 자리표시가 모달 폭을 다 먹어
+          다른 이벤트와 모양이 달라진다 (사용자 지적 2026-09-17). 칸 수는 늘 둘이다. */}
+      <div className="ev-top">
         <div className="ev-top-side">
           {/* 상세도 카드와 같다 — 그림이 없으면 자리만 남기고 글자를 띄운다
               (사용자 지시 2026-09-17). 빼 버리면 두 칸 배치가 한 칸으로 무너진다. */}
