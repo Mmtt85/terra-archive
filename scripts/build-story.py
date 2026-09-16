@@ -382,13 +382,24 @@ for act in acts:
     # 파일이 아직 없으면(신규 이벤트) 글로벌판을 임시로 받아두고, CG 대체 이벤트는 CG.
     dest = os.path.join(thumb_dir, f"{eid}.webp")
     if not os.path.exists(dest):
-        url = THUMB_FALLBACK.get(eid) or f"{ASSETS_EN}/arts/ui/storyreview/hubs/activity/{pic}.png"
-        try:
-            png = fetch(url, binary=True)
-            to_jpeg(png, dest, max_px=640 if eid in THUMB_FALLBACK else None)
-            print("thumb(임시-글로벌판, --kr-thumbs로 교체 필요):", eid, file=sys.stderr)
-        except Exception as err:  # noqa: BLE001 — 썸네일 하나 실패해도 목록은 만든다
-            failed.append((eid, pic, str(err)))
+        # 한국판 썸네일이 **한섭 CDN에 이미 있으면** 그걸 쓴다 (2026-09-16). 종전엔 무조건
+        # 글로벌판을 임시로 받아 두고 나중에 --kr-thumbs 로 교체했는데, 개방 당일엔 글로벌이
+        # 아직 그 이벤트를 모른다 — 404 로 파이프라인이 통째로 죽었다(act51side 실측).
+        # CDN 것은 임시가 아니라 진짜 한국판이라 교체도 필요 없다.
+        import cdnassets
+        kr_png = None if eid in THUMB_FALLBACK else cdnassets.png_bytes(
+            f"arts/ui/storyreview/hubs/activity/{pic}")
+        if kr_png:
+            to_jpeg(kr_png, dest)
+            print("thumb(한섭 CDN):", eid, file=sys.stderr)
+        else:
+            url = THUMB_FALLBACK.get(eid) or f"{ASSETS_EN}/arts/ui/storyreview/hubs/activity/{pic}.png"
+            try:
+                png = fetch(url, binary=True)
+                to_jpeg(png, dest, max_px=640 if eid in THUMB_FALLBACK else None)
+                print("thumb(임시-글로벌판, --kr-thumbs로 교체 필요):", eid, file=sys.stderr)
+            except Exception as err:  # noqa: BLE001 — 썸네일 하나 실패해도 목록은 만든다
+                failed.append((eid, pic, str(err)))
     # 글로벌판(en)·일본판(ja) — 없으면 필드 생략(UI가 기본판으로 폴백)
     if eid not in THUMB_FALLBACK:
         for key, sub_dir, base_url in (("thumbEn", en_dir, ASSETS_EN), ("thumbJa", ja_dir, ASSETS_JP)):

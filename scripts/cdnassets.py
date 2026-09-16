@@ -102,16 +102,30 @@ def _table(server, bundle):
         return out
 
 
+def _pick(tbl, name):
+    """번들에서 이름으로 고른다. **대소문자는 무시**한다 — 매니페스트 경로는 전부
+    소문자인데 번들 안 에셋은 원래 표기를 쓴다 (`storyentrypic_act51side` 경로에
+    `storyEntryPic_act51side` 에셋. 2026-09-16 실측, 이것 때문에 파이프라인이 죽었다)."""
+    if name in tbl:
+        return name
+    low = name.lower()
+    for k in tbl:
+        if k.lower() == low:
+            return k
+    return None
+
+
 def _compose(tbl, name):
     """알파가 따로 실린 텍스처를 합친다.
 
     아크나이츠 번들은 그림 일부를 **RGB 본체 + `<이름>[alpha]` 회색조 마스크** 두 장으로
     쪼개 둔다 (스토리 스프라이트가 특히 그렇다). 본체만 쓰면 배경이 까맣게 남는다.
     """
-    im = tbl.get(name)
-    if im is None:
+    key = _pick(tbl, name)
+    if key is None:
         return None
-    mask = tbl.get(name + "[alpha]")
+    im = tbl[key]
+    mask = tbl.get(key + "[alpha]") or tbl.get(_pick(tbl, key + "[alpha]") or "")
     if mask is None:
         return im.convert("RGBA") if im.mode != "RGBA" else im
     from PIL import Image
@@ -165,9 +179,9 @@ def image(path, server="kr"):
 def _faces(tbl, name):
     """번들 안에 실제로 있는 표정 번호 목록 (오름차순). 번호는 띄엄띄엄하다."""
     out = []
-    head = name + "$"
+    head = (name + "$").lower()
     for k in tbl:
-        if k.startswith(head) and not k.endswith("[alpha]"):
+        if k.lower().startswith(head) and not k.endswith("[alpha]"):
             tail = k[len(head):]
             if tail.isdigit():
                 out.append(int(tail))
