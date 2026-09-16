@@ -109,6 +109,9 @@ export default function SimLauncher() {
   // ── 상세 모달 스택 — 작전 도감(stages.tsx)과 같은 짜임 (주 모달 + 적·재료 겹침) ──
   const [open, setOpen] = useState<Stage | null>(null);
   const [subEnemy, setSubEnemy] = useState<Enemy | null>(null);
+  // ⚠ 적 도감 **전체 맵**을 들고 있어야 '연계 소환'에 이름이 찍힌다 — 안 그러면
+  //   `enemy_1588_ubbphw` 같은 id가 그대로 보인다 (사용자 제보 2026-09-17).
+  const [enMap, setEnMap] = useState<Map<string, Enemy> | null>(null);
   const [subItem, setSubItem] = useState<string | null>(null);
   const [enemyRaise, setEnemyRaise] = useState(0);
   const [itemRaise, setItemRaise] = useState(0);
@@ -133,7 +136,7 @@ export default function SimLauncher() {
   const view = open && doc ? viewOf(doc, open, STATS ?? undefined) : null;
   const openEnemy = (id: string) => {
     setEnemyRaise((k) => k + 1);
-    void loadEnemies(locale).then((m) => setSubEnemy(m.get(id) ?? null));
+    void loadEnemies(locale).then((m) => { setEnMap(m); setSubEnemy(m.get(id) ?? null); });
   };
   const openItem = (id: string) => { setSubItem(id); setItemRaise((k) => k + 1); };
 
@@ -325,7 +328,7 @@ export default function SimLauncher() {
       {/* 상세 모달 — 페이지 이동 없이 이 자리에서 (사용자 지시 2026-08-10). 시뮬 가능
           작전이면 이동 경로 탭 + 자동 재생(autoSim)으로 연다. */}
       {view && (
-        <ModalWindow key={mainRaise} label={`${view.stage.code} ${view.stage.name}`} className="operator-modal st-modal"
+        <ModalWindow key={`st-${mainRaise}`} label={`${view.stage.code} ${view.stage.name}`} className="operator-modal st-modal"
           onClose={() => setOpen(null)}>
           {/* key: 다른 작전으로 갈아탈 때 환경 탭·시뮬 상태를 초기화한다 */}
           <StageFile key={view.stage.id} view={view} onOpenEnemy={openEnemy} onOpenItem={openItem}
@@ -333,13 +336,14 @@ export default function SimLauncher() {
         </ModalWindow>
       )}
       {subEnemy && (
-        <ModalWindow key={enemyRaise} label={subEnemy.name} className="operator-modal en-modal" onClose={() => setSubEnemy(null)}>
-          <EnemyFile enemy={subEnemy} stagesDoc={null} onOpenEnemy={openEnemy} />
+        <ModalWindow key={`en-${enemyRaise}`} label={subEnemy.name} className="operator-modal en-modal" onClose={() => setSubEnemy(null)}>
+          <EnemyFile enemy={subEnemy} stagesDoc={null} onOpenEnemy={openEnemy}
+            nameOf={(id) => enMap?.get(id)?.name} />
         </ModalWindow>
       )}
       {subItem && (
         <Suspense fallback={null}>
-          <ItemModal key={itemRaise} id={subItem} onClose={() => setSubItem(null)} onShowItem={openItem}
+          <ItemModal key={`it-${itemRaise}`} id={subItem} onClose={() => setSubItem(null)} onShowItem={openItem}
             onShowStage={(sid: string) => {
               const st = byId.get(sid);
               if (st) { setOpen(st); setMainRaise((k) => k + 1); }

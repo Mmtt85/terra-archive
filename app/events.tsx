@@ -318,6 +318,10 @@ export default function EventDex({ doc, onShowOperator, onOpenGuide }: {
   // ⚠ 해시 동기화는 하지 않는다 (주 모달 #ev-<id>와 서로 덮어써 창이 닫힌다).
   const [subStage, setSubStage] = useState<StageView | null>(null);
   const [subEnemy, setSubEnemy] = useState<Enemy | null>(null);
+  // ⚠ 적 도감 **전체 맵**을 들고 있어야 '연계 소환'에 이름을 찍을 수 있다. 안 그러면
+  //   `enemy_1588_ubbphw` 같은 id가 그대로 보인다 (사용자 제보 2026-09-17 "파블로비치,
+  //   추밀관"). 어차피 적을 여는 순간 받는 맵이라 새로 받는 값이 아니다.
+  const [enMap, setEnMap] = useState<Map<string, Enemy> | null>(null);
   const [subItem, setSubItem] = useState<DexItem | null>(null);
   const [itemDoc, setItemDoc] = useState<ItemDoc | null>(null);
   const [subStory, setSubStory] = useState<string | null>(null);
@@ -335,7 +339,7 @@ export default function EventDex({ doc, onShowOperator, onOpenGuide }: {
   };
   const openEnemy = (eid: string) => {
     setRaise((k) => k + 1);
-    void loadEnemies(locale).then((m) => setSubEnemy(m.get(eid) ?? null));
+    void loadEnemies(locale).then((m) => { setEnMap(m); setSubEnemy(m.get(eid) ?? null); });
   };
   // 재화는 **모달로 겹쳐** 띄운다 (사용자 지시 2026-09-16: "페이지 이동이 아니라 모달창").
   // 아이템 도감 문서(로케일당 ~650KB)는 여기서 처음 필요해지므로 그때 받는다.
@@ -470,7 +474,13 @@ export default function EventDex({ doc, onShowOperator, onOpenGuide }: {
       {subEnemy && (
         <ModalWindow key={`en-${raise}`} label={subEnemy.name} className="operator-modal en-modal"
           onClose={() => setSubEnemy(null)}>
-          <EnemyFile enemy={subEnemy} stagesDoc={null} onOpenStage={openStage} />
+          {/* ⚠ nameOf·onOpenEnemy 를 빠뜨리면 '연계 소환'이 id를 날것으로 찍고, 눌렀을 때
+              모달이 아니라 적 상세 **페이지로 튕겨 나간다** (사용자 제보 2026-09-17).
+              onOpenStage는 stagesDoc이 null이라 죽은 값이었어서 뺐다 — 등장 작전 절은
+              stagesDoc이 있어야 그려진다(app/enemies.tsx만 넘긴다). */}
+          <EnemyFile enemy={subEnemy} stagesDoc={null}
+            nameOf={(id) => enMap?.get(id)?.name}
+            onOpenEnemy={openEnemy} />
         </ModalWindow>
       )}
       {subStory && (

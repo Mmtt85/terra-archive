@@ -30,7 +30,8 @@ import { ModalWindow } from "./modal-window";
 import { useHashSync } from "./hash-modal";
 import { AttributeFilter } from "./attr-filter";
 import { SearchSuggest } from "./search-suggest";
-import { loadEnemyStats, loadStages } from "./dex-cross";
+import { loadEnemies, loadEnemyStats, loadStages } from "./dex-cross";
+import { EnemyFile, type Enemy } from "./enemy-detail";
 import { StageFile } from "./stage-detail";
 import { viewOf, type StageView } from "./stage-data";
 
@@ -175,6 +176,11 @@ export default function ItemDex({ doc }: { doc: ItemDoc }) {
   // ⚠ 해시 동기화는 하지 않는다 (주 모달 #it-<id>와 서로 덮어써 창이 닫힌다).
   const [subStage, setSubStage] = useState<StageView | null>(null);
   const [stageRaise, setStageRaise] = useState(0);
+  // 작전 모달의 등장 적 — 여기도 **겹쳐** 띄운다. 종전에는 onOpenEnemy를 안 넘겨서
+  // 적을 누르면 아이템 도감을 **떠나** /enemies/<id>로 튕겨 나갔다 (2026-09-17 전수조사).
+  const [subEnemy, setSubEnemy] = useState<Enemy | null>(null);
+  const [enMap, setEnMap] = useState<Map<string, Enemy> | null>(null);
+  const [enemyRaise, setEnemyRaise] = useState(0);
 
   const items = doc.items;
   const byId = useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
@@ -184,6 +190,10 @@ export default function ItemDex({ doc }: { doc: ItemDoc }) {
       const st = d.stages.find((x) => x.id === sid);
       setSubStage(st ? viewOf(d, st, stats) : null);
     });
+  };
+  const openEnemy = (eid: string) => {
+    setEnemyRaise((k) => k + 1);
+    void loadEnemies(locale).then((m) => { setEnMap(m); setSubEnemy(m.get(eid) ?? null); });
   };
 
   // 딥링크 #it-<id> — 오퍼(#op-)·적(#en-)과 같은 관례. 재료파밍의 #item-<id>와는 다른
@@ -278,9 +288,17 @@ export default function ItemDex({ doc }: { doc: ItemDoc }) {
         </ModalWindow>
       )}
       {subStage && (
-        <ModalWindow key={stageRaise} label={`${subStage.stage.code} ${subStage.stage.name}`}
+        <ModalWindow key={`st-${stageRaise}`} label={`${subStage.stage.code} ${subStage.stage.name}`}
           className="operator-modal st-modal" onClose={() => setSubStage(null)}>
-          <StageFile view={subStage} onOpenItem={(id) => { const i = byId.get(id); if (i) setOpen(i); }} />
+          <StageFile view={subStage} onOpenEnemy={openEnemy}
+            onOpenItem={(id) => { const i = byId.get(id); if (i) setOpen(i); }} />
+        </ModalWindow>
+      )}
+      {subEnemy && (
+        <ModalWindow key={`en-${enemyRaise}`} label={subEnemy.name} className="operator-modal en-modal"
+          onClose={() => setSubEnemy(null)}>
+          <EnemyFile enemy={subEnemy} stagesDoc={null} onOpenEnemy={openEnemy}
+            nameOf={(id) => enMap?.get(id)?.name} />
         </ModalWindow>
       )}
     </section>

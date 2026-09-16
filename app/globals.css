@@ -18896,11 +18896,12 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
 .en-stagegroup li:hover {
   border-color: var(--border-hover);
 }
-/* 드랍 항목이 재료 상세를 여는 버튼이 됐다 (2026-08-09) */
+/* 드랍 항목이 재료 상세를 여는 버튼이 됐다 (2026-08-09) → 2026-09-17부터 **링크**다.
+   모달을 못 여는 자리(정적 /stages/<id>)에서 disabled 로 죽던 걸 없앴다 — 적 칩과 같은 규약 */
 .st-dropgroup li {
   padding: 0;
 }
-.st-dropgroup li > button {
+.st-dropgroup li > a {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -18909,12 +18910,10 @@ button.st-enemy { cursor: pointer; font: inherit; text-align: left; }
   background: 0 0;
   color: inherit;
   font: inherit;
+  text-decoration: none;
   cursor: pointer;
 }
-.st-dropgroup li > button:disabled {
-  cursor: default;
-}
-.st-dropgroup li:has(button:not(:disabled)):hover {
+.st-dropgroup li:hover {
   border-color: var(--border-hover);
 }
 /* 적 스탯표가 가로로 길어져 좁은 화면에서 넘칠 수 있다 — 표만 따로 스크롤한다 */

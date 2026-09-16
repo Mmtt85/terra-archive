@@ -261,7 +261,7 @@ export default function EnemyDex({ enemies }: { enemies: Enemy[] }) {
 
       {/* 작전 상세 — 적 모달 위에 겹친다 (ModalWindow가 zTop으로 앞뒤를 정한다) */}
       {subStage && (
-        <ModalWindow key={stageRaise} label={`${subStage.stage.code} ${subStage.stage.name}`} className="operator-modal st-modal"
+        <ModalWindow key={`st-${stageRaise}`} label={`${subStage.stage.code} ${subStage.stage.name}`} className="operator-modal st-modal"
           onClose={() => setSubStage(null)}>
           <StageFile view={subStage}
             onOpenEnemy={(id) => { const e = byId.get(id); if (e) { setSubStage(null); setOpen(e); } }}
@@ -270,7 +270,7 @@ export default function EnemyDex({ enemies }: { enemies: Enemy[] }) {
       )}
       {subItem && (
         <Suspense fallback={null}>
-          <ItemModal key={itemRaise} id={subItem} onClose={() => setSubItem(null)} onShowItem={openItem}
+          <ItemModal key={`it-${itemRaise}`} id={subItem} onClose={() => setSubItem(null)} onShowItem={openItem}
             onShowStage={openStage} />
         </Suspense>
       )}

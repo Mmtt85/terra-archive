@@ -9,7 +9,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useI18n } from "./i18n";
 import { asset } from "./assets";
-import { enemyPath, enemyImg, enemyImgBase, stageMap, stagePath, stageListPath } from "./dex-paths";
+import { enemyPath, enemyImg, enemyImgBase, itemDexPath, stageMap, stagePath, stageListPath } from "./dex-paths";
 import { ModalWindow } from "./modal-window";
 import { loadEnemies } from "./dex-cross";
 import { EnemyFile, type Enemy } from "./enemy-detail";
@@ -137,7 +137,7 @@ export function StageFile({ view, onOpenEnemy, onOpenItem, autoSim }: {
   /** 이동 경로 탭 + 시뮬 자동 재생으로 연다 — 작전 시뮬레이터 런처의 모달 (2026-08-10) */
   autoSim?: boolean;
 }) {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const [zoom, setZoom] = useState(false);
   const zoomRef = useRef<HTMLButtonElement | null>(null);
   // 실사 도면 / 이동 경로 탭 (사용자 확정 2026-08-10 "탭 두개로 구분")
@@ -321,8 +321,16 @@ export function StageFile({ view, onOpenEnemy, onOpenItem, autoSim }: {
                       {g.items.map((d, i) => (
                         <li key={`${d.id}-${i}`}>
                           {/* 재료 상세도 **모달로 겹쳐** 띄운다 (사용자 요청 2026-08-09).
-                              재료파밍 도우미의 상세를 그대로 쓰므로 설명·조합식·효율 스테이지까지 나온다. */}
-                          <button type="button" disabled={!onOpenItem} onClick={() => onOpenItem?.(d.id)}>
+                              재료파밍 도우미의 상세를 그대로 쓰므로 설명·조합식·효율 스테이지까지 나온다.
+                              ⚠ 종전에는 onOpenItem이 없으면 `disabled` 로 **죽은 칩**이 됐다 —
+                              /stages/<id> 정적 페이지와 아이템 도감의 작전 모달이 그 상태였다
+                              (사용자 제보 2026-09-17). 이제 적 칩과 같은 규약으로 **링크**를
+                              깔고 콜백이 있을 때만 가로챈다 — 어느 자리에서도 죽지 않는다. */}
+                          <a href={itemDexPath(locale, d.id)}
+                            onClick={(ev) => {
+                              if (!onOpenItem || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
+                              ev.preventDefault(); onOpenItem(d.id);
+                            }}>
                             <img src={asset(`/items/${d.id}.webp`)} alt="" aria-hidden width={28} height={28}
                               loading="lazy" decoding="async"
                               onError={(ev) => { ev.currentTarget.style.display = "none"; }} />
@@ -334,7 +342,7 @@ export function StageFile({ view, onOpenEnemy, onOpenItem, autoSim }: {
                             ) : (
                               <em>{d.occ}</em>
                             )}
-                          </button>
+                          </a>
                         </li>
                       ))}
                     </ul>
@@ -355,7 +363,11 @@ export function StagePage({ view, onBack }: { view: StageView; onBack?: () => vo
   // 섬네일 클릭 = 적 상세 모달 — 목록 모달과 같은 동작을 정적 페이지에도 (사용자 확정
   // 2026-08-10). 적 데이터(1MB)는 dex-cross가 지연 로드한다.
   const [subEnemy, setSubEnemy] = useState<Enemy | null>(null);
-  const openEnemy = (id: string) => { void loadEnemies(locale).then((m) => setSubEnemy(m.get(id) ?? null)); };
+  // ⚠ 맵을 들고 있어야 적 모달의 '연계 소환'에 이름이 찍힌다 (사용자 제보 2026-09-17)
+  const [enMap, setEnMap] = useState<Map<string, Enemy> | null>(null);
+  const openEnemy = (id: string) => {
+    void loadEnemies(locale).then((m) => { setEnMap(m); setSubEnemy(m.get(id) ?? null); });
+  };
   return (
     <div className="operator-page-wrap">
       <a className="story-back" href={stageListPath(locale)}
@@ -368,7 +380,8 @@ export function StagePage({ view, onBack }: { view: StageView; onBack?: () => vo
       </section>
       {subEnemy && (
         <ModalWindow label={subEnemy.name} className="operator-modal en-modal" onClose={() => setSubEnemy(null)}>
-          <EnemyFile enemy={subEnemy} stagesDoc={null} onOpenEnemy={openEnemy} />
+          <EnemyFile enemy={subEnemy} stagesDoc={null} onOpenEnemy={openEnemy}
+            nameOf={(id) => enMap?.get(id)?.name} />
         </ModalWindow>
       )}
     </div>

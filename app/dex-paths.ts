@@ -13,6 +13,9 @@ export const enemyPath = (locale: string, id: string) => `${base(locale)}/enemie
 export const enemyListPath = (locale: string) => `${base(locale)}/enemies`;
 export const stagePath = (locale: string, id: string) => `${base(locale)}/stages/${id}`;
 export const stageListPath = (locale: string) => `${base(locale)}/stages`;
+/** 아이템 도감의 그 재화 — 상세 라우트가 없어 **목록 + 해시**다 (app/items.tsx 머리주석).
+ *  드랍 칩처럼 모달을 못 여는 자리(정적 상세 페이지)의 폴백 링크로 쓴다. */
+export const itemDexPath = (locale: string, id: string) => `${base(locale)}/items#it-${id}`;
 /** 통합전략 작전(Stage.rg)이 속한 테마의 정본 주소 — 그 작전엔 /stages/<id> 페이지가 없다
  *  (파일 수 한도, scripts/build-stages-rogue.py 머리주석). id는 `ro<N>_...` 꼴이다.
  *  ⚠ rogue-topics는 데이터를 전혀 물지 않는 경량 모듈이라 여기서 가져와도 번들이 안 커진다

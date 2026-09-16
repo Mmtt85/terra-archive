@@ -10,6 +10,7 @@
 //   그래서 표현부만 여기 두고, 1MB짜리 enemies.json은 지연 로드되는 목록 탭에만 둔다.
 //   여기에 데이터 임포트를 추가하면 그 순간 모든 페이지의 첫 번들이 1MB 늘어난다.
 
+import { useEffect, useState } from "react";
 import { useI18n } from "./i18n";
 import { enemyImg, enemyImgBase, enemyPath, enemyListPath, stageListPath } from "./dex-paths";
 
@@ -147,6 +148,11 @@ function Appearances({ enemy, doc, onOpenStage }: { enemy: Enemy; doc: EnemyStag
  *  · stagesDoc — 등장 작전 색인. 상세 **페이지**는 서버가 넣어 주고(프리렌더 대상),
  *    목록 모달은 열릴 때 지연 로드한다. null이면 그 절만 빠진다.
  *  · onOpenEnemy — 연계 소환 적으로 이동 (목록 안에서만 동작, 페이지에선 링크로 폴백)
+ *  · nameOf — 연계 소환 적의 **이름**. 이 컴포넌트는 적 하나만 받으므로 다른 적의 이름을
+ *    스스로 알 수 없다. 안 넘기면 `enemy_1588_ubbphw` 같은 **id가 날것으로** 찍힌다
+ *    (사용자 제보 2026-08-13 생존연산 · 2026-09-17 이벤트 도감 "파블로비치, 추밀관").
+ *    모달로 띄우는 자리는 어차피 dex-cross의 적 맵을 받아 두었으니 그 맵을 그대로 넘긴다.
+ *    ⚠ 빠뜨리면 scripts/check-dexlinks.mjs가 빌드를 멈춘다.
  */
 export function EnemyFile({ enemy, stagesDoc, nameOf, onOpenEnemy, onOpenStage }: {
   enemy: Enemy; stagesDoc: EnemyStages | null;
@@ -234,6 +240,19 @@ export function EnemyPage({ enemy, stagesDoc, onBack }: {
   enemy: Enemy; stagesDoc: EnemyStages | null; onBack?: () => void;
 }) {
   const { locale, t } = useI18n();
+  // 연계 소환 적의 이름 — 서버가 내려 주는 건 **이 적 하나**뿐이라 링크에는 id밖에 없다.
+  // 하이드레이션 뒤에 도감을 받아 채운다 (링크가 있는 적일 때만).
+  // ⚠ 머리주석의 '데이터 임포트 금지'는 지킨다 — dex-cross를 **동적으로** 부르므로
+  //   이 모듈의 정적 임포트 그래프에 데이터가 들어오지 않고 첫 번들도 그대로다.
+  const [links, setLinks] = useState<Map<string, Enemy> | null>(null);
+  useEffect(() => {
+    if (!enemy.link?.length) return;
+    let live = true;
+    void import("./dex-cross")
+      .then((m) => m.loadEnemies(locale))
+      .then((m) => { if (live) setLinks(m); });
+    return () => { live = false; };
+  }, [enemy.id, enemy.link, locale]);
   return (
     <div className="operator-page-wrap">
       <a className="story-back" href={enemyListPath(locale)}
@@ -242,7 +261,7 @@ export function EnemyPage({ enemy, stagesDoc, onBack }: {
           e.preventDefault(); onBack();
         }}>← {t("적 목록으로")}</a>
       <section className="operator-modal operator-page en-page" aria-label={enemy.name}>
-        <EnemyFile enemy={enemy} stagesDoc={stagesDoc} />
+        <EnemyFile enemy={enemy} stagesDoc={stagesDoc} nameOf={(id) => links?.get(id)?.name} />
       </section>
     </div>
   );

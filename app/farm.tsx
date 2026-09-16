@@ -152,6 +152,9 @@ function useStageSubModal(onShowItem: (id: string) => void) {
   // ModalWindow는 마운트 때 z(++zTop)를 받으므로, 지목될 때마다 key를 갈아 재마운트한다.
   const [stageRaise, setStageRaise] = useState(0);
   const [enemyRaise, setEnemyRaise] = useState(0);
+  // ⚠ 적 도감 **전체 맵**을 들고 있어야 '연계 소환'에 이름이 찍힌다 — 안 그러면
+  //   `enemy_1588_ubbphw` 같은 id가 그대로 보인다 (사용자 제보 2026-09-17).
+  const [enMap, setEnMap] = useState<Map<string, Enemy> | null>(null);
   const openStage = (sid: string) => {
     setStageRaise((k) => k + 1);
     // 스탯 색인을 같이 받아야 등장 적 카드에 HP·공격 수치가 실린다 (적 도감 쪽과 같은
@@ -166,19 +169,22 @@ function useStageSubModal(onShowItem: (id: string) => void) {
   };
   const openEnemy = (eid: string) => {
     setEnemyRaise((k) => k + 1);
-    void loadEnemies(locale).then((m) => setEnemy(m.get(eid) ?? null));
+    void loadEnemies(locale).then((m) => { setEnMap(m); setEnemy(m.get(eid) ?? null); });
   };
   const node = (
     <>
       {stage && (
-        <ModalWindow key={stageRaise} label={`${stage.stage.code} ${stage.stage.name}`} className="operator-modal st-modal"
+        <ModalWindow key={`st-${stageRaise}`} label={`${stage.stage.code} ${stage.stage.name}`} className="operator-modal st-modal"
           onClose={() => setStage(null)}>
           <StageFile view={stage} onOpenEnemy={openEnemy} onOpenItem={onShowItem} />
         </ModalWindow>
       )}
       {enemy && (
-        <ModalWindow key={enemyRaise} label={enemy.name} className="operator-modal en-modal" onClose={() => setEnemy(null)}>
-          <EnemyFile enemy={enemy} stagesDoc={null} onOpenStage={openStage} />
+        <ModalWindow key={`en-${enemyRaise}`} label={enemy.name} className="operator-modal en-modal" onClose={() => setEnemy(null)}>
+          {/* onOpenStage는 stagesDoc이 null이라 죽은 값이었다 — 등장 작전 절은 stagesDoc이
+              있어야 그려진다(app/enemies.tsx만 넘긴다). 대신 연계 소환을 이어 준다. */}
+          <EnemyFile enemy={enemy} stagesDoc={null} onOpenEnemy={openEnemy}
+            nameOf={(id) => enMap?.get(id)?.name} />
         </ModalWindow>
       )}
     </>
@@ -402,7 +408,7 @@ export function UpgradeSim({ operators, includeFuture, onShowOperator }: { opera
       <p className="farm-source cost-future-note">{t("미실장(중국 서버 선행) 오퍼레이터·재료의 텍스트는 비공식 AI 번역으로, 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>
       <CostCalculator operators={operators} includeFuture={includeFuture} onShowOperator={onShowOperator} onShowItem={setShownItem} />
       {shownItem && (
-        <ItemModal key={itemRaise} id={shownItem} onClose={() => setShownItem(null)} onShowItem={setShownItem} onShowStage={sub.openStage} />
+        <ItemModal key={`it-${itemRaise}`} id={shownItem} onClose={() => setShownItem(null)} onShowItem={setShownItem} onShowStage={sub.openStage} />
       )}
       {sub.node}
     </section>
