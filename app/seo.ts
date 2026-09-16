@@ -11,14 +11,14 @@ import { CONTACT_EMAIL } from "./contact";
 export const SITE_URL = "https://terra-archive.net";
 
 type SeoLocale = "ko" | "en" | "ja";
-export type SeoTab = "portal" | "archive" | "enemy" | "stage" | "sim" | "planner" | "recruit" | "farm" | "upgrade" | "story" | "rogue" | "ra" | "autochess" | "about";
+export type SeoTab = "portal" | "archive" | "enemy" | "stage" | "item" | "sim" | "planner" | "recruit" | "farm" | "upgrade" | "story" | "rogue" | "ra" | "autochess" | "about";
 
 // 탭 → URL 세그먼트 (portal이 로케일 루트, 오퍼 백과사전은 /operators로 분리 — 사용자 확정
 // 2026-07-17: 루트 진입 시 오퍼 이미지 강제 로딩을 없애기 위해 포탈 첫화면 도입). 라우트 폴더명과 반드시 일치.
 // ⚠ 적 도감 세그먼트는 "enemies"(복수) — 초상 자산 폴더 public/enemy/(단수)와 일부러 다르다.
 //    deploy.sh가 스테이징에서 `rm -rf $STAGE/enemy`로 자산만 떼어내기 때문(서빙은 R2).
 export const TAB_SEG: Record<SeoTab, string> = {
-  portal: "", archive: "operators", enemy: "enemies", stage: "stages", sim: "sim", planner: "infra", recruit: "recruit", farm: "farm", upgrade: "upgrade", story: "stories", rogue: "rogue", ra: "ra", autochess: "autochess", about: "about",
+  portal: "", archive: "operators", enemy: "enemies", stage: "stages", item: "items", sim: "sim", planner: "infra", recruit: "recruit", farm: "farm", upgrade: "upgrade", story: "stories", rogue: "rogue", ra: "ra", autochess: "autochess", about: "about",
 };
 
 // 로케일 베이스 경로
@@ -56,6 +56,11 @@ const TAB_META: Record<Exclude<SeoTab, "portal">, Record<SeoLocale, { title: str
     ko: { title: "작전 도감 - 명일방주 스테이지 지형·드랍 | 테라 아카이브", description: "명일방주(아크나이츠) 작전 도감 — 스테이지 2,200여 개의 지형 도면과 소모 이성·권장 편성·등장 적·드랍을 계열과 구역으로 찾습니다." },
     en: { title: "Stage Handbook - Arknights Stage Maps & Drops | Terra Archive", description: "Arknights stage handbook — terrain layouts for 2,200+ operations with sanity cost, recommended level, enemies and drops, searchable by category and zone." },
     ja: { title: "作戦図鑑 - アークナイツ ステージ地形・ドロップ | テラアーカイブ", description: "アークナイツの作戦図鑑 — 2,200以上のステージの地形図と理性消費・推奨編成・出現する敵・ドロップを系統とエリアで検索できます。" },
+  },
+  item: {
+    ko: { title: "아이템 도감 - 명일방주 아이템 정보 | 테라 아카이브", description: "명일방주(아크나이츠) 아이템 도감 — 재료·이벤트 교환 재화·자원·교환권 1,400여 종의 설명과 용도, 획득 방법, 드랍 작전을 한자리에서 찾습니다." },
+    en: { title: "Item Handbook - Arknights Item Database | Terra Archive", description: "Arknights item handbook — descriptions, uses, how to obtain and drop stages for 1,400+ materials, event currencies, resources and vouchers, all in one place." },
+    ja: { title: "アイテム図鑑 - アークナイツ アイテム情報 | テラアーカイブ", description: "アークナイツのアイテム図鑑 — 素材・イベント交換素材・資源・引換券など1,400種以上の説明と用途、入手方法、ドロップ作戦をまとめて検索できます。" },
   },
   sim: {
     ko: { title: "작전 시뮬레이터 - 명일방주 적 스폰 타임라인 | 테라 아카이브", description: "명일방주(아크나이츠) 작전 시뮬레이터 — 작전을 고르면 적이 몇 초에 어디서 나와 어떤 경로로 어디에 들어가는지 스폰 타임라인을 재생합니다. 배속·구간 이동 지원, 통합전략 전투 노드 포함." },

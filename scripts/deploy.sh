@@ -47,6 +47,10 @@ cp -r dist/client/. "$STAGE/"
 # ⚠ 여기 빠지면 그 폴더는 R2와 Pages **양쪽에** 올라간다 — 배포 파일 수(2만 개 한도)를
 #   그대로 갉아먹고 업로드도 그만큼 길어진다. r2-sync.mjs의 DIRS와 **같은 집합**이어야 한다.
 #   (2026-08-23 점검: records 996개·32MB와 lore 99개가 빠져 있었다.)
+# ⚠ items 는 에셋 폴더(public/items/ — 재료·아이템 아이콘)이면서 라우트 세그먼트(/items,
+#   아이템 도감)이기도 하다. 지금은 목록이 `items.html` 한 파일이라 이 삭제를 안 타지만,
+#   **/items/<id> 같은 하위 라우트를 만들면 `items/` 아래로 떨어져 매 배포마다 사라진다**
+#   (아래 rogue가 2026-08-08에 당한 그 사고). 아이템 상세는 모달 + #it-<id> 로 둘 것.
 for dir in story lens tesseract avatars about og items scan profiles skins skin voice skills modules enemy stage sandbox ac records lore; do
   rm -rf "${STAGE:?}/$dir"
 done

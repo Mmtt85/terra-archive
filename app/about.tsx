@@ -32,6 +32,7 @@ const SHOTS: Partial<Record<Tab, ShotPair>> = {
   planner: { d: "/about/planner.webp", m: "/about/planner-m.webp" },
   enemy: { d: "/about/enemy.webp", m: "/about/enemy-m.webp" },
   stage: { d: "/about/stage.webp", m: "/about/stage-m.webp" },
+  item: { d: "/about/item.webp", m: "/about/item-m.webp" },
   sim: { d: "/about/sim.webp", m: "/about/sim-m.webp" },
   recruit: { d: "/about/recruit.webp", m: "/about/recruit-m.webp" },
   farm: { d: "/about/farm.webp", m: "/about/farm-m.webp" },
@@ -150,6 +151,16 @@ const CONTENT: Record<Locale, Content> = {
           "인게임 지형 도면을 그대로 싣고, 없는 작전은 레벨 데이터의 타일 격자로 그려 채웁니다",
           "등장 적을 눌러 바로 적 도감으로 — 강화 스탯으로 나오는 적은 ★로 구분합니다",
           "게임에 표기된 드랍 빈도까지. 실측 드랍률·이성 효율은 재료파밍 도우미가 맡습니다",
+        ],
+      },
+      {
+        tab: "item", icon: "◇", name: "아이템 도감",
+        summary: "게임 안 아이템 1,400여 종의 설명·용도·획득처를 한자리에서 봅니다.",
+        bullets: [
+          "재료·이벤트 재화·기초 자원·교환권·소장품을 분류와 등급으로 걸러 봅니다",
+          "게임이 아이템마다 달아 둔 플레이버 텍스트와 용도를 그대로 싣습니다",
+          "이벤트 교환 재화는 이벤트가 끝나면 게임에서 다시 볼 수 없는 글입니다 — 여기 남습니다",
+          "드랍 작전을 눌러 작전 도감으로, 파밍 재료는 재료파밍 효율표로 바로 넘어갑니다",
         ],
       },
       {
@@ -303,6 +314,16 @@ const CONTENT: Record<Locale, Content> = {
         ],
       },
       {
+        tab: "item", icon: "◇", name: "Item Handbook",
+        summary: "Descriptions, uses and sources for 1,400+ in-game items, all in one place.",
+        bullets: [
+          "Filter materials, event currencies, basic resources, vouchers and collectibles by category and tier",
+          "The flavour text and usage note the game attaches to each item, kept as written",
+          "Event exchange currencies vanish from the game once the event ends — they stay here",
+          "Tap a drop stage to jump to the Stage Handbook; farmable materials link to the efficiency table",
+        ],
+      },
+      {
         tab: "sim", icon: "\u25b6", name: "Stage Simulator",
         summary: "Pick an operation and replay its enemy spawn timeline — when each enemy appears, which route it takes, and where it goes.",
         bullets: [
@@ -450,6 +471,16 @@ const CONTENT: Record<Locale, Content> = {
           "ゲーム内の地形図をそのまま掲載し、無い作戦はレベルデータのタイル格子で描画します",
           "敵を押せばそのまま敵図鑑へ — 強化ステータスで出現する敵は★で区別します",
           "ゲーム内表記のドロップ頻度も掲載。実測ドロップ率・理性効率は素材周回ヘルパーが担当します",
+        ],
+      },
+      {
+        tab: "item", icon: "◇", name: "アイテム図鑑",
+        summary: "ゲーム内アイテム1,400種以上の説明・用途・入手先をまとめて確認できます。",
+        bullets: [
+          "素材・イベント交換素材・基本資源・引換券・コレクションを分類と等級で絞り込み",
+          "ゲームがアイテムごとに付けたフレーバーテキストと用途をそのまま掲載します",
+          "イベント交換素材はイベント終了後ゲームで見られなくなる文章です — ここに残ります",
+          "ドロップ作戦を押せば作戦図鑑へ、周回できる素材は効率表へそのまま移動できます",
         ],
       },
       {

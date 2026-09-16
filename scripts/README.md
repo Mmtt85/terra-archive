@@ -124,6 +124,11 @@ python3 scripts/build-stages.py .gamedata      # → app/data/stages{,.en,.ja}.j
 #     뒤집어 쓴다(같은 levels/ 파일을 두 번 훑지 않으려고). 인자 없이 돌리면 지형 도면
 #     2,224장을 받고(약 5~10분), 인게임 도면이 없는 작전은 레벨 타일 격자로 렌더한다.
 #   ⚠ 인자 없이 돌리면 levels/ 2,283개(179MB)를 받아 '등장 작전'을 역색인한다 (약 1분).
+python3 scripts/build-items.py .gamedata       # → app/data/items{,.en,.ja}.json + public/items/icon/ (아이템 도감, 3개 언어 동시)
+#   ⚠ **build-stages·build-farm·build-story 뒤에** 돌린다 — 드랍 작전은 stages.json 을
+#     뒤집어 만들고, 효율표 링크는 farm.json, 이벤트 링크는 stories.json 을 본다.
+#     KR item_table 전량(1,423종). 아이콘은 게임 CDN에서 파일명으로 매니페스트를 뒤져
+#     받는다(멱등 — 이미 있는 파일은 건너뜀). 못 찾는 54종은 아이콘 없이 글만 싣는다.
 python3 scripts/build-stages-rogue.py          # → app/data/stages-rogue{,.en,.ja}.json (작전 도감의 통합전략 693건)
 #   ⚠ 입력이 app/data/rogue{1..6}.json 뿐이라 **build-rogue.py 뒤에** 돌린다 (네트워크 불필요).
 #     stages.json에 섞지 않는 이유 = 상세 페이지 파일 수 한도. 스크립트 머리주석 참조.

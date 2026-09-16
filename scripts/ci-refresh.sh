@@ -179,6 +179,12 @@ run "build-enemies"      python3 scripts/build-enemies.py "$G" --meta-only --no-
 #   등장 적은 build-enemies가 만든 enemy-stages.json을 뒤집어 쓰므로 **반드시 그 뒤에** 온다.
 #   새 이벤트의 도면은 로컬에서 `python3 scripts/build-stages.py`(전체)를 돌려야 받는다.
 run "build-stages"       python3 scripts/build-stages.py "$G" --no-images
+# 아이템 도감 — **반드시 build-stages·build-farm·build-story 뒤에** 온다.
+#   드랍 작전은 stages.json 을 뒤집어 만들고, 효율표 링크는 farm.json, 이벤트 링크는
+#   stories.json 을 본다. 아이콘은 게임 CDN에서 뜯되 **이미 받은 건 건너뛴다**(멱등) —
+#   새 이벤트마다 재화 아이콘 몇 장이 느는 정도라 CI가 매번 돌려도 무겁지 않다.
+#   UnityPy·lz4inv 가 없으면 아이콘만 조용히 건너뛰고 표는 그대로 갱신된다.
+run "build-items"        python3 scripts/build-items.py "$G"
 
 # 8) 오퍼 지연 에셋 전수 검사 (사용자 요청 2026-08-02) — 데이터가 번들(배포)과 R2(동기화)
 # 두 경로로 나가는데 한쪽만 돌면 반쪽이 된다. 2026-08-01에 R2 키가 없어 아바타가 안 올라갔고

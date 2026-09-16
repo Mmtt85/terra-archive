@@ -99,7 +99,6 @@ export const MATERIAL_ALIASES: Record<string, string[]> = {
 };
 
 // 상시 파밍 가능 = 메인/서브 + 상설(복각) + 물자(요일 로테이션)
-const PERMANENT_KINDS = new Set(["main", "perm", "daily"]);
 const KIND_LABEL: Record<string, string> = { perm: "상설", event: "이벤트 한정", daily: "물자" };
 
 // 칩·칩셋의 주간 물자(PR) 스테이지 — 요일 로테이션 고정 드랍이라 펭귄 효율표엔 없다.
@@ -192,7 +191,6 @@ export default function FarmGuide() {
   const [tiers, setTiers] = useState<number[]>([]);
   // 비제어 입력 — 타이핑 중 렌더 0회, 멈춘 뒤 0.5초에 searchTerm만 갱신 (search.ts)
   const { term: searchTerm, set: setSearchTerm, inputProps: searchProps } = useSearchInput();
-  const [permOnly, setPermOnly] = useState(false);
   // 재료 상세 모달 — 효율표·계산기의 모든 재료 아이콘에서 연다 (id = item id)
   const [shownItem, setShownItem] = useState<string | null>(null);
   const [itemRaise, setItemRaise] = useState(0);
@@ -238,10 +236,8 @@ export default function FarmGuide() {
     const keyword = normSearch(searchTerm);
     return ALL_MATERIALS
       // 상시 파밍 토글은 파밍 가능 재료의 스테이지만 거른다 (파밍 불가 재료는 스테이지가 없음)
-      .map((item) => permOnly && item.farmable ? { ...item, stages: item.stages.filter((stage) => PERMANENT_KINDS.has(stage.kind)) } : item)
       // 상시 파밍 토글 시: 파밍 가능한데 상설 스테이지가 하나도 안 남은 재료만 숨긴다.
       // 파밍 불가 재료(칩·조합 T5 등)는 정보 표시용이라 토글과 무관하게 항상 노출.
-      .filter((item) => item.farmable ? (permOnly ? item.stages.length > 0 : true) : true)
       // 미실장(중국 선행) 재료도 항상 목록에 둔다 — 흑백(.fut-dim) + 미실장 배지로 구분
       // (2026-09-04 규칙 변경. 종전엔 미래시가 꺼지면 통째로 숨겼다.)
       .filter((item) =>
@@ -249,7 +245,7 @@ export default function FarmGuide() {
         (!keyword ||
           normSearch([item.name.ko, item.name.en, item.name.ja].filter(Boolean).join(" ")).includes(keyword) ||
           (MATERIAL_ALIASES[item.id] ?? []).some((alias) => normSearch(alias).includes(keyword))));
-  }, [tiers, searchTerm, permOnly]);
+  }, [tiers, searchTerm]);
 
   // 재료 검색이 0건이면 "실패한 검색"으로 남긴다 (app/trail.ts — 이후 도착지에 이어 붙는다)
   useEffect(() => {
@@ -285,10 +281,6 @@ export default function FarmGuide() {
             count: ALL_MATERIALS.filter((item) => item.rarity === tier).length,
           }))}
           onPick={(value) => toggleTier(Number(value))} />
-        <label className="farm-perm-toggle">
-          <input type="checkbox" checked={permOnly} onChange={(event) => setPermOnly(event.target.checked)} />
-          {t("상시 파밍 가능한 스테이지만 (이벤트 한정 제외)")}
-        </label>
       </div>
 
       {visible.length === 0 ? (

@@ -143,6 +143,10 @@ def _locate(path, server):
     mani = cdn.manifest()
     if path in mani:
         bundle = mani[path]
+    elif path.lower() in mani:
+        # 매니페스트 경로는 소문자인데 표에 적힌 id 는 대문자가 섞여 있는 것들이 있다
+        # (`act15d0_token_ironSheet` ↔ `…_ironsheet`. 2026-09-16 실측)
+        path, bundle = path.lower(), mani[path.lower()]
     else:
         try:
             # 접두사 검색이라 `..._1` 을 찾다 `..._1+` 이 걸릴 수 있다 (charportraits 에
@@ -226,6 +230,36 @@ def png_bytes(path, server="kr"):
     buf = io.BytesIO()
     im.save(buf, "PNG")
     return buf.getvalue()
+
+
+_by_name = {}   # server -> {에셋파일명(소문자): 매니페스트 경로}
+
+
+def find_path(name, server="kr"):
+    """**파일명만** 알 때 매니페스트에서 경로를 찾는다 (대소문자 무시). 없으면 None.
+
+    아이템 아이콘이 이걸 필요로 한다 — `iconId` 하나가 폴더 열 군데에 흩어져 있다
+    (2026-09-16 실측: `arts/items/icons` 338 · `…/potential` 385 · `…/classpotential` 183 ·
+    `…/acticon` 127 · `activity/commonassets/[uc]items` 123 · `…/apsupply` 50 · 나머지 십수 개).
+    부르는 쪽이 후보 경로를 나열하면 새 폴더가 생길 때마다 조용히 빠지므로, 매니페스트를
+    파일명으로 한 번 뒤집어 둔다 (176,000경로 × 서버당 한 번).
+    ⚠ 같은 파일명이 여러 폴더에 있으면 **먼저 나온 것**을 준다 — 아이템 아이콘은 겹치지
+      않는 것을 확인했지만, 다른 용도로 쓸 땐 경로를 직접 넘기는 편이 안전하다."""
+    if not available():
+        return None
+    with _lock:
+        if server not in _by_name:
+            table = {}
+            for path in _conn(server).manifest():
+                table.setdefault(path.rsplit("/", 1)[-1].lower(), path)
+            _by_name[server] = table
+    return _by_name[server].get(str(name).lower())
+
+
+def image_named(name, server="kr"):
+    """파일명으로 찾아 이미지 하나. `find_path` + `image`."""
+    path = find_path(name, server)
+    return image(path, server) if path else None
 
 
 def first(paths, servers=("kr", "cn")):

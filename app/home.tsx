@@ -29,6 +29,12 @@ const STAGE_DEX = {
   en: lazy(() => import("./stages-en")),
   ja: lazy(() => import("./stages-ja")),
 } as const;
+// 아이템 도감도 같은 이유로 로케일별 청크 (데이터 ~650KB, 2026-09-16)
+const ITEM_DEX = {
+  ko: lazy(() => import("./items-ko")),
+  en: lazy(() => import("./items-en")),
+  ja: lazy(() => import("./items-ja")),
+} as const;
 // 생존연산 가이드 — 로케일별 청크 (데이터 ~330KB, 2026-08-12)
 const SANDBOX_GUIDE = {
   ko: lazy(() => import("./sandbox-ko")),
@@ -210,17 +216,17 @@ const JOB_ORDER = ["PIONEER", "WARRIOR", "TANK", "SNIPER", "CASTER", "MEDIC", "S
 
 const SORT_KEYS = ["기본", "이름", "성급", "발매순", "소속", "출신지", "종족", "직군", "세부 직군"];
 
-export type Tab = "portal" | "archive" | "enemy" | "stage" | "sim" | "planner" | "recruit" | "farm" | "upgrade" | "story" | "rogue" | "ra" | "autochess" | "about";
+export type Tab = "portal" | "archive" | "enemy" | "stage" | "item" | "sim" | "planner" | "recruit" | "farm" | "upgrade" | "story" | "rogue" | "ra" | "autochess" | "about";
 // 탭 ↔ URL 세그먼트 (portal이 로케일 루트, 오퍼 백과사전은 /operators — 사용자 확정 2026-07-17:
 // 루트 진입 시 오퍼 이미지 강제 로딩을 없애려 포탈 첫화면 도입). seo.ts의 TAB_SEG·라우트 폴더명과 일치.
 // URL 세그먼트 "stories"(← 정적 자산 디렉터리 public/story/ 와의 경로 충돌 회피). 내부 탭명은 story.
 // ⚠ 적 도감의 URL 세그먼트는 "enemies"(복수)인데 초상 자산 폴더는 public/enemy/(단수)다.
 //    일부러 다르게 뒀다 — scripts/deploy.sh가 스테이징에서 `rm -rf $STAGE/enemy`로 자산만
 //    떼어내는데(서빙은 R2), 이름이 같으면 라우트 HTML까지 통째로 지워진다.
-const TAB_SEG: Record<Tab, string> = { portal: "", archive: "operators", enemy: "enemies", stage: "stages", sim: "sim", planner: "infra", recruit: "recruit", farm: "farm", upgrade: "upgrade", story: "stories", rogue: "rogue", ra: "ra", autochess: "autochess", about: "about" };
+const TAB_SEG: Record<Tab, string> = { portal: "", archive: "operators", enemy: "enemies", stage: "stages", item: "items", sim: "sim", planner: "infra", recruit: "recruit", farm: "farm", upgrade: "upgrade", story: "stories", rogue: "rogue", ra: "ra", autochess: "autochess", about: "about" };
 // ⚠ TAB_SEG와 짝 — 세그먼트를 더하면 여기도 같이 (enemies·stages가 빠져 /stages가
 //   portal로 판정되던 기존 누락도 2026-08-10에 함께 채움)
-const SEG_TAB: Record<string, Tab> = { "": "portal", operators: "archive", enemies: "enemy", stages: "stage", sim: "sim", infra: "planner", recruit: "recruit", farm: "farm", upgrade: "upgrade", stories: "story", rogue: "rogue", ra: "ra", autochess: "autochess", about: "about" };
+const SEG_TAB: Record<string, Tab> = { "": "portal", operators: "archive", enemies: "enemy", stages: "stage", items: "item", sim: "sim", infra: "planner", recruit: "recruit", farm: "farm", upgrade: "upgrade", stories: "story", rogue: "rogue", ra: "ra", autochess: "autochess", about: "about" };
 const LOCALE_BASE: Record<Locale, string> = { ko: "", en: "/en", ja: "/ja" };
 
 // 빌드(=배포) 시각 — vite define으로 박히는 ISO 문자열을 KST 분 단위로 찍는다.
@@ -1209,6 +1215,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   const AutochessForLocale = AUTOCHESS_GUIDE[locale as keyof typeof AUTOCHESS_GUIDE] ?? AUTOCHESS_GUIDE.ko;
   const [stagePageOpen, setStagePageOpen] = useState<boolean>(() => !!pageStage);
   const StageDexForLocale = STAGE_DEX[locale as keyof typeof STAGE_DEX] ?? STAGE_DEX.ko;
+  const ItemDexForLocale = ITEM_DEX[locale as keyof typeof ITEM_DEX] ?? ITEM_DEX.ko;
   // 작전 도감 → 적 도감: 적 칩을 누르면 적 상세로 넘어간다 (두 도감이 서로를 가리킨다)
   const openEnemyFromStage = (id: string) => {
     history.pushState(null, "", `${tabPath("enemy")}#en-${id}`);
@@ -1510,6 +1517,8 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
             ? (pageStage && stagePageOpen
               ? t("{code} {name} - 명일방주 작전 | 테라 아카이브", { code: pageStage.stage.code, name: pageStage.stage.name })
               : t("작전 도감 - 명일방주 스테이지 지형·드랍 | 테라 아카이브"))
+          : tab === "item"
+            ? t("아이템 도감 - 명일방주 아이템 정보 | 테라 아카이브")
           : tab === "farm"
             ? t("재료파밍 도우미 - 명일방주 재료 파밍 효율표 | 테라 아카이브")
             : tab === "sim"
@@ -1573,6 +1582,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     archive: t("오퍼 백과사전"),
     enemy: t("적 도감"),
     stage: t("작전 도감"),
+    item: t("아이템 도감"),
     planner: t("인프라 자동편성기"),
     recruit: t("공개채용 도우미"),
     farm: t("재료파밍 도우미"),
@@ -1592,6 +1602,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   const TAB_GROUPS: { id: "dex" | "sim"; name: string; icon: string; items: { tab: Tab; short: string }[] }[] = [
     { id: "dex", name: t("도감"), icon: "▤", items: [
       { tab: "archive", short: t("오퍼레이터") }, { tab: "enemy", short: t("적") }, { tab: "stage", short: t("작전") },
+      { tab: "item", short: t("아이템") },
     ] },
     { id: "sim", name: t("시뮬레이터"), icon: "◈", items: [
       { tab: "recruit", short: t("공개채용") }, { tab: "farm", short: t("재료파밍") }, { tab: "upgrade", short: t("오퍼 육성") },
@@ -2346,6 +2357,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
         {tab === "rogue" && <RogueGuide initialTopic={initialRogue ? `rogue_${initialRogue.replace(/^is/, "")}` : undefined} />}
         {tab === "enemy" && !(pageEnemy && enemyPageOpen) && <EnemyDexForLocale />}
         {tab === "stage" && !(pageStage && stagePageOpen) && <StageDexForLocale onOpenEnemy={openEnemyFromStage} />}
+        {tab === "item" && <ItemDexForLocale />}
         {tab === "ra" && <SandboxForLocale includeFuture={includeFuture} season={sandboxSlug === "anchor" ? "v3" : "v2"} />}
         {tab === "autochess" && <AutochessForLocale season={autochessSeason} onShowOperator={showOperatorById} />}
         {tab === "about" && <About onOpenTab={switchTab} />}

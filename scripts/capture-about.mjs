@@ -26,6 +26,7 @@ const SHOTS = [
   { name: "archive", path: "/operators" },
   { name: "enemy", path: "/enemies" },
   { name: "stage", path: "/stages" },
+  { name: "item", path: "/items" },
   { name: "sim", path: "/sim" },
   { name: "recruit", path: "/recruit" },
   { name: "farm", path: "/farm" },
