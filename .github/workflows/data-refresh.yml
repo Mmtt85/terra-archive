@@ -58,6 +58,11 @@ jobs:
         run: |
           npm ci
           python3 -m pip install --quiet pillow
+          # 게임 CDN 수신용 (ci-refresh.sh 가 클뜯 레포보다 먼저 CDN을 본다).
+          # 셋 중 하나라도 없으면 ci-refresh 가 경고를 남기고 레포판으로 물러난다.
+          python3 -m pip install --quiet UnityPy lz4inv
+          sudo apt-get update -qq && sudo apt-get install -y -qq flatbuffers-compiler
+          flatc --version
 
       - name: 레인 판별 (cron → kr/cn)
         id: lane

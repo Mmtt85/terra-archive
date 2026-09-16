@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# 결정론 데이터 리프레시 — 클뜯 레포에서 받아 모든 정적 데이터를 재생성한다.
+# 결정론 데이터 리프레시 — **게임 CDN**에서 받아 모든 정적 데이터를 재생성한다.
+# (클뜯 레포는 range_table 폴백과 CDN 실패 시 비상용으로만 쓴다 — 레포는 며칠씩 밀린다.)
 # GitHub Actions(무인) + 로컬 양쪽에서 동일하게 돈다. LLM 판단이 필요한 산출물
 # (스토리 요약 본문·록라 큐레이션·CN 신규 오퍼 번역)은 여기서 만들지 않는다 —
 # 그건 `story-summary` 등 스킬로 사람이 그때 만든다 (content-auto 레인은 2026-09-16 삭제).
@@ -88,7 +89,29 @@ for srv in ("kr", "jp", "en", "cn"):
         print("     `python3 scripts/fetch-gamedata-cdn.py --server %s` 로 전체를 다시 받는 게 안전하다." % srv)
 PY
 else
-  run "fetch-gamedata"   python3 scripts/fetch-gamedata.py "$G"
+  # ── CDN 우선 (사용자 확정 2026-09-16) ─────────────────────────────────────
+  # 종전엔 무인 CI가 **클뜯 레포**에서만 받았다. 레포는 사람이 돌려야 올라와서 며칠씩
+  # 밀리는데(실측 11일), 그걸 모르고 도니까 개방 당일 CDN으로 제대로 채워 둔 신규 오퍼를
+  # 옛 데이터로 덮어써 '미실장'으로 되돌리고 그대로 배포했다 (2026-09-16 보타니·우쿠시크·
+  # 지마 더 레이징 타이드). 이제 CI도 게임 CDN에서 직접 받는다 — 사람이 손으로 할 때와
+  # 같은 경로다.
+  #
+  # `range_table`(공격 범위 격자)만 CDN에서 못 뜯는 옛 암호화 표라 레포로 폴백하는데,
+  # 그건 fetch-gamedata-cdn.py 안에 들어 있다(FALLBACK). 연 2~4회만 바뀐다.
+  #
+  # CDN 경로가 죽으면(flatc·UnityPy 미설치, 스키마 변경 등) **레포로 물러난다** — 갱신이
+  # 하루 밀리는 것보다 낫다. 다만 물러났다는 사실을 경고로 남겨 사람이 알게 한다.
+  if python3 -c "import UnityPy, lz4inv" 2>/dev/null && command -v flatc >/dev/null 2>&1; then
+    CDN_OK=1
+    for srv in kr cn en jp; do
+      run "fetch-cdn($srv)" python3 scripts/fetch-gamedata-cdn.py --server "$srv" --out "$G" || CDN_OK=""
+    done
+    [ -n "$CDN_OK" ] || echo "⚠ CDN 수신이 실패해 클뜯 레포판으로 물러났다 — 레포가 밀려 있으면 신규 콘텐츠가 빠진다" | tee -a "$WARN" >&2
+  else
+    CDN_OK=""
+    echo "⚠ flatc/UnityPy/lz4inv 가 없어 CDN 대신 클뜯 레포판을 받는다 — 레포가 밀려 있으면 신규 콘텐츠가 빠진다" | tee -a "$WARN" >&2
+  fi
+  [ -n "${CDN_OK:-}" ] || run "fetch-gamedata"   python3 scripts/fetch-gamedata.py "$G"
 fi
 
 if in_phase fast; then
