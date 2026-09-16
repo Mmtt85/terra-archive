@@ -492,7 +492,7 @@ CN_PLACEHOLDER_THUMB = "/story/_placeholder.webp"
 kr_live = {}
 try:
     with open(f"{REPO}/.gamedata/kr_activity_table.json", encoding="utf-8") as fp:
-        kr_live = {k: v["name"] for k, v in (json.load(fp).get("basicInfo") or {}).items()
+        kr_live = {k: v for k, v in (json.load(fp).get("basicInfo") or {}).items()
                    if v.get("startTime", 0) > 0 and v["startTime"] <= time.time()}
 except (OSError, ValueError, KeyError):
     pass
@@ -548,7 +548,10 @@ for act in cn_acts:
         # EN/JA는 로케일 표가 따라올 때까지 임시 번역을 쓴다(빼면 한국어로 폴백한다 —
         # 사용자 제보 2026-09-04 "EN·JA 홈에서 이벤트 이름이 한글"). 미실장이 아니므로
         # unreleased·eta는 달지 않는다 — 레포가 따라오면 위 KR 블록이 이 항목을 대체한다.
-        ev_obj["name"] = {**(trans or {}), "ko": kr_live[eid]}
+        # ⚠ start 도 **한섭 개방월**로 바꿔야 한다 — CN 출시월(위 기본값)로 두면 목록에서
+        #   반년 전 자리에 파묻혀 "스토리가 사라졌다"가 된다 (2026-09-16 사용자 제보).
+        ev_obj["name"] = {**(trans or {}), "ko": kr_live[eid]["name"]}
+        ev_obj["start"] = time.strftime("%Y-%m", time.gmtime(kr_live[eid]["startTime"]))
         del ev_obj["unreleased"]
     elif _gap_sec:  # CN 출시월 + 시차 = KR 추정월 (확정 아님)
         ev_obj["eta"] = time.strftime("%Y-%m", time.gmtime(act["startTime"] + _gap_sec))

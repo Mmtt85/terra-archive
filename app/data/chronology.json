@@ -436,6 +436,12 @@
    "dateNote": "현재 씬 datestamp \"1102년 늦가을 … 초겨울\""
   },
   {
+   "ref": "act51side",
+   "kind": "event",
+   "terraYear": null,
+   "arc": "ur"
+  },
+  {
    "id": "main_0",
    "kind": "main",
    "title": {
