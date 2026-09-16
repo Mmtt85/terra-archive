@@ -10966,6 +10966,24 @@ html.dark .story-card:hover .story-thumb img {
    안쪽에서 `filter: grayscale(0)` 으로 되돌릴 수 없다. 그러면 정작 제일 읽혀야 할
    보라색 '미실장' 배지가 같이 회색이 되어 묻힌다 (2026-09-04 실측).
    → **그림(img)만 흑백**으로 눕히고, 나머지는 opacity 로만 눌러 배지 색을 지킨다. */
+/* 미실장 항목을 눌러 막혔을 때 — 헤더가 펼쳐지고 이 토글이 잠깐 깜빡인다
+   (사용자 요청 2026-09-16). 툴팁만 뜨면 "그래서 그게 어디 있는데"가 남는다.
+   home.tsx 가 FUTURE_BLOCKED 를 받아 .flash 를 2.6초 붙였다 뗀다. */
+@keyframes ft-flash {
+  0%, 100% { background: transparent; box-shadow: none; }
+  50% { background: #8a2be233; box-shadow: 0 0 0 2px #8a2be2, 0 0 12px #8a2be288; }
+}
+.future-toggle.flash {
+  border-radius: 6px;
+  animation: ft-flash 0.62s ease-in-out 4;
+}
+@media (prefers-reduced-motion: reduce) {
+  /* 깜빡임 대신 테두리만 남긴다 — 움직임을 줄여 달라고 한 사용자에게도 위치는 알려야 한다 */
+  .future-toggle.flash {
+    box-shadow: 0 0 0 2px #8a2be2;
+    animation: none;
+  }
+}
 :root:not([data-fut="1"]) .fut-dim {
   opacity: 0.78;
   /* 눌러도 아무 일이 안 난다 (future-tip.tsx 가 클릭을 캡처 단계에서 삼킨다) —

@@ -2032,9 +2032,9 @@ const D: Record<string, Pair> = {
     "Not yet released (CN-first), so it can't be marked as owned — turn on 'Include future data' in the header to include it in planning.",
     "未実装（中国サーバー先行）のため所持チェックできません — ヘッダーの「未実装データを含む」をオンにすると編成計算にも入れられます。",
   ],
-  "아직 한국 서버에 나오지 않은 항목입니다 — 헤더를 펼쳐 '미래시 데이터 포함'을 켜면 활성화됩니다.": [
-    "Not on the Global server yet — expand the header and turn on 'Include future data' to enable it.",
-    "まだ日本サーバーに実装されていない項目です — ヘッダーを開いて「未実装データを含む」をオンにすると有効になります。",
+  "아직 한국 서버에 나오지 않은 항목입니다 — 위에서 깜빡이는 '미래시 데이터 포함'을 켜면 활성화됩니다.": [
+    "Not on the Global server yet — turn on the flashing 'Include future data' switch above to enable it.",
+    "まだ日本サーバーに実装されていない項目です — 上で点滅している「未実装データを含む」をオンにすると有効になります。",
   ],
   "미래시(미실장) 오퍼": ["Future (unreleased) operators", "未実装（先行）オペレーター"],
   "미실장 (중국 서버 선행)": ["Unreleased (CN server)", "未実装（中国サーバー先行）"],

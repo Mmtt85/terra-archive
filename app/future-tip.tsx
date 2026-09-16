@@ -25,6 +25,9 @@ import { useI18n } from "./i18n";
 /** 커서에서 툴팁까지 띄우는 간격 — 커서 아래 그림자에 글자가 묻히지 않을 만큼만 */
 const GAP = 16;
 
+/** 미실장 항목을 눌러 막혔을 때 헤더에 보내는 신호 (home.tsx 가 받아 토글을 깜빡인다) */
+export const FUTURE_BLOCKED = "ta-future-blocked";
+
 export default function FutureTip() {
   const { t } = useI18n();
   const [shown, setShown] = useState(false);
@@ -74,6 +77,10 @@ export default function FutureTip() {
       else { const r = el.getBoundingClientRect(); at.current = { x: r.left + r.width / 2, y: r.bottom }; }
       setShown(true);
       paint();
+      // 헤더한테 "지금 막았다"고 알린다 — 헤더가 스스로 펼치고 '미래시 데이터 포함'을
+      // 깜빡여 준다 (사용자 요청 2026-09-16). 툴팁만으로는 토글이 어디 있는지 모른다.
+      // 위임 리스너라 여기 한 곳이면 .fut-dim 이 붙은 모든 화면이 같이 따라온다.
+      window.dispatchEvent(new CustomEvent(FUTURE_BLOCKED));
     };
     const key = (event: KeyboardEvent) => {
       if (event.key === "Enter" || event.key === " ") block(event);
@@ -113,7 +120,7 @@ export default function FutureTip() {
   if (!shown || typeof document === "undefined") return null;
   return createPortal(
     <div className="fut-tip" role="status" ref={boxRef}>
-      {t("아직 한국 서버에 나오지 않은 항목입니다 — 헤더를 펼쳐 '미래시 데이터 포함'을 켜면 활성화됩니다.")}
+      {t("아직 한국 서버에 나오지 않은 항목입니다 — 위에서 깜빡이는 '미래시 데이터 포함'을 켜면 활성화됩니다.")}
     </div>,
     document.body,
   );

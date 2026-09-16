@@ -52,7 +52,7 @@ import { asset } from "./assets";
 import { CONTACT_EMAIL } from "./contact";
 import { descLines } from "./desc-lines";
 import ChangelogButton from "./changelog";
-import FutureTip from "./future-tip";
+import FutureTip, { FUTURE_BLOCKED } from "./future-tip";
 // 헤더 치비 대화 — 크롬 내장 Gemini Nano (베타, 2026-08-03)
 import { ChibiChatPanel, chibiChatStatus, type ChibiActionRequest, type ChibiChatStatus } from "./chibi-chat";
 // 공용 창형 모달 — 이동·리사이즈·고정·z순서 (2026-08-03)
@@ -1054,6 +1054,9 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   // SSR엔 localStorage가 없으므로 false로 하이드레이션 후 이펙트에서 복원한다.
   // 우선순위: URL 쿼리(?future=1|0) > localStorage. URL 파라미터는 공유 링크용.
   const [includeFuture, setIncludeFuture] = useState(false);
+  // 미실장 항목을 눌러 막혔을 때 — 헤더를 펼치고 '미래시 데이터 포함'을 깜빡인다
+  // (사용자 요청 2026-09-16). 툴팁만 뜨면 "그래서 그게 어디 있는데"가 남는다.
+  const [futureFlash, setFutureFlash] = useState(false);
   useEffect(() => {
     const fromUrl = new URLSearchParams(window.location.search).get("future");
     if (fromUrl === "1") { setIncludeFuture(true); return; }
@@ -1066,6 +1069,22 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   // ⚠ 렌더가 아니라 이펙트로 documentElement 에 쓴다 — 마크업에 넣으면 프리렌더 HTML과
   //   갈라져 하이드레이션이 깨진다. 기본값(OFF)이 프리렌더 상태와 같아 첫 화면도 맞다.
   useEffect(() => { document.documentElement.dataset.fut = includeFuture ? "1" : "0"; }, [includeFuture]);
+  useEffect(() => {
+    const onBlocked = () => {
+      setHeaderCollapsed(false);
+      setHeaderTucked(false);
+      // 연달아 눌러도 애니메이션이 다시 시작되도록 한 프레임 끊었다 켠다
+      setFutureFlash(false);
+      requestAnimationFrame(() => setFutureFlash(true));
+    };
+    window.addEventListener(FUTURE_BLOCKED, onBlocked);
+    return () => window.removeEventListener(FUTURE_BLOCKED, onBlocked);
+  }, []);
+  useEffect(() => {
+    if (!futureFlash) return;
+    const id = window.setTimeout(() => setFutureFlash(false), 2600);
+    return () => window.clearTimeout(id);
+  }, [futureFlash]);
   const toggleFuture = (on: boolean) => {
     setIncludeFuture(on);
     try { localStorage.setItem(FUTURE_KEY, on ? "1" : "0"); } catch { /* ignore */ }
@@ -2136,7 +2155,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
             <BroadcastBadges includeFuture={includeFuture} slot="events" />
             <BroadcastBadges includeFuture={includeFuture} slot="broadcast" />
             {/* 라벨은 데스크탑 "미래시 데이터 포함", 모바일은 "미래시"로 축약 (사용자 요청 2026-07-22) */}
-            <label className="future-toggle" title={t("아직 정식 출시되지 않은(중국 서버 선행) 오퍼레이터·재료도 목록·계산기에 표시합니다. 미실장 텍스트는 비공식 AI 번역입니다.")}>
+            <label className={`future-toggle${futureFlash ? " flash" : ""}`} title={t("아직 정식 출시되지 않은(중국 서버 선행) 오퍼레이터·재료도 목록·계산기에 표시합니다. 미실장 텍스트는 비공식 AI 번역입니다.")}>
               <input type="checkbox" checked={includeFuture} onChange={(event) => toggleFuture(event.target.checked)} />
               <span className="ft-full">{t("미래시 데이터 포함")}</span>
               <span className="ft-short">{t("미래시")}</span>
