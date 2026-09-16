@@ -23032,10 +23032,14 @@ html[lang="ja"] .vn-box {
 .ev-pair > .ev-sec:only-child {
   grid-column: 1 / -1;
 }
-/* 맵에서 나오는 상위 재료 — 아이콘 + 이름·등급 + 떨어지는 작전 코드 */
+/* 맵에서 나오는 상위 재료 — 아이콘 + 이름·등급 + 떨어지는 작전 코드.
+   ⚠ `grid-auto-rows: 1fr` — 이름이 길어 두 줄이 되는 재료가 섞이면 카드 높이가 제각각이
+   된다(사용자 지적 2026-09-17). 칸이 한 줄씩 떨어지는 배치라 align-items 로는 안 맞고,
+   행 높이를 균등하게 잡아야 한다. `.ev-mat` 도 칸을 꽉 채워야 실제로 같아 보인다. */
 .ev-mats {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-auto-rows: 1fr;
   gap: 6px;
 }
 @media (max-width: 720px) {
@@ -23045,6 +23049,7 @@ html[lang="ja"] .vn-box {
   display: flex;
   align-items: center;
   gap: 8px;
+  height: 100%;
   padding: 5px 9px 5px 5px;
   border: 1px solid var(--line);
   background: var(--bg-faint);
