@@ -371,6 +371,10 @@ export default function EventDex({ doc, onShowOperator, onOpenGuide }: {
     });
   }, [events, term, types, has]);
 
+  // 미래시는 위쪽 스트립, 나머지는 본 목록 (오퍼 도감과 같은 규약)
+  const futureRows = useMemo(() => shown.filter((e) => e.fut), [shown]);
+  const mainRows = useMemo(() => shown.filter((e) => !e.fut), [shown]);
+
   const countBy = useMemo(() => {
     const ty = new Map<string, number>(), hs = new Map<string, number>();
     for (const e of events) {
@@ -421,9 +425,25 @@ export default function EventDex({ doc, onShowOperator, onOpenGuide }: {
 
         <div className="results-scroll">
           {shown.length > 0 ? (
-            <div className="ev-grid">
-              {shown.map((e) => <EventCard key={e.id} row={e} onSelect={setOpen} onGuide={onOpenGuide} />)}
-            </div>
+            <>
+              {/* 미래시(중섭 선행) 이벤트는 **위쪽 작은 칸**으로 뺀다 — 오퍼 도감의 미실장
+                  스트립과 같은 규약 (사용자 지시 2026-09-17). 한섭 유저가 아직 안 열린
+                  이벤트를 훑고 내려가야 하는 걸 막는다. */}
+              {futureRows.length > 0 && (
+                <section className="future-strip ev-future">
+                  <h3>
+                    {t("미실장 이벤트 {n}개", { n: futureRows.length })}
+                    <small>{t("중국 서버 선행 — 한국 서버엔 아직 없습니다")}</small>
+                  </h3>
+                  <div className="ev-grid mini">
+                    {futureRows.map((e) => <EventCard key={e.id} row={e} onSelect={setOpen} onGuide={onOpenGuide} />)}
+                  </div>
+                </section>
+              )}
+              <div className="ev-grid">
+                {mainRows.map((e) => <EventCard key={e.id} row={e} onSelect={setOpen} onGuide={onOpenGuide} />)}
+              </div>
+            </>
           ) : (
             <div className="empty"><span>NO MATCH</span><h3>{t("조건에 맞는 이벤트가 없어요.")}</h3>
               <button onClick={reset}><span className="btn-icon" aria-hidden>↻</span>{t("전체 보기")}</button></div>

@@ -1329,6 +1329,8 @@ const D: Record<string, Pair> = {
   "숙소도 방을 눌러 직접 편성할 수 있습니다 — 직접 넣은 오퍼는 📌로 고정되어 전체 자동편성이 그대로 둡니다(카드의 📌로 잠그거나 풀고, ✕로 빼면 고정도 풀립니다). 울피아누스를 숙소에 고정해 두면 다음 자동편성이 언더플로우(+10%)를 자연히 뽑아 갑니다. 고정 인원은 근무 방 후보에서 빠지므로 이중 배치되지 않습니다.": ["Dormitories are editable too — tap the room to assign people yourself. Anyone you place is 📌 pinned, so a full auto-plan leaves them alone (use 📌 on a card to pin/unpin, ✕ to remove, which also unpins). Park Ulpianus in a dormitory and the next auto-plan will pick up Underflow (+10%) on its own. Pinned residents are excluded from work-room candidates, so they are never double-assigned.", "宿舎も部屋をタップして直接編成できます — 自分で入れたオペレーターは📌固定され、全体自動編成でもそのまま残ります（カードの📌で固定・解除、✕で外すと固定も解けます）。ウルピアヌスを宿舎に固定しておけば、次の自動編成がアンダーフロー（+10%）を自然に採用します。固定人員は勤務部屋の候補から外れるため二重配置にはなりません。"],
   // ── 이벤트 도감 (/events, 2026-09-16) ───────────────────────────────────────
   "이벤트 도감": ["Event Handbook", "イベント図鑑"],
+  "미실장 이벤트 {n}개": ["{n} unreleased events", "未実装イベント{n}件"],
+  "이벤트 도감에서 보기": ["View in the Event Handbook", "イベント図鑑で見る"],
   "이벤트 도감 - 명일방주 이벤트 정보 | 테라 아카이브": [
     "Event Handbook - Arknights Event Database | Terra Archive",
     "イベント図鑑 - アークナイツ イベント情報 | テラアーカイブ",

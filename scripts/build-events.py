@@ -173,6 +173,16 @@ for loc in LOCALES:
         "ops": {o["id"]: o for o in load(op)} if os.path.exists(op) else {},
     }
 
+def _loc_name(loc, info_loc, sname, aid):
+    """그 로케일 이름 — 활동표 > 스토리 목록 > 한국어 순. 활동표에 있더라도 **한국어와
+    같으면** 아직 번역이 안 들어온 것이므로 스토리 목록 쪽을 본다 (실측)."""
+    kr_nm = ((kr_basic_all.get(aid) or {}).get("name") or "").strip()
+    nm = ((info_loc or {}).get("name") or "").strip()
+    if loc != "ko" and (not nm or nm == kr_nm):
+        nm = (sname.get(loc) or "").strip() or nm
+    return (nm or kr_nm or aid).strip()
+
+
 rows = {loc: [] for loc in LOCALES}
 kr_basic = kr_act["basicInfo"]
 # 드랍 종류 번호 — '주요 드랍' 자리. 세 로케일의 kinds 배열은 같은 순서라(실측) 번호가
@@ -258,9 +268,14 @@ for aid, info in sorted(kr_basic.items(), key=lambda kv: -(kv[1].get("startTime"
                for o in op_ids if o in loc_ops]
         li = (acts.get(loc, kr_act).get("basicInfo") or {}).get(aid) or info
         st = stories.get(aid)
+        # ⚠ 그 로케일 활동표에 아직 없는 이벤트는 이름이 **한국어로 떨어진다** — 글로벌·일본
+        #   서버는 한섭보다 늦어서 신규 이벤트가 그렇다 (사용자 제보 2026-09-17: "영문판에
+        #   사람들우리들 이벤트가 한글로 돼 있다"). 스토리 목록은 세 언어 이름을 들고 있으므로
+        #   그쪽을 먼저 본다. 복각판은 자기 항목이 없어 원본 이름으로 잇는다.
+        sname = ((st or stories.get(origin_of(aid)) or {}).get("name") or {})
         row = {
             "id": aid,
-            "n": (li.get("name") or info.get("name") or aid).strip(),
+            "n": (_loc_name(loc, li, sname, aid)),
             "type": info.get("displayType") or info.get("type"),
             "start": day(info.get("startTime")),
             "end": day(info.get("endTime")),

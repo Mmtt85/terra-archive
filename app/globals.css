@@ -23184,3 +23184,38 @@ html[lang="ja"] .vn-box {
   white-space: nowrap;
   font-weight: 700;
 }
+/* 이벤트 목록 줄이 도감으로 갈 때는 버튼이다 — 링크(<a>)와 같은 모양으로 맞춘다 */
+.event-menu .event-row-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: 0 0;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+/* 미래시 이벤트 스트립 — 오퍼 도감의 .future-strip 과 같은 규약, 카드만 반 크기로 */
+.ev-grid.mini {
+  grid-template-columns: repeat(auto-fill, minmax(196px, 1fr));
+  gap: 8px;
+}
+.ev-grid.mini .ev-card {
+  grid-template-columns: 62px minmax(0, 1fr);
+  gap: 8px;
+  padding: 6px;
+  contain-intrinsic-size: auto 196px auto 86px;
+}
+.ev-grid.mini .ev-card-name {
+  font-size: 12.5px;
+}
+.ev-grid.mini .ev-card-meta,
+.ev-grid.mini .ev-card-counts {
+  font-size: 10.5px;
+}
+.ev-grid.mini .ev-card-ops {
+  display: none;
+}

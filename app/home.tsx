@@ -536,7 +536,11 @@ const eventDday = (event: GameEvent, now: number): number => Math.max(0, Math.ce
 // slot — 헤더 두 곳에 나눠 그린다: 진행중 이벤트 배지는 1줄(접어도 보임), 공식 방송 버튼은
 // 확장부(header-sub)의 미래시 토글 왼쪽 (사용자 요청 2026-07-25). 워커 fetch는 모듈 공유
 // 프라미스라 인스턴스가 둘이어도 요청은 한 번이다.
-function BroadcastBadges({ includeFuture, slot }: { includeFuture?: boolean; slot?: "broadcast" | "events" }) {
+function BroadcastBadges({ includeFuture, slot, onOpenEvent }: {
+  includeFuture?: boolean; slot?: "broadcast" | "events";
+  /** 이벤트 줄을 누르면 이벤트 도감 상세로 (사용자 지시 2026-09-17) */
+  onOpenEvent?: (id: string, type?: string | null) => void;
+}) {
   const { locale, t } = useI18n();
   const shortStatus = (b: Broadcast, now: number): string => {
     const state = bcastState(b, now);
@@ -679,9 +683,14 @@ function BroadcastBadges({ includeFuture, slot }: { includeFuture?: boolean; slo
                 // 링크는 공식 카페 이벤트 공지로 (사용자 요청 2026-07 — 스토리 요약 아님)
                 return (
                   <li key={event.id}>
-                    {event.url
-                      ? <a href={event.url} target="_blank" rel="noopener noreferrer" title={t("공식 카페 공지 보기")}>{body}</a>
-                      : <span className="event-row-plain">{body}</span>}
+                    {/* ⚠ **이벤트 도감이 우선** (사용자 지시 2026-09-17). 도감이 모르는
+                        이벤트만 종전대로 공식 카페 공지로 나간다. */}
+                    {onOpenEvent && knownEventIds.has(event.id)
+                      ? <button type="button" className="event-row-btn"
+                          onClick={() => onOpenEvent(event.id, event.type)} title={t("이벤트 도감에서 보기")}>{body}</button>
+                      : event.url
+                        ? <a href={event.url} target="_blank" rel="noopener noreferrer" title={t("공식 카페 공지 보기")}>{body}</a>
+                        : <span className="event-row-plain">{body}</span>}
                   </li>
                 );
               })}
@@ -701,9 +710,14 @@ function BroadcastBadges({ includeFuture, slot }: { includeFuture?: boolean; slo
                 );
                 return (
                   <li key={event.id}>
-                    {event.url
-                      ? <a href={event.url} target="_blank" rel="noopener noreferrer" title={t("공식 카페 공지 보기")}>{body}</a>
-                      : <span className="event-row-plain">{body}</span>}
+                    {/* ⚠ **이벤트 도감이 우선** (사용자 지시 2026-09-17). 도감이 모르는
+                        이벤트만 종전대로 공식 카페 공지로 나간다. */}
+                    {onOpenEvent && knownEventIds.has(event.id)
+                      ? <button type="button" className="event-row-btn"
+                          onClick={() => onOpenEvent(event.id, event.type)} title={t("이벤트 도감에서 보기")}>{body}</button>
+                      : event.url
+                        ? <a href={event.url} target="_blank" rel="noopener noreferrer" title={t("공식 카페 공지 보기")}>{body}</a>
+                        : <span className="event-row-plain">{body}</span>}
                   </li>
                 );
               })}
@@ -880,8 +894,10 @@ function ThemeToggle() {
 //    fetchpriority=low·decoding=async로 내려, 종전 카드 그리드보다 요청 수는 오히려 적다.
 const SITE_OPENED = Date.parse("2026-07-11T00:00:00+09:00"); // 첫 커밋일 — LV 자리의 '운영 일수'
 
-function Portal({ onOpenTab }: {
+function Portal({ onOpenTab, onOpenEvent }: {
   onOpenTab: (tab: Tab) => void;
+  /** 이벤트 도감의 그 이벤트 상세를 연다 (배너에서 쓴다) */
+  onOpenEvent?: (id: string, type?: string | null) => void;
 }) {
   const { locale, t } = useI18n();
 
@@ -936,6 +952,13 @@ function Portal({ onOpenTab }: {
       // 종전에는 카페 이벤트 게시판으로 튕겼다.
       const guide = headline ? EVENT_GUIDE_TAB[headline.type ?? ""] : undefined;
       if (guide) { onOpenTab(guide); scrollMainTop(); return; }
+      // ⚠ **이제는 이벤트 도감이 우선이다** (사용자 지시 2026-09-17: "진행중 이벤트 혹은
+      //   홈 화면의 이벤트 배너같은 경우도 전부 이벤트 가이드로 연결시켜줘").
+      //   종전엔 공식 카페 공지로 새 창을 띄웠는데, 이제 그 이벤트의 작전·적·재화·오퍼가
+      //   사이트 안에 다 있다. 도감이 모르는 이벤트만 종전 경로로 물러난다.
+      if (headline && onOpenEvent && knownEventIds.has(headline.id)) {
+        onOpenEvent(headline.id, headline.type); return;
+      }
       if (headline?.url) { window.open(headline.url, "_blank", "noopener"); return; }
       // 공지를 못 찾았을 때: **스토리가 있는 이벤트만** 스토리 탭으로 보낸다. 벡터 돌파처럼
       // 스토리가 없는 이벤트를 스토리로 보내면 엉뚱한 곳에 떨어진다 (사용자 지적 2026-07-31
@@ -1246,7 +1269,17 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   const runningEvent = useRunningEvent();
   /** 이벤트 도감으로 넘어가 그 이벤트 상세를 연다 — 해시는 도감이 마운트하며 읽는다
    *  (작전 도감 → 적 도감 이동과 같은 방식). */
-  const openEventById = (id: string) => {
+  const openEventById = (id: string, type?: string | null) => {
+    // ⚠ **전용 가이드가 있는 모드는 그쪽이 우선이다** (사용자 지시 2026-09-17: "위수협의
+    //   맹약 이벤트는 위수협의 페이지로 넘어가 줘야지"). 이벤트 도감 상세보다 그 가이드에
+    //   훨씬 많은 게 들어 있다. 시즌은 활동 id(act<N>autochess)의 N 을 그대로 쓴다.
+    const guide = EVENT_GUIDE_TAB[type ?? ""];
+    if (guide === "autochess") {
+      const m = /^act(\d+)autochess$/.exec(id);
+      switchAutochess(autochessSeasonOf(m ? `s${m[1]}` : undefined));
+      return;
+    }
+    if (guide) { switchTab(guide); scrollMainTop(); return; }
     history.pushState(null, "", `${tabPath("event")}#ev-${id}`);
     startTransition(() => { setTab("event"); setSelected(null); });
     // ⚠ `pushState` 는 hashchange 를 일으키지 않는다. 이미 이벤트 도감에 있을 때는 탭도
@@ -2034,7 +2067,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
             title={eventName(locale, runningEvent)}
             onClick={(event) => {
               if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
-              event.preventDefault(); openEventById(runningEvent.id);
+              event.preventDefault(); openEventById(runningEvent.id, runningEvent.type);
             }}>
             <span className="promo-mark" aria-hidden>✦</span>
             {/* 이름이 크고 '진행중 이벤트'가 작다 (사용자 지시 2026-09-17). 이름 길이로 헤더
@@ -2246,7 +2279,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
           <div className="header-sub-right">
             {/* 진행중 이벤트 · 공식 방송 — 둘 다 확장부로 (이벤트 배지는 사용자 요청 2026-07-30에
                 1줄 배너에서 여기 작은 버튼으로 내려왔다. 방송은 2026-07-25부터 여기). */}
-            <BroadcastBadges includeFuture={includeFuture} slot="events" />
+            <BroadcastBadges includeFuture={includeFuture} slot="events" onOpenEvent={openEventById} />
             <BroadcastBadges includeFuture={includeFuture} slot="broadcast" />
             {/* 라벨은 데스크탑 "미래시 데이터 포함", 모바일은 "미래시"로 축약 (사용자 요청 2026-07-22) */}
             <label className={`future-toggle${futureFlash ? " flash" : ""}`} title={t("아직 정식 출시되지 않은(중국 서버 선행) 오퍼레이터·재료도 목록·계산기에 표시합니다. 미실장 텍스트는 비공식 AI 번역입니다.")}>
@@ -2307,7 +2340,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
           올라오지 않도록 — 사용자 요청 2026-07-22, 모바일·PC 공통). 모달·제안 위젯은 fixed라 밖에 둔다. */}
       <div className="site-scroll">
 
-      {tab === "portal" && <Portal onOpenTab={switchTab} />}
+      {tab === "portal" && <Portal onOpenTab={switchTab} onOpenEvent={openEventById} />}
 
       {/* 오퍼 상세 페이지(/operators/<id>)로 들어오면 목록 대신 상세만 — 420장의 목록이
           모든 상세 페이지에 통째로 딸려 들어가면 페이지마다 고유 본문보다 공통 뼈대가
