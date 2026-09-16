@@ -51,7 +51,7 @@ SCHEMA = "prts___levels"
 
 _cdn = {}        # server -> Cdn
 _bundles = {}    # (server, bundle) -> {에셋이름(소문자): FlatBuffer 바이트}
-_schema = None   # (fbs 경로, fbs 원문)
+_schema = {}     # 스키마 이름 -> (fbs 경로, fbs 원문) | False
 _ready = None
 _lock = threading.RLock()
 
@@ -70,10 +70,9 @@ def available():
     return _ready
 
 
-def _load_schema():
+def _load_schema(name=SCHEMA):
     """`fetch-gamedata-cdn.py` 의 schema_for 를 그대로 빌려 쓴다 (캐시·폴백 규칙 공유)."""
-    global _schema
-    if _schema is None:
+    if name not in _schema:
         import importlib.util
         path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fetch-gamedata-cdn.py")
         spec = importlib.util.spec_from_file_location("_fgcdn", path)
@@ -85,9 +84,9 @@ def _load_schema():
             pass
         finally:
             sys.argv = argv
-        p, txt = mod.schema_for(SCHEMA, "kr")
-        _schema = (p, txt) if txt else False
-    return _schema or None
+        p, txt = mod.schema_for(name, "kr")
+        _schema[name] = (p, txt) if txt else False
+    return _schema[name] or None
 
 
 def _conn(server):
@@ -140,8 +139,13 @@ def _norm(path):
     return p.strip("/")
 
 
-def level(path, server="kr"):
-    """레벨 하나를 공식 JSON 모양 dict 로. CDN 에 없거나 못 뜯으면 None."""
+def level(path, server="kr", schema=SCHEMA):
+    """레벨 하나를 공식 JSON 모양 dict 로. CDN 에 없거나 못 뜯으면 None.
+
+    ⚠ `levels/enemydata/enemy_database` 는 레벨이 아니라 **적 스탯 원본**이라 스키마가 다르다
+    (`enemy_database.fbs`). 레벨 스키마로 풀면 구조가 같은 자리만 읽혀 22칸짜리 엉뚱한
+    dict 가 나온다 — 조용히 틀리므로 `schema=` 로 명시해 부를 것 (2026-09-17 실측).
+    """
     if not available():
         return None
     lid = _norm(path)
@@ -158,15 +162,18 @@ def level(path, server="kr"):
         fb = _table(server, bundle).get(full.rsplit("/", 1)[-1].lower())
         if fb is None:
             return None
-        return _decode(fb)
+        return _decode(fb, schema)
     except Exception as e:
         print("⚠ CDN 레벨 실패(%s): %s" % (lid, str(e)[:60]), file=sys.stderr)
         return None
 
 
-def _decode(fb):
+def _decode(fb, schema=SCHEMA):
     from fbsutil import load_flatc_json
-    fbs_path, fbs_text = _load_schema()
+    got = _load_schema(schema)
+    if got is None:
+        return None
+    fbs_path, fbs_text = got
     with tempfile.TemporaryDirectory() as tmp:
         binp = os.path.join(tmp, "level.fb")
         open(binp, "wb").write(fb)

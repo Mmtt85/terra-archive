@@ -45,10 +45,16 @@ export type EventRow = {
   stages?: [string, string, string][];
   enemies?: [string, string][];
   items?: ([string, string] | [string, string, string])[];
+  /** 맵에서 파밍되는 상위 재료 [id, 이름, 아이콘, 등급, 작전 코드들] — T4 이상만 */
+  mats?: [string, string, string, number, string[]][];
   /** [id, 이름, 성급, 종류] — reward=이벤트 보상(무료 배포) · new=이 이벤트와 함께 데뷔 */
   ops?: [string, string, number, "reward" | "new"][];
   /** 사이트에 전용 가이드가 있는 모드 — 카드를 누르면 모달 대신 그리로 간다 */
   guide?: string;
+  /** 중섭 선행(미실장) — 흑백 처리되고 미래시 토글이 꺼져 있으면 눌리지 않는다 */
+  fut?: number;
+  /** 한섭 개방 추정월 ("2026-11") — 미실장에만 */
+  eta?: string;
 };
 export type EventDoc = { updated: string; events: EventRow[] };
 
@@ -62,12 +68,15 @@ const TYPE_LABEL: Record<string, string> = {
 const typeOf = (row: EventRow) => (row.type && TYPE_LABEL[row.type] ? row.type : "NONE");
 
 // '수록 내용' 필터 — 이벤트에 무엇이 들었는지로 거른다
-const HAS = ["stages", "enemies", "items", "ops", "story"] as const;
+const HAS = ["stages", "enemies", "items", "mats", "ops", "story", "fut"] as const;
 const HAS_LABEL: Record<string, string> = {
-  stages: "작전", enemies: "등장 적", items: "교환 재화", ops: "보상 오퍼", story: "스토리",
+  stages: "작전", enemies: "등장 적", items: "교환 재화", mats: "상위 재료",
+  ops: "이벤트 오퍼", story: "스토리", fut: "미실장",
 };
 const hasThing = (row: EventRow, key: string) =>
-  key === "story" ? !!row.story : ((row[key as "stages"] as unknown[] | undefined)?.length ?? 0) > 0;
+  key === "story" ? !!row.story
+    : key === "fut" ? !!row.fut
+      : ((row[key as "stages"] as unknown[] | undefined)?.length ?? 0) > 0;
 
 const OP_KIND: Record<string, string> = { reward: "보상", new: "신규" };
 
@@ -86,14 +95,17 @@ function EventCard({ row, onSelect, onGuide }: {
     row.stages?.length ? t("작전 {n}", { n: row.stages.length }) : null,
     row.enemies?.length ? t("적 {n}", { n: row.enemies.length }) : null,
     row.items?.length ? t("재화 {n}", { n: row.items.length }) : null,
+    row.mats?.length ? t("상위 재료 {n}", { n: row.mats.length }) : null,
   ].filter(Boolean);
   return (
     // 썸네일이 없는 이벤트(벡터 돌파 등 게임 모드형)는 빈 칸을 남기지 않고 글만 한 칸으로
     // 채운다 — 회색 네모가 줄줄이 있는 것보다 낫다.
     // 전용 가이드가 있는 모드(위수 협의)는 **앵커**다 — 새 탭·주소 복사가 그대로 되고,
     // 누르면 그 가이드로 간다 (사용자 지시 2026-09-16).
+    // 미실장(중섭 선행)은 `.fut-dim` 만 붙이면 된다 — 흑백 처리도, 미래시가 꺼져 있을 때
+    // 클릭을 삼키는 것도 app/future-tip.tsx 의 위임 리스너가 클래스만 보고 알아서 한다.
     <Tag type={row.guide ? undefined : "button"} {...(row.guide ? { href } : {})}
-      className={`ev-card${row.thumb ? "" : " no-thumb"}`}
+      className={`ev-card${row.thumb ? "" : " no-thumb"}${row.fut ? " fut-dim" : ""}`}
       onClick={(e: React.MouseEvent) => {
         if (!row.guide) { onSelect(row); return; }
         if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
@@ -111,7 +123,9 @@ function EventCard({ row, onSelect, onGuide }: {
         <b className="ev-card-name">{row.n}</b>
         <span className="ev-card-meta">
           <em className={`ev-type t-${typeOf(row).toLowerCase()}`}>{t(TYPE_LABEL[typeOf(row)])}</em>
-          {row.start && <span>{row.start}</span>}
+          {row.fut
+            ? <span className="ev-eta">{row.eta ? t("{ym} 예정", { ym: row.eta.replace("-", ".") }) : t("미실장")}</span>
+            : row.start && <span>{row.start}</span>}
         </span>
         {counts.length > 0 && <span className="ev-card-counts">{counts.join(" · ")}</span>}
         {row.ops && row.ops.length > 0 && (
@@ -145,21 +159,30 @@ function EventFile({ row, onOpenStage, onOpenEnemy, onOpenItem, onShowOperator }
         <div>
           <h3>{row.n}</h3>
           <em className={`ev-type t-${typeOf(row).toLowerCase()}`}>{t(TYPE_LABEL[typeOf(row)])}</em>
-          {row.start && <span className="ev-period">{row.start}{row.end ? ` ~ ${row.end}` : ""}</span>}
+          {row.fut
+            ? <span className="ev-period">{row.eta ? t("한국 서버 {ym} 예정", { ym: row.eta.replace("-", ".") }) : t("미실장")}</span>
+            : row.start && <span className="ev-period">{row.start}{row.end ? ` ~ ${row.end}` : ""}</span>}
         </div>
       </header>
-      {row.thumb && (
-        <div className="ev-hero">
-          <img src={asset(row.thumb)} alt="" aria-hidden loading="lazy" decoding="async"
-            onError={(e) => { e.currentTarget.closest(".ev-hero")?.remove(); }} />
-        </div>
-      )}
+      {/* 썸네일은 왼쪽, 스토리 읽기·이벤트 오퍼·작전은 오른쪽 — 한눈에 들어오게
+          (사용자 요청 2026-09-17). 좁은 화면에서는 CSS가 한 줄로 되돌린다. */}
+      <div className={`ev-top${row.thumb ? "" : " no-thumb"}`}>
+        {row.thumb && (
+          <div className="ev-hero">
+            <img src={asset(row.thumb)} alt="" aria-hidden loading="lazy" decoding="async"
+              onError={(e) => { e.currentTarget.closest(".ev-hero")?.remove(); }} />
+          </div>
+        )}
+        <div className="ev-top-main">
       {row.story ? (
         <p className="ev-links">
           <a className="it-link" href={storyHref(locale, row.id)}>{t("이 이벤트 스토리 읽기")}</a>
         </p>
       ) : null}
 
+      {/* 이벤트 오퍼레이터 ↔ 맵에서 나오는 상위 재료를 나란히 (사용자 요청 2026-09-17).
+          한쪽만 있으면 그쪽이 폭을 다 쓴다. */}
+      <div className="ev-pair">
       {row.ops && row.ops.length > 0 && (
         <section className="ev-sec">
           <b>{t("이벤트 오퍼레이터")}</b>
@@ -181,6 +204,40 @@ function EventFile({ row, onOpenStage, onOpenEnemy, onOpenItem, onShowOperator }
         </section>
       )}
 
+      {row.mats && row.mats.length > 0 && (
+        <section className="ev-sec">
+          <b>{t("맵에서 나오는 상위 재료")}</b>
+          <div className="ev-mats">
+            {row.mats.map(([id, name, icon, rarity, codes]) => (
+              <button key={id} type="button" className="ev-mat" onClick={() => onOpenItem(id)}>
+                {icon && <img src={itemIcon(icon)} alt="" aria-hidden width={36} height={36}
+                  loading="lazy" decoding="async" />}
+                <span>
+                  <b>{name}<em className={`farm-tier tier-${rarity}`}>T{rarity}</em></b>
+                  <i>{codes.join(" · ")}</i>
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+      </div>
+
+      {row.stages && row.stages.length > 0 && (
+        <section className="ev-sec">
+          <b>{t("작전 {n}", { n: row.stages.length })}</b>
+          <div className="ev-stages">
+            {row.stages.map(([id, code, name]) => (
+              <button key={id} type="button" className="ev-stage" onClick={() => onOpenStage(id)}>
+                <b>{code}</b><span>{name}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+        </div>
+      </div>
+
       {row.items && row.items.length > 0 && (
         <section className="ev-sec">
           <b>{t("교환 재화")}</b>
@@ -190,19 +247,6 @@ function EventFile({ row, onOpenStage, onOpenEnemy, onOpenItem, onShowOperator }
                 {it[2] && <img src={itemIcon(it[2])} alt="" aria-hidden width={40} height={40}
                   loading="lazy" decoding="async" />}
                 <span>{it[1]}</span>
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {row.stages && row.stages.length > 0 && (
-        <section className="ev-sec">
-          <b>{t("작전 {n}", { n: row.stages.length })}</b>
-          <div className="ev-stages">
-            {row.stages.map(([id, code, name]) => (
-              <button key={id} type="button" className="ev-stage" onClick={() => onOpenStage(id)}>
-                <b>{code}</b><span>{name}</span>
               </button>
             ))}
           </div>

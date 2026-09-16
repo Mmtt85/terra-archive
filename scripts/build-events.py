@@ -38,6 +38,7 @@ LOCALES = {"ko": "kr", "en": "en", "ja": "jp"}
 OUT = {"ko": "events.json", "en": "events.en.json", "ja": "events.ja.json"}
 
 load = lambda p: json.load(open(p, encoding="utf-8"))
+MAT_TIER = 4        # '파밍 가능한 상위 재료' 기준 등급 (사용자 지정 2026-09-17)
 day = lambda ts: time.strftime("%Y-%m-%d", time.localtime(ts)) if ts else None
 
 acts, stage_tables = {}, {}
@@ -164,9 +165,10 @@ for aid, info in sorted(kr_basic.items(), key=lambda kv: -(kv[1].get("startTime"
         doc = per_loc[loc]["stages"]
         by_id = {s["id"]: s for s in (doc["stages"] if doc else [])}
         # enemyIds 는 배열(작전의 e[0] 이 가리키는 번호표), enemyNames 는 {id: 이름} 사전이다
+        loc_items = per_loc[loc]["items"]
         enames = (doc.get("enemyNames") if doc else None) or {}
         eids = (doc.get("enemyIds") if doc else None) or []
-        stages, seen_enemy = [], {}
+        stages, seen_enemy, mats = [], {}, {}
         for sid in sids:
             s = by_id.get(sid)
             if not s:
@@ -176,7 +178,13 @@ for aid, info in sorted(kr_basic.items(), key=lambda kv: -(kv[1].get("startTime"
                 ix = e[0]
                 if 0 <= ix < len(eids) and eids[ix] not in seen_enemy:
                     seen_enemy[eids[ix]] = enames.get(eids[ix], eids[ix])
-        loc_items = per_loc[loc]["items"]
+            # 이 맵에서 파밍되는 **상위 재료**(T4 이상) — 사용자 요청 2026-09-17.
+            # ⚠ 이벤트 상점(교환소)에서 재화로 바꾸는 재료는 여기 없다. 상점 품목표가
+            #   클라이언트 데이터에 없기 때문이다(서버가 쥐고 있다) — 맵 드랍만 싣는다.
+            for d in (s.get("d") or []):
+                it = loc_items.get(d[0])
+                if it and it.get("g") == "material" and (it.get("r") or 0) >= MAT_TIER:
+                    mats.setdefault(d[0], set()).add(s["code"])
         loc_ops = per_loc[loc]["ops"]
         items = [[i, (loc_items.get(i) or {}).get("n", i)]
                  + ([(loc_items[i]["i"])] if (loc_items.get(i) or {}).get("i") else [])
@@ -214,11 +222,47 @@ for aid, info in sorted(kr_basic.items(), key=lambda kv: -(kv[1].get("startTime"
             row["enemies"] = [[k, v] for k, v in seen_enemy.items()]
         if items:
             row["items"] = items
+        if mats:
+            # 등급 높은 것 먼저, 같으면 이름순. 작전 코드는 사람이 읽는 순서로.
+            row["mats"] = [[i, loc_items[i]["n"], loc_items[i].get("i") or "",
+                            loc_items[i]["r"], sorted(mats[i])]
+                           for i in sorted(mats, key=lambda x: (-(loc_items[x]["r"]), loc_items[x]["n"]))]
         if ops:
             row["ops"] = ops
         rows[loc].append(row)
         if loc == "ko":
             n_stage += len(stages); n_enemy += len(seen_enemy); n_item += len(items); n_op += len(ops)
+
+# ── 미래시(중섭 선행) 이벤트 ────────────────────────────────────────────────
+# 사용자 요청 2026-09-17 "미래시 이벤트들도 넣어줘".
+# 한섭 activity_table 에는 당연히 없다. 스토리 파이프라인이 이미 중섭 선행 이벤트를
+# `unreleased`+`eta` 로 싣고 있으므로(app/data/stories.json) 그걸 그대로 가져온다.
+# ⚠ 작전·등장 적·재화는 **싣지 않는다** — 중섭 activity/stage 표를 받지 않기 때문이다
+#   (fetch-gamedata-cdn.py: 중섭은 미래시 전용이라 14표만 받는다). 이름·개방 예정·
+#   스토리 링크까지만 주고, 나머지는 한섭에 열릴 때 저절로 채워진다.
+# ⚠ 화면에서는 `.fut-dim` 이 붙어 흑백이 되고, 미래시 토글이 꺼져 있으면 눌리지 않는다
+#   (app/future-tip.tsx 의 위임 리스너가 클래스만 보고 알아서 막는다).
+for eid, st in stories.items():
+    if not st.get("unreleased"):
+        continue
+    for loc in LOCALES:
+        nm = st.get("name") or {}
+        row = {
+            "id": eid,
+            "n": (nm.get(loc) or nm.get("ko") or eid).strip(),
+            "type": "SIDESTORY",
+            "start": None,
+            "end": None,
+            "story": 1,
+            "fut": 1,
+        }
+        if st.get("eta"):
+            row["eta"] = st["eta"]
+        thumb = st.get(THUMB[loc]) or st.get("thumb")
+        if thumb:
+            row["thumb"] = thumb
+        rows[loc].insert(0, row)      # 아직 안 나온 것이라 맨 위
+n_fut = sum(1 for r in rows["ko"] if r.get("fut"))
 
 updated = time.strftime("%Y-%m-%d")
 for loc in LOCALES:
@@ -226,4 +270,5 @@ for loc in LOCALES:
     json.dump({"updated": updated, "events": rows[loc]}, open(dest, "w", encoding="utf-8"),
               ensure_ascii=False, separators=(",", ":"))
     print(f"  {OUT[loc]}  {os.path.getsize(dest) // 1024}KB")
-print(f"이벤트 {len(rows['ko'])}개 — 작전 {n_stage} · 등장 적 {n_enemy} · 재화 {n_item} · 보상 오퍼 {n_op}")
+print(f"이벤트 {len(rows['ko'])}개(미래시 {n_fut}) — 작전 {n_stage} · 등장 적 {n_enemy} · "
+      f"재화 {n_item} · 오퍼 {n_op}")

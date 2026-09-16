@@ -169,24 +169,38 @@ def fetch_level(path, cache_dir=CACHE):
 
 # ── 1. 스탯 원본 ────────────────────────────────────────────────────────────
 os.makedirs(CACHE, exist_ok=True)
-# 14MB짜리 스탯 원본 — 다른 스크립트가 이미 받아 둔 사본이 있으면 재사용한다.
-# ⚠ 종전엔 록라 캐시(.gamedata/rogue/)가 있으면 **무조건** 그걸 썼는데, 사본들이 서로
-#   다른 시점에 받아져 실제로는 벌어진다. 2026-08-25 실측: 록라 사본 07-17자 1,824종 vs
-#   .gamedata 루트 사본 08-12자 1,829종 — 묵은 걸 집는 바람에 이미 커밋돼 있던
-#   enemy_8016_misery·enemy_8017_vcblva의 스탯이 빈 배열로 **지워졌다**.
-#   그래서 "있으면 아무거나"가 아니라 **가장 최근에 받은 사본**을 고른다.
-_cands = [os.path.join(ROGUE_CACHE, "levels__enemydata__enemy_database.json"),
-          os.path.join(S, "levels__enemydata__enemy_database.json"),
-          os.path.join(CACHE, "levels__enemydata__enemy_database.json")]
-_have = [c for c in _cands if os.path.exists(c)]
-if _have:
-    _pick = max(_have, key=os.path.getmtime)
-    enemy_db = load(_pick)
-    print(f"enemy_database 사본: {os.path.relpath(_pick, REPO)} "
-          f"({time.strftime('%Y-%m-%d', time.localtime(os.path.getmtime(_pick)))})")
-else:
-    enemy_db = fetch_level("levels/enemydata/enemy_database.json")
-print(f"enemy_database: {len(enemy_db)}종")
+# 14MB짜리 스탯 원본 — **게임 CDN에서 매번 새로 받는다.**
+#
+# ⚠ 이건 캐시하면 안 되는 파일이다. 레벨 한 판은 한 번 나오면 안 바뀌지만, 이 표는
+#   **점검마다 늘어난다.** 종전엔 로컬 사본 셋 중 가장 최근 것을 골라 썼는데, 그 사본들이
+#   각각 07-17·08-12자라 9월 신규 적(enemy_10193_ubhh 등)이 통째로 없었고, 그래서 도감
+#   상세의 **스탯 표가 머리글만 남고 비었다** (사용자 제보 2026-09-17).
+# ⚠ 스키마가 레벨(prts___levels)과 **다르다** — `enemy_database.fbs` 다. 레벨 스키마로
+#   풀면 구조가 겹치는 자리만 읽혀 22칸짜리 엉뚱한 dict 가 조용히 나온다.
+# ⚠ flatc 산출물은 `[{Key, Value}]` 목록이다 (스키마가 dict__ 로 선언돼 있지 않아
+#   Normalizer 가 접지 못한다) — 공식 JSON 모양인 {적id: [레코드]} 로 여기서 접는다.
+enemy_db = None
+_cdn_db = cdnlevels.level("levels/enemydata/enemy_database", schema="enemy_database")
+if isinstance(_cdn_db, list):
+    enemy_db = {e["Key"]: e["Value"] for e in _cdn_db if isinstance(e, dict) and "Key" in e}
+    print(f"enemy_database: 게임 CDN에서 {len(enemy_db)}종")
+elif isinstance(_cdn_db, dict) and _cdn_db:
+    enemy_db = _cdn_db
+    print(f"enemy_database: 게임 CDN에서 {len(enemy_db)}종")
+if not enemy_db:
+    # CDN이 안 되면(의존성 없음 등) 종전대로 사본 중 **가장 최근에 받은 것**을 쓴다.
+    _cands = [os.path.join(ROGUE_CACHE, "levels__enemydata__enemy_database.json"),
+              os.path.join(S, "levels__enemydata__enemy_database.json"),
+              os.path.join(CACHE, "levels__enemydata__enemy_database.json")]
+    _have = [c for c in _cands if os.path.exists(c)]
+    if _have:
+        _pick = max(_have, key=os.path.getmtime)
+        enemy_db = load(_pick)
+        print(f"⚠ enemy_database: CDN 실패 — 사본 {os.path.relpath(_pick, REPO)} "
+              f"({time.strftime('%Y-%m-%d', time.localtime(os.path.getmtime(_pick)))})")
+    else:
+        enemy_db = fetch_level("levels/enemydata/enemy_database.json")
+        print(f"⚠ enemy_database: CDN 실패 — 레포에서 {len(enemy_db)}종")
 
 
 def first_defined(recs, key):

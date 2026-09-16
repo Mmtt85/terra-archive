@@ -22785,9 +22785,13 @@ html[lang="ja"] .vn-box {
   border-color: var(--border-strong);
   box-shadow: 3px 3px 0 #13171922;
 }
+/* 썸네일은 **잘라내지 않는다** (사용자 지적 2026-09-17: "뭔가 절반이 잘려있는데 다 보여줘").
+   두 종류가 섞여 있다 — 이벤트 키비주얼은 세로(420×508, 76장), 컷씬 대체본은 16:9(21장).
+   칸은 세로 비율로 고정하고 contain 으로 넣는다: 세로본은 꽉 차고, 가로본은 위아래가
+   비지만 **그림이 잘리는 일은 없다**. 칸 높이가 고르므로 카드 줄도 들쭉날쭉하지 않다. */
 .ev-card-face {
   display: block;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 420 / 508;
   overflow: hidden;
   border: 1px solid var(--line);
   background: var(--paper);
@@ -22795,7 +22799,7 @@ html[lang="ja"] .vn-box {
 .ev-card-face img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 .ev-card-body {
   display: flex;
@@ -22860,20 +22864,41 @@ html[lang="ja"] .vn-box {
   font: 700 11.5px monospace;
   color: var(--muted);
 }
-/* 스토리 썸네일은 세로로 긴 키비주얼이라 그대로 두면 938px까지 자란다 (실측) —
-   띠 모양으로 잘라 넣는다. 인물 얼굴이 대개 위쪽이라 위를 살린다. */
+/* 썸네일은 왼쪽, 스토리 읽기·이벤트 오퍼·작전은 오른쪽 (사용자 요청 2026-09-17).
+   왼쪽 폭은 세로 키비주얼(420×508)이 제 크기로 들어가는 값. */
+.ev-top {
+  display: grid;
+  grid-template-columns: 236px minmax(0, 1fr);
+  align-items: start;
+  gap: 16px;
+  margin-top: 10px;
+}
+.ev-top.no-thumb {
+  grid-template-columns: minmax(0, 1fr);
+}
+/* 오른쪽 첫 칸은 위 여백을 없앤다 — 썸네일과 윗선을 맞춘다 */
+.ev-top-main > :first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+/* 상세의 키비주얼도 자르지 않는다. 그대로 두면 938px까지 자라므로(실측) 높이만 막는다. */
 .ev-hero {
-  margin: 10px 0 12px;
+  display: flex;
+  justify-content: center;
   border: 1px solid var(--line);
-  overflow: hidden;
+  background: var(--paper);
 }
 .ev-hero img {
   display: block;
-  width: 100%;
+  width: auto;
   max-width: 100%;
-  height: 168px;
-  object-fit: cover;
-  object-position: center 28%;
+  max-height: 300px;
+  object-fit: contain;
+}
+@media (max-width: 720px) {
+  .ev-top { grid-template-columns: minmax(0, 1fr); }
+  .ev-hero img { max-height: 240px; }
 }
 .ev-links {
   margin: 0 0 12px;
@@ -22983,4 +23008,82 @@ html[lang="ja"] .vn-box {
 .ev-op.k-new em,
 .ev-op-chip.k-new {
   border-color: var(--lime);
+}
+/* 이벤트 오퍼레이터 ↔ 맵에서 나오는 상위 재료를 나란히 (사용자 요청 2026-09-17).
+   왼쪽은 오퍼 카드 폭만큼만(auto), 남는 자리는 재료가 다 쓴다. 한쪽만 있으면 그쪽이 전부.
+   윗선은 쌍이 한 번만 그어 둘이 같은 높이에서 시작하게 한다. */
+.ev-pair {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 18px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line);
+}
+.ev-pair:empty {
+  display: none;
+}
+.ev-pair > .ev-sec {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+.ev-pair > .ev-sec:only-child {
+  grid-column: 1 / -1;
+}
+/* 맵에서 나오는 상위 재료 — 아이콘 + 이름·등급 + 떨어지는 작전 코드 */
+.ev-mats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 6px;
+}
+@media (max-width: 720px) {
+  .ev-pair { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+}
+.ev-mat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 9px 5px 5px;
+  border: 1px solid var(--line);
+  background: var(--bg-faint);
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+.ev-mat:hover {
+  border-color: var(--border-strong);
+}
+.ev-mat img {
+  flex: none;
+  object-fit: contain;
+}
+.ev-mat > span {
+  min-width: 0;
+}
+.ev-mat b {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 400;
+}
+.ev-mat .farm-tier {
+  margin: 0 0 0 6px;
+  padding: 1px 5px;
+  vertical-align: middle;
+}
+.ev-mat i {
+  display: block;
+  margin-top: 1px;
+  font: 700 10.5px monospace;
+  font-style: normal;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* 미실장 이벤트의 개방 예정월 */
+.ev-eta {
+  color: var(--lime);
 }
