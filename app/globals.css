@@ -22743,3 +22743,7 @@ html[lang="ja"] .vn-box {
   .it-card-face { width: 46px; height: 46px; }
   .it-card-face img { width: 40px; height: 40px; }
 }
+/* 이벤트 재화의 소속 이벤트 — 획득 방법 첫 줄 */
+.it-event b {
+  color: var(--ink);
+}

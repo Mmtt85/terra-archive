@@ -79,15 +79,67 @@ def group_of(it):
     return "etc"
 
 
-# ── 이벤트 재화 → 그 이벤트 스토리 ──────────────────────────────────────────
-# `act26side_token_fragmenta_rep_1` → act26side (복각판 접미사는 떼고 본다)
+# ── 이벤트 재화 → 그 이벤트 (이름 + 스토리 링크) ────────────────────────────
+#
+# 정본은 **activity_table 의 `activityItems`** 다 (활동 id → 그 활동의 재화 목록).
+# 처음에는 아이템 id 접두사를 정규식으로 갈랐는데 246종 중 122종밖에 못 붙였다 —
+# `act11d0_token_currency` 의 복각판이 `act5sre` 소속인 식으로 id 와 활동이 어긋난다
+# (2026-09-16 실측). 정식 매핑으로 갈아 **241종**에 이벤트 이름이 붙는다.
+#
+# 이름과 링크는 성격이 다르다:
+#   · 이름(evName) — basicInfo 에 있는 활동이면 무조건 붙는다. 사용자가 알고 싶은 것은
+#     "이게 어느 이벤트 재화냐"이므로 스토리 페이지가 없어도 이름은 보여야 한다.
+#   · 링크(ev)     — 사이트에 그 이벤트 스토리 페이지가 있을 때만. 미니게임·보스러시·
+#     복각 전용 활동은 스토리가 없어서 129종만 걸린다.
 EV_KEY = re.compile(r"^(act\d+[a-z0-9]*|1stact)_")
+REP = re.compile(r"_rep_\d+$")
 story_ids = {e["id"] for e in load(os.path.join(REPO, "app", "data", "stories.json"))["events"]}
+
+act_of_item = {}        # 아이템 id → 활동 id (KR 표가 정본 — 매핑은 로케일 무관)
+act_name = {loc: {} for loc in LOCALES}
+for loc, prefix in LOCALES.items():
+    path = os.path.join(G, f"{prefix}_activity_table.json")
+    if not os.path.exists(path):
+        continue
+    at = load(path)
+    for act, info in (at.get("basicInfo") or {}).items():
+        name = (info.get("name") or "").strip()
+        if name:
+            act_name[loc][act] = name
+    if loc == "ko":
+        for act, items in (at.get("activityItems") or {}).items():
+            for iid in items or []:
+                act_of_item.setdefault(iid, act)
+
+
+def story_of(act):
+    """그 활동의 스토리 페이지 id. 없으면 None."""
+    if not act:
+        return None
+    if act in story_ids:
+        return act
+    # 복각 전용 활동(act41sre = act41side 재개방)은 원본 스토리로 보낸다
+    m = re.match(r"^act(\d+)s?re$", act)
+    return f"act{m.group(1)}side" if m and f"act{m.group(1)}side" in story_ids else None
 
 
 def event_of(item_id):
-    m = EV_KEY.match(item_id)
-    return m.group(1) if m and m.group(1) in story_ids else None
+    """(활동 id, 스토리 id) — 둘 다 없을 수 있다.
+
+    스토리 쪽은 **복각판을 원본으로 되돌려** 찾는다: `act11d0_token_currency_rep_1` 은
+    활동상 `act5sre`(복각) 소속이지만 읽을거리는 원본 `act11d0` 에 있다.
+    """
+    act = act_of_item.get(item_id)
+    base = REP.sub("", item_id)
+    story = story_of(act) or story_of(act_of_item.get(base))
+    if not story:
+        m = EV_KEY.match(base)            # 매핑에 없는 몇 종(서류철 등)을 위한 마지막 수단
+        if m and m.group(1) in story_ids:
+            story = m.group(1)
+    if not act:
+        m = EV_KEY.match(base)
+        act = m.group(1) if m else None
+    return act, story
 
 
 # ── 드랍 작전 역색인 (app/data/stages.json) ──────────────────────────────────
@@ -152,7 +204,7 @@ for base in order:
     icon = base.get("iconId") or ""
     if icon and not fetch_icon(icon):
         icon = ""
-    ev = event_of(iid) if grp == "event" else None
+    act, ev = event_of(iid) if grp == "event" else (None, None)
     dl = drops.get(iid) or []
     common = {
         "id": iid,
@@ -177,6 +229,11 @@ for base in order:
         src = base if loc == "ko" else (tables.get(loc, {}).get(iid) or base)
         row = dict(common)
         row["n"] = src.get("name") or base.get("name") or iid
+        if act:
+            # 이벤트 이름은 로케일별 activity_table 에서. 없으면 한국어로 폴백한다.
+            name = act_name.get(loc, {}).get(act) or act_name["ko"].get(act)
+            if name:
+                row["evName"] = name
         for key, field in (("d", "description"), ("u", "usage"), ("o", "obtainApproach")):
             v = (src.get(field) or "").strip()
             if v:

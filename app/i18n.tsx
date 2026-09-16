@@ -1334,7 +1334,7 @@ const D: Record<string, Pair> = {
     "アイテム図鑑 - アークナイツ アイテム情報 | テラアーカイブ",
   ],
   "전체 아이템": ["All items", "全アイテム"],
-  "이름, 설명, 용도 검색": ["Search by name, description or usage", "名前・説明・用途で検索"],
+  "이름, 이벤트, 설명, 용도 검색": ["Search by name, event, description or usage", "名前・イベント・説明・用途で検索"],
   "조건에 맞는 아이템이 없어요.": ["No items match those filters.", "条件に合うアイテムがありません。"],
   "이벤트 재화": ["Event currency", "イベント交換素材"],
   "기초 자원": ["Basic resources", "基本資源"],
@@ -1347,7 +1347,7 @@ const D: Record<string, Pair> = {
   "가공소에서 가공": ["Crafted in the workshop", "加工所で加工"],
   "드랍 작전": ["Drop stages", "ドロップ作戦"],
   "그 밖에 {n}개 작전에서도 나옵니다.": ["It also drops in {n} more operations.", "ほかに{n}件の作戦でもドロップします。"],
-  "이 재화가 나온 이벤트 보기": ["View the event it came from", "この素材が登場したイベントを見る"],
+  "이 이벤트 스토리 보기": ["Read this event's story", "このイベントのストーリーを見る"],
   "재료파밍 효율표에서 보기": ["Open in the farming efficiency table", "素材周回効率表で見る"],
   "게임이 설명을 붙이지 않은 아이템이에요.": ["The game does not attach a description to this item.", "ゲーム側で説明が付いていないアイテムです。"],
   "미실장 {n}명": [

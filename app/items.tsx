@@ -44,7 +44,8 @@ export type DexItem = {
   d?: string;                 // 설명(플레이버)
   u?: string;                 // 용도
   o?: string;                 // 획득처 한 줄
-  ev?: string;                // 이벤트 재화면 그 이벤트 스토리 id
+  ev?: string;                // 이벤트 재화면 그 이벤트 **스토리 id** (읽을거리가 있을 때만)
+  evName?: string;            // 그 이벤트 이름 — 스토리 페이지가 없어도 붙는다
   farm?: number;              // 재료파밍 도우미에 효율표가 있다
   b?: "MANUFACTURE" | "WORKSHOP";
   drop?: [string, string, number, number][];  // 작전id, 코드, occ, kind
@@ -116,14 +117,19 @@ function ItemFile({ item, doc, onOpenStage }: {
       </header>
       {item.d && <p className="item-desc">{item.d}</p>}
       {item.u && <p className="item-usage">{item.u}</p>}
-      {(item.o || item.b || item.ev || item.farm) && (
+      {(item.o || item.b || item.evName || item.farm) && (
         <div className="item-craft">
           <b>{t("획득 방법")}</b>
+          {/* 어느 이벤트 재화인지 — 스토리 페이지가 없는 이벤트(미니게임·보스러시)도 많아서
+              이름은 항상 글로 보여주고, 링크는 아래 it-links 에서 있을 때만 건다. */}
+          {item.evName && (
+            <p className="it-obtain it-event">{t("이벤트")} <b>「{item.evName}」</b></p>
+          )}
           {item.o && <p className="it-obtain">{item.o}</p>}
           {item.b && <p className="it-obtain">{t(ROOM_LABEL[item.b])}</p>}
           <div className="it-links">
             {item.ev && (
-              <a className="it-link" href={storyHref(locale, item.ev)}>{t("이 재화가 나온 이벤트 보기")}</a>
+              <a className="it-link" href={storyHref(locale, item.ev)}>{t("이 이벤트 스토리 보기")}</a>
             )}
             {/* 효율표는 재료파밍 도우미의 #item-<id> 딥링크가 정본이다 (2026-07-27) */}
             {item.farm ? (
@@ -195,7 +201,8 @@ export default function ItemDex({ doc }: { doc: ItemDoc }) {
       if (tiers.length && !tiers.includes(String(i.r))) return false;
       if (sources.length && !sources.every((s) => hasSource(i, s))) return false;
       if (!q) return true;
-      return normSearch(`${i.n} ${i.d ?? ""} ${i.u ?? ""} ${i.o ?? ""}`).includes(q);
+      // 이벤트 이름으로도 걸린다 — "공상의 정원" 을 치면 그 이벤트 재화가 나온다
+      return normSearch(`${i.n} ${i.evName ?? ""} ${i.d ?? ""} ${i.u ?? ""} ${i.o ?? ""}`).includes(q);
     });
   }, [items, term, groups, tiers, sources]);
 
@@ -236,10 +243,10 @@ export default function ItemDex({ doc }: { doc: ItemDoc }) {
           <div><span className="section-no">RESULT / 02</span><h2>{active ? t("탐색 결과") : t("전체 아이템")}</h2></div>
           <div className="search-wrap heading-search">
             <span>⌕</span>
-            <input id="item-search" {...inputProps} placeholder={t("이름, 설명, 용도 검색")} />
+            <input id="item-search" {...inputProps} placeholder={t("이름, 이벤트, 설명, 용도 검색")} />
             <button type="button" className="search-clear" onClick={() => clear()} aria-label={t("검색어 지우기")}>×</button>
             <SearchSuggest query={term}
-              items={shown.map((i) => ({ key: i.id, label: i.n, sub: t(GROUP_LABEL[i.g]), img: i.i ? itemIcon(i.i) : undefined }))}
+              items={shown.map((i) => ({ key: i.id, label: i.n, sub: i.evName ?? t(GROUP_LABEL[i.g]), img: i.i ? itemIcon(i.i) : undefined }))}
               onPick={(id) => { const i = byId.get(id); if (i) setOpen(i); }} />
           </div>
           <div className="results-tools"><span className="count"><b>{shown.length}</b> ITEMS</span></div>

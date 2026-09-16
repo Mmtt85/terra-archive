@@ -11,6 +11,12 @@ import path from "node:path";
 const OUT = process.argv[2];
 fs.mkdirSync(OUT, { recursive: true });
 const BASE = "http://localhost:3000";
+// 한 화면만 다시 찍을 때: --only=item[,farm]  (쉼표로 여러 개).
+// 전면 재촬영은 7분이 걸리는데, 새 메뉴 하나를 붙였거나 한 화면만 틀어졌을 때 그걸 다
+// 돌릴 이유가 없다 (2026-09-16: 아이템 도감 아이콘이 R2 동기화 전이라 빈 칸으로 찍혔다).
+// ⚠ 이걸 쓰면 출력 폴더에 그 화면만 남으므로, convert-about.py 도 그만 변환한다.
+const ONLY = (process.argv.find((a) => a.startsWith("--only=")) || "").slice(7)
+  .split(",").map((x) => x.trim()).filter(Boolean);
 
 // 언어 축 — prefix는 라우트(/, /en, /ja), chron은 연대기 탭 버튼 텍스트("테라 연대기" 번역 부분 일치)
 const LOCALES = [
@@ -65,7 +71,7 @@ for (const loc of LOCALES) {
         if (document.head) inject(); else document.addEventListener("DOMContentLoaded", inject);
       });
       const page = await ctx.newPage();
-      for (const shot of SHOTS) {
+      for (const shot of (ONLY.length ? SHOTS.filter((x) => ONLY.includes(x.name)) : SHOTS)) {
         // 로케일 prefix를 경로 앞에 — 홈("/")은 prefix 자체가 그 언어 홈("/en", "/ja")
         const target = shot.path === "/" ? (loc.prefix || "/") : loc.prefix + shot.path;
         await page.goto(BASE + target, { waitUntil: "networkidle" });
