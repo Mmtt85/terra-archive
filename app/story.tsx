@@ -780,19 +780,24 @@ export function StoryDetailById({ id, onClose, onShowOperator }: {
   const event = data.events.find((e) => e.id === id);
   if (!event) return null;
   if (!_summaryCache) return <p className="no-detail">{t("불러오는 중…")}</p>;
+  // 기본 보기는 **리더기** (사용자 지시 2026-09-17). defaultView="scene" 은 StoryDetail 의
+  // fallbackMode(리더기 > 전문 > 요약 > 기록)를 그대로 타라는 뜻이다.
   return (
     <StoryDetail event={event} summary={_summaryCache[id]} onClose={onClose}
-      onShowOperator={onShowOperator} defaultView="summary" />
+      onShowOperator={onShowOperator} defaultView="scene" embedded />
   );
 }
 
-export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex, defaultView, related, onOpenStory }: {
+export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex, defaultView, related, onOpenStory, embedded }: {
   event: StoryEvent; summary?: Summary; onClose: () => void; onShowOperator?: (id: string) => void; opIndex?: OpIndex;
   /** 해시로 지정된 게 없을 때의 기본 보기 — 상세 라우트(/stories/<id>)는 "summary"를 준다 */
   defaultView?: "summary" | "script" | "scene";
   /** 같은 테마의 다른 이야기 — 상세끼리 잇는 내부 링크 (2026-08-06) */
   related?: { label: string; items: { id: string; name: string }[] } | null;
   onOpenStory?: (id: string) => void;
+  /** 모달 안에 얹었을 때 — '스토리 목록으로' 버튼을 감춘다. 창에 이미 × 가 있고,
+   *  누르면 목록이 아니라 그 창만 닫히므로 문구가 거짓이 된다 (사용자 지시 2026-09-17). */
+  embedded?: boolean;
 }) {
   const { locale, t } = useI18n();
 
@@ -949,9 +954,11 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex, 
   return (
     <section className="story story-detail" aria-label={locText(locale, event.name)}>
       {/* 뒤로가기: 넓은 화면에선 왼쪽 여백에 sticky(본문은 위로 올라옴), 좁으면 본문 위 일반 배치 */}
-      <div className="story-back-wrap">
-        <button type="button" className={`story-back story-back-top${backHidden ? " hid" : ""}`} onClick={onClose}>← {t("스토리 목록으로")}</button>
-      </div>
+      {!embedded && (
+        <div className="story-back-wrap">
+          <button type="button" className={`story-back story-back-top${backHidden ? " hid" : ""}`} onClick={onClose}>← {t("스토리 목록으로")}</button>
+        </div>
+      )}
       <div className={`story-detail-inner reader-font-${readerPrefs.font} reader-img-${readerPrefs.img}`}>
         <header className="story-detail-head">
           {/* 제목 줄 — 왼쪽 제목, 오른쪽에 전문/요약 토글 (사용자 요청 2026-07-20, 모바일·PC 공통) */}
@@ -1075,9 +1082,11 @@ export function StoryDetail({ event, summary, onClose, onShowOperator, opIndex, 
             </div>
           </section>
         )}
-        <footer className="story-detail-foot">
-          <button type="button" className="story-back" onClick={onClose}>← {t("스토리 목록으로")}</button>
-        </footer>
+        {!embedded && (
+          <footer className="story-detail-foot">
+            <button type="button" className="story-back" onClick={onClose}>← {t("스토리 목록으로")}</button>
+          </footer>
+        )}
       </div>
     </section>
   );

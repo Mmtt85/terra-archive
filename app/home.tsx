@@ -2382,10 +2382,17 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
         {tab === "enemy" && !(pageEnemy && enemyPageOpen) && <EnemyDexForLocale />}
         {tab === "stage" && !(pageStage && stagePageOpen) && <StageDexForLocale onOpenEnemy={openEnemyFromStage} />}
         {tab === "item" && <ItemDexForLocale />}
-        {/* 전용 가이드가 있는 모드(위수 협의)는 이벤트 모달 대신 그 가이드 탭으로 넘긴다 */}
+        {/* 전용 가이드가 있는 모드(위수 협의)는 이벤트 모달 대신 그 가이드로 넘긴다.
+            ⚠ 위수 협의는 시즌마다 페이지가 따로다 — "autochess/s1" 처럼 뒤에 슬러그가
+            붙어 오면 그 시즌을 연다 (사용자 지적 2026-09-17: 시즌 1을 눌러도 최신
+            시즌이 열렸다). */}
         {tab === "event" && (
           <EventDexForLocale onShowOperator={showOperatorById}
-            onOpenGuide={(seg) => switchTab((SEG_TAB[seg] ?? "event") as Tab)} />
+            onOpenGuide={(seg) => {
+              const [head, slug] = seg.split("/");
+              if (head === "autochess" && slug) { switchAutochess(autochessSeasonOf(slug)); return; }
+              switchTab((SEG_TAB[head] ?? "event") as Tab);
+            }} />
         )}
         {tab === "ra" && <SandboxForLocale includeFuture={includeFuture} season={sandboxSlug === "anchor" ? "v3" : "v2"} />}
         {tab === "autochess" && <AutochessForLocale season={autochessSeason} onShowOperator={showOperatorById} />}

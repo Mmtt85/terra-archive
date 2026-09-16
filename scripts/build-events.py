@@ -54,13 +54,36 @@ if "ko" not in acts:
 kr_act = acts["ko"]
 ZONE_TO_ACT = kr_act["zoneToActivity"]
 
+RERUN = re.compile(r"^act(\d+)s?re$")
+
+
+def origin_of(aid):
+    """복각 전용 활동 id → 원본 활동 id (act41sre → act41side). 아니면 자기 자신."""
+    m = RERUN.match(aid)
+    return f"act{m.group(1)}side" if m else aid
+
+
 # ── 작전 → 이벤트 ───────────────────────────────────────────────────────────
+# ⚠ 복각(재개방)하면 `zoneToActivity` 가 그 구역을 **복각 활동 쪽으로 옮긴다.** 그래서
+#   원본(act40side)은 작전이 0개인 빈 껍데기가 되고 복각판(act40sre)만 23개를 갖는다
+#   (사용자 지적 2026-09-17: "상경환은 재개방은 데이터가 다 나오는데 원본은 아무것도 없다").
+#   작전 id 는 복각판에서도 `act40side_01` 그대로다 — **같은 작전**이라는 뜻이다.
+#   그래서 둘 다에 붙인다: 원본에도, 복각판에도.
 kr_stages = (stage_tables["ko"].get("stages") if "ko" in stage_tables else {}) or {}
-act_of_stage = {}
+stages_of_act = {}
 for sid, v in kr_stages.items():
     aid = ZONE_TO_ACT.get(v.get("zoneId"))
     if aid:
-        act_of_stage[sid] = aid
+        stages_of_act.setdefault(aid, []).append(sid)
+
+# 복각 ↔ 원본은 같은 작전을 공유한다 (위 주석)
+for aid in list(stages_of_act):
+    org = origin_of(aid)
+    if org != aid:
+        merged = list(dict.fromkeys(stages_of_act.get(org, []) + stages_of_act[aid]))
+        stages_of_act[org] = merged
+        stages_of_act[aid] = merged
+act_of_stage = {sid: aid for aid, sids in stages_of_act.items() for sid in sids}
 
 # ── 재화 → 이벤트 ───────────────────────────────────────────────────────────
 act_of_item = {}
@@ -98,18 +121,24 @@ for m in kr_act.get("missionData") or []:
 # ── 로케일별 산출물 ─────────────────────────────────────────────────────────
 stories = {e["id"]: e for e in load(os.path.join(DATA, "stories.json"))["events"]}
 THUMB = {"ko": "thumb", "en": "thumbEn", "ja": "thumbJa"}
-RERUN = re.compile(r"^act(\d+)s?re$")
 
 
 # 전용 가이드가 있는 활동 종류 → 그 가이드의 경로 조각 (로케일 프리픽스는 화면이 붙인다).
 # 여기 없는 종류는 이벤트 모달이 맡는다.
+# ⚠ 위수 협의는 **시즌마다 페이지가 따로** 있다 (/autochess/s1, /autochess/s2). 활동 id
+#   `act<N>autochess` 의 N 이 곧 시즌이므로 그대로 잇는다 — 전부 /autochess 로 보내면
+#   시즌 1 이벤트를 눌러도 최신 시즌이 열린다 (사용자 지적 2026-09-17).
 GUIDE_OF = {"AUTOCHESS_SEASON": "autochess"}
+AC_SEASON = re.compile(r"^act(\d+)autochess$")
 
 
-def origin_of(aid):
-    """복각 전용 활동 id → 원본 활동 id (act41sre → act41side). 아니면 자기 자신."""
-    m = RERUN.match(aid)
-    return f"act{m.group(1)}side" if m else aid
+def guide_of(aid, typ):
+    seg = GUIDE_OF.get(typ or "")
+    if not seg:
+        return None
+    m = AC_SEASON.match(aid)
+    return f"{seg}/s{m.group(1)}" if seg == "autochess" and m else seg
+
 
 per_loc = {}
 for loc in LOCALES:
@@ -151,15 +180,18 @@ n_stage = n_enemy = n_item = n_op = 0
 
 for aid, info in sorted(kr_basic.items(), key=lambda kv: -(kv[1].get("startTime") or 0)):
     ko_doc = per_loc["ko"]["stages"]
-    sids = [s["id"] for s in (ko_doc["stages"] if ko_doc else []) if act_of_stage.get(s["id"]) == aid]
+    have = set(stages_of_act.get(aid) or [])
+    sids = [s["id"] for s in (ko_doc["stages"] if ko_doc else []) if s["id"] in have]
     item_ids = [i for i, a in act_of_item.items() if a == aid and i in per_loc["ko"]["items"]]
     reward_ids = [o for o in ops_of_act.get(aid, []) if o in per_loc["ko"]["ops"]]
     # 보상 오퍼가 먼저, 그 다음 그 이벤트와 함께 데뷔한 배너 오퍼 (중복 제거)
     debut_ids = [o for o in debut_of_act.get(aid, [])
                  if o in per_loc["ko"]["ops"] and o not in reward_ids]
     op_ids = reward_ids + debut_ids
-    # 볼 것이 하나도 없는 활동(로그인 보상·체크인 등)은 도감에 넣지 않는다
-    if not sids and not item_ids and not op_ids and aid not in stories:
+    # 볼 것이 하나도 없는 활동(로그인 보상·체크인 등)은 도감에 넣지 않는다.
+    # ⚠ **작전도 스토리도 없는 활동**도 뺀다 — 「한정 포인트 미션」·「협동 목표」처럼 다른
+    #   이벤트에 얹히는 임무 껍데기라(16개), 재화 한 줄만 달랑 든 카드가 목록을 어지럽힌다.
+    if not sids and aid not in stories and origin_of(aid) not in stories:
         continue
     for loc in LOCALES:
         doc = per_loc[loc]["stages"]
@@ -206,18 +238,24 @@ for aid, info in sorted(kr_basic.items(), key=lambda kv: -(kv[1].get("startTime"
         # 사이트에 전용 가이드가 있는 모드(위수 협의 등)는 **그 가이드로 보낸다** —
         # 일반 이벤트 모달보다 그쪽이 훨씬 많은 걸 담고 있다 (사용자 지시 2026-09-16:
         # "위수협의는 그냥 위수협의 페이지로 넘어가버리면 됨").
-        guide = GUIDE_OF.get(info.get("type") or "")
+        guide = guide_of(aid, info.get("type"))
         if guide:
             row["guide"] = guide
-        if st:
-            row["story"] = 1
-        # 복각 전용 활동(act41sre)은 자기 스토리 항목이 없다 — 원본(act41side)의 썸네일을 쓴다.
-        # 안 그러면 카드 절반이 빈 칸이 된다.
-        src = st or stories.get(origin_of(aid))
+        # 복각 전용 활동(act41sre)은 **자기 스토리 항목이 없다** — 읽을거리도 썸네일도
+        # 원본(act41side) 것이다. 안 그러면 카드 절반이 빈 칸이 되고 스토리 버튼도 안 뜬다
+        # (사용자 지시 2026-09-17: "재개방이벤트들도 원본 이벤트 스토리 버튼을 달아줘").
+        origin = origin_of(aid)
+        src = st or stories.get(origin)
         if src:
+            row["story"] = 1
+            if not st:
+                row["sid"] = origin        # 스토리 링크는 원본 id 로 건다
             thumb = src.get(THUMB[loc]) or src.get("thumb")
             if thumb:
                 row["thumb"] = thumb
+        # 원본 이벤트가 목록에 있으면 그리로도 이어 준다 (사용자 지시 2026-09-17)
+        if origin != aid and origin in kr_basic:
+            row["origin"] = origin
         if stages:
             row["stages"] = stages
         if seen_enemy:

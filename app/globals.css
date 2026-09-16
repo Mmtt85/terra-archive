@@ -22859,6 +22859,13 @@ html[lang="ja"] .vn-box {
   object-fit: cover;
 }
 /* ── 상세 모달 ─────────────────────────────────────────────────────────── */
+/* 스토리 읽기 — 이벤트 이름 오른쪽 */
+.ev-story-link {
+  margin-left: 10px;
+  font-size: 12px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
 .ev-modal .ev-period {
   margin-left: 8px;
   font: 700 11.5px monospace;
@@ -22875,6 +22882,26 @@ html[lang="ja"] .vn-box {
 }
 .ev-top.no-thumb {
   grid-template-columns: minmax(0, 1fr);
+}
+/* 왼쪽 칸 — 썸네일 + 그 밑의 교환 재화 */
+.ev-top-side {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.ev-top.no-thumb .ev-top-side:empty {
+  display: none;
+}
+/* 왼쪽 칸의 섹션은 윗선·여백을 덜어 썸네일에 바로 붙인다 */
+.ev-sec-side {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+.ev-sec-side .ev-items {
+  flex-direction: column;
+  align-items: stretch;
 }
 /* 오른쪽 첫 칸은 위 여백을 없앤다 — 썸네일과 윗선을 맞춘다 */
 .ev-top-main > :first-child {
@@ -22994,6 +23021,15 @@ html[lang="ja"] .vn-box {
 }
 .ev-card.no-thumb {
   grid-template-columns: minmax(0, 1fr);
+}
+/* ⚠ 별·표식을 카드 **바닥에 붙인다.** 이름이 두 줄이 되는 오퍼(지마 더 레이징 타이드)가
+   섞이면 그 카드만 표식이 19px 내려앉아 밑변이 어긋난다 (사용자 지적 2026-09-17, 실측).
+   카드 높이는 flex stretch 로 이미 같으므로, 남는 높이를 이름 칸이 먹게 하면 된다. */
+.ev-op > span {
+  flex: 1 1 auto;
+}
+.ev-op > i {
+  margin-top: auto;
 }
 /* 이벤트 오퍼 — 보상(무료 배포)과 신규 데뷔를 표식으로 가른다 */
 .ev-op em {

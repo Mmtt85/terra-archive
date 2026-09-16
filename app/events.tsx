@@ -56,6 +56,10 @@ export type EventRow = {
   guide?: string;
   /** 중섭 선행(미실장) — 흑백 처리되고 미래시 토글이 꺼져 있으면 눌리지 않는다 */
   fut?: number;
+  /** 스토리 페이지 id — 복각판은 원본 이벤트의 것이다 (없으면 자기 id) */
+  sid?: string;
+  /** 복각판이면 원본 이벤트 id */
+  origin?: string;
   /** 한섭 개방 추정월 ("2026-11") — 미실장에만 */
   eta?: string;
 };
@@ -148,20 +152,38 @@ function EventCard({ row, onSelect, onGuide }: {
 }
 
 /** 이벤트 상세 — 작전·등장 적·교환 재화·보상 오퍼를 한 화면에. 누르면 각 도감이 겹쳐 뜬다. */
-function EventFile({ row, onOpenStage, onOpenEnemy, onOpenItem, onShowOperator, onOpenStory }: {
+function EventFile({ row, onOpenStage, onOpenEnemy, onOpenItem, onShowOperator, onOpenStory, onOpenOrigin }: {
   row: EventRow;
   onOpenStage: (id: string) => void;
   onOpenEnemy: (id: string) => void;
   onOpenItem: (id: string) => void;
   onShowOperator: (id: string) => void;
   onOpenStory: (id: string) => void;
+  onOpenOrigin: (id: string) => void;
 }) {
   const { locale, t } = useI18n();
   return (
     <>
       <header>
         <div>
-          <h3>{row.n}</h3>
+          <h3>
+            {row.n}
+            {/* 스토리 읽기는 이름 바로 옆에 (사용자 지시 2026-09-17).
+                정본 주소는 앵커에 그대로 둬서 새 탭·주소 복사·크롤러가 살아 있고,
+                좌클릭일 때만 모달로 겹친다. */}
+            {row.story ? (
+              <a className="it-link ev-story-link" href={storyHref(locale, row.sid ?? row.id)}
+                onClick={(e) => {
+                  if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+                  e.preventDefault(); onOpenStory(row.sid ?? row.id);
+                }}>{t(row.sid ? "원본 이벤트 스토리 읽기" : "이 이벤트 스토리 읽기")}</a>
+            ) : null}
+            {/* 복각판은 원본 이벤트 상세로도 이어 준다 (사용자 지시 2026-09-17) */}
+            {row.origin ? (
+              <button type="button" className="it-link ev-story-link"
+                onClick={() => onOpenOrigin(row.origin as string)}>{t("원본 이벤트 보기")}</button>
+            ) : null}
+          </h3>
           <em className={`ev-type t-${typeOf(row).toLowerCase()}`}>{t(TYPE_LABEL[typeOf(row)])}</em>
           {row.fut
             ? <span className="ev-period">{row.eta ? t("한국 서버 {ym} 예정", { ym: row.eta.replace("-", ".") }) : t("미실장")}</span>
@@ -171,25 +193,31 @@ function EventFile({ row, onOpenStage, onOpenEnemy, onOpenItem, onShowOperator, 
       {/* 썸네일은 왼쪽, 스토리 읽기·이벤트 오퍼·작전은 오른쪽 — 한눈에 들어오게
           (사용자 요청 2026-09-17). 좁은 화면에서는 CSS가 한 줄로 되돌린다. */}
       <div className={`ev-top${row.thumb ? "" : " no-thumb"}`}>
-        {row.thumb && (
-          <div className="ev-hero">
-            <img src={asset(row.thumb)} alt="" aria-hidden loading="lazy" decoding="async"
-              onError={(e) => { e.currentTarget.closest(".ev-hero")?.remove(); }} />
-          </div>
-        )}
+        <div className="ev-top-side">
+          {row.thumb && (
+            <div className="ev-hero">
+              <img src={asset(row.thumb)} alt="" aria-hidden loading="lazy" decoding="async"
+                onError={(e) => { e.currentTarget.closest(".ev-hero")?.remove(); }} />
+            </div>
+          )}
+          {/* 교환 재화는 썸네일 바로 밑 (사용자 지시 2026-09-17) — 이벤트당 한두 개뿐이라
+              오른쪽 칸을 비집고 들어갈 이유가 없다. */}
+          {row.items && row.items.length > 0 && (
+            <section className="ev-sec ev-sec-side">
+              <b>{t("교환 재화")}</b>
+              <div className="ev-items">
+                {row.items.map((it) => (
+                  <button key={it[0]} type="button" className="ev-item" onClick={() => onOpenItem(it[0])}>
+                    {it[2] && <img src={itemIcon(it[2])} alt="" aria-hidden width={40} height={40}
+                      loading="lazy" decoding="async" />}
+                    <span>{it[1]}</span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+        </div>
         <div className="ev-top-main">
-      {row.story ? (
-        <p className="ev-links">
-          {/* 정본 주소는 그대로 앵커에 둔다 — 새 탭·주소 복사·크롤러가 살아 있어야 한다.
-              그냥 누르면 페이지로 넘어가지 않고 모달로 겹쳐 뜬다. */}
-          <a className="it-link" href={storyHref(locale, row.id)}
-            onClick={(e) => {
-              if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
-              e.preventDefault(); onOpenStory(row.id);
-            }}>{t("이 이벤트 스토리 읽기")}</a>
-        </p>
-      ) : null}
-
       {/* 이벤트 오퍼레이터 ↔ 맵에서 나오는 상위 재료를 나란히 (사용자 요청 2026-09-17).
           한쪽만 있으면 그쪽이 폭을 다 쓴다. */}
       <div className="ev-pair">
@@ -247,21 +275,6 @@ function EventFile({ row, onOpenStage, onOpenEnemy, onOpenItem, onShowOperator, 
       )}
         </div>
       </div>
-
-      {row.items && row.items.length > 0 && (
-        <section className="ev-sec">
-          <b>{t("교환 재화")}</b>
-          <div className="ev-items">
-            {row.items.map((it) => (
-              <button key={it[0]} type="button" className="ev-item" onClick={() => onOpenItem(it[0])}>
-                {it[2] && <img src={itemIcon(it[2])} alt="" aria-hidden width={40} height={40}
-                  loading="lazy" decoding="async" />}
-                <span>{it[1]}</span>
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
 
       {row.enemies && row.enemies.length > 0 && (
         <section className="ev-sec">
@@ -413,7 +426,8 @@ export default function EventDex({ doc, onShowOperator, onOpenGuide }: {
         <ModalWindow label={open.n} className="operator-modal ev-modal" onClose={() => setOpen(null)}>
           <EventFile row={open} onOpenStage={openStage} onOpenEnemy={openEnemy}
             onOpenItem={openItem} onShowOperator={onShowOperator}
-            onOpenStory={(id) => { setRaise((k) => k + 1); setSubStory(id); }} />
+            onOpenStory={(id) => { setRaise((k) => k + 1); setSubStory(id); }}
+            onOpenOrigin={(id) => { const e = byId.get(id); if (e) setOpen(e); }} />
         </ModalWindow>
       )}
       {subStage && (
