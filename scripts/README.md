@@ -123,7 +123,8 @@ python3 scripts/build-stages.py .gamedata      # → app/data/stages{,.en,.ja}.j
 #   ⚠ **build-enemies.py를 먼저** 돌려야 한다 — 등장 적은 그 산출물(enemy-stages.json)을
 #     뒤집어 쓴다(같은 levels/ 파일을 두 번 훑지 않으려고). 인자 없이 돌리면 지형 도면
 #     2,224장을 받고(약 5~10분), 인게임 도면이 없는 작전은 레벨 타일 격자로 렌더한다.
-#   ⚠ 인자 없이 돌리면 levels/ 2,283개(179MB)를 받아 '등장 작전'을 역색인한다 (약 1분).
+#   ⚠ 인자 없이 돌리면 levels/ 2,283개를 받아 '등장 작전'을 역색인한다. 레벨은 게임 CDN에서
+#     받으므로(번들 6개, 실측 1.1분) 이제 CI도 --meta-only 없이 전량을 돈다 (2026-09-16).
 python3 scripts/build-items.py .gamedata       # → app/data/items{,.en,.ja}.json + public/items/icon/ (아이템 도감, 3개 언어 동시)
 #   ⚠ **build-stages·build-farm·build-story 뒤에** 돌린다 — 드랍 작전은 stages.json 을
 #     뒤집어 만들고, 효율표 링크는 farm.json, 이벤트 링크는 stories.json 을 본다.
@@ -132,8 +133,8 @@ python3 scripts/build-items.py .gamedata       # → app/data/items{,.en,.ja}.js
 python3 scripts/build-stages-rogue.py          # → app/data/stages-rogue{,.en,.ja}.json (작전 도감의 통합전략 693건)
 #   ⚠ 입력이 app/data/rogue{1..6}.json 뿐이라 **build-rogue.py 뒤에** 돌린다 (네트워크 불필요).
 #     stages.json에 섞지 않는 이유 = 상세 페이지 파일 수 한도. 스크립트 머리주석 참조.
-#     CI는 --meta-only --no-images로 돌아 그 둘을 건너뛰므로, 새 이벤트의 등장 적과
-#     신규 적 초상은 **로컬 전체 실행**으로만 갱신된다 (docs/AUTOMATION.md 1-B).
+#     CI는 --no-images로 돌아 초상만 건너뛰므로, **신규 적 초상**은 로컬 전체 실행으로만
+#     갱신된다. 등장 적은 이제 CI가 매번 채운다 (docs/AUTOMATION.md 1-B).
 python3 scripts/build-sandbox.py               # → app/data/sandbox{,.en,.ja}.json (생존연산 가이드 —
 #     V2 사막 이야기는 kr/en/jp 공식 텍스트, V3 신시즌은 CN 선행 + scripts/sandbox-cn-ko.json
 #     비공식 번역. 미번역 문자열이 생기면 未 경고를 낸다 — cn-translation-fill 흐름으로 보완)

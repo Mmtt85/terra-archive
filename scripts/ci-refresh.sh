@@ -170,11 +170,14 @@ run "broadcasts-cn"    python3 scripts/build-broadcasts-cn.py \
 #   CI가 매번 새로 받으면 러너 디스크·시간을 통째로 날린다. 이미지는 로컬에서 별도로 받는다.
 run "build-voicelines"   python3 scripts/build-voicelines.py "$G"
 run "build-skins-meta"   python3 scripts/build-skins.py "$G" --meta-only
-# ⚠ build-enemies도 같은 이유로 **--meta-only --no-images**다.
-#   --meta-only가 없으면 등장 작전 역색인을 만들려고 levels/ 2,283개(179MB)를 매번 받는다.
-#   그래서 CI는 도감 본문만 갱신하고, **새 이벤트 스테이지의 등장 적과 신규 적 초상은
-#   로컬에서 `python3 scripts/build-enemies.py`(전체)를 한 번 돌려야 반영된다.**
-run "build-enemies"      python3 scripts/build-enemies.py "$G" --meta-only --no-images
+# ⚠ **--meta-only 를 뗐다 (2026-09-16).** 그게 있던 이유는 등장 작전 역색인을 만들려고
+#   levels/ 2,283개를 **클뜯 레포에서 한 판씩**(179MB·HTTP 2,283회) 받아야 해서였다.
+#   그래서 CI 는 이 단계를 건너뛰었고, 새 이벤트 맵은 사람이 로컬 전체 실행을 돌릴 때까지
+#   **등장 적이 통째로 비어 있었다** (사용자 제보 2026-09-16: "이벤트 맵은 적 정보가 없다").
+#   이제 게임 CDN 에서 받는데 **레벨 2,649개가 번들 6개**에 들어 있다 — 실측 1.1분이라
+#   CI 가 매번 전량을 돌 수 있다 (scripts/cdnlevels.py 머리주석).
+#   --no-images 는 그대로다: 적 초상은 git 에 없고 R2 가 서빙한다.
+run "build-enemies"      python3 scripts/build-enemies.py "$G" --no-images
 # ⚠ build-stages도 **--no-images** — 지형 도면 2,224장(약 90MB)은 git에 없고 R2가 서빙한다.
 #   등장 적은 build-enemies가 만든 enemy-stages.json을 뒤집어 쓰므로 **반드시 그 뒤에** 온다.
 #   새 이벤트의 도면은 로컬에서 `python3 scripts/build-stages.py`(전체)를 돌려야 받는다.

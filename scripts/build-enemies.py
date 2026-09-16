@@ -2,16 +2,19 @@
 """적 도감 데이터 빌드 — 오퍼 백과사전(/operators)의 적 버전(/enemies).
 
 사용:
-  python3 scripts/build-enemies.py                # 전부 (레벨 파일 ~2,285개 · 최초 1회 ~1분 · 캐시 179MB)
-  python3 scripts/build-enemies.py --meta-only    # 등장 작전 역색인 생략 (무인 CI용)
-  python3 scripts/build-enemies.py --no-images    # 초상 다운로드 생략
+  python3 scripts/build-enemies.py                # 전부 (레벨 ~2,285판 · 최초 1회 ~1분)
+  python3 scripts/build-enemies.py --meta-only    # 등장 작전 역색인 생략
+  python3 scripts/build-enemies.py --no-images    # 초상 다운로드 생략 (무인 CI가 쓰는 조합)
 
 ⚠ 이 스크립트는 **KR/EN/JA를 한 번에** 낸다. CLAUDE.md의 "KR 데이터를 재생성하면
   build-i18n.py로 EN/JA도 재생성" 규칙은 여기서 자체 충족되므로 따로 돌릴 필요가 없다.
 
-⚠ --meta-only는 `app/data/enemy-stages*.json`을 **건드리지 않고 그대로 둔다**. 무인
-  파이프라인(docs/AUTOMATION.md)은 179MB 레벨 파일을 매번 받을 수 없어 이 모드로 돈다.
-  새 이벤트 스테이지의 등장 적을 반영하려면 로컬에서 인자 없이 한 번 돌려야 한다.
+⚠ --meta-only는 `app/data/enemy-stages*.json`을 **건드리지 않고 그대로 둔다** (반쪽 색인으로
+  덮여 등장 작전이 통째로 비는 사고를 막기 위한 것 — 이 동작은 바꾸지 말 것).
+  **무인 CI는 2026-09-16부터 이 모드를 안 쓴다.** 레벨을 게임 CDN에서 받게 되면서
+  (번들 6개 · 실측 1.1분, scripts/cdnlevels.py) 매번 전량을 돌 수 있게 됐기 때문이다.
+  종전에는 클뜯 레포에서 한 판씩 2,283번 받아야 해서 CI가 건너뛰었고, 그 탓에 **새 이벤트
+  맵의 등장 적이 통째로 비어 있었다** (사용자 제보 2026-09-16, 실측 220/2,256).
 
 출력:
   app/data/enemies.json / .en.json / .ja.json        적 1,514종의 도감 본문 + 스탯
@@ -24,6 +27,7 @@
   .gamedata/{kr,en,jp}_stage_table.json / _zone_table.json
   levels/enemydata/enemy_database.json               스탯 원본 (서버 공통 수치)
   levels/<levelId>.json                              스테이지별 등장 적·스폰 수
+                                                     (게임 CDN 우선 → 없으면 클뜯 레포)
 """
 import json, os, re, shutil, sys, time, urllib.error, urllib.request
 from concurrent.futures import ThreadPoolExecutor
@@ -39,6 +43,7 @@ CACHE = os.path.join(REPO, ".gamedata", "levels")
 ROGUE_CACHE = os.path.join(REPO, ".gamedata", "rogue")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import cdnassets
+import cdnlevels
 from imgutil import save_webp  # noqa: E402
 from routeutil import routes_of_level  # noqa: E402
 
@@ -128,13 +133,28 @@ def num(v):
 
 
 def fetch_level(path, cache_dir=CACHE):
-    """gamedata의 levels/ 파일 — 로컬 캐시. 404(삭제된 스테이지)는 None."""
+    """gamedata의 levels/ 파일 — **게임 CDN 우선**, 없으면 클뜯 레포. 없으면 None.
+
+    ⚠ 예전엔 레포에서만 받았다. 그게 이벤트 맵에 등장 적이 통째로 비던 원인이다
+    (2026-09-16 사용자 제보 → 작전 2,256개 중 220개가 빈 채였다): 무인 CI 는
+    `--meta-only` 로 돌아 이 단계를 건너뛰는데, 레포판은 **한 판마다 HTTP 요청 한 번**
+    (2,283번·179MB)이라 CI 가 감당할 수 없었기 때문이다. 그래서 사람이 로컬 전체 실행을
+    돌린 그때만 채워지고, 그 뒤 열린 이벤트는 영영 비었다.
+    CDN 은 **레벨 2,649개가 번들 6개**에 들어 있어 사정이 완전히 다르다 (cdnlevels 머리주석).
+    지난 이벤트는 CDN 매니페스트에서 빠지므로 레포 폴백은 그대로 남겨 둔다.
+    """
     dest = os.path.join(cache_dir, path.replace("/", "__"))
     if os.path.exists(dest):
         try:
             return load(dest)
         except json.JSONDecodeError:
             os.remove(dest)  # 중단된 다운로드 잔재
+    data = cdnlevels.level(path)
+    if data is not None:
+        os.makedirs(os.path.dirname(dest) or ".", exist_ok=True)
+        with open(dest, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False)
+        return data
     req = urllib.request.Request(f"{GAMEDATA}/kr/gamedata/{path}", headers={"User-Agent": "Mozilla/5.0"})
     try:
         raw = urllib.request.urlopen(req, timeout=60).read()
@@ -142,7 +162,7 @@ def fetch_level(path, cache_dir=CACHE):
         if e.code == 404:
             return None
         raise
-    os.makedirs(os.path.dirname(dest), exist_ok=True)
+    os.makedirs(os.path.dirname(dest) or ".", exist_ok=True)
     open(dest, "wb").write(raw)
     return json.loads(raw)
 

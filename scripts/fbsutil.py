@@ -134,18 +134,31 @@ class Cdn:
             raise KeyError("매니페스트에 없음: " + prefix)
         return sorted(hits)[0]
 
-    def text_asset(self, prefix):
-        """gamedata 표 하나를 **RSA 서명을 뗀 FlatBuffer 바이트**로 돌려준다."""
+    def text_asset(self, prefix, name=None):
+        """gamedata 표 하나를 **RSA 서명을 뗀 FlatBuffer 바이트**로 돌려준다.
+
+        ⚠ `name` 없이 부르면 **번들의 첫 TextAsset**을 준다. excel 표는 번들 하나에
+        표 하나뿐이라 그래도 맞지만, `gamedata/levels/…` 는 **한 번들에 384개**가 같이
+        들어 있어 엉뚱한 작전이 나온다 (2026-09-16 실측: level_main_00-01 을 달라고 했는데
+        level_sub_06-2-1 이 나왔다 — 눈치채기 어려운 것이, 구조가 같아서 디코딩은 멀쩡히 된다).
+        여러 개가 든 번들에서는 **반드시 `name`(에셋 이름 = 경로 마지막 조각)을 넘길 것.**
+        """
         path, bundle = self.find(prefix)
         import UnityPy
         env = UnityPy.load(io.BytesIO(self.bundle(bundle)))
+        want = name.lower() if name else None
         for obj in env.objects:
             if obj.type.name != "TextAsset":
                 continue
             d = obj.read()
+            if want is not None and (d.m_Name or "").lower() != want:
+                continue
             s = d.m_Script
             raw = s.encode("utf-8", "surrogateescape") if isinstance(s, str) else bytes(s)
             return raw[128:], path       # 앞 128바이트는 RSA 서명
+        if want is not None:
+            # 조용히 다른 걸 주느니 실패한다 — 호출부가 레포 폴백으로 넘어가면 된다
+            raise KeyError("번들에 '%s' 없음: %s" % (name, path))
         raise KeyError("TextAsset 없음: " + path)
 
 
