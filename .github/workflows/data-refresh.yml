@@ -3,7 +3,8 @@
 # 클뜯 레포(ArknightsAssets/ArknightsGamedata)에서 KR·CN·EN·JP 테이블을 받아
 # 모든 정적 데이터를 재생성하고, 진짜 변동이 있을 때만 커밋·배포한다.
 # LLM 판단이 필요한 산출물(스토리 요약·록라 큐레이션·CN 신규 오퍼 번역)은
-# 여기서 건드리지 않는다 — content-auto.yml(🟡 레인)이 맡는다.
+# 여기서 건드리지 않는다 — `story-summary` 스킬로 사람이 그때 만든다
+# (content-auto.yml 레인은 매일 돌 이유가 없어 2026-09-16 삭제).
 #
 # 스케줄(사용자 확정): KR 하루 2회(점검 후·저녁) + CN 하루 1회. UTC 기준.
 #   - 08:00 UTC = 17:00 KST  (KR 점검 종료 직후)
