@@ -17,7 +17,7 @@ Usage:
   {"img": 컷씬 이름}        | {"loc": 장소 스탬프}       | {"opts": [선택지…]}
   {"br": "1;2"}            (직전 opts 의 값 참조 — 분기 시작 마커)
 """
-import json, os, re, sys, urllib.request
+import io, json, os, re, subprocess, sys, urllib.request
 from collections import Counter, defaultdict
 from concurrent.futures import ThreadPoolExecutor
 
@@ -44,6 +44,73 @@ def fetch(url, binary=False):
         return raw if binary else json.loads(raw.decode("utf-8"))
 
 
+# ── 게임 CDN 폴백 (2026-09-16) ──────────────────────────────────────────────
+# 클뜯 레포는 사람이 돌려야 올라와서 며칠씩 밀린다 — 「사람들, 우리들」 개방일에 레포 kr
+# 리뷰 테이블은 act49side 까지였고, 그래서 **에러 없이 조용히 건너뛰어** 전문이 안 생겼다.
+# 레포에 없는 화는 게임 CDN에서 직접 뜯는다 (PROJECT-GUIDE §2-1 과 같은 경로).
+#
+# ⚠ 표와 달리 스토리 본문은 **RSA 서명이 없다** — fbsutil 의 text_asset() 은 앞 128바이트를
+#   서명으로 보고 잘라내므로 본문에 쓰면 첫 줄이 잘린다. 여기서는 번들을 직접 연다.
+# ⚠ 한 번들에 본문이 1700개 넘게 같이 들어 있다. 첫 TextAsset 을 집으면 엉뚱한 화가 나오므로
+#   (실측: level_act51side_01_beg 를 찾았는데 training_act29side_01_a 가 나왔다)
+#   **에셋 이름(경로 마지막 조각)으로 골라야 한다.**
+_cdn = None
+_cdn_bundles = {}
+
+
+def cdn_story_txt(path):
+    """게임 CDN에서 story txt 하나를 꺼낸다 (KR 전용). 못 찾으면 None."""
+    global _cdn
+    if LANG != "kr":
+        return None                       # EN/JA 는 서버가 달라 별도 — 지금은 KR 만
+    try:
+        sys.path.insert(0, os.path.join(REPO, "scripts"))
+        from fbsutil import Cdn, unity_lzham
+        import UnityPy
+        if _cdn is None:
+            unity_lzham()
+            _cdn = Cdn("kr", cache_dir=os.path.join(REPO, ".gamedata", ".cdn"))
+            _cdn.manifest()
+        try:
+            _, bundle = _cdn.find("gamedata/story/" + path)
+        except KeyError:
+            return None
+        if bundle not in _cdn_bundles:
+            env = UnityPy.load(io.BytesIO(_cdn.bundle(bundle)))
+            table = {}
+            for obj in env.objects:
+                if obj.type.name != "TextAsset":
+                    continue
+                d = obj.read()
+                raw = d.m_Script
+                table[d.m_Name] = raw if isinstance(raw, str) else bytes(raw).decode("utf-8", "replace")
+            _cdn_bundles[bundle] = table
+        return _cdn_bundles[bundle].get(path.rsplit("/", 1)[-1])
+    except Exception as e:
+        print("⚠ CDN 폴백 실패(%s): %s" % (path, str(e)[:60]))
+        return None
+
+
+def merge_cdn_review(review):
+    """레포 리뷰 테이블이 못 따라온 이벤트를 CDN 판으로 메운다.
+    `.gamedata/kr_story_review_table.json` 은 fetch-gamedata-cdn.py 가 받아 둔다."""
+    if LANG != "kr":
+        return review
+    dest = os.path.join(REPO, ".gamedata", "kr_story_review_table.json")
+    if not os.path.exists(dest):
+        subprocess.run([sys.executable, os.path.join(REPO, "scripts", "fetch-gamedata-cdn.py"),
+                        "--server", "kr", "--tables", "story_review_table"], cwd=REPO, check=False)
+    if not os.path.exists(dest):
+        return review
+    cdn = json.load(open(dest, encoding="utf-8"))
+    added = sorted(k for k in cdn if k not in review)
+    if added:
+        print("레포에 없어 CDN으로 메운 이벤트:", ", ".join(added))
+        for k in added:
+            review[k] = cdn[k]
+    return review
+
+
 def fetch_txt_cached(path):
     """story txt 를 .gamedata/story-cache/ 에 언어별로 캐시하며 가져온다. 404 는 None."""
     prefix = "" if LANG == "kr" else f"{LANG}__"  # kr은 무접두(기존 캐시 호환)
@@ -51,14 +118,16 @@ def fetch_txt_cached(path):
     if os.path.exists(dest):
         return open(dest, encoding="utf-8").read()
     try:
-        raw = fetch(f"{GAMEDATA}/{LANG}/gamedata/story/{path}.txt", binary=True)
+        txt = fetch(f"{GAMEDATA}/{LANG}/gamedata/story/{path}.txt", binary=True).decode("utf-8")
     except urllib.error.HTTPError as e:
-        if e.code == 404:
+        if e.code != 404:
+            raise
+        txt = cdn_story_txt(path)          # 레포가 아직 못 따라온 화 → CDN에서 직접
+        if txt is None:
             return None
-        raise
     os.makedirs(CACHE, exist_ok=True)
-    open(dest, "w", encoding="utf-8").write(raw.decode("utf-8"))
-    return raw.decode("utf-8")
+    open(dest, "w", encoding="utf-8").write(txt)
+    return txt
 
 
 # 인라인 마크업 제거 — <p=2>·</>·<color=…>·<i> 류. {@nickname} 은 플레이어 호칭 '박사'.
@@ -676,7 +745,7 @@ def main():
     site_loc = LOC[LANG]
     only = args[0] if args else None
     summaries = json.load(open(os.path.join(REPO, "app", "data", "story-summaries.json"), encoding="utf-8"))
-    review = fetch(f"{GAMEDATA}/{LANG}/gamedata/excel/story_review_table.json")
+    review = merge_cdn_review(fetch(f"{GAMEDATA}/{LANG}/gamedata/excel/story_review_table.json"))
     out_dir = OUT_DIR if LANG == "kr" else os.path.join(OUT_DIR, site_loc)
     os.makedirs(out_dir, exist_ok=True)
 
@@ -689,6 +758,9 @@ def main():
     for eid in targets:
         entry = review.get(eid)
         if not entry:  # rogue_N 등 리뷰 테이블에 없는 합성 이벤트
+            # 진짜 이벤트가 여기로 빠지면 **조용히 사라진다** — 「사람들, 우리들」이 그랬다.
+            if eid.startswith("act") or eid.startswith("main_"):
+                print("⚠ %s: 리뷰 테이블에 없다 — 레포도 CDN도 아직 못 따라왔다 (전문 미생성)" % eid)
             continue
         eps, images, faces, cg_layers = build_event(eid, entry)
         if not eps:
@@ -710,10 +782,19 @@ def main():
         nlines = sum(len(e["lines"]) for e in eps)
         print(f"{eid}: {len(eps)}편 {nlines}라인 {len(images)}컷 → {kb}KB" + (f" (컷 누락 {len(failed)})" if failed else ""))
 
-    if not only:
-        ids_name = "story-script-ids.json" if LANG == "kr" else f"story-script-ids.{site_loc}.json"
-        json.dump(sorted(ids), open(os.path.join(REPO, "app", "data", ids_name), "w", encoding="utf-8"),
-                  ensure_ascii=False)
+    ids_name = "story-script-ids.json" if LANG == "kr" else f"story-script-ids.{site_loc}.json"
+    ids_path = os.path.join(REPO, "app", "data", ids_name)
+    if only:
+        # 한 이벤트만 구웠어도 **목록에는 넣는다** — UI 는 이 목록에 있는 id 에만 '전문 보기'
+        # 버튼을 띄우므로, 안 넣으면 파일은 있는데 화면에 안 나온다 (2026-09-16 실측).
+        if ids:
+            have = json.load(open(ids_path, encoding="utf-8")) if os.path.exists(ids_path) else []
+            merged = sorted(set(have) | set(ids))
+            if merged != have:
+                json.dump(merged, open(ids_path, "w", encoding="utf-8"), ensure_ascii=False)
+                print(f"목록에 추가: {', '.join(sorted(set(ids) - set(have)))} → app/data/{ids_name}")
+    else:
+        json.dump(sorted(ids), open(ids_path, "w", encoding="utf-8"), ensure_ascii=False)
         sub = "" if LANG == "kr" else f"{site_loc}/"
         print(f"\n합계 {len(ids)}이벤트 {total_kb/1024:.1f}MB → public/story/script/{sub} · ids → app/data/{ids_name}")
     if all_failed:

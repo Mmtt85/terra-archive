@@ -50,7 +50,9 @@ TABLES = {
            "building_data", "range_table", "handbook_team_table", "handbook_info_table",
            "gamedata_const", "item_table", "gacha_table", "stage_table", "skin_table",
            "charword_table", "enemy_handbook_table", "zone_table", "activity_table",
-           "climb_tower_table", "sandbox_perm_table", "retro_table"],
+           # story_review_table: 스토리 '전문 보기'의 에피소드 구성. 레포가 며칠씩 밀려
+           # 새 이벤트 전문이 조용히 안 만들어지던 자리다 (2026-09-16 「사람들, 우리들」).
+           "climb_tower_table", "sandbox_perm_table", "retro_table", "story_review_table"],
     "cn": ["character_table", "skill_table", "uniequip_table", "battle_equip_table",
            "building_data", "range_table", "handbook_team_table", "handbook_info_table",
            "gamedata_const", "item_table", "charword_table", "skin_table",
