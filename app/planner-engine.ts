@@ -525,6 +525,62 @@ export function powerBudget(levels?: Levels | null): { provide: number; consume:
 }
 const dormLevelSum = () => LAYOUT.filter((c) => c.room === "DORMITORY").reduce((s, c) => s + levelOf(c.key), 0);
 const dormLevelMax = () => Math.max(1, ...LAYOUT.filter((c) => c.room === "DORMITORY").map((c) => levelOf(c.key)));
+
+// ── 숙소 회복 스킬의 계열 (게임 팩트) ─────────────────────────────────────────
+// 숙소 회복은 **계열별로 가장 높은 수치 하나만** 붙는다 ("동종 효과 중 가장 높은 수치만 적용").
+// 계열은 buffId(게임 내부 이름)로 갈린다 — dorm_rec_all* = 그 숙소 **전원**, dorm_rec_single* =
+// **1명**, dorm_rec_oneself*·dorm_recExcludeOther = 자기 전용(피아메타 '자율'). 전체형과 단일형은
+// 계열이 달라 **함께** 붙는다 — 포덴코가 '요양'(단일 +0.65)과 '훈훈한 감동'(전체 +0.15)을 혼자
+// 둘 다 발동시키는 게 그 증거다. buffId 로 안 갈리는 bd_ 계열 둘만 여기 적는다.
+const DORM_REC_SCOPE: Record<string, "all" | "single"> = {
+  dorm_rec_bd_n1_n2: "all",     // 아이리스 '자기 전 이야기' — 전원 +0.1
+  dorm_rec_bd_n1_n3: "single",  // 체르니 '완행의 노래' — 1명 +0.65
+};
+const dormRecoverScope = (op: InfraOp): "all" | "single" | "none" => {
+  let single = false;
+  for (const skill of op.skills) {
+    if (skill.room !== "DORMITORY" || !skill.value) continue;
+    const id = (skill.buffId ?? "").replace(/\[\d+\]$/, "");
+    const scope = DORM_REC_SCOPE[id] ?? (id.startsWith("dorm_rec_all") || id.endsWith("ToRecAll") ? "all"
+      : id.startsWith("dorm_rec_single") ? "single" : undefined);
+    if (scope === "all") return "all";
+    if (scope === "single") single = true;
+  }
+  return single ? "single" : "none";
+};
+
+// ── 숙소 고정 인원은 한 방에 쌓지 않는다 (사용자 지적 2026-09-16) ──────────────
+// 종전엔 LAYOUT 순서대로 첫 빈 칸에 꽂아서 숙소 생성원(아이리스·체르니·비르투오사·센시)과
+// 주차 인원(울피아누스)이 전부 **숙소 1**에 쌓였다. 숙소는 drain 0이고 고정 인원은 근무
+// 후보에서도 빠지므로 그 방은 전원이 늘 컨디션 만땅 — 회복 스킬이 죄다 "컨디션이 **가득 차지
+// 않은** 오퍼레이터"를 대상으로 해서 치료할 사람이 방 안에 없다. 네 명의 회복이 통째로 죽고,
+// 정작 지친 인원이 자는 나머지 세 숙소는 보너스가 0이었다 (만렙 기지 실측 2.45/h → 0/h).
+// 숙소 회복은 점수 대상이 아니므로(§10 미모델) 이건 점수가 아니라 **배치 타이브레이크**다.
+const dormOrder = (op: InfraOp, occupantsOf: (key: string) => InfraOp[]): string[] => {
+  const scope = dormRecoverScope(op);
+  // 레벨 의존 생성원(센시 마물 요리·아이리스 꿈나라·체르니 소절)은 **자기 숙소 레벨**로 만든다.
+  // genEstimate 가 최고 레벨 기준이라 낮은 방으로 보내면 원장이 거짓이 된다 — 토큰이 먼저다.
+  const bound = op.skills.some((s) => s.room === "DORMITORY" && s.tokenGen.some((g) => g.perDormLevel));
+  const top = dormLevelMax();
+  const rank = (key: string) => {
+    const here = occupantsOf(key);
+    const hasAll = here.some((m) => dormRecoverScope(m) === "all");
+    const provider = scope !== "none" || here.some((m) => dormRecoverScope(m) !== "none");
+    return [
+      bound && levelOf(key) < top ? 1 : 0,                    // ① 레벨 의존 생성원은 최고 레벨 숙소로
+      scope === "all" && hasAll ? 1 : 0,                      // ② 전체형끼리 겹치면 낮은 쪽이 죽는다
+      scope !== "all" && hasAll ? 1 : 0,                      // ③ 전체형 방의 휴식 자리를 뺏지 않는다
+      here.length + 1 >= slotsFor(key) && provider ? 1 : 0,   // ④ 방이 꽉 차면 회복 대상이 사라진다
+      scope === "all" ? here.length : -here.length,           // 전체형은 빈 방, 나머지는 한 방에 몰아서
+    ];
+  };
+  return LAYOUT.filter((c) => c.room === "DORMITORY" && occupantsOf(c.key).length < slotsFor(c.key))
+    .sort((a, b) => {
+      const [ra, rb] = [rank(a.key), rank(b.key)];
+      for (let i = 0; i < ra.length; i += 1) if (ra[i] !== rb[i]) return ra[i] - rb[i];
+      return 0;  // 동률은 LAYOUT 순서(숙소 1→4) — 편성은 결정적이어야 한다
+    }).map((c) => c.key);
+};
 const totalLevelSum = () => LAYOUT.reduce((s, c) => s + levelOf(c.key), 0);
 // 활성 레이아웃에서 제조소가 가공 중인 품목 **종류 수** (쿼츠 '정확한 스케줄')
 const factoryProductKinds = () =>
@@ -1973,6 +2029,10 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
         placedAt.set(op.id, cellByKey.get(key)?.label ?? key);
         return true;
       };
+      // 방 후보 순서 — 숙소만 첫 빈 칸이 아니라 회복 계열·레벨을 보고 고른다 (dormOrder)
+      const seatOrder = (op: InfraOp, room: string, skipPark: boolean) =>
+        room === "DORMITORY" ? dormOrder(op, (key) => seeds[key] ?? [])
+          : LAYOUT.filter((c) => c.room === room && !(skipPark && PARK_KEYS.includes(c.key))).map((c) => c.key);
       for (const token of packageTokens) {
         // converters (에벤홀츠) pull a source token into this one, so source
         // generators (숙소의 아이리스·체르니 등) join the package too
@@ -2025,9 +2085,9 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
             // 우선 생산 모드 순서대로 시드 배치 — 순금 우선이면 순금 제조소부터,
             // 작전기록 우선이면 작전기록부터, 밸런스는 교차 순서로 최고 요원이 앉는다
             const ord = new Map(prodKeys.map((k, i) => [k, i] as const));
-            const targets = LAYOUT.filter((c) => c.room === skill.room && !PARK_KEYS.includes(c.key))
-              .sort((a, b) => (ord.get(a.key) ?? 99) - (ord.get(b.key) ?? 99));
-            for (const cell of targets) if (place(op, cell.key)) break;
+            const targets = seatOrder(op, skill.room, true)
+              .sort((a, b) => (ord.get(a) ?? 99) - (ord.get(b) ?? 99));
+            for (const key of targets) if (place(op, key)) break;
           }
         }
         for (const op of members) {
@@ -2045,7 +2105,7 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
             // 자리를 받는다 — 무6성 로스터에서 기대가치 8짜리 사슬이 우요우를 무역소에
             // 예약해 품질 조합(210 > 182.5)을 봉쇄하던 원인
             if (!already && !converterPlaced) continue;
-            if (already || LAYOUT.filter((c) => c.room === skill.room).some((cell) => place(op, cell.key))) {
+            if (already || seatOrder(op, skill.room, false).some((key) => place(op, key))) {
               if (converterPlaced) {
                 for (const g of gen) {
                   if (!live(g)) continue; // 여러 홉 중 하나라도 전환자가 없으면 그 생성분은 죽는다
@@ -2166,7 +2226,12 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
   const unparkEmployed = (mirror?: Set<string>) => {
     for (const id of [...parked]) if (workingSomewhere(id)) unparkOne(id, mirror);
   };
-  const freeDorm = () => dormKeys.find((key) => (assignments[key]?.[0]?.length ?? 0) < slotsFor(key));
+  // 주차도 같은 규칙으로 방을 고른다 — 울피아누스(회복 없음)·피아메타(자기 전용)는
+  // 전체형 회복 보유자가 앉은 방의 휴식 자리를 뺏지 않도록 한쪽으로 몰린다
+  const dormMembers = (key: string) => (assignments[key]?.[0] ?? [])
+    .map((id) => byIdAll.get(id)).filter((op): op is InfraOp => !!op);
+  const freeDorm = (op?: InfraOp) => (op ? dormOrder(op, dormMembers)[0]
+    : dormKeys.find((key) => (assignments[key]?.[0]?.length ?? 0) < slotsFor(key)));
   // 로스터에 짝이 있는 조건은 전부 미리 주차 — 감사가 수혜 오퍼를 실제로 뽑을 기회를 준다
   const seedParks = () => {
     const partners = new Set<string>();
@@ -2178,7 +2243,7 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
     }
     for (const pid of partners) {
       if (reserved.has(pid) || workingSomewhere(pid) || dormKeys.some((key) => (assignments[key]?.[0] ?? []).includes(pid))) continue;
-      const spot = freeDorm();
+      const spot = freeDorm(byIdAll.get(pid));
       if (!spot) break;
       assignments[spot][0] = [...(assignments[spot][0] ?? []), pid];
       parked.add(pid);
@@ -2202,7 +2267,7 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
     const present = new Set<string>([...cellMapFor(0).keys(), ...cellMapFor(1).keys()]);
     for (const pid of wanted) {
       if (present.has(pid) || reserved.has(pid) || !byIdAll.has(pid)) continue;
-      const spot = freeDorm();
+      const spot = freeDorm(byIdAll.get(pid));
       if (!spot) break;
       const before = scoreExTraining(0) + scoreExTraining(1);
       assignments[spot][0] = [...(assignments[spot][0] ?? []), pid];
