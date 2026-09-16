@@ -60,6 +60,8 @@ export type EventRow = {
   sid?: string;
   /** 복각판이면 원본 이벤트 id */
   origin?: string;
+  /** 원본이면 복각(재개방) 이벤트 id */
+  rerun?: string;
   /** 한섭 개방 추정월 ("2026-11") — 미실장에만 */
   eta?: string;
 };
@@ -178,10 +180,14 @@ function EventFile({ row, onOpenStage, onOpenEnemy, onOpenItem, onShowOperator, 
                   e.preventDefault(); onOpenStory(row.sid ?? row.id);
                 }}>{t(row.sid ? "원본 이벤트 스토리 읽기" : "이 이벤트 스토리 읽기")}</a>
             ) : null}
-            {/* 복각판은 원본 이벤트 상세로도 이어 준다 (사용자 지시 2026-09-17) */}
+            {/* 원본 ↔ 복각을 서로 이어 준다 (사용자 지시 2026-09-17) */}
             {row.origin ? (
               <button type="button" className="it-link ev-story-link"
                 onClick={() => onOpenOrigin(row.origin as string)}>{t("원본 이벤트 보기")}</button>
+            ) : null}
+            {row.rerun ? (
+              <button type="button" className="it-link ev-story-link"
+                onClick={() => onOpenOrigin(row.rerun as string)}>{t("재개방 이벤트 보기")}</button>
             ) : null}
           </h3>
           <em className={`ev-type t-${typeOf(row).toLowerCase()}`}>{t(TYPE_LABEL[typeOf(row)])}</em>
@@ -433,7 +439,9 @@ export default function EventDex({ doc, onShowOperator, onOpenGuide }: {
       {subStage && (
         <ModalWindow key={`st-${raise}`} label={`${subStage.stage.code} ${subStage.stage.name}`}
           className="operator-modal st-modal" onClose={() => setSubStage(null)}>
-          <StageFile view={subStage} onOpenEnemy={openEnemy} />
+          {/* ⚠ onOpenItem 을 빠뜨리면 드랍 칩이 disabled 로 죽는다 — 작전 도감(app/stages.tsx)은
+              넘기고 있는데 여기만 빠져 있었다 (사용자 제보 2026-09-17). */}
+          <StageFile view={subStage} onOpenEnemy={openEnemy} onOpenItem={openItem} />
         </ModalWindow>
       )}
       {subEnemy && (

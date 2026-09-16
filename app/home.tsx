@@ -78,6 +78,7 @@ import type { StorySummaries, OpIndex, ScriptData } from "./story";
 // public/records/<locale>/<id>.json 을 모달에서 지연 fetch (R2 서빙, 번들 import 금지).
 import recordIdsData from "./data/record-ids.json";
 import acSeasonList from "./data/autochess-seasons.json";
+import eventIdsData from "./data/event-ids.json";
 /** 스토리 요약(로케일별 1.8MB)은 **스토리 탭에 들어갈 때만** 받는다 (2026-08-09 INP 작업).
  *  종전엔 로케일 래퍼가 정적 import해 모든 페이지가 파싱했다. 셸에서 쓰던 곳은
  *  Portal의 죽은 stats prop 하나뿐이라 데이터 자체가 필요 없었다. */
@@ -300,6 +301,9 @@ const EVENT_GUIDE_TAB: Record<string, Tab> = { AUTOCHESS_SEASON: "autochess" };
 // 위수 협의 시즌 — 메뉴 부메뉴와 /autochess/<slug> 라우팅에 쓴다 (2026-09-05).
 // 목록은 build-autochess.py 산출물이라 **여기에 숫자를 안 적는다** — 새 시즌이 오면 늘어난다.
 // (SEO 쪽 같은 판정은 app/seo-autochess.ts. 그쪽은 서버 전용이라 여기서 임포트하지 않는다)
+// 이벤트 도감이 아는 이벤트 id — 헤더 "진행중 이벤트" 칩을 띄울지 판단한다.
+// 본문(로케일당 350KB)은 지연 청크라 여기서 못 본다. id 목록만 2KB로 따로 받는다.
+const knownEventIds = new Set((eventIdsData as { ids: string[] }).ids);
 const AC_SEASONS = (acSeasonList as { n: number }[]).map((x) => x.n).sort((a, b) => a - b);
 const AC_LATEST = AC_SEASONS[AC_SEASONS.length - 1] ?? 1;
 const autochessSeasonOf = (slug?: string) => {
@@ -474,6 +478,22 @@ function fetchBcastPayload() {
     } : null))
     .catch(() => null);
   return bcastFetch;
+}
+
+/** 지금 돌고 있는 대표 이벤트 하나 — 헤더 바로가기 칩이 쓴다 (사용자 요청 2026-09-17).
+ *  워커 fetch 는 모듈 공유 프라미스(fetchBcastPayload)라 헤더 배지와 같은 요청을 나눠 쓴다. */
+function useRunningEvent(): GameEvent | null {
+  const [evt, setEvt] = useState<GameEvent | null>(null);
+  useEffect(() => {
+    let live = true;
+    void fetchBcastPayload().then((data) => {
+      if (!live || !data) return;
+      const top = sortRunning(data.events, Date.now())[0] ?? null;
+      if (top) setEvt(top);
+    });
+    return () => { live = false; };
+  }, []);
+  return evt;
 }
 
 // 진행중 이벤트 공용 헬퍼 — 배지·스트립이 같은 규칙으로 정렬·표기한다
@@ -1223,6 +1243,13 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   const StageDexForLocale = STAGE_DEX[locale as keyof typeof STAGE_DEX] ?? STAGE_DEX.ko;
   const ItemDexForLocale = ITEM_DEX[locale as keyof typeof ITEM_DEX] ?? ITEM_DEX.ko;
   const EventDexForLocale = EVENT_DEX[locale as keyof typeof EVENT_DEX] ?? EVENT_DEX.ko;
+  const runningEvent = useRunningEvent();
+  /** 이벤트 도감으로 넘어가 그 이벤트 상세를 연다 — 해시는 도감이 마운트하며 읽는다
+   *  (작전 도감 → 적 도감 이동과 같은 방식). */
+  const openEventById = (id: string) => {
+    history.pushState(null, "", `${tabPath("event")}#ev-${id}`);
+    startTransition(() => { setTab("event"); setSelected(null); });
+  };
   // 작전 도감 → 적 도감: 적 칩을 누르면 적 상세로 넘어간다 (두 도감이 서로를 가리킨다)
   const openEnemyFromStage = (id: string) => {
     history.pushState(null, "", `${tabPath("enemy")}#en-${id}`);
@@ -1990,6 +2017,24 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                 (사용자 요청 2026-08-24). 못 구하면 종전 문구로 되돌아간다. */}
             <span className="promo-hint">{promoLeftLabel(promoNow, t) ?? t("기간 한정")}</span>
             {tabHasNewFeature(PROMO.tab) && <span className="new-badge">{t("새기능")}</span>}
+          </a>
+        )}
+        {/* 진행중 이벤트 바로가기 — 누르면 이벤트 도감의 그 이벤트 상세가 열린다
+            (사용자 요청 2026-09-17 "위수협의 버튼이랑 마찬가지로"). 위수 협의 칩과 같은
+            1줄 소속이라 헤더를 접어도 남는다. 라벨은 이름이 아니라 "이벤트"로 고정 —
+            이름을 넣으면 길이에 따라 헤더 폭이 흔들린다(옆 event-trigger 와 같은 이유).
+            ⚠ 이벤트 도감이 아는 이벤트일 때만 띄운다 — 모르는 id 로 보내면 빈 화면이 된다. */}
+        {runningEvent && knownEventIds.has(runningEvent.id) && (
+          <a className={`promo-trigger ev-promo${tab === "event" ? " selected" : ""}`}
+            href={`${localeBase}/events#ev-${runningEvent.id}`}
+            title={eventName(locale, runningEvent)}
+            onClick={(event) => {
+              if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+              event.preventDefault(); openEventById(runningEvent.id);
+            }}>
+            <span className="promo-mark" aria-hidden>✦</span>
+            {t("진행중 이벤트")}
+            <span className="promo-hint">D-{eventDday(runningEvent, Date.now())}</span>
           </a>
         )}
         {/* 헤더 치비 (베타) — 1줄 가운데 빈 공간의 산책 장식, 데스크탑 전용 (사용자 요청 2026-08-03) */}

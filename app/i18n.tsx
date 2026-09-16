@@ -1354,6 +1354,7 @@ const D: Record<string, Pair> = {
   "이 이벤트 스토리 읽기": ["Read this event's story", "このイベントのストーリーを読む"],
   "원본 이벤트 스토리 읽기": ["Read the original event's story", "オリジナルイベントのストーリーを読む"],
   "원본 이벤트 보기": ["View the original event", "オリジナルイベントを見る"],
+  "재개방 이벤트 보기": ["View the rerun", "復刻イベントを見る"],
   "작전 {n}": ["{n} operations", "作戦{n}件"],
   "등장 적 {n}": ["{n} enemies", "出現する敵{n}種"],
   "적 {n}": ["{n} enemies", "敵{n}種"],

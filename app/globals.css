@@ -22700,13 +22700,24 @@ html[lang="ja"] .vn-box {
   gap: 7px;
   margin-top: 8px;
 }
+/* ⚠ `<a>` 와 `<button>` 이 섞여 쓴다 (이벤트 도감의 '원본 이벤트 스토리 읽기'는 앵커,
+   '원본 이벤트 보기'는 버튼). 버튼은 UA 기본 글꼴·줄높이·테두리를 갖고 있어서 그냥 두면
+   **높이가 어긋나고 커서도 화살표로 남는다** (사용자 지적 2026-09-17).
+   ⚠ `font:` 단축 속성에 inherit 을 섞지 말 것 — 통째로 무시된다 (check-css.mjs 가 막는다).
+   낱개 속성으로 맞춘다. */
 .it-link {
+  display: inline-block;
   padding: 5px 10px;
   border: 1px solid var(--line);
   background: var(--bg-faint);
   color: var(--ink2);
+  font-family: inherit;
+  font-weight: inherit;
   font-size: 12.5px;
+  line-height: 1.4;
+  text-align: left;
   text-decoration: none;
+  cursor: pointer;
 }
 .it-link:hover {
   border-color: var(--border-strong);
@@ -23126,5 +23137,9 @@ html[lang="ja"] .vn-box {
 }
 /* 미실장 이벤트의 개방 예정월 */
 .ev-eta {
+  color: var(--lime);
+}
+/* 진행중 이벤트 바로가기 — 위수 협의 칩(.promo-trigger)과 같은 모양, 표식만 다르다 */
+.promo-trigger.ev-promo .promo-mark {
   color: var(--lime);
 }

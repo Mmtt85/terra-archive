@@ -53,14 +53,29 @@ if "ko" not in acts:
     sys.exit("kr_activity_table.json 이 없다")
 kr_act = acts["ko"]
 ZONE_TO_ACT = kr_act["zoneToActivity"]
+kr_basic_all = kr_act["basicInfo"]
 
-RERUN = re.compile(r"^act(\d+)s?re$")
+# ── 복각(재개방) → 원본 ─────────────────────────────────────────────────────
+# ⚠ **id 로 잇지 말 것.** `act(\d+)sre → act$1side` 는 요즘 것만 맞는다 — act5sre 의 원본은
+#   act5d0, act9sre 는 act9d0 이라 옛 이벤트 8건이 통째로 빗나간다 (app/home.tsx 의
+#   storyOf 주석에 같은 실측이 적혀 있다). 그래서 **"(재개방)"을 뗀 한국어 이름**으로 잇는다.
+RERUN_SUFFIX = re.compile(r"\s*\(재개방\)\s*$")
+_ko_name = {}          # 한국어 이름 → 활동 id (복각이 아닌 것만)
+
+
+def _index_names(basic):
+    for aid, info in basic.items():
+        nm = (info.get("name") or "").strip()
+        if nm and not RERUN_SUFFIX.search(nm):
+            _ko_name.setdefault(nm, aid)
 
 
 def origin_of(aid):
-    """복각 전용 활동 id → 원본 활동 id (act41sre → act41side). 아니면 자기 자신."""
-    m = RERUN.match(aid)
-    return f"act{m.group(1)}side" if m else aid
+    """복각 활동 id → 원본 활동 id. 복각이 아니거나 원본을 못 찾으면 자기 자신."""
+    nm = ((kr_basic_all.get(aid) or {}).get("name") or "").strip()
+    if not RERUN_SUFFIX.search(nm):
+        return aid
+    return _ko_name.get(RERUN_SUFFIX.sub("", nm), aid)
 
 
 # ── 작전 → 이벤트 ───────────────────────────────────────────────────────────
@@ -76,6 +91,13 @@ for sid, v in kr_stages.items():
     if aid:
         stages_of_act.setdefault(aid, []).append(sid)
 
+_index_names(kr_basic_all)
+# 원본 → 복각 (역방향). 복각이 여럿이면 가장 최근 것.
+rerun_of = {}
+for _aid, _info in sorted(kr_basic_all.items(), key=lambda kv: kv[1].get("startTime") or 0):
+    _org = origin_of(_aid)
+    if _org != _aid:
+        rerun_of[_org] = _aid
 # 복각 ↔ 원본은 같은 작전을 공유한다 (위 주석)
 for aid in list(stages_of_act):
     org = origin_of(aid)
@@ -253,9 +275,11 @@ for aid, info in sorted(kr_basic.items(), key=lambda kv: -(kv[1].get("startTime"
             thumb = src.get(THUMB[loc]) or src.get("thumb")
             if thumb:
                 row["thumb"] = thumb
-        # 원본 이벤트가 목록에 있으면 그리로도 이어 준다 (사용자 지시 2026-09-17)
+        # 원본 ↔ 복각을 서로 이어 준다 (사용자 지시 2026-09-17)
         if origin != aid and origin in kr_basic:
             row["origin"] = origin
+        elif aid in rerun_of:
+            row["rerun"] = rerun_of[aid]
         if stages:
             row["stages"] = stages
         if seen_enemy:
@@ -310,5 +334,11 @@ for loc in LOCALES:
     json.dump({"updated": updated, "events": rows[loc]}, open(dest, "w", encoding="utf-8"),
               ensure_ascii=False, separators=(",", ":"))
     print(f"  {OUT[loc]}  {os.path.getsize(dest) // 1024}KB")
+# 헤더가 "진행중 이벤트" 칩을 띄울지 판단하려면 **id 목록만** 있으면 된다. 본문(로케일당
+# 350KB)은 지연 청크라 헤더에서 못 보므로, 가벼운 색인을 따로 낸다 (2026-09-17).
+ids_path = os.path.join(DATA, "event-ids.json")
+json.dump({"updated": updated, "ids": sorted(r["id"] for r in rows["ko"])},
+          open(ids_path, "w", encoding="utf-8"), ensure_ascii=False)
+print(f"  event-ids.json  {os.path.getsize(ids_path) // 1024}KB")
 print(f"이벤트 {len(rows['ko'])}개(미래시 {n_fut}) — 작전 {n_stage} · 등장 적 {n_enemy} · "
       f"재화 {n_item} · 오퍼 {n_op}")

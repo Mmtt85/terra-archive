@@ -32,7 +32,7 @@
 
 사용: python3 scripts/build-items.py [gamedata-dir]
 """
-import io, json, os, re, sys
+import io, json, os, re, shutil, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import cdnassets
@@ -41,6 +41,7 @@ from imgutil import save_webp
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 G = sys.argv[1] if len(sys.argv) > 1 else os.environ.get("GAMEDATA_DIR", os.path.join(REPO, ".gamedata"))
 ICON_DIR = os.path.join(REPO, "public", "items", "icon")
+ITEM_DIR = os.path.join(REPO, "public", "items")      # 재료파밍·육성 계산기가 쓰는 <itemId>.webp
 LOCALES = {"ko": "kr", "en": "en", "ja": "jp"}
 OUT_NAME = {"ko": "items.json", "en": "items.en.json", "ja": "items.ja.json"}
 
@@ -168,6 +169,32 @@ farm_ids = {i["id"] for i in load(farm_path)["items"]} if os.path.exists(farm_pa
 # ── 아이콘 ──────────────────────────────────────────────────────────────────
 os.makedirs(ICON_DIR, exist_ok=True)
 icon_ok, icon_have, icon_miss = 0, 0, []
+alias_made = 0
+
+# ⚠ 사이트의 옛 화면들은 아이콘을 **`/items/<itemId>.webp`** 로 부른다 (재료파밍 효율표·
+#   육성 비용 계산기·작전 도감의 드랍 칩). 그 폴더엔 육성 재료 95장뿐이라, 이벤트 재화가
+#   떨어지는 작전을 열면 **드랍 섬네일이 깨진다** (사용자 제보 2026-09-17, 실측 86종).
+#   아이템 도감은 iconId 로 저장하므로(한 아이콘을 여러 아이템이 공유한다) 이름이 다르다.
+#   그래서 **작전이 실제로 떨어뜨리는 아이템**에 한해 같은 그림을 itemId 이름으로도 둔다.
+_st = os.path.join(REPO, "app", "data", "stages.json")
+DROPPED = ({d[0] for s_ in load(_st)["stages"] for d in (s_.get("d") or [])}
+           if os.path.exists(_st) else set())
+
+
+def alias_for(item_id, icon_id):
+    """작전 드랍 칩이 부르는 `/items/<itemId>.webp` 가 없으면 같은 그림을 그 이름으로도 둔다."""
+    global alias_made
+    # ⚠ itemId == iconId 여도 건너뛰면 안 된다 — 폴더가 다르다
+    #   (`items/icon/X.webp` → `items/X.webp`). 처음에 이걸 건너뛰어 35종이 남았다.
+    if item_id not in DROPPED:
+        return
+    dest = os.path.join(ITEM_DIR, f"{item_id}.webp")
+    if os.path.exists(dest):
+        return
+    src = os.path.join(ICON_DIR, f"{icon_id}.webp")
+    if os.path.exists(src):
+        shutil.copyfile(src, dest)
+        alias_made += 1
 
 
 def fetch_icon(icon_id):
@@ -204,6 +231,8 @@ for base in order:
     icon = base.get("iconId") or ""
     if icon and not fetch_icon(icon):
         icon = ""
+    if icon:
+        alias_for(iid, icon)
     act, ev = event_of(iid) if grp == "event" else (None, None)
     dl = drops.get(iid) or []
     common = {
@@ -253,5 +282,6 @@ for loc in LOCALES:
 import collections
 gc = collections.Counter(r["g"] for r in rows["ko"])
 print(f"아이템 {len(rows['ko'])}종 — " + " · ".join(f"{k} {v}" for k, v in gc.most_common()))
+print(f"드랍 칩용 별칭 {alias_made}장 (/items/<itemId>.webp)")
 print(f"아이콘 새로 {icon_ok}장 · 기존 {icon_have}장"
       + (f" · 못 찾음 {len(icon_miss)} ({', '.join(sorted(set(icon_miss))[:5])}…)" if icon_miss else ""))
