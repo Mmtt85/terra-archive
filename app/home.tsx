@@ -284,8 +284,8 @@ const PROMO_END = Date.parse(PROMO.to);
  *  ⚠ 시계는 첫 렌더에서 **빌드 시각**(BUILD_NOW)이다 — 렌더 중 Date.now()를 쓰면 서버·클라
  *  답이 갈려 하이드레이션이 깨진다(React #418, whats-new.ts 주석). 마운트 후 진짜 시각으로
  *  갈아 끼운다. */
-function promoLeftLabel(nowMs: number, t: T): string | null {
-  const ms = PROMO_END - nowMs;
+function promoLeftLabel(nowMs: number, t: T, endMs: number = PROMO_END): string | null {
+  const ms = endMs - nowMs;
   if (!Number.isFinite(ms) || ms <= 0) return null;
   const d = Math.floor(ms / 86400000);
   if (d >= 1) return t("{n}일 남음", { n: d });
@@ -1249,6 +1249,10 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   const openEventById = (id: string) => {
     history.pushState(null, "", `${tabPath("event")}#ev-${id}`);
     startTransition(() => { setTab("event"); setSelected(null); });
+    // ⚠ `pushState` 는 hashchange 를 일으키지 않는다. 이미 이벤트 도감에 있을 때는 탭도
+    //   안 바뀌어 화면이 그대로였다 (사용자 제보 2026-09-17) — 해시 기계를 직접 깨운다.
+    //   (이미 마운트된 도감의 useHashSync 가 이 이벤트를 듣고 모달을 연다)
+    window.dispatchEvent(new Event("hashchange"));
   };
   // 작전 도감 → 적 도감: 적 칩을 누르면 적 상세로 넘어간다 (두 도감이 서로를 가리킨다)
   const openEnemyFromStage = (id: string) => {
@@ -2033,8 +2037,14 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
               event.preventDefault(); openEventById(runningEvent.id);
             }}>
             <span className="promo-mark" aria-hidden>✦</span>
-            {t("진행중 이벤트")}
-            <span className="promo-hint">D-{eventDday(runningEvent, Date.now())}</span>
+            {/* 이름이 크고 '진행중 이벤트'가 작다 (사용자 지시 2026-09-17). 이름 길이로 헤더
+                폭이 흔들리지 않게 CSS 가 최대 폭을 잡고 넘치면 말줄임한다. */}
+            <span className="ev-promo-kind">{t("진행중 이벤트")}</span>
+            <b className="ev-promo-name">{eventName(locale, runningEvent)}</b>
+            {/* 남은 기간 표기는 위수 협의 칩과 같은 문구로 (사용자 지시) */}
+            <span className="promo-hint">
+              {promoLeftLabel(Date.now(), t, Date.parse(runningEvent.end)) ?? t("진행중")}
+            </span>
           </a>
         )}
         {/* 헤더 치비 (베타) — 1줄 가운데 빈 공간의 산책 장식, 데스크탑 전용 (사용자 요청 2026-08-03) */}
@@ -2201,6 +2211,10 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
                     풀면 화면을 덮는다(통전 테마 6개·생존연산 2시즌과는 규모가 다르다).
                     고르는 것은 화면 안 검색·필터가 맡는다. */}
                 <a href={`${localeBase}/events`} className={`tab-sub tab-event${tab === "event" ? " selected" : ""}`}
+                  // ⚠ 부메뉴가 없는 줄이라 그냥 두면 **옆 모드(위수 협의 등)의 부메뉴가 열린
+                  //   채로 남는다** (사용자 지적 2026-09-17). 여기에 올라오면 열림 경로를
+                  //   'guide' 깊이로 되돌려 더 깊은 플라이아웃을 즉시 접는다.
+                  onMouseEnter={() => holdFlyout("guide")}
                   onClick={(event) => {
                     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
                     event.preventDefault(); switchTab("event");

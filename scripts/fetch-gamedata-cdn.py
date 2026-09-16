@@ -53,10 +53,15 @@ TABLES = {
            # story_review_table: 스토리 '전문 보기'의 에피소드 구성. 레포가 며칠씩 밀려
            # 새 이벤트 전문이 조용히 안 만들어지던 자리다 (2026-09-16 「사람들, 우리들」).
            "climb_tower_table", "sandbox_perm_table", "retro_table", "story_review_table"],
+    # ⚠ 2026-09-17에 activity/stage/zone 세 표가 **다시 들어왔다.** 종전 주석("중섭은 미래시
+    #   전용이라 이벤트·구역·스테이지 표는 받아도 쓰는 데가 없다")은 이제 맞지 않는다 —
+    #   이벤트 도감이 미래시 이벤트의 작전·등장 적·교환 재화를 중섭에서 미리 뽑는다
+    #   (사용자 요청 "미래시 이벤트도 중섭에서 정보 다 받아와줘").
     "cn": ["character_table", "skill_table", "uniequip_table", "battle_equip_table",
            "building_data", "range_table", "handbook_team_table", "handbook_info_table",
            "gamedata_const", "item_table", "charword_table", "skin_table",
-           "enemy_handbook_table", "sandbox_perm_table"],
+           "enemy_handbook_table", "sandbox_perm_table",
+           "activity_table", "stage_table", "zone_table"],
     # en/jp 에 range_table 이 없는 것은 의도다 — 공격 범위 격자는 **언어와 무관**해서
     # kr(없으면 cn) 것만 읽는다 (build-skill-levels.py, regen-operators.py). 넣어 봐야
     # 아무도 안 읽는 파일이 하나 더 생길 뿐이고, 하필 CDN에서 못 뜯는 표라 레포까지 다녀온다.

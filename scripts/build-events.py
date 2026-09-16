@@ -306,9 +306,123 @@ for aid, info in sorted(kr_basic.items(), key=lambda kv: -(kv[1].get("startTime"
 #   스토리 링크까지만 주고, 나머지는 한섭에 열릴 때 저절로 채워진다.
 # ⚠ 화면에서는 `.fut-dim` 이 붙어 흑백이 되고, 미래시 토글이 꺼져 있으면 눌리지 않는다
 #   (app/future-tip.tsx 의 위임 리스너가 클래스만 보고 알아서 막는다).
+# 중섭 표 — 있으면 미래시 이벤트의 속살(작전·등장 적·교환 재화·보상 오퍼)을 채운다.
+# ⚠ 전부 **중국어 원문**이다. 사이트 규칙대로 흑백(.fut-dim) + 미래시 토글 뒤에 둔다.
+cn_act = cn_stage = cn_item = cn_enemy = None
+try:
+    cn_act = load(os.path.join(G, "cn_activity_table.json"))
+    cn_stage = load(os.path.join(G, "cn_stage_table.json"))["stages"]
+    cn_item = load(os.path.join(G, "cn_item_table.json"))["items"]
+    cn_enemy = (load(os.path.join(G, "cn_enemy_handbook_table.json")).get("enemyData") or {})
+except (OSError, KeyError):
+    print("⚠ 중섭 표가 없다 — 미래시 이벤트는 이름·개방 예정만 싣는다")
+
+
+def cn_icon(icon_id):
+    """중섭 전용 재화 아이콘을 받아 둔다 (아이템 도감과 같은 폴더·이름)."""
+    if not icon_id:
+        return ""
+    dest = os.path.join(REPO, "public", "items", "icon", f"{icon_id}.webp")
+    if os.path.exists(dest):
+        return icon_id
+    try:
+        import cdnassets
+        from imgutil import save_webp
+        for server in ("cn", "kr"):
+            im = cdnassets.image_named(icon_id, server)
+            if im is not None:
+                import io as _io
+                buf = _io.BytesIO(); im.save(buf, "PNG")
+                save_webp(buf.getvalue(), dest, max_px=128, method=4, try_lossless=False)
+                return icon_id
+    except Exception as e:  # noqa: BLE001
+        print(f"  ⚠ 미래시 아이콘 실패({icon_id}): {str(e)[:50]}")
+    return ""
+
+
+CN_REPO = "https://raw.githubusercontent.com/ArknightsAssets/ArknightsGamedata/master/cn/gamedata/%s.json"
+_cn_lv_cache = os.path.join(G, "levels-cn")
+
+
+def cn_repo_level(level_id):
+    """중섭 CDN에 없는 레벨(이미 끝난 중섭 이벤트)은 클뜯 레포 cn 브랜치에서.
+    ⚠ 중섭 CDN은 한섭과 마찬가지로 **끝난 이벤트의 레벨을 내린다** (act50side·act53side
+      실측). 그런데 레포엔 남아 있어서, 미래시 이벤트의 등장 적은 이쪽이 유일한 출처다."""
+    import urllib.error, urllib.request
+    rel = str(level_id).lower()
+    dest = os.path.join(_cn_lv_cache, rel.replace("/", "__") + ".json")
+    if os.path.exists(dest):
+        try:
+            return load(dest)
+        except json.JSONDecodeError:
+            os.remove(dest)
+    try:
+        req = urllib.request.Request(CN_REPO % f"levels/{rel}", headers={"User-Agent": "Mozilla/5.0"})
+        raw = urllib.request.urlopen(req, timeout=60).read()
+    except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError):
+        return None
+    os.makedirs(_cn_lv_cache, exist_ok=True)
+    open(dest, "wb").write(raw)
+    return json.loads(raw)
+
+
+def cn_event_body(aid):
+    """중섭 표에서 그 이벤트의 작전·등장 적·재화·보상 오퍼를 뽑는다."""
+    if not cn_act or not cn_stage:
+        return {}
+    z2a = cn_act.get("zoneToActivity") or {}
+    sids = [k for k, v in cn_stage.items() if z2a.get(v.get("zoneId")) == aid]
+    # ⚠ 같은 작전이 난이도별로 두 벌씩 들어 있다 (`act50side_ex01` 과 `act50side_ex01#f#`,
+    #   difficulty NORMAL/FOUR_STAR). 코드가 같아 목록에 TD-EX-1 이 두 번 찍힌다
+    #   (2026-09-17 실측). 한섭 쪽은 build-stages 가 접미를 붙여 가르지만 여기선 미래시
+    #   맛보기라 **표준판만** 싣는다.
+    sids = [k for k in sids if "#" not in k]
+    sids.sort(key=lambda k: (cn_stage[k].get("sortId") or 0, k))
+    stages, seen = [], {}
+    import cdnlevels
+    for k in sids:
+        v = cn_stage[k]
+        stages.append([k, (v.get("code") or k), (v.get("name") or "")])
+        lid = v.get("levelId")
+        if not lid:
+            continue
+        d = cdnlevels.level(str(lid).lower(), server="cn") or cn_repo_level(lid)
+        for ref in ((d or {}).get("enemyDbRefs") or []):
+            rid = ref.get("id")
+            if rid and rid not in seen:
+                seen[rid] = ((cn_enemy or {}).get(rid) or {}).get("name") or rid
+    items = []
+    for iid in ((cn_act.get("activityItems") or {}).get(aid) or []):
+        meta = (cn_item or {}).get(iid) or {}
+        nm = (meta.get("name") or "").strip()
+        if not nm:
+            continue
+        ic = cn_icon(meta.get("iconId") or "")
+        items.append([iid, nm] + ([ic] if ic else []))
+    ops = []
+    for m in (cn_act.get("missionData") or []):
+        if m.get("missionGroup") != aid:
+            continue
+        for r in (m.get("rewards") or []):
+            rid = str(r.get("id") or "")
+            if rid.startswith("char_") and rid not in [o[0] for o in ops]:
+                ops.append([rid, rid, 0, "reward"])
+    out = {}
+    if stages:
+        out["stages"] = stages
+    if seen:
+        out["enemies"] = [[k, v] for k, v in seen.items()]
+    if items:
+        out["items"] = items
+    if ops:
+        out["ops"] = ops
+    return out
+
+
 for eid, st in stories.items():
     if not st.get("unreleased"):
         continue
+    body = cn_event_body(eid)
     for loc in LOCALES:
         nm = st.get("name") or {}
         row = {
@@ -325,6 +439,14 @@ for eid, st in stories.items():
         thumb = st.get(THUMB[loc]) or st.get("thumb")
         if thumb:
             row["thumb"] = thumb
+        # 보상 오퍼 이름은 사이트 오퍼 목록(미실장 포함)에서 — 없으면 id 그대로
+        loc_ops = per_loc[loc]["ops"]
+        body_loc = dict(body)
+        if body.get("ops"):
+            body_loc["ops"] = [[o[0], (loc_ops.get(o[0]) or {}).get("name", o[0]),
+                                (loc_ops.get(o[0]) or {}).get("rarity", 0), "reward"]
+                               for o in body["ops"]]
+        row.update(body_loc)
         rows[loc].insert(0, row)      # 아직 안 나온 것이라 맨 위
 n_fut = sum(1 for r in rows["ko"] if r.get("fut"))
 

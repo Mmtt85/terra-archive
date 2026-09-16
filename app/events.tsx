@@ -107,27 +107,26 @@ function EventCard({ row, onSelect, onGuide }: {
     row.mats?.length ? t("상위 재료 {n}", { n: row.mats.length }) : null,
   ].filter(Boolean);
   return (
-    // 썸네일이 없는 이벤트(벡터 돌파 등 게임 모드형)는 빈 칸을 남기지 않고 글만 한 칸으로
-    // 채운다 — 회색 네모가 줄줄이 있는 것보다 낫다.
+    // ⚠ 썸네일 칸은 **항상 그린다.** 없다고 빼면 카드마다 폭이 달라져 줄이 어긋난다
+    //   (사용자 지시 2026-09-17: "섬네일 없으면 NO IMAGE를 띄우든 빈 공간을 하든 레이아웃이
+    //   무너지지 않게"). 그림이 없거나 받다 실패하면 자리표시 글자를 남긴다.
     // 전용 가이드가 있는 모드(위수 협의)는 **앵커**다 — 새 탭·주소 복사가 그대로 되고,
     // 누르면 그 가이드로 간다 (사용자 지시 2026-09-16).
     // 미실장(중섭 선행)은 `.fut-dim` 만 붙이면 된다 — 흑백 처리도, 미래시가 꺼져 있을 때
     // 클릭을 삼키는 것도 app/future-tip.tsx 의 위임 리스너가 클래스만 보고 알아서 한다.
     <Tag type={row.guide ? undefined : "button"} {...(row.guide ? { href } : {})}
-      className={`ev-card${row.thumb ? "" : " no-thumb"}${row.fut ? " fut-dim" : ""}`}
+      className={`ev-card${row.fut ? " fut-dim" : ""}`}
       onClick={(e: React.MouseEvent) => {
         if (!row.guide) { onSelect(row); return; }
         if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
         e.preventDefault(); onGuide(row.guide);
       }}>
-      {row.thumb && (
-        <span className="ev-card-face" ref={ref}>
-          {visible && (
-            <img src={asset(row.thumb)} alt="" aria-hidden loading="lazy" decoding="async"
-              onError={(e) => { e.currentTarget.style.visibility = "hidden"; }} />
-          )}
-        </span>
-      )}
+      <span className="ev-card-face" ref={ref} data-noimg={t("이미지 없음")}>
+        {visible && row.thumb && (
+          <img src={asset(row.thumb)} alt="" aria-hidden loading="lazy" decoding="async"
+            onError={(e) => { e.currentTarget.remove(); }} />
+        )}
+      </span>
       <span className="ev-card-body">
         <b className="ev-card-name">{row.n}</b>
         <span className="ev-card-meta">
@@ -200,12 +199,14 @@ function EventFile({ row, onOpenStage, onOpenEnemy, onOpenItem, onShowOperator, 
           (사용자 요청 2026-09-17). 좁은 화면에서는 CSS가 한 줄로 되돌린다. */}
       <div className={`ev-top${row.thumb ? "" : " no-thumb"}`}>
         <div className="ev-top-side">
-          {row.thumb && (
-            <div className="ev-hero">
+          {/* 상세도 카드와 같다 — 그림이 없으면 자리만 남기고 글자를 띄운다
+              (사용자 지시 2026-09-17). 빼 버리면 두 칸 배치가 한 칸으로 무너진다. */}
+          <div className="ev-hero" data-noimg={t("이미지 없음")}>
+            {row.thumb && (
               <img src={asset(row.thumb)} alt="" aria-hidden loading="lazy" decoding="async"
-                onError={(e) => { e.currentTarget.closest(".ev-hero")?.remove(); }} />
-            </div>
-          )}
+                onError={(e) => { e.currentTarget.remove(); }} />
+            )}
+          </div>
           {/* 교환 재화는 썸네일 바로 밑 (사용자 지시 2026-09-17) — 이벤트당 한두 개뿐이라
               오른쪽 칸을 비집고 들어갈 이유가 없다. */}
           {row.items && row.items.length > 0 && (

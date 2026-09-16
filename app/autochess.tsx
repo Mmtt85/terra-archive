@@ -1827,7 +1827,10 @@ export default function AutochessGuide({ doc, onShowOperator }: {
     <section className="ac-guide" aria-labelledby="ac-title">
       <header className="sim-head ac-head">
         <span className="section-no">STRONGHOLD PROTOCOL</span>
-        <h2 id="ac-title">{doc.name}</h2>
+        {/* 시즌마다 수치·기물이 달라서 **지금 보는 게 몇 시즌인지**가 제목만큼 중요하다
+            (사용자 지시 2026-09-17). 메뉴에서 시즌을 골라 들어오면 주소만 달라지고 화면은
+            같아 보였다. */}
+        <h2 id="ac-title">{doc.name}<em className="ac-season">{t("시즌 {n}", { n: doc.season ?? 2 })}</em></h2>
         {/* 도감·목록 탭과 성격이 달라(직접 짜 보는 자리) 탭 줄이 아니라 제목 줄 한가운데 세운다.
             둘 — 손으로 짜는 편성기 + PRTS 로 게임을 따라가는 모드.
             PRTS 시뮬레이션은 2026-09-06 에 한 번 폐기했다가 **2026-09-07 사용자 재요청**(실플레이 녹화 2편 제공,

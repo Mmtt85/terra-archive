@@ -22801,11 +22801,23 @@ html[lang="ja"] .vn-box {
    칸은 세로 비율로 고정하고 contain 으로 넣는다: 세로본은 꽉 차고, 가로본은 위아래가
    비지만 **그림이 잘리는 일은 없다**. 칸 높이가 고르므로 카드 줄도 들쭉날쭉하지 않다. */
 .ev-card-face {
-  display: block;
+  display: grid;
+  place-items: center;
   aspect-ratio: 420 / 508;
   overflow: hidden;
   border: 1px solid var(--line);
   background: var(--paper);
+}
+/* 그림이 없거나 받다 실패한 칸 — 자리는 그대로 두고 글자만 남긴다 (레이아웃 유지) */
+.ev-card-face::after {
+  content: attr(data-noimg);
+  font: 700 10px monospace;
+  letter-spacing: 1px;
+  color: var(--muted);
+  opacity: 0.55;
+}
+.ev-card-face:has(img)::after {
+  content: none;
 }
 .ev-card-face img {
   width: 100%;
@@ -22923,9 +22935,22 @@ html[lang="ja"] .vn-box {
 /* 상세의 키비주얼도 자르지 않는다. 그대로 두면 938px까지 자라므로(실측) 높이만 막는다. */
 .ev-hero {
   display: flex;
+  align-items: center;
   justify-content: center;
+  min-height: 140px;
   border: 1px solid var(--line);
   background: var(--paper);
+}
+/* 카드와 같은 자리표시 — 그림이 없어도 두 칸 배치가 무너지지 않는다 */
+.ev-hero::after {
+  content: attr(data-noimg);
+  font: 700 10px monospace;
+  letter-spacing: 1px;
+  color: var(--muted);
+  opacity: 0.55;
+}
+.ev-hero:has(img)::after {
+  content: none;
 }
 .ev-hero img {
   display: block;
@@ -23029,9 +23054,6 @@ html[lang="ja"] .vn-box {
   .ev-grid { grid-template-columns: 1fr; }
   .ev-card { grid-template-columns: 92px minmax(0, 1fr); }
   .ev-stages { grid-template-columns: 1fr; }
-}
-.ev-card.no-thumb {
-  grid-template-columns: minmax(0, 1fr);
 }
 /* ⚠ 별·표식을 카드 **바닥에 붙인다.** 이름이 두 줄이 되는 오퍼(지마 더 레이징 타이드)가
    섞이면 그 카드만 표식이 19px 내려앉아 밑변이 어긋난다 (사용자 지적 2026-09-17, 실측).
@@ -23142,4 +23164,29 @@ html[lang="ja"] .vn-box {
 /* 진행중 이벤트 바로가기 — 위수 협의 칩(.promo-trigger)과 같은 모양, 표식만 다르다 */
 .promo-trigger.ev-promo .promo-mark {
   color: var(--lime);
+}
+/* 위수 협의 — 제목 옆 시즌 표식 (시즌마다 수치·기물이 다르다) */
+.ac-season {
+  display: inline-block;
+  margin-left: 10px;
+  padding: 2px 8px;
+  border: 1px solid var(--lime);
+  color: var(--lime);
+  font: 700 11.5px/1.5 monospace;
+  font-style: normal;
+  vertical-align: middle;
+}
+/* 진행중 이벤트 칩 — 이름이 크고 종류가 작다 (사용자 지시 2026-09-17).
+   ⚠ 이름 길이로 헤더 폭이 흔들리지 않게 최대 폭을 못박고 넘치면 말줄임한다. */
+.ev-promo-kind {
+  font-size: 10px;
+  letter-spacing: 0.3px;
+  color: var(--muted);
+}
+.ev-promo-name {
+  max-width: 13ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 700;
 }
