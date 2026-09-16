@@ -147,12 +147,15 @@ def main():
     ap.add_argument("--check", action="store_true", help="버전만 찍고 끝")
     a = ap.parse_args()
 
-    unity_lzham()
+    # --check 는 **버전 문자열만** 본다 — 번들을 안 열므로 UnityPy·lz4inv·flatc 가 필요 없다.
+    # 점검 감시기가 10분마다 부르는 자리라 가벼워야 한다 (2026-09-16).
     cdn = Cdn(a.server, cache_dir=a.cache)
     print("%s CDN  resVersion %s  (client %s)"
           % (a.server, cdn.res_version, cdn.client_version))
     if a.check:
         return 0
+
+    unity_lzham()
 
     os.makedirs(a.out, exist_ok=True)
     tables = a.tables.split(",") if a.tables else TABLES[a.server]

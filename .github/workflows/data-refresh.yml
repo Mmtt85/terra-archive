@@ -21,6 +21,14 @@ name: data-refresh
 
 on:
   schedule:
+    # ── 점검 감시 (사용자 확정 2026-09-16) ────────────────────────────────
+    # 데이터가 바뀌는 건 결국 점검 때다 — 한섭 큰 점검(10~16시)·작은 점검(16시~16시10분),
+    # 중섭 순단(17시~17시10분). 정해진 시각에만 돌던 종전 방식은 점검이 끝나고도 한 시간을
+    # 놀았고, 무엇보다 클뜯 레포를 봐서 **볼 게 없었다** — 3개월간 신규 오퍼를 한 번도 못
+    # 들여왔다(전수 확인). 이제 CDN을 보므로 게임과 동시에 안다.
+    # 09~19시(KST) 10분마다 **버전만** 확인하고, 움직였을 때만 파이프라인을 깨운다.
+    - cron: "*/10 0-9 * * *"
+    # 창 밖 변화(핫픽스 등) 안전망 — 버전과 무관하게 무조건 한 바퀴 돈다
     - cron: "0 8 * * *"   # KR #1
     - cron: "0 13 * * *"  # KR #2
     - cron: "0 4 * * *"   # CN(미래시)
@@ -39,7 +47,31 @@ permissions:
   contents: write
 
 jobs:
+  # 몇 초짜리 감시 — CDN resVersion 만 본다(번들을 안 열어 무거운 의존성이 필요 없다).
+  # 10분 크론은 여기서 거의 다 끝나고, 움직였을 때만 아래 refresh 가 깨어난다.
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      changed: ${{ steps.p.outputs.changed }}
+      moved: ${{ steps.p.outputs.moved }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - id: p
+        run: node scripts/ci-probe-version.mjs
+
   refresh:
+    needs: probe
+    # 10분 감시 크론은 **버전이 움직였을 때만** 돈다. 나머지(하루 세 번 안전망·수동 실행)는
+    # 버전과 무관하게 종전대로 한 바퀴 돈다.
+    if: >-
+      ${{ github.event.schedule != '*/10 0-9 * * *' || needs.probe.outputs.changed == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -97,7 +129,7 @@ jobs:
         run: |
           git config user.name  "terra-archive-bot"
           git config user.email "bot@users.noreply.github.com"
-          git add -A app/data public
+          git add -A app/data public .ci/resversion.json
           git commit -m "데이터 자동 갱신 (${{ steps.lane.outputs.lane }} · 오퍼 도감) — $(date -u +%Y-%m-%d)
 
           $(cat .ci/subject.txt)
@@ -116,8 +148,13 @@ jobs:
         id: report
         run: node scripts/ci-report.mjs "${{ steps.lane.outputs.lane }}"
 
+      # 버전이 움직였는데 사이트 데이터는 그대로일 수 있다(우리가 안 쓰는 에셋만 바뀐 경우).
+      # 그때도 기준선을 올려 둬야 10분마다 같은 발동이 반복되지 않는다.
+      - name: 감시 기준선 갱신
+        run: node scripts/ci-probe-version.mjs --write
+
       - name: 2단계 — 커밋 + 배포 (변동 있을 때만)
-        if: steps.report.outputs.meaningful == 'true' && !inputs.dry_run
+        if: (steps.report.outputs.meaningful == 'true' || needs.probe.outputs.changed == 'true') && !inputs.dry_run
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -125,7 +162,7 @@ jobs:
         run: |
           git config user.name  "terra-archive-bot"
           git config user.email "bot@users.noreply.github.com"
-          git add -A app/data public
+          git add -A app/data public .ci/resversion.json
           git commit -m "데이터 자동 갱신 (${{ steps.lane.outputs.lane }}) — $(date -u +%Y-%m-%d)
 
           $(cat .ci/subject.txt)

@@ -55,7 +55,11 @@ scripts/story-i18n/
 scripts/story-cn/
 
 # CI 임시 리포트/로그
-.ci/
+# 디렉터리째(`.ci/`) 무시하면 git 이 안으로 내려가지 않아 아래 예외가 먹지 않는다.
+.ci/*
+# 점검 감시 기준선만 예외로 추적한다 (2026-09-16) — 러너 캐시는 조용히 비워져 헛발동을
+# 부르고, 레포에 두면 "언제 뭐가 움직였나"가 기록으로 남는다.
+!.ci/resversion.json
 .cache/
 .gamedata-ci/
 .r2-sync-key
