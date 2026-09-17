@@ -217,7 +217,7 @@ labels["is-common.json"] = "통합전략 공통 — 조우 안내·판정 문구
 os.makedirs(OUT, exist_ok=True)
 ORDER = ["op-fut.json", "op-past.json", "ra.json",
          *[f"{t}.json" for t, _ in ROGUE_FILES], "is-common.json"]
-rows, changed = [], 0
+rows, group_counts, changed = [], {}, 0
 for name in ORDER:
     body = files[name]
     path = os.path.join(OUT, name)
@@ -232,9 +232,12 @@ for name in ORDER:
     # url 에 ?v=<hash> — 내용이 바뀌면 주소가 바뀌어 캐시가 옛 바이트를 못 돌려준다
     row = {"file": name, "url": f"{BASE}/{name}?v={h}",
            "label": labels[name], "n": leaves(body), "hash": h}
+    # ⚠ 갈래별 개수는 **manifest 에 넣지 않는다** (사용자 지적 2026-09-17). 갈래는 이미
+    #   파일 안에 들어 있고(is*.json 최상위 키), 파일은 통째로 받으므로 개수를 미리 알아야
+    #   내릴지 말지 정할 일이 없다 — 받는 쪽이 쓸 데 없는 중복이다. 아래 콘솔 출력용으로만 쓴다.
     first = next(iter(body.values()), None)
-    if isinstance(first, dict) and not ({"ko", "en", "ja"} & set(first)):
-        row["groups"] = {g: len(v) for g, v in body.items()}
+    grouped = isinstance(first, dict) and not ({"ko", "en", "ja"} & set(first))
+    group_counts[name] = {g: len(v) for g, v in body.items()} if grouped else None
     rows.append(row)
 
 # 옛 조각 파일(c0000·op-000·is-relic-000 …)을 치운다 — 이제 안 쓴다
@@ -252,7 +255,8 @@ with open(os.path.join(OUT, "manifest.json"), "w", encoding="utf-8") as fp:
 
 size = sum(os.path.getsize(os.path.join(OUT, f)) for f in os.listdir(OUT) if f.endswith(".json"))
 for r in rows:
-    extra = ("   " + " · ".join(f"{g} {n}" for g, n in r["groups"].items())) if r.get("groups") else ""
+    g = group_counts.get(r["file"])
+    extra = ("   " + " · ".join(f"{k} {n}" for k, n in g.items())) if g else ""
     print(f"  {r['file']:16} {r['n']:6,}{extra}")
 print(f"파일 {len(rows)}개 (이번에 바뀐 파일 {changed}개) · "
       f"{manifest['total']:,}항목 · {size/1024/1024:.1f}MB → public/tl/")
