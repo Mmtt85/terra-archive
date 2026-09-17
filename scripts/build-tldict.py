@@ -61,7 +61,17 @@ import time
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(REPO, "public", "tl")
-FORMAT_VERSION = 4
+# ⚠ **사용자가 "완전히 끝났다"고 오케이 하기 전까지는 1로 둔다** (지시 2026-09-17).
+#   아직 아무도 받아 가지 않는 동안 형식을 다듬는 중이라, 그 과정에서 2·3·4로 올려 봐야
+#   받는 쪽엔 아무 의미가 없고 첫 공개본이 v4 로 나가는 이상한 모양만 남는다.
+#   **공개를 승인받은 뒤부터** 형식이 바뀔 때 올린다 — 그때 받는 쪽은 모르는 v 를 보면
+#   전량을 다시 받으면 된다 (public/tl/README.md 에 그렇게 적어 뒀다).
+# ⚠ **사용자가 "완전히 끝났다"고 오케이 하기 전까지는 1로 둔다** (지시 2026-09-17).
+#   아직 아무도 받아 가지 않는 동안 형식을 다듬는 중이라, 그 과정에서 2·3·4로 올려 봐야
+#   받는 쪽엔 아무 의미가 없고 첫 공개본이 v4로 나가는 이상한 모양만 남는다.
+#   **공개를 승인받은 뒤부터** 형식이 바뀔 때 올린다 — 그때 받는 쪽은 모르는 v를 보면
+#   전량을 다시 받으면 된다 (public/tl/README.md에 그렇게 적어 뒀다).
+FORMAT_VERSION = 1
 # 공개 기준 주소 — r2-sync.mjs 가 public/<경로> 를 assets/<경로> 로 올린다 (PREFIX="assets/").
 # 여기를 고치면 manifest 의 base·url 이 함께 따라간다.
 BASE = "https://files.terra-archive.net/assets/tl"

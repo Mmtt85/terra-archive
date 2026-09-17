@@ -65,7 +65,7 @@
 
 ```json
 {
- "v": 4,
+ "v": 1,
  "updated": "2026-09-17",
  "base": "https://files.terra-archive.net/assets/tl",
  "total": 10478,
