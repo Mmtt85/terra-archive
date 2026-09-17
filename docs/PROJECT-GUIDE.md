@@ -1729,6 +1729,55 @@ Cloudflare가 봇으로 분류해 이미 걸러낸 뒤다. 건별 확인은 Secu
 
 **사이트맵 7,980 URL 중 enemies가 58%**라, 크롤러가 적 도감에 몰리는 건 표적이 아니라 부피 탓이다.
 
+### 7.5.1 2026-09-18 재조사 — '미상'은 전세계 프록시 떼였다
+
+**Web Analytics와 존 로그는 서로 다른 걸 센다.** 이걸 헷갈리면 엉뚱한 놈을 쫓는다.
+Web Analytics는 **JS를 실행해 비콘을 쏜 브라우저만** 세고, 존 로그(GraphQL)는 **요청 전부**를
+센다. 같은 24시간에 브라질이 Web Analytics에서는 228 방문인데 존 로그에서는 764 요청이고,
+일본은 존 로그 140,184 요청인데 Web Analytics 목록에는 아예 없다.
+
+**일본발 대량 요청은 우리 자신이다 — 차단하지 말 것.** `60.152.122.249`(SoftBank BBTEC)는
+개발 회선이고, UA `node`로 `/assets/*`를 3초 간격으로 반복하는 건 `deploy.sh`가 부르는
+`scripts/warm-assets.mjs --seconds 180`(캐시 예열)이다. 같은 IP의 `HeadlessChrome`·`curl`·
+iPhone UA도 전부 우리 도구와 우리 브라우저다. 미국 Azure IP의 `node`는 무인 파이프라인이
+도는 GitHub Actions 러너다. **UA가 `node`거나 헤드리스라고 막으면 배포 예열이 죽는다.**
+
+**§7.5의 '미상'(텐센트 클라우드·Chrome 109 위장)은 주거용 프록시 떼로 흩어졌다.**
+2026-09-18 기준 UA가 아래 한 줄로 **고정**되어 있고, 이 UA 하나가 **107개국**에서 나온다:
+
+```
+Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36
+```
+
+24시간 10,657 요청, 최대 조각은 여전히 싱가포르(7,901)지만 나머지가 브라질·방글라데시·
+파키스탄·남아공… 으로 IP당 2~6건씩 흩뿌려진다. **IP·나라 차단은 무의미하고**, JS를 실행해
+비콘을 쏘기 때문에 **Web Analytics 나라 목록을 통째로 더럽히는 건 이놈뿐이다**(방문/요청
+비율이 1:3 수준 — 실사용자는 1:20~50). 다행히 **한국에서 이 UA는 24시간 14건**(0.13%)이라
+UA 정확일치로 막아도 실사용자 피해가 사실상 없다 → WAF 커스텀 룰 + **Managed Challenge**.
+
+**⚠ 스킵 룰이 트래픽의 74%를 면제하고 있었다.** `securityAction = skip`이 24시간 392,399건,
+면제되는 나라가 **KR·JP·VN·SG 네 곳**이다 — §7.5엔 `sg-observe`가 SG만 매칭한다고 적혀
+있지만 실제로는 그렇지 않다. Bot Fight Mode는 켜져 있고(같은 기간 managed_challenge 3,352건)
+스킵 안 당한 나머지에서만 일한다. **차단 룰을 새로 만들기 전에 이 룰부터 끄거나 좁혀야 한다.**
+
+**존 로그를 직접 캐는 법** (대시보드 Events는 24시간·샘플링이라 전수가 아니다).
+wrangler 로그인 토큰으로 GraphQL을 그냥 쓸 수 있다 — 별도 API 토큰이 필요 없다:
+
+```bash
+TOK=$(grep '^oauth_token' ~/Library/Preferences/.wrangler/config/default.toml | sed 's/.*= "//;s/"//')
+curl -s -X POST https://api.cloudflare.com/client/v4/graphql \
+  -H "Authorization: Bearer $TOK" -H "Content-Type: application/json" --data @query.json
+```
+
+- 존 태그: `d15076ad004b938113c8a122aeaeaf79` (terra-archive.net, Free)
+- 데이터셋: `httpRequestsAdaptiveGroups` — `count`에 `avg { sampleInterval }`을 곱해야 실제 추정치다.
+- 쓸 수 있는 차원: `clientIP` `userAgent` `clientCountryName` `clientRequestPath`
+  `clientRequestHTTPHost` `edgeResponseStatus` `securityAction` `securitySource` `verifiedBotCategory`
+- **무료 플랜이 막는 차원**: `clientAsn` `clientASNDescription` `botManagementDecision` `ja4`
+  (ASN은 IP를 뽑아 `whois`로 확인하면 된다).
+- **WAF 룰은 이 토큰으로 못 읽고 못 쓴다**(`Authentication error`). 대시보드로 하거나
+  Zone.Firewall Services:Edit 토큰을 따로 발급해야 한다.
+
 ## 8. 디자인 시스템
 
 - 팔레트: `--ink #131719 / --paper #f1f0eb / --lime #dfff00` 계열, 각 오퍼 `accent` 색.
