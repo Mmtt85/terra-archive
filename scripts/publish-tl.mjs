@@ -31,9 +31,16 @@ const PUBLIC_BASE = "https://files.terra-archive.net/assets/tl";
 const DRY = process.argv.includes("--dry");
 const FORCE = process.argv.includes("--force");
 
-// 공개본은 JSON 과 규격서(.md) 둘뿐이다. .md 가 octet-stream 으로 나가면 브라우저가 페이지로
-// 그리지 않고 내려받는다 (2026-09-17 실측). 캐시는 60초 — 고치면 바로 나가야 한다.
-const MIME = { ".json": "application/json", ".md": "text/markdown; charset=utf-8" };
+// 공개본은 JSON · 규격서(.md) · 그 규격서를 브라우저로 읽는 페이지(.html) 셋이다.
+// .md 가 octet-stream 으로 나가면 브라우저가 페이지로 그리지 않고 내려받는다 (실측
+// 2026-09-17). 애초에 브라우저는 마크다운을 어떤 타입으로도 서식대로 그려 주지 않으므로
+// index.html 을 같이 낸다 — 그게 "주소 누르면 읽히는" 유일한 길이다.
+// 캐시는 60초 — 고치면 바로 나가야 한다.
+const MIME = {
+  ".json": "application/json",
+  ".md": "text/markdown; charset=utf-8",
+  ".html": "text/html; charset=utf-8",
+};
 const CACHE = "public, max-age=60, must-revalidate";
 
 const KEY = process.env.R2_SYNC_KEY
@@ -123,14 +130,20 @@ if (liveManifest !== localManifest) {
   failed += 1;
 } else {
   const { files } = JSON.parse(localManifest);
-  const head = await fetch(`${PUBLIC_BASE}/README.md`, { method: "HEAD" }).catch(() => null);
-  const ct = head?.headers.get("content-type") ?? "";
-  if (!ct.startsWith("text/markdown")) {
-    console.error(`\n✗ README.md 가 ${ct || "알 수 없음"} 로 나갑니다 — 브라우저가 내려받아 버립니다`);
+  const want = { "README.md": "text/markdown", "index.html": "text/html" };
+  const bad = [];
+  for (const [name, type] of Object.entries(want)) {
+    const head = await fetch(`${PUBLIC_BASE}/${name}`, { method: "HEAD" }).catch(() => null);
+    const ct = head?.headers.get("content-type") ?? "";
+    if (!ct.startsWith(type)) bad.push(`${name} → ${ct || "알 수 없음"} (${type} 이어야 함)`);
+  }
+  if (bad.length) {
+    console.error(`\n✗ 형식이 틀립니다 — 브라우저가 내려받아 버립니다:\n   ${bad.join("\n   ")}`);
     failed += 1;
   } else {
-    console.log(`\n확인 — manifest 일치 · 사전 ${files.length}개 · README 문서로 나감`);
-    console.log(`받는 쪽에 줄 주소: ${PUBLIC_BASE}/manifest.json`);
+    console.log(`\n확인 — manifest 일치 · 사전 ${files.length}개 · 규격서 둘 다 문서로 나감`);
+    console.log(`  받는 쪽 시작점: ${PUBLIC_BASE}/manifest.json`);
+    console.log(`  사람이 읽을 주소: ${PUBLIC_BASE}/index.html`);
   }
 }
 

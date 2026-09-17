@@ -54,6 +54,7 @@ manifest 주소 하나로 줄어든다.
 사용:  python3 scripts/build-tldict.py
 """
 import hashlib
+import html
 import json
 import os
 import re
@@ -150,6 +151,104 @@ def live_blobs():
     return out
 
 
+def md_to_html(md):
+    """README.md → 본문 HTML. 여기 쓰는 문법만 다룬다 (제목·표·코드블록·목록·문단)."""
+    def inline(t):
+        t = html.escape(t)
+        t = re.sub(r"`([^`]+)`", r"<code>\1</code>", t)
+        t = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", t)
+        return re.sub(r"(?<![\w>])(https?://[^\s<)]+|[\w.+-]+@[\w.-]+\.\w+)",
+                      lambda m: f'<a href="{"mailto:" if "@" in m[1] else ""}{m[1]}">{m[1]}</a>', t)
+
+    lines, out, i = md.split("\n"), [], 0
+    cells = lambda r: [c.strip() for c in r.strip().strip("|").split("|")]
+    while i < len(lines):
+        ln = lines[i]
+        if ln.startswith("```"):
+            i += 1
+            buf = []
+            while i < len(lines) and not lines[i].startswith("```"):
+                buf.append(html.escape(lines[i]))
+                i += 1
+            i += 1
+            out.append("<pre><code>" + "\n".join(buf) + "</code></pre>")
+        elif ln.startswith("#"):
+            n = len(ln) - len(ln.lstrip("#"))
+            out.append(f"<h{n}>{inline(ln[n:].strip())}</h{n}>")
+            i += 1
+        elif ln.startswith("|") and i + 1 < len(lines) and re.match(r"^\|[-: |]+\|$", lines[i + 1]):
+            al = ["right" if a.strip().endswith(":") else "left" for a in cells(lines[i + 1])]
+            head, i, body = cells(ln), i + 2, []
+            while i < len(lines) and lines[i].startswith("|"):
+                body.append(cells(lines[i]))
+                i += 1
+            th = "".join(f'<th style="text-align:{al[k]}">{inline(c)}</th>' for k, c in enumerate(head))
+            tr = "".join("<tr>" + "".join(
+                f'<td style="text-align:{al[k] if k < len(al) else "left"}">{inline(c)}</td>'
+                for k, c in enumerate(r)) + "</tr>" for r in body)
+            out.append(f"<table><thead><tr>{th}</tr></thead><tbody>{tr}</tbody></table>")
+        elif re.match(r"^(-|\d+\.) ", ln):
+            tag, items = ("ul" if ln.startswith("- ") else "ol"), []
+            while i < len(lines) and (re.match(r"^(-|\d+\.) ", lines[i])
+                                      or (items and lines[i].startswith("  ") and lines[i].strip())):
+                if re.match(r"^(-|\d+\.) ", lines[i]):
+                    items.append(re.sub(r"^(-|\d+\.) ", "", lines[i]))
+                else:
+                    items[-1] += " " + lines[i].strip()
+                i += 1
+            out.append(f"<{tag}>" + "".join(f"<li>{inline(x)}</li>" for x in items) + f"</{tag}>")
+        elif not ln.strip():
+            i += 1
+        else:
+            buf = []
+            while i < len(lines) and lines[i].strip() and not re.match(r"^(#|\||```|- |\d+\. )", lines[i]):
+                buf.append(lines[i].strip())
+                i += 1
+            out.append("<p>" + inline(" ".join(buf)) + "</p>")
+    return "\n".join(out)
+
+
+HTML_SHELL = """<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>테라 아카이브 — 중국어→한국어 번역 사전</title>
+<meta name="robots" content="noindex">
+<style>
+ :root{--bg:#fbfaf8;--fg:#23201c;--dim:#6d6459;--line:#e3ddd3;--code:#f2efe9;--accent:#b4622a}
+ @media (prefers-color-scheme:dark){:root{--bg:#171614;--fg:#e7e2da;--dim:#9a9187;--line:#322e29;--code:#22201d;--accent:#e08b4e}}
+ *{box-sizing:border-box}
+ body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.75 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+ main{max-width:820px;margin:0 auto;padding:40px 16px 80px}
+ h1{font-size:25px;line-height:1.35;margin:0 0 18px;letter-spacing:-.4px}
+ h2{font-size:18px;margin:38px 0 12px;padding-top:18px;border-top:1px solid var(--line);letter-spacing:-.3px}
+ a{color:var(--accent)}
+ code{background:var(--code);padding:1.5px 5px;border-radius:5px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.88em}
+ pre{background:var(--code);border:1px solid var(--line);border-radius:9px;padding:13px 15px;overflow-x:auto;line-height:1.6}
+ pre code{background:none;padding:0;font-size:12.5px}
+ table{border-collapse:collapse;width:100%;margin:14px 0;font-size:13.5px;display:block;overflow-x:auto}
+ th,td{border-bottom:1px solid var(--line);padding:8px 11px;text-align:left;white-space:nowrap}
+ th{color:var(--dim);font-weight:600;font-size:12px}
+ td:nth-child(2){white-space:normal;min-width:14em}
+ ul,ol{padding-left:20px}li{margin:5px 0}
+ footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);color:var(--dim);font-size:12.5px}
+</style></head><body><main>
+__BODY__
+<footer>이 페이지는 <code>README.md</code>를 그대로 옮긴 것입니다 — 같은 내용을 마크다운으로
+받으시려면 <a href="README.md">README.md</a>.</footer>
+</main></body></html>
+"""
+
+
+def write_html(md_path, out_path):
+    with open(md_path, encoding="utf-8") as fp:
+        body = md_to_html(fp.read())
+    raw = HTML_SHELL.replace("__BODY__", body)
+    old = open(out_path, encoding="utf-8").read() if os.path.exists(out_path) else None
+    if old != raw:
+        with open(out_path, "w", encoding="utf-8") as fp:
+            fp.write(raw)
+
+
 def digest(obj):
     raw = json.dumps(obj, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
@@ -241,7 +340,7 @@ for name in ORDER:
     rows.append(row)
 
 # 옛 조각 파일(c0000·op-000·is-relic-000 …)을 치운다 — 이제 안 쓴다
-keep = {"manifest.json", "README.md"} | set(ORDER)
+keep = {"manifest.json", "README.md", "index.html"} | set(ORDER)
 for name in os.listdir(OUT):
     if name not in keep:
         os.remove(os.path.join(OUT, name))
@@ -251,6 +350,13 @@ manifest = {"updated": time.strftime("%Y-%m-%d"), "files": rows}
 with open(os.path.join(OUT, "manifest.json"), "w", encoding="utf-8") as fp:
     json.dump(manifest, fp, ensure_ascii=False, indent=1)
     fp.write("\n")
+
+# ── 규격서를 읽을 수 있는 주소로도 낸다 ──────────────────────────────────────
+# 브라우저는 마크다운을 **어떤 content-type 으로도 그려 주지 않는다** — text/markdown 이면
+# 내려받고, text/plain 이면 서식 없는 맨 글자다 (2026-09-17 실측). 받는 쪽에 "주소 하나
+# 누르면 읽을 수 있는 문서"를 주려면 HTML 을 같이 내는 수밖에 없다. README.md 가 정본이고
+# 이건 그걸 그대로 옮긴 것이라, 손으로 고칠 일이 없다.
+write_html(os.path.join(OUT, "README.md"), os.path.join(OUT, "index.html"))
 
 size = sum(os.path.getsize(os.path.join(OUT, f)) for f in os.listdir(OUT) if f.endswith(".json"))
 for r in rows:
