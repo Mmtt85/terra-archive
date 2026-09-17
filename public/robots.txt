@@ -30,6 +30,32 @@ User-agent: Omgili
 User-agent: Diffbot
 User-agent: AI2Bot
 User-agent: ImagesiftBot
+# 2026-09-18 보강 — 판단 기준은 위와 같다(학습 코퍼스·데이터셋 수집). 검색·인용 크롤러는 손대지 않았다.
+# LLM 학습: 화웨이 Pangu · 소프트뱅크 계열 일본어 LLM · Cohere · AWS Bedrock · AI2 Dolma 데이터셋
+User-agent: PanguBot
+User-agent: SBIntuitionsBot
+User-agent: cohere-ai
+User-agent: cohere-training-data-crawler
+User-agent: bedrockbot
+User-agent: Ai2Bot-Dolma
+# ByteDance의 두 번째 이름 — Bytespider와 따로 돈다
+User-agent: TikTokSpider
+# 긁어서 데이터셋으로 파는 곳 (Omgili와 같은 Webz.io 계열 포함)
+User-agent: Webzio-Extended
+User-agent: VelenPublicWebCrawler
+User-agent: Timpibot
+User-agent: Crawlspace
+User-agent: FriendlyCrawler
+User-agent: Factset_spyderbot
+# SEO용 SemrushBot과 이름이 다르다 — 학습 코퍼스용인 OCOB만 막는다
+User-agent: SemrushBot-OCOB
+# 연구·위험평가 코퍼스 (일본 NICT · ISS)
+User-agent: ICC-Crawler
+User-agent: ISSCyberRiskCrawler
+# 이미지 대량 수집 — 여기 이미지가 1GB에 가까워서 특히 이쪽이 아프다
+User-agent: img2dataset
+# 스크래핑 프레임워크 기본 UA (지키는 쪽만 걸리지만 공짜로 거른다)
+User-agent: Scrapy
 Disallow: /
 
 # ── 검색·인용 — 허용 ─────────────────────────────────────────────────────────
@@ -49,6 +75,9 @@ User-agent: PerplexityBot
 User-agent: Perplexity-User
 User-agent: Claude-SearchBot
 User-agent: Claude-User
+# 사람이 링크를 열 때 대신 받아 가는 것들이라 위 차단 목록이 아니라 여기에 둔다.
+User-agent: Meta-ExternalFetcher
+User-agent: MistralAI-User
 Allow: /
 Disallow: /admin
 
