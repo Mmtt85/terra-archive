@@ -201,7 +201,8 @@ run "build-events"       python3 scripts/build-events.py "$G"
 # 중국어→한국어 번역 사전 공개본 — 외부 앱이 **바뀐 파일만** 받아가는 증분 배포본
 # (2026-09-17, 개인 번역 앱 문의). 입력이 scripts/ 의 번역 파일 넷뿐이라 게임데이터를
 # 안 읽는다 — 순서는 상관없지만 데이터 단계 끝에 둔다. 형식은 public/tl/README.md.
-# ⚠ public/tl 은 R2 가 서빙한다 (r2-sync.mjs DIRS · deploy.sh 트림 목록에 함께 있다).
+# ⚠ 여기서는 **만들기만 한다.** 올리는 건 scripts/publish-tl.mjs 가 따로 한다 — r2-sync 와
+#   집합을 나눠 뒀다 (2026-09-17). 즉 이 단계만 돌아서는 공개본이 밖에 안 나간다.
 run "build-tldict"       python3 scripts/build-tldict.py
 
 # 8) 오퍼 지연 에셋 전수 검사 (사용자 요청 2026-08-02) — 데이터가 번들(배포)과 R2(동기화)

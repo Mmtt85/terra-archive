@@ -597,9 +597,22 @@ python3 scripts/build-tldict.py   # → public/tl/ (manifest.json + 사전 10개
 옛 바이트를 돌려줄 창이 닫힌다 (`app/rogue.tsx`의 `?v=2`와 같은 처방). R2 워커는 쿼리
 파라미터를 무시하고 같은 오브젝트를 준다. 형식을 바꾸면 `FORMAT_VERSION`을 올린다.
 
-⚠ **산출물은 R2가 서빙한다** — `r2-sync.mjs`의 `DIRS`와 `deploy.sh`의 트림 목록에 `tl`이
-함께 들어 있다. 공개 규격서 `public/tl/README.md`의 산문은 손으로 쓴 것이라 형식을 바꾸면
-같이 고쳐야 한다 (`.md`는 `r2-sync.mjs`의 MIME 표에 있어야 브라우저가 페이지로 그린다).
+올리는 것은 **전용 스크립트**다. 사이트 에셋 동기화(`r2-sync.mjs`)와 집합을 나눠 뒀다 —
+`tl`은 그쪽 `DIRS`에 **없다** (2026-09-17, 사용자 지시 "공개 API 업로드 스크립트는 완전히
+따로 빼야지"). 섞었을 때 양쪽으로 샜다: 공개본을 내리려다 사이트 에셋 1,614개(167MB)가
+딸려 갔고, `--recache` 한 번에 11,681개(321MB)가 올라갔다.
+
+```bash
+node scripts/publish-tl.mjs --dry   # 올릴 목록만
+node scripts/publish-tl.mjs         # 바뀐 것만 올린다 (끝나고 공개 주소로 되읽어 확인)
+node scripts/publish-tl.mjs --force # 내용이 같아도 전부 (캐시 헤더 정책을 바꿨을 때)
+```
+
+⚠ `ci-refresh.sh`는 **만들기만 한다** — 이 스크립트를 따로 돌려야 밖에 나간다.
+⚠ `deploy.sh`의 트림 목록에는 `tl`이 그대로 있다 (Pages가 같은 파일을 또 서빙할 이유가
+없다). 즉 트림 목록 = `r2-sync.mjs`의 `DIRS` **+ tl** 이다.
+⚠ 공개 규격서 `public/tl/README.md`의 산문은 손으로 쓴 것이라 형식을 바꾸면 같이 고쳐야
+한다. `.md` 형식·캐시는 `publish-tl.mjs`가 직접 지정한다.
 
 ## CSS 무효 선언 검사 (`check-css.mjs`, 2026-08-23~)
 
