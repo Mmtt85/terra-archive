@@ -3,9 +3,9 @@
  "files": [
   {
    "file": "op.json",
-   "url": "https://files.terra-archive.net/assets/tl/op.json?v=cf0726274d7c3db6",
+   "url": "https://files.terra-archive.net/assets/tl/op.json?v=ab323b746bbf7020",
    "label": "오퍼레이터 — 이름·특성·재능·스킬·모듈·기반시설·보이스 대사·기록 — 공식 한국어 24,320 + 비공식 번역 1,805",
-   "hash": "cf0726274d7c3db6"
+   "hash": "ab323b746bbf7020"
   },
   {
    "file": "item.json",
