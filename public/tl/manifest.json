@@ -14,6 +14,30 @@
    "hash": "83c6352f0a5b3ee0"
   },
   {
+   "file": "kr-op.json",
+   "url": "https://files.terra-archive.net/assets/tl/kr-op.json?v=0f06460345451c6b",
+   "label": "오퍼레이터 — 이름·직위·특성·재능·스킬·모듈 (한섭 공식 한국어)",
+   "hash": "0f06460345451c6b"
+  },
+  {
+   "file": "kr-item.json",
+   "url": "https://files.terra-archive.net/assets/tl/kr-item.json?v=95966ec0fca61c43",
+   "label": "아이템·재료 — 이름·설명·용도 (한섭 공식 한국어)",
+   "hash": "95966ec0fca61c43"
+  },
+  {
+   "file": "kr-enemy.json",
+   "url": "https://files.terra-archive.net/assets/tl/kr-enemy.json?v=8ec3898df6c8f346",
+   "label": "적 — 이름·설명·능력 (한섭 공식 한국어)",
+   "hash": "8ec3898df6c8f346"
+  },
+  {
+   "file": "kr-stage.json",
+   "url": "https://files.terra-archive.net/assets/tl/kr-stage.json?v=c3dc1a6d3f215b2a",
+   "label": "작전 — 이름·설명 (한섭 공식 한국어)",
+   "hash": "c3dc1a6d3f215b2a"
+  },
+  {
    "file": "ra.json",
    "url": "https://files.terra-archive.net/assets/tl/ra.json?v=497e0066a7e143de",
    "label": "생존연산 (중국 서버 선행)",

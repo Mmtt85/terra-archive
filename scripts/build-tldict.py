@@ -16,10 +16,15 @@
     · 자주 바뀌는 것 ↔ 거의 안 바뀌는 것 (op-fut ↔ op-past)
   파일마다 해시를 manifest에 실으므로 증분은 **파일 단위로** 그대로 된다.
 
-내는 것 (11개):
+내는 것 (14개):
   manifest.json      파일 목록·해시·항목 수 + **바로 요청할 수 있는 URL**
   op-fut.json        미실장 오퍼·재료 — 중섭 패치마다 늘어난다
   op-past.json       한섭 출시로 공식 번역이 덮은 옛 장부 — 거의 안 바뀐다
+  kr-{op,item,enemy,stage}.json
+                     **공식 CN↔KO 대조본** — 한섭에 나온 것의 중국어 원문과 공식 한국어를
+                     id 로 짝지은 것. 번역이 아니라 대조라 AI 번역이 안 섞인다.
+                     받는 쪽이 보는 건 중섭 화면이라 한섭 출시 여부와 무관하게 필요하다
+                     (사용자 지적 2026-09-17).
   ra.json            생존연산
   is1.json … is6.json  통합전략 1~6 — 안에서 collectibles·nodes·encounters·endings·battles 로 갈라 둔다
   is-common.json     통합전략 공통 조우 편집자 텍스트 (테마 구분이 없는 안내·판정 문구)
@@ -389,9 +394,119 @@ for cn, val in load("scripts/rogue-enc-i18n.json").items():
 files["is-common.json"] = {"encounters": common}
 labels["is-common.json"] = "통합전략 공통 — 조우 안내·판정 문구 (테마 구분 없음)"
 
+# ── 공식 CN↔KO 대조본 (한섭 출시분) ─────────────────────────────────────────
+# 받는 쪽은 **중섭 화면**을 본다 — 한섭에 나왔든 말든 화면은 전부 중국어다. 그래서
+# "한섭에 있으니 게임에서 얻으세요"는 그 앱한테 아무 쓸모가 없었다 (사용자 지적
+# 2026-09-17). 여기서 내는 것은 번역이 아니라 **양쪽 공식 텍스트를 id 로 짝지은 것**이다.
+# 미실장분(op-fut)과 달리 AI 번역이 한 글자도 섞이지 않는다.
+#
+# ⚠ 입력이 .gamedata 의 cn_*/kr_* 표다. 없으면 **그 갈래를 통째로 건너뛴다** — CI 에
+#   테이블이 없다고 빌드가 죽으면 안 되고, 옛 산출물이 남아 있으면 그대로 쓰인다.
+GD = os.path.join(REPO, ".gamedata")
+
+
+def _t(name):
+    path = os.path.join(GD, f"{name}.json")
+    if not os.path.exists(path):
+        return None
+    with open(path, encoding="utf-8") as fp:
+        return json.load(fp)
+
+
+def official_pairs():
+    """{갈래: {중국어 원문: {"ko": 공식 한국어}}} — 양쪽 공식 표를 id 로 조인한다."""
+    out = {k: {} for k in ("op", "item", "enemy", "stage")}
+    tag_re = re.compile(r"<[^>]+>")
+
+    def add(tag, cn, ko):
+        cn = tag_re.sub("", cn).strip() if isinstance(cn, str) else ""
+        ko = tag_re.sub("", ko).strip() if isinstance(ko, str) else ""
+        # 한국어 쪽에 한자가 남아 있으면 번역이 안 된 자리다 — 넣어 봐야 헷갈린다
+        if cn and ko and cn != ko and CJK.search(cn) and not CJK.search(ko):
+            out[tag].setdefault(cn, {"ko": ko})
+
+    def both(name):
+        c, k = _t(f"cn_{name}"), _t(f"kr_{name}")
+        return (c, k) if c and k else (None, None)
+
+    c, k = both("character_table")
+    if c:
+        for cid, a in c.items():
+            b = k.get(cid)
+            if not isinstance(b, dict) or not isinstance(a, dict):
+                continue
+            for f in ("name", "appellation", "description"):
+                add("op", a.get(f), b.get(f))
+            for ta, tb in zip(a.get("talents") or [], b.get("talents") or []):
+                for ca, cb in zip(ta.get("candidates") or [], tb.get("candidates") or []):
+                    add("op", ca.get("name"), cb.get("name"))
+                    add("op", ca.get("description"), cb.get("description"))
+    c, k = both("skill_table")
+    if c:
+        for sid, a in c.items():
+            b = k.get(sid)
+            if not isinstance(b, dict):
+                continue
+            for la, lb in zip(a.get("levels") or [], b.get("levels") or []):
+                add("op", la.get("name"), lb.get("name"))
+                add("op", la.get("description"), lb.get("description"))
+    c, k = both("uniequip_table")
+    if c:
+        kd = k.get("equipDict") or {}
+        for eid, a in (c.get("equipDict") or {}).items():
+            b = kd.get(eid)
+            if not isinstance(b, dict):
+                continue
+            for f in ("uniEquipName", "uniEquipDesc", "typeName1", "typeName2"):
+                add("op", a.get(f), b.get(f))
+    c, k = both("item_table")
+    if c:
+        kd = k.get("items") or {}
+        for iid, a in (c.get("items") or {}).items():
+            b = kd.get(iid)
+            if not isinstance(b, dict):
+                continue
+            for f in ("name", "description", "usage"):
+                add("item", a.get(f), b.get(f))
+    c, k = both("enemy_handbook_table")
+    if c:
+        ca, kb = c.get("enemyData") or c, k.get("enemyData") or k
+        for eid, a in ca.items():
+            b = kb.get(eid)
+            if not isinstance(a, dict) or not isinstance(b, dict):
+                continue
+            for f in ("name", "description", "ability"):
+                add("enemy", a.get(f), b.get(f))
+    c, k = both("stage_table")
+    if c:
+        kd = k.get("stages") or {}
+        for sid, a in (c.get("stages") or {}).items():
+            b = kd.get(sid)
+            if not isinstance(b, dict):
+                continue
+            for f in ("name", "description"):
+                add("stage", a.get(f), b.get(f))
+    return out
+
+
+OFFICIAL = official_pairs()
+OFF_LABEL = {
+    "op":    "오퍼레이터 — 이름·직위·특성·재능·스킬·모듈 (한섭 공식 한국어)",
+    "item":  "아이템·재료 — 이름·설명·용도 (한섭 공식 한국어)",
+    "enemy": "적 — 이름·설명·능력 (한섭 공식 한국어)",
+    "stage": "작전 — 이름·설명 (한섭 공식 한국어)",
+}
+OFF_ORDER = []
+for tag in ("op", "item", "enemy", "stage"):
+    if OFFICIAL.get(tag):
+        name = f"kr-{tag}.json"
+        files[name] = OFFICIAL[tag]
+        labels[name] = OFF_LABEL[tag]
+        OFF_ORDER.append(name)
+
 # ── 내보내기 ─────────────────────────────────────────────────────────────────
 os.makedirs(OUT, exist_ok=True)
-ORDER = ["op-fut.json", "op-past.json", "ra.json",
+ORDER = ["op-fut.json", "op-past.json", *OFF_ORDER, "ra.json",
          *[f"{t}.json" for t, _ in ROGUE_FILES], "is-common.json"]
 rows, counts, group_counts, changed = [], {}, {}, 0
 for name in ORDER:
