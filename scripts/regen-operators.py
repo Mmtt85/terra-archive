@@ -627,8 +627,17 @@ for cid, c in cn.items():
     if not cid.startswith("char_") or cid in chars: continue
     if c.get("isNotObtainable") and build_modules(cid): continue
     op = build_op(cid, c)
-    op["name"] = c.get("appellation") or c.get("name")
-    op["aliases"] = [a for a in [c.get("name")] + op["aliases"] + FUTURE_ALIASES.get(cid, [])
+    # 이름 — **수동 사전의 한국어가 있으면 그걸 쓴다.** 종전에는 appellation(로마자
+    # 표기)을 그대로 썼는데, 그 결과 도감에 `Koromaru`·`Makoto Yuki` 처럼 영어로 떴다
+    # (2026-09-17 실측 17명). 장부에 한국어가 이미 있던 4명조차 영어로 나왔다.
+    # 폴백 순서: 수동 사전 ko → appellation(로마자) → CN 원문.
+    _cn_name = c.get("name")
+    _manual = MANUAL.get(_cn_name)
+    op["name"] = ((_manual.get("ko") if isinstance(_manual, dict) else None)
+                  or c.get("appellation") or _cn_name)
+    # 로마자·중국어 표기는 별칭으로 남긴다 — 그쪽으로도 검색되어야 한다
+    op["aliases"] = [a for a in [_cn_name, c.get("appellation")] + op["aliases"]
+                     + FUTURE_ALIASES.get(cid, [])
                      if a and a != op["name"]]
     op["aliases"] = list(dict.fromkeys(op["aliases"]))
     # 공통 어휘 사전으로 한국어화 (없으면 원문 유지)

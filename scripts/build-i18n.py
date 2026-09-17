@@ -398,8 +398,12 @@ def build_locale(prefix):
             _misses.add(x)
             return x
         return x
-    # concepts는 KR 키 유지(UI 사전이 번역), name/code/aliases는 검색·표기용 원본 유지
-    _skip_top = {"id", "name", "code", "aliases", "image", "accent", "concepts"}
+    # concepts는 KR 키 유지(UI 사전이 번역), code/aliases는 검색용 원본 유지.
+    # ⚠ name 은 **번역한다.** 종전에는 여기서 빼 뒀는데, 그때는 미실장 오퍼의 KR 이름이
+    #   appellation(로마자)이라 EN 에서 우연히 맞아 보였을 뿐이다. 이름을 한국어로
+    #   고치자(regen-operators.py 2026-09-17) EN·JA 에까지 한국어가 실렸다.
+    #   manual2(ko→로케일)에 이름이 있으면 그걸 쓰고, 없으면 한국어로 남는다.
+    _skip_top = {"id", "code", "aliases", "image", "accent", "concepts"}
     for i, uop in enumerate(ops_out):
         if not uop.get("unreleased"): continue
         ops_out[i] = {k: (v if k in _skip_top else _tr(v)) for k, v in uop.items()}

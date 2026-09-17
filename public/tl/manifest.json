@@ -3,9 +3,9 @@
  "files": [
   {
    "file": "op-fut.json",
-   "url": "https://files.terra-archive.net/assets/tl/op-fut.json?v=93d8be4ee4b3481c",
+   "url": "https://files.terra-archive.net/assets/tl/op-fut.json?v=7e1423d74e41ce4f",
    "label": "오퍼·재료·아이템 — 아직 한국 서버에 없는 것 (비공식 번역)",
-   "hash": "93d8be4ee4b3481c"
+   "hash": "7e1423d74e41ce4f"
   },
   {
    "file": "op-past.json",

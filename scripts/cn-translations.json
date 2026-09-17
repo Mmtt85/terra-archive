@@ -1481,13 +1481,13 @@
  },
  "在【沉沦者的黑流树海】中，攻击被自身或召唤物阻挡的敌人时攻击力提升至150%": {
   "ko": "[침몰자의 블랙플로우]에서, 자신 또는 소환물이 저지 중인 적을 공격할 때 공격력이 150%까지 상승",
-  "en": "In [Integrated Strategies: 沉沦者的黑流树海], ATK increases to 150% when attacking enemies blocked by this unit or its summons",
-  "ja": "【沉沦者的黑流树海】では、自身または召喚ユニットがブロック中の敵を攻撃する際、攻撃力が150%まで上昇"
+  "en": "In [Integrated Strategies: Sunken Blackflow Sea of Trees], ATK increases to 150% when attacking enemies blocked by this unit or its summons",
+  "ja": "【沈淪者の黒流樹海】では、自身または召喚ユニットがブロック中の敵を攻撃する際、攻撃力が150%まで上昇"
  },
  "可以使用一个持续30秒的结构性原理，拥有独立的再部署时间；在【沉沦者的黑流树海】中，结构性原理的持续时间无限": {
   "ko": "30초 동안 지속되는 '구조적 원리' 1기를 사용할 수 있으며, 독립적인 재배치 시간을 가짐. [침몰자의 블랙플로우]에서는 '구조적 원리'의 지속 시간이 무제한",
-  "en": "Can use 1 Structural Principle that lasts 30 seconds, with an independent redeployment time; in [Integrated Strategies: 沉沦者的黑流树海], the Structural Principle's duration becomes unlimited",
-  "ja": "30秒間持続する「構造的原理」を1体使用可能。独立した再配置時間を持つ。【沉沦者的黑流树海】では「構造的原理」の持続時間が無制限"
+  "en": "Can use 1 Structural Principle that lasts 30 seconds, with an independent redeployment time; in [Integrated Strategies: Sunken Blackflow Sea of Trees], the Structural Principle's duration becomes unlimited",
+  "ja": "30秒間持続する「構造的原理」を1体使用可能。独立した再配置時間を持つ。【沈淪者の黒流樹海】では「構造的原理」の持続時間が無制限"
  },
  "持续时间无限": {
   "ko": "지속 시간 무제한",
@@ -1496,8 +1496,8 @@
  },
  "可以使用一个持续30秒的结构性原理，拥有独立的再部署时间；在【沉沦者的黑流树海】中，结构性原理的持续时间无限，5秒内未受到伤害后每秒获得4%最大生命的屏障（上限为最大生命的20%）": {
   "ko": "30초 동안 지속되는 '구조적 원리' 1기를 사용할 수 있으며, 독립적인 재배치 시간을 가짐. [침몰자의 블랙플로우]에서는 '구조적 원리'의 지속 시간이 무제한이 되며, 5초 동안 대미지를 받지 않으면 초당 최대 HP 4%의 보호막 획득(최대 HP의 20%까지)",
-  "en": "Can use 1 Structural Principle that lasts 30 seconds, with an independent redeployment time; in [Integrated Strategies: 沉沦者的黑流树海], its duration becomes unlimited, and after taking no damage for 5 seconds it gains a barrier equal to 4% of Max HP per second (up to 20% of Max HP)",
-  "ja": "30秒間持続する「構造的原理」を1体使用可能。独立した再配置時間を持つ。【沉沦者的黑流树海】では持続時間が無制限となり、5秒間ダメージを受けなかった場合、毎秒最大HPの4%のバリアを獲得（上限は最大HPの20%）"
+  "en": "Can use 1 Structural Principle that lasts 30 seconds, with an independent redeployment time; in [Integrated Strategies: Sunken Blackflow Sea of Trees], its duration becomes unlimited, and after taking no damage for 5 seconds it gains a barrier equal to 4% of Max HP per second (up to 20% of Max HP)",
+  "ja": "30秒間持続する「構造的原理」を1体使用可能。独立した再配置時間を持つ。【沈淪者の黒流樹海】では持続時間が無制限となり、5秒間ダメージを受けなかった場合、毎秒最大HPの4%のバリアを獲得（上限は最大HPの20%）"
  },
  "“我睡过了”": {
   "ko": "'늦잠 잤어요'",
@@ -14031,13 +14031,13 @@
  },
  "虎狼丸的信物": {
   "ko": "코로마루의 증표",
-  "en": "虎狼丸's Token",
-  "ja": "虎狼丸の印"
+  "en": "Koromaru's Token",
+  "ja": "コロマルの印"
  },
  "用于提升虎狼丸的潜能。": {
   "ko": "코로마루의 잠재능력 상승에 사용된다.",
-  "en": "Used to improve the Potential of 虎狼丸.",
-  "ja": "虎狼丸の潜在能力強化に用いられる。"
+  "en": "Used to improve the Potential of Koromaru.",
+  "ja": "コロマルの潜在能力強化に用いられる。"
  },
  "裂响的信物": {
   "ko": "크랙본의 증표",
@@ -14061,62 +14061,62 @@
  },
  "佩德洛的信物": {
   "ko": "페드로의 증표",
-  "en": "佩德洛's Token",
-  "ja": "佩德洛の印"
+  "en": "Pedro's Token",
+  "ja": "ペドロの印"
  },
  "用于提升佩德洛的潜能。": {
   "ko": "페드로의 잠재능력 상승에 사용된다.",
-  "en": "Used to improve the Potential of 佩德洛.",
-  "ja": "佩德洛の潜在能力強化に用いられる。"
+  "en": "Used to improve the Potential of Pedro.",
+  "ja": "ペドロの潜在能力強化に用いられる。"
  },
  "嘉辛塔的信物": {
   "ko": "자신타의 증표",
-  "en": "嘉辛塔's Token",
-  "ja": "嘉辛塔の印"
+  "en": "Jacinta's Token",
+  "ja": "ハシンタの印"
  },
  "用于提升嘉辛塔的潜能。": {
   "ko": "자신타의 잠재능력 상승에 사용된다.",
-  "en": "Used to improve the Potential of 嘉辛塔.",
-  "ja": "嘉辛塔の潜在能力強化に用いられる。"
+  "en": "Used to improve the Potential of Jacinta.",
+  "ja": "ハシンタの潜在能力強化に用いられる。"
  },
  "时隙的信物": {
   "ko": "시극의 증표",
-  "en": "时隙's Token",
-  "ja": "时隙の印"
+  "en": "Timeslot's Token",
+  "ja": "タイムスロットの印"
  },
  "用于提升时隙的潜能。": {
   "ko": "시극의 잠재능력 상승에 사용된다.",
-  "en": "Used to improve the Potential of 时隙.",
-  "ja": "时隙の潜在能力強化に用いられる。"
+  "en": "Used to improve the Potential of Timeslot.",
+  "ja": "タイムスロットの潜在能力強化に用いられる。"
  },
  "埃癸斯的信物": {
   "ko": "아이기스의 증표",
-  "en": "埃癸斯's Token",
-  "ja": "埃癸斯の印"
+  "en": "Aigis's Token",
+  "ja": "アイギスの印"
  },
  "用于提升埃癸斯的潜能。": {
   "ko": "아이기스의 잠재능력 상승에 사용된다.",
-  "en": "Used to improve the Potential of 埃癸斯.",
-  "ja": "埃癸斯の潜在能力強化に用いられる。"
+  "en": "Used to improve the Potential of Aigis.",
+  "ja": "アイギスの潜在能力強化に用いられる。"
  },
  "岳羽由加莉的信物": {
   "ko": "타케바 유카리의 증표",
-  "en": "岳羽由加莉's Token",
-  "ja": "岳羽由加莉の印"
+  "en": "Yukari Takeba's Token",
+  "ja": "岳羽ゆかりの印"
  },
  "用于提升岳羽由加莉的潜能。": {
   "ko": "타케바 유카리의 잠재능력 상승에 사용된다.",
-  "en": "Used to improve the Potential of 岳羽由加莉.",
-  "ja": "岳羽由加莉の潜在能力強化に用いられる。"
+  "en": "Used to improve the Potential of Yukari Takeba.",
+  "ja": "岳羽ゆかりの潜在能力強化に用いられる。"
  },
  "凯尔希·思衡托的信物": {
   "ko": "켈시·에스페란타의 증표",
-  "en": "Kal'tsit Esperanta's Token",
+  "en": "Kal'tsit·Esperanta's Token",
   "ja": "ケルシー・エスペランタの印"
  },
  "用于提升凯尔希·思衡托的潜能。": {
   "ko": "켈시·에스페란타의 잠재능력 상승에 사용된다.",
-  "en": "Used to improve the Potential of Kal'tsit Esperanta.",
+  "en": "Used to improve the Potential of Kal'tsit·Esperanta.",
   "ja": "ケルシー・エスペランタの潜在能力強化に用いられる。"
  },
  "维伊的信物": {
@@ -14131,13 +14131,13 @@
  },
  "可露希尔的信物": {
   "ko": "클로저의 증표",
-  "en": "可露希尔's Token",
-  "ja": "可露希尔の印"
+  "en": "Closure's Token",
+  "ja": "クロージャの印"
  },
  "用于提升可露希尔的潜能。": {
   "ko": "클로저의 잠재능력 상승에 사용된다.",
-  "en": "Used to improve the Potential of 可露希尔.",
-  "ja": "可露希尔の潜在能力強化に用いられる。"
+  "en": "Used to improve the Potential of Closure.",
+  "ja": "クロージャの潜在能力強化に用いられる。"
  },
  "焰狐龙梓兰的信物": {
   "ko": "바이올렛 타마미츠네 오키드의 증표",
@@ -14181,23 +14181,23 @@
  },
  "珊比的信物": {
   "ko": "산비의 증표",
-  "en": "珊比's Token",
-  "ja": "珊比の印"
+  "en": "Thumpy's Token",
+  "ja": "サンビの印"
  },
  "用于提升珊比的潜能。": {
   "ko": "산비의 잠재능력 상승에 사용된다.",
-  "en": "Used to improve the Potential of 珊比.",
-  "ja": "珊比の潜在能力強化に用いられる。"
+  "en": "Used to improve the Potential of Thumpy.",
+  "ja": "サンビの潜在能力強化に用いられる。"
  },
  "结城理的信物": {
   "ko": "유키 마코토의 증표",
-  "en": "结城理's Token",
-  "ja": "结城理の印"
+  "en": "Makoto Yuki's Token",
+  "ja": "結城理の印"
  },
  "用于提升结城理的潜能。": {
   "ko": "유키 마코토의 잠재능력 상승에 사용된다.",
-  "en": "Used to improve the Potential of 结城理.",
-  "ja": "结城理の潜在能力強化に用いられる。"
+  "en": "Used to improve the Potential of Makoto Yuki.",
+  "ja": "結城理の潜在能力強化に用いられる。"
  },
  "露托的中坚信物": {
   "ko": "루토나다의 커널 증표",
@@ -14913,5 +14913,70 @@
   "ko": "몬스터 단서 10",
   "en": "Monster Clue 10",
   "ja": "モンスターの手がかり10"
+ },
+ "罗德岛隐秘队": {
+  "ko": "로도스 아일랜드 정찰대",
+  "en": "Rhodes Island Recon",
+  "ja": "ロドスの隠密隊"
+ },
+ "裂响": {
+  "ko": "크랙본",
+  "en": "Crackborne",
+  "ja": "クラックボーン"
+ },
+ "嘉辛塔": {
+  "ko": "자신타",
+  "en": "Jacinta",
+  "ja": "ハシンタ"
+ },
+ "佩德洛": {
+  "ko": "페드로",
+  "en": "Pedro",
+  "ja": "ペドロ"
+ },
+ "时隙": {
+  "ko": "시극",
+  "en": "Timeslot",
+  "ja": "タイムスロット"
+ },
+ "雷狼龙S空爆": {
+  "ko": "진오우거 S 캐터펄트",
+  "en": "Zinogre S Catapult",
+  "ja": "ジンオウガS カタパルト"
+ },
+ "予愿安洁莉娜": {
+  "ko": "안젤리나 더 멜로우 위시",
+  "en": "Angelina the Mellow Wish",
+  "ja": "アンジェリーナ・ザ・メロウウィッシュ"
+ },
+ "谬因": {
+  "ko": "아프리사",
+  "en": "Aphrissa",
+  "ja": "アフリッサ"
+ },
+ "可露希尔": {
+  "ko": "클로저",
+  "en": "Closure",
+  "ja": "クロージャ"
+ },
+ "凯尔希·思衡托": {
+  "ko": "켈시·에스페란타",
+  "en": "Kal'tsit·Esperanta",
+  "ja": "ケルシー・エスペランタ"
+ },
+ "机械师": {
+  "ko": "메커니스트",
+  "en": "Mechanist",
+  "ja": "メカニスト"
+ },
+ "珊比": {
+  "ko": "산비",
+  "en": "Thumpy",
+  "ja": "サンビ"
+ },
+ "焰狐龙梓兰": {
+  "ko": "바이올렛 타마미츠네 오키드",
+  "en": "Violet Mizutsune Orchid",
+  "ja": "タマミツネ（紫）オーキッド"
  }
 }
