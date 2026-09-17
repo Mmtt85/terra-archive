@@ -63,22 +63,23 @@
 <pre><code>{
  &quot;updated&quot;: &quot;2026-09-17&quot;,
  &quot;files&quot;: [
-  { &quot;file&quot;: &quot;op-fut.json&quot;,
-    &quot;url&quot;: &quot;https://files.terra-archive.net/assets/tl/op-fut.json?v=b31eeb9f964e6e50&quot;,
-    &quot;label&quot;: &quot;오퍼레이터·재료 — 아직 한국 서버에 없는 것&quot;,
-    &quot;hash&quot;: &quot;b31eeb9f964e6e50&quot; }
+  { &quot;file&quot;: &quot;item.json&quot;,
+    &quot;url&quot;: &quot;https://files.terra-archive.net/assets/tl/item.json?v=cc454255bbb7e330&quot;,
+    &quot;label&quot;: &quot;아이템·재료 — 이름·설명·용도 — …&quot;,
+    &quot;hash&quot;: &quot;cc454255bbb7e330&quot; }
  ]
 }</code></pre>
 <table><thead><tr><th style="text-align:left">항목</th><th style="text-align:left">쓰임</th></tr></thead><tbody><tr><td style="text-align:left"><code>file</code></td><td style="text-align:left">저장해 둘 때의 이름표. <strong>해시를 여기에 걸어 두세요</strong> — <code>url</code>은 갱신될 때마다 바뀝니다</td></tr><tr><td style="text-align:left"><code>url</code></td><td style="text-align:left">바로 요청할 주소</td></tr><tr><td style="text-align:left"><code>label</code></td><td style="text-align:left">받아 보기 전에 무엇인지 알려 줍니다 (고르는 화면을 만든다면 여기를 쓰세요)</td></tr><tr><td style="text-align:left"><code>hash</code></td><td style="text-align:left">바뀌었나 — 증분 판정은 이것 하나로 합니다</td></tr></tbody></table>
 <p>항목 수는 싣지 않습니다. 파일은 통째로 받으므로 미리 알아야 정할 일이 없고, 받고 나면 세면 되며, 내용이 온전한지는 <code>hash</code>가 더 정확하게 알려 줍니다.</p>
+<p>위 해시는 예시입니다 — 실제 값은 받아 보신 manifest 를 쓰세요.</p>
 <p><code>url</code> 끝의 <code>?v=</code>는 그 파일의 해시입니다. <strong>붙은 그대로 요청하세요</strong> — 내용이 바뀌면 주소도 바뀌므로, 중간 캐시나 CDN이 옛 내용을 돌려주는 일이 없습니다. 떼고 요청해도 같은 파일이 오지만 최대 1분쯤 옛 내용일 수 있습니다.</p>
 <p>바뀌는 빈도가 파일마다 다릅니다. <strong>비공식 번역(<code>x</code>)은 중국 서버 패치마다 늘고</strong>, 공식 쪽은 한국 서버 점검 때 늘어납니다. 통합전략은 거의 그대로입니다. <code>op.json</code>이 전체의 7할입니다 — 오퍼 하나가 추가되면 이름·스킬·보이스·기록이 한꺼번에 들어오므로 한 덩어리로 두었습니다.</p>
 <p>형식 버전 같은 것은 두지 않았습니다. 대신 <strong>형식을 깨야 할 일이 생기면 여기를 고치지 않고 주소를 새로 팝니다</strong> — 이미 쓰고 계신 앱은 지금 주소에서 그대로 돌아갑니다. 항목이 늘어나는 정도는 깨는 변경이 아니니, 모르는 항목은 무시하도록 만들어 두세요.</p>
 <p><code>updated</code>는 <strong>파일을 만든 날짜</strong>지 내용이 바뀐 날짜가 아닙니다 — 내용이 그대로여도 올라갑니다. <strong>갱신 판정에는 <code>hash</code>만 보세요.</strong></p>
 <h2>여기 없는 것</h2>
-<ul><li><strong>한국 서버에 아직 오지 않은 아이템·적·작전</strong> — <code>kr-*.json</code>은 한섭에 나온 것만 담습니다 (공식 한국어가 있어야 짝을 지을 수 있습니다). 미실장분은 오퍼·재료만 <code>op-fut.json</code>에 있고, 적·작전은 통합전략 것(<code>is*.json</code>의 <code>battles</code>)뿐입니다.</li><li><strong>이벤트·메인 스토리 본문</strong> — 없습니다. <strong>저작권 때문입니다.</strong></li></ul>
+<ul><li><strong>이벤트·메인 스토리 본문</strong> — 없습니다. <strong>저작권 때문입니다.</strong></li></ul>
 <p>만들 수 있느냐로만 따지면 만들 수 있습니다. 중국어 원문과 한국어 본문이 줄 단위로 정확히 짝이 맞는 것을 확인했습니다. 다만 이 사이트의 번역 작업은 AI(Claude)가 맡고 있는데, <strong>AI 쪽에서 스토리 전문 번역은 생성하지 않습니다.</strong> 이름·특성·스킬 설명처럼 짧은 기능적 문자열을 옮기는 것과 달리, 서사 전문을 옮기는 것은 저작물 본체를 통째로 다른 언어로 재생성하는 일이라는 이유입니다. 운영자가 귀찮아서 미뤄 둔 것이 아니라, 번역을 만드는 쪽에서 선을 그은 것입니다.</p>
-<p>(오퍼 한 명의 <strong>기록·프로필 산문</strong>은 이것과 다릅니다 — <code>op-past.json</code>에 1,090건 있습니다.)</p>
+<p>(오퍼 한 명의 <strong>기록·프로필 산문</strong>은 이것과 다릅니다 — <code>op.json</code>에 들어 있습니다.)</p>
 <h2>이용 조건</h2>
 <p><strong>조건은 출처 표시 하나뿐입니다.</strong> 재배포도, 상업적 이용도, 고쳐서 쓰는 것도 따로 허락받을 필요 없이 하셔도 됩니다. 표준 라이선스로 말하면 <strong>CC BY 4.0</strong>에 해당합니다.</p>
 <ol><li>출처를 <strong>테라 아카이브(terra-archive.net)</strong>로 밝혀 주세요. 앱이라면 정보·설정 화면 한 줄이면 충분합니다. 그대로 쓰셔도 되는 문구:</li></ol>
