@@ -61,19 +61,13 @@ import time
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(REPO, "public", "tl")
-# ⚠ **사용자가 "완전히 끝났다"고 오케이 하기 전까지는 1로 둔다** (지시 2026-09-17).
-#   아직 아무도 받아 가지 않는 동안 형식을 다듬는 중이라, 그 과정에서 2·3·4로 올려 봐야
-#   받는 쪽엔 아무 의미가 없고 첫 공개본이 v4 로 나가는 이상한 모양만 남는다.
-#   **공개를 승인받은 뒤부터** 형식이 바뀔 때 올린다 — 그때 받는 쪽은 모르는 v 를 보면
-#   전량을 다시 받으면 된다 (public/tl/README.md 에 그렇게 적어 뒀다).
-# ⚠ **사용자가 "완전히 끝났다"고 오케이 하기 전까지는 1로 둔다** (지시 2026-09-17).
-#   아직 아무도 받아 가지 않는 동안 형식을 다듬는 중이라, 그 과정에서 2·3·4로 올려 봐야
-#   받는 쪽엔 아무 의미가 없고 첫 공개본이 v4로 나가는 이상한 모양만 남는다.
-#   **공개를 승인받은 뒤부터** 형식이 바뀔 때 올린다 — 그때 받는 쪽은 모르는 v를 보면
-#   전량을 다시 받으면 된다 (public/tl/README.md에 그렇게 적어 뒀다).
-FORMAT_VERSION = 1
-# 공개 기준 주소 — r2-sync.mjs 가 public/<경로> 를 assets/<경로> 로 올린다 (PREFIX="assets/").
-# 여기를 고치면 manifest 의 base·url 이 함께 따라간다.
+# ⚠ **형식 버전(v)은 두지 않는다** (사용자 지시 2026-09-17). manifest 가 네 항목뿐이라
+#   숫자를 얹어 봐야 받는 쪽이 그걸 검사해 줄 거라는 보장이 없고, 안 보면 없느니만 못하다.
+#   **형식을 깨야 하면 숫자를 올리지 말고 주소를 새로 판다** (assets/tl2/ 같은 식) —
+#   그러면 옛 앱은 옛 주소에서 그대로 돌아가고, 깨진 걸 모른 채 엉뚱한 번역을 덧씌우는
+#   일이 아예 안 생긴다. 항목을 **더하는** 것은 깨는 변경이 아니니 그냥 더하면 된다.
+# 공개 기준 주소 — r2-sync.mjs 가 아니라 publish-tl.mjs 가 assets/tl/ 로 올린다.
+# 여기를 고치면 manifest 의 url 이 함께 따라간다.
 BASE = "https://files.terra-archive.net/assets/tl"
 
 CJK = re.compile(r"[一-鿿]")
@@ -252,9 +246,8 @@ for name in os.listdir(OUT):
     if name not in keep:
         os.remove(os.path.join(OUT, name))
 
-manifest = {"v": FORMAT_VERSION, "updated": time.strftime("%Y-%m-%d"),
-            # base 는 주소를 직접 조합하고 싶은 쪽 몫 — 보통은 files[].url 을 그대로 쓰면 된다
-            "base": BASE, "files": rows}
+# base 도 두지 않는다 — 항목마다 완전한 url 이 있어서 주소를 조합할 사람이 없다
+manifest = {"updated": time.strftime("%Y-%m-%d"), "files": rows}
 with open(os.path.join(OUT, "manifest.json"), "w", encoding="utf-8") as fp:
     json.dump(manifest, fp, ensure_ascii=False, indent=1)
     fp.write("\n")

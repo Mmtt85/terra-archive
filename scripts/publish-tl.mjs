@@ -129,7 +129,7 @@ if (liveManifest !== localManifest) {
     console.error(`\n✗ README.md 가 ${ct || "알 수 없음"} 로 나갑니다 — 브라우저가 내려받아 버립니다`);
     failed += 1;
   } else {
-    console.log(`\n확인 — manifest v${JSON.parse(localManifest).v} 일치 · 사전 ${files.length}개 · README 문서로 나감`);
+    console.log(`\n확인 — manifest 일치 · 사전 ${files.length}개 · README 문서로 나감`);
     console.log(`받는 쪽에 줄 주소: ${PUBLIC_BASE}/manifest.json`);
   }
 }
