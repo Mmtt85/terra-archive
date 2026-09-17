@@ -3480,6 +3480,7 @@ const D: Record<string, Pair> = {
   // 포탈 타일 설명 — 사전에서 빠져 있어 EN/JA에 한국어가 나가던 두 줄 (2026-08-22 발견)
   "요리 조합·제작 재료·지역과 조우 선택지를 정리": ["Recipes, crafting materials, areas and encounter choices", "料理レシピ・製作素材・エリアと遭遇の選択肢"],
   "적 1,500여 종의 스탯·능력·면역과 등장 작전": ["Stats, abilities and immunities for 1,500+ enemies, plus where they appear", "1,500種以上の敵のステータス・能力・耐性と出現作戦"],
+  "아이템 1,400여 종의 설명·용도·획득처": ["Descriptions, uses and sources for 1,400+ items", "1,400種以上のアイテムの説明・用途・入手先"],
 };
 
 export type T = (key: string, vars?: Record<string, string | number>) => string;

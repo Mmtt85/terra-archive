@@ -12007,17 +12007,19 @@ html.dark .pt-stage {
   /* 사용자 지정 배치 (2026-07-30): 1줄 인프라 통째, 2줄 통합전략 2칸 + 이벤트 1칸,
      나머지는 PORTAL_TILES 순서대로. 6열이라야 "2칸 : 1칸"이 정확히 떨어진다. */
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  /* 2행(가이드)은 라벨+설명 한 줄이 들어가야 해 조금 크다. 6행은 업데이트 내역 타일을
-     뺀 뒤라 여유가 있어 거기서 떼어 왔다 (사용자 지시 2026-08-26). 합(6.05)은 그대로. */
-  grid-template-rows: 1.1fr 1.15fr 1fr 1fr 1fr 0.8fr;
-  /* 도감·시뮬레이터는 묶음 상자(dex·sim)로 — 헤더 메뉴 묶음과 같은 구성 (사용자 지시
-     2026-08-10). 제안 보내기 타일은 뺐다(떠 있는 💬 버튼과 중복 — 같은 날 지시). */
+  /* 6행은 업데이트 내역 타일을 뺀 뒤라 여유가 있어 조금 작다 (사용자 지시 2026-08-26). */
+  grid-template-rows: 1.1fr 1fr 1fr 1fr 1fr 0.8fr;
+  /* 묶음 상자 셋(가이드·도감·시뮬레이터)을 **한 줄에 나란히** — 6열을 2칸씩 나눠 갖는다
+     (사용자 지시 2026-09-17). 종전엔 가이드가 가로 한 줄을 통째로 쓰고 아래에 도감·
+     시뮬레이터가 2단으로 놓였는데, 가이드에 이벤트가 붙어 넷이 되자 가로 3칸 상자에서
+     둘째 줄로 접혀 납작하게 찌그러졌다. 이제 셋 다 세로로 쌓는 같은 모양이고, 각 상자에
+     타일이 정확히 넷씩 들어간다. 제안 보내기 타일은 뺐다(떠 있는 💬 버튼과 중복). */
   grid-template-areas:
     "terminal terminal terminal terminal banner   banner  "
-    "guide    guide    guide    guide    guide    guide   "
-    "dex      dex      dex      sim      sim      sim     "
-    "dex      dex      dex      sim      sim      sim     "
-    "dex      dex      dex      sim      sim      sim     "
+    "guide    guide    dex      dex      sim      sim     "
+    "guide    guide    dex      dex      sim      sim     "
+    "guide    guide    dex      dex      sim      sim     "
+    "guide    guide    dex      dex      sim      sim     "
     "story    story    story    archives archives archives";
 }
 /* 묶음 상자 — 캡션 + 세로로 쌓인 작은 타일들 */
@@ -12045,10 +12047,6 @@ html.dark .pt-stage {
   display: grid;
   gap: 7px;
   grid-auto-rows: minmax(0, 1fr);
-}
-/* 가이드 묶음은 한 줄에 넷 — 통합전략·생존연산·위수협의·이벤트 (2026-09-17 이벤트 합류) */
-.pt-g-guide .pt-group-tiles {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 /* 가이드 상자는 종전엔 설명을 통째로 숨겼다 (2026-08-22 "한 줄뿐이라 칸 밖으로 잘린다").
    2026-08-26 부터 보인다 — 홈 타일 설명은 전부 1줄 + … 로 통일했으므로 그 안에 들어간다. */

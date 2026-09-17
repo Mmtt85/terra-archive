@@ -49,6 +49,10 @@ export const PORTAL_TILES: PortalTile[] = [
     desc: "적 1,500여 종의 스탯·능력·면역과 등장 작전", icon: "⊗" },
   { id: "stage", label: "작전 도감", tab: "stage", area: "dex", kind: "plate", group: "dex",
     desc: "작전 2,200여 개의 지형 도면과 등장 적·드랍", icon: "▨" },
+  // 아이템 도감은 헤더 메뉴의 도감 묶음에만 있고 홈 타일에서 빠져 있었다 (2026-09-17).
+  // 시뮬레이터 상자와 같은 4칸 구성이 된다.
+  { id: "item", label: "아이템 도감", tab: "item", area: "dex", kind: "plate", group: "dex",
+    desc: "아이템 1,400여 종의 설명·용도·획득처", icon: "◇" },
   // ── 시뮬레이터 묶음 (헤더 메뉴와 같은 구성 + 작전 시뮬레이터) ──
   { id: "recruit", label: "공개채용 도우미", tab: "recruit", area: "sim", kind: "plate", group: "sim",
     desc: "공개모집 태그 조합으로 확정·고성급 오퍼를 탐색", icon: "◎" },
