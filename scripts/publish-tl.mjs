@@ -34,7 +34,7 @@ const FORCE = process.argv.includes("--force");
 // 공개본은 JSON · 규격서(.md) · 그 규격서를 브라우저로 읽는 페이지(.html) 셋이다.
 // .md 가 octet-stream 으로 나가면 브라우저가 페이지로 그리지 않고 내려받는다 (실측
 // 2026-09-17). 애초에 브라우저는 마크다운을 어떤 타입으로도 서식대로 그려 주지 않으므로
-// index.html 을 같이 낸다 — 그게 "주소 누르면 읽히는" 유일한 길이다.
+// readme.html 을 같이 낸다 — 그게 "주소 누르면 읽히는" 유일한 길이다.
 // 캐시는 60초 — 고치면 바로 나가야 한다.
 const MIME = {
   ".json": "application/json",
@@ -130,7 +130,7 @@ if (liveManifest !== localManifest) {
   failed += 1;
 } else {
   const { files } = JSON.parse(localManifest);
-  const want = { "README.md": "text/markdown", "index.html": "text/html" };
+  const want = { "README.md": "text/markdown", "readme.html": "text/html" };
   const bad = [];
   for (const [name, type] of Object.entries(want)) {
     const head = await fetch(`${PUBLIC_BASE}/${name}`, { method: "HEAD" }).catch(() => null);
@@ -143,7 +143,7 @@ if (liveManifest !== localManifest) {
   } else {
     console.log(`\n확인 — manifest 일치 · 사전 ${files.length}개 · 규격서 둘 다 문서로 나감`);
     console.log(`  받는 쪽 시작점: ${PUBLIC_BASE}/manifest.json`);
-    console.log(`  사람이 읽을 주소: ${PUBLIC_BASE}/index.html`);
+    console.log(`  사람이 읽을 주소: ${PUBLIC_BASE}/readme.html`);
   }
 }
 

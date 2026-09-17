@@ -2,6 +2,7 @@
 // 사용자 혼자 올리고 사이트가 <img src>로 쓰는 구조 (2026-07-27 확정, S3 대체).
 //
 //   GET    /f/<key>      공개 서빙(폴백) — 평소엔 버킷 커스텀 도메인 files.terra-archive.net이 서빙
+//                        키가 /로 끝나면 index.html·readme.html을 찾는다 (디렉터리 인덱스)
 //   GET    /files        목록 — 전체 (admin UI가 uploads/·assets/ 탭으로 나눔)
 //   PUT    /files/<key>  업로드 — admin은 uploads/<key>로 강제, 같은 이름은 덮어쓴다
 //   DELETE /files/<key>  삭제 — admin은 uploads/ 안에서만 (에셋 트리 보호)
@@ -87,8 +88,22 @@ export default {
     if (url.pathname.startsWith("/f/")) {
       if (request.method !== "GET" && request.method !== "HEAD")
         return new Response("method not allowed", { status: 405 });
-      const key = keyFrom(url.pathname, "/f/");
+      let key = keyFrom(url.pathname, "/f/");
       if (!key) return new Response("bad key", { status: 400 });
+      // 디렉터리 인덱스 — 경로가 /로 끝나면 폴더의 대표 문서를 찾는다 (2026-09-17).
+      // R2는 키·값 저장소라 "폴더"가 없으므로 이 해석은 앞단이 해줘야 한다.
+      // index.html 이 관례고, readme.html 은 그 폴더가 문서 하나짜리일 때 쓰는 이름이다
+      // (번역 사전 공개본 assets/tl/ 이 그렇다 — 규격서 한 장이 곧 그 폴더의 대문이다).
+      // ⚠ **이 규칙은 워커를 거치는 /f/ 경로에만 듣는다.** 공개 주소
+      //   files.terra-archive.net 은 R2 버킷 커스텀 도메인이 직접 서빙해 워커를 안 탄다
+      //   (wrangler.toml 에 routes 가 없다). 거기까지 듣게 하려면 워커를 그 도메인에
+      //   라우팅하거나 Cloudflare 존에 URL 재작성 룰을 걸어야 한다 — 코드 밖의 일이다.
+      if (key.endsWith("/")) {
+        for (const name of ["index.html", "readme.html"]) {
+          if (await env.FILES.head(key + name)) { key += name; break; }
+        }
+        if (key.endsWith("/")) return new Response("not found", { status: 404 });
+      }
       // onlyIf에 요청 헤더를 그대로 넘기면 If-None-Match 판정을 R2가 해준다
       const object = await env.FILES.get(key, { onlyIf: request.headers });
       if (!object) return new Response("not found", { status: 404 });

@@ -25,14 +25,18 @@
 
 | 파일 | 내용 | 항목 |
 |---|---|---:|
-| `op-fut.json` | 오퍼레이터·재료 — **아직 한국 서버에 없는 것** | 351 |
-| `op-past.json` | 오퍼레이터·재료 — 한국 서버 출시로 공식 번역이 덮은 옛 항목 | 2,451 |
-| `ra.json` | 생존연산 (중국 서버 선행) | 1,157 |
-| `is1.json` … `is6.json` | 통합전략 1~6 (6은 중국 서버 선행) | 726~1,519 |
-| `is-common.json` | 통합전략 공통 — 조우 안내·판정 문구 (테마 구분 없음) | 298 |
-| `manifest.json` | 위 목록 + 파일별 해시 | — |
+| [`manifest.json`](https://files.terra-archive.net/assets/tl/manifest.json) | 아래 목록 + 파일별 해시·주소 | — |
+| [`op-fut.json`](https://files.terra-archive.net/assets/tl/op-fut.json) | 오퍼레이터·재료 — **아직 한국 서버에 없는 것** | 351 |
+| [`op-past.json`](https://files.terra-archive.net/assets/tl/op-past.json) | 오퍼레이터·재료 — 한국 서버 출시로 공식 번역이 덮은 옛 항목 | 2,451 |
+| [`ra.json`](https://files.terra-archive.net/assets/tl/ra.json) | 생존연산 (중국 서버 선행) | 1,157 |
+| [`is1.json`](https://files.terra-archive.net/assets/tl/is1.json) … [`is6.json`](https://files.terra-archive.net/assets/tl/is6.json) | 통합전략 1~6 (6은 중국 서버 선행) | 726~1,519 |
+| [`is-common.json`](https://files.terra-archive.net/assets/tl/is-common.json) | 통합전략 공통 — 조우 안내·판정 문구 (테마 구분 없음) | 298 |
 
 전량 약 3.2 MB입니다. 한 파일이 하나의 콘텐츠에 대응하므로 필요한 것만 받으면 됩니다.
+
+주소는 언제나 `https://files.terra-archive.net/assets/tl/<파일 이름>` 입니다. 위 주소는 **눌러서 들여다보시라고** 적어 둔 것이고,
+앱에서 **받을 때는 `manifest.json`의 `url`을 쓰세요** — 거기엔 해시가 `?v=`로 붙어 있어
+중간 캐시가 옛 내용을 돌려주지 않습니다.
 
 ## 모양
 

@@ -157,8 +157,19 @@ def md_to_html(md):
         t = html.escape(t)
         t = re.sub(r"`([^`]+)`", r"<code>\1</code>", t)
         t = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", t)
-        return re.sub(r"(?<![\w>])(https?://[^\s<)]+|[\w.+-]+@[\w.-]+\.\w+)",
-                      lambda m: f'<a href="{"mailto:" if "@" in m[1] else ""}{m[1]}">{m[1]}</a>', t)
+        # [글](주소) 를 먼저 완성해 자리표시자로 빼 둔다 — 안 그러면 아래 맨주소 변환이
+        # 그 안의 주소까지 또 감싸 <a href="<a href=…"> 로 겹친다 (2026-09-17에 그랬다).
+        done = []
+
+        def stash(m):
+            done.append(f'<a href="{m[2]}">{m[1]}</a>')
+            return f"\x00{len(done) - 1}\x00"
+
+        t = re.sub(r"\[([^\]]+)\]\((https?://[^)\s]+)\)", stash, t)
+        # 맨주소·메일은 그대로 링크로
+        t = re.sub(r"(?<![\w>])(https?://[^\s<)]+|[\w.+-]+@[\w.-]+\.\w+)",
+                   lambda m: f'<a href="{"mailto:" if "@" in m[1] else ""}{m[1]}">{m[1]}</a>', t)
+        return re.sub(r"\x00(\d+)\x00", lambda m: done[int(m[1])], t)
 
     lines, out, i = md.split("\n"), [], 0
     cells = lambda r: [c.strip() for c in r.strip().strip("|").split("|")]
@@ -340,7 +351,7 @@ for name in ORDER:
     rows.append(row)
 
 # 옛 조각 파일(c0000·op-000·is-relic-000 …)을 치운다 — 이제 안 쓴다
-keep = {"manifest.json", "README.md", "index.html"} | set(ORDER)
+keep = {"manifest.json", "README.md", "readme.html"} | set(ORDER)
 for name in os.listdir(OUT):
     if name not in keep:
         os.remove(os.path.join(OUT, name))
@@ -356,7 +367,7 @@ with open(os.path.join(OUT, "manifest.json"), "w", encoding="utf-8") as fp:
 # 내려받고, text/plain 이면 서식 없는 맨 글자다 (2026-09-17 실측). 받는 쪽에 "주소 하나
 # 누르면 읽을 수 있는 문서"를 주려면 HTML 을 같이 내는 수밖에 없다. README.md 가 정본이고
 # 이건 그걸 그대로 옮긴 것이라, 손으로 고칠 일이 없다.
-write_html(os.path.join(OUT, "README.md"), os.path.join(OUT, "index.html"))
+write_html(os.path.join(OUT, "README.md"), os.path.join(OUT, "readme.html"))
 
 size = sum(os.path.getsize(os.path.join(OUT, f)) for f in os.listdir(OUT) if f.endswith(".json"))
 for r in rows:
