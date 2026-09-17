@@ -12046,9 +12046,9 @@ html.dark .pt-stage {
   gap: 7px;
   grid-auto-rows: minmax(0, 1fr);
 }
-/* 가이드 묶음은 한 줄에 셋 — 통합전략·생존연산·위수협의 (2026-08-22) */
+/* 가이드 묶음은 한 줄에 넷 — 통합전략·생존연산·위수협의·이벤트 (2026-09-17 이벤트 합류) */
 .pt-g-guide .pt-group-tiles {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 /* 가이드 상자는 종전엔 설명을 통째로 숨겼다 (2026-08-22 "한 줄뿐이라 칸 밖으로 잘린다").
    2026-08-26 부터 보인다 — 홈 타일 설명은 전부 1줄 + … 로 통일했으므로 그 안에 들어간다. */

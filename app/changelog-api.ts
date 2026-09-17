@@ -35,7 +35,7 @@ export const CHANGE_KINDS: ChangeKind[] = ["new", "improve", "change", "fix", "d
 
 /** 영역 표시명 (i18n 키). 배지에 들어가므로 탭 정식명이 아니라 짧은 쪽을 쓴다. */
 export const CHANGE_AREA_LABEL: Record<ChangeArea, string> = {
-  infra: "인프라", archive: "오퍼 백과사전", enemy: "적 도감", stage: "작전 도감", item: "아이템 도감", event: "이벤트 도감",
+  infra: "인프라", archive: "오퍼 백과사전", enemy: "적 도감", stage: "작전 도감", item: "아이템 도감", event: "이벤트 가이드",
   sim: "작전 시뮬", recruit: "공채", farm: "파밍",
   upgrade: "육성", story: "스토리", rogue: "통합전략", ra: "생존연산", autochess: "위수협의", site: "사이트",
 };

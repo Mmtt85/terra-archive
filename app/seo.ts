@@ -63,9 +63,9 @@ const TAB_META: Record<Exclude<SeoTab, "portal">, Record<SeoLocale, { title: str
     ja: { title: "アイテム図鑑 - アークナイツ アイテム情報 | テラアーカイブ", description: "アークナイツのアイテム図鑑 — 素材・イベント交換素材・資源・引換券など1,400種以上の説明と用途、入手方法、ドロップ作戦をまとめて検索できます。" },
   },
   event: {
-    ko: { title: "이벤트 도감 - 명일방주 이벤트 정보 | 테라 아카이브", description: "명일방주(아크나이츠) 이벤트 도감 — 이벤트 150여 개의 작전·등장 적·교환 재화·보상 오퍼레이터를 한자리에서 봅니다. 끝난 이벤트도 그대로 남습니다." },
-    en: { title: "Event Handbook - Arknights Event Database | Terra Archive", description: "Arknights event handbook — operations, enemies, exchange currencies and welfare operators for 150+ events, gathered in one place. Ended events stay here." },
-    ja: { title: "イベント図鑑 - アークナイツ イベント情報 | テラアーカイブ", description: "アークナイツのイベント図鑑 — 150以上のイベントの作戦・出現する敵・交換素材・報酬オペレーターをまとめて確認できます。終了したイベントもそのまま残ります。" },
+    ko: { title: "이벤트 가이드 - 명일방주 이벤트 정보 | 테라 아카이브", description: "명일방주(아크나이츠) 이벤트 가이드 — 이벤트 150여 개의 작전·등장 적·교환 재화·보상 오퍼레이터를 한자리에서 봅니다. 끝난 이벤트도 그대로 남습니다." },
+    en: { title: "Event Guide - Arknights Event Database | Terra Archive", description: "Arknights event guide — operations, enemies, exchange currencies and welfare operators for 150+ events, gathered in one place. Ended events stay here." },
+    ja: { title: "イベントガイド - アークナイツ イベント情報 | テラアーカイブ", description: "アークナイツのイベントガイド — 150以上のイベントの作戦・出現する敵・交換素材・報酬オペレーターをまとめて確認できます。終了したイベントもそのまま残ります。" },
   },
   sim: {
     ko: { title: "작전 시뮬레이터 - 명일방주 적 스폰 타임라인 | 테라 아카이브", description: "명일방주(아크나이츠) 작전 시뮬레이터 — 작전을 고르면 적이 몇 초에 어디서 나와 어떤 경로로 어디에 들어가는지 스폰 타임라인을 재생합니다. 배속·구간 이동 지원, 통합전략 전투 노드 포함." },

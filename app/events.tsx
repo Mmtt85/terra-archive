@@ -304,16 +304,26 @@ function EventFile({ row, onOpenStage, onOpenEnemy, onOpenItem, onShowOperator, 
   );
 }
 
-export default function EventDex({ doc, onShowOperator, onOpenGuide }: {
+export default function EventDex({ doc, onShowOperator, onOpenGuide, modalOnly, initialId, onCloseModal }: {
   doc: EventDoc; onShowOperator: (id: string) => void;
   /** 전용 가이드가 있는 모드로 탭을 넘긴다 (위수 협의 등) */
   onOpenGuide: (seg: string) => void;
+  /** 목록 없이 **모달만** 그린다 — 헤더 이벤트 버튼이 페이지를 안 넘기고 그 자리에 띄울 때
+   *  (사용자 지시 2026-09-17: "이벤트 가이드로 페이지가 넘어가지 말고 그냥 모달창만").
+   *  작전·적·아이템·스토리 겹침 모달 배선을 그대로 재사용하려고 같은 컴포넌트를 쓴다. */
+  modalOnly?: boolean;
+  /** modalOnly 일 때 열 이벤트 id — ⚠ 호스트가 **key 로도 써서** 다른 이벤트를 누르면
+   *  이 컴포넌트가 새로 마운트된다. 그래서 여기선 초기값으로만 읽고 동기화 effect 를 두지 않는다. */
+  initialId?: string | null;
+  /** modalOnly 일 때 주 모달이 닫혔음을 알린다 (호스트가 자기 상태를 지운다) */
+  onCloseModal?: () => void;
 }) {
   const { locale, t } = useI18n();
   const { term, clear, inputProps } = useSearchInput();
   const [types, setTypes] = useState<string[]>([]);
   const [has, setHas] = useState<string[]>([]);
-  const [open, setOpen] = useState<EventRow | null>(null);
+  const [open, setOpen] = useState<EventRow | null>(
+    () => (modalOnly && initialId ? doc.events.find((e) => e.id === initialId) ?? null : null));
   // 겹쳐 뜨는 부가 모달 — 이벤트 모달을 그대로 둔 채 위에 하나 더 (적 도감과 같은 규약).
   // ⚠ 해시 동기화는 하지 않는다 (주 모달 #ev-<id>와 서로 덮어써 창이 닫힌다).
   const [subStage, setSubStage] = useState<StageView | null>(null);
@@ -358,8 +368,10 @@ export default function EventDex({ doc, onShowOperator, onOpenGuide }: {
   // ⚠ 스토리 모달이 떠 있는 동안은 **해시를 비켜 준다.** 스토리 상세는 자기 보기 방식을
   //   해시(#story-<id>/ep3 등)에 쓰는데, 여기가 계속 #ev-<id>로 되돌리면 둘이 서로를
   //   덮어써 창이 닫힌다 (이 화면의 다른 겹침 모달들이 해시를 안 쓰는 것과 같은 이유).
-  useHashSync(subStory ? null : (open ? `#ev-${open.id}` : null), (hash) => {
-    if (subStory) return;
+  // ⚠ modalOnly 는 해시를 건드리지 않는다 — 호스트 페이지(홈·도감 등)가 자기 해시를 쓰고
+  //   있어서, 여기서 #ev-<id>로 덮으면 그 화면의 해시 기계와 서로를 지운다.
+  useHashSync(modalOnly || subStory ? null : (open ? `#ev-${open.id}` : null), (hash) => {
+    if (modalOnly || subStory) return;
     const m = /^#ev-(.+)$/.exec(hash);
     setOpen(m ? byId.get(m[1]) ?? null : null);
   });
@@ -396,6 +408,56 @@ export default function EventDex({ doc, onShowOperator, onOpenGuide }: {
     set((cur) => (cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v]));
   const reset = () => { setTypes([]); setHas([]); clear(false); };
   const active = types.length + has.length > 0 || !!term;
+
+  const modals = (
+    <>
+      {open && (
+        <ModalWindow label={open.n} className="operator-modal ev-modal"
+          onClose={() => { setOpen(null); onCloseModal?.(); }}>
+          <EventFile row={open} onOpenStage={openStage} onOpenEnemy={openEnemy}
+            onOpenItem={openItem} onShowOperator={onShowOperator}
+            onOpenStory={(id) => { setRaise((k) => k + 1); setSubStory(id); }}
+            onOpenOrigin={(id) => { const e = byId.get(id); if (e) setOpen(e); }} />
+        </ModalWindow>
+      )}
+      {subStage && (
+        <ModalWindow key={`st-${raise}`} label={`${subStage.stage.code} ${subStage.stage.name}`}
+          className="operator-modal st-modal" onClose={() => setSubStage(null)}>
+          {/* ⚠ onOpenItem 을 빠뜨리면 드랍 칩이 disabled 로 죽는다 — 작전 도감(app/stages.tsx)은
+              넘기고 있는데 여기만 빠져 있었다 (사용자 제보 2026-09-17). */}
+          <StageFile view={subStage} onOpenEnemy={openEnemy} onOpenItem={openItem} />
+        </ModalWindow>
+      )}
+      {subEnemy && (
+        <ModalWindow key={`en-${raise}`} label={subEnemy.name} className="operator-modal en-modal"
+          onClose={() => setSubEnemy(null)}>
+          {/* ⚠ nameOf·onOpenEnemy 를 빠뜨리면 '연계 소환'이 id를 날것으로 찍고, 눌렀을 때
+              모달이 아니라 적 상세 **페이지로 튕겨 나간다** (사용자 제보 2026-09-17).
+              */}
+          <EnemyFile enemy={subEnemy} stagesDoc={enStages}
+            nameOf={(id) => enMap?.get(id)?.name}
+            onOpenEnemy={openEnemy} onOpenStage={openStage} />
+        </ModalWindow>
+      )}
+      {subStory && (
+        <ModalWindow key={`sy-${raise}`} label={byId.get(subStory)?.n ?? ""}
+          className="operator-modal sy-modal" onClose={() => setSubStory(null)}>
+          <Suspense fallback={<p className="no-detail">{t("불러오는 중…")}</p>}>
+            <StoryModal id={subStory} onClose={() => setSubStory(null)} onShowOperator={onShowOperator} />
+          </Suspense>
+        </ModalWindow>
+      )}
+      {subItem && itemDoc && (
+        <ModalWindow key={`it-${raise}`} label={subItem.n} className="item-modal it-modal"
+          onClose={() => setSubItem(null)}>
+          <ItemFile item={subItem} doc={itemDoc} onOpenStage={openStage} />
+        </ModalWindow>
+      )}
+    </>
+  );
+
+  // 모달만 그리는 모드 — 목록·필터 DOM 없이 겹침 모달 배선만 재사용한다
+  if (modalOnly) return modals;
 
   return (
     <section className="explorer ev-explorer" aria-labelledby="event-title">
@@ -459,47 +521,7 @@ export default function EventDex({ doc, onShowOperator, onOpenGuide }: {
         </div>
       </div>
 
-      {open && (
-        <ModalWindow label={open.n} className="operator-modal ev-modal" onClose={() => setOpen(null)}>
-          <EventFile row={open} onOpenStage={openStage} onOpenEnemy={openEnemy}
-            onOpenItem={openItem} onShowOperator={onShowOperator}
-            onOpenStory={(id) => { setRaise((k) => k + 1); setSubStory(id); }}
-            onOpenOrigin={(id) => { const e = byId.get(id); if (e) setOpen(e); }} />
-        </ModalWindow>
-      )}
-      {subStage && (
-        <ModalWindow key={`st-${raise}`} label={`${subStage.stage.code} ${subStage.stage.name}`}
-          className="operator-modal st-modal" onClose={() => setSubStage(null)}>
-          {/* ⚠ onOpenItem 을 빠뜨리면 드랍 칩이 disabled 로 죽는다 — 작전 도감(app/stages.tsx)은
-              넘기고 있는데 여기만 빠져 있었다 (사용자 제보 2026-09-17). */}
-          <StageFile view={subStage} onOpenEnemy={openEnemy} onOpenItem={openItem} />
-        </ModalWindow>
-      )}
-      {subEnemy && (
-        <ModalWindow key={`en-${raise}`} label={subEnemy.name} className="operator-modal en-modal"
-          onClose={() => setSubEnemy(null)}>
-          {/* ⚠ nameOf·onOpenEnemy 를 빠뜨리면 '연계 소환'이 id를 날것으로 찍고, 눌렀을 때
-              모달이 아니라 적 상세 **페이지로 튕겨 나간다** (사용자 제보 2026-09-17).
-              */}
-          <EnemyFile enemy={subEnemy} stagesDoc={enStages}
-            nameOf={(id) => enMap?.get(id)?.name}
-            onOpenEnemy={openEnemy} onOpenStage={openStage} />
-        </ModalWindow>
-      )}
-      {subStory && (
-        <ModalWindow key={`sy-${raise}`} label={byId.get(subStory)?.n ?? ""}
-          className="operator-modal sy-modal" onClose={() => setSubStory(null)}>
-          <Suspense fallback={<p className="no-detail">{t("불러오는 중…")}</p>}>
-            <StoryModal id={subStory} onClose={() => setSubStory(null)} onShowOperator={onShowOperator} />
-          </Suspense>
-        </ModalWindow>
-      )}
-      {subItem && itemDoc && (
-        <ModalWindow key={`it-${raise}`} label={subItem.n} className="item-modal it-modal"
-          onClose={() => setSubItem(null)}>
-          <ItemFile item={subItem} doc={itemDoc} onOpenStage={openStage} />
-        </ModalWindow>
-      )}
+      {modals}
     </section>
   );
 }

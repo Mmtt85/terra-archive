@@ -687,7 +687,7 @@ function BroadcastBadges({ includeFuture, slot, onOpenEvent }: {
                         이벤트만 종전대로 공식 카페 공지로 나간다. */}
                     {onOpenEvent && knownEventIds.has(event.id)
                       ? <button type="button" className="event-row-btn"
-                          onClick={() => onOpenEvent(event.id, event.type)} title={t("이벤트 도감에서 보기")}>{body}</button>
+                          onClick={() => onOpenEvent(event.id, event.type)} title={t("이벤트 가이드에서 보기")}>{body}</button>
                       : event.url
                         ? <a href={event.url} target="_blank" rel="noopener noreferrer" title={t("공식 카페 공지 보기")}>{body}</a>
                         : <span className="event-row-plain">{body}</span>}
@@ -714,7 +714,7 @@ function BroadcastBadges({ includeFuture, slot, onOpenEvent }: {
                         이벤트만 종전대로 공식 카페 공지로 나간다. */}
                     {onOpenEvent && knownEventIds.has(event.id)
                       ? <button type="button" className="event-row-btn"
-                          onClick={() => onOpenEvent(event.id, event.type)} title={t("이벤트 도감에서 보기")}>{body}</button>
+                          onClick={() => onOpenEvent(event.id, event.type)} title={t("이벤트 가이드에서 보기")}>{body}</button>
                       : event.url
                         ? <a href={event.url} target="_blank" rel="noopener noreferrer" title={t("공식 카페 공지 보기")}>{body}</a>
                         : <span className="event-row-plain">{body}</span>}
@@ -1267,11 +1267,14 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   const ItemDexForLocale = ITEM_DEX[locale as keyof typeof ITEM_DEX] ?? ITEM_DEX.ko;
   const EventDexForLocale = EVENT_DEX[locale as keyof typeof EVENT_DEX] ?? EVENT_DEX.ko;
   const runningEvent = useRunningEvent();
-  /** 이벤트 도감으로 넘어가 그 이벤트 상세를 연다 — 해시는 도감이 마운트하며 읽는다
-   *  (작전 도감 → 적 도감 이동과 같은 방식). */
+  /** 헤더·배너에서 연 이벤트 — **페이지를 안 넘기고** 그 자리에 모달만 띄운다
+   *  (사용자 지시 2026-09-17: "이벤트 가이드로 페이지가 넘어가지 말고 그냥 모달창만").
+   *  이미 이벤트 가이드 화면에 있으면 그쪽 목록이 해시로 열게 두고 여기선 띄우지 않는다 —
+   *  같은 모달이 두 겹으로 뜬다. */
+  const [eventModalId, setEventModalId] = useState<string | null>(null);
   const openEventById = (id: string, type?: string | null) => {
     // ⚠ **전용 가이드가 있는 모드는 그쪽이 우선이다** (사용자 지시 2026-09-17: "위수협의
-    //   맹약 이벤트는 위수협의 페이지로 넘어가 줘야지"). 이벤트 도감 상세보다 그 가이드에
+    //   맹약 이벤트는 위수협의 페이지로 넘어가 줘야지"). 이벤트 상세보다 그 가이드에
     //   훨씬 많은 게 들어 있다. 시즌은 활동 id(act<N>autochess)의 N 을 그대로 쓴다.
     const guide = EVENT_GUIDE_TAB[type ?? ""];
     if (guide === "autochess") {
@@ -1280,12 +1283,13 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
       return;
     }
     if (guide) { switchTab(guide); scrollMainTop(); return; }
-    history.pushState(null, "", `${tabPath("event")}#ev-${id}`);
-    startTransition(() => { setTab("event"); setSelected(null); });
-    // ⚠ `pushState` 는 hashchange 를 일으키지 않는다. 이미 이벤트 도감에 있을 때는 탭도
-    //   안 바뀌어 화면이 그대로였다 (사용자 제보 2026-09-17) — 해시 기계를 직접 깨운다.
-    //   (이미 마운트된 도감의 useHashSync 가 이 이벤트를 듣고 모달을 연다)
-    window.dispatchEvent(new Event("hashchange"));
+    // 이벤트 가이드 화면에서는 종전대로 해시로 연다 (그 화면의 목록·필터가 주인이다)
+    if (tab === "event") {
+      history.pushState(null, "", `${tabPath("event")}#ev-${id}`);
+      window.dispatchEvent(new Event("hashchange"));
+      return;
+    }
+    setEventModalId(id);
   };
   // 작전 도감 → 적 도감: 적 칩을 누르면 적 상세로 넘어간다 (두 도감이 서로를 가리킨다)
   const openEnemyFromStage = (id: string) => {
@@ -1591,7 +1595,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
           : tab === "item"
             ? t("아이템 도감 - 명일방주 아이템 정보 | 테라 아카이브")
           : tab === "event"
-            ? t("이벤트 도감 - 명일방주 이벤트 정보 | 테라 아카이브")
+            ? t("이벤트 가이드 - 명일방주 이벤트 정보 | 테라 아카이브")
           : tab === "farm"
             ? t("재료파밍 도우미 - 명일방주 재료 파밍 효율표 | 테라 아카이브")
             : tab === "sim"
@@ -1656,7 +1660,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
     enemy: t("적 도감"),
     stage: t("작전 도감"),
     item: t("아이템 도감"),
-    event: t("이벤트 도감"),
+    event: t("이벤트 가이드"),
     planner: t("인프라 자동편성기"),
     recruit: t("공개채용 도우미"),
     farm: t("재료파밍 도우미"),
@@ -2493,6 +2497,21 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
       {/* 작전 시뮬레이터 런처 — SEO 표적 페이지라 **정적 임포트로 프리렌더**한다
           (lazy면 /sim의 HTML이 빈 껍데기가 된다). 무거운 데이터는 컴포넌트가 지연 로드. */}
       {tab === "sim" && <SimLauncher />}
+      {/* 헤더·배너에서 연 이벤트 상세 — 어느 화면에서든 **그 자리에 모달로** 겹친다
+          (사용자 지시 2026-09-17). 이벤트 가이드 컴포넌트를 modalOnly 로 붙여 작전·적·
+          아이템·스토리 겹침 모달 배선을 그대로 쓴다 — 청크는 누를 때 처음 받는다. */}
+      {eventModalId && (
+        <Suspense fallback={null}>
+          <EventDexForLocale key={eventModalId} modalOnly initialId={eventModalId} onCloseModal={() => setEventModalId(null)}
+            onShowOperator={showOperatorById}
+            onOpenGuide={(seg) => {
+              setEventModalId(null);
+              const [head, slug] = seg.split("/");
+              if (head === "autochess" && slug) { switchAutochess(autochessSeasonOf(slug)); return; }
+              switchTab((SEG_TAB[head] ?? "event") as Tab);
+            }} />
+        </Suspense>
+      )}
 
       <footer ref={footerRef}
         className={`${footerFolded ? "folded" : ""}${footDragH != null ? " dragging" : ""}`}

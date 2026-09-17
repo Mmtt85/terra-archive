@@ -211,7 +211,7 @@ const CONTENT: Record<Locale, Content> = {
         ],
       },
       {
-        tab: "event", icon: "✧", name: "이벤트 도감",
+        tab: "event", icon: "✧", name: "이벤트 가이드",
         summary: "이벤트 하나를 열면 그 이벤트의 작전·등장 적·교환 재화·보상 오퍼가 한자리에 모입니다.",
         bullets: [
           "이벤트 150여 개 — 사이드 스토리·미니 이벤트·막간 이야기를 종류와 수록 내용으로 거릅니다",
@@ -381,7 +381,7 @@ const CONTENT: Record<Locale, Content> = {
         ],
       },
       {
-        tab: "event", icon: "✧", name: "Event Handbook",
+        tab: "event", icon: "✧", name: "Event Guide",
         summary: "Open an event and its operations, enemies, exchange currencies and reward operator are all in one place.",
         bullets: [
           "150+ events — filter Side Stories, mini events and Intermezzi by type and by what they contain",
@@ -551,7 +551,7 @@ const CONTENT: Record<Locale, Content> = {
         ],
       },
       {
-        tab: "event", icon: "✧", name: "イベント図鑑",
+        tab: "event", icon: "✧", name: "イベントガイド",
         summary: "イベントを開くと、その作戦・出現する敵・交換素材・報酬オペレーターが一箇所にまとまります。",
         bullets: [
           "150以上のイベント — サイドストーリー・ミニイベント・幕間を種類と収録内容で絞り込み",

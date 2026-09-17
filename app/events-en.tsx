@@ -5,8 +5,11 @@
 import EventDex, { type EventDoc } from "./events";
 import doc from "./data/events.en.json";
 
-export default function EventDexEN({ onShowOperator, onOpenGuide }: {
+export default function EventDexEN({ onShowOperator, onOpenGuide, modalOnly, initialId, onCloseModal }: {
   onShowOperator: (id: string) => void; onOpenGuide: (seg: string) => void;
+  /** 목록 없이 모달만 (헤더 이벤트 버튼 — app/events.tsx 의 modalOnly 주석 참조) */
+  modalOnly?: boolean; initialId?: string | null; onCloseModal?: () => void;
 }) {
-  return <EventDex doc={doc as unknown as EventDoc} onShowOperator={onShowOperator} onOpenGuide={onOpenGuide} />;
+  return <EventDex doc={doc as unknown as EventDoc} onShowOperator={onShowOperator} onOpenGuide={onOpenGuide}
+    modalOnly={modalOnly} initialId={initialId} onCloseModal={onCloseModal} />;
 }

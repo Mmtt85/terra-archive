@@ -67,6 +67,10 @@ export const PORTAL_TILES: PortalTile[] = [
     desc: "요리 조합·제작 재료·지역과 조우 선택지를 정리", icon: "❂" },
   { id: "autochess", label: "위수협의", tab: "autochess", area: "guide", kind: "plate", group: "guide",
     desc: "맹약별 오퍼레이터·전용 능력·특훈 적·보급센터 수치를 정리", icon: "♟" },
+  // 이벤트도 가이드 묶음 (사용자 지시 2026-09-17) — 헤더 메뉴의 GUIDE_TABS 와 같은 구성.
+  // 자료를 뒤지는 도감이 아니라 "이 콘텐츠를 보러 간다"는 결이라 여기 들어간다.
+  { id: "event", label: "이벤트", tab: "event", area: "guide", kind: "plate", group: "guide",
+    desc: "이벤트별 작전·등장 적·교환 재화·보상 오퍼를 한자리에", icon: "✧" },
   { id: "archives", label: "테라 아카이브 소개", tab: "about", area: "archives", kind: "plate",
     desc: "각 기능이 무엇이고 언제 쓰는지 안내", icon: "ⓘ" },
   // 제안 보내기 타일은 뺐다 (사용자 지시 2026-08-10) — 떠 있는 💬 제안 버튼과 중복.
