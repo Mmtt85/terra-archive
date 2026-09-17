@@ -10,6 +10,13 @@
 
 중국 서버 화면은 한섭 출시 여부와 무관하게 전부 중국어이므로 두 벌 다 필요합니다.
 
+**같은 원문이 두 벌에 겹치지는 않습니다.** 공식 한국어가 있는 자리에서는 비공식 번역을
+빼 두었으니, 파일을 하나로 합쳐 쓰셔도 어느 쪽이 이길지 걱정하실 것 없습니다.
+다만 **문맥이 다르면 같은 원문이 다르게 번역된 자리가 열 곳쯤 있습니다**
+(`清明`이 적 이름일 때와 오퍼 이름일 때, `哎呀！`가 조우 문구일 때와 보이스일 때).
+그 열 곳은 게임 안에서도 실제로 다른 말이라 합치지 않았습니다 — 정확도가 중요하시면
+파일별로 따로 찾으시고, 아니면 합쳐 쓰셔도 큰 지장은 없습니다.
+
 - 시작점: `https://files.terra-archive.net/assets/tl/manifest.json`
   — **앱에 박아 둘 주소는 이것 하나면 됩니다.** 나머지 파일 주소는 manifest 안에 들어
   있습니다 (`files[].url`). 주소를 직접 조합하지 마세요.
@@ -35,20 +42,21 @@
 | 파일 | 내용 | 항목 | 크기 |
 |---|---|---:|---:|
 | [`manifest.json`](https://files.terra-archive.net/assets/tl/manifest.json) | 아래 목록 + 파일별 해시·주소 | — | 3 KB |
-| [`op-fut.json`](https://files.terra-archive.net/assets/tl/op-fut.json) | 오퍼·재료·**아이템** — 아직 한국 서버에 없는 것 | 581 | 330 KB |
-| [`op-past.json`](https://files.terra-archive.net/assets/tl/op-past.json) | **오퍼 기록·보이스 대사** 중심 — 공식 한국어가 덮기 전의 옛 번역 | 2,415 | 2.3 MB |
+| [`op-fut.json`](https://files.terra-archive.net/assets/tl/op-fut.json) | 오퍼·재료·**아이템** — 아직 한국 서버에 없는 것 | 1,900 | 1.4 MB |
+| [`op-past.json`](https://files.terra-archive.net/assets/tl/op-past.json) | **오퍼 기록·보이스 대사** 중심 — 공식 한국어가 덮기 전의 옛 번역 | 412 | 347 KB |
 | [`kr-op.json`](https://files.terra-archive.net/assets/tl/kr-op.json) | 오퍼레이터 — 이름·직위·특성·재능·스킬·모듈 (**한섭 공식 한국어**) | 8,277 | 3.9 MB |
 | [`kr-item.json`](https://files.terra-archive.net/assets/tl/kr-item.json) | 아이템·재료 — 이름·설명·용도 (**한섭 공식 한국어**) | 3,024 | 507 KB |
 | [`kr-enemy.json`](https://files.terra-archive.net/assets/tl/kr-enemy.json) | 적 — 이름·설명·능력 (**한섭 공식 한국어**) | 3,141 | 733 KB |
 | [`kr-stage.json`](https://files.terra-archive.net/assets/tl/kr-stage.json) | 작전 — 이름·설명 (**한섭 공식 한국어**) | 5,248 | 1.2 MB |
 | [`kr-is-enc.json`](https://files.terra-archive.net/assets/tl/kr-is-enc.json) | 통합전략 1~5 조우 분기 — 씬 본문·선택지 (**한섭 공식 한국어**) | 3,305 | 762 KB |
-| [`ra.json`](https://files.terra-archive.net/assets/tl/ra.json) | 생존연산 (중국 서버 선행) | 1,157 | 161 KB |
-| [`is1.json`](https://files.terra-archive.net/assets/tl/is1.json) … [`is6.json`](https://files.terra-archive.net/assets/tl/is6.json) | 통합전략 1~6 (6은 중국 서버 선행) | 726~1,519 | 43~86 KB |
-| [`is-common.json`](https://files.terra-archive.net/assets/tl/is-common.json) | 통합전략 공통 — 조우 안내·판정 문구 (테마 구분 없음) | 298 | 118 KB |
+| [`kr-voice.json`](https://files.terra-archive.net/assets/tl/kr-voice.json) | 오퍼 보이스 대사 — 제목·대사 (**한섭 공식 한국어**) | 16,043 | 4.2 MB |
+| [`ra.json`](https://files.terra-archive.net/assets/tl/ra.json) | 생존연산 (중국 서버 선행) | 1,117 | 159 KB |
+| [`is1.json`](https://files.terra-archive.net/assets/tl/is1.json) … [`is6.json`](https://files.terra-archive.net/assets/tl/is6.json) | 통합전략 1~6 (6은 중국 서버 선행) | 385~673 | 23~40 KB |
+| [`is-common.json`](https://files.terra-archive.net/assets/tl/is-common.json) | 통합전략 공통 — 조우 안내·판정 문구 (테마 구분 없음) | 240 | 96 KB |
 
-전량 약 10.3 MB입니다. 한 파일이 하나의 콘텐츠에 대응하므로 필요한 것만 받으면 됩니다.
+전량 약 13.5 MB입니다. 한 파일이 하나의 콘텐츠에 대응하므로 필요한 것만 받으면 됩니다.
 
-`kr-*.json` 다섯은 **번역이 아니라 대조표**입니다. 한국 서버에 이미 나온 것들의 중국어 원문과
+`kr-*.json` 여섯은 **번역이 아니라 대조표**입니다. 한국 서버에 이미 나온 것들의 중국어 원문과
 **게임의 공식 한국어**를 같은 id끼리 짝지은 것이라, AI 번역이 한 글자도 섞여 있지 않습니다.
 중국 서버 화면은 한섭 출시 여부와 상관없이 전부 중국어이므로, 이쪽이 실제로 가장 많이
 쓰이실 겁니다. 나머지 파일이 그때그때의 **비공식** 번역입니다.

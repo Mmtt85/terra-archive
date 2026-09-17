@@ -364,7 +364,8 @@ def _t(name):
 def cn_only_texts():
     """CN 표에만 있는 원문 / KR 표에 있는 원문 — 미래시 판정의 직접 증거."""
     only, krs = set(), set()
-    tag = re.compile(r"<[^>]+>")
+    tag_re = re.compile(r"<[^>]+>")
+    tag = tag_re
     def take(cn_map, kr_map, fields):
         for i, e in (cn_map or {}).items():
             if not isinstance(e, dict): continue
@@ -387,12 +388,61 @@ def cn_only_texts():
     if c: take(c.get("stages"), k.get("stages"), ("name", "description"))
     c, k = both("uniequip_table")
     if c: take(c.get("equipDict"), k.get("equipDict"), ("uniEquipName", "uniEquipDesc"))
+    # ⚠ 보이스·기록도 봐야 한다 (2026-09-17 실측). 이 둘을 빼 뒀더니 미실장 오퍼의
+    #   기록 836건·보이스 551건이 전부 op-past 로 떨어졌다 — 미래시인데 "출시로 덮인
+    #   옛 것" 취급을 받은 것이다. char id 단위로 갈린다.
+    c, k = both("charword_table")
+    if c:
+        kd, only_ops = k.get("charWords") or {}, None
+        for wid, e in (c.get("charWords") or {}).items():
+            dest = krs if wid in kd else only
+            for f in ("voiceTitle", "voiceText"):
+                t = tag_re.sub("", e.get(f) or "").strip()
+                if t: dest.add(t)
+    c, k = both("handbook_info_table")
+    if c:
+        kd = k.get("handbookDict") or {}
+        for hid, e in (c.get("handbookDict") or {}).items():
+            dest = krs if hid in kd else only
+            for d2 in (e.get("storyTextAudio") or []):
+                for s2 in (d2.get("stories") or []):
+                    t = tag_re.sub("", s2.get("storyText") or "").strip()
+                    if not t: continue
+                    dest.add(t)
+                    for ln in t.split("\n"):
+                        ln = ln.strip()
+                        if ln: dest.add(ln)
     return only - krs, krs
 
 
+def cn_live_texts():
+    """현행 CN 게임데이터에 실제로 들어 있는 중국어 문자열 전부 — 고아 판정용."""
+    out, tag = set(), re.compile(r"<[^>]+>")
+    def walk(o):
+        if isinstance(o, dict):
+            for v in o.values(): walk(v)
+        elif isinstance(o, list):
+            for v in o: walk(v)
+        elif isinstance(o, str) and CJK.search(o):
+            t = tag.sub("", o).strip()
+            if t:
+                out.add(t)
+                for ln in t.split("\n"):
+                    ln = ln.strip()
+                    if ln: out.add(ln)
+    import glob as _glob
+    for f in _glob.glob(os.path.join(GD, "cn_*.json")):
+        try:
+            with open(f, encoding="utf-8") as fp: walk(json.load(fp))
+        except (OSError, ValueError):
+            continue
+    return out
+
+
+CN_LIVE = cn_live_texts()
 CN_ONLY, KR_TEXTS = cn_only_texts()
 
-op_fut, op_past = {}, {}
+op_fut, op_past, dropped = {}, {}, 0
 for cn, val in load("scripts/cn-translations.json").items():
     if cn.startswith("_") or not isinstance(val, dict):
         continue
@@ -404,8 +454,16 @@ for cn, val in load("scripts/cn-translations.json").items():
     # 안 싣는 갈래(아이템 도감은 미실장 133종을 아예 뺀다)가 통째로 past 로 잘못
     # 떨어졌다 (2026-09-17 실측: 새로 넣은 아이템 번역 175건이 전부 오분류).
     # 직접 증거가 없을 때만 옛 방식으로 폴백한다.
+    # 현행 CN 게임데이터 어디에도 없는 원문은 **내보내지 않는다** — 옛 판본의 스킬 문구
+    # 같은 것이라 중섭 화면에서 마주칠 일이 없다 (2026-09-17 실측 388건). 장부에는
+    # 남겨 둔다 — 다른 스크립트가 옛 산출물을 보정하는 데 쓸 수 있다.
+    if cn not in CN_LIVE:
+        dropped += 1
+        continue
     fut = cn in CN_ONLY or (cn not in KR_TEXTS and any(entry["ko"] in b for b in blobs))
     (op_fut if fut else op_past)[cn] = entry
+if dropped:
+    print(f"  현행 CN 데이터에 없어 제외한 옛 원문 {dropped:,}건")
 files["op-fut.json"] = op_fut
 labels["op-fut.json"] = "오퍼·재료·아이템 — 아직 한국 서버에 없는 것 (비공식 번역)"
 files["op-past.json"] = op_past
@@ -450,7 +508,7 @@ labels["is-common.json"] = "통합전략 공통 — 조우 안내·판정 문구
 #   테이블이 없다고 빌드가 죽으면 안 되고, 옛 산출물이 남아 있으면 그대로 쓰인다.
 def official_pairs():
     """{갈래: {중국어 원문: {"ko": 공식 한국어}}} — 양쪽 공식 표를 id 로 조인한다."""
-    out = {k: {} for k in ("op", "item", "enemy", "stage", "is-enc")}
+    out = {k: {} for k in ("op", "item", "enemy", "stage", "is-enc", "voice")}
     tag_re = re.compile(r"<[^>]+>")
 
     def add(tag, cn, ko):
@@ -534,6 +592,17 @@ def official_pairs():
                     for f in fields:
                         add("is-enc", ea.get(f), eb.get(f))
 
+    # 보이스 대사 — 자막으로 화면에 뜨므로 OCR 대상이다. 기록(핸드북 산문)은 9MB 라
+    # 분량 대비 실익이 얇아 뺐다 (사용자 판단 2026-09-17). 필요해지면 같은 방식으로 얹는다.
+    c, k = both("charword_table")
+    if c:
+        kd = k.get("charWords") or {}
+        for wid, a in (c.get("charWords") or {}).items():
+            b = kd.get(wid)
+            if not isinstance(b, dict): continue
+            for f in ("voiceTitle", "voiceText"):
+                add("voice", a.get(f), b.get(f))
+
     c, k = both("stage_table")
     if c:
         kd = k.get("stages") or {}
@@ -554,14 +623,39 @@ OFF_LABEL = {
     "enemy": "적 — 이름·설명·능력 (한섭 공식 한국어)",
     "stage": "작전 — 이름·설명 (한섭 공식 한국어)",
     "is-enc": "통합전략 1~5 조우 분기 — 씬 본문·선택지 (한섭 공식 한국어)",
+    "voice": "오퍼 보이스 대사 — 제목·대사 (한섭 공식 한국어)",
 }
 OFF_ORDER = []
-for tag in ("op", "item", "enemy", "stage", "is-enc"):
+for tag in ("op", "item", "enemy", "stage", "is-enc", "voice"):
     if OFFICIAL.get(tag):
         name = f"kr-{tag}.json"
         files[name] = OFFICIAL[tag]
         labels[name] = OFF_LABEL[tag]
         OFF_ORDER.append(name)
+
+# ── 공식과 겹치는 비공식 번역을 걷어낸다 ──────────────────────────────────────
+# 같은 중국어 원문에 공식 한국어와 AI 번역이 둘 다 나가면, 받는 쪽이 파일을 합칠 때
+# 어느 쪽이 이길지 순서에 달리게 된다 — 그리고 공식이 있는 자리는 공식이 옳다.
+# (실측 2026-09-17: is3 의 49%, op-past 의 36% 가 공식과 키가 겹쳤다.)
+_official_keys = {k for tag in OFF_ORDER for k in files[tag]}
+_pruned = 0
+for _name, _body in files.items():
+    if _name in OFF_ORDER:
+        continue
+    first = next(iter(_body.values()), None)
+    grouped = isinstance(first, dict) and not ({"ko", "en", "ja"} & set(first))
+    if grouped:
+        for g, inner in list(_body.items()):
+            for k in list(inner):
+                if k in _official_keys:
+                    del inner[k]; _pruned += 1
+            if not inner: del _body[g]
+    else:
+        for k in list(_body):
+            if k in _official_keys:
+                del _body[k]; _pruned += 1
+if _pruned:
+    print(f"  공식 대조본과 겹쳐 뺀 비공식 번역 {_pruned:,}건")
 
 # ── 내보내기 ─────────────────────────────────────────────────────────────────
 os.makedirs(OUT, exist_ok=True)

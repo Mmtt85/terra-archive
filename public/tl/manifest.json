@@ -3,15 +3,15 @@
  "files": [
   {
    "file": "op-fut.json",
-   "url": "https://files.terra-archive.net/assets/tl/op-fut.json?v=7e1423d74e41ce4f",
+   "url": "https://files.terra-archive.net/assets/tl/op-fut.json?v=fa7680fc3a9c0f57",
    "label": "오퍼·재료·아이템 — 아직 한국 서버에 없는 것 (비공식 번역)",
-   "hash": "7e1423d74e41ce4f"
+   "hash": "fa7680fc3a9c0f57"
   },
   {
    "file": "op-past.json",
-   "url": "https://files.terra-archive.net/assets/tl/op-past.json?v=271893be3fe26363",
+   "url": "https://files.terra-archive.net/assets/tl/op-past.json?v=342bbf1f7bbd985e",
    "label": "오퍼 기록·보이스 대사 중심 — 공식 한국어가 덮기 전의 옛 번역",
-   "hash": "271893be3fe26363"
+   "hash": "342bbf1f7bbd985e"
   },
   {
    "file": "kr-op.json",
@@ -44,52 +44,58 @@
    "hash": "44fd751fd8819b6a"
   },
   {
+   "file": "kr-voice.json",
+   "url": "https://files.terra-archive.net/assets/tl/kr-voice.json?v=f562c59e4a52f0d5",
+   "label": "오퍼 보이스 대사 — 제목·대사 (한섭 공식 한국어)",
+   "hash": "f562c59e4a52f0d5"
+  },
+  {
    "file": "ra.json",
-   "url": "https://files.terra-archive.net/assets/tl/ra.json?v=497e0066a7e143de",
+   "url": "https://files.terra-archive.net/assets/tl/ra.json?v=c461f7235c0e0b4b",
    "label": "생존연산 (중국 서버 선행)",
-   "hash": "497e0066a7e143de"
+   "hash": "c461f7235c0e0b4b"
   },
   {
    "file": "is1.json",
-   "url": "https://files.terra-archive.net/assets/tl/is1.json?v=fc40008aac3a7a98",
+   "url": "https://files.terra-archive.net/assets/tl/is1.json?v=eef4f3b982e29bb2",
    "label": "통합전략 1",
-   "hash": "fc40008aac3a7a98"
+   "hash": "eef4f3b982e29bb2"
   },
   {
    "file": "is2.json",
-   "url": "https://files.terra-archive.net/assets/tl/is2.json?v=3e82293d2524daff",
+   "url": "https://files.terra-archive.net/assets/tl/is2.json?v=03cf6b158e089f49",
    "label": "통합전략 2",
-   "hash": "3e82293d2524daff"
+   "hash": "03cf6b158e089f49"
   },
   {
    "file": "is3.json",
-   "url": "https://files.terra-archive.net/assets/tl/is3.json?v=984b01a6fe6cb0f9",
+   "url": "https://files.terra-archive.net/assets/tl/is3.json?v=7c83158735813cec",
    "label": "통합전략 3",
-   "hash": "984b01a6fe6cb0f9"
+   "hash": "7c83158735813cec"
   },
   {
    "file": "is4.json",
-   "url": "https://files.terra-archive.net/assets/tl/is4.json?v=3191473401dc0a87",
+   "url": "https://files.terra-archive.net/assets/tl/is4.json?v=fd2703bf5a13a44c",
    "label": "통합전략 4",
-   "hash": "3191473401dc0a87"
+   "hash": "fd2703bf5a13a44c"
   },
   {
    "file": "is5.json",
-   "url": "https://files.terra-archive.net/assets/tl/is5.json?v=dbb9ee65b858eb80",
+   "url": "https://files.terra-archive.net/assets/tl/is5.json?v=ff047f2f6f605fb7",
    "label": "통합전략 5",
-   "hash": "dbb9ee65b858eb80"
+   "hash": "ff047f2f6f605fb7"
   },
   {
    "file": "is6.json",
-   "url": "https://files.terra-archive.net/assets/tl/is6.json?v=11d243bae73db6dc",
+   "url": "https://files.terra-archive.net/assets/tl/is6.json?v=84746d7cbfe1ad65",
    "label": "통합전략 6 (중국 서버 선행)",
-   "hash": "11d243bae73db6dc"
+   "hash": "84746d7cbfe1ad65"
   },
   {
    "file": "is-common.json",
-   "url": "https://files.terra-archive.net/assets/tl/is-common.json?v=241841b5bcd0ded6",
+   "url": "https://files.terra-archive.net/assets/tl/is-common.json?v=d5cf5282d7b4ce0c",
    "label": "통합전략 공통 — 조우 안내·판정 문구 (테마 구분 없음)",
-   "hash": "241841b5bcd0ded6"
+   "hash": "d5cf5282d7b4ce0c"
   }
  ]
 }
