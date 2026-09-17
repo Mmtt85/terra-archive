@@ -1,14 +1,19 @@
 # 테라 아카이브 — 중국어→한국어 번역 사전
 
-중국 서버 화면의 중국어를 한국어로 바꿔 놓는 데 쓰라고 만든 사전입니다. 두 종류가
-섞여 있고, **어느 쪽인지가 파일 이름으로 갈립니다.**
+중국 서버 화면의 중국어를 한국어로 바꿔 놓는 데 쓰라고 만든 사전입니다.
 
-- **`kr-*.json` — 게임의 공식 한국어.** 한국 서버에 이미 나온 것들의 중국어 원문과 공식
-  한국어를 같은 id끼리 짝지은 대조표입니다. 번역이 아니라 대조라 손댄 곳이 없습니다.
-- **나머지 — 테라 아카이브의 비공식 번역.** 한국 서버에 아직 오지 않아 공식 한국어가
-  없는 텍스트를 옮긴 것이라, 정식 번역이 나오면 달라질 수 있습니다.
+**파일은 내용 갈래로만 나뉩니다** — 오퍼, 아이템, 적, 작전, 보이스, 기록, 통합전략.
+찾으시는 것이 어느 파일에 있는지는 이름만 보면 됩니다.
 
-중국 서버 화면은 한섭 출시 여부와 무관하게 전부 중국어이므로 두 벌 다 필요합니다.
+한 파일 안에 두 종류가 섞여 있고, **항목의 `x` 표시로 갈립니다.**
+
+- **표시 없음 — 게임의 공식 한국어.** 한국 서버에 이미 나온 것의 중국어 원문과 공식
+  한국어를 같은 id끼리 짝지은 것입니다. 번역이 아니라 대조라 손댄 곳이 없습니다.
+- **`"x": 1` — 테라 아카이브의 비공식 번역.** 한국 서버에 아직 오지 않아 공식 한국어가
+  없는 것이라, 정식 번역이 나오면 달라질 수 있습니다.
+
+같은 원문에 둘 다 있으면 **공식만 실었습니다.** 중국 서버 화면은 한섭 출시 여부와
+무관하게 전부 중국어이므로, 두 종류가 다 필요합니다.
 
 **같은 원문이 두 벌에 겹치지는 않습니다.** 공식 한국어가 있는 자리에서는 비공식 번역을
 빼 두었으니, 파일을 하나로 합쳐 쓰셔도 어느 쪽이 이길지 걱정하실 것 없습니다.
@@ -42,27 +47,27 @@
 | 파일 | 내용 | 항목 | 크기 |
 |---|---|---:|---:|
 | [`manifest.json`](https://files.terra-archive.net/assets/tl/manifest.json) | 아래 목록 + 파일별 해시·주소 | — | 3 KB |
-| [`op-fut.json`](https://files.terra-archive.net/assets/tl/op-fut.json) | 오퍼·재료·**아이템** — 아직 한국 서버에 없는 것 | 2,017 | 1.4 MB |
-| [`kr-op.json`](https://files.terra-archive.net/assets/tl/kr-op.json) | 오퍼레이터 — 이름·직위·특성·재능·스킬·모듈 (**한섭 공식 한국어**) | 8,277 | 3.9 MB |
-| [`kr-item.json`](https://files.terra-archive.net/assets/tl/kr-item.json) | 아이템·재료 — 이름·설명·용도 (**한섭 공식 한국어**) | 3,024 | 507 KB |
-| [`kr-enemy.json`](https://files.terra-archive.net/assets/tl/kr-enemy.json) | 적 — 이름·설명·능력 (**한섭 공식 한국어**) | 3,141 | 733 KB |
-| [`kr-stage.json`](https://files.terra-archive.net/assets/tl/kr-stage.json) | 작전 — 이름·설명 (**한섭 공식 한국어**) | 5,248 | 1.2 MB |
-| [`kr-is-enc.json`](https://files.terra-archive.net/assets/tl/kr-is-enc.json) | 통합전략 1~5 조우 분기 — 씬 본문·선택지 (**한섭 공식 한국어**) | 3,305 | 762 KB |
-| [`kr-voice.json`](https://files.terra-archive.net/assets/tl/kr-voice.json) | 오퍼 보이스 대사 — 제목·대사 (**한섭 공식 한국어**) | 16,043 | 4.2 MB |
-| [`ra.json`](https://files.terra-archive.net/assets/tl/ra.json) | 생존연산 (중국 서버 선행) | 1,117 | 159 KB |
-| [`is1.json`](https://files.terra-archive.net/assets/tl/is1.json) … [`is6.json`](https://files.terra-archive.net/assets/tl/is6.json) | 통합전략 1~6 (6은 중국 서버 선행) | 385~672 | 23~40 KB |
-| [`is-common.json`](https://files.terra-archive.net/assets/tl/is-common.json) | 통합전략 공통 — 조우 안내·판정 문구 (테마 구분 없음) | 240 | 96 KB |
+| [`op.json`](https://files.terra-archive.net/assets/tl/op.json) | 오퍼레이터 — 이름·직위·특성·재능·스킬·모듈·기반시설 — 공식 한국어 8,277 + 비공식 번역 401 | 8,678 | 4.2 MB |
+| [`item.json`](https://files.terra-archive.net/assets/tl/item.json) | 아이템·재료 — 이름·설명·용도 — 공식 한국어 3,024 + 비공식 번역 213 | 3,237 | 584 KB |
+| [`enemy.json`](https://files.terra-archive.net/assets/tl/enemy.json) | 적 — 이름·설명·능력 | 3,141 | 733 KB |
+| [`stage.json`](https://files.terra-archive.net/assets/tl/stage.json) | 작전 — 이름·설명 | 5,248 | 1.2 MB |
+| [`voice.json`](https://files.terra-archive.net/assets/tl/voice.json) | 오퍼 보이스 대사 — 제목·대사 — 공식 한국어 16,043 + 비공식 번역 556 | 16,599 | 4.5 MB |
+| [`record.json`](https://files.terra-archive.net/assets/tl/record.json) | 오퍼 기록·프로필 산문 (비공식 번역) | 847 | 837 KB |
+| [`ra.json`](https://files.terra-archive.net/assets/tl/ra.json) | 생존연산 (비공식 번역) | 1,117 | 170 KB |
+| [`is1.json`](https://files.terra-archive.net/assets/tl/is1.json) | 통합전략 1 | 818 | 119 KB |
+| [`is2.json`](https://files.terra-archive.net/assets/tl/is2.json) | 통합전략 2 | 1,024 | 171 KB |
+| [`is3.json`](https://files.terra-archive.net/assets/tl/is3.json) | 통합전략 3 | 1,113 | 190 KB |
+| [`is4.json`](https://files.terra-archive.net/assets/tl/is4.json) | 통합전략 4 | 1,221 | 191 KB |
+| [`is5.json`](https://files.terra-archive.net/assets/tl/is5.json) | 통합전략 5 | 1,911 | 299 KB |
+| [`is6.json`](https://files.terra-archive.net/assets/tl/is6.json) | 통합전략 6 (중국 서버 선행) | 660 | 47 KB |
+| [`is-common.json`](https://files.terra-archive.net/assets/tl/is-common.json) | 통합전략 공통 — 조우 안내·판정 문구 (테마 구분 없음) | 240 | 98 KB |
 
 전량 약 13.2 MB입니다. 한 파일이 하나의 콘텐츠에 대응하므로 필요한 것만 받으면 됩니다.
 
-`kr-*.json` 여섯은 **번역이 아니라 대조표**입니다. 한국 서버에 이미 나온 것들의 중국어 원문과
-**게임의 공식 한국어**를 같은 id끼리 짝지은 것이라, AI 번역이 한 글자도 섞여 있지 않습니다.
-중국 서버 화면은 한섭 출시 여부와 상관없이 전부 중국어이므로, 이쪽이 실제로 가장 많이
-쓰이실 겁니다. 나머지 파일이 그때그때의 **비공식** 번역입니다.
+`record.json`과 `ra.json`은 전부 비공식 번역입니다 — 한섭에 아직 안 나온 것들이라
+공식 한국어가 없습니다. 나머지 파일은 공식과 비공식이 섞여 있고 `x`로 갈립니다.
 
-`op-fut.json`에는 오퍼·재료·아이템의 이름과 설명뿐 아니라, **아직 한섭에 오지 않은
-오퍼의 기록(프로필 산문)과 보이스 대사**도 들어 있습니다. 중국 서버가 한 발 앞서 바꾼
-재능·모듈 문구도 여기 있습니다.
+
 
 주소는 언제나 `https://files.terra-archive.net/assets/tl/<파일 이름>` 입니다. 위 주소는 **눌러서 들여다보시라고** 적어 둔 것이고,
 앱에서 **받을 때는 `manifest.json`의 `url`을 쓰세요** — 거기엔 해시가 `?v=`로 붙어 있어
@@ -74,8 +79,8 @@
 게임 데이터 ID(`char_xxx`·`rogue_3_relic_xxx` 같은 것)로는 찾을 수 없습니다 — 여기 담긴
 것은 **화면에 보이는 글자**뿐입니다. OCR로 읽은 문자열을 그대로 키로 쓰시면 됩니다.
 
-`kr-*.json`·`op-*.json`·`ra.json`은 갈래 없이 평평합니다. 통합전략만 갈래로 한 겹
-싸여 있고, 갈래 이름은 다섯 가지뿐입니다:
+통합전략(`is*.json`)만 갈래로 한 겹 싸여 있고, 나머지는 평평합니다.
+갈래 이름은 다섯 가지뿐입니다:
 
 | 키 | 담긴 것 |
 |---|---|
@@ -101,20 +106,21 @@
 `is-common.json`은 `encounters` 하나만 들고 있습니다. 없는 갈래는 키 자체가 빠지므로,
 읽을 때 다섯 개가 다 있다고 가정하지 마세요.
 
-오퍼·재료·생존연산은 갈래 없이 평평합니다.
-
 ```json
-// op-fut.json
+// item.json
 {
- "进驻发电站时，无人机充能速度+15%…": {
-  "ko": "발전소에 배치 시, 드론 충전 속도 +15%…",
-  "en": "When assigned to a Power Plant…",
-  "ja": "発電所に配置時、ドローンの充電速度+15%…"
+ "源石虫": { "ko": "원석충" },
+ "热腾腾大包": {
+  "ko": "따끈따끈 왕만두",
+  "en": "Piping Hot Bun",
+  "ja": "ほかほか肉まん",
+  "x": 1
  }
 }
 ```
 
-`en`·`ja`는 없을 수 있습니다 (한국어만 있는 출처가 있습니다).
+- **`x: 1` 이 붙은 것만 비공식 번역**입니다. 없으면 게임의 공식 한국어입니다.
+- `en`·`ja`는 없을 수 있습니다 — 공식 대조는 한국어만 짝지어 두었습니다.
 
 ## 갱신 확인
 
@@ -147,10 +153,10 @@
 주소도 바뀌므로, 중간 캐시나 CDN이 옛 내용을 돌려주는 일이 없습니다. 떼고 요청해도
 같은 파일이 오지만 최대 1분쯤 옛 내용일 수 있습니다.
 
-바뀌는 빈도가 파일마다 다릅니다. **`op-fut.json`이 가장 자주 늘고**(중국 서버 패치마다),
-`kr-*.json`은 한국 서버 점검 때 늘어납니다. 통합전략 1~5는 거의 그대로입니다.
-용량은 `kr-voice.json`(4.2 MB)과 `kr-op.json`(3.9 MB)이 전체의 6할이니, 보이스
-자막이나 오퍼 상세가 필요 없으시면 그 둘만 빼도 됩니다.
+바뀌는 빈도가 파일마다 다릅니다. **비공식 번역(`x`)은 중국 서버 패치마다 늘고**,
+공식 쪽은 한국 서버 점검 때 늘어납니다. 통합전략 1~5는 거의 그대로입니다.
+용량은 `voice.json`(4.5 MB)과 `op.json`(4.2 MB)이 전체의 6할이니, 보이스 자막이나
+오퍼 상세가 필요 없으시면 그 둘만 빼도 됩니다.
 
 형식 버전 같은 것은 두지 않았습니다. 대신 **형식을 깨야 할 일이 생기면 여기를 고치지
 않고 주소를 새로 팝니다** — 이미 쓰고 계신 앱은 지금 주소에서 그대로 돌아갑니다.

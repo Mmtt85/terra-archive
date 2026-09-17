@@ -507,7 +507,7 @@ labels["is-common.json"] = "통합전략 공통 — 조우 안내·판정 문구
 #   테이블이 없다고 빌드가 죽으면 안 되고, 옛 산출물이 남아 있으면 그대로 쓰인다.
 def official_pairs():
     """{갈래: {중국어 원문: {"ko": 공식 한국어}}} — 양쪽 공식 표를 id 로 조인한다."""
-    out = {k: {} for k in ("op", "item", "enemy", "stage", "is-enc", "voice")}
+    out = {k: {} for k in ("op", "item", "enemy", "stage", "voice")}
     tag_re = re.compile(r"<[^>]+>")
 
     def add(tag, cn, ko):
@@ -574,6 +574,7 @@ def official_pairs():
     # 이름·설명만 담고 분기 전문은 빠져 있던 자리다 (사용자 지적 2026-09-17). IS1~5 는
     # 한섭에 나와 공식 한국어가 있고, id 가 CN 과 그대로 같아 짝이 바로 맞는다.
     # IS6 는 미실장이라 KR 표에 없어 자동으로 빠진다.
+    # 통합전략 조우 분기 — **테마별 파일에 들어간다** (is1~is6). 갈래는 encounters.
     c, k = both("roguelike_topic_table")
     if c:
         kd = k.get("details") or {}
@@ -581,6 +582,11 @@ def official_pairs():
             b2 = kd.get(theme)
             if not isinstance(b2, dict):
                 continue
+            m = re.fullmatch(r"rogue_(\d+)", theme)
+            if not m:
+                continue
+            slot = f"is{m.group(1)}"
+            out.setdefault(slot, {})
             for coll, fields in (("choiceScenes", ("title", "description")),
                                  ("choices", ("title", "description", "lockedCoverDesc"))):
                 kc = b2.get(coll) or {}
@@ -589,7 +595,7 @@ def official_pairs():
                     if not isinstance(ea, dict) or not isinstance(eb, dict):
                         continue
                     for f in fields:
-                        add("is-enc", ea.get(f), eb.get(f))
+                        add(slot, ea.get(f), eb.get(f))
 
     # 보이스 대사 — 자막으로 화면에 뜨므로 OCR 대상이다. 기록(핸드북 산문)은 9MB 라
     # 분량 대비 실익이 얇아 뺐다 (사용자 판단 2026-09-17). 필요해지면 같은 방식으로 얹는다.
@@ -667,7 +673,6 @@ OFF_LABEL = {
     "item":  "아이템·재료 — 이름·설명·용도 (한섭 공식 한국어)",
     "enemy": "적 — 이름·설명·능력 (한섭 공식 한국어)",
     "stage": "작전 — 이름·설명 (한섭 공식 한국어)",
-    "is-enc": "통합전략 1~5 조우 분기 — 씬 본문·선택지 (한섭 공식 한국어)",
     "voice": "오퍼 보이스 대사 — 제목·대사 (한섭 공식 한국어)",
 }
 OFF_ORDER = []
@@ -678,34 +683,114 @@ for tag in ("op", "item", "enemy", "stage", "is-enc", "voice"):
         labels[name] = OFF_LABEL[tag]
         OFF_ORDER.append(name)
 
-# ── 공식과 겹치는 비공식 번역을 걷어낸다 ──────────────────────────────────────
-# 같은 중국어 원문에 공식 한국어와 AI 번역이 둘 다 나가면, 받는 쪽이 파일을 합칠 때
-# 어느 쪽이 이길지 순서에 달리게 된다 — 그리고 공식이 있는 자리는 공식이 옳다.
-# (실측 2026-09-17: is3 의 49%, op-past 의 36% 가 공식과 키가 겹쳤다.)
-_official_keys = {k for tag in OFF_ORDER for k in files[tag]} | official_any()
+# ── 갈래별로 합친다 ─────────────────────────────────────────────────────────
+# 파일은 **내용 갈래**로만 가른다 (사용자 지시 2026-09-17 "오퍼랑 재료 두 파일만 나오면
+# 되겠네"). 종전에는 축이 둘 섞여 있었다 — kr-* 는 갈래로, op-fut 은 공식/비공식으로
+# 갈라서, 같은 갈래가 두 군데에 다른 이름으로 앉아 있었고 op-fut 하나에 여덟 갈래가
+# 뒤섞여 있었다 (실측: 기록 847 · 보이스 556 · 아이템 213 · 오퍼 159 …).
+#
+# 공식/비공식은 파일이 아니라 **항목에 표시**한다 — 비공식일 때만 `"x": 1`.
+# 같은 원문에 둘 다 있으면 **공식이 이긴다** (공식이 있는 자리는 공식이 옳다).
+KIND_LABEL = {
+    "op":      "오퍼레이터 — 이름·직위·특성·재능·스킬·모듈·기반시설",
+    "item":    "아이템·재료 — 이름·설명·용도",
+    "enemy":   "적 — 이름·설명·능력",
+    "stage":   "작전 — 이름·설명",
+    "voice":   "오퍼 보이스 대사 — 제목·대사",
+    "record":  "오퍼 기록·프로필 산문",
+    "ra":      "생존연산",
+}
+KIND_ORDER = ["op", "item", "enemy", "stage", "voice", "record", "ra"]
+
+# 비공식(장부에서 온 것)을 갈래로 흩는다 — 원문이 CN 게임데이터의 어느 표에서 왔는지로 판정
+def _kind_index():
+    idx, tag = {}, re.compile(r"<[^>]+>")
+    def walk(o, kind):
+        if isinstance(o, dict):
+            for v in o.values(): walk(v, kind)
+        elif isinstance(o, list):
+            for v in o: walk(v, kind)
+        elif isinstance(o, str) and CJK.search(o):
+            t = tag.sub("", o).strip()
+            if not t: return
+            idx.setdefault(t, kind)
+            for ln in t.split("\n"):
+                ln = ln.strip()
+                if ln: idx.setdefault(ln, kind)
+    # 뒤에 오는 표가 먼저 온 표를 못 덮게 — 구체적인 갈래부터 넣는다
+    for tbl, kind in (("charword_table", "voice"), ("handbook_info_table", "record"),
+                      ("item_table", "item"), ("enemy_handbook_table", "enemy"),
+                      ("stage_table", "stage"), ("skill_table", "op"),
+                      ("uniequip_table", "op"), ("building_data", "op"),
+                      ("character_table", "op")):
+        t2 = _t(f"cn_{tbl}")
+        if t2: walk(t2, kind)
+    return idx
+
+
+KIND_OF = _kind_index()
+merged = {k: {} for k in KIND_ORDER}
+# ① 공식 먼저
+for tag, body in OFFICIAL.items():
+    dest = merged.setdefault(tag, {})
+    for cn, e in body.items():
+        dest[cn] = e
+# ② 비공식 — 공식이 없는 자리에만
+_unofficial_src = {"op-fut.json": None, "ra.json": "ra"}
+_official_any = official_any() | {k for b in OFFICIAL.values() for k in b}
 _pruned = 0
-for _name, _body in files.items():
-    if _name in OFF_ORDER:
+for fname, fixed in _unofficial_src.items():
+    for cn, e in (files.get(fname) or {}).items():
+        if cn in _official_any:
+            _pruned += 1
+            continue
+        kind = fixed or KIND_OF.get(cn)
+        if kind is None:
+            kind = "op"          # 어느 표에도 없으면 오퍼 상세로 둔다 (대부분 스킬 문구다)
+        merged.setdefault(kind, {})[cn] = {**e, "x": 1}
+# ③ 통합전략 테마 — 갈래 구조(collectibles/…)를 유지한 채 공식·비공식을 한 파일에 담는다
+for fname, body in list(files.items()):
+    if not re.fullmatch(r"is\d\.json|is-common\.json", fname):
         continue
-    first = next(iter(_body.values()), None)
-    grouped = isinstance(first, dict) and not ({"ko", "en", "ja"} & set(first))
-    if grouped:
-        for g, inner in list(_body.items()):
-            for k in list(inner):
-                if k in _official_keys:
-                    del inner[k]; _pruned += 1
-            if not inner: del _body[g]
-    else:
-        for k in list(_body):
-            if k in _official_keys:
-                del _body[k]; _pruned += 1
+    slot = fname[:-5]
+    off = OFFICIAL.get(slot) or {}          # 그 테마의 공식 조우 분기 (평면)
+    out_body = {}
+    for g, inner in body.items():
+        keep = {}
+        for cn, e in inner.items():
+            if cn in off:                    # 공식이 있으면 공식으로 갈아 끼운다
+                keep[cn] = off[cn]
+            elif cn in _official_any:
+                _pruned += 1
+            else:
+                keep[cn] = {**e, "x": 1}
+        if keep: out_body[g] = keep
+    # 비공식 쪽에 없던 공식 조우 분기는 encounters 갈래로 붙인다
+    rest = {cn: e for cn, e in off.items()
+            if not any(cn in g for g in out_body.values())}
+    if rest:
+        out_body.setdefault("encounters", {}).update(rest)
+    merged[slot] = {g: out_body[g] for g in IS_ORDER if out_body.get(g)} or out_body
+    KIND_LABEL.setdefault(slot, labels[fname])
+    if slot not in KIND_ORDER: KIND_ORDER.append(slot)
 if _pruned:
-    print(f"  공식 대조본과 겹쳐 뺀 비공식 번역 {_pruned:,}건")
+    print(f"  공식이 있어 뺀 비공식 번역 {_pruned:,}건")
+
+files, labels = {}, {}
+for kind in KIND_ORDER:
+    body = merged.get(kind)
+    if not body: continue
+    name = f"{kind}.json"
+    files[name] = body
+    lab = KIND_LABEL[kind]
+    nx = sum(1 for v in body.values() if isinstance(v, dict) and v.get("x"))
+    if nx and not kind.startswith("is"):
+        lab += f" — 공식 한국어 {len(body)-nx:,} + 비공식 번역 {nx:,}" if nx < len(body) else " (비공식 번역)"
+    labels[name] = lab
 
 # ── 내보내기 ─────────────────────────────────────────────────────────────────
 os.makedirs(OUT, exist_ok=True)
-ORDER = ["op-fut.json", *OFF_ORDER, "ra.json",
-         *[f"{t}.json" for t, _ in ROGUE_FILES], "is-common.json"]
+ORDER = [f"{k}.json" for k in KIND_ORDER if f"{k}.json" in files]
 rows, counts, group_counts, changed = [], {}, {}, 0
 for name in ORDER:
     body = files[name]
