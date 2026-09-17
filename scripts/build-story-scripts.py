@@ -692,8 +692,20 @@ def cn_prepare(eid):
           + (f" (누락 {failed})" if failed else ""))
 
 
+# 중섭 선행 전문을 **발행하지 않기로 한 이벤트** (사용자 지시 2026-09-17:
+# "일단 AI번역만 올리고, 전문은 올리지 말자"). 번역 원본(scripts/story-cn/<id>/ko/)은
+# 지우지 않고 남겨 두되, 병합·발행만 막는다 — 그 파일이 남아 있으면 --cn-merge 를 다시
+# 돌리는 것만으로 조용히 되살아나기 때문이다 (실제로 한 번 올라갔다가 내렸다).
+# 발행을 재개하려면 여기서 id 를 빼면 된다. AI 요약은 이 목록과 무관하게 그대로 나간다.
+CN_NO_PUBLISH = {"act50side", "act53side", "act54side"}
+
+
 def cn_merge(eid):
     import re as _re
+    if eid in CN_NO_PUBLISH:
+        sys.exit(f"{eid}: 전문 발행 보류 대상이라 병합하지 않는다 "
+                 f"(scripts/build-story-scripts.py 의 CN_NO_PUBLISH). "
+                 f"번역 원본은 scripts/story-cn/{eid}/ko/ 에 그대로 있다.")
     base = os.path.join(REPO, "scripts", "story-cn", eid)
     meta = json.load(open(os.path.join(base, "meta.json"), encoding="utf-8"))
     hanzi = _re.compile(r"[一-鿿]")
