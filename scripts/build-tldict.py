@@ -21,11 +21,11 @@
   op-fut.json        미실장 오퍼·재료 — 중섭 패치마다 늘어난다
   op-past.json       한섭 출시로 공식 번역이 덮은 옛 장부 — 거의 안 바뀐다
   ra.json            생존연산
-  is1.json … is6.json  통합전략 1~6 — 안에서 소장품·노드·조우·엔딩·전투로 갈라 둔다
+  is1.json … is6.json  통합전략 1~6 — 안에서 collectibles·nodes·encounters·endings·battles 로 갈라 둔다
   is-common.json     통합전략 공통 조우 편집자 텍스트 (테마 구분이 없는 안내·판정 문구)
 
 통합전략 파일 모양 (사용자 지시 2026-09-17 "is3 : {아이템: 뭐시기, 적: 뭐시기} 이런 식"):
-  {"소장품": {"热水壶": {"ko": "전기주전자"}, …}, "노드": {…}, "조우": {…}, …}
+  {"collectibles": {"热水壶": {"ko": "전기주전자"}, …}, "nodes": {…}, "encounters": {…}, …}
 
 출처:
   scripts/cn-translations.json   미실장 오퍼·재료 상세 (특성·재능·스킬·잠재·모듈·기반시설)
@@ -79,18 +79,20 @@ BASE = "https://files.terra-archive.net/assets/tl"
 CJK = re.compile(r"[一-鿿]")
 
 # 통합전략 산출물의 컬렉션 → 파일 안의 갈래 이름. 제보자가 물어 온 갈래 그대로 맞춘다
-# ("소장품·노드·조우·엔딩·전투 설명").
+# ("소장품·노드·조우·엔딩·전투 설명" — 키는 영어로 낸다).
+# ⚠ 갈래 이름은 **영어 키**다 (사용자 지시 2026-09-17). 받는 쪽이 한국어권이라는 보장이
+#   없고, JSON 키에 한글이 섞이면 쓰는 쪽 코드가 지저분해진다. 값(번역문)만 한국어다.
 IS_GROUP = {
-    "relics": "소장품", "capsules": "소장품", "tools": "소장품",
-    "scraps": "소장품", "legacies": "소장품", "buoys": "소장품",
-    "nodeTypes": "노드", "zones": "노드", "weathers": "노드",
-    "subweathers": "노드", "difficulties": "노드",
-    "encounters": "조우", "visitors": "조우",
-    "endings": "엔딩",
-    "stages": "전투", "enemies": "전투", "bands": "전투",
-    "mechanics": "전투", "variations": "전투",
+    "relics": "collectibles", "capsules": "collectibles", "tools": "collectibles",
+    "scraps": "collectibles", "legacies": "collectibles", "buoys": "collectibles",
+    "nodeTypes": "nodes", "zones": "nodes", "weathers": "nodes",
+    "subweathers": "nodes", "difficulties": "nodes",
+    "encounters": "encounters", "visitors": "encounters",
+    "endings": "endings",
+    "stages": "battles", "enemies": "battles", "bands": "battles",
+    "mechanics": "battles", "variations": "battles",
 }
-IS_ORDER = ["소장품", "노드", "조우", "엔딩", "전투"]
+IS_ORDER = ["collectibles", "nodes", "encounters", "endings", "battles"]
 
 ROGUE_FILES = [("is1", "app/data/rogue1.cn.json"), ("is2", "app/data/rogue2.cn.json"),
                ("is3", "app/data/rogue3.cn.json"), ("is4", "app/data/rogue4.cn.json"),
@@ -210,7 +212,7 @@ for cn, val in load("scripts/rogue-enc-i18n.json").items():
     entry = {k: v for k, v in val.items() if k in ("ko", "en", "ja") and v}
     if entry.get("ko") and entry["ko"] != cn:
         common[cn] = entry
-files["is-common.json"] = {"조우": common}
+files["is-common.json"] = {"encounters": common}
 labels["is-common.json"] = "통합전략 공통 — 조우 안내·판정 문구 (테마 구분 없음)"
 
 # ── 내보내기 ─────────────────────────────────────────────────────────────────

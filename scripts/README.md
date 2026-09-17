@@ -585,7 +585,7 @@ python3 scripts/build-tldict.py   # → public/tl/ (manifest.json + 사전 10개
 | `op-fut.json` | 미실장 오퍼·재료 — **중섭 패치마다 늘어난다** |
 | `op-past.json` | 한섭 출시로 공식 번역이 덮인 옛 장부 — 거의 안 바뀐다 |
 | `ra.json` | 생존연산 |
-| `is1`~`is6.json` | 통합전략 1~6 (안에서 소장품·노드·조우·엔딩·전투로 갈라 둔다) |
+| `is1`~`is6.json` | 통합전략 1~6 (안에서 `collectibles`·`nodes`·`encounters`·`endings`·`battles` 로 갈라 둔다 — **키는 영어**) |
 | `is-common.json` | 통합전략 공통 조우 안내·판정 문구 |
 
 ⚠ **200개씩 끊는 조각(chunk) 방식은 만들었다가 접었다** (2026-09-17). 전량이 3MB인데
