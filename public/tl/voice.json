@@ -48130,3338 +48130,2226 @@
  },
  "虽然你已经不会再记得。": {
   "ko": "당신은 이미 기억하지 못하겠지만.",
-  "en": "Though you will no longer remember it.",
-  "ja": "あなたにはもう、思い出せないことだとしても。",
   "x": 1
  },
  "哲人与学者最终放弃了从可观测的世界中寻求答案，选择将信念寄托于我们的本能。": {
   "ko": "철인과 학자들은 결국 관측 가능한 세계에서 답을 구하기를 포기하고, 우리의 본능에 믿음을 맡기는 쪽을 택했다.",
-  "en": "In the end, the philosophers and scholars gave up seeking answers in the observable world, and chose instead to place their faith in our instincts.",
-  "ja": "哲人と学者たちは最終的に、観測可能な世界から答えを求めることを諦め、信念を我々の本能に託すことを選んだ。",
   "x": 1
  },
  "因为我们只能相信，在无解的孤独与困惑之外，爱的存在同样不可置疑。": {
   "ko": "풀리지 않는 고독과 곤혹 너머에 사랑이 존재한다는 것 또한 의심할 여지가 없다고, 우리는 그렇게 믿을 수밖에 없기 때문이다.",
-  "en": "Because we can only believe that, beyond the insoluble solitude and confusion, the existence of love is equally beyond doubt.",
-  "ja": "なぜなら我々は、解のない孤独と困惑の彼方に、愛が存在することもまた疑いようがないと信じるほかないからだ。",
   "x": 1
  },
  "我无法将过去的记忆交还给你，只能试图与你分享我的感受。": {
   "ko": "나는 과거의 기억을 네게 돌려줄 수 없어. 그저 내가 느낀 것을 너와 나누어 보려 할 뿐이야.",
-  "en": "I cannot give you back the memories of the past. All I can do is try to share with you what I have felt.",
-  "ja": "私は過去の記憶を君に返すことはできない。ただ、自分が感じたものを君と分かち合おうと試みることしかできない。",
   "x": 1
  },
  "我会相信你的本性，也希望你可以相信自己选择的意义。": {
   "ko": "나는 네 본성을 믿을 거야. 그리고 너도 네가 선택한 것의 의미를 믿을 수 있기를 바라.",
-  "en": "I will trust your nature, and I hope that you can trust the meaning of what you have chosen.",
-  "ja": "私は君の本性を信じる。そして君も、自分の選んだことの意味を信じられるよう願っている。",
   "x": 1
  },
  "Dr.{@nickname}，今天没有急件要送，我来帮你整理一下文件吧。放心放心，这么久了，这些文件的分类我早就一清二楚了。": {
   "ko": "박사, 오늘은 급하게 보낼 물건도 없으니까 내가 서류 정리 도와줄게. 걱정 마 걱정 마, 이렇게 오래 있었는데 이 서류들 분류법쯤은 벌써 훤히 꿰고 있다고.",
-  "en": "Doctor, there are no express deliveries today, so let me help you sort these documents. Relax, relax—after all this time, I know exactly how they're filed.",
-  "ja": "ドクター、今日は急ぎの配達もないから、あたしが書類の整理を手伝ってあげる。大丈夫大丈夫、こんなに長くいるんだもん、この書類の分類くらいとっくに頭に入ってるよ。",
   "x": 1
  },
  "如果能回叙拉古生活，我会回去吗？虽然我很想念故乡的父母和朋友，但就像罗德岛的大家习惯了有我的生活，叙拉古的他们也习惯了没有我的生活。为了更好地相见，先用书信传递彼此的思念吧。": {
   "ko": "시라쿠사로 돌아가서 살 수 있다면 돌아갈 거냐고? 고향의 부모님과 친구들이 그립긴 해. 하지만 로도스 아일랜드의 모두가 내가 있는 생활에 익숙해진 것처럼, 시라쿠사의 그 사람들도 내가 없는 생활에 익숙해졌을 거야. 더 좋은 얼굴로 다시 만나기 위해서, 지금은 편지로 서로의 그리움을 주고받으려고.",
-  "en": "Would I go back, if I could live in Siracusa again? I do miss my parents and my friends back home. But just as everyone at Rhodes Island has gotten used to a life with me in it, the people in Siracusa have gotten used to a life without me. So that our reunion can be a better one, we'll carry each other's longing by letter for now.",
-  "ja": "シラクーザに戻って暮らせるなら戻るのかって？故郷の両親も友達も、そりゃあ恋しいよ。でもね、ロドスのみんながあたしのいる生活に慣れたように、シラクーザのみんなもあたしのいない生活に慣れたんだ。もっといい形で再会するために、今はお互いの想いを手紙で届け合おうと思うんだ。",
   "x": 1
  },
  "Dr.{@nickname}，你看你看，我的作战影像也能被收录进教学记录了！": {
   "ko": "박사, 봐 봐, 내 작전 영상도 교육 자료에 수록되게 됐어!",
-  "en": "Doctor, look, look! My combat footage made it into the training records!",
-  "ja": "ドクター、見て見て、あたしの作戦映像も教材に収録されるようになったんだよ！",
   "x": 1
  },
  "由我来做路线规划吗？没问题，我看一眼就能知道怎么走最快。": {
   "ko": "루트 계획을 내가 맡는 거야? 문제없어. 한 번만 보면 어디로 가야 제일 빠른지 알 수 있거든.",
-  "en": "I'm plotting the route? No problem—one look and I'll know the fastest way there.",
-  "ja": "ルートの計画をあたしが？任せて、ひと目見ればどう行くのが一番速いかわかるから。",
   "x": 1
  },
  "你的信，我肯定加急派送。": {
   "ko": "네 편지는 무조건 특급으로 보내 줄게.",
-  "en": "Your letter? I'll rush it through, guaranteed.",
-  "ja": "その手紙、必ず速達で届けるよ。",
   "x": 1
  },
  "这封信要送到哪里？": {
   "ko": "이 편지는 어디로 보낼까?",
-  "en": "Where is this letter headed?",
-  "ja": "この手紙、どこに届けるの？",
   "x": 1
  },
  "平稳落地~": {
   "ko": "사뿐히 착지~",
-  "en": "Smooth landing~",
-  "ja": "ふんわり着地～",
   "x": 1
  },
  "我也不是只会让东西变轻哦，老实待在那里吧。": {
   "ko": "물건을 가볍게 만드는 것밖에 못 하는 건 아니거든? 얌전히 거기 있어.",
-  "en": "Making things lighter isn't all I can do, you know. Stay put.",
-  "ja": "物を軽くすることしかできないわけじゃないよ？おとなしくそこにいて。",
   "x": 1
  },
  "跑得不够快的敌人，是会被风吹落的。": {
   "ko": "발이 느린 적은, 바람에 삼켜지는 법이야.",
-  "en": "An enemy who can't run fast enough gets caught by the wind.",
-  "ja": "鈍足な敵は、風に呑まれるものだよ。",
   "x": 1
  },
  "没写清收件地址的信件，是会被退回的！": {
   "ko": "받는 주소를 제대로 안 쓴 편지는 반송되는 거야!",
-  "en": "A letter without a proper address gets returned to sender!",
-  "ja": "宛先をちゃんと書いてない手紙は、送り返されるんだからね！",
   "x": 1
  },
  "让开让开，还有人等着这封信呢！": {
   "ko": "비켜 비켜, 이 편지를 기다리는 사람이 있단 말이야!",
-  "en": "Move, move! Somebody's waiting on this letter!",
-  "ja": "どいてどいて、この手紙を待ってる人がいるんだから！",
   "x": 1
  },
  "本来想送完信直接去逛街，这下灰扑扑的，得回去洗个热水澡了。": {
   "ko": "편지 다 돌리고 바로 쇼핑 가려고 했는데, 이렇게 먼지투성이가 됐으니 돌아가서 뜨거운 물로 씻어야겠네.",
-  "en": "I was going shopping right after the deliveries, but now I'm covered in dust—guess I'm heading back for a hot bath.",
-  "ja": "配達が終わったらそのまま買い物に行くつもりだったのに、こんなに埃だらけじゃ、帰ってお風呂に入らなきゃね。",
   "x": 1
  },
  "轻飘飘地赢了战斗，回去路上放点轻松的音乐庆祝一下吧！": {
   "ko": "가뿐하게 이겼으니까, 돌아가는 길엔 가벼운 음악이라도 틀고 자축하자!",
-  "en": "That was a nice, light win—let's put on some easy music on the way back and celebrate!",
-  "ja": "ふわっと勝てたし、帰り道は軽い音楽でもかけてお祝いしようよ！",
   "x": 1
  },
  "啊，家——我回来啦！这次一定要多待几天！": {
   "ko": "아, 집이다—— 나 돌아왔어! 이번엔 꼭 며칠 더 있을 거야!",
-  "en": "Ahh, home—I'm back! This time I'm definitely staying a few more days!",
-  "ja": "ああ、お家――ただいま！今回は絶対にもう何日か泊まるからね！",
   "x": 1
  },
  "早安，Dr.{@nickname}！我今天有外出任务，所以跟你提前说午安和晚安啦！": {
   "ko": "좋은 아침, 박사! 오늘은 외근이 있어서, 점심 인사랑 밤 인사도 미리 해 둘게!",
-  "en": "Morning, Doctor! I've got a field assignment today, so let me say good afternoon and good night in advance!",
-  "ja": "おはよう、ドクター！今日は外の任務があるから、こんにちはとおやすみも先に言っておくね！",
   "x": 1
  },
  "今天的工作一如既往地多，博士。别担心，我会和你一起处理。": {
   "ko": "오늘도 일은 여전히 많네, 박사. 걱정 마, 나도 같이 처리할 테니까.",
-  "en": "The workload's as heavy as ever today, Doctor. Don't worry—I'll get through it with you.",
-  "ja": "今日も相変わらず仕事が多いわね、ドクターくん。心配しないで、私も一緒に片付けるから。",
   "x": 1
  },
  "这会儿，组里那帮人肯定又给我闹出了一些岔子。算了，每天不这么闹一下，我反而不习惯。而且，没有那帮吵闹的家伙，也没法衬托宁静生活的珍贵——我知道，这么安慰自己我会好过一点。": {
   "ko": "지금쯤 팀 애들이 또 무슨 사고를 쳐 놨겠지. 됐어, 매일 이 정도 소동이 없으면 오히려 내가 허전하니까. 게다가 그 시끄러운 녀석들이 없으면 평온한 삶이 얼마나 소중한지도 알 수 없잖아—— 알아, 이렇게 스스로를 위로하면 조금은 나아진다는 것도.",
-  "en": "By now that lot in my squad have surely made some new mess for me. Never mind—a day without the racket would feel wrong, honestly. Besides, without those noisy brats there'd be nothing to set a quiet life against—yes, I know. Telling myself that makes it a little easier.",
-  "ja": "今頃、うちの隊の連中がまた何かやらかしてるんでしょうね。まあいいわ、毎日これくらい騒がしくないと逆に落ち着かないもの。それに、あの騒がしい子たちがいなければ、静かな暮らしの尊さだってわからないでしょ――ええ、わかってる。そう自分に言い聞かせれば少しは気が楽になるってことも。",
   "x": 1
  },
  "最近许多人都说，我换了一身衣服之后，给人的感觉都变了。虽然原因其实在别的方面，不过这样也不坏。说起来，换装确实能够改变形象，博士要不要也试试？我可以免费帮你设计。": {
   "ko": "요즘 다들 내가 옷을 바꾸고 나서 분위기가 달라졌다고들 하더라. 사실 이유는 다른 데 있지만, 뭐 나쁘지 않지. 그러고 보니 옷을 바꾸면 확실히 이미지가 달라지긴 해. 박사도 한번 해 볼래? 디자인은 공짜로 해 줄게.",
-  "en": "Lately a lot of people tell me I give off a completely different impression since I changed my outfit. The real reason lies elsewhere, but I don't mind. Come to think of it, a change of clothes really does change your image. Care to try, Doctor? I'll design one for you free of charge.",
-  "ja": "最近、服を変えてから雰囲気が変わったってよく言われるの。本当の理由は別のところにあるんだけど、まあ悪くないわ。そういえば、着替えれば確かに印象は変わるものね。ドクターくんも試してみる？デザインはタダでしてあげるわよ。",
   "x": 1
  },
  "春天的时候，我打算带组里的人一起去一趟东国，去看看那里的竹林。那里当然不会有一个叫“泡影国”的国家，只是，我有些怀念风吹过竹叶发出的声音了。": {
   "ko": "봄이 되면 팀 애들을 데리고 극동에 한번 다녀올 생각이야. 그곳의 대나무 숲을 보러. 물론 거기에 “포영국”이라는 나라 같은 건 없겠지. 그냥…… 바람이 댓잎을 스치는 소리가 조금 그리워져서.",
-  "en": "Come spring, I'm thinking of taking the squad to Higashi to see the bamboo groves there. Of course no country called the 'Bubbly Realm' will be waiting for us. It's just... I've started to miss the sound of wind through bamboo leaves.",
-  "ja": "春になったら、隊のみんなを連れて極東へ行こうと思ってるの。あそこの竹林を見にね。もちろん「泡沫国」なんて国があるわけないけど。ただ……風が竹の葉を揺らす音が、少し恋しくなっただけ。",
   "x": 1
  },
  "我在想，凯尔希医生一开始让我担任A6的队长，是不是因为看穿了我的性格，知道我无论嘴上怎么说，实际上还是没法放着身边的人不管。我还挺好懂的？呵，博士，这堆文件你自己看着办吧。": {
   "ko": "생각해 봤는데, 닥터 켈시가 처음부터 나한테 A6 팀장을 맡긴 건 내 성격을 꿰뚫어 봤기 때문이 아닐까. 입으로는 뭐라고 하든 결국 곁에 있는 사람들을 내버려 두지 못한다는 걸 알고 있었던 거지. 내가 그렇게 알기 쉬운 사람이라고? 하, 박사, 이 서류 더미는 알아서 처리해.",
-  "en": "I've been wondering—maybe Dr. Kal'tsit put me in charge of A6 from the start because she saw right through me. She knew that whatever I say out loud, I can't actually leave the people beside me to fend for themselves. Oh, am I that easy to read? Hah. Doctor, you can deal with this stack of paperwork yourself.",
-  "ja": "考えてたんだけど、ケルシー先生が最初から私にA6の隊長を任せたのは、私の性格を見抜いてたからじゃないかしら。口では何と言っても、結局そばにいる人を放っておけないってこと。私ってそんなにわかりやすい？ふん、ドクターくん、この書類の山は自分でどうにかして。",
   "x": 1
  },
  "月见夜对待许多事情都很严肃，空爆会为了喜欢的东西倾注所有心血，斑点有他的骄傲，泡普卡懂事又能干。我总觉得，他们的这些优点应该被更多人看到，但或许，只有我知道也足够了。": {
   "ko": "미드나이트는 많은 일에 진지하고, 캐터펄트는 좋아하는 것에 온 힘을 쏟고, 스팟에겐 스팟만의 자존심이 있고, 포푸카는 철도 들었고 야무지지. 이런 장점들을 더 많은 사람이 알아줬으면 좋겠다는 생각이 늘 들어. 하지만…… 어쩌면 나만 알고 있어도 충분할지도 모르겠네.",
-  "en": "Midnight takes so many things seriously. Catapult pours everything she has into what she loves. Spot has his own pride. Popukar is thoughtful and capable. I keep thinking more people ought to see those sides of them. But then... maybe it's enough that I know.",
-  "ja": "ミッドナイトは何事にも真面目で、カタパルトは好きなものに全力を注いで、スポットには彼なりの誇りがあって、ポプカルは物わかりがよくて有能。あの子たちのそういういいところを、もっと多くの人に知ってほしいって、いつも思うの。でも……もしかしたら、私だけが知っていれば十分なのかもね。",
   "x": 1
  },
  "博士要尝尝吗？这是他们做的蛋糕。我吃过了，以初学者的水平来说，还不错，也不知道他们什么时候偷偷学的这一手。我总是说，A6不可能一直存在，但我甚至都要忘了我们在一起几年了。": {
   "ko": "박사도 먹어 볼래? 애들이 만든 케이크야. 나는 벌써 먹어 봤는데, 초보 수준치고는 꽤 괜찮더라. 대체 언제 몰래 이런 걸 배웠는지 모르겠어. 나는 늘 A6가 영원할 수는 없다고 말해 왔는데…… 우리가 함께한 세월이 몇 년인지조차 잊어버릴 뻔했네.",
-  "en": "Care for a slice, Doctor? The kids made this cake. I've already tried it—for beginners, it's not bad at all. I have no idea when they learned to do that behind my back. I'm always saying A6 can't last forever... and yet I've nearly lost count of how many years we've been together.",
-  "ja": "ドクターくんも食べてみる？あの子たちが作ったケーキよ。私はもう食べたけど、初心者にしてはなかなかね。いつの間にこんなこと覚えたのかしら。私はいつも、A6がずっと続くわけじゃないって言ってるのに……一緒に過ごした年数すら忘れそうになってるわ。",
   "x": 1
  },
  "博士也是个随性的人呢，算了，反正博士没什么需要我操心的。": {
   "ko": "박사도 참 제멋대로인 사람이네. 됐어, 어차피 박사는 내가 걱정할 일도 없으니까.",
-  "en": "You're quite the free spirit yourself, Doctor. Never mind—there's nothing about you for me to worry over anyway.",
-  "ja": "ドクターくんもずいぶん気ままな人ね。まあいいわ、どうせドクターくんは私が心配するようなことないもの。",
   "x": 1
  },
  "糟了，我之前保存的弓的教学视频哪儿去了？！": {
   "ko": "큰일이네, 저번에 저장해 둔 활 강습 영상 어디 갔지?!",
-  "en": "Oh no—where did that archery tutorial I saved go?!",
-  "ja": "まずいわ、前に保存しておいた弓の講習動画、どこにいったの！？",
   "x": 1
  },
  "比起利用武器跟野兽战斗，我还是更喜欢拿起笔跟文件战斗。唉，人生总是无法事事如意。不过至少，我最近画设计图越来越顺畅了，也算一件好事吧。": {
   "ko": "무기를 들고 야수와 싸우는 것보다는, 역시 펜을 들고 서류와 싸우는 쪽이 좋아. 하아, 인생이란 게 늘 뜻대로 되진 않지. 그래도 요즘 디자인 도면 그리는 게 점점 매끄러워지고 있으니, 그건 다행이라고 해야 하나.",
-  "en": "Given the choice between taking up a weapon against beasts and taking up a pen against paperwork, I'd still pick the pen. Ah, life never does go the way you want. Still, my design sketches have been coming out more smoothly lately—I suppose that counts as a good thing.",
-  "ja": "武器を持って獣と戦うより、やっぱりペンを持って書類と戦うほうがいいわ。はあ、人生って思い通りにいかないものね。それでも、最近はデザイン画がどんどんスムーズに描けるようになってきたし、それだけは良いことかしら。",
   "x": 1
  },
  "我已经读过任务简报了，交给我吧。": {
   "ko": "임무 브리핑은 이미 읽었어. 나한테 맡겨.",
-  "en": "I've already read the mission briefing. Leave it to me.",
-  "ja": "任務のブリーフィングはもう読んだわ。任せて。",
   "x": 1
  },
  "那么，由我来布置作战任务。": {
   "ko": "그럼, 작전 임무는 내가 배분할게.",
-  "en": "Then I'll assign the operation's tasks.",
-  "ja": "それじゃ、作戦の任務分担は私がするわ。",
   "x": 1
  },
  "我已经确认过后勤物资了，没有问题，出发吧。": {
   "ko": "보급 물자는 확인했어. 문제없어, 출발하자.",
-  "en": "I've checked the logistics supplies. No problems—let's move out.",
-  "ja": "補給物資は確認したわ。問題なし、出発しましょう。",
   "x": 1
  },
  "按照计划执行任务吧，没必要慌张。": {
   "ko": "계획대로 임무를 수행하자. 당황할 필요 없어.",
-  "en": "Carry out the mission as planned. There's no need to panic.",
-  "ja": "計画通りに任務を遂行して。慌てる必要はないわ。",
   "x": 1
  },
  "要开作战会议吗？": {
   "ko": "작전 회의라도 할까?",
-  "en": "Shall we hold a briefing?",
-  "ja": "作戦会議でもする？",
   "x": 1
  },
  "我有一些想法，聊一聊？": {
   "ko": "생각해 둔 게 좀 있는데, 얘기해 볼까?",
-  "en": "I have a few ideas. Want to talk them over?",
-  "ja": "いくつか考えがあるの、話す？",
   "x": 1
  },
  "对方的弱点，我已经看出来了。": {
   "ko": "상대의 약점은 벌써 파악했어.",
-  "en": "I've already spotted their weak point.",
-  "ja": "相手の弱点はもう見えてるわ。",
   "x": 1
  },
  "快点结束吧，回去还有许多事要做。": {
   "ko": "빨리 끝내자. 돌아가서 할 일이 산더미야.",
-  "en": "Let's finish quickly. There's a mountain of work waiting back home.",
-  "ja": "さっさと終わらせましょう。帰ってからやることが山ほどあるの。",
   "x": 1
  },
  "翔虫，拜托你了。": {
   "ko": "밧줄벌레, 부탁할게.",
-  "en": "Wirebug, I'm counting on you.",
-  "ja": "翔蟲、お願いね。",
   "x": 1
  },
  "为了应对这种情况，我早就做了准备。": {
   "ko": "이런 상황에 대비해서, 진작에 준비해 뒀어.",
-  "en": "I prepared for a situation like this long ago.",
-  "ja": "こういう状況に備えて、とっくに準備してあるわ。",
   "x": 1
  },
  "每次完成这样的任务之后，我都会想，这种挑战并不适合我。对我来说，能够守住自己的一方天地就足够了。": {
   "ko": "이런 임무를 끝낼 때마다 생각해. 이런 도전은 나한테 맞지 않는다고. 나한테는 내 작은 세계를 지킬 수 있는 것만으로 충분하니까.",
-  "en": "Every time I finish a mission like this, I think the same thing: challenges like these don't suit me. For me, holding on to my own little corner of the world is enough.",
-  "ja": "こういう任務を終えるたびに思うの、こんな挑戦は私に向いてないって。私は、自分の小さな居場所を守れればそれで十分よ。",
   "x": 1
  },
  "博士，别担心，我们的损失很小，还能继续追击。": {
   "ko": "박사, 걱정 마. 손실은 크지 않아, 아직 추격할 수 있어.",
-  "en": "Don't worry, Doctor. Our losses are minimal—we can still press the pursuit.",
-  "ja": "ドクターくん、心配しないで。損失は小さいわ、まだ追撃できる。",
   "x": 1
  },
  "果然我还是不擅长战斗这种事情啊。": {
   "ko": "역시 난 싸움 같은 건 잘 못하나 봐.",
-  "en": "I really am no good at this fighting business, am I.",
-  "ja": "やっぱり私、戦いなんて向いてないのね。",
   "x": 1
  },
  "这里的吵闹我也已经习惯了。": {
   "ko": "이 시끌벅적함에도 이젠 익숙해졌어.",
-  "en": "I've gotten used to the noise here, too.",
-  "ja": "ここの騒がしさにも、もう慣れたわ。",
   "x": 1
  },
  "等一下，别拉我的袖子！": {
   "ko": "잠깐, 소매 잡아당기지 마!",
-  "en": "Hold on—stop tugging my sleeve!",
-  "ja": "ちょっと、袖を引っ張らないで！",
   "x": 1
  },
  "博士，今天的工作到此为止，下班！": {
   "ko": "박사, 오늘 업무는 여기까지. 퇴근!",
-  "en": "Doctor, that's it for today's work. We're clocking out!",
-  "ja": "ドクターくん、今日の仕事はここまで。退勤よ！",
   "x": 1
  },
  "泡普卡，为什么你变成了一棵树？月见夜，这座香槟塔又是哪来的？空爆，这是新年聚会，不是战利品展览会！还有斑点，求你别用投影仪播放漫画了——我错了，我不该答应让你们自己布置场地的。": {
   "ko": "포푸카, 넌 왜 나무가 되어 있는 거야? 미드나이트, 저 샴페인 타워는 또 어디서 났고? 캐터펄트, 이건 신년 파티지 전리품 전시회가 아니야! 그리고 스팟, 제발 프로젝터로 만화 좀 틀지 말아 줄래—— 내가 잘못했어. 너희한테 장소 꾸미기를 맡기는 게 아니었어.",
-  "en": "Popukar, why have you turned into a tree? Midnight, where did this champagne tower come from? Catapult, this is a New Year's party, not a trophy exhibition! And Spot, please stop projecting comics on the wall—Fine, I admit it. I never should have let you decorate the place yourselves.",
-  "ja": "ポプカル、どうして木になってるの？ミッドナイト、このシャンパンタワーはどこから持ってきたの？カタパルト、これは新年会であって戦利品の展示会じゃないわ！それにスポット、お願いだからプロジェクターで漫画を流すのはやめて――私が悪かったわ。会場の飾りつけをあなたたちに任せるべきじゃなかった。",
   "x": 1
  },
  "博士，有什么事需要我帮忙吗？": {
   "ko": "박사, 뭐 도와줄 일이라도 있어?",
-  "en": "Doctor, is there anything you need help with?",
-  "ja": "ドクターくん、何か手伝うことある？",
   "x": 1
  },
  "生日快乐，博士，我给你缝了一个护身符，里面放了一小块我从“泡影国”带回来的“火竹炭”。把你的生日愿望写下来，放进护身符里，说不定就会实现哦？": {
   "ko": "생일 축하해, 박사. 부적을 하나 지어 봤어. 안에는 “포영국”에서 가져온 “화죽탄” 조각을 조금 넣어 뒀고. 생일 소원을 적어서 이 안에 넣어 두면, 어쩌면 이루어질지도 모르잖아?",
-  "en": "Happy birthday, Doctor. I sewed you a charm, with a little piece of the 'firebamboo charcoal' I brought back from the 'Bubbly Realm' tucked inside. Write down your birthday wish and slip it in—who knows, it might just come true.",
-  "ja": "お誕生日おめでとう、ドクターくん。お守りを一つ縫ったの。中には「泡沫国」から持ち帰った「火竹炭」のかけらを少し入れてあるわ。誕生日の願い事を書いて中に入れておけば、もしかしたら叶うかもしれないわよ？",
   "x": 1
  },
  "我的过去没什么好事，来到罗德岛，遇到A6小队算一件。某种看不清摸不着，但确实存在的东西把我们联结在了一起。我总说我们有一天肯定会分离，但最离不开这个小队的人，说不定是我自己。": {
   "ko": "내 과거엔 좋은 일이 별로 없었어. 로도스 아일랜드에 와서 A6 팀을 만난 건 그중 하나겠지. 눈에 보이지도, 손에 잡히지도 않지만 분명히 존재하는 무언가가 우리를 이어 놓았어. 나는 늘 우리도 언젠간 헤어질 거라고 말하지만…… 이 팀을 가장 놓지 못하는 사람은, 어쩌면 나 자신일지도 몰라.",
-  "en": "There isn't much good in my past. Coming to Rhodes Island and finding Squad A6 counts as one of the few. Something invisible and intangible—but undeniably real—tied us together. I keep saying that one day we're bound to part ways. But the one who can't let this squad go... might just be me.",
-  "ja": "私の過去にろくなことはなかった。ロドスに来て、A6小隊に出会えたのはその数少ない一つね。目にも見えず手にも取れない、けれど確かに存在する何かが、私たちを結びつけた。いつか必ず離れ離れになるって、私はいつも言ってるけど……この小隊を一番手放せずにいるのは、案外私自身なのかもしれないわ。",
   "x": 1
  },
  "让我们充满活力地开始工作吧！——虽然我想这么说，不过，还是老样子，先玩会儿游戏吧。": {
   "ko": "자, 활기차게 일을 시작해 보자! ——라고 말하고는 싶지만, 역시 늘 하던 대로 게임부터 좀 하자~",
-  "en": "All right, let's kick off the day with some energy!—is what I'd like to say, but same as always, let's play some games first.",
-  "ja": "さあ、元気いっぱいにお仕事を始めよう！――って言いたいところだけど、やっぱりいつも通り、先にちょっとゲームしよ～",
   "x": 1
  },
  "我们认识的斑点，其实没有完全发挥他的潜力，他只要努力一下，说不定能造出和罗德岛一样厉害的大家伙呢。所以，我们一起想个办法让他拿出真本事吧！哎，别走啊，我是认真的！": {
   "ko": "우리가 아는 스팟, 사실 자기 잠재력을 다 못 쓰고 있는 거야. 조금만 더 노력하면 로도스 아일랜드만큼 굉장한 물건도 만들어 낼지 모른다고. 그러니까 같이 그 녀석 진짜 실력을 끌어낼 방법을 궁리해 보자! 야, 가지 마, 나 진지하다고!",
-  "en": "The Spot we know isn't even close to his full potential. If he really tried, he might build something as big and impressive as Rhodes Island itself! So let's come up with a way to make him show what he's really got—hey, don't walk away, I'm serious!",
-  "ja": "あたしたちの知ってるスポットって、実は全然本気を出してないんだよ。ちょっと頑張れば、ロドスみたいなすごいデカブツだって作れるかもしれないんだから。だから一緒に、あいつの本気を引き出す方法を考えようよ！あ、行かないで、あたしマジだってば！",
   "x": 1
  },
  "你看，把剑这样插进盾里，它就会变成一把大斧！帅不帅？虽然我讨厌被当作卡西米尔的骑士，但用这把斧子逗逗这样想的人感觉也很有趣，我甚至想回去参赛玩玩了，嘿嘿。": {
   "ko": "봐 봐, 검을 이렇게 방패에 꽂으면 커다란 도끼로 변해! 멋있지? 카시미어의 기사 취급받는 건 딱 질색이지만, 이 도끼로 그렇게 생각하는 사람들을 놀려 먹는 것도 꽤 재밌을 것 같단 말이지. 슬슬 돌아가서 대회에 나가 볼까 싶을 정도라니까, 헤헤.",
-  "en": "Look, if you slot the sword into the shield like this, it turns into a giant axe! Cool, right? I hate being taken for a Kazimierz knight, but messing with the people who think that using this axe sounds pretty fun. I'm almost tempted to go back and enter a tournament again, heheh.",
-  "ja": "見て、剣をこうやって盾に差し込むと、でっかい斧に変わるんだ！かっこいいでしょ？カジミエーシュの騎士扱いされるのは嫌いだけど、この斧でそう思ってる連中をからかうのは面白そうなんだよね。ちょっと戻って大会に出てみたくなっちゃうくらいさ、へへ。",
   "x": 1
  },
  "嗯？杜宾今天又不在？训练任务我都已经完成了，还想找她多布置些呢。试试战斗以外的课程？不行不行，那种我还是老样子，三分钟就睡过去啦。": {
   "ko": "응? 도베르만 오늘 또 없어? 훈련 과제는 벌써 다 끝내서 더 내달라고 하려던 참이었는데. 전투 말고 다른 수업을 들어 보라고? 안 돼 안 돼, 그런 건 나 여전히 3분이면 잠들어 버린다고.",
-  "en": "Huh? Dobermann's out again today? I already finished all my training assignments—I was gonna ask her for more. Try a class that isn't combat? Nope, nope. Same as ever, I'd be out cold in three minutes.",
-  "ja": "ん？ドーベルマン、今日もいないの？訓練課題はもう全部終わらせたから、もっと出してもらおうと思ってたのに。戦闘以外の授業を試してみろ？無理無理、そういうのはあたし相変わらず、三分で寝落ちしちゃうから。",
   "x": 1
  },
  "我嘴笨，说不上来，但是，和雷狼龙的战斗，是我第一次觉得心里有什么东西被满足了，所以，回来之后我也想找一些那样的刺激——我知道错啦，泡普卡，我不该因为这个惹你生气的。": {
   "ko": "난 말주변이 없어서 잘 설명은 못 하겠는데…… 진오우거와의 싸움은, 내 안의 뭔가가 처음으로 채워지는 느낌이었어. 그래서 돌아온 뒤에도 그런 자극을 찾고 싶어졌고—— 알았어, 내가 잘못했어, 포푸카. 이런 걸로 널 화나게 하면 안 되는 거였는데.",
-  "en": "I'm bad with words, so I can't really explain it, but... fighting that Zinogre was the first time something inside me actually felt filled up. That's why I've been chasing that kind of thrill since we got back—Okay, okay, I'm sorry, Popukar. I shouldn't have made you mad over this.",
-  "ja": "あたし口下手だからうまく言えないんだけど……ジンオウガとの戦いは、心の中の何かが初めて満たされた感じがしたんだ。だから戻ってからも、ああいう刺激を探したくなっちゃって――わかったよ、あたしが悪かった、ポプカル。こんなことで怒らせちゃいけなかったよね。",
   "x": 1
  },
  "黑流树海、焚风热土、萨米冰原——听说这些地方有不少厉害的怪物值得挑战。不过一个人去好无聊，得想个办法拉上大伙一起。偷偷改一下梓兰姐的团建申请表好了！": {
   "ko": "블랙플로우, 푄 고온지대, 사미 빙원—— 이런 데엔 도전할 만한 굉장한 괴물이 잔뜩 있다더라고. 그치만 혼자 가면 심심하니까, 다들 끌고 갈 방법을 궁리해야지. 오키드 언니의 단합 행사 신청서를 몰래 좀 고쳐 놓을까!",
-  "en": "The Blackflow Forest, the Foehn Hotlands, the Sami snowfields—I hear all those places have plenty of monsters worth taking on. But going alone is boring, so I've gotta figure out how to drag everyone along. Maybe I'll quietly rewrite Ms. Orchid's team-outing application form!",
-  "ja": "黒流樹海、フェーンホットランド、サーミの氷原――こういう場所には挑みがいのあるモンスターがたくさんいるらしいんだ。でも一人で行くのは退屈だし、みんなを巻き込む方法を考えなきゃ。オーキッドの姉さんの親睦会申請書、こっそり書き換えちゃおうかな！",
   "x": 1
  },
  "我回来了！累死我了，沙发，我最喜欢的沙发，我要在上面躺一辈子——身上这些伤口？别在意，小伤而已。对了，狩猎的成果在仓库里，是个大家伙。我不管了，我要睡一会儿，晚安！": {
   "ko": "다녀왔어! 아 힘들어 죽겠다, 소파, 내가 제일 좋아하는 소파. 여기서 평생 누워 있을 거야—— 이 상처들? 신경 쓰지 마, 그냥 잔상처야. 아 참, 사냥한 건 창고에 넣어 뒀어. 엄청 큰 놈이야. 난 이제 몰라, 좀 잘 거야, 잘 자!",
-  "en": "I'm back! I'm dead tired. Couch, my beloved couch, I'm gonna lie here for the rest of my life—These cuts? Don't worry about it, just scratches. Oh right, the haul's in the warehouse. It's a big one. Anyway, I'm out. Gonna sleep. Night!",
-  "ja": "ただいま！もう疲れた～、ソファ、あたしの大好きなソファ。ここで一生寝てる――この傷？気にしないで、かすり傷だよ。あ、そうだ、狩りの成果は倉庫に置いてあるから。デカいやつだよ。もう知らない、ちょっと寝る、おやすみ！",
   "x": 1
  },
  "博士，我打磨武器的声音，是不是听着特别安心，特别催眠？要不我再多磨一会儿，让你好好睡一觉？": {
   "ko": "박사, 내가 무기 가는 소리, 듣고 있으면 엄청 안심되고 잠도 잘 오지 않아? 좀 더 갈아 줄까? 푹 자라고~",
-  "en": "Doctor, doesn't the sound of me sharpening my weapon feel super calming? Makes you sleepy, right? Want me to keep at it a while longer so you can get a good nap?",
-  "ja": "ドクター、あたしが武器を研ぐ音ってさ、聞いてると妙に安心して眠くならない？もうちょっと研いでてあげよっか？ぐっすり寝られるようにさ。",
   "x": 1
  },
  "博士，只是换了身装备，这种事走个过场就好了吧？那几个战斗任务的申请？别在意，只是想尝试一些新鲜事物而已啦。": {
   "ko": "박사, 그냥 장비 좀 바꾼 것뿐인데 이런 건 대충 형식만 갖추면 되지 않아? 그 전투 임무 신청서들? 신경 쓰지 마, 그냥 새로운 걸 좀 해 보고 싶었을 뿐이라니까.",
-  "en": "Doctor, I just swapped out my gear—can't we breeze through the formalities? Those combat mission applications? Don't worry about them, I just wanted to try something new, that's all.",
-  "ja": "ドクター、ただ装備を替えただけなんだから、こういうのは形だけでいいでしょ？あの戦闘任務の申請？気にしないで、ちょっと新しいことを試したかっただけだって。",
   "x": 1
  },
  "啊！这一招原来还能这么用！我去训练场试试！": {
   "ko": "아! 이 기술을 이렇게도 쓸 수 있구나! 훈련장 가서 해 봐야지!",
-  "en": "Whoa! So that's another way to use that move! I'm gonna go try it at the training grounds!",
-  "ja": "あっ！この技、こんな使い方もできるんだ！訓練場で試してくる！",
   "x": 1
  },
  "战斗的目的、拿起武器的意义，这些事情真的有那么重要吗？好吧，我决定了！我的目标是——狩猎大地上最厉害的野兽！": {
   "ko": "싸우는 목적, 무기를 드는 의미…… 그런 게 정말 그렇게 중요한 거야? 좋아, 정했어! 내 목표는—— 이 대지에서 가장 강한 야수를 사냥하는 거야!",
-  "en": "The purpose of fighting, the meaning behind picking up a weapon—is any of that really so important? Fine, I've decided! My goal is—to hunt down the mightiest beast on these lands!",
-  "ja": "戦う目的、武器を取る意味……そういうのって本当にそんなに大事？よし、決めた！あたしの目標は――この大地で一番強い獣を狩ることだ！",
   "x": 1
  },
  "时间到了？好嘞，我正好休息够了！出发！": {
   "ko": "시간 됐어? 좋아, 마침 푹 쉬었으니까! 출발!",
-  "en": "Time's up? Nice, I'm all rested up! Let's go!",
-  "ja": "時間？よーし、ちょうど休み足りたとこ！出発！",
   "x": 1
  },
  "最厉害的家伙交给我，其他你们解决，没问题吧？": {
   "ko": "제일 센 놈은 나한테 맡기고, 나머진 너희가 처리해. 문제없지?",
-  "en": "Leave the biggest one to me, you guys handle the rest. Sound good?",
-  "ja": "一番強いやつはあたしに任せて、ほかはみんなで片付けて。それでいいよね？",
   "x": 1
  },
  "等会儿，我忘了带砥石！": {
   "ko": "잠깐, 나 숫돌 안 챙겼어!",
-  "en": "Hold on—I forgot my whetstone!",
-  "ja": "ちょっと待って、砥石を忘れた！",
   "x": 1
  },
  "虽然我讨厌战争，不过狩猎还是很有趣的，嘿嘿。": {
   "ko": "전쟁은 싫지만, 사냥은 역시 재밌단 말이지, 헤헤.",
-  "en": "I hate war, but hunting? That's still a blast, heheh.",
-  "ja": "戦争は嫌いだけど、狩りはやっぱり楽しいんだよね、へへ。",
   "x": 1
  },
  "再等一会儿，我的肉要烤好了。": {
   "ko": "조금만 기다려, 내 고기 다 익어 가.",
-  "en": "Gimme a sec, my meat's almost done.",
-  "ja": "もうちょっと待って、お肉が焼けるとこなんだ。",
   "x": 1
  },
  "一起吃兔团子吗？": {
   "ko": "같이 토끼 경단 먹을래?",
-  "en": "Want some Bunny Dango?",
-  "ja": "一緒にウサ団子食べる？",
   "x": 1
  },
  "你们就是我的对手？还不赖嘛！": {
   "ko": "너희가 내 상대야? 나쁘지 않은데!",
-  "en": "You lot are my opponents? Not bad!",
-  "ja": "アンタたちがあたしの相手？悪くないじゃん！",
   "x": 1
  },
  "我现在精神很好，你们可要小心了！": {
   "ko": "나 지금 컨디션 최고니까, 조심하는 게 좋을걸!",
-  "en": "I'm wide awake right now, so you'd better watch out!",
-  "ja": "今のあたし絶好調だから、気をつけたほうがいいよ！",
   "x": 1
  },
  "小翔虫，到你出场了！": {
   "ko": "밧줄벌레, 네가 나설 차례야!",
-  "en": "Little Wirebug, you're up!",
-  "ja": "翔蟲ちゃん、出番だよ！",
   "x": 1
  },
  "吃我变形斩！": {
   "ko": "내 변형 베기나 받아라!",
-  "en": "Take my Morph Slash!",
-  "ja": "変形斬りを食らえ！",
   "x": 1
  },
  "瓶子，没问题。充能，没问题。好，该上了！": {
   "ko": "병, 이상 없음. 충전, 이상 없음. 좋아, 간다!",
-  "en": "Phial, check. Charge, check. All right, here we go!",
-  "ja": "ビン、よし。チャージ、よし。さあ、行くよ！",
   "x": 1
  },
  "我的盾正在发光，知道这意味着什么吗？": {
   "ko": "내 방패가 빛나고 있어. 이게 무슨 뜻인지 알아?",
-  "en": "My shield's glowing. Know what that means?",
-  "ja": "あたしの盾が光ってる。これが何を意味するかわかる？",
   "x": 1
  },
  "大丰收！瞧瞧这大家伙，赶紧带回去给大伙炫耀一下吧！": {
   "ko": "대풍작이다! 이 큰 녀석 좀 봐, 얼른 가져가서 다들한테 자랑해야지!",
-  "en": "What a haul! Just look at this big guy—let's hurry back and show everyone!",
-  "ja": "大収穫！このデカブツを見てよ、早く持ち帰ってみんなに自慢しなきゃ！",
   "x": 1
  },
  "哈，看到我刚才那一记完美的超高输出属性解放斩了吗？！": {
   "ko": "하, 방금 내 완벽한 초고출력 속성 해방 베기 봤어?!",
-  "en": "Ha! Did you see that perfect Super Amped Element Discharge just now?!",
-  "ja": "はっ、今の完璧な超高出力属性解放斬り、見た！？",
   "x": 1
  },
  "啧，让它给跑了。不过没事，我已经记住了它的招式，下次一定能做得更好。": {
   "ko": "쳇, 놓쳐 버렸네. 그래도 괜찮아, 그놈 패턴은 다 외웠으니까 다음엔 반드시 더 잘할 수 있어.",
-  "en": "Tch, it got away. It's fine though—I've memorized its moves, so next time I'll definitely do better.",
-  "ja": "ちっ、逃げられちゃった。でも平気、あいつの動きは覚えたから、次はもっとうまくやれるよ。",
   "x": 1
  },
  "政宗，快给博士准备板车！": {
   "ko": "마사무네, 얼른 박사한테 수레 준비해 줘!",
-  "en": "Masamune, get a cart ready for the Doctor, quick!",
-  "ja": "政宗、早くドクターに荷車を用意して！",
   "x": 1
  },
  "嗯~还是回家好啊。": {
   "ko": "음~ 역시 집이 최고야.",
-  "en": "Mmm~ Home really is the best.",
-  "ja": "ん～、やっぱりお家が一番だね。",
   "x": 1
  },
  "博士，我就知道是你。": {
   "ko": "박사, 그럴 줄 알았어.",
-  "en": "Doctor, I knew it was you.",
-  "ja": "ドクター、やっぱりドクターだと思った。",
   "x": 1
  },
  "博士，下个任务去哪里？": {
   "ko": "박사, 다음 임무는 어디로 가?",
-  "en": "Doctor, where's the next mission?",
-  "ja": "ドクター、次の任務はどこ？",
   "x": 1
  },
  "年终自评好麻烦啊，我这一年不是在狩猎就是在玩，但要是就这么写上去，梓兰姐肯定会杀了我的。对了，我就写，“在自我提升和集体活动参与方面颇有建树”，完美！": {
   "ko": "연말 자기 평가 진짜 귀찮다. 나 올 한 해 사냥 아니면 놀기만 했는데, 그렇게 그대로 적었다간 오키드 언니한테 죽는다고. 아, 맞다. 이렇게 쓰면 되겠네—— “자기 계발과 단체 활동 참여 면에서 상당한 성과를 거둠”. 완벽해!",
-  "en": "Year-end self-evaluations are such a pain. All I did this year was hunt or goof off, and if I write that down, Ms. Orchid will straight-up kill me. Oh, I know—I'll put: 'Made notable achievements in self-improvement and participation in group activities.' Perfect!",
-  "ja": "年末の自己評価って面倒くさいなあ。あたしの今年って狩りか遊びしかしてないし、そのまま書いたらオーキッドの姉さんに殺されるよ。あ、そうだ、こう書けばいいんだ――「自己研鑽および団体活動への参加において多大な成果を上げた」。完璧！",
   "x": 1
  },
  "博士，一起去狩猎吗？": {
   "ko": "박사, 같이 사냥 갈래?",
-  "en": "Doctor, wanna come hunting with me?",
-  "ja": "ドクター、一緒に狩りに行く？",
   "x": 1
  },
  "博士，你是不是闻到了一股肉味？你是不是觉得自己饿了，产生了幻觉？没错，你应该放下手上的工作，吃一顿烤肉庆祝你的生日——糟糕，博士，快点开窗，烤煳了烤煳了！": {
   "ko": "박사, 어디서 고기 냄새 나지 않아? 배가 고파서 헛것을 느끼는 것 같다고? 아니야, 진짜라니까. 그러니까 하던 일 다 내려놓고, 고기 구워 먹으면서 생일을 축하하는 거야—— 아 큰일 났다, 박사, 빨리 창문 열어! 탄다 타!",
-  "en": "Doctor, do you smell meat? Think you're just hungry and imagining things? Nope, it's real. So put down your work and celebrate your birthday with a barbecue—Uh oh, Doctor, open a window, quick! It's burning, it's burning!",
-  "ja": "ドクター、お肉の匂いしない？お腹が空いて幻でも見てると思ってる？違うよ、本物だって。だから仕事なんて置いといて、焼肉で誕生日をお祝いしよう――やば、ドクター、早く窓開けて！焦げてる焦げてる！",
   "x": 1
  },
  "如果没有罗德岛，我多半没办法这么自由自在地活着。虽说你们肯定不需要我的道谢——啧，感觉留下这种录音也不是我的风格。总之，博士，随录音给你寄了点这次狩猎的战利品，我很快就回来了！": {
   "ko": "로도스 아일랜드가 없었으면, 나는 아마 이렇게 자유롭게 살지 못했을 거야. 뭐, 너희한테 내 감사 인사 같은 게 필요하진 않겠지만—— 쳇, 이런 녹음을 남기는 것도 내 스타일은 아닌 것 같네. 아무튼 박사, 녹음이랑 같이 이번 사냥의 전리품도 좀 부쳤어. 나 금방 돌아갈게!",
-  "en": "Without Rhodes Island, I probably wouldn't be living this freely. Not that any of you need me to say thanks—Tch, leaving a recording like this isn't really my style either. Anyway, Doctor, I sent along some trophies from this hunt with the recording. I'll be back soon!",
-  "ja": "ロドスがなかったら、あたしはたぶんこんなに自由に生きられなかった。まあ、みんなはあたしのお礼なんて必要ないだろうけどさ――ちぇっ、こういう録音を残すのもあたしらしくないよね。とにかくドクター、録音と一緒に今回の狩りの戦利品もいくつか送っといたから。すぐ帰るよ！",
   "x": 1
  },
  "不必过分在意我的状态，我会尽快适应生理机能的些许变化，这不会妨碍我的工作。从现在开始，还是由我来担任你的全科医生。": {
   "ko": "내 상태를 지나치게 신경 쓸 필요는 없어. 생리 기능의 사소한 변화 정도는 곧 적응할 테고, 업무에 지장을 주지도 않을 거야. 지금부터도 네 주치의는 내가 맡지.",
-  "en": "There is no need to be overly concerned about my condition. I will adapt to these slight changes in my physiology soon enough, and they will not interfere with my work. From here on, I will continue to serve as your general practitioner.",
-  "ja": "私の状態をそこまで気にする必要はない。生理機能のわずかな変化にはすぐ順応するし、仕事の妨げにもならない。これからも、君の主治医は私が務める。",
   "x": 1
  },
  "石棺的核心装置正维系着我的生命，短时间内我还无法脱离它而行动。谨慎对待自己的生命状态，对我来说也算是从未有过的体验。许多事物我都要重新熟悉。也许这一次，我还是会需要你的指引。": {
   "ko": "석관의 핵심 장치가 지금 내 생명을 유지하고 있어. 당분간은 그것에서 떨어져 움직일 수 없지. 자신의 생명 상태를 조심스럽게 다뤄야 한다는 건, 나로서는 한 번도 겪어 본 적 없는 경험이야. 많은 것들을 다시 익혀야 해. 어쩌면 이번에도, 나는 네 인도가 필요할지 모르겠군.",
-  "en": "The sarcophagus's core apparatus is what sustains my life at present; I cannot move far from it for some time yet. Treating my own vital state with caution is an experience I have never had before. There is much I must grow familiar with all over again. Perhaps this time, too, I will need your guidance.",
-  "ja": "石棺の中核装置が今の私の命を繋いでいる。しばらくはそれを離れて動くことはできない。自分の生命状態を慎重に扱うというのは、私にとって初めての経験だ。多くのことを一から覚え直さなければならない。もしかすると今回も、私は君の導きを必要とするのかもしれないな。",
   "x": 1
  },
  "你们在最危急的时候带领罗德岛找到了航向，阿米娅无疑已经是成熟的领袖，我也从未怀疑过可露希尔的才能与你的决策。罗德岛不会因为离开谁就无法前行，失去的一切同样造就了现在的罗德岛。": {
   "ko": "너희는 가장 위태로운 순간에 로도스 아일랜드가 나아갈 항로를 찾아냈어. 아미야는 이미 의심할 여지 없이 성숙한 지도자이고, 클로저의 재능과 네 판단을 나는 한 번도 의심한 적 없어. 로도스 아일랜드는 누가 떠났다고 해서 나아가지 못하는 곳이 아니야. 잃어버린 모든 것 또한 지금의 로도스 아일랜드를 만들었으니까.",
-  "en": "In the most critical hour, you led Rhodes Island to its heading. Amiya is without question a mature leader now, and I have never once doubted Closure's talent or your decisions. Rhodes Island will not be unable to move forward simply because someone has left. Everything we lost shaped the Rhodes Island that stands today as well.",
-  "ja": "君たちは最も危うい時に、ロドスの進むべき航路を見つけ出した。アーミヤはもはや疑いようもなく成熟した指導者だし、クロージャの才覚と君の判断を、私は一度も疑ったことはない。ロドスは誰かが去った程度で前に進めなくなる場所ではない。失われたものもまた、今のロドスを形作っている。",
   "x": 1
  },
  "我很高兴Mon3tr可以用这种方式融入罗德岛，虽然没有同类，但所幸还有许多人将她视作同伴。她不会忘记与我一同承担过的使命，你可以完全信任她。此后的时间里，她会陪伴你更久。": {
   "ko": "Mon3tr가 이런 방식으로 로도스 아일랜드에 녹아든 것이 나는 기뻐. 같은 종족은 없지만, 다행히도 그녀를 동료로 여겨 주는 사람이 많으니까. 그녀는 나와 함께 짊어졌던 사명을 잊지 않을 거야. 완전히 믿어도 좋아. 앞으로의 시간 동안, 그녀는 나보다 더 오래 네 곁에 있어 줄 테니.",
-  "en": "I am glad Mon3tr has found her way into Rhodes Island like this. She has no others of her kind, but fortunately there are many here who regard her as a comrade. She will not forget the mission we bore together—you may trust her completely. In the time to come, she will stay by your side far longer than I will.",
-  "ja": "Mon3trがこういう形でロドスに溶け込めたことを、私は喜ばしく思う。同族はいないが、幸いにも彼女を仲間と見なす者は多い。彼女は私と共に背負った使命を忘れはしない。全面的に信頼していい。これからの時間、彼女は私より長く君のそばにいてくれるはずだ。",
   "x": 1
  },
  "普瑞赛斯暂时不再威胁罗德岛的安全，她将选择交给了你。源石异变撕裂了这片大地隐藏起来的旧创，如果不加以引导，绝望很可能会先于灾难毁灭我们。无论何时，文明最大的敌人都是人类本身。": {
   "ko": "프리스티스는 당분간 로도스 아일랜드의 안전을 위협하지 않을 거야. 그녀는 선택을 네게 넘겼으니까. 오리지늄 이변은 이 대지가 숨겨 두었던 오래된 상처를 헤집어 놓았어. 제대로 이끌지 않으면, 재앙보다 절망이 먼저 우리를 무너뜨릴지도 몰라. 언제나 문명의 가장 큰 적은 인간 자신이야.",
-  "en": "Priestess no longer threatens Rhodes Island's safety, for the time being. She has left the choice to you. The Originium anomaly has torn open the old wounds these lands kept hidden; if left unguided, despair may well destroy us before the disaster does. In every age, civilization's greatest enemy is humanity itself.",
-  "ja": "プリースティスは当面、ロドスの安全を脅かすことはない。彼女は選択を君に委ねた。源石の異変は、この大地が隠してきた古い傷を引き裂いた。導きがなければ、災厄よりも先に絶望が我々を滅ぼしかねない。いつの時代も、文明の最大の敵は人間自身だ。",
   "x": 1
  },
  "如今的你还会迷茫吗？可以让人们寻找自身意义的支点唯有生命的本性，但对我而言，是一项使命，一个承诺。我不会再质疑自己存在的意义，在旅途的尽头，名为凯尔希的个体已经找到了她自己。": {
   "ko": "지금의 너는 아직도 헤매고 있을까? 사람이 자기 존재의 의미를 찾을 수 있게 해 주는 받침점은 오직 생명의 본성뿐이지. 다만 나에게 그것은 하나의 사명이자, 하나의 약속이었어. 나는 더 이상 내 존재의 의미를 의심하지 않아. 여정의 끝에서, 켈시라 불리는 개체는 이미 자기 자신을 찾아냈으니까.",
-  "en": "Do you still lose your way, as you are now? The only fulcrum that lets anyone search for their own meaning is the nature of life itself—though for me it was a mission, a promise. I no longer question the meaning of my existence. At the end of the journey, the individual called Kal'tsit has found herself.",
-  "ja": "今の君は、まだ迷うことがあるのだろうか。人が自らの意味を探すための支点は、生命の本性のほかにない。だが私にとってそれは、一つの使命であり、一つの約束だった。私はもう自分の存在意義を疑うことはない。旅の果てで、ケルシーという個体は既に彼女自身を見つけたのだから。",
   "x": 1
  },
  "我们的交谈不会再受到限制，对现在的你来说我已经没有什么秘密。我乐意与你分享过往万年的见闻，可是那些思绪与感受恐怕难以用言语传达。好，在这些记忆淡去之前，我会尽可能讲给你听。": {
   "ko": "이제 우리의 대화에는 아무런 제약도 없어. 지금의 너에게 나는 더 이상 숨길 비밀이 없으니까. 지난 만 년의 견문을 너와 나누는 것도 기꺼이 하겠어. 다만 그때의 생각과 감정까지 말로 전하기는 아마 어려울 거야. 좋아, 이 기억들이 흐려지기 전에, 최대한 들려주도록 하지.",
-  "en": "Nothing constrains our conversations any longer; I have no secrets left from the person you are now. I would gladly share with you what I witnessed across ten thousand years, though I fear the thoughts and feelings themselves are beyond words. Very well. Before these memories fade, I will tell you as much as I can.",
-  "ja": "もう我々の会話に制約はない。今の君に対して、私に隠すべき秘密はもうないのだから。過ぎ去った万年の見聞を君と分かち合うのも喜んで引き受けよう。ただ、その時の想いや感覚まで言葉で伝えるのは難しいだろうがな。いいだろう、この記憶が薄れる前に、できる限り話して聞かせよう。",
   "x": 1
  },
  "我永远不会忘记有人曾与我谈论过生命与爱，我终于可以在这副躯体有限的时间里做出回应。我会耐心接受时间的磋磨，也会将立下的誓言履行下去，直到下一次，真正的死亡使我们分离。": {
   "ko": "누군가 나와 생명과 사랑을 이야기했던 일을 나는 결코 잊지 않아. 이제야 나는 이 육신에게 주어진 한정된 시간 안에서 그 물음에 답할 수 있게 됐어. 시간이 깎아 내는 것을 참을성 있게 받아들이고, 세운 맹세도 끝까지 지켜 나가겠어. 다음번에, 진짜 죽음이 우리를 갈라놓을 때까지.",
-  "en": "I will never forget that someone once spoke with me of life and love. At last, within the limited time this body is given, I can answer. I will patiently accept what time wears away, and I will carry out the oath I swore—until, next time, it is true death that parts us.",
-  "ja": "かつて誰かが私と生命と愛について語り合ったことを、私は決して忘れない。ようやく私は、この身体に許された限りある時間の中で、それに応えることができる。時が削り取っていくものを辛抱強く受け入れ、立てた誓いも果たし続けよう。次こそは、真の死が我々を分かつまで。",
   "x": 1
  },
  "往后的状况只会更为严峻，我们应当吸取经验。": {
   "ko": "앞으로의 상황은 더 험난해질 뿐이야. 우리는 경험에서 배워야 해.",
-  "en": "The situation ahead will only grow more severe. We would do well to learn from experience.",
-  "ja": "この先の状況は厳しくなる一方だ。我々は経験から学ぶべきだろう。",
   "x": 1
  },
  "你有了很多可以信任的同伴，作为领导者，你应该习惯让他们成为助力。": {
   "ko": "너에겐 믿을 수 있는 동료가 많이 생겼어. 지도자라면, 그들을 힘으로 삼는 데 익숙해져야 해.",
-  "en": "You have many comrades you can trust now. As a leader, you should grow accustomed to letting them become your strength.",
-  "ja": "君には信頼できる仲間が大勢できた。指導者なら、彼らを力とすることに慣れるべきだ。",
   "x": 1
  },
  "你已经不再需要我的指引，而罗德岛与这片大地今后会更加需要你。不要忘记你最初的辩题，“去找到你自己”。": {
   "ko": "너에게는 더 이상 내 인도가 필요하지 않아. 그리고 앞으로 로도스 아일랜드와 이 대지는 너를 더욱 필요로 하게 될 거야. 네가 처음 내걸었던 명제를 잊지 마—— “너 자신을 찾아”.",
-  "en": "You no longer need my guidance, and from here on, Rhodes Island and these lands will need you all the more. Do not forget the proposition you began with—'Find yourself.'",
-  "ja": "君にはもう私の導きは要らない。そしてこれから、ロドスとこの大地は君をより必要とするだろう。君が最初に掲げた命題を忘れるな――「君自身を、見つけるんだ」。",
   "x": 1
  },
  "我可以参与制定急救方案。": {
   "ko": "응급 처치 방안 수립에는 나도 참여하지.",
-  "en": "I can take part in drawing up the emergency care plan.",
-  "ja": "救急処置プランの策定には私も加わろう。",
   "x": 1
  },
  "没有问题。": {
   "ko": "문제없어.",
-  "en": "No problem.",
-  "ja": "問題ない。",
   "x": 1
  },
  "Mon3tr，不用担心，你更应该留在这里保护好博士。": {
   "ko": "Mon3tr, 걱정할 것 없어. 너는 여기 남아 박사를 지키는 편이 좋아.",
-  "en": "Mon3tr, there's no need to worry. You had better stay here and protect the Doctor.",
-  "ja": "Mon3tr、心配は要らない。お前はここに残ってドクターを守るべきだ。",
   "x": 1
  },
  "尽一切可能减少伤亡，我们需要为泰拉保留更多希望。": {
   "ko": "가능한 모든 수단을 다해 사상자를 줄인다. 우리는 테라를 위해 더 많은 희망을 남겨야 해.",
-  "en": "Do everything possible to reduce casualties. We must preserve as much hope for Terra as we can.",
-  "ja": "あらゆる手を尽くして死傷者を減らせ。我々はテラのために、より多くの希望を残さねばならない。",
   "x": 1
  },
  "治疗准备已就绪。": {
   "ko": "치료 준비 완료.",
-  "en": "Treatment preparations complete.",
-  "ja": "治療の準備は整った。",
   "x": 1
  },
  "我相信你。": {
   "ko": "너를 믿어.",
-  "en": "I trust you.",
-  "ja": "君を信じる。",
   "x": 1
  },
  "全域治疗单元已部署。": {
   "ko": "전역 치료 유닛, 전개 완료.",
-  "en": "Global treatment unit deployed.",
-  "ja": "全域治療ユニット、展開完了。",
   "x": 1
  },
  "安心执行计划，我会保障干员安全。": {
   "ko": "안심하고 계획을 실행해. 오퍼레이터들의 안전은 내가 책임지지.",
-  "en": "Carry out the plan without concern. I will see to the Operators' safety.",
-  "ja": "安心して計画を実行しろ。オペレーターの安全は私が保証する。",
   "x": 1
  },
  "方舟生物协议启动。": {
   "ko": "방주 생물 프로토콜, 기동.",
-  "en": "Ark organism protocol, initiated.",
-  "ja": "方舟生物プロトコル、起動。",
   "x": 1
  },
  "指令：修复。": {
   "ko": "명령: 복구.",
-  "en": "Command: Repair.",
-  "ja": "指令：修復。",
   "x": 1
  },
  "Mon3tr，我需要你保护伤员。": {
   "ko": "Mon3tr, 부상자를 지켜 줘야겠어.",
-  "en": "Mon3tr, I need you to protect the wounded.",
-  "ja": "Mon3tr、負傷者を守ってくれ。",
   "x": 1
  },
  "不要害怕，这种力量只会用于治愈。": {
   "ko": "두려워하지 마. 이 힘은 치유에만 쓰일 테니.",
-  "en": "Do not be afraid. This power will only ever be used to heal.",
-  "ja": "恐れることはない。この力は癒やしのためだけに使われる。",
   "x": 1
  },
  "也许我们能够看到那个属于所有人的未来。": {
   "ko": "어쩌면 우리는 모두의 것이 될 그 미래를 볼 수 있을지도 몰라.",
-  "en": "Perhaps we will live to see that future that belongs to everyone.",
-  "ja": "あるいは我々は、すべての人のものとなるあの未来を見られるかもしれない。",
   "x": 1
  },
  "没有伤亡。": {
   "ko": "사상자 없음.",
-  "en": "No casualties.",
-  "ja": "死傷者なし。",
   "x": 1
  },
  "战场在变得复杂，我们无法避免计划之外的变数，但总还有补救手段。": {
   "ko": "전장이 복잡해지고 있어. 계획 밖의 변수는 피할 수 없지만, 만회할 수단은 언제나 남아 있지.",
-  "en": "The battlefield is growing complex. Variables outside the plan cannot be avoided, but there are always means of correction.",
-  "ja": "戦場は複雑さを増している。計画外の変数は避けられないが、挽回する手段は常に残されている。",
   "x": 1
  },
  "让其他人先撤离。Mon3tr，我需要你协助我进行善后工作。": {
   "ko": "다른 사람들부터 철수시켜. Mon3tr, 뒷수습은 네가 도와줘야겠어.",
-  "en": "Get the others out first. Mon3tr, I need your help with the cleanup.",
-  "ja": "他の者たちを先に撤退させろ。Mon3tr、後始末は手伝ってくれ。",
   "x": 1
  },
  "和过去一样。": {
   "ko": "예전과 다름없군.",
-  "en": "Just as it always was.",
-  "ja": "昔と変わらないな。",
   "x": 1
  },
  "不必频繁确认我的状态，这副躯体与常人无异。": {
   "ko": "내 상태를 그렇게 자주 확인할 필요는 없어. 이 몸은 보통 사람과 다르지 않으니까.",
-  "en": "There is no need to check on my condition so often. This body is no different from anyone else's.",
-  "ja": "私の状態をそう頻繁に確かめる必要はない。この身体は常人と変わらないのだから。",
   "x": 1
  },
  "如果你的确很在意的话，我现在很好。": {
   "ko": "그렇게까지 신경이 쓰인다면…… 지금 나는 아주 좋아.",
-  "en": "If it truly weighs on you—I am quite well right now.",
-  "ja": "そこまで気になるというなら……今の私は、とても調子がいい。",
   "x": 1
  },
  "又到了这个节日，我终于能够感受到时间在我身上流逝。这并不可怕，时间因有限而珍贵，或许这样的体验才更接近普通的生命。Dr.{@nickname}，祝愿你在新的一年平安健康。": {
   "ko": "또 이 명절이 돌아왔군. 이제야 나는 시간이 내 몸을 스쳐 지나가는 것을 느낄 수 있게 됐어. 두려운 일은 아니야. 시간은 유한하기에 소중한 것이고, 어쩌면 이런 경험이야말로 평범한 생명에 더 가까운 것이겠지. 박사, 새해에도 무탈하고 건강하기를.",
-  "en": "This holiday has come around again. At last I can feel time passing through me. It is not frightening—time is precious because it is finite, and perhaps an experience like this is closer to an ordinary life. Doctor, I wish you peace and good health in the new year.",
-  "ja": "またこの祝日が巡ってきたな。ようやく私は、時間が自分の身を過ぎ去っていくのを感じられるようになった。恐ろしいことではない。時間は有限だからこそ尊いのだし、こうした経験こそが普通の生命に近いのだろう。ドクター、新しい一年、君が健やかで無事であるように。",
   "x": 1
  },
  "Dr.{@nickname}，我在。": {
   "ko": "박사, 나 여기 있어.",
-  "en": "Doctor. I'm here.",
-  "ja": "ドクター、私はここにいる。",
   "x": 1
  },
  "时间已经抹去了你原本所属的那个世界的痕迹，为生命计数的历法都已不复存在。所以，我更愿意用这片大地的方式为你送上祝福。我希望能让你相信，即使属于你的旅程漫长而危险，你也从不孤独。": {
   "ko": "시간은 네가 본래 속해 있던 그 세계의 흔적을 이미 지워 버렸어. 생명을 세던 역법조차 남아 있지 않지. 그러니 나는 이 대지의 방식으로 네게 축복을 건네고 싶어. 네가 믿을 수 있게 되기를 바라. 너에게 주어진 여정이 아무리 길고 위험하더라도, 너는 결코 혼자가 아니라는 걸.",
-  "en": "Time has already erased every trace of the world you originally belonged to; even the calendar that counted its lives is gone. So I would rather offer you my blessing in the manner of these lands. I hope I can make you believe that, however long and perilous your journey may be, you are never alone.",
-  "ja": "時間は、君が本来属していたあの世界の痕跡をすでに消し去った。生命を数えていた暦さえ、もう残っていない。だから私は、この大地のやり方で君に祝福を贈りたい。信じてほしいんだ――君の旅がどれほど長く危険であろうと、君は決して孤独ではないと。",
   "x": 1
  },
  "罗德岛的理想已经团结了许多人，在经历了无数不堪与苦痛后，依然有人在期冀着未来。无论我们能否跨越这一切苦难，罗德岛承载的愿景始终属于整个泰拉，而它理应被铭记。": {
   "ko": "로도스 아일랜드의 이상은 이미 많은 사람을 하나로 모았어. 수많은 참담함과 고통을 겪고도, 여전히 미래를 바라는 사람들이 있지. 우리가 이 모든 고난을 넘어설 수 있든 없든, 로도스 아일랜드가 짊어진 비전은 언제나 테라 전체의 것이고, 그것은 마땅히 기억되어야 해.",
-  "en": "Rhodes Island's ideals have already brought many people together. After enduring untold misery and pain, there are still those who hope for the future. Whether or not we can cross all this suffering, the vision Rhodes Island carries has always belonged to the whole of Terra—and it deserves to be remembered.",
-  "ja": "ロドスの理想は、すでに多くの人々を結びつけた。数えきれない惨めさと苦痛を経てなお、未来を待ち望む者がいる。我々がこの苦難のすべてを越えられるかどうかにかかわらず、ロドスが背負うビジョンはいつだってテラ全体のものであり、それは記憶されるに値する。",
   "x": 1
  },
  "博士和梓兰一样，每天都要讨伐名为“文件”的怪物喵？": {
   "ko": "박사도 오키드처럼 매일 “서류”라는 이름의 몬스터를 토벌해야 하는 거냥?",
-  "en": "So the Doctor's just like Orchid—you have to slay a monster called 'paperwork' every single day, meow?",
-  "ja": "ドクターもオーキッドと同じで、毎日「書類」という名のモンスターを討伐しないといけないのかニャ？",
   "x": 1
  },
  "义经，你还记得随从广场的样子喵？确实喵，这里应该这样画喵——好，这一话完成了，赶紧去给斑点看看喵！没错，把家乡的故事画出来是怀念家乡最好的方式喵，提出这个点子的斑点真聪明喵！": {
   "ko": "요시츠네, 오토모 광장이 어떻게 생겼는지 기억하냥? 그렇다냥, 여긴 이렇게 그려야 한다냥—— 좋아, 이번 화 완성이다냥. 얼른 스팟한테 보여 주러 가자냥! 맞다냥, 고향 이야기를 그림으로 그리는 게 고향을 그리워하는 가장 좋은 방법이다냥. 이런 생각을 해낸 스팟은 정말 똑똑하다냥!",
-  "en": "Yoshitsune, do you remember what the Buddy Plaza looked like, meow? That's right, meow—this part should be drawn like so, meow. There, this chapter's finished. Let's hurry and show Spot, meow! That's right, drawing our hometown's stories is the best way to miss it, meow. Spot's really clever for coming up with the idea, meow!",
-  "ja": "義経、オトモ広場がどんな様子だったか覚えてるかニャ？そうだニャ、ここはこう描くべきだニャ――よし、この話は完成だニャ。早くスポットに見せに行くニャ！そうだニャ、故郷の話を絵にするのが、故郷を懐かしむ一番いい方法だニャ。この案を出したスポットは本当に賢いニャ！",
   "x": 1
  },
  "泡普卡和宝巫迦陛下的性格完全不同喵！之前她一直盯着我看，我还以为自己做了什么坏事，害怕得睡不着喵！壮着胆子去问她，原来只是想摸摸我喵！现在已经是能够一起睡觉的好朋友了喵！": {
   "ko": "포푸카랑 보무가 폐하는 성격이 완전히 다르다냥! 전에 포푸카가 계속 나를 빤히 쳐다봐서, 내가 무슨 나쁜 짓이라도 했나 싶어 무서워서 잠도 못 잤다냥! 용기를 내서 물어봤더니, 그냥 나를 쓰다듬고 싶었을 뿐이었다냥! 지금은 같이 잘 수 있을 만큼 사이좋은 친구다냥!",
-  "en": "Popukar and Her Majesty Baowujia have completely different personalities, meow! She kept staring at me before, and I thought I'd done something bad—I was too scared to sleep, meow! I worked up the courage to ask her, and it turned out she just wanted to pet me, meow! Now we're good enough friends to nap together, meow!",
-  "ja": "ポプカルと宝巫迦陛下は性格が全然違うニャ！前にポプカルがずっとこっちをじっと見ていて、何か悪いことをしたのかと怖くて眠れなかったニャ！勇気を出して聞いてみたら、ただ撫でたかっただけだったニャ！今では一緒に眠れるくらい仲良しだニャ！",
   "x": 1
  },
  "博士，对不起喵！义经之前在训练中差点伤到月见夜喵！因为他把月见夜认成了那个百折不挠的将军，所以下意识就——啊，不是说这边的月见夜不够坚强的意思喵！": {
   "ko": "박사, 미안하다냥! 요시츠네가 얼마 전 훈련 중에 미드나이트를 다치게 할 뻔했다냥! 미드나이트를 그 불굴의 장군으로 착각하는 바람에 무심코—— 아, 이쪽 미드나이트가 강인하지 못하다는 뜻은 아니다냥!",
-  "en": "Doctor, I'm sorry, meow! Yoshitsune nearly hurt Midnight during training the other day, meow! He mistook Midnight for that indomitable general, so on reflex he just—ah, I don't mean this Midnight isn't tough enough, meow!",
-  "ja": "ドクター、ごめんニャ！この前の訓練で、義経がミッドナイトを傷つけそうになったニャ！ミッドナイトをあの不屈の将軍と見間違えて、つい――あっ、こっちのミッドナイトが強くないという意味じゃないニャ！",
   "x": 1
  },
  "空爆又不见了？我去帮梓兰找找喵！什么，义经，你要拦我？！你居然站在空爆那边喵？！没办法了，决一胜负吧喵！": {
   "ko": "캐터펄트가 또 사라졌다냥? 내가 오키드를 도와 찾아보겠다냥! 뭐냥, 요시츠네, 나를 막겠다는 거냥?! 하필 캐터펄트 편을 드는 거냥?! 어쩔 수 없다냥, 승부를 내자냥!",
-  "en": "Catapult's gone missing again? I'll help Orchid look for her, meow! What—Yoshitsune, you're stopping me?! You're taking Catapult's side, meow?! Fine then, let's settle this, meow!",
-  "ja": "カタパルトがまたいなくなったニャ？オーキッドを手伝って探しに行くニャ！なんだニャ義経、オイラを止めるつもりかニャ！？よりによってカタパルトの味方をするのかニャ！？仕方ないニャ、勝負だニャ！",
   "x": 1
  },
  "博士也想使用翔虫喵？没问题喵！抓住它尾部分泌的丝线，然后往想要的方向丢出去——糟糕，博士把自己甩飞了，义经，快接住喵！": {
   "ko": "박사도 밧줄벌레를 써 보고 싶은 거냥? 문제없다냥! 꼬리에서 나오는 실을 붙잡고, 가고 싶은 방향으로 던지면—— 큰일이다냥, 박사가 자기 자신을 날려 버렸다냥! 요시츠네, 얼른 받아 내라냥!",
-  "en": "The Doctor wants to try a Wirebug too, meow? No problem, meow! Grab the silk it secretes from its tail, then fling it in the direction you want to go—uh oh, the Doctor's flung themselves off! Yoshitsune, catch them, quick, meow!",
-  "ja": "ドクターも翔蟲を使ってみたいのかニャ？問題ないニャ！尻尾から出る糸を掴んで、行きたい方向へ放り投げるニャ――しまったニャ、ドクターが自分ごと飛んでいったニャ！義経、早く受け止めるニャ！",
   "x": 1
  },
  "喵？！开会要来不及了？义经——博士，义经让你骑上他喵！但是，要小心，义经的速度很快，以博士的体质——啊，走掉了喵。好像已经听到博士的惨叫声了，没办法，去给博士送药吧喵。": {
   "ko": "냐앗?! 회의에 늦겠다는 거냥? 요시츠네—— 박사, 요시츠네가 등에 타라고 한다냥! 하지만 조심하라냥, 요시츠네는 아주 빠르니까 박사의 체력으로는—— 아, 가 버렸다냥. 벌써 박사의 비명이 들리는 것 같다냥. 어쩔 수 없다냥, 약을 가져다 드리러 가자냥.",
-  "en": "Meow?! You're going to be late for the meeting? Yoshitsune—Doctor, Yoshitsune says to climb on, meow! But be careful, he's very fast, and with your constitution—ah, they're gone, meow. I think I can already hear the Doctor screaming. Nothing for it—let's go bring them some medicine, meow.",
-  "ja": "ニャッ！？会議に遅れるのかニャ？義経――ドクター、義経が背中に乗れと言ってるニャ！でも気をつけるニャ、義経はすごく速いから、ドクターの体力じゃ――あっ、行っちゃったニャ。もうドクターの悲鳴が聞こえる気がするニャ。仕方ないニャ、薬を届けに行くニャ。",
   "x": 1
  },
  "我们是来自炎火村随从隐秘队的政宗和义经喵！调查情报和收集素材就交给我们喵！呼——比第一次见到前代陛下时的自我介绍好多了喵！": {
   "ko": "우리는 카무라 마을 오토모 은밀대 소속, 마사무네와 요시츠네다냥! 정보 조사와 소재 수집은 우리에게 맡기라냥! 후우—— 선대 폐하를 처음 뵈었을 때의 자기소개보다 훨씬 나았다냥!",
-  "en": "We're Masamune and Yoshitsune, of Kamura Village's Buddy Recon, meow! Leave the intel gathering and material collecting to us, meow! Phew—that went way better than my introduction the first time I met the previous Majesty, meow!",
-  "ja": "オイラたちはカムラの里のオトモ隠密隊、政宗と義経だニャ！情報調査と素材集めはオイラたちに任せるニャ！ふぅ――先代陛下に初めてお会いした時の自己紹介より、ずっとうまくいったニャ！",
   "x": 1
  },
  "强大的猎人果然都有各自独特的战斗方式喵！": {
   "ko": "강한 헌터는 역시 저마다 자기만의 전투 방식이 있다냥!",
-  "en": "Strong hunters really do all have their own unique way of fighting, meow!",
-  "ja": "強いハンターは、やっぱりそれぞれ独自の戦い方があるニャ！",
   "x": 1
  },
  "狩猎也好，调查也好，都交给我们喵！": {
   "ko": "사냥이든 조사든, 전부 우리한테 맡기라냥!",
-  "en": "Hunting or scouting, leave it all to us, meow!",
-  "ja": "狩りも調査も、全部オイラたちに任せるニャ！",
   "x": 1
  },
  "没错，这可是我们表现的好机会喵！": {
   "ko": "그렇다냥, 이건 우리가 실력을 보여 줄 좋은 기회다냥!",
-  "en": "That's right—this is a great chance for us to show what we can do, meow!",
-  "ja": "そうだニャ、これはオイラたちの見せ場だニャ！",
   "x": 1
  },
  "狩猎开始喵！": {
   "ko": "사냥 시작이다냥!",
-  "en": "The hunt begins, meow!",
-  "ja": "狩猟開始だニャ！",
   "x": 1
  },
  "博士，义经嗅到了敌人的味道喵！": {
   "ko": "박사, 요시츠네가 적의 냄새를 맡았다냥!",
-  "en": "Doctor, Yoshitsune's caught the enemy's scent, meow!",
-  "ja": "ドクター、義経が敵の匂いを嗅ぎつけたニャ！",
   "x": 1
  },
  "义经说，敌人就在附近了喵！": {
   "ko": "요시츠네가 적이 바로 근처에 있다고 한다냥!",
-  "en": "Yoshitsune says the enemy is close by, meow!",
-  "ja": "義経が、敵はすぐ近くだと言ってるニャ！",
   "x": 1
  },
  "义经，不要冲动喵！": {
   "ko": "요시츠네, 성급하게 굴지 마라냥!",
-  "en": "Yoshitsune, don't rush in, meow!",
-  "ja": "義経、はやるんじゃないニャ！",
   "x": 1
  },
  "交给我们喵！": {
   "ko": "우리한테 맡기라냥!",
-  "en": "Leave it to us, meow!",
-  "ja": "オイラたちに任せるニャ！",
   "x": 1
  },
  "一定要带回让博士满意的情报和素材喵！": {
   "ko": "박사가 만족할 만한 정보와 소재를 반드시 가져오겠다냥!",
-  "en": "We'll be sure to bring back intel and materials the Doctor will be happy with, meow!",
-  "ja": "ドクターが満足する情報と素材を必ず持ち帰るニャ！",
   "x": 1
  },
  "让你们见识一下隐秘队的实力喵！": {
   "ko": "은밀 정찰대의 실력을 보여 주겠다냥!",
-  "en": "We'll show you what the Recon can do, meow!",
-  "ja": "隠密調査隊の実力を見せてやるニャ！",
   "x": 1
  },
  "一鼓作气解决他们喵！": {
   "ko": "단숨에 해치우자냥!",
-  "en": "Let's take them out in one go, meow!",
-  "ja": "一気に片付けるニャ！",
   "x": 1
  },
  "差点打到我了喵！": {
   "ko": "하마터면 맞을 뻔했다냥!",
-  "en": "That almost hit me, meow!",
-  "ja": "危うく当たるところだったニャ！",
   "x": 1
  },
  "感觉能获得很好的素材喵！": {
   "ko": "좋은 소재를 얻을 수 있을 것 같다냥!",
-  "en": "Feels like we'll get some good materials out of this, meow!",
-  "ja": "いい素材が手に入りそうだニャ！",
   "x": 1
  },
  "能够指挥完成这么困难的任务，博士简直就和那些传说中的猎人一样了不起喵！": {
   "ko": "이렇게 어려운 임무를 지휘해서 끝내다니, 박사는 전설 속의 헌터들만큼이나 대단하다냥!",
-  "en": "Commanding a mission this hard all the way through—the Doctor's as amazing as those legendary hunters, meow!",
-  "ja": "こんなに難しい任務を指揮してやり遂げるなんて、ドクターは伝説のハンターたちに負けないくらいすごいニャ！",
   "x": 1
  },
  "这次会获得什么样的稀有素材呢，好期待喵！": {
   "ko": "이번엔 어떤 희귀 소재를 얻게 될까냥, 정말 기대된다냥!",
-  "en": "I wonder what rare materials we'll get this time—I can't wait, meow!",
-  "ja": "今回はどんなレア素材が手に入るのかニャ、すごく楽しみだニャ！",
   "x": 1
  },
  "博士，不能掉以轻心，附近还有敌人喵！": {
   "ko": "박사, 방심하면 안 된다냥. 근처에 아직 적이 있다냥!",
-  "en": "Doctor, don't let your guard down—there are still enemies nearby, meow!",
-  "ja": "ドクター、油断は禁物だニャ。近くにまだ敵がいるニャ！",
   "x": 1
  },
  "板车准备好了，快把博士运回去喵！": {
   "ko": "손수레는 준비됐다냥, 얼른 박사를 실어서 돌아가자냥!",
-  "en": "The cart's ready—hurry, let's haul the Doctor back, meow!",
-  "ja": "荷車の準備はできたニャ、早くドクターを運んで戻るニャ！",
   "x": 1
  },
  "不知道罗德岛和炎火村的锻造场比，哪个比较大喵？": {
   "ko": "로도스 아일랜드랑 카무라 마을 대장간을 비교하면 어느 쪽이 더 클까냥?",
-  "en": "I wonder which is bigger, meow—Rhodes Island's forge, or Kamura Village's?",
-  "ja": "ロドスとカムラの里の鍛冶場、どっちが大きいのかニャ？",
   "x": 1
  },
  "敌袭喵？原来是博士喵！": {
   "ko": "적습이냥? 박사였냥!",
-  "en": "An ambush, meow? Oh, it's just the Doctor, meow!",
-  "ja": "敵襲かニャ？なんだ、ドクターだったニャ！",
   "x": 1
  },
  "义经，你应该明白的喵？离开炎火村的十年来，我们从未真正分出胜负。哼，别以为只有你变强了，我也变强了喵。今天，是时候了喵，就在这场雪仗里决一胜负——空爆，你偷袭我喵！": {
   "ko": "요시츠네, 너도 알고 있겠지냥? 카무라 마을을 떠난 십 년 동안, 우리는 한 번도 제대로 승부를 낸 적이 없다냥. 흥, 너만 강해진 줄 아냥, 나도 강해졌다냥. 오늘이야말로 때가 됐다냥, 이 눈싸움에서 결판을 내는 거다냥—— 캐터펄트, 기습이라니 치사하다냥!",
-  "en": "Yoshitsune, you know what I mean, meow? In the ten years since we left Kamura Village, we've never truly settled it. Hmph, don't think you're the only one who's gotten stronger—I have too, meow. Today's the day, meow. We settle it right here in this snowball fight—Catapult, that was a sneak attack, meow!",
-  "ja": "義経、分かっているはずだニャ？カムラの里を離れて十年、オイラたちは一度もちゃんと決着をつけていないニャ。ふん、強くなったのはお前だけだと思うなニャ、オイラも強くなったニャ。今日こそ時が来たニャ、この雪合戦で決着をつけるニャ――カタパルト、不意打ちとは卑怯だニャ！",
   "x": 1
  },
  "博士，一起去狩猎喵！": {
   "ko": "박사, 같이 사냥하러 가자냥!",
-  "en": "Doctor, let's go hunting together, meow!",
-  "ja": "ドクター、一緒に狩りに行くニャ！",
   "x": 1
  },
  "博士，为了感谢你一直以来对我们的照顾，我和义经准备了一份炎火村特色的超豪华版兔团子！根据艾草的秘传配方改良而成，保证你吃了以后能够精神百倍地继续工作喵！那还是算了？欸？": {
   "ko": "박사, 그동안 우리를 돌봐 준 것에 대한 감사의 뜻으로, 나와 요시츠네가 카무라 마을 특산 초호화판 토끼 경단을 준비했다냥! 요모기의 비전 조리법을 개량해서 만든 거라, 먹고 나면 기운이 백 배로 솟아 계속 일할 수 있다는 걸 보증한다냥! ……그럼 됐다는 거냥? 어라냥?",
-  "en": "Doctor, to thank you for looking after us all this time, Yoshitsune and I have prepared a super-deluxe batch of Kamura Village's specialty Bunny Dango! We improved on Yomogi's secret recipe—guaranteed to have you back at work with a hundred times the energy, meow! ...You'll pass after all? Huh, meow?",
-  "ja": "ドクター、いつも世話になっているお礼に、オイラと義経でカムラの里名物・超豪華版のウサ団子を用意したニャ！ヨモギの秘伝のレシピを改良したもので、食べれば元気百倍で仕事を続けられること間違いなしだニャ！……やっぱりいいのかニャ？あれニャ？",
   "x": 1
  },
  "在泡影国蔓延的“诅咒”，泰拉似乎也存在喵，如果能解开“诅咒”的秘密，我们说不定就能找到回家的路，还能再去一趟泡影国喵！泡普卡他们要是见到了“一模一样”的自己，肯定会吓一跳的喵！": {
   "ko": "포영국에 퍼져 있던 “저주”가 테라에도 존재하는 것 같다냥. “저주”의 비밀을 풀 수 있다면, 어쩌면 집으로 돌아가는 길을 찾을 수 있을지도 모른다냥. 게다가 포영국에 한 번 더 갈 수도 있다냥! 포푸카 일행이 “똑같이 생긴” 자기 자신을 만나면 분명 깜짝 놀랄 거다냥!",
-  "en": "The 'curse' that spread through the Bubbly Realm seems to exist in Terra too, meow. If we can unravel the secret of the 'curse,' maybe we'll find the road home—and get to visit the Bubbly Realm one more time, meow! If Popukar and the others met a version of themselves that looks 'exactly the same,' they'd definitely get a shock, meow!",
-  "ja": "泡沫国に広がっていた「呪い」が、テラにも存在するみたいだニャ。「呪い」の秘密を解ければ、家に帰る道が見つかるかもしれないニャ。それに、もう一度泡沫国へ行けるニャ！ポプカルたちが「そっくり同じ」の自分に会ったら、きっとびっくりするニャ！",
   "x": 1
  },
  "“助理”？需要我做些什么，你直接告诉我好了。没关系，不会的部分我可以学，只要你愿意教我。": {
   "ko": "“어시스턴트”요? 뭘 하면 되는지 그냥 말해 주세요. 괜찮아요, 모르는 부분은 배우면 되니까요. 박사가 가르쳐 주기만 한다면요.",
-  "en": "'Assistant'? Just tell me straight what you need me to do. It's fine—whatever I don't know, I can learn, as long as you're willing to teach me.",
-  "ja": "「アシスタント」ですか？何をすればいいのか、そのまま言ってください。大丈夫です、できない部分は覚えられます。ドクターが教えてくれさえすれば。",
   "x": 1
  },
  "出身地和成长经历？这些不是都写在简历上了吗？我不介意你问，只是真的没什么好讲的。抱歉，我不擅长闲聊。嗯，就像你说的，也许将来我会习惯吧，但现在，有闲谈的工夫，不如多干点活。": {
   "ko": "출신지와 성장 과정이요? 그건 이력서에 다 적어 두지 않았나요? 물어보시는 건 상관없어요. 다만 정말로 이야기할 만한 게 없어서요. 죄송해요, 저는 잡담에 서툴러요. 네, 말씀하신 대로 언젠가는 익숙해질지도 모르죠. 하지만 지금은 잡담할 시간에 일을 더 하는 편이 나아요.",
-  "en": "Where I'm from and how I grew up? Isn't all of that on my résumé? I don't mind you asking, there's just genuinely nothing worth telling. Sorry, I'm not good at small talk. Yes, as you say, maybe I'll get used to it someday. But for now, time spent chatting is better spent working.",
-  "ja": "出身地と生い立ちですか？それは履歴書に全部書いてありませんでしたか。訊かれるのは構いません。ただ、本当に話すようなことがないんです。すみません、雑談は苦手で。ええ、ドクターの言う通り、いずれ慣れるのかもしれません。でも今は、雑談する時間があるならもう少し働いたほうがいい。",
   "x": 1
  },
  "我的草稿纸看着有些奇怪？的确。有人在我门上贴了奇怪的纸条，扔了浪费，干脆用来练字——哦，原来是联谊舞会的邀请函？没办法，我当时没认出上面写的字。再说，这个日期也已经是上周了。": {
   "ko": "제 연습장이 좀 이상해 보인다고요? 그렇죠. 누가 제 방문에 이상한 쪽지를 붙여 놨는데, 버리기 아까워서 글씨 연습에 썼어요——아, 친목 무도회 초대장이었어요? 어쩔 수 없죠, 그땐 적힌 글자를 못 읽었으니까요. 게다가 이 날짜, 벌써 지난주네요.",
-  "en": "My scratch paper looks a bit odd? It does. Someone stuck a strange note on my door, and it seemed a waste to throw it out, so I used it to practice my handwriting. Oh, it was an invitation to a social dance? Nothing to be done—I couldn't read what was written on it at the time. Besides, the date on it was last week.",
-  "ja": "わたしの練習用の紙が変に見えますか？そうですね。誰かがドアに妙な紙を貼っていったんです。捨てるのはもったいないので、字の練習に使いました——ああ、親睦ダンスパーティーの招待状だったんですか。仕方ありません、あの時は書いてある字が読めませんでしたから。それに、この日付はもう先週です。",
   "x": 1
  },
  "泽尔格勒，我出生在它的地基上。长大后，我就接了父母的班，继续修建这座城市。我们把集体宿舍修到了十层高，还是高不过那堵石墙。我不介意他们隐瞒欺骗，但为什么非得毁掉我们的家？": {
   "ko": "젤그라드. 저는 그 도시의 기초 위에서 태어났어요. 자라서는 부모님의 일을 이어받아 계속 이 도시를 지었고요. 우리는 공동 숙소를 10층까지 올렸지만, 그래도 그 돌벽보다 높진 않았어요. 그들이 숨기고 속인 건 상관없어요. 그런데 왜 꼭 우리 집을 부숴야 했던 거죠?",
-  "en": "Zelgrad—I was born on its foundations. When I grew up, I took over my parents' work and went on building that city. We raised the collective dormitories ten stories high, and still they never rose above that stone wall. I don't mind that they concealed things and lied. But why did they have to destroy our home?",
-  "ja": "ゼルグラード。わたしはあの街の基礎の上で生まれました。大きくなってからは親の仕事を継いで、この街を建て続けました。共同宿舎は十階まで建てましたが、それでもあの石壁より高くはなりませんでした。隠されようと騙されようと構いません。ですが、どうしてわたしたちの家まで壊さなければならなかったんでしょうか。",
   "x": 1
  },
  "我和柳德米拉？不，你误会了，在泽尔格勒自称“整合运动”不是她的主意。当时城里大部分人并不清楚他们的主张和事迹，但在生死的困境里，一个常与改变挂钩的名字，足以成为改变的开端。": {
   "ko": "저와 류드밀라요? 아뇨, 오해예요. 젤그라드에서 “리유니온”을 자칭한 건 그 사람 생각이 아니었어요. 그때 도시 사람 대부분은 그들의 주장이나 행적을 잘 몰랐어요. 하지만 생사가 걸린 곤경에서는, 변화와 늘 엮여 온 이름 하나면 변화의 시작이 되기에 충분했죠.",
-  "en": "Me and Lyudmila? No, you've got it wrong. Calling ourselves 'Reunion' in Zelgrad wasn't her idea. Most people in the city knew little about their claims or their deeds back then. But when your life is on the line, a name that has always been tied to change is enough to become the beginning of change.",
-  "ja": "わたしとリュドミラですか？いえ、誤解です。ゼルグラードで「レユニオン」を名乗ったのは、彼女の考えではありません。当時、街の人の大半は彼らの主張も行いもよく知りませんでした。ですが生死のかかった苦境では、変化と結びついた名前が一つあれば、変化の始まりになるには十分だったんです。",
   "x": 1
  },
  "有件事。前段时间我帮工程部的人做了点杂活，今天收到了报酬。我不知道这种事合不合罗德岛的规矩——这样吗，那我就放心带回去吃了。嗯？当然不是钱，是那个叫阿兰娜的送来的炖菜。": {
   "ko": "말씀드릴 게 있어요. 얼마 전에 엔지니어링부 사람들 잡일을 좀 도와줬는데, 오늘 보수를 받았어요. 이런 게 로도스 아일랜드 규정에 맞는지 몰라서요——그런가요, 그럼 마음 놓고 가져가서 먹을게요. 네? 돈이 아니라, 알라나라는 분이 보내 준 스튜예요.",
-  "en": "There's something I should mention. A while back I did some odd jobs for the Engineering Department, and today I was paid for it. I wasn't sure whether that's within Rhodes Island's rules. Is that so? Then I'll take it back and eat it without worrying. Hm? Not money, of course—a stew that the one called Alanna sent over.",
-  "ja": "一つご報告が。少し前にエンジニアリング部の人たちの雑用を手伝ったんですが、今日その報酬を受け取りました。こういうことがロドスの規則に合うのか分からなくて——そうですか。では安心して持ち帰って食べます。え？お金ではありません。アランナという方が届けてくれた煮込み料理です。",
   "x": 1
  },
  "打扰一下，请问这几个词怎么读？“撕心裂肺”“誓言”“爱慕”和“悔恨”，哦。谢谢。在看什么书？从图书室随便拿的。听说是最近流行的浪漫小说，不过我读不懂里面的人，所以也没办法确定。": {
   "ko": "실례할게요. 이 단어들은 어떻게 읽나요? “애끊다”, “맹세”, “연모”, 그리고 “회한”. 아, 고마워요. 무슨 책을 보냐고요? 도서실에서 아무거나 집어 온 거예요. 요즘 유행하는 연애 소설이라던데, 안에 나오는 사람들을 이해할 수가 없어서 확실치는 않아요.",
-  "en": "Excuse me. How do you read these words? 'Heart-rending,' 'vow,' 'infatuation,' and 'remorse.' Oh. Thank you. What book am I reading? I just grabbed it from the library. They say it's a romance novel that's popular lately, but I can't understand the people in it, so I can't say for sure.",
-  "ja": "失礼します。この言葉はどう読むんでしょうか。「身を裂かれるよう」「誓い」「慕情」、それと「悔恨」。ああ、ありがとうございます。何の本かって？図書室から適当に取ってきたものです。最近流行りの恋愛小説だそうですが、中に出てくる人たちが理解できないので、確かなことは言えません。",
   "x": 1
  },
  "刚刚走进来的时候我突然意识到，我在这里说的话越来越多了。说话像从水壶里倒水，说得越多心里就越轻。我害怕轻飘飘的感觉，所以今天一到下班时间我立刻就走。但明天我还是会准时来，博士。": {
   "ko": "방금 들어오면서 문득 깨달았어요. 제가 여기서 하는 말이 점점 많아지고 있다는 걸요. 말하는 건 주전자에서 물을 따르는 것 같아요. 많이 말할수록 속이 가벼워지죠. 저는 그 붕 뜨는 느낌이 무서워요. 그래서 오늘은 퇴근 시간이 되는 대로 바로 갈게요. 그래도 내일은 제시간에 올 거예요, 박사.",
-  "en": "Just now, as I came in, it struck me that I've been talking more and more in here. Talking is like pouring water out of a kettle—the more you say, the lighter you feel inside. That weightless feeling frightens me, so today I'm leaving the moment the shift ends. But I'll still be here on time tomorrow, Doctor.",
-  "ja": "今入ってきた時にふと気づきました。わたし、ここで話す言葉がどんどん増えています。話すことはやかんから水を注ぐようなもので、話せば話すほど心が軽くなる。その軽さが怖いんです。だから今日は終業時間になったらすぐ帰ります。それでも明日は時間通りに来ます、ドクター。",
   "x": 1
  },
  "你好，我是瑭雅，柳德米拉说我能在这里找到工作，顺便给孩子们治病——对，那几个就是我的弟弟妹妹。都过来，和博士打个招呼吧。": {
   "ko": "안녕하세요, 타냐라고 해요. 류드밀라가 여기서 일자리를 구할 수 있고, 겸사겸사 아이들 병도 고칠 수 있다고 했어요——맞아요, 저 아이들이 제 동생들이에요. 다들 이리 와서 박사께 인사드리렴.",
-  "en": "Hello. I'm Tanya. Lyudmila told me I could find work here, and get the children treated at the same time. Yes—those are my little brothers and sisters. All of you, come over and say hello to the Doctor.",
-  "ja": "こんにちは、ターニャです。リュドミラが、ここなら仕事が見つかるし、ついでに子どもたちの治療も受けられると言っていました——ええ、あの子たちがわたしの弟と妹です。みんな、こっちに来てドクターに挨拶して。",
   "x": 1
  },
  "一定要这样做吗？只是确认一下。我可以做这些事，跟它们是善良或残忍无关。": {
   "ko": "꼭 이렇게 해야 하나요? 확인해 보는 것뿐이에요. 저는 이런 일을 할 수 있어요. 그게 선한 일인지 잔인한 일인지와는 상관없이요.",
-  "en": "Does it have to be done this way? I'm only checking. I can do these things. Whether they're kind or cruel has nothing to do with it.",
-  "ja": "必ずこうしなければいけませんか？確認するだけです。わたしはこういうことができます。それが善良か残酷かとは関係なく。",
   "x": 1
  },
  "快松开，格里沙，这不是玩具。玛莎，拜托，把那根丝带给我。行，你们晚上可以戴着勋章睡觉，只要博士允许——抱歉，博士，他们吵着要来参加晋升仪式。": {
   "ko": "얼른 놔, 그리샤. 이건 장난감이 아니야. 마샤, 부탁이니까 그 리본 좀 줘. 알았어, 오늘 밤엔 메달을 달고 자도 돼. 박사가 허락해 주신다면——죄송해요, 박사. 애들이 승진식에 오겠다고 떼를 써서요.",
-  "en": "Let go, Grisha, this isn't a toy. Masha, please, hand me that ribbon. Fine, you can sleep with the medal on tonight, as long as the Doctor allows it. My apologies, Doctor—they wouldn't stop pestering me to come to the promotion ceremony.",
-  "ja": "早く離して、グリーシャ。これはおもちゃじゃないの。マーシャ、お願いだからそのリボンを渡して。いいわ、今夜はメダルをつけて寝てもいい。ドクターが許してくださるならね——すみません、ドクター。この子たち、昇進式に行きたいと騒ぐもので。",
   "x": 1
  },
  "这枚勋章，能带来多大改善？不，我说的不是我的薪资或是药物配给。我是想问，接过这枚勋章后，我是不是就可以做更多事，救更多人？": {
   "ko": "이 메달로 얼마나 나아질 수 있나요? 아뇨, 제 급여나 약품 배급 얘기가 아니에요. 이 메달을 받고 나면 제가 더 많은 일을 하고, 더 많은 사람을 구할 수 있느냐는 뜻이에요.",
-  "en": "How much improvement does this medal bring? No, I don't mean my wages or my medicine ration. What I'm asking is: once I've accepted this medal, will I be able to do more, and save more people?",
-  "ja": "このメダルで、どれだけ良くなりますか？いえ、給料や薬の配給の話ではありません。このメダルを受け取ったら、わたしはもっと多くのことができて、もっと多くの人を救えるのか。それを訊いています。",
   "x": 1
  },
  "手要稳，腿要快，头脑要清醒。": {
   "ko": "손은 흔들림 없이, 다리는 빠르게, 머리는 맑게.",
-  "en": "Steady hands, quick legs, a clear head.",
-  "ja": "手は確かに、足は速く、頭は冴えたまま。",
   "x": 1
  },
  "深呼吸，手不要抖，看准了再打。": {
   "ko": "심호흡. 손 떨지 말고, 잘 보고 나서 쳐요.",
-  "en": "Deep breath. Don't let your hands shake. Aim before you strike.",
-  "ja": "深呼吸。手を震わせないで、狙いを定めてから打つ。",
   "x": 1
  },
  "嗯，准备好了。": {
   "ko": "네, 준비됐어요.",
-  "en": "Yes, I'm ready.",
-  "ja": "ええ、準備はできています。",
   "x": 1
  },
  "都可以。": {
   "ko": "다 괜찮아요.",
-  "en": "Anywhere's fine.",
-  "ja": "どこでも構いません。",
   "x": 1
  },
  "你来决定。": {
   "ko": "박사가 정하세요.",
-  "en": "You decide.",
-  "ja": "ドクターが決めてください。",
   "x": 1
  },
  "就这点力气，连小孩子都不如。": {
   "ko": "고작 이 정도 힘으로. 어린애만도 못하네요.",
-  "en": "That's all the strength you have? Weaker than a child.",
-  "ja": "その程度の力ですか。子どもにも劣ります。",
   "x": 1
  },
  "就这点伤，我都没当回事。": {
   "ko": "이 정도 상처는 신경도 안 써요.",
-  "en": "A wound like this? I hardly noticed.",
-  "ja": "この程度の傷、気にも留めません。",
   "x": 1
  },
  "“放弃抵抗”？你当所有人都是蠢货吗？": {
   "ko": "“저항을 포기하라”? 다들 멍청이인 줄 아나 보죠.",
-  "en": "'Surrender'? Do you take everyone for a fool?",
-  "ja": "「抵抗をやめろ」？みんなが馬鹿だとでも思っているんですか。",
   "x": 1
  },
  "“放下武器”？那和送命有什么区别？": {
   "ko": "“무기를 내려놔라”? 그게 목숨을 내주는 것과 뭐가 다르죠?",
-  "en": "'Drop your weapons'? How is that any different from handing over your life?",
-  "ja": "「武器を捨てろ」？それは命を差し出すのと何が違うんですか。",
   "x": 1
  },
  "牺牲，哪怕再崇高，我也希望越少越好。你保护了我们，你做得很好。": {
   "ko": "희생은 아무리 숭고해도 적을수록 좋다고 생각해요. 박사는 우리를 지켰어요. 아주 잘하셨어요.",
-  "en": "However noble a sacrifice may be, I would rather there were fewer of them. You protected us. You did well.",
-  "ja": "犠牲は、どれほど崇高でも少ないほうがいい。ドクターはわたしたちを守ってくれました。よくやってくれました。",
   "x": 1
  },
  "我只是想多救下一个。我们还有没有再拼一次的机会，你说了算。我等着你的决定。": {
   "ko": "저는 한 사람이라도 더 구하고 싶을 뿐이에요. 한 번 더 부딪쳐 볼 기회가 남았는지는 박사가 정하세요. 결정을 기다릴게요.",
-  "en": "I only want to save one more. Whether we still have a chance to try again is yours to decide. I'll wait for your call.",
-  "ja": "わたしはもう一人でも多く救いたいだけです。もう一度ぶつかる機会が残っているかは、ドクターが決めてください。決定を待ちます。",
   "x": 1
  },
  "很宽敞的床铺。但是我每晚都要去病房陪护，倒是用不上，可惜了。": {
   "ko": "아주 넓은 침대네요. 그런데 저는 매일 밤 병실에 붙어 있어야 해서 쓸 일이 없겠어요. 아깝네요.",
-  "en": "A very spacious bed. But I'm at the ward every night keeping watch, so I won't be using it. A shame.",
-  "ja": "ずいぶん広いベッドですね。でもわたしは毎晩病室に付き添うので、使うことはなさそうです。もったいない。",
   "x": 1
  },
  "被你吓到了。真厉害。": {
   "ko": "깜짝 놀랐어요. 대단하시네요.",
-  "en": "You startled me. Impressive.",
-  "ja": "驚きました。大したものです。",
   "x": 1
  },
  "你很喜欢看着别人工作吗？我没意见，你不会影响到我的。如果你愿意偶尔搭把手就更好了。": {
   "ko": "남이 일하는 걸 보는 게 그렇게 좋으세요? 저는 상관없어요, 방해되지 않으니까요. 가끔 손이라도 보태 주시면 더 좋겠지만요.",
-  "en": "Do you enjoy watching other people work? I don't mind—you won't get in my way. Though it would be even better if you lent a hand now and then.",
-  "ja": "人が働いているのを見るのがそんなに好きですか？わたしは構いません、邪魔にはなりませんから。たまに手を貸してくれると、もっといいんですが。",
   "x": 1
  },
  "越着急，活越是要慢慢做，只要不停，总能做完的。": {
   "ko": "급할수록 일은 천천히 해야 해요. 멈추지만 않으면 결국 다 끝나니까요.",
-  "en": "The more of a hurry you're in, the slower you should work. As long as you don't stop, it always gets finished.",
-  "ja": "焦っている時ほど、仕事はゆっくりやるものです。止まりさえしなければ、いつかは終わります。",
   "x": 1
  },
  "我用餐厅的烤箱做了个蛋糕——别急着大口吃，先尝一下味道再说。我不是很擅长烘焙，以前给妹妹弟弟们过生日，能有点白糖撒在切边吐司上就不错了。现在倒是不缺糖了，就怕贪心做得太甜。": {
   "ko": "식당 오븐으로 케이크를 만들었어요——급하게 크게 베어 물지 말고, 먼저 맛부터 보세요. 저는 베이킹을 잘 못해요. 예전엔 동생들 생일에 가장자리 자른 식빵에 설탕을 좀 뿌릴 수 있으면 그것만으로도 훌륭했거든요. 지금은 설탕이 모자라지 않으니, 욕심부리다 너무 달게 만들었을까 봐 그게 걱정이에요.",
-  "en": "I made a cake in the cafeteria oven. Don't take a big bite right away—taste it first. I'm not very good at baking. Back when it was my brother's and sisters' birthdays, a little sugar sprinkled on crustless toast was already something. Sugar isn't scarce now, so my worry is that I got greedy and made it too sweet.",
-  "ja": "食堂のオーブンでケーキを焼きました——急いで大きく頬張らないで、まず味を見てください。わたしは製菓が得意ではありません。昔は弟や妹の誕生日に、耳を切った食パンに砂糖を少し振れれば上出来でした。今は砂糖には困りませんが、欲張って甘くしすぎていないかが心配です。",
   "x": 1
  },
  "格里沙和玛莎在识字班上表现得不错，最小的家伙也走出了重症病房，后勤部帮我找了些轻松的兼职——为什么和你说这些？嗯，来罗德岛前我只当这是一份临时工作，但现在我却想一直留在这里了。": {
   "ko": "그리샤와 마샤는 문해 수업에서 잘하고 있고, 막내도 중환자 병동에서 나왔어요. 후방 지원부에서는 가벼운 부업도 몇 개 찾아 줬고요——왜 이런 얘기를 하냐고요? 음, 로도스 아일랜드에 오기 전엔 그냥 임시 일자리라고만 여겼는데, 지금은 계속 여기 남고 싶어졌거든요.",
-  "en": "Grisha and Masha are doing well in their literacy class, and the littlest one has left intensive care. Logistics found me some light part-time work as well. Why am I telling you all this? Well—before I came to Rhodes Island I thought of this as nothing but a temporary job. But now I find I want to stay here for good.",
-  "ja": "グリーシャとマーシャは識字クラスでよくやっていますし、一番下の子も重症病棟から出られました。後方支援部は軽い副業もいくつか見つけてくれました——どうしてこんな話をするのかって？ええ、ロドスに来る前は臨時の仕事としか思っていませんでした。でも今は、ずっとここに残っていたいと思うようになったんです。",
   "x": 1
  },
  "来，过来。手朝上摊开，对。给，都是我自己做的。灌糖太麻烦了，我也就做了这么一点。虽然在外面算不上稀罕，但你应该明白它的价值——吃完了？那我向你打听点事，不准说无可奉告。": {
   "ko": "자, 이리 와. 손바닥을 위로 펴고, 그래. 받아, 전부 내가 만든 거야. 설탕 끓여 붓는 게 워낙 번거로워서 이만큼밖에 못 만들었어. 바깥에선 별것 아니겠지만, 이게 얼마나 값진 건진 알 거야——다 먹었어? 그럼 좀 물어볼 게 있는데, 노 코멘트는 없기다.",
-  "en": "Here, come closer. Palm up, open—that's it. Take them, I made every one myself. Boiling the sugar is a real chore, so this is all I managed. They're nothing rare out in the world, but you understand what they're worth. Finished already? Then I've got something to ask you—and 'no comment' isn't allowed.",
-  "ja": "ほら、こっちへ来い。手のひらを上に開いて、そう。やるよ、全部俺が作ったんだ。飴を流し込むのは手間がかかるんでな、これっぽっちしか作れなかった。外じゃ珍しくもないだろうが、あんたならこの値打ちが分かるはずだ——もう食い終わったか？なら少し訊きたいことがある。ノーコメントは無しだぞ。",
   "x": 1
  },
  "“博士，我在。”怎么，声纹模仿咒法，是个战争术师都会。我学得不像？那看看这个，刀尖上——办公室里不许玩火？这是术法模拟，又不是真把文件烧了。你这人被吓到的点真是奇怪。": {
   "ko": "“박사, 여기 있습니다.” 왜, 성문 모방 주법이야. 전쟁 캐스터라면 다들 할 줄 알아. 별로 안 닮았다고? 그럼 이건 어때, 칼끝에——사무실에서 불장난 금지? 이건 아츠로 흉내 낸 거지, 진짜로 서류를 태운 게 아니야. 참 이상한 데서 놀라는 사람이군.",
-  "en": "'Doctor, I'm here.' What? Voiceprint mimicry—any war caster can do it. Not a good likeness? Then look at this, right on the tip of my blade— No playing with fire in the office? It's just an Arts simulation, I didn't actually burn your documents. You startle at the strangest things.",
-  "ja": "「ドクター、ここにいます。」なんだ、声紋模倣の呪法だ。戦争術師なら誰でもできる。似ていないって？なら、これを見ろ。刀の先に——執務室で火遊びは禁止？これはアーツで真似ただけだ、本当に書類を燃やしたわけじゃない。あんた、驚くところが妙だな。",
   "x": 1
  },
  "对集团军来说，站队永远是分明的，不选第二集团军，你就成了第四集团军的爪牙。没人会问武器的想法，我的“谢钦”曾经就是那个武器。我说了，我和叶甫根尼之间不是私人恩怨，没有那么复杂。": {
   "ko": "집단군한테 줄 서기는 언제나 명확해. 제2집단군을 고르지 않으면 곧 제4집단군의 앞잡이가 되는 거지. 무기한테 생각을 묻는 사람은 없어. 내 “셰친”이 한때 바로 그 무기였고. 말했잖아, 나와 예브게니 사이는 사사로운 원한이 아니야. 그렇게 복잡한 얘기가 아니라고.",
-  "en": "For the army groups, picking sides is always clear-cut: if you don't choose the Second, you become the Fourth's lackey. Nobody asks a weapon what it thinks, and my 'Shchin' used to be that weapon. Like I said, what's between me and Yevgeny isn't a personal grudge. It's not that complicated.",
-  "ja": "集団軍にとって、どちらに付くかは常にはっきりしている。第二集団軍を選ばなければ、第四集団軍の手先になるだけだ。武器の考えを訊く者などいない。俺の「シチン」は、かつてまさにその武器だった。言っただろう、俺とエヴゲーニーの間にあるのは私怨じゃない。そこまで複雑な話じゃないんだ。",
   "x": 1
  },
  "我的战友都认定我受到了某种眷顾，能像代号里那个耷拉着眼皮的怪物，肆意玩弄猎物，再将其拖进地狱。可在战争这真正的怪物面前，被玩弄和摧毁的其实是所有人。无论高尚，无论卑劣。": {
   "ko": "내 전우들은 내가 어떤 가호를 받고 있다고 믿어. 코드네임에 붙은, 눈꺼풀이 축 늘어진 그 괴물처럼 사냥감을 마음껏 갖고 놀다 지옥으로 끌고 갈 수 있다고 말이야. 하지만 전쟁이라는 진짜 괴물 앞에서는, 놀아나고 부서지는 건 결국 모두야. 고결하든, 비열하든.",
-  "en": "My comrades are all convinced I've been favored by something—that like the droopy-eyed monster in my codename, I can toy with my prey as I please and then drag it down to hell. But before the true monster, which is war, everyone is toyed with and destroyed alike. The noble and the base, all the same.",
-  "ja": "俺の戦友たちは、俺が何かの加護を受けていると信じ込んでいる。コードネームのあの瞼を垂らした怪物みたいに、獲物を好き放題もてあそんで、地獄へ引きずり込めるとな。だが戦争という本物の怪物の前では、もてあそばれ、壊されるのは結局全員だ。高潔だろうと、卑劣だろうと。",
   "x": 1
  },
  "这、这，还有这，都是什么意思？上面的字明明像虫子一样在爬，你怎么看懂的？以前这些东西都有人念给我听，不管什么内容西尔卡都能像唱歌一样讲出来，你说不定也行。有声书？不感兴趣。": {
   "ko": "이거, 이거, 그리고 이것도 다 무슨 뜻이야? 글자가 벌레처럼 기어다니는 것 같은데, 어떻게 읽어 내는 거지? 예전엔 이런 걸 누가 읽어 줬어. 무슨 내용이든 실카는 노래하듯이 들려줄 수 있었지. 박사도 어쩌면 할 수 있을지 모르겠군. 오디오북? 관심 없어.",
-  "en": "This, and this, and this too—what do they all mean? The letters crawl about like insects; how do you make sense of them? Someone always used to read this sort of thing to me. Whatever it was, Silka could recite it like a song. Maybe you could too. An audiobook? Not interested.",
-  "ja": "これと、これと、それにこれも、どういう意味だ？字が虫みたいに這い回っているようにしか見えないのに、あんたはどうやって読んでるんだ？昔はこういうものを誰かが読み上げてくれた。どんな内容でも、シルカは歌うみたいに聞かせてくれたもんだ。あんたにもできるかもしれないな。オーディオブック？興味ない。",
   "x": 1
  },
  "酿酒、制糖、木工和铁匠活，在学会走路之后，我们逐渐学会这些。离开战场，我们也只被允许做这些事来打发时间，养活自己。自酿的酒过不了安检，这点克瓦斯还是我偷偷带进来的，将就喝吧。": {
   "ko": "술 빚기, 사탕 만들기, 목공에 대장장이 일. 걸음마를 뗀 뒤로 우린 이런 걸 차차 배웠어. 전장을 떠나서도 시간을 때우고 입에 풀칠하려면 이런 일밖에 허락되지 않았고. 직접 빚은 술은 검색대를 못 통과해서, 이 크바스도 내가 몰래 들여온 거야. 아쉬운 대로 마셔.",
-  "en": "Brewing, sugar-making, carpentry, smithing—once we learned to walk, we learned these one by one. Off the battlefield, these were the only things we were permitted to do to pass the time and keep ourselves fed. Home-brewed liquor won't clear security, so I smuggled this bit of kvass in myself. It'll have to do.",
-  "ja": "酒造り、飴作り、木工に鍛冶仕事。歩けるようになった後、俺たちは少しずつそれらを覚えていく。戦場を離れても、暇をつぶして食っていくには、それくらいしか許されなかった。自家製の酒は検査を通らないんでな、このクワスも俺がこっそり持ち込んだものだ。まあ、これで我慢してくれ。",
   "x": 1
  },
  "站着看文件也能睡着啊，有这样快速补充精力的天分却并非战士，还真是有点可惜。": {
   "ko": "선 채로 서류를 보다가도 잠이 드는군. 그렇게 빨리 기운을 채우는 재능을 갖고도 전사가 아니라니, 참 아깝군.",
-  "en": "Falls asleep standing up reading paperwork, does he. A talent for topping up your energy that fast, and not a fighter—what a waste.",
-  "ja": "立ったまま書類を読みながら眠れるとはな。そんなに素早く気力を補充できる才があって戦士じゃないとは、少々もったいない。",
   "x": 1
  },
  "哦，兜帽，遮住全身的衣袍。你也有想隐藏的过去？没关系，我理解。斯乔帕·拉辛，为与你们建立合作关系而来，和队里那些家伙一样，叫我“维伊”就行。": {
   "ko": "오, 후드에 온몸을 덮는 로브라. 박사도 숨기고 싶은 과거가 있나? 괜찮아, 이해해. 스툐파 라진이다. 너희와 협력 관계를 맺으려고 왔어. 부대 녀석들처럼 그냥 “비이”라고 불러.",
-  "en": "Oh—a hood, robes that cover you head to foot. So you have a past you'd rather hide as well? That's fine, I understand. Styopa Razin. I'm here to establish a partnership with you. Just call me 'Viy,' same as the rest of my outfit does.",
-  "ja": "ほう、フードに全身を覆う長衣か。あんたにも隠したい過去があるのか？構わんさ、理解できる。スチョーパ・ラージンだ。あんたたちと協力関係を結ぶために来た。うちの連中と同じく、「ヴィー」と呼んでくれ。",
   "x": 1
  },
  "感觉比第一集团军的外部晋升要正式得多啊，还不用走关系送这送那，生怕调令被卡在哪个环节。对，想不到吧，我们还在那些纯血乌萨斯手下混过饭吃。": {
   "ko": "제1집단군의 외부 승진보다 훨씬 격식 있게 느껴지는군. 연줄 대고 이것저것 갖다 바치면서 발령이 어디서 막힐까 조마조마할 일도 없고. 그래, 뜻밖이지? 우리도 그 순혈 우르수스 놈들 밑에서 밥을 얻어먹던 시절이 있었어.",
-  "en": "Feels a lot more formal than an external promotion in the First Army Group. No need to pull strings and hand out gifts, worrying the transfer order will get stuck somewhere along the line. Yeah, hard to believe, isn't it? We used to earn our bread under those pureblood Ursus types too.",
-  "ja": "第一集団軍の外部昇進よりずっと格式張っているな。コネを頼ってあれこれ贈って、辞令がどこかで止まりはしないかと冷や冷やする必要もない。ああ、意外だろう？俺たちも純血ウルサスの連中の下で食わせてもらっていた時期があるんだ。",
   "x": 1
  },
  "队长是谁？": {
   "ko": "대장은 누구지?",
-  "en": "Who's leading?",
-  "ja": "隊長は誰だ？",
   "x": 1
  },
  "我能再带点自己人吗？": {
   "ko": "내 사람들 좀 더 데려와도 되나?",
-  "en": "Mind if I bring a few more of my own along?",
-  "ja": "うちの連中をもう少し連れてきていいか？",
   "x": 1
  },
  "战场，不算久违。": {
   "ko": "전장이라. 오랜만이랄 것도 없군.",
-  "en": "The battlefield. Hardly a stranger.",
-  "ja": "戦場か。久しぶりというほどでもない。",
   "x": 1
  },
  "注意力集中！": {
   "ko": "정신 집중해!",
-  "en": "Focus!",
-  "ja": "集中しろ！",
   "x": 1
  },
  "最好把我放在不会误伤其他人的位置。": {
   "ko": "다른 사람이 휘말리지 않을 자리에 두는 게 좋아.",
-  "en": "Best put me where I won't catch anyone else.",
-  "ja": "他の連中を巻き込まない位置に置いてくれ。",
   "x": 1
  },
  "视野开阔，不错。": {
   "ko": "시야가 트였군. 나쁘지 않아.",
-  "en": "Wide field of view. Not bad.",
-  "ja": "視界が開けている。悪くない。",
   "x": 1
  },
  "还有什么指令？": {
   "ko": "다른 지시는?",
-  "en": "Any other orders?",
-  "ja": "他に指示は？",
   "x": 1
  },
  "这柄刀也是我的母亲。": {
   "ko": "이 칼 또한 나의 어머니다.",
-  "en": "This blade is my mother too.",
-  "ja": "この刀もまた、俺の母だ。",
   "x": 1
  },
  "它抹去疼痛。": {
   "ko": "고통을 지워 준다.",
-  "en": "It erases pain.",
-  "ja": "痛みを消してくれる。",
   "x": 1
  },
  "它熄灭恐惧。": {
   "ko": "두려움을 꺼 준다.",
-  "en": "It snuffs out fear.",
-  "ja": "恐怖を消してくれる。",
   "x": 1
  },
  "还需要向谁祈祷？": {
   "ko": "이 이상 누구에게 기도할 필요가 있나?",
-  "en": "Who else is there left to pray to?",
-  "ja": "これ以上、誰に祈る必要がある？",
   "x": 1
  },
  "见证吧，我已如约为你赢得胜利。": {
   "ko": "똑똑히 봐. 약속대로 승리를 안겨 줬어.",
-  "en": "Bear witness. I've won you the victory, as promised.",
-  "ja": "見届けろ。約束通り、あんたに勝利を勝ち取ってやった。",
   "x": 1
  },
  "没有那些家伙起哄让我唱歌还真是不习惯啊。": {
   "ko": "그 녀석들이 노래하라고 떠들어 대지 않으니 어째 영 어색하군.",
-  "en": "Feels strange without the lads hollering at me to sing.",
-  "ja": "あいつらが囃し立てて歌えと言ってこないと、どうにも落ち着かんな。",
   "x": 1
  },
  "我留下来，斩草除根。": {
   "ko": "난 남는다. 뿌리까지 뽑아 놓지.",
-  "en": "I'll stay behind and pull it out by the roots.",
-  "ja": "俺は残る。根こそぎ絶ってやる。",
   "x": 1
  },
  "只差一点——！": {
   "ko": "조금만 더였는데——!",
-  "en": "So close—!",
-  "ja": "あと少しだったのに——！",
   "x": 1
  },
  "又在一艘舰船上了。": {
   "ko": "또 함선 위로군.",
-  "en": "Aboard a ship again.",
-  "ja": "また艦の上か。",
   "x": 1
  },
  "这次算你走运，下次要是被奇怪的咒法点燃了手指头，可别哭啊。": {
   "ko": "이번엔 운이 좋았어. 다음에 이상한 주법에 손가락이 타 버려도 울지나 마.",
-  "en": "Lucky for you this time. Next time some strange incantation sets your fingers alight, don't come crying.",
-  "ja": "今回は運が良かったな。次に妙な呪法で指を燃やされても、泣くなよ。",
   "x": 1
  },
  "不赖。再摸一下。": {
   "ko": "나쁘지 않군. 한 번 더.",
-  "en": "Not bad. Do it again.",
-  "ja": "悪くない。もう一度だ。",
   "x": 1
  },
  "“母亲倚着红角哭泣，父亲的身躯渐渐冰凉；姐姐赤脚走进水中，自由的孩子被河挽留。”我曾把家人的去向唱给每个战友，如今也唱给你。虽然乌萨斯人通常庆祝开年的第七天，但新年快乐，博士。": {
   "ko": "“어머니는 붉은 뿔에 기대어 울고, 아버지의 몸은 차츰 식어 가네. 누이는 맨발로 물속으로 걸어 들어가고, 자유의 아이는 강에 붙들렸네.” 나는 가족들이 어디로 갔는지를 전우들 하나하나에게 노래로 들려줬어. 오늘은 박사에게도 들려주지. 우르수스 사람들은 보통 새해 이레째 날을 기리지만——새해 복 많이 받아, 박사.",
-  "en": "'Mother weeps against the red horn, Father's body slowly cools; Sister walks barefoot into the water, and the river keeps the free child.' I used to sing where my family went to every one of my comrades. Today I sing it for you. Ursus folk usually celebrate the seventh day of the year, but—happy New Year, Doctor.",
-  "ja": "「母は赤い角にもたれて泣き、父の体はしだいに冷えていく。姉は裸足で水の中へ歩み入り、自由の子は川に引き留められた。」俺は家族の行方を戦友の一人ひとりに歌って聞かせてきた。今日はあんたにも歌おう。ウルサスの人間はたいてい年明け七日目を祝うが——新年おめでとう、ドクター。",
   "x": 1
  },
  "很无聊啊。来玩扑克吧，博士。": {
   "ko": "심심하군. 포커나 치자고, 박사.",
-  "en": "I'm bored. Let's play cards, Doctor.",
-  "ja": "退屈だな。トランプでもやろう、ドクター。",
   "x": 1
  },
  "“血迹”？哦，别动，没擦干净而已，急着来把这个给你。去工程部搞了点原材料打的，边缘我专门打磨过。来，把它挂在衣带上，就像我一样。对了，今天到底是你的命名日还是诞生日？": {
   "ko": "“핏자국”? 아, 가만있어. 덜 닦였을 뿐이야, 이걸 주려고 서둘러 오느라. 엔지니어링부에서 재료를 좀 얻어다 두들겨 만든 거야. 가장자리는 따로 갈아 뒀고. 자, 허리띠에 걸어. 나처럼. 그러고 보니, 오늘은 박사의 명명일이야, 아니면 생일이야?",
-  "en": "'Blood'? Ah, hold still—I just didn't wipe it all off. I was in a hurry to bring you this. Got some raw material from Engineering and forged it myself; I ground the edges down specially. Here, hang it on your belt, the way I do. By the way—is today your name day, or your birthday?",
-  "ja": "「血の跡」？ああ、動くな。拭き残しがあっただけだ、これを渡そうと急いで来たものでな。エンジニアリング部から材料をもらって打ったんだ。縁はわざわざ研いでおいた。ほら、帯に下げておけ。俺と同じようにな。そういえば、今日はあんたの命名日か、それとも誕生日か？",
   "x": 1
  },
  "我曾经以为，要成为自由民，就必须成为刽子手。但看到你们，我才想起最先争取自由民身份的人，其实并不为区别自己和其他乌萨斯人。我们只是为了找到另一种前进的方式，却绕了远路啊。": {
   "ko": "한때는 자유민이 되려면 반드시 망나니가 되어야 한다고 생각했어. 그런데 너희를 보고서야 떠올렸지. 맨 처음 자유민의 지위를 쟁취하려 한 사람들은, 자기를 다른 우르수스 사람과 구별하려던 게 아니었다는 걸. 우리는 그저 앞으로 나아갈 다른 방법을 찾고 싶었을 뿐인데, 참 먼 길을 돌아왔군.",
-  "en": "I once believed that to become a Freeman you had to become an executioner. But seeing you lot reminded me that the first people to fight for the Freemen's status weren't trying to set themselves apart from other Ursus at all. We only wanted to find another way forward—and we took the long way around to get there.",
-  "ja": "かつては、自由民になるには処刑人にならねばならないと思っていた。だが、あんたたちを見て思い出したんだ。最初に自由民の身分を勝ち取ろうとした者たちは、自分を他のウルサス人と区別するためにそうしたわけじゃない。俺たちはただ、前へ進む別のやり方を探したかっただけなんだ——ずいぶん遠回りをしてしまったな。",
   "x": 1
  },
  "给你，“高级饲料”，那些生物学家送的，我看着硌硬。一个两个都求我讲我当年见过的昆虫，我真讲，他们又打瞌睡。说是要写“昆虫学巨著”，连味道和口感都不关心，写什么写？": {
   "ko": "받아, “고급 사료”야. 그 생물학자들이 준 건데, 보기만 해도 거북해. 하나같이 내가 옛날에 본 곤충 얘기를 해 달라고 조르더니, 막상 해 주면 다들 졸아. “곤충학 대작”을 쓰겠다면서 맛도 식감도 관심이 없다니, 뭘 쓰겠다는 거야?",
-  "en": "Here, take it—'premium feed.' Those biologists gave it to me, and it turns my stomach just looking at it. Every last one of them begs me to tell them about the insects I saw back then, and the moment I do, they nod off. Says they're writing a 'great work of entomology,' and they don't care about taste or texture. What exactly are they writing?",
-  "ja": "はい、これ、「高級飼料」よ。あの生物学者たちがくれたんだけど、見ているだけで胸焼けがするわ。揃いも揃って、あたしが昔見た昆虫の話をしてくれって頼み込んできたくせに、いざ話すと居眠りするのよ。「昆虫学の大著」を書くとか言っておいて、味も食感も気にしないなんて、いったい何を書く気なの？",
   "x": 1
  },
  "什么叫你的源石？我吃进去就是我的胃石了，帮助消化的，很重要好吗？哎哎哎干嘛干嘛？告诉你，我这小屋和存钱罐是一回事，取东西只能靠砸的。你难道要为了取几颗破石头，对我做那种事？": {
   "ko": "네 오리지늄이라니 무슨 소리야? 내가 삼켰으면 그건 내 위석이야. 소화를 돕는 거라고, 아주 중요해. 어어어, 뭐야 뭐야? 미리 말해 두는데, 내 이 오두막은 돼지 저금통이랑 똑같아서, 안에 든 걸 꺼내려면 부수는 수밖에 없어. 설마 돌멩이 몇 개 꺼내겠다고 나한테 그런 짓을 하려는 건 아니겠지?",
-  "en": "What do you mean, your Originium? Once I've swallowed it, it's my gizzard stone. It aids digestion—very important, thank you. Hey, hey, hey, what are you doing? I'm telling you, this hut of mine works like a piggy bank: the only way to get anything out is to smash it. You wouldn't do that to me over a few lousy rocks, would you?",
-  "ja": "あんたの源石ですって？あたしが飲み込んだ以上、それはあたしの胃石よ。消化を助けるの、とっても大事なんですけど？ちょ、ちょ、ちょっと、何する気？言っておくけど、あたしのこの小屋は貯金箱と同じ。中のものを取り出すには叩き割るしかないの。まさか石ころ数個のために、あたしにそんなことをする気じゃないでしょうね？",
   "x": 1
  },
  "可露希尔是藏你这儿了吧？她还有至少十个改装需求没给我处理呢，可不能跑——啧，平衡没调好而已，你不用劝我。我连喙都没了，还不能装液压钳保险杠喷火器和螺旋桨了吗？": {
   "ko": "클로저 여기 숨겨 놨지? 아직 처리 안 해 준 개조 요구가 최소 열 개는 남았는데 도망치면 안 되지——쳇, 균형을 아직 못 잡았을 뿐이야, 말릴 필요 없어. 부리까지 없어졌는데, 유압 집게랑 범퍼랑 화염방사기랑 프로펠러 정도는 달아도 되는 거 아니야?",
-  "en": "You've got Closure hidden in here, haven't you? She still owes me at least ten refits—she doesn't get to run off. Tch, the balance just isn't tuned yet, no need to lecture me. I've already lost my beak; am I really not allowed hydraulic pincers, a bumper, a flamethrower and a propeller on top of that?",
-  "ja": "クロージャをここに匿ってるでしょ？まだ処理してもらってない改造の要望が最低でも十個あるんだから、逃がすわけにはいかないわ——ちっ、バランスがまだ取れてないだけよ、止めなくていいから。くちばしまで無くなったのに、油圧ペンチとバンパーと火炎放射器とプロペラくらい付けちゃいけないっていうの？",
   "x": 1
  },
  "别再给我介绍羽兽了，我和那些泰拉原生动物没半点关系，我们充其量算是趋同演化的产物。你要是真在乎我那方面的身心健康，还不如找个像鸡蛋的玩意放进我的小屋里。我看你的热水壶就不错啊？": {
   "ko": "파울비스트 소개하는 건 그만둬. 나는 그 테라 토착 동물들이랑 아무 상관 없어. 기껏해야 수렴 진화의 산물일 뿐이라고. 그쪽 방면의 내 심신 건강이 정말 걱정된다면, 차라리 달걀 비슷하게 생긴 물건이나 하나 구해서 내 오두막에 넣어 줘. 네 보온병, 그거 괜찮아 보이는데?",
-  "en": "Stop introducing me to fowlbeasts. I have nothing whatsoever to do with those Terran natives—at best we're products of convergent evolution. If you actually cared about my well-being in that department, you'd find something egg-shaped and put it in my hut instead. That kettle of yours looks about right, don't you think?",
-  "ja": "羽獣を紹介するのはもうやめて。あたしはあのテラ土着の動物たちとは何の関係もないわ。せいぜい収斂進化の産物ってところよ。その方面のあたしの心身の健康を本当に気にかけてくれるなら、卵みたいな物を見つけてあたしの小屋に入れてちょうだい。あんたのポット、あれなんてなかなかいいんじゃない？",
   "x": 1
  },
  "咯——咯咯——咯——": {
   "ko": "꼬——꼬꼬——꼬——",
-  "en": "Bwaak—bwak bwak—bwaaak—",
-  "ja": "コケ——コッコ——コケ——",
   "x": 1
  },
  "你就是这群人类的首领？那你管管外面那个“人事干员”，非要把我的种族填成什么“黎博利”，我都说了一万遍了，我是鸡，原鸡，很难理解吗？": {
   "ko": "네가 이 인간들 우두머리야? 그럼 밖에 있는 저 “인사 오퍼레이터”부터 좀 어떻게 해 봐. 기어이 내 종족을 “리베리”라고 적으려 들잖아. 만 번은 말했을 텐데, 나는 닭이야, 들닭. 이해하기가 그렇게 어려워?",
-  "en": "So you're the leader of these humans? Then go deal with that 'HR Operator' outside—she insists on writing my race down as 'Liberi.' I've said it ten thousand times: I am a chicken. A junglefowl. Is that so hard to grasp?",
-  "ja": "あんたがこの人間たちの首領？なら外にいるあの「人事オペレーター」をどうにかして。あたしの種族を「リーベリ」とか書き込もうとして聞かないのよ。一万回は言ったでしょ、あたしはニワトリ、野鶏よ。そんなに理解しづらい？",
   "x": 1
  },
  "你是说，他们这么折腾既不是为了捕食，也不是为了求偶？怎么跟凯尔希似的。": {
   "ko": "그러니까, 저렇게 난리를 치는 게 사냥 때문도 아니고 짝짓기 때문도 아니라는 거야? 어쩐지 켈시랑 비슷하네.",
-  "en": "You're telling me they go to all that trouble neither to feed nor to court a mate? Just like Kal'tsit, then.",
-  "ja": "つまり、あんなに大騒ぎしてるのは捕食のためでも求愛のためでもないってこと？なんだかケルシーみたいね。",
   "x": 1
  },
  "都长这么高干嘛！让让，让让，我看不见路了。": {
   "ko": "다들 뭐 하러 이렇게 크게 자란 거야! 비켜, 비켜. 길이 안 보이잖아.",
-  "en": "Why is everyone so tall! Move, move—I can't see where I'm going.",
-  "ja": "なんでみんなそんなに背が高いのよ！どいて、どいて。道が見えないじゃない。",
   "x": 1
  },
  "你、你、你，还有你，都冲进去，动静越大越好。这就是计划。": {
   "ko": "너, 너, 너, 그리고 너. 전부 뛰어들어. 요란할수록 좋아. 이게 작전이야.",
-  "en": "You, you, you, and you—charge in. The louder the better. That's the plan.",
-  "ja": "あんた、あんた、あんた、それにあんた。全員突っ込んで。派手なほどいいわ。これが作戦よ。",
   "x": 1
  },
  "凯尔希，我们走！": {
   "ko": "켈시, 가자!",
-  "en": "Kal'tsit, let's move!",
-  "ja": "ケルシー、行くわよ！",
   "x": 1
  },
  "人类都长一个样吗？生物演化的重大退步啊。": {
   "ko": "인간은 다 똑같이 생겼어? 생물 진화의 중대한 퇴보로군.",
-  "en": "Do all humans look the same? A serious step backward for evolution.",
-  "ja": "人間ってみんな同じ顔なの？生物進化の重大な後退ね。",
   "x": 1
  },
  "当年给凯尔希找样本，我可都是自由发挥的。": {
   "ko": "옛날에 켈시한테 표본 구해다 줄 땐 전부 내 마음대로 했다고.",
-  "en": "Back when I fetched samples for Kal'tsit, I did it all my own way.",
-  "ja": "昔ケルシーにサンプルを探してた時は、全部あたしの好きにやってたのよ。",
   "x": 1
  },
  "你肯定有比指挥一只鸡更重要的事可做吧？": {
   "ko": "닭 한 마리 지휘하는 것보다 중요한 일이 분명 있을 텐데?",
-  "en": "Surely you've got something more important to do than order a chicken about?",
-  "ja": "ニワトリ一羽に指図するより大事なことがあるでしょうに？",
   "x": 1
  },
  "又不是孵蛋，为什么要待在这儿不能动？": {
   "ko": "알을 품는 것도 아닌데, 왜 여기서 꼼짝 말고 있어야 하는데?",
-  "en": "It's not like I'm brooding eggs—why do I have to sit here without moving?",
-  "ja": "卵を温めてるわけでもないのに、どうしてここで動かずにいなきゃならないの？",
   "x": 1
  },
  "（激烈鸣叫的同时扇动仅剩的羽毛）": {
   "ko": "(격렬하게 울면서 남은 깃털을 퍼덕인다)",
-  "en": "(Crows furiously while flapping what feathers remain)",
-  "ja": "（激しく鳴きながら、残ったわずかな羽根をはためかせる）",
   "x": 1
  },
  "我现在看起来就这么不好吃吗？唉。": {
   "ko": "지금의 내가 그렇게 맛없어 보여? 하아.",
-  "en": "Do I really look that unappetizing now? Sigh.",
-  "ja": "今のあたし、そんなに不味そうに見える？はあ。",
   "x": 1
  },
  "哦哟，连只上万年的老鸡都追不上？": {
   "ko": "어이쿠, 만 년 묵은 늙은 닭도 못 따라잡아?",
-  "en": "Oho, can't even catch a chicken that's over ten thousand years old?",
-  "ja": "あらあら、一万年物の老いぼれニワトリにも追いつけないの？",
   "x": 1
  },
  "那你们还是当年有毛的时候更吓人。": {
   "ko": "너희는 그래도 옛날에 털 있던 시절이 더 무서웠어.",
-  "en": "You lot were scarier back when you still had fur.",
-  "ja": "あんたたち、やっぱり昔の毛が生えてた頃のほうが怖かったわ。",
   "x": 1
  },
  "看到了吗，鸡到底还是这颗星球的霸主。": {
   "ko": "봤지? 역시 이 별의 패자는 닭이라니까.",
-  "en": "See that? The chicken remains this planet's ruler after all.",
-  "ja": "見た？やっぱりこの星の覇者はニワトリなのよ。",
   "x": 1
  },
  "他们这逃跑速度跟蠕动似的，你们能忍住不追？": {
   "ko": "저것들 도망치는 속도가 꿈틀대는 수준인데, 안 쫓고 참을 수 있어?",
-  "en": "They're fleeing at about the speed of a worm crawling—and you can stop yourselves from chasing?",
-  "ja": "あいつらの逃げ足、のたくってるようなものよ。追わずに我慢できるの？",
   "x": 1
  },
  "凯尔希，想想办法，我要死了！": {
   "ko": "켈시, 방법을 좀 찾아 봐, 나 죽는다고!",
-  "en": "Kal'tsit, do something, I'm dying here!",
-  "ja": "ケルシー、何とかして、あたし死んじゃう！",
   "x": 1
  },
  "能跑的屋子是现在的什么流行趋势吗？": {
   "ko": "달릴 수 있는 집이 요즘 유행이라도 되는 거야?",
-  "en": "Are houses that can run some sort of trend these days?",
-  "ja": "走れる家って、今どきの流行か何かなの？",
   "x": 1
  },
  "别抓兜帽？不行，我爪子痒了。": {
   "ko": "후드를 잡지 말라고? 안 돼, 발톱이 근질거리는걸.",
-  "en": "Don't grab the hood? Too bad, my claws are itching.",
-  "ja": "フードを掴むなって？だめよ、爪がむずむずするんだから。",
   "x": 1
  },
  "是是，风向标可太好玩了。那我的尾巴呢，就那么不好玩吗？": {
   "ko": "그래 그래, 풍향계 참 재미있겠지. 그럼 내 꼬리는? 그렇게 재미가 없어?",
-  "en": "Yes, yes, the weathervane is ever so much fun. And my tail? Is it really that boring?",
-  "ja": "はいはい、風見鶏はさぞ楽しいでしょうね。じゃああたしの尻尾は？そんなにつまらない？",
   "x": 1
  },
  "司康？呃，我刚吃掉最后一块。不打紧，你等一下——咯，咳咳，咯——好了，给你，吃吧。你那是什么表情？我只是让它稍稍接触了我的内饰，又没消化。赶紧给我吃！": {
   "ko": "스콘? 어, 마지막 하나는 방금 내가 먹었는데. 괜찮아, 잠깐만——꼬, 콜록콜록, 꼬——자, 여기. 먹어. 그 표정은 뭐야? 내 내장재에 살짝 닿았을 뿐이지, 소화시킨 것도 아니야. 얼른 먹어!",
-  "en": "A scone? Er, I just ate the last one. No matter, hold on— Bwak, cough cough, bwaak— There. Here you go, eat up. What's that face for? It only brushed against my interior lining a little; I didn't digest it. Hurry up and eat it!",
-  "ja": "スコーン？えっと、最後の一つはさっきあたしが食べちゃったわ。平気よ、ちょっと待って——コケ、ごほごほ、コケ——はい、どうぞ、食べて。その顔は何なの？あたしの内装にちょっと触れただけで、消化してないわよ。さっさと食べなさい！",
   "x": 1
  },
  "给我掐羽管。": {
   "ko": "깃촉 좀 눌러 줘.",
-  "en": "Pinch my pinfeathers.",
-  "ja": "羽軸をつまんでちょうだい。",
   "x": 1
  },
  "生日？那是蛋被生下来的日子，还是我破壳的日子啊？哈，别纠结了，俩日子我都不知道。我也不用知道你的生日是你出生的日子，还是你作为博士苏醒的日子。它是我能给你送沙虫腿的日子就成。": {
   "ko": "생일? 그건 알이 낳아진 날이야, 아니면 내가 껍질을 깨고 나온 날이야? 하, 골머리 앓지 마. 두 날짜 다 나도 몰라. 나도 네 생일이 네가 태어난 날인지, 아니면 네가 박사로서 깨어난 날인지 알 필요 없어. 내가 너한테 갯지렁이 다리를 줄 수 있는 날이면 그걸로 됐지.",
-  "en": "A birthday? Is that the day the egg was laid, or the day I broke out of the shell? Ha, don't tie yourself in knots—I don't know either date. And I don't need to know whether your birthday is the day you were born or the day you woke up as the Doctor. As long as it's a day I can bring you a sandworm leg, it'll do.",
-  "ja": "誕生日？それは卵が産まれた日？それともあたしが殻を破った日？はっ、悩まなくていいわ、どっちの日付もあたしは知らないもの。あんたの誕生日が生まれた日なのか、ドクターとして目覚めた日なのかも、あたしは知らなくていい。あたしがあんたに砂虫の足を持ってこられる日なら、それで十分よ。",
   "x": 1
  },
  "最后的鸡，最后的人类，哈，听着还真是沉重。但那些早就死了、埋了、变了黎博利的鸡，我管不着，我只用对凯尔希负责。你呢？就一定要替所有人操心吗？至少偶尔，不能只对一个人负责吗？": {
   "ko": "마지막 닭, 마지막 인간이라. 하, 듣기만 해도 참 무겁네. 하지만 진작에 죽고, 묻히고, 리베리가 되어 버린 닭들까지 내가 신경 쓸 순 없어. 나는 켈시한테만 책임지면 돼. 너는? 꼭 모두를 걱정해야만 해? 적어도 가끔은, 딱 한 사람한테만 책임져도 되는 거 아니야?",
-  "en": "The last chicken, the last human—ha, that does sound heavy. But the chickens that died and were buried and turned into Liberi long ago are none of my business; I only answer to Kal'tsit. And you? Must you really worry on everyone's behalf? At least once in a while, couldn't you answer to just one person?",
-  "ja": "最後のニワトリ、最後の人類。はっ、聞くだけでずいぶん重たいわね。でも、とっくに死んで、埋められて、リーベリになったニワトリたちのことまであたしは知らない。あたしはケルシーにだけ責任を負えばいい。あんたは？どうしても全員のことを気に病まなきゃいけないの？せめてたまには、たった一人にだけ責任を負ってもいいんじゃない？",
   "x": 1
  },
  "采购部这么多种类的零食，当然是有特殊渠道才能买到啦！当年为了修好罗德岛，我搞来了哥伦比亚最先进的全自动装配线，殿下这才让我负责采购的。所以，为了支持采购部的工作，不许砍价！": {
   "ko": "구매부에 과자 종류가 이렇게 많은 건, 당연히 특별한 경로가 있어야 살 수 있는 거라고! 그 시절에 로도스 아일랜드를 고치겠다고 컬럼비아에서 제일 앞선 전자동 조립 라인까지 구해 왔거든. 그래서 전하가 나한테 구매를 맡긴 거야. 그러니까 구매부 일 밀어주는 셈 치고, 값 깎는 건 금지!",
-  "en": "You think Procurement carries that many kinds of snacks through normal channels? You need special connections, obviously! Back then I hauled in Columbia's most advanced automated assembly line just to get Rhodes Island running again, and that's why Her Highness put me in charge of purchasing. So, in the interest of supporting Procurement's work: no haggling!",
-  "ja": "購買部にあんなに色んな種類のお菓子が揃ってるのは、当然そういう特別なルートがあるからだよ！昔ロドスを直すために、あたしがクルビアで一番進んだ全自動組立ラインを調達してきたの。それで殿下があたしに購買を任せてくれたわけ。だから購買部の仕事を応援する意味で、値切るのは禁止ね！",
   "x": 1
  },
  "我以前会为了反驳“血魔该有血魔的样子”跟家里人吵架，可见了华法琳、隐德来希，甚至杜卡雷之后，我发现血魔好像真的都有某种洁癖——不过反正跟我无关，他们就算吸我的血也只能吸到咖啡。": {
   "ko": "예전엔 “뱀파이어라면 뱀파이어답게 굴어라”라는 말에 반박하겠다고 가족들이랑 싸우곤 했어. 근데 와파린, 엔텔레키아, 심지어 두카렐까지 보고 나니까 뱀파이어한테는 정말로 어떤 결벽 같은 게 있는 것 같더라고—— 뭐, 어차피 나랑은 상관없어. 걔네가 내 피를 빨아 봐야 커피밖에 안 나올 테니까.",
-  "en": "I used to pick fights with my family just to argue against 'a Vampire should act like a Vampire.' But after meeting Warfarin, Entelechia, even Duq'arael, I realized Vampires really do all have some kind of fastidious streak—not that it has anything to do with me. If they bit me, all they'd get is coffee.",
-  "ja": "昔は「ブラッドブルードならブラッドブルードらしくしろ」って言葉に反論したくて、家族とよく喧嘩してたんだ。でもワルファリンやエンテレケイア、あげくドゥカレまで見たあとだと、ブラッドブルードってほんとに何かしらの潔癖症を持ってるみたいでさ——まあどうせあたしには関係ないけどね。あいつらがあたしの血を吸ったって、出てくるのはコーヒーだけだし。",
   "x": 1
  },
  "总工程师确实什么都要懂，不过和焊接金属相比，还是让Lancet-2叫我“可爱的可露希尔姐姐”更有趣。什么非要当姐姐，你关注的重点错了。不觉得有自己苦恼的机器才更像人吗？": {
   "ko": "수석 엔지니어는 확실히 뭐든 다 알아야 하지. 근데 금속 용접보다는 Lancet-2한테 “귀여운 클로저 언니”라고 부르게 하는 쪽이 더 재밌더라. 왜 굳이 언니냐고? 박사, 짚는 데가 틀렸어. 자기만의 고민이 있는 기계가 더 사람 같지 않아?",
-  "en": "A Chief Engineer really does have to know a bit of everything. But compared to welding metal, getting Lancet-2 to call me 'sweet big sister Closure' is way more fun. Why it has to be 'big sister,' you ask? Doctor, you're focusing on the wrong part. Don't you think a machine with worries of its own is more like a person?",
-  "ja": "チーフエンジニアは確かに何でも知ってなきゃいけないけどね。でも金属を溶接するより、Lancet-2に「可愛いクロージャお姉ちゃん」って呼ばせるほうが面白いんだ。なんでお姉ちゃんにこだわるのかって？ドクター、着目点がずれてるよ。自分なりの悩みを持ってる機械のほうが、人間らしいと思わない？",
   "x": 1
  },
  "凯尔希回来就比什么都强。可她既然都回来了，能不能别再让整个罗德岛的事情都来找我？我真的不想当罗德岛的负责人啊！再这么干下去，罗德岛的下一次行动就是从过劳死地狱里拯救可露希尔了！": {
   "ko": "켈시가 돌아온 것만으로도 뭣보다 다행이지. 근데 이왕 돌아왔으면, 로도스 아일랜드 일이 전부 나한테 몰려오는 것 좀 어떻게 해 주면 안 될까? 난 정말 로도스 아일랜드 책임자 같은 거 하기 싫다고! 이대로 가다간 로도스 아일랜드의 다음 작전은 과로사 지옥에서 클로저 구출하기가 될걸!",
-  "en": "Kal'tsit being back beats everything else. But now that she is back, could she please stop letting every single Rhodes Island matter land on my desk? I really don't want to be the one running this place! Keep this up and Rhodes Island's next operation will be rescuing Closure from death-by-overwork hell!",
-  "ja": "ケルシーが戻ってきたことほど心強いことはないよ。でもせっかく戻ってきたんだから、ロドス中の案件が全部あたしのところに来るの、なんとかしてくれない？あたしはほんとにロドスの責任者なんてやりたくないの！このまま続いたら、ロドスの次の作戦は「過労死地獄からクロージャを救出せよ」になるからね！",
   "x": 1
  },
  "特蕾西娅殿下把我从阁楼里抓出来的时候，没人能想到自封的卡兹戴尔百强青年会沦为全年无休的工程师——不，我没在抱怨。即便真能回到过去，我也不知道自己还能做什么比现在更酷的事。": {
   "ko": "테레시아 전하가 날 다락방에서 끄집어냈을 때만 해도, 자칭 카즈델 100대 청년이 연중무휴 엔지니어로 전락할 줄은 아무도 몰랐지—— 아니, 불평하는 거 아냐. 진짜로 과거로 돌아갈 수 있다 해도, 지금보다 더 멋진 일을 뭘 할 수 있을지 모르겠거든.",
-  "en": "When Her Highness Theresa dragged me out of that attic, nobody could have guessed the self-proclaimed Top Hundred Youth of Kazdel would end up an engineer with no days off—no, I'm not complaining. Even if I really could go back, I don't know what I'd do that would be cooler than this.",
-  "ja": "テレジア殿下があたしを屋根裏から引っ張り出したとき、自称カズデル百傑の若者が年中無休のエンジニアに成り下がるなんて、誰も思わなかったよね——ううん、愚痴じゃないよ。本当に過去に戻れたとしても、今よりカッコいいことなんて思いつかないもの。",
   "x": 1
  },
  "博士，你这次体检的指标怎么回事？什么，觉得最近很虚弱，怕自己时日无多？！我这就把这些年多收你的钱给医疗部当特别经费，放心，一块钱都没动过——报告是假的？逗我玩？华法琳！": {
   "ko": "박사, 이번 건강검진 수치 이게 대체 뭐야? 뭐, 요즘 몸이 너무 약해진 것 같아서 얼마 못 살까 봐 걱정이라고?! 내가 그동안 더 받아 챙긴 돈, 당장 의료부에 특별 경비로 넘길게. 걱정 마, 한 푼도 안 건드렸으니까—— 보고서가 가짜라고? 날 놀린 거야? 와파린!!",
-  "en": "Doctor, what's going on with your checkup numbers? What—you've been feeling weak lately, you're worried you don't have long?! I'm handing over every extra coin I've overcharged you all these years to Medical as a special fund, right now. Relax, I never touched a single one of them—the report's fake? You're messing with me? WARFARIN!!",
-  "ja": "ドクター、今回の健康診断の数値、どういうこと？えっ、最近すごく体が弱ってて、もう長くないかもって？！これまで多めに取ってた分のお金、今すぐ医療部の特別経費に回すから。安心して、一銭も手をつけてないから——報告書が偽物？あたしをからかったの？ワルファリン！！",
   "x": 1
  },
  "小孩子还是任性点好，我当年就是，所以现在心理才这么健康。可阿米娅呢，那么多事憋在心里，还总是逼自己成熟——她确实长大了，可是从没享受过孩子的特权就长成大人，不是更让人心疼吗？": {
   "ko": "애들은 좀 제멋대로인 편이 나아. 나도 그때 그랬으니까 지금 이렇게 마음이 건강한 거지. 근데 아미야는 어때? 그 많은 걸 다 속에 담아 두고, 늘 자기 자신한테 어른이 되라고 몰아붙이잖아—— 확실히 자라긴 했어. 하지만 아이의 특권을 한 번도 누려 보지 못한 채 어른이 되는 게 더 안쓰럽지 않아?",
-  "en": "Kids are better off being a little selfish. I was, back then, and that's exactly why I'm so mentally healthy now. But what about Amiya? Bottling up so much, always forcing herself to be mature. She has grown up, sure. But growing up without ever enjoying a single childhood privilege—doesn't that break your heart even more?",
-  "ja": "子どもはわがままなくらいがちょうどいいの。あたしは昔そうだったから、今こんなに心が健康なわけ。でもアーミヤはどう？あんなに色んなことを胸に抱え込んで、いつも自分に大人になれって迫ってる——確かにあの子は成長したよ。でも子どもの特権を一度も味わわないまま大人になるほうが、もっと切ないと思わない？",
   "x": 1
  },
  "没想过我会同意出外勤？这个嘛，现在凯尔希也回来了，罗德岛也重建好了，我也终于可以借着出外勤的机会逃避工作啦。": {
   "ko": "내가 외근을 승낙할 줄은 몰랐다고? 그게 말이지, 이제 켈시도 돌아왔고 로도스 아일랜드도 재건이 끝났잖아. 나도 드디어 외근을 핑계로 일에서 도망칠 수 있게 된 거지.",
-  "en": "Didn't think I'd ever agree to field duty? Well, Kal'tsit's back and Rhodes Island's been rebuilt, so I can finally use field duty as an excuse to run away from work.",
-  "ja": "あたしが外勤を引き受けるなんて思わなかった？まあね、ケルシーも戻ってきたし、ロドスの再建も終わったし。あたしもようやく外勤を口実に仕事から逃げられるってわけ。",
   "x": 1
  },
  "等等，倒回去一点，让我看清楚那个在战场上偷吃薯片的人是谁？": {
   "ko": "잠깐, 조금만 되감아 봐. 전장에서 몰래 감자칩 먹고 있는 저 사람, 누군지 똑똑히 좀 보자?",
-  "en": "Wait, rewind a bit. Let me get a good look at whoever's sneaking potato chips on the battlefield.",
-  "ja": "ちょっと待って、少し巻き戻して。戦場でこっそりポテチ食べてるあの子、誰なのかはっきり見せて？",
   "x": 1
  },
  "我？晋升？我还能怎么晋升啊，罗德岛超级总工程师？": {
   "ko": "내가? 승진? 내가 더 뭘로 승진해, 로도스 아일랜드 슈퍼 수석 엔지니어라도 돼?",
-  "en": "Me? A promotion? Promoted to what, exactly—Rhodes Island's Super Chief Engineer?",
-  "ja": "あたしが？昇進？これ以上どう昇進するの、ロドス・スーパーチーフエンジニアとか？",
   "x": 1
  },
  "速战速决吧，工程部还有一大堆比打架有趣的问题等我解决呢。": {
   "ko": "속전속결로 가자. 엔지니어링부엔 싸움보다 재밌는 문제가 산더미로 쌓여 있거든.",
-  "en": "Let's make this quick. Engineering's got a pile of problems more interesting than fighting waiting for me.",
-  "ja": "速攻で片付けよう。エンジニア部には喧嘩より面白い問題が山ほど待ってるんだから。",
   "x": 1
  },
  "采购部的号码我写在你衣服上了，我不在也有人接听哦！": {
   "ko": "구매부 번호는 박사 옷에 적어 뒀어. 내가 없어도 받아 줄 사람 있으니까!",
-  "en": "I wrote Procurement's number on your coat. Someone'll pick up even when I'm not there!",
-  "ja": "購買部の番号、ドクターの服に書いといたから。あたしがいなくても誰か出てくれるよ！",
   "x": 1
  },
  "零号油罐，开始收集战场信息！": {
   "ko": "0호 오일탱크, 전장 정보 수집 개시!",
-  "en": "Oil Drum Zero, begin collecting battlefield data!",
-  "ja": "零号オイルタンク、戦場情報の収集開始！",
   "x": 1
  },
  "实时数据分享已开启，请各位把耳朵竖起来~": {
   "ko": "실시간 데이터 공유 개시. 다들 귀 쫑긋 세워 봐~",
-  "en": "Real-time data sharing is live. Everybody, ears up~",
-  "ja": "リアルタイムのデータ共有オン。みんな、耳をすませて〜",
   "x": 1
  },
  "今天打折的商品是——呃，只剩炸弹了啊。": {
   "ko": "오늘의 할인 상품은—— 어, 폭탄밖에 안 남았네.",
-  "en": "Today's discount item is—uh, only bombs left.",
-  "ja": "本日の割引商品は——えっと、爆弾しか残ってないや。",
   "x": 1
  },
  "你前面可没有优惠，只有火力网！": {
   "ko": "네 앞에 할인 같은 건 없어. 화력망뿐이야!",
-  "en": "No bargains ahead of you—just a wall of firepower!",
-  "ja": "あんたの前に割引はないよ。あるのは火力の網だけ！",
   "x": 1
  },
  "要是能把你脑子里的程序改改，让你掉头就跑，算不算做了件好事？": {
   "ko": "네 머릿속 프로그램을 좀 손봐서 뒤돌아 도망치게 만들면, 그것도 좋은 일 한 걸로 쳐 주나?",
-  "en": "If I tweaked the program in your head so you'd just turn around and run, would that count as a good deed?",
-  "ja": "あんたの頭の中のプログラムを書き換えて、回れ右で逃げるようにしたら、それって良いことをしたことになる？",
   "x": 1
  },
  "博士，大家表现得这么好，是不是应该采购点东西奖励一下？": {
   "ko": "박사, 다들 이렇게 잘했는데 뭔가 좀 사서 포상해 줘야 하는 거 아냐?",
-  "en": "Doctor, everyone performed so well—shouldn't we purchase something as a reward?",
-  "ja": "ドクター、みんなこんなに頑張ったんだから、何か買ってご褒美にすべきじゃない？",
   "x": 1
  },
  "全体无人机，挂钩释放，功率解锁，钩住博士的兜帽——起飞！": {
   "ko": "전 드론, 후크 사출, 출력 제한 해제, 박사의 후드를 걸어라—— 이륙!",
-  "en": "All drones, release hooks, unlock power limiters, latch onto the Doctor's hood—lift off!",
-  "ja": "全ドローン、フック射出、出力リミッター解除、ドクターのフードを掴んで——発進！",
   "x": 1
  },
  "嗯？你带我来这里，是想给这里置办一点新装饰吗？": {
   "ko": "응? 여기로 데려온 걸 보니, 새 장식이라도 좀 들여놓고 싶은 거야?",
-  "en": "Hm? You brought me here—looking to furnish the place with some new decorations?",
-  "ja": "ん？ここに連れてきたってことは、新しい装飾でも揃えたいの？",
   "x": 1
  },
  "别急，我还在算呢。": {
   "ko": "재촉하지 마, 아직 계산 중이야.",
-  "en": "Hold on, I'm still calculating.",
-  "ja": "急かさないで、まだ計算中。",
   "x": 1
  },
  "烧烤味饼干，来一片？": {
   "ko": "바비큐맛 과자, 한 조각 먹을래?",
-  "en": "Barbecue-flavored crackers. Want one?",
-  "ja": "バーベキュー味のクッキー、一枚どう？",
   "x": 1
  },
  "给，咖啡。看你那黑眼圈，昨晚又熬夜了吧？": {
   "ko": "자, 커피. 그 다크서클 보니까 어젯밤에 또 밤샜지?",
-  "en": "Here, coffee. Judging by those dark circles, you pulled another all-nighter?",
-  "ja": "はい、コーヒー。そのクマを見るに、昨日もまた徹夜したでしょ？",
   "x": 1
  },
  "罗德岛干员过生日均有机会获得采购部免单券，你也不例外！来这里摇奖，免单券就在特等奖等着你！什么？谁中过特等奖？这个——别担心，第一位特等奖得主没准就是你！": {
   "ko": "로도스 아일랜드 오퍼레이터는 생일이면 누구나 구매부 무료 이용권을 받을 기회가 생겨. 박사도 예외는 아니지! 자, 여기서 추첨해 봐. 무료 이용권은 특등상에 걸려 있으니까! 뭐? 특등상 당첨된 사람이 있냐고? 그건—— 걱정 마, 첫 특등상 당첨자가 박사일지도 모르잖아!",
-  "en": "Every Rhodes Island operator gets a shot at a Procurement free-purchase voucher on their birthday, and you're no exception! Come draw a ticket—the voucher is waiting for you as the grand prize! What? Has anyone ever won the grand prize? Well— don't worry, the very first grand prize winner might just be you!",
-  "ja": "ロドスのオペレーターは誕生日に購買部の無料券が当たるチャンスがあるの。ドクターも例外じゃないよ！さあここで抽選して。無料券は特等賞で待ってるから！え？特等賞を当てた人はいるのかって？それは——心配しないで、記念すべき最初の当選者があんたかもしれないでしょ！",
   "x": 1
  },
  "算起来，这已经是我第三次“修好”罗德岛了吧？虽然不该说习惯了，但这么多磨难之后，我敢说没有困难可以打败天才工程师可露希尔，也没有什么能击垮罗德岛！我们大家在的地方，就是罗德岛。": {
   "ko": "세어 보니 이게 벌써 내가 로도스 아일랜드를 “고쳐 놓은” 세 번째지? 익숙해졌다고 말하면 안 되겠지만, 이만큼 시련을 겪고 나니 자신 있게 말할 수 있어. 천재 엔지니어 클로저를 이길 수 있는 어려움은 없고, 로도스 아일랜드를 무너뜨릴 수 있는 것도 없다고! 우리 모두가 있는 곳, 그곳이 바로 로도스 아일랜드니까.",
-  "en": "Counting them up, this makes the third time I've 'fixed' Rhodes Island, doesn't it? I shouldn't say I'm used to it, but after this many trials I can say it with confidence: no hardship can beat the genius engineer Closure, and nothing can bring Rhodes Island down! Wherever all of us are—that is Rhodes Island.",
-  "ja": "数えてみたら、ロドスを「直した」のはこれで三回目だよね？慣れたなんて言っちゃいけないけど、これだけの試練を越えたあとなら自信を持って言えるよ。天才エンジニアのクロージャを打ち負かせる困難なんてないし、ロドスを叩き潰せるものもない！あたしたちみんながいる場所、そこがロドスなんだから。",
   "x": 1
  },
  "各项事务已按照截止日期录入，系统也给出了处理顺序的最优解。那么开始吧，博士，完成后我会为您核验。": {
   "ko": "각 업무는 마감일에 따라 입력해 두었고, 시스템이 처리 순서의 최적해도 내놓았습니다. 그럼 시작하시죠, 박사. 끝나면 제가 검수해 드리겠습니다.",
-  "en": "Every task has been entered according to its deadline, and the system has produced the optimal processing order. Let us begin, Doctor. I will verify the results once you are finished.",
-  "ja": "各業務は締め切りに従って入力済みで、システムが処理順序の最適解も出しています。では始めましょう、ドクター。終わりましたら私が検証いたします。",
   "x": 1
  },
  "有人想在那里成就不亚于“发现玻利瓦尔”的伟业，也有人只是打着探险的幌子，勘测丛林中或许存在的丰饶宝藏。那么您呢？您又是出于何种原因踏入那片迷人的树海？": {
   "ko": "누군가는 그곳에서 “볼리바르 발견”에 못지않은 위업을 이루려 하고, 누군가는 그저 탐험을 핑계 삼아 정글 어딘가에 있을지 모를 풍요로운 보물을 탐사하려 하죠. 그럼 박사는요? 어떤 이유로 그 매혹적인 수해에 발을 들이셨나요?",
-  "en": "Some go there hoping to achieve a feat no lesser than 'the discovery of Bolívar.' Others merely use exploration as a pretext to survey whatever bountiful treasure the jungle might hide. And you, Doctor? For what reason did you step into that enchanting sea of trees?",
-  "ja": "ある者はそこで「ボリバル発見」にも劣らぬ偉業を成し遂げようとし、ある者はただ探検を口実に、密林のどこかに眠るかもしれない豊かな財宝を探ろうとします。ではドクターは？どのような理由で、あの魅惑的な樹海に踏み入られたのでしょう？",
   "x": 1
  },
  "这台无人机不只是武器，更是翻译器，能将现实的物质与能量转写为计算机可读的数据。您也了解源石的这种用法，不是吗？沉默？呵，也对。我怎么又忘了，知识和技术一直都有自己的边境呢。": {
   "ko": "이 드론은 무기이기 이전에 번역기입니다. 현실의 물질과 에너지를 컴퓨터가 읽을 수 있는 데이터로 옮겨 적죠. 박사께서도 오리지늄의 이런 용법은 알고 계시죠? 침묵이신가요? 훗, 그렇겠네요. 제가 또 잊었군요. 지식과 기술에는 언제나 저마다의 국경이 있다는 걸.",
-  "en": "This drone is not merely a weapon—it is a translator, transcribing real matter and energy into computer-readable data. You are familiar with this use of Originium as well, are you not? Silence? Heh, of course. I keep forgetting that knowledge and technology have always had borders of their own.",
-  "ja": "このドローンは武器であるだけでなく、翻訳機でもあります。現実の物質とエネルギーを、コンピュータが読めるデータへ書き換えるのです。ドクターも源石のこうした用法はご存じでしょう？沈黙ですか？ふっ、そうですよね。また忘れていました——知識と技術には、いつだってそれぞれの国境があるということを。",
   "x": 1
  },
  "尝试破译这台计算机的密码吧，说不定您能从中找到方法，制作出“毁灭一切武器的武器”呢——当然，如果那样的武器真的存在的话。您认为它存在吗？": {
   "ko": "이 컴퓨터의 암호를 한번 풀어 보세요. 어쩌면 그 안에서 “모든 무기를 파괴하는 무기”를 만들 방법을 찾아내실지도 모르니까요—— 물론, 그런 무기가 정말로 존재한다면 말이지만요. 박사는 그것이 존재한다고 보시나요?",
-  "en": "Try deciphering this computer's passcode. You might just find within it a way to build 'the weapon that destroys all weapons'—assuming, of course, that such a weapon truly exists. Do you believe it does?",
-  "ja": "このコンピュータの暗号を解読してみてください。もしかしたら、その中から「あらゆる武器を滅ぼす武器」を作る方法を見つけられるかもしれません——もちろん、そんな武器が本当に存在すればの話ですが。ドクターは、それが存在するとお思いですか？",
   "x": 1
  },
  "Miss.Christine是位亲善的伙伴——同为罗德岛的干员，怎么不是伙伴？哦，您在我身上看到了与那位女士相似的东西？呵呵，能告诉我您看到了什么吗，博士？": {
   "ko": "Miss.Christine은 다정한 동료예요—— 같은 로도스 아일랜드의 오퍼레이터인데, 동료가 아닐 리 있나요? 아, 저에게서 그분과 비슷한 무언가를 보셨다고요? 후후, 무엇을 보셨는지 알려 주시겠어요, 박사?",
-  "en": "Miss.Christine is an amiable companion—she is a Rhodes Island operator just as I am, so how could she not be? Oh? You see something in me that resembles that lady? Hehe. Would you tell me what it is you saw, Doctor?",
-  "ja": "Miss.Christineは親切な仲間ですよ——同じロドスのオペレーターなのに、仲間でないはずがないでしょう？おや、私にあの方と似た何かを見出されたのですか？ふふ、何が見えたのか教えていただけます、ドクター？",
   "x": 1
  },
  "您是我见过的最沉默的学者。的确，能说会道的嘴巴属于政客，对研究者来说，重要的始终都只是那双能看清万物本质的眼睛。在您看来，纯粹、理想、毫无偏差的观测当真存在吗，博士？": {
   "ko": "박사는 제가 본 학자 중 가장 과묵한 분이에요. 하긴, 말재주 좋은 입은 정치가의 것이고, 연구자에게 중요한 것은 언제나 만물의 본질을 꿰뚫어 보는 두 눈뿐이니까요. 박사가 보시기에, 순수하고 이상적이며 오차 하나 없는 관측이란 게 정말로 존재할까요?",
-  "en": "You are the most silent scholar I have ever met. And rightly so—a silver tongue belongs to politicians; for a researcher, what has always mattered is only the pair of eyes that can see the essence of all things. In your view, Doctor, does a pure, ideal, wholly undistorted observation truly exist?",
-  "ja": "ドクターは、私が出会った中で最も寡黙な学者です。確かに、弁の立つ口は政治家のもの。研究者にとって大切なのは、いつだって万物の本質を見抜く両の目だけですから。ドクターのお考えでは、純粋で理想的な、一切の偏りのない観測など本当に存在するのでしょうか？",
   "x": 1
  },
  "随父亲抵达特科马的第一天，镇上的猎犬就咬死了我从故乡带来的小循兽。没错，在玻利瓦尔这种事每时每刻都在发生。但对一个孩子来讲，这足以成为童年时一桩真切又绝望的不幸了吧。": {
   "ko": "아버지를 따라 테코마에 도착한 첫날, 마을의 사냥개들이 제가 고향에서 데려온 어린 백비스트를 물어 죽였습니다. 맞아요, 볼리바르에서는 그런 일이 시시각각 벌어지죠. 하지만 아이에게는 그것만으로도 어린 시절의 참되고도 절망적인 불행 하나가 되기에 충분하지 않았을까요.",
-  "en": "On my first day arriving in Tecoma with my father, the town's hounds bit to death the little beckbeast I had brought from home. Yes, in Bolívar such things happen every moment of every day. But for a child, that alone is enough to become one real and hopeless misfortune of their childhood, wouldn't you say?",
-  "ja": "父に連れられてテコマに着いた最初の日、町の猟犬たちが、故郷から連れてきた小さな循獣を噛み殺しました。ええ、ボリバルではそんなことが刻一刻と起きています。でも子どもにとっては、それだけで幼い日の切実で絶望的な不幸になるには十分でしょう。",
   "x": 1
  },
  "不必用这样的眼神看我，博士，我只是一名普通的源石科技研究员。您仍在怀疑？呵呵，人事部的干员们不是已经审核过我的资料了吗？": {
   "ko": "그런 눈으로 보실 필요 없어요, 박사. 저는 그저 평범한 오리지늄 과학 기술 연구원일 뿐입니다. 아직도 의심하시나요? 후후, 인사부 오퍼레이터들이 이미 제 서류를 검증하지 않았던가요?",
-  "en": "There is no need to look at me like that, Doctor. I am only an ordinary Originium technology researcher. Still suspicious? Hehe. Have the operators in HR not already vetted my file?",
-  "ja": "そんな目で見なくても大丈夫ですよ、ドクター。私はごく普通の源石技術研究員に過ぎません。まだ疑っておられます？ふふ、人事部のオペレーターの方々が、すでに私の資料を審査済みではありませんか。",
   "x": 1
  },
  "又是晋升？呵呵，不必费劲地给予我这些漂亮的金属块儿。奖章百无一用，博士。": {
   "ko": "또 승진인가요? 후후, 이런 예쁜 금속 덩어리를 애써 주실 필요는 없어요. 훈장은 아무짝에도 쓸모없답니다, 박사.",
-  "en": "A promotion again? Hehe. There is no need to go to such trouble to give me these pretty lumps of metal. Medals are of no use whatsoever, Doctor.",
-  "ja": "また昇進ですか？ふふ、こんな綺麗な金属の塊をわざわざくださらなくても結構ですよ。勲章など何の役にも立ちません、ドクター。",
   "x": 1
  },
  "已同步作战信息。": {
   "ko": "작전 정보 동기화 완료.",
-  "en": "Combat data synchronized.",
-  "ja": "作戦情報を同期しました。",
   "x": 1
  },
  "系统为您推荐了合适的行动人选，需要参考吗？": {
   "ko": "시스템이 이번 작전에 적합한 인선을 추천했습니다. 참고하시겠어요?",
-  "en": "The system has recommended suitable personnel for this operation. Would you care to consult it?",
-  "ja": "システムが今回の作戦に適した人選を推薦しました。参考になさいますか？",
   "x": 1
  },
  "理论上可行，开始实战验证。": {
   "ko": "이론상 가능합니다. 실전 검증을 시작하죠.",
-  "en": "Theoretically viable. Beginning field verification.",
-  "ja": "理論上は可能です。実戦での検証を始めましょう。",
   "x": 1
  },
  "我会进行干涉。": {
   "ko": "제가 개입하겠습니다.",
-  "en": "I shall intervene.",
-  "ja": "私が干渉します。",
   "x": 1
  },
  "数据无误。": {
   "ko": "데이터, 이상 없음.",
-  "en": "Data, no anomalies.",
-  "ja": "データ、異常なし。",
   "x": 1
  },
  "频道无误。": {
   "ko": "채널, 이상 없음.",
-  "en": "Channel, no anomalies.",
-  "ja": "チャンネル、異常なし。",
   "x": 1
  },
  "坐标无误。": {
   "ko": "좌표, 이상 없음.",
-  "en": "Coordinates, no anomalies.",
-  "ja": "座標、異常なし。",
   "x": 1
  },
  "指令无误。": {
   "ko": "명령, 이상 없음.",
-  "en": "Orders, no anomalies.",
-  "ja": "指令、異常なし。",
   "x": 1
  },
  "你会是那个特殊的样本吗？": {
   "ko": "네가 그 특별한 표본이 되어 줄까?",
-  "en": "Will you be that special sample?",
-  "ja": "あなたが、あの特別なサンプルになってくれるのかしら？",
   "x": 1
  },
  "路径规划完毕，目标已锁定。": {
   "ko": "경로 계산 완료, 목표 포착.",
-  "en": "Path planning complete. Target locked.",
-  "ja": "経路の算出完了、目標をロックしました。",
   "x": 1
  },
  "很遗憾地通知——你的数据将被删除。": {
   "ko": "유감스럽지만 알려 드리죠—— 당신의 데이터는 삭제됩니다.",
-  "en": "It is my regret to inform you—your data is about to be deleted.",
-  "ja": "残念ながらお知らせします——あなたのデータは削除されます。",
   "x": 1
  },
  "抱歉。若有可能，你会出现在论文致谢中。": {
   "ko": "미안해요. 가능하다면, 논문의 감사의 글에 이름을 실어 드리죠.",
-  "en": "My apologies. If it is possible, you will appear in the acknowledgments of my paper.",
-  "ja": "ごめんなさい。可能であれば、論文の謝辞にお名前を載せますね。",
   "x": 1
  },
  "还有改进的空间。": {
   "ko": "아직 개선의 여지가 있군요.",
-  "en": "There is still room for improvement.",
-  "ja": "まだ改善の余地がありますね。",
   "x": 1
  },
  "损耗无可避免，您不必为此自责。": {
   "ko": "손실은 피할 수 없습니다. 그 일로 자책하실 필요 없어요.",
-  "en": "Attrition is unavoidable. You need not blame yourself for it.",
-  "ja": "損耗は避けられません。そのことでご自分を責める必要はありませんよ。",
   "x": 1
  },
  "很高效的作业线。": {
   "ko": "아주 효율적인 작업 라인이네요.",
-  "en": "A most efficient production line.",
-  "ja": "とても効率的な作業ラインですね。",
   "x": 1
  },
  "我会把这当作坏孩子的恶作剧，博士。": {
   "ko": "이건 나쁜 아이의 장난쯤으로 여겨 두죠, 박사.",
-  "en": "I shall treat that as a naughty child's prank, Doctor.",
-  "ja": "これは悪い子のいたずらということにしておきます、ドクター。",
   "x": 1
  },
  "我们的每一次互动都会被系统自动记下哦，博士。": {
   "ko": "우리의 모든 접촉은 시스템에 자동으로 기록된답니다, 박사.",
-  "en": "Every single interaction between us is automatically recorded by the system, you know, Doctor.",
-  "ja": "私たちのやり取りは一つ残らずシステムに自動記録されるんですよ、ドクター。",
   "x": 1
  },
  "在特科马，研究员们也会在节日里聚在一起，聊聊谁家孩子进了球队、哪家酒吧来了新的调酒师之类的小事。您看，“天才”们的日常也不全是公式和数据。所以，今天就多去和大伙聊聊吧，博士。": {
   "ko": "테코마에서도 연구원들은 명절이면 한데 모여서, 누구네 아이가 구단에 들어갔다느니 어느 술집에 새 바텐더가 왔다느니 하는 소소한 이야기를 나누곤 했어요. 보세요, “천재”들의 일상도 전부 공식과 데이터인 것만은 아니랍니다. 그러니 오늘은 다들과 좀 더 이야기를 나누고 오세요, 박사.",
-  "en": "In Tecoma, the researchers would gather on holidays as well, chatting about whose child made the team, which bar hired a new bartender, small things like that. You see, the daily life of 'geniuses' is not all formulas and data. So today, go and talk with everyone a little more, Doctor.",
-  "ja": "テコマでも、研究員たちは祝日になると集まって、誰の子がチームに入ったとか、どのバーに新しいバーテンダーが来たとか、そんな些細な話をしていました。ほら、「天才」たちの日常だって、公式とデータばかりではないんですよ。ですから今日は、皆さんともっとお話ししてきてください、ドクター。",
   "x": 1
  },
  "灵感需要新的空间，一直待在实验室里可找不着它——我是说，我们该出去走走了，博士。": {
   "ko": "영감에는 새로운 공간이 필요해요. 실험실에만 있어서는 찾을 수 없죠—— 그러니까, 우리도 슬슬 나가서 좀 걸어야 한다는 말입니다, 박사.",
-  "en": "Inspiration needs new space; you will never find it shut away in a laboratory—what I mean is, it is time we went out for a walk, Doctor.",
-  "ja": "閃きには新しい空間が必要です。実験室に籠もりきりでは見つかりません——つまり、そろそろ外を歩きに行きましょうということですよ、ドクター。",
   "x": 1
  },
  "不用怀疑，那封邮件就是发给您的，博士。它很安全，没有病毒，也不会窃取您终端中的任何数据——嗯，只是想祝您生日快乐。您看，我们之间其实可以更坦诚一些，不是吗？": {
   "ko": "의심하지 않으셔도 됩니다. 그 메일은 박사께 보낸 게 맞아요. 안전하고, 바이러스도 없고, 박사 단말기의 어떤 데이터도 훔쳐 가지 않습니다—— 네, 그저 생일을 축하드리고 싶었을 뿐이에요. 보세요, 우리 사이도 조금 더 솔직해질 수 있지 않을까요?",
-  "en": "No need for suspicion—that email really was addressed to you, Doctor. It is safe, it carries no virus, and it will not steal any data from your terminal—yes, I simply wished to wish you a happy birthday. You see? The two of us could be a little more candid with each other, could we not?",
-  "ja": "疑わなくても大丈夫ですよ、あのメールは確かにドクター宛てです。安全ですし、ウイルスもありませんし、ドクターの端末からデータを盗んだりもしません——ええ、ただお誕生日をお祝いしたかっただけです。ほら、私たちの間も、もう少し率直になれるのではありませんか？",
   "x": 1
  },
  "如果你不介意，可以试试这套测试版的全自动文件归档系统。绝对高效，绝对可靠。嗯，是的，得把你的整个书架和档案库都改造一遍，花不了太久。唔，你还是更喜欢现在的环境？我明白了。": {
   "ko": "괜찮다면 이 테스트 버전 전자동 문서 정리 시스템을 한번 써 봐. 확실히 효율적이고, 확실히 믿을 만해. 응, 맞아. 박사 책장이랑 자료실을 통째로 개조해야 하지만, 오래 안 걸려. 음, 그래도 지금 환경이 더 낫다고? 알았어.",
-  "en": "If you don't mind, try this test build of the fully automated file archiving system. Absolutely efficient, absolutely reliable. Yes, that's right—I'd have to rebuild your entire bookshelf and archive, but it won't take long. Hm, you'd still rather keep things the way they are? Understood.",
-  "ja": "よければ、このテスト版の全自動ファイル整理システムを試してみないか。絶対的に効率的で、絶対的に信頼できる。ああ、そうだ、ドクターの本棚と資料庫を丸ごと作り替える必要はあるが、そう時間はかからない。ふむ、それでも今の環境のほうがいいのか？分かった。",
   "x": 1
  },
  "那是我的工作列表，虽然严格执行它的机会不多，但有一份总不是件坏事，至少它可以分割我的项目进程，在组装工厂用起重机时不至于把武器轴承嵌进去。": {
   "ko": "그건 내 작업 목록이야. 엄격히 지킬 일은 별로 없지만, 하나쯤 있어서 나쁠 건 없지. 적어도 프로젝트 진행을 구분해 주니까, 조립 공장에서 크레인을 쓰다가 무기 베어링을 끼워 넣는 일은 없거든.",
-  "en": "That's my task list. I don't often get the chance to follow it strictly, but having one never hurts. At the very least it separates my project stages, so I don't end up embedding a weapon bearing into something while running the crane in the assembly plant.",
-  "ja": "それは俺の作業リストだ。厳密に実行する機会は多くないが、一つあって困るものでもない。少なくともプロジェクトの工程を区切ってくれるからな。おかげで組立工場でクレーンを使うときに、武器のベアリングを埋め込んじまうようなことは起きない。",
   "x": 1
  },
  "矢量突破考核的数据已经传回工坊了，我标记了数个漏洞，修复后能让携带装备和结构性原理在极端环境下更稳定地发挥效用。对了，测试的时候玩得还开心吗，博士？": {
   "ko": "벡터 돌파 평가 데이터는 이미 공방으로 넘어왔어. 결함을 몇 개 표시해 뒀는데, 수정하면 휴대 장비랑 구조적 원리가 극한 환경에서도 더 안정적으로 작동할 거야. 그건 그렇고, 테스트할 때 재미는 좀 있었어, 박사?",
-  "en": "The Vector Breakthrough assessment data is already back at the workshop. I flagged a number of holes—patch them and both the carried equipment and the Structural Principle will hold up more reliably in extreme conditions. By the way, did you have fun during the test, Doctor?",
-  "ja": "ベクトル突破の評価データはもう工房に届いてる。いくつか穴に印をつけておいた。直せば携行装備と構造的原理が、極限環境でももっと安定して機能するはずだ。ところで、テストのときは楽しめたか、ドクター？",
   "x": 1
  },
  "你或许很难想象作品会比创作者本身更有价值，但沃尔沃特科钦斯基就是如此衡量的，只要经过“资产再组合”，发明和发明人就再无关联了。我很庆幸这套逻辑在罗德岛并不生效。": {
   "ko": "작품이 창작자 본인보다 더 가치 있다는 건 상상하기 어려울지도 몰라. 하지만 볼보트 코친스키는 딱 그런 식으로 계산하지. “자산 재조합”만 거치면 발명과 발명자는 더 이상 아무 관계도 없게 되거든. 이 논리가 로도스 아일랜드에서는 통하지 않는다는 게 다행이야.",
-  "en": "You may find it hard to imagine a creation being worth more than its creator, but that is exactly how Volvort Kochinski weighs it. Run it through an 'asset recombination' and the invention has nothing to do with the inventor anymore. I'm glad that logic doesn't hold at Rhodes Island.",
-  "ja": "作品が創作者本人より価値があるなんて、想像しにくいかもしれない。だがヴォルヴォート・コシンスキーはまさにそう計算する。「資産再結合」を通しさえすれば、発明と発明者は無関係になるんだ。この論理がロドスでは通用しないことを、俺はありがたく思ってる。",
   "x": 1
  },
  "没有Whitesmith的话，我确实有可能离开罗德岛回到哥伦比亚。你应该能够理解，科技那种剥离感性的璀璨。她把工坊留给了我，所以我仍在这里，用钢铁泛起的每一抹光来纪念她。": {
   "ko": "Whitesmith가 없었다면, 나는 정말로 로도스 아일랜드를 떠나 컬럼비아로 돌아갔을지도 몰라. 박사도 이해할 거야. 감성을 걷어낸 과학기술 특유의 그 눈부심을. 그녀는 나에게 공방을 남겼고, 그래서 나는 아직 여기 있어. 강철에 어리는 빛 한 줄기 한 줄기로 그녀를 기리면서.",
-  "en": "Without Whitesmith, I might really have left Rhodes Island and gone back to Columbia. You should be able to understand it—that brilliance technology has once you strip the sentiment away. She left the workshop to me, so I'm still here, commemorating her with every gleam that rises off the steel.",
-  "ja": "Whitesmithがいなければ、俺は本当にロドスを離れてクルビアへ戻っていたかもしれない。ドクターなら分かるだろう、感性を削ぎ落とした科学技術のあの輝きが。彼女は工房を俺に遺した。だから俺はまだここにいる。鋼に浮かぶ一筋一筋の光で、彼女を偲びながらな。",
   "x": 1
  },
  "女妖咒言其实是一种专业术语，只要放下对神秘学的某些偏见，学起来并不困难。哦，还得找位好女妖当师父。哈哈，别看逻各斯平时那样，其实他很擅长教学的，要不下次我带你一起去上课？": {
   "ko": "밴시의 주문이란 건 사실 일종의 전문 용어야. 신비학에 대한 편견 몇 가지만 내려놓으면 배우기 그렇게 어렵지 않아. 아, 좋은 밴시를 스승으로 구하긴 해야 하지. 하하, 로고스가 평소엔 저래 보여도 사실 가르치는 데 아주 능하거든. 다음번엔 박사도 데리고 수업에 갈까?",
-  "en": "Banshee incantations are actually a kind of technical terminology. Set aside a few prejudices about the occult and they're not hard to learn. Oh—you do need a good Banshee for a teacher. Ha, don't let Logos's usual manner fool you; he's an excellent instructor. Want me to bring you along to a lesson next time?",
-  "ja": "バンシーの呪文というのは、実のところ一種の専門用語だ。神秘学に対する偏見をいくつか捨てさえすれば、学ぶのはそう難しくない。ああ、いいバンシーを師匠に持つ必要はあるがな。はは、ロゴスは普段ああ見えて、実は教えるのがうまいんだ。次は一緒に授業に連れて行こうか、ドクター？",
   "x": 1
  },
  "罗德岛所有源石与钢铁的堆叠都只指向一个目标，虽然不知道这份消耗什么时候会让我手背上的石头停止扩散，但技术发展终会在未来回答这个问题。我很庆幸，能在这份答案上留下自己的注脚。": {
   "ko": "로도스 아일랜드에 쌓인 오리지늄과 강철은 전부 단 하나의 목표를 향하고 있어. 이 소모가 언제쯤 내 손등의 결정이 번지는 걸 멈추게 해 줄지는 모르겠지만, 기술의 발전이 언젠가 그 질문에 답해 줄 거야. 그 답에 내 각주 하나를 남길 수 있다는 게 다행스러워.",
-  "en": "Every stack of Originium and steel at Rhodes Island points toward a single goal. I don't know when all this expenditure will finally stop the stone on the back of my hand from spreading, but the advance of technology will answer that question in the future. I'm glad I get to leave a footnote of my own on that answer.",
-  "ja": "ロドスに積み上げられた源石と鋼は、すべて一つの目標だけを指している。この消耗がいつ、俺の手の甲の石の広がりを止めてくれるのかは分からないが、技術の発展がいずれその問いに答えを出すだろう。その答えに自分の脚注を残せることを、俺はありがたく思ってる。",
   "x": 1
  },
  "来点喝的润润脑子？": {
   "ko": "머리도 좀 축일 겸, 한잔할까?",
-  "en": "Something to drink, to oil the brain?",
-  "ja": "頭を潤すのに、一杯どうだ？",
   "x": 1
  },
  "改进方案我已经有思路了，一会儿讨论下。": {
   "ko": "개선안은 이미 가닥이 잡혔어. 이따 같이 얘기하자.",
-  "en": "I've already got a line on the improvements. Let's talk it over in a bit.",
-  "ja": "改良案の見当はもうついてる。あとで少し話そう。",
   "x": 1
  },
  "虽然奖章是经我之手制作的，但你的信任无可替代，博士。": {
   "ko": "이 훈장은 내 손을 거쳐 만들어진 거지만, 박사의 신뢰는 무엇으로도 대체할 수 없어.",
-  "en": "The medal may have been made by my own hands, but your trust is irreplaceable, Doctor.",
-  "ja": "勲章は俺の手で作ったものだが、あんたの信頼は何にも代えられない、ドクター。",
   "x": 1
  },
  "有您的带领，我想有一天，我们可以破除源石对技术的桎梏。": {
   "ko": "박사가 이끌어 준다면, 언젠가 우리는 오리지늄이 기술에 채운 족쇄를 부술 수 있을 거라고 생각해.",
-  "en": "With your leadership, I believe that one day we will break the shackles Originium has placed on technology.",
-  "ja": "あんたが率いてくれるなら、いつか俺たちは、源石が技術にかけた枷を打ち破れると思う。",
   "x": 1
  },
  "设备已启动。": {
   "ko": "장비 기동 완료.",
-  "en": "Equipment online.",
-  "ja": "装備、起動した。",
   "x": 1
  },
  "已连接至指挥中枢，请各位确认简报。": {
   "ko": "지휘 중추에 연결됐어. 다들 브리핑 확인해 줘.",
-  "en": "Connected to the command hub. Everyone, confirm the briefing.",
-  "ja": "指揮中枢に接続した。各員、ブリーフィングを確認してくれ。",
   "x": 1
  },
  "再次检查设备。": {
   "ko": "장비 재점검.",
-  "en": "Checking the equipment again.",
-  "ja": "装備を再チェック。",
   "x": 1
  },
  "开始行动。": {
   "ko": "작전 개시.",
-  "en": "Commencing operation.",
-  "ja": "作戦開始。",
   "x": 1
  },
  "设备整备完毕。": {
   "ko": "장비 정비 완료.",
-  "en": "Equipment prepped.",
-  "ja": "装備の整備、完了。",
   "x": 1
  },
  "结构性原理准备部署。": {
   "ko": "구조적 원리, 배치 준비.",
-  "en": "Structural Principle, ready to deploy.",
-  "ja": "構造的原理、配置準備。",
   "x": 1
  },
  "解除武器保险。": {
   "ko": "무기 안전 장치 해제.",
-  "en": "Weapon safety off.",
-  "ja": "武器のセーフティ解除。",
   "x": 1
  },
  "协议一，火力覆盖。": {
   "ko": "프로토콜 1, 제압 사격.",
-  "en": "Protocol One, suppressive fire.",
-  "ja": "プロトコル一、制圧射撃。",
   "x": 1
  },
  "协议二，炮火抵御。": {
   "ko": "프로토콜 2, 포화 방어.",
-  "en": "Protocol Two, artillery defense.",
-  "ja": "プロトコル二、砲火防御。",
   "x": 1
  },
  "协议三，根除威胁。": {
   "ko": "프로토콜 3, 위협 제거.",
-  "en": "Protocol Three, eradicate the threat.",
-  "ja": "プロトコル三、脅威の根絶。",
   "x": 1
  },
  "协议四，“机械黎明”。": {
   "ko": "프로토콜 4, “기계의 여명”.",
-  "en": "Protocol Four, 'Mechanical Dawn.'",
-  "ja": "プロトコル四、「機械の黎明」。",
   "x": 1
  },
  "唉，看来我的模型又该升级了。": {
   "ko": "하아, 내 모델도 다시 손볼 때가 된 모양이군.",
-  "en": "Hah. Looks like my model needs another upgrade.",
-  "ja": "はぁ、俺のモデルもまた更新の時期らしいな。",
   "x": 1
  },
  "各项数据基本符合战前预估，辛苦了。": {
   "ko": "각 수치는 대체로 전투 전 예측과 일치해. 수고했어.",
-  "en": "The numbers broadly match our pre-battle estimates. Good work.",
-  "ja": "各データはおおむね戦前の予測通りだ。お疲れさま。",
   "x": 1
  },
  "数据波动还在可接受范围。": {
   "ko": "데이터 변동은 아직 허용 범위 안이야.",
-  "en": "The data fluctuation is still within acceptable range.",
-  "ja": "データの振れ幅はまだ許容範囲内だ。",
   "x": 1
  },
  "启动应急预案，该离开了，博士。": {
   "ko": "비상 대책 가동. 빠져나가야 해, 박사.",
-  "en": "Initiating the contingency plan. Time to leave, Doctor.",
-  "ja": "緊急プランを起動。離脱するぞ、ドクター。",
   "x": 1
  },
  "在哪里干活都一样。": {
   "ko": "어디서 일하든 똑같아.",
-  "en": "Work is the same wherever I do it.",
-  "ja": "どこで働こうと同じことだ。",
   "x": 1
  },
  "借一下你的终端，有些数据我没权限。": {
   "ko": "박사 단말기 좀 빌릴게. 내 권한으로는 못 보는 데이터가 있어서.",
-  "en": "Let me borrow your terminal—there's some data I don't have clearance for.",
-  "ja": "ちょっと端末を貸してくれ。俺の権限じゃ見られないデータがあるんだ。",
   "x": 1
  },
  "这就已经到新年了？！唉，一忙起来就什么都忘了。走吧博士，我们该去和大家一起庆祝了。这次就不沾酒精了，有些时光还是清醒着好，这样能记得更清楚。": {
   "ko": "벌써 새해라고?! 하아, 바빠지면 죄다 잊어버린단 말이지. 가자, 박사. 다 같이 축하하러 가야지. 이번엔 술은 안 마실게. 어떤 시간은 맨정신인 편이 나아. 그래야 더 또렷하게 기억할 수 있으니까.",
-  "en": "It's the New Year already?! Hah, once I get busy I forget everything. Come on, Doctor, we should go celebrate with everyone. I'll skip the alcohol this time. Some moments are better sober—you remember them more clearly that way.",
-  "ja": "もう新年なのか？！はぁ、忙しくなると何もかも忘れちまう。行こう、ドクター。みんなと一緒に祝いに行くべきだ。今回は酒はよしておく。素面のほうがいい時間というのもある。そのほうがはっきり覚えていられるからな。",
   "x": 1
  },
  "我一直想知道，你出生时依据的历法，和我们用的是同一套吗？如果是，这究竟是巧合，还是某种承继？哎，这不就是好奇嘛，我知道你没答案，来，干杯，祝你生日快乐。": {
   "ko": "예전부터 궁금했어. 박사가 태어났을 때 기준으로 삼은 역법이, 우리가 쓰는 것과 같은 것일까? 만약 같다면 그건 우연일까, 아니면 어떤 계승일까? 아니, 그냥 호기심이야. 박사한테 답이 없다는 건 알아. 자, 건배. 생일 축하해.",
-  "en": "I've always wanted to know—was the calendar your birth was reckoned by the same one we use? And if it was, is that coincidence, or some kind of inheritance? Ah, it's just curiosity. I know you don't have the answer. Here—cheers. Happy birthday.",
-  "ja": "ずっと気になってたんだ。あんたが生まれたときに基準にした暦は、俺たちが使っているものと同じなのか？もし同じなら、それは偶然なのか、それとも何らかの継承なのか。まあ、ただの好奇心だ。あんたに答えがないのは分かってる。ほら、乾杯だ。誕生日おめでとう。",
   "x": 1
  },
  "时间就像源石，我们永远在哀叹不足，却又害怕得到更多。我们什么时候才能铸成承载它们的天平，好让那些难题彻底远离大地？呵，我明白，这是你的课题，只是，如果遇到问题了，记得来找我们。": {
   "ko": "시간은 오리지늄과 같아. 우리는 늘 모자라다고 한탄하면서도, 더 많이 얻는 걸 두려워하지. 언제쯤이면 그것들을 떠받칠 저울을 벼려 내서, 그 난제들을 이 대지에서 완전히 떼어 놓을 수 있을까? 훗, 알아. 그건 박사의 과제야. 다만, 문제가 생기면 우리를 찾아오는 걸 잊지 마.",
-  "en": "Time is like Originium—we forever lament having too little, yet fear receiving more. When will we finally forge the scale that can bear them, so those problems leave this land for good? Heh, I know. That's your subject. Just remember—if you run into trouble, come find us.",
-  "ja": "時間は源石に似ている。俺たちは常に足りないと嘆きながら、それでいてもっと手に入れることを恐れる。いつになれば、それらを載せられる天秤を鋳造して、あの難題を大地から完全に遠ざけられるんだろうな？ふっ、分かってる。それはあんたの課題だ。ただ、問題にぶつかったら、俺たちを頼ることを忘れるな。",
   "x": 1
  },
  "有什么需要我做的事都请吩咐我，只要是我能做到的。有没有不情愿做的事？非要说的话请尽量不要让我去杀害无辜的人。嗯，我没有其他补充。": {
   "ko": "제가 할 일이 있으면 뭐든 지시해 주세요. 제가 할 수 있는 일이라면요. 하기 싫은 일이 있냐고요? 굳이 말하자면, 죄 없는 사람을 죽이는 일만은 되도록 시키지 말아 주세요. 네, 더 덧붙일 건 없습니다.",
-  "en": "Whatever you need me to do, just give the order—so long as it's something I can do. Anything I'd be unwilling to do? If I have to name one, please try not to send me to kill innocent people. Yes. I have nothing else to add.",
-  "ja": "何かやってほしいことがあれば何でも命じてください。僕にできることなら。やりたくないことがあるかって？あえて言うなら、罪のない人を殺すことだけは、なるべくさせないでほしいです。はい、他に付け加えることはありません。",
   "x": 1
  },
  "之前我所在的组织里那些发号施令的人，都会要求必须在称呼他们时使用“指挥官”“长官”“队长”“您”之类的词。如果你希望的话我也会照做。没有这类规定吗？我明白了。": {
   "ko": "전에 제가 몸담았던 조직에서 명령을 내리던 사람들은, 자기를 부를 때 반드시 “지휘관” “상관” “대장” 같은 호칭과 높임말을 쓰라고 요구했습니다. 박사가 원하신다면 저도 그렇게 하겠습니다. 그런 규정은 없다고요? 알겠습니다.",
-  "en": "In the organizations I used to belong to, the people who gave the orders all required that we address them as 'Commander,' 'Sir,' 'Captain,' or with formal speech. If that's what you'd like, I'll do the same. There's no such rule here? Understood.",
-  "ja": "以前僕がいた組織で命令を出す人たちは、呼ぶときに必ず「指揮官」「上官」「隊長」といった呼称や敬語を使うよう求めました。ドクターが望むなら、僕もそうします。そういう規定はないんですか？分かりました。",
   "x": 1
  },
  "我没有理由拒绝配合医疗部那位萨卡兹的研究，虽然我不觉得无法长大这件事有什么研究价值。在玻利瓦尔没能长大成人就离世的孩子有很多，而我只是还活着而已。": {
   "ko": "의료부의 그 살카즈가 하는 연구에 협조하지 않을 이유는 없습니다. 자라지 못한다는 게 무슨 연구 가치가 있는지는 잘 모르겠지만요. 볼리바르에는 어른이 되지 못하고 세상을 떠난 아이들이 많습니다. 저는 그저 아직 살아 있을 뿐이에요.",
-  "en": "I have no reason to refuse cooperating with that Sarkaz from Medical and her research, though I don't see what research value there is in being unable to grow up. In Bolívar there are plenty of children who died before ever reaching adulthood. I merely happen to still be alive.",
-  "ja": "医療部のあのサルカズの研究に協力しない理由はありません。大きくなれないことに、どんな研究価値があるのかは分かりませんけど。ボリバルには、大人になれずに亡くなった子どもがたくさんいます。僕はただ、まだ生きているというだけです。",
   "x": 1
  },
  "我已经记不清，有多少人在最后一刻来临之前，要我替他们去看那个不再需要更多人为之牺牲的未来，我没有办法拒绝。可我能看到的只有下一个对我这么说的人，一个接一个。": {
   "ko": "이제는 기억도 잘 안 납니다. 마지막 순간이 오기 전에, 더 이상 누구도 희생할 필요가 없는 미래를 자기 대신 봐 달라고 부탁한 사람이 몇 명이나 되는지. 저는 거절할 방법이 없었어요. 하지만 제가 볼 수 있었던 건 저에게 똑같은 말을 하는 다음 사람뿐이었습니다. 한 사람, 또 한 사람.",
-  "en": "I can no longer remember how many people, before their final moment came, asked me to go and see that future in their place—the one where no one else has to be sacrificed. I had no way to refuse. But all I could ever see was the next person telling me the same thing. One after another.",
-  "ja": "もう覚えていません。最期の瞬間が来る前に、これ以上誰も犠牲にならなくていい未来を自分の代わりに見てくれと、僕に頼んだ人が何人いたのか。断ることはできませんでした。でも僕に見えたのは、同じことを言う次の人だけでした。一人、また一人と。",
   "x": 1
  },
  "来到罗德岛的原因？你不会喜欢听的。说实话，我不能理解任何一个为了某样追求而舍弃生命的人，所以我只能做一些模仿来尝试理解他们。反正除了不想死以外，我也没有什么想要追求的目标。": {
   "ko": "로도스 아일랜드에 온 이유요? 들으면 마음에 안 드실 겁니다. 솔직히 말하면, 저는 무언가를 좇겠다고 목숨을 버리는 사람을 단 한 명도 이해하지 못하겠습니다. 그래서 흉내라도 내 보면서 그 사람들을 이해해 보려는 것뿐이에요. 어차피 죽고 싶지 않다는 것 말고는, 딱히 좇고 싶은 목표도 없으니까요.",
-  "en": "My reason for coming to Rhodes Island? You won't like hearing it. Honestly, I can't understand a single person who casts their life away for something they're pursuing, so all I can do is imitate them and try to understand. Besides not wanting to die, I don't have any goal I want to pursue anyway.",
-  "ja": "ロドスに来た理由ですか？聞いても気に入らないと思います。正直に言うと、僕は何かを追い求めて命を捨てる人を、誰一人として理解できません。だから真似事をして、その人たちを理解しようとしているだけです。どうせ死にたくないということ以外に、追い求めたい目標もありませんから。",
   "x": 1
  },
  "别在意，我还不困，你累的话就先休息吧。": {
   "ko": "신경 쓰지 마세요, 저는 아직 안 졸려요. 피곤하시면 먼저 쉬세요.",
-  "en": "Don't mind me, I'm not sleepy yet. If you're tired, go ahead and rest first.",
-  "ja": "気にしないでください、僕はまだ眠くないので。疲れているなら、先に休んでください。",
   "x": 1
  },
  "代号是佩德洛，今天起正式成为罗德岛的干员。我会尽快熟悉贵司的业务，希望我们合作愉快，嗯。": {
   "ko": "코드네임은 페드로. 오늘부터 정식으로 로도스 아일랜드의 오퍼레이터가 되었습니다. 귀사의 업무는 되도록 빨리 익히겠습니다. 잘 부탁드립니다, 네.",
-  "en": "Codename Pedro. As of today I'm officially an operator of Rhodes Island. I'll familiarize myself with your company's business as quickly as I can. I hope we work well together. Yes.",
-  "ja": "コードネームはペドロ。今日から正式にロドスのオペレーターになりました。御社の業務はできるだけ早く覚えます。よろしくお願いします、はい。",
   "x": 1
  },
  "跟这些比起来，以前我执行过的那些根本不能叫战术呢。": {
   "ko": "이런 것들에 비하면, 예전에 제가 수행했던 건 전술이라고 부를 수도 없겠네요.",
-  "en": "Compared to these, what I used to carry out can hardly be called tactics at all.",
-  "ja": "これに比べたら、以前僕が実行していたものなんて、戦術とも呼べませんね。",
   "x": 1
  },
  "看来你对我的表现还算满意？我很开心。": {
   "ko": "제 성과가 그럭저럭 만족스러우셨나 보네요. 기쁩니다.",
-  "en": "It seems you're reasonably satisfied with how I've performed. That makes me happy.",
-  "ja": "僕の働きに、それなりに満足していただけたようですね。嬉しいです。",
   "x": 1
  },
  "我吗？真的没问题吗？啊，我只是难得有些兴奋。你也知道，那些将军当然不会把小孩子当成什么有价值的资源。": {
   "ko": "저를요? 정말 괜찮은 겁니까? 아, 그냥 오랜만에 조금 들떴을 뿐입니다. 아시겠지만, 그 장군들이 어린아이를 가치 있는 자원으로 볼 리는 없었으니까요.",
-  "en": "Me? Are you really sure? Ah—it's just that I'm a little excited, which is rare for me. As you know, those generals would never regard a child as a resource of any value.",
-  "ja": "僕をですか？本当に構わないんですか？ああ、珍しく少し高揚しているだけです。ご存じの通り、あの将軍たちが子どもを価値ある資源と見なすことなんて、ありませんでしたから。",
   "x": 1
  },
  "我会全力配合此次战术执行。": {
   "ko": "이번 전술 수행에 전력으로 협조하겠습니다.",
-  "en": "I'll cooperate fully with this tactical execution.",
-  "ja": "今回の戦術遂行に全力で協力します。",
   "x": 1
  },
  "我已收到战术预测，请给我下一步的指示。": {
   "ko": "전술 예측을 수신했습니다. 다음 지시를 내려 주세요.",
-  "en": "I've received the tactical projection. Please give me my next instruction.",
-  "ja": "戦術予測を受け取りました。次の指示をお願いします。",
   "x": 1
  },
  "我们都会活着回来的。": {
   "ko": "우리 모두 살아서 돌아올 겁니다.",
-  "en": "We'll all come back alive.",
-  "ja": "僕たちはみんな、生きて帰ります。",
   "x": 1
  },
  "敌方的部署与预测相符，按原定计划执行我方战术。": {
   "ko": "적의 배치는 예측과 일치합니다. 예정대로 아군 전술을 수행하겠습니다.",
-  "en": "The enemy's deployment matches the projection. Executing our tactics as planned.",
-  "ja": "敵の配置は予測通りです。予定通り、こちらの戦術を実行します。",
   "x": 1
  },
  "我已了解。": {
   "ko": "알겠습니다.",
-  "en": "Understood.",
-  "ja": "了解しました。",
   "x": 1
  },
  "我将执行。": {
   "ko": "수행하겠습니다.",
-  "en": "I'll carry it out.",
-  "ja": "実行します。",
   "x": 1
  },
  "我将前往。": {
   "ko": "가겠습니다.",
-  "en": "I'm on my way.",
-  "ja": "向かいます。",
   "x": 1
  },
  "我已经抵达，等候下一个指令。": {
   "ko": "도착했습니다. 다음 명령을 기다리겠습니다.",
-  "en": "I've arrived. Awaiting the next order.",
-  "ja": "到着しました。次の指令を待ちます。",
   "x": 1
  },
  "放下你的武器。": {
   "ko": "무기를 내려놔.",
-  "en": "Put down your weapon.",
-  "ja": "武器を下ろすんだ。",
   "x": 1
  },
  "停止你的抵抗。": {
   "ko": "저항을 멈춰.",
-  "en": "Stop resisting.",
-  "ja": "抵抗をやめるんだ。",
   "x": 1
  },
  "执行掩护射击。": {
   "ko": "엄호 사격 수행합니다.",
-  "en": "Executing covering fire.",
-  "ja": "援護射撃を実行します。",
   "x": 1
  },
  "我们都会活下来的。": {
   "ko": "우리 모두 살아남을 겁니다.",
-  "en": "We're all going to survive.",
-  "ja": "僕たちはみんな生き延びます。",
   "x": 1
  },
  "我们胜利了。我们阻止了更多无辜的人被杀死，对吧。": {
   "ko": "우리가 이겼습니다. 더 많은 무고한 사람이 죽는 걸 막았어요, 그렇죠.",
-  "en": "We won. We stopped more innocent people from being killed. Right.",
-  "ja": "僕たちは勝ちました。もっと多くの罪のない人が殺されるのを止めた、そうですよね。",
   "x": 1
  },
  "别难过，我们都还活着，这比什么都要紧。": {
   "ko": "슬퍼하지 마세요. 우리는 다 살아 있습니다. 그게 무엇보다 중요해요.",
-  "en": "Don't be upset. We're all still alive, and that matters more than anything.",
-  "ja": "落ち込まないでください。僕たちはみんな生きています。それが何よりも大事です。",
   "x": 1
  },
  "要我去哪里都行，你说了算。": {
   "ko": "어디로 가라고 하셔도 괜찮습니다. 정하시는 대로 하죠.",
-  "en": "Send me anywhere you like. It's your call.",
-  "ja": "どこへ行けと言われても構いません。あなたの決めた通りに。",
   "x": 1
  },
  "唔嗯？别这样，我怕痒。": {
   "ko": "으응? 그러지 마세요, 간지러워요.",
-  "en": "Mm? Don't do that, it tickles.",
-  "ja": "うぅん？やめてください、くすぐったいです。",
   "x": 1
  },
  "你回来了，这比什么都好。": {
   "ko": "돌아오셨군요. 그게 무엇보다 좋습니다.",
-  "en": "You're back. Nothing is better than that.",
-  "ja": "帰ってきたんですね。それが何よりです。",
   "x": 1
  },
  "今天是你的生日吧。嗯，是没有跟我说过，你没记错。只是去年看到大家给你送礼物，我就在终端的日历上备注了一下。总之，生日快乐，礼物收好。": {
   "ko": "오늘 생일이시죠. 네, 저한테 말씀하신 적은 없습니다. 잘못 기억하신 거 아니에요. 그냥 작년에 다들 선물 드리는 걸 보고, 단말기 달력에 표시해 뒀을 뿐입니다. 아무튼, 생일 축하드립니다. 선물은 잘 받아 두세요.",
-  "en": "Today's your birthday, isn't it. Yes, you never told me. Your memory isn't wrong. It's just that last year I saw everyone giving you gifts, so I made a note on my terminal's calendar. Anyway. Happy birthday. Take good care of the present.",
-  "ja": "今日は誕生日ですよね。はい、僕には話していません。記憶違いじゃないです。ただ去年、みんながプレゼントを渡しているのを見て、端末のカレンダーにメモしておいただけです。とにかく、お誕生日おめでとうございます。プレゼントは受け取ってください。",
   "x": 1
  },
  "刚刚踏进荒野时，最新奇的感受是寂静吧？家长里短从耳朵里消失了，才发现风吹过沙地的声音可以那么有趣。可是听久了以后，还是会想念家里充满生活气的吵闹。什么都想要，人就是贪心呢。": {
   "ko": "황야에 막 발을 들였을 때 제일 신기했던 건 고요함이었어요. 집안 얘기 이웃 얘기가 귀에서 싹 사라지고 나서야, 바람이 모래땅을 스치는 소리가 그렇게 재미있다는 걸 알았죠. 그런데 오래 듣다 보면 사람 사는 냄새 나는 집안의 시끌벅적함이 또 그리워지더라고요. 이것도 저것도 다 갖고 싶고, 사람이란 참 욕심쟁이예요.",
-  "en": "When I first stepped out into the barrens, the strangest thing was the silence. Once all the household gossip vanished from my ears, I realized how interesting the sound of wind over sand could be. But after listening long enough, I start missing that lived-in racket back home. Wanting it all—people really are greedy, aren't we?",
-  "ja": "荒野に足を踏み入れたばかりの頃、一番新鮮だったのは静けさでした。ご近所の噂話が耳から消えて初めて、風が砂地を渡る音があんなに面白いって気づいたんです。でも長く聞いていると、やっぱり家の生活感あふれる賑やかさが恋しくなって。あれもこれも欲しいなんて、人って欲張りですね。",
   "x": 1
  },
  "当上干员后我的出行计划表变得好长，好在许多目的地已经打上了小钩。剩下的？去萨尔贡逛博物馆，去炎国尝美食，去米诺斯看战车竞技——大涌泉镇能搬那么远吗？搞、搞不好也能搬过去呢！嗯！": {
   "ko": "오퍼레이터가 되고 나서 여행 계획표가 엄청 길어졌어요. 다행히 목적지 상당수엔 벌써 체크 표시가 붙었지만요. 남은 거요? 사르곤에 가서 박물관 구경하고, 염국에 가서 맛있는 거 먹고, 미노스에 가서 전차 경기 보고—대용천 마을이 그렇게 멀리까지 이사할 수 있을까요? 어, 어쩌면 이사할 수 있을지도 몰라요! 네!",
-  "en": "Ever since I became an Operator, my travel plan has gotten so long. Luckily, plenty of the destinations already have little checkmarks on them. What's left? Visit the museums in Sargon, taste the food in Yan, watch the chariot races in Minos—could Great Geyser Town move that far, I wonder? M-maybe it could move there too! Mm!",
-  "ja": "オペレーターになってから、お出かけ計画表がすごく長くなりました。幸い、たくさんの目的地にはもうチェックがついてるんですけど。残りですか？サルゴンで博物館を見て回って、炎国で美味しいものを食べて、ミノスで戦車レースを観て——大涌泉の町、そんなに遠くまで引っ越せますかね？も、もしかしたら引っ越せるかも！うん！",
   "x": 1
  },
  "以前大家总担心我被欺负，为我安排这安排那，久而久之，我好像真的觉得自己什么都做不到了。现在？现在我可是整个镇子里阅历最丰富的人，亲戚们还会写信跟我咨询出游建议呢！": {
   "ko": "예전엔 다들 제가 괴롭힘당할까 봐 걱정하면서 이것저것 다 정해 줬어요. 그러다 보니 저도 정말로 제가 아무것도 못 하는 사람인 줄 알게 됐고요. 지금이요? 지금은 제가 마을 전체에서 제일 견문이 넓은 사람이에요. 친척들이 편지로 여행 조언까지 물어본다니까요!",
-  "en": "People used to worry I'd get bullied, so they arranged everything for me. After a while, I really did start believing I couldn't do anything myself. Now? Now I'm the most well-traveled person in the whole town—my relatives even write asking me for trip advice!",
-  "ja": "昔はみんな私がいじめられないかって心配して、あれもこれもお膳立てしてくれたんです。そうしているうちに、私も本当に自分は何もできないんだって思うようになっちゃって。今ですか？今の私は町で一番見聞が広い人ですよ。親戚が手紙で旅行の相談までしてくるんですから！",
   "x": 1
  },
  "以前我觉得自己永远追不上奶奶的脚步，出发后才意识到，虽然她的法术我一样也学不会，但她让大家信赖靠的不是法术，而是善良和魄力。再说我才十八岁嘛，奶奶十八岁时也有点笨手笨脚的呢！": {
   "ko": "예전엔 제가 할머니 발자취를 영영 못 따라잡을 거라고 생각했어요. 그런데 길을 떠나고 나서야 알았죠. 할머니의 마법은 하나도 못 배웠지만, 할머니가 모두의 신뢰를 얻은 건 마법이 아니라 착한 마음과 배짱이었다는 걸요. 게다가 저 아직 열여덟이잖아요. 할머니도 열여덟 살 땐 좀 어설펐다고요!",
-  "en": "I used to think I'd never catch up to Grandma's footsteps. It was only after I set out that I realized: I couldn't learn a single one of her Arts, but what made everyone trust her wasn't Arts, it was her kindness and her nerve. Besides, I'm only eighteen. Grandma was a bit clumsy at eighteen too!",
-  "ja": "昔は、おばあちゃんの足跡には一生追いつけないと思っていました。でも旅に出て初めて気づいたんです。おばあちゃんの術は一つも覚えられなかったけど、みんなに信頼されたのは術じゃなくて、優しさと度胸だったって。それに私、まだ十八歳ですよ。おばあちゃんだって十八の頃はちょっとどんくさかったんですから！",
   "x": 1
  },
  "博士会不会有这样的感觉？爱有时就像远视眼看东西，明明是出于关切，靠近的时候却一团糟，分开之后反而一切都明朗了。唔，彼此的空间也很重要呢。": {
   "ko": "박사도 이런 기분 느낀 적 있어요? 사랑은 가끔 원시인 눈으로 뭘 보는 것 같아요. 분명 걱정해서 하는 건데, 가까이 다가가면 오히려 엉망이 되고, 떨어지고 나서야 전부 또렷해지죠. 음, 서로의 공간도 참 중요한 것 같아요.",
-  "en": "Do you ever feel this way, Doctor? Love is sometimes like looking at something when you're farsighted. It comes from caring, but up close it's all a mess, and only once you're apart does everything come clear. Mm, space from each other matters too, doesn't it?",
-  "ja": "ドクターもこんな風に感じることってありますか？愛って、時々遠視の目でものを見るのに似ています。心配しているからこそなのに、近づくとぐちゃぐちゃになって、離れて初めて全部はっきり見えてくる。うーん、お互いの距離も大事なんですね。",
   "x": 1
  },
  "来点胡萝卜汤吧，博士。好好休息，才有力气去到更远的地方哦。": {
   "ko": "당근 수프 좀 드세요, 박사. 푹 쉬어야 더 먼 곳까지 갈 힘이 나는 거예요.",
-  "en": "Have some carrot soup, Doctor. Rest properly—that's how you get the strength to go somewhere farther.",
-  "ja": "ニンジンスープでもどうぞ、ドクター。しっかり休まないと、もっと遠くへ行く力は出ませんよ。",
   "x": 1
  },
  "你是说，只要我坚持训练，就能变成这样吗？": {
   "ko": "훈련을 꾸준히 하기만 하면 이렇게 될 수 있다는 말이에요?",
-  "en": "You mean, if I just keep up my training, I can become like this?",
-  "ja": "訓練を続けさえすれば、こうなれるってことですか？",
   "x": 1
  },
  "野外探查？我想去！保证注意安全！": {
   "ko": "야외 탐사요? 가고 싶어요! 안전은 꼭 챙길게요!",
-  "en": "A field survey? I want to go! I promise I'll be careful!",
-  "ja": "野外調査ですか？行きたいです！安全には気をつけます！",
   "x": 1
  },
  "我会尽我所能，不拖大家后腿——呃，带领大家前进的！": {
   "ko": "최선을 다해서 여러분한테 짐이 되지 않을게—어, 여러분을 앞장서서 이끌게요!",
-  "en": "I'll do everything I can not to hold everyone back—uh, I mean, to lead everyone forward!",
-  "ja": "精一杯やって、みんなの足を引っ張らないように——えっと、みんなを導いてみせます！",
   "x": 1
  },
  "别、别以为我怕了你们！": {
   "ko": "내, 내가 너희를 무서워하는 줄 알아!",
-  "en": "D-don't think I'm scared of you!",
-  "ja": "こ、怖がってると思ったら大間違いですよ！",
   "x": 1
  },
  "随时准备行动！哇，我说出来了，还挺酷的。": {
   "ko": "언제든 출동 준비 완료! 와, 진짜 말해 버렸네. 좀 멋있다.",
-  "en": "Ready to move out anytime! Wow, I actually said it. That was kind of cool.",
-  "ja": "いつでも行動できます！わあ、言えちゃった。ちょっとかっこいい。",
   "x": 1
  },
  "既然已经决定，那就坚持去做吧。": {
   "ko": "이미 정했으면, 끝까지 밀고 나가야죠.",
-  "en": "Once it's decided, we see it through.",
-  "ja": "決めたからには、やり通しましょう。",
   "x": 1
  },
  "把困难都踩扁！": {
   "ko": "어려움은 전부 밟아 뭉개고!",
-  "en": "Stomp every hardship flat!",
-  "ja": "困難はぜんぶ踏み潰す！",
   "x": 1
  },
  "把犹豫都蹬开！": {
   "ko": "망설임은 전부 걷어차 버리고!",
-  "en": "Kick every hesitation aside!",
-  "ja": "迷いはぜんぶ蹴り飛ばす！",
   "x": 1
  },
  "辣椒可不只是用来调味的，滋——": {
   "ko": "고추는 양념에만 쓰는 게 아니라고요, 촤아—",
-  "en": "Chili peppers aren't just for seasoning, ssss—",
-  "ja": "唐辛子は味付けだけのものじゃありません、シューッ——",
   "x": 1
  },
  "气罐可不只是用来做饭的，砰！": {
   "ko": "가스통은 요리에만 쓰는 게 아니라고요, 펑!",
-  "en": "Gas canisters aren't just for cooking, bang!",
-  "ja": "ガスボンベは料理だけのものじゃありません、ドンッ！",
   "x": 1
  },
  "登山杖可不只是用来支撑的，哈！": {
   "ko": "등산 스틱은 몸 지탱하는 데만 쓰는 게 아니라고요, 하!",
-  "en": "Trekking poles aren't just for support, hah!",
-  "ja": "トレッキングポールは体を支えるだけのものじゃありません、はっ！",
   "x": 1
  },
  "本次探查行动——成功！我会把照片和资料整理好，在此之前，博士，茄——子！": {
   "ko": "이번 탐사 작전—성공! 사진이랑 자료는 제가 정리할게요. 그 전에, 박사, 치—즈!",
-  "en": "This survey operation—success! I'll get the photos and the data organized. But first, Doctor, say chee—se!",
-  "ja": "今回の調査作戦——成功です！写真と資料は私が整理します。その前に、ドクター、はい、チー——ズ！",
   "x": 1
  },
  "在野外探索，运气和勇气一样重要。探索目标几乎都完成了，运气已经很好了呢。": {
   "ko": "야외를 탐사할 땐 운도 용기만큼 중요해요. 탐사 목표를 거의 다 달성했으니, 운이 꽤 좋았던 거예요.",
-  "en": "Out in the field, luck matters as much as courage. We got through almost all our survey objectives, so our luck was pretty good.",
-  "ja": "野外の探索では、運も勇気と同じくらい大事なんです。探索目標はほとんど達成できましたし、運は十分良かったですね。",
   "x": 1
  },
  "帐篷、帐篷要被吹跑了！到底哪里没做好啊——": {
   "ko": "텐트, 텐트가 날아가겠어요! 대체 어디서 잘못한 거지—",
-  "en": "The tent, the tent's about to blow away! What did I even do wrong—",
-  "ja": "テント、テントが飛ばされちゃいます！いったいどこがまずかったの——",
   "x": 1
  },
  "该画一张罗德岛的探索地图了。": {
   "ko": "로도스 아일랜드 탐사 지도를 하나 그려야겠어요.",
-  "en": "Time to draw up an exploration map of Rhodes Island.",
-  "ja": "ロドスの探索地図を一枚描かないと。",
   "x": 1
  },
  "啊哇哇！": {
   "ko": "아왓왓!",
-  "en": "Awawa!",
-  "ja": "あわわっ！",
   "x": 1
  },
  "少不了我吧~哪里需要帮忙？": {
   "ko": "저 없으면 안 되죠~ 어디 도와드릴까요?",
-  "en": "You can't do without me, right~? Where do you need a hand?",
-  "ja": "私がいないとダメですよね～。どこかお手伝いしましょうか？",
   "x": 1
  },
  "给，荒野里的小花，我猜你会喜欢的。": {
   "ko": "자, 황야에서 딴 작은 꽃이에요. 마음에 드실 것 같아서요.",
-  "en": "Here, a little flower from the barrens. I had a feeling you'd like it.",
-  "ja": "はい、荒野で摘んだ小さなお花です。きっと気に入ると思って。",
   "x": 1
  },
  "博士，这是我按照我家的配方做的胡萝卜泥蛋糕，很好吃哦。吹蜡烛之前可以许一个愿。嘘，不要出声。真正的愿望，是在心里说给自己听的。": {
   "ko": "박사, 이건 저희 집 조리법대로 만든 당근 케이크예요. 정말 맛있어요. 촛불 끄기 전에 소원을 빌어도 돼요. 쉿, 소리는 내지 마시고요. 진짜 소원은 마음속에서 자기한테만 들려주는 거니까요.",
-  "en": "Doctor, this is a carrot cake I made from my family's recipe. It's really good. You can make a wish before you blow out the candles. Shh, don't say it out loud. A real wish is one you tell only to yourself, in your heart.",
-  "ja": "ドクター、これはうちのレシピで作ったニンジンケーキです。とっても美味しいですよ。ロウソクを吹き消す前に、お願い事をしてもいいんです。しーっ、声に出しちゃだめですよ。本当の願いって、心の中で自分に聞かせるものですから。",
   "x": 1
  },
  "我与安洁莉娜她们的友情，是从一个谎言开始的。她们为我考虑不想旧事重提，可我知道自己不该忘记。愧疚感不总是负面情绪，它让我学会珍惜真正重要的人——那些让四处漂泊的我不再孤单的人。": {
   "ko": "안젤리나 일행과의 우정은 거짓말 하나에서 시작됐어요. 그들은 저를 생각해서 지난 일을 다시 꺼내지 않으려 하지만, 저는 잊으면 안 된다는 걸 알아요. 죄책감이 늘 나쁜 감정인 건 아니에요. 덕분에 저는 정말 소중한 사람을 아끼는 법을 배웠으니까요—떠돌기만 하던 저를 더는 외롭지 않게 해 준 사람들을요.",
-  "en": "My friendship with Angelina and the others began with a lie. They'd rather not bring up the past, for my sake, but I know I shouldn't forget it. Guilt isn't always a negative feeling—it taught me to treasure the people who truly matter. The people who made a drifter like me stop being alone.",
-  "ja": "アンジェリーナたちとの友情は、一つの嘘から始まりました。彼女たちは私を思って昔のことを蒸し返さずにいてくれますが、私は忘れてはいけないと分かっています。罪悪感はいつも悪い感情とは限りません。おかげで私は、本当に大切な人を大事にすることを学べたんですから——あちこち漂っていた私を、もう一人にしないでくれた人たちを。",
   "x": 1
  },
  "博士好！我是新来的通讯技术工程师，参与过的项目有雷姆必拓的远程通讯网络设计，哥、哥伦比亚的源石电磁、那个、啊——在家背得好好的，完蛋了——": {
   "ko": "박사, 안녕하세요! 새로 온 통신 기술 엔지니어입니다. 참여한 프로젝트로는 림 빌리턴의 원격 통신망 설계, 커, 컬럼비아의 오리지늄 전자기, 그, 아—집에서 잘만 외웠는데, 망했어요—",
-  "en": "Hello, Doctor! I'm the new communications engineer. Projects I've worked on include the long-range comms network design in Rim Billiton, the C-Columbian Originium electromagnetic, um, ah—I had it memorized perfectly at home, I've blown it—",
-  "ja": "ドクター、はじめまして！新しく来た通信技術エンジニアです。参加したプロジェクトはレム・ビリトンの遠距離通信ネットワーク設計、ク、クルビアの源石電磁、その、あぁ——家では完璧に暗記できていたのに、終わりました——",
   "x": 1
  },
  "我会确保信号通畅——不会辜负大家的信任！": {
   "ko": "신호가 끊기지 않게 하겠습니다—모두의 신뢰를 저버리지 않을게요!",
-  "en": "I'll keep the signal clear—I won't let everyone's trust down!",
-  "ja": "信号は途切れさせません——みんなの信頼を裏切りません！",
   "x": 1
  },
  "发射器接收器通讯器，请保佑我一切顺利——求求了！": {
   "ko": "송신기 수신기 통신기님, 부디 다 잘되게 해 주세요—제발요!",
-  "en": "Transmitter, receiver, communicator, please watch over me and let it all go smoothly—please!",
-  "ja": "送信機、受信機、通信機、どうか全部うまくいきますように——お願いします！",
   "x": 1
  },
  "信号接收良好，完毕。": {
   "ko": "신호 수신 양호, 이상.",
-  "en": "Signal received loud and clear, over.",
-  "ja": "信号受信良好、以上。",
   "x": 1
  },
  "能落地的才是好设计。": {
   "ko": "실현되는 게 좋은 설계죠.",
-  "en": "A good design is one that gets built.",
-  "ja": "実現できてこそ、良い設計です。",
   "x": 1
  },
  "能应用的才是好技术。": {
   "ko": "쓰이는 게 좋은 기술이고요.",
-  "en": "Good technology is technology that gets used.",
-  "ja": "使えてこそ、良い技術です。",
   "x": 1
  },
  "对不起对不起，下次我一定做得更好！": {
   "ko": "죄송해요 죄송해요, 다음엔 꼭 더 잘할게요!",
-  "en": "Sorry, sorry, I'll definitely do better next time!",
-  "ja": "ごめんなさいごめんなさい、次はもっとうまくやります！",
   "x": 1
  },
  "超导电磁发射技术，辛苦体验一下！": {
   "ko": "초전도 전자기 발사 기술, 수고스럽겠지만 한번 겪어 보세요!",
-  "en": "Superconducting electromagnetic launch technology—sorry to trouble you, but do try it!",
-  "ja": "超伝導電磁発射技術、お手数ですが体験してみてください！",
   "x": 1
  },
  "源石信号切割技术，麻烦感受一下！": {
   "ko": "오리지늄 신호 절단 기술, 번거로우시겠지만 한번 느껴 보세요!",
-  "en": "Originium signal-cutting technology—sorry for the bother, but give it a feel!",
-  "ja": "源石信号切断技術、お手数ですが味わってみてください！",
   "x": 1
  },
  "呜哇——您知道这个实验结果我等了多少天嘛！拜仪器真的有用啊！": {
   "ko": "우와아—이 실험 결과를 제가 며칠이나 기다렸는지 아세요! 장비한테 비는 거, 진짜 효과 있네요!",
-  "en": "Wahh—do you know how many days I waited for this result?! Praying to the instruments really does work!",
-  "ja": "うわあ——この実験結果を何日待ったと思いますか！機材にお祈りするの、本当に効くんですね！",
   "x": 1
  },
  "博士辛苦了，谢谢您今天的指导。刚才那些错漏的数据就留给我处理吧。": {
   "ko": "박사, 수고하셨어요. 오늘 지도해 주셔서 감사합니다. 아까 어긋나고 빠진 데이터는 제가 처리할게요.",
-  "en": "You've worked hard, Doctor. Thank you for your guidance today. Leave the flawed and missing data to me.",
-  "ja": "ドクター、お疲れさまです。今日はご指導ありがとうございました。さっきの誤りや抜けのあるデータは、私が処理しておきます。",
   "x": 1
  },
  "本组数据不可用，记录完毕，准备重启实验。意外地冷静？我吗？也没有啦，所谓的好心态是被无数次失败锻炼出来的。": {
   "ko": "이번 조 데이터는 사용 불가, 기록 완료, 실험 재개 준비. 의외로 침착하다고요? 제가요? 그런 것도 아니에요. 좋은 마음가짐이란 건 수없이 실패하면서 단련되는 거니까요.",
-  "en": "This data set is unusable, log complete, preparing to restart the experiment. Surprisingly calm? Me? Not really. A good mindset is something countless failures forge for you.",
-  "ja": "本データ群は使用不可、記録完了、実験の再開準備に入ります。意外と冷静だ、ですか？私が？そんなことないですよ。いい心持ちなんて、数えきれない失敗に鍛えられて身につくものですから。",
   "x": 1
  },
  "啊，您是在和我开玩笑吗？对不起没反应过来——下次我会配合的！": {
   "ko": "아, 저한테 농담하신 거예요? 죄송해요, 못 알아들었어요—다음엔 맞춰 드릴게요!",
-  "en": "Oh, were you joking with me? Sorry, I didn't catch it—I'll play along next time!",
-  "ja": "あ、私に冗談を言ってくれたんですか？すみません、気づかなくて——次は合わせますから！",
   "x": 1
  },
  "从我出生以来，好像人生中每一次向前迈步，不是形势所迫，就是因为倒霉。但我也差不多该长大了，对吗？下一步，无论如何选择，我都会从容地、坚定地、像大人一样地向前走。": {
   "ko": "태어나서 지금까지, 제 인생에서 앞으로 내디딘 걸음은 늘 상황에 떠밀렸거나 운이 나빠서였던 것 같아요. 그래도 저도 이제는 어른이 될 때가 됐죠? 다음 걸음은, 어떤 선택을 하든 침착하게, 흔들림 없이, 어른답게 나아갈 거예요.",
-  "en": "Ever since I was born, it feels like every step forward I took was either forced by circumstance or the result of bad luck. But it's about time I grew up, isn't it? My next step—whatever I choose—I'll take it calmly, firmly, like an adult.",
-  "ja": "生まれてからずっと、人生で前に踏み出した一歩はいつも状況に追い立てられたか、運が悪かったからだった気がします。でも、私もそろそろ大人になる頃ですよね？次の一歩は、どんな選択をするにせよ、落ち着いて、しっかりと、大人らしく前へ進みます。",
   "x": 1
  },
  "博士，红茶和点心都已经准备好了，还有什么需要我做的吗？": {
   "ko": "박사, 홍차와 다과는 모두 준비해 두었어요. 그 밖에 제가 할 일이 더 있을까요?",
-  "en": "Doctor, the black tea and the refreshments are ready. Is there anything else you'd like me to do?",
-  "ja": "ドクター、紅茶とお菓子はご用意できました。ほかに何かご入り用のことはありますか？",
   "x": 1
  },
  "母亲一直教导我作为一名优雅的淑女，要时时注重衣着的整洁，仪态的端庄——我脸上的泥？还有袖子上的草屑？咳，我们为了躲天灾钻进了沙地兽的洞穴里，那经历实在是太有趣了！您要听听吗？": {
   "ko": "어머니는 늘 우아한 숙녀라면 옷차림의 단정함과 몸가짐의 품위에 항상 신경 써야 한다고 가르치셨어요—제 얼굴에 묻은 흙이요? 소매에 붙은 풀 부스러기도요? 흠흠, 재앙을 피하려고 샌드비스트 굴속으로 기어 들어갔거든요. 그 경험이 정말 너무 재미있었어요! 들어 보시겠어요?",
-  "en": "Mother always taught me that an elegant lady must mind the neatness of her dress and the poise of her bearing at all times—the mud on my face? And the bits of grass on my sleeve? Ahem. We crawled into a sandbeast's burrow to take shelter from a Catastrophe. It was such a fascinating experience! Would you like to hear about it?",
-  "ja": "母はいつも、優雅な淑女たるもの、装いの清潔さと物腰の端正さに常に気を配りなさいと教えてくれました——顔についた泥ですか？袖の草くずも？こほん、天災を避けるためにサンドビーストの巣穴に潜り込んだんです。あの経験、本当にとても面白くて！聞いてみますか？",
   "x": 1
  },
  "呼，博士要来一起跑步吗？虽然圈数完成了，但我还不想停下来——跑起来的时候，我觉得时间都慢了下来，我像是跑在它的前面一样！": {
   "ko": "후우, 박사도 같이 달리실래요? 정해 둔 바퀴 수는 다 채웠지만 아직 멈추고 싶지 않아서요—달리고 있으면 시간마저 느려지는 것 같아요. 마치 제가 시간보다 앞서 달리는 것처럼요!",
-  "en": "Whew—would you like to run with me, Doctor? I've finished my laps, but I don't want to stop yet. When I'm running, it feels like time itself slows down, as if I'm running out ahead of it!",
-  "ja": "ふう、ドクターも一緒に走りませんか？周回数は終えたのですが、まだ止まりたくなくて——走っていると、時間まで遅くなるような気がするんです。まるで私が時間の前を走っているみたいに！",
   "x": 1
  },
  "咳咳，早上的训练已经做完了，吃完午餐下午去学习攀岩的技巧。安洁莉娜答应我说，要是我的身体能好一点，她就带我去萨尔贡的雨林。我得再快一点，再努力一点，还有很多想做的事呢！": {
   "ko": "콜록, 콜록. 아침 훈련은 벌써 끝냈어요. 점심을 먹고 오후엔 암벽 등반 기술을 배우러 갈 거예요. 안젤리나가 제 몸이 조금만 더 좋아지면 사르곤의 우림에 데려가 주겠다고 약속했거든요. 더 서둘러야 해요, 더 노력해야 해요. 하고 싶은 일이 아직 아주 많으니까요!",
-  "en": "*Cough, cough.* I've already finished this morning's training. After lunch, I'll go learn rock-climbing technique. Angelina promised that if my health improves a little, she'll take me to the rainforests of Sargon. I have to be faster, I have to try harder—there's still so much I want to do!",
-  "ja": "こほん、こほん。朝のトレーニングはもう終えました。昼食のあと、午後はクライミングの技術を習いに行きます。アンジェリーナが、私の体がもう少し良くなったらサルゴンの雨林に連れて行ってくれると約束してくれたんです。もっと急がなくちゃ、もっと頑張らなくちゃ。やりたいことがまだたくさんあるんですから！",
   "x": 1
  },
  "这本日历之前很薄，但它现在越来越厚啦——这页是我学源石技艺的笔记，这页是我送信的照片——它原本只是用来记录一个可怜病人仅剩的时间，不过它现在会记录我拥有一段何等精彩的人生。": {
   "ko": "이 달력은 예전엔 아주 얇았는데, 지금은 점점 두꺼워지고 있어요—이 장은 오리지늄 아츠를 배우면서 적은 필기고, 이 장은 제가 편지를 배달할 때 찍은 사진이에요—원래는 가여운 환자에게 남은 시간을 세는 용도였을 뿐이지만, 이제는 제가 얼마나 멋진 인생을 누리고 있는지를 기록해 줄 거예요.",
-  "en": "This calendar used to be so thin, but now it keeps getting thicker—this page is my notes from studying Originium Arts, this page is a photo from when I delivered letters—it was only ever meant to count down what little time a pitiable patient had left. Now it records what a marvelous life I'm living.",
-  "ja": "このカレンダー、前はとても薄かったのに、今はどんどん分厚くなっているんです——このページはアーツを学んだ時のノート、このページは手紙を届けた時の写真——もともとは哀れな病人に残された時間を記録するだけのものでした。でも今は、私がどれほど素晴らしい人生を送っているかを記録してくれるんです。",
   "x": 1
  },
  "您觉得医疗部的叮嘱很多？以前只要我出门，父亲就会在路上装满空气净化装置，说怕路上不安全，母亲还吓得要吃降压药。噗，比起家里面，医疗部的大家已经很善解人意啦。": {
   "ko": "의료부의 당부가 많다고 느끼세요? 예전엔 제가 외출만 하면 아버지가 길목마다 공기 정화 장치를 가득 설치하셨어요. 가는 길이 위험할까 걱정된다면서요. 어머니는 놀라서 혈압약까지 드셨고요. 풋, 저희 집에 비하면 의료부 여러분은 정말 이해심이 넓으신 편이에요.",
-  "en": "You think the Medical Department gives a lot of instructions? Back home, the moment I stepped out, Father would line the whole route with air purifiers, saying he was afraid it wasn't safe. Mother got so worked up she'd take blood pressure medication. Pfft—compared to my family, everyone in the Medical Department is remarkably understanding.",
-  "ja": "医療部の言いつけが多いと思われますか？昔は私が外出するだけで、父が道中に空気清浄装置をびっしり設置したんです。道が危ないからと言って。母は動転して降圧剤を飲む始末でした。ふふっ、実家に比べれば、医療部のみなさんはとても物わかりがいいですよ。",
   "x": 1
  },
  "塔妮急着向我们展示她的开车技术，阿梅利亚设计了新的车载通讯台，安洁莉娜说她现在可以让整辆载具都飞上半空，我们打算再去旅行一趟。博士要一起来吗？载具上正好还有一个空位呢！": {
   "ko": "타니는 자기 운전 실력을 보여 주고 싶어서 안달이고, 아멜리아는 새 차량용 통신대를 설계했고, 안젤리나는 이제 차량을 통째로 공중에 띄울 수 있대요. 저희, 여행을 한 번 더 다녀오려고요. 박사도 같이 가실래요? 마침 차에 자리가 하나 남았거든요!",
-  "en": "Tani can't wait to show off her driving, Amelia designed a new vehicle comms console, and Angelina says she can lift the entire vehicle into the air now. We're planning another trip. Would you come along, Doctor? There just happens to be one seat left!",
-  "ja": "タニは自分の運転技術を見せたくてうずうずしていて、アメリアは新しい車載通信台を設計して、アンジェリーナは今なら車両ごと宙に浮かせられるって言うんです。私たち、もう一度旅に出るつもりなんですよ。ドクターもご一緒しませんか？ちょうど車に一席空いているんです！",
   "x": 1
  },
  "您是说我们沿途搭建的通讯塔传递了消息，成功预警了一场天灾？博士，这真的是我听到的最好的消息——我不仅自己长了很多见识，甚至现在我还能帮到别人，这、这就是我想要的生活！": {
   "ko": "저희가 길을 따라 세운 통신탑이 소식을 전해서, 재앙을 미리 경보하는 데 성공했다고요? 박사, 이건 정말 제가 들어 본 소식 중에 최고예요—저 자신이 견문을 많이 넓혔을 뿐 아니라, 이제는 다른 사람까지 도울 수 있다니. 이, 이런 게 바로 제가 바라던 삶이에요!",
-  "en": "You're saying the comms towers we put up along the way carried a message that successfully gave early warning of a Catastrophe? Doctor, that is truly the best news I've ever heard—not only have I seen so much of the world, now I can even help other people. Th-this is exactly the life I wanted!",
-  "ja": "私たちが道沿いに建てた通信塔が知らせを届けて、天災の予報に成功したのですか？ドクター、それは本当に、今まで聞いた中で一番いい知らせです——私自身がたくさん見聞を広めただけでなく、今では他の人を助けることまでできるなんて。こ、これこそ私が望んでいた暮らしです！",
   "x": 1
  },
  "呼，就说整理文件这种工作没有很复杂嘛，父亲母亲还总是不让我做，才不会累到我呢。": {
   "ko": "후우, 서류 정리 같은 일은 그렇게 복잡하지 않다고 했잖아요. 아버지 어머니는 늘 못 하게 하셨지만, 이 정도로 지칠 리 없어요.",
-  "en": "Whew—I told you sorting documents isn't all that complicated. Father and Mother never let me do it, but something like this isn't going to tire me out.",
-  "ja": "ふう、書類整理くらいそんなに複雑じゃないって言ったでしょう。父も母もいつもやらせてくれませんでしたけど、この程度で疲れたりしません。",
   "x": 1
  },
  "嘉辛塔·坎贝尔，向您问好，博士。初次见面，这是我从雷姆必拓为您带来的甜胡萝卜风味红茶，希望您品尝过后，能享受心情愉悦的一天。": {
   "ko": "자신타 캠벨입니다, 박사. 처음 뵙겠습니다. 이건 제가 림 빌리턴에서 가져온 달콤한 당근 풍미 홍차예요. 한 모금 드시고 기분 좋은 하루를 보내셨으면 좋겠어요.",
-  "en": "Jacinta Campbell, at your service, Doctor. It's a pleasure to meet you. This is a sweet carrot-flavored black tea I brought for you from Rim Billiton. I hope that after a cup, you'll enjoy a day in fine spirits.",
-  "ja": "ジャシンタ・キャンベルです、ドクター。はじめまして。こちらはレム・ビリトンからお持ちした、甘いニンジン風味の紅茶です。一口召し上がって、気持ちのいい一日をお過ごしいただけますように。",
   "x": 1
  },
  "欸！博士您看，就是那只有袋鼷兽，就是它偷走了我们的东西！": {
   "ko": "어! 박사, 저기 보세요. 바로 저 유대 무스비스트예요. 저 녀석이 저희 물건을 훔쳐 갔다고요!",
-  "en": "Eh! Doctor, look—that's the marsupial musbeast, that's the one that stole our things!",
-  "ja": "あっ！ドクター、見てください、あの有袋鼷獣です。あいつが私たちの荷物を盗んだんですよ！",
   "x": 1
  },
  "我会把这枚徽章也夹进我的日历里面去的，它的厚度在我的努力下又增加了呢！": {
   "ko": "이 배지도 제 달력 사이에 끼워 둘 거예요. 제 노력 덕분에 두께가 또 늘었네요!",
-  "en": "I'm going to tuck this badge into my calendar too. Thanks to my efforts, it's grown thicker again!",
-  "ja": "このバッジも私のカレンダーに挟んでおきます。私の努力で、また厚みが増しましたね！",
   "x": 1
  },
  "博士，我现在每一天都过得无比充实、幸福。能学习、实践，还能用自己的力量去帮助别人——要我帮您喝掉今天的健康果蔬汁？那不行那不行，我受不了的。": {
   "ko": "박사, 저는 요즘 하루하루가 더할 나위 없이 알차고 행복해요. 배울 수 있고, 실천할 수 있고, 제 힘으로 다른 사람까지 도울 수 있으니까요—오늘 몫 건강 야채주스를 대신 마셔 달라고요? 그건 안 돼요, 안 돼요. 저는 도저히 못 견뎌요.",
-  "en": "Doctor, every single day now is full and happy beyond words. I get to study, to put it into practice, and to help others with my own strength—drink today's health vegetable juice for you? No, no, absolutely not. I couldn't bear it.",
-  "ja": "ドクター、今の私は毎日がこの上なく充実していて、幸せです。学べて、実践できて、自分の力で人を助けることまでできるんですから——今日の健康野菜ジュースを代わりに飲んでほしい？それはだめです、だめですよ。私には耐えられません。",
   "x": 1
  },
  "终于有机会和大家一起在雷姆必拓旅行了，我会尽力帮助大家的！": {
   "ko": "드디어 모두와 함께 림 빌리턴을 여행할 기회가 왔네요. 최선을 다해 돕겠습니다!",
-  "en": "At last, a chance to travel through Rim Billiton with everyone. I'll do my best to help!",
-  "ja": "ついにみなさんと一緒にレム・ビリトンを旅する機会が来ましたね。精一杯お手伝いします！",
   "x": 1
  },
  "感谢大家的信任，我会成为一名合格的领队。": {
   "ko": "모두의 신뢰에 감사드려요. 부족함 없는 인솔자가 될게요.",
-  "en": "Thank you all for your trust. I'll be a leader worthy of it.",
-  "ja": "みなさんの信頼に感謝します。立派な引率役になってみせます。",
   "x": 1
  },
  "我们出发吧！": {
   "ko": "자, 출발해요!",
-  "en": "Let's set out!",
-  "ja": "さあ、出発しましょう！",
   "x": 1
  },
  "注意检查背包，会有有袋鼷兽偷东西的哦。": {
   "ko": "배낭은 꼭 확인하세요. 유대 무스비스트가 물건을 훔쳐 가거든요.",
-  "en": "Do check your packs—marsupial musbeasts will steal things.",
-  "ja": "リュックの確認を忘れずに。有袋鼷獣が物を盗んでいきますから。",
   "x": 1
  },
  "要不要试一试他们说的间歇泉冲浪？": {
   "ko": "다들 말하던 간헐천 서핑, 한번 해 볼까요?",
-  "en": "Shall we try that geyser surfing everyone talks about?",
-  "ja": "みんなが言っていた間欠泉サーフィン、試してみませんか？",
   "x": 1
  },
  "据说有的瓶树里面还可以游泳呢！": {
   "ko": "어떤 병나무 안에서는 수영도 할 수 있대요!",
-  "en": "They say you can even swim inside some bottletrees!",
-  "ja": "サカビンノキの中には、泳げるものもあるそうですよ！",
   "x": 1
  },
  "啊啊啊请！离我！远一点！一位淑女需要她的个人空间——": {
   "ko": "아아아 제발! 저한테서! 좀 떨어져요! 숙녀에게는 개인 공간이 필요하다고요—",
-  "en": "Aaah, please! Stay! Away from me! A lady needs her personal space—",
-  "ja": "あああお願い！私から！離れてください！淑女には個人的な空間が必要なんです——",
   "x": 1
  },
  "看嘛，我就说如果是大家一起的话，肯定能行的！": {
   "ko": "거 보세요, 다 같이라면 분명 해낼 수 있다고 했잖아요!",
-  "en": "See? I told you—if we're all together, we can absolutely do it!",
-  "ja": "ほらね、みんな一緒ならきっとできるって言ったでしょう！",
   "x": 1
  },
  "博士，能帮我拍一张照片吗？我要纪念我又来到了一个之前没来过的地方！": {
   "ko": "박사, 사진 한 장만 찍어 주실 수 있나요? 처음 와 보는 곳에 또 도착했다는 걸 기념하고 싶어요!",
-  "en": "Doctor, could you take a photo for me? I want to commemorate reaching yet another place I've never been!",
-  "ja": "ドクター、写真を一枚撮っていただけますか？また行ったことのない場所に来られたことを記念したいんです！",
   "x": 1
  },
  "我以为太阳谷的移动舰船就已经足够大了，原来罗德岛是一个移动地块啊。": {
   "ko": "선 밸리의 이동 함선이면 충분히 크다고 생각했는데, 로도스 아일랜드는 아예 움직이는 땅덩어리였네요.",
-  "en": "I thought Sun Valley's mobile vessels were big enough, but Rhodes Island is an entire moving landmass.",
-  "ja": "サンバレーの移動艦船で十分大きいと思っていましたが、ロドスは丸ごと動く大地だったんですね。",
   "x": 1
  },
  "欸，这是罗德岛的打招呼方式吗？原来是这样，我记下了。": {
   "ko": "어, 이게 로도스 아일랜드식 인사인가요? 그렇군요, 기억해 둘게요.",
-  "en": "Oh, is this how people greet each other on Rhodes Island? I see—I'll remember that.",
-  "ja": "あら、これがロドス流のご挨拶ですか？なるほど、覚えておきます。",
   "x": 1
  },
  "嗯，请您放心，我有在好好吃药、定期接受治疗的。": {
   "ko": "네, 안심하셔도 돼요. 약도 잘 챙겨 먹고, 정기적으로 치료도 받고 있으니까요.",
-  "en": "Mm, please don't worry. I've been taking my medication properly and getting treatment on schedule.",
-  "ja": "はい、ご安心ください。お薬もきちんと飲んで、定期的に治療も受けていますから。",
   "x": 1
  },
  "（写字声）新年快乐博士，您收到这封信的时候，应该正在和罗德岛的大家聚在一起庆祝吧？大铁屯正在举办新年的黄金萝卜节，我找来了最漂亮的一根随信寄来，希望您会喜欢它的味道！": {
   "ko": "(글씨 쓰는 소리) 새해 복 많이 받으세요, 박사. 이 편지를 받으실 즈음이면 로도스 아일랜드의 모두와 모여 축하하고 계시겠죠? 빅아이언 타운에서는 지금 새해 황금 무 축제가 열리고 있어요. 그중 제일 예쁜 걸 하나 골라 편지에 함께 부칩니다. 그 맛을 마음에 들어 하셨으면 좋겠어요!",
-  "en": "(sound of writing) Happy New Year, Doctor. By the time you receive this letter, you should be gathered with everyone at Rhodes Island, celebrating. Big Iron Town is holding its New Year Golden Radish Festival, so I picked out the prettiest one and sent it along with this letter. I hope you like the taste!",
-  "ja": "（書く音）明けましておめでとうございます、ドクター。この手紙が届く頃には、ロドスのみなさんと集まってお祝いしている頃でしょうか？ビッグアイアンタウンでは今、新年の黄金ラディッシュ祭りが開かれています。一番きれいなものを一つ選んで、手紙と一緒にお送りしますね。お味を気に入っていただけますように！",
   "x": 1
  },
  "祝您拥有愉快的一天，博士。": {
   "ko": "즐거운 하루 보내세요, 박사.",
-  "en": "I hope you have a pleasant day, Doctor.",
-  "ja": "素敵な一日になりますように、ドクター。",
   "x": 1
  },
  "请您跟我来，博士，外面的花园里已经准备好了生日主题的下午茶。噗，不用担心，这次有袋鼷兽不会来偷走甜品的，因为我给它们也准备了一份~": {
   "ko": "저를 따라오세요, 박사. 바깥 정원에 생일 테마 애프터눈 티를 준비해 두었어요. 풋, 걱정 마세요. 이번엔 유대 무스비스트가 디저트를 훔쳐 가지 않을 거예요. 그 아이들 몫도 따로 준비해 뒀거든요~",
-  "en": "Please come with me, Doctor—a birthday-themed afternoon tea is already set out in the garden. Pfft, don't worry, the marsupial musbeasts won't come steal the sweets this time. I prepared a portion for them, too~",
-  "ja": "こちらへどうぞ、ドクター。外の庭にお誕生日をテーマにしたアフタヌーンティーをご用意しました。ふふっ、ご心配なく。今回は有袋鼷獣にデザートを盗まれたりしません。あの子たちの分も用意しておきましたから～",
   "x": 1
  },
  "大家都会为自己定周年目标呢，我听到塔妮偷偷地加了一句想再长高一点点。我？我的心愿就是，希望能有更多的时间，每一年这个时候都能和大家聚在一起，开开心心地庆祝我们又一起努力了一年。": {
   "ko": "다들 주년 목표를 하나씩 세우더라고요. 타니가 슬쩍 키가 조금만 더 컸으면 좋겠다고 덧붙이는 것도 들었어요. 저요? 제 바람은, 시간이 조금만 더 주어져서 해마다 이맘때 모두와 모여 또 한 해를 함께 애썼다는 걸 즐겁게 축하하는 거예요.",
-  "en": "Everyone sets an anniversary goal for themselves. I heard Tani quietly add that she'd like to grow just a little taller. Me? My wish is simply for more time—so that every year at this time I can gather with everyone and happily celebrate another year we worked through together.",
-  "ja": "みんな周年の目標を立てるんですね。タニがこっそり「もう少し背が伸びますように」と付け足しているのも聞こえました。私ですか？私の願いは、もう少し時間があって、毎年この時期にみんなと集まって、また一年一緒に頑張れたことを楽しくお祝いできることです。",
   "x": 1
  },
  "来吧！": {
   "ko": "가자!",
-  "en": "Let's go!",
-  "ja": "行くぞ！",
   "x": 1
  },
  "那么……": {
   "ko": "그럼……",
-  "en": "Then...",
-  "ja": "それじゃあ……",
   "x": 1
  },
  "就是这里。": {
   "ko": "여기다.",
-  "en": "Right here.",
-  "ja": "ここだ。",
   "x": 1
  },
  "目前安全。": {
   "ko": "지금은 안전해.",
-  "en": "Clear for now.",
-  "ja": "今のところ安全だ。",
   "x": 1
  },
  "要怎么做。": {
   "ko": "어떻게 할까.",
-  "en": "What should I do?",
-  "ja": "どうすればいい。",
   "x": 1
  },
  "不会这样结束！": {
   "ko": "이대로 끝나지 않아!",
-  "en": "It doesn't end like this!",
-  "ja": "こんなところで終わらない！",
   "x": 1
  },
  "博士，拜托了。": {
   "ko": "박사, 부탁해.",
-  "en": "Doctor, I'm counting on you.",
-  "ja": "ドクター、頼む。",
   "x": 1
  },
  "怎么了，博士？": {
   "ko": "무슨 일이야, 박사?",
-  "en": "What is it, Doctor?",
-  "ja": "どうした、ドクター？",
   "x": 1
  },
  "我……不会逃避！": {
   "ko": "난…… 도망치지 않아!",
-  "en": "I... won't run away!",
-  "ja": "俺は……逃げない！",
   "x": 1
  },
  "博士会为我们导航吗？": {
   "ko": "박사가 우리를 이끌어 주는 거야?",
-  "en": "Will you navigate for us, Doctor?",
-  "ja": "ドクターが導いてくれるのか？",
   "x": 1
  },
  "战斗训练吗？明白了。": {
   "ko": "전투 훈련? 알겠어.",
-  "en": "Combat training? Understood.",
-  "ja": "戦闘訓練か？わかった。",
   "x": 1
  },
  "轮到我值日吗……明白了。": {
   "ko": "내가 당번인가…… 알겠어.",
-  "en": "It's my turn on duty... understood.",
-  "ja": "俺が日直か……わかった。",
   "x": 1
  },
  "现在还是撤退吧。勉力战斗可不好。": {
   "ko": "지금은 물러나자. 무리해서 싸우는 건 좋지 않아.",
-  "en": "Let's pull back for now. Forcing a fight is no good.",
-  "ja": "今は退こう。無理に戦うのはよくない。",
   "x": 1
  },
  "协助教学……虽然以前没做过，希望能做好。": {
   "ko": "수업 보조라…… 해 본 적은 없지만, 잘할 수 있으면 좋겠어.",
-  "en": "Assisting with class... I've never done it before, but I hope I can manage.",
-  "ja": "授業の手伝いか……やったことはないけど、うまくやれるといいな。",
   "x": 1
  },
  "我要提前升入高年级了吗……？啊，原来不是。": {
   "ko": "내가 월반이라도 하는 건가……? 아, 그건 아니구나.",
-  "en": "Am I skipping a grade...? Ah, guess not.",
-  "ja": "飛び級でもするのか……？ああ、そうじゃないのか。",
   "x": 1
  },
  "赢了。由博士来指挥，就可以专注于战斗了。还不错。": {
   "ko": "이겼다. 박사가 지휘해 주니까 싸움에만 집중할 수 있어. 나쁘지 않네.",
-  "en": "We won. With you commanding, I can focus on the fight. Not bad.",
-  "ja": "勝った。ドクターが指揮してくれるから、戦いに集中できる。悪くない。",
   "x": 1
  },
  "我来了。这是博士你要我带的炸弹甜甜圈。……好吃吗？": {
   "ko": "왔어. 박사가 사 오라던 폭탄 도넛이야. ……맛있어?",
-  "en": "I'm here. This is the bomb doughnut you asked me to bring. ...Is it good?",
-  "ja": "来たぞ。ドクターが頼んでいた爆弾ドーナツだ。……美味いのか？",
   "x": 1
  },
  "老师好……不，Dr.{@nickname}，你好。": {
   "ko": "선생님, 안녕하세…… 아니, Dr.{@nickname}, 안녕.",
-  "en": "Good day, Teacher... no, hello, Dr. {@nickname}.",
-  "ja": "先生、こんにち……いや、Dr.{@nickname}、こんにちは。",
   "x": 1
  },
  "总觉得还有资源没有收集……博士，确认已经探索完毕了吗？": {
   "ko": "아직 못 챙긴 자원이 있는 것 같은데…… 박사, 탐색은 다 끝난 게 맞아?",
-  "en": "It feels like there are still resources left... Doctor, are you sure we've finished exploring?",
-  "ja": "まだ回収していない資源がある気がする……ドクター、探索は終わったのか？",
   "x": 1
  },
  "还好，这个随身听在这里也能工作……博士想听？也可以……": {
   "ko": "다행이야, 이 워크맨은 여기서도 작동하네…… 박사도 들어 볼래? 그래도 돼……",
-  "en": "Good, this player still works here... You want to listen too, Doctor? Sure...",
-  "ja": "よかった、このプレイヤーはここでも動くのか……ドクターも聴くか？いいけど……",
   "x": 1
  },
  "……拉特兰春天的阳光，把屋子照得暖洋洋的了啊。真舒服呢。": {
   "ko": "……라테라노의 봄볕이 방 안을 따뜻하게 덥히고 있네. 참 편안해.",
-  "en": "...Laterano's spring sunlight has warmed the whole room. It feels good.",
-  "ja": "……ラテラーノの春の日差しが、部屋を暖かく照らしているな。心地いい。",
   "x": 1
  },
  "我是结城理。刚转学过来，还不太了解情况……请和我讲讲这里的事吧。": {
   "ko": "유키 마코토야. 막 전학 와서 아직 잘 모르는 게 많아…… 여기 이야기를 좀 들려줘.",
-  "en": "I'm Makoto Yuki. I've just transferred in and don't know much yet... tell me about this place.",
-  "ja": "結城理だ。転校してきたばかりで、まだよく分からない……ここのことを教えてくれ。",
   "x": 1
  },
  "博士，不是说看你收藏的电影吗……好多戍卫队，还有铳骑，这些都是真的吗？": {
   "ko": "박사, 소장 영화를 보자고 하지 않았어……? 호위대가 잔뜩 나오고 총기사도 있는데, 이거 다 실제야?",
-  "en": "Doctor, weren't we going to watch a film from your collection...? There are so many Guards, and Gunlancers too—are they all real?",
-  "ja": "ドクター、コレクションの映画を観るんじゃなかったのか……護衛隊がたくさん出てくるし、銃騎もいる。これは全部本物なのか？",
   "x": 1
  },
  "如此艰难的战斗……博士，你似乎也不会恐惧呢。不过，你一定和之前的我不一样吧。": {
   "ko": "이렇게 힘든 싸움인데…… 박사, 당신은 두려워하지 않는구나. 하지만 예전의 나와는 다르겠지.",
-  "en": "Such a hard battle... and yet you don't seem afraid, Doctor. But you must be different from who I used to be.",
-  "ja": "これほど厳しい戦いなのに……ドクター、あなたは怖がらないんだな。でも、昔の俺とは違うんだろう。",
   "x": 1
  },
  "……Dr.{@nickname}，是有烦恼吗？之前也有人和我说过，老师的工作压力很大……": {
   "ko": "……Dr.{@nickname}, 무슨 고민이라도 있어? 선생님이라는 일은 스트레스가 크다고 누가 그러던데……",
-  "en": "...Dr. {@nickname}, is something troubling you? Someone once told me a teacher's job carries a lot of pressure...",
-  "ja": "……Dr.{@nickname}、悩みでもあるのか？先生の仕事はストレスが大きいと、前に誰かが言っていた……",
   "x": 1
  },
  "……博士好像很忙碌，一直有人来找你。有什么我能帮忙的吗？……这样啊，我明白了。那我就待在这里好了。": {
   "ko": "……박사, 바빠 보이네. 계속 누가 찾아오잖아. 내가 도울 일은 없어? ……그래, 알겠어. 그럼 여기 있을게.",
-  "en": "...You look busy, Doctor. People keep coming to see you. Is there anything I can help with? ...I see, understood. Then I'll stay here.",
-  "ja": "……ドクター、忙しそうだな。ずっと誰かが訪ねてくる。俺に手伝えることはあるか？……そうか、分かった。なら、ここにいる。",
   "x": 1
  },
  "这是……成为主力的意思吗？要是之后有机会参加大赛就好了。谢谢你的信任，Dr.{@nickname}。": {
   "ko": "이건…… 주전이 됐다는 뜻인가? 나중에 큰 대회에 나갈 기회가 있으면 좋겠는데. 믿어 줘서 고마워, Dr.{@nickname}.",
-  "en": "Does this... mean I'm a starter now? I hope I get to enter a tournament someday. Thank you for trusting me, Dr. {@nickname}.",
-  "ja": "これは……主力になったということか？いつか大会に出る機会があればいいな。信頼してくれてありがとう、Dr.{@nickname}。",
   "x": 1
  },
  "我没有一放学就回宿舍。前天我去了闲逛部，昨天在莱娜老师的疗养庭院，今天答应了隔壁班同学去看改装铳……不过，还不知道那位同学的名字。": {
   "ko": "방과 후에 바로 기숙사로 돌아가지는 않았어. 그저께는 산책부에 갔고, 어제는 레나 선생님의 요양 정원에 있었고, 오늘은 옆 반 친구랑 개조 총을 보러 가기로 했어…… 그런데 아직 그 친구 이름을 몰라.",
-  "en": "I haven't been going straight back to the dorm after class. The day before yesterday I went to the Strolling Club, yesterday I was in Miss Lena's convalescent garden, and today I promised a classmate from next door I'd go see a modified gun... though I still don't know their name.",
-  "ja": "放課後すぐに寮へ帰ってはいない。一昨日は散策部に行って、昨日はレナ先生の療養庭園にいて、今日は隣のクラスの子と改造銃を見に行く約束をした……でも、その子の名前はまだ知らない。",
   "x": 1
  },
  "新年快乐，博士。新的一年，如果能再前进一些就好了。你和许多人都在为了某个美好的未来而努力吧……我们也会为此尽力的。今年，也请多关照。": {
   "ko": "새해 복 많이 받아, 박사. 새해에는 조금 더 나아갈 수 있으면 좋겠어. 당신도, 많은 사람들도 어떤 좋은 미래를 위해 애쓰고 있는 거겠지…… 우리도 그러기 위해 힘을 다할게. 올해도 잘 부탁해.",
-  "en": "Happy New Year, Doctor. I hope we can move forward a little more this year. You and so many others are working toward some better future... we'll do our part too. Please look after me again this year.",
-  "ja": "あけましておめでとう、ドクター。新しい年は、もう少し前に進めるといいな。あなたも大勢の人も、どこかの良い未来のために頑張っているんだろう……俺たちもそのために力を尽くす。今年もよろしく。",
   "x": 1
  },
  "博士，一会儿有空吗？我答应了里凯莱先生和他去新开的餐厅……我们聊到，或许也可以邀请博士一起，听说完成指定套餐的挑战可以免单。你有兴趣吗？": {
   "ko": "박사, 이따 시간 있어? 리켈레 씨랑 새로 문 연 식당에 가기로 했는데…… 박사도 부르면 어떨까 하는 얘기가 나왔거든. 지정 세트 도전을 완주하면 공짜라던데. 관심 있어?",
-  "en": "Doctor, are you free later? I promised Mr. Ricchelle I'd go to a newly opened restaurant with him... we thought we might invite you along. Apparently if you finish the challenge set, the meal is free. Interested?",
-  "ja": "ドクター、後で時間はあるか？リッケーレさんと新しく開いた店に行く約束をしたんだ……ドクターも誘ってみようという話になってな。指定のセットを完食すればタダになるらしい。興味あるか？",
   "x": 1
  },
  "生日快乐，Dr.{@nickname}。阿米娅很早就开始准备这个派对了，我帮忙选了派对的音乐，希望你会喜欢。今天就开心一些吧，这是属于你的一天。": {
   "ko": "생일 축하해, Dr.{@nickname}. 아미야가 아주 오래전부터 이 파티를 준비했어. 나는 파티 음악을 고르는 걸 도왔는데, 마음에 들면 좋겠다. 오늘은 좀 즐겁게 보내. 당신의 날이잖아.",
-  "en": "Happy birthday, Dr. {@nickname}. Amiya started preparing this party a long time ago; I helped pick the music, and I hope you like it. Enjoy yourself today—it's your day.",
-  "ja": "誕生日おめでとう、Dr.{@nickname}。アーミヤはずっと前からこのパーティーを準備していた。俺は音楽選びを手伝ったんだ、気に入るといいな。今日は楽しんでくれ。あなたの日だから。",
   "x": 1
  },
  "如果能一直待在拉特兰吗？执行者的工作也许会很有趣……志愿实践的时候，如果能去公证所实习，说不定也不错。不过，还有更重要的事。同伴们还在等着我们回去。": {
   "ko": "계속 라테라노에 있을 수 있다면? 집행자 일도 재미있을지 몰라…… 봉사 실습 때 공증소에서 인턴을 할 수 있다면 그것도 괜찮을 것 같고. 그래도 더 중요한 일이 있어. 동료들이 우리가 돌아오기를 기다리고 있으니까.",
-  "en": "If I could stay in Laterano forever? Being an Executor might be interesting... and interning at the notary office during volunteer practice wouldn't be bad either. But there's something more important. Our companions are still waiting for us to come back.",
-  "ja": "ずっとラテラーノにいられたら？執行者の仕事も面白いかもしれない……奉仕実習で公証所に行けたら、それも悪くないな。でも、もっと大事なことがある。仲間たちが俺たちの帰りを待っているんだ。",
   "x": 1
  },
  "没想到校庆日会这么热闹，颁奖仪式真是精彩。我也在“人气教师”的评奖中给博士投了票。博士得了第一名，这就是深受师生信赖的证明吧。恭喜，Dr.{@nickname}。": {
   "ko": "개교기념일이 이렇게 떠들썩할 줄은 몰랐어. 시상식도 정말 볼만했고. 나도 '인기 교사' 부문에 박사를 찍었어. 박사가 1등을 했으니, 그만큼 학생과 교사들에게 신뢰받는다는 증거겠지. 축하해, Dr.{@nickname}.",
-  "en": "I didn't expect the school anniversary to be so lively—the awards ceremony was quite something. I voted for you in the \"Most Popular Teacher\" category. You took first place, which must be proof of how much the students and staff trust you. Congratulations, Dr. {@nickname}.",
-  "ja": "創立記念日がこんなに賑やかだとは思わなかった。表彰式も見事だったな。俺も「人気教師」の投票でドクターに入れたんだ。一位を取ったということは、それだけ生徒にも教師にも信頼されている証だろう。おめでとう、Dr.{@nickname}。",
   "x": 1
  },
  "我好像渐渐习惯拉特兰了，现在即使看到人们吃着冰淇淋爆破泡芙雕像也不会惊讶了。也许是因为同伴们在身边，就会安心吧……而且，也遇到了新的同伴。博士，多谢你一直以来的照顾。": {
   "ko": "점점 라테라노에 익숙해지는 것 같아. 이젠 사람들이 아이스크림을 먹으면서 슈크림 조각상을 폭파해도 놀라지 않게 됐어. 아마 동료들이 곁에 있어서 마음이 놓이는 거겠지…… 게다가 새 동료도 만났고. 박사, 늘 챙겨 줘서 고마워.",
-  "en": "I think I'm getting used to Laterano. These days I don't even blink when people blow up a cream-puff statue while eating ice cream. Maybe it's because my companions are beside me that I feel at ease... and I've made new ones, too. Doctor, thank you for looking after me all this time.",
-  "ja": "少しずつラテラーノに慣れてきた気がする。今では、人々がアイスを食べながらシュークリームの像を爆破していても驚かなくなった。仲間がそばにいるから安心できるんだろうな……それに、新しい仲間にも出会えた。ドクター、いつも気にかけてくれてありがとう。",
   "x": 1
  },
  "Dr.{@nickname}，今天是您的生日，我在此为您献上祝愿。我明白“祝愿”并非必定会实现，但人有着为愿望而努力的能力，因此，愿望才会化作现实。您的愿望一定也会实现的，终有一日。": {
   "ko": "Dr.{@nickname}, 오늘은 당신의 생일이군요. 이 자리를 빌려 축원을 드립니다. '축원'이 반드시 이루어지는 것은 아니라는 걸 압니다. 하지만 사람에게는 소원을 위해 노력할 힘이 있고, 그렇기에 소원이 현실이 되는 것이겠지요. 당신의 소원도 언젠가 반드시 이루어질 겁니다.",
-  "en": "Dr.{@nickname}, today is your birthday. Allow me to offer you my wishes. I understand that a \"wish\" does not necessarily come true. But people have the capacity to strive toward their wishes, and that is precisely why wishes become reality. Your wish, too, will surely come true one day.",
-  "ja": "Dr.{@nickname}、今日はあなたの誕生日ですね。この場を借りてお祝いを申し上げます。「願い」が必ず叶うわけではないことは理解しています。ですが、人には願いのために努力する力がある。だからこそ願いは現実になるのでしょう。あなたの願いも、いつか必ず叶うはずです。",
   "x": 1
  },
  "生日快乐，Dr.{@nickname}！今天这个派对是完完全全属于你的哦，完成蛋糕的这一步就交给你——这是裱花袋，在蛋糕上写点什么吧，画画当然也可以！怎么样，这个主意不错吧？": {
   "ko": "생일 축하해요, Dr.{@nickname}! 오늘 파티는 완전히 박사님만을 위한 거예요. 케이크 마무리는 박사님한테 맡길게요 — 자, 짤주머니예요. 케이크에 뭐라도 써 보세요, 그림도 물론 좋고요! 어때요, 괜찮은 아이디어죠?",
-  "en": "Happy birthday, Dr.{@nickname}! Today's party is all yours. I'll leave the last step of the cake to you—here's the piping bag. Write something on it! Or draw, if you'd rather. Pretty good idea, right?",
-  "ja": "お誕生日おめでとう、Dr.{@nickname}！今日のパーティーは、まるごとあなたのものだよ。ケーキの仕上げはあなたにおまかせ——はい、絞り袋。ケーキに何か書いてみて、絵でもいいよ！どう、いいアイデアでしょ？",
   "x": 1
  },
  "新年快乐，博士。其实我对拉特兰有些好奇，明明任何一天都可以到圣髑安所许愿，为什么大家会选在这一天共同行动呢？……唔，如果是为了能和友人们一起庆祝的话，我可以理解。谢谢。": {
   "ko": "새해 복 많이 받으세요, 박사님. 사실 저는 라테라노가 조금 궁금합니다. 언제든 성유물 안치소에서 소원을 빌 수 있는데, 왜 모두가 하필 이 하루를 골라 함께 움직이는 걸까요? ……음, 친구들과 함께 축하하기 위해서라면, 이해할 수 있습니다. 감사합니다.",
-  "en": "Happy New Year, Doctor. To be honest, I find Laterano rather curious. One may make a wish at the Reliquary on any day, so why does everyone choose this particular day to go together? ...Ah. If it is so that they may celebrate alongside their friends, then I understand. Thank you.",
-  "ja": "あけましておめでとうございます、ドクター。実はラテラーノについて少し気になっていることがあります。願いを捧げるだけなら聖遺物安置所はいつでも訪れられるのに、なぜ皆この一日を選んで一緒に行動するのでしょうか。……なるほど。友人たちと共に祝うためなら、理解できます。ありがとうございます。",
   "x": 1
  },
  "汪，汪汪！……汪？汪！（虎狼丸似乎对校庆很激动，于是带他一起来参加了。可能是感受到了庆典的氛围，他看起来很开心。帮虎狼丸拿了一块他也能吃的蛋糕，他高兴地摇起了尾巴。）": {
   "ko": "멍, 멍멍! ……멍? 멍! (코로마루는 개교기념일이 몹시 신나는 모양이라, 함께 데려왔다. 축제 분위기를 느낀 것인지 무척 즐거워 보인다. 코로마루도 먹을 수 있는 케이크를 한 조각 챙겨 주자, 신이 나서 꼬리를 흔든다.)",
-  "en": "Woof, woof woof! ...Woof? Woof! (Koromaru seemed so excited about the school festival that you brought him along. Perhaps he can feel the festive mood—he looks delighted. When you fetch him a slice of cake he can eat, his tail starts wagging happily.)",
-  "ja": "ワン、ワンワン！……ワン？ワン！（コロマルが学園祭にすっかり興奮していたので、一緒に連れてきた。お祭りの雰囲気を感じ取ったのか、とても楽しそうだ。コロマルでも食べられるケーキを取ってきてやると、嬉しそうに尻尾を振った。）",
   "x": 1
  },
  "我在阅读血骑士的传记时了解到了“矿石病”这种疾病。听说拉特兰过去是不接受矿石病患者定居的，但现在已经不是这样了。阿米娅同学说您对此事所知甚多，能请您告诉我详情吗？": {
   "ko": "피의 기사의 전기를 읽다가 '광석병'이라는 병을 알게 되었습니다. 라테라노는 과거 광석병 환자의 정착을 받아들이지 않았지만, 지금은 그렇지 않다고 들었습니다. 아미야 학우가 당신은 이 일에 대해 잘 아신다고 하더군요. 자세히 말씀해 주시겠습니까?",
-  "en": "While reading a biography of the Blood Knight, I learned of a disease called \"Oripathy.\" I am told that Laterano once refused to let the infected settle there, but that this is no longer the case. Amiya says you know a great deal about the matter. Would you tell me more?",
-  "ja": "血の騎士の伝記を読んでいて、「鉱石病」という病を知りました。ラテラーノはかつて鉱石病患者の定住を認めていなかったが、今はそうではないと聞いています。アーミヤさんが、あなたはこの件にお詳しいと。詳しく教えていただけますか。",
   "x": 1
  },
  "课间大家在聊度假的话题，其实我很想和同伴们再去旅行一次。之前去过海边，有点想再去一次山里……拉特兰附近有没有山？有机会的话真想让博士带我们去呢——会不会有呢……": {
   "ko": "쉬는 시간에 다들 휴가 얘기를 하더라고요. 사실 저도 동료들이랑 다시 한번 여행을 가고 싶어요. 전에 바다에는 가 봤으니까, 이번엔 산 쪽도 좋을 것 같은데…… 라테라노 근처에 산이 있나요? 기회가 되면 박사님이 데려가 주셨으면 좋겠는데—— 그럴 일이 있을까요……",
-  "en": "Everyone was talking about vacations between classes. Honestly, I'd love to travel with everyone again. We've been to the sea before, so maybe the mountains this time... Are there any mountains near Laterano? If we ever get the chance, I'd love for you to take us—will we, I wonder...",
-  "ja": "休み時間、みんな休暇の話をしてたんだ。実はわたしも、仲間ともう一度旅行に行きたいな。前は海に行ったから、今度は山もいいかも……ラテラーノの近くに山ってある？機会があったらドクターに連れて行ってほしいな——そんな日、来るかな……",
   "x": 1
  },
  "Dr.{@nickname}无论什么时候看起来都很冷静，这种不为外物所动的气概感觉很厉害呢，如果我也能学到就好了……欸？只要戴上兜帽就能做到？好像确实如此……": {
   "ko": "Dr.{@nickname}는 언제 봐도 참 침착하시네요. 무슨 일에도 흔들리지 않는 그 기개, 정말 대단한 것 같아요. 저도 좀 배울 수 있으면 좋겠는데…… 네? 후드만 쓰면 된다고요? 듣고 보니 그런 것도 같고……",
-  "en": "Dr.{@nickname}, you always look so calm. That air of being unmoved by anything—it's really impressive. I wish I could learn it... Huh? All I need is a hood? ...Now that you mention it, maybe so...",
-  "ja": "Dr.{@nickname}っていつ見ても落ち着いてるよね。何があっても動じないその感じ、すごいと思う。わたしも身につけられたらいいのに……えっ？フードをかぶればいいだけ？……言われてみれば、そうかも……",
   "x": 1
  },
  "我发现学校里也有罹患矿石病的同学。他们患上了这种无法治愈的疾病，却依然认真地对待自己的生活，为了将来努力学习，也享受课余的时光……我认为，这是十分坚强的表现。": {
   "ko": "학교에도 광석병에 걸린 학우들이 있다는 것을 알게 되었습니다. 치유할 수 없는 병을 안고서도 자신의 삶을 성실하게 대하고, 미래를 위해 열심히 공부하며, 방과 후의 시간도 즐기고 있더군요…… 저는 그것이 대단히 강인한 모습이라고 생각합니다.",
-  "en": "I have learned that there are students at the school who suffer from Oripathy as well. Though they carry an incurable illness, they face their lives in earnest—studying hard for the future, and enjoying their time after class. I believe that is a display of great strength.",
-  "ja": "学校にも鉱石病を患っている生徒がいると知りました。癒えることのない病を抱えながらも、自分の生活に真摯に向き合い、将来のために勉学に励み、放課後の時間も楽しんでいる……それはとても強いことだと、わたしは思います。",
   "x": 1
  },
  "今天晚上我打算自己在宿舍做饭呢，上次阿米娅来玩，我从她那里学了几道拉特兰菜。而且啊，昨天买菜的时候我又不由自主买多了……不如博士和阿米娅今晚过来，一起吃吧？": {
   "ko": "오늘 저녁엔 기숙사에서 직접 요리를 해 볼까 해요. 지난번에 아미야가 놀러 왔을 때 라테라노 요리를 몇 가지 배웠거든요. 게다가 어제 장 보다가 또 저도 모르게 너무 많이 사 버려서…… 박사님이랑 아미야, 오늘 저녁에 와서 같이 먹지 않을래요?",
-  "en": "I was thinking of cooking for myself in the dorm tonight. Amiya came over the other day and taught me a few Lateran dishes. Besides, I bought way too much again at the market yesterday... Why don't you and Amiya come over tonight and eat with me?",
-  "ja": "今夜は寮で自炊しようかなって。この前アーミヤが遊びに来たとき、ラテラーノ料理をいくつか教えてもらったんだ。それに昨日、買い物でまたつい買いすぎちゃって……ドクターとアーミヤ、今夜うちに来て一緒に食べない？",
   "x": 1
  },
  "新年快乐，博士！今天的圣髑安所果然人很多呢，圣髑上的涂鸦也越来越厚了……不过嘛，虽然向神明许愿也不错，但我觉得愿望还是自己努力去实现比较好。你觉得呢，博士？": {
   "ko": "새해 복 많이 받으세요, 박사님! 오늘 성유물 안치소는 역시 사람이 정말 많네요. 성유물 위의 낙서도 점점 두꺼워지고 있고요…… 뭐, 신께 소원을 비는 것도 나쁘진 않지만, 저는 소원이란 스스로 노력해서 이루는 편이 좋다고 생각해요. 박사님은 어떻게 생각하세요?",
-  "en": "Happy New Year, Doctor! The Reliquary really is packed today, isn't it? The graffiti on the relic keeps getting thicker, too... Well, praying to a god isn't a bad thing, but I think a wish is better when you work to make it come true yourself. What do you think, Doctor?",
-  "ja": "あけましておめでとう、ドクター！今日の聖遺物安置所、やっぱりすごい人だね。聖遺物の落書きもどんどん厚くなってるし……まあ、神様にお願いするのも悪くないけど、願いって自分の力で叶えるほうがいいと思うな。ドクターはどう思う？",
   "x": 1
  },
  "博士，恭喜您获得“最受学生欢迎教师奖”。我受行政处■■■老师所托，来护送您前往特别颁奖仪式，请不要负隅顽抗，尽快从躲藏处现身。您听到了吗？请回答我，博士。": {
   "ko": "박사님, '학생들이 가장 좋아하는 교사상' 수상을 축하드립니다. 행정처의 ■■■ 선생님의 부탁을 받고, 특별 시상식장까지 호위하러 왔습니다. 부디 저항하지 마시고 숨어 계신 곳에서 속히 나와 주십시오. 들리십니까? 대답해 주십시오, 박사님.",
-  "en": "Doctor, congratulations on receiving the Most Popular Teacher award. At the request of ■■■ from the administrative office, I have come to escort you to the special award ceremony. Please do not resist; kindly emerge from your hiding place at once. Can you hear me? Please respond, Doctor.",
-  "ja": "ドクター、「生徒が選ぶ人気教師賞」の受賞、おめでとうございます。事務室の■■■先生に頼まれ、特別授賞式までご案内に参りました。抵抗はなさらず、速やかに隠れ場所からお出ください。聞こえていますか。返事をしてください、ドクター。",
   "x": 1
  },
  "汪……呼！汪，汪汪！（虎狼丸叫醒了你，亲热地舔了舔你的脸。不知从哪儿传来了隐约的音乐声和学生们的声音，还闻到了蛋糕的甜香……虎狼丸是想带你一起过去吗？）": {
   "ko": "멍…… 후! 멍, 멍멍! (코로마루가 당신을 깨우고는 다정하게 얼굴을 핥는다. 어디선가 희미한 음악 소리와 학생들의 목소리가 들려오고, 케이크의 달콤한 향기까지 풍겨 온다…… 코로마루는 당신을 그곳으로 데려가고 싶은 걸까?)",
-  "en": "Woof... whuff! Woof, woof woof! (Koromaru wakes you and licks your face affectionately. From somewhere comes faint music and the voices of students, along with the sweet smell of cake... Does Koromaru want to take you there?)",
-  "ja": "ワン……フッ！ワン、ワンワン！（コロマルがあなたを起こし、親しげに顔を舐めた。どこからかかすかな音楽と生徒たちの声が聞こえ、ケーキの甘い香りも漂ってくる……コロマルは、あなたを一緒に連れて行きたいのだろうか。）",
   "x": 1
  },
  "我深入研习了战术课程发放的作战讲义，请您考虑让我与智能作业平台THRM-EX进行协同演练。根据我的计算，这可以将THRM-EX的威力提升至少528%。": {
   "ko": "전술 수업에서 배부된 작전 강의 자료를 깊이 연구했습니다. 지능형 작업 플랫폼 THRM-EX와의 협동 훈련을 검토해 주시기 바랍니다. 제 계산에 따르면, THRM-EX의 위력을 최소 528% 끌어올릴 수 있습니다.",
-  "en": "I have thoroughly studied the tactical handouts distributed in class. Please consider allowing me to conduct joint drills with the intelligent work platform THRM-EX. By my calculations, this would raise THRM-EX's output by at least 528%.",
-  "ja": "戦術の授業で配られた作戦講義資料を深く研究しました。知能作業プラットフォームTHRM-EXとの連携演習をご検討ください。わたしの計算では、THRM-EXの威力を少なくとも528%向上させられます。",
   "x": 1
  },
  "拉特兰的学校里竟然有这么多专业的工程师，特别是机械社的可露希尔老师，思路新颖。如果按照她的建议调整，说不定输出火力能提升到——什么，千万不可以听她的？": {
   "ko": "라테라노의 학교에 이렇게 전문적인 엔지니어가 많을 줄이야. 특히 기계부의 클로저 선생님은 발상이 참신하시더군요. 그분의 제안대로 조정하면 출력 화력을 이만큼——뭐라고요, 절대 그 말을 들으면 안 된다고요?",
-  "en": "I had not expected a school in Laterano to have so many capable engineers. The mechanics club's Closure, in particular, has remarkably novel ideas. If I adjust my systems as she suggests, my output firepower could reach—What? I must absolutely not listen to her?",
-  "ja": "ラテラーノの学校に、こんなに専門的な技術者がいるとは。特に機械部のクロージャ先生は発想が斬新です。彼女の提案どおりに調整すれば、出力火力を——え、絶対に言うことを聞いてはいけない？",
   "x": 1
  },
  "这枚徽章看起来有点贵重，我只是一名学生，真的可以收下吗……唔，没什么！我会努力让自己配得上这份荣誉的。非常感谢您的认可，Dr.{@nickname}。": {
   "ko": "이 훈장, 좀 귀해 보이는데…… 저는 그냥 학생인걸요, 정말 받아도 되는 걸까요…… 음, 아무것도 아니에요! 이 영예에 걸맞은 사람이 되도록 노력할게요. 인정해 주셔서 정말 감사해요, Dr.{@nickname}.",
-  "en": "This medal looks rather valuable... I'm only a student, is it really alright for me to accept it...? Ah, no, nothing! I'll work hard to be worthy of the honor. Thank you so much for recognizing me, Dr.{@nickname}.",
-  "ja": "この勲章、ちょっと高価そう……わたしはただの学生だけど、本当にもらっていいのかな……ううん、なんでもない！この名誉にふさわしい自分になれるよう頑張るね。認めてくれて本当にありがとう、Dr.{@nickname}。",
   "x": 1
  },
  "咦……我是因为觉得校庆日太热闹了才偷偷溜走的，想找个安静的地方，怎么博士你也在这里？今天的庆典，你是主角吧……？好吧好吧，那就和你稍微休息一会儿……": {
   "ko": "어라…… 저는 개교기념일이 너무 시끌벅적해서 몰래 빠져나온 건데요, 조용한 데를 찾으려고. 박사님은 왜 여기 계세요? 오늘 축제의 주인공이시잖아요……? 알았어요, 알았어. 그럼 잠깐만 같이 쉬어요……",
-  "en": "Huh...? I slipped away because the festival was too noisy—I wanted somewhere quiet. What are you doing here, Doctor? You're the guest of honor today, aren't you...? Fine, fine. Let's rest here together for a bit, then...",
-  "ja": "あれ……わたしは学園祭がにぎやかすぎて、静かなところを探してこっそり抜け出してきたんだけど、ドクターもここにいるの？今日のお祭りの主役でしょ……？わかったわかった、じゃあ少しだけ一緒に休もっか……",
   "x": 1
  },
  "我在宿舍的休息室里发现了前辈们留下的骑士小说和忍者电影，已经全部看完了。博士，您知道哪里能看到骑士大战忍者吗？我非常感兴趣……蓝卡坞？那是什么地方？": {
   "ko": "기숙사 휴게실에서 선배들이 남기고 간 기사 소설과 닌자 영화를 발견해 전부 보았습니다. 박사님, 기사와 닌자가 싸우는 것은 어디서 볼 수 있습니까? 대단히 흥미롭습니다…… 랭크우드? 그곳은 어떤 곳입니까?",
-  "en": "In the dorm lounge I found knight novels and ninja films left behind by our seniors, and I have watched and read them all. Doctor, where can one see a knight fight a ninja? I find it most intriguing... Rhincodon? What sort of place is that?",
-  "ja": "寮の談話室で先輩たちが残していった騎士小説と忍者映画を見つけて、すべて読み、観終えました。ドクター、騎士と忍者が戦うところはどこで見られますか。とても興味があります……ランクウッド？そこはどんな場所ですか。",
   "x": 1
  },
  "“自己必须一个人活下去”，我这样想过……但是，一直沉浸于这种拒绝他人的心情之中，并不是好事……我也好，别的人也好，其实我们都不是那么坚强的人呢。": {
   "ko": "'혼자서 살아가야만 한다', 저도 그렇게 생각한 적이 있어요…… 하지만 남을 밀어내는 그런 마음에만 계속 잠겨 있는 건, 좋은 일이 아니죠…… 저도, 다른 사람들도, 사실 그렇게까지 강한 사람들은 아니니까요.",
-  "en": "\"I have to live on my own\"—I used to think that way, too... But staying sunk in that kind of feeling, pushing everyone away, isn't good for you... Neither I nor anyone else is really as strong as all that.",
-  "ja": "「自分は一人で生きていかなきゃ」って、わたしもそう思ってた時期があったんだ……でも、人を拒む気持ちにずっと浸ってるのは、よくないよね……わたしも、他のみんなも、本当はそこまで強くないんだから。",
   "x": 1
  },
  "今天上学时，发现街上的花店里竟然有“非洲菊”，虽然名字好像不太一样……总之，我带了一束过来。博士，可以装饰在这里吗？彩色能让人心情愉快哦。": {
   "ko": "오늘 등굣길에 거리 꽃집에서 '거베라'를 발견했어요. 이름은 좀 다른 것 같았지만…… 아무튼 한 다발 가져왔어요. 박사님, 여기 장식해 둬도 될까요? 색깔이 있으면 기분이 좋아지잖아요.",
-  "en": "On the way to school today, I actually found gerberas at a flower shop in town—though the name seemed a little different... Anyway, I brought a bunch. Doctor, may I put them here? A splash of color always lifts the mood.",
-  "ja": "今日の登校中、街の花屋さんに「ガーベラ」があったの。名前はちょっと違うみたいだったけど……とにかく一束持ってきたよ。ドクター、ここに飾ってもいい？色があると気分が明るくなるでしょ。",
   "x": 1
  },
  "拉特兰的居民，原来从小就要学习使用铳型或类铳型武装……这其中有怎样的考虑呢，让人有些好奇。下次铳武课，我打算认真观察一下大家的训练方式。": {
   "ko": "라테라노 주민은 어릴 때부터 총기형 또는 유사 총기형 무장의 사용법을 배운다더군요…… 그 배경에는 어떤 고려가 있는 것인지, 조금 궁금합니다. 다음 총기술 수업에서는 모두의 훈련 방식을 자세히 관찰해 볼 생각입니다.",
-  "en": "So the residents of Laterano learn to use firearms or firearm-like weapons from childhood... I am curious what considerations lie behind that. In the next armament class, I intend to observe everyone's training methods closely.",
-  "ja": "ラテラーノの住民は幼い頃から銃型、あるいは銃に類する武装の扱いを学ぶのですね……そこにどんな考えがあるのか、少し気になります。次の銃術の授業では、皆さんの訓練方法をよく観察してみるつもりです。",
   "x": 1
  },
  "博士，您来了。我正在听一首据说在拉特兰很流行的音乐……博士听过这首歌吗？我很想知道人们听到这首歌时会有怎样的感受。博士，您能告诉我吗？": {
   "ko": "박사님, 오셨군요. 라테라노에서 유행한다는 음악을 듣고 있었습니다…… 박사님도 이 곡을 들어 보셨습니까? 사람들이 이 노래를 들을 때 어떤 감정을 느끼는지 알고 싶습니다. 박사님, 알려 주시겠습니까?",
-  "en": "You've come, Doctor. I was listening to a song said to be popular in Laterano... Have you heard it before? I would like to know what people feel when they hear it. Doctor, would you tell me?",
-  "ja": "ドクター、いらっしゃいましたか。ラテラーノで流行っているという曲を聴いていました……ドクターはこの曲をお聴きになったことは？人がこの歌を聴いたとき、どんな気持ちになるのかを知りたいのです。ドクター、教えていただけますか。",
   "x": 1
  },
  "其实我不太擅长和长辈相处。普通的师长还好，但如果是关系更近的人……好在博士不会让人产生那种紧张的感觉。这方面你和我们的队长有点像呢。": {
   "ko": "사실 저는 손윗사람이랑 지내는 게 좀 서툴러요. 평범한 선생님이면 괜찮은데, 더 가까운 사이가 되면…… 그래도 박사님은 그런 긴장감을 주지 않으셔서 다행이에요. 그런 점은 우리 팀장이랑 좀 닮으셨네요.",
-  "en": "Honestly, I'm not very good with people older than me. Ordinary teachers are fine, but when it's someone closer than that... Luckily, you don't make me feel that kind of tension. In that way, you're a bit like our leader.",
-  "ja": "実はわたし、目上の人と接するのがちょっと苦手なんだ。普通の先生ならいいんだけど、もっと近い関係の人だと……でもドクターはそういう緊張感を与えないから助かってる。そういうところ、うちのリーダーにちょっと似てるかも。",
   "x": 1
  },
  "汪汪汪，汪汪！（虎狼丸叼来了一个纸袋，他看起来很有精神。纸袋里有在圣髑安所许愿用的喷漆，还有一枚硬币。是同伴们拜托他送来了纸袋吗？）": {
   "ko": "멍멍멍, 멍멍! (코로마루가 종이봉투를 물고 왔다. 기운이 넘쳐 보인다. 봉투 안에는 성유물 안치소에서 소원을 빌 때 쓰는 스프레이와 동전 한 닢이 들어 있다. 동료들이 봉투를 전해 달라고 부탁한 걸까?)",
-  "en": "Woof woof woof, woof woof! (Koromaru trots up with a paper bag in his mouth, full of energy. Inside are a can of spray paint—the kind used to make wishes at the Reliquary—and a single coin. Did his friends ask him to deliver it?)",
-  "ja": "ワンワンワン、ワンワン！（コロマルが紙袋をくわえてきた。とても元気そうだ。袋の中には聖遺物安置所で願いを捧げるときに使うスプレーと、硬貨が一枚入っている。仲間たちが届けるよう頼んだのだろうか。）",
   "x": 1
  },
  "呼……我想，休息一下……博士刚才的指挥，是不是有点太勉强人了……欸，相信我的实力？我说，这也是您指挥技巧的一部分吗……？": {
   "ko": "후우…… 저, 좀 쉬고 싶은데요…… 방금 박사님 지휘, 사람 좀 너무 몰아붙이신 거 아니에요……? 네, 제 실력을 믿으셨다고요? 저기요, 그것도 지휘 기술의 일부인가요……?",
-  "en": "Whew... I'd like a break... Doctor, wasn't that a bit much to ask of us just now...? Huh, you had faith in me? Excuse me, is that part of your command technique too...?",
-  "ja": "ふぅ……ちょっと、休みたいんだけど……さっきのドクターの指揮、ちょっと無茶させすぎじゃない……？え、わたしの実力を信じてた？あの、それも指揮のテクニックの一部だったりする……？",
   "x": 1
  },
  "汪嗷……汪！呼呼。（按照指示，虎狼丸叼来了一盒泡面，看来阿米娅没有发现。刚好热水也烧好了。摸摸虎狼丸的头，表扬他吧。）": {
   "ko": "멍아오…… 멍! 후후. (지시대로 코로마루가 컵라면을 하나 물어 왔다. 아미야에게는 들키지 않은 모양이다. 마침 물도 다 끓었다. 코로마루의 머리를 쓰다듬으며 칭찬해 주자.)",
-  "en": "Wrrf... woof! Huff huff. (Just as instructed, Koromaru has fetched a cup of instant noodles—Amiya doesn't seem to have noticed. The water has just finished boiling, too. Give Koromaru a pat on the head and praise him.)",
-  "ja": "ワウ……ワン！フフ。（指示どおり、コロマルがカップ麺をくわえてきた。アーミヤには気づかれなかったようだ。ちょうどお湯も沸いている。コロマルの頭を撫でて褒めてやろう。）",
   "x": 1
  },
  "我的名字是岳羽由加莉，接下来会在这里借读一段时间。特长是弓术——这么介绍好像有点危险呢……总之，请多关照啦！": {
   "ko": "제 이름은 타케바 유카리예요. 앞으로 한동안 여기서 청강하게 됐어요. 특기는 궁술 —— 이렇게 소개하니까 좀 위험해 보이나요……? 아무튼, 잘 부탁드려요!",
-  "en": "My name is Yukari Takeba. I'll be studying here for a while. My specialty is archery—which maybe sounds a little dangerous, put like that...? Anyway, nice to meet you all!",
-  "ja": "わたしの名前は岳羽ゆかりです。しばらくの間、こちらでお世話になります。特技は弓道——って、こう紹介するとちょっと物騒かな……？とにかく、よろしくお願いします！",
   "x": 1
  },
  "汪！汪……？汪汪。（虎狼丸守在办公室门口。出门时，他似乎想要一起走，示意他回到门口，虎狼丸就乖乖地坐下了。）": {
   "ko": "멍! 멍……? 멍멍. (코로마루가 사무실 문 앞을 지키고 있다. 나갈 때 함께 가고 싶어 하는 눈치였지만, 문 앞으로 돌아가라는 손짓을 하자 얌전히 앉았다.)",
-  "en": "Woof! Woof...? Woof woof. (Koromaru is standing guard at the office door. When you head out he looks like he wants to come along, but a gesture toward the doorway is enough—he sits back down obediently.)",
-  "ja": "ワン！ワン……？ワンワン。（コロマルが執務室のドアの前を守っている。出かけようとすると一緒に行きたそうにしたが、ドアの前に戻るよう示すと、おとなしく座り込んだ。）",
   "x": 1
  },
  "虽然我平时的成绩也还可以啦，但得到这种嘉奖还是第一次！今天放学后要不要和大家庆祝一下呢……博士也一起来吧？": {
   "ko": "평소 성적도 나쁘진 않았지만, 이런 표창을 받는 건 처음이에요! 오늘 방과 후에 다 같이 축하라도 할까…… 박사님도 같이 가실래요?",
-  "en": "My grades have always been decent, but this is the first time I've gotten an award like this! Maybe we should all celebrate after school today... You'll come too, right, Doctor?",
-  "ja": "普段の成績もそこそこだったけど、こういう表彰をもらうのは初めて！今日の放課後、みんなでお祝いしようかな……ドクターも一緒にどう？",
   "x": 1
  },
  "学校里的同学没有质疑过我的身份，大家都认为我是标新立异的铳械改造爱好者。作为潜入任务而言，可谓进展顺利。": {
   "ko": "학교의 학우들은 아무도 제 정체를 의심하지 않았습니다. 다들 제가 유별난 총기 개조 마니아라고 여기더군요. 잠입 임무로서는 순조롭게 진행되고 있다고 하겠습니다.",
-  "en": "None of the students at school have questioned my identity. They all take me for an eccentric enthusiast of firearm modification. As an infiltration assignment, I would call this smooth progress.",
-  "ja": "学校の生徒たちは、誰もわたしの正体を疑っていません。皆、わたしを風変わりな銃器改造愛好家だと思っているようです。潜入任務としては、順調に進んでいると言えるでしょう。",
   "x": 1
  },
  "汪呜……汪，汪呜……！（虽然天气不太好，但虎狼丸在望着窗外吠叫。看来就算是这种天气，他也想去散步啊……）": {
   "ko": "멍우…… 멍, 멍우……! (날씨가 그리 좋지 않은데도 코로마루가 창밖을 보며 짖는다. 이런 날씨에도 산책을 나가고 싶은 모양이다……)",
-  "en": "Awoo... woof, awoo...! (The weather isn't good, but Koromaru is barking at the window. It seems he wants to go for a walk even in this...)",
-  "ja": "クゥ……ワン、クゥ……！（天気はよくないのに、コロマルが窓の外を見て吠えている。こんな天気でも散歩に行きたいらしい……）",
   "x": 1
  },
  "汪……？汪汪，汪，汪？（虎狼丸似乎对置物架上的棋盘很感兴趣。下一次下棋时，要不要请虎狼丸来观战呢……）": {
   "ko": "멍……? 멍멍, 멍, 멍? (코로마루가 선반 위의 장기판에 관심을 보이는 것 같다. 다음에 한 판 둘 때는 코로마루를 관전자로 초대해 볼까……)",
-  "en": "Woof...? Woof woof, woof, woof? (Koromaru seems interested in the game board on the shelf. Perhaps next time you play, you should invite him to watch...)",
-  "ja": "ワン……？ワンワン、ワン、ワン？（コロマルが棚の上の盤面に興味を示しているようだ。次に一局指すときは、コロマルに観戦してもらおうか……）",
   "x": 1
  },
  "为了进一步加深对拉特兰的了解，学习是不可或缺的。Dr.{@nickname}，还请您继续授课。": {
   "ko": "라테라노를 더 깊이 이해하려면 학습이 반드시 필요합니다. Dr.{@nickname}, 앞으로도 수업을 계속 부탁드립니다.",
-  "en": "To deepen my understanding of Laterano, study is indispensable. Dr.{@nickname}, please continue your lessons.",
-  "ja": "ラテラーノをより深く理解するには、学習が欠かせません。Dr.{@nickname}、これからも授業をお願いします。",
   "x": 1
  },
  "昨天放学时遇到丽萨同学的母亲了，竟然是那么帅气的女性！她们俩的感情真好……感觉稍微有点羡慕呢。": {
   "ko": "어제 하교할 때 리사 학우의 어머니를 만났는데, 세상에 그렇게 멋진 분일 줄이야! 두 분 사이도 정말 좋아 보이고…… 조금 부럽더라고요.",
-  "en": "I ran into Lisa's mother on the way home yesterday—she turned out to be such a cool woman! And the two of them get along so well... I felt a little envious.",
-  "ja": "昨日の下校中にリサさんのお母さんに会ったんだけど、あんなに格好いい人だったなんて！二人ともすごく仲がよくて……ちょっとうらやましくなっちゃった。",
   "x": 1
  },
  "……博士指挥战斗的时候虽然很帅气，但是也有点可怕呢。您在成为教师之前有做过别的工作吗……？": {
   "ko": "……박사님, 전투를 지휘하실 때는 멋있긴 한데, 조금 무섭기도 해요. 교사가 되기 전에 다른 일을 하신 적이 있으세요……?",
-  "en": "...Doctor, you look impressive when you're directing a battle, but also a little scary. Did you do some other kind of work before you became a teacher...?",
-  "ja": "……ドクター、戦闘を指揮してるときは格好いいけど、ちょっと怖くもあるんだよね。教師になる前、別の仕事をしてたことある……？",
   "x": 1
  },
  "唉……博士，拉特兰有没有专门练习弓箭的靶场？我还是不太习惯拉弓的时候旁边突然响起铳声……": {
   "ko": "하아…… 박사님, 라테라노에 활 연습만 할 수 있는 사대는 없나요? 활시위를 당길 때 옆에서 갑자기 총성이 울리는 건 아직도 좀 익숙해지질 않아서요……",
-  "en": "Sigh... Doctor, is there a range in Laterano just for archery? I still can't get used to gunshots going off right beside me while I'm drawing my bow...",
-  "ja": "はぁ……ドクター、ラテラーノに弓だけを練習できる射場ってない？弦を引いてるときに、すぐ横で急に銃声が鳴るのはまだ慣れなくて……",
   "x": 1
  },
  "早，Dr.{@nickname}。您手里是今天的讲义吗？我可以帮忙发给同学们。": {
   "ko": "안녕하세요, Dr.{@nickname}. 손에 드신 건 오늘 강의 자료인가요? 제가 학우들에게 나눠 줄게요.",
-  "en": "Good morning, Dr.{@nickname}. Is that today's handout? I can pass them out to everyone.",
-  "ja": "おはよう、Dr.{@nickname}。手に持ってるの、今日の資料？わたしがみんなに配ってくるよ。",
   "x": 1
  },
  "对不起……是我拖后腿了吗？请告诉我需要改进的地方。下次……绝不会这样了。": {
   "ko": "죄송해요…… 제가 발목을 잡은 걸까요? 고쳐야 할 점을 알려 주세요. 다음엔…… 절대 이러지 않을게요.",
-  "en": "I'm sorry... Was I holding everyone back? Please tell me what I need to fix. Next time... it won't happen again.",
-  "ja": "ごめんなさい……わたしが足を引っ張っちゃったのかな。直すべきところを教えて。次は……絶対にこんなことにはしないから。",
   "x": 1
  },
  "汪嗷！（虎狼丸叼来了一个弹力球，但上面有医务室的徽记。是他捡到的吗……）": {
   "ko": "멍아오! (코로마루가 탱탱볼을 하나 물어 왔다. 그런데 위에 의무실 표식이 찍혀 있다. 주워 온 걸까……)",
-  "en": "Wrrf! (Koromaru has fetched a bouncy ball—though it bears the infirmary's mark. Did he find it somewhere...?)",
-  "ja": "ワウ！（コロマルがスーパーボールをくわえてきた。だが、上には医務室の印がついている。拾ってきたのだろうか……）",
   "x": 1
  },
  "值日吗？当然没问题。唔……要不要找一些装饰，来改变一下教室的氛围呢？": {
   "ko": "당번이요? 물론 문제없어요. 음…… 장식 같은 걸 좀 구해서 교실 분위기를 바꿔 볼까요?",
-  "en": "Cleaning duty? Sure, no problem. Hmm... Maybe I'll find some decorations and change up the mood of the classroom.",
-  "ja": "日直？もちろん大丈夫。うーん……何か飾りを見つけて、教室の雰囲気を変えてみようかな。",
   "x": 1
  },
  "汪……嗷呜……汪汪！（虎狼丸挡住了敌人，不停大吠，听起来十分焦急。）": {
   "ko": "멍…… 아오우…… 멍멍! (코로마루가 적을 가로막고 쉴 새 없이 짖는다. 무척 다급하게 들린다.)",
-  "en": "Woof... awooo... woof woof! (Koromaru plants himself in the enemy's path, barking without pause. He sounds truly urgent.)",
-  "ja": "ワン……アオーン……ワンワン！（コロマルが敵の前に立ちはだかり、絶え間なく吠えている。とても焦っているように聞こえる。）",
   "x": 1
  },
  "咦，我吗……?应该还有更合适的人吧……我是说，没问题，请交给我吧。": {
   "ko": "어라, 저요……? 더 어울리는 사람이 있을 것 같은데…… 아, 문제없어요. 맡겨 주세요.",
-  "en": "Huh, me...? Surely there's someone better suited... I mean—no problem. Leave it to me.",
-  "ja": "えっ、わたし……？もっと適任の人がいると思うけど……ううん、大丈夫。任せて。",
   "x": 1
  },
  "拉特兰的书本和录像带都很丰富，我对此很感兴趣，请务必让我多多阅览。": {
   "ko": "라테라노의 서적과 영상 자료는 대단히 풍부하더군요. 저는 여기에 큰 흥미를 느끼고 있습니다. 부디 마음껏 열람하게 해 주십시오.",
-  "en": "Laterano's books and recordings are remarkably abundant. I find them deeply interesting. Please allow me to peruse them freely.",
-  "ja": "ラテラーノの書物や映像資料はとても豊富ですね。強い興味を覚えます。どうか存分に閲覧させてください。",
   "x": 1
  },
  "汪，汪嗷……？（虎狼丸绕着你转了两圈，难道他是想要出门去散步？）": {
   "ko": "멍, 멍아오……? (코로마루가 당신 주위를 두 바퀴 돌았다. 밖에 산책하러 나가고 싶은 걸까?)",
-  "en": "Woof, wrrf...? (Koromaru circles you twice. Does he want to go out for a walk?)",
-  "ja": "ワン、ワウ……？（コロマルがあなたの周りを二周した。散歩に行きたいのだろうか。）",
   "x": 1
  },
  "汪……？汪嗷，汪！（虎狼丸很高兴，看来他很想一起看电视……？）": {
   "ko": "멍……? 멍아오, 멍! (코로마루가 무척 기뻐한다. 같이 영상을 보고 싶은 모양인데……?)",
-  "en": "Woof...? Wrrf, woof! (Koromaru is delighted. Does he want to watch it together...?)",
-  "ja": "ワン……？ワウ、ワン！（コロマルはとても嬉しそうだ。一緒に映像を観たいのだろうか……？）",
   "x": 1
  },
  "汪汪，嗷！（虎狼丸看起来很有精神，似乎可以放心把工作交给他。）": {
   "ko": "멍멍, 아오! (코로마루는 기운이 넘쳐 보인다. 안심하고 일을 맡겨도 될 것 같다.)",
-  "en": "Woof woof, arf! (Koromaru looks full of energy. It seems safe to leave the job to him.)",
-  "ja": "ワンワン、アオ！（コロマルはとても元気そうだ。安心して仕事を任せられそうだ。）",
   "x": 1
  },
  "初次见面，我是埃癸斯。今日起会与大家一起行动。还望多多关照。": {
   "ko": "처음 뵙겠습니다, 아이기스입니다. 오늘부터 여러분과 함께 행동하게 되었습니다. 잘 부탁드립니다.",
-  "en": "A pleasure to meet you. I am Aigis. From today I will be acting alongside all of you. I look forward to working with you.",
-  "ja": "初めまして、アイギスです。本日より皆さんと共に行動いたします。どうぞよろしくお願いします。",
   "x": 1
  },
  "嗯……看录像的话，我还是比较喜欢能让人稍微放松一点的节目啦。": {
   "ko": "음…… 영상을 볼 거면, 저는 좀 편하게 쉴 수 있는 프로그램이 더 좋아요.",
-  "en": "Hmm... If we're watching something, I'd rather have a show that lets you relax a bit.",
-  "ja": "うーん……映像を観るなら、わたしはもう少しゆっくりできる番組のほうが好きかな。",
   "x": 1
  },
  "汪……汪汪！（虎狼丸对着逃走的敌人吠叫不止，似乎想去追赶。）": {
   "ko": "멍…… 멍멍! (코로마루가 달아나는 적을 향해 끊임없이 짖는다. 쫓아가고 싶은 모양이다.)",
-  "en": "Woof... woof woof! (Koromaru barks after the fleeing enemy without stopping. He clearly wants to give chase.)",
-  "ja": "ワン……ワンワン！（コロマルが逃げていく敵に向かって吠え続けている。追いかけたいようだ。）",
   "x": 1
  },
  "汪，汪，汪汪！（虎狼丸对同伴们轻轻叫着，像是在打招呼一样。）": {
   "ko": "멍, 멍, 멍멍! (코로마루가 동료들을 향해 가볍게 짖는다. 인사를 건네는 것 같다.)",
-  "en": "Woof, woof, woof woof! (Koromaru gives the others a few light barks—it sounds like a greeting.)",
-  "ja": "ワン、ワン、ワンワン！（コロマルが仲間たちに向かって軽く吠えている。挨拶をしているようだ。）",
   "x": 1
  },
  "呜……（虎狼丸用头顶了顶你，然后在你身边安静地卧了下来。）": {
   "ko": "끄응…… (코로마루가 머리로 당신을 툭 밀더니, 곁에 조용히 엎드렸다.)",
-  "en": "Mrrf... (Koromaru nudges you with his head, then quietly lies down at your side.)",
-  "ja": "クゥン……（コロマルが頭であなたを軽く押したあと、そばに静かに寝そべった。）",
   "x": 1
  },
  "汪汪！（虎狼丸非常兴奋，请队员们留意跟上虎狼丸的速度。）": {
   "ko": "멍멍! (코로마루가 몹시 신이 났다. 대원들은 코로마루의 속도를 놓치지 않도록 주의할 것.)",
-  "en": "Woof woof! (Koromaru is thoroughly excited. All members should take care to keep up with his pace.)",
-  "ja": "ワンワン！（コロマルはとても興奮している。隊員たちはコロマルの速度に遅れないよう注意すること。）",
   "x": 1
  },
  "哼……（虎狼丸看起来非常惬意，请继续摸摸他的下巴。）": {
   "ko": "흥…… (코로마루가 무척 편안해 보인다. 계속 턱을 쓰다듬어 주자.)",
-  "en": "Hmf... (Koromaru looks thoroughly content. Keep scratching under his chin.)",
-  "ja": "フン……（コロマルはとても気持ちよさそうだ。このまま顎を撫でてやろう。）",
   "x": 1
  },
  "承蒙褒奖。接下来我也会努力获得更多赞扬，请您准备好。": {
   "ko": "칭찬 감사합니다. 앞으로도 더 많은 칭찬을 받을 수 있도록 노력하겠으니, 준비해 두시기 바랍니다.",
-  "en": "Thank you for the praise. I shall strive to earn a great deal more of it, so please be prepared.",
-  "ja": "お褒めいただきありがとうございます。今後もより多くのお褒めの言葉をいただけるよう努めますので、ご準備ください。",
   "x": 1
  },
  "汪……！（虎狼丸开心地摇着尾巴，似乎很想一起玩耍。）": {
   "ko": "멍……! (코로마루가 즐겁게 꼬리를 흔든다. 같이 놀고 싶어 하는 모양이다.)",
-  "en": "Woof...! (Koromaru wags his tail happily. It seems he wants to play.)",
-  "ja": "ワン……！（コロマルが嬉しそうに尻尾を振っている。一緒に遊びたいようだ。）",
   "x": 1
  },
  "汪……嗷！（虎狼丸的速度很快，不过及时停下来了。）": {
   "ko": "멍…… 아오! (코로마루의 속도가 무척 빠르다. 그래도 제때 멈춰 섰다.)",
-  "en": "Woof... arf! (Koromaru is very fast—but he manages to stop in time.)",
-  "ja": "ワン……アオ！（コロマルの速度はとても速い。それでもきちんと止まった。）",
   "x": 1
  },
  "汪汪！（虎狼丸叼来了蜜饼，似乎是想分享这份食物。）": {
   "ko": "멍멍! (코로마루가 벌꿀 쿠키를 물어 왔다. 이 먹을 것을 나누고 싶은 모양이다.)",
-  "en": "Woof woof! (Koromaru brings over a honey cake. He seems to want to share it.)",
-  "ja": "ワンワン！（コロマルが蜜菓子をくわえてきた。この食べ物を分けたいらしい。）",
   "x": 1
  },
  "汪汪，汪！（虎狼丸很开心，但请小心不要被他扑倒。）": {
   "ko": "멍멍, 멍! (코로마루가 무척 기뻐하고 있다. 다만 덮치듯 달려들 수 있으니 조심할 것.)",
-  "en": "Woof woof, woof! (Koromaru is overjoyed—just be careful not to get knocked over.)",
-  "ja": "ワンワン、ワン！（コロマルはとても喜んでいる。ただし、飛びつかれて倒されないよう気をつけること。）",
   "x": 1
  },
  "这些工作交给我的话，13分07秒就能全部完成。": {
   "ko": "이 업무들을 제게 맡겨 주시면, 13분 07초 만에 전부 완료할 수 있습니다.",
-  "en": "If you entrust these tasks to me, I can complete all of them in thirteen minutes and seven seconds.",
-  "ja": "これらの業務をわたしにお任せいただければ、13分07秒ですべて完了できます。",
   "x": 1
  },
  "优秀学生表彰？是我吗？……那我便欣然接受了。": {
   "ko": "우수 학생 표창 말입니까? 저를요? ……그렇다면 기꺼이 받겠습니다.",
-  "en": "An outstanding student commendation? For me? ...Then I shall accept it gladly.",
-  "ja": "優秀生徒表彰、ですか。わたしを？……であれば、喜んでお受けします。",
   "x": 1
  },
  "咕噜噜噜……汪！！（虎狼丸召唤了人格面具！）": {
   "ko": "으르르릉…… 멍!! (코로마루가 페르소나를 소환했다!)",
-  "en": "Grrrrr... woof!! (Koromaru has summoned his Persona!)",
-  "ja": "グルルル……ワン！！（コロマルがペルソナを召喚した！）",
   "x": 1
  },
  "今天要爬多少层……不对，要去多远的地方呢？": {
   "ko": "오늘은 몇 층까지 올라가야 할까…… 아니, 얼마나 멀리 가야 하는 걸까?",
-  "en": "How many floors will we climb today...? No—how far will we have to go?",
-  "ja": "今日は何階まで登るのかな……ううん、どこまで遠くへ行くんだろう？",
   "x": 1
  },
  "汪——嗷！！（虎狼丸的气势震慑了敌人！）": {
   "ko": "멍——아오!! (코로마루의 기세가 적을 압도했다!)",
-  "en": "Wooo—arf!! (Koromaru's ferocity overwhelms the enemy!)",
-  "ja": "ワン——アオ！！（コロマルの気迫が敵を怯ませた！）",
   "x": 1
  },
  "汪！（虎狼丸伸出了前爪，似乎想要握手。）": {
   "ko": "멍! (코로마루가 앞발을 내밀었다. 악수를 하고 싶은 모양이다.)",
-  "en": "Woof! (Koromaru holds out a front paw. He seems to want a handshake.)",
-  "ja": "ワン！（コロマルが前足を差し出した。握手をしたいようだ。）",
   "x": 1
  },
  "我已受命担任队长。作战执行，请交予我。": {
   "ko": "팀장을 맡으라는 명을 받았습니다. 작전 수행은 제게 맡겨 주십시오.",
-  "en": "I have been ordered to serve as leader. Please leave the execution of the operation to me.",
-  "ja": "隊長を務めるよう命じられました。作戦の遂行はわたしにお任せください。",
   "x": 1
  },
  "谢谢您在学业上的指导。今后也请多关照。": {
   "ko": "학업을 지도해 주셔서 감사합니다. 앞으로도 잘 부탁드립니다.",
-  "en": "Thank you for your guidance in my studies. I look forward to your continued instruction.",
-  "ja": "学業をご指導いただき、ありがとうございます。今後もよろしくお願いします。",
   "x": 1
  },
  "我会保护好队伍里的大家，请交给我吧。": {
   "ko": "부대의 모두를 제가 지키겠습니다. 맡겨 주십시오.",
-  "en": "I will protect everyone in the squad. Please leave it to me.",
-  "ja": "隊のみんなは、わたしが守ります。お任せください。",
   "x": 1
  },
  "汪呜……汪汪汪！（虎狼丸冲了出去！）": {
   "ko": "멍우…… 멍멍멍! (코로마루가 뛰쳐나갔다!)",
-  "en": "Awoo... woof woof woof! (Koromaru charges out!)",
-  "ja": "クゥ……ワンワンワン！（コロマルが飛び出した！）",
   "x": 1
  },
  "汪汪！（虎狼丸迅速到达了指定位置。）": {
   "ko": "멍멍! (코로마루가 지정된 위치에 재빨리 도착했다.)",
-  "en": "Woof woof! (Koromaru reaches the designated position in a flash.)",
-  "ja": "ワンワン！（コロマルが指定の位置に素早く到着した。）",
   "x": 1
  },
  "作战成功。一切如同先前计划的那样。": {
   "ko": "작전 성공. 모든 것이 앞서 계획한 대로입니다.",
-  "en": "Operation successful. Everything went exactly as planned.",
-  "ja": "作戦成功。すべて事前の計画どおりです。",
   "x": 1
  },
  "呼……（虎狼丸在地毯上打了个滚。）": {
   "ko": "후우…… (코로마루가 카펫 위에서 한 바퀴 뒹굴었다.)",
-  "en": "Whuff... (Koromaru rolls over once on the carpet.)",
-  "ja": "フゥ……（コロマルがカーペットの上でごろんと転がった。）",
   "x": 1
  },
  "呼呼……（虎狼丸似乎在等待指令。）": {
   "ko": "후후…… (코로마루가 지시를 기다리고 있는 것 같다.)",
-  "en": "Huff huff... (Koromaru seems to be waiting for instructions.)",
-  "ja": "フフ……（コロマルは指示を待っているようだ。）",
   "x": 1
  },
  "啊……嗯，其实不太完美也没关系吧？": {
   "ko": "아…… 응, 사실 좀 완벽하지 않아도 괜찮지 않을까요?",
-  "en": "Ah... yeah, actually, isn't it fine if it's not quite perfect?",
-  "ja": "あ……うん、実はそんなに完璧じゃなくてもいいんじゃないかな？",
   "x": 1
  },
  "是可以在这里休息的意思吗？太好啦！": {
   "ko": "여기서 쉬어도 된다는 뜻인가요? 다행이다!",
-  "en": "Does that mean we can rest here? Yes!",
-  "ja": "ここで休んでいいってこと？やった！",
   "x": 1
  },
  "汪呜……汪！（虎狼丸攻向了敌人！）": {
   "ko": "멍우…… 멍! (코로마루가 적을 향해 달려들었다!)",
-  "en": "Awoo... woof! (Koromaru lunges at the enemy!)",
-  "ja": "クゥ……ワン！（コロマルが敵に飛びかかった！）",
   "x": 1
  },
  "汪呜……（虎狼丸敬佩地摇着尾巴。）": {
   "ko": "멍우…… (코로마루가 감탄한 듯 꼬리를 흔든다.)",
-  "en": "Awoo... (Koromaru wags his tail as if impressed.)",
-  "ja": "クゥ……（コロマルが感心したように尻尾を振っている。）",
   "x": 1
  },
  "汪！（虎狼丸似乎想要确认目的地。）": {
   "ko": "멍! (코로마루가 목적지를 확인하고 싶어 하는 것 같다.)",
-  "en": "Woof! (Koromaru seems to want confirmation of the destination.)",
-  "ja": "ワン！（コロマルは目的地を確認したいようだ。）",
   "x": 1
  },
  "博士要指导我们训练吗？我很期待。": {
   "ko": "박사님이 훈련을 봐 주시는 거예요? 기대되네요.",
-  "en": "You'll be coaching our training, Doctor? I'm looking forward to it.",
-  "ja": "ドクターが訓練を見てくれるの？楽しみだな。",
   "x": 1
  },
  "嗷呜——！（虎狼丸取得了先机！）": {
   "ko": "아오우——! (코로마루가 선수를 잡았다!)",
-  "en": "Awooo—! (Koromaru seizes the initiative!)",
-  "ja": "アオーン——！（コロマルが先手を取った！）",
   "x": 1
  },
  "我也有点困了，要不小睡一下吧……": {
   "ko": "저도 좀 졸린데, 잠깐 눈 좀 붙일까……",
-  "en": "I'm getting a little sleepy too. Maybe I'll take a short nap...",
-  "ja": "わたしもちょっと眠くなってきた、少し仮眠しようかな……",
   "x": 1
  },
  "是博士呀，等下要一起去逛街吗？": {
   "ko": "박사님이시네요, 이따 같이 쇼핑이라도 갈래요?",
-  "en": "Oh, it's you, Doctor. Want to go shopping together later?",
-  "ja": "ドクターだ、あとで一緒に買い物に行かない？",
   "x": 1
  },
  "汪呜？（虎狼丸似乎在思考……）": {
   "ko": "멍우? (코로마루가 무언가 생각에 잠긴 것 같다……)",
-  "en": "Awoo? (Koromaru seems lost in thought...)",
-  "ja": "クゥ？（コロマルは何か考え込んでいるようだ……）",
   "x": 1
  },
  "休息也是任务的一环。辛苦了。": {
   "ko": "휴식 또한 임무의 일부입니다. 수고하셨습니다.",
-  "en": "Rest is also part of the mission. Well done.",
-  "ja": "休息もまた任務の一環です。お疲れさまでした。",
   "x": 1
  },
  "伊西斯……请把力量借给我！": {
   "ko": "이시스…… 힘을 빌려줘!",
-  "en": "Isis... lend me your strength!",
-  "ja": "イシス……力を貸して！",
   "x": 1
  },
  "博士这是进入节能模式了吗？": {
   "ko": "박사님은 절전 모드에 들어가신 겁니까?",
-  "en": "Doctor, have you entered power-saving mode?",
-  "ja": "ドクターは省電力モードに入られたのですか。",
   "x": 1
  },
  "我已经不是独自一人了……！": {
   "ko": "난 이제 혼자가 아니야……!",
-  "en": "I'm not alone anymore...!",
-  "ja": "わたしはもう一人じゃない……！",
   "x": 1
  },
  "前方存在敌人，锁定完成。": {
   "ko": "전방에 적 존재, 조준 완료.",
-  "en": "Enemies detected ahead. Lock-on complete.",
-  "ja": "前方に敵を確認、ロックオン完了。",
   "x": 1
  },
  "完美的胜利，大家辛苦了。": {
   "ko": "완벽한 승리입니다. 모두 수고하셨습니다.",
-  "en": "A perfect victory. Well done, everyone.",
-  "ja": "完璧な勝利です。皆さん、お疲れさまでした。",
   "x": 1
  },
  "绝不允许你伤害我的同伴！": {
   "ko": "내 동료를 다치게 두진 않아!",
-  "en": "I won't let you hurt my friends!",
-  "ja": "仲間を傷つけさせはしない！",
   "x": 1
  },
  "Persona，应战！": {
   "ko": "페르소나, 응전!",
-  "en": "Persona, engage!",
-  "ja": "ペルソナ、応戦！",
   "x": 1
  },
  "下次我们还能做得更好。": {
   "ko": "다음엔 더 잘할 수 있습니다.",
-  "en": "Next time, we can do better.",
-  "ja": "次はもっとうまくやれます。",
   "x": 1
  },
  "咦，博士，有什么事吗？": {
   "ko": "어라, 박사님, 무슨 일 있으세요?",
-  "en": "Oh, Doctor? Did you need something?",
-  "ja": "あれ、ドクター、何か用かな？",
   "x": 1
  },
  "我来断后。诸位请撤退！": {
   "ko": "제가 후방을 맡겠습니다. 모두 물러나십시오!",
-  "en": "I will cover the retreat. Everyone, fall back!",
-  "ja": "わたしが殿を務めます。皆さん、後退を！",
   "x": 1
  },
  "没问题，准备万全。": {
   "ko": "문제없어요, 준비는 완벽해요.",
-  "en": "No problem—I'm all set.",
-  "ja": "問題ないよ、準備は万全。",
   "x": 1
  },
  "这个距离正合适！": {
   "ko": "이 거리라면 딱 좋아!",
-  "en": "This distance is just right!",
-  "ja": "この距離ならちょうどいい！",
   "x": 1
  },
  "嗯，您叫我吗？": {
   "ko": "네, 부르셨습니까?",
-  "en": "Yes? You called for me?",
-  "ja": "はい、お呼びですか。",
   "x": 1
  },
  "就是这里吗……": {
   "ko": "여기가 맞나……",
-  "en": "Is this the place...?",
-  "ja": "ここでいいのかな……",
   "x": 1
  },
  "该怎么做呢……": {
   "ko": "어떻게 해야 하지……",
-  "en": "What should I do...?",
-  "ja": "どうすればいいんだろう……",
   "x": 1
  },
  "一心一意……": {
   "ko": "정신 집중……",
-  "en": "Focus...",
-  "ja": "集中……",
   "x": 1
  },
  "很好的角度。": {
   "ko": "좋은 각도입니다.",
-  "en": "A good angle.",
-  "ja": "いい角度です。",
   "x": 1
  },
  "火力，全开！": {
   "ko": "화력, 전개!",
-  "en": "Full firepower!",
-  "ja": "火力、全開！",
   "x": 1
  },
  "请给我指示。": {
   "ko": "지시를 내려 주십시오.",
-  "en": "Please give me your orders.",
-  "ja": "指示をお願いします。",
   "x": 1
  },
  "连续，攻击！": {
   "ko": "연속, 사격!",
-  "en": "Continuous fire!",
-  "ja": "連続、攻撃！",
   "x": 1
  },
  "任务开始。": {
   "ko": "임무 개시.",
-  "en": "Mission start.",
-  "ja": "任務開始。",
   "x": 1
  }
 }

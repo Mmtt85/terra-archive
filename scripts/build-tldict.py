@@ -748,33 +748,57 @@ for fname, fixed in _unofficial_src.items():
         if kind is None:
             kind = "op"          # 어느 표에도 없으면 오퍼 상세로 둔다 (대부분 스킬 문구다)
         merged.setdefault(kind, {})[cn] = {**e, "x": 1}
-# ③ 통합전략 테마 — 갈래 구조(collectibles/…)를 유지한 채 공식·비공식을 한 파일에 담는다
+# ③ 통합전략 — **테마 1~6과 공통을 한 파일로 합친다** (사용자 지시 2026-09-17
+#    "파일을 7개나 만들 필요가 없음"). 갈래 구조(collectibles/…)는 그대로 둔다.
+#    테마가 달라 같은 원문의 번역이 갈리는 자리가 9건 있었는데 전부 표기 흔들림
+#    ("성의를 표시한다"/"표한다")이라 먼저 온 것을 남긴다.
+is_body = {}
 for fname, body in list(files.items()):
     if not re.fullmatch(r"is\d\.json|is-common\.json", fname):
         continue
-    slot = fname[:-5]
-    off = OFFICIAL.get(slot) or {}          # 그 테마의 공식 조우 분기 (평면)
-    out_body = {}
+    off = OFFICIAL.get(fname[:-5]) or {}     # 그 테마의 공식 조우 분기 (평면)
     for g, inner in body.items():
-        keep = {}
+        dest = is_body.setdefault(g, {})
         for cn, e in inner.items():
-            if cn in off:                    # 공식이 있으면 공식으로 갈아 끼운다
-                keep[cn] = off[cn]
+            if cn in dest:
+                continue
+            if cn in off:
+                dest[cn] = off[cn]           # 공식이 있으면 공식이 이긴다
             elif cn in _official_any:
                 _pruned += 1
             else:
-                keep[cn] = {**e, "x": 1}
-        if keep: out_body[g] = keep
+                dest[cn] = {**e, "x": 1}
     # 비공식 쪽에 없던 공식 조우 분기는 encounters 갈래로 붙인다
-    rest = {cn: e for cn, e in off.items()
-            if not any(cn in g for g in out_body.values())}
-    if rest:
-        out_body.setdefault("encounters", {}).update(rest)
-    merged[slot] = {g: out_body[g] for g in IS_ORDER if out_body.get(g)} or out_body
-    KIND_LABEL.setdefault(slot, labels[fname])
-    if slot not in KIND_ORDER: KIND_ORDER.append(slot)
+    enc = is_body.setdefault("encounters", {})
+    for cn, e in off.items():
+        if not any(cn in g for g in is_body.values()):
+            enc[cn] = e
+if is_body:
+    merged["is"] = {g: is_body[g] for g in IS_ORDER if is_body.get(g)}
+    KIND_LABEL["is"] = "통합전략 1~6 — 소장품·노드·조우·엔딩·전투 (테마 구분 없이 한 벌)"
+    if "is" not in KIND_ORDER: KIND_ORDER.append("is")
 if _pruned:
     print(f"  공식이 있어 뺀 비공식 번역 {_pruned:,}건")
+
+# 공개본에는 **한국어만** 싣는다 (사용자 지시 2026-09-17 "일본어랑 영어는 싹 지우자").
+# 받는 쪽이 중섭 화면에 한국어를 덧씌우는 앱이라 en/ja 를 쓸 데가 없고, 용량만 는다.
+# ⚠ scripts/cn-translations.json(장부)에는 그대로 둔다 — build-i18n.py 가 사이트의
+#   EN/JA 판을 만들 때 그걸 쓴다. 여기서 빼는 것은 **내보내는 파일**뿐이다.
+def _ko_only(body):
+    out = {}
+    for k, v in body.items():
+        if isinstance(v, dict) and ("ko" in v or "x" in v):
+            e = {"ko": v["ko"]} if v.get("ko") else {}
+            if v.get("x"): e["x"] = 1
+            if e: out[k] = e
+        elif isinstance(v, dict):
+            inner = _ko_only(v)
+            if inner: out[k] = inner
+    return out
+
+
+for _k in list(merged):
+    merged[_k] = _ko_only(merged[_k])
 
 files, labels = {}, {}
 for kind in KIND_ORDER:

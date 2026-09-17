@@ -2,8 +2,8 @@
 
 중국 서버 화면의 중국어를 한국어로 바꿔 놓는 데 쓰라고 만든 사전입니다.
 
-**파일은 내용 갈래로만 나뉩니다** — 오퍼, 아이템, 적, 작전, 보이스, 기록, 통합전략.
-찾으시는 것이 어느 파일에 있는지는 이름만 보면 됩니다.
+**파일은 내용 갈래로만 나뉩니다** — 오퍼, 아이템, 적, 작전, 보이스, 기록, 생존연산,
+통합전략. 찾으시는 것이 어느 파일에 있는지는 이름만 보면 됩니다. 값은 한국어뿐입니다.
 
 한 파일 안에 두 종류가 섞여 있고, **항목의 `x` 표시로 갈립니다.**
 
@@ -11,16 +11,6 @@
   한국어를 같은 id끼리 짝지은 것입니다. 번역이 아니라 대조라 손댄 곳이 없습니다.
 - **`"x": 1` — 테라 아카이브의 비공식 번역.** 한국 서버에 아직 오지 않아 공식 한국어가
   없는 것이라, 정식 번역이 나오면 달라질 수 있습니다.
-
-같은 원문에 둘 다 있으면 **공식만 실었습니다.** 중국 서버 화면은 한섭 출시 여부와
-무관하게 전부 중국어이므로, 두 종류가 다 필요합니다.
-
-**같은 원문이 두 벌에 겹치지는 않습니다.** 공식 한국어가 있는 자리에서는 비공식 번역을
-빼 두었으니, 파일을 하나로 합쳐 쓰셔도 어느 쪽이 이길지 걱정하실 것 없습니다.
-다만 **문맥이 다르면 같은 원문이 다르게 번역된 자리가 열 곳쯤 있습니다**
-(`清明`이 적 이름일 때와 오퍼 이름일 때, `哎呀！`가 조우 문구일 때와 보이스일 때).
-그 열 곳은 게임 안에서도 실제로 다른 말이라 합치지 않았습니다 — 정확도가 중요하시면
-파일별로 따로 찾으시고, 아니면 합쳐 쓰셔도 큰 지장은 없습니다.
 
 - 시작점: `https://files.terra-archive.net/assets/tl/manifest.json`
   — **앱에 박아 둘 주소는 이것 하나면 됩니다.** 나머지 파일 주소는 manifest 안에 들어
@@ -46,23 +36,17 @@
 
 | 파일 | 내용 | 항목 | 크기 |
 |---|---|---:|---:|
-| [`manifest.json`](https://files.terra-archive.net/assets/tl/manifest.json) | 아래 목록 + 파일별 해시·주소 | — | 3 KB |
-| [`op.json`](https://files.terra-archive.net/assets/tl/op.json) | 오퍼레이터 — 이름·직위·특성·재능·스킬·모듈·기반시설 — 공식 한국어 8,277 + 비공식 번역 401 | 8,678 | 4.2 MB |
-| [`item.json`](https://files.terra-archive.net/assets/tl/item.json) | 아이템·재료 — 이름·설명·용도 — 공식 한국어 3,024 + 비공식 번역 213 | 3,237 | 584 KB |
-| [`enemy.json`](https://files.terra-archive.net/assets/tl/enemy.json) | 적 — 이름·설명·능력 | 3,141 | 733 KB |
-| [`stage.json`](https://files.terra-archive.net/assets/tl/stage.json) | 작전 — 이름·설명 | 5,248 | 1.2 MB |
-| [`voice.json`](https://files.terra-archive.net/assets/tl/voice.json) | 오퍼 보이스 대사 — 제목·대사 — 공식 한국어 16,043 + 비공식 번역 556 | 16,599 | 4.5 MB |
-| [`record.json`](https://files.terra-archive.net/assets/tl/record.json) | 오퍼 기록·프로필 산문 (비공식 번역) | 847 | 837 KB |
+| [`manifest.json`](https://files.terra-archive.net/assets/tl/manifest.json) | 아래 목록 + 파일별 해시·주소 | — | 2 KB |
+| [`op.json`](https://files.terra-archive.net/assets/tl/op.json) | 오퍼레이터 — 이름·직위·특성·재능·스킬·모듈·기반시설 — 공식 한국어 8,277 + 비공식 번역 712 | 8,989 | 4.2 MB |
+| [`item.json`](https://files.terra-archive.net/assets/tl/item.json) | 아이템·재료 — 이름·설명·용도 — 공식 한국어 3,024 + 비공식 번역 213 | 3,237 | 545 KB |
+| [`enemy.json`](https://files.terra-archive.net/assets/tl/enemy.json) | 적 — 이름·설명·능력 — 공식 한국어 3,141 + 비공식 번역 246 | 3,387 | 812 KB |
+| [`stage.json`](https://files.terra-archive.net/assets/tl/stage.json) | 작전 — 이름·설명 — 공식 한국어 5,248 + 비공식 번역 302 | 5,550 | 1.3 MB |
+| [`voice.json`](https://files.terra-archive.net/assets/tl/voice.json) | 오퍼 보이스 대사 — 제목·대사 — 공식 한국어 16,043 + 비공식 번역 556 | 16,599 | 4.4 MB |
+| [`record.json`](https://files.terra-archive.net/assets/tl/record.json) | 오퍼 기록·프로필 산문 (비공식 번역) | 848 | 402 KB |
 | [`ra.json`](https://files.terra-archive.net/assets/tl/ra.json) | 생존연산 (비공식 번역) | 1,117 | 170 KB |
-| [`is1.json`](https://files.terra-archive.net/assets/tl/is1.json) | 통합전략 1 | 818 | 119 KB |
-| [`is2.json`](https://files.terra-archive.net/assets/tl/is2.json) | 통합전략 2 | 1,024 | 171 KB |
-| [`is3.json`](https://files.terra-archive.net/assets/tl/is3.json) | 통합전략 3 | 1,113 | 190 KB |
-| [`is4.json`](https://files.terra-archive.net/assets/tl/is4.json) | 통합전략 4 | 1,221 | 191 KB |
-| [`is5.json`](https://files.terra-archive.net/assets/tl/is5.json) | 통합전략 5 | 1,911 | 299 KB |
-| [`is6.json`](https://files.terra-archive.net/assets/tl/is6.json) | 통합전략 6 (중국 서버 선행) | 660 | 47 KB |
-| [`is-common.json`](https://files.terra-archive.net/assets/tl/is-common.json) | 통합전략 공통 — 조우 안내·판정 문구 (테마 구분 없음) | 240 | 98 KB |
+| [`is.json`](https://files.terra-archive.net/assets/tl/is.json) | 통합전략 1~6 — 소장품·노드·조우·엔딩·전투 (테마 구분 없이 한 벌) | 5,700 | 970 KB |
 
-전량 약 13.2 MB입니다. 한 파일이 하나의 콘텐츠에 대응하므로 필요한 것만 받으면 됩니다.
+전량 약 12.7 MB입니다. 한 파일이 하나의 콘텐츠에 대응하므로 필요한 것만 받으면 됩니다.
 
 `record.json`과 `ra.json`은 전부 비공식 번역입니다 — 한섭에 아직 안 나온 것들이라
 공식 한국어가 없습니다. 나머지 파일은 공식과 비공식이 섞여 있고 `x`로 갈립니다.
@@ -79,8 +63,8 @@
 게임 데이터 ID(`char_xxx`·`rogue_3_relic_xxx` 같은 것)로는 찾을 수 없습니다 — 여기 담긴
 것은 **화면에 보이는 글자**뿐입니다. OCR로 읽은 문자열을 그대로 키로 쓰시면 됩니다.
 
-통합전략(`is*.json`)만 갈래로 한 겹 싸여 있고, 나머지는 평평합니다.
-갈래 이름은 다섯 가지뿐입니다:
+통합전략(`is.json`)만 갈래로 한 겹 싸여 있고, 나머지는 평평합니다.
+테마 1~6은 한 파일에 함께 들어 있습니다. 갈래 이름은 다섯 가지뿐입니다:
 
 | 키 | 담긴 것 |
 |---|---|
@@ -91,7 +75,7 @@
 | `battles` | 작전·적·분대·전투 기믹 |
 
 ```json
-// is3.json
+// is.json
 {
  "collectibles": {
   "地形图": { "ko": "지형도" },
@@ -103,24 +87,17 @@
 }
 ```
 
-`is-common.json`은 `encounters` 하나만 들고 있습니다. 없는 갈래는 키 자체가 빠지므로,
-읽을 때 다섯 개가 다 있다고 가정하지 마세요.
+없는 갈래는 키 자체가 빠지므로, 읽을 때 다섯 개가 다 있다고 가정하지 마세요.
 
 ```json
 // item.json
 {
- "源石虫": { "ko": "원석충" },
- "热腾腾大包": {
-  "ko": "따끈따끈 왕만두",
-  "en": "Piping Hot Bun",
-  "ja": "ほかほか肉まん",
-  "x": 1
- }
+ "源石虫":    { "ko": "원석충" },
+ "热腾腾大包": { "ko": "따끈따끈 왕만두", "x": 1 }
 }
 ```
 
-- **`x: 1` 이 붙은 것만 비공식 번역**입니다. 없으면 게임의 공식 한국어입니다.
-- `en`·`ja`는 없을 수 있습니다 — 공식 대조는 한국어만 짝지어 두었습니다.
+**`x: 1` 이 붙은 것만 비공식 번역**입니다. 없으면 게임의 공식 한국어입니다.
 
 ## 갱신 확인
 
@@ -155,7 +132,7 @@
 
 바뀌는 빈도가 파일마다 다릅니다. **비공식 번역(`x`)은 중국 서버 패치마다 늘고**,
 공식 쪽은 한국 서버 점검 때 늘어납니다. 통합전략 1~5는 거의 그대로입니다.
-용량은 `voice.json`(4.5 MB)과 `op.json`(4.2 MB)이 전체의 6할이니, 보이스 자막이나
+용량은 `voice.json`(4.4 MB)과 `op.json`(4.2 MB)이 전체의 7할이니, 보이스 자막이나
 오퍼 상세가 필요 없으시면 그 둘만 빼도 됩니다.
 
 형식 버전 같은 것은 두지 않았습니다. 대신 **형식을 깨야 할 일이 생기면 여기를 고치지

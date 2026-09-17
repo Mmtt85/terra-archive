@@ -3,39 +3,39 @@
  "files": [
   {
    "file": "op.json",
-   "url": "https://files.terra-archive.net/assets/tl/op.json?v=5bf65cc82864974c",
-   "label": "오퍼레이터 — 이름·직위·특성·재능·스킬·모듈·기반시설 — 공식 한국어 8,277 + 비공식 번역 401",
-   "hash": "5bf65cc82864974c"
+   "url": "https://files.terra-archive.net/assets/tl/op.json?v=4ed0072bcec42910",
+   "label": "오퍼레이터 — 이름·직위·특성·재능·스킬·모듈·기반시설 — 공식 한국어 8,277 + 비공식 번역 712",
+   "hash": "4ed0072bcec42910"
   },
   {
    "file": "item.json",
-   "url": "https://files.terra-archive.net/assets/tl/item.json?v=e6347c62d5c7893a",
+   "url": "https://files.terra-archive.net/assets/tl/item.json?v=cc454255bbb7e330",
    "label": "아이템·재료 — 이름·설명·용도 — 공식 한국어 3,024 + 비공식 번역 213",
-   "hash": "e6347c62d5c7893a"
+   "hash": "cc454255bbb7e330"
   },
   {
    "file": "enemy.json",
-   "url": "https://files.terra-archive.net/assets/tl/enemy.json?v=8ec3898df6c8f346",
-   "label": "적 — 이름·설명·능력",
-   "hash": "8ec3898df6c8f346"
+   "url": "https://files.terra-archive.net/assets/tl/enemy.json?v=7cb835e281316de2",
+   "label": "적 — 이름·설명·능력 — 공식 한국어 3,141 + 비공식 번역 246",
+   "hash": "7cb835e281316de2"
   },
   {
    "file": "stage.json",
-   "url": "https://files.terra-archive.net/assets/tl/stage.json?v=c3dc1a6d3f215b2a",
-   "label": "작전 — 이름·설명",
-   "hash": "c3dc1a6d3f215b2a"
+   "url": "https://files.terra-archive.net/assets/tl/stage.json?v=dddc5669bbfec7c2",
+   "label": "작전 — 이름·설명 — 공식 한국어 5,248 + 비공식 번역 302",
+   "hash": "dddc5669bbfec7c2"
   },
   {
    "file": "voice.json",
-   "url": "https://files.terra-archive.net/assets/tl/voice.json?v=c7f4d7846dd29189",
+   "url": "https://files.terra-archive.net/assets/tl/voice.json?v=29cce38855261d52",
    "label": "오퍼 보이스 대사 — 제목·대사 — 공식 한국어 16,043 + 비공식 번역 556",
-   "hash": "c7f4d7846dd29189"
+   "hash": "29cce38855261d52"
   },
   {
    "file": "record.json",
-   "url": "https://files.terra-archive.net/assets/tl/record.json?v=7de6cfcfdb680c37",
+   "url": "https://files.terra-archive.net/assets/tl/record.json?v=95e98fb4125010b5",
    "label": "오퍼 기록·프로필 산문 (비공식 번역)",
-   "hash": "7de6cfcfdb680c37"
+   "hash": "95e98fb4125010b5"
   },
   {
    "file": "ra.json",
@@ -44,46 +44,10 @@
    "hash": "17b99053655fd21d"
   },
   {
-   "file": "is1.json",
-   "url": "https://files.terra-archive.net/assets/tl/is1.json?v=a4b57a6bb4363703",
-   "label": "통합전략 1",
-   "hash": "a4b57a6bb4363703"
-  },
-  {
-   "file": "is2.json",
-   "url": "https://files.terra-archive.net/assets/tl/is2.json?v=182542fd370b2eba",
-   "label": "통합전략 2",
-   "hash": "182542fd370b2eba"
-  },
-  {
-   "file": "is3.json",
-   "url": "https://files.terra-archive.net/assets/tl/is3.json?v=191001cf1f219078",
-   "label": "통합전략 3",
-   "hash": "191001cf1f219078"
-  },
-  {
-   "file": "is4.json",
-   "url": "https://files.terra-archive.net/assets/tl/is4.json?v=6ec1a7ce524eac4a",
-   "label": "통합전략 4",
-   "hash": "6ec1a7ce524eac4a"
-  },
-  {
-   "file": "is5.json",
-   "url": "https://files.terra-archive.net/assets/tl/is5.json?v=d68fb3c2e1e7ecaf",
-   "label": "통합전략 5",
-   "hash": "d68fb3c2e1e7ecaf"
-  },
-  {
-   "file": "is6.json",
-   "url": "https://files.terra-archive.net/assets/tl/is6.json?v=9c8db78ae3f093db",
-   "label": "통합전략 6 (중국 서버 선행)",
-   "hash": "9c8db78ae3f093db"
-  },
-  {
-   "file": "is-common.json",
-   "url": "https://files.terra-archive.net/assets/tl/is-common.json?v=8faec16b6377c499",
-   "label": "통합전략 공통 — 조우 안내·판정 문구 (테마 구분 없음)",
-   "hash": "8faec16b6377c499"
+   "file": "is.json",
+   "url": "https://files.terra-archive.net/assets/tl/is.json?v=98a880d5218aae21",
+   "label": "통합전략 1~6 — 소장품·노드·조우·엔딩·전투 (테마 구분 없이 한 벌)",
+   "hash": "98a880d5218aae21"
   }
  ]
 }
