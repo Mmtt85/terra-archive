@@ -12124,23 +12124,25 @@ html.dark .pt-stage {
 .pt-t-terminal .pt-ko { font-size: clamp(20px, 2.4vw, 29px); }
 .pt-t-terminal .pt-ic { width: 32px; height: 32px; font-size: 16px; }
 .pt-t-terminal .pt-desc { font-size: 13px; }
-/* 큰 칸 가운데를 채우는 한 줄 설명 — 게임에선 이성 시계가 있던 자리 */
-/* 홈 타일 설명은 **한 줄 + …** 로 통일한다 (사용자 지시 2026-08-26: "너비가 모자라면
-   …으로, 지금은 좀 길면 두 줄로 넘어간다").
+/* 칸 가운데를 채우는 설명 — 게임에선 이성 시계가 있던 자리 */
+/* **줄을 바꿔 다 보여준다** (사용자 지시 2026-09-17: "설명이 짤리면 개행을 하면 되지 왜
+   …하고 짜른 후에 마우스오버해도 보이지도 않고").
+   종전엔 한 줄 + … 였다 (2026-08-26). 그때는 상자가 가로로 넓어 한 줄에 다 들어갔지만,
+   묶음 셋을 한 줄에 세우면서 칸이 200px 안팎으로 좁아져 열 몇 자에서 잘렸다 — 남는 건
+   "층별 노드·적 도감·유물·엔…" 처럼 뜻이 끊긴 토막이고, title 속성도 없어 확인할 길이
+   없었다. 이제 줄바꿈으로 두 줄까지 자연히 흐르게 두고, 문구 자체를 두 줄에 맞춰 줄였다.
    ⚠ -webkit-line-clamp 는 여기서 **안 먹는다**. .pt-tile 이 세로 flex 라 자식의
-     display:-webkit-box 가 블록화되어 flow-root 로 계산된다 (실측 2026-08-26:
-     computed display=flow-root, clamp=1 인데 높이 8.5px 로 짜부라짐). 그래서 제목(.pt-ko)이
-     쓰는 것과 같은 nowrap + ellipsis 로 자른다 — 이건 flex 자식에서도 확실히 동작한다. */
+     display:-webkit-box 가 블록화되어 flow-root 로 계산된다 (실측 2026-08-26). */
 .pt-desc {
   font-size: 12px;
   font-weight: 600;
-  line-height: 1.45;
+  line-height: 1.4;
   color: var(--pt-mut);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex: none;            /* 세로 flex 에서 눌려 사라지지 않게 */
+  white-space: normal;
+  overflow-wrap: anywhere;   /* 긴 낱말이 칸을 밀지 않게 */
+  flex: none;                /* 세로 flex 에서 눌려 사라지지 않게 */
 }
+/* 넓은 칸(인프라·스토리·소개)은 종전처럼 한 줄이면 충분하다 — 넘치면 그때 줄을 바꾼다 */
 /* 이벤트 배너 칸 — 게이지(이성 시계 자리) + 배너 이미지 */
 .pt-banner {
   padding: 0;

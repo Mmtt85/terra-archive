@@ -44,37 +44,37 @@ export const PORTAL_TILES: PortalTile[] = [
   { id: "banner", label: "진행중 이벤트", area: "banner", kind: "banner", icon: "✦" },
   // ── 도감 묶음 (헤더 메뉴와 같은 구성) ──
   { id: "operator", label: "오퍼 백과사전", tab: "archive", area: "dex", kind: "plate", group: "dex",
-    desc: "소속·직군·태그·시너지로 필터·검색하는 오퍼레이터 도감", icon: "▤" },
+    desc: "소속·직군·태그·시너지로 찾는 오퍼레이터 도감", icon: "▤" },
   { id: "enemy", label: "적 도감", tab: "enemy", area: "dex", kind: "plate", group: "dex",
-    desc: "적 1,500여 종의 스탯·능력·면역과 등장 작전", icon: "⊗" },
+    desc: "적 1,500여 종의 스탯·능력과 등장 작전", icon: "⊗" },
   { id: "stage", label: "작전 도감", tab: "stage", area: "dex", kind: "plate", group: "dex",
-    desc: "작전 2,200여 개의 지형 도면과 등장 적·드랍", icon: "▨" },
+    desc: "작전 2,200여 개의 도면과 등장 적·드랍", icon: "▨" },
   // 아이템 도감은 헤더 메뉴의 도감 묶음에만 있고 홈 타일에서 빠져 있었다 (2026-09-17).
   // 시뮬레이터 상자와 같은 4칸 구성이 된다.
   { id: "item", label: "아이템 도감", tab: "item", area: "dex", kind: "plate", group: "dex",
     desc: "아이템 1,400여 종의 설명·용도·획득처", icon: "◇" },
   // ── 시뮬레이터 묶음 (헤더 메뉴와 같은 구성 + 작전 시뮬레이터) ──
   { id: "recruit", label: "공개채용 도우미", tab: "recruit", area: "sim", kind: "plate", group: "sim",
-    desc: "공개모집 태그 조합으로 확정·고성급 오퍼를 탐색", icon: "◎" },
+    desc: "공개모집 태그 조합으로 확정·고성급 탐색", icon: "◎" },
   { id: "base", label: "재료파밍 도우미", tab: "farm", area: "sim", kind: "plate", group: "sim",
-    desc: "정예화 재료의 최적 파밍 스테이지와 이성 효율표", icon: "◈" },
+    desc: "정예화 재료의 최적 파밍지와 이성 효율표", icon: "◈" },
   { id: "depot", label: "오퍼 육성 시뮬", tab: "upgrade", area: "sim", kind: "plate", group: "sim",
-    desc: "오퍼 육성에 필요한 용문폐·재료 총량을 단계별로 계산", icon: "▦" },
+    desc: "육성에 필요한 용문폐·재료 총량을 단계별로 계산", icon: "▦" },
   { id: "simulate", label: "작전 시뮬레이터", tab: "sim", area: "sim", kind: "plate", group: "sim",
-    desc: "적이 언제 어디서 나와 어디로 가는지 작전 흐름을 재생", icon: "▶" },
+    desc: "적이 언제 어디서 나와 어디로 가는지 재생", icon: "▶" },
   { id: "story", label: "스토리", tab: "story", area: "story", kind: "plate",
     desc: "이벤트 스토리를 AI 요약과 전문(풀 스크립트)으로", icon: "✦" },
   // 게임 모드 공략 3종은 '가이드' 묶음 상자로 (사용자 확정 2026-08-22) — 헤더 메뉴와 같은 구성
   { id: "squads", label: "통합전략", tab: "rogue", area: "guide", kind: "plate", group: "guide",
-    desc: "층별 노드·적 도감·유물·엔딩 조건을 난이도별로 정리", icon: "❖" },
+    desc: "층별 노드·유물·엔딩 조건을 난이도별로 정리", icon: "❖" },
   { id: "ra", label: "생존연산", tab: "ra", area: "guide", kind: "plate", group: "guide",
-    desc: "요리 조합·제작 재료·지역과 조우 선택지를 정리", icon: "❂" },
+    desc: "요리 조합·제작 재료·지역과 조우 선택지", icon: "❂" },
   { id: "autochess", label: "위수협의", tab: "autochess", area: "guide", kind: "plate", group: "guide",
-    desc: "맹약별 오퍼레이터·전용 능력·특훈 적·보급센터 수치를 정리", icon: "♟" },
+    desc: "맹약별 오퍼레이터·전용 능력과 보급센터 수치", icon: "♟" },
   // 이벤트도 가이드 묶음 (사용자 지시 2026-09-17) — 헤더 메뉴의 GUIDE_TABS 와 같은 구성.
   // 자료를 뒤지는 도감이 아니라 "이 콘텐츠를 보러 간다"는 결이라 여기 들어간다.
   { id: "event", label: "이벤트", tab: "event", area: "guide", kind: "plate", group: "guide",
-    desc: "이벤트별 작전·등장 적·교환 재화·보상 오퍼를 한자리에", icon: "✧" },
+    desc: "이벤트별 작전·적·교환 재화·보상 오퍼", icon: "✧" },
   { id: "archives", label: "테라 아카이브 소개", tab: "about", area: "archives", kind: "plate",
     desc: "각 기능이 무엇이고 언제 쓰는지 안내", icon: "ⓘ" },
   // 제안 보내기 타일은 뺐다 (사용자 지시 2026-08-10) — 떠 있는 💬 제안 버튼과 중복.

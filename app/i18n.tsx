@@ -207,9 +207,9 @@ const D: Record<string, Pair> = {
 
   // 포탈 첫화면 (루트 /)
   "명일방주(아크나이츠) 팬사이트 — 필요한 도구를 골라 들어가세요.": ["An Arknights fansite — pick a tool and dive in.", "アークナイツのファンサイト — 使いたいツールを選んで入りましょう。"],
-  "소속·직군·태그·시너지로 필터·검색하는 오퍼레이터 도감": ["Operator database you can filter and search by faction, class, tag, and synergy.", "所属・クラス・タグ・シナジーで絞り込み検索できるオペレーター図鑑。"],
+  "소속·직군·태그·시너지로 찾는 오퍼레이터 도감": ["Operators by faction, class, tag and synergy", "所属・クラス・タグ・シナジーで探すオペレーター図鑑"],
   "보유 오퍼만 입력하면 기반시설 편성을 자동으로 계산": ["Enter your roster and it auto-builds your RIIC base layout.", "手持ちオペレーターを入力するだけで基地編成を自動計算。"],
-  "공개모집 태그 조합으로 확정·고성급 오퍼를 탐색": ["Find guaranteed and high-rarity operators from recruitment tag combos.", "公開求人タグの組み合わせから確定・高レアオペレーターを探索。"],
+  "공개모집 태그 조합으로 확정·고성급 탐색": ["Guaranteed and high-rarity picks from tag combos", "公開求人タグの組み合わせから確定・高レアを探索"],
   "재료 파밍 효율표와 오퍼 육성 비용 시뮬레이션": ["Material farming efficiency table and operator upgrade-cost simulator.", "素材周回効率表とオペレーター育成コストシミュレーション。"],
   "이벤트 스토리를 컷씬과 함께 10분 분량으로 요약": ["Event stories summarized with cutscenes in a 10-minute read.", "イベントストーリーをカットシーンと共に10分で要約。"],
   "각 기능이 무엇이고 언제 쓰는지 안내": ["What each tool is and when to use it.", "各機能が何で、いつ使うのかを案内。"],
@@ -1964,7 +1964,7 @@ const D: Record<string, Pair> = {
   "게임에 표기된 빈도입니다. 실측 드랍률과 이성 효율은 재료파밍 도우미에서 봅니다.": ["These are the in-game frequency labels. For measured drop rates and sanity efficiency, see the Material Farming Helper.", "ゲーム内表記の頻度です。実測ドロップ率と理性効率は素材周回ヘルパーで確認できます。"],
   "작전 도감 - 명일방주 스테이지 지형·드랍 | 테라 아카이브": ["Stage Handbook - Arknights Stage Maps & Drops | Terra Archive", "作戦図鑑 - アークナイツ ステージ地形・ドロップ | テラアーカイブ"],
   "{code} {name} - 명일방주 작전 | 테라 아카이브": ["{code} {name} - Arknights Stage | Terra Archive", "{code} {name} - アークナイツ 作戦 | テラアーカイブ"],
-  "작전 2,200여 개의 지형 도면과 등장 적·드랍": ["Terrain layouts, enemies and drops for 2,200+ stages", "2,200以上の作戦の地形図と出現する敵・ドロップ"],
+  "작전 2,200여 개의 도면과 등장 적·드랍": ["Layouts, enemies and drops for 2,200+ stages", "2,200以上の作戦の地形図と敵・ドロップ"],
 
   // ── 공개채용 도우미 ────────────────────────────────────────────────────────────
   "공개모집 도우미": ["Recruitment helper", "公開求人ヘルパー"],
@@ -2013,8 +2013,8 @@ const D: Record<string, Pair> = {
   "재료파밍 도우미": ["Material Farming Helper", "素材周回ヘルパー"],
   "오퍼 육성 시뮬": ["Upgrade Sim", "育成シミュ"],
   "육성 비용 계산": ["Upgrade cost", "育成コスト"],
-  "정예화 재료의 최적 파밍 스테이지와 이성 효율표": ["Best farming stages and sanity efficiency for Elite materials", "昇進素材の最適ステージと理性効率表"],
-  "오퍼 육성에 필요한 용문폐·재료 총량을 단계별로 계산": ["Calculate the LMD and materials needed to upgrade operators, step by step", "オペレーター育成に必要な龍門幣・素材の合計を段階ごとに計算"],
+  "정예화 재료의 최적 파밍지와 이성 효율표": ["Best farming stages and sanity efficiency", "昇進素材の最適ステージと理性効率表"],
+  "육성에 필요한 용문폐·재료 총량을 단계별로 계산": ["LMD and materials to reach your upgrade goals", "育成に必要な龍門幣・素材の合計を段階ごとに計算"],
   "재료파밍 도우미 - 명일방주 재료 파밍 효율표 | 테라 아카이브": ["Material Farming Helper - Arknights Material Farming Efficiency | Terra Archive", "素材周回ヘルパー - アークナイツ素材周回効率表 | テラアーカイブ"],
   "오퍼 육성 시뮬 - 명일방주 육성 비용 계산기 | 테라 아카이브": ["Operator Upgrade Sim - Arknights Upgrade Cost Calculator | Terra Archive", "オペレーター育成シミュ - アークナイツ育成コスト計算機 | テラアーカイブ"],
   "재료 파밍 & 오퍼 육성 시뮬레이션": ["Material Farming & Operator Upgrade Simulator", "素材周回＆オペレーター育成シミュレーター"],
@@ -2328,7 +2328,7 @@ const D: Record<string, Pair> = {
   "거부반응": ["Rejection", "拒絶反応"],
   "계시": ["Revelation", "啓示"],
   "통합전략 가이드 - 명일방주 통합전략 공략 | 테라 아카이브": ["Integrated Strategies Guide - Arknights IS Guide | Terra Archive", "統合戦略ガイド - アークナイツ統合戦略攻略 | テラアーカイブ"],
-  "층별 노드·적 도감·유물·엔딩 조건을 난이도별로 정리": ["Floor nodes, enemy handbook, relics, and ending requirements by difficulty", "階層ノード・敵図鑑・秘宝・エンディング条件を難易度別に整理"],
+  "층별 노드·유물·엔딩 조건을 난이도별로 정리": ["Floor nodes, relics and endings by difficulty", "階層ノード・秘宝・エンディング条件を難易度別に"],
   "이 테마는 CN 선행 데이터라 아직 한국어·중국어로만 제공됩니다.": ["This theme is based on advance CN-server data and is only available in Korean/Chinese for now.", "このテーマはCN先行データのため、現在は韓国語・中国語のみの提供です。"],
   "다른 테마는 준비 중": ["Other themes coming soon", "他のテーマは準備中"],
   "준비 중": ["Coming soon", "準備中"],
@@ -3143,8 +3143,8 @@ const D: Record<string, Pair> = {
   "{n}마리": ["{n} of them", "{n}体"],
   "처치 시 자금 {n}": ["{n} funds on kill", "撃破で資金{n}"],
   "승리 시 자금 {n}": ["{n} funds on win", "勝利で資金{n}"],
-  "맹약별 오퍼레이터·전용 능력·특훈 적·보급센터 수치를 정리": ["Operators by alliance, garrison abilities, training enemies and Supply Center numbers", "盟約ごとのオペレーター・専用能力・訓練用仮想敵・補給センターの数値"],
-  "이벤트별 작전·등장 적·교환 재화·보상 오퍼를 한자리에": ["Operations, enemies, exchange currencies and welfare operators, per event", "イベントごとの作戦・出現する敵・交換素材・報酬オペレーターをまとめて"],
+  "맹약별 오퍼레이터·전용 능력과 보급센터 수치": ["Alliance operators, abilities and Supply Center data", "盟約ごとのオペレーター・専用能力と補給センターの数値"],
+  "이벤트별 작전·적·교환 재화·보상 오퍼": ["Operations, enemies, currencies and welfare operators", "イベントごとの作戦・敵・交換素材・報酬オペレーター"],
   "맹약(진영·특성)별 오퍼레이터와 각자의 위수 협의 전용 능력, 특훈 적과 리더 적, 보급센터 수치를 게임 데이터에서 그대로 정리했습니다.": [
     "Operators grouped by alliance (nation and trait) with the garrison ability each one carries, plus Tactical Training and leader enemies and every Supply Center number — straight from the game data.",
     "盟約（国家・特性）ごとのオペレーターとそれぞれの専用能力、訓練用仮想敵とリーダー級の敵、補給センターの数値をゲームデータからそのまま整理しました。"],
@@ -3478,9 +3478,10 @@ const D: Record<string, Pair> = {
   "처음부터 고를 수 있는 전략입니다.": [
     "This strategy is available from the start.", "最初から選べる戦略です。"],
   // 포탈 타일 설명 — 사전에서 빠져 있어 EN/JA에 한국어가 나가던 두 줄 (2026-08-22 발견)
-  "요리 조합·제작 재료·지역과 조우 선택지를 정리": ["Recipes, crafting materials, areas and encounter choices", "料理レシピ・製作素材・エリアと遭遇の選択肢"],
-  "적 1,500여 종의 스탯·능력·면역과 등장 작전": ["Stats, abilities and immunities for 1,500+ enemies, plus where they appear", "1,500種以上の敵のステータス・能力・耐性と出現作戦"],
+  "요리 조합·제작 재료·지역과 조우 선택지": ["Recipes, materials, areas and encounter choices", "料理レシピ・製作素材・エリアと遭遇の選択肢"],
+  "적 1,500여 종의 스탯·능력과 등장 작전": ["Stats, abilities and appearances for 1,500+ enemies", "1,500種以上の敵のステータス・能力と出現作戦"],
   "아이템 1,400여 종의 설명·용도·획득처": ["Descriptions, uses and sources for 1,400+ items", "1,400種以上のアイテムの説明・用途・入手先"],
+  "적이 언제 어디서 나와 어디로 가는지 재생": ["When and where enemies spawn, and where they go", "敵がいつどこに現れどこへ向かうかを再生"],
 };
 
 export type T = (key: string, vars?: Record<string, string | number>) => string;
