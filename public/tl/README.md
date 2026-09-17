@@ -26,14 +26,14 @@
 
 ## 파일
 
-| 파일 | 내용 | 항목 |
-|---|---|---:|
-| [`manifest.json`](https://files.terra-archive.net/assets/tl/manifest.json) | 아래 목록 + 파일별 해시·주소 | — |
-| [`op-fut.json`](https://files.terra-archive.net/assets/tl/op-fut.json) | 오퍼레이터·재료 — **아직 한국 서버에 없는 것** | 351 |
-| [`op-past.json`](https://files.terra-archive.net/assets/tl/op-past.json) | **오퍼 기록·보이스 대사** 중심 — 공식 한국어가 덮기 전의 옛 번역 | 2,451 |
-| [`ra.json`](https://files.terra-archive.net/assets/tl/ra.json) | 생존연산 (중국 서버 선행) | 1,157 |
-| [`is1.json`](https://files.terra-archive.net/assets/tl/is1.json) … [`is6.json`](https://files.terra-archive.net/assets/tl/is6.json) | 통합전략 1~6 (6은 중국 서버 선행) | 726~1,519 |
-| [`is-common.json`](https://files.terra-archive.net/assets/tl/is-common.json) | 통합전략 공통 — 조우 안내·판정 문구 (테마 구분 없음) | 298 |
+| 파일 | 내용 | 항목 | 크기 |
+|---|---|---:|---:|
+| [`manifest.json`](https://files.terra-archive.net/assets/tl/manifest.json) | 아래 목록 + 파일별 해시·주소 | — | 2 KB |
+| [`op-fut.json`](https://files.terra-archive.net/assets/tl/op-fut.json) | 오퍼레이터·재료 — **아직 한국 서버에 없는 것** | 351 | 162 KB |
+| [`op-past.json`](https://files.terra-archive.net/assets/tl/op-past.json) | **오퍼 기록·보이스 대사** 중심 — 공식 한국어가 덮기 전의 옛 번역 | 2,451 | 2.4 MB |
+| [`ra.json`](https://files.terra-archive.net/assets/tl/ra.json) | 생존연산 (중국 서버 선행) | 1,157 | 161 KB |
+| [`is1.json`](https://files.terra-archive.net/assets/tl/is1.json) … [`is6.json`](https://files.terra-archive.net/assets/tl/is6.json) | 통합전략 1~6 (6은 중국 서버 선행) | 726~1,519 | 43~86 KB |
+| [`is-common.json`](https://files.terra-archive.net/assets/tl/is-common.json) | 통합전략 공통 — 조우 안내·판정 문구 (테마 구분 없음) | 298 | 118 KB |
 
 전량 약 3.2 MB입니다. 한 파일이 하나의 콘텐츠에 대응하므로 필요한 것만 받으면 됩니다.
 

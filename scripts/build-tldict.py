@@ -250,6 +250,59 @@ __BODY__
 """
 
 
+def human(n):
+    return f"{n / 1048576:.1f} MB" if n >= 1024 * 1024 else f"{round(n / 1024):,} KB"
+
+
+def update_readme_table(md_path, counts, order):
+    """규격서 「파일」 표의 **숫자 칸만** 다시 쓴다 — 파일·내용 칸의 문구는 손댄 그대로 둔다.
+
+    항목 수도 크기도 빌드마다 바뀌는데 손으로 적어 두면 중섭 패치 한 번에 거짓말이 된다.
+    그렇다고 표 전체를 만들어 버리면 공들여 고친 설명 문구가 매번 날아간다 — 그래서
+    행이 어느 파일을 가리키는지 첫 칸의 코드 스팬에서 읽어내 **뒤 두 칸만** 갈아 끼운다.
+    `is1.json` … `is6.json` 처럼 둘 이상을 가리키는 행은 그 사이 전부의 범위를 낸다.
+    """
+    with open(md_path, encoding="utf-8") as fp:
+        text = fp.read()
+    rows = re.search(r"^\| 파일 \|.*?(?=\n\n)", text, re.M | re.S)
+    if not rows:
+        return
+    out = []
+    for i, line in enumerate(rows[0].split("\n")):
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if i == 0:
+            out.append("| " + " | ".join(cells[:2] + ["항목", "크기"]) + " |")
+            continue
+        if i == 1:
+            out.append("|---|---|---:|---:|")
+            continue
+        named = re.findall(r"`([A-Za-z0-9.\-]+\.json)`", cells[0])
+        if not named:
+            out.append(line)
+            continue
+        if len(named) > 1 and named[0] in order and named[-1] in order:
+            span = order[order.index(named[0]):order.index(named[-1]) + 1]
+        else:
+            span = named
+        sizes = [os.path.getsize(os.path.join(OUT, f)) for f in span if os.path.exists(os.path.join(OUT, f))]
+        nums = [counts[f] for f in span if f in counts]
+        n = "—" if not nums else (f"{nums[0]:,}" if len(set(nums)) == 1
+                                  else f"{min(nums):,}~{max(nums):,}")
+        if not sizes:
+            z = "—"
+        elif len(set(sizes)) == 1:
+            z = human(sizes[0])
+        else:
+            lo, hi = human(min(sizes)), human(max(sizes))
+            # 단위가 같으면 "43~86 KB" — "43 KB~86 KB" 는 눈에 걸린다
+            z = f"{lo.split()[0]}~{hi}" if lo.split()[1] == hi.split()[1] else f"{lo}~{hi}"
+        out.append("| " + " | ".join(cells[:2] + [n, z]) + " |")
+    fixed = text.replace(rows[0], "\n".join(out), 1)
+    if fixed != text:
+        with open(md_path, "w", encoding="utf-8") as fp:
+            fp.write(fixed)
+
+
 def write_html(md_path, out_path):
     with open(md_path, encoding="utf-8") as fp:
         body = md_to_html(fp.read())
@@ -373,6 +426,8 @@ with open(os.path.join(OUT, "manifest.json"), "w", encoding="utf-8") as fp:
 # 내려받고, text/plain 이면 서식 없는 맨 글자다 (2026-09-17 실측). 받는 쪽에 "주소 하나
 # 누르면 읽을 수 있는 문서"를 주려면 HTML 을 같이 내는 수밖에 없다. README.md 가 정본이고
 # 이건 그걸 그대로 옮긴 것이라, 손으로 고칠 일이 없다.
+# 표의 숫자를 먼저 맞춘 뒤 HTML 을 굽는다 — 순서가 바뀌면 페이지만 옛 숫자로 남는다
+update_readme_table(os.path.join(OUT, "README.md"), counts, ORDER)
 write_html(os.path.join(OUT, "README.md"), os.path.join(OUT, "readme.html"))
 
 size = sum(os.path.getsize(os.path.join(OUT, f)) for f in os.listdir(OUT) if f.endswith(".json"))
