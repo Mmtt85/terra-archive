@@ -6,6 +6,7 @@
 //   node scripts/r2-sync.mjs --dry     # 올릴 목록만 출력
 //   node scripts/r2-sync.mjs --prune   # 로컬에 없는 assets/ 원격 키 삭제 (uploads/는 절대 안 건드림)
 //   node scripts/r2-sync.mjs --recache # 내용이 같아도 데이터 파일을 다시 올려 캐시 헤더 갱신
+//   node scripts/r2-sync.mjs --only tl # 그 폴더만 올린다 (--prune 과는 같이 못 씀)
 //
 // 버킷 구조: assets/<public 상대경로> = 이 스크립트 관할 · uploads/ = /admin 수동 업로드 관할.
 // 인증: 레포 루트 .r2-sync-key (gitignore됨) 또는 env R2_SYNC_KEY.
@@ -62,6 +63,24 @@ const DIRS = ["story", "rogue", "lens", "tesseract", "avatars", "about", "og", "
 const PREFIX = "assets/"; // 에셋은 전부 이 폴더 밑 — uploads/(수동 업로드)와 격리
 const DRY = process.argv.includes("--dry");
 const PRUNE = process.argv.includes("--prune");
+// --only <폴더> : 그 폴더만 올린다 (여러 번 줄 수 있다). 한 갈래만 내보내고 싶은데 작업
+// 트리에 다른 작업이 섞여 있을 때 쓴다 — 번역 사전 공개본(tl)이 그런 경우다 (2026-09-17:
+// 그냥 돌리면 1,614개 167MB가 딸려 갔다).
+// ⚠ --prune 과는 같이 못 쓴다 — prune 은 "로컬에 없다 = 지워도 된다"로 판단하는데
+//   --only 는 로컬 목록 자체를 좁히므로 **나머지 폴더가 전부 삭제 대상이 된다.**
+const ONLY = process.argv.flatMap((v, i) => (v === "--only" ? [process.argv[i + 1]] : []));
+if (ONLY.length) {
+  const unknown = ONLY.filter((d) => !DIRS.includes(d));
+  if (unknown.length) {
+    console.error(`--only 에 모르는 폴더: ${unknown.join(", ")}\n고를 수 있는 것: ${DIRS.join(" ")}`);
+    process.exit(1);
+  }
+  if (PRUNE) {
+    console.error("--only 와 --prune 은 같이 쓸 수 없습니다 — 나머지 폴더가 전부 삭제 대상이 됩니다");
+    process.exit(1);
+  }
+}
+const SYNC_DIRS = ONLY.length ? ONLY : DIRS;
 // --recache: 내용이 같아도 데이터 파일(json/txt/bin)을 다시 올려 **Cache-Control을 새로 씌운다**.
 // 캐시 정책은 오브젝트 메타데이터라 cacheFor()만 고치면 이미 올라간 파일엔 반영되지 않는다.
 // 정책을 바꾼 뒤 딱 한 번 돌리면 된다 (2026-08-02, 86400 → 60+must-revalidate 전환 때 사용).
@@ -123,7 +142,7 @@ const remote = new Map((await listRes.json()).files.map((f) => [f.key, f.etag]))
 
 // ── 2. 로컬 파일 수집 + md5 비교 ──
 const files = [];
-for (const dir of DIRS) {
+for (const dir of SYNC_DIRS) {
   const abs = join(PUBLIC, dir);
   if (!existsSync(abs)) continue;
   for (const p of await walk(abs)) files.push(p);
