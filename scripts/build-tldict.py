@@ -350,6 +350,48 @@ files, labels = {}, {}
 # 오퍼·재료 장부 — 살아 있는 것(미실장)과 대체된 것(옛 장부)을 가른다.
 # 앞쪽은 중섭 패치마다 늘고 뒤쪽은 거의 안 바뀌므로, 받는 쪽이 앞쪽만 자주 받으면 된다.
 blobs = live_blobs()
+GD = os.path.join(REPO, ".gamedata")
+
+
+def _t(name):
+    path = os.path.join(GD, f"{name}.json")
+    if not os.path.exists(path):
+        return None
+    with open(path, encoding="utf-8") as fp:
+        return json.load(fp)
+
+
+def cn_only_texts():
+    """CN 표에만 있는 원문 / KR 표에 있는 원문 — 미래시 판정의 직접 증거."""
+    only, krs = set(), set()
+    tag = re.compile(r"<[^>]+>")
+    def take(cn_map, kr_map, fields):
+        for i, e in (cn_map or {}).items():
+            if not isinstance(e, dict): continue
+            dest = krs if i in (kr_map or {}) else only
+            for f in fields:
+                t = e.get(f)
+                if isinstance(t, str):
+                    t = tag.sub("", t).strip()
+                    if t: dest.add(t)
+    def both(n):
+        c, k = _t(f"cn_{n}"), (_t(f"kr_{n}") or _t(n))
+        return (c, k) if c and k else (None, None)
+    c, k = both("item_table")
+    if c: take(c.get("items"), k.get("items"), ("name", "description", "usage"))
+    c, k = both("character_table")
+    if c: take(c, k, ("name", "appellation", "description"))
+    c, k = both("enemy_handbook_table")
+    if c: take(c.get("enemyData") or c, k.get("enemyData") or k, ("name", "description", "ability"))
+    c, k = both("stage_table")
+    if c: take(c.get("stages"), k.get("stages"), ("name", "description"))
+    c, k = both("uniequip_table")
+    if c: take(c.get("equipDict"), k.get("equipDict"), ("uniEquipName", "uniEquipDesc"))
+    return only - krs, krs
+
+
+CN_ONLY, KR_TEXTS = cn_only_texts()
+
 op_fut, op_past = {}, {}
 for cn, val in load("scripts/cn-translations.json").items():
     if cn.startswith("_") or not isinstance(val, dict):
@@ -357,16 +399,20 @@ for cn, val in load("scripts/cn-translations.json").items():
     entry = {k: v for k, v in val.items() if k in ("ko", "en", "ja") and v}
     if not entry.get("ko") or entry["ko"] == cn:
         continue
-    (op_fut if any(entry["ko"] in b for b in blobs) else op_past)[cn] = entry
+    # 미래시냐 옛 장부냐 — **CN 표에만 있고 KR 표에 없는 원문인가**로 가른다.
+    # 종전에는 "번역문이 사이트 산출물에 보이나"라는 간접 증거를 썼는데, 산출물에
+    # 안 싣는 갈래(아이템 도감은 미실장 133종을 아예 뺀다)가 통째로 past 로 잘못
+    # 떨어졌다 (2026-09-17 실측: 새로 넣은 아이템 번역 175건이 전부 오분류).
+    # 직접 증거가 없을 때만 옛 방식으로 폴백한다.
+    fut = cn in CN_ONLY or (cn not in KR_TEXTS and any(entry["ko"] in b for b in blobs))
+    (op_fut if fut else op_past)[cn] = entry
 files["op-fut.json"] = op_fut
-labels["op-fut.json"] = "오퍼레이터·재료 — 아직 한국 서버에 없는 것"
+labels["op-fut.json"] = "오퍼·재료·아이템 — 아직 한국 서버에 없는 것 (비공식 번역)"
 files["op-past.json"] = op_past
 # ⚠ 라벨을 "오퍼레이터·재료"로 달아 뒀다가 실측으로 틀린 것을 잡았다 (2026-09-17).
-#   2,451건의 실제 구성은 CN 게임데이터 표와 대조해 보면 이렇다:
-#     오퍼 기록(핸드북 산문) 1,090 · 보이스 대사 715 · 특성/재능 60 · 아이템 34
-#     기반시설 21 · 모듈 21 · 스킬 16 · 지금 CN 데이터에도 없는 옛 원문 ~494
-#   즉 **73%가 기록과 보이스**다. 실장된 오퍼의 스킬·모듈 설명은 여기 거의 없다 —
-#   그건 한섭 공식 한국어가 덮어서 산출물에 남지 않았기 때문이다(그래서 past 로 갈렸다).
+#   실제 구성은 CN 게임데이터 표와 대조하면 **99.7%가 오퍼 기록(핸드북 산문)과 보이스
+#   대사**다 (2026-09-17 실측). 실장된 오퍼의 스킬·모듈 설명은 여기 거의 없다 — 한섭
+#   공식 한국어가 덮어서 산출물에 안 남았기 때문이고, 그건 이제 kr-op.json 이 담당한다.
 labels["op-past.json"] = "오퍼 기록·보이스 대사 중심 — 공식 한국어가 덮기 전의 옛 번역"
 
 # 생존연산
@@ -402,17 +448,6 @@ labels["is-common.json"] = "통합전략 공통 — 조우 안내·판정 문구
 #
 # ⚠ 입력이 .gamedata 의 cn_*/kr_* 표다. 없으면 **그 갈래를 통째로 건너뛴다** — CI 에
 #   테이블이 없다고 빌드가 죽으면 안 되고, 옛 산출물이 남아 있으면 그대로 쓰인다.
-GD = os.path.join(REPO, ".gamedata")
-
-
-def _t(name):
-    path = os.path.join(GD, f"{name}.json")
-    if not os.path.exists(path):
-        return None
-    with open(path, encoding="utf-8") as fp:
-        return json.load(fp)
-
-
 def official_pairs():
     """{갈래: {중국어 원문: {"ko": 공식 한국어}}} — 양쪽 공식 표를 id 로 조인한다."""
     out = {k: {} for k in ("op", "item", "enemy", "stage", "is-enc")}
@@ -509,6 +544,7 @@ def official_pairs():
             for f in ("name", "description"):
                 add("stage", a.get(f), b.get(f))
     return out
+
 
 
 OFFICIAL = official_pairs()

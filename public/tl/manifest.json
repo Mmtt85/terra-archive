@@ -3,15 +3,15 @@
  "files": [
   {
    "file": "op-fut.json",
-   "url": "https://files.terra-archive.net/assets/tl/op-fut.json?v=b31eeb9f964e6e50",
-   "label": "오퍼레이터·재료 — 아직 한국 서버에 없는 것",
-   "hash": "b31eeb9f964e6e50"
+   "url": "https://files.terra-archive.net/assets/tl/op-fut.json?v=93d8be4ee4b3481c",
+   "label": "오퍼·재료·아이템 — 아직 한국 서버에 없는 것 (비공식 번역)",
+   "hash": "93d8be4ee4b3481c"
   },
   {
    "file": "op-past.json",
-   "url": "https://files.terra-archive.net/assets/tl/op-past.json?v=83c6352f0a5b3ee0",
+   "url": "https://files.terra-archive.net/assets/tl/op-past.json?v=271893be3fe26363",
    "label": "오퍼 기록·보이스 대사 중심 — 공식 한국어가 덮기 전의 옛 번역",
-   "hash": "83c6352f0a5b3ee0"
+   "hash": "271893be3fe26363"
   },
   {
    "file": "kr-op.json",

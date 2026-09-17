@@ -14008,5 +14008,910 @@
   "ko": "발전소에 배치 시, 드론 충전 속도 +15%. 유키 마코토가 제조소에 배치되어 있으면 드론 충전 속도 추가 +5%",
   "en": "When assigned to a Power Plant, drone recharge rate +15%; if Makoto Yuki is assigned to a Factory, drone recharge rate increases by an additional 5%",
   "ja": "発電所に配置時、ドローンの充電速度+15%。結城理が製造所に配置されている場合、ドローンの充電速度がさらに+5%"
+ },
+ "GALLUS²的信物": {
+  "ko": "GALLUS²의 증표",
+  "en": "GALLUS²'s Token",
+  "ja": "GALLUS²の印"
+ },
+ "用于提升GALLUS²的潜能。": {
+  "ko": "GALLUS²의 잠재능력 상승에 사용된다.",
+  "en": "Used to improve the Potential of GALLUS².",
+  "ja": "GALLUS²の潜在能力強化に用いられる。"
+ },
+ "罗德岛隐秘队的信物": {
+  "ko": "로도스 아일랜드 정찰대의 증표",
+  "en": "Rhodes Island Recon's Token",
+  "ja": "ロドスの隠密隊の印"
+ },
+ "用于提升罗德岛隐秘队的潜能。": {
+  "ko": "로도스 아일랜드 정찰대의 잠재능력 상승에 사용된다.",
+  "en": "Used to improve the Potential of Rhodes Island Recon.",
+  "ja": "ロドスの隠密隊の潜在能力強化に用いられる。"
+ },
+ "虎狼丸的信物": {
+  "ko": "코로마루의 증표",
+  "en": "虎狼丸's Token",
+  "ja": "虎狼丸の印"
+ },
+ "用于提升虎狼丸的潜能。": {
+  "ko": "코로마루의 잠재능력 상승에 사용된다.",
+  "en": "Used to improve the Potential of 虎狼丸.",
+  "ja": "虎狼丸の潜在能力強化に用いられる。"
+ },
+ "裂响的信物": {
+  "ko": "크랙본의 증표",
+  "en": "Crackborne's Token",
+  "ja": "クラックボーンの印"
+ },
+ "用于提升裂响的潜能。": {
+  "ko": "크랙본의 잠재능력 상승에 사용된다.",
+  "en": "Used to improve the Potential of Crackborne.",
+  "ja": "クラックボーンの潜在能力強化に用いられる。"
+ },
+ "雷狼龙S空爆的信物": {
+  "ko": "진오우거 S 캐터펄트의 증표",
+  "en": "Zinogre S Catapult's Token",
+  "ja": "ジンオウガS カタパルトの印"
+ },
+ "用于提升雷狼龙S空爆的潜能。": {
+  "ko": "진오우거 S 캐터펄트의 잠재능력 상승에 사용된다.",
+  "en": "Used to improve the Potential of Zinogre S Catapult.",
+  "ja": "ジンオウガS カタパルトの潜在能力強化に用いられる。"
+ },
+ "佩德洛的信物": {
+  "ko": "페드로의 증표",
+  "en": "佩德洛's Token",
+  "ja": "佩德洛の印"
+ },
+ "用于提升佩德洛的潜能。": {
+  "ko": "페드로의 잠재능력 상승에 사용된다.",
+  "en": "Used to improve the Potential of 佩德洛.",
+  "ja": "佩德洛の潜在能力強化に用いられる。"
+ },
+ "嘉辛塔的信物": {
+  "ko": "자신타의 증표",
+  "en": "嘉辛塔's Token",
+  "ja": "嘉辛塔の印"
+ },
+ "用于提升嘉辛塔的潜能。": {
+  "ko": "자신타의 잠재능력 상승에 사용된다.",
+  "en": "Used to improve the Potential of 嘉辛塔.",
+  "ja": "嘉辛塔の潜在能力強化に用いられる。"
+ },
+ "时隙的信物": {
+  "ko": "시극의 증표",
+  "en": "时隙's Token",
+  "ja": "时隙の印"
+ },
+ "用于提升时隙的潜能。": {
+  "ko": "시극의 잠재능력 상승에 사용된다.",
+  "en": "Used to improve the Potential of 时隙.",
+  "ja": "时隙の潜在能力強化に用いられる。"
+ },
+ "埃癸斯的信物": {
+  "ko": "아이기스의 증표",
+  "en": "埃癸斯's Token",
+  "ja": "埃癸斯の印"
+ },
+ "用于提升埃癸斯的潜能。": {
+  "ko": "아이기스의 잠재능력 상승에 사용된다.",
+  "en": "Used to improve the Potential of 埃癸斯.",
+  "ja": "埃癸斯の潜在能力強化に用いられる。"
+ },
+ "岳羽由加莉的信物": {
+  "ko": "타케바 유카리의 증표",
+  "en": "岳羽由加莉's Token",
+  "ja": "岳羽由加莉の印"
+ },
+ "用于提升岳羽由加莉的潜能。": {
+  "ko": "타케바 유카리의 잠재능력 상승에 사용된다.",
+  "en": "Used to improve the Potential of 岳羽由加莉.",
+  "ja": "岳羽由加莉の潜在能力強化に用いられる。"
+ },
+ "凯尔希·思衡托的信物": {
+  "ko": "켈시·에스페란타의 증표",
+  "en": "Kal'tsit Esperanta's Token",
+  "ja": "ケルシー・エスペランタの印"
+ },
+ "用于提升凯尔希·思衡托的潜能。": {
+  "ko": "켈시·에스페란타의 잠재능력 상승에 사용된다.",
+  "en": "Used to improve the Potential of Kal'tsit Esperanta.",
+  "ja": "ケルシー・エスペランタの潜在能力強化に用いられる。"
+ },
+ "维伊的信物": {
+  "ko": "비이의 증표",
+  "en": "Viy's Token",
+  "ja": "ヴィイの印"
+ },
+ "用于提升维伊的潜能。": {
+  "ko": "비이의 잠재능력 상승에 사용된다.",
+  "en": "Used to improve the Potential of Viy.",
+  "ja": "ヴィイの潜在能力強化に用いられる。"
+ },
+ "可露希尔的信物": {
+  "ko": "클로저의 증표",
+  "en": "可露希尔's Token",
+  "ja": "可露希尔の印"
+ },
+ "用于提升可露希尔的潜能。": {
+  "ko": "클로저의 잠재능력 상승에 사용된다.",
+  "en": "Used to improve the Potential of 可露希尔.",
+  "ja": "可露希尔の潜在能力強化に用いられる。"
+ },
+ "焰狐龙梓兰的信物": {
+  "ko": "바이올렛 타마미츠네 오키드의 증표",
+  "en": "Violet Mizutsune Orchid's Token",
+  "ja": "タマミツネ（紫）オーキッドの印"
+ },
+ "用于提升焰狐龙梓兰的潜能。": {
+  "ko": "바이올렛 타마미츠네 오키드의 잠재능력 상승에 사용된다.",
+  "en": "Used to improve the Potential of Violet Mizutsune Orchid.",
+  "ja": "タマミツネ（紫）オーキッドの潜在能力強化に用いられる。"
+ },
+ "谬因的信物": {
+  "ko": "아프리사의 증표",
+  "en": "Aphrissa's Token",
+  "ja": "アフリッサの印"
+ },
+ "用于提升谬因的潜能。": {
+  "ko": "아프리사의 잠재능력 상승에 사용된다.",
+  "en": "Used to improve the Potential of Aphrissa.",
+  "ja": "アフリッサの潜在能力強化に用いられる。"
+ },
+ "机械师的信物": {
+  "ko": "메커니스트의 증표",
+  "en": "Mechanist's Token",
+  "ja": "メカニストの印"
+ },
+ "用于提升机械师的潜能。": {
+  "ko": "메커니스트의 잠재능력 상승에 사용된다.",
+  "en": "Used to improve the Potential of Mechanist.",
+  "ja": "メカニストの潜在能力強化に用いられる。"
+ },
+ "予愿安洁莉娜的信物": {
+  "ko": "안젤리나 더 멜로우 위시의 증표",
+  "en": "Angelina the Mellow Wish's Token",
+  "ja": "アンジェリーナ・ザ・メロウウィッシュの印"
+ },
+ "用于提升予愿安洁莉娜的潜能。": {
+  "ko": "안젤리나 더 멜로우 위시의 잠재능력 상승에 사용된다.",
+  "en": "Used to improve the Potential of Angelina the Mellow Wish.",
+  "ja": "アンジェリーナ・ザ・メロウウィッシュの潜在能力強化に用いられる。"
+ },
+ "珊比的信物": {
+  "ko": "산비의 증표",
+  "en": "珊比's Token",
+  "ja": "珊比の印"
+ },
+ "用于提升珊比的潜能。": {
+  "ko": "산비의 잠재능력 상승에 사용된다.",
+  "en": "Used to improve the Potential of 珊比.",
+  "ja": "珊比の潜在能力強化に用いられる。"
+ },
+ "结城理的信物": {
+  "ko": "유키 마코토의 증표",
+  "en": "结城理's Token",
+  "ja": "结城理の印"
+ },
+ "用于提升结城理的潜能。": {
+  "ko": "유키 마코토의 잠재능력 상승에 사용된다.",
+  "en": "Used to improve the Potential of 结城理.",
+  "ja": "结城理の潜在能力強化に用いられる。"
+ },
+ "露托的中坚信物": {
+  "ko": "루토나다의 커널 증표",
+  "en": "Lutonada's Kernel Token",
+  "ja": "ルトナダの印（中堅）"
+ },
+ "夜半的中坚信物": {
+  "ko": "블랙나이트의 커널 증표",
+  "en": "Blacknight's Kernel Token",
+  "ja": "ブラックナイトの印（中堅）"
+ },
+ "夏栎的中坚信物": {
+  "ko": "퀘르쿠스의 커널 증표",
+  "en": "Quercus's Kernel Token",
+  "ja": "クエルクスの印（中堅）"
+ },
+ "风丸的中坚信物": {
+  "ko": "카제마루의 커널 증표",
+  "en": "Kazemaru's Kernel Token",
+  "ja": "カゼマルの印（中堅）"
+ },
+ "洛洛的中坚信物": {
+  "ko": "락락의 커널 증표",
+  "en": "Rockrock's Kernel Token",
+  "ja": "ロックロックの印（中堅）"
+ },
+ "掠风的中坚信物": {
+  "ko": "윈드플릿의 커널 증표",
+  "en": "Windflit's Kernel Token",
+  "ja": "ウインドフリットの印（中堅）"
+ },
+ "濯尘芙蓉的中坚信物": {
+  "ko": "히비스커스 더 퓨리파이어의 커널 증표",
+  "en": "Hibiscus the Purifier's Kernel Token",
+  "ja": "濯塵ハイビスカスの印（中堅）"
+ },
+ "承曦格雷伊的中坚信物": {
+  "ko": "그레이 더 라이트닝베어러의 커널 증표",
+  "en": "Greyy the Lightningbearer's Kernel Token",
+  "ja": "承曦グレイの印（中堅）"
+ },
+ "老鲤的中坚信物": {
+  "ko": "리의 커널 증표",
+  "en": "Lee's Kernel Token",
+  "ja": "リーの印（中堅）"
+ },
+ "澄闪的中坚信物": {
+  "ko": "골든글로우의 커널 증표",
+  "en": "Goldenglow's Kernel Token",
+  "ja": "ゴールデングローの印（中堅）"
+ },
+ "菲亚梅塔的中坚信物": {
+  "ko": "피아메타의 커널 증표",
+  "en": "Fiammetta's Kernel Token",
+  "ja": "フィアメッタの印（中堅）"
+ },
+ "号角的中坚信物": {
+  "ko": "혼의 커널 증표",
+  "en": "Horn's Kernel Token",
+  "ja": "ホルンの印（中堅）"
+ },
+ "艾丽妮的中坚信物": {
+  "ko": "아이린의 커널 증표",
+  "en": "Irene's Kernel Token",
+  "ja": "アイリーニの印（中堅）"
+ },
+ "黑键的中坚信物": {
+  "ko": "에벤홀츠의 커널 증표",
+  "en": "Ebenholz's Kernel Token",
+  "ja": "エーベンホルツの印（中堅）"
+ },
+ "多萝西的中坚信物": {
+  "ko": "도로시의 커널 증표",
+  "en": "Dorothy's Kernel Token",
+  "ja": "ドロシーの印（中堅）"
+ },
+ "发送给博士的私人信件，用于将深巡的潜能提升至满级。": {
+  "ko": "박사에게 보내는 사적인 편지. 언더플로우의 잠재능력을 최대까지 올리는 데 사용된다.",
+  "en": "A personal letter sent to the Doctor. Used to raise Underflow's Potential to maximum.",
+  "ja": "ドクターへ宛てた私信。アンダーフローの潜在能力を最大まで上げるのに用いられる。"
+ },
+ "发送给博士的私人信件，用于将莎草的潜能提升至满级。": {
+  "ko": "박사에게 보내는 사적인 편지. 파피루스의 잠재능력을 최대까지 올리는 데 사용된다.",
+  "en": "A personal letter sent to the Doctor. Used to raise Papyrus's Potential to maximum.",
+  "ja": "ドクターへ宛てた私信。パピルスの潜在能力を最大まで上げるのに用いられる。"
+ },
+ "热腾腾大包": {
+  "ko": "따끈따끈 왕만두",
+  "en": "Piping Hot Bun",
+  "ja": "ほかほか肉まん"
+ },
+ "罗森便利店中购买的大包。一口咬下去，瞬间打开味蕾的馅料混合了外皮的热腾腾面香，浑身的疲劳一扫而空！": {
+  "ko": "로손 편의점에서 산 왕만두. 한 입 베어 물면 미각을 순식간에 깨우는 속과 겉껍질의 따끈한 밀 향이 어우러져, 온몸의 피로가 싹 가신다!",
+  "en": "A bun bought at a Lawson convenience store. One bite, and the filling that instantly awakens your taste buds blends with the warm aroma of the dough, sweeping away all your fatigue!",
+  "ja": "ローソンで買った肉まん。一口かじれば、味蕾を一瞬で開く具と皮のほかほかした小麦の香りが混ざり合い、全身の疲れが吹き飛ぶ！"
+ },
+ "两个热气腾腾的大包，可用于恢复理智。": {
+  "ko": "김이 모락모락 나는 왕만두 두 개. 이성 회복에 사용할 수 있다.",
+  "en": "Two piping hot buns. Can be used to restore Sanity.",
+  "ja": "湯気の立つ肉まん二つ。理性の回復に使用できる。"
+ },
+ "清爽运动饮料": {
+  "ko": "상쾌한 스포츠 음료",
+  "en": "Refreshing Sports Drink",
+  "ja": "さわやかスポーツドリンク"
+ },
+ "富含多种维生素与电解质，清凉爽口。助您在绿色出行中快速补充能量，调节身体机能。": {
+  "ko": "각종 비타민과 전해질이 풍부하고 시원하며 개운하다. 친환경 이동 중에도 빠르게 에너지를 보충하고 신체 기능을 조절해 준다.",
+  "en": "Rich in vitamins and electrolytes, cool and refreshing. Helps you quickly replenish energy and regulate your body during eco-friendly travel.",
+  "ja": "各種ビタミンと電解質が豊富で、爽やかな飲み口。エコな移動中でも素早くエネルギーを補給し、体の調子を整えてくれる。"
+ },
+ "清爽运动饮料，可用于恢复理智。": {
+  "ko": "상쾌한 스포츠 음료. 이성 회복에 사용할 수 있다.",
+  "en": "A refreshing sports drink. Can be used to restore Sanity.",
+  "ja": "さわやかスポーツドリンク。理性の回復に使用できる。"
+ },
+ "海底捞面": {
+  "ko": "하이디라오 라면",
+  "en": "Haidilao Noodles",
+  "ja": "海底撈ヌードル"
+ },
+ "筋道爽口的面条在海底捞特制番茄汤底中煮熟捞出，还没送进嘴里，光是这温暖诱人的香气已经足够让人感受到幸福。": {
+  "ko": "쫄깃하고 개운한 면을 하이디라오 특제 토마토 육수에 삶아 건져 냈다. 입에 넣기도 전에, 이 따뜻하고 매혹적인 향만으로도 행복을 느끼기에 충분하다.",
+  "en": "Chewy, refreshing noodles boiled in Haidilao's special tomato broth. Before it even reaches your mouth, the warm, inviting aroma alone is enough to make you feel happy.",
+  "ja": "コシのある麺を海底撈特製のトマトスープで茹で上げた一品。口に運ぶ前から、この温かく食欲をそそる香りだけで幸せを感じられる。"
+ },
+ "一份热气腾腾的番茄汤底捞面，可用于恢复理智。": {
+  "ko": "김이 나는 토마토 육수 라면 한 그릇. 이성 회복에 사용할 수 있다.",
+  "en": "A steaming bowl of tomato-broth noodles. Can be used to restore Sanity.",
+  "ja": "湯気の立つトマトスープの麺一杯。理性の回復に使用できる。"
+ },
+ "1102生日糕点": {
+  "ko": "1102 생일 케이크",
+  "en": "1102 Birthday Cake",
+  "ja": "1102年誕生日ケーキ"
+ },
+ "原来，前段时间她时时翻阅不断记下笔记，又总是藏起来笑着说是“秘密”的文件，是蛋糕的食谱。": {
+  "ko": "얼마 전부터 그녀가 틈틈이 들여다보며 계속 메모하던, 그러면서도 늘 숨긴 채 웃으며 “비밀”이라던 그 서류는, 알고 보니 케이크 레시피였다.",
+  "en": "So the documents she had been poring over and taking notes on, always hiding them with a smile and calling them a \"secret\"—they were a cake recipe.",
+  "ja": "少し前から彼女が何度もめくってはメモを取り、いつも隠して笑いながら「秘密」と言っていたあの書類は、ケーキのレシピだった。"
+ },
+ "一份阿米娅制作的蛋糕，可用于恢复理智。": {
+  "ko": "아미야가 만든 케이크. 이성 회복에 사용할 수 있다.",
+  "en": "A cake made by Amiya. Can be used to restore Sanity.",
+  "ja": "アーミヤが作ったケーキ。理性の回復に使用できる。"
+ },
+ "封缄诺言寻访凭证": {
+  "ko": "봉인된 약속 헤드헌팅 권",
+  "en": "Sealed Promise Headhunting Permit",
+  "ja": "封緘の約束スカウト券"
+ },
+ "弓吟空跃寻访凭证": {
+  "ko": "활시위의 도약 헤드헌팅 권",
+  "en": "Bowsong Skyleap Headhunting Permit",
+  "ja": "弓吟空躍スカウト券"
+ },
+ "搭车漫游寻访凭证": {
+  "ko": "히치하이킹 로밍 헤드헌팅 권",
+  "en": "Hitchhike Roaming Headhunting Permit",
+  "ja": "ヒッチハイク漫遊スカウト券"
+ },
+ "一逢满月十连寻访凭证": {
+  "ko": "만월과의 조우 10연속 헤드헌팅 권",
+  "en": "Once Upon a Full Moon 10-Roll Headhunting Permit",
+  "ja": "満月に逢う十連スカウト券"
+ },
+ "一逢满月寻访凭证": {
+  "ko": "만월과의 조우 헤드헌팅 권",
+  "en": "Once Upon a Full Moon Headhunting Permit",
+  "ja": "満月に逢うスカウト券"
+ },
+ "可在一定范围内自选一位六星干员，范围包含『空白频段』及过去的干员寻访池。": {
+  "ko": "일정 범위 내에서 6성 오퍼레이터 한 명을 직접 고를 수 있다. 범위에는 『공백 주파수』와 과거의 오퍼레이터 헤드헌팅 풀이 포함된다.",
+  "en": "Lets you choose one 6-star Operator from a set range, including 'Blank Frequency' and past Operator headhunting pools.",
+  "ja": "一定範囲から★6オペレーター1名を自由に選べる。範囲には『空白周波数』および過去のオペレータースカウトプールが含まれる。"
+ },
+ "可在一定范围内自选一位五星干员，范围包含『指令·重构』及过去的干员寻访池。": {
+  "ko": "일정 범위 내에서 5성 오퍼레이터 한 명을 직접 고를 수 있다. 범위에는 『명령·재구축』과 과거의 오퍼레이터 헤드헌팅 풀이 포함된다.",
+  "en": "Lets you choose one 5-star Operator from a set range, including 'Command: Reconstruct' and past Operator headhunting pools.",
+  "ja": "一定範囲から★5オペレーター1名を自由に選べる。範囲には『指令・再構築』および過去のオペレータースカウトプールが含まれる。"
+ },
+ "特殊活动调用凭证": {
+  "ko": "특별 이벤트 소환권",
+  "en": "Special Event Recruitment Voucher",
+  "ja": "特別イベント招集券"
+ },
+ "可从琴柳、史尔特尔、鸿雪、泥岩、焰影苇草、铃兰、异客、水月，八名干员之中选择其一。": {
+  "ko": "새버너, 수르트, 홍설, 머드락, 염영 리드, 스즈란, 패신저, 미즈키 여덟 명의 오퍼레이터 중 한 명을 고를 수 있다.",
+  "en": "Choose one of eight Operators: Saileach, Surtr, Hongxue, Mudrock, Reed the Flame Shadow, Suzuran, Passenger, and Mizuki.",
+  "ja": "セイロン、スルト、鴻雪、マドロック、焔影リード、スズラン、パッセンジャー、水月の8名から1名を選べる。"
+ },
+ "可从山、风笛、菲亚梅塔、夜莺，四名干员之中选择其一。": {
+  "ko": "마운틴, 배그파이프, 피아메타, 나이팅게일 네 명의 오퍼레이터 중 한 명을 고를 수 있다.",
+  "en": "Choose one of four Operators: Mountain, Bagpipe, Fiammetta, and Nightingale.",
+  "ja": "マウンテン、バグパイプ、フィアメッタ、ナイチンゲールの4名から1名を選べる。"
+ },
+ "时装回顾展·IV": {
+  "ko": "패션 회고전 · IV",
+  "en": "Outfit Retrospective IV",
+  "ja": "ファッション回顧展・IV"
+ },
+ "奇象时装回顾展": {
+  "ko": "기상 패션 회고전",
+  "en": "Wondrous Outfit Retrospective",
+  "ja": "奇象ファッション回顧展"
+ },
+ "α类迎新寻访凭证": {
+  "ko": "α형 신입 환영 헤드헌팅 권",
+  "en": "Type α Welcome Headhunting Permit",
+  "ja": "α類新歓スカウト券"
+ },
+ "β类迎新寻访凭证": {
+  "ko": "β형 신입 환영 헤드헌팅 권",
+  "en": "Type β Welcome Headhunting Permit",
+  "ja": "β類新歓スカウト券"
+ },
+ "γ类迎新寻访凭证": {
+  "ko": "γ형 신입 환영 헤드헌팅 권",
+  "en": "Type γ Welcome Headhunting Permit",
+  "ja": "γ類新歓スカウト券"
+ },
+ "α类新人寻访凭证": {
+  "ko": "α형 신인 헤드헌팅 권",
+  "en": "Type α Newcomer Headhunting Permit",
+  "ja": "α類新人スカウト券"
+ },
+ "β类新人寻访凭证": {
+  "ko": "β형 신인 헤드헌팅 권",
+  "en": "Type β Newcomer Headhunting Permit",
+  "ja": "β類新人スカウト券"
+ },
+ "γ类新人寻访凭证": {
+  "ko": "γ형 신인 헤드헌팅 권",
+  "en": "Type γ Newcomer Headhunting Permit",
+  "ja": "γ類新人スカウト券"
+ },
+ "罗德岛物资补给X": {
+  "ko": "로도스 아일랜드 물자 보급 X",
+  "en": "Rhodes Island Supply Pack X",
+  "ja": "ロドス物資補給X"
+ },
+ "生命标本": {
+  "ko": "생명 표본",
+  "en": "Life Specimen",
+  "ja": "生命の標本"
+ },
+ "一块保存得很好的琥珀标本，藏于其中的树叶还保留着千万年前的模样，生命原初的痕迹以这种方式呈现于你眼前。凯尔希将这一块时间的碎片送给你，也许是想与你分享那漫长时间中令人欣喜感动的每一个时刻。": {
+  "ko": "아주 잘 보존된 호박 표본. 그 안에 든 나뭇잎은 수천만 년 전의 모습을 그대로 간직하고 있어, 생명의 태초의 흔적이 이런 모습으로 눈앞에 드러난다. 켈시가 이 시간의 조각을 당신에게 건넨 것은, 그 아득한 시간 속에서 기쁘고 뭉클했던 모든 순간을 당신과 나누고 싶어서였는지도 모른다.",
+  "en": "A beautifully preserved amber specimen. The leaf sealed within still holds the shape it had tens of millions of years ago, presenting the earliest traces of life before your eyes. Kal'tsit gave you this fragment of time perhaps because she wished to share with you every joyous, moving moment from that long span.",
+  "ja": "極めて良好な状態で保存された琥珀の標本。中の木の葉は数千万年前の姿をそのまま留めており、生命の原初の痕跡がこうして目の前に現れる。ケルシーがこの時の欠片をあなたに贈ったのは、その長い時間の中で心を打たれた一つ一つの瞬間を分かち合いたかったからかもしれない。"
+ },
+ "一块包裹着树叶的琥珀标本，可兑换龙门币。": {
+  "ko": "나뭇잎을 감싼 호박 표본. 용문폐로 교환할 수 있다.",
+  "en": "An amber specimen enclosing a leaf. Can be exchanged for LMD.",
+  "ja": "木の葉を包み込んだ琥珀の標本。龍門幣と交換できる。"
+ },
+ "“幸福在途”补给包": {
+  "ko": "「행복은 길 위에」 보급 팩",
+  "en": "\"Happiness En Route\" Supply Pack",
+  "ja": "「幸せは道の上に」補給パック"
+ },
+ "“谁说《健身热身指南》没用？在雷姆必拓你很有可能打不过一只有袋牙兽！”": {
+  "ko": "“《운동 준비 가이드》가 쓸모없다고 누가 그래요? 림 빌리턴에서는 유대아수 한 마리한테도 못 이길 수 있다고요!”",
+  "en": "\"Who says the Fitness Warm-Up Guide is useless? In Rim Billiton, you might well lose to a single marsupial beast!\"",
+  "ja": "「『フィットネス準備ガイド』が役に立たないなんて誰が言ったの？リム・ビリトンじゃ有袋牙獣一匹にも勝てないかもしれないのよ！」"
+ },
+ "由热心播客乌露露倾情赞助的大礼包，包含红砂镇杂货铺卖剩的各种物资。": {
+  "ko": "열성 팟캐스터 울루루가 정성껏 후원한 선물 세트. 홍사진 잡화점에서 팔다 남은 온갖 물자가 들어 있다.",
+  "en": "A gift pack enthusiastically sponsored by the podcaster Wululu, containing all sorts of leftover goods from the Red Sand Town general store.",
+  "ja": "熱心なポッドキャスター、ウルルが心を込めて協賛した詰め合わせ。紅砂の町の雑貨屋で売れ残った各種物資が入っている。"
+ },
+ "“神秘动物的口袋”": {
+  "ko": "「수수께끼 동물의 주머니」",
+  "en": "\"Mystery Creature's Pouch\"",
+  "ja": "「謎の動物のポケット」"
+ },
+ "你端详了一会儿，确信背包的原型是一种你未曾见过的动物。背包上还开了一个毛茸茸的口袋，里面藏着安洁莉娜希望你亲自去发现的惊喜。": {
+  "ko": "한참을 들여다본 끝에, 이 배낭의 원형이 당신이 본 적 없는 동물이라는 확신이 들었다. 배낭에는 복슬복슬한 주머니가 하나 달려 있고, 그 안에는 안젤리나가 당신이 직접 발견하기를 바란 깜짝 선물이 들어 있다.",
+  "en": "After examining it for a while, you're certain the backpack is modeled on a creature you've never seen. There's a fuzzy pouch sewn onto it, hiding a surprise Angelina wanted you to find for yourself.",
+  "ja": "しばらく眺めた末、このリュックの原型が見たこともない動物だと確信した。リュックにはふわふわのポケットが一つ付いていて、中にはアンジェリーナがあなた自身に見つけてほしかったサプライズが隠されている。"
+ },
+ "一个以某种神秘动物为原型制作的背包，可兑换龙门币。": {
+  "ko": "어떤 수수께끼 동물을 원형으로 만든 배낭. 용문폐로 교환할 수 있다.",
+  "en": "A backpack modeled on some mysterious creature. Can be exchanged for LMD.",
+  "ja": "とある謎の動物を原型に作られたリュック。龍門幣と交換できる。"
+ },
+ "深巡的私人信件": {
+  "ko": "딥컬러의 사적인 편지",
+  "en": "Deepcolor's Personal Letter",
+  "ja": "ディープカラーの私信"
+ },
+ "信中提及了她最近精心制作的一式餐点，还附上了一段优雅的诗句。": {
+  "ko": "편지에는 그녀가 최근 정성껏 차린 한 상 요리 이야기가 담겨 있고, 우아한 시구도 한 구절 덧붙어 있다.",
+  "en": "The letter mentions a meal she recently prepared with great care, along with an elegant verse.",
+  "ja": "手紙には彼女が最近丹精込めて作った一式の料理のことが書かれ、優雅な詩句も添えられている。"
+ },
+ "莎草的私人信件": {
+  "ko": "파피루스의 사적인 편지",
+  "en": "Papyrus's Personal Letter",
+  "ja": "パピルスの私信"
+ },
+ "信中提及了她最近的游历经历，还附上了她在萨尔贡某个绿洲部落暂歇时的照片。": {
+  "ko": "편지에는 그녀가 최근 여행한 이야기가 담겨 있고, 사르곤의 어느 오아시스 부락에서 쉬어 갈 때 찍은 사진도 함께 들어 있다.",
+  "en": "The letter recounts her recent travels, with a photo taken while she rested at an oasis settlement in Sargon.",
+  "ja": "手紙には彼女の最近の旅の話が綴られ、サルゴンのとあるオアシスの集落で一休みした時の写真も添えられている。"
+ },
+ "生路家具收藏包": {
+  "ko": "생로 가구 수집 팩",
+  "en": "Way of Life Furniture Collection Pack",
+  "ja": "生路家具コレクションパック"
+ },
+ "获得所有尚未取得且仅可在生路活动中得到的家具。": {
+  "ko": "아직 얻지 못한, 생로 이벤트에서만 얻을 수 있는 가구를 모두 획득한다.",
+  "en": "Obtain all furniture you haven't yet acquired that can only be gained during the Way of Life event.",
+  "ja": "まだ入手していない、生路イベントでのみ手に入る家具をすべて獲得する。"
+ },
+ "太阳甩在身后家具收藏包": {
+  "ko": "태양을 등지고 가구 수집 팩",
+  "en": "Leave the Sun Behind Furniture Collection Pack",
+  "ja": "太陽を背にして家具コレクションパック"
+ },
+ "获得所有尚未取得且仅可在太阳甩在身后活动中得到的家具。": {
+  "ko": "아직 얻지 못한, 태양을 등지고 이벤트에서만 얻을 수 있는 가구를 모두 획득한다.",
+  "en": "Obtain all furniture you haven't yet acquired that can only be gained during the Leave the Sun Behind event.",
+  "ja": "まだ入手していない、太陽を背にしてイベントでのみ手に入る家具をすべて獲得する。"
+ },
+ "KFC积分": {
+  "ko": "KFC 포인트",
+  "en": "KFC Points",
+  "ja": "KFCポイント"
+ },
+ "2019年肯德基品牌合作活动的游戏内积分道具。": {
+  "ko": "2019년 KFC 브랜드 컬래버레이션 이벤트의 인게임 포인트 아이템.",
+  "en": "An in-game point item from the 2019 KFC brand collaboration event.",
+  "ja": "2019年のケンタッキーブランドコラボイベントのゲーム内ポイントアイテム。"
+ },
+ "积累此积分以获取相应的阶段性活动奖励。": {
+  "ko": "이 포인트를 모아 단계별 이벤트 보상을 받는다.",
+  "en": "Accumulate these points to claim the corresponding milestone event rewards.",
+  "ja": "このポイントを貯めて、段階ごとのイベント報酬を獲得する。"
+ },
+ "表情套组：博士士": {
+  "ko": "이모티콘 세트: 박사사",
+  "en": "Emoticon Set: Doctorr",
+  "ja": "スタンプセット：ドクタター"
+ },
+ "“虽然看起来不太像，但也是充满勇气的人。”": {
+  "ko": "“보기엔 별로 안 그래 보여도, 용기로 가득한 사람이다.”",
+  "en": "\"Doesn't look much like it, but they're full of courage too.\"",
+  "ja": "「見た目はあまりそう見えないが、勇気に満ちた人物である。」"
+ },
+ "表情套组：米米子": {
+  "ko": "이모티콘 세트: 미미코",
+  "en": "Emoticon Set: Mimiko",
+  "ja": "スタンプセット：ミミ子"
+ },
+ "“可能乍一看不相信，但也是代表希望的人。”": {
+  "ko": "“언뜻 봐서는 믿기지 않을지 몰라도, 희망을 상징하는 사람이다.”",
+  "en": "\"You might not believe it at first glance, but they stand for hope too.\"",
+  "ja": "「一見すると信じられないかもしれないが、希望を象徴する人物である。」"
+ },
+ "表情套组：维维美": {
+  "ko": "이모티콘 세트: 위위미",
+  "en": "Emoticon Set: Wiwimi",
+  "ja": "スタンプセット：ヴィヴィ美"
+ },
+ "“也许第一眼看不出，但也是完美无缺的人。”": {
+  "ko": "“첫눈에는 알아보기 어려울지 몰라도, 완벽무결한 사람이다.”",
+  "en": "\"You may not see it at first, but they're flawless all the same.\"",
+  "ja": "「一目では分からないかもしれないが、完全無欠な人物である。」"
+ },
+ "用于协作者之间的沟通交流。": {
+  "ko": "협력자들 사이의 소통에 사용된다.",
+  "en": "Used for communication between collaborators.",
+  "ja": "協力者同士のコミュニケーションに用いられる。"
+ },
+ "她仍然记得，那声跨越了时光与生死边界的低语——去寻找生命的痕迹，去寻找希望与未来，去找到你自己。": {
+  "ko": "그녀는 아직도 기억한다. 시간과 생사의 경계를 넘어 들려온 그 속삭임을 — 생명의 흔적을 찾아라, 희망과 미래를 찾아라, 그리고 너 자신을 찾아라.",
+  "en": "She still remembers that whisper which crossed the boundary of time and of life and death—go find the traces of life, go find hope and the future, go find yourself.",
+  "ja": "彼女は今も覚えている。時と生死の境を越えて届いたあの囁きを——生命の痕跡を探せ、希望と未来を探せ、そして自分自身を見つけろ。"
+ },
+ "一个中空的晶体外壳，其中曾经填满了绵延不绝的信息流，而今它只是与静默的光影同眠。": {
+  "ko": "텅 빈 결정 껍질. 한때는 끊임없이 이어지는 정보의 흐름으로 가득 차 있었으나, 지금은 고요한 빛과 그림자 곁에서 잠들어 있을 뿐이다.",
+  "en": "A hollow crystal shell. It was once filled with an endless stream of information; now it merely sleeps alongside silent light and shadow.",
+  "ja": "中が空洞の結晶の殻。かつては絶え間ない情報の流れで満たされていたが、今はただ静寂の光と影とともに眠っている。"
+ },
+ "温泉度假村体验券": {
+  "ko": "온천 리조트 체험권",
+  "en": "Hot Spring Resort Trial Pass",
+  "ja": "温泉リゾート体験券"
+ },
+ "来自荒野的善意被仔细地夹在了少女的旅行笔记里。": {
+  "ko": "황야에서 건네받은 호의가 소녀의 여행 노트 사이에 고이 끼워져 있다.",
+  "en": "A kindness from the wilderness, carefully tucked between the pages of the girl's travel journal.",
+  "ja": "荒野から差し出された好意が、少女の旅のノートに丁寧に挟まれている。"
+ },
+ "一张“黄昏突进号”温泉度假村的免费体验券，来自友人的馈赠。": {
+  "ko": "「황혼 돌진호」 온천 리조트 무료 체험권 한 장. 친구가 준 선물이다.",
+  "en": "A free trial pass for the \"Dusk Dash\" hot spring resort, a gift from a friend.",
+  "ja": "「黄昏突進号」温泉リゾートの無料体験券一枚。友人からの贈り物。"
+ },
+ "黑流印象家具收藏包一": {
+  "ko": "흑류 인상 가구 수집 팩 1",
+  "en": "Dark Current Impressions Furniture Collection Pack I",
+  "ja": "黒流の印象家具コレクションパック一"
+ },
+ "黑流树海里流淌的记忆不会停滞。\n生命在此诞生、断裂，又被封存。\n时间沿着根脉爬上沉沦者的额头，\n在林叶与泥土间，长成新的年轮。": {
+  "ko": "흑류 수해를 흐르는 기억은 멎지 않는다.\n생명은 이곳에서 태어나고, 끊기고, 다시 봉인된다.\n시간은 뿌리를 타고 침몰한 자의 이마로 기어올라,\n숲의 잎과 흙 사이에서 새로운 나이테로 자란다.",
+  "en": "The memories flowing through the Dark Current's sea of trees never still.\nLife is born here, severed here, and sealed away again.\nTime climbs the roots to the brow of the sunken,\nand between leaf and soil, grows into new rings.",
+  "ja": "黒流の樹海を流れる記憶は止まらない。\n生命はここで生まれ、断たれ、そして封じられる。\n時は根を伝って沈んだ者の額へと這い上がり、\n葉と土の間で新たな年輪となる。"
+ },
+ "获得“黑流印象”系列家具中属于“林骸残响”、“垂叶倒影”两个套件组的家具。": {
+  "ko": "「흑류 인상」 시리즈 가구 중 「임해 잔향」과 「수엽 반영」 두 세트에 속하는 가구를 획득한다.",
+  "en": "Obtain the furniture belonging to the \"Forest Husk Echo\" and \"Drooping Leaf Reflection\" sets from the \"Dark Current Impressions\" series.",
+  "ja": "「黒流の印象」シリーズ家具のうち、「林骸残響」「垂葉倒影」の二つのセットに属する家具を獲得する。"
+ },
+ "用于在“罗德岛采购平台”中兑换奖励的凭证。": {
+  "ko": "「로도스 아일랜드 조달 플랫폼」에서 보상을 교환하는 데 쓰는 증표.",
+  "en": "A voucher used to exchange for rewards on the \"Rhodes Island Procurement Platform\".",
+  "ja": "「ロドス調達プラットフォーム」で報酬と交換するための証票。"
+ },
+ "贴纸包/重启锚点": {
+  "ko": "스티커 팩 / 재시동 앵커",
+  "en": "Sticker Pack / Reboot Anchor",
+  "ja": "ステッカーパック／再起動アンカー"
+ },
+ "做好驶向新航路的准备。": {
+  "ko": "새로운 항로로 나아갈 준비를 마쳤다.",
+  "en": "Ready to set course for a new route.",
+  "ja": "新たな航路へ進む準備は整った。"
+ },
+ "“厂券”": {
+  "ko": "「공장권」",
+  "en": "\"Factory Scrip\"",
+  "ja": "「工場券」"
+ },
+ "没人知道为什么那些印着陛下脸孔的钱在这里突然就不起作用了，薄薄的金属片开始在一双双手中交换。起初，人们会被它粗糙的边缘割到，指节上陈年的厚茧也被削去一些。后来，他们发现被削去的不只有茧疤，还有尊严。": {
+  "ko": "폐하의 얼굴이 찍힌 돈이 왜 이곳에서 갑자기 쓸모없어졌는지는 아무도 모른다. 얇은 금속 조각이 이 손 저 손으로 오가기 시작했다. 처음에 사람들은 그 거친 모서리에 베였고, 손마디의 오래된 굳은살도 조금씩 깎여 나갔다. 나중에 그들은 깎여 나간 것이 굳은살만이 아니라 존엄이기도 하다는 것을 깨달았다.",
+  "en": "No one knows why the money bearing His Majesty's face suddenly stopped working here. Thin metal chips began passing from hand to hand. At first people were cut by their rough edges, and the old calluses on their knuckles were shaved away a little. Later they realized that what had been shaved away was not only calluses, but dignity.",
+  "ja": "陛下の顔が刻まれた金が、なぜここで急に使えなくなったのか、誰も知らない。薄い金属片が人々の手から手へと渡り始めた。初めのうち、人々はその粗い縁で手を切り、指の古いタコも少しずつ削られていった。やがて彼らは、削られたのがタコだけでなく、尊厳でもあったと気づいた。"
+ },
+ "1102年新年伊始，由阿纳托利·斯维特拉诺夫·卜捷里宁在泽尔格勒颁行的代用货币，通常仅能在居住园区内流通，用以换取日用品、食品、药品等生活所需。": {
+  "ko": "1102년 새해 벽두, 아나톨리 스베틀라노프 부테리닌이 체르게르에서 발행한 대용 화폐. 보통 거주 구역 안에서만 유통되며, 생필품·식품·의약품 등 생활에 필요한 물자와 교환하는 데 쓰인다.",
+  "en": "A substitute currency issued in Chernogorsk by Anatoly Svetlanov Buterinin at the start of the year 1102. It usually circulates only within the residential compound, exchanged for daily necessities, food, medicine, and other essentials.",
+  "ja": "1102年の年明けに、アナトリー・スヴェトラノフ・ブテリーニンがチェルゲルで発行した代用貨幣。通常は居住区内でのみ流通し、日用品・食品・薬品など生活必需品との交換に用いられる。"
+ },
+ "锦标积分券": {
+  "ko": "토너먼트 포인트권",
+  "en": "Championship Point Voucher",
+  "ja": "選手権ポイント券"
+ },
+ "赛事主办方为锦标赛参赛者准备的数字积分券，记录着各位球员的场上表现，据说夺冠者所持的积分券还有特别视觉效果。": {
+  "ko": "대회 주최 측이 참가자들을 위해 준비한 디지털 포인트권. 선수 각자의 경기 활약이 기록되며, 우승자가 지닌 포인트권에는 특별한 시각 효과가 붙는다고 한다.",
+  "en": "A digital point voucher prepared by the tournament organizers for participants. It records each player's on-field performance, and the champion's voucher is said to carry a special visual effect.",
+  "ja": "大会主催者が参加者のために用意したデジタルポイント券。各選手の試合での活躍が記録され、優勝者の持つポイント券には特別な視覚効果が付くという。"
+ },
+ "用于在阵地足球锦标中兑换各类物资。": {
+  "ko": "진지 축구 토너먼트에서 각종 물자를 교환하는 데 사용된다.",
+  "en": "Used to exchange for various supplies in the Positional Football Championship.",
+  "ja": "陣地サッカー選手権で各種物資と交換するのに用いられる。"
+ },
+ "烈竹": {
+  "ko": "열죽",
+  "en": "Blazing Bamboo",
+  "ja": "烈竹"
+ },
+ "竹林中的竹子受到熔火蜗身上的高温影响后变成的形态，能应用在各种生产领域中，因此在泡影国的市场上能卖出不错的价格。": {
+  "ko": "대숲의 대나무가 용화와의 고열에 영향을 받아 변한 형태. 여러 생산 분야에 쓸 수 있어 포영국 시장에서 제법 좋은 값에 팔린다.",
+  "en": "Bamboo from the grove transformed by the intense heat of the Molten Snail. Usable across many production fields, it fetches a good price in the markets of the Bubble Kingdom.",
+  "ja": "竹林の竹が熔火蝸の高温の影響を受けて変化した形態。様々な生産分野で使えるため、泡影国の市場ではそれなりの値がつく。"
+ },
+ "萤虫": {
+  "ko": "반딧불레",
+  "en": "Glowbug",
+  "ja": "蛍虫"
+ },
+ "一种受刺激时会发光的昆虫，到了夜晚才会出现在竹林中。可以作为武器素材或照明道具使用，在泡影国十分受欢迎。但由于夜晚的竹林相当危险，因此有一定的获取难度。": {
+  "ko": "자극을 받으면 빛을 내는 곤충으로, 밤이 되어야 대숲에 나타난다. 무기 소재나 조명 도구로 쓸 수 있어 포영국에서 인기가 높다. 다만 밤의 대숲은 상당히 위험해 손에 넣기가 쉽지 않다.",
+  "en": "An insect that glows when stimulated, appearing in the bamboo grove only at night. Usable as weapon material or as a light source, it is highly popular in the Bubble Kingdom—though the grove at night is dangerous enough to make gathering difficult.",
+  "ja": "刺激を受けると光る昆虫で、夜になってようやく竹林に現れる。武器素材や照明道具として使えるため泡影国では人気が高い。ただし夜の竹林はかなり危険で、入手には難しさが伴う。"
+ },
+ "火竹炭": {
+  "ko": "화죽탄",
+  "en": "Firebamboo Charcoal",
+  "ja": "火竹炭"
+ },
+ "由熔火蜗的壳制成的素材。熔火蜗在爬行过程中，壳上积累了各种矿石，经过长年累月的炙烤后变得美丽而坚硬，做成素材也十分耐用。": {
+  "ko": "용화와의 껍데기로 만든 소재. 용화와가 기어 다니는 동안 껍데기에 온갖 광석이 쌓이고, 오랜 세월 구워지며 아름답고 단단해져 소재로 써도 매우 튼튼하다.",
+  "en": "A material made from the Molten Snail's shell. As the snail crawls, ores accumulate on its shell; scorched over long years, it becomes beautiful and hard, making a highly durable material.",
+  "ja": "熔火蝸の殻から作られた素材。熔火蝸が這う間に殻へ様々な鉱石が積もり、長年焼かれて美しく硬くなり、素材としても非常に丈夫。"
+ },
+ "熔火冰晶": {
+  "ko": "용화 빙정",
+  "en": "Molten Ice Crystal",
+  "ja": "熔火氷晶"
+ },
+ "完成对“异兽”熔火蜗的狩猎后，在其周围发现的一种特殊结晶。表面是冰晶，里面却像是包裹着火焰。十分稀有，用在装备制作中似乎能够激发装备的潜力。": {
+  "ko": "「이수」 용화와 사냥을 마친 뒤 그 주변에서 발견되는 특수한 결정. 겉은 얼음 결정이지만 안에는 불꽃을 품은 듯하다. 매우 희귀하며, 장비 제작에 쓰면 장비의 잠재력을 끌어낼 수 있다고 한다.",
+  "en": "A peculiar crystal found around the Molten Snail after the hunt of that \"Beast\" is complete. Its surface is ice, yet flame seems wrapped within. Extremely rare, and said to draw out equipment's potential when used in crafting.",
+  "ja": "「異獣」熔火蝸の狩猟を終えた後、その周囲で見つかる特殊な結晶。表面は氷晶だが、内には炎を包み込んでいるかのよう。非常に希少で、装備製作に使うと装備の潜在能力を引き出せるという。"
+ },
+ "雷狼龙的碧玉": {
+  "ko": "진오우거의 벽옥",
+  "en": "Zinogre Jasper",
+  "ja": "ジンオウガの碧玉"
+ },
+ "雷狼龙偶尔会在体内生成的稀有玉石。王者力量的浓缩形象。": {
+  "ko": "진오우거가 이따금 체내에 만들어 내는 희귀한 옥석. 왕자의 힘이 응축된 형상.",
+  "en": "A rare gemstone Zinogre occasionally forms within its body. The concentrated image of a king's power.",
+  "ja": "ジンオウガが稀に体内で生成する希少な玉石。王者の力が凝縮された姿。"
+ },
+ "在与雷狼龙的战斗中取得的素材，用作炼金素材再好不过。": {
+  "ko": "진오우거와의 전투에서 얻은 소재. 연금 소재로 더할 나위 없다.",
+  "en": "A material obtained in battle with Zinogre—ideal as an alchemy reagent.",
+  "ja": "ジンオウガとの戦闘で得た素材。錬金素材として申し分ない。"
+ },
+ "群兽入侵": {
+  "ko": "짐승 무리의 침공",
+  "en": "Beast Swarm Invasion",
+  "ja": "獣群の侵攻"
+ },
+ "猎犬食糜": {
+  "ko": "사냥개의 미즙",
+  "en": "Hound Chyme",
+  "ja": "猟犬の食糜"
+ },
+ "黯淡的光芒将祂的躯体刺穿出一个巨大孔洞，于是黑色的太阳从玻利瓦尔的雨林中升起，滴落的黑流让金色的溪水化脓。追猎者们自痛楚中降生，从此它们便要啃食万物，来填补永不愈合的伤口。": {
+  "ko": "흐릿한 빛이 그분의 몸을 꿰뚫어 거대한 구멍을 냈고, 이윽고 검은 태양이 볼리바르의 우림에서 떠올랐다. 떨어지는 흑류는 금빛 시냇물을 곪게 했다. 추격자들은 고통 속에서 태어났고, 그때부터 결코 아물지 않는 상처를 메우기 위해 만물을 뜯어먹어야만 했다.",
+  "en": "A dim light pierced a vast hole through Their body, and a black sun rose from the rainforests of Bolivar; the dripping Dark Current festered the golden streams. The hunters were born out of that agony, and from then on had to devour all things to fill a wound that would never close.",
+  "ja": "淡い光が彼の身体を貫いて巨大な孔を穿ち、やがて黒い太陽がボリバルの雨林から昇った。滴り落ちる黒流は金色の小川を膿ませた。追猟者たちは痛みの中から生まれ、以来、決して癒えぬ傷を埋めるために万物を喰らわねばならなくなった。"
+ },
+ "在将袭击并吞吃人类身体的猎犬解剖后，我们惊讶地发现，非但在消化器官中没能找到任何食物残渣，而且其体内的整套器官也都像是一具空壳。那么它们活动的能量从何而来，吃下的质量又去何处了？": {
+  "ko": "사람을 습격해 삼킨 사냥개를 해부한 뒤 우리는 놀라운 사실을 발견했다. 소화 기관에서 음식물 찌꺼기를 전혀 찾지 못했을 뿐 아니라, 체내의 기관 전체가 빈 껍데기 같았다. 그렇다면 그것들이 움직이는 에너지는 어디서 오며, 삼킨 질량은 어디로 갔는가?",
+  "en": "After dissecting a hound that had attacked and devoured a human body, we were astonished to find not a single trace of food in its digestive organs—and moreover, its entire set of internal organs seemed no more than an empty shell. Then where does the energy for its movement come from, and where has the consumed mass gone?",
+  "ja": "人間を襲い喰らった猟犬を解剖した結果、我々は驚くべきことに気づいた。消化器官から食物の残滓が一切見つからないばかりか、体内の臓器一式がまるで空の殻のようだったのだ。ならば、それらが動くエネルギーはどこから来て、喰らった質量はどこへ消えたのか？"
+ },
+ "确定性混沌寻访凭证": {
+  "ko": "결정론적 혼돈 헤드헌팅 권",
+  "en": "Deterministic Chaos Headhunting Permit",
+  "ja": "決定論的カオススカウト券"
+ },
+ "确定性混沌十连寻访凭证": {
+  "ko": "결정론적 혼돈 10연속 헤드헌팅 권",
+  "en": "Deterministic Chaos 10-Roll Headhunting Permit",
+  "ja": "決定論的カオス十連スカウト券"
+ },
+ "源流样本": {
+  "ko": "원류 샘플",
+  "en": "Headwater Sample",
+  "ja": "源流サンプル"
+ },
+ "演化算子": {
+  "ko": "진화 연산자",
+  "en": "Evolution Operator",
+  "ja": "進化演算子"
+ },
+ "沿途的点滴": {
+  "ko": "길 위의 조각들",
+  "en": "Moments Along the Way",
+  "ja": "道すがらの断片"
+ },
+ "或许是邂逅了有趣的人物，或许是收获了深刻的感悟，又或许只是发生了一件想起来就会发笑的趣事。一次旅程结束了，她们有太多想要分享的回忆。": {
+  "ko": "재미있는 사람을 만났을 수도, 깊은 깨달음을 얻었을 수도, 아니면 그저 떠올리기만 해도 웃음이 나는 일이 있었을 수도 있다. 여정 하나가 끝났고, 그녀들에게는 나누고 싶은 기억이 너무나 많다.",
+  "en": "Perhaps they met someone interesting, perhaps they came away with a profound realization, or perhaps something simply happened that makes them laugh whenever they recall it. One journey has ended, and they have far too many memories they want to share.",
+  "ja": "面白い人物と出会ったのかもしれないし、深い気づきを得たのかもしれない。あるいはただ、思い出すだけで笑ってしまう出来事があったのかもしれない。一つの旅が終わり、彼女たちには分かち合いたい思い出が多すぎる。"
+ },
+ "好奇远行归来的少女们经历了怎样的旅程？找个舒服的角落坐下，再来一杯胡萝卜汁。她们不仅乐于讲故事，还会与你分享从远方带回的礼物。": {
+  "ko": "먼 길을 다녀온 소녀들이 어떤 여정을 겪었는지 궁금한가? 편안한 자리를 잡고 앉아 당근 주스도 한 잔 들자. 그녀들은 기꺼이 이야기를 들려줄 뿐 아니라, 멀리서 가져온 선물도 나눠 준다.",
+  "en": "Curious what sort of journey the girls had on their long trip? Find a comfortable corner, sit down, and have a glass of carrot juice. They're not only happy to tell you the story—they'll share the gifts they brought back from afar.",
+  "ja": "遠出から帰ってきた少女たちがどんな旅をしたのか気になる？心地よい隅を見つけて腰を下ろし、ニンジンジュースを一杯どうぞ。彼女たちは喜んで話を聞かせてくれるだけでなく、遠くから持ち帰った土産も分けてくれる。"
+ },
+ "巡展纪念章": {
+  "ko": "순회전 기념 배지",
+  "en": "Touring Exhibition Commemorative Badge",
+  "ja": "巡回展記念章"
+ },
+ "巡展主办方制作的纪念章，印有奇象巡展的标志。": {
+  "ko": "순회전 주최 측이 만든 기념 배지. 기상 순회전 로고가 찍혀 있다.",
+  "en": "A commemorative badge made by the exhibition organizers, stamped with the Wondrous Exhibition logo.",
+  "ja": "巡回展の主催者が作った記念章。奇象巡回展のロゴが刻まれている。"
+ },
+ "在奇象巡展期间获得的纪念章，可用于兑换各种奖励。": {
+  "ko": "기상 순회전 기간에 얻은 기념 배지. 다양한 보상과 교환할 수 있다.",
+  "en": "A commemorative badge obtained during the Wondrous Exhibition. Can be exchanged for various rewards.",
+  "ja": "奇象巡回展の期間中に得た記念章。様々な報酬と交換できる。"
+ },
+ "特辑/夏日音轨": {
+  "ko": "특집 / 여름의 사운드트랙",
+  "en": "Feature / Summer Soundtrack",
+  "ja": "特集／夏のサウンドトラック"
+ },
+ "满载着浪花与积云的美好记忆。": {
+  "ko": "물보라와 뭉게구름으로 가득 찬 아름다운 기억.",
+  "en": "Brimming with fond memories of sea spray and cumulus clouds.",
+  "ja": "波しぶきと積雲に満ちた美しい記憶。"
+ },
+ "形艺特辑专用的特辑封面和特辑收藏贴，可用于版面编辑。": {
+  "ko": "형예 특집 전용 표지와 특집 수집 스티커. 지면 편집에 사용할 수 있다.",
+  "en": "A feature cover and collectible sticker exclusive to the Art & Form feature, usable in layout editing.",
+  "ja": "形芸特集専用の特集カバーと特集コレクションシール。レイアウト編集に使用できる。"
+ },
+ "旧磁带": {
+  "ko": "낡은 카세트테이프",
+  "en": "Old Cassette Tape",
+  "ja": "古いカセットテープ"
+ },
+ "“清澈的晨光啊，如你的声音甘甜。我在梦中迷失，在你的眸子中重现。为你我献上自己的眼睛，忘却我看见一切，一切曾被我看见。”": {
+  "ko": "“맑은 아침 빛이여, 그대 목소리처럼 달콤하구나. 나는 꿈속에서 길을 잃고, 그대의 눈동자 속에서 다시 나타난다. 그대를 위해 나는 내 두 눈을 바치고, 내가 본 모든 것을, 일찍이 내게 보였던 모든 것을 잊는다.”",
+  "en": "\"O clear morning light, sweet as your voice. I lose myself in dreams and reappear within your eyes. For you I offer up my own eyes, forgetting all that I have seen, all that was once seen by me.\"",
+  "ja": "「澄んだ朝の光よ、君の声のように甘い。私は夢の中で迷い、君の瞳の中で再び現れる。君のために私は自らの両目を捧げ、見たものすべてを、かつて私に見えたすべてを忘れる。」"
+ },
+ "记录着曾在拉特兰风靡一时的音乐。如今的拉特兰人更习惯使用网络流媒体服务听新歌，但仍有人钟情于这些旧东西，愿意用你需要的物品来交换。": {
+  "ko": "한때 라테라노에서 크게 유행한 음악이 담겨 있다. 요즘 라테라노 사람들은 스트리밍 서비스로 새 노래를 듣는 데 익숙하지만, 여전히 이런 옛것을 아끼며 당신이 필요로 하는 물건과 기꺼이 바꿔 주는 이들도 있다.",
+  "en": "It holds music that was once all the rage in Laterano. Laterans today are more used to streaming services for new songs, but some still cherish these old things and will gladly trade what you need for them.",
+  "ja": "かつてラテラーノで一世を風靡した音楽が記録されている。今のラテラーノ人はストリーミングで新曲を聴くのに慣れているが、今なおこうした古い物を愛し、あなたの必要な品と交換してくれる者もいる。"
+ },
+ "节制": {
+  "ko": "절제",
+  "en": "Temperance",
+  "ja": "節制"
+ },
+ "倒吊人": {
+  "ko": "매달린 사람",
+  "en": "The Hanged Man",
+  "ja": "吊るされた男"
+ },
+ "隐者": {
+  "ko": "은둔자",
+  "en": "The Hermit",
+  "ja": "隠者"
+ },
+ "星": {
+  "ko": "별",
+  "en": "The Star",
+  "ja": "星"
+ },
+ "教宗": {
+  "ko": "교황",
+  "en": "The Hierophant",
+  "ja": "教皇"
+ },
+ "力量": {
+  "ko": "힘",
+  "en": "Strength",
+  "ja": "力"
+ },
+ "魔术师": {
+  "ko": "마법사",
+  "en": "The Magician",
+  "ja": "魔術師"
+ },
+ "游戏流行的方式未必遵从设计者的意愿，谁也不知道塔罗牌是怎么变成了一种性格分类。又或者我们只是希望看见命运的形状，好去篡改它的姓名。": {
+  "ko": "놀이가 퍼지는 방식이 반드시 만든 이의 뜻을 따르지는 않는다. 타로가 어쩌다 일종의 성격 분류가 되었는지는 아무도 모른다. 아니면 우리는 그저 운명의 형상을 보고 싶은 것인지도 모른다. 그 이름을 고쳐 쓰기 위해.",
+  "en": "The way a game spreads need not follow its designer's intent; no one knows how tarot became a kind of personality classification. Or perhaps we only wish to see the shape of fate, so that we might tamper with its name.",
+  "ja": "遊びの流行り方が必ずしも作り手の意図に従うとは限らない。タロットがどうして性格分類の一種になったのか、誰も知らない。あるいは我々はただ運命の形を見たいだけなのかもしれない——その名を書き換えるために。"
+ },
+ "校园中流行的塔罗牌，用于构筑塔罗牌阵。在心中默念你的疑问，摆下牌阵，翻开的塔罗牌会给出回答。当然，你可以选择不信。": {
+  "ko": "교내에서 유행하는 타로 카드. 타로 배열을 짜는 데 쓴다. 마음속으로 질문을 되뇌며 배열을 펼치면, 뒤집힌 카드가 답을 준다. 물론, 믿지 않기를 택해도 된다.",
+  "en": "Tarot cards popular around campus, used to build a spread. Silently recite your question, lay out the spread, and the cards you turn over will answer. Of course, you may choose not to believe them.",
+  "ja": "校内で流行しているタロットカード。スプレッドを組むのに使う。心の中で問いを唱えながら並べれば、めくったカードが答えを返す。もちろん、信じないという選択もできる。"
+ },
+ "月行水上家具收藏包": {
+  "ko": "월행수상 가구 수집 팩",
+  "en": "Moon Over Water Furniture Collection Pack",
+  "ja": "月行水上家具コレクションパック"
+ },
+ "怪物线索1": {
+  "ko": "몬스터 단서 1",
+  "en": "Monster Clue 1",
+  "ja": "モンスターの手がかり1"
+ },
+ "怪物线索2": {
+  "ko": "몬스터 단서 2",
+  "en": "Monster Clue 2",
+  "ja": "モンスターの手がかり2"
+ },
+ "怪物线索3": {
+  "ko": "몬스터 단서 3",
+  "en": "Monster Clue 3",
+  "ja": "モンスターの手がかり3"
+ },
+ "怪物线索4": {
+  "ko": "몬스터 단서 4",
+  "en": "Monster Clue 4",
+  "ja": "モンスターの手がかり4"
+ },
+ "怪物线索5": {
+  "ko": "몬스터 단서 5",
+  "en": "Monster Clue 5",
+  "ja": "モンスターの手がかり5"
+ },
+ "怪物线索6": {
+  "ko": "몬스터 단서 6",
+  "en": "Monster Clue 6",
+  "ja": "モンスターの手がかり6"
+ },
+ "怪物线索7": {
+  "ko": "몬스터 단서 7",
+  "en": "Monster Clue 7",
+  "ja": "モンスターの手がかり7"
+ },
+ "怪物线索8": {
+  "ko": "몬스터 단서 8",
+  "en": "Monster Clue 8",
+  "ja": "モンスターの手がかり8"
+ },
+ "怪物线索9": {
+  "ko": "몬스터 단서 9",
+  "en": "Monster Clue 9",
+  "ja": "モンスターの手がかり9"
+ },
+ "怪物线索10": {
+  "ko": "몬스터 단서 10",
+  "en": "Monster Clue 10",
+  "ja": "モンスターの手がかり10"
  }
 }

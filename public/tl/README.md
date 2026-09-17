@@ -35,8 +35,8 @@
 | 파일 | 내용 | 항목 | 크기 |
 |---|---|---:|---:|
 | [`manifest.json`](https://files.terra-archive.net/assets/tl/manifest.json) | 아래 목록 + 파일별 해시·주소 | — | 3 KB |
-| [`op-fut.json`](https://files.terra-archive.net/assets/tl/op-fut.json) | 오퍼레이터·재료 — **아직 한국 서버에 없는 것** | 351 | 162 KB |
-| [`op-past.json`](https://files.terra-archive.net/assets/tl/op-past.json) | **오퍼 기록·보이스 대사** 중심 — 공식 한국어가 덮기 전의 옛 번역 | 2,451 | 2.4 MB |
+| [`op-fut.json`](https://files.terra-archive.net/assets/tl/op-fut.json) | 오퍼·재료·**아이템** — 아직 한국 서버에 없는 것 | 568 | 329 KB |
+| [`op-past.json`](https://files.terra-archive.net/assets/tl/op-past.json) | **오퍼 기록·보이스 대사** 중심 — 공식 한국어가 덮기 전의 옛 번역 | 2,415 | 2.3 MB |
 | [`kr-op.json`](https://files.terra-archive.net/assets/tl/kr-op.json) | 오퍼레이터 — 이름·직위·특성·재능·스킬·모듈 (**한섭 공식 한국어**) | 8,277 | 3.9 MB |
 | [`kr-item.json`](https://files.terra-archive.net/assets/tl/kr-item.json) | 아이템·재료 — 이름·설명·용도 (**한섭 공식 한국어**) | 3,024 | 507 KB |
 | [`kr-enemy.json`](https://files.terra-archive.net/assets/tl/kr-enemy.json) | 적 — 이름·설명·능력 (**한섭 공식 한국어**) | 3,141 | 733 KB |
