@@ -198,6 +198,12 @@ run "build-op-debut"     python3 scripts/build-operator-debut.py
 # 이벤트 도감 — **맨 뒤**. 작전·아이템·스토리·오퍼 데뷔 장부를 전부 읽어 이벤트 단위로 접는다.
 run "build-events"       python3 scripts/build-events.py "$G"
 
+# 중국어→한국어 번역 사전 공개본 — 외부 앱이 **바뀐 파일만** 받아가는 증분 배포본
+# (2026-09-17, 개인 번역 앱 문의). 입력이 scripts/ 의 번역 파일 넷뿐이라 게임데이터를
+# 안 읽는다 — 순서는 상관없지만 데이터 단계 끝에 둔다. 형식은 public/tl/README.md.
+# ⚠ public/tl 은 R2 가 서빙한다 (r2-sync.mjs DIRS · deploy.sh 트림 목록에 함께 있다).
+run "build-tldict"       python3 scripts/build-tldict.py
+
 # 8) 오퍼 지연 에셋 전수 검사 (사용자 요청 2026-08-02) — 데이터가 번들(배포)과 R2(동기화)
 # 두 경로로 나가는데 한쪽만 돌면 반쪽이 된다. 2026-08-01에 R2 키가 없어 아바타가 안 올라갔고
 # 배포는 성공해서 신규 4명 섬네일만 404였다. 여기서 잡는다. 리포트 전용(종료 코드 0).

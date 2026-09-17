@@ -1,0 +1,123 @@
+{
+ "v": 4,
+ "updated": "2026-09-17",
+ "base": "https://files.terra-archive.net/assets/tl",
+ "total": 10478,
+ "files": [
+  {
+   "file": "op-fut.json",
+   "url": "https://files.terra-archive.net/assets/tl/op-fut.json?v=b31eeb9f964e6e50",
+   "label": "오퍼레이터·재료 — 아직 한국 서버에 없는 것",
+   "n": 351,
+   "hash": "b31eeb9f964e6e50"
+  },
+  {
+   "file": "op-past.json",
+   "url": "https://files.terra-archive.net/assets/tl/op-past.json?v=83c6352f0a5b3ee0",
+   "label": "오퍼레이터·재료 — 한국 서버 출시로 공식 번역이 덮은 옛 항목",
+   "n": 2451,
+   "hash": "83c6352f0a5b3ee0"
+  },
+  {
+   "file": "ra.json",
+   "url": "https://files.terra-archive.net/assets/tl/ra.json?v=497e0066a7e143de",
+   "label": "생존연산 (중국 서버 선행)",
+   "n": 1157,
+   "hash": "497e0066a7e143de"
+  },
+  {
+   "file": "is1.json",
+   "url": "https://files.terra-archive.net/assets/tl/is1.json?v=0ea0eb551b7ba775",
+   "label": "통합전략 1",
+   "n": 726,
+   "hash": "0ea0eb551b7ba775",
+   "groups": {
+    "소장품": 277,
+    "노드": 15,
+    "조우": 172,
+    "엔딩": 4,
+    "전투": 258
+   }
+  },
+  {
+   "file": "is2.json",
+   "url": "https://files.terra-archive.net/assets/tl/is2.json?v=c46b49832ede1360",
+   "label": "통합전략 2",
+   "n": 879,
+   "hash": "c46b49832ede1360",
+   "groups": {
+    "소장품": 262,
+    "노드": 20,
+    "조우": 272,
+    "엔딩": 16,
+    "전투": 309
+   }
+  },
+  {
+   "file": "is3.json",
+   "url": "https://files.terra-archive.net/assets/tl/is3.json?v=d5bfd1d1d5696076",
+   "label": "통합전략 3",
+   "n": 991,
+   "hash": "d5bfd1d1d5696076",
+   "groups": {
+    "소장품": 310,
+    "노드": 20,
+    "조우": 267,
+    "엔딩": 21,
+    "전투": 373
+   }
+  },
+  {
+   "file": "is4.json",
+   "url": "https://files.terra-archive.net/assets/tl/is4.json?v=5288d92c7bf33a61",
+   "label": "통합전략 4",
+   "n": 1148,
+   "hash": "5288d92c7bf33a61",
+   "groups": {
+    "소장품": 355,
+    "노드": 23,
+    "조우": 288,
+    "엔딩": 25,
+    "전투": 457
+   }
+  },
+  {
+   "file": "is5.json",
+   "url": "https://files.terra-archive.net/assets/tl/is5.json?v=13b055a091c1a2bb",
+   "label": "통합전략 5",
+   "n": 1519,
+   "hash": "13b055a091c1a2bb",
+   "groups": {
+    "소장품": 339,
+    "노드": 26,
+    "조우": 473,
+    "엔딩": 25,
+    "전투": 656
+   }
+  },
+  {
+   "file": "is6.json",
+   "url": "https://files.terra-archive.net/assets/tl/is6.json?v=180cd68754d8a1ca",
+   "label": "통합전략 6 (중국 서버 선행)",
+   "n": 958,
+   "hash": "180cd68754d8a1ca",
+   "groups": {
+    "소장품": 319,
+    "노드": 40,
+    "조우": 192,
+    "엔딩": 12,
+    "전투": 395
+   }
+  },
+  {
+   "file": "is-common.json",
+   "url": "https://files.terra-archive.net/assets/tl/is-common.json?v=d088a22d24346399",
+   "label": "통합전략 공통 — 조우 안내·판정 문구 (테마 구분 없음)",
+   "n": 298,
+   "hash": "d088a22d24346399",
+   "groups": {
+    "조우": 298
+   }
+  }
+ ]
+}

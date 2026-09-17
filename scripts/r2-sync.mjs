@@ -50,7 +50,11 @@ const DIRS = ["story", "rogue", "lens", "tesseract", "avatars", "about", "og", "
   "ac",
   // 이벤트 기록 — 인물 초상·물건 그림과 **본문 JSON**(lore/data/<스토리id>.json,
   // scripts/build-eventlore.py 2026-08-23). 화면은 스토리 상세의 「이벤트 기록」 보기.
-  "lore"];
+  "lore",
+  // 중국어→한국어 번역 사전 공개본 — scripts/build-tldict.py (2026-09-17).
+  // 외부 앱이 manifest 해시로 **바뀐 파일만** 받아간다 (규격은 public/tl/README.md).
+  // ⚠ 그 README(.md)도 여기로 나가므로 위 MIME 표에 .md 가 있어야 한다.
+  "tl"];
 // (2026-08-01 제거) "portal" — 대문 배경 전용 폴더였는데 포탈이 이격 스카디 일러 한 장
 // (PORTAL_ART = /skin/full/…)으로 굳으면서 로컬·R2 양쪽에서 비었다. 남겨 두면 아래
 // prune 안전장치가 매번 "빈 폴더"로 걸린다.
@@ -76,6 +80,9 @@ const MIME = {
   ".webp": "image/webp", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
   ".gif": "image/gif", ".svg": "image/svg+xml", ".avif": "image/avif", ".ico": "image/x-icon",
   ".json": "application/json", ".txt": "text/plain; charset=utf-8", ".html": "text/html; charset=utf-8",
+  // .md — public/tl/README.md(번역 사전 공개본 규격서). 없으면 octet-stream 폴백을 타서
+  // 브라우저가 페이지로 안 그리고 **내려받아 버린다** (2026-09-17 실측: 주소를 열 수 없었다).
+  ".md": "text/markdown; charset=utf-8",
   ".js": "text/javascript", ".wasm": "application/wasm",
   ".bin": "application/octet-stream", ".traineddata": "application/octet-stream",
 };
@@ -91,7 +98,8 @@ const MIME = {
 // 안 바뀌었으면 304(본문 없음)라 사실상 공짜고, 바뀌었으면 즉시 새 데이터를 받는다.
 function cacheFor(key) {
   const ext = extname(key).toLowerCase();
-  if ([".json", ".txt", ".bin"].includes(ext)) return "public, max-age=60, must-revalidate";
+  // .md 도 여기 — 공개 규격서라 고치면 바로 나가야 한다 (30일 캐시를 타면 한 달간 옛 문서)
+  if ([".json", ".txt", ".bin", ".md"].includes(ext)) return "public, max-age=60, must-revalidate";
   return "public, max-age=2592000";
 }
 
@@ -129,7 +137,7 @@ for (const p of files) {
   localKeys.add(key);
   const body = await readFile(p);
   const md5 = createHash("md5").update(body).digest("hex");
-  const recache = RECACHE && [".json", ".txt", ".bin"].includes(extname(key).toLowerCase());
+  const recache = RECACHE && [".json", ".txt", ".bin", ".md"].includes(extname(key).toLowerCase());
   if (remote.get(key) === md5 && !recache) { same += 1; continue; }
   todo.push({ key, p, size: statSync(p).size });
 }
