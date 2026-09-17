@@ -389,5 +389,41 @@ console.log("");
   }
 }
 
+// ── 발전소 "+1개로 간주" (그레이 더 라이트닝베어러 '아침 햇살', 사용자 제보 2026-09-17) ───
+// 종전엔 buildPlan이 "로스터에 보유자가 있으면 +1"을 한 번 계산해 Plan.plants에 박아 두고
+// 채점·UI가 그 값을 그대로 썼다 — 보유자가 발전소에 앉지 못해도, 사용자가 수동으로 빼내도
+// 4기로 계산돼 발전소 수 스케일 자동화 방(위디 15·유넥티스 10)이 통째로 부풀었다.
+// 제보 재현: 위디+유넥티스 순금방이 77%(3기)여야 하는데 102%(4기)로 표시.
+console.log("");
+{
+  const { plantsFor, teamScore, ctxFor, withElite, opById, LAYOUT, PLANTS_BASE_RT, TERMS } = engine;
+  const E2 = (op) => withElite(op, op.rarity >= 3 ? 2 : op.rarity === 2 ? 1 : 0);
+  const GREYY2 = "char_1027_greyy2", WEEDY = "char_400_weedy", EUN = "char_422_aurora";
+  const eun = ops.find((op) => op.name === "유넥티스");
+  const crew = [E2(opById.get(WEEDY)), E2(eun)];
+  const byId = new Map([...crew, E2(opById.get(GREYY2)), opById.get("char_376_therex")].map((op) => [op.id, op]));
+  const powerKeys = LAYOUT.filter((cell) => cell.room === "POWER").map((cell) => cell.key);
+  const planWith = (power) => ({ assignments: Object.fromEntries(powerKeys.map((k, i) => [k, [power[i] ?? []]])), factionCounts: [{}, {}], tokenPoints: {} });
+  const score = (plants) => Math.round(teamScore(crew, "MANUFACTURE", ctxFor("MANUFACTURE-0", {}, {}, plants, new Set(crew.map((op) => op.id)))));
+  const checks = [
+    ["작업 플랫폼 용어 정의(cc.tag.op)가 데이터에 있다", (TERMS["cc.tag.op"]?.ops ?? []).includes("char_376_therex")],
+    ["보유자가 발전소에 있으면 +1", plantsFor(planWith([[GREYY2]]), 0, byId) === PLANTS_BASE_RT + 1],
+    ["보유자가 미배치면 보정 없음", plantsFor(planWith([[]]), 0, byId) === PLANTS_BASE_RT],
+    ["보유자가 발전소 밖이면 보정 없음",
+      plantsFor({ ...planWith([[]]), assignments: { ...planWith([[]]).assignments, "MANUFACTURE-0": [[GREYY2]] } }, 0, byId) === PLANTS_BASE_RT],
+    ["다른 발전소에 작업 플랫폼이 있으면 보정 없음 (원문 조건)",
+      plantsFor(planWith([[GREYY2], ["char_376_therex"]]), 0, byId) === PLANTS_BASE_RT],
+    ["조별로 따로 판정 — B조에 없으면 B조는 보정 없음",
+      (() => { const p = { ...planWith([[GREYY2]]), assignments: { ...planWith([[GREYY2]]).assignments, [powerKeys[0]]: [[GREYY2], []] } };
+        return plantsFor(p, 0, byId) === PLANTS_BASE_RT + 1 && plantsFor(p, 1, byId) === PLANTS_BASE_RT; })()],
+    ["위디+유넥티스 순금방 — 3기 75 / 4기 100 (제보 수치, 제어센터 오라 제외)",
+      score(3) === 75 && score(4) === 100],
+  ];
+  for (const [name, ok] of checks) {
+    console.log(`${ok ? "✓" : "✗"} ${name}`);
+    if (!ok) failed += 1;
+  }
+}
+
 if (failed) { console.error(`\n✗ 검사 ${failed}건 실패`); process.exit(1); }
-console.log(`\n✓ 픽스처 ${rules.fixtures.length}건 + 육성추천 불변식 4건 + 반사실 전략 재현 3건 + 노시스 오라 2건 + 용량 변환 비중첩·자동화 7건 + 여러 홉 사슬 3건 + 자동편성 제외 2건 + 교차방 오라 7건 전부 통과`);
+console.log(`\n✓ 픽스처 ${rules.fixtures.length}건 + 육성추천 불변식 4건 + 반사실 전략 재현 3건 + 노시스 오라 2건 + 용량 변환 비중첩·자동화 7건 + 여러 홉 사슬 3건 + 자동편성 제외 2건 + 교차방 오라 7건 + 발전소 간주 7건 전부 통과`);

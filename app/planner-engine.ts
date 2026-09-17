@@ -1658,6 +1658,8 @@ export function sanitizePlan(raw: unknown): Plan | null {
     : [];
   return {
     assignments,
+    // ⚠ 채점·UI는 이 값을 읽지 않는다 — 발전소 수는 plantsFor 가 배치에서 구한다.
+    //   구버전 저장과의 호환·표시용으로만 남는다 (2026-09-17).
     plants: typeof p.plants === "number" ? p.plants : PLANTS_BASE_RT,
     tokenPoints: (p.tokenPoints && typeof p.tokenPoints === "object") ? p.tokenPoints as Record<string, number> : {},
     factionCounts,
@@ -1671,6 +1673,51 @@ export function sanitizePlan(raw: unknown): Plan | null {
     ...(Array.isArray(p.shiftHours) && (p.shiftHours as unknown[]).every((n) => typeof n === "number")
       ? { shiftHours: p.shiftHours as number[] } : {}),
   };
+}
+
+// ── 발전소 수 (물리 발전소 + "발전소 N개로 간주" 보정) ──────────────────────────────
+// 작업 플랫폼(1성 로봇) 명단은 infra.json 용어 정의(cc.tag.op)가 정본 — 하드코딩하지 않는다.
+// 그레이 더 라이트닝베어러 '아침 햇살'의 원문 조건이 이 용어를 직접 지목한다.
+const WORK_PLATFORMS = new Set(TERMS["cc.tag.op"]?.ops ?? []);
+const isWorkPlatform = (op: InfraOp): boolean => WORK_PLATFORMS.has(op.id);
+
+// 발전소 배치에서 '간주' 보정치를 뽑는다. 성립 조건 둘 다 **배치 결과**로만 판정한다:
+//   ① 보유자(plantbonus 스킬)가 실제로 발전소에 앉아 있을 것
+//   ② "다른 발전소에 배치된 작업 플랫폼이 없을 경우" — 원문 조건
+export function plantBonusOf(powerTeams: { key: string; ops: InfraOp[] }[]): number {
+  let bonus = 0;
+  for (const { key, ops: team } of powerTeams) {
+    for (const op of team) {
+      for (const skill of op.skills) {
+        if (skill.kind !== "plantbonus") continue;
+        if (powerTeams.some((other) => other.key !== key && other.ops.some(isWorkPlatform))) continue;
+        bonus = Math.max(bonus, skill.value);
+      }
+    }
+  }
+  return bonus;
+}
+
+/**
+ * 그 조의 실제 배치에서 발전소 수를 구한다 — 채점·UI의 유일한 정본.
+ *
+ * 종전엔 buildPlan이 "로스터에 보유자가 있으면 +1"을 한 번 계산해 `Plan.plants` 스칼라에
+ * 박아 두고, planScore·UI가 그 값을 그대로 재사용했다. 실제 배치를 보지 않는 값이라
+ * ⓐ 발전소 칸이 핀으로 차 보유자가 아예 미배치가 되거나 ⓑ 시딩이 A조에만 걸려 B조엔
+ * 없거나 ⓒ 사용자가 수동 편집으로 발전소 밖으로 옮겨도 4개로 계산됐다 — 발전소 수로
+ * 스케일하는 자동화 방(위디·유넥티스·패신저·윈드플릿)이 통째로 부풀었다.
+ * (제보 2026-09-17: 위디+유넥티스 순금방이 77%여야 하는데 102%로 표시)
+ *
+ * `Plan.plants`는 저장된 옛 편성과의 호환을 위해 남아 있지만 **채점은 이 함수만 쓴다** —
+ * 수동 편집이 스칼라를 갱신하지 않아도 자동으로 맞는다.
+ */
+export function plantsFor(plan: Plan, shift: number, byId: Map<string, InfraOp>): number {
+  const teams = LAYOUT.filter((cell) => cell.room === "POWER").map((cell) => {
+    const shifts = plan.assignments[cell.key] ?? [];
+    const ids = shifts[Math.min(shift, shifts.length - 1)] ?? [];
+    return { key: cell.key, ops: ids.map((id) => byId.get(id)).filter((op): op is InfraOp => Boolean(op)) };
+  });
+  return PLANTS_BASE_RT + plantBonusOf(teams);
 }
 
 // 해당 조 기준 기지 내 배치 전원 (숙소·응접실 포함) — 기반시설 존재 조건 판정용
@@ -1959,10 +2006,24 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
       reserved.set(id, cell.key);
     }
   }
-  // 그레이가 발전소 밖에 고정되면 '발전소 +1개 간주' 조건 자체가 성립하지 않는다 — 부스트 무효
-  const plantBooster = plantBooster0 && roomLocked.has(plantBooster0.id)
-    && cellByKey.get(reserved.get(plantBooster0.id) ?? "")?.room !== "POWER" ? undefined : plantBooster0;
-  const plants = PLANTS_BASE_RT + (plantBooster ? 1 : 0); // 243/153=3(그레이 4), 252=2(그레이 3)
+  // ── '발전소 +1개 간주'(그레이 더 라이트닝베어러 '아침 햇살') ─────────────────────────
+  // 조건은 **배치 결과**로만 성립한다 — 로스터에 있다고 켜지는 값이 아니다. 조립 단계에선
+  // 시딩이 성공할지를 미리 판정해 낙관값을 정하고, 최종 편성의 발전소 수는 plantsFor가
+  // 배치에서 다시 구한다 (제보 2026-09-17: 미배치인데 4기로 계산돼 자동화 방이 부풀었다).
+  const powerKeys = LAYOUT.filter((cell) => cell.room === "POWER").map((cell) => cell.key);
+  const plantBooster = ((): InfraOp | undefined => {
+    if (!plantBooster0) return undefined;
+    // ⓐ 사용자가 비-발전소 방에 고정했다 → 조건 자체가 성립 못 한다
+    const lockedCell = roomLocked.has(plantBooster0.id) ? reserved.get(plantBooster0.id) ?? "" : null;
+    if (lockedCell !== null && cellByKey.get(lockedCell)?.room !== "POWER") return undefined;
+    // ⓑ 고정이 아니면 시드로 앉을 자리(POWER-0)가 남아 있어야 한다 — 핀으로 꽉 차면 미배치가 된다
+    if (lockedCell === null && (roomLockOps["POWER-0"]?.length ?? 0) >= slotsFor("POWER-0")) return undefined;
+    // ⓒ 다른 발전소에 작업 플랫폼(1성 로봇)이 고정돼 있으면 원문 조건이 깨진다
+    const seatKey = lockedCell ?? "POWER-0";
+    if (powerKeys.some((key) => key !== seatKey && (roomLockOps[key] ?? []).some((p) => isWorkPlatform(p.op)))) return undefined;
+    return plantBooster0;
+  })();
+  const plants = PLANTS_BASE_RT + (plantBooster ? plantBooster.skills.find((s) => s.kind === "plantbonus")!.value : 0);
   for (let shift = 0; shift < SHIFT_COUNT; shift += 1) {
     const seeds: Record<string, InfraOp[]> = {};
     // 고정 인원을 시드로 먼저 깔아 둔다 — 토큰 패키지의 숙소 배치가 남은 슬롯만 쓰게
@@ -2864,7 +2925,13 @@ export function buildPlan(packageTokens: string[], fullRoster: InfraOp[], factio
     room: cellByKey.get(k)?.room ?? k,
     ops: (assignments[k]?.[Math.min(shift, (assignments[k]?.length ?? 1) - 1)] ?? []).map((id) => rosterById.get(id)).filter(Boolean) as InfraOp[],
   }))));
-  return { assignments, plants, tokenPoints, factionCounts: factionCountsPerShift, flows, crowdedOut, strategy, strategyTokens: packageTokens, strategySet: setUsed, priority, auditRounds, shiftHours };
+  // 최종 발전소 수는 **배치로** 다시 판정한다 — 낙관값(위 plants)과 어긋나는 편성(시딩 실패·
+  // 감사가 보유자를 다른 방으로 옮김)이 그대로 저장되지 않게. 채점·UI는 plantsFor를 쓰므로
+  // 이 스칼라는 A조 기준 표시용·구버전 호환용이다.
+  const finalPlants = PLANTS_BASE_RT + plantBonusOf(powerKeys.map((key) => ({
+    key, ops: (assignments[key]?.[0] ?? []).map((id) => rosterById.get(id)).filter(Boolean) as InfraOp[],
+  })));
+  return { assignments, plants: finalPlants, tokenPoints, factionCounts: factionCountsPerShift, flows, crowdedOut, strategy, strategyTokens: packageTokens, strategySet: setUsed, priority, auditRounds, shiftHours };
 }
 
 // 세트 채택 비교 시 조별 가중 — A조는 풀파워 주력, B조는 회복 교대(§1). 동일 가중이면
@@ -2892,7 +2959,8 @@ export function planScore(plan: Plan, byId: Map<string, InfraOp>): number {
     const points = shift === 0 ? plan.tokenPoints : {};
     const counts = plan.factionCounts[shift] ?? {};
     const present = presentIdsFor(plan, shift);
-    const ambient = aurasOf(teamAt("CONTROL"), ctxFor("CONTROL", points, counts, plan.plants, present));
+    const plants = plantsFor(plan, shift, byId); // 조별 실제 배치 기준 (Plan.plants 스칼라는 안 쓴다)
+    const ambient = aurasOf(teamAt("CONTROL"), ctxFor("CONTROL", points, counts, plants, present));
     // 교대 시계 — 플랜에 실린 값을 재사용하고, 없으면(구버전 저장·수기 편집) 편성에서 재계산
     const clock = plan.shiftHours?.[shift]
       ?? shiftHoursFor([...PRODUCTION_KEYS, ...SUPPORT_KEYS].map((key) => ({ room: cellByKey.get(key)!.room, ops: teamAt(key) })));
@@ -2904,7 +2972,7 @@ export function planScore(plan: Plan, byId: Map<string, InfraOp>): number {
       // "총점에 안 잡히니 남는 인원으로 채우면 공짜"도 아니다 — 훈련실도 시설로 세는 방이라
       // 잉여를 앉히면 카운터가 엉뚱하게 찬다 (buildPlan 훈련실 파킹 ⓒ 주석 참조).
       if (key === "TRAINING") continue;
-      total += shiftWeight * teamValue(teamAt(key), cell.room, { ...ctxFor(key, points, counts, plan.plants, present, ambient), shiftHours: clock, shift });
+      total += shiftWeight * teamValue(teamAt(key), cell.room, { ...ctxFor(key, points, counts, plants, present, ambient), shiftHours: clock, shift });
     }
   }
   return total;
