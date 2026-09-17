@@ -415,7 +415,7 @@ def _t(name):
 
 def official_pairs():
     """{갈래: {중국어 원문: {"ko": 공식 한국어}}} — 양쪽 공식 표를 id 로 조인한다."""
-    out = {k: {} for k in ("op", "item", "enemy", "stage")}
+    out = {k: {} for k in ("op", "item", "enemy", "stage", "is-enc")}
     tag_re = re.compile(r"<[^>]+>")
 
     def add(tag, cn, ko):
@@ -426,7 +426,8 @@ def official_pairs():
             out[tag].setdefault(cn, {"ko": ko})
 
     def both(name):
-        c, k = _t(f"cn_{name}"), _t(f"kr_{name}")
+        # KR 표는 접두사 없이 저장되기도 한다 (fetch-gamedata-cdn.py 의 기본 언어)
+        c, k = _t(f"cn_{name}"), (_t(f"kr_{name}") or _t(name))
         return (c, k) if c and k else (None, None)
 
     c, k = both("character_table")
@@ -477,6 +478,27 @@ def official_pairs():
                 continue
             for f in ("name", "description", "ability"):
                 add("enemy", a.get(f), b.get(f))
+    # 통합전략 조우 분기 — choiceScenes(씬 제목·본문) + choices(선택지 제목·결과·잠금 사유).
+    # 이름·설명만 담고 분기 전문은 빠져 있던 자리다 (사용자 지적 2026-09-17). IS1~5 는
+    # 한섭에 나와 공식 한국어가 있고, id 가 CN 과 그대로 같아 짝이 바로 맞는다.
+    # IS6 는 미실장이라 KR 표에 없어 자동으로 빠진다.
+    c, k = both("roguelike_topic_table")
+    if c:
+        kd = k.get("details") or {}
+        for theme, a2 in (c.get("details") or {}).items():
+            b2 = kd.get(theme)
+            if not isinstance(b2, dict):
+                continue
+            for coll, fields in (("choiceScenes", ("title", "description")),
+                                 ("choices", ("title", "description", "lockedCoverDesc"))):
+                kc = b2.get(coll) or {}
+                for cid, ea in (a2.get(coll) or {}).items():
+                    eb = kc.get(cid)
+                    if not isinstance(ea, dict) or not isinstance(eb, dict):
+                        continue
+                    for f in fields:
+                        add("is-enc", ea.get(f), eb.get(f))
+
     c, k = both("stage_table")
     if c:
         kd = k.get("stages") or {}
@@ -495,9 +517,10 @@ OFF_LABEL = {
     "item":  "아이템·재료 — 이름·설명·용도 (한섭 공식 한국어)",
     "enemy": "적 — 이름·설명·능력 (한섭 공식 한국어)",
     "stage": "작전 — 이름·설명 (한섭 공식 한국어)",
+    "is-enc": "통합전략 1~5 조우 분기 — 씬 본문·선택지 (한섭 공식 한국어)",
 }
 OFF_ORDER = []
-for tag in ("op", "item", "enemy", "stage"):
+for tag in ("op", "item", "enemy", "stage", "is-enc"):
     if OFFICIAL.get(tag):
         name = f"kr-{tag}.json"
         files[name] = OFFICIAL[tag]

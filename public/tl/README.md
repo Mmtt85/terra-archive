@@ -41,13 +41,14 @@
 | [`kr-item.json`](https://files.terra-archive.net/assets/tl/kr-item.json) | 아이템·재료 — 이름·설명·용도 (**한섭 공식 한국어**) | 3,024 | 507 KB |
 | [`kr-enemy.json`](https://files.terra-archive.net/assets/tl/kr-enemy.json) | 적 — 이름·설명·능력 (**한섭 공식 한국어**) | 3,141 | 733 KB |
 | [`kr-stage.json`](https://files.terra-archive.net/assets/tl/kr-stage.json) | 작전 — 이름·설명 (**한섭 공식 한국어**) | 5,248 | 1.2 MB |
+| [`kr-is-enc.json`](https://files.terra-archive.net/assets/tl/kr-is-enc.json) | 통합전략 1~5 조우 분기 — 씬 본문·선택지 (**한섭 공식 한국어**) | 3,305 | 762 KB |
 | [`ra.json`](https://files.terra-archive.net/assets/tl/ra.json) | 생존연산 (중국 서버 선행) | 1,157 | 161 KB |
 | [`is1.json`](https://files.terra-archive.net/assets/tl/is1.json) … [`is6.json`](https://files.terra-archive.net/assets/tl/is6.json) | 통합전략 1~6 (6은 중국 서버 선행) | 726~1,519 | 43~86 KB |
 | [`is-common.json`](https://files.terra-archive.net/assets/tl/is-common.json) | 통합전략 공통 — 조우 안내·판정 문구 (테마 구분 없음) | 298 | 118 KB |
 
-전량 약 9.7 MB입니다. 한 파일이 하나의 콘텐츠에 대응하므로 필요한 것만 받으면 됩니다.
+전량 약 10.3 MB입니다. 한 파일이 하나의 콘텐츠에 대응하므로 필요한 것만 받으면 됩니다.
 
-`kr-*.json` 넷은 **번역이 아니라 대조표**입니다. 한국 서버에 이미 나온 것들의 중국어 원문과
+`kr-*.json` 다섯은 **번역이 아니라 대조표**입니다. 한국 서버에 이미 나온 것들의 중국어 원문과
 **게임의 공식 한국어**를 같은 id끼리 짝지은 것이라, AI 번역이 한 글자도 섞여 있지 않습니다.
 중국 서버 화면은 한섭 출시 여부와 상관없이 전부 중국어이므로, 이쪽이 실제로 가장 많이
 쓰이실 겁니다. 나머지 파일이 그때그때의 **비공식** 번역입니다.
@@ -166,7 +167,6 @@
   번역을 만드는 쪽에서 선을 그은 것입니다.
 
   (오퍼 한 명의 **기록·프로필 산문**은 이것과 다릅니다 — `op-past.json`에 1,090건 있습니다.)
-- **통합전략 조우 분기 전문** — 담은 것은 이름·제목·설명까지입니다.
 
 ## 이용 조건
 

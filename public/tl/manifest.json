@@ -38,6 +38,12 @@
    "hash": "c3dc1a6d3f215b2a"
   },
   {
+   "file": "kr-is-enc.json",
+   "url": "https://files.terra-archive.net/assets/tl/kr-is-enc.json?v=44fd751fd8819b6a",
+   "label": "통합전략 1~5 조우 분기 — 씬 본문·선택지 (한섭 공식 한국어)",
+   "hash": "44fd751fd8819b6a"
+  },
+  {
    "file": "ra.json",
    "url": "https://files.terra-archive.net/assets/tl/ra.json?v=497e0066a7e143de",
    "label": "생존연산 (중국 서버 선행)",
