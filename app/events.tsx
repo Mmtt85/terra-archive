@@ -27,8 +27,8 @@ import { ModalWindow } from "./modal-window";
 import { useHashSync } from "./hash-modal";
 import { AttributeFilter } from "./attr-filter";
 import { SearchSuggest } from "./search-suggest";
-import { loadEnemies, loadEnemyStats, loadItems, loadStages } from "./dex-cross";
-import { EnemyFile, enemyImg, type Enemy } from "./enemy-detail";
+import { loadEnemies, loadEnemyStages, loadEnemyStats, loadItems, loadStages } from "./dex-cross";
+import { EnemyFile, enemyImg, type Enemy, type EnemyStages } from "./enemy-detail";
 import { StageFile } from "./stage-detail";
 import { viewOf, type StageView } from "./stage-data";
 import { ItemFile, itemIcon, type DexItem, type ItemDoc } from "./items";
@@ -322,6 +322,9 @@ export default function EventDex({ doc, onShowOperator, onOpenGuide }: {
   //   `enemy_1588_ubbphw` 같은 id가 그대로 보인다 (사용자 제보 2026-09-17 "파블로비치,
   //   추밀관"). 어차피 적을 여는 순간 받는 맵이라 새로 받는 값이 아니다.
   const [enMap, setEnMap] = useState<Map<string, Enemy> | null>(null);
+  // 등장 작전 역색인 — 적 모달의 '등장 작전' 절. 없으면 그 절이 통째로 안 그려진다
+  // (사용자 지시 2026-09-17 "등장 작전도 다른 모달에서 다 보이게 해줘").
+  const [enStages, setEnStages] = useState<EnemyStages | null>(null);
   const [subItem, setSubItem] = useState<DexItem | null>(null);
   const [itemDoc, setItemDoc] = useState<ItemDoc | null>(null);
   const [subStory, setSubStory] = useState<string | null>(null);
@@ -340,6 +343,7 @@ export default function EventDex({ doc, onShowOperator, onOpenGuide }: {
   const openEnemy = (eid: string) => {
     setRaise((k) => k + 1);
     void loadEnemies(locale).then((m) => { setEnMap(m); setSubEnemy(m.get(eid) ?? null); });
+    void loadEnemyStages(locale).then(setEnStages);
   };
   // 재화는 **모달로 겹쳐** 띄운다 (사용자 지시 2026-09-16: "페이지 이동이 아니라 모달창").
   // 아이템 도감 문서(로케일당 ~650KB)는 여기서 처음 필요해지므로 그때 받는다.
@@ -476,11 +480,10 @@ export default function EventDex({ doc, onShowOperator, onOpenGuide }: {
           onClose={() => setSubEnemy(null)}>
           {/* ⚠ nameOf·onOpenEnemy 를 빠뜨리면 '연계 소환'이 id를 날것으로 찍고, 눌렀을 때
               모달이 아니라 적 상세 **페이지로 튕겨 나간다** (사용자 제보 2026-09-17).
-              onOpenStage는 stagesDoc이 null이라 죽은 값이었어서 뺐다 — 등장 작전 절은
-              stagesDoc이 있어야 그려진다(app/enemies.tsx만 넘긴다). */}
-          <EnemyFile enemy={subEnemy} stagesDoc={null}
+              */}
+          <EnemyFile enemy={subEnemy} stagesDoc={enStages}
             nameOf={(id) => enMap?.get(id)?.name}
-            onOpenEnemy={openEnemy} />
+            onOpenEnemy={openEnemy} onOpenStage={openStage} />
         </ModalWindow>
       )}
       {subStory && (

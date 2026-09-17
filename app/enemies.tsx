@@ -17,7 +17,7 @@ import { ModalWindow } from "./modal-window";
 import { useHashSync } from "./hash-modal";
 import { AttributeFilter } from "./attr-filter";
 import { SearchSuggest } from "./search-suggest";
-import { loadEnemyStats, loadStages } from "./dex-cross";
+import { loadEnemyStages, loadEnemyStats, loadStages } from "./dex-cross";
 import { StageFile } from "./stage-detail";
 import { viewOf, type StageView } from "./stage-data";
 // 재료 상세는 재료파밍 도우미의 것을 그대로 쓴다 (작전 모달의 드랍에서 열린다)
@@ -29,28 +29,17 @@ import {
 
 const RANKS = ["NORMAL", "ELITE", "BOSS"];
 
-/** 등장 작전 색인은 모달을 열 때 처음 필요해진다 — 로케일별 지연 로드(로케일당 ~230KB) */
-const STAGE_LOADERS: Record<string, () => Promise<{ default: unknown }>> = {
-  ko: () => import("./data/enemy-stages.json"),
-  en: () => import("./data/enemy-stages.en.json"),
-  ja: () => import("./data/enemy-stages.ja.json"),
-};
-const stageCache = new Map<string, EnemyStages>();
-
+/** 등장 작전 색인은 모달을 열 때 처음 필요해진다 — 정본 로더는 dex-cross 에 있다
+ *  (2026-09-17: 이벤트·작전·재료파밍·아이템 도감의 적 모달도 같은 색인을 쓴다). */
 function useStagesDoc(locale: string, want: boolean): EnemyStages | null {
-  // 캐시를 **렌더 중에 읽는다** — 이펙트 안에서 동기 setState를 하면 연쇄 렌더가 난다
-  // (react-hooks/set-state-in-effect). 비동기 도착 때만 리렌더를 깨운다.
-  const [, bump] = useState(0);
+  const [doc, setDoc] = useState<EnemyStages | null>(null);
   useEffect(() => {
-    if (!want || stageCache.has(locale)) return;
+    if (!want) return;
     let live = true;
-    (STAGE_LOADERS[locale] ?? STAGE_LOADERS.ko)().then((m) => {
-      stageCache.set(locale, ((m as { default?: unknown }).default ?? m) as EnemyStages);
-      if (live) bump((n) => n + 1);
-    }).catch(() => { /* 색인이 없어도 도감 자체는 보여야 한다 */ });
+    void loadEnemyStages(locale).then((d) => { if (live) setDoc(d); });
     return () => { live = false; };
   }, [locale, want]);
-  return stageCache.get(locale) ?? null;
+  return doc;
 }
 
 function EnemyCard({ enemy, onSelect }: { enemy: Enemy; onSelect: (e: Enemy) => void }) {

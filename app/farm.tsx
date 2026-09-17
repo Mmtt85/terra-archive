@@ -21,10 +21,10 @@ import { Dropdown } from "./dropdown";
 import { useHashSync } from "./hash-modal";
 import { HANDOFF_EVENT, takeHandoff } from "./handoff";
 import { noteArrival, noteMiss } from "./trail";
-import { loadEnemies, loadEnemyStats, loadStages } from "./dex-cross";
+import { loadEnemies, loadEnemyStages, loadEnemyStats, loadStages } from "./dex-cross";
 import { StageFile } from "./stage-detail";
 import { viewOf, type StageView } from "./stage-data";
-import { EnemyFile, type Enemy } from "./enemy-detail";
+import { EnemyFile, type Enemy, type EnemyStages } from "./enemy-detail";
 
 type LocText = { ko: string; en?: string; ja?: string };
 type FarmStage = {
@@ -155,6 +155,8 @@ function useStageSubModal(onShowItem: (id: string) => void) {
   // ⚠ 적 도감 **전체 맵**을 들고 있어야 '연계 소환'에 이름이 찍힌다 — 안 그러면
   //   `enemy_1588_ubbphw` 같은 id가 그대로 보인다 (사용자 제보 2026-09-17).
   const [enMap, setEnMap] = useState<Map<string, Enemy> | null>(null);
+  // 등장 작전 역색인 — 적 모달의 '등장 작전' 절 (사용자 지시 2026-09-17)
+  const [enStages, setEnStages] = useState<EnemyStages | null>(null);
   const openStage = (sid: string) => {
     setStageRaise((k) => k + 1);
     // 스탯 색인을 같이 받아야 등장 적 카드에 HP·공격 수치가 실린다 (적 도감 쪽과 같은
@@ -170,6 +172,7 @@ function useStageSubModal(onShowItem: (id: string) => void) {
   const openEnemy = (eid: string) => {
     setEnemyRaise((k) => k + 1);
     void loadEnemies(locale).then((m) => { setEnMap(m); setEnemy(m.get(eid) ?? null); });
+    void loadEnemyStages(locale).then(setEnStages);
   };
   const node = (
     <>
@@ -181,10 +184,8 @@ function useStageSubModal(onShowItem: (id: string) => void) {
       )}
       {enemy && (
         <ModalWindow key={`en-${enemyRaise}`} label={enemy.name} className="operator-modal en-modal" onClose={() => setEnemy(null)}>
-          {/* onOpenStage는 stagesDoc이 null이라 죽은 값이었다 — 등장 작전 절은 stagesDoc이
-              있어야 그려진다(app/enemies.tsx만 넘긴다). 대신 연계 소환을 이어 준다. */}
-          <EnemyFile enemy={enemy} stagesDoc={null} onOpenEnemy={openEnemy}
-            nameOf={(id) => enMap?.get(id)?.name} />
+          <EnemyFile enemy={enemy} stagesDoc={enStages} onOpenEnemy={openEnemy}
+            nameOf={(id) => enMap?.get(id)?.name} onOpenStage={openStage} />
         </ModalWindow>
       )}
     </>

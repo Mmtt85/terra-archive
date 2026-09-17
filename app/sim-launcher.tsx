@@ -22,8 +22,8 @@ import { StageFile } from "./stage-detail";
 import { stageFilterTree, viewOf, type EnemyStatsIndex, type Stage, type StageDoc } from "./stage-data";
 import { ModalWindow } from "./modal-window";
 import { useHashSync } from "./hash-modal";
-import { loadEnemies } from "./dex-cross";
-import { EnemyFile, type Enemy } from "./enemy-detail";
+import { loadEnemies, loadEnemyStages } from "./dex-cross";
+import { EnemyFile, type Enemy, type EnemyStages } from "./enemy-detail";
 
 // 재료 상세는 재료파밍 도우미의 모달을 그대로 (stages 탭과 같은 지연 청크)
 const ItemModal = lazy(() => import("./farm").then((m) => ({ default: m.ItemModal })));
@@ -112,6 +112,8 @@ export default function SimLauncher() {
   // ⚠ 적 도감 **전체 맵**을 들고 있어야 '연계 소환'에 이름이 찍힌다 — 안 그러면
   //   `enemy_1588_ubbphw` 같은 id가 그대로 보인다 (사용자 제보 2026-09-17).
   const [enMap, setEnMap] = useState<Map<string, Enemy> | null>(null);
+  // 등장 작전 역색인 — 적 모달의 '등장 작전' 절 (사용자 지시 2026-09-17)
+  const [enStages, setEnStages] = useState<EnemyStages | null>(null);
   const [subItem, setSubItem] = useState<string | null>(null);
   const [enemyRaise, setEnemyRaise] = useState(0);
   const [itemRaise, setItemRaise] = useState(0);
@@ -137,6 +139,7 @@ export default function SimLauncher() {
   const openEnemy = (id: string) => {
     setEnemyRaise((k) => k + 1);
     void loadEnemies(locale).then((m) => { setEnMap(m); setSubEnemy(m.get(id) ?? null); });
+    void loadEnemyStages(locale).then(setEnStages);
   };
   const openItem = (id: string) => { setSubItem(id); setItemRaise((k) => k + 1); };
 
@@ -337,8 +340,12 @@ export default function SimLauncher() {
       )}
       {subEnemy && (
         <ModalWindow key={`en-${enemyRaise}`} label={subEnemy.name} className="operator-modal en-modal" onClose={() => setSubEnemy(null)}>
-          <EnemyFile enemy={subEnemy} stagesDoc={null} onOpenEnemy={openEnemy}
-            nameOf={(id) => enMap?.get(id)?.name} />
+          <EnemyFile enemy={subEnemy} stagesDoc={enStages} onOpenEnemy={openEnemy}
+            nameOf={(id) => enMap?.get(id)?.name}
+            onOpenStage={(sid: string) => {
+              const st = byId.get(sid);
+              if (st) { setOpen(st); setMainRaise((k) => k + 1); }
+            }} />
         </ModalWindow>
       )}
       {subItem && (

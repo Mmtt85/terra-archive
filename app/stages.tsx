@@ -18,8 +18,8 @@ import { ModalWindow } from "./modal-window";
 import { useHashSync } from "./hash-modal";
 import { AttributeFilter } from "./attr-filter";
 import { SearchSuggest } from "./search-suggest";
-import { loadEnemies } from "./dex-cross";
-import { EnemyFile, type Enemy } from "./enemy-detail";
+import { loadEnemies, loadEnemyStages } from "./dex-cross";
+import { EnemyFile, type Enemy, type EnemyStages } from "./enemy-detail";
 // 재료 상세는 재료파밍 도우미의 것을 그대로 쓴다 — 설명·용도·조합식·효율 상위 스테이지까지
 // 이미 다 들어 있다. 드랍을 누를 때만 그 청크를 받는다.
 const ItemModal = lazy(() => import("./farm").then((m) => ({ default: m.ItemModal })));
@@ -80,6 +80,8 @@ export default function StageDex({ doc }: { doc: StageDoc; onOpenEnemy?: (id: st
   // ⚠ 적 도감 **전체 맵**을 들고 있어야 '연계 소환'에 이름이 찍힌다 — 안 그러면
   //   `enemy_1588_ubbphw` 같은 id가 그대로 보인다 (사용자 제보 2026-09-17).
   const [enMap, setEnMap] = useState<Map<string, Enemy> | null>(null);
+  // 등장 작전 역색인 — 적 모달의 '등장 작전' 절 (사용자 지시 2026-09-17)
+  const [enStages, setEnStages] = useState<EnemyStages | null>(null);
   const [subItem, setSubItem] = useState<string | null>(null);
   // 이미 열려 있는 창을 다시 지목하면 앞으로 끌어올린다 (사용자 요청 2026-08-09) —
   // ModalWindow는 마운트 때 z를 받으므로 key를 갈아 재마운트한다.
@@ -222,6 +224,7 @@ export default function StageDex({ doc }: { doc: StageDoc; onOpenEnemy?: (id: st
   const openEnemy = (id: string) => {
     setEnemyRaise((k) => k + 1);
     void loadEnemies(locale).then((m) => { setEnMap(m); setSubEnemy(m.get(id) ?? null); });
+    void loadEnemyStages(locale).then(setEnStages);
   };
   const openItem = (id: string) => { setSubItem(id); setItemRaise((k) => k + 1); };
 
@@ -281,8 +284,14 @@ export default function StageDex({ doc }: { doc: StageDoc; onOpenEnemy?: (id: st
       {/* 적 상세 — 작전 모달 위에 겹친다 (ModalWindow가 zTop으로 앞뒤를 정한다) */}
       {subEnemy && (
         <ModalWindow key={`en-${enemyRaise}`} label={subEnemy.name} className="operator-modal en-modal" onClose={() => setSubEnemy(null)}>
-          <EnemyFile enemy={subEnemy} stagesDoc={null} onOpenEnemy={openEnemy}
-            nameOf={(id) => enMap?.get(id)?.name} />
+          {/* 등장 작전을 누르면 **주 모달**을 그 작전으로 갈아 끼우고 앞으로 끌어올린다
+              (재료 모달의 '효율 스테이지'와 같은 동작) */}
+          <EnemyFile enemy={subEnemy} stagesDoc={enStages} onOpenEnemy={openEnemy}
+            nameOf={(id) => enMap?.get(id)?.name}
+            onOpenStage={(sid) => {
+              const st = doc.stages.find((x) => x.id === sid);
+              if (st) { setOpen(st); setMainRaise((k) => k + 1); }
+            }} />
         </ModalWindow>
       )}
       {subItem && (

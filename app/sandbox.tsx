@@ -21,9 +21,9 @@ import { normSearch, useSearchInput } from "./search";
 import { asset } from "./assets";
 import { ModalWindow } from "./modal-window";
 import { GLOBAL_MODAL_HASH } from "./hash-modal";
-import { loadEnemies } from "./dex-cross";
+import { loadEnemies, loadEnemyStages } from "./dex-cross";
 import { enemyImg, enemyPath } from "./dex-paths";
-import { EnemyFile, type Enemy } from "./enemy-detail";
+import { EnemyFile, type Enemy, type EnemyStages } from "./enemy-detail";
 import { StageRouteMap, enemyRouteColor, type StageRoutes } from "./stage-route-map";
 
 // 이미지 — build-sandbox.py가 public/sandbox/{item,map,misc}/에 받아 R2로 서빙한다.
@@ -362,6 +362,7 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
   const routeOrder = rd ? enemyRows.filter((r) => rd.e[r[0]]?.length).map((r) => r[0]) : [];
   const openDexEnemy = (id: string, img: string) => {
     void loadEnemies(locale).then((m) => { setEnMap(m); setSubEnemy(m.get(id) ?? m.get(img) ?? null); });
+    void loadEnemyStages(locale).then(setEnStages);
   };
   // 적 도감 상세는 **모달을 열 때 바로 싣는다** — 링크를 한 번 더 누르게 하지 않는다
   // (사용자 지시 2026-08-13 "적도감에 있으면 바로 보여줘").
@@ -369,9 +370,14 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
   // 연계 소환 적의 **이름**을 찍으려면 도감 전체 맵이 필요하다 (없으면 id가 그대로 보였다 —
   // 사용자 제보 2026-08-13 "연계 소환이 제대로 안 나옴"). 한 번 받아 두고 재사용한다.
   const [enMap, setEnMap] = useState<Map<string, Enemy> | null>(null);
+  // 등장 작전 역색인 — 적 상세의 '등장 작전' 절. 생존연산 적 330종 중 276종이 일반
+  // 작전에도 나온다 (사용자 지시 2026-09-17). 여기선 띄울 작전 모달이 없어
+  // onOpenStage 대신 작전 도감 딥링크로 폴백한다.
+  const [enStages, setEnStages] = useState<EnemyStages | null>(null);
   const loadDexFull = (id: string, img: string) => {
     setDexFull(null);
     void loadEnemies(locale).then((m) => { setEnMap(m); setDexFull(m.get(id) ?? m.get(img) ?? null); });
+    void loadEnemyStages(locale).then(setEnStages);
   };
   /** 적 이름 — 도감 맵 → 생존연산 이름표 → id */
   const anyEnName = (id: string) => enMap?.get(id)?.name ?? v2.enemyNames[id] ?? v3.enemyNames[id] ?? id;
@@ -1671,7 +1677,7 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
               </div>
               {e.src === 0 && (
                 dexFull ? <div className="sb-dexfull">
-                    <EnemyFile enemy={dexFull} stagesDoc={null} nameOf={anyEnName}
+                    <EnemyFile enemy={dexFull} stagesDoc={enStages} nameOf={anyEnName}
                       onOpenEnemy={(id) => openDexEnemy(id, id)} />
                   </div>
                   : <p className="sim-note">{t("적 도감 정보를 불러오는 중…")}</p>
@@ -1956,7 +1962,7 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
                 </div>
                 {v3.enemySrc[e.id] === 0 && (
                   dexFull ? <div className="sb-dexfull">
-                    <EnemyFile enemy={dexFull} stagesDoc={null} nameOf={anyEnName}
+                    <EnemyFile enemy={dexFull} stagesDoc={enStages} nameOf={anyEnName}
                       onOpenEnemy={(id) => openDexEnemy(id, id)} />
                   </div>
                     : <p className="sim-note">{t("적 도감 정보를 불러오는 중…")}</p>
@@ -1978,8 +1984,8 @@ export default function SandboxGuide({ doc, includeFuture, season = "v2" }: { do
       {matTop === "a" && matA && matModal(matA, "a")}
       {subEnemy && (
         <ModalWindow label={subEnemy.name} className="operator-modal en-modal" onClose={() => setSubEnemy(null)}>
-          <EnemyFile enemy={subEnemy} stagesDoc={null} nameOf={anyEnName}
-            onOpenEnemy={(id) => { void loadEnemies(locale).then((m) => { setEnMap(m); setSubEnemy(m.get(id) ?? null); }); }} />
+          <EnemyFile enemy={subEnemy} stagesDoc={enStages} nameOf={anyEnName}
+            onOpenEnemy={(id) => openDexEnemy(id, id)} />
         </ModalWindow>
       )}
     </section>

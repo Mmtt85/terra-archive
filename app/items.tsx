@@ -30,8 +30,8 @@ import { ModalWindow } from "./modal-window";
 import { useHashSync } from "./hash-modal";
 import { AttributeFilter } from "./attr-filter";
 import { SearchSuggest } from "./search-suggest";
-import { loadEnemies, loadEnemyStats, loadStages } from "./dex-cross";
-import { EnemyFile, type Enemy } from "./enemy-detail";
+import { loadEnemies, loadEnemyStages, loadEnemyStats, loadStages } from "./dex-cross";
+import { EnemyFile, type Enemy, type EnemyStages } from "./enemy-detail";
 import { StageFile } from "./stage-detail";
 import { viewOf, type StageView } from "./stage-data";
 
@@ -180,6 +180,8 @@ export default function ItemDex({ doc }: { doc: ItemDoc }) {
   // 적을 누르면 아이템 도감을 **떠나** /enemies/<id>로 튕겨 나갔다 (2026-09-17 전수조사).
   const [subEnemy, setSubEnemy] = useState<Enemy | null>(null);
   const [enMap, setEnMap] = useState<Map<string, Enemy> | null>(null);
+  // 등장 작전 역색인 — 적 모달의 '등장 작전' 절 (사용자 지시 2026-09-17)
+  const [enStages, setEnStages] = useState<EnemyStages | null>(null);
   const [enemyRaise, setEnemyRaise] = useState(0);
 
   const items = doc.items;
@@ -194,6 +196,7 @@ export default function ItemDex({ doc }: { doc: ItemDoc }) {
   const openEnemy = (eid: string) => {
     setEnemyRaise((k) => k + 1);
     void loadEnemies(locale).then((m) => { setEnMap(m); setSubEnemy(m.get(eid) ?? null); });
+    void loadEnemyStages(locale).then(setEnStages);
   };
 
   // 딥링크 #it-<id> — 오퍼(#op-)·적(#en-)과 같은 관례. 재료파밍의 #item-<id>와는 다른
@@ -297,8 +300,8 @@ export default function ItemDex({ doc }: { doc: ItemDoc }) {
       {subEnemy && (
         <ModalWindow key={`en-${enemyRaise}`} label={subEnemy.name} className="operator-modal en-modal"
           onClose={() => setSubEnemy(null)}>
-          <EnemyFile enemy={subEnemy} stagesDoc={null} onOpenEnemy={openEnemy}
-            nameOf={(id) => enMap?.get(id)?.name} />
+          <EnemyFile enemy={subEnemy} stagesDoc={enStages} onOpenEnemy={openEnemy}
+            nameOf={(id) => enMap?.get(id)?.name} onOpenStage={openStage} />
         </ModalWindow>
       )}
     </section>

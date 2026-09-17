@@ -11,8 +11,8 @@ import { useI18n } from "./i18n";
 import { asset } from "./assets";
 import { enemyPath, enemyImg, enemyImgBase, itemDexPath, stageMap, stagePath, stageListPath } from "./dex-paths";
 import { ModalWindow } from "./modal-window";
-import { loadEnemies } from "./dex-cross";
-import { EnemyFile, type Enemy } from "./enemy-detail";
+import { loadEnemies, loadEnemyStages } from "./dex-cross";
+import { EnemyFile, type Enemy, type EnemyStages } from "./enemy-detail";
 
 import { viewOf, type EnvMul, type Stage, type StageDoc, type StageView } from "./stage-data";
 import { StageRouteMap, enemyRouteColor, type StageRoutes } from "./stage-route-map";
@@ -365,8 +365,13 @@ export function StagePage({ view, onBack }: { view: StageView; onBack?: () => vo
   const [subEnemy, setSubEnemy] = useState<Enemy | null>(null);
   // ⚠ 맵을 들고 있어야 적 모달의 '연계 소환'에 이름이 찍힌다 (사용자 제보 2026-09-17)
   const [enMap, setEnMap] = useState<Map<string, Enemy> | null>(null);
+  // 등장 작전 역색인 — 적 모달의 '등장 작전' 절 (사용자 지시 2026-09-17)
+  // 여기서는 onOpenStage를 안 넘긴다 — 정적 페이지라 띄울 작전 모달이 없다.
+  // 등장 작전 칸은 작전 도감 딥링크(/stages#st-<id>)로 폴백한다.
+  const [enStages, setEnStages] = useState<EnemyStages | null>(null);
   const openEnemy = (id: string) => {
     void loadEnemies(locale).then((m) => { setEnMap(m); setSubEnemy(m.get(id) ?? null); });
+    void loadEnemyStages(locale).then(setEnStages);
   };
   return (
     <div className="operator-page-wrap">
@@ -380,7 +385,7 @@ export function StagePage({ view, onBack }: { view: StageView; onBack?: () => vo
       </section>
       {subEnemy && (
         <ModalWindow label={subEnemy.name} className="operator-modal en-modal" onClose={() => setSubEnemy(null)}>
-          <EnemyFile enemy={subEnemy} stagesDoc={null} onOpenEnemy={openEnemy}
+          <EnemyFile enemy={subEnemy} stagesDoc={enStages} onOpenEnemy={openEnemy}
             nameOf={(id) => enMap?.get(id)?.name} />
         </ModalWindow>
       )}

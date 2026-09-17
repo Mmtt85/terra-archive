@@ -5,7 +5,7 @@
 // 그냥 상세 모달창만 추가로"). 그러려면 각 도감이 상대편 데이터를 갖고 있어야 하는데,
 // 로케일당 1MB가 넘으므로 **누르는 순간에만** 받는다. ModalWindow는 zTop 카운터로
 // 창끼리 앞뒤를 정하므로 겹쳐 떠도 그대로 동작한다.
-import type { Enemy } from "./enemy-detail";
+import type { Enemy, EnemyStages } from "./enemy-detail";
 import type { EnemyStatsIndex, StageDoc } from "./stage-data";
 
 const ENEMY_LOADERS: Record<string, () => Promise<unknown>> = {
@@ -58,6 +58,30 @@ export async function loadItems<T>(locale: string): Promise<T> {
   const doc = unwrap<T>(await (ITEM_LOADERS[locale] ?? ITEM_LOADERS.ko)());
   itemCache.set(locale, doc);
   return doc;
+}
+
+const ENEMY_STAGE_LOADERS: Record<string, () => Promise<unknown>> = {
+  ko: () => import("./data/enemy-stages.json"),
+  en: () => import("./data/enemy-stages.en.json"),
+  ja: () => import("./data/enemy-stages.ja.json"),
+};
+const enemyStageCache = new Map<string, EnemyStages>();
+
+/** 적의 **등장 작전 역색인** (로케일당 ~300KB) — 적 상세의 '등장 작전' 절에 필요하다.
+ *  ⚠ 안 넘기면 그 절이 **통째로 안 그려진다** (EnemyFile의 stagesDoc). 2026-09-17까지
+ *  적 도감에서만 넘기고 있어서, 이벤트·작전·재료파밍·아이템 도감의 적 모달에는 등장 작전이
+ *  아예 없었다 (사용자 지시 2026-09-17 "등장 작전도 다른 모달에서 다 보이게 해줘").
+ *  색인이 없어도 나머지는 보여야 하므로 실패는 삼키고 null을 준다. */
+export async function loadEnemyStages(locale: string): Promise<EnemyStages | null> {
+  const hit = enemyStageCache.get(locale);
+  if (hit) return hit;
+  try {
+    const doc = unwrap<EnemyStages>(await (ENEMY_STAGE_LOADERS[locale] ?? ENEMY_STAGE_LOADERS.ko)());
+    enemyStageCache.set(locale, doc);
+    return doc;
+  } catch {
+    return null;
+  }
 }
 
 /** 적 코어 스탯 색인 (70KB, 로케일 무관) — 작전 모달의 등장 적 수치에 필요하다.

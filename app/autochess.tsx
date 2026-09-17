@@ -24,8 +24,8 @@ import { normSearch, useSearchInput } from "./search";
 import { asset } from "./assets";
 import { ModalWindow } from "./modal-window";
 import { GLOBAL_MODAL_HASH } from "./hash-modal";
-import { loadEnemies } from "./dex-cross";
-import { EnemyFile, RANK_KEY, enemyImg, enemyImgBase, type Enemy } from "./enemy-detail";
+import { loadEnemies, loadEnemyStages } from "./dex-cross";
+import { EnemyFile, RANK_KEY, enemyImg, enemyImgBase, type Enemy, type EnemyStages } from "./enemy-detail";
 import { StageRouteMap, enemyRouteColor, type StageRoutes } from "./stage-route-map";
 import { useBridgeWatch, useBridgeStatus, connectBridge, disconnectBridge, bridgeSupported, bridgeOnMobile, bridgeOn, noteBridge, memoBridgeScene } from "./lens/bridge";
 import { recognizeShot, warmData, ocrLangFor } from "./lens/run";
@@ -432,15 +432,19 @@ function EnFace({ id, className = "ac-enface" }: { id: string; className?: strin
  *  이름·초상만으로 그려지고, 도감이 도착하면 상세 모달이 본문(EnemyFile)을 채운다. */
 function useEnemyDex(locale: string, want: boolean) {
   const [dex, setDex] = useState<Map<string, Enemy> | null>(null);
+  // 등장 작전 역색인 — 적 상세의 '등장 작전' 절. 위수 협의 적 203종 중 184종이 일반
+  // 작전에도 나오므로 여기서도 값이 있다 (사용자 지시 2026-09-17 "다 보이게 해줘").
+  const [stages, setStages] = useState<EnemyStages | null>(null);
   useEffect(() => {
     if (!want) return;
     let live = true;
     loadEnemies(locale)
       .then((m) => { if (live) setDex(m); })
       .catch(() => { /* 도감을 못 받아도 목록·카드는 그대로 보여야 한다 */ });
+    void loadEnemyStages(locale).then((d) => { if (live) setStages(d); });
     return () => { live = false; };
   }, [locale, want]);
-  return dex;
+  return { dex, stages };
 }
 
 /** 리더 HP는 수십만~수백만이라 그대로 쓰면 안 읽힌다 — 천 단위 구분 */
@@ -954,7 +958,7 @@ export default function AutochessGuide({ doc, onShowOperator }: {
 
   // 적 모달은 '적' 탭 밖에서도 열린다 — 전략 문구의 <덕로드>처럼 문구가 부르는 적
   // (2026-08-24). 창이 떠 있으면 도감을 받아 본문을 채운다.
-  const enemyDex = useEnemyDex(locale,
+  const { dex: enemyDex, stages: enemyStagesDoc } = useEnemyDex(locale,
     (view === "misc" && (miscTab === "enemy" || miscTab === "map")) || enemy != null);
   // 전투 맵 데이터는 그 탭을 처음 열 때만 받는다 (42KB)
   const wantRoutes = view === "misc" && miscTab === "map";
@@ -3554,8 +3558,9 @@ export default function AutochessGuide({ doc, onShowOperator }: {
           onClose={() => setEnemy(null)}>
           {(() => {
             const full = enemyDex?.get(enemy);
+            // 등장 작전은 여기선 링크로 폴백한다 — 위수 협의엔 띄울 일반 작전 모달이 없다
             return full ? (
-              <EnemyFile enemy={full} stagesDoc={null} nameOf={enemyName}
+              <EnemyFile enemy={full} stagesDoc={enemyStagesDoc} nameOf={enemyName}
                 onOpenEnemy={(id) => setEnemy(id)} />
             ) : (
               <div className="en-file">
