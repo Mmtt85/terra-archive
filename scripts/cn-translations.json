@@ -14003,5 +14003,10 @@
   "ko": "금속 골조, 유리 문과 창, 기계식 풍향계, 유압식 지지 다리, 그리고 물론 몇 남지 않은 깃털 — 테라의 마지막 들닭은 이런 모습으로, 만여 년 전 죽음에 가로막혔던 여정을 다시 이어 간다.",
   "en": "A metal frame, glass doors and windows, a mechanical weather vane, hydraulic support legs—and, of course, the few feathers that remain. In this form, the last junglefowl of Terra resumes the journey that death cut short over ten thousand years ago.",
   "ja": "金属のフレーム、ガラスの扉と窓、機械式の風見鶏、油圧式の支持脚、そしてもちろん、わずかに残った羽毛——テラ最後の野鶏は、この姿で一万数千年前に死によって断ち切られた旅路を再び歩み出す。"
+ },
+ "进驻发电站时，无人机充能速度+15%，如果结城理进驻在制造站，则无人机充能速度额外+5%": {
+  "ko": "발전소에 배치 시, 드론 충전 속도 +15%. 유키 마코토가 제조소에 배치되어 있으면 드론 충전 속도 추가 +5%",
+  "en": "When assigned to a Power Plant, drone recharge rate +15%; if Makoto Yuki is assigned to a Factory, drone recharge rate increases by an additional 5%",
+  "ja": "発電所に配置時、ドローンの充電速度+15%。結城理が製造所に配置されている場合、ドローンの充電速度がさらに+5%"
  }
 }

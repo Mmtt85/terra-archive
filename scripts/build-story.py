@@ -343,6 +343,23 @@ kr = fetch(f"{GAMEDATA}/kr/gamedata/excel/story_review_table.json")
 en = fetch(f"{GAMEDATA}/en/gamedata/excel/story_review_table.json")
 jp = fetch(f"{GAMEDATA}/jp/gamedata/excel/story_review_table.json")
 
+# ⚠ 위 세 표는 **클뜯 레포**라 며칠씩 밀린다. 한섭이 먼저 연 이벤트는 kr 표에만 들어오고
+#   en/jp 표엔 아직 없어서, 이름이 `or act["name"]` 로 **한국어로 폴백**했다
+#   (사용자 제보 2026-09-17 "영문판에 사람들우리들 이벤트가 한글로 돼 있다" — act51side).
+#   글섭·일섭이 그 이벤트를 이미 열었다면 **공식 영문·일문명**이 게임 CDN 활동표에 있다.
+#   `.gamedata/{en,jp}_activity_table.json` 은 fetch-gamedata-cdn.py 가 챙긴다.
+#   CI 에는 이 파일이 없거나 레포판이라 자동으로 무동작 — 있으면 쓰고 없으면 종전대로 간다.
+def _live_names(prefix):
+    try:
+        with open(f"{REPO}/.gamedata/{prefix}_activity_table.json", encoding="utf-8") as fp:
+            basic = json.load(fp).get("basicInfo") or {}
+    except (OSError, ValueError, KeyError):
+        return {}
+    return {k: v["name"] for k, v in basic.items()
+            if v.get("name") and 0 < v.get("startTime", 0) <= time.time()}
+en_live_names = _live_names("en")
+ja_live_names = _live_names("jp")
+
 thumb_dir = os.path.join(REPO, "public", "story")
 os.makedirs(thumb_dir, exist_ok=True)
 
@@ -370,8 +387,8 @@ for act in acts:
         "id": eid,
         "name": {
             "ko": act["name"],
-            "en": (en.get(eid) or {}).get("name") or act["name"],
-            "ja": (jp.get(eid) or {}).get("name") or act["name"],
+            "en": (en.get(eid) or {}).get("name") or en_live_names.get(eid) or act["name"],
+            "ja": (jp.get(eid) or {}).get("name") or ja_live_names.get(eid) or act["name"],
         },
         "start": time.strftime("%Y-%m", time.gmtime(act["startTime"])),
         "episodes": len(codes),
@@ -449,8 +466,8 @@ for act in minis:
         "id": eid, "mini": True,
         "name": {
             "ko": act["name"],
-            "en": (en.get(eid) or {}).get("name") or act["name"],
-            "ja": (jp.get(eid) or {}).get("name") or act["name"],
+            "en": (en.get(eid) or {}).get("name") or en_live_names.get(eid) or act["name"],
+            "ja": (jp.get(eid) or {}).get("name") or ja_live_names.get(eid) or act["name"],
         },
         "start": time.strftime("%Y-%m", time.gmtime(act["startTime"])),
         "episodes": len(codes) or len(act["infoUnlockDatas"]),
@@ -569,6 +586,9 @@ for act in cn_acts:
         # ⚠ start 도 **한섭 개방월**로 바꿔야 한다 — CN 출시월(위 기본값)로 두면 목록에서
         #   반년 전 자리에 파묻혀 "스토리가 사라졌다"가 된다 (2026-09-16 사용자 제보).
         ev_obj["name"] = {**(trans or {}), "ko": kr_live[eid]["name"]}
+        # 글섭·일섭도 열었으면 임시 번역 대신 **공식명**을 쓴다 (위 _live_names 와 같은 이유)
+        if en_live_names.get(eid): ev_obj["name"]["en"] = en_live_names[eid]
+        if ja_live_names.get(eid): ev_obj["name"]["ja"] = ja_live_names[eid]
         ev_obj["start"] = time.strftime("%Y-%m", time.gmtime(kr_live[eid]["startTime"]))
         del ev_obj["unreleased"]
     elif _gap_sec:  # CN 출시월 + 시차 = KR 추정월 (확정 아님)
