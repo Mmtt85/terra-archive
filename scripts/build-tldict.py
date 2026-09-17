@@ -219,7 +219,7 @@ labels["is-common.json"] = "통합전략 공통 — 조우 안내·판정 문구
 os.makedirs(OUT, exist_ok=True)
 ORDER = ["op-fut.json", "op-past.json", "ra.json",
          *[f"{t}.json" for t, _ in ROGUE_FILES], "is-common.json"]
-rows, group_counts, changed = [], {}, 0
+rows, counts, group_counts, changed = [], {}, {}, 0
 for name in ORDER:
     body = files[name]
     path = os.path.join(OUT, name)
@@ -231,12 +231,16 @@ for name in ORDER:
             fp.write(raw)
         changed += 1
     h = digest(body)
-    # url 에 ?v=<hash> — 내용이 바뀌면 주소가 바뀌어 캐시가 옛 바이트를 못 돌려준다
-    row = {"file": name, "url": f"{BASE}/{name}?v={h}",
-           "label": labels[name], "n": leaves(body), "hash": h}
-    # ⚠ 갈래별 개수는 **manifest 에 넣지 않는다** (사용자 지적 2026-09-17). 갈래는 이미
-    #   파일 안에 들어 있고(is*.json 최상위 키), 파일은 통째로 받으므로 개수를 미리 알아야
-    #   내릴지 말지 정할 일이 없다 — 받는 쪽이 쓸 데 없는 중복이다. 아래 콘솔 출력용으로만 쓴다.
+    # ⚠ manifest 에는 **받는 쪽이 실제로 쓸 것만** 싣는다 (사용자 지적 2026-09-17).
+    #   file  로컬에 저장할 때의 이름표 — url 은 내용이 바뀌면 같이 바뀌므로 키로 못 쓴다
+    #   url   바로 요청할 주소 (?v=<hash> 가 붙어 캐시가 옛 바이트를 못 돌려준다)
+    #   label 받아 보기 전에 무엇인지 알려 준다 (고르는 화면을 만든다면 여기 쓴다)
+    #   hash  바뀌었나 — 증분의 전부다
+    #   항목 수(n)·갈래별 개수(groups)·합계(total)는 뺐다. 파일은 통째로 받으므로 미리
+    #   알아야 정할 일이 없고, 받고 나면 세면 그만이며, 무결성은 hash 가 더 정확히 본다.
+    row = {"file": name, "url": f"{BASE}/{name}?v={h}", "label": labels[name], "hash": h}
+    # 아래 둘은 **콘솔 출력 전용**이다 — manifest 로는 나가지 않는다
+    counts[name] = leaves(body)
     first = next(iter(body.values()), None)
     grouped = isinstance(first, dict) and not ({"ko", "en", "ja"} & set(first))
     group_counts[name] = {g: len(v) for g, v in body.items()} if grouped else None
@@ -250,7 +254,7 @@ for name in os.listdir(OUT):
 
 manifest = {"v": FORMAT_VERSION, "updated": time.strftime("%Y-%m-%d"),
             # base 는 주소를 직접 조합하고 싶은 쪽 몫 — 보통은 files[].url 을 그대로 쓰면 된다
-            "base": BASE, "total": sum(r["n"] for r in rows), "files": rows}
+            "base": BASE, "files": rows}
 with open(os.path.join(OUT, "manifest.json"), "w", encoding="utf-8") as fp:
     json.dump(manifest, fp, ensure_ascii=False, indent=1)
     fp.write("\n")
@@ -259,6 +263,6 @@ size = sum(os.path.getsize(os.path.join(OUT, f)) for f in os.listdir(OUT) if f.e
 for r in rows:
     g = group_counts.get(r["file"])
     extra = ("   " + " · ".join(f"{k} {n}" for k, n in g.items())) if g else ""
-    print(f"  {r['file']:16} {r['n']:6,}{extra}")
+    print(f"  {r['file']:16} {counts[r['file']]:6,}{extra}")
 print(f"파일 {len(rows)}개 (이번에 바뀐 파일 {changed}개) · "
-      f"{manifest['total']:,}항목 · {size/1024/1024:.1f}MB → public/tl/")
+      f"{sum(counts.values()):,}항목 · {size/1024/1024:.1f}MB → public/tl/")

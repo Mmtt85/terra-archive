@@ -79,17 +79,24 @@
  "v": 1,
  "updated": "2026-09-17",
  "base": "https://files.terra-archive.net/assets/tl",
- "total": 10478,
  "files": [
   { "file": "op-fut.json",
     "url": "https://files.terra-archive.net/assets/tl/op-fut.json?v=b31eeb9f964e6e50",
-    "label": "…", "n": 351, "hash": "b31eeb9f964e6e50" },
-  { "file": "is3.json",
-    "url": "https://files.terra-archive.net/assets/tl/is3.json?v=d5bfd1d1d5696076",
-    "label": "…", "n": 991, "hash": "d5bfd1d1d5696076" }
+    "label": "오퍼레이터·재료 — 아직 한국 서버에 없는 것",
+    "hash": "b31eeb9f964e6e50" }
  ]
 }
 ```
+
+| 항목 | 쓰임 |
+|---|---|
+| `file` | 저장해 둘 때의 이름표. **해시를 여기에 걸어 두세요** — `url`은 갱신될 때마다 바뀝니다 |
+| `url` | 바로 요청할 주소 |
+| `label` | 받아 보기 전에 무엇인지 알려 줍니다 (고르는 화면을 만든다면 여기를 쓰세요) |
+| `hash` | 바뀌었나 — 증분 판정은 이것 하나로 합니다 |
+
+항목 수는 싣지 않습니다. 파일은 통째로 받으므로 미리 알아야 정할 일이 없고, 받고 나면
+세면 되며, 내용이 온전한지는 `hash`가 더 정확하게 알려 줍니다.
 
 `url` 끝의 `?v=`는 그 파일의 해시입니다. **붙은 그대로 요청하세요** — 내용이 바뀌면
 주소도 바뀌므로, 중간 캐시나 CDN이 옛 내용을 돌려주는 일이 없습니다. 떼고 요청해도
