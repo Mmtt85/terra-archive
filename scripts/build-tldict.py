@@ -442,7 +442,7 @@ def cn_live_texts():
 CN_LIVE = cn_live_texts()
 CN_ONLY, KR_TEXTS = cn_only_texts()
 
-op_fut, op_past, dropped = {}, {}, 0
+op_fut, dropped = {}, 0
 for cn, val in load("scripts/cn-translations.json").items():
     if cn.startswith("_") or not isinstance(val, dict):
         continue
@@ -460,18 +460,17 @@ for cn, val in load("scripts/cn-translations.json").items():
     if cn not in CN_LIVE:
         dropped += 1
         continue
-    fut = cn in CN_ONLY or (cn not in KR_TEXTS and any(entry["ko"] in b for b in blobs))
-    (op_fut if fut else op_past)[cn] = entry
+    op_fut[cn] = entry
 if dropped:
     print(f"  현행 CN 데이터에 없어 제외한 옛 원문 {dropped:,}건")
 files["op-fut.json"] = op_fut
 labels["op-fut.json"] = "오퍼·재료·아이템 — 아직 한국 서버에 없는 것 (비공식 번역)"
-files["op-past.json"] = op_past
-# ⚠ 라벨을 "오퍼레이터·재료"로 달아 뒀다가 실측으로 틀린 것을 잡았다 (2026-09-17).
-#   실제 구성은 CN 게임데이터 표와 대조하면 **99.7%가 오퍼 기록(핸드북 산문)과 보이스
-#   대사**다 (2026-09-17 실측). 실장된 오퍼의 스킬·모듈 설명은 여기 거의 없다 — 한섭
-#   공식 한국어가 덮어서 산출물에 안 남았기 때문이고, 그건 이제 kr-op.json 이 담당한다.
-labels["op-past.json"] = "오퍼 기록·보이스 대사 중심 — 공식 한국어가 덮기 전의 옛 번역"
+
+# ⚠ **op-past 는 폐지했다** (2026-09-17, 사용자 지적 "공식이 덮었으면 필요 없잖아").
+#   "출시로 덮인 옛 번역"이라는 갈래 자체가 성립하지 않았다 — 공식 한국어가 실재하면
+#   그건 kr-* 대조본이 더 정확하게 담고, 실재하지 않으면 그건 옛것이 아니라 미래시다
+#   (실측: 남아 있던 412건 중 292건은 공식이 있었고, 나머지는 CN 쪽이 앞선 재능·모듈
+#   문구였다). 그래서 살아남는 것은 전부 op-fut 으로 간다.
 
 # 생존연산
 ra = {}
@@ -616,6 +615,52 @@ def official_pairs():
 
 
 
+def official_any():
+    """공식 한국어가 **실재하는** 중국어 원문 전부 — 내보내지 않는 갈래까지 포함한다.
+    비공식 번역을 걷어낼 때 이걸 기준으로 삼는다. 공식이 있는데 AI 번역을 같이 내보내면
+    받는 쪽에 둘 중 하나를 고르게 시키는 꼴이고, 그 자리는 공식이 옳다."""
+    out = set()
+    tag = re.compile(r"<[^>]+>")
+    def mark(x, y):
+        x = tag.sub("", x).strip() if isinstance(x, str) else ""
+        y = tag.sub("", y).strip() if isinstance(y, str) else ""
+        if x and y and x != y and CJK.search(x) and not CJK.search(y):
+            out.add(x)
+            for lx, ly in zip(x.split("\n"), y.split("\n")):
+                lx, ly = lx.strip(), ly.strip()
+                if lx and ly and CJK.search(lx) and not CJK.search(ly): out.add(lx)
+    def both(n):
+        c, k = _t(f"cn_{n}"), (_t(f"kr_{n}") or _t(n))
+        return (c, k) if c and k else (None, None)
+    c, k = both("character_table")
+    if c:
+        for cid, a in c.items():
+            b = k.get(cid)
+            if not isinstance(b, dict) or not isinstance(a, dict): continue
+            for f in ("name", "appellation", "description", "itemUsage", "itemDesc", "itemObtainApproach"):
+                mark(a.get(f), b.get(f))
+            for pa, pb in zip(a.get("potentialRanks") or [], b.get("potentialRanks") or []):
+                mark(pa.get("description"), pb.get("description"))
+    c, k = both("handbook_info_table")
+    if c:
+        kd = k.get("handbookDict") or {}
+        for hid, a in (c.get("handbookDict") or {}).items():
+            b = kd.get(hid)
+            if not isinstance(b, dict): continue
+            for da, db in zip(a.get("storyTextAudio") or [], b.get("storyTextAudio") or []):
+                for sa, sb in zip(da.get("stories") or [], db.get("stories") or []):
+                    mark(sa.get("storyText"), sb.get("storyText"))
+    c, k = both("building_data")
+    if c:
+        kb = k.get("buffs") or {}
+        for bid, a in (c.get("buffs") or {}).items():
+            b = kb.get(bid)
+            if not isinstance(b, dict): continue
+            for f in ("buffName", "description"):
+                mark(a.get(f), b.get(f))
+    return out
+
+
 OFFICIAL = official_pairs()
 OFF_LABEL = {
     "op":    "오퍼레이터 — 이름·직위·특성·재능·스킬·모듈 (한섭 공식 한국어)",
@@ -637,7 +682,7 @@ for tag in ("op", "item", "enemy", "stage", "is-enc", "voice"):
 # 같은 중국어 원문에 공식 한국어와 AI 번역이 둘 다 나가면, 받는 쪽이 파일을 합칠 때
 # 어느 쪽이 이길지 순서에 달리게 된다 — 그리고 공식이 있는 자리는 공식이 옳다.
 # (실측 2026-09-17: is3 의 49%, op-past 의 36% 가 공식과 키가 겹쳤다.)
-_official_keys = {k for tag in OFF_ORDER for k in files[tag]}
+_official_keys = {k for tag in OFF_ORDER for k in files[tag]} | official_any()
 _pruned = 0
 for _name, _body in files.items():
     if _name in OFF_ORDER:
@@ -659,7 +704,7 @@ if _pruned:
 
 # ── 내보내기 ─────────────────────────────────────────────────────────────────
 os.makedirs(OUT, exist_ok=True)
-ORDER = ["op-fut.json", "op-past.json", *OFF_ORDER, "ra.json",
+ORDER = ["op-fut.json", *OFF_ORDER, "ra.json",
          *[f"{t}.json" for t, _ in ROGUE_FILES], "is-common.json"]
 rows, counts, group_counts, changed = [], {}, {}, 0
 for name in ORDER:

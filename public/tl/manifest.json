@@ -3,15 +3,9 @@
  "files": [
   {
    "file": "op-fut.json",
-   "url": "https://files.terra-archive.net/assets/tl/op-fut.json?v=fa7680fc3a9c0f57",
+   "url": "https://files.terra-archive.net/assets/tl/op-fut.json?v=1c1fbae12785d403",
    "label": "오퍼·재료·아이템 — 아직 한국 서버에 없는 것 (비공식 번역)",
-   "hash": "fa7680fc3a9c0f57"
-  },
-  {
-   "file": "op-past.json",
-   "url": "https://files.terra-archive.net/assets/tl/op-past.json?v=342bbf1f7bbd985e",
-   "label": "오퍼 기록·보이스 대사 중심 — 공식 한국어가 덮기 전의 옛 번역",
-   "hash": "342bbf1f7bbd985e"
+   "hash": "1c1fbae12785d403"
   },
   {
    "file": "kr-op.json",
@@ -63,9 +57,9 @@
   },
   {
    "file": "is2.json",
-   "url": "https://files.terra-archive.net/assets/tl/is2.json?v=03cf6b158e089f49",
+   "url": "https://files.terra-archive.net/assets/tl/is2.json?v=4a9fd24d1b116a50",
    "label": "통합전략 2",
-   "hash": "03cf6b158e089f49"
+   "hash": "4a9fd24d1b116a50"
   },
   {
    "file": "is3.json",
@@ -81,15 +75,15 @@
   },
   {
    "file": "is5.json",
-   "url": "https://files.terra-archive.net/assets/tl/is5.json?v=ff047f2f6f605fb7",
+   "url": "https://files.terra-archive.net/assets/tl/is5.json?v=d3c542b45e1fd2c9",
    "label": "통합전략 5",
-   "hash": "ff047f2f6f605fb7"
+   "hash": "d3c542b45e1fd2c9"
   },
   {
    "file": "is6.json",
-   "url": "https://files.terra-archive.net/assets/tl/is6.json?v=84746d7cbfe1ad65",
+   "url": "https://files.terra-archive.net/assets/tl/is6.json?v=6d7f539ebd179ea8",
    "label": "통합전략 6 (중국 서버 선행)",
-   "hash": "84746d7cbfe1ad65"
+   "hash": "6d7f539ebd179ea8"
   },
   {
    "file": "is-common.json",

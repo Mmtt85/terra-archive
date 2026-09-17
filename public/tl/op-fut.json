@@ -139,10 +139,25 @@
   "en": "Hype Squad",
   "ja": "ムードメーカー"
  },
- "街头法则": {
-  "ko": "거리의 법칙",
-  "en": "Rules of the Street",
-  "ja": "ストリートの掟"
+ "攻击溅射范围内有大于或等于3个敌人时，使当次攻击造成的伤害提升至125%": {
+  "ko": "공격의 스플래시 범위 내에 적이 3명 이상일 시, 해당 공격의 대미지가 125%로 증가",
+  "en": "When there are 3 or more enemies within the attack's splash area, that attack's damage increases to 125%",
+  "ja": "攻撃のスプラッシュ範囲内に敵が3体以上いる時、その攻撃のダメージが125%まで上昇"
+ },
+ "攻击溅射范围内有大于或等于3个敌人时，使当次攻击造成的伤害提升至130%": {
+  "ko": "공격의 스플래시 범위 내에 적이 3명 이상일 시, 해당 공격의 대미지가 130%로 증가",
+  "en": "When there are 3 or more enemies within the attack's splash area, that attack's damage increases to 130%",
+  "ja": "攻撃のスプラッシュ範囲内に敵が3体以上いる時、その攻撃のダメージが130%まで上昇"
+ },
+ "受到自身的跳跃治疗时，治疗量提升至125%，并额外进行一次不衰减的治疗跳跃": {
+  "ko": "자신의 치료 튕김을 받을 시 치유량이 125%로 증가, 추가로 감쇠되지 않는 치료 튕김 1회 진행",
+  "en": "When affected by this unit's own bouncing heal, healing increases to 125%, and the heal bounces one additional time without decay",
+  "ja": "自身の跳躍治療を受けた時、治療量が125%まで上昇し、追加で減衰しない跳躍治療を1回行う"
+ },
+ "受到自身的跳跃治疗时，治疗量提升至130%，并额外进行一次不衰减的治疗跳跃": {
+  "ko": "자신의 치료 튕김을 받을 시 치유량이 130%로 증가, 추가로 감쇠되지 않는 치료 튕김 1회 진행",
+  "en": "When affected by this unit's own bouncing heal, healing increases to 130%, and the heal bounces one additional time without decay",
+  "ja": "自身の跳躍治療を受けた時、治療量が130%まで上昇し、追加で減衰しない跳躍治療を1回行う"
  },
  "罗德岛的医疗干员凯尔希，在经历过短暂的意外离别后，她回到了这里。": {
   "ko": "로도스 아일랜드의 메딕 오퍼레이터 켈시. 짧고 갑작스러운 이별을 겪은 뒤, 그녀는 이곳으로 돌아왔습니다.",
@@ -268,6 +283,26 @@
   "ko": "제조소에 배치 시, 작전기록류에 대한 생산력 +35%, 시간당 컨디션 소모 +0.25",
   "en": "When this Operator is assigned to a Factory, productivity towards Battle Records +35%; Morale consumed each hour +0.25",
   "ja": "製造所配置時、作戦記録製造の製造効率+35%、1時間ごとの体力消費量+0.25"
+ },
+ "对生命值低于一半的单位造成的伤害提升8%；造成致命伤害时使敌人保留1点生命并使其重伤（击杀者技力+2）；矩不攻击重伤单位；": {
+  "ko": "HP가 절반 이하인 유닛에게 입히는 대미지 8% 상승. 치명적인 대미지를 입힐 시 적의 HP를 1 남기고 중상 상태로 만듦 (처치자는 SP +2). 주는 중상 상태의 유닛을 공격하지 않음",
+  "en": "Damage dealt to units below half HP +8%; when dealing lethal damage, leaves the enemy at 1 HP and Critically Wounds them (whoever defeats them gains +2 SP); Ju does not attack Critically Wounded units",
+  "ja": "HPが半分以下のユニットに与えるダメージ+8%。致命的なダメージを与えた時、敵のHPを1残して重傷状態にする（トドメを刺した者はSP+2）。ジュは重傷状態のユニットを攻撃しない"
+ },
+ "对生命值低于一半的单位造成的伤害提升12%；造成致命伤害时使敌人保留1点生命并使其重伤（击杀者技力+2）；矩不攻击重伤单位；": {
+  "ko": "HP가 절반 이하인 유닛에게 입히는 대미지 12% 상승. 치명적인 대미지를 입힐 시 적의 HP를 1 남기고 중상 상태로 만듦 (처치자는 SP +2). 주는 중상 상태의 유닛을 공격하지 않음",
+  "en": "Damage dealt to units below half HP +12%; when dealing lethal damage, leaves the enemy at 1 HP and Critically Wounds them (whoever defeats them gains +2 SP); Ju does not attack Critically Wounded units",
+  "ja": "HPが半分以下のユニットに与えるダメージ+12%。致命的なダメージを与えた時、敵のHPを1残して重傷状態にする（トドメを刺した者はSP+2）。ジュは重傷状態のユニットを攻撃しない"
+ },
+ "攻击范围内有敌人侵蚀损伤爆发时攻击速度+7，最多可叠加3层": {
+  "ko": "공격 범위 내 적의 침식 손상이 폭발할 시 공격 속도 +7, 최대 3층 중첩 가능",
+  "en": "ASPD +7 whenever an enemy within attack range has a Corrosion burst; stacks up to 3 times",
+  "ja": "攻撃範囲内の敵の侵蝕損傷が爆発した時、攻撃速度+7。最大3層まで重複可能"
+ },
+ "攻击范围内有敌人侵蚀损伤爆发时攻击速度+7，最多可叠加4层": {
+  "ko": "공격 범위 내 적의 침식 손상이 폭발할 시 공격 속도 +7, 최대 4층 중첩 가능",
+  "en": "ASPD +7 whenever an enemy within attack range has a Corrosion burst; stacks up to 4 times",
+  "ja": "攻撃範囲内の敵の侵蝕損傷が爆発した時、攻撃速度+7。最大4層まで重複可能"
  },
  "游击手": {
   "ko": "유격수",
@@ -594,15 +629,45 @@
   "en": "When this Operator is assigned to a Factory, each Training Room level grants that Factory +10% productivity, up to 30%",
   "ja": "製造所配置時、訓練室のレベル1につき、その製造所の製造効率+10%（最大30%）"
  },
- "当与伺夜在同一个贸易站时，心情每小时消耗-0.1，订单上限+2": {
-  "ko": "비질과 함께 같은 무역소에 배치 시, 시간당 컨디션 소모 -0.1, 오더 수주 상한 +2",
-  "en": "When this Operator is assigned to the same Trading Post as Vigil, Morale consumed each hour -0.1, and order limit +2",
-  "ja": "ヴィジェルと同じ貿易所に配置時、1時間ごとの体力消費量-0.1、注文上限+2"
+ "棋子激活时所在的连续直线上每有一枚棋子，直线上所有棋子造成伤害提升12%并无视敌人11点法术抗性（最多叠加3次）": {
+  "ko": "바둑돌이 활성화될 시 이어진 직선상의 바둑돌 1개당, 직선상 모든 바둑돌이 입히는 대미지 12% 상승 및 적의 마법 저항 11 무시 (최대 3회 중첩)",
+  "en": "When a stone activates, for each stone on the same continuous line, all stones on that line deal 12% more damage and ignore 11 RES (stacks up to 3 times)",
+  "ja": "碁石が活性化した時、連続する直線上にある碁石1個につき、直線上のすべての碁石の与ダメージ+12%、敵の術耐性を11無視する（最大3回まで重複）"
  },
- "进驻控制中枢时，自身心情每小时消耗+0.5，每个进驻在会客室的乌萨斯学生自治团干员，线索搜集速度+10%": {
-  "ko": "제어 센터에 배치 시, 자신의 시간당 컨디션 소모 +0.5, 응접실에 배치된 우르수스 학생자치단 오퍼레이터 1명당 단서 수집 속도 +10%",
-  "en": "When this Operator is assigned to the Control Center, own Morale consumed each hour +0.5; for each Ursus Student Self-Governing Group Operator assigned to the Reception Room, Clue search speed +10%",
-  "ja": "制御中枢配置時、自身の1時間ごとの体力消費量+0.5。応接室に配置されたウルサス学生自治団のオペレーター1人につき、手がかり捜索速度+10%"
+ "棋子激活时所在的连续直线上每有一枚棋子，直线上所有棋子造成伤害提升13%并无视敌人12点法术抗性（最多叠加3次）": {
+  "ko": "바둑돌이 활성화될 시 이어진 직선상의 바둑돌 1개당, 직선상 모든 바둑돌이 입히는 대미지 13% 상승 및 적의 마법 저항 12 무시 (최대 3회 중첩)",
+  "en": "When a stone activates, for each stone on the same continuous line, all stones on that line deal 13% more damage and ignore 12 RES (stacks up to 3 times)",
+  "ja": "碁石が活性化した時、連続する直線上にある碁石1個につき、直線上のすべての碁石の与ダメージ+13%、敵の術耐性を12無視する（最大3回まで重複）"
+ },
+ "攻击使目标在10秒内防御力降低7%（最多叠加5次），并且目标剩余生命值比例越低自身对其造成的伤害越高，在剩余20%以下生命值时伤害提高到最高142%": {
+  "ko": "공격 시 목표의 방어력이 10초간 7% 감소 (최대 5회 중첩), 목표의 잔여 HP 비율이 낮을수록 목표에게 입히는 대미지가 상승하며, 잔여 HP 20% 이하일 시 대미지가 최대 142%까지 상승",
+  "en": "Attacks reduce the target's DEF by 7% for 10 seconds (stacks up to 5 times); the lower the target's remaining HP percentage, the more damage this unit deals to it, up to a maximum of 142% when the target is below 20% HP",
+  "ja": "攻撃時、対象の防御力を10秒間7%低下させる（最大5回まで重複）。対象の残りHP割合が低いほど与えるダメージが上昇し、残りHPが20%以下の時、ダメージが最大142%まで上昇"
+ },
+ "攻击使目标在10秒内防御力降低8%（最多叠加5次），并且目标剩余生命值比例越低自身对其造成的伤害越高，在剩余20%以下生命值时伤害提高到最高142%": {
+  "ko": "공격 시 목표의 방어력이 10초간 8% 감소 (최대 5회 중첩), 목표의 잔여 HP 비율이 낮을수록 목표에게 입히는 대미지가 상승하며, 잔여 HP 20% 이하일 시 대미지가 최대 142%까지 상승",
+  "en": "Attacks reduce the target's DEF by 8% for 10 seconds (stacks up to 5 times); the lower the target's remaining HP percentage, the more damage this unit deals to it, up to a maximum of 142% when the target is below 20% HP",
+  "ja": "攻撃時、対象の防御力を10秒間8%低下させる（最大5回まで重複）。対象の残りHP割合が低いほど与えるダメージが上昇し、残りHPが20%以下の時、ダメージが最大142%まで上昇"
+ },
+ "特性溅射造成的物理伤害提升32%，且溅射到的每个高台对周围四格所有地面敌人造成相当于攻击力24%的物理伤害和0.5秒停顿": {
+  "ko": "특성의 스플래시가 입히는 물리 대미지 32% 상승, 스플래시가 닿은 각 원거리 타일이 주변 4칸의 모든 지상 적에게 공격력의 24%에 해당하는 물리 대미지와 0.5초 정지를 부여",
+  "en": "Physical damage dealt by the Trait's splash +32%; each Ranged tile hit by the splash deals 24% ATK as Physical damage and a 0.5-second Slow to all ground enemies in the surrounding 4 tiles",
+  "ja": "特性のスプラッシュが与える物理ダメージ+32%。スプラッシュが及んだ各高台マスは、周囲4マスのすべての地上の敵に攻撃力の24%の物理ダメージと0.5秒の足止めを与える"
+ },
+ "特性溅射造成的物理伤害提升40%，且溅射到的每个高台对周围四格所有地面敌人造成相当于攻击力24%的物理伤害和0.5秒停顿": {
+  "ko": "특성의 스플래시가 입히는 물리 대미지 40% 상승, 스플래시가 닿은 각 원거리 타일이 주변 4칸의 모든 지상 적에게 공격력의 24%에 해당하는 물리 대미지와 0.5초 정지를 부여",
+  "en": "Physical damage dealt by the Trait's splash +40%; each Ranged tile hit by the splash deals 24% ATK as Physical damage and a 0.5-second Slow to all ground enemies in the surrounding 4 tiles",
+  "ja": "特性のスプラッシュが与える物理ダメージ+40%。スプラッシュが及んだ各高台マスは、周囲4マスのすべての地上の敵に攻撃力の24%の物理ダメージと0.5秒の足止めを与える"
+ },
+ "未受到伤害时，每6秒随机治疗自身一定（攻击力的40%~180%）生命值，并闪避下次物理与法术攻击": {
+  "ko": "대미지를 받지 않았을 시, 6초마다 자신의 HP를 일정량 (공격력의 40%~180%) 무작위로 치료하고 다음 물리 및 마법 공격을 회피",
+  "en": "While not taking damage, every 6 seconds restores a random amount of HP (40% to 180% of ATK) and dodges the next Physical or Arts attack",
+  "ja": "ダメージを受けていない時、6秒ごとに自身のHPをランダムな量（攻撃力の40%～180%）回復し、次の物理・術攻撃を回避する"
+ },
+ "未受到伤害时，每6秒随机治疗自身一定（攻击力的50%~200%）生命值，并闪避下次物理与法术攻击": {
+  "ko": "대미지를 받지 않았을 시, 6초마다 자신의 HP를 일정량 (공격력의 50%~200%) 무작위로 치료하고 다음 물리 및 마법 공격을 회피",
+  "en": "While not taking damage, every 6 seconds restores a random amount of HP (50% to 200% of ATK) and dodges the next Physical or Arts attack",
+  "ja": "ダメージを受けていない時、6秒ごとに自身のHPをランダムな量（攻撃力の50%～200%）回復し、次の物理・術攻撃を回避する"
  },
  "液化高能气体": {
   "ko": "액화 고에너지 가스",
@@ -1019,10 +1084,55 @@
   "en": "Former Star Operator",
   "ja": "元ゴールド交換手"
  },
+ "基础档案": {
+  "ko": "기본정보",
+  "en": "Basic Info",
+  "ja": "基本情報"
+ },
+ "综合体检测试": {
+  "ko": "종합검진",
+  "en": "Physical Exam",
+  "ja": "健康診断"
+ },
  "客观履历": {
   "ko": "프로필",
   "en": "Profile",
   "ja": "プロフィール"
+ },
+ "临床诊断分析": {
+  "ko": "임상 진단 분석",
+  "en": "Clinical Analysis",
+  "ja": "臨床診断分析"
+ },
+ "档案资料一": {
+  "ko": "파일 자료 1",
+  "en": "Archive File 1",
+  "ja": "アーカイブ資料1"
+ },
+ "档案资料二": {
+  "ko": "파일 자료 2",
+  "en": "Archive File 2",
+  "ja": "アーカイブ資料2"
+ },
+ "档案资料三": {
+  "ko": "파일 자료 3",
+  "en": "Archive File 3",
+  "ja": "アーカイブ資料3"
+ },
+ "档案资料四": {
+  "ko": "파일 자료 4",
+  "en": "Archive File 4",
+  "ja": "アーカイブ資料4"
+ },
+ "晋升记录": {
+  "ko": "승진 기록",
+  "en": "Promotion Record",
+  "ja": "昇進記録"
+ },
+ "综合性能检测结果": {
+  "ko": "종합 성능 검사 결과",
+  "en": "Performance Test Results",
+  "ja": "総合性能検査結果"
  },
  "安洁莉娜，服务于罗德岛的资深信使，足迹遍布迄今为止已知的大多数国家。同时，她也作为资深术师干员，利用其独特的源石技艺为罗德岛提供帮助。": {
   "ko": "안젤리나. 로도스 아일랜드에 몸담은 베테랑 전달자로, 그 발자취는 지금까지 알려진 대부분의 국가에 미친다. 동시에 그녀는 베테랑 캐스터 오퍼레이터로서, 자신만의 독특한 오리지늄 아츠로 로도스 아일랜드를 돕고 있다.",
@@ -2609,6 +2719,16 @@
   "en": "Increases SP recovery rate by +0.2/s while an enemy under an Elemental Damage burst is within Attack Range",
   "ja": "攻撃範囲内に元素損傷の爆発効果中の敵が存在する場合、SPの自然回復速度+0.2sp/秒"
  },
+ "攻击处于凋亡损伤爆发期间的敌人时使其每0.8秒受到相当于攻击力40%的元素伤害，持续至凋亡损伤爆发结束": {
+  "ko": "쇠약 손상 폭발 상태인 적 공격 시 0.8초마다 공격력의 40%에 해당하는 원소 대미지를 입힘, 쇠약 손상 폭발이 끝날 때까지 지속",
+  "en": "When attacking enemies under the burst effect of Necrosis, deals 40% ATK as Elemental Damage to them every 0.8 seconds, lasting until the end of the Necrosis burst",
+  "ja": "壊死損傷の爆発効果中の敵を攻撃した場合、0.8秒ごとに攻撃力の40%の元素ダメージを与え続ける（壊死損傷の爆発効果が終了するまで継続）"
+ },
+ "攻击处于凋亡损伤爆发期间的敌人时使其每0.7秒受到相当于攻击力40%的元素伤害，持续至凋亡损伤爆发结束": {
+  "ko": "쇠약 손상 폭발 상태인 적 공격 시 0.7초마다 공격력의 40%에 해당하는 원소 대미지를 입힘, 쇠약 손상 폭발이 끝날 때까지 지속",
+  "en": "When attacking enemies under the burst effect of Necrosis, deals 40% ATK as Elemental Damage to them every 0.7 seconds, lasting until the end of the Necrosis burst",
+  "ja": "壊死損傷の爆発効果中の敵を攻撃した場合、0.7秒ごとに攻撃力の40%の元素ダメージを与え続ける（壊死損傷の爆発効果が終了するまで継続）"
+ },
  "沟通小助手": {
   "ko": "소통 도우미",
   "en": "Little Communication Helper",
@@ -2623,6 +2743,21 @@
   "ko": "쓰러지면 6000의 보호막 획득, 쓰러져 있는 동안 공격할 수 없고 치료받을 수 없으며, 초당 최대 HP의 4% 회복, 공격받을 때마다 목표에게 블레이즈 디 이그나이팅 스파크 공격력의 120%에 해당하는 마법 대미지와 해당 마법 대미지의 30%에 해당하는 소각 손상을 입힘, HP 전부 회복 후 부활하고 주변 적을 5초간 기절시키며 자신은 SP 8 회복",
   "en": "When defeated, becomes downed instead and gains 6000 Barrier; cannot attack or be healed while downed, but recovers 4% HP per second; each time she is attacked, deals 120% of Blaze the Igniting Spark's ATK as Arts damage to the attacker along with Burn equal to 30% of that Arts damage; once HP is full, revives, Stuns nearby enemies for 5s, and restores 8 SP to herself",
   "ja": "HPが0になっても退場せず、代わりにダウン状態（攻撃不可、味方の治療対象にならない）になり、6000までの被ダメージを吸収可能なバリアを獲得し、HPが毎秒最大値の4%回復する。攻撃を受けるたびに対象へ熾炎ブレイズの攻撃力の120%の術ダメージと、その術ダメージの30%の灼熱損傷を与える。HPが最大値まで回復するとダウン状態が解除され、周囲にいる敵全員を5秒間スタンさせ、自身のSPを8回復する"
+ },
+ "自身技能期间，攻击范围内的友军获得30点物理与法术伤害减免": {
+  "ko": "스킬 지속 시간 동안 공격 범위 내 아군이 받는 물리 및 마법 대미지가 30 감소",
+  "en": "While this unit's skill is active, allies within Attack Range take 30 less Physical and Arts damage",
+  "ja": "スキル発動中、攻撃範囲内の味方の物理・術被ダメージ-30"
+ },
+ "自身或海嗣攻击范围内存在我方干员时，自身攻击力+8%，防御力+6%；存在【深海猎人】干员时攻击力改为+15%，防御力+6%；我方干员部署于自身或海嗣范围内后，自身立刻获得2点技力": {
+  "ko": "자신 또는 시본의 공격 범위에 아군 오퍼레이터가 존재할 경우 자신의 공격력 +8%, 방어력 +6%, [어비설 헌터스] 오퍼레이터가 존재할 경우 공격력 +15%, 방어력 +6%로 변경, 아군 오퍼레이터가 자신 또는 시본의 범위 내에 배치되면 자신은 즉시 SP 2 회복",
+  "en": "ATK +8% and DEF +6% when there is an allied Operator within range of self or the Seaborn; if an [Abyssal Hunter] Operator is present, ATK becomes +15% and DEF +6% instead; whenever an allied Operator is deployed within range of self or the Seaborn, immediately restores 2 SP",
+  "ja": "自身やシーボーンの攻撃範囲内に味方オペレーターがいる時、自身の攻撃力+8%、防御力+6%。味方【アビサルハンター】がいる時、攻撃力の上昇効果が+15%、防御力+6%になる。自身やシーボーンの範囲内に味方オペレーターが配置されると、自身のSPを即座に2回復"
+ },
+ "自身或海嗣攻击范围内存在我方干员时，自身攻击力+9%，防御力+8%；存在【深海猎人】干员时攻击力改为+20%，防御力+8%；我方干员部署于自身或海嗣范围内后，自身立刻获得3点技力": {
+  "ko": "자신 또는 시본의 공격 범위에 아군 오퍼레이터가 존재할 경우 자신의 공격력 +9%, 방어력 +8%, [어비설 헌터스] 오퍼레이터가 존재할 경우 공격력 +20%, 방어력 +8%로 변경, 아군 오퍼레이터가 자신 또는 시본의 범위 내에 배치되면 자신은 즉시 SP 3 회복",
+  "en": "ATK +9% and DEF +8% when there is an allied Operator within range of self or the Seaborn; if an [Abyssal Hunter] Operator is present, ATK becomes +20% and DEF +8% instead; whenever an allied Operator is deployed within range of self or the Seaborn, immediately restores 3 SP",
+  "ja": "自身やシーボーンの攻撃範囲内に味方オペレーターがいる時、自身の攻撃力+9%、防御力+8%。味方【アビサルハンター】がいる時、攻撃力の上昇効果が+20%、防御力+8%になる。自身やシーボーンの範囲内に味方オペレーターが配置されると、自身のSPを即座に3回復"
  },
  "“新车和新生活”": {
   "ko": "'새 차와 새 삶'",
@@ -2654,10 +2789,30 @@
   "en": "Attacks deal an additional 25% ATK as Arts damage, and gain increasing Arts Amplification based on the number of times Arts damage has been dealt (up to 50% Arts Amplification after dealing Arts damage 10 times); Redeployment Time is 0 after the first retreat",
   "ja": "攻撃時、対象に追加で攻撃力の25%の術ダメージを与え、術ダメージを与えた回数に応じて術法充溢の効果が上昇していく（術ダメージを10回与えると最大50%の術法充溢を獲得）。初回撤退時の再配置時間が0になる"
  },
+ "自身受到的治疗量+20%，且部署后立即恢复攻击范围内一名友方干员（优先选取正前方）的生命值，恢复量为阿攻击力的100％": {
+  "ko": "자신이 받는 치유량 +20%, 배치 후 즉시 공격 범위 내 아군 오퍼레이터 1명(정면 우선 선택)의 HP를 아 공격력의 100%만큼 회복",
+  "en": "Increases healing effects on this unit by 20%, and immediately restores the HP of one allied Operator within Attack Range (prioritizing the one directly in front) by 100% of Aak's ATK upon deployment",
+  "ja": "自身が受ける治療量+20%。配置後、攻撃範囲内の味方オペレーター1名（正面を優先して選択）のHPをアの攻撃力の100%分即座に回復する"
+ },
+ "自身受到的治疗量+25%，且部署后立即恢复攻击范围内一名友方干员（优先选取正前方）的生命值，恢复量为阿攻击力的150％": {
+  "ko": "자신이 받는 치유량 +25%, 배치 후 즉시 공격 범위 내 아군 오퍼레이터 1명(정면 우선 선택)의 HP를 아 공격력의 150%만큼 회복",
+  "en": "Increases healing effects on this unit by 25%, and immediately restores the HP of one allied Operator within Attack Range (prioritizing the one directly in front) by 150% of Aak's ATK upon deployment",
+  "ja": "自身が受ける治療量+25%。配置後、攻撃範囲内の味方オペレーター1名（正面を優先して選択）のHPをアの攻撃力の150%分即座に回復する"
+ },
  "归溟幽灵鲨特限证章": {
   "ko": "스펙터 디 언체인드의 특별 한정 배지",
   "en": "Specter the Unchained's Specialized Badge",
   "ja": "帰溟スペクターの特別限定記章"
+ },
+ "普通治疗使目标每秒额外受到一次治疗量和元素损伤回复量为12%的增益治疗，持续7秒（最多叠加3层）": {
+  "ko": "치료 시 목표에 초당 치유량과 원소 손상 회복량이 공격력의 12%인 치료 버프 부여, 7초간 지속 (최대 3회 중첩)",
+  "en": "Normal heals additionally restore HP and Elemental Injury per second equal to 12% of the original amount, lasting for 7 seconds (stacks up to 3 times)",
+  "ja": "通常治療後、対象のHPと蓄積された元素損傷を7秒間、1秒ごとに12%治療（最大3回まで重複可能）"
+ },
+ "普通治疗使目标每秒额外受到一次治疗量和元素损伤回复量为13%的增益治疗，持续8秒（最多叠加3层）": {
+  "ko": "치료 시 목표에 초당 치유량과 원소 손상 회복량이 공격력의 13%인 치료 버프 부여, 8초간 지속 (최대 3회 중첩)",
+  "en": "Normal heals additionally restore HP and Elemental Injury per second equal to 13% of the original amount, lasting for 8 seconds (stacks up to 3 times)",
+  "ja": "通常治療後、対象のHPと蓄積された元素損傷を8秒間、1秒ごとに13%治療（最大3回まで重複可能）"
  },
  "“独属自己的一隅”": {
   "ko": "'자신만의 한 구석'",
@@ -2683,6 +2838,16 @@
   "ko": "공격 거리 +1 (스킬로 인한 공격 범위 변화의 영향을 받지 않음)",
   "en": "Attack Range +1 tile (not affected by Attack Range changes from skills)",
   "ja": "攻撃距離+1（スキルによる攻撃範囲の変化の影響を受けない）"
+ },
+ "机动盾牌受到伤害时，有55%的概率使涤火杰西卡获得1点技力并使机动盾牌自身再部署时间-1s（最多至-11s）": {
+  "ko": "기동 방패가 피격 시 55% 확률로 제시카 더 리버레이티드의 SP +1, 기동 방패 자신의 재배치 시간 -1초 (최대 -11초)",
+  "en": "When the Mobile Riot Shield receives damage, 55% chance to restore 1 SP to Jessica the Liberated and reduce the Mobile Riot Shield's own Redeployment Time by 1s (up to -11s)",
+  "ja": "機動防盾がダメージを受けると、55%の確率で滌火ジェシカのSPを1回復し、機動防盾自身の再配置時間-1秒（最大-11秒まで）"
+ },
+ "机动盾牌受到伤害时，有60%的概率使涤火杰西卡获得1点技力并使机动盾牌自身再部署时间-1s（最多至-14s）": {
+  "ko": "기동 방패가 피격 시 60% 확률로 제시카 더 리버레이티드의 SP +1, 기동 방패 자신의 재배치 시간 -1초 (최대 -14초)",
+  "en": "When the Mobile Riot Shield receives damage, 60% chance to restore 1 SP to Jessica the Liberated and reduce the Mobile Riot Shield's own Redeployment Time by 1s (up to -14s)",
+  "ja": "機動防盾がダメージを受けると、60%の確率で滌火ジェシカのSPを1回復し、機動防盾自身の再配置時間-1秒（最大-14秒まで）"
  },
  "“老朋友”": {
   "ko": "'오랜 친구'",
@@ -2723,6 +2888,16 @@
   "ko": "생존 연산에서 최초로 스킬 발동 후 최대 HP, 공격력, 방어력이 150%로 증가",
   "en": "In Reclamation Algorithm, Max HP, ATK, and DEF increase to 150% after activating a skill for the first time",
   "ja": "生息演算において、初めてスキルを発動した後、最大HP・攻撃力・防御力が150%まで上昇"
+ },
+ "受到致命伤害时持续使生命值不低于1，期间攻击速度+20，8秒后强制退出战场": {
+  "ko": "치명상을 입을 경우 HP를 최소 1 유지하며, 그동안 공격 속도 +20, 8초 후 퇴각",
+  "en": "After receiving fatal damage, continuously prevent HP from falling below 1, gaining +20 ASPD during this time. Retreat from the battlefield 8 seconds later",
+  "ja": "致命的なダメージを受けてもHPが1残り、その間攻撃速度+20。効果発動から8秒後強制退場"
+ },
+ "受到致命伤害时持续使生命值不低于1，期间攻击速度+30，9秒后强制退出战场": {
+  "ko": "치명상을 입을 경우 HP를 최소 1 유지하며, 그동안 공격 속도 +30, 9초 후 퇴각",
+  "en": "After receiving fatal damage, continuously prevent HP from falling below 1, gaining +30 ASPD during this time. Retreat from the battlefield 9 seconds later",
+  "ja": "致命的なダメージを受けてもHPが1残り、その間攻撃速度+30。効果発動から9秒後強制退場"
  },
  "裂响，本名瑭雅，原乌萨斯泽尔格勒工人，曾在泽尔格勒以“整合运动”名号发起反抗运动，后经弑君者介绍来到罗德岛接受治疗，并以正式干员身份参与罗德岛外勤任务。": {
   "ko": "크랙본, 본명 타냐. 우르수스 젤그라드의 노동자 출신으로, 젤그라드에서 '리유니온'의 이름을 내걸고 저항 운동을 일으킨 바 있다. 이후 크라운슬레이어의 소개로 로도스 아일랜드에 와 치료를 받게 되었으며, 정식 오퍼레이터 신분으로 로도스 아일랜드의 외근 임무에 참여하고 있다.",
@@ -3688,6 +3863,11 @@
   "ko": "“너 미쳤어?! 그건 근무 시간에 입에 올릴 얘기가 아니야! 설령 그게 모두의 공통된 생각이라 해도 안 돼!”",
   "en": "'Are you out of your mind?! That is not a topic for working hours! Not even if it happens to be the consensus!'",
   "ja": "「正気なの！？それは勤務時間中に話していい話題じゃない！たとえ全員の共通認識だとしてもダメ！」"
+ },
+ "——阿米娅": {
+  "ko": "——아미야",
+  "en": "—Amiya",
+  "ja": "――アーミヤ"
  },
  "石棺，是的，你看到了那些过去，知晓了它在历史中的位置。": {
   "ko": "석관, 그래. 너는 그 과거들을 보았고, 그것이 역사 속에서 차지하는 위치도 알게 되었지.",
@@ -6699,75 +6879,150 @@
   "en": "Operator Fiammetta has been granted special certification.\nPursuant to the resolution of the Field Operations Department,\nwhere the entailing mission would fall under Integrated Strategies scope, this operator shall be pursuant to tactics of a reinforced nature in meeting the enemy.\nThis badge is hereby conferred upon the above named,\nin witness whereof.\n'Ultimate righteousness needs no proof.'",
   "ja": "フィアメッタは特別な認証許可を得ている。\n外勤部門の決定に基づき、\n統合戦略行動において改良型戦略を駆使して敵に対処する。\n特別に本記章を授与し、\nその証明とする。\n「最終的な正当性に証明は要らない。」"
  },
+ "凯尔希为之苦行万余年的那个使命，它并不在乎，但它想看看。": {
+  "ko": "켈시가 만여 년을 고행하며 짊어져 온 그 사명 따위, 이 녀석은 관심 없다. 다만 지켜보고 싶을 뿐이다.",
+  "en": "The mission Kal'tsit has borne through over ten thousand years of asceticism means nothing to it. It just wants to watch.",
+  "ja": "ケルシーが一万年余りの苦行を捧げてきたあの使命など、こいつにはどうでもいい。ただ、見てみたいだけだ。"
+ },
  "留在你手臂上的一道抓痕。凯尔希曾与它同行，却不曾将它驯化。它是在荒野中挣扎过的生命，不是温顺的宠物。": {
   "ko": "당신의 팔에 남은 할퀸 자국 하나. 켈시는 이 녀석과 동행했지만, 길들인 적은 없다. 이 녀석은 황야에서 발버둥치며 살아남은 생명이지, 온순한 애완동물이 아니다.",
   "en": "A scratch left on your arm. Kal'tsit once traveled with it, but never tamed it. It is a life that struggled through the wilderness, not a docile pet.",
   "ja": "あなたの腕に残された一筋の引っかき傷。ケルシーはこいつと共に歩んだが、飼い慣らしたことはない。荒野でもがき抜いた命であって、従順なペットではないのだ。"
+ },
+ "和他们一起出去走一走，他们会很开心的。": {
+  "ko": "함께 산책이라도 나가 주면, 무척 기뻐할 것이다.",
+  "en": "Take them out for a walk with you, and they'll be overjoyed.",
+  "ja": "一緒に散歩に出かければ、彼らはとても喜ぶだろう。"
  },
  "一张按有肉球印章的不可思议票券，以及一个带有涂鸦的木桶盖。是友情的标志喵！": {
   "ko": "육구 도장이 찍힌 불가사의한 티켓 한 장, 그리고 낙서가 그려진 나무 통 뚜껑 하나. 우정의 증표다냥!",
   "en": "A mysterious ticket stamped with a paw print, and a wooden barrel lid covered in doodles. A token of friendship, meow!",
   "ja": "肉球のスタンプが押された不思議なチケットと、落書き付きの木樽のフタ。友情の証だニャ！"
  },
+ "她有死战到底的血性，也有活下去、守护自己生活所需的勇气。": {
+  "ko": "그녀에게는 끝까지 싸워내는 결기도, 살아남아 자신의 삶을 지켜내는 데 필요한 용기도 있다.",
+  "en": "She has the mettle to fight to the bitter end, and the courage it takes to live on and protect the life she has built.",
+  "ja": "彼女には最後まで戦い抜く気概もあれば、生き抜き、自らの生活を守るための勇気もある。"
+ },
  "一截刀片，裂响曾用它割开救济食品袋和缠绕的高空救生绳，后来她将它装在鞭绳上用来战斗，直至它被磨钝。裂响将它交给你，以纪念一段人生的结束。": {
   "ko": "칼날 한 토막. 크랙본은 이것으로 구호 식량 포대를 뜯고 엉킨 고공 구명줄을 잘라 냈으며, 나중에는 채찍 줄에 달아 무뎌질 때까지 전투에 썼다. 크랙본은 한 시절의 끝을 기념하며 이것을 당신에게 건넸다.",
   "en": "A blade fragment. Crackborne once used it to cut open relief food sacks and tangled high-altitude lifelines; later she mounted it on her whip and fought with it until it dulled. She gives it to you in memory of the end of a chapter of her life.",
   "ja": "刃の欠片。クラックボーンはかつてこれで救援物資の袋や絡まった高所用命綱を切り、のちに鞭に取り付けて刃こぼれするまで戦い続けた。人生のひと区切りの記念にと、彼女はこれをあなたに託した。"
+ },
+ "她想要快一点，再快一点，最好能够超过时间。": {
+  "ko": "그녀는 더 빨리, 조금 더 빨리 달리고 싶다. 시간마저 앞지를 수 있다면 더할 나위 없겠지.",
+  "en": "She wants to go faster, and faster still — ideally, fast enough to outrun time itself.",
+  "ja": "彼女はもっと速く、さらに速くと願っている。できることなら、時間さえも追い越したいのだ。"
  },
  "一本日历。每去过一个地方，每做到一件事情，她都会增加一页进去，这本曾经很薄的日历会变得越来越厚，一如她的生命会越来越精彩。": {
   "ko": "달력 한 권. 어딘가에 다녀올 때마다, 무언가를 해낼 때마다 그녀는 한 장씩 페이지를 더한다. 한때 얇았던 이 달력은 점점 두꺼워질 것이다. 그녀의 삶이 점점 눈부셔지는 것처럼.",
   "en": "A calendar. For every place she visits and every goal she achieves, she adds another page. Once thin, this calendar grows ever thicker — just as her life grows ever more brilliant.",
   "ja": "一冊のカレンダー。どこかへ行くたび、何かを成し遂げるたび、彼女は一枚ずつページを増やしていく。かつて薄かったこのカレンダーはどんどん厚くなっていく――彼女の人生がどんどん輝いていくように。"
  },
+ "他努力地想要理解赴死的人们，却不曾期待过有人能理解自己。": {
+  "ko": "그는 죽음을 향해 나아가는 이들을 이해하려 애쓰면서도, 누군가 자신을 이해해 주리라고는 기대해 본 적이 없다.",
+  "en": "He strives to understand those who walk toward death, yet has never expected anyone to understand him.",
+  "ja": "彼は死地へ赴く人々を理解しようと努めながらも、誰かに自分を理解してもらえるとは期待したことがない。"
+ },
  "一个款式看似基础的通讯器，他对其做了一些抗干扰的调试和改装。带上这个，或许你就不用担心找不到他，或者忘记他。": {
   "ko": "겉보기엔 평범한 기본형 통신기. 그가 직접 손봐 간섭 방지 조정과 개조를 해 두었다. 이것만 지니고 있으면, 그를 찾지 못하거나 잊어버릴 걱정은 없을지도 모른다.",
   "en": "A communicator of seemingly basic design, which he has tuned and modified for interference resistance. Carry it, and perhaps you'll never have to worry about losing track of him — or forgetting him.",
   "ja": "一見ベーシックなデザインの通信機。彼の手で耐干渉の調整と改造が施されている。これを持っていれば、彼を見つけられなくなる心配も、忘れてしまう心配もいらないかもしれない。"
+ },
+ "她鼓起自己全部的勇气，确认了自己的理想，并努力去实现它。": {
+  "ko": "그녀는 온 용기를 그러모아 자신의 이상을 확인했고, 그것을 이루기 위해 노력하고 있다.",
+  "en": "She mustered all her courage, affirmed her ideal, and now works hard to make it real.",
+  "ja": "彼女はありったけの勇気を振り絞って自らの理想を確かめ、その実現のために努力している。"
  },
  "几根替换用的天线。虽然很纤细，虽然很易折，但你知道这种小小的东西能够连接人与人，连接整片大地。": {
   "ko": "교체용 안테나 몇 개. 가늘고 꺾이기 쉽지만, 이 작은 물건이 사람과 사람을, 나아가 대지 전체를 이어 준다는 걸 당신은 알고 있다.",
   "en": "A few spare antennas. Slender and easily bent, yet you know these little things can connect person to person — and the whole land.",
   "ja": "数本の交換用アンテナ。細くて折れやすいが、この小さなものが人と人を、そして大地全体をつなげられることをあなたは知っている。"
  },
+ "但是，一个人的旅途也太无聊了，她正在想办法让这趟旅程热闹一点！": {
+  "ko": "하지만 혼자 하는 여행은 너무 심심하다. 그래서 그녀는 이 여정을 좀 더 왁자지껄하게 만들 방법을 궁리하는 중이다!",
+  "en": "But traveling alone is just too boring — so she's figuring out how to liven up this journey!",
+  "ja": "でも、一人旅はあまりにも退屈。だから彼女は、この旅をもっと賑やかにする方法を考えているところだ！"
+ },
  "一本和你共享的标本集。她告诉你，每到一个地方完成狩猎回来后，她就会往里面填充战利品。随着时间的推移，你发现这本册子已经成了她的旅游纪念册。": {
   "ko": "당신과 함께 보는 표본집. 어딘가에서 사냥을 마치고 돌아올 때마다 전리품을 채워 넣는다고 그녀는 말했다. 시간이 흐르고 보니, 이 책자는 어느새 그녀의 여행 기념 앨범이 되어 있었다.",
   "en": "A specimen album she shares with you. She tells you she fills it with trophies every time she returns from a hunt somewhere. As time passes, you realize the album has become her travel scrapbook.",
   "ja": "あなたと共有する標本集。狩りを終えて帰ってくるたびに戦利品を綴じ込んでいくのだと彼女は言う。時が経つにつれ、この冊子はいつしか彼女の旅の記念アルバムになっていた。"
+ },
+ "当你需要时，她一定会乘着风回到你的身边。": {
+  "ko": "당신이 필요로 할 때면, 그녀는 반드시 바람을 타고 당신 곁으로 돌아올 것이다.",
+  "en": "Whenever you need her, she will surely ride the wind back to your side.",
+  "ja": "あなたが必要とする時、彼女はきっと風に乗ってあなたのもとへ帰ってくる。"
  },
  "一只纸折的沃尔珀兽亲。她想了很久，最终决定用自己最初学会的样式制作赠予你的信物。": {
   "ko": "종이로 접은 볼포 짐승 친구. 그녀는 오래 고민한 끝에, 자신이 맨 처음 배운 접기 방식으로 당신에게 줄 증표를 만들기로 했다.",
   "en": "A paper-folded Vulpo animal friend. After much thought, she decided to make your keepsake in the very first folding pattern she ever learned.",
   "ja": "紙で折ったヴァルポの動物。長く悩んだ末、彼女は自分が最初に覚えた折り方であなたへの贈り物を作ることに決めた。"
  },
+ "你大可试着相信她，但不必相信她的档案。": {
+  "ko": "그녀를 믿어 보는 건 좋다. 다만 그녀의 파일까지 믿을 필요는 없다.",
+  "en": "Feel free to trust her — just don't trust her file.",
+  "ja": "彼女を信じてみるのはいい。ただし、彼女のファイルまで信じる必要はない。"
+ },
  "一块小巧圆润的琥珀，内嵌有一朵完整的愈创木花。虽非天然形成，但由她亲手制作。": {
   "ko": "작고 매끈한 호박 한 조각. 안에는 온전한 유창목 꽃 한 송이가 박혀 있다. 자연적으로 만들어진 것은 아니지만, 그녀가 직접 손수 만든 것이다.",
   "en": "A small, smooth piece of amber with a whole guaiacum blossom set inside. Not naturally formed, but crafted by her own hands.",
   "ja": "小さく丸みを帯びた琥珀。中には一輪のユソウボクの花がまるごと収められている。天然のものではないが、彼女が自らの手で作ったものだ。"
+ },
+ "和她一起亲临前线的还有工具组、无人机、零食，以及她脑子里那些亟待解决的工程问题。": {
+  "ko": "그녀와 함께 전선에 온 것은 공구 세트와 드론, 간식거리, 그리고 그녀의 머릿속에서 해결을 기다리는 엔지니어링 문제들이다.",
+  "en": "Arriving at the front lines alongside her: a toolkit, drones, snacks, and all the engineering problems in her head still waiting to be solved.",
+  "ja": "彼女とともに前線へやって来たのは、工具セット、ドローン、お菓子、そして彼女の頭の中で解決を待っているエンジニアリング問題の数々だ。"
  },
  "一张什么都没写的纸。你辨认出那是她印刷优惠券用的纸张，不禁跃跃欲试起来。": {
   "ko": "아무것도 적혀 있지 않은 종이 한 장. 그녀가 할인 쿠폰을 인쇄할 때 쓰는 종이임을 알아본 당신은, 저도 모르게 손이 근질근질해지기 시작했다.",
   "en": "A blank sheet of paper. You recognize it as the stock she prints her coupons on, and can't help itching to give it a try.",
   "ja": "何も書かれていない一枚の紙。彼女がクーポン印刷に使う用紙だと見抜いたあなたは、思わずうずうずし始めた。"
  },
+ "她失去了永恒的生命，得到了属于普通人的一切痛苦、残缺，还有希望。": {
+  "ko": "그녀는 영원한 생명을 잃은 대신, 평범한 사람의 몫인 모든 고통과 결핍, 그리고 희망을 얻었다.",
+  "en": "She lost her eternal life, and gained everything that belongs to ordinary people — all the pain, the imperfection, and the hope.",
+  "ja": "彼女は永遠の命を失い、その代わりに普通の人間に属するあらゆる痛みと欠落、そして希望を手に入れた。"
+ },
  "一支矿石病抑制剂，是罗德岛医疗部最新的成果。这暂时还不是能除去一切痛苦的解药，却是她对自己承诺的回答。": {
   "ko": "광석병 억제제 한 병. 로도스 아일랜드 의료부의 최신 성과다. 아직 모든 고통을 없애 주는 해약은 아니지만, 그녀가 스스로에게 한 약속에 대한 대답이다.",
   "en": "A dose of Oripathy suppressant, the latest achievement of Rhodes Island's Medical Department. Not yet a cure that removes all suffering — but it is her answer to the promise she made to herself.",
   "ja": "鉱石病抑制剤が一本。ロドス医療部門の最新の成果だ。まだあらゆる苦しみを取り除ける解薬ではないが、彼女が自分自身に立てた誓いへの答えである。"
+ },
+ "但其实，你早就已经被列入了他的指挥序列。毕竟，你用过的许许多多设备，都由他创造，也由他掌控。": {
+  "ko": "하지만 사실, 당신은 이미 오래전부터 그의 지휘 서열에 편입되어 있었다. 당신이 써 온 수많은 장비들이 전부 그의 손에서 만들어졌고, 또 그의 통제 아래에 있으니까.",
+  "en": "In truth, though, you were placed in his chain of command long ago. After all, so many of the devices you've used were created by him — and are controlled by him.",
+  "ja": "だが実のところ、あなたはとっくに彼の指揮系統に組み込まれている。何しろ、あなたが使ってきた数多くの機器は、みな彼が作り出し、彼が掌握しているのだから。"
  },
  "一瓶酒。当然，酒不重要，重要的是他醉酒后要向你展示的技术奇观——那是他所有思考和感受的具象表现，用逻各斯的话说，“他的灵魂”。现在？先喝吧。": {
   "ko": "술 한 병. 물론 술이 중요한 게 아니다. 중요한 건 그가 취한 뒤 당신에게 보여 줄 기술의 경이 — 그의 모든 사유와 감정이 형상화된 것, 로고스의 말을 빌리자면 '그의 영혼'이다. 지금은? 일단 마시자.",
   "en": "A bottle of liquor. The drink itself hardly matters, of course — what matters is the technological marvel he'll show you once he's drunk: the embodiment of all his thoughts and feelings, or in Logos's words, \"his soul.\" For now? Just drink.",
   "ja": "一本の酒。もちろん酒自体は重要ではない。重要なのは、彼が酔った後にあなたへ披露する技術の驚異――彼のあらゆる思考と感情が形になったもの、ロゴスの言葉を借りれば「彼の魂」だ。今は？まず飲もう。"
  },
+ "她会一步接着一步，去见识更灿烂的大地，去做原本以为做不到的事。": {
+  "ko": "그녀는 한 걸음 한 걸음, 더 눈부신 대지를 만나러 갈 것이다. 할 수 없으리라 여겼던 일들을 해내러 갈 것이다.",
+  "en": "Step by step, she will go see ever more brilliant lands, and do the things she once thought impossible.",
+  "ja": "彼女は一歩また一歩と、より輝かしい大地を見に行き、できないと思っていたことを成し遂げに行くのだ。"
+ },
  "一个装满了各项物品的背包。如果勇气涌上了心头，就立刻背上它出发吧！": {
   "ko": "온갖 물건이 가득 든 배낭. 가슴에 용기가 차오르면, 곧장 둘러메고 출발하자!",
   "en": "A backpack stuffed with all sorts of things. When courage wells up in your heart, sling it on and set out at once!",
   "ja": "様々な品物がぎっしり詰まったリュック。勇気が湧き上がってきたら、すぐに背負って出発しよう！"
  },
+ "她很认真地解释，她只是换了身衣服，并没有什么其他的变化，你相信吗？": {
+  "ko": "그녀는 그저 옷을 갈아입었을 뿐 달라진 건 없다고 진지하게 해명했다. 당신은 믿어지는가?",
+  "en": "She earnestly explains that she has merely changed her outfit and nothing else about her is different. Do you believe her?",
+  "ja": "彼女は、ただ服を着替えただけで他には何も変わっていないと、真剣に説明している。あなたは信じられるだろうか？"
+ },
  "一本素材本，上面贴满了梓兰平时从各种杂志上剪下来的时尚设计。她表示，你可以从中挑选喜欢的款式，她会免费帮你设计一套类似风格的衣服。": {
   "ko": "스크랩북 한 권. 오키드가 평소 온갖 잡지에서 오려 낸 패션 디자인이 가득 붙어 있다. 마음에 드는 스타일을 고르면, 비슷한 느낌의 옷 한 벌을 무료로 디자인해 주겠다고 한다.",
   "en": "A scrapbook plastered with fashion designs Orchid has clipped from all sorts of magazines. Pick a style you like, she says, and she'll design you an outfit in a similar vein — free of charge.",
   "ja": "スクラップブックが一冊。オーキッドが普段いろいろな雑誌から切り抜いたファッションデザインがびっしり貼られている。気に入ったスタイルを選べば、似た雰囲気の服を一着無料でデザインしてくれるそうだ。"
+ },
+ "合作，而不是附属。现在他分得很清楚。": {
+  "ko": "종속이 아닌 협력. 이제 그는 그 둘을 분명하게 구분한다.",
+  "en": "Cooperation, not subordination. He draws that line clearly now.",
+  "ja": "従属ではなく、協力。今の彼はその区別をはっきりつけている。"
  },
  "一枚金色的勋章，中间蓝色的珐琅质内圈上，用乌萨斯语刻印着“信念与忠诚”。他从不相信这些。": {
   "ko": "금빛 훈장 하나. 가운데 파란 법랑 내륜에는 우르수스어로 '신념과 충성'이라 새겨져 있다. 그는 이런 것들을 믿어 본 적이 없다.",
@@ -6999,6 +7254,26 @@
   "en": "When Snow Draws Near",
   "ja": "雪の降る頃"
  },
+ "加密报告": {
+  "ko": "암호화 보고서",
+  "en": "Encrypted Report",
+  "ja": "暗号化レポート"
+ },
+ "学生概况": {
+  "ko": "학생 개요",
+  "en": "Student Overview",
+  "ja": "生徒概要"
+ },
+ "特殊疾病筛查": {
+  "ko": "특수 질병 검사",
+  "en": "Special Disease Screening",
+  "ja": "特殊疾病スクリーニング"
+ },
+ "综合能力测试": {
+  "ko": "종합 능력 평가",
+  "en": "Comprehensive Aptitude Test",
+  "ja": "総合能力テスト"
+ },
  "攻击时有23%的几率使目标束缚1.5秒，首次命中敌人时提升至100%且束缚时间提升至3秒": {
   "ko": "공격 시 23% 확률로 목표를 1.5초간 속박. 적을 처음 명중시켰을 때는 확률이 100%로 오르고 속박 시간도 3초로 증가",
   "en": "Attacks have a 23% chance to Bind the target for 1.5 seconds; on the first hit against an enemy this rises to 100% and the Bind duration increases to 3 seconds",
@@ -7178,6 +7453,161 @@
   "ko": "점점 라테라노에 익숙해지는 것 같아. 이젠 사람들이 아이스크림을 먹으면서 슈크림 조각상을 폭파해도 놀라지 않게 됐어. 아마 동료들이 곁에 있어서 마음이 놓이는 거겠지…… 게다가 새 동료도 만났고. 박사, 늘 챙겨 줘서 고마워.",
   "en": "I think I'm getting used to Laterano. These days I don't even blink when people blow up a cream-puff statue while eating ice cream. Maybe it's because my companions are beside me that I feel at ease... and I've made new ones, too. Doctor, thank you for looking after me all this time.",
   "ja": "少しずつラテラーノに慣れてきた気がする。今では、人々がアイスを食べながらシュークリームの像を爆破していても驚かなくなった。仲間がそばにいるから安心できるんだろうな……それに、新しい仲間にも出会えた。ドクター、いつも気にかけてくれてありがとう。"
+ },
+ "予愿安洁莉娜攻击额外造成相当于攻击力25%的法术伤害，攻击重量较轻（小于等于3）的敌人时则额外造成相当于攻击力35%的法术伤害；处于起飞状态时使攻击范围内的敌人失重": {
+  "ko": "공격 시 공격력 25%에 해당하는 마법 대미지를 추가로 입히며, 무게가 가벼운(3 이하) 적을 공격할 때는 공격력 35%에 해당하는 마법 대미지를 추가로 입힘. 이륙 상태에서는 공격 범위 내 적을 무중력 상태로 만듦",
+  "en": "Angelina's attacks deal an additional 25% of ATK as Arts damage; against lighter enemies (Weight 3 or below), the bonus is 35% of ATK instead. While lifted off, enemies within her attack range become Weightless",
+  "ja": "攻撃時、攻撃力25%に相当する術ダメージを追加で与える。重量が軽い（3以下）敵への攻撃時は攻撃力35%相当の術ダメージを追加で与える。離陸状態では攻撃範囲内の敵を無重力状態にする"
+ },
+ "其他友方干员进入自身攻击范围时立刻获得1层护盾并额外获得一次每秒回复50点生命值的增益治疗，持续30秒（不可叠加），增益治疗对【罗德岛】干员的效果翻倍": {
+  "ko": "다른 아군 오퍼레이터가 자신의 공격 범위에 진입 시 즉시 실드 1회를 획득하고, 추가로 초당 HP 50 회복하는 회복 버프를 1회 획득, 30초간 지속 (중첩 불가), 회복 버프는 [로도스 아일랜드] 오퍼레이터에게 효과 2배",
+  "en": "When another allied Operator enters this unit's attack range, they immediately gain 1 Shield and a regeneration buff that restores 50 HP per second for 30 seconds (does not stack); the regeneration buff is twice as effective on [Rhodes Island] Operators",
+  "ja": "他の味方オペレーターが自身の攻撃範囲に入った時、即座にシールドを1枚獲得し、さらに1秒ごとにHPを50回復するバフを1回獲得する（30秒間継続、重複不可）。回復バフは【ロドス】オペレーターに対して効果が2倍になる"
+ },
+ "在场时，所有处于起飞状态的友方干员攻击力+13%且阻挡时每秒回复8%的最大生命值": {
+  "ko": "전장에 있는 동안, 이륙 상태인 모든 아군 오퍼레이터의 공격력 +13%, 저지 중일 때 매초 최대 HP의 8% 회복",
+  "en": "While she is on the field, all allied Operators in Lift Off state gain ATK +13% and recover 8% of Max HP per second while blocking",
+  "ja": "在場時、離陸状態の味方オペレーター全員の攻撃力+13%、ブロック中は毎秒最大体力の8%を回復"
+ },
+ "对前三个敌人首次进行攻击时改为使用“猫式起爆龙弹”。来自我方其他单位的伤害会将其引爆，造成罗德岛隐秘队150%攻击力的伤害和2秒晕眩，并回复1点部署费用。“猫式起爆龙弹”在被引爆后或30秒后消失": {
+  "ko": "처음 세 명의 적에게 첫 공격 시 '고양이식 기폭룡탄'을 대신 사용. 다른 아군 유닛의 대미지로 기폭되며, 로도스 아일랜드 은밀 정찰대 공격력의 150%에 해당하는 대미지와 2초 기절을 부여하고 배치 코스트 1 회복. '고양이식 기폭룡탄'은 기폭 후 또는 30초 후 소멸",
+  "en": "The first attack against each of the first 2 enemies is replaced with a 'Felyne Wyvernblast'. Damage from other allied units detonates it, dealing damage equal to 150% of Rhodes Island Recon's ATK, Stunning for 2 seconds, and recovering 1 DP. The 'Felyne Wyvernblast' disappears after detonating or after 30 seconds",
+  "ja": "最初の2体の敵への初回攻撃時、「ネコ式起爆竜弾」を代わりに使用する。他の味方ユニットからのダメージで起爆し、ロドス隠密調査隊の攻撃力の150%のダメージと2秒間のスタンを与え、コストを1回復する。「ネコ式起爆竜弾」は起爆後、または30秒後に消滅する"
+ },
+ "对前三个敌人首次进行攻击时改为使用“猫式起爆龙弹”。来自我方其他单位的伤害会将其引爆，造成罗德岛隐秘队230%攻击力的伤害和2.2秒晕眩，并回复1点部署费用。“猫式起爆龙弹”在被引爆后或30秒后消失": {
+  "ko": "처음 세 명의 적에게 첫 공격 시 '고양이식 기폭룡탄'을 대신 사용. 다른 아군 유닛의 대미지로 기폭되며, 로도스 아일랜드 은밀 정찰대 공격력의 230%에 해당하는 대미지와 2.2초 기절을 부여하고 배치 코스트 1 회복. '고양이식 기폭룡탄'은 기폭 후 또는 30초 후 소멸",
+  "en": "The first attack against each of the first 2.2 enemies is replaced with a 'Felyne Wyvernblast'. Damage from other allied units detonates it, dealing damage equal to 230% of Rhodes Island Recon's ATK, Stunning for 2.2 seconds, and recovering 1 DP. The 'Felyne Wyvernblast' disappears after detonating or after 30 seconds",
+  "ja": "最初の2.2体の敵への初回攻撃時、「ネコ式起爆竜弾」を代わりに使用する。他の味方ユニットからのダメージで起爆し、ロドス隠密調査隊の攻撃力の230%のダメージと2.2秒間のスタンを与え、コストを1回復する。「ネコ式起爆竜弾」は起爆後、または30秒後に消滅する"
+ },
+ "对前三个敌人首次进行攻击时改为使用“猫式起爆龙弹”。来自我方其他单位的伤害会将其引爆，造成罗德岛隐秘队280%攻击力的伤害和2.4秒晕眩，并回复1点部署费用。“猫式起爆龙弹”在被引爆后或30秒后消失": {
+  "ko": "처음 세 명의 적에게 첫 공격 시 '고양이식 기폭룡탄'을 대신 사용. 다른 아군 유닛의 대미지로 기폭되며, 로도스 아일랜드 은밀 정찰대 공격력의 280%에 해당하는 대미지와 2.4초 기절을 부여하고 배치 코스트 1 회복. '고양이식 기폭룡탄'은 기폭 후 또는 30초 후 소멸",
+  "en": "The first attack against each of the first 2.4 enemies is replaced with a 'Felyne Wyvernblast'. Damage from other allied units detonates it, dealing damage equal to 280% of Rhodes Island Recon's ATK, Stunning for 2.4 seconds, and recovering 1 DP. The 'Felyne Wyvernblast' disappears after detonating or after 30 seconds",
+  "ja": "最初の2.4体の敵への初回攻撃時、「ネコ式起爆竜弾」を代わりに使用する。他の味方ユニットからのダメージで起爆し、ロドス隠密調査隊の攻撃力の280%のダメージと2.4秒間のスタンを与え、コストを1回復する。「ネコ式起爆竜弾」は起爆後、または30秒後に消滅する"
+ },
+ "对前三个敌人首次进行攻击时改为使用“猫式起爆龙弹”。来自我方其他单位的伤害会将其引爆，造成罗德岛隐秘队350%攻击力的伤害和2.6秒晕眩，并回复1点部署费用。“猫式起爆龙弹”在被引爆后或30秒后消失": {
+  "ko": "처음 세 명의 적에게 첫 공격 시 '고양이식 기폭룡탄'을 대신 사용. 다른 아군 유닛의 대미지로 기폭되며, 로도스 아일랜드 은밀 정찰대 공격력의 350%에 해당하는 대미지와 2.6초 기절을 부여하고 배치 코스트 1 회복. '고양이식 기폭룡탄'은 기폭 후 또는 30초 후 소멸",
+  "en": "The first attack against each of the first 2.6 enemies is replaced with a 'Felyne Wyvernblast'. Damage from other allied units detonates it, dealing damage equal to 350% of Rhodes Island Recon's ATK, Stunning for 2.6 seconds, and recovering 1 DP. The 'Felyne Wyvernblast' disappears after detonating or after 30 seconds",
+  "ja": "最初の2.6体の敵への初回攻撃時、「ネコ式起爆竜弾」を代わりに使用する。他の味方ユニットからのダメージで起爆し、ロドス隠密調査隊の攻撃力の350%のダメージと2.6秒間のスタンを与え、コストを1回復する。「ネコ式起爆竜弾」は起爆後、または30秒後に消滅する"
+ },
+ "对前三个敌人首次进行攻击时改为使用“猫式起爆龙弹”。来自我方其他单位的伤害会将其引爆，造成罗德岛隐秘队420%攻击力的伤害和2.8秒晕眩，并回复1点部署费用。“猫式起爆龙弹”在被引爆后或30秒后消失": {
+  "ko": "처음 세 명의 적에게 첫 공격 시 '고양이식 기폭룡탄'을 대신 사용. 다른 아군 유닛의 대미지로 기폭되며, 로도스 아일랜드 은밀 정찰대 공격력의 420%에 해당하는 대미지와 2.8초 기절을 부여하고 배치 코스트 1 회복. '고양이식 기폭룡탄'은 기폭 후 또는 30초 후 소멸",
+  "en": "The first attack against each of the first 2.8 enemies is replaced with a 'Felyne Wyvernblast'. Damage from other allied units detonates it, dealing damage equal to 420% of Rhodes Island Recon's ATK, Stunning for 2.8 seconds, and recovering 1 DP. The 'Felyne Wyvernblast' disappears after detonating or after 30 seconds",
+  "ja": "最初の2.8体の敵への初回攻撃時、「ネコ式起爆竜弾」を代わりに使用する。他の味方ユニットからのダメージで起爆し、ロドス隠密調査隊の攻撃力の420%のダメージと2.8秒間のスタンを与え、コストを1回復する。「ネコ式起爆竜弾」は起爆後、または30秒後に消滅する"
+ },
+ "携带可露希尔时，部署费用下限降低3，【罗德岛】干员攻击力+4%": {
+  "ko": "클로저 편성 시, 배치 코스트 하한 3 감소, [로도스 아일랜드] 오퍼레이터 공격력 +4%",
+  "en": "When Closure is in the squad, the minimum DP cost is reduced by 3, and [Rhodes Island] Operators gain ATK +4%",
+  "ja": "クロージャを編成した時、コストの下限が3低下し、【ロドス】オペレーターの攻撃力+4%"
+ },
+ "攻击力+8%，浮游单元攻击时有15%概率使目标停顿1.5秒": {
+  "ko": "공격력 +8%, 공중 유닛 공격 시 15% 확률로 대상을 1.5초간 정지",
+  "en": "ATK +8%; the Drone's attacks have a 15% chance to halt the target for 1.5 seconds",
+  "ja": "攻撃力+8%、空中ユニットの攻撃時15%の確率で対象を1.5秒間停止させる"
+ },
+ "攻击范围内的友方干员攻击时无视敌方10点法术抗性": {
+  "ko": "공격 범위 내 아군 오퍼레이터가 공격 시 적의 마법 저항 10 무시",
+  "en": "Allied Operators within attack range ignore 10 RES when attacking",
+  "ja": "攻撃範囲内の味方オペレーターが攻撃時、敵の術耐性を10無視する"
+ },
+ "攻击范围内至少有2名其他干员时，自身攻击力+10%": {
+  "ko": "공격 범위 내 다른 오퍼레이터가 2명 이상일 시, 자신의 공격력 +10%",
+  "en": "When there are at least 2 other Operators within attack range, this unit's ATK +10%",
+  "ja": "攻撃範囲内に他のオペレーターが2名以上いる時、自身の攻撃力+10%"
+ },
+ "特性储存的能量达到3个时，合成为1个转置能量（至多储存等同于9倍的能量），拥有转置能量时攻击力+10%，未拥有转置能量时攻击速度+15": {
+  "ko": "특성으로 저장한 에너지가 3개에 도달하면 전치 에너지 1개로 합성 (최대 9배에 해당하는 에너지 저장 가능), 전치 에너지 보유 시 공격력 +10%, 미보유 시 공격 속도 +15",
+  "en": "When 3 units of energy stored by the Trait accumulate, they combine into 1 Transposed Energy (can store up to the equivalent of 9 units); ATK +10% while holding Transposed Energy, ASPD +15 while not",
+  "ja": "特性で蓄えたエネルギーが3個に達すると、1個の転置エネルギーに合成される（最大9倍相当まで蓄積可能）。転置エネルギー所持時、攻撃力+10%。未所持時、攻撃速度+15"
+ },
+ "珊比受到的元素损伤降低15%；珊比造成物理伤害时，附带攻击力10%的侵蚀损伤，并使目标的侵蚀损伤冷却减少1秒": {
+  "ko": "받는 원소 손상 15% 감소. 물리 대미지를 입힐 때 공격력 10%의 침식 손상을 함께 입히며, 대상의 침식 손상 쿨타임을 1초 감소",
+  "en": "Elemental Injury taken -15%. When dealing Physical damage, also inflicts Corrosion equal to 10% of ATK and reduces the target's Corrosion cooldown by 1 seconds",
+  "ja": "受ける元素損傷が15%減少。物理ダメージを与える際、攻撃力10%の侵蝕損傷を付与し、対象の侵蝕損傷のクールダウンを1秒短縮する"
+ },
+ "生命上限和防御力+25%，阻挡数+1，阻挡范围扩大，部署后生命修复单元升空，自身起飞": {
+  "ko": "최대 HP 및 방어력 +25%, 저지 가능 수 +1, 저지 범위 확대, 배치 후 생명 수복 유닛이 공중으로 떠오르며 자신이 이륙",
+  "en": "Max HP and DEF +25%, Block +1, block range expands; after deployment, the Life Restoration Unit rises into the air and this unit Lifts Off",
+  "ja": "最大HP・防御力+25%、ブロック数+1、ブロック範囲が拡大。配置後、生命修復ユニットが浮上し、自身が離陸する"
+ },
+ "自身受到的元素损伤-10%，受到的侵蚀损伤额外-10%": {
+  "ko": "자신이 받는 원소 손상 -10%, 받는 침식 손상 추가 -10%",
+  "en": "Elemental Injury taken -10%; Corrosion taken additionally -10%",
+  "ja": "自身が受ける元素損傷-10%、受ける侵蝕損傷が追加で-10%"
+ },
+ "自身和结构性原理部署时获得最大生命30%的屏障；来自自身的屏障可以抵挡超额的伤害": {
+  "ko": "자신과 '구조적 원리'는 배치 시 최대 HP 30%의 보호막 획득. 자신이 부여한 보호막은 초과 대미지를 막아냄",
+  "en": "Self and Structural Principle gain a barrier equal to 30% of Max HP when deployed; barriers from this unit block excess damage",
+  "ja": "自身と「構造的原理」は配置時、最大HPの30%のバリアを獲得。自身のバリアは超過ダメージを防ぐ"
+ },
+ "造成的物理伤害+10%，受到的物理伤害-10%": {
+  "ko": "입히는 물리 대미지 +10%, 받는 물리 대미지 -10%",
+  "en": "Physical damage dealt +10%, Physical damage taken -10%",
+  "ja": "与える物理ダメージ+10%、受ける物理ダメージ-10%"
+ },
+ "部署后20秒内，攻击使敌人法术抗性-15%（持续10秒），且优先攻击未获得此效果的敌人": {
+  "ko": "배치 후 20초 이내, 공격 시 적의 마법 저항 -15% (10초간 지속), 해당 효과를 받지 않은 적을 우선 공격",
+  "en": "For 20 seconds after deployment, attacks reduce the target's RES by 15% (lasts 10 seconds), prioritizing enemies not affected by this effect",
+  "ja": "配置後20秒間、攻撃時に敵の術耐性-15%（10秒間継続）。この効果を受けていない敵を優先して攻撃する"
+ },
+ "部署后20秒内，攻击使敌人法术抗性-17%（持续10秒），且优先攻击未获得此效果的敌人": {
+  "ko": "배치 후 20초 이내, 공격 시 적의 마법 저항 -17% (10초간 지속), 해당 효과를 받지 않은 적을 우선 공격",
+  "en": "For 20 seconds after deployment, attacks reduce the target's RES by 17% (lasts 10 seconds), prioritizing enemies not affected by this effect",
+  "ja": "配置後20秒間、攻撃時に敵の術耐性-17%（10秒間継続）。この効果を受けていない敵を優先して攻撃する"
+ },
+ "部署后20秒内，攻击使敌人法术抗性-19%（持续10秒），且优先攻击未获得此效果的敌人": {
+  "ko": "배치 후 20초 이내, 공격 시 적의 마법 저항 -19% (10초간 지속), 해당 효과를 받지 않은 적을 우선 공격",
+  "en": "For 20 seconds after deployment, attacks reduce the target's RES by 19% (lasts 10 seconds), prioritizing enemies not affected by this effect",
+  "ja": "配置後20秒間、攻撃時に敵の術耐性-19%（10秒間継続）。この効果を受けていない敵を優先して攻撃する"
+ },
+ "部署后20秒内，攻击使敌人法术抗性-21%（持续10秒），且优先攻击未获得此效果的敌人": {
+  "ko": "배치 후 20초 이내, 공격 시 적의 마법 저항 -21% (10초간 지속), 해당 효과를 받지 않은 적을 우선 공격",
+  "en": "For 20 seconds after deployment, attacks reduce the target's RES by 21% (lasts 10 seconds), prioritizing enemies not affected by this effect",
+  "ja": "配置後20秒間、攻撃時に敵の術耐性-21%（10秒間継続）。この効果を受けていない敵を優先して攻撃する"
+ },
+ "部署后20秒内，攻击使敌人法术抗性-23%（持续10秒），且优先攻击未获得此效果的敌人": {
+  "ko": "배치 후 20초 이내, 공격 시 적의 마법 저항 -23% (10초간 지속), 해당 효과를 받지 않은 적을 우선 공격",
+  "en": "For 20 seconds after deployment, attacks reduce the target's RES by 23% (lasts 10 seconds), prioritizing enemies not affected by this effect",
+  "ja": "配置後20秒間、攻撃時に敵の術耐性-23%（10秒間継続）。この効果を受けていない敵を優先して攻撃する"
+ },
+ "部署后对周围一定范围内最近的1名敌人发动总计6次无视闪避的斩击，每次斩击造成相当于攻击力100%的法术伤害，最后一次斩击改为造成攻击力200%的法术伤害并使目标恐惧4秒": {
+  "ko": "배치 후 주변 일정 범위 내 가장 가까운 적 1명에게 회피를 무시하는 참격을 총 6회 발동. 참격 1회당 공격력의 100%에 해당하는 마법 대미지를 입히며, 마지막 참격은 공격력의 200%에 해당하는 마법 대미지로 변경되고 목표를 4초간 공포에 빠뜨림",
+  "en": "After deployment, unleashes a total of 6 Dodge-ignoring slashes at the nearest enemy within a certain range; each slash deals 100% of ATK as Arts damage, and the final slash instead deals 200% of ATK as Arts damage and Fears the target for 4 seconds",
+  "ja": "配置後、周囲一定範囲内の最も近い敵1体に回避を無視する斬撃を合計6回放つ。斬撃1回につき攻撃力の100%の術ダメージを与え、最後の斬撃は攻撃力の200%の術ダメージに変化し、目標を4秒間恐怖状態にする"
+ },
+ "部署后对周围一定范围内最近的1名敌人发动总计6次无视闪避的斩击，每次斩击造成相当于攻击力120%的法术伤害，最后一次斩击改为造成攻击力240%的法术伤害并使目标恐惧4秒": {
+  "ko": "배치 후 주변 일정 범위 내 가장 가까운 적 1명에게 회피를 무시하는 참격을 총 6회 발동. 참격 1회당 공격력의 120%에 해당하는 마법 대미지를 입히며, 마지막 참격은 공격력의 240%에 해당하는 마법 대미지로 변경되고 목표를 4초간 공포에 빠뜨림",
+  "en": "After deployment, unleashes a total of 6 Dodge-ignoring slashes at the nearest enemy within a certain range; each slash deals 120% of ATK as Arts damage, and the final slash instead deals 240% of ATK as Arts damage and Fears the target for 4 seconds",
+  "ja": "配置後、周囲一定範囲内の最も近い敵1体に回避を無視する斬撃を合計6回放つ。斬撃1回につき攻撃力の120%の術ダメージを与え、最後の斬撃は攻撃力の240%の術ダメージに変化し、目標を4秒間恐怖状態にする"
+ },
+ "部署后对周围一定范围内最近的1名敌人发动总计6次无视闪避的斩击，每次斩击造成相当于攻击力140%的法术伤害，最后一次斩击改为造成攻击力280%的法术伤害并使目标恐惧4秒": {
+  "ko": "배치 후 주변 일정 범위 내 가장 가까운 적 1명에게 회피를 무시하는 참격을 총 6회 발동. 참격 1회당 공격력의 140%에 해당하는 마법 대미지를 입히며, 마지막 참격은 공격력의 280%에 해당하는 마법 대미지로 변경되고 목표를 4초간 공포에 빠뜨림",
+  "en": "After deployment, unleashes a total of 6 Dodge-ignoring slashes at the nearest enemy within a certain range; each slash deals 140% of ATK as Arts damage, and the final slash instead deals 280% of ATK as Arts damage and Fears the target for 4 seconds",
+  "ja": "配置後、周囲一定範囲内の最も近い敵1体に回避を無視する斬撃を合計6回放つ。斬撃1回につき攻撃力の140%の術ダメージを与え、最後の斬撃は攻撃力の280%の術ダメージに変化し、目標を4秒間恐怖状態にする"
+ },
+ "部署后对周围一定范围内最近的1名敌人发动总计6次无视闪避的斩击，每次斩击造成相当于攻击力160%的法术伤害，最后一次斩击改为造成攻击力320%的法术伤害并使目标恐惧4秒": {
+  "ko": "배치 후 주변 일정 범위 내 가장 가까운 적 1명에게 회피를 무시하는 참격을 총 6회 발동. 참격 1회당 공격력의 160%에 해당하는 마법 대미지를 입히며, 마지막 참격은 공격력의 320%에 해당하는 마법 대미지로 변경되고 목표를 4초간 공포에 빠뜨림",
+  "en": "After deployment, unleashes a total of 6 Dodge-ignoring slashes at the nearest enemy within a certain range; each slash deals 160% of ATK as Arts damage, and the final slash instead deals 320% of ATK as Arts damage and Fears the target for 4 seconds",
+  "ja": "配置後、周囲一定範囲内の最も近い敵1体に回避を無視する斬撃を合計6回放つ。斬撃1回につき攻撃力の160%の術ダメージを与え、最後の斬撃は攻撃力の320%の術ダメージに変化し、目標を4秒間恐怖状態にする"
+ },
+ "部署后对周围一定范围内最近的1名敌人发动总计6次无视闪避的斩击，每次斩击造成相当于攻击力180%的法术伤害，最后一次斩击改为造成攻击力360%的法术伤害并使目标恐惧4秒": {
+  "ko": "배치 후 주변 일정 범위 내 가장 가까운 적 1명에게 회피를 무시하는 참격을 총 6회 발동. 참격 1회당 공격력의 180%에 해당하는 마법 대미지를 입히며, 마지막 참격은 공격력의 360%에 해당하는 마법 대미지로 변경되고 목표를 4초간 공포에 빠뜨림",
+  "en": "After deployment, unleashes a total of 6 Dodge-ignoring slashes at the nearest enemy within a certain range; each slash deals 180% of ATK as Arts damage, and the final slash instead deals 360% of ATK as Arts damage and Fears the target for 4 seconds",
+  "ja": "配置後、周囲一定範囲内の最も近い敵1体に回避を無視する斬撃を合計6回放つ。斬撃1回につき攻撃力の180%の術ダメージを与え、最後の斬撃は攻撃力の360%の術ダメージに変化し、目標を4秒間恐怖状態にする"
+ },
+ "部署后首次开启技能时，接下来50次攻击的攻击力提升至115%": {
+  "ko": "배치 후 처음 스킬 발동 시, 이후 50회 공격의 공격력이 115%로 증가",
+  "en": "When activating a skill for the first time after deployment, the next 50 attacks have ATK increased to 115%",
+  "ja": "配置後、初めてスキルを発動した時、以降50回の攻撃の攻撃力が115%まで上昇"
+ },
+ "部署后，嘉辛塔自身与周围八格的友方单位获得13%的对空庇护": {
+  "ko": "배치 후, 자신타와 주변 8칸의 아군 유닛이 13%의 대공 가호 획득",
+  "en": "After deployment, Jacinta and allied units in the surrounding 8 tiles gain 13% Anti-Air Shelter",
+  "ja": "配置後、ジャシンタ自身と周囲8マスの味方ユニットが13%の対空加護を獲得"
+ },
+ "受到过来自珊比伤害的敌人侵蚀损伤爆发时，珊比获得8点防御力（最多叠加30层）和250点屏障（不超过最大生命值的300%）": {
+  "ko": "썸피에게 대미지를 받은 적의 침식 손상이 폭발할 때, 방어력 8 획득(최대 30중첩)과 보호막 250 획득(최대 HP의 300%를 넘지 않음)",
+  "en": "When Corrosion bursts on an enemy that has taken damage from Thumpy, Thumpy gains 8 DEF (stacking up to 30 times) and a 250 Barrier (not exceeding 300% of Max HP)",
+  "ja": "サンビからダメージを受けた敵の侵蝕損傷が爆発した時、防御力8を獲得（最大30層まで累積）し、250のバリアを獲得（最大体力の300%を超えない）"
  },
  "技能期间攻击距离延长。开启技能时施展变形斩造成伤害，同时消耗所有充能，每层使技能持续时间增加40%": {
   "ko": "스킬 지속 시간 동안 공격 거리 연장. 스킬 발동 시 변형 베기로 대미지를 입히며 모든 충전을 소모, 1층당 스킬 지속 시간 40% 증가",
@@ -7799,6 +8229,11 @@
   "en": "[Mental Health] Excellent",
   "ja": "【精神状態】優良"
  },
+ "别让他等得太久。": {
+  "ko": "너무 오래 기다리게 하지는 말 것.",
+  "en": "Don't keep him waiting too long.",
+  "ja": "あまり長く待たせないように。"
+ },
  "得知阿米娅的生日在冬天，结城同学提前祝了阿米娅生日快乐。我们聊起阿米娅过去的生日，提到了刚收养阿米娅时候的事。结城同学看起来并不惊讶，点点头说注意到了拉特兰人似乎喜欢收养孩子。我解释了一下阿米娅并不是从启言居所收养的。结城同学似乎对这个话题有些在意，我就多和他聊了几句。拉特兰的社会环境有些特殊，有相当比例的居民一生也不会组成家庭，因此也有很多拉特兰孩子（尤其是萨科塔）自出生就被送到启言居所抚养，这是拉特兰的公共抚养机构。有些孩子会在启言居所长到成年，有些会被收养。由于共感的存在和拉特兰的社会制度，拉特兰人认为每一个孩子都是神的孩子，无论是在启言居所成长还是在家庭中成长都是如此。当然，未来这一点是否会发生变化，现在没有人能断言。": {
   "ko": "아미야의 생일이 겨울이라는 걸 알게 된 유키 학생은 아미야에게 미리 생일 축하를 건넸다. 우리는 아미야의 지난 생일들을 이야기하다가, 아미야를 막 거두었을 무렵의 일까지 화제에 올렸다. 유키 학생은 별로 놀라는 기색 없이 고개를 끄덕이며, 라테라노 사람들은 아이를 입양하기를 좋아하는 것 같다고 말했다. 나는 아미야가 계언원에서 입양된 것은 아니라고 설명해 주었다. 유키 학생이 이 화제를 조금 마음에 두는 듯해서, 나는 몇 마디 더 나누었다. 라테라노의 사회 환경은 조금 특수해서, 상당한 비율의 주민이 평생 가정을 이루지 않는다. 그래서 많은 라테라노 아이들이(특히 산크타는) 태어나자마자 계언원으로 보내져 자란다. 계언원은 라테라노의 공공 양육 기관이다. 어떤 아이는 계언원에서 성인이 될 때까지 자라고, 어떤 아이는 입양된다. 공감의 존재와 라테라노의 사회 제도 덕분에, 라테라노 사람들은 모든 아이가 신의 아이라고 여긴다. 계언원에서 자라든 가정에서 자라든 마찬가지다. 물론 앞으로 이 점이 달라질지 어떨지는, 지금으로선 누구도 단언할 수 없다.",
   "en": "Learning that Amiya's birthday falls in winter, Makoto wished her a happy birthday in advance. We got to talking about Amiya's past birthdays, and the subject turned to when she was first taken in. Makoto did not seem surprised; he nodded and remarked that Lateran people seem fond of adopting children. I explained that Amiya was not adopted from the Revelation Home. He seemed to take some interest in the topic, so I told him a little more. Laterano's social environment is somewhat particular: a considerable share of its residents never form families at all, and so many Lateran children—Sankta especially—are sent from birth to the Revelation Home, Laterano's public institution for raising children. Some grow up there to adulthood; others are adopted. Because of empathy and Laterano's social system, Lateran people hold that every child is a child of God, whether raised at the Revelation Home or in a family. Whether that will change in the future, of course, no one can say for certain now.",
@@ -8013,6 +8448,11 @@
   "ko": "\"그래서 유키가 사려던 게 대체 뭐였어?\" 기숙사로 돌아가는 길에 타케바 학생이 물었다.",
   "en": "\"So what was it you wanted to buy, anyway?\" Yukari asked on the way back to the dorm.",
   "ja": "「で、結城が買いたかったものって結局何なの？」寮への帰り道、岳羽さんが尋ねた。"
+ },
+ "扣动扳机，人格面具自内心解放，燎燃烈焰将敌人引入湮灭。": {
+  "ko": "방아쇠를 당기면 페르소나가 마음속에서 해방되고, 타오르는 화염이 적을 소멸로 이끈다.",
+  "en": "Pull the trigger, and the Persona is released from within—blazing flames draw the enemy into oblivion.",
+  "ja": "引き金を引けば、ペルソナが心の内から解き放たれ、燃え盛る炎が敵を消滅へと導く。"
  },
  "我对他说，如果我是你梦中的人，你认为我会怎样回答？": {
   "ko": "나는 그에게 말했다. 만약 내가 네 꿈속의 사람이라면, 내가 어떻게 대답할 것 같으냐고.",
@@ -8334,6 +8774,11 @@
   "en": "\"Do you understand what they are for?\"",
   "ja": "「それらの用途をご存じですか」"
  },
+ "她会走向怎样的远方呢？": {
+  "ko": "그녀는 어떤 먼 곳으로 나아가게 될까?",
+  "en": "What distant place will she walk toward?",
+  "ja": "彼女はどんな遠くへ歩んでいくのだろうか。"
+ },
  "【沟通技巧】标准": {
   "ko": "[의사소통 능력] 표준",
   "en": "[Communication Skills] Standard",
@@ -8484,6 +8929,11 @@
   "en": "\"Doctor...\" Her voice, as she asked, was as small as if she were speaking to herself. \"If a child were to feel, toward her mother...\"",
   "ja": "「ドクター……」問いかける彼女の声は、独り言のように小さかった。「もし、ある子どもが母親に対して……」"
  },
+ "有着有目共睹的好人缘，也有着难以接近的一面。": {
+  "ko": "누가 봐도 인간관계가 좋지만, 다가가기 어려운 면도 있다.",
+  "en": "Her way with people is plain for all to see—yet there is a side of her that is hard to approach.",
+  "ja": "誰の目にも人付き合いがよいが、近寄りがたい一面もある。"
+ },
  "岳羽由加莉没有被源石感染的迹象。": {
   "ko": "타케바 유카리에게는 오리지늄에 감염된 징후가 없다.",
   "en": "Yukari Takeba shows no sign of Originium infection.",
@@ -8524,10 +8974,145 @@
   "en": "[Physical Condition] Standard",
   "ja": "【身体能力】標準"
  },
+ "安洁莉娜在出发去雷姆必拓前特意定做的服装。\n兼顾透气和防晒性能的材质几分钟就定好了，唯独配色让她苦恼了一下午才定下来。": {
+  "ko": "안젤리나가 림 빌리턴으로 떠나기 전에 특별히 맞춘 옷.\n통기성과 자외선 차단을 겸한 소재는 몇 분 만에 정해졌지만, 배색만은 오후 내내 고민한 끝에 겨우 정해졌다.",
+  "en": "An outfit Angelina had tailored specially before setting out for Rim Billiton.\nThe fabric—breathable and sun-resistant at once—was settled in minutes; only the colors kept her agonizing for a whole afternoon.",
+  "ja": "アンジェリーナがレム・ビリトンへ発つ前に特別に仕立てた服。\n通気性と日焼け防止を兼ねた素材は数分で決まったが、配色だけは午後いっぱい悩んだ末にようやく決まった。"
+ },
+ "一如既往，安洁莉娜轻盈地穿梭在高耸的建筑之间。\n忘掉复杂的计算和分析吧，此刻她来决定谁将受到天空张开双臂的欢迎。": {
+  "ko": "여느 때처럼, 안젤리나는 높이 솟은 건물들 사이를 가볍게 누빈다.\n복잡한 계산과 분석은 잊어버리자. 지금 이 순간, 하늘이 두 팔 벌려 누구를 맞이할지는 그녀가 정한다.",
+  "en": "As always, Angelina weaves lightly between the towering buildings.\nForget the complicated calculations and analyses—right now, she is the one who decides who the sky will welcome with open arms.",
+  "ja": "いつものように、アンジェリーナは高くそびえる建物の間を軽やかに駆け抜ける。\n複雑な計算や分析は忘れてしまおう。今この瞬間、空が両腕を広げて誰を迎えるかは、彼女が決める。"
+ },
+ "梓兰在泡影国狩猎“异兽”时换上的装备。\n以炎火村的设计为蓝本，加上本人的调整，可以说是为她量身定制。": {
+  "ko": "오키드가 포영국에서 '이수'를 사냥할 때 갈아입은 장비.\n카무라 마을의 디자인을 바탕으로 본인이 손을 더한, 그야말로 그녀만을 위한 맞춤 장비다.",
+  "en": "The gear Orchid changed into while hunting “monsters” in the Bubbly Realm.\nBased on a Kamura Village design with adjustments of her own, it is tailored to her in every sense.",
+  "ja": "オーキッドが泡沫国で「異獣」を狩る際に着替えた装備。\nカムラの里のデザインを下敷きに本人が手を加えた、まさに彼女のための誂えである。"
+ },
+ "梓兰依然没有喜欢上狩猎。\n但她至少愿意承认，穿上这身装备后的自己，心态上要更自由一些。": {
+  "ko": "오키드는 여전히 사냥을 좋아하게 되지는 않았다.\n다만 이 장비를 걸친 자신이 마음만은 조금 더 자유롭다는 것은, 적어도 인정할 생각이 있다.",
+  "en": "Orchid still hasn't come to like hunting.\nBut she is at least willing to admit that, wearing this gear, she feels a little freer.",
+  "ja": "オーキッドは相変わらず狩りを好きにはなれていない。\nそれでも、この装備を身につけた自分の方が心持ち自由でいられることは、認めてもいいと思っている。"
+ },
+ "凛冬在圣骏堡及周边地区走访游历时穿着的服装。\n面对罗斯托夫家族请来的裁缝，凛冬只提了一个要求，她希望将一块红色的布料缝在胸口的位置。": {
+  "ko": "지마가 디에티 그라이퍼부르크와 그 일대를 돌아다니며 입었던 옷.\n로스토프 가문이 부른 재봉사 앞에서 지마가 내건 요구는 하나뿐이었다 — 가슴께에 붉은 천 한 조각을 덧대어 달라는 것.",
+  "en": "The outfit Zima wore while traveling through Deity Grypherburg and the surrounding region.\nFacing the tailor the Rostov family had sent for, Zima made only one request: that a piece of red cloth be sewn over her chest.",
+  "ja": "ズィマーがサンクト・グリファーブルクとその周辺を巡り歩いた際に着ていた服。\nロストフ家が呼んだ仕立て屋を前に、ズィマーが出した要求はただ一つ——胸元に赤い布を一枚縫い付けてほしい、というものだった。"
+ },
+ "凛冬站立于人群之中。\n她不是一呼百应的首领，不是贪生怕死的懦弱者。她站在那里，就代表旗帜仍然高举。": {
+  "ko": "지마가 사람들 속에 서 있다.\n그녀는 한마디에 백 명이 따르는 우두머리도, 목숨을 아끼는 겁쟁이도 아니다. 그녀가 그 자리에 서 있다는 것은, 깃발이 아직 높이 들려 있다는 뜻이다.",
+  "en": "Zima stands among the crowd.\nShe is no leader whose single word summons hundreds, nor a coward clinging to her own life. That she stands there at all means the banner is still held high.",
+  "ja": "ズィマーが人々の中に立っている。\n彼女は一声で百人を動かす首領でもなければ、命を惜しむ臆病者でもない。彼女がそこに立っていること自体が、旗がなお高く掲げられている証だ。"
+ },
+ "凯尔希从泽尔格勒返回时穿的服装，那件巨大的仪器原本不是造型的一部分。\n大家都在讨论凯尔希身上的变化，但无论如何，她看上去还是一个医生。": {
+  "ko": "켈시가 젤그라드에서 돌아올 때 입고 있던 옷. 저 거대한 장치는 원래 이 차림의 일부가 아니었다.\n모두가 켈시에게 일어난 변화를 이야기하지만, 어찌 됐든 그녀는 여전히 의사로 보인다.",
+  "en": "The outfit Kal'tsit wore on her return from Zelgrad; that massive apparatus was never meant to be part of the look.\nEveryone is talking about how Kal'tsit has changed—but whatever else, she still looks like a doctor.",
+  "ja": "ケルシーがゼルグラードから戻ってきた際に着ていた服。あの巨大な機器は本来この装いの一部ではない。\n誰もがケルシーの変化を話題にするが、いずれにせよ彼女はやはり医者に見える。"
+ },
+ "凯尔希逐渐适应了对石棺修复模块的使用，服装和装备都相应进行了调整。\n她的生命脆弱且真实。": {
+  "ko": "켈시는 석관 수복 모듈의 사용에 차츰 적응했고, 복장과 장비도 그에 맞춰 조정되었다.\n그녀의 생명은 부서지기 쉽고, 또한 진짜다.",
+  "en": "Kal'tsit has gradually adapted to using the sarcophagus repair module, and her clothing and equipment have been adjusted to match.\nHer life is fragile, and real.",
+  "ja": "ケルシーは石棺の修復モジュールの使用に次第に慣れ、服装も装備もそれに合わせて調整された。\n彼女の生命は脆く、そして本物だ。"
+ },
+ "露营时间喵！": {
+  "ko": "캠프 시간이다냥!",
+  "en": "Camping Time, Meow!",
+  "ja": "キャンプの時間だニャ！"
+ },
+ "怪物猎人/II": {
+  "ko": "몬스터 헌터/II",
+  "en": "Monster Hunter/II",
+  "ja": "モンスターハンター/II"
+ },
+ "《怪物猎人》合作服装/露营时间喵！为喜欢在山野林间活动的隐秘队量身定做的服装，活动性和透气性极佳。": {
+  "ko": "《몬스터 헌터》 콜라보 복장/캠프 시간이다냥! 산과 숲을 누비기 좋아하는 은밀 정찰대를 위해 맞춘 옷으로, 활동성과 통기성이 아주 뛰어나다.",
+  "en": "Monster Hunter Collaboration Outfit/Camping Time, Meow! Tailored for the Rhodes Island Recon, who love moving through hills and woods—superbly mobile and breathable.",
+  "ja": "『モンスターハンター』コラボ衣装／キャンプの時間だニャ！　山野を駆け回るのが好きな隠密調査隊のために誂えた服で、動きやすさも通気性も抜群だ。"
+ },
+ "罗德岛隐秘队的便装之一。": {
+  "ko": "로도스 아일랜드 은밀 정찰대의 평상복 중 하나.",
+  "en": "One of the Rhodes Island Recon's casual outfits.",
+  "ja": "ロドス隠密調査隊の普段着の一つ。"
+ },
+ "政宗最近的兴趣是用泰拉的食材研究全新的兔团子配方，至于成果，看义经的表情就知道了。": {
+  "ko": "마사무네의 요즘 취미는 테라의 식재료로 새로운 토끼 경단 레시피를 연구하는 것. 그 성과가 어떤지는 요시츠네의 표정만 봐도 알 수 있다.",
+  "en": "Masamune's latest hobby is developing new Bunny Dango recipes with Terran ingredients. As for the results—one look at Yoshitsune's face tells you everything.",
+  "ja": "政宗の最近の趣味は、テラの食材で新しいウサ団子のレシピを研究すること。その成果のほどは、義経の表情を見れば分かる。"
+ },
  "采购中心": {
   "ko": "구매센터",
   "en": "Store",
   "ja": "購買部"
+ },
+ "见证荣光": {
+  "ko": "영광을 목격하다",
+  "en": "Witness to Glory",
+  "ja": "栄光を見届ける"
+ },
+ "女神异闻录３ Reload": {
+  "ko": "페르소나 3 리로드",
+  "en": "Persona 3 Reload",
+  "ja": "ペルソナ3 リロード"
+ },
+ "结城理在戏剧演出中穿着的服装。": {
+  "ko": "유키 마코토가 연극 공연에서 입은 의상.",
+  "en": "The costume Makoto Yuki wore in the play.",
+  "ja": "結城理が演劇の上演で着ていた衣装。"
+ },
+ "真正的荣光无需仰望，慷慨公正的太阳将它洒向每一个人。": {
+  "ko": "진정한 영광은 우러러볼 필요가 없다. 너그럽고 공정한 태양이 그것을 모두에게 고루 뿌려 주니까.",
+  "en": "True glory needs no looking up to—the generous, impartial sun scatters it over every one of us.",
+  "ja": "真の栄光は仰ぎ見る必要などない。寛大で公正な太陽が、それを一人ひとりに降り注ぐのだから。"
+ },
+ "静思真谛": {
+  "ko": "진리를 사색하다",
+  "en": "Quiet Contemplation",
+  "ja": "真理を静かに思う"
+ },
+ "埃癸斯在戏剧演出中穿着的服装。": {
+  "ko": "아이기스가 연극 공연에서 입은 의상.",
+  "en": "The costume Aegis wore in the play.",
+  "ja": "アイギスが演劇の上演で着ていた衣装。"
+ },
+ "有的答案足可追寻一生，是一日日清晨的浇灌与惦念让它长成。": {
+  "ko": "어떤 답은 평생을 좇아도 좋을 만큼 크다. 그것을 자라게 하는 것은 하루하루 아침의 물 주기와 마음 씀이다.",
+  "en": "Some answers are worth a lifetime of seeking; what makes them grow is the watering and the caring, morning after morning.",
+  "ja": "一生をかけて追い求めるに足る答えもある。それを育てるのは、日々の朝の水やりと、絶えず思い続ける心だ。"
+ },
+ "戍卫晨昏": {
+  "ko": "새벽과 황혼을 지키다",
+  "en": "Guarding Dawn and Dusk",
+  "ja": "暁と黄昏を守る"
+ },
+ "岳羽由加莉在戏剧演出中穿着的服装。": {
+  "ko": "타케바 유카리가 연극 공연에서 입은 의상.",
+  "en": "The costume Yukari Takeba wore in the play.",
+  "ja": "岳羽ゆかりが演劇の上演で着ていた衣装。"
+ },
+ "朝暮晨昏，云流风转，白墙将许多温热的生活围拢，那就叫做城市。": {
+  "ko": "아침과 저녁이 오가고 구름이 흐르고 바람이 도는 동안, 흰 성벽은 수많은 따뜻한 삶을 둘러 안는다. 그것을 도시라고 부른다.",
+  "en": "Morning to evening, clouds drifting and winds turning, the white wall gathers countless warm little lives within it—and that is what we call a city.",
+  "ja": "朝が来て夕が過ぎ、雲は流れ風は巡り、白い城壁は数え切れないほどの温かな暮らしを抱き込む。それを都市と呼ぶ。"
+ },
+ "飞越甜蜜之城": {
+  "ko": "달콤한 도시를 날다",
+  "en": "Over the City of Sweets",
+  "ja": "甘い街を飛び越えて"
+ },
+ "虎狼丸在拉特兰获得的服装。": {
+  "ko": "코로마루가 라테라노에서 얻은 옷.",
+  "en": "An outfit Koromaru received in Laterano.",
+  "ja": "コロマルがラテラーノで手に入れた服。"
+ },
+ "他们都做着梦中之梦，醒来时嘴角犹噙着微笑，这便是一场好眠。": {
+  "ko": "그들은 모두 꿈속의 꿈을 꾸고, 깨어나서도 입가에 미소가 남아 있다. 그것이 바로 좋은 잠이다.",
+  "en": "They all dreamed a dream within a dream, and woke still smiling at the corners of their mouths—that is what a good sleep is.",
+  "ja": "彼らは皆、夢の中の夢を見て、目覚めても口元に微笑みを残している。それこそが良い眠りというものだ。"
+ },
+ "金属框架、玻璃门窗、机械式风向标、液压式支撑足，当然还有仅剩的一点羽毛——泰拉的最后一只原鸡，将以这样的姿态继续万余年前被死亡中断的旅程。": {
+  "ko": "금속 골조, 유리 문과 창, 기계식 풍향계, 유압식 지지 다리, 그리고 물론 몇 남지 않은 깃털 — 테라의 마지막 들닭은 이런 모습으로, 만여 년 전 죽음에 가로막혔던 여정을 다시 이어 간다.",
+  "en": "A metal frame, glass doors and windows, a mechanical weather vane, hydraulic support legs—and, of course, the few feathers that remain. In this form, the last junglefowl of Terra resumes the journey that death cut short over ten thousand years ago.",
+  "ja": "金属のフレーム、ガラスの扉と窓、機械式の風見鶏、油圧式の支持脚、そしてもちろん、わずかに残った羽毛——テラ最後の野鶏は、この姿で一万数千年前に死によって断ち切られた旅路を再び歩み出す。"
  },
  "GALLUS²的信物": {
   "ko": "GALLUS²의 증표",
