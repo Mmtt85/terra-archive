@@ -507,7 +507,7 @@ labels["is-common.json"] = "통합전략 공통 — 조우 안내·판정 문구
 #   테이블이 없다고 빌드가 죽으면 안 되고, 옛 산출물이 남아 있으면 그대로 쓰인다.
 def official_pairs():
     """{갈래: {중국어 원문: {"ko": 공식 한국어}}} — 양쪽 공식 표를 id 로 조인한다."""
-    out = {k: {} for k in ("op", "item", "enemy", "stage", "voice")}
+    out = {k: {} for k in ("op", "item", "enemy", "stage")}
     tag_re = re.compile(r"<[^>]+>")
 
     def add(tag, cn, ko):
@@ -606,7 +606,7 @@ def official_pairs():
             b = kd.get(wid)
             if not isinstance(b, dict): continue
             for f in ("voiceTitle", "voiceText"):
-                add("voice", a.get(f), b.get(f))
+                add("op", a.get(f), b.get(f))
 
     c, k = both("stage_table")
     if c:
@@ -673,10 +673,9 @@ OFF_LABEL = {
     "item":  "아이템·재료 — 이름·설명·용도 (한섭 공식 한국어)",
     "enemy": "적 — 이름·설명·능력 (한섭 공식 한국어)",
     "stage": "작전 — 이름·설명 (한섭 공식 한국어)",
-    "voice": "오퍼 보이스 대사 — 제목·대사 (한섭 공식 한국어)",
 }
 OFF_ORDER = []
-for tag in ("op", "item", "enemy", "stage", "is-enc", "voice"):
+for tag in ("op", "item", "enemy", "stage", "is-enc"):
     if OFFICIAL.get(tag):
         name = f"kr-{tag}.json"
         files[name] = OFFICIAL[tag]
@@ -692,15 +691,18 @@ for tag in ("op", "item", "enemy", "stage", "is-enc", "voice"):
 # 공식/비공식은 파일이 아니라 **항목에 표시**한다 — 비공식일 때만 `"x": 1`.
 # 같은 원문에 둘 다 있으면 **공식이 이긴다** (공식이 있는 자리는 공식이 옳다).
 KIND_LABEL = {
-    "op":      "오퍼레이터 — 이름·직위·특성·재능·스킬·모듈·기반시설",
+    # ⚠ **보이스·기록은 op 에 합친다** (사용자 지적 2026-09-17). 셋을 갈라 두면 받는 쪽이
+    #   필요 없는 걸 안 받을 수 있다고 봤는데 실제로는 이점이 없었다 — 신규 오퍼 하나가
+    #   character_table·charword_table·handbook_info_table 에 **동시에** 들어가서
+    #   (실측: 미실장 19명 전원) 세 파일의 해시가 같이 바뀌고 결국 다 받게 된다.
+    #   전량을 한두 달에 한 번 받는 것이라 용량 차이도 없다.
+    "op":      "오퍼레이터 — 이름·특성·재능·스킬·모듈·기반시설·보이스 대사·기록",
     "item":    "아이템·재료 — 이름·설명·용도",
     "enemy":   "적 — 이름·설명·능력",
     "stage":   "작전 — 이름·설명",
-    "voice":   "오퍼 보이스 대사 — 제목·대사",
-    "record":  "오퍼 기록·프로필 산문",
     "ra":      "생존연산",
 }
-KIND_ORDER = ["op", "item", "enemy", "stage", "voice", "record", "ra"]
+KIND_ORDER = ["op", "item", "enemy", "stage", "ra"]
 
 # 비공식(장부에서 온 것)을 갈래로 흩는다 — 원문이 CN 게임데이터의 어느 표에서 왔는지로 판정
 def _kind_index():
@@ -718,7 +720,7 @@ def _kind_index():
                 ln = ln.strip()
                 if ln: idx.setdefault(ln, kind)
     # 뒤에 오는 표가 먼저 온 표를 못 덮게 — 구체적인 갈래부터 넣는다
-    for tbl, kind in (("charword_table", "voice"), ("handbook_info_table", "record"),
+    for tbl, kind in (("charword_table", "op"), ("handbook_info_table", "op"),
                       ("item_table", "item"), ("enemy_handbook_table", "enemy"),
                       ("stage_table", "stage"), ("skill_table", "op"),
                       ("uniequip_table", "op"), ("building_data", "op"),

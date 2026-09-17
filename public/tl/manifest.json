@@ -3,9 +3,9 @@
  "files": [
   {
    "file": "op.json",
-   "url": "https://files.terra-archive.net/assets/tl/op.json?v=4ed0072bcec42910",
-   "label": "오퍼레이터 — 이름·직위·특성·재능·스킬·모듈·기반시설 — 공식 한국어 8,277 + 비공식 번역 712",
-   "hash": "4ed0072bcec42910"
+   "url": "https://files.terra-archive.net/assets/tl/op.json?v=7d28ad3b5f57d264",
+   "label": "오퍼레이터 — 이름·특성·재능·스킬·모듈·기반시설·보이스 대사·기록 — 공식 한국어 24,320 + 비공식 번역 2,116",
+   "hash": "7d28ad3b5f57d264"
   },
   {
    "file": "item.json",
@@ -24,18 +24,6 @@
    "url": "https://files.terra-archive.net/assets/tl/stage.json?v=dddc5669bbfec7c2",
    "label": "작전 — 이름·설명 — 공식 한국어 5,248 + 비공식 번역 302",
    "hash": "dddc5669bbfec7c2"
-  },
-  {
-   "file": "voice.json",
-   "url": "https://files.terra-archive.net/assets/tl/voice.json?v=29cce38855261d52",
-   "label": "오퍼 보이스 대사 — 제목·대사 — 공식 한국어 16,043 + 비공식 번역 556",
-   "hash": "29cce38855261d52"
-  },
-  {
-   "file": "record.json",
-   "url": "https://files.terra-archive.net/assets/tl/record.json?v=95e98fb4125010b5",
-   "label": "오퍼 기록·프로필 산문 (비공식 번역)",
-   "hash": "95e98fb4125010b5"
   },
   {
    "file": "ra.json",
