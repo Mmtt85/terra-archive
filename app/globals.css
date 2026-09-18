@@ -1921,13 +1921,8 @@ legend {
 .operator-grid.mini .portrait {
   aspect-ratio: 4 / 5;
 }
-/* 절반 카드는 호버 없이도 직군·이름을 보여준다 — 흑백 얼굴은 알아보기 어렵다 */
 .operator-grid.mini .card-reveal {
-  grid-template-rows: auto 1fr;
-  padding: 12px 7px 6px;
-}
-.operator-grid.mini .card-more {
-  opacity: 1;
+  padding: 9px 7px 5px;
 }
 .operator-grid.mini .tags {
   display: none;
@@ -1936,10 +1931,8 @@ legend {
   top: 6px;
   left: 7px;
 }
-.operator-grid.mini .card-more h3 {
-  margin-top: 1px;
-  font-size: 11px;
-  line-height: 1.25;
+.operator-grid.mini .card-reveal h3 {
+  font-size: 10.5px;
 }
 /* 절반 폭 카드에선 아바타가 88%면 왼쫑 위 성급·직군 칩을 덮는다 */
 .operator-grid.mini .portrait img {
@@ -1955,12 +1948,9 @@ legend {
 .operator-grid.mini .portrait-meta span {
   font-size: 8px;
 }
-.operator-grid.mini .plate-eyebrow {
-  margin-bottom: 1px;
-}
-.operator-grid.mini .plate-eyebrow b {
-  font-size: 8.5px;
-  letter-spacing: 0.6px;
+.operator-grid.mini .portrait-meta b {
+  font-size: 8px;
+  letter-spacing: 0.5px;
 }
 /* 스트립 제목이 이미 '미실장'이라고 말한다 — 카드마다 또 붙일 이유가 없다
    (사용자 지적 2026-09-16). 미래시를 켜면 본 그리드로 돌아가 배지가 다시 붙는다. */
@@ -2079,16 +2069,36 @@ legend {
   position: relative;
   overflow: hidden;
 }
-/* 성급 별만 초상 왼쪽 위에 얹는다 — 아바타는 오른쫑 아래로 앉히므로 서로 안 겹친다.
-   직군은 명판 눈썹(.plate-eyebrow)으로 내렸다: 칩까지 올리니 아바타 머리에 겹쳤다. */
+/* 위 줄 — 성급 별 + 직군, 초상 왼쪽 위. 아바타가 위까지 차오르므로 그 뒤에 얇은 어두운
+   스크림(.portrait::before)을 깔아 글자가 머리카락 위에서도 읽히게 한다. */
+.portrait::before {
+  content: "";
+  z-index: 2;
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 46px;
+  background: linear-gradient(180deg, #0e1215c4, #0e121500);
+  pointer-events: none;
+}
 .portrait-meta {
   z-index: 3;
   position: absolute;
-  top: 10px;
-  left: 11px;
+  top: 9px;
+  left: 10px;
+  right: 8px;
   align-items: center;
   gap: 7px;
   display: flex;
+}
+.portrait-meta b {
+  color: #e6ebee;
+  font: 800 10px monospace;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  text-shadow: 0 1px 4px #000c;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 /* 별 색은 **성급별로** 나눈다 (사용자 요청 2026-09-16) — 게임에서 오퍼를 뽑을 때 나오는
    그 색이다. 전부 같은 금색이면 별 개수를 하나하나 세야 해서 분간이 안 된다.
@@ -2116,7 +2126,7 @@ legend {
   -webkit-background-clip: text;
   background-clip: text;
 }
-/* 아래 패널 — 접힌 상태엔 직군 한 줄만, 펼치면 grid 행이 0fr→1fr 로 열리며 이름·소속·
+/* 아래 패널 — 접힌 상태엔 이름 한 줄만, 펼치면 grid 행이 0fr→1fr 로 열리며 소속·출신·종족·
    태그가 올라온다. 배경은 늘 어두운 그라데이션(패널은 두 테마 모두 어둡다 — 아바타 위에
    글자를 얹어야 하므로). 윗선이 라임 헤어라인이다. */
 .card-reveal {
@@ -2125,7 +2135,7 @@ legend {
   inset: auto 0 0 0;
   display: grid;
   grid-template-rows: auto 0fr;
-  padding: 18px 10px 7px;
+  padding: 13px 10px 7px;
   background: linear-gradient(180deg, #0e121500, #0e1215d9 34%, #0e1215f0);
   border-top: 1px solid color-mix(in srgb, var(--lime) 72%, #0000);
   transition:
@@ -2138,30 +2148,24 @@ legend {
   opacity: 0;
   transition: opacity 0.2s ease 0.06s;
 }
-.plate-eyebrow {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.plate-eyebrow b {
-  color: #d5dce0;
-  font: 800 10px monospace;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-}
-.card-more h3 {
+/* 이름 — 접힌 채엔 한 줄 말줌표, 펼치면(호버·꾹·포커스) 두 줄까지 풀린다 */
+.card-reveal h3 {
   color: #f6f7f3;
-  letter-spacing: -0.4px;
-  margin: 3px 0 0;
-  font-size: 14px;
+  letter-spacing: -0.3px;
+  margin: 0;
+  font-size: 12.5px;
   font-weight: 800;
-  line-height: 1.2;
+  line-height: 1.25;
   word-break: keep-all;
+  white-space: nowrap;
   overflow: hidden;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  text-overflow: ellipsis;
 }
+@media (hover: hover) {
+  .operator-card:hover .card-reveal h3 { white-space: normal; }
+}
+.operator-card.peek .card-reveal h3,
+.operator-card:focus-visible .card-reveal h3 { white-space: normal; }
 .portrait-facts {
   margin-top: 4px;
   display: flex;
@@ -2222,20 +2226,17 @@ legend {
 .sort-direction:hover {
   border-color: var(--border-hover);
 }
-/* 아바타가 초상 칸을 거의 다 먹는다 — 얼굴이 주인공. 왼콽 가장자리는 마스크로 녹인다 */
+/* 아바타 — 카드 폭을 꽉 채워 **위에 붙인다**. 종전 '오른쪽 아래 88%' 는 정사각 아바타가
+   높이에 잡혀 위에 빈 잉크가 50px 남았다(사용자 지적). 정사각이라 아래가 남는데, 그 자리는
+   이름 패널이 덮는다. */
 .portrait img {
-  z-index: 2;
+  z-index: 1;
   object-fit: contain;
-  object-position: right bottom;
+  object-position: center top;
+  width: 100%;
   height: 100%;
-  width: auto;
-  max-width: 88%;
   position: absolute;
-  top: 0;
-  bottom: 0;
-  right: 4px;
-  -webkit-mask-image: linear-gradient(90deg, #0000, #000 18%);
-  mask-image: linear-gradient(90deg, #0000, #000 18%);
+  inset: 0;
 }
 .name-line {
   justify-content: space-between;
@@ -11160,11 +11161,11 @@ html.dark .story-card:hover .story-thumb img {
   width: max-content;
   max-width: 195%;
 }
-.plate-eyebrow b,
-.plate-eyebrow .future-badge {
+.portrait-meta b,
+.portrait-meta .future-badge {
   white-space: nowrap;
 }
-.plate-eyebrow .future-badge {
+.portrait-meta .future-badge {
   margin-left: 0;
   padding: 2px 5px;
   font-size: 10px;
