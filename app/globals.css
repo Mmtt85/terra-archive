@@ -2079,9 +2079,11 @@ legend {
    얼굴 뒤로 깐다. 광은 --accent 를 흰색과 조금 섞은 것 — 채도가 낮은 accent 그대로는
    어두운 바탕에서 안 보인다. 카드 = 초상 하나라 높이는 비율로 잡는다. */
 .portrait {
+  /* 테마를 따른다 (사용자 지적 2026-09-18 "라이트모드일때는 배경이 검은게 아니라 라이트모드
+     색에 맞춰줘야지"). 직군색 광은 라이트에선 종이에, 다크에선 흰빛에 섞어야 보인다. */
   background:
-    radial-gradient(120% 95% at 76% 104%, color-mix(in srgb, var(--accent) 82%, #fff) 0, #0000 64%),
-    linear-gradient(180deg, #252d32, #171d21 74%);
+    radial-gradient(120% 95% at 76% 104%, color-mix(in srgb, var(--accent) 34%, var(--white)) 0, #0000 64%),
+    linear-gradient(180deg, var(--bg-soft), var(--white) 74%);
   aspect-ratio: 5 / 6;
   /* **2행 그리드**: 위는 얼굴, 아래는 이름 패널. 패널이 내용만큼 자라면 얼굴 행(1fr)이
      그만큼 줄고, 얼굴은 아래 정렬이라 **밑변이 늘 라임 선에 붙는다** (사용자 확정
@@ -2101,7 +2103,7 @@ legend {
   position: absolute;
   inset: 0 0 auto 0;
   height: 46px;
-  background: linear-gradient(180deg, #0e1215c4, #0e121500);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--white) 88%, #0000), #0000);
   pointer-events: none;
 }
 .portrait-meta {
@@ -2115,11 +2117,10 @@ legend {
   display: flex;
 }
 .portrait-meta b {
-  color: #e6ebee;
+  color: var(--ink2);
   font: 800 10px monospace;
   letter-spacing: 0.8px;
   text-transform: uppercase;
-  text-shadow: 0 1px 4px #000c;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2128,9 +2129,8 @@ legend {
    그 색이다. 전부 같은 금색이면 별 개수를 하나하나 세야 해서 분간이 안 된다.
    1~3성 흰색 · 4성 푸른색 · 5성 금색 · 6성 살짝 무지갯빛 오렌지. */
 .portrait-meta span {
-  color: #f2f5f7;
+  color: var(--ink2);
   letter-spacing: -1px;
-  text-shadow: 0 1px 5px #0008;
   font-size: 11px;
 }
 .portrait-meta span[data-rarity="4"] {
@@ -2150,6 +2150,31 @@ legend {
   -webkit-background-clip: text;
   background-clip: text;
 }
+/* 다크에선 얼굴 위에 글자가 얹히므로 그림자를 돌려준다 (라이트는 종이 바탕이라 불필요) */
+html.dark .portrait-meta span,
+html.dark .portrait-meta b {
+  text-shadow: 0 1px 5px #0008;
+}
+/* 라이트 모드: 금색(5성)·연보라(4성) 별이 종이 위에서 날아간다 (사용자 지적 2026-09-18).
+   같은 색 계열을 유지하되 명도를 낮추고, 옅은 그림자로 배경에서 띄운다. */
+:root:not(.dark) .portrait-meta span {
+  text-shadow: 0 1px 2px #0000002e;
+}
+:root:not(.dark) .portrait-meta span[data-rarity="4"] {
+  color: #5468c4;
+}
+:root:not(.dark) .portrait-meta span[data-rarity="5"] {
+  color: #bd8a12;
+}
+:root:not(.dark) .portrait-meta span[data-rarity="6"] {
+  filter: drop-shadow(0 1px 2px #00000038) saturate(1.1) brightness(0.92);
+}
+html.dark .card-reveal h3 {
+  text-shadow: 0 1px 8px #0006;
+}
+html.dark .tags-track > span {
+  border-color: #ffffff2c;
+}
 /* 아래 패널 — 접힌 상태엔 이름 한 줄만, 펼치면 grid 행이 0fr→1fr 로 열리며 소속·출신·종족·
    태그가 올라온다. 배경은 늘 어두운 그라데이션(패널은 두 테마 모두 어둡다 — 아바타 위에
    글자를 얹어야 하므로). 윗선이 라임 헤어라인이다. */
@@ -2161,7 +2186,7 @@ legend {
      그만큼 위 얼굴 행이 줄어든다. */
   grid-template-rows: 16px 0fr;
   padding: 8px 10px 7px;
-  background: linear-gradient(180deg, #0e121500, #0e1215d9 34%, #0e1215f0);
+  background: linear-gradient(180deg, #0000, color-mix(in srgb, var(--white) 88%, #0000) 34%, var(--white));
   border-top: 1px solid color-mix(in srgb, var(--lime) 72%, #0000);
   transition:
     height 0.28s ease,
@@ -2186,7 +2211,7 @@ legend {
      물린다. 여긴 overflow:hidden 이라 둥근 모서리로 글자가 깎인다 — 끈다. */
   border-radius: 0;
   container-type: inline-size;
-  color: #f6f7f3;
+  color: var(--ink);
   letter-spacing: -0.3px;
   margin: 0;
   font-size: 12.5px;
@@ -2222,7 +2247,7 @@ legend {
   display: flex;
   align-items: baseline;
   gap: 5px;
-  color: #c3ccd1;
+  color: var(--ink3);
   font-size: 10px;
   font-weight: 700;
   line-height: 1.4;
@@ -2232,7 +2257,7 @@ legend {
 .portrait-facts i {
   flex: none;
   font-style: normal;
-  color: #8a969d;
+  color: var(--muted);
   background: #0000;
   padding: 0;
   font: 700 8.5px monospace;
@@ -2294,14 +2319,14 @@ legend {
   padding: 16px 13px 0;
   /* 양옆·위 가장자리를 배경에 녹인다 — 잘린 네모가 아니라 스며든 것처럼 보이게.
      밑변은 **건드리지 않는다**: 라임 선과 맞닿는 자리라 흐리면 선이 뜬다.
-     퍼센트는 패딩까지 포함한 박스 기준이라(좌우 13px = 약 8%) 실제로 얼굴에 닿는 건
-     그 바깥 몇 px 뿐이다 — 더 키우면 인물이 녹아 사라진다. */
+     퍼센트는 패딩까지 포함한 박스 기준이라(좌우 13px = 약 8%) 앞의 8%는 패딩에서 소모된다 —
+     15% 로 뒀더니 얼굴엔 6px 남짓만 닿아 "사라졌다"는 소리를 들었다(2026-09-18). 26% 다. */
   -webkit-mask-image:
-    linear-gradient(90deg, #0000, #000 15%, #000 85%, #0000),
-    linear-gradient(180deg, #0000, #000 16%);
+    linear-gradient(90deg, #0000, #000 26%, #000 74%, #0000),
+    linear-gradient(180deg, #0000, #000 24%);
   mask-image:
-    linear-gradient(90deg, #0000, #000 15%, #000 85%, #0000),
-    linear-gradient(180deg, #0000, #000 16%);
+    linear-gradient(90deg, #0000, #000 26%, #000 74%, #0000),
+    linear-gradient(180deg, #0000, #000 24%);
   -webkit-mask-composite: source-in;
   mask-composite: intersect;
 }
@@ -2359,9 +2384,9 @@ legend {
    묶여 보인다** — 게다가 래퍼가 첫 자식이라 라임 배경까지 먹는다 (사용자 지적 2026-09-18). */
 .tags-track > span {
   background: #0000;
-  border: 1px solid #ffffff2c;
+  border: 1px solid var(--line);
   border-radius: 3px;
-  color: #dfe5e8;
+  color: var(--ink2);
   padding: 2px 5px;
   font-size: 10px;
   font-weight: 700;
@@ -2372,7 +2397,8 @@ legend {
 .tags-track > span:first-child {
   border-color: color-mix(in srgb, var(--lime) 75%, #0000);
   background: color-mix(in srgb, var(--lime) 14%, #0000);
-  color: var(--lime);
+  /* 라임 원색은 흰 바탕에서 1.9:1 이라 안 읽힌다 — 잉크를 섞어 라이트에선 짙은 올리브로 */
+  color: color-mix(in srgb, var(--lime) 60%, var(--ink));
 }
 /* ⚠ backdrop-filter 금지 (사용자 지적 2026-07-28: "모달에서 드래그로 문자 블록 씌울 때
    이상하게 느리고 반응이 느림"). 원인 확정 — 선택 영역이 바뀔 때마다 전체 화면 블러가 다시
@@ -2616,11 +2642,14 @@ legend {
   outline: 2px solid var(--lime);
   outline-offset: 2px;
 }
+/* 헤더 높이는 **제목 쪽 내용이 정한다**(종전 min-height 150px 폐기). 글자 크기·여백을
+   줄여 175px → 90px 안팎으로 절반이 됐다 (사용자 요청 2026-09-18). 섬네일은 왼쪽 96px
+   열에 아래 정렬 — 위가 남아도 헤더 배경이 그대로 이어져 빈칸으로 안 보인다. */
 .modal-hero {
   color: #fff;
   background: linear-gradient(120deg, var(--accent), #151b1e);
-  grid-template-columns: 160px 1fr;
-  min-height: 150px;
+  grid-template-columns: 96px 1fr;
+  min-height: 0;
   display: grid;
 }
 @supports (color: color-mix(in lab, red, red)) {
@@ -2635,26 +2664,42 @@ legend {
 .modal-hero {
   overflow: hidden;
 }
+/* ⚠ 섬네일에 **제 배경을 주지 않는다** — 얼굴은 정사각이라 헤더가 조금만 높아도 위가 남는데,
+   거기에 헤더와 다른 그라데이션이 깔려 "이유 없는 빈칸"으로 보였다(사용자 지적 2026-09-18).
+   배경을 빼면 남는 자리는 그냥 헤더 배경이라 이어져 보인다. */
 .modal-hero > img {
   object-fit: contain;
-  object-position: right bottom;
-  background: linear-gradient(135deg, var(--accent), #171d20);
+  object-position: center bottom;
+  background: none;
   width: 100%;
   height: 100%;
-  min-height: 150px;
-}
-@supports (color: color-mix(in lab, red, red)) {
-  .modal-hero > img {
-    background: linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--accent) 64%, #222),
-      #171d20
-    );
-  }
+  min-height: 0;
+  /* 카드와 같은 처리 — 좌·우·위 세 변을 헤더 배경에 녹인다. 밑변은 헤더와 본문의 경계라
+     그대로 둔다 (사용자 지적 2026-09-18: 오른쪽·위만 되어 있었다). */
+  -webkit-mask-image:
+    linear-gradient(90deg, #0000, #000 22%, #000 78%, #0000),
+    linear-gradient(180deg, #0000, #000 24%);
+  mask-image:
+    linear-gradient(90deg, #0000, #000 22%, #000 78%, #0000),
+    linear-gradient(180deg, #0000, #000 24%);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
 }
 .modal-title-block {
   align-self: center;
-  padding: 16px 56px 16px 24px;
+  padding: 9px 52px 9px 18px;
+}
+/* 성급·직군을 같은 줄로 흘린다 — 종전엔 네 덩이가 세로로 쌓여 헤더가 175px 이었다 */
+.modal-title-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 14px;
+  row-gap: 1px;
+}
+.modal-title-main > .modal-kicker,
+.modal-title-main > .modal-name-row {
+  flex-basis: 100%;
 }
 .modal-kicker,
 .detail-no {
@@ -2664,14 +2709,14 @@ legend {
 }
 .modal-title-block h2 {
   letter-spacing: -0.06em;
-  margin: 6px 0 5px;
-  font-size: clamp(20px, 2.6vw, 30px);
+  margin: 2px 0 1px;
+  font-size: clamp(18px, 2vw, 23px);
   line-height: 1.05;
 }
 .modal-rarity {
   color: #f0c34c;
   letter-spacing: -2px;
-  font-size: 15px;
+  font-size: 13px;
 }
 .modal-rarity span {
   color: #d8dddf;
@@ -2680,20 +2725,21 @@ legend {
   font: 700 12px monospace;
 }
 .class-line {
-  align-items: center;
-  gap: 11px;
-  margin-top: 10px;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 0;
   display: flex;
 }
+/* 직군과 세부직군을 위아래가 아니라 **옆으로** 둔다 (한 줄 아낀다) */
 .class-line b {
-  font-size: 15px;
-  display: block;
+  font-size: 13.5px;
+  display: inline;
 }
 .class-line small {
   color: #c8ced0;
-  margin-top: 3px;
-  font-size: 12.5px;
-  display: block;
+  margin: 0 0 0 7px;
+  font-size: 11.5px;
+  display: inline;
 }
 .modal-scroll {
   overscroll-behavior: contain;
@@ -4664,15 +4710,15 @@ legend {
   /* 높이 계산은 --modal-pad·--modal-top으로 기본 규칙이 이미 처리한다 — 여기서 max-height를
      다시 잡으면(종전 `100dvh - 20px`) 위 여백 몫이 빠져 백드롭에 스크롤이 생긴다. */
   .modal-hero {
-    grid-template-columns: 110px 1fr;
-    min-height: 110px;
+    grid-template-columns: 84px 1fr;
+    min-height: 0;
   }
   .modal-hero > img {
     height: 100%;
-    min-height: 110px;
+    min-height: 0;
   }
   .modal-title-block {
-    padding: 12px 48px 12px 16px;
+    padding: 8px 46px 8px 14px;
   }
   .modal-title-block h2 {
     font-size: 20px;
