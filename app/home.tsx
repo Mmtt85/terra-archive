@@ -2893,12 +2893,67 @@ function ModalRail({ scrollRef }: { scrollRef: React.RefObject<HTMLDivElement | 
 
 // 관련 오퍼 — 상세끼리 서로 링크한다 (2026-08-06). 종전엔 상세가 목록에서만 링크돼
 // 크롤 깊이가 목록→상세 한 단계뿐이었고, 페이지끼리의 관련성 신호도 없었다.
-// 같은 진영·같은 세부 직군 두 갈래로만 — 임의로 늘리면 페이지마다 링크 뭉치가 커진다.
+//
+// 갈래는 **다른 버전 → 콜라보 → 진영(전부) → 세부 직군** 순이다 (2026-09-18 전수조사로 확정,
+// 사용자 요청 "이런류의 건이 되게 많을거같은데 전수조사 함 해봐"). 실측 결과 페이지당 링크는
+// 평균 15개·최대 31개, 줄은 최대 4개다.
 const RELATED_MAX = 10;
+// 진영이라기보다 사실상 전원 소속이라, 줄을 만들면 59명에게 **똑같은 ★6 열 명**이 뜬다. 뺀다.
+const GENERIC_FACTIONS = new Set(["로도스 아일랜드"]);
+// 콜라보는 전용 진영이 있는 쪽(S.E.E.S.·Ave Mujica·라이오스 파티)과 없는 쪽이 갈린다.
+// 없는 쪽은 **원본 오퍼의 진영을 물려받아** 서로 남남이 된다 — 몬헌 6명이 작전팀 A4조와
+// 예비작전팀 A6조로 찢어져 있었다. 그래서 별칭의 오퍼레이터 넘버 접두로 따로 묶는다.
+// ⚠ 접두를 전면 적용하면 안 된다 — PA(예비작전팀)·YD(염)처럼 대부분은 그냥 소속 코드라
+//   이미 진영으로 묶여 있다. 콜라보만 화이트리스트로 든다.
+const COLLAB_CODES: Record<string, string> = { MH: "몬스터 헌터" };
+const collabOf = (o: Operator) => {
+  for (const a of o.aliases ?? []) {
+    const m = /^([A-Z]{2,4})\d{2}$/.exec(a);
+    if (m && COLLAB_CODES[m[1]]) return m[1];
+  }
+  return "";
+};
+/** id 코드(`char_<번호>_<코드>`)의 끝 숫자를 떼면 원본과 같아진다 — catap2 → catap.
+ *  다만 이것만으로는 샌다: 키린R 야토는 `yato2` 인데 원본 야토는 `nblade` 다. */
+const baseCodeOf = (o: Operator) => /^char_\d+_(.+)$/.exec(o.id)?.[1].replace(/\d+$/, "") ?? o.id;
+// 언어판마다 `name` 과 `aliases` 가 맞바뀌지만 **영문 표기는 세 판 모두에 있다**
+// (ko/ja 데이터의 aliases 에 영문 이름이 들어 있다). 알트 판정을 언어와 무관하게 하려고
+// 이걸 기준으로 쓴다 — 이름으로 직접 맞추면 일본어에서 `グレイ ← レイ`, `プリン ← リン`
+// 같은 오탐이 쏟아진다 (띄어쓰기가 없어 경계를 못 잡는다, 2026-09-18 3개 언어 실측).
+// 오퍼레이터 넘버(A41·MH02)와 내부 코드(nblade·yato2)는 영문 이름이 아니므로 뺀다.
+const EN_NAME = /^[A-Z][A-Za-z0-9'’\-. ]*$/;
+const EN_CODE = /^[A-Za-z]{1,4}\d{1,3}$/;
+const enNameOf = (o: Operator) => {
+  if (EN_NAME.test(o.name) && !EN_CODE.test(o.name)) return o.name;
+  for (const a of o.aliases ?? []) if (EN_NAME.test(a) && !EN_CODE.test(a)) return a;
+  return "";
+};
 function RelatedOperators({ operator, operators, onSelect }: {
   operator: Operator; operators: Operator[]; onSelect?: (op: Operator) => void;
 }) {
   const { locale, t } = useI18n();
+  // 같은 인물의 다른 버전 묶기 — id 코드로 먼저 묶고, 어긋나는 짝은 영문 이름으로 잇는다.
+  // 알트의 영문 이름은 **원본 이름을 통째로 앞이나 뒤에 달고 있다**:
+  //   Ch'en the Dawnstreak ← Ch'en · Kirin R Yato ← Yato · Zinogre S Catapult ← Catapult
+  // 실측 34묶음 69명이고 ko/en/ja 세 판이 **같은 결과**를 낸다 (2026-09-18).
+  const family = useMemo(() => {
+    const fam = new Map<string, string>();
+    const byEn = new Map<string, Operator>();
+    for (const o of operators) {
+      fam.set(o.id, baseCodeOf(o));
+      const en = enNameOf(o);
+      if (en.length >= 3) byEn.set(en, o);
+    }
+    for (const o of operators) {
+      const w = enNameOf(o).split(" ").filter(Boolean);
+      if (w.length < 2) continue;
+      for (let n = w.length - 1; n >= 1; n--) {
+        const base = byEn.get(w.slice(0, n).join(" ")) ?? byEn.get(w.slice(w.length - n).join(" "));
+        if (base && base.id !== o.id) { fam.set(o.id, fam.get(base.id) ?? baseCodeOf(base)); break; }
+      }
+    }
+    return fam;
+  }, [operators]);
   const groups = useMemo(() => {
     // 미실장(중섭 선행)도 빼지 않는다 — 2026-09-04 규칙(숨기지 말고 흑백 `.fut-dim`)을
     // 여기만 안 따르고 있었다. 페르소나3 콜라보(S.E.E.S.)처럼 **소속이 전원 미실장인 진영**은
@@ -2910,12 +2965,20 @@ function RelatedOperators({ operator, operators, onSelect }: {
       .sort((a, b) => Number(!!a.unreleased) - Number(!!b.unreleased)
         || b.rarity - a.rarity || a.name.localeCompare(b.name, locale))
       .slice(0, RELATED_MAX);
-    const faction = operator.factions[0];
+    const mine = family.get(operator.id);
+    const collab = collabOf(operator);
     return [
-      { key: faction ?? "", label: faction, items: faction ? rank(operators.filter((o) => o.factions.includes(faction))) : [] },
+      // 같은 인물의 다른 버전이 제일 강한 관련성이라 맨 위 (첸 ↔ 첸 더 던스트릭 …)
+      { key: "alt", label: t("다른 버전"), items: rank(operators.filter((o) => family.get(o.id) === mine)) },
+      { key: `collab:${collab}`, label: collab ? t(COLLAB_CODES[collab]) : "",
+        items: collab ? rank(operators.filter((o) => collabOf(o) === collab)) : [] },
+      // 진영은 **전부** 돈다 — 종전엔 factions[0] 하나뿐이라 111명(25%)의 둘째 진영이 묻혔다
+      ...operator.factions.filter((f) => !GENERIC_FACTIONS.has(f)).map((f) => (
+        { key: f, label: f, items: rank(operators.filter((o) => o.factions.includes(f))) }
+      )),
       { key: operator.subProfession, label: operator.subProfession, items: rank(operators.filter((o) => o.subProfession === operator.subProfession)) },
     ].filter((g) => g.items.length > 0);
-  }, [operator, operators, locale]);
+  }, [operator, operators, family, locale, t]);
   if (groups.length === 0) return null;
   return (
     <section className="detail-section op-related" id="op-related" aria-label={t("관련 오퍼레이터")}>

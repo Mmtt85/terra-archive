@@ -2047,6 +2047,9 @@ const D: Record<string, Pair> = {
   "{ym} 예정": ["{ym} (est.)", "{ym} 予定"],
   "오퍼 목록으로": ["Back to operators", "オペレーター一覧へ"],
   "관련 오퍼레이터": ["Related operators", "関連オペレーター"],
+  // 관련 오퍼 갈래 라벨 — 진영·직군 이름은 데이터에서 번역돼 오고 이 둘만 UI 문구다
+  "다른 버전": ["Other versions", "別バージョン"],
+  "몬스터 헌터": ["Monster Hunter", "モンスターハンター"],
   "같은 테마의 다른 이야기": ["More from this theme", "同じテーマの他の物語"],
   // 상세 라우트가 내보내는 <title>과 같은 문구 (app/seo-story.ts TITLE)
   "{name} 스토리 요약 - 명일방주 | 테라 아카이브": ["{name} Story Summary - Arknights | Terra Archive", "{name} ストーリー要約 - アークナイツ | テラアーカイブ"],
