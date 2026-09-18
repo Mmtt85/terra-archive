@@ -1935,10 +1935,10 @@ legend {
 .operator-grid.mini .operator-card:hover .card-reveal,
 .operator-grid.mini .operator-card.peek .card-reveal,
 .operator-grid.mini .operator-card:focus-visible .card-reveal {
-  grid-template-rows: auto 0fr;
+  grid-template-rows: 13px 0fr;
 }
 .operator-grid.mini .card-reveal {
-  grid-template-rows: auto 0fr;   /* 이름 줄이 한 줄일 수도, 두 줄일 수도 */
+  grid-template-rows: 13px 0fr;
   padding: 7px 7px 6px;
 }
 .operator-grid.mini .tags {
@@ -1948,15 +1948,10 @@ legend {
   top: 6px;
   left: 7px;
 }
-/* 미니 카드 이름은 길면 **두 줄로 흘린다** — 한 줄 말줌표로 자르면 누군지 모른다
-   (사용자 요청 2026-09-18 "이름이 너무 길어서 짤리는경우는 자동으로 흘러가는 방식으로").
-   패널이 그만큼 자라고 얼굴 행이 줄지만, 미니는 원래 얼굴보다 이름이 중요하다. */
+/* 미니 카드 이름도 한 줄 마퀴 (사용자 요청 2026-09-18 "미니카드도 이름이 너무 길어서
+   짤리는경우는 자동으로 흘러가는 방식으로") */
 .operator-grid.mini .card-reveal h3 {
   font-size: 10.5px;
-  white-space: normal;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
 }
 /* 절반 폭 카드는 여백도 절반. 밑변은 여기서도 --plate 에 붙는다 */
 
@@ -2178,8 +2173,19 @@ legend {
   opacity: 0;
   transition: opacity 0.2s ease 0.06s;
 }
-/* 이름 — 접힌 채엔 한 줄 말줌표, 펼치면(호버·꾹·포커스) 두 줄까지 풀린다 */
+/* 이름 — 한 줄. 넘치면 말줌표로 두었다가, 펼치면 마퀴로 흐른다.
+   ⚠ 안쪽 span 은 **inline-block 이어야 한다** — 인라인 박스엔 transform 이 안 먹어서
+   애니메이션이 조용히 아무 일도 안 한다(한 번 당했다). */
+.card-reveal h3 > span {
+  /* ⚠ max-width 를 걸지 말 것 — span 이 상자 폭에 갇히면 넘칠 수가 없어 이동량
+     min(0px, 100cqw - 100%) 이 늘 0 이 된다(이것도 한 번 당했다). */
+  display: inline-block;
+}
 .card-reveal h3 {
+  /* 전역 리셋 `:where(button, input, select, textarea, kbd, a, h3)` 이 h3 에 --r-sm 을
+     물린다. 여긴 overflow:hidden 이라 둥근 모서리로 글자가 깎인다 — 끈다. */
+  border-radius: 0;
+  container-type: inline-size;
   color: #f6f7f3;
   letter-spacing: -0.3px;
   margin: 0;
@@ -2189,13 +2195,19 @@ legend {
   word-break: keep-all;
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
-@media (hover: hover) {
-  .operator-card:hover .card-reveal h3 { white-space: normal; }
+/* **호버와 무관하게 늘 흐른다** (사용자 요청 2026-09-18 "마우스 오버 굳이 안해도 너무길어서
+   한번에 다 안보이는 문자열들은 전부다 마퀴"). 넘치지 않으면 이동량이 0 이라 가만히 있고,
+   화면 밖 카드는 `content-visibility: auto` 덕에 렌더 자체를 건너뛴다.
+   3s — 7s 는 "너무 느리다"는 지적을 받았다. */
+.card-reveal h3 > span,
+.tags-track {
+  animation: card-flow 3.4s linear 0.6s infinite;
 }
-.operator-card.peek .card-reveal h3,
-.operator-card:focus-visible .card-reveal h3 { white-space: normal; }
+@media (prefers-reduced-motion: reduce) {
+  .card-reveal h3 > span,
+  .tags-track { animation: none !important; }
+}
 .portrait-facts {
   margin-top: 3px;
   display: flex;
@@ -2304,18 +2316,31 @@ legend {
   font-size: 11.5px;
   font-style: normal;
 }
-/* 태그는 오른쪽에서 잘리지 말고 **아랫줄 왼쪽으로 흘러간다** (사용자 요청 2026-09-18
-   "너무길어서 오른쪽 짤릴거 같으면 자동으로 왼쪽으로 흘러가는 방식"). 두 줄까지만 —
-   그 아래는 패널이 얼굴을 너무 많이 먹는다. */
+/* ── 넘치는 한 줄은 흐른다 (마퀴) ────────────────────────────────────────────
+   사용자 정정 2026-09-18: "이름이나 태그가 너무 길어서 짤리는 경우는 한 줄로 하고
+   자동으로 왼쪽으로 점점점점 흘러가는 방식". 줄바꿈으로 갔다가 되돌린 자리다.
+   **넘칠 때만 움직인다** — 이동량이 min(0px, 100cqw - 100%) 이라 내용이 상자보다 좁으면
+   0 이 된다(100cqw = 상자 폭, 100% = 흐르는 요소 제 폭). JS 없이 되는 유일한 방법.
+   ⚠ 애니메이션은 **펼친 카드에서만** 돈다 — 444장이 늘 흐르면 프레임을 갉아먹는다. */
+/* 한 방향으로 **일정한 속도**(linear)로 쭉 흘렀다가 처음으로 되돌아온다 — 왕복(alternate)
+   도, 가속(ease)도 쓰지 않는다 (사용자 지시 2026-09-18). 앞뒤 짧은 정지는 읽을 틈이다. */
+@keyframes card-flow {
+  0%, 14% { transform: translateX(0); }
+  86%, 100% { transform: translateX(min(0px, calc(100cqw - 100%))); }
+}
 .tags {
-  flex-wrap: wrap;
-  gap: 4px;
+  container-type: inline-size;
   margin-top: 5px;
-  max-height: 46px;
-  display: flex;
   overflow: hidden;
 }
-.tags span {
+.tags-track {
+  gap: 4px;
+  white-space: nowrap;
+  display: inline-flex;
+}
+/* ⚠ `.tags span` 으로 쓰면 마퀴 래퍼(.tags-track)까지 칩으로 칠해져 **태그 전체가 상자로
+   묶여 보인다** — 게다가 래퍼가 첫 자식이라 라임 배경까지 먹는다 (사용자 지적 2026-09-18). */
+.tags-track > span {
   background: #0000;
   border: 1px solid #ffffff2c;
   border-radius: 3px;
@@ -2327,7 +2352,7 @@ legend {
 /* 첫 태그(대표 컨셉)만 라임 — 카드에서 라임이 쓰이는 두 곳 중 하나.
    글자색은 라임을 잉크에 섞는다: 라이트에선 짙은 올리브(라임 원색은 흰 바탕에서 1.9:1로
    안 읽힌다), 다크에선 밝은 라임으로 알아서 갈린다. */
-.tags span:first-child {
+.tags-track > span:first-child {
   border-color: color-mix(in srgb, var(--lime) 75%, #0000);
   background: color-mix(in srgb, var(--lime) 14%, #0000);
   color: var(--lime);

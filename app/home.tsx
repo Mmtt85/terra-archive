@@ -2865,16 +2865,16 @@ function OperatorCard({ operator, index, onSelect }: { operator: Operator; index
         {visible && <img src={asset(operator.image)} alt={t("{name} 오퍼레이터", { name: operator.name })} width={180} height={180} decoding="async" />}
         {/* 아래 패널: 접힌 채엔 이름 한 줄, 펼치면 소속·출신·종족·컨셉 태그 */}
         <div className="card-reveal">
-          <h3>{operator.name}</h3>
+          {/* 길어서 넘치면 한 줄인 채 천천히 왼쪽으로 흐른다(마퀴) — 안쪽 span 이 움직인다 */}
+          <h3><span>{operator.name}</span></h3>
           <div className="card-more">
             <small className="portrait-facts">
               <span><i>{t("소속")}</i>{operator.faction}</span>
               <span><i>{t("출신")}</i>{operator.birthplace ?? t("불명")}</span>
               <span><i>{t("종족")}</i>{operator.race ?? t("불명")}</span>
             </small>
-            {/* 태그는 4개까지 — 카드에선 요약이면 충분하고, 더 넣으면 패널이 자라 얼굴을
-                너무 많이 먹는다(7개짜리가 있다). 전부는 상세 모달에 있다. */}
-            <div className="tags">{operator.concepts.slice(0, 4).map((tag) => <span key={tag}>{conceptName(locale, tag)}</span>)}</div>
+            {/* 태그도 한 줄 — 넘치면 줄바꿈이 아니라 흐른다(사용자 정정 2026-09-18) */}
+            <div className="tags"><span className="tags-track">{operator.concepts.map((tag) => <span key={tag}>{conceptName(locale, tag)}</span>)}</span></div>
           </div>
         </div>
       </div>
