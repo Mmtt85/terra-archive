@@ -3789,9 +3789,13 @@ html.dark .tags-track > span {
   grid-template-columns: 112px 1fr;
   display: grid;
 }
+/* 방 이름·해금 레벨은 오른쪽 설명이 길어도 **세로 가운데**에 (사용자 요청 2026-09-18) */
 .infra-list article > div {
   background: var(--accent);
   padding: 13px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 @supports (color: color-mix(in lab, red, red)) {
   .infra-list article > div {
