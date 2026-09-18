@@ -2204,7 +2204,7 @@ legend {
    안 넘치면 0ms 라 아예 돌지 않는다. */
 .card-reveal h3 > span,
 .tags-track {
-  animation: card-flow var(--flow-ms, 0ms) linear 0.6s infinite;
+  animation: card-flow var(--flow-ms, 0ms) linear infinite;
 }
 @media (prefers-reduced-motion: reduce) {
   .card-reveal h3 > span,
@@ -2326,9 +2326,12 @@ legend {
    ⚠ 애니메이션은 **펼친 카드에서만** 돈다 — 444장이 늘 흐르면 프레임을 갉아먹는다. */
 /* 한 방향으로 **일정한 속도**(linear)로 쭉 흘렀다가 처음으로 되돌아온다 — 왕복(alternate)
    도, 가속(ease)도 쓰지 않는다 (사용자 지시 2026-09-18). 앞뒤 짧은 정지는 읽을 틈이다. */
+/* 키프레임은 0→끝 **직선**만 그린다. 앞뒤 멈춤은 home.tsx 가 심는 `linear()` 이징의
+   평평한 구간이 맡는다 — 퍼센트 키프레임으로는 고정 시간(1초) 멈춤을 만들 수 없다
+   (지속시간이 글자마다 다르므로 퍼센트가 다 다른 초가 된다). */
 @keyframes card-flow {
-  0%, 10% { transform: translateX(0); }
-  90%, 100% { transform: translateX(min(0px, calc(100cqw - 100%))); }
+  from { transform: translateX(0); }
+  to { transform: translateX(min(0px, calc(100cqw - 100%))); }
 }
 .tags {
   container-type: inline-size;

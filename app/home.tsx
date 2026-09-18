@@ -231,6 +231,9 @@ export type Operator = {
 // ⚠ 직군 이름은 언어마다 다르므로 **jobCode**(언어 무관)로 잡는다.
 /** 마퀴가 흐르는 속도(px/초) — 글자 길이와 무관하게 이 값으로 고정된다 */
 const FLOW_PX_PER_SEC = 40;
+/** 흐르기 전후로 멈춰 서서 읽을 시간(ms). 끝에서 1초는 사용자 요청(2026-09-18). */
+const FLOW_HOLD_START = 600;
+const FLOW_HOLD_END = 1000;
 const JOB_HUE: Record<string, number> = {
   WARRIOR: 6,    // 가드 — 붉은계
   PIONEER: 36,   // 뱅가드 — 앰버
@@ -2841,8 +2844,16 @@ function OperatorCard({ operator, index, onSelect }: { operator: Operator; index
         const box = el.parentElement;
         if (!box) continue;
         const over = el.getBoundingClientRect().width - box.clientWidth;
-        // 앞뒤 10%씩은 읽을 틈이라 흐르는 구간이 80% — 그만큼 시간을 더 준다(×1.25)
-        el.style.setProperty("--flow-ms", over > 1 ? `${Math.round((over / FLOW_PX_PER_SEC) * 1250)}ms` : "0ms");
+        if (over <= 1) { el.style.setProperty("--flow-ms", "0ms"); el.style.animationTimingFunction = ""; continue; }
+        // 멈춤은 **고정 시간**(앞 0.6초·뒤 1초)이어야 하는데 키프레임 퍼센트는 지속시간에
+        // 비례해 늘어난다. 그래서 키프레임은 0→끝 직선으로 두고, 멈춤을 `linear()` 이징의
+        // 평평한 구간으로 만든다 — 퍼센트를 여기서 계산해 넣을 수 있는 유일한 자리다.
+        const travel = (over / FLOW_PX_PER_SEC) * 1000;
+        const total = FLOW_HOLD_START + travel + FLOW_HOLD_END;
+        const p1 = (FLOW_HOLD_START / total) * 100;
+        const p2 = ((FLOW_HOLD_START + travel) / total) * 100;
+        el.style.setProperty("--flow-ms", `${Math.round(total)}ms`);
+        el.style.animationTimingFunction = `linear(0 0%, 0 ${p1.toFixed(2)}%, 1 ${p2.toFixed(2)}%, 1 100%)`;
       }
     };
     measure();
