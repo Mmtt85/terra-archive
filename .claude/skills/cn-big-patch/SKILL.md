@@ -69,7 +69,7 @@ PY
 ## 2. 받는다
 
 ```bash
-python3 scripts/fetch-gamedata-cdn.py --server cn        # 14표 → .gamedata/cn_*.json
+python3 scripts/fetch-gamedata-cdn.py --server cn        # 17표 → .gamedata/cn_*.json
 ```
 
 절차·함정 전체는 **[`gamedata-pull`](../gamedata-pull/SKILL.md) 스킬**이 정본.

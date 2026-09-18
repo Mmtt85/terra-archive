@@ -54,7 +54,7 @@ PY
 python3 scripts/fetch-gamedata-cdn.py                  # kr 20표 → .gamedata/kr_*.json
 python3 scripts/fetch-gamedata-cdn.py --server jp      # 일섭 18표
 python3 scripts/fetch-gamedata-cdn.py --server en      # 글섭 18표
-python3 scripts/fetch-gamedata-cdn.py --server cn      # 중섭 14표 — **미래시 전용**
+python3 scripts/fetch-gamedata-cdn.py --server cn      # 중섭 17표 — **미래시 전용**
 python3 scripts/fetch-gamedata-cdn.py --tables activity_table,character_table   # 필요한 것만
 ```
 
@@ -103,7 +103,7 @@ python3 scripts/fbs-repair.py <표이름> --server <서버>             # → sc
 kr 것만 만들어 두면 jp·en은 중섭 스키마를 물다 실패한다.
 
 ⚠ **중섭은 스키마를 만들 필요가 없다.** 공개 스키마(`scripts/fbs/_cache/`, OpenArknightsFBS
-`main` 브랜치)가 **곧 중섭 현행판**이라 그대로 맞는다 — 2026-09-04 실측으로 14표 중
+`main` 브랜치)가 **곧 중섭 현행판**이라 그대로 맞는다 — 2026-09-04 실측(당시 14표 세트)으로
 13표가 손 안 대고 뜯렸다(나머지 1표는 예정된 `range_table` 폴백). 거꾸로 말하면
 **중섭에서 스키마가 어긋나면 공개 스키마가 아직 안 따라온 것**이니, 고치기 전에
 `rm -rf scripts/fbs/_cache` 로 최신판을 다시 받아 보는 게 먼저다.

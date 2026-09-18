@@ -244,7 +244,7 @@ const { term, set, clear, inputRef, inputProps } = useSearchInput();
 ```bash
 python3 scripts/fetch-gamedata-cdn.py --check      # 지금 CDN의 resVersion만 확인
 python3 scripts/fetch-gamedata-cdn.py              # kr 세트 → .gamedata/kr_*.json
-python3 scripts/fetch-gamedata-cdn.py --server cn  # 중섭(미래시) 14표
+python3 scripts/fetch-gamedata-cdn.py --server cn  # 중섭(미래시) 17표
 python3 scripts/fetch-gamedata-cdn.py --tables activity_table --server kr
 ```
 
