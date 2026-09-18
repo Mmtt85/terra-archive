@@ -2318,15 +2318,16 @@ html.dark .tags-track > span {
   object-position: center bottom;
   padding: 16px 13px 0;
   /* 양옆·위 가장자리를 배경에 녹인다 — 잘린 네모가 아니라 스며든 것처럼 보이게.
-     밑변은 **건드리지 않는다**: 라임 선과 맞닿는 자리라 흐리면 선이 뜬다.
+     밑변은 **짧게만**(마지막 8%) — 라임 선과 맞닿는 자리라 길게 흐리면 인물이 선 위에
+     떠 있는 것처럼 보인다 (사용자 요청으로 넣었다, 2026-09-18).
      퍼센트는 패딩까지 포함한 박스 기준이라(좌우 13px = 약 8%) 앞의 8%는 패딩에서 소모된다 —
      15% 로 뒀더니 얼굴엔 6px 남짓만 닿아 "사라졌다"는 소리를 들었다(2026-09-18). 26% 다. */
   -webkit-mask-image:
     linear-gradient(90deg, #0000, #000 26%, #000 74%, #0000),
-    linear-gradient(180deg, #0000, #000 24%);
+    linear-gradient(180deg, #0000, #000 24%, #000 92%, #0000);
   mask-image:
     linear-gradient(90deg, #0000, #000 26%, #000 74%, #0000),
-    linear-gradient(180deg, #0000, #000 24%);
+    linear-gradient(180deg, #0000, #000 24%, #000 92%, #0000);
   -webkit-mask-composite: source-in;
   mask-composite: intersect;
 }
@@ -2674,14 +2675,14 @@ html.dark .tags-track > span {
   width: 100%;
   height: 100%;
   min-height: 0;
-  /* 카드와 같은 처리 — 좌·우·위 세 변을 헤더 배경에 녹인다. 밑변은 헤더와 본문의 경계라
-     그대로 둔다 (사용자 지적 2026-09-18: 오른쪽·위만 되어 있었다). */
+  /* 카드와 같은 처리 — 네 변 모두 헤더 배경에 녹인다 (사용자 지적 2026-09-18:
+     처음엔 오른쪽·위만, 그다음엔 밑변이 빠져 있었다). */
   -webkit-mask-image:
     linear-gradient(90deg, #0000, #000 22%, #000 78%, #0000),
-    linear-gradient(180deg, #0000, #000 24%);
+    linear-gradient(180deg, #0000, #000 24%, #000 90%, #0000);
   mask-image:
     linear-gradient(90deg, #0000, #000 22%, #000 78%, #0000),
-    linear-gradient(180deg, #0000, #000 24%);
+    linear-gradient(180deg, #0000, #000 24%, #000 90%, #0000);
   -webkit-mask-composite: source-in;
   mask-composite: intersect;
 }
