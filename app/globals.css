@@ -7671,8 +7671,18 @@ html.dark .tags-track > span {
     justify-content: flex-end;
     /* 아래 margin-bottom 상쇄값과 짝이다 — 확장부 줄 높이를 33px로 못박아 둔다.
        (내용 자연 높이는 ko/en/ja · 761~1920px 전부 32.8px 로 같다.)
-       내용이 이보다 커지는 날이 오면 그 초과분만큼만 본문이 밀린다 — 안전한 쪽으로 어긋난다. */
-    min-height: 33px;
+       여닫기 애니메이션이 높이를 0↔33 으로 전환하므로 **확정값**이어야 한다
+       (auto 는 전환되지 않는다). 내용이 이보다 커지면 그만큼 삐져나온다. */
+    height: 33px;
+    opacity: 1;
+    visibility: visible;
+    /* 펼치기: 띠가 먼저 내려오고(0.24s) 버튼은 다 열린 뒤 뜬다 — 자라는 동안 버튼이
+       띠 밖으로 삐져나오는 걸 자르지 않고 가린다 (확장부에 overflow 를 걸면 이벤트·
+       방송 드롭다운이 통째로 잘린다 — 2026-07-26 회귀와 같은 함정). */
+    transition:
+      height 0.24s cubic-bezier(0.4, 0, 0.2, 1),
+      opacity 0.14s ease 0.16s,
+      visibility 0s;
   }
   .header-sub .header-sub-right {
     display: flex;
@@ -7693,9 +7703,26 @@ html.dark .tags-track > span {
     left: auto;
     right: 0;
   }
-  /* 접힘: 2줄(미래시·다크모드·언어)만 사라진다. 이벤트·공식방송은 1줄 소속이라 유지. */
+  /* 접힘: 2줄(미래시·다크모드·언어)만 사라진다. 이벤트·공식방송은 1줄 소속이라 유지.
+     ⚠ display:none 이 아니라 **높이 0**이다 — 여닫기를 전환하려면 박스가 남아 있어야 한다.
+     내용은 opacity 로 먼저 지우고(0.1s), 다 닫힌 뒤 visibility 로 끈다(0.32s = 0.08+0.24).
+     visibility:hidden 이라야 접힌 확장부가 탭 순서·스크린리더에서도 빠진다. */
   .site-header.collapsed .header-sub {
-    display: none;
+    height: 0;
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity 0.1s ease,
+      height 0.24s cubic-bezier(0.4, 0, 0.2, 1) 0.08s,
+      visibility 0s linear 0.32s;
+  }
+  /* 접혀도 헤더 높이는 종전 그대로(79px) — 확장부 줄이 (높이 0으로) 남아 있어 줄 간격
+     10px 이 하나 더 생기므로, 그만큼 아래 패딩에서 빼 준다 (14 → 4).
+     ⚠ row-gap 을 0으로 지우면 안 된다 — 900·1400·1440px 처럼 **1줄이 두 줄로 접히는 폭**
+       에서는 그 줄 사이 간격이기도 해서, 접힘 헤더가 10px 납작해지고 여닫을 때 본문이
+       10px 흔들렸다 (2026-09-19 실측). 패딩으로 빼면 1줄이 몇 줄이 되든 상쇄량이 같다. */
+  .site-header.collapsed {
+    padding-bottom: 4px;
   }
   /* 펼쳐도 **본문이 밀려 내려가지 않는다** (사용자 요청 2026-09-19).
      main.site-main 은 100dvh 세로 flex 이고 헤더는 그 첫 행이라, 헤더가 커진 만큼
@@ -7710,6 +7737,21 @@ html.dark .tags-track > span {
        동안에도 상쇄가 걸리면 본문이 화면 위로 끌려 올라간다. */
   .site-header:not(.collapsed):not(.dragging) {
     margin-bottom: -43px;
+  }
+  /* 여닫기 애니메이션 (사용자 요청 2026-09-19) — **본문은 한 픽셀도 움직이지 않는다.**
+     확장부 높이(0↔33) · 아래 패딩(4↔14) · 상쇄 margin(0↔-43)이 **같은 곡선·같은 시간**으로
+     움직이므로, 진행률 p 에서 헤더는 접힘높이 + 43p, 상쇄는 -43p 로 흐름 높이가 늘 같다.
+     셋 중 하나라도 타이밍이 어긋나면 그 차이가 그대로 본문 떨림이 된다 — 같이 고칠 것.
+     닫을 때는 버튼이 먼저 사라지도록 0.08s 늦게 시작한다 (확장부 opacity 와 짝). */
+  .site-header:not(.dragging) {
+    transition:
+      padding-bottom 0.24s cubic-bezier(0.4, 0, 0.2, 1),
+      margin-bottom 0.24s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .site-header.collapsed:not(.dragging) {
+    transition:
+      padding-bottom 0.24s cubic-bezier(0.4, 0, 0.2, 1) 0.08s,
+      margin-bottom 0.24s cubic-bezier(0.4, 0, 0.2, 1) 0.08s;
   }
   /* 접기 핸들은 PC에선 오른쪽(헤더 콘텐츠 패딩과 정렬) — 중앙은 이벤트 드롭다운과 동선이
      겹친다 (사용자 확정 2026-07-22). 모바일은 중앙 유지. */
