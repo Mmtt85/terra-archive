@@ -1919,18 +1919,26 @@ legend {
   content-visibility: visible;
 }
 .operator-grid.mini .portrait {
-  height: 72px;
+  aspect-ratio: 4 / 5;
+}
+/* 절반 카드는 호버 없이도 직군·이름을 보여준다 — 흑백 얼굴은 알아보기 어렵다 */
+.operator-grid.mini .card-reveal {
+  grid-template-rows: auto 1fr;
+  padding: 12px 7px 6px;
+}
+.operator-grid.mini .card-more {
+  opacity: 1;
+}
+.operator-grid.mini .tags {
+  display: none;
 }
 .operator-grid.mini .portrait-meta {
   top: 6px;
   left: 7px;
 }
-.operator-grid.mini .card-plate {
-  padding: 6px 7px;
-  min-height: 0;
-}
-.operator-grid.mini .card-plate h3 {
-  font-size: 11.5px;
+.operator-grid.mini .card-more h3 {
+  margin-top: 1px;
+  font-size: 11px;
   line-height: 1.25;
 }
 /* 절반 폭 카드에선 아바타가 88%면 왼쫑 위 성급·직군 칩을 덮는다 */
@@ -1959,9 +1967,8 @@ legend {
 .operator-grid.mini .future-badge {
   display: none;
 }
-/* 좁은 칸에선 소속·출신·종족과 컨셉 태그를 접는다 — 이름과 성급만 남긴다 */
-.operator-grid.mini .portrait-facts,
-.operator-grid.mini .card-body {
+/* 좁은 칸에선 소속·출신·종족을 접는다 — 이름·성급·직군만 남긴다 */
+.operator-grid.mini .portrait-facts {
   display: none;
 }
 @media (max-width: 1450px) {
@@ -1976,18 +1983,17 @@ legend {
 @media (max-width: 460px) {
   .operator-grid.mini { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
-/* ── 오퍼 카드 (2026-09-18 재설계, 사용자 요청 "사이트 톤에도 어울리고 누가봐도 예쁘다
-   생각들만큼") ──────────────────────────────────────────────────────────────
-   카드 전체가 **잉크색 한 덩어리**다 — 종전의 '어두운 초상 + 흰 몸통' 두 톤을 버렸다.
-   구성은 인게임 오퍼레이터 카드를 따른다: 어두운 상단 / 대각선으로 갈리는 직군색 하프톤
-   띠 / 경계에 **라임 헤어라인 한 줄**. 라임은 사이트 시그니처라 카드에서 딱 두 곳
-   (헤어라인·첫 태그)에만 쓴다 — 더 쓰면 시끄럽다. 직군색은 채도 14~24%로 눌러 먹색으로
-   읽히게 한다 (사용자 지적 "너무 형형색색"). 아바타는 왼쪽 가장자리를 마스크로 녹여
-   카드에 스며들게 한다.
-   ⚠ **껍데기·명판·태그는 사이트 토큰(--white/--ink/--line)을 쓴다** — 색을 박아 넣으면
-   라이트 모드에서 검은 직사각형 444장이 된다 (사용자 지적 2026-09-18). 초상 칸만 늘
-   어둡다(라임·하프톤이 살아야 한다). 그래서 라이트에선 '종이 카드에 어두운 사진',
-   다크에선 '잉크 한 덩어리'로 읽힌다. */
+/* ── 오퍼 카드 (2026-09-18 재설계 — 얼굴·성급·직군만, 나머지는 호버/꾹) ─────────────
+   카드에는 아바타·성급 별·직군만 보인다. 이름·소속·출신·종족·컨셉 태그는 마우스를
+   올리면(터치는 꾹 누르면) 카드가 살짝 커지며(scale 1.05) 아래에서 올라오는 패널
+   (.card-reveal)에 나온다 (사용자 제안). 종전 명판·태그 트레이는 걷어냈다 — 그리드
+   한 줄의 카드 높이가 제일 긴 카드에 맞춰지는데 명판이 남는 높이를 안 먹어 푸터가
+   위로 붙는 틈이 있었고, 글자 크기도 이질적이었다(사용자 지적).
+   초상 배경은 조용하게: 직군색은 얼굴 뒤 광으로만, 라임은 패널 윗선 한 줄. 인게임식
+   사선 띠·하프톤은 넣었다가 뺐다(얼굴과 경쟁만 한다) — 되살릴 생각이면 62ca61a7.
+   라임은 사이트 시그니처라 카드에서 딱 두 곳(패널 윗선·첫 태그)에만. 직군색은 채도
+   14~24%로 눌러 먹색으로 읽히게 한다. 이름은 링크 aria-label·img alt 에 남는다.
+   껍데기는 사이트 토큰(--white/--line)이라 라이트에서 검은 직사각형이 되지 않는다. */
 .operator-card {
   border: 1px solid var(--line);
   background: var(--white);
@@ -2000,7 +2006,7 @@ legend {
      자리높이를 205px로 잡는다 — 과대치를 넣으면 스크롤 중 접히며 재레이아웃이 폭주한다
      (roster-card가 210px→49px로 겪은 그 문제). */
   content-visibility: auto;
-  contain-intrinsic-size: auto 122px auto 236px; /* 2026-09-18 명판 레이아웃 실측 228~244px */
+  contain-intrinsic-size: auto 122px auto 190px; /* 초상 5:6 — 157px 폭에서 188px */
   /* 카드는 실제 <a>다 (크롤러용 내부 링크, 2026-08-06) — 링크 기본 스타일만 지운다 */
   color: inherit;
   text-decoration: none;
@@ -2014,11 +2020,44 @@ legend {
     box-shadow 0.2s,
     border-color 0.2s;
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
+  display: block;
+  position: relative;
+  /* 터치에서 꾹 누르면 우리가 패널을 여니, iOS 링크 미리보기·이미지 저장 시트는 막는다 */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+/* 펼침 — 마우스 호버(hover 가능한 기기만) · 키보드 포커스 · 터치 꾹(.peek, JS). 살짝
+   커지며 이웃 위로 올라오고, 패널의 grid 행이 0fr→1fr 로 열린다. 패널이 펼쳐질 자리를
+   카드 안에서 만들지 않으므로 그리드는 그대로다. */
+@media (hover: hover) {
+  .operator-card:hover {
+    transform: translateY(-4px) scale(1.05);
+    z-index: 6;
+  }
+  .operator-card:hover .card-reveal {
+    grid-template-rows: auto 1fr;
+    padding-bottom: 10px;
+  }
+  .operator-card:hover .card-more {
+    opacity: 1;
+  }
+}
+.operator-card.peek,
+.operator-card:focus-visible {
+  transform: translateY(-4px) scale(1.05);
+  z-index: 6;
+}
+.operator-card.peek .card-reveal,
+.operator-card:focus-visible .card-reveal {
+  grid-template-rows: auto 1fr;
+  padding-bottom: 10px;
+}
+.operator-card.peek .card-more,
+.operator-card:focus-visible .card-more {
+  opacity: 1;
 }
 .operator-card:hover {
-  transform: translateY(-4px);
   border-color: color-mix(in srgb, var(--lime) 70%, #0000);
   box-shadow:
     0 16px 36px #0000003a,
@@ -2029,31 +2068,16 @@ legend {
   outline-offset: 2px;
   border-color: var(--border-strong);
 }
-/* 초상 칸 — 세 겹: ① 라임 헤어라인(대각선 경계) ② 직군색 띠 ③ 잉크 바탕(위가 살짝 밝아
-   얼굴 뒤가 죽지 않는다). 글자가 명판으로 내려갔으니 대각선을 더 세우고(165deg) 위로
-   올려(58%) 얼굴이 띠를 딛고 서게 한다. 각도·위치는 .portrait-grid 마스크와 **같아야
-   한다** — 한쪽만 고치면 무늬가 띠 밖으로 샌다. */
+/* 초상 칸 — 잉크 바탕(위가 살짝 밝아 얼굴 뒤가 죽지 않는다) 위에 직군색 광을 오른쪽 아래
+   얼굴 뒤로 깐다. 광은 --accent 를 흰색과 조금 섞은 것 — 채도가 낮은 accent 그대로는
+   어두운 바탕에서 안 보인다. 카드 = 초상 하나라 높이는 비율로 잡는다. */
 .portrait {
   background:
-    linear-gradient(165deg, #0000 0 57.7%, var(--lime) 57.7% 58.3%, #0000 58.3%),
-    linear-gradient(165deg, #0000 0 58%, var(--accent) 58%),
+    radial-gradient(120% 95% at 76% 104%, color-mix(in srgb, var(--accent) 82%, #fff) 0, #0000 64%),
     linear-gradient(180deg, #252d32, #171d21 74%);
-  height: 138px;
-  flex: none;
+  aspect-ratio: 5 / 6;
   position: relative;
   overflow: hidden;
-}
-/* 띠 안쪽 무늬 — 하프톤 도트 + 쉐브론 사선. 아바타가 오른쪽을 덮으니 왼쪽에서 도트가
-   가장 잘 보인다 — 인게임 카드의 하프톤이 딱 그 자리에 있다. */
-.portrait-grid {
-  background-image:
-    repeating-linear-gradient(118deg, #ffffff12 0 2px, #0000 2px 20px),
-    radial-gradient(#ffffff30 1.15px, #0000 1.3px);
-  background-size: auto, 5px 5px;
-  position: absolute;
-  inset: 0;
-  -webkit-mask-image: linear-gradient(165deg, #0000 0 58%, #000 58%);
-  mask-image: linear-gradient(165deg, #0000 0 58%, #000 58%);
 }
 /* 성급 별만 초상 왼쪽 위에 얹는다 — 아바타는 오른쫑 아래로 앉히므로 서로 안 겹친다.
    직군은 명판 눈썹(.plate-eyebrow)으로 내렸다: 칩까지 올리니 아바타 머리에 겹쳤다. */
@@ -2092,31 +2116,46 @@ legend {
   -webkit-background-clip: text;
   background-clip: text;
 }
-/* 명판 눈썹 — 직군을 작고 또렷한 대문자 느낌으로 (EN/JA 에선 실제로 uppercase 가 걸린다) */
+/* 아래 패널 — 접힌 상태엔 직군 한 줄만, 펼치면 grid 행이 0fr→1fr 로 열리며 이름·소속·
+   태그가 올라온다. 배경은 늘 어두운 그라데이션(패널은 두 테마 모두 어둡다 — 아바타 위에
+   글자를 얹어야 하므로). 윗선이 라임 헤어라인이다. */
+.card-reveal {
+  z-index: 3;
+  position: absolute;
+  inset: auto 0 0 0;
+  display: grid;
+  grid-template-rows: auto 0fr;
+  padding: 18px 10px 7px;
+  background: linear-gradient(180deg, #0e121500, #0e1215d9 34%, #0e1215f0);
+  border-top: 1px solid color-mix(in srgb, var(--lime) 72%, #0000);
+  transition:
+    grid-template-rows 0.28s ease,
+    padding 0.28s ease;
+}
+.card-more {
+  min-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.2s ease 0.06s;
+}
 .plate-eyebrow {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 3px;
 }
 .plate-eyebrow b {
-  color: var(--ink3);
-  font: 800 10.5px monospace;
+  color: #d5dce0;
+  font: 800 10px monospace;
   letter-spacing: 1px;
   text-transform: uppercase;
 }
-/* 명판 — 이름 한 줄(길면 두 줄), 그 아래 소속·출신·종족을 한 줄로 흘린다 */
-.card-plate {
-  padding: 9px 12px 7px;
-  min-height: 56px;
-}
-.card-plate h3 {
-  color: var(--ink);
-  letter-spacing: -0.5px;
-  margin: 0;
-  font-size: 16.5px;
+.card-more h3 {
+  color: #f6f7f3;
+  letter-spacing: -0.4px;
+  margin: 3px 0 0;
+  font-size: 14px;
   font-weight: 800;
-  line-height: 1.15;
+  line-height: 1.2;
   word-break: keep-all;
   overflow: hidden;
   display: -webkit-box;
@@ -2124,7 +2163,7 @@ legend {
   -webkit-line-clamp: 2;
 }
 .portrait-facts {
-  margin-top: 5px;
+  margin-top: 4px;
   display: flex;
   flex-wrap: wrap;
   gap: 1px 10px;
@@ -2135,8 +2174,8 @@ legend {
   display: flex;
   align-items: baseline;
   gap: 5px;
-  color: var(--ink3);
-  font-size: 10.5px;
+  color: #c3ccd1;
+  font-size: 10px;
   font-weight: 700;
   line-height: 1.4;
   word-break: keep-all; /* 한국어 어절 단위 줄바꿈 — 글자 단위 세로 꺾임 방지 */
@@ -2145,10 +2184,10 @@ legend {
 .portrait-facts i {
   flex: none;
   font-style: normal;
-  color: var(--muted);
+  color: #8a969d;
   background: #0000;
   padding: 0;
-  font: 700 9px monospace;
+  font: 700 8.5px monospace;
   letter-spacing: 0.8px;
 }
 .results-tools {
@@ -2198,13 +2237,6 @@ legend {
   -webkit-mask-image: linear-gradient(90deg, #0000, #000 18%);
   mask-image: linear-gradient(90deg, #0000, #000 18%);
 }
-.card-body {
-  background: var(--bg-soft);
-  border-top: 1px solid var(--line);
-  height: 44px;
-  padding: 8px 11px 9px;
-  overflow: hidden;
-}
 .name-line {
   justify-content: space-between;
   align-items: start;
@@ -2233,18 +2265,18 @@ legend {
 .tags {
   white-space: nowrap;
   flex-wrap: nowrap;
-  gap: 5px;
-  margin-top: 0;
+  gap: 4px;
+  margin-top: 7px;
   display: flex;
   overflow: hidden;
 }
 .tags span {
-  background: var(--white);
-  border: 1px solid var(--line);
+  background: #0000;
+  border: 1px solid #ffffff2c;
   border-radius: 3px;
-  color: var(--ink2);
-  padding: 3px 6px;
-  font-size: 11px;
+  color: #dfe5e8;
+  padding: 2px 5px;
+  font-size: 10px;
   font-weight: 700;
 }
 /* 첫 태그(대표 컨셉)만 라임 — 카드에서 라임이 쓰이는 두 곳 중 하나.
@@ -2252,8 +2284,8 @@ legend {
    안 읽힌다), 다크에선 밝은 라임으로 알아서 갈린다. */
 .tags span:first-child {
   border-color: color-mix(in srgb, var(--lime) 75%, #0000);
-  background: color-mix(in srgb, var(--lime) 18%, var(--white));
-  color: color-mix(in srgb, var(--lime) 55%, var(--ink));
+  background: color-mix(in srgb, var(--lime) 14%, #0000);
+  color: var(--lime);
 }
 /* ⚠ backdrop-filter 금지 (사용자 지적 2026-07-28: "모달에서 드래그로 문자 블록 씌울 때
    이상하게 느리고 반응이 느림"). 원인 확정 — 선택 영역이 바뀔 때마다 전체 화면 블러가 다시
@@ -4531,12 +4563,6 @@ legend {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 9px;
   }
-  .portrait {
-    min-height: 138px;
-  }
-  .card-body {
-    padding: 12px;
-  }
   .name-line {
     display: block;
   }
@@ -4684,12 +4710,6 @@ legend {
   .operator-grid {
     /* 폰도 2열 — 1열이면 400px 폭 카드에 138px 얼굴이 앉아 왼쪽 절반이 빈 잉크로 남는다 */
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .portrait {
-    min-height: 138px;
-  }
-  .card-body p {
-    min-height: 0;
   }
 }
 @media (max-width: 760px) {

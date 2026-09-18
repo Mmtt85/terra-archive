@@ -2826,37 +2826,56 @@ function OperatorCard({ operator, index, onSelect }: { operator: Operator; index
   // 카드가 화면 근처에 실제로 들어오기 전엔 이미지 자체를 마운트하지 않는다 — 진입 즉시
   // 420장이 전부 요청되던 문제 대응 (스크롤·필터링 시에만 그때그때 받아옴, 2026-07-22)
   const [portraitRef, visible] = useLazyVisible<HTMLDivElement>();
+  // 터치 기기: **꾹 누르면**(350ms) 카드가 커지며 패널이 열리고, 그냥 한 번 누르면 모달
+  // (사용자 요청 2026-09-18). 꾹 누른 뒤 손을 떼면 그 클릭은 모달로 이어지지 않는다.
+  // 스크롤이 시작되면 pointercancel 이 와서 저절로 닫힌다. iOS 의 링크 미리보기·이미지
+  // 저장 시트는 CSS -webkit-touch-callout:none 으로, 안드로이드 컨텍스트 메뉴는 아래
+  // onContextMenu 로 막는다 — 안 막으면 꾹 누르는 순간 그쪽이 먼저 뜬다.
+  const [peek, setPeek] = useState(false);
+  const holdTimer = useRef<number | null>(null);
+  const held = useRef(false);
+  const startHold = (event: React.PointerEvent) => {
+    if (event.pointerType !== "touch") return;
+    held.current = false;
+    holdTimer.current = window.setTimeout(() => { held.current = true; setPeek(true); }, 350);
+  };
+  const endHold = () => {
+    if (holdTimer.current) { window.clearTimeout(holdTimer.current); holdTimer.current = null; }
+    setPeek(false);
+  };
+  useEffect(() => () => { if (holdTimer.current) window.clearTimeout(holdTimer.current); }, []);
   // 실제 앵커 — 크롤러가 따라갈 내부 링크이자 새 탭/북마크가 되는 정본 주소.
   // 클릭은 종전대로 가로채 모달을 연다 (미실장 오퍼는 상세 라우트가 없어 목록 주소로).
   return (
-    <a className={`operator-card${operator.unreleased ? " fut-dim" : ""}`} href={operatorHref(locale, operator)}
+    <a className={`operator-card${operator.unreleased ? " fut-dim" : ""}${peek ? " peek" : ""}`} href={operatorHref(locale, operator)}
+      onPointerDown={startHold} onPointerUp={endHold} onPointerCancel={endHold} onPointerLeave={endHold}
+      onContextMenu={(event) => { if (held.current || peek) event.preventDefault(); }}
       onClick={(event) => {
+        if (held.current) { held.current = false; event.preventDefault(); return; }   // 꾹 누른 뒤 뗀 것 — 모달 아님
         if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
         event.preventDefault(); onSelect(operator);
       }}
       aria-label={t("{name} 상세 정보 열기", { name: operator.name })} style={{ "--accent": accentOf(operator), "--delay": `${(index % 12) * 25}ms` } as React.CSSProperties}>
-      {/* 얼굴이 주인공인 카드 (2026-09-18 재설계, 사용자 "완전히 니 독자적인 판단으로"):
-          초상 칸에는 성급·직군 오버레이와 아바타만 두고, 이름·소속·출신·종족은 아래
-          명판(.card-plate)으로 뺀다. 종전엔 58% 폭 오버레이에 이름까지 밀어 넣어
-          "퍼퓨머 더 디스틸/트"처럼 이름이 꺾였다 — 명판은 카드 전폭이라 한 줄로 시원하다. */}
+      {/* 카드는 얼굴·성급·직군만 보여준다 (사용자 제안 2026-09-18 "성급, 얼굴, 직군만 남기고
+          마우스오버 하면 좀 확대되면서 지금 카드 내용들 나오고"). 이름·소속·출신·종족·컨셉
+          태그는 호버하면 카드가 살짝 커지며 아래에서 올라오는 패널(.card-reveal)에 나온다.
+          터치 기기엔 호버가 없으니 그냥 눌러서 상세 모달로 간다 — 정보는 모달에 다 있다.
+          이름은 링크의 aria-label 과 img alt 에 남아 크롤러·스크린리더는 그대로 읽는다. */}
       <div className="portrait" ref={portraitRef}>
-        <span className="portrait-grid" />
-        {/* 초상 위엔 별만 — 직군 칩까지 올리면 아바타 머리에 겹쳐 안 읽힌다 (사용자 지적 2026-09-18) */}
         <div className="portrait-meta"><span data-rarity={operator.rarity}>{"★".repeat(operator.rarity)}</span></div>
         {visible && <img src={asset(operator.image)} alt={t("{name} 오퍼레이터", { name: operator.name })} width={180} height={180} decoding="async" />}
-      </div>
-      <div className="card-plate">
-        {/* 눈썹(직군) → 이름 → 소속·출신·종족 — 편집 디자인의 eyebrow/headline/dek 순서 */}
-        <div className="plate-eyebrow"><b>{operator.job}</b>{operator.unreleased && <em className="future-badge">{t("미실장")}</em>}</div>
-        <h3>{operator.name}</h3>
-        <small className="portrait-facts">
-          <span><i>{t("소속")}</i>{operator.faction}</span>
-          <span><i>{t("출신")}</i>{operator.birthplace ?? t("불명")}</span>
-          <span><i>{t("종족")}</i>{operator.race ?? t("불명")}</span>
-        </small>
-      </div>
-      <div className="card-body">
-        <div className="tags">{operator.concepts.map((tag) => <span key={tag}>{conceptName(locale, tag)}</span>)}</div>
+        <div className="card-reveal">
+          <div className="plate-eyebrow"><b>{operator.job}</b>{operator.unreleased && <em className="future-badge">{t("미실장")}</em>}</div>
+          <div className="card-more">
+            <h3>{operator.name}</h3>
+            <small className="portrait-facts">
+              <span><i>{t("소속")}</i>{operator.faction}</span>
+              <span><i>{t("출신")}</i>{operator.birthplace ?? t("불명")}</span>
+              <span><i>{t("종족")}</i>{operator.race ?? t("불명")}</span>
+            </small>
+            <div className="tags">{operator.concepts.map((tag) => <span key={tag}>{conceptName(locale, tag)}</span>)}</div>
+          </div>
+        </div>
       </div>
     </a>
   );
