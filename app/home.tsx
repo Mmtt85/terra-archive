@@ -1277,6 +1277,26 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   // 잡은 순간의 헤더 높이를 재 두고 max-height 를 그 값 ± 이동량으로 실시간 갱신한다
   // (tuck 이 max-height 기반이라 같은 축을 쓴다 — transform 을 쓰면 본문과 겹친다).
   const headerRef = useRef<HTMLElement>(null);
+  // 헤더를 펼쳐도 **본문이 밀려 내려가지 않는다** (사용자 요청 2026-09-19). 헤더는 종전대로
+  // 커지고(치비·확장부·핸들 위치 그대로), 커진 만큼 본문을 위로 끌어올려 헤더가 본문을 덮는다.
+  // ⚠ 확장부를 헤더 밖으로 빼서 헤더 높이를 고정하는 방식은 쓰지 말 것 — 치비가 헤더 박스에
+  //   붙어 있어 43px 위로 딸려 올라가 잘렸다(2026-09-19 실패). 헤더 안을 안 건드리는 이 방식이
+  //   맞다. 데스크탑만 적용(CSS 미디어쿼리) — 모바일은 끌어올려 치우는 동작이 얽혀 그대로 둔다.
+  const headerBase = useRef(0);
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    const apply = () => {
+      const h = el.offsetHeight;
+      if (headerCollapsed) headerBase.current = h;              // 접힌 높이가 기준
+      const grow = Math.max(0, h - (headerBase.current || h));
+      document.documentElement.style.setProperty("--hdr-grow", `${grow}px`);
+    };
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [headerCollapsed]);
   const headerH = useRef(0);
   // 끄는 동안의 높이와 **내용 불투명도**를 같이 든다. 헤더는 안쪽 드롭다운이 absolute 라
   // overflow 로 자를 수 없어서(위 CSS 주석 참조), 높이만 줄이면 버튼이 상자 밖으로 삐져나온
