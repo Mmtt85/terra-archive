@@ -7664,32 +7664,11 @@ html.dark .tags-track > span {
   /* 이벤트 칩은 2026-07-30부터 확장부(.header-sub-right)의 작은 버튼이다 — 1줄 절대중앙
      배치와, 그 오른쪽에 방송 버튼을 붙이던 offset 계산은 함께 걷어냈다. */
   /* 2줄(펼침 시) = 미래시·다크모드·언어(오른쪽 끝) */
-  /* 확장부는 **흐름 밖(absolute)** 에 띄운다 — 펼쳐도 헤더 높이가 안 변하니 본문이 밀리지
-     않는다 (사용자 요청 2026-09-19). 헤더 바로 아래(top:100%)에 붙이고, 좌우 여백을 헤더와
-     같게 해서 버튼 x 좌표가 종전과 같다. ⚠ 위로 끌어올리지 말 것(top:calc(100% - 14px) 로
-     했다가 헤더를 가렸다). 여닫기는 높이 전환 — interpolate-size 로 height:auto 도 전환된다. */
-  .site-header {
-    interpolate-size: allow-keywords;
-  }
   .site-header .header-sub {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    padding: 0 clamp(22px, 5vw, 76px) 14px;
-    background: var(--header-bg);
-    -webkit-backdrop-filter: blur(12px);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--line);
+    flex-basis: 100%;
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    overflow: hidden;
-    height: auto;
-    transition:
-      height 0.26s cubic-bezier(0.4, 0, 0.2, 1),
-      padding-bottom 0.26s cubic-bezier(0.4, 0, 0.2, 1),
-      visibility 0s;
   }
   .header-sub .header-sub-right {
     display: flex;
@@ -7710,21 +7689,9 @@ html.dark .tags-track > span {
     left: auto;
     right: 0;
   }
-  /* 접힘: 2줄(미래시·다크모드·언어)만 사라진다. 이벤트·공식방송은 1줄 소속이라 유지.
-     ⚠ 본문을 음수 마진으로 끌어올리는 JS 방식(ResizeObserver 로 헤더 높이 차를 재는 것)은
-        버렸다 — 첫 프레임 예측·정지 판정이 폭마다 어긋나 본문이 10px 씩 흔들렸다(2026-09-19).
-        확장부를 absolute 로 띄우면 계산 자체가 필요 없다. */
-  /* 접힘: 높이 0 으로 여닫고, 다 닫힌 뒤 visibility 로 탭 포커스까지 막는다(hidden 은 전환이
-     끝나는 0.26s 뒤에, 펼칠 땐 즉시 visible — 각 규칙의 transition 이 그 방향을 맡는다). */
+  /* 접힘: 2줄(미래시·다크모드·언어)만 사라진다. 이벤트·공식방송은 1줄 소속이라 유지. */
   .site-header.collapsed .header-sub {
-    height: 0;
-    padding-bottom: 0;
-    border-bottom-width: 0;
-    visibility: hidden;
-    transition:
-      height 0.26s cubic-bezier(0.4, 0, 0.2, 1),
-      padding-bottom 0.26s cubic-bezier(0.4, 0, 0.2, 1),
-      visibility 0s linear 0.26s;
+    display: none;
   }
   /* 접기 핸들은 PC에선 오른쪽(헤더 콘텐츠 패딩과 정렬) — 중앙은 이벤트 드롭다운과 동선이
      겹친다 (사용자 확정 2026-07-22). 모바일은 중앙 유지. */
@@ -15376,6 +15343,13 @@ main.site-main > .site-header {
   /* 본문이 짧아도 푸터는 항상 스크롤 영역 하단에 (사용자 확정 2026-07-18) */
   display: flex;
   flex-direction: column;
+}
+/* 헤더를 펼치면 커진 만큼(--hdr-grow, home.tsx 가 잰다) 본문을 끌어올린다 — 헤더가 본문을
+   덮을 뿐 본문은 제자리다 (사용자 요청 2026-09-19). 헤더 쪽 규칙은 하나도 안 바꾼다. */
+@media (min-width: 761px) {
+  .site-scroll {
+    margin-top: calc(-1 * var(--hdr-grow, 0px));
+  }
 }
 /* 스크롤 컨테이너의 자식은 절대 눌리지 않는다 — 스크롤은 컨테이너 몫이므로.
    flex 자식의 기본 min-height:auto(내용 높이 밑으론 안 줄어듦)를 섹션의 명시적
