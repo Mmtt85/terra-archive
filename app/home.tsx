@@ -1841,16 +1841,6 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
       setSelected(null);
     });
   };
-  // 오퍼 상세 → 육성 시뮬로 그 오퍼를 담아 이동 (사용자 요청 2026-08-01).
-  // UpgradeSim은 마운트 때 ?ops를 한 번 읽으므로 URL을 먼저 맞춰 두고 탭을 바꾼다.
-  // ⚠ tabPath가 ?future=1을 달고 올 수 있어 문자열 이어붙이기 금지 — switchRogueTopic과 같은 함정.
-  const openUpgradeFor = (operatorId: string) => {
-    const [path, query] = tabPath("upgrade").split("?");
-    const params = new URLSearchParams(query);
-    params.set("ops", operatorId);
-    history.pushState(null, "", `${path}?${params}`);
-    startTransition(() => { setTab("upgrade"); setSelected(null); });
-  };
   // 햄버거의 '통합전략 가이드' 부메뉴에서 특정 테마로 바로 진입 — /rogue?topic=isN 으로 이동.
   // 이미 rogue 탭이면 커스텀 이벤트(ta:rogue-topic)로 RogueGuide가 토픽을 동기화하고, 다른
   // 탭이면 탭 전환 시 RogueGuide가 마운트되며 URL의 topic을 읽는다.
@@ -2392,7 +2382,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
           모든 상세 페이지에 통째로 딸려 들어가면 페이지마다 고유 본문보다 공통 뼈대가
           많아진다 (2026-08-06). 목록으로 돌아가는 링크는 상세 위에 있다. */}
       {tab === "archive" && pageOperator && (
-        <OperatorPage operator={pageOperator} onUpgrade={openUpgradeFor} includeFuture={includeFuture}
+        <OperatorPage operator={pageOperator} includeFuture={includeFuture}
           listHref={tabPath("archive")} operators={operators}
           onRelated={(op) => { setPageOperator(op); history.pushState(null, "", operatorHref(locale, op)); scrollMainTop(); }}
           onBack={() => { setPageOperator(null); history.pushState(null, "", tabPath("archive")); }} />
@@ -2658,7 +2648,7 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
 
       {/* 미실장 항목(.fut-dim) 안내 툴팁 — 위임 리스너 하나가 사이트 전체를 맡는다 */}
       <FutureTip />
-      {selected && <OperatorModal operator={selected} onClose={closeOperator} onUpgrade={openUpgradeFor} includeFuture={includeFuture} onPinChange={(pinned) => { opPinnedRef.current = pinned; }} operators={operators} onRelated={openOperator} />}
+      {selected && <OperatorModal operator={selected} onClose={closeOperator} includeFuture={includeFuture} onPinChange={(pinned) => { opPinnedRef.current = pinned; }} operators={operators} onRelated={openOperator} />}
       <FeedbackWidget open={feedbackOpen} setOpen={setFeedbackOpen}
         onNewCount={(n, admin) => { setFeedbackNew(n); setFeedbackNewAdmin(admin); }} />
     </main>
@@ -3125,7 +3115,7 @@ function RelatedOperators({ operator, operators, onSelect }: {
 // 페이지가 따로 필요한 이유: ModalWindow는 body 포털이라 프리렌더(document 없음)에서
 // 아무것도 못 그린다. /operators/<id>를 색인시키려면 본문이 정적 HTML에 있어야 한다
 // (2026-08-06). 두 곳이 같은 컴포넌트를 쓰므로 내용이 갈라질 일은 없다.
-function OperatorFile({ operator, onUpgrade, includeFuture, operators, onRelated }: { operator: Operator; onUpgrade?: (operatorId: string) => void; includeFuture?: boolean; operators?: Operator[]; onRelated?: (op: Operator) => void }) {
+function OperatorFile({ operator, includeFuture, operators, onRelated }: { operator: Operator; includeFuture?: boolean; operators?: Operator[]; onRelated?: (op: Operator) => void }) {
   const { locale, t } = useI18n();
   const scrollRef = useRef<HTMLDivElement>(null);
   // 미래 모듈도 항상 보여준다 — 미래시가 꺼져 있으면 흑백(.fut-dim) + 미실장 배지
@@ -3149,16 +3139,11 @@ function OperatorFile({ operator, onUpgrade, includeFuture, operators, onRelated
             {/* 헤더 오른쪽 세로단 — 미실장 안내와 바로가기 버튼을 쌓는다. 제목 옆 별도 열이라
                 안내 문장이 길어도 히어로 높이를 밀지 않고, 둘이 겹치지도 않는다
                 (사용자 요청 2026-08-01). */}
-            {(onUpgrade || operator.unreleased) && (
+            {/* '육성 비용 계산' 버튼은 2026-09-18에 뺐다 (사용자 "굳이 필요한가 싶음").
+                육성 시뮬은 헤더 메뉴로 들어간다. */}
+            {operator.unreleased && (
               <div className="modal-actions">
-                {operator.unreleased && (
-                  <p className="future-note">{t("미실장 오퍼레이터입니다 — 중국 서버 데이터 기준이며, 스킬·재능 등 텍스트는 비공식 AI 번역이라 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>
-                )}
-                {onUpgrade && (
-                  <button type="button" className="modal-action" onClick={() => onUpgrade(operator.id)}>
-                    <span className="btn-icon" aria-hidden>▦</span>{t("육성 비용 계산")}
-                  </button>
-                )}
+                <p className="future-note">{t("미실장 오퍼레이터입니다 — 중국 서버 데이터 기준이며, 스킬·재능 등 텍스트는 비공식 AI 번역이라 정식 출시 시 공식 번역과 다를 수 있습니다.")}</p>
               </div>
             )}
           </div>
@@ -3287,11 +3272,11 @@ function OperatorFile({ operator, onUpgrade, includeFuture, operators, onRelated
   );
 }
 
-function OperatorModal({ operator, onClose, onUpgrade, includeFuture, onPinChange, operators, onRelated }: { operator: Operator; onClose: () => void; onUpgrade?: (operatorId: string) => void; includeFuture?: boolean; onPinChange?: (pinned: boolean) => void; operators?: Operator[]; onRelated?: (op: Operator) => void }) {
+function OperatorModal({ operator, onClose, includeFuture, onPinChange, operators, onRelated }: { operator: Operator; onClose: () => void; includeFuture?: boolean; onPinChange?: (pinned: boolean) => void; operators?: Operator[]; onRelated?: (op: Operator) => void }) {
   return (
     <ModalWindow label={`${operator.name} · ${operator.code}`} className="operator-modal" onClose={onClose} onPinChange={onPinChange}
       style={{ "--accent": accentOf(operator) } as React.CSSProperties}>
-      <OperatorFile operator={operator} onUpgrade={onUpgrade} includeFuture={includeFuture} operators={operators} onRelated={onRelated} />
+      <OperatorFile operator={operator} includeFuture={includeFuture} operators={operators} onRelated={onRelated} />
     </ModalWindow>
   );
 }
@@ -3299,8 +3284,8 @@ function OperatorModal({ operator, onClose, onUpgrade, includeFuture, onPinChang
 // 오퍼 상세 페이지 — /operators/<id>로 직접 들어왔을 때. 창 모양은 그대로 쓰되(같은
 // .operator-modal 규격) 백드롭·크롬 없이 본문에 놓인다. 목록으로 돌아가는 링크는 실제
 // 앵커라 크롤러도 목록으로 되돌아갈 수 있다.
-function OperatorPage({ operator, onUpgrade, includeFuture, listHref, onBack, operators, onRelated }: {
-  operator: Operator; onUpgrade?: (operatorId: string) => void; includeFuture?: boolean;
+function OperatorPage({ operator, includeFuture, listHref, onBack, operators, onRelated }: {
+  operator: Operator; includeFuture?: boolean;
   listHref: string; onBack: () => void; operators?: Operator[]; onRelated?: (op: Operator) => void;
 }) {
   const { t } = useI18n();
@@ -3313,7 +3298,7 @@ function OperatorPage({ operator, onUpgrade, includeFuture, listHref, onBack, op
         }}>← {t("오퍼 목록으로")}</a>
       <section className="operator-modal operator-page" aria-label={`${operator.name} · ${operator.code}`}
         style={{ "--accent": accentOf(operator) } as React.CSSProperties}>
-        <OperatorFile operator={operator} onUpgrade={onUpgrade} includeFuture={includeFuture} operators={operators} onRelated={onRelated} />
+        <OperatorFile operator={operator} includeFuture={includeFuture} operators={operators} onRelated={onRelated} />
       </section>
     </div>
   );

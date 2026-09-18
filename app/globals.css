@@ -2186,8 +2186,10 @@ html.dark .tags-track > span {
      그만큼 위 얼굴 행이 줄어든다. */
   grid-template-rows: 16px 0fr;
   padding: 8px 10px 7px;
+  /* 라임 가로줄은 2026-09-18에 뺐다 (사용자 "필요 없는거같지 않아?") — 그라데이션만으로도
+     경계가 읽히고, 카드가 훨씬 조용해진다. 섬네일 밑변이 이 경계에 붙는 규칙은 그대로다
+     (그건 2행 그리드 구조가 잡는 것이지 선이 잡는 게 아니다). */
   background: linear-gradient(180deg, #0000, color-mix(in srgb, var(--white) 88%, #0000) 34%, var(--white));
-  border-top: 1px solid color-mix(in srgb, var(--lime) 72%, #0000);
   transition:
     height 0.28s ease,
     grid-template-rows 0.28s ease;
@@ -2812,27 +2814,34 @@ html.dark .tags-track > span {
 .modal-rail button.active em {
   color: var(--accent);
 }
+/* 공식 소속·출신지·종족·전투 태그·컨셉 — 다섯 칸짜리 3열 격자(두 줄, 약 150px)였던 것을
+   **한 줄 띠**로 압축했다 (사용자 요청 2026-09-18). 값이 길면 어절 단위로 다음 줄로
+   흘러가되 칸이 아니라 글줄이라 훨씬 얕다. */
 .modal-facts {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  margin-bottom: 28px;
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 5px 18px;
+  background: var(--bg-soft);
+  padding: 10px 14px;
+  margin-bottom: 22px;
 }
 .modal-facts div {
-  background: var(--bg-soft);
-  padding: 14px 16px;
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  min-width: 0;
 }
 .modal-facts span {
+  flex: none;
   color: var(--muted);
-  letter-spacing: 1px;
-  font: 700 11px monospace;
-  display: block;
+  letter-spacing: 0.5px;
+  font: 700 10px monospace;
 }
 .modal-facts b {
-  margin-top: 7px;
-  font-size: 13px;
-  line-height: 1.5;
-  display: block;
+  font-size: 12.5px;
+  line-height: 1.45;
+  word-break: keep-all;
 }
 /* 커뮤니티 별명 — 이름 바로 오른쪽에 상위 3개 (득표수 비표시), 헤더 오른편에 제보 폼 */
 .modal-title-block {
@@ -3062,11 +3071,13 @@ html.dark .tags-track > span {
   border: 1px solid var(--line);
   overflow-x: auto;
 }
+/* 데스크탑에선 **가로 스크롤 없이 한눈에** 들어가야 한다 (사용자 요청 2026-09-18 —
+   종전 min-width 860px 이 모달 본문 812px 을 넘겨 122px 씩 잘렸다). 여백·글자를 조여
+   맞췄고, 좁은 화면에선 아래 미디어쿼리로 다시 최소폭을 줘 가로 스크롤로 보낸다. */
 .stat-row {
   border-top: 1px solid var(--line);
-  grid-template-columns: 1.5fr repeat(8, 1fr) 1.4fr;
+  grid-template-columns: 1.35fr repeat(8, 1fr) 1.15fr;
   align-items: center;
-  min-width: 860px;
   display: grid;
 }
 .stat-row:first-child {
@@ -3074,22 +3085,27 @@ html.dark .tags-track > span {
 }
 .stat-row > * {
   text-align: center;
-  padding: 11px 9px;
-  font-size: 12.5px;
+  padding: 10px 3px;
+  font-size: 12px;
 }
+/* 좌우 여백을 3px 로 조였더니 맨 왼쪽 칸만 글자가 테두리에 붙었다 (사용자 지적) */
 .stat-row b {
   text-align: left;
+  padding-left: 11px;
 }
 .stat-row small {
   color: var(--muted);
-  font: 10.5px monospace;
+  font: 10px monospace;
+  display: block;
 }
 .stat-head {
   background: var(--chip);
   color: #fff;
 }
 .stat-head > * {
-  font: 700 11px monospace;
+  font: 700 10px monospace;
+  letter-spacing: -0.2px;
+  word-break: keep-all;
 }
 .attack-range {
   gap: 2px;
@@ -4726,6 +4742,10 @@ html.dark .tags-track > span {
   .modal-hero {
     grid-template-columns: 84px 1fr;
     min-height: 0;
+  }
+  /* 좁은 화면에선 눌러 담기보다 가로 스크롤이 낫다 */
+  .stat-row {
+    min-width: 700px;
   }
   .modal-hero > img {
     height: 100%;
