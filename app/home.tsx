@@ -1126,6 +1126,10 @@ function HomeInner({ operators, extra, summariesLoader, initialTab, initialStory
   useEffect(() => { document.documentElement.dataset.fut = includeFuture ? "1" : "0"; }, [includeFuture]);
   useEffect(() => {
     const onBlocked = () => {
+      // 햄버거 메뉴 안의 미래시 항목(통전 테마·생존연산 시즌·위수협의 시즌)을 눌렀을 때 —
+      // 메뉴가 떠 있으면 헤더를 가려서 정작 깜빡이는 토글이 안 보인다 (사용자 요청
+      // 2026-09-18). 메뉴가 닫혀 있으면 아무 일도 아니라 카드에서 눌렀을 때와 같다.
+      setNavOpen(false); setOpenGroup(""); holdFlyout("");
       setHeaderCollapsed(false);
       setHeaderTucked(false);
       // 연달아 눌러도 애니메이션이 다시 시작되도록 한 프레임 끊었다 켠다
