@@ -2900,9 +2900,15 @@ function RelatedOperators({ operator, operators, onSelect }: {
 }) {
   const { locale, t } = useI18n();
   const groups = useMemo(() => {
+    // 미실장(중섭 선행)도 빼지 않는다 — 2026-09-04 규칙(숨기지 말고 흑백 `.fut-dim`)을
+    // 여기만 안 따르고 있었다. 페르소나3 콜라보(S.E.E.S.)처럼 **소속이 전원 미실장인 진영**은
+    // 서로가 서로를 못 봐서 진영 줄이 통째로 사라졌다 (사용자 지적 2026-09-18).
+    // 다만 정렬은 실장 먼저 — 미실장 ★6이 앞자리를 먹으면 정작 지금 볼 수 있는 오퍼가
+    // 열 칸 밖으로 밀려난다.
     const rank = (list: Operator[]) => list
-      .filter((o) => o.id !== operator.id && !o.unreleased)
-      .sort((a, b) => b.rarity - a.rarity || a.name.localeCompare(b.name, locale))
+      .filter((o) => o.id !== operator.id)
+      .sort((a, b) => Number(!!a.unreleased) - Number(!!b.unreleased)
+        || b.rarity - a.rarity || a.name.localeCompare(b.name, locale))
       .slice(0, RELATED_MAX);
     const faction = operator.factions[0];
     return [
@@ -2920,7 +2926,7 @@ function RelatedOperators({ operator, operators, onSelect }: {
           <span className="op-related-label">{g.label}</span>
           <div className="op-related-list">
             {g.items.map((o) => (
-              <a key={o.id} href={operatorHref(locale, o)} className="op-related-chip"
+              <a key={o.id} href={operatorHref(locale, o)} className={`op-related-chip${o.unreleased ? " fut-dim" : ""}`}
                 onClick={(event) => {
                   if (!onSelect || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
                   event.preventDefault(); onSelect(o);
