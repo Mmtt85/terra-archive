@@ -2839,21 +2839,33 @@ function OperatorCard({ operator, index, onSelect }: { operator: Operator; index
     if (!visible) return;
     const root = portraitRef.current;
     if (!root) return;
+    // 멈춤은 **고정 시간**(앞 0.6초·뒤 2초)이어야 하는데 키프레임 퍼센트는 지속시간에
+    // 비례해 늘어난다. 그래서 키프레임은 0→끝 직선으로 두고, 멈춤을 `linear()` 이징의
+    // 평평한 구간으로 만든다 — 퍼센트를 여기서 계산해 넣을 수 있는 유일한 자리다.
+    const flow = (el: HTMLElement, over: number) => {
+      if (over <= 1) { el.style.setProperty("--flow-ms", "0ms"); el.style.animationTimingFunction = ""; return; }
+      const travel = (over / FLOW_PX_PER_SEC) * 1000;
+      const total = FLOW_HOLD_START + travel + FLOW_HOLD_END;
+      const p1 = (FLOW_HOLD_START / total) * 100;
+      const p2 = ((FLOW_HOLD_START + travel) / total) * 100;
+      el.style.setProperty("--flow-ms", `${Math.round(total)}ms`);
+      el.style.animationTimingFunction = `linear(0 0%, 0 ${p1.toFixed(2)}%, 1 ${p2.toFixed(2)}%, 1 100%)`;
+    };
     const measure = () => {
+      // 가로 — 이름·태그
       for (const el of root.querySelectorAll<HTMLElement>(".card-reveal h3 > span, .tags-track")) {
         const box = el.parentElement;
+        if (box) flow(el, el.getBoundingClientRect().width - box.clientWidth);
+      }
+      // 세로 — 소속·출신·종족이 두 줄을 넘을 때 (만트라처럼 소속이 긴 오퍼, 실측 8장).
+      // 이동량은 픽셀이라 CSS 변수로 넘긴다(가로처럼 컨테이너 단위를 못 쓴다 — 부모 높이가
+      // max-height 로 정해져 있어 100cqh 가 내용 높이를 안 알려준다).
+      for (const el of root.querySelectorAll<HTMLElement>(".facts-track")) {
+        const box = el.parentElement;
         if (!box) continue;
-        const over = el.getBoundingClientRect().width - box.clientWidth;
-        if (over <= 1) { el.style.setProperty("--flow-ms", "0ms"); el.style.animationTimingFunction = ""; continue; }
-        // 멈춤은 **고정 시간**(앞 0.6초·뒤 1초)이어야 하는데 키프레임 퍼센트는 지속시간에
-        // 비례해 늘어난다. 그래서 키프레임은 0→끝 직선으로 두고, 멈춤을 `linear()` 이징의
-        // 평평한 구간으로 만든다 — 퍼센트를 여기서 계산해 넣을 수 있는 유일한 자리다.
-        const travel = (over / FLOW_PX_PER_SEC) * 1000;
-        const total = FLOW_HOLD_START + travel + FLOW_HOLD_END;
-        const p1 = (FLOW_HOLD_START / total) * 100;
-        const p2 = ((FLOW_HOLD_START + travel) / total) * 100;
-        el.style.setProperty("--flow-ms", `${Math.round(total)}ms`);
-        el.style.animationTimingFunction = `linear(0 0%, 0 ${p1.toFixed(2)}%, 1 ${p2.toFixed(2)}%, 1 100%)`;
+        const over = el.getBoundingClientRect().height - box.clientHeight;
+        el.style.setProperty("--flow-y", `${-Math.round(Math.max(0, over))}px`);
+        flow(el, over);
       }
     };
     measure();
@@ -2901,11 +2913,12 @@ function OperatorCard({ operator, index, onSelect }: { operator: Operator; index
           {/* 길어서 넘치면 한 줄인 채 천천히 왼쪽으로 흐른다(마퀴) — 안쪽 span 이 움직인다 */}
           <h3><span>{operator.name}</span></h3>
           <div className="card-more">
-            <small className="portrait-facts">
+            {/* 두 줄 넘으면 세로로 흐른다(만트라처럼 소속이 긴 오퍼) — 안쪽 트랙이 움직인다 */}
+            <small className="portrait-facts"><span className="facts-track">
               <span><i>{t("소속")}</i>{operator.faction}</span>
               <span><i>{t("출신")}</i>{operator.birthplace ?? t("불명")}</span>
               <span><i>{t("종족")}</i>{operator.race ?? t("불명")}</span>
-            </small>
+            </span></small>
             {/* 태그도 한 줄 — 넘치면 줄바꿈이 아니라 흐른다(사용자 정정 2026-09-18) */}
             <div className="tags"><span className="tags-track">{operator.concepts.map((tag) => <span key={tag}>{conceptName(locale, tag)}</span>)}</span></div>
           </div>
