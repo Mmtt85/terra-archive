@@ -2835,18 +2835,25 @@ function OperatorCard({ operator, index, onSelect }: { operator: Operator; index
         event.preventDefault(); onSelect(operator);
       }}
       aria-label={t("{name} 상세 정보 열기", { name: operator.name })} style={{ "--accent": accentOf(operator), "--delay": `${(index % 12) * 25}ms` } as React.CSSProperties}>
+      {/* 얼굴이 주인공인 카드 (2026-09-18 재설계, 사용자 "완전히 니 독자적인 판단으로"):
+          초상 칸에는 성급·직군 오버레이와 아바타만 두고, 이름·소속·출신·종족은 아래
+          명판(.card-plate)으로 뺀다. 종전엔 58% 폭 오버레이에 이름까지 밀어 넣어
+          "퍼퓨머 더 디스틸/트"처럼 이름이 꺾였다 — 명판은 카드 전폭이라 한 줄로 시원하다. */}
       <div className="portrait" ref={portraitRef}>
         <span className="portrait-grid" />
-        <div className="portrait-info">
-          <div className="portrait-meta"><span data-rarity={operator.rarity}>{"★".repeat(operator.rarity)}</span><b>{operator.job}</b>{operator.unreleased && <em className="future-badge">{t("미실장")}</em>}</div>
-          <h3>{operator.name}</h3>
-          <small className="portrait-facts">
-            <span><i>{t("소속")}</i>{operator.faction}</span>
-            <span><i>{t("출신")}</i>{operator.birthplace ?? t("불명")}</span>
-            <span><i>{t("종족")}</i>{operator.race ?? t("불명")}</span>
-          </small>
-        </div>
+        {/* 초상 위엔 별만 — 직군 칩까지 올리면 아바타 머리에 겹쳐 안 읽힌다 (사용자 지적 2026-09-18) */}
+        <div className="portrait-meta"><span data-rarity={operator.rarity}>{"★".repeat(operator.rarity)}</span></div>
         {visible && <img src={asset(operator.image)} alt={t("{name} 오퍼레이터", { name: operator.name })} width={180} height={180} decoding="async" />}
+      </div>
+      <div className="card-plate">
+        {/* 눈썹(직군) → 이름 → 소속·출신·종족 — 편집 디자인의 eyebrow/headline/dek 순서 */}
+        <div className="plate-eyebrow"><b>{operator.job}</b>{operator.unreleased && <em className="future-badge">{t("미실장")}</em>}</div>
+        <h3>{operator.name}</h3>
+        <small className="portrait-facts">
+          <span><i>{t("소속")}</i>{operator.faction}</span>
+          <span><i>{t("출신")}</i>{operator.birthplace ?? t("불명")}</span>
+          <span><i>{t("종족")}</i>{operator.race ?? t("불명")}</span>
+        </small>
       </div>
       <div className="card-body">
         <div className="tags">{operator.concepts.map((tag) => <span key={tag}>{conceptName(locale, tag)}</span>)}</div>
