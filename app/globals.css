@@ -2292,6 +2292,18 @@ legend {
      패딩이 숨 쉴 틈(위 16 · 옆 13, 사용자 요청 "얼굴이 좀 부담스러운데 패딩 좀"). */
   object-position: center bottom;
   padding: 16px 13px 0;
+  /* 양옆·위 가장자리를 배경에 녹인다 — 잘린 네모가 아니라 스며든 것처럼 보이게.
+     밑변은 **건드리지 않는다**: 라임 선과 맞닿는 자리라 흐리면 선이 뜬다.
+     퍼센트는 패딩까지 포함한 박스 기준이라(좌우 13px = 약 8%) 실제로 얼굴에 닿는 건
+     그 바깥 몇 px 뿐이다 — 더 키우면 인물이 녹아 사라진다. */
+  -webkit-mask-image:
+    linear-gradient(90deg, #0000, #000 15%, #000 85%, #0000),
+    linear-gradient(180deg, #0000, #000 16%);
+  mask-image:
+    linear-gradient(90deg, #0000, #000 15%, #000 85%, #0000),
+    linear-gradient(180deg, #0000, #000 16%);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
 }
 .name-line {
   justify-content: space-between;
